@@ -14,11 +14,14 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_context.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/ptp_time.h>
+#include <zephyr/sys/fdtable.h>
 
 /* This test suite verifies that NET_AF_PACKET sockets behave according to well known behaviors.
  * Note, that this is not well standardized and relies on behaviors known from Linux or FreeBSD.
@@ -2293,3 +2296,111 @@ static void *test_setup(void)
 }
 
 ZTEST_SUITE(socket_packet, NULL, test_setup, NULL, test_after, NULL);
+
+static K_THREAD_STACK_DEFINE(close_thread_stack, 2048);
+static struct k_thread close_thread;
+static K_MUTEX_DEFINE(recv_cb_lock);
+static K_SEM_DEFINE(recv_cb_locked, 0, 1);
+static K_SEM_DEFINE(recv_cb_entered, 0, 1);
+static int recv_cb_entered_ret;
+static int close_ret;
+
+static void locking_recv_cb(struct net_context *ctx, struct net_pkt *pkt,
+			    union net_ip_header *ip_hdr,
+			    union net_proto_header *proto_hdr, int status,
+			    void *user_data)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(proto_hdr);
+	ARG_UNUSED(status);
+	ARG_UNUSED(user_data);
+
+	k_sem_give(&recv_cb_entered);
+
+	(void)k_mutex_lock(&recv_cb_lock, K_FOREVER);
+	(void)k_mutex_unlock(&recv_cb_lock);
+
+	net_pkt_unref(pkt);
+}
+
+static void close_thread_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	(void)k_mutex_lock(&recv_cb_lock, K_FOREVER);
+	k_sem_give(&recv_cb_locked);
+
+	recv_cb_entered_ret = k_sem_take(&recv_cb_entered, K_SECONDS(1));
+	close_ret = zsock_close(POINTER_TO_INT(p1));
+
+	(void)k_mutex_unlock(&recv_cb_lock);
+}
+
+/* Close a packet socket while a packet is being delivered to it. The packet
+ * socket callback takes no lock, so the test installs a receive callback
+ * that waits for a lock the closing thread holds, as the inet socket
+ * callback does with the descriptor lock. Delivery must not hold the
+ * connection lock that close() takes to unregister the socket. A deadlock
+ * leaves the stack wedged, so this runs in its own suite, after the others,
+ * and leaves the sockets open when it fails.
+ */
+ZTEST(socket_packet_close, test_raw_sock_close_during_delivery)
+{
+	struct net_sockaddr_ll ll_dst;
+	struct net_context *ctx;
+	struct k_mem_slab *rx;
+	uint32_t rx_free;
+	uint16_t pkt_len;
+	int tx_sock;
+	int rx_sock;
+	int ret;
+
+	setup_packet_socket(&tx_sock, NET_SOCK_RAW, 0);
+	prepare_test_packet(NET_SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
+	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
+	prepare_packet_socket(&rx_sock, ud.first, NET_SOCK_RAW, net_htons(ETH_P_ALL));
+
+	ctx = zvfs_get_fd_obj(rx_sock, NULL, 0);
+	zassert_not_null(ctx, "No context for socket %d", rx_sock);
+
+	ret = net_context_recv(ctx, locking_recv_cb, K_NO_WAIT, NULL);
+	zassert_ok(ret, "Cannot set the receive callback (%d)", ret);
+
+	net_pkt_get_info(&rx, NULL, NULL, NULL);
+	rx_free = k_mem_slab_num_free_get(rx);
+
+	k_thread_create(&close_thread, close_thread_stack,
+			K_THREAD_STACK_SIZEOF(close_thread_stack), close_thread_fn,
+			INT_TO_POINTER(rx_sock), NULL, NULL,
+			K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+	zassert_ok(k_sem_take(&recv_cb_locked, K_SECONDS(1)),
+		   "Closing thread did not start");
+
+	/* The RX thread delivers this to the packet socket, where the receive
+	 * callback waits for the lock. The closing thread then closes the
+	 * socket, still holding the lock.
+	 */
+	ret = zsock_sendto(tx_sock, tx_buf, pkt_len, 0,
+			   (struct net_sockaddr *)&ll_dst,
+			   sizeof(struct net_sockaddr_ll));
+	zassert_equal(ret, pkt_len, "Failed to send (%d)", errno);
+
+	ret = k_thread_join(&close_thread, K_SECONDS(2));
+	zassert_ok(ret, "close() deadlocked with packet socket delivery");
+	zassert_ok(recv_cb_entered_ret, "Packet not delivered to the socket");
+	zassert_ok(close_ret, "Closing packet socket failed");
+
+	zassert_ok(zsock_close(tx_sock), "Closing packet socket failed (%d)", errno);
+
+	/* With a TX thread, the ICMP port unreachable reply to the test packet
+	 * can still hold an RX packet in the fake driver here.
+	 */
+	zassert_true(WAIT_FOR(k_mem_slab_num_free_get(rx) == rx_free, USEC_PER_SEC,
+			      k_msleep(1)),
+		     "RX packet leaked (%u free, expected %u)",
+		     k_mem_slab_num_free_get(rx), rx_free);
+}
+
+ZTEST_SUITE(socket_packet_close, NULL, test_setup, NULL, NULL, NULL);

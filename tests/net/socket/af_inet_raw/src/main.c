@@ -7,9 +7,12 @@
 #include <stdio.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_context.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/random/random.h>
+#include <zephyr/sys/fdtable.h>
 #include <zephyr/ztest.h>
 
 /* This test suite verify that RAW IP sockets behave according to well known behaviors.
@@ -979,3 +982,81 @@ static void *test_setup(void)
 }
 
 ZTEST_SUITE(socket_af_inet_raw, NULL, test_setup, NULL, test_after, NULL);
+
+static K_THREAD_STACK_DEFINE(close_thread_stack, 2048);
+static struct k_thread close_thread;
+static int close_ret;
+
+static void close_thread_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	close_ret = zsock_close(POINTER_TO_INT(p1));
+}
+
+/* Close a raw socket while a packet is being delivered to it. The receive
+ * callback waits for the descriptor lock that close() holds, so delivery
+ * must not hold the connection lock that close() takes next, and the
+ * callback must drop the packet once close() has released the socket. A
+ * deadlock leaves the stack wedged, so this runs in its own suite, after
+ * the others, and leaves the sockets open when it fails.
+ */
+ZTEST(socket_af_inet_raw_close, test_raw_v4_sock_close_during_delivery)
+{
+	struct net_context *ctx;
+	struct k_mem_slab *rx;
+	uint32_t rx_free;
+	int sock;
+	int udp;
+	int ret;
+
+	prepare_addr(NET_AF_INET);
+	prepare_raw_sock_common(&sock, NET_AF_INET, NET_IPPROTO_UDP);
+	sock_bind_any(sock, NET_AF_INET);
+	prepare_udp_sock_common(&udp, NET_AF_INET, &src_addr);
+
+	ctx = zvfs_get_fd_obj(sock, NULL, 0);
+	zassert_not_null(ctx, "No context for socket %d", sock);
+
+	net_pkt_get_info(&rx, NULL, NULL, NULL);
+	rx_free = k_mem_slab_num_free_get(rx);
+
+	/* Holding the context lock stops the closer after it has taken the
+	 * descriptor lock, with the receive callback still installed.
+	 */
+	(void)k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	k_thread_create(&close_thread, close_thread_stack,
+			K_THREAD_STACK_SIZEOF(close_thread_stack), close_thread_fn,
+			INT_TO_POINTER(sock), NULL, NULL,
+			K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+	k_sleep(K_MSEC(10));
+
+	/* The RX thread delivers this to the raw socket, where the receive
+	 * callback waits for the descriptor lock.
+	 */
+	ret = zsock_sendto(udp, test_payload, sizeof(test_payload), 0,
+			   &dst_addr, addrlen);
+	zassert_equal(ret, sizeof(test_payload), "Failed to send UDP packet (%d)",
+		      errno);
+	k_sleep(K_MSEC(10));
+
+	/* The closer goes on and unregisters the socket while the RX thread
+	 * is in the receive callback.
+	 */
+	(void)k_mutex_unlock(&ctx->lock);
+
+	ret = k_thread_join(&close_thread, K_SECONDS(1));
+	zassert_ok(ret, "close() deadlocked with raw socket delivery");
+	zassert_ok(close_ret, "Closing RAW socket failed");
+
+	zassert_ok(zsock_close(udp), "Closing UDP socket failed (%d)", errno);
+
+	k_sleep(K_MSEC(10));
+	zassert_equal(k_mem_slab_num_free_get(rx), rx_free,
+		      "RX packet leaked (%u free, expected %u)",
+		      k_mem_slab_num_free_get(rx), rx_free);
+}
+
+ZTEST_SUITE(socket_af_inet_raw_close, NULL, test_setup, NULL, NULL, NULL);
