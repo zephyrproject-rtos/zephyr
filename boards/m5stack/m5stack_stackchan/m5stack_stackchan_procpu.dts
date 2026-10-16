@@ -18,6 +18,7 @@
  * board documentation).
  */
 #include "../m5stack_cores3/m5stack_cores3_procpu.dts"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "M5Stack StackChan PROCPU";
@@ -58,6 +59,14 @@
 		rshunt-micro-ohms = <10000>;
 		/* max expected current ~3 A / 2^15 */
 		current-lsb-microamps = <100>;
+	};
+
+	/* Si12T touch panel in the body (3 zones) */
+	si12t: touch@68 {
+		compatible = "adsemi,tsm12";
+		reg = <0x68>;
+		threshold-windows = "narrow", "narrow", "narrow";
+		input-codes = <INPUT_BTN_LEFT INPUT_BTN_MIDDLE INPUT_BTN_RIGHT>;
 	};
 };
 
