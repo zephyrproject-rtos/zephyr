@@ -147,14 +147,14 @@ static void bridge_show(struct eth_bridge_iface_context *ctx, void *data)
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
-	ARRAY_FOR_EACH(ctx->eth_iface, i) {
+	ARRAY_FOR_EACH(ctx->ports, i) {
 		int if_idx;
 
-		if (ctx->eth_iface[i] == NULL) {
+		if (ctx->ports[i].iface == NULL) {
 			continue;
 		}
 
-		if_idx = net_if_get_by_iface(ctx->eth_iface[i]);
+		if_idx = net_if_get_by_iface(ctx->ports[i].iface);
 
 		shell_fprintf(sh, SHELL_NORMAL, "%-2d", if_idx);
 	}
