@@ -1450,10 +1450,11 @@ static bool dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 		k_spin_unlock(&xtensa_counter_lock, key);
 		return true;
 	}
+	k_spin_unlock(&xtensa_counter_lock, key);
 
+	/* alloc_l2_table() takes xtensa_counter_lock itself. */
 	l2_table = dup_l2_table(src_l2_table, action);
 	if (l2_table == NULL) {
-		k_spin_unlock(&xtensa_counter_lock, key);
 		LOG_ERR("Cannot duplicate L2 page table %p", src_l2_table);
 		return false;
 	}
@@ -1463,6 +1464,7 @@ static bool dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 	 */
 	l1_table[l1_pos] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 
+	key = k_spin_lock(&xtensa_counter_lock);
 	l2_page_tables_counter_dec(src_l2_table);
 
 	k_spin_unlock(&xtensa_counter_lock, key);
