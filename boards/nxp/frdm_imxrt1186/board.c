@@ -9,7 +9,8 @@
 
 #include <fsl_clock.h>
 
-#if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
+#if (defined(CONFIG_ETH_NXP_IMX_NETC) || defined(CONFIG_MDIO_NXP_IMX_NETC)) && \
+	(DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
 #define FRDM_IMXRT1186_HAS_NETC_ENABLED 1
 #else
 #define FRDM_IMXRT1186_HAS_NETC_ENABLED 0
