@@ -679,7 +679,8 @@ zephyr_jpegenc: &jpeg {
 
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
-		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>,
+		 <&rcc STM32_CLOCK(APB4, 17)>;
 	status = "okay";
 };
 
