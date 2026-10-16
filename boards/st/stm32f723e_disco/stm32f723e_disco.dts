@@ -19,7 +19,7 @@
 		zephyr,shell-uart = &usart6;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,flash-controller = &mx25r512;
+		zephyr,flash-controller = &ext_flash_ctrl;
 	};
 
 	leds {
@@ -56,6 +56,7 @@
 		led1 = &red_led;
 		led2 = &green_led;
 		sw0 = &user_button;
+		ext-nor0 = &ext_flash_ctrl;
 	};
 };
 
@@ -126,22 +127,37 @@
 };
 
 &quadspi {
+	compatible = "st,stm32-qspi-controller";
+	clock-names = "qspix";
+	clock-frequency = <DT_FREQ_M(8)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,cs-high-time = <3>; /* >= 30 ns */
 	pinctrl-names = "default";
 	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
 		     &quadspi_bk1_io0_pc9 &quadspi_bk1_io1_pc10
 		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
-	flash-id = <1>;
 	status = "okay";
 
-	mx25r512: qspi-nor-flash@0 {
-		compatible = "st,stm32-qspi-nor";
+	ext_flash_ctrl: nor-flash-controller@0 {
+		compatible = "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
-		qspi-max-frequency = <8000000>;
-		cs-high-time = <3>; /* >= 30 ns */
+		jedec-id = [c2 20 1a]; /* MX25L51245G */
+		sfdp-bfp = [e5 20 fb ff ff ff ff 1f
+			    44 eb 08 6b 08 3b 04 bb
+			    fe ff ff ff ff ff 00 ff
+			    ff ff 44 eb 0c 20 0f 52
+			    10 d8 00 ff d6 49 c5 00
+			    81 df 04 e3 44 03 67 38
+			    30 b0 30 b0 f7 bd d5 5c
+			    4a 9e 29 ff f0 50 f9 85];
+		sfdp-ff84 = [7f ef ff ff 21 5c dc ff];
+		use-4byte-addressing;
+		mspi-max-frequency = <DT_FREQ_M(8)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
 		status = "okay";
-		spi-bus-width = <4>;
-		writeoc = "PP_1_4_4";
 	};
 };
 
