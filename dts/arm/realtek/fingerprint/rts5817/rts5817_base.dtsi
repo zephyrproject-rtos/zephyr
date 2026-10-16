@@ -15,6 +15,7 @@
 / {
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,entropy = &trng;
 	};
 
 	cpus {
@@ -258,6 +259,12 @@
 			interrupts = <IRQ_NUM_SPI_MASTER 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		trng: trng@401b0600 {
+			compatible = "realtek,rts5817-trng";
+			reg = <0x401b0600 0x80>;
 			status = "disabled";
 		};
 	};
