@@ -13,6 +13,7 @@
 #include "nrf_usbd_common.h"
 #include "nrf_usbd_common_errata.h"
 #include <string.h>
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
@@ -589,7 +590,7 @@ static void usbd_ep_abort_all(void)
  */
 static inline void usbd_int_rise(void)
 {
-	NVIC_SetPendingIRQ(USBD_IRQn);
+	k_irq_set_pending(USBD_IRQn);
 }
 
 /**
@@ -1261,7 +1262,7 @@ static void nrf_usbd_common_stop(void)
 	__ASSERT_NO_MSG(m_drv_state == NRFX_DRV_STATE_POWERED_ON);
 
 	/* Clear interrupt */
-	NVIC_ClearPendingIRQ(USBD_IRQn);
+	k_irq_clear_pending(USBD_IRQn);
 
 	if (irq_is_enabled(USBD_IRQn)) {
 		/* Abort transfers */
