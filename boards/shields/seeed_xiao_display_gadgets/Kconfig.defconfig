@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SEEED_XIAO_DISPLAY_0_96 || SHIELD_SEEED_XIAO_DISPLAY_1_14 || \
+	SHIELD_SEEED_XIAO_DISPLAY_1_47
+
+if DISPLAY
+
+# The display backlight is controlled by a fixed regulator
+configdefault REGULATOR
+	default y
+
+if LVGL
+
+configdefault INPUT
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # SHIELD_SEEED_XIAO_DISPLAY_*

@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmic0 = &dmic_seeed_xiao_display;
+	};
+};
+
+/* D14 (IMU interrupt) and D15 (USR2 button of the 1.47" display) are the NFC pins */
+&uicr {
+	nfct-pins-as-gpios;
+};
+
+&pinctrl {
+	pdm0_seeed_xiao_display_default: pdm0_seeed_xiao_display_default {
+		group1 {
+			psels = <NRF_PSEL(PDM_CLK, 0, 2)>,
+				<NRF_PSEL(PDM_DIN, 0, 3)>;
+		};
+	};
+
+	pdm0_seeed_xiao_display_sleep: pdm0_seeed_xiao_display_sleep {
+		group1 {
+			psels = <NRF_PSEL(PDM_CLK, 0, 2)>,
+				<NRF_PSEL(PDM_DIN, 0, 3)>;
+			low-power-enable;
+		};
+	};
+};
+
+/* PDM microphone on D0 (clock) and D1 (data) */
+dmic_seeed_xiao_display: &pdm0 {
+	status = "okay";
+	pinctrl-0 = <&pdm0_seeed_xiao_display_default>;
+	pinctrl-1 = <&pdm0_seeed_xiao_display_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-source = "PCLK32M";
+};
