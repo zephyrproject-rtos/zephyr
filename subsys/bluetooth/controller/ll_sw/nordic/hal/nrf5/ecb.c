@@ -22,7 +22,10 @@
 #if defined(NRF_ECB00) /* In some devices NRF_ECB was renamed NRF_ECB00 */
 #define NRF_ECB                   NRF_ECB00
 #define ECB_IRQn                  ECB00_IRQn
-#endif /* NRF_ECB00 */
+#elif defined(NRF_ECB030)
+#define NRF_ECB                   NRF_ECB030
+#define ECB_IRQn                  ECB030_IRQn
+#endif
 
 #if defined(ECB_INTENSET_ERROR_Msk)
 /* 54 and newer devices have renamed some of this peripheral's registers */
@@ -191,7 +194,7 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 				    | ECB_INTENSET_ENDECB_Msk);
 
 	/* enable interrupt */
-	NVIC_ClearPendingIRQ(ECB_IRQn);
+	cpu_irq_pending_clear(ECB_IRQn);
 	irq_enable(ECB_IRQn);
 
 	/* start the encryption h/w */
@@ -201,8 +204,7 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 static void isr_ecb(const void *arg)
 {
 #ifdef EASYVDMA_PRESENT
-	struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
-				 sizeof(struct ecb));
+	struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR - sizeof(struct ecb));
 #else /* EASYVDMA_PRESENT */
 	struct ecb *e = (void *)NRF_ECB->ECBDATAPTR;
 #endif /* EASYVDMA_PRESENT */
@@ -279,9 +281,10 @@ int ecb_ut(void)
 	}
 
 #if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS)
-	irq_connect_dynamic(ECB_IRQn, CONFIG_BT_CTLR_ULL_LOW_PRIO, isr_ecb, NULL, 0);
+	irq_connect_dynamic(ECB_IRQn, HAL_IRQ_PRIO(CONFIG_BT_CTLR_ULL_LOW_PRIO), isr_ecb, NULL,
+			    0);
 #else /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
-	IRQ_CONNECT(ECB_IRQn, CONFIG_BT_CTLR_ULL_LOW_PRIO, isr_ecb, NULL, 0);
+	IRQ_CONNECT(ECB_IRQn, HAL_IRQ_PRIO(CONFIG_BT_CTLR_ULL_LOW_PRIO), isr_ecb, NULL, 0);
 #endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
 	uint8_t ecb_mem[sizeof(struct ecb) + 32U];

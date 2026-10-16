@@ -7,6 +7,24 @@
 
 #include <zephyr/kernel.h>
 
+#if defined(CONFIG_CPU_CORTEX_M)
+#include <cmsis_core.h>
+#elif defined(CONFIG_RISCV)
+#include <hal/nrf_vpr_clic.h>
+#else
+#error "Unsupported CPU."
+#endif
+
+#if defined(CONFIG_RISCV)
+/* Controller IRQ priority Kconfig options use 0 as the most urgent priority,
+ * whereas in VPR CLIC a higher priority level preempts a lower one.
+ */
+#define HAL_IRQ_PRIO_MAX 3U
+#define HAL_IRQ_PRIO(prio) (HAL_IRQ_PRIO_MAX - (prio))
+#else
+#define HAL_IRQ_PRIO(prio) (prio)
+#endif
+
 static inline void cpu_sleep(void)
 {
 	k_cpu_atomic_idle(irq_lock());
@@ -25,6 +43,8 @@ static inline void cpu_dmb(void)
 	 * each access. Only a compiler memory clobber is sufficient.
 	 */
 	__asm__ volatile ("" : : : "memory");
+#elif defined(CONFIG_RISCV)
+	__asm__ volatile ("" : : : "memory");
 #elif defined(CONFIG_ARCH_POSIX)
 	/* FIXME: Add necessary host machine required Data Memory Barrier
 	 *        instruction alongwith the below defined compiler memory
@@ -33,5 +53,23 @@ static inline void cpu_dmb(void)
 	__asm__ volatile ("" : : : "memory");
 #else
 #error "Unsupported CPU."
+#endif
+}
+
+static inline void cpu_irq_pending_set(uint32_t irq)
+{
+#if defined(CONFIG_RISCV)
+	nrf_vpr_clic_int_pending_set(NRF_VPRCLIC, irq);
+#else
+	NVIC_SetPendingIRQ(irq);
+#endif
+}
+
+static inline void cpu_irq_pending_clear(uint32_t irq)
+{
+#if defined(CONFIG_RISCV)
+	nrf_vpr_clic_int_pending_clear(NRF_VPRCLIC, irq);
+#else
+	NVIC_ClearPendingIRQ(irq);
 #endif
 }
