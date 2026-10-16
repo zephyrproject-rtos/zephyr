@@ -561,4 +561,29 @@ ZTEST(http2_hpack, test_http2_hpack_empty_value_encode_decode)
 	zassert_equal(dec.value_len, 0, "Decoded a %zu byte value", dec.value_len);
 }
 
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_size_update)
+{
+	static const uint8_t update_zero[] = { 0x20 };
+	static const uint8_t update_100[] = { 0x3f, 0x45 };
+	/* An indexed field, :status 200. */
+	static const uint8_t field[] = { 0x88 };
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	ret = http_hpack_decode_header(update_zero, sizeof(update_zero), &dec);
+	zassert_equal(ret, sizeof(update_zero), "Size update rejected (%d)", ret);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE, "Entry type %d", dec.type);
+	zassert_equal(dec.table_size, 0, "Table size %u", dec.table_size);
+	zassert_equal(dec.name_len, 0, "Size update decoded as a field");
+
+	ret = http_hpack_decode_header(update_100, sizeof(update_100), &dec);
+	zassert_equal(ret, sizeof(update_100), "Size update rejected (%d)", ret);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE, "Entry type %d", dec.type);
+	zassert_equal(dec.table_size, 100, "Table size %u", dec.table_size);
+
+	ret = http_hpack_decode_header(field, sizeof(field), &dec);
+	zassert_equal(ret, sizeof(field), "Field rejected (%d)", ret);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
+}
+
 ZTEST_SUITE(http2_hpack, NULL, NULL, NULL, NULL, NULL);

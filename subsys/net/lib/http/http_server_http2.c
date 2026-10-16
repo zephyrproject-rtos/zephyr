@@ -1647,6 +1647,11 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		client->cursor += ret;
 		client->data_len -= ret;
 
+		if (header->type == HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE) {
+			/* No field to process. */
+			continue;
+		}
+
 		LOG_DBG("Parsed header: %.*s %.*s", (int)header->name_len,
 			header->name, (int)header->value_len, header->value);
 
