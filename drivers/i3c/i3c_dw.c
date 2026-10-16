@@ -56,10 +56,12 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define HW_CAP_DEVICE_ROLE_SEC_MASTER 0x3 /* dual-role       */
 #define HW_CAP_DEVICE_ROLE_SLAVE      0x4 /* target only     */
 
-/* Dual-role rejects SIR/MR via the reject registers; controller-only uses the DAT
- * entry (databook Table 2-1).
+/* SIR/MR reject registers are defined by both IC_DEVICE_ROLE and IC_HAS_IBI_DATA != 1
+ * - the latter we can't directly probe.  Flag if we could have these registers based
+ * on role, so at run-time it can be determined if we actually do. See databook
+ * sections 5.2.13/5.2.14
  */
-#define DW_IBI_REJECT_VIA_REG(role) ((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER)
+#define DW_IBI_REJECT_REG_MAY_EXIST(role) ((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER)
 /* BUS_AVAILABLE_TIME/BUS_IDLE_TIMING exist for 1 < IC_DEVICE_ROLE < 5. */
 #define DW_HAS_BUS_IDLE(role)                                                                      \
 	((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER || (role) == HW_CAP_DEVICE_ROLE_SLAVE)
@@ -469,6 +471,9 @@ struct dw_i3c_data {
 
 	/* IC_DEVICE_ROLE, cached from HW_CAPABILITY */
 	uint8_t role;
+
+	/* IBI_SIR/MR_REQ_REJECT are implemented, probed once at init */
+	bool ibi_reject_via_reg;
 
 	/* fifo depth is in words (32b) */
 	uint8_t ibififodepth;
@@ -1516,7 +1521,6 @@ static int dw_i3c_controller_ibi_crr_response(struct i3c_device_desc *target, bo
 static int i3c_dw_endis_ibi(const struct device *dev, struct i3c_device_desc *target, bool en)
 {
 	struct dw_i3c_data *data = dev->data;
-	uint32_t role = data->role;
 	uint32_t bitpos, sir_con;
 	struct i3c_ccc_events i3c_events;
 	int ret;
@@ -1545,7 +1549,7 @@ static int i3c_dw_endis_ibi(const struct device *dev, struct i3c_device_desc *ta
 	/* The DAT entry carries the IBI payload flag and SIR gating for every role;
 	 * a secondary controller gates SIR again in IBI_SIR_REQ_REJECT.
 	 */
-	if (DW_IBI_REJECT_VIA_REG(role)) {
+	if (data->ibi_reject_via_reg) {
 		sir_con = sys_read32(dw_i3c_regs(dev) + IBI_SIR_REQ_REJECT);
 		/* Map dynamic address to its SIR reject-bit position. */
 		bitpos = IBI_SIR_REQ_ID(target->dynamic_addr);
@@ -3252,10 +3256,12 @@ static int dw_i3c_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	/* disable ibi (dual-role rejects via these regs */
-	if (DW_IBI_REJECT_VIA_REG(role)) {
+	/* Reject every SIR/MR by default; the readback says whether that took. */
+	if (DW_IBI_REJECT_REG_MAY_EXIST(role)) {
 		sys_write32(IBI_REQ_REJECT_ALL, dw_i3c_regs(dev) + IBI_SIR_REQ_REJECT);
 		sys_write32(IBI_REQ_REJECT_ALL, dw_i3c_regs(dev) + IBI_MR_REQ_REJECT);
+		data->ibi_reject_via_reg =
+			sys_read32(dw_i3c_regs(dev) + IBI_SIR_REQ_REJECT) == IBI_REQ_REJECT_ALL;
 	}
 
 	/* disable hot-join */
