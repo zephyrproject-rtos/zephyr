@@ -404,11 +404,6 @@ static void ec_host_cmd_resumed(struct usbd_class_data *const c_data)
 	}
 }
 
-static void ec_host_cmd_suspended(struct usbd_class_data *const c_data)
-{
-	LOG_DBG("Configuration suspended");
-}
-
 static void ec_host_cmd_disable(struct usbd_class_data *const c_data)
 {
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
@@ -467,7 +462,6 @@ static void ec_host_cmd_reset(struct k_work *work)
 
 __maybe_unused static const struct usbd_class_api ec_host_cmd_api = {
 	.request = ec_host_cmd_request,
-	.suspended = ec_host_cmd_suspended,
 	.resumed = ec_host_cmd_resumed,
 	.enable = ec_host_cmd_enable,
 	.disable = ec_host_cmd_disable,
