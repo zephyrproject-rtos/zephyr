@@ -1625,16 +1625,23 @@ static void port_begin(struct eth_rstp_port *p)
 	tcm_enter(p, TCM_INACTIVE);
 }
 
-void eth_rstp_bridge_init(struct eth_rstp_bridge *br, const struct eth_rstp_ops *ops,
-			  struct eth_rstp_port **ports, size_t num_ports, const uint8_t mac[6])
+static uint64_t bridge_address(const uint8_t mac[6])
 {
 	uint64_t address = 0U;
-
-	memset(br, 0, sizeof(*br));
 
 	for (size_t i = 0; i < 6U; i++) {
 		address = (address << 8) | mac[i];
 	}
+
+	return address;
+}
+
+void eth_rstp_bridge_init(struct eth_rstp_bridge *br, const struct eth_rstp_ops *ops,
+			  struct eth_rstp_port **ports, size_t num_ports, const uint8_t mac[6])
+{
+	uint64_t address = bridge_address(mac);
+
+	memset(br, 0, sizeof(*br));
 
 	br->ops = ops;
 	br->ports = ports;
@@ -1677,6 +1684,11 @@ void eth_rstp_start(struct eth_rstp_bridge *br)
 	prs_enter(br, PRS_INIT_TREE);
 	br->started = true;
 	run(br);
+}
+
+void eth_rstp_stop(struct eth_rstp_bridge *br)
+{
+	br->started = false;
 }
 
 void eth_rstp_port_begin(struct eth_rstp_port *port)
@@ -1786,6 +1798,12 @@ int eth_rstp_set_bridge_priority(struct eth_rstp_bridge *br, uint16_t priority)
 	reselect_all(br);
 
 	return 0;
+}
+
+void eth_rstp_set_bridge_address(struct eth_rstp_bridge *br, const uint8_t mac[6])
+{
+	br->bridge_id = (br->bridge_id & ~BRIDGE_ADDRESS_MASK) | bridge_address(mac);
+	reselect_all(br);
 }
 
 int eth_rstp_set_times(struct eth_rstp_bridge *br, uint16_t max_age, uint16_t forward_delay)
