@@ -396,6 +396,10 @@ static void cli_caps_common_procedure(bool lost_targets)
 	bt_mesh_device_setup(&prov, &cli_comp);
 	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
 
+	/* Let the mock server's Block Status reach the client before any procedure starts. */
+	k_sleep(K_SECONDS(2));
+	ASSERT_EQUAL(blob_cli.state, BT_MESH_BLOB_CLI_STATE_NONE);
+
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	k_sem_init(&blob_caps_sem, 0, 1);
 	k_sem_init(&lost_target_sem, 0, 1);
@@ -536,11 +540,28 @@ static void test_srv_caps_standard(void)
 
 static void test_srv_caps_no_rsp(void)
 {
+	const struct bt_mesh_model *mod;
+	struct bt_mesh_msg_ctx ctx = {
+		.app_idx = 0,
+		.addr = BLOB_CLI_ADDR,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_BLOCK_STATUS, 5);
+
 	bt_mesh_test_cfg_set(NULL, 60);
 	bt_mesh_device_setup(&prov, &none_rsp_srv_comp);
 	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
 
 	k_sem_init(&info_get_sem, 0, 1);
+
+	/* Block Status to a client that has not started any procedure yet */
+	mod = bt_mesh_model_find(&none_rsp_srv_comp.elem[0], BT_MESH_MODEL_ID_BLOB_SRV);
+	k_sleep(K_SECONDS(1));
+	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_BLOCK_STATUS);
+	net_buf_simple_add_u8(&buf, BT_MESH_BLOB_CHUNKS_MISSING_NONE << 6);
+	net_buf_simple_add_le16(&buf, 0);
+	net_buf_simple_add_le16(&buf, 16);
+	ASSERT_OK(bt_mesh_model_send(mod, &ctx, &buf, NULL, NULL));
 
 	/* Checks that the client performs correct amount of retransmit attempts */
 	for (size_t j = 0; j < CONFIG_BT_MESH_BLOB_CLI_BLOCK_RETRIES; j++) {
