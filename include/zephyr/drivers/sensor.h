@@ -1694,7 +1694,7 @@ static inline int sensor_value_from_micro(struct sensor_value *val, int64_t micr
  * @param out Resulting sum.
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_value_add(struct sensor_value *inp1, struct sensor_value *inp2,
+static inline int sensor_value_add(const struct sensor_value *inp1, const struct sensor_value *inp2,
 				   struct sensor_value *out)
 {
 	int64_t val1 = (int64_t)inp1->val1 + (int64_t)inp2->val1;
@@ -1726,8 +1726,8 @@ static inline int sensor_value_add(struct sensor_value *inp1, struct sensor_valu
  * @param out Resulting difference.
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_value_subtract(struct sensor_value *inp1, struct sensor_value *inp2,
-					struct sensor_value *out)
+static inline int sensor_value_subtract(const struct sensor_value *inp1,
+					const struct sensor_value *inp2, struct sensor_value *out)
 {
 	int64_t val1 = (int64_t)inp1->val1 - (int64_t)inp2->val1;
 	int32_t val2 = inp1->val2 - inp2->val2;
@@ -1758,8 +1758,8 @@ static inline int sensor_value_subtract(struct sensor_value *inp1, struct sensor
  * @param out Resulting product.
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_value_multiply(struct sensor_value *inp1, struct sensor_value *inp2,
-					struct sensor_value *out)
+static inline int sensor_value_multiply(const struct sensor_value *inp1,
+					const struct sensor_value *inp2, struct sensor_value *out)
 {
 	int64_t val1 = (int64_t)inp1->val1 * inp2->val1;
 	int64_t val2 = (int64_t)inp1->val1 * inp2->val2 + (int64_t)inp1->val2 * inp2->val1 +
@@ -1786,7 +1786,7 @@ static inline int sensor_value_multiply(struct sensor_value *inp1, struct sensor
  * @param out Scaled output.
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_value_scale(struct sensor_value *inp, int32_t scalar,
+static inline int sensor_value_scale(const struct sensor_value *inp, int32_t scalar,
 				     struct sensor_value *out)
 {
 	int64_t val1 = (int64_t)inp->val1 * scalar;
