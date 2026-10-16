@@ -111,6 +111,8 @@ struct dl_work_ctx {
 struct send_tx_ctx {
 	const struct lwan_send_req *req;
 	bool tx_done;
+	bool ack_in_frame;
+	bool ack_received;
 };
 
 struct data_frame_layout {
@@ -697,7 +699,7 @@ static enum mac_rx_result send_rx_handler(struct lwan_ctx *ctx,
 					   int16_t rssi, int8_t snr,
 					   void *user_data)
 {
-	const struct send_tx_ctx *tx_ctx = user_data;
+	struct send_tx_ctx *tx_ctx = user_data;
 	const struct lwan_send_req *req = tx_ctx->req;
 	bool ack_received;
 	int ret;
@@ -707,11 +709,15 @@ static enum mac_rx_result send_rx_handler(struct lwan_ctx *ctx,
 		return MAC_RX_CONTINUE;
 	}
 
-	if (req->type == LORAWAN_MSG_CONFIRMED && !ack_received) {
+	tx_ctx->ack_received = ack_received;
+
+	if (req->type == LORAWAN_MSG_CONFIRMED && !tx_ctx->ack_received) {
 		LOG_DBG("Downlink without ACK for confirmed uplink");
-		return MAC_RX_CONTINUE;
 	}
 
+	/* Any authenticated downlink closes RX1/RX2.  ACK receipt is tracked
+	 * separately so a confirmed uplink can still be retried.
+	 */
 	return MAC_RX_DONE;
 }
 
@@ -740,7 +746,12 @@ static void send_post_tx(struct lwan_ctx *ctx, void *user_data)
 	struct send_tx_ctx *tx_ctx = user_data;
 
 	tx_ctx->tx_done = true;
-	ctx->pending &= ~LWAN_PENDING_ACK;
+	/* Retries reuse the prebuilt frame, so only consume an ACK that the
+	 * transmitted frame actually contained.
+	 */
+	if (tx_ctx->ack_in_frame) {
+		ctx->pending &= ~LWAN_PENDING_ACK;
+	}
 	mac_cmd_commit_ul_fopts(ctx);
 }
 
@@ -797,6 +808,7 @@ static int send_validate_payload_size(struct lwan_ctx *ctx,
 
 static int send_prepare_frame(struct lwan_ctx *ctx, struct send_state *state)
 {
+	bool ack_pending;
 	int ret;
 
 	ret = send_validate_payload_size(ctx, state);
@@ -804,8 +816,14 @@ static int send_prepare_frame(struct lwan_ctx *ctx, struct send_state *state)
 		return ret;
 	}
 
-	return mac_build_data_frame(ctx, state->req, state->frame,
-				    &state->frame_len);
+	ack_pending = (ctx->pending & LWAN_PENDING_ACK) != 0;
+	ret = mac_build_data_frame(ctx, state->req, state->frame,
+				   &state->frame_len);
+	if (ret == 0) {
+		state->tx_ctx.ack_in_frame = ack_pending;
+	}
+
+	return ret;
 }
 
 static struct mac_tx_params send_tx_params(struct send_state *state,
@@ -840,17 +858,17 @@ static void send_retry_backoff(void)
 static int send_handle_attempt_result(const struct send_state *state,
 				      uint8_t attempt, int ret)
 {
-	if (ret == 0) {
-		return 0;
-	}
-
-	if (ret != -ETIMEDOUT) {
+	if (ret != 0 && ret != -ETIMEDOUT) {
 		LOG_ERR("TX/RX transaction failed: %d", ret);
 		return ret;
 	}
 
 	if (state->req->type != LORAWAN_MSG_CONFIRMED) {
 		/* Unconfirmed: no downlink is normal */
+		return 0;
+	}
+
+	if (state->tx_ctx.ack_received) {
 		return 0;
 	}
 
