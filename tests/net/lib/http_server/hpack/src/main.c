@@ -586,4 +586,67 @@ ZTEST(http2_hpack, test_http2_hpack_dynamic_table_size_update)
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
 }
 
+ZTEST(http2_hpack, test_http2_hpack_oversized_field)
+{
+	/* A literal field with the name "x" and a Huffman-coded value that
+	 * decodes to more than the decoding buffer holds.
+	 */
+	static uint8_t value[2 * HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE];
+	static uint8_t encoded[sizeof(value)];
+	static uint8_t entry[8 + sizeof(value)];
+	struct http_hpack_header_buf dec = { 0 };
+	size_t len = 0;
+	int ret;
+
+	memset(value, 'a', sizeof(value));
+	ret = http_hpack_huffman_encode(value, sizeof(value), encoded, sizeof(encoded));
+	zassert_true(ret > 0, "Cannot Huffman-encode the value (%d)", ret);
+
+	entry[len++] = 0x00;
+	entry[len++] = 0x01;
+	entry[len++] = 'x';
+	entry[len++] = 0x80 | 0x7f;
+	entry[len++] = (uint8_t)(((ret - 127) % 128) | 0x80);
+	entry[len++] = (uint8_t)((ret - 127) / 128);
+	memcpy(entry + len, encoded, ret);
+	len += ret;
+
+	ret = http_hpack_decode_header(entry, len, &dec);
+	zassert_equal(ret, len, "Entry not consumed (%d, %zu bytes)", ret, len);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
+	zassert_true(dec.oversized, "Field not reported as oversized");
+}
+
+ZTEST(http2_hpack, test_http2_hpack_oversized_field_invalid)
+{
+	/* A literal field whose Huffman-coded value overflows the decoding
+	 * buffer and then runs into an EOS symbol: an error, not an oversized
+	 * field (RFC 7541, Section 5.2).
+	 */
+	static uint8_t value[2 * HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE];
+	static uint8_t encoded[sizeof(value) + 4];
+	static uint8_t entry[8 + sizeof(encoded)];
+	struct http_hpack_header_buf dec = { 0 };
+	size_t len = 0;
+	int ret;
+
+	memset(value, 'a', sizeof(value));
+	ret = http_hpack_huffman_encode(value, sizeof(value), encoded, sizeof(encoded) - 4);
+	zassert_true(ret > 0, "Cannot Huffman-encode the value (%d)", ret);
+	memset(encoded + ret, 0xff, 4);
+	ret += 4;
+
+	entry[len++] = 0x00;
+	entry[len++] = 0x01;
+	entry[len++] = 'x';
+	entry[len++] = 0x80 | 0x7f;
+	entry[len++] = (uint8_t)(((ret - 127) % 128) | 0x80);
+	entry[len++] = (uint8_t)((ret - 127) / 128);
+	memcpy(entry + len, encoded, ret);
+	len += ret;
+
+	ret = http_hpack_decode_header(entry, len, &dec);
+	zassert_equal(ret, -EBADMSG, "Invalid oversized string accepted (%d)", ret);
+}
+
 ZTEST_SUITE(http2_hpack, NULL, NULL, NULL, NULL, NULL);

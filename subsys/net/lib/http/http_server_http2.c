@@ -1652,6 +1652,12 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 			continue;
 		}
 
+		if (header->oversized) {
+			LOG_ERR("Header field too large");
+			ret = -ENOBUFS;
+			goto error;
+		}
+
 		LOG_DBG("Parsed header: %.*s %.*s", (int)header->name_len,
 			header->name, (int)header->value_len, header->value);
 
