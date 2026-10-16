@@ -1,0 +1,21 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_NXP_DCIF
+	bool "MIPI DBI driver for NXP DCIF"
+	default y
+	depends on DT_HAS_NXP_MIPI_DBI_DCIF_ENABLED
+	select PINCTRL
+	help
+	  Enable support for MIPI DBI driver for NXP DCIF display controller.
+
+if MIPI_DBI_NXP_DCIF
+
+config MIPI_DBI_NXP_DCIF_MAINTAIN_CACHE
+	bool "Maintain cache coherency"
+	default y
+	help
+	  Maintain cache coherency for the DBI framebuffer. This is generally
+	  required, unless the framebuffer is placed in uncached memory.
+
+endif # MIPI_DBI_NXP_DCIF
