@@ -60,6 +60,18 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR3_OFFSET	20
 #define ISR5_OFFSET	21
 #define TRIG_CHECK_SIZE	22
+#elif defined(CONFIG_SOC_AE350_INTERRUPT_TYPE_PLIC)
+#define TABLE_INDEX(offset)        (CONFIG_2ND_LVL_ISR_TBL_OFFSET + offset)
+#define VECTOR_TABLE_INDEX(offset) (offset)
+#define IRQ_LINE(offset)           (IRQ_TO_L2(offset) | RISCV_IRQ_MEXT)
+#define ISR1_OFFSET                10
+#define ISR2_OFFSET                11
+#define ISR3_OFFSET                12
+#define ISR4_OFFSET                13
+#define ISR5_OFFSET                14
+#define ISR6_OFFSET                15
+#define TRIG_CHECK_SIZE            16
+#define MIN_IRQ_PRIO 1 /* Priority of zero disables interrupt */
 #elif defined(CONFIG_HAZARD3_INTC)
 #define ISR3_OFFSET SPARE_IRQ_2
 #define ISR4_OFFSET SPARE_IRQ_3
@@ -96,11 +108,20 @@ extern const uintptr_t _irq_vector_table[];
 #define TRIG_CHECK_SIZE	6
 #endif
 
+#if !defined(IRQ_LINE)
 #define IRQ_LINE(offset)        offset
+#endif
+
+#if !defined(TABLE_INDEX)
 #if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
 #define TABLE_INDEX(offset)     offset + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 #else
 #define TABLE_INDEX(offset)     offset
+#endif
+#endif
+
+#if !defined(VECTOR_TABLE_INDEX)
+#define VECTOR_TABLE_INDEX(offset) TABLE_INDEX(offset)
 #endif
 
 #else
@@ -150,6 +171,7 @@ extern const uintptr_t _irq_vector_table[];
 				 (CONFIG_NUM_IRQS - TEST_NUM_IRQS))
 #define IRQ_LINE(offset)	(TEST_NUM_IRQS - ((offset) + 1))
 #define TABLE_INDEX(offset)	(TEST_IRQ_TABLE_SIZE - ((offset) + 1))
+#define VECTOR_TABLE_INDEX(offset) TABLE_INDEX(offset)
 #define TRIG_CHECK_SIZE		6
 #endif
 
@@ -159,9 +181,14 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR6_ARG	0xba5eba11
 
 #if defined(CONFIG_RISCV_HAS_CLIC)
+#define MIN_IRQ_PRIO 1 /* CLIC software triggering needs to be edge based */
 #define IRQ_FLAGS 1 /* rising edge */
 #else
 #define IRQ_FLAGS 0
+#endif
+
+#ifndef MIN_IRQ_PRIO
+#define MIN_IRQ_PRIO 0
 #endif
 
 static volatile int trigger_check[TRIG_CHECK_SIZE];
@@ -263,11 +290,11 @@ static int check_vector(void *isr, int offset)
  * dependent). For the sake of simplicity just skip the checks.
  */
 #ifndef CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE
-	TC_PRINT("Checking _irq_vector_table entry %d for irq %d\n",
-		 TABLE_INDEX(offset), IRQ_LINE(offset));
+	TC_PRINT("Checking _irq_vector_table entry %d for irq %d\n", VECTOR_TABLE_INDEX(offset),
+		 IRQ_LINE(offset));
 
-	if (_irq_vector_table[TABLE_INDEX(offset)] != (uintptr_t)isr) {
-		TC_PRINT("bad entry %d in vector table\n", TABLE_INDEX(offset));
+	if (_irq_vector_table[VECTOR_TABLE_INDEX(offset)] != (uintptr_t)isr) {
+		TC_PRINT("bad entry %d in vector table\n", VECTOR_TABLE_INDEX(offset));
 		return -1;
 	}
 #endif /* !CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE */
@@ -300,14 +327,16 @@ static int check_sw_isr(void *isr, uintptr_t arg, int offset)
 		TC_PRINT("expected %p got %p\n", (void *)isr, e->isr);
 		return -1;
 	}
+#ifndef CONFIG_SW_ISR_TABLE_ENTRY_FUNCTION
 #if defined(CONFIG_GEN_IRQ_VECTOR_TABLE) && !defined(CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE)
-	void *v = (void *)_irq_vector_table[TABLE_INDEX(offset)];
+	void *v = (void *)_irq_vector_table[VECTOR_TABLE_INDEX(offset)];
 	if (v != _isr_wrapper) {
 		TC_PRINT("Vector does not point to _isr_wrapper\n");
 		TC_PRINT("expected %p got %p\n", _isr_wrapper, v);
 		return -1;
 	}
 #endif /* CONFIG_GEN_IRQ_VECTOR_TABLE && !CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE */
+#endif /* !CONFIG_SW_ISR_TABLE_ENTRY_FUNCTION */
 
 	if (test_irq(offset)) {
 		return -1;
@@ -338,7 +367,7 @@ ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 #else
 
 #ifdef ISR1_OFFSET
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, IRQ_FLAGS);
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), MIN_IRQ_PRIO, isr1, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR1_OFFSET));
 	TC_PRINT("isr1 isr=%p irq=%d\n", isr1, IRQ_LINE(ISR1_OFFSET));
 	zassert_ok(check_vector(isr1, ISR1_OFFSET),
@@ -346,7 +375,7 @@ ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 #endif
 
 #ifdef ISR2_OFFSET
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, IRQ_FLAGS);
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), MIN_IRQ_PRIO, isr2, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR2_OFFSET));
 	TC_PRINT("isr2 isr=%p irq=%d\n", isr2, IRQ_LINE(ISR2_OFFSET));
 
@@ -381,7 +410,7 @@ ZTEST(gen_isr_table, test_build_time_interrupt)
 	TC_PRINT("_sw_isr_table at location %p\n", _sw_isr_table);
 
 #ifdef ISR3_OFFSET
-	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), 1, isr3, ISR3_ARG, IRQ_FLAGS);
+	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), MIN_IRQ_PRIO, isr3, ISR3_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR3_OFFSET));
 	TC_PRINT("isr3 isr=%p irq=%d param=%p\n", isr3, IRQ_LINE(ISR3_OFFSET),
 		 (void *)ISR3_ARG);
@@ -391,7 +420,7 @@ ZTEST(gen_isr_table, test_build_time_interrupt)
 #endif
 
 #ifdef ISR4_OFFSET
-	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), 1, isr4, ISR4_ARG, IRQ_FLAGS);
+	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), MIN_IRQ_PRIO, isr4, ISR4_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR4_OFFSET));
 	TC_PRINT("isr4 isr=%p irq=%d param=%p\n", isr4, IRQ_LINE(ISR4_OFFSET),
 		 (void *)ISR4_ARG);
@@ -426,7 +455,7 @@ ZTEST(gen_isr_table, test_run_time_interrupt)
 #else
 
 #ifdef ISR5_OFFSET
-	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), 1, isr5,
+	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), MIN_IRQ_PRIO, isr5,
 			    (const void *)ISR5_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR5_OFFSET));
 	TC_PRINT("isr5 isr=%p irq=%d param=%p\n", isr5, IRQ_LINE(ISR5_OFFSET),
@@ -436,7 +465,7 @@ ZTEST(gen_isr_table, test_run_time_interrupt)
 #endif
 
 #ifdef ISR6_OFFSET
-	irq_connect_dynamic(IRQ_LINE(ISR6_OFFSET), 1, isr6,
+	irq_connect_dynamic(IRQ_LINE(ISR6_OFFSET), MIN_IRQ_PRIO, isr6,
 			    (const void *)ISR6_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR6_OFFSET));
 	TC_PRINT("isr6 isr=%p irq=%d param=%p\n", isr6, IRQ_LINE(ISR6_OFFSET),
