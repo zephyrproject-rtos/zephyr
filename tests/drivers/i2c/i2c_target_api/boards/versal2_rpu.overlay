@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2026, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * AXI IIC internal loopback. The two AXI IIC cores have their SCL and SDA
+ * lines tied together in the programmable logic through wired-AND logic, so
+ * no external bus short is required.
+ *
+ * axi_iic1 hosts the 10-bit target EEPROM at 0x123; axi_iic0 carries the
+ * 7-bit placeholder EEPROM at 0x56 that the single-role test expects.
+ */
+
+/ {
+	/*
+	 * The generic versal2_rpu board selects uart1 as the console. The
+	 * VEK385 design this test runs against uses uart0 (serial@f1920000),
+	 * so override the console here.
+	 */
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	axi_iic_clk: axi-iic-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+	};
+};
+
+&axi_iic0 {
+	status = "okay";
+	clocks = <&axi_iic_clk>;
+	clock-frequency = <100000>;
+
+	/* Required by the upstream single-role test; intentionally unregistered. */
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};
+
+&axi_iic1 {
+	status = "okay";
+	clocks = <&axi_iic_clk>;
+	clock-frequency = <100000>;
+
+	eeprom0: eeprom@123 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x123>;
+		i2c-10-bit-address;
+		size = <256>;
+	};
+};
