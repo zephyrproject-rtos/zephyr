@@ -388,9 +388,9 @@ static void dma_dw_axi_isr(const struct device *dev)
 				reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
 
 		if (chan_data->dma_xfer_callback) {
+			atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
 			chan_data->dma_xfer_callback(dev, chan_data->priv_data_xfer,
 						channel, ret_status);
-			atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
 		}
 	}
 }
@@ -861,12 +861,12 @@ static int dma_dw_axi_suspend(const struct device *dev, uint32_t channel)
 	/* suspend dma transfer */
 	sys_write64(CH_SUSP(channel), reg_base + DMA_DW_AXI_CHENREG);
 
-	ret = WAIT_FOR(dma_dw_axi_get_ch_status(dev, channel) &
+	ret = WAIT_FOR(dma_dw_axi_get_ch_status(dev, channel) ==
 			DMA_DW_AXI_CH_SUSPENDED, CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
 			k_busy_wait(10));
 	if (ret == 0) {
 		LOG_ERR("channel suspend failed");
-		return ret;
+		return -ETIMEDOUT;
 	}
 
 	return 0;
