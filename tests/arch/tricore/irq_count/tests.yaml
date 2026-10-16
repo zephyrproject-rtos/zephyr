@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - arch
+    - interrupt
+
+tests:
+  arch.tricore.irq_count:
+    platform_allow: qemu_tc4x
+    build_only: true
