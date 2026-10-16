@@ -67,16 +67,20 @@ int ccp_call_ctrl_init(struct bt_conn *conn);
 /**
  * @brief Initiate a originate call command
  *
+ * @param conn Pointer to connection.
+ *
  * @return 0 if success, errno on failure.
  */
-int ccp_originate_call(void);
+int ccp_originate_call(struct bt_conn *conn);
 
 /**
  * @brief Initiate a terminate call command
  *
+ * @param conn Pointer to connection.
+ *
  * @return 0 if success, errno on failure.
  */
-int ccp_terminate_call(void);
+int ccp_terminate_call(struct bt_conn *conn);
 
 /**
  * @brief Initialize Media Controller
@@ -90,8 +94,9 @@ int mcp_ctlr_init(struct bt_conn *conn);
 /**
  * @brief Send a command to the Media Player
  *
+ * @param conn Pointer to connection.
  * @param mcp_opcode Command opcode.
  *
  * @return 0 if on success, errno on error.
  */
-int mcp_send_cmd(uint8_t mcp_opcode);
+int mcp_send_cmd(struct bt_conn *conn, uint8_t mcp_opcode);
