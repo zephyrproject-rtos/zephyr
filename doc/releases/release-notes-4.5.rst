@@ -2041,7 +2041,7 @@ New Drivers
 * :abbr:`IPC (Inter-Processor Communication)`
 
   * :dtcompatible:`infineon,ipc` (:github:`117744`)
-  * :dtcompatible:`nxp,ipc-rpmsg-lite` (:github:`104807`)
+  * :dtcompatible:`zephyr,ipc-rpmsg-lite` (:github:`104807`)
 
 * :abbr:`LED (Light Emitting Diode)`
 

@@ -34,7 +34,7 @@
 		/delete-node/ ipc0;
 
 		ipc0: ipc0 {
-			compatible = "nxp,ipc-rpmsg-lite";
+			compatible = "zephyr,ipc-rpmsg-lite";
 			memory-region = <&sram1_ipc0>;
 			mboxes = <&mbox1_a 2>, <&mbox1_a 3>;
 			mbox-names = "tx", "rx";
@@ -44,24 +44,24 @@
 		};
 
 		ipc1: ipc1 {
-			compatible = "nxp,ipc-rpmsg-lite";
+			compatible = "zephyr,ipc-rpmsg-lite";
 			memory-region = <&sram1_ipc1>;
 			notification-parent = <&ipc0>;
 			link-id = <1>;
 			role = "host";
-			priority = <1 PRIO_COOP>;
-			buffer-size = <128>;
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
 			status = "okay";
 		};
 
 		ipc2: ipc2 {
-			compatible = "nxp,ipc-rpmsg-lite";
+			compatible = "zephyr,ipc-rpmsg-lite";
 			memory-region = <&sram1_ipc2>;
 			notification-parent = <&ipc0>;
 			link-id = <2>;
 			role = "host";
-			priority = <1 PRIO_COOP>;
-			buffer-size = <128>;
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
 			status = "okay";
 		};
 	};
