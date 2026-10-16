@@ -148,11 +148,47 @@ class JLinkRTTReader:
         return bytes(self.jlink.rtt_read(self.channel, 1024))
 
 
+INPUT_MODES = ("serial", "file", "jlink-rtt")
+
+
+def _mode_argument_parser():
+    """Parser for arguments following the input mode subcommand."""
+    parser = argparse.ArgumentParser(add_help=False)
+    subparsers = parser.add_subparsers(dest="mode", required=True)
+
+    serial_parser = subparsers.add_parser("serial")
+    serial_parser.add_argument("port", help="Serial port")
+    serial_parser.add_argument("baudrate", type=int, help="Baudrate")
+
+    file_parser = subparsers.add_parser("file")
+    file_parser.add_argument(
+        "filepath", nargs="?", default=None, help="Input file path, leave empty for stdin"
+    )
+
+    jlink_rtt_parser = subparsers.add_parser("jlink-rtt")
+    jlink_rtt_parser.add_argument(
+        "target_device", help="Device Name (see https://www.segger.com/supported-devices/jlink/)"
+    )
+    jlink_rtt_parser.add_argument(
+        "--block-address", help="RTT block address in hex", type=lambda x: int(x, 16)
+    )
+    jlink_rtt_parser.add_argument("--channel", type=int, help="RTT channel number", default=0)
+    jlink_rtt_parser.add_argument("--speed", type=int, help="Reading speed", default="0")
+    jlink_rtt_parser.add_argument("--lib-path", help="Path to libjlinkarm.so library")
+
+    return parser
+
+
 def parse_args():
     """Parse command line arguments"""
-    parser = argparse.ArgumentParser(allow_abbrev=False)
-
-    parser.add_argument("dbfile", help="Dictionary Logging Database file")
+    parser = argparse.ArgumentParser(
+        allow_abbrev=False,
+        description=(
+            "Decode dictionary logs from serial, file, or J-Link RTT. "
+            "Pass one or more database JSON files, then the input mode "
+            "(e.g. serial PORT BAUDRATE)."
+        ),
+    )
     parser.add_argument("--debug", action="store_true", help="Print extra debugging information")
     parser.add_argument(
         "--polling-interval",
@@ -161,42 +197,50 @@ def parse_args():
         help="Interval for polling input source, if it does not support 'select'",
     )
 
-    # Create subparsers for different input modes
-    subparsers = parser.add_subparsers(dest="mode", required=True, help="Input source mode")
+    parserlib.add_sorting_arguments(parser)
 
-    # Serial subparser
-    serial_parser = subparsers.add_parser("serial", help="Read from serial port")
-    serial_parser.add_argument("port", help="Serial port")
-    serial_parser.add_argument("baudrate", type=int, help="Baudrate")
+    args, remainder = parser.parse_known_args()
+    parserlib.check_sorting_arguments(parser, args)
 
-    # File subparser
-    file_parser = subparsers.add_parser("file", help="Read from file")
-    file_parser.add_argument(
-        "filepath", nargs="?", default=None, help="Input file path, leave empty for stdin"
-    )
+    if not remainder:
+        parser.error(
+            "at least one dbfile and input mode are required "
+            "(e.g. app/log_dictionary.json remote/log_dictionary.json serial /dev/ttyACM0 115200)"
+        )
 
-    # RTT subparser
-    jlink_rtt_parser = subparsers.add_parser("jlink-rtt", help="Read from RTT")
-    jlink_rtt_parser.add_argument(
-        "target_device", help="Device Name (see https://www.segger.com/supported-devices/jlink/)"
-    )
-    jlink_rtt_parser.add_argument(
-        "--block-address", help="RTT block address in hex", type=lambda x: int(x, 16)
-    )
-    jlink_rtt_parser.add_argument("--channel", type=int, help="RTT channel number", default=0)
-    jlink_rtt_parser.add_argument("--speed", type=int, help="Reading speed", default='0')
-    jlink_rtt_parser.add_argument("--lib-path", help="Path to libjlinkarm.so library")
+    try:
+        mode_idx = next(i for i, tok in enumerate(remainder) if tok in INPUT_MODES)
+    except StopIteration:
+        parser.error("the following arguments are required: mode")
 
-    return parser.parse_args()
+    args.dbfile = parserlib.normalize_dbfiles(remainder[:mode_idx])
+    if not args.dbfile:
+        parser.error("at least one dbfile is required")
+
+    mode_argv = remainder[mode_idx:]
+    mode_ns = _mode_argument_parser().parse_args(mode_argv)
+
+    args.mode = mode_ns.mode
+    args.port = getattr(mode_ns, "port", None)
+    args.baudrate = getattr(mode_ns, "baudrate", None)
+    args.filepath = getattr(mode_ns, "filepath", None)
+    args.target_device = getattr(mode_ns, "target_device", None)
+    args.block_address = getattr(mode_ns, "block_address", None)
+    args.channel = getattr(mode_ns, "channel", 0)
+    args.speed = getattr(mode_ns, "speed", 0)
+    args.lib_path = getattr(mode_ns, "lib_path", None)
+
+    return args
 
 
 def main():
     """function of serial parser"""
     args = parse_args()
 
-    if args.dbfile is None or '.json' not in args.dbfile:
-        logger.error("ERROR: invalid log database path: %s, exiting...", args.dbfile)
-        sys.exit(1)
+    for one_db in args.dbfile:
+        if ".json" not in one_db:
+            logger.error("ERROR: invalid log database path: %s, exiting...", one_db)
+            sys.exit(1)
 
     logging.basicConfig(format=LOGGER_FORMAT)
 
@@ -205,9 +249,13 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
-    log_parser = parserlib.get_log_parser(args.dbfile, logger)
+    log_parser = parserlib.get_log_parser(
+        args.dbfile, logger, latency_ms=args.latency, ts_freq=args.ts_freq
+    )
 
     data = b''
+    # Input data is skipped until the synchronization sequence is found.
+    synced = False
 
     if args.mode == "serial":
         reader = SerialReader(args.port, args.baudrate)
@@ -222,13 +270,41 @@ def main():
 
     with reader.open():
         while True:
+            # When messages are cached for sorting, do not wait for new data longer than
+            # it is needed to print them.
+            idle_timeout = log_parser.idle_timeout()
             if hasattr(reader, 'fileno') and sys.platform != "win32":
-                _, _, _ = select.select([reader], [], [])
+                _, _, _ = select.select([reader], [], [], idle_timeout)
             else:
-                time.sleep(args.polling_interval)
+                if idle_timeout is None:
+                    time.sleep(args.polling_interval)
+                else:
+                    time.sleep(min(args.polling_interval, idle_timeout))
             data += reader.read_non_blocking()
+
+            if not synced:
+                # Stdin in file mode is fed with binary log data converted from a
+                # hexadecimal UART stream (after the ##ZLOGV1## marker). That stream
+                # does not include the binary synchronization sequence.
+                if args.mode == "file" and args.filepath is None:
+                    synced = True
+                else:
+                    synced, remaining = parserlib.skip_to_sync(data)
+                    if synced:
+                        logger.debug("Synchronization sequence found")
+                    elif len(remaining) != len(data):
+                        logger.debug(
+                            "Skipped %d bytes while waiting for sync", len(data) - len(remaining)
+                        )
+                    data = remaining
+                if not synced:
+                    continue
+
             parsed_data_offset = parserlib.parser(data, log_parser, logger)
             data = data[parsed_data_offset:]
+
+            # If no new messages arrived for the latency time, print what is still cached.
+            log_parser.flush_if_idle()
 
 
 if __name__ == "__main__":

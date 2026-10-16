@@ -60,6 +60,13 @@ config LOG_FRONTEND_OPT_API
 	  When enabled, frontend implements functions which are optimized versions
 	  used for the most common log messages.
 
+config LOG_FRONTEND_EXT_TS_API
+	bool "Frontend external timestamp API"
+	help
+	  When enabled, frontend implements functions which allow passing an external
+	  timestamp to the log message. Function can be used to pass remote messages
+	  to the local frontend.
+
 config LOG_CUSTOM_HEADER
 	bool "Include Custom Log Header [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -74,7 +81,7 @@ config LOG_DEFAULT_MINIMAL
 
 config LOG_MULTIDOMAIN
 	bool "Multi-domain logger"
-	select LOG_TIMESTAMP_64BIT
+	imply LOG_DOMAIN_NAME_PREFIX
 	imply LOG_DOMAIN_NAME_PREFIX
 
 if LOG_MODE_DEFERRED
