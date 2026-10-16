@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	chosen {
 		zephyr,ieee802154 = &ieee802154_atmel_rf2xx_mikrobus;
@@ -14,19 +16,19 @@
 	status = "okay";
 
 	/* CS */
-	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
 
 	ieee802154_atmel_rf2xx_mikrobus: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
 		spi-max-frequency = <6000000>;
 		/* INT */
-		irq-gpios = <&mikrobus_header 7
+		irq-gpios = <&mikrobus_header MIKROBUS_INT
 			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		/*  AN */
-		reset-gpios = <&mikrobus_header 0 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&mikrobus_header MIKROBUS_AN GPIO_ACTIVE_LOW>;
 		/* PWM */
-		slptr-gpios = <&mikrobus_header 6 GPIO_ACTIVE_HIGH>;
+		slptr-gpios = <&mikrobus_header MIKROBUS_PWM GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };

@@ -28,6 +28,9 @@ description: |
     Board's silkscreen may vary depending on your board, but coherent with
     the description above as it's according to the standard's specification.
 
+    Use MIKROBUS_* constants in <zephyr/dt-bindings/gpio/mikro-bus.h> to refer to
+    specific pins using convenient constant names.
+
 compatible: "mikro-bus"
 
 include: [gpio-nexus.yaml, base.yaml]

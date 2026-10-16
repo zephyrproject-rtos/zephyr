@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 &mikrobus_spi {
 	status = "okay";
-	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
 
 	spi_nand_mikroe_flash_8_click: spi-nand@0 {
 		compatible = "jedec,spi-nand";

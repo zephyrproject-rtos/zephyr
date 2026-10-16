@@ -4,26 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	mikrobus_header_1: mikrobus-connector-1 {
 		compatible = "mikro-bus";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &arduino_header 0 0>,	/* AN   -> A0  */
-			   <1 0 &arduino_header 3 0>,	/* RST  -> A3  */
-			   <2 0 &arduino_header 16 0>,	/* CS   -> D10 */
-			   <3 0 &arduino_header 19 0>,	/* SCK  -> D13 */
-			   <4 0 &arduino_header 18 0>,	/* MISO -> D12 */
-			   <5 0 &arduino_header 17 0>,	/* MOSI -> D11 */
+		gpio-map = <MIKROBUS_AN 0 &arduino_header ARDUINO_HEADER_R3_A0 0>,
+			   <MIKROBUS_RST 0 &arduino_header ARDUINO_HEADER_R3_A3 0>,
+			   <MIKROBUS_CS 0 &arduino_header ARDUINO_HEADER_R3_D10 0>,
+			   <MIKROBUS_SCK 0 &arduino_header ARDUINO_HEADER_R3_D13 0>,
+			   <MIKROBUS_MISO 0 &arduino_header ARDUINO_HEADER_R3_D12 0>,
+			   <MIKROBUS_MOSI 0 &arduino_header ARDUINO_HEADER_R3_D11 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &arduino_header 12 0>,	/* PWM  -> D6  */
-			   <7 0 &arduino_header 8 0>,	/* INT  -> D2  */
-			   <8 0 &arduino_header 6 0>,	/* RX   -> D0  */
-			   <9 0 &arduino_header 7 0>,	/* TX   -> D1  */
-			   <10 0 &arduino_header 5 0>,	/* SCL  -> A5  */
-			   <11 0 &arduino_header 4 0>;	/* SDA  -> A4  */
+			   <MIKROBUS_PWM 0 &arduino_header ARDUINO_HEADER_R3_D6 0>,
+			   <MIKROBUS_INT 0 &arduino_header ARDUINO_HEADER_R3_D2 0>,
+			   <MIKROBUS_RX 0 &arduino_header ARDUINO_HEADER_R3_D0 0>,
+			   <MIKROBUS_TX 0 &arduino_header ARDUINO_HEADER_R3_D1 0>,
+			   <MIKROBUS_SCL 0 &arduino_header ARDUINO_HEADER_R3_A5 0>,
+			   <MIKROBUS_SDA 0 &arduino_header ARDUINO_HEADER_R3_A4 0>;
 		/* +5V */
 		/* GND */
 	};
@@ -33,20 +36,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &arduino_header 1 0>,	/* AN   -> A1  */
-			   <1 0 &arduino_header 2 0>,	/* RST  -> A2  */
-			   <2 0 &arduino_header 15 0>,	/* CS   -> D9 */
-			   <3 0 &arduino_header 19 0>,	/* SCK  -> D13 */
-			   <4 0 &arduino_header 18 0>,	/* MISO -> D12 */
-			   <5 0 &arduino_header 17 0>,	/* MOSI -> D11 */
+		gpio-map = <MIKROBUS_AN 0 &arduino_header ARDUINO_HEADER_R3_A1 0>,
+			   <MIKROBUS_RST 0 &arduino_header ARDUINO_HEADER_R3_A2 0>,
+			   <MIKROBUS_CS 0 &arduino_header ARDUINO_HEADER_R3_D9 0>,
+			   <MIKROBUS_SCK 0 &arduino_header ARDUINO_HEADER_R3_D13 0>,
+			   <MIKROBUS_MISO 0 &arduino_header ARDUINO_HEADER_R3_D12 0>,
+			   <MIKROBUS_MOSI 0 &arduino_header ARDUINO_HEADER_R3_D11 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &arduino_header 11 0>,	/* PWM  -> D5  */
-			   <7 0 &arduino_header 9 0>,	/* INT  -> D3  */
-			   <8 0 &arduino_header 6 0>,	/* RX   -> D0  */
-			   <9 0 &arduino_header 7 0>,	/* TX   -> D1  */
-			   <10 0 &arduino_header 5 0>,	/* SCL  -> A5  */
-			   <11 0 &arduino_header 4 0>;	/* SDA  -> A4  */
+			   <MIKROBUS_PWM 0 &arduino_header ARDUINO_HEADER_R3_D5 0>,
+			   <MIKROBUS_INT 0 &arduino_header ARDUINO_HEADER_R3_D3 0>,
+			   <MIKROBUS_RX 0 &arduino_header ARDUINO_HEADER_R3_D0 0>,
+			   <MIKROBUS_TX 0 &arduino_header ARDUINO_HEADER_R3_D1 0>,
+			   <MIKROBUS_SCL 0 &arduino_header ARDUINO_HEADER_R3_A5 0>,
+			   <MIKROBUS_SDA 0 &arduino_header ARDUINO_HEADER_R3_A4 0>;
 		/* +5V */
 		/* GND */
 	};
