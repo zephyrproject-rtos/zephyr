@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Gail Rojas <gailroco@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSP432P4xx eUSCI_B I2C controller
+
+compatible: "ti,msp432p4xx-i2c"
+
+include: [i2c-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
