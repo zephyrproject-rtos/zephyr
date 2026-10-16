@@ -80,7 +80,7 @@ During the devicetree processing step, CMake runs
 :ref:`DTS root <dts_root>` directories, including :zephyr_file:`dts/bindings` and
 writes ``Kconfig.dts`` into the build's ``KCONFIG_BINARY_DIR`` (for example
 ``<build>/zephyr`` or ``<build>/<image>/zephyr`` in case of :ref:`sysbuild`).
-For each ``compatible = "vendor,chip"`` that appears in a binding, the generated
+For each ``compatible: "vendor,chip"`` key that appears in bindings, the generated
 file contains:
 
 .. code-block:: kconfig
@@ -113,3 +113,18 @@ Because these symbols are generated automatically, adding a new binding with
 a ``compatible`` property is all that is required to make the corresponding
 ``DT_HAS_<compatible>_ENABLED`` and ``DT_COMPAT_<compatible>`` constructs
 available to Kconfig.
+
+  .. warning::
+
+    Only the *top-level* ``compatible`` key found in binding files is taken
+    into account by :zephyr_file:`scripts/dts/gen_driver_kconfig_dts.py`.
+    ``compatible`` keys present in a ``child-binding`` will be ignored and
+    no Kconfig symbols will be generated for these compatibles.
+
+    In general, the ``compatible`` key should not be present in a ``child-binding``.
+    Refer to :ref:`the following page <dt-bindings-compatible>` for more information.
+
+    If the ``compatible`` property is important, create a distinct binding file and
+    declared properties in it instead. This distinct binding file will be picked up
+    properly by :zephyr_file:`scripts/dts/gen_driver_kconfig_dts.py` and Kconfig
+    options will be generated for it.
