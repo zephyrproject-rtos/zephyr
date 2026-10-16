@@ -106,26 +106,19 @@
 			clocks = <&uartclk>;
 		};
 
-		ethernet@9a000000 {
+		eth: ethernet@9a000000 {
+			compatible = "smsc,lan91c111";
 			reg = <0x9a000000 0x1000>;
-
-			eth: ethernet {
-				compatible = "smsc,lan91c111";
-				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				status = "disabled";
-
-				phy-handle = <&phy>;
-			};
+			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			phy-handle = <&phy>;
 
 			mdio: mdio {
 				compatible = "smsc,lan91c111-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 
 				phy: ethernet-phy@0 {
 					compatible = "ethernet-phy";
-					status = "disabled";
 					reg = <0>;
 				};
 			};
