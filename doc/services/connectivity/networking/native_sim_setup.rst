@@ -181,4 +181,12 @@ troublesome.
    These command line options can also be supplied at build time through the
    :kconfig:option:`CONFIG_NATIVE_EXTRA_CMDLINE_ARGS` configuration option.
 
+Accessing the Internet
+**********************
+
+To access the internet from a Zephyr application running in a
+:zephyr:board:`native_sim <native_sim>` board with the virtual/TAP Ethernet
+driver, NAT (masquerading) has to be set up on the host. See
+:ref:`networking_internet` for details.
+
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
