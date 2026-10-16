@@ -311,6 +311,15 @@ static int sai_sub_dma_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/* DMA channel has not been initialized */
+	if (stream->dma_channel < 0) {
+		stream->dma_channel = dma_request_channel(stream->dma_dev, NULL);
+		if (stream->dma_channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", stream->dma_channel);
+			return -ENODEV;
+		}
+	}
+
 	/* Proceed to the minimum Zephyr DMA driver init */
 	dma_cfg->user_data = hdma;
 	if (dma_cfg->channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
@@ -979,7 +988,7 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 #define SAI_SUB_DMA_CHANNEL_INIT(node, src, dest)                                                  \
 	.stream = {                                                                                \
 		.dma_dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                      \
-		.dma_channel = DT_DMAS_CELL_BY_IDX(node, 0, channel),                              \
+		.dma_channel = DT_DMAS_CELL_BY_IDX_OR(node, 0, channel, -1),                       \
 		.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(node, dmas, 0)),               \
 		.dma_cfg = {                                                                       \
 			.dma_slot = STM32_DT_DMA_SLOT_BY_IDX(node, 0),                             \

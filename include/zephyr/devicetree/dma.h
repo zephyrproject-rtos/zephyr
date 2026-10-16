@@ -165,6 +165,25 @@ extern "C" {
 	DT_PHA_BY_IDX(node_id, dmas, idx, cell)
 
 /**
+ * @brief Like DT_DMAS_CELL_BY_IDX(), but with a fallback to @p default_value
+ *
+ * If the value exists, this expands to DT_DMAS_CELL_BY_IDX(node_id,
+ * name, cell). The @p default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id node identifier for a node with a <tt>dmas</tt> property
+ * @param name lowercase-and-underscores name of a <tt>dmas</tt> element
+ *             as defined by the node's dma-names property
+ * @param cell lowercase-and-underscores cell name
+ * @param default_value a fallback value to expand to
+ * @return the cell's value or @p default_value
+ * @see DT_PHA_BY_IDX_OR()
+ */
+#define DT_DMAS_CELL_BY_IDX_OR(node_id, name, cell, default_value) \
+	DT_PHA_BY_IDX_OR(node_id, dmas, name, cell, default_value)
+
+/**
  * @brief Get a @c DT_DRV_COMPAT instance's DMA specifier's cell value at an index
  * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into <tt>dmas</tt> property
