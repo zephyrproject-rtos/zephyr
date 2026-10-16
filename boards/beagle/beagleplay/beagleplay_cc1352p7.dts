@@ -92,6 +92,10 @@
 	status = "disabled";
 };
 
+&radio {
+	status = "okay";
+};
+
 &ieee802154g {
 	status = "okay";
 };

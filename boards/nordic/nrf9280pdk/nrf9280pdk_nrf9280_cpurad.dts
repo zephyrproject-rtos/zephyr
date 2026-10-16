@@ -105,6 +105,10 @@ ipc0: &cpuapp_cpurad_ipc {
 	pinctrl-names = "default", "sleep";
 };
 
+&radio {
+	status = "okay";
+};
+
 &cpurad_ieee802154 {
 	status = "okay";
 };

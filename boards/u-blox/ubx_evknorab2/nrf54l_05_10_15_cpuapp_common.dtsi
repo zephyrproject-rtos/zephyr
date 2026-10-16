@@ -109,6 +109,10 @@
 	status = "okay";
 };
 
+&power {
+	status = "okay";
+};
+
 &gpregret1 {
 	status = "okay";
 

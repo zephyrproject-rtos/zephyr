@@ -173,6 +173,24 @@
 			#interrupt-cells = <2>;
 		};
 
+		/* Children inherit a non-okay status from their parent. */
+		test_disabled_parent: disabled-parent {
+			status = "disabled";
+
+			test_child_of_disabled: child {
+				compatible = "vnd,disabled-compat";
+				status = "okay";
+			};
+		};
+
+		test_reserved_parent: reserved-parent {
+			status = "reserved";
+
+			test_child_of_reserved: child {
+				compatible = "vnd,reserved-compat";
+			};
+		};
+
 		test_nodelabel: TEST_NODELABEL_ALLCAPS: test_gpio_1: gpio@deadbeef {
 			compatible = "vnd,gpio-device";
 			gpio-controller;

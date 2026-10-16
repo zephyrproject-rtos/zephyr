@@ -683,6 +683,44 @@
 		};
 	};
 
+	//
+	// Status inheritance
+	//
+
+	status-test {
+		disabled-parent {
+			status = "disabled";
+
+			okay-child {
+				compatible = "status-test";
+				status = "okay";
+
+				grandchild {};
+			};
+
+			no-status-child {};
+
+			reserved-child {
+				status = "reserved";
+			};
+		};
+
+		reserved-parent {
+			status = "reserved";
+
+			child {};
+		};
+
+		okay-parent {
+			status = "okay";
+
+			child {
+				compatible = "status-test";
+				required-prop = <1>;
+			};
+		};
+	};
+
 	/*
 	 * CPU properties may be defined in /cpus when they are identical across
 	 * all CPUs. Per-CPU properties should still override parent values.
