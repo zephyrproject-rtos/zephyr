@@ -344,17 +344,13 @@ static void dai_dmic_probe(struct dai_intel_dmic *dmic)
 
 static int dai_dmic_remove(struct dai_intel_dmic *dmic)
 {
-	uint32_t active_fifos_mask = dai_dmic_global.active_fifos_mask;
-	uint32_t pause_mask = dai_dmic_global.pause_mask;
+	LOG_INF("dmic_remove(), probed_count = %ld",
+		atomic_get(&dai_dmic_global.probed_count));
 
-	LOG_INF("dmic_remove(), dmic_active_fifos_mask = 0x%x, dmic_pause_mask = 0x%x",
-		active_fifos_mask, pause_mask);
-
-	/* The next end tasks must be passed if another DAI FIFO still runs.
-	 * Note: dai_put() function that calls remove() applies the spinlock
-	 * so it is not needed here to protect access to mask bits.
+	/* The next end tasks must be passed if another DMIC DAI is still probed,
+	 * since the DMIC block is shared.
 	 */
-	if (active_fifos_mask || pause_mask) {
+	if (atomic_get(&dai_dmic_global.probed_count)) {
 		return 0;
 	}
 
@@ -813,6 +809,7 @@ static void dai_dmic_probe_wrapper(const struct device *dev)
 
 	if (dmic->sref == 0) {
 		dai_dmic_probe(dmic);
+		atomic_inc(&dai_dmic_global.probed_count);
 	}
 
 	dmic->sref++;
@@ -829,6 +826,7 @@ static int dai_dmic_remove_wrapper(const struct device *dev)
 	key = k_spin_lock(&dmic->lock);
 
 	if (--dmic->sref == 0) {
+		atomic_dec(&dai_dmic_global.probed_count);
 		ret = dai_dmic_remove(dmic);
 	}
 

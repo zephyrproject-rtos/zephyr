@@ -146,6 +146,7 @@ enum dai_dmic_frame_format {
 struct dai_dmic_global_shared {
 	uint32_t active_fifos_mask;	/* Bits (dai->index) are set to indicate active FIFO */
 	uint32_t pause_mask;		/* Bits (dai->index) are set to indicate driver pause */
+	atomic_t probed_count;		/* Number of DMIC DAI instances currently probed */
 };
 
 struct dai_dmic_plat_fifo_data {
