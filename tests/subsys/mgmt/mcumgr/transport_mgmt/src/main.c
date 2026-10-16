@@ -1694,6 +1694,142 @@ ZTEST(transport_mgmt, test_connection_reverse_incoming)
 	zassert_equal(decoded, 0, "Expected to receive 0 decoded zcbor elements");
 }
 
+ZTEST(transport_mgmt, test_connect_bridge_function)
+{
+	uint8_t buffer[ZCBOR_BUFFER_SIZE];
+	uint8_t buffer_out[OUTPUT_BUFFER_SIZE];
+	bool ok;
+	int rc;
+	size_t buffer_size;
+	zcbor_state_t zse[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	zcbor_state_t zsd[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	struct cbor_nb_reader input_data = { 0 };
+	struct cbor_nb_writer output_data = { 0 };
+	size_t decoded = 0;
+	struct group_error_t group_error = { 0 };
+	struct smp_transport *dummy = smp_client_transport_get(SMP_SERIAL_TRANSPORT);
+	struct smp_transport *raw_dummy = smp_client_transport_get(SMP_RAW_SERIAL_TRANSPORT);
+
+	struct zcbor_map_decode_key_val output_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("err", mcumgr_ret_decode, &group_error),
+	};
+
+	zassert_not_null(dummy, "Expected dummy transport to be registered");
+	zassert_not_null(raw_dummy, "Expected raw dummy transport to be registered");
+
+	memset(buffer, 0, sizeof(buffer));
+	memset(buffer_out, 0, sizeof(buffer_out));
+
+	/* Connection parameters, the dummy transports have none */
+	zcbor_new_encode_state(zse, CBOR_MAP_STATES, buffer, ARRAY_SIZE(buffer), 0);
+	ok = zcbor_map_start_encode(zse, 0) && zcbor_map_end_encode(zse, 0);
+	zassert_true(ok, "Expected connection parameters creation to be successful");
+	buffer_size = (size_t)(zse->payload - buffer);
+
+	/* Test 1: Bridge dummy transport to raw dummy transport */
+	zcbor_new_decode_state(input_data.zs, ARRAY_SIZE(input_data.zs), buffer, buffer_size, 1,
+			       NULL, 0);
+	zcbor_new_encode_state(output_data.zs, ARRAY_SIZE(output_data.zs), buffer_out,
+			       ARRAY_SIZE(buffer_out), 0);
+	ok = zcbor_map_start_encode(output_data.zs, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+	zassert_true(ok, "Expected output map start to be successful");
+
+	rc = transport_mgmt_connect_bridge(dummy, raw_dummy, 0, &input_data, &output_data);
+	zassert_equal(rc, 0, "Expected bridge to be connected");
+
+	ok = zcbor_map_end_encode(output_data.zs, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+	zassert_true(ok, "Expected output map end to be successful");
+
+	zcbor_new_decode_state(zsd, 4, buffer_out, (size_t)(output_data.zs->payload - buffer_out),
+			       1, NULL, 0);
+	rc = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
+	zassert_equal(rc, 1, "Expected decode to be successful");
+	zassert_equal(decoded, 0, "Expected to receive 0 decoded zcbor elements");
+
+	zassert_true(transport_mgmt_is_bridged(dummy, TRANSPORT_MGMT_DIRECTION_INCOMING),
+		     "Expected dummy transport to be bridged as incoming");
+	zassert_true(transport_mgmt_is_bridged(raw_dummy, TRANSPORT_MGMT_DIRECTION_OUTGOING),
+		     "Expected raw dummy transport to be bridged as outgoing");
+
+	/* Clean up test */
+	memset(buffer_out, 0, sizeof(buffer_out));
+	memset(zsd, 0, sizeof(zsd));
+	output_decode[0].found = false;
+	group_error.found = false;
+
+	/* Test 2: Bridge the same transports again */
+	zcbor_new_decode_state(input_data.zs, ARRAY_SIZE(input_data.zs), buffer, buffer_size, 1,
+			       NULL, 0);
+	zcbor_new_encode_state(output_data.zs, ARRAY_SIZE(output_data.zs), buffer_out,
+			       ARRAY_SIZE(buffer_out), 0);
+	ok = zcbor_map_start_encode(output_data.zs, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+	zassert_true(ok, "Expected output map start to be successful");
+
+	rc = transport_mgmt_connect_bridge(dummy, raw_dummy, 0, &input_data, &output_data);
+	zassert_equal(rc, -EBUSY, "Expected transports to be already bridged");
+
+	ok = zcbor_map_end_encode(output_data.zs, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+	zassert_true(ok, "Expected output map end to be successful");
+
+	zcbor_new_decode_state(zsd, 4, buffer_out, (size_t)(output_data.zs->payload - buffer_out),
+			       1, NULL, 0);
+	rc = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
+	zassert_equal(rc, 1, "Expected decode to be successful");
+	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element");
+	zassert_true(group_error.found, "Expected 'err' to be present");
+	zassert_equal(group_error.group, MGMT_GROUP_ID_TRANSPORT,
+		      "Expected 'err' -> 'group' to be transport");
+	zassert_equal(group_error.rc,
+		      TRANSPORT_MGMT_ERR_TRANSPORT_INCOMING_TRANSPORT_ALREADY_BRIDGED,
+		      "Expected 'err' -> 'rc' to be incoming transport already bridged");
+
+	/* Clean up test */
+	memset(buffer_out, 0, sizeof(buffer_out));
+	memset(zsd, 0, sizeof(zsd));
+	output_decode[0].found = false;
+	group_error.found = false;
+
+	/* Test 3: Invalid arguments */
+	rc = transport_mgmt_connect_bridge(NULL, raw_dummy, 0, &input_data, &output_data);
+	zassert_equal(rc, -EINVAL, "Expected NULL incoming transport to be rejected");
+	rc = transport_mgmt_connect_bridge(dummy, NULL, 0, &input_data, &output_data);
+	zassert_equal(rc, -EINVAL, "Expected NULL outgoing transport to be rejected");
+	rc = transport_mgmt_connect_bridge(dummy, raw_dummy, 0, NULL, &output_data);
+	zassert_equal(rc, -EINVAL, "Expected NULL input data to be rejected");
+	rc = transport_mgmt_connect_bridge(dummy, raw_dummy, 0, &input_data, NULL);
+	zassert_equal(rc, -EINVAL, "Expected NULL output data to be rejected");
+
+	/* Test 4: Bridge refused by the transport */
+	rc = transport_mgmt_disconnect_all();
+	zassert_equal(rc, 0, "Expected bridge to be disconnected");
+
+	zcbor_new_decode_state(input_data.zs, ARRAY_SIZE(input_data.zs), buffer, buffer_size, 1,
+			       NULL, 0);
+	zcbor_new_encode_state(output_data.zs, ARRAY_SIZE(output_data.zs), buffer_out,
+			       ARRAY_SIZE(buffer_out), 0);
+	ok = zcbor_map_start_encode(output_data.zs, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+	zassert_true(ok, "Expected output map start to be successful");
+
+	rc = transport_mgmt_connect_bridge(dummy, dummy, 0, &input_data, &output_data);
+	zassert_equal(rc, -EIO, "Expected transport to refuse the bridge");
+
+	ok = zcbor_map_end_encode(output_data.zs, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+	zassert_true(ok, "Expected output map end to be successful");
+
+	zcbor_new_decode_state(zsd, 4, buffer_out, (size_t)(output_data.zs->payload - buffer_out),
+			       1, NULL, 0);
+	rc = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
+	zassert_equal(rc, 1, "Expected decode to be successful");
+	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element");
+	zassert_true(group_error.found, "Expected 'err' to be present");
+	zassert_equal(group_error.group, MGMT_GROUP_ID_TRANSPORT,
+		      "Expected 'err' -> 'group' to be transport");
+	zassert_equal(group_error.rc, TRANSPORT_MGMT_ERR_SAME_BRIDGE_DEVICE_DISALLOWED,
+		      "Expected 'err' -> 'rc' to be same bridge device disallowed");
+	zassert_false(transport_mgmt_is_bridged(dummy, TRANSPORT_MGMT_DIRECTION_INCOMING),
+		      "Expected dummy transport not to be bridged");
+}
+
 ZTEST(transport_mgmt, test_status)
 {
 	uint8_t buffer[ZCBOR_BUFFER_SIZE];
