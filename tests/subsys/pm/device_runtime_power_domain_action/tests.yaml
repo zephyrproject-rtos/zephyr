@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - pm
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
+
+tests:
+  pm.device_runtime.power_domain_action: {}
+  pm.device_runtime.power_domain_action.async_dedicated_wq:
+    extra_configs:
+      - CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ=y
+  pm.device_runtime.power_domain_action.async_disabled:
+    extra_configs:
+      - CONFIG_PM_DEVICE_RUNTIME_ASYNC=n
