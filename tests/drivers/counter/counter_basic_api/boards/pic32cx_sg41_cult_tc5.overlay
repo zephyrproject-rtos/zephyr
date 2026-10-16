@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tc5 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+&tc4 {
+	status = "disabled";  /* free TC5 from slave duty */
+};
