@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "stm32_cache.h"
+#include <zephyr/cache.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -52,4 +53,16 @@ bool stm32_buf_in_nocache(uintptr_t buf, size_t len_bytes)
 
 	/* Not in any region known to be NOCACHE */
 	return false;
+}
+
+bool stm32_buf_is_cached(uintptr_t buf, size_t len_bytes)
+{
+	return (len_bytes != 0U) && !stm32_buf_in_nocache(buf, len_bytes);
+}
+
+bool stm32_buf_owns_cache_lines(uintptr_t buf, size_t len_bytes)
+{
+	const size_t line = sys_cache_data_line_size_get();
+
+	return ((buf % line) == 0U) && ((len_bytes % line) == 0U);
 }
