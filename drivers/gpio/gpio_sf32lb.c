@@ -24,6 +24,7 @@
 #define GPIO1_DOERX  offsetof(GPIO1_TypeDef, DOER0)
 #define GPIO1_DOESRX offsetof(GPIO1_TypeDef, DOESR0)
 #define GPIO1_DOECRX offsetof(GPIO1_TypeDef, DOECR0)
+#define GPIO1_IERX   offsetof(GPIO1_TypeDef, IER0)
 #define GPIO1_IESRX  offsetof(GPIO1_TypeDef, IESR0)
 #define GPIO1_IECRX  offsetof(GPIO1_TypeDef, IECR0)
 #define GPIO1_ISRX   offsetof(GPIO1_TypeDef, ISR0)
@@ -80,17 +81,21 @@ static void gpio_sf32lb_irq(const void *arg)
 		struct gpio_sf32lb_data *data = controllers[c]->data;
 		uint8_t min, max;
 		uint32_t val;
+		uint32_t enabled;
 
 		min = u32_count_trailing_zeros(config->common.port_pin_mask);
 		max = 32 - u32_count_leading_zeros(config->common.port_pin_mask);
 
-		val = sys_read32(config->gpio + GPIO1_ISRX);
+		val = sys_read32(config->gpio + GPIO1_ISRX) & config->common.port_pin_mask;
+		enabled = sys_read32(config->gpio + GPIO1_IERX);
+		/* Preserve a new edge arriving while a callback is running. */
+		sys_write32(val, config->gpio + GPIO1_ISRX);
+		val &= enabled;
 		for (uint8_t i = min; i < max; i++) {
 			if ((val & BIT(i)) != 0U) {
 				gpio_fire_callbacks(&data->callbacks, controllers[c], BIT(i));
 			}
 		}
-		sys_write32(val, config->gpio + GPIO1_ISRX);
 	}
 }
 
