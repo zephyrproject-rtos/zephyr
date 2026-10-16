@@ -612,6 +612,8 @@
 			operation-mode = "low_noise";
 			functional-mode = "follower";
 			clocks = <&syscon MCUX_OPAMP0_CLK>;
+			power-domains = <&core_domain>;
+			zephyr,disabling-power-states = <&powerdown &deeppowerdown>;
 		};
 
 		lpi2c0: i2c@4009a000 {
