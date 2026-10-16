@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: downstream
+      url-base: https://github.com/TexasInstruments
     - name: babblesim
       url-base: https://github.com/BabbleSim
 
@@ -273,7 +275,8 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 53c80140dd69905cc5e034f637eff9c66b2f9654
+      remote: downstream
+      revision: a623531d9fe18481d721bd3cd718951565252b6b
       path: modules/hal/ti
       groups:
         - hal
