@@ -755,7 +755,7 @@ Bluetooth Host:
     - sjanc
     - Thalley
     - cvinayak
-    - HaavardRei
+    - KyraLengfeld
     - alxelax
     - lylezhu2012
   files:
@@ -851,9 +851,7 @@ Bluetooth Mesh:
     - PavelVPV
     - LingaoM
     - akredalen
-    - HaavardRei
     - omkar3141
-    - KyraLengfeld
     - ludvigsj
   files:
     - doc/services/connectivity/bluetooth/api/mesh/
