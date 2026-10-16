@@ -42,8 +42,8 @@ int do_device_init(const struct device *dev)
 			if (rc > UINT8_MAX) {
 				rc = UINT8_MAX;
 			}
-			dev->state->init_res = rc;
 		}
+		dev->state->init_res = rc;
 	}
 
 	/* device initialization has been invoked */
