@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "xiao_nrf52840_plus_common.dtsi"
+
+/ {
+	model = "Seeed Studio XIAO nRF52840 Plus";
+	compatible = "seeed,xiao-nrf52840-plus";
+};
