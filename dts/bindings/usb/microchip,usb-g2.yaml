@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip USB G2 driver
+
+description: |
+  Microchip USB G2 driver bindings.
+
+  Group g2 USB driver supports following hardware peripherals:
+    - module name="USBHS" id="03787" version="2a0"
+
+compatible: "microchip,usb-g2"
+
+include:
+  - name: mentor,musb.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      USBHS wrapper and MUSB core register regions.
+
+  reg-names:
+    required: true
+    description: |
+      Must be "wrapper", "core".
+
+  clocks:
+    required: true
+    description: |
+      Clock configuration for the USB controller.
+
+  clock-names:
+    description: |
+      Names of the clock inputs.
