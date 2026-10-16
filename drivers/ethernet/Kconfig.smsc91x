@@ -5,6 +5,7 @@ config ETH_SMSC91X
 	bool "SMSC91x Ethernet driver"
 	default y
 	depends on DT_HAS_SMSC_LAN91C111_ENABLED
+	select ETH_PHY_DRIVER
 	select MDIO
 	help
 	  Enable driver for SMSC/LAN91x family of chips.

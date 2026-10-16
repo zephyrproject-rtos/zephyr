@@ -32,6 +32,11 @@ Kernel
 Boards
 ******
 
+* ``qemu_cortex_a9`` no longer has the ``zephyr,uart-pipe`` chosen node, so SLIP networking
+  (:kconfig:option:`CONFIG_NET_QEMU_SLIP`) is no longer available on it. The board now
+  defaults to Ethernet networking (:kconfig:option:`CONFIG_NET_QEMU_ETHERNET`) through the
+  emulated GEM. (:github:`120871`)
+
 Device Drivers and Devicetree
 *****************************
 
@@ -46,6 +51,16 @@ Device Drivers and Devicetree
 .. ...
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
+
+Ethernet
+========
+
+* The Xilinx GEM Ethernet driver is no longer disabled on QEMU targets without
+  :kconfig:option:`CONFIG_NET_QEMU_ETHERNET`. (:github:`120871`)
+
+* :kconfig:option:`CONFIG_ETH_PHY_DRIVER` is no longer enabled by default. It is now selected by
+  the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
+  must select it as well. (:github:`120871`)
 
 .. zephyr-keep-sorted-stop
 
