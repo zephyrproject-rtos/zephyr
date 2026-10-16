@@ -182,6 +182,17 @@ static int mxicy_mx25u_pre_init(const struct device *dev)
 		return 0;
 	}
 
+	if (dev_config->mspi_nor_cfg.data_rate == MSPI_DATA_RATE_DUAL) {
+		dev_data->cmd_info.rdsr_dummy = SPI_NOR_DUMMY_REG_OCTAL_DTR;
+		dev_data->cmd_info.rdid_dummy = SPI_NOR_DUMMY_REG_OCTAL_DTR;
+	} else {
+		dev_data->cmd_info.rdsr_dummy = SPI_NOR_DUMMY_REG_OCTAL;
+		dev_data->cmd_info.rdid_dummy = SPI_NOR_DUMMY_REG_OCTAL;
+	}
+
+	dev_data->cmd_info.rdsr_addr_4 = true;
+	dev_data->cmd_info.rdid_addr_4 = true;
+
 	if (dev_config->mspi_nor_cfg.data_rate == MSPI_DATA_RATE_SINGLE) {
 		dev_data->cmd_info.cmd_extension = CMD_EXTENSION_INVERSE;
 	}
