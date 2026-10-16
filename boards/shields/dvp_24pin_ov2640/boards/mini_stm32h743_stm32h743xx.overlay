@@ -1,0 +1,10 @@
+/*
+ * SPDX-License-FileCopyrightText: Panoramix Labs
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../../common/dvp_stm32_dcmi.overlay"
+
+&ov2640 {
+	supply-gpios = <&dcmi_camera_connector 8 GPIO_ACTIVE_HIGH>;
+};
