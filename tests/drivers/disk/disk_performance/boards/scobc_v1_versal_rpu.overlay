@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdhci1 {
+	status = "okay";
+
+	mmc {
+		disk-name = "SD2";
+		status = "okay";
+	};
+};
