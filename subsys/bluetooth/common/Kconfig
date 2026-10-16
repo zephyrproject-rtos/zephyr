@@ -258,8 +258,13 @@ config BT_WAIT_NOP
 	  ready to receive commands.
 
 config BT_RPA
-	bool
+	bool "Resolvable Private Address helpers"
 	depends on BT_HOST_CRYPTO || BT_CTLR_CRYPTO
+	help
+	  Build the helpers that check a Resolvable Private Address against an
+	  Identity Resolving Key, such as bt_addr_matches_irk(). Selected by
+	  CONFIG_BT_SMP and CONFIG_BT_CTLR_PRIVACY; enable it to use them
+	  without either, for example in an observer.
 
 config BT_PRIVATE_SHELL
 	bool
