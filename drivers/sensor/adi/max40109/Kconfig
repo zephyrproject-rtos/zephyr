@@ -1,0 +1,79 @@
+# AFE to interface with resistive bridge-based pressure sensors
+
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MAX40109
+	bool "MAX40109 Precision Signal Conditioning AFE"
+	default y
+	depends on DT_HAS_ADI_MAX40109_ENABLED
+	select I2C
+	help
+	  Enable support for the MAX40109 Precision Signal Conditioning AFE.
+
+if MAX40109
+
+config MAX40109_CALIBRATION
+	bool "MTP calibration coefficient support"
+	default y
+	select FPU if CPU_HAS_FPU
+	help
+	  Enable access to the 20 MTP calibration coefficients (K0-K3, H0-H3,
+	  G0-G3, N0-N3 and M0-M3) through SENSOR_ATTR_CALIB_TARGET and the
+	  matching devicetree properties, which are applied to the volatile MTP
+	  shadow at init.
+
+	  Disable this when the coefficients are already burned into MTP, to
+	  drop the floating-point conversion code from the build. The
+	  devicetree coefficient properties are then ignored and
+	  SENSOR_ATTR_CALIB_TARGET returns -ENOTSUP.
+
+config MAX40109_TRIGGER
+	bool
+
+choice MAX40109_TRIGGER_MODE
+	prompt "Sets trigger mode"
+	default MAX40109_TRIGGER_NONE
+	help
+	  Sets thread type for the interrupt handler.
+
+config MAX40109_TRIGGER_NONE
+	bool "No trigger"
+
+config MAX40109_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX40109),interrupt-gpios)
+	select GPIO
+	select MAX40109_TRIGGER
+	help
+	  Use a global thread for the interrupt handler.
+
+config MAX40109_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX40109),interrupt-gpios)
+	select GPIO
+	select MAX40109_TRIGGER
+	help
+	  Use a separate thread for the interrupt handler.
+
+endchoice # MAX40109_TRIGGER_MODE
+
+if MAX40109_TRIGGER_OWN_THREAD
+
+config MAX40109_THREAD_PRIORITY
+	int "Thread priority of the interrupt handler"
+	default 10
+	help
+	  Thread priority of the interrupt handler. A higher number implies a
+	  higher priority. The thread is cooperative and will not be interrupted by
+	  another thread until execution is released.
+
+config MAX40109_THREAD_STACK_SIZE
+	int "Stack size of the interrupt handler thread"
+	default 1024
+	help
+	  Stack size of the interrupt handler thread.
+
+endif # MAX40109_TRIGGER_OWN_THREAD
+
+endif # MAX40109
