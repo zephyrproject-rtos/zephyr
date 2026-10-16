@@ -81,6 +81,18 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 	  16kB and all other systems will default to using all remaining
 	  ram for the malloc heap.
 
+config COMMON_LIBC_MALLOC_ARENA_CUSTOM_SECTION
+	bool "Use a custom section for the common C library malloc arena"
+	depends on COMMON_LIBC_MALLOC_ARENA_SIZE > 0
+	depends on !USERSPACE
+	help
+	  Place the statically allocated malloc arena in a custom section,
+	  with tag ".libc_malloc_arena", instead of .noinit. This can be
+	  used by custom linker scripts to relocate the arena to a custom
+	  location, such as another SRAM region or external memory.
+	  The linker script must place this section, otherwise the link
+	  fails with an orphan section error.
+
 config COMMON_LIBC_CALLOC
 	bool "Common C library calloc"
 	depends on COMMON_LIBC_MALLOC
