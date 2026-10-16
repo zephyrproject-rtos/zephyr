@@ -91,6 +91,19 @@ def walk_tree_cmake(fp, item, parent_children, section_name, prio):
     return prio
 
 
+def walk_tree_llext(fp, item, parent_children):
+    """Depth-first walk emitting EXPORT_GROUP_SYMBOLs for all device APIs."""
+    for child in parent_children.get(item, []):
+        walk_tree_llext(fp, child, parent_children)
+
+    fp.write(f"extern const uint8_t STRUCT_SECTION_START({item})[];\n")
+    fp.write(f"extern const uint8_t STRUCT_SECTION_END({item})[];\n")
+    fp.write(f"extern const uint8_t Z_DEVICE_API_EXT_END({item})[];\n")
+    fp.write(f"EXPORT_GROUP_SYMBOL(DEVICE_API, STRUCT_SECTION_START({item}));\n")
+    fp.write(f"EXPORT_GROUP_SYMBOL(DEVICE_API, STRUCT_SECTION_END({item}));\n")
+    fp.write(f"EXPORT_GROUP_SYMBOL(DEVICE_API, Z_DEVICE_API_EXT_END({item}));\n")
+
+
 def gen_ld(filepath: str, items: list, alignment: str, parent_children: dict, children: set):
     with open(filepath, "w") as fp:
         fp.write(f"SECTION_PROLOGUE(device_api_area,,SUBALIGN({alignment}))\n")
@@ -123,6 +136,16 @@ def gen_cmake(filepath: str, items: list, alignment: str, parent_children: dict,
         fp.write('set(DEVICE_API_SECTION_SETTINGS "${section_settings}" CACHE INTERNAL "")\n')
 
 
+def gen_llext(filepath: str, items: list, parent_children: dict, children: set):
+    with open(filepath, "w") as fp:
+        fp.write("#include <zephyr/device.h>\n")
+        fp.write("#include <zephyr/llext/symbol.h>\n\n")
+        for item in items:
+            if item in children:
+                continue
+            walk_tree_llext(fp, item, parent_children)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -137,6 +160,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-c", "--cmake-output", required=True, help="Path to CMake linker script inclusion file"
     )
+    parser.add_argument("-e", "--llext-output", help="Path to output LLEXT exports file")
 
     return parser.parse_args()
 
@@ -148,6 +172,8 @@ def main():
 
     gen_ld(args.ld_output, items, args.alignment, parent_children, children)
     gen_cmake(args.cmake_output, items, args.alignment, parent_children, children)
+    if args.llext_output:
+        gen_llext(args.llext_output, items, parent_children, children)
 
 
 if __name__ == "__main__":
