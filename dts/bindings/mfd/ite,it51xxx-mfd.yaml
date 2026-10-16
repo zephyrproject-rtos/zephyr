@@ -1,0 +1,15 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT51XXX multi-function device driver.
+
+compatible: "ite,it51xxx-mfd"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
