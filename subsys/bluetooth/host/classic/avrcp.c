@@ -3831,6 +3831,9 @@ failed:
 
 int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb)
 {
+#if defined(CONFIG_BT_AVRCP_CONTROLLER)
+	bool sdp_registered = false;
+#endif /* CONFIG_BT_AVRCP_CONTROLLER */
 	int err;
 
 	if (!cb) {
@@ -3849,6 +3852,8 @@ int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb)
 	if (err < 0 && err != -EEXIST) {
 		LOG_ERR("AVRCP CT SDP registration failed (err %d)", err);
 		goto failed;
+	} else {
+		sdp_registered = true;
 	}
 	LOG_DBG("AVRCP CT SDP record registered");
 #endif /* CONFIG_BT_AVRCP_CONTROLLER */
@@ -3862,12 +3867,25 @@ int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb)
 	return 0;
 
 failed:
+#if defined(CONFIG_BT_AVRCP_CONTROLLER)
+	if (sdp_registered) {
+		int sdp_err = bt_sdp_unregister_service(&avrcp_ct_rec);
+
+		if (sdp_err != 0) {
+			LOG_ERR("Failed to unregister CT SDP record: %d", sdp_err);
+		}
+	}
+#endif /* CONFIG_BT_AVRCP_CONTROLLER */
+
 	avrcp_ct_cb = NULL;
 	return err;
 }
 
 int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb)
 {
+#if defined(CONFIG_BT_AVRCP_TARGET)
+	bool sdp_registered = false;
+#endif /* CONFIG_BT_AVRCP_TARGET */
 	int err;
 
 	if (!cb) {
@@ -3894,6 +3912,8 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb)
 	if (err < 0 && err != -EEXIST) {
 		LOG_ERR("AVRCP TG SDP registration failed (err %d)", err);
 		goto failed;
+	} else {
+		sdp_registered = true;
 	}
 	LOG_DBG("AVRCP TG SDP record registered");
 #endif /* CONFIG_BT_AVRCP_TARGET */
@@ -3907,6 +3927,16 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb)
 	return 0;
 
 failed:
+#if defined(CONFIG_BT_AVRCP_TARGET)
+	if (sdp_registered) {
+		int sdp_err = bt_sdp_unregister_service(&avrcp_tg_rec);
+
+		if (sdp_err != 0) {
+			LOG_ERR("Failed to unregister TG SDP record: %d", sdp_err);
+		}
+	}
+#endif /* CONFIG_BT_AVRCP_TARGET */
+
 	avrcp_tg_cb = NULL;
 	return err;
 }
