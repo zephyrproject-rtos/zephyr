@@ -16,6 +16,8 @@ bq24190@0 {
 	constant-charge-current-max-microamp = <1000000>;
 	constant-charge-voltage-max-microvolt = <4208000>;
 
+	watchdog-timeout-ms = <0>;
+
 	ce-gpios = <&test_gpio 0 0>;
 };
 
