@@ -87,8 +87,8 @@ static void settings_nvs_cache_add(struct settings_nvs *cf, const char *name,
 	cf->cache_next %= CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE;
 }
 
-static uint16_t settings_nvs_cache_match(struct settings_nvs *cf, const char *name,
-					 char *rdname, size_t len)
+static int settings_nvs_cache_match(struct settings_nvs *cf, const char *name,
+				    char *rdname, size_t len)
 {
 	uint16_t name_hash = crc16_ccitt(0xffff, name, strlen(name));
 	int rc;
@@ -103,8 +103,11 @@ static uint16_t settings_nvs_cache_match(struct settings_nvs *cf, const char *na
 		}
 
 		rc = nvs_read(&cf->cf_nvs, cf->cache[i].name_id, rdname, len);
-		if (rc < 0) {
+		if (rc == -ENOENT) {
 			continue;
+		}
+		if (rc < 0) {
+			return rc;
 		}
 
 		if ((size_t)rc >= len) {
@@ -159,8 +162,14 @@ static int settings_nvs_load(struct settings_store *cs,
 		 * setting's value.
 		 */
 		rc1 = nvs_read(&cf->cf_nvs, name_id, &name, sizeof(name));
+		if (rc1 < 0 && rc1 != -ENOENT) {
+			return rc1;
+		}
 		rc2 = nvs_read(&cf->cf_nvs, name_id + NVS_NAME_ID_OFFSET,
 			       &buf, sizeof(buf));
+		if (rc2 < 0 && rc2 != -ENOENT) {
+			return rc2;
+		}
 
 		if ((rc1 <= 0) && (rc2 <= 0)) {
 			/* Settings largest ID in use is invalid due to
@@ -239,7 +248,11 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
 	bool name_in_cache = false;
 
-	name_id = settings_nvs_cache_match(cf, name, rdname, sizeof(rdname));
+	rc = settings_nvs_cache_match(cf, name, rdname, sizeof(rdname));
+	if (rc < 0) {
+		return rc;
+	}
+	name_id = rc;
 	if (name_id != NVS_NAMECNT_ID) {
 		write_name_id = name_id;
 		write_name = false;
@@ -267,12 +280,12 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 
 		rc = nvs_read(&cf->cf_nvs, name_id, &rdname, sizeof(rdname));
 
-		if (rc < 0) {
-			/* Error or entry not found */
-			if (rc == -ENOENT) {
-				write_name_id = name_id;
-			}
+		if (rc == -ENOENT) {
+			write_name_id = name_id;
 			continue;
+		}
+		if (rc < 0) {
+			return rc;
 		}
 
 		if ((size_t)rc >= sizeof(rdname)) {
@@ -384,8 +397,13 @@ int settings_nvs_backend_init(struct settings_nvs *cf)
 
 	rc = nvs_read(&cf->cf_nvs, NVS_NAMECNT_ID, &last_name_id,
 		      sizeof(last_name_id));
-	if (rc < 0) {
+	if (rc == -ENOENT) {
 		cf->last_name_id = NVS_NAMECNT_ID;
+	} else if (rc < 0) {
+		return rc;
+	} else if (rc != sizeof(last_name_id) || last_name_id < NVS_NAMECNT_ID ||
+		   last_name_id >= NVS_NAMECNT_ID + NVS_NAME_ID_OFFSET) {
+		return -EINVAL;
 	} else {
 		cf->last_name_id = last_name_id;
 	}
