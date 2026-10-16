@@ -1244,9 +1244,9 @@ static inline void i2c_mspm0_isr_controller(const struct device *dev)
 
 static inline void i2c_mspm0_isr(const struct device *dev)
 {
+#ifdef CONFIG_I2C_TARGET
 	struct i2c_mspm0_data *data = dev->data;
 
-#ifdef CONFIG_I2C_TARGET
 	if (data->is_target) {
 		const struct i2c_mspm0_config *config = dev->config;
 		const mm_reg_t base = config->base;
