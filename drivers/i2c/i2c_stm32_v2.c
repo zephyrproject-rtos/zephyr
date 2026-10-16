@@ -378,11 +378,6 @@ static void i2c_stm32_controller_abort_to_target(const struct device *dev, bool 
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 
-	if (own_addr_match) {
-		LL_I2C_ClearFlag_ADDR(cfg->i2c);
-		i2c_stm32_clear_controller_request(cfg->i2c);
-	}
-
 	i2c_stm32_disable_transfer_interrupts(dev);
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	if (using_dma(data)) {
@@ -390,6 +385,11 @@ static void i2c_stm32_controller_abort_to_target(const struct device *dev, bool 
 		LL_I2C_DisableDMAReq_TX(cfg->i2c);
 	}
 #endif
+	/* Stop controller DMA before ADDR releases target clock stretching. */
+	if (own_addr_match) {
+		LL_I2C_ClearFlag_ADDR(cfg->i2c);
+		i2c_stm32_clear_controller_request(cfg->i2c);
+	}
 	LL_I2C_ClearFlag_TXE(cfg->i2c);
 	data->controller_active = false;
 	i2c_stm32_signal_xfer_done(dev);
