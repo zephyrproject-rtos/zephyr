@@ -27,6 +27,11 @@ LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
  * is invalid, so we have to discard it.
  */
 #define ADC_SAM0_REFERENCE_GLITCH 1
+/*
+ * SAMD21 Manual 33.8.4: SAMPLEN counts half CLK_ADC periods. The later ADC
+ * (SAM C2x, D5x/E5x, L2x, R3x) counts whole periods (SAM C2x 38.8.12).
+ */
+#define ADC_SAM0_SAMPLEN_HALF_CYCLES 1
 #endif
 
 struct adc_sam0_data {
@@ -64,49 +69,48 @@ static void wait_synchronization(Adc *const adc)
 	}
 }
 
+/*
+ * Convert an acquisition time to SAMPCTRL.SAMPLEN. The sampling time is
+ * (SAMPLEN + 1) units of CLK_ADC, or of half CLK_ADC on the SoCs with
+ * ADC_SAM0_SAMPLEN_HALF_CYCLES. A time in ticks is in those units, a time in
+ * microseconds or nanoseconds is rounded up to the next unit.
+ */
+static uint64_t adc_sam0_ns_to_units(const struct device *dev, uint64_t time_ns)
+{
+	const struct adc_sam0_cfg *const cfg = dev->config;
+
+#ifdef ADC_SAM0_SAMPLEN_HALF_CYCLES
+	time_ns *= 2U;
+#endif
+
+	return DIV_ROUND_UP(time_ns * cfg->freq, NSEC_PER_SEC);
+}
+
 static int adc_sam0_acquisition_to_clocks(const struct device *dev,
 					  uint16_t acquisition_time)
 {
-	const struct adc_sam0_cfg *const cfg = dev->config;
-	uint64_t scaled_acq;
+	uint64_t units;
 
 	switch (ADC_ACQ_TIME_UNIT(acquisition_time)) {
 	case ADC_ACQ_TIME_TICKS:
-		if (ADC_ACQ_TIME_VALUE(acquisition_time) > 64U) {
-			return -EINVAL;
-		}
-
-		return (int)ADC_ACQ_TIME_VALUE(acquisition_time) - 1;
+		units = ADC_ACQ_TIME_VALUE(acquisition_time);
+		break;
 	case ADC_ACQ_TIME_MICROSECONDS:
-		scaled_acq = (uint64_t)ADC_ACQ_TIME_VALUE(acquisition_time) *
-			     1000000U;
+		units = adc_sam0_ns_to_units(dev, (uint64_t)ADC_ACQ_TIME_VALUE(acquisition_time) *
+						  NSEC_PER_USEC);
 		break;
 	case ADC_ACQ_TIME_NANOSECONDS:
-		scaled_acq = (uint64_t)ADC_ACQ_TIME_VALUE(acquisition_time) *
-			     1000U;
+		units = adc_sam0_ns_to_units(dev, ADC_ACQ_TIME_VALUE(acquisition_time));
 		break;
 	default:
 		return -EINVAL;
 	}
 
-	/*
-	 * sample_time = (sample_length+1) * (clk_adc / 2)
-	 * sample_length = sample_time * (2/clk_adc) - 1,
-	 */
-
-	scaled_acq *= 2U;
-	scaled_acq += cfg->freq / 2U;
-	scaled_acq /= cfg->freq;
-	if (scaled_acq <= 1U) {
-		return 0;
-	}
-
-	scaled_acq -= 1U;
-	if (scaled_acq >= 64U) {
+	if (units > 64U) {
 		return -EINVAL;
 	}
 
-	return (int)scaled_acq;
+	return (units == 0U) ? 0 : (int)units - 1;
 }
 
 static int adc_sam0_channel_setup(const struct device *dev,
