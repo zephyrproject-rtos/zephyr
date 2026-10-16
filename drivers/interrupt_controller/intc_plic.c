@@ -917,14 +917,21 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 
 #define PLIC_INTC_IRQ_FUNC_DECLARE(n) static void plic_irq_config_func_##n(void)
 
+#ifdef CONFIG_RISCV_S_MODE
+#define PLIC_CPU_EXT_IRQ(n) DT_INST_IRQN_BY_IDX(n, 1)
+#else
+#define PLIC_CPU_EXT_IRQ(n) DT_INST_IRQN(n)
+#endif
+
 #define PLIC_INTC_IRQ_FUNC_DEFINE(n)                                                               \
 	static void plic_irq_config_func_##n(void)                                                 \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), 0, plic_irq_handler, DEVICE_DT_INST_GET(n), 0);       \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+		IRQ_CONNECT(PLIC_CPU_EXT_IRQ(n), 0, plic_irq_handler, DEVICE_DT_INST_GET(n), 0);       \
+		irq_enable(PLIC_CPU_EXT_IRQ(n));                                                       \
 	}
 
-#define HART_CONTEXTS(i, n) IF_ENABLED(IS_EQ(DT_INST_IRQN_BY_IDX(n, i), DT_INST_IRQN(n)), (i,))
+#define HART_CONTEXTS(i, n) IF_ENABLED(IS_EQ(DT_INST_IRQN_BY_IDX(n, i), PLIC_CPU_EXT_IRQ(n)), (i,))
+
 #define PLIC_HART_CONTEXT_DECLARE(n)                                                               \
 	INTC_PLIC_STATIC const uint32_t plic_hart_contexts_##n[DT_CHILD_NUM(DT_PATH(cpus))] = {    \
 		LISTIFY(DT_INST_NUM_IRQS(n), HART_CONTEXTS, (), n)}
@@ -943,7 +950,7 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 		.max_prio = DT_INST_PROP(n, riscv_max_priority),                                   \
 		.riscv_ndev = DT_INST_PROP(n, riscv_ndev),                                         \
 		.nr_irqs = PLIC_MIN_IRQ_NUM(n),                                                    \
-		.irq = DT_INST_IRQN(n),                                                            \
+		.irq = PLIC_CPU_EXT_IRQ(n),                                                            \
 		.irq_config_func = plic_irq_config_func_##n,                                       \
 		.isr_table = &_sw_isr_table[INTC_INST_ISR_TBL_OFFSET(n)],                          \
 		.hart_context = plic_hart_contexts_##n,                                            \
@@ -952,7 +959,7 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 
 #define PLIC_INTC_DEVICE_INIT(n)                                                                   \
 	IRQ_PARENT_ENTRY_DEFINE(                                                                   \
-		plic##n, DEVICE_DT_INST_GET(n), DT_INST_IRQN(n),                                   \
+		plic##n, DEVICE_DT_INST_GET(n), PLIC_CPU_EXT_IRQ(n),                                   \
 		INTC_INST_ISR_TBL_OFFSET(n),                                                       \
 		DT_INST_INTC_GET_AGGREGATOR_LEVEL(n));                                             \
 	PLIC_INTC_CONFIG_INIT(n)                                                                   \
