@@ -1,0 +1,6 @@
+common:
+  tags:
+    - net
+    - bridge
+tests:
+  net.eth_bridge.stp: {}
