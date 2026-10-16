@@ -73,6 +73,22 @@
 				#gpio-cells = <2>;
 			};
 		};
+
+		dma0: dma@40020000 {
+			compatible = "ti,mspm0-dma";
+			reg = <0x40020000 0x2000>;
+			interrupts = <43 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		dma1: dma@40022000 {
+			compatible = "ti,mspm0-dma";
+			reg = <0x40022000 0x2000>;
+			interrupts = <44 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
 	};
 };
 
