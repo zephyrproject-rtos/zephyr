@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# The Cortex-M0+ has no dedicated exception stack: exception handlers and
-# main-thread work share this stack. Keep sufficient headroom for ztest's
-# final UART summary and post-test scheduling on the 32 KiB SRAM device.
+# The 512-byte board default is insufficient for ztest's final UART
+# summary and post-test processing, which run in the main thread.
+# Keep sufficient headroom on this 32 KiB SRAM device.
 configdefault MAIN_STACK_SIZE
 	default 1024
 
