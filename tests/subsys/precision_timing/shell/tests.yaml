@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Philipp Steiner
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - timing
+    - precision_timing
+    - shell
+  platform_allow:
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+tests:
+  subsys.precision_timing.shell: {}
+  subsys.precision_timing.shell.no_output:
+    extra_configs:
+      - CONFIG_PRECISION_CLOCK_OUTPUT=n

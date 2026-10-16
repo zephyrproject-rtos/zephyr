@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: PTP PPS output
+  description: Generate and monitor a PTP-synchronized PPS output
+tests:
+  sample.net.pps_out:
+    build_only: true
+    platform_allow:
+      - nucleo_h563zi
+    integration_platforms:
+      - nucleo_h563zi
+    depends_on: eth
+    tags:
+      - net
+      - ptp
+      - timing
+      - precision_timing

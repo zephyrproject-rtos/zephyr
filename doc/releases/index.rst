@@ -29,7 +29,7 @@ recommended starting point is either the **latest stable release** or the
    release-notes-3.7
    release-notes-4.[3-5]
    migration-guide-3.7
-   migration-guide-4.[3-5]
+   migration-guide-4.[3-6]
 
 .. note::
    | The next planned release is **Zephyr 4.5**, targeted for **October 2026**.

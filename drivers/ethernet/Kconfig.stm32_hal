@@ -159,6 +159,49 @@ menuconfig PTP_CLOCK_STM32_HAL
 
 if PTP_CLOCK_STM32_HAL
 
+config PTP_CLOCK_STM32_HAL_OUTPUT
+	bool "STM32 flexible scheduled clock output"
+	depends on PRECISION_CLOCK_OUTPUT
+	depends on !SOC_STM32H742XX && !SOC_STM32H743XX && !SOC_STM32H750XX && !SOC_STM32H753XX
+	default y
+	help
+	  Enable the STM32 Ethernet MAC flexible scheduled-output channel. The
+	  channel is exposed through the protocol-neutral scheduled clock output
+	  provider referenced by the PTP clock driver API, which a precision clock
+	  adapter bridges onto the precision timing scheduled-output API.
+	  STM32H742/H743/H750/H753 are excluded because ES0392 section 2.26.19
+	  affects pulse trains in fine timestamp mode and a single-pulse
+	  workaround has not been validated on those devices.
+
+config PTP_CLOCK_STM32_HAL_OUTPUT_REARM
+	bool
+	default y
+	depends on PTP_CLOCK_STM32_HAL_OUTPUT
+	depends on SOC_STM32H562XX || SOC_STM32H563XX || SOC_STM32H573XX
+	help
+	  Avoid the FlexPPS pulse-train erratum ES0565 section 2.22.9 by rearming
+	  absolute single pulses while retaining fine timestamp correction.
+	  Scheduled output is restricted to a one-second period, with a
+	  pulse-width limit derived from the clock-rate envelope.
+
+config PTP_CLOCK_STM32_HAL_OUTPUT_REARM_STACK_SIZE
+	int "STM32 scheduled-output rearm workqueue stack size"
+	default 1024
+	depends on PTP_CLOCK_STM32_HAL_OUTPUT_REARM
+	help
+	  Set the stack size for the dedicated workqueue that rearms single PPS
+	  pulses on devices affected by the FlexPPS pulse-train errata.
+
+config PTP_CLOCK_STM32_HAL_OUTPUT_REARM_PRIORITY
+	int "STM32 scheduled-output rearm workqueue priority"
+	default -1 if !PREEMPT_ENABLED
+	default 0
+	depends on PTP_CLOCK_STM32_HAL_OUTPUT_REARM
+	help
+	  Set the thread priority for the dedicated STM32 PPS rearm workqueue.
+	  The default is the highest preemptible thread priority, or the lowest
+	  cooperative priority when preemption is disabled.
+
 config ETH_STM32_HAL_PTP_CLOCK_SRC_HZ
 	int "Frequency of the clock source for the PTP timer"
 	default 50000000
@@ -169,14 +212,20 @@ config ETH_STM32_HAL_PTP_CLOCK_SRC_HZ
 config ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT
 	int "Lower bound of clock frequency adjustment (in percent)"
 	default 90
+	range 1 100
 	help
-	  Specifies lower bound of PTP clock rate adjustment.
+	  Specifies lower bound of PTP clock rate adjustment. On devices affected
+	  by the FlexPPS pulse-train errata, this contributes to the maximum
+	  pulse width reported by the scheduled-output provider.
 
 config ETH_STM32_HAL_PTP_CLOCK_ADJ_MAX_PCT
 	int "Upper bound of clock frequency adjustment (in percent)"
 	default 110
+	range 100 2147483647
 	help
-	  Specifies upper bound of PTP clock rate adjustment.
+	  Specifies upper bound of PTP clock rate adjustment. On devices affected
+	  by the FlexPPS pulse-train errata, this contributes to the maximum
+	  pulse width reported by the scheduled-output provider.
 
 endif # PTP_CLOCK_STM32_HAL
 
