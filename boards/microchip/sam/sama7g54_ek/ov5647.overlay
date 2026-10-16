@@ -1,0 +1,53 @@
+/*
+ * Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Describe an OV5647 camera module, of a Raspberry Pi Camera Module 1, on the CSI
+ * camera connector (J17) in place of the IMX219 the board devicetree describes.
+ *
+ * Build with:
+ *   -DEXTRA_DTC_OVERLAY_FILE=boards/microchip/sam/sama7g54_ek/ov5647.overlay
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/* Only one sensor can drive the CSI-2 receiver, which binds to it at build time */
+&imx219 {
+	status = "disabled";
+};
+
+&csi2host_ep_in {
+	remote-endpoint-label = "ov5647_ep_out";
+};
+
+&i2c8 {
+	ov5647: ov5647@36 {
+		compatible = "ovti,ov5647";
+		reg = <0x36>;
+		clocks = <&camera_clk>;
+		/*
+		 * IO0 of the connector, which has to be driven high for the module to
+		 * answer on the bus at all, exactly as the IMX219 module needs it high.
+		 * The line gates the regulators of the module rather than reaching the
+		 * PWDN pin of the sensor directly, which is why it is inverted against
+		 * the asserted-to-power-down sense the property name describes.
+		 */
+		powerdown-gpios = <&pioe 1 GPIO_ACTIVE_LOW>;
+		/*
+		 * The module sits in the connector with its first row of pixels at the
+		 * bottom of the scene, so the frames arrive upside down without this.
+		 */
+		vertical-flip;
+		status = "okay";
+
+		port {
+			ov5647_ep_out: endpoint {
+				remote-endpoint-label = "csi2host_ep_in";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2>;
+			};
+		};
+	};
+};

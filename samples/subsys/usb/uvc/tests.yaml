@@ -28,6 +28,7 @@ tests:
     filter: dt_chosen_enabled("zephyr,camera")
     integration_platforms:
       - arduino_nicla_vision/stm32h747xx/m7
+      - sama7g54_ek
   sample.usb.uvc.encoder.h264:
     depends_on:
       - usbd

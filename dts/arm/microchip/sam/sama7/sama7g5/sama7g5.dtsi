@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/microchip_sam_pmc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 
 / {
 	model = "Microchip SAMA7G5 family SoC";
@@ -307,6 +308,89 @@
 			clock-names = "hclock", "multclk";
 			assigned-clock-rates = <200000000>;
 			status = "disabled";
+		};
+
+		csi2host: csi2host@e1400000 {
+			compatible = "microchip,sama7g5-csi2host";
+			reg = <0xe1400000 0x800>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 33>, <&pmc PMC_TYPE_GCK 33>;
+			clock-names = "pclk", "phyclk";
+			assigned-clock-rates = <26600000>;
+			status = "disabled";
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+
+					csi2host_ep_out: endpoint {
+						remote-endpoint-label = "csi2dc_ep_in";
+					};
+				};
+
+				port@1 {
+					reg = <1>;
+				};
+			};
+		};
+
+		csi2dc: csi2dc@e1404000 {
+			compatible = "microchip,sama7g5-csi2dc";
+			reg = <0xe1404000 0x500>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 34>;
+			clock-names = "pclk";
+			status = "disabled";
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+
+					csi2dc_ep_in: endpoint {
+						remote-endpoint-label = "csi2host_ep_out";
+						bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+					};
+				};
+
+				port@1 {
+					reg = <1>;
+
+					csi2dc_ep_out: endpoint {
+						remote-endpoint-label = "isc_ep_in";
+						bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+						bus-width = <14>;
+						hsync-active = <1>;
+						vsync-active = <1>;
+					};
+				};
+			};
+		};
+
+		isc: isc@e1408000 {
+			compatible = "microchip,sama7g5-isc";
+			reg = <0xe1408000 0x2000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 56>;
+			clock-names = "hclock";
+			microchip,mipi-mode;
+			status = "disabled";
+
+			port {
+				isc_ep_in: endpoint {
+					remote-endpoint-label = "csi2dc_ep_out";
+					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+					bus-width = <14>;
+					hsync-active = <1>;
+					vsync-active = <1>;
+				};
+			};
 		};
 
 		pwm: pwm@e1604000 {

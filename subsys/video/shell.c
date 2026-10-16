@@ -212,6 +212,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
+	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX] = {NULL};
 	struct video_buffer vbuf0 = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_buffer *vbuf = &vbuf0;
@@ -223,6 +224,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 	uint32_t frmival_msec;
 	uint32_t frmrate_fps;
 	size_t buf_size;
+	size_t buf_align;
 	unsigned long num_buffers;
 	int ret;
 
@@ -246,11 +248,24 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 	buf_size = fmt.pitch * fmt.height;
 
-	shell_print(sh, "Preparing %u buffers of %u bytes each",
-		    CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, buf_size);
+	/*
+	 * A device that moves the frames itself may need its buffers aligned more
+	 * strictly than a pointer, either because its transfers start on a burst
+	 * boundary or because it maintains the caches over the frame itself.
+	 */
+	ret = video_get_caps(dev, &caps);
+	if (ret < 0) {
+		shell_error(sh, "Failed to get the capabilities");
+		return ret;
+	}
+
+	buf_align = MAX(caps.buf_align, sizeof(void *));
+
+	shell_print(sh, "Preparing %u buffers of %u bytes each, aligned on %u bytes",
+		    CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, buf_size, buf_align);
 
 	for (int i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(buf_size, K_NO_WAIT);
+		buffers[i] = video_buffer_aligned_alloc(buf_size, buf_align, K_NO_WAIT);
 		if (buffers[i] == NULL) {
 			shell_error(sh, "Failed to allocate buffer %u", i);
 			goto end;
@@ -298,6 +313,13 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 			shell_error(sh, "Failed to enqueue this buffer: %s", strerror(-ret));
 			goto end;
 		}
+
+		/*
+		 * The buffer belongs to the device again. Stopping the stream flushes it
+		 * back to the completed queue, where the loop below releases it, so it
+		 * must not be released a second time as a leftover of this loop.
+		 */
+		vbuf = NULL;
 	}
 
 	frmival_msec = this_uptime - first_uptime;

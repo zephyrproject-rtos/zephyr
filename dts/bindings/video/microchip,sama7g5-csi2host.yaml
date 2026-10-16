@@ -1,0 +1,81 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip SAMA7G5 MIPI CSI-2 host controller
+
+description: |
+  MIPI CSI-2 host controller with an integrated MIPI D-PHY receiver, found on
+  the SAMA7G5 family. It receives up to two CSI-2 D-PHY data lanes from an image
+  sensor and forwards the packets on its internal IDI output to the CSI-2 Demux
+  Controller (CSI2DC).
+
+  The sink port (port@1) describes the CSI-2 link to the image sensor, the source
+  port (port@0) the internal link to the CSI2DC.
+
+    &csi2host {
+      status = "okay";
+
+      ports {
+        port@1 {
+          reg = <1>;
+
+          csi2host_ep_in: endpoint {
+            remote-endpoint-label = "imx219_ep_out";
+            bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+            data-lanes = <1 2>;
+          };
+        };
+      };
+    };
+
+compatible: "microchip,sama7g5-csi2host"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Must be "pclk" (peripheral clock) and "phyclk" (generated clock feeding the
+      D-PHY configuration clock input).
+
+  microchip,dphy-frequency:
+    type: int
+    description: |
+      Lane data rate in kbit/s to tune the D-PHY receiver for, selecting the
+      frequency range it locks to. When absent the driver uses the rate the source
+      reports through VIDEO_CID_LINK_FREQ, which is normally what is wanted. Pin it
+      here for a source whose reported rate sits on a range boundary; Linux, whose
+      D-PHY driver cannot reach the sensor, always takes it from devicetree instead
+      (snps,dphy-frequency on the dphy node of sama7g5.dtsi, set to 900000).
+
+  microchip,dphy-bitrate-code:
+    type: int
+    description: |
+      High-speed bit rate code written to the analog configuration of the D-PHY
+      receiver, bypassing the frequency range lookup. Taken from the D-PHY bit
+      rate table of the datasheet. Only needed when microchip,dphy-frequency
+      cannot express the wanted range.
+
+  assigned-clock-rates:
+    type: int
+    default: 26600000
+    description: |
+      Rate in Hz programmed for the "phyclk" generated clock. The D-PHY
+      configuration clock must be in the 17 MHz to 27 MHz range.
+
+child-binding:
+  child-binding:
+    child-binding:
+      include: video-interfaces.yaml
