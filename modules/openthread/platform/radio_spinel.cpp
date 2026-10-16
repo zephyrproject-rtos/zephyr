@@ -116,6 +116,8 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	}
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 	if (message == NULL) {
+		LOG_ERR("[SPINEL] frame_to_send: otIp6NewMessage returned NULL - OT msg pool "
+			"exhausted (is_ip4=%d)", is_ip4);
 		goto exit;
 	}
 
