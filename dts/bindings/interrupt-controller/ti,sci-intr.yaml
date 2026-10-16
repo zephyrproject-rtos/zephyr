@@ -1,0 +1,68 @@
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments K3 Interrupt Router managed via TISCI.
+
+  The Interrupt Router muxes M interrupt inputs to N outputs. Configuration of
+  the per-output MUXCNTL registers is performed by System Firmware through the
+  TISCI resource-management IRQ set/release messages. Host software keeps track
+  of allocated outputs and translates them to the parent interrupt controller
+  (typically VIM on Cortex-R5) using ti,interrupt-ranges.
+
+  Expose each host IR output as a child `ti,sci-intr-out` node (reg = output
+  index, interrupts = parent VIM/GIC line). Peripherals set interrupt-parent to
+  that child and pass only the IR input number (plus a zero priority cell).
+  Drivers then use ordinary IRQ_CONNECT / irq_enable; the parent programs the
+  TISCI route when the IRQ is enabled.
+
+compatible: "ti,sci-intr"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-controller:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  ti,sci:
+    type: phandle
+    required: true
+    description: Phandle to the TISCI system controller node.
+
+  ti,sci-dev-id:
+    type: int
+    required: true
+    description: TISCI device ID of this interrupt router instance.
+
+  ti,interrupt-ranges:
+    type: array
+    required: true
+    description: |
+      Translation triples of <output_base parent_irq_base limit> that map
+      interrupt-router output indices to the parent controller's input IRQs.
+      Multiple triples may be listed consecutively.
+
+  ti,intr-trigger-type:
+    type: int
+    enum: [1, 4]
+    description: |
+      Global trigger type for all outputs of this router (Linux IRQ_TYPE values):
+        1 = edge triggered  (mapped to Zephyr IRQ_TYPE_EDGE)
+        4 = level triggered (mapped to Zephyr IRQ_TYPE_LEVEL)
+      Used as the default parent-IRQ trigger when connecting an output.
+      When present, child ti,sci-intr-out nodes use #interrupt-cells = 2.
+
+  "#interrupt-cells":
+    const: 1
+
+interrupt-cells:
+  - irq
