@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SPARKFUN_REDBOARD_ARTEMIS
+
+config USE_DT_CODE_PARTITION
+	default y
+
+endif # BOARD_SPARKFUN_REDBOARD_ARTEMIS
