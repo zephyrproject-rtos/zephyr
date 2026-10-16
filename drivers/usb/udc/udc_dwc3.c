@@ -1112,22 +1112,15 @@ static void udc_dwc3_ctrl_next_out(const struct device *const dev,
 	}
 }
 
-static void udc_dwc3_ctrl_try(const struct device *const dev,
+static bool udc_dwc3_ctrl_try(const struct device *const dev,
 			      struct udc_dwc3_ep_data *ep_data)
 {
-	const struct udc_dwc3_config *const cfg = dev->config;
 	struct net_buf *buf;
-
-	if (udc_ep_is_busy(&cfg->ep_data_in[0].cfg) ||
-	    udc_ep_is_busy(&cfg->ep_data_out[0].cfg)) {
-		LOG_INF("Control endpoints still busy, not loading next buffer");
-		return;
-	}
 
 	buf = udc_buf_peek(&ep_data->cfg);
 	if (buf == NULL) {
 		LOG_INF("No buffer for ep 0x%02X yet", ep_data->cfg.addr);
-		return;
+		return false;
 	}
 
 	udc_ep_set_busy(&ep_data->cfg, true);
@@ -1137,27 +1130,41 @@ static void udc_dwc3_ctrl_try(const struct device *const dev,
 	} else {
 		udc_dwc3_ctrl_next_out(dev, buf);
 	}
+
+	return true;
 }
 
 static void udc_dwc3_ctrl_next(const struct device *const dev)
 {
 	struct udc_dwc3_data *const priv = udc_get_private(dev);
 	const struct udc_dwc3_config *const cfg = dev->config;
+	bool done = false;
 
-	if (atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_SETUP)) {
-		udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0]);
+	if (udc_ep_is_busy(&cfg->ep_data_in[0].cfg) ||
+	    udc_ep_is_busy(&cfg->ep_data_out[0].cfg)) {
+		LOG_INF("Control endpoints still busy, not loading next buffer");
+		return;
+	}
 
-	} else if (atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_DATA_IN)) {
-		udc_dwc3_ctrl_try(dev, &cfg->ep_data_in[0]);
-	} else if (atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_STATUS_IN)) {
-		udc_dwc3_ctrl_try(dev, &cfg->ep_data_in[0]);
+	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_SETUP)) {
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0]);
+	}
 
-	} else if (atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_DATA_OUT)) {
-		udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0]);
-	} else if (atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_STATUS_OUT)) {
-		udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0]);
+	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_DATA_IN)) {
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_in[0]);
+	}
+	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_STATUS_IN)) {
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_in[0]);
+	}
 
-	} else {
+	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_DATA_OUT)) {
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0]);
+	}
+	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_STATUS_OUT)) {
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0]);
+	}
+
+	if (!done) {
 		LOG_INF("No XferNotReady event yet, waiting");
 	}
 }
