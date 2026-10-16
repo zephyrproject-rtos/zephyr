@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2026 Base Power Company
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g4/stm32g431X8.dtsi>
+#include <st/g4/stm32g431c(6-8-b)tx-pinctrl.dtsi>
+
+/ {
+	model = "DSD TECH SH-C31A";
+	compatible = "dsdtech,shc31a";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
+	};
+
+	aliases {
+		led0 = &tx_led;
+		led1 = &rx_led;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		tx_led: led_tx {
+			gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+			label = "TXD LED";
+		};
+
+		rx_led: led_rx {
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			label = "RXD LED";
+		};
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+/* 160 MHz system clock and 80 MHz FDCAN clock from HSI16 */
+&pll {
+	div-m = <4>;
+	mul-n = <80>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1, 23)>,
+		 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+	status = "okay";
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1, 25)>,
+		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
