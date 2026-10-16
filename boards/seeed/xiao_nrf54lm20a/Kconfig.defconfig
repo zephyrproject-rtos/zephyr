@@ -38,4 +38,20 @@ config REGULATOR_NPM13XX_INIT_PRIORITY
 
 endif # REGULATOR_NPM13XX
 
+# Board revision 2.0.0 reuses the XIAO nRF54LM20B PCB with the nRF54LM20A
+# SoC: applications are meant to be loaded by the factory MCUboot firmware
+# updater, so link them for its slot0 even in plain, non-sysbuild builds.
+# The corresponding 0x800 ROM_START_OFFSET comes from the nRF54L SoC
+# Kconfig default for BOOTLOADER_MCUBOOT.  The console of revision 2.0.0
+# is the native USB CDC ACM device (the V1 SAMD11 USB-UART bridge is
+# absent on this PCB), the same backend as XIAO nRF54LM20B.
+if BOARD_REVISION_2_0_0
+
+config BOOTLOADER_MCUBOOT
+	default y if !MCUBOOT
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_REVISION_2_0_0
+
 endif # BOARD_XIAO_NRF54LM20A_NRF54LM20A_CPUAPP

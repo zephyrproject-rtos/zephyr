@@ -2,6 +2,12 @@ board:
   name: xiao_nrf54lm20a
   full_name: XIAO nRF54LM20A
   vendor: seeed
+  revision:
+    format: major.minor.patch
+    default: "1.0.0"
+    revisions:
+      - name: "1.0.0"
+      - name: "2.0.0"
   socs:
   - name: nrf54lm20a
 runners:
