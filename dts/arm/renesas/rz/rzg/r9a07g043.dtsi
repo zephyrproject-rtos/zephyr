@@ -738,7 +738,6 @@
 			channel = <0>;
 			interrupts = <46 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -752,7 +751,6 @@
 			channel = <1>;
 			interrupts = <47 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -766,7 +764,6 @@
 			channel = <2>;
 			interrupts = <48 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";

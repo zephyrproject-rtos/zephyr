@@ -1206,7 +1206,6 @@
 			channel = <0>;
 			interrupts = <GIC_SPI 46 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			os_timer {
 				compatible = "renesas,rz-gtm-os-timer";
@@ -1225,7 +1224,6 @@
 			channel = <1>;
 			interrupts = <GIC_SPI 47 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			os_timer {
 				compatible = "renesas,rz-gtm-os-timer";
@@ -1244,7 +1242,6 @@
 			channel = <2>;
 			interrupts = <GIC_SPI 48 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			os_timer {
 				compatible = "renesas,rz-gtm-os-timer";
