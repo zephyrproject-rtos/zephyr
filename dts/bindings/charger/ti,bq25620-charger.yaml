@@ -1,0 +1,194 @@
+# Copyright (c) 2026 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+title: TI BQ25620 battery charger function
+
+description: |
+  Charger function of the TI BQ25620. Must be a child node of a "ti,bq25620"
+  node.
+
+  The driver programs all settings described here at initialization, so the
+  configuration does not depend on the state left by a previous boot. Optional
+  properties that are not set are programmed to the power-on reset value of the
+  device, except ti,input-current-limit-microamp.
+
+compatible: "ti,bq25620-charger"
+
+include: [base.yaml, battery.yaml]
+
+properties:
+  constant-charge-current-max-microamp:
+    required: true
+    description: |
+      Fast charge current applied at initialization and upper limit for
+      CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA.
+      Range: 80 mA to 3.52 A in 80 mA steps.
+
+  constant-charge-voltage-max-microvolt:
+    required: true
+    description: |
+      Charge voltage applied at initialization and upper limit for
+      CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV.
+      Range: 3.5 V to 4.8 V in 10 mV steps.
+
+  precharge-current-microamp:
+    description: |
+      Pre-charge current.
+      Range: 20 mA to 620 mA in 20 mA steps.
+
+  charge-term-current-microamp:
+    description: |
+      Termination current.
+      Range: 10 mA to 620 mA in 10 mA steps.
+
+  re-charge-threshold-microvolt:
+    type: int
+    enum:
+      - 100000
+      - 200000
+    description: |
+      Recharge threshold below the charge voltage.
+
+  ce-gpios:
+    type: phandle-array
+    description: |
+      Charge enable pin. The pin is active low on the device, so it is
+      typically flagged GPIO_ACTIVE_LOW. With the pin, charging is disabled
+      after initialization until it is enabled by the application. Without
+      the pin, charging is enabled after initialization.
+
+  ti,input-current-limit-microamp:
+    type: int
+    description: |
+      Input current limit applied at initialization. The device overrides the
+      limit with the result of the USB adapter detection and resets it when
+      the adapter is removed. If not set, the limit is left to the device.
+      Range: 100 mA to 3.2 A in 20 mA steps.
+
+  ti,input-voltage-limit-microvolt:
+    type: int
+    description: |
+      Input voltage limit.
+      Range: 3.8 V to 16.8 V in 40 mV steps.
+
+  ti,min-sys-voltage-microvolt:
+    type: int
+    description: |
+      Minimal system voltage.
+      Range: 2.56 V to 3.84 V in 80 mV steps.
+
+  ti,vindpm-bat-track-microvolt:
+    type: int
+    enum:
+      - 0
+      - 400000
+    description: |
+      Offset above the battery voltage for the input voltage limit. The
+      effective input voltage limit is the higher of the configured limit and
+      the battery voltage plus this offset. 0 disables the tracking.
+
+  ti,q1-fullon:
+    type: boolean
+    description: |
+      Force the reverse blocking FET (Q1) into its low resistance state,
+      regardless of the input current limit.
+
+  ti,q4-fullon:
+    type: boolean
+    description: |
+      Force the battery FET (Q4) into its low resistance state, regardless of
+      the charge current. Raises the minimal pre-charge current to 80 mA and
+      the minimal termination current to 120 mA.
+
+  ti,disable-safety-timers:
+    type: boolean
+    description: |
+      Disable the trickle charge, pre-charge and fast charge safety timers.
+
+  ti,disable-timer-2x:
+    type: boolean
+    description: |
+      Do not slow down the safety timers by 2x during input current, input
+      voltage or thermal regulation.
+
+  ti,precharge-timer:
+    type: string
+    enum:
+      - "2.5h"
+      - "0.62h"
+    description: |
+      Pre-charge safety timer.
+
+  ti,fast-charge-timer:
+    type: string
+    enum:
+      - "14.5h"
+      - "28h"
+    description: |
+      Fast charge safety timer.
+
+  ti,disable-auto-battery-discharge:
+    type: boolean
+    description: |
+      Do not apply a discharge current to the battery during a battery over
+      voltage fault.
+
+  ti,vbus-ovp-microvolt:
+    type: int
+    enum:
+      - 6300000
+      - 18500000
+    description: |
+      VBUS over voltage protection threshold.
+
+  ti,ibat-peak-current-microamp:
+    type: int
+    enum:
+      - 6000000
+      - 12000000
+    description: |
+      Battery discharge peak current protection threshold.
+
+  ti,charge-rate:
+    type: string
+    enum:
+      - "1C"
+      - "2C"
+      - "4C"
+      - "6C"
+    description: |
+      Charge rate of the fast charge stage, used to derive the fold back
+      charge current.
+
+  ti,thermal-regulation-celsius:
+    type: int
+    enum:
+      - 60
+      - 120
+    description: |
+      Junction temperature threshold of the thermal regulation.
+
+  ti,switching-frequency-hz:
+    type: int
+    enum:
+      - 1500000
+      - 1350000
+      - 1650000
+    description: |
+      Switching frequency of the buck converter.
+
+  ti,converter-drive-strength:
+    type: string
+    enum:
+      - "weak"
+      - "normal"
+      - "strong"
+    description: |
+      Drive strength of the buck converter switches, trading efficiency
+      against EMI.
+
+  ti,ts-ignore:
+    type: boolean
+    description: |
+      Ignore the TS pin feedback. The device treats the battery temperature
+      as always good, e.g. for designs without a battery thermistor.
