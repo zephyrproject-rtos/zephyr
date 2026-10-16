@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# Ameba led controller driver config
+config LEDC_AMEBA
+	bool "Ameba led controller driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_LEDC_ENABLED
+	select PINCTRL
+	select LED_STRIP_RGB_SCRATCH
+	help
+	  Enable support for Ameba led controller driver.
