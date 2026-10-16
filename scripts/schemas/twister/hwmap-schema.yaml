@@ -50,6 +50,8 @@ items:
       type: integer
     flash_with_test:
       type: boolean
+    runner_console:
+      type: boolean
     flash_before:
       type: boolean
     script_param:
