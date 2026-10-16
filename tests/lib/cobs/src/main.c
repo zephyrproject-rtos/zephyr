@@ -706,7 +706,7 @@ ZTEST_F(cobs_tests, test_cobs_missing_trailing_delim)
 
 	net_buf_add_mem(fixture->encoded, data_enc, sizeof(data_enc));
 	ret = cobs_decode(fixture->encoded, fixture->decoded, COBS_FLAG_TRAILING_DELIMITER);
-	zassert_equal(ret, -EINVAL, "Decoding missing trailing delimiter not caught");
+	zassert_equal(ret, -EAGAIN, "Decoding missing trailing delimiter not caught");
 }
 
 ZTEST_F(cobs_tests, test_decode_stream_close)
@@ -772,4 +772,66 @@ ZTEST_F(cobs_tests, test_decode_stream_stop_at_frame_end)
 	ret = cobs_decoder_write(&dec, &data_enc[8], 1);
 	zassert_equal(ret, 1, "decoder write used %d bytes", ret);
 	zassert_equal(cobs_decoder_close(&dec), -EINVAL);
+}
+
+ZTEST_F(cobs_tests, test_cobs_multiple_frames)
+{
+	const char data_enc[] = {
+		0x00, 0x02, 'A', 0x00, 0x00, 0x01, 0x00, 0x03, 'B', 'C', 0x00, 0x02,
+	};
+	uint32_t flags = COBS_FLAG_TRAILING_DELIMITER;
+
+	net_buf_add_mem(fixture->encoded, data_enc, sizeof(data_enc));
+
+	/* Leading delimiters are skipped, the following frames are kept */
+	zassert_ok(cobs_decode(fixture->encoded, fixture->decoded, flags));
+	zassert_equal(fixture->decoded->len, 1);
+	zassert_equal(fixture->decoded->data[0], 'A');
+	zassert_equal(fixture->encoded->len, 8);
+
+	/* Empty frame */
+	net_buf_reset(fixture->decoded);
+	zassert_ok(cobs_decode(fixture->encoded, fixture->decoded, flags));
+	zassert_equal(fixture->decoded->len, 0);
+	zassert_equal(fixture->encoded->len, 5);
+
+	zassert_ok(cobs_decode(fixture->encoded, fixture->decoded, flags));
+	zassert_equal(fixture->decoded->len, 2);
+	zassert_mem_equal(fixture->decoded->data, "BC", 2);
+	zassert_equal(fixture->encoded->len, 1);
+
+	/* Unterminated frame is left in place */
+	net_buf_reset(fixture->decoded);
+	zassert_equal(cobs_decode(fixture->encoded, fixture->decoded, flags), -EAGAIN);
+	zassert_equal(fixture->decoded->len, 0);
+	zassert_equal(fixture->encoded->len, 1);
+
+	/* Completing the frame */
+	net_buf_add_mem(fixture->encoded, "D", 1);
+	net_buf_add_u8(fixture->encoded, 0x00);
+	zassert_ok(cobs_decode(fixture->encoded, fixture->decoded, flags));
+	zassert_equal(fixture->decoded->len, 1);
+	zassert_equal(fixture->decoded->data[0], 'D');
+	zassert_equal(fixture->encoded->len, 0);
+
+	/* No frame */
+	zassert_equal(cobs_decode(fixture->encoded, fixture->decoded, flags), -EAGAIN);
+	net_buf_add_u8(fixture->encoded, 0x00);
+	zassert_equal(cobs_decode(fixture->encoded, fixture->decoded, flags), -EAGAIN);
+	zassert_equal(fixture->encoded->len, 1);
+}
+
+ZTEST_F(cobs_tests, test_cobs_decode_error_keeps_buffers)
+{
+	const char data_enc[] = {0x03, 'A', 'B', 0x02, 0x00};
+	uint32_t flags = COBS_FLAG_TRAILING_DELIMITER;
+
+	net_buf_add_mem(fixture->encoded, data_enc, sizeof(data_enc));
+	net_buf_add_u8(fixture->decoded, 'X');
+
+	/* Delimiter inside a group, after "AB" was decoded */
+	zassert_equal(cobs_decode(fixture->encoded, fixture->decoded, flags), -EINVAL);
+	zassert_equal(fixture->encoded->len, sizeof(data_enc));
+	zassert_equal(fixture->decoded->len, 1);
+	zassert_equal(fixture->decoded->data[0], 'X');
 }
