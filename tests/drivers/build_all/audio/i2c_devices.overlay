@@ -104,6 +104,12 @@
 				vdd-b-supply = <&test_regulator>;
 				vdd-amp-supply = <&test_regulator>;
 			};
+
+			test_i2c_nau88c10: nau88c10@a {
+				compatible = "nuvoton,nau88c10";
+				reg = <0xa>;
+				status = "okay";
+			};
 		};
 	};
 };
