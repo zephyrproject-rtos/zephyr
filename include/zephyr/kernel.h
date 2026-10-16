@@ -3816,10 +3816,27 @@ __syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
 __syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
 
 /**
+ * @brief Give a semaphore, reporting a full semaphore.
+ *
+ * This routine gives @a sem, unless the semaphore is already at its maximum
+ * permitted count. In that case the semaphore is left unchanged and
+ * -EOVERFLOW is returned.
+ *
+ * @isr_ok
+ *
+ * @param sem Address of the semaphore.
+ *
+ * @retval 0 Semaphore given.
+ * @retval -EOVERFLOW Semaphore is already at its maximum permitted count.
+ */
+__syscall int k_sem_post(struct k_sem *sem);
+
+/**
  * @brief Give a semaphore.
  *
  * This routine gives @a sem, unless the semaphore is already at its maximum
- * permitted count.
+ * permitted count. Use k_sem_post() to find out whether the semaphore was
+ * given.
  *
  * @isr_ok
  *

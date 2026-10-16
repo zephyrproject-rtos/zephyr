@@ -38,6 +38,11 @@ void __weak z_impl_k_sem_give(struct k_sem *sem)
 {
 }
 
+int __weak z_impl_k_sem_post(struct k_sem *sem)
+{
+	return 0;
+}
+
 int __weak z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
