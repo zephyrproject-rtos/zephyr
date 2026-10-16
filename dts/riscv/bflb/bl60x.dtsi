@@ -404,6 +404,18 @@
 			status = "disabled";
 		};
 
+		aon_scratch0: aon-scratch@4000f93c {
+			compatible = "zephyr,retained-reg";
+			reg = <0x4000f93c 0x4>;
+			alignment = <4>;
+		};
+
+		aon_scratch1: aon-scratch@4000f940 {
+			compatible = "zephyr,retained-reg";
+			reg = <0x4000f940 0x4>;
+			alignment = <4>;
+		};
+
 		retram: memory@40010000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
