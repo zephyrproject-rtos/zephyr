@@ -52,6 +52,14 @@ int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 			break;
 		case '.':
 			buf[lb_start] = lb_size;
+			if (i == (dn_size - 1U)) {
+				/* A trailing dot explicitly represents the root label. */
+				if (lb_size > 0U) {
+					buf[lb_index++] = 0U;
+				}
+				*len = lb_index;
+				return 0;
+			}
 			lb_size = 0U;
 			lb_start = lb_index;
 			break;
