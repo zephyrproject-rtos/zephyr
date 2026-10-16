@@ -64,6 +64,8 @@ static void modem_cellular_delegate_event_ptr(struct modem_cellular_data *data,
 static void modem_cellular_event_handler(struct modem_cellular_data *data,
 					 enum modem_cellular_event evt);
 
+static void modem_cellular_gnss_request_service(struct modem_cellular_data *data);
+
 static const char *modem_cellular_state_str(enum modem_cellular_state state)
 {
 	switch (state) {
@@ -103,6 +105,8 @@ static const char *modem_cellular_state_str(enum modem_cellular_state state)
 		return "run dial script";
 	case MODEM_CELLULAR_STATE_REGISTERED:
 		return "registered";
+	case MODEM_CELLULAR_STATE_RUN_GNSS_REQUEST_SCRIPT:
+		return "run gnss request script";
 	case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD:
 		return "await PPP dead";
 	case MODEM_CELLULAR_STATE_INIT_POWER_OFF:
@@ -163,13 +167,25 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "dial";
 	case MODEM_CELLULAR_EVENT_HANGUP:
 		return "hangup";
+	case MODEM_CELLULAR_EVENT_GNSS_REQUESTED:
+		return "gnss requested";
 	}
 
 	return "";
 }
 
-static bool modem_cellular_apn_change_allowed(enum modem_cellular_state st)
+static bool modem_cellular_apn_change_allowed(const struct modem_cellular_data *data)
 {
+	enum modem_cellular_state st = data->state;
+
+	/* While a GNSS request script runs, decide as for the state it returns to:
+	 * from WAIT_FOR_APN the APN is accepted, and APN_SET is handled once the
+	 * script completes.
+	 */
+	if (st == MODEM_CELLULAR_STATE_RUN_GNSS_REQUEST_SCRIPT) {
+		st = data->gnss_return_state;
+	}
+
 	switch (st) {
 	case MODEM_CELLULAR_STATE_IDLE:
 	case MODEM_CELLULAR_STATE_RESET_PULSE:
@@ -408,6 +424,22 @@ static void modem_cellular_dlci2_pipe_handler(struct modem_pipe *pipe,
 	}
 }
 
+static bool modem_cellular_gnss_request_pending(struct modem_cellular_data *data)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->gnss_lock);
+	bool pending = data->gnss_request != NULL;
+
+	k_spin_unlock(&data->gnss_lock, key);
+	return pending;
+}
+
+static void modem_cellular_gnss_request_kick(struct modem_cellular_data *data)
+{
+	if (modem_cellular_gnss_request_pending(data)) {
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_GNSS_REQUESTED);
+	}
+}
+
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 					  enum modem_chat_script_result result,
 					  const struct modem_chat_script_completion_info *info,
@@ -422,6 +454,9 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 	} else {
 		modem_cellular_delegate_event_ptr(data, MODEM_CELLULAR_EVENT_SCRIPT_FAILED, script);
 	}
+
+	/* A GNSS request that waited for the AT channel can run now */
+	modem_cellular_gnss_request_kick(data);
 }
 
 void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -780,7 +815,7 @@ MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused, "", "", modem_cellular_chat_o
 
 MODEM_CHAT_MATCHES_DEFINE(abort_matches,
 			  MODEM_CHAT_MATCH("ERROR", "", NULL),
-			  MODEM_CHAT_MATCH("+CME ERROR", "",
+			  MODEM_CHAT_MATCH("+CME ERROR: ", "",
 					   COND_CODE_1(CONFIG_MODEM_CELLULAR_STATS,
 						       (modem_cellular_chat_on_cme_error),
 						       (NULL))));
@@ -919,6 +954,63 @@ static void modem_cellular_begin_power_off_pulse(struct modem_cellular_data *dat
 	}
 }
 
+struct modem_cellular_gnss_request {
+	enum modem_cellular_gnss_request_op op;
+	int result;
+	struct k_sem done;
+	/* A GNSS script was started for this request */
+	bool started;
+};
+
+static void modem_cellular_gnss_request_cancel(struct modem_cellular_data *data)
+{
+	struct modem_cellular_gnss_request *request;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->gnss_lock);
+	request = data->gnss_request;
+	if (request != NULL) {
+		request->result = -ECANCELED;
+		k_sem_give(&request->done);
+		data->gnss_request = NULL;
+	}
+	k_spin_unlock(&data->gnss_lock, key);
+}
+
+static void modem_cellular_gnss_request_complete(struct modem_cellular_data *data, int result)
+{
+	struct modem_cellular_gnss_request *request;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->gnss_lock);
+	request = data->gnss_request;
+	if ((request != NULL) && request->started) {
+		request->result = result;
+		k_sem_give(&request->done);
+		data->gnss_request = NULL;
+	}
+	k_spin_unlock(&data->gnss_lock, key);
+}
+
+static void modem_cellular_enter_power_off_state(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	/* A timer armed by the state being left must not end the power-off states early */
+	modem_cellular_stop_timer(data);
+	modem_cellular_gnss_request_cancel(data);
+
+	/* Power the GNSS receiver down while the AT channel is still available */
+	if ((data->cmd_pipe != NULL) && (config->vendor->scripts.gnss_shutdown != NULL)) {
+		modem_chat_release(&data->chat);
+		data->gnss_op = MODEM_CELLULAR_GNSS_REQUEST_SHUTDOWN;
+		data->gnss_return_state = MODEM_CELLULAR_STATE_INIT_POWER_OFF;
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_GNSS_REQUEST_SCRIPT);
+	} else {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+	}
+}
+
 static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 {
 	const struct modem_cellular_config *config = data->dev->config;
@@ -937,6 +1029,10 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 	modem_ppp_release(config->ppp);
 	modem_cmux_release(&data->cmux);
 	modem_pipe_close_async(data->uart_pipe);
+	data->cmd_pipe = NULL;
+	data->suspend_pending = false;
+	/* The modem may have been powered off */
+	data->gnss_powered_known = false;
 	k_sem_give(&data->suspended_sem);
 	modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_SUSPENDED, NULL);
 	return 0;
@@ -1045,6 +1141,10 @@ static int modem_cellular_on_reset_pulse_state_enter(struct modem_cellular_data 
 		modem_cellular_baudrate_update(data, data->original_baudrate);
 	}
 
+	/* The modem restarts with the GNSS receiver off */
+	data->gnss_powered = false;
+	data->gnss_powered_known = true;
+
 	gpio_pin_set_dt(&config->reset_gpio, 1);
 	modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 	return 0;
@@ -1129,6 +1229,10 @@ static int modem_cellular_on_power_on_pulse_state_enter(struct modem_cellular_da
 	if (data->original_baudrate) {
 		modem_cellular_baudrate_update(data, data->original_baudrate);
 	}
+
+	/* The modem starts with the GNSS receiver off */
+	data->gnss_powered = false;
+	data->gnss_powered_known = true;
 
 	gpio_pin_set_dt(&config->power_gpio, 1);
 	modem_cellular_start_timer(data, K_MSEC(config->vendor->power_pulse_duration_ms));
@@ -1268,6 +1372,8 @@ static int modem_cellular_on_recovery_state_enter(struct modem_cellular_data *da
 				  CONFIG_MODEM_CELLULAR_RECOVERY_BACKOFF_MAX_MS);
 
 	LOG_DBG("recovery attempt %u, backoff %u ms", data->recovery_count, backoff_ms);
+	data->cmd_pipe = NULL;
+	data->gnss_powered_known = false;
 	modem_cellular_start_timer(data, K_MSEC(backoff_ms));
 	return 0;
 }
@@ -1433,7 +1539,7 @@ static void modem_cellular_connect_cmux_event_handler(struct modem_cellular_data
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 
 	default:
@@ -1465,7 +1571,7 @@ static void modem_cellular_open_dlci1_event_handler(struct modem_cellular_data *
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_chat_release(&data->chat);
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
@@ -1510,6 +1616,13 @@ static void modem_cellular_enter_apn_state(struct modem_cellular_data *data)
 	}
 }
 
+static int modem_cellular_chat_attach_cmd_pipe(struct modem_cellular_data *data,
+					       struct modem_pipe *pipe)
+{
+	data->cmd_pipe = pipe;
+	return modem_chat_attach(&data->chat, pipe);
+}
+
 static int modem_cellular_on_open_dlci2_state_enter(struct modem_cellular_data *data)
 {
 	modem_pipe_attach(data->dlci2_pipe, modem_cellular_dlci2_pipe_handler, data);
@@ -1545,7 +1658,7 @@ static void modem_cellular_open_dlci2_event_handler(struct modem_cellular_data *
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_chat_release(&data->chat);
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
@@ -1566,6 +1679,12 @@ static int modem_cellular_on_open_dlci2_state_leave(struct modem_cellular_data *
 	return 0;
 }
 
+static int modem_cellular_on_wait_for_apn_state_enter(struct modem_cellular_data *data)
+{
+	modem_cellular_gnss_request_kick(data);
+	return 0;
+}
+
 static void modem_cellular_wait_for_apn_event_handler(struct modem_cellular_data *data,
 							enum modem_cellular_event evt)
 {
@@ -1575,9 +1694,12 @@ static void modem_cellular_wait_for_apn_event_handler(struct modem_cellular_data
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 
+	case MODEM_CELLULAR_EVENT_GNSS_REQUESTED:
+		modem_cellular_gnss_request_service(data);
+		break;
 	default:
 		break;
 	}
@@ -1605,7 +1727,7 @@ static bool modem_cellular_is_script_retry_exceeded(struct modem_cellular_data *
 
 static int modem_cellular_on_run_board_init_script_state_enter(struct modem_cellular_data *data)
 {
-	modem_chat_attach(&data->chat, data->dlci1_pipe);
+	modem_cellular_chat_attach_cmd_pipe(data, data->dlci1_pipe);
 
 	/* The registered script is const; copy it to attach the driver's
 	 * completion callback.
@@ -1639,7 +1761,7 @@ static void modem_cellular_run_board_init_script_event_handler(struct modem_cell
 		}
 		break;
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 	default:
 		break;
@@ -1659,7 +1781,7 @@ static void modem_cellular_run_apn_script_event_handler(struct modem_cellular_da
 {
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_attach(&data->chat, data->dlci1_pipe);
+		modem_cellular_chat_attach_cmd_pipe(data, data->dlci1_pipe);
 		modem_chat_run_script_async(&data->chat, &data->apn_script);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
@@ -1675,7 +1797,7 @@ static void modem_cellular_run_apn_script_event_handler(struct modem_cellular_da
 		}
 		break;
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
 		modem_pipe_open_async(data->uart_pipe);
@@ -1687,7 +1809,7 @@ static void modem_cellular_run_apn_script_event_handler(struct modem_cellular_da
 
 static int modem_cellular_on_run_network_script_state_enter(struct modem_cellular_data *data)
 {
-	modem_chat_attach(&data->chat, data->dlci1_pipe);
+	modem_cellular_chat_attach_cmd_pipe(data, data->dlci1_pipe);
 	modem_cellular_start_timer(data, K_NO_WAIT);
 	return 0;
 }
@@ -1715,7 +1837,7 @@ static void modem_cellular_run_network_script_event_handler(struct modem_cellula
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
 		break;
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
 		modem_pipe_open_async(data->uart_pipe);
@@ -1729,7 +1851,8 @@ static int modem_cellular_on_await_dial_state_enter(struct modem_cellular_data *
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
-	modem_chat_attach(&data->chat, data->dlci1_pipe);
+	modem_cellular_chat_attach_cmd_pipe(data, data->dlci1_pipe);
+	modem_cellular_gnss_request_kick(data);
 
 	if (net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DIAL);
@@ -1803,10 +1926,13 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
 		modem_pipe_open_async(data->uart_pipe);
+		break;
+	case MODEM_CELLULAR_EVENT_GNSS_REQUESTED:
+		modem_cellular_gnss_request_service(data);
 		break;
 	default:
 		break;
@@ -1865,7 +1991,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
 		LOG_DBG("RING received!");
@@ -1889,12 +2015,13 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 
 static int modem_cellular_on_run_dial_script_state_leave(struct modem_cellular_data *data)
 {
-	return modem_chat_attach(&data->chat, data->dlci1_pipe);
+	return modem_cellular_chat_attach_cmd_pipe(data, data->dlci1_pipe);
 }
 
 static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_data *data)
 {
-	modem_chat_attach(&data->chat, data->dlci1_pipe);
+	modem_cellular_chat_attach_cmd_pipe(data, data->dlci1_pipe);
+	modem_cellular_gnss_request_kick(data);
 	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 	if (modem_cellular_is_registered(data)) {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
@@ -1987,11 +2114,14 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		break;
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
 		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
+		break;
+	case MODEM_CELLULAR_EVENT_GNSS_REQUESTED:
+		modem_cellular_gnss_request_service(data);
 		break;
 	default:
 		break;
@@ -2009,6 +2139,7 @@ static int modem_cellular_on_registered_state_enter(struct modem_cellular_data *
 	const struct modem_cellular_config *config = data->dev->config;
 
 	net_if_dormant_off(modem_ppp_get_iface(config->ppp));
+	modem_cellular_gnss_request_kick(data);
 	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 	return 0;
 }
@@ -2104,11 +2235,14 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_chat_release(&data->chat);
 		modem_ppp_release(config->ppp);
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		modem_cellular_enter_power_off_state(data);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
 		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
+		break;
+	case MODEM_CELLULAR_EVENT_GNSS_REQUESTED:
+		modem_cellular_gnss_request_service(data);
 		break;
 	default:
 		break;
@@ -2146,6 +2280,16 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 		/* Wait for the channel to return to AT mode after PPP termination */
 		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 		break;
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		/* Handled in the next state, once PPP teardown has settled. Not every
+		 * entry into this state arms the timer, and a timer left from the
+		 * previous state may run for a full periodic script interval, so
+		 * (re)arm it to bound the wait.
+		 */
+		data->suspend_pending = true;
+		k_work_reschedule(&data->timeout_work,
+				  K_MSEC(config->vendor->reset_pulse_duration_ms));
+		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		if (modem_cellular_has_network_script(config) &&
 		    !modem_cellular_is_registered(data)) {
@@ -2168,6 +2312,12 @@ static int modem_cellular_on_await_ppp_dead_state_leave(struct modem_cellular_da
 
 	modem_chat_release(&data->chat);
 	modem_ppp_release(config->ppp);
+
+	/* Queued, so it is handled in the next state */
+	if (data->suspend_pending) {
+		data->suspend_pending = false;
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SUSPEND);
+	}
 
 	return 0;
 }
@@ -2239,6 +2389,162 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 	default:
 		break;
 	}
+}
+
+static const struct modem_chat_script *
+modem_cellular_gnss_script(const struct modem_cellular_config *config,
+			   enum modem_cellular_gnss_request_op op)
+{
+	switch (op) {
+	case MODEM_CELLULAR_GNSS_REQUEST_POWER_ON:
+		return config->vendor->scripts.gnss_power_on;
+	case MODEM_CELLULAR_GNSS_REQUEST_SHUTDOWN:
+		return config->vendor->scripts.gnss_shutdown;
+	default:
+		return NULL;
+	}
+}
+
+static int modem_cellular_on_run_gnss_request_script_state_enter(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+	const struct modem_chat_script *script = modem_cellular_gnss_script(config, data->gnss_op);
+	bool power_on = data->gnss_op == MODEM_CELLULAR_GNSS_REQUEST_POWER_ON;
+
+	data->gnss_deferred_count = 0;
+	data->gnss_suspend_pending = false;
+
+	/* Backstop in case the script result event is dropped */
+	modem_cellular_stop_timer(data);
+	modem_cellular_start_timer(data, K_SECONDS(script->timeout + 1U));
+
+	if (data->gnss_powered_known && (data->gnss_powered == power_on)) {
+		modem_cellular_delegate_event_ptr(data, MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS,
+						  script);
+		return 0;
+	}
+
+	modem_chat_attach(&data->chat, data->cmd_pipe);
+	if (modem_chat_run_script_async(&data->chat, script) < 0) {
+		modem_cellular_delegate_event_ptr(data, MODEM_CELLULAR_EVENT_SCRIPT_FAILED, script);
+	}
+
+	return 0;
+}
+
+static void modem_cellular_gnss_script_done(struct modem_cellular_data *data, int result)
+{
+	enum modem_cellular_event deferred[ARRAY_SIZE(data->gnss_deferred_events)];
+	uint8_t deferred_count = data->gnss_deferred_count;
+
+	if (result == 0) {
+		data->gnss_powered = data->gnss_op == MODEM_CELLULAR_GNSS_REQUEST_POWER_ON;
+		data->gnss_powered_known = true;
+	} else {
+		LOG_WRN("GNSS %s script failed",
+			(data->gnss_op == MODEM_CELLULAR_GNSS_REQUEST_POWER_ON) ? "power-on"
+										: "shutdown");
+		data->gnss_powered_known = false;
+	}
+
+	modem_cellular_gnss_request_complete(data, result);
+
+	if (data->gnss_suspend_pending) {
+		modem_cellular_enter_power_off_state(data);
+		return;
+	}
+
+	memcpy(deferred, data->gnss_deferred_events, sizeof(deferred));
+	data->gnss_deferred_count = 0;
+
+	modem_cellular_enter_state(data, data->gnss_return_state);
+
+	for (uint8_t i = 0; i < deferred_count; i++) {
+		data->event_ptr = NULL;
+		modem_cellular_event_handler(data, deferred[i]);
+	}
+}
+
+static bool modem_cellular_gnss_event_deferred(const struct modem_cellular_data *data,
+					       enum modem_cellular_event evt)
+{
+	for (uint8_t i = 0; i < data->gnss_deferred_count; i++) {
+		if (data->gnss_deferred_events[i] == evt) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void modem_cellular_run_gnss_request_script_event_handler(struct modem_cellular_data *data,
+								 enum modem_cellular_event evt)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+	const struct modem_chat_script *script = modem_cellular_gnss_script(config, data->gnss_op);
+	bool powering_off = data->gnss_return_state == MODEM_CELLULAR_STATE_INIT_POWER_OFF;
+
+	switch (evt) {
+	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		if (data->event_ptr == script) {
+			modem_cellular_gnss_script_done(data, 0);
+		}
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		if (data->event_ptr == script) {
+			modem_cellular_gnss_script_done(data, -EIO);
+		}
+		break;
+
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (k_work_delayable_is_pending(&data->timeout_work)) {
+			/* Queued by the timer of the previous state */
+			break;
+		}
+		modem_chat_release(&data->chat);
+		modem_chat_attach(&data->chat, data->cmd_pipe);
+		modem_cellular_gnss_script_done(data, -EIO);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		if (powering_off) {
+			break;
+		}
+		/* Let the command complete before powering off: a modem powered off
+		 * while executing a GNSS command can fail to connect after the next
+		 * power on until its supply is removed.
+		 */
+		data->gnss_suspend_pending = true;
+		data->gnss_deferred_count = 0;
+		break;
+
+	case MODEM_CELLULAR_EVENT_RING:
+		modem_pipe_open_async(data->uart_pipe);
+		break;
+
+	case MODEM_CELLULAR_EVENT_GNSS_REQUESTED:
+		/* Serviced after returning to the previous state */
+		break;
+
+	default:
+		if (powering_off || data->gnss_suspend_pending ||
+		    modem_cellular_gnss_event_deferred(data, evt)) {
+			break;
+		}
+		if (data->gnss_deferred_count == ARRAY_SIZE(data->gnss_deferred_events)) {
+			LOG_WRN("Event %d dropped", evt);
+			break;
+		}
+		data->gnss_deferred_events[data->gnss_deferred_count++] = evt;
+		break;
+	}
+}
+
+static int modem_cellular_on_run_gnss_request_script_state_leave(struct modem_cellular_data *data)
+{
+	modem_cellular_stop_timer(data);
+	return 0;
 }
 
 static int modem_cellular_on_run_shutdown_script_state_enter(struct modem_cellular_data *data)
@@ -2384,6 +2690,10 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data *data)
 		ret = modem_cellular_on_run_board_init_script_state_enter(data);
 		break;
 
+	case MODEM_CELLULAR_STATE_WAIT_FOR_APN:
+		ret = modem_cellular_on_wait_for_apn_state_enter(data);
+		break;
+
 	case MODEM_CELLULAR_STATE_RUN_APN_SCRIPT:
 		ret = modem_cellular_on_run_apn_script_state_enter(data);
 		break;
@@ -2406,6 +2716,10 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data *data)
 
 	case MODEM_CELLULAR_STATE_REGISTERED:
 		ret = modem_cellular_on_registered_state_enter(data);
+		break;
+
+	case MODEM_CELLULAR_STATE_RUN_GNSS_REQUEST_SCRIPT:
+		ret = modem_cellular_on_run_gnss_request_script_state_enter(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD:
@@ -2485,6 +2799,10 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 		ret = modem_cellular_on_registered_state_leave(data);
 		break;
 
+	case MODEM_CELLULAR_STATE_RUN_GNSS_REQUEST_SCRIPT:
+		ret = modem_cellular_on_run_gnss_request_script_state_leave(data);
+		break;
+
 	case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD:
 		ret = modem_cellular_on_await_ppp_dead_state_leave(data);
 		break;
@@ -2503,6 +2821,31 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 	}
 
 	return ret;
+}
+
+static void modem_cellular_gnss_request_service(struct modem_cellular_data *data)
+{
+	struct modem_cellular_gnss_request *request;
+	k_spinlock_key_t key;
+
+	if (modem_chat_is_running(&data->chat)) {
+		return;
+	}
+
+	key = k_spin_lock(&data->gnss_lock);
+	request = data->gnss_request;
+	if (request != NULL) {
+		request->started = true;
+		data->gnss_op = request->op;
+	}
+	k_spin_unlock(&data->gnss_lock, key);
+
+	if (request == NULL) {
+		return;
+	}
+
+	data->gnss_return_state = data->state;
+	modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_GNSS_REQUEST_SCRIPT);
 }
 
 static void modem_cellular_enter_state(struct modem_cellular_data *data,
@@ -2610,6 +2953,10 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 
 	case MODEM_CELLULAR_STATE_REGISTERED:
 		modem_cellular_registered_event_handler(data, evt);
+		break;
+
+	case MODEM_CELLULAR_STATE_RUN_GNSS_REQUEST_SCRIPT:
+		modem_cellular_run_gnss_request_script_event_handler(data, evt);
 		break;
 
 	case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD:
@@ -2890,7 +3237,7 @@ static int modem_cellular_set_apn(const struct device *dev, const char *apn)
 		goto out;
 	}
 
-	if (!modem_cellular_apn_change_allowed(data->state)) {
+	if (!modem_cellular_apn_change_allowed(data)) {
 		ret = -EBUSY;
 		goto out;
 	}
@@ -2961,6 +3308,63 @@ int cellular_modem_resume_periodic_script(const struct device *dev)
 	return 0;
 }
 
+static int modem_cellular_gnss_request(const struct device *dev,
+				       enum modem_cellular_gnss_request_op op)
+{
+	const struct modem_cellular_config *config = dev->config;
+	struct modem_cellular_data *data = dev->data;
+	struct modem_cellular_gnss_request request = {.op = op};
+	const struct modem_chat_script *script = modem_cellular_gnss_script(config, op);
+	k_spinlock_key_t key;
+
+	if (script == NULL) {
+		return -ENOTSUP;
+	}
+
+	/* The request is serviced by the event dispatcher, which runs on the system workqueue */
+	if (k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
+		LOG_ERR("Cannot run a GNSS request from system workqueue");
+		return -EDEADLK;
+	}
+
+	k_sem_init(&request.done, 0, 1);
+
+	/* gnss_request_lock, not api_lock: the wait below can last up to
+	 * CONFIG_MODEM_CELLULAR_GNSS_REQUEST_TIMEOUT_S.
+	 */
+	k_mutex_lock(&data->gnss_request_lock, K_FOREVER);
+
+	key = k_spin_lock(&data->gnss_lock);
+	data->gnss_request = &request;
+	k_spin_unlock(&data->gnss_lock, key);
+
+	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_GNSS_REQUESTED);
+
+	if (k_sem_take(&request.done, K_SECONDS(CONFIG_MODEM_CELLULAR_GNSS_REQUEST_TIMEOUT_S)) !=
+	    0) {
+		key = k_spin_lock(&data->gnss_lock);
+		/* Not completed in the meantime */
+		if (data->gnss_request == &request) {
+			data->gnss_request = NULL;
+			request.result = -ETIMEDOUT;
+		}
+		k_spin_unlock(&data->gnss_lock, key);
+	}
+
+	k_mutex_unlock(&data->gnss_request_lock);
+	return request.result;
+}
+
+int modem_cellular_gnss_power_on(const struct device *dev)
+{
+	return modem_cellular_gnss_request(dev, MODEM_CELLULAR_GNSS_REQUEST_POWER_ON);
+}
+
+int modem_cellular_gnss_shutdown(const struct device *dev)
+{
+	return modem_cellular_gnss_request(dev, MODEM_CELLULAR_GNSS_REQUEST_SHUTDOWN);
+}
+
 #if defined(CONFIG_MODEM_CELLULAR_STATS)
 static const struct cellular_stats *modem_cellular_get_stats(const struct device *dev)
 {
@@ -2979,6 +3383,45 @@ DEVICE_API(cellular, modem_cellular_api) = {
 	.set_callback = modem_cellular_set_callback,
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (.get_stats = modem_cellular_get_stats,))
 };
+
+#if defined(CONFIG_DEVICE_DEPS)
+static int modem_cellular_pm_check_child_device(const struct device *child, void *context)
+{
+	ARG_UNUSED(context);
+	enum pm_device_state state;
+	int usage;
+
+	/* A child that failed to initialize keeps its default ACTIVE state without
+	 * ever running, and a child without PM support is never suspended: neither
+	 * can be in use.
+	 */
+	if (!device_is_ready(child) || (pm_device_state_get(child, &state) != 0)) {
+		return 0;
+	}
+
+	/* A child under runtime PM is in use only while it holds a usage reference.
+	 * Its state stays ACTIVE until its own suspend callback returns, so checking
+	 * the state alone would refuse a modem suspend requested from that callback.
+	 */
+	usage = pm_device_runtime_usage(child);
+	if (usage >= 0) {
+		if (usage > 0) {
+			LOG_WRN("Refusing to suspend: child device %s is still in use",
+				child->name);
+			return -EBUSY;
+		}
+
+		return 0;
+	}
+
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		LOG_WRN("Refusing to suspend: child device %s is still active", child->name);
+		return -EBUSY;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_DEVICE_DEPS */
 
 int modem_cellular_pm_action(const struct device *dev, enum pm_device_action action)
 {
@@ -3004,6 +3447,26 @@ int modem_cellular_pm_action(const struct device *dev, enum pm_device_action act
 			LOG_ERR("Cannot suspend from system workqueue");
 			return -EDEADLK;
 		}
+		/* The modem must not power down a child device (e.g. an integrated GNSS
+		 * receiver) on the caller's behalf: only the request to suspend the modem
+		 * was made. If a child is still active, refuse to suspend instead of
+		 * cutting power out from under it; the caller is responsible for
+		 * suspending its children first. Requires CONFIG_DEVICE_DEPS to enumerate
+		 * children at all; without it there is nothing to check.
+		 *
+		 * An asynchronous runtime suspend, such as the one modem_ppp requests when
+		 * PPP stops, cannot report the refusal: the runtime PM core asserts on it
+		 * and restores the usage count, leaving the modem active with a reference
+		 * no caller owns. Suspend children before the last modem reference is
+		 * released.
+		 */
+#if defined(CONFIG_DEVICE_DEPS)
+		ret = device_supported_foreach(dev, modem_cellular_pm_check_child_device, NULL);
+		if (ret < 0) {
+			return ret;
+		}
+#endif /* CONFIG_DEVICE_DEPS */
+		modem_cellular_gnss_request_cancel(data);
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SUSPEND);
 		ret = k_sem_take(&data->suspended_sem, K_SECONDS(30));
 		break;
@@ -3122,6 +3585,7 @@ int modem_cellular_init(const struct device *dev)
 	}
 
 	k_mutex_init(&data->api_lock);
+	k_mutex_init(&data->gnss_request_lock);
 	k_work_init_delayable(&data->timeout_work, modem_cellular_timeout_handler);
 	k_work_init(&data->event_dispatch_work, modem_cellular_event_dispatch_handler);
 	k_msgq_init(&data->event_queue, (void *)data->event_buf, sizeof(data->event_buf[0]),
