@@ -14,6 +14,18 @@ tests:
       - mimxrt1064_evk
     platform_exclude:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - zybo/xc7z010
+  drivers.sdhc.sdhc_api.xlnx_zynq:
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_alias_exists("sdhc0") and dt_compat_enabled("arasan,sdhci-8.9a")
+    extra_configs:
+      # the driver includes sd.h, which needs the SD stack (not selected by CONFIG_SDHC alone)
+      - CONFIG_SDMMC_STACK=y
+    tags: sdhc
+    platform_allow:
+      - zybo/xc7z010
   drivers.sdhc.sdhc_api.renesas_ra_sci_b_spi:
     depends_on: spi
     harness: ztest
