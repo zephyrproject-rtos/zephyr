@@ -144,9 +144,8 @@ static uint32_t smsc_mii_bitbang_read(struct smsc_data *sc)
 {
 	uint16_t val;
 
-	__ASSERT(FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)) == 3,
-		 "%s called with bank %d (!=3)", __func__,
-		 FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)));
+	__ASSERT(smsc_current_bank(sc) == 3, "%s called with bank %u (!=3)", __func__,
+		 smsc_current_bank(sc));
 
 	val = smsc_read_2(sc, MGMT);
 	delay(1); /* Simulate a timing sequence */
@@ -156,9 +155,8 @@ static uint32_t smsc_mii_bitbang_read(struct smsc_data *sc)
 
 static void smsc_mii_bitbang_write(struct smsc_data *sc, uint16_t val)
 {
-	__ASSERT(FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)) == 3,
-		 "%s called with bank %d (!=3)", __func__,
-		 FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)));
+	__ASSERT(smsc_current_bank(sc) == 3, "%s called with bank %u (!=3)", __func__,
+		 smsc_current_bank(sc));
 
 	smsc_write_2(sc, MGMT, val);
 	delay(1); /* Simulate a timing sequence */
