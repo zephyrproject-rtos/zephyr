@@ -105,3 +105,11 @@
 &psram {
 	status = "okay";
 };
+
+&adc0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
