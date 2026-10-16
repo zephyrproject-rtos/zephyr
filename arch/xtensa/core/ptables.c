@@ -1201,7 +1201,7 @@ static ALWAYS_INLINE void l2_page_tables_counter_dec(uint32_t *l2_table)
  */
 static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
 {
-	if ((thread->base.user_options & K_USER) != 0U) {
+	if (k_thread_is_user_thread(thread)) {
 		return thread->arch.ptables;
 	}
 
@@ -1731,7 +1731,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	domain = thread->mem_domain_info.mem_domain;
 	thread->arch.ptables = domain->arch.ptables;
 
-	is_user = (thread->base.user_options & K_USER) != 0;
+	is_user = k_thread_is_user_thread(thread);
 	is_migration = (old_ptables != NULL) && is_user;
 
 	if (is_migration) {
@@ -1777,7 +1777,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 
-	if ((thread->base.user_options & K_USER) == 0) {
+	if (!k_thread_is_user_thread(thread)) {
 		return 0;
 	}
 
