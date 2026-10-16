@@ -17,7 +17,7 @@ vendor: arm
 supported:
   - uart
   - smp
+  - netif:eth
 testing:
   ignore_tags:
-    - net
     - bluetooth
