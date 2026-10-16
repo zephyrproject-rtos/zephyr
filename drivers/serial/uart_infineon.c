@@ -247,7 +247,13 @@ static void ifx_cat1_uart_poll_out(const struct device *dev, unsigned char c)
 {
 	struct ifx_cat1_uart_data *data = dev->data;
 
-	(void)cyhal_uart_putc(&data->obj, (uint32_t)c);
+	/* Refused while a power transition is pending, and nothing was queued. */
+	if (cyhal_uart_putc(&data->obj, (uint32_t)c) != CY_RSLT_SUCCESS) {
+		return;
+	}
+
+	while (!Cy_SCB_UART_IsTxComplete(data->obj.base)) {
+	}
 }
 
 static int ifx_cat1_uart_err_check(const struct device *dev)
