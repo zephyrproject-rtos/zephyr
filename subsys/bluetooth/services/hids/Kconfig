@@ -11,6 +11,12 @@ menuconfig BT_HIDS
 	  Enable the HID Service server. Provides a HID Service with a
 	  configurable Report Map and Input, Output and Feature reports.
 
+	  The service tracks per-connection state (Protocol Mode and Suspend)
+	  for each Host whose link has the security level the characteristics
+	  require. With BT_HIDS_SECURITY_NONE it has BT_MAX_CONN tracking
+	  slots. Otherwise it has MIN(BT_MAX_CONN, BT_MAX_PAIRED), since
+	  encrypting a link takes an entry of the key pool, bonded or not.
+
 if BT_HIDS
 
 choice BT_HIDS_SECURITY
@@ -35,6 +41,15 @@ config BT_HIDS_SECURITY_AUTHEN
 	depends on BT_SMP
 
 endchoice # BT_HIDS_SECURITY
+
+config BT_HIDS_PROTOCOL_MODE
+	bool "Protocol Mode characteristic"
+	help
+	  Include the Protocol Mode characteristic in the HID Service.
+
+	  The characteristic is mandatory for a Device that supports Boot
+	  Protocol Mode, and optional for a Device that supports Report
+	  Protocol Mode only.
 
 config BT_HIDS_INPUT_REPORT_COUNT
 	int "Number of Input Report characteristics"
