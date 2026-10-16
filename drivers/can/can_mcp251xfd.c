@@ -502,8 +502,18 @@ static int mcp251xfd_send(const struct device *dev, const struct can_frame *msg,
 	}
 
 	if ((msg->flags & CAN_FRAME_FDF) == 0 && msg->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d without fd flag set.", msg->dlc);
+		LOG_ERR("DLC of %d without FD flag set.", msg->dlc);
 		return -EINVAL;
+	}
+
+	if ((msg->flags & CAN_FRAME_FDF) != 0 && msg->dlc > CANFD_MAX_DLC) {
+		LOG_ERR("DLC of %d with FD flag set.", msg->dlc);
+		return -EINVAL;
+	}
+
+	if ((msg->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR | CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
+		LOG_ERR("unsupported CAN frame flags 0x%02x", msg->flags);
+		return -ENOTSUP;
 	}
 
 	if ((msg->flags & CAN_FRAME_FDF) && !(dev_data->common.mode & CAN_MODE_FD)) {
