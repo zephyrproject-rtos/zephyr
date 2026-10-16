@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026, STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	raspberrypi_header: raspberrypi_header {
+		compatible = "raspberrypi-40pins-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioh 6 0>,	/* GPIO2 I2C5_SDA */
+			   <1 0 &gpiod 1 0>,	/* GPIO3 I2C5_SCL */
+			   <2 0 &gpiob 1 0>,	/* GPIO4 TIM3_CH4/DFSDM1_DATIN1 */
+			   <3 0 &gpioc 0 0>,	/* GPIO14 USART1_TX */
+			   <4 0 &gpiob 0 0>,	/* GPIO15 USART1_RX */
+			   <5 0 &gpioc 2 0>,	/* GPIO17 USART1_RTS */
+			   <6 0 &gpioa 4 0>,	/* GPIO18 SAI1_SCKA */
+			   <7 0 &gpioc 3 0>,	/* GPIO27 DFSDM1_CKOUT */
+			   <8 0 &gpiof 13 0>,	/* GPIO22 DFSDM1_DATIN3 */
+			   <9 0 &gpiog 1 0>,	/* GPIO23 FDCAN2_TX */
+			   <10 0 &gpiog 3 0>,	/* GPIO24 FDCAN2_RX */
+			   <11 0 &gpioh 3 0>,	/* GPIO10 SPI5_MOSI */
+			   <12 0 &gpioa 8 0>,	/* GPIO9 SPI5_MISO */
+			   <13 0 &gpioi 0 0>,	/* GPIO25 TAMP_IN8_OUT1 */
+			   <14 0 &gpioh 7 0>,	/* GPIO11 SPI5_SCK */
+			   <15 0 &gpioh 11 0>,	/* GPIO8 SPI5_NSS */
+			   <16 0 &gpiof 10 0>,	/* GPIO7 */
+			   <17 0 &gpioe 8 0>,	/* ID_SD I2C1_SDA */
+			   <18 0 &gpiod 12 0>,	/* ID_SC I2C1_SCL */
+			   <19 0 &gpioe 6 0>,	/* GPIO5 MCO2 */
+			   <20 0 &gpiod 13 0>,	/* GPIO6 TIM4_CH2 */
+			   <21 0 &gpioe 5 0>,	/* GPIO12 TIM8_CH3 */
+			   <22 0 &gpiof 9 0>,	/* GPIO13 TIM14_CH1/UART8_RX */
+			   <23 0 &gpiof 11 0>,	/* GPIO19 SAI1_FSA */
+			   <24 0 &gpioa 7 0>,	/* GPIO16 USART1_CTS */
+			   <25 0 &gpioe 1 0>,	/* GPIO26 UART8_TX */
+			   <26 0 &gpioa 5 0>,	/* GPIO20 SAI1_SDA */
+			   <27 0 &gpioa 0 0>;	/* GPIO21 SAI1_SDB */
+	};
+};
+
+raspberrypi_serial: &usart1 {};
+
+raspberrypi_i2c0: &i2c1 {};
+
+raspberrypi_i2c1: &i2c5 {};
+
+raspberrypi_spi: &spi5 {};

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The board touchscreen controller and the LPS22HH sensor on the X-STM32MP-MSP01
+ * shield use the same I2C address, so they cannot be enabled at the same time.
+ * Disable the shield sensor when the touchscreen is in use.
+ */
+&raspberrypi_i2c1 {
+	lps22hh_x_stm32mp_msp01: lps22hh@5d {
+		status = "disabled";
+	};
+};
+
+/*
+ * Alternatively, disable the touchscreen instead if the shield sensor is needed.
+ *
+ * &raspberrypi_i2c1 {
+ *     gt911: gt911@5d {
+ *         status = "disabled";
+ *     };
+ * };
+ */
