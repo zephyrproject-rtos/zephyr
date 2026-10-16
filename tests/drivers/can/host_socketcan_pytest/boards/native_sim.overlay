@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &can0;
+	};
+};
+
+/* Enable the native Linux SocketCAN device; the CAN sidecar passes the host
+ * interface to bind to at run time via --can-if.
+ */
+&can0 {
+	status = "okay";
+};
