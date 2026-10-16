@@ -1744,10 +1744,10 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 
 static void rfcomm_session_control_channel_connected(struct bt_rfcomm_session *session)
 {
-	struct bt_rfcomm_dlc *dlc;
+	struct bt_rfcomm_dlc *dlc, *next;
 	int err;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&session->dlcs, dlc, _node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->dlcs, dlc, next, _node) {
 		if (dlc->role == BT_RFCOMM_ROLE_INITIATOR && dlc->state == BT_RFCOMM_STATE_INIT) {
 			err = rfcomm_dlc_start(dlc);
 			if (err != 0) {
