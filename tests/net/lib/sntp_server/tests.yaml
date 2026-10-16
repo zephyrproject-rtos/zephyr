@@ -12,3 +12,7 @@ tests:
   net.lib.sntp_server.with_client:
     extra_configs:
       - CONFIG_SNTP=y
+  net.lib.sntp_server.no_optimizations:
+    build_only: true
+    extra_configs:
+      - CONFIG_NO_OPTIMIZATIONS=y
