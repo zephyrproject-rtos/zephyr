@@ -36,6 +36,9 @@ tests:
   drivers.can.build_all.max32:
     platform_allow:
       - max32662evkit
+  drivers.can.build_all.mchp_mcan_g1:
+    platform_allow:
+      - pic32cm_gc00_cpro
   drivers.can.build_all.mcp2515:
     extra_configs:
       - CONFIG_CAN_MCUX_FLEXCAN=n
