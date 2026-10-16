@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_FALLBACK
+	bool "I2S fallback iodev"
+	depends on I2S_RTIO
+
+if I2S_FALLBACK
+
+config I2S_FALLBACK_THREAD_STACK_SIZE
+	int "Stack size of I2S fallback iodev thread"
+	default 2048
+
+config I2S_FALLBACK_THREAD_PRIORITY
+	int "Priority of I2S fallback iodev thread"
+	default 0
+
+config I2S_FALLBACK_TIMEOUT_MS
+	int "Timeout waiting for block to be transferred during stream, in milliseconds"
+	default 1000
+
+endif # I2S_FALLBACK

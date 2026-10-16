@@ -1,0 +1,5 @@
+/ {
+	i2s: i2s {
+		compatible = "zephyr,fake-i2s";
+	};
+};
