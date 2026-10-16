@@ -340,18 +340,6 @@ extern struct k_mem_partition rtio_partition;
 /* clang-format on */
 
 /**
- * @brief Count of acquirable submission queue events
- *
- * @param r RTIO context
- *
- * @return Count of acquirable submission queue events
- */
-static inline uint32_t rtio_sqe_acquirable(struct rtio *r)
-{
-	return r->sqe_pool->pool_free;
-}
-
-/**
  * @brief Acquire a single submission queue event if available
  *
  * @param r RTIO context
@@ -1073,6 +1061,33 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handl
 	return 0;
 }
 
+/** @cond INTERNAL_HIDDEN */
+
+/* Return acquired but not yet queued entries, linked through next, to the pool */
+static inline void rtio_sqe_list_free(struct rtio *r, struct rtio_iodev_sqe *head)
+{
+	while (head != NULL) {
+		struct rtio_iodev_sqe *next = head->next;
+
+		rtio_sqe_pool_free(r->sqe_pool, head);
+		head = next;
+	}
+}
+
+/* Queue acquired entries front to back, since chains rely on queue order */
+static inline void rtio_sqe_list_queue(struct rtio *r, struct rtio_iodev_sqe *head)
+{
+	while (head != NULL) {
+		struct rtio_iodev_sqe *next = head->next;
+
+		head->next = NULL;
+		mpsc_push(&r->sq, &head->q);
+		head = next;
+	}
+}
+
+/** @endcond */
+
 /**
  * @brief Copy an array of SQEs into the queue and get resulting handles back
  *
@@ -1099,21 +1114,34 @@ static inline int z_impl_rtio_sqe_copy_in_get_handles(struct rtio *r, const stru
 						      rtio_sqe_handle_t *handles,
 						      size_t sqe_count)
 {
-	struct rtio_sqe *sqe;
-	uint32_t acquirable = rtio_sqe_acquirable(r);
+	struct rtio_iodev_sqe *head = NULL;
+	struct rtio_iodev_sqe *tail = NULL;
 
-	if (acquirable < sqe_count) {
-		return -ENOMEM;
-	}
+	/* Acquire the whole set before queueing any of it, chains need all of it */
+	for (size_t i = 0; i < sqe_count; i++) {
+		struct rtio_iodev_sqe *iodev_sqe = rtio_sqe_pool_alloc(r->sqe_pool);
 
-	for (unsigned long i = 0; i < sqe_count; i++) {
-		sqe = rtio_sqe_acquire(r);
-		__ASSERT_NO_MSG(sqe != NULL);
-		if (handles != NULL) {
-			handles[i] = rtio_sqe_handle(r, sqe);
+		if (iodev_sqe == NULL) {
+			rtio_sqe_list_free(r, head);
+			return -ENOMEM;
 		}
-		*sqe = sqes[i];
+
+		iodev_sqe->sqe = sqes[i];
+		iodev_sqe->next = NULL;
+
+		if (tail == NULL) {
+			head = iodev_sqe;
+		} else {
+			tail->next = iodev_sqe;
+		}
+		tail = iodev_sqe;
+
+		if (handles != NULL) {
+			handles[i] = rtio_sqe_handle(r, &iodev_sqe->sqe);
+		}
 	}
+
+	rtio_sqe_list_queue(r, head);
 
 	return 0;
 }
