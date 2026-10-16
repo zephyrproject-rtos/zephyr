@@ -29,6 +29,11 @@ typedef void (*irq_config_func_t)(void);
 
 BUILD_ASSERT((CONFIG_SDHC_BUFFER_ALIGNMENT % sizeof(uint32_t)) == 0U);
 
+#if defined(CONFIG_DCACHE_LINE_SIZE) && (CONFIG_DCACHE_LINE_SIZE > 0)
+BUILD_ASSERT((CONFIG_SDHC_BUFFER_ALIGNMENT % CONFIG_DCACHE_LINE_SIZE) == 0U,
+	     "SDHC DMA buffer alignment must cover whole cache lines");
+#endif
+
 #define SDIO_OCR_SDIO_S18R BIT(24) /* SDIO OCR bit indicating support for 1.8V switching */
 
 /* Set IDMA buffer address: adapts to series with IDMABASER vs IDMABASE0 */
@@ -1467,6 +1472,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	SDMMC_TypeDef *instance = sdhc_stm32_get_instance(dev);
 	bool direction = cmd->arg >> SDIO_CMD_ARG_RW_SHIFT;
 	bool is_block_mode = cmd->arg & BIT(SDIO_EXTEND_CMD_ARG_BLK_SHIFT);
+	size_t buf_len;
 
 	if (data->data == NULL) {
 		LOG_ERR("Invalid NULL data buffer passed to CMD53");
@@ -1477,8 +1483,9 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	dev_data->total_transfer_bytes = data->blocks * data->block_size;
 
 	if (IS_ENABLED(CONFIG_SDHC_STM32_DMA_MODE)) {
+		buf_len = ROUND_UP(dev_data->total_transfer_bytes, CONFIG_SDHC_BUFFER_ALIGNMENT);
 		dev_data->sdio_dma_buf = k_aligned_alloc(CONFIG_SDHC_BUFFER_ALIGNMENT,
-							 data->blocks * data->block_size);
+							 buf_len);
 		if (dev_data->sdio_dma_buf == NULL) {
 			LOG_ERR("DMA buffer allocation failed");
 			return -ENOMEM;
@@ -1488,7 +1495,9 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 			memcpy(dev_data->sdio_dma_buf, data->data, dev_data->total_transfer_bytes);
 		}
 
-		sys_cache_data_flush_range(dev_data->sdio_dma_buf, dev_data->total_transfer_bytes);
+		k_sem_reset(&dev_data->device_sync_sem);
+		__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_DATA_FLAGS);
+		sys_cache_data_flush_range(dev_data->sdio_dma_buf, buf_len);
 		res = sdhc_stm32_sdio_rw_extended_dma(cmd, instance, is_block_mode, dev_data,
 						      direction);
 
@@ -1522,8 +1531,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 		}
 
 		if (direction == SDIO_IO_READ) {
-			sys_cache_data_invd_range(dev_data->sdio_dma_buf,
-						  dev_data->total_transfer_bytes);
+			sys_cache_data_invd_range(dev_data->sdio_dma_buf, buf_len);
 			memcpy(data->data, dev_data->sdio_dma_buf, data->block_size * data->blocks);
 		}
 
