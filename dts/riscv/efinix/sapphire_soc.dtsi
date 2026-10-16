@@ -80,7 +80,7 @@
 		clint: clint@f8b00000 {
 			compatible = "sifive,clint0";
 			reg = <0xf8b00000 0x10000>;
-			interrupts-extended = <&hlic 3 &hlic 7>;
+			interrupts-extended = <&hlic 3>;
 		};
 
 		mtimer: timer@f8b0bff8 {

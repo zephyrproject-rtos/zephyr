@@ -63,8 +63,7 @@
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			reg = <0x2000000 0x10000>;
-			interrupts-extended = <&hlic 3 &hlic 7>;
-			interrupt-names = "soft0", "timer0";
+			interrupts-extended = <&hlic 3>;
 		};
 
 		mtimer: timer@200bff8 {
