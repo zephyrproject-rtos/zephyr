@@ -15,8 +15,8 @@
 		reg = <0x5a>;
 		status = "okay";
 
-		actuator-mode = "LRA";
-		loop-gain = "HIGH";
-		feedback-brake-factor = "2X";
+		ti,actuator-mode = "LRA";
+		ti,loop-gain = "HIGH";
+		ti,feedback-brake-factor = "2X";
 	};
 };

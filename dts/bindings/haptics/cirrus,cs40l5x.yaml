@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: CS40L5x haptic driver
+
+properties:
+  cirrus,external-boost:
+    type: phandle
+    description: External boost regulator.
