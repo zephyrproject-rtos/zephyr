@@ -200,6 +200,18 @@ static void dns_query_fail_pending_servers(struct dns_pending_query *pending_que
 	}
 }
 
+/* Length of the query name without the trailing dot of an absolute name */
+static size_t dns_query_name_len(const char *query)
+{
+	size_t len = strlen(query);
+
+	if (len > 1U && query[len - 1U] == '.') {
+		len--;
+	}
+
+	return len;
+}
+
 static bool dns_query_is_mdns(const char *query)
 {
 	if (query == NULL) {
@@ -207,9 +219,12 @@ static bool dns_query_is_mdns(const char *query)
 	}
 
 	if (IS_ENABLED(CONFIG_MDNS_RESOLVER)) {
-		const char *ptr = strrchr(query, '.');
+		static const char suffix[] = ".local";
+		const size_t suffix_len = sizeof(suffix) - 1U;
+		size_t len = dns_query_name_len(query);
 
-		return ptr != NULL && strcmp(ptr, ".local") == 0;
+		return len >= suffix_len &&
+		       strncmp(&query[len - suffix_len], suffix, suffix_len) == 0;
 	}
 
 	return false;
@@ -222,7 +237,10 @@ static bool dns_query_is_llmnr(const char *query)
 	}
 
 	if (IS_ENABLED(CONFIG_LLMNR_RESOLVER)) {
-		return strchr(query, '.') == NULL;
+		size_t len = dns_query_name_len(query);
+
+		/* A single label, relative ("host") or absolute ("host.") */
+		return len > 0U && memchr(query, '.', len) == NULL;
 	}
 
 	return false;
@@ -2849,14 +2867,10 @@ try_resolve:
 	 * For mDNS the id should be set to 0, see RFC 6762 ch. 18.1 for
 	 * details.
 	 */
-	if (IS_ENABLED(CONFIG_MDNS_RESOLVER)) {
-		const char *ptr = strrchr(query, '.');
+	if (dns_query_is_mdns(query)) {
+		mdns_query = true;
 
-		if (ptr != NULL && strcmp(ptr, ".local") == 0) {
-			mdns_query = true;
-
-			ctx->queries[i].id = 0;
-		}
+		ctx->queries[i].id = 0;
 	}
 
 	/* Do this immediately after calculating the Id so that the unit
