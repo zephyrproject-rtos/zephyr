@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+# TI Tiva C TM4C129x Series
+
+config SOC_SERIES_TM4C129X
+	bool
+	select SOC_FAMILY_TI_TIVA_C
+
+config SOC_SERIES
+	default "tm4c129x" if SOC_SERIES_TM4C129X
+
+config SOC_TI_TM4C129ENCPDT
+	bool
+	select SOC_SERIES_TM4C129X
+	help
+	  TI Tiva C Series TM4C129ENCPDT (ARM Cortex-M4F, 120 MHz,
+	  1 MB Flash, 256 KB SRAM)
+
+config SOC
+	default "ti_tm4c129encpdt" if SOC_TI_TM4C129ENCPDT
