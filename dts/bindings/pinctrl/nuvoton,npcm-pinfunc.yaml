@@ -1,0 +1,55 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NPCM pin function table.
+
+  Each pin's function is chosen by a selection table of SCFG DEVALTx bits. For example,
+  DEVALT7[6], DEVALTB[6], and DEVALT6D[7] select the function of GPIO17: 1xx is CLKOUT,
+  01x is RIA, 001 is I2C6B_SDA, and 000 is GPIO17.
+
+  Each child is one row of such a table, plus the function's pull and low-voltage controls
+  when it has them. The SoC devicetree provides the table in npcm<n>-pinfunc.dtsi. Example,
+  two of the GPIO17 rows:
+
+    &pinfunc {
+      pin_gpio17_gpio: pin-gpio17-gpio {
+        nuvoton,alts = <NPCM_SCFG_DEVALT6D 7 0>,
+                       <NPCM_SCFG_DEVALTB 6 0>,
+                       <NPCM_SCFG_DEVALT7 6 0>;
+      };
+      pin_gpio17_sda6b: pin-gpio17-sda6b {
+        nuvoton,alts = <NPCM_SCFG_DEVALT6D 7 1>,
+                       <NPCM_SCFG_DEVALTB 6 0>,
+                       <NPCM_SCFG_DEVALT7 6 0>;
+        nuvoton,pull-up-reg = <NPCM_SCFG_DEVPD1 4>;
+        nuvoton,low-voltage-reg = <NPCM_SCFG_LV_CTL3 7>;
+      };
+    };
+
+compatible: "nuvoton,npcm-pinfunc"
+
+include: base.yaml
+
+child-binding:
+  description: One function of one pin.
+
+  properties:
+    nuvoton,alts:
+      type: array
+      description: |
+        <register bit value> triplets for every selector bit in the pin's table row,
+        including the zeros, so that writing them selects exactly this function. Registers
+        are SCFG offsets (NPCM_SCFG_*). Absent on functions selected by a strap.
+
+    nuvoton,pull-up-reg:
+      type: array
+      description: <register bit> of the function's SCFG pull-up enable.
+
+    nuvoton,pull-down-reg:
+      type: array
+      description: <register bit> of the function's SCFG pull-down enable.
+
+    nuvoton,low-voltage-reg:
+      type: array
+      description: <register bit> of the function's SCFG 1.8 V select.
