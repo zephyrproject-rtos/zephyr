@@ -1917,5 +1917,18 @@ ZTEST(test_utils_fn, test_ipv6_ll_sl_prefix)
 	}
 }
 
+ZTEST_USER(test_utils_fn, test_net_addr_ntop_short_buffer)
+{
+	struct net_in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct net_in_addr addr4 = { { { 192, 0, 2, 1 } } };
+	char str6[NET_INET6_ADDRSTRLEN - 1];
+	char str4[NET_INET_ADDRSTRLEN - 1];
+
+	/* Same result in user and kernel mode: the buffer is too small */
+	zassert_is_null(net_addr_ntop(NET_AF_INET6, &addr6, str6, sizeof(str6)));
+	zassert_is_null(net_addr_ntop(NET_AF_INET, &addr4, str4, sizeof(str4)));
+}
+
 ZTEST_SUITE(test_utils_fn, NULL, NULL, NULL, NULL, NULL);
 ZTEST_INSTANTIATE_TEST_SUITE_P(all, test_utils_fn, test_net_addr, net_addr_cases);
