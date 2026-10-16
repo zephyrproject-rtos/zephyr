@@ -284,7 +284,8 @@ static int uart_sifive_irq_is_pending(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
-	return !!(uart->ip & (IE_RXWM | IE_TXWM));
+	/* ip reports the watermark conditions regardless of ie */
+	return (uart->ip & uart->ie & (IE_RXWM | IE_TXWM)) != 0U;
 }
 
 /**
