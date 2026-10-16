@@ -387,10 +387,20 @@ static void i2c_stm32_controller_abort_to_target(const struct device *dev, bool 
 	}
 #endif
 	if (own_addr_match) {
+		if (data->controller_aborting) {
+			if (LL_I2C_IsActiveFlag_RXNE(cfg->i2c) != 0U) {
+				(void)LL_I2C_ReceiveData8(cfg->i2c);
+			}
+			if (LL_I2C_IsActiveFlag_TXIS(cfg->i2c) != 0U) {
+				LL_I2C_TransmitData8(cfg->i2c, 0U);
+			}
+			LL_I2C_ClearFlag_TXE(cfg->i2c);
+		}
 		LL_I2C_ClearFlag_ADDR(cfg->i2c);
 		i2c_stm32_clear_controller_request(cfg->i2c);
 	}
 	LL_I2C_ClearFlag_TXE(cfg->i2c);
+	data->controller_aborting = false;
 	data->controller_active = false;
 	i2c_stm32_signal_xfer_done(dev);
 }
@@ -493,6 +503,62 @@ static bool i2c_stm32_target_preempt_controller_event(const struct device *dev, 
 	return false;
 }
 
+static void i2c_stm32_controller_abort(const struct device *dev)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+	unsigned int key = irq_lock();
+
+	if (data->controller_aborting) {
+		const uint32_t isr = stm32_reg_read(&i2c->ISR);
+		uint32_t cr2 = stm32_reg_read(&i2c->CR2);
+
+		/* ADDR stays stretched until the event ISR performs target handover. */
+		if ((isr & I2C_ISR_ADDR) != 0U) {
+			irq_unlock(key);
+			return;
+		}
+		if (((isr & (I2C_ISR_STOPF | I2C_ISR_ARLO)) != 0U) ||
+		    (data->current.is_arlo != 0U) ||
+		    (((isr & I2C_ISR_BUSY) == 0U) &&
+		     ((cr2 & (I2C_CR2_START | I2C_CR2_STOP)) == 0U))) {
+			i2c_stm32_disable_transfer_interrupts(dev);
+			stm32_reg_clear_bits(&i2c->CR2, I2C_CR2_START | I2C_CR2_STOP |
+					     I2C_CR2_RELOAD | I2C_CR2_AUTOEND | I2C_CR2_NBYTES_Msk |
+					     I2C_CR2_SADD_Msk | I2C_CR2_ADD10 | I2C_CR2_RD_WRN |
+					     I2C_CR2_HEAD10R);
+			LL_I2C_ClearFlag_STOP(i2c);
+			LL_I2C_ClearFlag_NACK(i2c);
+			LL_I2C_ClearFlag_ARLO(i2c);
+			if (LL_I2C_IsActiveFlag_TXIS(i2c) != 0U) {
+				LL_I2C_TransmitData8(i2c, 0U);
+			}
+			LL_I2C_ClearFlag_TXE(i2c);
+			data->controller_aborting = false;
+			data->controller_active = false;
+		} else {
+			LL_I2C_EnableIT_STOP(i2c);
+			LL_I2C_EnableIT_ERR(i2c);
+			LL_I2C_EnableIT_RX(i2c);
+			if (((cr2 & I2C_CR2_STOP) == 0U) || ((cr2 & I2C_CR2_RELOAD) != 0U)) {
+				/* NBYTES must not change while the address phase is pending. */
+				if ((cr2 & I2C_CR2_START) == 0U) {
+					cr2 &= ~(I2C_CR2_RELOAD | I2C_CR2_NBYTES_Msk);
+					cr2 |= 1U << I2C_CR2_NBYTES_Pos;
+				}
+				cr2 &= ~I2C_CR2_START;
+				cr2 |= I2C_CR2_AUTOEND | I2C_CR2_STOP;
+				stm32_reg_write(&i2c->CR2, cr2);
+			}
+		}
+		if (LL_I2C_IsActiveFlag_RXNE(i2c) != 0U) {
+			(void)LL_I2C_ReceiveData8(i2c);
+		}
+	}
+	irq_unlock(key);
+}
+
 /* Attach and start I2C as target */
 int i2c_stm32_target_register(const struct device *dev,
 			      struct i2c_target_config *config)
@@ -511,6 +577,7 @@ int i2c_stm32_target_register(const struct device *dev,
 		return -EBUSY;
 	}
 
+	i2c_stm32_controller_abort(dev);
 	if (data->controller_active) {
 		return -EBUSY;
 	}
@@ -588,6 +655,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 		return -EINVAL;
 	}
 
+	i2c_stm32_controller_abort(dev);
 	if (data->controller_active) {
 		return -EBUSY;
 	}
@@ -652,6 +720,10 @@ void i2c_stm32_event(const struct device *dev)
 
 #if defined(CONFIG_I2C_TARGET)
 	if (i2c_stm32_target_preempt_controller_event(dev, isr) == true) {
+		return;
+	}
+	if (data->controller_aborting) {
+		i2c_stm32_controller_abort(dev);
 		return;
 	}
 #endif
@@ -826,6 +898,10 @@ int i2c_stm32_error(const struct device *dev)
 	return 0;
 end:
 #if defined(CONFIG_I2C_TARGET)
+	if (data->controller_aborting) {
+		i2c_stm32_controller_abort(dev);
+		return -EIO;
+	}
 	if (data->target_attached && !data->controller_active) {
 		return -EIO;
 	}
@@ -845,8 +921,12 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 {
 	struct i2c_stm32_data *data = dev->data;
 	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
 	bool keep_enabled = (msg->flags & I2C_MSG_STOP) == 0U;
 	bool disable_i2c;
+	bool controller_owned = true;
+	bool reset_allowed = true;
+	unsigned int key;
 	int ret;
 
 	/* Wait for IRQ to complete or timeout */
@@ -857,6 +937,24 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 		/* Stop DMA and invalidate cache if needed */
 		dma_finish(dev, msg);
 	}
+#endif
+
+	key = irq_lock();
+#if defined(CONFIG_I2C_TARGET)
+	const bool addr_pending = LL_I2C_IsActiveFlag_ADDR(i2c) != 0U;
+	const bool handover_pending = data->target_attached && data->controller_active &&
+				      addr_pending;
+
+	if (handover_pending) {
+		const uint32_t isr = stm32_reg_read(&i2c->ISR);
+
+		data->current.is_arlo |= ((isr & I2C_ISR_STOPF) == 0U) ||
+					((isr & I2C_ISR_ARLO) != 0U);
+		data->current.is_nack |= (isr & I2C_ISR_NACKF) != 0U;
+	}
+	controller_owned = !data->target_attached || data->controller_active;
+	/* IRQ locking does not stop hardware address recognition. */
+	reset_allowed = !data->target_attached;
 #endif
 
 	/* Check for transfer errors or timeout */
@@ -877,11 +975,33 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 		if (ret != 0) {
 			LOG_DBG("TIMEOUT");
 		}
-		ret = -EIO;
+		ret = (data->current.is_arlo && !data->current.is_nack &&
+		       !data->current.is_err && (ret == 0)) ? -EAGAIN : -EIO;
 	}
 
+	if ((ret != 0) && controller_owned) {
+		i2c_stm32_disable_transfer_interrupts(dev);
+		if (reset_allowed) {
+			LL_I2C_Disable(i2c);
+			stm32_reg_write(&i2c->CR2, 0U);
+			LL_I2C_ClearFlag_TXE(i2c);
+			/* Keep PE low for at least three APB clocks before enabling it again. */
+			(void)stm32_reg_read(&i2c->CR1);
+			if (data->smbalert_active) {
+				LL_I2C_Enable(i2c);
+			}
+		}
 #if defined(CONFIG_I2C_TARGET)
-	if (!keep_enabled || (ret != 0)) {
+		else {
+			data->controller_aborting = true;
+			i2c_stm32_controller_abort(dev);
+		}
+#endif
+	}
+	data->current.msg = NULL;
+
+#if defined(CONFIG_I2C_TARGET)
+	if ((!keep_enabled || (ret != 0)) && !handover_pending && !data->controller_aborting) {
 		data->controller_active = false;
 	}
 #endif
@@ -900,6 +1020,7 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 	if (disable_i2c) {
 		LL_I2C_Disable(cfg->i2c);
 	}
+	irq_unlock(key);
 
 	return ret;
 }
@@ -948,8 +1069,7 @@ static int i2c_stm32_irq_prepare_start(const struct device *dev, struct i2c_msg 
 }
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
-static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg, I2C_TypeDef *regs,
-				   bool preload_tx)
+static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg, bool preload_tx)
 {
 	struct i2c_stm32_data *data = dev->data;
 
@@ -957,19 +1077,12 @@ static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg
 		return 0;
 	}
 
-#if defined(CONFIG_I2C_TARGET)
-	data->controller_active = false;
-	if (!data->target_attached && !data->smbalert_active) {
-		LL_I2C_Disable(regs);
-	}
-#else
-	if (!data->smbalert_active) {
-		LL_I2C_Disable(regs);
-	}
-#endif
-	data->current.msg = NULL;
+	unsigned int key = irq_lock();
 
-	return -EIO;
+	data->current.is_err = 1U;
+	i2c_stm32_signal_xfer_done(dev);
+	irq_unlock(key);
+	return stm32_i2c_irq_msg_finish(dev, msg);
 }
 #endif
 
@@ -984,6 +1097,11 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	unsigned int key = irq_lock();
 
 #if defined(CONFIG_I2C_TARGET)
+	i2c_stm32_controller_abort(dev);
+	if (data->controller_aborting) {
+		irq_unlock(key);
+		return -EBUSY;
+	}
 	starting_controller_session = !data->controller_active;
 #endif
 
@@ -1058,7 +1176,7 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 
 	if (using_dma(data)) {
 #ifdef CONFIG_I2C_STM32_V2_DMA
-		ret = i2c_stm32_irq_start_dma(dev, msg, regs, preload_tx);
+		ret = i2c_stm32_irq_start_dma(dev, msg, preload_tx);
 		if (ret != 0) {
 			return ret;
 		}

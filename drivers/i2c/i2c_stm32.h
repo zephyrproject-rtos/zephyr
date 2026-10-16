@@ -139,6 +139,9 @@ struct i2c_stm32_data {
 	bool target_attached;
 	struct i2c_target_config *target_cfg;
 #ifdef CONFIG_I2C_STM32_V2
+#ifndef CONFIG_I2C_RTIO
+	bool controller_aborting;
+#endif /* CONFIG_I2C_RTIO */
 	struct i2c_target_config *target2_cfg;
 #endif /* CONFIG_I2C_STM32_V2 */
 #endif /* CONFIG_I2C_TARGET */
