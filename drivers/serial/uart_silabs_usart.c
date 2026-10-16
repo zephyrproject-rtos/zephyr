@@ -429,11 +429,18 @@ static void uart_silabs_dma_rx_flush(struct uart_silabs_data *data)
 	}
 }
 
+static void uart_silabs_async_rx_irq_disable(USART_TypeDef *usart)
+{
+	USART_IntDisable(usart, USART_IF_RXOF | USART_IF_TCMP1);
+	USART_IntClear(usart, USART_IF_RXOF | USART_IF_TCMP1);
+}
+
 void uart_silabs_dma_rx_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
 			   int status)
 {
 	const struct device *uart_dev = user_data;
 	struct uart_silabs_data *data = uart_dev->data;
+	const struct uart_silabs_config *config = uart_dev->config;
 	struct uart_event disabled_event = {.type = UART_RX_DISABLED};
 
 	if (status < 0) {
@@ -450,6 +457,7 @@ void uart_silabs_dma_rx_cb(const struct device *dma_dev, void *user_data, uint32
 		uart_silabs_dma_replace_buffer(uart_dev);
 	} else {
 		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+		uart_silabs_async_rx_irq_disable(config->base);
 		data->dma_rx.enabled = false;
 		async_evt_rx_buf_release(data);
 		(void)uart_silabs_pm_lock_put(uart_dev, UART_SILABS_PM_LOCK_RX);
@@ -630,9 +638,7 @@ static int uart_silabs_async_rx_disable(const struct device *dev)
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 
-	USART_IntDisable(usart, USART_IF_RXOF);
-	USART_IntDisable(usart, USART_IF_TCMP1);
-	USART_IntClear(usart, USART_IF_RXOF | USART_IF_TCMP1);
+	uart_silabs_async_rx_irq_disable(usart);
 	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_RX);
 
 	if (!data->dma_rx.enabled) {
@@ -761,7 +767,7 @@ static void uart_silabs_isr(const struct device *dev)
 #ifdef CONFIG_UART_SILABS_USART_ASYNC
 	const struct uart_silabs_config *config = dev->config;
 	USART_TypeDef *usart = config->base;
-	uint32_t flags = USART_IntGet(usart);
+	uint32_t flags = USART_IntGetEnabled(usart);
 	struct dma_status stat;
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
