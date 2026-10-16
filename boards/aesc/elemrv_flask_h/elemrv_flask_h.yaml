@@ -10,6 +10,7 @@ flash: 512
 vendor: aesc
 supported:
   - clock_control
+  - entropy
   - gpio
   - syscon
   - uart
