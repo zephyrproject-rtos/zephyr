@@ -382,6 +382,15 @@ noflush:
 	l32i a3, a2, ___xtensa_irq_bsa_t_a3_OFFSET
 	s32i a1, a3, 0
 
+#if defined(CONFIG_XTENSA_LIBC) && !defined(__DYNAMIC_REENT__)
+	/* Update the reentrancy pointer for the new current thread */
+	rsr   a6, ZSR_CPU
+	addi  a6, a6, ___cpu_t_current_OFFSET
+	l32i  a6, a6, _thread_offset_to_reent
+	movi  a7, _reent_ptr
+	s32i  a6, a7, 0
+#endif
+
 	/* Switch stack pointer and restore.  The jump to
 	 * _restore_context does not return as such, but we arrange
 	 * for the restored "next" address to be immediately after for
