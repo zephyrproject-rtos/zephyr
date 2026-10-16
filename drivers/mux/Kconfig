@@ -36,4 +36,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 comment "MUX Drivers"
 
+rsource "Kconfig.ti_am13e2_xbar"
+
 endif # MUX
