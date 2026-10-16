@@ -568,12 +568,14 @@ static int parse_idtag_info(char *json, struct ocpp_idtag_info *idtag_info)
 
 	if (parsed.json_id_tag_info.parent_id_tag != NULL) {
 		strncpy(idtag_info->p_idtag, parsed.json_id_tag_info.parent_id_tag,
-			sizeof(idtag_info->p_idtag));
+			sizeof(idtag_info->p_idtag) - 1);
+		idtag_info->p_idtag[sizeof(idtag_info->p_idtag) - 1] = '\0';
 	}
 
 	if (parsed.json_id_tag_info.expiry_date != NULL) {
 		strncpy(idtag_info->exptime, parsed.json_id_tag_info.expiry_date,
-			sizeof(idtag_info->exptime));
+			sizeof(idtag_info->exptime) - 1);
+		idtag_info->exptime[sizeof(idtag_info->exptime) - 1] = '\0';
 	}
 
 	return 0;
@@ -745,7 +747,9 @@ static int parse_changeconfig_msg(char *json, char *key, char *val)
 	}
 
 	strncpy(key, payload.val1, CISTR50);
+	key[CISTR50] = '\0';
 	strncpy(val, payload.val2, CISTR500);
+	val[CISTR500] = '\0';
 
 	return 0;
 }
