@@ -52,9 +52,7 @@ void arch_dcache_disable(void);
  *
  * Flush the whole data cache.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_dcache_flush_all(void);
 
@@ -65,9 +63,7 @@ int arch_dcache_flush_all(void);
  *
  * Invalidate the whole data cache.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_dcache_invd_all(void);
 
@@ -78,9 +74,7 @@ int arch_dcache_invd_all(void);
  *
  * Flush and Invalidate the whole data cache.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_dcache_flush_and_invd_all(void);
 
@@ -101,9 +95,7 @@ int arch_dcache_flush_and_invd_all(void);
  * @param addr Starting address to flush.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_dcache_flush_range(void *addr, size_t size);
 
@@ -125,9 +117,7 @@ int arch_dcache_flush_range(void *addr, size_t size);
  * @param addr Starting address to invalidate.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_dcache_invd_range(void *addr, size_t size);
 
@@ -149,9 +139,7 @@ int arch_dcache_invd_range(void *addr, size_t size);
  * @param addr Starting address to flush and invalidate.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 
 int arch_dcache_flush_and_invd_range(void *addr, size_t size);
@@ -207,9 +195,7 @@ void arch_icache_disable(void);
  *
  * Flush the whole instruction cache.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_icache_flush_all(void);
 
@@ -220,9 +206,7 @@ int arch_icache_flush_all(void);
  *
  * Invalidate the whole instruction cache.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_icache_invd_all(void);
 
@@ -233,9 +217,7 @@ int arch_icache_invd_all(void);
  *
  * Flush and Invalidate the whole instruction cache.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_icache_flush_and_invd_all(void);
 
@@ -256,9 +238,7 @@ int arch_icache_flush_and_invd_all(void);
  * @param addr Starting address to flush.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_icache_flush_range(void *addr, size_t size);
 
@@ -280,9 +260,7 @@ int arch_icache_flush_range(void *addr, size_t size);
  * @param addr Starting address to invalidate.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_icache_invd_range(void *addr, size_t size);
 
@@ -304,9 +282,7 @@ int arch_icache_invd_range(void *addr, size_t size);
  * @param addr Starting address to flush and invalidate.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
- * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
+ * @return 0 on success, or a negative errno value on failure.
  */
 int arch_icache_flush_and_invd_range(void *addr, size_t size);
 
