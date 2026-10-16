@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config LSM9DS1_MAG
-	bool "LSM9DS1 I2C magnetometer chip"
+	bool "LSM9DS1 I2C/SPI magnetometer chip"
 	default y
 	depends on DT_HAS_ST_LSM9DS1_MAG_ENABLED
-	select I2C
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM9DS1_MAG),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM9DS1_MAG),spi)
 	select HAS_STMEMSC
 	select USE_STDC_LSM9DS1
