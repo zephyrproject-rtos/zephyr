@@ -47,6 +47,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT realtek_bee_aes
 #elif CONFIG_CRYPTO_MSPM0_AES
 #define CRYPTO_DEV_COMPAT ti_mspm0_aes
+#elif CONFIG_CRYPTO_MSPM0_AES_ADV
+#define CRYPTO_DEV_COMPAT ti_mspm0_aes_adv
 #else
 #error "You need to enable one crypto device"
 #endif
@@ -121,6 +123,10 @@ int validate_hw_compatibility(const struct device *dev)
 	}
 
 	cap_flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS;
+
+	if ((flags & CAP_NO_IV_PREFIX) != 0U) {
+		cap_flags |= CAP_NO_IV_PREFIX;
+	}
 
 	return 0;
 
@@ -220,8 +226,19 @@ static const uint8_t cbc_ciphertext[80] = {
 	0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7
 };
 
+static const uint8_t cbc_ciphertext_no_iv[64] = {
+	0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46, 0xce, 0xe9, 0x8e, 0x9b,
+	0x12, 0xe9, 0x19, 0x7d, 0x50, 0x86, 0xcb, 0x9b, 0x50, 0x72, 0x19, 0xee,
+	0x95, 0xdb, 0x11, 0x3a, 0x91, 0x76, 0x78, 0xb2, 0x73, 0xbe, 0xd6, 0xb8,
+	0xe3, 0xc1, 0x74, 0x3b, 0x71, 0x16, 0xe6, 0x9e, 0x22, 0x22, 0x95, 0x16,
+	0x3f, 0xf1, 0xca, 0xa1, 0x68, 0x1f, 0xac, 0x09, 0x12, 0x0e, 0xca, 0x30,
+	0x75, 0x86, 0xe1, 0xa7
+};
+
 void cbc_mode(const struct device *dev)
 {
+	const uint8_t *expected_ciphertext;
+	size_t expected_len;
 	uint8_t encrypted[80] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t decrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	struct cipher_ctx ini = {
@@ -235,17 +252,19 @@ void cbc_mode(const struct device *dev)
 		.out_buf_max = sizeof(encrypted),
 		.out_buf = encrypted,
 	};
-	struct cipher_pkt decrypt = {
-		.in_buf = encrypt.out_buf,
-		.in_len = sizeof(encrypted),
-		.out_buf = decrypted,
-		.out_buf_max = sizeof(decrypted),
-	};
 
 	static uint8_t iv[16] = {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
 	};
+
+	if ((cap_flags & CAP_NO_IV_PREFIX) != 0U) {
+		expected_ciphertext = cbc_ciphertext_no_iv;
+		expected_len = sizeof(cbc_ciphertext_no_iv);
+	} else {
+		expected_ciphertext = cbc_ciphertext;
+		expected_len = sizeof(cbc_ciphertext);
+	}
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CBC,
@@ -260,11 +279,10 @@ void cbc_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, cbc_ciphertext, sizeof(cbc_ciphertext))) {
+	if (memcmp(encrypt.out_buf, expected_ciphertext, expected_len)) {
 		LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
 			    "returned cipher text");
-		print_buffer_comparison(cbc_ciphertext, encrypt.out_buf,
-					sizeof(cbc_ciphertext));
+		print_buffer_comparison(expected_ciphertext, encrypt.out_buf, expected_len);
 		goto out;
 	}
 
@@ -277,7 +295,20 @@ void cbc_mode(const struct device *dev)
 		return;
 	}
 
-	if (cipher_cbc_op(&ini, &decrypt, encrypted)) {
+	/*
+	 * With CAP_NO_IV_PREFIX the IV is not embedded in the output, so
+	 * it must be supplied explicitly for decryption.  Otherwise the
+	 * first 16 bytes of the ciphertext are the IV.
+	 */
+	uint8_t *const decrypt_iv = (cap_flags & CAP_NO_IV_PREFIX) != 0U ? iv : encrypted;
+	struct cipher_pkt decrypt = {
+		.in_buf = encrypted,
+		.in_len = (int)expected_len,
+		.out_buf = decrypted,
+		.out_buf_max = sizeof(decrypted),
+	};
+
+	if (cipher_cbc_op(&ini, &decrypt, decrypt_iv)) {
 		LOG_ERR("CBC mode DECRYPT - Failed");
 		goto out;
 	}
