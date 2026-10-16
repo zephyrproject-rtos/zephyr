@@ -24,6 +24,8 @@ typedef enum {
 	SECURE_STORAGE_ITS_CALLER_COUNT
 } secure_storage_its_caller_id_t;
 
+#define SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE 2
+
 #ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
 
 /** The UID (caller + entry IDs) of an ITS entry. */
@@ -35,7 +37,6 @@ typedef struct {
 #else
 
 #define SECURE_STORAGE_ITS_UID_BIT_SIZE 30
-#define SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE 2
 
 /** @brief The UID (caller + entry IDs) of an ITS entry.
  * This is a packed, 32-bit version of `psa_storage_uid_t` which allows storing
