@@ -11,8 +11,8 @@ supported:
   - uart
   - shdc
   - pwm
+  - netif:eth
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: ti
