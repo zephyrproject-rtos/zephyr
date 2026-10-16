@@ -21,6 +21,10 @@
 
 #include <cy_sysclk.h>
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_lf))
+#include <cy_wdt.h>
+#endif
+
 #define DT_DRV_COMPAT infineon_fixed_factor_clock
 
 LOG_MODULE_REGISTER(clock_control_ifx_fixed_factor_clock, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -104,6 +108,8 @@ static int fixed_factor_clk_init(const struct device *dev)
 			return -EIO;
 		}
 #endif
+		/* Refresh SystemCoreClock and the Cy_SysLib_Delay calibration */
+		SystemCoreClockUpdate();
 		break;
 
 	case IFX_PUMP:
@@ -118,6 +124,28 @@ static int fixed_factor_clk_init(const struct device *dev)
 #endif
 		break;
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_lf))
+	case IFX_LF: {
+		/* CLK_SELECT.LFCLK_SEL ignores writes while the WDT is locked */
+		bool wdt_locked = Cy_WDT_Locked();
+
+		if (wdt_locked) {
+			Cy_WDT_Unlock();
+		}
+		Cy_SysClk_ClkLfSetSource((cy_en_clklf_in_sources_t)config->source_path);
+		if (wdt_locked) {
+			Cy_WDT_Lock();
+		}
+		break;
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_bak))
+	case IFX_BAK:
+		Cy_SysClk_ClkBakSetSource((cy_en_clkbak_in_sources_t)config->source_path);
+		break;
+#endif
+
 	default:
 		return -EINVAL;
 	}
@@ -128,6 +156,22 @@ static int fixed_factor_clk_init(const struct device *dev)
 	return 0;
 }
 
+#define FIXED_CLK_IS_LF_BAK(n)                                                                     \
+	UTIL_OR(IS_EQ(DT_INST_PROP(n, system_clock), IFX_LF),                                      \
+		IS_EQ(DT_INST_PROP(n, system_clock), IFX_BAK))
+
+/* clk_lf and clk_bak switch only after their inputs are enabled */
+#define FIXED_CLK_INIT_PRIORITY(n)                                                                 \
+	COND_CODE_1(FIXED_CLK_IS_LF_BAK(n),                                                        \
+		    (CONFIG_CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_LF_BAK_INIT_PRIORITY),            \
+		    (CONFIG_CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY))
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_lf)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_bak))
+BUILD_ASSERT(CONFIG_CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_LF_BAK_INIT_PRIORITY >
+		     CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+	     "clk_lf and clk_bak must initialize after the fixed clocks");
+#endif
+
 #define FIXED_CLK_INIT(n)                                                                          \
 	static const struct fixed_factor_clock_config fixed_factor_clock_config_##n = {            \
 		.divider = DT_INST_PROP_OR(n, clock_div, 1u),                                      \
@@ -137,6 +181,6 @@ static int fixed_factor_clk_init(const struct device *dev)
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, fixed_factor_clk_init, NULL, NULL,                                \
 			      &fixed_factor_clock_config_##n, PRE_KERNEL_1,                        \
-			      CONFIG_CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY, NULL);
+			      FIXED_CLK_INIT_PRIORITY(n), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(FIXED_CLK_INIT)
