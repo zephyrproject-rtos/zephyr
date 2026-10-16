@@ -166,11 +166,16 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
 		return 0;
 	}
 
-	/* Xtensa cannot safely recover from a fault while examining a string.
+	/* Xtensa cannot safely recover from a fault while examining a string
+	 * if we don't have permission to access the memory page(s) the string
+	 * resides.
+	 *
 	 * For MMU systems, an unmapped address can trigger an infinite DTLB
-	 * miss storm if its L2 page table does not exist. For MPU systems,
-	 * an access fault terminates the thread. Validate that the requested
-	 * range is readable in kernel mode before calling strnlen().
+	 * miss storm if its L2 page table does not exist.
+	 *
+	 * Because of that, we need to validate that the requested range is
+	 * readable in kernel mode before counting the number of characters
+	 * in the string.
 	 *
 	 * Only kernel mode readability is checked here: per
 	 * the k_usermode_string_nlen() contract, user mode accessibility
@@ -188,8 +193,11 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
 		return 0;
 	}
 
-	/* No error and we can proceed to getting the string length. */
-	*err_arg = 0;
-
-	return strnlen(s, maxsize);
+	/* After we have verified that we have permissions to access
+	 * the memory page(s) where the string resides, we can start
+	 * counting the number of characters. Though, it might still
+	 * fault while accessing, so we use another helper where we
+	 * will be able to recover from the fault and return errno.
+	 */
+	return xtensa_user_string_nlen(s, maxsize, err_arg);
 }
