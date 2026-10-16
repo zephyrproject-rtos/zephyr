@@ -877,7 +877,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(plic_cmds,
 SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 #endif /* CONFIG_PLIC_SHELL */
 
-#define PLIC_MIN_IRQ_NUM(n) MIN(DT_INST_PROP(n, riscv_ndev), CONFIG_MAX_IRQ_PER_AGGREGATOR)
+#define PLIC_MIN_IRQ_NUM(n)                                                                        \
+	MIN(DT_INST_PROP(n, riscv_ndev),                                                           \
+	    Z_MAX_IRQ_PER_AGGREGATOR_BY_ALVL(DT_INST_INTC_GET_AGGREGATOR_LEVEL(n)))
 
 #ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
 #define PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n)                                                          \
