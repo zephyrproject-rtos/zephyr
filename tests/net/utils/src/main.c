@@ -1891,5 +1891,31 @@ ZTEST(test_utils_fn, test_parse_ipv6_overflow)
 	}
 }
 
+ZTEST(test_utils_fn, test_ipv6_ll_sl_prefix)
+{
+	static const struct {
+		const char *addr;
+		bool ll;
+		bool sl;
+	} cases[] = {
+		{ "fe80::1", true, false },
+		{ "fe81::1", true, false },
+		{ "febf::1", true, false },
+		{ "fe7f::1", false, false },
+		{ "fec0::1", false, true },
+		{ "feff::1", false, true },
+		{ "ff02::1", false, false },
+	};
+	struct net_in6_addr addr;
+
+	ARRAY_FOR_EACH(cases, i) {
+		zassert_ok(net_addr_pton(NET_AF_INET6, cases[i].addr, &addr));
+		zassert_equal(net_ipv6_is_ll_addr(&addr), cases[i].ll,
+			      "%s link-local mismatch", cases[i].addr);
+		zassert_equal(net_ipv6_is_sl_addr(&addr), cases[i].sl,
+			      "%s site-local mismatch", cases[i].addr);
+	}
+}
+
 ZTEST_SUITE(test_utils_fn, NULL, NULL, NULL, NULL, NULL);
 ZTEST_INSTANTIATE_TEST_SUITE_P(all, test_utils_fn, test_net_addr, net_addr_cases);
