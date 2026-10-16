@@ -845,8 +845,12 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 {
 	struct i2c_stm32_data *data = dev->data;
 	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
 	bool keep_enabled = (msg->flags & I2C_MSG_STOP) == 0U;
 	bool disable_i2c;
+	bool controller_owned = true;
+	bool reset_allowed = true;
+	unsigned int key;
 	int ret;
 
 	/* Wait for IRQ to complete or timeout */
@@ -859,8 +863,18 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 	}
 #endif
 
+	key = irq_lock();
+#if defined(CONFIG_I2C_TARGET)
+	if (data->target_attached && data->controller_active && LL_I2C_IsActiveFlag_ADDR(i2c)) {
+		(void)i2c_stm32_target_preempt_controller_event(dev, stm32_reg_read(&i2c->ISR));
+	}
+	controller_owned = !data->target_attached || data->controller_active;
+	/* IRQ locking does not stop hardware address recognition. */
+	reset_allowed = !data->target_attached;
+#endif
+
 	/* Check for transfer errors or timeout */
-	if (data->current.is_nack || data->current.is_arlo || (ret != 0)) {
+	if (data->current.is_nack || data->current.is_arlo || data->current.is_err || (ret != 0)) {
 
 		if (data->current.is_arlo) {
 			LOG_DBG("ARLO");
@@ -877,8 +891,24 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 		if (ret != 0) {
 			LOG_DBG("TIMEOUT");
 		}
-		ret = -EIO;
+		ret = (data->current.is_arlo && !data->current.is_nack &&
+		       !data->current.is_err && (ret == 0)) ? -EAGAIN : -EIO;
 	}
+
+	if ((ret != 0) && controller_owned) {
+		i2c_stm32_disable_transfer_interrupts(dev);
+		if (reset_allowed) {
+			LL_I2C_Disable(i2c);
+			stm32_reg_write(&i2c->CR2, 0U);
+			LL_I2C_ClearFlag_TXE(i2c);
+			/* Keep PE low for at least three APB clocks before enabling it again. */
+			(void)stm32_reg_read(&i2c->CR1);
+			if (data->smbalert_active) {
+				LL_I2C_Enable(i2c);
+			}
+		}
+	}
+	data->current.msg = NULL;
 
 #if defined(CONFIG_I2C_TARGET)
 	if (!keep_enabled || (ret != 0)) {
@@ -900,6 +930,7 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 	if (disable_i2c) {
 		LL_I2C_Disable(cfg->i2c);
 	}
+	irq_unlock(key);
 
 	return ret;
 }
@@ -948,8 +979,7 @@ static int i2c_stm32_irq_prepare_start(const struct device *dev, struct i2c_msg 
 }
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
-static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg, I2C_TypeDef *regs,
-				   bool preload_tx)
+static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg, bool preload_tx)
 {
 	struct i2c_stm32_data *data = dev->data;
 
@@ -957,19 +987,12 @@ static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg
 		return 0;
 	}
 
-#if defined(CONFIG_I2C_TARGET)
-	data->controller_active = false;
-	if (!data->target_attached && !data->smbalert_active) {
-		LL_I2C_Disable(regs);
-	}
-#else
-	if (!data->smbalert_active) {
-		LL_I2C_Disable(regs);
-	}
-#endif
-	data->current.msg = NULL;
+	unsigned int key = irq_lock();
 
-	return -EIO;
+	data->current.is_err = 1U;
+	i2c_stm32_signal_xfer_done(dev);
+	irq_unlock(key);
+	return stm32_i2c_irq_msg_finish(dev, msg);
 }
 #endif
 
@@ -1058,7 +1081,7 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 
 	if (using_dma(data)) {
 #ifdef CONFIG_I2C_STM32_V2_DMA
-		ret = i2c_stm32_irq_start_dma(dev, msg, regs, preload_tx);
+		ret = i2c_stm32_irq_start_dma(dev, msg, preload_tx);
 		if (ret != 0) {
 			return ret;
 		}
