@@ -576,6 +576,40 @@ ZTEST_F(cobs_tests, test_decode_stream_frame_complete)
 	zassert_equal(frame_test_idx, ARRAY_SIZE(cobs_dataset));
 }
 
+static int cobs_frame_counter(const uint8_t *buf, size_t len, void *user_data)
+{
+	struct net_buf *dst = user_data;
+
+	if (buf == NULL) {
+		/* Store a marker byte for every frame end */
+		net_buf_add_u8(dst, 0xee);
+		return 0;
+	}
+
+	return cobs_net_buf_cb(buf, len, user_data);
+}
+
+ZTEST_F(cobs_tests, test_decode_stream_consecutive_delims)
+{
+	const uint8_t data_enc[] = {0x00, 0x00, 0x02, 'A', 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
+	const uint8_t expected[] = {'A', 0xee, 0xee};
+	struct cobs_decoder dec;
+	int ret;
+
+	ret = cobs_decoder_init(&dec, cobs_frame_counter, fixture->decoded,
+				COBS_FLAG_TRAILING_DELIMITER);
+	zassert_ok(ret, "decoder init failed (%d)", ret);
+
+	ret = cobs_decoder_write(&dec, data_enc, sizeof(data_enc));
+	zassert_equal(ret, sizeof(data_enc), "decoder write failed (%d)", ret);
+
+	ret = cobs_decoder_close(&dec);
+	zassert_ok(ret, "decoder close failed (%d)", ret);
+
+	zassert_equal(fixture->decoded->len, sizeof(expected));
+	zassert_mem_equal(fixture->decoded->data, expected, sizeof(expected));
+}
+
 ZTEST_P(cobs_tests, test_encode_trailing_delimiter)
 {
 	struct cobs_tests_fixture *fixture = data;
