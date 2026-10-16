@@ -1851,7 +1851,7 @@ static int udc_dwc3_ep_resume(const struct device *const dev,
 	int ret;
 
 	/* Reset all ongoing transfers on non-control OUT endpoints */
-	if (USB_EP_GET_IDX(ep_data->cfg.addr) > 0) {
+	if (USB_EP_GET_IDX(ep_data->cfg.addr) > 0 && ep_data->cfg.stat.enabled) {
 		udc_dwc3_depcmd_clear_stall(dev, ep_data, UDC_DWC3_DEPCMD_HIPRI_FORCERM);
 	}
 
