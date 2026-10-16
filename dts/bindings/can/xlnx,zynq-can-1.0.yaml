@@ -1,0 +1,30 @@
+# Copyright (c) 2022 Weidmueller Interface GmbH & Co. KG
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Xilinx Zynq-7000 processing system CAN controller
+
+  The CAN reference clock (CAN_REF_CLK) and the controller's APB clock must be
+  enabled before the driver initializes, typically by the FSBL or by board code.
+
+  pinctrl-0 is optional: omit it when the MIO pins are already set up by the
+  FSBL or when the controller is routed to the programmable logic via EMIO.
+
+compatible: "xlnx,zynq-can-1.0"
+
+include: [can-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Frequency of the CAN reference clock (CAN_REF_CLK) in Hz. The bit timing
+      prescaler divides this clock.

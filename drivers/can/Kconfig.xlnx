@@ -1,0 +1,24 @@
+# Xilinx Zynq-7000 PS CAN controller configuration options
+
+# Copyright (c) 2022 Weidmueller Interface GmbH & Co. KG
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_XLNX
+	bool "Xilinx Zynq-7000 PS CAN driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQ_CAN_1_0_ENABLED
+	select PINCTRL
+	help
+	  Enable the driver for the CAN controllers in the processing system of
+	  the Xilinx Zynq-7000 SoC.
+
+config CAN_XLNX_MAX_FILTERS
+	int "Maximum number of concurrent active RX filters"
+	depends on CAN_XLNX
+	default 16
+	range 1 32
+	help
+	  The hardware acceptance filters are left disabled and received CAN
+	  frames are filtered in software, so the number of RX filters is only
+	  limited by this option.
