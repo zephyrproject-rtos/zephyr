@@ -40,17 +40,25 @@ int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags)
 {
 	struct cobs_net_buf_ctx ctx = {.buf = dst};
 	struct cobs_encoder enc;
-	size_t len = src->len;
+	size_t dst_len = dst->len;
 	int ret;
 
 	(void)cobs_encoder_init(&enc, cobs_net_buf_cb, &ctx, flags);
 
-	ret = cobs_encoder_write(&enc, net_buf_pull_mem(src, len), len);
+	ret = cobs_encoder_write(&enc, src->data, src->len);
+	if (ret >= 0) {
+		ret = cobs_encoder_close(&enc);
+	}
+
 	if (ret < 0) {
+		/* Leave both buffers as they were */
+		(void)net_buf_remove_mem(dst, dst->len - dst_len);
 		return ret;
 	}
 
-	return cobs_encoder_close(&enc);
+	(void)net_buf_pull(src, src->len);
+
+	return 0;
 }
 
 int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags)

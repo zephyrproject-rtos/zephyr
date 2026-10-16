@@ -835,3 +835,32 @@ ZTEST_F(cobs_tests, test_cobs_decode_error_keeps_buffers)
 	zassert_equal(fixture->decoded->len, 1);
 	zassert_equal(fixture->decoded->data[0], 'X');
 }
+
+ZTEST_F(cobs_tests, test_cobs_encode_insufficient_space)
+{
+	/* 300 zero bytes encode as 301 code bytes, less than the worst case */
+	const size_t len = 300;
+	const size_t enc_len = len + 1;
+	int ret;
+
+	zassert_true(enc_len < cobs_max_encoded_len(len, 0));
+
+	(void)net_buf_add(fixture->test_data, len);
+	memset(fixture->test_data->data, 0x00, len);
+	net_buf_add_u8(fixture->encoded, 'X');
+	net_buf_add(fixture->encoded, net_buf_tailroom(fixture->encoded) - (enc_len - 1));
+
+	ret = cobs_encode(fixture->test_data, fixture->encoded, 0);
+	zassert_equal(ret, -ENOMEM, "Encoding with insufficient space not caught");
+	zassert_equal(fixture->test_data->len, len, "Encode input consumed");
+	zassert_equal(net_buf_tailroom(fixture->encoded), enc_len - 1, "Encode output written");
+	zassert_equal(fixture->encoded->data[0], 'X');
+
+	/* Exactly enough space for the actual encoding */
+	(void)net_buf_remove_mem(fixture->encoded, 1);
+
+	ret = cobs_encode(fixture->test_data, fixture->encoded, 0);
+	zassert_ok(ret, "Encoding with exact space failed (%d)", ret);
+	zassert_equal(fixture->test_data->len, 0, "Encode input not consumed");
+	zassert_equal(net_buf_tailroom(fixture->encoded), 0);
+}
