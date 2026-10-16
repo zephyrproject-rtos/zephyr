@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Arkadiusz Grzelka
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Efinix Sapphire SoC SPI controller (SpinalHDL SpiXdrMasterCtrl).
+
+  Chip selects are the controller's own SS lines, selected by the
+  child node's reg. cs-gpios may be used instead.
+
+compatible: "efinix,sapphire-spi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    required: true
+    description: Controller input clock in Hz (the SoC system clock).
+
+  num-cs:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4, 5, 6, 7, 8]
+    description: Number of SS lines the SoC was generated with.

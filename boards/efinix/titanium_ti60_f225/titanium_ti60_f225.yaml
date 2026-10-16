@@ -7,5 +7,6 @@ toolchain:
 ram: 196608
 supported:
   - gpio
+  - spi
   - uart
 vendor: efinix

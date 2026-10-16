@@ -50,3 +50,32 @@
 &gpio0 {
 	status = "okay";
 };
+
+&spi0 {
+	status = "okay";
+
+	flash0: flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
+		jedec-id = [ef 60 17];
+		size = <DT_SIZE_M(64)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			fpga_bitstream_partition: partition@0 {
+				label = "fpga_bitstream";
+				reg = <0x0 0x380000>;
+				read-only;
+			};
+
+			storage_partition: partition@7f0000 {
+				label = "storage";
+				reg = <0x7f0000 0x10000>;
+			};
+		};
+	};
+};

@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Arkadiusz Grzelka
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_EFINIX_SAPPHIRE
+	bool "Efinix Sapphire SoC SPI controller driver"
+	default y
+	depends on DT_HAS_EFINIX_SAPPHIRE_SPI_ENABLED
+	help
+	  Enable the polled driver for the SpinalHDL SpiXdrMasterCtrl SPI
+	  controller found in the Efinix Sapphire RISC-V SoC.
