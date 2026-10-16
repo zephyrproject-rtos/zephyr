@@ -19,10 +19,7 @@
 &mikroe_dali2_click {
 	counter = <&counter2>;
 	pwms = <&pwm3 3 PWM_USEC(41) PWM_POLARITY_NORMAL>;
-	tx-rx-propagation-max-us = <2400>;
 	tx-prog-delay-us = <(-200)>;
-	rx-max-latency-us = <80>;
-	rx-grey-area-us = <800>;
 };
 
 &timers2 {
