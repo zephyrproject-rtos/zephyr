@@ -16,4 +16,6 @@ flash: 65536
 supported:
   - gpio
   - uart
+  - i2c
+  - display
 vendor: nxp
