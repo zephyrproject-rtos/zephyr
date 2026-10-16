@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <realtek/amebasmart/amebasmart.dtsi>
+#include "rtl8730e_evb-pinctrl.dtsi"
+#include "rtl8730e_evb_partitions.h"
+
+/ {
+	model = "Realtek RTL8730E EVB";
+	compatible = "realtek,rtl8730e_evb";
+
+	chosen {
+		zephyr,sram             = &dram0;
+		zephyr,console          = &loguart;
+		zephyr,shell-uart       = &loguart;
+		zephyr,flash            = &flash0;
+		zephyr,flash-controller = &spic;
+		zephyr,entropy          = &trng;
+		zephyr,bt-hci           = &bt;
+		zephyr,code-partition   = &slot0_partition;
+	};
+};
+
+&loguart {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+&spic {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&bt {
+	status = "okay";
+};
+
+/delete-node/ &flash0;
+
+&spic {
+	flash0: flash@e000020 {
+		/* CA32 RSIP XIP logic window, not shared with KM4 */
+		reg = <0x0e000020 DT_SIZE_M(8)>;
+#include "rtl8730e_evb_partitions.dtsi"
+	};
+};

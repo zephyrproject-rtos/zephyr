@@ -24,6 +24,9 @@
 #include <zephyr/sw_isr_table.h>
 #include "macro_priv.inc"
 
+/* GICv2 GICC_IAR[12:10]: CPUID of the core that signaled an SGI */
+#define GICC_IAR_CPUID_MASK 0x1c00
+
 
 _ASM_FILE_PROLOGUE
 
@@ -183,6 +186,14 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	push {r0, r1}
 
+	/*
+	 * Strip the GICv2 SGI source CPUID so the INTID indexes _sw_isr_table.
+	 * The unmasked value stays on the stack for GICC_EOIR, which needs it.
+	 */
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) && CONFIG_GIC_VER == 2 && defined(CONFIG_SMP)
+	bic r0, r0, #GICC_IAR_CPUID_MASK
+#endif
+
 #ifdef CONFIG_ARM_TRACK_ACTIVE_IRQ
 	/*
 	 * Publish the acknowledged INTID for arch_irq_get_active(). The value
@@ -292,12 +303,14 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	add r0, #1
 	str r0, [r2, #___cpu_t_nested_OFFSET]
 
-	/* If not nested: switch to IRQ stack and save current sp on it. */
+	/* If not nested: switch to IRQ stack and save current sp on it.
+	 * r1 is a dummy word for AAPCS 8-byte alignment (NEON :64 stores fault).
+	 */
 	cmp r0, #1
 	bhi 1f
 	mov r0, sp
 	cps #MODE_IRQ
-	push {r0}
+	push {r0, r1}
 1:
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
@@ -335,6 +348,14 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	push {r0, r1}
+
+	/*
+	 * Strip the GICv2 SGI source CPUID so the INTID indexes _sw_isr_table.
+	 * The unmasked value stays on the stack for GICC_EOIR, which needs it.
+	 */
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) && CONFIG_GIC_VER == 2 && defined(CONFIG_SMP)
+	bic r0, r0, #GICC_IAR_CPUID_MASK
+#endif
 
 #ifdef CONFIG_ARM_TRACK_ACTIVE_IRQ
 	/*
@@ -423,8 +444,8 @@ z_arm_cortex_ar_irq_done:
 	 */
 	bhi __EXIT_INT
 
-	/* retrieve pointer to the current thread */
-	pop {r0}
+	/* Interrupted sp saved at IRQ entry; r1 is the dummy alignment word. */
+	pop {r0, r1}
 	cps #MODE_SYS
 	mov sp, r0
 

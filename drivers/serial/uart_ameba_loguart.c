@@ -16,6 +16,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(loguart_ameba, CONFIG_UART_LOG_LEVEL);
@@ -66,6 +67,80 @@ static int loguart_ameba_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
+#ifdef CONFIG_UART_AMEBA_LOGUART_XCORE_LOCK
+/*
+ * The hardware muxes each core's TX path per byte, so buffer a line per core and
+ * flush it under a hardware semaphore. Shell echo shares this path, so an idle
+ * timer flushes a partial line that has no newline yet.
+ */
+#define LOGUART_XCORE_LINE_MAX	CONFIG_UART_AMEBA_LOGUART_XCORE_LINE_MAX
+#define LOGUART_XCORE_SEM_ID	CONFIG_UART_AMEBA_LOGUART_XCORE_SEM_ID
+/* Register reads before flushing anyway; caps the stall if a peer died holding it. */
+#define LOGUART_XCORE_SEM_RETRIES	200000U
+/* A partial line with no newline is flushed this long after the last byte. */
+#define LOGUART_XCORE_IDLE_MS	4
+
+static struct k_spinlock loguart_xcore_lock;
+static char loguart_xcore_line[LOGUART_XCORE_LINE_MAX];
+static size_t loguart_xcore_len;
+
+/* Caller holds loguart_xcore_lock. */
+static void loguart_xcore_flush(void)
+{
+	bool locked = IPC_SEMTake(LOGUART_XCORE_SEM_ID, LOGUART_XCORE_SEM_RETRIES) == TRUE;
+
+	for (size_t i = 0; i < loguart_xcore_len; i++) {
+		LOGUART_PutChar(loguart_xcore_line[i]);
+	}
+	loguart_xcore_len = 0;
+
+	if (locked) {
+		IPC_SEMFree(LOGUART_XCORE_SEM_ID);
+	}
+}
+
+static void loguart_xcore_timeout(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+	k_spinlock_key_t key = k_spin_lock(&loguart_xcore_lock);
+
+	if (loguart_xcore_len > 0) {
+		loguart_xcore_flush();
+	}
+
+	k_spin_unlock(&loguart_xcore_lock, key);
+}
+K_TIMER_DEFINE(loguart_xcore_timer, loguart_xcore_timeout, NULL);
+
+static void loguart_xcore_putc(unsigned char c)
+{
+	bool flushed, was_empty;
+	k_spinlock_key_t key = k_spin_lock(&loguart_xcore_lock);
+
+	was_empty = (loguart_xcore_len == 0);
+	loguart_xcore_line[loguart_xcore_len++] = c;
+	flushed = (c == '\n' || loguart_xcore_len == LOGUART_XCORE_LINE_MAX);
+	if (flushed) {
+		loguart_xcore_flush();
+	}
+
+	k_spin_unlock(&loguart_xcore_lock, key);
+
+	/*
+	 * k_timer takes its own locks, so arm it outside the spinlock. Pre-kernel
+	 * output is newline-terminated and needs no timer.
+	 */
+	if (!k_is_pre_kernel()) {
+		if (flushed) {
+			k_timer_stop(&loguart_xcore_timer);
+		} else if (was_empty) {
+			k_timer_start(&loguart_xcore_timer, K_MSEC(LOGUART_XCORE_IDLE_MS),
+				      K_NO_WAIT);
+		}
+	}
+}
+#endif /* CONFIG_UART_AMEBA_LOGUART_XCORE_LOCK */
+
 /**
  * @brief Output a character in polled mode.
  *
@@ -75,7 +150,11 @@ static int loguart_ameba_poll_in(const struct device *dev, unsigned char *c)
 static void loguart_ameba_poll_out(const struct device *dev, unsigned char c)
 {
 	ARG_UNUSED(dev);
+#ifdef CONFIG_UART_AMEBA_LOGUART_XCORE_LOCK
+	loguart_xcore_putc(c);
+#else
 	LOGUART_PutChar(c);
+#endif
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -85,6 +164,15 @@ static int loguart_ameba_fifo_fill(const struct device *dev, const uint8_t *tx_d
 	ARG_UNUSED(dev);
 
 	uint8_t num_tx = 0U;
+
+#ifdef CONFIG_UART_AMEBA_LOGUART_XCORE_LOCK
+	/* The cross-core line buffer locks per character. */
+	while (len - num_tx > 0) {
+		loguart_xcore_putc((uint8_t)tx_data[num_tx++]);
+	}
+
+	return num_tx;
+#else
 	unsigned int key;
 
 	if (!LOGUART_Writable()) {
@@ -102,6 +190,7 @@ static int loguart_ameba_fifo_fill(const struct device *dev, const uint8_t *tx_d
 	irq_unlock(key);
 
 	return num_tx;
+#endif
 }
 
 static int loguart_ameba_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
@@ -131,8 +220,7 @@ static void loguart_ameba_irq_tx_enable(const struct device *dev)
 	sts = irq_disable_save();
 
 	data->tx_int_en = true;
-	/* KM4: TX_PATH1 */
-	LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_PATH_1_INTR, ENABLE);
+	LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_INTR, ENABLE);
 
 	/* Enable IRQ Interrupts according to Previous Status. */
 	irq_enable_restore(sts);
@@ -146,7 +234,7 @@ static void loguart_ameba_irq_tx_disable(const struct device *dev)
 	/* Disable IRQ Interrupts and Save Previous Status. */
 	sts = irq_disable_save();
 
-	LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_PATH_1_INTR, DISABLE);
+	LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_INTR, DISABLE);
 	data->tx_int_en = false;
 
 	/* Enable IRQ Interrupts according to Previous Status. */
@@ -157,8 +245,7 @@ static int loguart_ameba_irq_tx_ready(const struct device *dev)
 {
 	struct loguart_ameba_data *data = dev->data;
 
-	/* KM4: TX_PATH1 */
-	return (LOGUART_GetStatus(LOGUART_DEV) & LOGUART_BIT_TP1F_EMPTY) && data->tx_int_en;
+	return (LOGUART_GetStatus(LOGUART_DEV) & LOGUART_TX_EMPTY_STATUS) && data->tx_int_en;
 }
 
 static int loguart_ameba_irq_tx_complete(const struct device *dev)
@@ -233,9 +320,22 @@ static void loguart_ameba_irq_callback_set(const struct device *dev,
  */
 static int loguart_ameba_init(const struct device *dev)
 {
-	LOGUART_RxCmd(LOGUART_DEV, DISABLE);
-	LOGUART_INT_NP2AP();
+	struct loguart_ameba_data *data = dev->data;
 
+	LOGUART_RxCmd(LOGUART_DEV, DISABLE);
+
+#if !defined(CONFIG_SOC_SERIES_AMEBAD)
+	/* AmebaD has no LOGUART_WaitTxComplete. */
+	LOGUART_WaitTxComplete();
+#endif
+#if defined(CONFIG_SOC_SERIES_AMEBAD)
+	/* AmebaD LOGUART_SetBaud takes only the baudrate. */
+	LOGUART_SetBaud(data->config.baudrate);
+#else
+	LOGUART_SetBaud(LOGUART_DEV, data->config.baudrate);
+#endif
+
+	LOGUART_INT_NP2AP();
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	const struct loguart_ameba_config *config = dev->config;
 

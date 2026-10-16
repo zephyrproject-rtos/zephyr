@@ -93,6 +93,19 @@ void soc_per_core_init_hook(void);
 #define soc_per_core_init_hook() do { } while (0)
 #endif
 
+#if defined(CONFIG_SOC_CPU_POWER_ON_HOOK) || defined(__DOXYGEN__)
+/**
+ * @brief SoC hook called before PSCI CPU_ON for each secondary CPU.
+ *
+ * Performs power-on sequencing (power rails, isolation release).
+ *
+ * @param cpu_mpid MPIDR of the CPU to power on.
+ */
+void soc_cpu_power_on(uint32_t cpu_mpid);
+#else
+#define soc_cpu_power_on(mpid) do { } while (0)
+#endif
+
 #if defined(CONFIG_BOARD_EARLY_INIT_HOOK) || defined(__DOXYGEN__)
 /**
  * @brief Board hook executed before the kernel starts.

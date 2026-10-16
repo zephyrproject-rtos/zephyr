@@ -255,9 +255,76 @@ EL1_Reset_Handler:
     mcr p15, 1, r0, c9, c1, 0
 #endif
 
+#if defined(CONFIG_CORTEX_A_R_PRIMARY_CORE_MPID_ZERO)
+    /*
+     * A warm reset can leave SCTLR.I set, so stale I-cache lines could
+     * corrupt the literal-pool loads below. ICIALLU is harmless with SCTLR.I=0.
+     */
+    mov r0, #0
+    mcr p15, 0, r0, c7, c5, 0    /* ICIALLU: invalidate entire I-cache */
+    dsb
+    isb
+#endif /* CONFIG_CORTEX_A_R_PRIMARY_CORE_MPID_ZERO */
+
     ldr r0, =arm_cpu_boot_params
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
+#if defined(CONFIG_CORTEX_A_R_PRIMARY_CORE_MPID_ZERO)
+    /*
+     * MPIDR[23:0] == 0 is primary; voting would read uninitialised boot_params
+     * and deadlock. The primary writes boot_params.mpid before CPU_ON.
+     */
+    get_cpu_logic_id r1, r2, r3, r4 // r1: MPID, r2: logic id
+
+    cmp r1, #0                              /* MPID == 0 -> primary */
+    bne _secondary_core                     /* MPID != 0 -> secondary */
+    b _primary_core
+
+_secondary_core:
+    /*
+     * Entered from secure firmware in SVC mode with I+F masked. ACTLR.SMP
+     * must be set with caches off, and firmware may leave SCTLR.C on.
+     */
+    mrc p15, 0, r0, c1, c0, 0   /* read SCTLR */
+    bic r0, r0, #(1 << 2)        /* clear C bit (D-cache disable) */
+    mcr p15, 0, r0, c1, c0, 0   /* write SCTLR */
+    isb
+
+    /* Without ACTLR.SMP + Broadcast, cache coherency is UNPREDICTABLE. */
+    mrc p15, 0, r0, c1, c0, 1   /* read ACTLR */
+    orr r0, r0, #(1 << 6)        /* SMP bit */
+    orr r0, r0, #(1 << 0)        /* Broadcast bit */
+    mcr p15, 0, r0, c1, c0, 1   /* write ACTLR */
+    isb
+
+    /* r0 was clobbered above; restore the boot_params base. */
+    ldr r0, =arm_cpu_boot_params
+
+_secondary_core_spin:
+    /*
+     * Invalidate each iteration to see the primary's flushed writes.
+     * struct boot_params is cache-line aligned and padded to one line.
+     */
+    ldr r2, =arm_cpu_boot_params
+    mcr p15, 0, r2, c7, c6, 1   /* DCIMVAC: invalidate boot_params line */
+    dsb
+    isb
+    ldr r2, [r0, #BOOT_PARAM_MPID_OFFSET]
+    cmp r1, r2
+    bne _secondary_core_spin
+
+    /* boot_params is fresh in memory now; load our stack pointers */
+    ldr r4, =arch_secondary_cpu_init
+    ldr r5, [r0, #BOOT_PARAM_FIQ_SP_OFFSET]
+    ldr r6, [r0, #BOOT_PARAM_IRQ_SP_OFFSET]
+    ldr r7, [r0, #BOOT_PARAM_ABT_SP_OFFSET]
+    ldr r8, [r0, #BOOT_PARAM_UDF_SP_OFFSET]
+    ldr r9, [r0, #BOOT_PARAM_SVC_SP_OFFSET]
+    ldr r10, [r0, #BOOT_PARAM_SYS_SP_OFFSET]
+    b 2f
+
+_primary_core:
+#else /* !CONFIG_CORTEX_A_R_PRIMARY_CORE_MPID_ZERO */
     /*
      * This code uses voting locks, like arch/arm64/core/reset.S, to determine primary CPU.
      */
@@ -322,6 +389,7 @@ _secondary_core:
     b 2f
 
 _primary_core:
+#endif /* CONFIG_CORTEX_A_R_PRIMARY_CORE_MPID_ZERO */
 #endif
 
     ldr r4, =z_prep_c

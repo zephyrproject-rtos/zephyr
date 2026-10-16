@@ -1,0 +1,89 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_RTL8730E_CA32
+
+config CACHE_MANAGEMENT
+	default y
+
+config DCACHE_LINE_SIZE
+	default 64
+
+config ICACHE_LINE_SIZE
+	default 32
+
+config NUM_IRQS
+	# Highest SPI is AON_TIM_IRQ=95, so the last GIC INTID is 127.
+	default 128
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# Fallback only; soc_early_init_hook sets the live PLL_GetHBUSClk() / 2.
+	default 51111111
+
+config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	# The generic timer runs at the APB clock (PLL_GetHBUSClk() / 2), which
+	# depends on the PLL setup.
+	default y
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config SOC_PREP_HOOK
+	default y
+
+# soc_reset_hook() enables the FPU on every core.
+config SOC_RESET_HOOK
+	default y
+
+config TIMEOUT_64BIT
+	default y if SMP
+
+config SOC_CPU_POWER_ON_HOOK
+	default y if SMP
+
+config SOC_PER_CORE_INIT_HOOK
+	default y if SMP
+
+config PM_CPU_OPS
+	default y if SMP
+
+config PM_CPU_OPS_PSCI
+	default y if SMP
+
+config MP_MAX_NUM_CPUS
+	default 2 if SMP
+
+config SHELL_BACKEND_SERIAL_FORCE_TX_BLOCKING_MODE
+	default y if SMP
+
+endif # SOC_RTL8730E_CA32
+
+if SOC_RTL8730E_KM4
+
+config CACHE_MANAGEMENT
+	default y
+
+config NUM_IRQS
+	# KM4 NVIC: ~80 interrupt sources.
+	default 96
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# From /clocks/clk_sys (230 MHz).
+	default $(dt_node_int_prop_int,/clocks/clk_sys,clock-frequency)
+
+endif # SOC_RTL8730E_KM4
+
+if SOC_RTL8730E_KM0
+
+config CACHE_MANAGEMENT
+	default y
+
+config NUM_IRQS
+	# KM0 LP-core NVIC.
+	default 64
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# From /clocks/clk_sys.
+	default $(dt_node_int_prop_int,/clocks/clk_sys,clock-frequency)
+
+endif # SOC_RTL8730E_KM0

@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rtl8730e_evb/rtl8730e/km4
+name: Realtek RTL8730E EVB (KM4)
+vendor: realtek
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 1387
+flash: 6144
+supported:
+  - serial
+  - console
+  - clock_control
+  - flash

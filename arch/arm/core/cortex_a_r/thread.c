@@ -158,12 +158,25 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_COMPILER_ISA_THUMB2 */
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	iframe = (struct __basic_sf *)
-		((uintptr_t)iframe - sizeof(struct __fpu_sf));
-	memset(iframe, 0, sizeof(struct __fpu_sf));
-#endif
+	{
+		struct __basic_sf *basic_iframe = iframe;
 
+		iframe = (struct __basic_sf *)
+			((uintptr_t)iframe - sizeof(struct __fpu_sf));
+		memset(iframe, 0, sizeof(struct __fpu_sf));
+#if defined(CONFIG_USE_SWITCH)
+		/*
+		 * USE_SWITCH thread birth exits via z_arm_cortex_ar_exit_exc,
+		 * which pops only the basic frame, so psp must point at it.
+		 */
+		thread->callee_saved.psp = (uint32_t)basic_iframe;
+#else
+		thread->callee_saved.psp = (uint32_t)iframe;
+#endif
+	}
+#else
 	thread->callee_saved.psp = (uint32_t)iframe;
+#endif
 	thread->arch.basepri = 0;
 
 	/*
