@@ -11,8 +11,8 @@
 };
 
 &die_temp {
-	status = "okay";
 	ts-cal-resolution = <12>;
+	status = "okay";
 };
 
 &adc3_common {
@@ -22,11 +22,11 @@
 };
 
 &adc3 {
-	status = "okay";
 	pinctrl-0 = <>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@11 {
 		reg = <0x11>;

@@ -9,7 +9,6 @@
 
 	mx25u25645g_spi: flash@0 {
 		compatible = "jedec,spi-nor";
-		status = "okay";
 		reg = <0>;
 		jedec-id = [c2 25 39];
 		sfdp-bfp = [e5 20 fb ff ff ff ff 0f 44 eb 08 6b 08 3b 04 bb
@@ -24,5 +23,6 @@
 		reset-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		t-reset-recovery = <35000>;
 		spi-max-frequency = <DT_FREQ_M(66)>;
+		status = "okay";
 	};
 };

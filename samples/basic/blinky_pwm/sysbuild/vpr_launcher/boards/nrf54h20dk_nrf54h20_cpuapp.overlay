@@ -1,4 +1,4 @@
 &pwm130 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };

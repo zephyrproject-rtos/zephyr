@@ -9,10 +9,10 @@
 / {
 	uac2_headset: usb_audio2 {
 		compatible = "zephyr,uac2";
-		status = "okay";
 		full-speed;
 		high-speed;
 		audio-function = <AUDIO_FUNCTION_HEADSET>;
+		status = "okay";
 
 		uac_aclk: aclk {
 			compatible = "zephyr,uac2-clock-source";
