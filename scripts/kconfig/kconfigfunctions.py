@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import collections
 import functools
 import inspect
 import operator
@@ -1212,6 +1213,32 @@ def dt_partition_mtd(kconf, _, path):
 
     return ""
 
+def dt_max_shared_irqs(kconfig, _):
+    """
+    Returns the largest number of enabled peripherals sharing a single interrupt
+    line, in other words, the highest number of same "irq" cell entries in the
+    interrupts property across all nodes using same interrupt controller.
+
+    Skips nodes with status not set as "okay".
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    lines = collections.Counter()
+    for node in edt.nodes:
+        if node.status != "okay":
+            continue
+
+        for irq in node.interrupts:
+            irqn = irq.data.get("irq")
+
+            if not isinstance(irqn, int):
+                continue
+
+            lines[(irq.controller.path, irqn)] += 1
+
+    return str(max(lines.values(), default=0))
+
 def normalize_upper(kconf, _, string):
     """
     Normalize the string, so that the string only contains alphanumeric
@@ -1412,6 +1439,7 @@ functions = {
         "dt_chosen_partition_addr_int": (dt_chosen_partition_addr, 1, 3),
         "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
         "dt_highest_controller_irq_number": (dt_highest_controller_irq_number, 2, 2),
+        "dt_max_shared_irqs": (dt_max_shared_irqs, 0, 0),
         "dt_partition_mtd": (dt_partition_mtd, 1, 1),
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),

@@ -630,7 +630,7 @@ config SHARED_INTERRUPTS
 
 config SHARED_IRQ_MAX_NUM_CLIENTS
 	int "Maximum number of clients allowed per shared interrupt"
-	default 2
+	default $(max,$(dt_max_shared_irqs),2)
 	depends on SHARED_INTERRUPTS
 	help
 	  This option controls the maximum number of clients allowed
