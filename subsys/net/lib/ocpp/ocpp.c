@@ -393,7 +393,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 	fn = ctx->pfn[pdu];
 
 	switch (pdu) {
-	char skey[CISTR50];
+	char skey[CISTR50 + 1];
 
 	case PDU_BOOTNOTIFICATION:
 	{
@@ -458,7 +458,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 	case PDU_CHANGE_CONFIGURATION:
 	{
-		char sval[CISTR500] = {0};
+		char sval[CISTR500 + 1] = {0};
 
 		memset(skey, 0, sizeof(skey));
 		ret = fn(ui->recv_buf, skey, sval);
