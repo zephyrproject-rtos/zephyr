@@ -7,6 +7,7 @@
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/ztest.h>
+#include <zephyr/ztest_error_hook.h>
 
 #include "common.h"
 
@@ -730,6 +731,35 @@ ZTEST_USER(can_classic, test_max_ext_filters)
 {
 	add_remove_max_filters(true);
 }
+
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_DYNAMIC_OBJECTS)
+/**
+ * @brief Test that a dynamically allocated message queue is rejected from user mode.
+ *
+ * The CAN RX filter retains the message queue pointer for as long as the filter is
+ * installed, but a dynamically allocated kernel object is freed as soon as the last
+ * thread holding permission on it releases it or terminates. Accepting one would
+ * leave the filter with a dangling pointer, which a later matching frame would
+ * write through - potentially into an unrelated object which has since reused the
+ * memory. The syscall must therefore refuse it.
+ */
+ZTEST_USER(can_classic, test_add_rx_filter_msgq_dynamic)
+{
+	struct k_msgq *msgq;
+	int err;
+
+	msgq = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(msgq, "failed to allocate message queue object");
+
+	err = k_msgq_alloc_init(msgq, sizeof(struct can_frame), 5);
+	zassert_ok(err, "failed to initialize message queue (err %d)", err);
+
+	ztest_set_fault_valid(true);
+	(void)can_add_rx_filter_msgq(can_dev, msgq, &test_std_filter_1);
+
+	zassert_unreachable("dynamically allocated message queue was accepted");
+}
+#endif /* CONFIG_USERSPACE && CONFIG_DYNAMIC_OBJECTS */
 
 /**
  * @brief Test that no message is received when nothing was sent.
