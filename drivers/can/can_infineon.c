@@ -14,6 +14,8 @@
 
 #include <infineon_kconfig.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+#include <zephyr/drivers/clock_control/clock_control_ifx.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 
 #include <cy_canfd.h>
@@ -23,7 +25,9 @@ LOG_MODULE_REGISTER(can_infineon, CONFIG_CAN_LOG_LEVEL);
 #define DT_DRV_COMPAT infineon_can
 
 struct can_infineon_data {
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 	struct ifx_cat1_clock clock;
+#endif
 };
 
 struct can_infineon_config {
@@ -34,6 +38,11 @@ struct can_infineon_config {
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *ctrl_dev;
 	en_clk_dst_t clk_dst;
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+	uint32_t frequency;
+	const struct device *clk_dev;
+	struct ifx_clk_peri clk_info;
+#endif
 };
 
 /*
@@ -93,11 +102,19 @@ static int can_infineon_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_infineon_config *infineon_cfg = mcan_cfg->custom;
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+	cy_rslt_t status = clock_control_get_rate(infineon_cfg->clk_dev,
+						  (clock_control_subsys_t)&infineon_cfg->clk_info,
+						  rate);
+	if (status != 0) {
+		return -EINVAL;
+	}
+#else
 	struct can_mcan_data *mcan_data = dev->data;
 	struct can_infineon_data *data = mcan_data->custom;
 
 	*rate = ifx_cat1_utils_peri_pclk_get_frequency(infineon_cfg->clk_dst, &data->clock);
-
+#endif
 	return 0;
 }
 
@@ -105,8 +122,10 @@ static int can_infineon_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_infineon_config *infineon_cfg = mcan_cfg->custom;
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 	struct can_mcan_data *mcan_data = dev->data;
 	struct can_infineon_data *data = mcan_data->custom;
+#endif
 	cy_rslt_t result;
 	int ret;
 
@@ -123,13 +142,21 @@ static int can_infineon_init(const struct device *dev)
 		return ret;
 	}
 
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+	result = clock_control_set_rate(infineon_cfg->clk_dev,
+					(clock_control_subsys_t)&infineon_cfg->clk_info,
+					(uint32_t *)&infineon_cfg->frequency);
+	if (result != 0) {
+		return result;
+	}
+#else
 	/* Connect this CAN instance to the peripheral clock divider */
 	result = ifx_cat1_utils_peri_pclk_assign_divider(infineon_cfg->clk_dst, &data->clock);
 	if (result != CY_RSLT_SUCCESS) {
 		LOG_ERR("CAN clock assign failed (%d)", (int)result);
 		return -EIO;
 	}
-
+#endif
 	ret = can_mcan_configure_mram(dev, infineon_cfg->mrba, infineon_cfg->mram);
 	if (ret != 0) {
 		return ret;
@@ -205,6 +232,8 @@ static const struct can_mcan_ops can_infineon_ops = {
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
 	},
+#elif defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+#define CAN_PERI_CLOCK_INIT(n)
 #else
 #define CAN_PERI_CLOCK_INIT(n)                                                                     \
 	.clock = {                                                                                 \
@@ -213,6 +242,15 @@ static const struct can_mcan_ops can_infineon_ops = {
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
 	},
+#endif
+
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+#define CLOCK_CAN_GET(n)                                                                           \
+	.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(n))),				   \
+	.frequency = DT_INST_PROP(n, clock_frequency),						   \
+	.clk_info = IFX_CLK_PERI_DT_INST_SPEC_GET(n),
+#else
+#define CLOCK_CAN_GET(n)
 #endif
 
 #define CAN_INFINEON_MCAN_INIT(n)                                                                  \
@@ -225,14 +263,14 @@ static const struct can_mcan_ops can_infineon_ops = {
                                                                                                    \
 	static void infineon_mcan_irq_config_##n(void)                                             \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),                                     \
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, 0),                                             \
 			    DT_INST_IRQ_BY_NAME(n, int0, priority), can_mcan_line_0_isr,           \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));                                     \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),                                     \
+		irq_enable(DT_INST_IRQN_BY_IDX(n, 0));                                             \
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, 1),                                             \
 			    DT_INST_IRQ_BY_NAME(n, int1, priority), can_mcan_line_1_isr,           \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));                                     \
+		irq_enable(DT_INST_IRQN_BY_IDX(n, 1));                                             \
 	}                                                                                          \
                                                                                                    \
 	static struct can_infineon_data can_infineon_data_##n = {CAN_PERI_CLOCK_INIT(n)};          \
@@ -245,6 +283,7 @@ static const struct can_mcan_ops can_infineon_ops = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.ctrl_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
 		.clk_dst = DT_INST_PROP(n, clk_dst),                                               \
+		CLOCK_CAN_GET(n)                                                                   \
 	};                                                                                         \
                                                                                                    \
 	static const struct can_mcan_config can_mcan_cfg_##n = CAN_MCAN_DT_CONFIG_INST_GET(        \
