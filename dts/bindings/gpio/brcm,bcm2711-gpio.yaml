@@ -17,6 +17,13 @@ properties:
   "#gpio-cells":
     const: 2
 
+  legacy-pull-control:
+    type: boolean
+    description: |
+      Use the BCM2835-family GPPUD/GPPUDCLK pull-control sequence instead
+      of the BCM2711 GPPULL registers, which are reserved on BCM2835,
+      BCM2836, BCM2837 and BCM2710.
+
 gpio-cells:
   - pin
   - flags
