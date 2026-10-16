@@ -28,4 +28,6 @@ rsource "ots/Kconfig"
 
 rsource "bas/Kconfig.bas"
 
+rsource "hogp/Kconfig"
+
 endmenu
