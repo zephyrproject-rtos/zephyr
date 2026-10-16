@@ -1,0 +1,11 @@
+board:
+  name: qemu_x86_default
+  full_name: QEMU Emulation for X86 Default Qualifier Test
+  vendor: intel
+  default_qualifier: atom/virt
+  socs:
+    - name: atom
+      variants:
+        - name: virt
+          variants:
+            - name: two
