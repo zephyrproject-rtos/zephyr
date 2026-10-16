@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_I2C_TO_SPI_CLICK
+	def_bool $(shields_list_contains,mikroe_i2c_to_spi_click)
