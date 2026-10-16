@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice ANDES_CLANG_LINKER
+	prompt "Andes Clang linker"
+	default ANDES_CLANG_USE_LLD
+
+config ANDES_CLANG_USE_LD
+	bool "GNU ld"
+	help
+	  Use binutils ld linker with Andes Clang.
+
+config ANDES_CLANG_USE_LLD
+	bool "LLVM lld"
+	help
+	  Use LLVM lld linker with Andes Clang.
+
+endchoice
+
+rsource "../andes/Kconfig"
