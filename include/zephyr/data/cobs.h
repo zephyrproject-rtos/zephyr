@@ -127,13 +127,21 @@ int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
 /**
  * @brief COBS decoding
  *
- * Decodes COBS-encoded data from source buffer to destination buffer.
+ * Decodes a single COBS frame from source buffer to destination buffer. On
+ * success the frame is pulled from the source buffer, on error neither buffer
+ * is modified.
+ *
+ * With @ref COBS_FLAG_TRAILING_DELIMITER decoding stops at the delimiter ending
+ * the first frame, and the data following it is left in the source buffer.
+ * Delimiters before the frame are pulled with it.
  *
  * @param src        Source buffer to decode
  * @param dst        Destination buffer for decoded data
  * @param flags      Decoding flags @ref COBS_FLAGS
  *
  * @retval 0        Success
+ * @retval -EAGAIN  No complete frame in the source buffer, only with
+ *                  @ref COBS_FLAG_TRAILING_DELIMITER
  * @retval -ENOMEM  Insufficient destination space
  * @retval -EINVAL  Invalid COBS structure or parameters
  *

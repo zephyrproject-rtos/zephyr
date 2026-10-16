@@ -12,26 +12,38 @@
 
 #if defined(CONFIG_NET_BUF)
 
+struct cobs_net_buf_ctx {
+	struct net_buf *buf;
+	bool frame_end;
+};
+
 static int cobs_net_buf_cb(const uint8_t *buf, size_t len, void *user_data)
 {
-	struct net_buf *dst = user_data;
+	struct cobs_net_buf_ctx *ctx = user_data;
 
-	if (net_buf_tailroom(dst) < len) {
+	if (buf == NULL) {
+		/* Stop decoding after the first frame */
+		ctx->frame_end = true;
+		return 1;
+	}
+
+	if (net_buf_tailroom(ctx->buf) < len) {
 		return -ENOMEM;
 	}
 
-	(void)net_buf_add_mem(dst, buf, len);
+	(void)net_buf_add_mem(ctx->buf, buf, len);
 
 	return 0;
 }
 
 int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags)
 {
+	struct cobs_net_buf_ctx ctx = {.buf = dst};
 	struct cobs_encoder enc;
 	size_t len = src->len;
 	int ret;
 
-	(void)cobs_encoder_init(&enc, cobs_net_buf_cb, dst, flags);
+	(void)cobs_encoder_init(&enc, cobs_net_buf_cb, &ctx, flags);
 
 	ret = cobs_encoder_write(&enc, net_buf_pull_mem(src, len), len);
 	if (ret < 0) {
@@ -43,18 +55,33 @@ int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags)
 
 int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags)
 {
+	struct cobs_net_buf_ctx ctx = {.buf = dst};
 	struct cobs_decoder dec;
-	size_t len = src->len;
+	size_t dst_len = dst->len;
+	int used;
 	int ret;
 
-	(void)cobs_decoder_init(&dec, cobs_net_buf_cb, dst, flags);
+	(void)cobs_decoder_init(&dec, cobs_net_buf_cb, &ctx, flags);
 
-	ret = cobs_decoder_write(&dec, net_buf_pull_mem(src, len), len);
+	used = cobs_decoder_write(&dec, src->data, src->len);
+	if (used < 0) {
+		ret = used;
+	} else if ((flags & COBS_FLAG_TRAILING_DELIMITER) != 0U) {
+		/* The frame must be complete, the decoder is not closed */
+		ret = ctx.frame_end ? 0 : -EAGAIN;
+	} else {
+		ret = cobs_decoder_close(&dec);
+	}
+
 	if (ret < 0) {
+		/* Leave both buffers as they were */
+		(void)net_buf_remove_mem(dst, dst->len - dst_len);
 		return ret;
 	}
 
-	return cobs_decoder_close(&dec);
+	(void)net_buf_pull(src, used);
+
+	return 0;
 }
 
 #endif /* defined(CONFIG_NET_BUF) */
