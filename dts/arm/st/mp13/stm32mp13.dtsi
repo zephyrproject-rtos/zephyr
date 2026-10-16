@@ -135,7 +135,7 @@
 		};
 
 		rcc: rcc@50000000 {
-			compatible = "st,stm32-rcc";
+			compatible = "st,stm32mp13-rcc";
 			reg = <0x50000000 0x1000>;
 			#clock-cells = <2>;
 
@@ -862,6 +862,13 @@
 			clocks = <&rcc STM32_CLOCK(APB5, 8)>;
 			alarms-count = <2>;
 			alrm-exti-line = <19>;
+			status = "disabled";
+		};
+
+		ddr: memory-controller@5a003000 {
+			compatible = "st,stm32mp13-ddr";
+			reg = <0x5a003000 0x550>, <0x5a004000 0x234>;
+			reg-names = "controller", "phy";
 			status = "disabled";
 		};
 	};
