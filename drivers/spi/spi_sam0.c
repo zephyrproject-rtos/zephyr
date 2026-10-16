@@ -418,6 +418,27 @@ static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
 	return dma_start(cfg->dma_dev, cfg->rx_dma_channel);
 }
 
+static void spi_sam0_dma_tx_error(const struct device *dma_dev, void *arg,
+				  uint32_t id, int error_code)
+{
+	struct spi_sam0_data *data = arg;
+	const struct device *dev = data->dev;
+	const struct spi_sam0_config *cfg = dev->config;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(id);
+
+	/*
+	 * spi_sam0_dma_rx_done() completes the transfer, but after a TX error
+	 * the receive channel never gets the rest of its bytes
+	 */
+	if (error_code < 0) {
+		dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_complete(&data->ctx, dev, -EIO);
+	}
+}
+
 static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 				size_t len)
 {
@@ -427,9 +448,11 @@ static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	struct dma_block_config dma_blk = { 0 };
 	int retval;
 
-	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
+	dma_cfg.user_data = dev->data;
+	dma_cfg.dma_callback = spi_sam0_dma_tx_error;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 	dma_cfg.dma_slot = cfg->tx_dma_request;
@@ -528,7 +551,13 @@ static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 	int retval;
 
 	ARG_UNUSED(id);
-	ARG_UNUSED(error_code);
+
+	if (error_code < 0) {
+		dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_complete(&data->ctx, dev, -EIO);
+		return;
+	}
 
 	spi_context_update_tx(&data->ctx, 1, data->dma_segment_len);
 	spi_context_update_rx(&data->ctx, 1, data->dma_segment_len);
@@ -583,14 +612,19 @@ static int spi_sam0_transceive(const struct device *dev,
 
 		spi_sam0_dma_advance_segment(dev);
 		retval = spi_sam0_dma_advance_buffers(dev);
-		if (retval != 0) {
-			dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
-			dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
-
-			spi_context_cs_control(&data->ctx, false);
-		} else {
+		if (retval == 0) {
 			/* Wait for DMA completion signaled by spi_sam0_dma_rx_done() */
 			retval = spi_context_wait_for_completion(&data->ctx);
+		}
+
+		if (retval < 0) {
+			/*
+			 * The DMA callbacks have already done this for their own
+			 * errors, but not for a failed setup or a timeout
+			 */
+			dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
+			dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
+			spi_context_cs_control(&data->ctx, false);
 		}
 		spi_context_release(&data->ctx, retval);
 

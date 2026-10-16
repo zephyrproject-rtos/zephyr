@@ -42,13 +42,15 @@ static void dma_sam0_isr(const struct device *dev)
 	chdata = &data->channels[channel];
 
 	if (pend & DMAC_INTPEND_TERR) {
+		/* A bus error on a source or destination address, or an invalid descriptor */
+		LOG_ERR("Transfer error on channel %u", channel);
 		if (chdata->cb) {
-			chdata->cb(dev, chdata->user_data,
-				   channel, -DMAC_INTPEND_TERR);
+			chdata->cb(dev, chdata->user_data, channel, -EIO);
 		}
 	} else if (pend & DMAC_INTPEND_TCMPL) {
 		if (chdata->cb) {
-			chdata->cb(dev, chdata->user_data, channel, 0);
+			chdata->cb(dev, chdata->user_data, channel,
+				   DMA_STATUS_COMPLETE);
 		}
 	}
 
