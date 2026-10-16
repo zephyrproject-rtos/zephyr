@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(spi_mcux_ecspi, CONFIG_SPI_LOG_LEVEL);
 
 #define SPI_MCUX_ECSPI_MAX_BURST 4096
 
+/* Words per HAL transfer, the size of the FIFOs */
+#define SPI_MCUX_ECSPI_CHUNK 64U
+
 struct spi_mcux_config {
 	ECSPI_Type *base;
 	const struct pinctrl_dev_config *pincfg;
@@ -35,8 +38,10 @@ struct spi_mcux_data {
 	uint16_t dfs;
 	uint16_t word_size;
 
-	uint32_t rx_data;
-	uint32_t tx_data;
+	/* The words of the HAL transfer in progress, one FIFO entry each */
+	uint32_t rx_data[SPI_MCUX_ECSPI_CHUNK];
+	uint32_t tx_data[SPI_MCUX_ECSPI_CHUNK];
+	size_t chunk;
 
 	/* Set on completion timeout; makes a late SDK callback a no-op */
 	bool aborted;
@@ -52,6 +57,33 @@ static inline uint16_t bytes_per_word(uint16_t bits_per_word)
 	}
 
 	return 4U;
+}
+
+static uint32_t spi_mcux_get_word(const uint8_t *buf, uint16_t dfs)
+{
+	switch (dfs) {
+	case 1U:
+		return *buf;
+	case 2U:
+		return UNALIGNED_GET((const uint16_t *)buf);
+	default:
+		return UNALIGNED_GET((const uint32_t *)buf);
+	}
+}
+
+static void spi_mcux_put_word(uint8_t *buf, uint16_t dfs, uint32_t word)
+{
+	switch (dfs) {
+	case 1U:
+		*buf = (uint8_t)word;
+		break;
+	case 2U:
+		UNALIGNED_PUT((uint16_t)word, (uint16_t *)buf);
+		break;
+	default:
+		UNALIGNED_PUT(word, (uint32_t *)buf);
+		break;
+	}
 }
 
 static void spi_mcux_transfer_next_packet(const struct device *dev)
@@ -70,34 +102,30 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		return;
 	}
 
+	data->chunk = MIN(spi_context_max_continuous_chunk(ctx), SPI_MCUX_ECSPI_CHUNK);
+
 	transfer.channel = spi_cs_is_gpio(ctx->config) ? kECSPI_Channel0 : ctx->config->peripheral;
 
 	if (spi_context_rx_buf_on(ctx)) {
-		transfer.rxData = &data->rx_data;
+		transfer.rxData = data->rx_data;
 	} else {
 		transfer.rxData = NULL;
 	}
 
 	if (spi_context_tx_buf_on(ctx)) {
-		switch (data->dfs) {
-		case 1U:
-			data->tx_data = UNALIGNED_GET((uint8_t *)ctx->tx_buf);
-			break;
-		case 2U:
-			data->tx_data = UNALIGNED_GET((uint16_t *)ctx->tx_buf);
-			break;
-		case 4U:
-			data->tx_data = UNALIGNED_GET((uint32_t *)ctx->tx_buf);
-			break;
+		const uint8_t *buf = ctx->tx_buf;
+
+		for (size_t i = 0; i < data->chunk; i++) {
+			data->tx_data[i] = spi_mcux_get_word(&buf[i * data->dfs], data->dfs);
 		}
 
-		transfer.txData = &data->tx_data;
+		transfer.txData = data->tx_data;
 	} else {
 		transfer.txData = NULL;
 	}
 
 	/* Burst length is set in the configure step */
-	transfer.dataSize = 1;
+	transfer.dataSize = data->chunk;
 
 	status = ECSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
@@ -113,6 +141,12 @@ static void spi_mcux_isr(const struct device *dev)
 	struct spi_mcux_data *data = dev->data;
 	ECSPI_Type *base = config->base;
 
+	/* Not part of a transfer: disable all interrupts, the HAL would only disable the TX ones */
+	if (data->handle.txRemainingBytes == 0U && data->handle.rxRemainingBytes == 0U) {
+		ECSPI_DisableInterrupts(base, kECSPI_AllInterruptEnable);
+		return;
+	}
+
 	ECSPI_MasterTransferHandleIRQ(base, &data->handle);
 }
 
@@ -126,22 +160,26 @@ static void spi_mcux_transfer_callback(ECSPI_Type *base, ecspi_master_handle_t *
 		return;
 	}
 
+	if (status != kStatus_Success) {
+		/* An RX FIFO overflow lost a word, the HAL reports its completion next */
+		LOG_ERR("Transfer failed (%d)", status);
+		data->aborted = true;
+		ECSPI_MasterTransferAbort(base, handle);
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_complete(&data->ctx, dev, -EIO);
+		return;
+	}
+
 	if (spi_context_rx_buf_on(&data->ctx)) {
-		switch (data->dfs) {
-		case 1:
-			UNALIGNED_PUT(data->rx_data, (uint8_t *)data->ctx.rx_buf);
-			break;
-		case 2:
-			UNALIGNED_PUT(data->rx_data, (uint16_t *)data->ctx.rx_buf);
-			break;
-		case 4:
-			UNALIGNED_PUT(data->rx_data, (uint32_t *)data->ctx.rx_buf);
-			break;
+		uint8_t *buf = data->ctx.rx_buf;
+
+		for (size_t i = 0; i < data->chunk; i++) {
+			spi_mcux_put_word(&buf[i * data->dfs], data->dfs, data->rx_data[i]);
 		}
 	}
 
-	spi_context_update_tx(&data->ctx, data->dfs, 1);
-	spi_context_update_rx(&data->ctx, data->dfs, 1);
+	spi_context_update_tx(&data->ctx, data->dfs, data->chunk);
+	spi_context_update_rx(&data->ctx, data->dfs, data->chunk);
 
 	spi_mcux_transfer_next_packet(dev);
 }
@@ -156,7 +194,8 @@ static int spi_mcux_configure(const struct device *dev,
 	uint32_t clock_freq;
 	uint16_t word_size;
 
-	if (spi_context_configured(&data->ctx, spi_cfg)) {
+	/* An aborted transfer can leave words in the FIFOs, only the init resets them */
+	if (!data->aborted && spi_context_configured(&data->ctx, spi_cfg)) {
 		/* This configuration is already in use */
 		return 0;
 	}
