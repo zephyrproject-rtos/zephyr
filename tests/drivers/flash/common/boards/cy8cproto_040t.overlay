@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	status = "okay";
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Test partition for flash driver common tests */
+		storage_partition: partition@f000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0xf000 DT_SIZE_K(4)>;
+		};
+	};
+};

@@ -1,0 +1,45 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led1;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led1: pwm_led1 {
+			label = "PWM LED1";
+			pwms = <&pwm0_1 0 PWM_MSEC(1U) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&tcpwm0_1 {
+	status = "okay";
+
+	pwm0_1 {
+		clocks = <&peri_clk_div1>;
+		compatible = "infineon,tcpwm-pwm";
+		status = "okay";
+		pinctrl-0 = <&p1_0_pwm0_1>;
+		pinctrl-names = "default";
+	};
+};
+
+&p1_0_pwm0_1 {
+	drive-push-pull;
+};
+
+/* PWM counter is 16-bit (max 65535); clock-div must satisfy src_clk_hz / clock-div <= 65535 */
+&peri_clk_div1 {
+	status = "okay";
+	clock-div = <4000>;
+};
