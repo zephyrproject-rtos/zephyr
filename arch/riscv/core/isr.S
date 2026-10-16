@@ -22,6 +22,24 @@
 #include <soc_isr_stacking.h>
 #endif
 
+/*
+ * Optional SoC hooks, empty by default:
+ * - SOC_ISR_ENABLE_NESTING / SOC_ISR_DISABLE_NESTING run right before and
+ *   after the ISR call, on the interrupt stack with nested already counted.
+ * - SOC_ISR_SKIP_RESCHEDULE runs on the way back to thread context, with
+ *   sp pointing to the esf of the interrupted context, and may branch to
+ *   no_reschedule. Caller-saved registers are free.
+ */
+#ifndef SOC_ISR_ENABLE_NESTING
+#define SOC_ISR_ENABLE_NESTING
+#endif
+#ifndef SOC_ISR_DISABLE_NESTING
+#define SOC_ISR_DISABLE_NESTING
+#endif
+#ifndef SOC_ISR_SKIP_RESCHEDULE
+#define SOC_ISR_SKIP_RESCHEDULE
+#endif
+
 #ifdef CONFIG_RISCV_SOC_HAS_SYSCALL_INTMASK
 #include <soc_syscall.h>
 #endif
@@ -918,7 +936,9 @@ on_irq_stack:
 #endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
 	/* Call ISR function */
+	SOC_ISR_ENABLE_NESTING
 	jalr ra, t1, 0
+	SOC_ISR_DISABLE_NESTING
 
 #ifdef CONFIG_RISCV_NESTED_INTERRUPTS
 #ifdef CONFIG_RISCV_HAS_CUSTOM_NESTED_INTERRUPTS
@@ -970,6 +990,8 @@ irq_done:
 #ifdef CONFIG_STACK_SENTINEL
 	call z_check_stack_sentinel
 #endif
+
+	SOC_ISR_SKIP_RESCHEDULE
 
 check_reschedule:
 
