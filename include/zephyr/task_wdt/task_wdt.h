@@ -56,6 +56,12 @@ enum task_wdt_fault_reason {
 	TASK_WDT_FAULT_TIMEOUT,
 	/** The channel was fed before its minimum feed interval elapsed */
 	TASK_WDT_FAULT_TOO_EARLY,
+	/** A checkpoint was reached before the minimum time of its deadline elapsed */
+	TASK_WDT_FAULT_DEADLINE_MIN,
+	/** A checkpoint was not reached within the maximum time of its deadline */
+	TASK_WDT_FAULT_DEADLINE_MAX,
+	/** A checkpoint was reached which is not allowed after the previous one */
+	TASK_WDT_FAULT_SEQUENCE,
 };
 
 /** Task watchdog channel fault. */
@@ -82,6 +88,12 @@ enum task_wdt_reset_reason {
 	TASK_WDT_RESET_HW_FALLBACK,
 	/** A task watchdog channel was fed before its minimum feed interval elapsed */
 	TASK_WDT_RESET_TOO_EARLY,
+	/** A checkpoint was reached before the minimum time of its deadline elapsed */
+	TASK_WDT_RESET_DEADLINE_MIN,
+	/** A checkpoint was not reached within the maximum time of its deadline */
+	TASK_WDT_RESET_DEADLINE_MAX,
+	/** A checkpoint was reached which is not allowed after the previous one */
+	TASK_WDT_RESET_SEQUENCE,
 };
 
 /** Size of the thread name kept in @ref task_wdt_reset_info, including the terminator */
@@ -100,6 +112,77 @@ struct task_wdt_reset_info {
 	/** Name of the thread owning the channel (truncated), empty if not known */
 	char thread_name[TASK_WDT_RESET_INFO_THREAD_NAME_SIZE];
 };
+
+/** Deadline between two checkpoints of a supervised entity. */
+struct task_wdt_deadline {
+	/** Checkpoint starting the deadline */
+	uint8_t start;
+	/** Checkpoint ending the deadline */
+	uint8_t end;
+	/** Minimum time in milliseconds from start to end, 0 if not checked */
+	uint32_t min_ms;
+	/** Maximum time in milliseconds from start to end, 0 if not checked */
+	uint32_t max_ms;
+};
+
+/** Maximum number of checkpoints of a supervised entity */
+#define TASK_WDT_CHECKPOINTS_MAX 32
+
+/**
+ * @brief Supervised entity.
+ *
+ * Defined with TASK_WDT_SUPERVISION_DEFINE(), the members are internal.
+ */
+struct task_wdt_supervision {
+	/** @cond INTERNAL_HIDDEN */
+	const char *name;
+	const uint32_t *next;
+	const struct task_wdt_deadline *deadlines;
+	uint8_t num_checkpoints;
+	uint8_t num_deadlines;
+	/* last reached checkpoint, num_checkpoints if none */
+	uint8_t last;
+	/* index of the running deadline, num_deadlines if none */
+	uint8_t active;
+	/* channel reporting the faults, -1 if not started */
+	int channel_id;
+	/* abs. ticks when the running deadline started */
+	int64_t start_ticks;
+	/** @endcond */
+};
+
+/**
+ * @brief Define a supervised entity.
+ *
+ * The checkpoints of the entity are numbered from 0. Element @c i of
+ * @p _next is the bitmask of the checkpoints allowed to be reached after
+ * checkpoint @c i, e.g. @c BIT(1) | @c BIT(2). Reaching any other checkpoint
+ * is reported as a @ref TASK_WDT_FAULT_SEQUENCE fault.
+ *
+ * @p _deadlines lists the deadlines between two checkpoints. A deadline
+ * starts when its start checkpoint is reached and ends when its end
+ * checkpoint is reached, other checkpoints may be reached in between. Only
+ * one deadline of an entity runs at a time.
+ *
+ * @param _name Name of the supervised entity.
+ * @param _next Array of @c uint32_t bitmasks of the allowed next checkpoints,
+ *              one per checkpoint (at most @ref TASK_WDT_CHECKPOINTS_MAX).
+ * @param _deadlines Array of @ref task_wdt_deadline.
+ */
+#define TASK_WDT_SUPERVISION_DEFINE(_name, _next, _deadlines)                                      \
+	struct task_wdt_supervision _name = {                                                      \
+		.name = #_name,                                                                    \
+		.next = _next,                                                                     \
+		.deadlines = _deadlines,                                                           \
+		.num_checkpoints = ARRAY_SIZE(_next),                                              \
+		.num_deadlines = ARRAY_SIZE(_deadlines),                                           \
+		.last = ARRAY_SIZE(_next),                                                         \
+		.active = ARRAY_SIZE(_deadlines),                                                  \
+		.channel_id = -1,                                                                  \
+	};                                                                                         \
+	BUILD_ASSERT(ARRAY_SIZE(_next) > 0 && ARRAY_SIZE(_next) <= TASK_WDT_CHECKPOINTS_MAX,       \
+		     "invalid number of checkpoints");                                             \
+	BUILD_ASSERT(ARRAY_SIZE(_deadlines) < UINT8_MAX, "too many deadlines")
 
 /**
  * @brief Initialize task watchdog.
@@ -265,6 +348,56 @@ int task_wdt_reset_info_get(struct task_wdt_reset_info *info);
  * @retval -Errno Negative errno if the retention backend failed.
  */
 int task_wdt_reset_info_clear(void);
+
+/**
+ * @brief Start supervising an entity.
+ *
+ * The faults of the entity are reported on @p channel_id, which has to be
+ * added beforehand and is still fed by the application as usual. Its
+ * callback is called, or the system is reset, as for a timeout. Each
+ * channel reports the faults of at most one entity.
+ *
+ * The first checkpoint reached after this call may be any checkpoint.
+ *
+ * @param sup Supervised entity defined with TASK_WDT_SUPERVISION_DEFINE().
+ * @param channel_id Index of the channel as returned by task_wdt_add_ext().
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel or the
+ *                 deadlines of the entity are invalid.
+ * @retval -EBUSY If the entity or the channel is already supervising.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_SUPERVISION} is disabled.
+ */
+int task_wdt_supervision_start(struct task_wdt_supervision *sup, int channel_id);
+
+/**
+ * @brief Stop supervising an entity.
+ *
+ * @param sup Supervised entity defined with TASK_WDT_SUPERVISION_DEFINE().
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If the entity is not supervising.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_SUPERVISION} is disabled.
+ */
+int task_wdt_supervision_stop(struct task_wdt_supervision *sup);
+
+/**
+ * @brief Report that a supervised entity reached a checkpoint.
+ *
+ * A @ref TASK_WDT_FAULT_SEQUENCE fault is reported if the checkpoint is not
+ * allowed after the previous one, and a @ref TASK_WDT_FAULT_DEADLINE_MIN fault
+ * if it ends a deadline too early. Both are reported before this function
+ * returns. A @ref TASK_WDT_FAULT_DEADLINE_MAX fault is reported from the
+ * kernel timer interrupt if the end of a deadline is not reached in time.
+ *
+ * @param sup Supervised entity defined with TASK_WDT_SUPERVISION_DEFINE().
+ * @param checkpoint Index of the reached checkpoint.
+ *
+ * @retval 0 If successful, including when a fault was reported.
+ * @retval -EINVAL If the entity is not supervising or the checkpoint is invalid.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_SUPERVISION} is disabled.
+ */
+int task_wdt_checkpoint(struct task_wdt_supervision *sup, uint32_t checkpoint);
 
 /**
  * @brief Pause all channels before changing system power mode.
