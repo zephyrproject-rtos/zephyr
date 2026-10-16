@@ -46,6 +46,9 @@ LOG_MODULE_REGISTER(rtc_rv3028, CONFIG_RTC_LOG_LEVEL);
 	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR |     \
 	 RTC_ALARM_TIME_MASK_WEEKDAY)
 
+/* Written to the year register before the time; not BCD, also after a year increment */
+#define RV3028_YEAR_UNSET 0xA0U
+
 struct rv3028_config {
 	const struct device *mfd;
 };
@@ -61,9 +64,57 @@ struct rv3028_data {
 #endif /* CONFIG_RTC_UPDATE */
 };
 
+/*
+ * Clear Status flags. Writing 1 to a flag leaves it unchanged, so writing 0 only to the given
+ * flags needs no read: a flag set meanwhile is not lost, and a read cut short is not written
+ * back. Called with the MFD lock held.
+ */
+static int rv3028_clear_status(const struct device *dev, uint8_t flags)
+{
+	const struct rv3028_config *config = dev->config;
+
+	return mfd_rv3028_write_reg8(config->mfd, RV3028_REG_STATUS, (uint8_t)~flags);
+}
+
+/*
+ * A switchover to VBACKUP sets BSF, and disables and resets the I2C interface, which cuts
+ * short an access in progress. Clear a BSF left by an earlier switchover before accessing
+ * the time registers, so that a BSF read afterwards reports a switchover during the access.
+ * Called with the MFD lock held.
+ */
+static int rv3028_clear_bsf(const struct device *dev, uint8_t status)
+{
+	if ((status & RV3028_STATUS_BSF) == 0U) {
+		return 0;
+	}
+
+	return rv3028_clear_status(dev, RV3028_STATUS_BSF);
+}
+
+/* Fail if a switchover happened since BSF was cleared. Called with the MFD lock held. */
+static int rv3028_check_bsf(const struct device *dev)
+{
+	const struct rv3028_config *config = dev->config;
+	uint8_t status;
+	int err;
+
+	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_STATUS, &status);
+	if (err != 0) {
+		return err;
+	}
+
+	if ((status & RV3028_STATUS_BSF) != 0U) {
+		LOG_WRN("backup switchover during time register access");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int rv3028_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
 	const struct rv3028_config *config = dev->config;
+	uint8_t status;
 	uint8_t date[7];
 	int err;
 
@@ -88,13 +139,40 @@ static int rv3028_set_time(const struct device *dev, const struct rtc_time *time
 
 	mfd_rv3028_lock_sem(config->mfd);
 
+	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_STATUS, &status);
+	if (err != 0) {
+		goto unlock;
+	}
+
+	err = rv3028_clear_bsf(dev, status);
+	if (err != 0) {
+		goto unlock;
+	}
+
+	/*
+	 * Each byte is stored as it is acknowledged, so a write cut short by a power loss leaves
+	 * a mix of the old and new time. Mark the year as not set first: the year is the last
+	 * byte of the time write, so a write cut short leaves the mark. Writing Seconds resets
+	 * the prescaler.
+	 */
+	err = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_YEAR, RV3028_YEAR_UNSET);
+	if (err != 0) {
+		goto unlock;
+	}
+
 	err = mfd_rv3028_write_regs(config->mfd, RV3028_REG_SECONDS, &date, sizeof(date));
-	if (err) {
+	if (err != 0) {
+		goto unlock;
+	}
+
+	/* Leave PORF set if a switchover may have cut the write short */
+	err = rv3028_check_bsf(dev);
+	if (err != 0) {
 		goto unlock;
 	}
 
 	/* Clear Power On Reset Flag */
-	err = mfd_rv3028_update_reg8(config->mfd, RV3028_REG_STATUS, RV3028_STATUS_PORF, 0);
+	err = rv3028_clear_status(dev, RV3028_STATUS_PORF);
 
 unlock:
 	mfd_rv3028_unlock_sem(config->mfd);
@@ -125,15 +203,31 @@ static int rv3028_get_time(const struct device *dev, struct rtc_time *timeptr)
 		goto unlock;
 	}
 
+	err = rv3028_clear_bsf(dev, status);
+	if (err != 0) {
+		goto unlock;
+	}
+
 	err = mfd_rv3028_read_regs(config->mfd, RV3028_REG_SECONDS, date, sizeof(date));
 	if (err) {
 		goto unlock;
 	}
 
+	/* Bytes read after a switchover are not from the device */
+	err = rv3028_check_bsf(dev);
+
 unlock:
 	mfd_rv3028_unlock_sem(config->mfd);
 	if (err) {
 		return err;
+	}
+
+	/*
+	 * Left by a set_time cut short; the year counter increments it like any BCD value. FFh
+	 * is what a read cut short returns, never the mark.
+	 */
+	if ((date[RV3028_REG_YEAR] >= RV3028_YEAR_UNSET) && (date[RV3028_REG_YEAR] != 0xFFU)) {
+		return -ENODATA;
 	}
 
 	memset(timeptr, 0U, sizeof(*timeptr));
@@ -146,6 +240,19 @@ unlock:
 	timeptr->tm_year = bcd2bin(date[6] & RV3028_YEAR_MASK) + RV3028_YEAR_OFFSET;
 	timeptr->tm_yday = -1;
 	timeptr->tm_isdst = -1;
+
+	/* Weekday is binary, the other fields BCD */
+	for (size_t i = 0; i < sizeof(date); i++) {
+		if ((i != 3U) && ((date[i] & 0x0FU) > 9U)) {
+			err = -EIO;
+		}
+	}
+
+	if ((err != 0) || !rtc_utils_validate_rtc_time(timeptr, RV3028_RTC_TIME_MASK)) {
+		LOG_WRN("invalid time read: %02x %02x %02x %02x %02x %02x %02x", date[0], date[1],
+			date[2], date[3], date[4], date[5], date[6]);
+		return -EIO;
+	}
 
 	LOG_DBG("get time: year = %d, mon = %d, mday = %d, wday = %d, hour = %d, "
 		"min = %d, sec = %d",
