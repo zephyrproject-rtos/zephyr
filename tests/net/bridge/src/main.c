@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/promiscuous.h>
 
 #include "arp.h"
+#include "bridge/bridge_internal.h"
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -704,6 +705,22 @@ static void test_recv_no_forwarding_port(void)
 	net_if_up(fake_iface[2]);
 }
 
+/* Release what the fake driver kept and tell which ports sent a frame */
+static uint32_t collect_sent(void)
+{
+	uint32_t sent = 0U;
+
+	for (int i = 0; i < 3; i++) {
+		if (eth_fake_data[i].sent_pkt != NULL) {
+			sent |= BIT(i);
+			net_pkt_unref(eth_fake_data[i].sent_pkt);
+			eth_fake_data[i].sent_pkt = NULL;
+		}
+	}
+
+	return sent;
+}
+
 /* Receive a frame from src to dst on fake_iface[idx] and tell which ports
  * sent it on.
  */
@@ -712,7 +729,6 @@ static uint32_t recv_frame_and_collect(int idx, const struct net_eth_addr *src,
 {
 	static const uint8_t data[] = {'r', 's', 'v', 'd'};
 	struct net_eth_hdr eth_hdr;
-	uint32_t sent = 0U;
 	struct net_pkt *pkt;
 
 	pkt = net_pkt_rx_alloc_with_buffer(fake_iface[idx], sizeof(eth_hdr) + sizeof(data),
@@ -730,15 +746,7 @@ static uint32_t recv_frame_and_collect(int idx, const struct net_eth_addr *src,
 	/* give time to the processing threads to run */
 	k_sleep(K_MSEC(20));
 
-	for (int i = 0; i < 3; i++) {
-		if (eth_fake_data[i].sent_pkt != NULL) {
-			net_pkt_unref(eth_fake_data[i].sent_pkt);
-			eth_fake_data[i].sent_pkt = NULL;
-			sent |= BIT(i);
-		}
-	}
-
-	return sent;
+	return collect_sent();
 }
 
 /* The reserved addresses 01-80-C2-00-00-00 to 01-80-C2-00-00-0F are never
@@ -750,12 +758,7 @@ static void test_recv_reserved_addresses(void)
 	struct net_eth_addr dst = {{0x01, 0x80, 0xc2, 0x00, 0x00, 0x00}};
 
 	/* Release what an earlier test left in the fake driver */
-	for (int i = 0; i < 3; i++) {
-		if (eth_fake_data[i].sent_pkt != NULL) {
-			net_pkt_unref(eth_fake_data[i].sent_pkt);
-			eth_fake_data[i].sent_pkt = NULL;
-		}
-	}
+	(void)collect_sent();
 
 	for (uint8_t last = 0x00; last <= 0x0f; last++) {
 		dst.addr[5] = last;
@@ -766,6 +769,55 @@ static void test_recv_reserved_addresses(void)
 	dst.addr[5] = 0x10;
 	zexpect_equal(recv_frame_and_collect(0, &src, &dst), BIT(1) | BIT(2),
 		      "Frame to 01:80:c2:00:00:10 not forwarded");
+
+	check_free_packet_count();
+}
+
+/* Receive a frame on fake_iface[idx] and tell which ports sent it on */
+static uint32_t recv_and_collect(int idx)
+{
+	_recv_data(fake_iface[idx]);
+
+	/* give time to the processing threads to run */
+	k_sleep(K_MSEC(100));
+
+	return collect_sent();
+}
+
+/* A port that is not forwarding neither sends nor passes on frames */
+static void test_port_state_gating(void)
+{
+	static const enum eth_bridge_port_state blocked[] = {
+		ETH_BRIDGE_PORT_STATE_DISCARDING,
+		ETH_BRIDGE_PORT_STATE_LEARNING,
+	};
+	int ret;
+
+	(void)collect_sent();
+
+	zexpect_equal(eth_bridge_port_get_state(fake_iface[1]), ETH_BRIDGE_PORT_STATE_FORWARDING,
+		      "A new port is not forwarding");
+
+	ARRAY_FOR_EACH(blocked, i) {
+		ret = eth_bridge_port_set_state(bridge, fake_iface[1], blocked[i]);
+		zassert_equal(ret, 0, "Cannot set port state %d (%d)", blocked[i], ret);
+
+		zexpect_equal(recv_and_collect(0), BIT(2), "Flood reached a port in state %d",
+			      blocked[i]);
+		zexpect_equal(recv_and_collect(1), 0U, "Frame from a port in state %d forwarded",
+			      blocked[i]);
+	}
+
+	ret = eth_bridge_port_set_state(bridge, fake_iface[1], ETH_BRIDGE_PORT_STATE_FORWARDING);
+	zassert_equal(ret, 0, "Cannot set the port forwarding (%d)", ret);
+
+	zexpect_equal(recv_and_collect(0), BIT(1) | BIT(2), "Flood not restored");
+	zexpect_equal(recv_and_collect(1), BIT(0) | BIT(2), "Forwarding not restored");
+
+	zexpect_equal(eth_bridge_port_set_state(bridge, fake_iface[1], 42), -EINVAL,
+		      "Invalid state accepted");
+	zexpect_equal(eth_bridge_port_set_state(bridge, bridge, ETH_BRIDGE_PORT_STATE_FORWARDING),
+		      -ENOENT, "State set on an interface that is not a port");
 
 	check_free_packet_count();
 }
@@ -1005,6 +1057,7 @@ ZTEST(net_eth_bridge, test_net_eth_bridge)
 	test_recv_with_bridge();
 	test_recv_no_forwarding_port();
 	test_recv_reserved_addresses();
+	test_port_state_gating();
 	test_recv_with_bridge_fdb();
 	test_recv_with_bridge_fdb_ingress();
 	test_fdb_del_iface();

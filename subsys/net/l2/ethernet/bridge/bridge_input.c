@@ -10,6 +10,8 @@ LOG_MODULE_REGISTER(net_eth_bridge_input, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/net/ethernet_bridge.h>
 #include <zephyr/net/net_log.h>
 
+#include "bridge_internal.h"
+
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
 #include <zephyr/net/ethernet_bridge_fdb.h>
 
@@ -46,7 +48,8 @@ static void eth_bridge_fdb_forward_handler(struct eth_bridge_fdb_entry *entry, v
 	}
 
 	/* Forward per FDB entry */
-	if (!net_if_flag_is_set(entry->iface, NET_IF_UP)) {
+	if (!net_if_flag_is_set(entry->iface, NET_IF_UP) ||
+	    !eth_bridge_port_is_forwarding(entry->iface)) {
 		return;
 	}
 
@@ -159,6 +162,16 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 	if (is_link_local_addr(dst_addr)) {
 		NET_DBG("Link-local frame handled by iface %d", net_if_get_by_iface(iface));
 		return NET_CONTINUE;
+	}
+
+	if (!eth_bridge_port_is_forwarding(iface)) {
+		/* gPTP runs on every port whatever its forwarding state */
+		if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
+			return NET_CONTINUE;
+		}
+
+		NET_DBG("DROP: iface %d not forwarding", net_if_get_by_iface(iface));
+		return NET_DROP;
 	}
 
 	/* Lookup FDB table to forward */
