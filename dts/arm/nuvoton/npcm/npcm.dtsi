@@ -11,6 +11,15 @@
 #include <freq.h>
 
 / {
+	pinfunc: pinfunc {
+		compatible = "nuvoton,npcm-pinfunc";
+	};
+
+	pinctrl: pinctrl {
+		compatible = "nuvoton,npcm-pinctrl";
+		nuvoton,scfg = <&scfg>;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -44,6 +53,13 @@
 			reg = <0x4000d000 0x2000
 			       0x400b5000 0x2000>;
 			reg-names = "pmc", "cdcg";
+		};
+
+		scfg: syscon@400c3000 {
+			compatible = "nuvoton,npcm-scfg", "syscon";
+			/* System Configuration (SCFG) */
+			reg = <0x400c3000 0x1000>;
+			reg-io-width = <1>;
 		};
 	};
 };
