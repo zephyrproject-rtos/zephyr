@@ -567,6 +567,7 @@ static int uart_silabs_async_rx_enable(const struct device *dev, uint8_t *rx_buf
 {
 	const struct uart_silabs_config *config = dev->config;
 	struct uart_silabs_data *data = dev->data;
+	unsigned int key;
 	int ret;
 
 	if (!data->dma_rx.dma_dev) {
@@ -606,6 +607,8 @@ static int uart_silabs_async_rx_enable(const struct device *dev, uint8_t *rx_buf
 	data->dma_rx.enabled = true;
 	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_RX);
 
+	key = irq_lock();
+
 	USART_IntClear(config->base, USART_IF_RXOF | USART_IF_TCMP1);
 	USART_IntEnable(config->base, USART_IF_RXOF);
 
@@ -616,12 +619,14 @@ static int uart_silabs_async_rx_enable(const struct device *dev, uint8_t *rx_buf
 	if (dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel)) {
 		LOG_ERR("UART ERR: RX DMA start failed!");
 		uart_silabs_async_rx_irq_disable(config->base);
+		irq_unlock(key);
 		data->dma_rx.enabled = false;
 		(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_RX);
 		return -EFAULT;
 	}
 
 	async_evt_rx_buf_request(data);
+	irq_unlock(key);
 
 	return ret;
 }
