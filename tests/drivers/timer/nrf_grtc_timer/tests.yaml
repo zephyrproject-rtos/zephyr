@@ -14,6 +14,8 @@ common:
     - nrf54lm20dk/nrf54lm20a/cpuflpr
     - nrf54lm20dk/nrf54lm20b/cpuapp
     - nrf54lm20dk/nrf54lm20b/cpuflpr
+    - nrf54lv10dk/nrf54lv10a/cpuapp
+    - nrf54lv10dk/nrf54lv10a/cpuflpr
     - nrf7120dk/nrf7120/cpuapp
     - nrf7120dk/nrf7120/cpuapp/ns
     - nrf7120dk/nrf7120/cpuflpr
