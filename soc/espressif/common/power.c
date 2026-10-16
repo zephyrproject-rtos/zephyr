@@ -6,6 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/irq.h>
@@ -13,6 +14,7 @@
 #include <esp_attr.h>
 #include <esp_cpu.h>
 #include <esp_sleep.h>
+#include <esp_timer.h>
 #include <esp_timer_impl.h>
 #include <esp_private/esp_clk.h>
 #include <esp_private/systimer.h>
@@ -38,7 +40,6 @@ extern esp_err_t sleep_clock_icg_startup_init(void);
 #endif
 
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
-#include <esp_timer.h>
 #include <pmstats.h>
 #endif
 
@@ -63,6 +64,7 @@ static const struct device *const rtc_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(r
 
 static bool sleep_enabled;
 static uint64_t sleep_time_us;
+static uint64_t lpm_budget_us;
 static uint64_t lpm_entry_counter;
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
 static uint64_t lpm_deadline_us;
@@ -259,10 +261,15 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			if (ret != ESP_OK) {
 				LOG_DBG("Light sleep rejected by HAL (0x%x)", ret);
 			}
+		} else if (sleep_time_us != 0U) {
+			/* Avoid retrying suspend until the short alarm fires. */
+			k_cpu_idle();
 		}
 		break;
 
 	case PM_STATE_SOFT_OFF:
+		/* esp_timer alarms do not survive deep sleep. */
+		sleep_time_us = lpm_budget_us;
 		rtc_wakeup_enable(state, true);
 #if defined(SOC_PM_SUPPORT_RTC_PERIPH_PD)
 		esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
@@ -321,22 +328,38 @@ uint64_t esp32_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 #endif
 {
 	/* Since LPM state is not yet confirmed, we only program
-	 * wakeup at pm_state_set() event. Snapshot the counter here too, so the
-	 * software latency until the wakeup is programmed can be measured and
-	 * discounted from the sleep period.
+	 * wakeup at pm_state_set() event.
 	 */
-	uint64_t counter = esp_timer_impl_get_counter_reg();
+	int64_t next_alarm = esp_timer_get_next_alarm_for_wake_up();
+	int64_t now_us = esp_timer_get_time();
 
+	lpm_budget_us = max_lpm_time_us;
 	sleep_time_us = max_lpm_time_us;
-	lpm_entry_counter = counter;
+
+	/* An esp_timer alarm is not covered by the kernel timeout. Use the next
+	 * one that should wake the CPU as an earlier deadline. Idle enters sleep
+	 * again after the callback has run.
+	 */
+	if (next_alarm != INT64_MAX) {
+		if (next_alarm <= now_us) {
+			sleep_time_us = 0;
+		} else if ((uint64_t)(next_alarm - now_us) < sleep_time_us) {
+			sleep_time_us = (uint64_t)(next_alarm - now_us);
+		}
+	}
 
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
 	/* Anchor the wake deadline here, at low-power-idle entry, so the wake margin
 	 * to the deadline can be measured on wake in the same esp_timer frame without
 	 * the software-latency bias of anchoring later at sleep-start.
 	 */
-	lpm_deadline_us = (uint64_t)esp_timer_get_time() + max_lpm_time_us;
+	lpm_deadline_us = (uint64_t)now_us + max_lpm_time_us;
 #endif
+
+	/* Keep the LP counter snapshot adjacent to the OS counter snapshot. */
+	uint64_t counter = esp_timer_impl_get_counter_reg();
+
+	lpm_entry_counter = counter;
 
 	return counter;
 }
