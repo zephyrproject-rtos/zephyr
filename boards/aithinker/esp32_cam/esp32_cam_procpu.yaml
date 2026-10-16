@@ -10,10 +10,12 @@ supported:
   - gpio
   - i2c
   - i2s
+  - netif:wifi
   - nvs
   - pwm
   - sdhc
   - spi
   - uart
+  - video
   - watchdog
 vendor: aithinker
