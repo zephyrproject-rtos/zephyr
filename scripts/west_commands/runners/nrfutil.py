@@ -48,14 +48,16 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
-        return NrfUtilBinaryRunner(cfg, args.nrf_family, args.softreset,
-                                   args.pinreset, args.dev_id, erase=args.erase,
-                                   erase_mode=args.erase_mode,
-                                   ext_erase_mode=args.ext_erase_mode,
-                                   reset=args.reset, tool_opt=args.tool_opt,
-                                   force=args.force, recover=args.recover,
-                                   ext_mem_config_file=args.ext_mem_config_file,
-                                   dry_run=args.dry_run)
+        runner = NrfUtilBinaryRunner(cfg, args.nrf_family, args.softreset,
+                                     args.pinreset, args.dev_id, erase=args.erase,
+                                     erase_mode=args.erase_mode,
+                                     ext_erase_mode=args.ext_erase_mode,
+                                     reset=args.reset, tool_opt=args.tool_opt,
+                                     force=args.force, recover=args.recover,
+                                     ext_mem_config_file=args.ext_mem_config_file,
+                                     dry_run=args.dry_run)
+        runner.erase_prepended = getattr(args, 'erase_prepended', False)
+        return runner
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -109,6 +111,23 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
     def do_require(self):
         self.require('nrfutil')
+
+    def _read_ctrl_ap_register(self, address):
+        output = self._exec([
+            'x-access-port-register-read',
+            '--ctrl-ap',
+            '--address', hex(address),
+            '--serial-number', self.dev_id,
+            '--family', self.family,
+        ])
+
+        for item in output:
+            if item.get('type') == 'task_end':
+                result = item.get('data', {}).get('data', {})
+                return result['registerValue']
+
+        raise RuntimeError(
+            f'nrfutil CTRL-AP register read failed to return a value for address {hex(address)}')
 
     def _insert_op(self, op):
         op['operationId'] = f'{self._op_id}'
