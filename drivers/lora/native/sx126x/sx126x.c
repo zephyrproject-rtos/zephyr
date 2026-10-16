@@ -870,7 +870,8 @@ static void sx126x_irq_work_handler(struct k_work *work)
 	}
 }
 
-static int sx126x_set_configured_packet_params(const struct device *dev, uint8_t payload_len)
+static int sx126x_set_configured_packet_params(const struct device *dev, uint8_t payload_len,
+				  bool adjust_len_implicit)
 {
 	struct sx126x_data *data = dev->data;
 
@@ -878,10 +879,23 @@ static int sx126x_set_configured_packet_params(const struct device *dev, uint8_t
 		return sx126x_set_gfsk_packet_params(dev, &data->gfsk_config, payload_len);
 	}
 
-	return sx126x_set_packet_params(
-		dev, data->config.preamble_len, SX126X_LORA_HEADER_EXPLICIT, payload_len,
-		data->config.packet_crc_disable ? SX126X_LORA_CRC_OFF : SX126X_LORA_CRC_ON,
-		data->config.iq_inverted ? SX126X_LORA_IQ_INVERTED : SX126X_LORA_IQ_STANDARD);
+	if (data->config.explicit_header_disable &&
+		!adjust_len_implicit &&
+		payload_len != data->config.implicit_packet_length) {
+		return -EINVAL;
+	}
+
+	return sx126x_set_packet_params(dev,
+				data->config.preamble_len,
+				data->config.explicit_header_disable ?
+				SX126X_LORA_HEADER_IMPLICIT : SX126X_LORA_HEADER_EXPLICIT,
+				data->config.explicit_header_disable ?
+				data->config.implicit_packet_length : payload_len,
+				data->config.packet_crc_disable ?
+				SX126X_LORA_CRC_OFF : SX126X_LORA_CRC_ON,
+				data->config.iq_inverted ?
+				SX126X_LORA_IQ_INVERTED :
+				SX126X_LORA_IQ_STANDARD);
 }
 
 int sx126x_config_begin(const struct device *dev)
@@ -1054,7 +1068,7 @@ static int sx126x_lora_send_async(const struct device *dev,
 	k_msgq_purge(&data->tx_msgq);
 
 	/* Set packet parameters */
-	ret = sx126x_set_configured_packet_params(dev, data_len);
+	ret = sx126x_set_configured_packet_params(dev, data_len, false);
 	if (ret < 0) {
 		goto out_error;
 	}
@@ -1147,7 +1161,7 @@ static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 	k_msgq_purge(&data->rx_msgq);
 
 	/* Set packet parameters for variable length reception */
-	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN);
+	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
 	if (ret < 0) {
 		sx126x_set_sleep(dev);
 		k_mutex_unlock(&data->lock);
@@ -1239,7 +1253,7 @@ static int sx126x_lora_recv_async(const struct device *dev,
 	data->rx_cb_user_data = user_data;
 
 	/* Set packet parameters */
-	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN);
+	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
 	if (ret < 0) {
 		data->rx_cb = NULL;
 		sx126x_set_sleep(dev);
@@ -1328,7 +1342,7 @@ static int sx126x_duty_cycle_start(const struct device *dev,
 	data->duty_cycle.sleep_period = SX126X_MS_TO_TIMEOUT(
 		k_ticks_to_ms_ceil32(sleep_period.ticks));
 
-	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN);
+	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
 	if (ret < 0) {
 		goto out_error;
 	}
@@ -1465,7 +1479,7 @@ static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 {
 	struct sx126x_data *data = dev->data;
 	uint32_t t_preamble_us, t_payload_us, t_sym_us, n_payload, bw_hz;
-	uint8_t sf, cr;
+	uint8_t sf, cr, hdr_len;
 	int32_t tmp;
 	bool de, crc;
 	int ret;
@@ -1507,8 +1521,9 @@ static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 	de = should_enable_ldro(sf, data->config.bandwidth, dev->config);
 	crc = !data->config.packet_crc_disable;
 	cr = data->config.coding_rate;
+	hdr_len = data->config.explicit_header_disable ? 0 : 20;
 
-	tmp = 8 * data_len - 4 * sf + 28 + 16 * crc;
+	tmp = 8 * data_len - 4 * sf + 8 + hdr_len + 16 * crc;
 	if (tmp < 0) {
 		tmp = 0;
 	}

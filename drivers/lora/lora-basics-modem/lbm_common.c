@@ -94,8 +94,10 @@ int lbm_lora_config(const struct device *dev, const struct lora_modem_config *lo
 		},
 		.pkt_params = {
 			.preamble_len_in_symb = lora_config->preamble_len,
-			.header_type = RAL_LORA_PKT_EXPLICIT,
-			.pld_len_in_bytes = UINT8_MAX,
+			.header_type = lora_config->explicit_header_disable ?
+				RAL_LORA_PKT_IMPLICIT : RAL_LORA_PKT_EXPLICIT,
+			.pld_len_in_bytes = lora_config->explicit_header_disable ?
+				lora_config->implicit_packet_length : UINT8_MAX,
 			.crc_is_on = !lora_config->packet_crc_disable,
 			.invert_iq_is_on = lora_config->iq_inverted,
 		},
@@ -218,7 +220,10 @@ uint32_t lbm_lora_airtime(const struct device *dev, uint32_t data_len)
 						      &data->gfsk_mod_params);
 	}
 
-	data->pkt_params.pld_len_in_bytes = data_len;
+	/* Implicit header keeps configured length */
+	if (data->pkt_params.header_type != RAL_LORA_PKT_IMPLICIT) {
+		data->pkt_params.pld_len_in_bytes = data_len;
+	}
 
 	return ral_get_lora_time_on_air_in_ms(&config->ralf.ral, &data->pkt_params,
 					      &data->mod_params);
@@ -255,6 +260,11 @@ int lbm_lora_send_async(const struct device *dev, uint8_t *msg, uint32_t msg_len
 	    msg_len != data->gfsk_pkt_params.pld_len_in_bytes) {
 		ret = -EINVAL;
 		goto release;
+	} else if (!(IS_ENABLED(CONFIG_LORA_GFSK) && data->gfsk) &&
+		data->pkt_params.header_type == RAL_LORA_PKT_IMPLICIT &&
+		msg_len != data->pkt_params.pld_len_in_bytes) {
+		ret = -EINVAL;
+		goto release;
 	}
 
 	/* Store signal */
@@ -271,7 +281,9 @@ int lbm_lora_send_async(const struct device *dev, uint8_t *msg, uint32_t msg_len
 		}
 		status = ral_set_gfsk_pkt_params(&config->ralf.ral, &data->gfsk_pkt_params);
 	} else {
-		data->pkt_params.pld_len_in_bytes = msg_len;
+		if (data->pkt_params.header_type != RAL_LORA_PKT_IMPLICIT) {
+			data->pkt_params.pld_len_in_bytes = msg_len;
+		}
 		status = ral_set_lora_pkt_params(&config->ralf.ral, &data->pkt_params);
 	}
 	if (status != RAL_STATUS_OK) {
