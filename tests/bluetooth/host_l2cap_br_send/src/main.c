@@ -88,6 +88,8 @@ static void *setup(void)
 	conn = bt_conn_add_br(&addr);
 	zassert_not_null(conn);
 
+	/* As on Connection Complete, before L2CAP attaches its channels */
+	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 	bt_l2cap_br_connected(conn);
 	recv_feat_mask();
 

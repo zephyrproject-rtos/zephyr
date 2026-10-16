@@ -1032,6 +1032,14 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 		return -ENOTCONN;
 	}
 
+	/* The TX processor never sends on a link that is going away, so a PDU queued now would
+	 * hold its buffer until the L2CAP cleanup, which runs on the same work queue as the
+	 * signalling handlers that need those buffers.
+	 */
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	br_chan = CONTAINER_OF(ch, struct bt_l2cap_br_chan, chan);
 
 	LOG_DBG("chan %p buf %p len %u", br_chan, buf, buf->len);
