@@ -76,7 +76,7 @@ static int new_ftp_connection(struct ftp_client *client, enum ftp_channel_type c
 			      uint16_t port)
 {
 	int proto = client->sec_tag <= 0 ? NET_IPPROTO_TCP : NET_IPPROTO_TLS_1_2;
-	socklen_t addrlen;
+	net_socklen_t addrlen;
 	int *sock;
 	int ret;
 
