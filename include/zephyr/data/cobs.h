@@ -150,6 +150,7 @@ int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
  * processed data chunks.
  * A decoder that allows trailing delimiters and encounters one will invoke
  * this callback with a NULL pointer and zero length indicating a completed frame.
+ * Delimiters that do not end a frame, such as consecutive delimiters, are ignored.
  *
  * When this callback function returns a negative error value, the encoder or decoder
  * stream is aborted and the error will be propagated.
@@ -195,7 +196,7 @@ struct cobs_decoder {
 	/** User data pointer passed to callback */
 	void *cb_user_data;
 
-	/** Current COBS code byte being processed */
+	/** Current COBS code byte being processed, 0 if no frame was started */
 	uint8_t code;
 	/** Position within current code block */
 	uint8_t code_index;
@@ -293,7 +294,8 @@ int cobs_decoder_close(struct cobs_decoder *dec);
  *
  * @note If a delimiter is encountered, and the @ref COBS_FLAG_TRAILING_DELIMITER flag
  *       is set, the registered callback function will be called with a NULL pointer
- *       indicating a frame end.
+ *       indicating a frame end. Delimiters received before the first code byte of a
+ *       frame are ignored.
  *
  * @param dec Pointer to decoder structure
  * @param buf Buffer containing encoded data

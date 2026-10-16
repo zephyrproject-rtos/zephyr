@@ -154,7 +154,7 @@ int cobs_encoder_write(struct cobs_encoder *enc, const uint8_t *buf, size_t len)
 
 static inline void cobs_decoder_reset(struct cobs_decoder *dec)
 {
-	dec->code = 0xff;
+	dec->code = 0U;
 	dec->code_index = 0;
 }
 
@@ -213,6 +213,11 @@ int cobs_decoder_write(struct cobs_decoder *dec, const uint8_t *buf, size_t len)
 				return -EINVAL;
 			}
 
+			if (dec->code == 0U) {
+				/* No frame started, ignore consecutive delimiters */
+				continue;
+			}
+
 			/* Notify frame delimiter was seen */
 			ret = dec->cb(NULL, 0, dec->cb_user_data);
 			if (ret < 0) {
@@ -238,7 +243,7 @@ int cobs_decoder_write(struct cobs_decoder *dec, const uint8_t *buf, size_t len)
 
 		dec->code_index = data;
 
-		if (dec->code != 0xff) {
+		if (dec->code != 0U && dec->code != 0xff) {
 			/* Group finished, output zero byte */
 			data = 0x00;
 
