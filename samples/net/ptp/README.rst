@@ -45,6 +45,16 @@ Follow these steps to build the PTP sample application:
    :goals: build
    :compact:
 
+PPS Output
+==========
+
+Some Ethernet controllers can output a pulse-per-second (PPS) signal derived
+from the PTP hardware clock. On supported boards, the board devicetree or an
+overlay routes this output to a pin, given by the pinctrl configuration of the
+PTP clock node. The 1 Hz signal can be observed with an oscilloscope or a logic
+analyzer. Comparing the PPS outputs of two boards, or of a board and the
+grandmaster, shows how well the clocks are synchronized.
+
 Interpreting net ptp Output
 ===========================
 
