@@ -53,6 +53,11 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Networking
+
+  * ``CONFIG_HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE``, replaced by
+    :kconfig:option:`CONFIG_HTTP_HUFFMAN_DECODE_BUFFER_SIZE`.
+
 New APIs and options
 ====================
 ..
