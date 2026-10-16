@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf7120dk_nrf7120_cpuapp.overlay"
+#include "nrf7120dk_nrf7120_common.dtsi"

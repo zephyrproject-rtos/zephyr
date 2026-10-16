@@ -1,25 +1,7 @@
 /*
- * Copyright (c) 2026 Nordic Semiconductor
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/gpio/gpio.h>
-
-/*
- * P0.03 looped back to P0.00
- */
-
-/ {
-	aliases {
-		test-comp = &comp;
-	};
-
-	zephyr,user {
-		test-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-	};
-};
-
-&gpio0 {
-	status = "okay";
-};
+#include "nrf7120dk_nrf7120_common.dtsi"
