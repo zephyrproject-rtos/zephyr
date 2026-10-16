@@ -11,5 +11,6 @@ between cores, and between virtualized environments running on the same system.
 
    ipc/index.rst
    zbus/index.rst
+   zfence/index.rst
    notify.rst
    virtualization/index.rst
