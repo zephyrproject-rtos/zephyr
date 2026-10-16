@@ -58,6 +58,34 @@ static inline bool eth_bridge_port_is_forwarding(struct net_if *iface)
 	return eth_bridge_port_get_state(iface) == ETH_BRIDGE_PORT_STATE_FORWARDING;
 }
 
+/**
+ * @brief Learn the port of a source MAC address
+ *
+ * Adds a dynamic FDB entry for @p mac on @p iface, or moves an existing
+ * dynamic entry of the bridge to @p iface. Static entries are left as they
+ * are, and nothing is learned when the table is full or @p mac is not a
+ * unicast address.
+ *
+ * @param bridge Bridge interface
+ * @param mac Source MAC address of a received frame
+ * @param iface Bridged interface the frame was received on
+ */
+void eth_bridge_fdb_learn(struct net_if *bridge, struct net_eth_addr *mac, struct net_if *iface);
+
+/**
+ * @brief Find the ports of a destination MAC address
+ *
+ * @param bridge Bridge interface
+ * @param mac Destination MAC address
+ * @param ports Array filled with the interfaces of the matching entries
+ * @param max_ports Number of elements in @p ports
+ *
+ * @return Number of matching FDB entries of @p bridge. At most
+ *         @p max_ports of them are stored in @p ports.
+ */
+size_t eth_bridge_fdb_lookup(struct net_if *bridge, const struct net_eth_addr *mac,
+			     struct net_if *ports[], size_t max_ports);
+
 #ifdef __cplusplus
 }
 #endif
