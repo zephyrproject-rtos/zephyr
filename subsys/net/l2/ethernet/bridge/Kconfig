@@ -101,6 +101,17 @@ config NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES
 	help
 	  How many FDB (Forwarding database) entries supported.
 
+config NET_ETHERNET_BRIDGE_FDB_LEARNING
+	bool "Learn source MAC addresses into the FDB"
+	depends on NET_ETHERNET_BRIDGE_FDB
+	default y
+	help
+	  Learn the port of each source MAC address from received frames,
+	  so that a frame to a known destination is sent out of one port
+	  instead of being flooded. Learned entries are dynamic and never
+	  replace static ones. When the table is full nothing more is
+	  learned, and frames to unknown destinations are flooded.
+
 module = NET_ETHERNET_BRIDGE
 module-dep = NET_LOG
 module-str = Log level for Ethernet Bridging

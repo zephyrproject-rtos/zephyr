@@ -101,6 +101,14 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* Networking
+
+  * Ethernet bridge
+
+    * The bridge learns the port of each source MAC address into its FDB
+      (:kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING`), so that a frame to a known
+      destination is sent out of one port instead of being flooded.
+
 Other notable changes
 *********************
 
