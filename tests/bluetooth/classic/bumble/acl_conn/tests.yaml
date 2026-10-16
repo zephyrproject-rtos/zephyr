@@ -1,0 +1,31 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: ztest
+  timeout: 120
+  sidecar: bumble
+tests:
+  bluetooth.classic.bumble.acl_conn:
+    sidecar_config:
+      bumble:
+        addresses:
+          - "00:00:01:00:00:01"
+          - "00:00:01:00:00:02"
+        devices:
+          - '--peer_bd_address={addr1} -test=acl_central::test_01_connect'
+          - '--peer_bd_address={addr0} -test=acl_peripheral::test_01_connect'
+  # The peripheral is another application, and the devices are given their
+  # controllers by the test.
+  bluetooth.classic.bumble.acl_conn.separate_peer:
+    required_applications:
+      - application: bluetooth.classic.bumble.acl_peer
+        path: ../acl_peer
+    sidecar_config:
+      bumble:
+        controller_option: ''
+        devices:
+          - '--bt-dev={ctrl0} --peer_bd_address={addr1} -test=acl_central::test_01_connect'
+          - args: '--bt-dev={ctrl1}'
+            image: bluetooth.classic.bumble.acl_peer
