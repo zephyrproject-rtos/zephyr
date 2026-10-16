@@ -119,11 +119,9 @@ static inline size_t cobs_max_encoded_len(size_t decoded_size, uint32_t flags)
  *
  * @retval 0        Success
  * @retval -ENOMEM  Insufficient destination space
- * @retval -EINVAL  Invalid COBS structure or parameters
  *
  * @kconfig_dep{CONFIG_NET_BUF}
  */
-
 int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
 
 /**
@@ -168,6 +166,8 @@ int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
  * When this callback function returns a positive value for a completed frame, the
  * decoder stops after the frame's delimiter, see cobs_decoder_write(). Positive
  * values returned for data chunks, or by an encoder callback, are ignored.
+ *
+ * @p buf is only valid for the duration of the call.
  *
  * @param buf        Buffer containing processed data
  * @param len        Length of data in buffer
@@ -232,7 +232,8 @@ struct cobs_decoder {
  * @param user_data  User data pointer passed to callback
  * @param flags      Encoding flags @ref COBS_FLAGS
  *
- * @return 0 on success, negative errno code on failure
+ * @retval 0        Success
+ * @retval -EINVAL  @p cb is NULL
  */
 int cobs_encoder_init(struct cobs_encoder *enc, cobs_stream_cb cb, void *user_data, uint32_t flags);
 
@@ -246,7 +247,8 @@ int cobs_encoder_init(struct cobs_encoder *enc, cobs_stream_cb cb, void *user_da
  *
  * @param enc Pointer to encoder structure
  *
- * @return 0 on success, negative errno code on failure
+ * @retval 0       Success
+ * @retval -errno  Negative errno code returned by the callback
  */
 int cobs_encoder_close(struct cobs_encoder *enc);
 
@@ -257,13 +259,14 @@ int cobs_encoder_close(struct cobs_encoder *enc);
  * callback function. This function can be called multiple times to encode
  * data incrementally.
  *
- * In case an error is returned, the encoder state will be reset.
+ * In case an error is returned, the encoder state will be reset. Encoded groups of
+ * the current frame may already have been passed to the callback.
  *
  * @param enc Pointer to encoder structure
  * @param buf Buffer containing data to encode
  * @param len Length of data in buffer
  *
- * @return Number of bytes used from @p buf on success, negative errno code on failure
+ * @return @p len on success, negative errno code returned by the callback on failure
  */
 int cobs_encoder_write(struct cobs_encoder *enc, const uint8_t *buf, size_t len);
 
@@ -279,7 +282,8 @@ int cobs_encoder_write(struct cobs_encoder *enc, const uint8_t *buf, size_t len)
  * @param user_data  User data pointer passed to callback
  * @param flags      Decoding flags @ref COBS_FLAGS
  *
- * @return 0 on success, negative errno code on failure
+ * @retval 0        Success
+ * @retval -EINVAL  @p cb is NULL
  */
 int cobs_decoder_init(struct cobs_decoder *dec, cobs_stream_cb cb, void *user_data, uint32_t flags);
 
@@ -321,7 +325,9 @@ int cobs_decoder_close(struct cobs_decoder *dec);
  * @param buf Buffer containing encoded data
  * @param len Length of data in buffer
  *
- * @return Number of bytes used from @p buf on success, negative errno code on failure
+ * @return Number of bytes used from @p buf on success, which is @p len unless the
+ *         callback stopped at a frame end, -EINVAL on an unexpected delimiter, or a
+ *         negative errno code returned by the callback
  */
 int cobs_decoder_write(struct cobs_decoder *dec, const uint8_t *buf, size_t len);
 
