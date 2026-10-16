@@ -627,7 +627,8 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 	}
 
 	key = irq_lock();
-	if (sl_hal_ldma_channel_is_enabled(cfg->ldma, channel)) {
+	if (sl_hal_ldma_channel_is_enabled(cfg->ldma, channel) ||
+	    (sl_hal_ldma_get_pending_interrupts(cfg->ldma) & BIT(channel))) {
 		/*
 		 * It is voluntary to split this 2 lines in order to separate the write of the link
 		 * addr and the write of the link bit. In this way, there is always a linkAddr when
