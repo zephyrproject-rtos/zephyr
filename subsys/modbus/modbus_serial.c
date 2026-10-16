@@ -678,6 +678,10 @@ int modbus_serial_init(struct modbus_context *ctx,
 		cfg->rtu_timeout = (numof_bits * if_delay_max) / 38400;
 	}
 
+	if (cfg->use_rtu_timeout_override) {
+		cfg->rtu_timeout = cfg->rtu_timeout_override;
+	}
+
 	if (configure_gpio(ctx) != 0) {
 		return -EIO;
 	}

@@ -61,10 +61,25 @@ DT_INST_FOREACH_STATUS_OKAY(MB_RTU_DEFINE_GPIO_CFGS)
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, prop),		\
 		    (&prop##_cfg_##inst), (NULL))
 
-#define MODBUS_DT_GET_SERIAL_DEV(inst) {			\
-		.dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),	\
-		.de = MB_RTU_ASSIGN_GPIO_CFG(inst, de_gpios),	\
-		.re = MB_RTU_ASSIGN_GPIO_CFG(inst, re_gpios),	\
+#define MB_RTU_CHECK_TIMEOUT_OVERRIDE(inst)					\
+	BUILD_ASSERT(!DT_INST_PROP(inst, use_rtu_timeout_override) ||		\
+		     DT_INST_NODE_HAS_PROP(inst, rtu_timeout_override),		\
+		     "use-rtu-timeout-override requires rtu-timeout-override");	\
+	BUILD_ASSERT(!DT_INST_PROP(inst, use_rtu_timeout_override) ||		\
+		     IS_ENABLED(CONFIG_MODBUS_SERIAL_ASYNC_API) ||		\
+		     (DT_INST_PROP_OR(inst, rtu_timeout_override, 1) > 0),	\
+		     "rtu-timeout-override = 0 requires MODBUS_SERIAL_ASYNC_API");
+
+DT_INST_FOREACH_STATUS_OKAY(MB_RTU_CHECK_TIMEOUT_OVERRIDE)
+
+#define MODBUS_DT_GET_SERIAL_DEV(inst) {					\
+		.dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),			\
+		.de = MB_RTU_ASSIGN_GPIO_CFG(inst, de_gpios),			\
+		.re = MB_RTU_ASSIGN_GPIO_CFG(inst, re_gpios),			\
+		.use_rtu_timeout_override =					\
+			DT_INST_PROP(inst, use_rtu_timeout_override),		\
+		.rtu_timeout_override =						\
+			DT_INST_PROP_OR(inst, rtu_timeout_override, 0),		\
 	},
 
 #ifdef CONFIG_MODBUS_SERIAL

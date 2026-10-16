@@ -71,6 +71,10 @@
 struct modbus_serial_config {
 	/* UART device */
 	const struct device *dev;
+	/* Use rtu_timeout_override instead of the calculated RTU timeout */
+	bool use_rtu_timeout_override;
+	/* RTU timeout override in microseconds */
+	uint32_t rtu_timeout_override;
 	/* RTU timeout (maximum inter-frame delay) */
 	uint32_t rtu_timeout;
 	/* Pointer to current position in buffer */

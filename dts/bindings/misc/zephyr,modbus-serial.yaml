@@ -23,3 +23,20 @@ properties:
       Receiver enable pin (nRE) of the RS-485 transceiver.
       If connected directly the MCU pin should be configured
       as active low.
+
+  use-rtu-timeout-override:
+    type: boolean
+    description: Use rtu-timeout-override instead of the calculated RTU timeout.
+
+      By default, the RTU timeout (inter-frame delay t3.5) is calculated from the
+      baud rate and limited to the value at 38400 baud (about 1 ms) for higher
+      baud rates. Set this property to use rtu-timeout-override instead, e.g. for
+      protocols with response times below 1 ms at high baud rates.
+
+  rtu-timeout-override:
+    type: int
+    description: RTU timeout in microseconds, used if use-rtu-timeout-override is set.
+
+      0 is only supported with CONFIG_MODBUS_SERIAL_ASYNC_API. The end of a frame
+      is then detected by the UART driver, e.g. by an idle line interrupt, without
+      an additional delay.
