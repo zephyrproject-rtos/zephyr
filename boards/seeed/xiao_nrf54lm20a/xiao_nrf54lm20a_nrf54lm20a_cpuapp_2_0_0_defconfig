@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# Revision 2.0.0 only: applications are meant to be loaded by the factory
+# MCUboot firmware updater, so link them for its slot0 image (the 0x800
+# ROM_START_OFFSET comes from the nRF54L SoC Kconfig default for
+# BOOTLOADER_MCUBOOT).  The V2.0 console is the nRF54 native USB CDC ACM
+# device (the V1 SAMD11 USB-UART bridge is absent on this PCB), the same
+# serial backend as XIAO nRF54LM20B: the USB device stack next and its
+# CDC ACM UART are initialized at boot.
+
+CONFIG_BOOTLOADER_MCUBOOT=y
+
+CONFIG_USB_DEVICE_STACK_NEXT=y
+CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT=y
