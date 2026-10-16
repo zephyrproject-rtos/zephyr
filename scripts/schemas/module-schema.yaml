@@ -114,6 +114,76 @@ properties:
         type: array
         items:
           type: string
+      vulnerability-assessments:
+        type: array
+        items:
+          type: object
+          properties:
+            # The vulnerability being assessed, such as a CVE or GHSA ID.
+            vulnerability:
+              type: string
+            # Whether the vulnerability applies to this module as it ships.
+            status:
+              type: string
+              enum: ['not_affected', 'affected', 'fixed', 'under_investigation']
+            # Machine-readable reason a 'not_affected' claim holds, from the VEX
+            # vocabulary shared with OpenVEX and CSAF.
+            justification:
+              type: string
+              enum: ['component_not_present', 'vulnerable_code_not_present',
+                     'vulnerable_code_not_in_execute_path',
+                     'vulnerable_code_cannot_be_controlled_by_adversary',
+                     'inline_mitigations_already_exist']
+            # Prose explanation of why the vulnerability has no impact here.
+            impact-statement:
+              type: string
+            # What a user should do about an 'affected' vulnerability.
+            action-statement:
+              type: string
+            # How the status was reached; meaningful for any status.
+            status-notes:
+              type: string
+            # URLs backing the assessment, such as advisories or fixing commits.
+            references:
+              type: array
+              items:
+                type: string
+          required:
+            - vulnerability
+            - status
+          # VEX gives each statement below exactly one status it may appear
+          # with, which the two blocks that follow encode:
+          #   not_affected         needs a justification or an impact-statement
+          #   affected             needs an action-statement
+          #   fixed                takes none of the three
+          #   under_investigation  takes none of the three
+          # Keep every 'else' in step with its 'then': a statement no branch
+          # forbids is silently accepted for every other status.
+          allOf:
+            - if:
+                properties:
+                  status:
+                    const: not_affected
+                required: [status]
+              then:
+                anyOf:
+                  - required: [justification]
+                  - required: [impact-statement]
+              else:
+                not:
+                  anyOf:
+                    - required: [justification]
+                    - required: [impact-statement]
+            - if:
+                properties:
+                  status:
+                    const: affected
+                required: [status]
+              then:
+                required: [action-statement]
+              else:
+                not:
+                  required: [action-statement]
   package-managers:
     type: object
     properties:
