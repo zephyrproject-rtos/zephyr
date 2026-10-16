@@ -11,6 +11,7 @@ config RISCV_MACHINE_TIMER
 		   DT_HAS_NUCLEI_SYSTIMER_ENABLED
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_CLOCK_LONG_WAIT_CAPABLE
 	help
 	  This module implements a kernel device driver for the generic RISCV machine
 	  timer driver. It provides the standard "system clock driver" interfaces.
