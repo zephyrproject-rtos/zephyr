@@ -201,6 +201,27 @@ In order to use the Wi-Fi functionality provided by the W102 module, you first
 need to flash the `esp_at`_ firmware onto the module. This firmware can be
 built and flashed following the directions `on the ADI developer portal`_.
 
+The `esp_hosted`_ firmware may also be used, but must be configured with
+the following changes for the W102 module.
+
+.. code-block:: none
+
+  CONFIG_ESPTOOLPY_FLASHSIZE_2MB=y
+  CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_eh_cp_ota_2m.csv"
+  CONFIG_EH_TRANSPORT_CP_UART_PORT=0
+  CONFIG_EH_TRANSPORT_CP_UART_PIN_TX=1
+  CONFIG_EH_TRANSPORT_CP_UART_PIN_RX=3
+  CONFIG_EH_TRANSPORT_CP_UART_BAUDRATE=460800
+
+The board variant ``esp_hosted`` should be used when building firmware for
+the ESP module in this mode:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/wifi/shell
+   :board: apard32690/esp_hosted
+   :goals: build flash
+   :build-args: -DCONFIG_ETH_DRIVER=n
+
 Debugging
 =========
 
@@ -218,3 +239,4 @@ References
 .. _esp_at: https://github.com/espressif/esp-at
 .. _on the ADI developer portal:
   https://analogdevicesinc.github.io/system-level/solutions/reference-designs/ad-apard32690-sl/nina-w102/
+.. _esp_hosted: https://github.com/espressif/esp-hosted-mcu/tree/main/examples/wifi/sta/cp

@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "apard32690_max32690_m4.dts"
+
+&uart2 {
+	/* Raise UART speed for ESP hosted module firmware */
+	current-speed = <460800>;
+};
+
+&esp_wifi {
+	compatible = "espressif,esp-hosted-mcu";
+
+	esp_hosted_mcu_wifi: wifi {
+		compatible = "espressif,esp-hosted-mcu-wifi";
+		status = "okay";
+	};
+};
