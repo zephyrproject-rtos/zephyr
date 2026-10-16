@@ -11,7 +11,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/drivers/mfd/npm2100.h>
 
 #define EVENTS_SET              0x00U
@@ -88,6 +87,7 @@ struct mfd_npm2100_data {
 	struct gpio_callback gpio_cb;
 	struct k_work work;
 	sys_slist_t callbacks;
+	struct k_mutex event_lock;
 };
 
 struct event_reg_t {
@@ -137,6 +137,7 @@ static void work_callback(struct k_work *work)
 	struct mfd_npm2100_data *data = CONTAINER_OF(work, struct mfd_npm2100_data, work);
 	const struct mfd_npm2100_config *config = data->dev->config;
 	uint8_t buf[EVENTS_SIZE + 1U] = {EVENTS_SET};
+	struct mfd_npm2100_event_callback *cb, *tmp;
 	int ret;
 
 	/* Read MAIN SET registers into buffer, leaving space for register address */
@@ -148,7 +149,12 @@ static void work_callback(struct k_work *work)
 
 	for (int i = 0; i < NPM2100_EVENT_MAX; i++) {
 		if ((buf[event_reg[i].offset + 1U] & event_reg[i].mask) != 0U) {
-			gpio_fire_callbacks(&data->callbacks, data->dev, BIT(i));
+			/* Save the next node before a handler can unlink itself. */
+			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->callbacks, cb, tmp, node) {
+				if ((cb->event_mask & BIT(i)) != 0U) {
+					cb->handler(data->dev, cb, BIT(i));
+				}
+			}
 		}
 	}
 
@@ -266,6 +272,7 @@ static int mfd_npm2100_init(const struct device *dev)
 	}
 
 	mfd_data->dev = dev;
+	k_mutex_init(&mfd_data->event_lock);
 
 	ret = config_shphold(dev);
 	if (ret < 0) {
@@ -298,7 +305,7 @@ static int mfd_npm2100_init(const struct device *dev)
 		return ret;
 	}
 
-	mfd_data->work.handler = work_callback;
+	k_work_init(&mfd_data->work, work_callback);
 
 	return gpio_pin_interrupt_configure_dt(&config->host_int_gpios, config->host_int_flags);
 }
@@ -371,14 +378,18 @@ int mfd_npm2100_hibernate(const struct device *dev, uint32_t time_ms, bool pass_
 		&config->i2c, pass_through ? HIBERNATE_TASKS_HIBERPT : HIBERNATE_TASKS_HIBER, 1U);
 }
 
-int mfd_npm2100_add_callback(const struct device *dev, struct gpio_callback *callback)
+int mfd_npm2100_add_callback(const struct device *dev, struct mfd_npm2100_event_callback *callback)
 {
 	const struct mfd_npm2100_config *config = dev->config;
 	struct mfd_npm2100_data *data = dev->data;
 
+	if ((callback == NULL) || (callback->handler == NULL)) {
+		return -EINVAL;
+	}
+
 	/* Enable interrupts for specified events */
 	for (int i = 0; i < NPM2100_EVENT_MAX; i++) {
-		if ((callback->pin_mask & BIT(i)) != 0U) {
+		if ((callback->event_mask & BIT(i)) != 0U) {
 			/* Clear pending interrupt */
 			int ret = i2c_reg_write_byte_dt(
 				&config->i2c, event_reg[i].offset + EVENTS_CLR, event_reg[i].mask);
@@ -395,14 +406,29 @@ int mfd_npm2100_add_callback(const struct device *dev, struct gpio_callback *cal
 		}
 	}
 
-	return gpio_manage_callback(&data->callbacks, callback, true);
+	k_mutex_lock(&data->event_lock, K_FOREVER);
+	(void)sys_slist_find_and_remove(&data->callbacks, &callback->node);
+	sys_slist_prepend(&data->callbacks, &callback->node);
+	k_mutex_unlock(&data->event_lock);
+
+	return 0;
 }
 
-int mfd_npm2100_remove_callback(const struct device *dev, struct gpio_callback *callback)
+int mfd_npm2100_remove_callback(const struct device *dev,
+				struct mfd_npm2100_event_callback *callback)
 {
 	struct mfd_npm2100_data *data = dev->data;
+	bool removed;
 
-	return gpio_manage_callback(&data->callbacks, callback, false);
+	if (callback == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->event_lock, K_FOREVER);
+	removed = sys_slist_find_and_remove(&data->callbacks, &callback->node);
+	k_mutex_unlock(&data->event_lock);
+
+	return removed ? 0 : -EINVAL;
 }
 
 #define MFD_NPM2100_DEFINE(inst)                                                                   \
