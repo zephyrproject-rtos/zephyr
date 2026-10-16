@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: npck6m9k_evb
+name: Nuvoton NPCK6M9K EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 256
+flash: 640
+supported:
+  - clock
+  - gpio
+  - uart

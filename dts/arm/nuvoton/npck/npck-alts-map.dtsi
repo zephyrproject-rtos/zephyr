@@ -100,10 +100,6 @@
 			alts = <&scfg 0x02 0x6 0>;
 		};
 
-		alt2_smb1b_sl: alt27 {
-			alts = <&scfg 0x02 0x7 0>;
-		};
-
 		/* SCFG DEVALT 3 */
 		alt3_ta1_1_sl: alt30 {
 			alts = <&scfg 0x03 0x0 0>;
@@ -129,23 +125,7 @@
 			alts = <&scfg 0x03 0x5 0>;
 		};
 
-		alt3_tb1_2_sl: alt36 {
-			alts = <&scfg 0x03 0x6 0>;
-		};
-
-		alt3_ta1_2_sl: alt37 {
-			alts = <&scfg 0x03 0x7 0>;
-		};
-
 		/* SCFG DEVALT 4 */
-		alt4_shd2_spi: alt40 {
-			alts = <&scfg 0x04 0x0 0>;
-		};
-
-		alt4_noshd2_spi: alt40-inv {
-			alts = <&scfg 0x04 0x0 1>;
-		};
-
 		alt4_ckout2_sl: alt41 {
 			alts = <&scfg 0x04 0x1 0>;
 		};
@@ -296,10 +276,6 @@
 		};
 
 		/* SCFG DEVALT A */
-		alta_shi_sl: alta0 {
-			alts = <&scfg 0x0a 0x0 0>;
-		};
-
 		alta_smb6a_sl: alta1 {
 			alts = <&scfg 0x0a 0x1 0>;
 		};
@@ -308,11 +284,11 @@
 			alts = <&scfg 0x0a 0x2 0>;
 		};
 
-		alta_13c1a_sl: alta4 {
+		alta_i3c1a_sl: alta4 {
 			alts = <&scfg 0x0a 0x4 0>;
 		};
 
-		alta_13c1b_sl: alta5 {
+		alta_i3c1b_sl: alta5 {
 			alts = <&scfg 0x0a 0x5 0>;
 		};
 
@@ -358,10 +334,6 @@
 		};
 
 		/* SCFG DEVALT C */
-		altc_smb4b_sl: altc4 {
-			alts = <&scfg 0x0c 0x4 0>;
-		};
-
 		altc_smb3b_sl: altc5 {
 			alts = <&scfg 0x0c 0x5 0>;
 		};
@@ -375,10 +347,6 @@
 		};
 
 		/* SCFG DEVALT D */
-		altd_gpstby0_out_in_sby: altd0 {
-			alts = <&scfg 0x0d 0x0 0>;
-		};
-
 		altd_gpstby1_out_in_sby: altd1 {
 			alts = <&scfg 0x0d 0x1 0>;
 		};
@@ -397,10 +365,6 @@
 
 		altd_psl_in3_en_out_def: altd5 {
 			alts = <&scfg 0x0d 0x5 0>;
-		};
-
-		altd_psl_in4_en_out_def: altd6 {
-			alts = <&scfg 0x0d 0x6 0>;
 		};
 
 		altd_psl_in5_en_out_def: altd7 {
@@ -429,10 +393,6 @@
 			alts = <&scfg 0x0f 0x4 0>;
 		};
 
-		altf_psl_in4_en: altf5 {
-			alts = <&scfg 0x0f 0x5 0>;
-		};
-
 		altf_psl_in5_en: altf6 {
 			alts = <&scfg 0x0f 0x6 0>;
 		};
@@ -456,22 +416,6 @@
 
 		alt10_ta4_sl: alt103 {
 			alts = <&scfg 0x10 0x3 0>;
-		};
-
-		alt10_tb3_2_sl: alt104 {
-			alts = <&scfg 0x10 0x4 0>;
-		};
-
-		alt10_ta3_2_sl: alt105 {
-			alts = <&scfg 0x10 0x5 0>;
-		};
-
-		alt10_tb2_2_sl: alt106 {
-			alts = <&scfg 0x10 0x6 0>;
-		};
-
-		alt10_ta2_2_sl: alt107 {
-			alts = <&scfg 0x10 0x7 0>;
 		};
 
 		/* SCFG DEVALT 11 */
@@ -520,10 +464,6 @@
 			alts = <&scfg 0x12 0x6 0>;
 		};
 
-		smb4b_pu_sl: alt127 {
-			alts = <&scfg 0x12 0x7 0>;
-		};
-
 		/* SCFG DEVALT CX */
 		altcx_psl_in0_ahi: alt131 {
 			alts = <&scfg 0x13 0x1 0>;
@@ -539,10 +479,6 @@
 
 		altcx_psl_in3_ahi: alt134 {
 			alts = <&scfg 0x13 0x4 0>;
-		};
-
-		altcx_psl_in4_ahi: alt135 {
-			alts = <&scfg 0x13 0x5 0>;
 		};
 
 		altcx_psl_in5_ahi: alt136 {

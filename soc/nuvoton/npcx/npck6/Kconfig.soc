@@ -1,0 +1,23 @@
+# Nuvoton NPCK6 EC series
+
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NPCK6
+	bool
+	select SOC_FAMILY_NPCX
+	select NPCX_SOC_VARIANT_NPCKN
+	help
+	  Enable support for Nuvoton NPCK6 series
+
+config SOC_NPCK6M9K
+	bool
+	select SOC_SERIES_NPCK6
+	help
+	  NPCK6M9K
+
+config SOC_SERIES
+	default "npck6" if SOC_SERIES_NPCK6
+
+config SOC
+	default "npck6m9k" if SOC_NPCK6M9K

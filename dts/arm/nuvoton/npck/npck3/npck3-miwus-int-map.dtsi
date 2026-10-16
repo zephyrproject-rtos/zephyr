@@ -10,5 +10,16 @@
 /* Specific MIWU group-interrupt mapping configurations in npck3 series */
 / {
 	/* Mapping between MIWU group and interrupts */
-	npcx-miwus-int-map {};
+	npcx-miwus-int-map {
+		map_miwu1_groups: map-miwu1-groups {
+			compatible = "nuvoton,npcx-miwu-int-map";
+			parent = <&miwu1>;
+
+			group_e1: group-e1-map {
+				irq = <12>;
+				irq-prio = <2>;
+				group-mask = <0x10>;
+			};
+		};
+	};
 };
