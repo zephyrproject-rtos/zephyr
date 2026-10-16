@@ -876,7 +876,9 @@ static DEVICE_API(sensor, bmi270_driver_api) = {
 	.sample_fetch = bmi270_sample_fetch,
 	.channel_get = bmi270_channel_get,
 	.attr_set = bmi270_attr_set,
+#if defined(CONFIG_BMI270_STREAM)
 	.get_decoder = bmi270_get_decoder,
+#endif
 #if defined(CONFIG_BMI270_TRIGGER)
 	.trigger_set = bmi270_trigger_set,
 #endif
