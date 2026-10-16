@@ -1043,7 +1043,7 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 
 	/* Update CMSIS variable */
-	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	SystemCoreClock = STM32_CORE_FREQUENCY;
 
 	return r;
 }
