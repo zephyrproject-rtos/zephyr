@@ -1512,6 +1512,14 @@ void clock_dpll_init(const struct device *dev, struct clock_dpll_init *dpll_init
 		return;
 	}
 
+	if ((*(&oscctrl_regs->OSCCTRL_PLL0CTRL + (inst * DPLLREG_OFFSET)) &
+	     OSCCTRL_PLL0CTRL_ENABLE_Msk) != 0) {
+		LOG_INF("%s: skipping dpll_%d_init, as the DPLL is already running", __func__,
+			inst);
+		data->dpll_on_request |= BIT(inst);
+		return;
+	}
+
 	/* Check if the source clock (driving DPLL) is off. */
 	src = dpll_init->src;
 	if ((data->dpll_src_on_status & BIT(src)) == 0) {
@@ -1593,6 +1601,14 @@ void clock_dpll_out_init(const struct device *dev, struct clock_dpll_out_init *d
 	if ((data->gclkgen_src_on_status & BIT(CLOCK_MCHP_GCLK_SRC_DPLL0_CLKOUT0 + inst)) != 0) {
 		LOG_INF("%s: skipping dpll_%d_out_%d_init, as it is already on", __func__,
 			inst / PLLOUT_COUNT, inst % PLLOUT_COUNT);
+		return;
+	}
+
+	if ((*(&oscctrl_regs->OSCCTRL_PLL0POSTDIVA + ((inst / PLLOUT_COUNT) * DPLLREG_OFFSET)) &
+	     BIT(((inst % PLLOUT_COUNT) + 1) * PLLOUT_POSTDIV_SPAN - 1)) != 0) {
+		LOG_INF("%s: skipping dpll_%d_out_%d_init, as the output is already enabled",
+			__func__, inst / PLLOUT_COUNT, inst % PLLOUT_COUNT);
+		data->gclkgen_src_on_status |= BIT(CLOCK_MCHP_GCLK_SRC_DPLL0_CLKOUT0 + inst);
 		return;
 	}
 
