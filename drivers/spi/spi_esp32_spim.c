@@ -234,8 +234,8 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 				return -ENOMEM;
 			}
 			memcpy(tx_temp, &ctx->tx_buf[0], dma_len_tx);
-		} else if (!ctx->tx_buf && ctx->rx_buf) {
-			/* RX-only transfer: allocate zero-filled TX buffer.
+		} else if (!ctx->tx_buf && ctx->rx_buf && !hal_dev->half_duplex) {
+			/* Full-duplex RX-only transfer: allocate zero-filled TX buffer.
 			 * In loopback configurations (GPIO matrix or external wire),
 			 * SDO must actively output zeros so SDI receives zeros.
 			 */
@@ -342,8 +342,8 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 	if (cfg->dma_enabled) {
 		/* Enable SDO/SDI data lines AFTER DMA is configured.
-		 * Note: For RX-only DMA, we allocate a zero-filled TX buffer above,
-		 * so send_buffer is always set when rcv_buffer is set.
+		 * Note: For full-duplex RX-only DMA, we allocate a zero-filled TX
+		 * buffer above, so send_buffer is always set when rcv_buffer is set.
 		 */
 		spi_hal_enable_data_line(hal->hw, hal_trans->send_buffer != NULL,
 					 hal_trans->rcv_buffer != NULL);
@@ -383,8 +383,9 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	if (prepare_data) {
 		spi_hal_push_tx_buffer(hal, hal_trans);
 		spi_hal_enable_data_line(hal->hw,
-					 (hal_trans->rcv_buffer != NULL) ||
-						 (hal_trans->send_buffer != NULL),
+					 (hal_trans->send_buffer != NULL) ||
+						 (!hal_dev->half_duplex &&
+						  (hal_trans->rcv_buffer != NULL)),
 					 hal_trans->rcv_buffer != NULL);
 	}
 
