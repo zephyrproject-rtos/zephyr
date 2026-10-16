@@ -280,12 +280,20 @@ void z_arm64_mem_cfg_ipi(void)
 #endif
 
 #ifdef CONFIG_FPU_SHARING
+struct fpu_flush_request {
+	atomic_t pending;
+} Z_DCACHE_ALIGN_SMP;
+
+static struct fpu_flush_request fpu_flush_requests[CONFIG_MP_MAX_NUM_CPUS];
+
 void flush_fpu_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
 	disable_irq();
-	arch_flush_local_fpu();
+	if (atomic_clear(&fpu_flush_requests[_current_cpu->id].pending)) {
+		arch_flush_local_fpu();
+	}
 	/* no need to re-enable IRQs here */
 }
 
@@ -299,6 +307,8 @@ void arch_flush_fpu_ipi(unsigned int cpu)
 	}
 
 	aff0 = MPIDR_AFFLVL(mpidr, 0);
+	/* Publish before the SGI, including when the target has IRQs masked. */
+	atomic_set(&fpu_flush_requests[cpu].pending, 1);
 	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
 }
 
@@ -311,8 +321,13 @@ void arch_flush_fpu_ipi(unsigned int cpu)
  */
 void arch_spin_relax(void)
 {
-	if (arm_gic_irq_is_pending(SGI_FPU_IPI)) {
-		arm_gic_irq_clear_pending(SGI_FPU_IPI);
+	atomic_t *pending = &fpu_flush_requests[_current_cpu->id].pending;
+
+	if (atomic_get(pending) && atomic_clear(pending)) {
+		/* Consume before flushing so concurrent requests stay visible.
+		 * Keep the SGI pending: clearing it could lose a newer request.
+		 * Its handler skips the flush if this path already serviced it.
+		 */
 		/*
 		 * We may not be in IRQ context here hence cannot use
 		 * arch_flush_local_fpu() directly.
