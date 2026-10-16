@@ -250,22 +250,23 @@ static void print_fatal_exception(void *print_stack, bool is_dblexc, uint32_t de
 		EXCEPTION_DUMP(" ** FATAL EXCEPTION");
 	}
 
-	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %u (%s)",
-		arch_curr_cpu()->id, (uint32_t)bsa->exccause,
-		xtensa_exccause(bsa->exccause));
-
 	/* Don't print information if the BSA area is invalid as any elements
 	 * obtained via de-referencing the pointer are probably also invalid.
 	 * Or worse, cause another access violation.
 	 */
 	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
-		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)bsa->excvaddr, print_stack);
+		EXCEPTION_DUMP(" ** CPU %d Invalid BSA %p SP %p", arch_curr_cpu()->id, bsa,
+			       print_stack);
 		/* Do not waste hook bandwidth on broken records. */
 #if defined(CONFIG_EXCEPTION_DUMP_HOOK)
 		arch_exception_call_drain_hook(true);
 #endif
 		return;
 	}
+
+	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %u (%s)",
+		arch_curr_cpu()->id, (uint32_t)bsa->exccause,
+		xtensa_exccause(bsa->exccause));
 
 	ps = bsa->ps;
 	pc = (void *)bsa->pc;
