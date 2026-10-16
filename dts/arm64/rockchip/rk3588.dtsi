@@ -89,9 +89,44 @@
 		status = "okay";
 	};
 
-	psci {
-		compatible = "arm,psci-0.2", "arm,psci";
-		method = "smc";
+	firmware {
+		psci {
+			compatible = "arm,psci-1.1";
+			method = "smc";
+		};
+
+		scmi: scmi {
+			compatible = "arm,scmi-smc";
+			shmem = <&scmi_shmem>;
+			arm,smc-id = <0x82000010>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			scmi_clk: protocol@14 {
+				compatible = "arm,scmi-clock";
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+
+			scmi_reset: protocol@16 {
+				compatible = "arm,scmi-reset";
+				reg = <0x16>;
+				#reset-cells = <1>;
+			};
+		};
+	};
+
+	sram@10f000 {
+		compatible = "mmio-sram";
+		reg = <0x0010f000 0x100>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x0010f000 0x100>;
+
+		scmi_shmem: sram@0 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x0 0x100>;
+		};
 	};
 
 	timer {
