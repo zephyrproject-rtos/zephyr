@@ -760,6 +760,11 @@
 		clocks = <&clkctl0 MCUX_POWERQUAD_CLK>;
 		status = "disabled";
 	};
+
+	ocotp: ocotp@a000 {
+		compatible = "nxp,rw6xx-ocotp";
+		reg = <0xa000 0x690>;
+	};
 };
 
 &flexspi {
