@@ -10,6 +10,8 @@ using sysbus
 mach create $name
 machine LoadPlatformDescription @platforms/boards/mpfs-icicle-kit.repl
 
+machine UnregisterFromParent sysbus.DDR_CTRLR
+
 showAnalyzer mmuart0
 e51 PerformanceInMips 80
 
@@ -19,8 +21,27 @@ u54_2 IsHalted true
 u54_3 IsHalted true
 u54_4 IsHalted true
 
+machine LoadPlatformDescriptionFromString
+"""
+MSS_PLL: Memory.MappedMemory @ sysbus 0x3e001000
+    size: 0x1000
+"""
+
 macro reset
 """
+    sysbus WriteDoubleWord 0x3e001004 0x020010FF
+    sysbus WriteDoubleWord 0x3e001008 0x00000500
+    sysbus WriteDoubleWord 0x3e00100C 0x00000000
+    sysbus WriteDoubleWord 0x3e00100C 0x00000000
+    sysbus WriteDoubleWord 0x3e001010 0x01000100
+    sysbus WriteDoubleWord 0x3e001014 0x01000300
+    sysbus WriteDoubleWord 0x3e001018 0x00001020
+    sysbus WriteDoubleWord 0x3e00101C 0x00000D06
+    sysbus WriteDoubleWord 0x3e001020 0x00004003
+    sysbus WriteDoubleWord 0x3e001024 0x00000000
+    sysbus WriteDoubleWord 0x3e001028 0x00000000
+    sysbus WriteDoubleWord 0x3e00102C 0x00000060
+    sysbus WriteDoubleWord 0x3e001030 0x00000001
     sysbus LoadELF $elf
 """
 runMacro $reset
