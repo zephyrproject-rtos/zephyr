@@ -3,6 +3,7 @@
  */
 #include <zephyr/secure_storage/its/transform/aead.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #include <string.h>
 
 psa_status_t secure_storage_its_transform_aead_get_nonce(

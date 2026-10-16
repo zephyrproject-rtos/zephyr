@@ -12,6 +12,7 @@
 #include <zephyr/ztest.h>
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 ZTEST_USER(psa_crypto_test_suite, test_generate_random)
 {
@@ -165,6 +166,10 @@ ZTEST_USER(psa_crypto_test_suite, test_aes_ecb)
 		0xea, 0x5e, 0x61, 0xae, 0x81, 0x67, 0xca, 0xa0,
 		0x58, 0x63, 0x88, 0xeb, 0x9a, 0x7c, 0xb7, 0x55
 	};
+#define AES_DECRYPTED_OUTPUT_SIZE \
+	PSA_CIPHER_DECRYPT_OUTPUT_SIZE(PSA_KEY_TYPE_AES, PSA_ALG_ECB_NO_PADDING, \
+				       AES_ENCRYPTED_OUTPUT_SIZE)
+	uint8_t dec_buf[AES_DECRYPTED_OUTPUT_SIZE] = { 0 };
 	size_t out_len;
 	psa_status_t status;
 
@@ -172,7 +177,7 @@ ZTEST_USER(psa_crypto_test_suite, test_aes_ecb)
 
 	psa_set_key_type(&key_attr, PSA_KEY_TYPE_AES);
 	psa_set_key_algorithm(&key_attr, PSA_ALG_ECB_NO_PADDING);
-	psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_ENCRYPT);
+	psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
 	status = psa_import_key(&key_attr, key, sizeof(key), &key_id);
 	zassert_equal(status, PSA_SUCCESS);
 
@@ -181,6 +186,12 @@ ZTEST_USER(psa_crypto_test_suite, test_aes_ecb)
 	zassert_equal(status, PSA_SUCCESS);
 
 	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
+
+	status = psa_cipher_decrypt(key_id, PSA_ALG_ECB_NO_PADDING, out_buf_ref,
+				    sizeof(out_buf_ref), dec_buf, sizeof(dec_buf), &out_len);
+	zassert_equal(status, PSA_SUCCESS);
+	zassert_equal(out_len, sizeof(in_buf));
+	zassert_mem_equal(dec_buf, in_buf, sizeof(in_buf));
 
 	status = psa_destroy_key(key_id);
 	zassert_equal(status, PSA_SUCCESS);

@@ -18,6 +18,7 @@
 #include <zephyr/sys/base64.h>
 #include <zephyr/net/websocket.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 

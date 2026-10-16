@@ -167,6 +167,71 @@ Cleaning up after use
 
   * Destroying keys that are no longer used.
 
+
+RAM size optimization
+*********************
+
+The PSA Crypto API is, in relative terms, a stack-hungry API. This is not specific to PSA Crypto,
+but rather a general property of cryptographic libraries. On constrained devices this poses a
+challenge: every thread that calls a cryptographic function must size its own stack for the
+deepest call it makes, so the cost is paid once per thread rather than once per system.
+
+To mitigate this, Zephyr provides a call offloader.
+:kconfig:option:`CONFIG_OFFLOADER_PSA` enables a system-wide offloader thread that executes the
+calls on the caller's behalf. The offloader thread needs a stack large enough for the cryptographic
+operations and the callers keep a small one.
+The trade-off is a small latency penalty and the fact that the offloaded calls are serialized
+system-wide.
+
+Enabling the offloader is a build configuration change plus one include swap:
+
+.. code-block:: kconfig
+
+   CONFIG_OFFLOADER_PSA=y
+   CONFIG_OFFLOADER_PSA_STACK_SIZE=3072
+
+.. code-block:: c
+
+   #include <psa/crypto.h>
+   #include <zephyr/kernel.h>
+   #include <zephyr/offloader/psa.h>
+
+   #define HASHER_STACK_SIZE 512
+
+   static void hasher(void *p1, void *p2, void *p3)
+   {
+           static const uint8_t message[] = "Zephyr Development Summit 2026";
+           uint8_t digest[32];
+           size_t digest_len;
+           psa_status_t status;
+
+           status = psa_hash_compute(PSA_ALG_SHA_256, message, sizeof(message), digest,
+                                     sizeof(digest), &digest_len);
+           if (status != PSA_SUCCESS) {
+                   return;
+           }
+   }
+
+   K_THREAD_DEFINE(hasher_tid, HASHER_STACK_SIZE, hasher, NULL, NULL, NULL, 7, 0, 0);
+
+The call site itself is unchanged: ``<zephyr/offloader/psa.h>`` includes ``<psa/crypto.h>`` and
+redirects the covered calls, so swapping the include is the whole integration. The thread above
+runs with a 512 byte stack even though the hash is computed with
+:kconfig:option:`CONFIG_OFFLOADER_PSA_STACK_SIZE` bytes available to it.
+
+**Limitations:**
+
+  * The redirection is done with preprocessor macros, so every translation unit whose PSA calls
+    should be offloaded must include ``<zephyr/offloader/psa.h>``. A file that includes only
+    ``<psa/crypto.h>`` keeps running the call on its own stack. The in-tree subsystems using PSA
+    Crypto already include the offloader header.
+
+  * Calls cannot be dispatched from ISR.
+
+  * Every offloaded call runs at the engine priority, whatever the priority of the caller. There
+    is no priority inheritance, so a low-priority caller can run a cryptographic operation at
+    :kconfig:option:`CONFIG_OFFLOADER_PSA_PRIO`.
+
 References
 **********
 

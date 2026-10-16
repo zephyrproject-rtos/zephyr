@@ -8,6 +8,7 @@
 #include <zephyr/sys/byteorder.h>
 
 #include "psa/crypto.h"
+#include <zephyr/offloader/psa.h>
 
 #include "common/bt_str.h"
 #include "bt_crypto.h"

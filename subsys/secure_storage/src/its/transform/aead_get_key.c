@@ -6,6 +6,7 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #include <string.h>
 #include <mbedtls/platform_util.h>
 

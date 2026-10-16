@@ -10,6 +10,7 @@
 #include <zephyr/random/random.h>
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #include "crypto/crypto.h"
 #include "crypto/refc/hchacha20.h"

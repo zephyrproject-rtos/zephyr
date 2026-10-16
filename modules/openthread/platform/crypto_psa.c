@@ -7,6 +7,7 @@
 #include <openthread/platform/crypto.h>
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>

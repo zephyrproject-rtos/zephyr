@@ -14,6 +14,7 @@
 #include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum_sha256.h>
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #define SHA256_DIGEST_SIZE PSA_HASH_LENGTH(PSA_ALG_SHA_256)
 

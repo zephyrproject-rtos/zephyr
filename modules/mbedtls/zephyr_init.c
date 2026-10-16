@@ -21,6 +21,7 @@
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #endif
 
 #if defined(CONFIG_MBEDTLS_ENABLE_HEAP)

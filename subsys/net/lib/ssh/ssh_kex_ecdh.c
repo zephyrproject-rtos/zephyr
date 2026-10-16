@@ -12,6 +12,7 @@ LOG_MODULE_DECLARE(ssh, CONFIG_SSH_LOG_LEVEL);
 #include "ssh_host_key.h"
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #ifdef CONFIG_SSH_SERVER
 static int send_kex_ecdh_reply(struct ssh_transport *transport);

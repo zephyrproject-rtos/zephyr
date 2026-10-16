@@ -45,6 +45,7 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <mbedtls/pk.h>
 #if defined(MBEDTLS_PSA_CRYPTO_C) || defined(MBEDTLS_PSA_CRYPTO_CLIENT)
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 /* Support for referencing a private key resident in PSA (TLS_CREDENTIAL_PRIVATE_KEY_PSA),
  * so that the key material never has to be exported into the credential store.
  */

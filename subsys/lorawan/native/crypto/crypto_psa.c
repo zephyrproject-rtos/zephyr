@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #include <mbedtls/platform_util.h>
 #include <string.h>
 

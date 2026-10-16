@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 int z_impl_sys_csrand_get(void *dst, size_t outlen)
 {

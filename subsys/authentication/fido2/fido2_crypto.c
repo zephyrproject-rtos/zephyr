@@ -7,6 +7,7 @@
 #include <psa/crypto.h>
 #include <psa/crypto_values.h>
 #include <psa/crypto_types.h>
+#include <zephyr/offloader/psa.h>
 #include <zephyr/psa/key_ids.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>

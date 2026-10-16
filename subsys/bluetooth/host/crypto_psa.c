@@ -21,6 +21,7 @@
 #include <psa/crypto_struct.h>
 #include <psa/crypto_types.h>
 #include <psa/crypto_values.h>
+#include <zephyr/offloader/psa.h>
 
 #include "common/bt_str.h"
 #include "hci_core.h"
