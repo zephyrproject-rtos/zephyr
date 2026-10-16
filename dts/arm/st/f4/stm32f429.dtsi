@@ -26,6 +26,8 @@
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK(APB2, 26)>;
 			resets = <&rctl STM32_RESET(APB2, 26)>;
+			/* Stop mode stops the PLLs and the 1.2 V domain clocks */
+			zephyr,disabling-power-states = <&stop>;
 			status = "disabled";
 		};
 	};
