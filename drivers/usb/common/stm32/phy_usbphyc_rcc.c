@@ -69,7 +69,7 @@ static int stm32_rcc_usbphyc_disable(const struct stm32_usb_phy *phy)
 	/* Disable PHY clock gate (if provided) */
 	if (cfg->has_gatecfg) {
 		res = clock_control_off(rcc, (clock_control_subsys_t)&cfg->gatecfg);
-		if (res != 0) {
+		if (res != 0 && res != -ENOTSUP) {
 			return res;
 		}
 	}

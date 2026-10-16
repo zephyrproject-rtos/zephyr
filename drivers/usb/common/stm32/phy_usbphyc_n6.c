@@ -101,8 +101,14 @@ static int stm32n6_usbphyc_enable(const struct stm32_usb_phy *phy)
 static int stm32n6_usbphyc_disable(const struct stm32_usb_phy *phy)
 {
 	const struct stm32n6_usbphyc_config *cfg = phy->pcfg;
+	int ret;
 
-	return clock_control_off(rcc, (clock_control_subsys_t)&cfg->clocks[0]);
+	ret = clock_control_off(rcc, (clock_control_subsys_t)&cfg->clocks[0]);
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	}
+
+	return ret;
 }
 
 #define DEFINE_USBPHYC_N6(usb_node, phy_node)							\

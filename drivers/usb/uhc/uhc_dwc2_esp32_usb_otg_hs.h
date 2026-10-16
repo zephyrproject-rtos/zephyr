@@ -92,7 +92,9 @@ static int esp32_usb_otg_hs_shutdown(const struct device *const dev)
 	usb_utmi_hal_disable();
 
 	ret = clock_control_off(cfg->clock_dev, cfg->clock_subsys);
-	if (ret != 0) {
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	} else if (ret != 0) {
 		LOG_ERR("Unable to off the clock: %d", ret);
 	}
 
