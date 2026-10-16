@@ -308,6 +308,7 @@ ZTEST(threads_scheduling, test_time_slicing_disable_preemptible)
 	/* set current thread to a preemptible priority */
 	init_prio = 0;
 	setup_threads();
+	k_sched_time_slice_set(0, 0); /* disable time slice */
 
 	spawn_threads(0);
 	/* checkpoint: higher priority threads get executed immediately */
