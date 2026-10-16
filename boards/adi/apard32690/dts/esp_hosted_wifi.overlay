@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&uart2 {
+	/* Raise UART speed for ESP hosted module firmware */
+	current-speed = <460800>;
+};
+
+&esp_wifi {
+	compatible = "espressif,esp-hosted-mcu";
+
+	esp_hosted_mcu_wifi: wifi {
+		compatible = "espressif,esp-hosted-mcu-wifi";
+		status = "okay";
+	};
+};
