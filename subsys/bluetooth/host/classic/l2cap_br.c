@@ -5390,6 +5390,14 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	uint8_t ident = 0;
 	uint16_t len;
 
+	/* Nothing can be answered on a link that is going away, and its channels are released
+	 * once it is gone. Handling the PDU would only wait for signalling buffers meanwhile.
+	 */
+	if (chan->conn->state != BT_CONN_CONNECTED) {
+		LOG_DBG("Link not connected, dropping signalling PDU");
+		return 0;
+	}
+
 	while (buf->len > 0) {
 		if (buf->len < sizeof(*hdr)) {
 			LOG_ERR("Too small L2CAP signaling PDU");
