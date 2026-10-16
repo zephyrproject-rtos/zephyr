@@ -187,9 +187,12 @@ PR Requirements
       and the :zephyr_file:`smart battery driver <drivers/fuel_gauge/sbs_gauge/sbs_gauge.c>`.
     - Code coverage reports for the Zephyr project are available on `Codecov`_.
 
-- Incompatible changes to APIs must also update the release notes for the
-  next release detailing the change.  APIs marked as experimental are excluded
-  from this requirement.
+- Changes that require users to adapt their application must be described in
+  the migration guide for the next release, and new capabilities with a
+  user-visible impact in the release notes, following
+  :ref:`release_documentation`. Bare lists of new, deprecated or removed APIs
+  and options are not added by hand: they are part of the generated change
+  inventory. APIs marked as experimental are excluded from this requirement.
 
 - Changes to APIs must increment the API version number according to the API
   version rules.
