@@ -184,6 +184,79 @@ struct task_wdt_supervision {
 		     "invalid number of checkpoints");                                             \
 	BUILD_ASSERT(ARRAY_SIZE(_deadlines) < UINT8_MAX, "too many deadlines")
 
+/** Action taken when a channel of a group reports a fault, from the mildest to the strongest. */
+enum task_wdt_action {
+	/** Call the channel callback, or reset the system if there is none */
+	TASK_WDT_ACTION_CALLBACK,
+	/** Call the recovery function of the group from the recovery work queue */
+	TASK_WDT_ACTION_RECOVER,
+	/** Reset the system, even if the channel has a callback */
+	TASK_WDT_ACTION_RESET_SYSTEM,
+};
+
+/** Escalation policy of a group. */
+struct task_wdt_escalation {
+	/** Number of faults within @ref period_ms moving the group to the next action, 0 never */
+	uint32_t faults;
+	/** Period in milliseconds over which the faults are counted, 0 for no limit */
+	uint32_t period_ms;
+	/**
+	 * Time in milliseconds given to the recovery to feed the channel again before the
+	 * system is reset, 0 to use the reload period of the channel
+	 */
+	uint32_t recovery_ms;
+};
+
+/**
+ * @brief Group of channels sharing a fault policy.
+ *
+ * Defined with TASK_WDT_GROUP_DEFINE(), the members are internal.
+ */
+struct task_wdt_group {
+	/** @cond INTERNAL_HIDDEN */
+	const char *name;
+	task_wdt_fault_callback_t recovery_fn;
+	const struct task_wdt_escalation *escalation;
+	/* enum task_wdt_action, initial and current */
+	uint8_t action;
+	uint8_t level;
+	/* faults counted since window_start_ticks */
+	uint32_t faults;
+	int64_t window_start_ticks;
+	/** @endcond */
+};
+
+/**
+ * @brief Define a group of channels sharing a fault policy.
+ *
+ * When a channel of the group reports a fault, the current action of the
+ * group is taken. With @ref TASK_WDT_ACTION_RECOVER, @p _recovery_fn is
+ * called from a dedicated work queue, in thread context, with the user data
+ * of the channel. It is expected to restart the faulty thread, e.g. by
+ * aborting and creating it again, which has to feed the channel again within
+ * the recovery time of @p _escalation. Otherwise, or if any other fault is
+ * reported on the channel meanwhile, the system is reset.
+ *
+ * If @p _escalation is not NULL, the group moves to the next action when it
+ * reports @c faults faults within @c period_ms, and the last of these faults
+ * is already handled with the next action. Use task_wdt_group_reset() to go
+ * back to the initial action.
+ *
+ * @param _name Name of the group.
+ * @param _action Initial @ref task_wdt_action of the group.
+ * @param _recovery_fn Recovery function, of type @ref task_wdt_fault_callback_t.
+ *                     If NULL, @ref TASK_WDT_ACTION_RECOVER resets the system.
+ * @param _escalation Pointer to a @ref task_wdt_escalation, or NULL.
+ */
+#define TASK_WDT_GROUP_DEFINE(_name, _action, _recovery_fn, _escalation)                           \
+	struct task_wdt_group _name = {                                                            \
+		.name = #_name,                                                                    \
+		.recovery_fn = _recovery_fn,                                                       \
+		.escalation = _escalation,                                                         \
+		.action = _action,                                                                 \
+		.level = _action,                                                                  \
+	}
+
 /**
  * @brief Initialize task watchdog.
  *
@@ -398,6 +471,50 @@ int task_wdt_supervision_stop(struct task_wdt_supervision *sup);
  * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_SUPERVISION} is disabled.
  */
 int task_wdt_checkpoint(struct task_wdt_supervision *sup, uint32_t checkpoint);
+
+/**
+ * @brief Add a channel to a group, or remove it from its group.
+ *
+ * The faults of the channel, including those of the supervised entity
+ * attached to it, are handled according to the policy of the group.
+ *
+ * If the channel is being recovered, the recovery ends and the channel is given
+ * a full reload period again.
+ *
+ * @param channel_id Index of the channel as returned by task_wdt_add().
+ * @param group Group defined with TASK_WDT_GROUP_DEFINE(), or NULL to remove
+ *              the channel from its group.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_GROUPS} is disabled.
+ */
+int task_wdt_channel_group_set(int channel_id, struct task_wdt_group *group);
+
+/**
+ * @brief Get the current action of a group.
+ *
+ * @param group Group defined with TASK_WDT_GROUP_DEFINE().
+ *
+ * @retval action The current @ref task_wdt_action of the group.
+ * @retval -EINVAL If @p group is NULL.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_GROUPS} is disabled.
+ */
+int task_wdt_group_action_get(const struct task_wdt_group *group);
+
+/**
+ * @brief Move a group back to its initial action and forget its faults.
+ *
+ * The recovery of the channels of the group ends as well, and they are given a
+ * full reload period again.
+ *
+ * @param group Group defined with TASK_WDT_GROUP_DEFINE().
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If @p group is NULL.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_GROUPS} is disabled.
+ */
+int task_wdt_group_reset(struct task_wdt_group *group);
 
 /**
  * @brief Pause all channels before changing system power mode.
