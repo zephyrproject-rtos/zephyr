@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* mec_assy6941 EVB - dual-controller async sample (byte-mode driver)
+ *
+ * Two INDEPENDENT physical I2C buses, one per controller. No fly wires.
+ *
+ * Set VTR2 to +3.3V: J68 2x8 1-2
+ *
+ * Thread A: i2c_smb_0 -> port 0 -> PCA9555 @0x26 (100 kHz)
+ * -------------------------------------------------------
+ * JP15 7-8   GPIO004 as I2C00_SCL
+ * JP15 4-5   GPIO003 as I2C00_SDA
+ * JP70 19-20 ON  7.5K pull-up to VTR1
+ * JP70 21-22 ON  7.5K pull-up to VTR1
+ *
+ * Thread B: i2c_smb_1 -> port 7 -> FRAM mb85rc256v @0x50 (400 kHz)
+ * ---------------------------------------------------------------
+ * JP14 7-8, 16-17
+ * JP76 21-22 7.5K pull-up to VTR2
+ * JP76 23-24 7.5K pull-up to VTR2
+ */
+
+#include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/mchp-xec-i2c.h>
+
+/* Both controllers use the I2Cv3 byte-mode driver */
+&i2c_smb_0 {
+	compatible = "microchip,xec-i2c-v3-bm";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	/* Port routed at boot, before the first transfer. */
+	default-port = <&i2c0_p0>;
+};
+
+&i2c_smb_1 {
+	compatible = "microchip,xec-i2c-v3-bm";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	/* Port routed at boot, before the first transfer. */
+	default-port = <&i2c1_p7>;
+};
+
+/* Port 0 pins */
+&i2c00_sda_gpio003 {
+	drive-open-drain;
+};
+
+&i2c00_scl_gpio004 {
+	drive-open-drain;
+};
+
+/* Port 7 pins */
+&i2c07_sda_gpio012 {
+	drive-open-drain;
+	drive-strength = <3>;
+};
+
+&i2c07_scl_gpio013 {
+	drive-open-drain;
+	drive-strength = <3>;
+};
+
+/ {
+	aliases {
+		i2c0 = &i2c_smb_0;
+		i2c1 = &i2c_smb_1;
+	};
+
+	/* Port 0 (default port) on I2C Controller 0 - Thread A */
+	i2c0_p0: i2c-port0 {
+		compatible = "microchip,xec-i2c-v3-bm-port";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port = <0>;
+		controller = <&i2c_smb_0>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		pinctrl-0 = <&i2c00_sda_gpio003 &i2c00_scl_gpio004>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		/* Placeholder node (no compatible): accessed via raw I2C, so no
+		 * GPIO expander driver and no on-bus child init-priority concern.
+		 */
+		pca9555_evb: pca9555@26 {
+			reg = <0x26>;
+			status = "okay";
+		};
+	};
+
+	/* Port 7 (default port) on I2C Controller 1 - Thread B */
+	i2c1_p7: i2c-port7 {
+		compatible = "microchip,xec-i2c-v3-bm-port";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port = <7>;
+		controller = <&i2c_smb_1>;
+		clock-frequency = <I2C_BITRATE_FAST>;
+		pinctrl-0 = <&i2c07_sda_gpio012 &i2c07_scl_gpio013>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		mb85rc256v_fram: mb85rc256v_fram@50 {
+			reg = <0x50>;
+			#io-channels-cells = <1>;
+		};
+	};
+};
