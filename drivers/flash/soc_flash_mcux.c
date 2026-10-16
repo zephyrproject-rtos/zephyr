@@ -60,7 +60,12 @@ LOG_MODULE_REGISTER(flash_mcux);
 #include "fsl_flash.h"
 #endif /* SOC_HAS_IAP && !CONFIG_SOC_LPC55S36*/
 
+/* KV5x maps its program flash at 0x10000000, so it has no flash@0 child */
+#if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), flash_0))
 #define SOC_NV_FLASH_NODE DT_CHILD(DT_DRV_INST(0), flash_0)
+#else
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
+#endif
 
 #if defined(CONFIG_CHECK_BEFORE_READING) && !defined(CONFIG_SOC_SERIES_LPC55XXX)
 #define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
