@@ -4,6 +4,7 @@
 zephyr_library()
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_EMUL_MFD_ITE_IT8801 emul_ite_it8801.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_AD559X mfd_ad559x.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_AD559X_BUS_I2C mfd_ad559x_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_AD559X_BUS_SPI mfd_ad559x_spi.c)
