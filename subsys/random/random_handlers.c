@@ -7,6 +7,8 @@
 #include <zephyr/random/random.h>
 #include <zephyr/internal/syscall_handler.h>
 
+#if defined(CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR) || defined(CONFIG_TIMER_RANDOM_GENERATOR) ||   \
+	defined(CONFIG_XOSHIRO_RANDOM_GENERATOR) || defined(CONFIG_ARM64_RANDOM_GENERATOR)
 static inline void z_vrfy_sys_rand_get(void *dst, size_t len)
 {
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(dst, len));
@@ -14,8 +16,10 @@ static inline void z_vrfy_sys_rand_get(void *dst, size_t len)
 	z_impl_sys_rand_get(dst, len);
 }
 #include <zephyr/syscalls/sys_rand_get_mrsh.c>
+#endif
 
-#ifdef CONFIG_CSPRNG_ENABLED
+#if defined(CONFIG_HARDWARE_DEVICE_CS_GENERATOR) || defined(CONFIG_PSA_CSPRNG_GENERATOR) ||        \
+	defined(CONFIG_TEST_CSPRNG_GENERATOR)
 static inline int z_vrfy_sys_csrand_get(void *dst, size_t len)
 {
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(dst, len));
