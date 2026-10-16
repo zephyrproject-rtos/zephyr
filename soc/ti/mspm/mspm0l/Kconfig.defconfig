@@ -9,4 +9,11 @@ if SOC_SERIES_MSPM0L
 config NUM_IRQS
 	default 32
 
+if SHARED_INTERRUPTS
+
+configdefault SHARED_IRQ_MAX_NUM_CLIENTS
+	default 6
+
+endif # SHARED_INTERRUPTS
+
 endif # SOC_SERIES_MSPM0L
