@@ -103,6 +103,8 @@ one stopped by a cancellation reports ``-ECANCELED``. The only exception is
 at all, however it finishes. A caller can therefore account for every
 submission it queued without that flag, which is what makes waiting on a count
 of them, as :c:func:`rtio_submit` does with a non-zero ``wait_count``, safe.
+A transaction is one unit of work to its iodev but several submissions, so it
+produces one completion per member rather than one for the set.
 
 Other potential schemes are possible but a completion queue is a well trod
 idea with io_uring and other similar operating system APIs.
