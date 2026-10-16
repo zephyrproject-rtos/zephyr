@@ -445,9 +445,9 @@ void display_color_dither_patch_caps(struct display_color_dither_state *state,
 
 	/*
 	 * Only override the driver-reported current format when the helper is actively converting.
-	 * For I_4 input the driver speaks for itself.
 	 */
-	if (state->input_format != PIXEL_FORMAT_I_4) {
+	if ((state->input_format & COLOR_DITHER_SUPPORTED_FORMATS) != 0
+	    && caps->current_pixel_format == PIXEL_FORMAT_I_4) {
 		caps->current_pixel_format = state->input_format;
 	}
 }
