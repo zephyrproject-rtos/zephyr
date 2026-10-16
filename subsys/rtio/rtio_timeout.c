@@ -141,25 +141,18 @@ static void rtio_tq_expired(struct _timeout *timeout);
 /**
  * @brief Arm the shared kernel timeout to the current head, or disarm if empty
  *
- * Must be called with @p data->lock held. On SMP, aborting the timeout may fail
- * with -EAGAIN if the handler is in flight on another CPU; the only correct
- * response is to drop the lock and retry, which is done by the caller.
- *
- * @retval true if the arm completed
- * @retval false if the timeout abort needs the caller to drop the lock and retry
+ * Must be called with @p data->lock held. Any copy already armed is dropped
+ * first: a submit or cancel may arm the timeout while its handler is in flight,
+ * and the handler then re-arms it here.
  */
-static bool rtio_tq_try_arm(struct rtio_timeout_iodev_data *data)
+static void rtio_tq_arm(struct rtio_timeout_iodev_data *data)
 {
-	if (z_try_abort_timeout(&data->timeout) == -EAGAIN) {
-		return false;
-	}
+	(void)z_try_abort_timeout(&data->timeout);
 
 	if (data->head != NULL) {
 		z_add_timeout(&data->timeout, rtio_tq_expired,
 			      sys_timepoint_timeout(data->head->rt.delay_expiry));
 	}
-
-	return true;
 }
 
 /**
@@ -178,12 +171,7 @@ static void rtio_tq_expired(struct _timeout *timeout)
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	batch = rtio_tq_pop_expired(data);
-
-	if (data->head != NULL) {
-		z_add_timeout(&data->timeout, rtio_tq_expired,
-			      sys_timepoint_timeout(data->head->rt.delay_expiry));
-	}
-
+	rtio_tq_arm(data);
 	k_spin_unlock(&data->lock, key);
 
 	while (batch != NULL) {
@@ -205,13 +193,7 @@ static void rtio_timeout_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	key = k_spin_lock(&data->lock);
 
 	if (rtio_tq_insert(data, iodev_sqe)) {
-		/* New nearest deadline: re-arm, dropping the lock to retry if the
-		 * handler is in flight on another CPU (SMP).
-		 */
-		while (!rtio_tq_try_arm(data)) {
-			k_spin_unlock(&data->lock, key);
-			key = k_spin_lock(&data->lock);
-		}
+		rtio_tq_arm(data);
 	}
 
 	k_spin_unlock(&data->lock, key);
@@ -256,17 +238,8 @@ static void rtio_timeout_iodev_cancel(const struct rtio_iodev *iodev, struct rti
 	was_pending = rtio_tq_remove(data, iodev_sqe);
 
 	if (was_head) {
-		/* We removed the nearest deadline, so the shared timeout must be
-		 * re-armed to the new head. z_try_abort_timeout() (inside
-		 * rtio_tq_try_arm) returns -EAGAIN if the expiry handler is running on
-		 * another CPU and would deadlock on data->lock; the kernel's contract
-		 * is to drop the lock so it can finish, then retry. On non-SMP this
-		 * loop always runs exactly once.
-		 */
-		while (!rtio_tq_try_arm(data)) {
-			k_spin_unlock(&data->lock, key);
-			key = k_spin_lock(&data->lock);
-		}
+		/* We removed the nearest deadline: re-arm to the new head. */
+		rtio_tq_arm(data);
 	}
 
 	k_spin_unlock(&data->lock, key);
