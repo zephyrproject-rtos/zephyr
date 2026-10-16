@@ -28,3 +28,24 @@
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
 };
+
+/*
+ * Ethernet DMA to DTCM, which is zephyr,sram here, is not supported. The
+ * sram variant of this board target enables the three nodes below
+ * together with a system SRAM as zephyr,sram.
+ */
+&eth {
+	pinctrl-0 = <&eth_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+};
+
+&mdio {
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		/* A node does not follow the status of its bus */
+		status = "disabled";
+	};
+};

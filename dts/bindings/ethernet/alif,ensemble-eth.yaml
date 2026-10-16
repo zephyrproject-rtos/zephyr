@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+title: Alif Ensemble Ethernet MAC
+
+description: |
+  Synopsys DesignWare Ethernet QoS MAC of the Alif Ensemble SoCs, limited to
+  10/100 Mbps over RMII.
+
+compatible: "alif,ensemble-eth"
+
+include:
+  - snps,dwmac.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      The RMII reference clock source selection, either the ETH_REFCLK pin
+      (ALIF_ETH_RMII_REFCLK) or the internal 50 MHz PLL output
+      (ALIF_ETH_RMII_PLL_50M), the RMII clock gate (ALIF_ETH_RMII_CLK), and
+      the CSR clock (ALIF_ETH_SYST_HCLK), from whose rate the MDIO clock
+      range is derived.
+
+  clock-names:
+    required: true
+    description: |
+      Must be "rmii-src" for the source selection, "rmii" for the gate and
+      "csr" for the CSR clock.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  phy-connection-type:
+    required: true
+
+examples:
+  - |
+    eth: ethernet@48100000 {
+        compatible = "alif,ensemble-eth", "snps,dwmac";
+        reg = <0x48100000 0x2000>;
+        interrupts = <148 0>;
+        clocks = <&clockctrl ALIF_ETH_RMII_REFCLK>,
+                 <&clockctrl ALIF_ETH_RMII_CLK>,
+                 <&clockctrl ALIF_ETH_SYST_HCLK>;
+        clock-names = "rmii-src", "rmii", "csr";
+        pinctrl-0 = <&eth_default>;
+        pinctrl-names = "default";
+        phy-connection-type = "rmii";
+        phy-handle = <&phy>;
+    };

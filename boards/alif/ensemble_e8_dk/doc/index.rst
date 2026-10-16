@@ -20,23 +20,27 @@ Board Identifiers
 
 The following board identifiers are supported:
 
-+----------------------------------------------+-------------+----------+
-| Board Identifier                             | SoC Series  | Core     |
-+==============================================+=============+==========+
-| ``ensemble_e8_dk/ae402fa0e5597le0/rtss_he``  | E4          | RTSS-HE  |
-+----------------------------------------------+-------------+----------+
-| ``ensemble_e8_dk/ae402fa0e5597le0/rtss_hp``  | E4          | RTSS-HP  |
-+----------------------------------------------+-------------+----------+
-| ``ensemble_e8_dk/ae612fa0e5597ls0/rtss_he``  | E6          | RTSS-HE  |
-+----------------------------------------------+-------------+----------+
-| ``ensemble_e8_dk/ae612fa0e5597ls0/rtss_hp``  | E6          | RTSS-HP  |
-+----------------------------------------------+-------------+----------+
-| ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_he``  | E8          | RTSS-HE  |
-+----------------------------------------------+-------------+----------+
-| ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp``  | E8          | RTSS-HP  |
-+----------------------------------------------+-------------+----------+
-| ``ensemble_e8_dk/ae822fa0e5597ls0/apss``     | E8          | APSS     |
-+----------------------------------------------+-------------+----------+
++--------------------------------------------------+-------------+----------+
+| Board Identifier                                 | SoC Series  | Core     |
++==================================================+=============+==========+
+| ``ensemble_e8_dk/ae402fa0e5597le0/rtss_he``      | E4          | RTSS-HE  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae402fa0e5597le0/rtss_hp``      | E4          | RTSS-HP  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae612fa0e5597ls0/rtss_he``      | E6          | RTSS-HE  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae612fa0e5597ls0/rtss_hp``      | E6          | RTSS-HP  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_he``      | E8          | RTSS-HE  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_he/sram`` | E8          | RTSS-HE  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp``      | E8          | RTSS-HP  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp/sram`` | E8          | RTSS-HP  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae822fa0e5597ls0/apss``         | E8          | APSS     |
++--------------------------------------------------+-------------+----------+
 
 More information about the board can be found at the
 `Ensemble E8 DevKit Product Page`_.
@@ -70,6 +74,19 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+Ethernet
+========
+
+The Ethernet MAC of the RTSS cores is enabled only in the ``sram`` variants of the E8 board
+targets. The other targets use DTCM as ``zephyr,sram``, which DMA masters such as the Ethernet MAC
+cannot access. The ``sram`` variants use a system SRAM as ``zephyr,sram`` instead and enable the
+MAC, the MDIO bus and the PHY:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :board: ensemble_e8_dk/ae822fa0e5597ls0/rtss_he/sram
+   :goals: build
 
 Programming and Debugging
 *************************

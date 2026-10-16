@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "ensemble_e8_dk_ae822fa0e5597ls0_rtss_hp.dts"
+
+/* DMA masters such as the Ethernet MAC cannot access the DTCM */
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&phy {
+	status = "okay";
+};
