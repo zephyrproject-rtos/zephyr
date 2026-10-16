@@ -152,7 +152,9 @@ sets the boot mode :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_BOOT_MODE` with
 :c:func:`bootmode_set` before the system is reset for the
 :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_RESETS` th consecutive time. The
 application or the bootloader can check it with :c:func:`bootmode_check` and
-start a minimal configuration instead of resetting forever.
+start a minimal configuration instead of resetting forever. As for the
+retention backend, the retention and retained memory mutexes have to be
+disabled.
 
 Groups and Recovery
 *******************
