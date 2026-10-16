@@ -2942,6 +2942,94 @@ def added_lines(fname):
     return added
 
 
+class KernelScopeCheck(ComplianceTest):
+    """
+    Check that references to the Kconfig symbols excluded from a kernel
+    feature scope (kernel/scopes/*.yaml) do not spread through kernel/ and
+    lib/.
+
+    The sources that implement an excluded feature and the hook sources
+    providing its null variants are exempt. Elsewhere a file may not end up
+    with more references than it had before the change:
+    added references are reported when the total grew, so moving code
+    around inside a file or deleting references does not fail.
+    """
+
+    name = "KernelScope"
+    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#kernelscope-check")
+    path_hint = "<zephyr-base>"
+
+    SCOPES_DIR = Path("kernel/scopes")
+    PATHS = ("kernel", "lib")
+    SUFFIXES = (".c", ".h")
+    # The compile-time enforcement of the scope has to name the excluded symbols.
+    EXEMPT = ("kernel/scope.c",)
+
+    @staticmethod
+    def _base_ref():
+        """Return the ref whose tree COMMIT_RANGE is diffed against."""
+        if "..." in COMMIT_RANGE:
+            a, b = COMMIT_RANGE.split("...", 1)
+            return git("merge-base", a or "HEAD", b or "HEAD")
+        if ".." in COMMIT_RANGE:
+            return COMMIT_RANGE.split("..", 1)[0] or "HEAD"
+        return COMMIT_RANGE + "^"
+
+    def _load_scopes(self):
+        symbols = set()
+        exempt = []
+        scope_files = sorted((ZEPHYR_BASE / self.SCOPES_DIR).glob("*.yaml"))
+        if not scope_files:
+            self.skip(f"no scope descriptions in {self.SCOPES_DIR}")
+        for scope_file in scope_files:
+            with open(scope_file, encoding="utf-8") as f:
+                scope = yaml.safe_load(f)
+            symbols.update(scope.get("excluded_kconfig", []))
+            exempt.extend(scope.get("excluded_sources", []))
+            exempt.extend(scope.get("hook_sources", []))
+        exempt.extend(self.EXEMPT)
+        return symbols, list(dict.fromkeys(exempt))
+
+    @staticmethod
+    def _is_exempt(file, exempt):
+        return any(file == e or (e.endswith("/") and file.startswith(e)) for e in exempt)
+
+    def run(self):
+        symbols, exempt = self._load_scopes()
+        pattern = re.compile(r"\bCONFIG_(" + "|".join(sorted(symbols)) + r")\b")
+        base = self._base_ref()
+
+        for file in get_files(filter="AM", paths=self.PATHS):
+            if not file.endswith(self.SUFFIXES) or self._is_exempt(file, exempt):
+                continue
+
+            with open(GIT_TOP / file, encoding="utf-8") as f:
+                lines = f.read().splitlines()
+            old = git("show", f"{base}:{file}", ignore_non_zero=True)
+
+            new_count = sum(1 for line in lines if pattern.search(line))
+            old_count = sum(1 for line in old.splitlines() if pattern.search(line))
+            if new_count <= old_count:
+                continue
+
+            added = added_lines(file)
+            for lineno, line in enumerate(lines, start=1):
+                m = pattern.search(line)
+                if lineno in added and m:
+                    self.fmtd_failure(
+                        "error",
+                        "KernelScope",
+                        file,
+                        lineno,
+                        desc=(
+                            f"new reference to CONFIG_{m.group(1)} in common code "
+                            f"(references in this file grew from {old_count} to "
+                            f"{new_count}). Keep feature code under {', '.join(exempt)} "
+                            "or behind a hook whose disabled variant is an inline no-op."
+                        ),
+                    )
+
+
 class MmuRegionsCheck(ComplianceTest):
     """
     Check that mmu_regions.c files do not add new static MMU region entries.

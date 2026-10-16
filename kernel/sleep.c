@@ -101,11 +101,3 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep_ticks, timeout, signed_left);
 	return (k_ticks_t)signed_left;
 }
-
-#ifdef CONFIG_USERSPACE
-static inline k_ticks_t z_vrfy_k_sleep_ticks(k_timeout_t timeout)
-{
-	return z_impl_k_sleep_ticks(timeout);
-}
-#include <zephyr/syscalls/k_sleep_ticks_mrsh.c>
-#endif /* CONFIG_USERSPACE */
