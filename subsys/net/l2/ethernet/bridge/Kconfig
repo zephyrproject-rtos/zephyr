@@ -121,6 +121,20 @@ config NET_ETHERNET_BRIDGE_FDB_AGEING_TIME
 	  A learned entry is removed when no frame from its address has been
 	  received for this long. Static entries do not age.
 
+config NET_ETHERNET_BRIDGE_STP
+	bool "Rapid Spanning Tree Protocol (RSTP) [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_ETHERNET_BRIDGE_FDB
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Support the Rapid Spanning Tree Protocol, as specified in IEEE Std
+	  802.1Q-2014 Clause 13 and earlier in IEEE Std 802.1D-2004, on the
+	  bridge interfaces. It blocks the ports that would make a loop, and
+	  falls back to STP BPDUs on a port where an STP bridge is attached.
+	  The protocol runs on a bridge once eth_bridge_stp_enable() is
+	  called for it. Each bridge port takes about 220 bytes of RAM.
+
 module = NET_ETHERNET_BRIDGE
 module-dep = NET_LOG
 module-str = Log level for Ethernet Bridging
