@@ -7,6 +7,12 @@
 
 sysclk: system-clock {
 	compatible = "fixed-clock";
+	clock-frequency = <20000000>;
+	#clock-cells = <0>;
+};
+
+periphclk: peripheral-clock {
+	compatible = "fixed-clock";
 	clock-frequency = <25000000>;
 	#clock-cells = <0>;
 };
@@ -87,7 +93,7 @@ uart0: uart@200000 {
 	reg = <0x200000 0x1000>;
 	interrupts = <33 3 32 3>;
 	interrupt-names = "tx", "rx";
-	clocks = <&sysclk>;
+	clocks = <&periphclk>;
 	current-speed = <115200>;
 };
 
@@ -96,7 +102,7 @@ uart1: uart@201000 {
 	reg = <0x201000 0x1000>;
 	interrupts = <35 3 34 3>;
 	interrupt-names = "tx", "rx";
-	clocks = <&sysclk>;
+	clocks = <&periphclk>;
 	current-speed = <115200>;
 };
 
@@ -105,7 +111,7 @@ uart2: uart@202000 {
 	reg = <0x202000 0x1000>;
 	interrupts = <37 3 36 3>;
 	interrupt-names = "tx", "rx";
-	clocks = <&sysclk>;
+	clocks = <&periphclk>;
 	current-speed = <115200>;
 };
 
@@ -114,7 +120,7 @@ uart3: uart@203000 {
 	reg = <0x203000 0x1000>;
 	interrupts = <39 3 38 3>;
 	interrupt-names = "tx", "rx";
-	clocks = <&sysclk>;
+	clocks = <&periphclk>;
 	current-speed = <115200>;
 	pinctrl-0 = <&uart3_default>;
 	pinctrl-names = "default";
@@ -125,7 +131,7 @@ uart4: uart@204000 {
 	reg = <0x204000 0x1000>;
 	interrupts = <41 3 40 3>;
 	interrupt-names = "tx", "rx";
-	clocks = <&sysclk>;
+	clocks = <&periphclk>;
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
