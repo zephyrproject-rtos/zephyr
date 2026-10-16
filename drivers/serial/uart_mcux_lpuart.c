@@ -202,16 +202,26 @@ static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 #ifdef CONFIG_PM
 	struct mcux_lpuart_data *data = dev->data;
 #endif
-	/* Lock interrupts while we send data */
-	key = irq_lock();
+	/*
+	 * Wait for the transmitter with interrupts enabled, then lock interrupts
+	 * and check again, as another context may have written in between.
+	 */
+	while (true) {
+		while (!(LPUART_GetStatusFlags(get_base(dev)) & LPUART_STAT_TDRE_MASK)) {
+		}
+
+		key = irq_lock();
+
+		if (LPUART_GetStatusFlags(get_base(dev)) & LPUART_STAT_TDRE_MASK) {
+			break;
+		}
+
+		irq_unlock(key);
+	}
 
 	/* Switch TXD pin to output */
 	if (config->single_wire) {
 		get_base(dev)->CTRL |= LPUART_CTRL_TXDIR(true);
-	}
-
-	while (!(LPUART_GetStatusFlags(get_base(dev))
-		& LPUART_STAT_TDRE_MASK)) {
 	}
 
 #ifdef CONFIG_PM
