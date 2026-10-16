@@ -93,6 +93,7 @@ struct sdhc_stm32_data {
 	uint32_t sdmmc_clk;            /* Specifies the clock*/
 	uint32_t block_size;           /* Block size for SDMMC data transfer */
 	uint32_t error_code;           /* SD Card Error codes */
+	bool sdio_dma_fault;          /* DMA buffer quarantined until reboot */
 	bool is_sdio_transfer;         /* Flag to indicate if current transfer is SDIO */
 
 	uint32_t rx_xfer_size; /* SD Rx Transfer size */
@@ -338,6 +339,23 @@ static void sdhc_stm32_stop_sdio_dma(SDMMC_TypeDef *instance,
 	dev_data->is_sdio_transfer = false;
 
 	__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_DATA_FLAGS);
+}
+
+/* Thread only, after cleanup and outside the spinlock, before releasing the buffer. */
+static bool sdhc_stm32_sdio_dma_idle(SDMMC_TypeDef *instance,
+				     struct sdhc_stm32_data *dev_data)
+{
+	/* Short polling intervals avoid scheduler tick rounding for this 1 ms timeout. */
+	if (!WAIT_FOR(!__SDMMC_GET_FLAG(instance, SDMMC_FLAG_DPSMACT),
+		      1000U, k_busy_wait(10))) {
+		/* Do not reuse the host or release memory still owned by the data path. */
+		dev_data->sdio_dma_fault = true;
+		dev_data->error_code |= SDMMC_ERROR_TIMEOUT;
+		LOG_ERR("SDIO DPSM stuck; host and DMA buffer quarantined until reboot");
+		return false;
+	}
+
+	return true;
 }
 
 static void sdhc_stm32_abort_dma_transfer(SDMMC_TypeDef *instance, struct sdhc_stm32_data *dev_data)
@@ -1474,6 +1492,10 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	bool is_block_mode = cmd->arg & BIT(SDIO_EXTEND_CMD_ARG_BLK_SHIFT);
 	size_t buf_len;
 
+	if (dev_data->sdio_dma_fault) {
+		return -EIO;
+	}
+
 	if (data->data == NULL) {
 		LOG_ERR("Invalid NULL data buffer passed to CMD53");
 		return -EINVAL;
@@ -1507,6 +1529,9 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 
 			sdhc_stm32_stop_sdio_dma(instance, dev_data);
 			k_spin_unlock(&dev_data->lock, key);
+			if (!sdhc_stm32_sdio_dma_idle(instance, dev_data)) {
+				return -EIO;
+			}
 			k_free(dev_data->sdio_dma_buf);
 			return res;
 		}
@@ -1519,8 +1544,16 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 
 			sdhc_stm32_stop_sdio_dma(instance, dev_data);
 			k_spin_unlock(&dev_data->lock, key);
+			if (!sdhc_stm32_sdio_dma_idle(instance, dev_data)) {
+				return -EIO;
+			}
 			k_free(dev_data->sdio_dma_buf);
 			return -ETIMEDOUT;
+		}
+
+		/* The ISR finished its cleanup before waking us. */
+		if (!sdhc_stm32_sdio_dma_idle(instance, dev_data)) {
+			return -EIO;
 		}
 
 		if (dev_data->error_code != SDMMC_ERROR_NONE) {
@@ -1603,6 +1636,11 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 
 	if (k_mutex_lock(&dev_data->bus_mutex, K_MSEC(cmd->timeout_ms))) {
 		return -EBUSY;
+	}
+
+	if (dev_data->sdio_dma_fault) {
+		k_mutex_unlock(&dev_data->bus_mutex);
+		return -EIO;
 	}
 
 	if (sdhc_stm32_card_busy(dev)) {
