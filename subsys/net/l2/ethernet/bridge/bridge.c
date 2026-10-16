@@ -138,16 +138,18 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		found = true;
 	}
 
-	ARRAY_FOR_EACH(ctx->eth_iface, i) {
-		if (!found && ctx->eth_iface[i] == NULL) {
-			ctx->eth_iface[i] = iface;
+	ARRAY_FOR_EACH(ctx->ports, i) {
+		if (!found && ctx->ports[i].iface == NULL) {
+			ctx->ports[i].iface = iface;
+			(void)atomic_set(&ctx->ports[i].state, ETH_BRIDGE_PORT_STATE_FORWARDING);
 			eth_ctx->bridge = br;
+			eth_ctx->bridge_port = (uint8_t)i;
 			found = true;
 		}
 
 		/* Calculate how many interfaces are added to this bridge */
-		if (ctx->eth_iface[i] != NULL) {
-			struct ethernet_context *tmp = net_if_l2_data(ctx->eth_iface[i]);
+		if (ctx->ports[i].iface != NULL) {
+			struct ethernet_context *tmp = net_if_l2_data(ctx->ports[i].iface);
 
 			NET_ASSERT(tmp != NULL);
 
@@ -234,16 +236,18 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 #endif
 	lock_bridge(ctx);
 
-	ARRAY_FOR_EACH(ctx->eth_iface, i) {
-		if (!found && ctx->eth_iface[i] == iface) {
-			ctx->eth_iface[i] = NULL;
+	ARRAY_FOR_EACH(ctx->ports, i) {
+		if (!found && ctx->ports[i].iface == iface) {
+			ctx->ports[i].iface = NULL;
+			(void)atomic_set(&ctx->ports[i].state, ETH_BRIDGE_PORT_STATE_DISCARDING);
 			eth_ctx->bridge = NULL;
+			eth_ctx->bridge_port = 0U;
 			found = true;
 		}
 
 		/* Calculate how many interfaces are added to this bridge */
-		if (ctx->eth_iface[i] != NULL) {
-			struct ethernet_context *tmp = net_if_l2_data(ctx->eth_iface[i]);
+		if (ctx->ports[i].iface != NULL) {
+			struct ethernet_context *tmp = net_if_l2_data(ctx->ports[i].iface);
 
 			NET_ASSERT(tmp != NULL);
 
@@ -584,10 +588,12 @@ static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 	/* Pick the ports to forward to once, so that a port going down
 	 * meanwhile cannot make the count below wrong.
 	 */
-	ARRAY_FOR_EACH(ctx->eth_iface, i) {
-		if (ctx->eth_iface[i] != NULL && ctx->eth_iface[i] != orig_iface) {
+	ARRAY_FOR_EACH(ctx->ports, i) {
+		struct net_if *port_iface = ctx->ports[i].iface;
+
+		if (port_iface != NULL && port_iface != orig_iface) {
 			/* Skip it if not up */
-			if (!net_if_flag_is_set(ctx->eth_iface[i], NET_IF_UP)) {
+			if (!net_if_flag_is_set(port_iface, NET_IF_UP)) {
 				continue;
 			}
 
@@ -604,7 +610,9 @@ static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 	}
 
 	/* Forward pkt to other interfaces */
-	ARRAY_FOR_EACH(ctx->eth_iface, i) {
+	ARRAY_FOR_EACH(ctx->ports, i) {
+		struct net_if *port_iface = ctx->ports[i].iface;
+
 		if ((fwd_ports & BIT(i)) != 0U) {
 			/* Clone the packet if we have more than two interfaces in the bridge
 			 * because the first send might mess the data part of the message.
@@ -618,11 +626,10 @@ static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 			}
 
 			net_pkt_set_family(send_pkt, NET_AF_UNSPEC);
-			net_pkt_set_iface(send_pkt, ctx->eth_iface[i]);
-			net_if_queue_tx(ctx->eth_iface[i], send_pkt);
+			net_pkt_set_iface(send_pkt, port_iface);
+			net_if_queue_tx(port_iface, send_pkt);
 
-			NET_DBG("Send iface %d pkt %p (ref %d)",
-				net_if_get_by_iface(ctx->eth_iface[i]),
+			NET_DBG("Send iface %d pkt %p (ref %d)", net_if_get_by_iface(port_iface),
 				send_pkt, (int)atomic_get(&send_pkt->atomic_ref));
 		}
 	}
