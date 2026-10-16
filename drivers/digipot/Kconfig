@@ -1,0 +1,29 @@
+# Digipot configuration options
+
+# Copyright (c) 2020 Libre Solar Technologies GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Digipot options
+#
+menuconfig DIGIPOT
+	bool "Digital potentiometer drivers"
+	help
+	  Enable Digital potentiometer driver configuration.
+
+if DIGIPOT
+
+module = DIGIPOT
+module-str = DIGIPOT
+
+source "subsys/logging/Kconfig.template.log_config"
+
+config DIGIPOT_INIT_PRIORITY
+	int "Digipot init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Digipot driver device initialization priority.
+
+source "drivers/digipot/Kconfig.ad528x"
+
+endif # DIGIPOT
