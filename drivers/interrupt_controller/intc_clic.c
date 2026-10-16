@@ -14,7 +14,10 @@
 #include <zephyr/arch/riscv/icsr.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
+#include <zephyr/logging/log.h>
 #include "intc_clic.h"
+
+LOG_MODULE_REGISTER(intc_clic, CONFIG_INTC_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(riscv_clic)
 #define DT_DRV_COMPAT riscv_clic
@@ -292,6 +295,13 @@ static int clic_init(const struct device *dev)
 		/* Configure the interrupt level threshold by CSR mintthresh. */
 		csr_write(CSR_MINTTHRESH, 0x0);
 	}
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* Preemption is decided by the level alone */
+	if (data->nlbits == 0U) {
+		LOG_WRN("No level bits, interrupts cannot preempt each other");
+	}
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
 	if (IS_ENABLED(CONFIG_CLIC_SMCLICCONFIG_EXT)) {
 #ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
