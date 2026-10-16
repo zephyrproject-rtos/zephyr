@@ -5,6 +5,36 @@
 
 if SOC_FAMILY_INFINEON_CAT1A
 
+if SOC_FAMILY_PSOC6
+
+# SysTick stays the primary timer and the MCWDT only covers the DeepSleep gap,
+# so the HAL driver must not claim it as the tick source. To use the LP timer
+# as the primary tick instead, set CORTEX_M_SYSTICK=n and
+# INFINEON_LP_TIMER_HAL=y.
+config INFINEON_LP_TIMER_HAL
+	default n
+
+choice SYSTEM_TIMER_LPM_COMPANION
+	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if PM && DT_HAS_INFINEON_LP_TIMER_ENABLED
+endchoice
+
+# SysTick banks the ~80 us of entry work before the CPU halts; crediting it
+# against the companion loses a tick and leaves the timeout short. Stop SysTick
+# and restart it on wake, leaving the companion as the sole time reference.
+config SYSTEM_TIMER_RESET_BY_LPM
+	default y if PM
+
+# The companion selects USE_INFINEON_LPTIMER too, so the SysTick case has to be
+# listed first. CLK_LF, which clocks the MCWDT, runs at 32768 Hz.
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus,timebase-frequency) if CORTEX_M_SYSTICK
+	default 32768 if USE_INFINEON_LPTIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 8192 if USE_INFINEON_LPTIMER && !CORTEX_M_SYSTICK
+
+endif # SOC_FAMILY_PSOC6
+
 rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_INFINEON_CAT1A
