@@ -174,6 +174,7 @@ static int led_strip_matrix_read(const struct device *dev, const uint16_t x, con
 				uint32_t *pix_ptr = (uint32_t *)buf_ptr;
 
 				*pix_ptr = 0xFF000000 | pix->r << 16 | pix->g << 8 | pix->b;
+				buf_ptr += 4;
 			} else {
 				*buf_ptr = pix->r;
 				buf_ptr++;
