@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_echo_server_svc_sample, LOG_LEVEL_DBG);
 
