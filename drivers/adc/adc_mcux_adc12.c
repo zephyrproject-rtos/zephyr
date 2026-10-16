@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(adc_mcux_adc12);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
+#include "adc_common.h"
+
 struct mcux_adc12_config {
 	ADC_Type *base;
 	adc12_clock_source_t clock_src;
@@ -83,6 +85,13 @@ static int mcux_adc12_start_read(const struct device *dev,
 	ADC_Type *base = config->base;
 	int error;
 	uint32_t tmp32;
+
+	error = adc_sequence_validate_buffer(sequence, POPCOUNT(sequence->channels),
+					     sizeof(uint16_t));
+	if (error < 0) {
+		LOG_ERR("Buffer size too small");
+		return error;
+	}
 
 	switch (sequence->resolution) {
 	case 8:
