@@ -50,12 +50,38 @@ struct task_wdt_channel_info {
 	k_tid_t thread;
 };
 
+/** Reason of a task watchdog channel fault. */
+enum task_wdt_fault_reason {
+	/** The channel was not fed within its reload period */
+	TASK_WDT_FAULT_TIMEOUT,
+	/** The channel was fed before its minimum feed interval elapsed */
+	TASK_WDT_FAULT_TOO_EARLY,
+};
+
+/** Task watchdog channel fault. */
+struct task_wdt_fault {
+	/** Channel which reported the fault */
+	int channel_id;
+	/** Reason of the fault */
+	enum task_wdt_fault_reason reason;
+	/**
+	 * Thread owning the channel, or NULL if not known. Always NULL unless
+	 * @kconfig{CONFIG_TASK_WDT_THREAD_INFO} is enabled.
+	 */
+	k_tid_t thread;
+};
+
+/** Task watchdog fault callback, which is told the reason of the fault. */
+typedef void (*task_wdt_fault_callback_t)(const struct task_wdt_fault *fault, void *user_data);
+
 /** Cause of a reset triggered by the task watchdog. */
 enum task_wdt_reset_reason {
 	/** A task watchdog channel timed out */
 	TASK_WDT_RESET_TIMEOUT,
 	/** The hardware watchdog fallback reset the system */
 	TASK_WDT_RESET_HW_FALLBACK,
+	/** A task watchdog channel was fed before its minimum feed interval elapsed */
+	TASK_WDT_RESET_TOO_EARLY,
 };
 
 /** Size of the thread name kept in @ref task_wdt_reset_info, including the terminator */
@@ -114,6 +140,26 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 		 void *user_data);
 
 /**
+ * @brief Install new timeout with a fault callback.
+ *
+ * Same as task_wdt_add(), but the callback is told the reason of the fault.
+ * Timeouts are reported from the kernel timer interrupt, faults detected by
+ * task_wdt_feed() are reported from the thread feeding the channel.
+ *
+ * @param reload_period Period in milliseconds used to reset the timeout
+ * @param callback Function to be called when the channel reports a fault.
+ *                 Pass NULL to use system reset handler.
+ * @param user_data User data to associate with the watchdog channel.
+ *
+ * @retval channel_id If successful, a non-negative value indicating the index
+ *                    of the channel to which the timeout was assigned.
+ * @retval -EINVAL If the reload_period is invalid.
+ * @retval -ENOMEM If no more timeouts can be installed.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_FAULT_REASONS} is disabled.
+ */
+int task_wdt_add_ext(uint32_t reload_period, task_wdt_fault_callback_t callback, void *user_data);
+
+/**
  * @brief Delete task watchdog channel.
  *
  * Deletes the specified channel from the list of task watchdog channels. The
@@ -139,6 +185,27 @@ int task_wdt_delete(int channel_id);
  * @retval -EINVAL If there is no installed timeout for supplied channel.
  */
 int task_wdt_feed(int channel_id);
+
+/**
+ * @brief Set the minimum interval between two feeds of a channel.
+ *
+ * Feeding the channel again sooner than @p min_period milliseconds after the
+ * previous feed reports a @ref TASK_WDT_FAULT_TOO_EARLY fault, which detects a
+ * thread stuck in a loop feeding its channel. The fault is reported by
+ * task_wdt_feed() before it returns, and the channel is fed anyway. Channels
+ * added with task_wdt_add() call their callback, or reset the system, as for a
+ * timeout.
+ *
+ * @param channel_id Index of the channel as returned by task_wdt_add().
+ * @param min_period Minimum interval in milliseconds, 0 to disable the check.
+ *                   Must be lower than the reload period of the channel.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel or
+ *                 @p min_period is not lower than its reload period.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_FAULT_REASONS} is disabled.
+ */
+int task_wdt_window_set(int channel_id, uint32_t min_period);
 
 /**
  * @brief Set the thread owning a task watchdog channel.
