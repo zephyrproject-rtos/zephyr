@@ -970,6 +970,55 @@ ZTEST(rtio_api, test_rtio_transaction_mempool)
 	zassert_is_null(buffer, "Expected no buffer for the member that read nothing");
 }
 
+#define RELEASE_BLK_COUNT 8
+#define RELEASE_BLK_SIZE  8
+
+RTIO_DEFINE_WITH_MEMPOOL(r_release, 4, 4, RELEASE_BLK_COUNT, RELEASE_BLK_SIZE, MEM_BLK_ALIGN);
+
+RTIO_IODEV_TEST_DEFINE(iodev_test_release);
+
+/**
+ * @brief Releasing a partial length returns every block the buffer spans
+ *
+ * rtio_release_buffer() rounds its byte count up to whole blocks, so a consumer
+ * may hand back what it used rather than what it got. Rounding down strands the
+ * tail block of every buffer and the pool runs dry a few reads later.
+ */
+ZTEST(rtio_api, test_rtio_release_buffer_rounds_up)
+{
+	struct rtio *r = &r_release;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+	uint8_t *buf;
+	uint32_t buf_len;
+
+	rtio_iodev_test_init(&iodev_test_release);
+	for (int i = 0; i < MEM_BLK_SIZE; i++) {
+		mempool_data[i] = i;
+	}
+
+	/* Each read binds more than one block, and each release names one byte
+	 * less than it got, so a pool that rounds down never recovers.
+	 */
+	for (int i = 0; i < RELEASE_BLK_COUNT; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+		rtio_sqe_prep_read_with_pool(sqe, (struct rtio_iodev *)&iodev_test_release, 0,
+					     mempool_data);
+
+		zassert_ok(rtio_submit(r, 1));
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+		zassert_ok(cqe.result, "Read %d failed, blocks not returned?", i);
+
+		buf = NULL;
+		buf_len = 0;
+		zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buf, &buf_len));
+		zassert_equal(MEM_BLK_SIZE, buf_len);
+
+		rtio_release_buffer(r, buf, buf_len - 1);
+	}
+}
+
 ZTEST(rtio_api, test_rtio_transaction)
 {
 	TC_PRINT("initializing iodev test devices\n");
