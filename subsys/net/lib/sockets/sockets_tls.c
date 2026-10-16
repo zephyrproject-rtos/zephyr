@@ -1760,6 +1760,42 @@ static int tls_set_private_key(struct tls_context *tls,
 	return -ENOTSUP;
 }
 
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
+/* On success "key_id" contains the PSA key ID that has been verified. */
+static int tls_check_psa_key(struct tls_credential *cred, psa_key_id_t *key_id)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t status;
+	int ret = -EINVAL;
+
+	if (cred->len != sizeof(psa_key_id_t)) {
+		NET_ERR("Bad PSA key id length (%zu) on tag %d", cred->len, cred->tag);
+		return -EINVAL;
+	}
+
+	memcpy(key_id, cred->buf, cred->len);
+	status = psa_get_key_attributes(*key_id, &attr);
+	if (status != PSA_SUCCESS) {
+		NET_ERR("Error %d reading attributes for PSA key %x (tag %d)",
+			status, *key_id, cred->tag);
+		goto exit;
+	}
+
+	if ((cred->type == TLS_CREDENTIAL_PRIVATE_KEY_PSA) &&
+	    !PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(&attr))) {
+		NET_ERR("PSA key %x (tag %d) is not a key_pair", *key_id, cred->tag);
+		goto exit;
+	}
+
+	ret = 0;
+
+exit:
+	psa_reset_key_attributes(&attr);
+
+	return ret;
+}
+#endif
+
 static int tls_set_private_key_psa(struct tls_context *tls,
 				   struct tls_credential *priv_key)
 {
@@ -1768,11 +1804,9 @@ static int tls_set_private_key_psa(struct tls_context *tls,
 	mbedtls_svc_key_id_t svc_key_id;
 	int err;
 
-	if (priv_key->len != sizeof(key_id)) {
+	if (tls_check_psa_key(priv_key, &key_id) != 0) {
 		return -EINVAL;
 	}
-
-	memcpy(&key_id, priv_key->buf, sizeof(key_id));
 
 	/* The private key lives in PSA and is never exported - we only hold its
 	 * key id. Wrap that id into an opaque PK context (mbedtls_pk_wrap_psa)
@@ -2326,29 +2360,8 @@ static int tls_check_private_key_psa(struct tls_credential *priv_key)
 {
 #if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	psa_key_id_t key_id;
-	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
-	psa_status_t status;
 
-	if (priv_key->len != sizeof(key_id)) {
-		NET_ERR("Bad PSA key id length on tag %d", priv_key->tag);
-		return -EINVAL;
-	}
-
-	memcpy(&key_id, priv_key->buf, sizeof(key_id));
-
-	/* Validate that the referenced key exists and is usable, without
-	 * touching the key material.
-	 */
-	status = psa_get_key_attributes(key_id, &attr);
-	if (status != PSA_SUCCESS) {
-		NET_ERR("PSA key %u not found for tag %d, status: %d",
-			key_id, priv_key->tag, status);
-		return -EINVAL;
-	}
-
-	psa_reset_key_attributes(&attr);
-
-	return 0;
+	return tls_check_psa_key(priv_key, &key_id);
 #else
 	NET_ERR("TLS with certificates disabled. "
 		"Reconfigure mbed TLS to support certificate based key exchange.");
