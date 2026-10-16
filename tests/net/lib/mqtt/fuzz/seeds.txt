@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Dev It Wise
+# SPDX-License-Identifier: Apache-2.0
+#
+# Seed corpus for the MQTT receive-path fuzz harness, one seed per line
+# as "<name> <hex>". gen_corpus.py turns this file into the directory of
+# binary seeds libFuzzer wants.
+#
+# The seeds are hex rather than files because an MQTT packet is dense
+# with zero bytes - every string length, every short remaining length,
+# every success reason code is one - and git calls a file binary as soon
+# as it contains a NUL, which the tree does not accept.
+#
+# Each seed is the stream a broker sends after the connection has been
+# accepted; the harness supplies the CONNACK itself.
+
+# Shortest PUBLISH that carries a topic and a payload. Under 5.0 the
+# empty property list is the byte between the two.
+publish_qos0 300a0005746f706963006869
+
+# QoS 1, so the message id is decoded, followed by a second PUBLISH that
+# carries no topic and resolves it from the alias the first one set.
+# This is the only path that reads a topic out of the client's own
+# alias store rather than out of the receive buffer.
+publish_topic_alias 320a00017400010323000178300700000323000179
+
+# One user property, whose name and value lengths are consumed against
+# the property-length counter rather than the buffer end.
+publish_user_property 300c000174072600016b0001767a
+
+# CONNACK carrying properties, decoded while the client is already
+# connected. A conformant broker never sends a second CONNACK; the
+# decoder takes one anyway, without checking the connection state, so
+# a hostile peer can put the client here.
+connack_properties 200b000008110000003c220005
+
+# SUBACK: message id, an empty property list and three reason codes,
+# which is where the packet length decides how many codes are read.
+suback_reason_codes 9006000100000102
+
+# DISCONNECT with a reason code and no properties.
+disconnect_reason e0028b00
+
+# AUTH continuing authentication, with an authentication method string.
+auth_method f00b18091500066d6574686f64
+
+# A topic alias past the configured maximum, which is the input the
+# alias bounds check exists for: without it the alias indexes the
+# client's own array of aliases from the wire.
+publish_topic_alias_out_of_range 30080001740323ffff78
+
+# A fixed header announcing the largest remaining length the encoding
+# allows, with nothing behind it: the length check is the only thing
+# between the client and the end of the buffer.
+truncated_remaining_length 30ffffff7f
