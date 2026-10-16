@@ -8,10 +8,10 @@
  * @brief SOC header file for Renesas RX SOC series
  */
 
-#ifndef _SOC_H_
-#define _SOC_H_
+#ifndef ZEPHYR_SOC_RENESAS_RX_RX74N_SOC_H_
+#define ZEPHYR_SOC_RENESAS_RX_RX74N_SOC_H_
 
 #include "reg_protection.h"
 #include <bsp_api.h>
 
-#endif /* _SOC_H_ */
+#endif /* ZEPHYR_SOC_RENESAS_RX_RX74N_SOC_H_ */
