@@ -70,4 +70,22 @@
 			input-enable;
 		};
 	};
+
+	/*
+	 * SAI0 on PIO2_0..6 for the WM8962 codec (U56); MCLK, RX_BCLK and
+	 * RX_SYNC pass through mux U41, which defaults to SAI0.
+	 */
+	pinmux_sai0: pinmux_sai0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_0_audio_sai0_tx_data0>,
+				 <&main__iomuxc_pio2_1_audio_sai0_rx_data0>,
+				 <&main__iomuxc_pio2_2_audio_sai0_tx_bclk>,
+				 <&main__iomuxc_pio2_3_audio_sai0_tx_sync>,
+				 <&main__iomuxc_pio2_4_audio_sai0_mclk>,
+				 <&main__iomuxc_pio2_5_audio_sai0_rx_bclk>,
+				 <&main__iomuxc_pio2_6_audio_sai0_rx_sync>;
+			slew-rate = "low";
+			input-enable;
+		};
+	};
 };

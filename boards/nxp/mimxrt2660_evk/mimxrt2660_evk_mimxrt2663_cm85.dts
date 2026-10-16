@@ -134,3 +134,11 @@
 	pinctrl-0 = <&pinmux_lpspi0>;
 	pinctrl-names = "default";
 };
+
+&edma3 {
+	status = "okay";
+};
+
+&sai0 {
+	status = "okay";
+};
