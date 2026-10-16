@@ -26,6 +26,8 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/virtual.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_dummy.h>
 
 #include "bridge/bridge_internal.h"
 #include "rstp_internal.h"
@@ -490,6 +492,157 @@ ZTEST(rstp_bridge, test_api_errors)
 							ETH_RSTP_MAX_PATH_COST + 1U),
 		      -EINVAL);
 	zexpect_equal(eth_bridge_stp_port_set_p2p(bridges[1], fake[1].iface, 7), -EINVAL);
+}
+
+/* Run a shell command on the dummy backend and return its output */
+static const char *shell_run(int *ret, const char *fmt, ...)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	static char cmd[128];
+	size_t size;
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintk(cmd, sizeof(cmd), fmt, ap);
+	va_end(ap);
+
+	shell_backend_dummy_clear_output(sh);
+	*ret = shell_execute_cmd(sh, cmd);
+
+	return shell_backend_dummy_get_output(sh, &size);
+}
+
+static int idx(struct net_if *iface)
+{
+	return net_if_get_by_iface(iface);
+}
+
+/* Several bridge options, long and short, are applied in one command */
+ZTEST(rstp_bridge, test_shell_bridge_options)
+{
+	struct eth_bridge_stp_status status;
+	int ret;
+
+	shell_run(&ret, "net bridge stp %d -p 61440 --max-age 18 -f 14 --tx-hold 4",
+		  idx(bridges[2]));
+	zassert_ok(ret);
+
+	status = bridge_status(2);
+	zexpect_equal(status.bridge_id >> 48, 61440U);
+	zexpect_equal(status.bridge_max_age, 18U);
+	zexpect_equal(status.bridge_forward_delay, 14U);
+	zexpect_equal(status.tx_hold_count, 4U);
+
+	/* One invalid value among valid ones changes nothing */
+	shell_run(&ret, "net bridge stp %d --tx-hold 5 -p 100", idx(bridges[2]));
+	zexpect_not_equal(ret, 0);
+	shell_run(&ret, "net bridge stp %d -a 40 -f 10", idx(bridges[2]));
+	zexpect_not_equal(ret, 0);
+	shell_run(&ret, "net bridge stp %d -t 5 extra", idx(bridges[2]));
+	zexpect_not_equal(ret, 0);
+
+	status = bridge_status(2);
+	zexpect_equal(status.tx_hold_count, 4U);
+	zexpect_equal(status.bridge_max_age, 18U);
+
+	shell_run(&ret, "net bridge stp %d --priority 32768 -a 20 --forward-delay 15 -t 6",
+		  idx(bridges[2]));
+	zassert_ok(ret);
+
+	status = bridge_status(2);
+	zexpect_equal(status.bridge_id >> 48, 32768U);
+	zexpect_equal(status.bridge_max_age, 20U);
+	zexpect_equal(status.tx_hold_count, 6U);
+
+	k_sleep(RECONVERGE_TIME);
+	expect_ring_converged();
+}
+
+ZTEST(rstp_bridge, test_shell_port_options)
+{
+	struct eth_bridge_stp_port_status status;
+	int ret;
+
+	shell_run(&ret,
+		  "net bridge stp %d port %d -p 64 --cost 12345 -e on --auto-edge off -l shared",
+		  idx(bridges[0]), idx(fake[HOST].iface));
+	zassert_ok(ret);
+
+	status = port_status(HOST);
+	zexpect_equal(status.port_id >> 8, 64U);
+	zexpect_equal(status.path_cost, 12345U);
+	zexpect_false(status.path_cost_auto);
+	zexpect_true(status.admin_edge);
+	zexpect_false(status.auto_edge);
+	zexpect_equal(status.p2p, ETH_BRIDGE_STP_P2P_OFF);
+	zexpect_false(status.oper_p2p);
+
+	/* --edge alone keeps the AutoEdge setting */
+	shell_run(&ret, "net bridge stp %d port %d --edge off", idx(bridges[0]),
+		  idx(fake[HOST].iface));
+	zassert_ok(ret);
+	zexpect_false(port_status(HOST).admin_edge);
+	zexpect_false(port_status(HOST).auto_edge);
+
+	shell_run(&ret, "net bridge stp %d port %d -l bogus", idx(bridges[0]),
+		  idx(fake[HOST].iface));
+	zexpect_not_equal(ret, 0);
+	shell_run(&ret, "net bridge stp %d port %d -p 64", idx(bridges[1]), idx(fake[HOST].iface));
+	zexpect_not_equal(ret, 0, "not a port of that bridge");
+
+	shell_run(&ret, "net bridge stp %d port %d -p 128 -c 0 -a on --link auto", idx(bridges[0]),
+		  idx(fake[HOST].iface));
+	zassert_ok(ret);
+
+	status = port_status(HOST);
+	zexpect_equal(status.port_id >> 8, 128U);
+	zexpect_true(status.path_cost_auto);
+	zexpect_equal(status.path_cost, ETH_RSTP_DEFAULT_PATH_COST);
+	zexpect_true(status.auto_edge);
+	zexpect_equal(status.p2p, ETH_BRIDGE_STP_P2P_AUTO);
+	zexpect_true(status.oper_p2p);
+}
+
+ZTEST(rstp_bridge, test_shell_show)
+{
+	char line[16];
+	const char *out;
+	int ret;
+
+	out = shell_run(&ret, "net bridge stp %d", idx(bridges[2]));
+	zassert_ok(ret);
+	zexpect_not_null(strstr(out, "spanning tree on, RSTP"), "%s", out);
+
+	snprintk(line, sizeof(line), "Root port     %d", idx(fake[3].iface));
+	zexpect_not_null(strstr(out, line), "%s", out);
+
+	snprintk(line, sizeof(line), "%-6d%s", idx(fake[5].iface), "alternate");
+	zexpect_not_null(strstr(out, line), "%s", out);
+
+	out = shell_run(&ret, "net bridge stp %d port %d", idx(bridges[2]), idx(fake[5].iface));
+	zassert_ok(ret);
+	zexpect_not_null(strstr(out, "discarding"), "%s", out);
+
+	out = shell_run(&ret, "net bridge stp %d --help", idx(bridges[2]));
+	zassert_ok(ret);
+	zexpect_not_null(strstr(out, "--forward-delay"), "%s", out);
+}
+
+/* The help option works in place of the bridge and the interface index */
+ZTEST(rstp_bridge, test_shell_help)
+{
+	const char *out;
+	int ret;
+
+	out = shell_run(&ret, "net bridge stp -h");
+	zassert_ok(ret);
+	zexpect_not_null(strstr(out, "--forward-delay"), "%s", out);
+	zexpect_not_null(strstr(out, "--mcheck"), "%s", out);
+
+	out = shell_run(&ret, "net bridge stp %d port --help", idx(bridges[2]));
+	zassert_ok(ret);
+	zexpect_not_null(strstr(out, "--mcheck"), "%s", out);
+	zexpect_is_null(strstr(out, "Invalid index"), "%s", out);
 }
 
 ZTEST_SUITE(rstp_bridge, NULL, setup, before, after, NULL);
