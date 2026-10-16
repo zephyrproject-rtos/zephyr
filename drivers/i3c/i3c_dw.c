@@ -232,8 +232,14 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID_MASK GENMASK(15, 1)
 #define SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID(x)   ((x) & SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID_MASK)
 #define SLV_MIPI_ID_VALUE_SLV_PROV_ID_SEL      BIT(0)
+/* The register's lower half is PID[47:32]: MFG ID in [15:1], type selector in [0]. */
+#define SLV_MIPI_ID_VALUE_PID_HI_MASK          GENMASK(15, 0)
 
 #define SLV_PID_VALUE 0x74
+
+/* Halves of the 48-bit PID, as split across SLV_MIPI_ID_VALUE and SLV_PID_VALUE. */
+#define I3C_PID_HI_MASK GENMASK64(47, 32)
+#define I3C_PID_LO_MASK GENMASK64(31, 0)
 
 #define SLV_CHAR_CTRL                      0x78
 #define SLV_CHAR_CTRL_MAX_DATA_SPEED_LIMIT BIT(0)
@@ -2805,10 +2811,11 @@ static int dw_i3c_config_get(const struct device *dev, enum i3c_config_type type
 		target_config->supported_hdr = SLV_CHAR_CTRL_HDR_CAP(reg);
 
 		reg = sys_read32(dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
-		target_config->pid = ((uint64_t)reg) << 32;
+		target_config->pid = FIELD_PREP(I3C_PID_HI_MASK,
+						FIELD_GET(SLV_MIPI_ID_VALUE_PID_HI_MASK, reg));
 		target_config->pid_random = (bool)!!(reg & SLV_MIPI_ID_VALUE_SLV_PROV_ID_SEL);
 		reg = sys_read32(dw_i3c_regs(dev) + SLV_PID_VALUE);
-		target_config->pid |= reg;
+		target_config->pid |= FIELD_PREP(I3C_PID_LO_MASK, reg);
 
 		target_config->enabled = !dw_i3c_is_current_controller(dev);
 #else
@@ -2893,10 +2900,11 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 		val = sys_read32(dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
 		val &= ~(SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID_MASK |
 			 SLV_MIPI_ID_VALUE_SLV_PROV_ID_SEL);
-		val |= (uint32_t)(target_cfg->pid >> 16);
+		val |= (uint32_t)FIELD_PREP(SLV_MIPI_ID_VALUE_PID_HI_MASK,
+					    FIELD_GET(I3C_PID_HI_MASK, target_cfg->pid));
 		sys_write32(val, dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
 
-		val = (uint32_t)(target_cfg->pid & 0xFFFFFFFF);
+		val = (uint32_t)FIELD_GET(I3C_PID_LO_MASK, target_cfg->pid);
 		sys_write32(val, dw_i3c_regs(dev) + SLV_PID_VALUE);
 #else
 		return -ENOTSUP;
