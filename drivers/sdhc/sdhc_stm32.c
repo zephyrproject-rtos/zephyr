@@ -79,6 +79,7 @@ struct sdhc_stm32_config {
 struct sdhc_stm32_data {
 	DEVICE_MMIO_RAM;
 	struct k_mutex bus_mutex;      /* Sync between commands */
+	struct k_spinlock lock;        /* Serialize DMA cleanup with the event ISR */
 	struct sdhc_io host_io;        /* Input/Output host configuration */
 	struct sdhc_host_props props;  /* current host properties */
 	struct k_sem device_sync_sem;  /* Sync between device communication messages */
@@ -320,6 +321,20 @@ static void sdhc_stm32_disable_data_interrupts(SDMMC_TypeDef *instance)
 					     SDMMC_IT_RXFIFOHF);
 }
 
+/* SDIO-only, idempotent cleanup. Caller serializes against the event ISR. */
+static void sdhc_stm32_stop_sdio_dma(SDMMC_TypeDef *instance,
+				     struct sdhc_stm32_data *dev_data)
+{
+	sdhc_stm32_disable_data_interrupts(instance);
+	__SDMMC_CMDTRANS_DISABLE(instance);
+	instance->DLEN = 0U;
+	instance->IDMACTRL = SDMMC_DISABLE_IDMA;
+	instance->DCTRL &= SDMMC_DCTRL_SDIOEN;
+	dev_data->is_sdio_transfer = false;
+
+	__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_DATA_FLAGS);
+}
+
 static void sdhc_stm32_abort_dma_transfer(SDMMC_TypeDef *instance, struct sdhc_stm32_data *dev_data)
 {
 	sdhc_stm32_disable_data_interrupts(instance);
@@ -330,13 +345,7 @@ static void sdhc_stm32_abort_dma_transfer(SDMMC_TypeDef *instance, struct sdhc_s
 	instance->IDMACTRL = SDMMC_DISABLE_IDMA;
 
 	if (dev_data->is_sdio_transfer) {
-		if ((instance->DCTRL & SDMMC_DCTRL_SDIOEN) != 0U) {
-			instance->DCTRL = SDMMC_DCTRL_SDIOEN;
-		} else {
-			instance->DCTRL = 0U;
-		}
-
-		dev_data->is_sdio_transfer = false;
+		sdhc_stm32_stop_sdio_dma(instance, dev_data);
 	} else {
 		instance->DCTRL |= SDMMC_DCTRL_FIFORST;
 		instance->CMD |= SDMMC_CMD_CMDSTOP;
@@ -1180,13 +1189,7 @@ void sdhc_stm32_irq_handler(SDMMC_TypeDef *instance, struct sdhc_stm32_data *dev
 	instance->IDMACTRL = SDMMC_DISABLE_IDMA;
 
 	if (dev_data->is_sdio_transfer) {
-		if ((instance->DCTRL & SDMMC_DCTRL_SDIOEN) != 0U) {
-			instance->DCTRL = SDMMC_DCTRL_SDIOEN;
-		} else {
-			instance->DCTRL = 0U;
-		}
-
-		dev_data->is_sdio_transfer = false;
+		sdhc_stm32_stop_sdio_dma(instance, dev_data);
 	} else {
 		if (errorcode != 0U) {
 			instance->DCTRL |= SDMMC_DCTRL_FIFORST;
@@ -1489,16 +1492,24 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 		res = sdhc_stm32_sdio_rw_extended_dma(cmd, instance, is_block_mode, dev_data,
 						      direction);
 
-		/* Only wait on semaphore if HAL function succeeded */
+		/* Only wait on semaphore if the command phase succeeded. */
 		if (res != 0) {
+			k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
+
+			sdhc_stm32_stop_sdio_dma(instance, dev_data);
+			k_spin_unlock(&dev_data->lock, key);
 			k_free(dev_data->sdio_dma_buf);
 			return res;
 		}
 
 		/* Wait for whole transfer to complete */
 		if (k_sem_take(&dev_data->device_sync_sem, K_MSEC(data->timeout_ms)) != 0) {
+			k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
+
 			dev_data->error_code |= SDMMC_ERROR_TIMEOUT;
-			sdhc_stm32_abort_dma_transfer(instance, dev_data);
+
+			sdhc_stm32_stop_sdio_dma(instance, dev_data);
+			k_spin_unlock(&dev_data->lock, key);
 			k_free(dev_data->sdio_dma_buf);
 			return -ETIMEDOUT;
 		}
@@ -1870,18 +1881,23 @@ void sdhc_stm32_event_isr(const struct device *dev)
 	struct sdhc_stm32_data *data = dev->data;
 	SDMMC_TypeDef *instance = sdhc_stm32_get_instance(dev);
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	bool transfer_done = __SDMMC_GET_FLAG(instance, SDMMC_FLAG_DATAEND |
 					    SDMMC_DATA_ERROR_FLAGS | SDMMC_DMA_ERROR_FLAGS) != 0U;
+	uint32_t error_code;
 
 	/* Capture errors and stop DMA before clearing flags or waking the caller. */
 	sdhc_stm32_irq_handler(instance, data);
 	sdhc_stm32_clear_icr_flags(instance);
+	error_code = data->error_code;
+	k_spin_unlock(&data->lock, key);
 
+	/* Wake the caller only after cleanup is complete and the lock is released. */
 	if (transfer_done) {
 		k_sem_give(&data->device_sync_sem);
 	}
 
-	if (data->error_code != SDMMC_ERROR_NONE) {
+	if (error_code != SDMMC_ERROR_NONE) {
 		LOG_ERR("Error Interrupt");
 		sdhc_stm32_log_err_type(data);
 	}
