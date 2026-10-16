@@ -917,6 +917,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	init_thread_userspace(new_thread, stack, options);
 
 	z_waitq_init(&new_thread->join_queue);
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_init_thread(new_thread);
+#endif
 
 	/* Initialize various struct k_thread members */
 	z_init_thread_base(&new_thread->base, prio, _THREAD_SLEEPING, options);
@@ -1607,6 +1610,9 @@ void k_thread_abort_cleanup_check_reuse(struct k_thread *thread)
 void z_dummy_thread_init(struct k_thread *dummy_thread)
 {
 	dummy_thread->base.thread_state = _THREAD_DUMMY;
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_init_thread(dummy_thread);
+#endif
 #ifdef CONFIG_SCHED_CPU_MASK
 	dummy_thread->base.cpu_mask = -1;
 #endif /* CONFIG_SCHED_CPU_MASK */

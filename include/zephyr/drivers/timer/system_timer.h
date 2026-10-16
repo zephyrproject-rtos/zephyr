@@ -88,7 +88,7 @@ extern "C" {
  * @return Lock key to be passed to sys_clock_announce_locked()
  *         or sys_clock_unlock().
  */
-#if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
+#if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE) || defined(CONFIG_LOCKDEP)
 k_spinlock_key_t sys_clock_lock(void);
 #else
 /*
@@ -121,7 +121,7 @@ static inline k_spinlock_key_t sys_clock_lock(void)
  *
  * @param key Lock key returned by sys_clock_lock().
  */
-#if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
+#if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE) || defined(CONFIG_LOCKDEP)
 void sys_clock_unlock(k_spinlock_key_t key);
 #else
 static inline void sys_clock_unlock(k_spinlock_key_t key)
