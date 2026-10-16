@@ -30,7 +30,14 @@ static size_t monitor_list_count;
 
 static void hl78xx_at_monitor_task(struct k_work *work);
 
+/** Deferred notifications dropped because the heap was exhausted; only grows. */
+static atomic_t hl78xx_at_monitor_dropped;
+
 static K_FIFO_DEFINE(hl78xx_at_monitor_fifo);
+/* A parsed notification is variable-sized (the argv strings are copied behind
+ * the header), so this stays a byte heap rather than a fixed-block slab. An
+ * exhausted heap is a counted, logged event, never a silent loss.
+ */
 static K_HEAP_DEFINE(hl78xx_at_monitor_heap, CONFIG_HL78XX_AT_MONITOR_HEAP_SIZE);
 static K_WORK_DEFINE(hl78xx_at_monitor_work, hl78xx_at_monitor_task);
 
@@ -329,7 +336,11 @@ void hl78xx_at_monitor_dispatch(struct modem_chat *chat, char **argv, uint16_t a
 
 	copy = copy_notification(&notif);
 	if (copy == NULL) {
-		LOG_WRN("No heap space for AT notification: %s", notif.pattern);
+		atomic_val_t dropped = atomic_inc(&hl78xx_at_monitor_dropped) + 1;
+
+		LOG_ERR("Deferred AT notification heap exhausted (%d bytes): dropped %s, "
+			"%ld dropped in total",
+			CONFIG_HL78XX_AT_MONITOR_HEAP_SIZE, notif.pattern, (long)dropped);
 		return;
 	}
 
@@ -361,4 +372,9 @@ static void hl78xx_at_monitor_task(struct k_work *work)
 
 		k_heap_free(&hl78xx_at_monitor_heap, notif);
 	}
+}
+
+uint32_t hl78xx_at_monitor_dropped_count(void)
+{
+	return (uint32_t)atomic_get(&hl78xx_at_monitor_dropped);
 }

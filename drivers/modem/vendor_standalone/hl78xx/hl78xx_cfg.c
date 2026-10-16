@@ -417,6 +417,28 @@ error:
 }
 #endif
 
+/* The PDP profile follows the active RAT, not the build. Dedicated NB-NTN
+ * builds always use the NTN profile; an Auto-RAT build reaches NB-NTN only
+ * through the terrestrial-to-NTN fallback (AT+KSRAT=3 + restart), and the
+ * init script's AT+KSRAT? readback has recorded that RAT before the
+ * enable-GPRS state issues AT+CGDCONT. Until 30-08 the family and APN were
+ * compile-time only, so a fallback build on NTN sent
+ * AT+CGDCONT=1,"IPV4V6","<apn>" where the dedicated build sends
+ * AT+CGDCONT=1,"IP","" -- the profile NTN attach was validated with.
+ */
+static bool hl78xx_pdp_uses_ntn_profile(const struct hl78xx_data *data)
+{
+#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
+	ARG_UNUSED(data);
+	return true;
+#elif defined(CONFIG_MODEM_HL78XX_NTN_SUPPORT)
+	return data->status.registration.rat_mode == HL78XX_RAT_NBNTN;
+#else
+	ARG_UNUSED(data);
+	return false;
+#endif
+}
+
 int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t size)
 {
 	int ret = 0;
@@ -436,24 +458,30 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 		safe_strncpy(data->identity.apn, apn, sizeof(data->identity.apn));
 	}
 	k_mutex_unlock(&data->api_lock);
-#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
-	snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"\"", MODEM_HL78XX_ADDRESS_FAMILY);
-#else
-	snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"%s\"", MODEM_HL78XX_ADDRESS_FAMILY,
-		 apn);
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+	if (hl78xx_pdp_uses_ntn_profile(data)) {
+#if defined(CONFIG_MODEM_HL78XX_NTN_SUPPORT)
+		LOG_INF("PDP context: NB-NTN profile (family \"%s\", APN from the network)",
+			CONFIG_MODEM_HL78XX_NTN_PDP_FAMILY);
+		snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"\"",
+			 CONFIG_MODEM_HL78XX_NTN_PDP_FAMILY);
+#endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
+	} else {
+		snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"%s\"",
+			 MODEM_HL78XX_ADDRESS_FAMILY, apn);
+	}
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_string, strlen(cmd_string),
 				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
 				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		goto error;
 	}
-#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
-	snprintk(cmd_string, cmd_max_len, "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,", apn);
-#else
-	snprintk(cmd_string, cmd_max_len,
-		 "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"" MODEM_HL78XX_ADDRESS_FAMILY "\"", apn);
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+	if (hl78xx_pdp_uses_ntn_profile(data)) {
+		/* No family and no APN: the dedicated NB-NTN build's exact line. */
+		snprintk(cmd_string, cmd_max_len, "AT+KCNXCFG=1,\"GPRS\",\"\",,,");
+	} else {
+		snprintk(cmd_string, cmd_max_len,
+			 "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"" MODEM_HL78XX_ADDRESS_FAMILY "\"", apn);
+	}
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_string, strlen(cmd_string),
 				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
 				     MDM_CMD_TIMEOUT, false);
@@ -501,9 +529,17 @@ int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 	int ret = 0;
 	/* Activate the PDP context, Today only one pdp context is supported */
 	const char *cmd_activate_pdp = "AT+CGACT=1,1";
-	/* Check if the current RAT is GSM and if the PDP context is not already active */
+	/* Only GSM needs an explicit activation. On every EPS RAT -- CAT-M1,
+	 * NB-IoT and NB-NTN alike -- the attach brings the default bearer up
+	 * (+CGEV: ME PDN ACT precedes +CEREG: 5) and AT+CGACT=1,1 on that live
+	 * context is refused. 30-08 outdoor NTN-only run: every NTN attach
+	 * (three of them, on both SIMs) was followed by a refused CGACT, the
+	 * carrier dropped, the modem re-attached 45 s later and hit the same
+	 * wall 30 times until the NTN budget expired; nothing was ever sent.
+	 */
 	if (data->status.registration.rat_mode == HL78XX_RAT_CAT_M1 ||
 	    data->status.registration.rat_mode == HL78XX_RAT_NB1 ||
+	    data->status.registration.rat_mode == HL78XX_RAT_NBNTN ||
 	    data->status.gprs[0].is_active) {
 		return 0;
 	}
@@ -722,6 +758,14 @@ static void hl78xx_power_down_shutdown_fn(struct k_work *work)
 		CONTAINER_OF(dwork, struct hl78xx_data, work.power_down_shutdown_work);
 
 	LOG_DBG("%d: power down shutdown: entering INIT_POWER_OFF", __LINE__);
+	/* The link goes down here, once the application has confirmed (or sat
+	 * out its window) -- not when it is asked. Raising L4 carrier-off at
+	 * ENTER made a vetoed shutdown tear the session down anyway (30-08
+	 * NB-NTN log: veto accepted, carrier already gone, the modem module
+	 * re-requested the power-down and the cloud session died under an
+	 * exchange in flight).
+	 */
+	notif_carrier_off(data->devices.hl78xx);
 	data->status.lpm.power_down.previous = data->status.lpm.power_down.current;
 	data->status.lpm.power_down.current = POWER_DOWN_EVENT_ENTER;
 
@@ -736,8 +780,6 @@ static void hl78xx_power_down_work_handler(struct k_work *work_item)
 		CONTAINER_OF(dwork, struct hl78xx_data, work.hl78xx_pwr_dwn_work);
 
 	LOG_DBG("%d: Power down work handler called", __LINE__);
-
-	notif_carrier_off(data->devices.hl78xx);
 
 	struct hl78xx_evt pd_evt = {.type = HL78XX_POWER_DOWN_UPDATE};
 
@@ -848,6 +890,12 @@ static int hl78xx_power_down_apply_response(struct hl78xx_data *data,
 		(void)k_work_cancel_delayable(&data->work.power_down_shutdown_work);
 		data->status.lpm.power_down.shutdown_pending = false;
 		hl78xx_power_down_allow_feeding(data);
+		/* A registration loss reported while the shutdown was pending was
+		 * left to it; with the shutdown off, the state machine takes it.
+		 */
+		if (!hl78xx_is_registered(data)) {
+			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEREGISTERED);
+		}
 		return 0;
 
 	default:
@@ -2002,6 +2050,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 	char cmd_buf[32] = {0};
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	struct uart_config uart_cfg;
+	bool saved = true;
 	int ret;
 
 	if (data->status.uart.current_baudrate == target_baudrate) {
@@ -2066,6 +2115,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 	if (ret < 0) {
 		LOG_WRN("Failed to save baud rate to NVRAM: %d (will be temporary)", ret);
 		/* Continue anyway - baud rate is still active for current session */
+		saved = false;
 	} else {
 		LOG_DBG("Baud rate configuration saved to NVRAM");
 	}
@@ -2073,7 +2123,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 	data->status.uart.current_baudrate = target_baudrate;
 	LOG_INF("Successfully switched to baud rate %d", target_baudrate);
 
-	return 0;
+	return saved ? 0 : 1;
 }
 #endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 
@@ -2207,6 +2257,70 @@ int hl78xx_recover_post_restart_timeout(struct hl78xx_data *data,
 	ARG_UNUSED(failure);
 
 	ret = hl78xx_run_init_fail_script(data);
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+	if (ret == -EAGAIN) {
+		const struct hl78xx_config *config = data->devices.hl78xx->config;
+		struct uart_config start_cfg;
+		uint32_t boot_rate;
+
+		/* No usable answer at this rate: +KSUP most likely went out at another
+		 * one. Find the modem's rate and move it to the target; only a switch
+		 * saved with AT&W survives the soft reset this recovery resumes in.
+		 */
+		ret = uart_config_get(config->uart, &start_cfg);
+		if (ret < 0) {
+			LOG_ERR("Failed to get UART config: %d", ret);
+			return ret;
+		}
+		/* The rate the modem comes back at from the restart fallback: the
+		 * starting one until it is found, so that a modem only hung at the
+		 * right rate is still reached.
+		 */
+		boot_rate = start_cfg.baudrate;
+		ret = hl78xx_detect_current_baudrate(data);
+		if (ret == 0) {
+			/* Found. This recovery follows a restart of the modem, so it
+			 * restarts at the rate it came up at, until a switch is saved.
+			 */
+			boot_rate = data->status.uart.current_baudrate;
+		}
+		if ((ret == 0) && IS_ENABLED(CONFIG_MODEM_HL78XX_AUTOBAUD_CHANGE_PERSISTENT)) {
+			ret = hl78xx_switch_baudrate(data, data->status.uart.target_baudrate);
+			if (ret > 0) {
+				/* Switched but not saved: the soft reset would revert the
+				 * modem to the rate it was found at, with the UART left at
+				 * the target. Put it back now and carry on at that rate,
+				 * as a build without a persistent change does.
+				 */
+				LOG_WRN("Rate not saved: moving the modem back to %u baud",
+					boot_rate);
+				ret = hl78xx_switch_baudrate(data, boot_rate);
+				if (ret > 0) {
+					ret = 0;
+				}
+			} else if (ret == 0) {
+				/* Saved there: it restarts at the target from now on */
+				boot_rate = data->status.uart.target_baudrate;
+			}
+		}
+		if (ret == 0) {
+			/* It answered, so it has booted: its next +KSUP is a restart */
+			data->status.boot.is_booted_previously = true;
+			ret = hl78xx_run_init_fail_script(data);
+		}
+		/* On failure the restart fallback follows: give the UART the rate the
+		 * modem comes back at.
+		 */
+		if (ret < 0) {
+			start_cfg.baudrate = boot_rate;
+			if (uart_configure(config->uart, &start_cfg) < 0) {
+				LOG_ERR("Failed to restore UART baud rate %u", boot_rate);
+			} else {
+				data->status.uart.current_baudrate = boot_rate;
+			}
+		}
+	}
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	if (ret < 0) {
 		LOG_ERR("Failed to query KSREP configuration: %d", ret);
 		return ret;

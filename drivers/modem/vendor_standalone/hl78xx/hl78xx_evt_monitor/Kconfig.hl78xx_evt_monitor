@@ -7,14 +7,18 @@ menuconfig HL78XX_EVT_MONITOR
 
 if HL78XX_EVT_MONITOR
 
-config HL78XX_EVT_MONITOR_HEAP_SIZE
-	int "Heap size for notifications"
-	range 64 4096
-	default 256
+config HL78XX_EVT_MONITOR_QUEUE_DEPTH
+	int "Deferred notification queue depth"
+	range 1 256
+	default 16
 	help
-	  Heap size used to copy and queue HL78xx event notifications for
-	  deferred monitor dispatch in the system workqueue.
-	  Direct runtime monitor dispatch does not use this heap.
+	  Number of HL78xx event notifications that can be queued for deferred
+	  monitor dispatch in the system workqueue before new ones are dropped.
+	  A drop is logged at error level and counted; the count is readable
+	  through hl78xx_evt_monitor_dropped_count(). The modem dispatches three
+	  notifications back to back on every entry to the registered state, so
+	  keep the depth well above that. Direct runtime monitor dispatch does
+	  not use this queue.
 
 
 config HL78XX_EVT_MONITOR_MAX_INSTANCE_MONITORS

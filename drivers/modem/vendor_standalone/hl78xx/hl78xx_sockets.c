@@ -171,6 +171,8 @@ struct hl78xx_socket_control {
 	int current_sock_fd;
 	int sizeof_socket_data;
 	int requested_socket_id;
+	/* The socket the KTCPCFG or KUDPCFG in flight creates; see create_socket() */
+	struct modem_socket *creating_sock;
 
 	bool socket_data_error;
 	bool tcp_state_check_pending;
@@ -667,6 +669,28 @@ void hl78xx_release_socket_comms(struct hl78xx_data *data)
 
 	k_sem_give(&socket_data->sync.lpm_wakeup_sem);
 }
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+/**
+ * @brief The id that parks a socket of an ended modem session.
+ *
+ * Outside the table like the id that marks a fresh socket (base + len), and one
+ * past it, so that a socket kept from an ended session is told apart from one
+ * never created.
+ */
+static int hl78xx_retired_socket_id(const struct modem_socket_config *cfg)
+{
+	return cfg->base_socket_id + cfg->sockets_len + 1;
+}
+
+/**
+ * @brief Whether @p sock kept its descriptor through the end of a modem session.
+ */
+static bool hl78xx_socket_is_retired(const struct hl78xx_socket_data *socket_data,
+				     const struct modem_socket *sock)
+{
+	return sock->id == hl78xx_retired_socket_id(&socket_data->control.socket_config);
+}
 
 void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 {
@@ -677,16 +701,35 @@ void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 		return;
 	}
 
-	LOG_DBG("Invalidating all modem socket contexts (HL7800 sleep entry)");
+	LOG_DBG("Invalidating all modem socket contexts");
 
 	for (int i = 0; i < MDM_MAX_SOCKETS; i++) {
+		struct modem_socket_config *cfg = &socket_data->control.socket_config;
 		struct modem_socket *sock = &socket_data->control.sockets[i];
+		bool retired;
 
-		if (modem_socket_id_is_assigned(&socket_data->control.socket_config, sock)) {
+		/* Under the socket lock, against a close() of the same socket:
+		 * modem_socket_put() frees the slot under that lock, and an id
+		 * written after it would occupy the slot for good.
+		 */
+		k_sem_take(&cfg->sem_lock, K_FOREVER);
+		retired = modem_socket_id_is_assigned(cfg, sock);
+		if (retired) {
 			LOG_DBG("Invalidating socket fd=%d modem_id=%d", sock->sock_fd, sock->id);
-			sock->id = socket_data->control.socket_config.base_socket_id +
-				   socket_data->control.socket_config.sockets_len;
+			/* The descriptor stays with the application, the modem id
+			 * goes, until a re-creation gives it a new one.
+			 */
+			sock->id = hl78xx_retired_socket_id(cfg);
 			sock->is_connected = false;
+		}
+		k_sem_give(&cfg->sem_lock);
+
+		if (retired) {
+			/* A receiver blocked on the ended session waits for data that
+			 * never comes: woken now that the state is published, it reads
+			 * end of stream.
+			 */
+			modem_socket_data_ready(cfg, sock);
 		}
 
 		/* Reset TCP/UDP connection status tracking */
@@ -699,6 +742,7 @@ void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 	}
 }
 
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 static void hl78xx_send_wakeup_signal(struct hl78xx_socket_data *socket_data)
 {
 	hl78xx_delegate_event(socket_data->devices.mdata_global, MODEM_HL78XX_EVENT_RESUME);
@@ -1012,8 +1056,8 @@ void hl78xx_on_ktcpsocket_create(struct modem_chat *chat, char **argv, uint16_t 
 		LOG_DBG("unable to parse socket id from '%s'", argv[1]);
 		goto exit;
 	}
-	/* Try to find a reserved/new socket slot and assign the modem-provided id. */
-	sock = modem_socket_from_newid(&socket_data->control.socket_config);
+	/* The socket whose creation this response answers; see create_socket() */
+	sock = socket_data->control.creating_sock;
 	if (!sock) {
 		goto exit;
 	}
@@ -1065,8 +1109,8 @@ void hl78xx_on_kudpsocket_create(struct modem_chat *chat, char **argv, uint16_t 
 		LOG_DBG("unable to parse socket id from '%s'", argv[1]);
 		goto exit;
 	}
-	/* Try to find a reserved/new socket slot and assign the modem-provided id. */
-	sock = modem_socket_from_newid(&socket_data->control.socket_config);
+	/* The socket whose creation this response answers; see create_socket() */
+	sock = socket_data->control.creating_sock;
 	if (!sock) {
 		goto exit;
 	}
@@ -1468,6 +1512,15 @@ static int validate_socket(const struct modem_socket *sock, struct hl78xx_socket
 {
 	if (!sock) {
 		errno = EINVAL;
+		return -1;
+	}
+
+	/* A socket of an ended modem session keeps its descriptor but no modem
+	 * id: hl78xx_invalidate_socket_contexts() parks the id one past the
+	 * table, where the status arrays have no entry for it.
+	 */
+	if (!modem_socket_id_is_assigned(&socket_data->control.socket_config, sock)) {
+		errno = ENOTCONN;
 		return -1;
 	}
 
@@ -2244,7 +2297,7 @@ static int send_tcp_or_tls_config(struct modem_socket *sock, uint16_t dst_port, 
 	ret = modem_dynamic_cmd_send(socket_data->devices.mdata_global, NULL, cmd_buf,
 				     strlen(cmd_buf), hl78xx_get_ktcpcfg_match(), 1,
 				     MDM_CMD_TIMEOUT, false);
-	if (ret < 0 ||
+	if (ret < 0 || !modem_socket_id_is_assigned(&socket_data->control.socket_config, sock) ||
 	    socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)].is_created == false) {
 		LOG_ERR("%s ret:%d", cmd_buf, ret);
 		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
@@ -2290,8 +2343,11 @@ error:
 	return -1;
 }
 
-static int create_socket(struct modem_socket *sock, const struct net_sockaddr *addr,
-			 struct hl78xx_socket_data *data)
+/**
+ * @brief Send the KTCPCFG or KUDPCFG that creates @p sock; see create_socket().
+ */
+static int send_socket_create(struct modem_socket *sock, const struct net_sockaddr *addr,
+			      struct hl78xx_socket_data *data)
 {
 	LOG_DBG("entry fd=%d id=%d", sock->sock_fd, sock->id);
 	int af;
@@ -2326,6 +2382,34 @@ static int create_socket(struct modem_socket *sock, const struct net_sockaddr *a
 		af, dst_port, mode);
 	ret = send_tcp_or_tls_config(sock, dst_port, af, mode, data);
 	LOG_DBG("send_tcp_or_tls_config returned %d", ret);
+	return ret;
+}
+
+/**
+ * @brief Create @p sock on the modem, one creation at a time.
+ *
+ * Holds the AT channel lock, which is recursive, from the TLS set-up to the
+ * response, and records @p sock for the response handler: the response to its
+ * KTCPCFG or KUDPCFG carries the new modem id. A lookup by id could not tell
+ * the waiting sockets apart, since every fresh socket carries the same marker
+ * id.
+ */
+static int create_socket(struct modem_socket *sock, const struct net_sockaddr *addr,
+			 struct hl78xx_socket_data *data)
+{
+	struct k_mutex *tx_lock = &data->devices.mdata_global->tx_lock;
+	int ret;
+
+	if (k_mutex_lock(tx_lock, K_SECONDS(MDM_CMD_TIMEOUT)) < 0) {
+		LOG_ERR("AT channel busy: socket fd=%d not created", sock->sock_fd);
+		errno = EBUSY;
+		return -1;
+	}
+	data->control.creating_sock = sock;
+	ret = send_socket_create(sock, addr, data);
+	data->control.creating_sock = NULL;
+	k_mutex_unlock(tx_lock);
+
 	return ret;
 }
 
@@ -2447,8 +2531,9 @@ static int offload_bind(void *obj, const struct net_sockaddr *addr, net_socklen_
 	}
 	/*  Save bind address information */
 	memcpy(&sock->src, addr, sizeof(*addr));
-	/* Check if socket is allocated */
-	if (modem_socket_is_allocated(&socket_data->control.socket_config, sock)) {
+	/* Check if socket is allocated, or kept from an ended modem session */
+	if (modem_socket_is_allocated(&socket_data->control.socket_config, sock) ||
+	    hl78xx_socket_is_retired(socket_data, sock)) {
 		/* Trigger socket creation */
 		ret = create_socket(sock, addr, socket_data);
 		LOG_DBG("create_socket returned %d", ret);
@@ -2476,8 +2561,9 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 		errno = ENETUNREACH;
 		return -1;
 	}
-	/* make sure socket has been allocated */
-	if (modem_socket_is_allocated(&socket_data->control.socket_config, sock) == false) {
+	/* make sure socket has been allocated, or kept from an ended modem session */
+	if (!modem_socket_is_allocated(&socket_data->control.socket_config, sock) &&
+	    !hl78xx_socket_is_retired(socket_data, sock)) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d", sock->id, sock->sock_fd);
 		errno = EINVAL;
 		return -1;
