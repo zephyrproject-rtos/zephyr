@@ -41,14 +41,18 @@
 #define WDT_NODE DT_INVALID_NODE
 #endif
 
-static void task_wdt_callback(int channel_id, void *user_data)
+static void task_wdt_callback(const struct task_wdt_fault *fault, void *user_data)
 {
-	printk("Task watchdog channel %d callback, thread: %s\n",
-		channel_id, k_thread_name_get((k_tid_t)user_data));
+	const char *name = (fault->thread != NULL) ? k_thread_name_get(fault->thread) : NULL;
+
+	ARG_UNUSED(user_data);
+
+	printk("Task watchdog channel %d callback, thread: %s\n", fault->channel_id,
+	       name != NULL ? name : "<unknown>");
 
 	/*
-	 * If the issue could be resolved, call task_wdt_feed(channel_id) here
-	 * to continue operation.
+	 * If the issue could be resolved, call task_wdt_feed(fault->channel_id)
+	 * here to continue operation.
 	 *
 	 * Otherwise we can perform some cleanup and reset the device.
 	 */
@@ -100,11 +104,10 @@ void control_thread(void)
 	printk("Control thread started.\n");
 
 	/*
-	 * Add a new task watchdog channel with custom callback function and
-	 * the current thread ID as user data.
+	 * Add a new task watchdog channel with a custom callback. The owning
+	 * thread is tracked by the task watchdog and passed in the fault info.
 	 */
-	task_wdt_id = task_wdt_add(100U, task_wdt_callback,
-		(void *)k_current_get());
+	task_wdt_id = task_wdt_add(100U, task_wdt_callback, NULL);
 
 	while (true) {
 		if (count == 50) {

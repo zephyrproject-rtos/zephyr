@@ -105,6 +105,14 @@ config TASK_WDT_COREDUMP
 	  thread. Combined with CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS,
 	  this allows to find out where the owner thread was stuck.
 
+config TASK_WDT_FAULT_REASONS
+	bool "Fault reasons and minimum feed interval"
+	help
+	  Report distinct fault reasons to the channel callback and allow a
+	  minimum interval between two feeds of a channel with
+	  task_wdt_window_set(). Feeding a channel too early is reported as a
+	  fault, which detects a thread stuck in a loop feeding its channel.
+
 DT_CHOSEN_TASK_WDT_RESET_INFO := zephyr,task-wdt-reset-info
 
 menuconfig TASK_WDT_RESET_INFO

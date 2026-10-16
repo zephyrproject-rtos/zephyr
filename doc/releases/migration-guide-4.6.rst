@@ -58,6 +58,14 @@ Networking
 Other subsystems
 ****************
 
+Task Watchdog
+=============
+
+* The :c:type:`task_wdt_callback_t` signature now receives a
+  :c:struct:`task_wdt_fault` describing the channel, fault reason and owner
+  thread. Update callbacks from ``void cb(int channel_id, void *user_data)`` to
+  ``void cb(const struct task_wdt_fault *fault, void *user_data)``.
+
 Modules
 *******
 

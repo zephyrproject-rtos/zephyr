@@ -24,10 +24,10 @@ static atomic_t callback_count;
 static atomic_t callback_channel;
 static atomic_ptr_t callback_user_data;
 
-static void task_wdt_callback(int channel_id, void *user_data)
+static void task_wdt_callback(const struct task_wdt_fault *fault, void *user_data)
 {
 	atomic_inc(&callback_count);
-	atomic_set(&callback_channel, channel_id);
+	atomic_set(&callback_channel, fault->channel_id);
 	atomic_ptr_set(&callback_user_data, user_data);
 	k_sem_give(&callback_sem);
 }

@@ -168,25 +168,24 @@ static int task_wdt_reset_info_init(void)
 
 SYS_INIT(task_wdt_reset_info_init, APPLICATION, 0);
 
-void task_wdt_reset_info_save(int channel_id, k_tid_t thread)
+void task_wdt_reset_info_save(const struct task_wdt_fault *fault)
 {
 	struct reset_record rec = {
-		.reason = TASK_WDT_RESET_TIMEOUT,
+		.reason = fault->reason == TASK_WDT_FAULT_TOO_EARLY ? TASK_WDT_RESET_TOO_EARLY
+								    : TASK_WDT_RESET_TIMEOUT,
 		.armed = 1U,
-		.channel_id = channel_id,
+		.channel_id = fault->channel_id,
 	};
 	k_spinlock_key_t key;
 
 #ifdef CONFIG_THREAD_NAME
-	if (thread != NULL) {
-		const char *name = k_thread_name_get(thread);
+	if (fault->thread != NULL) {
+		const char *name = k_thread_name_get(fault->thread);
 
 		if (name != NULL) {
 			strncpy(rec.thread_name, name, sizeof(rec.thread_name) - 1);
 		}
 	}
-#else
-	ARG_UNUSED(thread);
 #endif
 
 	rec.uptime_ms = (uint64_t)k_uptime_get();

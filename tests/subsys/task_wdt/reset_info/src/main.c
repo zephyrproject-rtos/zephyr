@@ -37,17 +37,17 @@ static void next_stage(enum stage stage)
 	boot.stage = stage;
 }
 
-static void returning_callback(int channel_id, void *user_data)
+static void returning_callback(const struct task_wdt_fault *fault, void *user_data)
 {
-	ARG_UNUSED(channel_id);
+	ARG_UNUSED(fault);
 	ARG_UNUSED(user_data);
 
 	k_sem_give(&callback_sem);
 }
 
-static void resetting_callback(int channel_id, void *user_data)
+static void resetting_callback(const struct task_wdt_fault *fault, void *user_data)
 {
-	ARG_UNUSED(channel_id);
+	ARG_UNUSED(fault);
 	ARG_UNUSED(user_data);
 
 	sys_reboot(SYS_REBOOT_COLD);

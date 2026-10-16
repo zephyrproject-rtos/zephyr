@@ -43,6 +43,14 @@ int task_wdt_feed(int channel_id)
 	return 0;
 }
 
+int task_wdt_window_set(int channel_id, uint32_t min_period)
+{
+	ARG_UNUSED(channel_id);
+	ARG_UNUSED(min_period);
+
+	return 0;
+}
+
 int task_wdt_channel_thread_set(int channel_id, k_tid_t thread)
 {
 	ARG_UNUSED(channel_id);
