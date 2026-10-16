@@ -369,7 +369,7 @@ static void i2c_stm32_target_addr_setup(const struct device *dev,
 
 	LL_I2C_EnableIT_STOP(i2c);
 	LL_I2C_EnableIT_NACK(i2c);
-	LL_I2C_EnableIT_TC(i2c);
+	LL_I2C_DisableIT_TC(i2c);
 	LL_I2C_EnableIT_ERR(i2c);
 }
 
