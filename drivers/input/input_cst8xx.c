@@ -140,8 +140,7 @@ static int cst8xx_process(const struct device *dev)
 	uint8_t event;
 	uint16_t row, col;
 	bool pressed;
-	uint16_t x;
-	uint16_t y;
+	uint8_t pos[4];
 
 #ifdef CONFIG_INPUT_CST8XX_EV_DEVICE
 	uint8_t gesture;
@@ -153,21 +152,16 @@ static int cst8xx_process(const struct device *dev)
 	}
 #endif
 
-	ret = i2c_burst_read_dt(&cfg->i2c, CST8XX_REG_XPOS_H, (uint8_t *)&x, sizeof(x));
+	/* Read X and Y in one transfer so that both come from the same sample */
+	ret = i2c_burst_read_dt(&cfg->i2c, CST8XX_REG_XPOS_H, pos, sizeof(pos));
 	if (ret < 0) {
-		LOG_ERR("Could not read x data (%d)", ret);
+		LOG_ERR("Could not read position data (%d)", ret);
 		return ret;
 	}
+	col = sys_get_be16(&pos[0]) & 0x0fff;
+	row = sys_get_be16(&pos[2]) & 0x0fff;
 
-	ret = i2c_burst_read_dt(&cfg->i2c, CST8XX_REG_YPOS_H, (uint8_t *)&y, sizeof(y));
-	if (ret < 0) {
-		LOG_ERR("Could not read y data (%d)", ret);
-		return ret;
-	}
-	col = sys_be16_to_cpu(x) & 0x0fff;
-	row = sys_be16_to_cpu(y) & 0x0fff;
-
-	event = (x & 0xff) >> CST8XX_EVENT_BITS_POS;
+	event = pos[0] >> CST8XX_EVENT_BITS_POS;
 	pressed = (event == EVENT_PRESS_DOWN) || (event == EVENT_CONTACT);
 
 	LOG_DBG("event: %d, row: %d, col: %d", event, row, col);
