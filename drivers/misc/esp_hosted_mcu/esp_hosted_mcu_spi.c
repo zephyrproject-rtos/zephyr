@@ -312,9 +312,22 @@ static int esp_hosted_mcu_spi_transfer(const struct device *dev, const uint8_t *
 	return 0;
 }
 
+static void esp_hosted_mcu_spi_flush_rx(const struct device *dev)
+{
+	struct esp_hosted_mcu_spi_data *data = &esp_hosted_mcu_spi_data_0;
+
+	ARG_UNUSED(dev);
+
+	/* A frame shifted in before the coprocessor restarted is from its previous run. */
+	k_mutex_lock(&data->lock, K_FOREVER);
+	data->stash_len = 0;
+	k_mutex_unlock(&data->lock);
+}
+
 const struct esp_hosted_mcu_transport_api esp_hosted_mcu_spi_api = {
 	.init = esp_hosted_mcu_spi_init,
 	.transfer = esp_hosted_mcu_spi_transfer,
 	.data_ready = esp_hosted_mcu_spi_data_ready,
 	.wait_for_rx = esp_hosted_mcu_spi_wait_for_rx,
+	.flush_rx = esp_hosted_mcu_spi_flush_rx,
 };

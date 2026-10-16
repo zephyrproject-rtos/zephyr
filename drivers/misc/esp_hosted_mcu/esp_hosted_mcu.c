@@ -59,6 +59,8 @@ struct esp_hosted_mcu_data {
 	k_tid_t tid;
 	uint32_t fw_version;
 	bool rx_stride_aligned;
+	/* Set by esp_hosted_mcu_reattach(): the receive thread drops its carry. */
+	atomic_t rx_flush;
 	esp_hosted_mcu_rx_cb_t if_cb[ESP_HOSTED_MCU_MAX_IF];
 	void *if_user[ESP_HOSTED_MCU_MAX_IF];
 	esp_hosted_mcu_event_cb_t rpc_event_cb;
@@ -538,6 +540,12 @@ static void esp_hosted_mcu_event_task(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	while (true) {
+		/* A partial frame from before a coprocessor restart never completes. */
+		if (atomic_cas(&data->rx_flush, 1, 0)) {
+			carry = 0;
+			pad = 0;
+		}
+
 		if (!cfg->transport->data_ready(dev)) {
 			/*
 			 * Block on the transport's data-ready interrupt so a
@@ -638,6 +646,87 @@ int esp_hosted_mcu_send_frame(esp_hosted_mcu_if_type_t if_type, uint8_t if_num, 
 uint32_t esp_hosted_mcu_fw_version(void)
 {
 	return esp_hosted_mcu_data_0.fw_version;
+}
+
+int esp_hosted_mcu_reattach(k_timeout_t timeout)
+{
+	const struct device *dev = esp_hosted_mcu_data_0.dev;
+	const k_timepoint_t end = sys_timepoint_calc(timeout);
+	const struct esp_hosted_mcu_config *cfg;
+	struct esp_hosted_mcu_data *data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+	cfg = dev->config;
+	data = dev->data;
+
+	/*
+	 * Hold the RPC lock throughout: a round trip that was in flight when the
+	 * coprocessor went down can only time out, and a new one must not
+	 * interleave with the version query below. The mutex is recursive, so
+	 * the query takes it again on this thread.
+	 */
+	k_mutex_lock(&esp_hosted_mcu_rpc_lock, K_FOREVER);
+
+	K_SPINLOCK(&esp_hosted_mcu_rpc_ctx_lock) {
+		esp_hosted_mcu_rpc.pending = false;
+	}
+
+	/*
+	 * The version and the frame stride were learned from the previous run's
+	 * boot event, and the priv event only fills a version that is unknown.
+	 * A partial frame the receive thread carries, and receive data the
+	 * transport holds, belong to that run too; the thread drops its carry
+	 * within one poll interval.
+	 */
+	data->fw_version = 0;
+	data->rx_stride_aligned = false;
+	atomic_set(&data->rx_flush, 1);
+	if (cfg->transport->flush_rx != NULL) {
+		cfg->transport->flush_rx(dev);
+	}
+
+	while (data->fw_version == 0 && !sys_timepoint_expired(end)) {
+		Rpc req = Rpc_init_zero;
+		Rpc resp = Rpc_init_zero;
+
+		/* As at init, let the boot event land before asking over RPC. */
+		for (k_timepoint_t wait =
+			     sys_timepoint_calc(K_MSEC(ESP_HOSTED_MCU_BOOT_EVENT_WAIT));
+		     data->fw_version == 0 && !sys_timepoint_expired(wait) &&
+		     !sys_timepoint_expired(end);) {
+			k_msleep(10);
+		}
+		if (data->fw_version != 0 || sys_timepoint_expired(end)) {
+			break;
+		}
+
+		/* A coprocessor still booting does not answer; the loop asks again. */
+		req.msg_id = RpcId_Req_GetCoprocessorFwVersion;
+		if (esp_hosted_mcu_rpc_call(&req, &resp, ESP_HOSTED_MCU_BOOT_EVENT_WAIT) == 0) {
+			const Rpc_Resp_GetCoprocessorFwVersion *fw =
+				&resp.payload.resp_get_coprocessor_fwversion;
+
+			data->fw_version =
+				ESP_HOSTED_MCU_FW_VERSION_VAL(fw->major1, fw->minor1, fw->patch1);
+		}
+		pb_release(Rpc_fields, &resp);
+	}
+
+	k_mutex_unlock(&esp_hosted_mcu_rpc_lock);
+
+	if (data->fw_version == 0) {
+		LOG_WRN("coprocessor did not report a version after restart");
+		return -ETIMEDOUT;
+	}
+
+	LOG_INF("coprocessor restarted, firmware v%u.%u.%u",
+		ESP_HOSTED_MCU_FW_VERSION_MAJOR(data->fw_version),
+		ESP_HOSTED_MCU_FW_VERSION_MINOR(data->fw_version),
+		ESP_HOSTED_MCU_FW_VERSION_PATCH(data->fw_version));
+
+	return 0;
 }
 
 /*

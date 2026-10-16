@@ -9,4 +9,8 @@ if(CONFIG_WIFI_ESP_HOSTED_MCU)
     esp_hosted_mcu.c
   )
 
+  # Export the header so an application can re-run the bring-up after the
+  # coprocessor restarted, as the transport core exports its own.
+  zephyr_include_directories(./)
+
 endif()
