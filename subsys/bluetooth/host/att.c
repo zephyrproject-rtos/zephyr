@@ -100,11 +100,11 @@ typedef void (*bt_att_tx_cb_t)(struct bt_conn *conn,
 
 struct bt_att_tx_meta_data {
 	int err;
-	uint8_t opcode;
-	uint16_t attr_count;
 	struct bt_att_chan *att_chan;
 	bt_gatt_complete_func_t func;
 	void *user_data;
+	uint16_t attr_count;
+	uint8_t opcode;
 	enum bt_att_chan_opt chan_opt;
 };
 

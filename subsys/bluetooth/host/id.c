@@ -864,7 +864,7 @@ static int le_set_privacy_mode(const bt_addr_le_t *addr, uint8_t mode)
 	int err;
 
 	/* Check if set privacy mode command is supported */
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 39, 2)) {
+	if (!bt_dev_cmd_supported(BT_DEV_CMD_LE_SET_PRIVACY_MODE)) {
 		LOG_WRN("Set privacy mode command is not supported");
 		return 0;
 	}
