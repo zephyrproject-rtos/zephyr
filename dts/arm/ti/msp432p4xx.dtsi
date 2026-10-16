@@ -1,4 +1,9 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2026 Gail Rojas <gailroco@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <freq.h>
 #include <arm/armv7-m.dtsi>
@@ -35,6 +40,14 @@
 			reg = <0x40001000 0x400>;
 			interrupts = <32 0>;
 			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		adc0: adc@40012000 {
+			compatible = "ti,msp432p4xx-adc";
+			reg = <0x40012000 0x1000>;
+			interrupts = <24 0>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 	};

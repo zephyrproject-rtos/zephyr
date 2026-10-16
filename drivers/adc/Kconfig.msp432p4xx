@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Gail Rojas <gailroco@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MSP432P4XX
+	bool "MSP432P4xx ADC14 driver"
+	default y
+	depends on DT_HAS_TI_MSP432P4XX_ADC_ENABLED
+	help
+	  ADC14 driver for the TI MSP432P4xx. Supports 14-bit single-ended
+	  conversions on channels A0-A(MAX), the internal temperature sensor
+	  via TCMAP on A(MAX-1), and the AVCC/2 supply monitor via BATMAP on
+	  A(MAX). MAX is package-dependent (23 on the 24-channel VQFN-80).
