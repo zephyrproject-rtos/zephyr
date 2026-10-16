@@ -165,6 +165,10 @@ struct max40109_config {
 	int32_t temperature_full_scale;
 	/** Temperature in millidegrees Celsius at code 0 */
 	int32_t temperature_offset;
+#if defined(CONFIG_MAX40109_CALIBRATION)
+	/** Calibration coefficients, NAN for the ones left out of devicetree */
+	float calib_coeff[20];
+#endif
 };
 
 struct temp_gain_map {
@@ -199,6 +203,20 @@ struct digital_filter_map {
 	int setup;
 	uint8_t reg_val;
 };
+
+#if defined(CONFIG_MAX40109_CALIBRATION)
+struct calib_map {
+	/** Channel from @ref max40109_sensor_channel. */
+	uint16_t chan;
+	/** Coefficient that channel carries. */
+	enum max40109_calibration_coefficients coeff;
+};
+
+struct calibration_coeff_map {
+	uint8_t cal_coeff;
+	uint8_t cal_start_addr;
+};
+#endif /* CONFIG_MAX40109_CALIBRATION */
 
 /**
  * @brief Describes one MTP-backed threshold attribute.
