@@ -226,6 +226,24 @@ ZTEST(util, test_UTIL_AND) {
 	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7);
 }
 
+ZTEST(util, test_CODE_ASSUME) {
+	volatile int source = 42;
+	int value = source;
+	const int *ptr = &value;
+
+	/* Must compile as a statement with a true condition, in C and C++ */
+	CODE_ASSUME(value == 42);
+	CODE_ASSUME(ptr == &value);
+	CODE_ASSUME(true);
+
+	if (value > 0) {
+		CODE_ASSUME(value != 0);
+	}
+
+	zassert_equal(value, 42);
+	zassert_equal(*ptr, 42);
+}
+
 ZTEST(util, test_IF_ENABLED) {
 	#define test_IF_ENABLED_FLAG_A 1
 	#define test_IF_ENABLED_FLAG_B 0

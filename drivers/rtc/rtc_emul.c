@@ -243,6 +243,8 @@ static void rtc_emul_update(struct k_work *work)
 
 static int rtc_emul_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 	/* Validate arguments */
@@ -264,6 +266,8 @@ static int rtc_emul_set_time(const struct device *dev, const struct rtc_time *ti
 
 static int rtc_emul_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 	int ret = 0;
 
@@ -291,6 +295,8 @@ static int rtc_emul_get_time(const struct device *dev, struct rtc_time *timeptr)
 static int  rtc_emul_alarm_get_supported_fields(const struct device *dev, uint16_t id,
 						uint16_t *mask)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 	if (data->alarms_count <= id) {
@@ -310,6 +316,8 @@ static int  rtc_emul_alarm_get_supported_fields(const struct device *dev, uint16
 static int rtc_emul_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
 				   const struct rtc_time *timeptr)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 	if (data->alarms_count <= id) {
@@ -341,6 +349,8 @@ static int rtc_emul_alarm_set_time(const struct device *dev, uint16_t id, uint16
 static int rtc_emul_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
 				   struct rtc_time *timeptr)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 	if (data->alarms_count <= id) {
@@ -358,6 +368,8 @@ static int rtc_emul_alarm_get_time(const struct device *dev, uint16_t id, uint16
 
 static int rtc_emul_alarm_is_pending(const struct device *dev, uint16_t id)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 	int ret = 0;
 
@@ -378,6 +390,8 @@ static int rtc_emul_alarm_is_pending(const struct device *dev, uint16_t id)
 static int rtc_emul_alarm_set_callback(const struct device *dev, uint16_t id,
 				       rtc_alarm_callback callback, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 	if (data->alarms_count <= id) {
@@ -398,6 +412,8 @@ static int rtc_emul_alarm_set_callback(const struct device *dev, uint16_t id,
 static int rtc_emul_update_set_callback(const struct device *dev,
 					    rtc_update_callback callback, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 	K_SPINLOCK(&data->lock)
@@ -413,6 +429,8 @@ static int rtc_emul_update_set_callback(const struct device *dev,
 #ifdef CONFIG_RTC_CALIBRATION
 static int rtc_emul_set_calibration(const struct device *dev, int32_t calibration)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 	K_SPINLOCK(&data->lock)
@@ -425,6 +443,8 @@ static int rtc_emul_set_calibration(const struct device *dev, int32_t calibratio
 
 static int rtc_emul_get_calibration(const struct device *dev, int32_t *calibration)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 	K_SPINLOCK(&data->lock)
@@ -457,6 +477,8 @@ static DEVICE_API(rtc, rtc_emul_driver_api) = {
 
 static int rtc_emul_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 #ifdef CONFIG_RTC_EMUL_INIT_DATETIME
