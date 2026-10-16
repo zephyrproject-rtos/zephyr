@@ -133,12 +133,19 @@ static bool virtio_pci_read_cap(
 	uint32_t cap_ptr =
 		pcie_conf_read(bdf, CAPABILITIES_POINTER_REG) & CAPABILITIES_POINTER_MASK;
 	uint32_t cap_off = cap_ptr / sizeof(uint32_t);
+	uint64_t visited_caps = 0U;
 
 	/*
 	 * Every capability type struct has size and alignment of multiple of 4 bytes
 	 * so pcie_conf_read() can be used directly without aligning
 	 */
 	do {
+		if (visited_caps & BIT64(cap_off)) {
+			LOG_ERR("cyclic PCI capability list for device with bdf 0x%x", bdf);
+			return false;
+		}
+		visited_caps |= BIT64(cap_off);
+
 		for (int i = 0; i < sizeof(struct virtio_pci_cap) / sizeof(uint32_t); i++) {
 			((uint32_t *)&tmp)[i] = pcie_conf_read(bdf, cap_off + i);
 		}
