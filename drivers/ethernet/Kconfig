@@ -34,7 +34,8 @@ config ETH_QEMU_IFACE_NAME
 	  a parameter to -netdev qemu command line option. The network
 	  interface must be created before starting QEMU. The net-setup.sh
 	  script from net-tools project can be used to create the network
-	  interface.
+	  interface. Not used on macOS hosts, where QEMU connects through
+	  the vmnet framework and creates the host interface itself.
 
 config ETH_QEMU_EXTRA_ARGS
 	string "Extra arguments to QEMU -netdev option"
@@ -44,8 +45,10 @@ config ETH_QEMU_EXTRA_ARGS
 	  Extra arguments passed to QEMU -netdev option when Ethernet Networking
 	  is enabled. This option can contain multiple QEMU option
 	  arguments. Each QEMU argument must be separated by comma "," and no
-	  spaces between arguments. Example: "script=no" or
-	  "script=no,downscript=no".
+	  spaces between arguments. The available options depend on the
+	  backend, which is vmnet in host mode on macOS and TAP otherwise.
+	  Example for TAP: "script=no" or "script=no,downscript=no".
+	  Example for vmnet: "isolated=on".
 	  See https://www.qemu.org/docs/master/system/invocation.html#hxtool-5
 	  for the available options.
 
