@@ -26,6 +26,14 @@ if(CONFIG_ETHOS_U AND CONFIG_MULTITHREADING)
 
     add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ethos-u-core-driver)
 
+  # On AArch64, shadow <cmsis_compiler.h> with a shim that provides
+  # only __WFE/__SEV.  The real CMSIS Core header contains Cortex-M
+  # builtins that fail to compile on AArch64 with GCC >= 14.
+  if(CONFIG_ARM64)
+    target_include_directories(ethosu_core_driver BEFORE PRIVATE
+      ${ZEPHYR_BASE}/drivers/misc/ethos_u/cmsis_shim)
+  endif()
+
     target_link_libraries(ethosu_core_driver PUBLIC
        zephyr_interface)
 
