@@ -24,6 +24,7 @@
 		led1 = &led1;
 		watchdog0 = &wdt0;
 		sw0 = &btn0;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -249,4 +250,8 @@ auxdisplay_0: &lcd0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&ckm MSPM0_CLOCK_MCLK>;
+};
+
+&rtc {
+	status = "okay";
 };

@@ -26,6 +26,7 @@
 		sw1 = &btn1;
 		watchdog0 = &wdt0;
 		watchdog1 = &wdt1;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -243,5 +244,9 @@
 };
 
 &aes {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };

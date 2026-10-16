@@ -23,6 +23,7 @@
 		led2 = &led2;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -173,5 +174,9 @@
 };
 
 &crc {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };

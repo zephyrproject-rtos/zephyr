@@ -24,6 +24,7 @@
 		watchdog0 = &wdt0;
 		watchdog1 = &wdt1;
 		sw0 = &btn0;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -233,4 +234,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&ckm MSPM0_CLOCK_MCLK>;
+};
+
+&rtc {
+	status = "okay";
 };
