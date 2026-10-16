@@ -55,7 +55,7 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 	 * Note that this step must be done after all relevant state is
 	 * saved.
 	 */
-	dsb
+	data_sync_barrier r2
 	str r1, [r1, #___thread_t_switch_handle_OFFSET]
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
@@ -99,6 +99,10 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
  *
  */
 SECTION_FUNC(TEXT, z_arm_svc)
+#ifdef CONFIG_ARMV5
+    /* Not be handled for ARMv5 currently. */
+    b .
+#else
     z_arm_cortex_ar_enter_exc
 
    /* Get SVC number */
@@ -165,3 +169,4 @@ inv:
 
     /* Return here only in case of recoverable error */
     b z_arm_cortex_ar_exit_exc
+#endif /* CONFIG_ARMV5 */

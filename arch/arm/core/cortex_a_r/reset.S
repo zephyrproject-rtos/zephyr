@@ -255,9 +255,9 @@ EL1_Reset_Handler:
     mcr p15, 1, r0, c9, c1, 0
 #endif
 
+#if CONFIG_MP_MAX_NUM_CPUS > 1
     ldr r0, =arm_cpu_boot_params
 
-#if CONFIG_MP_MAX_NUM_CPUS > 1
     /*
      * This code uses voting locks, like arch/arm64/core/reset.S, to determine primary CPU.
      */
