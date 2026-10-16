@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	sram@2000ff00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2000ff00 0x100>;
+		ranges = <0x0 0x2000ff00 0x100>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			task_wdt_reset_info: retention@0 {
+				compatible = "zephyr,retention";
+				status = "okay";
+				reg = <0x0 0x100>;
+			};
+		};
+	};
+
+	chosen {
+		zephyr,task-wdt-reset-info = &task_wdt_reset_info;
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 0xff00>;
+};

@@ -86,6 +86,162 @@ config TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
 	  Note that this feature is supported only by a subset of hardware
 	  watchdogs.
 
+config TASK_WDT_THREAD_INFO
+	bool "Report the thread owning a timed out channel"
+	help
+	  Record the thread owning each channel, which by default is the
+	  thread which fed the channel last. When a channel times out, log
+	  the owner thread's name, state, priority and unused stack space
+	  (if CONFIG_INIT_STACKS and CONFIG_THREAD_STACK_INFO are enabled)
+	  before calling the callback or resetting the system.
+
+config TASK_WDT_COREDUMP
+	bool "Core dump the owner thread before resetting the system"
+	depends on TASK_WDT_THREAD_INFO
+	depends on DEBUG_COREDUMP
+	help
+	  If a channel without a callback times out, create a core dump
+	  before resetting the system, with the owner thread as the faulting
+	  thread. Combined with CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS,
+	  this allows to find out where the owner thread was stuck.
+
+config TASK_WDT_FAULT_REASONS
+	bool "Fault reasons and minimum feed interval"
+	help
+	  Allow to add channels with task_wdt_add_ext(), whose callback is
+	  told the reason of the fault, and to set a minimum interval between
+	  two feeds of a channel with task_wdt_window_set(). Feeding a channel
+	  too early is reported as a fault, which detects a thread stuck in a
+	  loop feeding its channel.
+
+config TASK_WDT_SUPERVISION
+	bool "Checkpoint supervision"
+	select TASK_WDT_FAULT_REASONS
+	help
+	  Allow to supervise the program flow of an entity defined with
+	  TASK_WDT_SUPERVISION_DEFINE(), which reports the checkpoints it
+	  reaches with task_wdt_checkpoint(). Reaching a checkpoint which is
+	  not allowed after the previous one, or reaching the end of a
+	  deadline too early or too late, is reported as a fault on the
+	  channel the entity is attached to.
+
+menuconfig TASK_WDT_GROUPS
+	bool "Channel groups, recovery and escalation"
+	help
+	  Allow to add channels to a group defined with
+	  TASK_WDT_GROUP_DEFINE(), whose policy decides whether a fault calls
+	  the channel callback, calls the recovery function of the group from
+	  a dedicated work queue, or resets the system. A group moves to the
+	  next action when it reports too many faults within a period, and the
+	  system is reset if the recovery does not feed the channel again in
+	  time.
+
+if TASK_WDT_GROUPS
+
+config TASK_WDT_RECOVERY_STACK_SIZE
+	int "Recovery work queue stack size"
+	default 1024
+	help
+	  Stack size of the work queue thread calling the recovery functions
+	  of the groups.
+
+config TASK_WDT_RECOVERY_PRIORITY
+	int "Recovery work queue priority"
+	default 0 if !COOP_ENABLED
+	default -1
+	help
+	  Priority of the work queue thread calling the recovery functions of
+	  the groups. It should be higher than the priority of the supervised
+	  threads, so a thread stuck in a loop does not prevent its recovery.
+
+endif # TASK_WDT_GROUPS
+
+DT_CHOSEN_TASK_WDT_RESET_INFO := zephyr,task-wdt-reset-info
+
+menuconfig TASK_WDT_RESET_INFO
+	bool "Keep the cause of a task watchdog reset"
+	select CRC
+	help
+	  When a channel times out and its callback does not return (or there
+	  is no callback), store a record with the channel, the name of its
+	  owner thread (if CONFIG_TASK_WDT_THREAD_INFO and CONFIG_THREAD_NAME
+	  are enabled), the uptime and the number of consecutive task watchdog
+	  resets. After the reset, the record can be read with
+	  task_wdt_reset_info_get().
+
+if TASK_WDT_RESET_INFO
+
+choice TASK_WDT_RESET_INFO_BACKEND
+	prompt "Reset information storage"
+	default TASK_WDT_RESET_INFO_NOINIT
+
+config TASK_WDT_RESET_INFO_NOINIT
+	bool "Non-initialized RAM"
+	help
+	  Store the record in RAM which is not cleared at boot. The record
+	  survives a reset as long as the hardware retains the RAM contents.
+
+config TASK_WDT_RESET_INFO_RETENTION
+	bool "Retention area"
+	depends on RETENTION
+	depends on RETENTION_MUTEX_FORCE_DISABLE
+	depends on RETAINED_MEM_MUTEX_FORCE_DISABLE
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_TASK_WDT_RESET_INFO))
+	help
+	  Store the record in the retention area selected with the
+	  zephyr,task-wdt-reset-info chosen node. The record is written from
+	  the task watchdog timer interrupt, so the retention and retained
+	  memory mutexes have to be disabled, and the retained memory driver
+	  must not block, as the RAM based drivers.
+
+endchoice
+
+config TASK_WDT_RESET_INFO_HW_FALLBACK
+	bool "Detect resets by the hardware watchdog fallback"
+	depends on TASK_WDT_HW_FALLBACK
+	depends on HWINFO
+	default y
+	help
+	  If the hardware reset cause is a watchdog reset but no record was
+	  stored by the task watchdog, report that the hardware watchdog
+	  fallback reset the system, which means the whole system was stuck.
+	  The application has to clear the hardware reset cause with
+	  hwinfo_clear_reset_cause() after the task watchdog was initialized.
+
+DT_CHOSEN_BOOT_MODE := zephyr,boot-mode
+
+config TASK_WDT_SAFE_MODE
+	bool "Boot into a safe mode after repeated task watchdog resets"
+	depends on RETENTION_BOOT_MODE
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_BOOT_MODE))
+	depends on RETENTION_MUTEX_FORCE_DISABLE
+	depends on RETAINED_MEM_MUTEX_FORCE_DISABLE
+	help
+	  Set the boot mode to TASK_WDT_SAFE_MODE_BOOT_MODE with
+	  bootmode_set() before the task watchdog resets the system for the
+	  TASK_WDT_SAFE_MODE_RESETS-th consecutive time. The boot mode is set
+	  from the task watchdog timer interrupt, so the retention and
+	  retained memory mutexes have to be disabled.
+
+if TASK_WDT_SAFE_MODE
+
+config TASK_WDT_SAFE_MODE_RESETS
+	int "Consecutive task watchdog resets before booting into the safe mode"
+	default 3
+	range 1 255
+
+config TASK_WDT_SAFE_MODE_BOOT_MODE
+	int "Boot mode of the safe mode"
+	default 1
+	range 1 255
+	help
+	  Boot mode value passed to bootmode_set(). The default is
+	  BOOT_MODE_TYPE_BOOTLOADER.
+
+endif # TASK_WDT_SAFE_MODE
+
+endif # TASK_WDT_RESET_INFO
+
 config TASK_WDT_SHELL
 	bool "Task watchdog shell utilities"
 	depends on SHELL

@@ -37,6 +37,226 @@ extern "C" {
 /** Task watchdog callback. */
 typedef void (*task_wdt_callback_t)(int channel_id, void *user_data);
 
+/** Task watchdog channel information. */
+struct task_wdt_channel_info {
+	/** Period in milliseconds used to reset the timeout */
+	uint32_t reload_period;
+	/** Time in milliseconds left until the channel times out */
+	uint32_t time_left;
+	/**
+	 * Thread owning the channel, or NULL if not known. Always NULL unless
+	 * @kconfig{CONFIG_TASK_WDT_THREAD_INFO} is enabled.
+	 */
+	k_tid_t thread;
+};
+
+/** Reason of a task watchdog channel fault. */
+enum task_wdt_fault_reason {
+	/** The channel was not fed within its reload period */
+	TASK_WDT_FAULT_TIMEOUT,
+	/** The channel was fed before its minimum feed interval elapsed */
+	TASK_WDT_FAULT_TOO_EARLY,
+	/** A checkpoint was reached before the minimum time of its deadline elapsed */
+	TASK_WDT_FAULT_DEADLINE_MIN,
+	/** A checkpoint was not reached within the maximum time of its deadline */
+	TASK_WDT_FAULT_DEADLINE_MAX,
+	/** A checkpoint was reached which is not allowed after the previous one */
+	TASK_WDT_FAULT_SEQUENCE,
+};
+
+/** Task watchdog channel fault. */
+struct task_wdt_fault {
+	/** Channel which reported the fault */
+	int channel_id;
+	/** Reason of the fault */
+	enum task_wdt_fault_reason reason;
+	/**
+	 * Thread owning the channel, or NULL if not known. Always NULL unless
+	 * @kconfig{CONFIG_TASK_WDT_THREAD_INFO} is enabled.
+	 */
+	k_tid_t thread;
+};
+
+/** Task watchdog fault callback, which is told the reason of the fault. */
+typedef void (*task_wdt_fault_callback_t)(const struct task_wdt_fault *fault, void *user_data);
+
+/** Cause of a reset triggered by the task watchdog. */
+enum task_wdt_reset_reason {
+	/** A task watchdog channel timed out */
+	TASK_WDT_RESET_TIMEOUT,
+	/** The hardware watchdog fallback reset the system */
+	TASK_WDT_RESET_HW_FALLBACK,
+	/** A task watchdog channel was fed before its minimum feed interval elapsed */
+	TASK_WDT_RESET_TOO_EARLY,
+	/** A checkpoint was reached before the minimum time of its deadline elapsed */
+	TASK_WDT_RESET_DEADLINE_MIN,
+	/** A checkpoint was not reached within the maximum time of its deadline */
+	TASK_WDT_RESET_DEADLINE_MAX,
+	/** A checkpoint was reached which is not allowed after the previous one */
+	TASK_WDT_RESET_SEQUENCE,
+};
+
+/** Size of the thread name kept in @ref task_wdt_reset_info, including the terminator */
+#define TASK_WDT_RESET_INFO_THREAD_NAME_SIZE 16
+
+/** Information about the last reset triggered by the task watchdog. */
+struct task_wdt_reset_info {
+	/** Cause of the reset */
+	enum task_wdt_reset_reason reason;
+	/** Channel which timed out, or -1 if not known */
+	int channel_id;
+	/** Number of consecutive resets triggered by the task watchdog */
+	uint32_t fault_count;
+	/** System uptime in milliseconds when the reset was triggered, 0 if not known */
+	uint64_t uptime_ms;
+	/** Name of the thread owning the channel (truncated), empty if not known */
+	char thread_name[TASK_WDT_RESET_INFO_THREAD_NAME_SIZE];
+};
+
+/** Deadline between two checkpoints of a supervised entity. */
+struct task_wdt_deadline {
+	/** Checkpoint starting the deadline */
+	uint8_t start;
+	/** Checkpoint ending the deadline */
+	uint8_t end;
+	/** Minimum time in milliseconds from start to end, 0 if not checked */
+	uint32_t min_ms;
+	/** Maximum time in milliseconds from start to end, 0 if not checked */
+	uint32_t max_ms;
+};
+
+/** Maximum number of checkpoints of a supervised entity */
+#define TASK_WDT_CHECKPOINTS_MAX 32
+
+/**
+ * @brief Supervised entity.
+ *
+ * Defined with TASK_WDT_SUPERVISION_DEFINE(), the members are internal.
+ */
+struct task_wdt_supervision {
+	/** @cond INTERNAL_HIDDEN */
+	const char *name;
+	const uint32_t *next;
+	const struct task_wdt_deadline *deadlines;
+	uint8_t num_checkpoints;
+	uint8_t num_deadlines;
+	/* last reached checkpoint, num_checkpoints if none */
+	uint8_t last;
+	/* index of the running deadline, num_deadlines if none */
+	uint8_t active;
+	/* channel reporting the faults, -1 if not started */
+	int channel_id;
+	/* abs. ticks when the running deadline started */
+	int64_t start_ticks;
+	/** @endcond */
+};
+
+/**
+ * @brief Define a supervised entity.
+ *
+ * The checkpoints of the entity are numbered from 0. Element @c i of
+ * @p _next is the bitmask of the checkpoints allowed to be reached after
+ * checkpoint @c i, e.g. @c BIT(1) | @c BIT(2). Reaching any other checkpoint
+ * is reported as a @ref TASK_WDT_FAULT_SEQUENCE fault.
+ *
+ * @p _deadlines lists the deadlines between two checkpoints. A deadline
+ * starts when its start checkpoint is reached and ends when its end
+ * checkpoint is reached, other checkpoints may be reached in between. Only
+ * one deadline of an entity runs at a time.
+ *
+ * @param _name Name of the supervised entity.
+ * @param _next Array of @c uint32_t bitmasks of the allowed next checkpoints,
+ *              one per checkpoint (at most @ref TASK_WDT_CHECKPOINTS_MAX).
+ * @param _deadlines Array of @ref task_wdt_deadline.
+ */
+#define TASK_WDT_SUPERVISION_DEFINE(_name, _next, _deadlines)                                      \
+	struct task_wdt_supervision _name = {                                                      \
+		.name = #_name,                                                                    \
+		.next = _next,                                                                     \
+		.deadlines = _deadlines,                                                           \
+		.num_checkpoints = ARRAY_SIZE(_next),                                              \
+		.num_deadlines = ARRAY_SIZE(_deadlines),                                           \
+		.last = ARRAY_SIZE(_next),                                                         \
+		.active = ARRAY_SIZE(_deadlines),                                                  \
+		.channel_id = -1,                                                                  \
+	};                                                                                         \
+	BUILD_ASSERT(ARRAY_SIZE(_next) > 0 && ARRAY_SIZE(_next) <= TASK_WDT_CHECKPOINTS_MAX,       \
+		     "invalid number of checkpoints");                                             \
+	BUILD_ASSERT(ARRAY_SIZE(_deadlines) < UINT8_MAX, "too many deadlines")
+
+/** Action taken when a channel of a group reports a fault, from the mildest to the strongest. */
+enum task_wdt_action {
+	/** Call the channel callback, or reset the system if there is none */
+	TASK_WDT_ACTION_CALLBACK,
+	/** Call the recovery function of the group from the recovery work queue */
+	TASK_WDT_ACTION_RECOVER,
+	/** Reset the system, even if the channel has a callback */
+	TASK_WDT_ACTION_RESET_SYSTEM,
+};
+
+/** Escalation policy of a group. */
+struct task_wdt_escalation {
+	/** Number of faults within @ref period_ms moving the group to the next action, 0 never */
+	uint32_t faults;
+	/** Period in milliseconds over which the faults are counted, 0 for no limit */
+	uint32_t period_ms;
+	/**
+	 * Time in milliseconds given to the recovery to feed the channel again before the
+	 * system is reset, 0 to use the reload period of the channel
+	 */
+	uint32_t recovery_ms;
+};
+
+/**
+ * @brief Group of channels sharing a fault policy.
+ *
+ * Defined with TASK_WDT_GROUP_DEFINE(), the members are internal.
+ */
+struct task_wdt_group {
+	/** @cond INTERNAL_HIDDEN */
+	const char *name;
+	task_wdt_fault_callback_t recovery_fn;
+	const struct task_wdt_escalation *escalation;
+	/* enum task_wdt_action, initial and current */
+	uint8_t action;
+	uint8_t level;
+	/* faults counted since window_start_ticks */
+	uint32_t faults;
+	int64_t window_start_ticks;
+	/** @endcond */
+};
+
+/**
+ * @brief Define a group of channels sharing a fault policy.
+ *
+ * When a channel of the group reports a fault, the current action of the
+ * group is taken. With @ref TASK_WDT_ACTION_RECOVER, @p _recovery_fn is
+ * called from a dedicated work queue, in thread context, with the user data
+ * of the channel. It is expected to restart the faulty thread, e.g. by
+ * aborting and creating it again, which has to feed the channel again within
+ * the recovery time of @p _escalation. Otherwise, or if any other fault is
+ * reported on the channel meanwhile, the system is reset.
+ *
+ * If @p _escalation is not NULL, the group moves to the next action when it
+ * reports @c faults faults within @c period_ms, and the last of these faults
+ * is already handled with the next action. Use task_wdt_group_reset() to go
+ * back to the initial action.
+ *
+ * @param _name Name of the group.
+ * @param _action Initial @ref task_wdt_action of the group.
+ * @param _recovery_fn Recovery function, of type @ref task_wdt_fault_callback_t.
+ *                     If NULL, @ref TASK_WDT_ACTION_RECOVER resets the system.
+ * @param _escalation Pointer to a @ref task_wdt_escalation, or NULL.
+ */
+#define TASK_WDT_GROUP_DEFINE(_name, _action, _recovery_fn, _escalation)                           \
+	struct task_wdt_group _name = {                                                            \
+		.name = #_name,                                                                    \
+		.recovery_fn = _recovery_fn,                                                       \
+		.escalation = _escalation,                                                         \
+		.action = _action,                                                                 \
+		.level = _action,                                                                  \
+	}
+
 /**
  * @brief Initialize task watchdog.
  *
@@ -76,6 +296,26 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 		 void *user_data);
 
 /**
+ * @brief Install new timeout with a fault callback.
+ *
+ * Same as task_wdt_add(), but the callback is told the reason of the fault.
+ * Timeouts are reported from the kernel timer interrupt, faults detected by
+ * task_wdt_feed() are reported from the thread feeding the channel.
+ *
+ * @param reload_period Period in milliseconds used to reset the timeout
+ * @param callback Function to be called when the channel reports a fault.
+ *                 Pass NULL to use system reset handler.
+ * @param user_data User data to associate with the watchdog channel.
+ *
+ * @retval channel_id If successful, a non-negative value indicating the index
+ *                    of the channel to which the timeout was assigned.
+ * @retval -EINVAL If the reload_period is invalid.
+ * @retval -ENOMEM If no more timeouts can be installed.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_FAULT_REASONS} is disabled.
+ */
+int task_wdt_add_ext(uint32_t reload_period, task_wdt_fault_callback_t callback, void *user_data);
+
+/**
  * @brief Delete task watchdog channel.
  *
  * Deletes the specified channel from the list of task watchdog channels. The
@@ -101,6 +341,180 @@ int task_wdt_delete(int channel_id);
  * @retval -EINVAL If there is no installed timeout for supplied channel.
  */
 int task_wdt_feed(int channel_id);
+
+/**
+ * @brief Set the minimum interval between two feeds of a channel.
+ *
+ * Feeding the channel again sooner than @p min_period milliseconds after the
+ * previous feed reports a @ref TASK_WDT_FAULT_TOO_EARLY fault, which detects a
+ * thread stuck in a loop feeding its channel. The fault is reported by
+ * task_wdt_feed() before it returns, and the channel is fed anyway. Channels
+ * added with task_wdt_add() call their callback, or reset the system, as for a
+ * timeout.
+ *
+ * @param channel_id Index of the channel as returned by task_wdt_add().
+ * @param min_period Minimum interval in milliseconds, 0 to disable the check.
+ *                   Must be lower than the reload period of the channel.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel or
+ *                 @p min_period is not lower than its reload period.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_FAULT_REASONS} is disabled.
+ */
+int task_wdt_window_set(int channel_id, uint32_t min_period);
+
+/**
+ * @brief Set the thread owning a task watchdog channel.
+ *
+ * By default, the owner of a channel is the thread which fed it last. Use this
+ * function if the channel is fed by a different thread than the supervised
+ * one. The owner is reported when the channel times out.
+ *
+ * @param channel_id Index of the channel as returned by task_wdt_add().
+ * @param thread Thread owning the channel. Pass NULL to go back to using the
+ *               thread which fed the channel last.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_THREAD_INFO} is disabled.
+ */
+int task_wdt_channel_thread_set(int channel_id, k_tid_t thread);
+
+/**
+ * @brief Get information about a task watchdog channel.
+ *
+ * @param channel_id Index of the channel as returned by task_wdt_add().
+ * @param info Filled in with the channel information.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel.
+ */
+int task_wdt_channel_info_get(int channel_id, struct task_wdt_channel_info *info);
+
+/**
+ * @brief Get the cause of the last reset if it was triggered by the task watchdog.
+ *
+ * A record is kept if a channel without a callback times out, or if the
+ * channel callback does not return (e.g. because it resets the system). If the
+ * hardware watchdog fallback reset the system before the task watchdog could
+ * write a record, this is reported as @ref TASK_WDT_RESET_HW_FALLBACK (requires
+ * @kconfig{CONFIG_TASK_WDT_RESET_INFO_HW_FALLBACK}).
+ *
+ * @param info Filled in with the reset information.
+ *
+ * @retval 0 If the last reset was triggered by the task watchdog.
+ * @retval -ENOENT If the last reset was not triggered by the task watchdog.
+ * @retval -EINVAL If @p info is NULL.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_RESET_INFO} is disabled.
+ */
+int task_wdt_reset_info_get(struct task_wdt_reset_info *info);
+
+/**
+ * @brief Clear the task watchdog reset information.
+ *
+ * Forget the cause of the last reset and restart counting consecutive task
+ * watchdog resets from zero. The counter is also restarted after any reset
+ * which was not triggered by the task watchdog.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_RESET_INFO} is disabled.
+ * @retval -Errno Negative errno if the retention backend failed.
+ */
+int task_wdt_reset_info_clear(void);
+
+/**
+ * @brief Start supervising an entity.
+ *
+ * The faults of the entity are reported on @p channel_id, which has to be
+ * added beforehand and is still fed by the application as usual. Its
+ * callback is called, or the system is reset, as for a timeout. Each
+ * channel reports the faults of at most one entity.
+ *
+ * The first checkpoint reached after this call may be any checkpoint.
+ *
+ * @param sup Supervised entity defined with TASK_WDT_SUPERVISION_DEFINE().
+ * @param channel_id Index of the channel as returned by task_wdt_add_ext().
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel or the
+ *                 deadlines of the entity are invalid.
+ * @retval -EBUSY If the entity or the channel is already supervising.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_SUPERVISION} is disabled.
+ */
+int task_wdt_supervision_start(struct task_wdt_supervision *sup, int channel_id);
+
+/**
+ * @brief Stop supervising an entity.
+ *
+ * @param sup Supervised entity defined with TASK_WDT_SUPERVISION_DEFINE().
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If the entity is not supervising.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_SUPERVISION} is disabled.
+ */
+int task_wdt_supervision_stop(struct task_wdt_supervision *sup);
+
+/**
+ * @brief Report that a supervised entity reached a checkpoint.
+ *
+ * A @ref TASK_WDT_FAULT_SEQUENCE fault is reported if the checkpoint is not
+ * allowed after the previous one, and a @ref TASK_WDT_FAULT_DEADLINE_MIN fault
+ * if it ends a deadline too early. Both are reported before this function
+ * returns. A @ref TASK_WDT_FAULT_DEADLINE_MAX fault is reported from the
+ * kernel timer interrupt if the end of a deadline is not reached in time.
+ *
+ * @param sup Supervised entity defined with TASK_WDT_SUPERVISION_DEFINE().
+ * @param checkpoint Index of the reached checkpoint.
+ *
+ * @retval 0 If successful, including when a fault was reported.
+ * @retval -EINVAL If the entity is not supervising or the checkpoint is invalid.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_SUPERVISION} is disabled.
+ */
+int task_wdt_checkpoint(struct task_wdt_supervision *sup, uint32_t checkpoint);
+
+/**
+ * @brief Add a channel to a group, or remove it from its group.
+ *
+ * The faults of the channel, including those of the supervised entity
+ * attached to it, are handled according to the policy of the group.
+ *
+ * If the channel is being recovered, the recovery ends and the channel is given
+ * a full reload period again.
+ *
+ * @param channel_id Index of the channel as returned by task_wdt_add().
+ * @param group Group defined with TASK_WDT_GROUP_DEFINE(), or NULL to remove
+ *              the channel from its group.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_GROUPS} is disabled.
+ */
+int task_wdt_channel_group_set(int channel_id, struct task_wdt_group *group);
+
+/**
+ * @brief Get the current action of a group.
+ *
+ * @param group Group defined with TASK_WDT_GROUP_DEFINE().
+ *
+ * @retval action The current @ref task_wdt_action of the group.
+ * @retval -EINVAL If @p group is NULL.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_GROUPS} is disabled.
+ */
+int task_wdt_group_action_get(const struct task_wdt_group *group);
+
+/**
+ * @brief Move a group back to its initial action and forget its faults.
+ *
+ * The recovery of the channels of the group ends as well, and they are given a
+ * full reload period again.
+ *
+ * @param group Group defined with TASK_WDT_GROUP_DEFINE().
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If @p group is NULL.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_GROUPS} is disabled.
+ */
+int task_wdt_group_reset(struct task_wdt_group *group);
 
 /**
  * @brief Pause all channels before changing system power mode.

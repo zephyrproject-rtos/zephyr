@@ -98,20 +98,40 @@ static int cmd_del(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_list(const struct shell *sh, size_t argc, char **argv)
+{
+	struct task_wdt_channel_info info;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_fprintf(sh, SHELL_NORMAL, "Channel  Period (ms)  Left (ms)  Thread\n");
+
+	for (int channel_id = 0; channel_id < CONFIG_TASK_WDT_CHANNELS; channel_id++) {
+		const char *name = NULL;
+
+		if (task_wdt_channel_info_get(channel_id, &info) < 0) {
+			continue;
+		}
+
+		if (info.thread != NULL) {
+			name = k_thread_name_get(info.thread);
+		}
+
+		shell_fprintf(sh, SHELL_NORMAL, "%7d  %11u  %9u  %p %s\n", channel_id,
+			      info.reload_period, info.time_left, (void *)info.thread,
+			      name != NULL ? name : "");
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_task_wdt,
-	SHELL_CMD(init, NULL,
-		  SHELL_HELP("Initialize task watchdog", NULL),
-		  cmd_init),
-	SHELL_CMD(add, NULL,
-		  SHELL_HELP("Install new timeout", "<period_in_seconds>"),
-		  cmd_add),
-	SHELL_CMD(feed, NULL,
-		  SHELL_HELP("Feed specified watchdog channel", "<channel>"),
-		  cmd_feed),
-	SHELL_CMD(del, NULL,
-		  SHELL_HELP("Delete task watchdog channel", "<channel>"),
-		  cmd_del),
+	sub_task_wdt, SHELL_CMD(init, NULL, SHELL_HELP("Initialize task watchdog", NULL), cmd_init),
+	SHELL_CMD(add, NULL, SHELL_HELP("Install new timeout", "<period_in_seconds>"), cmd_add),
+	SHELL_CMD(feed, NULL, SHELL_HELP("Feed specified watchdog channel", "<channel>"), cmd_feed),
+	SHELL_CMD(del, NULL, SHELL_HELP("Delete task watchdog channel", "<channel>"), cmd_del),
+	SHELL_CMD(list, NULL, SHELL_HELP("List task watchdog channels", NULL), cmd_list),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(task_wdt, &sub_task_wdt, "Task watchdog commands", NULL);

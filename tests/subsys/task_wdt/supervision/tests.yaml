@@ -1,0 +1,19 @@
+common:
+  tags:
+    - task_wdt
+  harness: ztest
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
+  integration_platforms:
+    - native_sim
+    - qemu_cortex_m3
+tests:
+  subsys.task_wdt.supervision: {}
+  subsys.task_wdt.supervision.thread_info:
+    extra_configs:
+      - CONFIG_TASK_WDT_THREAD_INFO=y
+      - CONFIG_LOG=y
+  subsys.task_wdt.supervision.disabled:
+    extra_configs:
+      - CONFIG_TASK_WDT_SUPERVISION=n
