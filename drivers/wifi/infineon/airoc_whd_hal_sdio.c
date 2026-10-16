@@ -13,6 +13,9 @@
 #include <bus_protocols/whd_sdio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sd/sd.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <string.h>
 
 LOG_MODULE_DECLARE(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 
@@ -167,6 +170,42 @@ whd_result_t whd_bus_sdio_cmd52(whd_driver_t whd_driver, whd_bus_transfer_direct
 	return WHD_SUCCESS;
 }
 
+/* WHD does not guarantee tail room in its caller-owned frame buffer. */
+static K_MUTEX_DEFINE(airoc_whd_f2_pad_lock);
+static uint8_t airoc_whd_f2_pad_buf[2048] __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT);
+
+static int airoc_whd_sdio_write(struct sdio_func *func, whd_bus_function_t function,
+			      sdio_transfer_mode_t mode, uint32_t address, uint16_t size,
+			      uint8_t *data)
+{
+	size_t padded;
+	int ret;
+
+	if (function != WLAN_FUNCTION || mode != SDIO_BLOCK_MODE || func == NULL ||
+	    func->block_size == 0U || size <= func->block_size ||
+	    (size % func->block_size) == 0U) {
+		return sdio_write_addr(func, address, data, size);
+	}
+
+	padded = ROUND_UP((size_t)size, func->block_size);
+	if (padded > sizeof(airoc_whd_f2_pad_buf)) {
+		return -EMSGSIZE;
+	}
+
+	ret = k_mutex_lock(&airoc_whd_f2_pad_lock, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* SDPCM carries the original frame length; avoid a byte-mode F2 tail. */
+	memcpy(airoc_whd_f2_pad_buf, data, size);
+	memset(airoc_whd_f2_pad_buf + size, 0, padded - size);
+	ret = sdio_write_addr(func, address, airoc_whd_f2_pad_buf, padded);
+	k_mutex_unlock(&airoc_whd_f2_pad_lock);
+
+	return ret;
+}
+
 whd_result_t whd_bus_sdio_cmd53(whd_driver_t whd_driver, whd_bus_transfer_direction_t direction,
 				whd_bus_function_t function, sdio_transfer_mode_t mode,
 				uint32_t address, uint16_t data_size, uint8_t *data,
@@ -178,7 +217,7 @@ whd_result_t whd_bus_sdio_cmd53(whd_driver_t whd_driver, whd_bus_transfer_direct
 
 	if (direction == BUS_WRITE) {
 		WHD_BUS_STATS_INCREMENT_VARIABLE(whd_driver->bus_priv, cmd53_write);
-		ret = sdio_write_addr(func, address, data, data_size);
+		ret = airoc_whd_sdio_write(func, function, mode, address, data_size, data);
 	} else {
 		WHD_BUS_STATS_INCREMENT_VARIABLE(whd_driver->bus_priv, cmd53_read);
 		ret = sdio_read_addr(func, address, data, data_size);
