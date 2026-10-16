@@ -29,6 +29,11 @@ Host/Core
 * OTS
 * SM
 
+BR/EDR Classic
+==============
+
+* OPP (Object Push Profile)
+
 LE Audio
 ========
 
