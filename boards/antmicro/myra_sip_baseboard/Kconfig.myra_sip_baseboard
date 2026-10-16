@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MYRA_SIP_BASEBOARD
-	select SOC_MYRA
+	select SOC_STM32G491XX
