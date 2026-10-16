@@ -747,6 +747,7 @@ static void init_client_ctx(struct http_client_ctx *client, const struct http_se
 	client->server_state = HTTP_SERVER_PREFACE_STATE;
 	client->has_upgrade_header = false;
 	client->preface_sent = false;
+	client->settings_acked = false;
 	client->window_size = HTTP_SERVER_INITIAL_WINDOW_SIZE;
 
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {

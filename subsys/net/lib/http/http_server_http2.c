@@ -21,6 +21,11 @@
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
+/* Dynamic table size an HPACK decoder has to accept until its own
+ * SETTINGS_HEADER_TABLE_SIZE is acknowledged (RFC 7541, Section 6.3).
+ */
+#define HTTP2_DEFAULT_HEADER_TABLE_SIZE 4096U
+
 #include "headers/server_internal.h"
 
 static const char content_404[] = {
@@ -1647,6 +1652,23 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		client->cursor += ret;
 		client->data_len -= ret;
 
+		if (header->type == HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE) {
+			/* The server advertises no dynamic table; until the
+			 * client acknowledges that, the protocol default is the
+			 * limit (RFC 7541, Section 6.3). No field to process.
+			 */
+			uint32_t limit = client->settings_acked ? 0U :
+							  HTTP2_DEFAULT_HEADER_TABLE_SIZE;
+
+			if (header->table_size > limit) {
+				LOG_ERR("Dynamic table size update above the limit");
+				ret = -EBADMSG;
+				goto error;
+			}
+
+			continue;
+		}
+
 		LOG_DBG("Parsed header: %.*s %.*s", (int)header->name_len,
 			header->name, (int)header->value_len, header->value);
 
@@ -1801,7 +1823,9 @@ int handle_http_frame_settings(struct http_client_ctx *client)
 	client->data_len -= bytes_consumed;
 	client->cursor += bytes_consumed;
 
-	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_SETTINGS_ACK)) {
+	if (is_header_flag_set(frame->flags, HTTP2_FLAG_SETTINGS_ACK)) {
+		client->settings_acked = true;
+	} else {
 		int ret;
 
 		ret = send_settings_frame(client, true);

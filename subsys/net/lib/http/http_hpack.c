@@ -387,7 +387,11 @@ static int hpack_handle_literal_no_index(const uint8_t *buf, size_t datalen,
 				    HPACK_PREFIX_LEN_LITERAL_NO_INDEXING);
 }
 
-static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen)
+/* The size requested is reported to the caller, who knows what it has
+ * advertised; no dynamic table is kept here.
+ */
+static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen,
+					    struct http_hpack_header_buf *header)
 {
 	uint32_t max_size;
 	int ret;
@@ -398,7 +402,10 @@ static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen)
 		return ret;
 	}
 
-	/* TODO Add dynamic table support, if needed. */
+	header->type = HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE;
+	header->table_size = max_size;
+	header->name_len = 0;
+	header->value_len = 0;
 
 	return ret;
 }
@@ -417,6 +424,7 @@ int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 		return -EAGAIN;
 	}
 
+	header->type = HTTP_HPACK_ENTRY_FIELD;
 	prefix = *buf;
 
 	if ((prefix & HPACK_PREFIX_INDEXED_MASK) == HPACK_PREFIX_INDEXED) {
@@ -431,7 +439,7 @@ int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 		ret = hpack_handle_literal_no_index(buf, datalen, header);
 	} else if ((prefix & HPACK_PREFIX_DYNAMIC_TABLE_SIZE_MASK) ==
 		   HPACK_PREFIX_DYNAMIC_TABLE_SIZE_UPDATE) {
-		ret = hpack_handle_dynamic_size_update(buf, datalen);
+		ret = hpack_handle_dynamic_size_update(buf, datalen, header);
 	} else {
 		ret = -EINVAL;
 	}
