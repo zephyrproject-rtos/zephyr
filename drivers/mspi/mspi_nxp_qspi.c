@@ -479,6 +479,11 @@ static int mspi_nxp_qspi_transceive(const struct device *dev,
 		return -ESTALE;
 	}
 
+	if (xfer->xfer_mode == MSPI_MEMMAP) {
+		LOG_DBG("Memory mapped transfers are not supported");
+		return -ENOTSUP;
+	}
+
 	if (xfer->num_packet == 0 || xfer->packets == NULL) {
 		return -EINVAL;
 	}

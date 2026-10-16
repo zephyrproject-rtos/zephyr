@@ -1406,6 +1406,8 @@ static int mspi_ambiq_transceive(const struct device      *controller,
 		return mspi_pio_transceive(controller, xfer, cb, cb_ctx);
 	} else if (xfer->xfer_mode == MSPI_DMA) {
 		return mspi_dma_transceive(controller, xfer, cb, cb_ctx);
+	} else if (xfer->xfer_mode == MSPI_MEMMAP) {
+		return -ENOTSUP;
 	} else {
 		return -EIO;
 	}
