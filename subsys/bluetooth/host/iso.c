@@ -483,18 +483,26 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	__ASSERT(chan->iso != NULL, "NULL conn for iso chan %p", chan);
 
+	/* Both states are set before the TX queue is emptied below: send_failed
+	 * must not be able to queue an SDU again, and what the controller had
+	 * not acknowledged is reported first.
+	 */
+	bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
+	bt_conn_set_state(chan->iso, BT_CONN_DISCONNECT_COMPLETE);
+
 #if defined(CONFIG_BT_ISO_TX)
 	struct net_buf *buf;
 
-	/* release buffers from tx_queue */
+	/* What is still queued has not been sent in full */
 	while ((buf = k_fifo_get(&chan->iso->iso.txq, K_NO_WAIT))) {
 		__ASSERT_NO_MSG(!bt_buf_has_view(buf));
 		net_buf_unref(buf);
+
+		if (chan->ops->send_failed != NULL) {
+			chan->ops->send_failed(chan, -ESHUTDOWN);
+		}
 	}
 #endif /* CONFIG_BT_ISO_TX */
-
-	bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
-	bt_conn_set_state(chan->iso, BT_CONN_DISCONNECT_COMPLETE);
 
 	/* Calling disconnected before final cleanup allows users to use bt_iso_chan_get_info in
 	 * the callback and to be more similar to the ACL disconnected callback. This also means
@@ -3516,18 +3524,11 @@ void bt_iso_reset(void)
 		struct bt_iso_cig *cig = &cigs[i];
 		struct bt_iso_chan *cis;
 
-		/* Disconnect any connected CIS and call the callback
-		 * We cannot use bt_iso_chan_disconnected directly here, as that
-		 * attempts to also remove the ISO data path, which we shouldn't attempt to
-		 * during the reset, as that sends HCI commands.
-		 */
 		SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
 			if (cis->state != BT_ISO_STATE_DISCONNECTED) {
-				bt_iso_chan_set_state(cis, BT_ISO_STATE_DISCONNECTED);
-				bt_iso_cleanup_acl(cis->iso);
-				if (cis->ops != NULL && cis->ops->disconnected != NULL) {
-					cis->ops->disconnected(cis, BT_HCI_ERR_UNSPECIFIED);
-				}
+				cis->iso->err = BT_HCI_ERR_UNSPECIFIED;
+
+				bt_iso_chan_disconnected(cis, BT_HCI_ERR_UNSPECIFIED);
 			}
 		}
 

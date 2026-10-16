@@ -409,11 +409,20 @@ static RXFIFO_DEFINE(done, sizeof(struct node_rx_event_done),
  *   complete.
  */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY)
-#define LL_PDU_RX_CNT (2 * (CONFIG_BT_CTLR_LLCP_CONN))
+#define LL_PDU_RX_CNT_BASE (2 * (CONFIG_BT_CTLR_LLCP_CONN))
 #elif defined(CONFIG_BT_CONN)
-#define LL_PDU_RX_CNT (CONFIG_BT_CTLR_LLCP_CONN)
+#define LL_PDU_RX_CNT_BASE (CONFIG_BT_CTLR_LLCP_CONN)
 #else
-#define LL_PDU_RX_CNT 0
+#define LL_PDU_RX_CNT_BASE 0
+#endif
+
+/* Flushing queued CIS Create procedures needs one notification node per CIS, as the procedures
+ * are all flushed at once, e.g. when the ACL disconnects.
+ */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#define LL_PDU_RX_CNT (LL_PDU_RX_CNT_BASE + CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+#else
+#define LL_PDU_RX_CNT LL_PDU_RX_CNT_BASE
 #endif
 
 /* No. of node rx for LLL to ULL.

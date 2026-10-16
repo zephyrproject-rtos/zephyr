@@ -778,8 +778,8 @@ struct bt_iso_chan_ops {
 	 * @brief Channel send failed callback
 	 *
 	 * This callback will be called if the call to bt_iso_chan_send() was successful, but
-	 * where the send operation later failed before the request was sent to the Bluetooth
-	 * Controller. This can happen if the @p chan has disconnected.
+	 * @p chan disconnected before the controller marked the SDU as completed. None, part
+	 * or all of the SDU may have been given to the controller by then.
 	 *
 	 * @param chan The channel for which the send operation failed.
 	 * @param err The reason for the send failure.

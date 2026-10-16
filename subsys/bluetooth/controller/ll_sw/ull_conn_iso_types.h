@@ -1,8 +1,11 @@
 /*
  * Copyright (c) 2021 Demant
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stdint.h>
 
 struct ll_conn;
 
@@ -22,7 +25,7 @@ struct ll_conn_iso_stream {
 
 	uint16_t c_max_sdu:12;    /* Maximum SDU size C_To_P */
 	uint16_t p_max_sdu:12;    /* Maximum SDU size P_To_C */
-	uint8_t  framed:1;        /* 0: unframed, 1: framed */
+	uint16_t framed: 1;       /* 0: unframed, 1: framed */
 	uint16_t established:1;   /* 0 if CIS has not yet been established.
 				   * 1 if CIS has been established and host
 				   * notified.
@@ -33,7 +36,7 @@ struct ll_conn_iso_stream {
 	union {
 		struct {
 			uint8_t  c_rtn;
-			uint8_t  p_rtn;
+			uint8_t p_rtn;
 		} central;
 	};
 

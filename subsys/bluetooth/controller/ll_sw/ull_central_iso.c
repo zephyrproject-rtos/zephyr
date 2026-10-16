@@ -1,11 +1,15 @@
 /*
  * Copyright (c) 2020 Demant
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/toolchain.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/iso.h>
@@ -726,7 +730,36 @@ uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
-void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
+static void cis_create_failed(struct ll_conn *conn, struct ll_conn_iso_stream *cis,
+			      void **node_rx_list)
+{
+	struct node_rx_conn_iso_estab *est;
+	struct node_rx_pdu *rx;
+
+	cis->lll.acl_handle = LLL_HANDLE_INVALID;
+
+	rx = ll_pdu_rx_alloc();
+	LL_ASSERT_ERR(rx != NULL);
+
+	/* Not going through memq, so release the link now
+	 * (same as ll_connect_disable() does for its node_rx).
+	 */
+	ll_rx_link_release(rx->hdr.link);
+
+	rx->hdr.type = NODE_RX_TYPE_CIS_ESTABLISHED;
+	rx->hdr.handle = conn->lll.handle;
+	rx->rx_ftr.param = cis;
+
+	est = (void *)rx->pdu;
+	est->cis_handle = cis->lll.handle;
+	est->status = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+
+	/* Prepend to caller's list; caller delivers after Command Status */
+	rx->hdr.next = *node_rx_list;
+	*node_rx_list = rx;
+}
+
+void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle, void **node_rx_list)
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn *conn;
@@ -770,6 +803,11 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 			/* This CIG is now initiating an ISO connection */
 			cis->group->state = CIG_STATE_INITIATING;
 		}
+	} else {
+		/* The procedure could not be started, e.g. no free procedure context. Errors are
+		 * reported through the CIS Established event, which the host is waiting for.
+		 */
+		cis_create_failed(conn, cis, node_rx_list);
 	}
 }
 
