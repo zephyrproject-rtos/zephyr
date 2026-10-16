@@ -18,6 +18,7 @@
 &sci0 {
 	pinctrl-0 = <&sci0_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	spi: spi {
 		rx-dtc;
