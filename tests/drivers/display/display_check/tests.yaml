@@ -50,6 +50,7 @@ tests:
       - mimxrt1040_evk
     integration_platforms:
       - mimxrt1040_evk
+      - esp32s3_lcd_ev/esp32s3/procpu
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
       fixture: fixture_display
