@@ -1860,34 +1860,149 @@ void clock_mclkperiph_init(const struct device *dev, uint32_t subsys_val, uint8_
 #endif /* CONFIG_CLOCK_CONTROL_MCHP_CONFIG_BOOTUP */
 
 /* clock driver initialization function. */
+#if CONFIG_CLOCK_CONTROL_MCHP_CONFIG_BOOTUP
+/* Detect whether a bootloader (e.g. MCUboot) has already configured the core
+ * clock tree, i.e. GCLK generator 0 (the CPU clock) has been moved off its
+ * reset-default source onto the device-tree-configured source. In that case the
+ * boot-up init must NOT software-reset GCLK or reconfigure GCLK0/DPLL/DFLL (that
+ * would glitch the live CPU clock and reset/hang the device).
+ *
+ * GCLK0 is enabled out of reset, running from DFLL48M (GENCTRL0 = 0x105), so
+ * "enabled" alone does not distinguish a warm boot. While GCLK0 is still on
+ * DFLL48M the full bring-up is safe (it is exactly the cold-reset state), so
+ * only a GCLK0 already on a different, device-tree-matching source is adopted.
+ */
+static bool clock_already_running(const struct clock_mchp_config *config)
+{
+	uint32_t genctrl0 = config->gclk_regs->GCLK_GENCTRL[CLOCK_MCHP_GCLKGEN_GEN0];
+	uint32_t cur_src = (genctrl0 & GCLK_GENCTRL_SRC_Msk) >> GCLK_GENCTRL_SRC_Pos;
+	uint32_t dt_src = DT_ENUM_IDX(DT_CHILD(DT_NODELABEL(gclkgen), gclkgen0), gclkgen_src);
+
+	return ((genctrl0 & GCLK_GENCTRL_GENEN_Msk) != 0) &&
+	       (cur_src != CLOCK_MCHP_GCLK_SRC_DFLL48M) && (cur_src == dt_src);
+}
+
+#define CLOCK_MCHP_ADOPT_GCLKPIN_FREQ(child)                                                       \
+	{                                                                                          \
+		union clock_mchp_subsys subsys = {.val = DT_PROP(child, subsystem)};               \
+		int inst = subsys.bits.inst;                                                       \
+                                                                                                   \
+		if ((inst <= GCLK_IO_MAX) && (inst >= GCLK_IO_MIN)) {                              \
+			data->gclkpin_freq[inst - GCLK_IO_MIN] =                                   \
+				DT_PROP(child, gclkgen_pin_src_freq);                              \
+		}                                                                                  \
+	}
+
+/* Rebuild the driver state that the full bring-up would have recorded, from the
+ * clock tree a bootloader left running. clock_mchp_get_status() reads hardware
+ * directly, but get_rate needs the crystal and GCLK pin frequencies, and the
+ * on/off paths rely on the on-status bookkeeping (e.g. a DPLL switched off and
+ * back on at runtime is only re-enabled if one of its outputs is marked on).
+ */
+static void clock_adopt_running(const struct device *dev)
+{
+	const struct clock_mchp_config *config = dev->config;
+	struct clock_mchp_data *data = dev->data;
+	oscctrl_registers_t *oscctrl_regs = config->oscctrl_regs;
+	osc32kctrl_registers_t *osc32kctrl_regs = config->osc32kctrl_regs;
+	gclk_registers_t *gclk_regs = config->gclk_regs;
+	uint32_t pos_en;
+
+	/* Frequencies the hardware cannot report; the bootloader used the same DT. */
+	data->xosc_crystal_freq = DT_PROP(DT_NODELABEL(xosc), xosc_frequency);
+	DT_FOREACH_CHILD(DT_NODELABEL(gclkgen), CLOCK_MCHP_ADOPT_GCLKPIN_FREQ);
+
+	if (((oscctrl_regs->OSCCTRL_XOSCCTRLA & OSCCTRL_XOSCCTRLA_ENABLE_Msk) != 0) &&
+	    ((oscctrl_regs->OSCCTRL_STATUS & OSCCTRL_STATUS_XOSCRDY_Msk) != 0)) {
+		data->dpll_src_on_status |= BIT(CLOCK_MCHP_DPLL_SRC_XOSC);
+		data->gclkgen_src_on_status |= BIT(CLOCK_MCHP_GCLK_SRC_XOSC);
+	}
+
+	if (((oscctrl_regs->OSCCTRL_DFLLCTRLA & OSCCTRL_DFLLCTRLA_ENABLE_Msk) != 0) &&
+	    ((oscctrl_regs->OSCCTRL_STATUS & OSCCTRL_STATUS_DFLLRDY_Msk) != 0)) {
+		data->dpll_src_on_status |= BIT(CLOCK_MCHP_DPLL_SRC_DFLL48M);
+		data->gclkgen_src_on_status |= BIT(CLOCK_MCHP_GCLK_SRC_DFLL48M);
+	}
+
+	if (((osc32kctrl_regs->OSC32KCTRL_XOSC32K & OSC32KCTRL_XOSC32K_ENABLE_Msk) != 0) &&
+	    ((osc32kctrl_regs->OSC32KCTRL_STATUS & OSC32KCTRL_STATUS_XOSC32KRDY_Msk) != 0)) {
+		data->gclkgen_src_on_status |= BIT(CLOCK_MCHP_GCLK_SRC_XOSC32K);
+	}
+
+	if (((oscctrl_regs->OSCCTRL_PLL0CTRL & OSCCTRL_PLL0CTRL_ENABLE_Msk) != 0) &&
+	    ((oscctrl_regs->OSCCTRL_STATUS & OSCCTRL_STATUS_PLL0LOCK_Msk) != 0)) {
+		data->dpll_on_status = 1;
+	}
+
+	for (int inst = 0; inst <= (CLOCK_MCHP_GCLK_SRC_MAX - CLOCK_MCHP_GCLK_SRC_DPLL0_CLKOUT0);
+	     inst++) {
+		uint32_t dpll_out_src = CLOCK_MCHP_GCLK_SRC_DPLL0_CLKOUT0 + inst;
+
+		pos_en = ((inst % PLLOUT_COUNT_PER_REG) + 1) * PLLOUT_POSTDIV_SPAN - 1;
+		if ((*(&oscctrl_regs->OSCCTRL_PLL0POSTDIVA + (inst / PLLOUT_COUNT_PER_REG)) &
+		     BIT(pos_en)) != 0) {
+			data->gclkgen_src_on_status |= BIT(dpll_out_src);
+		}
+	}
+
+	for (int inst = 0; inst < ARRAY_SIZE(gclk_regs->GCLK_GENCTRL); inst++) {
+		if ((gclk_regs->GCLK_GENCTRL[inst] & GCLK_GENCTRL_GENEN_Msk) != 0) {
+			data->dpll_src_on_status |= BIT(inst);
+			if (inst == CLOCK_MCHP_GCLKGEN_GEN1) {
+				data->gclkgen_src_on_status |= BIT(CLOCK_MCHP_GCLKGEN_GEN1);
+			}
+		}
+	}
+
+	data->gclk0_src = FIELD_GET(GCLK_GENCTRL_SRC_Msk,
+				    gclk_regs->GCLK_GENCTRL[CLOCK_MCHP_GCLKGEN_GEN0]);
+}
+#endif /* CONFIG_CLOCK_CONTROL_MCHP_CONFIG_BOOTUP */
+
 static int clock_mchp_init(const struct device *dev)
 {
 #if CONFIG_CLOCK_CONTROL_MCHP_CONFIG_BOOTUP
 	const struct clock_mchp_config *config = dev->config;
 	struct clock_mchp_data *data = dev->data;
 
-	DT_FOREACH_CHILD(DT_NODELABEL(mclkdomain), CLOCK_MCHP_ITERATE_MCLKDOMAIN);
+	if (clock_already_running(config)) {
+		/* Chainload-safe path: a bootloader (e.g. MCUboot) has already brought
+		 * up the core clock tree and the CPU is running from GCLK0. Do NOT
+		 * software-reset GCLK or reconfigure GCLK0/DPLL/DFLL here — that would
+		 * glitch the live CPU clock and reset/hang the device. Adopt the running
+		 * state instead.
+		 */
+		clock_adopt_running(dev);
+	} else {
+		/* Cold reset: full clock-tree bring-up from the device tree. */
+		DT_FOREACH_CHILD(DT_NODELABEL(mclkdomain), CLOCK_MCHP_ITERATE_MCLKDOMAIN);
 
-	/* iteration-1 */
-	CLOCK_MCHP_PROCESS_XOSC(DT_NODELABEL(xosc));
-	CLOCK_MCHP_PROCESS_XOSC32K(DT_NODELABEL(xosc32k));
+		/* iteration-1 */
+		CLOCK_MCHP_PROCESS_XOSC(DT_NODELABEL(xosc));
+		CLOCK_MCHP_PROCESS_XOSC32K(DT_NODELABEL(xosc32k));
 
-	config->gclk_regs->GCLK_CTRLA = GCLK_CTRLA_SWRST(1);
-	if (WAIT_FOR((config->gclk_regs->GCLK_SYNCBUSY == 0), TIMEOUT_REG_SYNC, NULL) == false) {
-		LOG_ERR("%s: GCLK_SYNCBUSY timeout on writing GCLK_CTRLA", __func__);
-		return -ETIMEDOUT;
+		config->gclk_regs->GCLK_CTRLA = GCLK_CTRLA_SWRST(1);
+		if (WAIT_FOR((config->gclk_regs->GCLK_SYNCBUSY == 0), TIMEOUT_REG_SYNC, NULL) ==
+		    false) {
+			LOG_ERR("%s: GCLK_SYNCBUSY timeout on writing GCLK_CTRLA", __func__);
+			return -ETIMEDOUT;
+		}
+
+		/* To avoid changing dfll48m, while gclk0 is driven by it. Else will affect CPU */
+		data->gclk0_src = CLOCK_MCHP_GCLK_SRC_DFLL48M;
+		for (int i = 0; i < CLOCK_INIT_ITERATION_COUNT; i++) {
+			DT_FOREACH_CHILD(DT_NODELABEL(gclkgen), CLOCK_MCHP_ITERATE_GCLKGEN);
+			CLOCK_MCHP_PROCESS_DFLL48M(DT_NODELABEL(dfll48m));
+			CLOCK_MCHP_PROCESS_DPLL0(DT_NODELABEL(dpll0));
+			DT_FOREACH_CHILD(DT_NODELABEL(dpll0), CLOCK_MCHP_ITERATE_DPLL_OUT);
+		}
+
+		CLOCK_MCHP_PROCESS_RTC(DT_NODELABEL(rtcclock));
 	}
 
-	/* To avoid changing dfll48m, while gclk0 is driven by it. Else will affect CPU */
-	data->gclk0_src = CLOCK_MCHP_GCLK_SRC_DFLL48M;
-	for (int i = 0; i < CLOCK_INIT_ITERATION_COUNT; i++) {
-		DT_FOREACH_CHILD(DT_NODELABEL(gclkgen), CLOCK_MCHP_ITERATE_GCLKGEN);
-		CLOCK_MCHP_PROCESS_DFLL48M(DT_NODELABEL(dfll48m));
-		CLOCK_MCHP_PROCESS_DPLL0(DT_NODELABEL(dpll0));
-		DT_FOREACH_CHILD(DT_NODELABEL(dpll0), CLOCK_MCHP_ITERATE_DPLL_OUT);
-	}
-
-	CLOCK_MCHP_PROCESS_RTC(DT_NODELABEL(rtcclock));
+	/* Peripheral clock gates are safe in both paths (they do not touch the
+	 * CPU clock) and are required for peripheral drivers (PORT, SERCOM, ...).
+	 */
 	DT_FOREACH_CHILD(DT_NODELABEL(gclkperiph), CLOCK_MCHP_ITERATE_GCLKPERIPH);
 	DT_FOREACH_CHILD(DT_NODELABEL(mclkperiph), CLOCK_MCHP_ITERATE_MCLKPERIPH);
 

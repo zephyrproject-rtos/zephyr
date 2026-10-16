@@ -68,6 +68,11 @@ config CLOCK_CONTROL_MCHP_CONFIG_BOOTUP
 	default y
 	help
 	  This option enables bootup clock configuration from device tree node.
+	  The bootup path auto-detects whether a bootloader (e.g. MCUboot) has
+	  already brought up the core clock tree: if GCLK0 is already running
+	  from the device-tree-configured source it adopts that clock (no
+	  destructive reset/reconfiguration of the live CPU clock); otherwise it
+	  performs the full clock bring-up from a cold reset.
 
 config CLOCK_CONTROL_MCHP_CONFIG_RUNTIME
 	bool "Runtime clock configuration"
