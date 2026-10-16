@@ -283,7 +283,7 @@ static int spi_silabs_eusart_pm_action(const struct device *dev, enum pm_device_
 
 		ret = clock_control_off(eusart_config->clock_dev,
 					(clock_control_subsys_t)&eusart_config->clock_cfg);
-		if (ret == -EALREADY) {
+		if (ret == -EALREADY || ret == -ENOTSUP) {
 			ret = 0;
 		}
 

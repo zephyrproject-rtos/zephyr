@@ -2280,7 +2280,7 @@ static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action a
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Stop device clock. */
 		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
-		if (err != 0) {
+		if (err != 0 && err != -ENOTSUP) {
 			LOG_ERR("Could not disable SPI clock");
 			return err;
 		}
