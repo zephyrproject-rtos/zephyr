@@ -12,4 +12,6 @@ supported:
   - i2c
   - spi
   - display
+  - memc
+  - usbd
 vendor: st
