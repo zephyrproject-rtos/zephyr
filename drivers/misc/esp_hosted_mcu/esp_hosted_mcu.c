@@ -32,6 +32,12 @@ struct esp_hosted_mcu_sdio_config;
 extern const struct esp_hosted_mcu_sdio_config esp_hosted_mcu_sdio_config_0;
 #define ESP_HOSTED_MCU_TRANSPORT_API    (&esp_hosted_mcu_sdio_api)
 #define ESP_HOSTED_MCU_TRANSPORT_CONFIG (&esp_hosted_mcu_sdio_config_0)
+#elif defined(CONFIG_ESP_HOSTED_MCU_UART)
+extern const struct esp_hosted_mcu_transport_api esp_hosted_mcu_uart_api;
+struct esp_hosted_mcu_uart_config;
+extern const struct esp_hosted_mcu_uart_config esp_hosted_mcu_uart_config_0;
+#define ESP_HOSTED_MCU_TRANSPORT_API    (&esp_hosted_mcu_uart_api)
+#define ESP_HOSTED_MCU_TRANSPORT_CONFIG (&esp_hosted_mcu_uart_config_0)
 #else
 extern const struct esp_hosted_mcu_transport_api esp_hosted_mcu_spi_api;
 struct esp_hosted_mcu_spi_config;
