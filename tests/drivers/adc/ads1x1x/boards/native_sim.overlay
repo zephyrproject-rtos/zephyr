@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Simulated ADS1x1x chips on the emulated I2C bus of native_sim. The chip that is used
+ * for the tests of an unconfigured channel is never configured by any other test.
+ */
+&i2c0 {
+	ads1115: ads1115@48 {
+		compatible = "ti,ads1115";
+		reg = <0x48>;
+		#io-channel-cells = <1>;
+	};
+
+	ads1115_fresh: ads1115@4a {
+		compatible = "ti,ads1115";
+		reg = <0x4a>;
+		#io-channel-cells = <1>;
+	};
+
+	/* A chip with its ALERT/RDY pin connected: it reports a finished conversion on that pin. */
+	ads1115_alert: ads1115@4b {
+		compatible = "ti,ads1115";
+		reg = <0x4b>;
+		alert-rdy-gpios = <&gpio0 7 0>;
+		#io-channel-cells = <1>;
+	};
+
+	ads1114: ads1114@49 {
+		compatible = "ti,ads1114";
+		reg = <0x49>;
+		#io-channel-cells = <1>;
+	};
+};
