@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Aleksandr Senin
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to the raw Ethernet transport of the MCUmgr
+# subsystem and provides Kconfig options to control aspects of the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_ETHERNET_
+
+menuconfig MCUMGR_TRANSPORT_ETHERNET
+	bool "Raw Ethernet MCUmgr SMP transport"
+	depends on NET_L2_ETHERNET
+	help
+	  Enables handling of SMP commands received in raw Ethernet frames.
+	  Each SMP frame is carried in the payload of a single Ethernet frame
+	  with the configured EtherType, without any IP stack involvement.
+	  Requests are accepted on any Ethernet interface and replies are sent
+	  from the interface the request was received on, back to the MAC
+	  address of the sender.
+
+if MCUMGR_TRANSPORT_ETHERNET
+
+config MCUMGR_TRANSPORT_ETHERNET_ETHERTYPE
+	hex "EtherType used for SMP frames"
+	default 0x88B5
+	help
+	  EtherType of the Ethernet frames carrying SMP data.
+	  The default value 0x88B5 is the IEEE 802 "Local Experimental
+	  EtherType 1".
+
+config MCUMGR_TRANSPORT_ETHERNET_AUTOMATIC_INIT
+	bool "Ethernet SMP autostart"
+	default y
+	help
+	  Enable starting the Ethernet SMP transport at boot time without
+	  needing any code in the application to do this, otherwise will need
+	  the user application to manually start and stop the transport using
+	  `smp_ethernet_open` and `smp_ethernet_close`.
+
+endif # MCUMGR_TRANSPORT_ETHERNET

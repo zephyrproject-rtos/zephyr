@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2026 Aleksandr Senin
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  tags:
+    - mgmt
+    - mcumgr
+    - transport
+    - ethernet
+tests:
+  mgmt.mcumgr.transport.ethernet:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+  mgmt.mcumgr.transport.ethernet.all:
+    extra_args:
+      - EXTRA_CONF_FILE="ethernet_all.conf"
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    build_only: true

@@ -20,6 +20,10 @@
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_DTLS
 #include <zephyr/mgmt/mcumgr/transport/smp_udp.h>
 #endif
+#ifdef CONFIG_MCUMGR_TRANSPORT_ETHERNET
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
+#endif
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <zephyr/logging/log.h>
@@ -51,6 +55,22 @@ static struct fs_mount_t littlefs_mnt = {
 	.storage_dev = (void *)STORAGE_PARTITION_ID,
 	.mnt_point = "/lfs1"
 };
+#endif
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_ETHERNET
+static void print_iface_mac(struct net_if *iface, void *user_data)
+{
+	struct net_linkaddr *ll = net_if_get_link_addr(iface);
+
+	ARG_UNUSED(user_data);
+
+	if (ll->type != NET_LINK_ETHERNET || ll->len != NET_ETH_ADDR_LEN) {
+		return;
+	}
+
+	LOG_INF("SMP eth iface %d MAC %02x:%02x:%02x:%02x:%02x:%02x", net_if_get_by_iface(iface),
+		ll->addr[0], ll->addr[1], ll->addr[2], ll->addr[3], ll->addr[4], ll->addr[5]);
+}
 #endif
 
 int main(void)
@@ -86,6 +106,10 @@ int main(void)
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT
 	start_smp_bluetooth_adverts();
+#endif
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_ETHERNET
+	net_if_foreach(print_iface_mac, NULL);
 #endif
 
 	/* using __TIME__ ensure that a new binary will be built on every
