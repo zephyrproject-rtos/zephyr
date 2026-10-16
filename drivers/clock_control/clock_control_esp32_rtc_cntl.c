@@ -154,6 +154,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 		clock_init_done = true;
 	}
 
+#if CONFIG_ESP_CONSOLE_UART > 0
 	esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
@@ -163,6 +164,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, cpu_cfg->xtal_freq * MHZ(1));
 		esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 	}
+#endif
 #endif
 
 	rtc_clk_cpu_freq_get_config(&old_config);
@@ -188,9 +190,11 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 
 		esp_clk_tree_src_get_freq_hz(
 			UART_SCLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &uart_sclk_freq);
+#if CONFIG_ESP_CONSOLE_UART > 0
 		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_DEFAULT);
 		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
 				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_sclk_freq);
+#endif
 	}
 #else
 #if defined(CONFIG_MCUBOOT) && defined(ESP_ROM_UART_CLK_IS_XTAL)
@@ -198,8 +202,10 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 #else
 	uint32_t uart_clock_src_hz = esp_clk_apb_freq();
 #endif
+#if CONFIG_ESP_CONSOLE_UART > 0
 	uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
 			     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_clock_src_hz);
+#endif
 #endif
 #endif
 	return 0;
