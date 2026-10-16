@@ -117,7 +117,7 @@ void item_put_no_overwrite(bool pow2)
 
 	init(&buffer, 4 - !pow2, false);
 
-	int repeat = buffer.size*2;
+	int repeat = buffer.config->size*2;
 	union test_item test_1word = {.data = {.valid = 1, .len = 1 }};
 
 	for (int i = 0; i < repeat; i++) {
@@ -154,7 +154,7 @@ void item_put_overwrite(bool pow2)
 	exp_dropped_len[0] = 1;
 	exp_drop_cnt = 1;
 
-	for (int i = 0; i < buffer.size + 1; i++) {
+	for (int i = 0; i < buffer.config->size + 1; i++) {
 		test_1word.data.data = i;
 		mpsc_pbuf_put_word(&buffer, test_1word.item);
 	}
@@ -175,7 +175,7 @@ void item_put_saturate(bool pow2)
 
 	init(&buffer, 4 - !pow2, false);
 
-	int repeat = buffer.size;
+	int repeat = buffer.config->size;
 	union test_item test_1word = {.data = {.valid = 1, .len = 1 }};
 	union test_item *t;
 
@@ -220,7 +220,7 @@ void benchmark_item_put(bool pow2)
 
 	init(&buffer, ARRAY_SIZE(buf32) - !pow2, true);
 
-	int repeat = buffer.size - 1;
+	int repeat = buffer.config->size - 1;
 	union test_item test_1word = {.data = {.valid = 1, .len = 1 }};
 	uint32_t t = get_cyc();
 
@@ -261,7 +261,7 @@ void item_put_ext_no_overwrite(bool pow2)
 
 	init(&buffer, 8 - !pow2, false);
 
-	int repeat = buffer.size * 2;
+	int repeat = buffer.config->size * 2;
 	union test_item test_ext_item = {
 		.data = {
 			.valid = 1,
@@ -300,7 +300,7 @@ void item_put_word_ext_overwrite(bool pow2)
 	init(&buffer, 8 - !pow2, true);
 
 	size_t w = (sizeof(uint32_t) + sizeof(void *)) / sizeof(uint32_t);
-	int repeat = 1 + buffer.size / w;
+	int repeat = 1 + buffer.config->size / w;
 	union test_item test_ext_item = {
 		.data = {
 			.valid = 1,
@@ -334,7 +334,7 @@ void item_put_ext_saturate(bool pow2)
 
 	init(&buffer, 8 - !pow2, false);
 
-	int repeat = buffer.size / PUT_EXT_LEN;
+	int repeat = buffer.config->size / PUT_EXT_LEN;
 	union test_item test_ext_item = {
 		.data = {
 			.valid = 1,
@@ -384,7 +384,7 @@ void benchmark_item_put_ext(bool pow2)
 
 	init(&buffer, ARRAY_SIZE(buf32) - !pow2, false);
 
-	int repeat = (buffer.size - 1) / PUT_EXT_LEN;
+	int repeat = (buffer.config->size - 1) / PUT_EXT_LEN;
 	union test_item test_ext_item = {
 		.data = {
 			.valid = 1,
@@ -431,7 +431,7 @@ void benchmark_item_put_data(bool pow2)
 
 	init(&buffer, ARRAY_SIZE(buf32) - !pow2, false);
 
-	int repeat = (buffer.size - 1) / PUT_EXT_LEN;
+	int repeat = (buffer.config->size - 1) / PUT_EXT_LEN;
 	union test_item test_ext_item = {
 		.data_ext = {
 			.hdr = {
@@ -483,7 +483,7 @@ void item_put_data_overwrite(bool pow2)
 	init(&buffer, 8 - !pow2, true);
 
 	size_t w = (sizeof(uint32_t) + sizeof(void *)) / sizeof(uint32_t);
-	int repeat = 1 + buffer.size / w;
+	int repeat = 1 + buffer.config->size / w;
 	static const int len = sizeof(struct test_data_ext) / sizeof(uint32_t);
 	struct test_data_ext item = {
 		.hdr = {
@@ -563,10 +563,10 @@ void item_max_alloc(bool overwrite)
 	/* First try to allocate the biggest possible packet. */
 	for (int i = 0; i < 2; i++) {
 		packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer,
-								 buffer.size,
+								 buffer.config->size,
 								 K_NO_WAIT);
 		zassert_true(packet != NULL);
-		packet->hdr.len = buffer.size;
+		packet->hdr.len = buffer.config->size;
 		mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)packet);
 
 		packet = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
@@ -575,7 +575,7 @@ void item_max_alloc(bool overwrite)
 
 	/* Too big packet cannot be allocated. */
 	packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer,
-							 buffer.size + 1,
+							 buffer.config->size + 1,
 							 K_NO_WAIT);
 	zassert_true(packet == NULL);
 }
@@ -593,7 +593,7 @@ static uint32_t saturate_buffer_uneven(struct mpsc_pbuf_buffer *buffer,
 	uint32_t uneven = 3;
 	uint32_t cnt = 0;
 	int repeat =
-		uneven + ((buffer->size - (uneven * len)) / len);
+		uneven + ((buffer->config->size - (uneven * len)) / len);
 
 	/* Put some data to include wrapping */
 	for (int i = 0; i < uneven; i++) {
@@ -1251,7 +1251,7 @@ ZTEST(log_buffer, test_put_while_claim)
 	mpsc_pbuf_init(&buffer, &buffer_config);
 	/* Expect buffer = {} */
 
-	for (int i = 0; i < buffer.size; ++i) {
+	for (int i = 0; i < buffer.config->size; ++i) {
 		mpsc_pbuf_put_word(&buffer, item.item);
 		item.data.data++;
 	}
@@ -1313,8 +1313,8 @@ static void check_usage(struct mpsc_pbuf_buffer *buffer,
 	int err;
 
 	mpsc_pbuf_get_utilization(buffer, &size, &usage);
-	zassert_equal(size / sizeof(int), buffer->size - 1, "%d: got:%d, exp:%d",
-			line, (uint32_t)(size / sizeof(int)), buffer->size - 1);
+	zassert_equal(size / sizeof(int), buffer->config->size - 1, "%d: got:%d, exp:%d",
+			line, (uint32_t)(size / sizeof(int)), buffer->config->size - 1);
 	zassert_equal(usage, now, "%d: got:%d, exp:%d", line, usage, now);
 
 	err = mpsc_pbuf_get_max_utilization(buffer, &usage);
@@ -1415,7 +1415,7 @@ ZTEST(log_buffer, test_utilization)
 	uint32_t len = 5;
 	uint32_t i;
 
-	for (i = 0; i < (buffer.size - 1) / len; i++) {
+	for (i = 0; i < (buffer.config->size - 1) / len; i++) {
 		packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, len, K_NO_WAIT);
 		packet->hdr.len = len;
 
