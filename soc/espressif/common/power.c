@@ -68,6 +68,7 @@ static uint64_t lpm_budget_us;
 static uint64_t lpm_entry_counter;
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
 static uint64_t lpm_deadline_us;
+static uint64_t lpm_kernel_us;
 #endif
 static uint64_t gpio_sleep_hold;
 #if defined(SOC_RTC_SLOW_MEM_SUPPORTED) || defined(SOC_RTC_FAST_MEM_SUPPORTED)
@@ -246,7 +247,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		if (sleep_enabled) {
 			esp32_sleep_gpio_prepare();
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
-			esp32_sleep_stats_before(sleep_time_us,
+			esp32_sleep_stats_before(lpm_kernel_us, sleep_time_us,
 						 MIN_RESIDENCY_SLEEP_US +
 							 CONFIG_SOC_ESP32_PM_WAKEUP_MARGIN_US,
 						 lpm_deadline_us);
@@ -353,6 +354,7 @@ uint64_t esp32_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 	 * to the deadline can be measured on wake in the same esp_timer frame without
 	 * the software-latency bias of anchoring later at sleep-start.
 	 */
+	lpm_kernel_us = max_lpm_time_us;
 	lpm_deadline_us = (uint64_t)now_us + max_lpm_time_us;
 #endif
 

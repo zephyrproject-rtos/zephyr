@@ -13,15 +13,18 @@
 /**
  * @brief Account one sleep fragment, called just before entering light sleep.
  *
- * @param sleep_time_us    Time left until the wake deadline, in microseconds.
- * @param min_sleep_us     Minimum time needed to enter sleep (the sleep floor),
- *                         used to estimate when the wait is effectively over.
- * @param deadline_abs_us  Absolute wake deadline in the esp_timer frame,
- *                         anchored at low-power-idle entry, used to measure
- *                         wake margin.
+ * @param kernel_us           Kernel sleep budget for this idle entry, in
+ *                            microseconds. Recorded as the requested time when
+ *                            the window opens.
+ * @param fragment_us         Sleep duration programmed for this fragment.
+ * @param min_sleep_us        Minimum time needed to enter sleep (the sleep floor),
+ *                            used to estimate when the wait is effectively over.
+ * @param deadline_abs_us     Absolute kernel wake deadline in the esp_timer
+ *                            frame, anchored at low-power-idle entry. Recorded
+ *                            when the window opens and used to measure wake margin.
  */
-void esp32_sleep_stats_before(uint64_t sleep_time_us, uint64_t min_sleep_us,
-			      uint64_t deadline_abs_us);
+void esp32_sleep_stats_before(uint64_t kernel_us, uint64_t fragment_us,
+			      uint64_t min_sleep_us, uint64_t deadline_abs_us);
 
 /**
  * @brief Account one sleep fragment, called right after returning from light sleep.
