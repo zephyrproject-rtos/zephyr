@@ -32,9 +32,22 @@ tests:
       - nucleo_f429zi
       - nucleo_wba55cg
       - google_dragonclaw
+      - nucleo_n657x0_q/stm32n657xx
+      - stm32n6570_dk/stm32n657xx
     timeout: 600
     extra_configs:
       - CONFIG_COUNTER_RTC_STM32_SUBSECONDS=y
+  drivers.counter.basic_api.stm32n6_no_subsec:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - nucleo_n657x0_q/stm32n657xx
+      - stm32n6570_dk/stm32n657xx
+    timeout: 600
+    extra_configs:
+      - CONFIG_COUNTER_RTC_STM32_SUBSECONDS=n
   drivers.counter.basic_api.rtc_1khz:
     tags:
       - drivers

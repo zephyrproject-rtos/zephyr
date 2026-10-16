@@ -19,6 +19,7 @@
 #include <stm32_ll_icache.h>
 
 #include <cmsis_core.h>
+#include <soc.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
@@ -83,6 +84,21 @@ static void soc_rif_config(void)
 #endif /* CONFIG_TRUSTED_EXECUTION_SECURE */
 }
 
+void stm32n6_configure_run_power(void)
+{
+	/*
+	 * STM32N6 development boards supply VCORE externally. Wait until the
+	 * power controller applies that selection before requesting VOS0.
+	 */
+	LL_PWR_ConfigSupply(LL_PWR_EXTERNAL_SOURCE_SUPPLY);
+	while (LL_PWR_IsActiveFlag_ACTVOSRDY() != 1U) {
+	}
+
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+	while (LL_PWR_IsActiveFlag_VOSRDY() != 1U) {
+	}
+}
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -103,8 +119,8 @@ void soc_early_init_hook(void)
 	/* Enable PWR */
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_PWR);
 
-	/* Set the main internal Regulator output voltage for best performance */
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+	/* Set the main internal regulator output voltage for best performance. */
+	stm32n6_configure_run_power();
 
 	/* Enable IOs */
 	LL_PWR_EnableVddIO2();
