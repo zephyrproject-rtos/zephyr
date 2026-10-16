@@ -217,5 +217,11 @@
 			reg = <46>;
 			#power-domain-cells = <0>;
 		};
+
+		main_usb0_pd: power-domain@5f {
+			compatible = "arm,scmi-power-domain";
+			reg = <95>;
+			#power-domain-cells = <0>;
+		};
 	};
 };

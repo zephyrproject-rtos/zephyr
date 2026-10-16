@@ -269,3 +269,8 @@
 	interrupt-names = "th1", "th2", "th0";
 	interrupt-parent = <&gic>;
 };
+
+&main_usb0 {
+	interrupts = <GIC_SPI 215 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
