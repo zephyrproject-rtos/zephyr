@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Arm the Hibernate wake source: the SoC power management reads this node at
+ * init, enables the input buffer on the armed pad and programs the SRSS wake
+ * registers. PIN0 is P2.0 (SW2), pressed low; PIN1 is left unarmed.
+ */
+&hibernate_wakeup {
+	status = "okay";
+	wakeup-pin0-trigger = "low";
+};
+
+/*
+ * Enabling this node selects CONFIG_PM_S2RAM through its "suspend-to-ram"
+ * power-state-name. Its default 2 s min-residency equals the sample's sleep
+ * window, so lower it here for the state to engage reliably.
+ */
+&deepsleep_ram {
+	status = "okay";
+	min-residency-us = <500000>;
+};
