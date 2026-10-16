@@ -348,7 +348,7 @@ static void dma_silabs_irq_handler(const struct device *dev, uint32_t id)
 			 */
 			if (sl_hal_ldma_transfer_is_done(config->ldma, chnum) &&
 			    config->ldma->CH[chnum].LINK & _LDMA_CH_LINK_LINK_MASK) {
-				sys_clear_bit((mem_addr_t)&config->ldma->CHDONE, chnum);
+				config->ldma->CHDONE_CLR = BIT(chnum);
 				config->ldma->LINKLOAD = BIT(chnum);
 			}
 
