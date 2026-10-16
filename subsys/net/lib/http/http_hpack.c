@@ -604,7 +604,7 @@ int http_hpack_encode_header(uint8_t *buf, size_t buflen,
 
 	if (buf == NULL || header == NULL ||
 	    header->name == NULL || header->name_len == 0 ||
-	    header->value == NULL || header->value_len == 0) {
+	    (header->value == NULL && header->value_len > 0)) {
 		return -EINVAL;
 	}
 

@@ -540,4 +540,25 @@ ZTEST(http2_hpack, test_http2_hpack_long_value_encode_decode)
 	zexpect_mem_equal(dec.value, hdr.value, dec.value_len, "Header value wrongly decoded");
 }
 
+ZTEST(http2_hpack, test_http2_hpack_empty_value_encode_decode)
+{
+	struct http_hpack_header_buf hdr = { 0 };
+	struct http_hpack_header_buf dec = { 0 };
+	int enc_ret, dec_ret;
+
+	hdr.name = "x-empty";
+	hdr.name_len = strlen(hdr.name);
+	hdr.value = "";
+	hdr.value_len = 0;
+
+	enc_ret = http_hpack_encode_header(test_buf, sizeof(test_buf), &hdr);
+	zassert_true(enc_ret > 0, "Cannot encode the header (%d)", enc_ret);
+
+	dec_ret = http_hpack_decode_header(test_buf, enc_ret, &dec);
+	zassert_equal(dec_ret, enc_ret, "Decoded %d of the %d bytes encoded", dec_ret, enc_ret);
+	zassert_equal(dec.name_len, hdr.name_len, "Wrong decoded header name length");
+	zassert_mem_equal(dec.name, hdr.name, dec.name_len, "Header name wrongly decoded");
+	zassert_equal(dec.value_len, 0, "Decoded a %zu byte value", dec.value_len);
+}
+
 ZTEST_SUITE(http2_hpack, NULL, NULL, NULL, NULL, NULL);
