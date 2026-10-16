@@ -12,3 +12,4 @@ toolchain:
   - zephyr
   - xcc
 vendor: amd
+twister: false
