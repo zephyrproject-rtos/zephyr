@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -69,4 +70,24 @@ ZTEST(bt_crypto_ccm, test_result_rfc_test_vectors)
 		free(encrypted_data);
 		free(decrypted_data);
 	}
+}
+
+ZTEST(bt_crypto_ccm, test_decrypt_invalid_mic)
+{
+	struct test_data *p = input_packets[0];
+	const size_t enc_len = p->input_len + p->mic_len;
+	const size_t payload_len = p->input_len - p->aad_len;
+	uint8_t encrypted[TEST_VECTOR_MAX_ENC_LEN];
+	uint8_t plaintext[TEST_VECTOR_MAX_INPUT_LEN];
+	const uint8_t *aad = p->input;
+	int err;
+
+	memcpy(encrypted, p->expected_output, enc_len);
+	memcpy(plaintext, p->input, p->aad_len);
+
+	encrypted[enc_len - 1] ^= 0x01;
+
+	err = bt_ccm_decrypt(p->key, p->nonce, &encrypted[p->aad_len], payload_len, aad,
+			     p->aad_len, &plaintext[p->aad_len], p->mic_len);
+	zassert_equal(err, -EBADMSG, "CCM decrypt with bad MIC returned %d", err);
 }

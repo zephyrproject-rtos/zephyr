@@ -7,6 +7,10 @@
 
 #define NUMBER_OF_TEST 24
 
+#define TEST_VECTOR_MAX_INPUT_LEN 33U
+#define TEST_VECTOR_MAX_MIC_LEN   10U
+#define TEST_VECTOR_MAX_ENC_LEN   (TEST_VECTOR_MAX_INPUT_LEN + TEST_VECTOR_MAX_MIC_LEN)
+
 struct test_data {
 	const uint8_t *input;
 	const uint8_t *expected_output;
