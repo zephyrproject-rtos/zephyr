@@ -102,7 +102,7 @@ bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
 	}
 
-	invalid = (addr <= start) || ((addr + sz) >= end);
+	invalid = (addr <= start) || (sz > (UINTPTR_MAX - addr)) || ((addr + sz) >= end);
 
 	return invalid;
 }

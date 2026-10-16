@@ -96,10 +96,10 @@ static inline bool xtensa_ptr_executable(const void *p)
 
 bool xtensa_backtrace_get_next_frame(struct xtensa_backtrace_frame_t *frame)
 {
-	/* Do not continue backtrace when we encounter an invalid stack
-	 * frame pointer.
+	/* Do not continue backtrace when the base save area (4 words
+	 * under the stack frame pointer) is not within the stack.
 	 */
-	if (xtensa_is_outside_stack_bounds((uintptr_t)frame->sp, 0, UINT32_MAX)) {
+	if (xtensa_is_outside_stack_bounds((uintptr_t)frame->sp - 16U, 16U, UINT32_MAX)) {
 		return false;
 	}
 
