@@ -25,6 +25,17 @@ typedef struct {
 	uint16_t iocon_cfg;
 } pinctrl_soc_pin_t;
 
+/**
+ * @brief Map port and pin to IOCON index.
+ *
+ * This function returns the array index for a given (port, pin) pair.
+ *
+ * @param port Port number (0 or 1).
+ * @param pin Pin number (0..31 for port 0, 0..21 for port 1).
+ * @return IOCON index on success, -EINVAL on failure.
+ */
+int lpc84x_iocon_index(uint8_t port, uint8_t pin);
+
 /* SWM decoding macros */
 #define LPC84X_SWM_PIN(cfg)      ((cfg) & 0xFF)
 #define LPC84X_SWM_FUNC(cfg)     (((cfg) >> 8) & 0x7F)
