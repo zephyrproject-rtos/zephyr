@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
-LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_http_hpack, CONFIG_NET_HTTP_LOG_LEVEL);
 
 struct decode_elem {
 	uint8_t bitlen;

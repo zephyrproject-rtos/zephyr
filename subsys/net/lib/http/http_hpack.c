@@ -11,7 +11,7 @@
 #include <zephyr/net/http/hpack.h>
 #include <zephyr/net/net_core.h>
 
-LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
+LOG_MODULE_DECLARE(net_http_hpack, CONFIG_NET_HTTP_LOG_LEVEL);
 
 static inline bool http_hpack_key_is_static(uint32_t key)
 {

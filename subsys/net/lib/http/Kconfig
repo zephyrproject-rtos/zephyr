@@ -32,6 +32,34 @@ config HTTP_PARSER_MAX_HEADER_SIZE
 	  To remove the effective limit on the size of the header, configure this option to a very
 	  large number.
 
+config HTTP_HUFFMAN_DECODE_BUFFER_SIZE
+	int "Size of the buffer used for decoding Huffman-encoded strings"
+	default HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE \
+		if HTTP_SERVER && HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE != 0
+	default 256
+	range 64 $(UINT32_MAX)
+	depends on HTTP2_COMMON || HTTP_SERVER_VERSION_3
+	help
+	  Size of the buffer used for decoding Huffman-encoded strings in
+	  HPACK (HTTP/2) and QPACK (HTTP/3) compressed headers. This
+	  effectively limits the maximum length of an individual HTTP header
+	  supported. Shared by the HTTP server and the multiprotocol HTTP client.
+
+config HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
+	int "Size of the Huffman decoding buffer [DEPRECATED]"
+	default 0
+	depends on HTTP_SERVER
+	help
+	  This symbol is deprecated, use HTTP_HUFFMAN_DECODE_BUFFER_SIZE instead.
+	  When set to a non-zero value it is used as the default for
+	  HTTP_HUFFMAN_DECODE_BUFFER_SIZE, for backward compatibility.
+
+config HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE_DEPRECATED
+	bool
+	default y if HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE != 0
+	depends on HTTP_SERVER
+	select DEPRECATED
+
 config HTTP_CLIENT
 	bool "HTTP client API"
 	select HTTP_PARSER
@@ -166,15 +194,6 @@ config HTTP_SERVER_CLIENT_BUFFER_SIZE
 	range 64 $(UINT32_MAX)
 	help
 	  This setting determines the buffer size for each client.
-
-config HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
-	int "Size of the buffer used for decoding Huffman-encoded strings"
-	default 256
-	range 64 $(UINT32_MAX)
-	help
-	  Size of the buffer used for decoding Huffman-encoded strings when
-	  processing HPACK compressed headers. This effectively limits the
-	  maximum length of an individual HTTP header supported.
 
 config HTTP_SERVER_MAX_URL_LENGTH
 	int "Maximum HTTP URL Length"
