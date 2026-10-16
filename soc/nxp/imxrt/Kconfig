@@ -52,7 +52,7 @@ config BOOT_FLEXSPI_NAND
 	bool "FlexSPI serial NAND"
 	depends on $(dt_has_compat,$(FLEXSPI_COMPAT))
 
-SEMC_COMPAT := nxp,imx-semc
+SEMC_COMPAT := nxp,semc
 
 config BOOT_SEMC_NOR
 	bool "SEMC parallel NOR"
@@ -145,6 +145,13 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 	  This setting should be enabled when the application uses HYPERRAM,
 	  or an MPU region will be defined to disable cached access to the
 	  HYPERRAM memory space.
+
+config NXP_IMX_EXTERNAL_SDRAM
+	bool "Allow access to external SDRAM region"
+	help
+	  Enable SEMC SDRAM XMCD so the ROM muxes the SEMC pins and brings up
+	  SDRAM at boot. Set this on boards where the external SDRAM is present
+	  and should be initialized by the ROM boot sequence.
 
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT multi-core series"

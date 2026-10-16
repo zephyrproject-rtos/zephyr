@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * DTCM is recreated as plain mmio-sram so it can serve as zephyr,sram
+ * without also introducing a DTCM linker region. Enabling &semc causes
+ * CMakeLists to select the SEMC XMCD so the ROM muxes the SEMC pins.
+ */
+
+/delete-node/ &dtcm;
+
+/ {
+	chosen {
+		zephyr,sram = &dtcm;
+	};
+
+	aliases {
+		sram-ext = &sdram0;
+	};
+
+	soc {
+		dtcm: memory@30000000 {
+			compatible = "mmio-sram";
+			reg = <0x30000000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&hyperram0 {
+	status = "disabled";
+};
+
+&semc {
+	status = "okay";
+};
+
+&sdram0 {
+	status = "okay";
+};
