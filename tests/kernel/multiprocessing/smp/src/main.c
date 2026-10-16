@@ -152,12 +152,18 @@ ZTEST(smp, test_smp_coop_threads)
 	}
 
 	for (i = 0; i < 10; i++) {
-		/* Wait slightly longer than the other thread so our
-		 * count will always be lower
+		/* This thread is cooperative and never yields, so t2 can
+		 * only make progress on another CPU. Don't bound it to
+		 * DELAY_US: QEMU without icount follows the host clock,
+		 * and the host may stall the other vCPU for a while.
 		 */
-		k_busy_wait(DELAY_US + (DELAY_US / 8));
+		int count = t2_count;
+		int64_t end = k_uptime_get() + TIMEOUT;
 
-		if (t2_count <= i) {
+		while (t2_count == count && k_uptime_get() < end) {
+		}
+
+		if (t2_count == count) {
 			ok = 0;
 			break;
 		}
@@ -222,6 +228,21 @@ static void thread_entry_fn(void *p1, void *p2, void *p3)
 
 	while (count++ < 5) {
 		k_busy_wait(DELAY_US);
+	}
+}
+
+static volatile bool spin_stop;
+
+static void spin_entry_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+	int thread_num = POINTER_TO_INT(p1);
+
+	tinfo[thread_num].executed = 1;
+	tinfo[thread_num].cpu_id = curr_cpu();
+
+	while (!spin_stop) {
 	}
 }
 
@@ -379,31 +400,40 @@ ZTEST(smp, test_coop_switch_in_abort)
 ZTEST(smp, test_coop_resched_threads)
 {
 	unsigned int num_threads = arch_num_cpus();
+	unsigned int last = num_threads - 1;
 
-	/* Spawn threads equal to number of cores,
-	 * since we don't give up current CPU, last thread
-	 * will not get scheduled
+	/* Occupy the other cores with threads that spin until told
+	 * to stop, so none of them frees its CPU.
 	 */
-	spawn_threads(K_PRIO_COOP(12), num_threads, !EQUAL_PRIORITY,
-		      &thread_entry_fn, THREAD_DELAY);
+	spin_stop = false;
+	spawn_threads(K_PRIO_COOP(12), last, !EQUAL_PRIORITY,
+		      &spin_entry_fn, !THREAD_DELAY);
 
-	/* Wait for some time to let other core's thread run */
-	k_busy_wait(DELAY_US * 5);
+	int64_t end = k_uptime_get() + TIMEOUT;
 
-
-	/* Reassure that cooperative thread's are not preempted
-	 * by checking last thread's execution
-	 * status. We know that all threads got rescheduled on
-	 * other cores except the last one
-	 */
-	for (int i = 0; i < num_threads - 1; i++) {
+	for (int i = 0; i < last; i++) {
+		while (tinfo[i].executed == 0 && k_uptime_get() < end) {
+		}
 		zassert_true(tinfo[i].executed == 1,
 			     "cooperative thread %d didn't run", i);
 	}
-	zassert_true(tinfo[num_threads - 1].executed == 0,
+
+	/* Every core now runs a cooperative thread. A thread of higher
+	 * priority than all of them must not preempt any.
+	 */
+	tinfo[last].priority = tinfo[last - 1].priority - 1;
+	tinfo[last].tid = k_thread_create(&tthread[last], tstack[last],
+					  STACK_SIZE, spin_entry_fn,
+					  INT_TO_POINTER(last), NULL, NULL,
+					  tinfo[last].priority, 0, K_NO_WAIT);
+
+	k_busy_wait(DELAY_US * 5);
+
+	zassert_true(tinfo[last].executed == 0,
 		     "cooperative thread is preempted");
 
 	/* Abort threads created */
+	spin_stop = true;
 	abort_threads(num_threads);
 	cleanup_resources();
 }
@@ -1311,5 +1341,38 @@ static void *smp_tests_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(smp, NULL, smp_tests_setup, NULL, NULL, NULL);
-ZTEST_SUITE(smp_stress, NULL, smp_tests_setup, NULL, NULL, NULL);
+struct leftovers {
+	k_tid_t tid[MAX_NUM_THREADS + 1];
+	size_t count;
+};
+
+static void find_leftover(const struct k_thread *thread, void *data)
+{
+	struct leftovers *left = data;
+
+	if ((thread == &t2 ||
+	     (thread >= &tthread[0] && thread < &tthread[MAX_NUM_THREADS])) &&
+	    left->count < ARRAY_SIZE(left->tid)) {
+		left->tid[left->count++] = (k_tid_t)thread;
+	}
+}
+
+/* A failed assertion ends the test before it aborts its threads. Abort
+ * them here: the next test reuses their stacks and thread objects.
+ */
+static void smp_tests_after(void *data)
+{
+	struct leftovers left = { .count = 0 };
+
+	ARG_UNUSED(data);
+
+	spin_stop = true;
+	k_thread_foreach(find_leftover, &left);
+	for (size_t i = 0; i < left.count; i++) {
+		k_thread_abort(left.tid[i]);
+		k_thread_join(left.tid[i], K_FOREVER);
+	}
+}
+
+ZTEST_SUITE(smp, NULL, smp_tests_setup, NULL, smp_tests_after, NULL);
+ZTEST_SUITE(smp_stress, NULL, smp_tests_setup, NULL, smp_tests_after, NULL);
