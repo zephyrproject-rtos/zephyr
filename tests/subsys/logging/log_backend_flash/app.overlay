@@ -1,0 +1,22 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,log-partition = &log_partition;
+	};
+};
+
+/* The area above 0x100000 is not claimed by any partition on native_sim. */
+&flash0 {
+	partitions {
+		log_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
+			label = "log";
+			reg = <0x00100000 0x00002000>;
+		};
+	};
+};
