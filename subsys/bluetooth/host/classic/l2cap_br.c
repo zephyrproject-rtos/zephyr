@@ -4983,8 +4983,12 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 	struct bt_l2cap_disconn_req *req;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_br_chan *br_chan;
+	int err;
 
-	if (!conn) {
+	/* The signalling buffers of a link that is going away are released only by the L2CAP
+	 * cleanup, which can be queued behind the caller on bt_workq: do not wait for one.
+	 */
+	if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
@@ -5013,7 +5017,17 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 	/* Set the ident for the signaling request */
 	br_chan->ident = hdr->ident;
 
-	l2cap_br_chan_send_req(br_chan, buf, L2CAP_BR_DISCONN_TIMEOUT);
+	/* Report a request that cannot be sent: the caller then cleans the channel up itself,
+	 * since no response or timeout will.
+	 */
+	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
+	if (err != 0) {
+		br_chan->ident = 0U;
+		net_buf_unref(buf);
+		return err;
+	}
+
+	bt_work_reschedule(&br_chan->rtx_work, L2CAP_BR_DISCONN_TIMEOUT);
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
 
 	return 0;
