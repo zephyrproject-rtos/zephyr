@@ -250,7 +250,11 @@ void async_listener_work_handler(struct k_work *item)
 
 		__ASSERT_NO_MSG(*chan != NULL);
 
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, async_listener, async_listener, *chan);
+
 		async_listener->callback(*chan, net_buf_remove_mem(buf, zbus_chan_msg_size(*chan)));
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, async_listener, async_listener, *chan);
 
 		net_buf_unref(buf);
 	}
@@ -438,7 +442,11 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 			continue;
 		}
 
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, obs_notify, obs, chan);
+
 		err = _zbus_notify_observer(chan, obs, end_time, buf);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, obs_notify, obs, chan, err);
 
 		if (err) {
 			last_error = err;
@@ -466,7 +474,11 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 			continue;
 		}
 
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, obs_notify, obs, chan);
+
 		err = _zbus_notify_observer(chan, obs, end_time, buf);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, obs_notify, obs, chan, err);
 
 		if (err) {
 			last_error = err;
@@ -629,9 +641,12 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 		timeout = K_NO_WAIT;
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, chan_pub, chan, timeout);
+
 	k_timepoint_t end_time = sys_timepoint_calc(timeout);
 
 	if (chan->validator != NULL && !chan->validator(msg, chan->message_size)) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, chan_pub, chan, timeout, -ENOMSG);
 		return -ENOMSG;
 	}
 
@@ -639,6 +654,7 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 
 	err = chan_lock(chan, timeout, &context_priority);
 	if (err) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, chan_pub, chan, timeout, err);
 		return err;
 	}
 
@@ -652,6 +668,8 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 	err = _zbus_vded_exec(chan, end_time);
 
 	chan_unlock(chan, context_priority);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, chan_pub, chan, timeout, err);
 
 	return err;
 }
@@ -667,14 +685,19 @@ int zbus_chan_read(const struct zbus_channel *chan, void *msg, k_timeout_t timeo
 		timeout = K_NO_WAIT;
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, chan_read, chan, timeout);
+
 	int err = k_sem_take(&chan->data->sem, timeout);
 	if (err) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, chan_read, chan, timeout, err);
 		return err;
 	}
 
 	memcpy(msg, chan->message, chan->message_size);
 
 	k_sem_give(&chan->data->sem);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, chan_read, chan, timeout, 0);
 
 	return 0;
 }
@@ -691,18 +714,23 @@ int zbus_chan_notify(const struct zbus_channel *chan, k_timeout_t timeout)
 		timeout = K_NO_WAIT;
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, chan_notify, chan, timeout);
+
 	k_timepoint_t end_time = sys_timepoint_calc(timeout);
 
 	int context_priority = ZBUS_MIN_THREAD_PRIORITY;
 
 	err = chan_lock(chan, timeout, &context_priority);
 	if (err) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, chan_notify, chan, timeout, err);
 		return err;
 	}
 
 	err = _zbus_vded_exec(chan, end_time);
 
 	chan_unlock(chan, context_priority);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, chan_notify, chan, timeout, err);
 
 	return err;
 }
@@ -717,7 +745,11 @@ int zbus_chan_claim(const struct zbus_channel *chan, k_timeout_t timeout)
 		timeout = K_NO_WAIT;
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, chan_claim, chan, timeout);
+
 	int err = k_sem_take(&chan->data->sem, timeout);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, chan_claim, chan, timeout, err);
 
 	if (err) {
 		return err;
@@ -730,7 +762,11 @@ int zbus_chan_finish(const struct zbus_channel *chan)
 {
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, chan_finish, chan);
+
 	k_sem_give(&chan->data->sem);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, chan_finish, chan, 0);
 
 	return 0;
 }
@@ -744,7 +780,13 @@ int zbus_sub_wait(const struct zbus_observer *sub, const struct zbus_channel **c
 	_ZBUS_ASSERT(sub->queue != NULL, "sub queue is required");
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 
-	return k_msgq_get(sub->queue, chan, timeout);
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, sub_wait, sub, timeout);
+
+	int err = k_msgq_get(sub->queue, chan, timeout);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, sub_wait, sub, timeout, err == 0 ? *chan : NULL, err);
+
+	return err;
 }
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
@@ -760,9 +802,12 @@ int zbus_sub_wait_msg(const struct zbus_observer *sub, const struct zbus_channel
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(msg != NULL, "msg is required");
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(zbus, sub_wait_msg, sub, timeout);
+
 	struct net_buf *buf = k_fifo_get(sub->message_fifo, timeout);
 
 	if (buf == NULL) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, sub_wait_msg, sub, timeout, NULL, -ENOMSG);
 		return -ENOMSG;
 	}
 
@@ -771,6 +816,8 @@ int zbus_sub_wait_msg(const struct zbus_observer *sub, const struct zbus_channel
 	memcpy(msg, net_buf_remove_mem(buf, zbus_chan_msg_size(*chan)), zbus_chan_msg_size(*chan));
 
 	net_buf_unref(buf);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(zbus, sub_wait_msg, sub, timeout, *chan, 0);
 
 	return 0;
 }
