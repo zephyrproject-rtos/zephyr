@@ -168,11 +168,26 @@ static int task_wdt_reset_info_init(void)
 
 SYS_INIT(task_wdt_reset_info_init, APPLICATION, 0);
 
+static uint8_t reset_reason(enum task_wdt_fault_reason reason)
+{
+	switch (reason) {
+	case TASK_WDT_FAULT_TOO_EARLY:
+		return TASK_WDT_RESET_TOO_EARLY;
+	case TASK_WDT_FAULT_DEADLINE_MIN:
+		return TASK_WDT_RESET_DEADLINE_MIN;
+	case TASK_WDT_FAULT_DEADLINE_MAX:
+		return TASK_WDT_RESET_DEADLINE_MAX;
+	case TASK_WDT_FAULT_SEQUENCE:
+		return TASK_WDT_RESET_SEQUENCE;
+	default:
+		return TASK_WDT_RESET_TIMEOUT;
+	}
+}
+
 void task_wdt_reset_info_save(const struct task_wdt_fault *fault)
 {
 	struct reset_record rec = {
-		.reason = fault->reason == TASK_WDT_FAULT_TOO_EARLY ? TASK_WDT_RESET_TOO_EARLY
-								    : TASK_WDT_RESET_TIMEOUT,
+		.reason = reset_reason(fault->reason),
 		.armed = 1U,
 		.channel_id = fault->channel_id,
 	};

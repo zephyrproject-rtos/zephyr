@@ -66,6 +66,55 @@ which keeps feeding its channel. The fault is reported from
 are reported from the timer interrupt. Channels added with
 :c:func:`task_wdt_add` handle this fault like a timeout.
 
+Checkpoint Supervision
+**********************
+
+With :kconfig:option:`CONFIG_TASK_WDT_SUPERVISION` enabled, the task watchdog
+can also check the program flow of an entity, for example the main loop of a
+thread. The entity is defined at build time with
+:c:macro:`TASK_WDT_SUPERVISION_DEFINE`, from a list of checkpoints and the
+checkpoints allowed to follow each of them, and a list of deadlines between
+two checkpoints. The application reports each checkpoint it reaches with
+:c:func:`task_wdt_checkpoint`.
+
+.. code-block:: c
+
+   enum { CP_START, CP_WORK, CP_END };
+
+   static const uint32_t next[] = {
+           [CP_START] = BIT(CP_WORK),
+           [CP_WORK] = BIT(CP_WORK) | BIT(CP_END),
+           [CP_END] = BIT(CP_START),
+   };
+
+   /* CP_END has to be reached between 10 ms and 50 ms after CP_START */
+   static const struct task_wdt_deadline deadlines[] = {
+           {.start = CP_START, .end = CP_END, .min_ms = 10, .max_ms = 50},
+   };
+
+   TASK_WDT_SUPERVISION_DEFINE(main_loop, next, deadlines);
+
+After :c:func:`task_wdt_supervision_start`, the faults of the entity are
+reported on a channel which is still fed as usual:
+
+* :c:enumerator:`TASK_WDT_FAULT_SEQUENCE` if a checkpoint is not allowed after
+  the previous one,
+* :c:enumerator:`TASK_WDT_FAULT_DEADLINE_MIN` if the end of a deadline is reached
+  too early,
+* :c:enumerator:`TASK_WDT_FAULT_DEADLINE_MAX` if the end of a deadline is not
+  reached in time.
+
+The first two are reported from :c:func:`task_wdt_checkpoint`, the last one
+from the timer interrupt. Deadlines use the same kernel timer as the channels,
+no additional timer is needed. Only one deadline of an entity runs at a time,
+and :c:func:`task_wdt_resume` cancels the running deadlines.
+
+.. note::
+
+   Checkpoint supervision provides alive, deadline and logical program flow
+   monitoring mechanisms as required by functional safety standards. Using it
+   does not make an application compliant with such a standard.
+
 Reset Information
 *****************
 
@@ -76,7 +125,9 @@ reset, :c:func:`task_wdt_reset_info_get` returns the channel, the name of its
 owner thread (with :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO` and
 :kconfig:option:`CONFIG_THREAD_NAME`), the uptime at the time of the reset and
 the number of consecutive task watchdog resets. A reset caused by feeding a
-channel too early is reported as :c:enumerator:`TASK_WDT_RESET_TOO_EARLY`. The count restarts from zero
+channel too early is reported as :c:enumerator:`TASK_WDT_RESET_TOO_EARLY`, and
+the checkpoint supervision faults have their own reset reasons as well. The
+count restarts from zero
 after any other reset or a call to :c:func:`task_wdt_reset_info_clear`.
 
 The record is written from the timer interrupt. By default, it is kept in RAM
@@ -117,6 +168,8 @@ Related configuration options can be found under
 * :kconfig:option:`CONFIG_TASK_WDT_COREDUMP`
 
 * :kconfig:option:`CONFIG_TASK_WDT_FAULT_REASONS`
+
+* :kconfig:option:`CONFIG_TASK_WDT_SUPERVISION`
 
 * :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO`
 

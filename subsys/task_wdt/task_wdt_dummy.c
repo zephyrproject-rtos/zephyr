@@ -95,6 +95,29 @@ int task_wdt_reset_info_clear(void)
 	return 0;
 }
 
+int task_wdt_supervision_start(struct task_wdt_supervision *sup, int channel_id)
+{
+	ARG_UNUSED(sup);
+	ARG_UNUSED(channel_id);
+
+	return 0;
+}
+
+int task_wdt_supervision_stop(struct task_wdt_supervision *sup)
+{
+	ARG_UNUSED(sup);
+
+	return 0;
+}
+
+int task_wdt_checkpoint(struct task_wdt_supervision *sup, uint32_t checkpoint)
+{
+	ARG_UNUSED(sup);
+	ARG_UNUSED(checkpoint);
+
+	return 0;
+}
+
 void task_wdt_suspend(void)
 {
 }

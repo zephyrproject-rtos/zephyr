@@ -17,6 +17,7 @@
 #include <zephyr/logging/log_ctrl.h>
 LOG_MODULE_REGISTER(task_wdt);
 
+#include "task_wdt_internal.h"
 #include "task_wdt_reset_info.h"
 
 /*
@@ -46,6 +47,12 @@ struct task_wdt_channel {
 	uint32_t min_period;
 	/* abs. ticks of the last task_wdt_feed() call */
 	int64_t last_feed_ticks;
+#endif
+#ifdef CONFIG_TASK_WDT_SUPERVISION
+	/* supervised entity reporting its faults on this channel, NULL if none */
+	struct task_wdt_supervision *sup;
+	/* abs. ticks when the running deadline of sup expires, INT64_MAX if none */
+	int64_t deadline_abs_ticks;
 #endif
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
 	/* thread owning the channel, NULL if not known */
@@ -93,6 +100,13 @@ static void schedule_next_timeout(int64_t current_ticks)
 			next_channel_id = id;
 			next_timeout = channels[id].timeout_abs_ticks;
 		}
+#ifdef CONFIG_TASK_WDT_SUPERVISION
+		if (channels[id].reload_period != 0 &&
+		    channels[id].deadline_abs_ticks < next_timeout) {
+			next_channel_id = id;
+			next_timeout = channels[id].deadline_abs_ticks;
+		}
+#endif
 	}
 
 	/* update task wdt kernel timer */
@@ -116,11 +130,23 @@ static void task_wdt_report(int channel_id, enum task_wdt_fault_reason reason)
 	char state[32];
 	const char *name;
 
-	if (reason == TASK_WDT_FAULT_TOO_EARLY) {
+	switch (reason) {
+	case TASK_WDT_FAULT_TOO_EARLY:
 		LOG_ERR("Channel %d fed too early", channel_id);
-	} else {
+		break;
+	case TASK_WDT_FAULT_DEADLINE_MIN:
+		LOG_ERR("Channel %d checkpoint reached too early", channel_id);
+		break;
+	case TASK_WDT_FAULT_DEADLINE_MAX:
+		LOG_ERR("Channel %d checkpoint deadline missed", channel_id);
+		break;
+	case TASK_WDT_FAULT_SEQUENCE:
+		LOG_ERR("Channel %d checkpoint out of sequence", channel_id);
+		break;
+	default:
 		LOG_ERR("Channel %d timed out, last fed %u ms ago", channel_id,
 			(uint32_t)k_ticks_to_ms_floor64(sys_clock_tick_get() - last_feed_ticks));
+		break;
 	}
 
 	if (thread == NULL) {
@@ -227,6 +253,33 @@ static void task_wdt_trigger(struct k_timer *timer_id)
 		return;
 	}
 
+#ifdef CONFIG_TASK_WDT_SUPERVISION
+	k_spinlock_key_t key = k_spin_lock(&channels_lock);
+	int64_t current_ticks = sys_clock_tick_get();
+
+	if (channels[channel_id].deadline_abs_ticks <= current_ticks) {
+		struct task_wdt_supervision *sup = channels[channel_id].sup;
+
+		/* the deadline of the supervised entity expired, keep watching the channel */
+		channels[channel_id].deadline_abs_ticks = INT64_MAX;
+		sup->active = sup->num_deadlines;
+		schedule_next_timeout(current_ticks);
+		k_spin_unlock(&channels_lock, key);
+
+		task_wdt_fault(channel_id, TASK_WDT_FAULT_DEADLINE_MAX);
+		return;
+	}
+
+	if (channels[channel_id].timeout_abs_ticks > current_ticks) {
+		/* the deadline the timer was started for was cancelled */
+		schedule_next_timeout(current_ticks);
+		k_spin_unlock(&channels_lock, key);
+		return;
+	}
+
+	k_spin_unlock(&channels_lock, key);
+#endif
+
 	task_wdt_fault(channel_id, TASK_WDT_FAULT_TIMEOUT);
 }
 
@@ -288,6 +341,10 @@ static int channel_add(uint32_t reload_period, task_wdt_callback_t callback,
 			channels[id].min_period = 0U;
 #else
 			ARG_UNUSED(fault_callback);
+#endif
+#ifdef CONFIG_TASK_WDT_SUPERVISION
+			channels[id].sup = NULL;
+			channels[id].deadline_abs_ticks = INT64_MAX;
 #endif
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
 			channels[id].thread = NULL;
@@ -352,6 +409,11 @@ int task_wdt_delete(int channel_id)
 	key = k_spin_lock(&channels_lock);
 
 	channels[channel_id].reload_period = 0;
+#ifdef CONFIG_TASK_WDT_SUPERVISION
+	if (channels[channel_id].sup != NULL) {
+		task_wdt_channel_sup_detach(channel_id);
+	}
+#endif
 
 	k_spin_unlock(&channels_lock, key);
 
@@ -569,6 +631,13 @@ void task_wdt_resume(void)
 			channels[id].timeout_abs_ticks = current_ticks +
 				k_ms_to_ticks_ceil64(channels[id].reload_period);
 		}
+#ifdef CONFIG_TASK_WDT_SUPERVISION
+		/* the time spent suspended does not count towards running deadlines */
+		if (channels[id].sup != NULL) {
+			channels[id].sup->active = channels[id].sup->num_deadlines;
+			channels[id].deadline_abs_ticks = INT64_MAX;
+		}
+#endif
 	}
 
 	/* Restart the Task Watchdog timer */
@@ -576,3 +645,86 @@ void task_wdt_resume(void)
 
 	k_spin_unlock(&channels_lock, key);
 }
+
+#ifdef CONFIG_TASK_WDT_SUPERVISION
+k_spinlock_key_t task_wdt_lock(void)
+{
+	return k_spin_lock(&channels_lock);
+}
+
+void task_wdt_unlock(k_spinlock_key_t key)
+{
+	k_spin_unlock(&channels_lock, key);
+}
+
+void task_wdt_channel_fault(struct task_wdt_supervision *sup, int channel_id,
+			    enum task_wdt_fault_reason reason)
+{
+	k_spinlock_key_t key = k_spin_lock(&channels_lock);
+	/* the channel may have been deleted, or the entity stopped, after the fault */
+	bool attached = channels[channel_id].reload_period != 0 && channels[channel_id].sup == sup;
+
+	k_spin_unlock(&channels_lock, key);
+
+	if (attached) {
+		task_wdt_fault(channel_id, reason);
+	}
+}
+
+int task_wdt_channel_sup_attach(int channel_id, struct task_wdt_supervision *sup)
+{
+	if (channel_id < 0 || channel_id >= ARRAY_SIZE(channels) ||
+	    channels[channel_id].reload_period == 0) {
+		return -EINVAL;
+	}
+
+	if (channels[channel_id].sup != NULL) {
+		return -EBUSY;
+	}
+
+	channels[channel_id].sup = sup;
+	channels[channel_id].deadline_abs_ticks = INT64_MAX;
+	sup->channel_id = channel_id;
+
+	return 0;
+}
+
+void task_wdt_channel_sup_detach(int channel_id)
+{
+	channels[channel_id].sup->channel_id = -1;
+	channels[channel_id].sup = NULL;
+	channels[channel_id].deadline_abs_ticks = INT64_MAX;
+}
+
+void task_wdt_channel_deadline_set(int channel_id, int64_t deadline_abs_ticks)
+{
+	channels[channel_id].deadline_abs_ticks = deadline_abs_ticks;
+
+	if (task_wdt_initialized) {
+		schedule_next_timeout(sys_clock_tick_get());
+	}
+}
+#else
+int task_wdt_supervision_start(struct task_wdt_supervision *sup, int channel_id)
+{
+	ARG_UNUSED(sup);
+	ARG_UNUSED(channel_id);
+
+	return -ENOTSUP;
+}
+
+int task_wdt_supervision_stop(struct task_wdt_supervision *sup)
+{
+	ARG_UNUSED(sup);
+
+	return -ENOTSUP;
+}
+
+int task_wdt_checkpoint(struct task_wdt_supervision *sup, uint32_t checkpoint)
+{
+	ARG_UNUSED(sup);
+	ARG_UNUSED(checkpoint);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_TASK_WDT_SUPERVISION */
