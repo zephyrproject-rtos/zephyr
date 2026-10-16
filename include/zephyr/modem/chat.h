@@ -377,8 +377,8 @@ struct modem_chat {
 	struct k_work script_abort_work;
 	uint16_t script_chat_it;
 	atomic_t script_state;
-	enum modem_chat_script_result script_result;
-	struct k_sem script_stopped_sem;
+	enum modem_chat_script_result *script_result;
+	struct k_sem *script_stopped_sem;
 
 	/* Script sending */
 	enum modem_chat_script_send_state script_send_state;
