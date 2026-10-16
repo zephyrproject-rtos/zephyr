@@ -13,6 +13,10 @@ endif # SOC_SERIES_IMXRT266X
 # layout of the image it boots, and SysTick.
 if SOC_SERIES_IMXRT266X_CM85
 
+choice CACHE_TYPE
+	default EXTERNAL_CACHE if DT_HAS_NXP_LLC_ENABLED
+endchoice
+
 config NUM_IRQS
 	# Highest device IRQ in MIMXRT2663_COMMON.h is MEDIA_FREQME_IRQn = 333.
 	default 334
