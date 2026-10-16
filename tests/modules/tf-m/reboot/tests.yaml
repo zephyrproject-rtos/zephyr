@@ -1,0 +1,32 @@
+common:
+  tags:
+    - trusted-firmware-m
+    - mcuboot
+  filter: >
+    CONFIG_BUILD_WITH_TFM and CONFIG_TFM_PARTITION_PLATFORM and
+    CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+  # The test relies on the NS SRAM holding its __noinit magic surviving the
+  # reset requested from TF-M. Add boards here once that has been confirmed.
+  platform_allow:
+    - mps2/an521/cpu0/ns
+  integration_platforms:
+    - mps2/an521/cpu0/ns
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Starting the Secure call worker"
+      - "Worker preempted in the Secure world"
+      - "Rebooting"
+      - "Back after the reboot: PASS"
+  timeout: 120
+
+tests:
+  tfm.reboot.ipc:
+    extra_args:
+      - CONFIG_TFM_IPC=y
+  tfm.reboot.sfn:
+    filter: CONFIG_TFM_PROFILE_TYPE_SMALL or CONFIG_TFM_PROFILE_TYPE_NOT_SET
+    extra_args:
+      - CONFIG_TFM_SFN=y

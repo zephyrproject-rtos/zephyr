@@ -485,9 +485,11 @@ if(CONFIG_BUILD_WITH_TFM)
       ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
     )
 
-    # Add interface include directory (exported by TF-M) to zephyr_interface
+    # Add the interface include directory (exported by TF-M) and the Zephyr
+    # additions to the NS interface to zephyr_interface
     zephyr_include_directories(
       ${TFM_INTERFACE_INCLUDE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/interface
     )
 
     zephyr_library_link_libraries(
