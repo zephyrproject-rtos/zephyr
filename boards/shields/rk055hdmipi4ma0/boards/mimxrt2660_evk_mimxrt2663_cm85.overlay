@@ -1,0 +1,39 @@
+/*
+ * Copyright 2026, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_lcdif {
+	data-bus-width = "RGB888";
+
+	/*
+	 * power-gpios is the board's own default (PCAL6524 pin 16, the
+	 * LCM_RGB_5INCH panel's power-enable) -- unrelated to this shield,
+	 * which powers its panel through its own en_mipi_display_rk055hdmipi4ma0
+	 * regulator node instead.
+	 */
+	/delete-property/ power-gpios;
+
+	/*
+	 * dcif pixel clock source PERI5 is 400 MHz, set the devider to 7 to
+	 * generate a 57.14 MHz pixel clock. Ideally the divider shall be calculated
+	 * inside driver using the value of 'clock-frequency' of display-timings,
+	 * however the clock driver has no API to update divider currently, will
+	 * improve later.
+	 */
+	clocks = <&media_ccm IMX_CCM_CLK(IMX_CCM_LPCG_MEDIA_DCIF,
+					 IMX_CCM_ROOT_MEDIA_DCPIXEL_FCLK)>,
+		 <&media_ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MEDIA_DCPIXEL_FCLK,
+					      IMX_CCM_MUX_DCPIXEL_PERI5, 7, 1)>;
+
+	display-timings {
+		hsync-len = <40>;
+		hfront-porch = <40>;
+		hback-porch = <50>;
+		vsync-len = <2>;
+		vfront-porch = <16>;
+		vback-porch = <14>;
+		clock-frequency = <55760000>;
+	};
+};
