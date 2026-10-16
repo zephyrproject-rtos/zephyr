@@ -1716,3 +1716,8 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_as7341: as7341@df {
+	compatible = "ams,as7341";
+	reg = <0xdf>;
+};
