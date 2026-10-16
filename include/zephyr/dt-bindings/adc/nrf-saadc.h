@@ -65,6 +65,8 @@
 #define NRF_SAADC_VDDAO1V8	      (NRF_SAADC_AIN_VDD_SHIM_OFFSET + 9)
 #define NRF_SAADC_VDDAO0V8	      (NRF_SAADC_AIN_VDD_SHIM_OFFSET + 10)
 #define NRF_SAADC_VDDRF		      (NRF_SAADC_AIN_VDD_SHIM_OFFSET + 11)
+/** @brief Symbol specifying offset to configure VBAT_5V0 as a channel input */
+#define NRF_SAADC_VBAT_5V0	      (NRF_SAADC_AIN_VDD_SHIM_OFFSET + 11)
 #define NRF_SAADC_VBAT		      (NRF_SAADC_AIN_VDD_SHIM_OFFSET + 12)
 #define NRF_SAADC_AIN_DISABLED	      255 /* UINT8_MAX */
 
