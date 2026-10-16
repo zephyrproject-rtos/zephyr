@@ -3465,7 +3465,7 @@ static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
 static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 {
 	int quota = 0;
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = bt_att_connected,
 		.disconnected = bt_att_disconnected,
 		.recv = bt_att_recv,

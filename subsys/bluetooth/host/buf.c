@@ -30,6 +30,15 @@
 
 LOG_MODULE_REGISTER(bt_buf, CONFIG_BT_LOG_LEVEL);
 
+/* The metadata of received ACL and ISO data. Without connections and ISO the
+ * buffers only carry events, which have none.
+ */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
+#define RX_USER_DATA_SIZE sizeof(struct bt_conn_rx)
+#else
+#define RX_USER_DATA_SIZE 0
+#endif
+
 /* Events have a length field of 1 byte. This size fits all events.
  *
  * It's true that we don't put all kinds of events there (yet). However, the
@@ -112,7 +121,7 @@ static void hci_rx_pool_destroy(struct net_buf *buf)
 }
 
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT, BT_BUF_RX_SIZE,
-			  sizeof(struct bt_conn_rx), hci_rx_pool_destroy);
+			  RX_USER_DATA_SIZE, hci_rx_pool_destroy);
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
