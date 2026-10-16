@@ -1,0 +1,8 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Beken BK7258 flash controller
+
+compatible: "beken,bk7258-flash-controller"
+
+include: flash-controller.yaml

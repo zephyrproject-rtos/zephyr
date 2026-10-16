@@ -112,6 +112,7 @@ bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
 beagle	BeagleBoard.org Foundation
+beken	Beken Corporation
 bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
@@ -510,6 +511,7 @@ newhaven	Newhaven Display International
 nexbox	Nexbox
 nextthing	Next Thing Co.
 ni	National Instruments
+nicemcu	NiceMCU
 nintendo	Nintendo
 nlt	NLT Technologies, Ltd.
 nokia	Nokia

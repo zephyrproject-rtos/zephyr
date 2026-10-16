@@ -1,0 +1,97 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/beken_bk7258_clock.h>
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * The BootROM leaves the core on the 26 MHz crystal and
+		 * Zephyr is started directly by the ROM, so this is the rate
+		 * the core runs at and SysTick counts.
+		 */
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(26)>;
+		};
+	};
+
+	/*
+	 * SRAM banks 0 to 5, contiguous. The whole block is claimed here
+	 * because CPU1 and CPU2 are left unbooted; it has to be split once
+	 * they are used.
+	 */
+	sram0: memory@28000000 {
+		compatible = "mmio-sram";
+		reg = <0x28000000 DT_SIZE_K(640)>;
+	};
+
+	soc {
+		flash_controller: flash-controller@44030000 {
+			compatible = "beken,bk7258-flash-controller";
+			reg = <0x44030000 0x58>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			/*
+			 * Flash as the CPU sees it through the execute-in-place
+			 * window. Zephyr is the first stage, so it starts at the
+			 * base of the window. How much is there is a property of
+			 * the board, which sets the size.
+			 */
+			flash0: flash@2000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x02000000 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		/*
+		 * Pads are configured in the AON GPIO block, one word per
+		 * pad, and switched between functions by seven words in the
+		 * SYS block that the clock controller sits in too.
+		 */
+		pinctrl: pin-controller@44000400 {
+			compatible = "beken,bk7258-pinctrl";
+			reg = <0x44000400 0xe0>, <0x440100c0 0x1c>;
+			reg-names = "pad", "func";
+		};
+
+		cgu: clock-controller@44010000 {
+			compatible = "beken,bk7258-cgu";
+			reg = <0x44010000 0x40>;
+			clock-frequency = <DT_FREQ_M(26)>;
+			#clock-cells = <1>;
+		};
+
+		uart0: serial@44820000 {
+			compatible = "beken,bk7258-uart";
+			reg = <0x44820000 0x100>;
+			interrupts = <4 3>;
+			clocks = <&cgu BK7258_CLK_UART0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
