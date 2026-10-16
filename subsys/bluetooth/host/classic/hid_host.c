@@ -304,18 +304,13 @@ static bool hid_req_take(struct bt_hid_host *hid, struct bt_hid_req *req)
 
 /* Closes whichever channel L2CAP still owns.
  *
- * This runs on the Bluetooth workqueue rather than from the L2CAP callback that
- * reported the first channel gone, because that callback runs while L2CAP is
- * still processing the peer's signalling packet and holding the buffer for its
- * response: br_sig_pool has one buffer per connection and
- * bt_l2cap_br_chan_disconnect() waits for one with K_FOREVER
- * (l2cap_br.c), so issuing a request from there deadlocks the receive thread.
- *
- * It also serves as the INTR channel connect timeout on the acceptor path, where
- * CTRL came up but the device never opened INTR: HID spec v1.1.2 Section 5.2.2
- * requires both channels, so an association that cannot make progress is torn
- * down. The two uses never overlap: the timeout is cancelled as soon as INTR is
- * connected, and hid_cleanup() cancels whatever is left.
+ * It serves as the INTR channel connect timeout on the acceptor path, where CTRL came up but the
+ * device never opened INTR: HID spec v1.1.2 Section 5.2.2 requires both channels, so an
+ * association that cannot make progress is torn down.
+ * And it is used to close the other channel when one of them disconnects, which is the normal
+ * path when the device initiates the teardown.
+ * Also it is used to close the INTR channel when the INTR channel is established while the CTRL
+ * is not.
  */
 static void hid_close_handler(struct k_work *work)
 {
