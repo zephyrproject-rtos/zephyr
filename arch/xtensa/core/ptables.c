@@ -367,6 +367,7 @@ enum dup_action {
 	COPY,
 };
 
+static inline int l1_table_to_track_pos(uint32_t *l1_table);
 static bool dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup_action action);
 #endif /* CONFIG_USERSPACE */
 
@@ -1261,6 +1262,29 @@ static ALWAYS_INLINE uint32_t vaddr_from_pt_pos(uint32_t l1_pos, uint32_t l2_pos
 }
 
 /**
+ * @brief Drop the L2 table references held by a L1 table and release it.
+ *
+ * @param[in] l1_table Pointer to the level 1 page table.
+ * @param[in] num_entries Number of leading L1 PTEs that have been set up.
+ */
+static void free_l1_table(uint32_t *l1_table, uint32_t num_entries)
+{
+	for (uint32_t l1_pos = 0; l1_pos < num_entries; l1_pos++) {
+		if (!is_pte_illegal(l1_table[l1_pos])) {
+			uint32_t *l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
+
+			K_SPINLOCK(&xtensa_counter_lock) {
+				l2_page_tables_counter_dec(l2_table);
+			}
+		}
+
+		l1_table[l1_pos] = PTE_L1_ILLEGAL;
+	}
+
+	atomic_clear_bit(l1_page_tables_track, l1_table_to_track_pos(l1_table));
+}
+
+/**
  * @brief Duplicate an existing level 2 page table.
  *
  * This allocates a new level 2 page table and duplicates the PTEs from an existing
@@ -1314,12 +1338,13 @@ static uint32_t *dup_l2_table(uint32_t *src_l2_table, enum dup_action action)
 static uint32_t *dup_l1_table(void)
 {
 	uint32_t *l1_table = alloc_l1_table();
+	uint32_t l1_pos;
 
 	if (!l1_table) {
 		return NULL;
 	}
 
-	for (uint32_t l1_pos = 0; l1_pos < L1_PAGE_TABLE_NUM_ENTRIES; l1_pos++) {
+	for (l1_pos = 0; l1_pos < L1_PAGE_TABLE_NUM_ENTRIES; l1_pos++) {
 		if (is_pte_illegal(xtensa_kernel_ptables[l1_pos]) ||
 			(l1_pos == XTENSA_MMU_L1_POS(XTENSA_MMU_PTEVADDR))) {
 			l1_table[l1_pos] = PTE_L1_ILLEGAL;
@@ -1359,6 +1384,9 @@ static uint32_t *dup_l1_table(void)
 
 			if (l2_need_dup) {
 				l2_table = dup_l2_table(src_l2_table, RESTORE);
+				if (l2_table == NULL) {
+					goto no_l2_table_err;
+				}
 			} else {
 				l2_table = src_l2_table;
 				K_SPINLOCK(&xtensa_counter_lock) {
@@ -1379,6 +1407,11 @@ static uint32_t *dup_l1_table(void)
 	}
 
 	return l1_table;
+
+no_l2_table_err:
+	free_l1_table(l1_table, l1_pos);
+
+	return NULL;
 }
 
 /**
