@@ -20,8 +20,8 @@
  * operation is complete the next will be executed. If the current operation fails
  * all chained operations will also fail.
  *
- * Operations may also be submitted as a transaction where a set of operations are considered
- * to be one operation.
+ * Operations may also be submitted as a transaction, where a set of operations is handed to one
+ * iodev as a single unit of work. Each member of the set still completes in its own right.
  *
  * Every operation reaches the completion queue, reporting the result it ran with, the error it
  * failed with, or -ECANCELED if a cancellation stopped it. Only @ref RTIO_SQE_NO_RESPONSE
