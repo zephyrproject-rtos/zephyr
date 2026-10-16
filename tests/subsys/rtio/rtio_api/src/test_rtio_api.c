@@ -659,12 +659,14 @@ ZTEST(rtio_api, test_rtio_chain_cancel_member)
 	zassert_equal_ptr((void *)0, cqe.userdata, "Head await should complete");
 	zassert_ok(cqe.result, "Head await should complete ok");
 
-	/* Check the pool first: both slots back means the tail is done being
-	 * resolved, so the absence of a completion below is a real result rather
-	 * than one that has not landed yet.
+	/* Reclaiming the pool only works once both entries are back, so this is a
+	 * barrier against checking the completions below too early.
 	 */
-	zassert_equal(rtio_sqe_acquirable(r), RTIO_CHAIN_MEMBER_ELEMS,
-		      "Both slots should be back in the pool");
+	struct rtio_sqe *slots[RTIO_CHAIN_MEMBER_ELEMS];
+
+	zassert_ok(rtio_sqe_acquire_array(r, RTIO_CHAIN_MEMBER_ELEMS, slots),
+		   "Both slots should be back in the pool");
+	rtio_sqe_drop_all(r);
 
 	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
 		      "Canceled tail should still complete");
@@ -719,9 +721,12 @@ ZTEST(rtio_api, test_rtio_chain_cancel_cascade)
 	zassert_equal_ptr((void *)0, cqe.userdata, "Head await should complete");
 	zassert_ok(cqe.result, "Head await should complete ok");
 
-	/* All three slots back means the middle and tail are both fully resolved. */
-	zassert_equal(rtio_sqe_acquirable(r), RTIO_CHAIN_CASCADE_ELEMS,
-		      "All slots should be back in the pool");
+	/* Barrier: the pool only reclaims once all three are resolved */
+	struct rtio_sqe *slots[RTIO_CHAIN_CASCADE_ELEMS];
+
+	zassert_ok(rtio_sqe_acquire_array(r, RTIO_CHAIN_CASCADE_ELEMS, slots),
+		   "All slots should be back in the pool");
+	rtio_sqe_drop_all(r);
 
 	/* Neither runs, and both say so: cancellation cascades down the chain */
 	for (uintptr_t expected = 1; expected <= 2; expected++) {
@@ -1301,12 +1306,17 @@ ZTEST(rtio_api, test_rtio_delay_cancel)
 		}
 	}
 
-	/* Active cancellation frees the canceled delays right away rather than
-	 * leaving them to fire, so the pool reflects the freed slots before any
-	 * simulated time passes.
+	/* Canceled delays are freed at once rather than left to fire. Taking
+	 * exactly that many and then failing to take one more pins the count.
 	 */
-	zassert_equal(rtio_sqe_acquirable(r), RTIO_DELAY_CANCEL_ELEMS - expected_completions,
-		      "Canceled delays should be removed and freed immediately");
+	const size_t expected_freed = RTIO_DELAY_CANCEL_ELEMS - expected_completions;
+	struct rtio_sqe *freed[RTIO_DELAY_CANCEL_ELEMS];
+
+	zassert_ok(rtio_sqe_acquire_array(r, expected_freed, freed),
+		   "Canceled delays should be removed and freed immediately");
+	zassert_equal(-ENOMEM, rtio_sqe_acquire_array(r, 1, freed),
+		      "Only the canceled delays should have been freed");
+	rtio_sqe_drop_all(r);
 
 	/* Wait past the longest delay so every timer has fired. */
 	k_sleep(K_MSEC(delay_ms[RTIO_DELAY_CANCEL_ELEMS - 1] + 20));
@@ -1862,6 +1872,120 @@ ZTEST(rtio_api, test_rtio_acquire_array)
 	rtio_sqe_drop_all(&r_acquire_array);
 }
 
+RTIO_DEFINE(r_acquire_clean, SQE_POOL_SIZE, CQE_POOL_SIZE);
+
+/**
+ * @brief An acquired entry never carries the submission before it
+ *
+ * A slot is reachable by its handle from the moment it is acquired, which is
+ * before the caller has filled it in, so what it holds in between must not be
+ * whatever the previous occupant left there. The pool is cycled once first so
+ * the slot that comes back is a used one rather than an untouched one.
+ */
+ZTEST(rtio_api, test_rtio_acquire_is_clean)
+{
+	struct rtio *r = &r_acquire_clean;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+
+	for (size_t i = 0; i < SQE_POOL_SIZE; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+		rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_simple, (void *)1);
+	}
+
+	zassert_ok(rtio_submit(r, SQE_POOL_SIZE));
+
+	for (size_t i = 0; i < SQE_POOL_SIZE; i++) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	}
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	zassert_equal(RTIO_OP_NOP, sqe->op, "Acquired sqe should hold no operation");
+	zassert_is_null(sqe->iodev, "Acquired sqe should hold no iodev");
+	zassert_is_null(sqe->userdata, "Acquired sqe should hold no userdata");
+	zassert_equal(0, sqe->flags, "Acquired sqe should hold no flags");
+
+	rtio_sqe_drop_all(r);
+}
+
+RTIO_DEFINE(r_copy_in, SQE_POOL_SIZE, CQE_POOL_SIZE);
+
+ZTEST(rtio_api, test_rtio_copy_in_rollback)
+{
+	TC_PRINT("rtio copy in rollback\n");
+
+	struct rtio *r = &r_copy_in;
+	struct rtio_sqe sqes[SQE_POOL_SIZE + 1];
+	rtio_sqe_handle_t handles[SQE_POOL_SIZE];
+
+	for (size_t i = 0; i < ARRAY_SIZE(sqes); i++) {
+		rtio_sqe_prep_nop(&sqes[i], NULL, NULL);
+	}
+
+	/* An oversized copy queues nothing and returns everything it took */
+	zassert_equal(-ENOMEM, rtio_sqe_copy_in(r, sqes, SQE_POOL_SIZE + 1),
+		      "Expected the oversized copy to be rejected");
+
+	zassert_ok(rtio_sqe_copy_in_get_handles(r, sqes, handles, SQE_POOL_SIZE),
+		   "Expected the rejected copy to have returned every entry");
+
+	for (size_t i = 0; i < SQE_POOL_SIZE; i++) {
+		zassert_not_null(rtio_iodev_sqe_from_handle(r, handles[i]),
+				 "Expected a live handle for every copied sqe");
+	}
+
+	zassert_equal(-ENOMEM, rtio_sqe_copy_in(r, sqes, 1),
+		      "Expected no entries left after filling the pool");
+
+	rtio_sqe_drop_all(r);
+
+	zassert_ok(rtio_sqe_copy_in(r, sqes, SQE_POOL_SIZE),
+		   "Expected the dropped entries to be reusable");
+
+	rtio_sqe_drop_all(r);
+}
+
+RTIO_DEFINE(r_copy_in_user, SQE_POOL_SIZE, CQE_POOL_SIZE);
+
+/**
+ * @brief The syscall copy rolls back the entries it took
+ *
+ * The verifier copies into its own entries rather than the caller's memory, so
+ * it has a rollback of its own to get wrong. A batch that cannot fit must leave
+ * the pool as it found it, which the full batch after it proves by fitting.
+ */
+ZTEST_USER(rtio_api, test_rtio_copy_in_rollback_user)
+{
+	struct rtio *r = &r_copy_in_user;
+	struct rtio_sqe sqes[SQE_POOL_SIZE + 1];
+	rtio_sqe_handle_t handles[SQE_POOL_SIZE];
+	struct rtio_cqe cqe;
+
+	for (size_t i = 0; i < ARRAY_SIZE(sqes); i++) {
+		rtio_sqe_prep_nop(&sqes[i], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	}
+
+	/* An oversized copy queues nothing and returns everything it took */
+	zassert_equal(-ENOMEM, rtio_sqe_copy_in(r, sqes, SQE_POOL_SIZE + 1),
+		      "Expected the oversized copy to be rejected");
+
+	zassert_ok(rtio_sqe_copy_in_get_handles(r, sqes, handles, SQE_POOL_SIZE),
+		   "Expected the rejected copy to have returned every entry");
+
+	zassert_equal(-ENOMEM, rtio_sqe_copy_in(r, sqes, 1),
+		      "Expected no entries left after filling the pool");
+
+	/* rtio_sqe_drop_all() is not a syscall, so run the batch out instead */
+	zassert_ok(rtio_submit(r, SQE_POOL_SIZE));
+
+	for (size_t i = 0; i < SQE_POOL_SIZE; i++) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER),
+			      "Expected every copied sqe to complete");
+	}
+}
+
 RTIO_DEFINE(r_cqe_callback, SQE_POOL_SIZE, CQE_POOL_SIZE);
 RTIO_IODEV_TEST_DEFINE(iodev_test_cqe_callback);
 
@@ -1981,6 +2105,7 @@ static void rtio_api_before(void *a)
 	k_mem_domain_add_thread(&rtio_domain, k_current_get());
 	rtio_access_grant(&r_simple, k_current_get());
 	rtio_access_grant(&r_syscall, k_current_get());
+	rtio_access_grant(&r_copy_in_user, k_current_get());
 	k_object_access_grant(&iodev_test_simple, k_current_get());
 	k_object_access_grant(&iodev_test_syscall, k_current_get());
 #endif
