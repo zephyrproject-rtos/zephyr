@@ -796,6 +796,7 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 {
 	const struct eusart_config *config = dev->config;
 	struct eusart_data *data = dev->data;
+	unsigned int key;
 	int ret;
 
 	if (!data->dma_rx.dma_dev) {
@@ -825,6 +826,8 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 	data->dma_rx.enabled = true;
 	eusart_pm_lock_get(dev, EUSART_PM_LOCK_RX);
 
+	key = irq_lock();
+
 	sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IF_RXOF);
 	sl_hal_eusart_enable_interrupts(config->eusart, EUSART_IF_RXOF);
 
@@ -839,6 +842,7 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 	if (dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel)) {
 		LOG_ERR("UART ERR: RX DMA start failed!");
 		eusart_async_rx_irq_disable(config->eusart);
+		irq_unlock(key);
 		k_work_cancel_delayable(&data->dma_rx.timeout_work);
 		data->dma_rx.enabled = false;
 		eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
@@ -846,6 +850,7 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 	}
 
 	eusart_async_evt_rx_buf_request(data);
+	irq_unlock(key);
 
 	return ret;
 }
