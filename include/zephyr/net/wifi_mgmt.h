@@ -153,6 +153,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_BGSCAN,
 	/** Wi-Fi Direct (P2P) operations*/
 	NET_REQUEST_WIFI_CMD_P2P_OPER,
+	/** roaming DHCP*/
+	NET_REQUEST_WIFI_CMD_ROAMING_DHCP,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -375,6 +377,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_P2P_OPER);
 
+/** Request a Wi-Fi roaming DHCP */
+#define NET_REQUEST_WIFI_ROAMING_DHCP				\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_ROAMING_DHCP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_ROAMING_DHCP);
+
 /** @cond INTERNAL_HIDDEN */
 
 enum {
@@ -396,6 +404,7 @@ enum {
 	NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED_VAL,
 	NET_EVENT_WIFI_CMD_SUPPLICANT_VAL,
 	NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND_VAL,
+	NET_EVENT_WIFI_CMD_ROAMING_DHCP_VAL,
 	NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT_VAL,
 	NET_EVENT_WIFI_CMD_NAN_REPLIED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED_VAL,
@@ -450,6 +459,8 @@ enum net_event_wifi_cmd {
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_SUPPLICANT),
 	/** P2P device found */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND),
+	/** Roaming DHCP */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_ROAMING_DHCP),
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
 	/** Supplicant specific event */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT),
@@ -527,6 +538,10 @@ enum net_event_wifi_cmd {
 /** Event emitted for P2P device found event */
 #define NET_EVENT_WIFI_P2P_DEVICE_FOUND				\
 	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND)
+
+/** Event emitted for roaming dhcp */
+#define NET_EVENT_WIFI_ROAMING_DHCP				    \
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_ROAMING_DHCP)
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 /** Maximum length for P2P device name */
@@ -2457,6 +2472,18 @@ struct wifi_mgmt_ops {
 	 * Return 0 to let the caller use the default.
 	 */
 	 uint32_t (*get_iface_caps)(const struct device *dev, struct net_if *iface);
+
+	/** Trigger DHCP
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the legacy scan operation
+	 * @param same_gw old and new APs with same gateway
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*gw_probe_done)(const struct device *dev,
+			struct net_if *iface,
+			bool same_gw);
 };
 
 /** Wi-Fi management offload API */
