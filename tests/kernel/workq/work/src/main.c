@@ -23,6 +23,13 @@
 
 static uint32_t delay_max_ms(void)
 {
+	/* QEMU without icount follows the host clock, and a loaded host
+	 * makes the work run late. Only catch gross errors there.
+	 */
+	if (IS_ENABLED(CONFIG_QEMU_TARGET) && !IS_ENABLED(CONFIG_QEMU_ICOUNT)) {
+		return 2U * DELAY_MS;
+	}
+
 	return k_ticks_to_ms_ceil32(DELAY_TOLERANCE_TICKS + k_ms_to_ticks_ceil32(DELAY_MS));
 }
 
@@ -1185,12 +1192,14 @@ ZTEST(work_1cpu, test_workq_1cpu_running_cancel)
 	/* Handler should not have run. */
 	zassert_equal(coophi_counter(), 0);
 
-	/* Busy wait until timer expires. Thread context is blocked so cancelling
-	 * of work won't be completed. Add one tick of slack on top of the
-	 * nominal timeout for the +1 round-up inside z_add_timeout() plus
-	 * 1 ms for general measurement jitter.
+	/* Busy wait until the timer callback has run. Thread context is
+	 * blocked so cancelling of work won't be completed. Don't bound
+	 * this to the timeout: QEMU without icount follows the host
+	 * clock, which may deliver the timer interrupt late.
 	 */
-	k_busy_wait(1000 * ms_timeout + k_ticks_to_us_ceil32(1) + 1000);
+	for (int i = 0; i < 1000 && *(volatile int *)&ctx->busy_rc == INT_MAX; i++) {
+		k_busy_wait(1000);
+	}
 
 	zassert_equal(k_timer_status_get(&ctx->timer), 1);
 
@@ -1271,12 +1280,14 @@ ZTEST(work_1cpu, test_workq_1cpu_running_cancel_sync)
 	/* Handler should have run. */
 	zassert_equal(coophi_counter(), 1);
 
-	/* Busy wait until timer expires. Thread context is blocked so cancelling
-	 * of work won't be completed. Add one tick of slack on top of the
-	 * nominal timeout for the +1 round-up inside z_add_timeout() plus
-	 * 1 ms for general measurement jitter.
+	/* Busy wait until the timer callback has run. Thread context is
+	 * blocked so cancelling of work won't be completed. Don't bound
+	 * this to the timeout: QEMU without icount follows the host
+	 * clock, which may deliver the timer interrupt late.
 	 */
-	k_busy_wait(1000 * ms_timeout + k_ticks_to_us_ceil32(1) + 1000);
+	for (int i = 0; i < 1000 && *(volatile int *)&ctx->busy_rc == INT_MAX; i++) {
+		k_busy_wait(1000);
+	}
 
 	zassert_equal(k_timer_status_get(&ctx->timer), 1);
 
