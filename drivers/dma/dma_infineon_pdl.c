@@ -38,6 +38,7 @@ struct ifx_cat1_dma_channel {
 	uint32_t complete_callback_en: 1;
 	uint32_t error_callback_dis: 1;
 	uint32_t sw_triggered: 1;
+	uint32_t hw_triggered: 1;
 
 	cy_stc_dma_descriptor_t descr[DESCRIPTOR_COUNT];
 	IRQn_Type irq;
@@ -154,6 +155,7 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 	data->channels[channel].error_callback_dis = config->error_callback_dis;
 	data->channels[channel].sw_triggered =
 		(config->channel_direction == MEMORY_TO_MEMORY) ? 1 : config->source_handshake;
+	data->channels[channel].hw_triggered = (config->dma_slot != 0u) ? 1u : 0u;
 
 	/* Get first descriptor */
 	descriptor = &data->channels[channel].descr[0];
@@ -180,8 +182,10 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 
 	descriptor_config.triggerOutType = CY_DMA_DESCR_CHAIN;
 
-	if ((config->source_burst_length == 1) &&
-	    (config->channel_direction != MEMORY_TO_MEMORY)) {
+	if (config->dma_slot != 0u) {
+		descriptor_config.triggerInType = CY_DMA_DESCR;
+	} else if ((config->source_burst_length == 1) &&
+		   (config->channel_direction != MEMORY_TO_MEMORY)) {
 		descriptor_config.triggerInType = CY_DMA_1ELEMENT;
 	} else {
 		descriptor_config.triggerInType = CY_DMA_DESCR_CHAIN;
@@ -302,6 +306,7 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 static int ifx_cat1_dma_start(const struct device *dev, uint32_t channel)
 {
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *const data = dev->data;
 
 	if (channel >= cfg->num_channels) {
 		LOG_ERR("Unsupported channel");
@@ -318,7 +323,9 @@ static int ifx_cat1_dma_start(const struct device *dev, uint32_t channel)
 	/* Enable DMA channel */
 	Cy_DMA_Channel_Enable(cfg->regs, channel);
 
-	ifx_cat1_dma_trig(dev, channel);
+	if (!data->channels[channel].hw_triggered) {
+		ifx_cat1_dma_trig(dev, channel);
+	}
 
 	return 0;
 }
