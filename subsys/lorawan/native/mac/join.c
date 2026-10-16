@@ -1,52 +1,10 @@
 /*
  * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
  * SPDX-License-Identifier: Apache-2.0
- *
- * LoRaWAN OTAA Join — frame formats
- *
- * Join Request (23 bytes, unencrypted):
- *
- *       +--------------------+
- *    0  | MHDR (1)           |  0x00 (Join Request)
- *       +--------------------+
- *    1  | JoinEUI (8)        |  Big-endian application identifier
- *       +--------------------+
- *    9  | DevEUI (8)         |  Big-endian device identifier
- *       +--------------------+
- *   17  | DevNonce (2)       |  Replay protection counter
- *       +--------------------+
- *   19  | MIC (4)            |  aes128_cmac(NwkKey, MHDR..DevNonce)[0:3]
- *       +--------------------+
- *
- * Join Accept (raw frame: 17 or 33 bytes):
- *
- *       +--------------------+
- *    0  | MHDR (1)           |  0x20 (Join Accept)
- *       +--------------------+
- *    1  | encrypted payload  |  aes128_encrypt(NwkKey) — NOT decrypt
- *       | (16 or 32)         |
- *       +--------------------+
- *
- *   Decrypted payload (offsets relative to payload start):
- *
- *       +--------------------+
- *    0  | JoinNonce (3)      |  Server-side nonce
- *       +--------------------+
- *    3  | NetID (3)          |  Network identifier
- *       +--------------------+
- *    6  | DevAddr (4)        |  Assigned device address
- *       +--------------------+
- *   10  | DLSettings (1)     |  RX1DRoffset[6:4] | RX2DataRate[3:0]
- *       +--------------------+
- *   11  | RxDelay (1)        |  Seconds (0 means 1)
- *       +--------------------+
- *   12  | [CFList] (0/16)    |  Optional channel list
- *       +--------------------+
- *       | MIC (4)            |  aes128_cmac(NwkKey, MHDR..last field)[0:3]
- *       +--------------------+
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/lorawan/packets.h>
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
 
@@ -57,34 +15,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 
-#define MHDR_JOIN_REQUEST	0x00
-#define MHDR_JOIN_ACCEPT	0x20
-
-#define JA_CFLIST_SIZE		16
-
-#define DL_RX1_DR_OFFSET_MASK	GENMASK(6, 4)
-#define DL_RX2_DATARATE_MASK	GENMASK(3, 0)
-
 #define JOIN_ACCEPT_DELAY1_MS	5000
 
-struct pkt_join_request {
-	uint8_t mhdr;
-	uint8_t join_eui[EUI_SIZE];
-	uint8_t dev_eui[EUI_SIZE];
-	uint8_t dev_nonce[DEV_NONCE_SIZE];
-	uint8_t mic[LWAN_MIC_SIZE];
-} __packed;
-
-struct pkt_join_accept {
-	uint8_t join_nonce[JOIN_NONCE_SIZE];
-	uint8_t net_id[NET_ID_SIZE];
-	uint8_t dev_addr[DEV_ADDR_SIZE];
-	uint8_t dl_settings;
-	uint8_t rx_delay;
-} __packed;
-
-#define JA_MIN_SIZE		(sizeof(struct pkt_join_accept) + LWAN_MIC_SIZE)
-#define JA_MAX_SIZE		(sizeof(struct pkt_join_accept) + JA_CFLIST_SIZE + LWAN_MIC_SIZE)
+#define JA_MIN_SIZE \
+	(sizeof(struct lorawan_pkt_join_accept) + LORAWAN_PKT_MIC_SIZE)
+#define JA_MAX_SIZE		(JA_MIN_SIZE + LORAWAN_PKT_CFLIST_SIZE)
 
 struct join_rx_ctx {
 	psa_key_id_t nwk_cmac;
@@ -95,26 +30,26 @@ struct join_rx_ctx {
 struct join_state {
 	const struct lwan_join_req *req;
 	struct join_rx_ctx rx_ctx;
-	uint8_t frame[sizeof(struct pkt_join_request)];
+	uint8_t frame[sizeof(struct lorawan_pkt_join_request)];
 	size_t frame_len;
 	uint32_t tx_freq;
 	uint8_t tx_dr_idx;
 };
 
-static void mac_write_join_request_fields(struct pkt_join_request *pkt,
+static void mac_write_join_request_fields(struct lorawan_pkt_join_request *pkt,
 					  const struct lwan_join_req *req)
 {
-	pkt->mhdr = MHDR_JOIN_REQUEST;
-	sys_memcpy_swap(pkt->join_eui, req->join_eui, EUI_SIZE);
-	sys_memcpy_swap(pkt->dev_eui, req->dev_eui, EUI_SIZE);
+	pkt->mhdr = LORAWAN_PKT_MHDR_JOIN_REQUEST;
+	sys_memcpy_swap(pkt->join_eui, req->join_eui, sizeof(pkt->join_eui));
+	sys_memcpy_swap(pkt->dev_eui, req->dev_eui, sizeof(pkt->dev_eui));
 	sys_put_le16(req->dev_nonce, pkt->dev_nonce);
 }
 
 static int mac_write_join_request_mic(psa_key_id_t nwk_cmac,
 				      uint8_t *frame)
 {
-	struct pkt_join_request *pkt = (struct pkt_join_request *)frame;
-	size_t mic_off = offsetof(struct pkt_join_request, mic);
+	struct lorawan_pkt_join_request *pkt = (struct lorawan_pkt_join_request *)frame;
+	size_t mic_off = offsetof(struct lorawan_pkt_join_request, mic);
 	int ret;
 
 	/* MIC = cmac(NwkKey, MHDR | JoinEUI | DevEUI | DevNonce) */
@@ -130,7 +65,7 @@ static int mac_build_join_request(const struct lwan_join_req *req,
 				  psa_key_id_t nwk_cmac,
 				  uint8_t *frame, size_t *frame_len)
 {
-	struct pkt_join_request *pkt = (struct pkt_join_request *)frame;
+	struct lorawan_pkt_join_request *pkt = (struct lorawan_pkt_join_request *)frame;
 	int ret;
 
 	if (*frame_len < sizeof(*pkt)) {
@@ -153,8 +88,8 @@ static int mac_build_join_request(const struct lwan_join_req *req,
 
 static int mac_apply_dl_settings(struct lwan_ctx *ctx, uint8_t dl_settings)
 {
-	uint8_t rx1_dr_offset = FIELD_GET(DL_RX1_DR_OFFSET_MASK, dl_settings);
-	uint8_t rx2_datarate = FIELD_GET(DL_RX2_DATARATE_MASK, dl_settings);
+	uint8_t rx1_dr_offset = FIELD_GET(LORAWAN_PKT_DL_RX1_DR_OFFSET_MASK, dl_settings);
+	uint8_t rx2_datarate = FIELD_GET(LORAWAN_PKT_DL_RX2_DATARATE_MASK, dl_settings);
 	int ret;
 
 	ret = ctx->region->validate_dl_settings(rx1_dr_offset, rx2_datarate);
@@ -171,20 +106,22 @@ static int mac_apply_dl_settings(struct lwan_ctx *ctx, uint8_t dl_settings)
 }
 
 static void mac_reset_channel_plan(struct lwan_ctx *ctx,
-				    const uint8_t *payload, size_t payload_len)
+				    const uint8_t *frame, size_t frame_len)
 {
 	const struct lwan_region_ops *region = ctx->region;
-	const uint8_t *cflist = payload + sizeof(struct pkt_join_accept);
+	const struct lorawan_pkt_join_accept *ja =
+		(const struct lorawan_pkt_join_accept *)frame;
+	const uint8_t *cflist = ja->payload_and_mic;
 
 	region->get_default_channels(ctx->channels, &ctx->channel_count);
 
-	if (payload_len > JA_MIN_SIZE) {
+	if (frame_len > JA_MIN_SIZE) {
 		region->apply_cflist(cflist, ctx->channels, &ctx->channel_count);
 	}
 }
 
 static void mac_read_join_accept_session(struct lwan_session *sess,
-					 const struct pkt_join_accept *ja)
+				 const struct lorawan_pkt_join_accept *ja)
 {
 	sess->dev_addr = sys_get_le32(ja->dev_addr);
 	sess->rx_delay = ja->rx_delay;
@@ -206,7 +143,7 @@ static void mac_destroy_session_keys(struct lwan_session *sess)
 }
 
 static int mac_derive_join_session_keys(struct lwan_session *sess,
-					const struct pkt_join_accept *ja,
+					const struct lorawan_pkt_join_accept *ja,
 					psa_key_id_t nwk_ecb,
 					uint16_t dev_nonce)
 {
@@ -234,7 +171,7 @@ static void mac_finish_join_accept(struct lwan_ctx *ctx,
 	sess->fcnt_up = 0;
 	sess->fcnt_down = LWAN_FCNT_NONE;
 
-	mac_reset_channel_plan(ctx, &frame[MHDR_SIZE], frame_len - MHDR_SIZE);
+	mac_reset_channel_plan(ctx, frame, frame_len);
 
 	atomic_set_bit(ctx->flags, LWAN_FLAG_JOINED);
 }
@@ -243,8 +180,8 @@ static int mac_apply_join_accept(struct lwan_ctx *ctx,
 				  const uint8_t *frame, size_t frame_len,
 				  psa_key_id_t nwk_ecb, uint16_t dev_nonce)
 {
-	const struct pkt_join_accept *ja =
-		(const struct pkt_join_accept *)&frame[MHDR_SIZE];
+	const struct lorawan_pkt_join_accept *ja =
+		(const struct lorawan_pkt_join_accept *)frame;
 	struct lwan_session *sess = &ctx->session;
 	int ret;
 
@@ -271,17 +208,17 @@ static int mac_apply_join_accept(struct lwan_ctx *ctx,
 static int mac_verify_join_accept_mic(psa_key_id_t nwk_cmac,
 				       const uint8_t *frame, size_t frame_len)
 {
-	uint8_t computed_mic[LWAN_MIC_SIZE];
+	uint8_t computed_mic[LORAWAN_PKT_MIC_SIZE];
 	int ret;
 
 	ret = lwan_crypto_compute_mic(nwk_cmac, frame,
-				      frame_len - LWAN_MIC_SIZE, computed_mic);
+				      frame_len - LORAWAN_PKT_MIC_SIZE, computed_mic);
 	if (ret != 0) {
 		return ret;
 	}
 
-	if (memcmp(computed_mic, &frame[frame_len - LWAN_MIC_SIZE],
-		   LWAN_MIC_SIZE) != 0) {
+	if (memcmp(computed_mic, &frame[frame_len - LORAWAN_PKT_MIC_SIZE],
+		   LORAWAN_PKT_MIC_SIZE) != 0) {
 		LOG_ERR("Join accept MIC mismatch");
 		return -EBADMSG;
 	}
@@ -291,9 +228,8 @@ static int mac_verify_join_accept_mic(psa_key_id_t nwk_cmac,
 
 static int mac_validate_join_accept_size(size_t rx_len, size_t *payload_len)
 {
-	*payload_len = rx_len - MHDR_SIZE;
-	if (*payload_len != JA_MIN_SIZE &&
-	    *payload_len != JA_MAX_SIZE) {
+	*payload_len = rx_len - LORAWAN_PKT_MHDR_SIZE;
+	if (rx_len != JA_MIN_SIZE && rx_len != JA_MAX_SIZE) {
 		LOG_ERR("Invalid join accept size: %zu", rx_len);
 		return -EINVAL;
 	}
@@ -306,7 +242,7 @@ static int mac_decrypt_join_accept_frame(psa_key_id_t nwk_ecb,
 {
 	int ret;
 
-	ret = lwan_crypto_decrypt_join_accept(nwk_ecb, &frame[MHDR_SIZE],
+	ret = lwan_crypto_decrypt_join_accept(nwk_ecb, &frame[LORAWAN_PKT_MHDR_SIZE],
 					      payload_len);
 	if (ret != 0) {
 		LOG_ERR("Join accept decrypt failed: %d", ret);
@@ -320,7 +256,7 @@ static int mac_parse_join_accept(struct lwan_ctx *ctx,
 				 psa_key_id_t nwk_cmac, psa_key_id_t nwk_ecb,
 				 uint16_t dev_nonce)
 {
-	uint8_t frame[MHDR_SIZE + JA_MAX_SIZE];
+	uint8_t frame[JA_MAX_SIZE];
 	size_t payload_len;
 	int ret;
 
@@ -354,11 +290,13 @@ static enum mac_rx_result join_rx_handler(struct lwan_ctx *ctx,
 	ARG_UNUSED(rssi);
 	ARG_UNUSED(snr);
 
-	if ((rx_buf[0] & MHDR_TYPE_MASK) != MHDR_JOIN_ACCEPT) {
+	if ((rx_buf[0] & LORAWAN_PKT_MHDR_TYPE_MASK) !=
+	    LORAWAN_PKT_MHDR_JOIN_ACCEPT) {
 		return MAC_RX_CONTINUE;
 	}
 
-	if ((rx_buf[0] & MHDR_MAJOR_MASK) != MHDR_MAJOR_R1) {
+	if ((rx_buf[0] & LORAWAN_PKT_MHDR_MAJOR_MASK) !=
+	    LORAWAN_PKT_MHDR_MAJOR_R1) {
 		return MAC_RX_CONTINUE;
 	}
 
