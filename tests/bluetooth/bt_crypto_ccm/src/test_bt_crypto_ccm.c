@@ -10,6 +10,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <psa/crypto.h>
 
 #include "common/bt_str.h"
 
@@ -17,7 +18,14 @@
 
 LOG_MODULE_REGISTER(test_bt_crypto_ccm, LOG_LEVEL_INF);
 
-ZTEST_SUITE(bt_crypto_ccm, NULL, NULL, NULL, NULL, NULL);
+static void *bt_crypto_ccm_setup(void)
+{
+	// zassert_equal(psa_crypto_init(), PSA_SUCCESS, "psa_crypto_init failed");
+
+	return NULL;
+}
+
+ZTEST_SUITE(bt_crypto_ccm, NULL, bt_crypto_ccm_setup, NULL, NULL, NULL);
 
 ZTEST(bt_crypto_ccm, test_result_rfc_test_vectors)
 {
