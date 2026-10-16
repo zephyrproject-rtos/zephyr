@@ -13,6 +13,13 @@ config ESPI_NPCX
 	  This option enables the Intel Enhanced Serial Peripheral Interface
 	  (eSPI) for NPCX family of processors.
 
+config ESPI_NPCX_HOST_SUB_V2
+	bool "Nuvoton NPCX ESPI Host Subsystem version 2 support"
+	default y
+	depends on ESPI_NPCX && DT_HAS_NUVOTON_NPCX_HOST_SUB_V2_ENABLED
+	help
+	  This option enables Host Subsystem version 2 support for npcx series.
+
 config ESPI_NPCX_NPCXN_V1
 	bool "Nuvoton NPCX ESPI version 1 support"
 	default y
