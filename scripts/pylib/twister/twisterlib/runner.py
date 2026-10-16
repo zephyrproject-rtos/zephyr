@@ -1517,16 +1517,18 @@ class ProjectBuilder(FilterBuilder):
         if handler.ready:
             args.extend(handler.args)
 
-        if conf_files:
-            args.append(f"CONF_FILE=\"{';'.join(conf_files)}\"")
+        # A test suite can also set EXTRA_CONF_FILE through extra_args. CMake
+        # keeps only the last -D option given for a variable, so lift those
+        # options out of the argument list and merge the winning one into the
+        # single option built below, which would otherwise silently drop it.
+        arg_conf_files = [
+            arg.split('=', 1)[1].strip('"') for arg in args
+            if arg.startswith('EXTRA_CONF_FILE=')
+        ]
+        args = [arg for arg in args if not arg.startswith('EXTRA_CONF_FILE=')]
 
-        if extra_conf_files:
-            args.append(f"EXTRA_CONF_FILE=\"{';'.join(extra_conf_files)}\"")
-
-        if extra_dtc_overlay_files:
-            args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
-
-        # merge overlay files into one variable
+        # The overlay confs are applied after the extra conf files, so that a
+        # test suite can override what a common .conf fragment has set.
         overlays = extra_overlay_confs.copy()
 
         additional_overlay_path = os.path.join(
@@ -1535,8 +1537,19 @@ class ProjectBuilder(FilterBuilder):
         if os.path.exists(additional_overlay_path):
             overlays.append(additional_overlay_path)
 
-        if overlays:
-            args.append(f"OVERLAY_CONFIG=\"{' '.join(overlays)}\"")
+        if conf_files:
+            args.append(f"CONF_FILE=\"{';'.join(conf_files)}\"")
+
+        # The extra conf files, the overlay confs and whatever extra_args set
+        # are all consumed through the single EXTRA_CONF_FILE variable, so they
+        # have to be merged into one argument instead of being passed as
+        # several -D options of which only the last one would survive.
+        conf_files_arg = (extra_conf_files or arg_conf_files[-1:]) + overlays
+        if conf_files_arg:
+            args.append(f"EXTRA_CONF_FILE=\"{';'.join(conf_files_arg)}\"")
+
+        if extra_dtc_overlay_files:
+            args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
 
         # Build the final argument list
         args_expanded.extend(["-D{}".format(a.replace('"', '\"')) for a in cmake_extra_args])
