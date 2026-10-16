@@ -1415,6 +1415,12 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 	struct bt_l2cap_br_chan *br_chan =
 		CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
+	/* A lost channel is closed: nothing more is sent on it */
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_LOST)) {
+		lower_data_ready(br_chan);
+		return NULL;
+	}
+
 	if (br_chan->_pdu_buf && bt_buf_has_view(br_chan->_pdu_buf)) {
 		LOG_ERR("already have view on %p", br_chan->_pdu_buf);
 		return NULL;
