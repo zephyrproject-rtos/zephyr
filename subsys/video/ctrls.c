@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include <zephyr/drivers/video.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/video/video.h>
 
@@ -325,6 +326,12 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
 		return "Compression Quality";
 
+	/* Image source controls */
+	case VIDEO_CID_VBLANK:
+		return "Vertical Blanking";
+	case VIDEO_CID_HBLANK:
+		return "Horizontal Blanking";
+
 	/* Image processing controls */
 	case VIDEO_CID_PIXEL_RATE:
 		return "Pixel Rate";
@@ -451,46 +458,126 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	}
 }
 
-int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
+static int video_query_ctrl_menu_index(struct video_ctrl_query *ctrl_query, uint32_t *index)
 {
+	const struct device *dev = ctrl_query->dev;
 	struct video_control ctrl = {
-		.id = VIDEO_CID_LINK_FREQ,
-	};
-	struct video_ctrl_query ctrl_query = {
-		.dev = dev,
-		.id = VIDEO_CID_LINK_FREQ,
+		.id = ctrl_query->id,
 	};
 	int ret;
 
-	/* Try to get the LINK_FREQ value from the source device */
 	ret = video_get_ctrl(dev, &ctrl);
-	if (ret < 0) {
-		goto fallback;
-	}
-
-	ret = video_query_ctrl(&ctrl_query);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (!IN_RANGE(ctrl.val, ctrl_query.range.min, ctrl_query.range.max)) {
+	ret = video_query_ctrl(ctrl_query);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!IN_RANGE(ctrl.val, ctrl_query->range.min, ctrl_query->range.max)) {
 		return -ERANGE;
+	}
+
+	*index = ctrl.val;
+
+	return 0;
+}
+
+int video_get_ctrl_int_menu(const struct device *dev, uint32_t cid, int64_t *int_p)
+{
+	struct video_ctrl_query ctrl_query = {
+		.dev = dev,
+		.id = cid,
+	};
+	uint32_t index = 0;
+	int ret;
+
+	ret = video_query_ctrl_menu_index(&ctrl_query, &index);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (ctrl_query.int_menu == NULL) {
 		return -EINVAL;
 	}
 
-	return (int64_t)ctrl_query.int_menu[ctrl.val];
+	*int_p = ctrl_query.int_menu[index];
 
-fallback:
-	/* If VIDEO_CID_LINK_FREQ is not available, approximate from VIDEO_CID_PIXEL_RATE */
-	ctrl.id = VIDEO_CID_PIXEL_RATE;
-	ret = video_get_ctrl(dev, &ctrl);
+	return 0;
+}
+
+int video_get_ctrl_menu(const struct device *dev, uint32_t cid, const char **str_p)
+{
+	struct video_ctrl_query ctrl_query = {
+		.dev = dev,
+		.id = cid,
+	};
+	uint32_t index = 0;
+	int ret;
+
+	ret = video_query_ctrl_menu_index(&ctrl_query, &index);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
-	return ctrl.val64 * bpp / (2 * lane_nb);
+	if (ctrl_query.menu == NULL) {
+		return -EINVAL;
+	}
+
+	*str_p = ctrl_query.menu[index];
+
+	return 0;
+}
+
+static int64_t video_get_link_freq(const struct device *dev, uint8_t bus_type, uint8_t bpp,
+				   uint8_t lane_nb)
+{
+	struct video_control pixel_rate_ctrl = {.id = VIDEO_CID_PIXEL_RATE};
+	int64_t link_freq = 0;
+	int ret;
+
+	/* Try to get the LINK_FREQ value from the source device */
+	ret = video_get_ctrl_int_menu(dev, VIDEO_CID_LINK_FREQ, &link_freq);
+	if (ret == -ENOTSUP) {
+		goto fallback;
+	}
+	if (ret < 0) {
+		LOG_ERR("Error while querying %s LINK_FREQUENCY", dev->name);
+		return ret;
+	}
+
+	return link_freq;
+
+fallback:
+	/* If VIDEO_CID_LINK_FREQ is not available, approximate from VIDEO_CID_PIXEL_RATE */
+	ret = video_get_ctrl(dev, &pixel_rate_ctrl);
+	if (ret < 0) {
+		LOG_ERR("Cannot query either %s PIXEL_RATE or LINK_FREQUENCY", dev->name);
+		return ret;
+	}
+
+	if (bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
+		/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
+		return pixel_rate_ctrl.val64 * bpp / (2 * lane_nb);
+	}
+
+	if (bus_type == VIDEO_BUS_TYPE_PARALLEL) {
+		/* DVP is using a parallel data bus with one bit per lane per clock */
+		return pixel_rate_ctrl.val64 * bpp / lane_nb;
+	}
+
+	LOG_ERR("Unsupported bus type %u", bus_type);
+	return -ENOTSUP;
+}
+
+int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
+{
+	return video_get_link_freq(dev, VIDEO_BUS_TYPE_CSI2_DPHY, bpp, lane_nb);
+}
+
+int64_t video_get_dvp_link_freq(const struct device *dev, uint8_t bpp, uint8_t bus_width)
+{
+	return video_get_link_freq(dev, VIDEO_BUS_TYPE_PARALLEL, bpp, bus_width);
 }

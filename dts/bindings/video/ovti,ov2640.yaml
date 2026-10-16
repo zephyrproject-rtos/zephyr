@@ -1,7 +1,22 @@
 # Copyright (c) 2021 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: OV2640 CMOS video sensor
+title: OV2640 CMOS video sensor
+
+description: |
+  The COM10 register expected to set the polarity active-high or active-low of VSYNC does not seem
+  to have any effect. Instead, it depends on whether the DSP core is enabled or not.
+
+  To access the bayer format, SBGGR8, it is required to turn off the DSP core on the sensor.
+
+  The desired VSYNC polarity therefore selects which formats are available, as the driver will
+  follow the devicetree configuration first, and deduce the formats that can be accessed in this
+  VSYNC configuration.
+
+  By default, the color formats are exposed. To access bayer, tuning the devicetree is needed.
+
+  Mind to update both side of the link so that the video receiver also updates its expected
+  format.
 
 compatible: "ovti,ov2640"
 
@@ -18,18 +33,49 @@ properties:
       The PWDN pin is asserted to disable the sensor. The sensor
       receives this as an active-high signal.
 
-  clock-rate-control:
+  clock-multiplier:
     type: int
-    default: 0x87
+    default: 2
+    min: 1
+    max: 2
     description: |
-      Define the value to the Clock Rate Control register. By changing
-      the system clock divide ratio and PLL, the frame rate and pixel
-      rate will change together.
-      Bit[7]    Internal frequency doublers ON/OFF selection.
-                0: ON       1: OFF
-      Bit[6]    Reserved
-      Bit[5:0]  Clock divider.
+      Select the multiplier applied to XVCLK (input clock pin), clocking the sensor internal
+      elements, also affecting the maximal pixel rate and frame rate.
 
-      CLK = XVCLK /(decimal value of CLKRC[5:0] + 1)
+  clocks:
+    required: true
+    description: |
+      Reference to then node of the clock providing the MCLK (aka XCLK/SYSCLK) signal.
+
+  drive-strength:
+    type: int
+    default: 1
+    min: 1
+    max: 4
+    description: |
+      Select the signal drive strength, particularly useful for PCLK which reaches above 150 MHz
+      for 16-bit per pixel formats at 1600x1200 at 30 FPS.
+
+  jpeg-hsync:
+    type: boolean
+    description: |
+      Mimicks an uncompressed frame transfer, with the JPEG buffer segmented in lines of as many
+      bytes as an uncompressed frame would have, leading to fewer lines (early VSYNC) and the last
+      line shorter (early HSYNC).
+
+      Set if the video receiver does not support JPEG input explicitly, in which case, the HSYNC
+      signal will be the same as VSYNC, effectively sending a single line with JPEG encoded data.
+
+      The pixel clock will be active only when data is to be sent, pausing and resuming.
+
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
+
+    properties:
+      vsync-active:
+        required: true
+
 
 include: i2c-device.yaml
