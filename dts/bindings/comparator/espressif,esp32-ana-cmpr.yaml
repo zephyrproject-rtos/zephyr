@@ -12,6 +12,7 @@ description: |
   pad are fixed per SoC and per unit, and are not configurable via
   devicetree:
     ESP32-C5 unit0: source GPIO9,  external reference GPIO8
+    ESP32-C61 unit0: source GPIO9, external reference GPIO8
     ESP32-H2 unit0: source GPIO11, external reference GPIO10
     ESP32-P4 unit0: source GPIO52, external reference GPIO51
     ESP32-P4 unit1: source GPIO54, external reference GPIO53
