@@ -16,6 +16,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/sys_io.h>
 
 #define RXDATA_EMPTY   (1 << 31)   /* Receive FIFO Empty */
 #define RXDATA_MASK    0xFF        /* Receive Data Mask */
@@ -35,22 +37,21 @@
 /* rxwm pending while the RX FIFO is not empty */
 #define RXCTRL_RXCNT   (0U << 16)
 
-struct uart_sifive_regs_t {
-	uint32_t tx;
-	uint32_t rx;
-	uint32_t txctrl;
-	uint32_t rxctrl;
-	uint32_t ie;
-	uint32_t ip;
-	uint32_t div;
-};
+/* Register offsets */
+#define UART_SIFIVE_TXDATA 0x00
+#define UART_SIFIVE_RXDATA 0x04
+#define UART_SIFIVE_TXCTRL 0x08
+#define UART_SIFIVE_RXCTRL 0x0c
+#define UART_SIFIVE_IE     0x10
+#define UART_SIFIVE_IP     0x14
+#define UART_SIFIVE_DIV    0x18
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 typedef void (*irq_cfg_func_t)(void);
 #endif
 
 struct uart_sifive_device_config {
-	uintptr_t	port;
+	DEVICE_MMIO_ROM;
 	uint32_t	baud_rate;
 	const struct	pinctrl_dev_config *pcfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -59,15 +60,22 @@ struct uart_sifive_device_config {
 };
 
 struct uart_sifive_data {
+	DEVICE_MMIO_RAM;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
 };
 
-#define DEV_UART(dev)						\
-	((struct uart_sifive_regs_t *)				\
-	 ((const struct uart_sifive_device_config * const)(dev)->config)->port)
+static inline uint32_t uart_sifive_read(const struct device *dev, uint32_t reg)
+{
+	return sys_read32(DEVICE_MMIO_GET(dev) + reg);
+}
+
+static inline void uart_sifive_write(const struct device *dev, uint32_t reg, uint32_t val)
+{
+	sys_write32(val, DEVICE_MMIO_GET(dev) + reg);
+}
 
 /**
  * @brief Output a character in polled mode.
@@ -80,13 +88,11 @@ struct uart_sifive_data {
 static void uart_sifive_poll_out(const struct device *dev,
 					 unsigned char c)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-
 	/* Wait while TX FIFO is full */
-	while (uart->tx & TXDATA_FULL) {
+	while ((uart_sifive_read(dev, UART_SIFIVE_TXDATA) & TXDATA_FULL) != 0U) {
 	}
 
-	uart->tx = (int)c;
+	uart_sifive_write(dev, UART_SIFIVE_TXDATA, c);
 }
 
 /**
@@ -99,10 +105,9 @@ static void uart_sifive_poll_out(const struct device *dev,
  */
 static int uart_sifive_poll_in(const struct device *dev, unsigned char *c)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-	uint32_t val = uart->rx;
+	uint32_t val = uart_sifive_read(dev, UART_SIFIVE_RXDATA);
 
-	if (val & RXDATA_EMPTY) {
+	if ((val & RXDATA_EMPTY) != 0U) {
 		return -1;
 	}
 
@@ -126,11 +131,11 @@ static int uart_sifive_fifo_fill(const struct device *dev,
 				 const uint8_t *tx_data,
 				 int size)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	int i;
 
-	for (i = 0; i < size && !(uart->tx & TXDATA_FULL); i++) {
-		uart->tx = (int)tx_data[i];
+	for (i = 0; i < size &&
+		    (uart_sifive_read(dev, UART_SIFIVE_TXDATA) & TXDATA_FULL) == 0U; i++) {
+		uart_sifive_write(dev, UART_SIFIVE_TXDATA, tx_data[i]);
 	}
 
 	return i;
@@ -149,14 +154,13 @@ static int uart_sifive_fifo_read(const struct device *dev,
 				 uint8_t *rx_data,
 				 const int size)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	int i;
 	uint32_t val;
 
 	for (i = 0; i < size; i++) {
-		val = uart->rx;
+		val = uart_sifive_read(dev, UART_SIFIVE_RXDATA);
 
-		if (val & RXDATA_EMPTY) {
+		if ((val & RXDATA_EMPTY) != 0U) {
 			break;
 		}
 
@@ -173,9 +177,7 @@ static int uart_sifive_fifo_read(const struct device *dev,
  */
 static void uart_sifive_irq_tx_enable(const struct device *dev)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-
-	uart->ie |= IE_TXWM;
+	sys_set_bits(DEVICE_MMIO_GET(dev) + UART_SIFIVE_IE, IE_TXWM);
 }
 
 /**
@@ -185,9 +187,7 @@ static void uart_sifive_irq_tx_enable(const struct device *dev)
  */
 static void uart_sifive_irq_tx_disable(const struct device *dev)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-
-	uart->ie &= ~IE_TXWM;
+	sys_clear_bits(DEVICE_MMIO_GET(dev) + UART_SIFIVE_IE, IE_TXWM);
 }
 
 /**
@@ -199,9 +199,7 @@ static void uart_sifive_irq_tx_disable(const struct device *dev)
  */
 static int uart_sifive_irq_tx_ready(const struct device *dev)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-
-	return !!(uart->ip & IE_TXWM);
+	return (uart_sifive_read(dev, UART_SIFIVE_IP) & IE_TXWM) != 0U;
 }
 
 /**
@@ -213,13 +211,11 @@ static int uart_sifive_irq_tx_ready(const struct device *dev)
  */
 static int uart_sifive_irq_tx_complete(const struct device *dev)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-
 	/*
 	 * No TX EMPTY flag for this controller, but with TXCTRL_TXCNT
 	 * the TX watermark is pending exactly while the TX FIFO is empty.
 	 */
-	return (uart->ip & IE_TXWM) != 0U;
+	return (uart_sifive_read(dev, UART_SIFIVE_IP) & IE_TXWM) != 0U;
 }
 
 /**
@@ -229,9 +225,7 @@ static int uart_sifive_irq_tx_complete(const struct device *dev)
  */
 static void uart_sifive_irq_rx_enable(const struct device *dev)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-
-	uart->ie |= IE_RXWM;
+	sys_set_bits(DEVICE_MMIO_GET(dev) + UART_SIFIVE_IE, IE_RXWM);
 }
 
 /**
@@ -241,9 +235,7 @@ static void uart_sifive_irq_rx_enable(const struct device *dev)
  */
 static void uart_sifive_irq_rx_disable(const struct device *dev)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-
-	uart->ie &= ~IE_RXWM;
+	sys_clear_bits(DEVICE_MMIO_GET(dev) + UART_SIFIVE_IE, IE_RXWM);
 }
 
 /**
@@ -255,9 +247,7 @@ static void uart_sifive_irq_rx_disable(const struct device *dev)
  */
 static int uart_sifive_irq_rx_ready(const struct device *dev)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-
-	return !!(uart->ip & IE_RXWM);
+	return (uart_sifive_read(dev, UART_SIFIVE_IP) & IE_RXWM) != 0U;
 }
 
 /* No error interrupt for this controller */
@@ -280,10 +270,9 @@ static void uart_sifive_irq_err_disable(const struct device *dev)
  */
 static int uart_sifive_irq_is_pending(const struct device *dev)
 {
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
-
 	/* ip reports the watermark conditions regardless of ie */
-	return (uart->ip & uart->ie & (IE_RXWM | IE_TXWM)) != 0U;
+	return (uart_sifive_read(dev, UART_SIFIVE_IP) & uart_sifive_read(dev, UART_SIFIVE_IE) &
+		(IE_RXWM | IE_TXWM)) != 0U;
 }
 
 /**
@@ -317,21 +306,23 @@ static void uart_sifive_irq_handler(const struct device *dev)
 static int uart_sifive_init(const struct device *dev)
 {
 	const struct uart_sifive_device_config * const cfg = dev->config;
-	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 #ifdef CONFIG_PINCTRL
 	int ret;
 #endif
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	/* Enable TX and RX channels */
-	uart->txctrl = TXCTRL_TXEN | TXCTRL_TXCNT;
-	uart->rxctrl = RXCTRL_RXEN | RXCTRL_RXCNT;
+	uart_sifive_write(dev, UART_SIFIVE_TXCTRL, TXCTRL_TXEN | TXCTRL_TXCNT);
+	uart_sifive_write(dev, UART_SIFIVE_RXCTRL, RXCTRL_RXEN | RXCTRL_RXCNT);
 
 	/* Set baud rate */
-	uart->div = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY / cfg->baud_rate - 1;
+	uart_sifive_write(dev, UART_SIFIVE_DIV,
+			  SIFIVE_PERIPHERAL_CLOCK_FREQUENCY / cfg->baud_rate - 1U);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Ensure that uart IRQ is disabled initially */
-	uart->ie = 0U;
+	uart_sifive_write(dev, UART_SIFIVE_IE, 0U);
 
 	/* Setup IRQ handler */
 	cfg->cfg_func();
@@ -389,7 +380,7 @@ static DEVICE_API(uart, uart_sifive_driver_api) = {
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
 	static const struct uart_sifive_device_config uart_sifive_dev_cfg_##n = {                  \
-		.port = DT_INST_REG_ADDR(n),                                                       \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                           \
