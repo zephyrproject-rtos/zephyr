@@ -466,6 +466,9 @@ static int example_initialization(void)
 	printk("subtree <%s> handler registered: OK\n", alpha_handler.name);
 	printk("subtree <alpha/beta> has static handler\n");
 
+	rc = settings_delete("gamma");
+	printk("<gamma> key was deleted (%d).\n", rc);
+
 	return 0;
 }
 
