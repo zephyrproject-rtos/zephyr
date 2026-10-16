@@ -108,6 +108,11 @@
 				resolution = <32>;
 				status = "disabled";
 			};
+
+			system_timer: system-timer {
+				compatible = "ti,mspm0-system-timer";
+				status = "disabled";
+			};
 		};
 
 		tima0: tima0@40860000 {

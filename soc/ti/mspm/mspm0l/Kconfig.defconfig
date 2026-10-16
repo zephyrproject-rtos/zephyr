@@ -1,12 +1,15 @@
 # TI MSPM0L series
 
 # Copyright (c) 2025 Texas Instruments
-# Copyright (c) 2025 Linumiz GmbH
+# Copyright (c) 2025-2026 Linumiz
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_MSPM0L
 
 config NUM_IRQS
 	default 32
+
+config CORTEX_M_SYSTICK
+	default n if (TI_MSPM0_SYSTEM_TIMER)
 
 endif # SOC_SERIES_MSPM0L
