@@ -9,6 +9,13 @@ tests:
     depends_on:
       - gpio
       - spi
+  drivers.led_strip.build.spi_async:
+    depends_on:
+      - gpio
+      - spi
+    extra_configs:
+      - CONFIG_SPI_ASYNC=y
+      - CONFIG_WS2812_STRIP_SPI_ASYNC=y
   drivers.led_strip.build.uart:
     depends_on:
       - gpio
