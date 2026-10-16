@@ -682,6 +682,9 @@ struct ethernet_context {
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct net_if *bridge;
+
+	/* Index of this interface in the port table of its bridge */
+	uint8_t bridge_port;
 #endif
 
 	/** Carrier ON/OFF handler worker. This is used to create
