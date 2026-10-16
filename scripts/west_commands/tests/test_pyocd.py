@@ -282,3 +282,9 @@ def test_reset_args(require, cc, bc, pyocd_args, expected, pyocd):
     assert require.called
     bc.assert_called_once_with(RC_BUILD_DIR)
     cc.assert_called_once_with(expected)
+
+
+def test_baud_rate_unsupported(pyocd):
+    '''pyocd lacks the baud_rate capability, --baud-rate must be rejected.'''
+    with pytest.raises(ValueError, match='--baud-rate'):
+        pyocd(TEST_DEF_PARAMS + ['--baud-rate', '115200'])
