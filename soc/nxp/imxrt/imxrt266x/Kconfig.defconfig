@@ -7,6 +7,9 @@ if SOC_SERIES_IMXRT266X
 config GPIO
 	default y
 
+config I2S_HAS_PLL_SETTING
+	default n
+
 endif # SOC_SERIES_IMXRT266X
 
 # Scoped to the core, not the die: NVIC vector count, this core's L1, the
