@@ -4,6 +4,16 @@ tests:
     tags:
       - kernel
       - workqueue
+  kernel.workqueue.asan:
+    min_flash: 34
+    tags:
+      - kernel
+      - workqueue
+    extra_configs:
+      - CONFIG_ASAN=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
   kernel.workqueue.work_timeout:
     min_flash: 34
     tags:
