@@ -108,6 +108,8 @@
 			mode = <0>;
 			input = <0>;
 			prescale = <0>;
+			power-domains = <&core_domain>;
+			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
 		ctimer1: ctimer@40005000 {
@@ -120,6 +122,8 @@
 			mode = <0>;
 			input = <0>;
 			prescale = <0>;
+			power-domains = <&core_domain>;
+			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
 		ctimer2: ctimer@40006000 {
@@ -132,6 +136,8 @@
 			mode = <0>;
 			input = <0>;
 			prescale = <0>;
+			power-domains = <&core_domain>;
+			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		};
 
 		edma0: dma-controller@40080000 {
