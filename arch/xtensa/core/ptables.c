@@ -1607,6 +1607,7 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		uint32_t page = start + offset;
 		uint32_t l1_pos = XTENSA_MMU_L1_POS(page);
 		uint32_t l2_pos = XTENSA_MMU_L2_POS(page);
+		bool old_exec;
 
 		if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
 			/* Make sure we grab a fresh copy of L1 page table */
@@ -1634,6 +1635,12 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		pte = l2_table[l2_pos];
 		pte = PTE_PPN_SET(pte, start + offset);
 
+		/* Need to keep track of the old PTE's exec bit.
+		 * So that if we are removing the exec bit, we need to invalidate
+		 * the iTLB to prevent those pages being executable.
+		 */
+		old_exec = (pte & XTENSA_MMU_PERM_X) == XTENSA_MMU_PERM_X;
+
 		if ((option & OPTION_RESTORE_ATTRS) == OPTION_RESTORE_ATTRS) {
 			new_attrs = PTE_BCKUP_ATTR_GET(pte);
 			new_ring = PTE_BCKUP_RING_GET(pte);
@@ -1652,6 +1659,10 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		}
 
 		xtensa_dtlb_vaddr_invalidate((void *)page);
+
+		if (old_exec || ((new_attrs & XTENSA_MMU_PERM_X) == XTENSA_MMU_PERM_X)) {
+			xtensa_itlb_vaddr_invalidate((void *)page);
+		}
 	}
 }
 
