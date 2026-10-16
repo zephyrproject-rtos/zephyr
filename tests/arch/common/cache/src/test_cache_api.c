@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_CACHE_MANAGEMENT)
+
 #include <zephyr/ztest.h>
 #include <zephyr/cache.h>
 
@@ -202,3 +204,5 @@ ZTEST_SUITE(cache_api, NULL, cache_api_setup, NULL, NULL, cache_api_teardown);
 /**
  * @}
  */
+
+#endif /* CONFIG_CACHE_MANAGEMENT */
