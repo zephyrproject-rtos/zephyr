@@ -4,3 +4,14 @@
 config BOARD_XIAO_NRF54LM20A
 	select SOC_NRF54LM20A_CPUAPP if BOARD_XIAO_NRF54LM20A_NRF54LM20A_CPUAPP
 	select SOC_NRF54LM20A_CPUFLPR if BOARD_XIAO_NRF54LM20A_NRF54LM20A_CPUFLPR
+
+if BOARD_XIAO_NRF54LM20A_NRF54LM20A_CPUAPP
+
+# Declared here (and set by the generated boards/Kconfig, def_bool y for
+# BOARD=xiao_nrf54lm20a@2.0.0/... builds) so that Kconfig.defconfig can
+# gate the revision 2.0.0 defaults on it also in standalone Kconfig
+# parsing (the generated symbol alone is not visible there).
+config BOARD_REVISION_2_0_0
+	bool
+
+endif # BOARD_XIAO_NRF54LM20A_NRF54LM20A_CPUAPP
