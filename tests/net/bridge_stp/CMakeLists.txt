@@ -7,6 +7,6 @@ project(bridge_stp)
 set(STP_DIR ${ZEPHYR_BASE}/subsys/net/l2/ethernet/bridge/stp)
 
 target_include_directories(app PRIVATE ${STP_DIR})
-target_sources(app PRIVATE ${STP_DIR}/rstp_bpdu.c)
+target_sources(app PRIVATE ${STP_DIR}/rstp_bpdu.c ${STP_DIR}/rstp.c)
 file(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
