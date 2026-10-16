@@ -1,0 +1,38 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_ITE_IT8300
+	bool "ITE IT8300 GPIO expander driver"
+	default y
+	depends on DT_HAS_ITE_IT8300_ENABLED
+	select I2C
+	help
+	  Enable GPIO support for the ITE IT8300 via I2C.
+	  The IT8300 exposes 34 GPIO pins over 5 groups (A..E); each group
+	  is instantiated as its own GPIO controller (child devicetree node),
+	  sharing one I2C bus connection owned by the parent "ite,it8300" node.
+
+if GPIO_ITE_IT8300
+
+config GPIO_ITE_IT8300_EMUL
+	bool "ITE IT8300 GPIO expander emulator"
+	depends on EMUL
+	depends on GPIO_EMUL
+	depends on I2C_EMUL
+	help
+	  Enable the ITE IT8300 GPIO expander emulator. The emulator models
+	  register access, GPIO input changes, and the active-low ALERT signal
+	  for driver tests running on emulated I2C and GPIO controllers.
+
+config IT8300_INIT_PRIORITY
+	int "IT8300 init priority"
+	default I2C_INIT_PRIORITY
+	help
+	  Initialization priority for the parent IT8300 device.
+	  GPIO child devices initialize at the next priority level.
+
+	  Must be greater than I2C_INIT_PRIORITY and, if an alert-gpios
+	  pin is used, greater than the init priority of that GPIO
+	  controller driver.
+
+endif # GPIO_ITE_IT8300

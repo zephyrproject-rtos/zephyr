@@ -1,0 +1,39 @@
+description: |
+  ITE IT8300 GPIO expander with an I2C interface.
+
+  The parent device manages the shared ALERT# interrupt. Each GPIO group
+  is represented by an ite,it8300-gpio child node. The I2C address is
+  0x20 through 0x23, selected by the CHIP_ID0 and CHIP_ID1 pins.
+
+  For example, attach the device to an ITE I2C controller and include the
+  GPIO group definitions. Adjust the bus, pinctrl, and ALERT# GPIO to match
+  the board. The included file extends the it8300_external_gpio label with
+  the address and size cells and all five GPIO group child nodes.
+
+    &i2c4 {
+        status = "okay";
+        clock-frequency = <I2C_BITRATE_FAST>;
+        pinctrl-0 = <&i2c4_clk_gpe0_default
+                     &i2c4_data_gpe7_default>;
+        pinctrl-names = "default";
+
+        it8300_external_gpio: it8300@20 {
+            compatible = "ite,it8300";
+            reg = <0x20>;
+            alert-gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+        };
+    };
+
+    #include <ite/it8300-gpio-cfg.dtsi>
+
+compatible: "ite,it8300"
+
+include: i2c-device.yaml
+
+properties:
+  alert-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO connected to the chip's CHIP_CS#/ALERT# pin.
+      The host GPIO is configured as an input; specify GPIO_ACTIVE_LOW.
+      If omitted, only polled GPIO access is available.
