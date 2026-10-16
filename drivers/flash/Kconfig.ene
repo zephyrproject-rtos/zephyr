@@ -1,0 +1,20 @@
+# Copyright (c) 2025-2026 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_ENE_KB106X
+	bool "ENE_KB106X flash driver"
+	default y
+	depends on DT_HAS_ENE_KB106X_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_EX_OP
+	help
+	  Enable flash driver for ENE_KB106X series
+
+config FLASH_ENE_EFLASH_PROTECT
+	bool "Extended operation for eflash protection control"
+	depends on FLASH_ENE_KB106X
+	help
+	  Enables flash extended operation for enabling flash
+	  protection.
