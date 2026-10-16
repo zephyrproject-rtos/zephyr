@@ -52,6 +52,7 @@ struct nxp_enet_ptp_data {
 	struct k_sem ptp_ts_sem;
 	struct k_mutex *ptp_mutex; /* created in PTP driver */
 	void *enet; /* enet_handle poiniter used by PTP driver */
+	bool timer_running; /* set by PTP driver once the 1588 timer is started */
 };
 
 #ifdef CONFIG_MDIO_NXP_ENET
