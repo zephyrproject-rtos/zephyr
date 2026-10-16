@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sdm0_default: sdm0_default {
+		group1 {
+			pinmux = <SDM_CH0_GPIO4>;
+			output-enable;
+		};
+	};
+};
+
+&sdm0 {
+	pinctrl-0 = <&sdm0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel0@0 {
+		reg = <0>;
+		sample-rate-hz = <1000000>;
+	};
+};

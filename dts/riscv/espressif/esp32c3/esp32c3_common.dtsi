@@ -231,6 +231,14 @@
 			status = "disabled";
 		};
 
+		sdm0: sdm@60004f00 {
+			compatible = "espressif,esp32-sdm";
+			reg = <0x60004f00 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		usb_serial: uart@60043000 {
 			compatible = "espressif,esp32-usb-serial";
 			reg = <0x60043000 0x400>;

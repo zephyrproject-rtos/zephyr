@@ -1,0 +1,68 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Espressif Sigma-Delta Modulator (SDM)
+
+description: |
+  Sigma-delta modulator. Each channel outputs a pulse-density stream on one
+  GPIO. Route the channel with pinctrl: SDM_CHn selects channel n, and the
+  child node's reg value must use that same index.
+
+    &sdm0 {
+      pinctrl-0 = <&sdm0_default>;
+      pinctrl-names = "default";
+      status = "okay";
+
+      channel0@0 {
+        reg = <0>;
+        sample-rate-hz = <1000000>;
+      };
+    };
+
+    sdm0_default: sdm0_default {
+      group1 {
+        pinmux = <SDM_CH0_GPIO4>;
+        output-enable;
+      };
+    };
+
+  The driver divides the default SDM clock by an integer prescaler from 1 to
+  256 to obtain sample-rate-hz. Density is changed at run time with
+  esp32_sdm_set_pulse_density().
+
+compatible: "espressif,esp32-sdm"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: SDM channel configuration.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+      description: |
+        Channel index. It must match the SDM_CHn signal used in pinctrl.
+        ESP32, ESP32-S2, ESP32-S3 and ESP32-P4 have channels 0 through 7.
+        ESP32-C3, ESP32-C5, ESP32-C6 and ESP32-H2 have channels 0 through 3.
+
+    sample-rate-hz:
+      type: int
+      required: true
+      description: |
+        Target sample rate, in Hz. The hardware prescaler is the integer
+        ratio of the default source clock to this rate and must fall in
+        the range 1 to 256.
