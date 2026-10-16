@@ -8,6 +8,6 @@ config NUM_IRQS
 	default 75
 
 config PM
-	select UART_INTERRUPT_DRIVEN
+	select UART_INTERRUPT_DRIVEN if SERIAL_SUPPORT_INTERRUPT
 
 endif
