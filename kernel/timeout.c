@@ -20,11 +20,11 @@
 static uint64_t curr_tick;
 
 /*
- * The timeout code shall take no locks other than its own (timeout_lock), nor
+ * The timeout code shall take no locks other than its own (z_timeout_lock), nor
  * shall it call any other subsystem while holding this lock. Code outside this
  * file takes it through sys_clock_lock()/sys_clock_unlock().
  */
-static struct k_spinlock timeout_lock;
+struct k_spinlock z_timeout_lock;
 
 /* Ticks left to process in the currently-executing sys_clock_announce() */
 static uint32_t announce_remaining;
@@ -70,6 +70,7 @@ static inline void inflight_mark_superseded(void)
 }
 
 static uint32_t elapsed(void)
+	Z_REQUIRES(z_timeout_lock)
 {
 	/*
 	 * While *this* CPU is executing sys_clock_announce_locked()'s firing
@@ -101,7 +102,7 @@ static uint32_t elapsed(void)
  * Backend queue implementation. The selected backend's queue instance and its
  * z_timeout_q_*() operations are private to this file: the backend is a header
  * included only here, after the shared state above, so those operations can
- * reach curr_tick / announce_remaining / inflight_timeout / timeout_lock
+ * reach curr_tick / announce_remaining / inflight_timeout / z_timeout_lock
  * directly. The per-node helpers (z_init_timeout / z_is_inactive_timeout) are
  * tree-wide and live in timeout_q.h.
  */
@@ -164,6 +165,7 @@ static uint32_t next_timeout(uint32_t ticks_elapsed)
  * always has a pending timeout and calls sys_clock_set_timeout() directly.
  */
 static void reprogram_next(uint32_t ticks_elapsed)
+	Z_REQUIRES(z_timeout_lock)
 {
 	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
 	    z_timeout_q_next_expiry() == K_TICKS_FOREVER) {
@@ -173,6 +175,7 @@ static void reprogram_next(uint32_t ticks_elapsed)
 	}
 }
 
+Z_NO_THREAD_SAFETY_ANALYSIS
 k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout)
 {
 	k_ticks_t ticks = 0;
@@ -188,7 +191,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	__ASSERT(z_is_inactive_timeout(to), "");
 	to->fn = fn;
 
-	K_SPINLOCK(&timeout_lock) {
+	K_SPINLOCK(&z_timeout_lock) {
 		uint32_t ticks_elapsed = 0;
 		bool has_elapsed = false;
 		k_ticks_t dticks;
@@ -236,11 +239,12 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	return ticks;
 }
 
+Z_NO_THREAD_SAFETY_ANALYSIS
 int z_try_abort_timeout(struct _timeout *to)
 {
 	int ret = -EINVAL;
 
-	K_SPINLOCK(&timeout_lock) {
+	K_SPINLOCK(&z_timeout_lock) {
 		if (!z_is_inactive_timeout(to)) {
 			bool was_first = z_timeout_q_remove(to);
 
@@ -277,7 +281,7 @@ bool z_timeout_inflight_superseded(const struct _timeout *to)
 {
 	bool superseded = false;
 
-	K_SPINLOCK(&timeout_lock) {
+	K_SPINLOCK(&z_timeout_lock) {
 		superseded = inflight_timeout ==
 			     (struct _timeout *)((uintptr_t)to | INFLIGHT_SUPERSEDED_BIT);
 	}
@@ -285,11 +289,12 @@ bool z_timeout_inflight_superseded(const struct _timeout *to)
 	return superseded;
 }
 
+Z_NO_THREAD_SAFETY_ANALYSIS
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
-	K_SPINLOCK(&timeout_lock) {
+	K_SPINLOCK(&z_timeout_lock) {
 		if (!z_is_inactive_timeout(timeout)) {
 			k_ticks_t rem = z_timeout_q_remainder(timeout);
 			uint32_t el = elapsed();
@@ -307,7 +312,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
-	K_SPINLOCK(&timeout_lock) {
+	K_SPINLOCK(&z_timeout_lock) {
 		ticks = curr_tick;
 		if (!z_is_inactive_timeout(timeout)) {
 			ticks += z_timeout_q_remainder(timeout);
@@ -318,11 +323,12 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 }
 EXPORT_SYMBOL(z_timeout_expires);
 
+Z_NO_THREAD_SAFETY_ANALYSIS
 uint32_t z_get_next_timeout_expiry(void)
 {
 	uint32_t ret = (uint32_t)K_TICKS_FOREVER;
 
-	K_SPINLOCK(&timeout_lock) {
+	K_SPINLOCK(&z_timeout_lock) {
 		/*
 		 * Same decision as reprogram_next(). Sloppy idle lets the
 		 * uptime drift, so an empty list means nothing to wake up for
@@ -350,7 +356,7 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 	 */
 	if (IS_ENABLED(CONFIG_SMP) && any_cpu_announcing()) {
 		announce_remaining += ticks;
-		k_spin_unlock(&timeout_lock, key);
+		k_spin_unlock(&z_timeout_lock, key);
 		return;
 	}
 
@@ -397,9 +403,9 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 
 			inflight_timeout = t;
 
-			k_spin_unlock(&timeout_lock, key);
+			k_spin_unlock(&z_timeout_lock, key);
 			handler(t);
-			key = k_spin_lock(&timeout_lock);
+			key = k_spin_lock(&z_timeout_lock);
 			inflight_timeout = NULL;
 		}
 	}
@@ -409,7 +415,7 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 
 	reprogram_next(0);
 
-	k_spin_unlock(&timeout_lock, key);
+	k_spin_unlock(&z_timeout_lock, key);
 
 #ifdef CONFIG_TIMESLICING
 	z_time_slice();
@@ -419,27 +425,28 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 #if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
 k_spinlock_key_t sys_clock_lock(void)
 {
-	return k_spin_lock(&timeout_lock);
+	return k_spin_lock(&z_timeout_lock);
 }
 
 void sys_clock_unlock(k_spinlock_key_t key)
 {
-	k_spin_unlock(&timeout_lock, key);
+	k_spin_unlock(&z_timeout_lock, key);
 }
 #endif
 
 #if defined(CONFIG_TEST) || defined(CONFIG_ASSERT)
 bool sys_clock_is_locked(void)
 {
-	return z_spin_is_locked(&timeout_lock);
+	return z_spin_is_locked(&z_timeout_lock);
 }
 #endif
 
+Z_NO_THREAD_SAFETY_ANALYSIS
 int64_t sys_clock_tick_get(void)
 {
 	uint64_t t = 0U;
 
-	K_SPINLOCK(&timeout_lock) {
+	K_SPINLOCK(&z_timeout_lock) {
 		t = curr_tick + elapsed();
 	}
 	return t;

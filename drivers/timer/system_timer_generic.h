@@ -673,6 +673,7 @@ uint32_t sys_clock_elapsed(void)
  * counter) before handing off.
  */
 static void timer_core_announce_from(k_spinlock_key_t key)
+	Z_RELEASES(z_timeout_lock)
 {
 	timer_core_ticks_t dticks = timer_core_delta_ticks();
 
@@ -725,6 +726,7 @@ static void timer_core_announce_from(k_spinlock_key_t key)
  * -Wunused-function.
  */
 static inline void timer_core_announce_cycles64_from(k_spinlock_key_t key, uint64_t cycles)
+	Z_RELEASES(z_timeout_lock)
 {
 	uint64_t dticks = cycles / TIMER_CORE_CYC_PER_TICK;
 
