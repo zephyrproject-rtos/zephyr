@@ -1716,3 +1716,9 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_scd30: scd30@df {
+	compatible = "sensirion,scd30";
+	reg = <0xdf>;
+	measurement-interval = <2>;
+};
