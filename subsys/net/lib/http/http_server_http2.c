@@ -1211,6 +1211,11 @@ static int parse_http_frame_padded_field(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
 
+	/* The Pad Length field itself has to fit the frame. */
+	if (frame->length == 0) {
+		return -EBADMSG;
+	}
+
 	if (client->data_len == 0) {
 		return -EAGAIN;
 	}
@@ -1244,6 +1249,10 @@ static int parse_http_frame_padded_field(struct http_client_ctx *client)
 static int parse_http_frame_priority_field(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
+
+	if (frame->length < HTTP2_HEADERS_FRAME_PRIORITY_LEN) {
+		return -EBADMSG;
+	}
 
 	if (client->data_len < HTTP2_HEADERS_FRAME_PRIORITY_LEN) {
 		return -EAGAIN;
