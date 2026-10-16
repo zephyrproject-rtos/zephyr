@@ -1652,6 +1652,10 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		}
 
 		xtensa_dtlb_vaddr_invalidate((void *)page);
+
+		if ((attrs & XTENSA_MMU_PERM_X) == XTENSA_MMU_PERM_X) {
+			xtensa_itlb_vaddr_invalidate((void *)page);
+		}
 	}
 }
 
