@@ -186,7 +186,14 @@ int cobs_decoder_close(struct cobs_decoder *dec)
 
 	__ASSERT_NO_MSG(dec != NULL);
 
-	ret = cobs_decoder_needs_more_data(dec) ? -EINVAL : 0;
+	if ((dec->flags & COBS_FLAG_TRAILING_DELIMITER) != 0U) {
+		/* Every frame must be terminated by a delimiter */
+		ret = dec->code != 0U ? -EINVAL : 0;
+	} else {
+		/* The stream is a single frame of at least one complete group */
+		ret = (dec->code == 0U || cobs_decoder_needs_more_data(dec)) ? -EINVAL : 0;
+	}
+
 	cobs_decoder_reset(dec);
 
 	return ret;

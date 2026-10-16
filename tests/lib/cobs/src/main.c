@@ -411,6 +411,11 @@ static int cobs_net_buf_cb(const uint8_t *buf, size_t len, void *user_data)
 {
 	struct net_buf *dst = user_data;
 
+	if (buf == NULL) {
+		/* Frame end */
+		return 0;
+	}
+
 	if (net_buf_tailroom(dst) < len) {
 		return -ENOMEM;
 	}
@@ -684,4 +689,51 @@ ZTEST_F(cobs_tests, test_cobs_invalid_overrun)
 	net_buf_add_mem(fixture->encoded, data_enc, sizeof(data_enc));
 	ret = cobs_decode(fixture->encoded, fixture->decoded, 0);
 	zassert_equal(ret, -EINVAL, "Decoding insufficient data not caught");
+}
+
+ZTEST_F(cobs_tests, test_cobs_empty)
+{
+	int ret;
+
+	ret = cobs_decode(fixture->encoded, fixture->decoded, 0);
+	zassert_equal(ret, -EINVAL, "Decoding empty input not caught");
+}
+
+ZTEST_F(cobs_tests, test_cobs_missing_trailing_delim)
+{
+	int ret;
+	const char data_enc[] = {0x02, 'A'};
+
+	net_buf_add_mem(fixture->encoded, data_enc, sizeof(data_enc));
+	ret = cobs_decode(fixture->encoded, fixture->decoded, COBS_FLAG_TRAILING_DELIMITER);
+	zassert_equal(ret, -EINVAL, "Decoding missing trailing delimiter not caught");
+}
+
+ZTEST_F(cobs_tests, test_decode_stream_close)
+{
+	const uint8_t data_enc[] = {0x02, 'A', 0x00, 0x02, 'B'};
+	struct cobs_decoder dec;
+	int ret;
+
+	/* Closing without a frame */
+	ret = cobs_decoder_init(&dec, cobs_net_buf_cb, fixture->decoded, 0);
+	zassert_ok(ret, "decoder init failed (%d)", ret);
+	zassert_equal(cobs_decoder_close(&dec), -EINVAL);
+
+	/* Closing inside a group */
+	zassert_equal(cobs_decoder_write(&dec, data_enc, 1), 1);
+	zassert_equal(cobs_decoder_close(&dec), -EINVAL);
+
+	ret = cobs_decoder_init(&dec, cobs_net_buf_cb, fixture->decoded,
+				COBS_FLAG_TRAILING_DELIMITER);
+	zassert_ok(ret, "decoder init failed (%d)", ret);
+
+	/* Closing without a frame or after a terminated frame */
+	zassert_ok(cobs_decoder_close(&dec));
+	zassert_equal(cobs_decoder_write(&dec, data_enc, 3), 3);
+	zassert_ok(cobs_decoder_close(&dec));
+
+	/* Closing inside an unterminated frame */
+	zassert_equal(cobs_decoder_write(&dec, &data_enc[3], 2), 2);
+	zassert_equal(cobs_decoder_close(&dec), -EINVAL);
 }
