@@ -76,6 +76,7 @@ struct ifx_cat1_i2c_data {
 	uint32_t async_pending;
 	struct ifx_cat1_clock clock;
 	struct i2c_target_config *p_target_config;
+	uint32_t controller_config;
 	uint8_t i2c_target_wr_byte;
 	uint8_t target_wr_buffer[CONFIG_I2C_INFINEON_CAT1_TARGET_BUF];
 	uint8_t target_address;
@@ -611,6 +612,15 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	} else {
 		/* Drop any stale registration when no longer a wakeup source. */
 		Cy_SysPm_UnregisterCallback(&data->i2c_deep_sleep);
+	}
+
+	if (!is_target_mode && (dev_config != 0)) {
+		/*
+		 * Remembered so that unregistering a target can put the
+		 * controller back exactly as it was, rather than at whatever
+		 * speed registering the target happened to select.
+		 */
+		data->controller_config = dev_config;
 	}
 
 	/* Release semaphore */
@@ -1199,25 +1209,35 @@ static int ifx_cat1_i2c_target_unregister(const struct device *dev, struct i2c_t
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 	int ret;
 
-	/* Acquire semaphore (block I2C operation for another thread) */
-	k_sem_take(&data->operation_sem, K_FOREVER);
+	ARG_UNUSED(cfg);
 
-	_i2c_free(dev);
-	data->p_target_config = NULL;
-
-	data->irq_cause &= ~I2C_CAT1_TARGET_EVENTS_MASK;
-
-	/* Disable NVIC to prevent ISR loops from stale INTR_S bits. */
+	/*
+	 * Mask the interrupt across the transition so stale INTR_S bits left
+	 * by the target role cannot drive the handler while the SCB is being
+	 * re-initialised. Reconfiguring below re-enables it.
+	 */
 	irq_disable(config->irq_num);
 
-	/* Release pins so a disabled SCB cannot hold the bus low. */
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-	if (ret < 0 && ret != -ENOENT) {
-		LOG_WRN("target_unregister: pinctrl SLEEP state apply failed (%d)", ret);
+	data->p_target_config = NULL;
+	data->irq_cause &= ~I2C_CAT1_TARGET_EVENTS_MASK;
+
+	/*
+	 * Restoring controller operation is what makes this the inverse of
+	 * target_register(). Reconfiguring de-initialises the SCB, brings it
+	 * back up without the target address and re-enables the interrupt.
+	 * Leaving the peripheral down instead would strand the instance: every
+	 * later transfer on it would time out, and the only way back would be
+	 * to register another target.
+	 *
+	 * The configuration applied is the one the controller last held, so a
+	 * speed chosen by the application survives a target registration.
+	 */
+	ret = ifx_cat1_i2c_configure(dev, data->controller_config);
+	if (ret < 0) {
+		LOG_ERR("target_unregister: could not restore controller mode (%d)", ret);
+		return ret;
 	}
 
-	/* Release semaphore */
-	k_sem_give(&data->operation_sem);
 	return 0;
 }
 
