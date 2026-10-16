@@ -14,6 +14,16 @@ tests:
     platform_exclude:
       - mg100
       - pinnacle_100_dvk
+  net.eth_bridge.fdb_ageing:
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IPV6=n
+      - CONFIG_NET_CONFIG_NEED_IPV4=n
+      - CONFIG_NET_CONFIG_NEED_IPV6=n
+      - CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME=2
+    platform_exclude:
+      - mg100
+      - pinnacle_100_dvk
   net.eth_bridge.ip:
     extra_configs:
       - CONFIG_NET_IPV4=y
