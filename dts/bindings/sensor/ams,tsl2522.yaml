@@ -1,0 +1,79 @@
+# Copyright (c) 2026 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ams OSRAM TSL2522 ambient light sensing and light flicker detection sensor. See datasheet at
+  https://look.ams-osram.com/m/297a255d37b15c/original/TSL2522-Highly-sensitive-ambient-light-sensor-with-light-flicker-detection.pdf
+
+compatible: "ams,tsl2522"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Identifies the interrupt pin
+
+  measurement-time-steps:
+    type: int
+    default: 720
+    min: 1
+    max: 2048
+    description: |
+      ALS measurement time step. Sets the time in steps of 1.388889μs
+      modulator clock.
+
+  number-of-samples:
+    type: int
+    default: 64
+    min: 1
+    max: 2048
+    description: |
+      Number of samples taken in one conversion
+
+  # Keep enums sorted, the driver depends on it.
+  # modulator-gain-16X is the initial value, it can be changed during
+  # runtime with SENSOR_ATTR_GAIN
+  modulator-gain:
+    type: string
+    default: modulator-gain-16X
+    enum:
+      - modulator-gain-half
+      - modulator-gain-1X
+      - modulator-gain-2X
+      - modulator-gain-4X
+      - modulator-gain-8X
+      - modulator-gain-16X
+      - modulator-gain-32X
+      - modulator-gain-64X
+      - modulator-gain-128X
+      - modulator-gain-256X
+      - modulator-gain-512X
+      - modulator-gain-1024X
+      - modulator-gain-2048X
+      - modulator-gain-4096X
+    description: |
+      Gain used in both modulators
+
+  glass-attenuation:
+    type: int
+    default: 100000
+    min: 0
+    max: 5000000
+    description: |
+      Visible light attenuation.
+      Integer value for a representation with 5 decimal points.
+      This default value (1.00000) is chosen for free open space (no glass).
+      Example: 1.2 would be 120000
+
+  glass-ir-attenuation:
+    type: int
+    default: 100000
+    min: 0
+    max: 5000000
+    description: |
+      Infra-red light attenuation.
+      Integer value for a representation with 5 decimal points.
+      This default value (1.00000) is chosen for free open space (no glass).
+      Example: 1.2 would be 120000
