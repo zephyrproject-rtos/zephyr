@@ -504,7 +504,7 @@ ZTEST(http2_hpack, test_http2_hpack_literal_not_indexed_decode)
  * buffer is configured to hold, which keeps the encoder on the literal
  * path and the value decodable without one.
  */
-#define TEST_LONG_VALUE_LEN MAX(408, 2 * HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE)
+#define TEST_LONG_VALUE_LEN MAX(408, 2 * HTTP_HUFFMAN_DECODE_BUFFER_SIZE)
 
 static char test_long_value[TEST_LONG_VALUE_LEN + 1];
 static uint8_t test_long_buf[TEST_LONG_VALUE_LEN + 16];
@@ -591,7 +591,7 @@ ZTEST(http2_hpack, test_http2_hpack_oversized_field)
 	/* A literal field with the name "x" and a Huffman-coded value that
 	 * decodes to more than the decoding buffer holds.
 	 */
-	static uint8_t value[2 * HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE];
+	static uint8_t value[2 * HTTP_HUFFMAN_DECODE_BUFFER_SIZE];
 	static uint8_t encoded[sizeof(value)];
 	static uint8_t entry[8 + sizeof(value)];
 	struct http_hpack_header_buf dec = { 0 };
@@ -623,7 +623,7 @@ ZTEST(http2_hpack, test_http2_hpack_oversized_field_invalid)
 	 * buffer and then runs into an EOS symbol: an error, not an oversized
 	 * field (RFC 7541, Section 5.2).
 	 */
-	static uint8_t value[2 * HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE];
+	static uint8_t value[2 * HTTP_HUFFMAN_DECODE_BUFFER_SIZE];
 	static uint8_t encoded[sizeof(value) + 4];
 	static uint8_t entry[8 + sizeof(encoded)];
 	struct http_hpack_header_buf dec = { 0 };
