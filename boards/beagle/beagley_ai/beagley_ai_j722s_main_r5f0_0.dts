@@ -59,3 +59,15 @@
 	pinctrl-names = "default";
 	current-speed = <115200>;
 };
+
+&secure_proxy_main {
+	status = "okay";
+};
+
+&dmsc {
+	status = "okay";
+};
+
+&main_gpio_intr {
+	status = "okay";
+};

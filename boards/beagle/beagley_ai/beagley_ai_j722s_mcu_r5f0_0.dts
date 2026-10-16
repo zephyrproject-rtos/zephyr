@@ -67,3 +67,15 @@
 &mcu_rti0 {
 	status = "okay";
 };
+
+&secure_proxy_main {
+	status = "okay";
+};
+
+&dmsc {
+	status = "okay";
+};
+
+&mcu_gpio_intr {
+	status = "okay";
+};
