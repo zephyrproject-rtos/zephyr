@@ -103,6 +103,12 @@ static inline uint8_t bt_monitor_opcode(uint8_t type, enum bt_monitor_dir dir)
 		} else {
 			return BT_MONITOR_ISO_RX_PKT;
 		}
+	case BT_HCI_H4_SCO:
+		if (dir == BT_MONITOR_TX) {
+			return BT_MONITOR_SCO_TX_PKT;
+		} else {
+			return BT_MONITOR_SCO_RX_PKT;
+		}
 	default:
 		return BT_MONITOR_NOP;
 	}
