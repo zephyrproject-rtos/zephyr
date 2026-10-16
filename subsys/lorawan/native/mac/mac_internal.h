@@ -17,24 +17,8 @@ extern "C" {
 /* RX2 opens this long after RX1 (RECEIVE_DELAY2 - RECEIVE_DELAY1) */
 #define RX2_DELAY_OFFSET_MS	1000
 
-/* LoRaWAN field sizes in bytes */
-#define LWAN_MIC_SIZE		4
-#define MHDR_SIZE		1
-#define DEV_ADDR_SIZE		4
-#define FCTRL_SIZE		1
-#define FCNT_SIZE		2
-#define FPORT_SIZE		1
-#define EUI_SIZE		8
-#define JOIN_NONCE_SIZE		3
-#define NET_ID_SIZE		3
-#define DEV_NONCE_SIZE		2
-
 #define LWAN_FCNT_NONE		UINT32_MAX
 #define LWAN_PENDING_ACK	BIT(0)
-
-#define MHDR_TYPE_MASK		GENMASK(7, 5)
-#define MHDR_MAJOR_MASK		GENMASK(1, 0)
-#define MHDR_MAJOR_R1		0
 
 enum mac_rx_result {
 	MAC_RX_DONE,
