@@ -278,6 +278,90 @@ ZTEST(mem_protect_domain, test_mem_domain_remove_add_partition)
 	spawn_child_thread(rw_part_access, &test_domain, false);
 }
 
+static ZTEST_BMEM volatile bool child_spinning;
+static ZTEST_BMEM volatile bool domain_changed;
+static bool grant_on_change;
+
+/* Change the test domain from interrupt context while the child spins, so the
+ * child sees the change without being switched out.
+ */
+static void change_domain(struct k_timer *timer)
+{
+	if (!child_spinning) {
+		k_timer_start(timer, K_MSEC(1), K_NO_WAIT);
+		return;
+	}
+
+	if (grant_on_change) {
+		(void)k_mem_domain_add_partition(&test_domain, &rw_parts[0]);
+	} else {
+		(void)k_mem_domain_remove_partition(&test_domain, &rw_parts[0]);
+	}
+	domain_changed = true;
+}
+
+static K_TIMER_DEFINE(domain_change_timer, change_domain, NULL);
+
+static void access_after_domain_change(void *p1, void *p2, void *p3)
+{
+	child_spinning = true;
+	while (!domain_changed) {
+	}
+
+	rw_bufs[0][0]++;
+	rw_bufs[0][0]--;
+}
+
+static void run_domain_change(bool grant, bool should_fault)
+{
+	child_spinning = false;
+	domain_changed = false;
+	grant_on_change = grant;
+	k_timer_start(&domain_change_timer, K_MSEC(1), K_NO_WAIT);
+	spawn_child_thread(access_after_domain_change, &test_domain, should_fault);
+	k_timer_stop(&domain_change_timer);
+	zassert_true(domain_changed, "the domain was not changed");
+}
+
+/**
+ * @brief Verify that a domain change reaches a thread that is running.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A partition added to or removed from the domain of the running thread
+ * applies to that thread at once, not only after it is next switched in.
+ *
+ * Test steps:
+ * - Remove a read-write partition from the test domain.
+ * - Spawn a user thread in the domain that spins until a timer interrupt adds
+ *   the partition back, then accesses it.
+ * - Spawn another that spins until a timer interrupt removes the partition,
+ *   then accesses it.
+ * - Restore the partition.
+ *
+ * Expected result:
+ * - The access after the grant succeeds and the access after the revoke
+ *   faults.
+ *
+ * @see k_mem_domain_add_partition()
+ * @see k_mem_domain_remove_partition()
+ */
+ZTEST(mem_protect_domain, test_mem_domain_change_reaches_running_thread)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API);
+	Z_TEST_SKIP_IFDEF(CONFIG_SMP);
+
+	zassert_equal(k_mem_domain_remove_partition(&test_domain, &rw_parts[0]), 0,
+		      "failed to remove memory partition");
+
+	run_domain_change(true, false);
+	run_domain_change(false, true);
+
+	zassert_equal(k_mem_domain_add_partition(&test_domain, &rw_parts[0]), 0,
+		      "failed to add memory partition");
+}
+
 /* user mode will attempt to initialize this and fail */
 static struct k_mem_domain no_access_domain;
 
