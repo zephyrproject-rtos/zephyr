@@ -10,6 +10,12 @@
 	status = "okay";
 };
 
-tst_dma0: &dmamux {
+&dmamux {
 	status = "okay";
+};
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&dmamux>;
+	};
 };

@@ -11,4 +11,8 @@
 	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 };
 
-tst_dma0: &edma0 {};
+/ {
+	zephyr,user {
+		dma-test-devs = <&edma0>;
+	};
+};

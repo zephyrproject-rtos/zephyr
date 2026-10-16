@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&edma3>, <&edma4>;
+	};
+};

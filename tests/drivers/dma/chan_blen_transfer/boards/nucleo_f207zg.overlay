@@ -8,6 +8,12 @@
 	status = "okay";
 };
 
-tst_dma0: &dma2 {
+&dma2 {
 	status = "okay";
+};
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&dma2>;
+	};
 };
