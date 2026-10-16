@@ -1,0 +1,225 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3.dtsi>
+#include "tdisplay_s3_amoled_plus-pinctrl.dtsi"
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	model = "LilyGO T-Display S3 AMOLED Plus PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		i2c-0 = &i2c0;
+		rtc = &pcf85063a;
+		sdhc0 = &sdcard0;
+		sw0 = &boot_button;
+		uart-0 = &uart0;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &rm67162;
+		zephyr,touch = &cst816t;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		te-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		rm67162: rm67162@0 {
+			compatible = "raydium,rm67162";
+			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(40)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			init-sequence = "lilygo-t-display-s3-amoled";
+			width = <240>;
+			height = <536>;
+			rotation = <90>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
+			te-mode = "MIPI_DBI_TE_RISING_EDGE";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		boot_button: boot_button {
+			label = "BOOT";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&cst816t>;
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 3>;
+		output-ohms = <100000>;
+		full-ohms = <200000>;
+		skip-calibration;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+
+	/* Enables the AMOLED panel power supply (ELVDD/ELVSS) */
+	oled-en-hog {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "oled-en";
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	cst816t: touchscreen@15 {
+		compatible = "hynitron,cst8xx";
+		reg = <0x15>;
+		irq-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		screen-width = <536>;
+		screen-height = <240>;
+		inverted-y;
+		swapped-x-y;
+	};
+
+	pcf85063a: rtc@51 {
+		compatible = "nxp,pcf85063a";
+		reg = <0x51>;
+		int1-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+	};
+
+	charger: charger@6b {
+		compatible = "ti,bq25896";
+		reg = <0x6b>;
+		constant-charge-current-max-microamp = <512000>;
+		constant-charge-voltage-max-microvolt = <4208000>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	dma-enabled;
+	dmas = <&dma 0>, <&dma 1>;
+	dma-names = "rx", "tx";
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+
+	sdcard0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+		};
+	};
+};
+
+&dma {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&ipm0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
