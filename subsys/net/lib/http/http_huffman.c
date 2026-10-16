@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <errno.h>
-#include <string.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
@@ -334,6 +335,7 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 	const struct decode_elem *decoded;
 	uint8_t bits_in_byte_left = 8;
 	size_t decoded_len = 0;
+	bool overflow = false;
 	uint32_t bits = 0;
 
 	if (encoded_buf == NULL || buf == NULL || encoded_len == 0) {
@@ -400,16 +402,24 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 		bits_needed += decoded->bitlen;
 		encoded_bits_len -= decoded->bitlen;
 
-		/* Store decoded symbol */
+		/* Store the decoded symbol. Once the buffer is full the rest of
+		 * the string is still decoded, so that an invalid string is
+		 * reported as such rather than as too large.
+		 */
 		if (buflen == 0) {
-			LOG_ERR("Not enough buffer to decode string");
-			return -ENOBUFS;
+			overflow = true;
+			continue;
 		}
 
 		*buf = decoded->symbol;
 		buf++;
 		buflen--;
 		decoded_len++;
+	}
+
+	if (overflow) {
+		LOG_ERR("Not enough buffer to decode string");
+		return -ENOBUFS;
 	}
 
 	return decoded_len;

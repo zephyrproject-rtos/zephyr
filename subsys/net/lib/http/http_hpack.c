@@ -213,7 +213,13 @@ static int hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 	NET_ASSERT(type == HPACK_HEADER_NAME || type == HPACK_HEADER_VALUE);
 
 	ret = http_hpack_huffman_decode(encoded_buf, encoded_len, buf, buflen);
-	if (ret < 0) {
+	if (ret == -ENOBUFS) {
+		/* The string length is explicit, so the entry can still be
+		 * consumed; the field is reported as oversized instead.
+		 */
+		header->oversized = true;
+		ret = 0;
+	} else if (ret < 0) {
 		return ret;
 	}
 
@@ -425,6 +431,7 @@ int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 	}
 
 	header->type = HTTP_HPACK_ENTRY_FIELD;
+	header->oversized = false;
 	prefix = *buf;
 
 	if ((prefix & HPACK_PREFIX_INDEXED_MASK) == HPACK_PREFIX_INDEXED) {

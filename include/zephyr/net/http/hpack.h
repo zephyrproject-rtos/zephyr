@@ -12,6 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_
 #define ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -121,6 +122,11 @@ struct http_hpack_header_buf {
 
 	/** Dynamic table size requested by a size update entry. */
 	uint32_t table_size;
+
+	/** Whether a string of the field was larger than the decoding buffer
+	 *  and was dropped. The entry is consumed, but the field is not usable.
+	 */
+	bool oversized;
 
 	/** A pointer to the decoded header field name. */
 	const char *name;
