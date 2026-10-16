@@ -243,9 +243,10 @@ def _node_reg_size(node, index, unit):
 def _node_int_prop(node, prop, unit=None):
     """
     This function takes a 'node' and  will look to see if that 'node' has a
-    property called 'prop' and if that 'prop' is an integer type will return
-    the value of the property 'prop' as either a string int or string hex
-    value, if not we return 0.
+    property called 'prop' and if that 'prop' is a property type whose value
+    is a single integer, i.e. 'int' or 'uint32-or-uint64', will return the
+    value of the property 'prop' as either a string int or string hex value,
+    if not we return 0.
 
     The function will divide the value based on 'unit':
         None        No division
@@ -262,7 +263,7 @@ def _node_int_prop(node, prop, unit=None):
     if prop not in node.props:
         return 0
 
-    if node.props[prop].type != "int":
+    if node.props[prop].type not in ("int", "uint32-or-uint64"):
         return 0
 
     return node.props[prop].val >> _dt_units_to_scale(unit)
@@ -692,9 +693,10 @@ def dt_node_int_prop(kconf, name, path, prop, unit=None):
     """
     This function takes a 'path' and property name ('prop') looks for an EDT
     node at that path. If it finds an EDT node, it will look to see if that
-    node has a property called 'prop' and if that 'prop' is an integer type
-    will return the value of the property 'prop' as either a string int or
-    string hex value, if not we return 0.
+    node has a property called 'prop' and if that 'prop' is a property type
+    whose value is a single integer, i.e. 'int' or 'uint32-or-uint64', will
+    return the value of the property 'prop' as either a string int or string
+    hex value, if not we return 0.
 
     The function will divide the value based on 'unit':
         None        No division
