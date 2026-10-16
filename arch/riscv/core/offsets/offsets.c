@@ -88,6 +88,10 @@ GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
 
 #endif /* CONFIG_FPU_SHARING */
 
+#ifdef CONFIG_RISCV_MMU
+GEN_OFFSET_SYM(_thread_arch_t, satp);
+#endif
+
 /* esf member offsets */
 GEN_OFFSET_STRUCT(arch_esf, ra);
 GEN_OFFSET_STRUCT(arch_esf, t0);
