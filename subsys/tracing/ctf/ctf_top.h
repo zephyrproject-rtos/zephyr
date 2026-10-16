@@ -53,10 +53,14 @@
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
 #include <zephyr/timing/timing.h>
 
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP
+uint64_t ctf_top_timestamp_get(void);
+#else  /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
 static inline uint64_t ctf_top_timestamp_get(void)
 {
 	return timing_ns_get();
 }
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
 
 #define CTF_EVENT(...)                                                                             \
 	{                                                                                          \
