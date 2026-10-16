@@ -65,6 +65,21 @@ static void thread_alloc_heap_null(void *p1, void *p2, void *p3)
 	k_heap_free(&k_heap_test, p);
 }
 
+#define DEADLINE_TICKS 5
+
+static int64_t deadline_elapsed;
+
+static void thread_alloc_heap_deadline(void *p1, void *p2, void *p3)
+{
+	int64_t start = k_uptime_ticks();
+	char *p;
+
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, K_TICKS(DEADLINE_TICKS));
+	deadline_elapsed = k_uptime_ticks() - start;
+
+	zassert_is_null(p, "k_heap_alloc should fail but did not");
+}
+
 /*test cases*/
 
 /* These need to be adjacent in BSS */
@@ -241,6 +256,40 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
 }
 
 /**
+ * @brief Validate that a blocked k_heap_alloc() returns at its deadline.
+ *
+ * @details A thread pends on an allocation that cannot be satisfied. When the
+ * deadline expires it must return instead of pending again. The wait is
+ * measured in the allocating thread: a second pend shows up as another tick.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @see k_heap_alloc()
+ */
+ZTEST(k_heap_api, test_k_heap_alloc_pending_deadline)
+{
+	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, K_NO_WAIT);
+
+	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_alloc_heap_deadline, NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+
+	int ret = k_thread_join(tid, K_TICKS(DEADLINE_TICKS * 4));
+
+	if (ret != 0) {
+		k_thread_abort(tid);
+	}
+	k_heap_free(&k_heap_test, p);
+
+	zassert_equal(ret, 0, "k_heap_alloc did not return");
+	zassert_true(deadline_elapsed <= (DEADLINE_TICKS + 1),
+		     "k_heap_alloc blocked for %lld ticks",
+		     (long long)deadline_elapsed);
+}
+
+/**
  * @brief Test k_heap_calloc() and k_heap_free() API usage
  *
  * @ingroup k_heap_api_tests
@@ -386,6 +435,66 @@ ZTEST(k_heap_api, test_k_heap_realloc_zero)
 	/* Realloc with size 0 should free the memory */
 	p2 = (char *)k_heap_realloc(&k_heap_test, p, 0, K_NO_WAIT);
 	zassert_is_null(p2, "k_heap_realloc with size 0 should return NULL");
+}
+
+/**
+ * @brief Test k_heap_realloc() with size 0 and a timeout.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The block is freed once and the call returns without waiting.
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc_zero_timeout)
+{
+	char *p, *p2;
+	int64_t start;
+
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, K_NO_WAIT);
+	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	start = k_uptime_ticks();
+	p2 = (char *)k_heap_realloc(&k_heap_test, p, 0, K_TICKS(10));
+	zassert_is_null(p2, "k_heap_realloc with size 0 should return NULL");
+	zassert_true(k_uptime_ticks() - start < 10, "k_heap_realloc with size 0 waited");
+
+	p = (char *)k_heap_alloc(&k_heap_test, HEAP_SIZE / 2, K_NO_WAIT);
+	p2 = (char *)k_heap_alloc(&k_heap_test, HEAP_SIZE / 4, K_NO_WAIT);
+	zassert_not_null(p, "k_heap_alloc operation failed");
+	zassert_not_null(p2, "k_heap_alloc operation failed");
+	k_heap_free(&k_heap_test, p2);
+	k_heap_free(&k_heap_test, p);
+}
+
+/**
+ * @brief Test that k_heap_realloc() with size 0 wakes a blocked allocation.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc_zero_wakes_waiter)
+{
+	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, K_NO_WAIT);
+
+	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_alloc_heap, NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+
+	/* Sleep long enough for child thread to go into pending */
+	k_msleep(5);
+
+	zassert_is_null(k_heap_realloc(&k_heap_test, p, 0, K_NO_WAIT),
+			"k_heap_realloc with size 0 should return NULL");
+
+	int ret = k_thread_join(tid, K_MSEC(100));
+
+	k_thread_join(tid, K_FOREVER);
+
+	zassert_equal(ret, 0, "waiter was not woken by k_heap_realloc with size 0");
 }
 
 /**
