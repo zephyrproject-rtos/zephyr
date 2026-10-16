@@ -52,6 +52,7 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define ANY_INST_HAS_RESET_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 #define ANY_INST_HAS_SUPPLY_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(supply_gpios)
 #define ANY_INST_HAS_T_RESET_RECOVERY DT_ANY_INST_HAS_PROP_STATUS_OKAY(t_reset_recovery)
+#define ANY_INST_HAS_INITIAL_SOFT_RESET DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
 #define ANY_INST_HAS_WP_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(wp_gpios)
 #define ANY_INST_HAS_HOLD_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(hold_gpios)
 #define ANY_INST_USE_4B_ADDR_OPCODES DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_4b_addr_opcodes)
@@ -153,6 +154,7 @@ struct spi_nor_config {
 	bool mxicy_mx25r_power_mode;
 #endif
 	bool use_4b_addr_opcodes:1;
+	bool initial_soft_reset:1;
 
 	/* exist flags for dts opt-ins */
 	bool dpd_exist:1;
@@ -1573,6 +1575,24 @@ static int spi_nor_configure(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/* After the DPD exit: a part in deep power-down ignores 66h/99h */
+	if (IS_ENABLED(ANY_INST_HAS_INITIAL_SOFT_RESET) && cfg->initial_soft_reset) {
+		rc = spi_nor_cmd_write(dev, SPI_NOR_CMD_RESET_EN);
+		if (rc == 0) {
+			rc = spi_nor_cmd_write(dev, SPI_NOR_CMD_RESET_MEM);
+		}
+		if (rc < 0) {
+			LOG_ERR("Soft reset failed (%d)", rc);
+			release_device(dev);
+			return -ENODEV;
+		}
+#if ANY_INST_HAS_T_RESET_RECOVERY
+		if (cfg->reset_recovery_us != 0) {
+			k_busy_wait(cfg->reset_recovery_us);
+		}
+#endif
+	}
+
 	rc = spi_nor_rdsr(dev);
 	if (rc > 0 && (rc & SPI_NOR_WIP_BIT)) {
 		LOG_WRN("Waiting until flash is ready");
@@ -1905,6 +1925,7 @@ static DEVICE_API(flash, spi_nor_api) = {
 		.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),				\
 		.hold_gpios_exist = DT_INST_NODE_HAS_PROP(idx, hold_gpios),			\
 		.use_4b_addr_opcodes = DT_INST_PROP(idx, use_4b_addr_opcodes),			\
+		.initial_soft_reset = DT_INST_PROP(idx, initial_soft_reset),			\
 		.has_flsr = DT_INST_PROP(idx, use_flag_status_register),			\
 		.use_fast_read = DT_INST_PROP(idx, use_fast_read),				\
 		IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),))	\
