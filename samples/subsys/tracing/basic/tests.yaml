@@ -15,6 +15,12 @@ tests:
       - mps2/an385
     integration_platforms:
       - mps2/an385
+  sample.tracing.ctf.ram:
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+    extra_args: EXTRA_CONF_FILE="prj_ram.conf"
   sample.tracing.user:
     extra_args: EXTRA_CONF_FILE="prj_user.conf"
     platform_allow:
