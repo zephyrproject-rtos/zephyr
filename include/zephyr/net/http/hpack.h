@@ -106,8 +106,22 @@ enum http_hpack_static_key {
 
 /** @endcond */
 
+/** Kind of HPACK entry decoded. */
+enum http_hpack_entry_type {
+	/** A header field. */
+	HTTP_HPACK_ENTRY_FIELD,
+	/** A dynamic table size update, carrying no field. */
+	HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE,
+};
+
 /** HTTP2 header field with decoding buffer. */
 struct http_hpack_header_buf {
+	/** Kind of the entry decoded last. */
+	enum http_hpack_entry_type type;
+
+	/** Dynamic table size requested by a size update entry. */
+	uint32_t table_size;
+
 	/** A pointer to the decoded header field name. */
 	const char *name;
 
