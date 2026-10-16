@@ -157,4 +157,47 @@
 #define IFX_AUTANALOG_SAR_FIFO_SPLIT8 3 /**< Eight 64-word buffers */
 /** @} */
 
+/**
+ * @name Sequencer next action (cy_en_autanalog_sar_next_act_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_SEQ_NEXT_STOP     0 /**< Stop, send SAR_EOS and SAR_DONE, idle */
+#define IFX_AUTANALOG_SAR_SEQ_NEXT_REPEAT   1 /**< Send SAR_EOS, return to start (continuous) */
+#define IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE 2 /**< Continue to next entry in scan table */
+/** @} */
+
+/**
+ * @name Sequencer calibration request (cy_en_autanalog_sar_calibrate_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_SEQ_CAL_DISABLED  0 /**< Calibration disabled */
+#define IFX_AUTANALOG_SAR_SEQ_CAL_BOTH      1 /**< Both offset and linearity */
+#define IFX_AUTANALOG_SAR_SEQ_CAL_OFFSET    2 /**< Offset calibration only */
+#define IFX_AUTANALOG_SAR_SEQ_CAL_LINEARITY 3 /**< Linearity calibration only */
+/** @} */
+
+/**
+ * @name Sequencer accumulator count (cy_en_autanalog_sar_acc_cnt_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_SEQ_ACC_CNT2   0 /**< 2 samples averaged */
+#define IFX_AUTANALOG_SAR_SEQ_ACC_CNT4   1 /**< 4 samples averaged */
+#define IFX_AUTANALOG_SAR_SEQ_ACC_CNT8   2 /**< 8 samples averaged */
+#define IFX_AUTANALOG_SAR_SEQ_ACC_CNT16  3 /**< 16 samples averaged */
+#define IFX_AUTANALOG_SAR_SEQ_ACC_CNT32  4 /**< 32 samples averaged */
+#define IFX_AUTANALOG_SAR_SEQ_ACC_CNT64  5 /**< 64 samples averaged */
+#define IFX_AUTANALOG_SAR_SEQ_ACC_CNT128 6 /**< 128 samples averaged */
+#define IFX_AUTANALOG_SAR_SEQ_ACC_CNT256 7 /**< 256 samples averaged */
+/** @} */
+
+/**
+ * @name Sequencer sample time slot selection (cy_en_autanalog_sar_sample_time_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME0 0 /**< Sample time slot 0 */
+#define IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME1 1 /**< Sample time slot 1 */
+#define IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME2 2 /**< Sample time slot 2 */
+#define IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME3 3 /**< Sample time slot 3 */
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_INFINEON_AUTANALOG_SAR_H_ */

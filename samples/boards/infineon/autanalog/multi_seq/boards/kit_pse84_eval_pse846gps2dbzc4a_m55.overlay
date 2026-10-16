@@ -1,0 +1,178 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-autanalog-sar.h>
+
+/ {
+	zephyr,user {
+		/* ADC channels: GPIO ch0~7, MUX ch8~9 */
+		io-channels = <&adc0 0>, <&adc0 1>, <&adc0 2>, <&adc0 3>,
+			      <&adc0 4>, <&adc0 5>, <&adc0 6>, <&adc0 7>,
+			      <&adc0 8>, <&adc0 9>;
+	};
+};
+
+&autanalog {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* Static sample-time mode: four slots with distinct acquisition times.
+	 * Each channel's zephyr,acquisition-time must match the slot selected by
+	 * the sequencer entry that samples it (sample-time-sel).
+	 */
+	sample-times = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>,
+		       <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 2)>,
+		       <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 5)>,
+		       <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <0>;   /* P15.0 */
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <1>;   /* P15.1 */
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 2)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <2>;   /* P15.2 */
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 2)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <3>;   /* P15.3 */
+	};
+
+	channel@4 {
+		reg = <4>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 2)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <4>;   /* P15.4 */
+	};
+
+	channel@5 {
+		reg = <5>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 5)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <5>;   /* P15.5 */
+	};
+
+	channel@6 {
+		reg = <6>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 5)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <6>;   /* P15.6 */
+	};
+
+	channel@7 {
+		reg = <7>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 5)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <7>;   /* P15.7 */
+	};
+
+	/* MUX channel: P15.0 via internal MUX routing.
+	 * Channel ID 8 = MUX channel index 0.
+	 */
+	channel@8 {
+		reg = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_GPIO0>;
+		mux-buf-bypass;
+	};
+
+	/* MUX channel: P15.2 via internal MUX routing.
+	 * Channel ID 9 = MUX channel index 1.
+	 */
+	channel@9 {
+		reg = <9>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_GPIO2>;
+		mux-buf-bypass;
+	};
+
+	/* HS sequencer table: each entry samples several channels at once and
+	 * selects its own sample-time slot via sample-time-sel.  All channels
+	 * grouped in one entry must share that slot's acquisition time.  Entries
+	 * are chained via next-action; the last one stops the scan.
+	 */
+	seq-hs-0 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0x03>;  /* GPIO ch 0, 1 */
+		sample-time-en;
+		sample-time-sel = <IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME0>;  /* 1 us */
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-1 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0x1c>;  /* GPIO ch 2, 3, 4 */
+		sample-time-en;
+		sample-time-sel = <IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME1>;  /* 2 us */
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-2 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0xe0>;  /* GPIO ch 5, 6, 7 */
+		sample-time-en;
+		sample-time-sel = <IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME2>;  /* 5 us */
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-3 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		mux-mode = <IFX_AUTANALOG_SAR_MUX0_MUX1_SINGLE_ENDED>;
+		mux0-sel = <0>;  /* MUX ch 8 (MUX index 0) */
+		mux1-sel = <1>;  /* MUX ch 9 (MUX index 1) */
+		sample-time-en;
+		sample-time-sel = <IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME3>;  /* 10 us */
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_STOP>;
+	};
+};
+
+&gpio_prt15 {
+	status = "okay";
+};
