@@ -13,6 +13,7 @@
 #include <esp_attr.h>
 #include <esp_cpu.h>
 #include <esp_sleep.h>
+#include <esp_timer.h>
 #include <esp_timer_impl.h>
 #include <esp_private/esp_clk.h>
 #include <esp_private/systimer.h>
@@ -36,7 +37,6 @@ extern esp_err_t sleep_clock_icg_startup_init(void);
 #endif
 
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
-#include <esp_timer.h>
 #include <pmstats.h>
 #endif
 
@@ -324,8 +324,23 @@ uint64_t esp32_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 	 * discounted from the sleep period.
 	 */
 	uint64_t counter = esp_timer_impl_get_counter_reg();
+	int64_t next_alarm = esp_timer_get_next_alarm_for_wake_up();
 
 	sleep_time_us = max_lpm_time_us;
+
+	/* An esp_timer alarm is not covered by the kernel timeout. Use the next
+	 * one that should wake the CPU as an earlier deadline. Idle enters sleep
+	 * again after the callback has run.
+	 */
+	if (next_alarm != INT64_MAX) {
+		int64_t now_us = esp_timer_get_time();
+
+		if (next_alarm <= now_us) {
+			sleep_time_us = 0;
+		} else if ((uint64_t)(next_alarm - now_us) < sleep_time_us) {
+			sleep_time_us = (uint64_t)(next_alarm - now_us);
+		}
+	}
 	lpm_entry_counter = counter;
 
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
