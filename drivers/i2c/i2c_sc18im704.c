@@ -68,7 +68,7 @@ int sc18im704_transfer(const struct device *dev,
 
 		for (uint8_t i = 0; i < rx_len && ret == 0; ++i)  {
 			/* Make sure we don't wait forever */
-			end = sys_timepoint_calc(K_SECONDS(1));
+			end = sys_timepoint_calc(K_MSEC(CONFIG_I2C_SC18IM704_READ_TIMEOUT_MS));
 
 			do {
 				ret = uart_poll_in(cfg->bus, &rx_data[i]);
