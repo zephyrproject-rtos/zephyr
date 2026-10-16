@@ -100,7 +100,8 @@ static const whd_event_num_t ap_link_events[] = {WLC_E_DISASSOC_IND, WLC_E_DEAUT
 
 static uint16_t sta_event_handler_index = 0xFF;
 static void airoc_event_task(void);
-static struct airoc_wifi_data airoc_wifi_data = {0};
+/* Not static: airoc_whd_hal_sdio.c needs direct access; see there for why. */
+struct airoc_wifi_data airoc_wifi_data = {0};
 
 #if defined(SPI_DATA_IRQ_SHARED)
 PINCTRL_DT_INST_DEFINE(0);
@@ -272,45 +273,6 @@ static int convert_whd_security_to_zephyr(whd_security_t security)
 		break;
 	}
 	return zephyr_security;
-}
-
-static whd_security_t convert_zephyr_security_to_whd(int security)
-{
-	whd_security_t whd_security = WIFI_SECURITY_TYPE_UNKNOWN;
-
-	switch (security) {
-	case WIFI_SECURITY_TYPE_NONE:
-		whd_security = WHD_SECURITY_OPEN;
-		break;
-
-	case WIFI_SECURITY_TYPE_WEP:
-		whd_security = WHD_SECURITY_WEP_PSK;
-		break;
-
-	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
-		whd_security = WHD_SECURITY_WPA3_WPA2_PSK;
-		break;
-
-	case WIFI_SECURITY_TYPE_PSK:
-		whd_security = WHD_SECURITY_WPA2_AES_PSK;
-		break;
-
-	case WIFI_SECURITY_TYPE_PSK_SHA256:
-		whd_security = WIFI_SECURITY_TYPE_PSK_SHA256;
-		break;
-
-	case WIFI_SECURITY_TYPE_SAE:
-		whd_security = WHD_SECURITY_WPA3_SAE;
-		break;
-
-	case WIFI_SECURITY_TYPE_WPA_PSK:
-		whd_security = WHD_SECURITY_WPA_AES_PSK;
-		break;
-
-	default:
-		break;
-	}
-	return whd_security;
 }
 
 static uint8_t convert_whd_band_to_zephyr(whd_802_11_band_t band)
@@ -833,6 +795,10 @@ static void airoc_mgmt_init(struct net_if *iface)
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"), WIFI_TYPE_STA,
 					iface);
+#if defined(CONFIG_IFX_WIFI_SOFTAP_SUPPORT)
+	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"), WIFI_TYPE_SAP,
+					iface);
+#endif
 #endif
 	/* Read WLAN MAC Address */
 	if (whd_wifi_get_mac_address(airoc_sta_if, &airoc_sta_if->mac_addr) != WHD_SUCCESS) {
@@ -1121,21 +1087,13 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		break;
 	}
 
-	switch (params->security) {
-	case WIFI_SECURITY_TYPE_NONE:
-		security = WHD_SECURITY_OPEN;
-		break;
-	case WIFI_SECURITY_TYPE_PSK:
-		security = WHD_SECURITY_WPA2_AES_PSK;
-		break;
-	case WIFI_SECURITY_TYPE_SAE:
-		security = WHD_SECURITY_WPA3_SAE;
-		break;
-	default:
+	ret = airoc_wifi_security_to_whd(params->security, &security);
+	if (ret) {
+		LOG_ERR("Unsupported AP security type: %d", params->security);
 		goto error;
 	}
 
-	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, (const uint8_t *)params->psk,
+	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, params->psk,
 			     params->psk_length, chanspec) != 0) {
 		LOG_ERR("Failed to init whd ap interface");
 		ret = -EAGAIN;
@@ -1171,7 +1129,7 @@ static int airoc_mgmt_wifi_stats(const struct device *dev,
 				 struct net_if *iface __unused,
 				 struct net_stats_wifi *stats)
 {
-	struct airoc_wifi_data *data = dev->data;
+	const struct airoc_wifi_data *data = dev->data;
 
 	stats->bytes.received = data->stats.bytes.received;
 	stats->bytes.sent = data->stats.bytes.sent;
@@ -2243,7 +2201,7 @@ int airoc_wifi_wpa_supp_send_ext_auth_sts(void *if_priv, struct external_auth *p
 }
 #endif
 
-#if defined(CONFIG_IFX_WIFI_SOFTAP_SUPPORT)
+#if defined(CONFIG_IFX_WIFI_SOFTAP_SUPPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 int airoc_wifi_wpa_supp_init_ap(void *if_priv, struct wpa_driver_associate_params *params)
 {
 	struct airoc_wifi_data *data = NULL;
