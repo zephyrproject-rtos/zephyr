@@ -56,7 +56,7 @@ struct data_pdu_length {
 struct lll_conn {
 	struct lll_hdr hdr;
 
-	uint8_t access_addr[4];
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
 	uint8_t crc_init[3];
 
 	uint16_t tifs_tx_us;
