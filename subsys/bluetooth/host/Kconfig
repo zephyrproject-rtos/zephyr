@@ -285,11 +285,23 @@ config BT_FILTER_ACCEPT_LIST
 	  advertising reports.
 	  Connections can be established automatically for accepted peers.
 
+config BT_LIM_ADV
+	bool "Limited discoverable mode advertising"
+	default y
+	depends on BT_BROADCASTER
+	help
+	  Stop advertising that bt_le_adv_start() started with the
+	  BT_LE_AD_LIMITED flag in its advertising data after
+	  BT_LIM_ADV_TIMEOUT seconds, as the limited discoverable mode
+	  requires. Without this option bt_le_adv_start() rejects such
+	  advertising data with -ENOTSUP, and each advertising set does
+	  without the timer for it.
+
 config BT_LIM_ADV_TIMEOUT
 	int "Timeout for limited advertising in 1s units"
 	default 30
 	range 1 180
-	depends on BT_BROADCASTER
+	depends on BT_LIM_ADV
 	help
 	  After this timeout is reached, advertisement with BT_LE_AD_LIMITED flag
 	  set shall be terminated. As per BT Core Spec 5.2, Vol 3, Part C,
