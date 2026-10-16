@@ -204,7 +204,7 @@ static int sys_clock_driver_init(void)
 {
 	/* Enable RTMR clock power */
 	RTMR_REG->INTSTS = RTOSTMR_INTSTS_STS_Msk;
-	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	k_irq_clear_pending(DT_INST_IRQN(0));
 
 	SYSTEM_Type *sys_reg = RTS5912_SCCON_REG_BASE;
 
