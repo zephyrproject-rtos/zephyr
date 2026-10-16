@@ -47,14 +47,15 @@
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
-			interrupts-extended = <&hlic 3 &hlic 7>;
-			interrupt-names = "soft0", "timer0";
+			interrupts-extended = <&hlic 3>;
+			interrupt-names = "soft0";
 			reg = <0x2000000 0x10000>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
 			interrupts-extended = <&hlic 7>;
+			interrupt-names = "timer0";
 			reg = <0x200bff8 0x8 0x2004000 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};
