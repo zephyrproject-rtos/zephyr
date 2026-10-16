@@ -154,3 +154,21 @@ done:
 NET_MGMT_REGISTER_EVENT_HANDLER(conn_mgr_ipv4_events, CONN_MGR_IPV4_EVENTS_MASK,
 				conn_mgr_ipv4_events_handler, NULL);
 #endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_DNS_RESOLVER)
+static void conn_mgr_dns_events_handler(uint64_t mgmt_event, struct net_if *iface __unused,
+					void *info __unused, size_t info_length __unused,
+					void *user_data __unused)
+{
+	NET_DBG("%s event 0x%" PRIx64 " received", "DNS", mgmt_event);
+
+	if ((mgmt_event & CONN_MGR_DNS_EVENTS_MASK) != mgmt_event) {
+		return;
+	}
+
+	k_sem_give(&conn_mgr_mon_updated);
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(conn_mgr_dns_events, CONN_MGR_DNS_EVENTS_MASK,
+				conn_mgr_dns_events_handler, NULL);
+#endif /* CONFIG_DNS_RESOLVER */

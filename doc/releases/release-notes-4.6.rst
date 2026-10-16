@@ -63,6 +63,18 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Networking
+
+  * Connection manager
+
+    * Add name resolution readiness tracking, see :ref:`conn_mgr_monitoring_dns`:
+      :c:macro:`NET_EVENT_L4_DNS_READY`, :c:macro:`NET_EVENT_L4_DNS_LOST` and
+      :c:func:`conn_mgr_dns_is_ready`.
+
+  * DNS
+
+    * :c:func:`dns_resolve_get_server_families`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
