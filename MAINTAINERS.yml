@@ -3614,6 +3614,7 @@ Infineon Platforms:
     - drivers/wifi/infineon/
     - dts/arm/infineon/
     - dts/bindings/*/*infineon*
+    - modules/trusted-firmware-m/infineon/
     - soc/infineon/
   labels:
     - "platform: Infineon"
@@ -7851,6 +7852,12 @@ West:
     - samples/tfm_integration/
     - doc/services/tfm/
     - tests/modules/tf-m/
+  file-groups:
+    - name: Vendor platform support
+      defer-to-other-areas: true
+      files:
+        - modules/trusted-firmware-m/infineon/
+        - modules/trusted-firmware-m/nordic/
   labels:
     - "area: TF-M"
   tests:
