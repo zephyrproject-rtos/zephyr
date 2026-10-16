@@ -18,19 +18,8 @@
 
 #include "dualtimer_cmsdk_apb.h"
 
-#define DTIMER_NODE(inst) DT_INST(inst, arm_cmsdk_dtimer)
-#define CLOCK_NODE(inst) DT_PHANDLE(DTIMER_NODE(inst), clocks)
-
-#define HAS_DTIMER_CLOCK(inst) DT_NODE_HAS_PROP(DTIMER_NODE(inst), clocks)
-#define HAS_CLOCK_FREQUENCY(inst) DT_NODE_HAS_PROP(CLOCK_NODE(inst), clock_frequency)
-
-#if HAS_DTIMER_CLOCK(inst) && HAS_CLOCK_FREQUENCY(inst)
-#define DTIMER_CMSDK_FREQ(inst) \
-	DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency)
-#else
-#define DTIMER_CMSDK_FREQ(inst) \
-	24000000U  /* fallback default */
-#endif /* HAS_DTIMER_CLOCK(inst) && HAS_CLOCK_FREQUENCY(inst) */
+#define DTIMER_CMSDK_FREQ(inst)                                                                    \
+	DT_PROP_BY_PHANDLE_IDX_OR(DT_DRV_INST(inst), clocks, 0, clock_frequency, 24000000U)
 
 typedef void (*dtimer_config_func_t)(const struct device *dev);
 

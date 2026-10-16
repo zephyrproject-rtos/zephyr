@@ -327,6 +327,7 @@ MPS2+ AN521 has several clocks connected:
    - TRACECLK : 20MHz
    - SWCLKTCK : 20MHz
    - TRACECLKIN : 20MHz
+   - OSC2 (peripheral clock) : 25MHz
 
 Serial Port
 ===========
