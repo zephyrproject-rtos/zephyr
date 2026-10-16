@@ -224,7 +224,7 @@ static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe
 	 */
 	do {
 		void *userdata = curr->sqe.userdata;
-		uint32_t cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
+		uint32_t cqe_flags = rtio_cqe_compute_flags(curr);
 		struct rtio_iodev_sqe *next = rtio_iodev_sqe_next(curr);
 
 		sqe_flags = curr->sqe.flags;

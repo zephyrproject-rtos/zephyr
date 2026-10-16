@@ -886,6 +886,90 @@ void test_rtio_transaction_(struct rtio *r)
 	zassert_true(seen[1], "Should have seen transaction 1");
 }
 
+#define TXN_MEMPOOL_ELEMS 4
+
+RTIO_DEFINE_WITH_MEMPOOL(r_txn_mempool, TXN_MEMPOOL_ELEMS, TXN_MEMPOOL_ELEMS,
+			 MEM_BLK_COUNT * 2, MEM_BLK_SIZE / 2, MEM_BLK_ALIGN);
+
+RTIO_IODEV_TEST_DEFINE(iodev_test_txn_mempool);
+
+/**
+ * @brief A transaction's mempool buffer belongs to the member that read into it
+ *
+ * Each completion has to describe its own member, or a consumer either loses
+ * the data or releases the same blocks once per member.
+ */
+ZTEST(rtio_api, test_rtio_transaction_mempool)
+{
+	struct rtio *r = &r_txn_mempool;
+	struct rtio_iodev *iodev = (struct rtio_iodev *)&iodev_test_txn_mempool;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+	uint8_t *buffer = NULL;
+	uint32_t buffer_len = 0;
+
+	rtio_iodev_test_init(&iodev_test_txn_mempool);
+
+	for (int i = 0; i < MEM_BLK_SIZE; i++) {
+		mempool_data[i] = i + 1;
+	}
+
+	/* The head holds the iodev and reads nothing, the member behind it reads */
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, iodev, NULL);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_read_with_pool(sqe, iodev, 0, mempool_data);
+
+	zassert_ok(rtio_submit(r, 2));
+
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_ok(cqe.result, "Transaction head should complete ok");
+	zassert_is_null(cqe.userdata, "First completion should be the head");
+	zassert_equal(-EINVAL, rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		      "A member that read nothing must not carry a mempool buffer");
+
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_ok(cqe.result, "Transaction read should complete ok");
+	zassert_equal_ptr(mempool_data, cqe.userdata, "Second completion should be the read");
+	zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		   "The member that read must carry the buffer it bound");
+	zassert_not_null(buffer, "Expected an allocated mempool buffer");
+	zassert_equal(MEM_BLK_SIZE, buffer_len);
+	zassert_mem_equal(buffer, mempool_data, MEM_BLK_SIZE, "Expected the data that was read");
+	rtio_release_buffer(r, buffer, buffer_len);
+
+	/* The other way round, so only the head may claim the buffer */
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_read_with_pool(sqe, iodev, 0, mempool_data);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, iodev, NULL);
+
+	zassert_ok(rtio_submit(r, 2));
+
+	buffer = NULL;
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_equal_ptr(mempool_data, cqe.userdata, "First completion should be the read");
+	zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		   "The member that read must carry the buffer it bound");
+	zassert_mem_equal(buffer, mempool_data, MEM_BLK_SIZE, "Expected the data that was read");
+	rtio_release_buffer(r, buffer, buffer_len);
+
+	buffer = NULL;
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_is_null(cqe.userdata, "Second completion should be the nop");
+	zassert_equal(-EINVAL, rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		      "A member that read nothing must not claim the buffer the head read into");
+	zassert_is_null(buffer, "Expected no buffer for the member that read nothing");
+}
+
 ZTEST(rtio_api, test_rtio_transaction)
 {
 	TC_PRINT("initializing iodev test devices\n");
