@@ -46,4 +46,16 @@
 		status = "okay";
 		power-domains = <&test_domain_async>;
 	};
+
+	test_domain_resume_fail: test_domain_resume_fail {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	test_dev_resume_fail: test_dev_resume_fail {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domains = <&test_domain_resume_fail>;
+	};
 };
