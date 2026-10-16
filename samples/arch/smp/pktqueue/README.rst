@@ -19,21 +19,28 @@ defined in SIZE_OF_HEADER and calculated crc16 header checksum
 in appropriate field defined by CRC_BYTE_1 and CRC_BYTE_2. The contents of
 header follows:
 
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   | 0 - 3 | 4 - 7 |     8 - 15    |            16 - 31            |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |Version|  IHL  |Type of Service|          Total Length         |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |         Identification        |Flags|      Fragment Offset    |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |  Time to Live |    Protocol   |         Header Checksum       |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                       Source Address                          |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                    Destination Address                        |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                    Options                    |    Padding    |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.. mermaid::
+   :caption: Packet header layout
+   :alt: 24-byte packet header laid out like an IPv4 header, 32 bits per row:
+         version, IHL, type of service and total length; identification, flags
+         and fragment offset; time to live, protocol and header checksum; source
+         address; destination address; options and padding.
+
+   packet
+     0-3: "Version"
+     4-7: "IHL"
+     8-15: "Type of Service"
+     16-31: "Total Length"
+     32-47: "Identification"
+     48-50: "Flags"
+     51-63: "Fragment Offset"
+     64-71: "Time to Live"
+     72-79: "Protocol"
+     80-95: "Header Checksum"
+     96-127: "Source Address"
+     128-159: "Destination Address"
+     160-183: "Options"
+     184-191: "Padding"
 
 The headers then are stored in multiple "sender" queues (the number is defined
 in QUEUE_NUM). After that for each pair of "sender"/"receiver" queues one thread
