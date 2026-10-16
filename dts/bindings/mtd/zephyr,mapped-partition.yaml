@@ -38,9 +38,20 @@ properties:
     type: array
     required: true
     description: |
-      This should be in the format <OFFSET SIZE>, where OFFSET is the offset of the flash
+      The first entry must be <OFFSET SIZE>, where OFFSET is the offset of the flash
       partition relative to the base address of the parent memory, and SIZE is the size of the
       partition in bytes.
+
+      An optional second entry, named "execution", describes the address and size of a separate
+      execution mapping, for example when a bootloader remaps the stored image before starting
+      it. Like other reg entries, its address is subject to translation through ancestor ranges.
+      The first entry continues to describe the partition's storage location and size.
+
+  reg-names:
+    description: |
+      If a separate execution mapping is provided, name the first reg entry "cpu-mapped" and
+      the second "execution". Without an execution entry, the first entry also describes the
+      execution mapping.
 
 examples:
   - |

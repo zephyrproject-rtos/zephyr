@@ -35,8 +35,14 @@ zephyr_linker_include_var(VAR SMEM_PARTITION_ALIGN_BYTES VALUE ${MPU_ALIGN_BYTES
 
 if(CONFIG_FLASH_USES_MAPPED_PARTITION)
   dt_chosen(chosen_partition_path PROPERTY "zephyr,code-partition")
-  dt_reg_addr(FLASH_ADDR PATH "${chosen_partition_path}")
-  dt_reg_size(chosen_partition_size PATH "${chosen_partition_path}")
+  dt_prop(partition_reg_names PATH "${chosen_partition_path}" PROPERTY "reg-names")
+  if(CONFIG_XIP AND "execution" IN_LIST partition_reg_names)
+    set(partition_reg_args NAME execution)
+  else()
+    set(partition_reg_args INDEX 0)
+  endif()
+  dt_reg_addr(FLASH_ADDR PATH "${chosen_partition_path}" ${partition_reg_args})
+  dt_reg_size(chosen_partition_size PATH "${chosen_partition_path}" ${partition_reg_args})
 
   math(EXPR FLASH_SIZE
     "(${chosen_partition_size} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
