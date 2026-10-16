@@ -4846,6 +4846,7 @@ Networking:
     - tests/net/wifi/
     - tests/net/arp/
     - tests/net/bridge/
+    - tests/net/bridge_stp/
     - tests/net/ethernet_mgmt/
     - tests/net/vlan/
   labels:
@@ -4975,6 +4976,7 @@ Networking:
     - samples/net/ethernet/
     - tests/net/arp/
     - tests/net/bridge/
+    - tests/net/bridge_stp/
     - tests/net/ethernet_mgmt/
     - tests/net/vlan/
     - doc/services/connectivity/networking/api/ethernet*.rst
