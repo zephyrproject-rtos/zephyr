@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - clock_control
+    - stm32
+  harness: ztest
+  timeout: 20
+  platform_allow:
+    - stm32n6570_dk/stm32n657xx/sb
+    - nucleo_n657x0_q/stm32n657xx/sb
+  integration_platforms:
+    - stm32n6570_dk/stm32n657xx/sb
+tests:
+  drivers.clock_control.stm32n6_cpu_clock:
+    extra_configs:
+      - CONFIG_TEST_STM32N6_CPU_CLOCK_STRESS_ITERATIONS=0
+  drivers.clock_control.stm32n6_cpu_clock.stress:
+    extra_configs:
+      - CONFIG_TEST_STM32N6_CPU_CLOCK_STRESS_ITERATIONS=10000
