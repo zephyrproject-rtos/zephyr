@@ -329,6 +329,8 @@ static void dai_dmic_probe(struct dai_intel_dmic *dmic)
 	/* Set state, note there is no playback direction support */
 	dmic->state = DAI_STATE_NOT_READY;
 
+	dai_dmic_global.probed_mask |= BIT(dmic->dai_config_params.dai_index);
+
 	/* Enable DMIC power */
 	dai_dmic_en_power(dmic);
 
@@ -346,15 +348,21 @@ static int dai_dmic_remove(struct dai_intel_dmic *dmic)
 {
 	uint32_t active_fifos_mask = dai_dmic_global.active_fifos_mask;
 	uint32_t pause_mask = dai_dmic_global.pause_mask;
+	uint32_t probed_mask;
 
-	LOG_INF("dmic_remove(), dmic_active_fifos_mask = 0x%x, dmic_pause_mask = 0x%x",
-		active_fifos_mask, pause_mask);
+	dai_dmic_global.probed_mask &= ~BIT(dmic->dai_config_params.dai_index);
+	probed_mask = dai_dmic_global.probed_mask;
 
-	/* The next end tasks must be passed if another DAI FIFO still runs.
+	LOG_INF("dmic_remove(), dmic_active_fifos_mask = 0x%x, dmic_pause_mask = 0x%x, "
+		"dmic_probed_mask = 0x%x", active_fifos_mask, pause_mask, probed_mask);
+
+	/* The next end tasks must be passed if another DAI FIFO still runs
+	 * or another DAI is still probed, since the DMIC power, clock gating
+	 * and ownership are shared by all DAI instances.
 	 * Note: dai_put() function that calls remove() applies the spinlock
 	 * so it is not needed here to protect access to mask bits.
 	 */
-	if (active_fifos_mask || pause_mask) {
+	if (active_fifos_mask || pause_mask || probed_mask) {
 		return 0;
 	}
 
