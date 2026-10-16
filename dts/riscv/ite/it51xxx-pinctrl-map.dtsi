@@ -40,6 +40,15 @@
 		pinmuxs = <&pinctrli 7 IT8XXX2_ALT_FUNC_1>;
 	};
 
+	/* DAC alternate function */
+	/omit-if-no-ref/ dac0_ch0_gpj0_default: dac0_ch0_gpj0_default {
+		pinmuxs = <&pinctrlj 0 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	/omit-if-no-ref/ dac0_ch1_gpj1_default: dac0_ch1_gpj1_default {
+		pinmuxs = <&pinctrlj 1 IT8XXX2_ALT_FUNC_1>;
+	};
+
 	/* FSPI alternate function */
 	/omit-if-no-ref/ fspi_fsce_gpg3_default: fspi_fsce_gpg3_default {
 		pinmuxs = <&pinctrlg 3 IT8XXX2_ALT_FUNC_1>;
