@@ -218,6 +218,21 @@
 				compatible = "nxp,imxrt11xx-arm-pll";
 				#clock-cells = <0>;
 			};
+
+			/* Clock roots of the ENET 1588 timers: SYS_PLL1_DIV2 / 5 = 100 MHz */
+			enet_timer1_root: enet-timer1-root {
+				compatible = "nxp,imxrt11xx-enet-timer-root";
+				#clock-cells = <0>;
+				clock-mux = <IMXRT11XX_ENET_TIMER_SRC_SYS_PLL1_DIV2>;
+				clock-div = <5>;
+			};
+
+			enet_timer2_root: enet-timer2-root {
+				compatible = "nxp,imxrt11xx-enet-timer-root";
+				#clock-cells = <0>;
+				clock-mux = <IMXRT11XX_ENET_TIMER_SRC_SYS_PLL1_DIV2>;
+				clock-div = <5>;
+			};
 		};
 
 		gpio1: gpio@4012c000 {

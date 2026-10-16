@@ -498,16 +498,22 @@ __weak void clock_init(void)
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
-	/* 100MHz enet PTP clock */
-	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxSysPll1Div2;
-	rootCfg.div = 5;
+	/* enet PTP clock root, from the devicetree (100MHz by default) */
+	BUILD_ASSERT(DT_PROP(DT_NODELABEL(enet_timer1_root), clock_mux) !=
+			     kCLOCK_ENET_TIMER1_ClockRoot_MuxSysPll1Div5,
+		     "SYS_PLL1_DIV5 is not enabled, select another ENET_TIMER1 root");
+	rootCfg.mux = DT_PROP(DT_NODELABEL(enet_timer1_root), clock_mux);
+	rootCfg.div = DT_PROP(DT_NODELABEL(enet_timer1_root), clock_div);
 	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer1, &rootCfg);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet1g))
-	/* 100MHz enet1g PTP clock */
-	rootCfg.mux = kCLOCK_ENET_TIMER2_ClockRoot_MuxSysPll1Div2;
-	rootCfg.div = 5;
+	/* enet1g PTP clock root, from the devicetree (100MHz by default) */
+	BUILD_ASSERT(DT_PROP(DT_NODELABEL(enet_timer2_root), clock_mux) !=
+			     kCLOCK_ENET_TIMER2_ClockRoot_MuxSysPll1Div5,
+		     "SYS_PLL1_DIV5 is not enabled, select another ENET_TIMER2 root");
+	rootCfg.mux = DT_PROP(DT_NODELABEL(enet_timer2_root), clock_mux);
+	rootCfg.div = DT_PROP(DT_NODELABEL(enet_timer2_root), clock_div);
 	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer2, &rootCfg);
 #endif
 #endif
