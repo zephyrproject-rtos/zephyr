@@ -1,0 +1,39 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: RTC LPCLK configuration.
+compatible: "microchip,pic32cx-bz-rtcclk"
+
+properties:
+  "#clock-cells":
+    const: 1
+    type: int
+
+  rtcclk-counter-mode-sel:
+    type: string
+    enum:
+      - "processed_32k"
+      - "raw_32k"
+    default: "raw_32k"
+    description: RTCC Counter Mode Clock Select
+
+  rtcclk-vbkp-div-sel:
+    type: string
+    enum:
+      - "div_by_32"
+      - "div_by_31.25"
+    default: "div_by_31.25"
+    description: VDDBUKPCORE LPCLK Clock Divider Selection
+
+  rtcclk-vbkp-1k-32k-sel:
+    type: string
+    enum:
+      - "32khz"
+      - "div_by_vbkp_div"
+    default: "32khz"
+    description: VDDBUKPCORE LPCLK Clock Selection
+
+clock-cells:
+  - subsystem

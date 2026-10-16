@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Fuse/DEVCFG register values programmed at build time.
+#
+# These map 1:1 onto the FUSES_* registers documented in the device's
+# electrical/programming specification. Most designs never need to change
+# these from their reset-safe defaults, so individual bitfields are not
+# exposed here. If a design needs a non-default value, compute the full
+# 32-bit register value from the datasheet and override the relevant
+# symbol below.
+
+menu "System Configuration"
+
+config FUSES_FUSERID
+	hex "User unique ID, readable using the SWD USER_ID instruction (USER_ID)"
+	default 0x0000ffff
+	help
+	  Assignment of value for the FUSES_FUSERID register.
+
+config FUSES_DEVCFG4
+	hex "USER Page CFGCON4 Fuses (DEVCFG4)"
+	default 0xc40ee000
+	help
+	  Full 32-bit value written to the FUSES_DEVCFG4 register.
+
+config FUSES_DEVCFG2
+	hex "USER Page CFGCON2 Fuses (DEVCFG2)"
+	default 0x5f74fc38
+	help
+	  Full 32-bit value written to the FUSES_DEVCFG2 register.
+
+config FUSES_DEVCFG1
+	hex "USER Page CFGCON1 Fuses (DEVCFG1)"
+	default 0x1400403b
+	help
+	  Full 32-bit value written to the FUSES_DEVCFG1 register.
+
+config FUSES_DEVCFG0
+	hex "USER Page CFGCON0 Fuses (DEVCFG0)"
+	default 0x7960000b
+	help
+	  Full 32-bit value written to the FUSES_DEVCFG0 register.
+
+config FUSES_FBCFG0
+	hex "NVR BCFG User Configuration Area (FBCFG0)"
+	default 0x00000000
+	help
+	  Full 32-bit value written to the FUSES_FBCFG0 register.
+
+config FUSES_FCPN0
+	hex "NVR CPN Register (FCPN0)"
+	default 0x10000000
+	help
+	  Full 32-bit value written to the FUSES_FCPN0 register.
+
+endmenu
