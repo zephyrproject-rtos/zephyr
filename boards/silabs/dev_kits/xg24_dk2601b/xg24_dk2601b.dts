@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  * Copyright (c) 2020 TriaGnoSys GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -9,6 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/sensor/icm20689.h>
 #include "xg24_dk2601b-pinctrl.dtsi"
 
 / {
@@ -28,6 +30,7 @@
 	};
 
 	aliases {
+		accel0 = &icm20689;
 		dht0 = &si7021;
 		led0 = &red_led;
 		led1 = &green_led;
@@ -200,7 +203,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>, <&gpioa 7 GPIO_ACTIVE_LOW>;
 
 	mx25r32: mx25r3235f@0 {
 		compatible = "jedec,spi-nor";
@@ -212,6 +215,20 @@
 		size = <0x2000000>;
 		spi-max-frequency = <80000000>;
 		zephyr,pm-device-runtime-auto;
+	};
+
+	icm20689: icm20689@1 {
+		compatible = "invensense,icm20689";
+		reg = <1>;
+		spi-max-frequency = <4000000>;
+		int-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+
+		accel-fs = <ICM20689_DT_ACCEL_FS_4G>;
+		gyro-fs = <ICM20689_DT_GYRO_FS_500DPS>;
+		accel-dlpf = <ICM20689_DT_ACCEL_DLPF_44_8HZ>;
+		gyro-dlpf = <ICM20689_DT_GYRO_DLPF_41HZ>;
+
+		smplrt-div = <9>;
 	};
 };
 
