@@ -53,10 +53,10 @@ static int ptp_clock_adjust_native(const struct device *clk, int increment)
 	return 0;
 }
 
-static int ptp_clock_rate_adjust_native(const struct device *clk, double ratio)
+static int ptp_clock_adjust_rate_native(const struct device *clk, int64_t scaled_ppm)
 {
 	ARG_UNUSED(clk);
-	ARG_UNUSED(ratio);
+	ARG_UNUSED(scaled_ppm);
 
 	/* We cannot adjust the host device time so this function
 	 * does nothing.
@@ -69,7 +69,7 @@ static DEVICE_API(ptp_clock, api) = {
 	.set = ptp_clock_set_native,
 	.get = ptp_clock_get_native,
 	.adjust = ptp_clock_adjust_native,
-	.rate_adjust = ptp_clock_rate_adjust_native,
+	.adjust_rate = ptp_clock_adjust_rate_native,
 };
 
 #define PTP_CLOCK_NATIVE_INIT(inst)                                                                \
