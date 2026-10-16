@@ -427,7 +427,10 @@ struct net_stats {
 	 */
 	struct net_stats_bytes bytes;
 
-	/** Count of malformed packets or packets we do not have handler for */
+	/** Count of malformed packets or packets we do not have handler for.
+	 * Ethernet frames whose EtherType has no handler are counted in
+	 * unknown_protocol of the Ethernet statistics instead.
+	 */
 	net_stats_t processing_error;
 
 	/** IP layer errors */
