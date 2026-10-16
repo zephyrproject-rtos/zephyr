@@ -1,0 +1,5 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_LCM_RGB_5INCH
+	def_bool $(shields_list_contains,lcm_rgb_5inch)
