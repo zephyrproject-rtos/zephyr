@@ -962,11 +962,16 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	aligned_addr = ROUND_DOWN((uintptr_t)addr, XCHAL_MPU_ALIGN);
 	addr_offset = (uintptr_t)addr - aligned_addr;
 
-	if (size_add_overflow(size, addr_offset, &aligned_size)) {
+	if (size_add_overflow(size, addr_offset, &aligned_size) ||
+	    (size > (UINTPTR_MAX - (uintptr_t)addr))) {
 		goto out;
 	}
 
 	aligned_size = ROUND_UP(size + addr_offset, XCHAL_MPU_ALIGN);
+	if (aligned_size < size) {
+		/* Round-up wrapped */
+		goto out;
+	}
 
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += XCHAL_MPU_ALIGN) {
@@ -1040,11 +1045,16 @@ bool xtensa_buffer_is_kernel_readable(const void *addr, size_t size)
 	aligned_addr = ROUND_DOWN((uintptr_t)addr, XCHAL_MPU_ALIGN);
 	addr_offset = (uintptr_t)addr - aligned_addr;
 
-	if (size_add_overflow(size, addr_offset, &aligned_size)) {
+	if (size_add_overflow(size, addr_offset, &aligned_size) ||
+	    (size > (UINTPTR_MAX - (uintptr_t)addr))) {
 		goto out;
 	}
 
 	aligned_size = ROUND_UP(size + addr_offset, XCHAL_MPU_ALIGN);
+	if (aligned_size < size) {
+		/* Round-up wrapped */
+		goto out;
+	}
 
 	for (size_t offset = 0; offset < aligned_size; offset += XCHAL_MPU_ALIGN) {
 		uint32_t probed = xtensa_pptlb_probe(aligned_addr + offset);
