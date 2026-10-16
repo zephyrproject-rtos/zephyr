@@ -143,24 +143,11 @@ static enum clock_control_status ameba_clock_get_status(const struct device *dev
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
-/**
- * @brief Initialize Ameba RCC Driver
- *
- * @param dev Device structure whose driver controls the clock
- *
- * @return 0 on success
- */
-static int ameba_clock_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-
 static DEVICE_API(clock_control, ameba_clock_driver_api) = {
 	.on = ameba_clock_on,
 	.off = ameba_clock_off,
 	.get_status = ameba_clock_get_status,
 };
 
-DEVICE_DT_INST_DEFINE(0, &ameba_clock_init, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &ameba_clock_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		      &ameba_clock_driver_api);
