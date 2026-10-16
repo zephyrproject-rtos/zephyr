@@ -165,6 +165,12 @@ Libraries / Subsystems
     prefer Nagle's algorithm can disable
     :kconfig:option:`CONFIG_HTTP_SERVER_TCP_NODELAY`.
 
+  * Ethernet bridge
+
+    * The bridge learns the port of each source MAC address into its FDB
+      (:kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING`), so that a frame to a known
+      destination is sent out of one port instead of being flooded.
+
 Devicetree
 **********
 
