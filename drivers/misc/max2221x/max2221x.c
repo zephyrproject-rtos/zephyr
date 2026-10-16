@@ -196,7 +196,7 @@ int max2221x_read_status(const struct device *dev, uint16_t *status)
 	int ret;
 	const struct misc_max2221x_config *config = dev->config;
 
-	ret = max2221x_reg_read(config->parent, MAX2221X_REG_GLOBAL_CFG, status);
+	ret = max2221x_reg_read(config->parent, MAX2221X_REG_STATUS, status);
 	if (ret) {
 		return ret;
 	}
