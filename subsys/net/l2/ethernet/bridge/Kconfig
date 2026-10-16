@@ -85,6 +85,8 @@ config NET_ETHERNET_BRIDGE_TXRX_DEBUG
 config NET_ETHERNET_BRIDGE_SHELL
 	bool "Ethernet Bridging management shell"
 	select NET_SHELL
+	select SHELL_GETOPT if NET_ETHERNET_BRIDGE_STP
+	select GETOPT_LONG if NET_ETHERNET_BRIDGE_STP
 	help
 	  Enables shell utility to manage bridge configuration interactively.
 
