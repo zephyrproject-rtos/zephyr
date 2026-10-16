@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* A zephyr,smp-uart node of a disabled transport, which must not affect the chosen UART */
+&uart_chosen {
+	smp-uart {
+		compatible = "zephyr,smp-uart";
+	};
+};
