@@ -55,23 +55,26 @@ int main(void)
 		/* Number of valid DAC values, e.g. 4096 for 12-bit DAC */
 		const int dac_values = 1U << DAC_RESOLUTION;
 
-		/*
-		 * 1 msec sleep leads to about 4 sec signal period for 12-bit
-		 * DACs. For DACs with lower resolution, sleep time needs to
-		 * be increased.
-		 * Make sure to sleep at least 1 msec even for future 16-bit
-		 * DACs (lowering signal frequency).
-		 */
-		const int sleep_time = 4096 / dac_values > 0 ?
-			4096 / dac_values : 1;
-
 		for (int i = 0; i < dac_values; i++) {
 			ret = dac_write_value(dac_dev, DAC_CHANNEL_ID, i);
 			if (ret != 0) {
 				printk("dac_write_value() failed with code %d\n", ret);
 				return 0;
 			}
+#if CONFIG_DAC_SAMPLE_SLEEP_MS == -1
+			/*
+			 * 1 msec sleep leads to about 4 sec signal period for 12-bit
+			 * DACs. For DACs with lower resolution, sleep time needs to
+			 * be increased.
+			 * Make sure to sleep at least 1 msec even for future 16-bit
+			 * DACs (lowering signal frequency).
+			 */
+			const int sleep_time = 4096 / dac_values > 0 ?
+				4096 / dac_values : 1;
 			k_sleep(K_MSEC(sleep_time));
+#elif CONFIG_DAC_SAMPLE_SLEEP_MS > 0
+			k_sleep(K_MSEC(CONFIG_DAC_SAMPLE_SLEEP_MS));
+#endif
 		}
 	}
 	return 0;
