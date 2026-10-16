@@ -76,7 +76,12 @@ static int arc_shared_intc_update_post_smp(void)
 	return 0;
 }
 
-SYS_INIT(arc_shared_intc_update_post_smp, SMP, 0);
+#ifdef CONFIG_SMP
+/* Redistributing the IDU interrupts is only meaningful once the secondary
+ * cores are up; without SMP the primary core is the only destination.
+ */
+SYS_INIT(arc_shared_intc_update_post_smp, PRE_MAIN, 0);
+#endif /* CONFIG_SMP */
 #endif /* CONFIG_ARC_CONNECT */
 
 

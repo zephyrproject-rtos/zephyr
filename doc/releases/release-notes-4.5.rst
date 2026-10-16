@@ -479,6 +479,18 @@ Deprecated APIs and options
   * Deprecated various fuel gauge property enums and union fields in favor of
     new versions with explicit unit suffixes.
 
+* Kernel
+
+  * The ``PRE_KERNEL_1`` and ``PRE_KERNEL_2`` initialization levels have been deprecated in favor
+    of a single ``PRE_KERNEL`` level. ``PRE_KERNEL_1`` is an alias of ``PRE_KERNEL``;
+    ``PRE_KERNEL_2`` keeps running after all ``PRE_KERNEL`` entries while it is phased out. See
+    the :ref:`migration guide <migration_4.5>` for details.
+
+  * The ``SMP`` initialization level has been renamed to ``PRE_MAIN``, after its position in
+    the boot sequence, and is no longer conditioned on :kconfig:option:`CONFIG_SMP`. ``SMP`` is
+    kept as a deprecated alias of ``PRE_MAIN``. See the :ref:`migration guide <migration_4.5>`
+    for details.
+
 * LoRa
 
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
@@ -787,6 +799,12 @@ New APIs and options
     ``zassert_vprint()`` and ``zassert_post_action()``.
     The legacy ``__ASSERT()`` family continues to work largely unchanged as a thin compatibility
     layer over the ZASSERT ``DEFAULT`` module.
+
+* Device
+
+  * :c:macro:`DEVICE_DT_DEFINE_AUTO`
+  * :c:macro:`DEVICE_DT_INST_DEFINE_AUTO`
+  * :c:macro:`SYS_INIT_DEPENDS`
 
 * Devicetree
 
