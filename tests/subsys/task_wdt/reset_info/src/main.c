@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <zephyr/kernel.h>
+#include <zephyr/retention/bootmode.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/task_wdt/task_wdt.h>
 #include <zephyr/ztest.h>
@@ -126,6 +127,17 @@ static void check_timeout_info(uint32_t fault_count)
 	check_info(TASK_WDT_RESET_TIMEOUT, fault_count, TASK_WDT_PERIOD_MS);
 }
 
+/* Check whether the safe mode was entered, and leave it */
+static void check_safe_mode(bool expected)
+{
+#ifdef CONFIG_TASK_WDT_SAFE_MODE
+	zassert_equal(bootmode_check(CONFIG_TASK_WDT_SAFE_MODE_BOOT_MODE), expected ? 1 : 0);
+	zassert_ok(bootmode_clear());
+#else
+	ARG_UNUSED(expected);
+#endif
+}
+
 ZTEST(task_wdt_reset_info, test_reset_info)
 {
 	struct task_wdt_reset_info info;
@@ -150,6 +162,7 @@ ZTEST(task_wdt_reset_info, test_reset_info)
 
 	case STAGE_REPEATED_TIMEOUT:
 		check_timeout_info(1U);
+		check_safe_mode(false);
 
 		next_stage(STAGE_CALLBACK);
 		time_out(NULL);
@@ -157,6 +170,8 @@ ZTEST(task_wdt_reset_info, test_reset_info)
 
 	case STAGE_CALLBACK:
 		check_timeout_info(2U);
+		/* the second consecutive reset enters the safe mode */
+		check_safe_mode(true);
 
 		/* a callback handling the timeout does not leave a record */
 		channel_id = task_wdt_add(TASK_WDT_PERIOD_MS, returning_callback, NULL);
