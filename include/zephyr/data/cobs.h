@@ -26,7 +26,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @defgroup cobs COBS (Consistent Overhead Byte Stuffing)
  * @since 4.2
@@ -41,7 +40,7 @@ extern "C" {
  * delimiter variants.
  */
 
- /**
+/**
  * @name COBS Encoder/Decoder Flags
  * @anchor COBS_FLAGS
  *
@@ -97,11 +96,13 @@ extern "C" {
  */
 static inline size_t cobs_max_encoded_len(size_t decoded_size, uint32_t flags)
 {
-	if (flags & COBS_FLAG_TRAILING_DELIMITER) {
-		return decoded_size + decoded_size / 254 + 1 + 1;
-	} else {
-		return decoded_size + decoded_size / 254 + 1;
+	size_t len = decoded_size + decoded_size / 254U + 1U;
+
+	if ((flags & COBS_FLAG_TRAILING_DELIMITER) != 0U) {
+		len++;
 	}
+
+	return len;
 }
 
 #if defined(CONFIG_NET_BUF) || defined(__DOXYGEN__)
