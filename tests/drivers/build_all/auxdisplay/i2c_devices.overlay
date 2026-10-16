@@ -41,6 +41,14 @@
 				columns = <16>;
 				rows = <2>;
 			};
+
+			test_us2066: us2066@3c {
+				compatible = "newhaven,us2066-i2c";
+				reg = <0x3c>;
+				status = "okay";
+				columns = <20>;
+				rows = <4>;
+			};
 		};
 	};
 };
