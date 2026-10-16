@@ -21,7 +21,6 @@
 			interrupts = <16 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg0: counterg0 {
 				compatible = "ti,mspm0-timer-counter";
@@ -37,7 +36,6 @@
 			interrupts = <2 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg8: counterg8 {
 				compatible = "ti,mspm0-timer-counter";
@@ -61,7 +59,6 @@
 			interrupts = <22 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg1: counterg1 {
 				compatible = "ti,mspm0-timer-counter";
