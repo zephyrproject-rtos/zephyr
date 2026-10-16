@@ -20,3 +20,7 @@ tests:
   drivers.clock.stm32_clock_configuration.n6.cpu_pll_hse_200_sysclk_pll_hse_200:
     platform_allow: stm32n6570_dk/stm32n657xx/sb
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_200.overlay"
+  drivers.clock.stm32_clock_configuration.n6.cpu_pll_hsi_400_sysclk_pll_hsi_400:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hsi_400_400.overlay"
+      - TEST_PLL_RATE=400000000
