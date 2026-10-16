@@ -153,6 +153,7 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 	struct uart_mcumgr_rx_buf *rx_buf;
 	uint8_t *p;
 	int len;
+	int rc;
 
 	ARG_UNUSED(dev);
 
@@ -172,7 +173,13 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 		}
 		break;
 	case UART_RX_DISABLED:
+		/* Reception stops after an RX error; restart it */
 		async_current = 0;
+		rc = uart_rx_enable(dev, async_buffer[0], sizeof(async_buffer[0]),
+				    CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_RX_TIMEOUT_US);
+		if (rc != 0) {
+			LOG_ERR("Failed to restart RX: %d", rc);
+		}
 		break;
 	case UART_RX_BUF_REQUEST:
 		/*
