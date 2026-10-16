@@ -2006,8 +2006,10 @@ static void st67_init_work(struct k_work *work)
 		SETUP_CMD("AT+CIPAPMAC?\r\n", "+CIPAPMAC:", on_cmd_cipapmac, 1U, ""),
 #endif
 		SETUP_CMD_NOHANDLE(ST67W611M1_CWLAPOPT_CMD),
+#if defined(CONFIG_ST67W611M1_LOW_POWER)
 		SETUP_CMD_NOHANDLE("AT+SLWKIO=28,0\r\n"),
 		SETUP_CMD_NOHANDLE("AT+SLWKDTIM=1\r\n"),
+#endif
 	};
 	ret = modem_cmd_handler_setup_cmds(
 		&st67_data->mctx.iface, &st67_data->mctx.cmd_handler, cmds, ARRAY_SIZE(cmds),
@@ -2171,9 +2173,10 @@ static const struct wifi_mgmt_ops st67_mgmt_ops = {
 	.ap_sta_disconnect = st67_ap_sta_disconnect,
 #endif
 	.iface_status = st67_iface_status,
-	.set_power_save = st67_set_power_save,
-	.set_twt = st67_set_twt,
-	.get_power_save_config = st67_get_power_save_config,
+	.set_power_save = IS_ENABLED(CONFIG_ST67W611M1_LOW_POWER) ? st67_set_power_save : NULL,
+	.set_twt = IS_ENABLED(CONFIG_ST67W611M1_LOW_POWER) ? st67_set_twt : NULL,
+	.get_power_save_config =
+		IS_ENABLED(CONFIG_ST67W611M1_LOW_POWER) ? st67_get_power_save_config : NULL,
 	.reg_domain = st67_reg_domain,
 };
 
