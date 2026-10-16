@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Space Cubics Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use DDR because the flash shell exceeds TCM/OCM capacity. */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,flash;
+		zephyr,sram = &rpu_ddr;
+	};
+
+	rpu_ddr: memory@9800000 {
+		compatible = "mmio-dram";
+		reg = <0x09800000 DT_SIZE_M(1)>;
+	};
+};
+
+&qspi {
+	status = "okay";
+};
+
+&boot_memory {
+	status = "okay";
+};
+
+&hirel_memory {
+	status = "okay";
+};
