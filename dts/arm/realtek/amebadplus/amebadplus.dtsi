@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	cpus {
@@ -185,6 +186,22 @@
 			interrupts = <47 0>;
 			channel-count = <7>;
 			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		ctc: ctc@41012000 {
+			compatible = "realtek,ameba-captouch";
+			reg = <0x41012000 0x210>;
+			/* CTC and ADC share same clock control index */
+			clocks = <&rcc AMEBA_ADC_CLK>;
+			interrupts = <32 0>;
+			channel-count = <4>;
+			diff-thre = <1600 1600 1600 1600>;
+			mbias-current = <0x21 0x22 0x22 0x13>;
+			nnoise-thre = <800 800 800 800>;
+			pnoise-thre = <800 800 800 800>;
+			channel-status = <1 1 1 1>;
+			input-key = <INPUT_KEY_0 INPUT_KEY_1 INPUT_KEY_2 INPUT_KEY_3>;
 			status = "disabled";
 		};
 
