@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/toolchain.h>
 #include <mmu.h>
+#include <kernel_arch_interface.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/cache.h>
 
@@ -459,6 +460,54 @@ ZTEST(mem_map_api, test_k_mem_map_unmap)
 			ztest_test_fail();
 		}
 	}
+}
+
+/**
+ * Test that k_mem_update_flags() keeps every page of a multi-page anonymous
+ * mapping on its own frame: the frames k_mem_map() hands out are not
+ * physically contiguous, so a remap that resolved only the first page would
+ * point the rest at foreign memory.
+ */
+ZTEST(mem_map_api, test_k_mem_update_flags)
+{
+	const size_t pages = 4;
+	const size_t size = pages * CONFIG_MMU_PAGE_SIZE;
+	uint8_t *mapped;
+	uintptr_t phys[4];
+
+	expect_fault = false;
+
+	mapped = k_mem_map(size, K_MEM_PERM_RW | K_MEM_MAP_LOCK);
+	zassert_not_null(mapped, "failed to map memory");
+
+	for (size_t i = 0; i < pages; i++) {
+		zassert_ok(arch_page_phys_get(mapped + i * CONFIG_MMU_PAGE_SIZE, &phys[i]));
+		(void)memset(mapped + i * CONFIG_MMU_PAGE_SIZE, 'A' + i, CONFIG_MMU_PAGE_SIZE);
+	}
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		sys_cache_data_flush_and_invd_range((void *)mapped, size);
+	}
+
+	/* read-only: every page keeps its frame and its contents */
+	zassert_ok(k_mem_update_flags(mapped, size, 0));
+	for (size_t i = 0; i < pages; i++) {
+		uintptr_t now;
+
+		zassert_ok(arch_page_phys_get(mapped + i * CONFIG_MMU_PAGE_SIZE, &now));
+		zassert_equal(now, phys[i], "page %zu moved from 0x%lx to 0x%lx", i, phys[i], now);
+		zassert_equal(mapped[i * CONFIG_MMU_PAGE_SIZE], 'A' + i,
+			      "page %zu reads 0x%02x", i, mapped[i * CONFIG_MMU_PAGE_SIZE]);
+		zassert_equal(mapped[(i + 1) * CONFIG_MMU_PAGE_SIZE - 1], 'A' + i,
+			      "page %zu tail reads 0x%02x", i,
+			      mapped[(i + 1) * CONFIG_MMU_PAGE_SIZE - 1]);
+	}
+
+	/* and back to read-write: the last page is writable again */
+	zassert_ok(k_mem_update_flags(mapped, size, K_MEM_PERM_RW));
+	mapped[size - 1] = 'Z';
+	zassert_equal(mapped[size - 1], 'Z');
+
+	k_mem_unmap(mapped, size);
 }
 
 /**
