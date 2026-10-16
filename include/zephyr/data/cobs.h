@@ -110,6 +110,8 @@ static inline size_t cobs_max_encoded_len(size_t decoded_size, uint32_t flags)
  * @brief COBS encoding
  *
  * Encodes data from source buffer to destination buffer using COBS encoding.
+ * On success the source buffer is pulled completely, on error neither buffer
+ * is modified.
  *
  * @param src        Source buffer to encode
  * @param dst        Destination buffer for encoded data
