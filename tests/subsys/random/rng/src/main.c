@@ -121,4 +121,11 @@ ZTEST(rng_common, test_rand32)
 #endif /* CONFIG_CSPRNG_ENABLED */
 }
 
+ZTEST_USER(rng_common, test_csrand_get_user)
+{
+	uint32_t buf[N_VALUES];
+
+	zassert_equal(sys_csrand_get(buf, sizeof(buf)), 0, "sys_csrand_get returned an error");
+}
+
 ZTEST_SUITE(rng_common, NULL, NULL, NULL, NULL, NULL);
