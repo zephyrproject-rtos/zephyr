@@ -124,6 +124,10 @@ Libraries / Subsystems
     * The bridge learns the port of each source MAC address into its FDB
       (:kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING`), so that a frame to a known
       destination is sent out of one port instead of being flooded.
+      Learned entries age out after
+      :kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME` seconds without a frame from
+      their address, and :c:struct:`eth_bridge_fdb_entry` records when that frame was last seen
+      (FDB API version 0.2.0).
 
 Other notable changes
 *********************

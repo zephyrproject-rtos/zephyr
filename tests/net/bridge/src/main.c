@@ -1111,6 +1111,82 @@ static void test_fdb_learning_keeps_static(void)
 	check_free_packet_count();
 }
 
+/* A flush removes the entries of one port or of the whole bridge */
+static void test_fdb_flush(void)
+{
+	static const struct net_eth_addr a = {{0x02, 0x00, 0x5e, 0x23, 0x00, 0x01}};
+	static const struct net_eth_addr b = {{0x02, 0x00, 0x5e, 0x23, 0x00, 0x02}};
+	static const struct net_eth_addr c = {{0x02, 0x00, 0x5e, 0x23, 0x00, 0x03}};
+	int ret;
+
+	(void)collect_sent();
+
+	/* Start from an empty table: earlier tests leave learned entries */
+	eth_bridge_fdb_flush(bridge, NULL, false);
+	zassert_equal(fdb_count_all(), 0, "Entries left after a full flush");
+
+	/* a learned on fake_iface[0], b learned on fake_iface[2] */
+	(void)recv_frame_and_collect(0, &a, &b);
+	(void)recv_frame_and_collect(2, &b, &a);
+
+	ret = eth_bridge_fdb_add((struct net_eth_addr *)&c, fake_iface[0]);
+	zassert_equal(ret, 0, "Cannot add FDB entry (%d)", ret);
+
+	zassert_equal(fdb_count_all(), 3, "Unexpected FDB entries");
+
+	eth_bridge_fdb_flush(bridge, fake_iface[0], true);
+
+	zexpect_equal(fdb_count_all(), 2, "Not only the learned entry of the port removed");
+	zexpect_equal(fdb_count(fake_iface[0]), 1, "Static entry removed by a dynamic flush");
+	zexpect_equal(recv_frame_and_collect(1, &c, &a), BIT(0) | BIT(2),
+		      "Frame to a flushed station not flooded");
+
+	eth_bridge_fdb_flush(bridge, NULL, false);
+
+	zexpect_equal(fdb_count_all(), 0, "Entries left after a full flush");
+
+	check_free_packet_count();
+}
+
+#if CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME < 5
+/* A learned entry ages out, a static one does not */
+static void test_fdb_ageing(void)
+{
+	static const struct net_eth_addr station = {{0x02, 0x00, 0x5e, 0x24, 0x00, 0x01}};
+	static const struct net_eth_addr fixed = {{0x02, 0x00, 0x5e, 0x24, 0x00, 0x02}};
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x24, 0x00, 0x03}};
+	int ret;
+
+	(void)collect_sent();
+
+	ret = eth_bridge_fdb_add((struct net_eth_addr *)&fixed, fake_iface[2]);
+	zassert_equal(ret, 0, "Cannot add FDB entry (%d)", ret);
+
+	(void)recv_frame_and_collect(0, &station, &peer);
+
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(0), "Station not learned");
+
+	/* No frame from the station: its entry expires. The peer is also
+	 * learned, on fake_iface[1], and expires as well.
+	 */
+	k_sleep(K_SECONDS(CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME + 2));
+
+	zexpect_equal(fdb_count_all(), 1, "Learned entries not aged out");
+	zexpect_equal(fdb_count(fake_iface[2]), 1, "Static entry aged out");
+
+	ret = eth_bridge_fdb_del((struct net_eth_addr *)&fixed, fake_iface[2]);
+	zexpect_equal(ret, 0, "Cannot delete FDB entry (%d)", ret);
+
+	/* Nothing to forward to now: the frame floods */
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(0) | BIT(2),
+		      "Frame to an aged out station not flooded");
+
+	eth_bridge_fdb_flush(bridge, NULL, false);
+
+	check_free_packet_count();
+}
+#endif
+
 /* With a full table nothing more is learned, so frames are flooded */
 static void test_fdb_learning_table_full(void)
 {
@@ -1216,6 +1292,10 @@ ZTEST(net_eth_bridge, test_net_eth_bridge)
 	test_fdb_learning();
 	test_fdb_learning_own_address();
 	test_fdb_learning_keeps_static();
+	test_fdb_flush();
+#if CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME < 5
+	test_fdb_ageing();
+#endif
 	test_fdb_learning_table_full();
 #endif
 	DBG("After bridging\n");
