@@ -1498,14 +1498,15 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 		goto err;
 	}
 
-	domain->arch.ptables = ptables;
-
 	domain->arch.asid = asid_alloc();
 	__ASSERT(domain->arch.asid != 0, "No ASIDs available");
 	if (domain->arch.asid == 0) {
+		free_l1_table(ptables, L1_PAGE_TABLE_NUM_ENTRIES);
 		ret = -ENOMEM;
 		goto err;
 	}
+
+	domain->arch.ptables = ptables;
 
 	sys_slist_append(&xtensa_domain_list, &domain->arch.node);
 
