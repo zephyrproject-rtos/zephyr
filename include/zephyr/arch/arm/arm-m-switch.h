@@ -142,7 +142,7 @@ struct arm_m_cs_ptrs {
 #ifdef CONFIG_FPU
 	/* FPU register blocks, or NULL if the thread has no FPU state:
 	 * the outgoing thread's s16-s31 are stored to fpu_out and the
-	 * incoming thread's s0-s31 are loaded from fpu_in.
+	 * incoming thread's s16-s31 are loaded from fpu_in.
 	 */
 	void *fpu_out, *fpu_in;
 #endif
