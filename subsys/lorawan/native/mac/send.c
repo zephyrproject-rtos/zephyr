@@ -1,50 +1,10 @@
 /*
  * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
  * SPDX-License-Identifier: Apache-2.0
- *
- * LoRaWAN MAC data frames — uplink and downlink
- *
- * Uplink data frame (unconfirmed 0x40, confirmed 0x80):
- *
- *       +--------------------+
- *    0  | MHDR (1)           |  Frame type + major version
- *       +--------------------+
- *    1  | DevAddr (4)        |  Little-endian device address
- *       +--------------------+
- *    5  | FCtrl (1)          |  UL: ADR|ADRACKReq|ACK|ClassB|FOptsLen[3:0]
- *       |                    |  DL: ADR|RFU|ACK|FPending|FOptsLen[3:0]
- *       +--------------------+
- *    6  | FCnt (2)           |  Frame counter (low 16 bits)
- *       +--------------------+
- *    8  | [FOpts] (0..15)    |  MAC commands
- *       +--------------------+  --- optional from here ---
- *  8+N  | FPort (1)          |  0 = MAC (FNwkSIntKey), 1-223 = app (AppSKey)
- *       +--------------------+
- *       | FRMPayload (M)     |  Encrypted payload
- *       +--------------------+
- *       | MIC (4)            |  aes128_cmac over B0 + MHDR..FRMPayload
- *       +--------------------+
- *
- * MIC B0 block (prepended to CMAC input, never transmitted):
- *
- *       +--------------------+
- *    0  | 0x49 (1)           |
- *       +--------------------+
- *    1  | 0x00 (4)           |  Reserved
- *       +--------------------+
- *    5  | Dir (1)            |  0 = uplink, 1 = downlink
- *       +--------------------+
- *    6  | DevAddr (4)        |
- *       +--------------------+
- *   10  | FCnt (4)           |  Full 32-bit frame counter
- *       +--------------------+
- *   14  | 0x00 (1)           |
- *       +--------------------+
- *   15  | MsgLen (1)         |  MHDR..FRMPayload length (excl. MIC)
- *       +--------------------+
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/lorawan/packets.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
@@ -57,44 +17,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 
-#define MHDR_UNCONF_DATA_UP	0x40
-#define MHDR_UNCONF_DATA_DOWN	0x60
-#define MHDR_CONF_DATA_UP	0x80
-#define MHDR_CONF_DATA_DOWN	0xA0
-
-#define DIR_UPLINK		0
-#define DIR_DOWNLINK		1
 #define MAX_FRAME_SIZE		256
-
-#define FCTRL_ADR		BIT(7)
-#define FCTRL_ACK		BIT(5)
-#define FCTRL_FPENDING		BIT(4)
-#define FCTRL_FOPTS_LEN_MASK	GENMASK(3, 0)
-
-#define MIC_B0_TYPE		0x49
 
 #define FCNT_LOW_MASK		BIT_MASK(16)
 #define FCNT_HIGH_MASK		GENMASK(31, 16)
 #define FCNT_ROLLOVER		BIT(16)
 
-struct pkt_data_hdr {
-	uint8_t mhdr;
-	uint8_t dev_addr[DEV_ADDR_SIZE];
-	uint8_t fctrl;
-	uint8_t fcnt[FCNT_SIZE];
-} __packed;
-
-#define DF_MIN_SIZE		(sizeof(struct pkt_data_hdr) + LWAN_MIC_SIZE)
-
-struct mic_b0 {
-	uint8_t type;
-	uint8_t reserved[4];
-	uint8_t dir;
-	uint8_t dev_addr[DEV_ADDR_SIZE];
-	uint8_t fcnt[4];
-	uint8_t pad;
-	uint8_t msg_len;
-} __packed;
+#define DF_MIN_SIZE \
+	(sizeof(struct lorawan_pkt_data_header) + LORAWAN_PKT_MIC_SIZE)
 
 struct dl_work_ctx {
 	struct k_work work;
@@ -174,17 +104,27 @@ static struct dl_work_ctx dl_work_ctx = {
 	.work = Z_WORK_INITIALIZER(dl_work_handler),
 };
 
+#if defined(CONFIG_ZTEST)
+void mac_flush_work(void)
+{
+	struct k_work_sync sync;
+
+	(void)k_work_flush(&dl_work_ctx.work, &sync);
+}
+#endif /* CONFIG_ZTEST */
+
 static int mac_compute_data_mic(psa_key_id_t cmac_key, uint32_t dev_addr,
 				uint32_t fcnt, uint8_t dir,
 				const uint8_t *msg, size_t msg_len,
 				uint8_t *mic)
 {
-	uint8_t mic_input[sizeof(struct mic_b0) + MAX_FRAME_SIZE];
-	struct mic_b0 *b0 = (struct mic_b0 *)mic_input;
+	uint8_t mic_input[sizeof(struct lorawan_pkt_data_mic_block) + MAX_FRAME_SIZE];
+	struct lorawan_pkt_data_mic_block *b0 =
+		(struct lorawan_pkt_data_mic_block *)mic_input;
 
 	memset(b0, 0, sizeof(*b0));
-	b0->type = MIC_B0_TYPE;
-	b0->dir = dir;
+	b0->type = LORAWAN_PKT_DATA_MIC_BLOCK_TYPE;
+	b0->direction = dir;
 	sys_put_le32(dev_addr, b0->dev_addr);
 	sys_put_le32(fcnt, b0->fcnt);
 	b0->msg_len = (uint8_t)msg_len;
@@ -202,13 +142,13 @@ static int mac_encrypt_ul_payload(struct lwan_session *sess, uint8_t port,
 	psa_key_id_t key;
 
 	frame[fhdr_end] = port;
-	memcpy(&frame[fhdr_end + FPORT_SIZE], data, len);
+	memcpy(&frame[fhdr_end + LORAWAN_PKT_FPORT_SIZE], data, len);
 
 	key = (port == 0) ? sess->fnwk_s_int_ecb : sess->app_s_key;
 
 	return lwan_crypto_payload_encrypt(key, sess->dev_addr,
-					   sess->fcnt_up, DIR_UPLINK,
-					   &frame[fhdr_end + FPORT_SIZE], len);
+					   sess->fcnt_up, LORAWAN_PKT_DIR_UPLINK,
+					   &frame[fhdr_end + LORAWAN_PKT_FPORT_SIZE], len);
 }
 
 static struct data_frame_layout mac_ul_frame_layout(
@@ -216,12 +156,12 @@ static struct data_frame_layout mac_ul_frame_layout(
 {
 	struct data_frame_layout layout = {
 		.fopts_len = fopts_len,
-		.fhdr_end = sizeof(struct pkt_data_hdr) + fopts_len,
+		.fhdr_end = sizeof(struct lorawan_pkt_data_header) + fopts_len,
 	};
 
-	layout.total_len = layout.fhdr_end + LWAN_MIC_SIZE;
+	layout.total_len = layout.fhdr_end + LORAWAN_PKT_MIC_SIZE;
 	if (req->len > 0) {
-		layout.total_len += FPORT_SIZE + req->len;
+		layout.total_len += LORAWAN_PKT_FPORT_SIZE + req->len;
 	}
 
 	return layout;
@@ -229,14 +169,14 @@ static struct data_frame_layout mac_ul_frame_layout(
 
 static uint8_t mac_ul_fctrl(const struct lwan_ctx *ctx, size_t fopts_len)
 {
-	uint8_t fctrl = (uint8_t)FIELD_PREP(FCTRL_FOPTS_LEN_MASK, fopts_len);
+	uint8_t fctrl = (uint8_t)FIELD_PREP(LORAWAN_PKT_FCTRL_FOPTS_LEN_MASK, fopts_len);
 
 	if (ctx->pending & LWAN_PENDING_ACK) {
-		fctrl |= FCTRL_ACK;
+		fctrl |= LORAWAN_PKT_FCTRL_ACK;
 	}
 
 	if (ctx->mac.adr_enabled) {
-		fctrl |= FCTRL_ADR;
+		fctrl |= LORAWAN_PKT_FCTRL_ADR;
 	}
 
 	return fctrl;
@@ -247,17 +187,17 @@ static void mac_write_ul_header(struct lwan_ctx *ctx,
 				uint8_t *frame, const uint8_t *fopts,
 				size_t fopts_len)
 {
-	struct pkt_data_hdr *hdr = (struct pkt_data_hdr *)frame;
+	struct lorawan_pkt_data_header *hdr = (struct lorawan_pkt_data_header *)frame;
 	struct lwan_session *sess = &ctx->session;
 
 	hdr->mhdr = req->type == LORAWAN_MSG_CONFIRMED
-		   ? MHDR_CONF_DATA_UP : MHDR_UNCONF_DATA_UP;
+		   ? LORAWAN_PKT_MHDR_CONF_DATA_UP : LORAWAN_PKT_MHDR_UNCONF_DATA_UP;
 	hdr->fctrl = mac_ul_fctrl(ctx, fopts_len);
 	sys_put_le32(sess->dev_addr, hdr->dev_addr);
 	sys_put_le16((uint16_t)(sess->fcnt_up & FCNT_LOW_MASK), hdr->fcnt);
 
 	if (fopts_len > 0) {
-		memcpy(&frame[sizeof(*hdr)], fopts, fopts_len);
+		memcpy(hdr->payload_and_mic, fopts, fopts_len);
 	}
 }
 
@@ -286,7 +226,7 @@ static int mac_write_ul_mic(struct lwan_session *sess, uint8_t *frame,
 	int ret;
 
 	ret = mac_compute_data_mic(sess->fnwk_s_int_cmac, sess->dev_addr,
-				   sess->fcnt_up, DIR_UPLINK,
+				   sess->fcnt_up, LORAWAN_PKT_DIR_UPLINK,
 				   frame, msg_len, &frame[msg_len]);
 	if (ret != 0) {
 		LOG_ERR("Data MIC compute failed: %d", ret);
@@ -320,7 +260,7 @@ static int mac_build_data_frame(struct lwan_ctx *ctx,
 		return ret;
 	}
 
-	msg_len = layout.total_len - LWAN_MIC_SIZE;
+	msg_len = layout.total_len - LORAWAN_PKT_MIC_SIZE;
 
 	ret = mac_write_ul_mic(sess, frame, msg_len);
 	if (ret != 0) {
@@ -392,15 +332,15 @@ static bool mac_get_dl_payload_info(const uint8_t *rx_buf, size_t rx_len,
 				    uint8_t fopts_len,
 				    struct dl_payload_info *payload)
 {
-	size_t fhdr_end = sizeof(struct pkt_data_hdr) + fopts_len;
-	size_t msg_len = rx_len - LWAN_MIC_SIZE;
+	size_t fhdr_end = sizeof(struct lorawan_pkt_data_header) + fopts_len;
+	size_t msg_len = rx_len - LORAWAN_PKT_MIC_SIZE;
 
-	if (rx_len <= fhdr_end + LWAN_MIC_SIZE) {
+	if (rx_len <= fhdr_end + LORAWAN_PKT_MIC_SIZE) {
 		return false;
 	}
 
 	payload->port = rx_buf[fhdr_end];
-	payload->start = fhdr_end + FPORT_SIZE;
+	payload->start = fhdr_end + LORAWAN_PKT_FPORT_SIZE;
 	payload->len = msg_len - payload->start;
 
 	return true;
@@ -418,7 +358,7 @@ static int mac_decrypt_dl_payload(struct lwan_session *sess,
 
 	return lwan_crypto_payload_encrypt(ecb_key, frame_info->dev_addr,
 					   frame_info->fcnt_down,
-					   DIR_DOWNLINK, dl_payload,
+					   LORAWAN_PKT_DIR_DOWNLINK, dl_payload,
 					   payload->len);
 }
 
@@ -521,7 +461,8 @@ static uint32_t mac_reconstruct_fcnt_down(uint16_t fcnt16,
 static int mac_validate_dl_header(const uint8_t *rx_buf, size_t rx_len,
 				  uint32_t expected_dev_addr)
 {
-	const struct pkt_data_hdr *hdr = (const struct pkt_data_hdr *)rx_buf;
+	const struct lorawan_pkt_data_header *hdr =
+		(const struct lorawan_pkt_data_header *)rx_buf;
 	uint32_t dev_addr;
 
 	if (rx_len < DF_MIN_SIZE) {
@@ -529,13 +470,16 @@ static int mac_validate_dl_header(const uint8_t *rx_buf, size_t rx_len,
 		return -EINVAL;
 	}
 
-	if ((hdr->mhdr & MHDR_TYPE_MASK) != MHDR_UNCONF_DATA_DOWN &&
-	    (hdr->mhdr & MHDR_TYPE_MASK) != MHDR_CONF_DATA_DOWN) {
+	if ((hdr->mhdr & LORAWAN_PKT_MHDR_TYPE_MASK) !=
+		LORAWAN_PKT_MHDR_UNCONF_DATA_DOWN &&
+	    (hdr->mhdr & LORAWAN_PKT_MHDR_TYPE_MASK) !=
+		LORAWAN_PKT_MHDR_CONF_DATA_DOWN) {
 		LOG_DBG("Not a data downlink: MHDR=0x%02X", hdr->mhdr);
 		return -EINVAL;
 	}
 
-	if ((hdr->mhdr & MHDR_MAJOR_MASK) != MHDR_MAJOR_R1) {
+	if ((hdr->mhdr & LORAWAN_PKT_MHDR_MAJOR_MASK) !=
+	    LORAWAN_PKT_MHDR_MAJOR_R1) {
 		LOG_DBG("Unsupported Major version: MHDR=0x%02X", hdr->mhdr);
 		return -EINVAL;
 	}
@@ -554,17 +498,17 @@ static int mac_verify_data_mic(psa_key_id_t cmac_key, uint32_t dev_addr,
 			       uint32_t fcnt, const uint8_t *frame,
 			       size_t frame_len)
 {
-	uint8_t computed_mic[LWAN_MIC_SIZE];
-	size_t msg_len = frame_len - LWAN_MIC_SIZE;
+	uint8_t computed_mic[LORAWAN_PKT_MIC_SIZE];
+	size_t msg_len = frame_len - LORAWAN_PKT_MIC_SIZE;
 	int ret;
 
-	ret = mac_compute_data_mic(cmac_key, dev_addr, fcnt, DIR_DOWNLINK,
+	ret = mac_compute_data_mic(cmac_key, dev_addr, fcnt, LORAWAN_PKT_DIR_DOWNLINK,
 				   frame, msg_len, computed_mic);
 	if (ret != 0) {
 		return ret;
 	}
 
-	if (memcmp(computed_mic, &frame[msg_len], LWAN_MIC_SIZE) != 0) {
+	if (memcmp(computed_mic, &frame[msg_len], LORAWAN_PKT_MIC_SIZE) != 0) {
 		LOG_WRN("Downlink MIC mismatch");
 		return -EBADMSG;
 	}
@@ -574,7 +518,8 @@ static int mac_verify_data_mic(psa_key_id_t cmac_key, uint32_t dev_addr,
 
 static int mac_validate_dl_fopts_len(size_t rx_len, uint8_t fopts_len)
 {
-	if (rx_len < sizeof(struct pkt_data_hdr) + fopts_len + LWAN_MIC_SIZE) {
+	if (rx_len < sizeof(struct lorawan_pkt_data_header) + fopts_len +
+		     LORAWAN_PKT_MIC_SIZE) {
 		LOG_DBG("Invalid FOptsLen: %u for len %zu", fopts_len, rx_len);
 		return -EINVAL;
 	}
@@ -586,7 +531,8 @@ static int mac_read_dl_frame_info(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 				  size_t rx_len,
 				  struct dl_frame_info *frame_info)
 {
-	const struct pkt_data_hdr *hdr = (const struct pkt_data_hdr *)rx_buf;
+	const struct lorawan_pkt_data_header *hdr =
+		(const struct lorawan_pkt_data_header *)rx_buf;
 	struct lwan_session *sess = &ctx->session;
 	int ret;
 
@@ -599,7 +545,8 @@ static int mac_read_dl_frame_info(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 	frame_info->fcnt_down =
 		mac_reconstruct_fcnt_down(sys_get_le16(hdr->fcnt),
 					   sess->fcnt_down);
-	frame_info->fopts_len = FIELD_GET(FCTRL_FOPTS_LEN_MASK, hdr->fctrl);
+	frame_info->fopts_len = FIELD_GET(LORAWAN_PKT_FCTRL_FOPTS_LEN_MASK,
+					 hdr->fctrl);
 
 	return mac_validate_dl_fopts_len(rx_len, frame_info->fopts_len);
 }
@@ -617,18 +564,19 @@ static int mac_validate_dl_replay(struct lwan_session *sess,
 }
 
 static void mac_apply_dl_fctrl(struct lwan_ctx *ctx,
-			       const struct pkt_data_hdr *hdr,
+			       const struct lorawan_pkt_data_header *hdr,
 			       struct dl_frame_info *frame_info)
 {
-	frame_info->ack_received = (hdr->fctrl & FCTRL_ACK) != 0;
+	frame_info->ack_received = (hdr->fctrl & LORAWAN_PKT_FCTRL_ACK) != 0;
 	frame_info->flags = 0;
 
-	if (hdr->fctrl & FCTRL_FPENDING) {
+	if (hdr->fctrl & LORAWAN_PKT_FCTRL_FPENDING) {
 		frame_info->flags |= LORAWAN_DATA_PENDING;
 	}
 
 	/* Confirmed downlinks require ACK in our next uplink */
-	if ((hdr->mhdr & MHDR_TYPE_MASK) == MHDR_CONF_DATA_DOWN) {
+	if ((hdr->mhdr & LORAWAN_PKT_MHDR_TYPE_MASK) ==
+	    LORAWAN_PKT_MHDR_CONF_DATA_DOWN) {
 		ctx->pending |= LWAN_PENDING_ACK;
 	}
 }
@@ -637,7 +585,8 @@ static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 			      size_t rx_len, int16_t rssi, int8_t snr,
 			      bool *ack_received)
 {
-	const struct pkt_data_hdr *hdr = (const struct pkt_data_hdr *)rx_buf;
+	const struct lorawan_pkt_data_header *hdr =
+		(const struct lorawan_pkt_data_header *)rx_buf;
 	struct lwan_session *sess = &ctx->session;
 	struct dl_payload_info payload;
 	struct dl_frame_info frame_info;
@@ -673,7 +622,7 @@ static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 		return -EBADMSG;
 	}
 
-	mac_cmd_process_dl_fopts(ctx, &rx_buf[sizeof(struct pkt_data_hdr)],
+	mac_cmd_process_dl_fopts(ctx, &rx_buf[sizeof(struct lorawan_pkt_data_header)],
 				 frame_info.fopts_len);
 
 	if (has_payload && payload.port == 0) {

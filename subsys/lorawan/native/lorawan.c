@@ -11,6 +11,7 @@
 #include "lorawan.h"
 #include "engine.h"
 #include "radio.h"
+#include "mac/mac.h"
 #include "crypto/crypto.h"
 #include "mac/mac_commands.h"
 
@@ -68,6 +69,38 @@ static int lorawan_native_init(void)
 	return 0;
 }
 SYS_INIT(lorawan_native_init, POST_KERNEL, 0);
+
+#if defined(CONFIG_ZTEST)
+void lorawan_stop(void)
+{
+	mac_flush_work();
+	engine_stop();
+
+	if (lwan_ctx.session.app_s_key != PSA_KEY_ID_NULL) {
+		(void)psa_destroy_key(lwan_ctx.session.app_s_key);
+	}
+	if (lwan_ctx.session.fnwk_s_int_cmac != PSA_KEY_ID_NULL) {
+		(void)psa_destroy_key(lwan_ctx.session.fnwk_s_int_cmac);
+	}
+	if (lwan_ctx.session.fnwk_s_int_ecb != PSA_KEY_ID_NULL) {
+		(void)psa_destroy_key(lwan_ctx.session.fnwk_s_int_ecb);
+	}
+
+	memset(&api_state, 0, sizeof(api_state));
+	mac_cmd_set_link_check_cb(NULL);
+	if (lwan_ctx.region != NULL && lwan_ctx.region->reset != NULL) {
+		lwan_ctx.region->reset();
+	}
+
+	memset(&lwan_ctx, 0, sizeof(lwan_ctx));
+	lwan_ctx.channel_count = LWAN_MAX_CHANNELS;
+	lwan_ctx.current_dr = LORAWAN_DR_0;
+	lwan_ctx.conf_tries = 1;
+	sys_slist_init(&lwan_ctx.dl_callbacks);
+
+	(void)lorawan_native_init();
+}
+#endif /* CONFIG_ZTEST */
 
 int lorawan_start(void)
 {
@@ -183,6 +216,10 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 
 	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_JOINED)) {
 		return -ENETDOWN;
+	}
+
+	if (type != LORAWAN_MSG_UNCONFIRMED && type != LORAWAN_MSG_CONFIRMED) {
+		return -EINVAL;
 	}
 
 	if (len > 0 && data == NULL) {
