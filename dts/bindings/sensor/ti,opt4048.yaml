@@ -1,0 +1,56 @@
+# Copyright (c) 2026 Darshan Maru <darshanmaru1411@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI OPT4048 high speed, high precision tristimulus XYZ color sensor.
+
+compatible: "ti,opt4048"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  conversion-time:
+    type: int
+    default: 8
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    description: |
+      The default selects 100 ms per channel, providing a practical
+      balance between measurement response time and noise performance
+      for general-purpose ambient light sensing. Applications requiring
+      faster measurements or lower measurement noise can select a
+      different conversion time.
+
+      0: 600 us, 1: 1 ms, 2: 1.8 ms, 3: 3.4 ms,
+      4: 6.5 ms, 5: 12.7 ms, 6: 25 ms, 7: 50 ms,
+      8: 100 ms, 9: 200 ms, 10: 400 ms, 11: 800 ms.
+
+  range:
+    type: int
+    default: 12
+    enum: [0, 1, 2, 3, 4, 5, 6, 12]
+    description: |
+      The default selects automatic ranging so that the sensor can
+      adapt its measurement range to changing illumination without
+      requiring an application-specific fixed range. Applications
+      requiring a fixed measurement range can select one of the
+      supported manual range settings.
+
+      0: 2.2 klux, 1: 4.5 klux, 2: 9 klux, 3: 18 klux,
+      4: 36 klux, 5: 72 klux, 6: 144 klux, 12: automatic range.
+
+  operating-mode:
+    type: int
+    default: 3
+    enum: [0, 1, 2, 3]
+    description: |
+      The default selects continuous conversion, which is suitable
+      for applications that periodically read ambient light
+      measurements without explicitly triggering each conversion.
+      Applications that need measurements only on demand or need
+      to reduce measurement activity can select a one-shot mode.
+
+      0: power-down, 1: forced auto-range one-shot,
+      2: one-shot, 3: continuous.
+
+      In one-shot modes, each sample_fetch() call must trigger a
+      new measurement and wait for its completion.
