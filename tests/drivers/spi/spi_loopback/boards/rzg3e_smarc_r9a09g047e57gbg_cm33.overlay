@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Wiring: connect MOSIA (PMOD0 pin 2) to MISOA (PMOD0 pin 3).
+ */
+
+&spi0 {
+	dmas = <&dma0 1 RZ_DMA_PERIPH_TO_MEM>,
+	       <&dma0 0 RZ_DMA_MEM_TO_PERIPH>;
+	dma-names = "rx", "tx";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <2500000>;
+	};
+};
+
+&dma0 {
+	dma-buf-addr-alignment = <1>;
+	status = "okay";
+};
