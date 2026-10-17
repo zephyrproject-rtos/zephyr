@@ -384,8 +384,10 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 			return NULL;
 		}
 
-		dyn->data = z_thread_aligned_alloc(DYN_OBJ_DATA_ALIGN_K_THREAD_STACK,
-						     adjusted_size);
+		/* a power-of-two MPU needs the user stack aligned to its own size */
+		dyn->data = z_thread_aligned_alloc(
+			MAX(DYN_OBJ_DATA_ALIGN_K_THREAD_STACK, Z_THREAD_STACK_OBJ_ALIGN(size)),
+			adjusted_size);
 		if (dyn->data == NULL) {
 			k_free(dyn);
 			return NULL;
