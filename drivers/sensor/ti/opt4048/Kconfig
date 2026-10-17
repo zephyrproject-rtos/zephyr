@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Darshan Maru <darshanmaru1411@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config OPT4048
+	bool "TI OPT4048 XYZ tristimulus color sensor"
+	default y
+	depends on DT_HAS_TI_OPT4048_ENABLED
+	select I2C
+	select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Enable the driver for the TI OPT4048 XYZ tristimulus color sensor.
+	  The driver implements the sensor read and decode API
+	  (sensor_read() / sensor_decode()), which needs
+	  CONFIG_SENSOR_ASYNC_API.
+
+if OPT4048
+
+config OPT4048_CRC_CHECK
+	bool "Verify output CRC of every channel"
+	default y
+	help
+	  Verify the 4-bit CRC returned with each channel result. A mismatch
+	  makes the read fail with -EIO.
+
+endif # OPT4048
