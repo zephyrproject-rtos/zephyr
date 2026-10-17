@@ -665,6 +665,7 @@ static int triggered_work_cancel(struct k_work_poll *work,
 		 */
 		while (z_try_abort_timeout(&work->timeout) == -EAGAIN) {
 			k_spin_unlock(&poll_lock, key);
+			z_timeout_wait_inflight(&work->timeout);
 			key = k_spin_lock(&poll_lock);
 		}
 

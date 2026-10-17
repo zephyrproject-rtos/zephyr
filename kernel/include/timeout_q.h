@@ -115,10 +115,32 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
  *             must drop any lock that the handler may need and retry. A short
  *             arch_spin_relax() has already been done before this return.
  *
- * On -EAGAIN, the only correct response is to drop outer locks and call again.
- * After a non-EAGAIN return, the handler is guaranteed not to be in flight.
+ * On -EAGAIN, the only correct response is to drop outer locks, wait with
+ * z_timeout_wait_inflight() and call again. After a non-EAGAIN return, the
+ * handler is guaranteed not to be in flight.
  */
 int z_try_abort_timeout(struct _timeout *to);
+
+void z_timeout_wait_inflight_spin(const struct _timeout *to);
+
+/* Wait, holding no locks, until @to is no longer in flight on another CPU.
+ *
+ * For the -EAGAIN retry loops around z_try_abort_timeout(). The in-flight
+ * handler usually needs the very lock the caller just dropped (the
+ * scheduler's for a thread timeout), and spinlocks are not fair: a caller
+ * that drops it and takes it straight back can win every time against the
+ * handler spinning in k_spin_lock() on the announcing CPU, which livelocks
+ * that CPU inside the timer interrupt. Waiting here first lets the handler
+ * take the lock and finish. Ticket spinlocks are FIFO, so the handler,
+ * already holding an earlier ticket, gets the lock first and there is
+ * nothing to wait for.
+ */
+static inline void z_timeout_wait_inflight(const struct _timeout *to)
+{
+	if (IS_ENABLED(CONFIG_SMP) && !IS_ENABLED(CONFIG_TICKET_SPINLOCKS)) {
+		z_timeout_wait_inflight_spin(to);
+	}
+}
 
 /* True if @to is the currently in-flight timeout and a same-CPU aborter
  * has marked the slot as superseded. Handlers with non-idempotent side
@@ -144,6 +166,11 @@ static inline int z_try_abort_thread_timeout(struct k_thread *thread)
 	return z_try_abort_timeout(&thread->base.timeout);
 }
 
+static inline void z_wait_thread_timeout_inflight(struct k_thread *thread)
+{
+	z_timeout_wait_inflight(&thread->base.timeout);
+}
+
 uint32_t z_get_next_timeout_expiry(void);
 
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
@@ -153,6 +180,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 /* Stubs when !CONFIG_SYS_CLOCK_EXISTS */
 #define z_init_thread_timeout(thread_base) do {} while (false)
 #define z_try_abort_thread_timeout(to) 0
+#define z_wait_thread_timeout_inflight(thread) do {} while (false)
 #define z_is_inactive_timeout(to) 1
 #define z_get_next_timeout_expiry() ((uint32_t) K_TICKS_FOREVER)
 #define z_set_timeout_expiry(ticks, is_idle) do {} while (false)

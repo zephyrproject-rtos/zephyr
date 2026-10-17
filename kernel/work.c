@@ -1128,6 +1128,7 @@ static inline bool unschedule_locked(struct k_work_delayable *dwork,
 	if (flag_test_and_clear(&work->flags, K_WORK_DELAYED_BIT)) {
 		while (z_try_abort_timeout(&dwork->timeout) == -EAGAIN) {
 			k_spin_unlock(&work_lock, *key);
+			z_timeout_wait_inflight(&dwork->timeout);
 			*key = k_spin_lock(&work_lock);
 		}
 		ret = true;
