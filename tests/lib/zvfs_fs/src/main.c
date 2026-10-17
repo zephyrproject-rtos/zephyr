@@ -212,6 +212,48 @@ ZTEST_USER(zvfs_fs, test_zvfs_fstat)
 	zassert_equal(errno, EBADF);
 }
 
+ZTEST_USER(zvfs_fs, test_zvfs_exe_resolve)
+{
+	char path[CONFIG_ZVFS_PATH_MAX];
+	char small[sizeof("tdir/sub")];
+	struct zvfs_stat st;
+	int fd;
+
+	/* the list is colon-separated, so a FAT mount name is reached through the working directory */
+	zassert_ok(zvfs_chdir(MNT));
+
+	/* the second directory holds the file: its path comes back with the descriptor */
+	fd = zvfs_exe_resolve("nope.txt:tdir", "sub.txt", path, sizeof(path));
+	zassert_true(fd >= 0, "resolve failed: %d", fd);
+	zassert_str_equal(path, "tdir/sub.txt");
+	zassert_ok(zvfs_fstat(fd, &st));
+	zassert_equal(st.mode & ZVFS_MODE_IFMT, ZVFS_MODE_IFREG);
+	zassert_ok(zvfs_close(fd));
+
+	/* an empty entry is the working directory */
+	fd = zvfs_exe_resolve("nope.txt:", "tfile.txt", path, sizeof(path));
+	zassert_true(fd >= 0, "resolve in the working directory failed: %d", fd);
+	zassert_str_equal(path, "tfile.txt");
+	zassert_ok(zvfs_close(fd));
+
+	/* nothing of that name anywhere */
+	zassert_equal(zvfs_exe_resolve("tdir:.", "nope.txt", path, sizeof(path)), -ENOENT);
+	/* a directory of that name is not an executable file */
+	zassert_equal(zvfs_exe_resolve(".", "tdir", path, sizeof(path)), -EPERM);
+	/* the path does not fit the buffer */
+	zassert_equal(zvfs_exe_resolve("tdir", "sub.txt", small, sizeof(small)), -ERANGE);
+	/* bad arguments */
+	zassert_equal(zvfs_exe_resolve(NULL, "sub.txt", path, sizeof(path)), -EINVAL);
+	zassert_equal(zvfs_exe_resolve("tdir", NULL, path, sizeof(path)), -EINVAL);
+	zassert_equal(zvfs_exe_resolve("tdir", "", path, sizeof(path)), -EINVAL);
+	zassert_equal(zvfs_exe_resolve("tdir", "a/b", path, sizeof(path)), -EINVAL);
+	zassert_equal(zvfs_exe_resolve("tdir", "sub.txt", NULL, sizeof(path)), -EINVAL);
+	zassert_equal(zvfs_exe_resolve("tdir", "sub.txt", NULL, 0), -EINVAL);
+	zassert_equal(zvfs_exe_resolve("tdir", "sub.txt", path, 0), -EINVAL);
+
+	zassert_ok(zvfs_chdir("/"));
+}
+
 ZTEST_USER(zvfs_fs, test_zvfs_fstatvfs)
 {
 	int fd;

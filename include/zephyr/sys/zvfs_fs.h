@@ -270,6 +270,32 @@ __syscall int zvfs_rmdir(const char *path);
 __syscall int zvfs_truncate(const char *path, off_t length);
 
 /**
+ * @brief Find an executable along a directory list
+ *
+ * Search the colon-separated directory list @p paths for a regular file named
+ * @p exe (which must not contain a path separator) with an execute permission
+ * bit. An empty entry in the list is the working directory, and a match there
+ * is reported by its bare name. Each candidate's path is written to @p buf and
+ * opened by it; the first match is left open and its descriptor returned. The
+ * list is read, never written: a caller passing an environment variable
+ * synchronizes its own modifications of the environment.
+ *
+ * @param paths    Colon-separated directory list.
+ * @param exe      Name to find, without a path separator.
+ * @param buf      Where to write the resolved path.
+ * @param buf_size Size of @p buf.
+ *
+ * @retval fd       The open descriptor of the executable (non-negative).
+ * @retval -ENOENT  No entry of that name along the list.
+ * @retval -EPERM   Only entries that are not executable regular files were found.
+ * @retval -ERANGE  A candidate path does not fit in @p buf.
+ * @retval -EINVAL  A NULL list, name or buffer, an empty name or buffer, or a
+ *                  separator in the name.
+ * @retval -errno   Another failure opening or inspecting a candidate.
+ */
+int zvfs_exe_resolve(const char *paths, const char *exe, char *buf, size_t buf_size);
+
+/**
  * @brief Check accessibility of a file or directory.
  *
  * @param path Path to check.
