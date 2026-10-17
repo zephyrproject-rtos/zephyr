@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&fake_display {
+	pixel-format = "mono01";
+	mono-vtiled;
+};

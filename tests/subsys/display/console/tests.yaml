@@ -1,0 +1,38 @@
+common:
+  tags:
+    - display
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  display.console.panic: {}
+  display.console.panic.x_aligned:
+    extra_dtc_overlay_files:
+      - app.overlay
+      - x_aligned.overlay
+  display.console.panic.rgb888:
+    extra_dtc_overlay_files:
+      - app.overlay
+      - rgb888.overlay
+  display.console.panic.argb8888:
+    extra_dtc_overlay_files:
+      - app.overlay
+      - argb8888.overlay
+  display.console.panic.l8:
+    extra_dtc_overlay_files:
+      - app.overlay
+      - l8.overlay
+  display.console.panic.mono01:
+    extra_dtc_overlay_files:
+      - app.overlay
+      - mono01.overlay
+  display.console.panic.mono01_vtiled:
+    extra_dtc_overlay_files:
+      - app.overlay
+      - mono01_vtiled.overlay
+  display.console.panic.mono10:
+    extra_dtc_overlay_files:
+      - app.overlay
+      - mono10.overlay
