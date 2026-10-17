@@ -107,8 +107,8 @@ config ETH_STM32_HAL_TX_ASYNC
 
 config ETH_STM32_HAL_RX_DESC_COUNT
 	int "Number of RX DMA descriptors"
-	depends on ETH_STM32_HAL_API_V2 && SOC_SERIES_STM32H5X
-	default 8 if PTP_CLOCK_STM32_HAL
+	depends on ETH_STM32_HAL_API_V2 && (SOC_SERIES_STM32H5X || SOC_SERIES_STM32H7RSX)
+	default 8 if PTP_CLOCK_STM32_HAL && SOC_SERIES_STM32H5X
 	default 4
 	range 4 64
 	help
