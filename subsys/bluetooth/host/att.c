@@ -3602,6 +3602,7 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 
 	chan = att_chan_new(att, 0);
 	if (!chan) {
+		k_mem_slab_free(&att_slab, (void *)att);
 		return -ENOMEM;
 	}
 

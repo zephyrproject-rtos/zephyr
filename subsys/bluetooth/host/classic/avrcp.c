@@ -863,7 +863,6 @@ static int send_single_vendor_rsp(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t r
 
 	if (net_buf_headroom(buf) < (sizeof(*pdu) + sizeof(*hdr))) {
 		LOG_WRN("Not enough headroom: for vendor dependent PDU");
-		net_buf_unref(buf);
 		return -ENOMEM;
 	}
 
@@ -889,6 +888,7 @@ static int send_fragmented_vendor_rsp(struct bt_avrcp_tg_vd_rsp_tx *tx,
 {
 	struct bt_avrcp_tg *tg = tx->tg;
 	struct net_buf *buf;
+	int err;
 
 	if ((tg == NULL) || (tg->avrcp == NULL)) {
 		return -EINVAL;
@@ -902,13 +902,20 @@ static int send_fragmented_vendor_rsp(struct bt_avrcp_tg_vd_rsp_tx *tx,
 	if (data_len > 0U) {
 		net_buf_add_mem(buf, data, data_len);
 	}
-	return avrcp_send(tg->avrcp, buf, BT_AVCTP_RESPONSE, tx->tid);
+
+	err = avrcp_send(tg->avrcp, buf, BT_AVCTP_RESPONSE, tx->tid);
+	if (err < 0) {
+		net_buf_unref(buf);
+	}
+
+	return err;
 }
 
 static int bt_avrcp_ct_continuing_rsp_cmd_send(struct bt_avrcp_ct *ct, uint8_t tid,
 					       uint8_t op_pdu_id, uint8_t target_pdu_id)
 {
 	struct net_buf *buf;
+	int err;
 
 	if ((ct == NULL) || (ct->avrcp == NULL)) {
 		return -EINVAL;
@@ -923,7 +930,12 @@ static int bt_avrcp_ct_continuing_rsp_cmd_send(struct bt_avrcp_ct *ct, uint8_t t
 
 	net_buf_add_u8(buf, target_pdu_id);
 
-	return avrcp_send(ct->avrcp, buf, BT_AVCTP_CMD, tid);
+	err = avrcp_send(ct->avrcp, buf, BT_AVCTP_CMD, tid);
+	if (err < 0) {
+		net_buf_unref(buf);
+	}
+
+	return err;
 }
 
 static int bt_avrcp_ct_send_req_continuing_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t pdu_id)
@@ -1061,6 +1073,7 @@ static void bt_avrcp_tg_vendor_tx_work(struct k_work *work)
 		if (tx->rsp == BT_AVRCP_RSP_REJECTED) {
 			if (net_buf_tailroom(rsp_buf) < sizeof(uint8_t)) {
 				LOG_ERR("Insufficient space in response buffer");
+				net_buf_unref(rsp_buf);
 				goto done;
 			}
 			net_buf_add_u8(rsp_buf, error_code);
@@ -3831,6 +3844,9 @@ failed:
 
 int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb)
 {
+#if defined(CONFIG_BT_AVRCP_CONTROLLER)
+	bool sdp_registered = false;
+#endif /* CONFIG_BT_AVRCP_CONTROLLER */
 	int err;
 
 	if (!cb) {
@@ -3850,6 +3866,7 @@ int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb)
 		LOG_ERR("AVRCP CT SDP registration failed (err %d)", err);
 		goto failed;
 	}
+	sdp_registered = (err == 0);
 	LOG_DBG("AVRCP CT SDP record registered");
 #endif /* CONFIG_BT_AVRCP_CONTROLLER */
 
@@ -3862,12 +3879,25 @@ int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb)
 	return 0;
 
 failed:
+#if defined(CONFIG_BT_AVRCP_CONTROLLER)
+	if (sdp_registered) {
+		int sdp_err = bt_sdp_unregister_service(&avrcp_ct_rec);
+
+		if (sdp_err != 0) {
+			LOG_DBG("Failed to unregister CT SDP record: %d", sdp_err);
+		}
+	}
+#endif /* CONFIG_BT_AVRCP_CONTROLLER */
+
 	avrcp_ct_cb = NULL;
 	return err;
 }
 
 int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb)
 {
+#if defined(CONFIG_BT_AVRCP_TARGET)
+	bool sdp_registered = false;
+#endif /* CONFIG_BT_AVRCP_TARGET */
 	int err;
 
 	if (!cb) {
@@ -3895,6 +3925,7 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb)
 		LOG_ERR("AVRCP TG SDP registration failed (err %d)", err);
 		goto failed;
 	}
+	sdp_registered = (err == 0);
 	LOG_DBG("AVRCP TG SDP record registered");
 #endif /* CONFIG_BT_AVRCP_TARGET */
 
@@ -3907,6 +3938,16 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb)
 	return 0;
 
 failed:
+#if defined(CONFIG_BT_AVRCP_TARGET)
+	if (sdp_registered) {
+		int sdp_err = bt_sdp_unregister_service(&avrcp_tg_rec);
+
+		if (sdp_err != 0) {
+			LOG_DBG("Failed to unregister TG SDP record: %d", sdp_err);
+		}
+	}
+#endif /* CONFIG_BT_AVRCP_TARGET */
+
 	avrcp_tg_cb = NULL;
 	return err;
 }
