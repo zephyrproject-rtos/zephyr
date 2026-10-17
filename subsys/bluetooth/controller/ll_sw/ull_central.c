@@ -330,6 +330,10 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	ull_hdr_init(&conn->ull);
 	lll_hdr_init(&conn->lll, conn);
 
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	lll_conn_meta_init(conn_lll);
+#endif /* CONFIG_BT_CTLR_CONN_META */
+
 conn_is_valid:
 #if defined(CONFIG_BT_CTLR_PHY)
 	ready_delay_us = lll_radio_tx_ready_delay_get(conn_lll->phy_tx,

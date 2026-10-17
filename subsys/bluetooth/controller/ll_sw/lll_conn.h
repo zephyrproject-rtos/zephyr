@@ -229,3 +229,8 @@ extern struct lll_conn *ull_conn_lll_get(uint16_t handle);
 extern void ull_conn_lll_tx_demux_sched(struct lll_conn *lll);
 extern void ull_conn_lll_ack_enqueue(uint16_t handle, struct node_tx *tx);
 extern uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll);
+
+/* Vendor initializer for the connection meta member, called after the native members are set.
+ * Writes memory only: radio resources are acquired after the connection request.
+ */
+void lll_conn_meta_init(struct lll_conn *lll);
