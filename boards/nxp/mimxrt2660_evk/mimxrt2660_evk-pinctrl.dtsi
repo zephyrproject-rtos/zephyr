@@ -70,4 +70,117 @@
 			input-enable;
 		};
 	};
+
+	/* LPI2C0 on PIO2_12/13, the bus the SD card slot's IO expanders sit on. */
+	pinmux_lpi2c0: pinmux_lpi2c0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_12_hsp_lpi2c0_sda>,
+				 <&main__iomuxc_pio2_13_hsp_lpi2c0_scl>;
+			slew-rate = "low";
+			drive-open-drain;
+			input-enable;
+		};
+	};
+
+	/*
+	 * USDHC0 (uSD slot) on PIO7_6..11; VSELECT on PIO6_11 drives the
+	 * level translator. The CLK pad needs input-enable for the USDHC
+	 * feedback path, and CMD/DAT need the pull-ups the SD spec asks for.
+	 */
+	pinmux_usdhc0: pinmux_usdhc0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio7_7_comm_usdhc0_clk>;
+			drive-strength = "50-ohm";
+			slew-rate = "medium";
+			input-enable;
+			bias-disable;
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio7_6_comm_usdhc0_cmd>,
+				 <&main__iomuxc_pio7_8_comm_usdhc0_dat0>,
+				 <&main__iomuxc_pio7_9_comm_usdhc0_dat1>,
+				 <&main__iomuxc_pio7_10_comm_usdhc0_dat2>,
+				 <&main__iomuxc_pio7_11_comm_usdhc0_dat3>;
+			drive-strength = "50-ohm";
+			slew-rate = "medium";
+			input-enable;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <&main__iomuxc_pio6_11_comm_usdhc0_vselect>;
+			drive-strength = "100-ohm";
+			slew-rate = "fast";
+		};
+	};
+
+	/* 25 MHz: SDR12 / SDR25 */
+	pinmux_usdhc0_slow: pinmux_usdhc0_slow {
+		group0 {
+			pinmux = <&main__iomuxc_pio7_7_comm_usdhc0_clk>;
+			drive-strength = "100-ohm";
+			slew-rate = "low";
+			input-enable;
+			bias-disable;
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio7_6_comm_usdhc0_cmd>,
+				 <&main__iomuxc_pio7_8_comm_usdhc0_dat0>,
+				 <&main__iomuxc_pio7_9_comm_usdhc0_dat1>,
+				 <&main__iomuxc_pio7_10_comm_usdhc0_dat2>,
+				 <&main__iomuxc_pio7_11_comm_usdhc0_dat3>;
+			drive-strength = "100-ohm";
+			slew-rate = "low";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	/* 50 MHz: SDR50 */
+	pinmux_usdhc0_med: pinmux_usdhc0_med {
+		group0 {
+			pinmux = <&main__iomuxc_pio7_7_comm_usdhc0_clk>;
+			drive-strength = "50-ohm";
+			slew-rate = "fast";
+			input-enable;
+			bias-disable;
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio7_6_comm_usdhc0_cmd>,
+				 <&main__iomuxc_pio7_8_comm_usdhc0_dat0>,
+				 <&main__iomuxc_pio7_9_comm_usdhc0_dat1>,
+				 <&main__iomuxc_pio7_10_comm_usdhc0_dat2>,
+				 <&main__iomuxc_pio7_11_comm_usdhc0_dat3>;
+			drive-strength = "50-ohm";
+			slew-rate = "fast";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	/* Over 100 MHz: SDR104 / HS200 */
+	pinmux_usdhc0_fast: pinmux_usdhc0_fast {
+		group0 {
+			pinmux = <&main__iomuxc_pio7_7_comm_usdhc0_clk>;
+			drive-strength = "33-ohm";
+			slew-rate = "high";
+			input-enable;
+			bias-disable;
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio7_6_comm_usdhc0_cmd>,
+				 <&main__iomuxc_pio7_8_comm_usdhc0_dat0>,
+				 <&main__iomuxc_pio7_9_comm_usdhc0_dat1>,
+				 <&main__iomuxc_pio7_10_comm_usdhc0_dat2>,
+				 <&main__iomuxc_pio7_11_comm_usdhc0_dat3>;
+			drive-strength = "33-ohm";
+			slew-rate = "high";
+			input-enable;
+			bias-pull-up;
+		};
+	};
 };
