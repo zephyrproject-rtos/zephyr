@@ -30,7 +30,7 @@ void adc_scan_end_isr(void *irq);
 #define ADC_SCAN_END_ISR adc_scan_end_isr
 #endif
 
-#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#if defined(CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT)
 #define RZ_INTC_BASE DT_REG_ADDR(DT_NODELABEL(intc))
 
 #ifdef CONFIG_CPU_CORTEX_M33
@@ -57,7 +57,7 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 	reg_val |= FIELD_PREP(REG_INTSEL_SPIk_SEL_MASK(irq), event);
 	REG_INTSEL_WRITE(irq, reg_val);
 }
-#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+#endif /* CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT */
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -410,14 +410,14 @@ static int adc_rz_init(const struct device *dev)
 
 #endif /* CONFIG_ADC_RENESAS_RZ_ADC_C */
 
-#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#if defined(CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT)
 #define ADC_RZ_CONNECT_IRQ_EVENT(idx)                                                              \
 	intc_connect_irq_event(DT_INST_IRQ_BY_NAME(idx, scanend, irq),                             \
 			       CONCAT(ADC, DT_INST_PROP(idx, unit), _ADA_ADIREQ_N_IRQSELn))
 
 #else
 #define ADC_RZ_CONNECT_IRQ_EVENT(idx)
-#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+#endif /* CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT */
 
 #if defined(CONFIG_ADC_RENESAS_RZ_ADC_E)
 #define ADC_RZ_EXTENDED_FSP_CFG(idx)                                                               \

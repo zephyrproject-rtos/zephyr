@@ -611,7 +611,7 @@ static void pwm_rz_gpt_ovf_isr(const struct device *dev)
 	gpt_counter_overflow_isr();
 }
 
-#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#if defined(CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT)
 #define RZ_INTC_BASE DT_REG_ADDR(DT_NODELABEL(intc))
 
 #ifdef CONFIG_CPU_CORTEX_M33
@@ -651,7 +651,7 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 
 #else
 #define PWM_RZ_CONNECT_IRQ_SELECT(inst)
-#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+#endif /* CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT */
 
 #ifdef CONFIG_CPU_CORTEX_M
 #define GPT_GET_IRQ_FLAGS(idx, irq_name) 0

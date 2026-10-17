@@ -50,8 +50,7 @@ if SPI_RENESAS_RZ || SPI_RENESAS_RZ_SPI_B
 config SPI_RENESAS_RZ_USE_INTERRUPT_SELECT
 	bool "RZ SPI support interrupt select"
 	default y
-	depends on SOC_SERIES_RZV2N \
-		|| SOC_SERIES_RZV2H
+	depends on RENESAS_RZ_INTC_SELECT_INTERRUPT
 	help
 	  Support interrupt select for the SPI.
 

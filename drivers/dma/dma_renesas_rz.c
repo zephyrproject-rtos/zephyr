@@ -685,7 +685,7 @@ static DEVICE_API(dma, dma_api) = {
 	.chan_release = dma_renesas_rz_channel_release,
 };
 
-#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#if defined(CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT)
 #define RZ_INTC_BASE DT_REG_ADDR(DT_NODELABEL(intc))
 
 #define RZ_INTM33SEL_ADDR_OFFSET 0x200
@@ -707,7 +707,7 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 	reg_val |= FIELD_PREP(REG_INTSEL_SPIk_SEL_MASK(irq), event);
 	REG_INTSEL_WRITE(irq, reg_val);
 }
-#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+#endif /* CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT */
 
 static int renesas_rz_dma_init(const struct device *dev)
 {
@@ -770,14 +770,14 @@ static void rz_dma_err_isr(const struct device *dev)
 #define RZ_DMA_DATA_STRUCT_GET_ERR_IRQ(inst, err_name)
 #endif
 
-#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#if defined(CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT)
 #define DMA_RZ_CONNECT_IRQ_SELECT(inst, name)                                                      \
 	intc_connect_irq_event(DT_INST_IRQ_BY_NAME(inst, name, irq),                               \
 			       CONCAT(DMAC_B, DT_INST_PROP(inst, dma_unit), _DMAERR_IRQSELn));
 
 #else
 #define DMA_RZ_CONNECT_IRQ_SELECT(inst, name)
-#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+#endif /* CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT */
 
 #define RZ_DMA_IRQ_ERR_CONFIGURE(inst, name)                                                       \
 	DMA_RZ_CONNECT_IRQ_SELECT(inst, name)                                                      \
