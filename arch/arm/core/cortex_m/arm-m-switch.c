@@ -314,10 +314,16 @@ static void *arm_m_switch_to_cpu(void *sp)
 	 */
 	bool have_fpu = (*(uint32_t *)sp) != 0;
 
+	/* The FPU registers themselves are loaded by arm_m_exc_exit
+	 * after all C code has run.  Loading them here would let
+	 * compiler-generated code (e.g. vectorized frame copies, or
+	 * any caller-saved s0-s15 use in a called function) clobber
+	 * them before the exception return.
+	 */
 	if (have_fpu) {
 		f = CONTAINER_OF(sp, union frame, zfp.have_fpu);
 		splim = PSPLIM(f);
-		__asm__ volatile("vldm %0, {s0-s31}" ::"r"(&f->zfp.s_regs[0]));
+		arm_m_cs_ptrs.fpu_in = &f->zfp.s_regs[0];
 		padded = f->zfp.u.sw.apsr & XPSR_STACK_ALIGN;
 		if (padded) {
 			SWITCH_TO_SYNTH_ALIGN(f->zfp.u.sw, f->synth_a);
@@ -327,6 +333,7 @@ static void *arm_m_switch_to_cpu(void *sp)
 	} else {
 		f = CONTAINER_OF(sp, union frame, z.have_fpu);
 		splim = PSPLIM(f);
+		arm_m_cs_ptrs.fpu_in = NULL;
 		padded = f->z.u.sw.apsr & XPSR_STACK_ALIGN;
 		if (padded) {
 			SWITCH_TO_SYNTH_ALIGN(f->z.u.sw, f->synth_a);
@@ -378,7 +385,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	union frame *f = NULL;
 	struct hw_frame_base *base = sp;
 	bool padded = (base->apsr & XPSR_STACK_ALIGN);
-	uint32_t fpscr;
+	uint32_t fpscr = 0;
 
 #ifdef CONFIG_FPU
 	if (fpu) {
@@ -386,8 +393,16 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 		 * the stack frame we have to tickle the FPU to force
 		 * it to spill the caller-save registers.  Then clear
 		 * CONTROL.FPCA which gets set again by that instruction.
+		 *
+		 * This must be a real VMRS: clang implements __get_FPSCR()
+		 * as a builtin without side effects and deletes it when the
+		 * result is unused.  The memory clobber keeps the frame
+		 * reads below from moving above the spill.
 		 */
-		(void)__get_FPSCR();
+		uint32_t dummy;
+
+		__asm__ volatile("vmrs %0, fpscr" : "=r"(dummy) : : "memory");
+		(void)dummy;
 		CONTROL_Type control = {.w = __get_CONTROL()};
 
 		control.b.FPCA = 0;
@@ -437,12 +452,14 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	arm_m_cs_ptrs.out = &f->z.u.sw.r4;
 
 #ifdef CONFIG_FPU
+	/* s16-s31 are stored by arm_m_exc_exit, see arm_m_switch_to_cpu() */
 	if (fpu) {
-		__asm__ volatile("vstm %0, {s16-s31}" ::"r"(&f->zfp.s_regs[16]));
+		arm_m_cs_ptrs.fpu_out = &f->zfp.s_regs[16];
 		f->zfp.fpscr = fpscr;
 		f->zfp.have_fpu = true;
 		return &f->zfp.have_fpu;
 	}
+	arm_m_cs_ptrs.fpu_out = NULL;
 	f->z.have_fpu = false;
 	return &f->z.have_fpu;
 #else
@@ -619,10 +636,26 @@ void arm_m_legacy_exit(void)
  * call arm_m_must_switch() (which handles the other context switch
  * duties), and spill/fill if necessary.  If no context switch is
  * needed, we just return via the original LR.  If we are switching,
- * we synthesize a integer-only EXC_RETURN as FPU state switching was
- * handled in software already.
+ * we synthesize a integer-only EXC_RETURN as FPU state switching is
+ * handled in software.
+ *
+ * The FPU registers are switched here, after all C code has run,
+ * rather than in arm_m_do_switch().  Like r4-r11, s16-s31 are
+ * callee-saved, so they still hold the outgoing thread's values on
+ * return from arm_m_must_switch().  The caller-saved s0-s15 were
+ * spilled to the exception frame and copied out in C.  Nothing
+ * between the loads below and the exception return can then use
+ * the FPU registers, whatever code the compiler generated for the C
+ * functions (clang vectorizes the frame copies into MVE q0-q7, for
+ * example).
  */
 #ifdef CONFIG_MULTITHREADING
+BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, lr_save) == 8);
+#ifdef CONFIG_FPU
+BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, fpu_out) == 16);
+BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, fpu_in) == 20);
+#endif
+
 __attribute__((naked)) void arm_m_exc_exit(void)
 {
 	__asm__("  bl arm_m_must_switch;"
@@ -635,6 +668,15 @@ __attribute__((naked)) void arm_m_exc_exit(void)
 		"  stm r0, {r4-r11};"    /* out is a switch_frame */
 		"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
 		"  ldm r1, {r4-r6};"
+#ifdef CONFIG_FPU
+		"  ldr r0, [r2, #16];" /* fpu_out */
+		"  cbz r0, 2f;"
+		"  vstm r0, {s16-s31};"
+		"2:\n"
+		"  ldr r1, [r2, #20];" /* fpu_in */
+		"  cbz r1, 1f;"
+		"  vldm r1, {s0-s31};"
+#endif
 		"1:\n"
 		"  msr basepri, r3;" /* release lock taken in must_switch */
 		"  bx lr;");

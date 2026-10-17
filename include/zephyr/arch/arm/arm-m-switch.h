@@ -139,6 +139,13 @@ extern uint32_t arm_m_switch_stack_buffer;
 struct arm_m_cs_ptrs {
 	/** Pointer to the callee-saved block being written by the outgoing thread */
 	void *out, *in, *lr_save, *lr_fixup;
+#ifdef CONFIG_FPU
+	/* FPU register blocks, or NULL if the thread has no FPU state:
+	 * the outgoing thread's s16-s31 are stored to fpu_out and the
+	 * incoming thread's s0-s31 are loaded from fpu_in.
+	 */
+	void *fpu_out, *fpu_in;
+#endif
 };
 /** @endcond */
 
