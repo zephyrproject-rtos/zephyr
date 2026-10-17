@@ -8,3 +8,9 @@ toolchain:
 supported:
   - uart
   - gpio
+  - adc
+  - counter
+  - dma
+  - i2c
+  - pwm
+  - spi

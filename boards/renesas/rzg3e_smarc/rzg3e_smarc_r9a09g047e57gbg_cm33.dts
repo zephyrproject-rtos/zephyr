@@ -26,6 +26,14 @@
 		sw0 = &sw1;
 		sw1 = &sw2;
 		sw2 = &sw3;
+		i2c-0 = &i2c1;
+		pwm-test = &pwm3;
+		adc = &adc0;
+		adc0 = &adc0;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>, <&adc0 2>;
 	};
 
 	buttons {
@@ -77,5 +85,115 @@
 };
 
 &gpio8 {
+	status = "okay";
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <1800>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <1800>;
+	};
+};
+
+&gtm0 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&gtm1 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&gtm2 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&gtm3 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&gtm4 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&gtm5 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&gtm6 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&gtm7 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&gpt3 {
+	status = "okay";
+
+	pwm3: pwm {
+		pinctrl-0 = <&gpt3_pins>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_pins>;
+	pinctrl-names = "default";
 	status = "okay";
 };

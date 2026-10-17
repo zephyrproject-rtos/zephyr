@@ -13,4 +13,49 @@
 				 <RZG_PINMUX(PORT_07, 6, 5)>; /* RXD */
 		};
 	};
+
+	/* RIIC1: SMARC I2C_GP (GEN_PURPOSE header pins 19/21, PMOD1 type 6A pins 3/4) */
+	/omit-if-no-ref/ i2c1_pins: i2c1 {
+		i2c1-pinmux {
+			pinmux = <RZG_PINMUX(PORT_03, 2, 1)>, /* SCL1, SMARC I2C_GP_CK */
+				 <RZG_PINMUX(PORT_03, 3, 1)>; /* SDA1, SMARC I2C_GP_DAT */
+		};
+	};
+
+	/* RSPI ch0: SMARC SPI1, PMOD0 type 2A (SPI) */
+	/omit-if-no-ref/ spi0_pins: spi0 {
+		spi0-pinmux {
+			pinmux = <RZG_PINMUX(PORT_22, 6, 2)>, /* RSPCKA, PMOD0-4 */
+				 <RZG_PINMUX(PORT_22, 5, 2)>, /* MOSIA, PMOD0-2 */
+				 <RZG_PINMUX(PORT_22, 4, 2)>, /* MISOA, PMOD0-3 */
+				 <RZG_PINMUX(PORT_22, 7, 2)>; /* SSLA0, PMOD0-1 */
+		};
+	};
+
+	/*
+	 * RSPI ch1: SMARC SPI0, GEN_PURPOSE header. The pins are shared with the parallel LCD
+	 * output and are routed to the SMARC connector when SYS[5] of the module is OFF.
+	 */
+	/omit-if-no-ref/ spi1_pins: spi1 {
+		spi1-pinmux {
+			pinmux = <RZG_PINMUX(PORT_06, 2, 2)>, /* RSPCKB, GEN_PURPOSE-13 */
+				 <RZG_PINMUX(PORT_06, 1, 2)>, /* MOSIB, GEN_PURPOSE-17 */
+				 <RZG_PINMUX(PORT_06, 0, 2)>, /* MISOB, GEN_PURPOSE-15 */
+				 <RZG_PINMUX(PORT_06, 3, 2)>; /* SSLB0, GEN_PURPOSE-11 */
+		};
+	};
+
+	/* GPT3: SMARC GPIO5 (PMOD0-8) */
+	/omit-if-no-ref/ gpt3_pins: gpt3 {
+		gpt3-pinmux {
+			pinmux = <RZG_PINMUX(PORT_03, 6, 10)>; /* GTIOC3A, PMOD0-8 */
+		};
+	};
+
+	/* GPT5: SMARC GPIO11 (PMOD1-2 in type 6A), needs SYS[5] of the module OFF */
+	/omit-if-no-ref/ gpt5_pins: gpt5 {
+		gpt5-pinmux {
+			pinmux = <RZG_PINMUX(PORT_05, 6, 10)>; /* GTIOC5A, PMOD1-2 */
+		};
+	};
 };
