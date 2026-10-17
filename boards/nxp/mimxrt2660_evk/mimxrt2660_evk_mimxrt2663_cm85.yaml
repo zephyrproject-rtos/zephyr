@@ -20,6 +20,7 @@ supported:
   - hwinfo
   - i2c
   - rtc
+  - sdhc
   - spi
   - uart
   - video
