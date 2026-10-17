@@ -426,6 +426,8 @@ class Console(Harness):
 
 
 class Script(Harness):
+    # Seconds the output reader may take past the timeout to drain the pipe
+    OUTPUT_DRAIN_GRACE = 1.0
 
     def __init__(self):
         super().__init__()
@@ -541,28 +543,36 @@ class Script(Harness):
         return command
 
     def run_command(self, cmd: list[str], timeout: float, env: dict[str, str] | None = None) -> int:
-        """Run a command, stream its output, and return the exit code."""
+        """Run a command, stream its output, and return the exit code.
+
+        The whole call, including the draining of the output pipe, is bounded by the
+        timeout plus OUTPUT_DRAIN_GRACE.
+        """
         logger.debug(f"Running command: {shlex.join(cmd)}")
-        with subprocess.Popen(
+        deadline = time.monotonic() + timeout
+        proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             env=env,
-        ) as proc:
-            try:
-                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
-                reader_t.start()
-                reader_t.join(timeout)
-                if reader_t.is_alive():
-                    terminate_process(proc)
-                    logger.warning('Timeout has occurred. Can be extended in testspec file. '
-                                   f'Currently set to {timeout} seconds.')
-                    self.instance.reason = 'Test timeout'
-                    self.status = TwisterStatus.FAIL
-                proc.wait(timeout)
-            except subprocess.TimeoutExpired:
-                self.status = TwisterStatus.FAIL
-                proc.kill()
+        )
+        reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+        reader_t.start()
+        try:
+            proc.wait(timeout)
+        except subprocess.TimeoutExpired:
+            terminate_process(proc)
+            proc.wait()
+            logger.warning('Timeout has occurred. Can be extended in testspec file. '
+                           f'Currently set to {timeout} seconds.')
+            self.instance.reason = 'Test timeout'
+            self.status = TwisterStatus.FAIL
+        # Let the reader drain what the script and its children wrote, within the same
+        # deadline. A process the script left behind may still hold the pipe; do not block
+        # on it or close the pipe underneath the reader, the daemon thread ends with it.
+        reader_t.join(max(0.0, deadline - time.monotonic()) + self.OUTPUT_DRAIN_GRACE)
+        if not reader_t.is_alive():
+            proc.stdout.close()
 
         return proc.returncode
 
@@ -576,16 +586,17 @@ class Script(Harness):
     def _output_reader(self, proc: subprocess.Popen) -> None:
         self._output = []
         log_prefix = self.log_prefix or self.__class__.__name__.upper()
-        while proc.stdout.readable() and proc.poll() is None:
+        # Read until EOF rather than until the process has exited: a script that exits
+        # before this thread gets to run would otherwise have its output discarded.
+        for raw_line in iter(proc.stdout.readline, b''):
             # errors="replace": a non-UTF-8 serial byte must not crash this reader
             # thread (which would stop capturing the DUT's output mid-run).
-            line = proc.stdout.readline().decode(errors="replace").rstrip()
+            line = raw_line.decode(errors="replace").rstrip()
             if not line:
                 continue
             self._output.append(line)
             logger.debug(f'{log_prefix}: {line}')
             self.parse_record(line)
-        proc.communicate()
 
     def _add_testcase_from_script(
         self, script: str, rc: int, duration: float = 0.0, reason: str = ''
