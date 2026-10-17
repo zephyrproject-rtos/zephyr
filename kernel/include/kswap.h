@@ -76,6 +76,7 @@ static inline void z_sched_switch_spin(struct k_thread *thread)
  * Note that is_spinlock is a compile-time construct which will be
  * optimized out when this function is expanded.
  */
+Z_NO_THREAD_SAFETY_ANALYSIS
 static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 					  struct k_spinlock *lock,
 					  bool is_spinlock)
@@ -178,7 +179,9 @@ static inline int z_swap_irqlock(unsigned int key)
 	return do_swap(key, NULL, false);
 }
 
+Z_NO_THREAD_SAFETY_ANALYSIS
 static inline int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
+	Z_RELEASES(lock)
 {
 	return do_swap(key.key, lock, true);
 }
@@ -214,6 +217,7 @@ static inline int z_swap_irqlock(unsigned int key)
  * handling.
  */
 static ALWAYS_INLINE int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
+	Z_RELEASES(lock)
 {
 	k_spin_release(lock);
 	return z_swap_irqlock(key.key);
@@ -229,6 +233,7 @@ static inline void z_swap_unlocked(void)
 /**
  * @brief - Like z_swap() but it is known that the scheduler's spinlock is already held.
  */
+Z_NO_THREAD_SAFETY_ANALYSIS
 static inline int z_swap_locked(k_spinlock_key_t key)
 {
 	return z_swap(&_sched_spinlock, key);

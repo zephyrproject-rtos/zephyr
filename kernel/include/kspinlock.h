@@ -60,6 +60,7 @@ static ALWAYS_INLINE void z_sched_spinlock_transfer_owner(struct k_thread *threa
 /**
  * @brief Release the scheduler's spinlock without restoring interrupts
  */
+Z_NO_THREAD_SAFETY_ANALYSIS
 static ALWAYS_INLINE void z_sched_spinlock_release(void)
 {
 	k_spin_release(&_sched_spinlock);
@@ -68,6 +69,7 @@ static ALWAYS_INLINE void z_sched_spinlock_release(void)
 /**
  * @brief Lock the scheduler's spinlock
  */
+Z_NO_THREAD_SAFETY_ANALYSIS
 static ALWAYS_INLINE k_spinlock_key_t z_sched_spinlock_lock(void)
 {
 	return k_spin_lock(&_sched_spinlock);
@@ -76,6 +78,7 @@ static ALWAYS_INLINE k_spinlock_key_t z_sched_spinlock_lock(void)
 /**
  * @brief Unlock the scheduler's spinlock
  */
+Z_NO_THREAD_SAFETY_ANALYSIS
 static ALWAYS_INLINE void z_sched_spinlock_unlock(k_spinlock_key_t key)
 {
 	k_spin_unlock(&_sched_spinlock, key);
