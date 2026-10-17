@@ -1427,10 +1427,10 @@ int net_pkt_alloc_buffer_with_reserve(struct net_pkt *pkt,
 
 	if (!buf) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_ERR("Data buffer (%zu) allocation failed (%s:%d)",
+		NET_ERR_RATELIMIT("Data buffer (%zu) allocation failed (%s:%d)",
 			alloc_len + reserve, caller, line);
 #else
-		NET_ERR("Data buffer (%zu) allocation failed.",
+		NET_ERR_RATELIMIT("Data buffer (%zu) allocation failed.",
 			alloc_len + reserve);
 #endif
 		return -ENOMEM;
@@ -1554,10 +1554,10 @@ int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
 
 	if (!buf) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_ERR("Data buffer (%zd) allocation failed (%s:%d)",
+		NET_ERR_RATELIMIT("Data buffer (%zd) allocation failed (%s:%d)",
 			size, caller, line);
 #else
-		NET_ERR("Data buffer (%zd) allocation failed.", size);
+		NET_ERR_RATELIMIT("Data buffer (%zd) allocation failed.", size);
 #endif
 		return -ENOMEM;
 	}
