@@ -29,5 +29,15 @@ tests_scripts: <list of script paths> (default tests_scripts)
             - ../../test/test_b.sh
             - $ENV_VAR/tests_scripts
 
+tests_scripts_parallel: <integer> (default 1)
+    Maximum number of the scripts of one test scenario that are run at the same time, at least 1.
+    By default the scripts run one after the other. Set this for scenarios whose scripts
+    are independent of each other, for example because each uses its own simulation id,
+    so that a scenario with many scripts does not keep one CPU busy while the others idle.
+    The scripts started this way are not counted against the ``-j/--jobs`` limit of
+    Twister, so keep the value small enough for the test load.
+    The results and logs are recorded in the order the scripts are listed, whichever
+    order they finish in.
+
 Any extra command-line arguments passed to Twister after ``--`` are forwarded to every script as
 additional positional arguments.
