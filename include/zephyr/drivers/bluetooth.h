@@ -74,16 +74,31 @@ enum {
 	 * the feature as not supported.
 	 */
 	BT_HCI_QUIRK_NO_FLOW_CONTROL = BIT(2),
+	/** No LE Advertising Set Terminated event when high duty cycle advertising times out.
+	 *
+	 * The controller reports the timeout of high duty cycle connectable directed advertising
+	 * enabled with the extended advertising commands with a connection complete event only.
+	 * Core Spec v6.3 Vol 4 Part E 7.8.56 allows that event, an LE Advertising Set Terminated
+	 * event, or both, and the host cannot tell which a controller sends. With this quirk it
+	 * ends the advertising set at the connection complete event. Never set it for a controller
+	 * that also sends LE Advertising Set Terminated; the host logs a warning when it gets one.
+	 *
+	 * The connection complete event names no advertising set, so the host refuses with -EBUSY
+	 * to start a second such set while one is enabled, reports 0 completed events to the set's
+	 * sent callback, and takes an event still queued when the application restarts
+	 * advertising for the end of the new advertising.
+	 */
+	BT_HCI_QUIRK_NO_ADV_TERM_ON_DIR_TIMEOUT = BIT(3),
 };
 
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
 	UTIL_CAT(BT_HCI_QUIRK_, DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx))
-#define BT_DT_HCI_QUIRKS_GET(node_id) COND_CODE_1(DT_NODE_HAS_PROP(node_id, bt_hci_quirks), \
-						  (DT_FOREACH_PROP_ELEM_SEP(node_id, \
-									    bt_hci_quirks, \
-									    BT_DT_HCI_QUIRK_OR, \
-									    (|))), \
-						  (0))
+#define BT_DT_HCI_QUIRKS_GET(node_id) (COND_CODE_1(DT_NODE_HAS_PROP(node_id, bt_hci_quirks), \
+						   (DT_FOREACH_PROP_ELEM_SEP(node_id, \
+									     bt_hci_quirks, \
+									     BT_DT_HCI_QUIRK_OR, \
+									     (|))), \
+						   (0)))
 #define BT_DT_HCI_QUIRKS_INST_GET(inst) BT_DT_HCI_QUIRKS_GET(DT_DRV_INST(inst))
 
 #define BT_DT_HCI_NAME_GET(node_id) DT_PROP_OR(node_id, bt_hci_name, "HCI")
