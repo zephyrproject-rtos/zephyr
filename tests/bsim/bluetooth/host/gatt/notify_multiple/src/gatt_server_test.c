@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <errno.h>
 
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
@@ -29,6 +30,7 @@ static struct bt_conn *g_conn;
 #define ARRAY_ITEM(i, _) i
 const uint8_t chrc_data[] = { LISTIFY(CHRC_SIZE, ARRAY_ITEM, (,)) }; /* 1, 2, 3 ... */
 const uint8_t long_chrc_data[] = { LISTIFY(LONG_CHRC_SIZE, ARRAY_ITEM, (,)) }; /* 1, 2, 3 ... */
+static uint8_t max_chrc_data[BT_ATT_MAX_ATTRIBUTE_LEN];
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -94,11 +96,57 @@ BT_GATT_SERVICE_DEFINE(test_svc, BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 					      BT_GATT_PERM_READ, NULL, NULL, NULL),
 		       BT_GATT_CCC(long_subscribe, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
 
-static volatile size_t num_notifications_sent;
+static atomic_t num_notifications_sent;
+static atomic_t num_fallback_notifications_sent;
 
 static void notification_sent(struct bt_conn *conn, void *user_data)
 {
-	printk("Sent notification #%u\n", num_notifications_sent++);
+	const atomic_val_t notification = atomic_inc(&num_notifications_sent);
+
+	printk("Sent notification #%d\n", (int)notification);
+}
+
+static void fallback_notification_sent(struct bt_conn *conn, void *user_data)
+{
+	(void)atomic_inc(&num_fallback_notifications_sent);
+}
+
+static void notify_single(const struct bt_gatt_attr *attr, uint16_t len)
+{
+	struct bt_gatt_notify_params params = {
+		.attr = attr,
+		.data = max_chrc_data,
+		.len = len,
+		.func = fallback_notification_sent,
+	};
+	int err;
+
+	err = bt_gatt_notify_cb(g_conn, &params);
+	TEST_ASSERT(err == 0, "Failed to send %u byte notification (err %d)", len, err);
+}
+
+static void test_single_notify_fallback(const struct bt_gatt_attr *attr)
+{
+	const int max_ntf_size = bt_att_get_max_notify_size(g_conn, BT_ATT_CHAN_OPT_NONE);
+
+	TEST_ASSERT(max_ntf_size > LONG_CHRC_SIZE + (int)NOTIFY_MULT_VALUE_OVERHEAD &&
+			    max_ntf_size <= (int)sizeof(max_chrc_data),
+		    "Unexpected maximum notification size %d", max_ntf_size);
+
+	const uint16_t lengths[] = {
+		FALLBACK_SHORT_LEN,
+		(uint16_t)max_ntf_size,
+		(uint16_t)(max_ntf_size - (NOTIFY_MULT_VALUE_OVERHEAD - 1U)),
+		(uint16_t)(max_ntf_size - NOTIFY_MULT_VALUE_OVERHEAD),
+	};
+
+	ARRAY_FOR_EACH(lengths, i) {
+		notify_single(attr, lengths[i]);
+	}
+
+	while (atomic_get(&num_fallback_notifications_sent) < (atomic_val_t)ARRAY_SIZE(lengths)) {
+		k_sleep(K_MSEC(10));
+	}
 }
 
 static inline void multiple_notify(const struct bt_gatt_attr *attrs[2])
@@ -169,15 +217,17 @@ static void test_main(void)
 		multiple_notify(attrs);
 	}
 
-	while (num_notifications_sent < NOTIFICATION_COUNT / 2) {
+	while (atomic_get(&num_notifications_sent) < NOTIFICATION_COUNT / 2U) {
 		k_sleep(K_MSEC(100));
 	}
 
 	k_sleep(K_MSEC(1000));
 
-	if (num_notifications_sent != NOTIFICATION_COUNT) {
+	if (atomic_get(&num_notifications_sent) != NOTIFICATION_COUNT) {
 		TEST_FAIL("Unexpected notification callback value");
 	}
+
+	test_single_notify_fallback(attrs[0]);
 
 	TEST_PASS("GATT server passed");
 }

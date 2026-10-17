@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <errno.h>
 
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
@@ -218,13 +219,68 @@ static void test_subscribed(struct bt_conn *conn,
 	}
 }
 
-static volatile size_t num_notifications;
+static atomic_t next_notification;
+static atomic_t num_notifications;
+static uint16_t fallback_notification_lengths[FALLBACK_NOTIFICATION_COUNT];
+
 uint8_t test_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params, const void *data,
 		    uint16_t length)
 {
-	printk("Received notification #%u with length %d\n", num_notifications++, length);
+	atomic_val_t notification_idx;
+	size_t notification;
+
+	if (data == NULL) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	notification_idx = atomic_inc(&next_notification);
+	notification = (size_t)notification_idx;
+
+	printk("Received notification #%zu with length %u\n", notification, length);
+
+	if (notification >= NOTIFICATION_COUNT) {
+		size_t fallback_idx = notification - NOTIFICATION_COUNT;
+
+		TEST_ASSERT(fallback_idx < ARRAY_SIZE(fallback_notification_lengths),
+			    "Too many fallback notifications");
+		fallback_notification_lengths[fallback_idx] = length;
+	}
+
+	/* Publish completion only after the corresponding length is recorded. */
+	(void)atomic_inc(&num_notifications);
 
 	return BT_GATT_ITER_CONTINUE;
+}
+
+static void verify_fallback_notifications(void)
+{
+	const int max_ntf_size = bt_att_get_max_notify_size(g_conn, BT_ATT_CHAN_OPT_NONE);
+	uint16_t remaining[2];
+	uint16_t just_above_mult_max;
+	uint16_t mult_max;
+
+	TEST_ASSERT(max_ntf_size > (int)NOTIFY_MULT_VALUE_OVERHEAD,
+		    "Unexpected maximum notification size %d", max_ntf_size);
+
+	just_above_mult_max =
+		(uint16_t)(max_ntf_size - (NOTIFY_MULT_VALUE_OVERHEAD - 1U));
+	mult_max = (uint16_t)(max_ntf_size - NOTIFY_MULT_VALUE_OVERHEAD);
+
+	TEST_ASSERT(fallback_notification_lengths[0] == FALLBACK_SHORT_LEN,
+		    "Pending notification has length %u, expected %u",
+		    fallback_notification_lengths[0], FALLBACK_SHORT_LEN);
+	TEST_ASSERT(fallback_notification_lengths[1] == (uint16_t)max_ntf_size,
+		    "Fallback notification has length %u, expected %u",
+		    fallback_notification_lengths[1], (uint16_t)max_ntf_size);
+
+	remaining[0] = fallback_notification_lengths[2];
+	remaining[1] = fallback_notification_lengths[3];
+
+	/* EATT bearers may complete these notifications out of order. */
+	TEST_ASSERT((remaining[0] == just_above_mult_max && remaining[1] == mult_max) ||
+			    (remaining[0] == mult_max && remaining[1] == just_above_mult_max),
+		    "Boundary notifications have lengths %u and %u, expected %u and %u",
+		    remaining[0], remaining[1], just_above_mult_max, mult_max);
 }
 
 static struct bt_gatt_discover_params disc_params_short;
@@ -348,9 +404,12 @@ static void test_main(void)
 
 	printk("Subscribed\n");
 
-	while (num_notifications < NOTIFICATION_COUNT) {
+	while (atomic_get(&num_notifications) <
+	       (atomic_val_t)(NOTIFICATION_COUNT + FALLBACK_NOTIFICATION_COUNT)) {
 		k_sleep(K_MSEC(100));
 	}
+
+	verify_fallback_notifications();
 
 	subscribe(&sub_params_short, false);
 	subscribe(&sub_params_long, false);
