@@ -1384,7 +1384,6 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
-	struct net_buf *buf;
 
 	LOG_DBG("chan %p cid 0x%04x", le_chan, le_chan->rx.cid);
 
@@ -1409,9 +1408,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	(void)k_work_cancel(&le_chan->rx_work);
 
 	/* Remove buffers on the SDU RX queue */
-	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&le_chan->rx_queue);
 
 	/* Destroy segmented SDU if it exists */
 	if (le_chan->_sdu) {
@@ -2425,7 +2422,6 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
-	struct net_buf *buf;
 
 	LOG_DBG("chan %p", chan);
 
@@ -2438,14 +2434,10 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 	}
 
 	/* Remove buffers on the TX queue */
-	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&le_chan->tx_queue);
 
 	/* Remove buffers on the RX queue */
-	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&le_chan->rx_queue);
 
 	/* Update status */
 	if (chan->ops->status) {
