@@ -14,6 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <soc.h>
 #include <stm32_bitops.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -1117,6 +1118,20 @@ static int stm32_ospi_abort(const struct device *dev)
 }
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP */
 
+static void stm32_ospi_invalidate_mmap_cache(off_t addr, size_t size)
+{
+	size_t line_size = sys_cache_data_line_size_get();
+
+	if (line_size != 0 && IS_ENABLED(CONFIG_DCACHE) &&
+	    IS_ENABLED(CONFIG_FLASH_STM32_NOR_MEMMAP) &&
+	    IS_ENABLED(CONFIG_CACHE_MANAGEMENT)) {
+		uintptr_t start = ROUND_DOWN(STM32_OSPI_BASE_ADDRESS + addr, line_size);
+		uintptr_t end = ROUND_UP(STM32_OSPI_BASE_ADDRESS + addr + size, line_size);
+
+		sys_cache_data_invd_range((void *)start, end - start);
+	}
+}
+
 /*
  * Function to erase the flash : chip or sector with possible OSPI/SPI and STR/DTR
  * to erase the complete chip (using dedicated command) :
@@ -1151,6 +1166,9 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		LOG_ERR("Error: wrong sector size 0x%x", size);
 		return -ENOTSUP;
 	}
+
+	const off_t erase_addr = addr;
+	const size_t erase_size = size;
 
 	ospi_lock_thread(dev);
 
@@ -1294,6 +1312,8 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 	goto end_erase;
 
 end_erase:
+	stm32_ospi_invalidate_mmap_cache(erase_addr, erase_size);
+
 	ospi_unlock_thread(dev);
 
 	return ret;
@@ -1427,6 +1447,9 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 		return 0;
 	}
 
+	const off_t write_addr = addr;
+	const size_t write_size = size;
+
 	ospi_lock_thread(dev);
 
 #ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
@@ -1539,6 +1562,8 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	goto end_write;
 
 end_write:
+	stm32_ospi_invalidate_mmap_cache(write_addr, write_size);
+
 	ospi_unlock_thread(dev);
 
 	return ret;
