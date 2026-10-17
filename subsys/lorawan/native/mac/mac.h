@@ -15,6 +15,10 @@ extern "C" {
 
 void mac_process_req(struct lwan_ctx *ctx, const struct lwan_req *req);
 
+#if defined(CONFIG_ZTEST)
+void mac_flush_work(void);
+#endif /* CONFIG_ZTEST */
+
 #ifdef __cplusplus
 }
 #endif
