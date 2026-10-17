@@ -75,9 +75,17 @@
 	vbatt: vbatt {
 		compatible = "voltage-divider";
 		io-channels = <&adc 7>;
-		output-ohms = <1000000>;
-		full-ohms = <2000000>;
+		output-ohms = <10000>;
+		full-ohms = <20000>;
 		power-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		/* Allow the 100 nF filter capacitor to settle through the divider. */
+		power-on-sample-delay-us = <5000>;
+	};
+
+	charger: charger {
+		compatible = "zephyr,charger-gpio";
+		charging-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		charge-done-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 	};
 
 	buzzer: buzzer {
@@ -90,6 +98,7 @@
 		sw0 = &button0;
 		lora0 = &lora;
 		gnss = &gnss;
+		charger0 = &charger;
 		buzzer0 = &buzzer;
 		watchdog0 = &wdt0;
 	};
@@ -177,6 +186,10 @@
 	gnss: gnss-nmea-generic {
 		compatible = "gnss-nmea-generic";
 		status = "okay";
+		enable-gpios = <&gpio1 9 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		reset-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		reset-assert-duration-ms = <100>;
+		startup-delay-ms = <10>;
 	};
 };
 
@@ -222,9 +235,6 @@
 		sck-frequency = <104000000>;
 		quad-enable-requirements = "S2B1v1";
 		jedec-id = [85 60 15];
-		sfdp-bfp = [e5 20 f9 ff ff ff ff 07 44 eb 08 6b 08 3b 80 bb
-			    fe ff ff ff ff ff 00 ff ff ff 44 eb 0c 20 0f 52
-			    10 d8 08 81];
 		size = <16777216>;
 		has-dpd;
 		t-enter-dpd = <3000>;
