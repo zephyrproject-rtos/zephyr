@@ -1358,8 +1358,6 @@ static bool smp_bt_bridge_config_details(uint32_t mode, zcbor_state_t *output_da
 	     zcbor_tstr_put_lit(output_data, "le_coded") &&
 	     zcbor_tstr_put_lit(output_data, "type") &&
 	     zcbor_uint32_put(output_data, 2) &&
-	     zcbor_tstr_put_lit(output_data, "required") &&
-	     zcbor_bool_put(output_data, true) &&
 	     zcbor_map_end_encode(output_data, 3);
 
 	*rc = MGMT_RETURN_CHECK(ok);
