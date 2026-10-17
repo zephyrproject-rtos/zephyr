@@ -1155,6 +1155,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 		ull_hdr_init(&conn->ull);
 		lll_hdr_init(&conn->lll, conn);
 
+#if defined(CONFIG_BT_CTLR_CONN_META)
+		lll_conn_meta_init(conn_lll);
+#endif /* CONFIG_BT_CTLR_CONN_META */
+
 		/* wait for stable clocks */
 		err = lll_clock_wait();
 		if (err) {
