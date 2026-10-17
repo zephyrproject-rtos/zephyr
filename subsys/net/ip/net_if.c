@@ -7332,8 +7332,11 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt)
 
 void net_if_add_tx_timestamp(struct net_pkt *pkt)
 {
-	k_fifo_put(&tx_ts_queue, pkt);
+	/* Take the reference first: the timestamp thread may preempt the
+	 * caller as soon as the packet is queued, and drop its reference.
+	 */
 	net_pkt_ref(pkt);
+	k_fifo_put(&tx_ts_queue, pkt);
 }
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
