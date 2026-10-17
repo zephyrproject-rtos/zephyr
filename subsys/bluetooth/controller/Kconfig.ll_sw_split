@@ -956,6 +956,9 @@ config BT_CTLR_RX_PDU_META
 	bool "RX pdu meta data"
 	help
 	  Enables vendor specific Rx PDU meta data as part of the Rx object.
+	  The PDU is placed inside the meta data at the vendor's
+	  LLL_RX_PDU_META_PDU_OFFSET, so the meta data can be the radio's own
+	  receive buffer descriptor and the radio can receive into the node.
 
 config BT_CTLR_NRF_GRTC
 	bool "Use nRF GRTC peripheral"

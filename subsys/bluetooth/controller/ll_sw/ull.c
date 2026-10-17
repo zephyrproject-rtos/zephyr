@@ -443,11 +443,15 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 
 #define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
 
+#define NODE_RX_USER_OVERHEAD COND_CODE_1(CONFIG_BT_CTLR_RX_PDU_META, \
+					  (BT_CTLR_USER_RX_BUFFER_OVERHEAD), (0U))
+
 #define PDU_RX_NODE_POOL_ELEMENT_SIZE MROUND(NODE_RX_HEADER_SIZE + \
 					     MAX(MAX(PDU_ADV_SIZE, \
 						     MAX(PDU_DATA_SIZE, \
 							 PDU_CTRL_SIZE)), \
-						 PDU_RX_USER_PDU_OCTETS_MAX))
+						 PDU_RX_USER_PDU_OCTETS_MAX) + \
+					     NODE_RX_USER_OVERHEAD)
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SET)
 #define BT_CTLR_ADV_ISO_SET CONFIG_BT_CTLR_ADV_ISO_SET

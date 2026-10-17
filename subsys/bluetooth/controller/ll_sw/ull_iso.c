@@ -129,6 +129,10 @@ BUILD_ASSERT(ISO_RX_HEADER_SIZE == offsetof(struct pdu_cis, payload));
 			    MAX(MAX(LL_BIS_OCTETS_RX_MAX, LL_CIS_OCTETS_RX_MAX), \
 				LL_VND_OCTETS_RX_MIN))
 
+/* Bytes the radio appends after the PDU (vendor RX PDU metadata) */
+#define NODE_RX_USER_OVERHEAD COND_CODE_1(CONFIG_BT_CTLR_RX_PDU_META, \
+					  (BT_CTLR_USER_RX_BUFFER_OVERHEAD), (0U))
+
 /* Declare the ISO rx node RXFIFO. This is a composite pool-backed MFIFO for
  * rx_nodes. The declaration constructs the following data structures:
  * - mfifo_iso_rx:    FIFO with pointers to PDU buffers
@@ -138,8 +142,9 @@ BUILD_ASSERT(ISO_RX_HEADER_SIZE == offsetof(struct pdu_cis, payload));
  * One extra rx buffer is reserved for empty ISO PDU reception.
  * Two extra links are reserved for use by the ll_iso_rx and ull_iso_rx memq.
  */
-static RXFIFO_DEFINE(iso_rx, ((NODE_RX_HEADER_SIZE) + (ISO_RX_BUFFER_SIZE)),
-			     (CONFIG_BT_CTLR_ISO_RX_BUFFERS + 1U), 2U);
+static RXFIFO_DEFINE(iso_rx,
+		     ((NODE_RX_HEADER_SIZE) + (ISO_RX_BUFFER_SIZE) + (NODE_RX_USER_OVERHEAD)),
+		     (CONFIG_BT_CTLR_ISO_RX_BUFFERS + 1U), 2U);
 
 static MEMQ_DECLARE(ll_iso_rx);
 #if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
