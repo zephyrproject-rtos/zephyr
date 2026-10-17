@@ -7,15 +7,9 @@
 /*
  * Board pinctrl for the MIMXRT2660-EVK.
  *
- * The <&main__iomuxc_*> / <&wake__iomuxc_*> nodes are generated per-part into
- * hal_nxp, under dts/nxp/imxrt/imxrt266x/pinctrl/; each carries the combined
- * IOMUXC PIO register (mux == config) and the daisy register for that pad.
- *
- * Any pad the peripheral has to read back needs input-enable (the IBENA bit):
- * without it the pad receiver stays off and the peripheral sees a stuck level.
- *
- * drive-strength exists only on the PIO5/PIO6/PIO7 pads, so groups on PIO0..PIO4
- * leave it out rather than carry a no-op.
+ * input-enable is required on any pad the peripheral reads back (IBENA bit).
+ * drive-strength is only available on PIO5/PIO6/PIO7 pads; groups on
+ * PIO0..PIO4 omit it.
  */
 
 #include <nxp/imxrt/imxrt266x/pinctrl/mimxrt2663cvvaa-pinctrl.dtsi>
@@ -27,6 +21,52 @@
 			pinmux = <&main__iomuxc_pio3_30_hsp_lpuart0_txd>,
 				 <&main__iomuxc_pio3_31_hsp_lpuart0_rxd>;
 			slew-rate = "high";
+			input-enable;
+		};
+	};
+
+	/* Alternate UART: LPUART2 on PIO2_8 (TXD) / PIO2_9 (RXD). */
+	pinmux_lpuart2: pinmux_lpuart2 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_8_hsp_lpuart2_txd>,
+				 <&main__iomuxc_pio2_9_hsp_lpuart2_rxd>;
+			slew-rate = "high";
+			input-enable;
+		};
+	};
+
+	/*
+	 * LPI2C1 on PIO2_24 (SDA) / PIO2_25 (SCL) -- the bus the on-board
+	 * P3T1755DP sensor (U28) sits on, which is why this instance rather than
+	 * LPI2C0, whose pins only reach unpopulated headers. A 0-ohm jumper picks
+	 * I2C1 over I3C on each ball (R349 SDA, R347 SCL), fitted on the I2C1 side.
+	 *
+	 * No internal pull-up: the board pulls both up (R273/R290, 4.7k). Without
+	 * input-enable the master reads SCL as permanently low, takes it for clock
+	 * stretching and issues no clocks at all -- the transfer then sits with
+	 * MSR.MBF set and no event flags.
+	 */
+	pinmux_lpi2c1: pinmux_lpi2c1 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_24_hsp_lpi2c1_sda>,
+				 <&main__iomuxc_pio2_25_hsp_lpi2c1_scl>;
+			slew-rate = "low";
+			drive-open-drain;
+			input-enable;
+		};
+	};
+
+	/*
+	 * LPSPI0 on PIO3_20..23; needs J53 at 1-2 to route these pads to LPSPI0
+	 * (default 2-3 routes them to the LCD interface).
+	 */
+	pinmux_lpspi0: pinmux_lpspi0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio3_20_hsp_lpspi0_sck>,
+				 <&main__iomuxc_pio3_21_hsp_lpspi0_sout>,
+				 <&main__iomuxc_pio3_22_hsp_lpspi0_sin>,
+				 <&main__iomuxc_pio3_23_hsp_lpspi0_pcs0>;
+			slew-rate = "fast";
 			input-enable;
 		};
 	};
