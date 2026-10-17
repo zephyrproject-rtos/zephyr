@@ -5135,7 +5135,6 @@ failed:
 
 int bt_disable(void)
 {
-	struct net_buf *buf;
 	bool was_ready;
 	int err;
 
@@ -5195,11 +5194,7 @@ int bt_disable(void)
 	 * them. The workqueue itself is kept running, since delayable host
 	 * work may remain scheduled across an enable/disable cycle.
 	 */
-	buf = net_buf_slist_get(&bt_dev.rx_queue);
-	while (buf != NULL) {
-		net_buf_unref(buf);
-		buf = net_buf_slist_get(&bt_dev.rx_queue);
-	}
+	net_buf_slist_purge(&bt_dev.rx_queue);
 
 	if (bt_is_work_thread()) {
 		(void)k_work_cancel(&rx_work);

@@ -2469,17 +2469,6 @@ static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
 	return BT_ATT_ERR_SUCCESS;
 }
 
-static void att_prep_queue_clear(struct bt_att *att)
-{
-	struct net_buf *buf;
-
-	buf = net_buf_slist_get(&att->prep_queue);
-	while (buf != NULL) {
-		net_buf_unref(buf);
-		buf = net_buf_slist_get(&att->prep_queue);
-	}
-}
-
 static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 {
 	struct net_buf *buf;
@@ -2488,7 +2477,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		/* Core v6.3 Vol 3 Part F 3.4.6.3: the prepared values are
 		 * discarded, the queue is cleared and the response is sent.
 		 */
-		att_prep_queue_clear(chan->att);
+		net_buf_slist_purge(&chan->att->prep_queue);
 		goto rsp;
 	}
 
@@ -2521,7 +2510,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		if (err != BT_ATT_ERR_SUCCESS) {
 			/* Discard queued buffers */
 			net_buf_unref(buf);
-			att_prep_queue_clear(chan->att);
+			net_buf_slist_purge(&chan->att->prep_queue);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
 				     handle, err);
 			return 0;
@@ -2534,7 +2523,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 			/* Core v6.3 Vol 3 Part F 3.4.6.3: the queue is cleared
 			 * and only an Error Response is sent.
 			 */
-			att_prep_queue_clear(chan->att);
+			net_buf_slist_purge(&chan->att->prep_queue);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, err);
 			return 0;
 		}
@@ -3216,11 +3205,9 @@ static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op)
 
 static void att_reset(struct bt_att *att)
 {
-	struct net_buf *buf;
-
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	/* Discard queued buffers */
-	att_prep_queue_clear(att);
+	net_buf_slist_purge(&att->prep_queue);
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
 #if defined(CONFIG_BT_EATT)
@@ -3229,9 +3216,7 @@ static void att_reset(struct bt_att *att)
 	(void)k_work_cancel_delayable_sync(&att->eatt.connection_work, &sync);
 #endif /* CONFIG_BT_EATT */
 
-	while ((buf = k_fifo_get(&att->tx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&att->tx_queue);
 
 	/* Notify pending requests */
 	while (!sys_slist_is_empty(&att->reqs)) {
@@ -3257,16 +3242,12 @@ static void att_reset(struct bt_att *att)
 
 static void att_chan_detach(struct bt_att_chan *chan)
 {
-	struct net_buf *buf;
-
 	LOG_DBG("chan %p", chan);
 
 	sys_slist_find_and_remove(&chan->att->chans, &chan->node);
 
 	/* Release pending buffers */
-	while ((buf = k_fifo_get(&chan->tx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&chan->tx_queue);
 
 	if (chan->req) {
 		/* Notify outstanding request */
