@@ -40,7 +40,7 @@ if(CONFIG_WIFI_BFLB AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
   )
 endif()
 
-if((CONFIG_BT_BFLB_BL60X OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+if(CONFIG_BFLB_PHYRF AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
   # Replace blob's printf with blob_printf; linked after the firmware
   # blob, which references phyrf symbols
   blob_objcopy(libbl602_phyrf.a "${BLOBS_DIR}/libbl602_phyrf.a" --redefine-sym printf=blob_printf)

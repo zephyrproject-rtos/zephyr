@@ -12,7 +12,7 @@ if(CONFIG_BT_BFLB_BL60X)
   zephyr_sources(bflb_platform_shim.c)
 endif()
 
-if(CONFIG_BT_BFLB_BL60X OR CONFIG_WIFI_BFLB)
+if(CONFIG_BFLB_PHYRF)
   zephyr_sources(bflb_rf.c)
 endif()
 
