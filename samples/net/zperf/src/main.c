@@ -279,6 +279,11 @@ int main(void)
 	loopback_set_packet_drop_ratio(1);
 #endif
 
+	if (net_if_get_default() == NULL) {
+		LOG_ERR("No network interface to work with");
+		return -ENODEV;
+	}
+
 #if defined(CONFIG_NET_DHCPV4) && !defined(CONFIG_NET_CONFIG_SETTINGS)
 	net_dhcpv4_start(net_if_get_default());
 #endif
