@@ -212,6 +212,10 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 		return -EPERM;
 	}
 
+	if (type != LORAWAN_MSG_UNCONFIRMED && type != LORAWAN_MSG_CONFIRMED) {
+		return -EINVAL;
+	}
+
 	if (len > 0 && data == NULL) {
 		return -EINVAL;
 	}
