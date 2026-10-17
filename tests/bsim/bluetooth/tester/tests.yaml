@@ -19,6 +19,7 @@ tests:
       - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpuapp
     harness_config:
+      tests_scripts_parallel: 8
       fixture: bsim_multi_test
     required_applications:
       - application: bluetooth.general.tester_bsim

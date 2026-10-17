@@ -11,9 +11,9 @@ common:
     - nrf5340bsim/nrf5340/cpuapp
 
 tests:
-  # Note: By now twister's bsim(script) harness does not parallelize tests scripts
-  # that are part of the same test. As we have lots of test scripts for this, we split it in several
-  # chunks so they are at least parallelized at that level.
+  # Note: twister runs the scripts of one scenario one after the other unless the scenario
+  # sets tests_scripts_parallel. As this image has lots of test scripts, they are also split
+  # in several chunks so that twister can schedule them on more than one worker.
   # See #116077
 
   bluetooth.audio.bsim:
@@ -22,6 +22,7 @@ tests:
       - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE=""
       # Note the last provided EXTRA_CONF_FILE definition will be used by cmake
     harness_config:
+      tests_scripts_parallel: 8
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_audio_prj_conf
       tests_scripts:
@@ -30,6 +31,7 @@ tests:
   bluetooth.audio.bsim.audio_config.cap:
     build: false
     harness_config:
+      tests_scripts_parallel: 8
       fixture: bsim_multi_test
       tests_scripts:
         - test_scripts/audio_config_tests/cap*
@@ -39,6 +41,7 @@ tests:
   bluetooth.audio.bsim.audio_config.gmap:
     build: false
     harness_config:
+      tests_scripts_parallel: 8
       fixture: bsim_multi_test
       tests_scripts:
         - test_scripts/audio_config_tests/gmap*

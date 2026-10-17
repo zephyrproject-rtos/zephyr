@@ -15,6 +15,7 @@ tests:
       - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE=""
     harness: bsim
     harness_config:
+      tests_scripts_parallel: 8
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_audio_samples_bap_broadcast_sink_prj_conf
     required_applications:
