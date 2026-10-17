@@ -949,6 +949,7 @@ static void tcp_conn_release(struct k_work *work)
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 		if (conn->queue_recv_data != NULL) {
 			net_buf_drop(&conn->queue_recv_data);
+			conn->queue_recv_data_last_frag = NULL;
 		}
 	}
 
@@ -1364,12 +1365,14 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 			net_buf_frag_add(pkt->buffer,
 					 conn->queue_recv_data);
 			conn->queue_recv_data = NULL;
+			conn->queue_recv_data_last_frag = NULL;
 
 			k_work_cancel_delayable(&conn->recv_queue_timer);
 		} else {
 			/* Check if the queued data is just a section of the incoming data */
 			if (gap_size <= 0) {
 				net_buf_drop(&conn->queue_recv_data);
+				conn->queue_recv_data_last_frag = NULL;
 
 				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
@@ -1916,47 +1919,144 @@ static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
 	return net_pkt_copy(to, from, len);
 }
 
-static int tcp_pkt_append(struct net_pkt *pkt, const uint8_t *data, size_t len)
+static int tcp_pkt_append(struct tcp *conn, const uint8_t *data, size_t len)
 {
-	size_t alloc_len = len;
-	struct net_buf *buf = NULL;
-	int ret = 0;
+	struct net_pkt *pkt = &conn->send_data;
+	struct net_buf *tail = NULL;
+	struct net_buf *new_chain_head = NULL;
+	struct net_buf *new_chain_tail = NULL;
+	k_timepoint_t alloc_end;
+	size_t need;
 
-	if (pkt->buffer) {
-		buf = net_buf_frag_last(pkt->buffer);
-
-		if (len > net_buf_tailroom(buf)) {
-			alloc_len -= net_buf_tailroom(buf);
-		} else {
-			alloc_len = 0;
+	/* conn->send_data holds the entire in-flight (unacked + unsent)
+	 * window, which can span many fragments once the window is more
+	 * than a couple of segments. The original implementation located
+	 * the tail on every call via net_pkt_alloc_buffer_raw(), which,
+	 * whenever a new fragment had to be allocated, attached it with
+	 * net_pkt_append_buffer() -- and that function walks the chain
+	 * from the head with net_buf_frag_last() every time. That made the
+	 * cost of queueing data grow with the window size instead of with
+	 * the amount being appended, including on the common path where a
+	 * new fragment has to be allocated for a large write.
+	 *
+	 * Avoid both net_pkt_alloc_buffer_raw() and net_pkt_append_buffer()
+	 * here and instead allocate whatever new fragments this call needs
+	 * with net_pkt_get_frag() -- which does not touch send_data's
+	 * existing chain at all -- and attach them after our own cached
+	 * tail with net_buf_frag_insert(), an O(1) pointer update. This is
+	 * the only place that *appends* to conn->send_data. tcp_pkt_pull()
+	 * also mutates it (dropping acked data from the front), but never
+	 * touches the tail fragment unless it drains the chain entirely,
+	 * which already clears pkt->buffer to NULL -- caught below -- so
+	 * the cache stays valid across that path without needing its own
+	 * invalidation there.
+	 *
+	 * Allocation and commit are kept as two separate phases. The
+	 * caller (net_tcp_queue()) only counts bytes toward
+	 * conn->send_data_total on full success of a given append; it does
+	 * not partially credit a failed one. So if this function wrote
+	 * data into (and thereby grew) a fragment it had already attached
+	 * to send_data, and only then hit an allocation failure for a
+	 * later fragment the same call also needed, send_data's chain
+	 * would end up containing bytes that send_data_total never learns
+	 * about, with no way for the caller to undo the already-attached
+	 * partial write. The original implementation avoided this
+	 * precisely because net_pkt_alloc_buffer_raw() built the entire
+	 * needed chain in an unattached, local scratch chain first, and
+	 * only called net_pkt_append_buffer() -- attaching it to the real
+	 * packet -- after every fragment in it had been allocated
+	 * successfully; a failure partway through discarded the scratch
+	 * chain via net_pkt_frag_unref() without ever touching the real
+	 * packet. Phase 1 below reproduces exactly that: it only
+	 * allocates, into a chain of its own that nothing else can see
+	 * yet. Phase 2 cannot fail, so attaching and writing there can be
+	 * safely combined.
+	 */
+	if (pkt->buffer == NULL) {
+		/* Queue is empty, any previously cached tail is stale. */
+		conn->send_data_last_frag = NULL;
+	} else {
+		tail = (conn->send_data_last_frag != NULL) ?
+			conn->send_data_last_frag : pkt->buffer;
+		while (tail->frags != NULL) {
+			tail = tail->frags;
 		}
 	}
 
-	if (alloc_len > 0) {
-		ret = net_pkt_alloc_buffer_raw(pkt, alloc_len,
-					       TCP_PKT_ALLOC_TIMEOUT);
-		if (ret < 0) {
+	need = len - MIN(len, (tail != NULL) ? net_buf_tailroom(tail) : 0);
+
+	/* One deadline for the whole call, not one per fragment: this
+	 * matches net_pkt_alloc_buffer_raw()'s own multi-fragment loop
+	 * (pkt_alloc_buffer() in net_pkt.c), which computes a single
+	 * end-of-wait timepoint up front and passes each fragment only
+	 * whatever is left of it. A fresh TCP_PKT_ALLOC_TIMEOUT per
+	 * fragment here would let one append spanning n fragments wait up
+	 * to n times as long under buffer pressure, while net_tcp_queue()
+	 * holds conn->lock the entire time.
+	 */
+	alloc_end = sys_timepoint_calc(TCP_PKT_ALLOC_TIMEOUT);
+
+	/* Phase 1: allocate only; send_data is not touched here. */
+	while (need > 0) {
+		struct net_buf *new_frag;
+
+		/* Fixed-size buffer pools reject a request larger than the
+		 * pool's own per-buffer size; variable-size pools use the
+		 * requested size to size the allocation. Mirror
+		 * net_pkt_get_reserve_data()'s own handling of this so this
+		 * works under either config.
+		 */
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+		size_t want = MIN(need, CONFIG_NET_BUF_DATA_SIZE);
+#else
+		size_t want = need;
+#endif
+		new_frag = net_pkt_get_frag(pkt, want, sys_timepoint_timeout(alloc_end));
+		if (new_frag == NULL) {
+			if (new_chain_head != NULL) {
+				net_pkt_frag_unref(new_chain_head);
+			}
 			return -ENOBUFS;
 		}
+
+		if (new_chain_head == NULL) {
+			new_chain_head = new_frag;
+		} else {
+			net_buf_frag_insert(new_chain_tail, new_frag);
+		}
+		new_chain_tail = new_frag;
+
+		need -= MIN(need, net_buf_tailroom(new_frag));
 	}
 
-	if (buf == NULL) {
-		buf = pkt->buffer;
+	/* Phase 2: commit. Every fragment this call needs has already been
+	 * allocated, so nothing from here on can fail.
+	 */
+	if (new_chain_head != NULL) {
+		if (tail == NULL) {
+			pkt->buffer = new_chain_head;
+			net_pkt_cursor_init(pkt);
+		} else {
+			net_buf_frag_insert(tail, new_chain_head);
+		}
 	}
 
-	while (buf != NULL && len > 0) {
-		size_t write_len = MIN(len, net_buf_tailroom(buf));
+	if (tail == NULL) {
+		tail = pkt->buffer;
+	}
 
-		net_buf_add_mem(buf, data, write_len);
+	while (len > 0) {
+		size_t write_len = MIN(len, net_buf_tailroom(tail));
+
+		net_buf_add_mem(tail, data, write_len);
 
 		data += write_len;
 		len -= write_len;
-		buf = buf->frags;
+		conn->send_data_last_frag = tail;
+		tail = tail->frags;
 	}
 
-	NET_ASSERT(len == 0, "Not all bytes written");
-
-	return ret;
+	return 0;
 }
 
 static bool tcp_window_full(struct tcp *conn)
@@ -2109,6 +2209,7 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 			tcp_get_seq(conn->queue_recv_data));
 
 		net_buf_drop(&conn->queue_recv_data);
+		conn->queue_recv_data_last_frag = NULL;
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -2984,12 +3085,24 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 					"end_offset %i, pending_len %zu",
 					conn, end_offset, pending_len);
 				conn->queue_recv_data = pkt->buffer;
+				conn->queue_recv_data_last_frag = NULL;
 				inserted = true;
 			}
 		} else {
 			struct net_buf *last;
 
-			last = net_buf_frag_last(conn->queue_recv_data);
+			/* This branch runs once per out-of-order segment and,
+			 * in the common case below, is just appending to the
+			 * tail of a queue that may already hold many segments.
+			 * Avoid walking the whole chain from the head every
+			 * time; the cache is invalidated by every other branch
+			 * that touches queue_recv_data.
+			 */
+			if (conn->queue_recv_data_last_frag != NULL) {
+				last = conn->queue_recv_data_last_frag;
+			} else {
+				last = net_buf_frag_last(conn->queue_recv_data);
+			}
 			pending_seq = tcp_get_seq(last);
 
 			start_offset = pending_seq - seq_start;
@@ -3003,6 +3116,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				 */
 				net_buf_unref(conn->queue_recv_data);
 				conn->queue_recv_data = pkt->buffer;
+				conn->queue_recv_data_last_frag = NULL;
 				inserted = true;
 			} else {
 				if (end_offset < len) {
@@ -3018,8 +3132,27 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 					NET_DBG("[%p] Adding at end of queue, "
 						"start %i, end %i, len %zu",
 						conn, start_offset, end_offset, len);
-					net_buf_frag_add(conn->queue_recv_data,
-							 pkt->buffer);
+					/* net_buf_frag_add(conn->queue_recv_data,
+					 * pkt->buffer) would do this attach, but
+					 * it locates the attach point itself via
+					 * net_buf_frag_last(conn->queue_recv_data)
+					 * -- an O(n) walk of the whole queue on
+					 * every out-of-order segment. We already
+					 * have the tail in `last` from the seq
+					 * check above, so attach there directly.
+					 * conn->queue_recv_data is always non-NULL
+					 * on this path (we are in the "else" of
+					 * the empty-queue check above), and
+					 * net_buf_frag_add() does not take an
+					 * extra reference on a non-NULL head --
+					 * it only does that in its "head was
+					 * NULL" branch, which does not apply
+					 * here. net_buf_frag_insert() alone is
+					 * therefore the exact equivalent.
+					 */
+					net_buf_frag_insert(last, pkt->buffer);
+					conn->queue_recv_data_last_frag =
+						net_buf_frag_last(pkt->buffer);
 					inserted = true;
 				}
 			}
@@ -3032,6 +3165,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 					conn);
 				/* error in sequence list, drop it */
 				net_buf_drop(&conn->queue_recv_data);
+				conn->queue_recv_data_last_frag = NULL;
 				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
 		} else {
@@ -3039,6 +3173,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		}
 	} else {
 		conn->queue_recv_data = pkt->buffer;
+		conn->queue_recv_data_last_frag = NULL;
 		inserted = true;
 	}
 
@@ -4155,7 +4290,7 @@ int net_tcp_queue(struct net_context *context, const void *data, size_t len,
 		for (int i = 0; i < msg->msg_iovlen; i++) {
 			int iovlen = MIN(msg->msg_iov[i].iov_len, len);
 
-			ret = tcp_pkt_append(&conn->send_data,
+			ret = tcp_pkt_append(conn,
 					     msg->msg_iov[i].iov_base,
 					     iovlen);
 			if (ret < 0) {
@@ -4174,7 +4309,7 @@ int net_tcp_queue(struct net_context *context, const void *data, size_t len,
 			}
 		}
 	} else {
-		ret = tcp_pkt_append(&conn->send_data, data, len);
+		ret = tcp_pkt_append(conn, data, len);
 		if (ret < 0) {
 			goto out;
 		}
