@@ -293,15 +293,19 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 #endif
 
 #ifdef CONFIG_FPU
-			 /* Push FPU state (if active) to our outgoing stack */
+			 /* Push FPU state (if active) to our outgoing stack.
+			  * CONTROL.FPCA is cleared only after the last FP
+			  * instruction: one executed with FPCA clear sets it
+			  * again and first resets FPSCR from FPDSCR.
+			  */
 			 "   mrs r8, control;" /* read CONTROL.FPCA */
 			 "   and r7, r8, #4;"  /* r7 == have_fpu */
 			 "   cbz r7, 1f;"
-			 "   bic r8, r8, #4;" /* clear CONTROL.FPCA */
-			 "   msr control, r8;"
 			 "   vmrs r6, fpscr;"
 			 "   push {r6};"
 			 "   vpush {s0-s31};"
+			 "   bic r8, r8, #4;" /* clear CONTROL.FPCA */
+			 "   msr control, r8;"
 			 "1: push {r7};" /* have_fpu word */
 
 			 /* Pop FPU state (if present) from incoming frame in r4 */
