@@ -211,15 +211,15 @@ static int mbedtls_aead(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt, ui
 		return -EIO;
 	}
 
-	status = psa_aead_set_nonce(&psa_op, nonce, nonce_len);
-	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_aead_set_nonce() failed (%d)", status);
-		goto error;
-	}
-
 	status = psa_aead_set_lengths(&psa_op, apkt->ad_len, apkt->pkt->in_len);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_aead_set_lengths() failed (%d)", status);
+		goto error;
+	}
+
+	status = psa_aead_set_nonce(&psa_op, nonce, nonce_len);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_aead_set_nonce() failed (%d)", status);
 		goto error;
 	}
 
