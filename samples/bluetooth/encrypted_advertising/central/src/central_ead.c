@@ -303,14 +303,15 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 		bt_conn_drop(&default_conn);
 
-		(void)start_scan(true);
+		/* Retry from the waiting thread: start_scan() waits for other callbacks */
+		(void)k_poll_signal_raise(&conn_signal, conn_err);
 
 		return;
 	}
 
 	LOG_DBG("Connected to: %s", bt_conn_dst_str(conn));
 
-	k_poll_signal_raise(&conn_signal, 0);
+	(void)k_poll_signal_raise(&conn_signal, 0);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -420,8 +421,10 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 		       struct key_material *test_received_keymat)
 {
 	int err;
+	int conn_err;
 	bool connect;
 	uint16_t end_handle;
+	unsigned int signaled;
 	uint16_t start_handle;
 
 	if (test_received_data != NULL) {
@@ -435,12 +438,16 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 		return err;
 	}
 
-	/* Start scan and connect to our peripheral */
+	/* Start scan and connect to our peripheral, scan again if the connection fails */
 	connect = true;
-	err = start_scan(connect);
-	if (err) {
-		return err;
-	}
+	do {
+		err = start_scan(connect);
+		if (err != 0) {
+			return err;
+		}
+
+		k_poll_signal_check(&conn_signal, &signaled, &conn_err);
+	} while (conn_err != 0);
 
 	/* Update connection security level */
 	err = bt_conn_set_security(default_conn, BT_SECURITY_L4);
