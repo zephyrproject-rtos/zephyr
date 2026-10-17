@@ -199,3 +199,7 @@ zephyr_lcdif: &dcif {
 };
 
 nxp_mipi_i2c: &lpi2c0 {};
+
+&usdhc0 {
+	status = "okay";
+};
