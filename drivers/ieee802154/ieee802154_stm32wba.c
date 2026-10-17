@@ -55,9 +55,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define STM32WBA_MAC_KEY_NEXT_INDEX     2
 #endif /* SUPPORT_RADIO_SECURITY_OT_1_2 */
 
-extern uint32_t llhwc_cmn_is_dp_slp_enabled(void);
-extern bool standby_entered;
-
 static struct stm32wba_802154_data_t stm32wba_802154_data;
 static volatile bool stm32wba_tx_wait_pending;
 static volatile bool stm32wba_tx_abort_on_reset;
@@ -1152,37 +1149,22 @@ static void stm32wba_802154_energy_scan_done(int8_t ed_result)
 }
 
 #ifdef CONFIG_PM_DEVICE
+extern void stm32wba_radio_pm_suspend(void);
+extern void stm32wba_radio_pm_resume(void);
+
 static int radio_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
 #if defined(CONFIG_PM_S2RAM)
-		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_ENABLED) {
-			if (standby_entered) {
-				/* Restore NVIC configuration for radio */
-				link_layer_register_isr();
-				ll_sys_dp_slp_exit();
-			}
-		}
+		stm32wba_radio_pm_resume();
 #endif /* CONFIG_PM_S2RAM */
 		LINKLAYER_PLAT_NotifyWFIExit();
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 #if defined(CONFIG_PM_S2RAM)
-		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_DISABLED) {
-			uint64_t next_radio_evt;
-			enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
-
-			if (state == PM_STATE_SUSPEND_TO_RAM) {
-				next_radio_evt = os_timer_get_earliest_time();
-				if (next_radio_evt > CFG_LPM_STDBY_WAKEUP_TIME) {
-					/* No event in a "near" futur */
-					next_radio_evt -= CFG_LPM_STDBY_WAKEUP_TIME;
-					ll_sys_dp_slp_enter(next_radio_evt);
-				}
-			}
-		}
+		stm32wba_radio_pm_suspend();
 #endif /* CONFIG_PM_S2RAM */
 		LINKLAYER_PLAT_NotifyWFIEnter();
 		break;
