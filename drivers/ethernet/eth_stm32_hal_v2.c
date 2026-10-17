@@ -479,6 +479,19 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 		timestamp.second = ts_registers.TimeStampHigh;
 		timestamp.nanosecond = ts_registers.TimeStampLow;
 		timestamp_valid = true;
+
+		/* If the HAL read a context descriptor the DMA had not written
+		 * back, the "nanoseconds" are a receive buffer address: treat
+		 * that as no timestamp rather than a time up to a second out.
+		 */
+		const uintptr_t ns = ts_registers.TimeStampLow;
+		const uintptr_t buf = (uintptr_t)cfg->dma_buf;
+
+		if (ns >= buf && ns < buf + sizeof(*cfg->dma_buf)) {
+			LOG_DBG("RX timestamp not written back: %u.%09u",
+				ts_registers.TimeStampHigh, ts_registers.TimeStampLow);
+			timestamp_valid = false;
+		}
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
