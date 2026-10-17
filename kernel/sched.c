@@ -400,6 +400,7 @@ void z_unpend_thread(struct k_thread *thread)
 	}
 	while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
 		z_sched_spinlock_unlock(key);
+		z_wait_thread_timeout_inflight(thread);
 		key = z_sched_spinlock_lock();
 	}
 	z_sched_spinlock_unlock(key);
@@ -587,6 +588,7 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 			if (key != NULL) {
 				while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
 					z_sched_spinlock_unlock(*key);
+					z_wait_thread_timeout_inflight(thread);
 					*key = z_sched_spinlock_lock();
 				}
 			}
