@@ -283,7 +283,7 @@ static int espi_peci_send(const struct device *dev, struct peci_msg *msg)
 	struct espi_oob_peci_hdr *oob_hdr = &oob_peci_req.oob_hdr;
 	struct espi_oob_packet oob_pckt;
 
-	if (msg->tx_buffer.len > ESPI_PECI_DATA_BUF_LEN - 1) {
+	if (msg->tx_buffer.len > ESPI_PECI_DATA_BUF_LEN) {
 		return -ENOMEM;
 	}
 
@@ -297,8 +297,8 @@ static int espi_peci_send(const struct device *dev, struct peci_msg *msg)
 		oob_peci_req.rd_len = 0;
 	} else {
 		oob_peci_req.rd_len = msg->rx_buffer.len;
-		/* Payload length plus command byte */
-		oob_peci_req.wr_len = msg->tx_buffer.len + 1;
+		/* Tx length already counts the PECI command byte */
+		oob_peci_req.wr_len = msg->tx_buffer.len;
 	}
 	oob_hdr->byte_cnt = OOB_PACKET_HEADER_SIZE + oob_peci_req.wr_len;
 
@@ -306,7 +306,7 @@ static int espi_peci_send(const struct device *dev, struct peci_msg *msg)
 	oob_peci_req.addr = msg->addr;
 	/* Tx length includes peci cmd code. So copy len-1 byte as data */
 	if (msg->tx_buffer.len > 1) {
-		memcpy(oob_peci_req.data, msg->tx_buffer.buf, msg->tx_buffer.len);
+		memcpy(oob_peci_req.data, msg->tx_buffer.buf, msg->tx_buffer.len - 1);
 	}
 
 	oob_pckt.buf = (uint8_t *)&oob_peci_req;
