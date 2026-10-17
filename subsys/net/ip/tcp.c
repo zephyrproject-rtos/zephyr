@@ -949,6 +949,7 @@ static void tcp_conn_release(struct k_work *work)
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 		if (conn->queue_recv_data != NULL) {
 			net_buf_drop(&conn->queue_recv_data);
+			conn->queue_recv_data_last_frag = NULL;
 		}
 	}
 
@@ -1364,12 +1365,14 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 			net_buf_frag_add(pkt->buffer,
 					 conn->queue_recv_data);
 			conn->queue_recv_data = NULL;
+			conn->queue_recv_data_last_frag = NULL;
 
 			k_work_cancel_delayable(&conn->recv_queue_timer);
 		} else {
 			/* Check if the queued data is just a section of the incoming data */
 			if (gap_size <= 0) {
 				net_buf_drop(&conn->queue_recv_data);
+				conn->queue_recv_data_last_frag = NULL;
 
 				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
@@ -2109,6 +2112,7 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 			tcp_get_seq(conn->queue_recv_data));
 
 		net_buf_drop(&conn->queue_recv_data);
+		conn->queue_recv_data_last_frag = NULL;
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -2984,12 +2988,24 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 					"end_offset %i, pending_len %zu",
 					conn, end_offset, pending_len);
 				conn->queue_recv_data = pkt->buffer;
+				conn->queue_recv_data_last_frag = NULL;
 				inserted = true;
 			}
 		} else {
 			struct net_buf *last;
 
-			last = net_buf_frag_last(conn->queue_recv_data);
+			/* This branch runs once per out-of-order segment and,
+			 * in the common case below, is just appending to the
+			 * tail of a queue that may already hold many segments.
+			 * Avoid walking the whole chain from the head every
+			 * time; the cache is invalidated by every other branch
+			 * that touches queue_recv_data.
+			 */
+			if (conn->queue_recv_data_last_frag != NULL) {
+				last = conn->queue_recv_data_last_frag;
+			} else {
+				last = net_buf_frag_last(conn->queue_recv_data);
+			}
 			pending_seq = tcp_get_seq(last);
 
 			start_offset = pending_seq - seq_start;
@@ -3003,6 +3019,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				 */
 				net_buf_unref(conn->queue_recv_data);
 				conn->queue_recv_data = pkt->buffer;
+				conn->queue_recv_data_last_frag = NULL;
 				inserted = true;
 			} else {
 				if (end_offset < len) {
@@ -3018,8 +3035,27 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 					NET_DBG("[%p] Adding at end of queue, "
 						"start %i, end %i, len %zu",
 						conn, start_offset, end_offset, len);
-					net_buf_frag_add(conn->queue_recv_data,
-							 pkt->buffer);
+					/* net_buf_frag_add(conn->queue_recv_data,
+					 * pkt->buffer) would do this attach, but
+					 * it locates the attach point itself via
+					 * net_buf_frag_last(conn->queue_recv_data)
+					 * -- an O(n) walk of the whole queue on
+					 * every out-of-order segment. We already
+					 * have the tail in `last` from the seq
+					 * check above, so attach there directly.
+					 * conn->queue_recv_data is always non-NULL
+					 * on this path (we are in the "else" of
+					 * the empty-queue check above), and
+					 * net_buf_frag_add() does not take an
+					 * extra reference on a non-NULL head --
+					 * it only does that in its "head was
+					 * NULL" branch, which does not apply
+					 * here. net_buf_frag_insert() alone is
+					 * therefore the exact equivalent.
+					 */
+					net_buf_frag_insert(last, pkt->buffer);
+					conn->queue_recv_data_last_frag =
+						net_buf_frag_last(pkt->buffer);
 					inserted = true;
 				}
 			}
@@ -3032,6 +3068,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 					conn);
 				/* error in sequence list, drop it */
 				net_buf_drop(&conn->queue_recv_data);
+				conn->queue_recv_data_last_frag = NULL;
 				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
 		} else {
@@ -3039,6 +3076,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		}
 	} else {
 		conn->queue_recv_data = pkt->buffer;
+		conn->queue_recv_data_last_frag = NULL;
 		inserted = true;
 	}
 
