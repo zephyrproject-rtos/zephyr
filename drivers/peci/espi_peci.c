@@ -347,6 +347,7 @@ static int espi_peci_receive(const struct device *dev, struct peci_msg *msg)
 	struct espi_oob_peci_resp *oob_peci_req;
 	struct espi_oob_packet oob_pckt;
 	uint8_t oob_rx_buf[ESPI_PECI_OOB_RX_BUF_LEN];
+	size_t data_len;
 	int ret;
 
 	oob_pckt.len = ESPI_PECI_OOB_RX_BUF_LEN;
@@ -380,12 +381,17 @@ static int espi_peci_receive(const struct device *dev, struct peci_msg *msg)
 	}
 
 	/* Copy command response data only */
-	if (oob_pckt.len > OOB_PECI_MIN_RESP_SIZE && msg->rx_buffer.buf) {
-		memcpy(msg->rx_buffer.buf, oob_rx_buf + OOB_PECI_MIN_RESP_SIZE,
-		       oob_pckt.len - OOB_PECI_MIN_RESP_SIZE);
+	data_len = oob_pckt.len - OOB_PECI_MIN_RESP_SIZE;
+	if (data_len > 0U && msg->rx_buffer.buf) {
+		if (data_len > msg->rx_buffer.len) {
+			LOG_ERR("Response data %zu exceeds rx buffer %zu", data_len,
+				msg->rx_buffer.len);
+			return -EIO;
+		}
+		memcpy(msg->rx_buffer.buf, oob_rx_buf + OOB_PECI_MIN_RESP_SIZE, data_len);
 	}
 
-	msg->rx_buffer.len = oob_pckt.len - OOB_PECI_MIN_RESP_SIZE;
+	msg->rx_buffer.len = data_len;
 
 	return 0;
 }
