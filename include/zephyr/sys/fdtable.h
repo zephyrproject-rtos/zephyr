@@ -350,6 +350,8 @@ enum {
 	ZFD_IOCTL_SET_LOCK,
 	ZFD_IOCTL_STAT,
 	ZFD_IOCTL_TRUNCATE,
+	/** Set the access and modification times: (const struct timespec times[2]) */
+	ZFD_IOCTL_UTIME,
 	ZFD_IOCTL_MMAP,
 	ZFD_IOCTL_STATVFS,
 	ZFD_IOCTL_READDIR,

@@ -64,6 +64,9 @@ void zvfs_statvfs_root(struct zvfs_statvfs *buf);
 /* the mode every stat of a file system entry reports: type plus synthesized permissions */
 uint32_t zvfs_synth_mode(bool is_dir, bool rdonly);
 
+/** @brief Fill the timestamps of @p buf from the file system entry at @p path, when recorded. */
+void zvfs_fs_times(const char *path, struct zvfs_stat *buf);
+
 #ifdef CONFIG_USERSPACE
 /**
  * @brief Copy a user-supplied path into a kernel buffer of CONFIG_ZVFS_PATH_MAX bytes.

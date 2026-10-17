@@ -92,6 +92,23 @@ static bool zvfs_mount_rdonly(const char *path)
 	return (flags & FS_MOUNT_FLAG_READ_ONLY) != 0;
 }
 
+void zvfs_fs_times(const char *path, struct zvfs_stat *buf)
+{
+#ifdef CONFIG_FS_DIRENT_EXT
+	struct fs_dirent entry;
+
+	if (fs_stat(path, &entry) == 0) {
+		buf->atime = entry.atime;
+		buf->mtime = entry.mtime;
+		/* Zephyr file systems track no status-change time */
+		buf->ctime = entry.mtime;
+	}
+#else
+	ARG_UNUSED(path);
+	ARG_UNUSED(buf);
+#endif
+}
+
 int z_impl_zvfs_unlink(const char *path)
 {
 	int res;

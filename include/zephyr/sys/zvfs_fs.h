@@ -281,6 +281,17 @@ __syscall int zvfs_truncate(const char *path, off_t length);
 __syscall int zvfs_access(const char *path, int amode);
 
 /**
+ * @brief Set the timestamps of an open file or directory.
+ *
+ * @param fd Descriptor of the file or directory.
+ * @param times Pointer to two timespecs, access time first and modification
+ *              time second, or NULL to set both to the current time.
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+__syscall int zvfs_futime(int fd, const struct timespec *times);
+
+/**
  * @brief Set file or directory timestamps.
  *
  * @param path Path of the file or directory.

@@ -313,6 +313,50 @@ ZTEST_USER(zvfs_fs, test_zvfs_utime)
 	zassert_true(errno == ENOENT || errno == ENOTSUP);
 }
 
+ZTEST_USER(zvfs_fs, test_zvfs_futime)
+{
+	const struct timespec times[2] = {
+		{.tv_sec = 1700000000},
+		{.tv_sec = 1700000100},
+	};
+	struct zvfs_stat st;
+	int fd = zvfs_open(TFILE, ZVFS_O_RDWR, 0);
+	int rc;
+
+	zassert_true(fd >= 0);
+
+	/* FatFs without FF_USE_CHMOD reports ENOTSUP through the core CHECKIF */
+	rc = zvfs_futime(fd, times);
+	if (rc < 0) {
+		zassert_equal(errno, ENOTSUP, "expected ENOTSUP got %d", errno);
+	} else if (IS_ENABLED(CONFIG_FS_DIRENT_EXT)) {
+		/* what was set through the descriptor is what the descriptor reports */
+		zassert_ok(zvfs_fstat(fd, &st));
+		zassert_equal(st.mtime.tv_sec, times[1].tv_sec);
+		zassert_ok(zvfs_stat(TFILE, &st));
+		zassert_equal(st.mtime.tv_sec, times[1].tv_sec);
+	}
+
+	rc = zvfs_futime(fd, NULL);
+	if (rc < 0) {
+		zassert_equal(errno, ENOTSUP, "expected ENOTSUP got %d", errno);
+	}
+	zassert_ok(zvfs_close(fd));
+
+	/* a directory descriptor is a descriptor too */
+	fd = zvfs_open(TDIR, ZVFS_O_RDONLY | ZVFS_O_DIRECTORY, 0);
+	zassert_true(fd >= 0);
+	rc = zvfs_futime(fd, NULL);
+	if (rc < 0) {
+		zassert_equal(errno, ENOTSUP, "expected ENOTSUP got %d", errno);
+	}
+	zassert_ok(zvfs_close(fd));
+
+	errno = 0;
+	zassert_equal(zvfs_futime(fd, NULL), -1);
+	zassert_equal(errno, EBADF);
+}
+
 ZTEST_USER(zvfs_fs, test_zvfs_opendir)
 {
 	struct zvfs_dirstream *d, *d2;

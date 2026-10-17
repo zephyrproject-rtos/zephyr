@@ -178,6 +178,8 @@ int z_impl_zvfs_open(const char *name, int flags, int mode)
 
 	ptr->stream = NULL;
 	ptr->flags = flags & (ZVFS_O_ACCMODE | ZVFS_O_APPEND | ZVFS_O_NONBLOCK);
+	/* the path, for the requests the file system API serves by name */
+	strcpy(ptr->path, name);
 	zvfs_finalize_typed_fd(fd, ptr, &fs_fd_op_vtable, ZVFS_MODE_IFREG);
 
 	return fd;
@@ -233,6 +235,7 @@ static int fs_dir_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 
 		*buf = (struct zvfs_stat){0};
 		buf->mode = zvfs_synth_mode(true, (ptr->dir.mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0);
+		zvfs_fs_times(ptr->path, buf);
 		return 0;
 	}
 	case ZFD_IOCTL_STATVFS: {
@@ -284,6 +287,12 @@ static int fs_dir_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	}
 	case ZFD_IOCTL_REWINDDIR: {
 		rc = fs_rewinddir(&ptr->dir);
+		break;
+	}
+	case ZFD_IOCTL_UTIME: {
+		const struct timespec *times = va_arg(args, const struct timespec *);
+
+		rc = fs_utime(ptr->path, times);
 		break;
 	}
 	case ZVFS_F_GETFL:
@@ -369,6 +378,7 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 			buf->size = current;
 			buf->mode = zvfs_synth_mode(ptr->is_dir,
 						    (ptr->file.mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0);
+			zvfs_fs_times(ptr->path, buf);
 		}
 
 		rc = fs_seek(&ptr->file, offset, FS_SEEK_SET);
@@ -433,6 +443,12 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 			errno = -rc;
 			return -1;
 		}
+		break;
+	}
+	case ZFD_IOCTL_UTIME: {
+		const struct timespec *times = va_arg(args, const struct timespec *);
+
+		rc = fs_utime(ptr->path, times);
 		break;
 	}
 	case ZVFS_F_GETFL:
