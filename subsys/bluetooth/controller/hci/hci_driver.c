@@ -893,10 +893,16 @@ static int cmd_handle(const struct device *dev, struct net_buf *buf)
 		if (err != 0) {
 			LOG_ERR("bt_recv_failed: %d", err);
 			net_buf_unref(evt);
-		} else if (node_rx != NULL) {
-			LOG_DBG("RX node enqueue");
-			node_rx->hdr.user_meta = hci_get_class(node_rx);
-			k_fifo_put(&recv_fifo, node_rx);
+		} else {
+			while (node_rx != NULL) {
+				struct node_rx_pdu *next = node_rx->hdr.next;
+
+				LOG_DBG("RX node enqueue");
+				node_rx->hdr.user_meta = hci_get_class(node_rx);
+				/* k_fifo_put() overwrites the first word (hdr.next) */
+				k_fifo_put(&recv_fifo, node_rx);
+				node_rx = next;
+			}
 		}
 	}
 
