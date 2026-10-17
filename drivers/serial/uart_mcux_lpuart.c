@@ -108,6 +108,8 @@ struct mcux_lpuart_tx_dma_params {
 	size_t buf_len;
 	struct k_work_delayable timeout_work;
 	size_t timeout_us;
+	/* TX DMA is done; waiting for the frame to leave the shift register. */
+	bool wait_tx_complete;
 };
 
 struct mcux_lpuart_async_data {
@@ -780,7 +782,14 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg, uint3
 			return;
 		}
 
-		async_evt_tx_done(dev);
+		/* The DMA only filled the data register; the frame is still in the
+		 * shift register.  UART_TX_DONE means the buffer was transmitted,
+		 * so defer it to the transmission-complete interrupt.  Reporting it
+		 * here truncates the last frames for a caller that drives the line
+		 * right after, such as dropping an RS-485 driver enable.
+		 */
+		data->async.tx_dma_params.wait_tx_complete = true;
+		LPUART_EnableInterrupts(lpuart, kLPUART_TransmissionCompleteInterruptEnable);
 	} else if (channel == config->rx_dma_config.dma_channel) {
 		LOG_DBG("RX Channel");
 		struct mcux_lpuart_rx_dma_params *rx_dma_params = &data->async.rx_dma_params;
@@ -938,6 +947,9 @@ static int mcux_lpuart_tx_abort(const struct device *dev)
 	LPUART_Type *lpuart = get_base(dev);
 
 	LPUART_EnableTxDMA(lpuart, false);
+	/* An aborted transfer must not report TX_DONE from the armed TC. */
+	LPUART_DisableInterrupts(lpuart, kLPUART_TransmissionCompleteInterruptEnable);
+	data->async.tx_dma_params.wait_tx_complete = false;
 	(void)k_work_cancel_delayable(&data->async.tx_dma_params.timeout_work);
 	struct dma_status status;
 	const int get_status_result = dma_get_status(config->tx_dma_config.dma_dev,
@@ -1104,6 +1116,20 @@ static inline void mcux_lpuart_async_isr(const struct device *dev,
 					 struct mcux_lpuart_data *data,
 					 const struct mcux_lpuart_config *config,
 					 const uint32_t status) {
+	/* TC is cleared by hardware only on the next data register write, so it
+	 * has to be masked here or it re-fires.  The flag, not api_type, is the
+	 * guard: this ISR also runs for instances that never use the async API,
+	 * and uart_tx() without uart_callback_set() arms TC while api_type is
+	 * still LPUART_NONE, which would then never disarm it.
+	 */
+	if ((status & kLPUART_TransmissionCompleteFlag) != 0U &&
+	    data->async.tx_dma_params.wait_tx_complete) {
+		LPUART_DisableInterrupts(get_base(dev),
+					 kLPUART_TransmissionCompleteInterruptEnable);
+		data->async.tx_dma_params.wait_tx_complete = false;
+		async_evt_tx_done((struct device *)dev);
+	}
+
 	/*
 	 * Handle RX errors first — they stop reception, making idle-line
 	 * processing pointless.  Per the async UART API contract,

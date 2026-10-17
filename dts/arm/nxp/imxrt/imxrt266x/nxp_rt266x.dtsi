@@ -486,6 +486,37 @@
 			clock-mux = <IMX_CCM_MUX_PERI3_MAINPLL_DIVX>;
 			clock-div = <1>;
 		};
+
+		/*
+		 * SAI MCLK roots sourced from the audio PLL (49.152 MHz):
+		 *   div=2 -> 24.576 MHz, suits 48/96 kHz sample rates.
+		 */
+		/* CLOCK_ROOT194 */
+		sai0_mclk0_rootclk: clock-root@c20 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0xc20 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_AUDIO_SAI0_MCLK0>;
+			clock-mux = <IMX_CCM_MUX_SAI0_MCLK0_AUDIOPLL>;
+			clock-div = <2>;
+		};
+
+		/* CLOCK_ROOT196 */
+		sai1_mclk0_rootclk: clock-root@c40 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0xc40 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_AUDIO_SAI1_MCLK0>;
+			clock-mux = <IMX_CCM_MUX_SAI1_MCLK0_AUDIOPLL>;
+			clock-div = <2>;
+		};
+
+		/* CLOCK_ROOT198 */
+		sai2_mclk0_rootclk: clock-root@c60 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0xc60 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_AUDIO_SAI2_MCLK0>;
+			clock-mux = <IMX_CCM_MUX_SAI2_MCLK0_AUDIOPLL>;
+			clock-div = <2>;
+		};
 	};
 
 	cmpt_ccm: clock-controller@44060000 {
@@ -515,6 +546,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x46060000 0x4000>;
+	};
+
+	audio_modcon: modcon@48000000 {
+		compatible = "nxp,imx-modcon";
+		reg = <0x48000000 0x9000>;
+		#pinmux-cells = <2>;
 	};
 
 	audio_ccm: clock-controller@48060000 {
@@ -607,6 +644,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART0_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART0_FCLK,
 						IMX_CCM_MUX_LPUART0_PERI3, 5, 1)>;
+		dmas = <&edma0 0 179>, <&edma0 1 180>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -619,6 +658,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART1_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART1_FCLK,
 						IMX_CCM_MUX_LPUART1_PERI3, 5, 1)>;
+		dmas = <&edma0 2 181>, <&edma0 3 182>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -631,6 +672,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART2_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART2_FCLK,
 						IMX_CCM_MUX_LPUART2_PERI3, 5, 1)>;
+		dmas = <&edma0 4 183>, <&edma0 5 184>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -643,6 +686,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART3_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART3_FCLK,
 						IMX_CCM_MUX_LPUART3_PERI3, 5, 1)>;
+		dmas = <&edma0 6 185>, <&edma0 7 186>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -655,6 +700,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART4_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART4_FCLK,
 						IMX_CCM_MUX_LPUART4_PERI3, 5, 1)>;
+		dmas = <&edma0 8 187>, <&edma0 9 188>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -667,6 +714,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART5_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART5_FCLK,
 						IMX_CCM_MUX_LPUART5_PERI3, 5, 1)>;
+		dmas = <&edma0 10 189>, <&edma0 11 190>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -679,6 +728,8 @@
 					   IMX_CCM_ROOT_WAKE_LPUART0_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPUART0_FCLK,
 						IMX_CCM_MUX_WAKE_LPUART0_PERI7, 1, 1)>;
+		dmas = <&edma2 0 26>, <&edma2 1 27>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -691,6 +742,8 @@
 					   IMX_CCM_ROOT_WAKE_LPUART1_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPUART1_FCLK,
 						IMX_CCM_MUX_WAKE_LPUART1_PERI7, 1, 1)>;
+		dmas = <&edma2 2 28>, <&edma2 3 29>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -805,8 +858,11 @@
 		#size-cells = <0>;
 		reg = <0x42910000 0x4000>;
 		interrupts = <176 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPI2C1,
-					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPI2C1_FCLK,
+						IMX_CCM_MUX_LPI2C1_PERI3, 5, 1)>;
 		status = "disabled";
 	};
 
@@ -839,9 +895,11 @@
 		compatible = "nxp,lpspi";
 		reg = <0x42160000 0x4000>;
 		interrupts = <179 0>;
-		clock-names = "gate";
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPSPI0,
-					   IMX_CCM_ROOT_MAIN_LPSPI0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPSPI0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPSPI0_FCLK,
+						IMX_CCM_MUX_LPSPI0_FRO192M, 2, 1)>;
 		tx-fifo-size = <16>;
 		rx-fifo-size = <16>;
 		#address-cells = <1>;
@@ -1735,6 +1793,7 @@
 		/* The AUDIO eDMA takes the Mux2 request set, highest source 22. */
 		dma-requests = <23>;
 		no-error-irq;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_EDMA, IMX_CCM_ROOT_NONE)>;
 		interrupts = <271 0>, <272 0>, <273 0>, <274 0>,
 			     <275 0>, <276 0>, <277 0>, <278 0>;
 		status = "disabled";
@@ -1785,7 +1844,10 @@
 		status = "disabled";
 	};
 
-	/* SAI (AUDIO domain), IRQ 256..258 */
+	/*
+	 * SAI (AUDIO domain), IRQ 256..258. pinmuxes is the MCLK pad gate,
+	 * IP[n].CFG[0] in the AUDIO MODCON.
+	 */
 	sai0: audio_sai_0: sai@480c0000 {
 		compatible = "nxp,mcux-i2s";
 		#address-cells = <1>;
@@ -1793,8 +1855,13 @@
 		reg = <0x480c0000 0x10000>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI0,
 					   IMX_CCM_ROOT_AUDIO_SAI0_MCLK0)>;
+		pinmuxes = <&audio_modcon 0x810 0x1>;
 		interrupts = <256 0>;
 		nxp,tx-channel = <1>;
+		dmas = <&edma3 0 4>, <&edma3 0 3>;
+		dma-names = "rx", "tx";
+		nxp,tx-dma-channel = <0>;
+		nxp,rx-dma-channel = <1>;
 		status = "disabled";
 	};
 
@@ -1805,8 +1872,13 @@
 		reg = <0x480d0000 0x10000>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI1,
 					   IMX_CCM_ROOT_AUDIO_SAI1_MCLK0)>;
+		pinmuxes = <&audio_modcon 0xa10 0x1>;
 		interrupts = <257 0>;
 		nxp,tx-channel = <1>;
+		dmas = <&edma3 0 6>, <&edma3 0 5>;
+		dma-names = "rx", "tx";
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
 		status = "disabled";
 	};
 
@@ -1817,8 +1889,13 @@
 		reg = <0x480e0000 0x10000>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI2,
 					   IMX_CCM_ROOT_AUDIO_SAI2_MCLK0)>;
+		pinmuxes = <&audio_modcon 0xc10 0x1>;
 		interrupts = <258 0>;
 		nxp,tx-channel = <1>;
+		dmas = <&edma3 0 8>, <&edma3 0 7>;
+		dma-names = "rx", "tx";
+		nxp,tx-dma-channel = <4>;
+		nxp,rx-dma-channel = <5>;
 		status = "disabled";
 	};
 

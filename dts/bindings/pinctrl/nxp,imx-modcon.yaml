@@ -1,0 +1,25 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  i.MX RT Module Control (MODCON) block.
+
+  One instance per power domain, holding per-peripheral configuration
+  registers. Exposed as a pinmux specifier space so a peripheral node can
+  point at the register field controlling one of its own signals, such as
+  the dynamic gate on a SAI's MCLK pad output.
+
+compatible: "nxp,imx-modcon"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+pinmux-cells:
+  - offset
+  - mask
