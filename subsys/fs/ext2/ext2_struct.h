@@ -163,6 +163,7 @@ struct ext2_bgroup {
 /* Flags for inode */
 #define INODE_FETCHED_BLOCK BIT(0)
 #define INODE_REMOVE BIT(1)
+#define INODE_TIMES_DIRTY BIT(2)
 
 struct ext2_inode {
 	struct ext2_data *i_fs;      /* pointer to file system data */
@@ -173,6 +174,9 @@ struct ext2_inode {
 	uint16_t i_mode;           /* mode */
 	uint16_t i_links_count;    /* link count */
 	uint32_t i_size;           /* size */
+	uint32_t i_atime;          /* access time */
+	uint32_t i_ctime;          /* status change time */
+	uint32_t i_mtime;          /* modification time */
 	uint32_t i_blocks;         /* number of reserved blocks (of size 512B) */
 	uint32_t i_block[15];      /* numbers of blocks */
 

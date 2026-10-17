@@ -13,6 +13,7 @@
 
 #include "../fs_impl.h"
 #include "ext2.h"
+#include "ext2_diskops.h"
 #include "ext2_impl.h"
 #include "ext2_struct.h"
 
@@ -313,7 +314,6 @@ static int ext2_opendir(struct fs_dir_t *dirp, const char *fs_path)
 		ret = -ENOMEM;
 		goto out;
 	}
-
 
 	if (!dir) {
 		ret = -ENOMEM;
@@ -618,8 +618,35 @@ static int ext2_statvfs(struct fs_mount_t *mountp, const char *path, struct fs_s
 	return 0;
 }
 
-/* File system interface */
+static int ext2_utime(struct fs_mount_t *mountp, const char *path, const struct timespec times[2])
+{
+	int rc;
+	struct ext2_data *fs = mountp->fs_data;
 
+	path = fs_impl_strip_prefix(path, mountp);
+
+	struct ext2_lookup_args args = {
+		.path = path,
+		.inode = NULL,
+		.flags = LOOKUP_ARG_OPEN,
+	};
+
+	rc = ext2_lookup_inode(fs, &args);
+	if (rc < 0) {
+		return rc;
+	}
+
+	args.inode->i_atime = (uint32_t)times[0].tv_sec;
+	args.inode->i_mtime = (uint32_t)times[1].tv_sec;
+	args.inode->i_ctime = ext2_now();
+
+	rc = ext2_commit_inode(args.inode);
+
+	ext2_inode_drop(args.inode);
+	return rc;
+}
+
+/* File system interface */
 
 /*
  * The driver was written assuming external serialization - the lookup and
@@ -649,6 +676,7 @@ static int ext2_locked_close(struct fs_file_t *filp)
 	k_mutex_unlock(&ext2_op_lock);
 
 	return ret;
+
 }
 
 static ssize_t ext2_locked_read(struct fs_file_t *filp, void *dest, size_t nbytes)
@@ -827,6 +855,18 @@ static int ext2_locked_statvfs(struct fs_mount_t *mountp, const char *path, stru
 	return ret;
 }
 
+static int ext2_locked_utime(struct fs_mount_t *mountp, const char *path,
+			     const struct timespec times[2])
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_utime(mountp, path, times);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
 #if defined(CONFIG_FILE_SYSTEM_MKFS)
 static int ext2_locked_mkfs(uintptr_t dev_id, void *vcfg, int flags)
 {
@@ -858,6 +898,7 @@ static const struct fs_file_system_t ext2_fs = {
 	.unlink = ext2_locked_unlink,
 	.rename = ext2_locked_rename,
 	.stat = ext2_locked_stat,
+	.utime = ext2_locked_utime,
 	.statvfs = ext2_locked_statvfs,
 #if defined(CONFIG_FILE_SYSTEM_MKFS)
 	.mkfs = ext2_locked_mkfs,

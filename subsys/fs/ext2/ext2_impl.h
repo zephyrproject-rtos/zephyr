@@ -221,6 +221,23 @@ int ext2_inode_trunc(struct ext2_inode *inode, off_t size);
  */
 int ext2_inode_sync(struct ext2_inode *inode);
 
+/**
+ * @brief Current time in the on-disk format
+ *
+ * @return Whole seconds since the Epoch, 0 when no real-time clock is available
+ */
+uint32_t ext2_now(void);
+
+/**
+ * @brief Mark an inode's contents as modified now
+ *
+ * Sets the modification and status change times; the inode reaches the disk with
+ * its next commit or sync.
+ *
+ * @param inode Inode to stamp
+ */
+void ext2_inode_modified(struct ext2_inode *inode);
+
 /* Directory operations */
 
 /**

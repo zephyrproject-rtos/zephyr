@@ -107,6 +107,9 @@ static void fill_inode(struct ext2_inode *inode, struct ext2_disk_inode *dino)
 {
 	inode->i_mode        = sys_le16_to_cpu(dino->i_mode);
 	inode->i_size        = sys_le32_to_cpu(dino->i_size);
+	inode->i_atime       = sys_le32_to_cpu(dino->i_atime);
+	inode->i_ctime       = sys_le32_to_cpu(dino->i_ctime);
+	inode->i_mtime       = sys_le32_to_cpu(dino->i_mtime);
 	inode->i_links_count = sys_le16_to_cpu(dino->i_links_count);
 	inode->i_blocks      = sys_le32_to_cpu(dino->i_blocks);
 	for (int i = 0; i < EXT2_INODE_BLOCKS; i++) {
@@ -118,6 +121,9 @@ static void fill_disk_inode(struct ext2_disk_inode *dino, struct ext2_inode *ino
 {
 	dino->i_mode        = sys_cpu_to_le16(inode->i_mode);
 	dino->i_size        = sys_cpu_to_le32(inode->i_size);
+	dino->i_atime       = sys_cpu_to_le32(inode->i_atime);
+	dino->i_ctime       = sys_cpu_to_le32(inode->i_ctime);
+	dino->i_mtime       = sys_cpu_to_le32(inode->i_mtime);
 	dino->i_links_count = sys_cpu_to_le16(inode->i_links_count);
 	dino->i_blocks      = sys_cpu_to_le32(inode->i_blocks);
 	for (int i = 0; i < EXT2_INODE_BLOCKS; i++) {
@@ -842,6 +848,7 @@ int ext2_commit_inode(struct ext2_inode *inode)
 
 	/* fill dinode */
 	fill_disk_inode(dino, inode);
+	inode->flags &= ~INODE_TIMES_DIRTY;
 
 	return ext2_write_block(fs, fs->bgroup.inode_table);
 }

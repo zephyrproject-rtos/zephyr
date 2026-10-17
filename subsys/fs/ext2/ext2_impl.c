@@ -11,6 +11,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/minmax.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/clock.h>
 
 #include "ext2.h"
 #include "ext2_impl.h"
@@ -692,6 +693,25 @@ success:
 
 /* Inode operations --------------------------------------------------------- */
 
+/* the on-disk format counts whole seconds since the Epoch */
+uint32_t ext2_now(void)
+{
+	struct timespec ts;
+
+	if (sys_clock_gettime(SYS_CLOCK_REALTIME, &ts) != 0) {
+		return 0;
+	}
+
+	return (uint32_t)ts.tv_sec;
+}
+
+void ext2_inode_modified(struct ext2_inode *inode)
+{
+	inode->i_mtime = ext2_now();
+	inode->i_ctime = inode->i_mtime;
+	inode->flags |= INODE_TIMES_DIRTY;
+}
+
 ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, size_t nbytes)
 {
 	int rc = 0;
@@ -767,6 +787,7 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 		/* Preserve the size of data committed before the failed block. */
 		if (offset > inode->i_size) {
 			inode->i_size = offset;
+			ext2_inode_modified(inode);
 			rc = ext2_commit_inode(inode);
 			if (rc < 0) {
 				return rc;
@@ -776,6 +797,7 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 		return written;
 	}
 
+	ext2_inode_modified(inode);
 	if (offset > inode->i_size) {
 		LOG_DBG("New inode size: %d -> %u", inode->i_size, offset);
 		inode->i_size = offset;
@@ -855,6 +877,7 @@ int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
 	}
 
 	inode->i_size = new_size;
+	ext2_inode_modified(inode);
 
 	LOG_DBG("New inode size: %d (blocks: %d)", inode->i_size, inode->i_blocks);
 
@@ -881,6 +904,13 @@ int ext2_inode_sync(struct ext2_inode *inode)
 {
 	int ret;
 	struct ext2_data *fs = inode->i_fs;
+
+	if ((inode->flags & INODE_TIMES_DIRTY) != 0) {
+		ret = ext2_commit_inode(inode);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	for (int i = 0; i < 4; ++i) {
 		if (inode->blocks[i] == NULL) {
@@ -961,13 +991,19 @@ int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent)
 	/* Get size only for files. Directories have size 0. */
 	size_t size = 0;
 
-	if (ent->type == FS_DIR_ENTRY_FILE) {
+	if ((ent->type == FS_DIR_ENTRY_FILE) || IS_ENABLED(CONFIG_FS_DIRENT_EXT)) {
 		rc = ext2_inode_get(fs, de->de_inode, &inode);
 		if (rc < 0) {
 			ret = rc;
 			goto out;
 		}
-		size = inode->i_size;
+		if (ent->type == FS_DIR_ENTRY_FILE) {
+			size = inode->i_size;
+		}
+#ifdef CONFIG_FS_DIRENT_EXT
+		ent->atime = (struct timespec){.tv_sec = inode->i_atime};
+		ent->mtime = (struct timespec){.tv_sec = inode->i_mtime};
+#endif
 	}
 
 	ent->size = size;
@@ -1002,6 +1038,9 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 	inode->i_size = 0;
 	inode->i_mode = type == FS_DIR_ENTRY_FILE ? EXT2_DEF_FILE_MODE : EXT2_DEF_DIR_MODE;
 	inode->i_links_count = 0;
+	inode->i_atime = ext2_now();
+	inode->i_ctime = inode->i_atime;
+	inode->i_mtime = inode->i_atime;
 	memset(inode->i_block, 0, 15 * 4);
 
 	if (type == FS_DIR_ENTRY_DIR) {
@@ -1139,6 +1178,7 @@ static int ext2_add_direntry(struct ext2_inode *dir, struct ext2_direntry *entry
 	de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(dir), offset);
 	ext2_write_direntry(de, entry);
 
+	ext2_inode_modified(dir);
 	rc = ext2_commit_inode_block(dir);
 	return rc;
 }
@@ -1270,6 +1310,7 @@ out:
 
 static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
 {
+	ext2_inode_modified(parent);
 	int rc = 0;
 	uint32_t block_size = parent->i_fs->block_size;
 
@@ -1677,6 +1718,15 @@ int ext2_inode_drop(struct ext2_inode *inode)
 		if (offset >= MAX_INODES) {
 			LOG_ERR("Inode structure at %p not in inode_pool", inode);
 			return -EINVAL;
+		}
+
+		if (((inode->flags & INODE_TIMES_DIRTY) != 0) &&
+		    ((inode->flags & INODE_REMOVE) == 0)) {
+			int rc = ext2_commit_inode(inode);
+
+			if (rc < 0) {
+				LOG_ERR("inode %d: committing timestamps failed (%d)", inode->i_id, rc);
+			}
 		}
 
 		ext2_inode_drop_blocks(inode);
