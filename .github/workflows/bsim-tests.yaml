@@ -50,6 +50,11 @@ jobs:
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       EDTT_PATH: ../tools/edtt
+      CCACHE_DIR: /node-cache/ccache-zephyr
+      CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
+      CCACHE_REMOTE_ONLY: "true"
+      # `--specs` is ignored because ccache is unable to resolve the toolchain specs file path.
+      CCACHE_IGNOREOPTIONS: '-specs=* --specs=*'
     permissions:
       checks: write # to create the check run entry with test results
 
@@ -89,6 +94,13 @@ jobs:
       - name: Install Python packages
         run: |
           pip install -r scripts/requirements-actions.txt --require-hashes
+
+      - name: Set up ccache
+        run: |
+          mkdir -p ${CCACHE_DIR}
+          ccache -M 10G
+          ccache -p
+          ccache -z -s -vv
 
       - name: Check common triggering files
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
@@ -187,6 +199,11 @@ jobs:
         if: steps.check-gpio-files.outputs.any_modified == 'true' || steps.check-common-files.outputs.any_modified == 'true'
         run: |
           tests/bsim/ci.gpio.sh
+
+      - name: Print ccache stats
+        if: always()
+        run: |
+          ccache -s -vv
 
       - name: Merge Test Results
         run: |
