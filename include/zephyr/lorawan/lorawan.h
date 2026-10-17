@@ -305,6 +305,16 @@ int lorawan_join(const struct lorawan_join_config *config);
  */
 int lorawan_start(void);
 
+#if defined(CONFIG_LORAWAN_NATIVE) && defined(CONFIG_ZTEST)
+/**
+ * @brief Stop and reset the native LoRaWAN stack for testing.
+ *
+ * Restore all native stack state to its boot-time defaults. This function is
+ * only available in ZTEST builds.
+ */
+void lorawan_stop(void);
+#endif /* CONFIG_LORAWAN_NATIVE && CONFIG_ZTEST */
+
 /**
  * @brief Send data to the LoRaWAN network
  *

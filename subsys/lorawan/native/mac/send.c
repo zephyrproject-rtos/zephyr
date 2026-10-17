@@ -174,6 +174,15 @@ static struct dl_work_ctx dl_work_ctx = {
 	.work = Z_WORK_INITIALIZER(dl_work_handler),
 };
 
+#if defined(CONFIG_ZTEST)
+void mac_flush_work(void)
+{
+	struct k_work_sync sync;
+
+	(void)k_work_flush(&dl_work_ctx.work, &sync);
+}
+#endif /* CONFIG_ZTEST */
+
 static int mac_compute_data_mic(psa_key_id_t cmac_key, uint32_t dev_addr,
 				uint32_t fcnt, uint8_t dir,
 				const uint8_t *msg, size_t msg_len,
