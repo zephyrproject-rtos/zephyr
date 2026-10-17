@@ -18,6 +18,7 @@ tests:
       CONF_FILE=prj_dut_llcp.conf
   bluetooth.controller.edtt.hci_test_app.tst:
     harness_config:
+      tests_scripts_parallel: 8
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_ll_edtt_hci_test_app_prj_tst_llcp_conf
       tests_scripts:

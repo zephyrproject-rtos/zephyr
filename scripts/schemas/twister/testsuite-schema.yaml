@@ -183,6 +183,9 @@ $defs:
             type: array
             items:
               type: string
+          tests_scripts_parallel:
+            type: integer
+            minimum: 1
           ztest_suite_repeat:
             type: integer
           ztest_test_repeat:
