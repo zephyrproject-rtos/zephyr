@@ -153,6 +153,7 @@ enum {
 
 	/* Retransmission and flow control flags*/
 	L2CAP_FLAG_RET_TIMER,   /* Retransmission timer is working */
+	L2CAP_FLAG_RET_LOST,    /* Channel lost to MaxTransmit */
 
 	/* Receiving S-frame/I-frame flags */
 	L2CAP_FLAG_RECV_FRAME_P,         /* Poll (P) flag of received frame */
@@ -186,10 +187,74 @@ enum {
 
 static sys_slist_t br_servers;
 
+/* Whether a channel lost to MaxTransmit waits for a signalling buffer */
+static atomic_t lost_chan_waiting;
+
+static void disconnect_lost_chans(struct bt_conn *conn, void *data)
+{
+	struct bt_l2cap_chan *chan;
+	bool *waiting = data;
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+		int err;
+
+		if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_LOST) ||
+		    (br_chan->state != BT_L2CAP_CONNECTED)) {
+			continue;
+		}
+
+		err = bt_l2cap_br_chan_disconnect(chan);
+		if (err == -ENOBUFS) {
+			*waiting = true;
+		} else if (err != 0) {
+			LOG_ERR("Failed to disconnect lost chan %p (err %d)", br_chan, err);
+		}
+	}
+}
+
+static void lost_chan_handler(struct k_work *work)
+{
+	bool waiting = false;
+
+	ARG_UNUSED(work);
+
+	/* Set first, so that a buffer freed meanwhile runs this again */
+	atomic_set(&lost_chan_waiting, 1);
+
+	bt_conn_foreach(BT_CONN_TYPE_BR, disconnect_lost_chans, &waiting);
+
+	if (!waiting) {
+		atomic_clear(&lost_chan_waiting);
+	}
+}
+
+/* Disconnecting a lost channel needs a signalling buffer, which neither the TX processor nor
+ * this work may wait for: queued signalling PDUs release theirs only when the TX processor
+ * sends them, or for a link that goes away, when cleanup on this work queue drops them.
+ */
+static K_WORK_DEFINE(lost_chan_work, lost_chan_handler);
+
+static void br_sig_buf_destroy(struct net_buf *buf)
+{
+	net_buf_destroy(buf);
+
+	if (IS_ENABLED(CONFIG_BT_L2CAP_RET_FC) && atomic_cas(&lost_chan_waiting, 1, 0)) {
+		int err = bt_work_submit(&lost_chan_work);
+
+		if (err < 0) {
+			LOG_ERR("Failed to submit the disconnect of lost chans (err %d)", err);
+		}
+	}
+}
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
 NET_BUF_POOL_FIXED_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, br_sig_buf_destroy);
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 static void br_tx_buf_destroy(struct net_buf *buf)
@@ -1350,6 +1415,12 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 	struct bt_l2cap_br_chan *br_chan =
 		CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
+	/* A lost channel is closed: nothing more is sent on it */
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_LOST)) {
+		lower_data_ready(br_chan);
+		return NULL;
+	}
+
 	if (br_chan->_pdu_buf && bt_buf_has_view(br_chan->_pdu_buf)) {
 		LOG_ERR("already have view on %p", br_chan->_pdu_buf);
 		return NULL;
@@ -1589,31 +1660,43 @@ send_i_frame:
 			 */
 			actual_pdu_len -= BT_L2CAP_RT_FC_SDU_LEN_SIZE;
 
-			tx_win->transmit_counter++;
 			tx_win->srej = false;
 			tx_win->retransmit = false;
 
+			/* Compared before counting this transmission, which would wrap the counter
+			 * for a MaxTransmit of 255
+			 */
 			if (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_ERET) {
-				if (br_chan->tx.max_transmit &&
-				    (tx_win->transmit_counter > br_chan->tx.max_transmit)) {
+				if ((br_chan->tx.max_transmit != 0U) &&
+				    (tx_win->transmit_counter >= br_chan->tx.max_transmit)) {
 					disconnect = true;
 				}
 			} else {
-				if (tx_win->transmit_counter > br_chan->tx.max_transmit) {
+				if (tx_win->transmit_counter >= br_chan->tx.max_transmit) {
 					disconnect = true;
 				}
 			}
 
 			if (disconnect) {
+				int err;
+
 				/* If the TransmitCounter is equal to MaxTransmit this channel to
 				 * the peer entity shall be assumed lost. The channel shall move
 				 * to the CLOSED state and appropriate action shall be taken to
 				 * report this to the upper layers.
 				 */
-				bt_l2cap_br_chan_disconnect(&br_chan->chan);
+				atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_LOST);
+				err = bt_work_submit(&lost_chan_work);
+				if (err < 0) {
+					LOG_ERR("Failed to submit the disconnect of %p (err %d)",
+						br_chan, err);
+				}
+
 				net_buf_unref(send_buf);
 				return NULL;
 			}
+
+			tx_win->transmit_counter++;
 
 			LOG_WRN("Retransmission I-frame %u: buf %p chan %p len %zu", tx_win->tx_seq,
 				pdu, br_chan, pdu_len);
@@ -4980,6 +5063,7 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 {
 	struct bt_conn *conn = chan->conn;
 	struct net_buf *buf;
+	k_timeout_t timeout;
 	struct bt_l2cap_disconn_req *req;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_br_chan *br_chan;
@@ -4996,7 +5080,10 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("chan %p scid 0x%04x dcid 0x%04x", chan, br_chan->rx.cid, br_chan->tx.cid);
 
-	buf = l2cap_br_create_pdu(&br_sig_pool, K_FOREVER);
+	/* A lost channel does not wait: lost_chan_work tries again once a buffer is free */
+	timeout = atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_LOST) ? K_NO_WAIT : K_FOREVER;
+
+	buf = l2cap_br_create_pdu(&br_sig_pool, timeout);
 	if (buf == NULL) {
 		return -ENOBUFS;
 	}
