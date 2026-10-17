@@ -1045,13 +1045,15 @@ static void bt_avrcp_tg_vendor_tx_work(struct k_work *work)
 
 	/* Check if fragmentation is needed */
 	if ((tx->sent_len == 0) && (buf->len <= max_payload_size)) {
-		/* Single packet response */
+		/* Single packet response. AVCTP queues the buffer itself, using its
+		 * node and user data, so it has to leave the pending list first.
+		 */
+		avrcp_tg_tx_remove(tg, buf);
 		err = send_single_vendor_rsp(tg, tx->tid, tx->rsp, tx->pdu_id, buf);
 		if (err < 0) {
 			LOG_ERR("Failed to send single len: %u", buf->len);
 			goto done;
 		}
-		avrcp_tg_tx_remove(tg, buf);
 		k_work_reschedule(&tg->vd_rsp_tx_work, K_NO_WAIT);
 		return;
 	}
