@@ -223,7 +223,11 @@ static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev,
 	struct can_filter filter_copy;
 
 	K_OOPS(K_SYSCALL_DRIVER_CAN(dev, add_rx_filter));
-	K_OOPS(K_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	/* The message queue pointer is retained by the CAN RX filter for as long
+	 * as the filter is installed, so it must not be an object which user
+	 * mode can free. See CAN_MSGQ_DEFINE().
+	 */
+	K_OOPS(K_SYSCALL_OBJ_STATIC(msgq, K_OBJ_MSGQ));
 	K_OOPS(k_usermode_from_copy(&filter_copy, filter, sizeof(filter_copy)));
 
 	return z_impl_can_add_rx_filter_msgq(dev, msgq, &filter_copy);
