@@ -165,24 +165,28 @@ static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 					       .enableCounterStop = false,
 					       .outControl = kCTIMER_Output_NoAction,
 					       .outPinInitState = false,
-					       .enableInterrupt = true };
+					       /* Armed below, once the match value is in place. */
+					       .enableInterrupt = false };
 
 	/*
-	 * A previously cancelled alarm can leave its match value programmed; on
-	 * this SoC the counter reaching that value latches the channel's status
-	 * flag even while the match interrupt is disabled. Mask this channel's
-	 * interrupt and drop any latched flag before registering the callback so
-	 * a stale match cannot be delivered as a spurious expiry. Only the match
-	 * armed by CTIMER_SetupMatch() below, which re-enables the interrupt, can
-	 * then reach the callback.
+	 * A previously cancelled alarm can leave its match value programmed, and
+	 * CTIMER_SetupMatch() writes MCR before MR. Letting it enable the match
+	 * interrupt would briefly arm that stale value, and the counter reaching
+	 * it would be delivered as a spurious expiry.
+	 *
+	 * Keep the channel masked while the new match value is written --
+	 * CTIMER_SetupMatch() drops the channel's status flag right after -- and
+	 * enable the interrupt only once the channel describes the alarm being
+	 * armed, so the first match that can reach the callback is that one.
 	 */
 	CTIMER_DisableInterrupts(config->base, CTIMER_MATCH_INT_MASK(chan_id));
-	CTIMER_ClearStatusFlags(config->base, (1U << chan_id));
+
+	CTIMER_SetupMatch(config->base, chan_id, &match_config);
 
 	data->channels[chan_id].alarm_callback = alarm_cfg->callback;
 	data->channels[chan_id].alarm_user_data = alarm_cfg->user_data;
 
-	CTIMER_SetupMatch(config->base, chan_id, &match_config);
+	CTIMER_EnableInterrupts(config->base, CTIMER_MATCH_INT_MASK(chan_id));
 
 	return 0;
 }
