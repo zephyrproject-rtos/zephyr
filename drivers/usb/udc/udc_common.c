@@ -685,9 +685,13 @@ int udc_ep_dequeue(const struct device *dev, const uint8_t ep)
 		udc_debug_ep_enqueue(dev, cfg);
 	}
 
-	if (k_fifo_is_empty(&cfg->fifo)) {
+	/*
+	 * A busy endpoint can hold buffers its driver has taken from the queue
+	 * already, the driver gives those back as well.
+	 */
+	if (k_fifo_is_empty(&cfg->fifo) && !udc_ep_is_busy(cfg)) {
 		ret = 0;
-	} else  {
+	} else {
 		ret = api->ep_dequeue(dev, cfg);
 	}
 
