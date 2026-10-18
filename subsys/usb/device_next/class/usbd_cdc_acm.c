@@ -257,26 +257,10 @@ static size_t cdc_acm_tx_current_tailroom_locked(struct cdc_acm_uart_data *const
 
 static uint32_t cdc_acm_tx_fifo_space_get(struct cdc_acm_uart_data *const data)
 {
-	const uint32_t count = data->tx_fifo.pool->buf_count;
-	k_spinlock_key_t key;
-	uint32_t available;
-	uint32_t space;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	uint32_t space = cdc_acm_tx_current_tailroom_locked(data);
 
-	key = k_spin_lock(&data->lock);
-
-	available = count - data->tx_fifo.enqueued;
-
-	if (available == 0) {
-		space = 0;
-	} else if (available == 1 || !data->echo_mitigated) {
-		space = cdc_acm_tx_current_tailroom_locked(data);
-	} else {
-		/* Use available - 1 to prevent sudden drop of available
-		 * size when a partially filled buffer is enqueued.
-		 */
-		space = USBD_MAX_BULK_MPS * (available - 1);
-	}
-
+	/* Only the worker can rotate a full current buffer. */
 	k_spin_unlock(&data->lock, key);
 
 	return space;
@@ -787,6 +771,11 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
 
 	cdc_acm_tx_fifo_enqueue(data->dev);
+	/* Rotation can restore space before any IN completion arrives. */
+	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
+	    cdc_acm_tx_fifo_space_get(data) != 0U) {
+		cdc_acm_work_submit(&data->irq_cb_work);
+	}
 }
 
 /*
@@ -914,7 +903,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		}
 
 		if (enqueue) {
-			cdc_acm_tx_fifo_enqueue(dev);
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
 	}
 
