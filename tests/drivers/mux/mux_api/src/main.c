@@ -28,6 +28,16 @@
 #include <zephyr/drivers/mux.h>
 #include <zephyr/ztest.h>
 
+#if IS_ENABLED(CONFIG_TEST_MUX_HAS_DISCONNECT)
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
+
+/* Enable line wired by the board fixture; observed to confirm the mux is
+ * physically connected/disconnected.
+ */
+static const struct gpio_dt_spec mux_en = GPIO_DT_SPEC_GET(DT_NODELABEL(mux0), enable_gpios);
+#endif
+
 #define CONSUMER DT_NODELABEL(mux_consumer)
 
 BUILD_ASSERT(DT_NODE_EXISTS(CONSUMER),
@@ -75,6 +85,44 @@ ZTEST(mux_api, test_state_apply_then_get)
 	zassert_ok(mux_state_get(mux_dev, mstate->control, &state), "get failed");
 	zassert_equal(state, mstate->state,
 		      "read-back should equal the applied DT state");
+}
+
+ZTEST(mux_api, test_disconnect)
+{
+	const struct mux_control *ctrl = MUX_CONTROL_DT_GET_BY_IDX(CONSUMER, 0);
+
+#if IS_ENABLED(CONFIG_TEST_MUX_HAS_DISCONNECT)
+	uint32_t state;
+
+	/* set() connects: the route is applied and the enable line asserted. */
+	zassert_ok(mux_control_set(mux_dev, ctrl, CONFIG_TEST_MUX_SET_VALUE_A),
+		   "set A failed");
+	zassert_equal(gpio_emul_output_get_dt(&mux_en), 1,
+		      "enable line should be asserted after set");
+
+	/* disconnect() opens the mux; the route is preserved for reconnect. */
+	zassert_ok(mux_control_disconnect(mux_dev, ctrl), "disconnect failed");
+	zassert_equal(gpio_emul_output_get_dt(&mux_en), 0,
+		      "enable line should be de-asserted after disconnect");
+	zassert_ok(mux_state_get(mux_dev, ctrl, &state),
+		   "get after disconnect failed");
+	zassert_equal(state, CONFIG_TEST_MUX_SET_VALUE_A,
+		      "route should be preserved across disconnect");
+
+	/* set() reconnects: enable re-asserted and the new route applied. */
+	zassert_ok(mux_control_set(mux_dev, ctrl, CONFIG_TEST_MUX_SET_VALUE_B),
+		   "reconnect set B failed");
+	zassert_equal(gpio_emul_output_get_dt(&mux_en), 1,
+		      "enable line should be re-asserted after reconnect");
+	zassert_ok(mux_state_get(mux_dev, ctrl, &state),
+		   "get after reconnect failed");
+	zassert_equal(state, CONFIG_TEST_MUX_SET_VALUE_B,
+		      "route should track the reconnect value");
+#else
+	/* Controllers without a disconnect capability report -ENOSYS. */
+	zassert_equal(mux_control_disconnect(mux_dev, ctrl), -ENOSYS,
+		      "disconnect should be unsupported on this controller");
+#endif
 }
 
 ZTEST_SUITE(mux_api, NULL, NULL, NULL, NULL, NULL);
