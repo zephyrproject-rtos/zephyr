@@ -64,7 +64,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me310g1_shutdown_chat_script,
 
 #endif
 
-__maybe_unused static const struct modem_cellular_vendor_config telit_me910g1_vendor = {
+__maybe_unused static const struct modem_cellular_vendor_config_common telit_me910g1_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &telit_mex10g1_init_chat_script,
@@ -87,14 +87,19 @@ __maybe_unused static const struct modem_cellular_vendor_config telit_me910g1_ve
 #define MODEM_CELLULAR_DEVICE_TELIT_ME910G1(inst)                                                  \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &telit_me910g1_vendor,                                                   \
+	};                                                                                         \
+                                                                                                   \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_me910g1_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 #if DT_HAS_COMPAT_STATUS_OKAY(telit_me310g1)
-static const struct modem_cellular_vendor_config telit_me310g1_vendor = {
+static const struct modem_cellular_vendor_config_common telit_me310g1_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &telit_mex10g1_init_chat_script,
@@ -119,13 +124,16 @@ static const struct modem_cellular_vendor_config telit_me310g1_vendor = {
 #define MODEM_CELLULAR_DEVICE_TELIT_ME310G1(inst)                                                  \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
-	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &telit_me310g1_vendor,                                                   \
 	};                                                                                         \
+                                                                                                   \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_me310g1_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 #define DT_DRV_COMPAT telit_me910g1
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_ME910G1)

@@ -269,12 +269,14 @@ struct modem_cellular_config_scripts {
 };
 
 /**
- * @brief Vendor-specific cellular modem configuration.
+ * @brief Vendor-specific common cellular modem configuration.
  *
  * Define one constant object for each modem variant. The referenced scripts and unsolicited-match
  * array must remain valid for the lifetime of every device instance that uses this configuration.
+ *
+ * This structure is for configuration that is common between all driver instances.
  */
-struct modem_cellular_vendor_config {
+struct modem_cellular_vendor_config_common {
 	/** Chat scripts implementing the modem lifecycle. */
 	struct modem_cellular_config_scripts scripts;
 	/** Unsolicited modem response matches. */
@@ -314,12 +316,21 @@ struct modem_cellular_vendor_config {
 	bool force_autostart;
 };
 
+/**
+ * @brief Modem configuration that varies per vendor and instance
+ */
+struct modem_cellular_vendor_config {
+	/** Common configuration shared between all vendor instances */
+	const struct modem_cellular_vendor_config_common *common;
+	/** Vendor specific instance configuration */
+	const void *vendor_inst;
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 struct modem_cellular_config {
 	const struct device *uart;
 	const struct modem_cellular_vendor_config *vendor;
-	const void *vendor_specific;
 	struct modem_ppp *ppp;
 	struct gpio_dt_spec power_gpio;
 	struct gpio_dt_spec reset_gpio;
@@ -574,15 +585,12 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
  * @param inst Devicetree instance number.
  * @param vendor_config Pointer to a constant @ref modem_cellular_vendor_config object. Must not be
  *        NULL and must remain valid for the lifetime of the device.
- * @param _vendor_specific Pointer to an arbitrary vendor-specific configuration structure. Can be
- *        NULL.
  */
-#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, vendor_config, _vendor_specific)                      \
+#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, vendor_config)                                        \
 	BUILD_ASSERT(vendor_config != NULL, "vendor_config must be non-NULL");                     \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.vendor = vendor_config,                                                           \
-		.vendor_specific = _vendor_specific,                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
