@@ -212,6 +212,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -298,6 +299,26 @@ extern void z_irq_spurious(const void *unused);
 /** @brief Previous interrupt-enable bit in the status CSR (M-mode: MPIE) */
 #define RV_STATUS_PIE MSTATUS_MPIE_EN
 #endif
+
+#define ARCH_MEM_PARTITION_ATTR_STR_MAX 32
+
+/**
+ * @brief Format a memory partition attribute as a string.
+ *
+ * M-mode is not constrained by PMP, so only U-mode permissions are decoded.
+ */
+static ALWAYS_INLINE char *arch_mem_partition_attr_str(
+	char *buf, const k_mem_partition_attr_t *attr)
+{
+	char r = (attr->pmp_attr & PMP_R) ? 'R' : '-';
+	char w = (attr->pmp_attr & PMP_W) ? 'W' : '-';
+	char x = (attr->pmp_attr & PMP_X) ? 'X' : '-';
+
+	snprintf(buf, ARCH_MEM_PARTITION_ATTR_STR_MAX,
+		 "Priv: RWX | User: %c%c%c", r, w, x);
+
+	return buf;
+}
 
 /**
  * @brief Read the privilege-level status register (mstatus or sstatus).

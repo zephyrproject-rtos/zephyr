@@ -1553,3 +1553,10 @@ config ARCH_IPI_LAZY_COPROCESSORS_SAVE
 	help
 	  Select when the architecture has multi-CPU lazy context switching
 	  of coprocessor registers.
+
+config ARCH_HAS_MEMPARTS_ATTR_STR
+	bool
+	help
+	  Select when the architecture implements
+	  arch_mem_partition_attr_str(), which formats a
+	  k_mem_partition_attr_t into a human-readable string.
