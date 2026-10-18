@@ -1258,6 +1258,7 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 
 static int modem_cellular_on_run_init_script_state_enter(struct modem_cellular_data *data)
 {
+	data->init_script_index = 0U;
 	modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
 	return modem_pipe_open_async(data->uart_pipe);
 }
@@ -1342,6 +1343,9 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 							 enum modem_cellular_event evt)
 {
 	const struct modem_cellular_config *config = data->dev->config;
+	const struct modem_cellular_config_scripts *scripts = &config->vendor->common->scripts;
+	const struct modem_cellular_vendor_config_inst *instance = config->vendor->instance;
+	const struct modem_chat_script *init_script;
 	uint8_t imei_len;
 	uint8_t link_addr_len;
 	uint8_t *link_addr_ptr;
@@ -1350,12 +1354,21 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
-		modem_chat_run_script_async(&data->chat, config->vendor->common->scripts.init);
+		init_script = scripts->init != NULL ? scripts->init
+						    : instance->multi_init[data->init_script_index];
+		modem_chat_run_script_async(&data->chat, init_script);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		/* Modem responded, so a skipped power-on pulse was the right call. */
 		data->power_on_skipped = false;
+
+		if ((scripts->init == NULL) &&
+		    (++data->init_script_index < instance->multi_init_num)) {
+			modem_chat_run_script_async(&data->chat,
+						    instance->multi_init[data->init_script_index]);
+			break;
+		}
 
 		/* Get link_addr_len least significant bytes from IMEI as a link address */
 		imei_len = MODEM_CELLULAR_DATA_IMEI_LEN - 1; /* Exclude str end */
@@ -3114,11 +3127,20 @@ int modem_cellular_init(const struct device *dev)
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 	struct modem_cellular_config *config = (struct modem_cellular_config *)dev->config;
 	const struct gpio_dt_spec *dtr_gpio = NULL;
+	bool single_init;
+	bool multi_init;
 
 	data->dev = dev;
 
+	__ASSERT_NO_MSG(config->vendor != NULL);
 	__ASSERT_NO_MSG(config->vendor->common != NULL);
-	__ASSERT_NO_MSG(config->vendor->common->scripts.init != NULL);
+	single_init = config->vendor->common->scripts.init != NULL;
+	multi_init = (config->vendor->instance != NULL) &&
+		     (config->vendor->instance->multi_init != NULL);
+
+	/* Exactly one of `single_init` and `multi_init` must be true */
+	__ASSERT_NO_MSG(single_init ^ multi_init);
+	__ASSERT_NO_MSG(!multi_init || (config->vendor->instance->multi_init_num > 0U));
 	__ASSERT_NO_MSG(config->vendor->common->scripts.dial != NULL);
 
 	/* On-demand connect drives the dial off the PPP interface admin state. A

@@ -156,6 +156,7 @@ struct modem_cellular_data {
 	uint8_t *chat_argv[32];
 	uint8_t script_failure_counter;
 	uint8_t recovery_count;
+	uint8_t init_script_index;
 
 	/* Status */
 	enum cellular_registration_status registration_status_gsm;
@@ -252,7 +253,9 @@ struct modem_cellular_user_pipe {
  *
  */
 struct modem_cellular_config_scripts {
-	/** Script that initializes the modem and enables CMUX. Must not be NULL. */
+	/** Script that initializes the modem and enables CMUX. Either this or @a multi_init in
+	 * @ref modem_cellular_vendor_config_inst must not be NULL.
+	 */
 	const struct modem_chat_script *init;
 	/** Optional script that waits for network registration before dialing. */
 	const struct modem_chat_script *network;
@@ -325,6 +328,14 @@ struct modem_cellular_vendor_config_common {
  * the lifetime of every device instance that uses this configuration.
  */
 struct modem_cellular_vendor_config_inst {
+	/**
+	 * Array of initialization scripts to run in order.
+	 *
+	 * Either this or @a init in @ref modem_cellular_config_scripts must not be NULL.
+	 */
+	const struct modem_chat_script **multi_init;
+	/** Number of scripts in @a multi_init array */
+	uint8_t multi_init_num;
 	/** Optional script that configures the modem's UART baud rate. */
 	const struct modem_chat_script *set_baudrate;
 	/** Integer baudrate associated with @a set_baudrate */
