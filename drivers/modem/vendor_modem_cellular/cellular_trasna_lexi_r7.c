@@ -67,7 +67,6 @@ MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r7_shutdown_chat_script,
 static const struct modem_cellular_vendor_config_common trasna_lexi_r7_vendor = {
 	/* clang-format off */
 	.scripts = {
-		.set_baudrate = &trasna_lexi_r7_set_baudrate_chat_script,
 		.init = &trasna_lexi_r7_init_chat_script,
 		.dial = &trasna_lexi_r7_dial_chat_script,
 		.periodic = &trasna_lexi_r7_periodic_chat_script,
@@ -92,9 +91,16 @@ static const struct modem_cellular_vendor_config_common trasna_lexi_r7_vendor = 
 #define MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R7(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
+		vendor_config_inst, inst) = {                                                      \
+		.set_baudrate = &trasna_lexi_r7_set_baudrate_chat_script,                          \
+		.target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,                             \
+	};                                                                                         \
+                                                                                                   \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
 										  inst) = {        \
 		.common = &trasna_lexi_r7_vendor,                                                  \
+		.instance = &MODEM_CELLULAR_INST_NAME(vendor_config_inst, inst),                   \
 	};                                                                                         \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \

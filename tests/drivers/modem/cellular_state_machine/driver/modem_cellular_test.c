@@ -153,8 +153,6 @@ static const struct uart_emul_device_api test_emul_api;
 		vendor_common, inst) = {                                                           \
 		.scripts =                                                                         \
 			{                                                                          \
-				.set_baudrate = TEST_SCRIPT(inst, no_set_baudrate_script,          \
-							    set_baudrate_chat_script),             \
 				.init = INIT_SCRIPT(inst),                                         \
 				.network =                                                         \
 					TEST_SCRIPT(inst, no_network_script, network_chat_script), \
@@ -178,9 +176,18 @@ static const struct uart_emul_device_api test_emul_api;
 		.shutdown_time_ms = DT_INST_PROP(inst, shutdown_time_ms),                          \
 	};                                                                                         \
                                                                                                    \
+	IF_DISABLED(DT_INST_PROP(inst, no_set_baudrate_script),                                    \
+		    (static const struct modem_cellular_vendor_config_inst                         \
+			     MODEM_CELLULAR_INST_NAME(vendor_inst, inst) = {                       \
+				     .set_baudrate = &set_baudrate_chat_script,                    \
+				     .target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,        \
+			     };))                                                                  \
+                                                                                                   \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor,          \
 										  inst) = {        \
 		.common = &MODEM_CELLULAR_INST_NAME(vendor_common, inst),                          \
+		.instance = COND_CODE_1(DT_INST_PROP(inst, no_set_baudrate_script), (NULL),        \
+					(&MODEM_CELLULAR_INST_NAME(vendor_inst, inst))),           \
 	};
 
 #define MODEM_CELLULAR_DEVICE_TEST_DEFINE(inst)                                                    \
