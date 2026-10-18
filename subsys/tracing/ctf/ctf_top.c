@@ -48,7 +48,8 @@ void sys_trace_k_thread_switched_out(void)
 	thread = k_sched_current_thread_query();
 	_get_thread_name(thread, &name);
 
-	ctf_top_thread_switched_out((uint32_t)(uintptr_t)thread, name);
+	ctf_top_thread_switched_out((uint32_t)(uintptr_t)thread, name,
+				    thread->base.prio);
 }
 
 void sys_trace_k_thread_user_mode_enter(void)
@@ -77,7 +78,8 @@ void sys_trace_k_thread_switched_in(void)
 	thread = k_sched_current_thread_query();
 	_get_thread_name(thread, &name);
 
-	ctf_top_thread_switched_in((uint32_t)(uintptr_t)thread, name);
+	ctf_top_thread_switched_in((uint32_t)(uintptr_t)thread, name,
+				    thread->base.prio);
 }
 
 void sys_trace_k_thread_priority_set(struct k_thread *thread)

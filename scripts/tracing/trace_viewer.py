@@ -137,11 +137,27 @@ THREAD_NAME_SET = 0x1A
 THREAD_PRIO_SET = 0x12  # k_thread_priority_set bracket (carries prio)
 THREAD_SCHED_PRIO_SET = 0xE9  # scheduler priority change, incl. inheritance
 
+# Events whose prio field is the priority of the thread they name. A context
+# switch reports it too, which is the only source for a thread whose priority
+# was never changed during the trace.
+PRIO_EVENTS = (
+    THREAD_PRIO_SET,
+    THREAD_SCHED_PRIO_SET,
+    THREAD_SWITCHED_IN,
+    THREAD_SWITCHED_OUT,
+)
+
 # Minimal fallback layout for the scheduling events, used only when the TSDL
 # metadata file cannot be located. Each entry is (name, [(field, type), ...]).
 FALLBACK_EVENTS = {
-    0x10: ("thread_switched_out", [("thread_id", "uint32_t"), ("name", "str20")]),
-    0x11: ("thread_switched_in", [("thread_id", "uint32_t"), ("name", "str20")]),
+    0x10: (
+        "thread_switched_out",
+        [("thread_id", "uint32_t"), ("name", "str20"), ("prio", "int8_t")],
+    ),
+    0x11: (
+        "thread_switched_in",
+        [("thread_id", "uint32_t"), ("name", "str20"), ("prio", "int8_t")],
+    ),
     0x12: (
         "thread_priority_set",
         [("thread_id", "uint32_t"), ("name", "str20"), ("prio", "int8_t")],
@@ -500,7 +516,7 @@ class TraceReader:
             nm = fields.get("name")
             if nm:
                 t["name"] = nm
-            if eid in (THREAD_PRIO_SET, THREAD_SCHED_PRIO_SET) and "prio" in fields:
+            if eid in PRIO_EVENTS and "prio" in fields:
                 t["prio"] = fields["prio"]
             if eid == THREAD_INFO:
                 t["stack_base"] = fields.get("stack_base")

@@ -74,6 +74,7 @@ event {
 	fields := struct {
 		uint32_t thread_id;
 		ctf_bounded_string_t name[20];
+		int8_t prio;
 	};
 };
 
@@ -83,6 +84,7 @@ event {
 	fields := struct {
 		uint32_t thread_id;
 		ctf_bounded_string_t name[20];
+		int8_t prio;
 	};
 };
 
