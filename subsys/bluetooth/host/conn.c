@@ -1351,14 +1351,15 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		switch (old_state) {
 		case BT_CONN_DISCONNECT_COMPLETE:
-			/* Any previously scheduled deferred work now becomes invalid
-			 * so cancel it here, before we yield to tx thread.
-			 */
-			k_work_cancel_delayable(&conn->deferred_work);
-
 			bt_conn_tx_notify(conn, true);
 
 			bt_conn_reset_rx_state(conn);
+
+			/* deferred_work() is not cancelled first: cancelling it while it
+			 * runs, e.g. for a parameter update, makes the reschedule below
+			 * fail and the cleanup is lost. BT_CONN_CLEANUP marks it as due.
+			 */
+			atomic_set_bit(conn->flags, BT_CONN_CLEANUP);
 
 			LOG_DBG("trigger disconnect work");
 			bt_work_reschedule(&conn->deferred_work, K_NO_WAIT);
@@ -2368,6 +2369,14 @@ static void deferred_work(struct k_work *work)
 	LOG_DBG("conn %p", conn);
 
 	if (conn->state == BT_CONN_DISCONNECTED) {
+		/* This work also runs when one of its timeouts (e.g. the parameter
+		 * update after connecting) expires after the state became DISCONNECTED
+		 * but before bt_conn_set_state() set BT_CONN_CLEANUP: no cleanup yet.
+		 */
+		if (!atomic_test_bit(conn->flags, BT_CONN_CLEANUP)) {
+			return;
+		}
+
 #if defined(CONFIG_BT_ISO_UNICAST)
 		bool acl_coupled_with_cis;
 
@@ -2376,6 +2385,7 @@ static void deferred_work(struct k_work *work)
 			 * connection pointer, as it is conditional on whether
 			 * the connection is a central or peripheral.
 			 */
+			atomic_clear_bit(conn->flags, BT_CONN_CLEANUP);
 			bt_iso_disconnected(conn);
 			return;
 		}
@@ -2434,6 +2444,10 @@ static void deferred_work(struct k_work *work)
 			sco = conn_lookup_sco(conn);
 		}
 #endif /* CONFIG_BT_CLASSIC */
+		/* Cleared only here, so that the run that waits for a CIS above
+		 * leaves it set for the run that completes the cleanup.
+		 */
+		atomic_clear_bit(conn->flags, BT_CONN_CLEANUP);
 		bt_l2cap_disconnected(conn);
 		notify_disconnected(conn);
 
