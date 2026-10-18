@@ -1,0 +1,14 @@
+common:
+  tags:
+    - offloader
+  platform_allow:
+    - qemu_x86
+  integration_platforms:
+    - qemu_x86
+tests:
+  libraries.offloader.engine: {}
+  libraries.offloader.benchmark:
+    timeout: 60
+    tags:
+      - benchmark
+    extra_args: EXTRA_CONF_FILE="benchmark.conf"
