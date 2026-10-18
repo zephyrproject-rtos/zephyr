@@ -64,7 +64,7 @@ MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_shutdown_chat_script,
 			 trasna_lexi_r10_shutdown_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 40);
 
-static const struct modem_cellular_vendor_config trasna_lexi_r10_vendor = {
+static const struct modem_cellular_vendor_config_common trasna_lexi_r10_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &trasna_lexi_r10_init_chat_script,
@@ -89,10 +89,15 @@ static const struct modem_cellular_vendor_config trasna_lexi_r10_vendor = {
 #define MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R10(inst)                                                \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &trasna_lexi_r10_vendor,                                                 \
+	};                                                                                         \
+                                                                                                   \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &trasna_lexi_r10_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R10)

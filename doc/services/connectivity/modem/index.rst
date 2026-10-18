@@ -322,7 +322,7 @@ binding, then write a driver source file using the macros from
    MODEM_CHAT_SCRIPT_DEFINE(dial_chat_script, dial_chat_script_cmds,
        dial_abort_matches, modem_cellular_chat_callback_handler, 60);
 
-   static const struct modem_cellular_vendor_config my_modem_vendor = {
+   static const struct modem_cellular_vendor_config_common my_modem_vendor = {
        .scripts = {
            .init = &init_chat_script,
            .dial = &dial_chat_script,
@@ -344,13 +344,19 @@ binding, then write a driver source file using the macros from
        MODEM_DT_INST_PPP_DEFINE(inst,                                              \
            MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);                   \
                                                                                    \
+       static const struct modem_cellular_vendor_config                            \
+           MODEM_CELLULAR_INST_NAME(vendor_config, inst) = {                       \
+               .common = &my_modem_vendor,                                         \
+       };                                                                          \
+                                                                                   \
        static struct modem_cellular_data                                           \
            MODEM_CELLULAR_INST_NAME(data, inst);                                   \
                                                                                    \
        MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                             \
            (user_pipe_0, 3), (user_pipe_1, 4))                                     \
                                                                                    \
-       MODEM_CELLULAR_DEFINE_INSTANCE(inst, &my_modem_vendor, NULL)
+       MODEM_CELLULAR_DEFINE_INSTANCE(                                             \
+           inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
    #define DT_DRV_COMPAT my_modem
    DT_INST_FOREACH_STATUS_OKAY(MY_MODEM_DEVICE)
