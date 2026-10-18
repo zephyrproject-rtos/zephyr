@@ -19,3 +19,15 @@ config OPTEE_MAX_NOTIF
 	help
 	 Sets the maximum notifications from OP-TEE to the Normal World. OP-TEE using
 	 this mechanism for the synchronization.
+
+config OPTEE_SUPPLICANT
+	bool "OP-TEE supplicant support"
+	depends on OPTEE
+	default y
+	help
+	  Pass requests that OP-TEE makes of the normal world's supplicant, such
+	  as loading a TA or accessing the REE file system, to a thread that serves
+	  them with tee_suppl_recv() and tee_suppl_send(). A request waits until
+	  that thread answers it, so disable this option when no thread does.
+	  Without it, such requests fail at once instead of waiting, and
+	  tee_suppl_recv() and tee_suppl_send() return -ENOSYS.

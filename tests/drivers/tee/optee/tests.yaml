@@ -1,14 +1,18 @@
 # Copyright 2023 EPAM Systems
 # SPDX-License-Identifier: Apache-2.0
 
+common:
+  tags:
+    - drivers
+    - tee
+    - optee
+  timeout: 500
+  integration_platforms:
+    - native_sim/native/64
+  platform_allow:
+    - native_sim/native/64
 tests:
-  drivers.tee.optee:
-    tags:
-      - drivers
-      - tee
-      - optee
-    timeout: 500
-    integration_platforms:
-      - native_sim/native/64
-    platform_allow:
-      - native_sim/native/64
+  drivers.tee.optee: {}
+  drivers.tee.optee.no_supplicant:
+    extra_configs:
+      - CONFIG_OPTEE_SUPPLICANT=n

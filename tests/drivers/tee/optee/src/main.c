@@ -561,6 +561,88 @@ void cmd_rpc_call(unsigned long a0, unsigned long a1, unsigned long a2, unsigned
 	t_call.num++;
 }
 
+static uint32_t no_supp_cmd;
+
+void cmd_rpc_no_supp_call(unsigned long a0, unsigned long a1, unsigned long a2, unsigned long a3,
+			  unsigned long a4, unsigned long a5, unsigned long a6, unsigned long a7,
+			  struct arm_smccc_res *res)
+{
+	struct optee_msg_arg *arg;
+	struct tee_shm *shm;
+
+	res->a1 = a1;
+	res->a2 = a2;
+	res->a3 = a3;
+	res->a4 = a4;
+	res->a5 = a5;
+
+	switch (t_call.num) {
+	case 0:
+		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1); /* size */
+		break;
+	case 1:
+		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
+		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_CMD;
+		arg = (struct optee_msg_arg *)regs_to_u64(a1, a2);
+		arg->cmd = no_supp_cmd;
+		arg->num_params = 1;
+		arg->params[0].attr = OPTEE_MSG_ATTR_TYPE_VALUE_INPUT;
+		arg->params[0].u.value.a = OPTEE_RPC_SHM_TYPE_APPL;
+		arg->params[0].u.value.b = 4096;
+		res->a1 = a4;
+		res->a2 = a5;
+		break;
+	case 2:
+		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
+		shm = (struct tee_shm *)regs_to_u64(a1, a2);
+		arg = (struct optee_msg_arg *)shm->addr;
+		zassert_equal(arg->ret, TEEC_ERROR_COMMUNICATION,
+			      "RPC %u with no supplicant returned %x", no_supp_cmd, arg->ret);
+		res->a0 = OPTEE_SMC_RETURN_OK;
+		break;
+	default:
+		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
+		res->a0 = OPTEE_SMC_RETURN_OK;
+	}
+
+	t_call.num++;
+}
+
+ZTEST(optee_test_suite, test_func_rpc_no_supp_returns_comm_error)
+{
+	int ret;
+	struct tee_invoke_func_arg invoke_arg = {};
+	struct tee_param param = {};
+	unsigned int num_params = 1;
+	uint32_t func;
+	const struct device *const dev = DEVICE_DT_GET_ONE(linaro_optee_tz);
+	const uint32_t cmds[] = { 555, OPTEE_RPC_CMD_SHM_ALLOC };
+
+	Z_TEST_SKIP_IFDEF(CONFIG_OPTEE_SUPPLICANT);
+	zassert_not_null(dev, "Unable to get dev");
+
+	t_call.pending = 1;
+	t_call.smc_cb = cmd_rpc_no_supp_call;
+	invoke_arg.func = 12;
+	invoke_arg.session = 1;
+
+	ARRAY_FOR_EACH(cmds, i) {
+		no_supp_cmd = cmds[i];
+		t_call.num = 0;
+		ret = tee_invoke_func(dev, &invoke_arg, 1, &param);
+		zassert_ok(ret, "tee_invoke_fn failed with code %d", ret);
+		zassert_equal(t_call.num, 3, "RPC %u did not complete", no_supp_cmd);
+	}
+
+	ret = tee_suppl_recv(dev, &func, &num_params, &param);
+	zassert_equal(ret, -ENOSYS, "tee_suppl_recv returned %d", ret);
+	ret = tee_suppl_send(dev, 0, num_params, &param);
+	zassert_equal(ret, -ENOSYS, "tee_suppl_send returned %d", ret);
+
+	t_call.pending = 0;
+}
+
 static void supp_thread_comm(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(linaro_optee_tz);
@@ -606,6 +688,8 @@ ZTEST(optee_test_suite, test_func_rpc_supp_cmd)
 	struct tee_param param = {};
 	const struct device *const dev = DEVICE_DT_GET_ONE(linaro_optee_tz);
 	k_tid_t tid;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_OPTEE_SUPPLICANT);
 
 	tid = k_thread_create(&supp_thread_data, supp_stack,
 			      K_KERNEL_STACK_SIZEOF(supp_stack),
@@ -785,6 +869,8 @@ ZTEST(optee_test_suite, test_func_rpc_shm_alloc_appl)
 	struct tee_param param = {};
 	const struct device *const dev = DEVICE_DT_GET_ONE(linaro_optee_tz);
 	k_tid_t tid;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_OPTEE_SUPPLICANT);
 
 	tid = k_thread_create(&supp_thread_data, supp_stack,
 			      K_KERNEL_STACK_SIZEOF(supp_stack),

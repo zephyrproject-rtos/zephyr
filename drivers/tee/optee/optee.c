@@ -259,6 +259,11 @@ static uint32_t optee_call_supp(const struct device *dev, uint32_t func, size_t 
 	struct optee_supp_req *req;
 	uint32_t ret;
 
+	if (!IS_ENABLED(CONFIG_OPTEE_SUPPLICANT)) {
+		LOG_DBG("Supplicant request %u failed: CONFIG_OPTEE_SUPPLICANT is disabled", func);
+		return TEEC_ERROR_COMMUNICATION;
+	}
+
 	req = k_malloc(sizeof(*req));
 	if (!req) {
 		return TEEC_ERROR_OUT_OF_MEMORY;
@@ -346,6 +351,10 @@ static void handle_cmd_alloc(const struct device *dev, struct optee_msg_arg *arg
 		rc = tee_add_shm(dev, NULL, 0, arg->params[0].u.value.b, TEE_SHM_ALLOC, &shm);
 		break;
 	case OPTEE_RPC_SHM_TYPE_APPL:
+		if (!IS_ENABLED(CONFIG_OPTEE_SUPPLICANT)) {
+			arg->ret = TEEC_ERROR_COMMUNICATION;
+			return;
+		}
 		rc = cmd_alloc_suppl(dev, arg->params[0].u.value.b, &shm);
 		break;
 	default:
@@ -1271,8 +1280,8 @@ static DEVICE_API(tee, optee_driver_api) = {
 	.invoke_func = optee_invoke_func,
 	.shm_register = optee_shm_register,
 	.shm_unregister = optee_shm_unregister,
-	.suppl_recv = optee_suppl_recv,
-	.suppl_send = optee_suppl_send,
+	.suppl_recv = IS_ENABLED(CONFIG_OPTEE_SUPPLICANT) ? optee_suppl_recv : NULL,
+	.suppl_send = IS_ENABLED(CONFIG_OPTEE_SUPPLICANT) ? optee_suppl_send : NULL,
 };
 
 /*
