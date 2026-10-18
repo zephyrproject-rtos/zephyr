@@ -109,8 +109,12 @@ unsigned int arch_irq_get_active(void)
 	/*
 	 * The ISR wrapper stores the INTID biased by one so that the
 	 * zero-initialized boot state reads as "none" on every CPU.
+	 * Lock interrupts so a thread cannot migrate during the read.
 	 */
+	unsigned int key = arch_irq_lock();
 	uint32_t biased = _current_cpu->arch.active_irq;
+
+	arch_irq_unlock(key);
 
 	return (biased == 0U) ? K_IRQ_ACTIVE_NONE : (biased - 1U);
 }
