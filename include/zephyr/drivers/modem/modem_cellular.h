@@ -254,8 +254,6 @@ struct modem_cellular_user_pipe {
  *
  */
 struct modem_cellular_config_scripts {
-	/** Optional script that configures the modem's UART baud rate. */
-	const struct modem_chat_script *set_baudrate;
 	/** Script that initializes the modem and enables CMUX. Must not be NULL. */
 	const struct modem_chat_script *init;
 	/** Optional script that waits for network registration before dialing. */
@@ -323,11 +321,26 @@ struct modem_cellular_vendor_config_common {
 };
 
 /**
+ * @brief Vendor-inst-specific cellular modem configuration.
+ *
+ * Define one constant object for each modem instance. The referenced scripts must remain valid for
+ * the lifetime of every device instance that uses this configuration.
+ */
+struct modem_cellular_vendor_config_inst {
+	/** Optional script that configures the modem's UART baud rate. */
+	const struct modem_chat_script *set_baudrate;
+	/** Integer baudrate associated with @a set_baudrate */
+	uint32_t target_baudrate;
+};
+
+/**
  * @brief Modem configuration that varies per vendor and instance
  */
 struct modem_cellular_vendor_config {
 	/** Common configuration shared between all vendor instances */
 	const struct modem_cellular_vendor_config_common *common;
+	/** Optional configuration that varies per instance */
+	const struct modem_cellular_vendor_config_inst *instance;
 	/** Vendor specific instance configuration */
 	const void *vendor_inst;
 };
