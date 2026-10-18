@@ -376,7 +376,6 @@ tests:
       - kit_pse84_ai/pse846gps2dbzc4a/m55
     extra_configs:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
-      - CONFIG_TEST_DRIVER_FLASH_SIZE=-1
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
   drivers.flash.common.stm32.xspi_driver_relocation:
