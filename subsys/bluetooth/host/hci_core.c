@@ -45,7 +45,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
-#include <soc.h>
 
 #include "addr_internal.h"
 #include "adv.h"
