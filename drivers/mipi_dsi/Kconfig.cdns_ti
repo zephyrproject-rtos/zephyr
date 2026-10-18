@@ -1,0 +1,13 @@
+# TI / Cadence DSI TX driver
+#
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DSI_CDNS_TI
+	bool "TI / Cadence DSI host controller (AM62L, AM62P)"
+	default y
+	depends on DT_HAS_TI_J721E_DSI_ENABLED
+	help
+	  MIPI DSI host driver for TI K3 SoCs using the Cadence DSI TX controller.
+	  The Cadence DPHY TX is initialised inline (no separate PHY driver).
+	  Supports video mode output and LP-mode DCS command transfers.

@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI / Cadence MIPI DSI host controller (ti,j721e-dsi).
+
+  The registers and clocks of DPHY are embedded inside this node.
+
+compatible: "ti,j721e-dsi"
+
+include: mipi-dsi-host.yaml
+
+properties:
+
+  reg:
+    required: true
+    description: |
+      Three MMIO regions, always in this order:
+        [0] dsi  — Cadence DSI TX core base address
+        [1] wrap — TI DSI wrapper base address
+        [2] dphy — Cadence DPHY TX base address
+
+  reg-names:
+    required: true
+    type: string-array
+    description: |
+      Names for each reg entry.  Must be exactly:
+        "dsi", "wrap", "dphy"
+
+  clocks:
+    required: true
+    description: |
+      Four clock phandles named by clock-names (in any order):
+        "dsi_p_clk"   — Cadence DSI TX peripheral clock
+        "dsi_sys_clk" — DSI system / functional clock
+        "psm_clk"     — DPHY PSM state-machine clock
+        "pll_ref_clk" — DPHY PLL reference clock
+
+  clock-names:
+    required: true
+    type: string-array
+    description: |
+      Clock names.  Must include all of:
+        "dsi_p_clk", "dsi_sys_clk", "psm_clk", "pll_ref_clk"
+
+  interrupts:
+    required: true
+    description: DSI TX interrupt line.
+
+  data-lanes:
+    type: int
+    required: true
+    description: |
+      Number of active MIPI DSI data lanes (1 to 4).
+
+  ti,pll-ref-clk-rate-hz:
+    type: int
+    required: true
+    description: |
+      DPHY PLL reference clock frequency in Hz.
+      Must match the rate configured on the "pll_ref_clk" clock
+      entry (via assigned-clock-rates or firmware pre-configuration).
+      Typically 25000000 (25 MHz) on AM62L and AM62P.
