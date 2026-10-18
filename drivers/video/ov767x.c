@@ -811,13 +811,15 @@ static DEVICE_API(video, ov767x_api) = {
 	.set_ctrl = ov767x_set_ctrl,
 };
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, reset_gpios) ||                                \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7675, reset_gpios)
 #define OV767X_RESET_GPIO(inst) .reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),
 #else
 #define OV767X_RESET_GPIO(inst)
 #endif
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, pwdn_gpios) ||                                 \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7675, pwdn_gpios)
 #define OV767X_PWDN_GPIO(inst) .pwdn = GPIO_DT_SPEC_INST_GET_OR(inst, pwdn_gpios, {}),
 #else
 #define OV767X_PWDN_GPIO(inst)
