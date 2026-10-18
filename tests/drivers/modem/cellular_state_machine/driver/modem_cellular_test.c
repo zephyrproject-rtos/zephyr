@@ -169,6 +169,8 @@ static const struct uart_emul_device_api test_emul_api;
 		.unsol_matches = {.matches = test_unsol, .size = ARRAY_SIZE(test_unsol)},          \
 		.chat_delimiter = "\r",                                                            \
 		.chat_filter = "\n",                                                               \
+		.baudrate_update_delay_ms = DT_INST_PROP(inst, baudrate_update_delay_ms),          \
+		.reset_power_on_delay_ms = DT_INST_PROP(inst, reset_power_on_delay_ms),            \
 		.power_pulse_duration_ms = DT_INST_PROP(inst, power_pulse_duration_ms),            \
 		.reset_pulse_duration_ms = DT_INST_PROP(inst, reset_pulse_duration_ms),            \
 		.cmux_disconnect_timeout_ms = DT_INST_PROP(inst, cmux_disconnect_timeout_ms),      \

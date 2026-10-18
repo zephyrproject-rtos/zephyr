@@ -81,6 +81,8 @@ static const struct modem_cellular_vendor_config_common fibocom_le250_vendor = {
 	/* clang-format on */
 	.chat_delimiter = "\r",
 	.chat_filter = "\n",
+	.baudrate_update_delay_ms = 300,
+	.reset_power_on_delay_ms = 500,
 	/*
 	 * PWRKEY must be asserted for more than 650 ms to power on and more
 	 * than 3100 ms for hardware power-off. Normal shutdown uses the

@@ -47,6 +47,16 @@ properties:
     default: 1
     description: Duration of the reset pulse
 
+  reset-power-on-delay-ms:
+    type: int
+    default: 100
+    description: Delay between releasing the reset line and pressing the power key
+
+  baudrate-update-delay-ms:
+    type: int
+    default: 1
+    description: Time the modem takes to switch to the new baudrate
+
   cmux-disconnect-timeout-ms:
     type: int
     default: 1

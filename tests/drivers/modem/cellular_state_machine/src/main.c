@@ -21,12 +21,15 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_MODEM_CMUX));
 BUILD_ASSERT(!IS_ENABLED(CONFIG_MODEM_PPP));
 BUILD_ASSERT(!IS_ENABLED(CONFIG_MODEM_BACKEND_UART));
 
+#define SLOW_BAUDRATE_UPDATE_DELAY_MS DT_PROP(DT_NODELABEL(modem_slow), baudrate_update_delay_ms)
+
 static const struct device *const modem = DEVICE_DT_GET(DT_ALIAS(modem));
 static const struct device *const modem_no_network = DEVICE_DT_GET(DT_NODELABEL(modem_no_network));
 static const struct device *const modem_no_baudrate =
 	DEVICE_DT_GET(DT_NODELABEL(modem_no_baudrate));
 static const struct device *const modem_no_dlci_setup =
 	DEVICE_DT_GET(DT_NODELABEL(modem_no_dlci_setup));
+static const struct device *const modem_slow = DEVICE_DT_GET(DT_NODELABEL(modem_slow));
 
 MODEM_PIPELINK_DT_DECLARE(DT_ALIAS(modem), user_pipe_0);
 MODEM_PIPELINK_DT_DECLARE(DT_ALIAS(modem), user_pipe_1);
@@ -58,6 +61,26 @@ ZTEST(modem_cellular_state_machine, test_boot_with_network_script)
 
 	expect_line(TEST_BACKEND_PIPE_UART, MODEM_CELLULAR_TEST_INIT_CMD);
 	zassert_equal(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE, uart_baudrate(modem),
+		      "UART baudrate was not switched");
+}
+
+/* The init script waits for the modem to switch to the new baudrate */
+ZTEST(modem_cellular_state_machine, test_baudrate_update_delay)
+{
+	int64_t start;
+	int64_t elapsed;
+
+	modem_restart(modem_slow);
+	advance_to(modem_slow, BOOT_SET_BAUDRATE);
+
+	start = k_uptime_get();
+	ok(TEST_BACKEND_PIPE_UART);
+	expect_line(TEST_BACKEND_PIPE_UART, MODEM_CELLULAR_TEST_INIT_CMD);
+	elapsed = k_uptime_delta(&start);
+	zassert_true(elapsed >= SLOW_BAUDRATE_UPDATE_DELAY_MS,
+		     "init script sent %lld ms after the baudrate change",
+		     (long long)elapsed);
+	zassert_equal(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE, uart_baudrate(modem_slow),
 		      "UART baudrate was not switched");
 }
 

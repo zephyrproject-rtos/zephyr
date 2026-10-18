@@ -179,6 +179,8 @@ static const struct modem_cellular_vendor_config_common nrf93m1_vendor = {
 	},
 	/* clang-format on */
 	.chat_delimiter = "\r\n",
+	.baudrate_update_delay_ms = 300,
+	.reset_power_on_delay_ms = 500,
 	.power_pulse_duration_ms = 100,
 	.reset_pulse_duration_ms = 500,
 	/* In practice RDY event short circuits this timeout */
