@@ -194,9 +194,48 @@ struct virtq {
 	uint16_t free_desc_n;
 
 	/**
+	 * Use only free_desc_n to allocate descriptor zero without scheduler calls.
+	 * Set before enabling a size-one queue; allocation must use K_NO_WAIT.
+	 */
+	bool single_desc_polling;
+
+	/**
 	 * array with callbacks invoked after receiving buffers back from the device
 	 */
 	struct virtq_receive_callback_entry *recv_cbs;
+
+	/**
+	 * Optional completion notification, invoked only in ISR context. Set this
+	 * before enabling the queue. Completions reclaimed by a thread are
+	 * coalesced until virtq_process_used() next runs in an ISR.
+	 */
+	void (*irq_cb)(void *opaque);
+
+	/** Argument passed to irq_cb. */
+	void *irq_cb_data;
+
+	/** Completion notification pending, protected by lock. */
+	bool irq_pending;
+
+	/**
+	 * Optional fault notification, invoked once when the queue faults,
+	 * outside lock in the caller's context. Set before enabling the queue.
+	 * In-flight descriptors remain owned by the device; their completion
+	 * callbacks are not invoked.
+	 */
+	void (*fault_cb)(void *opaque);
+
+	/** Argument passed to fault_cb. */
+	void *fault_cb_data;
+
+	/** Number of detected used-ring protocol errors, protected by lock. */
+	uint32_t invalid_used_count;
+
+	/**
+	 * Unrecoverable used-ring protocol error, protected by lock. Set when the
+	 * device reports an impossible number of completions; processing stops.
+	 */
+	bool faulted;
 };
 
 
@@ -235,7 +274,10 @@ struct virtq_buf {
  *
  * Note that according to spec 2.7.13.3 the device may access the buffers as soon
  * as the avail->idx is increased, which is done at the end of this function, so
- * the device may access the buffers without notifying it with virtio_notify_virtqueue
+ * the device may access the buffers without notifying it with virtio_notify_virtqueue().
+ *
+ * If the queue is faulted at publication, return the allocated descriptors
+ * and fail with -EIO without making the chain available to the device.
  *
  * @param v virtqueue it operates on
  * @param bufs array of buffers to be added to the virtqueue
@@ -265,13 +307,46 @@ void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx);
 /**
  * @brief gets next free descriptor
  *
+ * Blocking allocations periodically recheck queue faults without returning
+ * descriptors still owned by the device.
+ *
  * @param v virtqueue it operates on
  * @param desc_idx address where index of descriptor will be stored
  * @param timeout amount of time it will wait for free descriptor, with K_NO_WAIT it
  * can be called from isr
- * @return 0 or error code on failure
+ * @retval 0 Descriptor allocated.
+ * @retval -EIO Queue faulted.
+ * @retval -EBUSY No descriptor available with K_NO_WAIT.
+ * @retval -EAGAIN Timeout expired.
+ * @retval -EINVAL Invalid size or timeout for a single-descriptor polling queue.
  */
 int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout);
+
+/**
+ * @brief Get the number of free descriptors in the virtqueue
+ *
+ * The count is read under the virtqueue lock. A concurrent allocation removes
+ * its descriptor from the stack before decrementing the count, so this snapshot
+ * may temporarily overestimate availability. It does not reserve descriptors.
+ *
+ * @param v virtqueue to query, must not be NULL
+ * @return snapshot of the free descriptor count
+ */
+uint16_t virtq_get_free_desc_count(struct virtq *v);
+
+/**
+ * @brief Process completed buffers from a virtqueue.
+ *
+ * Reclaim completed descriptors and invoke their callbacks in the caller's
+ * context. This can be called from a thread or an ISR. The optional queue
+ * irq_cb notification is delivered only in ISR context, including for
+ * completions previously reclaimed by a thread.
+ * An impossible used index faults the queue and invokes fault_cb once in
+ * the caller's context without reclaiming descriptors from that batch.
+ *
+ * @param v virtqueue to process, must not be NULL
+ */
+void virtq_process_used(struct virtq *v);
 
 /**
  * @}
