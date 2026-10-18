@@ -17,5 +17,8 @@ properties:
   mdm-wdisable-gpios:
     type: phandle-array
 
+  target-baudrate:
+    enum: [9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600]
+
   zephyr,mdm-reset-behavior:
     default: ["toggle_on_recovery"]
