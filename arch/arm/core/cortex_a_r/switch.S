@@ -157,6 +157,7 @@ _oops:
     mov r1, #0
     mov r2, #0
     bl z_do_kernel_oops
+    b z_arm_cortex_ar_exit_exc
 
 inv:
     mov r0, #0 /* K_ERR_CPU_EXCEPTION */
