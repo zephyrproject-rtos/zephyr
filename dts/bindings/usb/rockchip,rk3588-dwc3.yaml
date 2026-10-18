@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Rockchip RK3588 DWC3 USB controller
+
+description: |
+  USB 3.0 OTG controller of the RK3588, a DWC_usb3 with the properties of
+  snps,dwc3. Its USB 2.0 PHY is the port of a rockchip,rk3588-usb2phy node
+  given in phys, as "usb2-phy" when phy-names is present.
+
+compatible: "rockchip,rk3588-dwc3"
+
+include: snps,dwc3.yaml
