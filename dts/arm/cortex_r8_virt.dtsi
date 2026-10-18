@@ -21,6 +21,12 @@
 			compatible = "arm,cortex-r8f";
 			reg = <0>;
 		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r8f";
+			reg = <1>;
+		};
 	};
 
 	soc {
