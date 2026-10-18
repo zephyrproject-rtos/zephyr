@@ -76,6 +76,8 @@ static const struct modem_cellular_vendor_config_common telit_lex10q1_vendor = {
 	/* clang-format on */
 	.chat_delimiter = "\r",
 	.chat_filter = "\n",
+	.baudrate_update_delay_ms = 300,
+	.reset_power_on_delay_ms = 500,
 	.power_pulse_duration_ms = 5050,
 	.reset_pulse_duration_ms = 250,
 	.startup_time_ms = 20000,

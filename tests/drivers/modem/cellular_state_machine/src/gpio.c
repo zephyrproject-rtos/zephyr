@@ -13,6 +13,7 @@
 #include <zephyr/ztest.h>
 
 #define AUTOSTART_STARTUP_TIME_MS DT_PROP(DT_NODELABEL(modem_autostart), startup_time_ms)
+#define SLOW_RESET_POWER_ON_DELAY_MS DT_PROP(DT_NODELABEL(modem_slow), reset_power_on_delay_ms)
 
 static const struct device *const modem = DEVICE_DT_GET(DT_ALIAS(modem));
 static const struct device *const modem_hold = DEVICE_DT_GET(DT_NODELABEL(modem_hold));
@@ -23,6 +24,7 @@ static const struct device *const modem_autostart =
 static const struct device *const modem_status = DEVICE_DT_GET(DT_NODELABEL(modem_status));
 static const struct device *const modem_no_shutdown =
 	DEVICE_DT_GET(DT_NODELABEL(modem_no_shutdown));
+static const struct device *const modem_slow = DEVICE_DT_GET(DT_NODELABEL(modem_slow));
 
 static const struct gpio_dt_spec status_gpio =
 	GPIO_DT_SPEC_GET(DT_NODELABEL(modem_status), mdm_status_gpios);
@@ -37,6 +39,7 @@ struct gpio_edge {
 	enum gpio_role role;
 	int value;
 	enum test_backend_state state;
+	int64_t uptime;
 };
 
 K_MSGQ_DEFINE(gpio_edges, sizeof(struct gpio_edge), 16, 4);
@@ -59,6 +62,7 @@ static void gpio_monitor_record(enum gpio_role role, const struct gpio_dt_spec *
 		.role = role,
 		.value = gpio_emul_output_get_dt(spec),
 		.state = test_backend_state(monitor.dev),
+		.uptime = k_uptime_get(),
 	};
 
 	if (edge.value == monitor.last[role]) {
@@ -115,8 +119,10 @@ static void gpio_monitor_stop(void)
 	monitor.dev = NULL;
 }
 
-/* Wait for the next edge, which must be @p role going to @p value in @p state */
-static void expect_edge(enum gpio_role role, int value, enum test_backend_state state)
+/* Wait for the next edge, which must be @p role going to @p value in @p state, and return
+ * the uptime it happened at
+ */
+static int64_t expect_edge(enum gpio_role role, int value, enum test_backend_state state)
 {
 	struct gpio_edge edge;
 
@@ -129,6 +135,7 @@ static void expect_edge(enum gpio_role role, int value, enum test_backend_state 
 		      edge.value, value);
 	zassert_equal(state, edge.state, "%s went to %d in state %d, expected state %d",
 		      gpio_role_names[role], value, edge.state, state);
+	return edge.uptime;
 }
 
 /* Expect @p role to be asserted and released again, both in @p state */
@@ -206,6 +213,25 @@ ZTEST(modem_cellular_gpio, test_toggle_on_resume)
 		   "resume failed");
 	expect_pulse(GPIO_ROLE_RESET, TEST_BACKEND_STATE_OFF);
 	expect_pulse(GPIO_ROLE_POWER, TEST_BACKEND_STATE_OFF);
+	expect_line(TEST_BACKEND_PIPE_UART, MODEM_CELLULAR_TEST_SET_BAUDRATE_CMD);
+	expect_no_edge();
+}
+
+/* The power key is only pressed once the vendor's reset to power on delay has elapsed */
+ZTEST(modem_cellular_gpio, test_reset_power_on_delay)
+{
+	int64_t released;
+	int64_t pressed;
+
+	boot_modem(modem_slow);
+
+	expect_edge(GPIO_ROLE_RESET, 1, TEST_BACKEND_STATE_OFF);
+	released = expect_edge(GPIO_ROLE_RESET, 0, TEST_BACKEND_STATE_OFF);
+	pressed = expect_edge(GPIO_ROLE_POWER, 1, TEST_BACKEND_STATE_OFF);
+	zassert_true(pressed - released >= SLOW_RESET_POWER_ON_DELAY_MS,
+		     "power key pressed %lld ms after reset released",
+		     (long long)(pressed - released));
+	expect_edge(GPIO_ROLE_POWER, 0, TEST_BACKEND_STATE_OFF);
 	expect_line(TEST_BACKEND_PIPE_UART, MODEM_CELLULAR_TEST_SET_BAUDRATE_CMD);
 	expect_no_edge();
 }

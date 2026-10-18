@@ -74,6 +74,8 @@ static const struct modem_cellular_vendor_config_common quectel_bg9x_vendor = {
 	/* clang-format on */
 	.chat_delimiter = "\r",
 	.chat_filter = "\n",
+	.baudrate_update_delay_ms = 300,
+	.reset_power_on_delay_ms = 500,
 	.power_pulse_duration_ms = 500,
 	.reset_pulse_duration_ms = 1000,
 	.startup_time_ms = 5000,
