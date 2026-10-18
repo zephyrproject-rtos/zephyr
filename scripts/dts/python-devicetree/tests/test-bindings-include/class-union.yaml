@@ -1,4 +1,4 @@
-# Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
 description: Class union test including two class base bindings
