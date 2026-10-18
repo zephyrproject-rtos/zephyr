@@ -976,7 +976,8 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 			data->power_on_skipped = true;
 		}
 
-		if (config->vendor->common->scripts.set_baudrate != NULL) {
+		if ((config->vendor->instance != NULL) &&
+		    (config->vendor->instance->set_baudrate != NULL)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_SET_BAUDRATE);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT);
@@ -1091,7 +1092,7 @@ static int modem_cellular_on_await_reset_state_enter(struct modem_cellular_data 
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
-	modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_power_on_delay_ms));
+	modem_cellular_start_timer(data, K_MSEC(config->vendor->common->reset_power_on_delay_ms));
 	return 0;
 }
 
@@ -1186,7 +1187,8 @@ static void modem_cellular_await_power_on_event_handler(struct modem_cellular_da
 		modem_cellular_stop_timer(data);
 		__fallthrough;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		if (config->vendor->common->scripts.set_baudrate != NULL) {
+		if ((config->vendor->instance != NULL) &&
+		    (config->vendor->instance->set_baudrate != NULL)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_SET_BAUDRATE);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT);
@@ -1216,7 +1218,7 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
-		modem_chat_run_script_async(&data->chat, config->vendor->inst->set_baudrate);
+		modem_chat_run_script_async(&data->chat, config->vendor->instance->set_baudrate);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -1237,8 +1239,8 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 
 	case MODEM_CELLULAR_EVENT_BUS_CLOSED:
 		/* Update UART port baudrate and preserve the original value */
-		data->original_baudrate = modem_cellular_baudrate_update(
-			data, CONFIG_MODEM_CELLULAR_NEW_BAUDRATE);
+		data->original_baudrate =
+			modem_cellular_baudrate_update(data, config->vendor->instance->target_baudrate);
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:

@@ -165,9 +165,6 @@ static void quectel_eg2x_g_on_qeng(struct modem_chat *chat, char **argv, uint16_
 static const struct modem_cellular_vendor_config_common quectel_eg2x_g_vendor = {
 	/* clang-format off */
 	.scripts = {
-#if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
-		.set_baudrate = &quectel_eg2x_g_set_baudrate_chat_script,
-#endif
 		.init = &quectel_eg2x_g_init_chat_script,
 		.dial = &quectel_eg2x_g_dial_chat_script,
 		.periodic = &quectel_eg2x_g_periodic_chat_script,
@@ -187,12 +184,25 @@ static const struct modem_cellular_vendor_config_common quectel_eg2x_g_vendor = 
 	.shutdown_time_ms = 5000,
 };
 
+#if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
+#define QUECTEL_EG2X_G_SET_BAUDRATE &quectel_eg2x_g_set_baudrate_chat_script
+#else
+#define QUECTEL_EG2X_G_SET_BAUDRATE NULL
+#endif
+
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG2X_G(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
+                                                                                                   \
+	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
+		vendor_config_inst, inst) = {                                                      \
+		.set_baudrate = QUECTEL_EG2X_G_SET_BAUDRATE,                                       \
+		.target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,                             \
+	};                                                                                         \
                                                                                                    \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
 										  inst) = {        \
 		.common = &quectel_eg2x_g_vendor,                                                  \
+		.instance = &MODEM_CELLULAR_INST_NAME(vendor_config_inst, inst),                   \
 	};                                                                                         \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \

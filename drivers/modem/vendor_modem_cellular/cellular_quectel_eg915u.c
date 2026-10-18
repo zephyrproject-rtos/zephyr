@@ -66,7 +66,6 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_periodic_chat_script,
 static const struct modem_cellular_vendor_config_common quectel_eg915u_vendor = {
 	/* clang-format off */
 	.scripts = {
-		.set_baudrate = &quectel_eg915u_set_baudrate_chat_script,
 		.init = &quectel_eg915u_init_chat_script,
 		.dial = &quectel_eg915u_dial_chat_script,
 		.periodic = &quectel_eg915u_periodic_chat_script,
@@ -89,9 +88,16 @@ static const struct modem_cellular_vendor_config_common quectel_eg915u_vendor = 
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG915U(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
+		vendor_config_inst, inst) = {                                                      \
+		.set_baudrate = &quectel_eg915u_set_baudrate_chat_script,                          \
+		.target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,                             \
+	};                                                                                         \
+                                                                                                   \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
 										  inst) = {        \
 		.common = &quectel_eg915u_vendor,                                                  \
+		.instance = &MODEM_CELLULAR_INST_NAME(vendor_config_inst, inst),                   \
 	};                                                                                         \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \

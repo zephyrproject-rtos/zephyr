@@ -92,7 +92,6 @@ static const struct modem_cellular_vendor_config_common u_blox_lara_r6_vendor = 
 		.init = &u_blox_lara_r6_init_chat_script,
 		.dial = &u_blox_lara_r6_dial_chat_script,
 		.periodic = &u_blox_lara_r6_periodic_chat_script,
-		.set_baudrate = &u_blox_lara_r6_set_baudrate_chat_script,
 	},
 	.unsol_matches = {
 		.matches = u_blox_lara_r6_unsol,
@@ -112,9 +111,16 @@ static const struct modem_cellular_vendor_config_common u_blox_lara_r6_vendor = 
 #define MODEM_CELLULAR_DEVICE_U_BLOX_LARA_R6(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
+		vendor_config_inst, inst) = {                                                      \
+		.set_baudrate = &u_blox_lara_r6_set_baudrate_chat_script,                          \
+		.target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,                             \
+	};                                                                                         \
+                                                                                                   \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
 										  inst) = {        \
 		.common = &u_blox_lara_r6_vendor,                                                  \
+		.instance = &MODEM_CELLULAR_INST_NAME(vendor_config_inst, inst),                   \
 	};                                                                                         \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
