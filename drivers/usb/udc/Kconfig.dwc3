@@ -11,6 +11,8 @@ config UDC_DWC3
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select CLOCK_CONTROL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DWC3),clocks)
 	select RESET if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DWC3),resets)
+	select SYSCON if DT_HAS_ROCKCHIP_RK3588_DWC3_ENABLED
+	select RESET if DT_HAS_ROCKCHIP_RK3588_DWC3_ENABLED
 	help
 	  Synopsys DesignWare Cores SuperSpeed USB 3.x (DWC3) device controller
 	  driver.

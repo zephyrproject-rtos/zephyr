@@ -242,8 +242,16 @@ struct udc_dwc3_config {
 	void (*irq_disable_func)(const struct device *dev);
 };
 
-/* Vendor quirks and their data per instance, none so far */
-#define UDC_DWC3_VENDOR_QUIRK_GET(n)      NULL
-#define UDC_DWC3_VENDOR_QUIRK_DATA_GET(n) NULL
+#if DT_HAS_COMPAT_STATUS_OKAY(rockchip_rk3588_dwc3)
+#include "udc_dwc3_rk3588.h"
+#endif
+
+#define UDC_DWC3_VENDOR_QUIRK_GET(n)                                                               \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), rockchip_rk3588_dwc3),                      \
+		    (&dwc3_rk3588_quirks), (NULL))
+
+#define UDC_DWC3_VENDOR_QUIRK_DATA_GET(n)                                                          \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), rockchip_rk3588_dwc3),                      \
+		    (&dwc3_rk3588_u2phy_##n), (NULL))
 
 #endif /* ZEPHYR_DRIVERS_USB_UDC_DWC3_H */
