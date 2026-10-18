@@ -409,6 +409,7 @@ if BT_LONG_WQ
 config BT_LONG_WQ_STACK_SIZE
 	int "Long workqueue stack size."
 	default 4096 if NO_OPTIMIZATIONS
+	default 4096 if ARM64
 	default 1400 if BT_ECC
 	default 1300 if BT_GATT_CACHING
 	default 1024
