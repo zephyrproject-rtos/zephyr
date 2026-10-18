@@ -246,6 +246,14 @@
 			interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 		};
+
+		swdt: watchdog@f8005000 {
+			compatible = "cdns,wdt-r1p2";
+			reg = <0xf8005000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 9 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>;
+		};
 	};
 
 	slcr: slcr@f8000000 {
