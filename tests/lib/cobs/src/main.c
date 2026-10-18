@@ -382,7 +382,38 @@ static const struct ztest_param_values cobs_vals = {
 };
 
 ZTEST_SUITE(cobs_tests, NULL, cobs_test_setup, cobs_test_before, NULL, cobs_test_teardown);
+ZTEST_F(cobs_tests, test_max_encoded_len)
+{
+	static const size_t lengths[] = {0U, 253U, 254U, 255U, 508U};
+	static const uint32_t flags[] = {0U, COBS_FLAG_ZERO_DELIMITER};
+	uint8_t payload[508];
 
+	memset(payload, 0xA5, sizeof(payload));
+
+	for(size_t i = 0; i < ARRAY_SIZE(lengths); i++) {
+		for (size_t j = 0; j < ARRAY_SIZE(flags); j++) {
+			size_t expected = lengths[i] + (lengths[i] / 254U + 1U);
+			int ret;
+
+			if ((flags[j] & COBS_FLAG_ZERO_DELIMITER) != 0U) {
+				expected++;
+			}
+
+			zassert_equal(cobs_max_encoded_len(lengths[i], flags[j]), expected);
+
+			net_buf_add_mem(fixture->test_data, payload, lengths[i]);
+			ret = cobs_encode(fixture->test_data, fixture->encoded, flags[j]);
+			zassert_ok(ret, "COBS encoding failed for length %zu and flags %u",
+				 lengths[i]);
+			zassert_true(fixture->encoded->len <= expected,
+				     "Encoded length %u exceeds expected %zu",
+				     fixture->encoded->len, expected);
+
+			net_buf_reset(fixture->test_data);
+			net_buf_reset(fixture->encoded);
+		}
+	}
+}
 /*
  * The dataset-driven tests below are instantiated once per cobs_dataset entry
  * via ZTEST_INSTANTIATE_TEST_SUITE_P(). The suite before() hook resets all
