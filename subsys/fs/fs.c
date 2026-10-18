@@ -18,6 +18,9 @@
 #include <zephyr/sys/minmax.h>
 
 #include <zephyr/logging/log.h>
+
+#include "fs_internal.h"
+
 LOG_MODULE_REGISTER(fs, CONFIG_FS_LOG_LEVEL);
 
 /* list of mounted file systems */
@@ -78,8 +81,7 @@ static const struct fs_file_system_t *fs_type_get(int type)
 	return (ep != NULL) ? ep->fstp : NULL;
 }
 
-static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
-			    const char *name, size_t *match_len)
+int fs_get_mnt_point(struct fs_mount_t **mnt_pntp, const char *name, size_t *match_len)
 {
 	struct fs_mount_t *mnt_p = NULL, *itr;
 	size_t longest_match = 0;
