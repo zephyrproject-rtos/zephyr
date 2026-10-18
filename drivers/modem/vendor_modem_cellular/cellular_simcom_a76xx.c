@@ -62,7 +62,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_a76xx_shutdown_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_shutdown_chat_script, simcom_a76xx_shutdown_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 15);
 
-static const struct modem_cellular_vendor_config simcom_a76xx_vendor = {
+static const struct modem_cellular_vendor_config_common simcom_a76xx_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &simcom_a76xx_init_chat_script,
@@ -86,10 +86,15 @@ static const struct modem_cellular_vendor_config simcom_a76xx_vendor = {
 #define MODEM_CELLULAR_DEVICE_SIMCOM_A76XX(inst)                                                   \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &simcom_a76xx_vendor,                                                    \
+	};                                                                                         \
+                                                                                                   \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &simcom_a76xx_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_SIMCOM_A76XX)

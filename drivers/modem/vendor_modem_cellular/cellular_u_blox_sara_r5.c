@@ -56,7 +56,7 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r5_periodic_chat_script,
 			 u_blox_sara_r5_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
 
-static const struct modem_cellular_vendor_config u_blox_sara_r5_vendor = {
+static const struct modem_cellular_vendor_config_common u_blox_sara_r5_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &u_blox_sara_r5_init_chat_script,
@@ -80,10 +80,15 @@ static const struct modem_cellular_vendor_config u_blox_sara_r5_vendor = {
 #define MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R5(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &u_blox_sara_r5_vendor,                                                  \
+	};                                                                                         \
+                                                                                                   \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 4), (user_pipe_0, 3))          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &u_blox_sara_r5_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R5)
