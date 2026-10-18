@@ -534,6 +534,41 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 		MODEM_CHAT_MATCH("OK", "", NULL))
 
 /**
+ * @brief Construct AT+IPR command from devicetree node
+ *
+ * @param inst Devicetree instance number.
+ */
+#define _MODEM_CELLULAR_IPR_CMD(inst) "AT+IPR=" STRINGIFY(DT_INST_PROP_OR(inst, target_baudrate, 0))
+
+/**
+ * @brief Define the standard script for updating the modem baudrate
+ *
+ * The script is not required to be used if defined.
+ *
+ * @param inst Devicetree instance number.
+ */
+#define MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst)                                           \
+	MODEM_CHAT_SCRIPT_CMDS_DEFINE(                                                             \
+		MODEM_CELLULAR_INST_NAME(baudrate_cmds, inst),                                     \
+		MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),                                      \
+		MODEM_CHAT_SCRIPT_CMD_RESP(_MODEM_CELLULAR_IPR_CMD(inst), ok_match));              \
+                                                                                                   \
+	MODEM_CHAT_SCRIPT_DEFINE(__maybe_unused MODEM_CELLULAR_INST_NAME(baudrate_script, inst),   \
+				 MODEM_CELLULAR_INST_NAME(baudrate_cmds, inst), abort_matches,     \
+				 modem_cellular_chat_callback_handler, 1);
+
+/**
+ * @brief Helper macro for populating @ref modem_cellular_vendor_config_inst baudrate fields
+ *
+ * @param inst Devicetree instance number.
+ */
+#define MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst)                                    \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, target_baudrate),                                  \
+		(.set_baudrate = &MODEM_CELLULAR_INST_NAME(baudrate_script, inst),                 \
+		.target_baudrate = DT_INST_PROP(inst, target_baudrate)),                           \
+		(.set_baudrate = NULL))
+
+/**
  * @brief Define common chat matches used by cellular modem scripts.
  *
  * Invoke this macro once at file scope. It defines matches for successful commands, common command
