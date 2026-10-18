@@ -80,10 +80,23 @@ static void isr_tx_connect_rsp(void *param);
  */
 static struct node_rx_pdu *node_conn_rx;
 
+static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
+{
+	/* The central is connected once it receives the AUX_CONNECT_RSP: let an
+	 * accepted AUX_CONNECT_REQ complete, the preempting prepare is cancelled.
+	 */
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && (node_conn_rx != NULL)) {
+		return 0;
+	}
+
+	return lll_is_abort_cb(next, curr, resume_cb);
+}
+
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
-	/* An aborted event does not reach isr_tx_connect_rsp(): release the
-	 * node rx of an accepted AUX_CONNECT_REQ instead of leaking them.
+	/* Aborts that do not ask is_abort_cb(), such as disabling the set, skip
+	 * isr_tx_connect_rsp(): release the node rx of an accepted AUX_CONNECT_REQ
+	 * instead of leaking them.
 	 */
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && (prepare_param == NULL) && (node_conn_rx != NULL)) {
 		struct node_rx_pdu *rx = node_conn_rx;
@@ -138,7 +151,7 @@ void lll_adv_aux_prepare(void *param)
 	err = lll_hfclock_on();
 	LL_ASSERT_ERR(err >= 0);
 
-	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, param);
+	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
