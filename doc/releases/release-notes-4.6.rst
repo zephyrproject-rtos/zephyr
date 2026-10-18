@@ -63,6 +63,12 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Storage
+
+  * :c:func:`fs_mkdir_p`
+  * :kconfig:option:`CONFIG_FILE_SYSTEM_UTILS`
+  * :kconfig:option:`CONFIG_FILE_SYSTEM_UTILS_MAX_PATH_LEN`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
