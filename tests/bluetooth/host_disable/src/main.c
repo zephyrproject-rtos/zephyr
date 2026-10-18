@@ -570,7 +570,7 @@ static ZTEST(bt_disable, test_enable_silent_controller_cb)
 	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
 }
 
-static K_THREAD_STACK_DEFINE(enable_stack, CONFIG_ZTEST_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(enable_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread enable_thread;
 static bool enable_returned;
 
@@ -769,7 +769,7 @@ static ZTEST(bt_disable, test_data_sent_during_disable)
  * system workqueue, which delivers the delayed responses of the controller here
  * and must not be held up by a call that waits for one.
  */
-static K_THREAD_STACK_DEFINE(app_stack, 1024);
+static K_THREAD_STACK_DEFINE(app_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_work_q app_workq;
 static K_SEM_DEFINE(disconnect_returned, 0, 1);
 static int disconnect_err;
