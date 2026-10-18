@@ -1,0 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors */
+&spi2 {
+	/delete-property/ interrupts;
+};

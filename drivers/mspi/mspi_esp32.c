@@ -1122,7 +1122,10 @@ static int mspi_esp32_get_channel_status(const struct device *dev, uint8_t ch)
 {
 	struct mspi_esp32_data *data = dev->data;
 
-	ARG_UNUSED(ch);
+	/* Each controller instance exposes one logical transfer channel. */
+	if (ch != 0) {
+		return -EINVAL;
+	}
 
 	(void)k_sem_take(&data->ctx_lock, K_FOREVER);
 
@@ -1275,6 +1278,10 @@ static int init_dma(const struct device *dev)
 
 #else /* !SOC_GDMA_SUPPORTED: integrated DMA (ESP32, ESP32-S2) */
 
+	if (config->dma_clk_src < 0) {
+		LOG_ERR("dma-clk is required when integrated DMA is enabled");
+		return -EINVAL;
+	}
 	if (clock_control_on(config->clock_dev, (clock_control_subsys_t)config->dma_clk_src)) {
 		LOG_ERR("Could not enable DMA clock");
 		return -EIO;
@@ -1497,7 +1504,7 @@ static DEVICE_API(mspi, mspi_esp32_api) = {
 	.dma_buf_size_alignment = MSPI_DMA_BUF_SIZE_ALIGNMENT(inst),
 #else
 #define MSPI_DMA_CFG(inst)                                                                         \
-	.dma_clk_src = DT_INST_PROP(inst, dma_clk), .dma_buf_size_alignment = 4,
+	.dma_clk_src = DT_INST_PROP_OR(inst, dma_clk, -1), .dma_buf_size_alignment = 4,
 #endif
 
 #define MSPI_IRQ_CFG(inst)                                                                         \
@@ -1549,7 +1556,7 @@ static DEVICE_API(mspi, mspi_esp32_api) = {
 		.use_iomux = DT_INST_PROP_OR(inst, use_iomux, false),                              \
 		.duty_cycle = DT_INST_PROP(inst, duty_cycle),                                      \
 		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),                          \
-		.input_delay_ns = 0,                                                               \
+		.input_delay_ns = DT_INST_PROP(inst, input_delay_ns), \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, mspi_esp32_init, NULL, &mspi_esp32_data_##inst,                \

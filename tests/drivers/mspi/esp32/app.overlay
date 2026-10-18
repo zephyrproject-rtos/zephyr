@@ -1,0 +1,13 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors */
+&spi2 {
+	compatible = "espressif,esp32-mspi";
+	peripheral-id = <0>;
+	clock-frequency = <10000000>;
+	/* Exercise the documented fallback to peripheral-id. */
+	/delete-property/ dma-host;
+};
+
+&spi3 {
+	status = "disabled";
+};
