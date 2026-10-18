@@ -242,6 +242,13 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 	/* Unmask interrupts */
 	ch_config &= ~(DMA_ITC | DMA_IE);
 
+	/* Enable *DMA* (eg not peripheral transfer) completion interrupt */
+	if (config->dma_callback != NULL) {
+		control |= DMA_I;
+	} else {
+		control &= ~DMA_I;
+	}
+
 	sys_write32(control, cfg->base_reg
 			+ DMA_CxCONTROL_OFFSET + BFLB_DMA_CH_OFFSET(channel));
 	sys_write32(ch_config, cfg->base_reg
