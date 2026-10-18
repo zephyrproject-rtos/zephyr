@@ -1,0 +1,380 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Synopsys DesignWare Cores SuperSpeed USB 3.x controller
+
+description: |
+  DWC_usb3, DWC_usb31 and DWC_usb32 controller, used in device mode.
+
+  The properties have the names, types and meaning of the Linux snps,dwc3
+  binding, so that a controller node can be taken from a Linux devicetree
+  as it is. Properties that only matter in host or dual-role operation are
+  accepted for that reason, and ignored. Only num-bidir-endpoints is
+  specific to Zephyr.
+
+  The values Linux reads as 8-bit integers are uint8-array properties, set
+  with /bits/ 8 as in Linux devicetrees, for example
+  snps,hird-threshold = /bits/ 8 <0x0>; the driver uses the first byte.
+  Where Linux has a default for such a value, the driver uses the same.
+
+  Example, with the PHYs described by their own nodes:
+
+    usb@fc000000 {
+      compatible = "snps,dwc3";
+      reg = <0xfc000000 0x400000>;
+      interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+      clocks = <&cru REF_CLK_USB3OTG0>, <&cru SUSPEND_CLK_USB3OTG0>,
+               <&cru ACLK_USB3OTG0>;
+      clock-names = "ref_clk", "suspend_clk", "bus_clk";
+      resets = <&cru SRST_A_USB3OTG0>;
+      dr_mode = "otg";
+      phys = <&u2phy0_otg>;
+      phy-names = "usb2-phy";
+      phy_type = "utmi_wide";
+      maximum-speed = "high-speed";
+      snps,dis_enblslpm_quirk;
+      snps,dis-u2-freeclk-exists-quirk;
+    };
+
+compatible: "snps,dwc3"
+
+include: [usb-controller.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  num-bidir-endpoints:
+    type: int
+    default: 16
+    description: |
+      Number of endpoint pairs, EP0 included, the driver keeps state for.
+      The driver uses no more than the controller provides, as reported by
+      GHWPARAMS3. Lower it to save memory when fewer endpoints are used.
+
+  dr_mode:
+    type: string
+    default: "otg"
+    enum:
+      - "host"
+      - "peripheral"
+      - "otg"
+    description: |
+      Role of a dual-role controller. The driver always runs the controller
+      as a device, so "otg" and "peripheral" select the same operation.
+
+  phy_type:
+    type: string
+    enum:
+      - "utmi"
+      - "utmi_wide"
+      - "ulpi"
+      - "serial"
+      - "hsic"
+    description: |
+      Interface to the USB 2.0 PHY. "utmi" is the 8-bit UTMI+ interface and
+      "utmi_wide" the 16-bit one; they set the PHY interface width and the
+      turnaround time in GUSB2PHYCFG.
+
+  phys:
+    type: phandle-array
+    description: |
+      USB 2.0 PHY, and the USB 3.x PHY when there is one, named by
+      phy-names.
+
+  phy-names:
+    type: string-array
+    description: |
+      Names of the phys entries, "usb2-phy" and "usb3-phy".
+
+  usb-phy:
+    type: phandles
+    deprecated: true
+    description: Legacy reference to the USB 2.0 and USB 3.x PHYs.
+
+  extcon:
+    type: phandle
+    deprecated: true
+    description: Legacy external connector reference.
+
+  snps,hsphy_interface:
+    type: string
+    enum:
+      - "utmi"
+      - "ulpi"
+    description: |
+      USB 2.0 PHY interface to use when the controller was configured with
+      both UTMI+ and ULPI.
+
+  snps,usb2-lpm-disable:
+    type: boolean
+    description: Do not enable USB 2.0 hardware LPM in host mode.
+
+  snps,usb2-gadget-lpm-disable:
+    type: boolean
+    description: Do not advertise or accept USB 2.0 LPM in device mode.
+
+  snps,usb3_lpm_capable:
+    type: boolean
+    description: The platform supports USB 3.x link power management.
+
+  snps,has-lpm-erratum:
+    type: boolean
+    description: |
+      The controller was configured with the LPM Erratum, so the LPM NYET
+      threshold applies.
+
+  snps,lpm-nyet-threshold:
+    type: uint8-array
+    description: LPM NYET response threshold, DCTL.NYET_THRES. 15 by default.
+
+  snps,is-utmi-l1-suspend:
+    type: boolean
+    description: |
+      The controller signals L1 with utmi_l1_suspend_n rather than with
+      utmi_sleep_n.
+
+  snps,hird-threshold:
+    type: uint8-array
+    description: HIRD threshold, DCTL.HIRD_THRES. 12 by default.
+
+  snps,reserved-endpoints:
+    type: uint8-array
+    description: |
+      Physical endpoint numbers, from 2 to 31, the driver must not use for
+      transfers.
+
+  snps,dis-start-transfer-quirk:
+    type: boolean
+    description: |
+      Do not apply the isochronous Start Transfer workaround of DWC_usb31
+      1.70a-ea06 and earlier.
+
+  snps,disable_scramble_quirk:
+    type: boolean
+    description: Disable data scrambling. For FPGA builds of the controller.
+
+  snps,u2exit_lfps_quirk:
+    type: boolean
+    description: Set GCTL.U2EXIT_LFPS.
+
+  snps,u2ss_inp3_quirk:
+    type: boolean
+    description: Allow the P3 power state for U2 and SS.Inactive, GUSB3PIPECTL.U2SSINP3OK.
+
+  snps,req_p1p2p3_quirk:
+    type: boolean
+    description: Always request the P1/P2/P3 transition, GUSB3PIPECTL.REQP1P2P3.
+
+  snps,del_p1p2p3_quirk:
+    type: boolean
+    description: |
+      Delay the P1/P2/P3 transition until 8b/10b errors occur,
+      GUSB3PIPECTL.DEP1P2P3.
+
+  snps,del_phy_power_chg_quirk:
+    type: boolean
+    description: |
+      Delay the PHY power change from P0 to P1/P2/P3,
+      GUSB3PIPECTL.DEPOCHANGE set.
+
+  snps,lfps_filter_quirk:
+    type: boolean
+    description: Filter LFPS reception, GUSB3PIPECTL.LFPSFILT.
+
+  snps,rx_detect_poll_quirk:
+    type: boolean
+    description: |
+      Do not wait 400 us before Polling.LFPS after Rx.Detect,
+      GUSB3PIPECTL.RX_DETOPOLL.
+
+  snps,tx_de_emphasis_quirk:
+    type: boolean
+    description: Drive snps,tx_de_emphasis to the PHY.
+
+  snps,tx_de_emphasis:
+    type: uint8-array
+    description: |
+      Transmit de-emphasis in USB 3.x compliance mode: 0 for -6 dB, 1 for
+      -3.5 dB, 2 for none, 1 by default. Used with
+      snps,tx_de_emphasis_quirk.
+
+  snps,dis_u3_susphy_quirk:
+    type: boolean
+    description: Never set GUSB3PIPECTL.SUSPHY, the USB 3.x PHY suspend.
+
+  snps,dis_u2_susphy_quirk:
+    type: boolean
+    description: Never set GUSB2PHYCFG.SUSPHY, the USB 2.0 PHY suspend.
+
+  snps,dis_enblslpm_quirk:
+    type: boolean
+    description: |
+      Clear GUSB2PHYCFG.ENBLSLPM, so that the controller does not drive the
+      suspend signal of the USB 2.0 PHY.
+
+  snps,dis-u1-entry-quirk:
+    type: boolean
+    description: Do not let the link enter U1.
+
+  snps,dis-u2-entry-quirk:
+    type: boolean
+    description: Do not let the link enter U2.
+
+  snps,dis_rxdet_inp3_quirk:
+    type: boolean
+    description: |
+      Disable receiver detection in the PHY P3 state,
+      GUSB3PIPECTL.DISRXDETINP3.
+
+  snps,dis-u2-freeclk-exists-quirk:
+    type: boolean
+    description: |
+      The USB 2.0 PHY has no free-running clock, GUSB2PHYCFG.U2_FREECLK_EXISTS
+      cleared.
+
+  snps,dis-del-phy-power-chg-quirk:
+    type: boolean
+    description: |
+      Change the PHY power from P0 to P1/P2/P3 without delay,
+      GUSB3PIPECTL.DEPOCHANGE cleared.
+
+  snps,dis-tx-ipgap-linecheck-quirk:
+    type: boolean
+    description: |
+      Do not check the line state during high-speed transmit,
+      GUCTL1.TX_IPGAP_LINECHECK_DIS.
+
+  snps,parkmode-disable-ss-quirk:
+    type: boolean
+    description: Disable park mode for SuperSpeed, GUCTL1.PARKMODE_DISABLE_SS.
+
+  snps,parkmode-disable-hs-quirk:
+    type: boolean
+    description: Disable park mode for high speed, GUCTL1.PARKMODE_DISABLE_HS.
+
+  snps,dis_metastability_quirk:
+    type: boolean
+    description: |
+      Do not apply the DCFG metastability workaround of DWC_usb3 before
+      2.20a.
+
+  snps,dis-split-quirk:
+    type: boolean
+    description: Host-only split transfer handling.
+
+  snps,gfladj-refclk-lpm-sel-quirk:
+    type: boolean
+    description: Run the SOF/ITP counter from ref_clk, GFLADJ.REFCLK_LPM_SEL.
+
+  snps,resume-hs-terminations:
+    type: boolean
+    description: Host-only fix for HS terminations on resume, for legacy ULPI PHYs.
+
+  snps,ulpi-ext-vbus-drv:
+    type: boolean
+    description: Host-only, drive VBUS from an external supply through the ULPI PHY.
+
+  snps,quirk-frame-length-adjustment:
+    type: int
+    description: Value of the GFLADJ_30MHZ field, from 0 to 0x3f.
+
+  snps,ref-clock-period-ns:
+    type: int
+    deprecated: true
+    description: |
+      Reference clock period in nanoseconds, for GUCTL.REFCLKPER. Prefer the
+      ref_clk clock, whose rate gives the period.
+
+  snps,rx-thr-num-pkt:
+    type: uint8-array
+    description: |
+      SuperSpeed receive packet threshold, from 1 to 15. Takes effect with
+      snps,rx-max-burst.
+
+  snps,rx-max-burst:
+    type: uint8-array
+    description: |
+      SuperSpeed receive burst size, from 1 to 16; in device mode the NUMP
+      sent in ERDY. Takes effect with snps,rx-thr-num-pkt.
+
+  snps,tx-thr-num-pkt:
+    type: uint8-array
+    description: |
+      SuperSpeed transmit packet threshold, from 1 to 15. Takes effect with
+      snps,tx-max-burst.
+
+  snps,tx-max-burst:
+    type: uint8-array
+    description: |
+      SuperSpeed transmit burst size, from 1 to 16. Takes effect with
+      snps,tx-thr-num-pkt.
+
+  snps,rx-thr-num-pkt-prd:
+    type: uint8-array
+    description: Host-only periodic receive packet threshold of DWC_usb31.
+
+  snps,rx-max-burst-prd:
+    type: uint8-array
+    description: Host-only periodic receive burst size of DWC_usb31.
+
+  snps,tx-thr-num-pkt-prd:
+    type: uint8-array
+    description: Host-only periodic transmit packet threshold of DWC_usb31.
+
+  snps,tx-max-burst-prd:
+    type: uint8-array
+    description: Host-only periodic transmit burst size of DWC_usb31.
+
+  tx-fifo-resize:
+    type: boolean
+    description: |
+      Resize the transmit FIFOs of the IN endpoints for the configuration in
+      use.
+
+  tx-fifo-max-num:
+    type: uint8-array
+    description: |
+      Largest number of packets a transmit FIFO is sized for when
+      tx-fifo-resize is set, from 3, 6 by default.
+
+  snps,incr-burst-type-adjustment:
+    type: array
+    description: |
+      INCR burst lengths for GSBUSCFG0, from 1, 4, 8, 16, 32, 64, 128 and
+      256. One value enables INCRx bursts of that length; more values enable
+      undefined length INCR bursts up to the longest of them.
+
+  num-hc-interrupters:
+    type: compound
+    description: Host-only number of xHCI interrupters, a 16-bit value.
+
+  otg-rev:
+    type: int
+    description: OTG and EH supplement release the controller complies with.
+
+  hnp-disable:
+    type: boolean
+    description: Do not use OTG HNP.
+
+  srp-disable:
+    type: boolean
+    description: Do not use OTG SRP.
+
+  adp-disable:
+    type: boolean
+    description: Do not use OTG ADP.
+
+  usb-role-switch:
+    type: boolean
+    description: The controller data role is switched by a connector.
+
+  role-switch-default-mode:
+    type: string
+    enum:
+      - "host"
+      - "peripheral"
+    description: Data role while no role is assigned through the role switch.

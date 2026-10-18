@@ -10,3 +10,23 @@
 - mmc-hs200-1_8v
 - mmc-hs400-1_8v
 - device_type
+# Linux USB and snps,dwc3 bindings
+- dr_mode
+- phy_type
+- snps,del_p1p2p3_quirk
+- snps,del_phy_power_chg_quirk
+- snps,dis_enblslpm_quirk
+- snps,dis_metastability_quirk
+- snps,dis_rxdet_inp3_quirk
+- snps,dis_u2_susphy_quirk
+- snps,dis_u3_susphy_quirk
+- snps,disable_scramble_quirk
+- snps,hsphy_interface
+- snps,lfps_filter_quirk
+- snps,req_p1p2p3_quirk
+- snps,rx_detect_poll_quirk
+- snps,tx_de_emphasis
+- snps,tx_de_emphasis_quirk
+- snps,u2exit_lfps_quirk
+- snps,u2ss_inp3_quirk
+- snps,usb3_lpm_capable
