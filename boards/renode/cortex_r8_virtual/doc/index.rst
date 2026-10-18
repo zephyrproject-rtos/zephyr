@@ -52,6 +52,20 @@ Renode, and display the following console output:
 
 Exit Renode by pressing :kbd:`CTRL+C`.
 
+SMP
+===
+
+The ``cortex_r8_virtual/cortex_r8_virtual/smp`` board target runs Zephyr with
+:kconfig:option:`CONFIG_SMP` on two Cortex-R8 cores, using the platform
+description in :zephyr_file:`boards/renode/cortex_r8_virtual/support/cortex_r8_virtual_smp.repl`.
+It needs Renode 1.15.2 or newer. The VFP is disabled on this target.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: cortex_r8_virtual/cortex_r8_virtual/smp
+   :goals: run
+
 Debugging
 =========
 

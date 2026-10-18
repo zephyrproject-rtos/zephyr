@@ -4,3 +4,5 @@ board:
   vendor: renode
   socs:
   - name: cortex_r8_virtual
+    variants:
+    - name: smp
