@@ -18,7 +18,7 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCHES_DEFINE(test_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
 /* Optional scripts are only defined when an instance uses them */
-#if !DT_ALL_INST_HAS_BOOL_STATUS_OKAY(no_set_baudrate_script)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(target_baudrate)
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(set_baudrate_chat_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP(MODEM_CELLULAR_TEST_SET_BAUDRATE_CMD,
 							 ok_match));
@@ -148,6 +148,13 @@ static const struct uart_emul_device_api test_emul_api;
 		    (&init_info_chat_script),                                                      \
 		    (&init_chat_script))
 
+/* Configure the target-baudrate with the test command */
+#define TEST_TARGET_BAUDRATE(inst)                                                                 \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, target_baudrate),                                  \
+		    (.set_baudrate = &set_baudrate_chat_script,                                    \
+		     .target_baudrate = DT_INST_PROP(inst, target_baudrate)),                      \
+		    (.set_baudrate = NULL))
+
 #define MODEM_CELLULAR_DEVICE_TEST(inst)                                                           \
 	static const struct modem_cellular_vendor_config_common MODEM_CELLULAR_INST_NAME(          \
 		vendor_common, inst) = {                                                           \
@@ -176,18 +183,19 @@ static const struct uart_emul_device_api test_emul_api;
 		.shutdown_time_ms = DT_INST_PROP(inst, shutdown_time_ms),                          \
 	};                                                                                         \
                                                                                                    \
-	IF_DISABLED(DT_INST_PROP(inst, no_set_baudrate_script),                                    \
-		    (static const struct modem_cellular_vendor_config_inst                         \
-			     MODEM_CELLULAR_INST_NAME(vendor_inst, inst) = {                       \
-				     .set_baudrate = &set_baudrate_chat_script,                    \
-				     .target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,        \
-			     };))                                                                  \
+	MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst);                                          \
+                                                                                                   \
+	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
+		vendor_inst, inst) = {                                                             \
+		COND_CODE_1(DT_INST_PROP(inst, common_baudrate_script),                            \
+			    (MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst)),             \
+			    (TEST_TARGET_BAUDRATE(inst)))                                          \
+	};                                                                                         \
                                                                                                    \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor,          \
 										  inst) = {        \
 		.common = &MODEM_CELLULAR_INST_NAME(vendor_common, inst),                          \
-		.instance = COND_CODE_1(DT_INST_PROP(inst, no_set_baudrate_script), (NULL),        \
-					(&MODEM_CELLULAR_INST_NAME(vendor_inst, inst))),           \
+		.instance = &MODEM_CELLULAR_INST_NAME(vendor_inst, inst),                          \
 	};
 
 #define MODEM_CELLULAR_DEVICE_TEST_DEFINE(inst)                                                    \
