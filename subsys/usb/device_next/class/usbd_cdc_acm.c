@@ -40,6 +40,8 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_FS_INT_EP_INTERVAL	USB_FS_INT_EP_INTERVAL(10000U)
 #define CDC_ACM_HS_INT_EP_INTERVAL	USB_HS_INT_EP_INTERVAL(10000U)
 
+#define CDC_ACM_RX_RETRY_MAX_MS		128U
+
 #define CDC_ACM_CLASS_ENABLED		0
 #define CDC_ACM_CLASS_SUSPENDED		1
 #define CDC_ACM_IRQ_RX_ENABLED		2
@@ -129,7 +131,8 @@ struct cdc_acm_uart_data {
 	/* USBD CDC ACM TX fifo work */
 	struct k_work_delayable tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
-	struct k_work rx_fifo_work;
+	struct k_work_delayable rx_fifo_work;
+	uint32_t rx_retry_delay;
 	atomic_t state;
 	struct k_sem notif_sem;
 	/* Protect context access only, never the completion wait. */
@@ -230,6 +233,40 @@ static int cdc_acm_work_schedule(struct cdc_acm_uart_data *data,
 
 	k_spin_unlock(&data->lock, key);
 	return ret;
+}
+
+/* Lifecycle and drain events must not wait for an outstanding retry. */
+static void cdc_acm_rx_schedule(struct cdc_acm_uart_data *data, k_timeout_t delay)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_SHUTDOWN) &&
+	    atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
+#if CONFIG_USBD_CDC_ACM_WORKQUEUE
+		k_work_reschedule_for_queue(&cdc_acm_work_q, &data->rx_fifo_work, delay);
+#else
+		k_work_reschedule(&data->rx_fifo_work, delay);
+#endif
+	}
+	k_spin_unlock(&data->lock, key);
+}
+
+static void cdc_acm_rx_retry(struct cdc_acm_uart_data *data)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	uint32_t delay = data->rx_retry_delay;
+
+	data->rx_retry_delay = MIN(delay * 2U, CDC_ACM_RX_RETRY_MAX_MS);
+	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_SHUTDOWN) &&
+	    atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
+		/* Preserve an immediate lifecycle event queued during enqueue. */
+#if CONFIG_USBD_CDC_ACM_WORKQUEUE
+		k_work_schedule_for_queue(&cdc_acm_work_q, &data->rx_fifo_work, K_MSEC(delay));
+#else
+		k_work_schedule(&data->rx_fifo_work, K_MSEC(delay));
+#endif
+	}
+	k_spin_unlock(&data->lock, key);
 }
 
 static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
@@ -379,7 +416,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		if (buf->len == 0) {
 			/* Drop transfer with zero length */
 			net_buf_unref(buf);
-			cdc_acm_work_submit(data, &data->rx_fifo_work);
+			cdc_acm_rx_schedule(data, K_NO_WAIT);
 			goto ep_buf_already_handled;
 		}
 
@@ -446,6 +483,7 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 		k_spin_unlock(&data->lock, key);
 		return;
 	}
+	data->rx_retry_delay = 1U;
 	atomic_set_bit(&data->state, CDC_ACM_CLASS_ENABLED);
 	k_spin_unlock(&data->lock, key);
 	LOG_INF("Configuration enabled");
@@ -456,7 +494,7 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 
 	if (data->cb == NULL) {
 		/* Allow cdc_acm_poll_in to receive */
-		cdc_acm_work_submit(data, &data->rx_fifo_work);
+		cdc_acm_rx_schedule(data, K_NO_WAIT);
 	}
 	data->zlp_needed = true;
 	cdc_acm_work_schedule(data, &data->tx_fifo_work, K_NO_WAIT);
@@ -493,7 +531,7 @@ static void usbd_cdc_acm_shutdown(struct usbd_class_data *const c_data)
 	/* The application callback may be waiting for the device lock. */
 	(void)k_work_cancel(&data->irq_cb_work);
 	k_work_cancel_delayable_sync(&data->tx_fifo_work, &sync);
-	k_work_cancel_sync(&data->rx_fifo_work, &sync);
+	k_work_cancel_delayable_sync(&data->rx_fifo_work, &sync);
 }
 
 static void usbd_cdc_acm_suspended(struct usbd_class_data *const c_data)
@@ -511,6 +549,7 @@ static void usbd_cdc_acm_resumed(struct usbd_class_data *const c_data)
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
+	cdc_acm_rx_schedule(data, K_NO_WAIT);
 }
 
 static const void *usbd_cdc_acm_get_desc(struct usbd_class_data *const c_data,
@@ -882,7 +921,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
  *  - (x) RX transfer completion
  *  - (x) the end of cdc_acm_irq_cb_handler
  *  - (x) USBD class API enable call
- *  - ( ) USBD class API resumed call (TODO)
+ *  - (x) USBD class API resumed call
  */
 static void cdc_acm_rx_fifo_handler(struct k_work *work)
 {
@@ -890,7 +929,9 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
 
-	data = CONTAINER_OF(work, struct cdc_acm_uart_data, rx_fifo_work);
+	data = CONTAINER_OF(k_work_delayable_from_work(work),
+			    struct cdc_acm_uart_data, rx_fifo_work);
+
 	if (cdc_acm_is_shutdown(data)) {
 		return;
 	}
@@ -920,8 +961,11 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		if (usbd_ep_enqueue(c_data, buf) != 0) {
 			LOG_ERR("Failed to enqueue net_buf for 0x%02x", bi->ep);
 			net_buf_unref(buf);
+			/* Failed enqueue will not produce a completion event. */
+			cdc_acm_rx_retry(data);
 			break;
 		}
+		data->rx_retry_delay = 1U;
 	}
 }
 
@@ -956,7 +1000,7 @@ static void cdc_acm_irq_rx_enable(const struct device *dev)
 		cdc_acm_work_submit(data, &data->irq_cb_work);
 	}
 
-	cdc_acm_work_submit(data, &data->rx_fifo_work);
+	cdc_acm_rx_schedule(data, K_NO_WAIT);
 }
 
 static void cdc_acm_irq_rx_disable(const struct device *dev)
@@ -1173,7 +1217,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 
 	if (data->rx_fifo.altered) {
 		LOG_DBG("rx fifo altered, submit work");
-		cdc_acm_work_submit(data, &data->rx_fifo_work);
+		cdc_acm_rx_schedule(data, K_NO_WAIT);
 	}
 
 	key = k_spin_lock(&data->lock);
@@ -1226,7 +1270,7 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 	if (head->len == 0) {
 		head = k_fifo_get(data->rx_fifo.bufs, K_NO_WAIT);
 		net_buf_unref(head);
-		cdc_acm_work_submit(data, &data->rx_fifo_work);
+		cdc_acm_rx_schedule(data, K_NO_WAIT);
 	}
 
 	return 0;
@@ -1367,7 +1411,7 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
-	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
+	k_work_init_delayable(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
 	k_work_init(&data->irq_cb_work, cdc_acm_irq_cb_handler);
 
 	cdc_acm_update_uart_cfg(data);

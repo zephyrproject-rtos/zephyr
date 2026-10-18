@@ -103,6 +103,17 @@ static __unused bool test_cancel_delayable_sync(struct k_work_delayable *work,
 	return test_cancel_sync(&work->work, sync);
 }
 
+static int64_t test_work_delay(struct k_work *work)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(work_slots); i++) {
+		if (work_slots[i].work == work) {
+			return work_slots[i].due - test_ticks;
+		}
+	}
+	zassert_unreachable("expected pending work");
+	return -1;
+}
+
 static bool test_work_pending(struct k_work *work)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(work_slots); i++) {

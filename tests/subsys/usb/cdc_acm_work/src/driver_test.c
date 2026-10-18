@@ -142,6 +142,15 @@ static struct k_work *rx_work(void)
 #endif
 }
 
+static struct net_buf *take_out(void)
+{
+	struct udc_ep_config *cfg;
+
+	cfg = udc_get_ep_cfg(rx_device.dev, cdc_acm_get_bulk_out(rx_class()));
+	zassert_not_null(cfg);
+	return udc_buf_get(cfg);
+}
+
 static void release_endpoint(uint8_t ep)
 {
 	struct udc_ep_config *cfg = udc_get_ep_cfg(rx_device.dev, ep);
@@ -204,6 +213,46 @@ static void *setup(void)
 	zassert_ok(udc_ep_enable(rx_device.dev, cdc_acm_get_bulk_in(rx_class()),
 				 USB_EP_TYPE_BULK, cdc_acm_get_bulk_mps(rx_class()), 0));
 	return NULL;
+}
+
+ZTEST(cdc_acm_work, test_retry_backoff_and_success_reset)
+{
+	static const uint32_t delays[] = {1U, 2U, 4U, 8U, 16U, 32U, 64U, 128U, 128U};
+	struct net_buf *buf;
+	unsigned char byte;
+	uint32_t failures;
+
+	refuse_always = true;
+	test_advance(K_NO_WAIT);
+	for (size_t i = 0; i < ARRAY_SIZE(delays); i++) {
+		zassert_equal(enqueue_failures, i + 1U);
+		zassert_equal(test_work_delay(rx_work()), K_MSEC(delays[i]).ticks,
+			      "retry delay did not follow capped backoff");
+		if (i + 1U < ARRAY_SIZE(delays)) {
+			test_advance(K_MSEC(delays[i]));
+		}
+	}
+
+	refuse_always = false;
+	test_advance(K_MSEC(128));
+	zassert_true(out_armed > 0, "retry did not recover");
+	buf = take_out();
+	zassert_not_null(buf);
+	net_buf_add_u8(buf, 0x5a);
+	zassert_ok(usbd_cdc_acm_request(rx_class(), buf, 0));
+	refuse_always = true;
+	zassert_ok(cdc_acm_poll_in(uart, &byte));
+	test_advance(K_NO_WAIT);
+	zassert_equal(test_work_delay(rx_work()), K_MSEC(1).ticks,
+		      "successful enqueue did not reset backoff");
+	usbd_cdc_acm_resumed(rx_class());
+	zassert_equal(test_work_delay(rx_work()), 0, "resume waited for backoff");
+	/* A resume can arrive before the controller returns its refusal. */
+	resume_on_refusal = true;
+	failures = enqueue_failures;
+	test_advance(K_NO_WAIT);
+	zassert_equal(enqueue_failures, failures + 2U,
+		      "refusal replaced an immediate lifecycle event with backoff");
 }
 
 /* A bounded stand-in for usbd_wakeup_request() taking the same mutex. */
@@ -358,6 +407,143 @@ ZTEST(cdc_acm_work, test_shutdown_full_tx_buffer_stays_in_worker)
 	zassert_false(tx_enqueue_detached, "late FIFO fill entered send enqueue after detachment");
 	zassert_false(test_work_pending(&data->tx_fifo_work.work));
 }
+
+ZTEST(cdc_acm_work, test_shutdown_cancels_pending_retry)
+{
+	struct usbd_class_data *c_data = rx_class();
+	struct usbd_context *ctx = c_data->uds_ctx;
+	struct cdc_acm_uart_data *data = uart->data;
+	uint32_t runs;
+
+	refuse_always = true;
+	test_advance(K_NO_WAIT);
+	zassert_equal(enqueue_failures, 1U);
+	zassert_true(test_work_pending(rx_work()));
+	if (c_data->api->shutdown != NULL) {
+		c_data->api->shutdown(c_data);
+	}
+	/* Assert before detaching: a missing shutdown handler must not fault. */
+	zassert_false(test_work_pending(rx_work()), "shutdown left RX retry pending");
+	zassert_false(test_work_pending(&data->tx_fifo_work.work));
+	zassert_false(test_work_pending(&data->irq_cb_work));
+	runs = test_work_runs;
+	c_data->uds_ctx = NULL;
+	test_advance(K_SECONDS(1));
+	c_data->uds_ctx = ctx;
+	zassert_equal(test_work_runs, runs, "work ran after shutdown returned");
+	zassert_equal(enqueue_failures, 1U);
+}
+
+ZTEST(cdc_acm_work, test_enqueue_failure_rearms)
+{
+	fail_enqueue = true;
+	test_advance(K_NO_WAIT);
+	zassert_equal(enqueue_failures, 1, "enqueue seam was not reached");
+	zassert_equal(out_armed, 0);
+	test_advance(K_MSEC(1));
+	zassert_true(out_armed > 0, "failed enqueue left RX unarmed");
+}
+
+ZTEST(cdc_acm_work, test_resume_rearms)
+{
+	/* Consume the initial work while suspended: there is no pending retry. */
+	usbd_cdc_acm_suspended(rx_class());
+	test_advance(K_NO_WAIT);
+	zassert_equal(out_armed, 0);
+	zassert_false(test_work_pending(rx_work()));
+	usbd_cdc_acm_resumed(rx_class());
+	test_advance(K_NO_WAIT);
+	zassert_true(out_armed > 0, "resume did not rearm RX");
+}
+
+ZTEST(cdc_acm_work, test_retry_consumed_during_suspend)
+{
+	fail_enqueue = true;
+	test_advance(K_NO_WAIT);
+	zassert_equal(enqueue_failures, 1);
+	usbd_cdc_acm_suspended(rx_class());
+	test_advance(K_MSEC(1));
+	zassert_equal(out_armed, 0, "RX enqueued while suspended");
+	zassert_false(test_work_pending(rx_work()));
+	usbd_cdc_acm_resumed(rx_class());
+	test_advance(K_NO_WAIT);
+	zassert_true(out_armed > 0, "suspended retry lost recovery on resume");
+}
+
+ZTEST(cdc_acm_work, test_disable_stops_retry)
+{
+	fail_enqueue = true;
+	test_advance(K_NO_WAIT);
+	zassert_equal(enqueue_failures, 1);
+	usbd_cdc_acm_disable(rx_class());
+	test_advance(K_MSEC(1));
+	zassert_equal(out_armed, 0);
+	zassert_false(test_work_pending(rx_work()));
+	usbd_cdc_acm_resumed(rx_class());
+	test_advance(K_NO_WAIT);
+	zassert_equal(out_armed, 0, "resume armed a disabled class");
+}
+
+ZTEST(cdc_acm_work, test_no_fault_arms)
+{
+	test_advance(K_NO_WAIT);
+	zassert_true(out_armed > 0);
+	zassert_equal(enqueue_failures, 0);
+}
+
+
+static void fill_rx_pool(void)
+{
+	struct net_buf *buf;
+
+	test_advance(K_NO_WAIT);
+	/* Complete real queued OUT buffers into the driver's receive FIFO. */
+	while ((buf = take_out()) != NULL) {
+		net_buf_add_u8(buf, 0x5a);
+		zassert_ok(usbd_cdc_acm_request(rx_class(), buf, 0));
+	}
+	test_advance(K_NO_WAIT);
+	zassert_false(test_work_pending(rx_work()), "normal pool pressure must not poll");
+}
+
+ZTEST(cdc_acm_work, test_poll_drain_rearms_without_polling)
+{
+	uint32_t armed_before;
+	unsigned char byte;
+
+	fill_rx_pool();
+	armed_before = out_armed;
+	test_advance(K_MSEC(10));
+	zassert_equal(out_armed, armed_before);
+	zassert_ok(cdc_acm_poll_in(uart, &byte));
+	zassert_equal(byte, 0x5a);
+	test_advance(K_NO_WAIT);
+	zassert_true(out_armed > armed_before, "poll drain did not rearm RX");
+}
+
+static void drain_callback(const struct device *dev, void *user_data)
+{
+	uint8_t byte;
+
+	ARG_UNUSED(user_data);
+	cdc_acm_irq_update(dev);
+	if (cdc_acm_irq_rx_ready(dev) != 0) {
+		zassert_equal(cdc_acm_fifo_read(dev, &byte, 1), 1);
+	}
+}
+
+ZTEST(cdc_acm_work, test_irq_drain_rearms_without_polling)
+{
+	uint32_t armed_before;
+
+	fill_rx_pool();
+	armed_before = out_armed;
+	cdc_acm_irq_callback_set(uart, drain_callback, NULL);
+	cdc_acm_irq_rx_enable(uart);
+	test_advance(K_NO_WAIT);
+	zassert_true(out_armed > armed_before, "IRQ drain did not rearm RX");
+}
+
 
 static K_SEM_DEFINE(notification_done, 0, 1);
 static K_SEM_DEFINE(notification_shutdown_started, 0, 1);
