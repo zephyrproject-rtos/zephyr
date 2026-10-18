@@ -1,0 +1,19 @@
+common:
+  tags:
+    - call_offloader
+  platform_allow:
+    - qemu_x86
+  integration_platforms:
+    - qemu_x86
+tests:
+  kernel.call_offloader.engine: {}
+  kernel.call_offloader.fault:
+    ignore_faults: true
+    tags:
+      - ignore_fault
+    extra_args: EXTRA_CONF_FILE="fault.conf"
+  kernel.call_offloader.benchmark:
+    timeout: 60
+    tags:
+      - benchmark
+    extra_args: EXTRA_CONF_FILE="benchmark.conf"
