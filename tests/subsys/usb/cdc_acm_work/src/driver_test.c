@@ -434,6 +434,88 @@ ZTEST(cdc_acm_work, test_shutdown_cancels_pending_retry)
 	zassert_equal(enqueue_failures, 1U);
 }
 
+static void interface_reenable(bool completion_first)
+{
+	const struct cdc_acm_uart_config *cfg = uart->config;
+	struct net_buf *cancelled[16];
+	size_t count = 0U;
+	uint32_t armed_before;
+
+	test_advance(K_NO_WAIT);
+	zassert_false(test_work_pending(rx_work()));
+	/* Hold cancelled buffers until before or after the update callback. */
+	while (count < ARRAY_SIZE(cancelled)) {
+		cancelled[count] = take_out();
+		if (cancelled[count] == NULL) {
+			break;
+		}
+		count++;
+	}
+	zassert_true(count > 0U && count < ARRAY_SIZE(cancelled));
+	armed_before = out_armed;
+	if (!completion_first) {
+		usbd_cdc_acm_update(rx_class(), cfg->desc->if1.bInterfaceNumber, 0);
+		test_advance(K_NO_WAIT);
+	}
+	for (size_t i = 0; i < count; i++) {
+		zassert_ok(usbd_cdc_acm_request(rx_class(), cancelled[i], -ECONNABORTED));
+	}
+	if (completion_first) {
+		/* Run before update too: a refused enqueue may already be pending. */
+		test_advance(K_NO_WAIT);
+		usbd_cdc_acm_update(rx_class(), cfg->desc->if1.bInterfaceNumber, 0);
+	}
+	test_advance(K_NO_WAIT);
+	zassert_true(out_armed > armed_before, "interface re-enable left RX unarmed");
+}
+
+ZTEST(cdc_acm_work, test_interface_update_before_cancel_completion)
+{
+	interface_reenable(false);
+}
+
+ZTEST(cdc_acm_work, test_interface_update_after_cancel_completion)
+{
+	interface_reenable(true);
+}
+
+ZTEST(cdc_acm_work, test_interface_update_skips_disabled_endpoint_backoff)
+{
+	const struct cdc_acm_uart_config *cfg = uart->config;
+	struct net_buf *cancelled[16];
+	size_t count = 0U;
+	uint32_t armed_before;
+	int64_t update_ticks;
+	uint8_t ep = cdc_acm_get_bulk_out(rx_class());
+
+	test_advance(K_NO_WAIT);
+	zassert_false(test_work_pending(rx_work()));
+	while (count < ARRAY_SIZE(cancelled)) {
+		cancelled[count] = take_out();
+		if (cancelled[count] == NULL) {
+			break;
+		}
+		count++;
+	}
+	zassert_true(count > 0U && count < ARRAY_SIZE(cancelled));
+	armed_before = out_armed;
+	/* Return every held cancellation while the endpoint is still off. */
+	zassert_ok(udc_ep_disable(rx_device.dev, ep));
+	for (size_t i = 0; i < count; i++) {
+		zassert_ok(usbd_cdc_acm_request(rx_class(), cancelled[i], -ECONNABORTED));
+	}
+	test_advance(K_NO_WAIT);
+	zassert_equal(out_armed, armed_before, "disabled endpoint accepted RX");
+	zassert_ok(udc_ep_enable(rx_device.dev, ep, USB_EP_TYPE_BULK,
+				 cdc_acm_get_bulk_mps(rx_class()), 0));
+	update_ticks = test_ticks;
+	usbd_cdc_acm_update(rx_class(), cfg->desc->if1.bInterfaceNumber, 0);
+	/* Run immediate work only: the refused enqueue's retry is still later. */
+	test_advance(K_NO_WAIT);
+	zassert_equal(test_ticks, update_ticks, "interface update advanced retry time");
+	zassert_true(out_armed > armed_before, "interface update waited for RX backoff");
+}
+
 ZTEST(cdc_acm_work, test_enqueue_failure_rearms)
 {
 	fail_enqueue = true;

@@ -394,6 +394,12 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 				bi->ep, buf->len);
 		}
 
+		if (err == -ECONNABORTED && bi->ep == cdc_acm_get_bulk_out(c_data)) {
+			ret = usbd_ep_buf_free(uds_ctx, buf);
+			cdc_acm_rx_schedule(data, K_NO_WAIT);
+			return ret;
+		}
+
 		if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
 			key = k_spin_lock(&data->lock);
 			data->tx_fifo.enqueued--;
@@ -468,8 +474,15 @@ ep_buf_already_handled:
 static void usbd_cdc_acm_update(struct usbd_class_data *const c_data,
 				uint8_t iface, uint8_t alternate)
 {
+	const struct device *dev = usbd_class_get_private(c_data);
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct cdc_acm_uart_data *data = dev->data;
+
 	LOG_DBG("New configuration, interface %u alternate %u",
 		iface, alternate);
+	if (iface == cfg->desc->if1.bInterfaceNumber && alternate == 0U) {
+		cdc_acm_rx_schedule(data, K_NO_WAIT);
+	}
 }
 
 static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
