@@ -44,6 +44,7 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_CLASS_SUSPENDED		1
 #define CDC_ACM_IRQ_RX_ENABLED		2
 #define CDC_ACM_IRQ_TX_ENABLED		3
+#define CDC_ACM_CLASS_SHUTDOWN		6
 
 struct cdc_acm_rx_uart_fifo {
 	struct k_fifo *bufs;
@@ -131,6 +132,8 @@ struct cdc_acm_uart_data {
 	struct k_work rx_fifo_work;
 	atomic_t state;
 	struct k_sem notif_sem;
+	/* Protect context access only, never the completion wait. */
+	struct k_mutex notif_lock;
 	struct k_spinlock lock;
 };
 
@@ -154,12 +157,12 @@ static int usbd_cdc_acm_init_wq(void)
 
 SYS_INIT(usbd_cdc_acm_init_wq, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-static ALWAYS_INLINE int cdc_acm_work_submit(struct k_work *work)
+static ALWAYS_INLINE int cdc_acm_work_submit_raw(struct k_work *work)
 {
 	return k_work_submit_to_queue(&cdc_acm_work_q, work);
 }
 
-static ALWAYS_INLINE int cdc_acm_work_schedule(struct k_work_delayable *work,
+static ALWAYS_INLINE int cdc_acm_work_schedule_raw(struct k_work_delayable *work,
 					       k_timeout_t delay)
 {
 	return k_work_schedule_for_queue(&cdc_acm_work_q, work, delay);
@@ -172,12 +175,12 @@ static ALWAYS_INLINE bool check_wq_ctx(const struct device *dev)
 
 #else /* Use system workqueue */
 
-static ALWAYS_INLINE int cdc_acm_work_submit(struct k_work *work)
+static ALWAYS_INLINE int cdc_acm_work_submit_raw(struct k_work *work)
 {
 	return k_work_submit(work);
 }
 
-static ALWAYS_INLINE int cdc_acm_work_schedule(struct k_work_delayable *work,
+static ALWAYS_INLINE int cdc_acm_work_schedule_raw(struct k_work_delayable *work,
 					       k_timeout_t delay)
 {
 	return k_work_schedule(work, delay);
@@ -186,6 +189,48 @@ static ALWAYS_INLINE int cdc_acm_work_schedule(struct k_work_delayable *work,
 #define check_wq_ctx(dev) true
 
 #endif /* CONFIG_USBD_CDC_ACM_WORKQUEUE */
+
+/* Serialize all producers with shutdown, including UART API callers. */
+static bool cdc_acm_is_shutdown(struct cdc_acm_uart_data *data)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	bool stopped = atomic_test_bit(&data->state, CDC_ACM_CLASS_SHUTDOWN);
+
+	k_spin_unlock(&data->lock, key);
+	return stopped;
+}
+
+static int cdc_acm_work_submit(struct cdc_acm_uart_data *data, struct k_work *work)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	int ret = -ESHUTDOWN;
+
+	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_SHUTDOWN)) {
+		ret = cdc_acm_work_submit_raw(work);
+	}
+	k_spin_unlock(&data->lock, key);
+	return ret;
+}
+
+static int cdc_acm_work_schedule_locked(struct cdc_acm_uart_data *data,
+				      struct k_work_delayable *work, k_timeout_t delay)
+{
+	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SHUTDOWN)) {
+		return -ESHUTDOWN;
+	}
+
+	return cdc_acm_work_schedule_raw(work, delay);
+}
+
+static int cdc_acm_work_schedule(struct cdc_acm_uart_data *data,
+			       struct k_work_delayable *work, k_timeout_t delay)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	int ret = cdc_acm_work_schedule_locked(data, work, delay);
+
+	k_spin_unlock(&data->lock, key);
+	return ret;
+}
 
 static uint8_t cdc_acm_get_int_in(struct usbd_class_data *const c_data)
 {
@@ -276,7 +321,7 @@ static void cdc_acm_tx_schedule_leftover_locked(struct cdc_acm_uart_data *const 
 		}
 		if (data->zlp_needed || len != 0) {
 			/* Queue pending TX data on IN endpoint */
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+			cdc_acm_work_schedule_locked(data, &data->tx_fifo_work, K_NO_WAIT);
 		}
 	}
 }
@@ -334,13 +379,13 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		if (buf->len == 0) {
 			/* Drop transfer with zero length */
 			net_buf_unref(buf);
-			cdc_acm_work_submit(&data->rx_fifo_work);
+			cdc_acm_work_submit(data, &data->rx_fifo_work);
 			goto ep_buf_already_handled;
 		}
 
 		k_fifo_put(data->rx_fifo.bufs, buf);
 		if (data->cb) {
-			cdc_acm_work_submit(&data->irq_cb_work);
+			cdc_acm_work_submit(data, &data->irq_cb_work);
 		}
 
 		goto ep_buf_already_handled;
@@ -349,7 +394,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 	if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
 		/* TX transfer completion */
 		if (data->cb) {
-			cdc_acm_work_submit(&data->irq_cb_work);
+			cdc_acm_work_submit(data, &data->irq_cb_work);
 		}
 
 		key = k_spin_lock(&data->lock);
@@ -361,7 +406,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			/* If mitigation was not yet applied give the host some
 			 * time to disable ECHO.
 			 */
-			cdc_acm_work_schedule(&data->tx_fifo_work,
+			cdc_acm_work_schedule_locked(data, &data->tx_fifo_work,
 					      K_MSEC(CONFIG_USBD_CDC_ACM_TX_DELAY_MS));
 			data->echo_mitigated = true;
 		} else {
@@ -395,7 +440,14 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SHUTDOWN)) {
+		k_spin_unlock(&data->lock, key);
+		return;
+	}
 	atomic_set_bit(&data->state, CDC_ACM_CLASS_ENABLED);
+	k_spin_unlock(&data->lock, key);
 	LOG_INF("Configuration enabled");
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED)) {
@@ -404,10 +456,10 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 
 	if (data->cb == NULL) {
 		/* Allow cdc_acm_poll_in to receive */
-		cdc_acm_work_submit(&data->rx_fifo_work);
+		cdc_acm_work_submit(data, &data->rx_fifo_work);
 	}
 	data->zlp_needed = true;
-	cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+	cdc_acm_work_schedule(data, &data->tx_fifo_work, K_NO_WAIT);
 }
 
 static void usbd_cdc_acm_disable(struct usbd_class_data *const c_data)
@@ -420,6 +472,28 @@ static void usbd_cdc_acm_disable(struct usbd_class_data *const c_data)
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_ENABLED);
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
 	LOG_INF("Configuration disabled");
+}
+
+static void usbd_cdc_acm_shutdown(struct usbd_class_data *const c_data)
+{
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct cdc_acm_uart_data *data = dev->data;
+	struct k_work_sync sync;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	atomic_set_bit(&data->state, CDC_ACM_CLASS_SHUTDOWN);
+	atomic_clear_bit(&data->state, CDC_ACM_CLASS_ENABLED);
+	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
+	k_spin_unlock(&data->lock, key);
+
+	/* Join allocation/enqueue after closing entry, outside the spinlock. */
+	(void)k_mutex_lock(&data->notif_lock, K_FOREVER);
+	k_mutex_unlock(&data->notif_lock);
+
+	/* The application callback may be waiting for the device lock. */
+	(void)k_work_cancel(&data->irq_cb_work);
+	k_work_cancel_delayable_sync(&data->tx_fifo_work, &sync);
+	k_work_cancel_sync(&data->rx_fifo_work, &sync);
 }
 
 static void usbd_cdc_acm_suspended(struct usbd_class_data *const c_data)
@@ -603,6 +677,11 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct cdc_acm_uart_config *cfg = dev->config;
 	struct usbd_cdc_acm_desc *desc = cfg->desc;
+	struct cdc_acm_uart_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SHUTDOWN);
+	k_spin_unlock(&data->lock, key);
 
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
@@ -637,26 +716,41 @@ static __maybe_unused int cdc_acm_send_notification(const struct device *dev,
 	uint8_t ep;
 	int ret;
 
-	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
-		LOG_INF("USB configuration is not enabled");
+	/* New callers refuse without waiting for an active notification. */
+	if (cdc_acm_is_shutdown(data)) {
 		return -EACCES;
+	}
+
+	(void)k_mutex_lock(&data->notif_lock, K_FOREVER);
+	if (cdc_acm_is_shutdown(data) ||
+	    !atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
+		LOG_INF("USB configuration is not enabled");
+		ret = -EACCES;
+		goto unlock;
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
 		LOG_INF("USB support is suspended (FIXME)");
-		return -EACCES;
+		ret = -EACCES;
+		goto unlock;
 	}
 
 	ep = cdc_acm_get_int_in(c_data);
 	buf = usbd_ep_buf_alloc(c_data, ep, sizeof(struct cdc_acm_notification));
 	if (buf == NULL) {
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto unlock;
 	}
 
 	net_buf_add_mem(buf, &notification, sizeof(struct cdc_acm_notification));
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		net_buf_unref(buf);
+	}
+
+unlock:
+	k_mutex_unlock(&data->notif_lock);
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -723,7 +817,7 @@ static void cdc_acm_tx_fifo_enqueue(const struct device *dev)
 
 	if (buf == NULL) {
 		if (data->zlp_needed) {
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
+			cdc_acm_work_schedule(data, &data->tx_fifo_work, K_MSEC(1));
 		}
 		return;
 	}
@@ -770,11 +864,15 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 
 	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
 
+	if (cdc_acm_is_shutdown(data)) {
+		return;
+	}
+
 	cdc_acm_tx_fifo_enqueue(data->dev);
 	/* Rotation can restore space before any IN completion arrives. */
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
 	    cdc_acm_tx_fifo_space_get(data) != 0U) {
-		cdc_acm_work_submit(&data->irq_cb_work);
+		cdc_acm_work_submit(data, &data->irq_cb_work);
 	}
 }
 
@@ -793,6 +891,9 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	struct usbd_class_data *c_data;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, rx_fifo_work);
+	if (cdc_acm_is_shutdown(data)) {
+		return;
+	}
 	cfg = data->dev->config;
 	c_data = cfg->c_data;
 
@@ -832,7 +933,7 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
 
 	if (cdc_acm_tx_fifo_space_get(data)) {
 		LOG_INF("tx_en: trigger irq_cb_work");
-		cdc_acm_work_submit(&data->irq_cb_work);
+		cdc_acm_work_submit(data, &data->irq_cb_work);
 	}
 }
 
@@ -852,10 +953,10 @@ static void cdc_acm_irq_rx_enable(const struct device *dev)
 	/* Permit buffer to be drained regardless of USB state */
 	if (!k_fifo_is_empty(data->rx_fifo.bufs)) {
 		LOG_INF("rx_en: trigger irq_cb_work");
-		cdc_acm_work_submit(&data->irq_cb_work);
+		cdc_acm_work_submit(data, &data->irq_cb_work);
 	}
 
-	cdc_acm_work_submit(&data->rx_fifo_work);
+	cdc_acm_work_submit(data, &data->rx_fifo_work);
 }
 
 static void cdc_acm_irq_rx_disable(const struct device *dev)
@@ -903,7 +1004,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		}
 
 		if (enqueue) {
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+			cdc_acm_work_schedule(data, &data->tx_fifo_work, K_NO_WAIT);
 		}
 	}
 
@@ -1043,13 +1144,13 @@ static void cdc_acm_irq_update(const struct device *dev)
 static void cdc_acm_irq_cb_handler(struct k_work *work)
 {
 	struct cdc_acm_uart_data *data;
-	const struct cdc_acm_uart_config *cfg;
-	struct usbd_class_data *c_data;
 	k_spinlock_key_t key;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, irq_cb_work);
-	cfg = data->dev->config;
-	c_data = cfg->c_data;
+
+	if (cdc_acm_is_shutdown(data)) {
+		return;
+	}
 
 	if (data->cb == NULL) {
 		LOG_ERR("IRQ callback is not set");
@@ -1063,22 +1164,26 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) ||
 	    atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		data->cb(usbd_class_get_private(c_data), data->cb_data);
+		data->cb(data->dev, data->cb_data);
+	}
+
+	if (cdc_acm_is_shutdown(data)) {
+		return;
 	}
 
 	if (data->rx_fifo.altered) {
 		LOG_DBG("rx fifo altered, submit work");
-		cdc_acm_work_submit(&data->rx_fifo_work);
+		cdc_acm_work_submit(data, &data->rx_fifo_work);
 	}
 
 	key = k_spin_lock(&data->lock);
 	if (data->tx_fifo.enqueued == 0) {
 		if (data->tx_fifo.altered) {
 			LOG_DBG("tx fifo altered, submit work");
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+			cdc_acm_work_schedule_locked(data, &data->tx_fifo_work, K_NO_WAIT);
 		} else if (data->zlp_needed) {
 			LOG_DBG("zlp needed, submit work");
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+			cdc_acm_work_schedule_locked(data, &data->tx_fifo_work, K_NO_WAIT);
 		}
 	}
 	k_spin_unlock(&data->lock, key);
@@ -1086,13 +1191,13 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
 	    !k_fifo_is_empty(data->rx_fifo.bufs)) {
 		LOG_DBG("rx irq pending, submit irq_cb_work");
-		cdc_acm_work_submit(&data->irq_cb_work);
+		cdc_acm_work_submit(data, &data->irq_cb_work);
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
 	    cdc_acm_tx_fifo_space_get(data)) {
 		LOG_DBG("tx irq pending, submit irq_cb_work");
-		cdc_acm_work_submit(&data->irq_cb_work);
+		cdc_acm_work_submit(data, &data->irq_cb_work);
 	}
 }
 
@@ -1121,7 +1226,7 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 	if (head->len == 0) {
 		head = k_fifo_get(data->rx_fifo.bufs, K_NO_WAIT);
 		net_buf_unref(head);
-		cdc_acm_work_submit(&data->rx_fifo_work);
+		cdc_acm_work_submit(data, &data->rx_fifo_work);
 	}
 
 	return 0;
@@ -1156,7 +1261,7 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 	 */
 cdc_acm_poll_out_schedule:
 	if (data->echo_mitigated) {
-		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
+		cdc_acm_work_schedule(data, &data->tx_fifo_work, K_MSEC(1));
 	}
 }
 
@@ -1301,6 +1406,7 @@ static const struct usbd_class_api usbd_cdc_acm_api = {
 	.update = usbd_cdc_acm_update,
 	.enable = usbd_cdc_acm_enable,
 	.disable = usbd_cdc_acm_disable,
+	.shutdown = usbd_cdc_acm_shutdown,
 	.suspended = usbd_cdc_acm_suspended,
 	.resumed = usbd_cdc_acm_resumed,
 	.control_to_host = usbd_cdc_acm_cth,
@@ -1527,6 +1633,7 @@ const static struct usb_desc_header *const cdc_acm_hs_desc_##n[] = {		\
 		.tx_fifo.pool = &cdc_acm_tx_pool_##n,				\
 		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
+		.notif_lock = Z_MUTEX_INITIALIZER(uart_data_##n.notif_lock),	\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, usbd_cdc_acm_preinit, NULL,			\

@@ -20,6 +20,17 @@ else()
   target_compile_definitions(subsys__usb__device_next PRIVATE RX_WORK_DELAYABLE=0)
 endif()
 
+# Observe send-helper entry without changing the production source file.
+set(enqueue_entry "static void cdc_acm_tx_fifo_enqueue(const struct device *dev)\n{")
+string(FIND "${driver_text}" "${enqueue_entry}" enqueue_position)
+if(enqueue_position EQUAL -1)
+  message(FATAL_ERROR "Expected CDC ACM send enqueue entry")
+endif()
+string(REPLACE "${enqueue_entry}" "${enqueue_entry}\n\ttx_enqueue_entered(dev);"
+  driver_text "${driver_text}")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/usbd_cdc_acm_test_driver.c" "${driver_text}")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${driver}")
+
 get_target_property(sources subsys__usb__device_next SOURCES)
 set(remaining)
 set(replaced 0)
@@ -38,6 +49,7 @@ target_sources(subsys__usb__device_next PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src/driver_test.c"
 )
 target_include_directories(subsys__usb__device_next BEFORE PRIVATE
+  "${CMAKE_CURRENT_BINARY_DIR}"
   "${ZEPHYR_BASE}/subsys/usb/device_next/class"
   "${ZEPHYR_BASE}/drivers/usb/udc"
 )

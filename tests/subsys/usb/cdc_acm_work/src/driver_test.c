@@ -10,8 +10,91 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/usb/usbd.h>
 
+static bool fail_enqueue;
+static bool refuse_always;
+static bool resume_on_refusal;
+static uint32_t enqueue_failures;
+static uint32_t out_armed;
+
+/* Hold only test-side allocation, after the driver's enabled check. */
+static K_SEM_DEFINE(notification_entered, 0, 1);
+static K_SEM_DEFINE(notification_release, 0, 1);
+static K_SEM_DEFINE(notification_queued, 0, 1);
+static bool notification_test;
+static bool notification_hold;
+static bool notification_accept;
+static bool notification_detached;
+static uint32_t notification_allocations;
+static uint8_t notification_ep;
+
+static struct net_buf *notification_alloc(const struct usbd_class_data *c_data,
+					 uint8_t ep, size_t size)
+{
+	if (notification_test && USB_EP_DIR_IS_IN(ep)) {
+		notification_ep = ep;
+		notification_allocations++;
+		if (notification_hold) {
+			k_sem_give(&notification_entered);
+			(void)k_sem_take(&notification_release, K_MSEC(250));
+		}
+		if (c_data->uds_ctx == NULL) {
+			/* Observe the bug without dereferencing the detached context. */
+			notification_detached = true;
+			return NULL;
+		}
+	}
+	return usbd_ep_buf_alloc(c_data, ep, size);
+}
+
+static int enqueue_seam(const struct usbd_class_data *c_data, struct net_buf *buf)
+{
+	bool out = USB_EP_DIR_IS_OUT(udc_get_buf_info(buf)->ep);
+	int ret;
+
+	if (out && (fail_enqueue || refuse_always)) {
+		fail_enqueue = false;
+		enqueue_failures++;
+		if (resume_on_refusal) {
+			resume_on_refusal = false;
+			c_data->api->resumed((struct usbd_class_data *)c_data);
+		}
+		return -EIO;
+	}
+
+	if (notification_test && udc_get_buf_info(buf)->ep == notification_ep) {
+		k_sem_give(&notification_queued);
+		if (notification_accept) {
+			/* The test controller owns it; completion is released separately. */
+			net_buf_unref(buf);
+			return 0;
+		}
+		return -EIO;
+	}
+
+	ret = usbd_ep_enqueue(c_data, buf);
+	if (out && ret == 0) {
+		out_armed++;
+	}
+	return ret;
+}
+
+/* Observe entry before the send helper's enabled-state guard. */
+static const struct device *tx_enqueue_device;
+static const struct usbd_class_data *tx_enqueue_class;
+static bool tx_enqueue_detached;
+
+static void tx_enqueue_entered(const struct device *dev)
+{
+	if (dev == tx_enqueue_device && tx_enqueue_class != NULL &&
+	    tx_enqueue_class->uds_ctx == NULL) {
+		tx_enqueue_detached = true;
+	}
+}
+
 /* Compile the complete driver once, in its usual library. */
 
+#define usbd_ep_buf_alloc notification_alloc
+#define usbd_ep_enqueue enqueue_seam
 #define k_work_submit(work) test_submit_to_queue(&k_sys_work_q, work)
 #define k_work_schedule(work, delay) test_schedule_for_queue(&k_sys_work_q, work, delay)
 #define k_work_reschedule(work, delay) test_reschedule_for_queue(&k_sys_work_q, work, delay)
@@ -21,7 +104,7 @@
 #define k_work_cancel test_cancel
 #define k_work_cancel_sync test_cancel_sync
 #define k_work_cancel_delayable_sync test_cancel_delayable_sync
-#include <usbd_cdc_acm.c>
+#include <usbd_cdc_acm_test_driver.c>
 #undef k_work_cancel_delayable_sync
 #undef k_work_cancel_sync
 #undef k_work_cancel
@@ -31,6 +114,8 @@
 #undef k_work_reschedule
 #undef k_work_schedule
 #undef k_work_submit
+#undef usbd_ep_enqueue
+#undef usbd_ep_buf_alloc
 
 
 USBD_CONFIGURATION_DEFINE(rx_fs, 0, 50, NULL);
@@ -44,6 +129,17 @@ static struct usbd_class_data *rx_class(void)
 	const struct cdc_acm_uart_config *cfg = uart->config;
 
 	return cfg->c_data;
+}
+
+static struct k_work *rx_work(void)
+{
+	struct cdc_acm_uart_data *data = uart->data;
+
+#if RX_WORK_DELAYABLE
+	return &data->rx_fifo_work.work;
+#else
+	return &data->rx_fifo_work;
+#endif
 }
 
 static void release_endpoint(uint8_t ep)
@@ -78,6 +174,11 @@ static void before(void *fixture)
 {
 	ARG_UNUSED(fixture);
 	cleanup();
+	fail_enqueue = false;
+	refuse_always = false;
+	resume_on_refusal = false;
+	enqueue_failures = 0;
+	out_armed = 0;
 
 	zassert_ok(usbd_cdc_acm_init(rx_class()));
 	usbd_cdc_acm_enable(rx_class());
@@ -103,6 +204,269 @@ static void *setup(void)
 	zassert_ok(udc_ep_enable(rx_device.dev, cdc_acm_get_bulk_in(rx_class()),
 				 USB_EP_TYPE_BULK, cdc_acm_get_bulk_mps(rx_class()), 0));
 	return NULL;
+}
+
+/* A bounded stand-in for usbd_wakeup_request() taking the same mutex. */
+static K_SEM_DEFINE(device_locked, 0, 1);
+static K_SEM_DEFINE(callback_entered, 0, 1);
+static K_SEM_DEFINE(shutdown_done, 0, 1);
+static K_SEM_DEFINE(release_device_lock, 0, 1);
+static K_THREAD_STACK_DEFINE(shutdown_stack, 2048);
+static struct k_thread shutdown_thread;
+static uint32_t blocked_callbacks;
+
+static void blocking_callback(const struct device *dev, void *user_data)
+{
+	struct usbd_context *ctx = user_data;
+	uint8_t byte = 0x5a;
+	int ret;
+
+	blocked_callbacks++;
+	k_sem_give(&callback_entered);
+	/* A timeout also frees the red control's synchronous canceller. */
+	ret = k_mutex_lock(&ctx->mutex, K_MSEC(250));
+	if (ret == 0) {
+		k_mutex_unlock(&ctx->mutex);
+	}
+	uart_irq_tx_enable(dev);
+	uart_irq_rx_enable(dev);
+	(void)uart_fifo_fill(dev, &byte, 1);
+	uart_poll_out(dev, byte);
+}
+
+static void run_shutdown(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+	(void)k_mutex_lock(&rx_device.mutex, K_FOREVER);
+	k_sem_give(&device_locked);
+	if (k_sem_take(&callback_entered, K_SECONDS(1)) == 0) {
+		rx_class()->api->shutdown(rx_class());
+		k_sem_give(&shutdown_done);
+	}
+	(void)k_sem_take(&release_device_lock, K_SECONDS(1));
+	k_mutex_unlock(&rx_device.mutex);
+}
+
+ZTEST(cdc_acm_work, test_shutdown_does_not_wait_for_application)
+{
+	struct cdc_acm_uart_data *data = uart->data;
+	struct usbd_context *ctx = rx_class()->uds_ctx;
+	struct k_work_sync sync;
+	uint32_t runs;
+	int ret;
+	int shutdown_join;
+
+	if (!IS_ENABLED(CONFIG_USBD_CDC_ACM_WORKQUEUE)) {
+		/* A blocked callback would also block virtual-host system work. */
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_not_null(rx_class()->api->shutdown, "class shutdown is not registered");
+	refuse_always = true;
+	test_advance(K_NO_WAIT);
+	blocked_callbacks = 0U;
+	k_sem_reset(&device_locked);
+	k_sem_reset(&callback_entered);
+	k_sem_reset(&shutdown_done);
+	k_sem_reset(&release_device_lock);
+	cdc_acm_irq_callback_set(uart, blocking_callback, ctx);
+	/* Run the callback on the dedicated queue, leaving UHC events free. */
+	test_real_work = &data->irq_cb_work;
+	k_thread_create(&shutdown_thread, shutdown_stack,
+			K_THREAD_STACK_SIZEOF(shutdown_stack), run_shutdown,
+			NULL, NULL, NULL, 1, 0, K_NO_WAIT);
+	zassert_ok(k_sem_take(&device_locked, K_SECONDS(1)));
+	cdc_acm_irq_tx_enable(uart);
+	ret = k_sem_take(&shutdown_done, K_MSEC(50));
+	if (ret == 0) {
+		/* Detach only in green; the callback still waits for this lock. */
+		rx_class()->uds_ctx = NULL;
+	}
+	k_sem_give(&release_device_lock);
+	shutdown_join = k_thread_join(&shutdown_thread, K_SECONDS(1));
+	(void)k_work_flush(&data->irq_cb_work, &sync);
+	test_real_work = NULL;
+	rx_class()->uds_ctx = ctx;
+	zassert_ok(shutdown_join);
+	zassert_ok(ret, "shutdown waited for application code under the device lock");
+	zassert_equal(blocked_callbacks, 1U);
+	zassert_false(test_work_pending(&data->irq_cb_work));
+	zassert_false(test_work_pending(&data->tx_fifo_work.work));
+	zassert_false(test_work_pending(rx_work()));
+	runs = test_work_runs;
+	rx_class()->uds_ctx = NULL;
+	/* Late producers and already dequeued handlers must also refuse. */
+	usbd_cdc_acm_enable(rx_class());
+	usbd_cdc_acm_resumed(rx_class());
+	cdc_acm_irq_tx_enable(uart);
+	cdc_acm_irq_rx_enable(uart);
+	cdc_acm_tx_fifo_handler(&data->tx_fifo_work.work);
+	cdc_acm_rx_fifo_handler(rx_work());
+	cdc_acm_irq_cb_handler(&data->irq_cb_work);
+	test_advance(K_SECONDS(1));
+	rx_class()->uds_ctx = ctx;
+	zassert_equal(test_work_runs, runs, "class work ran after shutdown");
+	zassert_equal(blocked_callbacks, 1U, "callback restarted after shutdown");
+}
+
+static uint8_t late_tx_bytes[USBD_MAX_BULK_MPS];
+static size_t late_tx_tailroom;
+static int late_tx_written;
+static bool late_tx_full;
+
+static void late_filling_callback(const struct device *dev, void *user_data)
+{
+	struct usbd_class_data *c_data = user_data;
+	struct usbd_context *ctx = c_data->uds_ctx;
+	struct cdc_acm_uart_data *data = dev->data;
+
+	/* Continue an admitted callback after shutdown and class detachment. */
+	c_data->api->shutdown(c_data);
+	c_data->uds_ctx = NULL;
+	late_tx_written = uart_fifo_fill(dev, late_tx_bytes, late_tx_tailroom);
+	late_tx_full = data->tx_fifo.current != NULL &&
+		       net_buf_tailroom(data->tx_fifo.current) == 0U;
+	uart_irq_tx_disable(dev);
+	c_data->uds_ctx = ctx;
+}
+
+ZTEST(cdc_acm_work, test_shutdown_full_tx_buffer_stays_in_worker)
+{
+	struct cdc_acm_uart_data *data = uart->data;
+
+	zassert_not_null(rx_class()->api->shutdown, "class shutdown is not registered");
+	test_advance(K_NO_WAIT);
+	zassert_not_null(data->tx_fifo.current);
+	late_tx_tailroom = net_buf_tailroom(data->tx_fifo.current);
+	zassert_true(late_tx_tailroom > 0U && late_tx_tailroom <= sizeof(late_tx_bytes));
+	late_tx_written = 0;
+	late_tx_full = false;
+	tx_enqueue_detached = false;
+	tx_enqueue_device = uart;
+	tx_enqueue_class = rx_class();
+	data->echo_mitigated = true;
+	cdc_acm_irq_callback_set(uart, late_filling_callback, rx_class());
+	cdc_acm_irq_tx_enable(uart);
+	test_advance(K_NO_WAIT);
+	tx_enqueue_class = NULL;
+	tx_enqueue_device = NULL;
+	zassert_equal(late_tx_written, late_tx_tailroom, "late callback did not fill TX buffer");
+	zassert_true(late_tx_full, "late callback left TX buffer space");
+	zassert_false(tx_enqueue_detached, "late FIFO fill entered send enqueue after detachment");
+	zassert_false(test_work_pending(&data->tx_fifo_work.work));
+}
+
+static K_SEM_DEFINE(notification_done, 0, 1);
+static K_SEM_DEFINE(notification_shutdown_started, 0, 1);
+static K_SEM_DEFINE(notification_shutdown_done, 0, 1);
+static K_THREAD_STACK_DEFINE(notification_stack, 2048);
+static K_THREAD_STACK_DEFINE(notification_shutdown_stack, 2048);
+static struct k_thread notification_thread;
+static struct k_thread notification_shutdown_thread;
+static int notification_result;
+
+static void run_notification(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+	notification_result = uart_line_ctrl_set(uart, UART_LINE_CTRL_DCD, 1U);
+	k_sem_give(&notification_done);
+}
+
+static void shutdown_notification(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+	(void)k_mutex_lock(&rx_device.mutex, K_FOREVER);
+	k_sem_give(&notification_shutdown_started);
+	if (rx_class()->api->shutdown != NULL) {
+		rx_class()->api->shutdown(rx_class());
+	}
+	/* Match class removal: detach as soon as shutdown returns. */
+	rx_class()->uds_ctx = NULL;
+	k_sem_give(&notification_shutdown_done);
+	k_mutex_unlock(&rx_device.mutex);
+}
+
+static void notification_shutdown_case(bool hold_allocation)
+{
+	struct usbd_context *ctx = rx_class()->uds_ctx;
+	struct cdc_acm_uart_data *data = uart->data;
+	uint32_t allocations;
+	int shutdown_ret;
+	int notify_join;
+	int shutdown_join;
+	int disabled_ret;
+
+	notification_test = true;
+	notification_hold = hold_allocation;
+	notification_accept = !hold_allocation;
+	notification_detached = false;
+	notification_allocations = 0U;
+	k_sem_reset(&notification_entered);
+	k_sem_reset(&notification_release);
+	k_sem_reset(&notification_queued);
+	k_sem_reset(&notification_done);
+	k_sem_reset(&notification_shutdown_started);
+	k_sem_reset(&notification_shutdown_done);
+	k_sem_reset(&data->notif_sem);
+	k_thread_create(&notification_thread, notification_stack,
+			K_THREAD_STACK_SIZEOF(notification_stack), run_notification,
+			NULL, NULL, NULL, 1, 0, K_NO_WAIT);
+	if (hold_allocation) {
+		zassert_ok(k_sem_take(&notification_entered, K_SECONDS(1)));
+	} else {
+		/* Enqueue succeeds, but the test controller withholds completion. */
+		zassert_ok(k_sem_take(&notification_queued, K_SECONDS(1)));
+	}
+	k_thread_create(&notification_shutdown_thread, notification_shutdown_stack,
+			K_THREAD_STACK_SIZEOF(notification_shutdown_stack), shutdown_notification,
+			NULL, NULL, NULL, 1, 0, K_NO_WAIT);
+	zassert_ok(k_sem_take(&notification_shutdown_started, K_SECONDS(1)));
+	shutdown_ret = k_sem_take(&notification_shutdown_done, K_MSEC(50));
+	/* Release either seam before asserting, including in a broken driver. */
+	k_sem_give(&notification_release);
+	k_sem_give(&data->notif_sem);
+	notify_join = k_thread_join(&notification_thread, K_SECONDS(1));
+	shutdown_join = k_thread_join(&notification_shutdown_thread, K_SECONDS(1));
+	allocations = notification_allocations;
+	/* Still detached: no new notification may even enter allocation. */
+	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
+		/* Old controls have no shutdown: do not look up an endpoint through NULL. */
+		disabled_ret = 0;
+	} else {
+		disabled_ret = uart_line_ctrl_set(uart, UART_LINE_CTRL_DCD, 0U);
+	}
+	rx_class()->uds_ctx = ctx;
+	notification_test = false;
+	test_work_reset();
+	zassert_ok(usbd_cdc_acm_init(rx_class()));
+	usbd_cdc_acm_enable(rx_class());
+	zassert_ok(notify_join);
+	zassert_ok(shutdown_join);
+	zassert_false(notification_detached, "shutdown detached a notification section");
+	if (hold_allocation) {
+		zassert_equal(shutdown_ret, -EAGAIN,
+			      "shutdown did not join notification allocation");
+		zassert_equal(notification_result, -EIO);
+	} else {
+		zassert_ok(shutdown_ret, "shutdown waited for notification completion");
+		zassert_ok(notification_result);
+	}
+	zassert_equal(disabled_ret, -EACCES, "detached notification was not refused");
+	zassert_equal(notification_allocations, allocations,
+		      "late notification reached allocation");
+}
+
+ZTEST(cdc_acm_work, test_notification_shutdown_joins_section)
+{
+	notification_shutdown_case(true);
+	notification_shutdown_case(false);
 }
 
 static uint8_t tx_bytes[USBD_MAX_BULK_MPS * 3U + 7U];
