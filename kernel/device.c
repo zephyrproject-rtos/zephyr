@@ -51,10 +51,13 @@ int do_device_init(const struct device *dev)
 		dev->state->init_res = rc;
 	}
 
-	/* device initialization has been invoked */
-	dev->state->initialized = true;
-
 	if (rc == 0) {
+		/* A failed init leaves the device uninitialized, so it can be
+		 * retried by device_init() and nothing can be released by
+		 * device_deinit().
+		 */
+		dev->state->initialized = true;
+
 		/* Run automatic device runtime enablement */
 		(void)pm_device_runtime_auto_enable(dev);
 	}
@@ -198,7 +201,7 @@ bool z_impl_device_is_ready(const struct device *dev)
 		return false;
 	}
 
-	return dev->state->initialized && (dev->state->init_res == 0U);
+	return dev->state->initialized;
 }
 
 int z_impl_device_deinit(const struct device *dev)

@@ -395,9 +395,11 @@ static void *iface_setup(void)
 		      "Invalid operational state (%d)",
 		      net_if_oper_state(iface1));
 
-	/* Mark the device ready and take the interface up */
-	dev->state->init_res = 0;
+	/* Make the device ready and take the interface up */
 	device_ok = true;
+	ret = device_init(dev);
+	zassert_equal(ret, 0, "Device init failed (%d)", ret);
+	zassert_true(device_is_ready(dev), "Device %s (%p) is not ready!", dev->name, dev);
 
 	/* The interface init was skipped because device was not ready during
 	 * system initialization. Now that the device is ready, we need to
