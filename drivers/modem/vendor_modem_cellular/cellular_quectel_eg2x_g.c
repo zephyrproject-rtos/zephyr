@@ -17,41 +17,6 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCHES_DEFINE(quectel_eg2x_g_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES,
 			  MODEM_CHAT_MATCH("+QENG: ", ",", quectel_eg2x_g_on_qeng));
 
-/*
- * AT+CMUX <port_speed> is specified in 3GPP TS 27.007 defining values 1..6 (up to 230400);
- * the EG2X-G accepts vendor values for higher rates. The modem moves its multiplexer UART
- * to the named rate on CMUX entry, so it must track the host rate selected by devicetree.
- * Due to the current limitations of the init script, only considers the first devicetree
- * instance.
- */
-#if DT_HAS_COMPAT_STATUS_OKAY(quectel_eg21_g)
-#define TARGET_BAUDRATE                                                                            \
-	DT_PROP_OR(DT_COMPAT_GET_ANY_STATUS_OKAY(quectel_eg21_g), target_baudrate, 115200)
-#else
-#define TARGET_BAUDRATE                                                                            \
-	DT_PROP_OR(DT_COMPAT_GET_ANY_STATUS_OKAY(quectel_eg25_g), target_baudrate, 115200)
-#endif
-
-#if TARGET_BAUDRATE == 921600
-#define QUECTEL_EG2X_G_CMUX_PORT_SPEED "8"
-#elif TARGET_BAUDRATE == 460800
-#define QUECTEL_EG2X_G_CMUX_PORT_SPEED "7"
-#elif TARGET_BAUDRATE == 230400
-#define QUECTEL_EG2X_G_CMUX_PORT_SPEED "6"
-#elif TARGET_BAUDRATE == 115200
-#define QUECTEL_EG2X_G_CMUX_PORT_SPEED "5"
-#elif TARGET_BAUDRATE == 57600
-#define QUECTEL_EG2X_G_CMUX_PORT_SPEED "4"
-#elif TARGET_BAUDRATE == 38400
-#define QUECTEL_EG2X_G_CMUX_PORT_SPEED "3"
-#elif TARGET_BAUDRATE == 19200
-#define QUECTEL_EG2X_G_CMUX_PORT_SPEED "2"
-#elif TARGET_BAUDRATE == 9600
-#define QUECTEL_EG2X_G_CMUX_PORT_SPEED "1"
-#else
-#error "TARGET_BAUDRATE unsupported for EG2X-G CMUX port speed"
-#endif
-
 #define BUS_HAS_FLOW_CONTROL(modem)                                                                \
 	DT_PROP_OR(DT_BUS(DT_COMPAT_GET_ANY_STATUS_OKAY(modem)), hw_flow_control, 0)
 
@@ -72,11 +37,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMI", cgmi_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0," QUECTEL_EG2X_G_CMUX_PORT_SPEED
-					"," STRINGIFY(CONFIG_MODEM_CMUX_MTU)
-					",10,3,30,10,2",
-					100));
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_init_chat_script, quectel_eg2x_g_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -163,7 +124,6 @@ static void quectel_eg2x_g_on_qeng(struct modem_chat *chat, char **argv, uint16_
 static const struct modem_cellular_vendor_config_common quectel_eg2x_g_vendor = {
 	/* clang-format off */
 	.scripts = {
-		.init = &quectel_eg2x_g_init_chat_script,
 		.dial = &quectel_eg2x_g_dial_chat_script,
 		.periodic = &quectel_eg2x_g_periodic_chat_script,
 	},
@@ -182,14 +142,40 @@ static const struct modem_cellular_vendor_config_common quectel_eg2x_g_vendor = 
 	.shutdown_time_ms = 5000,
 };
 
+/* Convert the devicetree baudrate to the CMUX port speed string */
+#define QUECTEL_CMUX_PORT_SPEED(inst)                                                              \
+	STRINGIFY(UTIL_INC(DT_INST_ENUM_IDX_OR(inst, target_baudrate, 4)))
+
+/*
+ * AT+CMUX <port_speed> is specified in 3GPP TS 27.007 defining values 1..6 (up to 230400);
+ * the EG2X-G accepts vendor values for higher rates. The modem moves its multiplexer UART
+ * to the named rate on CMUX entry, so it must track the host rate selected by devicetree.
+ */
+#define QUECTEL_INIT_CMUX_SCRIPT(inst)                                                             \
+	MODEM_CHAT_SCRIPT_CMDS_DEFINE(                                                             \
+		MODEM_CELLULAR_INST_NAME(cmux_cmds, inst),                                         \
+		MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0," QUECTEL_CMUX_PORT_SPEED(            \
+			inst) "," STRINGIFY(CONFIG_MODEM_CMUX_MTU) ",10,3,30,10,2", 100));         \
+	MODEM_CHAT_SCRIPT_DEFINE(MODEM_CELLULAR_INST_NAME(cmux_script, inst),                      \
+				 MODEM_CELLULAR_INST_NAME(cmux_cmds, inst), abort_matches,         \
+				 modem_cellular_chat_callback_handler, 10);
+
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG2X_G(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
 	MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst);                                          \
+	QUECTEL_INIT_CMUX_SCRIPT(inst);                                                            \
+                                                                                                   \
+	static const struct modem_chat_script *MODEM_CELLULAR_INST_NAME(init_scripts, inst)[] = {  \
+		&quectel_eg2x_g_init_chat_script,                                                  \
+		&MODEM_CELLULAR_INST_NAME(cmux_script, inst),                                      \
+	};                                                                                         \
                                                                                                    \
 	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
 		vendor_config_inst, inst) = {                                                      \
-			MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst),                   \
+		.multi_init = MODEM_CELLULAR_INST_NAME(init_scripts, inst),                        \
+		.multi_init_num = ARRAY_SIZE(MODEM_CELLULAR_INST_NAME(init_scripts, inst)),        \
+		MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst),                           \
 	};                                                                                         \
                                                                                                    \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
