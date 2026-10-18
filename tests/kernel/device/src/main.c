@@ -695,6 +695,20 @@ ZTEST_USER(device, test_deferred_init_user)
 	zassert_true(device_is_ready(FAKEDEFERDRIVER1));
 }
 
+/**
+ * @brief Test device_is_ready() with a NULL pointer from user mode
+ *
+ * @details Verify that device_is_ready(NULL) returns false from a user
+ * thread instead of faulting in the syscall verifier.
+ *
+ * @see device_is_ready
+ * @ingroup kernel_device_tests
+ */
+ZTEST_USER(device, test_device_is_ready_null_user)
+{
+	zassert_false(device_is_ready(NULL));
+}
+
 ZTEST(device, test_deinit_not_supported)
 {
 	const struct device *dev = device_get_binding(DUMMY_NOINIT);

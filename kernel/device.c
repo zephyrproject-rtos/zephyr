@@ -123,6 +123,11 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 
 static inline bool z_vrfy_device_is_ready(const struct device *dev)
 {
+	/* NULL is a documented argument, not an invalid kernel object */
+	if (dev == NULL) {
+		return false;
+	}
+
 	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_DRIVER_ANY));
 
 	return z_impl_device_is_ready(dev);
