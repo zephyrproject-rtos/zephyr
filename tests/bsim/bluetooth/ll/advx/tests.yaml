@@ -15,6 +15,7 @@ tests:
       tests_scripts:
         - tests_scripts/basic_advx.sh
         - tests_scripts/aux_connect.sh
+        - tests_scripts/aux_connect_preempt.sh
 
   bluetooth.controller.advx.ticker_expire_info:
     extra_overlay_confs:
