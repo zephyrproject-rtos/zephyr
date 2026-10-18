@@ -18,10 +18,15 @@ target_sources(app PRIVATE
   "src/anonymous.c"
   "src/connect.c"
   "src/test_aux_connect.c"
+  "src/test_aux_connect_preempt.c"
 )
 
 zephyr_include_directories(
+  ${ZEPHYR_BASE}
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
   )
+
+# The preempt test recognizes the AUX_CONNECT_RSP that the Controller sets up.
+target_link_options(app PUBLIC -Wl,--wrap=radio_pkt_tx_set)
