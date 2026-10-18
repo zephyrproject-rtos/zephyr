@@ -162,7 +162,7 @@ static void quectel_eg2x_g_on_qeng(struct modem_chat *chat, char **argv, uint16_
 	modem_cellular_emit_network_status(data, &evt);
 }
 
-static const struct modem_cellular_vendor_config quectel_eg2x_g_vendor = {
+static const struct modem_cellular_vendor_config_common quectel_eg2x_g_vendor = {
 	/* clang-format off */
 	.scripts = {
 #if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
@@ -188,11 +188,16 @@ static const struct modem_cellular_vendor_config quectel_eg2x_g_vendor = {
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG2X_G(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &quectel_eg2x_g_vendor,                                                  \
+	};                                                                                         \
+                                                                                                   \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &quectel_eg2x_g_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 #define DT_DRV_COMPAT quectel_eg21_g
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_EG2X_G)

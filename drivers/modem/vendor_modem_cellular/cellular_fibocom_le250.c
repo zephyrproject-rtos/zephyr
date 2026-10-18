@@ -66,7 +66,7 @@ MODEM_CHAT_SCRIPT_DEFINE(fibocom_le250_shutdown_chat_script,
 			 fibocom_le250_shutdown_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 10);
 
-static const struct modem_cellular_vendor_config fibocom_le250_vendor = {
+static const struct modem_cellular_vendor_config_common fibocom_le250_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &fibocom_le250_init_chat_script,
@@ -95,10 +95,15 @@ static const struct modem_cellular_vendor_config fibocom_le250_vendor = {
 #define MODEM_CELLULAR_DEVICE_FIBOCOM_LE250(inst)                                                  \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &fibocom_le250_vendor,                                                   \
+	};                                                                                         \
+                                                                                                   \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &fibocom_le250_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_FIBOCOM_LE250)
