@@ -2861,6 +2861,23 @@ static void l2cap_br_conn_rsp_sent_cb(struct bt_conn *conn, void *user_data, int
 		return;
 	}
 
+	if (err != 0) {
+		/* Reported on the TX processor, which cannot wait for the HCI command: the
+		 * signalling channel, which outlives this one, disconnects the link instead
+		 */
+		if ((conn->state == BT_CONN_CONNECTED) &&
+		    atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONNECT_ACL)) {
+			struct bt_l2cap_br *l2cap = l2cap_br_find_signal_channel(conn);
+
+			if (l2cap != NULL) {
+				atomic_set_bit(l2cap->chan.flags, L2CAP_FLAG_DISCONNECT_ACL);
+				bt_work_reschedule(&l2cap->chan.retry_work, K_NO_WAIT);
+			}
+		}
+
+		return;
+	}
+
 	/* Check whether the ACL connection needs to be disconnected. */
 	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONNECT_ACL)) {
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
@@ -5917,6 +5934,17 @@ static void l2cap_br_retry_handler(struct k_work *work)
 
 	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_DISCONN_REQ)) {
 		(void)bt_l2cap_br_chan_disconnect(&chan->chan);
+	}
+
+	/* Set on the signalling channel by l2cap_br_conn_rsp_sent_cb() */
+	if ((chan->rx.cid == BT_L2CAP_CID_BR_SIG) &&
+	    atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_DISCONNECT_ACL)) {
+		int err;
+
+		err = bt_conn_disconnect(chan->chan.conn, BT_HCI_ERR_AUTH_FAIL);
+		if (err != 0) {
+			LOG_WRN("Unable to disconnect %p (err %d)", chan->chan.conn, err);
+		}
 	}
 }
 
