@@ -381,7 +381,8 @@ ZTEST(modem_cellular_gpio, test_status_powered_resume_keeps_baudrate)
 	zassert_ok(modem_cellular_pm_action(modem_status, PM_DEVICE_ACTION_RESUME));
 
 	expect_line(TEST_BACKEND_PIPE_UART, MODEM_CELLULAR_TEST_SET_BAUDRATE_CMD);
-	zassert_equal(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE, uart_baudrate(modem_status),
+	zassert_equal(DT_PROP(DT_NODELABEL(modem_status), target_baudrate),
+		      uart_baudrate(modem_status),
 		      "baudrate script sent at the original baudrate");
 	expect_no_edge();
 	ok(TEST_BACKEND_PIPE_UART);

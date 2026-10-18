@@ -11,14 +11,6 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCHES_DEFINE(quectel_bg9x_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	quectel_bg9x_set_baudrate_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR=" STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE),
-						       ok_match));
-
-MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_set_baudrate_chat_script, quectel_bg9x_set_baudrate_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 1);
-
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	quectel_bg9x_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN", imei_match),
@@ -81,13 +73,14 @@ static const struct modem_cellular_vendor_config_common quectel_bg9x_vendor = {
 	.shutdown_time_ms = 2000,
 };
 
-#define MODEM_CELLULAR_DEVICE_QUECTEL_BG9X(inst)                                                   \
+#define MODEM_CELLULAR_DEVICE_QUECTEL_BG9X(inst, variant)                                          \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
+                                                                                                   \
+	MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst);                                          \
                                                                                                    \
 	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
 		vendor_config_inst, inst) = {                                                      \
-		.set_baudrate = &quectel_bg9x_set_baudrate_chat_script,                            \
-		.target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,                             \
+		MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst),                           \
 	};                                                                                         \
                                                                                                    \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
@@ -102,10 +95,13 @@ static const struct modem_cellular_vendor_config_common quectel_bg9x_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
+#define MODEM_CELLULAR_DEVICE_QUECTEL_BG95(inst) MODEM_CELLULAR_DEVICE_QUECTEL_BG9X(inst, 95)
+#define MODEM_CELLULAR_DEVICE_QUECTEL_BG96(inst) MODEM_CELLULAR_DEVICE_QUECTEL_BG9X(inst, 96)
+
 #define DT_DRV_COMPAT quectel_bg95
-DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_BG9X)
+DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_BG95)
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT quectel_bg96
-DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_BG9X)
+DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_BG96)
 #undef DT_DRV_COMPAT

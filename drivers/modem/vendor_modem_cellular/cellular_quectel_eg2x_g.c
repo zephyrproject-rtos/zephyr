@@ -20,27 +20,38 @@ MODEM_CHAT_MATCHES_DEFINE(quectel_eg2x_g_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATC
 /*
  * AT+CMUX <port_speed> is specified in 3GPP TS 27.007 defining values 1..6 (up to 230400);
  * the EG2X-G accepts vendor values for higher rates. The modem moves its multiplexer UART
- * to the named rate on CMUX entry, so it must track the host rate selected by
- * CONFIG_MODEM_CELLULAR_NEW_BAUDRATE.
+ * to the named rate on CMUX entry, so it must track the host rate selected by devicetree.
+ * Due to the current limitations of the init script, only considers the first devicetree
+ * instance.
  */
-#if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE == 921600
+#define TARGET_BAUDRATE_FUNC(node)                                                                 \
+	DT_PROP_OR(node, target_baudrate, DT_PROP(DT_BUS(node), current_speed))
+
+#if DT_HAS_COMPAT_STATUS_OKAY(quectel_eg21_g)
+#define TARGET_BAUDRATE TARGET_BAUDRATE_FUNC(DT_COMPAT_GET_ANY_STATUS_OKAY(quectel_eg21_g))
+#else
+#define TARGET_BAUDRATE                                                                            \
+	TARGET_BAUDRATE_FUNC(DT_COMPAT_GET_ANY_STATUS_OKAY(quectequectel_eg25_gl_eg21_g))
+#endif
+
+#if TARGET_BAUDRATE == 921600
 #define QUECTEL_EG2X_G_CMUX_PORT_SPEED "8"
-#elif CONFIG_MODEM_CELLULAR_NEW_BAUDRATE == 460800
+#elif TARGET_BAUDRATE == 460800
 #define QUECTEL_EG2X_G_CMUX_PORT_SPEED "7"
-#elif CONFIG_MODEM_CELLULAR_NEW_BAUDRATE == 230400
+#elif TARGET_BAUDRATE == 230400
 #define QUECTEL_EG2X_G_CMUX_PORT_SPEED "6"
-#elif CONFIG_MODEM_CELLULAR_NEW_BAUDRATE == 115200
+#elif TARGET_BAUDRATE == 115200
 #define QUECTEL_EG2X_G_CMUX_PORT_SPEED "5"
-#elif CONFIG_MODEM_CELLULAR_NEW_BAUDRATE == 57600
+#elif TARGET_BAUDRATE == 57600
 #define QUECTEL_EG2X_G_CMUX_PORT_SPEED "4"
-#elif CONFIG_MODEM_CELLULAR_NEW_BAUDRATE == 38400
+#elif TARGET_BAUDRATE == 38400
 #define QUECTEL_EG2X_G_CMUX_PORT_SPEED "3"
-#elif CONFIG_MODEM_CELLULAR_NEW_BAUDRATE == 19200
+#elif TARGET_BAUDRATE == 19200
 #define QUECTEL_EG2X_G_CMUX_PORT_SPEED "2"
-#elif CONFIG_MODEM_CELLULAR_NEW_BAUDRATE == 9600
+#elif TARGET_BAUDRATE == 9600
 #define QUECTEL_EG2X_G_CMUX_PORT_SPEED "1"
 #else
-#error "CONFIG_MODEM_CELLULAR_NEW_BAUDRATE unsupported for EG2X-G CMUX port speed"
+#error "TARGET_BAUDRATE unsupported for EG2X-G CMUX port speed"
 #endif
 
 #define BUS_HAS_FLOW_CONTROL(modem)                                                                \
@@ -65,32 +76,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0," QUECTEL_EG2X_G_CMUX_PORT_SPEED
-					"," STRINGIFY(CONFIG_MODEM_CMUX_MTU)
-					",10,3,30,10,2",
-					100));
+					"," STRINGIFY(CONFIG_MODEM_CMUX_MTU) ",10,3,30,10,2", 100));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_init_chat_script, quectel_eg2x_g_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
-#if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	quectel_eg2x_g_set_baudrate_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR=" STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE),
-						       ok_match));
-
-MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_set_baudrate_chat_script,
-			 quectel_eg2x_g_set_baudrate_chat_script_cmds, abort_matches,
-			 modem_cellular_chat_callback_handler, 10);
-#endif
-
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg2x_g_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT(
-				"AT+CGACT=0," STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID),
-				allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP(
-				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
-				connect_match));
+				      "AT+CGACT=0," STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID),
+							      allow_match),
+				      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
+				      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+					      connect_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_dial_chat_script, quectel_eg2x_g_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -184,19 +181,14 @@ static const struct modem_cellular_vendor_config_common quectel_eg2x_g_vendor = 
 	.shutdown_time_ms = 5000,
 };
 
-#if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
-#define QUECTEL_EG2X_G_SET_BAUDRATE &quectel_eg2x_g_set_baudrate_chat_script
-#else
-#define QUECTEL_EG2X_G_SET_BAUDRATE NULL
-#endif
-
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG2X_G(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst);                                          \
+                                                                                                   \
 	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
 		vendor_config_inst, inst) = {                                                      \
-		.set_baudrate = QUECTEL_EG2X_G_SET_BAUDRATE,                                       \
-		.target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,                             \
+		MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst),                           \
 	};                                                                                         \
                                                                                                    \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \

@@ -12,18 +12,6 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
 MODEM_CHAT_MATCHES_DEFINE(u_blox_sara_r4_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
-
-#if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_set_baudrate_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR="
-				  STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE), ok_match));
-
-MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_set_baudrate_chat_script,
-			 u_blox_sara_r4_set_baudrate_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 1);
-#endif
-
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	u_blox_sara_r4_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
@@ -91,19 +79,14 @@ static const struct modem_cellular_vendor_config_common u_blox_sara_r4_vendor = 
 	.shutdown_time_ms = 5000,
 };
 
-#if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
-#define U_BLOX_SARA_R4_SET_BAUDRATE &u_blox_sara_r4_set_baudrate_chat_script
-#else
-#define U_BLOX_SARA_R4_SET_BAUDRATE NULL
-#endif
-
 #define MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R4(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst);                                          \
+                                                                                                   \
 	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
 		vendor_config_inst, inst) = {                                                      \
-		.set_baudrate = U_BLOX_SARA_R4_SET_BAUDRATE,                                       \
-		.target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,                             \
+		MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst),                           \
 	};                                                                                         \
                                                                                                    \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \

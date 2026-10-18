@@ -13,15 +13,6 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCHES_DEFINE(trasna_lexi_r10_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	trasna_lexi_r10_set_baudrate_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR=" STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE),
-						       ok_match));
-
-MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_set_baudrate_chat_script,
-			 trasna_lexi_r10_set_baudrate_chat_script_cmds, abort_matches,
-			 modem_cellular_chat_callback_handler, 1);
-
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	trasna_lexi_r10_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
@@ -90,10 +81,11 @@ static const struct modem_cellular_vendor_config_common trasna_lexi_r10_vendor =
 #define MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R10(inst)                                                \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst);                                          \
+                                                                                                   \
 	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
 		vendor_config_inst, inst) = {                                                      \
-		.set_baudrate = &trasna_lexi_r10_set_baudrate_chat_script,                         \
-		.target_baudrate = CONFIG_MODEM_CELLULAR_NEW_BAUDRATE,                             \
+		MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst),                           \
 	};                                                                                         \
                                                                                                    \
 	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \

@@ -26,6 +26,8 @@
 			compatible = "zephyr,modem-cellular-test";
 			mdm-power-gpios = <&test_gpio 0 0>;
 			mdm-reset-gpios = <&test_gpio 1 0>;
+			/* Differs from the UART current-speed so changes are observable */
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -41,6 +43,7 @@
 			compatible = "zephyr,modem-cellular-test";
 			mdm-power-gpios = <&test_gpio 2 0>;
 			mdm-reset-gpios = <&test_gpio 3 0>;
+			target-baudrate = <921600>;
 			zephyr,mdm-reset-behavior = "hold_on_suspend";
 			status = "okay";
 		};
@@ -57,6 +60,7 @@
 			compatible = "zephyr,modem-cellular-test";
 			mdm-power-gpios = <&test_gpio 4 0>;
 			mdm-reset-gpios = <&test_gpio 5 0>;
+			target-baudrate = <921600>;
 			zephyr,mdm-reset-behavior = "toggle_on_resume";
 			status = "okay";
 		};
@@ -73,6 +77,7 @@
 			compatible = "zephyr,modem-cellular-test";
 			mdm-power-gpios = <&test_gpio 6 0>;
 			mdm-reset-gpios = <&test_gpio 7 0>;
+			target-baudrate = <921600>;
 			zephyr,mdm-reset-behavior = "toggle_on_recovery";
 			status = "okay";
 		};
@@ -90,6 +95,7 @@
 			mdm-power-gpios = <&test_gpio 8 0>;
 			mdm-reset-gpios = <&test_gpio 9 0>;
 			no-network-script;
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -107,6 +113,7 @@
 			mdm-reset-gpios = <&test_gpio 11 0>;
 			autostarts;
 			startup-time-ms = <500>;
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -123,6 +130,7 @@
 			mdm-power-gpios = <&test_gpio 12 0>;
 			mdm-reset-gpios = <&test_gpio 13 0>;
 			mdm-status-gpios = <&test_gpio 14 0>;
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -139,6 +147,7 @@
 			mdm-power-gpios = <&test_gpio 15 0>;
 			mdm-reset-gpios = <&test_gpio 16 0>;
 			no-shutdown-script;
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -154,7 +163,6 @@
 			compatible = "zephyr,modem-cellular-test";
 			mdm-power-gpios = <&test_gpio 17 0>;
 			mdm-reset-gpios = <&test_gpio 18 0>;
-			no-set-baudrate-script;
 			status = "okay";
 		};
 	};
@@ -178,6 +186,7 @@
 			baudrate-update-delay-ms = <200>;
 			cmux-disconnect-timeout-ms = <200>;
 			shutdown-time-ms = <200>;
+			target-baudrate = <921600>;
 			zephyr,mdm-reset-behavior = "toggle_on_resume";
 			status = "okay";
 		};
@@ -192,6 +201,7 @@
 
 		modem_no_power: modem {
 			compatible = "zephyr,modem-cellular-test";
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -208,6 +218,7 @@
 			mdm-power-gpios = <&test_gpio 21 0>;
 			mdm-reset-gpios = <&test_gpio 22 0>;
 			no-dlci-setup-script;
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -224,6 +235,7 @@
 			mdm-power-gpios = <&test_gpio 23 0>;
 			mdm-reset-gpios = <&test_gpio 24 0>;
 			no-periodic-script;
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -238,6 +250,7 @@
 		modem_info: modem {
 			compatible = "zephyr,modem-cellular-test";
 			modem-info-script;
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -252,6 +265,7 @@
 		/* The only instance with a board init script */
 		modem_board_init: modem {
 			compatible = "zephyr,modem-cellular-test";
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
@@ -266,6 +280,22 @@
 		modem_ring: modem {
 			compatible = "zephyr,modem-cellular-test";
 			mdm-ring-gpios = <&test_gpio 25 0>;
+			target-baudrate = <921600>;
+			status = "okay";
+		};
+	};
+
+	modem_uart_common_baudrate: uart-emul-common-baudrate {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_common_baudrate: modem {
+			compatible = "zephyr,modem-cellular-test";
+			common-baudrate-script;
+			target-baudrate = <460800>;
 			status = "okay";
 		};
 	};

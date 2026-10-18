@@ -8,9 +8,11 @@ compatible: "zephyr,modem-cellular-test"
 include: zephyr,cellular-modem-device.yaml
 
 properties:
-  no-set-baudrate-script:
+  common-baudrate-script:
     type: boolean
-    description: Omit the optional UART baud-rate configuration script
+    description: |
+      Configure the target-baudrate with the common baudrate script instead of
+      the test command
 
   no-network-script:
     type: boolean
