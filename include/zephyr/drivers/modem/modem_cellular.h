@@ -301,6 +301,10 @@ struct modem_cellular_vendor_config_common {
 	 * the device.
 	 */
 	const char *chat_filter;
+	/** Time modem takes to change baudrate, in milliseconds */
+	uint16_t baudrate_update_delay_ms;
+	/** Delay between de-asserting the reset pin and pulsing the power pin, in milliseconds */
+	uint16_t reset_power_on_delay_ms;
 	/** Duration of the modem power-key pulse, in milliseconds. */
 	uint16_t power_pulse_duration_ms;
 	/** Duration of the modem reset pulse, in milliseconds. */

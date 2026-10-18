@@ -1105,7 +1105,9 @@ static int modem_cellular_on_reset_pulse_state_leave(struct modem_cellular_data 
 
 static int modem_cellular_on_await_reset_state_enter(struct modem_cellular_data *data)
 {
-	modem_cellular_start_timer(data, K_MSEC(CONFIG_MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS));
+	const struct modem_cellular_config *config = data->dev->config;
+
+	modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_power_on_delay_ms));
 	return 0;
 }
 
@@ -1230,7 +1232,7 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
-		modem_cellular_run_script(data, config->vendor->common->scripts.set_baudrate);
+		modem_cellular_run_script(data, config->vendor->inst->set_baudrate);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -1242,7 +1244,8 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 		__fallthrough;
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		/* Let modem reconfigure */
-		modem_cellular_start_timer(data, K_MSEC(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE_DELAY));
+		modem_cellular_start_timer(
+			data, K_MSEC(config->vendor->common->baudrate_update_delay_ms));
 		modem_chat_release(&data->chat);
 		modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
 		modem_pipe_close_async(data->uart_pipe);
