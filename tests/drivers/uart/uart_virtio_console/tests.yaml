@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - uart
+  platform_allow:
+    - qemu_x86_64
+  harness: ztest
+  timeout: 30
+tests:
+  drivers.uart.virtio_console: {}
+  drivers.uart.virtio_console.printk_sync:
+    extra_configs:
+      - CONFIG_PRINTK_SYNC=y
+  drivers.uart.virtio_console.immediate_logging:
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_BACKEND_UART=y
+      - CONFIG_LOG_BACKEND_UART_AUTOSTART=n
+      - CONFIG_LOG_PRINTK=n
+      - CONFIG_PRINTK_SYNC=y
