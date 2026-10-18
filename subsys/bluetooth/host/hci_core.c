@@ -350,6 +350,11 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
+	/* Dropped before its connection was looked up */
+	if (index == BT_CONN_INDEX_INVALID) {
+		return;
+	}
+
 	conn = bt_conn_lookup_index(index);
 	if (!conn) {
 		LOG_WRN("Unable to look up conn with index 0x%02x", index);
