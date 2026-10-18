@@ -197,6 +197,28 @@ struct virtq {
 	 * array with callbacks invoked after receiving buffers back from the device
 	 */
 	struct virtq_receive_callback_entry *recv_cbs;
+
+	/**
+	 * Optional completion notification, invoked only in ISR context. Set this
+	 * before enabling the queue. Completions reclaimed by a thread are
+	 * coalesced until virtq_process_used() next runs in an ISR.
+	 */
+	void (*irq_cb)(void *opaque);
+
+	/** Argument passed to irq_cb. */
+	void *irq_cb_data;
+
+	/** Completion notification pending, protected by lock. */
+	bool irq_pending;
+
+	/** Number of invalid used-ring descriptor IDs, protected by lock. */
+	uint32_t invalid_used_count;
+
+	/**
+	 * Unrecoverable used-ring protocol error, protected by lock. Set when the
+	 * device reports an impossible number of completions; processing stops.
+	 */
+	bool faulted;
 };
 
 
@@ -272,6 +294,30 @@ void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx);
  * @return 0 or error code on failure
  */
 int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout);
+
+/**
+ * @brief Get the number of free descriptors in the virtqueue
+ *
+ * The count is read under the virtqueue lock. A concurrent allocation removes
+ * its descriptor from the stack before decrementing the count, so this snapshot
+ * may temporarily overestimate availability. It does not reserve descriptors.
+ *
+ * @param v virtqueue to query, must not be NULL
+ * @return snapshot of the free descriptor count
+ */
+uint16_t virtq_get_free_desc_count(struct virtq *v);
+
+/**
+ * @brief Process completed buffers from a virtqueue.
+ *
+ * Reclaim completed descriptors and invoke their callbacks in the caller's
+ * context. This can be called from a thread or an ISR. The optional queue
+ * irq_cb notification is delivered only in ISR context, including for
+ * completions previously reclaimed by a thread.
+ *
+ * @param v virtqueue to process, must not be NULL
+ */
+void virtq_process_used(struct virtq *v);
 
 /**
  * @}

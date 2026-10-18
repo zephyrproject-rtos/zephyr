@@ -1073,6 +1073,14 @@ New APIs and options
 
   * :c:macro:`ARGS_UNUSED` to mark multiple arguments as unused.
 
+* VirtIO
+
+  * :c:func:`virtq_get_free_desc_count`
+  * :c:func:`virtq_process_used` and :c:member:`virtq.irq_cb` for ISR notifications of completions
+    reclaimed by polling.
+  * :c:member:`virtq.invalid_used_count` for tracking malformed used-ring entries without logging.
+  * :c:member:`virtq.faulted` for queues stopped after an impossible used-ring order.
+
 * Zbus
 
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION`
