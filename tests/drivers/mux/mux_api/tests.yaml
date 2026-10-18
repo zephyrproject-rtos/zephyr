@@ -32,3 +32,13 @@ tests:
       - CONFIG_TEST_MUX_SET_VALUE_A=3
       - CONFIG_TEST_MUX_SET_VALUE_B=6
       - CONFIG_TEST_MUX_HAS_DISCONNECT=y
+  drivers.mux.am13e2_xbar_in:
+    filter: dt_compat_enabled("ti,am13e2-xbar-in")
+    platform_allow:
+      - lp_am13e230/am13e23019
+    integration_platforms:
+      - lp_am13e230/am13e23019
+    extra_configs:
+      # AM13E2_XBAR_IN_STATE(36, 1) and AM13E2_XBAR_IN_STATE(37, 1)
+      - CONFIG_TEST_MUX_SET_VALUE_A=292
+      - CONFIG_TEST_MUX_SET_VALUE_B=293
