@@ -383,6 +383,14 @@
 				     &lvol_iof4 &lvol_iof5 &lvol_none &lvol_none>;
 		};
 
+		miwu3: miwu@400ab000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400ab000 0x2000>;
+			index = <3>;
+			#miwu-cells = <2>;
+			status = "disabled";
+		};
+
 		/*
 		 * Writing to BKUP_STS register might affect the value stored in
 		 * the first byte of the BBRAM.

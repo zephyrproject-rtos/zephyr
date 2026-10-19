@@ -14,9 +14,9 @@
  * controller (EC) to exit 'Sleep' or 'Deep Sleep' power state which allows chip
  * has better power consumption. Also, it provides signal conditioning such as
  * 'Level' and 'Edge' trigger type and grouping of external interrupt sources
- * of NVIC. The NPCX series has three identical MIWU modules: MIWU0, MIWU1,
- * MIWU2. Together, they support a total of over 140 internal and/or external
- * wake-up input (WUI) sources.
+ * of NVIC. The NPCX series has three or four identical MIWU modules: MIWU0,
+ * MIWU1, MIWU2 and, on some series, MIWU3. Together, they support a total of
+ * over 140 internal and/or external wake-up input (WUI) sources.
  *
  * This driver uses device tree files to present the relationship between
  * MIWU and the other devices in different npcx series. For npcx7 series,

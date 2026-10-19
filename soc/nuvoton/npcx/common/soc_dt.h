@@ -241,7 +241,7 @@
 	}
 
 /**
- * @brief Get a node from path '/npcx_miwus_map/map_miwu(0/1/2)_groups'
+ * @brief Get a node from path '/npcx_miwus_map/map_miwu(0/1/2/3)_groups'
  *
  * @param i index of npcx miwu devices
  * @return node identifier with that path.

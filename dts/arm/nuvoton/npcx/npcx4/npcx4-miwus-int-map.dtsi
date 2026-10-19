@@ -80,5 +80,35 @@
 				group-mask = <0x80>;
 			};
 		};
+
+		/* MIWU3 implements groups A to D only (GPIOG, GPIOH, GPIOJ, GPIOK) */
+		map_miwu3_groups: map-miwu3-groups {
+			compatible = "nuvoton,npcx-miwu-int-map";
+			parent = <&miwu3>;
+
+			group_a3: group-a3-map {
+				irq = <76>;
+				irq-prio = <3>;
+				group-mask = <0x01>;
+			};
+
+			group_b3: group-b3-map {
+				irq = <77>;
+				irq-prio = <3>;
+				group-mask = <0x02>;
+			};
+
+			group_c3: group-c3-map {
+				irq = <78>;
+				irq-prio = <3>;
+				group-mask = <0x04>;
+			};
+
+			group_d3: group-d3-map {
+				irq = <79>;
+				irq-prio = <3>;
+				group-mask = <0x08>;
+			};
+		};
 	};
 };
