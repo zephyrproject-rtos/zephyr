@@ -104,6 +104,13 @@
 				vdd-b-supply = <&test_regulator>;
 				vdd-amp-supply = <&test_regulator>;
 			};
+
+			test_i2c_nau8540: nau8540@a {
+				compatible = "nuvoton,nau8540";
+				reg = <0xa>;
+				status = "okay";
+				csb-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
