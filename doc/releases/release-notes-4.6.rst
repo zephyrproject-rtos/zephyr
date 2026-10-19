@@ -63,6 +63,15 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* PTP Clock
+
+  * :c:func:`ptp_clock_adjust_rate` and the :c:member:`ptp_clock_driver_api.adjust_rate` driver
+    operation (clock rate offset as scaled parts per million instead of a floating-point ratio)
+  * :c:func:`ptp_clock_scaled_ppm_to_ppb`
+  * :c:func:`ptp_clock_adjust_by_scaled_ppm`
+  * :c:macro:`PTP_CLOCK_SCALED_PPM_SHIFT`
+  * :c:macro:`PTP_CLOCK_SCALED_PPM_ONE`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
