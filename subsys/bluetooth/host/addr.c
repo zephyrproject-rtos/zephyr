@@ -137,7 +137,7 @@ bool bt_addr_le_is_resolved(const bt_addr_le_t *addr)
 	return addr->type == BT_ADDR_LE_PUBLIC_ID || addr->type == BT_ADDR_LE_RANDOM_ID;
 }
 
-#if defined(CONFIG_BT_PRIVACY)
+#if defined(CONFIG_BT_PRIVACY) && defined(CONFIG_BT_SMP)
 int bt_addr_le_rpa_resolve(uint8_t id, const bt_addr_le_t *addr, bt_addr_le_t *resolved_addr)
 {
 	struct bt_keys *keys;
@@ -164,4 +164,4 @@ int bt_addr_le_rpa_resolve(uint8_t id, const bt_addr_le_t *addr, bt_addr_le_t *r
 	/* No matching IRK found for this RPA */
 	return -ENOENT;
 }
-#endif /* CONFIG_BT_PRIVACY */
+#endif /* CONFIG_BT_PRIVACY && CONFIG_BT_SMP */
