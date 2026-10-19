@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 BayLibre SAS
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Device tree for Arm Corstone-1000-A320 FVP
@@ -91,7 +92,7 @@
 
 		dram0: memory@80000000 {
 			compatible = "mmio-dram";
-			reg = <0x80000000 DT_SIZE_M(128)>;
+			reg = <0x80000000 DT_SIZE_G(2)>;
 		};
 	};
 };
