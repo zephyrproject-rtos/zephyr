@@ -204,6 +204,9 @@ enum ethernet_hw_caps {
 
 	/** TX-Injection supported */
 	ETHERNET_TXINJECTION_MODE	= BIT(20),
+
+	/** The device forwards frames between its ports in hardware */
+	ETHERNET_HW_PORT_FORWARDING	= BIT(21),
 };
 
 /** @cond INTERNAL_HIDDEN */

@@ -115,6 +115,15 @@ void eth_bridge_stp_init(struct eth_bridge_iface_context *ctx);
 bool eth_bridge_stp_is_running(struct eth_bridge_iface_context *ctx);
 
 /**
+ * @brief Check that the spanning tree protocol can block a port
+ *
+ * @param iface Ethernet interface
+ *
+ * @return false if the device of @p iface forwards to other ports in hardware.
+ */
+bool eth_bridge_stp_port_supported(struct net_if *iface);
+
+/**
  * @brief Tell the spanning tree protocol that a port was added
  *
  * Called with the bridge lock held, after the port slot was filled.
