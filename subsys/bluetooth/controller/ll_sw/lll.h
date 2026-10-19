@@ -389,12 +389,15 @@ struct node_rx_ftr {
 	uint8_t  sync_rx_enabled:1;
 #if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 	uint8_t  devmatch:1;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 	/* Advertising without AdvA may be reported, as decided when the ULL
 	 * handled the ADV_EXT_IND
 	 */
 	uint8_t  anon_allow:1;
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	uint8_t  aux_sched:1;
 	uint8_t  aux_lll_sched:1;
