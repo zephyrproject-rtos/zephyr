@@ -56,3 +56,4 @@ family:
     - name: corstone1000
       cpuclusters:
       - name: extsys
+      - name: a35

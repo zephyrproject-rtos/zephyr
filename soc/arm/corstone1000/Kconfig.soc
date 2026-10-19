@@ -22,6 +22,12 @@ config SOC_CORSTONE1000_EXTSYS
 	help
 	  ARM Cortex-M3 External System on Corstone1000
 
+config SOC_CORSTONE1000_A35
+	bool
+	select SOC_CORSTONE1000
+	help
+	  ARM Cortex-A35 on Corstone1000
+
 config SOC_FAMILY
 	default "corstone1000" if SOC_FAMILY_CORSTONE1000
 
