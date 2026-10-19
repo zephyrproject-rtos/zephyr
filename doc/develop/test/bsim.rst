@@ -226,3 +226,25 @@ Here are the conventions:
   produced the exact same radio traffic.
 - Only override random seeds if there is a real need for that test. Avoid designing tests which are
   overly sensitive to random seed changes.
+
+CI run time
+-----------
+
+Twister builds and runs the scenarios in parallel, but it runs the scripts of one scenario one
+after the other, and the job ends when its last scenario ends. A scenario with hundreds of
+scripts, or an image that many scenarios wait for, therefore sets the time of the whole job.
+When adding tests:
+
+- Prefer an existing image (see above): every new ``prj.conf``, overlay or test directory is
+  one more build on each platform it is enabled for, and building is most of the job.
+- Keep the scripts of one scenario to a few seconds of total run time, and split a long list by
+  topic. Twister runs a scenario's scripts in parallel only as far as it has free job slots,
+  which is mostly towards the end of a run; set ``tests_scripts_parallel: false`` in the
+  ``harness_config`` only for scripts that cannot run at the same time.
+- Add a platform to ``platform_allow`` only when it changes what the test exercises, such as
+  the controller or the HCI transport of a split build: each platform repeats both the build
+  and the scripts.
+- End the simulation as soon as the last assertion has passed instead of running until
+  ``-sim_length``: on the nRF bsim boards a device that exits ends the simulation for all
+  devices, so make sure the other devices are done first. Simulate only as much traffic as the
+  test checks; simulated time is free, host CPU time is not.
