@@ -116,7 +116,14 @@ struct cdc_acm_uart_data {
 	 * the TX FIFO during the user callback execution.
 	 */
 	bool zlp_needed;
+	/*
+	 * After cdc acm tty is opened on the host side, wait
+	 * CONFIG_USBD_CDC_ACM_TX_DELAY_MS milliseconds before transmitting
+	 * any data to the host, to give posix host time to disable echoing
+	 * it back
+	 */
 	bool echo_mitigated;
+	struct k_timer echo_mitigation_timer;
 	/* UART API IRQ callback */
 	uart_irq_callback_user_data_t cb;
 	/* UART API user callback data */
@@ -242,6 +249,15 @@ static size_t cdc_acm_get_bulk_mps(struct usbd_class_data *const c_data)
 	}
 
 	return 64U;
+}
+
+static void cdc_acm_echo_delay_expired(struct k_timer *timer)
+{
+	struct cdc_acm_uart_data *data;
+
+	data = CONTAINER_OF(timer, struct cdc_acm_uart_data, echo_mitigation_timer);
+	data->echo_mitigated = true;
+	cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 }
 
 static size_t cdc_acm_tx_current_tailroom_locked(struct cdc_acm_uart_data *const data)
@@ -377,9 +393,10 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			/* If mitigation was not yet applied give the host some
 			 * time to disable ECHO.
 			 */
-			cdc_acm_work_schedule(&data->tx_fifo_work,
-					      K_MSEC(CONFIG_USBD_CDC_ACM_TX_DELAY_MS));
-			data->echo_mitigated = true;
+			if (k_timer_remaining_get(&data->echo_mitigation_timer) == 0) {
+				k_timer_start(&data->echo_mitigation_timer,
+					      K_MSEC(CONFIG_USBD_CDC_ACM_TX_DELAY_MS), K_NO_WAIT);
+			}
 		} else {
 			cdc_acm_tx_schedule_leftover_locked(data);
 		}
@@ -432,6 +449,7 @@ static void usbd_cdc_acm_disable(struct usbd_class_data *const c_data)
 	struct cdc_acm_uart_data *data = dev->data;
 
 	data->echo_mitigated = false;
+	k_timer_stop(&data->echo_mitigation_timer);
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_ENABLED);
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
@@ -1275,6 +1293,8 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
 	k_work_init(&data->irq_cb_work, cdc_acm_irq_cb_handler);
+
+	k_timer_init(&data->echo_mitigation_timer, cdc_acm_echo_delay_expired, NULL);
 
 	cdc_acm_update_uart_cfg(data);
 
