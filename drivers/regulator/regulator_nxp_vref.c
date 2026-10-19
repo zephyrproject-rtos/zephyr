@@ -327,31 +327,29 @@ static int regulator_nxp_vref_configure_hw(const struct device *dev)
 
 static int regulator_nxp_vref_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	struct regulator_nxp_vref_data *data = dev->data;
+	int ret = 0;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_TURN_ON:
-		/*
-		 * enable() only starts the bandgap and the buffer. Everything
-		 * else the reference needs -- the clock, the compensation and
-		 * chopping settings, the internal regulator, the trim -- is
-		 * written once and then only lost to a reset of the block, so
-		 * put it back here before any consumer asks for the output.
-		 */
-		return regulator_nxp_vref_configure_hw(dev);
-
+		ret = regulator_nxp_vref_configure_hw(dev);
+		break;
 	case PM_DEVICE_ACTION_RESUME:
+		if (data->enabled) {
+			ret = regulator_nxp_vref_enable_hw(dev);
+		}
+		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		regulator_nxp_vref_disable_hw(dev);
+		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
-		/*
-		 * Whether the output is on is owned by the consumers through the
-		 * regulator reference count, not by the SoC power state: a
-		 * consumer that keeps converting in a low-power state needs its
-		 * reference to keep running.
-		 */
-		return 0;
-
+		/* SUSPEND already disabled the analog circuitry. */
+		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		break;
 	}
+	return ret;
 }
 
 static int regulator_nxp_vref_init(const struct device *dev)
