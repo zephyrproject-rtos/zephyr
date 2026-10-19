@@ -1871,8 +1871,8 @@
 	enet: comm_enet: ethernet@4a0d0000 {
 		compatible = "nxp,enet";
 		reg = <0x4a0d0000 0x10000>;
-		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH0,
-					   IMX_CCM_ROOT_COMM_ETH0_TRXCLK)>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH1,
+					   IMX_CCM_ROOT_COMM_ETH1_TRXCLK)>;
 		status = "disabled";
 
 		enet_mac: ethernet {
@@ -1895,8 +1895,8 @@
 			compatible = "nxp,enet-ptp-clock";
 			interrupts = <302 0>;
 			interrupt-names = "IEEE1588_TMR";
-			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH0,
-						   IMX_CCM_ROOT_COMM_ETH0_TRXCLK)>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH1,
+						   IMX_CCM_ROOT_COMM_ETH1_TIMERCLK)>;
 			status = "disabled";
 		};
 	};
@@ -1904,8 +1904,8 @@
 	enet_qos: comm_enet_qos: ethernet@4a0c0000 {
 		compatible = "nxp,enet-qos";
 		reg = <0x4a0c0000 0x10000>;
-		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH1,
-					   IMX_CCM_ROOT_COMM_ETH1_TRXCLK)>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH0,
+					   IMX_CCM_ROOT_COMM_ETH0_TRXCLK)>;
 		status = "disabled";
 
 		enet_qos_mac: ethernet {
