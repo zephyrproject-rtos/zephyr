@@ -99,3 +99,11 @@ config CLOCK_CONTROL_MCUX_CCM_REV3
 	  peripheral clock specifier packs a gate and a clock-root identifier,
 	  and configurable clock roots are described as devicetree child nodes
 	  of the controller.
+
+config CLOCK_CONTROL_MCUX_USBPHY_PLL
+	bool "MCUX USB PHY PLL driver"
+	default y
+	depends on DT_HAS_NXP_IMX_USBPHY_PLL_ENABLED
+	help
+	  Enable the NXP i.MX RT USB PHY 480 MHz PLL driver. Turning the clock
+	  on locks the PLL and releases the USB0 controller reset.
