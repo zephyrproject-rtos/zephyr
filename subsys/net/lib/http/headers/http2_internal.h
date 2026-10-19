@@ -20,10 +20,22 @@
 /* Size of one SETTINGS parameter on the wire: 16-bit identifier, 32-bit value. */
 #define HTTP2_SETTINGS_FIELD_LEN 6
 
+/* Initial SETTINGS_MAX_FRAME_SIZE value (RFC 9113, Section 6.5.2), also the
+ * smallest a peer may set, and the largest.
+ */
+#define HTTP2_DEFAULT_MAX_FRAME_SIZE 16384U
+
 /* Dynamic table size an HPACK decoder has to accept until its own
  * SETTINGS_HEADER_TABLE_SIZE is acknowledged (RFC 7541, Section 6.3).
  */
 #define HTTP2_DEFAULT_HEADER_TABLE_SIZE 4096U
+#define HTTP2_MAX_FRAME_SIZE_LIMIT   16777215U
+
+/* Initial flow-control window size (RFC 9113, Section 6.9.2) and the largest
+ * one (Section 6.9.1).
+ */
+#define HTTP2_INITIAL_WINDOW_SIZE 65535
+#define HTTP2_MAX_WINDOW_SIZE     0x7fffffff
 
 /* Buffer sizes needed for the fixed-size frames built below. */
 #define HTTP2_SETTINGS_FRAME_SIZE(count)                                                           \
