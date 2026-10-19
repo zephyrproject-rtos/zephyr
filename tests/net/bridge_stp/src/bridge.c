@@ -61,6 +61,8 @@ struct fake_port {
 	atomic_t data_tx;
 	uint8_t last_bpdu[MAX_FRAME];
 	size_t last_bpdu_len;
+	/* Report ETHERNET_HW_PORT_FORWARDING */
+	bool hw_forwarding;
 };
 
 struct wire_frame {
@@ -186,10 +188,10 @@ static int fake_send(const struct device *dev, struct net_pkt *pkt)
 
 static enum ethernet_hw_caps fake_get_capabilities(const struct device *dev, struct net_if *iface)
 {
-	ARG_UNUSED(dev);
 	ARG_UNUSED(iface);
 
-	return ETHERNET_PROMISC_MODE | ETHERNET_LINK_100BASE;
+	return ETHERNET_PROMISC_MODE | ETHERNET_LINK_100BASE |
+	       (fake_of(dev)->hw_forwarding ? ETHERNET_HW_PORT_FORWARDING : 0);
 }
 
 static int fake_set_config(const struct device *dev, struct net_if *iface,
@@ -709,6 +711,27 @@ ZTEST(rstp_bridge, test_stp_bridge_on_host_port)
 
 	/* The STP BPDU was not forwarded */
 	zexpect_equal(atomic_get(&fake[0].data_tx), 0);
+}
+
+/* The protocol cannot block a port that forwards in hardware: it does not
+ * start with one, and one cannot be added while it runs.
+ */
+ZTEST(rstp_bridge, test_hw_forwarding_port)
+{
+	zassert_ok(eth_bridge_iface_remove(bridges[0], fake[HOST].iface));
+	fake[HOST].hw_forwarding = true;
+	zexpect_equal(eth_bridge_iface_add(bridges[0], fake[HOST].iface), -ENOTSUP);
+
+	zassert_ok(eth_bridge_stp_enable(bridges[0], false));
+	zassert_ok(eth_bridge_iface_add(bridges[0], fake[HOST].iface), "without the protocol");
+	zexpect_equal(eth_bridge_stp_enable(bridges[0], true), -ENOTSUP);
+	zexpect_false(bridge_status(0).enabled);
+
+	fake[HOST].hw_forwarding = false;
+	zassert_ok(eth_bridge_stp_enable(bridges[0], true));
+	k_sleep(RECONVERGE_TIME);
+
+	expect_ring_converged();
 }
 
 ZTEST(rstp_bridge, test_api_errors)

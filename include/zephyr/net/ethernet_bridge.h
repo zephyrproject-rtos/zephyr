@@ -100,7 +100,9 @@ struct eth_bridge_iface_context {
  * @param br A pointer to a bridge interface
  * @param iface Interface to add
  *
- * @return 0 if OK, negative error code otherwise.
+ * @return 0 if OK, negative error code otherwise. -ENOTSUP if the spanning
+ *         tree protocol runs on @p br and @p iface forwards frames in hardware,
+ *         see eth_bridge_stp_enable().
  */
 int eth_bridge_iface_add(struct net_if *br, struct net_if *iface);
 
