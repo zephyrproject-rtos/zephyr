@@ -231,6 +231,15 @@ void z_shell_op_right_arrow(const struct shell *sh)
 	}
 }
 
+static void print_obscured(const struct shell *sh, const char *data)
+{
+	int len = strlen(data);
+
+	while (len--) {
+		z_shell_raw_fprintf(sh->fprintf_ctx, "*");
+	}
+}
+
 static void reprint_from_cursor(const struct shell *sh, uint16_t diff,
 				bool data_removed)
 {
@@ -246,11 +255,7 @@ static void reprint_from_cursor(const struct shell *sh, uint16_t diff,
 	}
 
 	if (z_flag_obscure_get(sh)) {
-		int len = strlen(&sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos]);
-
-		while (len--) {
-			z_shell_raw_fprintf(sh->fprintf_ctx, "*");
-		}
+		print_obscured(sh, &sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos]);
 	} else {
 		/* Check if the reprint will cross a line boundary */
 		int line_len = sh->ctx->cmd_buff_len + z_shell_strlen(sh->ctx->prompt);
@@ -410,8 +415,13 @@ void z_shell_print_cmd(const struct shell *sh)
 		ch = sh->ctx->cmd_buff[end_offset];
 		sh->ctx->cmd_buff[end_offset] = '\0';
 
-		z_shell_raw_fprintf(sh->fprintf_ctx, "%s\n",
-				&sh->ctx->cmd_buff[beg_offset]);
+		if (z_flag_obscure_get(sh)) {
+			print_obscured(sh, &sh->ctx->cmd_buff[beg_offset]);
+			z_shell_raw_fprintf(sh->fprintf_ctx, "\n");
+		} else {
+			z_shell_raw_fprintf(sh->fprintf_ctx, "%s\n",
+					&sh->ctx->cmd_buff[beg_offset]);
+		}
 
 		sh->ctx->cmd_buff[end_offset] = ch;
 		cmd_width -= (sh->ctx->vt100_ctx.cons.terminal_wid - adjust);
@@ -419,8 +429,12 @@ void z_shell_print_cmd(const struct shell *sh)
 		adjust = 0;
 	}
 	if (cmd_width > 0) {
-		z_shell_raw_fprintf(sh->fprintf_ctx, "%s",
-				&sh->ctx->cmd_buff[beg_offset]);
+		if (z_flag_obscure_get(sh)) {
+			print_obscured(sh, &sh->ctx->cmd_buff[beg_offset]);
+		} else {
+			z_shell_raw_fprintf(sh->fprintf_ctx, "%s",
+					&sh->ctx->cmd_buff[beg_offset]);
+		}
 	}
 }
 
