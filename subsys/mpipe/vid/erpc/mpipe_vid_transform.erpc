@@ -1,0 +1,54 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * RPC interface between the video transform client and its server on the
+ * remote core. Both sides are generated from this file with erpcgen.
+ *
+ * The wire types are the interface's own: the client converts them from and
+ * to the Zephyr video types, and the server needs no Zephyr or mpipe header.
+ * The pad direction values match enum mpipe_pad_direction.
+ *
+ * erpcgen derives the names of the generated functions from the interface
+ * name (initMpipeVidTransform_client, create_MpipeVidTransform_service).
+ */
+
+program mpipe_vid_transform
+
+enum mpipe_rpc_pad_direction {
+	MPIPE_RPC_PAD_UNKNOWN = 0,
+	MPIPE_RPC_PAD_SRC = 1,
+	MPIPE_RPC_PAD_SINK = 2
+}
+
+/* Mirrors struct video_format; type is reserved in the IDL, hence the rename */
+struct mpipe_rpc_video_format {
+	uint8 buf_type @name("type");
+	uint32 pixelformat;
+	uint32 width;
+	uint32 height;
+	uint32 pitch;
+	uint32 size;
+}
+
+/* Mirrors struct video_format_cap */
+struct mpipe_rpc_video_format_cap {
+	uint32 pixelformat;
+	uint32 width_min;
+	uint32 width_max;
+	uint32 height_min;
+	uint32 height_max;
+	uint16 width_step;
+	uint16 height_step;
+}
+
+interface MpipeVidTransform {
+	get_buf_caps_rpc(in mpipe_rpc_pad_direction direction, out uint8 min_buffers, out uint16 buf_align) -> int32
+	get_format_caps_rpc(in mpipe_rpc_pad_direction direction, in uint8 ind, out mpipe_rpc_video_format_cap vfc) -> int32
+	set_format_rpc(inout mpipe_rpc_video_format fmt) -> int32
+	transform_cap_rpc(in mpipe_rpc_pad_direction direction, in uint16 ind, in mpipe_rpc_video_format_cap vfc, out mpipe_rpc_video_format_cap other_vfc) -> int32
+	process_fn_rpc(in uint32 in_buf, in uint32 in_sz, in uint32 out_buf, out uint32 out_sz) -> int32
+}
