@@ -7,7 +7,10 @@ config REGULATOR_NXP_VREF
 	depends on DT_HAS_NXP_VREF_ENABLED
 	select PM_EARLY_SYSTEM_TIMER_RESUME if PM && PM_DEVICE_SYSTEM_MANAGED
 	help
-	  Enable the NXP VREF driver
+	  Enable the NXP VREF driver. With device runtime PM, the first
+	  regulator enable holds a runtime reference until the last disable.
+	  Configuration operations temporarily resume the register block
+	  without enabling the output.
 
 config REGULATOR_NXP_VREF_INIT_PRIORITY
 	int "NXP VREF peripheral driver init priority"
