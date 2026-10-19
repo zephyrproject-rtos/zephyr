@@ -185,6 +185,12 @@
 @{
 @}
 
+@defgroup sensor_interface_ext_rakwireless RAKwireless
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from RAKwireless.
+@{
+@}
+
 @defgroup sensor_interface_ext_realtek Realtek
 @ingroup sensor_interface_ext
 @brief Device-specific extensions for sensors from Realtek.
