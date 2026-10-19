@@ -61,6 +61,9 @@ comment "Unavailable modules, please install those via the project manifest."
 # config ZEPHYR_<MODULE_NAME_UPPER>_MODULE
 # 	bool
 
+comment "erpc module not available."
+	depends on !ZEPHYR_ERPC_MODULE
+
 comment "hal_bouffalolab module not available."
 	depends on !ZEPHYR_HAL_BOUFFALOLAB_MODULE
 
@@ -72,6 +75,9 @@ comment "hal_nordic module not available."
 
 comment "hal_nxp module not available."
 	depends on !ZEPHYR_HAL_NXP_MODULE
+
+comment "jpegdec module not available."
+	depends on !ZEPHYR_JPEGDEC_MODULE
 
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE

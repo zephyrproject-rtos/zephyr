@@ -1,0 +1,13 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_JPEGDEC_MODULE
+	bool
+
+config JPEGDEC
+	bool "JPEGDEC software JPEG decoder"
+	depends on ZEPHYR_JPEGDEC_MODULE
+	help
+	  Baseline and progressive JPEG decoder from the jpegdec module. The
+	  decoder keeps its state in a caller-owned JPEGIMAGE and allocates
+	  nothing.
