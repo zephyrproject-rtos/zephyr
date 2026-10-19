@@ -87,6 +87,18 @@
 				status = "okay";
 			};
 
+			test_atecc608a: atecc608a@60 {
+				compatible = "microchip,atecc608a";
+				reg = <0x60>;
+				reset-gpios = <&test_gpio 0 0>;
+				status = "okay";
+
+				test_atecc608a_trng: atecc608a_trng {
+					compatible = "microchip,atecc608a-trng";
+					status = "okay";
+				};
+			};
+
 			test_i2c_m5pm1: pmic@6e {
 				compatible = "m5stack,m5pm1";
 				reg = <0x6e>;

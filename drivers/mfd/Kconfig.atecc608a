@@ -1,0 +1,11 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_ATECC608A
+	bool "Microchip ATECC608A multi-function device driver"
+	default y
+	depends on DT_HAS_MICROCHIP_ATECC608A_ENABLED
+	select I2C
+	help
+	  Enable the Microchip ATECC608A I2C parent driver. Child drivers use
+	  this node for wake, command framing, and bus access.
