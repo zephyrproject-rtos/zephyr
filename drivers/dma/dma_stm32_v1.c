@@ -487,3 +487,53 @@ uint32_t stm32_dma_get_fifo_threshold(uint16_t fifo_mode_control)
 		return LL_DMA_FIFOTHRESHOLD_1_4;
 	}
 }
+
+uint32_t dma_stm32_chunk_items(uint32_t total_items)
+{
+	uint32_t chunk_items_nb = MIN(total_items, DMA_STM32_MAX_DATA_ITEMS);
+
+	/* DBM uses one transfer count for both targets, so chunks must divide evenly. */
+	while (chunk_items_nb > 1U && (total_items % chunk_items_nb) != 0U) {
+		chunk_items_nb--;
+	}
+
+	return chunk_items_nb;
+}
+
+uint32_t dma_stm32_chunk_address(const struct dma_stm32_stream *stream, uint32_t chunk)
+{
+	uint32_t offset = chunk * stream->dbm.chunk_items_nb * stream->dbm.transfer_unit_size;
+
+	if (stream->dbm.memory_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+		return stream->dbm.memory_address + offset;
+	} else if (stream->dbm.memory_addr_adj == DMA_ADDR_ADJ_DECREMENT) {
+		return stream->dbm.memory_address - offset;
+	}
+
+	return stream->dbm.memory_address;
+}
+
+void dma_stm32_program_chunked(DMA_TypeDef *dma, uint32_t id, struct dma_stm32_stream *stream)
+{
+	uint32_t stream_id = dma_stm32_id_to_stream(id);
+
+	LL_DMA_SetMemoryAddress(dma, stream_id, stream->dbm.memory_address);
+	LL_DMA_SetMemory1Address(dma, stream_id,
+				 dma_stm32_chunk_address(stream, 1U));
+	LL_DMA_SetCurrentTargetMem(dma, stream_id, LL_DMA_CURRENTTARGETMEM0);
+	LL_DMA_SetDataLength(dma, stream_id, stream->dbm.chunk_items_nb);
+	LL_DMA_EnableDoubleBufferMode(dma, stream_id);
+	stream->dbm.enable = true;
+}
+
+void dma_stm32_set_inactive_target(DMA_TypeDef *dma, uint32_t id, struct dma_stm32_stream *stream,
+				   uint32_t address)
+{
+	uint32_t stream_id = dma_stm32_id_to_stream(id);
+
+	if (LL_DMA_GetCurrentTargetMem(dma, stream_id) == LL_DMA_CURRENTTARGETMEM0) {
+		LL_DMA_SetMemory1Address(dma, stream_id, address);
+	} else {
+		LL_DMA_SetMemoryAddress(dma, stream_id, address);
+	}
+}
