@@ -123,7 +123,7 @@ static int stream_flash_erase_to_append(struct stream_flash_ctx *ctx, size_t siz
 	if (rc != 0) {
 		LOG_ERR("Error %d while erasing page", rc);
 	} else {
-		ctx->erased_up_to += page.size;
+		ctx->erased_up_to = page.start_offset + page.size - ctx->offset;
 	}
 #endif
 	return rc;
