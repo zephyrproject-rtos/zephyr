@@ -550,7 +550,7 @@ static int uhc_vrt_enqueue(const struct device *dev,
 			xfer->start_frame, priv->frame_number, xfer->bInterval);
 	}
 
-	uhc_xfer_append(dev, xfer);
+	uhc_xfer_append(dev, xfer, 0);
 
 	return 0;
 }

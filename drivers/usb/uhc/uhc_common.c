@@ -62,23 +62,84 @@ void uhc_xfer_return(const struct device *dev,
 	(void)uhc_xfer_unref(xfer);
 }
 
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
+void uhc_xfer_add_periodic(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	struct uhc_data *data = dev->data;
+	sys_dlist_t *periodic_list = &data->periodic_xfers;
+	struct uhc_transfer *curr;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(periodic_list, curr, node) {
+		if (xfer_seq_cmp(xfer->start_frame, curr->start_frame) < 0) {
+			continue;
+		}
+		sys_dlist_insert(&curr->node, &xfer->node);
+		return;
+	}
+
+	sys_dlist_append(periodic_list, &xfer->node);
+}
+
+void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer *const xfer,
+				  uint32_t frame_number)
+{
+	uint32_t old_start_frame = xfer->start_frame;
+
+	if (unlikely(xfer->interval == 0)) {
+		/* Prevent a infinite loop if somehow interval equals 0 */
+		xfer->interval = 1;
+	}
+
+	do {
+		xfer->start_frame += xfer->interval;
+	} while (xfer_seq_cmp(xfer->start_frame, frame_number) <= 0);
+
+	sys_dlist_remove(&xfer->node);
+	uhc_xfer_add_periodic(dev, xfer);
+
+	LOG_DBG("Periodic transfer advance frame old s.f. %u new s.f %u f.n. %u interval %u",
+		old_start_frame, xfer->start_frame, frame_number, xfer->interval);
+}
+
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t frame_number)
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_transfer *xfer;
-	sys_dnode_t *node;
 
 	/* Draft, WIP */
-	node = sys_dlist_peek_head(&data->ctrl_xfers);
-	if (node == NULL) {
-		node = sys_dlist_peek_head(&data->bulk_xfers);
+
+	xfer = SYS_DLIST_CONTAINER(sys_dlist_peek_tail(&data->periodic_xfers), xfer, node);
+	if (xfer && xfer_seq_cmp(xfer->start_frame, frame_number) <= 0) {
+		return xfer;
 	}
 
-	return (node == NULL) ? NULL : SYS_DLIST_CONTAINER(node, xfer, node);
+	xfer = SYS_DLIST_PEEK_HEAD_CONTAINER(&data->ctrl_xfers, xfer, node);
+	if (xfer == NULL) {
+		xfer = SYS_DLIST_PEEK_HEAD_CONTAINER(&data->bulk_xfers, xfer, node);
+	}
+
+	return xfer;
 }
 
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer)
+static int uhc_xfer_add_new_periodic(const struct device *dev, struct uhc_transfer *const xfer,
+				     uint32_t frame_number)
+{
+	if (xfer->interval == 0) {
+		LOG_ERR("Tried to schedule a periodic xfer that has interval equal to 0");
+		return -EINVAL;
+	}
+
+	xfer->start_frame = frame_number + xfer->interval;
+
+	LOG_DBG("New periodic transfer s.f. %u f.n. %u interval %u", xfer->start_frame,
+		frame_number, xfer->interval);
+
+	uhc_xfer_add_periodic(dev, xfer);
+
+	return 0;
+}
+
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer,
+		    uint32_t frame_number)
 {
 	struct uhc_data *data = dev->data;
 
@@ -89,8 +150,12 @@ int uhc_xfer_append(const struct device *dev,
 	case USB_EP_TYPE_BULK:
 		sys_dlist_append(&data->bulk_xfers, &xfer->node);
 		break;
+	case USB_EP_TYPE_ISO:
+	case USB_EP_TYPE_INTERRUPT:
+		return uhc_xfer_add_new_periodic(dev, xfer, frame_number);
 	default:
 		LOG_ERR("Invalid xfer type: %d", xfer->type);
+		return -EINVAL;
 	}
 
 	return 0;
@@ -118,6 +183,7 @@ void uhc_xfer_cleanup_cancelled(const struct device *dev, uhc_xfer_cancel_cb_t c
 
 	uhc_xfer_dlist_cleanup_cancelled(dev, &data->ctrl_xfers, cb, priv);
 	uhc_xfer_dlist_cleanup_cancelled(dev, &data->bulk_xfers, cb, priv);
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->periodic_xfers, cb, priv);
 }
 
 int uhc_xfer_dequeue(struct uhc_transfer *const xfer)
@@ -438,6 +504,7 @@ int uhc_init(const struct device *dev,
 	data->event_ctx = event_ctx;
 	sys_dlist_init(&data->ctrl_xfers);
 	sys_dlist_init(&data->bulk_xfers);
+	sys_dlist_init(&data->periodic_xfers);
 
 	ret = api->init(dev);
 	if (ret == 0) {

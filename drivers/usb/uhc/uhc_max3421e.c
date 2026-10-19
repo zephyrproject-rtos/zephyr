@@ -380,7 +380,7 @@ static int max3421e_schedule_xfer(const struct device *dev)
 		/* Do not restart last transfer */
 		hrsl = 0;
 
-		priv->last_xfer = uhc_xfer_get_next(dev);
+		priv->last_xfer = uhc_xfer_get_next(dev, 0);
 		if (priv->last_xfer == NULL) {
 			LOG_DBG("Nothing to transfer");
 			return 0;
@@ -793,7 +793,7 @@ static int max3421e_bus_resume(const struct device *dev)
 static int max3421e_enqueue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
-	return uhc_xfer_append(dev, xfer);
+	return uhc_xfer_append(dev, xfer, 0);
 }
 
 static int max3421e_dequeue(const struct device *dev,
