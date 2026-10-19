@@ -23,6 +23,18 @@ tests:
       - rpi_pico2/rp2350a/m33/mcuboot
       - rpi_pico2/rp2350a/m33/w/mcuboot
       - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
+  drivers.adc.pm:
+    platform_allow:
+      - lp_mspm0g3519/mspm0g3519
+      - lp_mspm0l2228/mspm0l2228
+    extra_args:
+      - platform:lp_mspm0g3519/mspm0g3519:DTC_OVERLAY_FILE="boards/lp_mspm0g3519.overlay;boards/lp_mspm0g3519_pm_runtime.overlay"
+      - platform:lp_mspm0l2228/mspm0l2228:DTC_OVERLAY_FILE="boards/lp_mspm0l2228.overlay;boards/lp_mspm0l2228_pm_runtime.overlay"
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
