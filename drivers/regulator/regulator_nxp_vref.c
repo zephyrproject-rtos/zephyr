@@ -49,6 +49,22 @@ static const struct linear_range utrim_ranges[] = {
 };
 #endif
 
+#if defined(FSL_FEATURE_VREF_HAS_LPBGEN) && (FSL_FEATURE_VREF_HAS_LPBGEN == 0)
+#define NXP_VREF_BIAS_MASK VREF_CSR_IBIAS_EN_MASK
+#else
+#define NXP_VREF_BIAS_MASK VREF_CSR_LPBGEN_MASK
+#endif
+
+#if defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0)
+#define NXP_VREF_LP_BUFFER_MASK 0U
+#else
+#define NXP_VREF_LP_BUFFER_MASK VREF_CSR_LPBG_BUF_EN_MASK
+#endif
+
+#define NXP_VREF_ENABLE_MASK (VREF_CSR_HCBGEN_MASK | VREF_CSR_BUF21EN_MASK | \
+			     NXP_VREF_BIAS_MASK | NXP_VREF_LP_BUFFER_MASK)
+#define NXP_VREF_CONFIG_MASK (VREF_CSR_ICOMPEN_MASK | VREF_CSR_CHOPEN_MASK | VREF_CSR_REGEN_MASK)
+
 struct regulator_nxp_vref_data {
 	struct regulator_common_data common;
 	uint16_t trim;
@@ -74,10 +90,7 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 
 	volatile uint32_t *const csr = &base->CSR;
 
-	*csr |= VREF_CSR_LPBGEN_MASK;
-#if !(defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0))
-	*csr |= VREF_CSR_LPBG_BUF_EN_MASK;
-#endif
+	*csr |= NXP_VREF_BIAS_MASK | NXP_VREF_LP_BUFFER_MASK;
 
 	/* Wait for bandgap startup */
 	k_busy_wait(config->bg_start_time);
@@ -99,14 +112,10 @@ static int regulator_nxp_vref_disable(const struct device *dev)
 	VREF_Type *const base = config->base;
 
 	/*
-	 * Disable HC Bandgap, LP Bandgap, Buf21, and (where present) the LP
+	 * Disable HC Bandgap, bias, Buf21, and (where present) the LP
 	 * Bandgap Buffer to achieve "Off" mode of VREF.
 	 */
-	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK | VREF_CSR_LPBGEN_MASK
-#if !(defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0))
-		       | VREF_CSR_LPBG_BUF_EN_MASK
-#endif
-	);
+	base->CSR &= ~NXP_VREF_ENABLE_MASK;
 
 	return 0;
 }
