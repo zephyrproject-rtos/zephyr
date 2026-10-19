@@ -247,7 +247,7 @@
  * @return node identifier with that path.
  */
 #define NPCX_DT_NODE_FROM_MIWU_MAP(i)  DT_PATH(npcx_miwus_int_map, \
-						map_miwu##i##_groups)
+						UTIL_CAT(UTIL_CAT(map_miwu, i), _groups))
 /**
  * @brief Get the index prop from parent MIWU device node.
  *
