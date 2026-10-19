@@ -157,6 +157,8 @@ int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 			     struct http_hpack_header_buf *header);
 int http_hpack_encode_header(uint8_t *buf, size_t buflen,
 			     struct http_hpack_header_buf *header);
+int http_hpack_encode_field(uint8_t *buf, size_t buflen, struct http_hpack_header_buf *header,
+			    const char *name, const char *value);
 
 /** @endcond */
 
