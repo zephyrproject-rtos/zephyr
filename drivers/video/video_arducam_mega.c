@@ -952,7 +952,7 @@ static int arducam_mega_capture(const struct device *dev, uint32_t *length)
 	for (int tries = ARDUCAM_MEGA_CAPTURE_TRIES; tries > 0; tries--) {
 		ret = arducam_mega_read_reg(&cfg->bus, ARDUCHIP_TRIG, &reg_data);
 		if (ret < 0) {
-			LOG_ERR("Capture timeout!");
+			LOG_ERR("Failed to read the capture state (%d)", ret);
 			return ret;
 		}
 
@@ -961,6 +961,11 @@ static int arducam_mega_capture(const struct device *dev, uint32_t *length)
 		}
 
 		k_msleep(2);
+	}
+
+	if (!(reg_data & CAP_DONE_MASK)) {
+		LOG_ERR("Capture timeout");
+		return -ETIMEDOUT;
 	}
 
 	ret = arducam_mega_read_reg(&cfg->bus, FIFO_SIZE1, &reg_data);
@@ -1029,14 +1034,18 @@ static void arducam_mega_buffer_work(struct k_work *work)
 	}
 
 	if (drv_data->fifo_length == 0) {
-		arducam_mega_capture(drv_data->dev, &length);
+		ret = arducam_mega_capture(drv_data->dev, &length);
+		if (ret < 0) {
+			LOG_ERR("failed to capture a frame (%d)", ret);
+			goto retry;
+		}
 		drv_data->frame_timestamp = k_uptime_get_32();
 	}
 
 	ret = arducam_mega_fifo_read(drv_data->dev, vbuf);
 	if (ret < 0) {
 		LOG_ERR("failed to read a buffer (%d)", ret);
-		return;
+		goto retry;
 	}
 
 	if (drv_data->fifo_length != 0) {
@@ -1045,6 +1054,12 @@ static void arducam_mega_buffer_work(struct k_work *work)
 
 	vbuf->timestamp = drv_data->frame_timestamp;
 	k_fifo_put(&drv_data->fifo_out, vbuf);
+	return;
+
+retry:
+	/* The frame is lost: the buffer goes back for the next capture */
+	drv_data->fifo_length = 0;
+	k_fifo_put(&drv_data->fifo_in, vbuf);
 }
 
 static int arducam_mega_enqueue(const struct device *dev, struct video_buffer *vbuf)
