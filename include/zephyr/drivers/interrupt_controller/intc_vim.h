@@ -185,4 +185,11 @@ int z_vim_irq_is_enabled(unsigned int irq);
  */
 void z_vim_arm_enter_irq(int irq);
 
+/**
+ * @brief Clear a pending interrupt while it may remain masked.
+ *
+ * @param irq interrupt ID.
+ */
+void z_vim_irq_clear_pending(unsigned int irq);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_VIM_H_ */
