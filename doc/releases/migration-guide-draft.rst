@@ -62,6 +62,24 @@ Ethernet
   the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
   must select it as well. (:github:`120871`)
 
+OPAMP
+=====
+
+* The NXP OPAMP drivers (:dtcompatible:`nxp,opamp` and :dtcompatible:`nxp,opamp-fast`) hold a
+  power state constraint while the device is active, and the OPAMP nodes declare
+  ``zephyr,disabling-power-states``. With :kconfig:option:`CONFIG_PM_POLICY_DEVICE_CONSTRAINTS`
+  an enabled OPAMP therefore keeps the system out of Power Down and Deep Power Down for as long
+  as it is active, which without :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` is from init onwards.
+  Enable device runtime PM for the node, or suspend it explicitly, to let the system reach those
+  states. (:github:`122135`)
+
+* :dtcompatible:`nxp,opamp-fast` no longer enables an instance marked with
+  ``is-reference-source`` from its init function; the instance follows its own power state like
+  every other instance. With :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` an application has to hold
+  a runtime reference on the reference source while it measures an amplifier fed by it. Builds
+  without device runtime PM are unaffected: the device is resumed at init and the instance comes
+  up enabled as before. (:github:`122135`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
