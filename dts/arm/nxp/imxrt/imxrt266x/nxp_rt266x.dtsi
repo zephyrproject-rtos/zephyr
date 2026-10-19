@@ -988,13 +988,16 @@
 		status = "disabled";
 	};
 
-	/* FlexIO (HSP domain), IRQ 171..173 */
+	/* FlexIO (HSP domain), IRQ 171..173. MAINDIVX (400 MHz) / 4 = 100 MHz. */
 	flexio0: hsp_flexio_0: flexio@42110000 {
 		compatible = "nxp,flexio";
 		reg = <0x42110000 0x4000>;
 		interrupts = <171 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXIO0,
-					   IMX_CCM_ROOT_MAIN_FLEXIO0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_FLEXIO0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_FLEXIO0_FCLK,
+						IMX_CCM_MUX_FLEXIO0_MAINDIVX, 4, 1)>;
 		status = "disabled";
 	};
 
@@ -1002,8 +1005,11 @@
 		compatible = "nxp,flexio";
 		reg = <0x42120000 0x4000>;
 		interrupts = <172 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXIO1,
-					   IMX_CCM_ROOT_MAIN_FLEXIO1_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_FLEXIO1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_FLEXIO1_FCLK,
+						IMX_CCM_MUX_FLEXIO1_MAINDIVX, 4, 1)>;
 		status = "disabled";
 	};
 
@@ -1011,8 +1017,11 @@
 		compatible = "nxp,flexio";
 		reg = <0x42900000 0x4000>;
 		interrupts = <173 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXIO2,
-					   IMX_CCM_ROOT_MAIN_FLEXIO2_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_FLEXIO2_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_FLEXIO2_FCLK,
+						IMX_CCM_MUX_FLEXIO2_MAINDIVX, 4, 1)>;
 		status = "disabled";
 	};
 
