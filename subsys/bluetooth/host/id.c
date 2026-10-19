@@ -1771,6 +1771,22 @@ uint8_t bt_id_read_public_addr(bt_addr_le_t *addr)
 	return 1U;
 }
 
+/* IRK = d1(IR, 1, 0), Core v6.3, Vol 3, Part H, Appendix B.2.3 */
+static bool irk_from_ir(const uint8_t ir[16], uint8_t irk[BT_IRK_SIZE])
+{
+	static const uint8_t invalid_ir[16] = { 0 };
+
+	if (util_memeq(ir, invalid_ir, sizeof(invalid_ir))) {
+		return false;
+	}
+
+	sys_put_le16(1U, &irk[0]);
+	sys_put_le16(0U, &irk[2]);
+	(void)memset(&irk[4], 0, BT_IRK_SIZE - 4);
+
+	return bt_encrypt_le(ir, irk, irk) == 0;
+}
+
 int bt_setup_public_id_addr(void)
 {
 	bt_addr_le_t addr;
@@ -1789,7 +1805,7 @@ int bt_setup_public_id_addr(void)
 	bt_read_identity_root(ir);
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY_RANDOMIZE_IR)) {
-		if (!bt_smp_irk_get(ir, ir_irk)) {
+		if (irk_from_ir(ir, ir_irk)) {
 			irk = ir_irk;
 		}
 	}
@@ -1879,7 +1895,7 @@ int bt_setup_random_id_addr(void)
 
 			if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !IS_ENABLED(CONFIG_BT_PRIVACY_RANDOMIZE_IR)) {
-				if (!bt_smp_irk_get(addrs[i].ir, ir_irk)) {
+				if (irk_from_ir(addrs[i].ir, ir_irk)) {
 					irk = ir_irk;
 				}
 			}
