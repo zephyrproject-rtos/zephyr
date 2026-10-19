@@ -21,8 +21,10 @@
 #include <zephyr/drivers/rtc/rtc_ti_mspm0.h>
 
 #define RTCCLK_FREQ (32768)
-/* Writes take ~ 3 RTCCLK cycles (32 kHz) to take effect. Approximate delay of 92us */
-#define WRITE_DELAY ((3 * USEC_PER_SEC) / RTCCLK_FREQ)
+/* Writes take ~ 3 RTCCLK cycles (32 kHz) to take effect.
+ * Add an approximate delay of ~184us (6 RTCCLK cycles) for safety.
+ */
+#define WRITE_DELAY ((6 * USEC_PER_SEC) / RTCCLK_FREQ)
 
 #if defined(CONFIG_RTC_ALARM)
 #define RTC_TI_ALARM_1		0
