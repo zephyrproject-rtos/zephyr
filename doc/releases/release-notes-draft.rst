@@ -80,6 +80,11 @@ Libraries / Subsystems
     :c:macro:`NET_EVENT_L4_DNS_LOST` and :c:func:`conn_mgr_dns_is_ready`.
   * :c:func:`dns_resolve_get_server_families` reports the address families of the
     available unicast DNS servers.
+  * New :ref:`multiprotocol HTTP client <http_client_multiprotocol_interface>`
+    (:kconfig:option:`CONFIG_HTTP_CLIENT_MULTIPROTOCOL`), a client API meant to
+    cover HTTP/1.1, HTTP/2 and HTTP/3 over pluggable transports, with any number
+    of requests per connection in a synchronous or an asynchronous mode. HTTP/2
+    over TCP and TLS is supported in this release.
 
   * Ethernet bridge
 
