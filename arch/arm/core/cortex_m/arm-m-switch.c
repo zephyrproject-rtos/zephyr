@@ -21,7 +21,7 @@ struct hw_frame_fpu {
 	struct hw_frame_base base;
 	uint32_t s_regs[16];
 	uint32_t fpscr;
-	uint32_t reserved;
+	uint32_t vpr; /* reserved without MVE */
 };
 
 /* The hardware frame pushed when entry happens with a misaligned stack */
@@ -109,6 +109,9 @@ struct z_frame {
 struct z_frame_fpu {
 	uint32_t have_fpu;
 	uint32_t s_regs[32];
+#ifdef CONFIG_ARMV8_1_M_MVEI
+	uint32_t vpr;
+#endif
 	uint32_t fpscr;
 	union u_frame u;
 };
@@ -160,7 +163,7 @@ BUILD_ASSERT(offsetof(union frame, synth_fp_a.s_regs) <= offsetof(union frame, z
 
 #ifdef CONFIG_FPU
 /* Without CONFIG_BUILTIN_STACK_GUARD, the padded synthesized FPU
- * frame is one word larger than the suspended frame it is built from.
+ * frame can be larger than the suspended frame it is built from.
  */
 uint32_t arm_m_switch_stack_buffer =
 	MAX(sizeof(struct z_frame_fpu), sizeof(struct synth_frame_align_fpu)) -
@@ -194,6 +197,15 @@ void *arm_m_lto_refs[2];
 #define ZFP_SYNTH_APSR XPSR_SFPA
 #else
 #define ZFP_SYNTH_APSR 0
+#endif
+
+/* VPR (MVE predication) is part of a thread's FP context: it is
+ * stacked in the extended frame's last word and kept in z_frame_fpu
+ */
+#ifdef CONFIG_ARMV8_1_M_MVEI
+#define ZFP_VPR(f) ((f)->zfp.vpr)
+#else
+#define ZFP_VPR(f) 0
 #endif
 
 /* Unit test hook, unused in production */
@@ -250,13 +262,15 @@ uint32_t arm_m_switch_control;
  * frame overwrites (the integer frame, FPSCR, and s30/s31 when it
  * covers them), then move s0-s15 up into it, then s16-s31 down to the
  * bottom (whose old contents are now copied out), then write r4-r11
- * and the integer hardware frame over the old s16-s31.  A frame
+ * and the integer hardware frame over the old s16-s31.  On cores
+ * with MVE the hardware also restores VPR from the extended frame.  A frame
  * saved by arm_m_switch() has no SFPA bit in its APSR word, so set it
  * (in Secure state) to keep the FPSCR the hardware restores.
  */
 #define ZFP_TO_SYNTH(f, sfp, fphw) do {                                 \
 	struct switch_frame sw = f->zfp.u.sw;                           \
 	uint32_t fpscr = f->zfp.fpscr;                                  \
+	uint32_t vpr = ZFP_VPR(f);                                      \
 	uint32_t s30 = f->zfp.s_regs[30], s31 = f->zfp.s_regs[31];      \
 	for (int i = 0; i < 16; i++) {                                  \
 		f->sfp.fphw.s_regs[i] = f->zfp.s_regs[i];               \
@@ -269,7 +283,7 @@ uint32_t arm_m_switch_control;
 	SWITCH_TO_SYNTH_INNER(sw, f->sfp, f->sfp.fphw.base);            \
 	f->sfp.fphw.base.apsr |= ZFP_SYNTH_APSR;                        \
 	f->sfp.fphw.fpscr = fpscr;                                      \
-	f->sfp.fphw.reserved = 0;                                       \
+	f->sfp.fphw.vpr = vpr;                                          \
 } while (false)
 
 /* clang-format on */
@@ -480,6 +494,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	struct hw_frame_base *base = sp;
 	bool padded = (base->apsr & XPSR_STACK_ALIGN);
 	uint32_t fpscr = 0;
+	uint32_t vpr = 0;
 
 #ifdef CONFIG_FPU
 	if (fpu) {
@@ -511,6 +526,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 
 	if (IS_ENABLED(CONFIG_FPU) && fpu) {
 		fpscr = CONTAINER_OF(sp, struct hw_frame_fpu, base)->fpscr;
+		vpr = CONTAINER_OF(sp, struct hw_frame_fpu, base)->vpr;
 	}
 
 	/* There are four (!) different offsets from the interrupted
@@ -550,6 +566,11 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	if (fpu) {
 		arm_m_cs_ptrs.fpu_out = &f->zfp.s_regs[16];
 		f->zfp.fpscr = fpscr;
+#ifdef CONFIG_ARMV8_1_M_MVEI
+		f->zfp.vpr = vpr;
+#else
+		ARG_UNUSED(vpr);
+#endif
 		f->zfp.have_fpu = true;
 		return &f->zfp.have_fpu;
 	}

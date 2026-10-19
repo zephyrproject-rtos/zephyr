@@ -302,7 +302,12 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 			 "   and r7, r8, #4;"  /* r7 == have_fpu */
 			 "   cbz r7, 1f;"
 			 "   vmrs r6, fpscr;"
+#ifdef CONFIG_ARMV8_1_M_MVEI
+			 "   vmrs r2, vpr;" /* r2 is already saved */
+			 "   push {r2, r6};"
+#else
 			 "   push {r6};"
+#endif
 			 "   vpush {s0-s31};"
 			 "   bic r8, r8, #4;" /* clear CONTROL.FPCA */
 			 "   msr control, r8;"
@@ -312,7 +317,12 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 			 "   ldm r4!, {r7};" /* have_fpu word */
 			 "   cbz r7, 2f;"
 			 "   vldm r4!, {s0-s31};" /* (note: sets FPCA bit for us) */
+#ifdef CONFIG_ARMV8_1_M_MVEI
+			 "   ldm r4!, {r2, r6};"
+			 "   vmsr vpr, r2;"
+#else
 			 "   ldm r4!, {r6};"
+#endif
 			 "   vmsr fpscr, r6;"
 			 "2:;"
 #endif
