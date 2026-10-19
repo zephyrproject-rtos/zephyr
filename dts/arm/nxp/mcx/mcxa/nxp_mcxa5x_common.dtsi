@@ -832,6 +832,7 @@
 		clocks = <&syscon MCUX_VREF_CLK>;
 		regulator-min-microvolt = <1000000>;
 		regulator-max-microvolt = <2500000>;
+		nxp,spc = <&spc>;
 		#nxp,reference-cells = <1>;
 		nxp,buffer-startup-delay-us = <400>;
 		nxp,bandgap-startup-time-us = <20>;

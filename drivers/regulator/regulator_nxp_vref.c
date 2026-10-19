@@ -13,6 +13,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/linear_range.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
@@ -64,6 +65,11 @@ static const struct linear_range utrim_ranges[] = {
 #define NXP_VREF_ENABLE_MASK (VREF_CSR_HCBGEN_MASK | VREF_CSR_BUF21EN_MASK | \
 			     NXP_VREF_BIAS_MASK | NXP_VREF_LP_BUFFER_MASK)
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(nxp_spc)
+#define NXP_VREF_SPC_ACTIVE_CFG1_OFFSET 0x104U
+#define NXP_VREF_SPC_ENABLE_MASK BIT(0)
+#endif
+
 struct regulator_nxp_vref_data {
 	struct regulator_common_data common;
 	uint16_t trim;
@@ -82,6 +88,9 @@ struct regulator_nxp_vref_config {
 	bool internal_voltage_regulator_en;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(nxp_spc)
+	uintptr_t spc_base;
+#endif
 };
 
 static void regulator_nxp_vref_disable_hw(const struct device *dev)
@@ -275,6 +284,13 @@ static int regulator_nxp_vref_configure_hw(const struct device *dev)
 		}
 	}
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(nxp_spc)
+	if (config->spc_base != 0U) {
+		sys_set_bits(config->spc_base + NXP_VREF_SPC_ACTIVE_CFG1_OFFSET,
+			     NXP_VREF_SPC_ENABLE_MASK);
+	}
+#endif
+
 	regulator_nxp_vref_disable_hw(dev);
 
 	if (config->current_compensation_en) {
@@ -354,6 +370,14 @@ static int regulator_nxp_vref_init(const struct device *dev)
 	return regulator_common_init(dev, false);
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(nxp_spc)
+#define NXP_VREF_SPC_CONFIG(inst)                                                                  \
+	.spc_base = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, nxp_spc),                              \
+			       (DT_REG_ADDR(DT_INST_PHANDLE(inst, nxp_spc))), (0U)),
+#else
+#define NXP_VREF_SPC_CONFIG(inst)
+#endif
+
 #define REGULATOR_NXP_VREF_DEFINE(inst)                                                            \
 	static struct regulator_nxp_vref_data data_##inst;                                         \
                                                                                                    \
@@ -371,6 +395,7 @@ static int regulator_nxp_vref_init(const struct device *dev)
 		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                   \
 				((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)),         \
 				((clock_control_subsys_t)0)),                                      \
+		NXP_VREF_SPC_CONFIG(inst)                                                          \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_pm_action);                              \
