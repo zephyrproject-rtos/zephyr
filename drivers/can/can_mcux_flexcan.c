@@ -64,6 +64,7 @@ struct mcux_flexcan_config {
 
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_cfg;
 	uint32_t clk_source;
 	uint32_t number_of_mb;
 	uint32_t rx_mb;
@@ -1168,6 +1169,14 @@ static int mcux_flexcan_init(const struct device *dev)
 		}
 	}
 
+	if (config->clock_cfg != NULL) {
+		err = clock_control_configure(config->clock_dev, config->clock_cfg, NULL);
+		if (err) {
+			LOG_ERR("Failed to configure clock source: %d", err);
+			return err;
+		}
+	}
+
 #if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
 	err = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (err) {
@@ -1499,10 +1508,16 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
 	.clk_source = 0U
 
+#define FLEXCAN_INST_CLOCK_CFG(id)						\
+	.clock_cfg = (clock_control_subsys_t)COND_CODE_1(			\
+		DT_INST_CLOCKS_HAS_NAME(id, source),				\
+		(DT_INST_CLOCKS_CELL_BY_NAME(id, source, name)), (0U))
+
 #define FLEXCAN_INST_CLOCKS(id)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, clk_source),			\
 		(FLEXCAN_INST_CLOCKS_FROM_CLK_SOURCE(id)),			\
-		(FLEXCAN_INST_CLOCKS_NO_CLK_SOURCE(id)))
+		(FLEXCAN_INST_CLOCKS_NO_CLK_SOURCE(id))),			\
+	FLEXCAN_INST_CLOCK_CFG(id)
 
 #define FLEXCAN_CHECK_CLK_SOURCE(id)								\
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(id, clk_source),					\
