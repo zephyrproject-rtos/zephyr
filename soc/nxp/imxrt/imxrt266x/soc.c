@@ -10,6 +10,8 @@
  * and clock roots belong to the nxp,imx-ccm-rev3 driver, driven from devicetree.
  */
 
+#include <string.h>
+
 #include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/fatal.h>
@@ -84,6 +86,11 @@ static void soc_release_sleep_hold(void)
 	POWERCON_DisableSleepHold(SYSCON__POWERCON_CMC0_CTRL);
 }
 
+#ifdef CONFIG_MCUX_NONCACHEABLE_CUSTOM
+extern char __mcux_noncacheable_start[];
+extern char __mcux_noncacheable_end[];
+#endif
+
 void soc_reset_hook(void)
 {
 	/*
@@ -107,6 +114,11 @@ void soc_early_init_hook(void)
 {
 	/* Access control first: every step after it is a peripheral access. */
 	soc_trdc_setup();
+
+#ifdef CONFIG_MCUX_NONCACHEABLE_CUSTOM
+	/* nocache_sram.ld is NOLOAD; zero it as Zephyr zeroes its nocache section. */
+	memset(__mcux_noncacheable_start, 0, __mcux_noncacheable_end - __mcux_noncacheable_start);
+#endif
 
 	soc_release_sleep_hold();
 
