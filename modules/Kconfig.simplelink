@@ -37,3 +37,10 @@ config HAS_CC13X2X7_CC26X2X7_SDK
 
 config HAS_CC23X0_SDK
 	bool
+
+config SIMPLELINK_F3_RADIO_DRIVER
+	bool
+	depends on HAS_CC23X0_SDK
+	help
+	  Build the SimpleLink F3 Radio Control Layer (RCL), LRF driver and
+	  RF patches from hal_ti.

@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Holds the main parameters every basic_radio backend can set at runtime
+  through basic_radio_config(). Other parameters such as datarate, deviation,
+  CRC, whitening, preamble, frame format is vendor specific and lives in
+  the vendor PHY binding. Vendor bindings use the same property names for
+  the same concepts (for example datarate-bps, modulation, crc-enable) so
+  that overlays can be compared across vendors.
+
+properties:
+  frequency-hz:
+    type: int
+    required: true
+    description: Carrier frequency in Hz.
+
+  sync-word:
+    type: int
+    required: true
+    description: |
+      Frame sync word, LSB-aligned. Its length on air is set by the PHY
+      (vendor binding).
+
+  tx-power-dbm:
+    type: int
+    default: 0
+    description: TX power in dBm.
+
+  max-packet-length:
+    type: int
+    default: 255
+    description: Maximum payload length in bytes.

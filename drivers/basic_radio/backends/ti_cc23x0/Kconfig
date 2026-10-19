@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config BASIC_RADIO_CC23X0
+	bool "TI CC23x0 RCL backend"
+	default y
+	depends on DT_HAS_TI_CC23X0_BASIC_RADIO_ENABLED
+	select SIMPLELINK_F3_RADIO_DRIVER
+	select PM
+	help
+	  Backend for TI CC23x0 SimpleLink SoCs.
+
+config BASIC_RADIO_CC23X0_RX_BUFFER_SIZE
+	int "RX MultiBuffer size in bytes"
+	depends on BASIC_RADIO_CC23X0
+	default 512
+	help
+	  Size of each RCL MultiBuffer used for RX. One buffer can hold
+	  several received packets.

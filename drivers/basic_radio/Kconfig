@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BASIC_RADIO
+	bool "Basic Radio Drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select POLL
+	help
+	  Vendor-agnostic API for basic radio commands
+
+if BASIC_RADIO
+
+module = BASIC_RADIO
+module-str = basic_radio
+source "subsys/logging/Kconfig.template.log_config"
+
+config BASIC_RADIO_INIT_PRIORITY
+	int "basic_radio initialization priority"
+	default 90
+	help
+	  POST_KERNEL init priority for basic_radio drivers. Must be higher
+	  than the priority of any underlying vendor HAL init.
+
+config BASIC_RADIO_MAX_PACKET_LEN
+	int "Maximum payload length"
+	range 1 255
+	default 255
+	help
+	  Largest payload in bytes any PHY of the radio can send or receive.
+
+config BASIC_RADIO_RX_BUFFER_COUNT
+	int "Number of RX buffers"
+	range 1 16
+	default 3
+	help
+	  Number of RX buffers preallocated by the backend.
+
+config BASIC_RADIO_TX_BUFFER_COUNT
+	int "Number of TX buffers"
+	range 1 16
+	default 4
+	help
+	  Depth of the backend's TX buffer pool. More buffers allow
+	  back-to-back submits without waiting for the previous TX to finish.
+
+rsource "backends/ti_cc23x0/Kconfig"
+# add here more "backends/..."
+
+endif # BASIC_RADIO
