@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_OPENCORES_ETHOC
+	bool "OpenCores ethmac MDIO driver"
+	default y
+	depends on DT_HAS_OPENCORES_ETHOC_MDIO_ENABLED
+	depends on ETH_OPENCORES_ETHOC
+	help
+	  Enable the MDIO controller of the OpenCores ethmac.
+
+if MDIO_OPENCORES_ETHOC
+
+config MDIO_OPENCORES_ETHOC_BUSY_TIMEOUT
+	int "MDIO busy-wait timeout (us)"
+	default 10000
+	help
+	  Maximum time to wait for an MDIO transaction to complete.
+
+endif # MDIO_OPENCORES_ETHOC
