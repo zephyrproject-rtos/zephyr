@@ -52,6 +52,7 @@ tests:
       - frdm_mcxc242
       - frdm_mcxc444
       - cy8cproto_062_4343w/cy8c624abzi_s2d44
+      - cy8cproto_062s3_4343w/cy8c6245lqi_s3d72
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853
