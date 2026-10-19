@@ -1442,6 +1442,8 @@
 		clocks = <&syscon MCUX_VREF_CLK>;
 		power-domains = <&core_domain>;
 		nxp,spc = <&spc>;
+		/* Low-power analog retention is not configured; DPD also resets registers. */
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		#nxp,reference-cells = <1>;
 		nxp,current-compensation-en;
 		nxp,internal-voltage-regulator-en;
