@@ -832,6 +832,7 @@
 		clocks = <&syscon MCUX_VREF_CLK>;
 		regulator-min-microvolt = <1000000>;
 		regulator-max-microvolt = <2500000>;
+		power-domains = <&core_domain>;
 		nxp,spc = <&spc>;
 		#nxp,reference-cells = <1>;
 		nxp,buffer-startup-delay-us = <400>;
@@ -839,6 +840,8 @@
 		nxp,current-compensation-en;
 		nxp,internal-voltage-regulator-en;
 		nxp,chop-oscillator-en;
+		/* Low-power analog retention is not configured; DPD also resets registers. */
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
