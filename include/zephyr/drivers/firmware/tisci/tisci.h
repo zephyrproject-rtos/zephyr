@@ -159,6 +159,14 @@ struct tisci_msg_rm_udmap_rx_ch_cfg {
 #define TISCI_MSG_VALUE_RM_VINT_VALID                  (1u << 3u)
 #define TISCI_MSG_VALUE_RM_GLOBAL_EVENT_VALID          (1u << 4u)
 #define TISCI_MSG_VALUE_RM_VINT_STATUS_BIT_INDEX_VALID (1u << 5u)
+/** @brief Bit in valid_params indicating @a secondary_host is valid. */
+#define TISCI_MSG_VALUE_RM_SECONDARY_HOST_VALID        (1u << 31u)
+
+/** TISCI resource-assignment subtype for interrupt-router outputs. */
+#define TISCI_RESASG_SUBTYPE_IR_OUTPUT 0U
+
+/** Invalid secondary-host value for TISCI IRQ / resource-range messages. */
+#define TISCI_IRQ_SECONDARY_HOST_INVALID 0xff
 
 /**
  * @brief Request to set up an interrupt route.
