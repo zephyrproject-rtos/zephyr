@@ -39,4 +39,10 @@ config TFA_PLATFORM
 	  Platform name for TF-A build system (PLAT= parameter).
 	  Boards should set this in their Kconfig.defconfig file.
 
+config TFA_TARGET_BOARD
+	string
+	help
+	  TF-A TARGET_BOARD parameter. Used by platforms that distinguish
+	  multiple board variants under a single PLAT directory.
+
 endif # BUILD_WITH_TFA
