@@ -19,6 +19,9 @@ properties:
   "#gpio-cells":
     const: 2
 
+  "#adc-gpio-cells":
+    const: 2
+
   sense-edge-mask:
     type: int
     description: |
@@ -60,3 +63,7 @@ properties:
 gpio-cells:
   - pin
   - flags
+
+adc-gpio-cells:
+  - pin
+  - ain

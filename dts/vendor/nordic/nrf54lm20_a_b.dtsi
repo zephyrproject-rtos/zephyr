@@ -596,6 +596,15 @@
 			adc: adc@d5000 {
 				compatible = "nordic,nrf-saadc";
 				reg = <0xd5000 0x1000>;
+				/* AIN0..AIN7 = P1.00, P1.31, P1.30, P1.29, P1.06, P1.05, P1.04, P1.03 */
+				nordic,saadc-inputs = <&gpio1 0 NRF_SAADC_AIN0>,
+						      <&gpio1 31 NRF_SAADC_AIN1>,
+						      <&gpio1 30 NRF_SAADC_AIN2>,
+						      <&gpio1 29 NRF_SAADC_AIN3>,
+						      <&gpio1 6 NRF_SAADC_AIN4>,
+						      <&gpio1 5 NRF_SAADC_AIN5>,
+						      <&gpio1 4 NRF_SAADC_AIN6>,
+						      <&gpio1 3 NRF_SAADC_AIN7>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				interrupts = <213 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -619,6 +628,7 @@
 			};
 
 			gpio1: gpio@d8200 {
+				#adc-gpio-cells = <2>;
 				compatible = "nordic,nrf-gpio";
 				gpio-controller;
 				reg = <0xd8200 0x300>;

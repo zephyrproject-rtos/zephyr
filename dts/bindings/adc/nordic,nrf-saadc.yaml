@@ -17,5 +17,20 @@ properties:
   "#io-channel-cells":
     const: 1
 
+  nordic,saadc-inputs:
+    type: phandle-array
+    required: true
+    specifier-space: adc-gpio
+    description: |
+      GPIO pins connected to the external SAADC analog inputs, one entry per
+      input, in the form <&gpioN pin NRF_SAADC_AINx>. The AIN number selects
+      the input, so the entry order does not have to match it. AIN numbers
+      that are not listed are rejected by the driver. Internal inputs (for
+      example VDD) are not listed.
+
+      On SoCs where the SAADC selects inputs by AIN number instead of by pin
+      (nRF52, nRF53, nRF91), the pin is fixed in silicon and only the AIN
+      numbers listed here are usable; the pin cell documents the routing.
+
 io-channel-cells:
   - input

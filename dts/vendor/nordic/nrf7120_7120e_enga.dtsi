@@ -810,6 +810,21 @@
 			adc: adc@d5000 {
 				compatible = "nordic,nrf-saadc";
 				reg = <0xd5000 0x1000>;
+				/* AIN8 does not exist on this SoC. */
+				nordic,saadc-inputs = <&gpio0 0 NRF_SAADC_AIN0>,
+						      <&gpio0 1 NRF_SAADC_AIN1>,
+						      <&gpio0 2 NRF_SAADC_AIN2>,
+						      <&gpio0 3 NRF_SAADC_AIN3>,
+						      <&gpio0 4 NRF_SAADC_AIN4>,
+						      <&gpio0 6 NRF_SAADC_AIN5>,
+						      <&gpio0 7 NRF_SAADC_AIN6>,
+						      <&gpio0 8 NRF_SAADC_AIN7>,
+						      <&gpio4 0 NRF_SAADC_AIN9>,
+						      <&gpio4 1 NRF_SAADC_AIN10>,
+						      <&gpio4 2 NRF_SAADC_AIN11>,
+						      <&gpio4 3 NRF_SAADC_AIN12>,
+						      <&gpio4 4 NRF_SAADC_AIN13>,
+						      <&gpio4 5 NRF_SAADC_AIN14>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				interrupts = <213 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -858,6 +873,7 @@
 				reg = <0xd8800 0x200>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				#adc-gpio-cells = <2>;
 				port = <4>;
 				ngpios = <12>;
 				gpiote-instance = <&gpiote20>;
@@ -1046,6 +1062,7 @@
 				reg = <0x10a000 0x200>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				#adc-gpio-cells = <2>;
 				port = <0>;
 				ngpios = <13>;
 				gpiote-instance = <&gpiote30>;
