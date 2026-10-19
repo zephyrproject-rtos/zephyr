@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+
+	rak12035_new: rak12035@20 {
+		compatible = "rakwireless,rak12035";
+		reg = <0x20>;
+	};
+
+	rak12035_old_desc: rak12035@21 {
+		compatible = "rakwireless,rak12035";
+		reg = <0x21>;
+	};
+
+	rak12035_old_asc: rak12035@22 {
+		compatible = "rakwireless,rak12035";
+		reg = <0x22>;
+	};
+
+	rak12035_old_invalid: rak12035@23 {
+		compatible = "rakwireless,rak12035";
+		reg = <0x23>;
+	};
+};
+
+/ {
+	aliases {
+		rak12035-new = &rak12035_new;
+		rak12035-old-desc = &rak12035_old_desc;
+		rak12035-old-asc = &rak12035_old_asc;
+		rak12035-old-invalid = &rak12035_old_invalid;
+	};
+};
