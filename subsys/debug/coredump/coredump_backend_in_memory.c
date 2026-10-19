@@ -72,9 +72,9 @@ static int in_memory_copy_to(struct coredump_cmd_copy_arg *copy_arg)
 		(void *)copy_arg->buffer, (unsigned long)copy_arg->offset,
 		(unsigned long)copy_arg->length);
 
-	if (copy_arg->buffer == NULL ||
-	    copy_arg->offset >= IN_MEMORY_END ||
-	    (copy_arg->length + copy_arg->offset) >= IN_MEMORY_END) {
+	if (copy_arg->buffer == NULL || copy_arg->offset < 0 ||
+	    copy_arg->offset > CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE ||
+	    copy_arg->length > CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE - copy_arg->offset) {
 		return -EINVAL;
 	}
 
