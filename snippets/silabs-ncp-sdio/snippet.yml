@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+name: silabs-ncp-sdio
+description: |
+  Silicon Labs network co-processor wired on the SDMMC1 controller, with
+  its Bluetooth HCI controller as the Zephyr Bluetooth HCI.
+
+append:
+  EXTRA_CONF_FILE: silabs-ncp-sdio.conf
+
+boards:
+  /nucleo_h755zi_q/stm32h755xx/m7/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nucleo_h755zi_q_stm32h755xx_m7.overlay
