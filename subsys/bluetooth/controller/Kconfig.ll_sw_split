@@ -116,11 +116,13 @@ config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Hidden, Controller's Co-Operative high priority Rx thread stack size.
 	int
+	default 2048 if NO_OPTIMIZATIONS
 	default 448
 
 config BT_CTLR_RX_STACK_SIZE
 	# Hidden, Controller's Co-Operative Rx thread stack size.
 	int
+	default 2048 if NO_OPTIMIZATIONS
 	default 896
 
 config BT_CTLR_SETTINGS
