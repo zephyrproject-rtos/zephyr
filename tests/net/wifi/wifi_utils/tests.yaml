@@ -8,3 +8,11 @@ common:
     - native_sim
 tests:
   net.wifi.utils: {}
+  net.wifi.utils.ranging_shell:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_NET_L2_WIFI_SHELL=y
+      - CONFIG_WIFI_MGMT_RANGING=y
+      - CONFIG_WIFI_MGMT_RANGING_INITIATOR=y
+      - CONFIG_WIFI_MGMT_RANGING_RESPONDER=y
+      - CONFIG_WIFI_MGMT_RANGING_11AZ=y

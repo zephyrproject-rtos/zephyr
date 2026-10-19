@@ -1976,3 +1976,433 @@ static int connect_stored_command(uint64_t mgmt_request, struct net_if *iface, v
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT_STORED, connect_stored_command);
 
 #endif /* CONFIG_WIFI_CREDENTIALS_CONNECT_STORED */
+
+
+#if defined(CONFIG_WIFI_MGMT_RANGING) || defined(CONFIG_WIFI_MGMT_LOCATION)
+/*
+ * Ranging and location have no supplicant path: measurement results arrive from
+ * the firmware straight to the driver, and the decode is standards-defined work
+ * done here. So resolve the driver's ops directly instead of get_wifi_api(),
+ * which returns the network manager's table and would shadow them.
+ */
+static const struct wifi_mgmt_ops *const get_wifi_driver_api(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api;
+
+	if (dev == NULL || !net_if_is_wifi(iface)) {
+		return NULL;
+	}
+
+	off_api = (struct net_wifi_mgmt_offload *)dev->api;
+
+	return off_api ? off_api->wifi_mgmt_api : NULL;
+}
+#endif /* CONFIG_WIFI_MGMT_RANGING || CONFIG_WIFI_MGMT_LOCATION */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING
+void wifi_mgmt_raise_ranging_done_event(struct net_if *iface,
+					struct wifi_ranging_done *done)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_RANGING_DONE, iface,
+					done, sizeof(*done));
+}
+
+#ifdef CONFIG_WIFI_MGMT_RANGING_INITIATOR
+static void ranging_result_cb(struct net_if *iface, uint32_t session_id, int status,
+			      struct wifi_ranging_result *result)
+{
+
+	if (result == NULL) {
+		struct wifi_ranging_done done = {
+			.session_id = session_id,
+			.status = status,
+		};
+		wifi_mgmt_raise_ranging_done_event(iface, &done);
+		return;
+	}
+	result->session_id = session_id;
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_RANGING_RESULT, iface,
+					result, sizeof(*result));
+}
+
+static int wifi_ranging_start(uint64_t mgmt_request, struct net_if *iface,
+			      void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_ranging_params *params = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_start == NULL) {
+		return -ENOTSUP;
+	}
+
+	/*
+	 * Admin-up is enough; ranging does not require an association. The
+	 * driver decides whether an unassociated or off-channel request is
+	 * supported and rejects with -ENOTSUP if not.
+	 */
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (params == NULL || len != sizeof(*params) ||
+	    params->num_peers == 0 ||
+	    params->num_peers > CONFIG_WIFI_MGMT_RANGING_MAX_PEERS) {
+		return -EINVAL;
+	}
+
+	if (params->mode > WIFI_RANGING_MODE_11AZ_TB) {
+		return -EINVAL;
+	}
+
+	if (!IS_ENABLED(CONFIG_WIFI_MGMT_RANGING_11AZ) &&
+	    (params->mode == WIFI_RANGING_MODE_11AZ_NTB ||
+	     params->mode == WIFI_RANGING_MODE_11AZ_TB)) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->ranging_start(dev, iface, params, ranging_result_cb);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_START, wifi_ranging_start);
+
+static int wifi_ranging_cancel(uint64_t mgmt_request, struct net_if *iface,
+			       void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	uint32_t *session_id = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_cancel == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (session_id == NULL || len != sizeof(*session_id)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ranging_cancel(dev, iface, *session_id);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_CANCEL, wifi_ranging_cancel);
+#endif /* CONFIG_WIFI_MGMT_RANGING_INITIATOR */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING_RESPONDER
+static int wifi_ranging_responder(uint64_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_ranging_responder_params *params = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_responder == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (params == NULL || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	if (params->oper != WIFI_MGMT_GET && params->oper != WIFI_MGMT_SET) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ranging_responder(dev, iface, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_RESPONDER, wifi_ranging_responder);
+#endif /* CONFIG_WIFI_MGMT_RANGING_RESPONDER */
+
+static int wifi_ranging_caps(uint64_t mgmt_request, struct net_if *iface,
+			     void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_ranging_caps *caps = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_get_caps == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (caps == NULL || len != sizeof(*caps)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ranging_get_caps(dev, iface, caps);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_CAPS, wifi_ranging_caps);
+
+static int wifi_ranging_peer_caps(uint64_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_ranging_peer_caps *caps = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_get_peer_caps == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (caps == NULL || len != sizeof(*caps)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ranging_get_peer_caps(dev, iface, caps);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_PEER_CAPS, wifi_ranging_peer_caps);
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+void wifi_mgmt_raise_location_result_event(struct net_if *iface,
+					   struct wifi_location *location)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_LOCATION_RESULT, iface,
+					location, sizeof(*location));
+}
+
+/*
+ * Measurement Report element body (IEEE Std 802.11-2024, 9.4.2.20), i.e. the
+ * element contents after the ID and Length octets:
+ *
+ *   0: Measurement Token
+ *   1: Measurement Report Mode
+ *   2: Measurement Type
+ *   3: Measurement Report (variable, absent when the mode says so)
+ */
+#define WIFI_MEAS_RPT_TOKEN_OFF	 0
+#define WIFI_MEAS_RPT_MODE_OFF	 1
+#define WIFI_MEAS_RPT_TYPE_OFF	 2
+#define WIFI_MEAS_RPT_BODY_OFF	 3
+
+/* Measurement Report Mode bits; any of them set means there is no report. */
+#define WIFI_MEAS_RPT_MODE_LATE	    BIT(0)
+#define WIFI_MEAS_RPT_MODE_INCAPABLE BIT(1)
+#define WIFI_MEAS_RPT_MODE_REFUSED   BIT(2)
+
+/* Measurement types carried by a location report. */
+#define WIFI_MEAS_TYPE_LCI	 8
+#define WIFI_MEAS_TYPE_CIVIC	 11
+
+/*
+ * LCI report body (IEEE Std 802.11-2024, 9.4.2.20.6): an LCI subelement
+ * (ID 0, Length 16) wrapping the 16-octet LCI field. The field is numbered
+ * from the least significant bit of each octet, and each multi-bit value has
+ * its first bit as the least significant one. Bit offsets within the field:
+ *
+ *   0..5     Latitude Uncertainty   (6 bits)
+ *   6..39    Latitude               (34 bits, 2's complement, 25 fraction bits)
+ *   40..45   Longitude Uncertainty  (6 bits)
+ *   46..79   Longitude              (34 bits, same encoding as Latitude)
+ *   80..83   Altitude Type          (4 bits, 1 = metres, 2 = floors)
+ *   84..89   Altitude Uncertainty   (6 bits)
+ *   90..119  Altitude               (30 bits, 2's complement, 8 fraction bits)
+ *   120..122 Datum                  (3 bits)
+ *   123      RegLoc Agreement       (1 bit)
+ *   124      RegLoc DSE             (1 bit)
+ *   125      Dependent STA          (1 bit)
+ *   126..127 Version                (2 bits)
+ */
+#define WIFI_LCI_SUBELEM_ID	0
+#define WIFI_LCI_SUBELEM_HDR_LEN 2
+#define WIFI_LCI_FIELD_LEN	16
+
+#define WIFI_LCI_LAT_UNC_OFF	0
+#define WIFI_LCI_LAT_OFF	6
+#define WIFI_LCI_LONG_UNC_OFF	40
+#define WIFI_LCI_LONG_OFF	46
+#define WIFI_LCI_ALT_TYPE_OFF	80
+#define WIFI_LCI_ALT_UNC_OFF	84
+#define WIFI_LCI_ALT_OFF	90
+
+#define WIFI_LCI_UNC_BITS	6
+#define WIFI_LCI_DEG_BITS	34
+#define WIFI_LCI_ALT_TYPE_BITS	4
+#define WIFI_LCI_ALT_BITS	30
+
+/*
+ * Location Civic report body (IEEE Std 802.11-2024, 9.4.2.20.13):
+ *
+ *   0: Civic Location Type (0 = RFC 4776)
+ *   1: Location Civic subelement ID (0)
+ *   2: Location Civic subelement length
+ *   3: Country Code, octet 0
+ *   4: Country Code, octet 1
+ *   5: CAtype/CAlength/CAvalue triples, up to the subelement length
+ */
+#define WIFI_CIVIC_TYPE_RFC4776		0
+#define WIFI_CIVIC_SUBELEM_ID		0
+#define WIFI_CIVIC_SUBELEM_OFF		1
+#define WIFI_CIVIC_SUBELEM_HDR_LEN	2
+#define WIFI_CIVIC_COUNTRY_LEN		2
+
+/* Pull n_bits (at most 64) starting at bit_off, LSB-first from buf[0]. */
+static uint64_t wifi_lci_bits(const uint8_t *buf, unsigned int bit_off, unsigned int n_bits)
+{
+	uint64_t val = 0;
+
+	for (unsigned int i = 0; i < n_bits; i++) {
+		unsigned int bit = bit_off + i;
+
+		val |= (uint64_t)((buf[bit / 8] >> (bit % 8)) & 0x01) << i;
+	}
+
+	return val;
+}
+
+/* Reinterpret an n_bits-wide two's complement field as a signed value. */
+static int64_t wifi_lci_signed(uint64_t val, unsigned int n_bits)
+{
+	if (val & BIT64(n_bits - 1)) {
+		val |= ~((BIT64(n_bits)) - 1U);
+	}
+
+	return (int64_t)val;
+}
+
+int wifi_location_parse_measurement_report(const uint8_t *report, size_t report_len,
+					   struct wifi_location *out)
+{
+	const uint8_t *body;
+	size_t body_len;
+	uint8_t type;
+
+	if (report == NULL || out == NULL) {
+		return -EINVAL;
+	}
+
+	if (report_len < WIFI_MEAS_RPT_BODY_OFF) {
+		return -EINVAL;
+	}
+
+	/* Late, Incapable or Refused all mean the peer sent no measurement. */
+	if (report[WIFI_MEAS_RPT_MODE_OFF] &
+	    (WIFI_MEAS_RPT_MODE_LATE | WIFI_MEAS_RPT_MODE_INCAPABLE |
+	     WIFI_MEAS_RPT_MODE_REFUSED)) {
+		return -ENOMSG;
+	}
+
+	type = report[WIFI_MEAS_RPT_TYPE_OFF];
+	body = &report[WIFI_MEAS_RPT_BODY_OFF];
+	body_len = report_len - WIFI_MEAS_RPT_BODY_OFF;
+
+	/*
+	 * Only the fields for the type present are touched, and has_lci/has_civic
+	 * are set rather than cleared: a peer reports LCI and civic as two
+	 * separate elements, so the caller accumulates both into one
+	 * struct wifi_location by calling this once per element.
+	 */
+	switch (type) {
+	case WIFI_MEAS_TYPE_LCI: {
+#ifdef CONFIG_WIFI_MGMT_LOCATION_LCI
+		if (body_len < WIFI_LCI_SUBELEM_HDR_LEN + WIFI_LCI_FIELD_LEN ||
+		    body[0] != WIFI_LCI_SUBELEM_ID ||
+		    body[1] != WIFI_LCI_FIELD_LEN) {
+			return -EBADMSG;
+		}
+
+		body += WIFI_LCI_SUBELEM_HDR_LEN;
+
+		out->lci.lat_uncertainty =
+			(uint8_t)wifi_lci_bits(body, WIFI_LCI_LAT_UNC_OFF, WIFI_LCI_UNC_BITS);
+		out->lci.latitude = wifi_lci_signed(
+			wifi_lci_bits(body, WIFI_LCI_LAT_OFF, WIFI_LCI_DEG_BITS),
+			WIFI_LCI_DEG_BITS);
+		out->lci.long_uncertainty =
+			(uint8_t)wifi_lci_bits(body, WIFI_LCI_LONG_UNC_OFF, WIFI_LCI_UNC_BITS);
+		out->lci.longitude = wifi_lci_signed(
+			wifi_lci_bits(body, WIFI_LCI_LONG_OFF, WIFI_LCI_DEG_BITS),
+			WIFI_LCI_DEG_BITS);
+		out->lci.altitude_type = (uint8_t)wifi_lci_bits(body, WIFI_LCI_ALT_TYPE_OFF,
+								WIFI_LCI_ALT_TYPE_BITS);
+		out->lci.alt_uncertainty =
+			(uint8_t)wifi_lci_bits(body, WIFI_LCI_ALT_UNC_OFF, WIFI_LCI_UNC_BITS);
+		out->lci.altitude = (int32_t)wifi_lci_signed(
+			wifi_lci_bits(body, WIFI_LCI_ALT_OFF, WIFI_LCI_ALT_BITS),
+			WIFI_LCI_ALT_BITS);
+
+		out->has_lci = true;
+
+		return 0;
+#else
+		return -ENOTSUP;
+#endif /* CONFIG_WIFI_MGMT_LOCATION_LCI */
+	}
+	case WIFI_MEAS_TYPE_CIVIC: {
+#ifdef CONFIG_WIFI_MGMT_LOCATION_CIVIC
+		size_t subelem_len;
+		size_t addr_len;
+
+		if (body_len < WIFI_CIVIC_SUBELEM_OFF + WIFI_CIVIC_SUBELEM_HDR_LEN ||
+		    body[0] != WIFI_CIVIC_TYPE_RFC4776 ||
+		    body[WIFI_CIVIC_SUBELEM_OFF] != WIFI_CIVIC_SUBELEM_ID) {
+			return -EBADMSG;
+		}
+
+		subelem_len = body[WIFI_CIVIC_SUBELEM_OFF + 1];
+		body += WIFI_CIVIC_SUBELEM_OFF + WIFI_CIVIC_SUBELEM_HDR_LEN;
+		body_len -= WIFI_CIVIC_SUBELEM_OFF + WIFI_CIVIC_SUBELEM_HDR_LEN;
+
+		if (subelem_len < WIFI_CIVIC_COUNTRY_LEN || subelem_len > body_len) {
+			return -EBADMSG;
+		}
+
+		memcpy(out->civic.country, body, WIFI_CIVIC_COUNTRY_LEN);
+
+		/* A report longer than the configured buffer is truncated; the
+		 * TLVs that do fit stay parseable by the application.
+		 */
+		addr_len = subelem_len - WIFI_CIVIC_COUNTRY_LEN;
+		if (addr_len > sizeof(out->civic.addr)) {
+			addr_len = sizeof(out->civic.addr);
+		}
+
+		memcpy(out->civic.addr, &body[WIFI_CIVIC_COUNTRY_LEN], addr_len);
+		out->civic.addr_len = (uint8_t)addr_len;
+
+		out->has_civic = true;
+
+		return 0;
+#else
+		return -ENOTSUP;
+#endif /* CONFIG_WIFI_MGMT_LOCATION_CIVIC */
+	}
+	default:
+		return -EBADMSG;
+	}
+}
+
+static int wifi_location_self(uint64_t mgmt_request, struct net_if *iface,
+			      void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_location_self_params *params = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->location_self == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (params == NULL || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	if (params->oper != WIFI_MGMT_GET && params->oper != WIFI_MGMT_SET) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->location_self(dev, iface, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_LOCATION_SELF, wifi_location_self);
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
