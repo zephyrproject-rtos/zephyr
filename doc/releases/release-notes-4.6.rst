@@ -53,6 +53,13 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* PTP Clock
+
+  * :c:func:`ptp_clock_rate_adjust` and the :c:member:`ptp_clock_driver_api.rate_adjust` driver
+    operation are deprecated in favor of :c:func:`ptp_clock_adjust_rate` and
+    :c:member:`ptp_clock_driver_api.adjust_rate`, which take the rate offset as scaled parts per
+    million instead of a floating-point ratio.
+
 New APIs and options
 ====================
 ..
