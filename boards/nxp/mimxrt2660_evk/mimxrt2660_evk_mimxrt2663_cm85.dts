@@ -113,3 +113,7 @@
 &dac0 {
 	status = "okay";
 };
+
+&temp0 {
+	status = "okay";
+};
