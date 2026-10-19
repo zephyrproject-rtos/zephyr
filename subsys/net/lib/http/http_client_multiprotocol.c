@@ -18,6 +18,8 @@
 
 LOG_MODULE_REGISTER(net_http_client_mp, CONFIG_NET_HTTP_LOG_LEVEL);
 
+BUILD_ASSERT(IS_ENABLED(CONFIG_HTTP_CLIENT_VERSION_2), "Some HTTP version needs to be enabled");
+
 #define HTTP_WAIT_SLICE_MS 1000
 
 static int client_transport_close(struct http_client *client);
