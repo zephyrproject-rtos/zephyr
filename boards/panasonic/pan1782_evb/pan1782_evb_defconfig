@@ -21,6 +21,3 @@ CONFIG_SERIAL=y
 # enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# using rc for slow clock
-CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
