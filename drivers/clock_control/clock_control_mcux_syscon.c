@@ -350,6 +350,16 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_SOC_SERIES_MCXAXX7)
+	if ((uint32_t)sub_system == MCUX_VREF_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateVREF0);
+	}
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+	if ((uint32_t)sub_system == MCUX_VREF_CLK) {
+		CLOCK_EnableClock(kCLOCK_Vref);
+	}
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp1), okay)
 	if ((uint32_t)sub_system == MCUX_OPAMP1_CLK) {
 #if defined(CONFIG_SOC_FAMILY_MCXA)
@@ -608,6 +618,15 @@ static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_SOC_SERIES_MCXAXX7)
+	if ((uint32_t)sub_system == MCUX_VREF_CLK) {
+		CLOCK_DisableClock(kCLOCK_GateVREF0);
+	}
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+	if ((uint32_t)sub_system == MCUX_VREF_CLK) {
+		CLOCK_DisableClock(kCLOCK_Vref);
+	}
+#endif
 #if defined(CONFIG_EQDC_MCUX)
 	if ((uint32_t)sub_system == MCUX_EQDC_CLK ||
 	    (uint32_t)sub_system == MCUX_EQDC0_CLK) {
