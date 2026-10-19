@@ -302,8 +302,12 @@ tests:
       - riscv
       - xtensa
     platform_allow:
+      - mps2/an383
       - mps2/an385
+      - mps2/an521/cpu0
+      - qemu_cortex_a9
       - qemu_cortex_a53
+      - qemu_cortex_r5
       - qemu_xtensa/dc233c
       - qemu_riscv32
     extra_conf_files: ['no_mem_protection.conf']
