@@ -153,8 +153,16 @@ The following TLS credential types can be registered in the system:
 - ``TLS_CREDENTIAL_CA_CERTIFICATE``
 - ``TLS_CREDENTIAL_PUBLIC_CERTIFICATE``
 - ``TLS_CREDENTIAL_PRIVATE_KEY``
+- ``TLS_CREDENTIAL_PRIVATE_KEY_PSA``
 - ``TLS_CREDENTIAL_PSK``
+- ``TLS_CREDENTIAL_PSK_PSA``
 - ``TLS_CREDENTIAL_PSK_ID``
+
+``TLS_CREDENTIAL_PRIVATE_KEY_PSA`` and ``TLS_CREDENTIAL_PSK_PSA`` are alternatives to
+``TLS_CREDENTIAL_PRIVATE_KEY`` and ``TLS_CREDENTIAL_PSK`` respectively, for keys stored in PSA.
+Instead of the key material, the credential buffer holds the ``psa_key_id_t`` of the key, which
+must already be present in PSA when the credential is used. A secure tag cannot hold both
+``TLS_CREDENTIAL_PSK`` and ``TLS_CREDENTIAL_PSK_PSA``.
 
 An example registration of CA certificate (provided in ``ca_certificate``
 array) looks like this:
