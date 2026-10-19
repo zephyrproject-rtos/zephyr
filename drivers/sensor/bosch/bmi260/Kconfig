@@ -1,0 +1,38 @@
+# BMI260 6 Axis IMU configuration
+
+# Copyright (c) 2021 Bosch Sensortec GmbH
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright (c) 2026 Shreyas Acharya
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMI260
+	bool "BMI260 Inertial measurement unit"
+	default y
+	depends on DT_HAS_BOSCH_BMI260_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),spi)
+	help
+	  Enable driver for the BMI260 I2C or SPI based IMU sensor.
+
+if BMI260
+
+config BMI260_BUS_I2C
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),i2c)
+
+config BMI260_BUS_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),spi)
+
+config BMI260_LOW_POWER_MODE
+	bool "Force low-power (power-optimized) filter mode at all ODRs"
+	help
+	  When set, the accelerometer and gyroscope always use the
+	  power-optimized filter mode (acc_filter_perf=0, gyr_filter_perf=0,
+	  gyr_noise_perf=0) regardless of ODR. By default the driver switches
+	  to performance mode at ODR >= 100 Hz. Enabling this saves power at
+	  the cost of higher noise (no digital filtering / OSR).
+
+endif # BMI260

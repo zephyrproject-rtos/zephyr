@@ -71,6 +71,14 @@ Zephyr-Origin = "https://github.com/BoschSensortec/BMI08x-Sensor-API"
 Zephyr-Kconfig-Condition = "CONFIG_BMI08X"
 
 [[annotations]]
+path = "drivers/sensor/bosch/bmi260/bmi260_config_file.h"
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Sensor configuration data compiled into the firmware only when the BMI260 driver is enabled."
+Zephyr-Description = "Bosch BMI260 Sensor Configuration File"
+Zephyr-Origin = "https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:src/platform/ec/third_party/bmi260/accelgyro_bmi260_config_tbin.h"
+Zephyr-Kconfig-Condition = "CONFIG_BMI260"
+
+[[annotations]]
 path = [
     "scripts/coccicheck",
     "scripts/coccinelle/array_size.cocci",
