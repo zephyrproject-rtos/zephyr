@@ -843,6 +843,14 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 		return ret;
 	}
 
+	/* The camera takes the JPEG quality in JPEG mode only: the control's value now */
+	if (fmt->pixelformat == VIDEO_PIX_FMT_JPEG) {
+		ret = arducam_mega_set_jpeg_quality(dev, drv_data->ctrls.quality.val);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	ret = arducam_mega_set_resolution(dev, i % SUPPORT_RESOLUTION_NUM);
 	if (ret < 0) {
 		return ret;
@@ -1200,12 +1208,12 @@ static int arducam_mega_init_controls(const struct device *dev)
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->gain_auto, dev, VIDEO_CID_AUTOGAIN,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
 	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->whitebalauto, dev, VIDEO_CID_AUTO_WHITE_BALANCE,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
 	if (ret < 0) {
 		return ret;
 	}
@@ -1231,7 +1239,8 @@ static int arducam_mega_init_controls(const struct device *dev)
 	}
 	ret = video_init_ctrl(
 		&ctrls->quality, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY,
-		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+		(struct video_ctrl_range){
+			.min = 0, .max = 65535, .step = 1, .def = DEFAULT_QUALITY});
 	if (ret < 0) {
 		return ret;
 	}
@@ -1257,6 +1266,52 @@ static int arducam_mega_init_controls(const struct device *dev)
 		return ret;
 	}
 	ctrls->linkfreq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
+
+	return 0;
+}
+
+/*
+ * The camera starts with its own settings, unknown to the control framework,
+ * which skips a value equal to the one it has cached: write the controls'
+ * values, so that the camera and the framework agree. The manual exposure and
+ * gain apply in manual mode only, the JPEG quality in JPEG mode only
+ * (arducam_mega_set_fmt()).
+ */
+static int arducam_mega_write_ctrls(const struct device *dev)
+{
+	static const uint32_t ids[] = {
+		VIDEO_CID_BRIGHTNESS,
+		VIDEO_CID_CONTRAST,
+		VIDEO_CID_SATURATION,
+		VIDEO_CID_AUTO_EXPOSURE_BIAS,
+		VIDEO_CID_WHITE_BALANCE_TEMPERATURE,
+		VIDEO_CID_AUTO_WHITE_BALANCE,
+		VIDEO_CID_AUTOGAIN,
+		VIDEO_CID_EXPOSURE_AUTO,
+	};
+	struct arducam_mega_data *drv_data = dev->data;
+	int ret;
+
+	for (size_t i = 0; i < ARRAY_SIZE(ids); i++) {
+		ret = arducam_mega_set_ctrl(dev, ids[i]);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (drv_data->features & MEGA_HAS_SHARPNESS) {
+		ret = arducam_mega_set_ctrl(dev, VIDEO_CID_SHARPNESS);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (drv_data->features & MEGA_HAS_COLORFX) {
+		ret = arducam_mega_set_ctrl(dev, VIDEO_CID_COLORFX);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -1348,6 +1403,13 @@ static int arducam_mega_init(const struct device *dev)
 		LOG_ERR("Unable to initialize controls");
 		return ret;
 	}
+
+	ret = arducam_mega_write_ctrls(dev);
+	if (ret < 0) {
+		LOG_ERR("Unable to write the controls to the camera");
+		return ret;
+	}
+
 	return 0;
 }
 
