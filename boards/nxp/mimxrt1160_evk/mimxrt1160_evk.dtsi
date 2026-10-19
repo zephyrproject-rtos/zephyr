@@ -32,7 +32,7 @@
 
 		user_button: button-1 {
 			label = "User SW7";
-			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio13 0 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
