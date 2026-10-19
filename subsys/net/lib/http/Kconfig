@@ -203,6 +203,26 @@ config HTTP_CLIENT_TLS_USE_ALPN
 	  the TLS_ALPN_LIST option; for native TLS this means MBEDTLS_SSL_ALPN
 	  and a non-zero NET_SOCKETS_TLS_MAX_APP_PROTOCOLS.
 
+config HTTP_CLIENT_VERSION_2
+	bool
+	select HTTP2_COMMON
+	default y
+	help
+	  HTTP/2 support in the HTTP client. Always enabled, as it is the only
+	  protocol version implemented.
+
+config HTTP_CLIENT_HTTP2_WINDOW_SIZE
+	int "HTTP/2 receive window size"
+	depends on HTTP_CLIENT_VERSION_2
+	default 65535
+	range 65535 2147483647
+	help
+	  Flow control credit, in bytes, that the client grants the server on
+	  the connection and on each stream. The server never has more than
+	  this much response data in flight, so a window smaller than the TCP
+	  receive window throttles a transfer, while a larger one buys
+	  nothing.
+
 endif # HTTP_CLIENT_MULTIPROTOCOL
 
 menuconfig HTTP_SERVER
