@@ -825,6 +825,22 @@
 		status = "disabled";
 	};
 
+	vref: vref@bb000 {
+		compatible = "nxp,vref";
+		reg = <0xbb000 0x14>;
+		regulator-name = "mcxa-vref";
+		clocks = <&syscon MCUX_VREF_CLK>;
+		regulator-min-microvolt = <1000000>;
+		regulator-max-microvolt = <2500000>;
+		#nxp,reference-cells = <1>;
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <20>;
+		nxp,current-compensation-en;
+		nxp,internal-voltage-regulator-en;
+		nxp,chop-oscillator-en;
+		status = "disabled";
+	};
+
 	porta: pinmux@bc000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xbc000 0x1000>;
