@@ -49,4 +49,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 		if CORTEX_M_SYSTICK && \
 		!$(dt_nodelabel_bool_prop,systick,external-clock-source)
 
+# Keep the MCUX SDK NonCacheable sections out of PSRAM; see nocache_sram.ld.
+choice MCUX_NONCACHEABLE_PLACEMENT
+	default MCUX_NONCACHEABLE_CUSTOM
+endchoice
+
 endif # SOC_SERIES_IMXRT266X_CM85
