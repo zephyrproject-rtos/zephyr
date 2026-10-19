@@ -17,6 +17,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
@@ -83,6 +84,9 @@ struct regulator_nxp_vref_data {
 	regulator_mode_t mode;
 	bool trim_set;
 	bool enabled;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool power_locked;
+#endif
 };
 
 struct regulator_nxp_vref_config {
@@ -99,6 +103,26 @@ struct regulator_nxp_vref_config {
 	uintptr_t spc_base;
 #endif
 };
+
+static void regulator_nxp_vref_power_lock(const struct device *dev, bool enabled)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct regulator_nxp_vref_data *data = dev->data;
+
+	if (enabled == data->power_locked) {
+		return;
+	}
+	if (enabled) {
+		pm_policy_device_power_lock_get(dev);
+	} else {
+		pm_policy_device_power_lock_put(dev);
+	}
+	data->power_locked = enabled;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enabled);
+#endif
+}
 
 static void regulator_nxp_vref_disable_hw(const struct device *dev)
 {
@@ -188,9 +212,12 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 		return ret;
 	}
 	k_mutex_lock(&data->lock, K_FOREVER);
+	regulator_nxp_vref_power_lock(dev, true);
 	ret = regulator_nxp_vref_enable_hw(dev);
 	if (ret == 0) {
 		data->enabled = true;
+	} else {
+		regulator_nxp_vref_power_lock(dev, false);
 	}
 	k_mutex_unlock(&data->lock);
 
@@ -210,13 +237,17 @@ static int regulator_nxp_vref_disable(const struct device *dev)
 	k_mutex_lock(&data->lock, K_FOREVER);
 	regulator_nxp_vref_disable_hw(dev);
 	data->enabled = false;
+	regulator_nxp_vref_power_lock(dev, false);
 	k_mutex_unlock(&data->lock);
 
 	ret = regulator_nxp_vref_release(dev, 0);
 	if (ret < 0) {
 		k_mutex_lock(&data->lock, K_FOREVER);
 		data->enabled = true;
-		(void)regulator_nxp_vref_enable_hw(dev);
+		regulator_nxp_vref_power_lock(dev, true);
+		if (regulator_nxp_vref_enable_hw(dev) < 0) {
+			regulator_nxp_vref_power_lock(dev, false);
+		}
 		k_mutex_unlock(&data->lock);
 	}
 	return ret;
@@ -420,11 +451,16 @@ static int regulator_nxp_vref_pm_action(const struct device *dev, enum pm_device
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		if (data->enabled) {
+			regulator_nxp_vref_power_lock(dev, true);
 			ret = regulator_nxp_vref_enable_hw(dev);
+			if (ret < 0) {
+				regulator_nxp_vref_power_lock(dev, false);
+			}
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		regulator_nxp_vref_disable_hw(dev);
+		regulator_nxp_vref_power_lock(dev, false);
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		/* SUSPEND already disabled the analog circuitry. */

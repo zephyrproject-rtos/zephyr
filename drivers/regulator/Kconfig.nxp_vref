@@ -11,6 +11,11 @@ config REGULATOR_NXP_VREF
 	  regulator enable holds a runtime reference until the last disable.
 	  Configuration operations temporarily resume the register block
 	  without enabling the output.
+	  With PM_POLICY_DEVICE_CONSTRAINTS enabled, an active output holds
+	  the power-state constraints described by devicetree.
+	  With system-managed device PM, the system timer resumes before
+	  devices so the VREF startup delays can complete. This enables the
+	  experimental early system timer resume sequence.
 
 config REGULATOR_NXP_VREF_INIT_PRIORITY
 	int "NXP VREF peripheral driver init priority"
