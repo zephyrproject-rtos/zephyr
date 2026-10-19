@@ -351,6 +351,14 @@
 			status = "disabled";
 		};
 
+		sdm0: sdm@60091f00 {
+			compatible = "espressif,esp32-sdm";
+			reg = <0x60091f00 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		mcpwm0: mcpwm@60014000 {
 			compatible = "espressif,esp32-mcpwm";
 			reg = <0x60014000 DT_SIZE_K(4)>;
