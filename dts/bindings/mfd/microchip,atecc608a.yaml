@@ -1,0 +1,38 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip ATECC608A CryptoAuthentication device.
+
+  This node is the I2C parent that owns wake, command framing, CRC, and the
+  shared access lock. Child nodes expose standard Zephyr classes, for example
+  the on-chip TRNG:
+
+    &i2c0 {
+            clock-frequency = <I2C_BITRATE_STANDARD>;
+
+            atecc608a: atecc608a@60 {
+                    compatible = "microchip,atecc608a";
+                    reg = <0x60>;
+
+                    atecc608a_trng: atecc608a_trng {
+                            compatible = "microchip,atecc608a-trng";
+                    };
+            };
+    };
+
+  The 7-bit I2C address is programmed in the device configuration zone and
+  is not assumed by this binding. The factory default for many modules,
+  including the RAKwireless RAK5814, is 0x60. The I2C controller must not
+  exceed 100 kHz (I2C_BITRATE_STANDARD).
+
+compatible: "microchip,atecc608a"
+
+include: [i2c-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional module reset pin. Configure the specifier active-low when the
+      pin resets the device while driven low.
