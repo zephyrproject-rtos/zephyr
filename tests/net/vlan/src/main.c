@@ -235,7 +235,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return ret;
 }
 
-static enum ethernet_hw_caps eth_vlan_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_vlan_capabilities(const struct device *dev __unused,
+						   struct net_if *iface __unused)
 {
 	return ETHERNET_HW_VLAN;
 }
@@ -300,7 +301,8 @@ static int eth_tx_embed_ll_hdr(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_vlan_embed_ll_hdr_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_vlan_embed_ll_hdr_capabilities(const struct device *dev __unused,
+								struct net_if *iface __unused)
 {
 	return ETHERNET_HW_VLAN;
 }

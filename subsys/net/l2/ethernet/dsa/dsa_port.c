@@ -118,7 +118,8 @@ static void dsa_port_iface_init(struct net_if *iface)
 	phy_link_callback_set(cfg->phy_dev, dsa_switch_ctx->dapi->port_phylink_change, (void *)dev);
 }
 
-static const struct device *dsa_port_get_phy(const struct device *dev)
+static const struct device *dsa_port_get_phy(const struct device *dev,
+					     struct net_if *iface __unused)
 {
 	const struct dsa_port_config *cfg = dev->config;
 
@@ -126,7 +127,8 @@ static const struct device *dsa_port_get_phy(const struct device *dev)
 }
 
 #ifdef CONFIG_NET_L2_PTP
-const struct device *dsa_port_get_ptp_clock(const struct device *dev)
+const struct device *dsa_port_get_ptp_clock(const struct device *dev,
+					    struct net_if *iface __unused)
 {
 	const struct dsa_port_config *cfg = dev->config;
 
@@ -134,13 +136,14 @@ const struct device *dsa_port_get_ptp_clock(const struct device *dev)
 }
 #endif
 
-enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
+enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev,
+						struct net_if *iface __maybe_unused)
 {
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	uint32_t caps = 0;
 
 #ifdef CONFIG_NET_L2_PTP
-	if (dsa_port_get_ptp_clock(dev) != NULL) {
+	if (dsa_port_get_ptp_clock(dev, iface) != NULL) {
 		caps |= ETHERNET_PTP;
 	}
 #endif
@@ -152,7 +155,9 @@ enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 	return caps;
 }
 
-static int dsa_set_config(const struct device *dev, enum ethernet_config_type type,
+static int dsa_set_config(const struct device *dev,
+			  struct net_if *iface __unused,
+			  enum ethernet_config_type type,
 			  const struct ethernet_config *config)
 {
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
@@ -164,7 +169,9 @@ static int dsa_set_config(const struct device *dev, enum ethernet_config_type ty
 	return dsa_switch_ctx->dapi->set_config(dev, type, config);
 }
 
-static int dsa_get_config(const struct device *dev, enum ethernet_config_type type,
+static int dsa_get_config(const struct device *dev,
+			  struct net_if *iface __unused,
+			  enum ethernet_config_type type,
 			  struct ethernet_config *config)
 {
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;

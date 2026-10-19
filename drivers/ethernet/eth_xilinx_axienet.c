@@ -362,7 +362,8 @@ static void xilinx_axienet_isr(const struct device *dev)
 	}
 }
 
-static enum ethernet_hw_caps xilinx_axienet_caps(const struct device *dev)
+static enum ethernet_hw_caps xilinx_axienet_caps(const struct device *dev,
+						 struct net_if *iface __unused)
 {
 	const struct xilinx_axienet_config *config = dev->config;
 	enum ethernet_hw_caps ret = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
@@ -378,14 +379,17 @@ static enum ethernet_hw_caps xilinx_axienet_caps(const struct device *dev)
 	return ret;
 }
 
-static const struct device *xilinx_axienet_get_phy(const struct device *dev)
+static const struct device *xilinx_axienet_get_phy(const struct device *dev,
+						   struct net_if *iface __unused)
 {
 	const struct xilinx_axienet_config *config = dev->config;
 
 	return config->phy;
 }
 
-static int xilinx_axienet_get_config(const struct device *dev, enum ethernet_config_type type,
+static int xilinx_axienet_get_config(const struct device *dev,
+				     struct net_if *iface __unused,
+				     enum ethernet_config_type type,
 				     struct ethernet_config *config)
 {
 	const struct xilinx_axienet_config *dev_config = dev->config;
@@ -430,7 +434,9 @@ static void xilinx_axienet_set_mac_address(const struct xilinx_axienet_config *c
 				      (data->mac_addr[4]) | (data->mac_addr[5] << 8));
 }
 
-static int xilinx_axienet_set_config(const struct device *dev, enum ethernet_config_type type,
+static int xilinx_axienet_set_config(const struct device *dev,
+				     struct net_if *iface __unused,
+				     enum ethernet_config_type type,
 				     const struct ethernet_config *config)
 {
 	const struct xilinx_axienet_config *dev_config = dev->config;
@@ -543,6 +549,61 @@ static int xilinx_axienet_probe(const struct device *dev)
 	}
 
 	xilinx_axienet_set_mac_address(config, data);
+
+	config->config_func(data);
+
+	return 0;
+}
+
+static int xilinx_axienet_stop(const struct device *dev, struct net_if *iface __unused)
+{
+	const struct xilinx_axienet_config *config = dev->config;
+	struct xilinx_axienet_data *data = dev->data;
+	uint32_t status;
+	int err;
+
+	/* Disable AXIENET RX */
+	status = xilinx_axienet_read_register(
+		config, XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_OFFSET);
+	status &= ~XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_RX_EN_MASK;
+	xilinx_axienet_write_register(
+		config, XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_OFFSET, status);
+
+	/* Stop the RX DMA channel */
+	err = dma_stop(config->dma, XILINX_AXI_DMA_RX_CHANNEL_NUM);
+	if (err) {
+		LOG_ERR("%s: failed to stop RX DMA: %d", dev->name, err);
+	}
+
+	/* Stop the TX DMA channel */
+	err = dma_stop(config->dma, XILINX_AXI_DMA_TX_CHANNEL_NUM);
+	if (err) {
+		LOG_ERR("%s: failed to stop TX DMA: %d", dev->name, err);
+	}
+
+	/* Disable AXIENET TX */
+	status = xilinx_axienet_read_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET);
+	status &= ~XILINX_AXIENET_TX_CONTROL_TX_EN_MASK;
+	xilinx_axienet_write_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET, status);
+
+	data->dma_is_configured_rx = false;
+	data->dma_is_configured_tx = false;
+	data->rx_populated_buffer_index = 0;
+	data->rx_completed_buffer_index = 0;
+	data->tx_populated_buffer_index = 0;
+	data->tx_completed_buffer_index = 0;
+
+	LOG_INF("%s: AxiEnet stopped", dev->name);
+	return 0;
+}
+
+static int xilinx_axienet_start(const struct device *dev, struct net_if *iface __unused)
+{
+	const struct xilinx_axienet_config *config = dev->config;
+	struct xilinx_axienet_data *data = dev->data;
+	uint32_t status;
+	int err;
+
 
 	for (int i = 0; i < CONFIG_ETH_XILINX_AXIENET_BUFFER_NUM_RX - 1; i++) {
 		setup_dma_rx_transfer(dev, config, data);

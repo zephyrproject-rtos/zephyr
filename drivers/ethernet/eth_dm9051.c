@@ -358,7 +358,7 @@ static int eth_dm9051_nsr_poll(const struct device *dev, k_timeout_t timeout)
 	return -ETIMEDOUT;
 }
 
-static int eth_dm9051_hw_start(const struct device *dev)
+static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __unused)
 {
 	const uint8_t imr = DM9051_IMR_PRI | DM9051_IMR_PTI | DM9051_IMR_LNKCHGI | DM9051_IMR_PAR;
 	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_DIS_CRC | DM9051_RCR_DIS_LONG;
@@ -416,7 +416,7 @@ static int eth_dm9051_hw_start(const struct device *dev)
 	return eth_dm9051_spi_write_reg(dev, DM9051_IMR, imr);
 }
 
-static int eth_dm9051_hw_stop(const struct device *dev)
+static int eth_dm9051_hw_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	int ret;
 
@@ -524,7 +524,7 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 				rx_len, NET_ETH_MAX_FRAME_SIZE);
 		}
 
-		(void)eth_dm9051_hw_start(dev);
+		(void)eth_dm9051_hw_start(dev, data->iface);
 		return NULL;
 	}
 
@@ -715,10 +715,9 @@ static void eth_dm9051_iface_init(struct net_if *iface)
 	k_thread_name_set(&data->rx_thread, "eth_dm9051");
 }
 
-static enum ethernet_hw_caps eth_dm9051_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_dm9051_get_capabilities(const struct device *dev __unused,
+							 struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
@@ -727,6 +726,7 @@ static enum ethernet_hw_caps eth_dm9051_get_capabilities(const struct device *de
 }
 
 static int eth_dm9051_set_config(const struct device *dev,
+				 struct net_if *iface __unused,
 				 enum ethernet_config_type type,
 				 const struct ethernet_config *config)
 {
@@ -771,7 +771,8 @@ static int eth_dm9051_set_config(const struct device *dev,
 	}
 }
 
-static const struct device *eth_dm9051_get_phy(const struct device *dev)
+static const struct device *eth_dm9051_get_phy(const struct device *dev,
+					       struct net_if *iface __unused)
 {
 	const struct eth_dm9051_config *config = dev->config;
 

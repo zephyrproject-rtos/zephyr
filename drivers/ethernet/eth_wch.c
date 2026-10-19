@@ -397,7 +397,7 @@ static void eth_isr(const struct device *dev)
 	}
 }
 
-static int eth_wch_start(const struct device *dev)
+static int eth_wch_start(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_wch_config *config = dev->config;
 	ETH_TypeDef *eth = config->regs;
@@ -410,7 +410,7 @@ static int eth_wch_start(const struct device *dev)
 	return 0;
 }
 
-static int eth_wch_stop(const struct device *dev)
+static int eth_wch_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_wch_config *config = dev->config;
 	ETH_TypeDef *eth = config->regs;
@@ -553,10 +553,9 @@ static void eth_wch_iface_init(struct net_if *iface)
 	}
 }
 
-static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev __unused,
+						      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_ETH_WCH_HW_CHECKSUM)
 	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD
@@ -576,7 +575,9 @@ static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev)
 		;
 }
 
-static int eth_wch_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_wch_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
+			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
 	struct eth_wch_data *data = dev->data;
@@ -609,7 +610,7 @@ static int eth_wch_set_config(const struct device *dev, enum ethernet_config_typ
 	return -ENOTSUP;
 }
 
-static const struct device *eth_wch_get_phy(const struct device *dev)
+static const struct device *eth_wch_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_wch_config *config = dev->config;
 
@@ -617,7 +618,8 @@ static const struct device *eth_wch_get_phy(const struct device *dev)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_wch_get_stats(const struct device *dev)
+static struct net_stats_eth *eth_wch_get_stats(const struct device *dev,
+					       struct net_if *iface __unused)
 {
 	struct eth_wch_data *data = dev->data;
 
