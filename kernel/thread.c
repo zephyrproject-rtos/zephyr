@@ -983,6 +983,24 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 #endif
 
+#ifdef CONFIG_THREAD_CANCEL
+	/*
+	 * Cancellation follows the signal-mask convention: a kernel thread starts with it
+	 * disabled, a user thread created by the kernel enabled, a user child inherits
+	 * its parent's state.
+	 */
+	bool cancel_disabled = true;
+
+#ifdef CONFIG_USERSPACE
+	if ((options & K_USER) != 0U) {
+		cancel_disabled = k_is_in_user_syscall() && !z_thread_cancel_is_enabled(_current);
+	}
+#endif /* CONFIG_USERSPACE */
+	if (cancel_disabled) {
+		new_thread->base.user_options |= K_CANCEL_DISABLED;
+	}
+#endif /* CONFIG_THREAD_CANCEL */
+
 #ifdef CONFIG_THREAD_RESULT
 	new_thread->base.result = (atomic_t)NULL;
 #endif
@@ -1187,6 +1205,7 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 
 #ifdef CONFIG_THREAD_CANCEL
 	atomic_set(&thread_base->cancel_pending, 0);
+	atomic_set(&thread_base->cancel_armed, 0);
 #endif
 }
 
@@ -1201,6 +1220,10 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 		k_sig_emptyset(&_current->base.sig.mask);
 	}
 #endif /* CONFIG_SIGNAL */
+#ifdef CONFIG_THREAD_CANCEL
+	/* likewise cancellable */
+	_current->base.user_options &= ~K_CANCEL_DISABLED;
+#endif /* CONFIG_THREAD_CANCEL */
 	_current->base.user_options |= K_USER;
 	z_thread_essential_clear(_current);
 #ifdef CONFIG_THREAD_MONITOR
@@ -2200,7 +2223,7 @@ static void z_thread_cancel_deliver_pending(k_tid_t tid)
 	}
 
 	if (z_thread_cancel_is_async(tid)) {
-		(void)k_sig_queue(tid, K_SIG_CANCEL, (union k_sig_val){0});
+		z_thread_cancel_arm(tid);
 	} else if (tid == _current) {
 		(void)z_thread_cancel_try_actuate();
 	}
@@ -2250,7 +2273,7 @@ int z_impl_k_thread_cancel(k_tid_t tid)
 	const bool first = atomic_cas(&tid->base.cancel_pending, 0, 1);
 
 	if (first) {
-		atomic_inc(&z_sig_work_pending);
+		atomic_inc(&z_syscall_work_pending);
 		thread_cancel_tls_set(tid);
 	}
 
@@ -2260,7 +2283,8 @@ int z_impl_k_thread_cancel(k_tid_t tid)
 	k_spin_unlock(&_sched_spinlock, key);
 
 	if (deliver_async) {
-		return k_sig_queue(tid, K_SIG_CANCEL, (union k_sig_val){0});
+		/* actuated when the target next returns from a system call */
+		z_thread_cancel_arm(tid);
 	}
 
 	return 0;
@@ -2285,14 +2309,14 @@ int z_vrfy_k_thread_cancel(k_tid_t tid)
 
 void z_impl_k_thread_cancel_qstate(bool *new_state, bool *old_state)
 {
-	bool enabled = k_sig_ismember(&_current->base.sig.mask, K_SIG_CANCEL) == 0;
+	bool enabled = z_thread_cancel_is_enabled(_current);
 
 	if (new_state != NULL) {
 		if (*new_state) {
-			(void)k_sig_delset(&_current->base.sig.mask, K_SIG_CANCEL);
+			_current->base.user_options &= ~K_CANCEL_DISABLED;
 			z_thread_cancel_deliver_pending(_current);
 		} else {
-			(void)k_sig_addset(&_current->base.sig.mask, K_SIG_CANCEL);
+			_current->base.user_options |= K_CANCEL_DISABLED;
 		}
 	}
 

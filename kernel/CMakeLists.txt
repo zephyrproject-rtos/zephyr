@@ -78,8 +78,11 @@ endif()
 message(STATUS "Defining SIGNAL_ACTION_DB_SIZE to ${sigaction_min_size}")
 zephyr_compile_definitions(SIGNAL_ACTION_DB_SIZE=${sigaction_min_size})
 
-# This file cannot be compiled with __ZEPHYR_SUPERVISOR__ when userspace is enabled
+# These files cannot be compiled with __ZEPHYR_SUPERVISOR__ when userspace is enabled:
+# the trampoline and the exit path run in the thread's own mode
 zephyr_sources_ifdef(CONFIG_SIGNAL signal.c)
+zephyr_sources_ifdef(CONFIG_SYSCALL_RETURN_HOOK return_hook.c)
+zephyr_sources_ifdef(CONFIG_THREAD_RESULT thread_exit.c)
 zephyr_sources_ifdef(CONFIG_THREAD_CLEANUP cleanup.c)
 zephyr_sources_ifdef(CONFIG_THREAD_SPECIFIC_STORAGE tss.c)
 

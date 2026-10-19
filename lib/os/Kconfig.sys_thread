@@ -5,7 +5,6 @@ config SYS_THREAD
 	bool "Support shared pools of threading primitives"
 	select DYNAMIC_OBJECTS if USERSPACE
 	select THREAD_ABORT_NEED_CLEANUP
-	select SIGNAL
 	select SYS_ELASTIPOOL
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO

@@ -237,8 +237,9 @@ config THREAD_CANCEL_SIGNAL_NUMBER
 	int "Thread cancellation signal number"
 	def_int 32
 	help
-	  k_thread_cancel() is implemented via a signal. This option configures the signal
-	  number, delivered via k_sig_queue(), that is used when k_thread_cancel() is called.
+	  The signal number reserved for thread cancellation. Cancellation itself does not use
+	  the signal queue; the number is reserved so that it can be neither sent, masked nor
+	  handled through the signal API, and its default action cancels the thread.
 
 	  This signal number is intentionally chosen to be compabile with Linux' usage of
 	  K_SIG_RTMIN for cancellation.
@@ -246,11 +247,21 @@ config THREAD_CANCEL_SIGNAL_NUMBER
 	  The signal number may be defined regardless of whether CONFIG_THREAD_CANCEL is
 	  enabled.
 
+config SYSCALL_RETURN_HOOK
+	bool
+	help
+	  Run deferred work for a thread when it returns from a system call. A user
+	  thread is redirected through a trampoline that runs in its own mode and
+	  comes back through k_sig_return(); a kernel-mode caller runs the work after
+	  the call. Selected by the features that need it: thread cancellation and
+	  signals.
+
 config THREAD_CANCEL
 	bool "Thread cancellation"
-	depends on SIGNAL
+	depends on !USERSPACE || ARCH_SUPPORTS_USERSPACE_SIGNALS
 	select THREAD_RESULT
-	default y
+	select SYSCALL_RETURN_HOOK
+	default y if SIGNAL
 	help
 	  Say 'Y' here to support thread cancellation. Thread cancellation differs from
 	  thread abort in that it allows the target thread to perform cleanup operations,
@@ -272,6 +283,7 @@ config THREAD_CANCEL_TLS
 
 config SIGNAL_SET_SIZE_MIN_THREAD_CANCEL
 	int
+	depends on SIGNAL
 	default 34
 	help
 	  This option represents the number of signals required for thread cancellation. While
@@ -774,6 +786,7 @@ config SIGNAL
 	depends on !USERSPACE || (USERSPACE && ARCH_SUPPORTS_USERSPACE_SIGNALS)
 	select EXPERIMENTAL
 	select POLL
+	select SYSCALL_RETURN_HOOK
 	help
 	  Select 'y' here to support signals.
 

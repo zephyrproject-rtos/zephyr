@@ -386,9 +386,16 @@ int z_kernel_stats_query(struct k_obj_core *obj_core, void *stats);
 void k_thread_abort_cleanup_check_reuse(struct k_thread *thread);
 #endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
 
+#ifdef CONFIG_THREAD_RESULT
+/* cleanup handlers, thread-specific storage destructors, then abort; runs in the caller's mode */
+FUNC_NORETURN void z_thread_teardown(void);
+#endif /* CONFIG_THREAD_RESULT */
+
 #ifdef CONFIG_THREAD_CANCEL
 FUNC_NORETURN void z_thread_cancel_actuate(void);
 bool z_thread_cancel_try_actuate(void);
+/* the trampoline-side action that actuates a cancellation */
+void z_thread_cancel_handler(int sig, struct k_sig_info *info, void *ucontext);
 
 static inline bool z_thread_cancel_is_async(struct k_thread *thread)
 {
@@ -397,9 +404,27 @@ static inline bool z_thread_cancel_is_async(struct k_thread *thread)
 
 static inline bool z_thread_cancel_is_enabled(struct k_thread *thread)
 {
-	return k_sig_ismember(&thread->base.sig.mask, K_SIG_CANCEL) == 0;
+	return (thread->base.user_options & K_CANCEL_DISABLED) == 0U;
+}
+
+/* actuate the pending request when thread next returns from a system call */
+static inline void z_thread_cancel_arm(struct k_thread *thread)
+{
+	atomic_set(&thread->base.cancel_armed, 1);
 }
 #endif /* CONFIG_THREAD_CANCEL */
+
+#ifdef CONFIG_SYSCALL_RETURN_HOOK
+/* the trampoline: fetch the pending action with k_sig_current(), run it, k_sig_return() */
+void z_sig_trampoline(void);
+#endif /* CONFIG_SYSCALL_RETURN_HOOK */
+
+#ifdef CONFIG_SIGNAL
+/* claim the next deliverable signal for the current thread into its context; 1 when claimed */
+int z_sig_claim(struct k_thread *tid);
+/* a signal may be deliverable to tid (its own or its process's) */
+bool z_sig_pending_any(struct k_thread *tid);
+#endif /* CONFIG_SIGNAL */
 
 #ifdef __cplusplus
 }

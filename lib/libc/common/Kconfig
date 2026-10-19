@@ -114,6 +114,7 @@ config COMMON_LIBC_SIGNAL
 
 config COMMON_LIBC_THRD
 	bool "C11 <threads.h> API support"
+	select THREAD_RESULT
 	depends on DYNAMIC_THREAD
 	# Note: the POSIX_API dependency is only necessary until common elements
 	# of C11 threads and POSIX API can be abstracted out to a common library.

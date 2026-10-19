@@ -245,12 +245,14 @@ ZTEST_USER(threads_lifecycle, test_k_thread_cancel)
 	ztest_test_skip();
 #else
 	void *result = NULL;
+#ifdef CONFIG_SIGNAL
 	struct k_sig_action act = {.handler = K_SIG_IGN};
 
 	/* the cancellation signal is reserved: requested with k_thread_cancel(), never caught */
 	zassert_equal(k_sig_action(K_SIG_CANCEL, &act, NULL), -EINVAL);
 	act.handler = K_SIG_DFL;
 	zassert_equal(k_sig_action(K_SIG_CANCEL, &act, NULL), -EINVAL);
+#endif /* CONFIG_SIGNAL */
 	bool cancel_self;
 	bool cancel_enable;
 	int expect_flag;

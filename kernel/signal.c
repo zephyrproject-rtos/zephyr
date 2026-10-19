@@ -22,8 +22,6 @@
 
 LOG_MODULE_REGISTER(k_sig, CONFIG_SIGNAL_LOG_LEVEL);
 
-atomic_t z_sig_work_pending;
-
 struct k_sig_fifo_element {
 	k_tid_t tid;
 	struct k_sig_info info;
@@ -138,7 +136,7 @@ static void z_sig_pending_unlocked(struct k_sig_set *set, struct k_thread *tid)
 			/* If any signal in the queue, at any point, belongs to a dead thread
 			 * remove it! */
 			atomic_dec(&entry->tid->base.sig.pending);
-			atomic_dec(&z_sig_work_pending);
+			atomic_dec(&z_syscall_work_pending);
 			z_sig_slab_free_unlocked(pos);
 		} else {
 			ring_buf_put(&k_sig_fifo, &pos, 1);
@@ -303,7 +301,7 @@ int z_impl_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
 
 	ring_buf_put(&k_sig_fifo, &pos, 1);
 	atomic_inc(&pid->base.sig.pending);
-	atomic_inc(&z_sig_work_pending);
+	atomic_inc(&z_syscall_work_pending);
 
 	if (IS_ENABLED(CONFIG_SIGNAL_LOG_LEVEL_DBG)) {
 		struct k_sig_set pend;
@@ -416,7 +414,7 @@ int z_impl_k_sig_timedwait(const struct k_sig_set *ZRESTRICT set, struct k_sig_i
 
 	k_mem_slab_free(&k_sig_slab, &k_sig_array[pos]);
 	atomic_dec(&tid->base.sig.pending);
-	atomic_dec(&z_sig_work_pending);
+	atomic_dec(&z_syscall_work_pending);
 
 	if (IS_ENABLED(CONFIG_SIGNAL_LOG_LEVEL_DBG)) {
 		struct k_sig_set pend;
@@ -729,53 +727,16 @@ static void z_sig_set_dump(const struct k_sig_set *set, const char *label)
 	}
 }
 
-void z_sig_trampoline(void)
+bool z_sig_pending_any(struct k_thread *tid)
 {
-	void *context;
-	struct k_sig_info info;
-	struct k_sig_action action;
-
-	k_sig_current(&info, &action, &context);
-
-	if ((action.flags & K_SIG_SA_RESETHAND) != 0) {
-		struct k_sig_action reset_action = action;
-
-		reset_action.handler = K_SIG_DFL;
-		reset_action.flags &= ~K_SIG_SA_SIGINFO;
-
-		(void)k_sig_action(info.signo, &reset_action, NULL);
-	}
-
-	action.handler(info.signo, &info, &context);
-	k_sig_return();
+	return atomic_get(&tid->base.sig.pending) > 0;
 }
 
-#ifndef CONFIG_ARCH_HAS_SIGNAL_TRAMPOLINE
-void arch_sig_trampoline(void)
+int z_sig_claim(struct k_thread *tid)
 {
-	z_sig_trampoline();
-}
-#endif
-
-int z_sig_handle(void *user)
-{
-	if (IS_ENABLED(CONFIG_USERSPACE)) {
-		__ASSERT(!k_is_user_context(),
-			 "z_sig_handle() should not be called from userspace");
-	}
-
-	if (k_is_pre_kernel()) {
-		return 0;
-	}
-
-	if (k_is_in_isr()) {
-		return 0;
-	}
-
-	k_tid_t const tid = _current;
 	struct k_sig_ctx *const ctx = &tid->base.sig;
 
-	if (atomic_get(&ctx->pending) == 0) {
+	if (!z_sig_pending_any(tid)) {
 		return 0;
 	}
 
@@ -836,58 +797,8 @@ int z_sig_handle(void *user)
 
 	z_sig_orset(&ctx->mask, &ctx->action.mask);
 
-#ifdef CONFIG_USERSPACE
-	if (user != NULL) {
-		arch_sig_pre(tid, user);
-	}
-#endif
-
 	return 1;
 }
-
-void z_impl_k_sig_return(void)
-{
-#ifdef CONFIG_USERSPACE
-	if (k_is_in_user_syscall()) {
-		arch_sig_post(_current, _current->syscall_frame);
-	}
-#endif
-
-	_current->base.sig.mask = _current->base.sig.restore;
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_sig_return(void)
-{
-	z_impl_k_sig_return();
-}
-#include <zephyr/syscalls/k_sig_return_mrsh.c>
-#endif
-void z_impl_k_sig_current(struct k_sig_info *info, struct k_sig_action *action, void **context)
-{
-	__ASSERT_NO_MSG(!k_is_pre_kernel());
-	__ASSERT_NO_MSG(!k_is_in_isr());
-
-	struct k_sig_ctx *const ctx = &_current->base.sig;
-
-	*info = ctx->info;
-	*action = ctx->action;
-	*context = NULL;
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_sig_current(struct k_sig_info *info, struct k_sig_action *action,
-					void **context)
-{
-	K_OOPS(K_SYSCALL_MEMORY_WRITE(info, sizeof(*info)));
-	K_OOPS(K_SYSCALL_MEMORY_WRITE(action, sizeof(*action)));
-	K_OOPS(K_SYSCALL_MEMORY_WRITE(context, sizeof(*context)));
-
-	z_impl_k_sig_current(info, action, context);
-}
-#include <zephyr/syscalls/k_sig_current_mrsh.c>
-#endif
-
 static void z_sig_handler_term(int sig, struct k_sig_info *info, void *ucontext)
 {
 	ARG_UNUSED(info);
@@ -895,130 +806,6 @@ static void z_sig_handler_term(int sig, struct k_sig_info *info, void *ucontext)
 
 	k_thread_abort(k_current_get());
 }
-
-#ifdef CONFIG_THREAD_CANCEL
-FUNC_NORETURN void z_thread_cancel_actuate(void)
-{
-#ifdef CONFIG_THREAD_CLEANUP
-	/* call clean-up routines */
-	for (bool more = true; more;) {
-		more = k_thread_cleanup_pop(true);
-	}
-#endif
-
-#ifdef CONFIG_THREAD_SPECIFIC_STORAGE
-	bool drained = false;
-
-	/* a destructor may store a value again: each pass visits only what was stored at its start */
-	for (unsigned int pass = 0; pass < CONFIG_THREAD_SPECIFIC_STORAGE_DESTRUCTOR_ITERATIONS;
-	     pass++) {
-		size_t n = k_thread_specific_count();
-
-		if (n == 0) {
-			drained = true;
-			break;
-		}
-
-		for (void *key = NULL, *value = NULL, *_dtor = NULL;
-		     (n > 0) &&
-		     (k_thread_popspecific(&key, &value, (k_thread_key_destructor_t *)&_dtor) == 0);
-		     n--) {
-			k_thread_key_destructor_t dtor = (k_thread_key_destructor_t)_dtor;
-
-			if ((dtor != NULL) && (value != NULL)) {
-				dtor(value);
-			}
-		}
-	}
-
-	/* whatever is still stored is dropped without its destructor */
-	for (void *key = NULL, *value = NULL, *_dtor = NULL;
-	     !drained &&
-	     (k_thread_popspecific(&key, &value, (k_thread_key_destructor_t *)&_dtor) == 0);) {
-	}
-#endif
-
-	k_thread_abort(k_current_get());
-	CODE_UNREACHABLE;
-}
-
-/*
- * Not a system call, and defined here rather than in thread.c because this file is compiled
- * without __ZEPHYR_SUPERVISOR__: it runs in the exiting thread's own mode, so the cleanup
- * handlers and destructors of a user thread execute in user mode. Disabling cancellation
- * first makes the result final: no cancellation point below can actuate a pending request.
- */
-FUNC_NORETURN void k_thread_exit(void *result)
-{
-	k_thread_cancel_setstate(false);
-	k_thread_result_set(result);
-	z_thread_cancel_actuate();
-	CODE_UNREACHABLE;
-}
-
-bool z_thread_cancel_try_actuate(void)
-{
-	k_tid_t const tid = _current;
-
-	if (k_sig_ismember(&tid->base.sig.mask, K_SIG_CANCEL) != 0) {
-		return false;
-	}
-
-#ifdef CONFIG_USERSPACE
-	if (k_is_in_user_syscall()) {
-		/*
-		 * Cleanup handlers and destructors of a user thread run in user mode: hand the
-		 * request to the signal path, which delivers K_SIG_CANCEL through the trampoline
-		 * on return from this system call. The request stays pending until then, so a
-		 * full queue simply retries at the next cancellation point.
-		 */
-		if (atomic_get(&tid->base.cancel_pending) == 0) {
-			return false;
-		}
-		(void)k_sig_queue(tid, K_SIG_CANCEL, (union k_sig_val){0});
-		return true;
-	}
-#endif /* CONFIG_USERSPACE */
-
-	if (!atomic_cas(&tid->base.cancel_pending, 1, 0)) {
-		return false;
-	}
-	atomic_dec(&z_sig_work_pending);
-	atomic_set(&tid->base.result, (atomic_val_t)K_THREAD_CANCELLED);
-
-	z_thread_cancel_actuate();
-	CODE_UNREACHABLE;
-}
-
-/**
- * @brief The cancellation signal handler
- *
- * In contrast to aborting a thread, cancelling a thread is a cooperative process. It
- * permits the thread to
- *
- * 1. perform any thread-level clean-up routines
- * 2. destructors for thread-specific storage are called
- * 3. finally, the thread is terminated
- *
- * @param sig signal number
- * @param info signal information
- * @param ucontext signal user context
- */
-static void z_sig_handler_cancel(int sig, struct k_sig_info *info, void *ucontext)
-{
-	ARG_UNUSED(sig);
-	ARG_UNUSED(info);
-	ARG_UNUSED(ucontext);
-
-	/*
-	 * Runs in the cancelled thread's own mode (user mode for a user thread, through the
-	 * trampoline) and touches nothing but system calls: the request was claimed and the
-	 * result set kernel-side at delivery.
-	 */
-	z_thread_cancel_actuate();
-	CODE_UNREACHABLE;
-}
-#endif /* CONFIG_THREAD_CANCEL */
 
 /**
  * @brief The coredump signal handler
@@ -1169,7 +956,7 @@ static k_sig_handler_t z_sig_resolve(int sig)
 
 #ifdef CONFIG_THREAD_CANCEL
 	case K_SIG_CANCEL:
-		return z_sig_handler_cancel;
+		return z_thread_cancel_handler;
 #endif
 
 	/* all signals that have default 'Ign' behaviour */
@@ -1193,28 +980,3 @@ static k_sig_handler_t z_sig_resolve(int sig)
 	CODE_UNREACHABLE;
 }
 
-#if defined(CONFIG_THREAD_CANCEL)
-void z_syscall_cancel_check_slow(void)
-{
-	k_tid_t const tid = _current;
-
-	if (k_is_pre_kernel() || k_is_in_isr()) {
-		return;
-	}
-
-	if (z_thread_cancel_is_async(tid)) {
-		return;
-	}
-
-	(void)z_thread_cancel_try_actuate();
-}
-#endif /* CONFIG_THREAD_CANCEL */
-
-void z_syscall_sig_check_slow(void)
-{
-	if (atomic_get(&_current->base.sig.pending) > 0) {
-		while (z_sig_handle(NULL)) {
-			z_sig_trampoline();
-		}
-	}
-}

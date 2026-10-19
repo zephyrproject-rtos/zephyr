@@ -429,6 +429,14 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 #define K_CANCEL_ASYNC (BIT(9))
 
 /**
+ * @brief Cancellation disabled for thread
+ *
+ * This option indicates that cancellation requests stay pending until the thread enables
+ * cancellation again with @ref k_thread_cancel_setstate.
+ */
+#define K_CANCEL_DISABLED (BIT(10))
+
+/**
  * @brief Detached thread
  *
  * This option indicates that the thread is detached. Detached threads
@@ -7852,7 +7860,13 @@ __syscall int k_sig_queue(k_pid_t pid, int signo, union k_sig_val value);
 __syscall int k_sig_timedwait(const struct k_sig_set *set, struct k_sig_info *info,
 			      k_timeout_t timeout);
 
-#if defined(CONFIG_USERSPACE)
+/**
+ * @}
+ */
+
+#endif /* CONFIG_SIGNAL */
+
+#if defined(CONFIG_SYSCALL_RETURN_HOOK) && defined(CONFIG_USERSPACE)
 /** @cond INTERNAL_HIDDEN */
 /*
  * This system call is used exclusively for returning from the signal handler trampoline,
@@ -8007,6 +8021,13 @@ static inline bool k_thread_cancel_may_be_pending(void)
 #endif
 }
 
+
+/**
+ * @}
+ */
+
+#endif /* CONFIG_THREAD_CANCEL */
+
 #if defined(CONFIG_THREAD_RESULT) || defined(__DOXYGEN__)
 /**
  * @brief Terminate the current thread gracefully and set its result.
@@ -8020,23 +8041,11 @@ static inline bool k_thread_cancel_may_be_pending(void)
  *
  * @param result The result to set for the current thread.
  *
- * @note @kconfig{CONFIG_THREAD_CANCEL} and @kconfig{CONFIG_THREAD_RESULT} must
- * be set for this function to be available.
+ * @note @kconfig{CONFIG_THREAD_RESULT} must be set for this function to be available.
+ * Cancellation is disabled first only when @kconfig{CONFIG_THREAD_CANCEL} is enabled.
  */
 FUNC_NORETURN void k_thread_exit(void *result);
 #endif
-
-/**
- * @}
- */
-
-#endif /* CONFIG_THREAD_CANCEL */
-
-/**
- * @}
- */
-
-#endif /* CONFIG_SIGNAL */
 
 /**
  * @addtogroup k_thread_cleanup_apis

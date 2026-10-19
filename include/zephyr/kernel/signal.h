@@ -136,15 +136,19 @@ struct k_sig_action {
 
 /** @brief Per-thread signal context */
 struct k_sig_ctx {
+#ifdef CONFIG_SIGNAL
 	struct k_sig_set mask; /**< Masked signals */
 	struct k_sig_set restore; /**< Signal mask to restore after handling signal */
+#endif
 	struct k_sig_info info; /**< Information about a signal being handled */
 	struct k_sig_action action; /**< Action for a signal being handled */
-#if defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK) && defined(CONFIG_USERSPACE)
 	struct arch_sig_ctx user; /**< Arch-specific userspace context for signal being handled */
 #endif
+#ifdef CONFIG_SIGNAL
 	atomic_t pending; /**< Count of signals pending delivery */
 	atomic_t delivered; /**< Count of signals delivered to a handler */
+#endif
 };
 
 /* Signal numbers used by Zephyr */

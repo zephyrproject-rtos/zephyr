@@ -136,7 +136,7 @@ struct _thread_base {
 	struct k_cycle_stats  usage;   /* Track thread usage statistics */
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 
-#ifdef CONFIG_SIGNAL
+#ifdef CONFIG_SYSCALL_RETURN_HOOK
 	struct k_sig_ctx sig;
 #endif
 
@@ -148,6 +148,8 @@ struct _thread_base {
 #ifdef CONFIG_THREAD_CANCEL
        /** Sticky cancellation request pending actuation */
        atomic_t cancel_pending;
+       /** Actuate the pending request on the next return from a system call */
+       atomic_t cancel_armed;
 #endif
 
 #ifdef CONFIG_THREAD_CLEANUP

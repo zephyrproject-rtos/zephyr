@@ -7,6 +7,10 @@ common:
 tests:
   kernel.threads.apis:
     min_flash: 34
+  kernel.threads.apis.nosignal:
+    min_flash: 34
+    extra_configs:
+      - CONFIG_SIGNAL=n
   kernel.threads.apis.cpu_mask:
     min_flash: 34
     depends_on:
