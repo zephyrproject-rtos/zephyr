@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Silicon Labs NCP on SDMMC1, on the ST Zio connector CN8:
+ *   PC8 D0, PC9 D1, PC10 D2, PC11 D3, PC12 CK, PD2 CMD (pins 2 to 12),
+ *   PG10 reset (pin 14).
+ */
+
+/ {
+	chosen {
+		zephyr,bt-hci = &ncp_hci;
+	};
+};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9 &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	bus-width = <4>;
+	/*
+	 * Flying wires on the Arduino and Morpho headers limit the usable clock.
+	 * On a proper board, remove the limit: the SD stack then follows the
+	 * speed the co-processor advertises in its CCCR.
+	 */
+	max-bus-freq = <10000000>;
+	status = "okay";
+
+	ncp: ncp {
+		compatible = "silabs,ncp";
+		reset-gpios = <&gpiog 10 GPIO_ACTIVE_LOW>;
+
+		ncp_hci: bt-hci {
+			compatible = "silabs,ncp-hci";
+		};
+	};
+};
