@@ -16,6 +16,7 @@
 #include <zephyr/pm/device.h>
 #include <string.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
 #include <zephyr/drivers/sensor/lsm6dsvxxx.h>
@@ -924,6 +925,46 @@ static int lsm6dsv16x_sample_fetch_temp(const struct device *dev)
 }
 #endif
 
+/*
+ * OUT_TEMP (0x20-0x21), the gyro outputs (0x22-0x27) and the accel outputs (0x28-0x2D) are
+ * contiguous, so read them all in one bus transfer. temp is only written when
+ * CONFIG_LSM6DSV16X_ENABLE_TEMP is set.
+ */
+int lsm6dsv16x_sample_fetch_all_raw(const struct device *dev, int16_t acc[3], int16_t gyro[3],
+				    int16_t *temp)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
+	uint8_t buf[14];
+	const uint8_t reg = LSM6DSV16X_OUT_TEMP_L;
+#else
+	uint8_t buf[12];
+	const uint8_t reg = LSM6DSV16X_OUTX_L_G;
+#endif
+	const uint8_t *out = buf;
+	int ret;
+
+	ret = lsm6dsv16x_read_reg(ctx, reg, buf, sizeof(buf));
+	if (ret < 0) {
+		LOG_DBG("Failed to read sample");
+		return ret;
+	}
+
+#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
+	*temp = (int16_t)sys_get_le16(out);
+	out += sizeof(uint16_t);
+#else
+	ARG_UNUSED(temp);
+#endif
+	for (size_t i = 0; i < 3; i++) {
+		gyro[i] = (int16_t)sys_get_le16(&out[2 * i]);
+		acc[i] = (int16_t)sys_get_le16(&out[6 + 2 * i]);
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 static int lsm6dsv16x_sample_fetch_shub(const struct device *dev)
 {
@@ -939,9 +980,7 @@ static int lsm6dsv16x_sample_fetch_shub(const struct device *dev)
 static int lsm6dsv16x_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 	struct lsm6dsv16x_data *data = dev->data;
-#endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 	int ret = 0;
 
 	switch (chan) {
@@ -957,20 +996,15 @@ static int lsm6dsv16x_sample_fetch(const struct device *dev,
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		ret = lsm6dsv16x_sample_fetch_accel(dev);
-		if (ret != 0) {
-			break;
-		}
-		ret = lsm6dsv16x_sample_fetch_gyro(dev);
-		if (ret != 0) {
-			break;
-		}
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
-		ret = lsm6dsv16x_sample_fetch_temp(dev);
+		ret = lsm6dsv16x_sample_fetch_all_raw(dev, data->acc, data->gyro,
+						      &data->temp_sample);
+#else
+		ret = lsm6dsv16x_sample_fetch_all_raw(dev, data->acc, data->gyro, NULL);
+#endif
 		if (ret != 0) {
 			break;
 		}
-#endif
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 		if (data->shub_inited) {
 			ret = lsm6dsv16x_sample_fetch_shub(dev);
