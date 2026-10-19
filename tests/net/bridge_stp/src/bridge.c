@@ -23,7 +23,9 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_bridge.h>
 #include <zephyr/net/ethernet_bridge_stp.h>
+#include <zephyr/net/ethernet_mgmt.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/shell/shell.h>
@@ -262,6 +264,71 @@ static struct eth_bridge_stp_status bridge_status(int b)
 	return status;
 }
 
+#define STP_EVENTS                                                                                 \
+	(NET_EVENT_ETHERNET_BRIDGE_PORT_STATE | NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT |               \
+	 NET_EVENT_ETHERNET_BRIDGE_TOPOLOGY_CHANGE)
+
+struct event_rec {
+	uint64_t event;
+	struct net_if *iface;
+	union {
+		struct eth_bridge_stp_port_event port;
+		struct eth_bridge_stp_root_event root;
+		struct eth_bridge_stp_topology_event topology;
+	} info;
+};
+
+static struct net_mgmt_event_callback stp_event_cb;
+static struct event_rec events[32];
+static size_t num_events;
+static struct k_spinlock events_lock;
+
+static void stp_event_handler(struct net_mgmt_event_callback *cb, uint64_t event,
+			      struct net_if *iface)
+{
+	k_spinlock_key_t key = k_spin_lock(&events_lock);
+
+	if (num_events < ARRAY_SIZE(events)) {
+		struct event_rec *rec = &events[num_events++];
+
+		*rec = (struct event_rec){.event = event, .iface = iface};
+		memcpy(&rec->info, cb->info, MIN(cb->info_length, sizeof(rec->info)));
+	}
+
+	k_spin_unlock(&events_lock, key);
+}
+
+static void clear_events(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&events_lock);
+
+	num_events = 0U;
+	k_spin_unlock(&events_lock, key);
+}
+
+/* The events are delivered from the net_mgmt thread */
+static size_t count_events(uint64_t event, struct net_if *iface, struct event_rec *last)
+{
+	k_spinlock_key_t key;
+	size_t count = 0U;
+
+	k_sleep(K_MSEC(50));
+	key = k_spin_lock(&events_lock);
+
+	for (size_t i = 0; i < num_events; i++) {
+		if (events[i].event == event && events[i].iface == iface) {
+			count++;
+			if (last != NULL) {
+				*last = events[i];
+			}
+		}
+	}
+
+	k_spin_unlock(&events_lock, key);
+
+	return count;
+}
+
 /* Receive a frame on the host port as if a host had sent it */
 static void host_send(const uint8_t *frame, size_t len)
 {
@@ -320,6 +387,9 @@ static void *setup(void)
 		zassert_ok(eth_bridge_stp_enable(bridges[b], true));
 	}
 
+	net_mgmt_init_event_callback(&stp_event_cb, stp_event_handler, STP_EVENTS);
+	net_mgmt_add_event_callback(&stp_event_cb);
+
 	k_sleep(RECONVERGE_TIME);
 
 	return NULL;
@@ -330,6 +400,7 @@ static void before(void *fixture)
 	ARG_UNUSED(fixture);
 
 	clear_counters();
+	clear_events();
 }
 
 static void after(void *fixture)
@@ -432,6 +503,169 @@ ZTEST(rstp_bridge, test_stop_and_start)
 	expect_ring_converged();
 }
 
+/* A failed link raises the port events and a topology change, but no new
+ * root: the root stays bridge0.
+ */
+ZTEST(rstp_bridge, test_events_link_down)
+{
+	struct eth_bridge_stp_status before = bridge_status(2);
+	struct event_rec ev;
+
+	net_if_carrier_off(fake[2].iface);
+	net_if_carrier_off(fake[3].iface);
+
+	zexpect_equal(count_events(NET_EVENT_ETHERNET_BRIDGE_PORT_STATE, fake[3].iface, &ev), 1U);
+	zexpect_equal(ev.info.port.bridge, bridges[2]);
+	zexpect_equal(ev.info.port.role, ETH_BRIDGE_STP_ROLE_DISABLED);
+	zexpect_false(ev.info.port.forwarding);
+
+	zexpect_equal(count_events(NET_EVENT_ETHERNET_BRIDGE_PORT_STATE, fake[5].iface, &ev), 1U);
+	zexpect_equal(ev.info.port.role, ETH_BRIDGE_STP_ROLE_ROOT);
+	zexpect_true(ev.info.port.learning);
+	zexpect_true(ev.info.port.forwarding);
+
+	/* The Alternate Port that started forwarding started a topology change */
+	zexpect_equal(count_events(NET_EVENT_ETHERNET_BRIDGE_TOPOLOGY_CHANGE, bridges[2], &ev), 1U);
+	zexpect_equal(ev.info.topology.topology_change_count, before.topology_change_count + 1U);
+	zexpect_true(bridge_status(2).topology_change);
+	zexpect_equal(bridge_status(2).time_since_topology_change, 0U);
+
+	zexpect_equal(count_events(NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT, bridges[2], NULL), 0U);
+
+	/* bridge0 reran its state machines, but its host port did not change */
+	zexpect_equal(count_events(NET_EVENT_ETHERNET_BRIDGE_PORT_STATE, fake[HOST].iface, NULL),
+		      0U);
+
+	net_if_carrier_on(fake[2].iface);
+	net_if_carrier_on(fake[3].iface);
+	k_sleep(RECONVERGE_TIME);
+
+	expect_ring_converged();
+}
+
+/* A better root bridge raises the event once on every bridge */
+ZTEST(rstp_bridge, test_events_new_root)
+{
+	uint64_t root;
+	struct event_rec ev;
+
+	zassert_ok(eth_bridge_stp_set_bridge_priority(bridges[2], 0U));
+	k_sleep(RECONVERGE_TIME);
+	root = bridge_status(2).bridge_id;
+
+	ARRAY_FOR_EACH(bridges, b) {
+		zexpect_equal(count_events(NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT, bridges[b], &ev), 1U,
+			      "bridge %zu", b);
+		zexpect_equal(ev.info.root.root_id, root, "bridge %zu", b);
+	}
+
+	zexpect_is_null(ev.info.root.root_port, "bridge2 is the root");
+	zexpect_equal(ev.info.root.root_path_cost, 0U);
+
+	clear_events();
+	zassert_ok(eth_bridge_stp_set_bridge_priority(bridges[2],
+						      ETH_RSTP_DEFAULT_BRIDGE_PRIORITY));
+	k_sleep(RECONVERGE_TIME);
+
+	/* The old root information can go round the ring before it ages out,
+	 * so there may be more than one event, the last one for bridge0.
+	 */
+	zexpect_true(count_events(NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT, bridges[2], &ev) > 0U);
+	zexpect_equal(ev.info.root.root_id, bridge_status(0).bridge_id);
+
+	expect_ring_converged();
+}
+
+/* Stopping the protocol reports every port forwarding, and starting it again
+ * reports the root again.
+ */
+ZTEST(rstp_bridge, test_events_stop_and_start)
+{
+	struct event_rec ev;
+
+	zassert_ok(eth_bridge_stp_enable(bridges[2], false));
+
+	zexpect_equal(count_events(NET_EVENT_ETHERNET_BRIDGE_PORT_STATE, fake[5].iface, &ev), 1U);
+	zexpect_equal(ev.info.port.role, ETH_BRIDGE_STP_ROLE_DISABLED);
+	zexpect_true(ev.info.port.forwarding);
+	zexpect_equal(count_events(NET_EVENT_ETHERNET_BRIDGE_PORT_STATE, fake[3].iface, &ev), 1U);
+	zexpect_true(ev.info.port.forwarding);
+
+	clear_events();
+	zassert_ok(eth_bridge_stp_enable(bridges[2], true));
+	k_sleep(RECONVERGE_TIME);
+
+	zexpect_equal(count_events(NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT, bridges[2], &ev), 2U,
+		      "itself first, then bridge0");
+	zexpect_equal(ev.info.root.root_id, bridge_status(0).bridge_id);
+	zexpect_true(count_events(NET_EVENT_ETHERNET_BRIDGE_PORT_STATE, fake[5].iface, &ev) > 0U);
+	zexpect_equal(ev.info.port.role, ETH_BRIDGE_STP_ROLE_ALTERNATE);
+	zexpect_false(ev.info.port.forwarding);
+
+	expect_ring_converged();
+}
+
+/* An event of the test only, raised on the host port */
+#define TEST_EVENT 0x97ab1234
+
+static struct net_mgmt_event_callback test_event_cb;
+static K_SEM_DEFINE(test_event_entered, 0, 1);
+static K_THREAD_STACK_DEFINE(raise_stack, 2048);
+static K_THREAD_STACK_DEFINE(set_cost_stack, 2048);
+static struct k_thread raise_thread;
+static struct k_thread set_cost_thread;
+
+static void test_event_handler(struct net_mgmt_event_callback *cb, uint64_t event,
+			       struct net_if *iface)
+{
+	struct eth_bridge_stp_status status;
+
+	k_sem_give(&test_event_entered);
+
+	/* Let the other thread change the bridge in the meantime */
+	k_sleep(K_MSEC(100));
+	(void)eth_bridge_stp_get_status(bridges[2], &status);
+}
+
+static void raise_fn(void *p1, void *p2, void *p3)
+{
+	net_mgmt_event_notify(TEST_EVENT, fake[HOST].iface);
+}
+
+/* bridge2 moves its root port to its other port, which raises port events */
+static void set_cost_fn(void *p1, void *p2, void *p3)
+{
+	(void)eth_bridge_stp_port_set_path_cost(bridges[2], fake[3].iface, ETH_RSTP_MAX_PATH_COST);
+}
+
+/* A net_mgmt callback may use the bridge API while the bridge raises events
+ * in another thread. With CONFIG_NET_MGMT_EVENT_DIRECT the callback runs in
+ * the thread that raised its event, with the net_mgmt callback lock held.
+ */
+ZTEST(rstp_bridge, test_events_callback_uses_bridge)
+{
+	int prio = k_thread_priority_get(k_current_get());
+
+	net_mgmt_init_event_callback(&test_event_cb, test_event_handler, TEST_EVENT);
+	net_mgmt_add_event_callback(&test_event_cb);
+
+	k_thread_create(&raise_thread, raise_stack, K_THREAD_STACK_SIZEOF(raise_stack), raise_fn,
+			NULL, NULL, NULL, prio, 0, K_NO_WAIT);
+	zassert_ok(k_sem_take(&test_event_entered, K_SECONDS(1)));
+	k_thread_create(&set_cost_thread, set_cost_stack, K_THREAD_STACK_SIZEOF(set_cost_stack),
+			set_cost_fn, NULL, NULL, NULL, prio, 0, K_NO_WAIT);
+
+	zexpect_ok(k_thread_join(&set_cost_thread, K_SECONDS(2)));
+	zexpect_ok(k_thread_join(&raise_thread, K_SECONDS(2)));
+	net_mgmt_del_event_callback(&test_event_cb);
+	zexpect_equal(bridge_status(2).root_port, fake[5].iface);
+
+	zassert_ok(eth_bridge_stp_port_set_path_cost(bridges[2], fake[3].iface, 0U));
+	k_sleep(RECONVERGE_TIME);
+
+	expect_ring_converged();
+}
+
 /* The host port falls back to STP BPDUs when it hears an STP bridge, and
  * sends RST BPDUs again after mcheck.
  */
@@ -511,6 +745,7 @@ static const char *shell_run(int *ret, const char *fmt, ...)
 
 	return shell_backend_dummy_get_output(sh, &size);
 }
+
 
 static int idx(struct net_if *iface)
 {
@@ -612,6 +847,7 @@ ZTEST(rstp_bridge, test_shell_show)
 	out = shell_run(&ret, "net bridge stp %d", idx(bridges[2]));
 	zassert_ok(ret);
 	zexpect_not_null(strstr(out, "spanning tree on, RSTP"), "%s", out);
+	zexpect_not_null(strstr(out, "Topology change "), "%s", out);
 
 	snprintk(line, sizeof(line), "Root port     %d", idx(fake[3].iface));
 	zexpect_not_null(strstr(out, line), "%s", out);

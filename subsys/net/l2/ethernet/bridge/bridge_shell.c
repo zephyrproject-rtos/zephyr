@@ -563,6 +563,9 @@ static void stp_show(const struct shell *sh, struct net_if *br)
 		    status.max_age, status.forward_delay, status.bridge_max_age,
 		    status.bridge_forward_delay);
 	shell_print(sh, "Tx hold count %u", status.tx_hold_count);
+	shell_print(sh, "Topology change %s, %u changes, last %u s ago",
+		    status.topology_change ? "yes" : "no", status.topology_change_count,
+		    status.time_since_topology_change);
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
