@@ -127,6 +127,7 @@
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	a0: channel@0 {
 		reg = <0>;
@@ -150,6 +151,7 @@
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	a3: channel@9 {
 		reg = <9>;
@@ -172,6 +174,7 @@
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	a1: channel@0 {
 		reg = <0>;
