@@ -8,8 +8,8 @@ identifier: mcxw23_evk
 name: NXP MCXW23-EVK
 type: mcu
 arch: arm
-ram: 128
-flash: 1016
+ram: 112
+flash: 440
 toolchain:
   - zephyr
   - gnuarmemb
