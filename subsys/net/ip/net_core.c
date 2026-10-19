@@ -376,6 +376,7 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt);
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
 	struct net_if *iface;
+	bool dormant_ppp_control = false;
 	int family;
 	int status;
 	int ret;
@@ -392,7 +393,19 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		goto err;
 	}
 
-	if (!net_if_is_up(net_pkt_iface(pkt))) {
+	/* PPP uses dormancy to take IP connectivity down before closing LCP.
+	 * Its control packets still need the live link to complete that close.
+	 * Do not relax the operational-state check for IP traffic, other L2s,
+	 * admin-down interfaces, or interfaces without carrier.
+	 */
+#if defined(CONFIG_NET_L2_PPP)
+	iface = net_pkt_iface(pkt);
+	dormant_ppp_control = net_pkt_is_ppp(pkt) &&
+			      net_if_l2(iface) == &NET_L2_GET_NAME(PPP) &&
+			      net_if_is_admin_up(iface) && net_if_is_carrier_ok(iface) &&
+			      net_if_is_dormant(iface);
+#endif
+	if (!net_if_is_up(net_pkt_iface(pkt)) && !dormant_ppp_control) {
 		ret = -ENETDOWN;
 		goto err;
 	}

@@ -306,6 +306,7 @@ static void lcp_down(struct ppp_fsm *fsm)
 	 */
 	bool terminating = fsm->state == PPP_STOPPING ||
 			    ctx->phase == PPP_TERMINATE || ctx->phase == PPP_DEAD;
+	bool local_close = ctx->phase == PPP_TERMINATE && fsm->state == PPP_OPENED;
 
 	memset(&ctx->lcp.peer_options.auth_proto, 0,
 	       sizeof(ctx->lcp.peer_options.auth_proto));
@@ -319,7 +320,13 @@ static void lcp_down(struct ppp_fsm *fsm)
 		ppp_network_all_down(ctx);
 	}
 
-	if (net_if_is_carrier_ok(ctx->iface) && ctx->is_enabled && !terminating) {
+	if (net_if_is_carrier_ok(ctx->iface) && local_close) {
+		/* Local close still needs a Terminate-Ack or retry exhaustion.
+		 * Reporting DEAD here lets the driver release the transport before
+		 * terminate() has even sent the first Terminate-Request.
+		 */
+		ppp_change_phase(ctx, PPP_TERMINATE);
+	} else if (net_if_is_carrier_ok(ctx->iface) && ctx->is_enabled && !terminating) {
 		ppp_change_phase(ctx, PPP_ESTABLISH);
 	} else {
 		ppp_change_phase(ctx, PPP_DEAD);

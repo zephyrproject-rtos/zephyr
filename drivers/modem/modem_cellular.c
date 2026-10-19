@@ -876,9 +876,11 @@ static void modem_cellular_stop_timer(struct modem_cellular_data *data)
 static int modem_cellular_run_script(struct modem_cellular_data *data,
 				     const struct modem_chat_script *script)
 {
+	struct modem_chat *chat = data->state == MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT ?
+				  &data->dial_chat : &data->chat;
 	int ret;
 
-	ret = modem_chat_run_script_async(&data->chat, script);
+	ret = modem_chat_run_script_async(chat, script);
 	if (ret == 0) {
 		data->script_running = script;
 	}
@@ -969,6 +971,7 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 
 	modem_cellular_clear_registration_status(data);
 	modem_cellular_notify_user_pipes_disconnected(data);
+	modem_chat_release(&data->dial_chat);
 	modem_chat_release(&data->chat);
 	modem_ppp_release(config->ppp);
 	modem_cmux_release(&data->cmux);
@@ -1912,7 +1915,13 @@ static int modem_cellular_on_await_dial_state_leave(struct modem_cellular_data *
 
 static int modem_cellular_on_run_dial_script_state_enter(struct modem_cellular_data *data)
 {
-	modem_chat_attach(&data->chat, data->dlci2_pipe);
+	data->dial_deregistered = false;
+	/* Stop any control script, but keep consuming control-channel URCs while
+	 * the independent dial chat owns DLCI 2. Never attach one chat to both.
+	 */
+	modem_chat_release(&data->chat);
+	modem_chat_attach(&data->chat, data->dlci1_pipe);
+	modem_chat_attach(&data->dial_chat, data->dlci2_pipe);
 	modem_cellular_start_timer(data, K_NO_WAIT);
 	return 0;
 }
@@ -1942,8 +1951,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		modem_cellular_script_success(data);
-		modem_chat_release(&data->chat);
-		modem_chat_attach(&data->chat, data->dlci1_pipe);
+		modem_chat_release(&data->dial_chat);
 
 		/* PHY is now up and searching for network */
 		net_if_carrier_on(modem_ppp_get_iface(config->ppp));
@@ -1956,6 +1964,13 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		/* Check if we are already registered during the network setup */
 		if (modem_cellular_has_network_script(config)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
+			/* These URCs used to remain buffered on DLCI 1 until CONNECT.
+			 * Preserve teardown even if registration returned meanwhile.
+			 */
+			if (data->dial_deregistered) {
+				modem_cellular_enter_state(data,
+						   MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
+			}
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
 		}
@@ -1970,13 +1985,16 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		break;
 	case MODEM_CELLULAR_EVENT_REGISTERED:
 		/* Restart immediately, if we are waiting to retry the dial-script */
-		if (!modem_chat_is_running(&data->chat)) {
+		if (!modem_chat_is_running(&data->dial_chat)) {
 			modem_cellular_stop_timer(data);
 			modem_cellular_run_script(data, config->vendor->scripts.dial);
 		}
 		break;
+	case MODEM_CELLULAR_EVENT_DEREGISTERED:
+		data->dial_deregistered = true;
+		break;
 	case MODEM_CELLULAR_EVENT_HANGUP:
-		modem_chat_release(&data->chat);
+		modem_chat_release(&data->dial_chat);
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_DIAL);
 		break;
 	default:
@@ -1986,7 +2004,9 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 
 static int modem_cellular_on_run_dial_script_state_leave(struct modem_cellular_data *data)
 {
-	return modem_chat_attach(&data->chat, data->dlci1_pipe);
+	modem_cellular_stop_timer(data);
+	modem_chat_release(&data->dial_chat);
+	return 0;
 }
 
 static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_data *data)
@@ -2256,6 +2276,7 @@ static void modem_cellular_cmux_cleanup(struct modem_cellular_data *data)
 	const struct modem_cellular_config *config = data->dev->config;
 
 	modem_cellular_notify_user_pipes_disconnected(data);
+	modem_chat_release(&data->dial_chat);
 	modem_chat_release(&data->chat);
 	modem_ppp_release(config->ppp);
 }
@@ -3344,7 +3365,14 @@ int modem_cellular_init(const struct device *dev)
 			.unsol_matches_size = config->vendor->unsol_matches.size,
 		};
 
+		struct modem_chat_config dial_chat_config = chat_config;
+
 		modem_chat_init(&data->chat, &chat_config);
+		dial_chat_config.receive_buf = data->dial_chat_receive_buf;
+		dial_chat_config.receive_buf_size = sizeof(data->dial_chat_receive_buf);
+		dial_chat_config.argv = data->dial_chat_argv;
+		dial_chat_config.argv_size = ARRAY_SIZE(data->dial_chat_argv);
+		modem_chat_init(&data->dial_chat, &dial_chat_config);
 	}
 
 	{
