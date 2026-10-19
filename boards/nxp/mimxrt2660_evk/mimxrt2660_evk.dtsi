@@ -51,6 +51,46 @@
 	pinctrl-names = "default";
 };
 
+/*
+ * ENET to the YT8531 PHY U46 and J71, RGMII. PHY address 4 from its
+ * strap pins. The PHY reset is pulled up and only also reaches the PCAL6524
+ * I/O expander, so the PHY runs without the expander being driven.
+ */
+&enet {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	/* RGMII TX clock: MAINPLLDIV8 (250 MHz) / 2 = 125 MHz. */
+	clock-names = "gate", "source";
+	clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH1, IMX_CCM_ROOT_COMM_COMM_CLK)>,
+		 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_COMM_ETH1_TRXCLK,
+					IMX_CCM_MUX_ETH1_TRXCLK_MAINPLLDIV8, 2, 1)>;
+};
+
+&enet_mac {
+	phy-handle = <&enet_phy>;
+	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+
+	enet_phy: phy@4 {
+		compatible = "motorcomm,yt8531";
+		reg = <4>;
+		/* The MAC adds no RGMII delay; about 1.95 ns each way in the PHY. */
+		motorcomm,rx-delay-sel = <13>;
+		motorcomm,tx-delay-sel = <13>;
+		/*
+		 * 1000BASE-T does not work yet: once the MAC runs at 1 Gbit/s, MDIO
+		 * reads return corrupted data and no frame is received.
+		 */
+		default-speeds = "10BASE Half-Duplex", "10BASE Full-Duplex",
+				 "100BASE Half-Duplex", "100BASE Full-Duplex";
+	};
+};
+
 /* Alternate UART; left disabled until an overlay enables it. */
 &lpuart2 {
 	pinctrl-0 = <&pinmux_lpuart2>;

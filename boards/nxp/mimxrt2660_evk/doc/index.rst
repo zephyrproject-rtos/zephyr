@@ -91,6 +91,9 @@ Connections and I/Os
 +-----------+-----------------+------------------------------------+
 | User SW   | WAKE GPIO0 0    | PIO1_0 (WAKE_SS_BTN)               |
 +-----------+-----------------+------------------------------------+
+| ENET      | RGMII, MDIO     | PIO4_0..PIO4_13 (YT8531 U46, J71;  |
+|           |                 | 10/100 Mbit/s only for now)        |
++-----------+-----------------+------------------------------------+
 | XSPI0     | SCLK0, SS0_N,   | PIO6_0, PIO6_1, PIO6_2..PIO6_5     |
 |           | DATA0..DATA3    | (quad; the flash is not wired      |
 |           |                 | octal on this board)               |
