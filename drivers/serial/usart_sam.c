@@ -458,13 +458,6 @@ static int usart_sam_irq_is_pending(const struct device *dev)
 		(usart->US_CSR & (US_CSR_TXRDY | US_CSR_RXRDY));
 }
 
-static int usart_sam_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 1;
-}
-
 static void usart_sam_irq_callback_set(const struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
@@ -547,7 +540,6 @@ static DEVICE_API(uart, usart_sam_driver_api) = {
 	.irq_err_enable = usart_sam_irq_err_enable,
 	.irq_err_disable = usart_sam_irq_err_disable,
 	.irq_is_pending = usart_sam_irq_is_pending,
-	.irq_update = usart_sam_irq_update,
 	.irq_callback_set = usart_sam_irq_callback_set,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 };

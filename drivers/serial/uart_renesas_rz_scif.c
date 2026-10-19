@@ -319,12 +319,6 @@ static void uart_rz_scif_irq_callback_set(const struct device *dev,
 	data->callback_data = cb_data;
 }
 
-static int uart_rz_scif_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 1;
-}
-
 static void uart_rz_scif_rxi_isr(const struct device *dev)
 {
 	struct uart_rz_scif_data *data = dev->data;
@@ -424,7 +418,6 @@ static DEVICE_API(uart, uart_rz_scif_driver_api) = {
 	.irq_rx_ready = uart_rz_scif_irq_rx_ready,
 	.irq_is_pending = uart_rz_scif_irq_is_pending,
 	.irq_callback_set = uart_rz_scif_irq_callback_set,
-	.irq_update = uart_rz_scif_irq_update,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 

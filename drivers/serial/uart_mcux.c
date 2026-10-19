@@ -297,11 +297,6 @@ static int uart_mcux_irq_is_pending(const struct device *dev)
 	return uart_mcux_irq_tx_ready(dev) || uart_mcux_irq_rx_pending(dev);
 }
 
-static int uart_mcux_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void uart_mcux_irq_callback_set(const struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
@@ -388,7 +383,6 @@ static DEVICE_API(uart, uart_mcux_driver_api) = {
 	.irq_err_enable = uart_mcux_irq_err_enable,
 	.irq_err_disable = uart_mcux_irq_err_disable,
 	.irq_is_pending = uart_mcux_irq_is_pending,
-	.irq_update = uart_mcux_irq_update,
 	.irq_callback_set = uart_mcux_irq_callback_set,
 #endif
 };

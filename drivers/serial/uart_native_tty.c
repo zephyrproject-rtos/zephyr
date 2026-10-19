@@ -335,12 +335,6 @@ static int native_tty_uart_irq_is_pending(const struct device *dev)
 		native_tty_uart_irq_tx_ready(dev);
 }
 
-static int native_tty_uart_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 1;
-}
-
 static void native_tty_uart_irq_handler(const struct device *dev)
 {
 	struct native_tty_data *data = dev->data;
@@ -470,7 +464,6 @@ static DEVICE_API(uart, native_tty_uart_driver_api) = {
 	.irq_rx_disable   = native_tty_uart_irq_rx_disable,
 	.irq_rx_ready     = native_tty_uart_irq_rx_ready,
 	.irq_is_pending   = native_tty_uart_irq_is_pending,
-	.irq_update       = native_tty_uart_irq_update,
 	.irq_callback_set = native_tty_uart_irq_callback_set,
 #endif
 };

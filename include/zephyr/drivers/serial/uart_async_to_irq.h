@@ -71,7 +71,7 @@ void uart_async_to_irq_trampoline_cb(const struct device *dev);
 	.irq_err_enable	  = z_uart_async_to_irq_irq_err_enable,	\
 	.irq_err_disable  = z_uart_async_to_irq_irq_err_disable,\
 	.irq_is_pending	  = z_uart_async_to_irq_irq_is_pending,	\
-	.irq_update	  = z_uart_async_to_irq_irq_update,	\
+	.irq_update	  = NULL,				\
 	.irq_callback_set = z_uart_async_to_irq_irq_callback_set
 
 /** @brief Configuration structure initializer.
@@ -263,9 +263,6 @@ void z_uart_async_to_irq_irq_err_disable(const struct device *dev);
 
 /** Interrupt driven pending status function */
 int z_uart_async_to_irq_irq_is_pending(const struct device *dev);
-
-/** Interrupt driven interrupt update function */
-int z_uart_async_to_irq_irq_update(const struct device *dev);
 
 /** Set the irq callback function */
 void z_uart_async_to_irq_irq_callback_set(const struct device *dev,
