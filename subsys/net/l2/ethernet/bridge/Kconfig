@@ -129,13 +129,16 @@ config NET_ETHERNET_BRIDGE_STP
 	select NET_ETHERNET_BRIDGE_FDB
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
 	help
 	  Support the Rapid Spanning Tree Protocol, as specified in IEEE Std
 	  802.1Q-2014 Clause 13 and earlier in IEEE Std 802.1D-2004, on the
 	  bridge interfaces. It blocks the ports that would make a loop, and
 	  falls back to STP BPDUs on a port where an STP bridge is attached.
 	  The protocol runs on a bridge once eth_bridge_stp_enable() is
-	  called for it. Each bridge port takes about 220 bytes of RAM.
+	  called for it, and raises net_mgmt events when a port changes its
+	  role or state, the root bridge changes, or a topology change starts.
+	  Each bridge port takes about 230 bytes of RAM.
 
 module = NET_ETHERNET_BRIDGE
 module-dep = NET_LOG

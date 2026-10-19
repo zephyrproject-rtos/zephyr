@@ -1565,12 +1565,30 @@ static bool run_port_output(struct eth_rstp_port *p)
 	return changed;
 }
 
-static void run(struct eth_rstp_bridge *br)
+/* Topology Change and Topology Change Count (12.8.1.1.3) */
+static void update_topology_change(struct eth_rstp_bridge *br)
 {
-	if (!br->started) {
-		return;
+	bool tc = false;
+
+	for (size_t i = 0; i < br->num_ports; i++) {
+		if (br->ports[i] != NULL && br->ports[i]->tc_while != 0U) {
+			tc = true;
+		}
 	}
 
+	if (tc && !br->topology_change) {
+		br->topology_change_count++;
+	}
+
+	if (tc) {
+		br->time_since_topology_change = 0U;
+	}
+
+	br->topology_change = tc;
+}
+
+static void run_machines(struct eth_rstp_bridge *br)
+{
 	for (uint32_t pass = 0U; pass < MAX_PASSES; pass++) {
 		bool changed = false;
 
@@ -1604,6 +1622,20 @@ static void run(struct eth_rstp_bridge *br)
 	}
 
 	br->unsettled++;
+}
+
+static void run(struct eth_rstp_bridge *br)
+{
+	if (!br->started) {
+		return;
+	}
+
+	run_machines(br);
+	update_topology_change(br);
+
+	if (br->ops->updated != NULL) {
+		br->ops->updated(br);
+	}
 }
 
 static void port_begin(struct eth_rstp_port *p)
@@ -1689,6 +1721,7 @@ void eth_rstp_start(struct eth_rstp_bridge *br)
 void eth_rstp_stop(struct eth_rstp_bridge *br)
 {
 	br->started = false;
+	br->topology_change = false;
 }
 
 void eth_rstp_port_begin(struct eth_rstp_port *port)
@@ -1706,6 +1739,14 @@ void eth_rstp_tick(struct eth_rstp_bridge *br)
 	}
 
 	run(br);
+
+	if (!br->started) {
+		return;
+	}
+
+	if (!br->topology_change && br->time_since_topology_change < UINT32_MAX) {
+		br->time_since_topology_change++;
+	}
 }
 
 void eth_rstp_rx(struct eth_rstp_port *port, const struct eth_rstp_bpdu *bpdu)

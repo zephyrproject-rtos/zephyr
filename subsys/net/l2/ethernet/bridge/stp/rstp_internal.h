@@ -169,6 +169,12 @@ struct eth_rstp_ops {
 	void (*set_port_state)(struct eth_rstp_port *port, bool learning, bool forwarding);
 	/** Remove the learned FDB entries of @p port (13.27.28) */
 	void (*flush_fdb)(struct eth_rstp_port *port);
+	/**
+	 * The state machines of @p br have run, so the port roles, the port
+	 * states, the root or the topology change state may have changed.
+	 * Optional.
+	 */
+	void (*updated)(struct eth_rstp_bridge *br);
 };
 
 /**
@@ -278,6 +284,12 @@ struct eth_rstp_bridge {
 	uint8_t prs_state;
 	/** eth_rstp_start() has been called */
 	bool started;
+	/** tcWhile is nonzero for a port (12.8.1.1.3) */
+	bool topology_change;
+	/** Times that tcWhile became nonzero for a port when it was zero for all (12.8.1.1.3) */
+	uint32_t topology_change_count;
+	/** Seconds since tcWhile was last nonzero for a port (12.8.1.1.3) */
+	uint32_t time_since_topology_change;
 	/** Runs that stopped before the state machines settled */
 	uint32_t unsettled;
 };

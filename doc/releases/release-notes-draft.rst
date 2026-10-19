@@ -138,7 +138,10 @@ Libraries / Subsystems
     * Experimental support for the Rapid Spanning Tree Protocol of IEEE Std 802.1Q-2014
       (:kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_STP`). Once started on a bridge with
       :c:func:`eth_bridge_stp_enable`, it blocks the bridge ports that would make a loop and
-      falls back to STP BPDUs on a port where an STP bridge is attached.
+      falls back to STP BPDUs on a port where an STP bridge is attached. The
+      ``NET_EVENT_ETHERNET_BRIDGE_PORT_STATE``, ``NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT`` and
+      ``NET_EVENT_ETHERNET_BRIDGE_TOPOLOGY_CHANGE`` net_mgmt events report port role and state
+      changes, a new root bridge and the start of a topology change.
 
 Other notable changes
 *********************
