@@ -2170,11 +2170,15 @@ static int transceive(const struct device *dev,
 			ret = spi_stm32_shift_frames(spi, data);
 
 			if (ret == 0 &&
-			    ((dir == STM32_SPI_HALF_DUPLEX_TX && mode == LL_SPI_MODE_MASTER
-			      && data->tx_len == 0) ||
-			     (dir == STM32_SPI_HALF_DUPLEX_RX && mode == LL_SPI_MODE_SLAVE
-			      && data->rx_len == 0))) {
-				ret = spi_stm32_half_duplex_switch_direction(dev);
+			    ((dir == STM32_SPI_HALF_DUPLEX_TX && mode == LL_SPI_MODE_MASTER &&
+			      data->tx_len == 0 && spi_context_rx_on(&data->ctx)) ||
+			     (dir == STM32_SPI_HALF_DUPLEX_RX && mode == LL_SPI_MODE_SLAVE &&
+			      data->rx_len == 0 && spi_context_tx_on(&data->ctx)))) {
+				/* First half-duplex phase done: spi_stm32_complete() waits for
+				 * the transfer to finish then switches direction, reusing the
+				 * same completion path as interrupt mode.
+				 */
+				spi_stm32_complete(dev, ret);
 				dir = ll_get_transfer_direction(spi);
 			}
 		}
