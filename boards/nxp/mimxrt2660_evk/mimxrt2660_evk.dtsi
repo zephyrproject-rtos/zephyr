@@ -107,3 +107,14 @@
 		status = "disabled";
 	};
 };
+
+/* USB0 OTG on J1. PHY trim values are from the SDK board files. */
+zephyr_udc0: &usb0 {
+	phy-handle = <&usbphy0>;
+};
+
+&usbphy0 {
+	tx-d-cal = <0x0c>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
+};
