@@ -290,7 +290,7 @@
 		enet: ethernet@40079000 {
 			compatible = "nxp,enet";
 			reg = <0x40079000 0x620>;
-			clocks = <&core_clk>;
+			clocks = <&pcc 0x1e4 KINETIS_PCC_SRC_SPLL_ASYNC>;
 
 			enet_mac: ethernet {
 				compatible = "nxp,enet-mac";
