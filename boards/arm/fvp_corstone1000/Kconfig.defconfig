@@ -7,6 +7,16 @@ if BOARD_FVP_CORSTONE1000
 config BUILD_OUTPUT_BIN
 	default y
 
+if ARM64 && ARM_MMU
+
+# Allow extra translation tables for the 2 GiB DRAM map.
+# Preserve the Arm64 userspace defaults, which provide larger budgets
+# for tests and SMP.
+config MAX_XLAT_TABLES
+	default 16 if !USERSPACE
+
+endif # ARM64 && ARM_MMU
+
 if BOARD_FVP_CORSTONE1000_A320_SMP
 
 # Plain load-acquires and LSE atomics do not end an FVP execution quantum,
