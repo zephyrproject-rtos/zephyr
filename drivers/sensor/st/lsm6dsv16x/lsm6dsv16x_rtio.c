@@ -84,30 +84,17 @@ static void lsm6dsv16x_submit_sample(const struct device *dev, struct rtio_iodev
 #endif
 		case SENSOR_CHAN_ALL:
 			edata->has_accel = 1;
-
-			rc = lsm6dsv16x_acceleration_raw_get(ctx, edata->acc);
-			if (rc  < 0) {
-				LOG_DBG("Failed to read accel sample");
-				goto err;
-			}
-
 			edata->has_gyro = 1;
-
-			rc = lsm6dsv16x_angular_rate_raw_get(ctx, edata->gyro);
-			if (rc  < 0) {
-				LOG_DBG("Failed to read gyro sample");
-				goto err;
-			}
-
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 			edata->has_temp = 1;
-
-			rc = lsm6dsv16x_temperature_raw_get(ctx, &edata->temp);
+			rc = lsm6dsv16x_sample_fetch_all_raw(dev, edata->acc, edata->gyro,
+							     &edata->temp);
+#else
+			rc = lsm6dsv16x_sample_fetch_all_raw(dev, edata->acc, edata->gyro, NULL);
+#endif
 			if (rc < 0) {
-				LOG_DBG("Failed to read temp sample");
 				goto err;
 			}
-#endif
 			break;
 		default:
 			continue;
