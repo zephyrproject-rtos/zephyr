@@ -69,7 +69,11 @@ static int counter_silabs_get_value(const struct device *dev, uint32_t *ticks)
 static uint32_t counter_silabs_get_top_value(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+#if defined(CONFIG_COUNTER_SILABS_BURTC_ALARM)
+	return BURTC_MAX_VALUE;
+#else
 	return sl_hal_burtc_get_compare();
+#endif
 }
 
 static uint32_t counter_silabs_get_freq(const struct device *dev)
