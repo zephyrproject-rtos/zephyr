@@ -50,7 +50,7 @@ GEN_OFFSET_SYM(x86_tss64_t, shstk_addr);
 GEN_OFFSET_SYM(x86_tss64_t, exception_shstk_addr);
 #endif
 #ifdef CONFIG_USERSPACE
-#ifdef CONFIG_SIGNAL
+#ifdef CONFIG_SYSCALL_RETURN_HOOK
 GEN_OFFSET_SYM(x86_tss64_t, syscall_id);
 #endif
 GEN_OFFSET_SYM(x86_tss64_t, psp);
@@ -64,13 +64,16 @@ GEN_OFFSET_SYM(x86_cpuboot_t, sp);
 GEN_OFFSET_SYM(x86_cpuboot_t, stack_size);
 GEN_ABSOLUTE_SYM(__X86_CPUBOOT_SIZEOF, sizeof(x86_cpuboot_t));
 
-#if defined(CONFIG_USERSPACE) && defined(CONFIG_SIGNAL)
+#ifdef CONFIG_USERSPACE
+/* the save frame every system call pushes, read back by the return hook and by a fork */
 GEN_OFFSET_STRUCT(x86_ssf, rsp);
 GEN_OFFSET_STRUCT(x86_ssf, rdi);
 GEN_ABSOLUTE_SYM(__X86_SSF_SIZEOF, sizeof(struct x86_ssf));
 
+#ifdef CONFIG_SYSCALL_RETURN_HOOK
 GEN_ABSOLUTE_SYM(__thread_sig_user_s_OFFSET,
 		 offsetof(struct k_thread, base.sig.user.s));
-#endif
+#endif /* CONFIG_SYSCALL_RETURN_HOOK */
+#endif /* CONFIG_USERSPACE */
 
 #endif /* _X86_OFFSETS_INC_ */

@@ -90,7 +90,7 @@ struct x86_tss64 {
 #endif
 
 #ifdef CONFIG_USERSPACE
-#ifdef CONFIG_SIGNAL
+#ifdef CONFIG_SYSCALL_RETURN_HOOK
 	/* Ran out of registers and need to preserve syscall id */
 	uintptr_t syscall_id;
 #endif

@@ -23,7 +23,7 @@ zephyr_library_sources_ifdef(CONFIG_X86_USERSPACE	ia32/userspace.S)
 zephyr_library_sources_ifdef(CONFIG_LAZY_FPU_SHARING	ia32/float.c)
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB		ia32/gdbstub.c)
 
-if(CONFIG_SIGNAL AND CONFIG_USERSPACE)
+if(CONFIG_SYSCALL_RETURN_HOOK AND CONFIG_USERSPACE)
   zephyr_library_sources(ia32/signal.c)
 endif()
 

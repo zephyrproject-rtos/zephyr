@@ -1556,7 +1556,7 @@ void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 
 /** @} */
 
-#if (defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)) || defined(__DOXYGEN__)
+#if (defined(CONFIG_SYSCALL_RETURN_HOOK) && defined(CONFIG_USERSPACE)) || defined(__DOXYGEN__)
 /**
  * @brief Arch specific Signal handling APIs
  * @defgroup sig_api_arch Arch specific Signal Handling APIs
@@ -1594,7 +1594,7 @@ void arch_sig_post(struct k_thread *thread, void *arg);
  * @}
  */
 
-#endif /* (defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)) || defined(__DOXYGEN__) */
+#endif /* (defined(CONFIG_SYSCALL_RETURN_HOOK) && defined(CONFIG_USERSPACE)) || defined(__DOXYGEN__) */
 
 
 #ifdef __cplusplus

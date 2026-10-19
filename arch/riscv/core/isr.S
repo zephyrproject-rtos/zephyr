@@ -152,7 +152,7 @@ GTEXT(z_riscv_custom_stack_guard_enable)
 GTEXT(z_riscv_custom_stack_guard_disable)
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
-#if defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK) && defined(CONFIG_USERSPACE)
 GTEXT(z_sig_handle)
 #endif
 
@@ -734,7 +734,7 @@ valid_syscall_id:
 	/* Update a0 (return value) on the stack */
 	sr a0, __struct_arch_esf_a0_OFFSET(sp)
 
-#ifdef CONFIG_SIGNAL
+#ifdef CONFIG_SYSCALL_RETURN_HOOK
 	/* reload the syscall id: t0 is caller-saved and the syscall may have clobbered it */
 	lr t0, __struct_arch_esf_t0_OFFSET(sp)
 

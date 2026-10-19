@@ -105,7 +105,7 @@ struct arch_esf {
 typedef struct soc_esf soc_esf_t;
 #endif
 
-#if defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK) && defined(CONFIG_USERSPACE)
 struct arch_sig_ctx {
 	unsigned long ra;		/* return address */
 	unsigned long a0;		/* function argument/return value */

@@ -47,7 +47,7 @@ GDATA(_k_syscall_table)
 # define UNLOCK(unused)
 #endif
 
-#if defined(CONFIG_SIGNAL)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK)
 GTEXT(z_sig_handle)
 #endif
 
@@ -446,7 +446,7 @@ dispatch_syscall:
     /* restore stack pointer to its original location */
     pop {r4,r5,ip}
 
-#ifdef CONFIG_SIGNAL
+#ifdef CONFIG_SYSCALL_RETURN_HOOK
     ldr ip, =K_SYSCALL_K_SIG_ACTION
     cmp ip, r6
     beq .L_skip_k_sig_handle

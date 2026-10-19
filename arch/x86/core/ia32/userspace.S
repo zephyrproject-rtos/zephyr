@@ -22,7 +22,7 @@ GTEXT(z_x86_user_string_nlen_fixup)
 /* Imports */
 GDATA(_k_syscall_table)
 
-#if defined(CONFIG_SIGNAL)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK)
 GTEXT(z_sig_handle)
 #endif
 
@@ -220,7 +220,7 @@ _id_ok:
 	/* Run the handler, which is some entry in _k_syscall_table */
 	call	*%ebx
 
-#if defined(CONFIG_SIGNAL)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK)
 	cmp	$K_SYSCALL_K_SIG_ACTION, %esi
 	je	_skip_z_sig_handle
 	cmp	$K_SYSCALL_K_SIG_CURRENT, %esi

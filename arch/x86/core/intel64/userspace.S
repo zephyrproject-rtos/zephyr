@@ -11,7 +11,7 @@
 #include <zephyr/kernel/mm.h>
 
 /* Imports */
-#if defined(CONFIG_SIGNAL)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK)
 GTEXT(z_sig_handle)
 #endif
 
@@ -75,7 +75,7 @@ z_x86_trampoline_to_user:
 z_x86_syscall_entry_stub:
 	swapgs
 
-#if defined(CONFIG_SIGNAL)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK)
 	movq	%rax, %gs:__x86_tss64_t_syscall_id_OFFSET
 #endif
 
@@ -161,7 +161,7 @@ _id_ok:
 	/* Run the marshal function, which is some entry in _k_syscall_table */
 	call	*%r10
 
-#if defined(CONFIG_SIGNAL)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK)
 	movq	%gs:__x86_tss64_t_syscall_id_OFFSET, %rdi
 
 	cmp	$K_SYSCALL_K_SIG_ACTION, %rdi

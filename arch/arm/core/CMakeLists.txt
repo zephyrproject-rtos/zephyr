@@ -56,7 +56,7 @@ zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)
 zephyr_linker_sources(ROM_START SORT_KEY 0x1vectors cortex_m/vector_table_pad.ld)
 endif()
 
-if(CONFIG_SIGNAL AND CONFIG_USERSPACE)
+if(CONFIG_SYSCALL_RETURN_HOOK AND CONFIG_USERSPACE)
   zephyr_library_sources(signal.c)
 endif()
 

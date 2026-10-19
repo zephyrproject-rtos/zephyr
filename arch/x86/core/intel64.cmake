@@ -21,6 +21,6 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE	intel64/userspace.S)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE	intel64/tls.c)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP	intel64/coredump.c)
 
-if(CONFIG_SIGNAL AND CONFIG_USERSPACE)
+if(CONFIG_SYSCALL_RETURN_HOOK AND CONFIG_USERSPACE)
   zephyr_library_sources(intel64/signal.c)
 endif()

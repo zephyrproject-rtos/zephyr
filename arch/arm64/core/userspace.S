@@ -14,7 +14,7 @@
 
 _ASM_FILE_PROLOGUE
 
-#if defined(CONFIG_SIGNAL)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK)
 GTEXT(z_sig_handle)
 #endif
 
@@ -141,7 +141,7 @@ valid_syscall_id:
 	/* Save the return value into the ESF */
 	str	x0, [sp, ___esf_t_x0_x1_OFFSET]
 
-#ifdef CONFIG_SIGNAL
+#ifdef CONFIG_SYSCALL_RETURN_HOOK
 	ldr	x0, =K_SYSCALL_K_SIG_ACTION
 	cmp	x0, x8
 	beq skip_k_sig_handle

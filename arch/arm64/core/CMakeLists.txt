@@ -54,7 +54,7 @@ if((CONFIG_MP_MAX_NUM_CPUS GREATER 1) OR (CONFIG_SMP))
   zephyr_library_sources(smp.c)
 endif()
 
-if(CONFIG_SIGNAL AND CONFIG_USERSPACE)
+if(CONFIG_SYSCALL_RETURN_HOOK AND CONFIG_USERSPACE)
   zephyr_library_sources(signal.c)
 endif()
 

@@ -27,7 +27,7 @@
 
 #include <kernel_offsets.h>
 
-#if defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK) && defined(CONFIG_USERSPACE)
 GEN_ABSOLUTE_SYM(__thread_sig_user_s_OFFSET,
 		 offsetof(struct k_thread, base.sig.user.s));
 GEN_ABSOLUTE_SYM(__thread_sig_user_a0_OFFSET,

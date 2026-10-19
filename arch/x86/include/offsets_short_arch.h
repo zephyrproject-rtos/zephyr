@@ -19,7 +19,7 @@
 #define _thread_offset_to_psp \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_psp_OFFSET)
 
-#ifdef CONFIG_SIGNAL
+#ifdef CONFIG_SYSCALL_RETURN_HOOK
 #define _thread_offset_to_sig_eax \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_sig_eax_OFFSET)
 #endif

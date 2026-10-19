@@ -33,7 +33,7 @@
 
 GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
 
-#if defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK) && defined(CONFIG_USERSPACE)
 GEN_ABSOLUTE_SYM(__thread_sig_user_x_OFFSET,
 		 offsetof(struct k_thread, base.sig.user.x));
 GEN_ABSOLUTE_SYM(__thread_sig_user_x0_OFFSET,

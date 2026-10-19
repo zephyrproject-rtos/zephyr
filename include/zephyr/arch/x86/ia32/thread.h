@@ -218,7 +218,7 @@ struct _thread_arch {
 	 */
 	char *psp;
 
-#if defined(CONFIG_SIGNAL)
+#if defined(CONFIG_SYSCALL_RETURN_HOOK)
 	/* Last syscall return value, saved/restored across signal delivery. */
 	unsigned long sig_eax;
 #endif
