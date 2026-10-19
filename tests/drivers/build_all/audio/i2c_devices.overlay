@@ -111,6 +111,13 @@
 				status = "okay";
 			};
 
+			test_i2c_nau8540: nau8540@b {
+				compatible = "nuvoton,nau8540";
+				reg = <0xb>;
+				csb-gpios = <&test_gpio 0 0>;
+				status = "okay";
+			};
+
 			test_i2c_tas2560: tas2560@4c {
 				compatible = "ti,tas2560";
 				reg = <0x4c>;
