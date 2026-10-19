@@ -11,8 +11,10 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 131072
+supported:
+  - net
+  - netif:eth
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: qemu
