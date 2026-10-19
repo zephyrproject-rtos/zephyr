@@ -1669,6 +1669,12 @@
 		status = "disabled";
 	};
 
+	/* On-die temperature sensor, measured on LPADC channel 9. */
+	temp0: temp0 {
+		compatible = "nxp,lpadc-temp40";
+		status = "disabled";
+	};
+
 	dac0: hsp_dac: dac@42060000 {
 		compatible = "nxp,lpdac";
 		reg = <0x42060000 0x1000>;
