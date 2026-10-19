@@ -99,6 +99,11 @@ uart2: &scb2 {
 	};
 };
 
+/* SysTick's low-power companion: keeps time while the CM4 is in DeepSleep. */
+&mcwdt0 {
+	status = "okay";
+};
+
 /* System clock configuration */
 &fll0 {
 	clock-frequency = <100000000>;

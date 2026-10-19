@@ -16,4 +16,5 @@ supported:
   - uart
   - i2c
   - watchdog
+  - pm
 vendor: infineon
