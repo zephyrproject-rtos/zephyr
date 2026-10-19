@@ -465,7 +465,12 @@ static void mcux_lptmr_isr(const struct device *dev)
 
 	k_spin_unlock(&data->lock, key);
 #else
-	if (data->top_callback) {
+	/*
+	 * The flag clear crosses into the LPTMR clock domain. A fast core can
+	 * leave the ISR before it lands and take the interrupt again with no
+	 * flag set; that entry is not a turnaround.
+	 */
+	if ((flags != 0U) && (data->top_callback != NULL)) {
 		data->top_callback(dev, data->top_user_data);
 	}
 #endif
