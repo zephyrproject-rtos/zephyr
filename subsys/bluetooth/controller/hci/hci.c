@@ -879,8 +879,12 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[27] |= BIT(0) | BIT(1);
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
-	/* LE Encrypt, LE Rand */
-	rp->commands[27] |= BIT(6) | BIT(7);
+#if defined(CONFIG_BT_CTLR_CRYPTO)
+	/* LE Encrypt */
+	rp->commands[27] |= BIT(6);
+#endif /* CONFIG_BT_CTLR_CRYPTO */
+	/* LE Rand */
+	rp->commands[27] |= BIT(7);
 	/* LE Read Supported States */
 	rp->commands[28] |= BIT(3);
 
