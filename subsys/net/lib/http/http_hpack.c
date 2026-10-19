@@ -641,3 +641,14 @@ int http_hpack_encode_header(uint8_t *buf, size_t buflen,
 
 	return len;
 }
+
+int http_hpack_encode_field(uint8_t *buf, size_t buflen, struct http_hpack_header_buf *header,
+			    const char *name, const char *value)
+{
+	header->name = name;
+	header->name_len = strlen(name);
+	header->value = value;
+	header->value_len = strlen(value);
+
+	return http_hpack_encode_header(buf, buflen, header);
+}

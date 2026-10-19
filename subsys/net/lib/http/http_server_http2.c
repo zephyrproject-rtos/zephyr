@@ -112,12 +112,7 @@ static int add_header_field(struct http_client_ctx *client, uint8_t **buf,
 {
 	int ret;
 
-	client->header_field.name = name;
-	client->header_field.name_len = strlen(name);
-	client->header_field.value = value;
-	client->header_field.value_len = strlen(value);
-
-	ret = http_hpack_encode_header(*buf, *buflen, &client->header_field);
+	ret = http_hpack_encode_field(*buf, *buflen, &client->header_field, name, value);
 	if (ret < 0) {
 		LOG_DBG("Failed to encode header, err %d", ret);
 		return ret;
