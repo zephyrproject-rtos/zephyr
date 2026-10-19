@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <hal/nrf_ecb.h>
@@ -64,6 +65,15 @@ struct ecb_param {
 
 static void do_ecb(struct ecb_param *ep)
 {
+	/* Another thread must not run do_ecb() in the middle of this one: calls that
+	 * preempt each other, as from ISRs, only work when they nest.
+	 */
+	bool is_thread = !k_is_in_isr();
+
+	if (is_thread) {
+		k_sched_lock();
+	}
+
 	do {
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 
@@ -109,6 +119,10 @@ static void do_ecb(struct ecb_param *ep)
 	} while ((NRF_ECB->EVENTS_ERRORECB != 0) || (NRF_ECB->ECBDATAPTR == 0));
 
 	NRF_ECB->ECBDATAPTR = 0;
+
+	if (is_thread) {
+		k_sched_unlock();
+	}
 }
 
 void ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,
