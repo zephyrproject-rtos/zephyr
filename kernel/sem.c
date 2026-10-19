@@ -22,6 +22,7 @@
 #include <zephyr/toolchain.h>
 #include <wait_q.h>
 #include <ksem.h>
+#include <zephyr/sys/sem.h>
 #include <zephyr/sys/dlist.h>
 #include <ksched.h>
 #include <scheduler.h>
@@ -156,6 +157,13 @@ int z_sem_give_checked(struct k_sem *sem)
 {
 	return sem_give(sem, true);
 }
+
+#ifndef CONFIG_USERSPACE
+int sys_sem_give(struct sys_sem *sem)
+{
+	return (sem_give(&sem->kernel_sem, true) < 0) ? -EAGAIN : 0;
+}
+#endif /* !CONFIG_USERSPACE */
 
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_sem_give(struct k_sem *sem)

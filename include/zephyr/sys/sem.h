@@ -126,7 +126,16 @@ int sys_sem_give(struct sys_sem *sem);
  * @retval -ETIMEDOUT Waiting period timed out.
  * @retval -EACCES Caller does not have enough access.
  */
+#if defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
 int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout);
+#else
+static ALWAYS_INLINE int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
+{
+	int ret = k_sem_take(&sem->kernel_sem, timeout);
+
+	return ((ret == -EAGAIN) || (ret == -EBUSY)) ? -ETIMEDOUT : ret;
+}
+#endif
 
 /**
  * @brief Get sys_sem's value
@@ -137,7 +146,14 @@ int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout);
  *
  * @return Current value of sys_sem.
  */
+#if defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
 unsigned int sys_sem_count_get(struct sys_sem *sem);
+#else
+static inline unsigned int sys_sem_count_get(struct sys_sem *sem)
+{
+	return k_sem_count_get(&sem->kernel_sem);
+}
+#endif
 
 /**
  * @brief Check whether any thread is blocked taking @a sem.
