@@ -5476,18 +5476,12 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 #if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
 int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout)
 {
-	if ((new_rpa_timeout == 0) || (new_rpa_timeout > 3600)) {
-		return -EINVAL;
-	}
+	return bt_id_set_rpa_timeout(new_rpa_timeout);
+}
 
-	if (new_rpa_timeout == bt_dev.rpa_timeout) {
-		return 0;
-	}
-
-	bt_dev.rpa_timeout = new_rpa_timeout;
-	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_CHANGED);
-
-	return 0;
+int bt_le_set_rpa_timeout_and_reschedule(uint16_t new_rpa_timeout)
+{
+	return bt_id_set_rpa_timeout_and_reschedule(new_rpa_timeout);
 }
 #endif
 

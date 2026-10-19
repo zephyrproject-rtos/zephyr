@@ -2902,9 +2902,11 @@ int bt_le_set_chan_map(uint8_t chan_map[5]);
 /**
  * @brief Set the Resolvable Private Address timeout in runtime
  *
- * The new RPA timeout value will be used for the next RPA rotation
- * and all subsequent rotations until another override is scheduled
- * with this API.
+ * The new RPA timeout value will be used for subsequent RPA timeout
+ * scheduling until another override is set with this API. An RPA rotation
+ * work item that is already pending or running is not rescheduled. Use
+ * @ref bt_le_set_rpa_timeout_and_reschedule to explicitly reschedule an
+ * active RPA rotation timer.
  *
  * Initially, @kconfig{CONFIG_BT_RPA_TIMEOUT} is used as the RPA timeout.
  *
@@ -2916,6 +2918,26 @@ int bt_le_set_chan_map(uint8_t chan_map[5]);
  * @retval -EINVAL RPA timeout value is invalid. Valid range is 1s - 3600s.
  */
 int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout);
+
+/**
+ * @brief Set the Resolvable Private Address timeout and reschedule an active timer
+ *
+ * Sets the RPA timeout value and, if the RPA rotation work item is pending or
+ * running, reschedules it to the new timeout from this call. A rotation that
+ * is already running is not interrupted. If the work item is idle, it remains
+ * idle and uses the new timeout when next scheduled. This also works when
+ * called from the RPA rotation callback to schedule its next interval.
+ *
+ * Initially, @kconfig{CONFIG_BT_RPA_TIMEOUT} is used as the RPA timeout.
+ *
+ * @kconfig_dep{CONFIG_BT_RPA_TIMEOUT_DYNAMIC}.
+ *
+ * @param new_rpa_timeout Resolvable Private Address timeout in seconds.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL RPA timeout value is invalid. Valid range is 1s - 3600s.
+ */
+int bt_le_set_rpa_timeout_and_reschedule(uint16_t new_rpa_timeout);
 
 /**
  * @brief Helper for parsing advertising (or EIR or OOB) data.

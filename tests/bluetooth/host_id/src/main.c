@@ -24,6 +24,7 @@
 
 #if defined(CONFIG_BT_PRIVACY)
 #include <common/rpa.h>
+#include <host/hci_core.h>
 #include <host/keys.h>
 #endif
 
@@ -578,6 +579,77 @@ ZTEST(bt_id_public_api, test_oob_rejects_invalid_identity)
 }
 
 #if defined(CONFIG_BT_PRIVACY)
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+static ZTEST(bt_id_public_api, test_rpa_timeout_rescheduling)
+{
+	struct k_work_sync sync;
+	k_ticks_t remaining;
+
+	(void)k_work_cancel_delayable_sync(&bt_dev.rpa_update, &sync);
+	zassert_false(k_work_delayable_is_pending(&bt_dev.rpa_update),
+		      "RPA timer should start idle");
+
+	zassert_equal(bt_work_schedule(&bt_dev.rpa_update, K_SECONDS(3600)), 1,
+		      "Failed to schedule the RPA timer");
+	zassert_ok(bt_le_set_rpa_timeout(30), "Failed to update the RPA timeout");
+	remaining = k_work_delayable_remaining_get(&bt_dev.rpa_update);
+	zassert_true(remaining > K_SECONDS(3500).ticks,
+		     "The existing API unexpectedly rescheduled the RPA timer");
+
+	zassert_ok(bt_le_set_rpa_timeout_and_reschedule(30),
+		   "Failed to update and reschedule the RPA timeout");
+	remaining = k_work_delayable_remaining_get(&bt_dev.rpa_update);
+	zassert_true((remaining > K_SECONDS(25).ticks) && (remaining < K_SECONDS(31).ticks),
+		     "The active RPA timer was not rescheduled to the new timeout");
+
+	/* An unchanged timeout still restarts an active timer with this API. */
+	zassert_ok(bt_le_set_rpa_timeout_and_reschedule(30),
+		   "Failed to reschedule the unchanged RPA timeout");
+	remaining = k_work_delayable_remaining_get(&bt_dev.rpa_update);
+	zassert_true((remaining > K_SECONDS(25).ticks) && (remaining < K_SECONDS(31).ticks),
+		     "The unchanged timeout did not restart the active timer");
+
+	(void)k_work_cancel_delayable_sync(&bt_dev.rpa_update, &sync);
+	zassert_false(k_work_delayable_is_pending(&bt_dev.rpa_update),
+		      "RPA timer should be idle after cancellation");
+	zassert_ok(bt_le_set_rpa_timeout_and_reschedule(30),
+		   "Failed to update the timeout while the timer was idle");
+	zassert_false(k_work_delayable_is_pending(&bt_dev.rpa_update),
+		      "Updating an idle timer should not schedule it");
+	{
+		int scheduled;
+		int queued;
+		int ret;
+		int rescheduled;
+		k_ticks_t remaining;
+
+		/* Keep the Bluetooth workqueue from running the queued RPA work. */
+		k_sched_lock();
+		scheduled = bt_work_reschedule(&bt_dev.rpa_update, K_NO_WAIT);
+		queued = k_work_delayable_busy_get(&bt_dev.rpa_update);
+		ret = bt_le_set_rpa_timeout_and_reschedule(30);
+		rescheduled = k_work_delayable_busy_get(&bt_dev.rpa_update);
+		remaining = k_work_delayable_remaining_get(&bt_dev.rpa_update);
+		k_sched_unlock();
+
+		(void)k_work_cancel_delayable_sync(&bt_dev.rpa_update, &sync);
+
+		zassert_equal(scheduled, 1, "Failed to queue the RPA work");
+		zassert_true((queued & K_WORK_QUEUED) != 0,
+			     "RPA work should be queued while the workqueue is blocked");
+		zassert_ok(ret, "Failed to reschedule queued RPA work");
+		zassert_true((rescheduled & K_WORK_DELAYED) != 0,
+			     "Queued RPA work was not rescheduled as delayed work");
+		zassert_false((rescheduled & K_WORK_QUEUED) != 0,
+			      "Queued RPA work was not removed before rescheduling");
+		zassert_true((remaining > K_SECONDS(25).ticks) && (remaining < K_SECONDS(31).ticks),
+			     "The queued RPA work did not get the new timeout");
+	}
+	zassert_ok(bt_le_set_rpa_timeout(CONFIG_BT_RPA_TIMEOUT),
+		   "Failed to restore the configured RPA timeout");
+}
+#endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+
 static bool is_zero_irk(const uint8_t *irk)
 {
 	for (size_t i = 0U; i < BT_IRK_SIZE; i++) {

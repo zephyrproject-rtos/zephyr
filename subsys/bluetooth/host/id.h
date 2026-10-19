@@ -65,6 +65,11 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv, uint32_t options);
 
 int bt_id_set_private_addr(uint8_t id);
 
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+int bt_id_set_rpa_timeout(uint16_t new_rpa_timeout);
+int bt_id_set_rpa_timeout_and_reschedule(uint16_t new_rpa_timeout);
+#endif
+
 void bt_id_pending_keys_update(void);
 
 void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag);

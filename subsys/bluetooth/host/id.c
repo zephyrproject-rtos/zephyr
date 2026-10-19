@@ -349,6 +349,43 @@ static void le_rpa_timeout_submit(void)
 	(void)bt_work_schedule(&bt_dev.rpa_update, K_SECONDS(bt_dev.rpa_timeout));
 }
 
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+static int bt_id_rpa_timeout_set(uint16_t new_rpa_timeout, bool reschedule)
+{
+	if ((new_rpa_timeout == 0) || (new_rpa_timeout > 3600)) {
+		return -EINVAL;
+	}
+
+	if (new_rpa_timeout != bt_dev.rpa_timeout) {
+		bt_dev.rpa_timeout = new_rpa_timeout;
+		atomic_set_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_CHANGED);
+	}
+
+	if (reschedule) {
+		int busy = k_work_delayable_busy_get(&bt_dev.rpa_update);
+
+		if (busy != 0) {
+			if ((busy & K_WORK_QUEUED) != 0) {
+				(void)k_work_cancel_delayable(&bt_dev.rpa_update);
+			}
+			(void)bt_work_reschedule(&bt_dev.rpa_update, K_SECONDS(new_rpa_timeout));
+		}
+	}
+
+	return 0;
+}
+
+int bt_id_set_rpa_timeout(uint16_t new_rpa_timeout)
+{
+	return bt_id_rpa_timeout_set(new_rpa_timeout, false);
+}
+
+int bt_id_set_rpa_timeout_and_reschedule(uint16_t new_rpa_timeout)
+{
+	return bt_id_rpa_timeout_set(new_rpa_timeout, true);
+}
+#endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+
 /* this function sets new RPA only if current one is no longer valid */
 int bt_id_set_private_addr(uint8_t id)
 {
