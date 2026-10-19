@@ -867,34 +867,37 @@ static void arducam_mega_stream_schedule(struct k_timer *timer)
 	k_work_submit_to_queue(&ac_work_q, &drv_data->buf_work);
 }
 
+static int arducam_mega_stream_stop(const struct device *dev)
+{
+	struct arducam_mega_data *drv_data = dev->data;
+	struct k_work_sync sync;
+
+	drv_data->stream_on = 0;
+
+	k_timer_stop(&drv_data->stream_schedule_timer);
+
+	/* No capture from here on: one under way finishes first */
+	k_work_cancel_sync(&drv_data->buf_work, &sync);
+
+	return 0;
+}
+
 static int arducam_mega_stream_start(const struct device *dev, bool enable,
 				     enum video_buf_type type)
 {
 	struct arducam_mega_data *drv_data = dev->data;
 
-	if (drv_data->stream_on) {
+	if (enable == (drv_data->stream_on != 0)) {
 		return 0;
 	}
 
-	if (enable) {
-		drv_data->stream_on = 1;
-		drv_data->fifo_length = 0;
-		k_timer_start(&drv_data->stream_schedule_timer, K_MSEC(30), K_MSEC(30));
-	} else {
-		drv_data->stream_on = 0;
-		k_timer_stop(&drv_data->stream_schedule_timer);
+	if (!enable) {
+		return arducam_mega_stream_stop(dev);
 	}
 
-	return 0;
-}
-
-static int arducam_mega_stream_stop(const struct device *dev)
-{
-	struct arducam_mega_data *drv_data = dev->data;
-
-	drv_data->stream_on = 0;
-
-	k_timer_stop(&drv_data->stream_schedule_timer);
+	drv_data->stream_on = 1;
+	drv_data->fifo_length = 0;
+	k_timer_start(&drv_data->stream_schedule_timer, K_MSEC(30), K_MSEC(30));
 
 	return 0;
 }
