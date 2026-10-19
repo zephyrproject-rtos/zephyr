@@ -7,3 +7,4 @@ tests:
   net.eth_bridge.stp.direct_events:
     extra_configs:
       - CONFIG_NET_MGMT_EVENT_DIRECT=y
+      - CONFIG_NET_MGMT_EVENT_MONITOR=n
