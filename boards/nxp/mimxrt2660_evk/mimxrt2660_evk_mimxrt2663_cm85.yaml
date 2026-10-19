@@ -20,4 +20,5 @@ supported:
   - i2c
   - spi
   - usbd
+  - usbh
 vendor: nxp

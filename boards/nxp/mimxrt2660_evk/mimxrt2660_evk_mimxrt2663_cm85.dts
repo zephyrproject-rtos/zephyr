@@ -135,7 +135,15 @@
 	pinctrl-names = "default";
 };
 
+/*
+ * usb0 and usbh0 are one controller; the application's USB stack choice
+ * decides which initializes.
+ */
 &usb0 {
+	status = "okay";
+};
+
+&usbh0 {
 	status = "okay";
 };
 
