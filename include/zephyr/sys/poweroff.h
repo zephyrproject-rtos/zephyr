@@ -27,6 +27,15 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Pre System power off hook.
+ *
+ * This function needs to be implemented in platform code. in case
+ * of some dependent core/PMIC/any other chore need to handle in case
+ * of poweroff sequence
+ */
+void z_sys_pre_poweroff_hook(void);
+
 /** @cond INTERNAL_HIDDEN */
 
 /**
