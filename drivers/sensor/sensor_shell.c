@@ -278,7 +278,7 @@ RTIO_IODEV_DEFINE(iodev_sensor_shell_read, &__sensor_iodev_api, &iodev_sensor_sh
 /* Create the RTIO context to service the reading */
 RTIO_DEFINE_WITH_MEMPOOL(sensor_read_rtio, 8, 8, 32, 64, 4);
 
-static int parse_named_int(const char *name, const char *const heystack[], size_t count)
+static int parse_named_int(const char *name, const char *const haystack[], size_t count)
 {
 	char *endptr;
 	int i;
@@ -292,7 +292,7 @@ static int parse_named_int(const char *name, const char *const heystack[], size_
 
 	/* Channel name is not a number, look it up */
 	for (i = 0; i < count; i++) {
-		if (strcmp(name, heystack[i]) == 0) {
+		if (strcmp(name, haystack[i]) == 0) {
 			return i;
 		}
 	}
