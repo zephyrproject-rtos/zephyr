@@ -164,7 +164,8 @@ config BT_BUF_EVT_DISCARDABLE_COUNT
 
 config BT_HOST_CRYPTO
 	bool "Use crypto functionality implemented in the Bluetooth host"
-	default y if !BT_CTLR_CRYPTO
+	default y
+	depends on !BT_CTLR_CRYPTO
 	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_AES
 	select PSA_WANT_ALG_ECB_NO_PADDING
@@ -172,6 +173,8 @@ config BT_HOST_CRYPTO
 	help
 	  The option adds the AES encryption support using PSA Crypto API
 	  library if this is not provided by the controller implementation.
+	  In a combined build with BT_CTLR_CRYPTO enabled, the Controller
+	  provides these functions instead.
 
 config BT_HOST_CRYPTO_PRNG
 	bool "Use PSA crypto API library for random number generation"
