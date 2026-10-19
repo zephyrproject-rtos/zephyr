@@ -1551,12 +1551,22 @@
 		};
 	};
 
-	/* LPTMR (WAKE domain), IRQ 222/223 */
+	/*
+	 * LPTMR (WAKE domain), IRQ 222/223. clk-source 0 runs at 32.768 kHz on
+	 * all three instances: the WAKE ones from their lptmrN_fclk root set to
+	 * ULP32K below, the VBAT one from the VBAT domain directly.
+	 * clock-frequency has to match.
+	 */
 	lptmr1: wake_lptmr_0: timer@46130000 {
 		compatible = "nxp,lptmr";
 		reg = <0x46130000 0x1000>;
 		interrupts = <222 0>;
-		clock-frequency = <DT_FREQ_M(80)>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPTIMER0,
+					   IMX_CCM_ROOT_WAKE_LPTMR0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPTMR0_FCLK,
+						IMX_CCM_MUX_LPTMR0_ULP32K, 1, 1)>;
+		clock-frequency = <32768>;
 		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
@@ -1567,7 +1577,12 @@
 		compatible = "nxp,lptmr";
 		reg = <0x46140000 0x1000>;
 		interrupts = <223 0>;
-		clock-frequency = <DT_FREQ_M(80)>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPTIMER1,
+					   IMX_CCM_ROOT_WAKE_LPTMR1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPTMR1_FCLK,
+						IMX_CCM_MUX_LPTMR1_ULP32K, 1, 1)>;
+		clock-frequency = <32768>;
 		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
@@ -1578,7 +1593,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x46330000 0x1000>;
 		interrupts = <250 0>;
-		clock-frequency = <DT_FREQ_M(80)>;
+		clock-frequency = <32768>;
 		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
