@@ -33,9 +33,28 @@ static int get_idx(const struct shell *sh, char *index_str)
 }
 
 /* The shell parses -h and --help itself only without CONFIG_SHELL_GETOPT */
-static inline bool is_help_opt(const char *arg)
+static bool is_help_opt(const char *arg)
 {
 	return strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0;
+}
+
+/* The commands take -h in place of their arguments, so the shell checks only
+ * the upper bound of the argument count and this checks the lower one.
+ */
+static int check_help(const struct shell *sh, size_t argc, char *argv[], size_t min_argc)
+{
+	if (argc == 2 && is_help_opt(argv[1])) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	if (argc < min_argc) {
+		shell_error(sh, "%s: wrong parameter count", argv[0]);
+		shell_help(sh);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int cmd_bridge_addif(const struct shell *sh, size_t argc, char *argv[])
@@ -46,6 +65,11 @@ static int cmd_bridge_addif(const struct shell *sh, size_t argc, char *argv[])
 	int ret = 0, br_idx, if_idx;
 	struct net_if *iface;
 	struct net_if *br;
+
+	ret = check_help(sh, argc, argv, 3);
+	if (ret != 0) {
+		return ret;
+	}
 
 	br_idx = get_idx(sh, argv[1]);
 	if (br_idx < 0) {
@@ -103,6 +127,11 @@ static int cmd_bridge_delif(const struct shell *sh, size_t argc, char *argv[])
 	int ret = 0, br_idx, if_idx;
 	struct net_if *iface;
 	struct net_if *br;
+
+	ret = check_help(sh, argc, argv, 3);
+	if (ret != 0) {
+		return ret;
+	}
 
 	br_idx = get_idx(sh, argv[1]);
 	if (br_idx < 0) {
@@ -178,6 +207,12 @@ static int cmd_bridge_show(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *br = NULL;
 	int br_idx;
+	int ret;
+
+	ret = check_help(sh, argc, argv, 1);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (argc == 2) {
 		br_idx = get_idx(sh, argv[1]);
@@ -211,6 +246,11 @@ static int cmd_bridge_fdb_add(const struct shell *sh, size_t argc, char *argv[])
 	struct net_if *iface;
 	int iface_idx;
 	int ret;
+
+	ret = check_help(sh, argc, argv, 3);
+	if (ret != 0) {
+		return ret;
+	}
 
 	/* Parse MAC address */
 	ret = net_bytes_from_str(mac.addr, sizeof(mac.addr), argv[1]);
@@ -251,6 +291,11 @@ static int cmd_bridge_fdb_del(const struct shell *sh, size_t argc, char *argv[])
 	struct net_if *iface;
 	int iface_idx;
 	int ret;
+
+	ret = check_help(sh, argc, argv, 3);
+	if (ret != 0) {
+		return ret;
+	}
 
 	/* Parse MAC address */
 	ret = net_bytes_from_str(mac.addr, sizeof(mac.addr), argv[1]);
@@ -301,6 +346,19 @@ static void cmd_bridge_fdb_handler(struct eth_bridge_fdb_entry *entry, void *use
 static int cmd_bridge_fdb_show(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+	int ret;
+
+	ret = check_help(sh, argc, argv, 1);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (argc > 1) {
+		shell_error(sh, "%s: wrong parameter count", argv[0]);
+		shell_help(sh);
+		return -EINVAL;
+	}
+
 	shell_print(sh, "FDB Table:");
 	shell_print(sh, "MAC Address        Interface  Flags");
 	shell_print(sh, "-------------------------------------------");
@@ -311,6 +369,18 @@ static int cmd_bridge_fdb_show(const struct shell *sh, size_t argc, char *argv[]
 	shell_warn(sh, "Set CONFIG_NET_ETHERNET_BRIDGE_FDB to enable Ethernet bridge FDB support.");
 	return -ENOTSUP;
 #endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB */
+}
+
+/* Without a handler of its own, "fdb -h" would run the bridge command */
+static int cmd_bridge_fdb(const struct shell *sh, size_t argc, char *argv[])
+{
+	shell_help(sh);
+
+	if (argc == 2 && !is_help_opt(argv[1])) {
+		return -EINVAL;
+	}
+
+	return SHELL_CMD_HELP_PRINTED;
 }
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_STP)
@@ -860,13 +930,13 @@ static int cmd_bridge_stp(const struct shell *sh, size_t argc, char *argv[])
 SHELL_STATIC_SUBCMD_SET_CREATE(bridge_fdb_commands,
 	SHELL_CMD_ARG(add, NULL,
 		SHELL_HELP("Add fdb table entry", "<mac address> <interface index>"),
-		cmd_bridge_fdb_add, 3, 0),
+		cmd_bridge_fdb_add, 2, 1),
 	SHELL_CMD_ARG(del, NULL,
 		SHELL_HELP("Delete fdb table entry", "<mac address> <interface index>"),
-		cmd_bridge_fdb_del, 3, 0),
+		cmd_bridge_fdb_del, 2, 1),
 	SHELL_CMD_ARG(show, NULL,
 		SHELL_HELP("Show fdb table", ""),
-		cmd_bridge_fdb_show, 1, 0),
+		cmd_bridge_fdb_show, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 
@@ -874,17 +944,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bridge_commands,
 	SHELL_CMD_ARG(addif, NULL,
 		SHELL_HELP("Add a network interface to a bridge.",
 			"<bridge_index> <one or more interface index>"),
-		cmd_bridge_addif, 3, 5),
+		cmd_bridge_addif, 2, 6),
 	SHELL_CMD_ARG(delif, NULL,
 		SHELL_HELP("Delete a network interface from a bridge.",
 			"<bridge_index> <one or more interface index>"),
-		cmd_bridge_delif, 3, 5),
+		cmd_bridge_delif, 2, 6),
 	SHELL_CMD_ARG(show, NULL,
 		SHELL_HELP("Show bridge information.", "<bridge_index>"),
 		cmd_bridge_show, 1, 1),
 	SHELL_CMD_ARG(fdb, &bridge_fdb_commands,
 		SHELL_HELP("Manage FDB table. Check usage with -h.", NULL),
-		NULL, 1, 0),
+		cmd_bridge_fdb, 1, 1),
 	SHELL_CMD_ARG(stp, NULL,
 		SHELL_HELP("Show or set the spanning tree protocol of a bridge or a port.",
 			   "<bridge_index> [port <iface_index>] [options], -h for the options"),
