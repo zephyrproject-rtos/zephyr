@@ -1871,8 +1871,13 @@
 	enet: comm_enet: ethernet@4a0d0000 {
 		compatible = "nxp,enet";
 		reg = <0x4a0d0000 0x10000>;
+		/*
+		 * The rate the MAC derives MDC and its timing from is the COMM bus
+		 * clock. The TRX root depends on the PHY interface, so the board
+		 * programs it with a "source" cell.
+		 */
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH1,
-					   IMX_CCM_ROOT_COMM_ETH1_TRXCLK)>;
+					   IMX_CCM_ROOT_COMM_COMM_CLK)>;
 		status = "disabled";
 
 		enet_mac: ethernet {
