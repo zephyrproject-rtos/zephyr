@@ -123,7 +123,7 @@ static void npcx_kbd_init_ksi_wui_callback(const struct device *dev,
 					   miwu_dev_callback_handler_t handler)
 {
 	/* KSI signal which has no wake-up input source */
-	if (wui->table == NPCX_MIWU_TABLE_NONE) {
+	if (npcx_miwu_wui_is_none(wui)) {
 		return;
 	}
 
