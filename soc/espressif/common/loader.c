@@ -262,11 +262,10 @@ void map_rom_segments(int core, struct rom_segments *map)
 	 * so the new app only has the mappings it creates.
 	 */
 	if (core == 0) {
-#if defined(CONFIG_SOC_SERIES_ESP32P4)
-		/*
-		 * P4 has separate MMU for flash (SPI_MEM_C) and PSRAM (SPI_MEM_S).
-		 * Only unmap flash MMU here. PSRAM MMU is not initialized yet
-		 * and accessing its registers without full PSRAM init hangs the CPU.
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
+		/* Flash (SPI_MEM_C) and PSRAM (SPI_MEM_S) have separate MMUs. Only
+		 * unmap the flash MMU: the PSRAM MMU is not initialized yet, and on
+		 * ESP32-P4 accessing it before PSRAM init hangs the CPU.
 		 */
 		mmu_ll_unmap_all(MMU_LL_FLASH_MMU_ID);
 #else
@@ -336,7 +335,7 @@ void map_rom_segments(int core, struct rom_segments *map)
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2) &&                    \
-	!defined(CONFIG_SOC_SERIES_ESP32P4)
+	!defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32S31)
 	/* Configure the Cache MMU size for instruction and rodata in flash. */
 	uint32_t cache_mmu_irom_size =
 		((map->irom_size + CONFIG_MMU_PAGE_SIZE - 1) / CONFIG_MMU_PAGE_SIZE) *
