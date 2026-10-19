@@ -1023,7 +1023,7 @@ static void arducam_mega_buffer_work(struct k_work *work)
 
 	vbuf = k_fifo_get(&drv_data->fifo_in, K_NO_WAIT);
 	if (vbuf == NULL) {
-		k_work_submit_to_queue(&ac_work_q, &drv_data->buf_work);
+		/* arducam_mega_enqueue() or the stream timer submits the work again */
 		return;
 	}
 
@@ -1051,6 +1051,11 @@ static int arducam_mega_enqueue(const struct device *dev, struct video_buffer *v
 	struct arducam_mega_data *data = dev->data;
 
 	k_fifo_put(&data->fifo_in, vbuf);
+
+	/* A frame being read goes on at once rather than at the next timer tick */
+	if (data->stream_on) {
+		k_work_submit_to_queue(&ac_work_q, &data->buf_work);
+	}
 
 	LOG_DBG("enqueue buffer %p", vbuf->buffer);
 
