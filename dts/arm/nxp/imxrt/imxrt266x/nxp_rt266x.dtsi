@@ -1819,6 +1819,20 @@
 		status = "disabled";
 	};
 
+	/* usb0 in host role. */
+	usbh0: comm_usbc_host: usbh@4a0a0000 {
+		compatible = "nxp,uhc-ehci";
+		reg = <0x4a0a0000 0x200>;
+		interrupts = <304 0>;
+		interrupt-names = "usb_otg";
+		clock-names = "gate", "phyclk";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_USB0,
+					   IMX_CCM_ROOT_COMM_USB0_PHYCLK)>,
+			 <&usbphy0 0>;
+		clock-rates = <0 DT_FREQ_M(480)>;
+		status = "disabled";
+	};
+
 	/*
 	 * nxp,usbphy enables the USB drivers' PHY init and trim properties;
 	 * nxp,imx-usbphy-pll provides the PLL clock.
