@@ -83,6 +83,12 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Networking
+
+  * Multiprotocol HTTP client (:kconfig:option:`CONFIG_HTTP_CLIENT_MULTIPROTOCOL`),
+    a new client API meant to cover HTTP/1.1, HTTP/2 and HTTP/3. HTTP/2 over TCP
+    and TLS is supported in this release.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
