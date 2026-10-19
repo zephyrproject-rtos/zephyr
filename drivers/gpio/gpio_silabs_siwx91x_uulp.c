@@ -7,6 +7,10 @@
 #define DT_DRV_COMPAT silabs_siwx91x_gpio_uulp
 
 #include "sl_si91x_driver_gpio.h"
+
+#include <zephyr/drivers/wuc.h>
+#include <zephyr/pm/device.h>
+
 #include "sl_status.h"
 #include "rsi_retention.h"
 
@@ -28,6 +32,8 @@
 struct gpio_siwx91x_uulp_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
+	struct wuc_dt_spec wuc;
+	bool wakeup_source;
 };
 
 struct gpio_siwx91x_uulp_data {
@@ -37,28 +43,96 @@ struct gpio_siwx91x_uulp_data {
 	sys_slist_t callbacks;
 };
 
-/* Functions */
-static void gpio_siwx91x_uulp_pin_set_wakeup_config(gpio_pin_t pin, enum gpio_int_trig trig)
+/*
+ * The UULP GPIO block remains available in the always-on domain, so PM state
+ * changes require no driver-specific hardware action.
+ *
+ * This callback is still required by the device PM object. The PM object
+ * records the devicetree "wakeup-source" capability and allows applications
+ * to enable GPIO wakeup with pm_device_wakeup_enable(). Pin polarity, wakeup
+ * interrupts, and the WUC source are configured separately by
+ * gpio_siwx91x_uulp_interrupt_configure().
+ */
+static int gpio_siwx91x_uulp_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(action);
+
+	return 0;
+}
+
+static bool gpio_siwx91x_uulp_is_wakeup_source(const struct device *port)
+{
+	const struct gpio_siwx91x_uulp_config *config = port->config;
+
+	return config->wakeup_source && (config->wuc.dev != NULL);
+}
+
+/* Functions */
+static int gpio_siwx91x_uulp_pin_set_wakeup_config(const struct device *port, gpio_pin_t pin,
+						   enum gpio_int_trig trig)
+{
+	const struct gpio_siwx91x_uulp_config *config = port->config;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_WUC)) {
+		ARG_UNUSED(port);
+		ARG_UNUSED(pin);
+		ARG_UNUSED(trig);
+		return -ENOTSUP;
+	}
+	if (!pm_device_wakeup_is_enabled(port)) {
+		return -EPERM;
+	}
+
+	if (!gpio_siwx91x_uulp_is_wakeup_source(port)) {
+		return -ENOTSUP;
+	}
+
 	if (trig == GPIO_INT_TRIG_WAKE_LOW) {
 		sl_si91x_gpio_select_uulp_npss_polarity(pin, GPIO_POLARITY_0);
 	} else {
 		sl_si91x_gpio_select_uulp_npss_polarity(pin, GPIO_POLARITY_1);
 	}
 	sl_si91x_gpio_set_uulp_npss_wakeup_interrupt(pin);
-	RSI_PS_SetWkpSources(GPIO_BASED_WAKEUP);
+	ret = wuc_enable_wakeup_source_dt(&config->wuc);
+	if (ret != 0) {
+		sl_si91x_gpio_clear_uulp_npss_wakeup_interrupt(pin);
+		return ret;
+	}
+	return 0;
 }
 
-static void gpio_siwx91x_uulp_pin_clear_wakeup_config(gpio_pin_t pin, enum gpio_int_trig trig)
+static int gpio_siwx91x_uulp_pin_clear_wakeup_config(const struct device *port, gpio_pin_t pin,
+						     enum gpio_int_trig trig)
 {
-	sl_si91x_gpio_clear_uulp_npss_wakeup_interrupt(pin);
-	/* TODO: Define MCU_FSM properly in dts
-	 * If none of the GPIO pins are configured as wakeup source,
-	 * then GPIO based wakeup can be cleared to avoid false wakeups.
-	 */
-	if ((MCU_FSM->GPIO_WAKEUP_REGISTER & 0xF) == 0) {
-		RSI_PS_ClrWkpSources(GPIO_BASED_WAKEUP);
+	const struct gpio_siwx91x_uulp_config *config = port->config;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_WUC)) {
+		ARG_UNUSED(port);
+		ARG_UNUSED(pin);
+		ARG_UNUSED(trig);
+		return -ENOTSUP;
 	}
+
+	if (!pm_device_wakeup_is_enabled(port)) {
+		return -EPERM;
+	}
+
+	if (!gpio_siwx91x_uulp_is_wakeup_source(port)) {
+		return -ENOTSUP;
+	}
+
+	sl_si91x_gpio_clear_uulp_npss_wakeup_interrupt(pin);
+
+	if ((MCU_FSM->GPIO_WAKEUP_REGISTER & 0xF) == 0) {
+		ret = wuc_disable_wakeup_source_dt(&config->wuc);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	return 0;
 }
 
 static int gpio_siwx91x_uulp_pin_configure(const struct device *dev, gpio_pin_t pin,
@@ -155,13 +229,17 @@ static int gpio_siwx91x_uulp_interrupt_configure(const struct device *port, gpio
 						 enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	uint32_t flags = 0;
+	int ret = 0;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		sl_si91x_gpio_configure_uulp_interrupt(flags, pin);
 		sl_si91x_gpio_clear_uulp_npss_interrupt(pin);
 		sl_si91x_gpio_mask_set_uulp_npss_interrupt(pin);
 		if (trig & GPIO_INT_WAKEUP) {
-			gpio_siwx91x_uulp_pin_clear_wakeup_config(pin, trig);
+			ret = gpio_siwx91x_uulp_pin_clear_wakeup_config(port, pin, trig);
+			if (ret != 0) {
+				return ret;
+			}
 		}
 	} else {
 		if (trig & GPIO_INT_TRIG_LOW) {
@@ -187,7 +265,10 @@ static int gpio_siwx91x_uulp_interrupt_configure(const struct device *port, gpio
 		sl_si91x_gpio_configure_uulp_interrupt(flags, pin);
 
 		if (trig & GPIO_INT_WAKEUP) {
-			gpio_siwx91x_uulp_pin_set_wakeup_config(pin, trig);
+			ret = gpio_siwx91x_uulp_pin_set_wakeup_config(port, pin, trig);
+			if (ret != 0) {
+				return ret;
+			}
 		}
 	}
 	return 0;
@@ -221,6 +302,11 @@ static DEVICE_API(gpio, gpio_siwx91x_uulp_api) = {
 #endif
 };
 
+#define SIWX91X_UULP_GPIO_WUC_INIT(inst) \
+	IF_ENABLED(CONFIG_WUC,                                                       \
+		   (.wuc = WUC_DT_SPEC_INST_GET_OR(inst, {0}),                      \
+		    .wakeup_source = DT_INST_PROP_OR(inst, wakeup_source, false),))
+
 /*
  * Changing NPSS GPIO 0 mode to 0 (NPSS_GPIO is UULP GPIO) in the init.
  * By default the mode for uulpgpio 0 is 1
@@ -229,23 +315,29 @@ static DEVICE_API(gpio, gpio_siwx91x_uulp_api) = {
  * but never manage to prove that because of lack of documentation about this mode
  * (see rm p.307 section "UULP VBAT GPIO Pin Multiplexing").
  */
-#define GPIO_PORT_INIT(idx)                                                                        \
-	static const struct gpio_siwx91x_uulp_config gpio_siwx91x_port_config##idx = {             \
-		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx)                                     \
-	};                                                                                         \
-	static struct gpio_siwx91x_uulp_data gpio_siwx91x_port_data##idx;                          \
-                                                                                                   \
-	static int gpio_siwx91x_init_uulp_##idx(const struct device *dev)                          \
-	{                                                                                          \
-		sys_write32(0, DT_INST_REG_ADDR_BY_NAME(idx, int) + UULP_REG_INTERRUPT_CONFIG);    \
-		sl_si91x_gpio_set_uulp_npss_pin_mux(0, 0);                                         \
-		IRQ_CONNECT(DT_INST_IRQ(idx, irq), DT_INST_IRQ(idx, priority),                     \
-			    gpio_siwx91x_uulp_isr, DEVICE_DT_GET(DT_DRV_INST(idx)), 0);            \
-		irq_enable(DT_INST_IRQ(idx, irq));                                                 \
-		return 0;                                                                          \
-	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(idx, gpio_siwx91x_init_uulp_##idx, NULL,                             \
-			      &gpio_siwx91x_port_data##idx, &gpio_siwx91x_port_config##idx,        \
-			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_siwx91x_uulp_api);
+#define GPIO_PORT_INIT(idx)                                                                   \
+	static const struct gpio_siwx91x_uulp_config gpio_siwx91x_port_config##idx = {        \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                               \
+		SIWX91X_UULP_GPIO_WUC_INIT(idx)                                               \
+	};                                                                                    \
+	static struct gpio_siwx91x_uulp_data gpio_siwx91x_port_data##idx;                       \
+                                                                                              \
+	static int gpio_siwx91x_init_uulp_##idx(const struct device *dev)                     \
+	{                                                                                     \
+		sys_write32(0,                                                                \
+			    DT_INST_REG_ADDR_BY_NAME(idx, int) + UULP_REG_INTERRUPT_CONFIG); \
+		sl_si91x_gpio_set_uulp_npss_pin_mux(0, 0);                                    \
+		IRQ_CONNECT(DT_INST_IRQ(idx, irq), DT_INST_IRQ(idx, priority),                \
+			    gpio_siwx91x_uulp_isr, DEVICE_DT_GET(DT_DRV_INST(idx)), 0);       \
+		irq_enable(DT_INST_IRQ(idx, irq));                                            \
+		return 0;                                                                     \
+	}                                                                                     \
+                                                                                              \
+	PM_DEVICE_DT_INST_DEFINE(idx, gpio_siwx91x_uulp_pm_action);                           \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(idx, gpio_siwx91x_init_uulp_##idx, PM_DEVICE_DT_INST_GET(idx),  \
+			      &gpio_siwx91x_port_data##idx,                                  \
+			      &gpio_siwx91x_port_config##idx, PRE_KERNEL_1,                  \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_siwx91x_uulp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_INIT)
