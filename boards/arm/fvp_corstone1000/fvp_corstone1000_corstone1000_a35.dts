@@ -1,0 +1,55 @@
+/*
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/armv8-a.dtsi>
+#include "fvp_corstone1000.dtsi"
+
+/ {
+	compatible = "arm,corstone1000-a35-fvp";
+	model = "Arm Corstone-1000 Host Cortex-A35 FVP";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(50)>;
+
+		/* This target runs on CPU0 of the FVP's four-core cluster. */
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-a35";
+			reg = <0>;
+			device_type = "cpu";
+		};
+	};
+
+	refclk: reference-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <50000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		gic: interrupt-controller@1c010000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0x1c010000 0x1000>, /* GICD */
+			      <0x1c02f000 0x2000>; /* GICC */
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+	};
+};
+
+&uartclk {
+	/* The UART input uses the 50 MHz host reference clock. */
+	clock-frequency = <DT_FREQ_M(50)>;
+};
+
+&uart0 {
+	/* UART0 is connected to GIC interrupt 51 (SPI 19). */
+	interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-names = "irq_19";
+};
