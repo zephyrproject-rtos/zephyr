@@ -1760,3 +1760,9 @@ test_i2c_adxl373: adxl373@e4 {
 	reg = <0xe4>;
 	int1-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_rak12035: rak12035@e5 {
+	compatible = "rakwireless,rak12035";
+	reg = <0xe5>;
+	reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+};
