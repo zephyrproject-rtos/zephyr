@@ -28,8 +28,13 @@ class JobHandle:
         pass
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self.release()
+
+    def release(self):
+        """Give the job back; a second call does nothing."""
         if self.release_func:
             self.release_func(*self.args, **self.kwargs)
+            self.release_func = None
 
 
 class JobClient:
@@ -38,6 +43,14 @@ class JobClient:
     def get_job(self):
         """Claim a job."""
         return JobHandle(None)
+
+    def try_get_job(self):
+        """Claim a job without waiting.
+
+        Returns a JobHandle, or None when no job is free right now. This base class has
+        no job accounting, so it never hands out an extra job.
+        """
+        return None
 
     @staticmethod
     def env():
@@ -200,6 +213,19 @@ class GNUMakeJobClient(JobClient):
                     )
                 except BlockingIOError:
                     pass
+
+    def try_get_job(self):
+        """Claim a job without waiting.
+
+        Returns a JobHandle, or None when no job is free right now.
+        """
+        for key, _ in self._selector.select(0):
+            try:
+                byte = os.read(key.fd, 1)
+            except BlockingIOError:
+                continue
+            return JobHandle(functools.partial(os.write, key.data, byte))
+        return None
 
     def env(self):
         """Get the environment variables necessary to share the job server."""
