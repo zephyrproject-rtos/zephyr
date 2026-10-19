@@ -643,6 +643,44 @@ ZTEST(rstp_bridge, test_shell_help)
 	zassert_ok(ret);
 	zexpect_not_null(strstr(out, "--mcheck"), "%s", out);
 	zexpect_is_null(strstr(out, "Invalid index"), "%s", out);
+
+	/* CONFIG_SHELL_GETOPT leaves -h to the command also for the others */
+	out = shell_run(&ret, "net bridge -h");
+	zexpect_equal(ret, SHELL_CMD_HELP_PRINTED, "%d", ret);
+	zexpect_not_null(strstr(out, "addif"), "%s", out);
+
+	out = shell_run(&ret, "net bridge show --help");
+	zexpect_equal(ret, SHELL_CMD_HELP_PRINTED, "%d", ret);
+	zexpect_not_null(strstr(out, "Show bridge information"), "%s", out);
+
+	out = shell_run(&ret, "net bridge fdb -h");
+	zexpect_equal(ret, SHELL_CMD_HELP_PRINTED, "%d", ret);
+	zexpect_not_null(strstr(out, "Add fdb table entry"), "%s", out);
+
+	out = shell_run(&ret, "net bridge fdb");
+	zexpect_equal(ret, SHELL_CMD_HELP_PRINTED, "%d", ret);
+	zexpect_not_null(strstr(out, "Add fdb table entry"), "%s", out);
+
+	shell_run(&ret, "net bridge fdb show");
+	zexpect_ok(ret);
+
+	out = shell_run(&ret, "net bridge addif -h");
+	zexpect_equal(ret, SHELL_CMD_HELP_PRINTED, "%d", ret);
+	zexpect_not_null(strstr(out, "Add a network interface"), "%s", out);
+	zexpect_is_null(strstr(out, "wrong parameter count"), "%s", out);
+
+	out = shell_run(&ret, "net bridge fdb add --help");
+	zexpect_equal(ret, SHELL_CMD_HELP_PRINTED, "%d", ret);
+	zexpect_not_null(strstr(out, "Add fdb table entry"), "%s", out);
+	zexpect_is_null(strstr(out, "wrong parameter count"), "%s", out);
+
+	/* The lower and upper bounds of the argument count still hold */
+	out = shell_run(&ret, "net bridge delif %d", idx(bridges[0]));
+	zexpect_equal(ret, -EINVAL, "%d", ret);
+	zexpect_not_null(strstr(out, "wrong parameter count"), "%s", out);
+
+	shell_run(&ret, "net bridge fdb show extra");
+	zexpect_equal(ret, -EINVAL, "%d", ret);
 }
 
 ZTEST_SUITE(rstp_bridge, NULL, setup, before, after, NULL);
