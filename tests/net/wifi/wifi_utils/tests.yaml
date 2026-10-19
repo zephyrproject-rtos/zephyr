@@ -7,4 +7,33 @@ common:
   integration_platforms:
     - native_sim
 tests:
-  net.wifi.utils: {}
+  net.wifi.utils:
+    extra_configs:
+      - CONFIG_WIFI_MGMT_LOCATION=y
+      - CONFIG_WIFI_MGMT_LOCATION_LCI=y
+      - CONFIG_WIFI_MGMT_LOCATION_CIVIC=y
+  net.wifi.utils.lci_only:
+    extra_configs:
+      - CONFIG_WIFI_MGMT_LOCATION=y
+      - CONFIG_WIFI_MGMT_LOCATION_LCI=y
+      - CONFIG_WIFI_MGMT_LOCATION_CIVIC=n
+  net.wifi.utils.civic_only:
+    extra_configs:
+      - CONFIG_WIFI_MGMT_LOCATION=y
+      - CONFIG_WIFI_MGMT_LOCATION_LCI=n
+      - CONFIG_WIFI_MGMT_LOCATION_CIVIC=y
+  net.wifi.utils.ranging_only:
+    extra_configs:
+      - CONFIG_WIFI_MGMT_RANGING=y
+      - CONFIG_WIFI_MGMT_RANGING_INITIATOR=y
+      - CONFIG_WIFI_MGMT_RANGING_RESPONDER=y
+  net.wifi.utils.ranging_shell:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_NET_L2_WIFI_SHELL=y
+      - CONFIG_WIFI_MGMT_RANGING=y
+      - CONFIG_WIFI_MGMT_RANGING_INITIATOR=y
+      - CONFIG_WIFI_MGMT_RANGING_RESPONDER=y
+      - CONFIG_WIFI_MGMT_LOCATION=y
+      - CONFIG_WIFI_MGMT_LOCATION_LCI=y
+      - CONFIG_WIFI_MGMT_LOCATION_CIVIC=y
