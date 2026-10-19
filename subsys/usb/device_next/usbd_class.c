@@ -282,7 +282,6 @@ int usbd_class_remove_all(struct usbd_context *const uds_ctx,
 		c_nd = CONTAINER_OF(node, struct usbd_class_node, node);
 		atomic_clear_bit(&c_nd->state, USBD_CCTX_REGISTERED);
 		usbd_class_shutdown(c_nd->c_data);
-		c_nd->c_data->uds_ctx = NULL;
 		LOG_DBG("Remove class node %p from configuration %u", c_nd, cfg);
 	}
 
@@ -292,6 +291,25 @@ int usbd_class_remove_all(struct usbd_context *const uds_ctx,
 /*
  * All the functions below are part of public USB device support API.
  */
+
+static bool usbd_class_data_is_registered(const struct usbd_class_data *const c_data)
+{
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
+		if ((c_nd->c_data == c_data) &&
+		    atomic_test_bit(&c_nd->state, USBD_CCTX_REGISTERED)) {
+			return true;
+		}
+	}
+
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
+		if ((c_nd->c_data == c_data) &&
+		    atomic_test_bit(&c_nd->state, USBD_CCTX_REGISTERED)) {
+			return true;
+		}
+	}
+
+	return false;
+}
 
 int usbd_register_class(struct usbd_context *const uds_ctx,
 			const char *name,
@@ -323,7 +341,7 @@ int usbd_register_class(struct usbd_context *const uds_ctx,
 		goto register_class_error;
 	}
 
-	if ((c_data->uds_ctx != NULL) && (c_data->uds_ctx != uds_ctx)) {
+	if ((c_data->uds_ctx != uds_ctx) && usbd_class_data_is_registered(c_data)) {
 		LOG_ERR("Class registered to other context at different speed");
 		ret = -EBUSY;
 		goto register_class_error;
