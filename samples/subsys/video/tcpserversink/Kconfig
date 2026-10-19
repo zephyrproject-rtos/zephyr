@@ -70,7 +70,7 @@ config VIDEO_CTRL_VFLIP
 
 config VIDEO_ENCODED_PIXEL_FORMAT
 	string "Pixel format of the encoded frame"
-	default VIDEO_PIX_FMT_H264
+	default "H264"
 	help
 	  Compression format used by the video encoder if enabled.
 	  If not set defaults to H264 video bitstream with startcodes.
