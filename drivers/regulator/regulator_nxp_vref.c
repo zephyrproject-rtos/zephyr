@@ -166,6 +166,9 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_
 	uint16_t idx;
 	int ret;
 
+	if (min_uv > max_uv) {
+		return -EINVAL;
+	}
 	ret = linear_range_get_win_index(&utrim_range, min_uv, max_uv, &idx);
 	if (ret < 0) {
 		return ret;
