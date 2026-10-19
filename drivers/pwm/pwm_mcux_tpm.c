@@ -176,10 +176,12 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 		TPM_UpdateChnlEdgeLevelSelect(base, channel, kTPM_LowTrue);
 	}
 
+#if !(defined(FSL_FEATURE_TPM_HAS_NO_SC_CPWMS) && FSL_FEATURE_TPM_HAS_NO_SC_CPWMS)
 	if (config->mode == kTPM_CenterAlignedPwm) {
 		pulse_cycles /= 2U;
 		period_cycles /= 2U;
 	}
+#endif
 
 	if (pulse_cycles == period_cycles) {
 		pulse_cycles = period_cycles + 1U;
