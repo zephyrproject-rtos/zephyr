@@ -132,6 +132,27 @@ Ethernet
   ``reset-deassertion-timeout-ms`` with ``reset-deassert-us``, multiplying its value by 1000 as
   it is now in microseconds. (:github:`124061`)
 
+GPIO
+====
+
+* The Silicon Labs SiWx91x UULP GPIO driver now uses the Zephyr WUC API
+  directly to set GPIO as wakeup source. Applications using ``GPIO_INT_WAKEUP``
+  must enable :kconfig:option:`CONFIG_WUC` and add ``wakeup-ctrls`` to the
+  GPIO controller. Configuring the wakeup interrupt enables the WUC source;
+
+  .. code-block:: devicetree
+
+     &uulpgpio {
+             wakeup-ctrls = <&wuc0 SIWX91X_WUC_GPIO>;
+     };
+
+  .. code-block:: c
+
+     gpio_pin_interrupt_configure_dt(
+             &button, GPIO_INT_LEVEL_ACTIVE | GPIO_INT_WAKEUP);
+
+  Without these changes, wakeup interrupt configuration returns ``-ENOTSUP``.
+
 OPAMP
 =====
 
