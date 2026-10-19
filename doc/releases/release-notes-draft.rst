@@ -120,6 +120,11 @@ Libraries / Subsystems
 Other notable changes
 *********************
 
+* Bluetooth
+
+  * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
+    without :kconfig:option:`CONFIG_BT_SMP`.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
