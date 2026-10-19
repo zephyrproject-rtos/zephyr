@@ -114,7 +114,7 @@ static inline bool sem_handle_poll_events(struct k_sem *sem)
 #endif /* CONFIG_POLL */
 }
 
-static int sem_give(struct k_sem *sem, bool checked)
+static ALWAYS_INLINE int sem_give(struct k_sem *sem, bool checked)
 {
 	struct k_spinlock *lock = sem_spinlock_get(sem);
 	k_spinlock_key_t key = k_spin_lock(lock);
