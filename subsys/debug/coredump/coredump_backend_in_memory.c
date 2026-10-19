@@ -44,7 +44,7 @@ static inline void in_memory_invalidate(void)
 {
 	memset(in_memory_coredump, 0, IN_MEMORY_CANARY_SIZE);
 	memset(&in_memory_coredump[IN_MEMORY_END], 0, IN_MEMORY_CANARY_SIZE);
-	*coredump_size = 0;
+	UNALIGNED_PUT(0, coredump_size);
 	cur_ptr = NULL;
 }
 static inline void in_memory_erase(void)
@@ -98,7 +98,7 @@ static void coredump_in_memory_backend_start(void)
 	memcpy(in_memory_coredump, in_memory_canary, IN_MEMORY_CANARY_SIZE);
 	cur_ptr = &in_memory_coredump[IN_MEMORY_START];
 
-	*coredump_size = 0;
+	UNALIGNED_PUT(0, coredump_size);
 
 	while (LOG_PROCESS()) {
 		;
@@ -113,7 +113,7 @@ static void coredump_in_memory_backend_end(void)
 	memcpy(&in_memory_coredump[IN_MEMORY_END],
 	       in_memory_canary, IN_MEMORY_CANARY_SIZE);
 
-	*coredump_size = cur_ptr - &in_memory_coredump[IN_MEMORY_START];
+	UNALIGNED_PUT(cur_ptr - &in_memory_coredump[IN_MEMORY_START], coredump_size);
 
 	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_END_STR);
 }
@@ -149,7 +149,7 @@ static int coredump_in_memory_backend_query(enum coredump_query_id query_id,
 		return in_memory_is_valid();
 	case COREDUMP_QUERY_GET_STORED_DUMP_SIZE:
 		if (in_memory_is_valid() == 1) {
-			return *coredump_size;
+			return UNALIGNED_GET(coredump_size);
 		}
 		break;
 	default:
