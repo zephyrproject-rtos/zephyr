@@ -27,6 +27,14 @@ tests:
       - CONFIG_BT_PRIVACY=y
       - CONFIG_BT_SMP=n
       - CONFIG_BT_HOST_CRYPTO_PRNG=n
+  bluetooth.host_id.privacy.observer:
+    extra_args:
+      - CONFIG_BT_PRIVACY=y
+      - CONFIG_BT_SMP=n
+      - CONFIG_BT_BROADCASTER=n
+      - CONFIG_BT_OBSERVER=y
+      - CONFIG_BT_HOST_CRYPTO_PRNG=n
+      - CONFIG_BT_RPA_TIMEOUT_DYNAMIC=y
   bluetooth.host_id.privacy.rpa_sharing:
     extra_args:
       - CONFIG_BT_PRIVACY=y
