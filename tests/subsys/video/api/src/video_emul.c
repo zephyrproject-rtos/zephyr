@@ -8,10 +8,25 @@
 #include <zephyr/video/video.h>
 #include <zephyr/ztest.h>
 
-const struct device *rx_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_rx));
-const struct device *imager_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_imager));
+static const struct device *rx_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_rx));
+static const struct device *imager_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_imager));
+static struct video_caps rx_caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
+static struct video_caps imager_caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 
-ZTEST(video_common, test_video_device)
+static void *test_video_common_setup(void)
+{
+	int ret;
+
+	ret = video_get_caps(imager_dev, &imager_caps);
+	zassert_ok(ret, "Failed to query imager format caps");
+
+	ret = video_get_caps(rx_dev, &rx_caps);
+	zassert_ok(ret, "Failed to query receiver format caps");
+
+	return NULL;
+}
+
+ZTEST(video_emul, test_video_device)
 {
 	zexpect_true(device_is_ready(rx_dev));
 	zexpect_true(device_is_ready(imager_dev));
@@ -23,48 +38,45 @@ ZTEST(video_common, test_video_device)
 	zexpect_ok(video_stream_stop(rx_dev, VIDEO_BUF_TYPE_OUTPUT));
 }
 
-ZTEST(video_common, test_video_format)
+ZTEST(video_emul, test_video_format)
 {
-	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_format fmt = {0};
 
-	zexpect_ok(video_get_caps(imager_dev, &caps));
-
 	/* Test all the formats listed in the caps, the min and max values */
-	for (size_t i = 0; caps.format_caps[i].pixelformat != 0; i++) {
-		fmt.pixelformat = caps.format_caps[i].pixelformat;
+	for (size_t i = 0; imager_caps.format_caps[i].pixelformat != 0; i++) {
+		fmt.pixelformat = imager_caps.format_caps[i].pixelformat;
 
-		fmt.height = caps.format_caps[i].height_min;
-		fmt.width = caps.format_caps[i].width_min;
+		fmt.height = imager_caps.format_caps[i].height_min;
+		fmt.width = imager_caps.format_caps[i].width_min;
 		zexpect_ok(video_set_format(imager_dev, &fmt));
 		zexpect_ok(video_get_format(imager_dev, &fmt));
-		zexpect_equal(fmt.pixelformat, caps.format_caps[i].pixelformat);
-		zexpect_equal(fmt.width, caps.format_caps[i].width_min);
-		zexpect_equal(fmt.height, caps.format_caps[i].height_min);
+		zexpect_equal(fmt.pixelformat, imager_caps.format_caps[i].pixelformat);
+		zexpect_equal(fmt.width, imager_caps.format_caps[i].width_min);
+		zexpect_equal(fmt.height, imager_caps.format_caps[i].height_min);
 
-		fmt.height = caps.format_caps[i].height_max;
-		fmt.width = caps.format_caps[i].width_min;
+		fmt.height = imager_caps.format_caps[i].height_max;
+		fmt.width = imager_caps.format_caps[i].width_min;
 		zexpect_ok(video_set_format(imager_dev, &fmt));
 		zexpect_ok(video_get_format(imager_dev, &fmt));
-		zexpect_equal(fmt.pixelformat, caps.format_caps[i].pixelformat);
-		zexpect_equal(fmt.width, caps.format_caps[i].width_max);
-		zexpect_equal(fmt.height, caps.format_caps[i].height_min);
+		zexpect_equal(fmt.pixelformat, imager_caps.format_caps[i].pixelformat);
+		zexpect_equal(fmt.width, imager_caps.format_caps[i].width_max);
+		zexpect_equal(fmt.height, imager_caps.format_caps[i].height_min);
 
-		fmt.height = caps.format_caps[i].height_min;
-		fmt.width = caps.format_caps[i].width_max;
+		fmt.height = imager_caps.format_caps[i].height_min;
+		fmt.width = imager_caps.format_caps[i].width_max;
 		zexpect_ok(video_set_format(imager_dev, &fmt));
 		zexpect_ok(video_get_format(imager_dev, &fmt));
-		zexpect_equal(fmt.pixelformat, caps.format_caps[i].pixelformat);
-		zexpect_equal(fmt.width, caps.format_caps[i].width_min);
-		zexpect_equal(fmt.height, caps.format_caps[i].height_max);
+		zexpect_equal(fmt.pixelformat, imager_caps.format_caps[i].pixelformat);
+		zexpect_equal(fmt.width, imager_caps.format_caps[i].width_min);
+		zexpect_equal(fmt.height, imager_caps.format_caps[i].height_max);
 
-		fmt.height = caps.format_caps[i].height_max;
-		fmt.width = caps.format_caps[i].width_max;
+		fmt.height = imager_caps.format_caps[i].height_max;
+		fmt.width = imager_caps.format_caps[i].width_max;
 		zexpect_ok(video_set_format(imager_dev, &fmt));
 		zexpect_ok(video_get_format(imager_dev, &fmt));
-		zexpect_equal(fmt.pixelformat, caps.format_caps[i].pixelformat);
-		zexpect_equal(fmt.width, caps.format_caps[i].width_max);
-		zexpect_equal(fmt.height, caps.format_caps[i].height_max);
+		zexpect_equal(fmt.pixelformat, imager_caps.format_caps[i].pixelformat);
+		zexpect_equal(fmt.width, imager_caps.format_caps[i].width_max);
+		zexpect_equal(fmt.height, imager_caps.format_caps[i].height_max);
 	}
 
 	fmt.pixelformat = 0x00000000;
@@ -73,7 +85,7 @@ ZTEST(video_common, test_video_format)
 	zexpect_not_equal(fmt.pixelformat, 0x00000000, "should not store wrong formats");
 }
 
-ZTEST(video_common, test_video_frmival)
+ZTEST(video_emul, test_video_frmival)
 {
 	struct video_format fmt;
 	struct video_frmival_enum fie = {.format = &fmt};
@@ -132,32 +144,37 @@ ZTEST(video_common, test_video_frmival)
 	}
 }
 
-ZTEST(video_common, test_video_ctrl)
+ZTEST(video_emul, test_video_ctrl)
 {
 	struct video_control ctrl = {.id = VIDEO_CID_PRIVATE_BASE + 0x01, .val = 30};
+	uint32_t pixelformat = imager_caps.format_caps[0].pixelformat;
+	int64_t link_freq;
 
 	/* Emulated vendor specific control, expected to be supported by all imagers */
 	zexpect_ok(video_set_ctrl(imager_dev, &ctrl));
 	ctrl.val = 0;
 	zexpect_ok(video_get_ctrl(imager_dev, &ctrl));
 	zexpect_equal(ctrl.val, 30);
+
+	/* Test that the link frequency is accurate, assuming DVP 8-bit */
+	link_freq = video_get_dvp_link_freq(imager_dev, video_bits_per_pixel(pixelformat), 8);
+	zexpect_equal(link_freq, MHZ(72));
+
+	/* Test that the link frequency is accurate, assuming MIPI-CSI 2-lanes */
+	link_freq = video_get_csi_link_freq(imager_dev, video_bits_per_pixel(pixelformat), 2);
+	zexpect_equal(link_freq, MHZ(72));
 }
 
-ZTEST(video_common, test_video_vbuf)
+ZTEST(video_emul, test_video_vbuf)
 {
-	struct video_caps caps;
 	struct video_format fmt;
 	struct video_buffer *vbuf = NULL;
 	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 
-	/* Get a list of supported format */
-	caps.type = type;
-	zexpect_ok(video_get_caps(rx_dev, &caps));
-
 	/* Pick set first format, just to use something supported */
-	fmt.pixelformat = caps.format_caps[0].pixelformat;
-	fmt.width = caps.format_caps[0].width_max;
-	fmt.height = caps.format_caps[0].height_max;
+	fmt.pixelformat = rx_caps.format_caps[0].pixelformat;
+	fmt.width = rx_caps.format_caps[0].width_max;
+	fmt.height = rx_caps.format_caps[0].height_max;
 	fmt.type = type;
 	zexpect_ok(video_set_format(rx_dev, &fmt));
 
@@ -196,4 +213,4 @@ ZTEST(video_common, test_video_vbuf)
 	video_buffer_release(vbuf);
 }
 
-ZTEST_SUITE(video_emul, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(video_emul, NULL, test_video_common_setup, NULL, NULL, NULL);
