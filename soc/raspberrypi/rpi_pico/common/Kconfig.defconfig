@@ -1,0 +1,18 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_RPI_PICO_CPU1
+
+# Running CPU1 from flash is not recommended due to XIP cache contention with
+# CPU0. If !XIP, we move the code partition from flash into SRAM at CPU0 init
+# and run CPU1 from SRAM. !XIP is the default.
+DT_CHOSEN_CODE_PARTITION = zephyr,code-partition
+DT_CHOSEN_SRAM = zephyr,sram
+
+config BUILD_OUTPUT_ADJUST_LMA
+	default "$(dt_chosen_partition_addr_hex,$(DT_CHOSEN_CODE_PARTITION)) - \
+	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_SRAM))" if !XIP && \
+	$(dt_chosen_enabled,$(DT_CHOSEN_CODE_PARTITION)) && \
+	$(dt_chosen_enabled,$(DT_CHOSEN_SRAM))
+
+endif # SOC_FAMILY_RPI_PICO_CPU1
