@@ -101,8 +101,18 @@ function(zephyr_mcuboot_tasks)
     dt_prop(slot_size PATH "${slot1_flash}" PROPERTY "reg" INDEX 1 REQUIRED)
   endif()
 
+  # imgtool is either a Python script (imgtool.py or a pip launcher), which is run with the
+  # build's Python interpreter, or a native executable, which is run directly.
+  set(imgtool_cmd ${IMGTOOL})
+  if(EXISTS "${IMGTOOL}")
+    file(READ "${IMGTOOL}" imgtool_head LIMIT 2 HEX)
+  endif()
+  if(IMGTOOL MATCHES "\\.py$" OR imgtool_head STREQUAL "2321" OR NOT EXISTS "${IMGTOOL}")
+    set(imgtool_cmd ${PYTHON_EXECUTABLE} ${IMGTOOL})
+  endif()
+
   # Basic 'imgtool sign' command with known image information.
-  set(imgtool_sign ${PYTHON_EXECUTABLE} ${IMGTOOL} sign
+  set(imgtool_sign ${imgtool_cmd} sign
       --version ${CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION} --header-size ${CONFIG_ROM_START_OFFSET}
       --slot-size ${slot_size})
 
