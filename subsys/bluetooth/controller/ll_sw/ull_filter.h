@@ -5,6 +5,7 @@
  */
 
 void ull_filter_reset(bool init);
+bool ull_filter_ull_fal_anon_listed(void);
 bool ull_filter_ull_pal_addr_match(const uint8_t addr_type,
 				   const uint8_t *const addr);
 bool ull_filter_ull_pal_match(const uint8_t addr_type,
