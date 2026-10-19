@@ -57,6 +57,7 @@ struct pio_uart_data {
 	size_t rx_sm;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	struct k_spinlock cb_lock;
+	struct k_spinlock rx_lock;
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
 	atomic_t rx_irq_enabled;
@@ -164,11 +165,19 @@ static inline uint8_t pio_uart_rx_fifo_get(PIO pio, size_t sm)
 	return *uart_rx_fifo_msb;
 }
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static int pio_uart_rx_ring_read(struct pio_uart_data *data, uint8_t *out, int max);
+#endif
+
 static int pio_uart_poll_in(const struct device *dev, unsigned char *c)
 {
+	struct pio_uart_data *data = dev->data;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* The RX DMA drains the FIFO, so received bytes are only in the ring. */
+	return (pio_uart_rx_ring_read(data, c, 1) == 1) ? 0 : -1;
+#else
 	const struct pio_uart_config *config = dev->config;
 	PIO pio = pio_rpi_pico_get_pio(config->piodev);
-	struct pio_uart_data *data = dev->data;
 
 	if (pio_sm_is_rx_fifo_empty(pio, data->rx_sm)) {
 		return -1;
@@ -176,14 +185,20 @@ static int pio_uart_poll_in(const struct device *dev, unsigned char *c)
 
 	*c = pio_uart_rx_fifo_get(pio, data->rx_sm);
 	return 0;
+#endif
 }
 
 static void pio_uart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct pio_uart_config *config = dev->config;
 	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
 
-	pio_sm_put_blocking(pio_rpi_pico_get_pio(config->piodev), data->tx_sm, (uint32_t)c);
+	pio_sm_put_blocking(pio, data->tx_sm, (uint32_t)c);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* As in fifo_fill(), so irq_tx_complete() also covers this byte. */
+	pio->fdebug = BIT(PIO_FDEBUG_TXSTALL_LSB + data->tx_sm);
+#endif
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -251,6 +266,8 @@ static int pio_uart_rx_dma_init(PIO pio, uint32_t rx_sm, struct pio_uart_data *d
 
 static int pio_uart_rx_ring_read(struct pio_uart_data *data, uint8_t *out, int max)
 {
+	/* poll_in() and fifo_read() may be called from different threads. */
+	k_spinlock_key_t key = k_spin_lock(&data->rx_lock);
 	uint32_t write_pos = ((uint32_t)dma_channel_hw_addr(data->rx_dma_chan)->write_addr -
 			      (uint32_t)data->rx_dma_buf) & PIO_UART_RX_RING_MASK;
 	int n = 0;
@@ -259,6 +276,8 @@ static int pio_uart_rx_ring_read(struct pio_uart_data *data, uint8_t *out, int m
 		out[n++] = data->rx_dma_buf[data->rx_read_pos];
 		data->rx_read_pos = (data->rx_read_pos + 1) & PIO_UART_RX_RING_MASK;
 	}
+
+	k_spin_unlock(&data->rx_lock, key);
 
 	return n;
 }
