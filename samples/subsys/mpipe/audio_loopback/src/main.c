@@ -30,6 +30,14 @@ enum {
 __nocache struct k_mem_slab mem_slab;
 
 static struct mpipe pipe;
+
+/* Which side of the I2S link drives BCLK and WS, from the board configuration */
+#ifdef CONFIG_USE_I2S_TARGET_CODEC_CONTROLLER
+#define I2S_CLK_ROLE MPIPE_AUD_I2S_TARGET_CODEC_CONTROLLER
+#else
+#define I2S_CLK_ROLE MPIPE_AUD_I2S_CONTROLLER_CODEC_TARGET
+#endif
+
 #ifdef CONFIG_SAMPLE_AUDIO_SOURCE_I2S
 static struct mpipe_aud_i2s_src source;
 #define audio_src_init(src, id)                                                                    \
@@ -76,8 +84,20 @@ int main(void)
 	if (ret < 0) {
 		goto err;
 	}
+
+#ifdef CONFIG_SAMPLE_AUDIO_SOURCE_I2S
+	ret = mpipe_object_set_properties((struct mpipe_object *)&source,
+					  MPIPE_PROP_AUD_I2S_SRC_CLK_ROLE,
+					  (void *)(uintptr_t)I2S_CLK_ROLE,
+					  MPIPE_PROP_LIST_END);
+	if (ret < 0) {
+		goto err;
+	}
+#endif
 	ret = mpipe_object_set_properties((struct mpipe_object *)&sink,
 					  MPIPE_PROP_AUD_SINK_SLAB_PTR, &mem_slab,
+					  MPIPE_PROP_AUD_SINK_CLK_ROLE,
+					  (void *)(uintptr_t)I2S_CLK_ROLE,
 					  MPIPE_PROP_LIST_END);
 	if (ret < 0) {
 		goto err;
