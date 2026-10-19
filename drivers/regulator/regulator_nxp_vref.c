@@ -151,6 +151,10 @@ static inline unsigned int regulator_nxp_vref_count_voltages(const struct device
 static int regulator_nxp_vref_list_voltage(const struct device *dev, unsigned int idx,
 					   int32_t *volt_uv)
 {
+	ARG_UNUSED(dev);
+	if (idx > UINT16_MAX) {
+		return -EINVAL;
+	}
 	return linear_range_get_value(&utrim_range, idx, volt_uv);
 }
 
