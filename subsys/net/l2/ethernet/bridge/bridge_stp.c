@@ -427,6 +427,12 @@ bool eth_bridge_stp_is_running(struct eth_bridge_iface_context *ctx)
 	return stp_of(ctx)->enabled;
 }
 
+bool eth_bridge_stp_port_supported(struct net_if *iface)
+{
+	return (net_eth_get_hw_capabilities(iface) &
+		(ETHERNET_DSA_USER_PORT | ETHERNET_HW_PORT_FORWARDING)) == 0;
+}
+
 void eth_bridge_stp_port_added(struct eth_bridge_iface_context *ctx, size_t index)
 {
 	struct stp_bridge *stp = stp_of(ctx);
@@ -524,6 +530,18 @@ int eth_bridge_stp_enable(struct net_if *br, bool enable)
 	if (stp->enabled == enable) {
 		k_mutex_unlock(&ctx->lock);
 		return -EALREADY;
+	}
+
+	if (enable) {
+		ARRAY_FOR_EACH(ctx->ports, i) {
+			if (ctx->ports[i].iface != NULL &&
+			    !eth_bridge_stp_port_supported(ctx->ports[i].iface)) {
+				NET_ERR("iface %d forwards in hardware, it cannot be blocked",
+					net_if_get_by_iface(ctx->ports[i].iface));
+				k_mutex_unlock(&ctx->lock);
+				return -ENOTSUP;
+			}
+		}
 	}
 
 	stp->enabled = enable;

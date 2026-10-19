@@ -142,9 +142,15 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 	}
 
 	/* With the spanning tree running, a new port forwards only once the
-	 * protocol has given it a role.
+	 * protocol has given it a role, and it must be one the protocol can
+	 * block.
 	 */
 	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE_STP) && eth_bridge_stp_is_running(ctx)) {
+		if (!found && !eth_bridge_stp_port_supported(iface)) {
+			unlock_bridge(ctx);
+			return -ENOTSUP;
+		}
+
 		state = ETH_BRIDGE_PORT_STATE_DISCARDING;
 	}
 
