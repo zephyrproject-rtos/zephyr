@@ -1877,8 +1877,8 @@
 
 		enet_mac: ethernet {
 			compatible = "nxp,enet-mac";
-			interrupts = <299 0>, <300 0>;
-			interrupt-names = "TX", "RX";
+			interrupts = <299 0>, <300 0>, <301 0>;
+			interrupt-names = "TX", "RX", "ERR";
 			nxp,mdio = <&enet_mdio>;
 			ptp-clock = <&enet_ptp_clock>;
 			status = "disabled";
