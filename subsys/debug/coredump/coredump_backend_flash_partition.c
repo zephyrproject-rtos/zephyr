@@ -112,6 +112,8 @@ struct flash_hdr_t {
 	int		error;
 } __packed;
 
+BUILD_ASSERT(HEADER_BLOCK_SIZE <= sizeof(stream_flash_buf),
+	     "Header does not fit in buffer, increase CONFIG_DEBUG_COREDUMP_FLASH_CHUNK_SIZE");
 
 /**
  * @brief Open the flash partition.
@@ -466,9 +468,13 @@ static void coredump_flash_backend_start(void)
 static void coredump_flash_backend_end(void)
 {
 	int ret;
-	uint8_t hdr_buf[HEADER_BLOCK_SIZE];
 
-	struct flash_hdr_t *hdr = (struct flash_hdr_t *)hdr_buf;
+	/*
+	 * we need to comply with flash write sizes here. As the write block size might be
+	 * excessively large for the stack, we reuse the stream buffer for the header write.
+	 * note: this is only safe if we flush the stream before we write the header.
+	 */
+	struct flash_hdr_t *hdr = (struct flash_hdr_t *)stream_flash_buf;
 
 	if (backend_ctx.flash_area == NULL) {
 		return;
@@ -490,7 +496,7 @@ static void coredump_flash_backend_end(void)
 	hdr->error = backend_ctx.error;
 	hdr->flags = 0;
 
-	ret = flash_area_write(backend_ctx.flash_area, 0, hdr_buf, sizeof(hdr_buf));
+	ret = flash_area_write(backend_ctx.flash_area, 0, hdr, HEADER_BLOCK_SIZE);
 	if (ret != 0) {
 		LOG_ERR("Cannot write coredump header!");
 		backend_ctx.error = ret;
