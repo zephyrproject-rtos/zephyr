@@ -366,18 +366,17 @@ static int regulator_nxp_vref_init(const struct device *dev)
 		.chop_oscillator_en = DT_INST_PROP(inst, nxp_chop_oscillator_en),                  \
 		.internal_voltage_regulator_en =                                                   \
 			DT_INST_PROP(inst, nxp_internal_voltage_regulator_en),                     \
-		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks), \
-				(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), \
-				(NULL)),                        \
-			 .clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks), \
-			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)), \
-			((clock_control_subsys_t)0)),                                    \
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                      \
+					(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), (NULL)),       \
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                   \
+				((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)),         \
+				((clock_control_subsys_t)0)),                                      \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_pm_action);                              \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init,                                       \
-			      PM_DEVICE_DT_INST_GET(inst), &data_##inst, &config_##inst,           \
-			      POST_KERNEL, CONFIG_REGULATOR_NXP_VREF_INIT_PRIORITY, &api);
+	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, PM_DEVICE_DT_INST_GET(inst),          \
+			      &data_##inst, &config_##inst, POST_KERNEL,                           \
+			      CONFIG_REGULATOR_NXP_VREF_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NXP_VREF_DEFINE)
