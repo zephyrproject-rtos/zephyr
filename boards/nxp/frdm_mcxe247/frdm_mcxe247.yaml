@@ -26,4 +26,6 @@ supported:
   - counter
   - pwm
   - watchdog
+  - netif:eth
+  - ptp_clock
 vendor: nxp
