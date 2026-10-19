@@ -1667,7 +1667,7 @@ int bt_id_reset_irk(uint8_t id, uint8_t *irk)
 		return -EBUSY;
 	}
 
-	if (bt_keys_has_bond(id)) {
+	if (IS_ENABLED(CONFIG_BT_SMP) && bt_keys_has_bond(id)) {
 		return -ENOTEMPTY;
 	}
 
