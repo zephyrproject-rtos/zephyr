@@ -245,6 +245,7 @@ struct arducam_mega_data {
 	struct k_poll_signal *signal;
 	uint8_t fifo_first_read;
 	uint32_t fifo_length;
+	uint32_t frame_timestamp;
 	uint8_t stream_on;
 	uint32_t features;
 	uint32_t camera_id;
@@ -1017,8 +1018,8 @@ static void arducam_mega_buffer_work(struct k_work *work)
 	struct k_work *dwork = work;
 	struct arducam_mega_data *drv_data =
 		CONTAINER_OF(dwork, struct arducam_mega_data, buf_work);
-	static uint32_t f_timestamp, f_length;
 	struct video_buffer *vbuf;
+	uint32_t length;
 	int ret = 0;
 
 	vbuf = k_fifo_get(&drv_data->fifo_in, K_NO_WAIT);
@@ -1028,8 +1029,8 @@ static void arducam_mega_buffer_work(struct k_work *work)
 	}
 
 	if (drv_data->fifo_length == 0) {
-		arducam_mega_capture(drv_data->dev, &f_length);
-		f_timestamp = k_uptime_get_32();
+		arducam_mega_capture(drv_data->dev, &length);
+		drv_data->frame_timestamp = k_uptime_get_32();
 	}
 
 	ret = arducam_mega_fifo_read(drv_data->dev, vbuf);
@@ -1042,7 +1043,7 @@ static void arducam_mega_buffer_work(struct k_work *work)
 		k_work_submit_to_queue(&ac_work_q, &drv_data->buf_work);
 	}
 
-	vbuf->timestamp = f_timestamp;
+	vbuf->timestamp = drv_data->frame_timestamp;
 	k_fifo_put(&drv_data->fifo_out, vbuf);
 }
 
