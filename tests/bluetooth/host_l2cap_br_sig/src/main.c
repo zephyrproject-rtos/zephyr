@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
@@ -47,6 +48,8 @@ static struct cb_log connless_log[2];
 static struct bt_conn *conn;
 
 NET_BUF_POOL_FIXED_DEFINE(pdu_pool, 1, 32, 0, NULL);
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_L2CAP_BR_ECHO_REQ_RESERVE + MAX_DATA,
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 /* Records the data and then consumes it, as a callback parsing it would */
 static void record(struct cb_log *rec, uint8_t ident, struct net_buf *buf)
@@ -144,6 +147,33 @@ static void add_sig_cmd(struct net_buf *buf, uint8_t code, uint8_t ident, const 
 	net_buf_add_mem(buf, data, strlen(data));
 }
 
+static struct bt_l2cap_br_chan *sig_chan(void)
+{
+	struct bt_l2cap_chan *sig = bt_l2cap_br_lookup_rx_cid(conn, SIG_CID);
+
+	zassert_not_null(sig);
+
+	return CONTAINER_OF(sig, struct bt_l2cap_br_chan, chan);
+}
+
+/* Send an Echo Request and return its identifier, taken from the queued PDU */
+static uint8_t send_echo_req(void)
+{
+	struct net_buf *buf;
+	int err;
+
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+	zassert_not_null(buf);
+	net_buf_reserve(buf, BT_L2CAP_BR_ECHO_REQ_RESERVE);
+
+	err = bt_l2cap_br_echo_req(conn, buf);
+	zassert_equal(err, 0, "err %d", err);
+	zassert_equal_ptr(sys_slist_peek_tail(&sig_chan()->_pdu_tx_queue), &buf->node);
+
+	/* L2CAP header, then the signaling header code and identifier */
+	return buf->data[5];
+}
+
 static void *setup(void)
 {
 	static const bt_addr_t addr = { .val = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 } };
@@ -173,7 +203,19 @@ static void before(void *fixture)
 	memset(connless_log, 0, sizeof(connless_log));
 }
 
-ZTEST_SUITE(l2cap_br_sig, NULL, setup, before, NULL, NULL);
+/* Release the PDUs queued for sending, as there is no controller */
+static void after(void *fixture)
+{
+	sys_snode_t *node;
+
+	ARG_UNUSED(fixture);
+
+	while ((node = sys_slist_get(&sig_chan()->_pdu_tx_queue)) != NULL) {
+		net_buf_unref(CONTAINER_OF(node, struct net_buf, node));
+	}
+}
+
+ZTEST_SUITE(l2cap_br_sig, NULL, setup, before, after, NULL);
 
 /* Each Echo Request callback sees exactly the data of that request, although
  * another request follows in the same signaling packet and the other callback
@@ -197,17 +239,14 @@ ZTEST(l2cap_br_sig, test_echo_req)
 /* Each Echo Response callback sees exactly the data of the response */
 ZTEST(l2cap_br_sig, test_echo_rsp)
 {
-	struct bt_l2cap_chan *sig = bt_l2cap_br_lookup_rx_cid(conn, SIG_CID);
 	struct net_buf *buf;
+	uint8_t ident;
 
-	zassert_not_null(sig);
-
-	/* As if an Echo Request with identifier 3 had been sent */
-	CONTAINER_OF(sig, struct bt_l2cap_br_chan, chan)->ident = 3;
+	ident = send_echo_req();
 
 	buf = l2cap_pdu(SIG_CID);
-	add_sig_cmd(buf, ECHO_RSP, 3, "pq");
-	add_sig_cmd(buf, ECHO_REQ, 4, "z");
+	add_sig_cmd(buf, ECHO_RSP, ident, "pq");
+	add_sig_cmd(buf, ECHO_REQ, (uint8_t)(ident + 1U), "z");
 	send_pdu(buf);
 
 	ARRAY_FOR_EACH_PTR(echo_rsp_log, rec) {
