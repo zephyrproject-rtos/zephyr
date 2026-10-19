@@ -1,11 +1,12 @@
 # Copyright (c) 2026 BayLibre SAS
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 # Sysbuild configuration for Corstone-1000 FVP
 #
 # This builds:
 # 1. TF-M for the Secure Enclave (Cortex-M0+)
-# 2. TF-A for the Host CPU (Cortex-A320) with Zephyr as BL33
+# 2. TF-A for the Host CPU (Cortex-A35 or Cortex-A320) with Zephyr as BL33
 # 3. Combined flash image for the FVP
 #
 # This board uses a custom ExternalProject-based build instead of the
@@ -248,13 +249,22 @@ set(tfm_cmake_args
   # Disable Initial Attestation: depends on QCBOR/t_cose which have licensing
   # issues and are not shipped with Zephyr (TF-M would try to clone them).
   -DTFM_PARTITION_INITIAL_ATTESTATION=OFF
-  # Cortex-A320 variant with DSU-120T PPU power management
-  -DCORSTONE1000_CORTEX_A320=TRUE
-  -DCORSTONE1000_DSU_120T=TRUE
   # Verify boot images with MCUboot's default key model (public-key hash), not
   # the builtin-key/key-id model (which would need an out-of-tree mcuboot patch).
   -DMCUBOOT_BUILTIN_KEY=OFF
 )
+
+if(SB_CONFIG_SOC_A320)
+  list(APPEND tfm_cmake_args
+    -DCORSTONE1000_CORTEX_A320=TRUE
+    -DCORSTONE1000_DSU_120T=TRUE
+  )
+else()
+  list(APPEND tfm_cmake_args
+    -DCORSTONE1000_CORTEX_A320=FALSE
+    -DCORSTONE1000_DSU_120T=FALSE
+  )
+endif()
 
 # TF-M's corstone1000 platform builds the CryptoCell (cc3xx) PSA crypto driver
 # unconditionally: BL1 links it to verify boot images, so it is a hard
@@ -363,10 +373,10 @@ add_custom_command(
 add_custom_target(tfm_flash ALL DEPENDS ${CORSTONE1000_FIRMWARE_DIR}/cs1000_tfm.bin)
 
 # =============================================================================
-# TF-A Build for Host CPU (Cortex-A320)
+# TF-A Build for Host CPU (Cortex-A320/Cortex-A35)
 # =============================================================================
 
-message(STATUS "Corstone-1000: Building TF-A for Host CPU (Cortex-A320)")
+message(STATUS "Corstone-1000: Building TF-A for Host CPU")
 
 # TF-A build type
 if(SB_CONFIG_BOARD_CORSTONE1000_TFA_DEBUG)
@@ -380,37 +390,50 @@ endif()
 set(zephyr_bl33_name $<TARGET_PROPERTY:${DEFAULT_IMAGE},CONFIG_KERNEL_BIN_NAME>)
 set(zephyr_bl33 ${CMAKE_BINARY_DIR}/${DEFAULT_IMAGE}/zephyr/${zephyr_bl33_name}.bin)
 
-# TF-A build arguments for Corstone-1000 with Cortex-A320
+# TF-A build arguments shared by the Corstone-1000 Cortex-A320/Cortex-A35 variants
 # Aligned with Yocto meta-arm CORSTONE1000-2025.12 reference build
 set(tfa_plat "corstone1000")
 set(tfa_extra_args
   TARGET_PLATFORM=fvp
-  CORSTONE1000_CORTEX_A320=1
-  HW_ASSISTED_COHERENCY=1
-  USE_COHERENT_MEM=0
   CTX_INCLUDE_AARCH32_REGS=0
   NEED_BL32=no
   # PIE allows BL2 to run at any address (not just BL2_BASE)
   ENABLE_PIE=1
   # CPU resets directly into BL2 (no BL1 on host side)
   RESET_TO_BL2=1
-  # A320 uses GICv3 (GIC-600), not GICv2
-  FVP_USE_GIC_DRIVER=FVP_GICV3
-  # ARMv9 feature enables for Cortex-A320
-  ENABLE_FEAT_HCX=1
-  ENABLE_FEAT_FGT=1
-  ENABLE_FEAT_ECV=1
-  ENABLE_FEAT_MTE2=1
-  ENABLE_FEAT_AMU=1
-  ENABLE_FEAT_CSV2_2=1
-  ENABLE_SVE_FOR_NS=1
-  ENABLE_SVE_FOR_SWD=1
   ENABLE_STACK_PROTECTOR=strong
   # GPT partition table support for FIP discovery in flash
   ARM_GPT_SUPPORT=1
   PSA_FWU_SUPPORT=1
   NR_OF_IMAGES_IN_FW_BANK=4
 )
+
+if(SB_CONFIG_SOC_A320)
+  list(APPEND tfa_extra_args
+    CORSTONE1000_CORTEX_A320=1
+    HW_ASSISTED_COHERENCY=1
+    USE_COHERENT_MEM=0
+    FVP_USE_GIC_DRIVER=FVP_GICV3
+    ENABLE_FEAT_HCX=1
+    ENABLE_FEAT_FGT=1
+    ENABLE_FEAT_ECV=1
+    ENABLE_FEAT_MTE2=1
+    ENABLE_FEAT_AMU=1
+    ENABLE_FEAT_CSV2_2=1
+    ENABLE_SVE_FOR_NS=1
+    ENABLE_SVE_FOR_SWD=1
+  )
+else()
+  list(APPEND tfa_extra_args
+    CORSTONE1000_CORTEX_A320=0
+    HW_ASSISTED_COHERENCY=0
+    USE_COHERENT_MEM=1
+    FVP_USE_GIC_DRIVER=FVP_GICV2
+    ERRATA_A35_855472=1
+    ENABLE_SVE_FOR_NS=0
+    ENABLE_SVE_FOR_SWD=0
+  )
+endif()
 
 # Multi-core PSCI support for secondary CPU boot
 if("${BOARD_QUALIFIERS}" MATCHES "/smp$")
@@ -593,6 +616,6 @@ message(STATUS "  - cs1000.bin: Combined flash image with TF-M and TF-A FIP")
 # are assembled before forwarding to the sub-build's run target.
 add_custom_target(run
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/${DEFAULT_IMAGE} --target run
-  DEPENDS combined_flash
+  DEPENDS tfm_bl1 combined_flash
   USES_TERMINAL
 )
