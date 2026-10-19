@@ -144,6 +144,8 @@ void map_rom_segments(int core, struct rom_segments *map)
 	esp_image_segment_header_t WORD_ALIGNED_ATTR segment_hdr;
 	size_t offset = PARTITION_OFFSET(boot_partition);
 	bool checksum = false;
+	bool irom_found = (map->irom_size == 0);
+	bool drom_found = (map->drom_size == 0);
 	unsigned int segments = 0;
 	unsigned int ram_segments = 0;
 
@@ -195,10 +197,12 @@ void map_rom_segments(int core, struct rom_segments *map)
 		if (segment_hdr.load_addr == map->drom_map_addr) {
 			map->drom_flash_offset = offset + sizeof(esp_image_segment_header_t);
 			app_drom_start_align = map->drom_flash_offset & MMU_FLASH_MASK;
+			drom_found = true;
 		}
 		if (segment_hdr.load_addr == map->irom_map_addr) {
 			map->irom_flash_offset = offset + sizeof(esp_image_segment_header_t);
 			app_irom_start_align = map->irom_flash_offset & MMU_FLASH_MASK;
+			irom_found = true;
 		}
 		if (IS_SRAM(segment_hdr) || IS_RTC(segment_hdr)) {
 			ram_segments++;
@@ -209,6 +213,10 @@ void map_rom_segments(int core, struct rom_segments *map)
 		if (ram_segments == bootloader_image_hdr.segment_count && !checksum) {
 			offset += (CHECKSUM_ALIGN - 1) - (offset % CHECKSUM_ALIGN) + 1;
 			checksum = true;
+		}
+
+		if (irom_found && drom_found) {
+			break;
 		}
 	}
 	if (segments == 0 || segments > ESP_IMAGE_MAX_SEGMENTS) {
@@ -317,7 +325,7 @@ void map_rom_segments(int core, struct rom_segments *map)
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2) &&                    \
-	!defined(CONFIG_SOC_SERIES_ESP32P4)
+	!defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32S31)
 	/* Configure the Cache MMU size for instruction and rodata in flash. */
 	uint32_t cache_mmu_irom_size =
 		((map->irom_size + CONFIG_MMU_PAGE_SIZE - 1) / CONFIG_MMU_PAGE_SIZE) *

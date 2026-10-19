@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S31
+	select RISCV
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select RISCV_PMP if SOC_ESP32S31_HPCORE && !MCUBOOT
+	select DYNAMIC_INTERRUPTS if SOC_ESP32S31_HPCORE
+	select CLOCK_CONTROL if SOC_ESP32S31_HPCORE
+	select PINCTRL if SOC_ESP32S31_HPCORE
+	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_DCACHE if SOC_ESP32S31_HPCORE
+	select HAS_POWEROFF
+	select SOC_HAS_TIMING_FUNCTIONS if SOC_ESP32S31_HPCORE
+
+if SOC_SERIES_ESP32S31
+
+rsource "Kconfig.caps"
+
+config SOC_ESP32S31_REV_MIN_FULL
+	int
+	default 0 if SOC_ESP32S31_REV_0_0
+	default 0
+	help
+	  Minimum supported ESP32-S31 chip revision in major * 100 + minor
+	  format, matching what efuse_hal_chip_revision() returns at runtime.
+	  Derived from the SOC_ESP32S31_REV_* symbol the board selects.
+	  Defaults to v0.0 (0), the first revision of the family.
+
+endif # SOC_SERIES_ESP32S31
