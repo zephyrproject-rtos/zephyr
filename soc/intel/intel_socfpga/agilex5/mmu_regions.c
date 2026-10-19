@@ -17,7 +17,7 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("SYSTEM_MANAGER",
 			      DT_REG_ADDR(DT_NODELABEL(sysmgr)),
 			      DT_REG_SIZE(DT_NODELABEL(sysmgr)),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
 
 	MMU_REGION_FLAT_ENTRY("PINMUX",
 			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(pinmux), 0),
