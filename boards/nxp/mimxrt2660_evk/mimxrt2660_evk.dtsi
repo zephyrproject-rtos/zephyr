@@ -118,3 +118,6 @@ zephyr_udc0: &usb0 {
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
 };
+
+/* Controller for generic I2C samples such as i2c_tiny_usb. */
+zephyr_i2c: &lpi2c1 {};
