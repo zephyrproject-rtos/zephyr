@@ -15,4 +15,5 @@ supported:
   - spi
   - vref
   - counter
+  - rtc
 vendor: ti
