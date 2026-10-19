@@ -22,6 +22,10 @@ properties:
     description: |
       Required if the "clk-source" property is present.
 
+      The optional "source" clock provides CAN engine clock root configuration and must use
+      the same clock controller as the CAN engine clock. It is configured during initialization,
+      before the CAN engine clock rate is read.
+
   clk-source:
     type: int
     enum:
