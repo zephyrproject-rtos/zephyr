@@ -30,4 +30,13 @@
 			input-enable;
 		};
 	};
+
+	/* FlexCAN1 on PIO2_16 (TX) / PIO2_17 (RX), to the TJA1040 transceiver U44. */
+	pinmux_flexcan1: pinmux_flexcan1 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_16_hsp_flexcan1_can_tx>,
+				 <&main__iomuxc_pio2_17_hsp_flexcan1_can_rx>;
+			input-enable;
+		};
+	};
 };
