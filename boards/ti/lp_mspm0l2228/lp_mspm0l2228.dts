@@ -19,6 +19,7 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -129,5 +130,9 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };
