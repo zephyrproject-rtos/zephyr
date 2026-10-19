@@ -141,7 +141,10 @@ Libraries / Subsystems
       falls back to STP BPDUs on a port where an STP bridge is attached. The
       ``NET_EVENT_ETHERNET_BRIDGE_PORT_STATE``, ``NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT`` and
       ``NET_EVENT_ETHERNET_BRIDGE_TOPOLOGY_CHANGE`` net_mgmt events report port role and state
-      changes, a new root bridge and the start of a topology change.
+      changes, a new root bridge and the start of a topology change. The protocol does not
+      run on ports that forward frames in hardware, DSA switch ports and Ethernet devices that
+      report the new :c:enumerator:`ETHERNET_HW_PORT_FORWARDING` capability, as it cannot
+      block them.
 
 Other notable changes
 *********************
