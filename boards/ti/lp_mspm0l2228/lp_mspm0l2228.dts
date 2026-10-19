@@ -21,6 +21,7 @@
 		led0 = &led0;
 		led1 = &led1;
 		watchdog0 = &wdt0;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -154,5 +155,9 @@
 	ti,cc-index = <0>;
 	ti,pwm-mode = "EDGE_ALIGN";
 	ti,period = <3906>; /* ~100 ms at 39,062 Hz */
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };
