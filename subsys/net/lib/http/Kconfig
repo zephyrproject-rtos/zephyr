@@ -77,6 +77,134 @@ config HTTP_CLIENT_SEND_BUF_SIZE
 	  constructing and sending request headers. Larger values can reduce
 	  socket send calls at the cost of additional stack usage.
 
+config HTTP_CLIENT_MULTIPROTOCOL
+	bool "Multiprotocol HTTP client API [EXPERIMENTAL]"
+	select HTTP_PARSER
+	select EXPERIMENTAL
+	help
+	  HTTP client API designed to carry HTTP/1.1, HTTP/2 and HTTP/3 over
+	  pluggable transports. Only HTTP/2 is implemented so far.
+
+if HTTP_CLIENT_MULTIPROTOCOL
+
+config HTTP_CLIENT_MAX_INSTANCES
+	int "Maximum number of concurrent asynchronous sessions"
+	default 1
+	range 1 $(UINT8_MAX)
+	depends on HTTP_CLIENT_TRANSPORT_TCP
+	help
+	  Maximum number of asynchronous sessions the TCP and TLS transports
+	  can serve at a time, each taking a socket service slot. Synchronous
+	  sessions and application transports are not counted.
+
+config HTTP_CLIENT_WORKQUEUE_STACK_SIZE
+	int "Stack size of the HTTP client work queue"
+	default 4096 if HTTP_CLIENT_TRANSPORT_TLS
+	default 2048
+	range 1024 $(UINT16_MAX)
+	help
+	  Stack size of the work queue that enforces the deadlines of
+	  asynchronous transactions. A timed out stream is reset from it,
+	  which sends on the transport, and the application is notified from
+	  it through the response callback. The queue is started on the first
+	  asynchronous session.
+
+config HTTP_CLIENT_WORKQUEUE_PRIORITY
+	int "Priority of the HTTP client work queue"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Priority of the work queue that enforces the deadlines of
+	  asynchronous transactions. The value is clamped to the range of
+	  application thread priorities, so the default is the lowest one.
+
+config HTTP_CLIENT_RX_BUFFER_SIZE
+	int "HTTP client RX buffer size"
+	default 512
+	range 64 $(UINT16_MAX)
+	help
+	  Size of the per-session receive buffer used to buffer incoming data
+	  from the transport. A single response header field must fit in the
+	  buffer; body data is delivered in chunks of any size.
+
+config HTTP_CLIENT_TX_BUFFER_SIZE
+	int "HTTP client TX buffer size"
+	default 256
+	range 64 $(UINT16_MAX)
+	help
+	  Size of the per-session transmit buffer used to encode request
+	  headers. A header block larger than the buffer is sent as several
+	  frames, so the size only bounds a single header field.
+
+config HTTP_CLIENT_HEADERS_BUFFER_SIZE
+	int "HTTP client headers buffer size"
+	default 512
+	range 64 $(UINT16_MAX)
+	help
+	  Size of the headers buffer used by HTTP client when passing headers
+	  to the application via callback. The buffer size specifies the maximum
+	  header size received in the response that can be processed by the
+	  application. If possible, multiple headers will be encoded in the buffer
+	  and passed to the application in a single callback call.
+
+config HTTP_CLIENT_MAX_CONTENT_TYPE_LENGTH
+	int "Maximum Content-Type and Content-Encoding value length"
+	default 64
+	range 16 256
+	help
+	  Size of the response context buffers holding the Content-Type and
+	  Content-Encoding values, terminating NUL included. Longer values
+	  are truncated.
+
+config HTTP_CLIENT_MAX_STREAMS
+	int "Maximum concurrent streams per HTTP client instance"
+	default 1
+	range 1 $(UINT8_MAX)
+	help
+	  Maximum number of concurrent HTTP streams per HTTP client instance.
+	  Only makes sense to increase it for HTTP/2 and HTTP/3.
+
+config HTTP_CLIENT_SEND_TIMEOUT
+	int "Send timeout for the socket transports (milliseconds)"
+	default 10000
+	range 1 $(INT32_MAX)
+	depends on HTTP_CLIENT_TRANSPORT_TCP
+	help
+	  Maximum time a single send on the TCP or TLS transport may block
+	  before the session is ended. Bounds how long a peer that stops
+	  reading can stall a thread sending a request, or the receive context
+	  of an asynchronous session sending a control frame.
+
+config HTTP_CLIENT_TRANSPORT_TCP
+	bool "HTTP client TCP transport"
+	depends on NET_TCP
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
+	default y
+	help
+	  TCP transport for the HTTP client. Asynchronous sessions receive
+	  through the socket service.
+
+config HTTP_CLIENT_TRANSPORT_TLS
+	bool "HTTP client TLS transport"
+	depends on HTTP_CLIENT_TRANSPORT_TCP && NET_SOCKETS_SOCKOPT_TLS
+	default y
+	help
+	  TLS transport for the HTTP client, built on top of the TCP transport.
+
+config HTTP_CLIENT_TLS_USE_ALPN
+	bool "ALPN support for the HTTP client TLS transport"
+	depends on HTTP_CLIENT_TRANSPORT_TLS
+	default y
+	imply MBEDTLS_SSL_ALPN
+	help
+	  Use ALPN (application layer protocol negotiation) to announce the HTTP
+	  version in use on TLS connections. Servers generally require it to
+	  accept HTTP/2 over TLS. The TLS socket implementation must support
+	  the TLS_ALPN_LIST option; for native TLS this means MBEDTLS_SSL_ALPN
+	  and a non-zero NET_SOCKETS_TLS_MAX_APP_PROTOCOLS.
+
+endif # HTTP_CLIENT_MULTIPROTOCOL
+
 menuconfig HTTP_SERVER
 	bool "HTTP Server [EXPERIMENTAL]"
 	select HTTP_PARSER
@@ -364,7 +492,8 @@ config HTTP2_COMMON
 # Hidden option to avoid having multiple individual options that are ORed together
 config HTTP
 	bool
-	depends on (HTTP_PARSER_URL || HTTP_PARSER || HTTP_CLIENT || HTTP_SERVER)
+	depends on (HTTP_PARSER_URL || HTTP_PARSER || HTTP_CLIENT || \
+		HTTP_CLIENT_MULTIPROTOCOL || HTTP_SERVER)
 	default y
 
 module = NET_HTTP
