@@ -8,6 +8,9 @@
 
 void sys_poweroff(void)
 {
+#if defined(CONFIG_PRE_POWEROFF_HOOK)
+	z_sys_pre_poweroff_hook();
+#endif
 	(void)irq_lock();
 
 #if defined(CONFIG_ZERO_LATENCY_IRQS)
