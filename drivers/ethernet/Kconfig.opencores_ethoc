@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_OPENCORES_ETHOC
+	bool "OpenCores ethmac Ethernet driver"
+	default y
+	depends on DT_HAS_OPENCORES_ETHOC_ENABLED
+	select CACHE_MANAGEMENT if DCACHE && !ETH_OPENCORES_ETHOC_DMA_COHERENT
+	select ETH_NIC_MODEL_ONBOARD
+	help
+	  Enable the OpenCores 10/100 Mbps Ethernet MAC (ethmac) driver.
+
+if ETH_OPENCORES_ETHOC
+
+config ETH_NIC_MODEL
+	string
+	default "open_eth"
+	help
+	  Value of the -nic parameter to be used when starting QEMU.
+
+config ETH_OPENCORES_ETHOC_DMA_COHERENT
+	def_bool $(dt_compat_all_has_prop,$(DT_COMPAT_OPENCORES_ETHOC),dma-coherent,True)
+
+config ETH_OPENCORES_ETHOC_NB_TX_DESCS
+	int "Number of TX descriptors"
+	default 8
+	range 1 127
+	help
+	  Number of TX buffer descriptors, each of which holds one frame.
+	  Without ETH_OPENCORES_ETHOC_ZERO_COPY, each descriptor also has an
+	  internal frame buffer. TX and RX descriptors together must not
+	  exceed 128.
+
+config ETH_OPENCORES_ETHOC_NB_RX_DESCS
+	int "Number of RX descriptors"
+	default 8
+	range 1 127
+	help
+	  Number of RX buffer descriptors, each of which holds one frame in a
+	  network buffer, or in an internal frame buffer without
+	  ETH_OPENCORES_ETHOC_ZERO_COPY. TX and RX descriptors together must
+	  not exceed 128.
+
+config ETH_OPENCORES_ETHOC_ZERO_COPY
+	bool "Use network buffers holding whole frames"
+	default y if NET_BUF_VARIABLE_DATA_SIZE || NET_BUF_DATA_SIZE >= 1536
+	help
+	  Receive frames directly into network buffers, and copy packets that
+	  cannot be sent from their own buffer into a new network buffer. This
+	  needs network buffers large enough for a whole frame.
+
+	  If disabled, frames are received into internal buffers and copied
+	  into network buffers of any size, and packets that cannot be sent
+	  from their own buffer are copied into internal buffers.
+
+configdefault NET_BUF_DATA_SIZE
+	default 1536
+
+# A network buffer holds a whole frame, so far fewer buffers are needed:
+# one per pending packet, plus the ones armed in the RX descriptors.
+configdefault NET_BUF_RX_COUNT
+	default 22 if ETH_OPENCORES_ETHOC_ZERO_COPY
+
+configdefault NET_BUF_TX_COUNT
+	default 16 if ETH_OPENCORES_ETHOC_ZERO_COPY
+
+# received frames must not share cache lines with other data
+configdefault NET_BUF_ALIGNMENT
+	default DCACHE_LINE_SIZE if DCACHE && ETH_OPENCORES_ETHOC_ZERO_COPY && \
+		!ETH_OPENCORES_ETHOC_DMA_COHERENT
+
+configdefault NET_L2_ETHERNET_RESERVE_HEADER
+	default y
+
+endif # ETH_OPENCORES_ETHOC
