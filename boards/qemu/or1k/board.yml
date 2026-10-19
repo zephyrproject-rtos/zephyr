@@ -4,3 +4,5 @@ board:
   vendor: qemu
   socs:
   - name: qemu_or1k
+    variants:
+    - name: sim
