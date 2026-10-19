@@ -30,13 +30,23 @@ LOG_MODULE_REGISTER(nxp_vref, CONFIG_REGULATOR_LOG_LEVEL);
 #define NXP_VREF_TRIM_MASK      VREF_UTRIM_VREFTRIM_MASK
 #define NXP_VREF_TRIM_SHIFT     VREF_UTRIM_VREFTRIM_SHIFT
 #define NXP_VREF_TRIM_IS_FACTORY 1
-static const struct linear_range utrim_range =
-	LINEAR_RANGE_INIT(1200000 - (0x20 * 667), 667U, 0x0U, 0x3FU);
+static const struct linear_range utrim_ranges[] = {
+	LINEAR_RANGE_INIT(1200000 - (0x20 * 667), 667U, 0x0U, 0x3FU),
+};
 #else
 #define NXP_VREF_TRIM_MASK      VREF_UTRIM_TRIM2V1_MASK
 #define NXP_VREF_TRIM_SHIFT     VREF_UTRIM_TRIM2V1_SHIFT
 #define NXP_VREF_TRIM_IS_FACTORY 0
-static const struct linear_range utrim_range = LINEAR_RANGE_INIT(1000000, 100000U, 0x0U, 0xBU);
+static const struct linear_range utrim_ranges[] = {
+#if defined(FSL_FEATURE_VREF_SUPPORT_2V5) && FSL_FEATURE_VREF_SUPPORT_2V5
+	LINEAR_RANGE_INIT(1000000, 250000U, 0x0U, 0x2U),
+	LINEAR_RANGE_INIT(1800000, 0U, 0x3U, 0x3U),
+	LINEAR_RANGE_INIT(2048000, 0U, 0x4U, 0x4U),
+	LINEAR_RANGE_INIT(2500000, 0U, 0x5U, 0x5U),
+#else
+	LINEAR_RANGE_INIT(1000000, 100000U, 0x0U, 0xBU),
+#endif
+};
 #endif
 
 struct regulator_nxp_vref_data {
@@ -143,9 +153,10 @@ static int regulator_nxp_vref_get_mode(const struct device *dev, regulator_mode_
 	return 0;
 }
 
-static inline unsigned int regulator_nxp_vref_count_voltages(const struct device *dev)
+static unsigned int regulator_nxp_vref_count_voltages(const struct device *dev)
 {
-	return linear_range_values_count(&utrim_range);
+	ARG_UNUSED(dev);
+	return linear_range_group_values_count(utrim_ranges, ARRAY_SIZE(utrim_ranges));
 }
 
 static int regulator_nxp_vref_list_voltage(const struct device *dev, unsigned int idx,
@@ -155,7 +166,7 @@ static int regulator_nxp_vref_list_voltage(const struct device *dev, unsigned in
 	if (idx > UINT16_MAX) {
 		return -EINVAL;
 	}
-	return linear_range_get_value(&utrim_range, idx, volt_uv);
+	return linear_range_group_get_value(utrim_ranges, ARRAY_SIZE(utrim_ranges), idx, volt_uv);
 }
 
 static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
@@ -169,11 +180,12 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_
 	if (min_uv > max_uv) {
 		return -EINVAL;
 	}
-	ret = linear_range_get_win_index(&utrim_range, min_uv, max_uv, &idx);
+	ret = linear_range_group_get_win_index(utrim_ranges, ARRAY_SIZE(utrim_ranges),
+					      min_uv, max_uv, &idx);
 	if (ret < 0 && ret != -ERANGE) {
 		return ret;
 	}
-	ret = linear_range_get_value(&utrim_range, idx, &voltage);
+	ret = linear_range_group_get_value(utrim_ranges, ARRAY_SIZE(utrim_ranges), idx, &voltage);
 	if (ret < 0 || voltage < min_uv || voltage > max_uv) {
 		return -EINVAL;
 	}
@@ -188,14 +200,13 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_
 static int regulator_nxp_vref_get_voltage(const struct device *dev, int32_t *volt_uv)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
-	VREF_Type *const base = config->base;
 	uint16_t idx;
 	int ret;
 
 	/* Linear range index is the register value */
-	idx = (base->UTRIM & NXP_VREF_TRIM_MASK) >> NXP_VREF_TRIM_SHIFT;
+	idx = (config->base->UTRIM & NXP_VREF_TRIM_MASK) >> NXP_VREF_TRIM_SHIFT;
 
-	ret = linear_range_get_value(&utrim_range, idx, volt_uv);
+	ret = linear_range_group_get_value(utrim_ranges, ARRAY_SIZE(utrim_ranges), idx, volt_uv);
 
 	return ret;
 }
