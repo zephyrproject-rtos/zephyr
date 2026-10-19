@@ -9,4 +9,24 @@
 
 / {
 	model = "QEMU OpenRISC 1000 or1k-sim";
+
+	ethernet@92000000 {
+		compatible = "opencores,ethoc";
+		reg = <0x92000000 0x800>;
+		interrupts = <4>;
+		dma-coherent;
+		local-mac-address = [00 00 5e 00 53 01];
+		phy-handle = <&phy>;
+
+		mdio {
+			compatible = "opencores,ethoc-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy: ethernet-phy@1 {
+				compatible = "ethernet-phy";
+				reg = <1>;
+			};
+		};
+	};
 };
