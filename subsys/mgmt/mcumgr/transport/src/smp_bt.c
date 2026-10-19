@@ -1116,6 +1116,10 @@ clean_up:
 			cpd->state = 0;
 			cpd->id = 0;
 			cpd->conn = NULL;
+
+			smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+					TRANSPORT_MGMT_ERR_CONNECT_FAILED);
+
 		} else {
 			cpd->state |= DISCOVERED;
 		}
@@ -1128,6 +1132,9 @@ clean_up:
 
 	if (cpd == NULL) {
 		LOG_ERR("Invalid CPD for connection: %p", ud->conn);
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_CONNECTION_ESTABLISHMENT_FATAL_ERROR);
+
 		return false;
 	}
 
