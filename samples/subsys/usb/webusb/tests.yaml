@@ -13,6 +13,7 @@ tests:
       - nucleo_f413zh
       - mimxrt685_evk/mimxrt685s/cm33
       - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt2660_evk/mimxrt2663/cm85
       - max32690evkit/max32690/m4
       - samd21_xpro
       - same54_xpro
