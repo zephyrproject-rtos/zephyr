@@ -21,6 +21,7 @@ enum miwu_table {
 	NPCX_MIWU_TABLE_0,
 	NPCX_MIWU_TABLE_1,
 	NPCX_MIWU_TABLE_2,
+	NPCX_MIWU_TABLE_3,
 };
 
 /* Number of MIWU modules enabled in devicetree */
