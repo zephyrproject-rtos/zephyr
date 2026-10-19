@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Silicon Labs NCP on the Arduino SPI header:
+ *   D10 chip select, D11 MOSI, D12 MISO, D13 SCK, D9 IRQ, D8 reset.
+ */
+
+/ {
+	chosen {
+		zephyr,bt-hci = &ncp_hci;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	ncp: ncp@0 {
+		compatible = "silabs,ncp";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		irq-gpios = <&arduino_header 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;
+
+		ncp_hci: bt-hci {
+			compatible = "silabs,ncp-hci";
+		};
+
+		ncp_wifi: wifi {
+			compatible = "silabs,ncp-wifi";
+		};
+	};
+};
