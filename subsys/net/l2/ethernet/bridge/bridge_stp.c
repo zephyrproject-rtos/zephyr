@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_eth_bridge_stp, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/net/ethernet_bridge.h>
 #include <zephyr/net/ethernet_bridge_fdb.h>
 #include <zephyr/net/ethernet_bridge_stp.h>
+#include <zephyr/net/ethernet_mgmt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_mgmt.h>
@@ -44,6 +45,8 @@ struct stp_port {
 	enum eth_bridge_stp_p2p p2p;
 	/* 0 when the cost is derived from the link speed */
 	uint32_t admin_path_cost;
+	/* Last NET_EVENT_ETHERNET_BRIDGE_PORT_STATE information */
+	struct eth_bridge_stp_port_event reported;
 };
 
 struct stp_bridge {
@@ -52,7 +55,11 @@ struct stp_bridge {
 	struct stp_port port[NUM_PORTS];
 	struct eth_bridge_iface_context *ctx;
 	struct k_work_delayable tick;
+	struct k_work report;
 	bool enabled;
+	/* Root and topology change state of the last events */
+	uint64_t reported_root;
+	bool reported_topology_change;
 };
 
 static struct stp_bridge stp_bridges[CONFIG_NET_ETHERNET_BRIDGE_COUNT];
@@ -139,10 +146,156 @@ static void flush_fdb(struct eth_rstp_port *port)
 	eth_bridge_fdb_flush(stp->ctx->iface, stp_port_of(port)->iface, true);
 }
 
+static enum eth_bridge_stp_role role_of(enum eth_rstp_role role)
+{
+	switch (role) {
+	case ETH_RSTP_ROLE_ROOT:
+		return ETH_BRIDGE_STP_ROLE_ROOT;
+	case ETH_RSTP_ROLE_DESIGNATED:
+		return ETH_BRIDGE_STP_ROLE_DESIGNATED;
+	case ETH_RSTP_ROLE_ALTERNATE:
+		return ETH_BRIDGE_STP_ROLE_ALTERNATE;
+	case ETH_RSTP_ROLE_BACKUP:
+		return ETH_BRIDGE_STP_ROLE_BACKUP;
+	default:
+		return ETH_BRIDGE_STP_ROLE_DISABLED;
+	}
+}
+
+static struct net_if *root_port_iface(struct stp_bridge *stp)
+{
+	ARRAY_FOR_EACH(stp->port, i) {
+		if (stp->enabled && stp->ports[i] != NULL &&
+		    stp->port[i].rstp.port_id == stp->rstp.root_port_id &&
+		    stp->rstp.root_port_id != 0U) {
+			return stp->port[i].iface;
+		}
+	}
+
+	return NULL;
+}
+
+/* The role and state of a port as seen from outside: with the protocol
+ * stopped, every port forwards.
+ */
+static struct eth_bridge_stp_port_event port_event(struct stp_bridge *stp, struct stp_port *sp)
+{
+	return (struct eth_bridge_stp_port_event){
+		.bridge = stp->ctx->iface,
+		.role = stp->enabled ? role_of(sp->rstp.role) : ETH_BRIDGE_STP_ROLE_DISABLED,
+		.learning = !stp->enabled || sp->rstp.learning,
+		.forwarding = !stp->enabled || sp->rstp.forwarding,
+	};
+}
+
+union stp_event_info {
+	struct eth_bridge_stp_port_event port;
+	struct eth_bridge_stp_root_event root;
+	struct eth_bridge_stp_topology_event topology;
+};
+
+/* Find the first change since the last events, and record it as reported.
+ * The state machines have settled, so a port that changed state and back in
+ * between has nothing to report.
+ */
+static bool next_change(struct stp_bridge *stp, uint64_t *event, struct net_if **iface,
+			union stp_event_info *info, size_t *len)
+{
+	ARRAY_FOR_EACH(stp->port, i) {
+		struct stp_port *sp = &stp->port[i];
+		struct eth_bridge_stp_port_event ev;
+
+		if (stp->ports[i] == NULL) {
+			continue;
+		}
+
+		ev = port_event(stp, sp);
+		if (ev.role == sp->reported.role && ev.learning == sp->reported.learning &&
+		    ev.forwarding == sp->reported.forwarding) {
+			continue;
+		}
+
+		sp->reported = ev;
+		*event = NET_EVENT_ETHERNET_BRIDGE_PORT_STATE;
+		*iface = sp->iface;
+		info->port = ev;
+		*len = sizeof(info->port);
+
+		return true;
+	}
+
+	if (!stp->enabled) {
+		stp->reported_root = 0U;
+		stp->reported_topology_change = false;
+		return false;
+	}
+
+	*iface = stp->ctx->iface;
+
+	if (stp->rstp.root_prio.root_id != stp->reported_root) {
+		stp->reported_root = stp->rstp.root_prio.root_id;
+		*event = NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT;
+		info->root = (struct eth_bridge_stp_root_event){
+			.root_id = stp->rstp.root_prio.root_id,
+			.root_path_cost = stp->rstp.root_prio.root_path_cost,
+			.root_port = root_port_iface(stp),
+		};
+		*len = sizeof(info->root);
+
+		return true;
+	}
+
+	if (stp->rstp.topology_change != stp->reported_topology_change) {
+		stp->reported_topology_change = stp->rstp.topology_change;
+		if (stp->rstp.topology_change) {
+			*event = NET_EVENT_ETHERNET_BRIDGE_TOPOLOGY_CHANGE;
+			info->topology = (struct eth_bridge_stp_topology_event){
+				.topology_change_count = stp->rstp.topology_change_count,
+			};
+			*len = sizeof(info->topology);
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Raise the events without the bridge lock, as a net_mgmt callback may take
+ * it. They are raised one per run, so that the net_mgmt queue is drained in
+ * between when the events are handled on the system work queue too.
+ */
+static void report_handler(struct k_work *work)
+{
+	struct stp_bridge *stp = CONTAINER_OF(work, struct stp_bridge, report);
+	union stp_event_info info;
+	struct net_if *iface;
+	uint64_t event;
+	size_t len;
+	bool found;
+
+	k_mutex_lock(&stp->ctx->lock, K_FOREVER);
+	found = next_change(stp, &event, &iface, &info, &len);
+	k_mutex_unlock(&stp->ctx->lock);
+
+	if (!found) {
+		return;
+	}
+
+	net_mgmt_event_notify_with_info(event, iface, &info, len);
+	(void)k_work_submit(&stp->report);
+}
+
+static void updated(struct eth_rstp_bridge *br)
+{
+	(void)k_work_submit(&CONTAINER_OF(br, struct stp_bridge, rstp)->report);
+}
+
 static const struct eth_rstp_ops stp_ops = {
 	.tx_bpdu = tx_bpdu,
 	.set_port_state = set_port_state,
 	.flush_fdb = flush_fdb,
+	.updated = updated,
 };
 
 static uint32_t speed_to_cost(uint32_t mbps)
@@ -266,6 +419,7 @@ void eth_bridge_stp_init(struct eth_bridge_iface_context *ctx)
 	eth_rstp_bridge_init(&stp->rstp, &stp_ops, stp->ports, ARRAY_SIZE(stp->ports),
 			     net_if_get_link_addr(ctx->iface)->addr);
 	k_work_init_delayable(&stp->tick, tick_handler);
+	k_work_init(&stp->report, report_handler);
 }
 
 bool eth_bridge_stp_is_running(struct eth_bridge_iface_context *ctx)
@@ -283,6 +437,7 @@ void eth_bridge_stp_port_added(struct eth_bridge_iface_context *ctx, size_t inde
 	sp->iface = ctx->ports[index].iface;
 	sp->p2p = ETH_BRIDGE_STP_P2P_AUTO;
 	sp->admin_path_cost = 0U;
+	sp->reported = port_event(stp, sp);
 	stp->ports[index] = &sp->rstp;
 
 	if (stp->enabled) {
@@ -393,6 +548,7 @@ int eth_bridge_stp_enable(struct net_if *br, bool enable)
 		}
 
 		eth_bridge_fdb_flush(br, NULL, true);
+		(void)k_work_submit(&stp->report);
 	}
 
 	k_mutex_unlock(&ctx->lock);
@@ -406,22 +562,6 @@ int eth_bridge_stp_enable(struct net_if *br, bool enable)
 		net_if_get_by_iface(br));
 
 	return 0;
-}
-
-static enum eth_bridge_stp_role role_of(enum eth_rstp_role role)
-{
-	switch (role) {
-	case ETH_RSTP_ROLE_ROOT:
-		return ETH_BRIDGE_STP_ROLE_ROOT;
-	case ETH_RSTP_ROLE_DESIGNATED:
-		return ETH_BRIDGE_STP_ROLE_DESIGNATED;
-	case ETH_RSTP_ROLE_ALTERNATE:
-		return ETH_BRIDGE_STP_ROLE_ALTERNATE;
-	case ETH_RSTP_ROLE_BACKUP:
-		return ETH_BRIDGE_STP_ROLE_BACKUP;
-	default:
-		return ETH_BRIDGE_STP_ROLE_DISABLED;
-	}
 }
 
 int eth_bridge_stp_get_status(struct net_if *br, struct eth_bridge_stp_status *status)
@@ -448,19 +588,15 @@ int eth_bridge_stp_get_status(struct net_if *br, struct eth_bridge_stp_status *s
 		.bridge_max_age = (uint8_t)stp->rstp.bridge_times.max_age,
 		.bridge_forward_delay = (uint8_t)stp->rstp.bridge_times.forward_delay,
 		.tx_hold_count = stp->rstp.tx_hold_count,
+		.root_port = root_port_iface(stp),
+		.topology_change = stp->rstp.topology_change,
+		.topology_change_count = stp->rstp.topology_change_count,
+		.time_since_topology_change = stp->rstp.time_since_topology_change,
 	};
 
 	if (!stp->enabled) {
 		status->root_id = stp->rstp.bridge_id;
 		status->root_path_cost = 0U;
-	}
-
-	ARRAY_FOR_EACH(stp->port, i) {
-		if (stp->enabled && stp->ports[i] != NULL &&
-		    stp->port[i].rstp.port_id == stp->rstp.root_port_id &&
-		    stp->rstp.root_port_id != 0U) {
-			status->root_port = stp->port[i].iface;
-		}
 	}
 
 	k_mutex_unlock(&ctx->lock);
@@ -502,6 +638,7 @@ static void unlock_port(struct stp_bridge *stp)
 int eth_bridge_stp_port_get_status(struct net_if *br, struct net_if *iface,
 				   struct eth_bridge_stp_port_status *status)
 {
+	struct eth_bridge_stp_port_event ev;
 	struct eth_rstp_port *port;
 	struct stp_bridge *stp;
 	struct stp_port *sp;
@@ -518,10 +655,12 @@ int eth_bridge_stp_port_get_status(struct net_if *br, struct net_if *iface,
 
 	port = &sp->rstp;
 
+	ev = port_event(stp, sp);
+
 	*status = (struct eth_bridge_stp_port_status){
-		.role = stp->enabled ? role_of(port->role) : ETH_BRIDGE_STP_ROLE_DISABLED,
-		.learning = !stp->enabled || port->learning,
-		.forwarding = !stp->enabled || port->forwarding,
+		.role = ev.role,
+		.learning = ev.learning,
+		.forwarding = ev.forwarding,
 		.oper_edge = port->oper_edge,
 		.admin_edge = port->admin_edge,
 		.auto_edge = port->auto_edge,

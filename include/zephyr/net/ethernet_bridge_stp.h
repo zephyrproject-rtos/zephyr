@@ -85,6 +85,12 @@ struct eth_bridge_stp_status {
 	uint8_t bridge_forward_delay;
 	/** Transmit Hold Count */
 	uint8_t tx_hold_count;
+	/** A topology change is being propagated (IEEE Std 802.1Q-2014 12.8.1.1.3) */
+	bool topology_change;
+	/** Topology changes since the bridge was initialized */
+	uint32_t topology_change_count;
+	/** Seconds since the last topology change */
+	uint32_t time_since_topology_change;
 };
 
 /** Spanning tree state of a bridge port */
@@ -121,6 +127,51 @@ struct eth_bridge_stp_port_status {
 	uint16_t designated_port;
 	/** Root path cost of the Designated Bridge */
 	uint32_t designated_cost;
+};
+
+/**
+ * @brief Information of the NET_EVENT_ETHERNET_BRIDGE_PORT_STATE event
+ *
+ * The event is raised on the port interface when the role, learning or
+ * forwarding state of the port changes, also when the protocol starts or
+ * stops on the bridge.
+ */
+struct eth_bridge_stp_port_event {
+	/** Bridge interface of the port */
+	struct net_if *bridge;
+	/** Port Role */
+	enum eth_bridge_stp_role role;
+	/** The port learns source addresses */
+	bool learning;
+	/** The port forwards frames */
+	bool forwarding;
+};
+
+/**
+ * @brief Information of the NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT event
+ *
+ * The event is raised on the bridge interface when the root bridge changes,
+ * also when the protocol starts and the bridge is its own root.
+ */
+struct eth_bridge_stp_root_event {
+	/** Bridge Identifier of the root bridge */
+	uint64_t root_id;
+	/** Cost of the path to the root bridge */
+	uint32_t root_path_cost;
+	/** Root Port, NULL if this bridge is the root */
+	struct net_if *root_port;
+};
+
+/**
+ * @brief Information of the NET_EVENT_ETHERNET_BRIDGE_TOPOLOGY_CHANGE event
+ *
+ * The event is raised on the bridge interface when a topology change starts:
+ * a port starts propagating one while none did. The learned FDB entries of
+ * the other ports are then removed.
+ */
+struct eth_bridge_stp_topology_event {
+	/** Topology changes since the bridge was initialized, this one included */
+	uint32_t topology_change_count;
 };
 
 /**
