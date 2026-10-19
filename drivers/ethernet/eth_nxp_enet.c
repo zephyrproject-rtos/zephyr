@@ -640,13 +640,13 @@ static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 #define nxp_enet_unique_mac(...)
 #endif
 
-#ifdef CONFIG_SOC_FAMILY_NXP_IMXRT
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 #include <fsl_ocotp.h>
 #endif
 
 static inline void nxp_enet_fused_mac(uint8_t *mac_addr)
 {
-#ifdef CONFIG_SOC_FAMILY_NXP_IMXRT
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	uint32_t mac_addr_fuse[2] = {0};
 
 #if defined(CONFIG_SOC_SERIES_IMXRT10XX)
