@@ -1478,13 +1478,16 @@
 		status = "disabled";
 	};
 
-	/* LPIT (HSP domain), IRQ 115/116 */
+	/* LPIT (HSP domain), IRQ 115/116. PERI3 (400 MHz) / 5 = 80 MHz. */
 	lpit0: hsp_lpit_0: lpit@42070000 {
 		compatible = "nxp,lpit";
 		reg = <0x42070000 0x1000>;
 		interrupts = <115 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPIT0,
-					   IMX_CCM_ROOT_MAIN_LPIT0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPIT0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPIT0_FCLK,
+						IMX_CCM_MUX_LPIT0_PERI3, 5, 1)>;
 		max-load-value = <0xffffffff>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -1519,8 +1522,11 @@
 		compatible = "nxp,lpit";
 		reg = <0x42860000 0x1000>;
 		interrupts = <116 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPIT1,
-					   IMX_CCM_ROOT_MAIN_LPIT1_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPIT1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPIT1_FCLK,
+						IMX_CCM_MUX_LPIT1_PERI3, 5, 1)>;
 		max-load-value = <0xffffffff>;
 		#address-cells = <1>;
 		#size-cells = <0>;
