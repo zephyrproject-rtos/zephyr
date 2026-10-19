@@ -73,6 +73,7 @@ static const struct linear_range utrim_ranges[] = {
 
 struct regulator_nxp_vref_data {
 	struct regulator_common_data common;
+	struct k_mutex lock;
 	uint16_t trim;
 	regulator_mode_t mode;
 	bool trim_set;
@@ -149,11 +150,14 @@ static int regulator_nxp_vref_enable_hw(const struct device *dev)
 static int regulator_nxp_vref_enable(const struct device *dev)
 {
 	struct regulator_nxp_vref_data *data = dev->data;
-	int ret = regulator_nxp_vref_enable_hw(dev);
+	int ret;
 
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = regulator_nxp_vref_enable_hw(dev);
 	if (ret == 0) {
 		data->enabled = true;
 	}
+	k_mutex_unlock(&data->lock);
 	return ret;
 }
 
@@ -161,8 +165,10 @@ static int regulator_nxp_vref_disable(const struct device *dev)
 {
 	struct regulator_nxp_vref_data *data = dev->data;
 
+	k_mutex_lock(&data->lock, K_FOREVER);
 	regulator_nxp_vref_disable_hw(dev);
 	data->enabled = false;
+	k_mutex_unlock(&data->lock);
 	return 0;
 }
 
@@ -174,18 +180,22 @@ static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_
 	    mode != NXP_VREF_MODE_HIGH_POWER) {
 		return -EINVAL;
 	}
+	k_mutex_lock(&data->lock, K_FOREVER);
 	data->mode = mode;
 	if (data->enabled) {
 		regulator_nxp_vref_apply_mode(dev);
 	}
+	k_mutex_unlock(&data->lock);
 	return 0;
 }
 
 static int regulator_nxp_vref_get_mode(const struct device *dev, regulator_mode_t *mode)
 {
-	const struct regulator_nxp_vref_data *data = dev->data;
+	struct regulator_nxp_vref_data *data = dev->data;
 
+	k_mutex_lock(&data->lock, K_FOREVER);
 	*mode = data->mode;
+	k_mutex_unlock(&data->lock);
 	return 0;
 }
 
@@ -225,10 +235,12 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_
 	if (ret < 0 || voltage < min_uv || voltage > max_uv) {
 		return -EINVAL;
 	}
+	k_mutex_lock(&data->lock, K_FOREVER);
 	config->base->UTRIM = (config->base->UTRIM & ~NXP_VREF_TRIM_MASK) |
 			     (((uint32_t)idx << NXP_VREF_TRIM_SHIFT) & NXP_VREF_TRIM_MASK);
 	data->trim = idx;
 	data->trim_set = true;
+	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -236,13 +248,16 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_
 static int regulator_nxp_vref_get_voltage(const struct device *dev, int32_t *volt_uv)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
+	struct regulator_nxp_vref_data *data = dev->data;
 	uint16_t idx;
 	int ret;
 
+	k_mutex_lock(&data->lock, K_FOREVER);
 	/* Linear range index is the register value */
 	idx = (config->base->UTRIM & NXP_VREF_TRIM_MASK) >> NXP_VREF_TRIM_SHIFT;
 
 	ret = linear_range_group_get_value(utrim_ranges, ARRAY_SIZE(utrim_ranges), idx, volt_uv);
+	k_mutex_unlock(&data->lock);
 
 	return ret;
 }
@@ -360,6 +375,7 @@ static int regulator_nxp_vref_init(const struct device *dev)
 	int ret;
 
 	regulator_common_data_init(dev);
+	k_mutex_init(&data->lock);
 	data->mode = NXP_VREF_MODE_STANDBY;
 
 	ret = pm_device_driver_init(dev, regulator_nxp_vref_pm_action);
