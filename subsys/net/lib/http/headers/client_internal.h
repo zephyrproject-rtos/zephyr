@@ -72,7 +72,11 @@ struct http_client_ops {
 			    size_t len, bool end_stream);
 };
 
+#if defined(CONFIG_HTTP_CLIENT_VERSION_2)
+const struct http_client_ops *http_client_get_http2_ops(void);
+#else
 static inline const struct http_client_ops *http_client_get_http2_ops(void) { return NULL; }
+#endif
 
 /* Look up an active stream by its protocol stream identifier. A completed
  * stream is not found, even while it waits to be released. Returns NULL if no
