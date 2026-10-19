@@ -65,6 +65,10 @@ The main Wi-Fi shell subcommands include:
      - Disconnect from a Wi-Fi network.
    * - ``status``
      - Show the Wi-Fi interface status.
+   * - ``ranging``
+     - Start or cancel FTM ranging and show ranging capabilities, see :ref:`wifi_mgmt_ranging`.
+   * - ``location``
+     - Get or set the advertised location, see :ref:`wifi_mgmt_ranging`.
 
 Use ``wifi --help`` to list all available subcommands and ``wifi <subcommand> --help`` for
 command-specific help.
@@ -293,6 +297,37 @@ To enable and build with Wi-Fi NAN support:
 .. code-block:: bash
 
     $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
+
+.. _wifi_mgmt_ranging:
+
+Wi-Fi Ranging (FTM) and Location
+********************************
+
+The Wi-Fi management API can measure the distance to peers using Fine Timing Measurement (FTM,
+IEEE 802.11mc) and, optionally, 802.11az ranging, and can exchange location information (LCI and
+civic) with them. Ranging is requested with :c:macro:`NET_REQUEST_WIFI_RANGING_START`; per-peer
+results are reported with :c:macro:`NET_EVENT_WIFI_RANGING_RESULT` and the end of a session with
+:c:macro:`NET_EVENT_WIFI_RANGING_DONE`. Support for ranging is driver dependent.
+
+The features are selected with the following options:
+
+* :kconfig:option:`CONFIG_WIFI_MGMT_RANGING` enables ranging, with
+  :kconfig:option:`CONFIG_WIFI_MGMT_RANGING_INITIATOR` and
+  :kconfig:option:`CONFIG_WIFI_MGMT_RANGING_RESPONDER` selecting the roles and
+  :kconfig:option:`CONFIG_WIFI_MGMT_RANGING_11AZ` adding 802.11az modes.
+* :kconfig:option:`CONFIG_WIFI_MGMT_LOCATION` enables location, with
+  :kconfig:option:`CONFIG_WIFI_MGMT_LOCATION_LCI` and
+  :kconfig:option:`CONFIG_WIFI_MGMT_LOCATION_CIVIC` selecting the report formats.
+
+With the Wi-Fi shell, ranging and location are used as follows:
+
+.. code-block:: console
+
+   wifi ranging caps
+   wifi ranging responder enable
+   wifi ranging start --peer 00:11:22:33:44:55 --band 5 --channel 36 --bandwidth 80
+   wifi ranging cancel <session id>
+   wifi location self get
 
 API Reference
 *************

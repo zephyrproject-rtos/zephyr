@@ -63,6 +63,8 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Wi-Fi ranging (FTM) and location: :ref:`wifi_mgmt_ranging`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
