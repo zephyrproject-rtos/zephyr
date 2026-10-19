@@ -864,6 +864,42 @@ ZTEST(rstp_bridge, test_shell_show)
 	zexpect_not_null(strstr(out, "--forward-delay"), "%s", out);
 }
 
+/* The net events monitor shows the bridge events */
+ZTEST(rstp_bridge, test_shell_events)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	char root[sizeof("0000.00:00:00:00:00:00")];
+	uint8_t id[sizeof(uint64_t)];
+	const char *out;
+	size_t size;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_MGMT_EVENT_MONITOR);
+
+	shell_run(&ret, "net events on");
+	zassert_ok(ret);
+
+	zassert_ok(eth_bridge_stp_set_bridge_priority(bridges[2], 0U));
+	k_sleep(RECONVERGE_TIME);
+
+	out = shell_backend_dummy_get_output(sh, &size);
+	sys_put_be64(bridge_status(2).bridge_id, id);
+	snprintk(root, sizeof(root), "%02x%02x.%02x:%02x:%02x:%02x:%02x:%02x", id[0], id[1], id[2],
+		 id[3], id[4], id[5], id[6], id[7]);
+	zexpect_not_null(strstr(out, "bridge new root"), "%s", out);
+	zexpect_not_null(strstr(out, root), "%s", out);
+	zexpect_not_null(strstr(out, "bridge port state"), "%s", out);
+	zexpect_not_null(strstr(out, "bridge topology change count"), "%s", out);
+
+	shell_run(&ret, "net events off");
+	zexpect_ok(ret);
+
+	zassert_ok(eth_bridge_stp_set_bridge_priority(bridges[2],
+						      ETH_RSTP_DEFAULT_BRIDGE_PRIORITY));
+	k_sleep(RECONVERGE_TIME);
+	expect_ring_converged();
+}
+
 /* The help option works in place of the bridge and the interface index */
 ZTEST(rstp_bridge, test_shell_help)
 {
