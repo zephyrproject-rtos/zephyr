@@ -1,0 +1,58 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr test cellular modem
+
+compatible: "zephyr,modem-cellular-test"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  no-set-baudrate-script:
+    type: boolean
+    description: Omit the optional UART baud-rate configuration script
+
+  no-network-script:
+    type: boolean
+    description: Omit the optional network registration script
+
+  no-periodic-script:
+    type: boolean
+    description: Omit the optional periodic status script
+
+  no-shutdown-script:
+    type: boolean
+    description: Omit the optional modem shutdown script
+
+  no-dlci-setup-script:
+    type: boolean
+    description: Omit the optional DLCI setup script
+
+  modem-info-script:
+    type: boolean
+    description: Query every modem info string as part of the init script
+
+  startup-time-ms:
+    type: int
+    default: 1
+    description: Time to wait for the modem ready indication after power on
+
+  power-pulse-duration-ms:
+    type: int
+    default: 1
+    description: Duration of the power key pulse
+
+  reset-pulse-duration-ms:
+    type: int
+    default: 1
+    description: Duration of the reset pulse
+
+  cmux-disconnect-timeout-ms:
+    type: int
+    default: 1
+    description: Time to wait for the modem to return to AT mode after CMUX disconnects
+
+  shutdown-time-ms:
+    type: int
+    default: 1
+    description: Time to wait for the modem to power off
