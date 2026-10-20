@@ -23,6 +23,8 @@
 #include <stddef.h>
 
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -223,6 +225,36 @@ int bt_att_br_connect(struct bt_conn *conn);
  * @retval -ENOTCONN No ATT bearer on @p conn.
  */
 int bt_att_br_disconnect(struct bt_conn *conn);
+
+/** @brief GATT service published in SDP for the ATT bearer over BR/EDR
+ *
+ * Defined with @ref BT_ATT_BR_SDP_SERVICE.
+ */
+struct bt_att_br_sdp_service {
+	/** UUID of the primary service */
+	const struct bt_uuid *uuid;
+};
+
+/** @brief Publish the SDP record of a GATT service for BR/EDR
+ *
+ * With @kconfig{CONFIG_BT_ATT_BR}, an SDP record is published for each
+ * registered primary service with UUID @p _uuid, so that the service can be
+ * discovered with SDP on BR/EDR (Core v6.2 Vol 3 Part G 9). The records of the
+ * GAP and GATT services are always published. This is intended for services
+ * whose specification defines SDP interoperability; other services do not
+ * have SDP records.
+ *
+ * Without @kconfig{CONFIG_BT_ATT_BR}, the macro defines nothing.
+ *
+ * @param _name Name of the definition.
+ * @param _uuid Service UUID, a pointer to a @ref bt_uuid.
+ */
+#define BT_ATT_BR_SDP_SERVICE(_name, _uuid)                                                        \
+	COND_CODE_1(CONFIG_BT_ATT_BR,                                                              \
+		    (static const STRUCT_SECTION_ITERABLE(bt_att_br_sdp_service,                   \
+			_CONCAT(bt_att_br_sdp_service_, _name)) = {.uuid = (_uuid)}),              \
+		    (extern const struct bt_att_br_sdp_service                                     \
+			_CONCAT(bt_att_br_sdp_service_, _name)))
 
 /** @brief ATT channel option bit field values.
  * @note @ref BT_ATT_CHAN_OPT_UNENHANCED_ONLY and @ref BT_ATT_CHAN_OPT_ENHANCED_ONLY are mutually

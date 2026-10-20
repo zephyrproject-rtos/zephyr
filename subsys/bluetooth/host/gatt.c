@@ -1797,6 +1797,10 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 
 	db_changed();
 
+#if defined(CONFIG_BT_ATT_BR)
+	bt_att_br_db_changed();
+#endif /* CONFIG_BT_ATT_BR */
+
 	k_sched_unlock();
 	bt_dev_unlock();
 
@@ -1841,6 +1845,10 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	sc_indicate(sc_start_handle, sc_end_handle);
 
 	db_changed();
+
+#if defined(CONFIG_BT_ATT_BR)
+	bt_att_br_db_changed();
+#endif /* CONFIG_BT_ATT_BR */
 
 	k_sched_unlock();
 	bt_dev_unlock();
