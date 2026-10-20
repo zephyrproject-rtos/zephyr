@@ -1304,6 +1304,42 @@ config CODE_DATA_RELOCATION
 	  the target regions should be specified in CMakeLists.txt using
 	  zephyr_code_relocate().
 
+config LATE_RELOCATION_INIT_PRIORITY
+	int "Init priority for late BSS zeroing"
+	depends on CODE_DATA_RELOCATION
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Set the init priority for the .data section copying and .bss section zeroing configured
+	  via zephyr_code_relocate(... LATECOPY). This will be passed to the related SYS_INIT().
+
+choice LATE_RELOCATION_INIT_LEVEL
+	bool "Init level for late BSS zeroing"
+	depends on CODE_DATA_RELOCATION
+	default LATE_RELOCATION_POST_KERNEL
+	help
+	  Set the init level for the .bss section zeroing configured via
+	  zephyr_code_relocate(... LATECOPY).
+
+config LATE_RELOCATION_EARLY
+	bool "Copy .data and zero .bss during EARLY init level"
+
+config LATE_RELOCATION_PRE_KERNEL_1
+	bool "Copy .data and zero .bss during PRE_KERNEL_1 init level"
+
+config LATE_RELOCATION_PRE_KERNEL_2
+	bool "Copy .data and zero .bss during PRE_KERNEL_2 init level"
+
+config LATE_RELOCATION_POST_KERNEL
+	bool "Copy .data and zero .bss during POST_KERNEL init level"
+
+config LATE_RELOCATION_APPLICATION
+	bool "Copy .data and zero .bss during APPLICATION init level"
+
+config LATE_RELOCATION_SMP
+	bool "Copy .data and zero .bss during SMP init level"
+
+endchoice
+
 menu "DSP Options"
 
 config DSP_SHARING

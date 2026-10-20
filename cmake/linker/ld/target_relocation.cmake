@@ -8,6 +8,8 @@ macro(toolchain_ld_relocation)
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_data_relocate.ld")
   set(MEM_RELOCATION_SRAM_BSS_LD
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_bss_relocate.ld")
+  set(MEM_RELOCATION_EXTRA_RAM_BSS_LD
+       "${PROJECT_BINARY_DIR}/include/generated/linker_extra_ram_bss_relocate.ld")
   set(MEM_RELOCATION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
   set(MEM_REGION_DEFAULT_RAM RAM)
   set(DICT_FILE "${PROJECT_BINARY_DIR}/relocation_dict.txt")
@@ -34,6 +36,7 @@ macro(toolchain_ld_relocation)
       -b ${MEM_RELOCATION_SRAM_BSS_LD}
       -c ${MEM_RELOCATION_CODE}
       --default_ram_region ${MEM_REGION_DEFAULT_RAM}
+      -l \"$<JOIN:$<TARGET_PROPERTY:code_data_relocation_target,late_relocation_regions>,:>\"
     DEPENDS
       app
       kernel

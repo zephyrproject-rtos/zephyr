@@ -2120,6 +2120,27 @@ function(zephyr_code_relocate)
     "${code_rel_str}\n${CODE_REL_LOCATION}:${flag_list}:${file_list},${CODE_REL_FILTER}")
 endfunction()
 
+#[=======================================================================[.rst:
+
+Zephyr late relocation
+----------------------
+
+Helper function for deferring relocation of regions configured with zephyr_code_relocate()
+
+.. cmake:signature:: zephyr_late_relocation(<region> ...)
+
+The arguments are a list of memory region, such as PSRAM, that will be initialized using
+arch_late_memcpy() and arch_late_memset(), at a moment configured with:
+
+- :kconfig:option:`CONFIG_LATE_RELOCATION_INIT_LEVEL`
+- :kconfig:option:`CONFIG_LATE_RELOCATION_INIT_PRIORITY`
+
+#]=======================================================================]
+function(zephyr_late_relocation)
+  # Append the memory regions to a property that keeps track of which gets its init deferred
+  set_property(TARGET code_data_relocation_target APPEND PROPERTY late_relocation_regions ${ARGN})
+endfunction()
+
 # Usage:
 #   check_dtc_flag("-Wtest" DTC_WARN_TEST)
 #
