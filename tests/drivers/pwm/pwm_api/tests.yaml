@@ -61,6 +61,13 @@ tests:
       - mcx_n9xx_evk/mcxn947/cpu0
       - mcx_n9xx_evk/mcxn947/cpu0/qspi
     filter: dt_alias_exists("pwm-test")
+  drivers.pwm.frdm_imxrt1152_qtmr:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/frdm_imxrt1152_qtmr.overlay"
+    extra_configs:
+      - CONFIG_DEFAULT_PWM_PORT=1
+    platform_allow:
+      - frdm_imxrt1152/mimxrt1152
+    filter: dt_alias_exists("pwm-test")
   drivers.pwm.native_sim:
     platform_allow:
       - native_sim
