@@ -596,11 +596,21 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
+/* dma_stop() may be called from an ISR: only sleep while polling when that is allowed. */
+static void dma_xilinx_axi_dma_halt_poll_delay(void)
+{
+	if (k_is_in_isr() || k_is_pre_kernel()) {
+		k_busy_wait(1);
+	} else {
+		k_usleep(10);
+	}
+}
+
 static int dma_xilinx_axi_dma_stop(const struct device *dev, uint32_t channel)
 {
 	const struct dma_xilinx_axi_dma_config *cfg = dev->config;
 	struct dma_xilinx_axi_dma_data *data = dev->data;
-	struct dma_xilinx_axi_dma_channel *channel_data = &data->channels[channel];
+	struct dma_xilinx_axi_dma_channel *channel_data;
 
 	uint32_t new_control;
 
@@ -609,18 +619,35 @@ static int dma_xilinx_axi_dma_stop(const struct device *dev, uint32_t channel)
 			cfg->channels);
 		return -EINVAL;
 	}
+	channel_data = &data->channels[channel];
 
 	new_control = dma_xilinx_axi_dma_read_reg(channel_data, XILINX_AXI_DMA_REG_DMACR);
 	/* RS = 0 --> DMA will complete ongoing transactions and then go into hold */
 	new_control = new_control & ~XILINX_AXI_DMA_REGS_DMACR_RS;
 
 	dma_xilinx_axi_dma_write_reg(channel_data, XILINX_AXI_DMA_REG_DMACR, new_control);
+	/* A later configure must reset the core, including after a stop timeout. */
+	data->needs_dma_soft_reset = true;
 
-	/* commit before returning to caller */
+	/* Commit the stop request before polling its completion. */
 	barrier_dmem_fence_full();
 
-	/* Flag DMA soft reset on next dma_configure(). */
-	data->needs_dma_soft_reset = true;
+	/*
+	 * Clearing RS is only a stop request: outstanding transfers and
+	 * descriptor updates may continue until DMASR.Halted asserts, which
+	 * takes as long as the in-progress AXI transfers (normally a few
+	 * microseconds). dma_stop() therefore blocks until the channel has
+	 * halted or XILINX_AXI_DMA_STOP_TIMEOUT_MS has elapsed; it sleeps
+	 * while polling in thread context and busy-waits only in an ISR.
+	 */
+	if (!WAIT_FOR(dma_xilinx_axi_dma_read_reg(channel_data,
+						 XILINX_AXI_DMA_REG_DMASR) &
+			      XILINX_AXI_DMA_REGS_DMASR_HALTED,
+		      XILINX_AXI_DMA_STOP_TIMEOUT_MS * USEC_PER_MSEC,
+		      dma_xilinx_axi_dma_halt_poll_delay())) {
+		LOG_ERR("DMA channel %" PRIu32 " did not halt", channel);
+		return -ETIMEDOUT;
+	}
 
 	return 0;
 }
