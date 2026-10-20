@@ -704,6 +704,72 @@ static void test_recv_no_forwarding_port(void)
 	net_if_up(fake_iface[2]);
 }
 
+/* Receive a frame from src to dst on fake_iface[idx] and tell which ports
+ * sent it on.
+ */
+static uint32_t recv_frame_and_collect(int idx, const struct net_eth_addr *src,
+				       const struct net_eth_addr *dst)
+{
+	static const uint8_t data[] = {'r', 's', 'v', 'd'};
+	struct net_eth_hdr eth_hdr;
+	uint32_t sent = 0U;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(fake_iface[idx], sizeof(eth_hdr) + sizeof(data),
+					   NET_AF_UNSPEC, 0, K_FOREVER);
+	zassert_not_null(pkt, "");
+
+	memcpy(&eth_hdr.dst, dst, sizeof(eth_hdr.dst));
+	memcpy(&eth_hdr.src, src, sizeof(eth_hdr.src));
+	eth_hdr.type = net_htons(NET_ETH_PTYPE_ALL);
+
+	zassert_equal(net_pkt_write(pkt, &eth_hdr, sizeof(eth_hdr)), 0, "");
+	zassert_equal(net_pkt_write(pkt, data, sizeof(data)), 0, "");
+	zassert_equal(net_recv_data(fake_iface[idx], pkt), 0, "");
+
+	/* give time to the processing threads to run */
+	k_sleep(K_MSEC(20));
+
+	for (int i = 0; i < 3; i++) {
+		if (eth_fake_data[i].sent_pkt != NULL) {
+			net_pkt_unref(eth_fake_data[i].sent_pkt);
+			eth_fake_data[i].sent_pkt = NULL;
+			sent |= BIT(i);
+		}
+	}
+
+	return sent;
+}
+
+/* The reserved addresses 01-80-C2-00-00-00 to 01-80-C2-00-00-0F are never
+ * forwarded, the address after them is.
+ */
+static void test_recv_reserved_addresses(void)
+{
+	static const struct net_eth_addr src = {{0x02, 0x00, 0x5e, 0x30, 0x00, 0x01}};
+	struct net_eth_addr dst = {{0x01, 0x80, 0xc2, 0x00, 0x00, 0x00}};
+
+	/* Release what an earlier test left in the fake driver */
+	for (int i = 0; i < 3; i++) {
+		if (eth_fake_data[i].sent_pkt != NULL) {
+			net_pkt_unref(eth_fake_data[i].sent_pkt);
+			eth_fake_data[i].sent_pkt = NULL;
+		}
+	}
+
+	for (uint8_t last = 0x00; last <= 0x0f; last++) {
+		dst.addr[5] = last;
+		zexpect_equal(recv_frame_and_collect(0, &src, &dst), 0U,
+			      "Frame to 01:80:c2:00:00:%02x forwarded", last);
+	}
+
+	dst.addr[5] = 0x10;
+	zexpect_equal(recv_frame_and_collect(0, &src, &dst), BIT(1) | BIT(2),
+		      "Frame to 01:80:c2:00:00:10 not forwarded");
+
+	check_free_packet_count();
+}
+
 static void test_recv_with_bridge_fdb(void)
 {
 	struct net_eth_addr mac;
@@ -938,6 +1004,7 @@ ZTEST(net_eth_bridge, test_net_eth_bridge)
 #endif
 	test_recv_with_bridge();
 	test_recv_no_forwarding_port();
+	test_recv_reserved_addresses();
 	test_recv_with_bridge_fdb();
 	test_recv_with_bridge_fdb_ingress();
 	test_fdb_del_iface();
