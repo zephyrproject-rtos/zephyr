@@ -6,7 +6,7 @@
 / {
 	pinctrl: pinctrl@fd5f0000 {
 		compatible = "rockchip,rk3588-pinctrl";
-		reg = <0xfd5f0000 0x10000>;
+		reg = <0x0 0xfd5f0000 0x0 0x10000>;
 		status = "disabled";
 	};
 };
