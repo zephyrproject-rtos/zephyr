@@ -7,7 +7,7 @@
 #
 
 menuconfig ETH_XLNX_GEM
-	bool "Xilinx GEM Ethernet driver"
+	bool "Xilinx GEM Ethernet driver [DEPRECATED]"
 	default y
 	depends on DT_HAS_XLNX_GEM_ENABLED
 	depends on !QEMU_TARGET || (QEMU_TARGET && NET_QEMU_ETHERNET)
@@ -16,8 +16,11 @@ menuconfig ETH_XLNX_GEM
 	select CACHE_MANAGEMENT if DCACHE
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	select ETH_NIC_MODEL_ONBOARD
+	select DEPRECATED
 	help
-	  Enable Xilinx GEM Ethernet driver.
+	  Enable the Xilinx GEM Ethernet driver. It is deprecated in favour of
+	  the Cadence MACB/GEM driver, ETH_XLNX_CDNS_MACB, which the GEM nodes
+	  of the Zynq-7000 and ZynqMP use.
 
 config ETH_NIC_MODEL
 	string
