@@ -1,0 +1,55 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * A TPM channel captures the signal present on its own TPMx_CHn pad, and no
+ * on-chip route can feed another peripheral output into the capture latch, so
+ * the loopback needs an external wire on the Arduino header J2:
+ *
+ *   D9 (PTA18, GPIO output) ---> D10 (PTB0, TPM1_CH0, capture input)
+ */
+
+&pinctrl {
+	pinmux_tpm1_capture_in: pinmux_tpm1_capture_in {
+		group0 {
+			pinmux = <TPM1_CH0_PTB0>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+};
+
+/ {
+	zephyr,user {
+		capture-tester-gpios = <&gpioa 18 GPIO_ACTIVE_HIGH>;
+	};
+
+	counter_loopback_0: counter_loopback {
+		compatible = "test-counter-capture";
+		/* index order must match the order of the capture-tester-gpios */
+		test-counter-captures = <&tpm1 0 0>;
+	};
+};
+
+&gpioa {
+	/* Drives the loopback wire from PTA18. */
+	status = "okay";
+};
+
+&lpspi1 {
+	/* PTB0 is the LPSPI1 chip select on this board, release it for TPM1_CH0. */
+	status = "disabled";
+};
+
+&tpm1 {
+	compatible = "nxp,tpm-timer";
+	status = "okay";
+	#counter-capture-cells = <2>;
+	pinctrl-0 = <&pinmux_tpm1_capture_in>;
+	pinctrl-names = "default";
+};

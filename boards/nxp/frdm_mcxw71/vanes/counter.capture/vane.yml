@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# The TPM captures from its pad only, so the trigger GPIO is wired to it.
+fixture: counter_capture_loopback
