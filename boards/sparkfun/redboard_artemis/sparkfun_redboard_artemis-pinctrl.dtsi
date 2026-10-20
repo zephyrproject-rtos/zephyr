@@ -1,0 +1,46 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ambiq-apollo3-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P48>;
+		};
+
+		group2 {
+			pinmux = <UART0RX_P49>;
+			input-enable;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1TX_P24>;
+		};
+
+		group2 {
+			pinmux = <UART1RX_P25>;
+			input-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <M0SCK_P5>, <M0MISO_P6>, <M0MOSI_P7>;
+		};
+	};
+
+	i2c4_default: i2c4_default {
+		group1 {
+			pinmux = <M4SCL_P39>, <M4SDAWIR3_P40>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+};
