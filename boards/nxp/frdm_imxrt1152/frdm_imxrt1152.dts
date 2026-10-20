@@ -28,6 +28,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,flash = &w25q512nw;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &ext_flash_ctrl;
 	};
 
