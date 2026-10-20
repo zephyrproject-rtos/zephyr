@@ -8,6 +8,7 @@
 
 #include "eth_dwc_xgmac_priv.h"
 #include <zephyr/cache.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_MODULE_NAME eth_dwc_xgmac
 #define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
@@ -1641,7 +1642,6 @@ static const struct ethernet_api eth_dwc_xgmac_apis = {
 	.stop = eth_dwc_xgmac_stop_device,
 	.get_capabilities = eth_dwc_xgmac_get_capabilities,
 	.set_config = eth_dwc_xgmac_set_config,
-	.get_config = eth_dwc_xgmac_get_config,
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 	.get_stats = eth_dwc_xgmac_stats,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
