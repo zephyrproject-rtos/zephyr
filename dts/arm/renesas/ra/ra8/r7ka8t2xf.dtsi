@@ -7,6 +7,8 @@
 #include <arm/renesas/ra/ra8/ra8x2.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 
+/delete-node/ &i2s0;
+/delete-node/ &i2s1;
 /delete-node/ &usbhs;
 /delete-node/ &usbhs_phy;
 /delete-node/ &drw;

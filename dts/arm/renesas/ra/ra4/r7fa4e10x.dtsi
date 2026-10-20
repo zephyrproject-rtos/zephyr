@@ -16,6 +16,7 @@
 /delete-node/ &iic1;
 /delete-node/ &i3c0;
 /delete-node/ &pwm0;
+/delete-node/ &i2s0;
 
 / {
 	soc {
