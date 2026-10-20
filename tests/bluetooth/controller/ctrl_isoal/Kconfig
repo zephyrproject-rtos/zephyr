@@ -32,7 +32,7 @@ config BT_CTLR_ISOAL_SOURCES
 
 config BT_CTLR_ISO_RX_SDU_BUFFERS
 	int "Number of SDU fragments that the ISO-AL can buffer"
-	depends on BT_CTLR_ISO_RX_BUFFER_SDUS
+	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
 	default 0
 	range 0 64
 	help

@@ -42,11 +42,11 @@
 	(s == ISOAL_CONTINUE ? "CONTINUE" : \
 		(s == ISOAL_ERR_SPOOL ? "ERR SPOOL" : "???")))
 
-#if defined(ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE)
+#if defined(ISOAL_BUFFER_RX_SDUS_ENABLE)
 #define COLLATED_RX_SDU_INFO(_non_buf, _buf) (_buf)
 #else
 #define COLLATED_RX_SDU_INFO(_non_buf, _buf) (_non_buf)
-#endif /* ISOAL_CONFIG_BUFFER_RX_SDUS_ENABLE */
+#endif /* ISOAL_BUFFER_RX_SDUS_ENABLE */
 
 /* Maximum PDU payload for given number of PDUs */
 #define MAX_FRAMED_PDU_PAYLOAD(_pdus)                                                              \
