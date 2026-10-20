@@ -1490,8 +1490,6 @@ void net_wlan_set_mac_address(unsigned char *sta_mac, unsigned char *uap_mac)
 		net_clear_ipv6_ll_address(&g_mlan);
 #endif
 		(void)memcpy(g_mlan.state.ethaddr.addr, &sta_mac[0], MLAN_MAC_ADDR_LENGTH);
-		net_if_set_link_addr(g_mlan.netif, g_mlan.state.ethaddr.addr, NET_MAC_ADDR_LEN,
-				     NET_LINK_ETHERNET);
 	}
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
@@ -1500,8 +1498,6 @@ void net_wlan_set_mac_address(unsigned char *sta_mac, unsigned char *uap_mac)
 		net_clear_ipv6_ll_address(&g_uap);
 #endif
 		(void)memcpy(g_uap.state.ethaddr.addr, &uap_mac[0], MLAN_MAC_ADDR_LENGTH);
-		net_if_set_link_addr(g_uap.netif, g_uap.state.ethaddr.addr, NET_MAC_ADDR_LEN,
-				     NET_LINK_ETHERNET);
 	}
 #endif
 }
