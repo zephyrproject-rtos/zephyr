@@ -81,6 +81,7 @@ For more information about the PSOC™ Edge E84 and KIT_PSE84_EVAL:
 
 - `PSOC Edge E84 SoC Website`_
 - `KIT_PSE84_EVAL Board Website`_
+- `KIT_PSE84_EVAL User Guide`_
 
 Kit Contents
 ============
@@ -171,6 +172,44 @@ Default communication settings are **115200 8N1**.
 
 The BT HCI UART is assigned to **SCB4** (``uart4``) with hardware flow
 control (RTS/CTS).
+
+Ethernet
+========
+
+The KIT_PSE84_EVAL board supports 10/100 Mbps Ethernet via the Cadence GEM MAC
+and an external Microchip LAN8710A PHY connected to the Ethernet header. Because
+the Ethernet pins are shared with the Bluetooth HCI UART (Port 10) and Wi-Fi
+control GPIOs (Port 11), Ethernet is disabled by default and requires a resistor
+rework on the evaluation kit. Dedicated board variants (``.../eth``) provide the
+pin and clock configuration for Ethernet in MII mode.
+
+See section 3.3.5 of the `KIT_PSE84_EVAL User Guide`_ for resistor rework instructions
+(configuring the board between Bluetooth, Wi-Fi, and Ethernet MII/RMII).
+
+To build an application with Ethernet in MII mode on the CM33 core (Non-Secure):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :board: kit_pse84_eval/pse846gps2dbzc4a/m33/ns/eth
+   :goals: build
+
+To build for the Cortex-M55 core using sysbuild to include the CM33 companion
+application that boots CM55:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :board: kit_pse84_eval/pse846gps2dbzc4a/m55/eth
+   :west-args: -p --sysbuild
+   :goals: build
+
+To test in RMII mode (requires matching RMII hardware rework, PHY strap configuration,
+and an external 50 MHz clock supplied to the ``REF_CLK`` pin):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :board: kit_pse84_eval/pse846gps2dbzc4a/m33/ns/eth
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE="${ZEPHYR_BASE}/boards/infineon/kit_pse84_eval/rmii.overlay"
+   :goals: build
 
 Building
 ********
@@ -857,6 +896,9 @@ References
 
 .. _KIT_PSE84_EVAL Board Website:
     https://www.infineon.com/evaluation-board/KIT-PSE84-EVAL
+
+.. _KIT_PSE84_EVAL User Guide:
+   https://www.infineon.com/document-promo/infineon-kit-pse84-eval-user-guide-usermanual-en_c6ba547c-8833-4171-b596-faa11e53a2d8
 
 .. _ModusToolbox™ Programming Tools:
     https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolboxprogtools
