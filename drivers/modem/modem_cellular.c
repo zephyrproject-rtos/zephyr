@@ -3151,6 +3151,76 @@ static void modem_cellular_ring_gpio_callback(const struct device *dev, struct g
 	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RING);
 }
 
+#if defined(CONFIG_ZTEST)
+void modem_cellular_ztest_halt(const struct device *dev)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
+	const struct modem_cellular_config *config = dev->config;
+	struct k_work_sync sync;
+	struct modem_cellular_event_pkg event;
+
+	k_work_cancel_delayable_sync(&data->timeout_work, &sync);
+	k_work_cancel_sync(&data->event_dispatch_work, &sync);
+
+	net_mgmt_del_event_callback(&data->net_mgmt_event_callback);
+#if defined(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)
+	net_mgmt_del_event_callback(&data->if_event_callback);
+#endif
+
+	if (modem_cellular_gpio_is_enabled(&config->ring_gpio)) {
+		gpio_pin_interrupt_configure_dt(&config->ring_gpio, GPIO_INT_DISABLE);
+		gpio_remove_callback(config->ring_gpio.port, &data->ring_gpio_cb);
+	}
+
+	modem_chat_release(&data->chat);
+	modem_ppp_release(config->ppp);
+	modem_cmux_release(&data->cmux);
+
+	if (data->uart_pipe != NULL) {
+		modem_pipe_release(data->uart_pipe);
+	}
+
+	if (data->dlci1_pipe != NULL) {
+		modem_pipe_release(data->dlci1_pipe);
+	}
+
+	if (data->dlci2_pipe != NULL) {
+		modem_pipe_release(data->dlci2_pipe);
+	}
+
+	for (uint8_t i = 0; i < config->user_pipes_size; i++) {
+		struct modem_cellular_user_pipe *user_pipe = &config->user_pipes[i];
+
+		if (user_pipe->pipe != NULL) {
+			modem_pipe_release(user_pipe->pipe);
+		}
+	}
+
+	while (k_msgq_get(&data->event_queue, &event, K_NO_WAIT) == 0) {
+	}
+	k_work_cancel_sync(&data->event_dispatch_work, &sync);
+	k_work_cancel_delayable_sync(&data->timeout_work, &sync);
+
+	/* Halting bypasses the idle state, which normally forgets the registration */
+	modem_cellular_clear_registration_status(data);
+	net_if_dormant_on(modem_ppp_get_iface(config->ppp));
+
+	/* Return to the state modem_cellular_init() expects on a fresh boot */
+	data->state = MODEM_CELLULAR_STATE_IDLE;
+	data->original_baudrate = 0;
+	data->apn[0] = '\0';
+	data->recovery_count = 0;
+	data->script_failure_counter = 0;
+	atomic_clear(&data->periodic_paused);
+	data->periodic_timeout_skipped = false;
+	data->power_on_skipped = false;
+	data->suspend_pending = false;
+	data->cmux_connect_failed = false;
+	data->cmux_bus_opened = false;
+	data->cmd_pipe = NULL;
+}
+#endif
+
 static void modem_cellular_init_apn(struct modem_cellular_data *data)
 {
 #ifdef CONFIG_MODEM_CELLULAR_APN
