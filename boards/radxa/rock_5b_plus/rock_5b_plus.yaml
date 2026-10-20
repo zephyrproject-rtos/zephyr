@@ -6,3 +6,5 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 131072
+supported:
+  - pci
