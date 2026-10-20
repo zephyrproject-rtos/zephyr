@@ -46,8 +46,58 @@ details).
    :board: ch582m_dev_board
    :goals: build
 
-Flashing and debugging require an external SWD/SDI programmer, such as the
-WCH-Link, and OpenOCD with WCH-specific support.
+Before the first flash, the chip must be unprotected. Press the BOOT button on the board, plug in
+USB-C, and run the following ``wchisp`` command (see wchisp_):
+
+.. code-block:: console
+
+   wchisp config unprotect
+
+This step is done only once (it can be repeated if the board is switched to protected mode again).
+
+After that one can flash the application using ``wchisp`` - disconnect USB-C, press BOOT
+button, reconnect USB_C again and running the following command:
+
+.. code-block:: console
+
+   west flash --runner wchisp
+
+The application can also be flashed and debugged with an external WCH-Link probe. The WCH-Link
+enumerates as a USB (WinUSB/libusb) device for flashing and debugging. Any serial port it exposes
+is only a pass-through console UART and is not used for flashing.
+
+The WCH-Link debug interface only works on an unprotected chip. If a debug or flash command fails
+with ``WCH-Link failed to connect with riscvchip``, unprotect the chip as described above.
+
+``wlink`` (see wlink_) is the default runner:
+
+.. code-block:: console
+
+   west flash
+
+One can also use it explicitly with the following command:
+
+.. code-block:: console
+
+   west flash --runner wlink
+
+To debug the application with the WCH-Link, use a WCH-enabled OpenOCD build that provides the
+``wlinke`` adapter driver, such as the ``openocd-wch`` fork (see openocd_wch_). The OpenOCD shipped
+with the Zephyr SDK does not include this driver, so pass the fork's binary with ``--openocd``.
+
+Start the debug server in one terminal (replace the path with the location of your OpenOCD build):
+
+.. code-block:: console
+
+   west debugserver -r openocd --openocd C:\path\to\openocd-wch\bin\openocd.exe
+
+The server listens for GDB on port 3333. In another terminal, start the debug session:
+
+.. code-block:: console
+
+   west debug --no-rebuild --runner openocd --openocd C:\path\to\openocd-wch\bin\openocd.exe
+
+If the build directory is not the default ``build``, add ``-d <build-dir>`` to both commands.
 
 It's also possible to flash image using WCHISPStudio using default first stage bootloader through
 USB-C port. To do this add image to WCHISPStudio, press BOOT button on the board and plug in USB-C.
@@ -58,3 +108,6 @@ References
 .. target-notes::
 
 .. _WCH: http://www.wch-ic.com
+.. _wchisp: https://github.com/ch32-rs/wchisp
+.. _wlink: https://github.com/ch32-rs/wlink
+.. _openocd_wch: https://github.com/jnk0le/openocd-wch
