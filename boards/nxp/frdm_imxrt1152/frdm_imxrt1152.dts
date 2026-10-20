@@ -136,6 +136,13 @@
 	status = "okay";
 };
 
+/* ADC1 CH0A (GPIO_AD_06) is on J47-8 (A3), CH3A (GPIO_AD_12) on J47-4 (A1) */
+&lpadc1 {
+	pinctrl-0 = <&pinmux_lpadc1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 /*
  * The MIMXRT1152XHM8B on this board comes in the HM (232 MAPBGA)
  * package, which bonds fewer pads than the VM (289 MAPBGA) parts.
