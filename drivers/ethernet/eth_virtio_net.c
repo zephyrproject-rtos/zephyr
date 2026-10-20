@@ -86,7 +86,7 @@ enum _virtio_net_hdr_gso_types {
 };
 
 #define VIRTIO_NET_BUFLEN                                                                          \
-	(NET_ETH_MTU + sizeof(struct net_eth_hdr) + sizeof(struct _virtio_net_hdr))
+	(NET_ETH_MAX_FRAME_SIZE + sizeof(struct _virtio_net_hdr))
 /* virtqueue pairs are numbered from 1 upwards */
 /* convert pair number to virtqueue index */
 #define VIRTQ_RX(n) ((n - 1) * 2)
