@@ -39,11 +39,6 @@ config NET_SAMPLE_HTTPS_SERVICE
 	default y if NET_SAMPLE_WEBSOCKET_CONSOLE
 	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
 
-config NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT
-	int "Port number for HTTPS service"
-	default 443
-	depends on NET_SAMPLE_HTTPS_SERVICE
-
 if USB_DEVICE_STACK_NEXT
 
 # Source common USB sample options used to initialize new experimental USB
