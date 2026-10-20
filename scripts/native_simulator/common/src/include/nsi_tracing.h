@@ -19,6 +19,9 @@ extern "C" {
  *   Print a message/warning/error to the tracing backend
  *   and in case of nsi_print_error_and_exit() also call nsi_exit()
  *
+ * Error-and-exit APIs do not return. The process exits with a nonzero status;
+ * the exact value depends on the tracing backend.
+ *
  * All print()/vprint() APIs take the same arguments as printf()/vprintf().
  */
 

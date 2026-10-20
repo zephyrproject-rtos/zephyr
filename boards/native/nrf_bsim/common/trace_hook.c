@@ -5,6 +5,7 @@
  */
 #include <stdarg.h>
 #include "bs_tracing.h"
+#include "bsim_control.h"
 
 /*
  * Provide the posix_print_* functions required from all POSIX arch boards
@@ -23,6 +24,7 @@ static const unsigned int cpu_number;
 
 void posix_vprint_error_and_exit(const char *format, va_list vargs)
 {
+	bsim_set_trace_error();
 	bs_trace_vprint(BS_TRACE_ERROR, cpu_prefix, cpu_number, 0, BS_TRACE_AUTOTIME, 0,
 			format, vargs);
 }
@@ -75,6 +77,7 @@ int posix_trace_over_tty(int file_number)
 
 void nsi_vprint_error_and_exit(const char *format, va_list vargs)
 {
+	bsim_set_trace_error();
 	bs_trace_vprint(BS_TRACE_ERROR, cpu_prefix, cpu_number, 0, BS_TRACE_AUTOTIME, 0,
 			format, vargs);
 }

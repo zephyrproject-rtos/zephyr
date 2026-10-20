@@ -15,8 +15,10 @@
 #include "nsi_hw_scheduler.h"
 #include "NRF_HWLowL.h"
 #include "bsim_args_runner.h"
+#include "bsim_control.h"
 
 static bool bsim_disconnect_on_exit;
+static bool trace_error;
 
 /*
  * Control what will happen to the overall simulation when this executable exists.
@@ -30,9 +32,14 @@ void bsim_set_terminate_on_exit(bool terminate)
 	bsim_disconnect_on_exit = !terminate;
 }
 
+void bsim_set_trace_error(void)
+{
+	trace_error = true;
+}
+
 static uint8_t main_clean_up_trace_wrap(void)
 {
-	return nsi_exit_inner(0);
+	return nsi_exit_inner(trace_error ? 1 : 0);
 }
 
 static void trace_registration(void)

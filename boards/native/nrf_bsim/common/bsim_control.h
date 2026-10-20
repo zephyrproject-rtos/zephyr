@@ -15,6 +15,9 @@ extern "C" {
 
 void bsim_set_terminate_on_exit(bool terminate);
 
+/* Preserve failure status if trace cleanup transfers control to the runner. */
+void bsim_set_trace_error(void);
+
 #ifdef __cplusplus
 }
 #endif
