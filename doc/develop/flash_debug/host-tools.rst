@@ -748,6 +748,40 @@ using the ``--device`` option:
 
 For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
 
+.. _runner_ap_bootloader:
+
+ArduPilot Bootloader
+********************
+
+The ap_bootloader runner flashes flight controllers that run the ArduPilot bootloader, which
+speaks the PX4 bootloader protocol over USB. The runner implements the revisions of the
+protocol used by the ArduPilot bootloader; other PX4 bootloaders are not tested.
+
+The bootloader must already be installed on the board. It only erases and programs the
+application area that follows it in flash, so the board's ``zephyr,code-partition`` must start
+at the address where the bootloader expects the application. The runner refuses images linked
+at the start of flash.
+
+The runner finds the bootloader from ``--port`` or from its USB ID, and checks the board ID it
+reports against ``--board-id`` before erasing anything. This is the ``APJ_BOARD_ID`` of the
+board in ArduPilot. If an ArduPilot application runs on the board, the runner reboots it into
+the bootloader over MAVLink, on the bootloader port or on the ports with the USB ID given by
+``--app-usb-id``. Otherwise, as when a Zephyr application runs, reset or replug the board while
+the runner waits for the bootloader.
+
+A board enables the runner in its :file:`board.cmake`:
+
+.. code-block:: cmake
+
+   board_runner_args(ap_bootloader "--board-id=<APJ_BOARD_ID>" "--usb-id=<VID>:<PID>")
+   include(${ZEPHYR_BASE}/boards/common/ap_bootloader.board.cmake)
+
+.. code-block:: console
+
+   west flash --runner ap_bootloader
+
+Run ``west flash --runner ap_bootloader --context`` to list the runner options.
+
 .. _runner_rtkprog:
 
 Realtek Alternate Flash Programmer (rtkprog)
