@@ -53,6 +53,9 @@ config BT_ATT_PREPARE_COUNT_PER_CONN
 	  that a peer which never executes or cancels its queued writes
 	  cannot exhaust the pool for the other connections.
 
+	  The values that a deferred Execute Write Request has left to
+	  write (BT_GATT_DEFERRED_RSP) count as held as well.
+
 	  0 selects BT_ATT_PREPARE_COUNT / BT_MAX_CONN, at least 1, which
 	  gives every connection an equal share of the pool as long as the
 	  pool holds at least one buffer per connection. The remainder of
