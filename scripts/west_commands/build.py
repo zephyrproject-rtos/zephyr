@@ -390,10 +390,16 @@ class Build(Forceable):
             extra_overlay_confs = []
             extra_conf_files = []
             required_snippets = []
+            setups = []
             for section in [common, item]:
                 if not section:
                     continue
                 sysbuild = section.get('sysbuild', sysbuild)
+                # The test setups the scenario requires, realized by the
+                # board's vanes
+                setups.extend(
+                    req['setup'] for req in section.get('requires') or [] if 'setup' in req
+                )
                 for data in [
                         'extra_args',
                         'extra_configs',
@@ -454,6 +460,9 @@ class Build(Forceable):
 
             if sysbuild is not None:
                 self.args.sysbuild = sysbuild
+
+            if setups:
+                self.args.cmake_opts.append(f"-DVANES={';'.join(dict.fromkeys(setups))}")
 
         if found_test_metadata:
             args = []

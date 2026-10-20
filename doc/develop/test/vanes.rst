@@ -111,7 +111,9 @@ build with them by hand, name the setups in the ``VANES`` variable:
    west build -b frdm_mcxw71/mcxw716c tests/drivers/counter/counter_capture -- \
      -DVANES=counter.capture
 
-Under sysbuild, ``VANES`` applies to the main application image.
+``west build -T <scenario>`` passes the setups the scenario requires, as
+twister does. Under sysbuild, ``VANES`` applies to the main application
+image.
 
 :zephyr_file:`scripts/list_vanes.py` lists the setups, the boards realizing
 each, and the setups a board realizes.
