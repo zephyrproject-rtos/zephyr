@@ -272,7 +272,12 @@ typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
  *  and the request is responded to with @ref bt_gatt_deferred_read_rsp or
  *  @ref bt_gatt_deferred_error_rsp, later from any thread or from the callback itself.
  *
- *  Read, Read Blob and Read By Type Requests are served this way.
+ *  Read, Read Blob, Read By Type, Read Multiple and Read Multiple Variable
+ *  Length Requests are served this way. A Read Multiple [Variable Length]
+ *  Request calls the method of each deferred attribute it lists, one after
+ *  the other: the next one once the previous value has a response.
+ *  Each call has its own id and is responded to on its own; the host puts
+ *  the values together in one response.
  *
  *  @note When the stack invokes this method to serve a remote
  *  operation it does so from a thread context chosen by the
@@ -436,6 +441,8 @@ int bt_gatt_deferred_read_rsp(uint32_t id, const void *data, uint16_t len);
 int bt_gatt_deferred_write_rsp(uint32_t id);
 
 /** @brief Reject a deferred read or write with an error
+ *
+ *  For a Read Multiple [Variable Length] Request this fails the whole request.
  *
  *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
  *
