@@ -47,6 +47,21 @@ extern const struct esp_hosted_mcu_spi_config esp_hosted_mcu_spi_config_0;
 #define ESP_HOSTED_MCU_RX_BURST 16
 
 /*
+ * Receive-side packet reassembly. The coprocessor splits a packet that does
+ * not fit one frame into consecutive frames, each with its own header; all
+ * but the last carry ESP_HOSTED_MCU_FLAG_FRAGMENT.
+ */
+struct esp_hosted_mcu_reasm {
+	/* Header of the first fragment, describes the whole packet. */
+	struct esp_hosted_mcu_header hdr;
+	uint16_t len;
+	bool active;
+	/* Set when the packet outgrew buf; discard up to its last fragment. */
+	bool overflow;
+	uint8_t buf[CONFIG_ESP_HOSTED_MCU_RX_REASSEMBLY_SIZE];
+};
+
+/*
  * Core per-instance state. Owns the transport link, the RPC round-trip
  * machinery and the consumer dispatch table. A single instance is supported.
  */
@@ -59,6 +74,7 @@ struct esp_hosted_mcu_data {
 	k_tid_t tid;
 	uint32_t fw_version;
 	bool rx_stride_aligned;
+	struct esp_hosted_mcu_reasm reasm;
 	esp_hosted_mcu_rx_cb_t if_cb[ESP_HOSTED_MCU_MAX_IF];
 	void *if_user[ESP_HOSTED_MCU_MAX_IF];
 	esp_hosted_mcu_event_cb_t rpc_event_cb;
@@ -420,11 +436,15 @@ static void esp_hosted_mcu_priv_event(struct esp_hosted_mcu_data *data, const ui
 	}
 }
 
+/*
+ * Deliver one packet. The header supplies the routing fields; payload and
+ * len are passed separately because a reassembled packet's payload lives in
+ * the reassembly buffer rather than after its header.
+ */
 static void esp_hosted_mcu_process_one(struct esp_hosted_mcu_data *data,
-				       const struct esp_hosted_mcu_header *hdr)
+				       const struct esp_hosted_mcu_header *hdr,
+				       const uint8_t *payload, uint16_t len)
 {
-	const uint8_t *payload = (const uint8_t *)hdr + hdr->offset;
-
 	/*
 	 * The coprocessor sends frames with the header checksum field left zero, so
 	 * the receive path does not validate it. The transmit path still fills
@@ -434,7 +454,7 @@ static void esp_hosted_mcu_process_one(struct esp_hosted_mcu_data *data,
 	switch (hdr->if_type) {
 	case ESP_HOSTED_MCU_SERIAL_IF:
 		esp_hosted_mcu_dispatch_serial(data, (const struct esp_hosted_mcu_tlv *)payload,
-					       hdr->len);
+					       len);
 		break;
 	case ESP_HOSTED_MCU_STA_IF:
 	case ESP_HOSTED_MCU_AP_IF:
@@ -444,18 +464,70 @@ static void esp_hosted_mcu_process_one(struct esp_hosted_mcu_data *data,
 
 		compiler_barrier();
 		if (cb != NULL) {
-			cb(payload, hdr->len, hdr->hci_pkt_type, data->if_user[hdr->if_type]);
+			cb(payload, len, hdr->hci_pkt_type, data->if_user[hdr->if_type]);
 		}
 		break;
 	}
 	case ESP_HOSTED_MCU_PRIV_IF:
 		if (hdr->priv_pkt_type == ESP_HOSTED_MCU_PACKET_TYPE_EVENT) {
-			esp_hosted_mcu_priv_event(data, payload, hdr->len);
+			esp_hosted_mcu_priv_event(data, payload, len);
 		}
 		break;
 	default:
 		LOG_DBG("unhandled if_type %u", hdr->if_type);
 		break;
+	}
+}
+
+/*
+ * Pass one complete, validated frame through fragment reassembly. A frame
+ * outside a fragmented packet is delivered directly. Otherwise its payload
+ * is appended to the reassembly buffer, and the packet is delivered once
+ * the frame without the fragment flag arrives.
+ */
+static void esp_hosted_mcu_rx_frame(struct esp_hosted_mcu_data *data,
+				    const struct esp_hosted_mcu_header *hdr)
+{
+	struct esp_hosted_mcu_reasm *reasm = &data->reasm;
+	const uint8_t *payload = (const uint8_t *)hdr + hdr->offset;
+	bool more = (hdr->flags & ESP_HOSTED_MCU_FLAG_FRAGMENT) != 0;
+
+	/* Fragments of one packet are sent back to back on one interface. */
+	if (reasm->active &&
+	    (hdr->if_type != reasm->hdr.if_type || hdr->if_num != reasm->hdr.if_num)) {
+		LOG_WRN("dropping incomplete if_type %u packet", reasm->hdr.if_type);
+		reasm->active = false;
+	}
+
+	if (!reasm->active) {
+		if (!more) {
+			esp_hosted_mcu_process_one(data, hdr, payload, hdr->len);
+			return;
+		}
+
+		reasm->hdr = *hdr;
+		reasm->len = 0;
+		reasm->overflow = false;
+		reasm->active = true;
+	}
+
+	if (!reasm->overflow) {
+		if (hdr->len > sizeof(reasm->buf) - reasm->len) {
+			LOG_WRN("dropping fragmented packet over %zu bytes", sizeof(reasm->buf));
+			reasm->overflow = true;
+		} else {
+			memcpy(&reasm->buf[reasm->len], payload, hdr->len);
+			reasm->len += hdr->len;
+		}
+	}
+
+	if (more) {
+		return;
+	}
+
+	reasm->active = false;
+	if (!reasm->overflow) {
+		esp_hosted_mcu_process_one(data, &reasm->hdr, reasm->buf, reasm->len);
 	}
 }
 
@@ -484,8 +556,11 @@ static uint16_t esp_hosted_mcu_process_frame(struct esp_hosted_mcu_data *data, c
 		    hdr->offset != ESP_HOSTED_MCU_HEADER_SIZE) {
 			/*
 			 * The header itself is not usable, so no resync point
-			 * can be derived from it. Drop what is left.
+			 * can be derived from it. Drop what is left, including
+			 * any packet under reassembly, which may now be missing
+			 * a fragment.
 			 */
+			data->reasm.active = false;
 			return len;
 		}
 		if (off + frame_len > len) {
@@ -493,7 +568,7 @@ static uint16_t esp_hosted_mcu_process_frame(struct esp_hosted_mcu_data *data, c
 			return off;
 		}
 
-		esp_hosted_mcu_process_one(data, hdr);
+		esp_hosted_mcu_rx_frame(data, hdr);
 
 		/*
 		 * When the coprocessor aggregates frames it pads each one to a

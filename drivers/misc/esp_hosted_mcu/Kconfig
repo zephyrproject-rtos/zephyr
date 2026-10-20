@@ -134,6 +134,15 @@ config ESP_HOSTED_MCU_EVENT_TASK_POLL_MS
 	  the worst-case receive latency: every request and response pays
 	  up to one poll period.
 
+config ESP_HOSTED_MCU_RX_REASSEMBLY_SIZE
+	int "Receive reassembly buffer size"
+	default 3200
+	range 1 65535
+	help
+	  Largest payload, in bytes, that can be rebuilt from frames the
+	  coprocessor sends with the fragment flag set. A fragmented packet
+	  that does not fit is dropped.
+
 module = ESP_HOSTED_MCU
 module-str = esp-hosted-mcu
 source "subsys/logging/Kconfig.template.log_config"
