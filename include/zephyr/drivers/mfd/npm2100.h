@@ -3,6 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup mdf_interface_npm2100
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MFD_NPM2100_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MFD_NPM2100_H_
 
@@ -11,8 +16,10 @@ extern "C" {
 #endif
 
 /**
- * @defgroup mdf_interface_npm2100 MFD NPM2100 Interface
+ * @defgroup mdf_interface_npm2100 nPM2100
  * @ingroup mfd_interfaces
+ * @since 4.1
+ * @version 0.1.0
  * @{
  */
 
@@ -20,7 +27,7 @@ extern "C" {
 #include <stdint.h>
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/slist.h>
 
 enum mfd_npm2100_event {
 	NPM2100_EVENT_SYS_DIETEMP_WARN,
@@ -54,70 +61,109 @@ enum mfd_npm2100_timer_mode {
 	NPM2100_TIMER_MODE_WAKEUP,
 };
 
+/** Event bits encoded as BIT(NPM2100_EVENT_*). */
+typedef uint32_t npm2100_event_t;
+
+struct mfd_npm2100_event_callback;
+
 /**
- * @brief Write npm2100 timer register
+ * Handle one PMIC event.
  *
- * The timer tick resolution is 1/64 seconds.
- * This function does not start the timer (see mfd_npm2100_start_timer()).
+ * @param dev PMIC
+ * @param cb Registered subscription
+ * @param events Matching event bit
+ */
+typedef void (*npm2100_callback_handler_t)(const struct device *dev,
+					   struct mfd_npm2100_event_callback *cb,
+					   npm2100_event_t events);
+
+/**
+ * Caller-owned subscription.
  *
- * @param dev npm2100 mfd device
- * @param time_ms timer value in ms
- * @param mode timer mode
- * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
- * @retval -EINVAL Time value is too large.
+ * Handlers run on the system workqueue before event clearing.
+ * Handlers may remove only themselves. Serialize external list changes with dispatch.
+ * Keep this object intact until removal and dispatch complete.
+ */
+struct mfd_npm2100_event_callback {
+	/** Driver-owned linkage. */
+	sys_snode_t node;
+	/** Subscribed events. */
+	npm2100_event_t event_mask;
+	/** Non-NULL event handler. */
+	npm2100_callback_handler_t handler;
+};
+
+/**
+ * Configure the timer without starting it.
+ *
+ * @param dev PMIC
+ * @param time_ms Duration in ms, rounded to 1/64 s
+ * @param mode Timer function
+ * @retval 0 Success
+ * @retval -EINVAL Duration outside timer range
+ * @retval -EBUSY Timer running
+ * @return Negative errno
  */
 int mfd_npm2100_set_timer(const struct device *dev, uint32_t time_ms,
 			  enum mfd_npm2100_timer_mode mode);
 
 /**
- * @brief Start npm2100 timer
+ * Start the timer.
  *
- * @param dev npm2100 mfd device
- * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
+ * @param dev PMIC
+ * @retval 0 Success
+ * @return Negative errno
  */
 int mfd_npm2100_start_timer(const struct device *dev);
 
 /**
- * @brief npm2100 full power reset
+ * Reset PMIC power.
  *
- * @param dev npm2100 mfd device
- * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
+ * @param dev PMIC
+ * @retval 0 Success
+ * @return Negative errno
  */
 int mfd_npm2100_reset(const struct device *dev);
 
 /**
- * @brief npm2100 hibernate
+ * Hibernate until SHPHLD or timer wakeup.
  *
- * Enters low power state, and wakes after specified time or "shphld" pin signal.
- * Pass-through mode can be used when the battery voltage is high enough to supply the pmic directly
- * without boosting. This lowers the power consumption of the pmic when hibernate mode is active.
- *
- * @param dev npm2100 mfd device
- * @param time_ms timer value in ms. Set to 0 to disable timer.
- * @param pass_through set to use pass-through hibernate mode.
- * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
- * @retval -EINVAL Time value is too large.
- * @retval -EBUSY The timer is already in use.
+ * @param dev PMIC
+ * @param time_ms Wake delay in ms; 0 skips timer setup
+ * @param pass_through Bypass boost when battery voltage allows
+ * @retval 0 Success
+ * @retval -EINVAL Duration outside timer range
+ * @retval -EBUSY Timer running
+ * @return Negative errno
  */
 int mfd_npm2100_hibernate(const struct device *dev, uint32_t time_ms, bool pass_through);
 
 /**
- * @brief Add npm2100 event callback
+ * Register an event callback.
  *
- * @param dev npm2100 mfd device
- * @param callback callback
- * @return 0 on success, negative errno value on failure.
+ * Thread context; delivery needs host-int-gpios.
+ * Re-registering succeeds without duplication.
+ *
+ * @param dev PMIC
+ * @param[in,out] callback Subscription for one device
+ * @retval 0 Callback registered
+ * @retval -EINVAL NULL callback or handler
+ * @return Negative I2C errno
  */
-int mfd_npm2100_add_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm2100_add_callback(const struct device *dev, struct mfd_npm2100_event_callback *callback);
 
 /**
- * @brief Remove npm2100 event callback
+ * Unlink an event callback.
  *
- * @param dev npm2100 mfd device
- * @param callback callback
- * @return 0 on success, negative errno value on failure.
+ * Thread context; no wait for dispatch. PMIC interrupts stay enabled.
+ *
+ * @param dev PMIC
+ * @param[in,out] callback Registered subscription
+ * @retval 0 Callback removed
+ * @retval -EINVAL NULL or unregistered callback
  */
-int mfd_npm2100_remove_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm2100_remove_callback(const struct device *dev,
+				struct mfd_npm2100_event_callback *callback);
 
 /** @} */
 
