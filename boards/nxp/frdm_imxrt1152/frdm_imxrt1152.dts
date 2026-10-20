@@ -132,6 +132,14 @@
 	};
 };
 
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
+
 &systick {
 	status = "okay";
 };
