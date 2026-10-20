@@ -100,6 +100,55 @@ The default target ``frdm_mcxa577/mcxa577`` uses the on-SoC 10BASE-T1S PHY:
    :board: frdm_mcxa577
    :goals: build
 
+10BASE-T1S Board-to-Board Setup
+-------------------------------
+
+Two boards can be connected directly with a twisted pair between their 10BASE-T1S connectors.
+Exactly one node on the segment must be the PLCA coordinator (node ID 0), and the boards need
+different MAC addresses. The board devicetree uses PLCA node ID 1 and a random MAC address,
+which is identical on every board when ``CONFIG_TEST_RANDOM_GENERATOR`` is enabled, as in
+:zephyr:code-sample:`zperf`.
+
+Build the first board with the default configuration (``192.0.2.1``). For the second board,
+save the following overlay as ``samples/net/zperf/t1s_node0.overlay``:
+
+.. code-block:: dts
+
+   &enet {
+       /delete-property/ zephyr,random-mac-address;
+       local-mac-address = [00 04 9f 00 00 01];
+   };
+
+   &t1s {
+       plca-enable;
+       plca-node-id = <0>;
+       plca-node-count = <2>;
+       plca-burst-count = <0>;
+       plca-burst-timer = <0x80>;
+       plca-to-timer = <0x20>;
+       status = "okay";
+   };
+
+and the following as ``samples/net/zperf/t1s_node0.conf`` to swap the IP addresses:
+
+.. code-block:: cfg
+
+   CONFIG_NET_CONFIG_MY_IPV6_ADDR="2001:db8::2"
+   CONFIG_NET_CONFIG_PEER_IPV6_ADDR="2001:db8::1"
+   CONFIG_NET_CONFIG_MY_IPV4_ADDR="192.0.2.2"
+   CONFIG_NET_CONFIG_PEER_IPV4_ADDR="192.0.2.1"
+
+Then build the second board with both files:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/zperf
+   :board: frdm_mcxa577
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=t1s_node0.overlay -DEXTRA_CONF_FILE=t1s_node0.conf
+   :goals: build
+
+After flashing, ``net iface`` must show a different ``Link addr`` on each board, and
+``net ping 192.0.2.2`` from the first board must succeed.
+
 External PHY over MII
 ---------------------
 
