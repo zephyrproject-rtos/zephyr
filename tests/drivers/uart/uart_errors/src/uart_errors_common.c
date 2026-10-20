@@ -316,9 +316,17 @@ void async_rx_reclaim_chunks(void)
 void async_rx_start(bool hwfc)
 {
 	uint8_t *buf = alloc_rx_chunk();
+	int err;
 
 	zassert_not_null(buf);
-	zassert_equal(uart_rx_enable(uart_dev, buf, RX_CHUNK_LEN, RX_TIMEOUT), 0);
+	err = uart_rx_enable(uart_dev, buf, RX_CHUNK_LEN, RX_TIMEOUT);
+	if (err == -ENOTSUP) {
+		/* The instance lacks what its driver's async mode needs, DMA
+		 * channels for instance.
+		 */
+		ztest_test_skip();
+	}
+	zassert_equal(err, 0);
 	k_msleep(hwfc ? 10 : 1);
 }
 #endif
