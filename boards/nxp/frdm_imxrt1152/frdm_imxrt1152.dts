@@ -137,6 +137,39 @@
 };
 
 /*
+ * ENET_1G drives the YT8521 RGMII PHY (U23, address 1) on J54. RXD3 and
+ * MDIO pass the U13 mux, whose default selects Ethernet over the second
+ * HyperRAM. The PHY reset is held off by a pull-up and its PCAL6524
+ * control line is not used.
+ */
+&enet1g {
+	pinctrl-0 = <&pinmux_enet1g>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&enet1g_mac {
+	phy-handle = <&enet1g_phy>;
+	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
+	status = "okay";
+};
+
+&enet1g_mdio {
+	pinctrl-0 = <&pinmux_enet1g_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	enet1g_phy: phy@1 {
+		compatible = "motorcomm,yt8521";
+		reg = <1>;
+		motorcomm,rx-delay-sel = <13>;
+		motorcomm,tx-delay-sel = <13>;
+		status = "okay";
+	};
+};
+
+/*
  * The MIMXRT1152XHM8B on this board comes in the HM (232 MAPBGA)
  * package, which bonds fewer pads than the VM (289 MAPBGA) parts.
  * Mark the unbonded GPIO pins as reserved and compact the GPIO pinmux
