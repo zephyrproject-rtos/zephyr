@@ -766,7 +766,7 @@ static int compare_strings(const char *path, const char *resource)
 	return 1; /* Strings are not equal */
 }
 
-static int path_len_without_query(const char *path)
+int http_server_path_len_without_query(const char *path)
 {
 	int len = 0;
 
@@ -891,14 +891,14 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 
 			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
 			if (ret == 0) {
-				*path_len = path_len_without_query(path);
+				*path_len = http_server_path_len_without_query(path);
 				return resource->detail;
 			}
 		}
 	}
 
 	if (service->res_fallback != NULL && !skip_this(service->res_fallback, is_websocket)) {
-		*path_len = path_len_without_query(path);
+		*path_len = http_server_path_len_without_query(path);
 		return service->res_fallback;
 	}
 
@@ -972,7 +972,7 @@ return_filename:
 void http_server_get_content_type_from_extension(char *url, char *content_type,
 						 size_t content_type_size)
 {
-	size_t url_len = strlen(url);
+	size_t url_len = http_server_path_len_without_query(url);
 
 	HTTP_SERVER_CONTENT_TYPE_FOREACH(ct) {
 		char *ext;
