@@ -1,0 +1,9 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/*
+ * USART6 is clocked from APB2 (84 MHz). 6 Mbit/s exceeds fCK / 16 (5.25 Mbit/s) and requires
+ * oversampling by 8 (USARTDIV = 84 MHz / (8 * 6 Mbit/s) = 1.75, no baud rate error).
+ */
+&usart6 {
+	current-speed = <6000000>;
+};

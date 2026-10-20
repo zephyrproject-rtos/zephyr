@@ -167,6 +167,16 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/nucleo_h723zg.overlay;boards/nucleo_h723zg_nocachemem.overlay"
       - EXTRA_CONF_FILE=stm32_nocache_mem_dt.conf
+  drivers.uart.async_api.stm32_oversampling_8:
+    # Baud rate above fCK / 16, requires oversampling by 8
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    platform_allow:
+      - nucleo_f429zi
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nucleo_f429zi.overlay;boards/nucleo_f429zi_oversampling_8.overlay"
   drivers.uart.async_api.mchp:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     platform_allow:
