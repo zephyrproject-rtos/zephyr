@@ -16,6 +16,7 @@
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,sram = &dram;
+		zephyr,pcie-controller = &pcie2x1l2;
 	};
 
 	dram: memory@10000000 {
@@ -27,5 +28,13 @@
 
 &uart2 {
 	current-speed = <1500000>;
+	status = "okay";
+};
+
+&its0 {
+	status = "okay";
+};
+
+&pcie2x1l2 {
 	status = "okay";
 };
