@@ -20,7 +20,7 @@
 
 	sram0: memory@0 {
 		compatible = "mmio-sram";
-		reg = <0x0 DT_SIZE_G(1)>;
+		reg = <0x0 0x0 0x0 DT_SIZE_G(1)>;
 		device_type = "memory";
 	};
 };
