@@ -28,6 +28,14 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_TMAP_PERIPHERAL_STEREO=y
+  sample.bluetooth.audio.tmap_peripheral.ct_only:
+    build_only: true
+    extra_configs:
+      - CONFIG_TMAP_PERIPHERAL_ROLE_UMR=n
+  sample.bluetooth.audio.tmap_peripheral.umr_only:
+    build_only: true
+    extra_configs:
+      - CONFIG_TMAP_PERIPHERAL_ROLE_CT=n
   sample.bluetooth.audio.tmap_peripheral.playback:
     build_only: true
     platform_exclude:
