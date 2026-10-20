@@ -316,14 +316,15 @@ static int hpack_handle_indexed(const uint8_t *buf, size_t datalen,
 		return -EBADMSG;
 	}
 
-	if (entry->name == NULL || entry->value == NULL) {
+	if (entry->name == NULL) {
 		return -EBADMSG;
 	}
 
 	header->name = entry->name;
 	header->name_len = strlen(entry->name);
-	header->value = entry->value;
-	header->value_len = strlen(entry->value);
+	/* Static entries with an empty value store it as NULL. */
+	header->value = (entry->value != NULL) ? entry->value : "";
+	header->value_len = strlen(header->value);
 
 	return ret;
 }

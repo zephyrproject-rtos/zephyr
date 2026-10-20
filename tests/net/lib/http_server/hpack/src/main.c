@@ -676,4 +676,19 @@ ZTEST(http2_hpack, test_http2_hpack_integer_overflow)
 	zassert_equal(ret, -EBADMSG, "Wrapped integer accepted (%d)", ret);
 }
 
+ZTEST(http2_hpack, test_http2_hpack_indexed_empty_value)
+{
+	/* Static table entry 15, accept-charset, has an empty value. */
+	static const uint8_t indexed[] = { 0x8f };
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	ret = http_hpack_decode_header(indexed, sizeof(indexed), &dec);
+	zassert_equal(ret, sizeof(indexed), "Indexed entry rejected (%d)", ret);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
+	zassert_equal(dec.name_len, strlen("accept-charset"), "Name length %zu", dec.name_len);
+	zassert_mem_equal(dec.name, "accept-charset", dec.name_len, "Wrong name");
+	zassert_equal(dec.value_len, 0, "Decoded a %zu byte value", dec.value_len);
+}
+
 ZTEST_SUITE(http2_hpack, NULL, NULL, NULL, NULL, NULL);
