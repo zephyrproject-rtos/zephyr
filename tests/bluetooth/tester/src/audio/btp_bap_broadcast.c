@@ -1323,6 +1323,7 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 		broadcaster->requested_bis_sync);
 
 	broadcaster->biginfo_received = true;
+	broadcaster->biginfo_encrypted = biginfo->encryption;
 
 	if (biginfo->encryption && !broadcaster->broadcast_code_received) {
 		/* Wait for Set Broadcast Code and start sync at broadcast_code_cb */
@@ -1963,6 +1964,13 @@ uint8_t btp_bap_broadcast_sink_bis_sync(const void *cmd, uint16_t cmd_len, void 
 
 	if (!broadcaster->biginfo_received) {
 		LOG_DBG("Broadcast sync requested, but have not yet received BIGInfo");
+		remote_broadcast_sources_unlock();
+		return BTP_STATUS_SUCCESS;
+	}
+
+	if (broadcaster->biginfo_encrypted && !broadcaster->broadcast_code_received) {
+		/* Sync is started from broadcast_code_cb once the code has been written */
+		LOG_DBG("Broadcast sync requested, but have not yet received broadcast code");
 		remote_broadcast_sources_unlock();
 		return BTP_STATUS_SUCCESS;
 	}
