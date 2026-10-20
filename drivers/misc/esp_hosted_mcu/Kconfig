@@ -151,6 +151,15 @@ config ESP_HOSTED_MCU_RESTART_PRIORITY
 	  listeners block while they wait for RPC responses, so the priority
 	  only decides how soon the recovery runs against other threads.
 
+config ESP_HOSTED_MCU_RX_REASSEMBLY_SIZE
+	int "Receive reassembly buffer size"
+	default 3200
+	range 1 65535
+	help
+	  Largest payload, in bytes, that can be rebuilt from frames the
+	  coprocessor sends with the fragment flag set. A fragmented packet
+	  that does not fit is dropped.
+
 module = ESP_HOSTED_MCU
 module-str = esp-hosted-mcu
 source "subsys/logging/Kconfig.template.log_config"
