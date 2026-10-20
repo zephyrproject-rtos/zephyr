@@ -17,6 +17,7 @@
 #define XILINX_AXI_DMA_LINKED_CHANNEL_FULL_CSUM_OFFLOAD 0x1
 
 #define XILINX_AXI_DMA_RESET_TIMEOUT_MS 1000
+#define XILINX_AXI_DMA_STOP_TIMEOUT_US  1000000
 
 #include <stdint.h>
 #include <zephyr/device.h>
