@@ -122,6 +122,21 @@ tests:
       - native_sim
     platform_exclude: nrf52dk/nrf52810
     harness: keyboard
+  bluetooth.shell.shell_br.att_br:
+    extra_configs:
+      - CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+      - CONFIG_BT_ATT_BR=y
+      - CONFIG_BT_GATT_DYNAMIC_DB=y
+    extra_args: CONF_FILE="prj_br.conf"
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    platform_exclude: nrf52dk/nrf52810
+    harness: keyboard
   bluetooth.shell.no_privacy:
     integration_platforms:
       - native_sim
