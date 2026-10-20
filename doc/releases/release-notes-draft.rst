@@ -63,6 +63,23 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Bluetooth
+
+  * Host
+
+    * :kconfig:option:`CONFIG_BT_GATT_DEFERRED_RSP`
+    * :c:macro:`BT_ATT_TIMEOUT_SEC`
+    * :c:macro:`BT_GATT_ATTRIBUTE_DEFERRED`
+    * :c:macro:`BT_GATT_CHARACTERISTIC_DEFERRED`
+    * :c:member:`bt_gatt_attr.deferred`
+    * :c:struct:`bt_gatt_attr_deferred`
+    * :c:type:`bt_gatt_attr_read_deferred_func_t`
+    * :c:type:`bt_gatt_attr_write_deferred_func_t`
+    * :c:func:`bt_gatt_error_rsp`
+    * :c:func:`bt_gatt_read_rsp`
+    * :c:struct:`bt_gatt_req`
+    * :c:func:`bt_gatt_write_rsp`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
