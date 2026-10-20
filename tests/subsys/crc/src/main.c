@@ -22,6 +22,20 @@ ZTEST(crc_subsys, test_crc_8)
 }
 
 /* Define result of CRC computation */
+#define RESULT_CRC8_REFLECT_SEED_1D 0xCC
+
+/**
+ * @brief Test reflected crc8() with a seed that is not a bit palindrome
+ */
+ZTEST(crc_subsys, test_crc_8_reflect_seed)
+{
+	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
+
+	zassert_equal(crc8(data, sizeof(data), CRC8_REFLECT_POLY, 0x1D, true),
+		      RESULT_CRC8_REFLECT_SEED_1D);
+}
+
+/* Define result of CRC computation */
 #define RESULT_CRC8_CCITT 0x4D
 
 /**
@@ -74,6 +88,20 @@ ZTEST(crc_subsys, test_crc_16_reflect)
 }
 
 /* Define result of CRC computation */
+#define RESULT_CRC16_REFLECT_SEED_1D0F 0x94CE
+
+/**
+ * @brief Test crc16_reflect() with a seed that is not a bit palindrome
+ */
+ZTEST(crc_subsys, test_crc_16_reflect_seed)
+{
+	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
+
+	zassert_equal(crc16_reflect(CRC16_REFLECT_POLY, 0x1D0F, data, sizeof(data)),
+		      RESULT_CRC16_REFLECT_SEED_1D0F);
+}
+
+/* Define result of CRC computation */
 #define RESULT_CRC16_ANSI 0xDE03
 
 /**
@@ -99,6 +127,30 @@ ZTEST(crc_subsys, test_crc_16_ccitt)
 	zassert_equal(crc16_ccitt(0x0000, data, sizeof(data)), RESULT_CRC_CCITT);
 }
 
+/**
+ * @brief Test that crc16_ccitt() continues a CRC computed in two parts
+ */
+ZTEST(crc_subsys, test_crc_16_ccitt_chained)
+{
+	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
+	uint16_t crc = crc16_ccitt(0x0000, data, 4);
+
+	zassert_equal(crc16_ccitt(crc, &data[4], 4), RESULT_CRC_CCITT);
+}
+
+/* Define result of CRC computation */
+#define RESULT_CRC_CCITT_SEED_1D0F 0x6E68
+
+/**
+ * @brief Test crc16_ccitt() with a seed that is not a bit palindrome
+ */
+ZTEST(crc_subsys, test_crc_16_ccitt_seed)
+{
+	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
+
+	zassert_equal(crc16_ccitt(0x1D0F, data, sizeof(data)), RESULT_CRC_CCITT_SEED_1D0F);
+}
+
 /* Define result of CRC computation */
 #define RESULT_CRC16_ITU_T 0x8866
 
@@ -114,6 +166,7 @@ ZTEST(crc_subsys, test_crc_16_itu_t)
 
 /* Define result of CRC computation */
 #define RESULT_CRC32_C 0xBB19ECB2
+#define RESULT_CRC32_C_FINAL (RESULT_CRC32_C ^ 0xFFFFFFFF)
 
 /**
  * @brief Test that crc32_c works
@@ -123,7 +176,22 @@ ZTEST(crc_subsys, test_crc_32_c)
 	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
 
 	zassert_equal(crc32_c(0x000, data, sizeof(data), true, false), RESULT_CRC32_C);
+	zassert_equal(crc32_c(0x000, data, sizeof(data), true, true), RESULT_CRC32_C_FINAL);
 }
+
+/**
+ * @brief Test that crc32_c() continues a CRC computed in two parts
+ */
+ZTEST(crc_subsys, test_crc_32_c_chained)
+{
+	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
+	uint32_t crc = crc32_c(0x000, data, 4, true, false);
+
+	crc = crc32_c(crc, &data[4], 4, false, false);
+	zassert_equal(crc, RESULT_CRC32_C);
+	zassert_equal(crc32_c(crc, NULL, 0, false, true), RESULT_CRC32_C_FINAL);
+}
+
 /* Define result of CRC computation */
 #define RESULT_CRC32_IEEE 0xCEA4A6C2
 
@@ -135,6 +203,17 @@ ZTEST(crc_subsys, test_crc_32_ieee)
 	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
 
 	zassert_equal(crc32_ieee(data, sizeof(data)), RESULT_CRC32_IEEE);
+}
+
+/**
+ * @brief Test that crc32_ieee_update() continues a CRC computed in two parts
+ */
+ZTEST(crc_subsys, test_crc_32_ieee_update_chained)
+{
+	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
+	uint32_t crc = crc32_ieee(data, 4);
+
+	zassert_equal(crc32_ieee_update(crc, &data[4], 4), RESULT_CRC32_IEEE);
 }
 
 /* Define result of CRC computation */
