@@ -319,10 +319,7 @@ class Patch(WestCommand):
         elif not args.patch_yml.is_absolute():
             args.patch_yml = manifest_dir / args.patch_yml
 
-        if args.west_workspace is None:
-            args.west_workspace = topdir
-        elif not args.west_workspace.is_absolute():
-            args.west_workspace = topdir / args.west_workspace
+        self.resolve_west_workspace(args)
 
         if args.dst_modules is not None:
             args.dst_modules = [self.get_module_path(m) for m in args.dst_modules]
@@ -345,10 +342,6 @@ class Patch(WestCommand):
 
     def do_run(self, args, _):
         self.filter_args(args)
-
-        west_config = Path(args.west_workspace) / ".west" / "config"
-        if not os.path.isfile(west_config):
-            self.die(f"{args.west_workspace} is not a valid west workspace")
 
         yml = self.load_yml(args, args.subcommand in ["gh-fetch"])
         if yml is None:
@@ -443,6 +436,35 @@ class Patch(WestCommand):
         if not patches:
             return True
 
+        processed_patch_count, failed_patch, patched_modules = self.process_patches(
+            args, yml, patch_cmd, test_cmd, reverse_order, dst_mods
+        )
+
+        if not failed_patch:
+            self.inf(f"{processed_patch_count} patches processed successfully \\o/")
+            return True
+
+        # Only the apply subcommand has the --roll-back option, so we need to check for it first
+        if hasattr(args, "roll_back") and args.roll_back:
+            self.clean(args, yml, patched_modules)
+
+        self.err(f"failed to process patch {failed_patch}, is there a conflict?")
+        return False
+
+    def process_patches(self, args, yml, patch_cmd, test_cmd,
+                        reverse_order=False, dst_mods=None):
+        """
+        Run patch_cmd for each patch. Stop at the first failure.
+
+        Arguments: same as patch()
+
+        Returns (patch_count, failed_patch, patched_mods):
+            - patch_count: number of patches processed
+            - failed_patch: the patch that failed, or None
+            - patched_mods: modules the command ran in
+        """
+        patches = yml.get("patches", [])
+
         patch_count = 0
         failed_patch = None
         patched_mods = set()
@@ -477,16 +499,7 @@ class Patch(WestCommand):
 
             patch_count += 1
 
-        if not failed_patch:
-            self.inf(f"{patch_count} patches processed successfully \\o/")
-            return True
-
-        # Only the apply subcommand has the --roll-back option, so we need to check for it first
-        if hasattr(args, "roll_back") and args.roll_back:
-            self.clean(args, yml, patched_mods)
-
-        self.err(f"failed to process patch {failed_patch}, is there a conflict?")
-        return False
+        return patch_count, failed_patch, patched_mods
 
     def apply(self, args, yml, dst_mods=None):
         success = self.patch(
@@ -511,6 +524,16 @@ class Patch(WestCommand):
 
         if not success:
             self.die("failed to reverse patches")
+
+    def resolve_west_workspace(self, args):
+        if args.west_workspace is None:
+            args.west_workspace = Path(self.topdir)
+        elif not args.west_workspace.is_absolute():
+            args.west_workspace = Path(self.topdir) / args.west_workspace
+
+        west_config = Path(args.west_workspace) / ".west" / "config"
+        if not west_config.is_file():
+            self.die(f"{args.west_workspace} is not a valid west workspace")
 
     def clean(self, args, yml, dst_mods=None):
         clean_cmd = yml["clean-command"]
