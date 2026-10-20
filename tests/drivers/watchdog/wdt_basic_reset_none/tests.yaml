@@ -61,6 +61,7 @@ tests:
     platform_allow:
       - mimxrt1170_evk@A/mimxrt1176/cm7
       - mimxrt1170_evk@B/mimxrt1176/cm7
+      - frdm_imxrt1152/mimxrt1152
     integration_platforms:
       - mimxrt1170_evk@A/mimxrt1176/cm7
     extra_args:
