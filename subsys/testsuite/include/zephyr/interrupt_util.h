@@ -180,6 +180,12 @@ static inline void trigger_irq(int irq)
 {
 	irq_set_pending(irq);
 }
+#elif defined(CONFIG_MAX32_RV32_INTC)
+#include <zephyr/drivers/interrupt_controller/intc_max32_rv32.h>
+static inline void trigger_irq(int irq)
+{
+	intc_max32_rv32_irq_set_pending(irq);
+}
 #elif defined(CONFIG_RISCV_S_MODE)
 /* In S-mode mip is read-only; set bits via sip (SSIP is writable via sip) */
 static inline void trigger_irq(int irq)
