@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Daniel Kampert
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Reduce the USART6 kernel clock (APB2) to 168 MHz / 16 = 10.5 MHz. 875 kbit/s then
+ * exceeds fCK / 16 (656.25 kbit/s) and requires oversampling by 8
+ * (USARTDIV = 10.5 MHz / (8 * 875 kbit/s) = 1.5, no baud rate error).
+ *
+ * A reduced kernel clock is used instead of a baud rate of several Mbit/s, because the
+ * async API tests need reception across RX buffer boundaries without data loss.
+ */
+&rcc {
+	apb2-prescaler = <16>;
+};
+
+&usart6 {
+	current-speed = <875000>;
+};
