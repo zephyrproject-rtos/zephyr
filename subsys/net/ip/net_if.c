@@ -491,6 +491,34 @@ static inline void init_iface(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_NATIVE)
+#if defined(CONFIG_NET_LOOPBACK_FRAGMENT)
+/* Run only the fragmentation step of the IP send checks, so that a packet
+ * larger than the loopback MTU is fragmented and reassembled like on a real
+ * link. Raw IP sockets bypass the checks as they do on other interfaces.
+ */
+static enum net_verdict loopback_prepare_for_send(struct net_pkt *pkt,
+						  struct net_context *context)
+{
+	if (context != NULL && net_context_get_type(context) == NET_SOCK_RAW) {
+		return NET_OK;
+	}
+
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+	if (net_pkt_family(pkt) == NET_AF_INET6) {
+		return net_ipv6_prepare_for_send_fragment(pkt);
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+	if (net_pkt_family(pkt) == NET_AF_INET) {
+		return net_ipv4_prepare_for_send_fragment(pkt);
+	}
+#endif
+
+	return NET_OK;
+}
+#endif /* CONFIG_NET_LOOPBACK_FRAGMENT */
+
 enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 				      k_timeout_t timeout)
 {
@@ -548,6 +576,9 @@ enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 	 * additional checks, so let the packet through.
 	 */
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+#if defined(CONFIG_NET_LOOPBACK_FRAGMENT)
+		verdict = loopback_prepare_for_send(pkt, context);
+#endif
 		goto done;
 	}
 #endif
