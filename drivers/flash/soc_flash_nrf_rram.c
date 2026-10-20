@@ -85,18 +85,6 @@ BUILD_ASSERT((PAGE_SIZE % (WRITE_LINE_SIZE) == 0),
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 
-#if (WRITE_BUFFER_SIZE < 2)
-#define FLASH_SLOT_WRITE 500
-#elif (WRITE_BUFFER_SIZE < 4)
-#define FLASH_SLOT_WRITE 1000
-#elif (WRITE_BUFFER_SIZE < 9)
-#define FLASH_SLOT_WRITE 2000
-#elif (WRITE_BUFFER_SIZE < 17)
-#define FLASH_SLOT_WRITE 4000
-#else
-#define FLASH_SLOT_WRITE 8000 /* longest write takes 7107 us */
-#endif
-
 static int write_op(void *context); /* instance of flash_op_handler_t */
 static int write_synchronously(off_t addr, const void *data, uint8_t fill_val, size_t len);
 
@@ -252,7 +240,7 @@ static int write_synchronously(off_t addr, const void *data, uint8_t fill_val, s
 
 	struct flash_op_desc flash_op_desc = {.handler = write_op, .context = &context};
 
-	nrf_flash_sync_set_context(FLASH_SLOT_WRITE);
+	nrf_flash_sync_set_context(NRF_RRAM_WRITE_WINDOW_US(WRITE_BUFFER_SIZE));
 	return nrf_flash_sync_exe(&flash_op_desc);
 }
 
