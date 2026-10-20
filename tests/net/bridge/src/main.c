@@ -659,6 +659,9 @@ static void test_recv_with_bridge(void)
 			zassert_equal(hdr->dst.addr[4], src_if_idx, "");
 			zassert_equal(hdr->src.addr[3], src_if_idx, "");
 
+			/* The bridge sends it on with the checksums of its sender */
+			zexpect_true(net_pkt_is_chksum_done(pkt), "Forwarded frame not marked");
+
 			net_pkt_unref(pkt);
 		}
 	}
