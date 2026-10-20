@@ -443,6 +443,11 @@ void bt_hci_inquiry_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_inquiry_complete *evt = (void *)buf->data;
 
+	/* Queued before the inquiry was stopped */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return;
+	}
+
 	if (evt->status) {
 		LOG_ERR("Failed to complete inquiry");
 	}
@@ -1077,10 +1082,88 @@ static bool valid_br_discov_param(const struct bt_br_discovery_param *param, siz
 	return true;
 }
 
+struct discovery_call {
+	struct k_work work;
+	int (*func)(const void *arg);
+	const void *arg;
+	int err;
+};
+
+static void discovery_call_handler(struct k_work *work)
+{
+	struct discovery_call *call = CONTAINER_OF(work, struct discovery_call, work);
+
+	call->err = call->func(call->arg);
+}
+
+/* The discovery state and callbacks are owned by the Bluetooth workqueue, so
+ * run start and stop there: once they return no callback is in progress and
+ * the results storage is not accessed anymore.
+ */
+static int discovery_call(int (*func)(const void *arg), const void *arg)
+{
+	struct discovery_call call = {
+		.func = func,
+		.arg = arg,
+	};
+	struct k_work_sync sync;
+	int err;
+
+	if (bt_is_work_thread()) {
+		return func(arg);
+	}
+
+	k_work_init(&call.work, discovery_call_handler);
+
+	err = bt_work_submit(&call.work);
+	if (err < 0) {
+		return err;
+	}
+
+	(void)k_work_flush(&call.work, &sync);
+
+	return call.err;
+}
+
+struct discovery_start_arg {
+	const struct bt_br_discovery_param *param;
+	struct bt_br_discovery_result *results;
+	size_t cnt;
+};
+
+static int discovery_start(const void *arg)
+{
+	const struct discovery_start_arg *start = arg;
+	int err;
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return -EALREADY;
+	}
+
+	err = br_start_inquiry(start->param);
+	if (err) {
+		return err;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY);
+
+	(void)memset(start->results, 0, sizeof(*start->results) * start->cnt);
+
+	discovery_results = start->results;
+	discovery_results_size = start->cnt;
+	discovery_results_count = 0;
+
+	return 0;
+}
+
 int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 			  struct bt_br_discovery_result *results, size_t cnt)
 {
-	int err;
+	const struct discovery_start_arg start = {
+		.param = param,
+		.results = results,
+		.cnt = cnt,
+	};
 
 	LOG_DBG("");
 
@@ -1092,33 +1175,16 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
-		return -EALREADY;
-	}
-
-	err = br_start_inquiry(param);
-	if (err) {
-		return err;
-	}
-
-	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY);
-
-	(void)memset(results, 0, sizeof(*results) * cnt);
-
-	discovery_results = results;
-	discovery_results_size = cnt;
-	discovery_results_count = 0;
-
-	return 0;
+	return discovery_call(discovery_start, &start);
 }
 
-int bt_br_discovery_stop(void)
+static int discovery_stop(const void *arg)
 {
 	bool resolving_names = false;
 	int err;
 	int i;
 
-	LOG_DBG("");
+	ARG_UNUSED(arg);
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return -EALREADY;
@@ -1155,15 +1221,12 @@ int bt_br_discovery_stop(void)
 	 */
 	if (!resolving_names) {
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
-		/* The inquiry may complete while the cancel is in flight.
-		 * If the event started no name request it has already
-		 * cleared the flag, and a failure with the flag clear is
-		 * that completion, not an error. If it started one the flag
-		 * stays set until the last name request completes, and the
-		 * error is returned: discovery is still resolving names.
+		/* The cancel fails if the inquiry has just completed. That
+		 * Inquiry Complete event is still queued behind this work and
+		 * is dropped once the flag is cleared below.
 		 */
-		if (err != 0 && atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
-			return err;
+		if (err != 0) {
+			LOG_DBG("Inquiry Cancel failed (err %d)", err);
 		}
 	}
 
@@ -1174,6 +1237,13 @@ int bt_br_discovery_stop(void)
 	discovery_results_count = 0;
 
 	return 0;
+}
+
+int bt_br_discovery_stop(void)
+{
+	LOG_DBG("");
+
+	return discovery_call(discovery_stop, NULL);
 }
 
 void bt_br_discovery_cb_register(struct bt_br_discovery_cb *cb)
