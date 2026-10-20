@@ -10,5 +10,12 @@ board:
   socs:
   - name: pse846gps2dbzc4a
     variants:
+    - name: eth
+      cpucluster: m33
+    - name: eth
+      cpucluster: m55
     - name: ns
       cpucluster: m33
+      variants:
+      - name: eth
+        cpucluster: m33

@@ -136,3 +136,28 @@ i2c0: &scb0 {
 &gpio_prt17 {
 	status = "okay";
 };
+
+/*
+ * Microchip LAN8710A PHY on MII, its reset is tied to the MCU reset. The
+ * MII pins are shared with the HCI UART of the Bluetooth module and need a
+ * board rework, enable it with the pse84-eth or pse84-eth-rmii snippet.
+ */
+&ethernet0 {
+	pinctrl-0 = <&p13_1_eth0_mdc &p13_6_eth0_mdio
+		     &p11_2_eth0_txd0 &p11_3_eth0_txd1 &p11_6_eth0_txd2 &p10_0_eth0_txd3
+		     &p11_4_eth0_tx_ctl &p11_5_eth0_tx_clk
+		     &p10_6_eth0_rxd0 &p10_7_eth0_rxd1 &p11_0_eth0_rxd2 &p10_4_eth0_rxd3
+		     &p10_5_eth0_rx_ctl &p10_1_eth0_rx_clk>;
+	pinctrl-names = "default";
+	phy-handle = <&eth_phy>;
+	phy-connection-type = "mii";
+	zephyr,random-mac-address;
+};
+
+&mdio0 {
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "disabled";
+	};
+};
