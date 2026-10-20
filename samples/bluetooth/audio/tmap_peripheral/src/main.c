@@ -327,7 +327,8 @@ int main(void)
 		printk("MCP initialized\n");
 	}
 
-	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT) && peer_is_cg) {
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT) &&
+	    IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_cg) {
 		/* Initiate a call with CCP */
 		err = ccp_originate_call();
 		if (err != 0) {
@@ -337,7 +338,8 @@ int main(void)
 		k_work_schedule(&call_terminate_set_work, K_MSEC(2000));
 	}
 
-	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR) && peer_is_ums) {
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR) &&
+	    IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_ums) {
 		/* Play media with MCP */
 		err = mcp_send_cmd(BT_MCS_OPC_PLAY);
 		if (err != 0) {
