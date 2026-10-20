@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config PCIE_DW_ROCKCHIP
+	bool "Rockchip DesignWare PCIe host controller"
+	default y
+	depends on DT_HAS_ROCKCHIP_RK3588_PCIE_ENABLED
+	depends on ARM64
+	depends on CLOCK_CONTROL
+	select RESET
+	select PCIE_DW
+	help
+	  Enable the DesignWare PCIe Root Complex driver for Rockchip RK3588
+	  SoCs. The driver handles configuration space access, outbound iATU
+	  windows, BAR allocation, endpoint enumeration and MSI through the
+	  GICv3 ITS; legacy INTx is not supported. Only the pcie2x1l2
+	  controller is supported for direct power-on (clocks, resets,
+	  ComboPHY0, PERST#); other controllers need firmware bring-up and the
+	  rockchip,firmware-initialized devicetree property. pcie3x4 support is
+	  a follow-up.
