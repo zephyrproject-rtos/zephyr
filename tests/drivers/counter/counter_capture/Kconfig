@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Meta Platforms
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 mainmenu "Counter capture test configuration"
@@ -12,19 +12,29 @@ config NUM_OF_CONTINUOUS_CAPTURES
 	help
 	  Number of capture iterations run by each continuous capture test case.
 
-config COUNTER_CAPTURE_TOLERANCE_US
-	int "Capture timestamp tolerance in microseconds"
-	default 100
+# The trigger source the board provides, from its devicetree
+ZEPHYR_USER := zephyr,user
+
+config COUNTER_CAPTURE_TRIGGER_PWM
+	bool
+	default $(dt_node_has_prop,/$(ZEPHYR_USER),pwms)
+	select PWM
 	help
-	  Maximum allowed difference in microseconds between the counter value
-	  sampled just before toggling the GPIO and the timestamp recorded by
-	  the capture callback.
+	  A PWM output of the zephyr,user node drives the capture input.
+
+config COUNTER_CAPTURE_TRIGGER_GPIO
+	bool
+	default $(dt_node_has_prop,/$(ZEPHYR_USER),capture-tester-gpios)
+	select GPIO
+	help
+	  A GPIO of the zephyr,user node drives the capture input.
 
 config COUNTER_CAPTURE_MCUX_QTMR_XBAR_LOOPBACK
-	bool "Use RT1064 internal XBAR loopback for MCUX QTMR capture"
-	depends on SOC_MIMXRT1064
+	bool
+	default y if SOC_MIMXRT1064 && !COUNTER_CAPTURE_TRIGGER_PWM && \
+		!COUNTER_CAPTURE_TRIGGER_GPIO
 	help
-	  Enable the RT1064-specific trigger-source backend for the counter
-	  capture test. The backend configures XBARA1 and IOMUXC_GPR so QTMR3
-	  timer 0 output drives QTMR1 timer 0 input internally, avoiding an
-	  external loopback wire while exercising the MCUX QTMR capture path.
+	  The RT1064-specific trigger-source backend of the test. It configures
+	  XBARA1 and IOMUXC_GPR so QTMR3 timer 0 output drives QTMR1 timer 0
+	  input internally, avoiding an external loopback wire while exercising
+	  the MCUX QTMR capture path.

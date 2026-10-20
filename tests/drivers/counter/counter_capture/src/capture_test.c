@@ -13,7 +13,7 @@
 #include "trigger_src.h"
 
 #define NUM_OF_CONTINUOUS_CAPTURES CONFIG_NUM_OF_CONTINUOUS_CAPTURES
-#define CAPTURE_TOLERANCE_US       CONFIG_COUNTER_CAPTURE_TOLERANCE_US
+#define CAPTURE_TOLERANCE_US       DT_PROP(DT_NODELABEL(counter_loopback_0), capture_tolerance_us)
 #define EDGE_RISING                1
 #define EDGE_FALLING               0
 #define CAPTURE_COUNT \

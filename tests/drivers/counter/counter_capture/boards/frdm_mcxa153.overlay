@@ -27,6 +27,7 @@
 
 	counter_loopback_0: counter_loopback {
 		compatible = "test-counter-capture";
+		capture-tolerance-us = <1000>;
 		test-counter-captures = <&ctimer2 0 0>;
 	};
 };
