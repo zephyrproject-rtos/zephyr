@@ -16,6 +16,15 @@ config SPI_IDEAL_TRANSFER_DURATION_SCALING
 	default 40 if SPI_NXP_LPSPI_DMA || SPI_MCUX_FLEXIO
 	default 8
 
+config SPI_LOOPBACK_TEST_BUSY_DEINIT
+	bool "Exercise device_deinit() while a transfer is in flight"
+	depends on SPI_ASYNC
+	help
+	  Enable test_spi_deinit_busy, which asserts the driver rejects
+	  device_deinit() with -EBUSY while an asynchronous transfer is still in
+	  flight, then succeeds once it completes. Select this only on drivers
+	  that implement that busy guard.
+
 if SOC_SERIES_STM32H7X
 
 config SPI_LOOPBACK_16BITS_FRAMES
