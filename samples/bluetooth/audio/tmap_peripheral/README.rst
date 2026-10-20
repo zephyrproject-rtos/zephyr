@@ -72,4 +72,11 @@ setting ``CONFIG_LIBLC3=y``, ``CONFIG_FPU=y``,
 ``CONFIG_SAMPLE_BT_AUDIO_PLAYBACK_SINK_NONE=y``. The audio is then decoded and
 the resulting PCM discarded.
 
+When the peer adjusts volume through the Volume Control Service (VCS), the
+sample maps the 0..255 VCS volume linearly onto the codec output volume and
+applies mute. Codec volume registers are device-specific, so set
+``CONFIG_SAMPLE_BT_AUDIO_PLAYBACK_CODEC_VOL_MIN`` and
+``CONFIG_SAMPLE_BT_AUDIO_PLAYBACK_CODEC_VOL_MAX`` to your codec's range in the
+board :file:`.conf` (for example ``0`` and ``127`` for the WM8962 register).
+
 See :zephyr:code-sample-category:`bluetooth` samples for details.
