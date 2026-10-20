@@ -22,6 +22,7 @@
 		sw0 = &user_button;
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
+		watchdog0 = &wdog1;
 	};
 
 	chosen {
@@ -157,6 +158,10 @@
 &flexpwm1_pwm3 {
 	pinctrl-0 = <&pinmux_flexpwm1_pwm3>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&wdog1 {
 	status = "okay";
 };
 

@@ -18,4 +18,5 @@ supported:
   - gpio
   - pwm
   - uart
+  - watchdog
 vendor: nxp
