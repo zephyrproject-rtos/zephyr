@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: TDK InvenSense IIM-42653 6-axis IMU
+
+description: |
+  IIM-42653 industrial motion tracking device.
+
+  When setting the accel-pwr-mode, accel-fs, accel-odr, gyro-pwr-mode,
+  gyro-fs and gyro-odr properties in a .dts or .dtsi file you may include
+  iim42653.h and use the macros defined there.
+
+compatible: "invensense,iim42653"
+include: ["invensense,icm4268x.yaml"]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/iim42653.h>
+
+    iim42653: iim42653@0 {
+      compatible = "invensense,iim42653", "invensense,icm4268x";
+      /* ... */
+
+      accel-pwr-mode = <IIM42653_DT_ACCEL_LN>;
+      accel-fs = <IIM42653_DT_ACCEL_FS_32>;
+      accel-odr = <IIM42653_DT_ACCEL_ODR_1000>;
+      gyro-pwr-mode = <IIM42653_DT_GYRO_LN>;
+      gyro-fs = <IIM42653_DT_GYRO_FS_4000>;
+      gyro-odr = <IIM42653_DT_GYRO_ODR_1000>;
+    };

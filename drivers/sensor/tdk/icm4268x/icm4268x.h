@@ -13,6 +13,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/dt-bindings/sensor/icm42688.h>
 #include <zephyr/dt-bindings/sensor/icm42686.h>
+#include <zephyr/dt-bindings/sensor/iim42653.h>
 #include <stdlib.h>
 #include "icm4268x_bus.h"
 
@@ -24,6 +25,7 @@ struct alignment {
 enum icm4268x_variant {
 	ICM4268X_VARIANT_ICM42688 = 0,
 	ICM4268X_VARIANT_ICM42686 = 1,
+	ICM4268X_VARIANT_IIM42653 = 2,
 };
 
 /** Helper struct used to map between values and DT-options (e.g: DT_ACCEL_FS) */
@@ -35,6 +37,7 @@ struct icm4268x_reg_val_pair {
 static const uint8_t table_accel_fs_to_reg_array_size[] = {
 	[ICM4268X_VARIANT_ICM42688] = 4, /* FS16 to FS2 */
 	[ICM4268X_VARIANT_ICM42686] = 5, /* FS32 to FS2 */
+	[ICM4268X_VARIANT_IIM42653] = 4, /* FS32 to FS4 */
 };
 
 static const struct icm4268x_reg_val_pair table_accel_fs_to_reg[][5] = {
@@ -50,6 +53,12 @@ static const struct icm4268x_reg_val_pair table_accel_fs_to_reg[][5] = {
 		{.val = 8, .reg = ICM42686_DT_ACCEL_FS_8},
 		{.val = 4, .reg = ICM42686_DT_ACCEL_FS_4},
 		{.val = 2, .reg = ICM42686_DT_ACCEL_FS_2},
+	},
+	[ICM4268X_VARIANT_IIM42653] = {
+		{.val = 32, .reg = IIM42653_DT_ACCEL_FS_32},
+		{.val = 16, .reg = IIM42653_DT_ACCEL_FS_16},
+		{.val = 8, .reg = IIM42653_DT_ACCEL_FS_8},
+		{.val = 4, .reg = IIM42653_DT_ACCEL_FS_4},
 	},
 };
 
@@ -81,6 +90,7 @@ static inline void icm4268x_accel_reg_to_fs(uint8_t fs, enum icm4268x_variant va
 static const uint8_t table_gyro_fs_to_reg_array_size[] = {
 	[ICM4268X_VARIANT_ICM42688] = 8, /* FS2000 to FS15_625 */
 	[ICM4268X_VARIANT_ICM42686] = 8, /* FS4000 to FS31_25 */
+	[ICM4268X_VARIANT_IIM42653] = 8, /* FS4000 to FS31_25 */
 };
 
 static const struct icm4268x_reg_val_pair table_gyro_fs_to_reg[][8] = {
@@ -103,6 +113,16 @@ static const struct icm4268x_reg_val_pair table_gyro_fs_to_reg[][8] = {
 		{.val = 12500000,  .reg = ICM42686_DT_GYRO_FS_125},
 		{.val = 6250000,   .reg = ICM42686_DT_GYRO_FS_62_5},
 		{.val = 3125000,   .reg = ICM42686_DT_GYRO_FS_31_25},
+	},
+	[ICM4268X_VARIANT_IIM42653] = {
+		{.val = 400000000, .reg = IIM42653_DT_GYRO_FS_4000},
+		{.val = 200000000, .reg = IIM42653_DT_GYRO_FS_2000},
+		{.val = 100000000, .reg = IIM42653_DT_GYRO_FS_1000},
+		{.val = 50000000,  .reg = IIM42653_DT_GYRO_FS_500},
+		{.val = 25000000,  .reg = IIM42653_DT_GYRO_FS_250},
+		{.val = 12500000,  .reg = IIM42653_DT_GYRO_FS_125},
+		{.val = 6250000,   .reg = IIM42653_DT_GYRO_FS_62_5},
+		{.val = 3125000,   .reg = IIM42653_DT_GYRO_FS_31_25},
 	},
 };
 
@@ -470,6 +490,12 @@ static const struct icm4268x_reg_val_pair table_accel_sensitivity_to_reg[][5] = 
 		{.val = 8192, .reg = ICM42686_DT_ACCEL_FS_4},
 		{.val = 16384, .reg = ICM42686_DT_ACCEL_FS_2},
 	},
+	[ICM4268X_VARIANT_IIM42653] = {
+		{.val = 1024, .reg = IIM42653_DT_ACCEL_FS_32},
+		{.val = 2048, .reg = IIM42653_DT_ACCEL_FS_16},
+		{.val = 4096, .reg = IIM42653_DT_ACCEL_FS_8},
+		{.val = 8192, .reg = IIM42653_DT_ACCEL_FS_4},
+	},
 };
 
 /**
@@ -526,6 +552,16 @@ static const struct icm4268x_reg_val_pair table_gyro_sensitivity_to_reg[][8] = {
 		{.val = 2620,  .reg = ICM42686_DT_GYRO_FS_125},
 		{.val = 5243,   .reg = ICM42686_DT_GYRO_FS_62_5},
 		{.val = 10486,   .reg = ICM42686_DT_GYRO_FS_31_25},
+	},
+	[ICM4268X_VARIANT_IIM42653] = {
+		{.val = 82, .reg = IIM42653_DT_GYRO_FS_4000},
+		{.val = 164, .reg = IIM42653_DT_GYRO_FS_2000},
+		{.val = 328, .reg = IIM42653_DT_GYRO_FS_1000},
+		{.val = 655,  .reg = IIM42653_DT_GYRO_FS_500},
+		{.val = 1310,  .reg = IIM42653_DT_GYRO_FS_250},
+		{.val = 2620,  .reg = IIM42653_DT_GYRO_FS_125},
+		{.val = 5243,   .reg = IIM42653_DT_GYRO_FS_62_5},
+		{.val = 10486,   .reg = IIM42653_DT_GYRO_FS_31_25},
 	},
 };
 
