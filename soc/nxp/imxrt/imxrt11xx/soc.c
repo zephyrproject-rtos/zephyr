@@ -573,6 +573,12 @@ __weak void clock_init(void)
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Can1, &rootCfg);
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan2))
+	/* Configure CAN2 using Osc48MDiv2 */
+	rootCfg.mux = kCLOCK_CAN2_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Can2, &rootCfg);
+#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan3))
 	/* Configure CAN1 using Osc48MDiv2 */
 	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxOscRc48MDiv2;
