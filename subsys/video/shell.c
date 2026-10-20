@@ -12,6 +12,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/sys_getopt.h>
 #include <zephyr/video/video.h>
 
 #define VIDEO_FRMIVAL_FPS(frmival)  DIV_ROUND_CLOSEST((frmival)->denominator, (frmival)->numerator)
@@ -44,6 +45,8 @@ static bool device_is_video_and_ready(const struct device *dev)
 {
 	return device_is_ready(dev) && DEVICE_API_IS(video, dev);
 }
+
+#define VIDEO_SHELL_BYTES_END 16
 
 static int video_shell_check_device(const struct shell *sh, const struct device *dev)
 {
@@ -194,79 +197,151 @@ static int cmd_video_stop(const struct shell *sh, size_t argc, char **argv)
 
 static void video_shell_print_buffer(const struct shell *sh, struct video_buffer *vbuf,
 				     struct video_format *fmt, int i, uint32_t num_buffer,
-				     uint32_t frmrate_fps, uint32_t frmival_msec)
+				     uint32_t frmrate_fps, uint32_t frmival_msec, size_t max_bytes)
 {
 	uint32_t line_offset = vbuf->line_offset;
 	uint32_t byte_offset = line_offset * fmt->pitch;
 	uint32_t bytes_in_buf = vbuf->bytesused;
-	uint32_t lines_in_buf = vbuf->bytesused / fmt->pitch;
+	uint32_t lines_in_buf = fmt->pitch == 0 ? fmt->height : vbuf->bytesused / fmt->pitch;
 
 	shell_print(sh, "Buffer %u/%u at %u ms, Bytes %u-%u/%u, Lines %u-%u/%u, Rate %u FPS %u ms",
 		    /* Buffer */ i + 1, num_buffer, vbuf->timestamp,
-		    /* Bytes */ byte_offset, byte_offset + bytes_in_buf, fmt->height * fmt->pitch,
+		    /* Bytes */ byte_offset, byte_offset + bytes_in_buf, fmt->size,
 		    /* Lines */ line_offset, line_offset + lines_in_buf, fmt->height,
 		    /* Rate */ frmrate_fps, frmival_msec);
+
+	if (max_bytes == 0) {
+		/* No printing */
+	} else if (vbuf->bytesused > max_bytes) {
+		shell_hexdump(sh, vbuf->buffer, max_bytes);
+		shell_print(sh, "...");
+		shell_hexdump(sh, vbuf->buffer + vbuf->bytesused - VIDEO_SHELL_BYTES_END,
+			      VIDEO_SHELL_BYTES_END);
+	} else {
+		shell_hexdump(sh, vbuf->buffer, vbuf->bytesused);
+	}
 }
 
 static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
+	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
-	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX] = {NULL};
-	struct video_buffer vbuf0 = {.type = VIDEO_BUF_TYPE_OUTPUT};
-	struct video_buffer *vbuf = &vbuf0;
-	char *arg_device = argv[1];
-	char *arg_nbufs = argv[2];
+	struct video_buffer *vbuf = &(struct video_buffer){.type = VIDEO_BUF_TYPE_OUTPUT};
+	struct sys_getopt_state *opt = sys_getopt_state_get();
 	uint32_t first_uptime;
 	uint32_t prev_uptime;
 	uint32_t this_uptime;
 	uint32_t frmival_msec;
 	uint32_t frmrate_fps;
-	size_t buf_size;
-	unsigned long num_buffers;
+	size_t max_bytes = 0;
+	size_t buf_align = 0;
+	size_t num_allocated = 0;
+	size_t num_buffers;
 	int ret;
 
-	dev = device_get_binding(arg_device);
+	dev = device_get_binding(argv[1]);
+	shell_print(sh, "device name: %s", argv[1]);
 	ret = video_shell_check_device(sh, dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_get_format(dev, &fmt);
+	ret = video_get_caps(dev, &caps);
 	if (ret < 0) {
-		shell_error(sh, "Failed to get the current format interval");
-		return ret;
+		shell_error(sh, "Failed to query %s capabilities", dev->name);
+		return -ENODEV;
 	}
 
-	num_buffers = strtoull(arg_nbufs, &arg_nbufs, 10);
-	if (*arg_nbufs != '\0') {
-		shell_error(sh, "Invalid integer '%s' for this type", arg_nbufs);
+	opt->optind = 2;
+
+	while ((ret = sys_getopt(argc, argv, "p:n:a:")) != -1) {
+		switch (ret) {
+		case 'p':
+			ret = 0;
+			max_bytes = shell_strtol(opt->optarg, 10, &ret);
+			if (ret != 0) {
+				shell_warn(sh, "Invalid number of bytes %s", opt->optarg);
+				return ret;
+			}
+			break;
+		case 'n':
+			ret = 0;
+			num_allocated = shell_strtol(opt->optarg, 10, &ret);
+			if (ret != 0) {
+				shell_warn(sh, "Invalid number of buffers %s", opt->optarg);
+				return ret;
+			}
+			break;
+		case 'a':
+			ret = 0;
+			buf_align = shell_strtol(opt->optarg, 10, &ret);
+			if (ret != 0) {
+				shell_warn(sh, "Invalid alignment size %s", opt->optarg);
+				return ret;
+			}
+			break;
+		default:
+			shell_warn(sh, "Invalid option: %s", argv[opt->optind]);
+			shell_help(sh);
+		}
+	}
+
+	argv += opt->optind;
+	argc -= opt->optind;
+
+	if (argc != 1) {
+		shell_error(sh, "Invalid number of arguments, %u %u", opt->optind, argc);
+		shell_help(sh);
 		return -EINVAL;
 	}
 
-	buf_size = fmt.pitch * fmt.height;
+	num_buffers = shell_strtoull(argv[0], 10, &ret);
+	if (ret != 0) {
+		shell_error(sh, "Invalid integer '%s' for this type", argv[0]);
+		return ret;
+	}
 
-	shell_print(sh, "Preparing %u buffers of %u bytes each",
-		    CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, buf_size);
+	if (num_allocated == 0) {
+		num_allocated = caps.min_vbuf_count;
+	}
 
-	for (int i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(buf_size, K_NO_WAIT);
-		if (buffers[i] == NULL) {
-			shell_error(sh, "Failed to allocate buffer %u", i);
+	if (buf_align == 0) {
+		buf_align = caps.buf_align;
+	}
+
+	ret = video_get_format(dev, &fmt);
+	if (ret < 0) {
+		shell_error(sh, "Failed to get the current format");
+		return ret;
+	}
+
+	shell_print(sh, "Preparing %u buffers of %u bytes each", num_allocated, fmt.size);
+
+	for (int i = 0; i < num_allocated; i++) {
+		vbuf = video_buffer_aligned_alloc(fmt.size, buf_align, K_NO_WAIT);
+		if (vbuf == NULL) {
+			shell_error(sh, "Failed to allocate buffer %u of %u bytes", i, fmt.size);
 			goto end;
 		}
 
 		/* Only queueing of output buffers is supported for now */
-		buffers[i]->type = VIDEO_BUF_TYPE_OUTPUT;
+		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 
-		ret = video_enqueue(dev, buffers[i]);
+		ret = video_enqueue(dev, vbuf);
 		if (ret < 0) {
 			shell_error(sh, "Failed to enqueue buffer %u: %s", i, strerror(-ret));
+
+			ret = video_buffer_release(vbuf);
+			if (ret) {
+				shell_error(sh, "Failed to release video buffer %u", vbuf->index);
+			}
+
 			goto end;
 		}
 	}
 
-	shell_print(sh, "Starting the capture of %lu buffers from %s", num_buffers, dev->name);
+	shell_print(sh, "Starting the capture of %zu buffers from %s", num_buffers, dev->name);
 
 	ret = video_stream_start(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
@@ -288,7 +363,8 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		frmrate_fps = (frmival_msec == 0) ? (UINT32_MAX) : (MSEC_PER_SEC / frmival_msec);
 		prev_uptime = this_uptime;
 
-		video_shell_print_buffer(sh, vbuf, &fmt, i, num_buffers, frmrate_fps, frmival_msec);
+		video_shell_print_buffer(sh, vbuf, &fmt, i, num_buffers, frmrate_fps, frmival_msec,
+					 max_bytes);
 
 		/* Only increment the frame counter on the beginning of a new frame */
 		i += (vbuf->line_offset == 0);
@@ -296,6 +372,12 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		ret = video_enqueue(dev, vbuf);
 		if (ret < 0) {
 			shell_error(sh, "Failed to enqueue this buffer: %s", strerror(-ret));
+
+			ret = video_buffer_release(vbuf);
+			if (ret) {
+				shell_error(sh, "Failed to release video buffer %u", vbuf->index);
+			}
+
 			goto end;
 		}
 	}
@@ -304,18 +386,20 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 	frmrate_fps =
 		(frmival_msec == 0) ? (UINT32_MAX) : (num_buffers * MSEC_PER_SEC / frmival_msec);
 
-	shell_print(sh, "Capture of %lu buffers in %u ms in total, %u FPS on average, stopping %s",
+	shell_print(sh, "Capture of %zu buffers in %u ms in total, %u FPS on average, stopping %s",
 		    num_buffers, frmival_msec, frmrate_fps, dev->name);
 
 end:
-	video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT);
-
-	if (vbuf != NULL) {
-		video_buffer_release(vbuf);
+	ret = video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT);
+	if (ret < 0) {
+		shell_error(sh, "Failed to stop the video device after the capture");
 	}
 
 	while (video_dequeue(dev, &vbuf, K_NO_WAIT) == 0) {
-		video_buffer_release(vbuf);
+		ret = video_buffer_release(vbuf);
+		if (ret < 0) {
+			shell_error(sh, "Failed to release video buffer %u", vbuf->index);
+		}
 	}
 
 	return ret;
@@ -408,6 +492,12 @@ static int video_shell_set_frmival(const struct shell *sh, const struct device *
 		return ret;
 	}
 
+	ret = video_get_frmival(dev, &frmival);
+	if (ret < 0) {
+		shell_error(sh, "Failed to read the frame interval back");
+		return ret;
+	}
+
 	shell_print(sh, "New frame interval:     %u ms (%u FPS)",
 		    VIDEO_FRMIVAL_MSEC(&frmival), VIDEO_FRMIVAL_FPS(&frmival));
 
@@ -436,7 +526,7 @@ static int cmd_video_frmival(const struct shell *sh, size_t argc, char **argv)
 
 	ret = video_get_format(dev, &fmt);
 	if (ret < 0) {
-		shell_error(sh, "Failed to get the current format interval");
+		shell_error(sh, "Failed to get the current format");
 		return ret;
 	}
 
@@ -585,7 +675,7 @@ static int video_shell_set_format(const struct shell *sh, const struct device *d
 static int cmd_video_format(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
-	struct video_caps caps = {0};
+	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_format fmt = {0};
 	enum video_buf_type type;
 	char *arg_device = argv[1];
@@ -612,7 +702,7 @@ static int cmd_video_format(const struct shell *sh, size_t argc, char **argv)
 
 	ret = video_get_format(dev, &fmt);
 	if (ret < 0) {
-		shell_error(sh, "Failed to query %s capabilities", dev->name);
+		shell_error(sh, "Failed to query %s format", dev->name);
 		return -ENODEV;
 	}
 
@@ -1311,8 +1401,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
 		cmd_video_stop, 2, 0),
 	SHELL_CMD_ARG(capture, &dsub_video_dev,
 		SHELL_HELP("Capture a given number of buffers from a device",
-			   "<device> <num-buffers>"),
-		cmd_video_capture, 3, 0),
+			   "<device> [-p <bytes-printed>] [-n <bufs-allocated>] [-a <alignment>]"
+			   " <bufs-total>"),
+		cmd_video_capture, 3, 6),
 	SHELL_CMD_ARG(format, &dsub_video_format_dev,
 		SHELL_HELP("Query or set the video format of a device",
 			   "<device> <dir> [<fourcc> <width>x<height>]"),

@@ -66,6 +66,7 @@ struct emul_imager_config {
 };
 
 struct emul_imager_ctrls {
+	struct video_ctrl link_freq;
 	struct video_ctrl custom;
 };
 
@@ -77,6 +78,10 @@ struct emul_imager_data {
 	enum emul_imager_fmt_id fmt_id;
 	struct video_format fmt;
 	struct emul_imager_ctrls ctrls;
+};
+
+const int64_t emul_imager_link_freq[] = {
+	MHZ(72), MHZ(36), MHZ(24),
 };
 
 /* All the I2C registers sent on various scenario */
@@ -340,9 +345,18 @@ static DEVICE_API(video, emul_imager_driver_api) = {
 static int emul_imager_init_controls(const struct device *dev)
 {
 	struct emul_imager_data *drv_data = dev->data;
+	struct emul_imager_ctrls *ctrls = &drv_data->ctrls;
+	int ret;
+
+	ret = video_init_int_menu_ctrl(&ctrls->link_freq, dev, VIDEO_CID_LINK_FREQ, 0,
+				       emul_imager_link_freq, ARRAY_SIZE(emul_imager_link_freq));
+	if (ret < 0) {
+		return ret;
+	}
+	ctrls->link_freq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 
 	return video_init_ctrl(
-		&drv_data->ctrls.custom, dev, EMUL_IMAGER_CID_CUSTOM,
+		&ctrls->custom, dev, EMUL_IMAGER_CID_CUSTOM,
 		(struct video_ctrl_range){.min = 0, .max = 255, .step = 1, .def = 128});
 }
 
