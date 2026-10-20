@@ -129,6 +129,10 @@
 	status = "okay";
 };
 
+&ocotp {
+	status = "okay";
+};
+
 mikrobus_serial: &flexcomm0 {};
 
 &hsgpio0 {
