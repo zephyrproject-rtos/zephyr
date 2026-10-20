@@ -72,6 +72,10 @@ setting ``CONFIG_LIBLC3=y``, ``CONFIG_FPU=y``,
 ``CONFIG_SAMPLE_BT_AUDIO_PLAYBACK_SINK_NONE=y``. The audio is then decoded and
 the resulting PCM discarded.
 
+For interoperability with commercial smartphone LE Audio sources, you may also
+set ``CONFIG_TMAP_PERIPHERAL_STEREO=y`` (advertise a stereo speaker location)
+in your board :file:`.conf` or in :file:`prj.conf`.
+
 When the peer adjusts volume through the Volume Control Service (VCS), the
 sample maps the 0..255 VCS volume linearly onto the codec output volume and
 applies mute. Codec volume registers are device-specific, so set
