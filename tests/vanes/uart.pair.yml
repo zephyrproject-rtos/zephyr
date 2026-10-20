@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A UART labeled dut whose receive line is wired to the transmit line of a
+  second one labeled dut_aux, both configured with their pins and the DMA
+  channels they use. Where the board also wires the RTS of dut to the CTS
+  of dut_aux, a fake_tx GPIO on the transmit pin and a fake_cts GPIO on the
+  CTS pin let a test drive the line and read the flow control by hand.
