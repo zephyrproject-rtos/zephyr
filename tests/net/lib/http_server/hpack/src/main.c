@@ -649,4 +649,31 @@ ZTEST(http2_hpack, test_http2_hpack_oversized_field_invalid)
 	zassert_equal(ret, -EBADMSG, "Invalid oversized string accepted (%d)", ret);
 }
 
+ZTEST(http2_hpack, test_http2_hpack_integer_overflow)
+{
+	/* Literal fields with a name length of 2^32 - 1 (five continuation
+	 * bytes, the last one at the limit), and ones that run past 32 bits
+	 * by a high group, a sixth byte and the final addition.
+	 */
+	static const uint8_t at_limit[] = { 0x00, 0x7f, 0x80, 0xff, 0xff, 0xff, 0x0f };
+	static const uint8_t high_group[] = { 0x00, 0x7f, 0x80, 0x80, 0x80, 0x80, 0x10 };
+	static const uint8_t six_bytes[] = { 0x00, 0x7f, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01 };
+	static const uint8_t wrapped[] = { 0x00, 0x7f, 0x82, 0xff, 0xff, 0xff, 0x0f, 'x',
+					   0x01, 'v' };
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	ret = http_hpack_decode_header(at_limit, sizeof(at_limit), &dec);
+	zassert_equal(ret, -EAGAIN, "Largest integer rejected (%d)", ret);
+
+	ret = http_hpack_decode_header(high_group, sizeof(high_group), &dec);
+	zassert_equal(ret, -EBADMSG, "High group accepted (%d)", ret);
+
+	ret = http_hpack_decode_header(six_bytes, sizeof(six_bytes), &dec);
+	zassert_equal(ret, -EBADMSG, "Six-byte integer accepted (%d)", ret);
+
+	ret = http_hpack_decode_header(wrapped, sizeof(wrapped), &dec);
+	zassert_equal(ret, -EBADMSG, "Wrapped integer accepted (%d)", ret);
+}
+
 ZTEST_SUITE(http2_hpack, NULL, NULL, NULL, NULL, NULL);
