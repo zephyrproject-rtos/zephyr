@@ -256,7 +256,7 @@ static int eth_fake_set_config(const struct device *dev,
 		break;
 
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;
