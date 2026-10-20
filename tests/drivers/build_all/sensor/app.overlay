@@ -192,6 +192,19 @@
 #include "i3c.dtsi"
 		};
 
+		test_smbus: smbus {
+			compatible = "zephyr,smbus-i2c";
+			i2c = <&test_i2c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			test_smbus_pmbus: pmbus@40 {
+				compatible = "zephyr,pmbus";
+				reg = <0x40>;
+			};
+		};
+
 		native_linux_temp {
 			compatible = "zephyr,native-linux-temp";
 			path = "/tmp/native-linux-temp";
