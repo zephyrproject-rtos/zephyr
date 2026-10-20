@@ -47,6 +47,13 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
+Ethernet
+========
+
+* The Kconfig option ``CONFIG_ETH_INTEL_IGC_NET_MTU`` has been removed. The Intel IGC Ethernet
+  driver now always uses the standard Ethernet MTU of 1500 bytes, as the Ethernet L2 does not
+  support jumbo frames. (:github:`122863`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
