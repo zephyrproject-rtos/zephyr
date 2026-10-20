@@ -20,6 +20,8 @@ tests:
         - tests_scripts/gatt_caching_db_hash_read_no_eatt.sh
         - tests_scripts/gatt_caching_out_of_sync_eatt.sh
         - tests_scripts/gatt_caching_out_of_sync_no_eatt.sh
+        - tests_scripts/gatt_caching_deferred_rsp_no_eatt.sh
+        - tests_scripts/gatt_caching_deferred_rsp_eatt.sh
   bluetooth.host.gatt.caching_psa_overlay:
     harness_config:
       fixture: bsim_multi_test
