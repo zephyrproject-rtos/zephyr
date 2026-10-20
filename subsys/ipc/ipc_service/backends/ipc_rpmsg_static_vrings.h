@@ -136,13 +136,14 @@
 /*
  * Size of the status region (possibly a multiple of the cache line size).
  */
-#define VDEV_STATUS_SIZE	CONFIG_IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
+#define VDEV_STATUS_SIZE CONFIG_IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
 
-#define VIRTQUEUE_ID_HOST	(0)
-#define VIRTQUEUE_ID_REMOTE	(1)
+#define VIRTQUEUE_ID_HOST   (0)
+#define VIRTQUEUE_ID_REMOTE (1)
 
-#define ROLE_HOST		VIRTIO_DEV_DRIVER
-#define ROLE_REMOTE		VIRTIO_DEV_DEVICE
+#define ROLE_HOST   VIRTIO_DEV_DRIVER
+#define ROLE_REMOTE VIRTIO_DEV_DEVICE
+
 /* The descriptor count must be a power of two representable by uint16_t. */
 #define MAX_LOG2_NUM_DESC (sizeof(uint16_t) * CHAR_BIT - 1U)
 
