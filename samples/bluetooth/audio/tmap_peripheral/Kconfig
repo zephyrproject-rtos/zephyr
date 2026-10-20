@@ -74,6 +74,16 @@ config TMAP_PERIPHERAL_ROLE_UMR
 	  always built, so the peripheral still accepts a sink stream and plays
 	  received media but no longer drives media control.
 
+config TMAP_PERIPHERAL_AUTO_CTRL
+	bool "Run the CT/MCC control demo after TMAP discovery"
+	depends on TMAP_PERIPHERAL_ROLE_CT || TMAP_PERIPHERAL_ROLE_UMR
+	default y
+	help
+	  When enabled the sample originates a call via CCP and issues a
+	  play/pause via MCP after discovering the peer. Disable this to
+	  keep the sample as a passive media sink (UMR) that waits for the
+	  peer to open a CIS to it.
+
 rsource "../common/Kconfig"
 
 endmenu

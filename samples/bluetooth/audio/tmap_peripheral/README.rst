@@ -36,6 +36,10 @@ the peer's TMAP role: if the peer is a Call Gateway (CG), it sends an "originate
 and terminates it after 2 seconds; if the peer is a Unicast Media Sender (UMS),
 it sends a "play media" request and pauses after 2 seconds.
 
+This automatic control demo runs only when ``CONFIG_TMAP_PERIPHERAL_AUTO_CTRL``
+is enabled (the default). Disable it to keep the peripheral a passive sink that
+waits for the Central to drive call and media control.
+
 Use the :zephyr:code-sample:`ble_peripheral_tmap_central` sample on another
 board to act as the TMAP Central (CG and UMS roles).
 
@@ -77,7 +81,9 @@ the resulting PCM discarded.
 
 For interoperability with commercial smartphone LE Audio sources, you may also
 set ``CONFIG_TMAP_PERIPHERAL_STEREO=y`` (advertise a stereo speaker location)
-in your board :file:`.conf` or in :file:`prj.conf`.
+and ``CONFIG_TMAP_PERIPHERAL_AUTO_CTRL=n`` (stay a passive sink instead of
+running the CT/MCC control demo after discovery) in your board :file:`.conf` or
+in :file:`prj.conf`.
 
 When the peer adjusts volume through the Volume Control Service (VCS), the
 sample maps the 0..255 VCS volume linearly onto the codec output volume and

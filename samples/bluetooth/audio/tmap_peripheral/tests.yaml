@@ -28,6 +28,10 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_TMAP_PERIPHERAL_STEREO=y
+  sample.bluetooth.audio.tmap_peripheral.passive_sink:
+    build_only: true
+    extra_configs:
+      - CONFIG_TMAP_PERIPHERAL_AUTO_CTRL=n
   sample.bluetooth.audio.tmap_peripheral.ct_only:
     build_only: true
     extra_configs:
