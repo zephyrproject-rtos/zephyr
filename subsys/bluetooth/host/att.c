@@ -108,6 +108,44 @@ struct bt_att_tx_meta_data {
 	enum bt_att_chan_opt chan_opt;
 };
 
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+/* The request a bearer is serving while its response is deferred */
+struct bt_att_defer {
+	/* Token of the response awaited, never 0 while one is */
+	uint32_t id;
+	uint8_t op;
+	uint16_t handle;
+	uint16_t offset;
+	/* Response of the request, allocated before it is deferred */
+	struct net_buf *rsp;
+	/* The response holds an Error Response to send. */
+	bool failed;
+	/* A response is recorded in `rsp` and waits for `cont_work`. */
+	bool responded;
+	/* A request is deferred, holding one of att_defer_sem until it is sent. */
+	bool serving;
+	/* Continues the request once it responds, on the RX work queue. */
+	struct k_work cont_work;
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
+	/* Entry of a deferred Prepare Write Request, kept out of the queue
+	 * shared by the bearers of the connection until it is accepted.
+	 */
+	struct net_buf *prep;
+	/* Values of a deferred Execute Write Request that are left to write. */
+	sys_slist_t exec;
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
+};
+
+/* One deferred-response slot per bearer that can exist at once, so every
+ * bearer can always defer its single in-flight request. Each slot is a
+ * response buffer att_pool has on top of CONFIG_BT_ATT_TX_COUNT.
+ */
+#define ATT_DEFER_MAX (CONFIG_BT_MAX_CONN * ATT_CHAN_MAX)
+#define ATT_TX_BUF_COUNT (CONFIG_BT_ATT_TX_COUNT + ATT_DEFER_MAX)
+#else
+#define ATT_TX_BUF_COUNT CONFIG_BT_ATT_TX_COUNT
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
 /* ATT channel specific data */
 struct bt_att_chan {
 	/* Connection this channel is associated with */
@@ -115,6 +153,9 @@ struct bt_att_chan {
 	struct bt_l2cap_le_chan	chan;
 	ATOMIC_DEFINE(flags, ATT_NUM_FLAGS);
 	struct bt_att_req	*req;
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	struct bt_att_defer	defer;
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 	struct k_fifo		tx_queue;
 	struct k_work_delayable	timeout_work;
 	sys_snode_t		node;
@@ -183,7 +224,7 @@ static struct bt_att_req cancel;
  */
 static k_tid_t att_handle_rsp_thread;
 
-static struct bt_att_tx_meta_data tx_meta_data_storage[CONFIG_BT_ATT_TX_COUNT];
+static struct bt_att_tx_meta_data tx_meta_data_storage[ATT_TX_BUF_COUNT];
 
 static struct bt_att_tx_meta_data *att_get_tx_meta_data(const struct net_buf *buf);
 static void att_on_sent_cb(struct bt_att_tx_meta_data *meta);
@@ -348,7 +389,7 @@ static void att_tx_destroy(struct net_buf *buf)
 	/* Continues in att_tx_destroy_work_handler() */
 }
 
-NET_BUF_POOL_DEFINE(att_pool, CONFIG_BT_ATT_TX_COUNT,
+NET_BUF_POOL_DEFINE(att_pool, ATT_TX_BUF_COUNT,
 		    BT_L2CAP_SDU_BUF_SIZE(BT_ATT_BUF_SIZE),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, att_tx_destroy);
 
@@ -941,6 +982,202 @@ static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
 
 	bt_att_chan_send_rsp(chan, buf);
 }
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+static K_SEM_DEFINE(att_defer_sem, ATT_DEFER_MAX,
+		    ATT_DEFER_MAX);
+
+/* Turns an assembled response into an Error Response in place. */
+static void att_err_into(struct net_buf *buf, uint8_t req, uint16_t handle, uint8_t err)
+{
+	struct bt_att_error_rsp *rsp;
+	struct net_buf *frag;
+
+	frag = buf->frags;
+	buf->frags = NULL;
+	while (frag != NULL) {
+		struct net_buf *next = frag->frags;
+
+		net_buf_unref(frag);
+		frag = next;
+	}
+
+	/* Keep the opcode byte, drop whatever value was collected */
+	buf->len = sizeof(struct bt_att_hdr);
+	((struct bt_att_hdr *)buf->data)->code = BT_ATT_OP_ERROR_RSP;
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	rsp->request = req;
+	rsp->handle = sys_cpu_to_le16(handle);
+	rsp->error = err;
+}
+
+static struct bt_att_chan *att_defer_find(struct bt_att *att, uint32_t id)
+{
+	struct bt_att_chan *chan;
+
+	if (id == 0U) {
+		return NULL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
+		if (chan->defer.id == id) {
+			return chan;
+		}
+	}
+
+	return NULL;
+}
+
+static bool att_defer_op_is_read(uint8_t op)
+{
+	return (op == BT_ATT_OP_READ_REQ) || (op == BT_ATT_OP_READ_BLOB_REQ) ||
+	       (op == BT_ATT_OP_READ_TYPE_REQ);
+}
+
+static uint8_t att_defer_rsp_op(uint8_t op)
+{
+	switch (op) {
+	case BT_ATT_OP_READ_REQ:
+		return BT_ATT_OP_READ_RSP;
+	case BT_ATT_OP_READ_BLOB_REQ:
+		return BT_ATT_OP_READ_BLOB_RSP;
+	case BT_ATT_OP_READ_TYPE_REQ:
+		return BT_ATT_OP_READ_TYPE_RSP;
+	case BT_ATT_OP_WRITE_REQ:
+		return BT_ATT_OP_WRITE_RSP;
+	case BT_ATT_OP_PREPARE_WRITE_REQ:
+		return BT_ATT_OP_PREPARE_WRITE_RSP;
+	case BT_ATT_OP_EXEC_WRITE_REQ:
+		return BT_ATT_OP_EXEC_WRITE_RSP;
+	default:
+		return 0U;
+	}
+}
+
+static uint16_t att_defer_max_len(struct bt_att_chan *chan, uint8_t op)
+{
+	if (op == BT_ATT_OP_READ_TYPE_REQ) {
+		/* A single Attribute Data: opcode, list length, handle and
+		 * value, where the list length also caps the value at 253.
+		 * Core v6.3 Vol 3 Part F 3.4.4.2.
+		 */
+		return MIN(bt_att_mtu(chan) - 4, UINT8_MAX - 2);
+	}
+
+	return bt_att_mtu(chan) - 1;
+}
+
+static int att_defer_fill(struct bt_att_chan *chan, struct net_buf *buf, uint8_t rsp_op,
+			  uint8_t att_err, const void *data, uint16_t len)
+{
+	switch (rsp_op) {
+	case BT_ATT_OP_ERROR_RSP: {
+		att_err_into(buf, chan->defer.op, chan->defer.handle, att_err);
+
+		return 0;
+	}
+	case BT_ATT_OP_READ_RSP:
+	case BT_ATT_OP_READ_BLOB_RSP:
+		len = MIN(len, att_defer_max_len(chan, chan->defer.op));
+		if (len > 0U) {
+			net_buf_add_mem(buf, data, len);
+		}
+
+		return 0;
+	case BT_ATT_OP_READ_TYPE_RSP: {
+		struct bt_att_read_type_rsp *rsp;
+		struct bt_att_data *item;
+
+		len = MIN(len, att_defer_max_len(chan, chan->defer.op));
+		rsp = net_buf_add(buf, sizeof(*rsp));
+		rsp->len = len + sizeof(*item);
+		item = net_buf_add(buf, sizeof(*item));
+		item->handle = sys_cpu_to_le16(chan->defer.handle);
+		if (len > 0U) {
+			net_buf_add_mem(buf, data, len);
+		}
+
+		return 0;
+	}
+	case BT_ATT_OP_WRITE_RSP:
+	case BT_ATT_OP_EXEC_WRITE_RSP:
+		return 0;
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
+	case BT_ATT_OP_PREPARE_WRITE_RSP: {
+		struct bt_att_prepare_write_rsp *rsp;
+		struct net_buf *entry = chan->defer.prep;
+
+		if (entry == NULL) {
+			return -EINVAL;
+		}
+
+		rsp = net_buf_add(buf, sizeof(*rsp));
+		rsp->handle = sys_cpu_to_le16(chan->defer.handle);
+		rsp->offset = sys_cpu_to_le16(chan->defer.offset);
+		net_buf_add_mem(buf, entry->data, entry->len);
+
+		return 0;
+	}
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
+	default:
+		return -EINVAL;
+	}
+}
+
+/* Stops serving a deferred request and frees what it holds besides the
+ * response. Runs under the host lock.
+ */
+static void att_defer_end(struct bt_att_chan *chan)
+{
+	chan->defer.rsp = NULL;
+	chan->defer.failed = false;
+	chan->defer.responded = false;
+	chan->defer.id = 0U;
+
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
+	if (chan->defer.prep != NULL) {
+		net_buf_unref(chan->defer.prep);
+		chan->defer.prep = NULL;
+	}
+
+	for (struct net_buf *buf = net_buf_slist_get(&chan->defer.exec); buf != NULL;
+	     buf = net_buf_slist_get(&chan->defer.exec)) {
+		net_buf_unref(buf);
+	}
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
+
+	if (chan->defer.serving) {
+		chan->defer.serving = false;
+		k_sem_give(&att_defer_sem);
+	}
+}
+
+/* Sends the response of a deferred request and stops serving it. */
+static void att_defer_send(struct bt_att_chan *chan)
+{
+	struct net_buf *rsp;
+
+	bt_dev_lock();
+	rsp = chan->defer.rsp;
+	att_defer_end(chan);
+	bt_att_chan_send_rsp(chan, rsp);
+	bt_dev_unlock();
+}
+
+/* Drops the deferred request of a bearer that is not to respond any more. */
+static void att_defer_drop(struct bt_att_chan *chan)
+{
+	bt_dev_lock();
+	(void)k_work_cancel(&chan->defer.cont_work);
+	if (chan->defer.rsp != NULL) {
+		net_buf_unref(chan->defer.rsp);
+	}
+
+	att_defer_end(chan);
+	bt_dev_unlock();
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 {
@@ -3073,6 +3310,26 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	/* Enforced before the handler lookup, so that a request whose handler
+	 * is compiled out (e.g. Prepare Write with CONFIG_BT_ATT_PREPARE_COUNT
+	 * 0) is still rejected instead of taking the no-handler path below.
+	 */
+	if ((att_op_get_type(hdr->code) == ATT_REQUEST) && att_chan->defer.serving) {
+		/* A client may only have one outstanding request per bearer */
+		LOG_WRN("Request 0x%02x while 0x%02x is deferred", hdr->code, att_chan->defer.op);
+		if (IS_ENABLED(CONFIG_BT_EATT) && bt_att_is_enhanced(att_chan)) {
+			/* Only this bearer is closed, the others stay */
+			att_defer_drop(att_chan);
+			(void)bt_l2cap_chan_disconnect(&att_chan->chan.chan);
+		} else {
+			att_disconnect(att_chan);
+		}
+
+		return 0;
+	}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
 	for (i = 0, handler = NULL; i < ARRAY_SIZE(handlers); i++) {
 		if (hdr->code == handlers[i].op) {
 			handler = &handlers[i];
@@ -3184,6 +3441,132 @@ static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op)
 	return buf;
 }
 
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+/* Records the response of a single-value request. Runs under the host lock. */
+static int att_defer_record_rsp(struct bt_att_chan *chan, uint32_t id, uint8_t att_err,
+			    const void *data, uint16_t len)
+{
+	uint8_t rsp_op;
+
+	if (chan->defer.id != id) {
+		return -EINVAL;
+	}
+
+	rsp_op = (att_err != 0U) ? BT_ATT_OP_ERROR_RSP : att_defer_rsp_op(chan->defer.op);
+	if (att_defer_fill(chan, chan->defer.rsp, rsp_op, att_err, data, len) != 0) {
+		/* The response cannot be built: fail the request instead */
+		att_err_into(chan->defer.rsp, chan->defer.op, chan->defer.handle,
+			     BT_ATT_ERR_UNLIKELY);
+		att_err = BT_ATT_ERR_UNLIKELY;
+	}
+
+	chan->defer.failed = (att_err != 0U);
+	chan->defer.responded = true;
+
+	return 0;
+}
+
+/* Continues a deferred request with the response recorded for it */
+static void att_defer_cont_work_handler(struct k_work *work)
+{
+	struct bt_att_chan *chan = CONTAINER_OF(work, struct bt_att_chan, defer.cont_work);
+	uint8_t op;
+	bool failed;
+
+	bt_dev_lock();
+
+	if (!chan->defer.responded) {
+		/* Dropped with its bearer */
+		bt_dev_unlock();
+
+		return;
+	}
+
+	/* The response is taken up here, so a second one is refused. */
+	op = chan->defer.op;
+	failed = chan->defer.failed;
+	chan->defer.responded = false;
+	chan->defer.id = 0U;
+
+	bt_dev_unlock();
+
+	if (failed) {
+		att_defer_send(chan);
+
+		return;
+	}
+
+	att_defer_send(chan);
+}
+
+/* Records the response of a deferred request and continues it on cont_work. */
+static int att_defer_rsp(struct bt_conn *conn, uint32_t id, bool is_read, uint8_t att_err,
+			 const void *data, uint16_t len)
+{
+	struct bt_att_chan *chan;
+	struct bt_att *att;
+	uint8_t op;
+	int err;
+
+	if ((att_err == 0U) && (data == NULL) && (len != 0U)) {
+		return -EINVAL;
+	}
+
+	bt_dev_lock();
+
+	att = att_get(conn);
+	chan = (att != NULL) ? att_defer_find(att, id) : NULL;
+	if (chan == NULL) {
+		bt_dev_unlock();
+
+		return (att == NULL) ? -ENOTCONN : -EINVAL;
+	}
+
+	if (chan->defer.responded) {
+		bt_dev_unlock();
+
+		return -EINVAL;
+	}
+
+	op = chan->defer.op;
+	if ((att_err == 0U) && (att_defer_op_is_read(op) != is_read)) {
+		LOG_WRN("Response does not match request 0x%02x", op);
+		bt_dev_unlock();
+
+		return -EINVAL;
+	}
+
+	err = att_defer_record_rsp(chan, id, att_err, data, len);
+
+	if (err == 0) {
+		(void)bt_work_submit(&chan->defer.cont_work);
+	}
+
+	bt_dev_unlock();
+
+	return err;
+}
+
+int bt_att_rsp_read(struct bt_conn *conn, uint32_t id, const void *data, uint16_t len)
+{
+	return att_defer_rsp(conn, id, true, 0U, data, len);
+}
+
+int bt_att_rsp_write(struct bt_conn *conn, uint32_t id)
+{
+	return att_defer_rsp(conn, id, false, 0U, NULL, 0U);
+}
+
+int bt_att_rsp_error(struct bt_conn *conn, uint32_t id, uint8_t att_err)
+{
+	if (att_err == 0U) {
+		return -EINVAL;
+	}
+
+	return att_defer_rsp(conn, id, false, att_err, NULL, 0U);
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
 static void att_reset(struct bt_att *att)
 {
 	struct net_buf *buf;
@@ -3242,6 +3625,11 @@ static void att_chan_detach(struct bt_att_chan *chan)
 		/* Notify outstanding request */
 		att_handle_rsp(chan, NULL, 0, -ECONNRESET);
 	}
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	/* A deferred response cannot be sent on this bearer any more */
+	att_defer_drop(chan);
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 	chan->att = NULL;
 	atomic_clear_bit(chan->flags, ATT_CONNECTED);
@@ -3309,6 +3697,10 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 	att_chan_mtu_updated(att_chan);
 
 	k_work_init_delayable(&att_chan->timeout_work, att_timeout);
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	k_work_init(&att_chan->defer.cont_work, att_defer_cont_work_handler);
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 	bt_gatt_connected(le_chan->chan.conn);
 }

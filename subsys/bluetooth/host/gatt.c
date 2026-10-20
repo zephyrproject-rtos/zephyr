@@ -3399,6 +3399,36 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	return 0;
 }
 
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+int bt_gatt_read_rsp(const struct bt_gatt_req *req, const void *data, uint16_t len)
+{
+	if ((req == NULL) || (req->conn == NULL) || ((data == NULL) && (len != 0U))) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_read(req->conn, req->id, data, len);
+}
+
+int bt_gatt_write_rsp(const struct bt_gatt_req *req)
+{
+	if ((req == NULL) || (req->conn == NULL)) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_write(req->conn, req->id);
+}
+
+int bt_gatt_error_rsp(const struct bt_gatt_req *req, int err)
+{
+	/* BT_GATT_ERR() of an ATT error code, 0x01 to 0xff */
+	if ((req == NULL) || (req->conn == NULL) || (err >= 0) || (err < -UINT8_MAX)) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_error(req->conn, req->id, (uint8_t)-err);
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
 static void sc_restore_rsp(struct bt_conn *conn,
 			   struct bt_gatt_indicate_params *params, uint8_t err)
 {

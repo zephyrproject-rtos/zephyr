@@ -13,6 +13,7 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #define BT_GATT_PERM_READ_MASK			(BT_GATT_PERM_READ | \
 						BT_GATT_PERM_READ_ENCRYPT | \
@@ -39,6 +40,32 @@ void bt_gatt_encrypt_change(struct bt_conn *conn);
 void bt_gatt_disconnected(struct bt_conn *conn);
 
 bool bt_gatt_change_aware(struct bt_conn *conn, bool req);
+
+/* Deferred method serving remote reads of the attribute, or NULL */
+static inline bt_gatt_attr_read_deferred_func_t
+bt_gatt_attr_deferred_read(const struct bt_gatt_attr *attr)
+{
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	if (attr->deferred != NULL) {
+		return attr->deferred->read;
+	}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
+	return NULL;
+}
+
+/* Deferred method serving remote writes of the attribute, or NULL */
+static inline bt_gatt_attr_write_deferred_func_t
+bt_gatt_attr_deferred_write(const struct bt_gatt_attr *attr)
+{
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	if (attr->deferred != NULL) {
+		return attr->deferred->write;
+	}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
+	return NULL;
+}
 
 int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr);
 
