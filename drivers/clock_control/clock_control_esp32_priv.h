@@ -128,7 +128,7 @@
  * ESP32-H2, ESP32-P4). Exactly one implementation file is compiled per
  * build, selected from CMakeLists.txt by SoC series.
  */
-int esp32_select_rtc_slow_clk(uint8_t slow_clk);
+int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback);
 
 void esp32_select_rtc_fast_clk(uint8_t fast_clk);
 
