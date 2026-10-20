@@ -1068,6 +1068,24 @@
 			status = "disabled";
 		};
 
+		snvs: snvs@40c90000 {
+			compatible = "nxp,imx-snvs";
+			reg = <0x40c90000 0x4000>;
+
+			snvs_rtc: rtc {
+				compatible = "nxp,imx-snvs-rtc";
+				interrupts = <66 0>;
+				wakeup-source;
+				status = "disabled";
+
+				counter_rtc: counter_rtc {
+					compatible = "zephyr,rtc-counter";
+					alarms-count = <2>;
+					status = "disabled";
+				};
+			};
+		};
+
 		anatop: anatop@40c84000 {
 			compatible = "nxp,imx-anatop";
 			reg = <0x40c84000 0x4000>;
