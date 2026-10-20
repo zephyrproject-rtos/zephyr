@@ -20,7 +20,6 @@
 
 #define BT_EATT_PSM		0x27
 #define BT_ATT_DEFAULT_LE_MTU	23
-#define BT_ATT_TIMEOUT_SEC	30
 #define BT_ATT_TIMEOUT		K_SECONDS(BT_ATT_TIMEOUT_SEC)
 
 /* Local ATT Rx MTU
@@ -322,6 +321,13 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req);
 
 /* Cancel ATT request */
 void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req);
+
+/* Backs the bt_gatt_deferred_*_rsp() functions. */
+int bt_att_rsp_read(uint32_t id, const void *data, uint16_t len);
+
+int bt_att_rsp_write(uint32_t id);
+
+int bt_att_rsp_error(uint32_t id, uint8_t att_err);
 
 /* Disconnect EATT channels */
 int bt_eatt_disconnect(struct bt_conn *conn);

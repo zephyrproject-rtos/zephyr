@@ -3399,6 +3399,32 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	return 0;
 }
 
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+int bt_gatt_deferred_read_rsp(uint32_t id, const void *data, uint16_t len)
+{
+	if ((data == NULL) && (len != 0U)) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_read(id, data, len);
+}
+
+int bt_gatt_deferred_write_rsp(uint32_t id)
+{
+	return bt_att_rsp_write(id);
+}
+
+int bt_gatt_deferred_error_rsp(uint32_t id, int err)
+{
+	/* BT_GATT_ERR() of an ATT error code, 0x01 to 0xff */
+	if ((err >= 0) || (err < -UINT8_MAX)) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_error(id, (uint8_t)-err);
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
 static void sc_restore_rsp(struct bt_conn *conn,
 			   struct bt_gatt_indicate_params *params, uint8_t err)
 {
