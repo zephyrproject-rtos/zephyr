@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PMBUS
+	bool "PMBus core [EXPERIMENTAL]"
+	depends on SMBUS
+	select EXPERIMENTAL
+	help
+	  Enable the PMBus (Power Management Bus) core. It provides command
+	  access with page handling and the PMBus data format conversions to
+	  drivers of PMBus devices.
+
+if PMBUS
+
+config PMBUS_MAX_PAGES
+	int "Maximum number of pages per device"
+	range 1 32
+	default 1
+	help
+	  Largest number of pages a PMBus device can have. It sets the size of
+	  the per page state kept for each device.
+
+module = PMBUS
+module-str = pmbus
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # PMBUS
