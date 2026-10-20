@@ -76,6 +76,18 @@ New APIs and options
 
     * :c:func:`bt_addr_matches_irk`
     * :c:func:`bt_l2cap_server_unregister`
+    * :kconfig:option:`CONFIG_BT_GATT_DEFERRED_RSP`
+    * :c:macro:`BT_ATT_TIMEOUT_SEC`
+    * :c:member:`bt_gatt_attr.deferred`
+    * :c:macro:`BT_GATT_ATTRIBUTE_DEFERRED`
+    * :c:macro:`BT_GATT_CHARACTERISTIC_DEFERRED`
+    * :c:struct:`bt_gatt_deferred_attr`
+    * :c:type:`bt_gatt_deferred_attr_read_func_t`
+    * :c:type:`bt_gatt_deferred_attr_write_func_t`
+    * :c:func:`bt_gatt_deferred_error_rsp`
+    * :c:func:`bt_gatt_deferred_read_rsp`
+    * :c:macro:`BT_GATT_DEFERRED_REQ_ID_NONE`
+    * :c:func:`bt_gatt_deferred_write_rsp`
 
   * Services
 
