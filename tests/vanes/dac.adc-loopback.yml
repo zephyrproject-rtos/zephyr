@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A DAC output wired to an ADC input, named dac1 and adc1 in the io-channels
+  of the zephyr,user node, with the channel of each configured on its
+  controller. The wire may be inside the SoC, where the ADC can sample the
+  DAC output directly.
+filter: dt_node_has_prop("/zephyr,user", "io-channels")
