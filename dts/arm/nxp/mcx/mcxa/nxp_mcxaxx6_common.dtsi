@@ -278,8 +278,15 @@
 			compatible = "nxp,lpc-wwdt";
 			reg = <0x4000c000 0x1000>;
 			clocks = <&syscon MCUX_WWDT0_CLK>;
+			power-domains = <&core_domain>;
 			interrupts = <60 0>;
 			clk-divider = <1>;
+			/*
+			 * Deep Sleep needs a retained functional clock. A board with
+			 * verified low-power clock setup may drop &deepsleep.
+			 * Power Down stops operation; Deep Power Down loses state.
+			 */
+			zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 			status = "disabled";
 		};
 
