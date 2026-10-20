@@ -634,6 +634,8 @@ static int xilinx_axienet_stop(const struct device *dev, struct net_if *iface __
 	struct xilinx_axienet_data *data = dev->data;
 	uint32_t status;
 	int err;
+	int rx_err;
+	int tx_err;
 
 	/* Disable AXIENET RX */
 	status = xilinx_axienet_read_register(
@@ -643,21 +645,28 @@ static int xilinx_axienet_stop(const struct device *dev, struct net_if *iface __
 		config, XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_OFFSET, status);
 
 	/* Stop the RX DMA channel */
-	err = dma_stop(config->dma, XILINX_AXI_DMA_RX_CHANNEL_NUM);
-	if (err) {
-		LOG_ERR("%s: failed to stop RX DMA: %d", dev->name, err);
+	rx_err = dma_stop(config->dma, XILINX_AXI_DMA_RX_CHANNEL_NUM);
+	if (rx_err != 0) {
+		LOG_ERR("%s: failed to stop RX DMA: %d", dev->name, rx_err);
 	}
 
 	/* Stop the TX DMA channel */
-	err = dma_stop(config->dma, XILINX_AXI_DMA_TX_CHANNEL_NUM);
-	if (err) {
-		LOG_ERR("%s: failed to stop TX DMA: %d", dev->name, err);
+	tx_err = dma_stop(config->dma, XILINX_AXI_DMA_TX_CHANNEL_NUM);
+	if (tx_err != 0) {
+		LOG_ERR("%s: failed to stop TX DMA: %d", dev->name, tx_err);
 	}
 
 	/* Disable AXIENET TX */
 	status = xilinx_axienet_read_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET);
 	status &= ~XILINX_AXIENET_TX_CONTROL_TX_EN_MASK;
 	xilinx_axienet_write_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET, status);
+
+	/* A failed stop leaves DMA ownership live: retain every referenced buffer. */
+	if ((rx_err != 0) || (tx_err != 0)) {
+		err = (rx_err != 0) ? rx_err : tx_err;
+		LOG_ERR("%s: retaining DMA buffers after incomplete shutdown", dev->name);
+		return err;
+	}
 
 	/* Release any in-flight TX net_pkts (DMA has stopped; callbacks won't fire). */
 	for (int i = 0; i < CONFIG_ETH_XILINX_AXIENET_BUFFER_NUM_TX; i++) {
