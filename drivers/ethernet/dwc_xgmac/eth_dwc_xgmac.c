@@ -1532,7 +1532,7 @@ static int eth_dwc_xgmac_set_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(dev_data->mac_addr, config->mac_address.addr, ETH_MAC_ADDRESS_SIZE);
 		dwxgmac_set_mac_addr_by_idx(dev, dev_data->mac_addr, 0u, false);
-		return 0;
+		break;
 #if (!CONFIG_ETH_DWC_XGMAC_PROMISCUOUS_EXCEPTION && CONFIG_NET_PROMISCUOUS_MODE)
 
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
