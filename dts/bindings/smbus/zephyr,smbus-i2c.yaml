@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic SMBus controller on top of an I2C controller.
+
+  SMBus protocols are built from I2C transfers on the referenced I2C
+  controller, with Packet Error Checking done in software. The bus speed is
+  set by the I2C controller node. Block read and block process call are not
+  supported.
+
+  Example:
+
+    smbus0: smbus0 {
+      compatible = "zephyr,smbus-i2c";
+      i2c = <&i2c0>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+    };
+
+compatible: "zephyr,smbus-i2c"
+
+include: smbus-controller.yaml
+
+properties:
+  i2c:
+    type: phandle
+    required: true
+    description: I2C controller used to run the SMBus transfers
