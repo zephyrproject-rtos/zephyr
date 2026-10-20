@@ -30,5 +30,7 @@ tests:
     extra_configs:
       - CONFIG_TFM_IPC=y
   sample.tfm.secure_partition.sfn:
+    platform_exclude:
+      - lpcxpresso55s69/lpc55s69/cpu0/ns
     extra_configs:
       - CONFIG_TFM_SFN=y
