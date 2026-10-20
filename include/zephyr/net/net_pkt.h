@@ -262,8 +262,9 @@ struct net_pkt {
 	uint8_t l2_processed : 1; /* Set to 1 if this packet has already been
 				   * processed by the L2
 				   */
-	uint8_t chksum_done : 1; /* Checksum has already been computed for
-				  * the packet.
+	uint8_t chksum_done : 1; /* The transport layer checksum is already
+				  * in the packet, see
+				  * net_pkt_is_chksum_done().
 				  */
 	uint8_t loopback : 1; /* Packet is a loop back packet. */
 #if defined(CONFIG_NET_IP_FRAGMENT)
@@ -619,6 +620,23 @@ static inline void net_pkt_set_l2_processed(struct net_pkt *pkt,
 	pkt->l2_processed = is_l2_processed;
 }
 
+/**
+ * @brief Check whether the transport layer checksum is already in the packet
+ *
+ * True when the stack computed the TCP, UDP or ICMP checksum in software,
+ * or when the packet is forwarded, by IP forwarding or by an Ethernet
+ * bridge, with the checksum its sender put in. The IPv4 header checksum is
+ * not covered.
+ *
+ * A driver that requests checksum insertion per frame then requests the
+ * IPv4 header checksum only. Some hardware computes over the checksum field
+ * as it is and expects it to be zero, so inserting into a field that already
+ * holds the checksum gives a wrong one.
+ *
+ * @param pkt Network packet
+ *
+ * @return true if the transport layer checksum is in the packet.
+ */
 static inline bool net_pkt_is_chksum_done(struct net_pkt *pkt)
 {
 	return !!(pkt->chksum_done);
