@@ -35,7 +35,7 @@ config UART_INFINEON_CAT1_PDL
 
 config UART_INFINEON_PDL_MP_FIELD_QUIRK
 	bool
-	default y if SOC_DIE_PSC3M6 || SOC_SERIES_PSE84
+	default y if SOC_DIE_PSC3M6 || SOC_DIE_PSC3M8 || SOC_SERIES_PSE84
 	help
 	  Enabled for SoCs whose PDL fixed the SCB UART config field name
 	  "enableMultiProcessorMode". Older PDL revisions misspell it as
