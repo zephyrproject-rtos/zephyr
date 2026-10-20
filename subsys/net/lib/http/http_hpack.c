@@ -133,6 +133,8 @@ static int http_hpack_find_index(struct http_hpack_header_buf *header,
 }
 
 #define HPACK_INTEGER_CONTINUATION_FLAG            0x80
+/* Shift of the last 7-bit group that fits a 32-bit integer. */
+#define HPACK_INTEGER_MAX_SHIFT                    28
 #define HPACK_STRING_HUFFMAN_FLAG                  0x80
 #define HPACK_STRING_PREFIX_LEN                    7
 
@@ -177,6 +179,8 @@ static int hpack_integer_decode(const uint8_t *buf, size_t datalen,
 	}
 
 	do {
+		uint32_t group;
+
 		buf++;
 		len++;
 
@@ -184,12 +188,15 @@ static int hpack_integer_decode(const uint8_t *buf, size_t datalen,
 			return -EAGAIN;
 		}
 
-		if (m >= sizeof(uint32_t) * 8) {
-			/* Can't handle integer that large. */
+		group = *buf & ~HPACK_INTEGER_CONTINUATION_FLAG;
+
+		/* Integers are limited to 32 bits (RFC 7541, Section 5.1). */
+		if (m > HPACK_INTEGER_MAX_SHIFT || ((group << m) >> m) != group ||
+		    *value > UINT32_MAX - (group << m)) {
 			return -EBADMSG;
 		}
 
-		*value += (uint32_t)(*buf & ~HPACK_INTEGER_CONTINUATION_FLAG) << m;
+		*value += group << m;
 		m += 7;
 
 	} while (*buf & HPACK_INTEGER_CONTINUATION_FLAG);
