@@ -140,6 +140,11 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 		return 0U;
 	}
 
+	/* The fields of an incomplete extended header can lie beyond the PDU */
+	if (unlikely(!ull_scan_aux_lll_ext_hdr_is_complete(pdu))) {
+		return 0U;
+	}
+
 	/* Get reference to flags and contents */
 	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
 	pri_dptr = pri_hdr->data;
