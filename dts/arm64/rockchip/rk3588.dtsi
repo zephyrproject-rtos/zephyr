@@ -10,11 +10,17 @@
 #include <zephyr/dt-bindings/reset/rk3588-cru-reset.h>
 
 / {
-	#address-cells = <1>;
-	#size-cells = <1>;
+	#address-cells = <2>;
+	#size-cells = <2>;
 
 	compatible = "rockchip,rk3588";
 	interrupt-parent = <&gic>;
+
+	/* Keep the inherited "soc" bus consistent with the 64-bit root bus. */
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -84,9 +90,10 @@
 		#interrupt-cells = <4>;
 		interrupt-controller;
 
-		reg = <0xfe600000 0x10000>, /* GICD */
-		      <0xfe680000 0x100000>; /* GICR */
+		reg = <0x0 0xfe600000 0x0 0x10000>, /* GICD */
+		      <0x0 0xfe680000 0x0 0x100000>; /* GICR */
 		status = "okay";
+
 	};
 
 	psci {
@@ -105,19 +112,19 @@
 
 	sys_grf: syscon@fd58c000 {
 		compatible = "syscon";
-		reg = <0xfd58c000 0x1000>;
+		reg = <0x0 0xfd58c000 0x0 0x1000>;
 		status = "okay";
 	};
 
 	php_grf: syscon@fd5b0000 {
 		compatible = "syscon";
-		reg = <0xfd5b0000 0x1000>;
+		reg = <0x0 0xfd5b0000 0x0 0x1000>;
 		status = "okay";
 	};
 
 	cru: clock-controller@fd7c0000 {
 		compatible = "rockchip,rk3588-cru";
-		reg = <0xfd7c0000 0x5c000>;
+		reg = <0x0 0xfd7c0000 0x0 0x5c000>;
 		status = "okay";
 
 		cru_clk: clock-controller {
@@ -135,7 +142,7 @@
 
 	uart2: serial@feb50000 {
 		compatible = "rockchip,rk3588-uart", "ns16550";
-		reg = <0xfeb50000 0x100>;
+		reg = <0x0 0xfeb50000 0x0 0x100>;
 		interrupts = <GIC_SPI 333 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		clock-frequency = <12000000>;
 		reg-shift = <2>;
@@ -144,7 +151,7 @@
 
 	uart3: serial@feb60000 {
 		compatible = "rockchip,rk3588-uart", "ns16550";
-		reg = <0xfeb60000 0x100>;
+		reg = <0x0 0xfeb60000 0x0 0x100>;
 		interrupts = <GIC_SPI 334 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		clock-frequency = <24000000>;
 		reg-shift = <2>;
@@ -153,7 +160,7 @@
 
 	gmac0: ethernet@fe1b0000 {
 		compatible = "rockchip,rk3588-gmac", "snps,dwmac";
-		reg = <0xfe1b0000 0x10000>;
+		reg = <0x0 0xfe1b0000 0x0 0x10000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 227 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		clocks = <&cru_clk CLK_GMAC_125M>, <&cru_clk CLK_GMAC_50M>,
@@ -185,7 +192,7 @@
 
 	gmac1: ethernet@fe1c0000 {
 		compatible = "rockchip,rk3588-gmac", "snps,dwmac";
-		reg = <0xfe1c0000 0x10000>;
+		reg = <0x0 0xfe1c0000 0x0 0x10000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 234 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		clocks = <&cru_clk CLK_GMAC_125M>, <&cru_clk CLK_GMAC_50M>,
