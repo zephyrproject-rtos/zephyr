@@ -214,13 +214,15 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_sclk_freq);
 	}
 #else
-#if defined(CONFIG_MCUBOOT) && defined(ESP_ROM_UART_CLK_IS_XTAL)
-	uint32_t uart_clock_src_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
-#else
-	uint32_t uart_clock_src_hz = esp_clk_apb_freq();
-#endif
-	uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-			     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_clock_src_hz);
+	soc_module_clk_t uart_sclk;
+	uint32_t uart_clock_src_hz;
+
+	uart_ll_get_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), &uart_sclk);
+	if (esp_clk_tree_src_get_freq_hz(uart_sclk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+					 &uart_clock_src_hz) == ESP_OK) {
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
+				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_clock_src_hz);
+	}
 #endif
 #endif
 	return 0;
