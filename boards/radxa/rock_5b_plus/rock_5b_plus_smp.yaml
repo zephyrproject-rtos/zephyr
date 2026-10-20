@@ -7,4 +7,5 @@ toolchain:
   - cross-compile
 ram: 131072
 supported:
+  - pci
   - smp
