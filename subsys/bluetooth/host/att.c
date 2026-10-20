@@ -117,6 +117,10 @@ struct bt_att_tx_meta_data {
 	enum bt_att_chan_opt chan_opt;
 };
 
+#if defined(CONFIG_BT_GATT_READ_MULTIPLE) || defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
+#define ATT_READ_MULT_SUPPORT
+#endif
+
 #if defined(CONFIG_BT_GATT_DEFERRED_RSP)
 /* The request a bearer is serving while its response is deferred */
 struct bt_att_defer {
@@ -143,6 +147,10 @@ struct bt_att_defer {
 	/* Values of a deferred Execute Write Request that are left to write. */
 	sys_slist_t exec;
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
+#if defined(ATT_READ_MULT_SUPPORT)
+	/* Read Multiple handles left to read, copied out of the request PDU. */
+	struct net_buf *handles;
+#endif /* ATT_READ_MULT_SUPPORT */
 };
 
 /* One deferred-response slot per bearer that can exist at once, so every
@@ -1003,6 +1011,12 @@ static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
 static K_SEM_DEFINE(att_defer_sem, ATT_DEFER_MAX,
 		    ATT_DEFER_MAX);
 
+#if defined(ATT_READ_MULT_SUPPORT)
+/* Read Multiple handles of the deferred requests. They are never sent. */
+NET_BUF_POOL_FIXED_DEFINE(att_defer_handles_pool, ATT_DEFER_MAX,
+			  BT_ATT_BUF_SIZE, 0, NULL);
+#endif /* ATT_READ_MULT_SUPPORT */
+
 /* Turns an assembled response into an Error Response in place. */
 static void att_err_into(struct net_buf *buf, uint8_t req, uint16_t handle, uint8_t err)
 {
@@ -1048,7 +1062,8 @@ static struct bt_att_chan *att_defer_find(struct bt_att *att, uint32_t id)
 static bool att_defer_op_is_read(uint8_t op)
 {
 	return (op == BT_ATT_OP_READ_REQ) || (op == BT_ATT_OP_READ_BLOB_REQ) ||
-	       (op == BT_ATT_OP_READ_TYPE_REQ);
+	       (op == BT_ATT_OP_READ_TYPE_REQ) || (op == BT_ATT_OP_READ_MULT_REQ) ||
+	       (op == BT_ATT_OP_READ_MULT_VL_REQ);
 }
 
 static uint8_t att_defer_rsp_op(uint8_t op)
@@ -1060,6 +1075,10 @@ static uint8_t att_defer_rsp_op(uint8_t op)
 		return BT_ATT_OP_READ_BLOB_RSP;
 	case BT_ATT_OP_READ_TYPE_REQ:
 		return BT_ATT_OP_READ_TYPE_RSP;
+	case BT_ATT_OP_READ_MULT_REQ:
+		return BT_ATT_OP_READ_MULT_RSP;
+	case BT_ATT_OP_READ_MULT_VL_REQ:
+		return BT_ATT_OP_READ_MULT_VL_RSP;
 	case BT_ATT_OP_WRITE_REQ:
 		return BT_ATT_OP_WRITE_RSP;
 	case BT_ATT_OP_PREPARE_WRITE_REQ:
@@ -1070,6 +1089,13 @@ static uint8_t att_defer_rsp_op(uint8_t op)
 		return 0U;
 	}
 }
+
+#if defined(ATT_READ_MULT_SUPPORT)
+static bool att_defer_op_is_mult(uint8_t op)
+{
+	return (op == BT_ATT_OP_READ_MULT_REQ) || (op == BT_ATT_OP_READ_MULT_VL_REQ);
+}
+#endif /* ATT_READ_MULT_SUPPORT */
 
 static uint16_t att_defer_max_len(struct bt_att_chan *chan, uint8_t op)
 {
@@ -1162,6 +1188,13 @@ static void att_defer_end(struct bt_att_chan *chan)
 		net_buf_unref(buf);
 	}
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
+
+#if defined(ATT_READ_MULT_SUPPORT)
+	if (chan->defer.handles != NULL) {
+		net_buf_unref(chan->defer.handles);
+		chan->defer.handles = NULL;
+	}
+#endif /* ATT_READ_MULT_SUPPORT */
 
 	if (chan->defer.serving) {
 		chan->defer.serving = false;
@@ -2185,66 +2218,6 @@ static uint8_t att_read_blob_req(struct bt_att_chan *chan, struct net_buf *buf)
 			    BT_ATT_OP_READ_BLOB_RSP, handle, offset);
 }
 
-#if defined(CONFIG_BT_GATT_READ_MULTIPLE)
-static uint8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
-{
-	struct read_data data;
-	uint16_t handle;
-
-	if (!bt_gatt_change_aware(chan->att->conn, true)) {
-		if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
-			return BT_ATT_ERR_DB_OUT_OF_SYNC;
-		} else {
-			return 0;
-		}
-	}
-
-	(void)memset(&data, 0, sizeof(data));
-
-	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_READ_MULT_RSP);
-	if (!data.buf) {
-		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
-	}
-
-	data.chan = chan;
-
-	while (buf->len >= sizeof(uint16_t)) {
-		handle = net_buf_pull_le16(buf);
-
-		LOG_DBG("handle 0x%04x ", handle);
-
-		/* An Error Response shall be sent by the server in response to
-		 * the Read Multiple Request [....] if a read operation is not
-		 * permitted on any of the Characteristic Values.
-		 *
-		 * If handle is not valid then return invalid handle error.
-		 * If handle is found error will be cleared by read_cb.
-		 */
-		data.err = BT_ATT_ERR_INVALID_HANDLE;
-
-		bt_gatt_foreach_attr(handle, handle, read_cb, &data);
-
-		if (data.deferred_attr != NULL) {
-			/* Not supported: the response holds several values */
-			data.err = BT_ATT_ERR_UNLIKELY;
-		}
-
-		/* Stop reading in case of error */
-		if (data.err) {
-			net_buf_unref(data.buf);
-			/* Respond here since handle is set */
-			send_err_rsp(chan, BT_ATT_OP_READ_MULT_REQ, handle,
-				     data.err);
-			return 0;
-		}
-	}
-
-	bt_att_chan_send_rsp(chan, data.buf);
-
-	return 0;
-}
-#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
-
 #if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
 static uint8_t read_vl_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			  void *user_data)
@@ -2276,8 +2249,7 @@ static uint8_t read_vl_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 	if (bt_gatt_attr_deferred_read(attr) != NULL) {
-		/* Not supported: the response holds several values */
-		data->err = BT_ATT_ERR_UNLIKELY;
+		data->deferred_attr = attr;
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -2300,11 +2272,246 @@ static uint8_t read_vl_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	return BT_GATT_ITER_CONTINUE;
 }
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
 
-static uint8_t att_read_mult_vl_req(struct bt_att_chan *chan, struct net_buf *buf)
+#if defined(ATT_READ_MULT_SUPPORT)
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+/* Whether the response has room for another value. A variable length one goes
+ * in as soon as its length does, truncated to nothing if need be, which is how
+ * the synchronous path truncates as well.
+ */
+static bool att_read_mult_fits(struct bt_att_chan *chan, uint8_t op, struct net_buf *rsp)
 {
+	uint16_t least = 1U;
+
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
+	if (op == BT_ATT_OP_READ_MULT_VL_REQ) {
+		least = sizeof(struct bt_att_read_mult_vl_rsp);
+	}
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
+
+	return bt_att_mtu(chan) >= (net_buf_frags_len(rsp) + least);
+}
+
+/* Largest value the response still has room for, 0 when it only has room for
+ * the length of a variable length one
+ */
+static uint16_t att_read_mult_room(struct bt_att_chan *chan, uint8_t op, struct net_buf *rsp)
+{
+	uint16_t used = net_buf_frags_len(rsp);
+
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
+	if (op == BT_ATT_OP_READ_MULT_VL_REQ) {
+		/* Every value is preceded by its length */
+		used += sizeof(struct bt_att_read_mult_vl_rsp);
+	}
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
+
+	return (bt_att_mtu(chan) > used) ? (bt_att_mtu(chan) - used) : 0U;
+}
+
+/* Adds one value to the response, truncated to the room there is for it */
+static void att_read_mult_add(struct bt_att_chan *chan, uint8_t op, struct net_buf *rsp,
+			      const void *data, uint16_t len)
+{
+	struct net_buf *frag = net_buf_frag_last(rsp);
+
+	len = MIN(len, att_read_mult_room(chan, op, rsp));
+
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
+	if (op == BT_ATT_OP_READ_MULT_VL_REQ) {
+		struct bt_att_read_mult_vl_rsp *tuple = net_buf_add(frag, sizeof(*tuple));
+
+		tuple->len = sys_cpu_to_le16(len);
+	}
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
+
+	if (len > 0U) {
+		net_buf_add_mem(frag, data, len);
+	}
+}
+
+/* Asks a deferred attribute for its value. Returns an ATT error, or 0
+ * with *wait set when the request waits for the response.
+ */
+static uint8_t att_read_mult_ask(struct bt_att_chan *chan, uint8_t op, uint16_t handle,
+				 const struct bt_gatt_attr *attr, struct net_buf *rsp,
+				 struct net_buf *handles, bool *wait)
+{
+	bt_gatt_attr_read_deferred_func_t read = bt_gatt_attr_deferred_read(attr);
+	struct bt_gatt_req req;
+	uint16_t max_len;
+	uint8_t att_err;
+	bool first;
+
+	if (!att_read_mult_fits(chan, op, rsp)) {
+		/* The response is full, so this value is left out the same way
+		 * a synchronous one would be
+		 */
+		return 0U;
+	}
+
+	max_len = att_read_mult_room(chan, op, rsp);
+	if (max_len == 0U) {
+		/* Only the length of a variable length value fits, which the
+		 * synchronous path writes as zero without reading the
+		 * attribute at all
+		 */
+		att_read_mult_add(chan, op, rsp, NULL, 0U);
+
+		return 0U;
+	}
+
+	first = !chan->defer.serving;
+
+	att_err = att_defer_begin(chan, op, handle, 0U, rsp, &req);
+	if (att_err != 0U) {
+		return att_err;
+	}
+
+	if (first) {
+		/* The request PDU is released once the request is deferred */
+		chan->defer.handles = net_buf_alloc(&att_defer_handles_pool, K_NO_WAIT);
+		if ((chan->defer.handles == NULL) ||
+		    (net_buf_tailroom(chan->defer.handles) < handles->len)) {
+			bt_dev_lock();
+			att_defer_end(chan);
+			bt_dev_unlock();
+
+			return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
+		}
+
+		net_buf_add_mem(chan->defer.handles, handles->data, handles->len);
+	}
+
+	att_defer_called(chan, read(&req, attr, 0U, max_len));
+	*wait = true;
+
+	return 0U;
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
+/* Reads the handles left in `handles` into `rsp` and sends it. Returns an ATT
+ * error for *err_handle, or 0 once the response is sent or the request waits
+ * for a deferred value.
+ */
+static uint8_t att_read_mult_run(struct bt_att_chan *chan, uint8_t op, struct net_buf *rsp,
+				 struct net_buf *handles, uint16_t *err_handle)
+{
+	bt_gatt_attr_func_t read_value = read_cb;
 	struct read_data data;
 	uint16_t handle;
+
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
+	if (op == BT_ATT_OP_READ_MULT_VL_REQ) {
+		read_value = read_vl_cb;
+	}
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
+
+	while (handles->len >= sizeof(uint16_t)) {
+		handle = net_buf_pull_le16(handles);
+
+		LOG_DBG("handle 0x%04x ", handle);
+
+		(void)memset(&data, 0, sizeof(data));
+		data.chan = chan;
+		data.buf = rsp;
+
+		/* An Error Response shall be sent by the server in response to
+		 * the Read Multiple Request [....] if a read operation is not
+		 * permitted on any of the Characteristic Values.
+		 *
+		 * If handle is not valid then return invalid handle error.
+		 * If handle is found error will be cleared by read_cb.
+		 */
+		data.err = BT_ATT_ERR_INVALID_HANDLE;
+
+		bt_gatt_foreach_attr(handle, handle, read_value, &data);
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+		if ((data.err == 0U) && (data.deferred_attr != NULL)) {
+			bool wait = false;
+
+			data.err = att_read_mult_ask(chan, op, handle, data.deferred_attr, rsp,
+						     handles, &wait);
+			if ((data.err == 0U) && wait) {
+				return 0U;
+			}
+		}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
+		/* Stop reading in case of error */
+		if (data.err != 0U) {
+			*err_handle = handle;
+
+			return data.err;
+		}
+	}
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	if (chan->defer.serving) {
+		att_defer_send(chan);
+
+		return 0U;
+	}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
+	bt_att_chan_send_rsp(chan, rsp);
+
+	return 0U;
+}
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+/* Records one Read Multiple value, or the error that fails the request.
+ * Runs under the host lock.
+ */
+static int att_read_mult_record_rsp(struct bt_att_chan *chan, uint32_t id, uint8_t att_err,
+				const void *data, uint16_t len)
+{
+	struct net_buf *rsp;
+
+	if (chan->defer.id != id) {
+		return -EINVAL;
+	}
+
+	rsp = chan->defer.rsp;
+
+	if (att_err == 0U) {
+		att_read_mult_add(chan, chan->defer.op, rsp, data, len);
+		chan->defer.responded = true;
+
+		return 0;
+	}
+
+	/* An error for any of the handles fails the whole request. */
+	att_err_into(rsp, chan->defer.op, chan->defer.handle, att_err);
+	chan->defer.failed = true;
+	chan->defer.responded = true;
+
+	return 0;
+}
+
+/* Reads the rest of a Read Multiple request after a value responded */
+static void att_read_mult_cont(struct bt_att_chan *chan)
+{
+	uint16_t err_handle = 0U;
+	uint8_t err;
+
+	err = att_read_mult_run(chan, chan->defer.op, chan->defer.rsp, chan->defer.handles,
+				&err_handle);
+	if (err != 0U) {
+		att_err_into(chan->defer.rsp, chan->defer.op, err_handle, err);
+		att_defer_send(chan);
+	}
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
+static uint8_t att_read_mult_rsp(struct bt_att_chan *chan, uint8_t op, uint8_t rsp_op,
+				 struct net_buf *buf)
+{
+	uint16_t err_handle = 0U;
+	struct net_buf *rsp;
+	uint8_t err;
 
 	if (!bt_gatt_change_aware(chan->att->conn, true)) {
 		if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
@@ -2314,40 +2521,34 @@ static uint8_t att_read_mult_vl_req(struct bt_att_chan *chan, struct net_buf *bu
 		}
 	}
 
-	(void)memset(&data, 0, sizeof(data));
-
-	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_READ_MULT_VL_RSP);
-	if (!data.buf) {
+	rsp = att_create_rsp_pdu(chan, rsp_op);
+	if (rsp == NULL) {
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
 
-	data.chan = chan;
-
-	while (buf->len >= sizeof(uint16_t)) {
-		handle = net_buf_pull_le16(buf);
-
-		LOG_DBG("handle 0x%04x ", handle);
-
-		/* If handle is not valid then return invalid handle error.
-		 * If handle is found error will be cleared by read_cb.
-		 */
-		data.err = BT_ATT_ERR_INVALID_HANDLE;
-
-		bt_gatt_foreach_attr(handle, handle, read_vl_cb, &data);
-
-		/* Stop reading in case of error */
-		if (data.err) {
-			net_buf_unref(data.buf);
-			/* Respond here since handle is set */
-			send_err_rsp(chan, BT_ATT_OP_READ_MULT_VL_REQ, handle,
-				     data.err);
-			return 0;
-		}
+	err = att_read_mult_run(chan, op, rsp, buf, &err_handle);
+	if (err != 0U) {
+		net_buf_unref(rsp);
+		/* Respond here since handle is set */
+		send_err_rsp(chan, op, err_handle, err);
 	}
 
-	bt_att_chan_send_rsp(chan, data.buf);
-
 	return 0;
+}
+#endif /* ATT_READ_MULT_SUPPORT */
+
+#if defined(CONFIG_BT_GATT_READ_MULTIPLE)
+static uint8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
+{
+	return att_read_mult_rsp(chan, BT_ATT_OP_READ_MULT_REQ, BT_ATT_OP_READ_MULT_RSP, buf);
+}
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
+static uint8_t att_read_mult_vl_req(struct bt_att_chan *chan, struct net_buf *buf)
+{
+	return att_read_mult_rsp(chan, BT_ATT_OP_READ_MULT_VL_REQ, BT_ATT_OP_READ_MULT_VL_RSP,
+				 buf);
 }
 #endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
 
@@ -3894,6 +4095,14 @@ static void att_defer_cont_work_handler(struct k_work *work)
 	}
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
+#if defined(ATT_READ_MULT_SUPPORT)
+	if (att_defer_op_is_mult(op)) {
+		att_read_mult_cont(chan);
+
+		return;
+	}
+#endif /* ATT_READ_MULT_SUPPORT */
+
 	att_defer_send(chan);
 }
 
@@ -3934,7 +4143,15 @@ static int att_defer_rsp(struct bt_conn *conn, uint32_t id, bool is_read, uint8_
 		return -EINVAL;
 	}
 
+#if defined(ATT_READ_MULT_SUPPORT)
+	if (att_defer_op_is_mult(op)) {
+		err = att_read_mult_record_rsp(chan, id, att_err, data, len);
+	} else {
+		err = att_defer_record_rsp(chan, id, att_err, data, len);
+	}
+#else
 	err = att_defer_record_rsp(chan, id, att_err, data, len);
+#endif /* ATT_READ_MULT_SUPPORT */
 
 	if (err == 0) {
 		(void)bt_work_submit(&chan->defer.cont_work);

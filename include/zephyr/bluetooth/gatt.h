@@ -287,7 +287,10 @@ struct bt_gatt_req {
  *  and the request is responded to with @ref bt_gatt_read_rsp or
  *  @ref bt_gatt_error_rsp, later from any thread or from the callback itself.
  *
- *  Read, Read Blob and Read By Type Requests are served this way.
+ *  Read, Read Blob, Read By Type, Read Multiple and Read Multiple Variable
+ *  Length Requests are served this way. A Read Multiple [Variable Length]
+ *  Request calls the method of each deferred attribute it lists, one after
+ *  the other: the next one once the previous value has a response.
  *
  *  See @ref bt_gatt_attr_deferred for the rules both methods follow.
  *
@@ -446,6 +449,7 @@ int bt_gatt_write_rsp(const struct bt_gatt_req *req);
 
 /** @brief Reject a deferred read or write with an error
  *
+ *  For a Read Multiple [Variable Length] Request this fails the whole request.
  *  The response is sent from the Bluetooth RX thread.
  *
  *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
