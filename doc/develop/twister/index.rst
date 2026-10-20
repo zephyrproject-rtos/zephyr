@@ -1366,6 +1366,49 @@ argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
 details.
 
 
+.. _twister_diff_base:
+
+Building Only Changed Configurations
+************************************
+
+With ``--diff-base``, twister only builds and runs the configurations that are
+affected by your changes:
+
+.. code-block:: bash
+
+   ./scripts/twister -T tests/kernel --diff-base origin/main
+
+Twister finds all files you changed since you branched off ``origin/main``.
+Files you modified but did not commit yet count too.
+
+Twister runs CMake for every configuration. It builds a configuration only if:
+
+- a file has been modified in the test folder or below,
+- a file has been modified that is used by the build, like a source file or
+  ``prj.conf``,
+- a file has been modified that is included by a source file (e.g. header files),
+- any ``Kconfig*``, ``CMakeLists.txt`` or ``*.cmake`` file has been modified
+  (this builds all configurations).
+
+If none of these conditions match, the build is skipped. The reason is
+``not changed (--diff-base)``.
+
+To add more conditions, use ``--diff-force-build-on <REGEX>``:
+
+.. code-block:: bash
+
+   ./scripts/twister -T tests --diff-base origin/main --diff-force-build-on '^west\.yml$'
+
+.. note::
+
+   - This works with the Ninja generator, which is the default.
+   - Twister asks the compiler which files are included. This works with
+     GCC and Clang.
+   - Twister only looks at the git repository you run it from. It does not
+     consider changes in other repositories, like modules.
+   - If the diff-check fails for any reason, twister will run the build.
+
+
 Running Tests on Hardware
 *************************
 
