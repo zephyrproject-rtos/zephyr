@@ -42,6 +42,12 @@ struct flash_context {
 			  (FLASH_PAGE_MAX_CNT) / 1000 * \
 			  CONFIG_SOC_FLASH_NRF_TIMEOUT_MULTIPLIER / 10)
 
+/* The execution window a write of that many RRAM write lines needs at worst:
+ * the longest write of 32 lines takes 7107 us.
+ */
+#define NRF_RRAM_WRITE_WINDOW_US(lines) \
+	((lines) < 2 ? 500 : (lines) < 4 ? 1000 : (lines) < 9 ? 2000 : (lines) < 17 ? 4000 : 8000)
+
 /**
  * @defgroup nrf_flash_sync sync backend API
  *
