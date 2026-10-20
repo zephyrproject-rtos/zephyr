@@ -59,8 +59,6 @@ config MODEM_CMUX
 	select EVENTS
 	select CRC
 
-if MODEM_CMUX
-
 config MODEM_CMUX_DEFAULT_MTU_127
 	bool
 	help
@@ -68,6 +66,7 @@ config MODEM_CMUX_DEFAULT_MTU_127
 
 config MODEM_CMUX_MTU
 	int "CMUX MTU size in bytes"
+	depends on MODEM_CMUX || MODEM_CELLULAR
 	range 16 1500
 	default 127 if MODEM_CMUX_DEFAULT_MTU_127
 	default 31
@@ -77,10 +76,13 @@ config MODEM_CMUX_MTU
 
 config MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA
 	int "CMUX module extra work buffer size in bytes"
+	depends on MODEM_CMUX || MODEM_CELLULAR
 	default 0
 	help
 	  Extra bytes to add to the work buffers used by the CMUX module.
 	  The default size of these buffers is MODEM_CMUX_MTU + 7 (CMUX header size).
+
+if MODEM_CMUX
 
 config MODEM_CMUX_MSC_FC_THRESHOLD
 	int "Enable flow control when the DLCI ring buffer has less than this many bytes free"
