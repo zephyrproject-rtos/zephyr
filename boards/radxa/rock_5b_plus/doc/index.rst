@@ -15,7 +15,8 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-The onboard Ethernet interface is not currently supported by Zephyr.
+The PCIe2x1L2 host controller and GICv3 ITS0 are enabled in both the
+single-core and the SMP configuration.
 
 Serial Port
 ===========

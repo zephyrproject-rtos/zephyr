@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ROCK_5B_PLUS
+
+# The GICv3 ITS allocates one 64 KiB LPI pending table per CPU from the system
+# heap, so the default minimum that covers four CPUs is too small for the eight
+# CPUs of the SMP variant.
+config HEAP_MEM_POOL_ADD_SIZE_GIC_V3_ITS
+	default 2097152 if GIC_V3_ITS && SMP
+
+endif # BOARD_ROCK_5B_PLUS
