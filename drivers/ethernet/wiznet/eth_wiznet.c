@@ -99,6 +99,20 @@ int wiznet_writebuf(const struct device *dev, uint16_t offset, uint8_t *buf, siz
 	return wiznet_write(dev, mem_start, buf + len, remain);
 }
 
+/*
+ * Close and reopen socket 0. OPEN resets the RX pointers, which is the only way
+ * back once the length header and Sn_RX_RD disagree. Sn_MR survives CLOSE, so
+ * MACRAW mode and the MAC filter stay as configured.
+ */
+static void wiznet_rx_resync(const struct device *dev, uint16_t hdr_len, uint16_t buffered)
+{
+	LOG_ERR("%s: RX state inconsistent (header %u, %u buffered), reopening socket",
+		dev->name, hdr_len, buffered);
+
+	wiznet_command(dev, WIZNET_S0_CR_CLOSE);
+	wiznet_command(dev, WIZNET_S0_CR_OPEN);
+}
+
 int wiznet_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct wiznet_config *cfg = dev->config;
@@ -147,6 +161,7 @@ int wiznet_rx(const struct device *dev)
 	uint16_t rx_buf_len;
 	uint16_t read_len;
 	uint16_t reader;
+	uint16_t hdr_len;
 	int ret;
 
 	ret = wiznet_read(dev, cfg->regs->s0_rx_rsr, tmp, 2);
@@ -169,11 +184,15 @@ int wiznet_rx(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	if (sys_get_be16(header) <= 2U) {
+
+	hdr_len = sys_get_be16(header);
+	if (hdr_len <= 2U || hdr_len - 2U > NET_ETH_MAX_FRAME_SIZE) {
 		LOG_ERR("%s: invalid header size %u", dev->name, sys_get_be16(header));
+		eth_stats_update_errors_rx(ctx->iface);
+		wiznet_rx_resync(dev, hdr_len, rx_buf_len);
 		return -EINVAL;
 	}
-	rx_len = sys_get_be16(header) - 2;
+	rx_len = hdr_len - 2;
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_len, NET_AF_UNSPEC, 0,
 					   K_MSEC(CONFIG_ETH_WIZNET_TIMEOUT));
