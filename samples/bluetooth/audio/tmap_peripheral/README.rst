@@ -7,7 +7,10 @@
 Overview
 ********
 
-Application demonstrating the TMAP peripheral functionality. Implements the CT and UMR roles.
+Application demonstrating the TMAP peripheral functionality. Implements the
+Call Terminal (CT) and Unicast Media Receiver (UMR) roles. Either role can be
+built on its own: disable ``CONFIG_TMAP_PERIPHERAL_ROLE_CT`` for a media-only
+peripheral or ``CONFIG_TMAP_PERIPHERAL_ROLE_UMR`` for a call-only peripheral.
 
 Requirements
 ************
