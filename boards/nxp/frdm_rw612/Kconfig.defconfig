@@ -8,6 +8,13 @@ if BOARD_FRDM_RW612
 configdefault ETH_DRIVER
 	default y if DT_HAS_NXP_ENET_MAC_ENABLED
 
+# When the on-board Ethernet MAC is enabled, the board exposes a second
+# network interface in addition to any OpenThread/Wi-Fi interface. Size the
+# IPv6 address pool accordingly so one address structure is available per
+# interface and net_if does not warn at boot.
+configdefault NET_IF_MAX_IPV6_COUNT
+	default 2 if DT_HAS_NXP_ENET_MAC_ENABLED
+
 # The external flash is bound to a power domain, so restore its
 # FlexSPI configuration when that domain is turned back on.
 configdefault FLASH_MCUX_FLEXSPI_NOR_PM_RESTORE
