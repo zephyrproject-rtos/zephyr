@@ -173,6 +173,19 @@ arduino_i2c: &lpi2c1 {
 };
 
 /*
+ * LPSPI1 is on the Arduino header D10-D13 (J11) and the mikroBUS socket
+ * (J12). The Wi-Fi module taps the same pads only through solder jumpers
+ * that ship open.
+ */
+arduino_spi: &lpspi1 {
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+	dmas = <&edma0 0 36>, <&edma0 1 37>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+/*
  * The MIMXRT1152XHM8B on this board comes in the HM (232 MAPBGA)
  * package, which bonds fewer pads than the VM (289 MAPBGA) parts.
  * Mark the unbonded GPIO pins as reserved and compact the GPIO pinmux

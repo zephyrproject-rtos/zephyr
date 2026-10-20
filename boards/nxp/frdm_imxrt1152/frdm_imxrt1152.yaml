@@ -17,5 +17,6 @@ supported:
   - dma
   - gpio
   - i2c
+  - spi
   - uart
 vendor: nxp
