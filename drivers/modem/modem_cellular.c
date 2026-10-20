@@ -2157,6 +2157,9 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 		}
 		break;
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		break;
 	default:
 		break;
 	}
@@ -2166,6 +2169,7 @@ static int modem_cellular_on_await_ppp_dead_state_leave(struct modem_cellular_da
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
+	modem_cellular_stop_timer(data);
 	modem_chat_release(&data->chat);
 	modem_ppp_release(config->ppp);
 
