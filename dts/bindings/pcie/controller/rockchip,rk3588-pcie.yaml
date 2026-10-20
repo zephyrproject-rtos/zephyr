@@ -1,0 +1,102 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rockchip RK3588 DesignWare PCIe Root Complex
+
+compatible: "rockchip,rk3588-pcie"
+
+include: [base.yaml, pcie-controller.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register windows named pcie_apb (RK3588 PCIe client registers),
+      pcie_dbi (DesignWare DBI), config (outbound configuration space),
+      pipe_phy_grf (ComboPHY PIPE PHY GRF), combphy (ComboPHY analog
+      registers), gpio (PERST# GPIO bank) and ioc (IOMUX registers).
+
+  reg-names:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      All clocks of the controller in parent-before-child order. The driver
+      enables every entry, so the list must be complete.
+
+  clock-names:
+    required: true
+    description: |
+      Must contain the "top", "gpio" and "ref" entries in addition to the
+      controller clock gates. "ref" is the ComboPHY reference clock, whose
+      rate is set to 100 MHz.
+
+  resets:
+    required: true
+
+  reset-names:
+    required: true
+    description: |
+      Controller power, PIPE, PHY and PHY APB resets, named "pwr", "pipe",
+      "phy" and "phy-apb".
+
+  msi-parent:
+    type: phandle
+    required: true
+    description: GICv3 ITS receiving the endpoint MSI writes
+
+  ranges:
+    required: true
+    description: |
+      CPU-to-PCI I/O and memory translation ranges, one per outbound iATU
+      window. The I/O range, the 32-bit memory range and the 64-bit memory
+      range are each optional, but at least one is required.
+
+  bus-range:
+    type: array
+    required: true
+    description: |
+      First and last bus number of the hierarchy behind this root complex.
+      Both cells are required.
+
+  num-lanes:
+    type: int
+    required: true
+    description: Number of PCIe lanes of the link
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+
+  max-link-speed:
+    type: int
+    default: 2
+    description: Maximum PCIe link speed in generations
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+
+  rockchip,firmware-initialized:
+    type: boolean
+    description: |
+      The platform firmware already supplies clocks, PHY setup, reset
+      sequencing, PERST# and a usable link. The driver still configures the
+      root complex, iATU windows and PCI bus.
+
+  rockchip,perst-inactive-ms:
+    type: int
+    default: 200
+    description: |
+      Delay between enabling the LTSSM and releasing PERST#, in
+      milliseconds. Must not exceed 1000.
+
+  rockchip,link-timeout-ms:
+    type: int
+    default: 2000
+    description: |
+      Maximum time to wait for the PCIe data link, in milliseconds. Must not
+      exceed 60000.
