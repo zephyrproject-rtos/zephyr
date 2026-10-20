@@ -48,6 +48,11 @@
 
 #define TIMER_CLKSRC (DT_INST_PROP(0, clk_source))
 
+#if DT_INST_NODE_HAS_PROP(0, clock_frequency)
+BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == DT_INST_PROP(0, clock_frequency),
+	     "CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC must equal the stimer clock-frequency");
+#endif
+
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = COMPAREA_IRQ;
 #endif
