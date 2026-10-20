@@ -24,6 +24,8 @@
 #define SCANA_SIZE    BDADDR_SIZE
 #define INITA_SIZE    BDADDR_SIZE
 #define TARGETA_SIZE  BDADDR_SIZE
+#define CTEINFO_SIZE  1U
+#define TXPOWER_SIZE  1U
 #define LLDATA_SIZE   22
 
 /* Constant offsets in extended header (TargetA is present in PDUs with AdvA) */

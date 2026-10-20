@@ -138,6 +138,35 @@ int ull_scan_aux_reset(void)
 	return 0;
 }
 
+bool ull_scan_aux_lll_ext_hdr_is_complete(const struct pdu_adv *pdu)
+{
+	const struct pdu_adv_com_ext_adv *com_hdr = &pdu->adv_ext_ind;
+	const struct pdu_adv_ext_hdr *hdr = &com_hdr->ext_hdr;
+	uint8_t len;
+
+	if (pdu->len < (PDU_AC_EXT_HEADER_SIZE_MIN + com_hdr->ext_hdr_len)) {
+		return false;
+	}
+
+	if (com_hdr->ext_hdr_len == 0U) {
+		return true;
+	}
+
+	len = sizeof(*hdr);
+	len += (hdr->adv_addr != 0U) ? ADVA_SIZE : 0U;
+	len += (hdr->tgt_addr != 0U) ? TARGETA_SIZE : 0U;
+	len += (hdr->cte_info != 0U) ? CTEINFO_SIZE : 0U;
+	len += (hdr->adi != 0U) ? sizeof(struct pdu_adv_adi) : 0U;
+	len += (hdr->aux_ptr != 0U) ? sizeof(struct pdu_adv_aux_ptr) : 0U;
+	len += (hdr->sync_info != 0U) ? sizeof(struct pdu_adv_sync_info) : 0U;
+	len += (hdr->tx_pwr != 0U) ? TXPOWER_SIZE : 0U;
+
+	return com_hdr->ext_hdr_len >= len;
+}
+
+bool ull_scan_aux_ext_hdr_is_complete(const struct pdu_adv *pdu)
+	ALIAS_OF(ull_scan_aux_lll_ext_hdr_is_complete);
+
 static void rx_release_put(struct node_rx_pdu *rx)
 {
 	rx->hdr.type = NODE_RX_TYPE_RELEASE;
@@ -437,6 +466,34 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 			ftr->aux_data_len = aux->data_len;
 		} else {
 			ftr->aux_data_len = data_len;
+		}
+
+		goto ull_scan_aux_rx_flush;
+	}
+
+	/* The fields of an incomplete extended header can lie beyond the PDU:
+	 * walk none of them, schedule nothing and take no data from it.
+	 */
+	if (!ull_scan_aux_ext_hdr_is_complete(pdu)) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
+			struct ll_sync_set *sync_set;
+
+			sync_set = HDR_LLL2ULL(sync_lll);
+			ftr->aux_data_len = sync_set->data_len;
+			sync_set->data_len = 0U;
+		} else if (aux) {
+			ftr->aux_data_len = aux->data_len;
+		} else {
+			ftr->aux_data_len = 0U;
+		}
+
+		if (is_scan_req) {
+			LL_ASSERT_DBG(aux && aux->rx_last);
+
+			aux->rx_last->rx_ftr.extra = rx;
+			aux->rx_last = rx;
+
+			return;
 		}
 
 		goto ull_scan_aux_rx_flush;
@@ -1854,6 +1911,28 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 			ftr->aux_data_len = chain->data_len;
 		} else {
 			ftr->aux_data_len = data_len;
+		}
+
+		goto ull_scan_aux_rx_flush;
+	}
+
+	/* The fields of an incomplete extended header can lie beyond the PDU:
+	 * walk none of them, schedule nothing and take no data from it.
+	 */
+	if (!ull_scan_aux_ext_hdr_is_complete(pdu)) {
+		if (chain) {
+			ftr->aux_data_len = chain->data_len;
+		} else {
+			ftr->aux_data_len = 0U;
+		}
+
+		if (is_scan_req) {
+			LL_ASSERT_DBG(chain && chain->rx_last);
+
+			chain->rx_last->rx_ftr.extra = rx;
+			chain->rx_last = rx;
+
+			return;
 		}
 
 		goto ull_scan_aux_rx_flush;
