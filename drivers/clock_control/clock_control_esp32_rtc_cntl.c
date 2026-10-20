@@ -46,7 +46,7 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 	/* number of times to repeat 32k XTAL calibration
 	 * before giving up and switching to the internal RC
 	 */
-	int retry_32k_xtal = 3;
+	int retry_32k_xtal = CONFIG_CLOCK_CONTROL_ESP32_RTC_XTAL_CAL_RETRY;
 	bool revoke_32k = false;
 
 	/*
