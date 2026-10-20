@@ -6,6 +6,7 @@ zephyr_library()
 zephyr_library_link_libraries(subsys__bluetooth)
 
 zephyr_library_sources_ifdef(CONFIG_BT_A2DP             a2dp.c a2dp_codec_sbc.c)
+zephyr_library_sources_ifdef(CONFIG_BT_ATT_BR           att_br.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AVDTP            avdtp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AVRCP            avrcp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AVCTP            avctp.c)
