@@ -88,3 +88,11 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
     extra_args:
       - hello_world_SNIPPET=nordic-flpr
+  sample.sysbuild.hello_world.kit_pse84_ai_cm55_ram_load:
+    platform_allow:
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+    integration_platforms:
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+    build_only: true
+    extra_args:
+      - SNIPPET=infineon-pse84-cm55-ram-load
