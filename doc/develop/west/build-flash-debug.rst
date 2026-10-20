@@ -561,8 +561,6 @@ only the image from this domain::
 
   west flash --domain hello_world
 
-.. _west-debugging:
-
 Configuration Options
 =====================
 
@@ -578,6 +576,8 @@ You can :ref:`configure <west-config-cmd>` ``west flash`` using these options.
      - Description
    * - ``flash.rebuild``
      - Boolean, default ``true``. If ``false``, do not rebuild on west flash.
+
+.. _west-debugging:
 
 Debugging: ``west debug``, ``west debugserver``
 ***********************************************
