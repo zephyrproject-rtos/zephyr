@@ -25,6 +25,8 @@ K_SEM_DEFINE(driver_lock, 0, UINT_MAX);
 
 uint8_t mock_ext_addr_be[8] = {0x00, 0x12, 0x4b, 0x00, 0x00, 0x9e, 0xa3, 0xc2};
 
+static bool started;
+
 static enum ieee802154_hw_caps fake_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS;
@@ -108,6 +110,11 @@ static int fake_tx(const struct device *dev,
 
 static int fake_start(const struct device *dev)
 {
+	if (started) {
+		return -EALREADY;
+	}
+
+	started = true;
 	NET_INFO("FAKE ieee802154 driver started");
 
 	return 0;
@@ -115,6 +122,11 @@ static int fake_start(const struct device *dev)
 
 static int fake_stop(const struct device *dev)
 {
+	if (!started) {
+		return -EALREADY;
+	}
+
+	started = false;
 	NET_INFO("FAKE ieee802154 driver stopped");
 
 	return 0;
