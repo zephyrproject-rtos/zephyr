@@ -13,7 +13,6 @@ import os
 import sys
 
 from elftools.elf.elffile import ELFFile
-from elftools.elf.sections import SymbolTableSection
 
 
 class gen_isr_log:
@@ -254,9 +253,9 @@ class gen_isr_config:
 
 
 def get_symbols(obj):
-    for section in obj.iter_sections():
-        if isinstance(section, SymbolTableSection):
-            return {sym.name: sym.entry.st_value for sym in section.iter_symbols()}
+    section = obj.get_section_by_name(".symtab")
+    if section:
+        return {sym.name: sym.entry.st_value for sym in section.iter_symbols()}
 
     log.error("Could not find symbol table")
 
