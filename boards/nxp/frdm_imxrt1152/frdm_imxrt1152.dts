@@ -23,6 +23,7 @@
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
 		watchdog0 = &wdog1;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -162,6 +163,14 @@
 };
 
 &wdog1 {
+	status = "okay";
+};
+
+&snvs_rtc {
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };
 

@@ -17,6 +17,7 @@ supported:
   - counter
   - gpio
   - pwm
+  - rtc
   - uart
   - watchdog
 vendor: nxp
