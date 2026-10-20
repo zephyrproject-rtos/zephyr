@@ -3337,6 +3337,11 @@ static bool gatt_attr_is_readable(const struct bt_gatt_attr *attr)
 	return (bt_gatt_attr_deferred_read(attr) != NULL) || (attr->read != NULL);
 }
 
+static bool gatt_attr_is_writable(const struct bt_gatt_attr *attr)
+{
+	return (bt_gatt_attr_deferred_write(attr) != NULL) || (attr->write != NULL);
+}
+
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint16_t mask)
 {
@@ -3346,7 +3351,7 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	}
 
 	if ((mask & BT_GATT_PERM_WRITE) &&
-	    (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !attr->write)) {
+	    (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !gatt_attr_is_writable(attr))) {
 		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
 	}
 
