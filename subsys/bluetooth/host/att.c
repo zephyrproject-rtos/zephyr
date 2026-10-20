@@ -1675,6 +1675,93 @@ static uint8_t err_to_att(int err)
 	return BT_ATT_ERR_UNLIKELY;
 }
 
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+/* Defers a request, or the next value of one that is deferred already, with
+ * `rsp` as its response or a new one when NULL. Returns an ATT error, or 0.
+ */
+static uint8_t att_defer_begin(struct bt_att_chan *chan, uint8_t op, uint16_t handle,
+			       uint16_t offset, struct net_buf *rsp, struct bt_gatt_req *req)
+{
+	static uint32_t last_id;
+
+	if (!chan->defer.serving) {
+		if (k_sem_take(&att_defer_sem, K_NO_WAIT) != 0) {
+			LOG_WRN("Too many deferred requests for 0x%02x", op);
+			return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
+		}
+
+		if (rsp == NULL) {
+			rsp = att_create_rsp_pdu(chan, att_defer_rsp_op(op));
+			if (rsp == NULL) {
+				k_sem_give(&att_defer_sem);
+				return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
+			}
+		}
+	}
+
+	bt_dev_lock();
+
+	last_id++;
+	if (last_id == 0U) {
+		last_id = 1U;
+	}
+
+	if (!chan->defer.serving) {
+		chan->defer.serving = true;
+		chan->defer.rsp = rsp;
+	}
+
+	chan->defer.id = last_id;
+	chan->defer.op = op;
+	chan->defer.handle = handle;
+	chan->defer.offset = offset;
+	chan->defer.failed = false;
+	chan->defer.responded = false;
+
+	req->conn = chan->att->conn;
+	req->id = last_id;
+
+	bt_dev_unlock();
+
+	return 0U;
+}
+
+/* Settles a deferred request once its callback has returned: an error returned
+ * without a response becomes the response. It continues on cont_work either way.
+ */
+static void att_defer_called(struct bt_att_chan *chan, int err)
+{
+	bt_dev_lock();
+
+	if ((err != 0) && !chan->defer.responded) {
+		att_err_into(chan->defer.rsp, chan->defer.op, chan->defer.handle, err_to_att(err));
+		chan->defer.failed = true;
+		chan->defer.responded = true;
+		(void)bt_work_submit(&chan->defer.cont_work);
+	}
+
+	bt_dev_unlock();
+}
+
+static uint8_t att_read_deferred(struct bt_att_chan *chan, uint8_t op, uint16_t handle,
+			      const struct bt_gatt_attr *attr, uint16_t offset)
+{
+	bt_gatt_attr_read_deferred_func_t read = bt_gatt_attr_deferred_read(attr);
+	struct bt_gatt_req req;
+	uint8_t att_err;
+
+	att_err = att_defer_begin(chan, op, handle, offset, NULL, &req);
+	if (att_err != 0U) {
+		send_err_rsp(chan, op, handle, att_err);
+		return 0U;
+	}
+
+	att_defer_called(chan, read(&req, attr, offset, att_defer_max_len(chan, op)));
+
+	return 0U;
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
 struct read_type_data {
 	struct bt_att_chan *chan;
 	struct bt_uuid *uuid;
@@ -1682,6 +1769,8 @@ struct read_type_data {
 	struct bt_att_read_type_rsp *rsp;
 	struct bt_att_data *item;
 	uint8_t err;
+	const struct bt_gatt_attr *deferred_attr;
+	uint16_t deferred_handle;
 };
 
 typedef bool (*attr_read_cb)(struct net_buf *buf, ssize_t read,
@@ -1808,6 +1897,19 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	 */
 	data->err = 0x00;
 
+	if (bt_gatt_attr_deferred_read(attr) != NULL) {
+		if (data->rsp->len == 0U) {
+			/* The whole response is deferred */
+			data->deferred_attr = attr;
+			data->deferred_handle = handle;
+		}
+
+		/* Otherwise the attributes found so far are returned and the
+		 * client reads this one with a new request.
+		 */
+		return BT_GATT_ITER_STOP;
+	}
+
 	/* Fast forward to next item position */
 	data->item = net_buf_add(net_buf_frag_last(data->buf),
 				 sizeof(*data->item));
@@ -1849,6 +1951,15 @@ static uint8_t att_read_type_rsp(struct bt_att_chan *chan, struct bt_uuid *uuid,
 	data.err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
 
 	bt_gatt_foreach_attr(start_handle, end_handle, read_type_cb, &data);
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	if (data.deferred_attr != NULL) {
+		net_buf_unref(data.buf);
+
+		return att_read_deferred(chan, BT_ATT_OP_READ_TYPE_REQ, data.deferred_handle,
+				      data.deferred_attr, 0);
+	}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 	if (data.err) {
 		net_buf_unref(data.buf);
@@ -1928,6 +2039,7 @@ struct read_data {
 	uint16_t offset;
 	struct net_buf *buf;
 	uint8_t err;
+	const struct bt_gatt_attr *deferred_attr;
 };
 
 static uint8_t read_cb(const struct bt_gatt_attr *attr, uint16_t handle,
@@ -1955,6 +2067,11 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	/* Check the attribute authorization logic */
 	if (!bt_gatt_attr_read_authorize(conn, attr)) {
 		data->err = BT_ATT_ERR_AUTHORIZATION;
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (bt_gatt_attr_deferred_read(attr) != NULL) {
+		data->deferred_attr = attr;
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1999,6 +2116,14 @@ static uint8_t att_read_rsp(struct bt_att_chan *chan, uint8_t op, uint8_t rsp,
 	data.err = BT_ATT_ERR_INVALID_HANDLE;
 
 	bt_gatt_foreach_attr(handle, handle, read_cb, &data);
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	if (data.deferred_attr != NULL) {
+		net_buf_unref(data.buf);
+
+		return att_read_deferred(chan, op, handle, data.deferred_attr, offset);
+	}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 	/* In case of error discard data and respond with an error */
 	if (data.err) {
@@ -2083,6 +2208,11 @@ static uint8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 		bt_gatt_foreach_attr(handle, handle, read_cb, &data);
 
+		if (data.deferred_attr != NULL) {
+			/* Not supported: the response holds several values */
+			data.err = BT_ATT_ERR_UNLIKELY;
+		}
+
 		/* Stop reading in case of error */
 		if (data.err) {
 			net_buf_unref(data.buf);
@@ -2126,6 +2256,12 @@ static uint8_t read_vl_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	/* Check the attribute authorization logic */
 	if (!bt_gatt_attr_read_authorize(conn, attr)) {
 		data->err = BT_ATT_ERR_AUTHORIZATION;
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (bt_gatt_attr_deferred_read(attr) != NULL) {
+		/* Not supported: the response holds several values */
+		data->err = BT_ATT_ERR_UNLIKELY;
 		return BT_GATT_ITER_STOP;
 	}
 

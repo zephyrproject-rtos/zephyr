@@ -3332,11 +3332,16 @@ uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn)
 	return bt_att_get_uatt_mtu(conn);
 }
 
+static bool gatt_attr_is_readable(const struct bt_gatt_attr *attr)
+{
+	return (bt_gatt_attr_deferred_read(attr) != NULL) || (attr->read != NULL);
+}
+
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint16_t mask)
 {
 	if ((mask & BT_GATT_PERM_READ) &&
-	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read)) {
+	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !gatt_attr_is_readable(attr))) {
 		return BT_ATT_ERR_READ_NOT_PERMITTED;
 	}
 
