@@ -136,6 +136,10 @@
 	status = "okay";
 };
 
+&edma0 {
+	status = "okay";
+};
+
 /*
  * The MIMXRT1152XHM8B on this board comes in the HM (232 MAPBGA)
  * package, which bonds fewer pads than the VM (289 MAPBGA) parts.
