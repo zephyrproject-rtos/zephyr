@@ -9,6 +9,7 @@ menu "Bluetooth Classic Options"
 config BT_CLASSIC
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
 	depends on BT_HCI_HOST
+	depends on BT_TX_PROCESSOR_THREAD
 	select BT_PERIPHERAL
 	select BT_CENTRAL
 	select BT_SMP
