@@ -16,37 +16,18 @@
  * some like x86 do this with optimized assembly
  */
 
-/**
- * @brief equivalent of memset() for early boot usage
- *
- * Architectures that can't safely use the regular (optimized) memset very
- * early during boot because e.g. hardware isn't yet sufficiently initialized
- * may override this with their own safe implementation.
- */
 __boot_func
 void __weak arch_early_memset(void *dst, int c, size_t n)
 {
 	(void) memset(dst, c, n);
 }
 
-/**
- * @brief equivalent of memcpy() for early boot usage
- *
- * Architectures that can't safely use the regular (optimized) memcpy very
- * early during boot because e.g. hardware isn't yet sufficiently initialized
- * may override this with their own safe implementation.
- */
 __boot_func
 void __weak arch_early_memcpy(void *dst, const void *src, size_t n)
 {
 	(void) memcpy(dst, src, n);
 }
 
-/**
- * @brief Clear BSS
- *
- * This routine clears the BSS region, so all bytes are 0.
- */
 __boot_func
 void arch_bss_zero(void)
 {
@@ -81,14 +62,6 @@ void arch_bss_zero(void)
 }
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
-/**
- * @brief Clear BSS within the boot region
- *
- * This routine clears the BSS within the boot region.
- * This is separate from arch_bss_zero() as boot region may
- * contain symbols required for the boot process before
- * paging is initialized.
- */
 __boot_func
 void arch_bss_zero_boot(void)
 {
