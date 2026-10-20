@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Counter capture inputs a test can trigger, listed in a test-counter-capture
+  node, each fed by a signal the board generates in the same order: a PWM
+  output of the zephyr,user node routed to the input inside the SoC, or a
+  GPIO of its capture-tester-gpios wired to the input on the board.
+compatible: test-counter-capture
