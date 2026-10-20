@@ -65,9 +65,18 @@ static int nxp_tmpsns_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(FSL_FEATURE_TMPSNS_HAS_AI_INTERFACE) && FSL_FEATURE_TMPSNS_HAS_AI_INTERFACE
+/* Not memory mapped: the HAL reaches the registers through the ANADIG
+ * analog interface, and TMPSNS is the base of their offsets.
+ */
+#define NXP_TMPSNS_BASE(inst) TMPSNS
+#else
+#define NXP_TMPSNS_BASE(inst) ((TMPSNS_Type *)DT_INST_REG_ADDR(inst))
+#endif
+
 #define NXP_TMPSNS_DEFINE(inst)                                                                    \
 	static struct nxp_tmpsns_config nxp_tmpsns_config_##inst = {                               \
-		.base = (TMPSNS_Type *)DT_INST_REG_ADDR(inst)};                                    \
+		.base = NXP_TMPSNS_BASE(inst)};                                                    \
 	struct nxp_tmpsns_data nxp_tmpsns_data_##inst;                                             \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, nxp_tmpsns_init, NULL, &nxp_tmpsns_data_##inst,         \
 				     &nxp_tmpsns_config_##inst, POST_KERNEL,                       \
