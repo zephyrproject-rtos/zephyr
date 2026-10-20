@@ -389,6 +389,51 @@ ZTEST(k_heap_api, test_k_heap_realloc_zero)
 }
 
 /**
+ * @brief Test k_heap_realloc() with size 0 and a non-zero timeout.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The test validates that k_heap_realloc() with size 0 frees the
+ * block exactly once and returns NULL without waiting, for both a finite
+ * timeout and K_FOREVER, and also when called with a NULL pointer. The whole
+ * heap must be allocatable afterwards.
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc_zero_timeout)
+{
+	k_timeout_t timeouts[] = { K_MSEC(TIMEOUT), K_FOREVER };
+	int64_t start;
+	char *p, *p2;
+
+	for (size_t i = 0; i < ARRAY_SIZE(timeouts); i++) {
+		p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, K_NO_WAIT);
+		zassert_not_null(p, "k_heap_alloc operation failed");
+
+		start = k_uptime_get();
+		p2 = (char *)k_heap_realloc(&k_heap_test, p, 0, timeouts[i]);
+		zassert_is_null(p2, "k_heap_realloc with size 0 should return NULL");
+		zassert_true(k_uptime_delta(&start) < TIMEOUT,
+			     "k_heap_realloc with size 0 should not wait");
+
+		start = k_uptime_get();
+		p2 = (char *)k_heap_realloc(&k_heap_test, NULL, 0, timeouts[i]);
+		zassert_is_null(p2, "k_heap_realloc(NULL, 0) should return NULL");
+		zassert_true(k_uptime_delta(&start) < TIMEOUT,
+			     "k_heap_realloc(NULL, 0) should not wait");
+	}
+
+	/* The heap must be intact: two large blocks fit only if p was freed */
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, K_NO_WAIT);
+	zassert_not_null(p, "k_heap_alloc operation failed");
+	p2 = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1 / 2, K_NO_WAIT);
+	zassert_not_null(p2, "k_heap_alloc operation failed");
+
+	k_heap_free(&k_heap_test, p2);
+	k_heap_free(&k_heap_test, p);
+}
+
+/**
  * @brief Test k_heap_realloc() failure case.
  *
  * @ingroup k_heap_api_tests
