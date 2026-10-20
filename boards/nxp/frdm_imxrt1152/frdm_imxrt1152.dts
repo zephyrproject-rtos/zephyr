@@ -19,6 +19,7 @@
 		led1 = &red_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		die-temp0 = &tmpsns;
 	};
 
 	chosen {
@@ -140,6 +141,10 @@
 &lpadc1 {
 	pinctrl-0 = <&pinmux_lpadc1>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tmpsns {
 	status = "okay";
 };
 
