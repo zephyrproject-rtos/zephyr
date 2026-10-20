@@ -1,0 +1,19 @@
+# Copyright 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Bluetooth HCI over a Unix socket
+  description: Expose a BabbleSim Bluetooth controller through an H:4 Unix socket
+tests:
+  sample.bluetooth.hci_virt:
+    tags:
+      - bluetooth
+    depends_on: bsim
+    platform_allow:
+      - nrf52_bsim/native
+    integration_platforms:
+      - nrf52_bsim/native
+    build_only: true
+    harness: bsim
+    harness_config:
+      bsim_exe_name: samples_bluetooth_hci_virt
