@@ -100,6 +100,13 @@ extern "C" {
 /* Version 5.2, Vol 3, Part F, 3.2.9 defines maximum attribute length to 512 */
 #define BT_ATT_MAX_ATTRIBUTE_LEN		512
 
+/** @brief ATT transaction timeout in seconds
+ *
+ *  A request that is not answered within this time fails, and the bearer it
+ *  was sent on is not used any more (Core v6.3 Vol 3 Part F 3.3.3).
+ */
+#define BT_ATT_TIMEOUT_SEC			30U
+
 /* Handle 0x0000 is reserved for future use */
 #define BT_ATT_FIRST_ATTRIBUTE_HANDLE           0x0001
 /* 0xffff is defined as the maximum, and thus last, valid attribute handle */
