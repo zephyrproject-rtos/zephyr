@@ -1296,7 +1296,7 @@ static int h3_handle_static_fs_resource(
 	}
 
 	/* Get filename and content-type from URL */
-	len = strlen((const char *)client->url_buffer);
+	len = http_server_path_len_without_query((const char *)client->url_buffer);
 
 	if (len == 1) {
 		snprintk(fname, sizeof(fname), "%s/index.html",
@@ -1305,8 +1305,8 @@ static int h3_handle_static_fs_resource(
 		http_server_get_content_type_from_extension(
 			(char *)client->url_buffer, content_type,
 			sizeof(content_type));
-		snprintk(fname, sizeof(fname), "%s%s",
-			 static_fs_detail->fs_path, client->url_buffer);
+		snprintk(fname, sizeof(fname), "%s%.*s",
+			 static_fs_detail->fs_path, len, client->url_buffer);
 	}
 
 	ret = http_server_find_file(fname, sizeof(fname), &file_size, 0, NULL);

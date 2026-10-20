@@ -749,14 +749,14 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 	}
 
 	/* get filename and content-type from url */
-	len = strlen(client->url_buffer);
+	len = http_server_path_len_without_query(client->url_buffer);
 	if (len == 1) {
 		/* url is just the leading slash, use index.html as filename */
 		snprintk(fname, sizeof(fname), "%s/index.html", static_fs_detail->fs_path);
 	} else {
 		http_server_get_content_type_from_extension(client->url_buffer, content_type,
 							    sizeof(content_type));
-		snprintk(fname, sizeof(fname), "%s%s", static_fs_detail->fs_path,
+		snprintk(fname, sizeof(fname), "%s%.*s", static_fs_detail->fs_path, len,
 			 client->url_buffer);
 	}
 
