@@ -58,6 +58,10 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(mdns_udp_service, mdns_receive_handler, MA
 
 otError mdns_plat_socket_init(otInstance *ot_instance, uint32_t ail_iface_idx)
 {
+	ARRAY_FOR_EACH(sockfd_udp, idx) {
+		sockfd_udp[idx].fd = -1;
+	}
+
 	ot_instance_ptr = ot_instance;
 	ail_iface_index = ail_iface_idx;
 
