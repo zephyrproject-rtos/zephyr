@@ -161,7 +161,12 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 	while (ret == NULL) {
 		ret = sys_heap_realloc(&heap->heap, ptr, bytes);
 
-		if (!IS_ENABLED(CONFIG_MULTITHREADING) ||
+		/*
+		 * A zero size request frees ptr (if not NULL) and always
+		 * returns NULL. It must not be retried: ptr is no longer
+		 * owned by the caller and waiting cannot change the result.
+		 */
+		if (!IS_ENABLED(CONFIG_MULTITHREADING) || (bytes == 0U) ||
 		    (ret != NULL) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 			break;
 		}
