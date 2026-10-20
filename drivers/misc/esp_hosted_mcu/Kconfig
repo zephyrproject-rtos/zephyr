@@ -134,6 +134,13 @@ config ESP_HOSTED_MCU_EVENT_TASK_POLL_MS
 	  the worst-case receive latency: every request and response pays
 	  up to one poll period.
 
+config ESP_HOSTED_MCU_FRAME_SIZE
+	int "Transport frame size"
+	default 1600
+	help
+	  Maximum frame size used for communication with the coprocessor. Must
+	  be a multiple of 4 bytes to satisfy DMA alignment requirements.
+
 module = ESP_HOSTED_MCU
 module-str = esp-hosted-mcu
 source "subsys/logging/Kconfig.template.log_config"
