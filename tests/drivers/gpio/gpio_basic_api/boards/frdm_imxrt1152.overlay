@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Short J47-2 (A0, GPIO_AD_13) to J47-6 (A2, GPIO_AD_07) */
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		status = "okay";
+		out-gpios = <&gpio3 12 0>;
+		in-gpios = <&gpio3 6 0>;
+	};
+};
