@@ -16,5 +16,6 @@ toolchain:
 supported:
   - dma
   - gpio
+  - spi
   - uart
 vendor: nxp
