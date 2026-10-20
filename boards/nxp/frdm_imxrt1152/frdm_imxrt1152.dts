@@ -27,6 +27,7 @@
 		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,canbus = &flexcan2;
 		zephyr,flash = &w25q512nw;
 		zephyr,flash-controller = &ext_flash_ctrl;
 	};
@@ -134,6 +135,20 @@
 
 &systick {
 	status = "okay";
+};
+
+/*
+ * FlexCAN2 reaches the TJA1040 transceiver U35 and J60 through SJ39/SJ44.
+ * The transceiver STB pin is pulled low (R509), so it starts in normal mode.
+ */
+&flexcan2 {
+	pinctrl-0 = <&pinmux_flexcan2>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <1000000>;
+	};
 };
 
 /*
