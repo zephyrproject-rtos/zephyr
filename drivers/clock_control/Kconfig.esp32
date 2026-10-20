@@ -93,9 +93,7 @@ config CLOCK_CONTROL_ESP32_RTC_CLK_CAL_CYCLES
 
 config CLOCK_CONTROL_ESP32_RTC_XTAL_CAL_RETRY
 	int "Number of attempts to repeat 32k XTAL calibration"
-	default 3 if SOC_SERIES_ESP32S2
-	default 1
-	depends on CLOCK_CONTROL_ESP32_RTC_CLK_SRC_EXT_CRYS
+	default 3
 	help
 	  Number of attempts to repeat 32k XTAL calibration before giving
 	  up and switching to the internal RC. Increase this option if the
