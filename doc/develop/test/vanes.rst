@@ -113,7 +113,9 @@ hand, name the setups in the ``VANES`` variable:
 The build fails when the board provides a named setup neither with a vane
 nor with its own devicetree.
 
-Under sysbuild, ``VANES`` applies to the main application image.
+``west build -T <scenario>`` passes the setups the scenario requires, as
+twister does. Under sysbuild, ``VANES`` applies to the main application
+image.
 
 :zephyr_file:`scripts/list_vanes.py` lists the setups, the boards realizing
 each, and the setups a board realizes.
