@@ -182,6 +182,13 @@ i2s_tx: &sai1 {};
 	status = "okay";
 };
 
+/* ADC1 CH0A (GPIO_AD_06) is on J47-8 (A3), CH3A (GPIO_AD_12) on J47-4 (A1) */
+&lpadc1 {
+	pinctrl-0 = <&pinmux_lpadc1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &edma0 {
 	status = "okay";
 };
