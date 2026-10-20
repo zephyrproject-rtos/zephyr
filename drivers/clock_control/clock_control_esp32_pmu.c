@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-int esp32_select_rtc_slow_clk(uint8_t slow_clk)
+int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 {
 	soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk;
 	uint32_t cal_val = 0;
@@ -25,6 +25,7 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 	 * before giving up and switching to the internal RC
 	 */
 	int retry_32k_xtal = 3;
+	bool revoke_32k = false;
 
 	/*
 	 * RTC slow clock calibration uses TIMG0 to count XTAL cycles.
@@ -63,9 +64,13 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 				} else if (retry_32k_xtal > 0) {
 					retry_32k_xtal--;
 					continue;
-				} else {
-					LOG_ERR("32 kHz XTAL not found");
+				} else if (!fallback) {
+					LOG_ERR("32 kHz clock not found");
 					return -ENODEV;
+				} else {
+					LOG_WRN("32 kHz clock not found, switching to internal RC");
+					rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+					revoke_32k = true;
 				}
 			}
 #if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2) ||                    \
@@ -79,6 +84,11 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 		}
 #endif
 		rtc_clk_slow_src_set(rtc_slow_clk_src);
+
+		if (revoke_32k) {
+			rtc_clk_32k_enable(false);
+			revoke_32k = false;
+		}
 
 		/*
 		 * The source enums differ per SoC (ESP32-C5 has no RC32K,
