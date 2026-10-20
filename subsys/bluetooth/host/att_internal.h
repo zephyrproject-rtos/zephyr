@@ -333,6 +333,7 @@ int bt_att_br_chan_connect(struct bt_conn *conn);
 int bt_att_br_chan_disconnect(struct bt_conn *conn);
 bool bt_att_br_chan_connected(struct bt_conn *conn);
 void bt_att_br_init(void);
+void bt_att_br_db_changed(void);
 
 /** @brief Find a pending ATT request by its user_data pointer.
  *  @param conn The connection the request was issued on.
