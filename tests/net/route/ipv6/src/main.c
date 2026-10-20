@@ -103,6 +103,7 @@ static bool data_failure;
 static bool feed_data; /* feed data back to IP stack */
 static bool sent_pkt_seen;
 static bool sent_forwarding;
+static bool sent_chksum_done;
 static struct net_if *sent_iface;
 static struct net_if *sent_orig_iface;
 static uint8_t sent_ipv6_hop_limit;
@@ -167,6 +168,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	sent_iface = net_if_lookup_by_dev(dev);
 	sent_orig_iface = net_pkt_orig_iface(pkt);
 	sent_forwarding = net_pkt_forwarding(pkt);
+	sent_chksum_done = net_pkt_is_chksum_done(pkt);
 	sent_ipv6_hop_limit = 0U;
 
 	if (net_pkt_family(pkt) == NET_AF_INET6 &&
@@ -227,6 +229,7 @@ static int tester_send_peer(const struct device *dev, struct net_pkt *pkt)
 	sent_iface = net_if_lookup_by_dev(dev);
 	sent_orig_iface = net_pkt_orig_iface(pkt);
 	sent_forwarding = net_pkt_forwarding(pkt);
+	sent_chksum_done = net_pkt_is_chksum_done(pkt);
 	sent_ipv6_hop_limit = 0U;
 
 	if (net_pkt_family(pkt) == NET_AF_INET6 &&
@@ -778,6 +781,7 @@ static void test_route_ipv6_input_route_same_iface(void)
 		zassert_equal_ptr(sent_iface, my_iface,
 				  "Routed packet used wrong egress interface");
 		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 		zassert_equal(sent_ipv6_hop_limit, 1U,
 			      "Routed packet should decrement hop limit");
 	}
@@ -810,6 +814,7 @@ static void test_route_ipv6_input_default_router(void)
 		zassert_equal_ptr(sent_iface, my_iface,
 				  "Routed packet used wrong egress interface");
 		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 		zassert_equal(sent_ipv6_hop_limit, 1U,
 			      "Routed packet should decrement hop limit");
 	}
@@ -968,6 +973,7 @@ static void test_route_ipv6_forward_onlink_packet_between_ifaces(void)
 	zassert_equal(sent_ipv6_hop_limit, 1U,
 		      "On-link forwarded IPv6 packet should decrement hop limit");
 	zassert_true(sent_forwarding, "On-link packet should be marked forwarded");
+	zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 
 	expected_ipv6_dst = NULL;
 	zassert_ok(net_nbr_unlink(nbr, &net_route_data_peer.ll_addr),

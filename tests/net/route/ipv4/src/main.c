@@ -59,6 +59,7 @@ static bool sent_arp_request_seen;
 static struct net_if *sent_iface;
 static struct net_if *sent_orig_iface;
 static bool sent_forwarding;
+static bool sent_chksum_done;
 static uint8_t sent_ipv4_ttl;
 
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
@@ -122,6 +123,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	sent_iface = net_if_lookup_by_dev(dev);
 	sent_orig_iface = net_pkt_orig_iface(pkt);
 	sent_forwarding = net_pkt_forwarding(pkt);
+	sent_chksum_done = net_pkt_is_chksum_done(pkt);
 	sent_ll_proto_type = net_pkt_ll_proto_type(pkt);
 	sent_arp_request_seen = false;
 	sent_ipv4_ttl = sent_forwarding ? net_pkt_ipv4_ttl(pkt) : 0U;
@@ -822,6 +824,7 @@ static void test_route_ipv4_forward_onlink_packet_between_ifaces(void)
 
 	zassert_true(sent_pkt_seen, "On-link forwarded packet not observed");
 	zassert_true(sent_forwarding, "On-link packet should be marked forwarded");
+	zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 	zassert_equal_ptr(sent_iface, my_iface_alt,
 			  "On-link forwarded packet used wrong egress interface");
 	zassert_equal_ptr(sent_orig_iface, my_iface,
@@ -1001,6 +1004,7 @@ static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
 				  "On-link routed packet missing ingress interface");
 		zassert_true(sent_forwarding,
 			     "On-link routed packet should be marked forwarded");
+		zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 		zassert_equal(sent_ipv4_ttl, 1U,
 			      "On-link routed packet should decrement TTL");
 	}
@@ -1028,6 +1032,7 @@ static void test_route_ipv4_input_onlink_same_iface(void)
 		zassert_equal_ptr(sent_iface, my_iface,
 				  "Routed packet used wrong egress interface");
 		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 		zassert_equal(sent_ipv4_ttl, 1U, "Routed packet should decrement TTL");
 	}
 
@@ -1060,6 +1065,7 @@ static void test_route_ipv4_input_default_router(void)
 		zassert_true(net_ipv4_addr_cmp(&sent_ll_resolve_addr, &gateway_addr),
 			     "Routed packet should go to the default router");
 		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 		zassert_equal(sent_ipv4_ttl, 1U, "Routed packet should decrement TTL");
 	}
 
