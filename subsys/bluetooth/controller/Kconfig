@@ -207,6 +207,10 @@ config BT_CTLR_CRYPTO
 	  Controller cryptographic implementations can be disabled to save flash
 	  and RAM usage.
 
+	  The Zephyr Link Layer (BT_LL_SW_SPLIT) also uses them for LE Encryption
+	  and Controller-based privacy, so with it, disabling this option also
+	  disables both.
+
 config BT_CTLR_HCI_VS_BUILD_INFO
 	string "Zephyr HCI VS Build Info string"
 	default ""
