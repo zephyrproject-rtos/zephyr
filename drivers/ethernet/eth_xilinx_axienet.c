@@ -117,6 +117,8 @@ struct xilinx_axienet_data {
 	/* device mac address */
 	uint8_t mac_addr[NET_ETH_ADDR_LEN];
 	bool dma_is_configured_rx;
+	/* A DMA stop failed: rx_buf[]/tx_pkt[] may still be in use by the DMA engine. */
+	bool dma_stop_failed;
 };
 
 /* global configuration per Ethernet device */
@@ -634,6 +636,8 @@ static int xilinx_axienet_stop(const struct device *dev, struct net_if *iface __
 	struct xilinx_axienet_data *data = dev->data;
 	uint32_t status;
 	int err;
+	int rx_err;
+	int tx_err;
 
 	/* Disable AXIENET RX */
 	status = xilinx_axienet_read_register(
@@ -643,21 +647,34 @@ static int xilinx_axienet_stop(const struct device *dev, struct net_if *iface __
 		config, XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_OFFSET, status);
 
 	/* Stop the RX DMA channel */
-	err = dma_stop(config->dma, XILINX_AXI_DMA_RX_CHANNEL_NUM);
-	if (err) {
-		LOG_ERR("%s: failed to stop RX DMA: %d", dev->name, err);
+	rx_err = dma_stop(config->dma, XILINX_AXI_DMA_RX_CHANNEL_NUM);
+	if (rx_err != 0) {
+		LOG_ERR("%s: failed to stop RX DMA: %d", dev->name, rx_err);
 	}
 
 	/* Stop the TX DMA channel */
-	err = dma_stop(config->dma, XILINX_AXI_DMA_TX_CHANNEL_NUM);
-	if (err) {
-		LOG_ERR("%s: failed to stop TX DMA: %d", dev->name, err);
+	tx_err = dma_stop(config->dma, XILINX_AXI_DMA_TX_CHANNEL_NUM);
+	if (tx_err != 0) {
+		LOG_ERR("%s: failed to stop TX DMA: %d", dev->name, tx_err);
 	}
 
 	/* Disable AXIENET TX */
 	status = xilinx_axienet_read_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET);
 	status &= ~XILINX_AXIENET_TX_CONTROL_TX_EN_MASK;
 	xilinx_axienet_write_register(config, XILINX_AXIENET_TX_CONTROL_REG_OFFSET, status);
+
+	/*
+	 * A failed stop leaves DMA ownership live: retain every referenced
+	 * buffer, and the ring state that describes them, until a later stop
+	 * succeeds. xilinx_axienet_start() retries the stop first.
+	 */
+	if ((rx_err != 0) || (tx_err != 0)) {
+		err = (rx_err != 0) ? rx_err : tx_err;
+		data->dma_stop_failed = true;
+		LOG_ERR("%s: retaining DMA buffers after incomplete shutdown", dev->name);
+		return err;
+	}
+	data->dma_stop_failed = false;
 
 	/* Release any in-flight TX net_pkts (DMA has stopped; callbacks won't fire). */
 	for (int i = 0; i < CONFIG_ETH_XILINX_AXIENET_BUFFER_NUM_TX; i++) {
@@ -685,12 +702,25 @@ static int xilinx_axienet_stop(const struct device *dev, struct net_if *iface __
 	return 0;
 }
 
-static int xilinx_axienet_start(const struct device *dev, struct net_if *iface __unused)
+static int xilinx_axienet_start(const struct device *dev, struct net_if *iface)
 {
 	const struct xilinx_axienet_config *config = dev->config;
 	struct xilinx_axienet_data *data = dev->data;
 	uint32_t status;
 	int err;
+
+	/*
+	 * Do not reuse the rings while a failed stop left buffers with the DMA
+	 * engine: retry the stop, which releases them and resets the ring
+	 * indices only once both channels have halted.
+	 */
+	if (data->dma_stop_failed) {
+		err = xilinx_axienet_stop(dev, iface);
+		if (err != 0) {
+			LOG_ERR("%s: cannot start, DMA still not halted: %d", dev->name, err);
+			return err;
+		}
+	}
 
 	/* Initialize the RX DMA ring; each call reserves one networking stack RX buffer. */
 	for (int i = 0; i < CONFIG_ETH_XILINX_AXIENET_BUFFER_NUM_RX - 1; i++) {
