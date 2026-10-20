@@ -63,6 +63,13 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Bluetooth
+
+  * Classic
+
+    * :kconfig:option:`CONFIG_BT_ATT_BR`, :c:func:`bt_att_br_connect` and
+      :c:func:`bt_att_br_disconnect` for GATT over BR/EDR
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

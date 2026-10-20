@@ -101,6 +101,29 @@ being triggered for the same attribute. Subscriptions can be removed with use of
   When subscriptions are removed ``notify`` callback is called with the data
   set to NULL.
 
+GATT over BR/EDR
+****************
+
+With :kconfig:option:`CONFIG_BT_ATT_BR`, GATT is also available on BR/EDR connections. The ATT
+bearer is then an L2CAP channel on the ATT PSM (0x001F) in Basic mode (Core Vol 3, Part G, 5.1).
+Either device can create it: the local L2CAP server accepts incoming connections and
+:c:func:`bt_att_br_connect` connects to the peer. :c:func:`bt_att_br_disconnect` closes the
+bearer and leaves the ACL connection up. Once the bearer is connected, the GATT client and server
+APIs are used with the BR/EDR connection object as with an LE connection, and
+:c:member:`bt_gatt_cb.att_mtu_updated` reports the ATT MTU.
+
+Compared to LE:
+
+* The ATT MTU is the result of the L2CAP configuration. :c:func:`bt_gatt_exchange_mtu` is not
+  supported and returns ``-ENOTSUP``.
+* The L2CAP channel requires an encrypted link, at least :c:enumerator:`BT_SECURITY_L2`. Signed
+  writes are not used.
+* An ATT transaction timeout closes the bearer, not the ACL connection.
+* The GATT state of a peer, such as its CCC values, is keyed by its BD_ADDR as a public address
+  and is stored if the peer is bonded on BR/EDR.
+
+The Enhanced ATT bearer is not supported on BR/EDR.
+
 API Reference
 *************
 
