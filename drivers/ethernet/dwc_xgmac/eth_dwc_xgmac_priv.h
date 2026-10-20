@@ -338,6 +338,8 @@
 #define XGMAC_TDES3_FD        BIT(29)
 #define XGMAC_TDES3_LD        BIT(28)
 #define XGMAC_TDES3_CS_EN_MSK (3u << 16u)
+/* Checksum insertion: IPv4 header checksum only */
+#define XGMAC_TDES3_CS_IP_HDR (1u << 16u)
 
 #define XGMAC_RDES3_OWN BIT(31)
 #define XGMAC_RDES3_IOC BIT(30)
