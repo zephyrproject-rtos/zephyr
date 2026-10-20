@@ -94,6 +94,10 @@ config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
 	default 30000 if DT_HAS_NORDIC_NRF93M1_ENABLED
 	default 2000
 
+config MODEM_CELLULAR_GNSS_REQUEST_TIMEOUT_S
+	int "On-demand GNSS power request timeout in seconds"
+	default 60
+
 config MODEM_CELLULAR_UART_BUFFER_SIZES
 	int "The UART receive and transmit buffer sizes in bytes."
 	default 512
