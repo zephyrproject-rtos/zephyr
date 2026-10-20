@@ -74,6 +74,10 @@ static att_type_t att_op_get_type(uint8_t op);
 struct bt_attr_data {
 	uint16_t handle;
 	uint16_t offset;
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	/* Arrival order, from bt_att.prep_seq */
+	uint16_t seq;
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 };
 
 /* Pool for incoming ATT packets */
@@ -236,6 +240,13 @@ struct bt_att {
 	struct k_fifo		tx_queue;
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	sys_slist_t		prep_queue;
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	/* Counts the prepared values in arrival order. att_prep_queue_insert()
+	 * compares with serial-number arithmetic, so it needs no reset and a
+	 * wrap does not reorder the queue.
+	 */
+	uint16_t		prep_seq;
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 #endif
 	/* Contains bt_att_chan instance(s) */
 	sys_slist_t		chans;
@@ -1051,6 +1062,12 @@ static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
 #if defined(CONFIG_BT_GATT_DEFERRED_RSP)
 static K_SEM_DEFINE(att_defer_sem, ATT_DEFER_MAX,
 		    ATT_DEFER_MAX);
+
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
+/* Prepare Write values of the deferred requests until they are accepted */
+NET_BUF_POOL_FIXED_DEFINE(att_defer_req_pool, ATT_DEFER_MAX, BT_ATT_BUF_SIZE,
+			  sizeof(struct bt_attr_data), NULL);
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
 /* Turns an assembled response into an Error Response in place. */
 static void att_err_into(struct net_buf *buf, uint8_t req, uint16_t handle, uint8_t err)
@@ -2565,6 +2582,8 @@ struct write_data {
 	uint16_t len;
 	uint16_t offset;
 	uint8_t err;
+	const struct bt_gatt_attr *deferred_attr;
+	uint8_t flags;
 };
 
 static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
@@ -2598,6 +2617,12 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		__ASSERT(data->op == BT_ATT_OP_WRITE_REQ, "Invalid data->op: %u", data->op);
 	}
 
+	if (bt_gatt_attr_deferred_write(attr) != NULL) {
+		data->deferred_attr = attr;
+		data->flags = flags;
+		return BT_GATT_ITER_STOP;
+	}
+
 	/* Write attribute value */
 	write = attr->write(data->conn, attr, data->value, data->len,
 			    data->offset, flags);
@@ -2622,8 +2647,41 @@ static bool is_gatt_request(uint8_t op)
 	}
 }
 
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+static uint8_t att_write_deferred(struct bt_att_chan *chan, uint8_t op, uint16_t handle,
+				  const struct bt_gatt_attr *attr, const void *value,
+				  uint16_t len, uint16_t offset,
+				  enum bt_gatt_attr_write_flag flags, bool *deferred)
+{
+	bt_gatt_deferred_attr_write_func_t write = bt_gatt_attr_deferred_write(attr);
+	uint8_t att_err;
+	uint32_t id;
+	int err;
+
+	if (deferred == NULL) {
+		err = write(att_chan_get_conn(chan), BT_GATT_DEFERRED_REQ_ID_NONE, attr, value, len,
+			    offset, flags);
+
+		return (err != 0) ? err_to_att(err) : 0U;
+	}
+
+	att_err = att_defer_begin(chan, op, handle, offset, NULL, &id);
+	if (att_err != 0U) {
+		return att_err;
+	}
+
+	/* The response is sent from cont_work, the error one included */
+	err = write(att_chan_get_conn(chan), id, attr, value, len, offset, flags);
+	att_defer_called(chan, err);
+	*deferred = true;
+
+	return 0U;
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
 static uint8_t perform_write(struct bt_att_chan *chan, uint8_t op, uint16_t handle,
-			     uint16_t offset, const void *value, uint16_t len)
+			     uint16_t offset, const void *value, uint16_t len,
+			     bool *deferred)
 {
 	struct write_data data;
 
@@ -2650,6 +2708,13 @@ static uint8_t perform_write(struct bt_att_chan *chan, uint8_t op, uint16_t hand
 
 	bt_gatt_foreach_attr(handle, handle, write_cb, &data);
 
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	if (data.deferred_attr != NULL) {
+		return att_write_deferred(chan, op, handle, data.deferred_attr, value, len, offset,
+					  (enum bt_gatt_attr_write_flag)data.flags, deferred);
+	}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
 	return data.err;
 }
 
@@ -2657,12 +2722,19 @@ static uint8_t att_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 {
 	uint16_t handle;
 	uint8_t err;
+	bool deferred = false;
 
 	handle = net_buf_pull_le16(buf);
 
 	LOG_DBG("handle 0x%04x", handle);
 
-	err = perform_write(chan, BT_ATT_OP_WRITE_REQ, handle, 0, buf->data, buf->len);
+	err = perform_write(chan, BT_ATT_OP_WRITE_REQ, handle, 0, buf->data, buf->len,
+			    &deferred);
+	if (deferred) {
+		/* The response is sent once the application responds */
+		return 0;
+	}
+
 	if (err == 0) {
 		buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_WRITE_RSP, 0);
 		if (buf == NULL) {
@@ -2686,6 +2758,7 @@ struct prep_data {
 	uint16_t len;
 	uint16_t offset;
 	uint8_t err;
+	const struct bt_gatt_attr *deferred_attr;
 };
 
 static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
@@ -2715,6 +2788,14 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		goto append;
 	}
 
+	if (bt_gatt_attr_deferred_write(attr) != NULL) {
+		/* Held by the bearer until accepted, see att_prep_write_rsp() */
+		data->deferred_attr = attr;
+		data->err = 0U;
+
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	/* Write attribute value to check if device is authorized */
 	write = attr->write(data->conn, attr, data->value, data->len,
 			    data->offset, BT_GATT_WRITE_FLAG_PREPARE);
@@ -2741,6 +2822,12 @@ append:
 	attr_data = net_buf_user_data(data->buf);
 	attr_data->handle = handle;
 	attr_data->offset = data->offset;
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	/* Numbered on arrival, on the RX thread, so the order is the one the
+	 * client sent even for a deferred value queued later on acceptance.
+	 */
+	attr_data->seq = data->att->prep_seq++;
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 	net_buf_add_mem(data->buf, data->value, data->len);
 
@@ -2786,6 +2873,43 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 	}
 
 	LOG_DBG("buf %p handle 0x%04x offset %u", data.buf, handle, offset);
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	if (data.deferred_attr != NULL) {
+		struct bt_attr_data *attr_data;
+		bool deferred = false;
+		uint8_t err;
+
+		/* The queue is shared by every bearer, so an Execute Write on
+		 * another one would apply a value the application has not
+		 * accepted yet. cont_work queues it once it has.
+		 */
+		chan->defer.prep = net_buf_alloc(&att_defer_req_pool, K_NO_WAIT);
+		if (chan->defer.prep == NULL) {
+			send_err_rsp(chan, BT_ATT_OP_PREPARE_WRITE_REQ, handle,
+				     BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+			return 0;
+		}
+
+		attr_data = net_buf_user_data(chan->defer.prep);
+		attr_data->handle = handle;
+		attr_data->offset = offset;
+		attr_data->seq = chan->att->prep_seq++;
+		net_buf_add_mem(chan->defer.prep, value, len);
+
+		err = att_write_deferred(chan, BT_ATT_OP_PREPARE_WRITE_REQ, handle,
+					 data.deferred_attr, value, len, offset,
+					 BT_GATT_WRITE_FLAG_PREPARE, &deferred);
+		if (!deferred) {
+			net_buf_unref(chan->defer.prep);
+			chan->defer.prep = NULL;
+
+			send_err_rsp(chan, BT_ATT_OP_PREPARE_WRITE_REQ, handle, err);
+		}
+
+		return 0;
+	}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 	/* Store buffer in the outstanding queue */
 	net_buf_slist_put(&chan->att->prep_queue, net_buf_take(&data.buf));
@@ -2875,9 +2999,166 @@ static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
 	return BT_ATT_ERR_SUCCESS;
 }
 
-static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+/* Puts an accepted prepared value in the queue at its arrival place, so
+ * the queue stays in the order the client sent (Core v6.3 Vol 3 Part F
+ * 3.4.6.3), whatever order the application accepted the values in.
+ */
+static void att_prep_queue_insert(struct bt_att *att, struct net_buf *buf)
+{
+	uint16_t seq = ((struct bt_attr_data *)net_buf_user_data(buf))->seq;
+	sys_snode_t *prev = NULL;
+	struct net_buf *entry;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->prep_queue, entry, node) {
+		uint16_t entry_seq = ((struct bt_attr_data *)net_buf_user_data(entry))->seq;
+
+		/* Serial-number arithmetic, so the order is kept across a wrap
+		 * of prep_seq without depending on when the queue is cleared.
+		 */
+		if ((int16_t)(entry_seq - seq) > 0) {
+			break;
+		}
+		prev = &entry->node;
+	}
+
+	sys_slist_insert(&att->prep_queue, prev, &net_buf_take(&buf)->node);
+}
+
+/* Queues an accepted deferred value as prep_write_cb() queues a non-deferred
+ * one. The held buffer is left for att_defer_end() to free.
+ */
+static uint8_t att_prep_queue_accepted(struct bt_att *att, struct net_buf *held)
+{
+	struct bt_attr_data *attr_data;
+	struct net_buf *buf;
+
+	if (sys_slist_len(&att->prep_queue) >= (size_t)PREP_QUEUE_MAX) {
+		LOG_WRN_RATELIMIT("Per-connection prepare queue limit (%d) reached for %s",
+				  PREP_QUEUE_MAX, bt_conn_dst_str(att->conn));
+		return BT_ATT_ERR_PREPARE_QUEUE_FULL;
+	}
+
+	buf = net_buf_alloc(&prep_pool, K_NO_WAIT);
+	if (buf == NULL) {
+		return BT_ATT_ERR_PREPARE_QUEUE_FULL;
+	}
+
+	attr_data = net_buf_user_data(buf);
+	*attr_data = *(struct bt_attr_data *)net_buf_user_data(held);
+	net_buf_add_mem(buf, held->data, held->len);
+	att_prep_queue_insert(att, buf);
+
+	return 0U;
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
+/* Writes the prepared values left in `queue`, in the order they were received.
+ * Returns an ATT error for *err_handle, or 0 with *wait set when a value is
+ * deferred and the request waits for its response.
+ */
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+/* Reports through its data whether the attribute has a deferred write. */
+static uint8_t att_prep_handle_is_deferred_cb(const struct bt_gatt_attr *attr, uint16_t handle,
+					      void *user_data)
+{
+	bool *deferred = user_data;
+
+	ARG_UNUSED(handle);
+
+	*deferred = (bt_gatt_attr_deferred_write(attr) != NULL);
+
+	return BT_GATT_ITER_STOP;
+}
+
+/* True when every attribute the prepare queue writes to is deferred. Only then
+ * may the Execute Write wait for a value: a non-deferred attribute would hold
+ * its new value meanwhile, and the request is atomic (Core v6.3 Vol 3 Part F 3.4.6.3).
+ */
+static bool att_exec_write_all_deferred(struct bt_att *att)
+{
+	struct net_buf *entry;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->prep_queue, entry, node) {
+		struct bt_attr_data *data = net_buf_user_data(entry);
+		bool deferred = false;
+
+		bt_gatt_foreach_attr(data->handle, data->handle,
+				     att_prep_handle_is_deferred_cb, &deferred);
+		if (!deferred) {
+			return false;
+		}
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+
+static uint8_t att_exec_write_run(struct bt_att_chan *chan, sys_slist_t *queue,
+				  uint16_t *err_handle, bool *wait, bool allow_defer)
 {
 	struct net_buf *buf;
+
+	/* The following code will iterate on all prepare writes in the
+	 * prep_queue, and reassemble those that share the same handle.
+	 * Once a handle has been reassembled, it is sent to the upper layers,
+	 * and the next handle is processed
+	 */
+	while (!sys_slist_is_empty(queue)) {
+		struct bt_attr_data *data;
+		bool deferred = false;
+		uint16_t handle;
+		uint8_t err;
+
+		NET_BUF_SIMPLE_DEFINE_STATIC(reassembled_data,
+					     MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
+						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_BUF_SIZE));
+
+		buf = net_buf_slist_get(queue);
+		data = net_buf_user_data(buf);
+		handle = data->handle;
+
+		LOG_DBG("buf %p handle 0x%04x offset %u", buf, handle, data->offset);
+
+		net_buf_simple_reset(&reassembled_data);
+		net_buf_simple_add_mem(&reassembled_data, buf->data, buf->len);
+
+		err = exec_write_reassemble(handle, data->offset, queue, &reassembled_data);
+		if (err == BT_ATT_ERR_SUCCESS) {
+			err = perform_write(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, data->offset,
+					    reassembled_data.data, reassembled_data.len,
+					    allow_defer ? &deferred : NULL);
+		}
+
+		net_buf_unref(buf);
+		if (err != BT_ATT_ERR_SUCCESS) {
+			*err_handle = handle;
+			return err;
+		}
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+		if (deferred) {
+			if (queue != &chan->defer.exec) {
+				/* Taken off the queue the bearers share until done */
+				chan->defer.exec = *queue;
+				sys_slist_init(queue);
+			}
+
+			*wait = true;
+			return 0U;
+		}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+	}
+
+	return 0U;
+}
+
+static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
+{
+	uint16_t handle = 0U;
+	struct net_buf *buf;
+	bool wait = false;
+	uint8_t err;
 
 	if (flags != BT_ATT_FLAG_EXEC) {
 		/* Core v6.3 Vol 3 Part F 3.4.6.3: the prepared values are
@@ -2887,52 +3168,24 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		goto rsp;
 	}
 
-	/* The following code will iterate on all prepare writes in the
-	 * prep_queue, and reassemble those that share the same handle.
-	 * Once a handle has been reassembled, it is sent to the upper layers,
-	 * and the next handle is processed
-	 */
-	while (!sys_slist_is_empty(&chan->att->prep_queue)) {
-		struct bt_attr_data *data;
-		uint16_t handle;
-		uint8_t err;
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+	err = att_exec_write_run(chan, &chan->att->prep_queue, &handle, &wait,
+				 att_exec_write_all_deferred(chan->att));
+#else
+	err = att_exec_write_run(chan, &chan->att->prep_queue, &handle, &wait, false);
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
+	if (err != BT_ATT_ERR_SUCCESS) {
+		/* Core v6.3 Vol 3 Part F 3.4.6.3: the queue is cleared
+		 * and only an Error Response is sent.
+		 */
+		net_buf_slist_purge(&chan->att->prep_queue);
+		send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, err);
+		return 0;
+	}
 
-		NET_BUF_SIMPLE_DEFINE_STATIC(reassembled_data,
-					     MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
-						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_BUF_SIZE));
-
-		buf = net_buf_slist_get(&chan->att->prep_queue);
-		data = net_buf_user_data(buf);
-		handle = data->handle;
-
-		LOG_DBG("buf %p handle 0x%04x offset %u", buf, handle, data->offset);
-
-		net_buf_simple_reset(&reassembled_data);
-		net_buf_simple_add_mem(&reassembled_data, buf->data, buf->len);
-
-		err = exec_write_reassemble(handle, data->offset,
-					    &chan->att->prep_queue,
-					    &reassembled_data);
-		if (err != BT_ATT_ERR_SUCCESS) {
-			/* Discard queued buffers */
-			net_buf_unref(buf);
-			net_buf_slist_purge(&chan->att->prep_queue);
-			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
-				     handle, err);
-			return 0;
-		}
-
-		err = perform_write(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, data->offset,
-				    reassembled_data.data, reassembled_data.len);
-		net_buf_unref(buf);
-		if (err != BT_ATT_ERR_SUCCESS) {
-			/* Core v6.3 Vol 3 Part F 3.4.6.3: the queue is cleared
-			 * and only an Error Response is sent.
-			 */
-			net_buf_slist_purge(&chan->att->prep_queue);
-			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, err);
-			return 0;
-		}
+	if (wait) {
+		/* The response is sent once the last value is written */
+		return 0;
 	}
 
 rsp:
@@ -2946,6 +3199,30 @@ rsp:
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+/* Writes the rest of an Execute Write request after a value responded */
+static void att_exec_write_cont(struct bt_att_chan *chan)
+{
+	uint16_t handle = 0U;
+	bool wait = false;
+	uint8_t err;
+
+	err = att_exec_write_run(chan, &chan->defer.exec, &handle, &wait, true);
+	if ((err == BT_ATT_ERR_SUCCESS) && wait) {
+		return;
+	}
+
+	if (err != BT_ATT_ERR_SUCCESS) {
+		/* Core v6.3 Vol 3 Part F 3.4.6.3: the queue is cleared, which
+		 * att_defer_end() does, and only an Error Response is sent.
+		 */
+		att_err_into(chan->defer.rsp, BT_ATT_OP_EXEC_WRITE_REQ, handle, err);
+	}
+
+	att_defer_send(chan);
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 static uint8_t att_exec_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 {
@@ -2967,7 +3244,7 @@ static uint8_t att_write_cmd(struct bt_att_chan *chan, struct net_buf *buf)
 
 	LOG_DBG("handle 0x%04x", handle);
 
-	if (perform_write(chan, BT_ATT_OP_WRITE_CMD, handle, 0, buf->data, buf->len)) {
+	if (perform_write(chan, BT_ATT_OP_WRITE_CMD, handle, 0, buf->data, buf->len, NULL) != 0) {
 		/* Nothing we can do here, as this is a write command */
 	}
 
@@ -3009,7 +3286,7 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 	net_buf_pull(buf, sizeof(*req));
 
 	if (perform_write(chan, BT_ATT_OP_SIGNED_WRITE_CMD, handle, 0, buf->data,
-			  buf->len - sizeof(struct bt_att_signature)) != 0) {
+			  buf->len - sizeof(struct bt_att_signature), NULL) != 0) {
 		/* Nothing we can do here, as this is a write command */
 	}
 
@@ -3683,6 +3960,23 @@ static void att_defer_cont_work_handler(struct k_work *work)
 
 		return;
 	}
+
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
+	if (chan->defer.prep != NULL) {
+		/* Accepted: queue the value at its arrival place, if there is room */
+		uint8_t err = att_prep_queue_accepted(chan->att, chan->defer.prep);
+
+		if (err != 0U) {
+			att_err_into(chan->defer.rsp, op, chan->defer.handle, err);
+		}
+	}
+
+	if (op == BT_ATT_OP_EXEC_WRITE_REQ) {
+		att_exec_write_cont(chan);
+
+		return;
+	}
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
 	att_defer_send(chan);
 }
