@@ -412,10 +412,27 @@ static bool check_request_name(void)
 	return resolving_names;
 }
 
+static void discovery_complete(void)
+{
+	struct bt_br_discovery_result *results = discovery_results;
+	size_t count = discovery_results_count;
+	struct bt_br_discovery_cb *listener, *next;
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
+
+	/* Reset before reporting, a listener may start a new discovery */
+	bt_br_discovery_reset();
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->timeout != NULL) {
+			listener->timeout(results, count);
+		}
+	}
+}
+
 static void report_discovery_results(void)
 {
 	int i;
-	struct bt_br_discovery_cb *listener, *next;
 
 	for (i = 0; i < discovery_results_count; i++) {
 		struct bt_br_discovery_priv *priv;
@@ -428,15 +445,7 @@ static void report_discovery_results(void)
 		return;
 	}
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
-		if (listener->timeout) {
-			listener->timeout(discovery_results, discovery_results_count);
-		}
-	}
-
-	bt_br_discovery_reset();
+	discovery_complete();
 }
 
 void bt_hci_inquiry_complete(struct net_buf *buf)
@@ -655,13 +664,7 @@ check_names:
 	}
 
 	/* all names resolved, report discovery results */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
-		if (listener->timeout) {
-			listener->timeout(discovery_results, discovery_results_count);
-		}
-	}
+	discovery_complete();
 }
 
 void bt_hci_read_remote_features_complete(struct net_buf *buf)
