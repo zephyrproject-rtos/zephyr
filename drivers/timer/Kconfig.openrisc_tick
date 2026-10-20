@@ -6,6 +6,7 @@
 
 config OPENRISC_TICK_TIMER
 	bool "OpenRISC Tick Timer"
+	default y
 	depends on OPENRISC
 	select TICKLESS_CAPABLE
 	help
