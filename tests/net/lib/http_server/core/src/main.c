@@ -3289,6 +3289,36 @@ ZTEST(server_function_tests, test_http1_static_fs)
 			  "Received data doesn't match expected response");
 }
 
+ZTEST(server_function_tests, test_http1_static_fs_query)
+{
+	static const char http1_request[] =
+		"GET /static_file.html?v=1 HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 30\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n"
+		TEST_STATIC_FS_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
 /* HPACK-encoded "GET /static_file.html" request, END_STREAM | END_HEADERS set.
  * :method: GET (indexed, 0x82), :scheme: http (indexed, 0x86) and :path with an
  * indexed name (4) and a literal, non-Huffman value.
@@ -3338,6 +3368,41 @@ ZTEST(server_function_tests, test_http2_static_fs)
 
 	expect_http2_headers_frame(&offset, TEST_STREAM_ID_2, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_2, TEST_STATIC_FS_PAYLOAD,
+				strlen(TEST_STATIC_FS_PAYLOAD), HTTP2_FLAG_END_STREAM);
+}
+
+/* HPACK-encoded "GET /static_file.html?v=1" request, encoded as above. */
+#define TEST_HTTP2_HEADERS_GET_STATIC_FS_QUERY(_stream_id) \
+	0x00, 0x00, 0x19, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x04, 0x15, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x69, 0x63, 0x5f, \
+	0x66, 0x69, 0x6c, 0x65, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0x3f, 0x76, 0x3d, \
+	0x31
+
+ZTEST(server_function_tests, test_http2_static_fs_query)
+{
+	static const uint8_t request_get_static_fs[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_STATIC_FS_QUERY(TEST_STREAM_ID_1),
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, request_get_static_fs,
+			 sizeof(request_get_static_fs), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_FS_PAYLOAD,
 				strlen(TEST_STATIC_FS_PAYLOAD), HTTP2_FLAG_END_STREAM);
 }
 
