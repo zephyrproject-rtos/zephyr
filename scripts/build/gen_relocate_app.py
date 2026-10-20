@@ -103,7 +103,7 @@ class SectionKind(Enum):
             return None
 
 
-class OutputSection(NamedTuple):
+class InputSection(NamedTuple):
     obj_file_name: str
     section_name: str
     keep: bool = True
@@ -117,7 +117,7 @@ PRINT_TEMPLATE_NOKEEP = """
                 *{obj_file_name}("{section_name}")
 """
 
-SECTION_LOAD_MEMORY_SEQ = """
+SECTION_LOAD_MEMORY = """
         __{mem}_{kind}_rom_start = LOADADDR(.{mem}_{kind}_reloc);
 """
 
@@ -150,7 +150,7 @@ MPU_RO_REGION_END = """
 """
 
 # generic section creation format
-LINKER_SECTION_SEQ = """
+LINKER_OUTPUT_SECTION = """
 
 /* Linker section for memory region {mem_upper} for {kind_name} section  */
 
@@ -165,7 +165,7 @@ LINKER_SECTION_SEQ = """
         __{mem}_{kind}_reloc_size = __{mem}_{kind}_reloc_end - __{mem}_{kind}_reloc_start;
 """
 
-LINKER_SECTION_SEQ_MPU = """
+LINKER_OUTPUT_SECTION_MPU = """
 
 /* Linker section for memory region {mem_upper} for {kind_name} section  */
 
@@ -237,7 +237,7 @@ def region_is_default_ram(region_name: str) -> bool:
     return region_name == args.default_ram_region
 
 
-def find_sections(filename: str, symbol_filter: str) -> 'dict[SectionKind, list[OutputSection]]':
+def find_sections(filename: str, symbol_filter: str) -> 'dict[SectionKind, list[InputSection]]':
     """
     Locate relocatable sections in the given object file.
 
@@ -262,7 +262,7 @@ def find_sections(filename: str, symbol_filter: str) -> 'dict[SectionKind, list[
             if section_kind is None:
                 continue
 
-            out[section_kind].append(OutputSection(obj_file_path.name, section.name))
+            out[section_kind].append(InputSection(obj_file_path.name, section.name))
 
             # Common variables will be placed in the .bss section
             # only after linking in the final executable. This "if" finds
@@ -286,8 +286,8 @@ def find_sections(filename: str, symbol_filter: str) -> 'dict[SectionKind, list[
 
 
 def assign_to_correct_mem_region(
-    memory_region: str, full_list_of_sections: 'dict[SectionKind, list[OutputSection]]'
-) -> 'dict[MemoryRegion, dict[SectionKind, list[OutputSection]]]':
+    memory_region: str, full_list_of_sections: 'dict[SectionKind, list[InputSection]]'
+) -> 'dict[MemoryRegion, dict[SectionKind, list[InputSection]]]':
     """
     Generate a mapping of memory region to collection of output sections to be
     placed in each region.
@@ -341,7 +341,7 @@ def section_kinds_from_memory_region(memory_region: str) -> 'tuple[set[SectionKi
     return (out, memory_region)
 
 
-def print_linker_sections(list_sections: 'list[OutputSection]'):
+def print_linker_sections(list_sections: 'list[InputSection]'):
     out = ''
     for section in sorted(list_sections):
         template = PRINT_TEMPLATE if section.keep else PRINT_TEMPLATE_NOKEEP
@@ -358,7 +358,7 @@ def add_phdr(memory_type, phdrs):
 def string_create_helper(
     kind: SectionKind,
     memory_type,
-    full_list_of_sections: 'dict[SectionKind, list[OutputSection]]',
+    full_list_of_sections: 'dict[SectionKind, list[InputSection]]',
     load_address_in_flash,
     is_copy,
     phdrs,
@@ -400,7 +400,7 @@ def string_create_helper(
             }
 
             if not region_is_default_ram(memory_type) and kind is SectionKind.RODATA:
-                linker_string += LINKER_SECTION_SEQ_MPU.format(
+                linker_string += LINKER_OUTPUT_SECTION_MPU.format(
                     align_size=mpu_align.get(memory_type, 0),
                     **fields,
                 )
@@ -409,11 +409,11 @@ def string_create_helper(
                     SectionKind.TEXT,
                     SectionKind.LITERAL,
                 ):
-                    linker_string += LINKER_SECTION_SEQ_MPU.format(align_size=0, **fields)
+                    linker_string += LINKER_OUTPUT_SECTION_MPU.format(align_size=0, **fields)
                 else:
-                    linker_string += LINKER_SECTION_SEQ.format(**fields)
+                    linker_string += LINKER_OUTPUT_SECTION.format(**fields)
             if load_address_in_flash:
-                linker_string += SECTION_LOAD_MEMORY_SEQ.format(**fields)
+                linker_string += SECTION_LOAD_MEMORY.format(**fields)
     return linker_string
 
 
@@ -677,7 +677,7 @@ def main():
     sram_data_linker_file = args.output_sram_data
     sram_bss_linker_file = args.output_sram_bss
     rel_dict, phdrs = create_dict_wrt_mem()
-    complete_list_of_sections: dict[MemoryRegion, dict[SectionKind, list[OutputSection]]] = (
+    complete_list_of_sections: dict[MemoryRegion, dict[SectionKind, list[InputSection]]] = (
         defaultdict(lambda: defaultdict(list))
     )
 
@@ -686,7 +686,7 @@ def main():
 
     # for each memory_type, create text/rodata/data/bss sections for all obj files
     for memory_type, files in rel_dict.items():
-        full_list_of_sections: dict[SectionKind, list[OutputSection]] = defaultdict(list)
+        full_list_of_sections: dict[SectionKind, list[InputSection]] = defaultdict(list)
 
         for filename, symbol_filter in files:
             obj_filename = get_obj_filename(all_obj_files, filename)
