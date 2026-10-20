@@ -69,6 +69,8 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_BT_ATT_BR`, :c:func:`bt_att_br_connect` and
       :c:func:`bt_att_br_disconnect` for GATT over BR/EDR
+    * :kconfig:option:`CONFIG_BT_ATT_BR_SDP_RECORDS` and :c:macro:`BT_ATT_BR_SDP_SERVICE` for the
+      SDP records of the GATT services available over BR/EDR
 
 .. zephyr-keep-sorted-stop
 
