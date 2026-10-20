@@ -377,8 +377,16 @@
 		compatible = "nxp,lpc-wwdt";
 		reg = <0x16000 0x1000>;
 		clocks = <&syscon MCUX_WWDT0_CLK>;
+		power-domains = <&core_domain>;
 		interrupts = <152 0>;
 		clk-divider = <1>;
+		/*
+		 * DS/PD operation requires a functional clock retained in that state.
+		 * A board providing and verifying that clock may drop the matching
+		 * restriction. Clock-source low-power setup belongs to the board/SoC.
+		 * Deep Power Down removes power from the register block.
+		 */
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
