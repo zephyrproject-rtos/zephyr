@@ -37,6 +37,9 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TDES0_TTSS BIT(17)
 #define TDES0_ES  BIT(15)
 #define TDES0_CIC GENMASK(23, 22)
+/* Checksum Insertion Control values */
+#define TDES0_CIC_IP_HDR FIELD_PREP(TDES0_CIC, 1)
+#define TDES0_CIC_FULL   FIELD_PREP(TDES0_CIC, 3)
 
 #define TDES1_TBS1 GENMASK(12, 0)
 #define TDES1_TBS2 GENMASK(28, 16)
@@ -97,8 +100,18 @@ static __maybe_unused unsigned int net_pkt_get_nbfrags(struct net_pkt *pkt)
 	return nbfrags;
 }
 
-#define TDES0_FLAGS_DEFAULT (TDES0_IC | \
-	(IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN) ? TDES0_CIC : 0U))
+/* The MAC computes the ICMPv4 checksum over the field as it is, so a
+ * packet that carries its transport layer checksum already, a forwarded one
+ * for example, gets the IPv4 header checksum only.
+ */
+static uint32_t tdes0_cic(struct net_pkt *pkt)
+{
+	if (!IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN)) {
+		return 0U;
+	}
+
+	return net_pkt_is_chksum_done(pkt) ? TDES0_CIC_IP_HDR : TDES0_CIC_FULL;
+}
 
 static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 {
@@ -106,6 +119,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	unsigned int d_idx, first_d_idx;
 	struct dwmac_dma_desc *d;
 	uint32_t des0_flags;
+	uint32_t cic = tdes0_cic(pkt);
 
 	LOG_DBG("pkt len/frags=%zu/%u", net_pkt_get_len(pkt), net_pkt_get_nbfrags(pkt));
 
@@ -132,7 +146,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 
 	first_d_idx = p->tx_desc_head;
 	d_idx = first_d_idx;
-	des0_flags = TDES0_FLAGS_DEFAULT;
+	des0_flags = TDES0_IC | cic;
 
 	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		LOG_DBG("tx frag %p len=%zu", frag, frag->len);
@@ -156,7 +170,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 			sys_cache_data_flush_range(frag->data, frag->len);
 		}
 
-		des0_flags = TDES0_OWN | TDES0_FLAGS_DEFAULT;
+		des0_flags = TDES0_OWN | TDES0_IC | cic;
 		INC_WRAP(d_idx, NB_TX_DESCS);
 
 		if (frag->frags == NULL) {

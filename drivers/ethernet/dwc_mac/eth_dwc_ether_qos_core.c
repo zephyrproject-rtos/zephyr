@@ -184,8 +184,12 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 		des2_flags |= TDES2_TTSE;
 	}
 
+	/* The MAC computes the ICMPv4 checksum over the field as it is, so a
+	 * packet that carries its transport layer checksum already, a forwarded
+	 * one for example, gets the IPv4 header checksum only.
+	 */
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN)) {
-		des3_flags |= TDES3_CIC;
+		des3_flags |= net_pkt_is_chksum_done(pkt) ? TDES3_CIC_IP_HDR : TDES3_CIC;
 	}
 
 	/* map packet fragments */
