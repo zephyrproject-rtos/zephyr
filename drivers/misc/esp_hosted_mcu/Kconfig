@@ -166,6 +166,14 @@ config ESP_HOSTED_MCU_RX_REASSEMBLY_SIZE
 	  coprocessor sends with the fragment flag set. A fragmented packet
 	  that does not fit is dropped.
 
+config ESP_HOSTED_MCU_FRAME_SIZE
+	int "Transport frame size" if ESP_HOSTED_MCU_UART
+	default 3200 if ESP_HOSTED_MCU_UART
+	default 1600
+	help
+	  Maximum frame size used for communication with the coprocessor. Must
+	  be a multiple of 4 bytes to satisfy DMA alignment requirements.
+
 module = ESP_HOSTED_MCU
 module-str = esp-hosted-mcu
 source "subsys/logging/Kconfig.template.log_config"
