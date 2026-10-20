@@ -37,6 +37,9 @@ LOG_MODULE_REGISTER(ieee802154_silabs_efr32, CONFIG_IEEE802154_DRIVER_LOG_LEVEL)
 #include <openthread/error.h>
 #include <openthread/link.h>
 #include <openthread-core-zephyr-config.h>
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+#include "utils/link_metrics.h"
+#endif
 #endif
 
 #include <sli_crypto.h>
@@ -1312,6 +1315,43 @@ static bool sl_802154_match_ack_src_addr(struct sl_802154_data *data)
 		      IEEE802154_EXT_ADDR_LENGTH) == 0;
 }
 
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+/* Build an otMacAddress from the received source address for link-metrics lookup.
+ * A short address is returned as a host integer, and an extended address is
+ * byte-swapped out of its on-air order. Returns false when the frame has no
+ * usable source address.
+ */
+static bool sl_802154_get_ot_src_addr(struct sl_802154_data *data, otMacAddress *src)
+{
+	struct sl_802154_pan_id_layout pl;
+	struct ieee802154_address *src_addr;
+
+	src->mType = OT_MAC_ADDRESS_TYPE_NONE;
+	if (data->rx_mhr.src_addr == NULL) {
+		return false;
+	}
+
+	pl = sl_802154_pan_id_layout_get(data->rx_mhr.fs);
+	src_addr = pl.src_pan_present ? &data->rx_mhr.src_addr->plain.addr
+				      : &data->rx_mhr.src_addr->comp.addr;
+
+	if (data->rx_mhr.fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
+		src->mType = OT_MAC_ADDRESS_TYPE_SHORT;
+		src->mAddress.mShortAddress =
+			sys_get_le16((uint8_t *)&src_addr->short_addr);
+	} else if (data->rx_mhr.fs->fc.src_addr_mode ==
+		   IEEE802154_ADDR_MODE_EXTENDED) {
+		src->mType = OT_MAC_ADDRESS_TYPE_EXTENDED;
+		sys_memcpy_swap(src->mAddress.mExtAddress.m8, src_addr->ext_addr,
+				IEEE802154_EXT_ADDR_LENGTH);
+	} else {
+		return false;
+	}
+
+	return true;
+}
+#endif
+
 static void sl_802154_reset_ack_metadata(struct sl_802154_data *data)
 {
 	data->mac_data.ack_seb = false;
@@ -1340,6 +1380,11 @@ static int sl_802154_write_enhanced_ack(struct sl_802154_data *data,
 	bool match;
 	int peek_rc;
 	size_t ie_total;
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+	otMacAddress src_addr;
+	uint8_t link_metrics_data[OT_ENH_PROBING_IE_DATA_MAX_SIZE];
+	uint8_t link_metrics_data_len = 0;
+#endif
 
 	/* RAIL will generate an Immediate ACK for us.
 	 * For an Enhanced ACK, we need to generate the whole packet ourselves.
@@ -1380,9 +1425,13 @@ static int sl_802154_write_enhanced_ack(struct sl_802154_data *data,
 	csl_ie_present = false;
 	match = sl_802154_match_ack_src_addr(data);
 
-	if (IS_ENABLED(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)) {
-		link_metrics_ie_present = match && (data->ack_ie.link_metrics_header_ie.length > 0);
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+	if (sl_802154_get_ot_src_addr(data, &src_addr)) {
+		link_metrics_data_len = otLinkMetricsEnhAckGenData(
+			&src_addr, data->last_lqi, data->last_rssi, link_metrics_data);
+		link_metrics_ie_present = link_metrics_data_len > 0;
 	}
+#endif
 
 	if (SL_802154_HAS_CSL_SUPPORT) {
 		csl_ie_present = match && (data->ack_ie.csl_header_ie.length > 0);
@@ -1392,6 +1441,18 @@ static int sl_802154_write_enhanced_ack(struct sl_802154_data *data,
 
 	enh_ack_mhr_length = sl_802154_construct_enh_ack_mhr(data, ie_present);
 	enh_ack_len = SL_802154_PHR_BYTES + enh_ack_mhr_length;
+
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+	/* Header IEs must be in increasing element-ID order: Vendor-Specific
+	 * (0x00), then CSL (0x1a).
+	 */
+	if (link_metrics_ie_present) {
+		ie_total = otMacFrameGenerateEnhAckProbingIe(
+			data->enh_ack_buffer + enh_ack_len, link_metrics_data,
+			link_metrics_data_len);
+		enh_ack_len += (uint8_t)ie_total;
+	}
+#endif
 
 	if (SL_802154_HAS_CSL_SUPPORT && csl_ie_present) {
 		/* This should be set to the expected length of the packet is being received.
@@ -1409,16 +1470,6 @@ static int sl_802154_write_enhanced_ack(struct sl_802154_data *data,
 		ie_total = IEEE802154_HEADER_IE_HEADER_LENGTH + data->ack_ie.csl_header_ie.length;
 
 		memcpy(data->enh_ack_buffer + enh_ack_len, &data->ack_ie.csl_header_ie, ie_total);
-		enh_ack_len += (uint8_t)ie_total;
-	}
-
-	if (IS_ENABLED(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT) && link_metrics_ie_present) {
-		/* Append Link Metrics IE after CSL to match the SiSDK PAL ordering. */
-		ie_total = IEEE802154_HEADER_IE_HEADER_LENGTH +
-			   data->ack_ie.link_metrics_header_ie.length;
-
-		memcpy(data->enh_ack_buffer + enh_ack_len,
-		       &data->ack_ie.link_metrics_header_ie, ie_total);
 		enh_ack_len += (uint8_t)ie_total;
 	}
 
@@ -1826,6 +1877,11 @@ static void sl_802154_handle_rx_pkt(const struct device *dev)
 	if (pkt_details.is_ack) {
 		sl_802154_handle_rx_ack(dev, l2_length, &pkt_details);
 	} else {
+		/* Enhanced ACK probing uses the metrics from
+		 * the most recently completed received data frame.
+		 */
+		data->last_lqi = pkt_details.lqi;
+		data->last_rssi = pkt_details.rssi_dbm;
 		sl_802154_handle_rx_data(dev, l2_length, &pkt_details);
 	}
 }
@@ -3101,6 +3157,54 @@ static int sl_802154_configure_mac_keys(const struct device *dev, struct sl_8021
 	return 0;
 }
 
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+static int sl_802154_configure_link_metrics(const struct ieee802154_config *config)
+{
+	static const uint8_t thread_oui[] = IEEE802154_OPENTHREAD_THREAD_IE_VENDOR_OUI;
+	const uint8_t *ie = (const uint8_t *)config->ack_ie.header_ie;
+	otLinkMetrics metrics = {0};
+	otExtAddress ext_addr;
+	otError error;
+
+	if (config->ack_ie.header_ie->length == 0) {
+		memcpy(ext_addr.m8, config->ack_ie.ext_addr, sizeof(ext_addr.m8));
+		error = otLinkMetricsConfigureEnhAckProbing(config->ack_ie.short_addr,
+							   &ext_addr, metrics);
+		return error == OT_ERROR_NONE ? 0 : -ENOENT;
+	}
+
+	if (config->ack_ie.header_ie->length < sizeof(thread_oui) + 1 ||
+	    memcmp(&ie[IEEE802154_HEADER_IE_HEADER_LENGTH], thread_oui,
+		   sizeof(thread_oui)) != 0 ||
+	    ie[IEEE802154_HEADER_IE_HEADER_LENGTH + sizeof(thread_oui)] != 0) {
+		return -ENOTSUP;
+	}
+
+	for (size_t i = IEEE802154_HEADER_IE_HEADER_LENGTH + sizeof(thread_oui) + 1;
+	     i < IEEE802154_HEADER_IE_HEADER_LENGTH + config->ack_ie.header_ie->length; i++) {
+		switch (ie[i]) {
+		case 0x01:
+			metrics.mRssi = true;
+			break;
+		case 0x02:
+			metrics.mLinkMargin = true;
+			break;
+		case 0x03:
+			metrics.mLqi = true;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+	}
+
+	memcpy(ext_addr.m8, config->ack_ie.ext_addr, sizeof(ext_addr.m8));
+	error = otLinkMetricsConfigureEnhAckProbing(config->ack_ie.short_addr, &ext_addr,
+						   metrics);
+
+	return error == OT_ERROR_NONE ? 0 : error == OT_ERROR_NO_BUFS ? -ENOMEM : -EINVAL;
+}
+#endif
+
 static int sl_802154_configure_enh_ack_header_ie(const struct device *dev,
 						 struct sl_802154_data *data,
 						 const struct ieee802154_config *config)
@@ -3120,33 +3224,42 @@ static int sl_802154_configure_enh_ack_header_ie(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	data->ack_ie.short_addr = sys_get_le16((const uint8_t *)&config->ack_ie.short_addr);
-	sys_memcpy_swap(data->ack_ie.ext_addr, config->ack_ie.ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+	if (config->ack_ie.header_ie != NULL && config->ack_ie.header_ie->length > 0) {
+		element_id = ieee802154_header_ie_get_element_id(config->ack_ie.header_ie);
 
-	if (config->ack_ie.header_ie == NULL || config->ack_ie.header_ie->length == 0) {
-		sl_802154_clear_enh_ack_header_ie(data);
-		return 0;
-	}
-
-	element_id = ieee802154_header_ie_get_element_id(config->ack_ie.header_ie);
-
-	if (element_id == IEEE802154_HEADER_IE_ELEMENT_ID_VENDOR_SPECIFIC_IE &&
-	    IS_ENABLED(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)) {
-		ie_total = IEEE802154_HEADER_IE_HEADER_LENGTH + config->ack_ie.header_ie->length;
-		if (ie_total > sizeof(data->ack_ie.link_metrics_header_ie)) {
-			return -EMSGSIZE;
+		if (element_id == IEEE802154_HEADER_IE_ELEMENT_ID_VENDOR_SPECIFIC_IE &&
+		    IS_ENABLED(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)) {
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+			return sl_802154_configure_link_metrics(config);
+#endif
+		} else if (element_id == IEEE802154_HEADER_IE_ELEMENT_ID_CSL_IE &&
+			   SL_802154_HAS_CSL_SUPPORT) {
+			data->ack_ie.short_addr =
+				sys_get_le16((const uint8_t *)&config->ack_ie.short_addr);
+			sys_memcpy_swap(data->ack_ie.ext_addr, config->ack_ie.ext_addr,
+					IEEE802154_EXT_ADDR_LENGTH);
+			ie_total = IEEE802154_HEADER_IE_HEADER_LENGTH +
+				   config->ack_ie.header_ie->length;
+			if (ie_total > sizeof(data->ack_ie.csl_header_ie)) {
+				return -EMSGSIZE;
+			}
+			memcpy(&data->ack_ie.csl_header_ie, config->ack_ie.header_ie, ie_total);
+			return 0;
 		}
-		memcpy(&data->ack_ie.link_metrics_header_ie, config->ack_ie.header_ie, ie_total);
-	} else if (element_id == IEEE802154_HEADER_IE_ELEMENT_ID_CSL_IE &&
-		   SL_802154_HAS_CSL_SUPPORT) {
-		ie_total = IEEE802154_HEADER_IE_HEADER_LENGTH + config->ack_ie.header_ie->length;
-		if (ie_total > sizeof(data->ack_ie.csl_header_ie)) {
-			return -EMSGSIZE;
-		}
-		memcpy(&data->ack_ie.csl_header_ie, config->ack_ie.header_ie, ie_total);
-	} else {
+
 		return -ENOTSUP;
 	}
+
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+	/* A zero-length Vendor IE clears one probing entry and leaves the CSL peer alone. */
+	if (config->ack_ie.header_ie != NULL) {
+		return sl_802154_configure_link_metrics(config);
+	}
+#endif
+
+	data->ack_ie.short_addr = sys_get_le16((const uint8_t *)&config->ack_ie.short_addr);
+	sys_memcpy_swap(data->ack_ie.ext_addr, config->ack_ie.ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+	sl_802154_clear_enh_ack_header_ie(data);
 	return 0;
 }
 
@@ -3295,6 +3408,11 @@ static int silabs_efr32_init(const struct device *dev)
 	if (cfg->irq_config_func != NULL) {
 		cfg->irq_config_func(dev);
 	}
+
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+	/* Same default as SL_OPENTHREAD_RECEIVE_SENSITIVITY in the SiLabs PAL. */
+	otLinkMetricsInit(-100);
+#endif
 
 	sl_openthread_init();
 
