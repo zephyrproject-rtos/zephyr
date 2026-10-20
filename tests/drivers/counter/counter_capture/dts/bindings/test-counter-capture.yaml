@@ -17,3 +17,11 @@ properties:
     description: |
       Counter pins that will be used for capturing a rising and falling edge of a
       gpio signal. The first index is the channel number.
+
+  capture-tolerance-us:
+    type: int
+    default: 100
+    description: |
+      Largest difference, in microseconds, between the counter value read
+      just before the trigger toggles and the timestamp the capture records,
+      for the signal path of this board.

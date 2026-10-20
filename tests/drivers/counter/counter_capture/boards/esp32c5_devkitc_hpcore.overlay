@@ -19,6 +19,7 @@
 
 	counter_loopback_0: counter_loopback {
 		compatible = "test-counter-capture";
+		capture-tolerance-us = <1000>;
 		test-counter-captures = <&capture 0 0>;
 	};
 };
