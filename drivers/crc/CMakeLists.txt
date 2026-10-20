@@ -5,6 +5,7 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/crc.h)
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_CRC_AMBIQ crc_ambiq.c)

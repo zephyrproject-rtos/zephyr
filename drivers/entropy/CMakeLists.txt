@@ -3,6 +3,7 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/entropy.h)
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 if(CONFIG_FAKE_ENTROPY_NATIVE_SIM)
   zephyr_library_sources(fake_entropy_native_sim.c)

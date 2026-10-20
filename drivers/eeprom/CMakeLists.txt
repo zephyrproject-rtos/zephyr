@@ -3,6 +3,7 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/eeprom.h)
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 if(CONFIG_EEPROM_SIMULATOR)
   zephyr_library_sources(eeprom_simulator.c)

@@ -18,6 +18,7 @@ else()
 endif() # CONFIG_BUILD_ONLY_NO_BLOBS
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_BFLB ieee802154_bflb.c)

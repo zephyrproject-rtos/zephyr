@@ -3,6 +3,7 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/espi.h)
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ESPI_EMUL espi_emul.c)
