@@ -116,6 +116,41 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
  */
 int bt_br_discovery_stop(void);
 
+/**
+ * @brief Remote name request callback.
+ *
+ * @param addr Address of the remote device.
+ * @param name NUL terminated remote device name, or NULL if the request failed.
+ * @param status HCI status of the request, 0 on success, or
+ *               BT_HCI_ERR_UNSPECIFIED if the request could not be sent.
+ */
+typedef void (*bt_br_remote_name_req_cb_t)(const bt_addr_t *addr, const char *name, uint8_t status);
+
+/**
+ * @brief Request the name of a remote device.
+ *
+ * Send an HCI Remote Name Request to the remote device. No ACL connection is
+ * required. Page scan parameters from an ongoing discovery are used when the
+ * device is among its results. If discovery is already resolving the name of
+ * the same device, its result is shared instead of sending a new request; if
+ * it is resolving the name of another device, the request is sent once
+ * discovery has finished.
+ *
+ * Only one request can be pending at a time. The callback is called exactly
+ * once if this function returns 0, and is not called otherwise. A pending
+ * request is dropped without calling the callback when Bluetooth is disabled.
+ *
+ * @param addr Address of the remote device.
+ * @param cb Callback to receive the result.
+ *
+ * @retval 0 Success, @p cb will be called with the result.
+ * @retval -EINVAL @p addr or @p cb is NULL.
+ * @retval -EAGAIN Bluetooth is not ready.
+ * @retval -EBUSY Another remote name request is pending.
+ * @return Other negative error codes if the request could not be queued.
+ */
+int bt_br_remote_name_request(const bt_addr_t *addr, bt_br_remote_name_req_cb_t cb);
+
 struct bt_br_discovery_cb {
 
 	/**

@@ -38,6 +38,12 @@ static sys_slist_t discovery_cbs = SYS_SLIST_STATIC_INIT(&discovery_cbs);
 
 static bt_br_conn_req_func_t br_conn_req_func;
 
+/* Set by the application, sent and completed on the Bluetooth workqueue */
+static struct k_spinlock remote_name_lock;
+static bt_br_remote_name_req_cb_t remote_name_cb;
+static bt_addr_t remote_name_addr;
+static bool remote_name_sent;
+
 static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 {
 	struct bt_hci_cp_reject_conn_req *cp;
@@ -577,6 +583,153 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 	}
 }
 
+static struct bt_br_discovery_result *find_discovery_result(const bt_addr_t *addr)
+{
+	size_t i;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return NULL;
+	}
+
+	for (i = 0; i < discovery_results_count; i++) {
+		if (bt_addr_eq(addr, &discovery_results[i].addr)) {
+			return &discovery_results[i];
+		}
+	}
+
+	return NULL;
+}
+
+static bool discovery_resolving_name(const bt_addr_t *addr)
+{
+	struct bt_br_discovery_result *result = find_discovery_result(addr);
+
+	return (result != NULL) && (result->_priv.resolve_state == RESOLVE_REMOTE_NAME_RESOLVING);
+}
+
+static bool discovery_name_pending(void)
+{
+	size_t i;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return false;
+	}
+
+	for (i = 0; i < discovery_results_count; i++) {
+		if (discovery_results[i]._priv.resolve_state == RESOLVE_REMOTE_NAME_RESOLVING) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bt_br_remote_name_req_cb_t remote_name_take(const bt_addr_t *addr)
+{
+	k_spinlock_key_t key = k_spin_lock(&remote_name_lock);
+	bt_br_remote_name_req_cb_t cb = NULL;
+
+	if ((remote_name_cb != NULL) && bt_addr_eq(addr, &remote_name_addr)) {
+		cb = remote_name_cb;
+		remote_name_cb = NULL;
+		remote_name_sent = false;
+	}
+
+	k_spin_unlock(&remote_name_lock, key);
+
+	return cb;
+}
+
+/* Page scan repetition mode R2, used when no inquiry result is cached */
+#define REMOTE_NAME_PSCAN_REP_MODE_DEFAULT 0x02U
+
+static void remote_name_work_handler(struct k_work *work)
+{
+	const struct bt_br_discovery_result *result;
+	uint8_t pscan = REMOTE_NAME_PSCAN_REP_MODE_DEFAULT;
+	uint16_t offset = 0U;
+	bt_br_remote_name_req_cb_t cb;
+	k_spinlock_key_t key;
+	bt_addr_t addr;
+	bool waiting;
+
+	ARG_UNUSED(work);
+
+	key = k_spin_lock(&remote_name_lock);
+	waiting = (remote_name_cb != NULL) && !remote_name_sent;
+	bt_addr_copy(&addr, &remote_name_addr);
+	k_spin_unlock(&remote_name_lock, key);
+
+	if (!waiting) {
+		return;
+	}
+
+	/* Discovery already requested this name, its completion is shared */
+	if (discovery_resolving_name(&addr)) {
+		return;
+	}
+
+	/* Discovery resolves names one at a time, it resubmits this work when done */
+	if (discovery_name_pending()) {
+		return;
+	}
+
+	result = find_discovery_result(&addr);
+	if (result != NULL) {
+		pscan = result->_priv.pscan_rep_mode;
+		offset = result->_priv.clock_offset;
+	}
+
+	key = k_spin_lock(&remote_name_lock);
+	remote_name_sent = true;
+	k_spin_unlock(&remote_name_lock, key);
+
+	if (request_name(&addr, pscan, offset) != 0) {
+		cb = remote_name_take(&addr);
+		if (cb != NULL) {
+			cb(&addr, NULL, BT_HCI_ERR_UNSPECIFIED);
+		}
+	}
+}
+
+static K_WORK_DEFINE(remote_name_work, remote_name_work_handler);
+
+static void remote_name_resume(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&remote_name_lock);
+	bool waiting = (remote_name_cb != NULL) && !remote_name_sent;
+
+	k_spin_unlock(&remote_name_lock, key);
+
+	if (waiting) {
+		(void)bt_work_submit(&remote_name_work);
+	}
+}
+
+void bt_br_remote_name_reset(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&remote_name_lock);
+
+	remote_name_cb = NULL;
+	remote_name_sent = false;
+
+	k_spin_unlock(&remote_name_lock, key);
+
+	(void)k_work_cancel(&remote_name_work);
+}
+
+static void remote_name_complete(bt_br_remote_name_req_cb_t cb,
+				 const struct bt_hci_evt_remote_name_req_complete *evt)
+{
+	/* A 248 octet name has no NUL terminator in the event */
+	static char name[sizeof(evt->name) + 1];
+
+	memcpy(name, evt->name, sizeof(evt->name));
+	name[sizeof(evt->name)] = '\0';
+
+	cb(&evt->bdaddr, (evt->status == BT_HCI_ERR_SUCCESS) ? name : NULL, evt->status);
+}
+
 void bt_hci_remote_name_request_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_remote_name_req_complete *evt = (void *)buf->data;
@@ -585,6 +738,17 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	int eir_len = 240;
 	uint8_t *eir;
 	struct bt_br_discovery_cb *listener, *next;
+	bt_br_remote_name_req_cb_t cb;
+
+	cb = remote_name_take(&evt->bdaddr);
+	if (cb != NULL) {
+		remote_name_complete(cb, evt);
+
+		/* Only a request issued by discovery may update the discovery results */
+		if (!discovery_resolving_name(&evt->bdaddr)) {
+			return;
+		}
+	}
 
 	result = get_result_slot(&evt->bdaddr, RSSI_INVALID);
 	if (!result) {
@@ -657,6 +821,8 @@ check_names:
 			listener->timeout(discovery_results, discovery_results_count);
 		}
 	}
+
+	remote_name_resume();
 }
 
 void bt_hci_read_remote_features_complete(struct net_buf *buf)
@@ -1173,6 +1339,8 @@ int bt_br_discovery_stop(void)
 	discovery_results_size = 0;
 	discovery_results_count = 0;
 
+	remote_name_resume();
+
 	return 0;
 }
 
@@ -1184,6 +1352,40 @@ void bt_br_discovery_cb_register(struct bt_br_discovery_cb *cb)
 void bt_br_discovery_cb_unregister(struct bt_br_discovery_cb *cb)
 {
 	sys_slist_find_and_remove(&discovery_cbs, &cb->node);
+}
+
+int bt_br_remote_name_request(const bt_addr_t *addr, bt_br_remote_name_req_cb_t cb)
+{
+	k_spinlock_key_t key;
+	int err;
+
+	if ((addr == NULL) || (cb == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	key = k_spin_lock(&remote_name_lock);
+	if (remote_name_cb != NULL) {
+		k_spin_unlock(&remote_name_lock, key);
+		return -EBUSY;
+	}
+
+	remote_name_cb = cb;
+	bt_addr_copy(&remote_name_addr, addr);
+	remote_name_sent = false;
+	k_spin_unlock(&remote_name_lock, key);
+
+	/* Discovery state is only accessed from the Bluetooth workqueue */
+	err = bt_work_submit(&remote_name_work);
+	if (err < 0) {
+		(void)remote_name_take(addr);
+		return err;
+	}
+
+	return 0;
 }
 
 static int write_scan_enable(uint8_t scan)

@@ -63,6 +63,12 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Bluetooth
+
+  * Classic
+
+    * :c:func:`bt_br_remote_name_request`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

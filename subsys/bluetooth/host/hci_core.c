@@ -2762,6 +2762,7 @@ static void hci_reset_complete(void)
 
 #if defined(CONFIG_BT_CLASSIC)
 	bt_br_discovery_reset();
+	bt_br_remote_name_reset();
 #endif /* CONFIG_BT_CLASSIC */
 
 	flags = (atomic_get(bt_dev.flags) & BT_DEV_PERSISTENT_FLAGS);
