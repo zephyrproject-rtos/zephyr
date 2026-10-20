@@ -3,7 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Xilinx GEM Ethernet controller
+description: |
+  Xilinx GEM Ethernet controller.
+
+  Deprecated. Use the Cadence MACB/GEM driver through the xlnx,zynq-gem
+  or xlnx,zynqmp-gem compatible instead.
 
 compatible: "xlnx,gem"
 
