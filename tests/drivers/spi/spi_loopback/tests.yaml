@@ -13,6 +13,13 @@ tests:
   drivers.spi.loopback: {}
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
+  drivers.spi.loopback.deinit_busy:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    extra_configs:
+      - CONFIG_SPI_LOOPBACK_TEST_BUSY_DEINIT=y
   drivers.spi.loopback.lpspi.dma:
     filter: DT_HAS_NXP_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
