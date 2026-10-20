@@ -1027,7 +1027,9 @@ int k_mem_update_flags(void *addr, size_t size, uint32_t flags)
 {
 	uintptr_t phys;
 	k_spinlock_key_t key;
-	int ret;
+	size_t offset;
+	uint8_t *pos;
+	int ret = 0;
 
 	k_mem_assert_virtual_region(addr, size);
 
@@ -1036,23 +1038,31 @@ int k_mem_update_flags(void *addr, size_t size, uint32_t flags)
 	/*
 	 * We can achieve desired result without explicit architecture support
 	 * by unmapping and remapping the same physical memory using new flags.
+	 * The region need not be physically contiguous (e.g. from k_mem_map()),
+	 * so this is done one page at a time.
 	 */
+	for (offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
+		pos = (uint8_t *)addr + offset;
 
-	ret = arch_page_phys_get(addr, &phys);
-	if (ret < 0) {
-		goto out;
+		ret = arch_page_phys_get(pos, &phys);
+		if (ret < 0) {
+			goto out;
+		}
+
+		/* TODO: detect and handle paged-out memory as well */
+
+		ret = arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+		__ASSERT(ret == 0, "%s: arch_mem_unmap failed %d\n", __func__, ret);
+		if (ret != 0) {
+			goto out;
+		}
+
+		ret = arch_mem_map(pos, phys, CONFIG_MMU_PAGE_SIZE, flags);
+		__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
+		if (ret != 0) {
+			goto out;
+		}
 	}
-
-	/* TODO: detect and handle paged-out memory as well */
-
-	ret = arch_mem_unmap(addr, size);
-	__ASSERT(ret == 0, "%s: arch_mem_unmap failed %d\n", __func__, ret);
-	if (ret != 0) {
-		goto out;
-	}
-
-	ret = arch_mem_map(addr, phys, size, flags);
-	__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
 
 out:
 	k_spin_unlock(&z_mm_lock, key);
