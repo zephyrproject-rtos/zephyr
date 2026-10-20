@@ -1,0 +1,21 @@
+identifier: simg301_ek2719a
+name: SixG301 Explorer Kit (BRD2719A)
+type: mcu
+arch: arm
+ram: 512
+flash: 1888
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - ieee802154
+  - netif:openthread
+  - uart
+  - watchdog
+vendor: silabs
