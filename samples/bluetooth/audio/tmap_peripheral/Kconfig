@@ -47,4 +47,6 @@ config TMAP_PERIPHERAL_RIGHT
 
 endchoice # TMAP_PERIPHERAL_LOCATION
 
+rsource "../common/Kconfig"
+
 endmenu
