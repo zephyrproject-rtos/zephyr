@@ -6,7 +6,8 @@
 
 description: |
     This binding provides resources required to build and run the
-    tests/drivers/counter/counter_capture test in Zephyr.
+    tests/drivers/counter/counter_capture test in Zephyr, in a board's
+    vane for the counter.capture test setup.
 
 compatible: "test-counter-capture"
 
