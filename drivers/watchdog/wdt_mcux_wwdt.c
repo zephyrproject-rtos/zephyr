@@ -267,6 +267,7 @@ static int mcux_wwdt_install_timeout(const struct device *dev, const struct wdt_
 static int mcux_wwdt_feed(const struct device *dev, int channel_id)
 {
 	const struct mcux_wwdt_config *config = dev->config;
+	struct mcux_wwdt_data *data = dev->data;
 	WWDT_Type *base = config->base;
 
 	if (channel_id != 0) {
@@ -274,10 +275,21 @@ static int mcux_wwdt_feed(const struct device *dev, int channel_id)
 		return -EINVAL;
 	}
 
-	WWDT_Refresh(base);
-	LOG_DBG("Fed the watchdog");
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	int ret = 0;
 
-	return 0;
+	if (data->starting) {
+		ret = -EAGAIN;
+	} else if (!data->timeout_valid || !data->started) {
+		ret = -EINVAL;
+	} else {
+		WWDT_Refresh(base);
+	}
+	k_spin_unlock(&data->lock, key);
+	if (ret != 0) {
+		LOG_ERR("Cannot feed watchdog: %d", ret);
+	}
+	return ret;
 }
 
 static void mcux_wwdt_isr(const struct device *dev)
