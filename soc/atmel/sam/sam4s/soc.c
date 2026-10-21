@@ -16,6 +16,7 @@
  * for the Atmel SAM4S series processor.
  */
 
+#include <zephyr/cache.h>
 #include <soc.h>
 #include <soc_pmc.h>
 #include <soc_supc.h>
@@ -108,4 +109,17 @@ void soc_reset_hook(void)
 
 	/* Setup system clocks. */
 	clock_init();
+}
+
+void soc_early_init_hook(void)
+{
+#if defined(CONFIG_SOC_ATMEL_SAM_HAS_CMCC)
+	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT) && IS_ENABLED(CONFIG_ICACHE)) {
+		/* Without the cache, every instruction fetch waits for the flash */
+		sys_cache_instr_enable();
+	} else {
+		/* Left enabled by a bootloader, nothing would keep it coherent with the flash */
+		CMCC->CMCC_CTRL = 0U;
+	}
+#endif
 }
