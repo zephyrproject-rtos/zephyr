@@ -22,6 +22,12 @@
 #define ACMP_NEGATIVE 7
 /* Select Vin2. Vin1 is not used and tied to ground on this chip. Vin2 is from VDDA_1P8_IN. */
 #define ACMP_DAC_VREF 1
+#elif defined(CONFIG_BOARD_FRDM_IMXRT1152)
+#define ACMP_NODE  DT_NODELABEL(acmp3)
+#define ACMP_POSITIVE 1
+#define ACMP_NEGATIVE 7
+/* Select Vin2. Vin1 is not used and tied to ground on this chip. Vin2 is from VDDA_1P8_IN. */
+#define ACMP_DAC_VREF 1
 #elif (defined(CONFIG_BOARD_FRDM_KE17Z) || defined(CONFIG_BOARD_FRDM_KE17Z512))
 #define ACMP_NODE  DT_NODELABEL(cmp0)
 #define ACMP_POSITIVE 4
