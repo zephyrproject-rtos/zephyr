@@ -12,6 +12,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/atomic.h>
+#include <ethernet/eth_stats.h>
 #include "eth.h"
 
 #define DT_DRV_COMPAT virtio_net
@@ -115,8 +116,17 @@ struct _virtio_net_ctrl_mac {
 } __packed;
 #endif /* CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER */
 
-#define VIRTIO_NET_BUFLEN                                                                          \
-	(NET_ETH_MAX_FRAME_SIZE + sizeof(struct _virtio_net_hdr))
+/* Each receive buffer is a fragment of the receive buffer pool. With
+ * mergeable receive buffers a frame is spread over as many of them as it
+ * needs, the first one starting with the header, and all of them must be
+ * available at once for the device to deliver a maximum size frame.
+ */
+#define VIRTNET_RX_BUF_SIZE CONFIG_NET_BUF_DATA_SIZE
+BUILD_ASSERT(CONFIG_ETH_VIRTIO_NET_RX_BUFFERS * VIRTNET_RX_BUF_SIZE >=
+		     NET_ETH_MAX_FRAME_SIZE + sizeof(struct _virtio_net_hdr),
+	     "the receive buffers cannot hold a maximum size frame");
+
+#define VIRTNET_RX_REFILL_STACK_SIZE 1024
 
 /* Fragments of a maximum size frame, plus the separate link layer header
  * fragment of a packet forwarded from another interface
@@ -144,10 +154,13 @@ struct virtnet_config {
 	unsigned int inst;
 };
 
-/* Allows virtnet_rx_cb to know which virtqueue it was called by */
-struct _rx_cb_data {
+/* A receive buffer handed to the device, or waiting for a fragment of the
+ * receive buffer pool to become free
+ */
+struct virtnet_rx_slot {
+	void *fifo_reserved;
 	struct virtnet_data *data;
-	uint16_t buf_no;
+	struct net_buf *buf;
 };
 
 /* A packet handed to the device: its fragments are referenced by the
@@ -165,10 +178,20 @@ struct virtnet_data {
 	struct net_if *iface;
 	const struct _virtio_net_config *virtio_devcfg;
 	uint8_t mac[6];
-	struct _rx_cb_data rx_cb_data[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS];
 	struct k_mem_slab tx_slab;
 	struct virtnet_tx_slot tx_slots[CONFIG_ETH_VIRTIO_NET_TX_BUFFERS];
-	uint8_t rxb[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS][VIRTIO_NET_BUFLEN];
+	struct virtnet_rx_slot rx_slots[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS];
+	/* Slots in use, the device may offer fewer descriptors than slots */
+	uint16_t rx_slot_count;
+	/* Slots whose buffer could not be replaced from the interrupt */
+	struct k_fifo rx_refill;
+	struct k_thread rx_refill_thread;
+
+	K_KERNEL_STACK_MEMBER(rx_refill_stack, VIRTNET_RX_REFILL_STACK_SIZE);
+
+	/* Frame being assembled from consecutive receive buffers */
+	struct net_pkt *rx_pkt;
+	uint16_t rx_remaining;
 	/* Control virtqueue command. The buffers must stay valid until the
 	 * device used them, so there is one in-flight command, serialized by
 	 * ctrl_lock and completed through ctrl_sem.
@@ -190,7 +213,7 @@ struct virtnet_data {
 
 static uint16_t virtnet_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *priv)
 {
-	ARG_UNUSED(priv);
+	struct virtnet_data *data = priv;
 
 	if (q_index == VIRTQ_CTRL) {
 		/* Big enough for the descriptor chain of one command */
@@ -198,7 +221,9 @@ static uint16_t virtnet_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, vo
 	}
 
 	if (q_index % 2 == 0) { /* receiving virtqueue (even-numbered) */
-		return CONFIG_ETH_VIRTIO_NET_RX_BUFFERS;
+		/* one descriptor per receive buffer */
+		data->rx_slot_count = MIN(CONFIG_ETH_VIRTIO_NET_RX_BUFFERS, q_size_max);
+		return NHPOT(data->rx_slot_count);
 	}
 
 	/* transmitting virtqueue: room for the descriptor chains of all the
@@ -537,33 +562,120 @@ static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-void virtnet_rx_cb(void *priv, uint32_t len)
+static void virtnet_rx_cb(void *priv, uint32_t len);
+
+/* Hand a fragment of the receive buffer pool to the device */
+static int virtnet_rx_slot_fill(struct virtnet_rx_slot *slot, k_timeout_t timeout)
 {
-	const struct _rx_cb_data *p = priv;
-	struct virtnet_data *data = p->data;
-	uint16_t buf_no = p->buf_no;
+	struct virtnet_data *data = slot->data;
 	const struct virtnet_config *config = data->dev->config;
 	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_RX(1));
+	int ret;
 
-	len -= sizeof(struct _virtio_net_hdr);
-	struct net_pkt *pkt =
-		net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
-
-	if (pkt == NULL) {
-		LOG_ERR("received packet, but could not pass it to the operating system");
-	} else if (net_pkt_write(pkt, &(data->rxb[buf_no][sizeof(struct _virtio_net_hdr)]), len)) {
-		LOG_ERR("could not copy entire received packet");
-		net_pkt_unref(pkt);
-	} else if (net_recv_data(data->iface, pkt)) {
-		LOG_ERR("operating system failed to receive packet");
-		net_pkt_unref(pkt);
-	} else {
-		/* Packet received correctly, no error */
+	slot->buf = net_pkt_get_reserve_rx_data(VIRTNET_RX_BUF_SIZE, timeout);
+	if (slot->buf == NULL) {
+		return -ENOMEM;
 	}
-	struct virtq_buf vqbuf[] = {{.addr = &(data->rxb[buf_no]), .len = VIRTIO_NET_BUFLEN}};
 
-	virtq_add_buffer_chain(vq, vqbuf, 1, 0, virtnet_rx_cb, priv, K_FOREVER);
+	struct virtq_buf vqbuf[] = {{.addr = slot->buf->data, .len = slot->buf->size}};
+
+	/* The virtqueue has a descriptor for every slot */
+	ret = virtq_add_buffer_chain(vq, vqbuf, 1, 0, virtnet_rx_cb, slot, K_NO_WAIT);
+	if (ret != 0) {
+		net_buf_unref(slot->buf);
+		slot->buf = NULL;
+		return ret;
+	}
+
 	virtio_notify_virtqueue(config->vdev, VIRTQ_RX(1));
+
+	return 0;
+}
+
+static void virtnet_rx_refill_thread(void *arg1, void *arg2 __unused, void *arg3 __unused)
+{
+	struct virtnet_data *data = arg1;
+
+	while (true) {
+		struct virtnet_rx_slot *slot = k_fifo_get(&data->rx_refill, K_FOREVER);
+
+		if (virtnet_rx_slot_fill(slot, K_FOREVER) != 0) {
+			LOG_ERR("could not hand a receive buffer to the device");
+		}
+	}
+}
+
+/* The first buffer of a frame starts with the header, which tells how many
+ * buffers the frame is spread over
+ */
+static int virtnet_rx_frame_start(struct virtnet_data *data, struct net_buf *buf)
+{
+	const struct _virtio_net_hdr *hdr = (const struct _virtio_net_hdr *)buf->data;
+	uint16_t num_buffers;
+
+	if (buf->len < sizeof(*hdr)) {
+		return -EINVAL;
+	}
+
+	num_buffers = sys_le16_to_cpu(hdr->num_buffers);
+	if (num_buffers == 0U) {
+		return -EINVAL;
+	}
+
+	data->rx_remaining = num_buffers;
+
+	/* Without a packet the buffers of the frame are dropped as they come */
+	data->rx_pkt = net_pkt_rx_alloc_on_iface(data->iface, K_NO_WAIT);
+	if (data->rx_pkt == NULL) {
+		eth_stats_update_errors_rx(data->iface);
+	}
+
+	net_buf_pull(buf, sizeof(*hdr));
+
+	return 0;
+}
+
+static void virtnet_rx_cb(void *priv, uint32_t len)
+{
+	struct virtnet_rx_slot *slot = priv;
+	struct virtnet_data *data = slot->data;
+	struct net_buf *buf = slot->buf;
+
+	slot->buf = NULL;
+	buf->len = MIN(len, buf->size);
+
+	if (data->rx_remaining == 0U && virtnet_rx_frame_start(data, buf) != 0) {
+		LOG_ERR("received buffer does not start a frame");
+		eth_stats_update_errors_rx(data->iface);
+		net_buf_unref(buf);
+	} else {
+		data->rx_remaining--;
+
+		if (data->rx_pkt == NULL) {
+			net_buf_unref(buf);
+		} else {
+			net_pkt_frag_add(data->rx_pkt, buf);
+		}
+
+		if (data->rx_remaining == 0U && data->rx_pkt != NULL) {
+			LOG_DBG("pkt len=%zu", net_pkt_get_len(data->rx_pkt));
+
+			if (net_recv_data(data->iface, data->rx_pkt) < 0) {
+				eth_stats_update_errors_rx(data->iface);
+				net_pkt_unref(data->rx_pkt);
+			}
+
+			data->rx_pkt = NULL;
+		}
+	}
+
+	/* Replace the buffer right away if the pool allows, otherwise once
+	 * the stack has released one
+	 */
+	if (virtnet_rx_slot_fill(slot, K_NO_WAIT) != 0) {
+		LOG_DBG("receive buffer pool empty");
+		k_fifo_put(&data->rx_refill, slot);
+	}
 }
 
 static void virtnet_if_init(struct net_if *iface)
@@ -571,22 +683,22 @@ static void virtnet_if_init(struct net_if *iface)
 	ethernet_init(iface);
 	const struct device *dev = net_if_get_device(iface);
 	struct virtnet_data *data = dev->data;
-	const struct virtnet_config *config = dev->config;
 
 	data->iface = iface;
 	net_if_set_link_addr(iface, data->mac, sizeof(data->virtio_devcfg->mac), NET_LINK_ETHERNET);
-	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_RX(1));
 
-	for (int i = 0; i < CONFIG_ETH_VIRTIO_NET_RX_BUFFERS; i++) {
-		data->rx_cb_data[i].data = data;
-		data->rx_cb_data[i].buf_no = i;
+	for (uint16_t i = 0; i < data->rx_slot_count; i++) {
+		struct virtnet_rx_slot *slot = &data->rx_slots[i];
 
-		struct virtq_buf vqbuf[] = {{.addr = &(data->rxb[i]), .len = VIRTIO_NET_BUFLEN}};
+		slot->data = data;
 
-		virtq_add_buffer_chain(vq, vqbuf, 1, 0, virtnet_rx_cb, &(data->rx_cb_data[i]),
-				       K_FOREVER);
-		virtio_notify_virtqueue(config->vdev, VIRTQ_RX(1));
+		if (virtnet_rx_slot_fill(slot, K_NO_WAIT) != 0) {
+			LOG_ERR("receive buffer pool too small for %u receive buffers",
+				data->rx_slot_count);
+			k_fifo_put(&data->rx_refill, slot);
+		}
 	}
+
 	LOG_DBG("initialization finished");
 }
 
@@ -600,6 +712,7 @@ static int virtnet_dev_init(const struct device *dev)
 
 	k_mutex_init(&data->ctrl_lock);
 	k_sem_init(&data->ctrl_sem, 0, 1);
+	k_fifo_init(&data->rx_refill);
 
 	ret = k_mem_slab_init(&data->tx_slab, data->tx_slots, sizeof(data->tx_slots[0]),
 			      ARRAY_SIZE(data->tx_slots));
@@ -610,6 +723,15 @@ static int virtnet_dev_init(const struct device *dev)
 	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev);
 	if (data->virtio_devcfg == NULL) {
 		LOG_ERR("could not get config struct");
+	}
+
+	/* A frame is received into as many buffers as it needs, each one a
+	 * fragment of the receive buffer pool
+	 */
+	if (!virtio_read_device_feature_bit(config->vdev, VIRTIO_NET_F_MRG_RXBUF) ||
+	    virtio_write_driver_feature_bit(config->vdev, VIRTIO_NET_F_MRG_RXBUF, true) != 0) {
+		LOG_ERR("device does not support mergeable receive buffers");
+		return -ENOTSUP;
 	}
 
 	ret = net_eth_mac_load(&config->mcfg, data->mac);
@@ -673,7 +795,7 @@ static int virtnet_dev_init(const struct device *dev)
 	LOG_DBG("MAC address is %02x:%02x:%02x:%02x:%02x:%02x", data->mac[0], data->mac[1],
 		data->mac[2], data->mac[3], data->mac[4], data->mac[5]);
 
-	virtio_init_virtqueues(config->vdev, has_ctrl_vq ? 3 : 2, virtnet_enum_queues_cb, NULL);
+	virtio_init_virtqueues(config->vdev, has_ctrl_vq ? 3 : 2, virtnet_enum_queues_cb, data);
 	virtio_finalize_init(config->vdev);
 
 	if (data->has_ctrl_rx && virtnet_rx_mode_init(dev) != 0) {
@@ -684,6 +806,12 @@ static int virtnet_dev_init(const struct device *dev)
 	if (data->has_mac_addr_set && ret == 0 && virtnet_mac_addr_set(dev) != 0) {
 		LOG_WRN("could not tell the device the MAC address");
 	}
+
+	k_thread_create(&data->rx_refill_thread, data->rx_refill_stack,
+			K_KERNEL_STACK_SIZEOF(data->rx_refill_stack), virtnet_rx_refill_thread,
+			data, NULL, NULL, CONFIG_ETH_VIRTIO_NET_RX_REFILL_THREAD_PRIORITY,
+			K_ESSENTIAL, K_NO_WAIT);
+	k_thread_name_set(&data->rx_refill_thread, "virtnet_rx_refill");
 
 	return 0;
 }

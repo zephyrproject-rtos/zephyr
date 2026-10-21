@@ -20,7 +20,21 @@ config ETH_NIC_MODEL
 
 config ETH_VIRTIO_NET_RX_BUFFERS
 	int "VIRTIO network device receive buffers"
-	default 4
+	default 16
+	range 1 256
+	help
+	  Number of fragments of the receive buffer pool handed to the device
+	  at the same time, each one a descriptor of the receive virtqueue.
+	  A frame is received into as many of them as it needs, so together
+	  they must hold a maximum size frame, and NET_BUF_RX_COUNT must
+	  leave fragments for the network stack to process received frames.
+
+config ETH_VIRTIO_NET_RX_REFILL_THREAD_PRIORITY
+	int "Receive buffer refill thread priority"
+	default 0
+	help
+	  Priority of the thread that hands fragments to the device once the
+	  receive buffer pool was empty when a frame was received.
 
 config ETH_VIRTIO_NET_TX_BUFFERS
 	int "VIRTIO network device transmit buffers"
