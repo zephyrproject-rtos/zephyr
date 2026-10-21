@@ -186,12 +186,17 @@ static struct net_buf *ec_host_cmd_buf_alloc_int(const uint8_t ep)
 	return buf;
 }
 
+/* Notify the host if an event is pending. */
 static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 	struct net_buf *buf;
 	int ret;
+
+	if (!ctx->pending_event) {
+		return 0;
+	}
 
 	buf = ec_host_cmd_buf_alloc_int(ec_host_cmd_get_in_int_ep(c_data));
 	if (buf == NULL) {
@@ -382,9 +387,7 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	}
 	ctx->state = USB_EC_HOST_CMD_STATE_READY_TO_RX;
 
-	if (ctx->pending_event) {
-		ec_host_cmd_signal_event(c_data);
-	}
+	ec_host_cmd_signal_event(c_data);
 
 	LOG_INF("Configuration enabled");
 }
@@ -392,11 +395,8 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 static void ec_host_cmd_resumed(struct usbd_class_data *const c_data)
 {
 	LOG_DBG("Configuration resumed");
-	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 
-	if (ctx->pending_event) {
-		ec_host_cmd_signal_event(c_data);
-	}
+	ec_host_cmd_signal_event(c_data);
 }
 
 static void ec_host_cmd_suspended(struct usbd_class_data *const c_data)
