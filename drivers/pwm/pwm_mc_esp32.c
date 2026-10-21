@@ -18,6 +18,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #ifdef CONFIG_PWM_CAPTURE
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif /* CONFIG_PWM_CAPTURE */
@@ -522,6 +523,11 @@ int mcpwm_esp32_init(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Could not initialize clock (%d)", ret);
 		return ret;
+	}
+
+	if (esp_clk_tree_enable_src(MCPWM_TIMER_CLK_SRC_DEFAULT, true) != ESP_OK) {
+		LOG_ERR("Could not enable clock source");
+		return -EIO;
 	}
 
 	mcpwm_ll_group_enable_clock(config->index, true);
