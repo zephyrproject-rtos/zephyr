@@ -31,6 +31,8 @@
 #include <zephyr/device.h>
 #include <errno.h>
 #include <stddef.h>
+#include <zephyr/media/formats.h>
+#include <zephyr/media/formats_misc.h>
 #include <zephyr/types.h>
 #include <zephyr/dt-bindings/display/panel.h>
 
@@ -39,259 +41,26 @@ extern "C" {
 #endif
 
 /**
- * @brief Display pixel formats
- *
- * Display pixel format bitmasks.
- *
- * In case a pixel format consists out of multiple bytes the byte order is
- * big endian.
+ * @brief Compatibility header for display pixel formats.
  */
-enum {
-	/**
-	 * @brief 24-bit RGB format with 8 bits per component.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   Byte 1   Byte 2
-	 *   7......0 15.....8 23....16
-	 * | Bbbbbbbb Gggggggg Rrrrrrrr | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_RGB_888		= BIT(0), /**< 24-bit RGB */
+#define	PIXEL_FORMAT_RGB_888	PIXFMT_BGR24
+#define	PIXEL_FORMAT_ARGB_8888	PIXFMT_BGRA32
+#define	PIXEL_FORMAT_RGB_565	PIXFMT_RGB565
+#define	PIXEL_FORMAT_RGB_565X	PIXFMT_RGB565X
+#define	PIXEL_FORMAT_L_8	PIXFMT_GREY
+#define	PIXEL_FORMAT_AL_88	PIXFMT_AL88
+#define	PIXEL_FORMAT_XRGB_8888	PIXFMT_BGRX32
+#define	PIXEL_FORMAT_BGR_888	PIXFMT_RGB24
+#define	PIXEL_FORMAT_ABGR_8888	PIXFMT_RGBA32
+#define	PIXEL_FORMAT_RGBA_8888	PIXFMT_ABGR32
+#define	PIXEL_FORMAT_BGRA_8888	PIXFMT_ARGB32
+#define	PIXEL_FORMAT_YUYV	PIXFMT_YUYV
+#define	PIXEL_FORMAT_L_4	PIXFMT_L4
+#define	PIXEL_FORMAT_I_4	PIXFMT_I4
+#define	PIXEL_FORMAT_MONO01	PIXFMT_MONO01
+#define	PIXEL_FORMAT_MONO10	PIXFMT_MONO10
 
-	/**
-	 * @brief 1-bit monochrome format with 1 bit per pixel, thus each byte represent 8 pixels
-	 * Two variants, with black being either represented by 0 or 1
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   | Byte 1   |
-	 *   7......0   7......0
-	 * | MMMMMMMM | MMMMMMMM | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_MONO01		= BIT(1), /**< Monochrome (0=Black 1=White) */
-	PIXEL_FORMAT_MONO10		= BIT(2), /**< Monochrome (1=Black 0=White) */
-
-	/**
-	 * @brief 32-bit RGB format with 8 bits per component and 8 bits for alpha.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   Byte 1   Byte 2   Byte 3
-	 *   7......0 15.....8 23....16 31....24
-	 * | Bbbbbbbb Gggggggg Rrrrrrrr Aaaaaaaa | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
-
-	/**
-	 * @brief 16-bit RGB format packed into two bytes: 5 red bits [15:11], 6
-	 * green bits [10:5], 5 blue bits [4:0].
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   Byte 1   |
-	 *   7......0 15.....8
-	 * | gggBbbbb RrrrrGgg | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_RGB_565		= BIT(4),
-
-	/**
-	 * @brief 16-bit RGB format packed into two bytes. Byte swapped version of
-	 * the PIXEL_FORMAT_RGB_565 format.
-	 *
-	 * @code{.unparsed}
-	 *   7......0 15.....8
-	 * | RrrrrGgg gggBbbbb | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_RGB_565X		= BIT(5),
-
-	/**
-	 * @brief 8-bit Greyscale format
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   | Byte 1   |
-	 *   7......0   7......0
-	 * | Gggggggg | Gggggggg | ...
-	 * @endcode
-	 */
-	PIXEL_FORMAT_L_8		= BIT(6), /**< 8-bit Grayscale/Luminance, equivalent to */
-						  /**< GRAY, GREY, GRAY8, Y8, R8, etc...        */
-
-	/**
-	 * @brief 16-bit Greyscale format with 8-bit luminance and 8-bit for alpha
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0    Byte 1   |
-	 *   7......0  15.....8
-	 * | Gggggggg  Aaaaaaaa | ...
-	 * @endcode
-	 */
-	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
-
-	/**
-	 * @brief 32-bit RGB format with 8 bits per component and 8 bits unused.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   Byte 1   Byte 2   Byte 3
-	 *   7......0 15.....8 23....16 31....24
-	 * | Bbbbbbbb Gggggggg Rrrrrrrr Xxxxxxxx | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_XRGB_8888 = BIT(8), /**< 32-bit XRGB */
-
-	/**
-	 * @brief 24-bit BGR format with 8 bits per component.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   Byte 1   Byte 2
-	 *   7......0 15.....8 23....16
-	 * | Rrrrrrrr Gggggggg Bbbbbbbb | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_BGR_888 = BIT(9), /**< 24-bit BGR */
-
-	/**
-	 * @brief 32-bit BGR format with 8 bits per component and 8 bits for alpha.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   Byte 1   Byte 2   Byte 3
-	 *   7......0 15.....8 23....16 31....24
-	 * | Rrrrrrrr Gggggggg Bbbbbbbb Aaaaaaaa | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_ABGR_8888 = BIT(10), /**< 32-bit ABGR */
-
-	/**
-	 * @brief 32-bit RGB format with 8 bits per component and 8 bits for alpha.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   Byte 1   Byte 2   Byte 3
-	 *   7......0 15.....8 23....16 31....24
-	 * | Aaaaaaaa Bbbbbbbb Gggggggg Rrrrrrrr | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_RGBA_8888 = BIT(11), /**< 32-bit RGBA */
-
-	/**
-	 * @brief 32-bit BGR format with 8 bits per component and 8 bits for alpha.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   Byte 1   Byte 2   Byte 3
-	 *   7......0 15.....8 23....16 31....24
-	 * | Aaaaaaaa Rrrrrrrr Gggggggg Bbbbbbbb | ...
-	 * @endcode
-	 *
-	 */
-	PIXEL_FORMAT_BGRA_8888 = BIT(12), /**< 32-bit BGRA */
-
-	/**
-	 * @brief 4-bit indexed color format with 2 pixels packed per byte.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   | Byte 1   |
-	 *   7......0   7......0
-	 * | IiiiJjjj | KkkkLlll | ...
-	 * @endcode
-	 *
-	 * The high nibble stores the left pixel and the low nibble stores the
-	 * right pixel. Palette semantics are display-specific.
-	 */
-	PIXEL_FORMAT_I_4 = BIT(13), /**< Packed 4-bit indexed color */
-
-	/**
-	 * @brief 4-bit greyscale format with 2 pixels packed per byte.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   | Byte 1   |
-	 *   7......0   7......0
-	 * | GgggHhhh | IiiiJjjj | ...
-	 * @endcode
-	 *
-	 * The high nibble stores the left pixel and the low nibble stores the
-	 * right pixel.
-	 */
-	PIXEL_FORMAT_L_4 = BIT(14), /**< Packed 4-bit Grayscale/Luminance */
-
-	/**
-	 * @brief Packed YUV 4:2:2 format, two pixels per four bytes.
-	 *
-	 * Each pixel carries its own luminance and the two share a pair of
-	 * chrominance samples, so the format costs sixteen bits per pixel.
-	 *
-	 * Below shows how data are organized in memory.
-	 *
-	 * @code{.unparsed}
-	 *   Byte 0   | Byte 1   | Byte 2   | Byte 3   |
-	 *   7......0   7......0   7......0   7......0
-	 * | Yyyyyyyy | Uuuuuuuu | Yyyyyyyy | Vvvvvvvv | ...
-	 * @endcode
-	 *
-	 * Byte 0 is the luminance of the left pixel and byte 2 that of the
-	 * right one. A display advertising this format converts to RGB itself,
-	 * which is what makes it worth writing pictures out in.
-	 */
-	PIXEL_FORMAT_YUYV = BIT(15),
-};
-
-/**
- * @brief Bits required per pixel for display format
- *
- * This macro expands to the number of bits required for a given display
- * format. It can be used to allocate a framebuffer based on a given
- * display format type
- */
-#define DISPLAY_BITS_PER_PIXEL(fmt)						\
-	((((fmt & PIXEL_FORMAT_RGB_888) >> 0) * 24U) +				\
-	(((fmt & PIXEL_FORMAT_MONO01) >> 1) * 1U) +				\
-	(((fmt & PIXEL_FORMAT_MONO10) >> 2) * 1U) +				\
-	(((fmt & PIXEL_FORMAT_ARGB_8888) >> 3) * 32U) +				\
-	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
-	(((fmt & PIXEL_FORMAT_RGB_565X) >> 5) * 16U) +				\
-	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U) +				\
-	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U) +				\
-	(((fmt & PIXEL_FORMAT_XRGB_8888) >> 8) * 32U) +				\
-	(((fmt & PIXEL_FORMAT_BGR_888) >> 9) * 24U) +				\
-	(((fmt & PIXEL_FORMAT_ABGR_8888) >> 10) * 32U) +			\
-	(((fmt & PIXEL_FORMAT_RGBA_8888) >> 11) * 32U) +			\
-	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
-	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U) +				\
-	(((fmt & PIXEL_FORMAT_L_4) >> 14) * 4U) +				\
-	(((fmt & PIXEL_FORMAT_YUYV) >> 15) * 16U))
+#define	DISPLAY_BITS_PER_PIXEL(fmt)	PIXFMT_BITS_PER_PIXEL(fmt)
 
 /**
  * @brief Display screen information
