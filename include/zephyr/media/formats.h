@@ -356,6 +356,29 @@
 #define PIXFMT_GREY PIXFMT_FOURCC('G', 'R', 'E', 'Y')
 
 /**
+ * 16-bit Greyscale format with 8-bit luminance and 8-bit alpha
+ *
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Yyyyyyyy | Aaaaaaaa | Yyyyyyyy | Aaaaaaaa | ...
+ * @endcode
+ */
+#define PIXFMT_AL88 PIXFMT_FOURCC('A', 'L', '8', '8')
+
+/**
+ * 4-bit Greyscale format with 2 pixels packed per byte
+ *
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | LlllLlll | LlllLlll | LlllLlll | LlllLlll | ...
+ * @endcode
+ *
+ * The high nibble stores the left pixel and the low nibble stores the
+ * right pixel.
+ */
+#define PIXFMT_L4 PIXFMT_FOURCC('L', '4', '4', ' ')
+
+/**
  * Little endian, with the 6 most significant bits set to Zero.
  * @code{.unparsed}
  *   0                   1                   2                   3
@@ -810,6 +833,35 @@
  * @endcode
  */
 #define PIXFMT_YVU420 PIXFMT_FOURCC('Y', 'V', '1', '2')
+
+/**
+ * 4-bit indexed color format with 2 pixels packed per byte
+ *
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | IiiiIiii | IiiiIiii | IiiiIiii | IiiiIiii | ...
+ * @endcode
+ *
+ * The high nibble stores the left pixel and the low nibble stores the
+ * right pixel. Palette semantics are display-specific.
+ */
+#define PIXFMT_I4 PIXFMT_FOURCC('I', '4', '4', ' ')
+
+/**
+ * 1-bit monochrome format with 1 bit per pixel, thus each byte represent 8 pixels
+ * Two variants, with black being either represented by 0 or 1
+ *
+ * In PIXFMT_MONO01, 0=Black and 1=White
+ * In PIXFMT_MONO10, 1=Black and 0=White
+ *
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | MMMMMMMM | MMMMMMMM | MMMMMMMM | MMMMMMMM | ...
+ * @endcode
+ *
+ */
+#define PIXFMT_MONO01	PIXFMT_FOURCC('M', 'C', '0', '1')
+#define PIXFMT_MONO10	PIXFMT_FOURCC('M', 'C', '1', '0')
 
 /**
  * Both JPEG (single frame) and Motion-JPEG (MJPEG, multiple JPEG frames concatenated)
