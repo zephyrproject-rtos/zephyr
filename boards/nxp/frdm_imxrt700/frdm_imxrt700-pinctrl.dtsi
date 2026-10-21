@@ -37,4 +37,17 @@
 			drive-strength = "normal";
 		};
 	};
+
+	/* LPSPI16, Arduino D10-D13 (J6) */
+	pinmux_lpspi16: pinmux_lpspi16 {
+		group0 {
+			pinmux = <LPSPI16_SOUT_PIO2_2>,
+				 <LPSPI16_SCK_PIO2_3>,
+				 <LPSPI16_SIN_PIO2_4>,
+				 <LPSPI16_PCS0_PIO2_5>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
 };

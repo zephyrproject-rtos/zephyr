@@ -81,6 +81,15 @@
 	pinctrl-names = "default";
 };
 
+arduino_spi: &lpspi16 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI16 RX and TX */
+	dmas = <&edma0 0 75>, <&edma0 1 76>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi16>;
+	pinctrl-names = "default";
+};
+
 &gpio0 {
 	status = "okay";
 };
