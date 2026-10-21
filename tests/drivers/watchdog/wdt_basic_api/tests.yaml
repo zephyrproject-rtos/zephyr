@@ -47,6 +47,10 @@ tests:
       - mcxw23_evk
       - pic32cx_sg61_cult
       - raytac_an54lv_db_15/nrf54l15/cpuapp/ns
+  drivers.watchdog.frdm_imxrt1152_rtwdog:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/frdm_imxrt1152_rtwdog.overlay"
+    platform_allow:
+      - frdm_imxrt1152/mimxrt1152
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
