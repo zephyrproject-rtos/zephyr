@@ -949,7 +949,6 @@ void hl78xx_on_ktcpind(struct modem_chat *chat, char **argv, uint16_t argc, void
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 	struct hl78xx_socket_data *socket_data =
 		(struct hl78xx_socket_data *)data->devices.offload->data;
-	struct modem_socket *sock = NULL;
 	int socket_id = -1;
 	int tcp_conn_stat = -1;
 
@@ -965,7 +964,6 @@ void hl78xx_on_ktcpind(struct modem_chat *chat, char **argv, uint16_t argc, void
 	if (socket_id == -1) {
 		goto exit;
 	}
-	sock = modem_socket_from_id(&socket_data->control.socket_config, socket_id);
 	tcp_conn_stat = ATOI(argv[2], -1, "tcp_status");
 	if (tcp_conn_stat == TCP_SOCKET_CONNECTED) {
 		socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(socket_id)].err_code =
@@ -981,9 +979,11 @@ exit:
 		socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(socket_id)].is_connected =
 			false;
 	}
-	if ((socket_id != -1) && (sock != NULL)) {
-		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
-	}
+	/* The slot stays with the descriptor until the application closes it:
+	 * freed here, a socket() of another thread could take the slot while
+	 * the connect() still blocked on this socket, and the later close()
+	 * of that descriptor would free the other thread's socket.
+	 */
 }
 
 /* Chat/URC handler for socket-create/indication responses
@@ -1033,9 +1033,7 @@ exit:
 	socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(socket_id)].err_code =
 		TCP_SOCKET_ERROR;
 	socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(socket_id)].is_created = false;
-	if (socket_id != -1 && sock) {
-		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
-	}
+	/* The slot stays with the descriptor; close() frees it */
 }
 /* Chat/URC handler for socket-create/indication responses
  * Matches +KUDPCFG: <id>
@@ -1090,9 +1088,7 @@ exit:
 	socket_data->conn.udp_conn_status[HL78XX_UDP_STATUS_ID(socket_id)].err_code =
 		UDP_SOCKET_ERROR;
 	socket_data->conn.udp_conn_status[HL78XX_UDP_STATUS_ID(socket_id)].is_created = false;
-	if (socket_id != -1 && sock) {
-		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
-	}
+	/* The slot stays with the descriptor; close() frees it */
 }
 
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
@@ -2247,8 +2243,8 @@ static int send_tcp_or_tls_config(struct modem_socket *sock, uint16_t dst_port, 
 	if (ret < 0 ||
 	    socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)].is_created == false) {
 		LOG_ERR("%s ret:%d", cmd_buf, ret);
-		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
-		/* Map negative internal return codes to positive errno; fall back to EIO
+		/* The slot stays with the descriptor; close() frees it. Map
+		 * negative internal return codes to positive errno; fall back to EIO
 		 * when the code is non-negative but the operation failed.
 		 */
 		hl78xx_set_errno_from_code(ret);
@@ -2285,7 +2281,7 @@ static int send_udp_config(const struct net_sockaddr *addr, struct hl78xx_socket
 	return 0;
 error:
 	LOG_ERR("%s ret:%d", cmd_buf, ret);
-	modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
+	/* The slot stays with the descriptor; close() frees it */
 	hl78xx_set_errno_from_code(ret);
 	return -1;
 }
@@ -2425,6 +2421,14 @@ static int offload_close(void *obj)
 		socket_delete(socket_data, sock);
 		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
 		sock->is_connected = false;
+	} else {
+		/* A session the peer closed, a connect that failed or a socket
+		 * only bound: the modem still holds the session and the
+		 * descriptor still holds the slot. Left here, the slot kept its
+		 * id for good and the modem ran out of sessions.
+		 */
+		(void)socket_delete(socket_data, sock);
+		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
 	}
 	/* Consider here successfully socket is closed */
 	return 0;
