@@ -141,6 +141,34 @@ static void deinit_vbat(void)
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_vbat) */
 
+/*
+ * Without the NBU firmware the radio CPU is held in reset and the host has to
+ * manage the radio domain low power. With the NBU, the NBU firmware manages it.
+ */
+#if defined(CONFIG_SOC_MCXW70AC) && !defined(CONFIG_NXP_NBU)
+#define MCXW70_HOST_RADIO_LP 1
+#endif
+
+#if defined(MCXW70_HOST_RADIO_LP)
+/*
+ * The radio domain low-power entry is requested for each host low-power entry:
+ * without it the system does not resume from Deep Sleep, it falls back to a
+ * normal boot.
+ */
+static void mcxw70_radio_lp_enter(uint32_t radio_lp_mode)
+{
+	RFMC->RF2P4GHZ_CTRL = (RFMC->RF2P4GHZ_CTRL & ~RFMC_RF2P4GHZ_CTRL_LP_MODE_MASK) |
+			      RFMC_RF2P4GHZ_CTRL_LP_MODE(radio_lp_mode);
+	RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER_MASK;
+}
+
+static void mcxw70_radio_lp_exit(void)
+{
+	RFMC->RF2P4GHZ_CTRL &=
+		~(RFMC_RF2P4GHZ_CTRL_LP_MODE_MASK | RFMC_RF2P4GHZ_CTRL_LP_ENTER_MASK);
+}
+#endif /* MCXW70_HOST_RADIO_LP */
+
 /* Invoke Low Power/System Off specific Tasks */
 __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -158,6 +186,10 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		config.clock_mode  = kCMC_GateAllSystemClocksEnterLowPowerMode;
 		config.main_domain = kCMC_SleepMode;
 		config.wake_domain = kCMC_SleepMode;
+#if defined(MCXW70_HOST_RADIO_LP)
+		/* Radio domain into Sleep */
+		mcxw70_radio_lp_enter(0x1U);
+#endif
 		key = arch_pm_state_set_prepare();
 		CMC_EnterLowPowerMode(MCXW7_CMC_ADDR, &config);
 		arch_pm_state_set_finish(key);
@@ -171,6 +203,10 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		config.clock_mode  = kCMC_GateAllSystemClocksEnterLowPowerMode;
 		config.main_domain = kCMC_DeepSleepMode;
 		config.wake_domain = kCMC_DeepSleepMode;
+#if defined(MCXW70_HOST_RADIO_LP)
+		/* Deep Sleep regulator settings need the radio domain in Deep Sleep too */
+		mcxw70_radio_lp_enter(0x3U);
+#endif
 
 		key = arch_pm_state_set_prepare();
 		CMC_EnterLowPowerMode(MCXW7_CMC_ADDR, &config);
@@ -193,6 +229,12 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		spc_power_domain_id_t domain = (spc_power_domain_id_t)i;
 
 		if (SPC_CheckPowerDomainLowPowerRequest(MCXW7_SPC_ADDR, domain)) {
+#if defined(MCXW70_HOST_RADIO_LP)
+			if (domain == kSPC_PowerDomain2) {
+				/* Radio domain back to active */
+				mcxw70_radio_lp_exit();
+			}
+#endif
 			SPC_ClearPowerDomainLowPowerRequestFlag(MCXW7_SPC_ADDR, domain);
 		}
 	}
@@ -259,8 +301,15 @@ __weak void set_spc_configuration(void)
 
 	SPC_SetActiveModeBandgapModeConfig(MCXW7_SPC_ADDR, active_mode_regulator.bandgapMode);
 
+#if !defined(CONFIG_SOC_MCXW70AC)
 	SPC_SetActiveModeCoreLDORegulatorConfig(MCXW7_SPC_ADDR,
 						&active_mode_regulator.CoreLDOOption);
+#endif
+	/*
+	 * On MCXW70 the active Core LDO level is left to the clock setup: the boot
+	 * ROM may hand over at 96 MHz in overdrive (IFR BOOT_SPEED), and lowering the
+	 * level here, before the clock is configured, would undervolt the core.
+	 */
 
 #if defined(FSL_FEATURE_SPC_HAS_LPBUFF) && FSL_FEATURE_SPC_HAS_LPBUFF
 	SPC_EnableActiveModeCMPBandgapBuffer(MCXW7_SPC_ADDR, active_mode_regulator.lpBuff);
@@ -319,6 +368,15 @@ __weak void set_spc_configuration(void)
 void nxp_mcxw7x_power_init(void)
 {
 	set_spc_configuration();
+
+#if defined(CONFIG_SOC_MCXW70AC)
+	/*
+	 * Deep Sleep only retains part of the system SRAM by default on MCXW70,
+	 * while the image uses most of it: keep every SRAM partition powered in
+	 * low-power modes.
+	 */
+	CMC_PowerOnSRAMLowPowerOnly(MCXW7_CMC_ADDR, CMC_SRAMRET_RET_MASK);
+#endif
 
 #ifdef CONFIG_SOC_SERIES_MCXW7XX_SHUTDOWN_UNUSED_RAM
 	uint32_t unused_ram_mask = mcxw7x_compute_unused_ram_mask();
