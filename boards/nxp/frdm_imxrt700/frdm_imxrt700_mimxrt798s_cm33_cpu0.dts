@@ -21,7 +21,9 @@
 	};
 
 	chosen {
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &w25q25pw;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0_lpuart0;
 		zephyr,shell-uart = &flexcomm0_lpuart0;
@@ -89,55 +91,68 @@
 	status = "okay";
 };
 
-/*
- * XSPI0 hosts the XIP boot flash: FRDM-IMXRT700 populates a Winbond
- * W25Q25PW quad SPI NOR (32MB / 256Mbit), unlike the MIMXRT700-EVK
- * octal MX25UM51345G. The boot ROM configures the pins and the
- * controller for XIP from the boot configuration block
- * (flash_config/flash_config.c), so no pinctrl is attached here and
- * code executes in place from the memory-mapped window at 0x38000000.
- * The node must stay enabled: the boot header machinery (BOOT_XSPI_NOR
- * and the flash config block placement) depends on an enabled nxp,xspi
- * node, and board_early_init_hook() keys the XSPI0 power domain
- * keep-alive on it.
- */
 &xspi0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_xspi0>;
+	pinctrl-names = "default";
+	byte-order = <3>;
+	ahb-buffer-write-flush;
+	ahb-prefetch;
 
-	/*
-	 * The flash chip is described because it is on the board and
-	 * zephyr,flash needs it to place the XIP image, but the flash
-	 * controller stays disabled: the nxp,xspi-nor driver only knows the
-	 * octal MX25UM51345G (see the device table in
-	 * drivers/flash/flash_mcux_xspi.c) and would fail probing this quad
-	 * part. For the same reason there is no zephyr,flash-controller
-	 * chosen entry; add both once the driver supports the W25Q25PW.
-	 */
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,xspi-nor";
-		device-name = "w25q25pw";
 		/* W25Q25PW is a 32MB, 256Mbit flash part. */
 		size = <DT_SIZE_M(32)>;
 		reg = <0>;
+		/* No DQS pin: sample with the strobe looped back through the DQS pad */
+		sample-clk-source = <2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x38000000 DT_SIZE_M(32)>;
-		status = "disabled";
 
 		w25q25pw: flash@0 {
-			compatible = "soc-nv-flash";
+			compatible = "winbond,w25q25pw", "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(32)>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <4>;
 
-			/*
-			 * Required by zephyr,mapped-partition so that an
-			 * application overlay can add partitions to this
-			 * node; the baseline board itself is unpartitioned.
-			 */
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
+
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				/*
+				 * Partition sizes must be aligned
+				 * to the flash memory sector size of 4KB.
+				 */
+				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					label = "mcuboot";
+					reg = <0x00000000 DT_SIZE_K(128)>;
+				};
+
+				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-0";
+					reg = <0x00020000 DT_SIZE_M(7)>;
+				};
+
+				slot1_partition: partition@720000 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-1";
+					reg = <0x00720000 DT_SIZE_M(7)>;
+				};
+
+				storage_partition: partition@e20000 {
+					compatible = "zephyr,mapped-partition";
+					label = "storage";
+					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				};
+			};
 		};
 	};
 };
