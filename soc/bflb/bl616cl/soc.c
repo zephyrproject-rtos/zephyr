@@ -20,18 +20,20 @@
 #include <hbn_reg.h>
 #include <pds_reg.h>
 
+#include "thead_csr.h"
+
 #define SYSMAP_BASE			0xEFFFF000UL
 #define SYSMAP_BASE_SHIFT		(12)
 #define SYSMAP_ATTR_STRONG_ORDER	BIT(4)
 #define SYSMAP_ATTR_CACHE_ABLE		BIT(3)
 #define SYSMAP_ATTR_BUFFER_ABLE		BIT(2)
-#define SYSMAP_ADDR_OFFSET		0x0
-#define SYSMAP_FLAGS_OFFSET		0x4
-#define SYSMAP_ENTRY_OFFSET		0x8
+#define SYSMAP_ADDR_OFFSET		0x0U
+#define SYSMAP_FLAGS_OFFSET		0x4U
+#define SYSMAP_ENTRY_OFFSET		0x8U
 
 /* EM_SEL selects WRAM banks for BLE exchange memory */
-#define BLE_EM_SEL_16K 0x1U
-#define BLE_EM_SEL_32K 0x3U
+#define BLE_EM_SEL_16K			0x1U
+#define BLE_EM_SEL_32K			0x3U
 
 /* Initialize memory regions */
 void system_sysmap_init(void)
@@ -84,78 +86,6 @@ void system_sysmap_init(void)
 	sys_write32(SYSMAP_ATTR_STRONG_ORDER, (sysmap_base + SYSMAP_FLAGS_OFFSET));
 }
 
-static void enable_branchpred(bool yes)
-{
-	uint32_t tmp;
-
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
-	);
-	__asm__ volatile(
-		"csrr %0, 0x7C1"
-		: "=r"(tmp));
-	if (yes) {
-		tmp |= (1 << 5) | (1 << 12);
-	} else {
-		tmp &= ~((1 << 5) | (1 << 12));
-	}
-	__asm__ volatile(
-		"csrw 0x7C1, %0"
-		:
-		: "r"(tmp));
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
-	);
-}
-
-static void enable_thead_isa_ext(void)
-{
-	uint32_t tmp;
-
-	__asm__ volatile(
-		"csrr %0, 0x7C0"
-		: "=r"(tmp));
-	tmp |= (1 << 22);
-	__asm__ volatile(
-		"csrw 0x7C0, %0"
-		:
-		: "r"(tmp));
-}
-
-static void set_thead_enforce_aligned(bool enable)
-{
-	uint32_t tmp;
-
-	__asm__ volatile(
-		"csrr %0, 0x7C0"
-		: "=r"(tmp));
-	if (enable) {
-		tmp &= ~(1 << 15);
-	} else {
-		tmp |= (1 << 15);
-	}
-	__asm__ volatile(
-		"csrw 0x7C0, %0"
-		:
-		: "r"(tmp));
-}
-
-static void disable_interrupt_autostacking(void)
-{
-	uint32_t tmp;
-
-	__asm__ volatile(
-		"csrr %0, 0x7E1"
-		: "=r"(tmp));
-	tmp &= ~(0x3 << 16);
-	__asm__ volatile(
-		"csrw 0x7E1, %0"
-		:
-		: "r"(tmp));
-}
-
 void arch_cache_init(void)
 {
 	enable_thead_isa_ext();
@@ -164,6 +94,7 @@ void arch_cache_init(void)
 	enable_branchpred(true);
 	sys_cache_instr_enable();
 	disable_interrupt_autostacking();
+	set_thead_mhint(true, AMR_7L, PREF_N_16);
 	sys_cache_data_flush_and_invd_all();
 	sys_cache_instr_invd_all();
 }
