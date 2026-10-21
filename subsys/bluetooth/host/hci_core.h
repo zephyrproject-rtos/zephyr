@@ -466,6 +466,11 @@ struct bt_dev {
 
 	/* The RPA timeout value. */
 	uint16_t rpa_timeout;
+
+	/* The RPA timeout rpa_update was last scheduled with. A changed
+	 * rpa_timeout only applies from the next scheduling on.
+	 */
+	uint16_t rpa_update_timeout;
 #endif
 
 	/* Local Name */
