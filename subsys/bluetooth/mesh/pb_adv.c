@@ -49,7 +49,6 @@ LOG_MODULE_REGISTER(bt_mesh_pb_adv);
 
 #define RETRANSMIT_TIMEOUT  K_MSEC(CONFIG_BT_MESH_PB_ADV_RETRANS_TIMEOUT)
 #define BUF_TIMEOUT         K_MSEC(400)
-#define CLOSING_TIMEOUT     3
 #define TRANSACTION_TIMEOUT 30
 
 /* Acked messages, will do retransmissions manually, taking acks into account:
@@ -1091,12 +1090,6 @@ static void prov_link_close(enum prov_bearer_link_status status)
 		return;
 	}
 
-	/*
-	 * According to MshPRTv1.1: 5.3.1.4.3, the close message should
-	 * be restransmitted at least three times. Retransmit the LINK_CLOSE
-	 * message until CLOSING_TIMEOUT has elapsed.
-	 */
-	link.tx.timeout = CLOSING_TIMEOUT;
 	/* Ignore errors, the link will time out eventually if this doesn't get sent */
 	err = bearer_ctl_send_unacked(
 		ctl_adv_create(LINK_CLOSE, &status, 1, RETRANSMITS_LINK_CLOSE),
