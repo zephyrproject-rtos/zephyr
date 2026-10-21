@@ -80,7 +80,6 @@ struct regulator_event {
 };
 
 /**
- * @typedef regulator_callback_t
  * @brief Regulator callback function signature
  *
  * @param dev Regulator device instance

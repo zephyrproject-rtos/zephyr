@@ -83,7 +83,6 @@ union dac161s997_status {
 };
 
 /**
- * @typedef dac161s997_error_callback_t
  * @brief Callback to invoke when an error is triggered
  *
  * @param dev Pointer to the device

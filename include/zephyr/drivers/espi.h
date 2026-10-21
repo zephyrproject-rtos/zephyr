@@ -534,7 +534,6 @@ struct espi_flash_packet {
 struct espi_callback;
 
 /**
- * @typedef espi_callback_handler_t
  * @brief Define the application callback handler function signature.
  *
  * @param dev Device struct for the eSPI device.
