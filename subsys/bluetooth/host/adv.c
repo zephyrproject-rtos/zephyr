@@ -1455,7 +1455,9 @@ int bt_le_adv_stop(void)
 
 	bt_le_lim_adv_cancel_timeout(adv);
 
-	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+	/* A paused set is stopped like an enabled one, see bt_le_ext_adv_stop() */
+	if (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RPA_PAUSED) &&
+	    !atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		/* Legacy advertiser exists, but is not currently advertising.
 		 * This happens when keep advertising behavior is active but
 		 * no conn object is available to do connectable advertising.
@@ -1589,6 +1591,15 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 	return 0;
 }
 
+/* A set paused for an RPA update counts as started: the rotation resumes it, and may have its
+ * enable command pending.
+ */
+static bool adv_is_started(const struct bt_le_ext_adv *adv)
+{
+	return atomic_test_bit(adv->flags, BT_ADV_RPA_PAUSED) ||
+	       atomic_test_bit(adv->flags, BT_ADV_ENABLED);
+}
+
 int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 			       const struct bt_le_adv_param *param)
 {
@@ -1619,7 +1630,7 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 		}
 	}
 
-	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+	if (adv_is_started(adv)) {
 		return -EINVAL;
 	}
 
@@ -1642,7 +1653,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+	if (adv_is_started(adv)) {
 		return -EALREADY;
 	}
 
@@ -1715,7 +1726,11 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 
 	bt_le_lim_adv_cancel_timeout(adv);
 
-	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+	/* A set paused for an RPA update is stopped like an enabled one: the rotation may have its
+	 * enable command pending, which the disable command below then follows.
+	 */
+	if (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RPA_PAUSED) &&
+	    !atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return 0;
 	}
 
@@ -1777,7 +1792,7 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 	}
 
 	/* Advertising set should be stopped first */
-	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+	if (adv_is_started(adv)) {
 		return -EINVAL;
 	}
 
@@ -2352,6 +2367,8 @@ static void adv_set_terminated(struct bt_le_ext_adv *adv,
 #endif
 
 	atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
+	/* A set whose pause failed advertises until it ends here: nothing is left to resume */
+	atomic_clear_bit(adv->flags, BT_ADV_RPA_PAUSED);
 
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	bt_dev.adv_conn_id = adv->id;
