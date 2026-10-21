@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 #define I2C_FILTER_CYC_NUM_DEF 7	/* Number of apb cycles filtered by default */
 #define I2C_CLR_BUS_SCL_NUM 9		/* Number of SCL clocks to restore SDA signal */
 #define I2C_CLR_BUS_HALF_PERIOD_US 5	/* Period of SCL clock to restore SDA signal */
-#define I2C_TRANSFER_TIMEOUT_MSEC 500	/* Transfer timeout period */
+#define I2C_BUS_BUSY_TIMEOUT_MSEC 500	/* Maximum bus busy wait */
 
 /* Freq limitation when using different clock sources */
 #define I2C_CLK_LIMIT_REF_TICK (1 * 1000 * 1000 / 20)	/* REF_TICK, no more than REF_TICK/20*/
@@ -153,6 +153,7 @@ struct i2c_esp32_config {
 
 	const uint32_t bitrate;
 	const uint32_t scl_timeout;
+	k_timeout_t transfer_timeout;
 };
 
 static uint32_t i2c_get_src_clk_freq(i2c_clock_source_t clk_src)
@@ -455,6 +456,7 @@ static void IRAM_ATTR i2c_esp32_reset_fifo(const struct device *dev)
 
 static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 {
+	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	int ret = 0;
 
@@ -463,7 +465,7 @@ static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 	i2c_ll_start_trans(data->hal.dev);
 	data->cmd_idx = 0;
 
-	ret = k_sem_take(&data->cmd_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC));
+	ret = k_sem_take(&data->cmd_sem, config->transfer_timeout);
 	if (ret != 0) {
 		/* If the I2C target is powered off or the SDA/SCL is */
 		/* connected to ground, for example, I2C hw FSM would get */
@@ -698,7 +700,7 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	struct i2c_msg *current, *next;
-	uint32_t timeout = I2C_TRANSFER_TIMEOUT_MSEC * USEC_PER_MSEC;
+	uint32_t timeout = I2C_BUS_BUSY_TIMEOUT_MSEC * USEC_PER_MSEC;
 	int ret = 0;
 
 	while (i2c_ll_is_bus_busy(data->hal.dev)) {
@@ -1281,6 +1283,14 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	COND_CODE_1(DT_NODE_HAS_PROP(I2C(inst), scl_timeout_us),	\
 		    (DT_PROP(I2C(inst), scl_timeout_us)), (0))
 
+#define I2C_ESP32_TRANSFER_TIMEOUT_MS(idx)                                                         \
+	DT_PROP_OR(I2C(idx), zephyr_transfer_timeout_ms, CONFIG_I2C_TRANSFER_TIMEOUT_MS)
+
+#define I2C_ESP32_TRANSFER_TIMEOUT(idx)                                                            \
+	SYS_TIMEOUT_MS(((I2C_ESP32_TRANSFER_TIMEOUT_MS(idx) != 0)                                  \
+				? I2C_ESP32_TRANSFER_TIMEOUT_MS(idx)                               \
+				: SYS_FOREVER_MS))
+
 #define I2C_ESP32_FREQUENCY(bitrate)					\
 	 (bitrate == I2C_BITRATE_STANDARD ? KHZ(100)			\
 	: bitrate == I2C_BITRATE_FAST     ? KHZ(400)			\
@@ -1316,6 +1326,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),				   \
 		.bitrate = I2C_FREQUENCY(idx),							   \
 		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
+		.transfer_timeout = I2C_ESP32_TRANSFER_TIMEOUT(idx),				   \
 	};											   \
 	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,		   \
 			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	   \
