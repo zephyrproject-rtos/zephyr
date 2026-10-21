@@ -652,6 +652,7 @@ seco	SECO S.p.A.
 seeed	Seeed Technology Co., Ltd
 segger	SEGGER Microcontroller GmbH
 seirobotics	Shenzhen SEI Robotics Co., Ltd
+semiconlab	SemiconLab
 semtech	Semtech Corporation
 sensirion	Sensirion AG
 sensortek	Sensortek Technology Corporation
