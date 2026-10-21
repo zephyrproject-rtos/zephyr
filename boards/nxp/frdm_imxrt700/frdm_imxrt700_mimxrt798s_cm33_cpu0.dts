@@ -19,6 +19,8 @@
 		led0 = &green_led;
 		led1 = &blue_led;
 		sw0 = &user_button_1;
+		i2s-codec-tx = &sai0;
+		i2s-tx = &sai0;
 	};
 
 	chosen {
@@ -91,6 +93,16 @@
 	pinctrl-0 = <&pinmux_flexcomm3_lpi2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&clkctl0 MCUX_SAI0_CLK>;
+		clock-names = "mclk";
+	};
 };
 
 &flexcomm8 {
@@ -182,4 +194,17 @@ arduino_spi: &lpspi16 {
 			ranges;
 		};
 	};
+};
+
+&sai0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sai0>;
+	pinctrl-names = "default";
+	nxp,rx-sync-mode;
+};
+
+&micfil {
+	status = "okay";
+	pinctrl-0 = <&pinmux_micfil>;
+	pinctrl-names = "default";
 };

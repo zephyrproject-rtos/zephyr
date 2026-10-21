@@ -76,4 +76,33 @@
 			input-enable;
 		};
 	};
+
+	/*
+	 * SAI0 to the WM8962 codec. Only the TX bit clock and frame sync
+	 * reach the codec as assembled, so the receiver runs synchronous
+	 * to the transmitter.
+	 */
+	pinmux_sai0: pinmux_sai0 {
+		group0 {
+			pinmux = <CLKCTL0_MCLK_PIO0_21>,
+				 <SAI0_TX_BCLK_PIO0_3>,
+				 <SAI0_TX_SYNC_PIO0_5>,
+				 <SAI0_TX_DATA0_PIO0_4>,
+				 <SAI0_RX_DATA0_PIO0_2>;
+			drive-strength = "high";
+			slew-rate = "normal";
+			input-enable;
+		};
+	};
+
+	/* MICFIL to the on-board PDM microphones U66/U67 */
+	pinmux_micfil: pinmux_micfil {
+		group0 {
+			pinmux = <PDM_CLK_PIO10_8>,
+				 <PDM_DATA0_PIO10_9>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
 };
