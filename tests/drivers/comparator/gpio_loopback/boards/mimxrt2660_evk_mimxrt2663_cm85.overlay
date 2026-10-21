@@ -1,0 +1,51 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &acmp0;
+	};
+
+	zephyr,user {
+		/* PIO3_5 (J94 pin 18) output, jumpered to PIO3_4 (J94 pin 17, ACMP0 INA0). */
+		test-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	acmp0_default: acmp0_default {
+		group0 {
+			pinmux = <&main__iomuxc_pio3_4_wake_acmp0_ina0_3v>;
+		};
+
+		/* The test GPIO has no pinctrl of its own, so it is muxed here. */
+		group1 {
+			pinmux = <&main__iomuxc_pio3_5_hsp_gpio1_gpio5>;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&acmp0 {
+	pinctrl-0 = <&acmp0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	positive-mux-input = "IN1"; /* INA_3V[1] = PIO3_4 */
+	negative-mux-input = "IN7"; /* DAC output */
+
+	/* PIO3 is a 3.3 V bank (VDDIO1); divide the input into the 1.8 V range. */
+	discrete-mode-enable-resistor-divider;
+
+	dac-vref-source = "VIN1"; /* VDDA_1V8_DATACONV */
+	dac-value = <127>;
+	dac-enable;
+};
