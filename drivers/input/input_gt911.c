@@ -353,8 +353,8 @@ static int gt911_init(const struct device *dev)
 		/* hold down at least 5ms. This is the point the INT pin must be low. */
 		k_sleep(K_MSEC(5));
 	}
-	/* hold down 50ms to make sure the address available */
-	k_sleep(K_MSEC(50));
+	/* hold down 100ms to make sure the address available */
+	k_sleep(K_MSEC(100));
 
 	if (config->int_gpio.port != NULL) {
 		r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
