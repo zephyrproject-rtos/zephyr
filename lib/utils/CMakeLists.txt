@@ -9,6 +9,7 @@ zephyr_sources(
   set.c
   timeutil.c
   bitarray.c
+  bitmap.c
   bitmask.c
   )
 
