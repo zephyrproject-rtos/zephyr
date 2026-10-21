@@ -55,6 +55,7 @@
 		reset-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		cirrus,fll-ref = "mclk1";
+		cirrus,in2-single-ended;
 		status = "okay";
 	};
 
@@ -140,6 +141,27 @@
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_diff: cs47l63@c {
+		compatible = "cirrus,cs47l63";
+		reg = <12>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		cirrus,fll-ref = "mclk1";
+		status = "okay";
+	};
+
+	cs47l63_hp_low: cs47l63@d {
+		compatible = "cirrus,cs47l63";
+		reg = <13>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		cirrus,fll-ref = "mclk1";
+		cirrus,hp-load-below-20-ohm;
 		status = "okay";
 	};
 };
