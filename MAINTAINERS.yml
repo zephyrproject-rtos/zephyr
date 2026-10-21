@@ -4696,6 +4696,9 @@ NXP Platforms (MPU):
     - tests/arch/arm64/arm64_gicv3_its/boards/imx*.conf
   files-regex:
     - boards/nxp/.*m?imx[^(rt)].*/
+  files-exclude:
+    - drivers/video/imx*
+    - drivers/video/Kconfig.imx*
   labels:
     - "platform: NXP MPU"
     - "platform: NXP"
