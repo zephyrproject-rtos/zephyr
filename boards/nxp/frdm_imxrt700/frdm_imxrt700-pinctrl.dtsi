@@ -63,4 +63,17 @@
 			drive-open-drain;
 		};
 	};
+
+	/* LPSPI16 on J6-3 to J6-6 (Arduino) and J22-3 to J22-6 (mikroBUS) */
+	pinmux_lpspi16: pinmux_lpspi16 {
+		group0 {
+			pinmux = <LPSPI16_SOUT_PIO2_2>,
+				 <LPSPI16_SCK_PIO2_3>,
+				 <LPSPI16_SIN_PIO2_4>,
+				 <LPSPI16_PCS0_PIO2_5>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
 };
