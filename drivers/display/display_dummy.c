@@ -19,7 +19,7 @@ struct dummy_display_config {
 };
 
 struct dummy_display_data {
-	enum display_pixel_format current_pixel_format;
+	uint32_t current_pixel_format;
 };
 
 static int dummy_display_init(const struct device *dev)
@@ -97,7 +97,7 @@ static void dummy_display_get_capabilities(const struct device *dev,
 }
 
 static int dummy_display_set_pixel_format(const struct device *dev,
-		const enum display_pixel_format pixel_format)
+		const uint32_t pixel_format)
 {
 	struct dummy_display_data *disp_data = dev->data;
 

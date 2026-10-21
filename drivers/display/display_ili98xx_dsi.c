@@ -157,7 +157,7 @@ static void ili98xx_dsi_get_capabilities(const struct device *dev,
 }
 
 static int ili98xx_dsi_set_pixel_format(const struct device *dev,
-					const enum display_pixel_format pixel_format)
+					const uint32_t pixel_format)
 {
 	const struct ili98xx_dsi_config *cfg = dev->config;
 

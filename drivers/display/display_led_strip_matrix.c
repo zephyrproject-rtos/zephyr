@@ -32,7 +32,7 @@ struct led_strip_matrix_config {
 	bool modules_circulative;
 	bool modules_start_from_right;
 	bool modules_start_from_bottom;
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 };
 
 static size_t pixel_index(const struct led_strip_matrix_config *config, uint16_t x, uint16_t y)

@@ -786,7 +786,7 @@ static void it8951_get_capabilities(const struct device *dev, struct display_cap
 	caps->screen_info = SCREEN_INFO_EPD;
 }
 
-static int it8951_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int it8951_set_pixel_format(const struct device *dev, const uint32_t pf)
 {
 	ARG_UNUSED(dev);
 

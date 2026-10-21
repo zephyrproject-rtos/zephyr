@@ -870,7 +870,7 @@ static void display_esp32_dsi_get_capabilities(const struct device *dev,
 }
 
 static int display_esp32_dsi_set_pixel_format(const struct device *dev,
-					      const enum display_pixel_format pixel_format)
+					      const uint32_t pixel_format)
 {
 	const struct display_esp32_dsi_config *config = dev->config;
 

@@ -166,7 +166,7 @@ struct ssd1306_config {
 };
 
 struct ssd1306_data {
-	enum display_pixel_format pf;
+	uint32_t pf;
 	enum display_orientation orientation;
 	struct k_mutex i2c_buf_lock;
 };
@@ -617,7 +617,7 @@ static int ssd1306_set_orientation(const struct device *dev,
 }
 
 static int ssd1306_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pf)
+				    const uint32_t pf)
 {
 	struct ssd1306_data *data = dev->data;
 	uint8_t cmd;

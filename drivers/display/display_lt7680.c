@@ -248,7 +248,7 @@ struct lt7680_config {
 };
 
 struct lt7680_data {
-	enum display_pixel_format current_pixel_format;
+	uint32_t current_pixel_format;
 	bool display_on;
 	bool blanking;
 	enum display_orientation orientation;
@@ -712,7 +712,7 @@ static void lt7680_get_capabilities(const struct device *dev, struct display_cap
 	};
 }
 
-static int lt7680_set_pixel_format(const struct device *dev, const enum display_pixel_format fmt)
+static int lt7680_set_pixel_format(const struct device *dev, const uint32_t fmt)
 {
 	struct lt7680_data *data = dev->data;
 	uint8_t mode_bpp;

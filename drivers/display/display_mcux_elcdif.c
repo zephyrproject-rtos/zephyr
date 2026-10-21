@@ -57,7 +57,7 @@ struct mcux_elcdif_data {
 	const uint8_t *active_fb;
 	/* Pointers to driver allocated framebuffers */
 	uint8_t *fb[CONFIG_MCUX_ELCDIF_FB_NUM];
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	size_t pixel_bytes;
 	size_t fb_bytes;
 	elcdif_rgb_mode_config_t rgb_mode;
@@ -283,7 +283,7 @@ static int mcux_elcdif_display_blanking_on(const struct device *dev)
 }
 
 static int mcux_elcdif_set_pixel_format(const struct device *dev,
-					const enum display_pixel_format pixel_format)
+					const uint32_t pixel_format)
 {
 	struct mcux_elcdif_data *dev_data = dev->data;
 	const struct mcux_elcdif_config *config = dev->config;

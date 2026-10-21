@@ -254,7 +254,7 @@ static void cplx_get_capabilities(const struct device *dev, struct display_capab
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static int cplx_set_pixel_format(const struct device *dev, enum display_pixel_format format)
+static int cplx_set_pixel_format(const struct device *dev, uint32_t format)
 {
 	ARG_UNUSED(dev);
 	return (format == PIXEL_FORMAT_MONO01) ? 0 : -ENOTSUP;

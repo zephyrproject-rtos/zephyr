@@ -70,9 +70,9 @@ static int ek79007_blanking_on(const struct device *dev)
 }
 
 /* The devicetree carries the MIPI DSI pixel format, which the display API
- * reports under its own enumeration.
+ * reports under its own pixel format bitmask.
  */
-static enum display_pixel_format ek79007_display_format(uint8_t pixfmt)
+static uint32_t ek79007_display_format(uint8_t pixfmt)
 {
 	switch (pixfmt) {
 	case MIPI_DSI_PIXFMT_RGB565:
@@ -87,7 +87,7 @@ static void ek79007_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	const struct ek79007_config *config = dev->config;
-	enum display_pixel_format format = ek79007_display_format(config->pixel_format);
+	uint32_t format = ek79007_display_format(config->pixel_format);
 
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
@@ -97,7 +97,7 @@ static void ek79007_get_capabilities(const struct device *dev,
 }
 
 static int ek79007_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const uint32_t pixel_format)
 {
 	const struct ek79007_config *config = dev->config;
 

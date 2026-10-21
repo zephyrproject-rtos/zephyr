@@ -151,7 +151,7 @@ struct st730x_config {
 };
 
 struct st730x_data {
-	enum display_pixel_format current_pixel_format;
+	uint32_t current_pixel_format;
 };
 
 static int st730x_resume(const struct device *dev)
@@ -603,7 +603,7 @@ static void st730x_get_capabilities(const struct device *dev, struct display_cap
 	caps->screen_info = 0;
 }
 
-static int st730x_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int st730x_set_pixel_format(const struct device *dev, const uint32_t pf)
 {
 	const struct st730x_config *config = dev->config;
 	struct st730x_data *data = dev->data;

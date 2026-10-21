@@ -51,7 +51,7 @@ struct mcux_lcdifv3_data {
 	/* DT value: PANEL_PIXEL_FORMAT_* */
 	uint32_t panel_pixel_format;
 	/* Runtime/Zephyr value: PIXEL_FORMAT_* */
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	lcdifv3_buffer_config_t buffer_config;
 	uint8_t *fb[CONFIG_MCUX_LCDIFV3_FB_NUM];
 	uint8_t pixel_bytes;
@@ -174,7 +174,7 @@ static void mcux_lcdifv3_get_capabilities(const struct device *dev,
 }
 
 static int mcux_lcdifv3_set_pixel_format(const struct device *dev,
-					 const enum display_pixel_format pixel_format)
+					 const uint32_t pixel_format)
 {
 	const struct mcux_lcdifv3_config *config = dev->config;
 	struct mcux_lcdifv3_data *dev_data = dev->data;

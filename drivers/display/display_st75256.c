@@ -326,7 +326,7 @@ static void st75256_get_capabilities(const struct device *dev, struct display_ca
 }
 
 static int st75256_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const uint32_t pixel_format)
 {
 	struct st75256_data *data = dev->data;
 	uint8_t tmp;

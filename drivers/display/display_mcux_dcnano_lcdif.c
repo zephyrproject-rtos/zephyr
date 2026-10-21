@@ -222,8 +222,7 @@ static int mcux_dcnano_lcdif_display_blanking_on(const struct device *dev)
 }
 
 static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
-					const enum display_pixel_format
-					pixel_format)
+					     uint32_t pixel_format)
 {
 	struct mcux_dcnano_lcdif_data *data = dev->data;
 	const struct mcux_dcnano_lcdif_config *config = dev->config;

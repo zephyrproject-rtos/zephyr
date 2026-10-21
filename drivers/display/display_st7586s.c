@@ -287,7 +287,7 @@ static void st7586s_get_capabilities(const struct device *dev, struct display_ca
 }
 
 static int st7586s_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const uint32_t pixel_format)
 {
 	struct st7586s_data *data = dev->data;
 	uint8_t buf;

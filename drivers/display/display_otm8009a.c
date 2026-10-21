@@ -32,7 +32,7 @@ struct otm8009a_data {
 	uint16_t xres;
 	uint16_t yres;
 	uint8_t dsi_pixel_format;
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	enum display_orientation orientation;
 };
 

@@ -190,7 +190,7 @@ static int api_set_brightness(const struct device *dev,
 }
 
 static int api_set_pixel_format(const struct device *dev,
-				const enum display_pixel_format format)
+				const uint32_t format)
 {
 	switch (format) {
 	case PIXEL_FORMAT_MONO01:

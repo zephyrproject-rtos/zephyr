@@ -69,7 +69,7 @@
  *   }
  *
  *   static int foo_set_pixel_format(const struct device *dev,
- *                                   enum display_pixel_format pf)
+ *                                   uint32_t pf)
  *   {
  *           struct foo_data *data = dev->data;
  *
@@ -177,7 +177,7 @@ struct display_color_dither_state {
 	 * I_4 and is consumed directly with no conversion. An RGB format instructs the helper to
 	 * convert that source format down to the native I_4 target before write() runs.
 	 */
-	enum display_pixel_format input_format;
+	uint32_t input_format;
 	/** Scratch buffer for the converted I_4 frame. */
 	uint8_t *converted_buf;
 	/** Size of @c converted_buf in bytes. */
@@ -312,7 +312,7 @@ void display_color_dither_patch_caps(struct display_color_dither_state *state,
  *                  unsupported for RGB-to-I_4 conversion.
  */
 int display_color_dither_set_input_format(struct display_color_dither_state *state,
-					  enum display_pixel_format pf);
+					  uint32_t pf);
 
 /**
  * @brief Report whether the helper is actively converting input to native I_4.
@@ -326,7 +326,7 @@ int display_color_dither_set_input_format(struct display_color_dither_state *sta
  * @retval false The native I_4 write path is in effect (no helper conversion).
  */
 bool display_color_dither_is_active(const struct display_color_dither_state *state,
-				    enum display_pixel_format current_pixel_format);
+				    uint32_t current_pixel_format);
 
 #else /* !CONFIG_DISPLAY_COLOR_DITHER */
 
@@ -360,7 +360,7 @@ static inline void display_color_dither_patch_caps(struct display_color_dither_s
 }
 
 static inline int display_color_dither_set_input_format(struct display_color_dither_state *state,
-							enum display_pixel_format pf)
+							uint32_t pf)
 {
 	(void)state;
 
@@ -368,7 +368,7 @@ static inline int display_color_dither_set_input_format(struct display_color_dit
 }
 
 static inline bool display_color_dither_is_active(const struct display_color_dither_state *state,
-						  enum display_pixel_format current_pixel_format)
+						  uint32_t current_pixel_format)
 {
 	(void)state;
 	(void)current_pixel_format;

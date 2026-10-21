@@ -448,7 +448,7 @@ static void co5300_get_capabilities(const struct device *dev,
 }
 
 static int co5300_set_pixel_format(const struct device *dev,
-		const enum display_pixel_format pixel_format)
+		const uint32_t pixel_format)
 {
 	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;

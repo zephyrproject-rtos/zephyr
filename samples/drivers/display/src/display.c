@@ -32,11 +32,11 @@ enum corner {
 };
 
 typedef void (*fill_buffer)(enum corner corner, uint8_t grey, uint8_t *buf,
-			    size_t buf_size, enum display_pixel_format fmt);
+			    size_t buf_size, uint32_t fmt);
 
 
 static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
-				 size_t buf_size, enum display_pixel_format fmt)
+				 size_t buf_size, uint32_t fmt)
 {
 	uint8_t r = 0, g = 0, b = 0;
 	uint8_t a = 0xFFu;
@@ -79,7 +79,7 @@ static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
 }
 
 static void fill_buffer_rgb888(enum corner corner, uint8_t grey, uint8_t *buf,
-			       size_t buf_size, enum display_pixel_format fmt)
+			       size_t buf_size, uint32_t fmt)
 {
 	uint8_t r = 0, g = 0, b = 0;
 	uint8_t byte0, byte1, byte2;
@@ -138,7 +138,7 @@ static uint16_t get_rgb565_color(enum corner corner, uint8_t grey)
 }
 
 static void fill_buffer_rgb565x(enum corner corner, uint8_t grey, uint8_t *buf,
-				size_t buf_size, enum display_pixel_format fmt)
+				size_t buf_size, uint32_t fmt)
 {
 	uint16_t color = get_rgb565_color(corner, grey);
 
@@ -149,7 +149,7 @@ static void fill_buffer_rgb565x(enum corner corner, uint8_t grey, uint8_t *buf,
 }
 
 static void fill_buffer_rgb565(enum corner corner, uint8_t grey, uint8_t *buf,
-			       size_t buf_size, enum display_pixel_format fmt)
+			       size_t buf_size, uint32_t fmt)
 {
 	uint16_t color = get_rgb565_color(corner, grey);
 
@@ -177,7 +177,7 @@ static void fill_buffer_mono(enum corner corner, uint8_t grey,
 }
 
 static inline void fill_buffer_l_8(enum corner corner, uint8_t grey, uint8_t *buf,
-				    size_t buf_size, enum display_pixel_format fmt)
+				    size_t buf_size, uint32_t fmt)
 {
 	uint8_t color;
 
@@ -206,7 +206,7 @@ static inline void fill_buffer_l_8(enum corner corner, uint8_t grey, uint8_t *bu
 }
 
 static inline void fill_buffer_l_4(enum corner corner, uint8_t grey, uint8_t *buf,
-				   size_t buf_size, enum display_pixel_format fmt)
+				   size_t buf_size, uint32_t fmt)
 {
 	uint8_t nibble;
 
@@ -236,7 +236,7 @@ static inline void fill_buffer_l_4(enum corner corner, uint8_t grey, uint8_t *bu
 }
 
 static void fill_buffer_al_88(enum corner corner, uint8_t grey, uint8_t *buf,
-			      size_t buf_size, enum display_pixel_format fmt)
+			      size_t buf_size, uint32_t fmt)
 {
 	uint16_t color;
 
@@ -265,14 +265,14 @@ static void fill_buffer_al_88(enum corner corner, uint8_t grey, uint8_t *buf,
 
 static inline void fill_buffer_mono01(enum corner corner, uint8_t grey,
 				      uint8_t *buf, size_t buf_size,
-				      enum display_pixel_format fmt)
+				      uint32_t fmt)
 {
 	fill_buffer_mono(corner, grey, 0x00u, 0xFFu, buf, buf_size);
 }
 
 static inline void fill_buffer_mono10(enum corner corner, uint8_t grey,
 				      uint8_t *buf, size_t buf_size,
-				      enum display_pixel_format fmt)
+				      uint32_t fmt)
 {
 	fill_buffer_mono(corner, grey, 0xFFu, 0x00u, buf, buf_size);
 }

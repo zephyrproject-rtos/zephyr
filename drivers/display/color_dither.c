@@ -108,7 +108,7 @@ static void apply_ordered_dither(enum color_dither_algorithm algorithm, uint32_t
 }
 
 static int decode_pixel_rgb(const struct display_buffer_descriptor *desc,
-			    enum display_pixel_format pixel_format, const void *buf, uint32_t x,
+			    uint32_t pixel_format, const void *buf, uint32_t x,
 			    uint32_t y, struct color_dither_rgb *rgb)
 {
 	uint32_t pixel_idx = y * desc->pitch + x;
@@ -271,7 +271,7 @@ static uint8_t error_apply(uint8_t component, int16_t error, int divisor)
 }
 
 static int convert_error_diffusion(const struct display_buffer_descriptor *desc,
-				   enum display_pixel_format pixel_format, const void *buf,
+				   uint32_t pixel_format, const void *buf,
 				   const struct display_palette_color *palette,
 				   struct display_color_dither_state *state,
 				   const struct color_dither_errdiff_kernel *kernel)
@@ -368,7 +368,7 @@ static int convert_error_diffusion(const struct display_buffer_descriptor *desc,
 #endif /* FLOYD_STEINBERG || ATKINSON */
 
 static int convert_ordered(const struct display_buffer_descriptor *desc,
-			   enum display_pixel_format pixel_format, const void *buf,
+			   uint32_t pixel_format, const void *buf,
 			   const struct display_palette_color *palette, uint8_t *converted_buf,
 			   enum color_dither_algorithm algorithm)
 {
@@ -397,7 +397,7 @@ static int convert_ordered(const struct display_buffer_descriptor *desc,
 	 (IS_ENABLED(CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888) ? PIXEL_FORMAT_RGB_888 : 0))
 
 int display_color_dither_set_input_format(struct display_color_dither_state *state,
-					  enum display_pixel_format pf)
+					  uint32_t pf)
 {
 	/* I_4 is the native target format: select the driver's passthrough path with no
 	 * conversion. It is intentionally not part of COLOR_DITHER_SUPPORTED_FORMATS (those are
@@ -427,7 +427,7 @@ int display_color_dither_set_input_format(struct display_color_dither_state *sta
 }
 
 bool display_color_dither_is_active(const struct display_color_dither_state *state,
-				    enum display_pixel_format current_pixel_format)
+				    uint32_t current_pixel_format)
 {
 	return state != NULL && state->converted_buf != NULL &&
 	       state->input_format != PIXEL_FORMAT_I_4 &&

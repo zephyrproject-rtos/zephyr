@@ -212,7 +212,7 @@ typedef int (*mipi_dbi_write_display_t)(const struct device *dev,
 					const struct mipi_dbi_config *config,
 					const uint8_t *framebuf,
 					struct display_buffer_descriptor *desc,
-					enum display_pixel_format pixfmt);
+					uint32_t pixfmt);
 
 /**
  * @brief Callback API to reset the attached display controller.
@@ -351,7 +351,7 @@ static inline int mipi_dbi_write_display(const struct device *dev,
 					 const struct mipi_dbi_config *config,
 					 const uint8_t *framebuf,
 					 struct display_buffer_descriptor *desc,
-					 enum display_pixel_format pixfmt)
+					 uint32_t pixfmt)
 {
 	const struct mipi_dbi_driver_api *api = DEVICE_API_GET(mipi_dbi, dev);
 

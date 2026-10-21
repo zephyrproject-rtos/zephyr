@@ -189,7 +189,7 @@ static void lpm_get_capabilities(const struct device *dev, struct display_capabi
 	caps->screen_info = SCREEN_INFO_X_ALIGNMENT_WIDTH;
 }
 
-static int lpm_set_pixel_format(const struct device *dev, enum display_pixel_format pf)
+static int lpm_set_pixel_format(const struct device *dev, uint32_t pf)
 {
 	return (pf == PIXEL_FORMAT_RGB_565) ? 0 : -ENOTSUP;
 }
