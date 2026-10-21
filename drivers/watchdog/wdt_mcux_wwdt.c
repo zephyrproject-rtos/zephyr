@@ -43,6 +43,7 @@ struct mcux_wwdt_data {
 	bool timeout_valid;
 	bool active_before_sleep;
 	bool started;
+	bool disabled;
 };
 
 #if MCUX_WWDT_HAS_CLOCK_HALT
@@ -156,6 +157,11 @@ static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
 		return -EBUSY;
 	}
 
+	if (MCUX_WWDT_HAS_CLOCK_HALT && data->disabled) {
+		LOG_ERR("Cannot restart a disabled watchdog");
+		return -ENOTSUP;
+	}
+
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeouts installed");
 		return -EINVAL;
@@ -193,6 +199,7 @@ static int mcux_wwdt_disable(const struct device *dev)
 			LOG_ERR("Cannot halt watchdog: %d", ret);
 			return ret;
 		}
+		data->disabled = true;
 		irq_unlock(key);
 	} else {
 		WWDT_Deinit(base);
@@ -219,6 +226,11 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	struct mcux_wwdt_data *data = dev->data;
 	uint32_t clock_freq;
 	int ret;
+
+	if (MCUX_WWDT_HAS_CLOCK_HALT && data->disabled) {
+		LOG_ERR("Cannot restart a disabled watchdog");
+		return -ENOTSUP;
+	}
 
 	if (data->timeout_valid) {
 		LOG_ERR("No more timeouts can be installed");
@@ -355,6 +367,10 @@ static int mcux_wwdt_driver_pm_action(const struct device *dev,
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		data->started = false;
+		if (MCUX_WWDT_HAS_CLOCK_HALT && data->disabled) {
+			data->active_before_sleep = false;
+			break;
+		}
 		if (config->base->MOD & WWDT_MOD_WDEN_MASK) {
 			data->active_before_sleep = true;
 		}
