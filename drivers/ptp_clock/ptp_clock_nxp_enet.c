@@ -89,14 +89,22 @@ static int ptp_clock_nxp_enet_adjust(const struct device *dev,
 
 }
 
-static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
-					double ratio)
+/* A rate offset of 100 % in scaled ppm */
+#define PTP_CLOCK_NXP_ENET_SCALED_PPM_FULL (1000000 * PTP_CLOCK_SCALED_PPM_ONE)
+
+/* Rate offsets below 10 ppb, which is 655.36 in scaled ppm, are not applied. */
+#define PTP_CLOCK_NXP_ENET_SCALED_PPM_MIN 656
+
+static int ptp_clock_nxp_enet_adjust_rate(const struct device *dev,
+					int64_t scaled_ppm)
 {
 	const struct ptp_clock_nxp_enet_config *config = dev->config;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	int corr;
 	int32_t mul;
-	double val;
+	uint64_t val;
+	uint64_t abs_ppm;
+	int64_t max_ppm;
 	uint32_t enet_ref_pll_rate;
 
 	(void) clock_control_get_rate(config->clock_dev, config->clock_subsys,
@@ -104,23 +112,29 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 	int hw_inc = NSEC_PER_SEC / enet_ref_pll_rate;
 
 	/* No change needed. */
-	if ((ratio > 1.0 && ratio - 1.0 < 0.00000001) ||
-	   (ratio < 1.0 && 1.0 - ratio < 0.00000001)) {
+	if ((scaled_ppm != 0) && (scaled_ppm > -PTP_CLOCK_NXP_ENET_SCALED_PPM_MIN) &&
+	    (scaled_ppm < PTP_CLOCK_NXP_ENET_SCALED_PPM_MIN)) {
 		return 0;
 	}
 
-	/* Limit possible ratio. */
-	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
-			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
+	/* Limit possible rate offset to 1 / (2 * hw_inc). */
+	max_ppm = PTP_CLOCK_NXP_ENET_SCALED_PPM_FULL / (2 * hw_inc);
+	if ((scaled_ppm > max_ppm) || (scaled_ppm < -max_ppm)) {
 		return -EINVAL;
 	}
 
-	if (ratio < 1.0) {
+	/*
+	 * The increment is corrected by 1 ns every val timer clocks, which
+	 * makes up for the rate offset if val = 1 / (hw_inc * rate offset).
+	 */
+	if (scaled_ppm < 0) {
+		abs_ppm = (uint64_t)(-scaled_ppm);
 		corr = hw_inc - 1;
-		val = 1.0 / (hw_inc * (1.0 - ratio));
-	} else if (ratio > 1.0) {
+		val = PTP_CLOCK_NXP_ENET_SCALED_PPM_FULL / (hw_inc * abs_ppm);
+	} else if (scaled_ppm > 0) {
+		abs_ppm = (uint64_t)scaled_ppm;
 		corr = hw_inc + 1;
-		val = 1.0 / (hw_inc * (ratio - 1.0));
+		val = PTP_CLOCK_NXP_ENET_SCALED_PPM_FULL / (hw_inc * abs_ppm);
 	} else {
 		val = 0;
 		corr = hw_inc;
@@ -227,7 +241,7 @@ static DEVICE_API(ptp_clock, ptp_clock_nxp_enet_api) = {
 	.set = ptp_clock_nxp_enet_set,
 	.get = ptp_clock_nxp_enet_get,
 	.adjust = ptp_clock_nxp_enet_adjust,
-	.rate_adjust = ptp_clock_nxp_enet_rate_adjust,
+	.adjust_rate = ptp_clock_nxp_enet_adjust_rate,
 };
 
 #define PTP_CLOCK_NXP_ENET_INIT(n)						\
