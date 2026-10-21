@@ -3561,6 +3561,7 @@ static int hl78xx_on_sleep_state_enter(struct hl78xx_data *data)
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 0);
 		LOG_DBG("Set WAKE pin to 0");
 	}
+	data->status.sleep_wake_timer_armed = false;
 #ifdef CONFIG_MODEM_HL78XX_EDRX
 	/* Cancel the eDRX idle timer since we are already entering sleep */
 	hl78xx_edrx_idle_cancel(data);
@@ -3616,6 +3617,7 @@ static void hl78xx_sleep_event_handler(struct hl78xx_data *data, enum hl78xx_eve
 			LOG_DBG("Set WAKE pin to 1");
 		}
 		hl78xx_resume_uart(config);
+		data->status.sleep_wake_timer_armed = true;
 		hl78xx_start_timer(data, K_MSEC(config->startup_time_ms));
 		break;
 	case MODEM_HL78XX_EVENT_DEVICE_AWAKE:
@@ -3626,6 +3628,14 @@ static void hl78xx_sleep_event_handler(struct hl78xx_data *data, enum hl78xx_eve
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_RESUME);
 		break;
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+		if (!data->status.sleep_wake_timer_armed) {
+			/* A timeout the previous state queued before it left: not
+			 * the wake settling, and the modem is still asleep.
+			 */
+			LOG_DBG("Ignoring a timeout that SLEEP did not arm");
+			break;
+		}
+		data->status.sleep_wake_timer_armed = false;
 		LOG_DBG("Modem wakeup settling complete, reopening UART pipe");
 		modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
 		modem_pipe_open_async(data->uart_pipe);

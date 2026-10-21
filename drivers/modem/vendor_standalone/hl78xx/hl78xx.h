@@ -618,6 +618,10 @@ struct modem_status {
 	 * during the wait, instead of re-running the GPRS enable.
 	 */
 	bool carrier_off_registration_loss;
+	/* SLEEP armed the wake settling timer: its timeout reopens the UART. A
+	 * timeout the previous state queued before it left is not that one.
+	 */
+	bool sleep_wake_timer_armed;
 
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	struct hl78xx_wdsi_status wdsi;
