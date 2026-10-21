@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,11 @@
 #define PANEL_PIXEL_FORMAT_RGB_565X  (0x1 << 5)
 #define PANEL_PIXEL_FORMAT_L_8       (0x1 << 6)
 #define PANEL_PIXEL_FORMAT_AL_88     (0x1 << 7)
-#define PANEL_PIXEL_FORMAT_XRGB_8888 (0x1 << 8) /**< 32-bit ARGB */
+#define PANEL_PIXEL_FORMAT_XRGB_8888 (0x1 << 8)  /**< 32-bit XRGB */
+#define PANEL_PIXEL_FORMAT_BGR_888   (0x1 << 9)  /**< 24-bit BGR */
+#define PANEL_PIXEL_FORMAT_ABGR_8888 (0x1 << 10) /**< 32-bit ABGR */
+#define PANEL_PIXEL_FORMAT_RGBA_8888 (0x1 << 11) /**< 32-bit RGBA */
+#define PANEL_PIXEL_FORMAT_BGRA_8888 (0x1 << 12) /**< 32-bit BGRA */
 
 /**
  * @}
