@@ -97,7 +97,7 @@ static int st7796s_blanking_off(const struct device *dev)
 	return st7796s_send_cmd(dev, ST7796S_CMD_DISPON, NULL, 0);
 }
 
-static int st7796s_get_pixelfmt(const struct device *dev)
+static pixel_format_t st7796s_get_pixelfmt(const struct device *dev)
 {
 	const struct st7796s_config *config = dev->config;
 
@@ -160,7 +160,7 @@ static int st7796s_write(const struct device *dev,
 	const struct st7796s_config *config = dev->config;
 	int ret;
 	struct display_buffer_descriptor mipi_desc = {0};
-	enum display_pixel_format pixfmt;
+	pixel_format_t pixfmt;
 
 	ret = st7796s_set_cursor(dev, x, y, desc->width, desc->height);
 	if (ret < 0) {
@@ -327,7 +327,7 @@ static int st7796s_lcd_config(const struct device *dev)
 }
 
 static int st7796s_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const pixel_format_t pixel_format)
 {
 	/* Just check again the current pixel format as changing format at
 	 * runtime is not supported

@@ -39,7 +39,7 @@ struct nxp_dcif_config {
 	dcif_output_config_t output_config;
 	dcif_layer_panic_config_t panic_config;
 	/* Initial pixel format from devicetree */
-	enum display_pixel_format init_pixel_format;
+	pixel_format_t init_pixel_format;
 	/* Pointer to first framebuffer */
 	uint8_t *fb_ptr;
 };
@@ -221,7 +221,7 @@ static int nxp_dcif_display_blanking_on(const struct device *dev)
 }
 
 static int nxp_dcif_set_pixel_format(const struct device *dev,
-				      const enum display_pixel_format pixel_format)
+				      const pixel_format_t pixel_format)
 {
 	struct nxp_dcif_data *data = dev->data;
 	const struct nxp_dcif_config *config = dev->config;
