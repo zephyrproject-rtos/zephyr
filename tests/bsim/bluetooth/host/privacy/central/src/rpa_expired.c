@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -53,13 +54,9 @@ static void get_rpa(const struct bt_le_ext_adv *adv, bt_addr_le_t *rpa)
 	bt_addr_le_copy(rpa, info.addr);
 }
 
-/* bt_le_oob_get_local() rotates the RPAs now and calls rpa_expired_cb() from this thread. */
-static void force_rotation(void)
+/* A rotation forced with err == 0 has called rpa_expired_cb() from this thread. */
+static void expect_forced_call(int err)
 {
-	struct bt_le_oob oob;
-	int err;
-
-	err = bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
 	TEST_ASSERT(err == 0, "Failed to rotate the RPAs (err %d)", err);
 	TEST_ASSERT(k_sem_take(&rpa_expired_sem, K_NO_WAIT) == 0,
 		    "No rpa_expired call for the forced rotation");
@@ -85,9 +82,13 @@ static void test_rpa_expired(void)
 		.rpa_expired = rpa_expired_cb,
 	};
 	struct bt_le_ext_adv *adv;
+	struct bt_le_oob oob;
 	bt_addr_le_t kept_rpa;
 	bt_addr_le_t rpa;
 	int err;
+
+	err = bt_le_rotate_rpa();
+	TEST_ASSERT(err == -EAGAIN, "Rotating before bt_enable() returned %d", err);
 
 	err = bt_enable(NULL);
 	TEST_ASSERT(err == 0, "Bluetooth init failed (err %d)", err);
@@ -101,7 +102,7 @@ static void test_rpa_expired(void)
 	 */
 	keep_rpa = true;
 	next_timeout_s = 2U;
-	force_rotation();
+	expect_forced_call(bt_le_oob_get_local(BT_ID_DEFAULT, &oob));
 	expect_call(1U, 2U);
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
@@ -112,7 +113,7 @@ static void test_rpa_expired(void)
 	/* The same for an advertising set, after a rotation it allowed */
 	keep_rpa = false;
 	next_timeout_s = 3U;
-	force_rotation();
+	expect_forced_call(bt_le_rotate_rpa());
 	get_rpa(adv, &rpa);
 	TEST_ASSERT(!bt_addr_le_eq(&rpa, &kept_rpa), "The set did not get a new RPA");
 	bt_addr_le_copy(&kept_rpa, &rpa);
@@ -137,7 +138,7 @@ static void test_rpa_expired(void)
 	err = bt_le_ext_adv_stop(adv);
 	TEST_ASSERT(err == 0, "Failed to stop advertising (err %d)", err);
 	keep_rpa = false;
-	force_rotation();
+	expect_forced_call(bt_le_rotate_rpa());
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	TEST_ASSERT(err == 0, "Failed to start advertising (err %d)", err);
 	get_rpa(adv, &rpa);
