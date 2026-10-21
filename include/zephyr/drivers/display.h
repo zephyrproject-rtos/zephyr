@@ -216,10 +216,20 @@ enum display_pixel_format {
 	PIXEL_FORMAT_BGRA_8888 = BIT(12), /**< 32-bit BGRA */
 
 	/**
-	 * This and higher values are display specific.
-	 * Refer to the display header file.
+	 * @brief 4-bit indexed color format with 2 pixels packed per byte.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | IiiiJjjj | KkkkLlll | ...
+	 * @endcode
+	 *
+	 * The high nibble stores the left pixel and the low nibble stores the
+	 * right pixel. Palette semantics are display-specific.
 	 */
-	PIXEL_FORMAT_PRIV_START = (PIXEL_FORMAT_BGRA_8888 << 1),
+	PIXEL_FORMAT_I_4 = BIT(13), /**< Packed 4-bit indexed color */
 };
 
 /**
@@ -227,8 +237,7 @@ enum display_pixel_format {
  *
  * This macro expands to the number of bits required for a given display
  * format. It can be used to allocate a framebuffer based on a given
- * display format type. This does not work with any private
- * pixel formats.
+ * display format type
  */
 #define DISPLAY_BITS_PER_PIXEL(fmt)						\
 	((((fmt & PIXEL_FORMAT_RGB_888) >> 0) * 24U) +				\
@@ -243,7 +252,9 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_BGR_888) >> 9) * 24U) +				\
 	(((fmt & PIXEL_FORMAT_ABGR_8888) >> 10) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_RGBA_8888) >> 11) * 32U) +			\
-	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U))
+	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
+	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U))
+
 /**
  * @brief Display screen information
  */

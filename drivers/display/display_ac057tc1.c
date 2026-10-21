@@ -48,9 +48,6 @@ LOG_MODULE_REGISTER(ac057tc1, CONFIG_DISPLAY_LOG_LEVEL);
 /* Deep sleep check byte */
 #define AC057TC1_DEEP_SLEEP_CHECK 0xA5
 
-/* Pixel format: 4 bits per pixel (one nibble per pixel, 2 pixels per byte) */
-#define AC057TC1_PIXELS_PER_BYTE 2
-
 struct ac057tc1_config {
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
@@ -294,7 +291,7 @@ static int ac057tc1_write(const struct device *dev, const uint16_t x, const uint
 	}
 
 	/* Calculate buffer length - 4 bits per pixel, 2 pixels per byte */
-	buf_len = (desc->width * desc->height) / AC057TC1_PIXELS_PER_BYTE;
+	buf_len = (desc->width * desc->height) / 2U;
 
 	if (buf == NULL || desc->buf_size < buf_len) {
 		LOG_ERR("Invalid buffer: buf=%p size=%u expected=%u", buf, desc->buf_size, buf_len);
@@ -394,14 +391,14 @@ static void ac057tc1_get_capabilities(const struct device *dev, struct display_c
 	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_L_4;
-	caps->current_pixel_format = PIXEL_FORMAT_L_4;
+	caps->supported_pixel_formats = PIXEL_FORMAT_I_4;
+	caps->current_pixel_format = PIXEL_FORMAT_I_4;
 	caps->screen_info = SCREEN_INFO_EPD;
 }
 
 static int ac057tc1_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
 {
-	if (pf == PIXEL_FORMAT_L_4) {
+	if (pf == PIXEL_FORMAT_I_4) {
 		return 0;
 	}
 
