@@ -191,6 +191,7 @@ static void hub_port_handle_change(struct usbh_hub_data *const hub_data,
 	const uint8_t port_num = port_instance->num;
 	uint16_t port_status;
 	uint16_t port_change;
+	bool connect_change;
 	int ret;
 
 	ret = usbh_req_get_port_status(hub_data->udev, port_num,
@@ -200,6 +201,7 @@ static void hub_port_handle_change(struct usbh_hub_data *const hub_data,
 		return;
 	}
 
+	connect_change = (port_change & USB_HUB_PORT_CHANGE_CONNECTION) != 0;
 	port_sts.wPortStatus = port_status;
 	port_sts.wPortChange = port_change;
 	LOG_DBG("Port %d status: wPortStatus=0x%04x, wPortChange=0x%04x",
@@ -274,6 +276,11 @@ static void hub_port_handle_change(struct usbh_hub_data *const hub_data,
 		LOG_DBG("Port %d device still active", port_num);
 		port_instance->state = PORT_STATE_ENABLED;
 		port_instance->enum_pending = false;
+		return;
+	}
+
+	if (port_instance->udev == NULL && !connect_change) {
+		LOG_DBG("Port %d not reset again without a new connection", port_num);
 		return;
 	}
 
@@ -432,6 +439,15 @@ static void hub_port_process(struct usbh_hub_data *const hub_data,
 				LOG_WRN("Port %d device disconnected during reset", port_num);
 				port_instance->state = PORT_STATE_DISCONNECTED;
 				return;
+			}
+
+			/* A device attached again is debounced before the next reset */
+			if ((port_sts.wPortChange & USB_HUB_PORT_CHANGE_CONNECTION) != 0 &&
+			    port_instance->reset_count > 0) {
+				LOG_WRN("Port %d connection changed during reset", port_num);
+				port_instance->state = PORT_STATE_DISCONNECTED;
+				k_sleep(K_MSEC(CONFIG_USBH_HUB_ENUM_RETRY_DELAY_MS));
+				continue;
 			}
 
 			if ((port_sts.wPortStatus & USB_HUB_PORT_STATUS_ENABLE) == 0) {
