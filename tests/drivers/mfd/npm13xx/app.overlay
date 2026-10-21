@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+
+	pmic: pmic@6b {
+		compatible = "nordic,npm1300";
+		reg = <0x6b>;
+		host-int-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		pmic-int-pin = <0>;
+	};
+};
