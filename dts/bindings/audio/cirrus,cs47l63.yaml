@@ -40,6 +40,21 @@ properties:
       Input this serial port captures from: line is IN2L/IN2R, the analog
       line pair; pdm is IN1L/IN1R in digital mode, a PDM microphone.
 
+  cirrus,in2-single-ended:
+    type: boolean
+    description: |
+      IN2L and IN2R are wired single-ended, on IN2LP and IN2RP only. If
+      absent they are wired as differential pairs, IN2xP to IN2xN, the
+      part's reset setting. One setting covers both channels. Applies to
+      every serial port whose cirrus,input is "line".
+
+  cirrus,hp-load-below-20-ohm:
+    type: boolean
+    description: |
+      The headphone load on OUTP/OUTN has a DC resistance below 20 ohms.
+      If absent the load is taken as 20 ohms or more, the part's reset
+      setting.
+
   gpio1-gpios:
     type: phandle-array
     description:
