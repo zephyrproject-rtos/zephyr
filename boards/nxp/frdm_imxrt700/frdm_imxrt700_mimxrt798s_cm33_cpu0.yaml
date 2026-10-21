@@ -17,5 +17,6 @@ supported:
   - counter
   - gpio
   - uart
+  - watchdog
   - serial
 vendor: nxp
