@@ -396,3 +396,48 @@ ZTEST(pwm_loopback, test_capture_busy)
 	err = pwm_disable_capture(in.dev, in.pwm);
 	zassert_equal(err, 0, "failed to disable pwm capture (err %d)", err);
 }
+
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), pwms)
+/*
+ * Generate and capture on the same instance. Each captured period then holds
+ * exactly one counter rollover, so a wrong rollover length shows up as an exact
+ * error instead of hiding inside the 1% tolerance.
+ */
+ZTEST(pwm_loopback, test_period_capture_same_instance)
+{
+	const struct pwm_dt_spec out = PWM_DT_SPEC_GET_BY_IDX(DT_PATH(zephyr_user), 0);
+	const struct pwm_dt_spec in = PWM_DT_SPEC_GET_BY_IDX(DT_PATH(zephyr_user), 1);
+	const uint32_t period = 1000U;
+	uint32_t period_capture = 0;
+	uint32_t pulse_capture = 0;
+	uint64_t period_usec;
+	int err;
+
+	zassert_true(pwm_is_ready_dt(&out), "same-instance output device is not ready");
+	zassert_true(pwm_is_ready_dt(&in), "same-instance input device is not ready");
+
+	err = pwm_cycles_to_usec(out.dev, out.channel, period, &period_usec);
+	zassert_equal(err, 0, "failed to calculate usec (err %d)", err);
+
+	err = pwm_set_cycles(out.dev, out.channel, period, period / 4U, out.flags);
+	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
+
+	k_sleep(K_USEC(period_usec));
+
+	err = pwm_capture_cycles(in.dev, in.channel,
+				 in.flags | PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_INVERTED,
+				 &period_capture, &pulse_capture, K_USEC(period_usec * 10));
+
+	/* Leave the line at a constant inactive level for the tests that follow. */
+	(void)pwm_set_cycles(out.dev, out.channel, period, 0, out.flags);
+
+	if (err == -ENOTSUP) {
+		TC_PRINT("period capture not supported\n");
+		ztest_test_skip();
+	}
+
+	zassert_equal(err, 0, "failed to capture pwm (err %d)", err);
+	zassert_equal(period_capture, period, "period capture %u cycles, expected %u",
+		      period_capture, period);
+}
+#endif /* DT_NODE_HAS_PROP(DT_PATH(zephyr_user), pwms) */
