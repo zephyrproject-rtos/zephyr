@@ -208,6 +208,89 @@ static OSPI_RegularCmdTypeDef mspi_stm32_ospi_prepare_cmd(uint8_t cfg_mode, uint
 	return cmd_tmp;
 }
 
+/* Read the OCTOSPI kernel clock rate: the domain clock when one is given. */
+static int mspi_stm32_ospi_kernel_freq(const struct mspi_stm32_conf *cfg, uint32_t *freq)
+{
+	const struct stm32_pclken *pclken = &cfg->pclken[(cfg->pclk_len > 1) ? 1 : 0];
+
+	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				   (clock_control_subsys_t)pclken, freq) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate(pclken)");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/**
+ * Convert time_to_break (us) into the DCR4 REFRESH value.
+ *
+ * The controller releases nCS every REFRESH + 1 cycles on writes and
+ * REFRESH + 4 cycles on reads, so the read case bounds the value.
+ * The cycle count uses the actual bus clock set by the prescaler.
+ */
+static int mspi_stm32_ospi_refresh_compute(const struct device *controller,
+					   uint32_t time_to_break, uint32_t *refresh)
+{
+	const struct mspi_stm32_conf *cfg = controller->config;
+	struct mspi_stm32_data *data = controller->data;
+	uint32_t kernel_freq;
+	uint64_t cycles;
+	int ret;
+
+	if (time_to_break == 0U) {
+		*refresh = 0U;
+		return 0;
+	}
+
+	ret = mspi_stm32_ospi_kernel_freq(cfg, &kernel_freq);
+	if (ret != 0) {
+		return ret;
+	}
+
+	cycles = ((uint64_t)time_to_break *
+		  MSPI_STM32_CLOCK_COMPUTE(kernel_freq, data->hmspi.ospi.Init.ClockPrescaler)) /
+		 USEC_PER_SEC;
+	if (cycles <= 4U || cycles > (uint64_t)UINT32_MAX + 4U) {
+		LOG_ERR("time_to_break %u us is out of range", time_to_break);
+		return -EINVAL;
+	}
+
+	*refresh = (uint32_t)(cycles - 4U);
+
+	return 0;
+}
+
+/**
+ * Program DCR4 REFRESH. The register is writable only when BUSY = 0, so while
+ * the controller is busy the update is left pending and written before the
+ * next command, see mspi_stm32_ospi_refresh_apply_pending().
+ */
+static void mspi_stm32_ospi_refresh_apply(const struct device *controller)
+{
+	struct mspi_stm32_data *data = controller->data;
+
+	(void)pm_device_runtime_get(controller);
+
+	if (__HAL_OSPI_GET_FLAG(&data->hmspi.ospi, HAL_OSPI_FLAG_BUSY) == SET) {
+		data->refresh_pending = true;
+	} else {
+		stm32_reg_write(&data->hmspi.ospi.Instance->DCR4, data->hmspi.ospi.Init.Refresh);
+		data->refresh_pending = false;
+	}
+
+	(void)pm_device_runtime_put(controller);
+}
+
+static void mspi_stm32_ospi_refresh_apply_pending(const struct device *controller)
+{
+	struct mspi_stm32_data *data = controller->data;
+
+	if (data->refresh_pending) {
+		mspi_stm32_ospi_refresh_apply(controller);
+	}
+}
+
 static bool mspi_stm32_ospi_is_memorymap(const struct device *dev)
 {
 	struct mspi_stm32_data *dev_data = dev->data;
@@ -246,6 +329,8 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 		LOG_ERR("MSPI_IO_MODE_SINGLE in 3Bytes addressing is not supported");
 		return -EIO;
 	}
+
+	mspi_stm32_ospi_refresh_apply_pending(controller);
 
 	/* Initialize the read command */
 	s_command.OperationType = HAL_OSPI_OPTYPE_READ_CFG;
@@ -443,6 +528,8 @@ indirect:
 	(void)pm_device_runtime_get(dev);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+	mspi_stm32_ospi_refresh_apply_pending(dev);
 
 	OSPI_RegularCmdTypeDef cmd =
 		mspi_stm32_ospi_prepare_cmd(dev_data->dev_cfg.io_mode, dev_data->dev_cfg.data_rate);
@@ -801,6 +888,18 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 			return -ENOTSUP;
 		}
 		data->dev_cfg.dqs_enable = dev_cfg->dqs_enable;
+	}
+
+	if ((param_mask & MSPI_DEVICE_CONFIG_BREAK_TIME) != 0) {
+		uint32_t refresh;
+		int ret = mspi_stm32_ospi_refresh_compute(controller, dev_cfg->time_to_break,
+							  &refresh);
+
+		if (ret != 0) {
+			return ret;
+		}
+		data->hmspi.ospi.Init.Refresh = refresh;
+		mspi_stm32_ospi_refresh_apply(controller);
 	}
 
 	mspi_stm32_ospi_set_cfg(data, param_mask, dev_cfg);
@@ -1220,21 +1319,8 @@ static int mspi_stm32_ospi_clock_config(struct mspi_stm32_data *dev_data,
 		return -EIO;
 	}
 
-	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				   (clock_control_subsys_t)&dev_cfg->pclken[0],
-				   &ahb_clock_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken)");
+	if (mspi_stm32_ospi_kernel_freq(dev_cfg, &ahb_clock_freq) != 0) {
 		return -EIO;
-	}
-
-	/* Alternate clock config for peripheral if any */
-	if (dev_cfg->pclk_len > 1) {
-		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t)&dev_cfg->pclken[1],
-					   &ahb_clock_freq) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken)");
-			return -EIO;
-		}
 	}
 
 	if (dev_cfg->pclk_len > 2) {

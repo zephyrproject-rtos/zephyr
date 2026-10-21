@@ -200,6 +200,10 @@ struct mspi_stm32_data {
 #if defined(CONFIG_MSPI_STM32_OSPI) || defined(CONFIG_MSPI_STM32_QSPI)
 	DMA_HandleTypeDef hdma;
 #endif
+#ifdef CONFIG_MSPI_STM32_OSPI
+	/* DCR4 REFRESH update skipped while BUSY = 1, still to be written */
+	bool refresh_pending;
+#endif
 #ifdef CONFIG_MSPI_STM32_XSPI
 #if defined(CONFIG_STM32_HAL2)
 	hal_dma_handle_t hdma_tx;
