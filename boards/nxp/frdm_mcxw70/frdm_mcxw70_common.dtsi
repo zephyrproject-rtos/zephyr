@@ -17,6 +17,7 @@
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		sw0 = &user_button_0;
+		wakeup-button = &user_button_0;
 	};
 
 	chosen {
@@ -70,6 +71,8 @@
 			label = "User SW4";
 			gpios = <&gpio_a 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
+			/* SW4 wakes via WUU external pin 0. */
+			wakeup-ctrls = <&wuu_0 NXP_WUU_PIN_0_FALLING_INT>;
 			status = "okay";
 		};
 	};
