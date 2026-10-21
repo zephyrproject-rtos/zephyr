@@ -222,6 +222,7 @@ static void udc_event_xfer_complete(const struct device *dev, struct udc_renesas
 			goto error;
 		}
 
+		udc_ep_set_busy(ep_cfg, true);
 		return;
 	}
 
@@ -234,6 +235,11 @@ static void udc_event_xfer_complete(const struct device *dev, struct udc_renesas
 			net_buf_add(buf, len);
 		}
 		udc_submit_ep_event(dev, buf, 0);
+
+		/* Trigger next transfer */
+		if (ep != USB_CONTROL_EP_OUT) {
+			udc_event_xfer_next(dev, ep);
+		}
 	}
 
 	return;
