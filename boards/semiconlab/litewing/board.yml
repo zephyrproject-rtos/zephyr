@@ -1,0 +1,6 @@
+board:
+  name: litewing
+  full_name: Litewing Drone
+  vendor: semiconlab
+  socs:
+  - name: esp32s3
