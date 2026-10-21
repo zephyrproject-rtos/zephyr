@@ -89,6 +89,19 @@ config ST67W611M1_LOW_POWER
 	  and TWT Wi-Fi management operations. Disable if the module
 	  firmware does not support low power.
 
+config ST67W611M1_SHELL
+	bool "Shell commands"
+	depends on SHELL
+	help
+	  Add the "st67" shell command. "st67 atcmd <AT command>" sends a
+	  raw AT command to the module and prints the reply, for debugging
+	  and for querying module state the driver does not expose.
+
+	  Reply lines the driver already handles (such as +CWJAP:,
+	  +CWSTATE: or +CWCOUNTRY:) go to the driver and are not printed.
+	  Commands that change the module state (such as connecting) bypass
+	  the driver, so its state can get out of sync with the module.
+
 configdefault NET_MGMT_EVENT_STACK_SIZE
 	default 2048
 
