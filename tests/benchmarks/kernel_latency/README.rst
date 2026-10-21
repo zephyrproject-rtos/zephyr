@@ -116,6 +116,32 @@ further out.
 The cold cost is reported for every benchmark, and in CSV output it is a
 row of its own.
 
+Comparing two trees
+*******************
+
+:file:`scripts/kernel_latency_regression.py` reads the percentile rows twister
+recorded for two runs and reports, per platform and per ready queue
+algorithm, which benchmarks moved:
+
+.. code-block:: console
+
+   scripts/twister -p qemu_x86 -T tests/benchmarks/kernel_latency --outdir base-run
+   # apply the change under test
+   scripts/twister -p qemu_x86 -T tests/benchmarks/kernel_latency --outdir pr-run
+   tests/benchmarks/kernel_latency/scripts/kernel_latency_regression.py \
+       --twister-json pr-run/twister.json --baseline-twister-json base-run/twister.json
+
+By default the median is compared, and a benchmark that moved by less than two
+percent is reported as unchanged; ``--statistic`` and ``--threshold`` change
+that, ``--markdown`` writes the comparison as a table, and ``--save`` and
+``--baseline`` keep a run around as a baseline file instead of a whole twister
+report.
+
+On the QEMU targets the comparison is exact. They run in icount mode, where the
+cycle counter advances with executed instructions, so a given binary reports
+the same numbers on every run and on every host, and a benchmark that moved is
+a path that executes a different number of instructions.
+
 Notes
 *****
 
