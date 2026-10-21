@@ -52,6 +52,9 @@ static struct k_heap * const wifi_data_pool = &wifi_drv_data_mem_pool;
 #define WORD_SIZE 4
 
 struct zep_shim_intr_priv *intr_priv;
+/* Gates ISR work submission; closed unless a registration is live. */
+static struct k_spinlock intr_lock;
+static bool intr_stopping = true;
 
 static void *zep_shim_mem_alloc(size_t size)
 {
@@ -1006,12 +1009,21 @@ static void zep_shim_irq_handler(const struct device *dev, struct gpio_callback 
 	ARG_UNUSED(cb);
 	ARG_UNUSED(pins);
 
+	k_spinlock_key_t key = k_spin_lock(&intr_lock);
+
+	if (intr_stopping) {
+		k_spin_unlock(&intr_lock, key);
+		return;
+	}
+
 	if (!(intr_priv && intr_priv->callbk_fn && intr_priv->callbk_data)) {
+		k_spin_unlock(&intr_lock, key);
 		LOG_ERR("%s: Invalid intr_priv", __func__);
 		return;
 	}
 
 	k_work_schedule_for_queue(&zep_wifi_intr_q, &intr_priv->work, K_NO_WAIT);
+	k_spin_unlock(&intr_lock, key);
 }
 
 
@@ -1022,6 +1034,12 @@ static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *c
 	int ret = -1;
 
 	ARG_UNUSED(os_dev_ctx);
+
+	/* A failed unreg keeps intr_priv while its callback may still be linked. */
+	if (intr_priv != NULL) {
+		LOG_ERR("%s: Previous interrupt registration still present", __func__);
+		goto out;
+	}
 
 	intr_priv = zep_shim_mem_zalloc(sizeof(*intr_priv));
 
@@ -1044,6 +1062,10 @@ static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *c
 		goto out;
 	}
 
+	K_SPINLOCK(&intr_lock) {
+		intr_stopping = false;
+	}
+
 	status = NRF_WIFI_STATUS_SUCCESS;
 out:
 	return status;
@@ -1055,9 +1077,20 @@ static void zep_shim_bus_qspi_intr_unreg(void *os_qspi_dev_ctx)
 	int ret;
 
 	ARG_UNUSED(os_qspi_dev_ctx);
+
+	if (intr_priv == NULL) {
+		return;
+	}
+
+	K_SPINLOCK(&intr_lock) {
+		intr_stopping = true;
+	}
+
 	ret = rpu_irq_remove(&intr_priv->gpio_cb_data);
 	if (ret) {
 		LOG_ERR("%s: rpu_irq_remove failed", __func__);
+		/* The caller frees the bus context regardless; drain queued work. */
+		k_work_cancel_delayable_sync(&intr_priv->work, &sync);
 		return;
 	}
 
