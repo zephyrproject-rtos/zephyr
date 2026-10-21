@@ -246,6 +246,26 @@ enum display_pixel_format {
 	 * right pixel.
 	 */
 	PIXEL_FORMAT_L_4 = BIT(14), /**< Packed 4-bit Grayscale/Luminance */
+
+	/**
+	 * @brief Packed YUV 4:2:2 format, two pixels per four bytes.
+	 *
+	 * Each pixel carries its own luminance and the two share a pair of
+	 * chrominance samples, so the format costs sixteen bits per pixel.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   | Byte 2   | Byte 3   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Yyyyyyyy | Uuuuuuuu | Yyyyyyyy | Vvvvvvvv | ...
+	 * @endcode
+	 *
+	 * Byte 0 is the luminance of the left pixel and byte 2 that of the
+	 * right one. A display advertising this format converts to RGB itself,
+	 * which is what makes it worth writing pictures out in.
+	 */
+	PIXEL_FORMAT_YUYV = BIT(15),
 };
 
 /**
@@ -270,7 +290,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_RGBA_8888) >> 11) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U) +				\
-	(((fmt & PIXEL_FORMAT_L_4) >> 14) * 4U))
+	(((fmt & PIXEL_FORMAT_L_4) >> 14) * 4U) +				\
+	(((fmt & PIXEL_FORMAT_YUYV) >> 15) * 16U))
 
 /**
  * @brief Display screen information
