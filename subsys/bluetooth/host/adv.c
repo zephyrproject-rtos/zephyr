@@ -1102,6 +1102,8 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 	adv->sid = BT_GAP_SID_INVALID;
 #endif /* CONFIG_BT_EXT_ADV */
 
+	adv->options = param->options;
+
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE, param->options & BT_LE_ADV_OPT_CONN);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_SCANNABLE, scannable);
