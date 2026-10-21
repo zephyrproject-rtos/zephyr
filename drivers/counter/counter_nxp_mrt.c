@@ -59,6 +59,7 @@ struct nxp_mrt_config {
 	struct nxp_mrt_channel_data *const *data;
 	const struct device *const *channels;
 	const struct reset_dt_spec reset;
+	uint8_t num_channels;
 };
 
 static int nxp_mrt_stop(const struct device *dev)
@@ -213,7 +214,6 @@ static int nxp_mrt_init_common(const struct device *dev)
 {
 	const struct nxp_mrt_config *config = dev->config;
 	MRT_Type *base = config->base;
-	uint32_t num_channels = (base->MODCFG & MRT_MODCFG_NOC_MASK) >> MRT_MODCFG_NOC_SHIFT;
 	int ret = 0;
 
 	if (!device_is_ready(config->reset.dev)) {
@@ -231,7 +231,7 @@ static int nxp_mrt_init_common(const struct device *dev)
 	config->irq_config_func(dev);
 
 	/* Enable interrupts for all the channels that have devices */
-	for (int i = 0; i < num_channels; i++) {
+	for (int i = 0; i < config->num_channels; i++) {
 		if (config->channels[i]) {
 			base->CHANNEL[i].CTRL = MRT_CHANNEL_CTRL_INTEN_MASK;
 		}
@@ -271,9 +271,8 @@ static void nxp_mrt_isr(const struct device *dev)
 	const struct nxp_mrt_config *config = dev->config;
 	MRT_Type *base = config->base;
 	uint32_t irq_pends = base->IRQ_FLAG;
-	uint32_t num_channels = (base->MODCFG & MRT_MODCFG_NOC_MASK) >> MRT_MODCFG_NOC_SHIFT;
 
-	for (int i = 0; i < num_channels; i++) {
+	for (int i = 0; i < config->num_channels; i++) {
 		/* Channel IRQ pending flags lowest order bits in IRQ_FLAG register */
 		if (!(irq_pends & (0x1 << i))) {
 			continue;
@@ -361,6 +360,7 @@ DEVICE_API(counter, nxp_mrt_api) = {
 		.data = nxp_mrt_##n##_channel_datas,                                               \
 		.channels = nxp_mrt_##n##_channels,                                                \
 		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
+		.num_channels = DT_INST_PROP(n, num_channels),                                     \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(n, nxp_mrt_pm_action);                                            \
