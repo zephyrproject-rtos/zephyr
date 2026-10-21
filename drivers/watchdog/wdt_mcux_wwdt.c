@@ -42,6 +42,7 @@ struct mcux_wwdt_data {
 	bool active_before_sleep;
 	bool started;
 	struct k_spinlock lock;
+	bool starting;
 };
 
 static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32_t *freq)
@@ -89,19 +90,43 @@ static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32
 	return 0;
 }
 
-static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
+static void mcux_wwdt_start(const struct device *dev)
 {
 	const struct mcux_wwdt_config *config = dev->config;
 	struct mcux_wwdt_data *data = dev->data;
-	WWDT_Type *base = config->base;
+	k_spinlock_key_t key;
 
-	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
-		return -EINVAL;
+	WWDT_Init(config->base, &data->wwdt_config);
+
+	key = k_spin_lock(&data->lock);
+	data->started = true;
+	data->starting = false;
+	data->active_before_sleep = false;
+	k_spin_unlock(&data->lock, key);
+}
+
+static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
+{
+	struct mcux_wwdt_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	int ret = 0;
+
+	if (data->started || data->starting) {
+		ret = -EBUSY;
+	} else if (!data->timeout_valid) {
+		ret = -EINVAL;
 	}
 
-	WWDT_Init(base, &data->wwdt_config);
-	data->started = true;
+	if (ret != 0) {
+		k_spin_unlock(&data->lock, key);
+		LOG_ERR("Cannot set up watchdog: %d", ret);
+		return ret;
+	}
+
+	data->starting = true;
+	k_spin_unlock(&data->lock, key);
+
+	mcux_wwdt_start(dev);
 	LOG_DBG("Setup the watchdog");
 	return 0;
 }
@@ -216,7 +241,7 @@ static int mcux_wwdt_install_timeout(const struct device *dev, const struct wdt_
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	if (data->started) {
+	if (data->started || data->starting) {
 		ret = -EBUSY;
 	} else {
 		ret = mcux_wwdt_install_timeout_config(dev, cfg);
