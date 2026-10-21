@@ -48,6 +48,9 @@ struct nxp_mrt_channel_data {
 	uint32_t top;
 	counter_top_callback_t cb;
 	void *user_data;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool power_locked;
+#endif
 };
 
 /* Shared between all channels */
@@ -63,6 +66,38 @@ struct nxp_mrt_config {
 	uint8_t num_channels;
 };
 
+/*
+ * The flag records whether this channel holds the lock, so a start or a stop
+ * called twice leaves the policy count balanced.
+ */
+static void nxp_mrt_power_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct nxp_mrt_channel_data *data = MRT_CHANNEL_DATA(dev);
+
+	if (!data->power_locked) {
+		pm_policy_device_power_lock_get(dev);
+		data->power_locked = true;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static void nxp_mrt_power_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct nxp_mrt_channel_data *data = MRT_CHANNEL_DATA(dev);
+
+	if (data->power_locked) {
+		pm_policy_device_power_lock_put(dev);
+		data->power_locked = false;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
 static int nxp_mrt_stop(const struct device *dev)
 {
 	const struct nxp_mrt_config *config = dev->config;
@@ -75,7 +110,7 @@ static int nxp_mrt_stop(const struct device *dev)
 	/* LOAD bit and 0 ivalue allows us to forcibly stop the timer */
 	base->CHANNEL[channel_id].INTVAL = MRT_CHANNEL_INTVAL_LOAD(1);
 
-	pm_policy_device_power_lock_put(dev);
+	nxp_mrt_power_lock_put(dev);
 
 	return 0;
 }
@@ -94,7 +129,7 @@ static int nxp_mrt_start(const struct device *dev)
 		data->top = config->info.max_top_value;
 	}
 
-	pm_policy_device_power_lock_get(dev);
+	nxp_mrt_power_lock_get(dev);
 
 	/* Start with previously configured top value (if already running this has no effect) */
 	base->CHANNEL[channel_id].INTVAL = data->top;
