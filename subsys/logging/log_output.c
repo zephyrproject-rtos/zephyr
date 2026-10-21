@@ -138,8 +138,8 @@ static int cr_out_func(int c, void *ctx)
 	return 0;
 }
 
-static int print_formatted(const struct log_output *output,
-			   const char *fmt, ...)
+static __printf_like(2, 3) int print_formatted(const struct log_output *output,
+					       const char *fmt, ...)
 {
 	va_list args;
 	int length = 0;
@@ -177,7 +177,7 @@ static int timestamp_print(const struct log_output *output,
 
 	if (!format) {
 #ifndef CONFIG_LOG_TIMESTAMP_64BIT
-		return print_formatted(output, "[%010lu] ", timestamp);
+		return print_formatted(output, "[%010u] ", timestamp);
 #else
 		return print_formatted(output, "[%020llu] ", timestamp);
 #endif
@@ -224,7 +224,7 @@ static int timestamp_print(const struct log_output *output,
 #if defined(CONFIG_LOG_TIMESTAMP_64BIT)
 				       "[%5llu.%06d] ",
 #else
-				       "[%5lu.%06d] ",
+				       "[%5u.%06d] ",
 #endif
 				       total_seconds, ms * 1000U + us);
 	}
