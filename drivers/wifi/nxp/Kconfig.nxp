@@ -634,7 +634,7 @@ config NXP_WIFI_ROAMING
 	bool "Wi-Fi Soft Roaming"
 	default y if !NXP_WIFI_SLIM
 	select WIFI_NM_WPA_SUPPLICANT_ROAMING if WIFI_NM_WPA_SUPPLICANT
-	select WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING if WIFI_NM_WPA_SUPPLICANT
+	imply WIFI_MGMT_ROAMING_DHCP
 	help
 	  This option enables Soft Roaming support in the Wi-Fi driver.
 
