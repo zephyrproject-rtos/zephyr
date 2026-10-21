@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
@@ -60,9 +61,14 @@ static void test_scan_identity_adv(void)
 	err = bt_le_adv_start(BT_LE_ADV_NCONN_IDENTITY, NULL, 0, NULL, 0);
 	TEST_ASSERT(err == 0, "Failed to start advertising (err %d)", err);
 
-	expect_report("before the RPA timeout");
+	expect_report("before the forced rotation");
 
-	/* The RPA timeout, started with the scanner, is not reported to the application */
+	err = bt_le_rotate_rpa();
+	TEST_ASSERT(err == -EACCES, "Rotating next to the identity advertiser returned %d", err);
+	k_sem_reset(&report_sem);
+	expect_report("after the forced rotation");
+
+	/* The RPA timeout, restarted by the forced rotation, is not reported to the application */
 	(void)k_sleep(K_SECONDS(CONFIG_BT_RPA_TIMEOUT));
 	k_sem_reset(&report_sem);
 	expect_report("after the RPA timeout");
@@ -88,7 +94,8 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "scan_identity_adv",
 		.test_descr = "An active scanner keeps scanning when a legacy advertiser on the "
-			      "public identity address keeps its RPA from being rotated",
+			      "public identity address keeps its RPA from being rotated, and "
+			      "bt_le_rotate_rpa() reports it",
 		.test_main_f = test_scan_identity_adv,
 	},
 	{
