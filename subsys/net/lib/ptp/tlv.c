@@ -38,7 +38,7 @@ static inline void tlv_htons(void *ptr)
 	memcpy(ptr, &val, sizeof(val));
 }
 
-static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
+static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt **p_mgmt_tlv, uint16_t length)
 {
 	struct ptp_tlv_mgmt_clock_desc *clock_desc;
 	struct ptp_tlv_time_prop_ds *time_prop_ds;
@@ -47,6 +47,8 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 	struct ptp_tlv_parent_ds *parent_ds;
 	struct ptp_tlv_port_ds *port_ds;
 	struct ptp_timestamp ts;
+
+	struct ptp_tlv_mgmt *mgmt_tlv = *p_mgmt_tlv;
 
 	enum ptp_mgmt_id id = (enum ptp_mgmt_id)mgmt_tlv->id;
 	struct ptp_tlv_container *container;
@@ -70,7 +72,7 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 		}
 		break;
 	case PTP_MGMT_CLOCK_DESCRIPTION:
-		container = CONTAINER_OF((void *)mgmt_tlv, struct ptp_tlv_container, tlv);
+		container = CONTAINER_OF((void *)p_mgmt_tlv, struct ptp_tlv_container, tlv);
 
 		clock_desc = &container->clock_desc;
 		data = mgmt_tlv->data;
@@ -82,7 +84,7 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 		if (data_length < 0) {
 			return -EBADMSG;
 		}
-		tlv_ntohs(&clock_desc->type);
+		tlv_ntohs(clock_desc->type);
 
 		clock_desc->phy_protocol = (struct ptp_text *)data;
 		data += sizeof(*clock_desc->phy_protocol);
@@ -102,7 +104,7 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 		if (data_length < 0) {
 			return -EBADMSG;
 		}
-		tlv_ntohs(&clock_desc->phy_addr_len);
+		tlv_ntohs(clock_desc->phy_addr_len);
 		if (*clock_desc->phy_addr_len > TLV_ADDR_LEN_MAX) {
 			return -EBADMSG;
 		}
@@ -182,7 +184,7 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 
 		break;
 	case PTP_MGMT_USER_DESCRIPTION:
-		container = CONTAINER_OF((void *)mgmt_tlv, struct ptp_tlv_container, tlv);
+		container = CONTAINER_OF((void *)p_mgmt_tlv, struct ptp_tlv_container, tlv);
 
 		if (length < sizeof(struct ptp_text)) {
 			return -EBADMSG;
@@ -259,8 +261,9 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 	return 0;
 }
 
-static void tlv_mgmt_pre_send(struct ptp_tlv_mgmt *mgmt_tlv)
+static void tlv_mgmt_pre_send(struct ptp_tlv_mgmt **p_mgmt_tlv)
 {
+	struct ptp_tlv_mgmt *mgmt_tlv = *p_mgmt_tlv;
 	enum ptp_mgmt_id id = (enum ptp_mgmt_id)mgmt_tlv->id;
 	struct ptp_tlv_mgmt_clock_desc *clock_desc;
 	struct ptp_tlv_time_prop_ds *time_prop_ds;
@@ -273,11 +276,11 @@ static void tlv_mgmt_pre_send(struct ptp_tlv_mgmt *mgmt_tlv)
 
 	switch (id) {
 	case PTP_MGMT_CLOCK_DESCRIPTION:
-		container = CONTAINER_OF((void *)mgmt_tlv, struct ptp_tlv_container, tlv);
+		container = CONTAINER_OF((void *)p_mgmt_tlv, struct ptp_tlv_container, tlv);
 		clock_desc = &container->clock_desc;
 
-		tlv_htons(&clock_desc->type);
-		tlv_htons(&clock_desc->phy_addr_len);
+		tlv_htons(clock_desc->type);
+		tlv_htons(clock_desc->phy_addr_len);
 		tlv_htons(&clock_desc->protocol_addr->protocol);
 		tlv_htons(&clock_desc->protocol_addr->addr_len);
 		break;
@@ -360,11 +363,12 @@ enum ptp_tlv_type ptp_tlv_type(struct ptp_tlv *tlv)
 	return (enum ptp_tlv_type)tlv->type;
 }
 
-int ptp_tlv_post_recv(struct ptp_tlv *tlv)
+int ptp_tlv_post_recv(struct ptp_tlv **p_tlv)
 {
 	struct ptp_tlv_mgmt_err *mgmt_err;
 	struct ptp_tlv_mgmt *mgmt;
 	int ret = 0;
+	struct ptp_tlv *tlv = *p_tlv;
 
 	switch (ptp_tlv_type(tlv)) {
 	case PTP_TLV_TYPE_MANAGEMENT:
@@ -378,7 +382,7 @@ int ptp_tlv_post_recv(struct ptp_tlv *tlv)
 		 * based on IEEE 1588-2019 Section 15.5.2.2.
 		 */
 		if (tlv->length > sizeof(mgmt->id)) {
-			ret = tlv_mgmt_post_recv(mgmt, tlv->length - 2);
+			ret = tlv_mgmt_post_recv((struct ptp_tlv_mgmt **)p_tlv, tlv->length - 2);
 		}
 		break;
 	case PTP_TLV_TYPE_MANAGEMENT_ERROR_STATUS:
@@ -396,10 +400,11 @@ int ptp_tlv_post_recv(struct ptp_tlv *tlv)
 	return ret;
 }
 
-void ptp_tlv_pre_send(struct ptp_tlv *tlv)
+void ptp_tlv_pre_send(struct ptp_tlv **p_tlv)
 {
 	struct ptp_tlv_mgmt_err *mgmt_err;
 	struct ptp_tlv_mgmt *mgmt;
+	struct ptp_tlv *tlv = *p_tlv;
 
 	switch (ptp_tlv_type(tlv)) {
 	case PTP_TLV_TYPE_MANAGEMENT:
@@ -407,7 +412,7 @@ void ptp_tlv_pre_send(struct ptp_tlv *tlv)
 
 		/* Check if management TLV contains data */
 		if (tlv->length > sizeof(mgmt->id)) {
-			tlv_mgmt_pre_send(mgmt);
+			tlv_mgmt_pre_send((struct ptp_tlv_mgmt **)p_tlv);
 		}
 		mgmt->id = htons(mgmt->id);
 		break;
