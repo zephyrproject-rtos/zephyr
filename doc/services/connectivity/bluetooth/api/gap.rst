@@ -23,9 +23,8 @@ stops and gets the callback then, possibly while it is still advertising.
 An application whose advertising data changes on its own schedule can align the rotations with it.
 With :kconfig:option:`CONFIG_BT_RPA_TIMEOUT_DYNAMIC`, calling :c:func:`bt_le_set_rpa_timeout` from
 the callback of a rotation sets the time to the next one; computing it from the application's own
-clock at every rotation keeps the two in step. :c:func:`bt_le_oob_get_local` rotates the RPAs
-immediately, for example before starting a set, and also generates new LE Secure Connections OOB
-data.
+clock at every rotation keeps the two in step. :c:func:`bt_le_rotate_rpa` rotates the RPAs
+immediately, for example before starting a set.
 
 API Reference
 *************

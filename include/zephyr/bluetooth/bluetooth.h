@@ -2929,6 +2929,30 @@ int bt_le_set_chan_map(uint8_t chan_map[5]);
 int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout);
 
 /**
+ * @brief Rotate the Resolvable Private Addresses now
+ *
+ * Does right away what the RPA timeout does: calls the
+ * @ref bt_le_ext_adv_cb::rpa_expired callbacks, gives a new RPA to the advertising sets whose
+ * callback allows it and to the scanner and initiator, and restarts the RPA timeout from now.
+ * A connection that is being created is restarted with the new RPA, as at the RPA timeout.
+ * The RPA rotation is described in
+ * https://docs.zephyrproject.org/latest/services/connectivity/bluetooth/api/gap.html#resolvable-private-address-rotation
+ *
+ * Must not be called from a @ref bt_le_ext_adv_cb::rpa_expired callback.
+ *
+ * @kconfig_dep{CONFIG_BT_PRIVACY}.
+ *
+ * @retval 0 Success.
+ * @retval -EAGAIN Bluetooth is not enabled.
+ * @retval -EBUSY The Host is starting a connection to a device it found by scanning.
+ * @retval -EACCES The Controller refused the new random address, for example while a legacy
+ *                 advertiser uses its identity address. The roles using the random address
+ *                 keep the current one.
+ * @return Another negative errno value when the new random address could not be set.
+ */
+int bt_le_rotate_rpa(void);
+
+/**
  * @brief Helper for parsing advertising (or EIR or OOB) data.
  *
  * A helper for parsing the basic AD Types used for Extended Inquiry
