@@ -3,19 +3,24 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/arch/arch_interface.h>
 #include <fsl_cmc.h>
 #include <fsl_spc.h>
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_vbat)
 #include <fsl_vbat.h>
+#endif
 
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_vbat)
 #define MCXW7_VBAT_ADDR (VBAT_Type *)DT_REG_ADDR(DT_INST(0, nxp_vbat))
+#endif
 #define MCXW7_SPC_ADDR (SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc))
 
 #define MCXW7_LPWKUP_DELAY_10MHz (0xAAU)
@@ -118,6 +123,7 @@ static void set_cmc_configuration(void)
 	CMC_ConfigFlashMode(MCXW7_CMC_ADDR, false, false, false);
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_vbat)
 /*
  * Disable Backup SRAM regulator, FRO16K and Bandgap which
  * locates in VBAT power domain for most of power modes.
@@ -133,6 +139,7 @@ static void deinit_vbat(void)
 	while (VBAT_CheckBandgapEnabled(MCXW7_VBAT_ADDR)) {
 	};
 }
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_vbat) */
 
 /* Invoke Low Power/System Off specific Tasks */
 __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
@@ -141,7 +148,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	unsigned int key;
 
 	set_cmc_configuration();
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_vbat)
 	deinit_vbat();
+#endif
 
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
@@ -180,14 +189,12 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
-	if (SPC_CheckPowerDomainLowPowerRequest(MCXW7_SPC_ADDR, kSPC_PowerDomain0)) {
-		SPC_ClearPowerDomainLowPowerRequestFlag(MCXW7_SPC_ADDR, kSPC_PowerDomain0);
-	}
-	if (SPC_CheckPowerDomainLowPowerRequest(MCXW7_SPC_ADDR, kSPC_PowerDomain1)) {
-		SPC_ClearPowerDomainLowPowerRequestFlag(MCXW7_SPC_ADDR, kSPC_PowerDomain1);
-	}
-	if (SPC_CheckPowerDomainLowPowerRequest(MCXW7_SPC_ADDR, kSPC_PowerDomain2)) {
-		SPC_ClearPowerDomainLowPowerRequestFlag(MCXW7_SPC_ADDR, kSPC_PowerDomain2);
+	for (uint32_t i = 0U; i < SPC_PD_STATUS_COUNT; i++) {
+		spc_power_domain_id_t domain = (spc_power_domain_id_t)i;
+
+		if (SPC_CheckPowerDomainLowPowerRequest(MCXW7_SPC_ADDR, domain)) {
+			SPC_ClearPowerDomainLowPowerRequestFlag(MCXW7_SPC_ADDR, domain);
+		}
 	}
 	SPC_ClearLowPowerRequest(MCXW7_SPC_ADDR);
 }
@@ -205,8 +212,13 @@ __weak void set_spc_configuration(void)
 	/* Disable LVDs and HVDs in Active mode. */
 	SPC_EnableActiveModeCoreHighVoltageDetect(MCXW7_SPC_ADDR, false);
 	SPC_EnableActiveModeCoreLowVoltageDetect(MCXW7_SPC_ADDR, false);
+#if defined(FSL_FEATURE_SPC_HAS_VDD_SYS) && FSL_FEATURE_SPC_HAS_VDD_SYS
 	SPC_EnableActiveModeSystemHighVoltageDetect(MCXW7_SPC_ADDR, false);
 	SPC_EnableActiveModeSystemLowVoltageDetect(MCXW7_SPC_ADDR, false);
+#endif
+#if defined(FSL_FEATURE_SPC_HAS_VDD1P8_LVD) && FSL_FEATURE_SPC_HAS_VDD1P8_LVD
+	SPC_EnableActiveModeVDD1P8LowVoltageDetect(MCXW7_SPC_ADDR, false);
+#endif
 	SPC_EnableActiveModeIOHighVoltageDetect(MCXW7_SPC_ADDR, false);
 	SPC_EnableActiveModeIOLowVoltageDetect(MCXW7_SPC_ADDR, false);
 	while (SPC_GetBusyStatusFlag(MCXW7_SPC_ADDR)) {
@@ -215,9 +227,13 @@ __weak void set_spc_configuration(void)
 	spc_active_mode_regulators_config_t active_mode_regulator;
 
 	active_mode_regulator.bandgapMode = kSPC_BandgapEnabledBufferDisabled;
+#if defined(FSL_FEATURE_SPC_HAS_LPBUFF) && FSL_FEATURE_SPC_HAS_LPBUFF
 	active_mode_regulator.lpBuff = false;
+#endif
+#if defined(FSL_FEATURE_SPC_HAS_SYS_LDO) && FSL_FEATURE_SPC_HAS_SYS_LDO
 	active_mode_regulator.SysLDOOption.SysLDOVoltage = kSPC_SysLDO_NormalVoltage;
 	active_mode_regulator.SysLDOOption.SysLDODriveStrength = kSPC_SysLDO_NormalDriveStrength;
+#endif
 	/* Core LDO regulate to 1.1V. */
 	active_mode_regulator.CoreLDOOption.CoreLDOVoltage = kSPC_CoreLDO_MidDriveVoltage;
 #if defined(FSL_FEATURE_SPC_HAS_CORELDO_VDD_DS) && FSL_FEATURE_SPC_HAS_CORELDO_VDD_DS
@@ -229,25 +245,33 @@ __weak void set_spc_configuration(void)
 	 * reconfigure it here so the device tree configured value is preserved.
 	 */
 
+#if defined(FSL_FEATURE_SPC_HAS_SYS_LDO) && FSL_FEATURE_SPC_HAS_SYS_LDO
 	SPC_SetActiveModeSystemLDORegulatorConfig(MCXW7_SPC_ADDR,
 						  &active_mode_regulator.SysLDOOption);
+#endif
 
 	SPC_SetActiveModeBandgapModeConfig(MCXW7_SPC_ADDR, active_mode_regulator.bandgapMode);
 
 	SPC_SetActiveModeCoreLDORegulatorConfig(MCXW7_SPC_ADDR,
 						&active_mode_regulator.CoreLDOOption);
 
+#if defined(FSL_FEATURE_SPC_HAS_LPBUFF) && FSL_FEATURE_SPC_HAS_LPBUFF
 	SPC_EnableActiveModeCMPBandgapBuffer(MCXW7_SPC_ADDR, active_mode_regulator.lpBuff);
+#endif
 
 	spc_lowpower_mode_regulators_config_t low_power_regulator;
 
 	low_power_regulator.lpIREF = false;
 	low_power_regulator.bandgapMode = kSPC_BandgapDisabled;
+#if defined(FSL_FEATURE_SPC_HAS_LPBUFF) && FSL_FEATURE_SPC_HAS_LPBUFF
 	low_power_regulator.lpBuff = false;
+#endif
 	low_power_regulator.CoreIVS = false;
 	low_power_regulator.DCDCOption.DCDCVoltage = kSPC_DCDC_LowUnderVoltage;
 	low_power_regulator.DCDCOption.DCDCDriveStrength = kSPC_DCDC_LowDriveStrength;
+#if defined(FSL_FEATURE_SPC_HAS_SYS_LDO) && FSL_FEATURE_SPC_HAS_SYS_LDO
 	low_power_regulator.SysLDOOption.SysLDODriveStrength = kSPC_SysLDO_LowDriveStrength;
+#endif
 	low_power_regulator.CoreLDOOption.CoreLDOVoltage = kSPC_CoreLDO_MidDriveVoltage;
 	low_power_regulator.CoreLDOOption.CoreLDODriveStrength = kSPC_CoreLDO_LowDriveStrength;
 
