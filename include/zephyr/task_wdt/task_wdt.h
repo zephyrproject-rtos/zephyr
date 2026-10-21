@@ -60,6 +60,10 @@ int task_wdt_init(const struct device *hw_wdt);
  *
  * Adds a new timeout to the list of task watchdog channels.
  *
+ * If a hardware watchdog fallback is configured but not yet started, this
+ * function starts it. If setup fails, the error is returned and no task
+ * watchdog channel is allocated.
+ *
  * @param reload_period Period in milliseconds used to reset the timeout
  * @param callback Function to be called when watchdog timer expired. Pass
  *                 NULL to use system reset handler.
@@ -71,6 +75,8 @@ int task_wdt_init(const struct device *hw_wdt);
  *                    task_wdt_feed().
  * @retval -EINVAL If the reload_period is invalid.
  * @retval -ENOMEM If no more timeouts can be installed.
+ * @retval -Errno Negative errno returned by wdt_setup() if starting the
+ *                hardware watchdog fallback fails.
  */
 int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 		 void *user_data);
