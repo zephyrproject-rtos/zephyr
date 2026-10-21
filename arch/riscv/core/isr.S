@@ -154,6 +154,9 @@ GTEXT(z_riscv_custom_stack_guard_disable)
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 #ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+#ifdef CONFIG_RISCV_HAS_CUSTOM_NESTED_INTERRUPTS
+#include <custom_nested_irq.inc>
+#else
 /*
  * The interrupts each standard interrupt masks, in the priority order of the
  * RISC-V privileged architecture specification: MEI > MSI > MTI > SEI > SSI >
@@ -178,6 +181,7 @@ SECTION_VAR(RODATA, riscv_irq_mask_table)
 	.word 0x2000	/* 13: LCOFI masks LCOFI */
 	.word 0x0000	/* 14: Reserved */
 	.word 0x0000	/* 15: Reserved */
+#endif /* CONFIG_RISCV_HAS_CUSTOM_NESTED_INTERRUPTS */
 #endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
 /* exports */
@@ -854,6 +858,13 @@ on_irq_stack:
 #endif
 
 #ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+#ifdef CONFIG_RISCV_HAS_CUSTOM_NESTED_INTERRUPTS
+	/*
+	 * Allow nesting. sp already points to the interrupt stack. The macro
+	 * must preserve s0-s11, a0 (ISR argument) and t1 (ISR address).
+	 */
+	__custom_nested_interrupts_enable
+#else
 	/*
 	 * Mask this interrupt and the lower priority ones, so only a higher
 	 * priority one can preempt the ISR. The masked bits are saved on the
@@ -903,12 +914,20 @@ on_irq_stack:
 	csrrc a1, RV_IE, t2
 	and t2, t2, a1
 	sr t2, 0(sp)
+#endif /* CONFIG_RISCV_HAS_CUSTOM_NESTED_INTERRUPTS */
 #endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
 	/* Call ISR function */
 	jalr ra, t1, 0
 
 #ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+#ifdef CONFIG_RISCV_HAS_CUSTOM_NESTED_INTERRUPTS
+	/*
+	 * Disallow nesting. The macro must preserve s0-s11, restore sp to its
+	 * value before the enable macro, and leave interrupts disabled.
+	 */
+	__custom_nested_interrupts_disable
+#else
 	/* The ISR returns with interrupts disabled, so this cannot trap yet */
 	lr t1, 0(sp)
 	csrs RV_IE, t1
@@ -918,6 +937,7 @@ on_irq_stack:
 	csrs RV_IEH, t1
 #endif
 	addi sp, sp, 16
+#endif /* CONFIG_RISCV_HAS_CUSTOM_NESTED_INTERRUPTS */
 #endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
 #ifdef CONFIG_TRACING_ISR

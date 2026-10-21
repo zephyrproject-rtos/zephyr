@@ -91,6 +91,17 @@ config RISCV_NESTED_INTERRUPTS
 	  the interrupt, such as the interrupt controller driver, enables them
 	  once its source can no longer signal again.
 
+config RISCV_HAS_CUSTOM_NESTED_INTERRUPTS
+	bool
+	depends on RISCV_HAS_NESTED_INTERRUPTS
+	help
+	  Selected by a SoC or CPU with a custom interrupt controller, to
+	  enable and disable nested interrupts around the ISR call in the
+	  common RISC-V ISR wrapper, instead of the standard mie handling.
+	  The SoC or CPU provides custom_nested_irq.inc, which defines
+	  the __custom_nested_interrupts_enable and
+	  __custom_nested_interrupts_disable assembler macros.
+
 DT_CHOSEN_Z_SRAM = zephyr,sram
 
 choice RISCV_CMODEL
