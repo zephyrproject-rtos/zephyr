@@ -47,7 +47,7 @@ struct display_esp32_dsi_config {
 	uint8_t irq_flags;
 	uint16_t width;
 	uint16_t height;
-	uint32_t pixel_format;
+	pixel_format_t pixel_format;
 };
 
 struct display_esp32_dsi_data {
@@ -871,7 +871,7 @@ static void display_esp32_dsi_get_capabilities(const struct device *dev,
 }
 
 static int display_esp32_dsi_set_pixel_format(const struct device *dev,
-					      const enum display_pixel_format pixel_format)
+					      const pixel_format_t pixel_format)
 {
 	const struct display_esp32_dsi_config *config = dev->config;
 
