@@ -17,6 +17,9 @@
 
 #define RPA_TIMEOUT_MS(_rpa_timeout) (_rpa_timeout * MSEC_PER_SEC)
 
+/* An RPA is considered new for this long after its timeout was started. */
+#define BT_ID_RPA_NEW_TIME_MS 500U
+
 static inline bool bt_id_rpa_is_new(void)
 {
 #if defined(CONFIG_BT_PRIVACY)
@@ -25,10 +28,7 @@ static inline bool bt_id_rpa_is_new(void)
 	 */
 	uint32_t remaining_ms = k_ticks_to_ms_floor32(
 		k_work_delayable_remaining_get(&bt_dev.rpa_update));
-	/* RPA is considered new if there is less than half a second since the
-	 * timeout was started.
-	 */
-	return remaining_ms > (RPA_TIMEOUT_MS(bt_dev.rpa_timeout) - 500);
+	return remaining_ms > (RPA_TIMEOUT_MS(bt_dev.rpa_update_timeout) - BT_ID_RPA_NEW_TIME_MS);
 #else
 	return false;
 #endif
