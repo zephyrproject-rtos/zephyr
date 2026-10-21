@@ -108,6 +108,9 @@ queue.
 errors and session changes of each link, read with :c:func:`ipc_link_stats_get` and cleared
 with :c:func:`ipc_link_stats_reset`.
 
+:kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_LINK_SHELL` - the ``ipc_link stats`` and
+``ipc_link reset`` shell commands, which show and clear these counters for one or all instances.
+
 Devicetree
 ----------
 

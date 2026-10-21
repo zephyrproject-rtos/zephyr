@@ -76,6 +76,14 @@ config IPC_SERVICE_BACKEND_LINK_WQ_PRIORITY
 
 endif # IPC_SERVICE_BACKEND_LINK_WQ_ENABLE
 
+config IPC_SERVICE_BACKEND_LINK_SHELL
+	bool "Shell commands"
+	depends on SHELL
+	select IPC_SERVICE_LINK_STATS
+	help
+	  The ipc_link command shows and clears the counters of the link
+	  instances.
+
 module = IPC_SERVICE_BACKEND_LINK
 module-str = IPC link backend
 module-help = Sets log level for the IPC link backend

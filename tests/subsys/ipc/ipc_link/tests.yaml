@@ -13,3 +13,7 @@ tests:
   ipc.ipc_link.backend.sysworkq:
     extra_configs:
       - CONFIG_IPC_SERVICE_BACKEND_LINK_WQ_ENABLE=n
+  ipc.ipc_link.backend.shell:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_IPC_SERVICE_BACKEND_LINK_SHELL=y
