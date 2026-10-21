@@ -967,6 +967,15 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 	}
 }
 
+/* Drops the resume of a set paused for an RPA update, see adv_enable_rpa() */
+static void adv_rpa_update_cancel(struct bt_le_ext_adv *adv)
+{
+	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RPA_UPDATE) &&
+	    IS_ENABLED(CONFIG_BT_PERIPHERAL) && atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
+		le_adv_stop_free_conn(adv, 0);
+	}
+}
+
 static int adv_start_legacy(struct bt_le_ext_adv *adv,
 			   const struct bt_le_adv_param *param,
 			   const struct bt_data *ad, size_t ad_len,
@@ -1443,6 +1452,8 @@ int bt_le_adv_stop(void)
 
 	(void)bt_le_lim_adv_cancel_timeout(adv);
 
+	adv_rpa_update_cancel(adv);
+
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		/* Legacy advertiser exists, but is not currently advertising.
 		 * This happens when keep advertising behavior is active but
@@ -1634,6 +1645,8 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 		return -EALREADY;
 	}
 
+	adv_rpa_update_cancel(adv);
+
 	if (IS_ENABLED(CONFIG_BT_SMP) && atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
 		bt_id_pending_keys_update();
 	}
@@ -1710,6 +1723,8 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 
 	(void)bt_le_lim_adv_cancel_timeout(adv);
 
+	adv_rpa_update_cancel(adv);
+
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return 0;
 	}
@@ -1775,6 +1790,8 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return -EINVAL;
 	}
+
+	adv_rpa_update_cancel(adv);
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
