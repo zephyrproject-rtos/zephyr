@@ -16,5 +16,6 @@ toolchain:
 supported:
   - gpio
   - uart
+  - watchdog
   - serial
 vendor: nxp
