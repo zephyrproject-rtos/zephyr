@@ -186,9 +186,16 @@ static void virtio_pci_reset(const struct device *dev)
 	}
 }
 
+struct virtq *virtio_pci_get_virtqueue(const struct device *dev, uint16_t queue_idx);
+
 static void virtio_pci_notify_queue(const struct device *dev, uint16_t queue_idx)
 {
 	struct virtio_pci_data *data = dev->data;
+	struct virtq *vq = virtio_pci_get_virtqueue(dev, queue_idx);
+
+	if (vq != NULL && !virtq_notification_needed(vq)) {
+		return;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&data->notify_lock);
 

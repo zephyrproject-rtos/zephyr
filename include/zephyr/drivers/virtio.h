@@ -136,7 +136,9 @@ static inline struct virtq *virtio_get_virtqueue(const struct device *dev, uint1
  *
  * Note that according to spec 2.7.13.3 the device may access the buffers as soon
  * as the avail->idx is increased, which is done by virtq_add_buffer_chain, so the
- * device may access the buffers even without notifying it with virtio_notify_virtqueue
+ * device may access the buffers even without notifying it with virtio_notify_virtqueue.
+ * The notification is skipped while the device has suppressed notifications for the
+ * virtqueue, see virtq_notification_needed().
  *
  * @param dev virtio device it operates on
  * @param queue_idx virtqueue to be notified
