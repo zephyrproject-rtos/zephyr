@@ -860,6 +860,11 @@ static void modem_cellular_start_timer(struct modem_cellular_data *data, k_timeo
 	k_work_schedule(&data->timeout_work, timeout);
 }
 
+static void modem_cellular_update_timer(struct modem_cellular_data *data, k_timeout_t timeout)
+{
+	k_work_reschedule(&data->timeout_work, timeout);
+}
+
 static void modem_cellular_stop_timer(struct modem_cellular_data *data)
 {
 	k_work_cancel_delayable(&data->timeout_work);
@@ -1986,12 +1991,10 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		if (net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
-			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
 		break;
 	case MODEM_CELLULAR_EVENT_HANGUP:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
-		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		break;
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
@@ -2088,12 +2091,10 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		if (net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
-			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
 		break;
 	case MODEM_CELLULAR_EVENT_HANGUP:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
-		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		break;
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_chat_release(&data->chat);
@@ -2123,6 +2124,8 @@ static int modem_cellular_on_await_ppp_dead_state_enter(struct modem_cellular_da
 	net_if_dormant_on(modem_ppp_get_iface(config->ppp));
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (data->stats.link_drops += 1));
 
+	/* PPP is not guaranteed to report the link dead, so do not wait on it forever */
+	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 	return 0;
 }
 
@@ -2138,7 +2141,7 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 		break;
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		/* Wait for the channel to return to AT mode after PPP termination */
-		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
+		modem_cellular_update_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		if (modem_cellular_has_network_script(config) &&
