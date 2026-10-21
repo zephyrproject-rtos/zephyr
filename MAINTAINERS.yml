@@ -2884,6 +2884,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - teburd
+    - maass-hamburg
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
