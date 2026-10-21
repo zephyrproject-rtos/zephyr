@@ -1032,7 +1032,8 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 	ARG_UNUSED(pkt);
 #endif
 
-	k_timepoint_t end = sys_timepoint_calc(timeout);
+	k_timepoint_t end;
+	bool end_set = false;
 	struct net_buf *first = NULL;
 	struct net_buf *current = NULL;
 
@@ -1040,8 +1041,8 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 		struct net_buf *new;
 
 		/* An allocation that does not block cannot have consumed any
-		 * of the caller's timeout, so only work out how much of it is
-		 * left when the pool was empty and we actually have to wait.
+		 * of the caller's timeout, so the deadline is only taken the
+		 * first time the pool is empty and we actually have to wait.
 		 * That keeps the clock out of the common path: with K_NO_WAIT
 		 * the deadline handling in net_buf_alloc_len() short circuits
 		 * too, so nothing below here reads it either.
@@ -1050,6 +1051,11 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 		if (new == NULL) {
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				goto error;
+			}
+
+			if (!end_set) {
+				end = sys_timepoint_calc(timeout);
+				end_set = true;
 			}
 
 			new = net_buf_alloc_fixed(pool,
