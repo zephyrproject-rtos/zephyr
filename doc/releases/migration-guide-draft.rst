@@ -511,6 +511,13 @@ Shell
   ``-ENOEXEC`` instead of ``SHELL_CMD_HELP_PRINTED`` (1). The help is still printed. Update code
   that checks the return value of :c:func:`shell_execute_cmd` for this case.
 
+Task Watchdog
+=============
+
+* If :c:func:`task_wdt_add` fails to set up a hardware watchdog fallback, it now
+  returns the error without leaving a channel allocated. Applications must check
+  the returned errors and avoid requesting pause options their backend does not support.
+
 Tools
 *****
 
