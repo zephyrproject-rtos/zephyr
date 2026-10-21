@@ -165,10 +165,17 @@ static int nxp_mrt_set_top_value(const struct device *dev, const struct counter_
 static uint32_t nxp_mrt_get_top_value(const struct device *dev)
 {
 	const struct nxp_mrt_config *config = dev->config;
-	MRT_Type *base = config->base;
-	int channel_id = MRT_CHANNEL_ID(dev);
+	struct nxp_mrt_channel_data *data = MRT_CHANNEL_DATA(dev);
 
-	return base->CHANNEL[channel_id].INTVAL & MRT_CHANNEL_INTVAL_IVALUE_MASK;
+	/* INTVAL reads back zero while the channel is idle, so the configured top
+	 * value only survives in RAM. A channel that has never been given one
+	 * wraps at the maximum.
+	 */
+	if (data->top <= 1) {
+		return config->info.max_top_value;
+	}
+
+	return data->top;
 }
 
 static uint32_t nxp_mrt_get_pending_int(const struct device *dev)
