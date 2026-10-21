@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
+
 / {
 	aliases {
 		watchdog0 = &wdog_0;
@@ -39,13 +41,13 @@
 			sleep: sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				exit-latency-us = <10>;
+				exit-latency-us = <140>;
 			};
 
 			deep_sleep: deep-sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				exit-latency-us = <11>;
+				exit-latency-us = <180>;
 			};
 		};
 
@@ -494,6 +496,8 @@
 		prescale-glitch-filter-bypass;
 		resolution = <32>;
 		status = "disabled";
+		wakeup-source;
+		wakeup-ctrls = <&wuu_0 NXP_WUU_MODULE_1_INT>;
 	};
 
 	lptmr_1: timer@6000 {

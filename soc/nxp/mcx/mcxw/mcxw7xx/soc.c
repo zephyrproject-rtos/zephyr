@@ -156,6 +156,11 @@ static int soc_nbu_init(void)
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #if defined(CONFIG_NXP_NBU)
 	nxp_nbu_init();
+#elif defined(CONFIG_PM) && defined(CONFIG_SOC_MCXW70AC)
+	/* Hold the NBU CM3 in reset as not used. The radio domain low-power entry
+	 * is requested for each low-power state in pm_state_set().
+	 */
+	RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_CPU_RST_MASK;
 #elif defined(CONFIG_PM)
 	/* Shutdown NBU as not used */
 
