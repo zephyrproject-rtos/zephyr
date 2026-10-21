@@ -12,18 +12,6 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
 MODEM_CHAT_MATCHES_DEFINE(u_blox_sara_r4_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
-
-#if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_set_baudrate_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR="
-				  STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE), ok_match));
-
-MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_set_baudrate_chat_script,
-			 u_blox_sara_r4_set_baudrate_chat_script_cmds,
-			 abort_matches, modem_cellular_chat_callback_handler, 1);
-#endif
-
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	u_blox_sara_r4_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
@@ -69,12 +57,9 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_periodic_chat_script,
 			 u_blox_sara_r4_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
 
-static const struct modem_cellular_vendor_config u_blox_sara_r4_vendor = {
+static const struct modem_cellular_vendor_config_common u_blox_sara_r4_vendor = {
 	/* clang-format off */
 	.scripts = {
-#if CONFIG_MODEM_CELLULAR_NEW_BAUDRATE != 115200
-		.set_baudrate = &u_blox_sara_r4_set_baudrate_chat_script,
-#endif
 		.init = &u_blox_sara_r4_init_chat_script,
 		.dial = &u_blox_sara_r4_dial_chat_script,
 		.periodic = &u_blox_sara_r4_periodic_chat_script,
@@ -86,6 +71,8 @@ static const struct modem_cellular_vendor_config u_blox_sara_r4_vendor = {
 	/* clang-format on */
 	.chat_delimiter = "\r",
 	.chat_filter = "\n",
+	.baudrate_update_delay_ms = 300,
+	.reset_power_on_delay_ms = 500,
 	.power_pulse_duration_ms = 1500,
 	.reset_pulse_duration_ms = 100,
 	.startup_time_ms = 10000,
@@ -95,10 +82,23 @@ static const struct modem_cellular_vendor_config u_blox_sara_r4_vendor = {
 #define MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R4(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst);                                          \
+                                                                                                   \
+	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
+		vendor_config_inst, inst) = {                                                      \
+		MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst),                           \
+	};                                                                                         \
+                                                                                                   \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &u_blox_sara_r4_vendor,                                                  \
+		.instance = &MODEM_CELLULAR_INST_NAME(vendor_config_inst, inst),                   \
+	};                                                                                         \
+                                                                                                   \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3))                            \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &u_blox_sara_r4_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R4)
