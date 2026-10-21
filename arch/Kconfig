@@ -412,6 +412,7 @@ config HW_STACK_PROTECTION
 config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
+	depends on KERNEL_SCOPE_USERSPACE
 	depends on SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
 	select LINKER_USE_NO_RELAX
@@ -528,6 +529,7 @@ config MAX_THREAD_BYTES
 config DYNAMIC_OBJECTS
 	bool "Allow kernel objects to be allocated at runtime"
 	depends on USERSPACE
+	depends on KERNEL_SCOPE_DYNAMIC_OBJECTS
 	help
 	  Enabling this option allows for kernel objects to be requested from
 	  the calling thread's resource pool, at a slight cost in performance

@@ -118,11 +118,3 @@ void z_impl_k_busy_wait(uint32_t usec_to_wait)
 
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, busy_wait, usec_to_wait);
 }
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_busy_wait(uint32_t usec_to_wait)
-{
-	z_impl_k_busy_wait(usec_to_wait);
-}
-#include <zephyr/syscalls/k_busy_wait_mrsh.c>
-#endif /* CONFIG_USERSPACE */

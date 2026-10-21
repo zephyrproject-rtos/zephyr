@@ -133,12 +133,9 @@ z_thread_return_value_set_with_data(struct k_thread *thread,
 	thread->base.swap_data = data;
 }
 
-#ifdef CONFIG_SMP
-extern void z_smp_init(void);
-#ifdef CONFIG_SYS_CLOCK_EXISTS
+#if defined(CONFIG_SMP) && defined(CONFIG_SYS_CLOCK_EXISTS)
 extern void smp_timer_init(void);
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
-#endif /* CONFIG_SMP */
+#endif /* CONFIG_SMP && CONFIG_SYS_CLOCK_EXISTS */
 
 extern void z_early_rand_get(uint8_t *buf, size_t length);
 
@@ -161,28 +158,6 @@ extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 
 /* Calculate stack usage. */
 int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
-
-#ifdef CONFIG_USERSPACE
-bool z_stack_is_user_capable(k_thread_stack_t *stack);
-
-/* Memory domain setup hook, called from z_setup_new_thread() */
-void z_mem_domain_init_thread(struct k_thread *thread);
-
-/* Memory domain teardown hook, called from z_thread_abort() */
-void z_mem_domain_exit_thread(struct k_thread *thread);
-
-/* This spinlock:
- *
- * - Protects the full set of active k_mem_domain objects and their contents
- * - Serializes calls to arch_mem_domain_* APIs
- *
- * If architecture code needs to access k_mem_domain structures or the
- * partitions they contain at any other point, this spinlock should be held.
- * Uniprocessor systems can get away with just locking interrupts but this is
- * not recommended.
- */
-extern struct k_spinlock z_mem_domain_lock;
-#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_GDBSTUB
 struct gdb_ctx;
@@ -314,6 +289,11 @@ void k_thread_abort_cleanup_check_reuse(struct k_thread *thread);
 #ifdef __cplusplus
 }
 #endif
+
+/* The user mode hooks are declared here because the architecture code
+ * includes this header for z_stack_is_user_capable() and z_mem_domain_lock.
+ */
+#include <kuser.h>
 
 #endif /* _ASMLANGUAGE */
 

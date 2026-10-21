@@ -674,6 +674,23 @@ sequentially.
    Set the default app to Strawberry Perl. By default the executable is
    installed at ``C:\Strawberry\perl\bin\perl.exe``.
 
+KernelScope Check
+^^^^^^^^^^^^^^^^^
+
+The KernelScope check keeps the code of features that a kernel feature scope
+(for example :kconfig:option:`CONFIG_KERNEL_SCOPE_UP`) excludes, such as SMP or user mode
+threads, out of the common kernel sources. The scope descriptions in
+:zephyr_file:`kernel/scopes/` list the excluded Kconfig symbols, the
+directories that implement the excluded features and the hook headers through
+which the common code reaches them.
+
+A changed ``.c`` or ``.h`` file under ``kernel/`` or ``lib/`` that is neither in
+one of those directories nor one of those hook headers may not end up with more
+references to the excluded ``CONFIG_`` symbols than it had before the change.
+Put code that belongs to an excluded feature in the directory implementing it,
+or call it through a hook whose disabled variant is an inline no-op, instead of
+adding conditional compilation to the common code.
+
 KeepSorted Check
 ^^^^^^^^^^^^^^^^
 

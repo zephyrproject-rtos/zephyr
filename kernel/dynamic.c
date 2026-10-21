@@ -5,6 +5,7 @@
  */
 
 #include "kernel_internal.h"
+#include <kuser.h>
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
@@ -101,14 +102,6 @@ k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
 	return stack;
 }
 
-#ifdef CONFIG_USERSPACE
-static inline k_thread_stack_t *z_vrfy_k_thread_stack_alloc(size_t size, int flags)
-{
-	return z_impl_k_thread_stack_alloc(size, flags);
-}
-#include <zephyr/syscalls/k_thread_stack_alloc_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 static void dyn_cb(const struct k_thread *thread, void *user_data)
 {
 	struct dyn_cb_data *const data = (struct dyn_cb_data *)user_data;
@@ -146,15 +139,9 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 	}
 
 	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
-#ifdef CONFIG_USERSPACE
-		if (k_object_find(stack)) {
-			k_object_free(stack);
-		} else {
+		if (!z_stack_user_free(stack)) {
 			k_free(stack);
 		}
-#else
-		k_free(stack);
-#endif /* CONFIG_USERSPACE */
 	} else {
 		LOG_DBG("Invalid stack %p", stack);
 		return -EINVAL;
@@ -162,20 +149,3 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 
 	return 0;
 }
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_thread_stack_free(k_thread_stack_t *stack)
-{
-	/* The thread stack object must not be in initialized state.
-	 *
-	 * Thread stack objects are initialized when the thread is created
-	 * and de-initialized when the thread is destroyed. Since we can't
-	 * free a stack that is in use, we have to check that the caller
-	 * has access to the object but that it is not in use anymore.
-	 */
-	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(stack, K_OBJ_THREAD_STACK_ELEMENT));
-
-	return z_impl_k_thread_stack_free(stack);
-}
-#include <zephyr/syscalls/k_thread_stack_free_mrsh.c>
-#endif /* CONFIG_USERSPACE */

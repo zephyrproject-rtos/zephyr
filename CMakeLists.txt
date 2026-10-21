@@ -2157,6 +2157,20 @@ if(CONFIG_LLEXT)
   endif()
 endif()
 
+if(CONFIG_KERNEL_SCOPE_DEFINITION)
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_kernel_scope.py
+    --scope ${ZEPHYR_BASE}/${CONFIG_KERNEL_SCOPE_DEFINITION}
+    --zephyr-base ${ZEPHYR_BASE}
+    --dotconfig ${DOTCONFIG}
+    --compile-commands ${CMAKE_BINARY_DIR}/compile_commands.json
+    --elf ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
+    --manifest ${PROJECT_BINARY_DIR}/kernel_scope_manifest.json
+  )
+  list(APPEND post_build_byproducts ${PROJECT_BINARY_DIR}/kernel_scope_manifest.json)
+endif()
+
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
   set(check_init_priorities_input
       $<IF:$<TARGET_EXISTS:native_runner_executable>,${BYPRODUCT_KERNEL_EXE_NAME},${BYPRODUCT_KERNEL_ELF_NAME}>

@@ -398,16 +398,6 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 #endif
 }
 
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
-				      k_timeout_t timeout)
-{
-	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
-	return z_impl_k_mutex_lock(mutex, timeout);
-}
-#include <zephyr/syscalls/k_mutex_lock_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner = NULL;
@@ -511,12 +501,3 @@ k_mutex_unlock_return:
 
 	return 0;
 }
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)
-{
-	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
-	return z_impl_k_mutex_unlock(mutex);
-}
-#include <zephyr/syscalls/k_mutex_unlock_mrsh.c>
-#endif /* CONFIG_USERSPACE */

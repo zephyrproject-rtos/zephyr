@@ -93,3 +93,29 @@ tests:
     integration_platforms:
       - qemu_x86
       - mps2/an385
+  kernel.common.scope_up:
+    platform_key:
+      - arch
+    platform_allow:
+      - qemu_cortex_m3
+      - mps2/an385
+      - qemu_riscv32
+      - native_sim
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_riscv32
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_KERNEL_SCOPE_UP=y
+  kernel.common.scope_up_userspace:
+    platform_key:
+      - arch
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    platform_allow:
+      - mps2/an385
+      - qemu_riscv32
+    integration_platforms:
+      - mps2/an385
+      - qemu_riscv32
+    extra_configs:
+      - CONFIG_KERNEL_SCOPE_UP_USERSPACE=y

@@ -459,14 +459,6 @@ int64_t z_impl_k_uptime_ticks(void)
 	return sys_clock_tick_get();
 }
 
-#ifdef CONFIG_USERSPACE
-static inline int64_t z_vrfy_k_uptime_ticks(void)
-{
-	return z_impl_k_uptime_ticks();
-}
-#include <zephyr/syscalls/k_uptime_ticks_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
 {
 	k_timepoint_t timepoint;

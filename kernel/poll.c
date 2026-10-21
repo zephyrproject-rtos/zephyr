@@ -497,15 +497,6 @@ void z_impl_k_poll_signal_init(struct k_poll_signal *sig)
 	SYS_PORT_TRACING_FUNC(k_poll_api, signal_init, sig);
 }
 
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_poll_signal_init(struct k_poll_signal *sig)
-{
-	K_OOPS(K_SYSCALL_OBJ_INIT(sig, K_OBJ_POLL_SIGNAL));
-	z_impl_k_poll_signal_init(sig);
-}
-#include <zephyr/syscalls/k_poll_signal_init_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 void z_impl_k_poll_signal_reset(struct k_poll_signal *sig)
 {
 	sig->signaled = 0U;
@@ -521,18 +512,6 @@ void z_impl_k_poll_signal_check(struct k_poll_signal *sig,
 
 	SYS_PORT_TRACING_FUNC(k_poll_api, signal_check, sig);
 }
-
-#ifdef CONFIG_USERSPACE
-void z_vrfy_k_poll_signal_check(struct k_poll_signal *sig,
-			       unsigned int *signaled, int *result)
-{
-	K_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
-	K_OOPS(K_SYSCALL_MEMORY_WRITE(signaled, sizeof(unsigned int)));
-	K_OOPS(K_SYSCALL_MEMORY_WRITE(result, sizeof(int)));
-	z_impl_k_poll_signal_check(sig, signaled, result);
-}
-#include <zephyr/syscalls/k_poll_signal_check_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 int z_impl_k_poll_signal_raise(struct k_poll_signal *sig, int result)
 {
@@ -558,24 +537,6 @@ int z_impl_k_poll_signal_raise(struct k_poll_signal *sig, int result)
 	z_reschedule(&poll_lock, key);
 	return rc;
 }
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_poll_signal_raise(struct k_poll_signal *sig,
-					     int result)
-{
-	K_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
-	return z_impl_k_poll_signal_raise(sig, result);
-}
-#include <zephyr/syscalls/k_poll_signal_raise_mrsh.c>
-
-static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *sig)
-{
-	K_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
-	z_impl_k_poll_signal_reset(sig);
-}
-#include <zephyr/syscalls/k_poll_signal_reset_mrsh.c>
-
-#endif /* CONFIG_USERSPACE */
 
 static void triggered_work_handler(struct k_work *work)
 {
