@@ -29,7 +29,10 @@
 #include <bouffalolab/common/uart_reg.h>
 #include <bouffalolab/common/bflb_uart.h>
 
-
+#if defined(CONFIG_SOC_SERIES_BL808_D0)
+#include <zephyr/dt-bindings/clock/bflb_bl808_clock.h>
+#include <bouffalolab/bl808/mm_glb_reg.h>
+#endif
 
 struct bflb_config {
 	const struct pinctrl_dev_config *pincfg;
@@ -79,6 +82,11 @@ static uint32_t uart_bflb_get_clock(void)
 	uart_divider = sys_read32(GLB_BASE + GLB_CLK_CFG2_OFFSET);
 	uart_divider = (uart_divider & GLB_UART_CLK_DIV_MSK) >> GLB_UART_CLK_DIV_POS;
 	clock_control_get_rate(clock_ctrl, (void *)BFLB_CLKID_CLK_ROOT, &uclk);
+#elif defined(CONFIG_SOC_SERIES_BL808_D0)
+	uart_divider = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_PERI_OFFSET);
+	uart_divider = (uart_divider & MM_GLB_REG_UART0_CLK_DIV_MSK)
+		>> MM_GLB_REG_UART0_CLK_DIV_POS;
+	clock_control_get_rate(clock_ctrl, (void *)BL808_CLKID_CLK_BCLK1X, &uclk);
 #else
 	uart_divider = sys_read32(GLB_BASE + GLB_UART_CFG0_OFFSET);
 	uart_divider = (uart_divider & GLB_UART_CLK_DIV_MSK) >> GLB_UART_CLK_DIV_POS;
