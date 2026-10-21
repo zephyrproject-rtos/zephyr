@@ -29,9 +29,10 @@
 /**
  * @brief set_source() sentinel: leave that axis (reference or target) unchanged.
  *
- * A real INPUTMUX connection cookie is always nonzero: it always carries a
+ * A real INPUTMUX connection cookie is always nonzero: it carries a nonzero
  * destination-register field (0x180/0x184 on MCX, 0x700/0x704 on RT7xx) in its
- * upper bits, so 0 is free to mean "no change" for the NXP FREQME
+ * upper bits, or, on RT266x where the reference register is at 0x0, a nonzero
+ * selector. So 0 is free to mean "no change" for the NXP FREQME
  * clock_monitor_set_source() back-end. The public clock_monitor API does not
  * define a generic sentinel; this constant is FREQME-private.
  */
@@ -181,5 +182,39 @@
 #define NXP_FREQME_RT7XX_TAR_FRO2        NXP_FREQME_RT7XX_TAR(7) /**< RT7xx tar: FRO2. */
 #define NXP_FREQME_RT7XX_TAR_GPIO_A_CLK  NXP_FREQME_RT7XX_TAR(8) /**< RT7xx tar: GPIO A clock. */
 #define NXP_FREQME_RT7XX_TAR_GPIO_B_CLK  NXP_FREQME_RT7XX_TAR(9) /**< RT7xx tar: GPIO B clock. */
+
+/*
+ * i.MX RT266x selectors.
+ * Each subsystem pairs a FREQME with its own INPUTMUX, whose FREQMEAS reference
+ * / target mux registers are at 0x0 / 0x4. No source uses selector 0. The
+ * selectors below are those of the SYSCON pair.
+ * Devices: MIMXRT2660, MIMXRT2661, MIMXRT2662, MIMXRT2663.
+ */
+
+/** FREQMEAS reference mux register offset (i.MX RT266x). */
+#define NXP_FREQME_RT266X_REF_REG 0x0
+/** FREQMEAS target mux register offset (i.MX RT266x). */
+#define NXP_FREQME_RT266X_TAR_REG 0x4
+
+/** Build an RT266x reference-route cookie from selector @p sel. */
+#define NXP_FREQME_RT266X_REF(sel) ((sel) + (NXP_FREQME_RT266X_REF_REG << NXP_FREQME_PMUX_SHIFT))
+/** Build an RT266x target-route cookie from selector @p sel. */
+#define NXP_FREQME_RT266X_TAR(sel) ((sel) + (NXP_FREQME_RT266X_TAR_REG << NXP_FREQME_PMUX_SHIFT))
+
+#define NXP_FREQME_RT266X_REF_SXOSC    NXP_FREQME_RT266X_REF(16) /**< RT266x ref: 24 MHz SXOSC. */
+#define NXP_FREQME_RT266X_REF_BASE_CLK NXP_FREQME_RT266X_REF(17) /**< RT266x ref: base clock. */
+#define NXP_FREQME_RT266X_REF_ULP32K   NXP_FREQME_RT266X_REF(32) /**< RT266x ref: 32 kHz ULP OSC. */
+#define NXP_FREQME_RT266X_REF_FRO192M  NXP_FREQME_RT266X_REF(33) /**< RT266x ref: FRO 192 MHz. */
+#define NXP_FREQME_RT266X_REF_FRO96M   NXP_FREQME_RT266X_REF(34) /**< RT266x ref: FRO 96 MHz. */
+#define NXP_FREQME_RT266X_REF_FRO48M   NXP_FREQME_RT266X_REF(35) /**< RT266x ref: FRO 48 MHz. */
+#define NXP_FREQME_RT266X_REF_FRO24M   NXP_FREQME_RT266X_REF(36) /**< RT266x ref: FRO 24 MHz. */
+
+#define NXP_FREQME_RT266X_TAR_SXOSC    NXP_FREQME_RT266X_TAR(16) /**< RT266x tar: 24 MHz SXOSC. */
+#define NXP_FREQME_RT266X_TAR_BASE_CLK NXP_FREQME_RT266X_TAR(17) /**< RT266x tar: base clock. */
+#define NXP_FREQME_RT266X_TAR_ULP32K   NXP_FREQME_RT266X_TAR(32) /**< RT266x tar: 32 kHz ULP OSC. */
+#define NXP_FREQME_RT266X_TAR_FRO192M  NXP_FREQME_RT266X_TAR(33) /**< RT266x tar: FRO 192 MHz. */
+#define NXP_FREQME_RT266X_TAR_FRO96M   NXP_FREQME_RT266X_TAR(34) /**< RT266x tar: FRO 96 MHz. */
+#define NXP_FREQME_RT266X_TAR_FRO48M   NXP_FREQME_RT266X_TAR(35) /**< RT266x tar: FRO 48 MHz. */
+#define NXP_FREQME_RT266X_TAR_FRO24M   NXP_FREQME_RT266X_TAR(36) /**< RT266x tar: FRO 24 MHz. */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MONITOR_NXP_FREQME_H_ */
