@@ -827,6 +827,10 @@ config BT_PRIVACY
 	  Enable privacy for the local device. This makes the device use Resolvable
 	  Private Addresses (RPAs) by default.
 
+	  How the RPAs are rotated is described in the "Resolvable Private Address
+	  rotation" section of
+	  https://docs.zephyrproject.org/latest/services/connectivity/bluetooth/api/gap.html
+
 	  Note:
 	  Establishing connections as a directed advertiser, or to a directed
 	  advertiser is only possible if the controller also supports privacy.
@@ -895,6 +899,10 @@ config BT_RPA_TIMEOUT
 	help
 	  This option defines how often resolvable private address is rotated.
 	  Value is provided in seconds and defaults to 900 seconds (15 minutes).
+
+	  How the RPAs are rotated is described in the "Resolvable Private Address
+	  rotation" section of
+	  https://docs.zephyrproject.org/latest/services/connectivity/bluetooth/api/gap.html
 
 config BT_RPA_TIMEOUT_DYNAMIC
 	bool "Support setting the Resolvable Private Address timeout at runtime"
