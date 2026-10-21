@@ -271,6 +271,12 @@ struct bt_le_ext_adv_cb {
 	 * expired. The user can use this callback to synchronize the advertising payload update
 	 * with the RPA rotation by for example invoking @ref bt_le_ext_adv_set_data upon callback.
 	 *
+	 * At an RPA rotation it is also called for an advertising set that is not enabled, as
+	 * long as the set holds a valid RPA, and a timeout set with @ref bt_le_set_rpa_timeout
+	 * from it is the time to the next rotation. A set with a duration or event limit gets
+	 * the callback when it stops instead. The RPA rotation is described in
+	 * https://docs.zephyrproject.org/latest/services/connectivity/bluetooth/api/gap.html#resolvable-private-address-rotation
+	 *
 	 * If RPA sharing is enabled (see @kconfig{CONFIG_BT_RPA_SHARING}) and this RPA expired
 	 * callback of any adv-sets belonging to same adv id returns false, then adv-sets will
 	 * continue with the old RPA throughout the RPA rotations.
@@ -2904,7 +2910,8 @@ int bt_le_set_chan_map(uint8_t chan_map[5]);
  *
  * The new RPA timeout value will be used for the next RPA rotation
  * and all subsequent rotations until another override is scheduled
- * with this API.
+ * with this API. The RPA rotation is described in
+ * https://docs.zephyrproject.org/latest/services/connectivity/bluetooth/api/gap.html#resolvable-private-address-rotation
  *
  * Initially, @kconfig{CONFIG_BT_RPA_TIMEOUT} is used as the RPA timeout.
  *
