@@ -185,18 +185,29 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms);
 /**
  * @brief Add npm13xx event callback
  *
+ * Clears any pending occurrence of the requested events, enables their
+ * interrupts and links the callback. On failure the callback is left as
+ * it was. Must not be called from an ISR.
+ *
  * @param dev npm13xx mfd device
  * @param callback A pointer to the event callback to add to the list
- * @return 0 on success, -errno on failure
+ * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
+ * @retval -EINVAL @p callback is NULL, has a NULL handler, an empty event
+ *         mask, a mask bit at or above NPM13XX_EVENT_MAX, or is already
+ *         registered.
  */
 int mfd_npm13xx_add_callback(const struct device *dev, struct mfd_npm13xx_event_callback *callback);
 
 /**
  * @brief Remove npm13xx event callback
  *
+ * Unlinks the callback. The interrupts it subscribed to stay enabled.
+ * Must not be called from an ISR.
+ *
  * @param dev npm13xx mfd device
  * @param callback A pointer to the event callback to remove from the list
- * @return 0 on success, -errno on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL @p callback is NULL or is not registered.
  */
 int mfd_npm13xx_remove_callback(const struct device *dev,
 				struct mfd_npm13xx_event_callback *callback);

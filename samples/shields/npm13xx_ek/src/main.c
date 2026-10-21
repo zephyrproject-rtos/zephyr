@@ -75,6 +75,8 @@ static void event_callback(const struct device *dev, struct mfd_npm13xx_event_ca
 
 void configure_events(void)
 {
+	int ret;
+
 	if (!device_is_ready(pmic)) {
 		printk("Pmic device not ready.\n");
 		return;
@@ -87,7 +89,10 @@ void configure_events(void)
 		BIT(NPM13XX_EVENT_SHIPHOLD_PRESS) | BIT(NPM13XX_EVENT_SHIPHOLD_RELEASE);
 	event_cb.handler = event_callback;
 
-	mfd_npm13xx_add_callback(pmic, &event_cb);
+	ret = mfd_npm13xx_add_callback(pmic, &event_cb);
+	if (ret < 0) {
+		printk("Failed to add pmic event callback: %d\n", ret);
+	}
 }
 
 void read_sensors(void)
