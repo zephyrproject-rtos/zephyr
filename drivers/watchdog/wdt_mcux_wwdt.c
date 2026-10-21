@@ -372,6 +372,11 @@ static int mcux_wwdt_init(const struct device *dev)
 	const struct mcux_wwdt_config *config = dev->config;
 	int ret;
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("Clock control device not ready");
+		return -ENODEV;
+	}
+
 	ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 	if (ret && ret != -ENOSYS) {
 		/* Real error occurred */
@@ -380,15 +385,11 @@ static int mcux_wwdt_init(const struct device *dev)
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Failed to enable clock: %d", ret);
 		return ret;
 	}
 
-	/* The rest of the device init is done from the
-	 * PM_DEVICE_ACTION_TURN_ON in the pm callback
-	 * which is invoked by pm_device_driver_init.
-	 */
 	config->irq_config_func(dev);
 	return pm_device_driver_init(dev, mcux_wwdt_driver_pm_action);
 }
