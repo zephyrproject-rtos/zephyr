@@ -259,5 +259,16 @@
 				};
 			};
 		};
+
+		adc0: adc@403a0000 {
+			compatible = "infineon,sar-adc";
+			infineon,version = <4>;
+			reg = <0x403a0000 0xff08>;
+			interrupts = <27 0>;
+			#io-channel-cells = <1>;
+			clocks = <&peri_clk_div4>;
+			clk-dst = <0xd>;
+			status = "disabled";
+		};
 	};
 };
