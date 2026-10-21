@@ -6799,6 +6799,7 @@ Utilities:
   files:
     - include/zephyr/data/cobs.h
     - lib/utils/
+    - tests/lib/bitmap/
     - tests/unit/timeutil/
     - tests/unit/time_units/
     - tests/unit/rbtree/
