@@ -13,6 +13,11 @@
 #define ARCH_HDR_VER			1
 #define XTENSA_BLOCK_HDR_VER		2
 
+/**
+ * @brief SoC identifiers stored in the coredump architecture block.
+ *
+ * Used by the GDB stub to select the register layout of the SoC.
+ */
 enum xtensa_soc_code {
 	XTENSA_SOC_UNKNOWN = 0,
 	XTENSA_SOC_SAMPLE_CONTROLLER,
@@ -23,6 +28,9 @@ enum xtensa_soc_code {
 	XTENSA_SOC_DC233C,
 };
 
+/**
+ * @brief Xtensa architecture-specific coredump block.
+ */
 struct xtensa_arch_block {
 	/* Each Xtensa SOC can omit registers (e.g. loop
 	 * registers) or assign different index numbers
