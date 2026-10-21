@@ -63,6 +63,8 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* MFD: :c:struct:`mfd_npm13xx_event_callback`.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

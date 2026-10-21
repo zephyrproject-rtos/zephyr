@@ -9,7 +9,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/mfd/npm13xx.h>
 
 #define NPM13XX_TIME_BASE 0x07U
@@ -85,6 +85,40 @@ static void gpio_callback(const struct device *dev, struct gpio_callback *cb, ui
 	k_work_submit(&data->work);
 }
 
+static void fire_callbacks(sys_slist_t *callbacks, const struct device *dev, npm13xx_event_t events)
+{
+	struct mfd_npm13xx_event_callback *cb, *tmp;
+
+	/* A handler may remove its own callback. */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(callbacks, cb, tmp, node) {
+		if ((cb->event_mask & events) != 0U) {
+			__ASSERT(cb->handler != NULL, "No callback handler!");
+			cb->handler(dev, cb, cb->event_mask & events);
+		}
+	}
+}
+
+static int manage_callback(sys_slist_t *callbacks, struct mfd_npm13xx_event_callback *callback,
+			   bool add)
+{
+	__ASSERT(callback != NULL, "No callback!");
+	__ASSERT(callback->handler != NULL, "No callback handler!");
+
+	if (!sys_slist_is_empty(callbacks)) {
+		if (!sys_slist_find_and_remove(callbacks, &callback->node) && !add) {
+			return -EINVAL;
+		}
+	} else if (!add) {
+		return -EINVAL;
+	}
+
+	if (add) {
+		sys_slist_prepend(callbacks, &callback->node);
+	}
+
+	return 0;
+}
+
 static void work_callback(struct k_work *work)
 {
 	struct mfd_npm13xx_data *data = CONTAINER_OF(work, struct mfd_npm13xx_data, work);
@@ -103,7 +137,7 @@ static void work_callback(struct k_work *work)
 		int offset = event_reg[i].offset + MAIN_OFFSET_CLR;
 
 		if ((buf[offset] & event_reg[i].mask) != 0U) {
-			gpio_fire_callbacks(&data->callbacks, data->dev, BIT(i));
+			fire_callbacks(&data->callbacks, data->dev, BIT(i));
 
 			ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE, offset,
 						    event_reg[i].mask);
@@ -279,13 +313,13 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms)
 	return mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_HIBERNATE, 1U);
 }
 
-int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *callback)
+int mfd_npm13xx_add_callback(const struct device *dev, struct mfd_npm13xx_event_callback *callback)
 {
 	struct mfd_npm13xx_data *data = dev->data;
 
 	/* Enable interrupts for specified events */
 	for (int i = 0; i < NPM13XX_EVENT_MAX; i++) {
-		if ((callback->pin_mask & BIT(i)) != 0U) {
+		if ((callback->event_mask & BIT(i)) != 0U) {
 			/* Clear pending interrupt */
 			int ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
 							event_reg[i].offset + MAIN_OFFSET_CLR,
@@ -304,14 +338,15 @@ int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *cal
 		}
 	}
 
-	return gpio_manage_callback(&data->callbacks, callback, true);
+	return manage_callback(&data->callbacks, callback, true);
 }
 
-int mfd_npm13xx_remove_callback(const struct device *dev, struct gpio_callback *callback)
+int mfd_npm13xx_remove_callback(const struct device *dev,
+				struct mfd_npm13xx_event_callback *callback)
 {
 	struct mfd_npm13xx_data *data = dev->data;
 
-	return gpio_manage_callback(&data->callbacks, callback, false);
+	return manage_callback(&data->callbacks, callback, false);
 }
 
 #define MFD_NPM13XX_DEFINE(partno, n)                                                              \
