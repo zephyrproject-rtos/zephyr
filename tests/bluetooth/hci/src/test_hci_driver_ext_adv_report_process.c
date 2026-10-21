@@ -389,7 +389,7 @@ static ZTEST(hci_ext_adv_report_process,
 }
 
 static ZTEST(hci_ext_adv_report_process,
-	     two_interleaved_chains_first_chain_has_unavailable_first_buffer)
+	     test_two_interleaved_chains_first_chain_has_unavailable_first_buffer)
 {
 	/* Validate that two interleaved chains of reports:
 	 * - Chain A
@@ -479,7 +479,7 @@ static ZTEST(hci_ext_adv_report_process,
 }
 
 static ZTEST(hci_ext_adv_report_process,
-	     two_interleaved_chains_first_chain_has_unavailable_last_buffer)
+	     test_two_interleaved_chains_first_chain_has_unavailable_last_buffer)
 {
 	/* Validate that two interleaved chains of reports:
 	 * - Chain A
