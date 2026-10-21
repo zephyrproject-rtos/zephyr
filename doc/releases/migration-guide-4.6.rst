@@ -47,6 +47,17 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
+MFD
+===
+
+* The nPM13xx MFD event callback API no longer reuses :c:struct:`gpio_callback`. Register with
+  :c:struct:`mfd_npm13xx_event_callback`, setting ``event_mask`` (a bitwise-OR of
+  ``BIT(NPM13XX_EVENT_*)``) and ``handler`` directly instead of calling ``gpio_init_callback()``.
+  The handler signature is now ``void handler(const struct device *dev,
+  struct mfd_npm13xx_event_callback *cb, npm13xx_event_t events)``. A handler is invoked once
+  per dispatch with the fired events it subscribed to rather than once per event bit.
+  (:github:`110454`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
