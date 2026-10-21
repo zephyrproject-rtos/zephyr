@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <soc.h>
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/drivers/clock_control.h>
@@ -391,7 +392,7 @@ static void usbd_ep_abort_all(void)
 /* Rise USBD interrupt to trigger interrupt handler */
 static inline void usbd_int_rise(void)
 {
-	NVIC_SetPendingIRQ(USBD_IRQn);
+	k_irq_set_pending(USBD_IRQn);
 }
 
 static void ev_usbreset_handler(void)
@@ -951,7 +952,7 @@ static void nrf_usbd_legacy_start(bool enable_sof)
 static void nrf_usbd_common_stop(void)
 {
 	/* Clear interrupt */
-	NVIC_ClearPendingIRQ(USBD_IRQn);
+	k_irq_clear_pending(USBD_IRQn);
 
 	if (irq_is_enabled(USBD_IRQn)) {
 		/* Abort transfers */
