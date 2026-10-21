@@ -230,6 +230,22 @@ enum display_pixel_format {
 	 * right pixel. Palette semantics are display-specific.
 	 */
 	PIXEL_FORMAT_I_4 = BIT(13), /**< Packed 4-bit indexed color */
+
+	/**
+	 * @brief 4-bit greyscale format with 2 pixels packed per byte.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | GgggHhhh | IiiiJjjj | ...
+	 * @endcode
+	 *
+	 * The high nibble stores the left pixel and the low nibble stores the
+	 * right pixel.
+	 */
+	PIXEL_FORMAT_L_4 = BIT(14), /**< Packed 4-bit Grayscale/Luminance */
 };
 
 /**
@@ -253,7 +269,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_ABGR_8888) >> 10) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_RGBA_8888) >> 11) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
-	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U))
+	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U) +				\
+	(((fmt & PIXEL_FORMAT_L_4) >> 14) * 4U))
 
 /**
  * @brief Display screen information
