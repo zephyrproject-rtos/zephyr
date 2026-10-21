@@ -2,7 +2,13 @@
 # Copyright (c) 2024 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 LCD-TFT display controller
+description: |
+  STM32 LCD-TFT display controller
+
+  The display-timings child node is optional. Without it, the LTDC is not
+  started until the timings are set with display_set_timing(), for example
+  by the MIPI DSI host when a device attaches. The width and height properties
+  size the frame buffer, so they must cover the largest timings that are set.
 
 compatible: "st,stm32-ltdc"
 
