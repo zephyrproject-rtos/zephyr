@@ -140,7 +140,10 @@ report.
 On the QEMU targets the comparison is exact. They run in icount mode, where the
 cycle counter advances with executed instructions, so a given binary reports
 the same numbers on every run and on every host, and a benchmark that moved is
-a path that executes a different number of instructions.
+a path that executes a different number of instructions. The
+:file:`.github/workflows/kernel-perf.yml` workflow uses that to measure every
+pull request that touches the kernel against the branch it targets, on one
+QEMU target per architecture, and posts the result on the pull request.
 
 Notes
 *****
