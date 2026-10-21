@@ -183,7 +183,7 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 			if (!hw_wdt_started && hw_wdt_dev) {
 				/* also start fallback hw wdt */
-				wdt_setup(hw_wdt_dev,
+				int ret = wdt_setup(hw_wdt_dev,
 					0
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_HALTED_BY_DBG
 					| WDT_OPT_PAUSE_HALTED_BY_DBG
@@ -192,6 +192,12 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 					| WDT_OPT_PAUSE_IN_SLEEP
 #endif
 				);
+				if (ret < 0) {
+					channels[id] = (struct task_wdt_channel){0};
+					k_spin_unlock(&channels_lock, key);
+					LOG_ERR("Hardware watchdog setup failed: %d", ret);
+					return ret;
+				}
 				hw_wdt_started = true;
 			}
 #endif
