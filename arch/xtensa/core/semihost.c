@@ -37,6 +37,7 @@
 #define SEMIHOST_SEEK_CUR 1
 #define SEMIHOST_SEEK_END 2
 
+/** Open flags understood by the semihosting host. */
 enum semihost_open_flag {
 	SEMIHOST_RDONLY = 0x0,
 	SEMIHOST_WRONLY = 0x1,
@@ -58,6 +59,13 @@ enum semihost_open_flag {
 #endif /* CONFIG_SIMULATOR_XTENSA */
 };
 
+/**
+ * @brief Convert a semihosting open mode to host open flags.
+ *
+ * @param mode Semihosting open mode.
+ *
+ * @return Host open flags, or -1 if @p mode is invalid.
+ */
 uint32_t semihost_flags(enum semihost_open_mode mode)
 {
 	uint32_t flags = 0;
@@ -94,6 +102,13 @@ uint32_t semihost_flags(enum semihost_open_mode mode)
 	return flags;
 }
 
+/**
+ * @brief Get the file permissions used when opening a file.
+ *
+ * @param mode Semihosting open mode.
+ *
+ * @return 0600 for modes that may create the file, 0 otherwise.
+ */
 uint32_t semihost_mode(enum semihost_open_mode mode)
 {
 	switch (mode) {
@@ -114,6 +129,17 @@ uint32_t semihost_mode(enum semihost_open_mode mode)
 
 /* Not used by any simulator calls at the moment */
 #ifndef CONFIG_SIMULATOR_XTENSA
+/**
+ * @brief Issue a semihosting call with four arguments.
+ *
+ * @param arg1 First argument.
+ * @param arg2 Second argument.
+ * @param arg3 Third argument.
+ * @param arg4 Fourth argument.
+ * @param call_id Semihosting call number.
+ *
+ * @return Value returned by the host.
+ */
 static inline uintptr_t xtensa_semihost_call_4(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
 					       uintptr_t arg4, uintptr_t call_id)
 {
@@ -132,6 +158,16 @@ static inline uintptr_t xtensa_semihost_call_4(uintptr_t arg1, uintptr_t arg2, u
 }
 #endif /* CONFIG_SIMULATOR_XTENSA */
 
+/**
+ * @brief Issue a semihosting call with three arguments.
+ *
+ * @param arg1 First argument.
+ * @param arg2 Second argument.
+ * @param arg3 Third argument.
+ * @param call_id Semihosting call number.
+ *
+ * @return Value returned by the host.
+ */
 static inline uintptr_t xtensa_semihost_call_3(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
 					       uintptr_t call_id)
 {
@@ -151,6 +187,15 @@ static inline uintptr_t xtensa_semihost_call_3(uintptr_t arg1, uintptr_t arg2, u
 	return r2;
 }
 
+/**
+ * @brief Issue a semihosting call with two arguments.
+ *
+ * @param arg1 First argument.
+ * @param arg2 Second argument.
+ * @param call_id Semihosting call number.
+ *
+ * @return Value returned by the host.
+ */
 static inline uintptr_t xtensa_semihost_call_2(uintptr_t arg1, uintptr_t arg2, uintptr_t call_id)
 {
 	register uintptr_t r2 __asm__("%a2") = call_id;
@@ -167,6 +212,14 @@ static inline uintptr_t xtensa_semihost_call_2(uintptr_t arg1, uintptr_t arg2, u
 	return r2;
 }
 
+/**
+ * @brief Issue a semihosting call with one argument.
+ *
+ * @param arg1 First argument.
+ * @param call_id Semihosting call number.
+ *
+ * @return Value returned by the host.
+ */
 static inline uintptr_t xtensa_semihost_call_1(uintptr_t arg1, uintptr_t call_id)
 {
 	register uintptr_t r2 __asm__("%a2") = call_id;
@@ -181,6 +234,13 @@ static inline uintptr_t xtensa_semihost_call_1(uintptr_t arg1, uintptr_t call_id
 	return r2;
 }
 
+/**
+ * @brief Open a file on the host.
+ *
+ * @param args Path and open mode.
+ *
+ * @return File descriptor on success, negative value on failure.
+ */
 long xtensa_semihost_open(struct semihost_open_args *args)
 {
 #ifdef CONFIG_SIMULATOR_XTENSA
@@ -193,11 +253,29 @@ long xtensa_semihost_open(struct semihost_open_args *args)
 #endif /* CONFIG_SIMULATOR_XTENSA */
 }
 
+/**
+ * @brief Close a file on the host.
+ *
+ * @param fd File descriptor.
+ *
+ * @retval 0 Success.
+ * @retval -1 Failure.
+ */
 long xtensa_semihost_close(long fd)
 {
 	return xtensa_semihost_call_1(fd, XTENSA_SEMIHOST_CLOSE);
 }
 
+/**
+ * @brief Write to a file on the host.
+ *
+ * @param fd File descriptor.
+ * @param buf Data to write.
+ * @param len Number of bytes to write.
+ *
+ * @retval 0 All bytes written.
+ * @retval -1 Failure or partial write.
+ */
 long xtensa_semihost_write(long fd, const char *buf, long len)
 {
 	long ret;
@@ -212,6 +290,20 @@ long xtensa_semihost_write(long fd, const char *buf, long len)
 	return -1;
 }
 
+/**
+ * @brief Read from a file on the host.
+ *
+ * The return value follows the semihosting convention of reporting the
+ * number of bytes not read.
+ *
+ * @param fd File descriptor.
+ * @param buf Destination buffer.
+ * @param len Number of bytes to read.
+ *
+ * @retval 0 All bytes read.
+ * @retval len Nothing read (EOF or error).
+ * @return Otherwise, the host return value for a partial read.
+ */
 long xtensa_semihost_read(long fd, void *buf, long len)
 {
 	long ret;
@@ -230,6 +322,13 @@ long xtensa_semihost_read(long fd, void *buf, long len)
 	}
 }
 
+/**
+ * @brief Read one character from a file on the host.
+ *
+ * @param fd File descriptor.
+ *
+ * @return Character read, 0 if nothing was read.
+ */
 long xtensa_semihost_read_char(long fd)
 {
 	char c = 0;
@@ -239,6 +338,15 @@ long xtensa_semihost_read_char(long fd)
 	return (long)c;
 }
 
+/**
+ * @brief Change the file position of a file on the host.
+ *
+ * @param args File descriptor and offset.
+ * @param whence SEMIHOST_SEEK_SET, SEMIHOST_SEEK_CUR or SEMIHOST_SEEK_END.
+ *
+ * @retval 0 Resulting position equals the requested offset.
+ * @return Otherwise, the resulting position or a negative value on failure.
+ */
 long xtensa_semihost_seek(struct semihost_seek_args *args, int whence)
 {
 	long ret;
@@ -253,6 +361,13 @@ long xtensa_semihost_seek(struct semihost_seek_args *args, int whence)
 }
 
 #ifndef CONFIG_QEMU_TARGET
+/**
+ * @brief Get the length of a file on the host using fstat.
+ *
+ * @param fd File descriptor.
+ *
+ * @return File length in bytes, -1 on failure.
+ */
 long xtensa_semihost_flen(long fd)
 {
 	uint8_t buf[64] = {0};
@@ -279,6 +394,15 @@ long xtensa_semihost_flen(long fd)
 #endif /* CONFIG_SIMULATOR_XTENSA */
 }
 #else
+/**
+ * @brief Get the length of a file on the host using lseek.
+ *
+ * The file position is restored before returning.
+ *
+ * @param fd File descriptor.
+ *
+ * @return File length in bytes, -1 on failure.
+ */
 long xtensa_semihost_flen(long fd)
 {
 	/* QEMU does not support fstat, use lseek to determine the file length. */
@@ -312,6 +436,14 @@ long xtensa_semihost_flen(long fd)
 }
 #endif /* CONFIG_QEMU_TARGET */
 
+/**
+ * @brief Execute a semihosting request.
+ *
+ * @param instr Semihosting operation.
+ * @param args Operation-specific argument structure.
+ *
+ * @return Result of the operation, -1 for unsupported operations.
+ */
 long semihost_exec(enum semihost_instr instr, void *args)
 {
 	switch (instr) {
