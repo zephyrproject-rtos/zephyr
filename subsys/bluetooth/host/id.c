@@ -2283,6 +2283,30 @@ int bt_br_oob_get_local(struct bt_br_oob *oob)
 }
 #endif /* CONFIG_BT_CLASSIC */
 
+#if defined(CONFIG_BT_PRIVACY)
+int bt_le_rotate_rpa(void)
+{
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
+		struct bt_conn *conn;
+
+		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_SCAN_BEFORE_INITIATING);
+		if (conn != NULL) {
+			/* Cannot set a new RPA while creating a connection */
+			bt_conn_unref(conn);
+			return -EBUSY;
+		}
+	}
+
+	le_force_rpa_timeout();
+
+	return 0;
+}
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
 int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 {
 	struct bt_le_ext_adv *adv = NULL;
