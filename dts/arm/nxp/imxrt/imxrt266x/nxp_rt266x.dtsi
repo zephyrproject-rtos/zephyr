@@ -1627,6 +1627,7 @@
 		compatible = "nxp,ewm";
 		reg = <0x46110000 0x10000>;
 		interrupts = <220 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_EWM, IMX_CCM_ROOT_WAKE_EWM_FCLK)>;
 		clk-divider = <0x2>;
 		status = "disabled";
 	};
