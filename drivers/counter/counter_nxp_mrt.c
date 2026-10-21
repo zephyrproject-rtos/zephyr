@@ -18,6 +18,15 @@
  * configuring or accessing its hardware. Keep the reference for as long as the timebase is
  * wanted, and call counter_stop() before releasing it with pm_device_runtime_put().
  * SUSPEND returns -EBUSY while the channel is running.
+ *
+ * The channels share one bus clock, which both gates the registers and runs the counters, so
+ * the clock belongs to the module device. Each channel names the module as its power domain,
+ * so the PM core reference counts the shared gate: it closes once every channel has released
+ * its reference. An automatically runtime-managed module requires
+ * CONFIG_PM_DEVICE_POWER_DOMAIN and automatic runtime PM on every enabled channel, so each
+ * channel can claim the shared clock. A channel can use runtime PM without it on the module;
+ * the module then starts active and runtime PM does not gate its clock. Applications enabling
+ * or disabling runtime PM explicitly must preserve these dependencies.
  */
 
 #define DT_DRV_COMPAT nxp_mrt
@@ -312,17 +321,23 @@ static int nxp_mrt_init_common(const struct device *dev)
 		}
 	}
 
-	return 0;
+	/* The block is handed over suspended, so hand the clock back. The resume
+	 * action is what clocks it.
+	 */
+	return clock_control_off(config->clock_dev, config->clock_subsys);
 }
 
 static int nxp_mrt_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct nxp_mrt_config *config = dev->config;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		break;
+		return clock_control_on(config->clock_dev, config->clock_subsys);
 	case PM_DEVICE_ACTION_SUSPEND:
-		break;
+		return clock_control_off(config->clock_dev, config->clock_subsys);
 	case PM_DEVICE_ACTION_TURN_OFF:
+		/* A turn-off only ever follows a suspend, which gated the clock. */
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		return nxp_mrt_init_common(dev);
@@ -383,6 +398,10 @@ static int nxp_mrt_channel_pm_action(const struct device *dev, enum pm_device_ac
 
 static int nxp_mrt_channel_init(const struct device *dev)
 {
+	/* The module's TURN_ON initializes every channel. With the module suspended,
+	 * pm_device_driver_init() leaves the channel OFF; pm_device_runtime_get()
+	 * resumes the module before moving the channel directly to ACTIVE.
+	 */
 	return pm_device_driver_init(dev, nxp_mrt_channel_pm_action);
 }
 
