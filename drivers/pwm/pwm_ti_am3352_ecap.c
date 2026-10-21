@@ -234,8 +234,10 @@ static int ti_ecap_configure_capture(const struct device *dev, uint32_t channel,
 	/* disable interrupts */
 	regs->ECINT_EN_FLG &= ~(TI_ECAP_ECINT_EN_CEVT4 | TI_ECAP_ECINT_EN_CNTOVF);
 
-	/* clear event flags */
-	regs->ECINT_CLR_FRC |=
+	/* ECCLR is write-1-to-clear; ECFRC sits in the upper half of this
+	 * 32-bit view — never RMW or a stale force bit can be rewritten.
+	 */
+	regs->ECINT_CLR_FRC =
 		(TI_ECAP_ECINT_CLR_CNTOVF | TI_ECAP_ECINT_CLR_CEVT4 | TI_ECAP_ECINT_CLR_INT);
 
 	ecctl = regs->ECCTL;
@@ -374,8 +376,7 @@ static void ti_ecap_isr(const struct device *dev)
 			cpt->callback(dev, 0, period, pulse, -ERANGE, cpt->user_data);
 		}
 
-		/* clear event */
-		regs->ECINT_CLR_FRC |= TI_ECAP_ECINT_CLR_CNTOVF;
+		regs->ECINT_CLR_FRC = TI_ECAP_ECINT_CLR_CNTOVF | TI_ECAP_ECINT_CLR_INT;
 	} else if (ecint_en_flg & TI_ECAP_ECINT_EN_CEVT4_FLG) {
 		uint32_t cap3 = regs->CAP3;
 		uint32_t cap4 = regs->CAP4;
@@ -392,12 +393,10 @@ static void ti_ecap_isr(const struct device *dev)
 			cpt->callback(dev, 0, period, pulse, 0, cpt->user_data);
 		}
 
-		/* clear event */
-		regs->ECINT_CLR_FRC |= TI_ECAP_ECINT_CLR_CEVT4;
+		regs->ECINT_CLR_FRC = TI_ECAP_ECINT_CLR_CEVT4 | TI_ECAP_ECINT_CLR_INT;
+	} else {
+		regs->ECINT_CLR_FRC = TI_ECAP_ECINT_CLR_INT;
 	}
-
-	/* clear global interrupt */
-	regs->ECINT_CLR_FRC |= TI_ECAP_ECINT_CLR_INT;
 }
 
 static DEVICE_API(pwm, ti_ecap_api) = {
