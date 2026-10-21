@@ -804,7 +804,19 @@ static void airoc_event_task(void)
 
 		case WLC_E_DEAUTH_IND:
 		case WLC_E_DISASSOC_IND:
-			net_if_dormant_on(airoc_wifi_iface);
+			/* This fires for AP-side client disassociation too (same
+			 * msgq, tagged via is_ap_event), but airoc_wifi_iface is
+			 * this driver's single shared net_if. Marking it dormant
+			 * on a routine client disconnect clears NET_IF_RUNNING
+			 * (update_operational_state() -> notify_iface_down()) and
+			 * makes net_if_is_up() report the AP interface as down,
+			 * even though nothing actually brought the radio down.
+			 * Only losing our own STA association should mark this
+			 * interface dormant.
+			 */
+			if (!airoc_event.is_ap_event) {
+				net_if_dormant_on(airoc_wifi_iface);
+			}
 			break;
 
 		default:
