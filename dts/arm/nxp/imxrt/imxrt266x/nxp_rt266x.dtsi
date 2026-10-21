@@ -709,7 +709,7 @@
 		reg = <0x43800000 0x4000>;
 		interrupts = <190 0>, <191 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO0,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		status = "disabled";
@@ -720,7 +720,7 @@
 		reg = <0x43810000 0x4000>;
 		interrupts = <192 0>, <193 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO1,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		status = "disabled";
@@ -731,7 +731,7 @@
 		reg = <0x43820000 0x4000>;
 		interrupts = <194 0>, <195 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO2,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		status = "disabled";
@@ -742,7 +742,7 @@
 		reg = <0x43830000 0x4000>;
 		interrupts = <196 0>, <197 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO3,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		status = "disabled";
@@ -753,7 +753,7 @@
 		reg = <0x43840000 0x4000>;
 		interrupts = <198 0>, <199 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_RGPIO4,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		status = "disabled";
@@ -1031,7 +1031,7 @@
 			interrupts = <117 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM0,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1042,7 +1042,7 @@
 			interrupts = <118 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM0,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1053,7 +1053,7 @@
 			interrupts = <119 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM0,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1064,7 +1064,7 @@
 			interrupts = <120 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM0,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1081,7 +1081,7 @@
 			interrupts = <122 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM1,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1092,7 +1092,7 @@
 			interrupts = <123 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM1,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1103,7 +1103,7 @@
 			interrupts = <124 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM1,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1114,7 +1114,7 @@
 			interrupts = <125 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM1,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1131,7 +1131,7 @@
 			interrupts = <127 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM2,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1142,7 +1142,7 @@
 			interrupts = <128 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM2,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1153,7 +1153,7 @@
 			interrupts = <129 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM2,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1164,7 +1164,7 @@
 			interrupts = <130 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM2,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1181,7 +1181,7 @@
 			interrupts = <132 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM3,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1192,7 +1192,7 @@
 			interrupts = <133 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM3,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1203,7 +1203,7 @@
 			interrupts = <134 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM3,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1214,7 +1214,7 @@
 			interrupts = <135 0>;
 			#pwm-cells = <3>;
 			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_FLEXPWM3,
-						   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+						   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
@@ -1318,7 +1318,7 @@
 		reg = <0x421e0000 0x4000>;
 		interrupts = <149 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER0,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr0_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1350,7 +1350,7 @@
 		reg = <0x421f0000 0x4000>;
 		interrupts = <150 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER1,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr1_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1382,7 +1382,7 @@
 		reg = <0x429e0000 0x4000>;
 		interrupts = <151 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER2,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr2_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1414,7 +1414,7 @@
 		reg = <0x429f0000 0x4000>;
 		interrupts = <152 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER3,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr3_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1447,7 +1447,7 @@
 		reg = <0x420c0000 0x4000>;
 		interrupts = <153 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC0,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 		status = "disabled";
 	};
 
@@ -1456,7 +1456,7 @@
 		reg = <0x420d0000 0x4000>;
 		interrupts = <154 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC1,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 		status = "disabled";
 	};
 
@@ -1465,7 +1465,7 @@
 		reg = <0x428c0000 0x4000>;
 		interrupts = <155 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC2,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 		status = "disabled";
 	};
 
@@ -1474,7 +1474,7 @@
 		reg = <0x428d0000 0x4000>;
 		interrupts = <156 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC3,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 		status = "disabled";
 	};
 
