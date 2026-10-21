@@ -14,7 +14,15 @@ include: base.yaml
 properties:
   reg:
     required: true
+
   reg-names:
     required: true
+
   interrupts-extended:
     required: true
+
+  32bit-mmio-mtimecmp:
+    type: boolean
+    description: |
+      Some RISC-V implementations do not support atomic 64-bit MMIO stores to mtimecmp.
+      This enables using the 32-bit write sequence (high=max, low=val, high=val) on 64-bit targets.
