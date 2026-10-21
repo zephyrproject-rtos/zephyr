@@ -27,3 +27,14 @@
 &lptmr2 {
 	status = "okay";
 };
+
+&qtmr0_timer0 {
+	status = "okay";
+	primary-source = "kQTMR_ClockDivide_128";
+	mode = "kQTMR_PriSrcRiseEdge";
+};
+
+&stm0 {
+	prescaler = <1>;
+	status = "okay";
+};
