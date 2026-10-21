@@ -231,6 +231,8 @@ the host computing speed. All randomness is controlled by random seeds which can
 be provided as command line options.
 
 
+.. _nrf52bsim_time:
+
 About time in BabbleSim
 ************************
 
