@@ -119,7 +119,6 @@
 	st,adc-prescaler = <4>;
 	st,adc-clock-source = "SYNC";
 	vref-mv = <10000>;
-	status = "okay";
 };
 
 &adc1 {
@@ -164,7 +163,6 @@
 	st,adc-prescaler = <4>;
 	st,adc-clock-source = "SYNC";
 	vref-mv = <10000>;
-	status = "okay";
 };
 
 &adc3 {
