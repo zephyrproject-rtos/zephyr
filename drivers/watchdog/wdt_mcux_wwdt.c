@@ -33,6 +33,7 @@ struct mcux_wwdt_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
+	unsigned int irq;
 };
 
 struct mcux_wwdt_data {
@@ -43,6 +44,7 @@ struct mcux_wwdt_data {
 	bool started;
 	struct k_spinlock lock;
 	bool starting;
+	bool irq_was_enabled;
 };
 
 static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32_t *freq)
@@ -90,7 +92,7 @@ static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32
 	return 0;
 }
 
-static void mcux_wwdt_start(const struct device *dev)
+static void mcux_wwdt_start(const struct device *dev, bool irq_enabled)
 {
 	const struct mcux_wwdt_config *config = dev->config;
 	struct mcux_wwdt_data *data = dev->data;
@@ -102,13 +104,19 @@ static void mcux_wwdt_start(const struct device *dev)
 	data->started = true;
 	data->starting = false;
 	data->active_before_sleep = false;
+	data->irq_was_enabled = false;
+	if (irq_enabled) {
+		irq_enable(config->irq);
+	}
 	k_spin_unlock(&data->lock, key);
 }
 
 static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
 {
+	const struct mcux_wwdt_config *config = dev->config;
 	struct mcux_wwdt_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	bool irq_enabled;
 	int ret = 0;
 
 	if (data->started || data->starting) {
@@ -124,9 +132,11 @@ static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
 	}
 
 	data->starting = true;
+	irq_enabled = (irq_is_enabled(config->irq) != 0) || data->irq_was_enabled;
+	irq_disable(config->irq);
 	k_spin_unlock(&data->lock, key);
 
-	mcux_wwdt_start(dev);
+	mcux_wwdt_start(dev, irq_enabled);
 	LOG_DBG("Setup the watchdog");
 	return 0;
 }
@@ -143,7 +153,10 @@ static int mcux_wwdt_disable(const struct device *dev)
 	} else if (!data->started) {
 		ret = -EFAULT;
 	} else {
+		data->irq_was_enabled = irq_is_enabled(config->irq) != 0;
+		irq_disable(config->irq);
 		WWDT_Deinit(config->base);
+		k_irq_clear_pending(config->irq);
 		data->timeout_valid = false;
 		data->callback = NULL;
 		data->active_before_sleep = false;
@@ -396,6 +409,7 @@ static DEVICE_API(wdt, mcux_wwdt_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),             \
 		.irq_config_func = mcux_wwdt_config_func_##id,                                     \
+		.irq = DT_INST_IRQN(id),                                                           \
 	};                                                                                         \
                                                                                                    \
 	static struct mcux_wwdt_data mcux_wwdt_data_##id;                                          \
