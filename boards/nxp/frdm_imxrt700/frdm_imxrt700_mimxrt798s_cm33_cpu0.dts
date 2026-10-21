@@ -62,6 +62,14 @@
 	wakeup-source;
 };
 
+&ctimer0 {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
 &flexcomm0 {
 	status = "okay";
 };
