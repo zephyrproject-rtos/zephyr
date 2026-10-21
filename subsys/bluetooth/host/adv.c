@@ -1392,9 +1392,9 @@ static int adv_start_ext(struct bt_le_ext_adv *adv,
 
 static void adv_timeout(struct k_work *work);
 
-int bt_le_lim_adv_cancel_timeout(struct bt_le_ext_adv *adv)
+void bt_le_lim_adv_cancel_timeout(struct bt_le_ext_adv *adv)
 {
-	return k_work_cancel_delayable(&adv->lim_adv_timeout_work);
+	(void)k_work_cancel_delayable(&adv->lim_adv_timeout_work);
 }
 
 int bt_le_adv_start(const struct bt_le_adv_param *param,
@@ -1441,7 +1441,7 @@ int bt_le_adv_stop(void)
 		return 0;
 	}
 
-	(void)bt_le_lim_adv_cancel_timeout(adv);
+	bt_le_lim_adv_cancel_timeout(adv);
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		/* Legacy advertiser exists, but is not currently advertising.
@@ -1698,7 +1698,7 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 		return -EINVAL;
 	}
 
-	(void)bt_le_lim_adv_cancel_timeout(adv);
+	bt_le_lim_adv_cancel_timeout(adv);
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return 0;
@@ -2328,7 +2328,7 @@ static void adv_set_terminated(struct bt_le_ext_adv *adv,
 	bool was_adv_enabled;
 #endif
 
-	(void)bt_le_lim_adv_cancel_timeout(adv);
+	bt_le_lim_adv_cancel_timeout(adv);
 
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	was_adv_enabled = atomic_test_bit(adv->flags, BT_ADV_ENABLED);

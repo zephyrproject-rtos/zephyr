@@ -4687,7 +4687,7 @@ static void le_conn_complete_prio(uint8_t role)
 		 * object to keep host in sync with controller state.
 		 */
 		atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
-		(void)bt_le_lim_adv_cancel_timeout(adv);
+		bt_le_lim_adv_cancel_timeout(adv);
 	}
 }
 
