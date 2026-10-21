@@ -47,6 +47,7 @@ static void busy_entry(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	while (1) {
+		arch_nop();
 	}
 }
 
