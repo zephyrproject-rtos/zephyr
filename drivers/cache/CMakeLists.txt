@@ -3,6 +3,7 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/cache.h)
 
 zephyr_library()
+# Header only cache implementations exist
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE cache_handlers.c)
