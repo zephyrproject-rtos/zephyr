@@ -17,6 +17,19 @@ properties:
       The type of clock (refer to include/.../dt-bindings/clock/ifx_clock_source_common.h):
       clk_iho  : system-clock = <IFX_IHO>
       clk_pilo : system-clock = <IFX_PILO>
+      clk_eco  : system-clock = <IFX_ECO>
+
+  eco-ctrim:
+    type: int
+    description: ECO trim capacitance setting (clk_eco only).
+
+  eco-gtrim:
+    type: int
+    description: ECO amplifier gain trim setting (clk_eco only).
+
+  eco-iboost:
+    type: int
+    description: ECO amplifier current boost setting (clk_eco only).
 
   feedback-div:
     type: int
