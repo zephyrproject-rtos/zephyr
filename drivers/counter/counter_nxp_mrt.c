@@ -287,8 +287,10 @@ static void nxp_mrt_isr(const struct device *dev)
 
 		LOG_DBG("Handling interrupt for MRT%p channel %d", base, i);
 
-		/* W1C interrupt flag */
-		base->CHANNEL[i].STAT |= MRT_CHANNEL_STAT_INTFLAG_MASK;
+		/* STAT holds two write-1-to-clear flags, so clear this channel's
+		 * interrupt flag by writing it alone.
+		 */
+		base->CHANNEL[i].STAT = MRT_CHANNEL_STAT_INTFLAG_MASK;
 
 		/* Channel devs & pointer path to channel cbs is in shared config */
 		if (config->data[i]->cb) {
