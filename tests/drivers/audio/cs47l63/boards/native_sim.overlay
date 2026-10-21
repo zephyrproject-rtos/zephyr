@@ -142,4 +142,64 @@
 		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
+
+	cs47l63_gpio: cs47l63@d {
+		compatible = "cirrus,cs47l63";
+		reg = <13>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		cirrus,fll-ref = "mclk1";
+		status = "okay";
+
+		cs47l63_gpio_ctl: gpio {
+			compatible = "cirrus,cs47l63-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <12>;
+		};
+	};
+
+	cs47l63_gpio_asp2: cs47l63@e {
+		compatible = "cirrus,cs47l63";
+		reg = <14>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		cirrus,fll-ref = "mclk1";
+		cirrus,asp = <2>;
+		status = "okay";
+
+		cs47l63_gpio_asp2_ctl: gpio {
+			compatible = "cirrus,cs47l63-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <12>;
+		};
+	};
+
+	cs47l63_gpio_dual: cs47l63@f {
+		compatible = "cirrus,cs47l63";
+		reg = <15>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		cirrus,fll-ref = "mclk1";
+		status = "okay";
+
+		cs47l63_gpio_dual_asp2: asp2 {
+			cirrus,asp = <2>;
+			cirrus,input = "pdm";
+		};
+
+		cs47l63_gpio_dual_ctl: gpio {
+			compatible = "cirrus,cs47l63-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <12>;
+		};
+	};
+};
+
+/ {
+	zephyr,user {
+		cs47l63-gpios = <&cs47l63_gpio_ctl 9 GPIO_ACTIVE_LOW>;
+	};
 };
