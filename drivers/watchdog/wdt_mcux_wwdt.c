@@ -297,17 +297,23 @@ static void mcux_wwdt_isr(const struct device *dev)
 	const struct mcux_wwdt_config *config = dev->config;
 	struct mcux_wwdt_data *data = dev->data;
 	WWDT_Type *base = config->base;
+	wdt_callback_t callback;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	uint32_t flags;
+
+	if (!data->started || data->starting) {
+		k_spin_unlock(&data->lock, key);
+		return;
+	}
 
 	flags = WWDT_GetStatusFlags(base);
 	WWDT_ClearStatusFlags(base, flags);
 
-	if (!data->started) {
-		return;
-	}
+	callback = data->callback;
+	k_spin_unlock(&data->lock, key);
 
-	if (data->callback) {
-		data->callback(dev, 0);
+	if (callback != NULL) {
+		callback(dev, 0);
 	}
 }
 
