@@ -427,6 +427,19 @@
 			status = "disabled";
 		};
 
+		/* Counter shared by both cores, one alarm channel per core
+		 * (TARGET0 for CPU0, TARGET1 for CPU1). Not used as the system
+		 * timer: ESP32-S3 uses XTENSA_TIMER.
+		 */
+		systimer0: systimer@60023000 {
+			compatible = "espressif,esp32-systimer";
+			reg = <0x60023000 DT_SIZE_K(4)>;
+			interrupts = <SYSTIMER_TARGET0_EDGE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <SYSTIMER_TARGET1_EDGE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "okay";
+		};
+
 		spi2: spi@60024000 {
 			compatible = "espressif,esp32-spi";
 			reg = <0x60024000 DT_SIZE_K(4)>;
