@@ -8,6 +8,7 @@ zephyr_library_sources_ifndef(CONFIG_SOC_SERIES_SAM4L soc_gpio.c)
 zephyr_library_sources_ifndef(CONFIG_SOC_SERIES_SAM4L soc_supc.c)
 zephyr_library_sources_ifndef(CONFIG_SOC_SERIES_SAM4L soc_power.c)
 zephyr_library_sources_ifndef(CONFIG_SOC_SERIES_SAM4L soc_poweroff.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_ATMEL_SAM_HAS_CMCC soc_cmcc.c)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_SAM4L soc_sam4l_pm.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_SAM4L soc_sam4l_gpio.c)
