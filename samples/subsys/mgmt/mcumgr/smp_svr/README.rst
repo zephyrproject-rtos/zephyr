@@ -188,6 +188,9 @@ included. The ``smp_svr`` sample comes in different flavours.
       The sample explicitly selects EtherType ``0x88B5`` (IEEE Local Experimental
       EtherType 1). Use it only on a controlled experimental network, never in
       shipped products. Configure the host client to use the same EtherType.
+      Any host on the segment can send requests; the transport provides no
+      authentication. See :ref:`mcumgr_smp_transport_ethernet` for framing,
+      configuration, and access considerations.
 
       To build the raw Ethernet sample:
 
