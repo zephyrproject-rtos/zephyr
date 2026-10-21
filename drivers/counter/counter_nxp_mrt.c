@@ -11,6 +11,11 @@
  * initialization, interrupt handling, and any other module-wide tasks. The current implementation
  * of this driver prioritizes minimizing image size over speed, because it is not expected for the
  * functions to be called very often, and this IP is mostly present on low memory devices.
+ *
+ * With CONFIG_PM_DEVICE_RUNTIME the consumer owns a channel's lifetime. A counter has no
+ * completion event the driver could hang a pm_device_runtime_put() on, so the driver takes no
+ * runtime reference of its own: call pm_device_runtime_get() on the channel before
+ * counter_start() and keep the reference for as long as the timebase is wanted.
  */
 
 #define DT_DRV_COMPAT nxp_mrt
@@ -317,6 +322,42 @@ static int nxp_mrt_init(const struct device *dev)
 	return pm_device_driver_init(dev, nxp_mrt_pm_action);
 }
 
+static int nxp_mrt_channel_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct nxp_mrt_config *config = dev->config;
+	MRT_Type *base = config->base;
+	int channel_id = MRT_CHANNEL_ID(dev);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* A channel left running is one the consumer started and did not
+		 * stop, so take its protection again.
+		 */
+		if (base->CHANNEL[channel_id].STAT & MRT_CHANNEL_STAT_RUN_MASK) {
+			nxp_mrt_power_lock_get(dev);
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		nxp_mrt_power_lock_put(dev);
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/* The channels share one reset line and one clock, so the module
+		 * device brings all of them up in a single pass.
+		 */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int nxp_mrt_channel_init(const struct device *dev)
+{
+	return pm_device_driver_init(dev, nxp_mrt_channel_pm_action);
+}
+
 static void nxp_mrt_isr(const struct device *dev)
 {
 	const struct nxp_mrt_config *config = dev->config;
@@ -357,7 +398,10 @@ DEVICE_API(counter, nxp_mrt_api) = {
 
 /* Creates a device for a channel (needed for counter API) */
 #define NXP_MRT_CHANNEL_DEV_INIT(node, mrt_inst)				\
-	DEVICE_DT_DEFINE(node, NULL, NULL,					\
+	PM_DEVICE_DT_DEFINE(node, nxp_mrt_channel_pm_action);			\
+										\
+	DEVICE_DT_DEFINE(node, nxp_mrt_channel_init,				\
+			PM_DEVICE_DT_GET(node),					\
 			(void *)						\
 			&nxp_mrt_##mrt_inst##_channel_datas[DT_REG_ADDR(node)],	\
 			&nxp_mrt_##mrt_inst##_config,				\
