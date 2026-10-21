@@ -1590,8 +1590,11 @@
 		compatible = "nxp,kinetis-acmp";
 		reg = <0x460d0000 0x10000>;
 		interrupts = <216 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_ACMP0,
-					   IMX_CCM_ROOT_WAKE_ACMP0_FCLK)>;
+					   IMX_CCM_ROOT_WAKE_ACMP0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_ACMP0_FCLK,
+						IMX_CCM_MUX_ACMP0_PERI7, 1, 1)>;
 		status = "disabled";
 	};
 
@@ -1599,8 +1602,11 @@
 		compatible = "nxp,kinetis-acmp";
 		reg = <0x460e0000 0x10000>;
 		interrupts = <217 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_ACMP1,
-					   IMX_CCM_ROOT_WAKE_ACMP1_FCLK)>;
+					   IMX_CCM_ROOT_WAKE_ACMP1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_ACMP1_FCLK,
+						IMX_CCM_MUX_ACMP1_PERI7, 1, 1)>;
 		status = "disabled";
 	};
 
@@ -1608,8 +1614,11 @@
 		compatible = "nxp,kinetis-acmp";
 		reg = <0x460f0000 0x10000>;
 		interrupts = <218 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_ACMP2,
-					   IMX_CCM_ROOT_WAKE_ACMP2_FCLK)>;
+					   IMX_CCM_ROOT_WAKE_ACMP2_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_ACMP2_FCLK,
+						IMX_CCM_MUX_ACMP2_PERI7, 1, 1)>;
 		status = "disabled";
 	};
 
@@ -1617,8 +1626,11 @@
 		compatible = "nxp,kinetis-acmp";
 		reg = <0x46100000 0x10000>;
 		interrupts = <219 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_ACMP3,
-					   IMX_CCM_ROOT_WAKE_ACMP3_FCLK)>;
+					   IMX_CCM_ROOT_WAKE_ACMP3_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_ACMP3_FCLK,
+						IMX_CCM_MUX_ACMP3_PERI7, 1, 1)>;
 		status = "disabled";
 	};
 
