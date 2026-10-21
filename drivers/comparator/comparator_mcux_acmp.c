@@ -499,9 +499,19 @@ int comp_mcux_acmp_set_dm_config(const struct device *dev,
 	const struct mcux_acmp_config *dev_config = dev->config;
 	acmp_discrete_mode_config_t acmp_dm_config;
 
+#if defined(FSL_FEATURE_ACMP_HAS_CONTINUOUS_MODE) && (FSL_FEATURE_ACMP_HAS_CONTINUOUS_MODE == 0U)
+	/*
+	 * Always in discrete mode; the resistor divider is enabled per channel by
+	 * not bypassing it.
+	 */
+	acmp_dm_config.bypassPositiveChannelResistorDivider = !config->enable_resistor_divider;
+	acmp_dm_config.bypassNegativeChannelResistorDivider = !config->enable_resistor_divider;
+	acmp_dm_config.enableHysteresisDivider = false;
+#else
 	acmp_dm_config.enablePositiveChannelDiscreteMode = config->enable_positive_channel;
 	acmp_dm_config.enableNegativeChannelDiscreteMode = config->enable_negative_channel;
 	acmp_dm_config.enableResistorDivider = config->enable_resistor_divider;
+#endif
 	acmp_dm_config.clockSource = (acmp_discrete_clock_source_t)config->clock_source;
 	acmp_dm_config.sampleTime = (acmp_discrete_sample_time_t)config->sample_time;
 	acmp_dm_config.phase1Time = (acmp_discrete_phase_time_t)config->phase1_time;
