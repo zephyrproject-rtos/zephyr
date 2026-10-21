@@ -149,6 +149,23 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, ui
 	rp = cmd_complete(evt, sizeof(*rp), opcode);
 	rp->status = BT_HCI_ERR_SUCCESS;
 	(void)memset(rp->features, 0, sizeof(rp->features));
+	if (IS_ENABLED(CONFIG_TEST_HCI_EXT_ADV)) {
+		rp->features[BT_LE_FEAT_BIT_EXT_ADV / 8U] |= BIT(BT_LE_FEAT_BIT_EXT_ADV % 8U);
+	}
+}
+
+static bool adv_set_random_addr_failure;
+
+static void le_set_adv_set_random_addr(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+				       uint16_t opcode)
+{
+	struct bt_hci_evt_cc_status *rp;
+
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	rp = cmd_complete(evt, sizeof(*rp), opcode);
+	rp->status = adv_set_random_addr_failure ? BT_HCI_ERR_UNSPECIFIED : BT_HCI_ERR_SUCCESS;
 }
 
 static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8_t len,
@@ -290,6 +307,11 @@ static const struct cmd_handler cmds[] = {
 		BT_HCI_OP_LE_SET_SCAN_ENABLE,
 		sizeof(struct bt_hci_evt_cc_status),
 		le_set_scan_enable,
+	},
+	{
+		BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR,
+		sizeof(struct bt_hci_evt_cc_status),
+		le_set_adv_set_random_addr,
 	},
 };
 
@@ -728,6 +750,34 @@ static ZTEST(bt_id_public_api, test_reset_irk_invalidates_cached_rpa)
 	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the new advertising set");
 }
 #endif /* defined(CONFIG_BT_RPA_SHARING) */
+
+#if defined(CONFIG_TEST_HCI_EXT_ADV)
+static ZTEST(bt_id_public_api, test_adv_start_rpa_failure)
+{
+	struct bt_le_ext_adv_info info;
+	struct bt_le_ext_adv *adv;
+	struct bt_le_oob oob = {0};
+	int err;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv),
+		   "Failed to create the advertising set");
+	/* bt_le_oob_get_local() rotates the RPAs, so the stopped set needs a new one. */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+
+	adv_set_random_addr_failure = true;
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	adv_set_random_addr_failure = false;
+	zassert_not_equal(err, 0, "The set started without a new RPA");
+	zassert_ok(bt_le_ext_adv_get_info(adv, &info), "Failed to get the set info");
+	zassert_equal(info.ext_adv_state, BT_LE_EXT_ADV_STATE_DISABLED,
+		      "The set is enabled after a failed start");
+
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the advertising set");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+}
+#endif /* defined(CONFIG_TEST_HCI_EXT_ADV) */
 
 static ZTEST(bt_id_public_api, test_reset_irk_rejects_random_failure)
 {
