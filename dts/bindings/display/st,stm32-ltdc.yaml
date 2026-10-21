@@ -2,7 +2,12 @@
 # Copyright (c) 2024 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 LCD-TFT display controller
+title: STM32 LCD-TFT display controller
+
+description: |
+  The display-timings child node can be omitted when the timings are provided
+  by a MIPI DSI host referencing a 'st,stm32-ltdc' compatible node. The width
+  and height properties then give the largest active area.
 
 compatible: "st,stm32-ltdc"
 
