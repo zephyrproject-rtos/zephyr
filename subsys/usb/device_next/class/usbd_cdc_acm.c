@@ -62,7 +62,6 @@ struct cdc_acm_tx_uart_fifo {
 	sys_slist_t tx_queue;
 	uint32_t queued;
 	bool irq;
-	bool altered;
 };
 
 enum cdc_acm_tx_state {
@@ -132,8 +131,8 @@ struct cdc_acm_uart_data {
 	 */
 	bool flow_ctrl;
 	/* Used to enqueue a ZLP transfer when the previous IN transfer length
-	 * was a multiple of the endpoint MPS and no more data is added to
-	 * the TX FIFO during the user callback execution.
+	 * was a multiple of the endpoint MPS and no more data was written
+	 * while the transfer was on the bulk IN endpoint.
 	 */
 	bool zlp_needed;
 	enum cdc_acm_tx_state tx_state;
@@ -861,19 +860,22 @@ static void cdc_acm_tx_fifo_enqueue(const struct device *dev)
 		key = k_spin_lock(&data->lock);
 	}
 
-	buf = data->tx_fifo.current;
-	if (!cdc_acm_tx_can_enqueue_locked(data)) {
-		buf = NULL;
-	} else if (buf != NULL) {
-		data->tx_fifo.current = NULL;
-		data->zlp_needed = buf->len % mps == 0;
-		data->tx_fifo.queued++;
-	} else if (data->zlp_needed && cdc_acm_tx_idle_locked(data)) {
-		buf = cdc_acm_tx_zlp_alloc();
-		data->zlp_needed = false;
-		data->tx_state = CDC_ACM_TX_ZLP_PENDING;
-	} else {
-		buf = NULL;
+	/* Partially filled buffer and ZLP are enqueued only when nothing is
+	 * on the endpoint. Otherwise the transfer completion schedules the
+	 * work and more data can be collected in the meantime.
+	 */
+	buf = NULL;
+	if (cdc_acm_tx_idle_locked(data)) {
+		if (data->tx_fifo.current != NULL) {
+			buf = data->tx_fifo.current;
+			data->tx_fifo.current = NULL;
+			data->zlp_needed = buf->len % mps == 0;
+			data->tx_fifo.queued++;
+		} else if (data->zlp_needed) {
+			buf = cdc_acm_tx_zlp_alloc();
+			data->zlp_needed = false;
+			data->tx_state = CDC_ACM_TX_ZLP_PENDING;
+		}
 	}
 
 	k_spin_unlock(&data->lock, key);
@@ -1010,10 +1012,6 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		}
 
 		done += written;
-	}
-
-	if (done) {
-		data->tx_fifo.altered = true;
 	}
 
 	LOG_INF("UART dev %p, len %d, remaining space %u", dev, len,
@@ -1161,7 +1159,6 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 		return;
 	}
 
-	data->tx_fifo.altered = false;
 	data->rx_fifo.altered = false;
 	data->rx_fifo.irq = false;
 	data->tx_fifo.irq = false;
@@ -1177,15 +1174,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	}
 
 	key = k_spin_lock(&data->lock);
-	if (cdc_acm_tx_idle_locked(data)) {
-		if (data->tx_fifo.altered) {
-			LOG_DBG("tx fifo altered, submit work");
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
-		} else if (data->zlp_needed) {
-			LOG_DBG("zlp needed, submit work");
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
-		}
-	}
+	cdc_acm_tx_schedule_leftover_locked(data);
 	k_spin_unlock(&data->lock, key);
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
@@ -1247,9 +1236,10 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 		/* Schedule with minimal timeout to make it possible to send
 		 * more than one byte per USB transfer. The latency increase is
 		 * negligible while the increased throughput and reduced CPU
-		 * usage is easily observable.
+		 * usage is easily observable. If anything is on the endpoint,
+		 * the transfer completion schedules the work.
 		 */
-		if (wrote == 1 && cdc_acm_tx_can_enqueue_locked(data)) {
+		if (wrote == 1 && cdc_acm_tx_idle_locked(data)) {
 			cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
 		}
 
