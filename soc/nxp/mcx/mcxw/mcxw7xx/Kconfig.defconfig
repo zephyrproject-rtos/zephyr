@@ -119,4 +119,4 @@ endif # NXP_MCXW7XX_BOOT_HEADER
 endif
 
 config WUC
-	default y if "$(dt_nodelabel_enabled,wuu)"
+	default y if DT_HAS_NXP_WUC_WUU_ENABLED
