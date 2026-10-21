@@ -1,0 +1,7 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "frdm_imxrt700_mimxrt798s_cm33_cpu0.overlay"
