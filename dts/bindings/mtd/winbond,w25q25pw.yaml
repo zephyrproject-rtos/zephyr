@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Winbond W25Q25PW Quad SPI NOR flash
+
+compatible: "winbond,w25q25pw"
+
+include: soc-nv-flash.yaml
