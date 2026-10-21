@@ -118,6 +118,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 	.p2p_oper = supplicant_p2p_oper,
 #endif
+#ifdef CONFIG_WIFI_MGMT_ROAMING_DHCP
+	.gw_probe_done = supplicant_gw_probe_done,
+#endif
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
