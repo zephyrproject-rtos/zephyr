@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  net.ppp.dormant_control:
+    tags:
+      - net
+      - ppp
+    harness: ztest
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

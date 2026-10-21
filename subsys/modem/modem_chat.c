@@ -27,6 +27,7 @@ const struct modem_chat_script_chat modem_chat_empty_script_chats[0];
 #define MODEM_CHAT_MATCHES_INDEX_UNSOL	  (2)
 
 #define MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT (0)
+#define MODEM_CHAT_SCRIPT_STATE_RELEASING_BIT (1)
 
 #if defined(CONFIG_LOG) && (CONFIG_MODEM_MODULES_LOG_LEVEL == LOG_LEVEL_DBG)
 
@@ -322,6 +323,10 @@ static void modem_chat_script_run_handler(struct k_work *item)
 {
 	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, script_run_work);
 
+	if (atomic_test_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RELEASING_BIT)) {
+		return;
+	}
+
 	/* Start script */
 	modem_chat_script_start(chat, chat->pending_script);
 }
@@ -424,7 +429,8 @@ static void modem_chat_script_send_timeout_handler(struct k_work *item)
 	struct modem_chat *chat = CONTAINER_OF(dwork, struct modem_chat, script_send_timeout_work);
 
 	/* Validate script is currently running */
-	if (chat->script == NULL) {
+	if (chat->script == NULL ||
+	    atomic_test_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RELEASING_BIT)) {
 		return;
 	}
 
@@ -937,8 +943,6 @@ bool modem_chat_is_running(struct modem_chat *chat)
 static int _run_script_internal(struct modem_chat *chat, const struct modem_chat_script *script,
 				struct k_sem *waiter, enum modem_chat_script_result *result)
 {
-	bool script_is_running;
-
 	__ASSERT_NO_MSG(script != NULL);
 	if (waiter != NULL) {
 		/* Both waiter and result must be provided */
@@ -967,10 +971,8 @@ static int _run_script_internal(struct modem_chat *chat, const struct modem_chat
 		}
 	}
 
-	script_is_running =
-		atomic_test_and_set_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT);
-
-	if (script_is_running == true) {
+	/* Do not accept a new script from a callback while release is draining work. */
+	if (!atomic_cas(&chat->script_state, 0, BIT(MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT))) {
 		return -EBUSY;
 	}
 
@@ -1013,9 +1015,24 @@ void modem_chat_script_abort(struct modem_chat *chat)
 	modem_work_submit(&chat->script_abort_work);
 }
 
+static void modem_chat_cancel_timer(struct k_work_delayable *timer, struct k_work_sync *sync)
+{
+	/* A timeout callback may itself release the chat. Do not wait for the
+	 * current handler to finish on its own workqueue.
+	 */
+	if (timer->queue != NULL && k_current_get() == k_work_queue_thread_get(timer->queue)) {
+		k_work_cancel_delayable(timer);
+	} else {
+		k_work_cancel_delayable_sync(timer, sync);
+	}
+}
+
 void modem_chat_release(struct modem_chat *chat)
 {
 	struct k_work_sync sync;
+
+	/* Prevent a finishing sender's timeout from submitting more send work. */
+	atomic_set_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RELEASING_BIT);
 
 	if (chat->pipe) {
 		modem_pipe_release(chat->pipe);
@@ -1024,7 +1041,18 @@ void modem_chat_release(struct modem_chat *chat)
 	k_work_cancel_sync(&chat->script_run_work, &sync);
 	k_work_cancel_sync(&chat->script_abort_work, &sync);
 	k_work_cancel_sync(&chat->receive_work, &sync);
+	modem_chat_cancel_timer(&chat->script_timeout_work, &sync);
+	/* The send timeout can submit send work, and send work can arm another
+	 * timeout. Stop the timeout first, quiesce the sender, then cancel any
+	 * timeout the sender armed while it was finishing.
+	 */
+	modem_chat_cancel_timer(&chat->script_send_timeout_work, &sync);
 	k_work_cancel_sync(&chat->script_send_work, &sync);
+	modem_chat_cancel_timer(&chat->script_send_timeout_work, &sync);
+	/* A callback already running when release began may have queued a script
+	 * after the first cancellation. All callback sources are now quiescent.
+	 */
+	k_work_cancel_sync(&chat->script_run_work, &sync);
 
 	chat->pipe = NULL;
 	chat->receive_buf_len = 0;
