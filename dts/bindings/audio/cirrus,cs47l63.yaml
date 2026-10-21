@@ -1,7 +1,11 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: Cirrus Logic CS47L63 Low-Power Audio DSP
+description: |
+  Cirrus Logic CS47L63 Low-Power Audio DSP
+
+  A child node with compatible "cirrus,cs47l63-gpio" exposes GPIO1 to GPIO12
+  as a GPIO controller.
 
 compatible: "cirrus,cs47l63"
 
