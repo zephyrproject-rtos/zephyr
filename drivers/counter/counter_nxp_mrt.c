@@ -24,6 +24,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/spinlock.h>
 
 #include <soc.h>
 
@@ -44,9 +45,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 
 /* Specific for each channel */
 struct nxp_mrt_channel_data {
+	struct k_spinlock lock;
 	uint32_t top;
 	counter_top_callback_t cb;
 	void *user_data;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool power_locked;
+#endif
 };
 
 /* Shared between all channels */
@@ -62,19 +67,56 @@ struct nxp_mrt_config {
 	uint8_t num_channels;
 };
 
+/*
+ * The flag records whether this channel holds the lock, so a start or a stop
+ * called twice leaves the policy count balanced.
+ */
+static void nxp_mrt_power_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct nxp_mrt_channel_data *data = MRT_CHANNEL_DATA(dev);
+
+	if (!data->power_locked) {
+		pm_policy_device_power_lock_get(dev);
+		data->power_locked = true;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static void nxp_mrt_power_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct nxp_mrt_channel_data *data = MRT_CHANNEL_DATA(dev);
+
+	if (data->power_locked) {
+		pm_policy_device_power_lock_put(dev);
+		data->power_locked = false;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
 static int nxp_mrt_stop(const struct device *dev)
 {
 	const struct nxp_mrt_config *config = dev->config;
+	struct nxp_mrt_channel_data *data = MRT_CHANNEL_DATA(dev);
 	MRT_Type *base = config->base;
 	int channel_id = MRT_CHANNEL_ID(dev);
 
 	LOG_DBG("MRT@%p channel %d stopped", base, channel_id);
 	LOG_WRN("MRT channel resets upon stopping");
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
 	/* LOAD bit and 0 ivalue allows us to forcibly stop the timer */
 	base->CHANNEL[channel_id].INTVAL = MRT_CHANNEL_INTVAL_LOAD(1);
 
-	pm_policy_device_power_lock_put(dev);
+	nxp_mrt_power_lock_put(dev);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -85,6 +127,7 @@ static int nxp_mrt_start(const struct device *dev)
 	MRT_Type *base = config->base;
 	struct nxp_mrt_channel_data *data = MRT_CHANNEL_DATA(dev);
 	int channel_id = MRT_CHANNEL_ID(dev);
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	if (data->top <= 1) {
 		/* Zephyr API says default should be max top value */
@@ -93,12 +136,14 @@ static int nxp_mrt_start(const struct device *dev)
 		data->top = config->info.max_top_value;
 	}
 
-	pm_policy_device_power_lock_get(dev);
+	nxp_mrt_power_lock_get(dev);
 
 	/* Start with previously configured top value (if already running this has no effect) */
 	base->CHANNEL[channel_id].INTVAL = data->top;
 
 	LOG_DBG("MRT@%p channel %d started with top value %d", base, channel_id, data->top);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -122,6 +167,7 @@ static int nxp_mrt_set_top_value(const struct device *dev, const struct counter_
 	int channel_id = MRT_CHANNEL_ID(dev);
 	/* By default in Zephyr API, the counter resets on changing top value */
 	bool reset = !(cfg->flags & COUNTER_TOP_CFG_DONT_RESET);
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	bool active = base->CHANNEL[channel_id].STAT & MRT_CHANNEL_STAT_RUN_MASK;
 	uint32_t current_val = base->CHANNEL[channel_id].TIMER & MRT_CHANNEL_TIMER_VALUE_MASK;
 	int ret = 0;
@@ -136,6 +182,7 @@ static int nxp_mrt_set_top_value(const struct device *dev, const struct counter_
 	/* If not yet started, wait for counter_start because setting reg value starts timer */
 	if (!active) {
 		LOG_DBG("Set MRT@%p channel %d top value to %d", base, channel_id, data->top);
+		k_spin_unlock(&data->lock, key);
 		return ret;
 	}
 
@@ -159,6 +206,8 @@ static int nxp_mrt_set_top_value(const struct device *dev, const struct counter_
 	LOG_DBG("Changed MRT@%p channel %d top value while active to %d", base, channel_id,
 		base->CHANNEL[channel_id].INTVAL & MRT_CHANNEL_INTVAL_IVALUE_MASK);
 
+	k_spin_unlock(&data->lock, key);
+
 	return ret;
 }
 
@@ -166,16 +215,18 @@ static uint32_t nxp_mrt_get_top_value(const struct device *dev)
 {
 	const struct nxp_mrt_config *config = dev->config;
 	struct nxp_mrt_channel_data *data = MRT_CHANNEL_DATA(dev);
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	uint32_t top;
 
 	/* INTVAL reads back zero while the channel is idle, so the configured top
 	 * value only survives in RAM. A channel that has never been given one
 	 * wraps at the maximum.
 	 */
-	if (data->top <= 1) {
-		return config->info.max_top_value;
-	}
+	top = data->top <= 1 ? config->info.max_top_value : data->top;
 
-	return data->top;
+	k_spin_unlock(&data->lock, key);
+
+	return top;
 }
 
 static uint32_t nxp_mrt_get_pending_int(const struct device *dev)
@@ -284,6 +335,11 @@ static void nxp_mrt_isr(const struct device *dev)
 	uint32_t irq_pends = base->IRQ_FLAG;
 
 	for (int i = 0; i < config->num_channels; i++) {
+		struct nxp_mrt_channel_data *data = config->data[i];
+		counter_top_callback_t callback;
+		void *user_data;
+		k_spinlock_key_t key;
+
 		/* Channel IRQ pending flags lowest order bits in IRQ_FLAG register */
 		if (!(irq_pends & (0x1 << i))) {
 			continue;
@@ -291,14 +347,19 @@ static void nxp_mrt_isr(const struct device *dev)
 
 		LOG_DBG("Handling interrupt for MRT%p channel %d", base, i);
 
+		key = k_spin_lock(&data->lock);
+
 		/* STAT holds two write-1-to-clear flags, so clear this channel's
 		 * interrupt flag by writing it alone.
 		 */
 		base->CHANNEL[i].STAT = MRT_CHANNEL_STAT_INTFLAG_MASK;
 
-		/* Channel devs & pointer path to channel cbs is in shared config */
-		if (config->data[i]->cb) {
-			config->data[i]->cb(config->channels[i], config->data[i]->user_data);
+		callback = data->cb;
+		user_data = data->user_data;
+		k_spin_unlock(&data->lock, key);
+
+		if (callback != NULL) {
+			callback(config->channels[i], user_data);
 		}
 	}
 }
