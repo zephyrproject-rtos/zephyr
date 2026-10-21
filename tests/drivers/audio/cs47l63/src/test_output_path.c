@@ -26,6 +26,9 @@
 
 #define OUT1L_VOL_MASK 0x000000FFU
 
+/** HP1L_CFG code for a load of 20 ohms or more. */
+#define HP1L_CFG_GE20_OHM 2U
+
 /** Margin over the deadline of the start check. */
 #define START_WAIT_MS (CS47L63_START_TIMEOUT_MS + 100U)
 
@@ -177,6 +180,18 @@ static ZTEST(cs47l63_out, test_configure_leaves_sysclk_and_every_path_off)
 		      MIX_SLOT(CS47L63_MIXER_SRC_NONE), "no mixer source");
 	zassert_equal(cs47l63_emul_get_reg(EMUL, CS47L63_OUT1L_INPUT2),
 		      MIX_SLOT(CS47L63_MIXER_SRC_NONE));
+}
+
+static ZTEST(cs47l63_out, test_headphone_load_stays_at_the_trim_without_the_property)
+{
+	uint32_t val;
+
+	zassert_equal(cs47l63_emul_write_count(EMUL, CS47L63_DAC_IF_TEST_1), 1U,
+		      "only the trim writes HP1L_CFG's register");
+	zassert_true(cs47l63_emul_nth_write(EMUL, CS47L63_DAC_IF_TEST_1, 0U, &val));
+	zassert_equal((val & CS47L63_HP1L_CFG_MASK) >> CS47L63_HP1L_CFG_SHIFT,
+		      HP1L_CFG_GE20_OHM,
+		      "a load of 20 ohms or more, the reset setting");
 }
 
 static ZTEST(cs47l63_out, test_output_start_enables_sysclk_before_any_path)
