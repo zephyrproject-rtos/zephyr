@@ -1085,7 +1085,9 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
       get_property(allow_empty TARGET ${zephyr_lib} PROPERTY ALLOW_EMPTY)
       if(NOT "${allow_empty}")
         message(WARNING
-          "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
+          "No SOURCES given to Zephyr library: ${zephyr_lib}\n"
+          "Excluding target from build.\n"
+          "Consider zephyr_library_amend() or ZEPHYR_CURRENT_LIBRARY for out-of-tree sources.\n"
         )
       endif()
       target_sources(${zephyr_lib} PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
