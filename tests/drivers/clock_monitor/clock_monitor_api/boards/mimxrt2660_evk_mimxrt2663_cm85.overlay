@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
+
+/ {
+	clock-monitor-test {
+		compatible = "test-clock-monitor";
+
+		/* Reference = 24 MHz SXOSC, target = FRO96M. */
+		freqme {
+			monitor = <&freqme0>;
+			measure-expected-hz = <96000000>;
+			/*
+			 * set_source(): reference to FRO192M (target stays FRO96M),
+			 * then target to SXOSC.
+			 */
+			switch-reference = <NXP_FREQME_RT266X_REF_FRO192M>;
+			switch-target = <NXP_FREQME_RT266X_TAR_SXOSC>;
+			switch-target-expected-hz = <24000000>;
+		};
+	};
+};
