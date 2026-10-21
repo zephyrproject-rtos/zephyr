@@ -191,6 +191,8 @@ extern "C" {
  */
 #define PIXFMT_FOREACH_GRAYSCALE_NON_PACKED(X, ...)			\
 	X(PIXFMT_GREY, __VA_ARGS__)					\
+	X(PIXFMT_AL88, __VA_ARGS__)					\
+	X(PIXFMT_L4, __VA_ARGS__)					\
 	X(PIXFMT_Y10, __VA_ARGS__)					\
 	X(PIXFMT_Y12, __VA_ARGS__)					\
 	X(PIXFMT_Y14, __VA_ARGS__)					\
