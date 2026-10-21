@@ -19,6 +19,11 @@
 
 LOG_MODULE_REGISTER(usbh_hub, CONFIG_USBH_HUB_LOG_LEVEL);
 
+/* Connect debounce, TATTDB is 100 ms (USB 2.0, 7.1.7.3) */
+#define HUB_DEBOUNCE_POLL_MS		25
+#define HUB_DEBOUNCE_STABLE_MS		100
+#define HUB_DEBOUNCE_TIMEOUT_MS		1500
+
 static K_KERNEL_STACK_DEFINE(hub_stack, CONFIG_USBH_HUB_STACK_SIZE);
 static struct k_work_q hub_work_q;
 
@@ -273,9 +278,49 @@ static void hub_port_handle_change(struct usbh_hub_data *const hub_data,
 	}
 
 	LOG_DBG("Device connected to port %d, scheduling reset and enumeration", port_num);
-	port_instance->state = PORT_STATE_DISABLED;
+	port_instance->state = PORT_STATE_DISCONNECTED;
 	port_instance->reset_count = CONFIG_USBH_HUB_PORT_RESET_TIMES;
 	port_instance->enum_pending = true;
+}
+
+/*
+ * Wait until the hub has reported no connection change for TATTDB. Returns 0
+ * if a device is connected, -ENOTCONN if the port is empty.
+ */
+static int hub_port_debounce(struct usbh_hub_data *const hub_data, const uint8_t port_num)
+{
+	const int64_t deadline = k_uptime_get() + HUB_DEBOUNCE_TIMEOUT_MS;
+	int64_t last_change = k_uptime_get();
+	uint16_t port_status;
+	uint16_t port_change;
+	int ret;
+
+	while (k_uptime_get() < deadline) {
+		k_msleep(HUB_DEBOUNCE_POLL_MS);
+
+		ret = usbh_req_get_port_status(hub_data->udev, port_num,
+					       &port_status, &port_change);
+		if (ret != 0) {
+			return ret;
+		}
+
+		if ((port_change & USB_HUB_PORT_CHANGE_CONNECTION) != 0) {
+			ret = usbh_req_clear_hcfs_c_port_connection(hub_data->udev, port_num);
+			if (ret != 0) {
+				return ret;
+			}
+
+			last_change = k_uptime_get();
+		} else if (k_uptime_get() - last_change >= HUB_DEBOUNCE_STABLE_MS) {
+			if ((port_status & USB_HUB_PORT_STATUS_CONNECTION) == 0) {
+				return -ENOTCONN;
+			}
+
+			return 0;
+		}
+	}
+
+	return -ETIMEDOUT;
 }
 
 static void hub_port_process(struct usbh_hub_data *const hub_data,
@@ -292,6 +337,21 @@ static void hub_port_process(struct usbh_hub_data *const hub_data,
 
 	while (hub_data->connected) {
 		switch (port_instance->state) {
+		case PORT_STATE_DISCONNECTED:
+			ret = hub_port_debounce(hub_data, port_num);
+			if (ret == -ENOTCONN) {
+				LOG_DBG("Port %d disconnected", port_num);
+				return;
+			}
+
+			if (ret != 0) {
+				LOG_WRN("Port %d connect debounce failed: %d", port_num, ret);
+				return;
+			}
+
+			port_instance->state = PORT_STATE_DISABLED;
+			continue;
+
 		case PORT_STATE_DISABLED:
 			if (port_instance->reset_count == 0) {
 				LOG_ERR("Port %d reset retry count exhausted, giving up",
