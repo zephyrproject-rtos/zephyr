@@ -17,6 +17,7 @@ target_sources(app PRIVATE
   src/test_asp2.c
   src/test_dual_asp.c
   src/test_gpio.c
+  src/test_gpio_api.c
 )
 
 target_include_directories(app PRIVATE src "${ZEPHYR_BASE}/drivers/audio")

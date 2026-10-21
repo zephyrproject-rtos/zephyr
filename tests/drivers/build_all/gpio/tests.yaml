@@ -65,6 +65,22 @@ tests:
       - CONFIG_ADC_INIT_PRIORITY=80
       - CONFIG_ADC_LMP90XXX_GPIO=y
 
+  drivers.gpio.build.audio_cs47l63_gpio:
+    min_ram: 32
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    depends_on:
+      - gpio
+      - spi
+    extra_args:
+      - DTC_OVERLAY_FILE="audio_cs47l63_gpio.overlay"
+    extra_configs:
+      - CONFIG_AUDIO=y
+      - CONFIG_AUDIO_CODEC=y
+      - CONFIG_AUDIO_CODEC_CS47L63=y
+      - CONFIG_AUDIO_CODEC_CS47L63_GPIO=y
+
   drivers.gpio.build.iproc:
     platform_allow: qemu_cortex_m3
     depends_on: gpio
