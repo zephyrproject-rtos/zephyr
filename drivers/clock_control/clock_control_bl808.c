@@ -11,6 +11,7 @@
 #include <zephyr/drivers/otp.h>
 #include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/cache.h>
 #include <zephyr/dt-bindings/clock/bflb_bl808_clock.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -22,6 +23,7 @@ LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #include <bouffalolab/bl808/glb_reg.h>
 #include <bouffalolab/bl808/hbn_reg.h>
 #include <bouffalolab/bl808/mcu_misc_reg.h>
+#include <bouffalolab/bl808/mm_misc_reg.h>
 #include <bouffalolab/bl808/mm_glb_reg.h>
 #include <bouffalolab/bl808/pds_reg.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
@@ -94,6 +96,8 @@ LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
  */
 #define HBN_XTAL_FLAG_VALUE 0x5800U
 #define HBN_XTAL_FLAG_MASK  0x0000ff00U
+
+#ifdef CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL
 
 /* WiFi PLL analog parameter set (same layout as BL808 SDK GLB_WAC_PLL_CFG_BASIC_Type) */
 typedef struct {
@@ -412,6 +416,8 @@ static const bl808_pll_config *const bl808_cpupll_configs[CRYSTAL_VALUES_CNT] = 
 	&cpupll_32M, &cpupll_24M, &cpupll_38P4M, &cpupll_40M, &cpupll_26M,
 };
 
+#endif /* CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL */
+
 enum bl808_clkid {
 	bl808_clkid_clk_root = BL808_CLKID_CLK_ROOT,
 	bl808_clkid_clk_rc32m = BL808_CLKID_CLK_RC32M,
@@ -425,6 +431,8 @@ enum bl808_clkid {
 	bl808_clkid_clk_cpupll = BL808_CLKID_CLK_CPUPLL,
 	bl808_clkid_clk_160mux = BL808_CLKID_CLK_160M,
 	bl808_clkid_clk_uhspll = BL808_CLKID_CLK_UHSPLL,
+	bl808_clkid_clk_bclk1x = BL808_CLKID_CLK_BCLK1X,
+	bl808_clkid_clk_lp = BL808_CLKID_CLK_LP,
 };
 
 struct clock_control_bl808_pll_config {
@@ -458,6 +466,10 @@ struct clock_control_bl808_mm_config {
 	uint8_t divider;
 };
 
+struct clock_control_bl808_lp_config {
+	uint8_t divider;
+};
+
 struct clock_control_bl808_config {
 	uint32_t crystal_id;
 };
@@ -473,7 +485,10 @@ struct clock_control_bl808_data {
 	struct clock_control_bl808_flashclk_config flashclk;
 	struct clock_control_bl808_f32k_config f32k;
 	struct clock_control_bl808_mm_config mm;
+	struct clock_control_bl808_lp_config lp;
 };
+
+#ifdef CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL
 
 static void clock_control_bl808_clock_at_least_us(uint32_t us)
 {
@@ -562,6 +577,33 @@ static __bflb_critfunc int clock_bflb_set_root_clock_dividers(uint32_t hclk_div,
 	return 0;
 }
 
+static int clock_bflb_set_lp_clk_divider(uint32_t div)
+{
+	uint32_t tmp;
+	int count = CLOCK_TIMEOUT;
+
+	tmp = sys_read32(PDS_BASE + PDS_CPU_CORE_CFG7_OFFSET);
+	tmp = (tmp & PDS_REG_PICO_DIV_UMSK) | (div << PDS_REG_PICO_DIV_POS);
+	sys_write32(tmp, PDS_BASE + PDS_CPU_CORE_CFG7_OFFSET);
+
+	tmp = sys_read32(GLB_BASE + GLB_SYS_CFG1_OFFSET);
+	tmp = (tmp & GLB_REG_PICO_CLK_DIV_ACT_PULSE_UMSK)
+		| (1U << GLB_REG_PICO_CLK_DIV_ACT_PULSE_POS);
+	sys_write32(tmp, GLB_BASE + GLB_SYS_CFG1_OFFSET);
+
+	do {
+		tmp = sys_read32(GLB_BASE + GLB_SYS_CFG1_OFFSET);
+		tmp = (tmp & GLB_STS_PICO_CLK_PROT_DONE_MSK) >> GLB_STS_PICO_CLK_PROT_DONE_POS;
+		count--;
+	} while (count > 0 && tmp == 0);
+
+	if (count < 1) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 /*
  * Configure the machine timer clock.
  * BL808 M0 core mtimer is clocked from FCLK (core clock), not XCLK.
@@ -579,6 +621,32 @@ static void clock_control_bl808_set_machine_timer_clock_enable(bool enable)
 		tmp &= MCU_MISC_REG_MCU_RTC_EN_UMSK;
 	}
 	sys_write32(tmp, MCU_MISC_BASE + MCU_MISC_MCU_E907_RTC_OFFSET);
+}
+
+static void clock_control_bl808_set_d0_machine_timer_clock_enable(bool enable)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(MM_MISC_BASE + MM_MISC_CPU_RTC_OFFSET);
+	if (enable) {
+		tmp = (tmp & MM_MISC_C906_RTC_EN_UMSK) | (1U << MM_MISC_C906_RTC_EN_POS);
+	} else {
+		tmp &= MM_MISC_C906_RTC_EN_UMSK;
+	}
+	sys_write32(tmp, MM_MISC_BASE + MM_MISC_CPU_RTC_OFFSET);
+}
+
+static void clock_control_bl808_set_lp_machine_timer_clock_enable(bool enable)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(PDS_BASE + PDS_CPU_CORE_CFG8_OFFSET);
+	if (enable) {
+		tmp = (tmp & PDS_E902_RTC_EN_UMSK) | (1U << PDS_E902_RTC_EN_POS);
+	} else {
+		tmp &= PDS_E902_RTC_EN_UMSK;
+	}
+	sys_write32(tmp, PDS_BASE + PDS_CPU_CORE_CFG8_OFFSET);
 }
 
 static void clock_control_bl808_deinit_wifipll(void)
@@ -1147,6 +1215,12 @@ static void clock_control_bl808_set_mm_clks(enum bl808_clkid source_root, uint8_
 		/* Switch MM root to PLL */
 		tmp |= MM_GLB_REG_CPU_ROOT_CLK_SEL_MSK;
 		sys_write32(tmp, MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+	} else if (source_root == bl808_clkid_clk_cpupll) {
+		tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+		/* CPU_CLK_SEL=2: cpupll output */
+		tmp = (tmp & MM_GLB_REG_CPU_CLK_SEL_UMSK) | (2U << MM_GLB_REG_CPU_CLK_SEL_POS);
+		tmp |= MM_GLB_REG_CPU_ROOT_CLK_SEL_MSK;
+		sys_write32(tmp, MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
 	} else {
 		/* Unsupported */
 	}
@@ -1155,6 +1229,16 @@ static void clock_control_bl808_set_mm_clks(enum bl808_clkid source_root, uint8_
 		/* MM 160M mux is wifipll */
 		tmp = sys_read32(GLB_BASE + GLB_DIG_CLK_CFG1_OFFSET);
 		tmp &= GLB_REG_MM_MUXPLL_160M_SEL_UMSK;
+		tmp &= GLB_REG_MM_MUXPLL_240M_SEL_UMSK;
+		sys_write32(tmp, GLB_BASE + GLB_DIG_CLK_CFG1_OFFSET);
+
+		tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+		/* Switch BCLK1x to MM 160M mux */
+		tmp |= 2U << MM_GLB_REG_BCLK1X_SEL_POS;
+		sys_write32(tmp, MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+	} else if (source_bclk1x == bl808_clkid_clk_cpupll) {
+		tmp = sys_read32(GLB_BASE + GLB_DIG_CLK_CFG1_OFFSET);
+		tmp |= GLB_REG_MM_MUXPLL_160M_SEL_MSK;
 		tmp &= GLB_REG_MM_MUXPLL_240M_SEL_UMSK;
 		sys_write32(tmp, GLB_BASE + GLB_DIG_CLK_CFG1_OFFSET);
 
@@ -1306,6 +1390,8 @@ static void clock_control_bl808_gate_pll(uint8_t pll)
 	sys_write32(tmp, GLB_BASE + GLB_CGEN_CFG3_OFFSET);
 }
 
+#endif /* CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL */
+
 /* Get XCLK frequency: RC32M when root_clk_sel[0]=0, crystal otherwise. */
 static __ramfunc uint32_t clock_control_bl808_get_xclk(const struct device *dev)
 {
@@ -1348,11 +1434,6 @@ static __ramfunc uint32_t clock_control_bl808_get_fclk(const struct device *dev)
 	}
 
 	return 0;
-}
-
-static uint32_t clock_control_bl808_mtimer_get_fclk_src_div(const struct device *dev)
-{
-	return (clock_control_bl808_get_fclk(dev) / MHZ(1) - 1);
 }
 
 /* Get HCLK (AHB bus clock): FCLK divided by (hclk_div + 1). */
@@ -1404,6 +1485,126 @@ static uint32_t clock_control_bl808_get_160m(const struct device *dev)
 	case 3:
 		return data->aupll.top_frequency * 2 / 5;
 	}
+}
+
+static __ramfunc uint32_t clock_control_bl808_get_mm_xclk(const struct device *dev)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+	if ((tmp & MM_GLB_REG_XCLK_CLK_SEL_MSK) == 0U) {
+		return BFLB_RC32M_FREQUENCY;
+	}
+	return DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal), clock_frequency);
+}
+
+static __ramfunc uint32_t clock_control_bl808_get_mm_bclk1x(const struct device *dev)
+{
+	struct clock_control_bl808_data *data = dev->data;
+	uint32_t tmp, div_it;
+
+	tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+	tmp = (tmp & MM_GLB_REG_BCLK1X_SEL_MSK) >> MM_GLB_REG_BCLK1X_SEL_POS;
+
+	div_it = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CPU_OFFSET);
+	div_it = ((div_it & MM_GLB_REG_BCLK1X_DIV_MSK) >> MM_GLB_REG_BCLK1X_DIV_POS) + 1U;
+
+	if (tmp == 0 || tmp == 1) {
+		return clock_control_bl808_get_mm_xclk(dev) / div_it;
+	}
+
+	if (tmp == 3) {
+		tmp = sys_read32(GLB_BASE + GLB_DIG_CLK_CFG1_OFFSET);
+		if ((tmp & GLB_REG_MM_MUXPLL_240M_SEL_MSK) == 0) {
+			return BFLB_MUL_CLK(DT_FREQ_M(240), data->wifipll.top_frequency,
+					    BL808_WIFIPLL_TOP_FREQ) / div_it;
+		} else {
+			return BFLB_MUL_CLK((BL808_AUPLL_TOP_FREQ/2U), data->aupll.top_frequency,
+					    BL808_AUPLL_TOP_FREQ) / div_it;
+		}
+	} else {
+		tmp = sys_read32(GLB_BASE + GLB_DIG_CLK_CFG1_OFFSET);
+		if ((tmp & GLB_REG_MM_MUXPLL_160M_SEL_MSK) == 0) {
+			return BFLB_MUL_CLK(DT_FREQ_M(160), data->wifipll.top_frequency,
+					    BL808_WIFIPLL_TOP_FREQ) / div_it;
+		} else {
+			return BFLB_MUL_CLK(DT_FREQ_M(192), data->cpupll.top_frequency,
+				    BL808_CPUPLL_TOP_FREQ) / div_it;
+		}
+	}
+
+	return 0;
+}
+
+static __ramfunc uint32_t clock_control_bl808_get_lp_clk(const struct device *dev)
+{
+	uint32_t tmp;
+	uint32_t source_clock;
+
+	tmp = sys_read32(PDS_BASE + PDS_CPU_CORE_CFG7_OFFSET);
+	tmp = (tmp & PDS_REG_PICO_DIV_MSK) >> PDS_REG_PICO_DIV_POS;
+	source_clock = clock_control_bl808_get_bclk(dev);
+	return source_clock / (tmp + 1);
+}
+
+#ifdef CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL
+
+/* Get mm_cpu_clk (d0 core clock) */
+static __ramfunc uint32_t clock_control_bl808_get_mm_cpu_clk(const struct device *dev)
+{
+	struct clock_control_bl808_data *data = dev->data;
+	uint32_t tmp, div_it;
+
+	tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+
+	if ((tmp & MM_GLB_REG_CPU_ROOT_CLK_SEL_MSK) == 0) {
+		return clock_control_bl808_get_mm_xclk(dev);
+	}
+
+	div_it = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CPU_OFFSET);
+	div_it = ((div_it & MM_GLB_REG_CPU_CLK_DIV_MSK) >> MM_GLB_REG_CPU_CLK_DIV_POS) + 1U;
+
+	tmp = (tmp & MM_GLB_REG_CPU_CLK_SEL_MSK) >> MM_GLB_REG_CPU_CLK_SEL_POS;
+
+	if (tmp == 1) {
+		tmp = sys_read32(GLB_BASE + GLB_DIG_CLK_CFG1_OFFSET);
+		if ((tmp & GLB_REG_MM_MUXPLL_320M_SEL_MSK) == 0) {
+			return BFLB_MUL_CLK(DT_FREQ_M(320), data->wifipll.top_frequency,
+					    BL808_WIFIPLL_TOP_FREQ) / div_it;
+		} else {
+			return BFLB_MUL_CLK((BL808_AUPLL_TOP_FREQ/2U), data->aupll.top_frequency,
+					    BL808_AUPLL_TOP_FREQ) / div_it;
+		}
+	} else if (tmp == 0) {
+		tmp = sys_read32(GLB_BASE + GLB_DIG_CLK_CFG1_OFFSET);
+		if ((tmp & GLB_REG_MM_MUXPLL_240M_SEL_MSK) == 0) {
+			return BFLB_MUL_CLK(DT_FREQ_M(240), data->wifipll.top_frequency,
+					    BL808_WIFIPLL_TOP_FREQ) / div_it;
+		} else {
+			return BFLB_MUL_CLK((BL808_AUPLL_TOP_FREQ/2U), data->aupll.top_frequency,
+					    BL808_AUPLL_TOP_FREQ) / div_it;
+		}
+	} else {
+		return BFLB_MUL_CLK(DT_FREQ_M(480), data->cpupll.top_frequency,
+				    BL808_CPUPLL_TOP_FREQ) / div_it;
+	}
+
+	return 0;
+}
+
+static uint32_t clock_control_bl808_mtimer_get_fclk_src_div(const struct device *dev)
+{
+	return (clock_control_bl808_get_fclk(dev) / MHZ(1) - 1U);
+}
+
+static uint32_t clock_control_bl808_mtimer_get_mm_cpu_clk_src_div(const struct device *dev)
+{
+	return (clock_control_bl808_get_mm_cpu_clk(dev) / MHZ(1) - 1U);
+}
+
+static uint32_t clock_control_bl808_mtimer_get_lp_clk_src_div(const struct device *dev)
+{
+	return (clock_control_bl808_get_bclk(dev) / MHZ(1) - 1U);
 }
 
 static __bflb_critfunc void clock_control_bl808_init_root_as_wifipll(const struct device *dev)
@@ -1534,6 +1735,34 @@ static void clock_control_bl808_set_machine_timer_clock(bool enable, uint32_t so
 	clock_control_bl808_set_machine_timer_clock_enable(enable);
 }
 
+/* The source clock for D0 mtime is the CPU clock */
+static void clock_control_bl808_set_d0_machine_timer_clock(bool enable, uint32_t divider)
+{
+	uint32_t tmp;
+
+	clock_control_bl808_set_d0_machine_timer_clock_enable(false);
+
+	tmp = sys_read32(MM_MISC_BASE + MM_MISC_CPU_RTC_OFFSET);
+	tmp = (tmp & MM_MISC_C906_RTC_DIV_UMSK) | (divider << MM_MISC_C906_RTC_DIV_POS);
+	sys_write32(tmp, MM_MISC_BASE + MM_MISC_CPU_RTC_OFFSET);
+
+	clock_control_bl808_set_d0_machine_timer_clock_enable(enable);
+}
+
+/* The source clock for LP mtime is the BCLK */
+static void clock_control_bl808_set_lp_machine_timer_clock(bool enable, uint32_t divider)
+{
+	uint32_t tmp;
+
+	clock_control_bl808_set_lp_machine_timer_clock_enable(false);
+
+	tmp = sys_read32(PDS_BASE + PDS_CPU_CORE_CFG8_OFFSET);
+	tmp = (tmp & PDS_E902_RTC_DIV_UMSK) | (divider << PDS_E902_RTC_DIV_POS);
+	sys_write32(tmp, PDS_BASE + PDS_CPU_CORE_CFG8_OFFSET);
+
+	clock_control_bl808_set_lp_machine_timer_clock_enable(enable);
+}
+
 static int clock_control_bl808_update_f32k(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
@@ -1623,6 +1852,9 @@ static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *
 	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
 	clock_bflb_settle();
+
+	/* Prefetch may have gotten garbage */
+	sys_cache_instr_invd_all();
 }
 
 static __bflb_critfunc int clock_control_bl808_update_clocks(const struct device *dev)
@@ -1801,6 +2033,13 @@ static __bflb_critfunc int clock_control_bl808_update_clocks(const struct device
 			1, 0, clock_control_bl808_mtimer_get_xclk_src_div(dev));
 	}
 
+	clock_control_bl808_set_d0_machine_timer_clock(true,
+		clock_control_bl808_mtimer_get_mm_cpu_clk_src_div(dev));
+	(void)clock_bflb_set_lp_clk_divider(data->lp.divider - 1U);
+
+	clock_control_bl808_set_lp_machine_timer_clock(true,
+		clock_control_bl808_mtimer_get_lp_clk_src_div(dev));
+
 	clock_bflb_settle();
 
 	return ret;
@@ -1817,6 +2056,20 @@ static void clock_control_bl808_uart_set_clock_enable(bool enable)
 		tmp &= GLB_UART_CLK_EN_UMSK;
 	}
 	sys_write32(tmp, GLB_BASE + GLB_UART_CFG0_OFFSET);
+}
+
+static void clock_control_bl808_mm_uart_set_clock_enable(bool enable)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_PERI_OFFSET);
+	if (enable) {
+		tmp = (tmp & MM_GLB_REG_UART0_CLK_DIV_EN_UMSK)
+			| (1U << MM_GLB_REG_UART0_CLK_DIV_EN_POS);
+	} else {
+		tmp &= MM_GLB_REG_UART0_CLK_DIV_EN_UMSK;
+	}
+	sys_write32(tmp, MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_PERI_OFFSET);
 }
 
 /* Clock source_clock parameter (matches SDK HBN_UART_CLK_Type):
@@ -1856,6 +2109,33 @@ static void clock_control_bl808_uart_set_clock(bool enable, uint32_t source_cloc
 	clock_control_bl808_uart_set_clock_enable(enable);
 }
 
+/* Same configuration constraints as regular UARTs */
+static void clock_control_bl808_mm_uart_set_clock(bool enable, uint32_t source_clock,
+						  uint32_t divider)
+{
+	uint32_t tmp;
+
+	if (divider > 0x7U) {
+		divider = 0x7U;
+	}
+
+	if (source_clock > 2U) {
+		source_clock = 2U;
+	}
+	/* disable uart clock */
+	clock_control_bl808_mm_uart_set_clock_enable(false);
+
+	tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_PERI_OFFSET);
+	tmp = (tmp & MM_GLB_REG_UART0_CLK_DIV_UMSK) | (divider << MM_GLB_REG_UART0_CLK_DIV_POS);
+	sys_write32(tmp, MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_PERI_OFFSET);
+
+	tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+	tmp = (tmp & MM_GLB_REG_UART_CLK_SEL_UMSK) | (source_clock << MM_GLB_REG_UART_CLK_SEL_POS);
+	sys_write32(tmp, MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+
+	clock_control_bl808_mm_uart_set_clock_enable(enable);
+}
+
 /* Ungate all peripheral clocks in CGEN_CFG1/CFG2 and configure UART clock. */
 static void clock_control_bl808_peripheral_clock_init(void)
 {
@@ -1887,10 +2167,14 @@ static void clock_control_bl808_peripheral_clock_init(void)
 
 	/* MCU_PBCLK (BCLK=80MHz), div=0 (UART driver assumes BCLK) */
 	clock_control_bl808_uart_set_clock(1, 0, 0);
+	clock_control_bl808_mm_uart_set_clock(true, 0, 1);
 }
+
+#endif /* CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL */
 
 static int clock_control_bl808_on(const struct device *dev, clock_control_subsys_t sys)
 {
+#ifdef CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL
 	struct clock_control_bl808_data *data = dev->data;
 	int ret = -EINVAL;
 	uint32_t key;
@@ -1982,10 +2266,16 @@ static int clock_control_bl808_on(const struct device *dev, clock_control_subsys
 
 	irq_unlock(key);
 	return ret;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(sys);
+	return -ENOTSUP;
+#endif
 }
 
 static int clock_control_bl808_off(const struct device *dev, clock_control_subsys_t sys)
 {
+#ifdef CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL
 	struct clock_control_bl808_data *data = dev->data;
 	int ret = -EINVAL;
 	uint32_t key;
@@ -2048,6 +2338,11 @@ static int clock_control_bl808_off(const struct device *dev, clock_control_subsy
 
 	irq_unlock(key);
 	return ret;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(sys);
+	return -ENOTSUP;
+#endif
 }
 
 static enum clock_control_status clock_control_bl808_get_status(const struct device *dev,
@@ -2121,6 +2416,10 @@ static int clock_control_bl808_get_rate(const struct device *dev, clock_control_
 			return -EINVAL;
 		}
 		*rate = data->uhspll.top_frequency;
+	} else if ((enum bl808_clkid)sys == bl808_clkid_clk_bclk1x) {
+		*rate = clock_control_bl808_get_mm_bclk1x(dev);
+	} else if ((enum bl808_clkid)sys == bl808_clkid_clk_lp) {
+		*rate = clock_control_bl808_get_lp_clk(dev);
 	} else {
 		return -EINVAL;
 	}
@@ -2134,6 +2433,7 @@ static int clock_control_bl808_get_rate(const struct device *dev, clock_control_
 static int clock_control_bl808_set_rate(const struct device *dev, clock_control_subsys_t sys,
 					clock_control_subsys_rate_t rate)
 {
+#ifdef CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL
 	struct clock_control_bl808_data *data = dev->data;
 	uint32_t freq = (uint32_t)(uintptr_t)rate;
 	uint32_t key;
@@ -2150,10 +2450,17 @@ static int clock_control_bl808_set_rate(const struct device *dev, clock_control_
 	irq_unlock(key);
 
 	return ret;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(sys);
+	ARG_UNUSED(rate);
+	return -ENOTSUP;
+#endif
 }
 
 static int clock_control_bl808_init(const struct device *dev)
 {
+#ifdef CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL808_FULL
 	int ret;
 	uint32_t key;
 
@@ -2170,7 +2477,9 @@ static int clock_control_bl808_init(const struct device *dev)
 	clock_bflb_settle();
 
 	irq_unlock(key);
-
+#else
+	ARG_UNUSED(dev);
+#endif
 	return 0;
 }
 
@@ -2295,6 +2604,10 @@ static struct clock_control_bl808_data clock_control_bl808_data = {
 #endif
 			.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, mm), divider),
 		},
+
+	.lp = {
+		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, lp), divider),
+	},
 };
 
 BUILD_ASSERT((CLK_SRC_IS(aupll_top, crystal) || CLK_SRC_IS(wifipll_top, crystal) ||
@@ -2334,8 +2647,11 @@ BUILD_ASSERT(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m), clock_frequency) ==
 		     BFLB_RC32M_FREQUENCY,
 	     "RC32M must be 32M");
 
+BUILD_ASSERT(CLK_SRC_IS(lp, bclk), "LP source clock is always BCLK");
+
 #define UHSPLL_DT_MHZ \
 	(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, uhspll_top), clock_frequency) / MHZ(1))
+
 BUILD_ASSERT(UHSPLL_DT_MHZ >= 400 && UHSPLL_DT_MHZ <= 2300 && (UHSPLL_DT_MHZ % 50) == 0,
 	     "UHS PLL clock-frequency must be a multiple of 50 MHz within 400-2300 MHz");
 

@@ -38,6 +38,10 @@
 #define BL808_CLKID_CLK_160M    (BFLB_CLKID_CLK_PRIVATE + 3)
 /** UHS PLL Clock (dedicated PLL for UHS PSRAM PHY) */
 #define BL808_CLKID_CLK_UHSPLL  (BFLB_CLKID_CLK_PRIVATE + 4)
+/** MM (d0) area bclk1x clock */
+#define BL808_CLKID_CLK_BCLK1X  (BFLB_CLKID_CLK_PRIVATE + 5)
+/** LP area clock */
+#define BL808_CLKID_CLK_LP      (BFLB_CLKID_CLK_PRIVATE + 6)
 
 /** CPU PLL output select: divide by 1 */
 #define BL808_CPUPLL_ID_DIV1    0
