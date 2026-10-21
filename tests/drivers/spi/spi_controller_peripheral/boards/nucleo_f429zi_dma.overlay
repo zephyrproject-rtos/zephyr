@@ -1,0 +1,24 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* DMA for the SPI controller/peripheral test.
+ * DMA1 mapping: SPI2 RX stream 3 channel 0, SPI2 TX stream 4 channel 0,
+ * SPI3 RX stream 0 channel 0, SPI3 TX stream 5 channel 0.
+ */
+
+&dma1 {
+	status = "okay";
+};
+
+&spi2 {
+	dmas = <&dma1 4 0 STM32_DMA_PERIPH_TX STM32_DMA_FIFO_FULL>,
+	       <&dma1 3 0 STM32_DMA_PERIPH_RX STM32_DMA_FIFO_FULL>;
+	dma-names = "tx", "rx";
+};
+
+&spi3 {
+	dmas = <&dma1 5 0 STM32_DMA_PERIPH_TX STM32_DMA_FIFO_FULL>,
+	       <&dma1 0 0 STM32_DMA_PERIPH_RX STM32_DMA_FIFO_FULL>;
+	dma-names = "tx", "rx";
+};
