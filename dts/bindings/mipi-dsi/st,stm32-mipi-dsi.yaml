@@ -25,6 +25,12 @@ properties:
   resets:
     required: true
 
+  st,ltdc:
+    type: phandle
+    description: |
+      LTDC feeding the DSI host. When set, the timings of the attached device
+      are forwarded to the LTDC with display_set_timing().
+
   hs-active-high:
     type: boolean
     description: |
