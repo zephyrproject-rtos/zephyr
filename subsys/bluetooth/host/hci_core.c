@@ -166,6 +166,7 @@ struct bt_dev bt_dev = {
 	.init          = Z_WORK_INITIALIZER(init_work),
 #if defined(CONFIG_BT_PRIVACY)
 	.rpa_timeout   = CONFIG_BT_RPA_TIMEOUT,
+	.rpa_update_timeout = CONFIG_BT_RPA_TIMEOUT,
 #endif
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	.appearance = CONFIG_BT_DEVICE_APPEARANCE,
