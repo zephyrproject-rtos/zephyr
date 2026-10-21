@@ -623,6 +623,28 @@ Networking
   * :zephyr_file:`samples/subsys/mgmt/updatehub/local.conf.example` replaces
     ``overlay-prj.conf.example``.
 
+Ethernet
+========
+
+* Checksum offload capabilities are now advertised with one bit per IP version and protocol.
+  ``ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER``, ``ETHERNET_CHECKSUM_SUPPORT_TCP`` and
+  ``ETHERNET_CHECKSUM_SUPPORT_UDP`` have been removed. :c:enumerator:`NET_IF_CHECKSUM_IPV6_HEADER`
+  has been deprecated, as IPv6 has no header checksum and no interface advertises it anymore.
+  Drivers reporting ``ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT`` or
+  ``ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT`` must set
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP`,
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP`,
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP` and
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP` for the combinations they offload. The old
+  bits map per IP version:
+
+  * ``ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER`` together with ``ETHERNET_CHECKSUM_SUPPORT_TCP`` or
+    ``ETHERNET_CHECKSUM_SUPPORT_UDP`` becomes :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP`
+    or :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP`.
+  * ``ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER`` together with ``ETHERNET_CHECKSUM_SUPPORT_TCP`` or
+    ``ETHERNET_CHECKSUM_SUPPORT_UDP`` becomes :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP`
+    or :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP`.
+
 OpenThread
 ==========
 
