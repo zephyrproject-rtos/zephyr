@@ -29,6 +29,12 @@
 				reg = <0x14>;
 				#clock-cells = <1>;
 			};
+
+			scmi_reset: protocol@16 {
+				compatible = "arm,scmi-reset";
+				reg = <0x16>;
+				#reset-cells = <1>;
+			};
 		};
 	};
 
