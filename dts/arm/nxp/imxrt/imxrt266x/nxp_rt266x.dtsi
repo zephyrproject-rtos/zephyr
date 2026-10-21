@@ -1318,7 +1318,7 @@
 		reg = <0x421e0000 0x4000>;
 		interrupts = <149 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER0,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr0_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1350,7 +1350,7 @@
 		reg = <0x421f0000 0x4000>;
 		interrupts = <150 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER1,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr1_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1382,7 +1382,7 @@
 		reg = <0x429e0000 0x4000>;
 		interrupts = <151 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER2,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr2_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1414,7 +1414,7 @@
 		reg = <0x429f0000 0x4000>;
 		interrupts = <152 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER3,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr3_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
