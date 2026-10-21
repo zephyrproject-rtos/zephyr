@@ -251,7 +251,7 @@ static int mipi_dbi_dcif_write_display(const struct device *dev,
 					const struct mipi_dbi_config *dbi_config,
 					const uint8_t *framebuf,
 					struct display_buffer_descriptor *desc,
-					enum display_pixel_format pixfmt)
+					pixel_format_t pixfmt)
 {
 	const struct mcux_dcif_dbi_config *config = dev->config;
 	struct mcux_dcif_dbi_data *data = dev->data;

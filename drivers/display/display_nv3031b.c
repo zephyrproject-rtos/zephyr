@@ -286,7 +286,7 @@ static void nv3031b_get_capabilities(const struct device *dev, struct display_ca
 	k_mutex_unlock(&data->lock);
 }
 
-static int nv3031b_set_pixel_format(const struct device *dev, enum display_pixel_format format)
+static int nv3031b_set_pixel_format(const struct device *dev, pixel_format_t format)
 {
 	ARG_UNUSED(dev);
 

@@ -340,6 +340,12 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+Display
+=======
+
+* The ``enum display_pixel_format`` type has been removed and display pixel formats are now typed
+  as ``pixel_format_t``.
+
 Entropy
 =======
 

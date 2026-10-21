@@ -100,7 +100,7 @@ struct rm67162_config {
 	const struct rm67162_init_seq *init_seq;
 	uint16_t panel_width;
 	uint16_t panel_height;
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	/* Index of the rotation property: 0, 90, 180 or 270 degrees */
 	uint8_t rotation;
 	union {
@@ -114,7 +114,7 @@ struct rm67162_config {
 };
 
 struct rm67162_data {
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	enum display_orientation orientation;
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi)
 	struct rm67162_dsi_data dsi;
@@ -379,7 +379,7 @@ static int rm67162_set_window(const struct device *dev, uint16_t x, uint16_t y, 
 }
 
 static int rm67162_set_address_mode(const struct device *dev, enum display_orientation orientation,
-				    enum display_pixel_format pixel_format)
+				    pixel_format_t pixel_format)
 {
 	static const uint8_t rotations[] = {
 		0U,
@@ -471,7 +471,7 @@ static void rm67162_get_capabilities(const struct device *dev,
 }
 
 static int rm67162_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const pixel_format_t pixel_format)
 {
 	const struct rm67162_config *config = dev->config;
 	struct rm67162_data *data = dev->data;
@@ -531,7 +531,7 @@ static void rm67162_init_state(const struct device *dev)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi)
 
-static uint8_t rm67162_dsi_pixfmt(enum display_pixel_format pixel_format)
+static uint8_t rm67162_dsi_pixfmt(pixel_format_t pixel_format)
 {
 	if (pixel_format == PIXEL_FORMAT_RGB_888) {
 		return MIPI_DSI_PIXFMT_RGB888;

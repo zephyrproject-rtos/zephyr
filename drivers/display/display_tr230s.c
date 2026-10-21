@@ -481,7 +481,7 @@ static int tr230s_set_brightness(const struct device *dev, uint8_t brightness)
 }
 
 static int tr230s_set_pixel_format(const struct device *dev,
-				   enum display_pixel_format pixel_format)
+				   pixel_format_t pixel_format)
 {
 	ARG_UNUSED(dev);
 
