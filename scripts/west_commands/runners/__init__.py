@@ -65,6 +65,7 @@ _names = [
     'rfp',
     'rtkprog',
     'rtsflash',
+    'sdcard',
     'sftool',
     'silabs_commander',
     'spi_burn',

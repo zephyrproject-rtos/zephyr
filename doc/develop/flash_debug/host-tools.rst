@@ -748,6 +748,23 @@ using the ``--device`` option:
 
 For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
 
+.. _runner_sdcard:
+
+SD Card
+*******
+
+The sdcard runner supports boards whose boot loader loads the application image from an SD card,
+for example U-Boot running a boot script. It copies the image to the SD card partition mounted at
+``--mountpoint`` and does nothing else: preparing the card with the boot loader, moving it to the
+board and power-cycling the board are left to the user.
+
+.. code-block:: console
+
+   west flash --runner sdcard --mountpoint /media/user/BOOT
+
+By default ``zephyr.bin`` is copied under its own name. Use ``--file`` to copy a different image
+and ``--dest-name`` to change the name it gets on the card.
+
 .. _runner_rtkprog:
 
 Realtek Alternate Flash Programmer (rtkprog)
