@@ -16,6 +16,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(DPS310, CONFIG_SENSOR_LOG_LEVEL);
@@ -53,6 +54,14 @@ enum {
 #define IFX_DPS310_REG_ADDR_MEAS_CFG_SELF_INIT_OK	(0xC0)
 #define IFX_DPS310_COEF_SRCE_MASK			(0x80)
 #define IFX_DPS310_PRODUCT_ID				(0x10)
+/* Read flag of the register address byte on SPI */
+#define IFX_DPS310_SPI_READ				BIT(7)
+
+#define DPS310_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#define DPS310_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+
+#define DPS310_SPI_OPERATION                                                   \
+	(SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 /* Polling time in ms*/
 #define POLL_TIME_MS					(K_MSEC(10))
@@ -206,13 +215,6 @@ enum {
 #define POW_2_20		BIT(20)
 #define POW_2_19_MINUS_1	BIT_MASK(19)
 
-/* Needed because the values are referenced by pointer. */
-static const uint8_t REG_ADDR_MEAS_CFG = IFX_DPS310_REG_ADDR_MEAS_CFG;
-static const uint8_t REG_ADDR_CALIB_COEFF_0 = IFX_DPS310_REG_ADDR_COEF_0;
-static const uint8_t REG_ADDR_TMP_B2 = IFX_DPS310_REG_ADDR_TMP_B2;
-static const uint8_t REG_ADDR_PSR_B2 = IFX_DPS310_REG_ADDR_PSR_B2;
-static const uint8_t REG_ADDR_COEF_SRCE = IFX_DPS310_REG_ADDR_COEF_SRCE;
-
 /* calibration coefficients */
 struct dps310_cal_coeff {
 	/* Pressure Sensor Calibration Coefficients */
@@ -240,9 +242,108 @@ struct dps310_data {
 	int32_t psr_val2;
 };
 
-struct dps310_cfg {
+union dps310_bus {
+#if DPS310_BUS_I2C
 	struct i2c_dt_spec i2c;
+#endif
+#if DPS310_BUS_SPI
+	struct spi_dt_spec spi;
+#endif
 };
+
+struct dps310_bus_io {
+	int (*check)(const union dps310_bus *bus);
+	int (*read)(const union dps310_bus *bus, uint8_t reg, uint8_t *buf, size_t len);
+	int (*write)(const union dps310_bus *bus, uint8_t reg, uint8_t val);
+};
+
+struct dps310_cfg {
+	union dps310_bus bus;
+	const struct dps310_bus_io *bus_io;
+};
+
+#if DPS310_BUS_I2C
+static int dps310_i2c_check(const union dps310_bus *bus)
+{
+	if (!i2c_is_ready_dt(&bus->i2c)) {
+		LOG_ERR_DEVICE_NOT_READY(bus->i2c.bus);
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int dps310_i2c_read(const union dps310_bus *bus, uint8_t reg, uint8_t *buf, size_t len)
+{
+	return i2c_burst_read_dt(&bus->i2c, reg, buf, len);
+}
+
+static int dps310_i2c_write(const union dps310_bus *bus, uint8_t reg, uint8_t val)
+{
+	return i2c_reg_write_byte_dt(&bus->i2c, reg, val);
+}
+
+static const struct dps310_bus_io dps310_bus_io_i2c = {
+	.check = dps310_i2c_check,
+	.read = dps310_i2c_read,
+	.write = dps310_i2c_write,
+};
+#endif /* DPS310_BUS_I2C */
+
+#if DPS310_BUS_SPI
+static int dps310_spi_check(const union dps310_bus *bus)
+{
+	if (!spi_is_ready_dt(&bus->spi)) {
+		LOG_ERR_DEVICE_NOT_READY(bus->spi.bus);
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int dps310_spi_read(const union dps310_bus *bus, uint8_t reg, uint8_t *buf, size_t len)
+{
+	uint8_t addr = reg | IFX_DPS310_SPI_READ;
+	const struct spi_buf tx_buf = {.buf = &addr, .len = 1};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	const struct spi_buf rx_bufs[] = {
+		{.buf = NULL, .len = 1},
+		{.buf = buf, .len = len},
+	};
+	const struct spi_buf_set rx = {.buffers = rx_bufs, .count = ARRAY_SIZE(rx_bufs)};
+
+	return spi_transceive_dt(&bus->spi, &tx, &rx);
+}
+
+static int dps310_spi_write(const union dps310_bus *bus, uint8_t reg, uint8_t val)
+{
+	uint8_t cmd[] = {reg & ~IFX_DPS310_SPI_READ, val};
+	const struct spi_buf tx_buf = {.buf = cmd, .len = sizeof(cmd)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+
+	return spi_write_dt(&bus->spi, &tx);
+}
+
+static const struct dps310_bus_io dps310_bus_io_spi = {
+	.check = dps310_spi_check,
+	.read = dps310_spi_read,
+	.write = dps310_spi_write,
+};
+#endif /* DPS310_BUS_SPI */
+
+static int dps310_read(const struct device *dev, uint8_t reg, uint8_t *buf, size_t len)
+{
+	const struct dps310_cfg *config = dev->config;
+
+	return config->bus_io->read(&config->bus, reg, buf, len);
+}
+
+static int dps310_write(const struct device *dev, uint8_t reg, uint8_t val)
+{
+	const struct dps310_cfg *config = dev->config;
+
+	return config->bus_io->write(&config->bus, reg, val);
+}
 
 /*
  * Convert the bytes from calibration memory to calibration coefficients
@@ -289,13 +390,12 @@ static void dps310_calib_coeff_creation(const uint8_t raw_coef[18],
 /* Poll one or multiple bits given by ready_mask in reg_addr */
 static bool poll_rdy(const struct device *dev, uint8_t reg_addr, uint8_t ready_mask)
 {
-	const struct dps310_cfg *config = dev->config;
 	/* Try only a finite number of times */
 	for (int i = 0; i < POLL_TRIES; i++) {
 		uint8_t reg = 0;
-		int res = i2c_reg_read_byte_dt(&config->i2c, reg_addr, &reg);
+		int res = dps310_read(dev, reg_addr, &reg, 1);
 		if (res < 0) {
-			LOG_WRN("I2C error: %d", res);
+			LOG_WRN("Bus error: %d", res);
 			return false;
 		}
 
@@ -314,18 +414,11 @@ static bool poll_rdy(const struct device *dev, uint8_t reg_addr, uint8_t ready_m
 /* Trigger a temperature measurement and wait until the result is stored */
 static bool dps310_trigger_temperature(const struct device *dev)
 {
-	const struct dps310_cfg *config = dev->config;
-
-	/* command to start temperature measurement */
-	static const uint8_t tmp_meas_cmd[] = {
-		IFX_DPS310_REG_ADDR_MEAS_CFG,
-		IFX_DPS310_MODE_COMMAND_TEMPERATURE
-	};
-
 	/* trigger temperature measurement */
-	int res = i2c_write_dt(&config->i2c, tmp_meas_cmd, sizeof(tmp_meas_cmd));
+	int res = dps310_write(dev, IFX_DPS310_REG_ADDR_MEAS_CFG,
+			       IFX_DPS310_MODE_COMMAND_TEMPERATURE);
 	if (res < 0) {
-		LOG_WRN("I2C error: %d", res);
+		LOG_WRN("Bus error: %d", res);
 		return false;
 	}
 
@@ -343,18 +436,11 @@ static bool dps310_trigger_temperature(const struct device *dev)
 /* Trigger a pressure measurement and wait until the result is stored */
 static bool dps310_trigger_pressure(const struct device *dev)
 {
-	const struct dps310_cfg *config = dev->config;
-
-	/* command to start pressure measurement */
-	static const uint8_t psr_meas_cmd[] = {
-		IFX_DPS310_REG_ADDR_MEAS_CFG,
-		IFX_DPS310_MODE_COMMAND_PRESSURE
-	};
-
 	/* trigger pressure measurement */
-	int res = i2c_write_dt(&config->i2c, psr_meas_cmd, sizeof(psr_meas_cmd));
+	int res = dps310_write(dev, IFX_DPS310_REG_ADDR_MEAS_CFG,
+			       IFX_DPS310_MODE_COMMAND_PRESSURE);
 	if (res < 0) {
-		LOG_WRN("I2C error: %d", res);
+		LOG_WRN("Bus error: %d", res);
 		return false;
 	}
 
@@ -376,8 +462,6 @@ static bool dps310_trigger_pressure(const struct device *dev)
  */
 static void dps310_hw_bug_fix(const struct device *dev)
 {
-	const struct dps310_cfg *config = dev->config;
-
 	/* setup the necessary 5 sequences to fix the hw bug */
 	static const uint8_t hw_bug_fix_sequence[HW_BUG_FIX_SEQUENCE_LEN][2] = {
 		/*
@@ -395,9 +479,9 @@ static void dps310_hw_bug_fix(const struct device *dev)
 
 	/* execute sequence for hw bug fix */
 	for (int i = 0; i < HW_BUG_FIX_SEQUENCE_LEN; i++) {
-		int res = i2c_write_dt(&config->i2c, hw_bug_fix_sequence[i], 2);
+		int res = dps310_write(dev, hw_bug_fix_sequence[i][0], hw_bug_fix_sequence[i][1]);
 		if (res < 0) {
-			LOG_WRN("I2C error: %d", res);
+			LOG_WRN("Bus error: %d", res);
 			return;
 		}
 	}
@@ -472,7 +556,6 @@ static int32_t raw_to_int24(const uint8_t raw[3])
 static bool dps310_measure_tmp_psr(const struct device *dev)
 {
 	struct dps310_data *data = dev->data;
-	const struct dps310_cfg *config = dev->config;
 
 	if (!dps310_trigger_temperature(dev)) {
 		return false;
@@ -486,10 +569,9 @@ static bool dps310_measure_tmp_psr(const struct device *dev)
 	uint8_t value_raw[6];
 
 	/* read pressure and temperature raw values in one continuous read */
-	int res = i2c_write_read_dt(&config->i2c, &REG_ADDR_PSR_B2, 1,
-				    &value_raw, sizeof(value_raw));
+	int res = dps310_read(dev, IFX_DPS310_REG_ADDR_PSR_B2, value_raw, sizeof(value_raw));
 	if (res < 0) {
-		LOG_WRN("I2C error: %d", res);
+		LOG_WRN("Bus error: %d", res);
 		return false;
 	}
 
@@ -512,7 +594,6 @@ static bool dps310_measure_tmp_psr(const struct device *dev)
 static bool dps310_measure_psr(const struct device *dev)
 {
 	struct dps310_data *data = dev->data;
-	const struct dps310_cfg *config = dev->config;
 
 	/* measure pressure */
 	if (!dps310_trigger_pressure(dev)) {
@@ -523,10 +604,9 @@ static bool dps310_measure_psr(const struct device *dev)
 	uint8_t value_raw[3];
 
 	/* read pressure raw values in one continuous read */
-	int res = i2c_write_read_dt(&config->i2c, &REG_ADDR_PSR_B2, 1,
-				    &value_raw, sizeof(value_raw));
+	int res = dps310_read(dev, IFX_DPS310_REG_ADDR_PSR_B2, value_raw, sizeof(value_raw));
 	if (res < 0) {
-		LOG_WRN("I2C error: %d", res);
+		LOG_WRN("Bus error: %d", res);
 		return false;
 	}
 
@@ -542,7 +622,6 @@ static bool dps310_measure_psr(const struct device *dev)
 static bool dps310_measure_tmp(const struct device *dev)
 {
 	struct dps310_data *data = dev->data;
-	const struct dps310_cfg *config = dev->config;
 
 	/* measure temperature */
 	if (!dps310_trigger_temperature(dev)) {
@@ -553,10 +632,9 @@ static bool dps310_measure_tmp(const struct device *dev)
 	uint8_t value_raw[3];
 
 	/* read temperature raw values in one continuous read */
-	int res = i2c_write_read_dt(&config->i2c, &REG_ADDR_TMP_B2, 1,
-				    &value_raw, sizeof(value_raw));
+	int res = dps310_read(dev, IFX_DPS310_REG_ADDR_TMP_B2, value_raw, sizeof(value_raw));
 	if (res < 0) {
-		LOG_WRN("I2C error: %d", res);
+		LOG_WRN("Bus error: %d", res);
 		return false;
 	}
 
@@ -574,13 +652,15 @@ static int dps310_init(const struct device *dev)
 	struct dps310_data *data = dev->data;
 	const struct dps310_cfg *config = dev->config;
 
-	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
-		return -ENODEV;
+	int res = config->bus_io->check(&config->bus);
+
+	if (res < 0) {
+		return res;
 	}
 
 	uint8_t product_id = 0;
-	int res = i2c_reg_read_byte_dt(&config->i2c, IFX_DPS310_REG_ADDR_PRODUCT_ID, &product_id);
+
+	res = dps310_read(dev, IFX_DPS310_REG_ADDR_PRODUCT_ID, &product_id, 1);
 
 	if (res < 0) {
 		LOG_ERR("No device found");
@@ -597,7 +677,8 @@ static int dps310_init(const struct device *dev)
 	k_sleep(K_MSEC(40));
 
 	/* wait for the sensor to load the calibration data */
-	if (!poll_rdy(dev, REG_ADDR_MEAS_CFG, IFX_DPS310_REG_ADDR_MEAS_CFG_SELF_INIT_OK)) {
+	if (!poll_rdy(dev, IFX_DPS310_REG_ADDR_MEAS_CFG,
+		      IFX_DPS310_REG_ADDR_MEAS_CFG_SELF_INIT_OK)) {
 		LOG_ERR_DEVICE_NOT_READY(dev);
 		return -EIO;
 	}
@@ -605,9 +686,9 @@ static int dps310_init(const struct device *dev)
 	/* read calibration coefficients */
 	uint8_t raw_coef[18] = { 0 };
 
-	res = i2c_write_read_dt(&config->i2c, &REG_ADDR_CALIB_COEFF_0, 1, &raw_coef, 18);
+	res = dps310_read(dev, IFX_DPS310_REG_ADDR_COEF_0, raw_coef, sizeof(raw_coef));
 	if (res < 0) {
-		LOG_WRN("I2C error: %d", res);
+		LOG_WRN("Bus error: %d", res);
 		return -EIO;
 	}
 
@@ -620,10 +701,9 @@ static int dps310_init(const struct device *dev)
 	 */
 	uint8_t tmp_coef_srce = 0;
 
-	res = i2c_write_read_dt(&config->i2c, &REG_ADDR_COEF_SRCE, 1, &tmp_coef_srce,
-				sizeof(tmp_coef_srce));
+	res = dps310_read(dev, IFX_DPS310_REG_ADDR_COEF_SRCE, &tmp_coef_srce, 1);
 	if (res < 0) {
-		LOG_WRN("I2C error: %d", res);
+		LOG_WRN("Bus error: %d", res);
 		return -EIO;
 	}
 
@@ -633,19 +713,20 @@ static int dps310_init(const struct device *dev)
 	/* merge with temperature measurement configuration */
 	tmp_coef_srce |= IFX_DPS310_TMP_CFG;
 
-	/* set complete configuration in one write */
+	/* set the configuration registers, starting at PRS_CFG */
 	const uint8_t config_seq[] = {
-		IFX_DPS310_REG_ADDR_PRS_CFG,	/* start register address */
 		IFX_DPS310_PSR_CFG,		/* PSR_CFG */
 		tmp_coef_srce,			/* TMP_CFG */
 		0x00,				/* MEAS_CFG */
 		DPS310_CFG_REG			/* CFG_REG */
 	};
 
-	res = i2c_write_dt(&config->i2c, config_seq, sizeof(config_seq));
-	if (res < 0) {
-		LOG_WRN("I2C error: %d", res);
-		return -EIO;
+	for (size_t i = 0; i < ARRAY_SIZE(config_seq); i++) {
+		res = dps310_write(dev, IFX_DPS310_REG_ADDR_PRS_CFG + i, config_seq[i]);
+		if (res < 0) {
+			LOG_WRN("Bus error: %d", res);
+			return -EIO;
+		}
 	}
 
 	dps310_hw_bug_fix(dev);
@@ -715,11 +796,20 @@ static DEVICE_API(sensor, dps310_api_funcs) = {
 	.channel_get = dps310_channel_get,
 };
 
+#define DPS310_CONFIG_I2C(inst)								\
+	.bus = {.i2c = I2C_DT_SPEC_INST_GET(inst)},					\
+	.bus_io = &dps310_bus_io_i2c,
+
+#define DPS310_CONFIG_SPI(inst)								\
+	.bus = {.spi = SPI_DT_SPEC_INST_GET(inst, DPS310_SPI_OPERATION)},		\
+	.bus_io = &dps310_bus_io_spi,
+
 #define DPS310_DEFINE(inst)								\
 	static struct dps310_data dps310_data_##inst;					\
 											\
 	static const struct dps310_cfg dps310_cfg_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),					\
+			    (DPS310_CONFIG_SPI(inst)), (DPS310_CONFIG_I2C(inst)))	\
 	};										\
 											\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, dps310_init, NULL,				\
