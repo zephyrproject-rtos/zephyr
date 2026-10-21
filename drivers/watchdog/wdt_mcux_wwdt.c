@@ -192,6 +192,13 @@ static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
 		ret = -ENOTSUP;
 	} else if (!data->timeout_valid) {
 		ret = -EINVAL;
+	} else if (MCUX_WWDT_MCX) {
+		enum pm_device_state state;
+
+		ret = pm_device_state_get(dev, &state);
+		if ((ret == 0) && (state != PM_DEVICE_STATE_ACTIVE)) {
+			ret = -EBUSY;
+		}
 	}
 
 	if (ret != 0) {
