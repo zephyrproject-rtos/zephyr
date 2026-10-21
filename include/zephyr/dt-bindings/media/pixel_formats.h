@@ -359,6 +359,29 @@
 #define PIX_FMT_GREY PIX_FMT_FOURCC('G', 'R', 'E', 'Y')
 
 /**
+ * 16-bit Greyscale format with 8-bit luminance and 8-bit alpha
+ *
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | Yyyyyyyy | Aaaaaaaa | Yyyyyyyy | Aaaaaaaa | ...
+ * @endcode
+ */
+#define PIX_FMT_AL88 PIX_FMT_FOURCC('A', 'L', '8', '8')
+
+/**
+ * 4-bit Greyscale format with 2 pixels packed per byte
+ *
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | YyyyYyyy | YyyyYyyy | YyyyYyyy | YyyyYyyy | ...
+ * @endcode
+ *
+ * The high nibble stores the left pixel and the low nibble stores the
+ * right pixel.
+ */
+#define PIX_FMT_L4 PIX_FMT_FOURCC('R', '4', ' ', ' ')
+
+/**
  * Little endian, with the 6 most significant bits set to Zero.
  * @code{.unparsed}
  *   0                   1                   2                   3
@@ -828,6 +851,45 @@
  * @endcode
  */
 #define PIX_FMT_YVU420 PIX_FMT_FOURCC('Y', 'V', '1', '2')
+
+/**
+ * 4-bit indexed color format with 2 pixels packed per byte
+ *
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | IiiiIiii | IiiiIiii | IiiiIiii | IiiiIiii | ...
+ * @endcode
+ *
+ * The high nibble stores the left pixel and the low nibble stores the
+ * right pixel. Palette semantics are display-specific.
+ */
+#define PIX_FMT_I4 PIX_FMT_FOURCC('C', '4', ' ', ' ')
+
+/**
+ * 1-bit monochrome format with 1 bit per pixel, thus each byte represent 8 pixels
+ * R(1) represent the white while 0 represent black
+ * Bit order and tiling are not part of the format and instead are set by
+ * SCREEN_INFO_MONO_MSB_FIRST / SCREEN_INFO_MONO_VTILED
+ *
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | RRRRRRRR | RRRRRRRR | RRRRRRRR | RRRRRRRR | ...
+ * @endcode
+ */
+#define PIX_FMT_MONO01	PIX_FMT_FOURCC('R', '1', ' ', ' ')
+
+/**
+ * 1-bit monochrome format with 1 bit per pixel, thus each byte represent 8 pixels
+ * D(1) represent the black while 0 represent white
+ * Bit order and tiling are not part of the format and instead are set by
+ * SCREEN_INFO_MONO_MSB_FIRST / SCREEN_INFO_MONO_VTILED
+ *
+ * @code{.unparsed}
+ *   0          1          2          3
+ * | DDDDDDDD | DDDDDDDD | DDDDDDDD | DDDDDDDD | ...
+ * @endcode
+ */
+#define PIX_FMT_MONO10	PIX_FMT_FOURCC('D', '1', ' ', ' ')
 
 /**
  * Both JPEG (single frame) and Motion-JPEG (MJPEG, multiple JPEG frames concatenated)
