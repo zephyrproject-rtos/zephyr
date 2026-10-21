@@ -17,6 +17,9 @@ zephyr_library_sources_ifdef(CONFIG_IRONSIDE_TE_LOG_LEVEL
 zephyr_library_sources_ifdef(CONFIG_IRONSIDE_TE_FAULT_LOGGING
   boot_fault_log.c
 )
+zephyr_library_sources_ifdef(CONFIG_IRONSIDE_TE_BOOT_LAYOUT_CHECK
+  boot_layout_check.c
+)
 
 if(CONFIG_PSA_CRYPTO_PROVIDER_IRONSIDE_TE)
   zephyr_library_sources(

@@ -21,13 +21,22 @@ config IRONSIDE_TE_FAULT_LOGGING
 	  Read the boot report on boot and log the fault IronSide TE recorded, if any.
 	  When a fault is caught, IronSide TE takes it and resets the device.
 
-if IRONSIDE_TE_FAULT_LOGGING
+config IRONSIDE_TE_BOOT_LAYOUT_CHECK
+	bool "Check the layout against the boot report"
+	depends on LOG
+	default y
+	help
+	  Compare the partitions and non-secure RAM the boot report says are in
+	  effect with the devicetree this image was built from, and log every
+	  difference.
+
+if IRONSIDE_TE_FAULT_LOGGING || IRONSIDE_TE_BOOT_LAYOUT_CHECK
 
 module = IRONSIDE_TE
 module-str = IronSide TE
 source "subsys/logging/Kconfig.template.log_config"
 
-endif # IRONSIDE_TE_FAULT_LOGGING
+endif # IRONSIDE_TE_FAULT_LOGGING || IRONSIDE_TE_BOOT_LAYOUT_CHECK
 
 endif # IRONSIDE_TE_CLIENT
 
