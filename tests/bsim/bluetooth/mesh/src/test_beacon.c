@@ -1632,6 +1632,7 @@ static struct netkey_ctx pp_net2 = {.net_key = (uint8_t *)test_net_key_3, .net_i
 struct priv_test_ctx {
 	uint8_t beacon_type;
 	uint16_t *node_id_addr;
+	uint32_t adva_changes;
 };
 
 static void pp_netkey_ctx_init(struct netkey_ctx *net)
@@ -1683,20 +1684,46 @@ static uint64_t proxy_adv_hash_calc(struct netkey_ctx *net, uint64_t random, uin
 	return hash;
 }
 
+/* Returns true for the first advertisement received with a new AdvA. */
 static bool pp_beacon_check(const uint8_t *net_id, void *ctx)
 {
 	struct priv_test_ctx *test_ctx = (struct priv_test_ctx *)ctx;
+	static uint64_t last_pp_random;
+	bool same_adva;
 
 	ASSERT_EQUAL(beacon.pp_hash,
 		     proxy_adv_hash_calc(&pp_net0, beacon.pp_random, test_ctx->node_id_addr, true));
 
-	if (memcmp(beacon.adv_addr.a.val, last_beacon_adv_addr.a.val, BT_ADDR_SIZE) == 0) {
+	/* MshPRTv1.1: 7.2.2.2.4 and 7.2.2.2.5: The AdvA field is a private address, regenerated
+	 * whenever the Random field is regenerated.
+	 */
+	ASSERT_TRUE_MSG(beacon.adv_addr.type == BT_ADDR_LE_RANDOM &&
+			BT_ADDR_IS_NRPA(&beacon.adv_addr.a), "AdvA is not an NRPA\n");
+
+	same_adva = bt_addr_eq(&beacon.adv_addr.a, &last_beacon_adv_addr.a);
+	ASSERT_TRUE_MSG(same_adva == (beacon.pp_random == last_pp_random),
+			"AdvA and Random field changed independently\n");
+
+	if (same_adva) {
 		return false;
 	}
 
-	memcpy(&last_beacon_adv_addr.a.val, beacon.adv_addr.a.val, BT_ADDR_SIZE);
+	bt_addr_copy(&last_beacon_adv_addr.a, &beacon.adv_addr.a);
+	last_pp_random = beacon.pp_random;
 
 	return true;
+}
+
+static bool pp_beacon_monitor(const uint8_t *net_id, void *ctx)
+{
+	struct priv_test_ctx *test_ctx = (struct priv_test_ctx *)ctx;
+
+	if (pp_beacon_check(net_id, ctx)) {
+		test_ctx->adva_changes++;
+	}
+
+	/* Keep scanning */
+	return false;
 }
 
 static void priv_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
@@ -1721,6 +1748,26 @@ static void priv_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type
 	if (!beacon.process_cb || beacon.process_cb(NULL, beacon.user_ctx)) {
 		k_sem_give(&observer_sem);
 	}
+}
+
+/* Checks every Private Network Identity or Private Node Identity advertisement received during
+ * the given time with pp_beacon_check().
+ */
+static void pp_beacon_monitor_run(struct priv_test_ctx *ctx, uint32_t seconds)
+{
+	struct bt_le_scan_param scan_param = {
+		.type = BT_LE_SCAN_TYPE_PASSIVE,
+		.options = BT_LE_SCAN_OPT_NONE,
+		.interval = BT_MESH_ADV_SCAN_UNIT(1000),
+		.window = BT_MESH_ADV_SCAN_UNIT(1000),
+	};
+
+	beacon.process_cb = pp_beacon_monitor;
+	beacon.user_ctx = ctx;
+
+	ASSERT_OK_MSG(bt_le_scan_start(&scan_param, priv_scan_cb), "Failed to start scanning");
+	k_sleep(K_SECONDS(seconds));
+	ASSERT_OK_MSG(bt_le_scan_stop(), "Failed to stop scanning");
 }
 
 struct proxy_adv_beacon {
@@ -1808,12 +1855,12 @@ static void test_rx_priv_net_id(void)
 
 	uint64_t last_pp_random = beacon.pp_random;
 
-	/* Wait for 10 minutes, then scan for another net
-	 * ID beacon and verify that random field has changed
+	/* Check every net ID advertisement for 10 minutes, then verify that the random field and
+	 * AdvA have changed
 	 */
-	k_sleep(K_SECONDS(600));
-	ASSERT_TRUE(
-		wait_for_beacon(priv_scan_cb, 5, pp_beacon_check, &ctx));
+	pp_beacon_monitor_run(&ctx, 600);
+	LOG_INF("AdvA changed %u times", ctx.adva_changes);
+	ASSERT_TRUE(ctx.adva_changes > 0);
 	ASSERT_FALSE(beacon.pp_random == last_pp_random);
 
 	PASS();
@@ -1862,13 +1909,12 @@ static void test_rx_priv_node_id(void)
 
 	uint64_t last_pp_random = beacon.pp_random;
 
-	/* Wait for first node ID advertisement to finish, then scan for
-	 * second node ID and verify that random field has changed
+	/* Check every node ID advertisement until the first node ID advertisement has finished
+	 * and the second has started, then verify that the random field and AdvA have changed
 	 */
-
-	k_sleep(K_SECONDS(65));
-	ASSERT_TRUE(
-		wait_for_beacon(priv_scan_cb, 5, pp_beacon_check, &ctx));
+	pp_beacon_monitor_run(&ctx, 70);
+	LOG_INF("AdvA changed %u times", ctx.adva_changes);
+	ASSERT_TRUE(ctx.adva_changes > 0);
 	ASSERT_FALSE(beacon.pp_random == last_pp_random);
 
 	PASS();
