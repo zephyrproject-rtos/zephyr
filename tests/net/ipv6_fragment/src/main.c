@@ -724,9 +724,9 @@ static unsigned char ipv6_second_frag[] = {
 static unsigned char ipv6_frag_wo_hbho[] = {
 0x60, 0x08, 0xd7, 0x22, 0x05, 0x1c, 0x3a, 0x40,
 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
 /* ICMPv6 header */
 0x80, 0x00, 0xb2, 0xb2, 0x28, 0x5b, 0x00, 0x01,
 /* Payload */
@@ -2086,9 +2086,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_without_hbho)
 	int ret;
 
 	frag_count = 0;
-	pkt_data_len = sizeof(ipv6_frag_wo_hbho) -
-			sizeof(struct net_ipv6_hdr) -
-			NET_IPV6_FRAGH_LEN;
+	pkt_data_len = sizeof(ipv6_frag_wo_hbho) - sizeof(struct net_ipv6_hdr);
 	test_type = IPV6_WITHOUT_HBHO_FRAG;
 
 	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv6_frag_wo_hbho),
@@ -2098,7 +2096,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_without_hbho)
 	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IPV6);
 	net_pkt_set_family(pkt, NET_AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_ipv6_ext_len(pkt, NET_IPV6_FRAGH_LEN); /* without hbho*/
+	net_pkt_set_ipv6_ext_len(pkt, 0U); /* without hbho */
 
 	ret = net_pkt_write(pkt, ipv6_frag_wo_hbho,
 			    sizeof(ipv6_frag_wo_hbho));
@@ -2106,8 +2104,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_without_hbho)
 
 	net_pkt_set_overwrite(pkt, true);
 
-	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr) -
-		    NET_IPV6_FRAGH_LEN;
+	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
 
 	NET_DBG("Sending %zd bytes of which ext %d and data %d bytes",
 		total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
