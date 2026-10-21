@@ -1159,6 +1159,14 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 
 	data->is_ap_up = true;
 	airoc_if = airoc_ap_if;
+	/* This secondary interface is created at runtime
+	 * (whd_add_secondary_interface(), above), after net_if_post_init()'s
+	 * boot-time sweep already ran, nothing else ever calls net_if_up()
+	 * on it, so net_if_is_up() stays false and every net_context_sendto()
+	 * on this interface (e.g. the DHCPv4 server's own replies) fails with
+	 * -ENETDOWN before even looking at the destination address.
+	 */
+	net_if_up(iface);
 	net_if_dormant_off(iface);
 error:
 
