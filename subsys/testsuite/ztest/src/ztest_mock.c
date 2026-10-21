@@ -6,6 +6,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
+#include <zephyr/sys/bitmap.h>
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <stdio.h>
@@ -72,46 +73,7 @@ int snprintk(char *str, size_t size, const char *fmt, ...)
 
 #else
 
-/*
- * FIXME: move to sys_io.h once the argument signature for bitmap has
- * been fixed to void* or similar GH-2825
- */
-#define DEFINE_BITFIELD(name, bits) unsigned long(name)[DIV_ROUND_UP(bits, BITS_PER_LONG)]
-
-static inline int sys_bitfield_find_first_clear(const unsigned long *bitmap,
-						const unsigned int bits)
-{
-	const size_t words = DIV_ROUND_UP(bits, BITS_PER_LONG);
-	size_t cnt;
-	unsigned int long neg_bitmap;
-
-	/*
-	 * By bitwise negating the bitmap, we are actually implementing
-	 * ffc (find first clear) using ffs (find first set).
-	 */
-	for (cnt = 0; cnt < words; cnt++) {
-		neg_bitmap = ~bitmap[cnt];
-		if (neg_bitmap == 0) {
-			/* All full. Try next word. */
-			continue;
-		} else if (neg_bitmap == ~0UL) {
-			/* First bit is free */
-			return cnt * BITS_PER_LONG;
-		} else {
-			const unsigned int bit =
-				(cnt * BITS_PER_LONG) + __builtin_ffsl(neg_bitmap) - 1;
-			/* Ensure first free bit is within total bits count */
-			if (bit < bits) {
-				return bit;
-			} else {
-				return -1;
-			}
-		}
-	}
-	return -1;
-}
-
-static DEFINE_BITFIELD(params_allocation, CONFIG_ZTEST_PARAMETER_COUNT);
+static SYS_BITMAP_DEFINE(params_allocation, CONFIG_ZTEST_PARAMETER_COUNT);
 static struct parameter params[CONFIG_ZTEST_PARAMETER_COUNT];
 
 static void free_parameter(struct parameter *param)
@@ -124,21 +86,21 @@ static void free_parameter(struct parameter *param)
 	__ASSERT(allocation_index < CONFIG_ZTEST_PARAMETER_COUNT,
 		 "param %p given to free is not in the static buffer %p:%u", param, params,
 		 CONFIG_ZTEST_PARAMETER_COUNT);
-	sys_bitfield_clear_bit((mem_addr_t)params_allocation, allocation_index);
+	sys_bitmap_clear_bit(params_allocation, allocation_index);
 }
 
 static struct parameter *alloc_parameter(void)
 {
-	int allocation_index;
+	size_t allocation_index;
 	struct parameter *param;
 
 	allocation_index =
-		sys_bitfield_find_first_clear(params_allocation, CONFIG_ZTEST_PARAMETER_COUNT);
-	if (allocation_index == -1) {
+		sys_bitmap_find_next_clear(params_allocation, CONFIG_ZTEST_PARAMETER_COUNT, 0);
+	if (allocation_index == CONFIG_ZTEST_PARAMETER_COUNT) {
 		printk("No more mock parameters available for allocation\n");
 		ztest_test_fail();
 	}
-	sys_bitfield_set_bit((mem_addr_t)params_allocation, allocation_index);
+	sys_bitmap_set_bit(params_allocation, allocation_index);
 	param = params + allocation_index;
 	(void)memset(param, 0, sizeof(*param));
 	return param;
