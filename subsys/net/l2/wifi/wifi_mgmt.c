@@ -20,6 +20,10 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
+#if defined(CONFIG_WIFI_MGMT_ROAMING_DHCP)
+#include "ethernet/arp.h"
+#include "net_private.h"
+#endif
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
@@ -50,6 +54,36 @@ struct wifi_roaming_params {
 
 static struct wifi_roaming_params roaming_params;
 #endif
+
+#if defined(CONFIG_WIFI_MGMT_ROAMING_DHCP)
+/* ARP probe result check interval, fixed for all interfaces */
+#define WIFI_GW_PROBE_CHECK_INTERVAL_MS 20
+#define WIFI_GW_PROBE_TIMEOUT_MS  100
+
+#define WIFI_GW_PROBE_MAX_CTX CONFIG_NET_IF_MAX_IPV4_COUNT
+
+typedef int (*gw_probe_cb_t)(const struct device *dev,
+		struct net_if *iface,
+		bool same_gw);
+
+typedef struct {
+	sys_snode_t node;
+	struct net_if *iface;
+	struct net_in_addr gw;
+	struct net_eth_addr old_gw_mac;
+	bool had_old_mac;
+	uint16_t elapsed_ms;
+	bool same_gw;
+	gw_probe_cb_t gw_probe_cb;
+} gw_probe_ctx_t;
+
+struct net_arp_lookup_ctx {
+	struct net_if *iface;
+	struct net_in_addr target_ip;
+	struct net_eth_addr result_mac;
+	bool found;
+};
+#endif /* CONFIG_WIFI_MGMT_ROAMING_DHCP */
 
 const char *wifi_security_txt(enum wifi_security_type security)
 {
@@ -803,6 +837,335 @@ void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, 
 	}
 }
 #endif
+
+#if defined(CONFIG_WIFI_MGMT_ROAMING_DHCP)
+K_MEM_SLAB_DEFINE_STATIC_TYPE(gw_probe_ctx_slab, gw_probe_ctx_t, WIFI_GW_PROBE_MAX_CTX);
+static sys_slist_t gw_probe_ctx_list = SYS_SLIST_STATIC_INIT(&gw_probe_ctx_list);
+static K_MUTEX_DEFINE(gw_probe_ctx_lock);
+
+static gw_probe_ctx_t *gw_probe_ctx_find(struct net_if *iface)
+{
+	gw_probe_ctx_t *ctx;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&gw_probe_ctx_list, ctx, node) {
+		if (ctx->iface == iface) {
+			return ctx;
+		}
+	}
+
+	return NULL;
+}
+
+static void wifi_arp_lookup_cb(struct arp_entry *entry, void *user_data)
+{
+	struct net_arp_lookup_ctx *ctx = (struct net_arp_lookup_ctx *)user_data;
+
+	if (entry->iface == ctx->iface &&
+		entry->ip.s_addr == ctx->target_ip.s_addr) {
+		memcpy(&ctx->result_mac, &entry->eth, sizeof(struct net_eth_addr));
+		ctx->found = true;
+
+		LOG_DBG("entry: iface=%p ip=%s "
+		   "mac=%02x:%02x:%02x:%02x:%02x:%02x",
+		   entry->iface, net_sprint_ipv4_addr(&entry->ip.s_addr),
+		   entry->eth.addr[0],
+		   entry->eth.addr[1],
+		   entry->eth.addr[2],
+		   entry->eth.addr[3],
+		   entry->eth.addr[4],
+		   entry->eth.addr[5]);
+
+		LOG_DBG"ctx: iface=%p ip=%s "
+		   "result_mac=%02x:%02x:%02x:%02x:%02x:%02x found=%d",
+		   ctx->iface, net_sprint_ipv4_addr(&ctx->target_ip.s_addr),
+		   ctx->result_mac.addr[0],
+		   ctx->result_mac.addr[1],
+		   ctx->result_mac.addr[2],
+		   ctx->result_mac.addr[3],
+		   ctx->result_mac.addr[4],
+		   ctx->result_mac.addr[5],
+		   ctx->found);
+	}
+}
+
+static bool wifi_etharp_find_addr(struct net_if *iface,
+				  const struct net_in_addr *ip,
+				  struct net_eth_addr *out_mac)
+{
+	struct net_arp_lookup_ctx ctx = {
+		.iface     = iface,
+		.target_ip = *ip,
+		.found     = false,
+	};
+
+	net_arp_foreach(wifi_arp_lookup_cb, &ctx);
+	if (ctx.found) {
+		memcpy(out_mac, &ctx.result_mac, sizeof(struct net_eth_addr));
+	}
+
+	return ctx.found;
+}
+
+static void wifi_etharp_cleanup_netif(struct net_if *iface)
+{
+	net_arp_clear_cache(iface);
+}
+
+static void wifi_etharp_request(struct net_if *iface,
+				const struct net_in_addr *target_ip)
+{
+	struct net_pkt *probe   = NULL;
+	struct net_arp_hdr arp_probe;
+	struct net_pkt *arp_pkt = NULL;
+	struct net_in_addr *local_ip;
+	const struct net_linkaddr *lladdr;
+	int ret;
+
+	lladdr = net_if_get_link_addr(iface);
+	if (!lladdr || lladdr->len == 0) {
+		LOG_ERR("no link addr");
+		return;
+	}
+
+	local_ip = net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED);
+	if (!local_ip) {
+		LOG_ERR("no IPv4 addr on iface");
+		return;
+	}
+
+	memset(&arp_probe, 0, sizeof(arp_probe));
+	arp_probe.hwtype    = htons(NET_ARP_HTYPE_ETH);
+	arp_probe.protocol  = htons(NET_ETH_PTYPE_IP);
+	arp_probe.hwlen     = sizeof(struct net_eth_addr);
+	arp_probe.protolen  = sizeof(struct in_addr);
+	arp_probe.opcode    = htons(NET_ARP_REQUEST);
+	memcpy(arp_probe.src_hwaddr.addr, lladdr->addr, sizeof(struct net_eth_addr));
+	memcpy(arp_probe.src_ipaddr, local_ip, sizeof(struct in_addr));
+	memset(arp_probe.dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
+	memcpy(arp_probe.dst_ipaddr, target_ip, sizeof(struct in_addr));
+
+	/* Allocate with ll_reserve so ethernet driver can prepend eth header */
+	probe = net_pkt_alloc_with_buffer(iface,
+                                    sizeof(arp_probe),
+                                    NET_AF_UNSPEC,
+                                    0,
+                                    K_SECONDS(1));
+	if (!probe) {
+		LOG_ERR("alloc pkt fail");
+		return;
+	}
+
+	/* Set dst MAC to broadcast so ethernet driver fills eth header correctly */
+	memcpy(net_pkt_lladdr_dst(probe)->addr, net_eth_broadcast_addr(), sizeof(struct net_eth_addr));
+	net_pkt_lladdr_dst(probe)->len  = sizeof(struct net_eth_addr);
+	net_pkt_lladdr_dst(probe)->type = NET_LINK_ETHERNET;
+	net_pkt_set_ll_proto_type(probe, NET_ETH_PTYPE_ARP);
+	net_pkt_cursor_init(probe);
+
+	if (net_pkt_write(probe, &arp_probe, sizeof(arp_probe))) {
+		net_pkt_unref(probe);
+		LOG_ERR("net_pkt_write failed");
+		return;
+	}
+
+	ret = net_arp_prepare(probe, (struct net_in_addr *)target_ip, NULL, &arp_pkt);
+	switch (ret) {
+	case NET_ARP_COMPLETE:
+		/*
+		 * ARP cache hit: target MAC already known and injected into probe.
+		 * No ARP request needed. We only wanted to trigger ARP resolution,
+		 * so discard probe here.
+		 */
+		LOG_DBG("NET_ARP_COMPLETE ARP already resolved for %u.%u.%u.%u",
+			target_ip->s4_addr[0], target_ip->s4_addr[1],
+			target_ip->s4_addr[2], target_ip->s4_addr[3]);
+		net_pkt_unref(probe);
+		break;
+
+	case NET_ARP_PKT_REPLACED:
+		/*
+		 * MAC unknown: probe was consumed internally, arp_pkt holds the
+		 * ARP request frame to send. Sending it will trigger ARP reply
+		 * which will update the ARP cache via net_arp_update().
+		 */
+		LOG_DBG("NET_ARP_PKT_REPLACED Send ARP request to %u.%u.%u.%u",
+				target_ip->s4_addr[0], target_ip->s4_addr[1],
+				target_ip->s4_addr[2], target_ip->s4_addr[3]);
+		net_if_queue_tx(iface, arp_pkt);
+		break;
+
+	case NET_ARP_PKT_QUEUED:
+		/*
+		 * Another ARP request for the same IP is already in flight.
+		 * probe has been queued; it will be sent once the pending
+		 * ARP reply arrives.
+		 */
+		LOG_DBG("NET_ARP_PKT_QUEUED ARP request already pending for %u.%u.%u.%u",
+				target_ip->s4_addr[0], target_ip->s4_addr[1],
+				target_ip->s4_addr[2], target_ip->s4_addr[3]);
+		net_pkt_unref(probe);
+		break;
+
+	default:
+		LOG_DBG("net_arp_prepare unexpected ret=%d", ret);
+		net_pkt_unref(probe);
+		break;
+	}
+}
+
+static void wifi_gw_probe_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(wifi_gw_probe_dwork, wifi_gw_probe_handler);
+
+static void gw_probe_ctx_free(gw_probe_ctx_t *ctx)
+{
+	k_mem_slab_free(&gw_probe_ctx_slab, (void *)ctx);
+}
+
+/*
+ * Gateway still keep old without update, there are below cases need deal:
+ * case#1: AC with AP's gateway mac are same ----> mac same, skip dhcp
+ * case#2: Different gateway----> no arp response, do dhcp again
+ * case#3: Same AP setting, but independent APs --->mac diff, do dhcp again
+ *
+ * A single delayable work serves all interfaces: every run walks
+ * gw_probe_ctx_list and, per interface, polling check the probe result.
+ * Finished contexts are unlinked under the lock, their callbacks are
+ * invoked after the lock is released and the contexts are freed.
+ * The work is rescheduled only while some interface is still probing.
+ */
+static void wifi_gw_probe_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	sys_slist_t done_list = SYS_SLIST_STATIC_INIT(&done_list);
+	gw_probe_ctx_t *ctx, *next;
+	sys_snode_t *prev = NULL;
+	struct net_eth_addr cur_mac;
+
+	k_mutex_lock(&gw_probe_ctx_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&gw_probe_ctx_list, ctx, next, node) {
+		bool finished = false;
+
+		if (wifi_etharp_find_addr(ctx->iface, &ctx->gw, &cur_mac)) {
+			/* Process case#1 and case#3 */
+			ctx->same_gw = ctx->had_old_mac &&
+				       (memcmp(cur_mac.addr, ctx->old_gw_mac.addr,
+					       NET_ETH_ADDR_LEN) == 0);
+			finished = true;
+		} else {
+			ctx->elapsed_ms += WIFI_GW_PROBE_CHECK_INTERVAL_MS;
+			if (ctx->elapsed_ms >= WIFI_GW_PROBE_TIMEOUT_MS) {
+				/* Process case#2 */
+				ctx->same_gw = false;
+				finished = true;
+			}
+		}
+
+		if (finished) {
+			sys_slist_remove(&gw_probe_ctx_list, prev, &ctx->node);
+			sys_slist_append(&done_list, &ctx->node);
+			/* prev is unchanged, ctx is no longer in the list */
+			continue;
+		}
+
+		prev = &ctx->node;
+	}
+
+	/* Interfaces in list means without ARP result, probe again */
+	if (!sys_slist_is_empty(&gw_probe_ctx_list)) {
+		k_work_reschedule(&wifi_gw_probe_dwork, K_MSEC(WIFI_GW_PROBE_CHECK_INTERVAL_MS));
+	}
+
+	k_mutex_unlock(&gw_probe_ctx_lock);
+
+	/* ARP probe on these interfaces is complete */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&done_list, ctx, next, node) {
+		LOG_DBG("iface %d gw probe done, same_gw %d",
+			net_if_get_by_iface(ctx->iface), ctx->same_gw);
+
+		if (ctx->gw_probe_cb != NULL) {
+			(void)ctx->gw_probe_cb(net_if_get_device(ctx->iface),
+					       ctx->iface, ctx->same_gw);
+		}
+
+		gw_probe_ctx_free(ctx);
+	}
+}
+
+static int wifi_gw_probe_start(struct net_if *iface, gw_probe_cb_t cb)
+{
+	gw_probe_ctx_t *ctx;
+	struct net_in_addr gw;
+
+	gw = net_if_ipv4_get_gw(iface);
+	if (net_ipv4_is_addr_unspecified(&gw)) {
+		/* Nothing to probe, treat as a different network */
+		LOG_DBG("iface %d has no IPv4 gateway", net_if_get_by_iface(iface));
+		return cb(net_if_get_device(iface), iface, false);
+	}
+
+	k_mutex_lock(&gw_probe_ctx_lock, K_FOREVER);
+
+	if (gw_probe_ctx_find(iface) != NULL) {
+		/* Probe already running on this interface */
+		k_mutex_unlock(&gw_probe_ctx_lock);
+		LOG_DBG("iface %d gw probe already in progress",
+			net_if_get_by_iface(iface));
+		return 0;
+	}
+
+	if (k_mem_slab_alloc(&gw_probe_ctx_slab, (void **)&ctx, K_NO_WAIT) != 0) {
+		k_mutex_unlock(&gw_probe_ctx_lock);
+		LOG_ERR("No free gw probe context for iface %d",
+			net_if_get_by_iface(iface));
+		return -ENOMEM;
+	}
+
+	memset(ctx, 0, sizeof(*ctx));
+	ctx->iface = iface;
+	ctx->gw = gw;
+	ctx->gw_probe_cb = cb;
+	ctx->elapsed_ms = 0;
+	ctx->had_old_mac = wifi_etharp_find_addr(iface, &ctx->gw, &ctx->old_gw_mac);
+
+	/* Only this interface's ARP entries are flushed */
+	wifi_etharp_cleanup_netif(iface);
+	(void)wifi_etharp_request(iface, &ctx->gw);
+
+	sys_slist_append(&gw_probe_ctx_list, &ctx->node);
+
+	/*
+	 * k_work_schedule() does not touch an already scheduled work, so a new
+	 * interface joining does not postpone the probes already running.
+	 */
+	k_work_schedule(&wifi_gw_probe_dwork, K_MSEC(WIFI_GW_PROBE_CHECK_INTERVAL_MS));
+
+	k_mutex_unlock(&gw_probe_ctx_lock);
+
+	return 0;
+}
+
+static int wifi_roaming_dhcp(uint64_t mgmt_request, struct net_if *iface,
+			      void *data, size_t len)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->gw_probe_done == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	LOG_DBG("Start roaming gw probe on iface %d", net_if_get_by_iface(iface));
+
+	return wifi_gw_probe_start(iface, wifi_mgmt_api->gw_probe_done);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_ROAMING_DHCP, wifi_roaming_dhcp);
+#endif /* CONFIG_WIFI_MGMT_ROAMING_DHCP */
 
 static int wifi_ap_enable(uint64_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
