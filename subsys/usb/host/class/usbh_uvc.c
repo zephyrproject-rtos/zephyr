@@ -206,7 +206,12 @@ static const void *get_vs_desc_end(const struct usb_if_descriptor *const if_desc
 
 	header_desc = (const void *)usbh_desc_get_next(if_desc);
 
-	if (!vs_header_is_valid(header_desc)) {
+	/* Some devices put the endpoint descriptor before the header */
+	while (header_desc != NULL && header_desc->bDescriptorType == USB_DESC_ENDPOINT) {
+		header_desc = (const void *)usbh_desc_get_next(header_desc);
+	}
+
+	if (header_desc == NULL || !vs_header_is_valid(header_desc)) {
 		LOG_ERR("Invalid VS header descriptor");
 		return NULL;
 	}
