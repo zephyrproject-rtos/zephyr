@@ -1,0 +1,11 @@
+# Copyright (c) 2026 MASSDRIVER EI
+# SPDX-License-Identifier: Apache-2.0
+
+title: Xuantie E902 Core CPU
+
+description: |
+  E902 is an embedded CPU core with ultra-low power consumption.
+
+compatible: "xuantie,e902"
+
+include: riscv-common.yaml
