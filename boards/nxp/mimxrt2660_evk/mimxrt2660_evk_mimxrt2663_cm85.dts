@@ -58,6 +58,14 @@
 	status = "okay";
 };
 
+&freqme0 {
+	status = "okay";
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };
