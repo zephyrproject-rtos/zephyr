@@ -120,3 +120,19 @@ endif
 
 config WUC
 	default y if DT_HAS_NXP_WUC_WUU_ENABLED
+
+if SOC_MCXW70AC && PM
+
+# Not every peripheral keeps its registers in Deep Sleep on MCXW70: the devices
+# in deep_sleep_off_domain are turned off and back on around it.
+configdefault PM_DEVICE
+	default y
+
+configdefault POWER_DOMAIN
+	default y if PM_DEVICE
+
+# The devices are turned back on from the idle thread.
+configdefault IDLE_STACK_SIZE
+	default 640 if PM_DEVICE
+
+endif # SOC_MCXW70AC && PM
