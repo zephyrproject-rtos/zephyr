@@ -1634,7 +1634,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 			const struct bt_le_ext_adv_start_param *param)
 {
 	struct bt_conn *conn = NULL;
-	int err;
+	int err = 0;
 
 	if (adv == NULL) {
 		LOG_DBG("adv is NULL");
@@ -1667,7 +1667,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
 		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
 		     !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID))) {
-			bt_id_set_adv_private_addr(adv, adv->options);
+			err = bt_id_set_adv_private_addr(adv, adv->options);
 		}
 	} else {
 		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
@@ -1675,11 +1675,14 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
 		     (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		      !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID)))) {
-			bt_id_set_adv_private_addr(adv, adv->options);
+			err = bt_id_set_adv_private_addr(adv, adv->options);
 		}
 	}
 
-	err = bt_le_adv_set_enable_ext(adv, true, param);
+	if (err == 0) {
+		err = bt_le_adv_set_enable_ext(adv, true, param);
+	}
+
 	if (err) {
 		LOG_ERR("Failed to start advertiser");
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
