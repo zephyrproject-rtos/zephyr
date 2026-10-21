@@ -654,9 +654,14 @@ static void le_update_private_addr(void)
 
 	/* If both advertiser and scanner is running then the advertiser
 	 * ID must be BT_ID_DEFAULT, this will update the RPA address
-	 * for both roles.
+	 * for both roles. An advertiser using an NRPA gets a new NRPA,
+	 * which a running scanner then shares.
 	 */
-	err = bt_id_set_private_addr(id);
+	if (adv_enabled && (adv->options & BT_LE_ADV_OPT_USE_NRPA) != 0U) {
+		err = bt_id_set_adv_private_addr(adv, adv->options);
+	} else {
+		err = bt_id_set_private_addr(id);
+	}
 	if (err) {
 		LOG_WRN("Failed to update RPA address (%d)", err);
 		return;
