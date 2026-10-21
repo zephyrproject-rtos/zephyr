@@ -37,6 +37,14 @@ struct h4_data {
 		struct net_buf *buf;
 		struct k_fifo   fifo;
 
+		/* Boolean: set by the ISR when it found no buffer for the packet and
+		 * stopped receiving. rx_thread owns the RX state until it clears it.
+		 */
+		atomic_t        deferred;
+
+		/* Byte counts: still to be read of the current header or payload,
+		 * and still to be read and dropped.
+		 */
 		uint16_t        remaining;
 		uint16_t        discard;
 
@@ -214,6 +222,9 @@ static void init_rx_buf(struct h4_data *h4)
 	(void)net_buf_add_mem(h4->rx.buf, h4->rx.hdr, h4->rx.hdr_len);
 }
 
+/* Called only once the header is in: the pool depends on the packet type and,
+ * for an event, on its code and whether it is discardable.
+ */
 static struct net_buf *get_rx(struct h4_data *h4, k_timeout_t timeout)
 {
 	LOG_DBG("type 0x%02x, evt 0x%02x", h4->rx.type, h4->rx.evt.evt);
@@ -244,26 +255,11 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 	LOG_DBG("started");
 
+	uart_irq_rx_enable(cfg->uart);
+
 	while (1) {
-		LOG_DBG("rx.buf %p", h4->rx.buf);
-
-		/* We can only do the allocation if we know the initial
-		 * header, since Command Complete/Status events must use the
-		 * original command buffer (if available).
-		 */
-		if (h4->rx.have_hdr && !h4->rx.buf) {
-			h4->rx.buf = get_rx(h4, K_FOREVER);
-			LOG_DBG("Got rx.buf %p", h4->rx.buf);
-			init_rx_buf(h4);
-		}
-
-		/* Let the ISR continue receiving new packets */
-		uart_irq_rx_enable(cfg->uart);
-
 		buf = net_buf_get(&h4->rx.fifo, K_FOREVER);
 		do {
-			uart_irq_rx_enable(cfg->uart);
-
 			LOG_DBG("Calling bt_recv(%p)", buf);
 			h4->recv(dev, buf);
 
@@ -273,9 +269,21 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			 */
 			k_yield();
 
-			uart_irq_rx_disable(cfg->uart);
 			buf = net_buf_get(&h4->rx.fifo, K_NO_WAIT);
 		} while (buf);
+
+		/* Only once no packet is queued, as the allocation may have to wait
+		 * for the host to free one of them. The ISR queues none while
+		 * deferred.
+		 */
+		if (atomic_get(&h4->rx.deferred) != 0 && k_fifo_is_empty(&h4->rx.fifo)) {
+			h4->rx.buf = get_rx(h4, K_FOREVER);
+			LOG_DBG("Got rx.buf %p", h4->rx.buf);
+			init_rx_buf(h4);
+
+			(void)atomic_clear(&h4->rx.deferred);
+			uart_irq_rx_enable(cfg->uart);
+		}
 	}
 }
 
@@ -312,6 +320,7 @@ static inline void read_payload(const struct device *dev)
 
 			LOG_WRN("Failed to allocate, deferring to rx_thread");
 			uart_irq_rx_disable(cfg->uart);
+			(void)atomic_set(&h4->rx.deferred, 1);
 			return;
 		}
 
@@ -379,10 +388,6 @@ static inline void read_header(const struct device *dev)
 	default:
 		CODE_UNREACHABLE;
 		return;
-	}
-
-	if (h4->rx.have_hdr && h4->rx.buf) {
-		init_rx_buf(h4);
 	}
 }
 
@@ -452,6 +457,22 @@ static inline void process_rx(const struct device *dev)
 {
 	const struct h4_config *cfg = dev->config;
 	struct h4_data *h4 = dev->data;
+
+	/* rx_thread owns the RX state. A TX interrupt gets here too, as
+	 * uart_irq_rx_ready() need not depend on the RX interrupt being enabled,
+	 * and an RX one if rx_thread enabled RX after the ISR deferred: the
+	 * unread data would keep that interrupt pending.
+	 */
+	if (atomic_get(&h4->rx.deferred) != 0) {
+		uart_irq_rx_disable(cfg->uart);
+
+		/* rx_thread may have handed the RX state back on another CPU */
+		if (atomic_get(&h4->rx.deferred) == 0) {
+			uart_irq_rx_enable(cfg->uart);
+		}
+
+		return;
+	}
 
 	LOG_DBG("remaining %u discard %u have_hdr %u rx.buf %p len %u",
 		h4->rx.remaining, h4->rx.discard, h4->rx.have_hdr, h4->rx.buf,
