@@ -732,8 +732,10 @@ static void rpa_timeout(struct k_work *work)
 	adv_enabled = le_adv_rpa_timeout();
 	le_rpa_invalidate();
 
-	/* IF no roles using the RPA is running we can stop the RPA timer */
-	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+	/* If no roles using the RPA are running we can stop the RPA timer. Without
+	 * a Broadcaster there are no advertising sets to call rpa_expired for.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) || !IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		if (!(adv_enabled || atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
 		      bt_le_scan_active_scanner_running())) {
 			return;
