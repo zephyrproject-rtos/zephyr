@@ -22,6 +22,18 @@
 #define NOCACHE_MEM 0
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+/*
+ * DMA buffers that are not placed in a nocache region must be aligned to a
+ * full data-cache line. Otherwise cache maintenance on one buffer can corrupt
+ * an adjacent buffer sharing the same cache line, seen as DMA data read back
+ * stale/empty on cached targets.
+ */
+#if defined(CONFIG_DCACHE) && !NOCACHE_MEM
+#define UART_DMA_ALIGN_SIZE CONFIG_DCACHE_LINE_SIZE
+#else
+#define UART_DMA_ALIGN_SIZE sizeof(void *)
+#endif
+
 K_SEM_DEFINE(tx_done, 0, 2);
 K_SEM_DEFINE(tx_aborted, 0, 1);
 K_SEM_DEFINE(rx_rdy, 0, 1);
@@ -116,9 +128,9 @@ static void uart_async_test_init(int idx)
 
 struct test_data {
 	volatile uint32_t tx_aborted_count;
-	__aligned(sizeof(void *)) uint8_t rx_first_buffer[10];
+	__aligned(UART_DMA_ALIGN_SIZE) uint8_t rx_first_buffer[10];
 	uint32_t recv_bytes_first_buffer;
-	__aligned(sizeof(void *)) uint8_t rx_second_buffer[5];
+	__aligned(UART_DMA_ALIGN_SIZE) uint8_t rx_second_buffer[5];
 	uint32_t recv_bytes_second_buffer;
 	bool supply_second_buffer;
 };
@@ -232,7 +244,7 @@ static void single_read(enum uart_config_data_bits data_bits)
 #if defined(CONFIG_DCACHE)
 	static const uint8_t tx_buf_temp[] = "0123456789";
 
-	__aligned(sizeof(void *)) uint8_t tx_buf[sizeof(tx_buf_temp)];
+	__aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[sizeof(tx_buf_temp)];
 
 	memcpy(tx_buf, tx_buf_temp, sizeof(tx_buf_temp));
 #else
@@ -337,7 +349,7 @@ ZTEST_USER(uart_async_multi_rx, test_multiple_rx_enable)
 	static const uint8_t tx_buf_temp[] = "test";
 	const uint32_t rx_buf_size = sizeof(tx_buf_temp);
 
-	__aligned(sizeof(void *)) uint8_t tx_buf[sizeof(tx_buf_temp)];
+	__aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[sizeof(tx_buf_temp)];
 
 	memcpy(tx_buf, tx_buf_temp, sizeof(tx_buf_temp));
 #else
@@ -426,13 +438,13 @@ ZTEST_USER(uart_async_multi_rx, test_multiple_rx_enable)
 }
 
 #if NOCACHE_MEM
-static __aligned(sizeof(void *)) uint8_t chained_read_buf_0[10] __used __NOCACHE;
-static __aligned(sizeof(void *)) uint8_t chained_read_buf_1[10] __used __NOCACHE;
-static __aligned(sizeof(void *)) uint8_t chained_cpy_buf[10] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t chained_read_buf_0[10] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t chained_read_buf_1[10] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t chained_cpy_buf[10] __used __NOCACHE;
 #else
-ZTEST_BMEM uint8_t chained_read_buf_0[10];
-ZTEST_BMEM uint8_t chained_read_buf_1[10];
-ZTEST_BMEM uint8_t chained_cpy_buf[10];
+__aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t chained_read_buf_0[10];
+__aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t chained_read_buf_1[10];
+__aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t chained_cpy_buf[10];
 #endif /* NOCACHE_MEM */
 static ZTEST_BMEM volatile uint8_t rx_data_idx;
 static ZTEST_BMEM uint8_t rx_buf_idx;
@@ -490,9 +502,9 @@ static void *chained_read_setup(void)
 ZTEST_USER(uart_async_chain_read, test_chained_read)
 {
 #if NOCACHE_MEM
-	static __aligned(sizeof(void *)) uint8_t tx_buf[10] __used __NOCACHE;
+	static __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[10] __used __NOCACHE;
 #else
-	 __aligned(sizeof(void *)) uint8_t tx_buf[10];
+	 __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[10];
 #endif /* NOCACHE_MEM */
 	int iter = 6;
 	uint32_t rx_timeout_ms = 50;
@@ -528,9 +540,9 @@ ZTEST_USER(uart_async_chain_read, test_chained_read)
 }
 
 #if NOCACHE_MEM
-static __aligned(sizeof(void *)) uint8_t double_buffer[2][12] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t double_buffer[2][12] __used __NOCACHE;
 #else
-static ZTEST_BMEM uint8_t double_buffer[2][12];
+static __aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t double_buffer[2][12];
 #endif /* NOCACHE_MEM */
 static ZTEST_DMEM uint8_t *next_buf = double_buffer[1];
 
@@ -575,9 +587,9 @@ static void *double_buffer_setup(void)
 ZTEST_USER(uart_async_double_buf, test_double_buffer)
 {
 #if NOCACHE_MEM
-	static __aligned(sizeof(void *)) uint8_t tx_buf[4] __used __NOCACHE;
+	static __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[4] __used __NOCACHE;
 #else
-	 __aligned(sizeof(void *)) uint8_t tx_buf[4];
+	 __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[4];
 #endif /* NOCACHE_MEM */
 
 	zassert_equal(uart_rx_enable(uart_dev, double_buffer[0], sizeof(double_buffer[0]),
@@ -603,11 +615,11 @@ ZTEST_USER(uart_async_double_buf, test_double_buffer)
 }
 
 #if NOCACHE_MEM
-static __aligned(sizeof(void *)) uint8_t test_read_abort_rx_buf[2][100] __used __NOCACHE;
-static __aligned(sizeof(void *)) uint8_t test_read_abort_read_buf[100] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t test_read_abort_rx_buf[2][100] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t test_read_abort_read_buf[100] __used __NOCACHE;
 #else
-static ZTEST_BMEM uint8_t test_read_abort_rx_buf[2][100];
-static ZTEST_BMEM uint8_t test_read_abort_read_buf[100];
+static __aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t test_read_abort_rx_buf[2][100];
+static __aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t test_read_abort_read_buf[100];
 #endif /* NOCACHE_MEM */
 static ZTEST_BMEM int test_read_abort_rx_cnt;
 static ZTEST_BMEM bool test_read_abort_rx_buf_req_once;
@@ -693,11 +705,11 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	uint32_t rx_timeout_us = 50 * USEC_PER_MSEC;
 	uint32_t xfer_len;
 #if NOCACHE_MEM
-	static __aligned(sizeof(void *)) uint8_t rx_buf[100] __used __NOCACHE;
-	static __aligned(sizeof(void *)) uint8_t tx_buf[100] __used __NOCACHE;
+	static __aligned(UART_DMA_ALIGN_SIZE) uint8_t rx_buf[100] __used __NOCACHE;
+	static __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[100] __used __NOCACHE;
 #else
-	 __aligned(sizeof(void *)) uint8_t rx_buf[100];
-	 __aligned(sizeof(void *)) uint8_t tx_buf[100];
+	 __aligned(UART_DMA_ALIGN_SIZE) uint8_t rx_buf[100];
+	 __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[100];
 #endif /* NOCACHE_MEM */
 	uint32_t baudrate;
 
@@ -781,9 +793,9 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 static ZTEST_BMEM volatile size_t sent;
 static ZTEST_BMEM volatile size_t received;
 #if NOCACHE_MEM
-static __aligned(sizeof(void *)) uint8_t test_rx_buf[2][100] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t test_rx_buf[2][100] __used __NOCACHE;
 #else
-static ZTEST_BMEM uint8_t test_rx_buf[2][100];
+static __aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t test_rx_buf[2][100];
 #endif /* NOCACHE_MEM */
 
 static void test_write_abort_callback(const struct device *dev,
@@ -831,9 +843,9 @@ static void *write_abort_setup(void)
 ZTEST_USER(uart_async_write_abort, test_write_abort)
 {
 #if NOCACHE_MEM
-	static __aligned(sizeof(void *)) uint8_t tx_buf[100] __used __NOCACHE;
+	static __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[100] __used __NOCACHE;
 #else
-	 __aligned(sizeof(void *)) uint8_t tx_buf[100];
+	 __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[100];
 #endif /* NOCACHE_MEM */
 
 	memset(test_rx_buf, 0, sizeof(test_rx_buf));
@@ -907,11 +919,11 @@ static void *forever_timeout_setup(void)
 ZTEST_USER(uart_async_timeout, test_forever_timeout)
 {
 #if NOCACHE_MEM
-	static __aligned(sizeof(void *)) uint8_t rx_buf[100] __used __NOCACHE;
-	static __aligned(sizeof(void *)) uint8_t tx_buf[100] __used __NOCACHE;
+	static __aligned(UART_DMA_ALIGN_SIZE) uint8_t rx_buf[100] __used __NOCACHE;
+	static __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[100] __used __NOCACHE;
 #else
-	 __aligned(sizeof(void *)) uint8_t rx_buf[100];
-	 __aligned(sizeof(void *)) uint8_t tx_buf[100];
+	 __aligned(UART_DMA_ALIGN_SIZE) uint8_t rx_buf[100];
+	 __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buf[100];
 #endif /* NOCACHE_MEM */
 	uint32_t xfer_len;
 
@@ -959,7 +971,8 @@ ZTEST_USER(uart_async_timeout, test_forever_timeout)
 #if NOCACHE_MEM
 static const uint8_t chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
 #else
-static ZTEST_DMEM uint8_t chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
+static __aligned(UART_DMA_ALIGN_SIZE) ZTEST_DMEM uint8_t
+	chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
 #endif /* NOCACHE_MEM */
 static ZTEST_DMEM bool chained_write_next_buf = true;
 static ZTEST_BMEM volatile uint8_t tx_sent;
@@ -1011,9 +1024,9 @@ static void *chained_write_setup(void)
 ZTEST_USER(uart_async_chain_write, test_chained_write)
 {
 #if NOCACHE_MEM
-	static __aligned(sizeof(void *)) uint8_t rx_buf[20] __used __NOCACHE;
+	static __aligned(UART_DMA_ALIGN_SIZE) uint8_t rx_buf[20] __used __NOCACHE;
 #else
-	 __aligned(sizeof(void *)) uint8_t rx_buf[20];
+	 __aligned(UART_DMA_ALIGN_SIZE) uint8_t rx_buf[20];
 #endif /* NOCACHE_MEM */
 
 	memset(rx_buf, 0, sizeof(rx_buf));
@@ -1053,13 +1066,13 @@ ZTEST_USER(uart_async_chain_write, test_chained_write)
 #define TX_LONG_BUFFER (CONFIG_TEST_LONG_BUFFER_SIZE - 8)
 
 #if NOCACHE_MEM
-static __aligned(sizeof(void *)) uint8_t long_rx_buf[RX_LONG_BUFFER] __used __NOCACHE;
-static __aligned(sizeof(void *)) uint8_t long_rx_buf2[RX_LONG_BUFFER] __used __NOCACHE;
-static __aligned(sizeof(void *)) uint8_t long_tx_buf[TX_LONG_BUFFER] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t long_rx_buf[RX_LONG_BUFFER] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t long_rx_buf2[RX_LONG_BUFFER] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t long_tx_buf[TX_LONG_BUFFER] __used __NOCACHE;
 #else
-static ZTEST_BMEM uint8_t long_rx_buf[RX_LONG_BUFFER];
-static ZTEST_BMEM uint8_t long_rx_buf2[RX_LONG_BUFFER];
-static ZTEST_BMEM uint8_t long_tx_buf[TX_LONG_BUFFER];
+static __aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t long_rx_buf[RX_LONG_BUFFER];
+static __aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t long_rx_buf2[RX_LONG_BUFFER];
+static __aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t long_tx_buf[TX_LONG_BUFFER];
 #endif /* NOCACHE_MEM */
 static ZTEST_BMEM volatile uint8_t evt_num;
 static ZTEST_BMEM size_t long_received[2];
@@ -1164,15 +1177,15 @@ ZTEST_USER(uart_async_long_buf, test_long_buffers)
 #define VAR_LENGTH_RX_BUF_SIZE (VAR_LENGTH_TX_BUF_SIZE * 4)
 
 #if NOCACHE_MEM
-volatile static uint8_t __aligned(sizeof(void *))
+volatile static uint8_t __aligned(UART_DMA_ALIGN_SIZE)
 	var_length_rx_buf[VAR_LENGTH_RX_BUF_SIZE] __used __NOCACHE;
-volatile static uint8_t __aligned(sizeof(void *))
+volatile static uint8_t __aligned(UART_DMA_ALIGN_SIZE)
 	var_length_rx_buf_pool[VAR_LENGTH_RX_BUF_SIZE] __used __NOCACHE;
 #else
 volatile static ZTEST_BMEM
-	uint8_t __aligned(sizeof(void *)) var_length_rx_buf[VAR_LENGTH_RX_BUF_SIZE];
+	uint8_t __aligned(UART_DMA_ALIGN_SIZE) var_length_rx_buf[VAR_LENGTH_RX_BUF_SIZE];
 volatile static ZTEST_BMEM
-	uint8_t __aligned(sizeof(void *)) var_length_rx_buf_pool[VAR_LENGTH_RX_BUF_SIZE];
+	uint8_t __aligned(UART_DMA_ALIGN_SIZE) var_length_rx_buf_pool[VAR_LENGTH_RX_BUF_SIZE];
 #endif /* NOCACHE_MEM */
 volatile static ZTEST_BMEM size_t var_length_buf_rx_idx;
 volatile static ZTEST_BMEM size_t var_length_buf_rx_pool_idx;
@@ -1220,9 +1233,9 @@ static void test_uart_async_var_buf(size_t buf_len, size_t tx_len)
 	int ret;
 
 #if NOCACHE_MEM
-static __aligned(sizeof(void *)) uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE] __used __NOCACHE;
+static __aligned(UART_DMA_ALIGN_SIZE) uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE] __used __NOCACHE;
 #else
-static ZTEST_BMEM uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE];
+static __aligned(UART_DMA_ALIGN_SIZE) ZTEST_BMEM uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE];
 #endif /* NOCACHE_MEM */
 
 	for (size_t i = 0; i < VAR_LENGTH_TX_BUF_SIZE; ++i) {
