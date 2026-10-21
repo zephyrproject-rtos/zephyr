@@ -127,8 +127,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	k_poll_signal_raise(&device_found_cb_completed, 0);
 }
 
-static void connect_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-				 struct net_buf_simple *ad)
+static void connect_device_found(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
 	int err;
 
@@ -136,12 +135,12 @@ static void connect_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t 
 		return;
 	}
 
-	/* Connect only to devices in close range */
-	if (rssi < -70) {
+	/* Connect only to connectable devices in close range */
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) == 0U || info->rssi < -70) {
 		return;
 	}
 
-	LOG_DBG("Device found: %s (RSSI %d)", bt_addr_le_str(addr), rssi);
+	LOG_DBG("Device found: %s (RSSI %d)", bt_addr_le_str(info->addr), info->rssi);
 
 	err = bt_le_scan_stop();
 	if (err) {
@@ -149,10 +148,10 @@ static void connect_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t 
 		return;
 	}
 
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
+	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
 				&default_conn);
 	if (err) {
-		LOG_DBG("Failed to connect to %s (err %d)", bt_addr_le_str(addr), err);
+		LOG_DBG("Failed to connect to %s (err %d)", bt_addr_le_str(info->addr), err);
 		return;
 	}
 
@@ -161,14 +160,27 @@ static void connect_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t 
 
 static int start_scan(bool connect)
 {
+	/* Only the recv callback reports whether an extended advertiser is connectable */
+	static struct bt_le_scan_cb connect_scan_cb = {
+		.recv = connect_device_found,
+	};
 	int err;
 
 	k_poll_signal_reset(&conn_signal);
 	k_poll_signal_reset(&device_found_cb_completed);
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, connect ? connect_device_found : device_found);
+	if (connect) {
+		err = bt_le_scan_cb_register(&connect_scan_cb);
+		if (err != 0) {
+			LOG_DBG("Failed to register scan callbacks (err %d)", err);
+			return err;
+		}
+	}
+
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, connect ? NULL : device_found);
 	if (err) {
 		LOG_DBG("Scanning failed to start (err %d)", err);
+		bt_le_scan_cb_unregister(&connect_scan_cb);
 		return err;
 	}
 
@@ -180,6 +192,8 @@ static int start_scan(bool connect)
 	}
 
 	await_signal(&device_found_cb_completed);
+
+	bt_le_scan_cb_unregister(&connect_scan_cb);
 
 	return 0;
 }
