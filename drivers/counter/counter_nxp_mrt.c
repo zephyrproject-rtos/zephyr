@@ -39,6 +39,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 
+#define NXP_MRT_RUNTIME_AUTO(node_id)                                                              \
+	(IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&                                                   \
+	 (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE) ||                                   \
+	  DT_PROP_OR(node_id, zephyr_pm_device_runtime_auto, 0)))
+
 /* Device holds a pointer to pointer to data */
 #define MRT_CHANNEL_DATA(dev) (*(struct nxp_mrt_channel_data *const *const)dev->data)
 
@@ -431,6 +436,8 @@ DEVICE_API(counter, nxp_mrt_api) = {
 
 /* Creates a device for a channel (needed for counter API) */
 #define NXP_MRT_CHANNEL_DEV_INIT(node, mrt_inst)                                                   \
+	BUILD_ASSERT(!NXP_MRT_RUNTIME_AUTO(DT_PARENT(node)) || NXP_MRT_RUNTIME_AUTO(node),         \
+		     "Runtime-managed MRT modules require runtime PM on every enabled channel");   \
 	PM_DEVICE_DT_DEFINE(node, nxp_mrt_channel_pm_action);                                      \
                                                                                                    \
 	DEVICE_DT_DEFINE(node, nxp_mrt_channel_init, PM_DEVICE_DT_GET(node),                       \
@@ -449,6 +456,9 @@ DEVICE_API(counter, nxp_mrt_api) = {
 #define NXP_MRT_CHANNEL_DEV_ARRAY_INIT(node) [DT_REG_ADDR(node)] = DEVICE_DT_GET(node),
 
 #define NXP_MRT_INIT(n)                                                                            \
+	BUILD_ASSERT(!NXP_MRT_RUNTIME_AUTO(DT_DRV_INST(n)) ||                                      \
+			     IS_ENABLED(CONFIG_PM_DEVICE_POWER_DOMAIN),                            \
+		     "Runtime-managed MRT modules require CONFIG_PM_DEVICE_POWER_DOMAIN");         \
 	/* ISR is shared between all channels */                                                   \
 	static void nxp_mrt_##n##_irq_config_func(const struct device *dev)                        \
 	{                                                                                          \
