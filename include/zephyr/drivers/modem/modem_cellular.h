@@ -217,6 +217,12 @@ struct modem_cellular_data {
 	 * the modem already powered; the init script then confirms it responds.
 	 */
 	bool power_on_skipped;
+	/** Set when a suspend arrives while CMUX is connecting; acted on once it settles. */
+	bool suspend_pending;
+	/** Set when the CMUX connect attempt has failed; a suspend is then acted on at once. */
+	bool cmux_connect_failed;
+	/** Set once the UART has opened for the CMUX connect attempt. */
+	bool cmux_bus_opened;
 
 #if defined(CONFIG_MODEM_CELLULAR_STATS)
 	/** Operational statistics, exposed via cellular_get_stats(). */
