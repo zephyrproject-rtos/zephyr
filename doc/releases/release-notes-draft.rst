@@ -63,6 +63,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Audio
+
+  * :c:enumerator:`AUDIO_CODEC_ERROR_CLOCK`
+
 * Bluetooth
 
   * Host
