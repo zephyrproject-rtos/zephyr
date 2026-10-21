@@ -1,6 +1,7 @@
 zephyr_sources_ifdef(CONFIG_MIPI_DSI mipi_dsi.c)
 
 # zephyr-keep-sorted-start
+zephyr_sources_ifdef(CONFIG_MIPI_DSI_CDNS_TI dsi_cdns_ti.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_MCUX dsi_mcux.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_MCUX_2L dsi_mcux_2l.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_NXP_DWC dsi_nxp_dwc.c)
