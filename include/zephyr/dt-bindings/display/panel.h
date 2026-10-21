@@ -43,6 +43,26 @@
 #define PANEL_PIXEL_FORMAT_I_4       (0x1 << 13) /**< 4-bit indexed color */
 
 /**
+ * @brief Pack color components into a 32-bit ARGB8888 value.
+ *
+ * This macro is intended for use in devicetree files to specify color values.
+ *
+ * @param r Red component (0-255)
+ * @param g Green component (0-255)
+ * @param b Blue component (0-255)
+ * @param a Alpha component (0-255)
+ */
+#define ARGB8888(r, g, b, a) (((b) << 0) | ((g) << 8) | ((r) << 16) | ((a) << 24))
+
+/**
+ * @brief Panel color palette null value
+ *
+ * This value is used to fill empty entries in case of
+ * non-contiguous color palette entries.
+ */
+#define PANEL_COLOR_PALETTE_NULL 0
+
+/**
  * @}
  */
 
