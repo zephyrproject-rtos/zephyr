@@ -198,6 +198,29 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Watchdog
+========
+
+* The NXP WWDT driver (:dtcompatible:`nxp,lpc-wwdt`) has these compatibility changes:
+
+  **Disable:** On MCXN/MCXA, successful disable now halts the watchdog's functional clock.
+  In this release, the driver does not support restart within the same software boot,
+  even after a power-domain cycle; reset the system before reusing the instance.
+  This also applies with :kconfig:option:`CONFIG_PM_DEVICE` disabled.
+
+  **Return values:** Setup or timeout installation on a running or starting instance
+  returns ``-EBUSY``. Feed returns ``-EAGAIN`` during startup and ``-EINVAL`` when not
+  running; disable returns ``-EFAULT`` when not running.
+  On MCXN/MCXA, install and setup after successful disable return ``-ENOTSUP``.
+
+  **System PM:** On MCXN/MCXA, a running watchdog now blocks Deep Sleep, Power Down
+  and Deep Power Down by default. Relax ``zephyr,disabling-power-states`` only after
+  verifying the required low-power clocks. Successful disable releases these constraints.
+
+  **Runtime PM:** On MCXN/MCXA, setup requires an ACTIVE device. Hold a runtime reference
+  from before setup until successful disable. Running-device suspend returns ``-ENOTSUP``;
+  do not make a final asynchronous runtime put while the watchdog runs.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
