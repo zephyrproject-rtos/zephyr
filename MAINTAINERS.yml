@@ -4198,6 +4198,21 @@ MIPS arch:
     - arch
     - kernel
 
+Media unified formats:
+  status: maintained
+  maintainers:
+    - avolmat-st
+  collaborators:
+    - JarmouniA
+    - josuah
+    - ngphibang
+  files:
+    - include/zephyr/dt-bindings/media/
+    - include/zephyr/media/
+  labels:
+    - "area: Display"
+    - "area: Video"
+
 MediaTek Platforms:
   status: maintained
   maintainers:
