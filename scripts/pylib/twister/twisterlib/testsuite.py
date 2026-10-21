@@ -80,7 +80,8 @@ def scan_file(inf_name):
         br"^\s*ZTEST_SUITE\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
         re.MULTILINE)
     testcase_regex = re.compile(
-        br"^\s*(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+        br"^\s*(?:static\s+)?(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\("
+        br"\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
         br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
         re.MULTILINE)
     # Checks if the file contains a definition of "void test_main(void)"
@@ -250,7 +251,8 @@ def _find_new_ztest_testcases(search_area):
     # phantom testcase that never runs. Such cases are still discovered at
     # runtime from the harness output.
     testcase_regex = re.compile(
-        br"^\s*(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+        br"^\s*(?:static\s+)?(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\("
+        br"\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
         br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)(?![a-zA-Z0-9_#])\s*",
         re.MULTILINE)
 
