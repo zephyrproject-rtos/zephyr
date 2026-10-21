@@ -13,12 +13,6 @@ properties:
   reg:
     required: true
 
-  interrupts:
-    required: true
-
-  interrupt-names:
-    required: true
-
 child-binding:
 
   description: Group of 32 pins for BL61x GPIOs
