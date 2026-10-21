@@ -1,0 +1,41 @@
+common:
+  tags:
+    - pwm
+    - drivers
+    - pm
+  depends_on: pwm
+  filter: dt_compat_enabled("test-pwm-loopback")
+  harness: ztest
+  harness_config:
+    fixture: pwm_loopback
+  platform_allow:
+    - frdm_mcxe247
+  integration_platforms:
+    - frdm_mcxe247
+tests:
+  drivers.pwm.pm: {}
+  drivers.pwm.pm.policy:
+    # Device-managed PM only: with the system-managed sweep enabled, every
+    # entry into a low power state would suspend the capture instance behind
+    # the test's back.
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+      - CONFIG_PM_DEVICE_SYSTEM_MANAGED=n
+      # The low-power companion is a counter; without the API it falls back
+      # to none and nothing wakes the SoC from a low power state.
+      - CONFIG_COUNTER=y
+    extra_args:
+      - platform:frdm_mcxe247:EXTRA_DTC_OVERLAY_FILE="boards/frdm_mcxe247_lptmr.overlay"
+  drivers.pwm.pm.sysmanaged:
+    # The sweep that suspends devices before a low power state, with the
+    # policy locks that are supposed to keep it away from a driving output.
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+      - CONFIG_PM_DEVICE_SYSTEM_MANAGED=y
+      - CONFIG_COUNTER=y
+      # frdm_mcxe247 gives the idle thread 320 bytes, and the sweep runs on it.
+      - platform:frdm_mcxe247:CONFIG_IDLE_STACK_SIZE=1024
+    extra_args:
+      - platform:frdm_mcxe247:EXTRA_DTC_OVERLAY_FILE="boards/frdm_mcxe247_lptmr.overlay"
