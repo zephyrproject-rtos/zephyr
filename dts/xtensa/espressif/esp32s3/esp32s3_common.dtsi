@@ -427,6 +427,26 @@
 			status = "disabled";
 		};
 
+		/* SYSTIMER: a single free-running 52-bit counter shared by both
+		 * cores, with one independent alarm/comparator channel per core
+		 * (TARGET0 for CPU0, TARGET1 for CPU1). drivers/timer/
+		 * esp32_sys_timer.c uses this under CONFIG_SMP instead of the
+		 * default CCOUNT-based drivers/timer/xtensa_sys_timer.c: CCOUNT
+		 * is a private per-core register with no hardware link between
+		 * the two cores, which corrupts cross-core tick accounting;
+		 * SYSTIMER has no such problem since both cores read the same
+		 * counter. Present but unused (XTENSA_TIMER stays the default)
+		 * outside CONFIG_SMP.
+		 */
+		systimer0: systimer@60023000 {
+			compatible = "espressif,esp32-systimer";
+			reg = <0x60023000 DT_SIZE_K(4)>;
+			interrupts = <SYSTIMER_TARGET0_EDGE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <SYSTIMER_TARGET1_EDGE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "okay";
+		};
+
 		spi2: spi@60024000 {
 			compatible = "espressif,esp32-spi";
 			reg = <0x60024000 DT_SIZE_K(4)>;
