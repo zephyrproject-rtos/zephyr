@@ -142,6 +142,8 @@ struct mspi_stm32_conf {
 	const struct pinctrl_dev_config *pcfg;
 	bool dma_specified;
 	uint32_t cs_boundary;
+	/* nCS release period in memory clock cycles, 0 to disable */
+	uint32_t refresh;
 	bool ssht_enable;
 	/* Raw DCR1 DEVSIZE value: memory address bits - 1 */
 	uint32_t mem_size;
