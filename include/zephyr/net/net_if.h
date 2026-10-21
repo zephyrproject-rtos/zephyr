@@ -3249,12 +3249,13 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 #define NET_IF_CHECKSUM_NONE_BIT			0
 #define NET_IF_CHECKSUM_IPV4_HEADER_BIT			BIT(0)
 #define NET_IF_CHECKSUM_IPV4_ICMP_BIT			BIT(1)
+#define NET_IF_CHECKSUM_IPV4_TCP_BIT			BIT(2)
+#define NET_IF_CHECKSUM_IPV4_UDP_BIT			BIT(3)
 /* Space for future protocols and restrictions for IPV4 */
-#define NET_IF_CHECKSUM_IPV6_HEADER_BIT			BIT(10)
 #define NET_IF_CHECKSUM_IPV6_ICMP_BIT			BIT(11)
+#define NET_IF_CHECKSUM_IPV6_TCP_BIT			BIT(12)
+#define NET_IF_CHECKSUM_IPV6_UDP_BIT			BIT(13)
 /* Space for future protocols and restrictions for IPV6 */
-#define NET_IF_CHECKSUM_TCP_BIT				BIT(21)
-#define NET_IF_CHECKSUM_UDP_BIT				BIT(22)
 
 /** @endcond */
 
@@ -3265,21 +3266,15 @@ enum net_if_checksum_type {
 	/** Interface supports IP version 4 header checksum calculation */
 	NET_IF_CHECKSUM_IPV4_HEADER = NET_IF_CHECKSUM_IPV4_HEADER_BIT,
 	/** Interface supports checksum calculation for TCP payload in IPv4 */
-	NET_IF_CHECKSUM_IPV4_TCP    = NET_IF_CHECKSUM_IPV4_HEADER_BIT |
-				      NET_IF_CHECKSUM_TCP_BIT,
+	NET_IF_CHECKSUM_IPV4_TCP    = NET_IF_CHECKSUM_IPV4_TCP_BIT,
 	/** Interface supports checksum calculation for UDP payload in IPv4 */
-	NET_IF_CHECKSUM_IPV4_UDP    = NET_IF_CHECKSUM_IPV4_HEADER_BIT |
-				      NET_IF_CHECKSUM_UDP_BIT,
+	NET_IF_CHECKSUM_IPV4_UDP    = NET_IF_CHECKSUM_IPV4_UDP_BIT,
 	/** Interface supports checksum calculation for ICMP4 payload in IPv4 */
 	NET_IF_CHECKSUM_IPV4_ICMP   = NET_IF_CHECKSUM_IPV4_ICMP_BIT,
-	/** Interface supports IP version 6 header checksum calculation */
-	NET_IF_CHECKSUM_IPV6_HEADER = NET_IF_CHECKSUM_IPV6_HEADER_BIT,
 	/** Interface supports checksum calculation for TCP payload in IPv6 */
-	NET_IF_CHECKSUM_IPV6_TCP    = NET_IF_CHECKSUM_IPV6_HEADER_BIT |
-				      NET_IF_CHECKSUM_TCP_BIT,
+	NET_IF_CHECKSUM_IPV6_TCP    = NET_IF_CHECKSUM_IPV6_TCP_BIT,
 	/** Interface supports checksum calculation for UDP payload in IPv6 */
-	NET_IF_CHECKSUM_IPV6_UDP    = NET_IF_CHECKSUM_IPV6_HEADER_BIT |
-				      NET_IF_CHECKSUM_UDP_BIT,
+	NET_IF_CHECKSUM_IPV6_UDP    = NET_IF_CHECKSUM_IPV6_UDP_BIT,
 	/** Interface supports checksum calculation for ICMP6 payload in IPv6 */
 	NET_IF_CHECKSUM_IPV6_ICMP   = NET_IF_CHECKSUM_IPV6_ICMP_BIT
 };
