@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/init.h>
 #include <soc.h>
@@ -81,8 +82,17 @@ static int hwinfo_sam_init(void)
 	efc->EEFC_FMR |= EEFC_FMR_SCOD;
 #endif
 
+	/*
+	 * A cache on the code bus would return the flash it holds instead of the unique
+	 * identifier, or keep the identifier as flash contents. Disabled, it neither hits nor
+	 * fills, and what it holds stays valid.
+	 */
+	sys_cache_instr_disable();
+
 	/* Read the device ID using code in RAM */
 	hwinfo_sam_read_device_id();
+
+	sys_cache_instr_enable();
 
 	/* Restore code optimization settings. */
 	efc->EEFC_FMR = fmr;
