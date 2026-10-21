@@ -199,7 +199,7 @@ static inline int nxp_mrt_cancel_alarm(const struct device *dev, uint8_t chan_id
 	return -ENOTSUP;
 }
 
-uint32_t nxp_mrt_get_freq(const struct device *dev)
+static uint32_t nxp_mrt_get_freq(const struct device *dev)
 {
 	const struct nxp_mrt_config *config = dev->config;
 	uint32_t freq;
