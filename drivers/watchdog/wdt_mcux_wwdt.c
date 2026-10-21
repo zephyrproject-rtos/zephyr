@@ -34,6 +34,7 @@ struct mcux_wwdt_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
+	unsigned int irq;
 };
 
 struct mcux_wwdt_data {
@@ -71,6 +72,29 @@ static int mcux_wwdt_get_divider(const struct device *dev, clock_div_name_t *div
 	}
 }
 #endif
+
+static int mcux_wwdt_halt_clock(const struct device *dev)
+{
+#if MCUX_WWDT_HAS_CLOCK_HALT
+	clock_div_name_t divider;
+	int ret = mcux_wwdt_get_divider(dev, &divider);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+	CLOCK_HaltClockDiv(divider);
+	return CLOCK_GetClockDiv(divider) == 0U ? 0 : -EIO;
+#else
+	CLOCK_SetClkDiv(divider, 0U);
+	return CLOCK_GetClkDiv(divider) == 0U ? 0 : -EIO;
+#endif
+#else
+	ARG_UNUSED(dev);
+	return -ENOTSUP;
+#endif
+}
 
 static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32_t *freq)
 {
@@ -154,7 +178,25 @@ static int mcux_wwdt_disable(const struct device *dev)
 		return -EFAULT;
 	}
 
-	WWDT_Deinit(base);
+	if (MCUX_WWDT_HAS_CLOCK_HALT) {
+		unsigned int key = irq_lock();
+		bool irq_enabled = irq_is_enabled(config->irq) != 0;
+
+		irq_disable(config->irq);
+		int ret = mcux_wwdt_halt_clock(dev);
+
+		if (ret != 0) {
+			if (irq_enabled) {
+				irq_enable(config->irq);
+			}
+			irq_unlock(key);
+			LOG_ERR("Cannot halt watchdog: %d", ret);
+			return ret;
+		}
+		irq_unlock(key);
+	} else {
+		WWDT_Deinit(base);
+	}
 	data->timeout_valid = false;
 	data->callback = NULL;
 	data->active_before_sleep = false;
@@ -366,6 +408,7 @@ static DEVICE_API(wdt, mcux_wwdt_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),             \
 		.irq_config_func = mcux_wwdt_config_func_##id,                                     \
+		.irq = DT_INST_IRQN(id),                                                           \
 	};                                                                                         \
                                                                                                    \
 	static struct mcux_wwdt_data mcux_wwdt_data_##id;                                          \
