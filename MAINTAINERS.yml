@@ -2889,6 +2889,7 @@ Documentation Infrastructure:
     - tbursztyka
   collaborators:
     - teburd
+    - maass-hamburg
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
