@@ -136,6 +136,19 @@
 	status = "okay";
 };
 
+/* USB1 OTG on the USB-C connector J51 */
+zephyr_udc0: &usb1 {
+	phy-handle = <&usbphy1>;
+	status = "okay";
+};
+
+&usbphy1 {
+	tx-d-cal = <7>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
+};
+
 /*
  * The MIMXRT1152XHM8B on this board comes in the HM (232 MAPBGA)
  * package, which bonds fewer pads than the VM (289 MAPBGA) parts.
