@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(.)
-zephyr_sources(soc.c)
+zephyr_sources_ifdef(CONFIG_SOC_SERIES_BL808_M0 soc_m0.c)
+zephyr_sources_ifdef(CONFIG_SOC_SERIES_BL808_D0 soc_d0.c)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")
 

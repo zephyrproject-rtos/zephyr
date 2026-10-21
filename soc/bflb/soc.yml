@@ -47,5 +47,13 @@ family:
   - name: bl808
     socs:
     - name: bl808c09q2i
+      cpuclusters:
+      - name: m0
+      - name: d0
+      - name: lp
     - name: bl808d09q2i
+      cpuclusters:
+      - name: m0
+      - name: d0
+      - name: lp
 vendor: bflb

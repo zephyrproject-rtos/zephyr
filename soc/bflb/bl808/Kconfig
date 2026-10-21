@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_BL808
+config SOC_SERIES_BL808_M0
 	select CACHE_MANAGEMENT
 	select CLOCK_CONTROL
 	select CPU_HAS_DCACHE
@@ -18,3 +18,52 @@ config SOC_SERIES_BL808
 	imply FPU
 	imply REGULATOR
 	imply XIP
+
+config SOC_SERIES_BL808_D0
+	select CACHE_MANAGEMENT
+	select CLOCK_CONTROL
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_XUANTIE_C906
+	select OTP
+	select RISCV
+	select SOC_EARLY_INIT_HOOK
+	select USE_DT_CODE_PARTITION
+	imply CODE_DATA_RELOCATION
+	imply FPU
+	imply XIP
+
+# The E902 on BL808 has no cache
+config SOC_SERIES_BL808_LP
+	select CLOCK_CONTROL
+	select CPU_XUANTIE_E902
+	select OTP
+	select RISCV
+	select USE_DT_CODE_PARTITION
+	imply CODE_DATA_RELOCATION
+	imply XIP
+
+if SOC_SERIES_BL808
+
+DT_CHOSEN_BFLB_D0_PARTITION := bflb,d0-partition
+DT_CHOSEN_BFLB_LP_PARTITION := bflb,lp-partition
+
+config SOC_SERIES_BL808_D0_START
+	bool "Start D0 C906 core"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_BFLB_D0_PARTITION))
+	depends on SOC_SERIES_BL808_M0
+	select SOC_LATE_INIT_HOOK
+	help
+	  The M0 CPU core starts the D0 CPU at the chosen partition offset once its initialization
+	  is completed.
+
+config SOC_SERIES_BL808_LP_START
+	bool "Start LP E902 core"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_BFLB_LP_PARTITION))
+	depends on SOC_SERIES_BL808_M0
+	select SOC_LATE_INIT_HOOK
+	help
+	  The M0 CPU core starts the LP CPU at the chosen partition offset once its initialization
+	  is completed.
+
+endif

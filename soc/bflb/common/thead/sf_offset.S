@@ -22,8 +22,7 @@
 #define THEAD_MHCR	0x7C1
 #define THEAD_MXSTATUS	0x7C0
 
-/* Pick a RAM to use */
-#define RAM_ADDR	(DT_REG_ADDR(DT_COMPAT_GET_ANY_STATUS_OKAY(mmio_sram)))
+#define RAM_ADDR	(DT_REG_ADDR(DT_NODELABEL(all_ram)))
 
 /* Fetch what offset to use from ranges */
 #if DT_RANGES_HAS_IDX(DT_CHOSEN(zephyr_flash), 0)
@@ -33,9 +32,24 @@
 #endif
 
 #define MXSTATUS_OR	((1U << 22) | (1U << 15))
-#define MHCR_NOCACHE	(~31U)
+#define MHCR_NOCACHE	(-32)
 
 GTEXT(__start)
+
+/* On BL808 E902 LP, no cache, no offset, directly jump to address */
+#ifdef CONFIG_SOC_SERIES_BL808_LP
+
+SECTION_FUNC(vectors, __bflb_reset)
+	.option push
+	.option norelax
+	.option norvc
+	lui a2, %hi(__start)
+	addi a2, a2, %lo(__start)
+	jr 0(a2)
+	.balign 4
+	.option pop
+
+#else
 
 SECTION_FUNC(vectors, __bflb_reset_ram)
 .__bflb_reset_ram_start:
@@ -52,11 +66,12 @@ SECTION_FUNC(vectors, __bflb_reset_ram)
 	/* Fence to clear pipeline of bad instructions */
 	fence
 	fence.i
-	.option pop
 	/* Get *absolute* address of __start and continue boot */
 	lui a2, %hi(__start)
 	addi a2, a2, %lo(__start)
 	jr 0(a2)
+	.balign 4
+	.option pop
 .__bflb_reset_ram_end:
 
 SECTION_FUNC(vectors, __bflb_reset)
@@ -89,6 +104,8 @@ SECTION_FUNC(vectors, __bflb_reset)
 	sw a5, 0(a2)
 	addi a3, a3, 4
 	addi a2, a2, 4
-	bne a3, a4, .copy_loop
+	bltu a3, a4, .copy_loop
 	li a2, RAM_ADDR
 	jr 0(a2)
+
+#endif

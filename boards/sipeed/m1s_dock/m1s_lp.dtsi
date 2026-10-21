@@ -1,0 +1,37 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <bflb/bl808-lp.dtsi>
+#include "m1s_common.dtsi"
+
+/ {
+	model = "Sipeed M1S (LP CPU)";
+	compatible = "bflb,bl808";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition_lp;
+		zephyr,sram = &all_ram;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};

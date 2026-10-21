@@ -4,19 +4,59 @@
 
 if SOC_SERIES_BL808
 
-config SOC_RESET_HOOK
-	default y
+config ARCH_SW_ISR_TABLE_ALIGN
+	default 64
+
+if SOC_SERIES_BL808_M0
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 5000
 
+config SOC_RESET_HOOK
+	default y
+
 config NUM_IRQS
 	default 80
 
-config ARCH_SW_ISR_TABLE_ALIGN
-	default 64
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0xFFF
+
+endif # SOC_SERIES_BL808_M0
+
+if SOC_SERIES_BL808_D0
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 5000
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 16
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 66
+
+config NUM_IRQS
+	default 82
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0x7FFFFFFFFFFFFFFF
+
+endif # SOC_SERIES_BL808_D0
+
+if SOC_SERIES_BL808_LP
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+# The real limit is 48
+config NUM_IRQS
+	default 80
 
 config RISCV_MCAUSE_EXCEPTION_MASK
 	default 0xFFF
+
+endif # SOC_SERIES_BL808_LP
 
 endif # SOC_SERIES_BL808

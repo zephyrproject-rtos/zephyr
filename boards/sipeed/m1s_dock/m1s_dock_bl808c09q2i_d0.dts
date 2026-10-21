@@ -1,0 +1,14 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "m1s_d0.dtsi"
+#include "m1s_dock_common.dtsi"
+
+/ {
+	model = "Sipeed M1S Dock (D0 CPU)";
+};

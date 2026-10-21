@@ -1,0 +1,21 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: m1s_dock/bl808c09q2i/d0
+name: Sipeed M1S Dock (D0 C906 CPU)
+vendor: sipeed
+type: mcu
+arch: riscv
+ram: 512
+flash: 4096
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart

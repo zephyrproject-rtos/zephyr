@@ -10,7 +10,7 @@ description: |
 
 compatible: "bflb,bl808-psram-uhs"
 
-include: ["base.yaml", "zephyr,memory-region.yaml"]
+include: "base.yaml"
 
 properties:
   page-size:
