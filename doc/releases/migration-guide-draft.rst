@@ -71,6 +71,11 @@ Bluetooth Classic
 Networking
 **********
 
+* ``CONFIG_WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING`` has been removed. After
+  roaming, the IPv4 gateway is now probed with ARP and DHCPv4 is restarted only
+  if the gateway changed or did not answer. Applications that had the option
+  disabled no longer get an unconditional DHCPv4 restart on every roam.
+
 Other subsystems
 ****************
 

@@ -74,7 +74,6 @@ tests:
   net.wifi.build.roaming:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING=y
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING=y
   net.wifi.build.roaming_dhcp:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING=y
