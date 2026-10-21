@@ -145,7 +145,7 @@ static int mipi_dbi_smartbond_reset(const struct device *dev, k_timeout_t delay)
 #endif
 
 /* Display pixel to output color format translation */
-static inline uint8_t lcdc_smartbond_pixel_to_ocm(enum display_pixel_format pixfmt)
+static inline uint8_t lcdc_smartbond_pixel_to_ocm(uint32_t pixfmt)
 {
 	switch (pixfmt) {
 	case PIXEL_FORMAT_RGB_565:
@@ -173,7 +173,7 @@ static inline uint8_t lcdc_smartbond_line_mode_translation(uint8_t mode)
 	}
 }
 
-static inline uint8_t lcdc_smartbond_pixel_to_lcm(enum display_pixel_format pixfmt)
+static inline uint8_t lcdc_smartbond_pixel_to_lcm(uint32_t pixfmt)
 {
 	switch (pixfmt) {
 	case PIXEL_FORMAT_RGB_565:
@@ -188,7 +188,7 @@ static inline uint8_t lcdc_smartbond_pixel_to_lcm(enum display_pixel_format pixf
 
 static void lcdc_smartbond_mipi_dbi_translation(const struct mipi_dbi_config *dbi_config,
 			lcdc_smartbond_mipi_dbi_cfg *mipi_dbi_cfg,
-			enum display_pixel_format pixfmt)
+			uint32_t pixfmt)
 {
 	mipi_dbi_cfg->cpha = dbi_config->config.operation & SPI_MODE_CPHA;
 	mipi_dbi_cfg->cpol = dbi_config->config.operation & SPI_MODE_CPOL;
@@ -329,7 +329,7 @@ static int mipi_dbi_smartbond_write_display(const struct device *dev,
 					const struct mipi_dbi_config *dbi_config,
 					const uint8_t *framebuf,
 					struct display_buffer_descriptor *desc,
-					enum display_pixel_format pixfmt)
+					uint32_t pixfmt)
 {
 	struct mipi_dbi_smartbond_data *data = dev->data;
 	const struct mipi_dbi_smartbond_config *config = dev->config;

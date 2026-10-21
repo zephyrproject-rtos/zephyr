@@ -40,7 +40,7 @@ struct char_framebuffer {
 	const struct cfb_font *fonts;
 
 	/** Display pixel format */
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 
 	/** Display screen info */
 	enum display_screen_info screen_info;

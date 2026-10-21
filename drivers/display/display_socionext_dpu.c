@@ -43,7 +43,7 @@ struct dpu_data {
 	/* DT value: PANEL_PIXEL_FORMAT_* */
 	uint32_t panel_pixel_format;
 	/* Runtime/Zephyr value: PIXEL_FORMAT_* */
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	dpu_pixel_format_t rgb_format;
 	uint8_t pixel_bytes;
 	struct k_sem sem;
@@ -157,7 +157,7 @@ static void *dpu_get_framebuffer(const struct device *dev)
 }
 
 static int dpu_set_pixel_format(const struct device *dev,
-				const enum display_pixel_format pixel_format)
+				const uint32_t pixel_format)
 {
 	const struct dpu_config *config = dev->config;
 	struct dpu_data *data = dev->data;

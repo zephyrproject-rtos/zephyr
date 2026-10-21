@@ -701,10 +701,10 @@ static void uc81xx_get_capabilities(const struct device *dev,
 }
 
 static int uc81xx_set_pixel_format(const struct device *dev,
-				   const enum display_pixel_format pf)
+				   const uint32_t pf)
 {
 	const struct uc81xx_config *config = dev->config;
-	const enum display_pixel_format expected =
+	const uint32_t expected =
 		config->grayscale ? PIXEL_FORMAT_L_8 : PIXEL_FORMAT_MONO01;
 
 	if (pf == expected) {

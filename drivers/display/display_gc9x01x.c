@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(display_gc9x01x, CONFIG_DISPLAY_LOG_LEVEL);
 /* Display data struct */
 struct gc9x01x_data {
 	uint8_t bytes_per_pixel;
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	enum display_orientation orientation;
 };
 
@@ -365,7 +365,7 @@ static int gc9x01x_display_blanking_on(const struct device *dev)
 }
 
 static int gc9x01x_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const uint32_t pixel_format)
 {
 	struct gc9x01x_data *data = dev->data;
 	int ret;

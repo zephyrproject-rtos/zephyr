@@ -38,7 +38,7 @@ struct rpi_bcm2711_fb_descriptor {
 
 struct rpi_bcm2711_fb_config {
 	struct display_fb_common_config common;
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	bool red_blue_swap;
 };
 
@@ -59,7 +59,7 @@ static void rpi_bcm2711_fb_get_capabilities(const struct device *dev,
 }
 
 static int rpi_bcm2711_fb_set_pixel_format(const struct device *dev,
-					   const enum display_pixel_format pixel_format)
+					   const uint32_t pixel_format)
 {
 	const struct rpi_bcm2711_fb_config *config = dev->config;
 

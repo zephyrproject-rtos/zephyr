@@ -41,12 +41,12 @@ extern "C" {
 /**
  * @brief Display pixel formats
  *
- * Display pixel format enumeration.
+ * Display pixel format bitmasks.
  *
  * In case a pixel format consists out of multiple bytes the byte order is
  * big endian.
  */
-enum display_pixel_format {
+enum {
 	/**
 	 * @brief 24-bit RGB format with 8 bits per component.
 	 *
@@ -358,7 +358,7 @@ struct display_capabilities {
 	/** Information about display panel */
 	uint32_t screen_info;
 	/** Currently active pixel format for the display */
-	enum display_pixel_format current_pixel_format;
+	uint32_t current_pixel_format;
 	/** Current display orientation */
 	enum display_orientation current_orientation;
 	/** Supported callback events mask, 0 when event callback unsupported */
@@ -516,8 +516,7 @@ typedef void (*display_get_capabilities_api)(const struct device *dev,
  * See display_set_pixel_format() for argument description
  */
 typedef int (*display_set_pixel_format_api)(const struct device *dev,
-					    const enum display_pixel_format
-					    pixel_format);
+					    uint32_t pixel_format);
 
 /**
  * @brief Callback API to set orientation used by the display.
@@ -828,7 +827,7 @@ static inline void display_get_capabilities(const struct device *dev,
  */
 static inline int
 display_set_pixel_format(const struct device *dev,
-			 const enum display_pixel_format pixel_format)
+			 const uint32_t pixel_format)
 {
 	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 

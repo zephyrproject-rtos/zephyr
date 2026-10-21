@@ -541,7 +541,7 @@ static int rm67162_blanking_on(const struct device *dev)
 }
 
 static int rm67162_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const uint32_t pixel_format)
 {
 	const struct rm67162_config *config = dev->config;
 	struct rm67162_data *data = dev->data;

@@ -41,7 +41,7 @@ struct ramfb_settings {
 	uint32_t stride;
 } __packed;
 
-static int ramfb_set_pixel_format(const struct device *dev, const enum display_pixel_format format)
+static int ramfb_set_pixel_format(const struct device *dev, const uint32_t format)
 {
 	switch (format) {
 	case PIXEL_FORMAT_ARGB_8888:

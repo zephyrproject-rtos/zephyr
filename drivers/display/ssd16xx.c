@@ -589,7 +589,7 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 }
 
 static int ssd16xx_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pf)
+				    const uint32_t pf)
 {
 	if (pf == PIXEL_FORMAT_MONO01) {
 		return 0;

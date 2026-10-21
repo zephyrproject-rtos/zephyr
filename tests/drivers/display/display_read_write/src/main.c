@@ -36,7 +36,7 @@ static inline size_t buffer_size(size_t width, size_t height)
 	return width * height * bpp;
 }
 
-static inline uint8_t bytes_per_pixel(enum display_pixel_format pixel_format)
+static inline uint8_t bytes_per_pixel(uint32_t pixel_format)
 {
 	switch (pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:

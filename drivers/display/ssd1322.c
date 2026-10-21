@@ -471,7 +471,7 @@ static int ssd1322_init_device(const struct device *dev)
 }
 
 static int ssd1322_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const uint32_t pixel_format)
 {
 	struct ssd1322_data *data = dev->data;
 

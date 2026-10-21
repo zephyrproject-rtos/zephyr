@@ -264,7 +264,7 @@ static void hub12_get_capabilities(const struct device *dev, struct display_capa
 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST;
 }
 
-static int hub12_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int hub12_set_pixel_format(const struct device *dev, const uint32_t pf)
 {
 	if (pf == PIXEL_FORMAT_MONO01) {
 		return 0;

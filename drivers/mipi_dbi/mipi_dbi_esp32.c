@@ -284,7 +284,7 @@ static int mipi_dbi_esp32_write_display(const struct device *dev,
 					const struct mipi_dbi_config *dbi_cfg,
 					const uint8_t *framebuf,
 					struct display_buffer_descriptor *desc,
-					enum display_pixel_format pixfmt)
+					uint32_t pixfmt)
 {
 	struct mipi_dbi_esp32_data *drv_data = dev->data;
 	int ret;

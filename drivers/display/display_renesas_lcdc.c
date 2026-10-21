@@ -95,7 +95,7 @@ struct display_smartbond_config {
 	const uint16_t y_res;
 	/* Pixel size in bytes */
 	uint8_t pixel_size;
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 };
 
 static inline void lcdc_smartbond_pm_policy_state_lock_get(struct display_smartbond_data *data)
@@ -122,7 +122,7 @@ static inline void lcdc_smartbond_pm_policy_state_lock_put(struct display_smartb
 }
 
 /* Display pixel to layer color format translation */
-static uint8_t lcdc_smartbond_pixel_to_lcm(enum display_pixel_format pixel_format)
+static uint8_t lcdc_smartbond_pixel_to_lcm(uint32_t pixel_format)
 {
 	switch (pixel_format) {
 	case PIXEL_FORMAT_RGB_565:

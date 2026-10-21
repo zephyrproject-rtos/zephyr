@@ -180,7 +180,7 @@ static int st7789v_write(const struct device *dev,
 	const uint8_t *write_data_start = (uint8_t *) buf;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
-	enum display_pixel_format pixfmt = config->pixel_format;
+	uint32_t pixfmt = config->pixel_format;
 	uint8_t pixel_size = ST7789V_PIXEL_SIZE(config->pixel_format);
 	int ret;
 
@@ -243,7 +243,7 @@ static void st7789v_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static inline uint8_t st7789v_get_colmod(enum display_pixel_format fmt)
+static inline uint8_t st7789v_get_colmod(uint32_t fmt)
 {
 	switch (fmt) {
 	case PIXEL_FORMAT_RGB_888:
@@ -257,7 +257,7 @@ static inline uint8_t st7789v_get_colmod(enum display_pixel_format fmt)
 }
 
 static int st7789v_set_pixel_format(const struct device *dev,
-			     const enum display_pixel_format pixel_format)
+			     const uint32_t pixel_format)
 {
 	const struct st7789v_config *config = dev->config;
 
