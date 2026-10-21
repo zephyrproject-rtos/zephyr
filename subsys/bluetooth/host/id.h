@@ -59,6 +59,8 @@ bool bt_id_adv_random_addr_check(const struct bt_le_adv_param *param);
 
 bool bt_id_scan_random_addr_check(void);
 
+bool bt_id_conn_random_addr_check(void);
+
 int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 			      const bt_addr_t *addr);
 int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv, uint32_t options);
