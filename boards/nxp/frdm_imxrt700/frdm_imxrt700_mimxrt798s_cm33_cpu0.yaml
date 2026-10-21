@@ -16,6 +16,7 @@ toolchain:
 supported:
   - counter
   - gpio
+  - pwm
   - uart
   - watchdog
   - serial
