@@ -7841,6 +7841,13 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	    (ftr->aux_failed || data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
 		struct bt_hci_evt_le_per_advertising_report *sep;
 
+		/* Not even the end of a report is sent while reporting is
+		 * disabled
+		 */
+		if (sync->rx_enable == 0U) {
+			return;
+		}
+
 		sep = meta_evt(buf,
 			       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
 			       sizeof(*sep));
