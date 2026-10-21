@@ -138,7 +138,7 @@
 		compatible = "clock-state";
 		clocks = <&ahbclkdiv 1 &fro_12m 1 &mainclkselb 0 &mainclksela 0
 			  &xtal32m 1 &clk_in_en 1 &pll1clksel 1
-			  &pll1_pdec 2 &pll1 8 144 0 53 31
+			  &pll1_pdec 2 &pll1 8 144 0 55 31
 			  &pll1_directo 0 &pll1_bypass 0
 			  &mainclkselb 2>;
 	};
@@ -148,7 +148,7 @@
 	/* 96 MHz setpoint for Flexcomm2 clock using FROHF */
 	fxcom2_96mhz: fxcom2_96mhz {
 		compatible = "clock-state";
-		clocks = <&fcclksel2 3 &frohfdiv 1>;
+		clocks = <&fcclksel2 3 &frohfdiv 1 &fro_hf 1>;
 	};
 };
 
