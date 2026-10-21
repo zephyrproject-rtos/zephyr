@@ -1441,6 +1441,16 @@
 		};
 	};
 
+	/* STM (HSP domain), IRQ 78 */
+	stm0: hsp_stm: stm@429b0000 {
+		compatible = "nxp,stm";
+		reg = <0x429b0000 0x4000>;
+		interrupts = <78 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_STM,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		status = "disabled";
+	};
+
 	/* EQDC / quadrature decoder (HSP domain), IRQ 153..156 */
 	qdec0: hsp_eqdc_0: qdec@420c0000 {
 		compatible = "nxp,mcux-qdec";
