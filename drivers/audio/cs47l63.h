@@ -75,6 +75,20 @@ extern "C" {
 #define CS47L63_GP_DIR_INPUT     0x80000000U
 #define CS47L63_GP_CTRL1_ASP_PAD 0x61000000U
 
+#define CS47L63_GPIO_COUNT       12U
+#define CS47L63_GPIO_STATUS1     0x00000C00U
+#define CS47L63_GP_PU            0x40000000U
+#define CS47L63_GP_PD            0x20000000U
+#define CS47L63_GP_DRV_STR       0x01000000U
+/** GPn_LVL, D15: write-only. */
+#define CS47L63_GP_LVL           0x00008000U
+/** GPn_OP_CFG, D14: 1 = open drain. */
+#define CS47L63_GP_OP_OPEN_DRAIN 0x00004000U
+#define CS47L63_GP_FN_GPIO       0x00000001U
+/** The word every GPIOn_CTRL1 resets to: input, bus keeper, 8 mA, plain GPIO. */
+#define CS47L63_GP_CTRL1_RESET   0xE1000001U
+#define CS47L63_GPIOn_CTRL1(pin) (CS47L63_GPIO1_CTRL1 + (4U * (pin)))
+
 #define CS47L63_CLOCK32K           0x00001400U
 #define CS47L63_CLK_32K_EN         0x00000040U
 #define CS47L63_CLK_32K_SRC_MASK   0x00000003U
@@ -364,6 +378,14 @@ struct cs47l63_chip {
 	/** When the start check stops waiting for FLL1 lock and the output stage. */
 	k_timepoint_t start_deadline;
 	struct k_mutex lock;
+#ifdef CONFIG_AUDIO_CODEC_CS47L63_GPIO
+	/** Per pin, the GPIOn_CTRL1 word last written. GPn_LVL cannot be read back. */
+	uint32_t gpio_ctrl[CS47L63_GPIO_COUNT];
+	/** BIT(pin) for every pin set up and not disconnected: the pins a reset must not lose. */
+	uint16_t gpio_used;
+	/** The part has been reset and identified, and the pins in gpio_used written back. */
+	bool booted;
+#endif
 };
 
 /** A child sets only chip and port. */
@@ -395,6 +417,12 @@ struct cs47l63_fll_solution {
 
 /** Returns -ENOTSUP for any configuration it cannot reach exactly; nothing is approximated. */
 int cs47l63_clock_solve(uint32_t fref_hz, struct cs47l63_fll_solution *out);
+
+int cs47l63_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags);
+int cs47l63_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value);
+int cs47l63_gpio_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+				     gpio_port_value_t value);
+int cs47l63_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins);
 
 /** Bounds the start check: the caller starting I2S, FLL1 lock and the output enable. */
 #define CS47L63_START_TIMEOUT_MS 500U

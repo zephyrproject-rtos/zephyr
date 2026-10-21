@@ -326,6 +326,10 @@ static int hw_reset(const struct device *dev)
 	struct cs47l63_chip *chip = cfg->chip;
 	int ret;
 
+#ifdef CONFIG_AUDIO_CODEC_CS47L63_GPIO
+	chip->booted = false;
+#endif
+
 	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
 		return ret;
@@ -421,6 +425,27 @@ static int apply_trim(const struct device *dev)
 	return ret;
 }
 
+#ifdef CONFIG_AUDIO_CODEC_CS47L63_GPIO
+static int gpio_replay(const struct device *dev)
+{
+	const struct cs47l63_chip *chip = chip_of(dev);
+	int ret;
+
+	for (gpio_pin_t pin = 0U; pin < CS47L63_GPIO_COUNT; pin++) {
+		if ((chip->gpio_used & BIT(pin)) == 0U) {
+			continue;
+		}
+
+		ret = cs47l63_bus_write_reg(dev, CS47L63_GPIOn_CTRL1(pin), chip->gpio_ctrl[pin]);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_AUDIO_CODEC_CS47L63_GPIO */
+
 static int cs47l63_boot_bringup(const struct device *dev)
 {
 	bool reached;
@@ -448,8 +473,202 @@ static int cs47l63_boot_bringup(const struct device *dev)
 		return ret;
 	}
 
-	return apply_trim(dev);
+	ret = apply_trim(dev);
+#ifdef CONFIG_AUDIO_CODEC_CS47L63_GPIO
+	if (ret == 0) {
+		ret = gpio_replay(dev);
+	}
+	if (ret == 0) {
+		chip_of(dev)->booted = true;
+	}
+#endif
+
+	return ret;
 }
+
+#ifdef CONFIG_AUDIO_CODEC_CS47L63_GPIO
+#define CS47L63_ASP_PADS 4U
+
+static bool gpio_pad_is_taken(const struct cs47l63_chip *chip, gpio_pin_t pin)
+{
+	const size_t asp = pin / CS47L63_ASP_PADS;
+
+	return (asp < ARRAY_SIZE(chip->ports)) && (chip->ports[asp] != NULL);
+}
+
+static bool gpio_is_output(const struct cs47l63_chip *chip, gpio_pin_t pin)
+{
+	return ((chip->gpio_used & BIT(pin)) != 0U) &&
+	       ((chip->gpio_ctrl[pin] & CS47L63_GP_DIR_INPUT) == 0U);
+}
+
+static int gpio_word(const struct cs47l63_chip *chip, gpio_pin_t pin, gpio_flags_t flags,
+		     uint32_t *word)
+{
+	const bool input = (flags & GPIO_INPUT) != 0U;
+	const bool output = (flags & GPIO_OUTPUT) != 0U;
+	const gpio_flags_t drive = flags & GPIO_OPEN_DRAIN;
+	uint32_t val = CS47L63_GP_DRV_STR | CS47L63_GP_FN_GPIO;
+
+	if ((input && output) || ((flags & GPIO_INT_MASK) != 0U) || (drive == GPIO_OPEN_SOURCE) ||
+	    ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) == (GPIO_PULL_UP | GPIO_PULL_DOWN))) {
+		return -ENOTSUP;
+	}
+
+	if (!input && !output) {
+		*word = CS47L63_GP_CTRL1_RESET;
+		return 0;
+	}
+
+	if (input) {
+		val |= CS47L63_GP_DIR_INPUT;
+	} else {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			val |= CS47L63_GP_LVL;
+		} else if (((flags & GPIO_OUTPUT_INIT_LOW) == 0U) && gpio_is_output(chip, pin)) {
+			val |= chip->gpio_ctrl[pin] & CS47L63_GP_LVL;
+		}
+		if (drive == GPIO_OPEN_DRAIN) {
+			val |= CS47L63_GP_OP_OPEN_DRAIN;
+		}
+	}
+
+	if ((flags & GPIO_PULL_UP) != 0U) {
+		val |= CS47L63_GP_PU;
+	}
+	if ((flags & GPIO_PULL_DOWN) != 0U) {
+		val |= CS47L63_GP_PD;
+	}
+
+	*word = val;
+
+	return 0;
+}
+
+static int gpio_write(const struct device *dev, gpio_pin_t pin, uint32_t word)
+{
+	struct cs47l63_chip *chip = chip_of(dev);
+	int ret;
+
+	ret = cs47l63_bus_write_reg(dev, CS47L63_GPIOn_CTRL1(pin), word);
+	if (ret == 0) {
+		chip->gpio_ctrl[pin] = word;
+		chip->gpio_used |= BIT(pin);
+	}
+
+	return ret;
+}
+
+static int gpio_boot(const struct device *dev)
+{
+	return chip_of(dev)->booted ? 0 : cs47l63_boot_bringup(dev);
+}
+
+int cs47l63_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
+{
+	struct cs47l63_chip *chip = chip_of(dev);
+	uint32_t word;
+	int ret;
+
+	if (pin >= CS47L63_GPIO_COUNT) {
+		return -EINVAL;
+	}
+	if (gpio_pad_is_taken(chip, pin)) {
+		return -EBUSY;
+	}
+
+	chip_lock(chip);
+
+	ret = gpio_word(chip, pin, flags, &word);
+	if (ret == 0) {
+		ret = gpio_boot(dev);
+	}
+	if (ret == 0) {
+		ret = gpio_write(dev, pin, word);
+	}
+	if ((ret == 0) && (word == CS47L63_GP_CTRL1_RESET)) {
+		chip->gpio_used &= ~BIT(pin);
+	}
+
+	chip_unlock(chip);
+
+	return ret;
+}
+
+int cs47l63_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
+{
+	struct cs47l63_chip *chip = chip_of(dev);
+	uint32_t status;
+	uint32_t outputs = 0U;
+	uint32_t levels = 0U;
+	int ret;
+
+	chip_lock(chip);
+
+	ret = gpio_boot(dev);
+	if (ret == 0) {
+		ret = cs47l63_bus_read_reg(dev, CS47L63_GPIO_STATUS1, &status);
+	}
+	if (ret == 0) {
+		for (gpio_pin_t pin = 0U; pin < CS47L63_GPIO_COUNT; pin++) {
+			if (gpio_is_output(chip, pin)) {
+				outputs |= BIT(pin);
+				if ((chip->gpio_ctrl[pin] & CS47L63_GP_LVL) != 0U) {
+					levels |= BIT(pin);
+				}
+			}
+		}
+		*value = (status & BIT_MASK(CS47L63_GPIO_COUNT) & ~outputs) | levels;
+	}
+
+	chip_unlock(chip);
+
+	return ret;
+}
+
+static int gpio_set_levels(const struct device *dev, gpio_port_pins_t mask,
+			   gpio_port_value_t value, bool toggle)
+{
+	struct cs47l63_chip *chip = chip_of(dev);
+	int ret;
+
+	chip_lock(chip);
+
+	ret = gpio_boot(dev);
+	for (gpio_pin_t pin = 0U; (ret == 0) && (pin < CS47L63_GPIO_COUNT); pin++) {
+		const uint32_t ctrl = chip->gpio_ctrl[pin];
+		bool high = (value & BIT(pin)) != 0U;
+		uint32_t word;
+
+		if (((mask & BIT(pin)) == 0U) || !gpio_is_output(chip, pin)) {
+			continue;
+		}
+
+		if (toggle) {
+			high = (ctrl & CS47L63_GP_LVL) == 0U;
+		}
+		word = (ctrl & ~CS47L63_GP_LVL) | (high ? CS47L63_GP_LVL : 0U);
+		if (word != ctrl) {
+			ret = gpio_write(dev, pin, word);
+		}
+	}
+
+	chip_unlock(chip);
+
+	return ret;
+}
+
+int cs47l63_gpio_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+				     gpio_port_value_t value)
+{
+	return gpio_set_levels(dev, mask, value, false);
+}
+
+int cs47l63_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
+{
+	return gpio_set_levels(dev, pins, 0U, true);
+}
+#endif /* CONFIG_AUDIO_CODEC_CS47L63_GPIO */
 
 /* FLL1 terms follow DS1249F2 section 4.10.7.4 and table 4-51, as the vendor's
  * cs47l63_fll_do_config() does, and the write order its cs47l63_fll_apply_config()
@@ -2325,7 +2544,16 @@ static DEVICE_API(audio_codec, child_driver_api) = {
 	.stop = codec_stop,
 };
 
+#define CS47L63_CHILD_IS_GPIO(node_id) DT_NODE_HAS_COMPAT(node_id, cirrus_cs47l63_gpio)
+
+#define CS47L63_ASP_CHILD_COUNT(node_id) COND_CODE_1(CS47L63_CHILD_IS_GPIO(node_id), (0), (1))
+
+#define CS47L63_GPIO_CHILD_COUNT(node_id) COND_CODE_1(CS47L63_CHILD_IS_GPIO(node_id), (1), (0))
+
 #define CS47L63_CHILD_DEFINE(node_id, inst)                                                        \
+	COND_CODE_1(CS47L63_CHILD_IS_GPIO(node_id), (), (CS47L63_ASP_CHILD(node_id, inst)))
+
+#define CS47L63_ASP_CHILD(node_id, inst)                                                           \
 	BUILD_ASSERT(DT_PROP(node_id, cirrus_asp) != DT_INST_PROP(inst, cirrus_asp),               \
 		     "cs47l63: " DT_NODE_PATH(node_id) " is on its parent's cirrus,asp");          \
 	static struct cs47l63_port cs47l63_port_##node_id = {                                      \
@@ -2343,8 +2571,12 @@ static DEVICE_API(audio_codec, child_driver_api) = {
 #define CS47L63_DEFINE(inst)                                                                       \
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, reset_gpios),                                     \
 		     "cs47l63: reset-gpios is required, boot starts with a hardware reset");       \
-	BUILD_ASSERT(DT_INST_CHILD_NUM_STATUS_OKAY(inst) <= 1,                                     \
-		     "cs47l63: " DT_NODE_PATH(DT_DRV_INST(inst)) " has more than one child");      \
+	BUILD_ASSERT((DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, CS47L63_ASP_CHILD_COUNT, (+)) +  \
+		      0) <= 1,                                                                     \
+		     "cs47l63: " DT_NODE_PATH(DT_DRV_INST(inst)) " has more than one port child"); \
+	BUILD_ASSERT((DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, CS47L63_GPIO_CHILD_COUNT, (+)) + \
+		      0) <= 1,                                                                     \
+		     "cs47l63: " DT_NODE_PATH(DT_DRV_INST(inst)) " has more than one GPIO child"); \
 	static struct cs47l63_data cs47l63_data_##inst;                                            \
 	static struct cs47l63_chip cs47l63_chip_##inst;                                            \
 	static struct cs47l63_port cs47l63_port_##inst = {                                         \
