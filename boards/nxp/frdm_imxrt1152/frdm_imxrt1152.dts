@@ -19,6 +19,7 @@
 		led1 = &red_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {
@@ -134,6 +135,25 @@
 
 &systick {
 	status = "okay";
+};
+
+/*
+ * USDHC1 serves the microSD slot J14 through the U9/U10/U14 muxes, which
+ * default to the slot rather than the Wi-Fi module. SD_PWREN_B gates the
+ * card supply and VSELECT switches NVCC_SD between 3.3 V and 1.8 V.
+ */
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpio4 0 GPIO_ACTIVE_LOW>;
+	pwr-gpios = <&gpio10 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
 
 /*
