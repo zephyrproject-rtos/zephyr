@@ -23,6 +23,7 @@ config WDT_MCUX_WWDT
 	bool "MCUX WWDT driver"
 	default y
 	depends on DT_HAS_NXP_LPC_WWDT_ENABLED
+	select PM_POLICY_DEVICE_CONSTRAINTS if PM && (SOC_FAMILY_MCXN || SOC_FAMILY_MCXA)
 	help
 	  Enable the mcux wwdt driver.
 
