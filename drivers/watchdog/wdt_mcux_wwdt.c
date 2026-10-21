@@ -135,15 +135,25 @@ static int mcux_wwdt_disable(const struct device *dev)
 {
 	const struct mcux_wwdt_config *config = dev->config;
 	struct mcux_wwdt_data *data = dev->data;
-	WWDT_Type *base = config->base;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	int ret = 0;
 
-	WWDT_Deinit(base);
-	data->timeout_valid = false;
-	data->active_before_sleep = false;
-	data->started = false;
-	LOG_DBG("Disabled the watchdog");
-
-	return 0;
+	if (data->starting) {
+		ret = -EBUSY;
+	} else if (!data->started) {
+		ret = -EFAULT;
+	} else {
+		WWDT_Deinit(config->base);
+		data->timeout_valid = false;
+		data->callback = NULL;
+		data->active_before_sleep = false;
+		data->started = false;
+	}
+	k_spin_unlock(&data->lock, key);
+	if (ret != 0) {
+		LOG_ERR("Cannot disable watchdog: %d", ret);
+	}
+	return ret;
 }
 
 /*
