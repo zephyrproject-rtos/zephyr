@@ -16,7 +16,7 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
-if((CONFIG_SOC_SERIES_NRF54H OR CONFIG_SOC_SERIES_NRF92) AND CONFIG_ARM)
+if(CONFIG_SOC_SERIES_NRF54H OR CONFIG_SOC_SERIES_NRF92)
   zephyr_library_sources_ifdef(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS nrf54hx_nrf92x_mpu_regions.c)
   zephyr_library_sources(soc_lrcconf.c)
 endif()
