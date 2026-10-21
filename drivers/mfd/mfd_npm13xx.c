@@ -109,20 +109,15 @@ static void work_callback(struct k_work *work)
 		int offset = event_reg[i].offset + MAIN_OFFSET_CLR;
 
 		if ((buf[offset] & event_reg[i].mask) != 0U) {
+			/* Record before the clear: a write that errors may still have landed. */
+			events |= BIT(i);
+
 			ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE, offset,
 						    event_reg[i].mask);
 			if (ret < 0) {
-				/*
-				 * Stop clearing on failure, but still dispatch the
-				 * events already cleared below; a later read will no
-				 * longer see them, so returning here would drop them.
-				 * Resubmit to retry the events not yet cleared.
-				 */
 				resubmit = true;
 				break;
 			}
-
-			events |= BIT(i);
 		}
 	}
 
