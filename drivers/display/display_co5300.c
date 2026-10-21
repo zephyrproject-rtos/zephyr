@@ -89,7 +89,7 @@ struct co5300_data {
 	struct mspi_dev_cfg mspi_dev_config;
 	struct k_sem lock;
 #endif
-	uint8_t pixel_format;
+	pixel_format_t pixel_format;
 	uint8_t bytes_per_pixel;
 	struct gpio_callback tear_effect_gpio_cb;
 	struct k_sem tear_effect_sem;
@@ -448,7 +448,7 @@ static void co5300_get_capabilities(const struct device *dev,
 }
 
 static int co5300_set_pixel_format(const struct device *dev,
-		const enum display_pixel_format pixel_format)
+		const pixel_format_t pixel_format)
 {
 	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;

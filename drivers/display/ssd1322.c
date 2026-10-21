@@ -98,7 +98,7 @@ struct ssd1322_config {
 };
 
 struct ssd1322_data {
-	int current_pixel_format;
+	pixel_format_t current_pixel_format;
 };
 
 static inline int ssd1322_write_command(const struct device *dev, uint8_t cmd, const uint8_t *buf,
@@ -471,7 +471,7 @@ static int ssd1322_init_device(const struct device *dev)
 }
 
 static int ssd1322_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const pixel_format_t pixel_format)
 {
 	struct ssd1322_data *data = dev->data;
 

@@ -19,11 +19,10 @@
  * @brief Bitmasks for panel pixel formats in devicetree.
  *
  * Each @c PANEL_PIXEL_FORMAT_* value uses the same bit position as the matching @c PIXEL_FORMAT_*
- * entry in @ref display_pixel_format.
+ * constant in <zephyr/drivers/display.h>.
  *
  * These macros exist because C enumerators cannot be used in devicetree source files.
  *
- * @see display_pixel_format
  * @{
  */
 
