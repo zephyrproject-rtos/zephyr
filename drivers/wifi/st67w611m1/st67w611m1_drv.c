@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(st67w611m1, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/wifi.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/util.h>
@@ -1869,6 +1870,75 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+LP INTERVAL:", on_cmd_lp_interval, 1U, ""),
 	MODEM_CMD("+CWCOUNTRY:", on_cmd_cwcountry, 2U, ","),
 };
+
+#if defined(CONFIG_ST67W611M1_SHELL)
+/* Serializes atcmd between shell backends, as atcmd_shell is shared. */
+static K_MUTEX_DEFINE(atcmd_lock);
+static const struct shell *atcmd_shell;
+
+/* Prints every reply line not consumed by the response or unsolicited handlers. */
+MODEM_CMD_DEFINE(on_cmd_atcmd_reply)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
+
+	if (atcmd_shell != NULL) {
+		shell_print(atcmd_shell, "< %.*s", (int)len, (const char *)data->match_buf);
+	}
+
+	return 0;
+}
+
+static int st67_shell_atcmd(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+	char cmd[ST67W611M1_AT_CMD_MAX_LEN];
+	struct st67_driver_data *st67_data = &driver_data;
+	static const struct modem_cmd handler_cmds[] = {
+		MODEM_CMD("", on_cmd_atcmd_reply, 0U, ""),
+	};
+
+	if (argc < 2) {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	/* The command is passed raw, so quotes and '?' reach the module as typed. */
+	ret = snprintk(cmd, sizeof(cmd), "%s\r\n", argv[1]);
+	if ((ret < 0) || ((size_t)ret >= sizeof(cmd))) {
+		shell_error(sh, "Command too long");
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "> %s", argv[1]);
+
+	k_mutex_lock(&atcmd_lock, K_FOREVER);
+	atcmd_shell = sh;
+	ret = st67_send_at_cmd(st67_data, handler_cmds, ARRAY_SIZE(handler_cmds), cmd,
+			       ST67W611M1_AT_CMD_TIMEOUT);
+	atcmd_shell = NULL;
+	k_mutex_unlock(&atcmd_lock);
+
+	if (ret < 0) {
+		shell_error(sh, "Failed: %d", ret);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "< OK");
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(st67_shell_cmds,
+	SHELL_CMD_ARG(atcmd, NULL,
+		      SHELL_HELP("Send an AT command to the module and print the reply",
+				 "<AT command>"),
+		      st67_shell_atcmd, 1, SHELL_OPT_ARG_RAW),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_REGISTER(st67, &st67_shell_cmds, "ST67W611M1 commands", NULL);
+#endif /* CONFIG_ST67W611M1_SHELL */
 
 static void handle_at_cmd_frame(const uint8_t *buf, size_t len)
 {
