@@ -13,6 +13,8 @@ extern "C" {
 /**
  * @defgroup mfd_interface_npm13xx MFD NPM13XX Interface
  * @ingroup mfd_interfaces
+ * @since 3.5
+ * @version 0.1.0
  * @{
  */
 
@@ -20,7 +22,7 @@ extern "C" {
 #include <stdint.h>
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/slist.h>
 
 enum mfd_npm13xx_event_t {
 	NPM13XX_EVENT_CHG_COMPLETED,
@@ -38,6 +40,42 @@ enum mfd_npm13xx_event_t {
 	NPM13XX_EVENT_GPIO3_EDGE,
 	NPM13XX_EVENT_GPIO4_EDGE,
 	NPM13XX_EVENT_MAX
+};
+
+/** @brief Mask of BIT(NPM13XX_EVENT_*) values. */
+typedef uint32_t npm13xx_event_t;
+
+struct mfd_npm13xx_event_callback;
+
+/**
+ * @brief Handler for nPM13xx events.
+ *
+ * Called from the system workqueue with one matching event per invocation,
+ * before clearing that event in the PMIC. A failed clear can cause the same
+ * event to be reported again.
+ *
+ * @param dev nPM13xx MFD device.
+ * @param cb Callback that owns this handler.
+ * @param events Mask containing the single event being reported.
+ */
+typedef void (*npm13xx_callback_handler_t)(const struct device *dev,
+					   struct mfd_npm13xx_event_callback *cb,
+					   npm13xx_event_t events);
+
+/**
+ * @brief nPM13xx event callback.
+ *
+ * The callback must remain valid while registered. A handler may remove
+ * its own callback, but not another callback. List updates from other
+ * threads must be serialized with each other and with dispatch.
+ */
+struct mfd_npm13xx_event_callback {
+	/** Internal list node. */
+	sys_snode_t node;
+	/** Events to subscribe to, as a bitwise OR of BIT(NPM13XX_EVENT_*) values. */
+	npm13xx_event_t event_mask;
+	/** Handler called for a matching event. */
+	npm13xx_callback_handler_t handler;
 };
 
 /**
@@ -138,7 +176,7 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms);
  * @param callback callback
  * @return 0 on success, -errno on failure
  */
-int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm13xx_add_callback(const struct device *dev, struct mfd_npm13xx_event_callback *callback);
 
 /**
  * @brief Remove npm13xx event callback
@@ -147,7 +185,8 @@ int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *cal
  * @param callback callback
  * @return 0 on success, -errno on failure
  */
-int mfd_npm13xx_remove_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm13xx_remove_callback(const struct device *dev,
+				struct mfd_npm13xx_event_callback *callback);
 
 /** @} */
 
