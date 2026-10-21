@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/imxrt/imxrt7xx/nxp_rt798s_cm33_cpu0.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "frdm_imxrt700-pinctrl.dtsi"
 
@@ -72,6 +73,30 @@
 	pinctrl-0 = <&pinmux_flexcomm0_lpuart>;
 	pinctrl-names = "default";
 };
+
+&flexcomm3 {
+	status = "okay";
+};
+
+&flexcomm3_lpi2c3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcomm3_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&flexcomm8 {
+	status = "okay";
+};
+
+arduino_i2c: &flexcomm8_lpi2c8 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcomm8_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 
 &gpio0 {
 	status = "okay";
