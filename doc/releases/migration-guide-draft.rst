@@ -511,6 +511,17 @@ Timers
   now uses the generic system timer core, which keeps the match value at least 16 timer cycles
   ahead of the counter. Remove the option from application and board configurations.
 
+Video
+=====
+
+* The video pixel formats have moved to the shared pixel format headers
+  :zephyr_file:`include/zephyr/dt-bindings/media/pixel_format.h` and
+  :zephyr_file:`include/zephyr/media/pixel_format_misc.h`, also used by the display API. The
+  ``VIDEO_PIX_FMT_*``, ``VIDEO_FOURCC*()`` and ``VIDEO_FMT_IS_*()`` macros and
+  :c:func:`video_bits_per_pixel` in :zephyr_file:`include/zephyr/video/formats.h` are deprecated
+  and map to their ``PIX_FMT_*``, ``PIX_FMT_FOURCC*()``, ``PIX_FMT_IS_*()`` and
+  ``pix_fmt_bpp()`` replacements.
+
 W1
 ==
 
