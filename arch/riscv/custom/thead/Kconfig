@@ -1,4 +1,4 @@
-# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
 # SPDX-License-Identifier: Apache-2.0
 
 config RISCV_ISA_EXT_XTHEAD_BA
@@ -84,6 +84,7 @@ config RISCV_ISA_EXT_XTHEAD_VECTOR
 config RISCV_CUSTOM_CSR_THEAD_CMO
 	bool
 	depends on RISCV_ISA_EXT_XTHEAD_CMO
+	depends on RISCV_ISA_EXT_XTHEAD_SYNC
 	default y if CACHE_MANAGEMENT
 	help
 	  This option enables the cache operation for XuanTie family of CPUs.
