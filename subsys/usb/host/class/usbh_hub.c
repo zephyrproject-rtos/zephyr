@@ -24,6 +24,12 @@ LOG_MODULE_REGISTER(usbh_hub, CONFIG_USBH_HUB_LOG_LEVEL);
 #define HUB_DEBOUNCE_STABLE_MS		100
 #define HUB_DEBOUNCE_TIMEOUT_MS		1500
 
+/* The hub ends the port reset, TDRST is 10 to 20 ms (USB 2.0, 7.1.7.5) */
+#define HUB_RESET_POLL_MS		10
+#define HUB_RESET_TIMEOUT_MS		500
+/* Reset recovery time TRSTRCY (USB 2.0, 7.1.7.5) */
+#define HUB_RESET_RECOVERY_MS		10
+
 static K_KERNEL_STACK_DEFINE(hub_stack, CONFIG_USBH_HUB_STACK_SIZE);
 static struct k_work_q hub_work_q;
 
@@ -329,6 +335,7 @@ static void hub_port_process(struct usbh_hub_data *const hub_data,
 	struct usb_hub_port_status port_sts;
 	struct usb_device *udev;
 	const uint8_t port_num = port_instance->num;
+	int64_t reset_start = 0;
 	uint16_t port_status;
 	uint16_t port_change;
 	int ret;
@@ -367,6 +374,7 @@ static void hub_port_process(struct usbh_hub_data *const hub_data,
 
 			port_instance->reset_count--;
 			port_instance->state = PORT_STATE_RESETTING;
+			reset_start = k_uptime_get();
 			/* specification requires 10-20ms, Default is 20ms for worst case. */
 			k_sleep(K_MSEC(CONFIG_USBH_HUB_PORT_RESET_DELAY_MS));
 			continue;
@@ -382,7 +390,12 @@ static void hub_port_process(struct usbh_hub_data *const hub_data,
 			port_sts.wPortStatus = port_status;
 			port_sts.wPortChange = port_change;
 
-			if ((port_sts.wPortChange & USB_HUB_PORT_CHANGE_RESET) == 0) {
+			if ((port_sts.wPortStatus & USB_HUB_PORT_STATUS_RESET) != 0) {
+				if (k_uptime_get() - reset_start < HUB_RESET_TIMEOUT_MS) {
+					k_msleep(HUB_RESET_POLL_MS);
+					continue;
+				}
+
 				if (port_instance->reset_count > 0) {
 					LOG_WRN("Port %d reset timeout, retrying (%d left)",
 						port_num, port_instance->reset_count);
@@ -422,7 +435,8 @@ static void hub_port_process(struct usbh_hub_data *const hub_data,
 			}
 
 			if ((port_sts.wPortStatus & USB_HUB_PORT_STATUS_ENABLE) == 0) {
-				LOG_WRN("Port %d not enabled after reset", port_num);
+				LOG_WRN("Port %d not enabled, status 0x%04x change 0x%04x",
+					port_num, port_sts.wPortStatus, port_sts.wPortChange);
 
 				if (port_instance->reset_count > 0) {
 					LOG_WRN("Port %d retrying reset (%d left)",
@@ -436,6 +450,8 @@ static void hub_port_process(struct usbh_hub_data *const hub_data,
 				port_instance->state = PORT_STATE_DISABLED;
 				return;
 			}
+
+			k_msleep(HUB_RESET_RECOVERY_MS);
 
 			ret = enumerate_port_device(hub_data, port_instance, port_num,
 						    &port_sts);
