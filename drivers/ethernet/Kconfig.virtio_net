@@ -5,6 +5,7 @@ menuconfig ETH_VIRTIO_NET
 	bool "VIRTIO networking paravirtualization device driver"
 	default y
 	depends on DT_HAS_VIRTIO_NET_ENABLED
+	depends on NET_BUF_FIXED_DATA_SIZE
 	select VIRTIO
 
 if ETH_VIRTIO_NET
@@ -20,6 +21,16 @@ config ETH_NIC_MODEL
 config ETH_VIRTIO_NET_RX_BUFFERS
 	int "VIRTIO network device receive buffers"
 	default 4
+
+config ETH_VIRTIO_NET_TX_BUFFERS
+	int "VIRTIO network device transmit buffers"
+	default 4
+	range 1 64
+	help
+	  Number of packets that can be handed to the device at the same
+	  time. The transmit virtqueue is sized to hold the descriptor
+	  chains of all of them, one descriptor per fragment plus one for
+	  the header.
 
 config ETH_VIRTIO_NET_MULTICAST_FILTER
 	bool "Multicast destination address filtering"

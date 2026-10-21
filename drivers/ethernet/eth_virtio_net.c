@@ -117,6 +117,20 @@ struct _virtio_net_ctrl_mac {
 
 #define VIRTIO_NET_BUFLEN                                                                          \
 	(NET_ETH_MAX_FRAME_SIZE + sizeof(struct _virtio_net_hdr))
+
+/* Fragments of a maximum size frame, plus the separate link layer header
+ * fragment of a packet forwarded from another interface
+ */
+#define VIRTNET_TX_MAX_FRAGS (DIV_ROUND_UP(NET_ETH_MAX_FRAME_SIZE, CONFIG_NET_BUF_DATA_SIZE) + 1)
+/* Descriptors of one transmitted packet: the header and its fragments */
+#define VIRTNET_TX_CHAIN_LEN (1 + VIRTNET_TX_MAX_FRAGS)
+
+/* Grace period to wait for a free transmit slot or descriptor. The device
+ * returns a packet as soon as it has processed it, so this is only reached
+ * when it stalls. Beyond that the packet is dropped.
+ */
+#define VIRTNET_TX_AVAIL_WAIT K_MSEC(10)
+
 /* virtqueue pairs are numbered from 1 upwards */
 /* convert pair number to virtqueue index */
 #define VIRTQ_RX(n) ((n - 1) * 2)
@@ -136,13 +150,24 @@ struct _rx_cb_data {
 	uint16_t buf_no;
 };
 
+/* A packet handed to the device: its fragments are referenced by the
+ * descriptor chain following the header, so nothing is copied
+ */
+struct virtnet_tx_slot {
+	struct _virtio_net_hdr hdr;
+	struct virtnet_data *data;
+	struct net_pkt *pkt;
+	struct virtq_buf bufs[VIRTNET_TX_CHAIN_LEN];
+};
+
 struct virtnet_data {
 	const struct device *dev;
 	struct net_if *iface;
 	const struct _virtio_net_config *virtio_devcfg;
 	uint8_t mac[6];
 	struct _rx_cb_data rx_cb_data[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS];
-	uint8_t txb[VIRTIO_NET_BUFLEN];
+	struct k_mem_slab tx_slab;
+	struct virtnet_tx_slot tx_slots[CONFIG_ETH_VIRTIO_NET_TX_BUFFERS];
 	uint8_t rxb[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS][VIRTIO_NET_BUFLEN];
 	/* Control virtqueue command. The buffers must stay valid until the
 	 * device used them, so there is one in-flight command, serialized by
@@ -174,9 +199,12 @@ static uint16_t virtnet_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, vo
 
 	if (q_index % 2 == 0) { /* receiving virtqueue (even-numbered) */
 		return CONFIG_ETH_VIRTIO_NET_RX_BUFFERS;
-	} else {
-		return 1;
 	}
+
+	/* transmitting virtqueue: room for the descriptor chains of all the
+	 * packets that may be in flight
+	 */
+	return MIN(NHPOT(CONFIG_ETH_VIRTIO_NET_TX_BUFFERS * VIRTNET_TX_CHAIN_LEN), q_size_max);
 }
 
 static enum ethernet_hw_caps virtnet_get_capabilities(const struct device *dev,
@@ -443,26 +471,69 @@ static int virtnet_set_config(const struct device *dev, struct net_if *iface,
 	}
 }
 
+static void virtnet_tx_cb(void *priv, uint32_t len __unused)
+{
+	struct virtnet_tx_slot *slot = priv;
+	struct virtnet_data *data = slot->data;
+
+	net_pkt_unref(slot->pkt);
+	k_mem_slab_free(&data->tx_slab, slot);
+}
+
 static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct virtnet_config *config = dev->config;
 	struct virtnet_data *data = dev->data;
-	size_t len = net_pkt_get_len(pkt);
-
-	if (net_pkt_read(pkt, data->txb + sizeof(struct _virtio_net_hdr), len)) {
-		LOG_ERR("could not read contents of packet to be sent");
-		return -EIO;
-	}
-
 	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_TX(1));
-	struct virtq_buf vqbuf[] = {
-		{.addr = data->txb, .len = sizeof(struct _virtio_net_hdr) + len}};
+	struct virtnet_tx_slot *slot;
+	uint16_t nbufs = 1;
+	int ret;
 
-	if (virtq_add_buffer_chain(vq, vqbuf, 1, 1, NULL, NULL, K_FOREVER)) {
-		LOG_ERR("could not send packet");
-		return -EIO;
+	ret = k_mem_slab_alloc(&data->tx_slab, (void **)&slot, VIRTNET_TX_AVAIL_WAIT);
+	if (ret != 0) {
+		LOG_DBG("no free transmit slot");
+		return -ENOMEM;
 	}
+
+	/* No offloads are negotiated, so the header carries nothing */
+	memset(&slot->hdr, 0, sizeof(slot->hdr));
+	slot->data = data;
+	slot->pkt = pkt;
+	slot->bufs[0].addr = &slot->hdr;
+	slot->bufs[0].len = sizeof(slot->hdr);
+
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
+		if (frag->len == 0U) {
+			continue;
+		}
+
+		if (nbufs == ARRAY_SIZE(slot->bufs)) {
+			LOG_ERR("packet has too many fragments");
+			k_mem_slab_free(&data->tx_slab, slot);
+			return -ENOMEM;
+		}
+
+		slot->bufs[nbufs].addr = frag->data;
+		slot->bufs[nbufs].len = frag->len;
+		nbufs++;
+	}
+
+	LOG_DBG("pkt len/bufs=%zu/%u", net_pkt_get_len(pkt), nbufs);
+
+	/* The fragments stay with the device until it returns the chain */
+	net_pkt_ref(pkt);
+
+	ret = virtq_add_buffer_chain(vq, slot->bufs, nbufs, nbufs, virtnet_tx_cb, slot,
+				     VIRTNET_TX_AVAIL_WAIT);
+	if (ret != 0) {
+		LOG_DBG("no free transmit descriptors");
+		net_pkt_unref(pkt);
+		k_mem_slab_free(&data->tx_slab, slot);
+		return -ENOMEM;
+	}
+
 	virtio_notify_virtqueue(config->vdev, VIRTQ_TX(1));
+
 	return 0;
 }
 
@@ -529,6 +600,12 @@ static int virtnet_dev_init(const struct device *dev)
 
 	k_mutex_init(&data->ctrl_lock);
 	k_sem_init(&data->ctrl_sem, 0, 1);
+
+	ret = k_mem_slab_init(&data->tx_slab, data->tx_slots, sizeof(data->tx_slots[0]),
+			      ARRAY_SIZE(data->tx_slots));
+	if (ret != 0) {
+		return ret;
+	}
 
 	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev);
 	if (data->virtio_devcfg == NULL) {
