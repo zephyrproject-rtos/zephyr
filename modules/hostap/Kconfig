@@ -596,15 +596,6 @@ config WIFI_NM_WPA_SUPPLICANT_ROAMING_RETRY
 	  If both reaches this count, fall back to legacy roaming,
 	  which scans full channel.
 
-config WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING
-	bool "Skip DHCP after roaming to new AP"
-	help
-	  For L2 roaming, the original AP and new AP are in the same subnet, client
-	  can use same IP address and skip DHCP. Enable this to skip DHCP.
-	  For L3 roaming, the original AP and new AP are in different subnet, client
-	  needs to get new IP address after roaming to new AP. Disable this to keep
-	  DHCP after roaming.
-
 config WIFI_NM_WPA_SUPPLICANT_BGSCAN
 	bool "Background scanning (for legacy roaming), recommended if 802.11r is not supported"
 	depends on WIFI_NM_WPA_SUPPLICANT_WNM

@@ -50,6 +50,11 @@ API Changes
 Removed APIs and options
 ========================
 
+* Networking
+
+  * ``CONFIG_WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING``. See the
+    :ref:`migration guide <migration_4.6>` for details.
+
 Deprecated APIs and options
 ===========================
 
