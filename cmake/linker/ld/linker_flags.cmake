@@ -45,6 +45,21 @@ endif()
 
 set_property(TARGET linker PROPERTY partial_linking "-r")
 
+# GNU ld-compatible linkers accept these options. Toolchains selecting a
+# different linker for LLEXT must provide equivalent properties in their backend.
+set_property(TARGET linker PROPERTY llext_shared_supported TRUE)
+set_property(TARGET linker PROPERTY llext_shared_linker
+             ${LINKERFLAGPREFIX},-shared)
+set_property(TARGET linker PROPERTY llext_shared_undefined
+             ${LINKERFLAGPREFIX},--unresolved-symbols=ignore-all)
+set_property(TARGET linker PROPERTY llext_shared_layout
+             ${LINKERFLAGPREFIX},-z,max-page-size=4096
+             ${LINKERFLAGPREFIX},-z,common-page-size=4096
+             ${LINKERFLAGPREFIX},-z,norelro)
+
+# The selected toolchain is responsible for ensuring that its linker accepts
+# these options before advertising shared-library LLEXT support.
+
 set_property(TARGET linker PROPERTY lto_arguments -flto=auto -fno-ipa-sra -ffunction-sections -fdata-sections)
 set_property(TARGET linker PROPERTY lto_arguments_st -flto=1 -fno-ipa-sra -ffunction-sections -fdata-sections)
 

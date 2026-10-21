@@ -405,6 +405,22 @@ config TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
 	help
 	  Hidden option to signal that toolchain supports GNU Extensions.
 
+config TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN
+	bool
+	default y if "$(ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN)" = "y"
+	default n if "$(ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN)" = "n"
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" && !RISCV && !ARC
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" && RISCV && "$(TOOLCHAIN_HAS_LLEXT_LLD)" = "y"
+	help
+	  Hidden option to signal that the toolchain can produce LLEXT ELF ET_DYN
+	  images for the target architecture.
+
+	  Toolchains that support this format should set
+	  ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN to "y". Toolchains that do not
+	  support it should set the variable to "n". The Zephyr SDK ARC linker
+	  currently emits incorrect R_ARC_RELATIVE addends for ET_DYN images, so
+	  ARC is excluded until the linker is fixed.
+
 config GNU_C_EXTENSIONS
 	bool "GNU C Extensions"
 	depends on TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS

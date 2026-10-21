@@ -36,10 +36,32 @@ config LLEXT_TYPE_ELF_RELOCATABLE
 
 config LLEXT_TYPE_ELF_SHAREDLIB
 	bool "Shared library ELF file"
+	depends on ARCH_HAS_LLEXT_ET_DYN && TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN
+	depends on !USERSPACE || XTENSA
 	help
-	  Build and expect shared libraries as binary object type for
-	  the llext subsystem. The usual linking process is used to
+	  Build and expect shared libraries (ELF ET_DYN) as the binary object
+	  type for the llext subsystem. The usual linking process is used to
 	  generate the shared library from multiple object files.
+
+	  The architecture and toolchain must both advertise support for this
+	  format. Linker-specific flags are supplied by the selected toolchain
+	  and linker backend, so out-of-tree toolchains can provide their own
+	  implementation without adding an architecture-specific exception here.
+	  The loader applies the dynamic relocations (.rel.dyn, .rela.dyn,
+	  .rel.plt, .rela.plt, .rela.got) and keeps the link-time distance between
+	  text and the GOT. For example, the Zephyr SDK RISC-V toolchain uses lld
+	  because its GNU linker cannot emit shared objects. Xtensa keeps its
+	  existing shared-library path.
+
+	  Shared libraries are not supported with USERSPACE on architectures
+	  other than Xtensa because the loader keeps text, rodata, data, and the
+	  GOT in one contiguous buffer to preserve link-time text-to-GOT
+	  distances. This layout cannot be split into the per-region memory-domain
+	  partitions required for userspace isolation. This restriction is
+	  independent of the per-page permissions applied by the MMU when MMU
+	  support is enabled. Xtensa is exempt because it uses its own,
+	  pre-existing PLT/GOT-based shared-library loader instead of this
+	  contiguous-image path.
 
 endchoice
 
@@ -142,7 +164,7 @@ config LLEXT_DATA_HEAP_SIZE
 
 config LLEXT_BUILD_PIC
 	bool "Use -fPIC when building LLEXT"
-	depends on XTENSA
+	depends on XTENSA || LLEXT_TYPE_ELF_SHAREDLIB
 	default y if LLEXT_TYPE_ELF_SHAREDLIB
 	help
 	  By default LLEXT compilation is performed with -fno-pic -fno-pie compiler
@@ -171,7 +193,7 @@ config LLEXT_STORAGE_WRITABLE
 
 config LLEXT_RODATA_NO_RELOC
 	bool "Keep read-only data without relocations in flash"
-	depends on !MMU && !USERSPACE
+	depends on !MMU && !USERSPACE && (!LLEXT_BUILD_PIC || XTENSA)
 	help
 	  When enabled, read-only data sections (.rodata) that do not have
 	  any relocations are kept in their original location (typically flash)
@@ -182,6 +204,9 @@ config LLEXT_RODATA_NO_RELOC
 
 	  This feature requires the extension to manually tag that data with
 	  the LLEXT_RODATA_NO_RELOC macro.
+
+	  Incompatible with non-Xtensa LLEXT_BUILD_PIC / ET_DYN loads, which
+	  keep text and rodata in one contiguous image.
 
 config LLEXT_EXPORT_DEVICES
 	bool "Export all DT devices to llexts"

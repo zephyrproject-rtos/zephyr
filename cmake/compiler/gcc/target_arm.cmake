@@ -68,6 +68,17 @@ set(LLEXT_APPEND_FLAGS
   -mthumb
 )
 
+if(CONFIG_LLEXT_BUILD_PIC)
+  list(APPEND LLEXT_APPEND_FLAGS -fPIC)
+endif()
+if(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
+  list(APPEND LLEXT_APPEND_FLAGS
+    -nostdlib
+    -nodefaultlibs
+    -nostartfiles
+  )
+endif()
+
 list(APPEND LLEXT_EDK_REMOVE_FLAGS
     --sysroot=.*
     -fmacro-prefix-map=.*

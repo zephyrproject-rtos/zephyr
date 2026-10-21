@@ -151,6 +151,19 @@ endforeach()
 
 # A list of common environment settings used when invoking Kconfig during CMake
 # configure time or menuconfig and related build target.
+if(TOOLCHAIN_HAS_LLEXT_LLD)
+  set(_local_TOOLCHAIN_HAS_LLEXT_LLD y)
+else()
+  set(_local_TOOLCHAIN_HAS_LLEXT_LLD n)
+endif()
+
+if(DEFINED ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN)
+  set(_local_ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN
+      ${ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN})
+else()
+  set(_local_ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN "")
+endif()
+
 string(REPLACE ";" "\\\;" SHIELD_AS_LIST_ESCAPED "${SHIELD_AS_LIST}")
 # cmake commands are escaped differently
 string(REPLACE ";" "\\;" SHIELD_AS_LIST_ESCAPED_COMMAND "${SHIELD_AS_LIST}")
@@ -210,6 +223,8 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   TOOLCHAIN_HAS_PICOLIBC=${_local_TOOLCHAIN_HAS_PICOLIBC}
   TOOLCHAIN_HAS_GLIBCXX=${_local_TOOLCHAIN_HAS_GLIBCXX}
   TOOLCHAIN_HAS_LIBCXX=${_local_TOOLCHAIN_HAS_LIBCXX}
+  TOOLCHAIN_HAS_LLEXT_LLD=${_local_TOOLCHAIN_HAS_LLEXT_LLD}
+  ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN=${_local_ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN}
   EDT_PICKLE=${EDT_PICKLE}
   # Export all Zephyr modules to Kconfig
   ${ZEPHYR_KCONFIG_MODULES_DIR}

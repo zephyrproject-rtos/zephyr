@@ -12,6 +12,7 @@ if(TOOLCHAIN_VARIANT_COMPILER STREQUAL "gnu" OR
   set(TOOLCHAIN_KCONFIG_DIR ${ZEPHYR_BASE}/cmake/toolchain/host/gnu)
   set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
   set(TOOLCHAIN_HAS_GLIBCXX ON CACHE BOOL "True if toolchain supports libstdc++")
+  set(ZEPHYR_TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN y)
 elseif(TOOLCHAIN_VARIANT_COMPILER STREQUAL "llvm")
 
   include(${ZEPHYR_BASE}/cmake/toolchain/host/llvm/generic.cmake)
