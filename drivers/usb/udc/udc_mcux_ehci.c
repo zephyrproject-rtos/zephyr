@@ -741,6 +741,15 @@ static int udc_mcux_init(const struct device *dev)
 	/* enable USB interrupt */
 	config->irq_enable_func(dev);
 
+#if (defined USB_DEVICE_CONFIG_DETACH_ENABLE) && (USB_DEVICE_CONFIG_DETACH_ENABLE > 0U)
+	/* The HAL reports attach only when VBUS changes, so report a VBUS
+	 * that is already present, e.g. a cable plugged in before boot.
+	 */
+	if ((((USBHS_Type *)base)->OTGSC & USBHS_OTGSC_BSV_MASK) != 0U) {
+		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+	}
+#endif
+
 	LOG_DBG("Initialized USB controller %x", (uint32_t)base);
 
 	return 0;
