@@ -193,7 +193,11 @@ typedef uint32_t pixel_format_t;
  * @param ... extra parameters
  */
 #define PIX_FMT_FOREACH_GRAYSCALE_NON_PACKED(X, ...)			\
+	X(PIX_FMT_R1, __VA_ARGS__)					\
+	X(PIX_FMT_D1, __VA_ARGS__)					\
+	X(PIX_FMT_R4, __VA_ARGS__)					\
 	X(PIX_FMT_GREY, __VA_ARGS__)					\
+	X(PIX_FMT_AL88, __VA_ARGS__)					\
 	X(PIX_FMT_Y10, __VA_ARGS__)					\
 	X(PIX_FMT_Y12, __VA_ARGS__)					\
 	X(PIX_FMT_Y14, __VA_ARGS__)					\
@@ -357,6 +361,24 @@ typedef uint32_t pixel_format_t;
  */
 
 /**
+ * @name Indexed formats
+ * @{
+ */
+
+/**
+ * @brief Repeat a macro for every indexed format, passed as first parameter
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define PIX_FMT_FOREACH_INDEXED(X, ...)						\
+	X(PIX_FMT_C4, __VA_ARGS__)
+
+/**
+ * @}
+ */
+
+/**
  * @name Compressed formats
  * @{
  */
@@ -416,6 +438,15 @@ typedef uint32_t pixel_format_t;
  */
 #define PIX_FMT_IS_YUV(pixfmt)						\
 	(0 PIX_FMT_FOREACH_YUV(_PIX_FMT_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is an indexed format
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define PIX_FMT_IS_INDEXED(pixfmt)					\
+	(0 PIX_FMT_FOREACH_INDEXED(_PIX_FMT_FMT_OR_EQ, pixfmt))
 
 /**
  * @brief Test if a fourcc is a compressed format
