@@ -18,6 +18,7 @@ if(CONFIG_SOC_SERIES_BL61X OR CONFIG_SOC_SERIES_BL808 OR CONFIG_SOC_SERIES_BL616
   zephyr_include_directories(thead)
   zephyr_sources(
     thead/sf_offset.S
+    thead/thead_csr.c
   )
 endif()
 
