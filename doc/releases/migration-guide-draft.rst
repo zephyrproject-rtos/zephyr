@@ -71,6 +71,22 @@ Bluetooth Classic
 Networking
 **********
 
+Ethernet
+========
+
+* Checksum offload capabilities are now advertised with one bit per IP version and protocol.
+  ``NET_IF_CHECKSUM_IPV6_HEADER``, ``ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER``,
+  ``ETHERNET_CHECKSUM_SUPPORT_TCP`` and ``ETHERNET_CHECKSUM_SUPPORT_UDP`` have been removed.
+  Drivers reporting ``ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT`` or
+  ``ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT`` must set
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP`,
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP`,
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP` and
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP` for the combinations they offload. A driver
+  that set the IPv6 header bit together with the TCP and UDP bits now sets both the IPv4 and the
+  IPv6 TCP and UDP enumerators; a driver that set only the IPv4 header bit together with the TCP
+  and UDP bits now sets the IPv4 TCP and UDP enumerators.
+
 Other subsystems
 ****************
 
