@@ -656,6 +656,7 @@ static void usbip_thread_handler(void *const a, void *const b, void *const c)
 	int listenfd;
 	int connfd;
 	int reuse = 1;
+	int nodelay = 1;
 
 	LOG_DBG("Started connection handling thread");
 
@@ -695,6 +696,12 @@ static void usbip_thread_handler(void *const a, void *const b, void *const c)
 		if (connfd < 0) {
 			LOG_ERR("accept() failed: %d", errno);
 			continue;
+		}
+
+		/* A reply is sent as a header and its data, do not hold the data back */
+		if (zsock_setsockopt(connfd, NET_IPPROTO_TCP, ZSOCK_TCP_NODELAY,
+				     &nodelay, sizeof(nodelay)) < 0) {
+			LOG_WRN("setsockopt() failed: %s", strerror(errno));
 		}
 
 		zsock_inet_ntop(client_addr.sin_family, &client_addr.sin_addr,
