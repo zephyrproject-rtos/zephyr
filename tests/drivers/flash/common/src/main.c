@@ -322,19 +322,22 @@ ZTEST(flash_driver, test_flash_erase)
 		(page_info.size * ((EXPECTED_SIZE + page_info.size - 1) / page_info.size)));
 	zassert_equal(rc, 0, "Flash memory not properly erased");
 
-	/* Confirm erase operation */
-	rc = flash_read(flash_dev, page_info.start_offset, read_buf, EXPECTED_SIZE);
-	zassert_equal(rc, 0, "Cannot read flash");
+	if (flash_params_erase_value_readable(fparams)) {
+		/* Confirm erase operation */
+		rc = flash_read(flash_dev, page_info.start_offset, read_buf, EXPECTED_SIZE);
+		zassert_equal(rc, 0, "Cannot read flash");
 
-	comparison_result = true;
-	for (int i = 0; i < EXPECTED_SIZE; i++) {
-		if (read_buf[i] != erase_value) {
-			comparison_result = false;
-			TC_PRINT("i=%d:\tread_buf[i]=%d\texpected=%d\n", i, read_buf[i],
-				 erase_value);
+		comparison_result = true;
+		for (int i = 0; i < EXPECTED_SIZE; i++) {
+			if (read_buf[i] != erase_value) {
+				comparison_result = false;
+				TC_PRINT("i=%d:\tread_buf[i]=%d\texpected=%d\n", i, read_buf[i],
+					 erase_value);
+			}
 		}
+		zassert_true(comparison_result, "Erase operation failed");
 	}
-	zassert_true(comparison_result, "Write operation failed");
+
 	/* Cross check - confirm that expected data
 	 * doesn't contain erase_value
 	 */
