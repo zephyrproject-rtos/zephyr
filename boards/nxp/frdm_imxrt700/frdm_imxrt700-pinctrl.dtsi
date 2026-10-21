@@ -37,4 +37,13 @@
 			drive-strength = "normal";
 		};
 	};
+
+	/* SCT0_OUT2 drives the blue LED (P0_19_PWM_BLU_LED) */
+	pinmux_sctimer: pinmux_sctimer {
+		group0 {
+			pinmux = <SCT0_OUT2_PIO0_19>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
 };
