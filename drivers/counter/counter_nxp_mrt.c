@@ -212,7 +212,9 @@ static uint32_t nxp_mrt_get_freq(const struct device *dev)
 	const struct nxp_mrt_config *config = dev->config;
 	uint32_t freq;
 
-	clock_control_get_rate(config->clock_dev, config->clock_subsys, &freq);
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &freq)) {
+		return 0;
+	}
 
 	return freq;
 }
@@ -233,7 +235,10 @@ static int nxp_mrt_init_common(const struct device *dev)
 		return ret;
 	}
 
-	clock_control_on(config->clock_dev, config->clock_subsys);
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret) {
+		return ret;
+	}
 
 	config->irq_config_func(dev);
 
@@ -257,8 +262,7 @@ static int nxp_mrt_pm_action(const struct device *dev, enum pm_device_action act
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		nxp_mrt_init_common(dev);
-		break;
+		return nxp_mrt_init_common(dev);
 	default:
 		return -ENOTSUP;
 	}
