@@ -16,6 +16,12 @@
  * completion event the driver could hang a pm_device_runtime_put() on, so the driver takes no
  * runtime reference of its own: call pm_device_runtime_get() on the channel before
  * counter_start() and keep the reference for as long as the timebase is wanted.
+ *
+ * The channels share one bus clock, which both gates the registers and runs the counters, so
+ * the clock belongs to the module device. Each channel names the module as its power domain,
+ * so the PM core reference counts the shared gate: it closes once every channel has released
+ * its reference. Enabling runtime PM on a channel requires it on the module as well, because
+ * only the module's resume action turns the clock on.
  */
 
 #define DT_DRV_COMPAT nxp_mrt
@@ -294,17 +300,23 @@ static int nxp_mrt_init_common(const struct device *dev)
 		}
 	}
 
-	return 0;
+	/* The block is handed over suspended, so hand the clock back. The resume
+	 * action is what clocks it.
+	 */
+	return clock_control_off(config->clock_dev, config->clock_subsys);
 }
 
 static int nxp_mrt_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct nxp_mrt_config *config = dev->config;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		break;
+		return clock_control_on(config->clock_dev, config->clock_subsys);
 	case PM_DEVICE_ACTION_SUSPEND:
-		break;
+		return clock_control_off(config->clock_dev, config->clock_subsys);
 	case PM_DEVICE_ACTION_TURN_OFF:
+		/* A turn-off only ever follows a suspend, which gated the clock. */
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		return nxp_mrt_init_common(dev);
