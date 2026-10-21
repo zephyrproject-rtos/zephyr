@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - comparator
   - gpio
   - uart
 vendor: nxp
