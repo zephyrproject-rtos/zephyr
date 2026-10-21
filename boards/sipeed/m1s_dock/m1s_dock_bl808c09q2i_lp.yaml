@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: m1s_dock
-name: Sipeed M1S Dock
+identifier: m1s_dock/bl808c09q2i/lp
+name: Sipeed M1S Dock (LP E902 CPU)
 vendor: sipeed
 type: mcu
 arch: riscv
-ram: 224
-flash: 8128
+ram: 48
+flash: 1024
 toolchain:
   - zephyr
 testing:
@@ -19,11 +19,3 @@ supported:
   - gpio
   - pinctrl
   - uart
-  - pwm
-  - i2c
-  - spi
-  - watchdog
-  - counter
-  - entropy
-  - crypto
-  - sdhc

@@ -1,5 +1,6 @@
 /*
  * Copyright The Zephyr Project Contributors
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,70 +25,29 @@
 #include <pds_reg.h>
 #include <tzc_sec_reg.h>
 
+#include "thead_csr.h"
+
+#ifdef CONFIG_SOC_SERIES_BL808_D0_START
+
+#define D0_BOOT_ADDR	DT_PARTITION_ADDR(DT_CHOSEN(bflb_d0_partition))
+
+#endif
+
+#ifdef CONFIG_SOC_SERIES_BL808_LP_START
+
+#define LP_BOOT_ADDR	DT_PARTITION_ADDR(DT_CHOSEN(bflb_lp_partition))
+
+#endif
+
 /* T-Head E907 sysmap configuration */
-#define SYSMAP_BASE              0xEFFFF000UL
-#define SYSMAP_BASE_SHIFT        (12)
-#define SYSMAP_ATTR_STRONG_ORDER BIT(4)
-#define SYSMAP_ATTR_CACHE_ABLE   BIT(3)
-#define SYSMAP_ATTR_BUFFER_ABLE  BIT(2)
-#define SYSMAP_ADDR_OFFSET       0x0
-#define SYSMAP_FLAGS_OFFSET      0x4
-#define SYSMAP_ENTRY_OFFSET      0x8
-
-/* T-Head E907 CSR bit definitions */
-#define THEAD_MHCR_DE    BIT(0)  /* D-cache enable */
-#define THEAD_MHCR_WB    BIT(1)  /* Write-back enable */
-#define THEAD_MHCR_BPE   BIT(5)  /* Branch prediction enable */
-#define THEAD_MHCR_L0BTB BIT(12) /* L0 BTB enable */
-#define THEAD_MHINT_DPLD BIT(2)  /* D-cache prefetch */
-#define THEAD_MHINT_AMR  BIT(3)  /* Auto memory request */
-
-/* MXSTATUS (CSR 0x7C0): enable T-Head ISA extensions (bit 22) + unaligned access (bit 15).
- * SDK does both in one write during SystemInit.
- */
-static void init_mxstatus(void)
-{
-	uint32_t tmp;
-
-	__asm__ volatile("csrr %0, 0x7C0" : "=r"(tmp));
-	tmp |= (1 << 22) | (1 << 15);
-	__asm__ volatile("csrw 0x7C0, %0" : : "r"(tmp));
-}
-
-static void disable_interrupt_autostacking(void)
-{
-	uint32_t tmp;
-
-	__asm__ volatile("csrr %0, 0x7E1" : "=r"(tmp));
-	tmp &= ~(0x3 << 16);
-	__asm__ volatile("csrw 0x7E1, %0" : : "r"(tmp));
-}
-
-static void set_thead_mhint(void)
-{
-	uint32_t tmp;
-
-	__asm__ volatile("csrr %0, 0x7C5" : "=r"(tmp));
-	tmp |= THEAD_MHINT_DPLD | THEAD_MHINT_AMR;
-	__asm__ volatile("csrw 0x7C5, %0" : : "r"(tmp));
-}
-
-static void enable_branchpred(bool yes)
-{
-	uint32_t tmp;
-
-	__asm__ volatile("fence\n"
-			 "fence.i\n");
-	__asm__ volatile("csrr %0, 0x7C1" : "=r"(tmp));
-	if (yes) {
-		tmp |= (1 << 5) | (1 << 12);
-	} else {
-		tmp &= ~((1 << 5) | (1 << 12));
-	}
-	__asm__ volatile("csrw 0x7C1, %0" : : "r"(tmp));
-	__asm__ volatile("fence\n"
-			 "fence.i\n");
-}
+#define SYSMAP_BASE			0xEFFFF000UL
+#define SYSMAP_BASE_SHIFT		(12U)
+#define SYSMAP_ATTR_STRONG_ORDER	BIT(4)
+#define SYSMAP_ATTR_CACHE_ABLE		BIT(3)
+#define SYSMAP_ATTR_BUFFER_ABLE		BIT(2)
+#define SYSMAP_ADDR_OFFSET		0x0U
+#define SYSMAP_FLAGS_OFFSET		0x4U
+#define SYSMAP_ENTRY_OFFSET		0x8U
 
 /*
  * Halt secondary cores (D0 + LP) using the same sequence as BL808 SDK
@@ -312,10 +272,10 @@ static inline __attribute__((always_inline)) void disable_machine_interrupts(voi
  */
 static inline __attribute__((always_inline)) void disable_dcache_and_branchpred(void)
 {
-	const uint32_t bits = THEAD_MHCR_DE | THEAD_MHCR_WB |
-			      THEAD_MHCR_BPE | THEAD_MHCR_L0BTB;
+	const uint32_t bits = THEAD_MHCR_IE | THEAD_MHCR_DE | THEAD_MHCR_WB |
+			      THEAD_MHCR_BPE | THEAD_MHCR_BTB;
 
-	__asm__ volatile("csrc 0x7C1, %0" : : "r"(bits));
+	__asm__ volatile("csrc " THEAD_MHCR ", %0" : : "r"(bits));
 }
 
 /* Clear speculative prefetch hints (MHINT CSR 0x7C5).
@@ -323,7 +283,7 @@ static inline __attribute__((always_inline)) void disable_dcache_and_branchpred(
  */
 static inline __attribute__((always_inline)) void clear_speculation_hints(void)
 {
-	__asm__ volatile("csrw 0x7C5, zero");
+	__asm__ volatile("csrw " THEAD_MHINT ", zero");
 }
 
 /*
@@ -385,21 +345,67 @@ void soc_early_init_hook(void)
 	irq_unlock(key);
 }
 
-/* Match SDK SystemInit() order exactly:
- * 1. MXSTATUS: THEADISAEE + MM
- * 2. csi_dcache_enable()  (DE|WB|WA|RS|BPE|L0BTB)
- * 3. csi_icache_enable()  (IE)
- * 4. MHINT 0x000c         (DPLD|AMR)
- * 5. MEXSTATUS             (disable SPUSHEN/SPSWAPEN)
- */
 void arch_cache_init(void)
 {
-	init_mxstatus();
+	enable_thead_isa_ext();
+	set_thead_enforce_aligned(false);
 	sys_cache_data_enable();
 	enable_branchpred(true);
 	sys_cache_instr_enable();
-	set_thead_mhint();
 	disable_interrupt_autostacking();
+	set_thead_mhint(true, AMR_7L, PREF_N_2);
 	sys_cache_data_flush_and_invd_all();
 	sys_cache_instr_invd_all();
 }
+
+#ifdef CONFIG_SOC_SERIES_BL808_D0_START
+
+static void release_d0_core(void)
+{
+	uint32_t tmp;
+
+	sys_write32(D0_BOOT_ADDR, MM_MISC_BASE + MM_MISC_CPU0_BOOT_OFFSET);
+
+	tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+	tmp |= MM_GLB_REG_MMCPU0_CLK_EN_MSK;
+	sys_write32(tmp, MM_GLB_BASE + MM_GLB_MM_CLK_CTRL_CPU_OFFSET);
+	k_busy_wait(1);
+	tmp = sys_read32(MM_GLB_BASE + MM_GLB_MM_SW_SYS_RESET_OFFSET);
+	tmp &= ~MM_GLB_REG_CTRL_MMCPU0_RESET_MSK;
+	sys_write32(tmp, MM_GLB_BASE + MM_GLB_MM_SW_SYS_RESET_OFFSET);
+}
+
+#endif
+
+#ifdef CONFIG_SOC_SERIES_BL808_LP_START
+
+static void release_lp_core(void)
+{
+	uint32_t tmp;
+
+	sys_write32(LP_BOOT_ADDR, PDS_BASE + PDS_CPU_CORE_CFG13_OFFSET);
+
+	tmp = sys_read32(PDS_BASE + PDS_CPU_CORE_CFG0_OFFSET);
+	tmp |= PDS_REG_PICO_CLK_EN_MSK;
+	sys_write32(tmp, PDS_BASE + PDS_CPU_CORE_CFG0_OFFSET);
+	k_busy_wait(1);
+	tmp = sys_read32(GLB_BASE + GLB_SWRST_CFG2_OFFSET);
+	tmp &= ~GLB_REG_CTRL_PICO_RESET_MSK;
+	sys_write32(tmp, GLB_BASE + GLB_SWRST_CFG2_OFFSET);
+}
+
+#endif
+
+#ifdef CONFIG_SOC_LATE_INIT_HOOK
+
+void soc_late_init_hook(void)
+{
+#ifdef CONFIG_SOC_SERIES_BL808_D0_START
+	release_d0_core();
+#endif
+#ifdef CONFIG_SOC_SERIES_BL808_LP_START
+	release_lp_core();
+#endif
+}
+
+#endif

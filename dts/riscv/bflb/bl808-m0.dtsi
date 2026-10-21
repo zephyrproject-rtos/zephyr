@@ -1,0 +1,137 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <bflb/bl808_32bit_common.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	bt_hci_bflb: bt-hci {
+		compatible = "bflb,bt-hci";
+		status = "disabled";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(1)>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "xuantie,e907", "riscv";
+			reg = <0>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei",
+					       "xtheadba", "xtheadbb", "xtheadbs",
+					       "xtheadsync", "xtheadcmo";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			hardware-exec-breakpoint-count = <4>;
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			clic: clic@e0800000 {
+				compatible = "nuclei,eclic";
+				reg = <0xe0800000 0x10000>;
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* Keep critical initialization peripherals in M0's exclusive control */
+		powerctrl: power-controller@2000f000 {
+			compatible = "bflb,power-controller";
+			reg = <0x2000f000 0x1000>, <0x2000f000 0x1000>;
+			reg-names = "hbn", "aon";
+			status = "okay";
+
+			interrupts = <67 1>, <68 1>, <69 1>;
+			interrupt-parent = <&clic>;
+			interrupt-names = "hbn0", "hbn1", "bor";
+		};
+
+		reg_soc: regulator-soc@2000f000 {
+			compatible = "bflb,soc-regulator";
+			reg = <0x2000f000 0x1000>;
+			status = "okay";
+		};
+
+		reg_rt: regulator-rt@2000f000 {
+			compatible = "bflb,rt-regulator";
+			reg = <0x2000f000 0x1000>;
+			status = "okay";
+		};
+
+		reg_aon: regulator-aon@2000f000 {
+			compatible = "bflb,aon-regulator";
+			reg = <0x2000f000 0x1000>;
+			status = "okay";
+		};
+
+		psram_uhs_ctrl: psram-uhs@3000f000 {
+			compatible = "bflb,bl808-psram-uhs-controller";
+			reg = <0x3000f000 DT_SIZE_K(4)>;
+			clocks = <&clocks BL808_CLKID_CLK_UHSPLL>;
+			status = "disabled";
+		};
+
+		/* All contiguous fast RAM for M0
+		 * It is kept tightly coupled by this CPU's internal cache
+		 */
+		all_ram: memory@62020000 {
+			compatible = "mmio-sram";
+			reg = <0x62020000 DT_SIZE_K(224)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x62020000 DT_SIZE_K(224)>;
+
+			/* OCRAM is slightly faster */
+			ocram: memory@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(64)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(64)>;
+				status = "disabled";
+			};
+
+			/* WRAM is slightly slower, it can be used by the RF systems */
+			wram: memory@10000 {
+				compatible = "mmio-sram";
+				reg = <0x10000 DT_SIZE_K(160)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x10000 DT_SIZE_K(160)>;
+				status = "disabled";
+			};
+		};
+
+		mtimer: timer@e000bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0xe000bff8 0x8 0xe0004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+
+			interrupts-extended = <&clic 7 1>;
+		};
+	};
+};
+
+psram: &psram_m0 {
+	status = "okay";
+	zephyr,memory-region = "PSRAM";
+};
