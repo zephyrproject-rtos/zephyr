@@ -4341,6 +4341,7 @@ static int bt_hfp_ag_sco_accept(const struct bt_sco_accept_info *info,
 	};
 	size_t index;
 	struct bt_hfp_ag *ag;
+	int err;
 
 	LOG_DBG("conn %p", info->acl);
 
@@ -4358,6 +4359,12 @@ static int bt_hfp_ag_sco_accept(const struct bt_sco_accept_info *info,
 	}
 
 	ag->sco_chan.ops = &ops;
+
+	err = hfp_ag_set_voice_setting(ag);
+	if (err < 0) {
+		LOG_ERR("Fail to set voice setting");
+		return err;
+	}
 
 	*chan = &ag->sco_chan;
 
