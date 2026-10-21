@@ -14,3 +14,14 @@ config ILI9806E_DSI
 	select ILI98XX_DSI
 	help
 	  Enable driver for ILI9806E_DSI display driver.
+
+config ILI9881C_DSI
+	bool "ILI9881C_DSI display driver"
+	default y
+	depends on DT_HAS_ILITEK_ILI9881C_ENABLED
+	select MIPI_DSI
+	select ILI98XX_DSI
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ILITEK_ILI9881C),reset-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ILITEK_ILI9881C),bl-gpios)
+	help
+	  Enable driver for ILI9881C_DSI display driver.
