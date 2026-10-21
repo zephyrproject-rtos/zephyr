@@ -81,10 +81,14 @@ class TitleMaxLengthRevert(LineRule):
     options_spec = [IntOption('line-length', 75, "Max line length")]
     violation_message = "Commit title exceeds max length ({0}>{1})"
 
+    # Downstream patch tags (e.g. "UPSTREAM-PEND: ") don't count towards the max length
+    patch_tag_regex = re.compile(r"^(?:UPSTREAM-PEND|UPSTREAM|PEND|TI: HACK|TI): ")
+
     def validate(self, line, _commit):
         max_length = self.options['line-length'].value
-        if len(line) > max_length and not line.startswith("Revert"):
-            return [RuleViolation(self.id, self.violation_message.format(len(line), max_length), line)]
+        title = self.patch_tag_regex.sub("", line, count=1)
+        if len(title) > max_length and not title.startswith("Revert"):
+            return [RuleViolation(self.id, self.violation_message.format(len(title), max_length), line)]
 
 class TitleStartsWithSubsystem(LineRule):
     name = "title-starts-with-subsystem"
