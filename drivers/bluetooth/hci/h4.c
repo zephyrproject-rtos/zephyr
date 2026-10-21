@@ -244,6 +244,19 @@ static void init_rx_buf(struct h4_data *h4)
 	(void)net_buf_add_mem(h4->rx.buf, h4->rx.hdr, h4->rx.hdr_len);
 }
 
+/* Hands the packet completed in rx.buf to rx_thread */
+static void rx_complete(struct h4_data *h4)
+{
+	struct net_buf *buf = h4->rx.buf;
+
+	h4->rx.buf = NULL;
+	reset_rx(h4);
+
+	LOG_DBG("Putting buf %p to rx fifo", buf);
+	k_fifo_put(&h4->rx.fifo, buf);
+	k_sem_give(&h4->rx.ready);
+}
+
 /* Called only once the header is in: the pool depends on the packet type and,
  * for an event, on its code and whether it is discardable.
  */
@@ -324,6 +337,9 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			h4->rx.buf = get_rx(h4, K_FOREVER);
 			LOG_DBG("Got rx.buf %p", h4->rx.buf);
 			init_rx_buf(h4);
+			if (h4->rx.buf != NULL && h4->rx.remaining == 0U) {
+				rx_complete(h4);
+			}
 
 			(void)atomic_clear(&h4->rx.deferred);
 			uart_irq_rx_enable(cfg->uart);
@@ -349,7 +365,6 @@ static inline void read_payload(const struct device *dev)
 {
 	const struct h4_config *cfg = dev->config;
 	struct h4_data *h4 = dev->data;
-	struct net_buf *buf;
 	int read;
 
 	if (!h4->rx.buf) {
@@ -406,14 +421,7 @@ static inline void read_payload(const struct device *dev)
 		return;
 	}
 
-	buf = h4->rx.buf;
-	h4->rx.buf = NULL;
-
-	reset_rx(h4);
-
-	LOG_DBG("Putting buf %p to rx fifo", buf);
-	k_fifo_put(&h4->rx.fifo, buf);
-	k_sem_give(&h4->rx.ready);
+	rx_complete(h4);
 }
 
 static inline void read_header(const struct device *dev)
@@ -506,11 +514,18 @@ static inline void process_rx(const struct device *dev)
 		return;
 	}
 
-	if (h4->rx.have_hdr) {
-		read_payload(dev);
-	} else {
+	if (!h4->rx.have_hdr) {
 		read_header(dev);
+
+		/* A packet without payload is complete with its header, and no
+		 * more data may arrive to complete it later.
+		 */
+		if (!h4->rx.have_hdr || h4->rx.remaining > 0U) {
+			return;
+		}
 	}
+
+	read_payload(dev);
 }
 
 static void bt_uart_isr(const struct device *uart, void *user_data)
