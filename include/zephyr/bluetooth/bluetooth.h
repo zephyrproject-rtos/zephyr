@@ -2929,6 +2929,25 @@ int bt_le_set_chan_map(uint8_t chan_map[5]);
 int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout);
 
 /**
+ * @brief Rotate the Resolvable Private Addresses now
+ *
+ * Does right away what the RPA timeout does: calls the
+ * @ref bt_le_ext_adv_cb::rpa_expired callbacks, gives a new RPA to the advertising sets whose
+ * callback allows it and to the scanner and initiator, and restarts the RPA timeout from now.
+ * The RPA rotation is described in
+ * https://docs.zephyrproject.org/latest/services/connectivity/bluetooth/api/gap.html#resolvable-private-address-rotation
+ *
+ * Must not be called from a @ref bt_le_ext_adv_cb::rpa_expired callback.
+ *
+ * @kconfig_dep{CONFIG_BT_PRIVACY}.
+ *
+ * @retval 0 Success.
+ * @retval -EAGAIN Bluetooth is not enabled.
+ * @retval -EBUSY A connection is being created.
+ */
+int bt_le_rotate_rpa(void);
+
+/**
  * @brief Helper for parsing advertising (or EIR or OOB) data.
  *
  * A helper for parsing the basic AD Types used for Extended Inquiry
