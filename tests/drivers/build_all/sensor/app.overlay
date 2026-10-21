@@ -169,7 +169,8 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,	/* 0x46 */
-				   <&test_gpio 0 0>;	/* 0x47 */
+				   <&test_gpio 0 0>,	/* 0x47 */
+				   <&test_gpio 0 0>;	/* 0x48 */
 			status = "okay";
 #include "spi.dtsi"
 		};
