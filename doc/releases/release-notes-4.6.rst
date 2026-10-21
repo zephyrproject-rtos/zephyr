@@ -63,6 +63,13 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Networking
+
+  * Add :c:macro:`NET_REQUEST_WIFI_ROAMING_DHCP` to probe the IPv4 gateway
+    after a Wi-Fi roam, and the :c:member:`wifi_mgmt_ops.gw_probe_done`
+    callback that reports whether the new AP is on the same network, so
+    DHCPv4 is restarted only when needed.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

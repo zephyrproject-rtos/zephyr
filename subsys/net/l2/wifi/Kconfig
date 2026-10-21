@@ -175,6 +175,15 @@ config WIFI_STA_AUTO_DHCPV4
 	  responsible for either manually starting the DHCPv4 client
 	  or configuring a static IPv4 address.
 
+config WIFI_MGMT_ROAMING_DHCP
+	bool "Gateway probe based DHCPv4 restart after roaming"
+	depends on NET_ARP && NET_NATIVE_IPV4 && NET_DHCPV4
+	help
+	  After roaming to a new AP, probe the IPv4 gateway with ARP to detect
+	  whether the new AP is attached to the same network. The result is
+	  reported through the gw_probe_done() op of the Wi-Fi management API,
+	  which decides whether DHCPv4 needs to be restarted.
+
 config WIFI_MGMT_BSS_MAX_IDLE_TIME
 	int "BSS max idle timeout in seconds"
 	range 0 64000
