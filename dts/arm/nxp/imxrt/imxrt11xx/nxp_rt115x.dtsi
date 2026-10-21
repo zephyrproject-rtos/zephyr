@@ -42,7 +42,6 @@
  * - 100M ENET (only ENET_1G and ENET_QOS are present)
  * - LPUART4/10/11, LPI2C5, LPSPI6, FLEXCAN3, SAI4
  * - MU mailbox and the M4 ITCM OCRAM alias (no second core)
- * - MIPI DSI host controller
  */
 /delete-node/ &enet;
 /delete-node/ &lpuart4;
@@ -53,5 +52,4 @@
 /delete-node/ &flexcan3;
 /delete-node/ &sai4;
 /delete-node/ &mailbox_a;
-/delete-node/ &mipi_dsi;
 /delete-node/ &ocram;
