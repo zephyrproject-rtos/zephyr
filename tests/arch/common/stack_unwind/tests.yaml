@@ -117,3 +117,48 @@ tests:
     # two extra func1 frames at the start; the regex expects the alternating
     # func1/func2 pattern but gets func1/func1/func2 instead.
     filter: not CONFIG_RISCV_S_MODE
+  # The logging thread is printing on another CPU when the system halts
+  arch.common.stack_unwind.arm64_smp_busy_log:
+    arch_allow:
+      - arm64
+    filter: CONFIG_SMP
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_args: EXTRA_CFLAGS=-DSTACK_UNWIND_BUSY_LOG_TEST
+    extra_configs:
+      - CONFIG_FRAME_POINTER=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_BUFFER_SIZE=8192
+    harness_config:
+      type: multi_line
+      regex:
+        - "<err> os: call trace:"
+        - "<err> os:      0: fp: \\w+ lr: \\w+"
+        - "<err> os:      1: fp: \\w+ lr: \\w+"
+        - "<err> os:      2: fp: \\w+ lr: \\w+"
+        - "<err> os:      3: fp: \\w+ lr: \\w+"
+        - "<err> os:      4: fp: \\w+ lr: \\w+"
+        - "<err> os:      5: fp: \\w+ lr: \\w+"
+        - "<err> os: Halting system"
+  arch.common.stack_unwind.riscv_smp_busy_log:
+    arch_allow:
+      - riscv
+    filter: CONFIG_SMP
+    integration_platforms:
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    extra_args: EXTRA_CFLAGS=-DSTACK_UNWIND_BUSY_LOG_TEST
+    extra_configs:
+      - CONFIG_FRAME_POINTER=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_BUFFER_SIZE=8192
+    harness_config:
+      type: multi_line
+      regex:
+        - "<err> os: call trace:"
+        - "<err> os:       0: fp: \\w+ ra: \\w+"
+        - "<err> os:       1: fp: \\w+ ra: \\w+"
+        - "<err> os:       2: fp: \\w+ ra: \\w+"
+        - "<err> os:       3: fp: \\w+ ra: \\w+"
+        - "<err> os:       4: fp: \\w+ ra: \\w+"
+        - "<err> os:       5: fp: \\w+ ra: \\w+"
+        - "<err> os: Halting system"
