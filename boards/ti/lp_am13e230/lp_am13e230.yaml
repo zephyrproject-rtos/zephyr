@@ -12,4 +12,5 @@ supported:
   - uart
   - i2c
   - spi
+  - pwm
 vendor: ti
