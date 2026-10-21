@@ -850,6 +850,16 @@
 			};
 		};
 
+		kpp: kpp@400e0000 {
+			compatible = "nxp,mcux-kpp";
+			reg = <0x400e0000 0x4000>;
+			interrupts = <51 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&ccm IMX_CCM_KPP_CLK 0x0 0>;
+			status = "disabled";
+		};
+
 		usb1: usbd@40430000 {
 			compatible = "nxp,ehci";
 			reg = <0x40430000 0x200>;
