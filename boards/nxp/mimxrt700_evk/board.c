@@ -76,6 +76,14 @@ static void edma_enable_all_request(uint8_t instance);
 
 void board_early_init_hook(void)
 {
+	/*
+	 * Open the common peripherals to this core's domain before the clock setup
+	 * below touches them: out of reset AHBSC3 blocks the Sense domain from the
+	 * common APB peripherals, so CPU1's first CLKCTL2 access bus-faults unless
+	 * CPU0 has already done this for it.
+	 */
+	BOARD_InitAHBSC();
+
 #if CONFIG_SOC_MIMXRT798S_CM33_CPU0
 	const clock_fro_config_t froAutotrimCfg = {
 		.targetFreq = 300000000U,
@@ -229,8 +237,6 @@ void board_early_init_hook(void)
 
 	POWER_ApplyPD();
 #endif /* CONFIG_SOC_MIMXRT798S_CM33_CPU0 */
-
-	BOARD_InitAHBSC();
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
 	edma_enable_all_request(0);
