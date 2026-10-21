@@ -13,7 +13,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
-#include <zephyr/dt-bindings/display/panel.h>
 
 LOG_MODULE_REGISTER(display_mcux_lcdifv3, CONFIG_DISPLAY_LOG_LEVEL);
 
@@ -55,8 +54,6 @@ struct mcux_lcdifv3_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 	/* Pointer to active framebuffer */
 	const uint8_t *active_fb;
-	/* DT value: PANEL_PIXEL_FORMAT_* */
-	uint32_t panel_pixel_format;
 	/* Runtime/Zephyr value: PIXEL_FORMAT_* */
 	pixel_format_t pixel_format;
 	lcdifv3_buffer_config_t buffer_config;
@@ -293,25 +290,6 @@ static int mcux_lcdifv3_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	/* Set default pixel format obtained from device tree */
-	switch (data->panel_pixel_format) {
-	case PANEL_PIXEL_FORMAT_RGB_565:
-		data->pixel_format = PIXEL_FORMAT_RGB_565;
-		break;
-	case PANEL_PIXEL_FORMAT_RGB_888:
-		data->pixel_format = PIXEL_FORMAT_RGB_888;
-		break;
-	case PANEL_PIXEL_FORMAT_ARGB_8888:
-		data->pixel_format = PIXEL_FORMAT_ARGB_8888;
-		break;
-	case PANEL_PIXEL_FORMAT_ABGR_8888:
-		data->pixel_format = PIXEL_FORMAT_ABGR_8888;
-		break;
-	default:
-		LOG_ERR("Pixel format not supported");
-		return -ENOTSUP;
-	}
-
 	ret = mcux_lcdifv3_set_pixel_format(dev, data->pixel_format);
 	if (ret) {
 		return ret;
@@ -392,7 +370,7 @@ static DEVICE_API(display, mcux_lcdifv3_api) = {
 	MCUX_LCDIFV3_FRAMEBUFFER_DECL(id);                                                         \
 	static struct mcux_lcdifv3_data mcux_lcdifv3_data_##id = {                                 \
 		.next_idx = 0,                                                                     \
-		.panel_pixel_format = DT_INST_PROP(id, pixel_format),                              \
+		.pixel_format = PIX_FMT_DT_INST(id),                                         \
 	};                                                                                         \
 	static const struct mcux_lcdifv3_config mcux_lcdifv3_config_##id = {                       \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(id)),                             \

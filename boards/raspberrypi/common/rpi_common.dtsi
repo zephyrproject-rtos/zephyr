@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
 #include <zephyr/dt-bindings/power/rpi_bcm283x_power.h>
 
@@ -32,7 +31,7 @@
 	fb0: framebuffer {
 		compatible = "raspberrypi,bcm2711-framebuffer";
 		firmware = <&rpi_fw>;
-		pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
+		pixel-format = "bgra32";
 		width = <640>;
 		height = <480>;
 		red-blue-swap;

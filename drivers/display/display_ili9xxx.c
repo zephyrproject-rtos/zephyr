@@ -7,7 +7,6 @@
  */
 
 #include "display_ili9xxx.h"
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -395,22 +394,10 @@ static int ili9xxx_configure(const struct device *dev)
 	struct ili9xxx_data *data = dev->data;
 
 	int r;
-	pixel_format_t pixel_format;
 	enum display_orientation orientation;
 
 	/* pixel format */
-	if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_565) {
-		pixel_format = PIXEL_FORMAT_RGB_565;
-	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_565X) {
-		pixel_format = PIXEL_FORMAT_RGB_565X;
-	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_888) {
-		pixel_format = PIXEL_FORMAT_RGB_888;
-	} else {
-		LOG_ERR("Unsupported pixel format in DT");
-		return -ENOTSUP;
-	}
-
-	r = ili9xxx_set_pixel_format(dev, pixel_format);
+	r = ili9xxx_set_pixel_format(dev, config->pixel_format);
 	if (r < 0) {
 		return r;
 	}
@@ -547,7 +534,7 @@ static DEVICE_API(display, ili9xxx_api) = {
 					INST_DT_ILI9XXX(n, t),                                     \
 					SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8), 0),              \
 			},                                                                         \
-		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),                      \
+		.pixel_format = PIX_FMT_DT(INST_DT_ILI9XXX(n, t)),                                 \
 		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),                              \
 		.x_resolution = DT_PROP_OR(INST_DT_ILI9XXX(n, t), width, ILI##t##_X_RES),          \
 		.y_resolution = DT_PROP_OR(INST_DT_ILI9XXX(n, t), height, ILI##t##_Y_RES),         \

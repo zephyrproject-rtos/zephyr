@@ -9,13 +9,13 @@ include: ["mspi-device.yaml", "chipone,co5300-common.yaml"]
 
 properties:
   pixel-format:
-    type: int
+    type: string
     required: true
     description: |
       Initial Pixel format of this controller's output data.
     enum:
-      - 1 # PANEL_PIXEL_FORMAT_RGB_888
-      - 16 # PANEL_PIXEL_FORMAT_RGB_565
+      - "bgr24"
+      - "rgb565"
 
   chunk-size:
     type: int
@@ -25,10 +25,8 @@ properties:
 
 examples:
   - |
-    #include <zephyr/dt-bindings/display/panel.h>
-
     co5300_display: co5300-display@0 {
       /* ... */
 
-      pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+      pixel-format = "rgb565";
     };

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
@@ -28,7 +27,7 @@
 			mipi-max-frequency = <25000000>;
 			width = <240>;
 			height = <320>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = "rgb565";
 			rotation = <0>;
 			frmctr1 = [00 18];
 			pwctrl1 = [23 00];

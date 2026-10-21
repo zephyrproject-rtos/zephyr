@@ -17,13 +17,13 @@ properties:
     required: true
 
   pixel-format:
-    type: int
+    type: string
     required: true
     description: |
       Initial Pixel format of this controller's output data.
     enum:
-      - 8 # PANEL_PIXEL_FORMAT_ARGB_8888
-      - 1024 # PANEL_PIXEL_FORMAT_ABGR_8888
+      - "bgra32"
+      - "rgba32"
 
   red-blue-swap:
     type: boolean
@@ -32,10 +32,8 @@ properties:
 
 examples:
   - |
-    #include <zephyr/dt-bindings/display/panel.h>
-
     fb0: framebuffer {
       /* ... */
 
-      pixel-format = <PANEL_PIXEL_FORMAT_ABGR_8888>;
+      pixel-format = "rgba32";
     };

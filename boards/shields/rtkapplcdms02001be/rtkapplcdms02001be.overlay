@@ -44,8 +44,8 @@
 &zephyr_lcdif {
 	width = <720>;
 	height = <1280>;
-	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	input-pixel-format = "bgr24";
+	pixel-format = "bgr24";
 
 	backlight-gpios = <&renesas_mipi_connector 21 GPIO_ACTIVE_HIGH>;
 	status = "okay";

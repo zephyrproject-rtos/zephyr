@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/led/led.h>
 
 / {
@@ -25,7 +24,7 @@
 	def-back-color-red = <0>;
 	def-back-color-green = <0>;
 	def-back-color-blue = <0>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	pixel-format = "bgr24";
 
 	bl-ctrl-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
 	status = "okay";

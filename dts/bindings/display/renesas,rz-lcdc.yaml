@@ -31,23 +31,23 @@ properties:
       The sensor receives this as an active-high signal.
 
   input-pixel-format:
-    type: int
+    type: string
     required: true
     description: |
       Initial input Pixel format for LCD controller.
     enum:
-      - 1 # PANEL_PIXEL_FORMAT_RGB_888
-      - 8 # PANEL_PIXEL_FORMAT_ARGB_8888
-      - 16 # PANEL_PIXEL_FORMAT_RGB_565
+      - "bgr24"
+      - "bgra32"
+      - "rgb565"
 
   pixel-format:
-    type: int
+    type: string
     required: true
     description: |
       Initial output Pixel format for LCD controller.
     enum:
-      - 1 # PANEL_PIXEL_FORMAT_RGB_888
-      - 16 # PANEL_PIXEL_FORMAT_RGB_565
+      - "bgr24"
+      - "rgb565"
 
   background-color-alpha:
     type: int

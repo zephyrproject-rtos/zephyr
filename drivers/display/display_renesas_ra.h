@@ -10,29 +10,28 @@
 #include <zephyr/drivers/display.h>
 
 #define ROUND_UP_64BYTES(x)    ROUND_UP(x, NUM_BITS(uint64_t))
-#define INPUT_FORMAT_PIXEL(n)  DT_INST_PROP(n, input_pixel_format)
-#define OUTPUT_FORMAT_PIXEL(n) DT_INST_PROP(n, output_pixel_format)
-
-#define RENESAS_RA_GLCDC_IN_PIXEL_FORMAT_1  (DISPLAY_IN_FORMAT_32BITS_RGB888)
-#define RENESAS_RA_GLCDC_IN_PIXEL_FORMAT_8  (DISPLAY_IN_FORMAT_32BITS_ARGB8888)
-#define RENESAS_RA_GLCDC_IN_PIXEL_FORMAT_16 (DISPLAY_IN_FORMAT_16BITS_RGB565)
-
-#define RENESAS_RA_GLCDC_OUT_PIXEL_FORMAT_1  (DISPLAY_OUT_FORMAT_24BITS_RGB888)
-#define RENESAS_RA_GLCDC_OUT_PIXEL_FORMAT_16 (DISPLAY_OUT_FORMAT_16BITS_RGB565)
+#define INPUT_FORMAT_PIXEL(n)                                                                      \
+	UTIL_CAT(PIX_FMT_, DT_INST_STRING_UPPER_TOKEN(n, input_pixel_format))
+#define OUTPUT_FORMAT_PIXEL(n)                                                                     \
+	UTIL_CAT(PIX_FMT_, DT_INST_STRING_UPPER_TOKEN(n, output_pixel_format))
 
 #define RENESAS_RA_DISPLAY_GET_PIXEL_FORMAT(n)                                                     \
-	(DT_INST_PROP(n, input_pixel_format) == PANEL_PIXEL_FORMAT_RGB_888                         \
-		 ? PANEL_PIXEL_FORMAT_ARGB_8888                                                    \
-		 : DT_INST_PROP(n, input_pixel_format))
+	(INPUT_FORMAT_PIXEL(n) == PIXEL_FORMAT_RGB_888                                             \
+		? PIXEL_FORMAT_ARGB_8888                                                           \
+		: INPUT_FORMAT_PIXEL(n))
 
 #define DISPLAY_HSIZE(n) (DT_INST_PROP(n, width))
 #define DISPLAY_VSIZE(n) (DT_INST_PROP(n, height))
 
 #define RENESAS_RA_GLCDC_IN_PIXEL_FORMAT(n)                                                        \
-	UTIL_CAT(RENESAS_RA_GLCDC_IN_PIXEL_FORMAT_, INPUT_FORMAT_PIXEL(n))
+	(INPUT_FORMAT_PIXEL(n) == PIXEL_FORMAT_RGB_888 ? DISPLAY_IN_FORMAT_32BITS_RGB888           \
+						       :                                           \
+	 (INPUT_FORMAT_PIXEL(n) == PIXEL_FORMAT_ARGB_8888 ? DISPLAY_IN_FORMAT_32BITS_ARGB8888      \
+	                                                  : DISPLAY_IN_FORMAT_16BITS_RGB565))
 
 #define RENESAS_RA_GLCDC_OUT_PIXEL_FORMAT(n)                                                       \
-	UTIL_CAT(RENESAS_RA_GLCDC_OUT_PIXEL_FORMAT_, OUTPUT_FORMAT_PIXEL(n))
+	(OUTPUT_FORMAT_PIXEL(n) == PIXEL_FORMAT_RGB_888 ? DISPLAY_OUT_FORMAT_24BITS_RGB888         \
+							: DISPLAY_OUT_FORMAT_16BITS_RGB565)
 
 #define RENESAS_RA_GLCDC_PIXEL_BYTE_SIZE(n)                                                        \
 	(DISPLAY_BITS_PER_PIXEL(RENESAS_RA_DISPLAY_GET_PIXEL_FORMAT(n)) >> 3)

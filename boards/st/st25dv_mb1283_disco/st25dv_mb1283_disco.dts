@@ -8,7 +8,6 @@
 #include <st/f4/stm32f405Xg.dtsi>
 #include <st/f4/stm32f405vgtx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	compatible = "st,st25dv_mb1283_disco", "st,stm32f405", "st,stm32f4";
@@ -87,7 +86,7 @@
 			compatible = "ilitek,ili9341";
 			reg = <0>;
 			mipi-max-frequency = <DT_FREQ_M(20)>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+			pixel-format = "bgr24";
 			red-blue-swap;
 			rotation = <0>;
 			width = <240>;

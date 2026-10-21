@@ -9,7 +9,6 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "esp32s3_geek-pinctrl.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	compatible = "waveshare,esp32-s3-geek";
@@ -65,7 +64,7 @@
 			vdvs = <0x20>;
 			mdac = <0x70>;
 			lcm = <0x2c>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = "rgb565";
 			gamma = <0x01>;
 			porch-param = [0c 0c 00 33 33];
 			cmd2en-param = [5a 69 02 01];

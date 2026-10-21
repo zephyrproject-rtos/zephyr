@@ -481,7 +481,7 @@ static DEVICE_API(display, st7789v_api) = {
 	SPI_WORD_SET(8) : SPI_WORD_SET(9))
 #define ST7789V_INIT(inst)								\
 	static const pixel_format_t st7789v_supported_pixel_formats_ ## inst[] = {	\
-		DT_INST_PROP(inst, pixel_format), 0};					\
+		PIX_FMT_DT_INST(inst), 0};                                              \
 	static const struct st7789v_config st7789v_config_ ## inst = {			\
 		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                        \
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,                             \
@@ -520,7 +520,7 @@ static DEVICE_API(display, st7789v_api) = {
 		.width = DT_INST_PROP(inst, width),					\
 		.height = DT_INST_PROP(inst, height),					\
 		.ready_time_ms = DT_INST_PROP(inst, ready_time_ms),			\
-		.pixel_format = DT_INST_PROP(inst, pixel_format),			\
+		.pixel_format = PIX_FMT_DT_INST(inst),                                  \
 		.supported_pixel_formats = st7789v_supported_pixel_formats_ ## inst,	\
 	};										\
 											\

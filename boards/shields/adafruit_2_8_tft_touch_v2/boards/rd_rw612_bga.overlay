@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/dt-bindings/spi/spi.h>
-#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	chosen {
@@ -45,7 +44,7 @@
 		duplex = <SPI_HALF_DUPLEX>;
 		width = <240>;
 		height = <320>;
-		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+		pixel-format = "bgr24";
 		rotation = <270>;
 		v-mirror;
 		red-blue-swap;

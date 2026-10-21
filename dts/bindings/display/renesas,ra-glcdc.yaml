@@ -98,16 +98,23 @@ properties:
     description: Select the output signal synchronization edge. Default is falling edge.
 
   input-pixel-format:
-    type: int
+    type: string
     required: true
     description: |
       Initial input Pixel format for Graphic LCD controller.
+    enum:
+      - "bgr24"
+      - "bgra32"
+      - "rgb565"
 
   output-pixel-format:
-    type: int
+    type: string
     required: true
     description: |
       Initial output Pixel format for Graphic LCD controller.
+    enum:
+      - "bgr24"
+      - "rgb565"
 
   def-back-color-alpha:
     type: int

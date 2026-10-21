@@ -343,7 +343,7 @@ static DEVICE_API(display, mcux_lcdifv2_api) = {
 	};                                                                                         \
 	static struct mcux_lcdifv2_data mcux_lcdifv2_data_##id = {                                 \
 		.next_idx = 0,                                                                     \
-		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \
+		.pixel_format = PIX_FMT_DT_INST(id),                                               \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(id, &mcux_lcdifv2_init, NULL, &mcux_lcdifv2_data_##id,               \
 			      &mcux_lcdifv2_config_##id, POST_KERNEL,                              \

@@ -270,11 +270,11 @@ static int led_strip_matrix_init(const struct device *dev)
 		.start_from_right = DT_INST_PROP(inst, start_from_right),                          \
 		.modules_circulative = DT_INST_PROP(inst, modules_circulative),                    \
 		.modules_start_from_right = DT_INST_PROP(inst, modules_start_from_right),          \
-		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
+		.pixel_format = PIX_FMT_DT_INST(inst),                                             \
 	};                                                                                         \
                                                                                                    \
-	BUILD_ASSERT((DT_INST_PROP(inst, pixel_format) == PIXEL_FORMAT_RGB_888) ||                 \
-		     (DT_INST_PROP(inst, pixel_format) == PIXEL_FORMAT_ARGB_8888));                \
+	BUILD_ASSERT((PIX_FMT_DT_INST(inst) == PIXEL_FORMAT_RGB_888) ||                            \
+		     (PIX_FMT_DT_INST(inst) == PIXEL_FORMAT_ARGB_8888));                           \
 	BUILD_ASSERT((DT_INST_PROP(inst, width) * DT_INST_PROP(inst, height)) ==                   \
 		     AMOUNT_OF_LEDS(inst));                                                        \
 	BUILD_ASSERT((DT_INST_PROP(inst, width) % DT_INST_PROP(inst, horizontal_modules)) == 0);   \

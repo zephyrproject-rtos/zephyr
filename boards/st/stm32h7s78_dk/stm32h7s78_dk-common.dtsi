@@ -9,7 +9,6 @@
 #include <st/h7/stm32h7s7l8hxh-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include "stmod_connector.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 /*
@@ -524,7 +523,7 @@ zephyr_udc0: &usb1 {};
 
 	width = <800>;
 	height = <480>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	pixel-format = "bgr24";
 
 	def-back-color-red = <0xff>;
 	def-back-color-green = <0xff>;

@@ -396,7 +396,7 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
  * if pixel format is changed at runtime.
  */
 #define MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)					\
-	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(n, pixel_format)) / BITS_PER_BYTE)
+	(DISPLAY_BITS_PER_PIXEL(PIX_FMT_DT_INST(n)) / BITS_PER_BYTE)
 #define MCUX_DCNANO_LCDIF_PITCH_BYTES(n)					\
 	ROUND_UP((DT_INST_PROP(n, width) * MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)),	\
 	MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN)
@@ -430,14 +430,14 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 			.topLeftY = 0U,						\
 			.width = DT_INST_PROP(n, width),			\
 			.height = DT_INST_PROP(n, height),			\
-			.format = DT_INST_PROP(n, pixel_format),		\
+			.format = PIX_FMT_DT_INST(n),				\
 		},
 #else
 #define MCUX_DCNANO_LCDIF_FB_CONFIG(n)						\
 		.fb_config = {							\
 			.enable = true,						\
 			.enableGamma = false,					\
-			.format = DT_INST_PROP(n, pixel_format),		\
+			.format = PIX_FMT_DT_INST(n),				\
 		},
 #endif
 

@@ -1025,7 +1025,7 @@ static int display_esp32_dsi_init(const struct device *dev)
 	static const struct device *const display_esp32_dsi_panels_##inst[] = {                    \
 		DISPLAY_ESP32_DSI_PANEL(inst)};                                                    \
 	static const pixel_format_t esp32_dsi_supported_formats_##inst[] = {                       \
-		DT_INST_PROP(inst, pixel_format), 0};                                              \
+		PIX_FMT_DT_INST(inst), 0};                                                         \
 	static const struct display_esp32_dsi_config display_esp32_dsi_config_##inst = {           \
 		.dma_channel = DT_INST_PROP(inst, dma_channel),                                    \
 		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                    \
@@ -1036,7 +1036,7 @@ static int display_esp32_dsi_init(const struct device *dev)
 				 : NULL,                                                           \
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \
-		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
+		.pixel_format = PIX_FMT_DT_INST(inst),                                             \
 		.supported_pixel_formats = esp32_dsi_supported_formats_##inst,                     \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, display_esp32_dsi_init, NULL, &display_esp32_dsi_data_##inst,  \

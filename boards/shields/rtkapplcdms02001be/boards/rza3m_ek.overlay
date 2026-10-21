@@ -14,7 +14,7 @@
 };
 
 &zephyr_lcdif {
-	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	input-pixel-format = "rgb565";
 };
 
 &mipi_dsi {

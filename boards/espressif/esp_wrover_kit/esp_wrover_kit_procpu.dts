@@ -91,7 +91,7 @@
 			compatible = "ilitek,ili9341";
 			reg = <0>;
 			mipi-max-frequency = <25000000>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = "rgb565";
 			rotation = <0>;
 			width = <240>;
 			height = <320>;

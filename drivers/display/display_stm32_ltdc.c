@@ -991,7 +991,7 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 #endif
 
 /* LTDC supports RGB888 and RGB666 for output however only RGB_888 is supported for now */
-#if DT_INST_PROP(0, pixel_format) != PANEL_PIXEL_FORMAT_RGB_888
+#if PIX_FMT_DT_INST(0) != PIXEL_FORMAT_RGB_888
 #error "Only RGB_888 is supported as a LTDC output (aka panel or mipi-dsi input format)"
 #endif
 

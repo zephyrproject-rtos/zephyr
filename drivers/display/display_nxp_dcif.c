@@ -468,7 +468,7 @@ static DEVICE_API(display, nxp_dcif_api) = {
 		.irq_config_func = nxp_dcif_config_func_##n,					\
 		.pincfg = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0),			\
 			(PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),				\
-		.init_pixel_format = DT_INST_PROP(n, pixel_format),				\
+		.init_pixel_format = PIX_FMT_DT_INST(n),				\
 		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),			\
 					 (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),	\
 		.clock_subsys = COND_CODE_1(							\

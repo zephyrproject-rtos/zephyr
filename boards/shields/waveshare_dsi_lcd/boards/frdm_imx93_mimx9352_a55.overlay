@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
-#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	chosen {
@@ -24,7 +23,7 @@
 &lcdif {
 	width = <1024>;
 	height = <600>;
-	pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
+	pixel-format = "bgra32";
 	media-axi-clk-rate = <400000000>;
 	media-apb-clk-rate = <133333334>;
 	status = "okay";

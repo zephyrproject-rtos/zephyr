@@ -8,7 +8,6 @@
 #include <freq.h>
 #include <posix/posix.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -185,7 +184,7 @@
 
 	sdl_dc: sdl_dc {
 		compatible = "zephyr,sdl-dc";
-		pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
+		pixel-format = "bgra32";
 		height = <240>;
 		width = <320>;
 	};

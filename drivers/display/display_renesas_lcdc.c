@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(smartbond_display, CONFIG_DISPLAY_LOG_LEVEL);
 	LCDC_LCDC_LAYER0_OFFSETX_REG_ ## _field ## _Msk)
 
 #define DISPLAY_SMARTBOND_PIXEL_SIZE(inst)                                                         \
-	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(inst, pixel_format)) / BITS_PER_BYTE)
+	(DISPLAY_BITS_PER_PIXEL(PIX_FMT_DT_INST(inst)) / BITS_PER_BYTE)
 
 #if CONFIG_DISPLAY_RENESAS_LCDC_BUFFER_PSRAM
 #define DISPLAY_BUFFER_LINKER_SECTION \
@@ -438,7 +438,7 @@ static void *display_smartbond_get_framebuffer(const struct device *dev)
 }
 
 static const pixel_format_t display_smartbond_supported_pixel_formats[] = {
-	DT_INST_PROP(0, pixel_format),
+	PIX_FMT_DT_INST(0),
 	0,
 };
 
@@ -456,7 +456,7 @@ static void display_smartbond_get_capabilities(const struct device *dev,
 	 */
 	capabilities->supported_pixel_formats = display_smartbond_supported_pixel_formats;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
-	capabilities->current_pixel_format = DT_INST_PROP(0, pixel_format);
+	capabilities->current_pixel_format = PIX_FMT_DT_INST(0);
 	capabilities->x_resolution = DT_INST_PROP(0, width);
 	capabilities->y_resolution = DT_INST_PROP(0, height);
 }
@@ -653,7 +653,7 @@ static DEVICE_API(display, display_smartbond_driver_api) = {
 		.x_res = DT_INST_PROP(inst, width), \
 		.y_res = DT_INST_PROP(inst, height),	\
 		.pixel_size = DISPLAY_SMARTBOND_PIXEL_SIZE(inst),	\
-		.pixel_format = DT_INST_PROP(0, pixel_format),	\
+		.pixel_format = PIX_FMT_DT_INST(0),             \
 		.mode.vsync_pol =	\
 			DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_active) ? 0 : 1,	\
 		.mode.hsync_pol =	\

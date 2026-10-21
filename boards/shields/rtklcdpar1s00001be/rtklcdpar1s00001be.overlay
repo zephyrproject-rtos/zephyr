@@ -29,8 +29,8 @@
 &zephyr_lcdif {
 	width = <1024>;
 	height = <600>;
-	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
-	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	input-pixel-format = "rgb565";
+	output-pixel-format = "bgr24";
 	backlight-gpios = <&renesas_parallel_graphics_connector 1 GPIO_ACTIVE_HIGH>;
 	output-signal-sync-edge = "RISING";
 	status = "okay";

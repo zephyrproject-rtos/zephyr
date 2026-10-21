@@ -173,10 +173,10 @@ properties:
       [(width / horizontal-modules) * (height / vertical-modules)].
 
   pixel-format:
-    type: int
-    default: 1
+    type: string
+    default: "bgr24"
     description: |
-      Initial Pixel format.
-      See dt-bindings/display/panel.h for a list.
-      This property only accepts PANEL_PIXEL_FORMAT_RGB_888 and PANEL_PIXEL_FORMAT_RRGB_8888.
-      If this property is not set, use PANEL_PIXEL_FORMAT_RGB_888 as a default.
+      Initial pixel format. Defaults to "bgr24".
+    enum:
+      - "bgr24"
+      - "bgra32"

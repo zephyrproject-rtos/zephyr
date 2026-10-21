@@ -562,7 +562,7 @@ static DEVICE_API(display, mcux_elcdif_api) = {
 			   (.pxp = DEVICE_DT_GET(DT_INST_PHANDLE(id, nxp_pxp)),))};                \
 	static struct mcux_elcdif_data mcux_elcdif_data_##id = {                                   \
 		.next_idx = 0,                                                                     \
-		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \
+		.pixel_format = PIX_FMT_DT_INST(id),                                               \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(id, &mcux_elcdif_init, NULL, &mcux_elcdif_data_##id,                 \
 			      &mcux_elcdif_config_##id, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, \

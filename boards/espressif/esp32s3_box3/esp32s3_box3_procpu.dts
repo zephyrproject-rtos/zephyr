@@ -9,7 +9,6 @@
 #include <espressif/esp32s3/esp32s3.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
-#include <zephyr/dt-bindings/display/panel.h>
 #include "esp32s3_box3-pinctrl.dtsi"
 
 / {
@@ -63,7 +62,7 @@
 			reg = <0>;
 			mipi-max-frequency = <20000000>;
 			vin-supply = <&lcd_backlight_en>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = "rgb565";
 			width = <320>;
 			height = <240>;
 			rotation = <180>;

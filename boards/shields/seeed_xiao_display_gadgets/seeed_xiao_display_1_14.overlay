@@ -50,7 +50,7 @@
 		x-offset = <52>;
 		y-offset = <40>;
 		mdac = <0x00>;
-		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
+		pixel-format = "rgb565x";
 		porch-param = [0c 0c 00 33 33];
 		gctrl = <0x35>;
 		vcom = <0x28>;

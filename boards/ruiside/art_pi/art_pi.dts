@@ -195,7 +195,7 @@
 	clocks = <&rcc STM32_CLOCK(APB3, 3)>, <&rcc STM32_SRC_PLL3_R NO_SEL>;
 	width = <800>;
 	height = <480>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	pixel-format = "bgr24";
 	def-back-color-red = <0x00>;
 	def-back-color-green = <0x00>;
 	def-back-color-blue = <0x00>;

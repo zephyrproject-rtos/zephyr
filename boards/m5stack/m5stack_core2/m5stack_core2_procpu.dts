@@ -9,7 +9,6 @@
 #include "m5stack_core2-pinctrl.dtsi"
 #include "grove_connectors.dtsi"
 #include "m5stack_mbus_connectors.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/regulator/axp192.h>
 #include <espressif/partitions_0x1000_amp.dtsi>
 
@@ -63,7 +62,7 @@
 			reg = <0>;
 			mipi-max-frequency = <30000000>;
 			vin-supply = <&lcd_bg>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
+			pixel-format = "rgb565x";
 			display-inversion;
 			width = <320>;
 			height = <240>;

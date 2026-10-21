@@ -8,7 +8,6 @@
 
 #include "display_gc9x01x.h"
 
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/pm/device.h>
@@ -632,7 +631,7 @@ static DEVICE_API(display, gc9x01x_api) = {
 							      SPI_OP_MODE_CONTROLLER |             \
 							      SPI_WORD_SET(8), 0),                 \
 		},                                                                                 \
-		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
+		.pixel_format = PIX_FMT_DT_INST(inst),                                             \
 		.orientation = DT_INST_ENUM_IDX(inst, orientation),                                \
 		.x_resolution = DT_INST_PROP(inst, width),                                         \
 		.y_resolution = DT_INST_PROP(inst, height),                                        \

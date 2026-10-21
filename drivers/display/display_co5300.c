@@ -784,7 +784,7 @@ static DEVICE_API(display, co5300_api) = {
 			 PIXEL_FORMAT_RGB_565 :							\
 			 DT_INST_PROP(node_id, pixel_format) == MIPI_DSI_PIXFMT_RGB888 ?	\
 			 PIXEL_FORMAT_RGB_888 : 0),						\
-			(DT_INST_PROP(node_id, pixel_format))),					\
+			(PIX_FMT_DT_INST(node_id))),					\
 		COND_CODE_1(DT_INST_ON_BUS(node_id, mspi), (CO5300_DATA_MSPI(node_id)),	())	\
 	};											\
 												\

@@ -19,11 +19,11 @@ properties:
       dt-bindings/mipi_dbi/mipi_dbi.h
 
   pixel-format:
-    type: int
-    default: 32
+    type: string
+    default: "rgb565x"
     enum:
-      - 1 # PANEL_PIXEL_FORMAT_RGB_888
-      - 32 # PANEL_PIXEL_FORMAT_RGB_565X
+      - "bgr24"
+      - "rgb565x"
     description: |
       Initial pixel format. The MIPI DBI interfaces of the controller are
       byte wide and receive 16-bit pixels most significant byte first.

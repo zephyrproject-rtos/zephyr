@@ -175,7 +175,7 @@ static DEVICE_API(display, rpi_bcm2711_fb_api) = {
 #define RPI_BCM2711_FB_DEFINE(n)                                                                   \
 	static const struct rpi_bcm2711_fb_config rpi_bcm2711_fb_config_##n = {                    \
 		.common = DISPLAY_FB_COMMON_CFG_FROM_DT_INST(n),                                   \
-		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
+		.pixel_format = PIX_FMT_DT_INST(n),                                                \
 		.red_blue_swap = DT_INST_PROP(n, red_blue_swap),                                   \
 	};                                                                                         \
                                                                                                    \

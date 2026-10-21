@@ -9,7 +9,6 @@
 #include "t_deck-pinctrl.dtsi"
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/input/keymap.h>
 #include <zephyr/dt-bindings/lora/sx126x.h>
@@ -115,7 +114,7 @@
 			vdvs = <0x20>;
 			mdac = <0x60>;
 			lcm = <0x2c>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
+			pixel-format = "rgb565x";
 			gamma = <0x01>;
 			porch-param = [0c 0c 00 33 33];
 			cmd2en-param = [5a 69 02 01];

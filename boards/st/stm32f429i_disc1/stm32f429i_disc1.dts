@@ -8,7 +8,6 @@
 /dts-v1/;
 #include <st/f4/stm32f429Xi.dtsi>
 #include <st/f4/stm32f429zitx-pinctrl.dtsi>
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -70,7 +69,7 @@
 			height = <320>;
 			rotation = <180>;
 			h-mirror;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = "rgb565";
 			pwctrla = [39 2c 00 34 02];
 			pwctrlb = [00 c1 30];
 			timctrla = [85 00 78];
@@ -265,7 +264,7 @@
 
 	width = <240>;
 	height = <320>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	pixel-format = "bgr24";
 
 	def-back-color-red = <0xff>;
 	def-back-color-green = <0xff>;

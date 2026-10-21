@@ -7,7 +7,6 @@
 
 /dts-v1/;
 #include <st/h7/stm32h745Xi_m7.dtsi>
-#include <zephyr/dt-bindings/display/panel.h>
 #include "stm32h745i_disco.dtsi"
 
 / {
@@ -260,7 +259,7 @@
 
 	width = <480>;
 	height = <272>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	pixel-format = "bgr24";
 
 	def-back-color-red = <0>;
 	def-back-color-green = <0>;

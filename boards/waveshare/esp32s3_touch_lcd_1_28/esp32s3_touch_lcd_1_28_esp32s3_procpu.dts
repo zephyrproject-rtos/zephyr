@@ -6,7 +6,6 @@
 /dts-v1/;
 #include <espressif/esp32s3/esp32s3.dtsi>
 #include "esp32s3_touch_lcd_1_28-pinctrl.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
@@ -69,7 +68,7 @@
 			compatible = "galaxycore,gc9x01x";
 			reg = <0>;
 			mipi-max-frequency = <100000000>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = "rgb565";
 			display-inversion;
 			width = <240>;
 			height = <240>;
