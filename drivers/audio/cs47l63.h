@@ -56,7 +56,6 @@ extern "C" {
 #define CS47L63_HP_OCD_CTRL1      0x000024ACU
 #define CS47L63_HP_OCD_TEST1      0x000024B4U
 #define CS47L63_DAC_IF_CONTROL_1  0x00004D68U
-#define CS47L63_DAC_IF_TEST_1     0x00004D70U
 
 /* MICBIAS1B can be sourced from VDD_A, which needs no VDD_LDO (DS1249F2 section 4.14.2). */
 #define CS47L63_MICBIAS_CTRL5 0x00002418U
@@ -156,6 +155,14 @@ extern "C" {
 #define CS47L63_OUT1L_MUTE      0x00000100U
 #define CS47L63_OUT1L_VOL_0DB   0x80U
 
+/** R19824, the whole of which apply_trim() also writes. */
+#define CS47L63_DAC_IF_TEST_1     0x00004D70U
+/** HP1L_CFG, D15-D13: 010 for a load of 20 ohms or more, the reset value (DS1249F2 table 4-45). */
+#define CS47L63_HP1L_CFG_MASK     0x0000E000U
+#define CS47L63_HP1L_CFG_SHIFT    13
+/** HP1L_CFG code for a DC resistance below 20 ohms. */
+#define CS47L63_HP1L_CFG_LT20_OHM 3U
+
 #define CS47L63_ASP1_ENABLES1      0x00006000U
 #define CS47L63_ASP1_CONTROL1      0x00006004U
 #define CS47L63_ASP1_CONTROL2      0x00006008U
@@ -248,6 +255,7 @@ extern "C" {
 #define CS47L63_IN2R_CONTROL2        0x00004088U
 #define CS47L63_IN2_SRC_MASK         0x30000000U
 #define CS47L63_IN2_SRC_SHIFT        28
+#define CS47L63_IN2_SRC_DIFFERENTIAL 0U
 #define CS47L63_IN2_SRC_SINGLE_ENDED 1U
 #define CS47L63_IN2_MUTE             0x10000000U
 #define CS47L63_IN2_VOL_MASK         0x00FF0000U
@@ -372,6 +380,8 @@ struct cs47l63_config {
 	struct gpio_dt_spec reset_gpio;
 	struct cs47l63_chip *chip;
 	struct cs47l63_port *port;
+	bool in2_single_ended;
+	bool hp_load_lt20;
 };
 
 /** The FLL output DS1249F2 section 4.10.7.4 requires for SYSCLK in the 48 kHz family. */

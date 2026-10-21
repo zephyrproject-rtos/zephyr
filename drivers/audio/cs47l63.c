@@ -1222,7 +1222,10 @@ static int cs47l63_in_init(const struct device *dev, struct cs47l63_port *port)
 
 static int line_start(const struct device *dev, const struct cs47l63_port *port)
 {
+	const struct cs47l63_config *cfg = dev->config;
 	const struct cs47l63_data *data = dev->data;
+	const uint32_t src = cfg->in2_single_ended ? CS47L63_IN2_SRC_SINGLE_ENDED
+						   : CS47L63_IN2_SRC_DIFFERENTIAL;
 	int ret;
 
 	/* The rate field's reset value selects SAMPLE_RATE1 (DS1249F2 table 4-20). */
@@ -1234,15 +1237,13 @@ static int line_start(const struct device *dev, const struct cs47l63_port *port)
 	}
 
 	ret = cs47l63_bus_update_reg(dev, CS47L63_IN2L_CONTROL1, CS47L63_IN2_SRC_MASK,
-				     (uint32_t)CS47L63_IN2_SRC_SINGLE_ENDED
-					     << CS47L63_IN2_SRC_SHIFT);
+				     src << CS47L63_IN2_SRC_SHIFT);
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = cs47l63_bus_update_reg(dev, CS47L63_IN2R_CONTROL1, CS47L63_IN2_SRC_MASK,
-				     (uint32_t)CS47L63_IN2_SRC_SINGLE_ENDED
-					     << CS47L63_IN2_SRC_SHIFT);
+				     src << CS47L63_IN2_SRC_SHIFT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1515,11 +1516,20 @@ static int apply_cached_volume(const struct device *dev)
 
 static int cs47l63_out_init(const struct device *dev)
 {
+	const struct cs47l63_config *cfg = dev->config;
 	struct cs47l63_data *data = dev->data;
 	int ret;
 
 	data->out_muted = false;
 	data->out_vol_code = CS47L63_OUT1L_VOL_0DB;
+
+	if (cfg->hp_load_lt20) {
+		ret = cs47l63_bus_update_reg(dev, CS47L63_DAC_IF_TEST_1, CS47L63_HP1L_CFG_MASK,
+					     CS47L63_HP1L_CFG_LT20_OHM << CS47L63_HP1L_CFG_SHIFT);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	ret = cs47l63_bus_update_reg(dev, CS47L63_OUTPUT_ENABLE_1, CS47L63_OUT1L_EN, 0U);
 	if (ret < 0) {
@@ -2358,6 +2368,8 @@ static DEVICE_API(audio_codec, child_driver_api) = {
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
 		.chip = &cs47l63_chip_##inst,                                                      \
 		.port = &cs47l63_port_##inst,                                                      \
+		.in2_single_ended = DT_INST_PROP(inst, cirrus_in2_single_ended),                   \
+		.hp_load_lt20 = DT_INST_PROP(inst, cirrus_hp_load_below_20_ohm),                   \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, codec_initialize, NULL, &cs47l63_data_##inst,                  \
 			      &cs47l63_config_##inst, POST_KERNEL,                                 \
