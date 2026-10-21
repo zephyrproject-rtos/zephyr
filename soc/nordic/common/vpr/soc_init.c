@@ -7,7 +7,7 @@
 #include <hal/nrf_vpr_csr.h>
 #include <hal/nrf_vpr_csr_vevif.h>
 
-static int vpr_init(void)
+void soc_early_init_hook(void)
 {
 	uint32_t sleep_mode;
 
@@ -30,7 +30,4 @@ static int vpr_init(void)
 	/* Notify parent core that core is ready and can accept IPC communication. */
 	nrf_vpr_csr_vevif_events_set(BIT(DT_PROP(DT_NODELABEL(cpu), nordic_vpr_ready_event)));
 #endif
-	return 0;
 }
-
-SYS_INIT(vpr_init, PRE_KERNEL_1, 0);
