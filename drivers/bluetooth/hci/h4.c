@@ -206,11 +206,6 @@ static inline void get_evt_hdr(const struct device *dev)
 }
 
 
-static inline void copy_hdr(struct h4_data *h4)
-{
-	net_buf_add_mem(h4->rx.buf, h4->rx.hdr, h4->rx.hdr_len);
-}
-
 static void reset_rx(struct h4_data *h4)
 {
 	net_buf_drop(&h4->rx.buf);
@@ -220,6 +215,25 @@ static void reset_rx(struct h4_data *h4)
 	h4->rx.have_hdr = false;
 	h4->rx.hdr_len = 0U;
 	h4->rx.discardable = false;
+}
+
+/* Puts the header into rx.buf, which the caller has just allocated, or
+ * discards the packet, leaving rx.buf NULL, if the header and payload do not
+ * fit in it.
+ */
+static void init_rx_buf(struct h4_data *h4)
+{
+	size_t buf_tailroom = net_buf_tailroom(h4->rx.buf);
+
+	if (buf_tailroom < (h4->rx.remaining + h4->rx.hdr_len)) {
+		LOG_ERR("Not enough space in buffer %u/%zu", h4->rx.remaining + h4->rx.hdr_len,
+			buf_tailroom);
+		h4->rx.discard = h4->rx.remaining;
+		reset_rx(h4);
+		return;
+	}
+
+	(void)net_buf_add_mem(h4->rx.buf, h4->rx.hdr, h4->rx.hdr_len);
 }
 
 static struct net_buf *get_rx(struct h4_data *h4, k_timeout_t timeout)
@@ -278,13 +292,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		if (h4->rx.have_hdr && !h4->rx.buf) {
 			h4->rx.buf = get_rx(h4, K_FOREVER);
 			LOG_DBG("Got rx.buf %p", h4->rx.buf);
-			if (h4->rx.remaining > net_buf_tailroom(h4->rx.buf)) {
-				LOG_ERR("Not enough space in buffer");
-				h4->rx.discard = h4->rx.remaining;
-				reset_rx(h4);
-			} else {
-				copy_hdr(h4);
-			}
+			init_rx_buf(h4);
 		}
 
 		/* Let the ISR continue receiving new packets */
@@ -337,8 +345,6 @@ static inline void read_payload(const struct device *dev)
 	int read;
 
 	if (!h4->rx.buf) {
-		size_t buf_tailroom;
-
 		h4->rx.buf = get_rx(h4, K_NO_WAIT);
 		if (!h4->rx.buf) {
 			if (h4->rx.discardable) {
@@ -367,16 +373,11 @@ static inline void read_payload(const struct device *dev)
 
 		LOG_DBG("Allocated rx.buf %p", h4->rx.buf);
 
-		buf_tailroom = net_buf_tailroom(h4->rx.buf);
-		if (buf_tailroom < (h4->rx.remaining + h4->rx.hdr_len)) {
-			LOG_ERR("Not enough space in buffer %u/%zu", h4->rx.remaining,
-				buf_tailroom);
-			h4->rx.discard = h4->rx.remaining;
-			reset_rx(h4);
+		init_rx_buf(h4);
+		/* init_rx_buf may drop h4->rx.buf */
+		if (h4->rx.buf == NULL) {
 			return;
 		}
-
-		copy_hdr(h4);
 	}
 
 	read = uart_fifo_read(cfg->uart, net_buf_tail(h4->rx.buf), h4->rx.remaining);
@@ -432,13 +433,7 @@ static inline void read_header(const struct device *dev)
 	}
 
 	if (h4->rx.have_hdr && h4->rx.buf) {
-		if (h4->rx.remaining > net_buf_tailroom(h4->rx.buf)) {
-			LOG_ERR("Not enough space in buffer");
-			h4->rx.discard = h4->rx.remaining;
-			reset_rx(h4);
-		} else {
-			copy_hdr(h4);
-		}
+		init_rx_buf(h4);
 	}
 }
 
