@@ -28,6 +28,61 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
 #endif
 
+#if defined(CONFIG_SOC_STM32U575XX) || defined(CONFIG_SOC_STM32U585XX)
+/* STM32U575/585 silicon revisions, see errata sheet ES0499 */
+#define STM32U575_585_REV_X 0x2001U
+#define STM32U575_585_REV_W 0x3001U
+
+/* Max time for the oscillators and PLLs to stop, in microseconds */
+#define STOP_ENTRY_CLK_OFF_TIMEOUT_US 100U
+
+/*
+ * ES0499 Rev 12 §2.2.5 (device revision X and W): the device can hang if a
+ * wakeup request arrives a few clock cycles before Stop 2 or Stop 3 entry
+ * while PLL2, PLL3, HSI48 or SHSI is running.
+ */
+static bool affected_by_stop_entry_hang_erratum;
+
+/*
+ * ES0499 Rev 12 §2.2.11 (device revision X): after Stop 2 or Stop 3, the
+ * first fetch or read from the ICACHE or DCACHE line that was accessed last
+ * before entry may be corrupted.
+ */
+static bool affected_by_stop_cache_erratum;
+
+static bool stop_entry_erratum_clocks_stopped(void)
+{
+	bool running = LL_RCC_PLL2_IsReady() || LL_RCC_PLL3_IsReady() || LL_RCC_HSI48_IsReady();
+
+#if defined(RCC_CR_SHSION)
+	running = running || LL_RCC_SHSI_IsReady();
+#endif
+
+	return !running;
+}
+
+static void turn_off_stop_entry_erratum_clocks(void)
+{
+	/*
+	 * Stop entry switches all of these off anyway: switch them off just
+	 * before, and wait for them to stop, to close the window. After
+	 * wakeup, stm32_clock_control_init() enables the ones in use again.
+	 * The SHSI bits are read-as-zero/write-ignored from the non-secure
+	 * side when SAES is secure: then only the secure side can do this.
+	 */
+	LL_RCC_PLL2_Disable();
+	LL_RCC_PLL3_Disable();
+	LL_RCC_HSI48_Disable();
+#if defined(RCC_CR_SHSION)
+	LL_RCC_SHSI_Disable();
+#endif
+
+	if (!WAIT_FOR(stop_entry_erratum_clocks_stopped(), STOP_ENTRY_CLK_OFF_TIMEOUT_US, NULL)) {
+		LOG_DBG("Clocks still running at Stop entry");
+	}
+}
+#endif /* CONFIG_SOC_STM32U575XX || CONFIG_SOC_STM32U585XX */
+
 #ifdef CONFIG_STM32_STOP3_LP_MODE
 static void pwr_stop3_isr(const struct device *dev)
 {
@@ -76,6 +131,19 @@ void set_mode_stop(uint8_t substate_id)
 		LOG_DBG("Unsupported power state substate-id %u", substate_id);
 		break;
 	}
+
+#if defined(CONFIG_SOC_STM32U575XX) || defined(CONFIG_SOC_STM32U585XX)
+	if ((substate_id == 3) || (substate_id == 4)) {
+		/* Apply the errata workarounds before Stop 2/3 entry */
+		if (affected_by_stop_cache_erratum) {
+			sys_cache_instr_disable();
+			sys_cache_data_disable();
+		}
+		if (affected_by_stop_entry_hang_erratum) {
+			turn_off_stop_entry_erratum_clocks();
+		}
+	}
+#endif /* CONFIG_SOC_STM32U575XX || CONFIG_SOC_STM32U585XX */
 }
 
 void set_mode_standby(uint8_t substate_id)
@@ -142,6 +210,16 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		LOG_DBG("Unsupported power state %u", state);
 		break;
 	}
+
+#if defined(CONFIG_SOC_STM32U575XX) || defined(CONFIG_SOC_STM32U585XX)
+	if ((state == PM_STATE_SUSPEND_TO_IDLE) && ((substate_id == 3) || (substate_id == 4)) &&
+	    affected_by_stop_cache_erratum) {
+		/* Undo the cache errata workaround after Stop 2/3 exit */
+		sys_cache_instr_enable();
+		sys_cache_data_enable();
+	}
+#endif /* CONFIG_SOC_STM32U575XX || CONFIG_SOC_STM32U585XX */
+
 	/* need to restore the clock */
 	stm32_clock_control_init(NULL);
 
@@ -159,6 +237,14 @@ void stm32_power_init(void)
 
 	/* enable Power clock */
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
+
+#if defined(CONFIG_SOC_STM32U575XX) || defined(CONFIG_SOC_STM32U585XX)
+	uint32_t rev_id = LL_DBGMCU_GetRevisionID();
+
+	affected_by_stop_entry_hang_erratum =
+		(rev_id == STM32U575_585_REV_X) || (rev_id == STM32U575_585_REV_W);
+	affected_by_stop_cache_erratum = (rev_id == STM32U575_585_REV_X);
+#endif /* CONFIG_SOC_STM32U575XX || CONFIG_SOC_STM32U585XX */
 
 #ifdef CONFIG_STM32_STOP3_LP_MODE
 	IRQ_CONNECT(PWR_S3WU_IRQn, 0,
