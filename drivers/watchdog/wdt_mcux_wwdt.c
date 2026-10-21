@@ -105,15 +105,9 @@ static int mcux_wwdt_clock_halted(const struct device *dev, bool halt)
 #endif
 }
 
-static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32_t *freq)
+static void mcux_wwdt_set_clock_divider(const struct device *dev)
 {
 	const struct mcux_wwdt_config *config = dev->config;
-	int ret;
-
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
 
 	switch ((uint32_t)config->clock_subsys) {
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt))
@@ -140,6 +134,19 @@ static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32
 	default:
 		break;
 	}
+}
+
+static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32_t *freq)
+{
+	const struct mcux_wwdt_config *config = dev->config;
+	int ret;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	mcux_wwdt_set_clock_divider(dev);
 
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, freq);
 	if (ret) {
