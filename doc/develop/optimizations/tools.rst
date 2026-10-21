@@ -376,3 +376,38 @@ This will generate the following output file and open it in the default browser:
 .. image:: dashboard.webp
    :align: center
    :alt: Dashboard
+
+System Configuration
+********************
+
+Clock Settings
+==============
+
+Clock settings for a given board may be displayed as a tree by running the
+``clock_tree`` build target, like so:
+
+.. zephyr-app-commands::
+    :tool: all
+    :zephyr-app: samples/hello_world
+    :board: reel_board
+    :goals: clock_tree
+
+This will generate a text based representation of the clock tree for the
+specified board, based on the settings that will be applied at first boot.
+Output will look similar to the following:
+
+.. code:: console
+
+    xtal32m (16 MHz)
+    ├── clk_in_en (16 MHz)
+    │   └── pll0clksel [mux: clk_in_en] (16 MHz)
+    │       └── pll0 (512 MHz)
+    │           └── pll0_pdec (128 MHz)
+    │               └── pll0_directo [mux: pll0_pdec] (128 MHz)
+    │                   └── pll0_bypass [mux: pll0_directo] (128 MHz)
+    │                       ├── clkoutsel [mux: pll0_bypass] (128 MHz)
+    │                       │   └── clkoutdiv (500 kHz)
+    │                       │       └── clkout_clock [output] (500 kHz)
+    │                       └── pll0div (128 MHz)
+    └── clk_usb_en (0 Hz)
+        └── usb1_phy_clock [output] (0 Hz)

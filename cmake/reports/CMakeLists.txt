@@ -171,3 +171,15 @@ add_custom_target(
   USES_TERMINAL
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
+
+if(CONFIG_CLOCK_MANAGEMENT)
+  add_custom_target(
+    clock_tree
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/dts/static_clocks/display_tree.py
+    ${EDT_PICKLE}
+    DEPENDS ${logical_target_for_zephyr_elf}
+    USES_TERMINAL
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+endif()
