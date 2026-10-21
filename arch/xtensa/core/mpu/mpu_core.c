@@ -81,6 +81,9 @@ static struct k_spinlock xtensa_mpu_lock;
  *
  * @param[in] start Start address of the region.
  * @param[in] end End address of the region.
+ *
+ * @return Memory type of the region, XTENSA_MPU_DEFAULT_MEMORY_TYPE if no
+ *         range in xtensa_mpu_mem_type_ranges[] covers the region.
  */
 static uint32_t find_memory_type(const uintptr_t start, const uintptr_t end)
 {
@@ -191,6 +194,9 @@ static int compare_entries(const void *a, const void *b)
  *
  * This sorts the MPU entries in ascending order of starting address.
  * After sorting, it rewrites the segment numbers of all entries.
+ *
+ * @param[in,out] entries Array of MPU entries with XTENSA_MPU_NUM_ENTRIES elements.
+ * @param[in] first_enabled_idx Index of the first enabled entry.
  */
 static void sort_entries(struct xtensa_mpu_entry *entries, uint8_t first_enabled_idx)
 {
@@ -301,6 +307,8 @@ static bool consolidate_entries(struct xtensa_mpu_entry *entries, uint8_t *first
  *
  * @retval 0 Successful in adding the region.
  * @retval -EINVAL Invalid values in function arguments.
+ * @retval -ENOSPC Not enough free entries in the MPU map.
+ * @retval -EFAULT Newly added entry not found after sorting.
  */
 static int mpu_map_region_add(struct xtensa_mpu_map *map,
 			      uintptr_t start_addr, uintptr_t end_addr,
@@ -661,6 +669,9 @@ void xtensa_mpu_init(void)
  *
  * @param[in] start Start address of the region.
  * @param[in] end End address of the region.
+ *
+ * @return Access rights of the region at boot, XTENSA_MPU_ACCESS_P_RW_U_NA
+ *         if no range in xtensa_mpu_ranges[] covers the region.
  */
 static uint32_t find_boot_permission(const uintptr_t start, const uintptr_t end)
 {
@@ -692,10 +703,11 @@ static uint32_t find_boot_permission(const uintptr_t start, const uintptr_t end)
  * @param[in,out] map Pointer to MPU map.
  * @param[in] start_addr Start address of the region.
  * @param[in] end_addr End address of the region.
- * @param[in] access_rights Access rights of this region.
  *
  * @retval 0 Successful in adding the region.
  * @retval -EINVAL Invalid values in function arguments.
+ * @retval -ENOSPC Not enough free entries in the MPU map.
+ * @retval -EFAULT Newly added entry not found after sorting.
  */
 static int mpu_map_region_restore(struct xtensa_mpu_map *map,
 				  uintptr_t start_addr, uintptr_t end_addr)
@@ -1095,6 +1107,11 @@ out:
 	return ret;
 }
 
+/**
+ * @brief Clear a user thread's stack and grant the thread access to it.
+ *
+ * @param thread User thread.
+ */
 void xtensa_user_stack_perms(struct k_thread *thread)
 {
 	int ret;
