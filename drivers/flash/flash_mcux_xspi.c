@@ -261,6 +261,31 @@ static const struct flash_xspi_device flash_xspi_winbond_w25q512nw __maybe_unuse
 	.reset_recovery_us = 30, /* Soft reset tRST=30us. Not support hardware reset. */
 };
 
+/* Same command set as the W25Q512NW, half the size. */
+static const struct flash_xspi_device flash_xspi_winbond_w25q25pw __maybe_unused = {
+	.memc = {
+		.xspi_dev_config = {
+			.deviceInterface = kXSPI_StrandardExtendedSPI,
+			.interfaceSettings.strandardExtendedSPISettings.pageSize = 256,
+			.CSHoldTime = 3,
+			.CSSetupTime = 3,
+			.addrMode = kXSPI_DeviceByteAddressable,
+			.columnAddrWidth = 0,
+			.enableCASInterleaving = false,
+			.ptrDeviceDdrConfig = NULL,
+			.deviceSize = {32 * 1024, 0},
+		},
+		.lut_array = &flash_xspi_lut_w25q512nw[0][0],
+		.lut_count = FLASH_MCUX_XSPI_LUT_ARRAY_SIZE(flash_xspi_lut_w25q512nw),
+	},
+	.mode_enable = true,
+	.mode_enable_value = 0x02, /* SR2: set QE (bit 1) */
+	.addr_4byte = false,
+	.status_read_size = 1,
+	.reset_assert_us = 0,
+	.reset_recovery_us = 30, /* Soft reset tRST=30us. Not support hardware reset. */
+};
+
 static int flash_xspi_nor_wait_bus_busy(const struct device *dev)
 {
 	struct flash_mcux_xspi_data *devData = dev->data;
@@ -808,7 +833,9 @@ static DEVICE_API(flash, flash_mcux_xspi_api) = {
 		    (&flash_xspi_mxicy_mx25um51345g,),				\
 	(COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, winbond_w25q512nw),		\
 		    (&flash_xspi_winbond_w25q512nw,),				\
-		    ())))
+	(COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, winbond_w25q25pw),		\
+		    (&flash_xspi_winbond_w25q25pw,),				\
+		    ())))))
 
 #define FLASH_MCUX_XSPI_NOR_DEV(n)						\
 	GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(n, FLASH_MCUX_XSPI_CHIP_DEV) NULL)
