@@ -613,6 +613,11 @@ __subsystem struct display_driver_api {
  * @param buf Pointer to buffer array
  *
  * @return 0 on success else negative errno code.
+ * @retval -EINVAL Invalid descriptor/rectangle/buffer
+ * @retval -ENOTSUP Update mode unsupported (e.g., partial write)
+ * @retval -EAGAIN Device busy/not started (driver-specific transient)
+ * @retval -EIO Transfer/programming failure
+ * @retval -ENOMEM Insufficient memory/resources
  */
 static inline int display_write(const struct device *dev, const uint16_t x,
 				const uint16_t y,
@@ -632,7 +637,10 @@ static inline int display_write(const struct device *dev, const uint16_t x,
  * @param buf Pointer to buffer array
  *
  * @return 0 on success else negative errno code.
- * @retval -ENOSYS if not implemented.
+ * @retval -ENOSYS Not implemented.
+ * @retval -EINVAL Invalid descriptor/rectangle/buffer.
+ * @retval -EAGAIN Device busy/not started (driver-specific transient).
+ * @retval -EIO Transfer/programming failure.
  */
 static inline int display_read(const struct device *dev, const uint16_t x,
 			       const uint16_t y,
@@ -654,7 +662,7 @@ static inline int display_read(const struct device *dev, const uint16_t x,
  * @param dev Pointer to device structure
  *
  * @return 0 on success else negative errno code.
- * @retval -ENOSYS if not implemented.
+ * @retval -ENOSYS Not implemented.
  */
 static inline int display_clear(const struct device *dev)
 {
@@ -704,7 +712,8 @@ static inline void *display_get_framebuffer(const struct device *dev)
  * @param dev Pointer to device structure
  *
  * @return 0 on success else negative errno code.
- * @retval -ENOSYS if not implemented.
+ * @retval -ENOSYS Not implemented.
+ * @retval -ENODEV Dependent device not ready
  */
 static inline int display_blanking_on(const struct device *dev)
 {
@@ -727,7 +736,8 @@ static inline int display_blanking_on(const struct device *dev)
  * @param dev Pointer to device structure
  *
  * @return 0 on success else negative errno code.
- * @retval -ENOSYS if not implemented.
+ * @retval -ENOSYS Not implemented.
+ * @retval -ENODEV Dependent device not ready
  */
 static inline int display_blanking_off(const struct device *dev)
 {
@@ -750,7 +760,8 @@ static inline int display_blanking_off(const struct device *dev)
  * @param brightness Brightness in steps of 1/256
  *
  * @return 0 on success else negative errno code.
- * @retval -ENOSYS if not implemented.
+ * @retval -ENOSYS Not implemented.
+ * @retval -ENODEV Dependent device not ready
  */
 static inline int display_set_brightness(const struct device *dev,
 					 uint8_t brightness)
@@ -774,7 +785,7 @@ static inline int display_set_brightness(const struct device *dev,
  * @param contrast Contrast in steps of 1/256
  *
  * @return 0 on success else negative errno code.
- * @retval -ENOSYS if not implemented.
+ * @retval -ENOSYS Not implemented.
  */
 static inline int display_set_contrast(const struct device *dev, uint8_t contrast)
 {
@@ -809,7 +820,11 @@ static inline void display_get_capabilities(const struct device *dev,
  * @param pixel_format Pixel format to be used by display
  *
  * @return 0 on success else negative errno code.
- * @retval -ENOSYS if not implemented.
+ * @retval -ENOSYS Not implemented.
+ * @retval -ENOTSUP Unsupported format.
+ * @retval -ENOMEM Backing framebuffer too small or realloc failure.
+ * @retval -EWOULDBLOCK Invalid state (running display).
+ * @retval -EIO Reconfig failure.
  */
 static inline int
 display_set_pixel_format(const struct device *dev,
@@ -831,7 +846,9 @@ display_set_pixel_format(const struct device *dev,
  * @param orientation Orientation to be used by display
  *
  * @return 0 on success else negative errno code.
- * @retval -ENOSYS if not implemented.
+ * @retval -ENOSYS Not implemented.
+ * @retval -ENOTSUP Unsupported orientation.
+ * @retval -ENODEV Dependent device not ready
  */
 static inline int display_set_orientation(const struct device *dev,
 					  const enum display_orientation
