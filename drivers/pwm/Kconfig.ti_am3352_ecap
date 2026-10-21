@@ -16,6 +16,7 @@ config PWM_TI_AM3352_ECAP_VARIANT_AM13
 	depends on SOC_SERIES_AM13E
 	default y
 	select MUX
+	select SYSCON
 	help
 	  Enable AM13E ECAP support : mux-states xbar routing
 	  and sysctl for setting PWREN bits.
