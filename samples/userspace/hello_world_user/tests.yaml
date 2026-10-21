@@ -5,7 +5,9 @@ sample:
 common:
   integration_platforms:
     - mps2/an385
-  tags: introduction
+  tags:
+    - introduction
+    - userspace
   harness: console
   harness_config:
     type: one_line
@@ -18,4 +20,6 @@ tests:
       - posix
     platform_exclude:
       - qemu_xtensa/dc233c/mmu
-    tags: introduction
+    tags:
+      - introduction
+      - userspace
