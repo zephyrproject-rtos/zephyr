@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(wdt_mcux_wwdt);
 
 #define MIN_TIMEOUT 0xFF
 #define MAX_TIMEOUT WWDT_TC_COUNT_MASK
+#define MCUX_WWDT_HAS_CLOCK_HALT \
+	(IS_ENABLED(CONFIG_SOC_FAMILY_MCXN) || IS_ENABLED(CONFIG_SOC_FAMILY_MCXA))
 
 struct mcux_wwdt_config {
 	WWDT_Type *base;
@@ -42,6 +44,34 @@ struct mcux_wwdt_data {
 	bool started;
 };
 
+#if MCUX_WWDT_HAS_CLOCK_HALT
+static int mcux_wwdt_get_divider(const struct device *dev, clock_div_name_t *divider)
+{
+	const struct mcux_wwdt_config *config = dev->config;
+
+	switch ((uint32_t)config->clock_subsys) {
+	case MCUX_WWDT0_CLK:
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		*divider = kCLOCK_DivWWDT0;
+#else
+		*divider = kCLOCK_DivWdt0Clk;
+#endif
+		return 0;
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt1))
+	case MCUX_WWDT1_CLK:
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		*divider = kCLOCK_DivWWDT1;
+#else
+		*divider = kCLOCK_DivWdt1Clk;
+#endif
+		return 0;
+#endif
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif
+
 static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32_t *freq)
 {
 	const struct mcux_wwdt_config *config = dev->config;
@@ -52,31 +82,35 @@ static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32
 		return -ENODEV;
 	}
 
+#if MCUX_WWDT_HAS_CLOCK_HALT
+	clock_div_name_t divider;
+
+	ret = mcux_wwdt_get_divider(dev, &divider);
+	if (ret != 0) {
+		LOG_ERR("Unsupported watchdog divider: %d", ret);
+		return ret;
+	}
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+	CLOCK_SetClockDiv(divider, config->clk_divider);
+#else
+	CLOCK_SetClkDiv(divider, config->clk_divider);
+#endif
+#else
 	switch ((uint32_t)config->clock_subsys) {
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt))
 	case MCUX_WWDT0_CLK:
 #if defined(CONFIG_SOC_SERIES_MCXW2XX) || defined(CONFIG_SOC_SERIES_LPC55XXX) ||                   \
 	defined(CONFIG_SOC_SERIES_LPC51U68) || defined(CONFIG_SOC_SERIES_LPC11U6X)
 		CLOCK_SetClkDiv(kCLOCK_DivWdtClk, config->clk_divider, true);
-#elif defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+#elif defined(CONFIG_SOC_FAMILY_MCXL)
 		CLOCK_SetClockDiv(kCLOCK_DivWWDT0, config->clk_divider);
-#elif defined(CONFIG_SOC_FAMILY_MCXN)
-		CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, config->clk_divider);
-#endif
-		break;
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt1))
-	case MCUX_WWDT1_CLK:
-#if defined(CONFIG_SOC_FAMILY_MCXA)
-		CLOCK_SetClockDiv(kCLOCK_DivWWDT1, config->clk_divider);
-#elif defined(CONFIG_SOC_FAMILY_MCXN)
-		CLOCK_SetClkDiv(kCLOCK_DivWdt1Clk, config->clk_divider);
 #endif
 		break;
 #endif
 	default:
 		break;
 	}
+#endif
 
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, freq);
 	if (ret) {
