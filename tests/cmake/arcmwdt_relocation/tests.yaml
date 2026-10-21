@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  buildsystem.cmake.arcmwdt_relocation:
+    tags: cmake
+    build_only: true
+    platform_allow: native_sim/native/64
