@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "kit_pse84_eval_m33.dts"
+
+/*
+ * Ethernet board variant (MII mode).
+ *
+ * This board variant requires hardware rework:
+ * - Resistors configured to route pins P10 and P11 to the LAN8710A PHY.
+ * - Conflicting interfaces (UART4 Bluetooth HCI and SDHC0 Wi-Fi) are disabled.
+ */
+
+/* P10.0 and P10.1 are MII pins */
+&uart4 {
+	status = "disabled";
+};
+
+/* P11.4 (TX_CTL) and P11.6 (TXD2) conflict with Wi-Fi control GPIOs */
+&sdhc0 {
+	status = "disabled";
+
+	airoc-wifi {
+		status = "disabled";
+	};
+};
+
+/* Clock of the time stamp unit (CLK_TSU) */
+&peri0_group4_8bit_0 {
+	clock-div = <2>;
+	status = "okay";
+};
+
+&ethernet0 {
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&eth_phy {
+	status = "okay";
+};

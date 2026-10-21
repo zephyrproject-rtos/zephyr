@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * RMII mode board overlay for kit_pse84_eval Ethernet variants.
+ *
+ * This overlay configures the MAC for RMII operation using the reduced pin set.
+ * Hardware rework is required to route RMII signals and inject an external
+ * 50 MHz reference clock to P11.7 (REF_CLK).
+ */
+
+&ethernet0 {
+	phy-connection-type = "rmii";
+	pinctrl-0 = <&p13_1_eth0_mdc &p13_6_eth0_mdio
+		     &p11_2_eth0_txd0 &p11_3_eth0_txd1 &p11_4_eth0_tx_ctl
+		     &p11_7_eth0_ref_clk
+		     &p10_6_eth0_rxd0 &p10_7_eth0_rxd1 &p10_5_eth0_rx_ctl>;
+};
