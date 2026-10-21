@@ -199,6 +199,12 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	SPC_ClearLowPowerRequest(MCXW7_SPC_ADDR);
 }
 
+static void wait_spc_ready(void)
+{
+	while (SPC_GetBusyStatusFlag(MCXW7_SPC_ADDR)) {
+	}
+}
+
 /*
  * In active mode, all HVDs/LVDs are disabled, Core LDO regulated to 1.1V.
  * The active-mode DCDC output voltage is configured separately and earlier by
@@ -209,6 +215,8 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
  */
 __weak void set_spc_configuration(void)
 {
+	status_t status;
+
 	/* Disable LVDs and HVDs in Active mode. */
 	SPC_EnableActiveModeCoreHighVoltageDetect(MCXW7_SPC_ADDR, false);
 	SPC_EnableActiveModeCoreLowVoltageDetect(MCXW7_SPC_ADDR, false);
@@ -221,8 +229,7 @@ __weak void set_spc_configuration(void)
 #endif
 	SPC_EnableActiveModeIOHighVoltageDetect(MCXW7_SPC_ADDR, false);
 	SPC_EnableActiveModeIOLowVoltageDetect(MCXW7_SPC_ADDR, false);
-	while (SPC_GetBusyStatusFlag(MCXW7_SPC_ADDR)) {
-	}
+	wait_spc_ready();
 
 	spc_active_mode_regulators_config_t active_mode_regulator;
 
@@ -275,7 +282,36 @@ __weak void set_spc_configuration(void)
 	low_power_regulator.CoreLDOOption.CoreLDOVoltage = kSPC_CoreLDO_MidDriveVoltage;
 	low_power_regulator.CoreLDOOption.CoreLDODriveStrength = kSPC_CoreLDO_LowDriveStrength;
 
-	SPC_SetLowPowerModeRegulatorsConfig(MCXW7_SPC_ADDR, &low_power_regulator);
+	/*
+	 * The low-power Core LDO level can only change while its drive strength is
+	 * normal, which needs the bandgap. LP_CFG survives a software reset and its
+	 * reset level differs between parts (normal on MCXW70), so first move the
+	 * level with normal drive strength when it does not match the target.
+	 */
+	if (SPC_GetLowPowerCoreLDOVDDVoltageLevel(MCXW7_SPC_ADDR) !=
+	    low_power_regulator.CoreLDOOption.CoreLDOVoltage) {
+		spc_lowpower_mode_core_ldo_option_t core_ldo = low_power_regulator.CoreLDOOption;
+
+		core_ldo.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
+
+		wait_spc_ready();
+		status = SPC_SetLowPowerModeBandgapmodeConfig(MCXW7_SPC_ADDR,
+							      kSPC_BandgapEnabledBufferDisabled);
+		if (status == kStatus_Success) {
+			wait_spc_ready();
+			status = SPC_SetLowPowerModeCoreLDORegulatorConfig(MCXW7_SPC_ADDR,
+									   &core_ldo);
+		}
+		if (status != kStatus_Success) {
+			LOG_ERR("SPC low-power Core LDO level change failed (%d)", status);
+		}
+	}
+
+	wait_spc_ready();
+	status = SPC_SetLowPowerModeRegulatorsConfig(MCXW7_SPC_ADDR, &low_power_regulator);
+	if (status != kStatus_Success) {
+		LOG_ERR("SPC low-power regulator config failed (%d)", status);
+	}
 
 	SPC_SetLowPowerWakeUpDelay(MCXW7_SPC_ADDR, MCXW7_LPWKUP_DELAY_10MHz);
 }

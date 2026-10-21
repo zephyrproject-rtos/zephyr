@@ -10,6 +10,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/logging/log.h>
 
 #include <soc.h>
 
@@ -17,6 +18,8 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <fsl_cmc.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 
