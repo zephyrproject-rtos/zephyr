@@ -27,8 +27,8 @@ Building and Running
 After flashing, the device works as a Hands-Free Audio Gateway. After the Bluetooth Host
 stack is initialized, the GAP discovery procedure will be started automatically. The target
 device is a Hands-Free Unit (the major of COD is 0x04 (:c:macro:`BT_COD_MAJOR_AUDIO_VIDEO`), the
-minor of the COD is 0x02 (:c:macro:`BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HANDS_FREE`)). When the target
-device is discovered, the AG will connect to the device.
+minor of the COD is 0x02 (:c:macro:`BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HANDS_FREE`)). When one or more
+matching devices are discovered, the AG connects to the Hands-Free peer with the strongest RSSI.
 
 After the ACL connection is established, the AG will initiate the Service Discovery Protocol (SDP)
 to discover the Hands-Free Unit's supported features. Once the HFP connection is established, the
