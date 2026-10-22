@@ -145,6 +145,18 @@ tests:
       - CONFIG_NXP_WIFI_OWE=y
     platform_allow:
       - frdm_rw612
+  sample.net.wifi.silabs_ncp_sdio:
+    extra_args: SNIPPET=silabs-ncp-sdio
+    platform_allow:
+      - nucleo_h755zi_q/stm32h755xx/m7
+  sample.net.wifi.silabs_ncp_spi:
+    extra_args: SNIPPET=silabs-ncp-spi
+    platform_allow:
+      - nucleo_h755zi_q/stm32h755xx/m7
+  sample.net.wifi.silabs_ncp_uart:
+    extra_args: SNIPPET=silabs-ncp-uart
+    platform_allow:
+      - nucleo_h755zi_q/stm32h755xx/m7
   sample.net.wifi.hwsim:
     platform_allow:
       - native_sim
