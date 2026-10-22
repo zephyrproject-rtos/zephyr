@@ -51,6 +51,16 @@
 		zephyr,memory-region = "ITCM";
 	};
 
+	soc {
+		peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+#include "mps3_common_soc_peripheral.dtsi"
+		};
+	};
+
 	sram: sram@1000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x1000000 DT_SIZE_M(1)>;
@@ -76,16 +86,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x21020000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 		zephyr,memory-region = "ISRAM-Non-Secure";
-	};
-
-	soc {
-		peripheral@40000000 {
-			ranges = <0x0 0x40000000 0x10000000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-#include "mps3_common_soc_peripheral.dtsi"
-		};
 	};
 };
 #include "mps3_common.dtsi"
