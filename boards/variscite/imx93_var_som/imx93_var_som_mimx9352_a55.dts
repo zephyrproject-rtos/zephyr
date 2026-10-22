@@ -28,23 +28,6 @@
 		};
 	};
 
-	sram0: memory@80400000 {
-		reg = <0x80400000 DT_SIZE_M(1)>;
-	};
-
-	lpuart7: serial@42690000 {
-		compatible = "nxp,imx-lpuart", "nxp,lpuart";
-		reg = <0x42690000 DT_SIZE_K(64)>;
-		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-names = "irq_0";
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_LPUART7_CLK 0x6c 24>;
-		current-speed = <115200>;
-		pinctrl-0 = <&uart7_default>;
-		pinctrl-names = "default";
-		status = "okay";
-	};
-
 	aliases {
 		led0 = &blinky0;
 		sw0 = &button0;
@@ -66,6 +49,23 @@
 			gpios = <&gpio2 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	lpuart7: serial@42690000 {
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
+		reg = <0x42690000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPUART7_CLK 0x6c 24>;
+		current-speed = <115200>;
+		pinctrl-0 = <&uart7_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+
+	sram0: memory@80400000 {
+		reg = <0x80400000 DT_SIZE_M(1)>;
 	};
 };
 
