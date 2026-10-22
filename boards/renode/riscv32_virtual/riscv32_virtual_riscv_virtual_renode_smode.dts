@@ -9,8 +9,8 @@
 #include <renode_riscv32_virt.dtsi>
 
 / {
-	model = "Renode RISCV32 Virtual target";
 	compatible = "renode,riscv32-virtual";
+	model = "Renode RISCV32 Virtual target";
 
 	chosen {
 		zephyr,console = &uart0;
