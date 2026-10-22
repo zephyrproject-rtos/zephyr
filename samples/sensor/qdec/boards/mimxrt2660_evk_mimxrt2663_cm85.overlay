@@ -1,0 +1,65 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		qdec0 = &qdec0;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	/*
+	 * Remove the J26/J27 caps and wire J26-2 <-> J94-13 (phase A) and
+	 * J27-2 <-> J94-14 (phase B).
+	 */
+	encoder-emulate {
+		compatible = "gpio-leds";
+
+		phase_a: phase_a {
+			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+		};
+
+		phase_b: phase_b {
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&pinctrl {
+	qdec0_default: qdec0_default {
+		group0 {
+			pinmux = <&main__iomuxc_pio3_0_hsp_xbar0_in00>,
+				 <&main__iomuxc_pio3_1_hsp_xbar0_in01>;
+			input-enable;
+		};
+
+		/* The emulator GPIOs have no pinctrl of their own, so they are muxed here. */
+		group1 {
+			pinmux = <&main__iomuxc_pio2_18_hsp_gpio0_gpio18>,
+				 <&main__iomuxc_pio2_19_hsp_gpio0_gpio19>;
+		};
+	};
+};
+
+&xbar0 {
+	status = "okay";
+};
+
+&qdec0 {
+	status = "okay";
+	pinctrl-0 = <&qdec0_default>;
+	pinctrl-names = "default";
+	counts-per-revolution = <120>;
+	prescaler = <11>;
+	input-filter-period = <1>;
+	/*
+	 * mux-states cells = <output, input>:
+	 *   XBAR0_INOUT00 (in 86) -> EQDC0 PHASE_A (out 123)
+	 *   XBAR0_INOUT01 (in 87) -> EQDC0 PHASE_B (out 124)
+	 */
+	mux-states = <&xbar0 123 86>,
+		     <&xbar0 124 87>;
+};
