@@ -9,14 +9,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			reg = <0xdeadbeef 0x1000>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "okay";
-		};
-
 		test_st67w611m1: spi@67676767 {
 			compatible = "vnd,spi";
 			reg = <0x67676767 0x1000>;
@@ -33,6 +25,14 @@
 				chip-en-gpios = <&test_gpio 0 0>;
 				status = "okay";
 			};
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "okay";
 		};
 	};
 };

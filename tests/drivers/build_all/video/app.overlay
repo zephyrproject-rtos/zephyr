@@ -27,6 +27,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_video_native_sim_fifo: video_native_sim_fifo {
+			compatible = "zephyr,native-sim-video-fifo";
+		};
+
 		test_gpio: gpio@10001000 {
 			compatible = "vnd,gpio";
 			reg = <0x10001000 0x1000>;
@@ -204,10 +208,6 @@
 					remote-endpoint-label = "application";
 				};
 			};
-		};
-
-		test_video_native_sim_fifo: video_native_sim_fifo {
-			compatible = "zephyr,native-sim-video-fifo";
 		};
 	};
 };

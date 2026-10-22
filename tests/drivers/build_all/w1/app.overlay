@@ -15,30 +15,9 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			reg = <0xdeadbeef 0x1000>;
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
 		test_w1_gpio: test_w1_gpio {
 			compatible = "zephyr,w1-gpio";
 			gpios = <&test_gpio 0 0>;
-		};
-
-		test_uart: uart@55556666 {
-			compatible = "vnd,serial";
-			reg = <0x55556666 0x1000>;
-
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "okay";
-
-			test_uart_w1_serial: w1_serial {
-				compatible = "zephyr,w1-serial";
-			};
 		};
 
 		test_i2c: i2c@11112222 {
@@ -75,6 +54,27 @@
 				active-pull-threshold = "low";
 				weak-pullup = "1000";
 			};
+		};
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			test_uart_w1_serial: w1_serial {
+				compatible = "zephyr,w1-serial";
+			};
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };

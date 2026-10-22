@@ -8,14 +8,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			reg = <0xdeadbeef 0x1000>;
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
 		power_domain_gpio {
 			compatible = "power-domain-gpio";
 			enable-gpios = <&test_gpio 0 0>;
@@ -27,6 +19,14 @@
 			compatible = "power-domain-gpio-monitor";
 			gpios = <&test_gpio 0 0>;
 			#power-domain-cells = <0>;
+			status = "okay";
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 	};
