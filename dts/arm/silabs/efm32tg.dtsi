@@ -20,9 +20,9 @@
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m3";
+			reg = <0>;
 			device_type = "cpu";
 			clock-frequency = <32000000>;
-			reg = <0>;
 		};
 	};
 
@@ -134,10 +134,10 @@
 
 		i2c0: i2c@4000a000 {
 			compatible = "silabs,gecko-i2c";
+			reg = <0x4000a000 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4000a000 0x400>;
 			interrupts = <8 0>;
 			status = "disabled";
 		};
@@ -145,10 +145,10 @@
 		gpio@40006100 {
 			compatible = "silabs,gecko-gpio";
 			reg = <0x40006100 0xf00>;
-			interrupts = <1 2>, <9 2>;
-			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 
 			ranges;
+			interrupts = <1 2>, <9 2>;
+			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 			#address-cells = <1>;
 			#size-cells = <1>;
 

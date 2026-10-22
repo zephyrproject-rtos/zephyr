@@ -210,20 +210,20 @@
 
 		i2c0: i2c@40089000 {
 			compatible = "silabs,gecko-i2c";
+			reg = <0x40089000 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40089000 0x400>;
 			interrupts = <11 0>;
 			status = "disabled";
 		};
 
 		i2c1: i2c@40089400 {
 			compatible = "silabs,gecko-i2c";
+			reg = <0x40089400 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40089400 0x400>;
 			interrupts = <12 0>;
 			status = "disabled";
 		};
@@ -231,10 +231,10 @@
 		gpio: gpio@40088400 {
 			compatible = "silabs,gecko-gpio";
 			reg = <0x40088400 0xc00>;
-			interrupts = <3 2 13 2>;
-			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 
 			ranges;
+			interrupts = <3 2 13 2>;
+			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
