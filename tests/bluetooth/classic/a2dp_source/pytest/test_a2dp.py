@@ -670,6 +670,76 @@ async def a2dp_source_case_source_to_sink(hci_port, shell, dut, address, snoop_f
         await bumble_acl_disconnect(shell, dut, device, connection)
 
 
+async def a2dp_source_case_abandoned_config(hci_port, shell, dut, address, snoop_file) -> None:
+    """Verify that an unanswered configuration is released and can be retried."""
+    logger.info('<<< a2dp_source_case_abandoned_config ...')
+
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        device = Device.with_hci(
+            'Bumble',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+        device.sdp_service_records = SDP_SERVICE_RECORDS_A2DP
+
+        device.host.snooper = BtSnooper(snoop_file)
+        await device_power_on(device)
+        await device.send_command(HCI_Write_Page_Timeout_Command(page_timeout=0xFFFF))
+
+        sink = None
+        configuration_received = asyncio.Event()
+
+        def on_avdtp_connection(server):
+            nonlocal sink
+            sink = server
+            sink.add_sink(codec_capabilities=source_codec_capabilities())
+
+            async def ignore_set_configuration(command):
+                logger.info(f'Ignore SetConfiguration for ACP SEID {command.acp_seid}')
+                configuration_received.set()
+                return None
+
+            sink.on_set_configuration_command = ignore_set_configuration
+
+        listener = Listener.for_device(device)
+        listener.on('connection', on_avdtp_connection)
+
+        await send_cmd_to_iut(shell, dut, "br clear all", None)
+
+        target_address = address.split(" ")[0]
+        connection = await bumble_acl_connect(shell, dut, device, target_address)
+        found, _ = await wait_for_shell_response(dut, "Connected:")
+        assert found is True
+
+        await send_cmd_to_iut(shell, dut, 'a2dp_source connect', 'a2dp connected')
+        await send_cmd_to_iut(shell, dut, 'a2dp_source discover_peer_eps', 'Bitpool Range:')
+
+        await send_cmd_to_iut(shell, dut, 'a2dp_source configure', None)
+        await asyncio.wait_for(configuration_received.wait(), timeout=5)
+
+        _, lines = await bumble_acl_disconnect(shell, dut, device, connection)
+        if not any("stream released" in line for line in lines):
+            _, more_lines = await wait_for_shell_response(dut, "stream released", 10)
+            lines += more_lines
+
+        assert any("stream released" in line for line in lines)
+        assert any("fail to configure" in line for line in lines)
+
+        # The release callback must make the endpoint usable on the next connection.
+        connection = await bumble_acl_connect(shell, dut, device, target_address)
+        found, _ = await wait_for_shell_response(dut, "Connected:")
+        assert found is True
+
+        await send_cmd_to_iut(shell, dut, 'a2dp_source connect', 'a2dp connected')
+        await send_cmd_to_iut(shell, dut, 'a2dp_source discover_peer_eps', 'Bitpool Range:')
+        await send_cmd_to_iut(shell, dut, 'a2dp_source configure', 'success to configure')
+
+        await bumble_acl_disconnect(shell, dut, device, connection)
+
+
 class TestA2dpSource:
     def test_a2dp_source_register_ep(self, shell: Shell, dut: DeviceAdapter, a2dp_source_dut):
         logger.info(f'test_a2dp_source_case_register_ep {a2dp_source_dut}')
@@ -694,6 +764,16 @@ class TestA2dpSource:
         hci, iut_address = a2dp_source_dut
         with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
             asyncio.run(a2dp_source_case_discover_get_cap(hci, shell, dut, iut_address, snoop_file))
+
+    def test_a2dp_source_abandoned_config(
+        self, shell: Shell, dut: DeviceAdapter, a2dp_source_dut
+    ):
+        logger.info(f'test_a2dp_source_case_abandoned_config {a2dp_source_dut}')
+        hci, iut_address = a2dp_source_dut
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            asyncio.run(
+                a2dp_source_case_abandoned_config(hci, shell, dut, iut_address, snoop_file)
+            )
 
     def test_a2dp_source_sink_to_source(self, shell: Shell, dut: DeviceAdapter, a2dp_source_dut):
         logger.info(f'test_a2dp_source_case_sink_to_source {a2dp_source_dut}')

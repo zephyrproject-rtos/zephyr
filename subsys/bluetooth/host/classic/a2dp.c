@@ -686,6 +686,25 @@ static void bt_a2dp_ctrl_req_clear_busy(struct bt_a2dp *a2dp)
 	bt_a2dp_req_clear_busy(&a2dp->ctrl_param.req);
 }
 
+static void a2dp_release_stream(struct bt_a2dp_stream *stream)
+{
+	struct bt_a2dp_ep *ep;
+
+	if (stream == NULL || stream->local_ep == NULL) {
+		return;
+	}
+
+	ep = stream->local_ep;
+	if (ep->stream != stream) {
+		return;
+	}
+
+	ep->stream = NULL;
+	if (stream->ops != NULL && stream->ops->released != NULL) {
+		stream->ops->released(stream);
+	}
+}
+
 static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	uint8_t status;
@@ -720,8 +739,18 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 		a2dp_cb->config_rsp(stream, status);
 	}
 
+	if (status != BT_AVDTP_SUCCESS) {
+		/* An unconfigured SEP stays idle, so the AVDTP teardown path does
+		 * not notify the endpoint and would leave the stream attached.
+		 */
+		if (req->sig == BT_AVDTP_SET_CONFIGURATION) {
+			a2dp_release_stream(stream);
+		}
+		return 0;
+	}
+
 	ops = stream->ops;
-	if ((status == BT_AVDTP_SUCCESS) && (ops != NULL) && (ops->configured != NULL)) {
+	if ((ops != NULL) && (ops->configured != NULL)) {
 		ops->configured(stream);
 	}
 	return 0;
@@ -1011,6 +1040,8 @@ int bt_a2dp_stream_config(struct bt_a2dp *a2dp, struct bt_a2dp_stream *stream,
 	err = bt_avdtp_set_configuration(&a2dp->session, &a2dp->set_config_param);
 	if (err != 0) {
 		bt_a2dp_req_clear_busy(&a2dp->set_config_param.req);
+		local_ep->stream = NULL;
+		remote_ep->stream = NULL;
 	}
 
 	return err;
@@ -1462,7 +1493,6 @@ static void stream_connected(struct bt_avdtp_sep *sep)
 static void stream_disconnected(struct bt_avdtp_sep *sep)
 {
 	struct bt_a2dp_ep *ep;
-	struct bt_a2dp_stream *stream;
 
 	__ASSERT(sep, "Invalid sep");
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
@@ -1470,11 +1500,7 @@ static void stream_disconnected(struct bt_avdtp_sep *sep)
 		return;
 	}
 
-	stream = ep->stream;
-	ep->stream = NULL;
-	if (stream->ops != NULL && stream->ops->released != NULL) {
-		stream->ops->released(stream);
-	}
+	a2dp_release_stream(ep->stream);
 }
 
 static const struct bt_avdtp_sep_ops source_sep_ops = {

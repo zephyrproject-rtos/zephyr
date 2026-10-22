@@ -475,7 +475,8 @@ struct bt_a2dp_cb {
 			    uint8_t *rsp_err_code);
 	/** @brief Callback function for bt_a2dp_stream_config() and bt_a2dp_stream_reconfig()
 	 *
-	 *  Called when the codec configure operation is completed.
+	 *  Called when the codec configure operation is completed. If the initial
+	 *  configuration fails, the stream is released after this callback returns.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
 	 *  @param[in] rsp_err_code the remote responded error code
@@ -754,8 +755,9 @@ struct bt_a2dp_stream_ops {
 	 *
 	 * The release procedure (bt_a2dp_stream_release, release_req, release_rsp and
 	 * disconnect l2cap media channel), the abort procedure (bt_a2dp_stream_abort, abort_req,
-	 * abort_rsp and disconnect l2cap media channel) and the error procedure (for example,
-	 * the l2cap channel disconnected unexpectedly) will cause the stream to be released.
+	 * abort_rsp and disconnect l2cap media channel), a failed initial configuration and the
+	 * error procedure (for example, the l2cap channel disconnected unexpectedly) will cause
+	 * the stream to be released.
 	 * The callback is called whenever an Audio Stream has been released.
 	 * After released, the stream becomes invalid to control.
 	 *
