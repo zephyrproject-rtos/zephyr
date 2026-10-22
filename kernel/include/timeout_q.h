@@ -122,7 +122,7 @@ int z_try_abort_timeout(struct _timeout *to);
 
 /* True if @to is the currently in-flight timeout and a same-CPU aborter
  * has marked the slot as superseded. Handlers with non-idempotent side
- * effects (e.g. k_timer's expiry_fn) should call this at entry, after
+ * effects (e.g. z_thread_timeout()) should call this at entry, after
  * taking their own lock, and bail if it returns true.
  */
 bool z_timeout_inflight_superseded(const struct _timeout *to);
