@@ -36,11 +36,13 @@ struct spi_mcux_data {
 
 	uint16_t dfs;
 	uint16_t word_size;
-	/* Frames in the burst being transferred. */
+	/* Frames in each burst being transferred, one burst per FIFO word. */
 	uint16_t frames;
+	/* FIFO words being transferred. */
+	uint16_t words;
 
-	uint32_t rx_data;
-	uint32_t tx_data;
+	uint32_t rx_data[CONFIG_SPI_MCUX_ECSPI_FIFO_WORDS];
+	uint32_t tx_data[CONFIG_SPI_MCUX_ECSPI_FIFO_WORDS];
 
 	/* Set on completion timeout; makes a late SDK callback a no-op */
 	bool aborted;
@@ -105,6 +107,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	struct spi_context *ctx = &data->ctx;
 	ecspi_transfer_t transfer;
 	status_t status;
+	size_t chunk;
 
 	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
 		/* nothing left to rx or tx, we're done! */
@@ -116,7 +119,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	transfer.channel = spi_cs_is_gpio(ctx->config) ? kECSPI_Channel0 : ctx->config->peripheral;
 
 	if (spi_context_rx_buf_on(ctx)) {
-		transfer.rxData = &data->rx_data;
+		transfer.rxData = data->rx_data;
 	} else {
 		transfer.rxData = NULL;
 	}
@@ -125,26 +128,35 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	 * length is written here, between bursts, because the MCUX driver takes
 	 * one through ECSPI_MasterInit() only, which resets the peripheral.
 	 */
-	data->frames = MIN(spi_context_max_continuous_chunk(ctx),
-			   SPI_MCUX_ECSPI_WORD_BITS / data->word_size);
+	chunk = spi_context_max_continuous_chunk(ctx);
+	data->frames = MIN(chunk, SPI_MCUX_ECSPI_WORD_BITS / data->word_size);
 	spi_mcux_set_burst_length(base, data->frames * data->word_size);
 
-	data->tx_data = 0U;
+	/* Every burst of the HAL transfer has the same length */
+	data->words = MIN(chunk / data->frames, CONFIG_SPI_MCUX_ECSPI_FIFO_WORDS);
+
 	if (spi_context_tx_buf_on(ctx)) {
 		const uint32_t mask = GENMASK(data->word_size - 1U, 0);
 		const uint8_t *buf = ctx->tx_buf;
 
-		for (int shift = spi_mcux_frame_shift(data); shift >= 0; shift -= data->word_size) {
-			data->tx_data |= (spi_mcux_frame_get(buf, data->dfs) & mask) << shift;
-			buf += data->dfs;
+		for (size_t i = 0; i < data->words; i++) {
+			uint32_t word = 0U;
+
+			for (int shift = spi_mcux_frame_shift(data); shift >= 0;
+			     shift -= data->word_size) {
+				word |= (spi_mcux_frame_get(buf, data->dfs) & mask) << shift;
+				buf += data->dfs;
+			}
+
+			data->tx_data[i] = word;
 		}
 
-		transfer.txData = &data->tx_data;
+		transfer.txData = data->tx_data;
 	} else {
 		transfer.txData = NULL;
 	}
 
-	transfer.dataSize = 1;
+	transfer.dataSize = data->words;
 
 	status = ECSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
@@ -173,18 +185,33 @@ static void spi_mcux_transfer_callback(ECSPI_Type *base, ecspi_master_handle_t *
 		return;
 	}
 
+	if (status != kStatus_Success) {
+		/* An RX FIFO overflow lost a word, the HAL reports a completion next */
+		LOG_ERR("Transfer failed (%d)", status);
+		data->aborted = true;
+		ECSPI_MasterTransferAbort(base, handle);
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_complete(&data->ctx, dev, -EIO);
+		return;
+	}
+
 	if (spi_context_rx_buf_on(&data->ctx)) {
 		const uint32_t mask = GENMASK(data->word_size - 1U, 0);
 		uint8_t *buf = data->ctx.rx_buf;
 
-		for (int shift = spi_mcux_frame_shift(data); shift >= 0; shift -= data->word_size) {
-			spi_mcux_frame_put(buf, data->dfs, (data->rx_data >> shift) & mask);
-			buf += data->dfs;
+		for (size_t i = 0; i < data->words; i++) {
+			const uint32_t word = data->rx_data[i];
+
+			for (int shift = spi_mcux_frame_shift(data); shift >= 0;
+			     shift -= data->word_size) {
+				spi_mcux_frame_put(buf, data->dfs, (word >> shift) & mask);
+				buf += data->dfs;
+			}
 		}
 	}
 
-	spi_context_update_tx(&data->ctx, data->dfs, data->frames);
-	spi_context_update_rx(&data->ctx, data->dfs, data->frames);
+	spi_context_update_tx(&data->ctx, data->dfs, data->frames * data->words);
+	spi_context_update_rx(&data->ctx, data->dfs, data->frames * data->words);
 
 	spi_mcux_transfer_next_packet(dev);
 }

@@ -9,3 +9,14 @@ config SPI_MCUX_ECSPI
 	select PINCTRL
 	help
 	  Enable support for NXP's mcux ecspi driver.
+
+config SPI_MCUX_ECSPI_FIFO_WORDS
+	int "FIFO words per HAL transfer"
+	depends on SPI_MCUX_ECSPI
+	range 1 64
+	default 1
+	help
+	  FIFO words handed to the MCUX driver at once, each carrying a burst of up to 32 bits. With
+	  more words, its interrupt handler keeps the FIFOs filled and a transfer takes fewer
+	  interrupts, at the cost of two buffers of this many 32-bit words per instance. With more
+	  than one word in flight, an RX FIFO overflow fails the transfer with -EIO.
