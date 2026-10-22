@@ -718,11 +718,48 @@ static void nxp_freqme_isr(const struct device *dev)
 	}
 }
 
-static int nxp_freqme_init(const struct device *dev)
+/*
+ * Enable the peripheral clock, route the selected sources and restore any
+ * configuration retained in RAM.
+ */
+static int nxp_freqme_hw_bringup(const struct device *dev)
 {
 	const struct nxp_freqme_config *config = dev->config;
 	struct nxp_freqme_data *data = dev->data;
 	int ret;
+
+	ret = clock_control_on(config->gate_clk_dev, config->gate_clk_subsys);
+	if (ret != 0) {
+		LOG_ERR("%s: failed to enable gate clock (%d)", dev->name, ret);
+		return ret;
+	}
+
+	/* Route the selected reference/target sources to the FREQME inputs. The
+	 * driver does not enable these source clocks - the caller must have them
+	 * running before configure()/start().
+	 */
+	ret = nxp_freqme_route(&config->ref_srcs[data->cur_ref_idx]);
+	if (ret != 0) {
+		LOG_ERR("%s: failed to route ref source (%d)", dev->name, ret);
+		return ret;
+	}
+	ret = nxp_freqme_route(&config->tar_srcs[data->cur_tar_idx]);
+	if (ret != 0) {
+		LOG_ERR("%s: failed to route tar source (%d)", dev->name, ret);
+		return ret;
+	}
+
+	if (data->configured) {
+		freqme_hw_apply(config->base, &data->cfg, &data->params);
+	}
+
+	return 0;
+}
+
+static int nxp_freqme_init(const struct device *dev)
+{
+	const struct nxp_freqme_config *config = dev->config;
+	struct nxp_freqme_data *data = dev->data;
 
 	data->state = NXP_FREQME_STATE_IDLE;
 	data->cur_ref_idx = nxp_freqme_default_idx(config->ref_srcs,
@@ -735,29 +772,9 @@ static int nxp_freqme_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->gate_clk_dev, config->gate_clk_subsys);
-	if (ret != 0) {
-		LOG_ERR("%s: failed to enable gate clock (%d)", dev->name, ret);
-		return ret;
-	}
-
-	/* Route the default reference/target sources to the FREQME inputs. The
-	 * driver does not enable these source clocks - the caller must have them
-	 * running before configure()/start().
-	 */
-	ret = nxp_freqme_route(&config->ref_srcs[data->cur_ref_idx]);
-	if (ret != 0) {
-		LOG_ERR("%s: failed to route default ref source (%d)", dev->name, ret);
-		return ret;
-	}
-	ret = nxp_freqme_route(&config->tar_srcs[data->cur_tar_idx]);
-	if (ret != 0) {
-		LOG_ERR("%s: failed to route default tar source (%d)", dev->name, ret);
-		return ret;
-	}
-
 	config->irq_config_func(dev);
-	return 0;
+
+	return nxp_freqme_hw_bringup(dev);
 }
 
 static DEVICE_API(clock_monitor, nxp_freqme_api) = {
