@@ -10,8 +10,8 @@
 #include "ch32v203-pinctrl.dtsi"
 
 / {
-	model = "ch32v203c8t6evt";
 	compatible = "wch,ch32v203", "wch,ch32v203c8t6";
+	model = "ch32v203c8t6evt";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -53,8 +53,8 @@
 };
 
 &usart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
