@@ -15,9 +15,9 @@
 	qspi_flash: qspi_flash@40890000 {
 		compatible = "infineon,qspi-flash";
 		reg = <0x40890000 0x30000>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 	};
 
 	/* Flash aliased address path */

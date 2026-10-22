@@ -13,9 +13,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m55";
 			reg = <1>;
+			device_type = "cpu";
 			clock-frequency = <400000000>;
 			cpu-power-states = <&sleep &deepsleep>;
 		};

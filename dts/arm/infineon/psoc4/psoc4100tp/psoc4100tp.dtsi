@@ -42,8 +42,8 @@
 			interrupts = <0 3>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt1: gpio@40040100 {
@@ -52,8 +52,8 @@
 			interrupts = <1 3>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt2: gpio@40040200 {
@@ -62,8 +62,8 @@
 			interrupts = <2 3>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt3: gpio@40040300 {
@@ -72,8 +72,8 @@
 			interrupts = <3 3>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_shared: gpio_shared@40040400 {
@@ -88,8 +88,8 @@
 				reg = <0x40040400 0x100>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt5: gpio@40040500 {
@@ -97,8 +97,8 @@
 				reg = <0x40040500 0x100>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt6: gpio@40040600 {
@@ -106,8 +106,8 @@
 				reg = <0x40040600 0x100>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 		};
 
@@ -160,18 +160,18 @@
 
 		adc0: adc@403a0000 {
 			compatible = "infineon,sar-adc";
-			infineon,version = <3>;
 			reg = <0x403a0000 0xf08>;
 			interrupts = <22 0>;
 			#io-channel-cells = <1>;
 			clocks = <&peri_clk_div4>;
 			clk-dst = <0xc>;
+			infineon,version = <3>;
 		};
 
 		dma0: dma@40101000 {
-			#dma-cells = <1>;
 			compatible = "infineon,dmac";
 			reg = <0x40101000 0x900>;
+			#dma-cells = <1>;
 			interrupts = <14 1>;
 			dma-channels = <8>;
 			status = "disabled";
