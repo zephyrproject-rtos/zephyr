@@ -9,6 +9,6 @@
 #include "nano_ch57x_common.dtsi"
 
 / {
-	model = "muselab_nano_ch57x_ch570";
 	compatible = "muselab,nano_ch57x";
+	model = "muselab_nano_ch57x_ch570";
 };
