@@ -13,9 +13,9 @@
 	soc {
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
-				erase-block-size = <2048>;
 				reg = <0x08000000 DT_SIZE_K(128)>;
 				ranges = <0 0x8000000 DT_SIZE_K(128)>;
+				erase-block-size = <2048>;
 			};
 		};
 
@@ -44,10 +44,10 @@
 
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005800 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40005800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
 			interrupts = <24 0>;
 			interrupt-names = "combined";
@@ -56,9 +56,9 @@
 
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003800 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <26 0>;
 			st,spi-data-width = "full-4-to-16-bit";

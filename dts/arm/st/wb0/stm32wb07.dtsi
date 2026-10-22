@@ -29,10 +29,10 @@
 
 		i2c2: i2c@41001000 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x41001000 DT_SIZE_K(1)>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x41001000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
 			interrupts = <4 0>;
 			interrupt-names = "combined";
@@ -41,9 +41,9 @@
 
 		spi1: spi@41002000 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x41002000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x41002000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(APB1, 0)>;
 			interrupts = <5 0>;
 			st,spi-data-width = "full-4-to-16-bit";
@@ -52,9 +52,9 @@
 
 		spi2: spi@41003000 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x41003000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x41003000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
 			interrupts = <6 0>;
 			st,spi-data-width = "full-4-to-16-bit";
@@ -73,8 +73,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {

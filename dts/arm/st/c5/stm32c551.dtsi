@@ -21,10 +21,10 @@
 
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005800 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40005800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
 			interrupts = <70 0>, <71 0>;
 			interrupt-names = "event", "error";
@@ -39,9 +39,9 @@
 
 		i2s3: i2s@40003c00 {
 			compatible = "st,stm32h7-i2s", "st,stm32-i2s";
+			reg = <0x40003c00 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003c00 0x400>;
 			interrupts = <50 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			dmas = <&lpdma1 0 9 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
@@ -68,14 +68,14 @@
 
 		spi3: spi@40003c00 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003c00 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003c00 0x400>;
 			interrupts = <50 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -96,8 +96,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			qdec {
@@ -124,8 +124,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -146,8 +146,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 	};
