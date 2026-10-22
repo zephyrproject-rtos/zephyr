@@ -8,9 +8,9 @@
 #include <freq.h>
 
 / {
+	compatible = "cdac,thejas32";
 	#address-cells = <1>;
 	#size-cells = <1>;
-	compatible = "cdac,thejas32";
 
 	cpus {
 		#address-cells = <1>;
@@ -18,9 +18,9 @@
 		timebase-frequency = <DT_FREQ_M(100)>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "cdac,vega-et1031", "riscv";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(100)>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "zicsr", "zifencei";
@@ -48,16 +48,16 @@
 	 * is caught instead of silently corrupting the boot ROM's memory.
 	 */
 	sram0: memory@200000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x00200000 DT_SIZE_K(250)>;
+		device_type = "memory";
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		interrupt-parent = <&intc>;
 
 		/*
