@@ -82,9 +82,9 @@
 
 		sci7: sci7@400700e0 {
 			compatible = "renesas,ra-sci";
+			reg = <0x400700e0 0x20>;
 			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x400700e0 0x20>;
 			clocks = <&pclka MSTPB 24>;
 			status = "disabled";
 
@@ -114,8 +114,8 @@
 
 		iic2: iic2@40053200 {
 			compatible = "renesas,ra-iic";
-			channel = <2>;
 			reg = <0x40053200 0x100>;
+			channel = <2>;
 			clocks = <&pclkb MSTPB 7>;
 			max-bitrate-supported = <I2C_BITRATE_FAST>;
 			status = "disabled";
@@ -131,10 +131,10 @@
 
 		pwm13: pwm13@40078d00 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40078d00 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_13>;
 			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40078d00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -159,8 +159,8 @@
 
 		option_setting_osis: option-setting-osis@100a150 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			reg = <0x0100a150 0x10>;
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			status = "okay";
 		};
 	};

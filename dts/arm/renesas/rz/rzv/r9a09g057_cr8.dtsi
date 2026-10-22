@@ -20,9 +20,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r8";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(800)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -35,22 +35,22 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		interrupt-parent = <&gic>;
 
 		arch_timer: timer@12c10200 {
 			compatible = "arm,armv8-timer";
-			status = "okay";
+			reg = <0x12c10200 0x1c>;
 			interrupt-names = "irq_0", "irq_1", "irq_2", "irq_3";
 			interrupts = <GIC_PPI 13 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_PPI 14 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_PPI 11 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_PPI 10 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-			reg = <0x12c10200 0x1c>;
 			label = "arch_timer";
+			status = "okay";
 		};
 
 		gic: interrupt-controller@12c11000 {
@@ -91,109 +91,109 @@
 
 			gpio0: gpio@0 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x0>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
-				reg = <0x0>;
 				status = "disabled";
 			};
 
 			gpio1: gpio@100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <6>;
-				reg = <0x100>;
 				status = "disabled";
 			};
 
 			gpio2: gpio@200 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x200>;
 				status = "disabled";
 			};
 
 			gpio3: gpio@300 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x300>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
-				reg = <0x300>;
 				status = "disabled";
 			};
 
 			gpio4: gpio@400 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
-				reg = <0x400>;
 				status = "disabled";
 			};
 
 			gpio5: gpio@500 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x500>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
-				reg = <0x500>;
 				status = "disabled";
 			};
 
 			gpio6: gpio@600 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x600>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
-				reg = <0x600>;
 				status = "disabled";
 			};
 
 			gpio7: gpio@700 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x700>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
-				reg = <0x700>;
 				status = "disabled";
 			};
 
 			gpio8: gpio@800 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x800>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
-				reg = <0x800>;
 				status = "disabled";
 			};
 
 			gpio9: gpio@900 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x900>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
-				reg = <0x900>;
 				status = "disabled";
 			};
 
 			gpio10: gpio@a00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xa00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
-				reg = <0xa00>;
 				status = "disabled";
 			};
 
 			gpio11: gpio@b00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xb00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <6>;
-				reg = <0xb00>;
 				status = "disabled";
 			};
 		};
@@ -500,11 +500,11 @@
 
 		i2c0: i2c@14400400 {
 			compatible = "renesas,rz-riic";
+			reg = <0x14400400 DT_SIZE_K(1)>;
 			channel = <0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x14400400 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 174 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 175 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 176 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -519,11 +519,11 @@
 
 		i2c1: i2c@14400800 {
 			compatible = "renesas,rz-riic";
+			reg = <0x14400800 DT_SIZE_K(1)>;
 			channel = <1>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x14400800 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 180 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 181 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 182 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -538,11 +538,11 @@
 
 		i2c2: i2c@14400c00 {
 			compatible = "renesas,rz-riic";
+			reg = <0x14400c00 DT_SIZE_K(1)>;
 			channel = <2>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x14400c00 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 186 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 187 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 188 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -557,11 +557,11 @@
 
 		i2c3: i2c@14401000 {
 			compatible = "renesas,rz-riic";
+			reg = <0x14401000 DT_SIZE_K(1)>;
 			channel = <3>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x14401000 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -576,11 +576,11 @@
 
 		i2c4: i2c@14401400 {
 			compatible = "renesas,rz-riic";
+			reg = <0x14401400 DT_SIZE_K(1)>;
 			channel = <4>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x14401400 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 198 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 199 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 200 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -595,11 +595,11 @@
 
 		i2c5: i2c@14401800 {
 			compatible = "renesas,rz-riic";
+			reg = <0x14401800 DT_SIZE_K(1)>;
 			channel = <5>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x14401800 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 204 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 205 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 206 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -614,11 +614,11 @@
 
 		i2c6: i2c@14401c00 {
 			compatible = "renesas,rz-riic";
+			reg = <0x14401c00 DT_SIZE_K(1)>;
 			channel = <6>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x14401c00 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 210 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 211 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -633,11 +633,11 @@
 
 		i2c7: i2c@14402000 {
 			compatible = "renesas,rz-riic";
+			reg = <0x14402000 DT_SIZE_K(1)>;
 			channel = <7>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x14402000 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 216 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 217 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 218 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -652,11 +652,11 @@
 
 		i2c8: i2c@11c01000 {
 			compatible = "renesas,rz-riic";
+			reg = <0x11c01000 DT_SIZE_K(1)>;
 			channel = <8>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x11c01000 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 222 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 223 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 224 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,

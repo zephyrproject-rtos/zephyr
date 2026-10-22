@@ -86,8 +86,8 @@
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006005 0x1>;
 			channel = <5>;
-			renesas,sample-clock-div = <64>;
 			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
 			status = "disabled";
 		};
 
@@ -95,8 +95,8 @@
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006008 0x1>;
 			channel = <8>;
-			renesas,sample-clock-div = <64>;
 			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
 			status = "disabled";
 		};
 
@@ -104,8 +104,8 @@
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x4000600a 0x1>;
 			channel = <10>;
-			renesas,sample-clock-div = <64>;
 			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
 			status = "disabled";
 		};
 
@@ -113,8 +113,8 @@
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x4000600c 0x1>;
 			channel = <12>;
-			renesas,sample-clock-div = <64>;
 			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
 			status = "disabled";
 		};
 
@@ -125,20 +125,20 @@
 
 		pwm6: pwm6@40078600 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40078600 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_6>;
 			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40078600 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm7: pwm7@40078700 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40078700 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_7>;
 			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40078700 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
