@@ -5,10 +5,10 @@
  */
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	spe: lan865x@0 {
 		compatible = "microchip,lan865x";
@@ -25,11 +25,13 @@
 
 		spi-max-frequency = <25000000>;
 
+		status = "okay";
+
 		lan865x_mdio: lan865x_mdio {
 			compatible = "microchip,lan865x-mdio";
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "okay";
 
 			lan865x_phy: ethernet-phy@0 {
 				compatible = "microchip,t1s-phy";
@@ -43,7 +45,5 @@
 				status = "okay";
 			};
 		};
-
-		status = "okay";
 	};
 };

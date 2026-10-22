@@ -20,8 +20,8 @@
 
 		device {
 			compatible = "virtio,net";
-			status = "okay";
 			zephyr,random-mac-address;
+			status = "okay";
 		};
 	};
 };
