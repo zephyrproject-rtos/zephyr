@@ -29,6 +29,13 @@
 		};
 	};
 
+	dp0: dp0 {
+		compatible = "zephyr,swdp-gpio";
+		clk-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+		dio-gpios = <&gpioa 4 GPIO_PULL_UP>;
+		port-write-cycles = <2>;
+	};
+
 	aliases {
 		led0 = &led;
 	};
@@ -64,5 +71,6 @@
 zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
+	disconnect-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
