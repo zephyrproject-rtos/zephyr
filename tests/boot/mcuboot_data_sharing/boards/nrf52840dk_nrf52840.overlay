@@ -5,6 +5,10 @@
 		/delete-property/ zephyr,boot-mode;
 	};
 
+	chosen {
+		zephyr,bootloader-info = &boot_info0;
+	};
+
 	sram@2003fc00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2003fc00 DT_SIZE_K(1)>;
@@ -23,10 +27,6 @@
 				status = "okay";
 			};
 		};
-	};
-
-	chosen {
-		zephyr,bootloader-info = &boot_info0;
 	};
 };
 
