@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties of the IPC link backend's SPI transport
+
+include: [spi-device.yaml, ipc-link.yaml]
+
+properties:
+  rdy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Driven by the peripheral, active while it has a transfer armed. The controller waits for it
+      to become active before each transaction.
+
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Driven by the peripheral, active while it has something to send.
+
+  mtu:
+    type: int
+    default: 1600
+    description: |
+      Length of every transaction in bytes, a multiple of 4, the same on both sides: the header
+      carries it, and a peer with another size is reported and never connects. A transaction
+      holds a 12 byte header, the messages, each with a 4 byte header, and a 2 byte CRC. The
+      default fits an Ethernet frame.
