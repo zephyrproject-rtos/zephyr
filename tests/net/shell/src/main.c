@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/udp.h>
 #include <zephyr/random/random.h>
+#include <zephyr/shell/shell.h>
 
 #include "ipv4.h"
 #include "ipv6.h"
@@ -205,6 +206,33 @@ ZTEST(net_shell_test_suite, test_net_shell)
 
 	ret = shell_execute_cmd(NULL, "net arp flush");
 	zexpect_equal(ret, 0, "");
+}
+
+ZTEST(net_shell_test_suite, test_net_shell_http_get_url_too_long)
+{
+	static char cmd[CONFIG_SHELL_CMD_BUFF_SIZE];
+	static const char prefix[] = "net http get http://a/p#";
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_HTTP_CLIENT)) {
+		ztest_test_skip();
+	}
+
+	/* A short path followed by a fragment that does not fit into the URL
+	 * buffer must be rejected instead of overflowing it.
+	 */
+	memcpy(cmd, prefix, sizeof(prefix) - 1);
+	memset(cmd + sizeof(prefix) - 1, 'x', sizeof(cmd) - sizeof(prefix));
+	cmd[sizeof(cmd) - 1] = '\0';
+
+	ret = shell_execute_cmd(NULL, cmd);
+	zassert_equal(ret, -ENOBUFS, "Long fragment accepted (%d)", ret);
+
+	/* Same for a path that is too long on its own. */
+	cmd[sizeof(prefix) - 2] = 'x';
+
+	ret = shell_execute_cmd(NULL, cmd);
+	zassert_equal(ret, -ENOBUFS, "Long path accepted (%d)", ret);
 }
 
 ZTEST_SUITE(net_shell_test_suite, NULL, test_setup, NULL, NULL, NULL);
