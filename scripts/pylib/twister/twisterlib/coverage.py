@@ -549,7 +549,9 @@ class Gcovr(CoverageTool):
         self.ignores.append('.*' + pattern + '.*')
 
     def add_ignore_directory(self, pattern):
-        self.ignores.append(".*/" + pattern + '/.*')
+        # Optional prefix: matches both "<pattern>/..." at the root of the
+        # scanned tree and ".../<pattern>/..." nested anywhere under it.
+        self.ignores.append("(?:.*/)?" + pattern + '/.*')
 
     def add_ignore_branch_pattern(self, pattern):
         self.ignore_branch_patterns.append(pattern)
@@ -1151,6 +1153,8 @@ def run_coverage_tool(options, outdir, is_system_gcov, instances,
     coverage_tool.add_ignore_file('generated')
     coverage_tool.add_ignore_directory('tests')
     coverage_tool.add_ignore_directory('samples')
+    for pattern in options.coverage_exclude_dir:
+        coverage_tool.add_ignore_directory(pattern)
     # Ignore branch coverage on LOG_* and LOG_HEXDUMP_* macros
     # Branch misses are due to the implementation of Z_LOG2 and cannot be avoided
     coverage_tool.add_ignore_branch_pattern(r"^\s*LOG_(?:HEXDUMP_)?(?:DBG|INF|WRN|ERR)\(.*")
