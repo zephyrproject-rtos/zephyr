@@ -24,9 +24,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -66,12 +66,12 @@
 	soc {
 		pcc: clock-controller@4000d000 {
 			compatible = "nuvoton,npcx-pcc";
-			/* Cells for bus type, clock control reg and bit */
-			#clock-cells = <3>;
 			/* First reg region is Power Management Controller */
 			/* Second reg region is Core Domain Clock Generator */
 			reg = <0x4000d000 0x2000
 			       0x400b5000 0x2000>;
+			/* Cells for bus type, clock control reg and bit */
+			#clock-cells = <3>;
 			reg-names = "pmc", "cdcg";
 		};
 
@@ -339,8 +339,8 @@
 
 		adc0: adc@400d1000 {
 			compatible = "nuvoton,npcx-adc";
-			#io-channel-cells = <1>;
 			reg = <0x400d1000 0x2000>;
+			#io-channel-cells = <1>;
 			interrupts = <10 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 4>;
 			vref-mv = <2816>;
@@ -451,9 +451,9 @@
 		/* Dedicated Quad-SPI interface to access SPI flashes */
 		qspi_fiu0: quadspi@40020000 {
 			compatible = "nuvoton,npcx-fiu-qspi";
+			reg = <0x40020000 0x2000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40020000 0x2000>;
 		};
 
 		peci0: peci@400d4000 {
