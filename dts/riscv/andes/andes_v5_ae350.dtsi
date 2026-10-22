@@ -197,6 +197,36 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		eth0: eth@e0100000 {
+			compatible = "andestech,atfmac100";
+			reg = <0xe0100000 0x1000>;
+			interrupts = <19 2>;
+			interrupt-parent = <&plic0>;
+			local-mac-address = [fc 8c eb 9b a6 51];
+			status = "disabled";
+		};
+
+		lcd0: lcd@e0200000 {
+			compatible = "andestech,atflcdc100";
+			reg = <0xe0200000 0x1000>;
+			interrupts = <20 1>;
+			interrupt-parent = <&plic0>;
+			clock-frequency = <30000000>;
+			status = "disabled";
+		};
+
+		smc0: smc@e0400000 {
+			compatible = "andestech,atfsmc020";
+			reg = <0xe0400000 0x1000>;
+			status = "disabled";
+		};
+
+		l2_cache: cache-controller@e0500000 {
+			compatible = "andestech,l2c";
+			reg = <0xe0500000 0x1000>;
+			status = "disabled";
+		};
+
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0", "andestech,nceplic100";
 			reg = <0xe4000000 0x02000000>;
@@ -209,6 +239,16 @@
 					       &cpu6_intc 11 &cpu7_intc 11>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
+		};
+
+		mtimer: timer@e6000000 {
+			compatible = "riscv,machine-timer";
+			reg = <0xe6000000 0x8 0xe6000008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&cpu0_intc 7 &cpu1_intc 7
+					       &cpu2_intc 7 &cpu3_intc 7
+					       &cpu4_intc 7 &cpu5_intc 7
+					       &cpu6_intc 7 &cpu7_intc 7>;
 		};
 
 		plic_sw: interrupt-controller@e6400000 {
@@ -247,25 +287,9 @@
 			};
 		};
 
-		mtimer: timer@e6000000 {
-			compatible = "riscv,machine-timer";
-			reg = <0xe6000000 0x8 0xe6000008 0x8>;
-			reg-names = "mtime", "mtimecmp";
-			interrupts-extended = <&cpu0_intc 7 &cpu1_intc 7
-					       &cpu2_intc 7 &cpu3_intc 7
-					       &cpu4_intc 7 &cpu5_intc 7
-					       &cpu6_intc 7 &cpu7_intc 7>;
-		};
-
 		syscon: syscon@f0100000 {
 			compatible = "syscon", "andestech,atcsmu100";
 			reg = <0xf0100000 0x1000>;
-			status = "disabled";
-		};
-
-		l2_cache: cache-controller@e0500000 {
-			compatible = "andestech,l2c";
-			reg = <0xe0500000 0x1000>;
 			status = "disabled";
 		};
 
@@ -294,6 +318,14 @@
 			interrupt-parent = <&plic0>;
 			clock-frequency = <60000000>;
 			prescaler = <600>;
+			status = "disabled";
+		};
+
+		wdt: wdt@f0500000 {
+			compatible = "andestech,atcwdt200";
+			reg = <0xf0500000 0x1000>;
+			interrupts = <20 1>;
+			interrupt-parent = <&plic0>;
 			status = "disabled";
 		};
 
@@ -343,21 +375,6 @@
 			status = "disabled";
 		};
 
-		spi1: spi@f0f00000 {
-			compatible = "andestech,atcspi200";
-			reg = <0xf0f00000 0x1000>;
-			reg-names = "control";
-			interrupts = <5 1>;
-			interrupt-parent = <&plic0>;
-			dmas = <&dma0 2 2 0x009>,
-			       <&dma0 3 3 0x00a>;
-			dma-names = "tx", "rx";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clock-frequency = <66000000>;
-			status = "disabled";
-		};
-
 		dma0: dma@f0c00000 {
 			compatible = "andestech,atcdmacx00";
 			reg = <0xf0c00000 0x1000>;
@@ -368,38 +385,6 @@
 			chain-transfer = <1>;
 			max-data-width = <4>;
 			#dma-cells = <3>;
-			status = "disabled";
-		};
-
-		eth0: eth@e0100000 {
-			compatible = "andestech,atfmac100";
-			reg = <0xe0100000 0x1000>;
-			interrupts = <19 2>;
-			interrupt-parent = <&plic0>;
-			local-mac-address = [fc 8c eb 9b a6 51];
-			status = "disabled";
-		};
-
-		lcd0: lcd@e0200000 {
-			compatible = "andestech,atflcdc100";
-			reg = <0xe0200000 0x1000>;
-			interrupts = <20 1>;
-			interrupt-parent = <&plic0>;
-			clock-frequency = <30000000>;
-			status = "disabled";
-		};
-
-		wdt: wdt@f0500000 {
-			compatible = "andestech,atcwdt200";
-			reg = <0xf0500000 0x1000>;
-			interrupts = <20 1>;
-			interrupt-parent = <&plic0>;
-			status = "disabled";
-		};
-
-		smc0: smc@e0400000 {
-			compatible = "andestech,atfsmc020";
-			reg = <0xe0400000 0x1000>;
 			status = "disabled";
 		};
 
@@ -420,6 +405,21 @@
 			max-frequency = <100000000>;
 			clock-freq-min-max = <400000 100000000>;
 			fifo-depth = <0x10>;
+			status = "disabled";
+		};
+
+		spi1: spi@f0f00000 {
+			compatible = "andestech,atcspi200";
+			reg = <0xf0f00000 0x1000>;
+			reg-names = "control";
+			interrupts = <5 1>;
+			interrupt-parent = <&plic0>;
+			dmas = <&dma0 2 2 0x009>,
+			       <&dma0 3 3 0x00a>;
+			dma-names = "tx", "rx";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <66000000>;
 			status = "disabled";
 		};
 	};
