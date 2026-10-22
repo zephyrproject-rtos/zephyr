@@ -10,17 +10,18 @@ ram: 128
 flash: 512
 supported:
   - adc
-  - uart
-  - gpio
   - can
-  - dac
-  - pwm
-  - i2c
-  - spi
-  - vref
-  - dma
-  - trng
   - counter
-  - watchdog
+  - dac
+  - dma
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
   - rtc
+  - spi
+  - trng
+  - uart
+  - vref
+  - watchdog
 vendor: ti
