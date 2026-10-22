@@ -64,6 +64,14 @@ Libraries / Subsystems
   * Added a PSA Protected Storage backend, enabled with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
+* IPC
+
+  * Added the :ref:`IPC link backend <ipc_service_backend_link>`, which runs the IPC service
+    between two processors over a :ref:`UART <ipc_service_backend_link_uart>` or an
+    :ref:`SPI bus <ipc_service_backend_link_spi>`. It retransmits lost and corrupted frames,
+    detects a peer reboot or a peer that stops answering, and unbinds the endpoints when the
+    session ends.
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region
