@@ -1403,7 +1403,7 @@ static DEVICE_API(display, sdl_display_api) = {
 	static struct sdl_display_data sdl_data_##n = {                                            \
 		COND_CODE_1(HAS_COLOR_PALETTE(n),                                                  \
 			    (.color_dither = DISPLAY_COLOR_DITHER_INIT(n),), ())                   \
-		.current_pixel_format = DT_INST_PROP(n, pixel_format),                             \
+		.current_pixel_format = DT_INST_STRING_TOKEN(n, pixel_format),                     \
 		.buf = sdl_buf_##n,                                                                \
 		.read_buf = sdl_read_buf_##n,                                                      \
 		.task_msgq = &sdl_task_msgq_##n,                                                   \

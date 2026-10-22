@@ -184,7 +184,7 @@
 
 	sdl_dc: sdl_dc {
 		compatible = "zephyr,sdl-dc";
-		pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
+		pixel-format = "PANEL_PIXEL_FORMAT_ARGB_8888";
 		height = <240>;
 		width = <320>;
 	};
