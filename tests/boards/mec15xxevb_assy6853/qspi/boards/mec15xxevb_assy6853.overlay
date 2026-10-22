@@ -5,7 +5,6 @@
  */
 
 &spi0 {
-	status = "okay";
 	port-sel = <0>;
 	chip-select = <0>;
 	lines = <4>;
@@ -16,4 +15,5 @@
 		     &shd_io1_gpio224
 		     &shd_io2_gpio227
 		     &shd_io3_gpio016>;
+	status = "okay";
 };
