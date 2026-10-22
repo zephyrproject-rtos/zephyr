@@ -17,27 +17,27 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <1>;
+			device_type = "cpu";
 		};
 
 		cpu@2 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <2>;
+			device_type = "cpu";
 		};
 
 		cpu@3 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <3>;
+			device_type = "cpu";
 		};
 	};
 
