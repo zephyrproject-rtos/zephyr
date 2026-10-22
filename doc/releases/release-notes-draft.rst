@@ -74,6 +74,13 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* IPC
+
+  * :ref:`ipc_service_backend_link`, an IPC service backend over transports that move frames
+    between two processors, with a :ref:`UART transport <ipc_service_backend_link_uart>` and an
+    :ref:`SPI transport <ipc_service_backend_link_spi>`, its transport interface,
+    :c:struct:`ipc_link_transport_api`, and its counters, :c:func:`ipc_link_stats_get`.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
