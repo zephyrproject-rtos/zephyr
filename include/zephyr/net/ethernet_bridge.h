@@ -42,15 +42,36 @@ extern "C" {
 #define NET_ETHERNET_BRIDGE_ETH_INTERFACE_COUNT 1
 #endif
 
+/* Forwarding state of a bridge port, as in IEEE 802.1D-2004 7.4 */
+enum eth_bridge_port_state {
+	/* Frames are neither forwarded nor learned from */
+	ETH_BRIDGE_PORT_STATE_DISCARDING = 0,
+	/* Source addresses are learned, frames are not forwarded */
+	ETH_BRIDGE_PORT_STATE_LEARNING,
+	/* Frames are learned from and forwarded */
+	ETH_BRIDGE_PORT_STATE_FORWARDING,
+};
+
+/* One Ethernet interface bridged by a bridge interface */
+struct eth_bridge_port {
+	/* The bridged Ethernet interface, NULL if the slot is free */
+	struct net_if *iface;
+
+	/* Port state, an enum eth_bridge_port_state. Read without the
+	 * bridge lock in the data path.
+	 */
+	atomic_t state;
+};
+
 struct eth_bridge_iface_context {
-	/* Lock to protect access to interface array below */
+	/* Lock to protect access to the port array below */
 	struct k_mutex lock;
 
 	/* The actual bridge virtual interface  */
 	struct net_if *iface;
 
 	/* What Ethernet interfaces are bridged together */
-	struct net_if *eth_iface[NET_ETHERNET_BRIDGE_ETH_INTERFACE_COUNT];
+	struct eth_bridge_port ports[NET_ETHERNET_BRIDGE_ETH_INTERFACE_COUNT];
 
 	/* How many interfaces are bridged atm */
 	size_t count;
@@ -79,7 +100,9 @@ struct eth_bridge_iface_context {
  * @param br A pointer to a bridge interface
  * @param iface Interface to add
  *
- * @return 0 if OK, negative error code otherwise.
+ * @return 0 if OK, negative error code otherwise. -ENOTSUP if the spanning
+ *         tree protocol runs on @p br and @p iface forwards frames in hardware,
+ *         see eth_bridge_stp_enable().
  */
 int eth_bridge_iface_add(struct net_if *br, struct net_if *iface);
 

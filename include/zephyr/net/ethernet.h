@@ -204,6 +204,9 @@ enum ethernet_hw_caps {
 
 	/** TX-Injection supported */
 	ETHERNET_TXINJECTION_MODE	= BIT(20),
+
+	/** The device forwards frames between its ports in hardware */
+	ETHERNET_HW_PORT_FORWARDING	= BIT(21),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -682,6 +685,9 @@ struct ethernet_context {
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct net_if *bridge;
+
+	/* Index of this interface in the port table of its bridge */
+	uint8_t bridge_port;
 #endif
 
 	/** Carrier ON/OFF handler worker. This is used to create

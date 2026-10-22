@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/promiscuous.h>
 
 #include "arp.h"
+#include "bridge/bridge_internal.h"
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -704,6 +705,71 @@ static void test_recv_no_forwarding_port(void)
 	net_if_up(fake_iface[2]);
 }
 
+/* Release what the fake driver kept and tell which ports sent a frame */
+static uint32_t collect_sent(void)
+{
+	uint32_t sent = 0U;
+
+	for (int i = 0; i < 3; i++) {
+		if (eth_fake_data[i].sent_pkt != NULL) {
+			sent |= BIT(i);
+			net_pkt_unref(eth_fake_data[i].sent_pkt);
+			eth_fake_data[i].sent_pkt = NULL;
+		}
+	}
+
+	return sent;
+}
+
+/* Receive a frame on fake_iface[idx] and tell which ports sent it on */
+static uint32_t recv_and_collect(int idx)
+{
+	_recv_data(fake_iface[idx]);
+
+	/* give time to the processing threads to run */
+	k_sleep(K_MSEC(100));
+
+	return collect_sent();
+}
+
+/* A port that is not forwarding neither sends nor passes on frames */
+static void test_port_state_gating(void)
+{
+	static const enum eth_bridge_port_state blocked[] = {
+		ETH_BRIDGE_PORT_STATE_DISCARDING,
+		ETH_BRIDGE_PORT_STATE_LEARNING,
+	};
+	int ret;
+
+	(void)collect_sent();
+
+	zexpect_equal(eth_bridge_port_get_state(fake_iface[1]), ETH_BRIDGE_PORT_STATE_FORWARDING,
+		      "A new port is not forwarding");
+
+	ARRAY_FOR_EACH(blocked, i) {
+		ret = eth_bridge_port_set_state(bridge, fake_iface[1], blocked[i]);
+		zassert_equal(ret, 0, "Cannot set port state %d (%d)", blocked[i], ret);
+
+		zexpect_equal(recv_and_collect(0), BIT(2), "Flood reached a port in state %d",
+			      blocked[i]);
+		zexpect_equal(recv_and_collect(1), 0U, "Frame from a port in state %d forwarded",
+			      blocked[i]);
+	}
+
+	ret = eth_bridge_port_set_state(bridge, fake_iface[1], ETH_BRIDGE_PORT_STATE_FORWARDING);
+	zassert_equal(ret, 0, "Cannot set the port forwarding (%d)", ret);
+
+	zexpect_equal(recv_and_collect(0), BIT(1) | BIT(2), "Flood not restored");
+	zexpect_equal(recv_and_collect(1), BIT(0) | BIT(2), "Forwarding not restored");
+
+	zexpect_equal(eth_bridge_port_set_state(bridge, fake_iface[1], 42), -EINVAL,
+		      "Invalid state accepted");
+	zexpect_equal(eth_bridge_port_set_state(bridge, bridge, ETH_BRIDGE_PORT_STATE_FORWARDING),
+		      -ENOENT, "State set on an interface that is not a port");
+
+	check_free_packet_count();
+}
+
 static void test_recv_with_bridge_fdb(void)
 {
 	struct net_eth_addr mac;
@@ -769,6 +835,7 @@ static void recv_data_dst(int idx, struct net_eth_addr *mac)
 
 struct fdb_count_data {
 	struct net_if *iface;
+	uint8_t flags;
 	int count;
 };
 
@@ -776,14 +843,18 @@ static void fdb_count_cb(struct eth_bridge_fdb_entry *entry, void *user_data)
 {
 	struct fdb_count_data *data = user_data;
 
-	if (entry->iface == data->iface) {
+	if (entry->iface == data->iface && (entry->flags & data->flags) != 0U) {
 		data->count++;
 	}
 }
 
+/* Count the static FDB entries of a port; learning adds dynamic ones */
 static int fdb_count(struct net_if *iface)
 {
-	struct fdb_count_data data = {.iface = iface};
+	struct fdb_count_data data = {
+		.iface = iface,
+		.flags = ETHERNET_BRIDGE_FDB_FLAG_STATIC,
+	};
 
 	eth_bridge_fdb_foreach(fdb_count_cb, &data);
 
@@ -888,6 +959,258 @@ static void test_fdb_del_any_iface(void)
 	}
 }
 
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING)
+/* Receive a frame from src to dst on fake_iface[idx] and tell which ports
+ * sent it on.
+ */
+static uint32_t recv_frame_and_collect(int idx, const struct net_eth_addr *src,
+				       const struct net_eth_addr *dst)
+{
+	static const uint8_t data[] = {'l', 'e', 'a', 'r', 'n'};
+	struct net_eth_hdr eth_hdr;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_rx_alloc_with_buffer(fake_iface[idx], sizeof(eth_hdr) + sizeof(data),
+					   NET_AF_UNSPEC, 0, K_FOREVER);
+	zassert_not_null(pkt, "");
+
+	memcpy(&eth_hdr.dst, dst, sizeof(eth_hdr.dst));
+	memcpy(&eth_hdr.src, src, sizeof(eth_hdr.src));
+	eth_hdr.type = net_htons(NET_ETH_PTYPE_ALL);
+
+	zassert_equal(net_pkt_write(pkt, &eth_hdr, sizeof(eth_hdr)), 0, "");
+	zassert_equal(net_pkt_write(pkt, data, sizeof(data)), 0, "");
+
+	ret = net_recv_data(fake_iface[idx], pkt);
+	zassert_equal(ret, 0, "Cannot receive data (%d)", ret);
+
+	/* give time to the processing threads to run */
+	k_sleep(K_MSEC(20));
+
+	return collect_sent();
+}
+
+static int fdb_count_all(void)
+{
+	int count = 0;
+
+	for (int i = 0; i < 3; i++) {
+		struct fdb_count_data data = {
+			.iface = fake_iface[i],
+			.flags = ETHERNET_BRIDGE_FDB_FLAG_STATIC | ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC,
+		};
+
+		eth_bridge_fdb_foreach(fdb_count_cb, &data);
+		count += data.count;
+	}
+
+	return count;
+}
+
+/* The source of a received frame is learned, so that frames to it go out
+ * of its port only, and follow it when it moves to another port.
+ */
+static void test_fdb_learning(void)
+{
+	static const struct net_eth_addr station = {{0x02, 0x00, 0x5e, 0x20, 0x00, 0x01}};
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x20, 0x00, 0x02}};
+	int ret;
+
+	(void)collect_sent();
+
+	/* Unknown yet: flooded, and learned on fake_iface[0] */
+	zexpect_equal(recv_frame_and_collect(0, &station, &peer), BIT(1) | BIT(2),
+		      "Frame to an unknown destination not flooded");
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(0),
+		      "Frame to a learned station not sent to its port only");
+
+	/* The station moves to fake_iface[2]; the peer was learned meanwhile */
+	zexpect_equal(recv_frame_and_collect(2, &station, &peer), BIT(1),
+		      "Frame to a learned station not sent to its port only");
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(2),
+		      "Learned entry did not follow the station");
+
+	ret = eth_bridge_fdb_del((struct net_eth_addr *)&station, fake_iface[2]);
+	zexpect_equal(ret, 0, "Cannot delete the learned entry (%d)", ret);
+	ret = eth_bridge_fdb_del((struct net_eth_addr *)&peer, fake_iface[1]);
+	zexpect_equal(ret, 0, "Cannot delete the learned entry (%d)", ret);
+
+	check_free_packet_count();
+}
+
+/* A frame with the bridge's own address as source is not learned, and a
+ * frame for the bridge is delivered to it, not sent to a port.
+ */
+static void test_fdb_learning_own_address(void)
+{
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x23, 0x00, 0x02}};
+	struct net_eth_addr own;
+	int entries;
+
+	memcpy(own.addr, net_if_get_link_addr(bridge)->addr, sizeof(own.addr));
+	(void)collect_sent();
+	entries = fdb_count_all();
+
+	(void)recv_frame_and_collect(0, &own, &peer);
+	zexpect_equal(fdb_count_all(), entries, "The bridge address was learned");
+
+	zassert_equal(eth_bridge_fdb_add(&own, fake_iface[0]), 0, "");
+	zexpect_equal(recv_frame_and_collect(1, &peer, &own), 0U,
+		      "Frame to the bridge address sent to a port");
+	zassert_equal(eth_bridge_fdb_del(&own, fake_iface[0]), 0, "");
+	zassert_equal(eth_bridge_fdb_del((struct net_eth_addr *)&peer, fake_iface[1]), 0, "");
+
+	check_free_packet_count();
+}
+
+/* Learning never changes a static entry */
+static void test_fdb_learning_keeps_static(void)
+{
+	static const struct net_eth_addr station = {{0x02, 0x00, 0x5e, 0x21, 0x00, 0x01}};
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x21, 0x00, 0x02}};
+	int ret;
+
+	(void)collect_sent();
+
+	ret = eth_bridge_fdb_add((struct net_eth_addr *)&station, fake_iface[0]);
+	zassert_equal(ret, 0, "Cannot add FDB entry (%d)", ret);
+
+	/* The station shows up behind another port */
+	(void)recv_frame_and_collect(2, &station, &peer);
+
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(0),
+		      "Static entry changed by learning");
+	zexpect_equal(fdb_count(fake_iface[0]), 1, "Static entry lost");
+
+	ret = eth_bridge_fdb_del((struct net_eth_addr *)&station, fake_iface[0]);
+	zexpect_equal(ret, 0, "Cannot delete FDB entry (%d)", ret);
+	(void)eth_bridge_fdb_del((struct net_eth_addr *)&peer, fake_iface[1]);
+
+	check_free_packet_count();
+}
+
+/* A flush removes the entries of one port or of the whole bridge */
+static void test_fdb_flush(void)
+{
+	static const struct net_eth_addr a = {{0x02, 0x00, 0x5e, 0x23, 0x00, 0x01}};
+	static const struct net_eth_addr b = {{0x02, 0x00, 0x5e, 0x23, 0x00, 0x02}};
+	static const struct net_eth_addr c = {{0x02, 0x00, 0x5e, 0x23, 0x00, 0x03}};
+	int ret;
+
+	(void)collect_sent();
+
+	/* Start from an empty table: earlier tests leave learned entries */
+	eth_bridge_fdb_flush(bridge, NULL, false);
+	zassert_equal(fdb_count_all(), 0, "Entries left after a full flush");
+
+	/* a learned on fake_iface[0], b learned on fake_iface[2] */
+	(void)recv_frame_and_collect(0, &a, &b);
+	(void)recv_frame_and_collect(2, &b, &a);
+
+	ret = eth_bridge_fdb_add((struct net_eth_addr *)&c, fake_iface[0]);
+	zassert_equal(ret, 0, "Cannot add FDB entry (%d)", ret);
+
+	zassert_equal(fdb_count_all(), 3, "Unexpected FDB entries");
+
+	eth_bridge_fdb_flush(bridge, fake_iface[0], true);
+
+	zexpect_equal(fdb_count_all(), 2, "Not only the learned entry of the port removed");
+	zexpect_equal(fdb_count(fake_iface[0]), 1, "Static entry removed by a dynamic flush");
+	zexpect_equal(recv_frame_and_collect(1, &c, &a), BIT(0) | BIT(2),
+		      "Frame to a flushed station not flooded");
+
+	eth_bridge_fdb_flush(bridge, NULL, false);
+
+	zexpect_equal(fdb_count_all(), 0, "Entries left after a full flush");
+
+	check_free_packet_count();
+}
+
+#if CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME < 5
+/* A learned entry ages out, a static one does not */
+static void test_fdb_ageing(void)
+{
+	static const struct net_eth_addr station = {{0x02, 0x00, 0x5e, 0x24, 0x00, 0x01}};
+	static const struct net_eth_addr fixed = {{0x02, 0x00, 0x5e, 0x24, 0x00, 0x02}};
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x24, 0x00, 0x03}};
+	int ret;
+
+	(void)collect_sent();
+
+	ret = eth_bridge_fdb_add((struct net_eth_addr *)&fixed, fake_iface[2]);
+	zassert_equal(ret, 0, "Cannot add FDB entry (%d)", ret);
+
+	(void)recv_frame_and_collect(0, &station, &peer);
+
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(0), "Station not learned");
+
+	/* No frame from the station: its entry expires. The peer is also
+	 * learned, on fake_iface[1], and expires as well.
+	 */
+	k_sleep(K_SECONDS(CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME + 2));
+
+	zexpect_equal(fdb_count_all(), 1, "Learned entries not aged out");
+	zexpect_equal(fdb_count(fake_iface[2]), 1, "Static entry aged out");
+
+	ret = eth_bridge_fdb_del((struct net_eth_addr *)&fixed, fake_iface[2]);
+	zexpect_equal(ret, 0, "Cannot delete FDB entry (%d)", ret);
+
+	/* Nothing to forward to now: the frame floods */
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(0) | BIT(2),
+		      "Frame to an aged out station not flooded");
+
+	eth_bridge_fdb_flush(bridge, NULL, false);
+
+	check_free_packet_count();
+}
+#endif
+
+/* With a full table nothing more is learned, so frames are flooded */
+static void test_fdb_learning_table_full(void)
+{
+	struct net_eth_addr src = {{0x02, 0x00, 0x5e, 0x22, 0x00, 0x00}};
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x22, 0x01, 0x00}};
+	int free_entries;
+
+	(void)collect_sent();
+
+	free_entries = CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES - fdb_count_all();
+	zassert_true(free_entries > 0, "FDB already full");
+
+	for (int i = 0; i < free_entries; i++) {
+		src.addr[5] = (uint8_t)i;
+		(void)recv_frame_and_collect(0, &src, &peer);
+	}
+
+	zexpect_equal(fdb_count_all(), CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES,
+		      "Table not full");
+
+	/* One more station: not learned */
+	src.addr[5] = (uint8_t)free_entries;
+	(void)recv_frame_and_collect(0, &src, &peer);
+
+	zexpect_equal(recv_frame_and_collect(1, &peer, &src), BIT(0) | BIT(2),
+		      "Frame to a station not learned is not flooded");
+
+	/* A static entry still fits, in place of a learned one */
+	zexpect_equal(eth_bridge_fdb_add((struct net_eth_addr *)&peer, fake_iface[1]), 0,
+		      "Learned entries keep a static one out");
+	zexpect_equal(fdb_count(fake_iface[1]), 1, "Static entry not added");
+	zexpect_equal(fdb_count_all(), CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES,
+		      "Table not full");
+
+	for (int i = 0; i < 3; i++) {
+		zexpect_equal(eth_bridge_fdb_del_iface(fake_iface[i]), 0,
+			      "Cannot flush fake_iface[%d]", i);
+	}
+
+	zexpect_equal(fdb_count_all(), 0, "Entries left");
+
+	check_free_packet_count();
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING */
+
 static void test_recv_after_bridging(void)
 {
 	int ret;
@@ -938,10 +1261,21 @@ ZTEST(net_eth_bridge, test_net_eth_bridge)
 #endif
 	test_recv_with_bridge();
 	test_recv_no_forwarding_port();
+	test_port_state_gating();
 	test_recv_with_bridge_fdb();
 	test_recv_with_bridge_fdb_ingress();
 	test_fdb_del_iface();
 	test_fdb_del_any_iface();
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING)
+	test_fdb_learning();
+	test_fdb_learning_own_address();
+	test_fdb_learning_keeps_static();
+	test_fdb_flush();
+#if CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME < 5
+	test_fdb_ageing();
+#endif
+	test_fdb_learning_table_full();
+#endif
 	DBG("After bridging\n");
 	test_recv_after_bridging();
 }

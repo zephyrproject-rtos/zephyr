@@ -63,6 +63,13 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Networking
+
+  * Ethernet bridge
+
+    * :c:group:`eth_bridge_stp`
+    * :kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_STP`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -100,6 +107,28 @@ New Samples
 
 Libraries / Subsystems
 **********************
+
+* Networking
+
+  * Ethernet bridge
+
+    * The bridge learns the port of each source MAC address into its FDB
+      (:kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING`), so that a frame to a known
+      destination is sent out of one port instead of being flooded.
+      Learned entries age out after
+      :kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME` seconds without a frame from
+      their address, and :c:struct:`eth_bridge_fdb_entry` records when that frame was last seen
+      (FDB API version 0.2.0).
+    * Experimental support for the Rapid Spanning Tree Protocol of IEEE Std 802.1Q-2014
+      (:kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_STP`). Once started on a bridge with
+      :c:func:`eth_bridge_stp_enable`, it blocks the bridge ports that would make a loop and
+      falls back to STP BPDUs on a port where an STP bridge is attached. The
+      ``NET_EVENT_ETHERNET_BRIDGE_PORT_STATE``, ``NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT`` and
+      ``NET_EVENT_ETHERNET_BRIDGE_TOPOLOGY_CHANGE`` net_mgmt events report port role and state
+      changes, a new root bridge and the start of a topology change. The protocol does not
+      run on ports that forward frames in hardware, DSA switch ports and Ethernet devices that
+      report the new :c:enumerator:`ETHERNET_HW_PORT_FORWARDING` capability, as it cannot
+      block them.
 
 Other notable changes
 *********************

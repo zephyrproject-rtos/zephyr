@@ -11,6 +11,8 @@ LOG_MODULE_REGISTER(net_eth_bridge_fdb, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/net/ethernet_bridge.h>
 #include <zephyr/net/ethernet_bridge_fdb.h>
 
+#include "bridge_internal.h"
+
 /* FDB table */
 static sys_slist_t fdb_entries = SYS_SLIST_STATIC_INIT(&fdb_entries);
 static K_MUTEX_DEFINE(fdb_lock);
@@ -20,9 +22,49 @@ static size_t fdb_count;
 K_MEM_SLAB_DEFINE_STATIC_TYPE(fdb_slab, struct eth_bridge_fdb_entry,
 			      CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES);
 
+static void fdb_remove(sys_snode_t *prev, struct eth_bridge_fdb_entry *entry)
+{
+	NET_DBG("FDB entry removed: %02x:%02x:%02x:%02x:%02x:%02x -> iface %d", entry->mac.addr[0],
+		entry->mac.addr[1], entry->mac.addr[2], entry->mac.addr[3], entry->mac.addr[4],
+		entry->mac.addr[5], net_if_get_by_iface(entry->iface));
+
+	sys_slist_remove(&fdb_entries, prev, &entry->node);
+	fdb_count--;
+
+	k_mem_slab_free(&fdb_slab, (void *)entry);
+}
+
+/* Remove the learned entry seen longest ago, the first learned of those seen
+ * at the same time. Called with fdb_lock held.
+ */
+static bool fdb_remove_oldest_learned(void)
+{
+	struct eth_bridge_fdb_entry *entry, *oldest = NULL;
+	sys_snode_t *prev = NULL, *oldest_prev = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&fdb_entries, entry, node) {
+		if ((entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) != 0U &&
+		    (oldest == NULL || entry->last_seen <= oldest->last_seen)) {
+			oldest = entry;
+			oldest_prev = prev;
+		}
+
+		prev = &entry->node;
+	}
+
+	if (oldest == NULL) {
+		return false;
+	}
+
+	fdb_remove(oldest_prev, oldest);
+
+	return true;
+}
+
 int eth_bridge_fdb_add(struct net_eth_addr *mac, struct net_if *iface)
 {
 	struct eth_bridge_fdb_entry *entry;
+	struct net_if *bridge;
 	int ret = 0;
 
 	/* Check mac and iface is valid or not */
@@ -34,13 +76,18 @@ int eth_bridge_fdb_add(struct net_eth_addr *mac, struct net_if *iface)
 		return -EINVAL;
 	}
 
+	bridge = net_eth_get_bridge(net_if_l2_data(iface));
+
 	k_mutex_lock(&fdb_lock, K_FOREVER);
 
-	/* Check if the mac already exists in FDB table */
+	/* Check if the mac already exists in the FDB table of this bridge */
 	SYS_SLIST_FOR_EACH_CONTAINER(&fdb_entries, entry, node) {
-		if (memcmp(&entry->mac, mac, sizeof(struct net_eth_addr)) == 0) {
+		if (memcmp(&entry->mac, mac, sizeof(struct net_eth_addr)) == 0 &&
+		    net_eth_get_bridge(net_if_l2_data(entry->iface)) == bridge) {
 
 			if (entry->iface == iface) {
+				/* A learned entry becomes static */
+				entry->flags = ETHERNET_BRIDGE_FDB_FLAG_STATIC;
 				NET_DBG("FDB entry exists");
 				goto out;
 			}
@@ -48,6 +95,7 @@ int eth_bridge_fdb_add(struct net_eth_addr *mac, struct net_if *iface)
 			/* For unicast address, just update it */
 			if (net_eth_is_addr_valid(mac)) {
 				entry->iface = iface;
+				entry->flags = ETHERNET_BRIDGE_FDB_FLAG_STATIC;
 				NET_DBG("FDB entry updated: %02x:%02x:%02x:%02x:%02x:%02x -> iface "
 					"%d",
 					mac->addr[0], mac->addr[1], mac->addr[2], mac->addr[3],
@@ -57,8 +105,12 @@ int eth_bridge_fdb_add(struct net_eth_addr *mac, struct net_if *iface)
 		}
 	}
 
-	/* Check if we have space */
-	if (fdb_count >= CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES) {
+	/* Learned entries share the table: a full one gives up its oldest
+	 * learned entry, so that received frames cannot fill it against
+	 * configuration.
+	 */
+	if (fdb_count >= CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES &&
+	    !fdb_remove_oldest_learned()) {
 		NET_ERR("FDB table full");
 		ret = -ENOMEM;
 		goto out;
@@ -180,6 +232,160 @@ void eth_bridge_fdb_foreach(eth_bridge_fdb_entry_cb_t cb, void *user_data)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&fdb_entries, entry, tmp, node) {
 		cb(entry, user_data);
+	}
+
+	k_mutex_unlock(&fdb_lock);
+}
+
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING)
+static void fdb_ageing_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(fdb_ageing_work, fdb_ageing_handler);
+
+/* Remove the learned entries not refreshed within the ageing time, once a
+ * second while there are learned entries.
+ */
+static void fdb_ageing_handler(struct k_work *work)
+{
+	struct eth_bridge_fdb_entry *entry;
+	sys_snode_t *node, *next, *prev = NULL;
+	uint32_t now = k_uptime_seconds();
+	bool dynamic_left = false;
+
+	ARG_UNUSED(work);
+
+	k_mutex_lock(&fdb_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&fdb_entries, node, next) {
+		entry = CONTAINER_OF(node, struct eth_bridge_fdb_entry, node);
+
+		if ((entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) == 0U) {
+			prev = node;
+			continue;
+		}
+
+		if (now - entry->last_seen >= CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME) {
+			/* prev stays the last kept node */
+			fdb_remove(prev, entry);
+			continue;
+		}
+
+		dynamic_left = true;
+		prev = node;
+	}
+
+	k_mutex_unlock(&fdb_lock);
+
+	if (dynamic_left) {
+		(void)k_work_schedule(&fdb_ageing_work, K_SECONDS(1));
+	}
+}
+
+void eth_bridge_fdb_learn(struct net_if *bridge, struct net_eth_addr *mac, struct net_if *iface)
+{
+	struct eth_bridge_fdb_entry *entry;
+
+	/* Only a unicast source identifies a station, and a frame with the
+	 * bridge's own address as source is not from a station behind a port.
+	 * Learning that would send the frames for the bridge to that port.
+	 */
+	if (!net_eth_is_addr_valid(mac) ||
+	    memcmp(mac, net_if_get_link_addr(bridge)->addr, sizeof(*mac)) == 0) {
+		return;
+	}
+
+	k_mutex_lock(&fdb_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&fdb_entries, entry, node) {
+		if (memcmp(&entry->mac, mac, sizeof(struct net_eth_addr)) != 0 ||
+		    net_eth_get_bridge(net_if_l2_data(entry->iface)) != bridge) {
+			continue;
+		}
+
+		/* A static entry is never changed by what is received */
+		if ((entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) != 0U) {
+			if (entry->iface != iface) {
+				NET_DBG("FDB move %02x:%02x:%02x:%02x:%02x:%02x -> iface %d",
+					mac->addr[0], mac->addr[1], mac->addr[2], mac->addr[3],
+					mac->addr[4], mac->addr[5], net_if_get_by_iface(iface));
+				entry->iface = iface;
+			}
+
+			entry->last_seen = k_uptime_seconds();
+		}
+
+		goto out;
+	}
+
+	/* A full table learns nothing; such destinations are flooded */
+	if (fdb_count >= CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES ||
+	    k_mem_slab_alloc(&fdb_slab, (void **)&entry, K_NO_WAIT) != 0) {
+		goto out;
+	}
+
+	memcpy(&entry->mac, mac, sizeof(struct net_eth_addr));
+	entry->iface = iface;
+	entry->flags = ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC;
+	entry->last_seen = k_uptime_seconds();
+
+	sys_slist_prepend(&fdb_entries, &entry->node);
+	fdb_count++;
+
+	/* Does nothing when the ageing work is already scheduled */
+	(void)k_work_schedule(&fdb_ageing_work, K_SECONDS(1));
+
+	NET_DBG("FDB entry learned: %02x:%02x:%02x:%02x:%02x:%02x -> iface %d", mac->addr[0],
+		mac->addr[1], mac->addr[2], mac->addr[3], mac->addr[4], mac->addr[5],
+		net_if_get_by_iface(iface));
+out:
+	k_mutex_unlock(&fdb_lock);
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING */
+
+size_t eth_bridge_fdb_lookup(struct net_if *bridge, const struct net_eth_addr *mac,
+			     struct net_if *ports[], size_t max_ports)
+{
+	struct eth_bridge_fdb_entry *entry;
+	size_t count = 0;
+
+	k_mutex_lock(&fdb_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&fdb_entries, entry, node) {
+		if (memcmp(&entry->mac, mac, sizeof(struct net_eth_addr)) != 0 ||
+		    net_eth_get_bridge(net_if_l2_data(entry->iface)) != bridge) {
+			continue;
+		}
+
+		if (count < max_ports) {
+			ports[count] = entry->iface;
+		}
+
+		count++;
+	}
+
+	k_mutex_unlock(&fdb_lock);
+
+	return count;
+}
+
+void eth_bridge_fdb_flush(struct net_if *bridge, struct net_if *iface, bool dynamic_only)
+{
+	struct eth_bridge_fdb_entry *entry;
+	sys_snode_t *node, *next, *prev = NULL;
+
+	k_mutex_lock(&fdb_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&fdb_entries, node, next) {
+		entry = CONTAINER_OF(node, struct eth_bridge_fdb_entry, node);
+
+		if (net_eth_get_bridge(net_if_l2_data(entry->iface)) != bridge ||
+		    (iface != NULL && entry->iface != iface) ||
+		    (dynamic_only && (entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) == 0U)) {
+			prev = node;
+			continue;
+		}
+
+		/* prev stays the last kept node */
+		fdb_remove(prev, entry);
 	}
 
 	k_mutex_unlock(&fdb_lock);
