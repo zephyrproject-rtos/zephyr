@@ -20,6 +20,32 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		m33_code: memory@24058000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x24058000 DT_SIZE_K(404)>;
+			zephyr,memory-region = "M33CODE";
+		};
+
+		m33_data: memory@240bd000 {
+			reg = <0x240bd000 DT_SIZE_K(256)>;
+		};
+
+		m33_allocatable_shared: memory@240fe000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x240fe000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "M33SHARED";
+		};
+
+		m55_allocatable_shared: memory@240ff000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x240ff000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "M55SHARED";
+		};
+
+		m55_data: memory@26100000 {
+			reg = <0x26100000 DT_SIZE_K(256)>;
+		};
+
 		extended_boot_sram_reserved: memory@34000000 {
 			reg = <0x34000000 DT_SIZE_K(4)>;
 		};
@@ -38,36 +64,10 @@
 			reg = <0x34037000 DT_SIZE_K(132)>;
 		};
 
-		m33_code: memory@24058000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x24058000 DT_SIZE_K(404)>;
-			zephyr,memory-region = "M33CODE";
-		};
-
-		m33_data: memory@240bd000 {
-			reg = <0x240bd000 DT_SIZE_K(256)>;
-		};
-
 		m33s_allocatable_shared: memory@340fd000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x340fd000 DT_SIZE_K(4)>;
 			zephyr,memory-region = "SECSHARED";
-		};
-
-		m33_allocatable_shared: memory@240fe000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x240fe000 DT_SIZE_K(4)>;
-			zephyr,memory-region = "M33SHARED";
-		};
-
-		m55_allocatable_shared: memory@240ff000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x240ff000 DT_SIZE_K(4)>;
-			zephyr,memory-region = "M55SHARED";
-		};
-
-		m55_data: memory@26100000 {
-			reg = <0x26100000 DT_SIZE_K(256)>;
 		};
 	};
 
