@@ -260,17 +260,17 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 	pinctrl-names = "default";
 	status = "okay";
 
-	phy0: phy@5 {
+	phy2: phy@4 {
 		compatible = "motorcomm,yt8531";
-		reg = <0x5>;
+		reg = <0x4>;
 		motorcomm,rx-delay-sel = <13>;
 		motorcomm,tx-delay-sel = <13>;
 		status = "okay";
 	};
 
-	phy2: phy@4 {
+	phy0: phy@5 {
 		compatible = "motorcomm,yt8531";
-		reg = <0x4>;
+		reg = <0x5>;
 		motorcomm,rx-delay-sel = <13>;
 		motorcomm,tx-delay-sel = <13>;
 		status = "okay";

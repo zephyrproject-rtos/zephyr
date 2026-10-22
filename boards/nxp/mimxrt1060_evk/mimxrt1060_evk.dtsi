@@ -35,12 +35,6 @@
 		zephyr,canbus = &flexcan3;
 	};
 
-	sdram0: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(32)>;
-		/* Micron MT48LC16M16A2B4-6AIT:G */
-		device_type = "memory";
-	};
-
 	/*
 	 * This node describes the GPIO pins of the parallel FPC interface,
 	 * This interface is standard to several NXP EVKs, and is used with
@@ -122,6 +116,12 @@
 			   <ARDUINO_HEADER_R3_D13 0 &gpio3 12 0>,
 			   <ARDUINO_HEADER_R3_D14 0 &gpio1 17 0>,
 			   <ARDUINO_HEADER_R3_D15 0 &gpio1 16 0>;
+	};
+
+	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(32)>;
+		/* Micron MT48LC16M16A2B4-6AIT:G */
+		device_type = "memory";
 	};
 };
 

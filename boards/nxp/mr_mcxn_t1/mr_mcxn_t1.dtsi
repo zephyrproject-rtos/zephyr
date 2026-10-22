@@ -68,18 +68,18 @@
 	i2c-scl-hz = <400000>;
 	status = "disabled";
 
-	bmp581_0: bmp581_0@470000000000000050 {
-		compatible = "bosch,bmp581";
-		reg = <0x47 0x0 0x50>;
-		status = "disabled";
-	};
-
 	bmm350_0: bmm350_0@140000000000000050 {
 		compatible = "bosch,bmm350";
 		reg = <0x14 0x0 0x50>;
 		drdy-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 		push-pull-int;
 		active-high-int;
+		status = "disabled";
+	};
+
+	bmp581_0: bmp581_0@470000000000000050 {
+		compatible = "bosch,bmp581";
+		reg = <0x47 0x0 0x50>;
 		status = "disabled";
 	};
 };
