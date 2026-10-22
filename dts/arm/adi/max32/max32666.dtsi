@@ -31,10 +31,10 @@
 		/delete-node/ cpu@1;
 
 		cpu1: cpu@1 {
-			device_type = "cpu";
 			/* CPU1 can have pinctrl setup for the SWD pins */
 			compatible = "adi,max32-m4f-cpu1", "arm,cortex-m4f";
 			reg = <1>;
+			device_type = "cpu";
 			cpu-power-states = <&idle &suspend>;
 		};
 	};
@@ -110,9 +110,9 @@
 
 			flash1: flash@10080000 {
 				compatible = "soc-nv-flash";
-				interrupts = <87 0>;
 				reg = <0x10080000 DT_SIZE_K(512)>;
 				ranges = <0x0 0x10080000 DT_SIZE_K(512)>;
+				interrupts = <87 0>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 				write-block-size = <16>;
@@ -126,8 +126,8 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>;
 			dma-channels = <8>;
-			status = "disabled";
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		dma1: dma@40035000 {
@@ -136,8 +136,8 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 21>;
 			interrupts = <72 0>, <73 0>, <74 0>, <75 0>, <76 0>, <77 0>, <78 0>, <79 0>;
 			dma-channels = <8>;
-			status = "disabled";
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		spi0: spi@400be000 {
@@ -174,20 +174,20 @@
 			compatible = "adi,max32-timer";
 			reg = <0x40014000 0x1000>;
 			interrupts = <9 0>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 19>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+			status = "disabled";
 		};
 
 		timer5: timer@40015000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40015000 0x1000>;
 			interrupts = <10 0>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 20>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+			status = "disabled";
 		};
 
 		w1: w1@4003d000 {
@@ -202,24 +202,24 @@
 			compatible = "adi,max32-sdhc";
 			reg = <0x400b6000 0x1000>;
 			interrupts = <66 0>;
+
+			power-delay-ms = <1500>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 10>;
 			status = "disabled";
 
 			mmc {
 				compatible = "zephyr,sdmmc-disk";
-				status = "disabled";
 				disk-name = "SD";
+				status = "disabled";
 			};
-
-			power-delay-ms = <1500>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 10>;
 		};
 
 		wut0: timer@40006400 {
 			compatible = "adi,max32-timer";
 			reg = <0x40006400 0x400>;
 			interrupts = <53 0>;
-			status = "disabled";
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-wut";

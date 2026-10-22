@@ -65,8 +65,8 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
 			dma-channels = <4>;
-			status = "disabled";
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		spi0: spi@40046000 {
