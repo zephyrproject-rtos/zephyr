@@ -20,3 +20,5 @@ testing:
     - can
 ram: 96
 flash: 512
+# See https://github.com/zephyrproject-rtos/zephyr/issues/123189
+twister: false
