@@ -10,8 +10,8 @@
 #include "sk-am62_am6254_a53-pinctrl.dtsi"
 
 / {
-	model = "TI AM62X STARTER KIT (SK) EVALUATION MODULE (EVM)";
 	compatible = "ti,am62x_a53_sk";
+	model = "TI AM62X STARTER KIT (SK) EVALUATION MODULE (EVM)";
 
 	chosen {
 		zephyr,console = &main_uart0;
@@ -57,8 +57,8 @@
 	};
 
 	ddr0: memory@80000000 {
-		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_G(2)>;
+		device_type = "memory";
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
 

@@ -9,8 +9,8 @@
 #include <ti/am62x_m4.dtsi>
 
 / {
-	model = "TI AM62X STARTER KIT (SK) EVALUATION MODULE (EVM)";
 	compatible = "ti,am62x_m4_sk";
+	model = "TI AM62X STARTER KIT (SK) EVALUATION MODULE (EVM)";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -23,8 +23,8 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <400000000>;
+			status = "okay";
 		};
 	};
 
