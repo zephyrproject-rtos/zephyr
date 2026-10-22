@@ -434,11 +434,21 @@ static void before(void *arg)
 
 static void multi_server_cleanup(void);
 
+/* A reference that a test holds in place of a connection, dropped here if
+ * the test stops before it lets the reference go
+ */
+static struct quic_endpoint *held_listener;
+
 static void after(void *arg)
 {
 	struct test_config *cfg = arg;
 	int loop = MAX_WAIT_COUNT;
 	bool fail;
+
+	if (held_listener != NULL) {
+		quic_test_endpoint_unref(held_listener);
+		held_listener = NULL;
+	}
 
 	/* A test that failed half way did not get to stop its server */
 	multi_server_cleanup();
@@ -8402,6 +8412,71 @@ ZTEST(net_socket_quic, test_523_orphan_release_leaves_a_closing_context_alone)
 
 	/* Let the receive path go */
 	quic_test_endpoint_unref(ep);
+}
+
+ZTEST(net_socket_quic, test_519_listener_kept_by_its_connections_is_not_taken_over)
+{
+	static const char addr_str[] = "127.0.0.1:54364";
+	struct net_sockaddr_storage addr;
+	struct quic_endpoint *listener;
+	struct quic_context *ctx;
+	sec_tag_t sec_tags[] = { SERVER_CERTIFICATE_TAG };
+	int sock;
+	int ret;
+
+	zassert_true(net_ipaddr_parse(addr_str, strlen(addr_str), (struct net_sockaddr *)&addr),
+		     "Cannot parse %s", addr_str);
+
+	ctx = open_test_listener(&sock, addr_str);
+	listener = ctx->listen;
+	zassert_not_null(listener, "No listener");
+
+	/* A live listener cannot be opened a second time */
+	ret = quic_connection_open(NULL, (struct net_sockaddr *)&addr);
+	zexpect_equal(ret, -EADDRINUSE, "Second listener on the same address (%d)", ret);
+	if (ret >= 0) {
+		(void)quic_connection_close(ret);
+	}
+
+	zexpect_equal(atomic_get(&listener->refcount), 1,
+		      "The refused listener kept a reference");
+
+	/* A connection still holds the listener as its parent when the
+	 * listening socket is closed, for example when a server stops
+	 */
+	atomic_inc(&listener->refcount);
+	held_listener = listener;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zassert_equal(atomic_get(&listener->refcount), 1,
+		      "Listener not kept by its connection alone");
+
+	/* The address is in use until the connection lets the listener go */
+	ret = quic_connection_open(NULL, (struct net_sockaddr *)&addr);
+	zexpect_equal(ret, -EADDRINUSE, "Listener kept by a connection taken over (%d)", ret);
+	if (ret >= 0) {
+		(void)quic_connection_close(ret);
+	}
+
+	zexpect_equal(atomic_get(&listener->refcount), 1,
+		      "The refused listener kept a reference");
+
+	/* Let the connection go */
+	held_listener = NULL;
+	quic_test_endpoint_unref(listener);
+	zexpect_equal(atomic_get(&listener->refcount), 0, "Listener not released");
+
+	/* The address can be listened on again, with a new listener */
+	ctx = open_test_listener(&sock, addr_str);
+	zexpect_not_null(ctx->listen, "No listener");
+
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST, sec_tags,
+			       sizeof(sec_tags));
+	zexpect_ok(ret, "Cannot configure the new listener (%d)", -errno);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
 ZTEST(net_socket_quic, test_536_timeout_drops_the_list_reference_once)
