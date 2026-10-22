@@ -650,11 +650,43 @@ struct modem_gpio_callbacks {
 	struct gpio_callback uart_cts_cb;
 };
 
+/** Events the queue of the state machine holds */
+#define HL78XX_EVENT_QUEUE_SIZE 8
+
+/** @brief An event queued for the state machine. */
+struct hl78xx_queued_event {
+	/** The event, an enum hl78xx_event */
+	uint8_t evt;
+	/** Script whose result the event reports, NULL for any other event and
+	 *  for a result that no chat script produced
+	 */
+	const struct modem_chat_script *script;
+};
+
 struct modem_event_system {
 	struct k_work event_dispatch_work;
-	uint8_t event_buf[8];
+	uint8_t event_buf[HL78XX_EVENT_QUEUE_SIZE * sizeof(struct hl78xx_queued_event)];
 	struct ring_buf event_rb;
 	struct k_mutex event_rb_lock;
+	/* Script results (success, failure, AT command timeout) queued and not
+	 * handled yet: a state that must tell the result of its own script from
+	 * that of an earlier one starts its script when none is left.
+	 */
+	atomic_t script_results_queued;
+	/* The script the current state started and whose result it waits for,
+	 * NULL when it waits for none. The chat gives itself up before it
+	 * reports the result of the script that ended, so that result can
+	 * still be on its way when the state starts its own script: while this
+	 * is set, the result of any other script is not the state's. Cleared
+	 * when the script reports and when the state changes.
+	 */
+	const struct modem_chat_script *state_script;
+	/* The current state waits to start its script: another script held the
+	 * chat, or a script result was still queued. Until the script starts, a
+	 * script result is not the result of that script: see
+	 * hl78xx_is_stale_script_result().
+	 */
+	bool script_start_deferred;
 };
 
 enum hl78xx_at_cmd_terminal_result {
@@ -1339,6 +1371,21 @@ void hl78xx_enter_state(struct hl78xx_data *data, enum hl78xx_state state);
  * @param evt Description of evt.
  */
 void hl78xx_delegate_event(struct hl78xx_data *data, enum hl78xx_event evt);
+
+/**
+ * @brief Queue the result of a chat script for the state machine.
+ *
+ * The result is queued with the script that produced it, so that a state
+ * which started a script can tell the result of that script from the result
+ * of a script that ended before it.
+ *
+ * @param data Driver data
+ * @param evt MODEM_HL78XX_EVENT_SCRIPT_SUCCESS, MODEM_HL78XX_EVENT_SCRIPT_FAILED
+ *            or MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT
+ * @param script Script that ended, NULL when no chat script produced the result
+ */
+void hl78xx_delegate_script_result(struct hl78xx_data *data, enum hl78xx_event evt,
+				   const struct modem_chat_script *script);
 
 /**
  * @brief Resume LTE service, running the config chain first if this session

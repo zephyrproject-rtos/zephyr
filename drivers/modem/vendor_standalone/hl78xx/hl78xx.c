@@ -56,7 +56,8 @@ K_KERNEL_STACK_DEFINE(modem_workq_stack, CONFIG_MODEM_HL78XX_RX_WORKQ_STACK_SIZE
 static struct k_work_q modem_workq;
 hl78xx_evt_monitor_dispatcher_t event_dispatcher;
 
-static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt);
+static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt,
+				 const struct modem_chat_script *script);
 static int hl78xx_on_idle_state_enter(struct hl78xx_data *data);
 
 struct hl78xx_state_handlers {
@@ -554,30 +555,114 @@ static void hl78xx_log_state_changed(enum hl78xx_state last_state, enum hl78xx_s
 	LOG_INF("switch from %s to %s", hl78xx_state_str(last_state), hl78xx_state_str(new_state));
 }
 
+/**
+ * @brief Tell whether an event reports the result of a chat script.
+ */
+static bool hl78xx_is_script_result(enum hl78xx_event evt)
+{
+	return (evt == MODEM_HL78XX_EVENT_SCRIPT_SUCCESS) ||
+	       (evt == MODEM_HL78XX_EVENT_SCRIPT_FAILED) ||
+	       (evt == MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT);
+}
+
 static void hl78xx_event_dispatch_handler(struct k_work *item)
 {
 	struct hl78xx_data *data =
 		CONTAINER_OF(item, struct hl78xx_data, events.event_dispatch_work);
-	uint8_t events[sizeof(data->events.event_buf)];
+	struct hl78xx_queued_event events[HL78XX_EVENT_QUEUE_SIZE];
+	uint32_t len;
 	uint8_t events_cnt;
 
 	k_mutex_lock(&data->events.event_rb_lock, K_FOREVER);
-	events_cnt = (uint8_t)ring_buf_get(&data->events.event_rb, events,
-					   sizeof(data->events.event_buf));
+	len = ring_buf_get(&data->events.event_rb, (uint8_t *)events, sizeof(events));
+	events_cnt = (uint8_t)(len / sizeof(events[0]));
 	k_mutex_unlock(&data->events.event_rb_lock);
 	LOG_DBG("dequeued %d events", events_cnt);
 
 	for (uint8_t i = 0; i < events_cnt; i++) {
-		hl78xx_event_handler(data, (enum hl78xx_event)events[i]);
+		enum hl78xx_event evt = (enum hl78xx_event)events[i].evt;
+
+		/* A result counts as queued until its turn comes */
+		if (hl78xx_is_script_result(evt)) {
+			(void)atomic_dec(&data->events.script_results_queued);
+		}
+		hl78xx_event_handler(data, evt, events[i].script);
 	}
+}
+
+/**
+ * @brief Queue an event for the state machine.
+ *
+ * @param data Driver data
+ * @param evt Event
+ * @param script Script whose result the event reports, NULL for any other event
+ */
+static void hl78xx_queue_event(struct hl78xx_data *data, enum hl78xx_event evt,
+			       const struct modem_chat_script *script)
+{
+	const struct hl78xx_queued_event event = {.evt = (uint8_t)evt, .script = script};
+
+	k_mutex_lock(&data->events.event_rb_lock, K_FOREVER);
+	/* Whole events only: the dispatch reads the queue event by event */
+	if (ring_buf_space_get(&data->events.event_rb) >= sizeof(event)) {
+		(void)ring_buf_put(&data->events.event_rb, (const uint8_t *)&event, sizeof(event));
+		if (hl78xx_is_script_result(evt)) {
+			(void)atomic_inc(&data->events.script_results_queued);
+		}
+	}
+	k_mutex_unlock(&data->events.event_rb_lock);
+	k_work_submit_to_queue(&modem_workq, &data->events.event_dispatch_work);
 }
 
 void hl78xx_delegate_event(struct hl78xx_data *data, enum hl78xx_event evt)
 {
-	k_mutex_lock(&data->events.event_rb_lock, K_FOREVER);
-	ring_buf_put(&data->events.event_rb, (uint8_t *)&evt, 1);
-	k_mutex_unlock(&data->events.event_rb_lock);
-	k_work_submit_to_queue(&modem_workq, &data->events.event_dispatch_work);
+	hl78xx_queue_event(data, evt, NULL);
+}
+
+void hl78xx_delegate_script_result(struct hl78xx_data *data, enum hl78xx_event evt,
+				   const struct modem_chat_script *script)
+{
+	hl78xx_queue_event(data, evt, script);
+}
+
+/**
+ * @brief Defer the start of the script of the current state to the state timer.
+ *
+ * Until the state starts its script, a script result is that of another
+ * script: one that ended before, the one the state aborted, or one that took
+ * the chat since. See hl78xx_is_stale_script_result().
+ */
+static void hl78xx_defer_script_start(struct hl78xx_data *data)
+{
+	data->events.script_start_deferred = true;
+	hl78xx_reschedule_timer(data, K_MSEC(100));
+}
+
+/**
+ * @brief Tell whether a script result must be kept from the current state.
+ *
+ * A state that waits to start its script has no result of its own to get: a
+ * success would end it without its script, and a failure would be taken for
+ * the failure of that script.
+ *
+ * A state that started its script takes the result of that script only. The
+ * chat gives itself up before it reports the script that ended, so the state
+ * can find the chat free and start its script before that report is queued.
+ *
+ * @param data Driver data
+ * @param evt Script result
+ * @param script Script that produced the result, NULL when no chat script did
+ */
+static bool hl78xx_is_stale_script_result(struct hl78xx_data *data, enum hl78xx_event evt,
+					  const struct modem_chat_script *script)
+{
+	ARG_UNUSED(evt);
+
+	if (data->events.script_start_deferred) {
+		return true;
+	}
+
+	return (data->events.state_script != NULL) && (script != data->events.state_script);
 }
 
 void hl78xx_enter_lte_restore_state(struct hl78xx_data *data)
@@ -2190,7 +2275,7 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		(void)hl78xx_get_uart_config(data);
-		/* Reset per-cycle flag so AT_CMD_READY is dispatched exactly once. */
+		/* Reset the per-session flag so AT_CMD_READY is dispatched once for it. */
 		data->status.at_cmd_ready_sent = false;
 		LOG_DBG("Current baudrate after post-restart script: %d",
 			data->status.uart.current_baudrate);
@@ -2702,7 +2787,7 @@ static int hl78xx_on_await_registered_state_enter(struct hl78xx_data *data)
 		LOG_DBG("AT_CMD_READY dispatched from await-registered handler");
 		event_dispatcher_dispatch(&at_ready_evt);
 	} else {
-		LOG_DBG("AT_CMD_READY already sent this power cycle, skipping await-registered "
+		LOG_DBG("AT_CMD_READY already sent this session, skipping await-registered "
 			"dispatch");
 	}
 
@@ -3695,6 +3780,24 @@ static int hl78xx_on_airplane_mode_state_enter(struct hl78xx_data *data)
 	return hl78xx_run_cfun_query_script_async(data);
 }
 
+/**
+ * @brief Enter AIRPLANE again for the session that a restart of the modem began.
+ *
+ * Waits on the state timer while a script still holds the chat, the aborted
+ * one or a command sent since, while the query of the ended session has not
+ * reported, or while a script result is still queued.
+ */
+static void hl78xx_airplane_restart_entry(struct hl78xx_data *data)
+{
+	if (modem_chat_is_running(&data->chat) || (data->events.state_script != NULL) ||
+	    (atomic_get(&data->events.script_results_queued) > 0)) {
+		hl78xx_defer_script_start(data);
+		return;
+	}
+
+	hl78xx_enter_state(data, MODEM_HL78XX_STATE_AIRPLANE);
+}
+
 static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	switch (evt) {
@@ -3706,7 +3809,7 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 			LOG_DBG("AT_CMD_READY dispatched from airplane-mode handler");
 			event_dispatcher_dispatch(&at_ready_evt);
 		} else {
-			LOG_DBG("AT_CMD_READY already sent this power cycle, skipping "
+			LOG_DBG("AT_CMD_READY already sent this session, skipping "
 				"airplane-mode dispatch");
 		}
 #ifdef CONFIG_HL78XX_GNSS
@@ -3722,6 +3825,27 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
 		LOG_INF("LTE_RESTORE_REQUESTED: entering RUN_INIT_SCRIPT on modem_workq");
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
+
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		/* The modem restarted while it waited in airplane mode, and the new
+		 * session is not configured. Enter the state again: the entry sets
+		 * airplane mode on the new session and its result announces the AT
+		 * channel. A script that still waits for the ended session is
+		 * aborted first, and the entry follows on the timeout.
+		 */
+		LOG_DBG("Modem restart detected %d", __LINE__);
+		data->status.boot.init_sequence_completed = false;
+		if (modem_chat_is_running(&data->chat)) {
+			hl78xx_chat_abort_active_script(data);
+		}
+		hl78xx_airplane_restart_entry(data);
+		break;
+
+	case MODEM_HL78XX_EVENT_TIMEOUT:
+		if (data->events.script_start_deferred) {
+			hl78xx_airplane_restart_entry(data);
+		}
 		break;
 
 #ifdef CONFIG_HL78XX_GNSS
@@ -4008,6 +4132,14 @@ void hl78xx_enter_state(struct hl78xx_data *data, enum hl78xx_state state)
 		return;
 	}
 
+	if (data->events.script_start_deferred) {
+		/* The start the state deferred must not fire in the next state */
+		hl78xx_stop_timer(data);
+		data->events.script_start_deferred = false;
+	}
+	/* The next state waits for no script until it starts one */
+	data->events.state_script = NULL;
+
 	data->status.state = state;
 	ret = hl78xx_on_state_enter(data);
 
@@ -4016,7 +4148,8 @@ void hl78xx_enter_state(struct hl78xx_data *data, enum hl78xx_state state)
 	}
 }
 
-static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
+static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt,
+				 const struct modem_chat_script *script)
 {
 	enum hl78xx_state state;
 	enum hl78xx_state s;
@@ -4043,10 +4176,36 @@ static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt
 	}
 #endif /* CONFIG_HL78XX_GNSS */
 
+	if (hl78xx_is_script_result(evt)) {
+		bool stale = hl78xx_is_stale_script_result(data, evt, script);
+
+		if (script == data->events.state_script) {
+			/* The script the state started has reported */
+			data->events.state_script = NULL;
+		}
+		if (stale) {
+			LOG_DBG("Result of the aborted script ignored: %s", hl78xx_event_str(evt));
+			hl78xx_clear_script_failure(data);
+			return;
+		}
+	}
+
 	if ((int)s < MODEM_HL78XX_STATE_COUNT && hl78xx_state_table[s].on_event) {
 		hl78xx_state_table[s].on_event(data, evt);
 	} else {
 		LOG_ERR("%d unknown event %d", __LINE__, evt);
+	}
+
+	if (evt == MODEM_HL78XX_EVENT_MDM_RESTART) {
+		/* The AT channel of the ended session was announced once; the new
+		 * session is announced again at its AWAIT_REGISTERED or airplane
+		 * entry. A requested restart clears this itself. Cleared once the
+		 * state has taken the restart, not when the +KSUP is parsed: an
+		 * entry handled ahead of the restart, or one the state only passes
+		 * through on its way to the init chain, must not spend the
+		 * announcement.
+		 */
+		data->status.at_cmd_ready_sent = false;
 	}
 	if (state != s) {
 		hl78xx_log_state_changed(state, s);

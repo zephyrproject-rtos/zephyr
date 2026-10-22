@@ -1218,7 +1218,7 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 	 * OK: a CFUN=0/4 can take many seconds to detach, and URCs flushed from
 	 * the old state (a late +CREG in particular) arrive in the same instant
 	 * as the OK — hl78xx_on_cxreg() must be able to see the transition for
-	 * the whole window. Reverted if the send fails.
+	 * the whole window. Reverted if the send fails in the same session.
 	 */
 	struct hl78xx_phone_functionality_work prev = data->status.phone_functionality;
 
@@ -1233,8 +1233,13 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 		data->status.phone_functionality.valid = true;
 		event.content.value = functionality;
 		event_dispatcher_dispatch(&event);
-	} else {
+	} else if (data->status.phone_functionality.in_progress) {
 		data->status.phone_functionality = prev;
+	} else {
+		/* The modem restarted under the command and the session state was
+		 * reset, or the modem reported its functionality meanwhile: what
+		 * was known before the command no longer describes the modem.
+		 */
 	}
 
 	return ret;
