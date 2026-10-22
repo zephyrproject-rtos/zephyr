@@ -7585,6 +7585,57 @@ ZTEST(net_socket_quic, test_508_unused_stream_ids_stay_unopened)
 		      "Room claimed for more unused streams than can be kept");
 }
 
+ZTEST(net_socket_quic, test_519_listener_kept_by_its_connections_is_taken_over)
+{
+	static const char addr_str[] = "127.0.0.1:54364";
+	struct net_sockaddr_storage addr;
+	struct quic_endpoint *listener;
+	struct quic_context *ctx;
+	sec_tag_t sec_tags[] = { SERVER_CERTIFICATE_TAG };
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, addr_str);
+	listener = ctx->listen;
+	zassert_not_null(listener, "No listener");
+
+	/* A live listener cannot be opened a second time */
+	zassert_true(net_ipaddr_parse(addr_str, strlen(addr_str), (struct net_sockaddr *)&addr),
+		     "Cannot parse %s", addr_str);
+	ret = quic_connection_open(NULL, (struct net_sockaddr *)&addr);
+	zexpect_equal(ret, -EADDRINUSE, "Second listener on the same address (%d)", ret);
+	if (ret >= 0) {
+		(void)quic_connection_close(ret);
+	}
+
+	/* A connection still holds the listener as its parent when the
+	 * listening socket is closed, for example when a server stops
+	 */
+	atomic_inc(&listener->refcount);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zassert_equal(atomic_get(&listener->refcount), 1,
+		      "Listener not kept by its connection alone");
+
+	/* Listening on the address again takes the listener over */
+	ctx = open_test_listener(&sock, addr_str);
+	zexpect_equal_ptr(ctx->listen, listener, "A new listener was created");
+	zexpect_true(sys_slist_find(&ctx->endpoints, &listener->node, NULL),
+		     "Listener not on the endpoints of the new context");
+
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST, sec_tags,
+			       sizeof(sec_tags));
+	zexpect_ok(ret, "Cannot configure the listener taken over (%d)", -errno);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+
+	/* Let the connection go */
+	quic_test_endpoint_unref(listener);
+	zexpect_equal(atomic_get(&listener->refcount), 0, "Listener not released");
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
