@@ -111,6 +111,11 @@ typedef int sec_tag_t;
  * @param cred    A TLS/DTLS credential.
  * @param credlen A TLS/DTLS credential length.
  *
+ * @note With the volatile backend (@kconfig{CONFIG_TLS_CREDENTIALS_BACKEND_VOLATILE}),
+ *       the credential data is not copied. Only the @p cred pointer is stored, so the
+ *       buffer must stay valid and unchanged for as long as the tag is in use, that is,
+ *       until the credential is removed with @ref tls_credential_delete.
+ *
  * @retval 0 TLS credential successfully added.
  * @retval -EACCES Access to the TLS credential subsystem was denied.
  * @retval -ENOMEM Not enough memory to add new TLS credential.
