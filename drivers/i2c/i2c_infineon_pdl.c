@@ -136,7 +136,7 @@ static const cy_stc_scb_i2c_config_t _i2c_default_config = {
 
 typedef void (*ifx_cat1_i2c_event_callback_t)(void *callback_arg, uint32_t event);
 
-cy_rslt_t _i2c_abort_async(const struct device *dev)
+static void _i2c_abort_async(const struct device *dev)
 {
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
@@ -144,7 +144,7 @@ cy_rslt_t _i2c_abort_async(const struct device *dev)
 	uint16_t timeout_us = 10000;
 
 	if (data->pending == CAT1_I2C_PENDING_NONE) {
-		return CY_RSLT_SUCCESS;
+		return;
 	}
 
 	if (data->pending == CAT1_I2C_PENDING_RX) {
@@ -162,12 +162,10 @@ cy_rslt_t _i2c_abort_async(const struct device *dev)
 	}
 
 	if (0 == timeout_us) {
-		return CY_SCB_I2C_MASTER_MANUAL_TIMEOUT;
+		return;
 	}
 
 	data->pending = CAT1_I2C_PENDING_NONE;
-
-	return CY_RSLT_SUCCESS;
 }
 
 static void ifx_handle_target_read_event(const struct device *dev)
@@ -250,7 +248,7 @@ static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 
 	if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
-		(void)_i2c_abort_async(dev);
+		_i2c_abort_async(dev);
 		/*
 		 * Abort does not confirm the controller went idle when it times out,
 		 * so clear the async state unconditionally. This stops the
@@ -280,6 +278,30 @@ static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
 	if (data->p_target_config != NULL) {
 		ifx_handle_target_events(dev, event);
 	}
+}
+
+/**
+ * @brief Arm a registered target's receive buffer and events.
+ *
+ * A target acknowledges a write only while its receive buffer is armed, and
+ * its events reach the handler only while they are set in irq_cause.  Call
+ * this after anything that resets the SCB or its PDL context.  Does nothing
+ * when no target is registered.
+ *
+ * @param[in] dev I2C device instance.
+ */
+static void ifx_cat1_i2c_target_arm(const struct device *dev)
+{
+	struct ifx_cat1_i2c_data *data = dev->data;
+	const struct ifx_cat1_i2c_config *const config = dev->config;
+
+	if (data->p_target_config == NULL) {
+		return;
+	}
+
+	Cy_SCB_I2C_SlaveConfigWriteBuf(config->base, (uint8_t *)data->target_wr_buffer,
+				       CONFIG_I2C_INFINEON_CAT1_TARGET_BUF, &data->context);
+	data->irq_cause |= I2C_CAT1_TARGET_EVENTS_MASK;
 }
 
 void ifx_cat1_i2c_register_callback(const struct device *dev,
@@ -945,21 +967,26 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		 */
 		ret = k_sem_take(&data->transfer_sem, config->transfer_timeout);
 		if (ret != 0) {
-			cy_rslt_t abort_status;
-
-			/* The transfer did not complete in time, for example a
-			 * target holding the bus low. Abort the async operation,
-			 * then reset the shared async state with the SCB
-			 * interrupt masked so a late completion cannot race the
-			 * teardown or leak into the next transfer.
+			/*
+			 * An abort cannot recover a transfer that never
+			 * completes, for example on a line held low: the SCB
+			 * stays busy and every later transfer would time out.
+			 * The abort still requests a STOP, but only disabling
+			 * and re-enabling the SCB recovers it
+			 * (Cy_SCB_I2C_MasterWrite() and Cy_SCB_I2C_MasterRead()
+			 * documentation).  The reset runs whether or not the
+			 * abort reached idle.
+			 *
+			 * The interrupt stays masked until the state is
+			 * cleared, so a late completion cannot reach the next
+			 * transfer.
 			 */
-			abort_status = _i2c_abort_async(dev);
-			if (abort_status != CY_RSLT_SUCCESS) {
-				LOG_WRN("I2C abort did not confirm controller idle "
-					"(0x%x); bus may be stuck", abort_status);
-			}
+			_i2c_abort_async(dev);
 
 			irq_disable(config->irq_num);
+			Cy_SCB_I2C_Disable(config->base, &data->context);
+			ifx_cat1_i2c_enable(config, data);
+			ifx_cat1_i2c_target_arm(dev);
 			data->pending = CAT1_I2C_PENDING_NONE;
 			k_sem_reset(&data->transfer_sem);
 			data->irq_cause &= ~I2C_CAT1_EVENTS_MASK;
@@ -1185,10 +1212,7 @@ static int ifx_cat1_i2c_target_register(const struct device *dev, struct i2c_tar
 	}
 
 	/* Arm the RX buffer so the first write after register is ACKed. */
-	Cy_SCB_I2C_SlaveConfigWriteBuf(config->base, (uint8_t *)data->target_wr_buffer,
-				       CONFIG_I2C_INFINEON_CAT1_TARGET_BUF, &data->context);
-
-	data->irq_cause |= I2C_CAT1_TARGET_EVENTS_MASK;
+	ifx_cat1_i2c_target_arm(dev);
 
 	return 0;
 }
