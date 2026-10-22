@@ -16,6 +16,7 @@ supported:
   - hwinfo
   - i2c
   - led_strip
+  - netif:openthread
   - pinctrl
   - pulse_io
   - pwm
