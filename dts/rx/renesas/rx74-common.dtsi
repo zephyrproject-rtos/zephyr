@@ -18,18 +18,14 @@
 
 		cpu0: cpu@0 {
 			compatible = "renesas,rxv3e";
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
 			status = "okay";
 		};
 	};
 
 	icu: interrupt-controller@87006000 {
-		#interrupt-cells = <2>;
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "renesas,rx-icum";
-		interrupt-controller;
 		reg = <0x87006000 0x100>,
 		      <0x87006200 0x20>,
 		      <0x87006300 0x100>,
@@ -39,6 +35,10 @@
 		      <0x87006580 0x04>,
 		      <0x87006584 0x04>,
 		      <0x87006588 0x04>;
+		#interrupt-cells = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-controller;
 		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR",
 			    "SLIXR", "NMISR", "NMIER", "NMICLR";
 
@@ -52,10 +52,10 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		device_type = "soc";
-		compatible = "simple-bus";
 		interrupt-parent = <&icu>;
 
 		ioport0: gpio@87c00000 {
@@ -399,20 +399,20 @@
 
 		cmt: timer@87826000 {
 			compatible = "renesas,rx-timer-cmt-start-control";
+			reg = <0x87826000 0x02>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x87826000 0x02>;
 			clocks = <&pclkb MSTPF 15>;
 			reg-names = "CMSTR0";
 			status = "okay";
 
 			cmt0: timer@87826002 {
 				compatible = "renesas,rx-timer-cmt";
-				#address-cells = <1>;
-				#size-cells = <1>;
 				reg = <0x87826002 0x02>,
 				      <0x87826004 0x02>,
 				      <0x87826006 0x02>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				reg-names = "CMCR", "CMCNT", "CMCOR";
 				interrupts = <28 1>;
 				interrupt-names = "cmi";
@@ -446,15 +446,15 @@
 
 			ofs_dualsel: ofs-dualsel0@86c2e850 {
 				compatible = "zephyr,memory-region";
-				zephyr,memory-region = "OFS_DUALSEL";
 				reg = <0x86c2e850 0x4>;
+				zephyr,memory-region = "OFS_DUALSEL";
 				status = "disabled";
 			};
 
 			ofs_sas: ofs-sas@86c2e870 {
 				compatible = "zephyr,memory-region";
-				zephyr,memory-region = "OFS_SAS";
 				reg = <0x86c2e870 0x4>;
+				zephyr,memory-region = "OFS_SAS";
 				status = "disabled";
 			};
 

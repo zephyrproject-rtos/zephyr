@@ -59,8 +59,8 @@
 				clocks = <&pll>;
 				div = <2>;
 				mul = <1 0>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pllq: pllq {
@@ -68,8 +68,8 @@
 				clocks = <&pll>;
 				div = <3>;
 				mul = <1 0>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pllr: pllr {
@@ -77,8 +77,8 @@
 				clocks = <&pll>;
 				div = <3>;
 				mul = <1 0>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -90,22 +90,22 @@
 			pll2p: pll2p {
 				compatible = "renesas,rx-cgc-pllccr-type";
 				div = <2>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pll2q: pll2q {
 				compatible = "renesas,rx-cgc-pllccr-type";
 				div = <2>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pll2r: pll2r {
 				compatible = "renesas,rx-cgc-pllccr-type";
 				div = <2>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -329,9 +329,9 @@
 
 	soc {
 		sram0: memory@82000000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x82000000 DT_SIZE_K(1536)>;
+			device_type = "memory";
 		};
 
 		mram_ctrl: mram-controller@8709c000 {
