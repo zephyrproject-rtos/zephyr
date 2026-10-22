@@ -468,7 +468,15 @@ static int timer_crsas_ma2_cancel_alarm(const struct device *dev, uint8_t chan_i
 
 	data->alarm_cb = NULL;
 	data->user_data = NULL;
-	if (data->top_cb) {
+
+	if (data->alarm_after_top != 0) {
+		/*
+		 * Alarm was deferred past the next top turnaround.
+		 * Hardware auto-increment mode was never stopped and
+		 * saved_aival was never recorded. Simply discard the deferred alarm.
+		 */
+		data->alarm_after_top = 0;
+	} else if (data->top_cb) {
 		restore_auto_increment_after_alarm(config, data);
 	} else if (data->free_running) {
 		/* Enable timer but in free running (interrupt masked) mode */
@@ -537,7 +545,7 @@ static void timer_crsas_ma2_isr(const struct device *dev)
 		 * auto-increment interrupt.
 		 */
 
-		if (data->alarm_after_top == 0) {
+		if (data->alarm_after_top == 0 || data->alarm_cb == NULL) {
 			/* Clear the AIVAL interrupt by writing to register. Faster
 			 * to just write entire register with the enable bit set
 			 * and 0 to the CLR bit, instead of read-modify-write.
