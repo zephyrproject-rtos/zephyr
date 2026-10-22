@@ -6,33 +6,33 @@
 
 / {
 	test_gpio_0: gpio@ffff {
+		compatible = "vnd,gpio-device";
+		reg = <0xffff 0x1000>;
 		gpio-controller;
 		#gpio-cells = <0x2>;
-		compatible = "vnd,gpio-device";
 		status = "okay";
-		reg = <0xffff 0x1000>;
 	};
 
 	test_i2c: i2c@11112222 {
+		compatible = "vnd,i2c";
+		reg = <0x11112222 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		compatible = "vnd,i2c";
-		status = "okay";
-		reg = <0x11112222 0x1000>;
 		clock-frequency = <100000>;
+		status = "okay";
 
 		test_dev_a: test-i2c-dev@10 {
 			compatible = "vnd,i2c-device";
-			status = "okay";
 			reg = <0x10>;
 			supply-gpios = <&test_gpio_0 1 0>;
+			status = "okay";
 		};
 
 		test_dev_b: test-i2c-dev@11 {
 			compatible = "vnd,i2c-device";
-			status = "okay";
 			reg = <0x11>;
 			supply-gpios = <&test_gpio_0 2 0>;
+			status = "okay";
 		};
 	};
 };
