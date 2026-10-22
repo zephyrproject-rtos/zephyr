@@ -364,6 +364,8 @@ static int quic_send_max_data(struct quic_endpoint *ep);
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
 				     struct quic_stream *stream);
 static int quic_send_max_streams(struct quic_endpoint *ep, bool bidi);
+static uint64_t quic_base_pto_ms(const struct quic_endpoint *ep);
+ZTESTABLE_STATIC int64_t quic_endpoint_idle_timeout_ms(const struct quic_endpoint *ep);
 static int quic_send_data_blocked(struct quic_endpoint *ep);
 static int quic_send_stream_data_blocked(struct quic_endpoint *ep,
 					 struct quic_stream *stream);
@@ -3975,7 +3977,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 
 	for (int i = 0; i < CONFIG_QUIC_MAX_ENDPOINTS; i++) {
 		struct quic_endpoint *ep = endpoints[i];
-		int64_t idle_time, idle_start, remaining;
+		int64_t idle_time, idle_start, idle_timeout, remaining;
 		uint64_t negotiated_ms;
 		k_spinlock_key_t key;
 		bool idle_disabled;
@@ -4038,6 +4040,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 		idle_disabled = ep->idle.idle_timeout_disabled;
 		negotiated_ms = ep->idle.negotiated_timeout_ms;
 		idle_start = ep->idle.last_rx_time;
+		idle_timeout = quic_endpoint_idle_timeout_ms(ep);
 		k_spin_unlock(&ep->idle.lock, key);
 
 		if (idle_disabled) {
@@ -4050,7 +4053,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 
 		idle_time = now - idle_start;
 
-		if (idle_time >= (int64_t)negotiated_ms) {
+		if (idle_time >= idle_timeout) {
 			NET_INFO("[EP:%p/%d] Idle timeout (%" PRId64 " ms), closing",
 				 ep, quic_get_by_ep(ep), idle_time);
 
@@ -4061,7 +4064,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 		}
 
 		/* Figure out how much time until this endpoint hits idle timeout */
-		remaining = (int64_t)negotiated_ms - idle_time;
+		remaining = idle_timeout - idle_time;
 		if (shortest > remaining || shortest == 0) {
 			shortest = remaining;
 		}
@@ -4091,6 +4094,32 @@ static void quic_start_idle_timeout_checker(void)
 	k_work_reschedule(&idle_timeout_work, K_NO_WAIT);
 }
 
+/* The idle timeout in effect: the negotiated one, but at least three times
+ * the PTO period, so that several probes can be sent and lost before the
+ * connection is given up (RFC 9000 ch. 10.1). Called with ep->idle.lock
+ * held.
+ */
+ZTESTABLE_STATIC int64_t quic_endpoint_idle_timeout_ms(const struct quic_endpoint *ep)
+{
+	uint64_t timeout_ms = MAX(ep->idle.negotiated_timeout_ms, ep->idle.pto_floor_ms);
+
+	return (int64_t)MIN(timeout_ms, (uint64_t)INT64_MAX);
+}
+
+/* Store three PTO periods as the floor of the idle timeout. Called where the
+ * RTT estimate is written, so that the idle timeout check does not have to
+ * read the estimate, which ep->recovery.lock protects.
+ */
+static void quic_endpoint_update_idle_pto_floor(struct quic_endpoint *ep)
+{
+	uint64_t pto_floor_ms = 3U * quic_base_pto_ms(ep);
+	k_spinlock_key_t key = k_spin_lock(&ep->idle.lock);
+
+	ep->idle.pto_floor_ms = pto_floor_ms;
+
+	k_spin_unlock(&ep->idle.lock, key);
+}
+
 static void quic_endpoint_set_idle_timeout(struct quic_endpoint *ep,
 					   uint64_t timeout_ms, bool disabled)
 {
@@ -4102,7 +4131,7 @@ static void quic_endpoint_set_idle_timeout(struct quic_endpoint *ep,
 	k_spin_unlock(&ep->idle.lock, key);
 }
 
-static void quic_endpoint_negotiate_idle_timeout(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_endpoint_negotiate_idle_timeout(struct quic_endpoint *ep)
 {
 	uint64_t peer_timeout_ms = ep->peer_params.max_idle_timeout;
 	uint64_t local_timeout_ms = ep->idle.local_max_idle_timeout_ms;
@@ -4114,12 +4143,16 @@ static void quic_endpoint_negotiate_idle_timeout(struct quic_endpoint *ep)
 		return;
 	}
 
-	/* Use minimum of both values. We do allow peer to disable idle
-	 * timeout (unless we also disabled it) so that peer cannot consume
-	 * our resources forever.
+	/* RFC 9000 ch. 10.1: the minimum of the two values, or the sole
+	 * advertised value if only one endpoint advertises a non-zero value.
+	 * A value of 0 means no timeout, so it takes part as the largest.
 	 */
 	if (peer_timeout_ms == 0) {
 		peer_timeout_ms = UINT64_MAX;
+	}
+
+	if (local_timeout_ms == 0) {
+		local_timeout_ms = UINT64_MAX;
 	}
 
 	quic_endpoint_set_idle_timeout(ep, MIN(peer_timeout_ms, local_timeout_ms), false);
@@ -4263,6 +4296,7 @@ ZTESTABLE_STATIC void quic_recovery_init(struct quic_endpoint *ep)
 	/* RFC 9002 Section 6.2.2: Initialize RTT with initial estimate */
 	ep->recovery.smoothed_rtt = QUIC_INITIAL_RTT_US;
 	ep->recovery.rtt_var = QUIC_INITIAL_RTT_US / 2;
+	quic_endpoint_update_idle_pto_floor(ep);
 	ep->recovery.min_rtt = UINT64_MAX;
 	ep->recovery.latest_rtt = 0;
 	ep->recovery.rtt_initialized = false;
@@ -4346,10 +4380,7 @@ static void quic_endpoint_note_ack_eliciting_tx(struct quic_endpoint *ep)
 
 	if (!ep->idle.ack_eliciting_sent) {
 		ep->idle.ack_eliciting_sent = true;
-
-		if (!ep->idle.idle_timeout_disabled) {
-			ep->idle.last_rx_time = now;
-		}
+		ep->idle.last_rx_time = now;
 	}
 
 	k_spin_unlock(&ep->idle.lock, key);
@@ -4946,11 +4977,6 @@ unlock:
  */
 #define QUIC_MAX_ACK_RANGES 8
 
-struct quic_ack_range {
-	uint64_t start;  /* lowest acked pkt_num in this range (inclusive) */
-	uint64_t end;    /* highest acked pkt_num in this range (inclusive) */
-};
-
 static bool pkt_num_in_ack_ranges(uint64_t pkt_num,
 				  const struct quic_ack_range *ranges,
 				  int count)
@@ -5133,11 +5159,11 @@ static void quic_readvertise_flow_control(struct quic_endpoint *ep)
 	k_mutex_unlock(&quic_readvertise_lock);
 }
 
-static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
-					  enum quic_secret_level level,
-					  const struct quic_ack_range *ranges,
-					  int range_count,
-					  uint64_t ack_delay_us)
+ZTESTABLE_STATIC void quic_recovery_on_ack_received(struct quic_endpoint *ep,
+						    enum quic_secret_level level,
+						    const struct quic_ack_range *ranges,
+						    int range_count,
+						    uint64_t ack_delay_us)
 {
 	int pn_space = level_to_pn_space(level);
 	int64_t now = k_uptime_get();
@@ -5245,6 +5271,8 @@ static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 				(7 * ep->recovery.smoothed_rtt + adjusted_rtt) / 8;
 		}
 
+		quic_endpoint_update_idle_pto_floor(ep);
+
 		NET_DBG("[EP:%p/%d] RTT update: level %d, latest=%" PRIu64 " us, "
 			"smoothed=%" PRIu64 " us, var=%" PRIu64	" us, "
 			"min=%" PRIu64 " us, bytes_in_flight=%" PRIu64,
@@ -5308,15 +5336,22 @@ static uint8_t quic_compute_max_pto_count(uint64_t pto_base_ms)
 	return MAX(QUIC_MIN_PTO_COUNT, n);
 }
 
-/* RFC 9002 Section 6.2.1 */
-static uint64_t quic_compute_pto_ms(struct quic_endpoint *ep)
+/* The PTO period of RFC 9002 ch. 6.2.1, without backoff */
+static uint64_t quic_base_pto_ms(const struct quic_endpoint *ep)
 {
 	uint64_t srtt_ms = ep->recovery.smoothed_rtt / 1000U;
 	uint64_t rttvar_ms = ep->recovery.rtt_var / 1000U;
-	uint64_t pto;
 
 	/* TODO: do not add ACK_DELAY in handshake phase */
-	pto = srtt_ms + MAX(4U * rttvar_ms, 1U) + QUIC_MAX_ACK_DELAY_MS;
+	return srtt_ms + MAX(4U * rttvar_ms, 1U) + QUIC_MAX_ACK_DELAY_MS;
+}
+
+/* RFC 9002 Section 6.2.1 */
+static uint64_t quic_compute_pto_ms(struct quic_endpoint *ep)
+{
+	uint64_t pto;
+
+	pto = quic_base_pto_ms(ep);
 	ep->recovery.max_pto_count = quic_compute_max_pto_count(pto);
 
 	/* Exponential backoff */
@@ -8457,16 +8492,18 @@ static void process_pkt(struct quic_pkt *pkt)
  * all of its connections. And it must not be done for a packet that failed
  * to decrypt, or anyone who knows the addresses and the connection ID could
  * keep the connection from ever timing out.
+ *
+ * The timer restarts also while the idle timeout is disabled. With our own
+ * value 0 it stays disabled until the peer's transport parameters are
+ * processed, and from then on the idle period counts from the last packet,
+ * not from the start of the connection.
  */
 ZTESTABLE_STATIC void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
 {
 	int64_t now = k_uptime_get();
 	k_spinlock_key_t key = k_spin_lock(&ep->idle.lock);
 
-	if (!ep->idle.idle_timeout_disabled) {
-		ep->idle.last_rx_time = now;
-	}
-
+	ep->idle.last_rx_time = now;
 	ep->idle.ack_eliciting_sent = false;
 
 	k_spin_unlock(&ep->idle.lock, key);

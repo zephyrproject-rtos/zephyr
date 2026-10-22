@@ -132,6 +132,12 @@ struct quic_buffer {
 BUILD_ASSERT(QUIC_SENT_PKT_HISTORY_RESERVE < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE,
 	     "The reserve must leave room for stream data packets");
 
+/** One range of packet numbers acknowledged by an ACK frame */
+struct quic_ack_range {
+	uint64_t start;  /* lowest acked pkt_num in this range (inclusive) */
+	uint64_t end;    /* highest acked pkt_num in this range (inclusive) */
+};
+
 /**
  * Information about a sent packet for RTT measurement and loss detection.
  * This is stored in a ring buffer per packet number space.
@@ -942,7 +948,7 @@ struct quic_endpoint {
 
 	/** Idle timeout tracking */
 	struct {
-		/** Protects last_rx_time, negotiated_timeout_ms,
+		/** Protects last_rx_time, pto_floor_ms, negotiated_timeout_ms,
 		 * idle_timeout_disabled and ack_eliciting_sent. The sending
 		 * and receiving threads write them and the idle timeout check
 		 * reads them. Nothing else is locked while it is held.
@@ -955,6 +961,11 @@ struct quic_endpoint {
 		 * after that was sent.
 		 */
 		int64_t last_rx_time;
+
+		/** Three PTO periods (milliseconds), the lower bound of the
+		 * idle timeout. Updated with the RTT estimate.
+		 */
+		uint64_t pto_floor_ms;
 
 		/** Negotiated idle timeout (milliseconds)
 		 *  = MIN(our max_idle_timeout, peer's max_idle_timeout)
@@ -1616,6 +1627,11 @@ void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 				  bool ack_eliciting,
 				  bool dplpmtud_probe,
 				  uint16_t dplpmtud_probe_size);
+void quic_recovery_on_ack_received(struct quic_endpoint *ep,
+				   enum quic_secret_level level,
+				   const struct quic_ack_range *ranges,
+				   int range_count,
+				   uint64_t ack_delay_us);
 void quic_dplpmtud_refresh_state(struct quic_endpoint *ep);
 void quic_dplpmtud_on_probe_acked(struct quic_endpoint *ep, uint16_t probe_size);
 void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep, uint16_t probe_size);
@@ -1730,5 +1746,7 @@ void quic_test_check_idle_timeouts(void);
 bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq);
 bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq);
 void stream_seq_mark_opened(struct quic_stream_seq_set *set, uint64_t seq);
+void quic_endpoint_negotiate_idle_timeout(struct quic_endpoint *ep);
+int64_t quic_endpoint_idle_timeout_ms(const struct quic_endpoint *ep);
 
 #endif /* CONFIG_NET_TEST */
