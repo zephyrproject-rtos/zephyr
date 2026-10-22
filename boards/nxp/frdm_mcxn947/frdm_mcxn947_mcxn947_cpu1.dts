@@ -10,8 +10,8 @@
 #include "frdm_mcxn947.dtsi"
 
 / {
-	model = "NXP FRDM_N94 board";
 	compatible = "nxp,mcxn947", "nxp,mcx";
+	model = "NXP FRDM_N94 board";
 
 	cpus {
 		/delete-node/ cpu@0;

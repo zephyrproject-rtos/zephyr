@@ -12,8 +12,8 @@
 #include "lpcxpresso54628-pinctrl.dtsi"
 
 / {
-	model = "NXP LPCXpresso54628 board";
 	compatible = "nxp,lpc546xx", "nxp,lpc";
+	model = "NXP LPCXpresso54628 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -81,11 +81,11 @@
 };
 
 &flexcomm0 {
-	status = "okay";
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &usbfs {
@@ -99,9 +99,9 @@ zephyr_udc0: &usbhs {
 
 /* Full-size SD card slot (J7), 4-bit SDIO. */
 &sdif {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sdif>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
@@ -112,12 +112,12 @@ zephyr_udc0: &usbhs {
 
 &flexcomm2 {
 	compatible = "nxp,lpc-i2c";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	/*
 	 * NXP MMA8652FC 3-axis accelerometer. INT1 is wired to P3_4 and INT2 is

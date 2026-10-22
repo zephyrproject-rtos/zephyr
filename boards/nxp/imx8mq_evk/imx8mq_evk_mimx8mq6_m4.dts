@@ -10,8 +10,8 @@
 #include "imx8mq_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX8MQ EVK board";
 	compatible = "nxp,mimx8mq_evk";
+	model = "NXP i.MX8MQ EVK board";
 
 	aliases {
 		uart-2 = &uart2;
@@ -26,8 +26,8 @@
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

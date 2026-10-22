@@ -10,8 +10,8 @@
 #include "imx952_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX952 A55";
 	compatible = "fsl,mimx952";
+	model = "NXP i.MX952 A55";
 
 	chosen {
 		zephyr,canbus = &flexcan2;
@@ -49,10 +49,10 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio2 {

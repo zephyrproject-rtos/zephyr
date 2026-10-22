@@ -9,8 +9,8 @@
 #include <nxp/nxp_imxrt700_hifi1.dtsi>
 
 / {
-	model = "NXP MIMXRT700-EVK HiFi1 DSP";
 	compatible = "nxp,mimxrt798s";
+	model = "NXP MIMXRT700-EVK HiFi1 DSP";
 
 	chosen {
 		zephyr,sram = &dtcm;
