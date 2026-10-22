@@ -1014,6 +1014,13 @@ struct quic_endpoint {
 	 */
 	uint16_t max_tx_payload_size;
 
+	/** The reference held for the endpoint list of a context has been
+	 * dropped. References left are held by whoever is using the endpoint
+	 * at the moment. Not a bit field: it is written under contexts_lock,
+	 * the bits below are not.
+	 */
+	bool list_ref_dropped;
+
 	/** Is this endpoint in a server role.
 	 */
 	bool is_server : 1;
