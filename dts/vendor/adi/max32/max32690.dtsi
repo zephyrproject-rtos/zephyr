@@ -44,8 +44,8 @@
 	reg = <0x40008000 0x3220>;
 
 	gpio2: gpio@4000a000 {
-		reg = <0x4000a000 0x1000>;
 		compatible = "adi,max32-gpio";
+		reg = <0x4000a000 0x1000>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		interrupts = <26 0>;
@@ -54,8 +54,8 @@
 	};
 
 	gpio3: gpio@40080400 {
-		reg = <0x40080400 0x200>;
 		compatible = "adi,max32-gpio";
+		reg = <0x40080400 0x200>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		interrupts = <58 0>;
@@ -64,8 +64,8 @@
 	};
 
 	gpio4: gpio@4000c000 {
-		reg = <0x4000c000 0x20>;
 		compatible = "adi,max32-gpio";
+		reg = <0x4000c000 0x20>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		interrupts = <54 0>;
@@ -153,8 +153,8 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
 			dma-channels = <16>;
-			status = "disabled";
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		wdt1: watchdog@40080800 {
@@ -168,10 +168,10 @@
 		lptimer0: timer@40080c00 {
 			compatible = "adi,max32-timer";
 			reg = <0x40080c00 0x400>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>, <&clk_lptmr0>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-counter";
@@ -182,10 +182,10 @@
 		lptimer1: timer@40081000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40081000 0x400>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>, <&clk_lptmr1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-counter";
@@ -203,15 +203,15 @@
 		can0: can@40064000 {
 			compatible = "adi,max32-can";
 			reg = <0x40064000 0x1000>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 11>;
+			status = "disabled";
 		};
 
 		can1: can@40065000 {
 			compatible = "adi,max32-can";
 			reg = <0x40065000 0x1000>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 19>;
+			status = "disabled";
 		};
 
 		i2s0: i2s@40060000 {
@@ -228,8 +228,8 @@
 		wut0: timer@40006400 {
 			compatible = "adi,max32-timer";
 			reg = <0x40006400 0x200>;
-			status = "disabled";
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-wut";
@@ -240,8 +240,8 @@
 		wut1: timer@40006600 {
 			compatible = "adi,max32-timer";
 			reg = <0x40006600 0x200>;
-			status = "disabled";
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-wut";
