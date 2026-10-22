@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SFA0 measures the 32 kHz clock against the 96 MHz CPU clock. */
+
+/ {
+	aliases {
+		clock-meter = &sfa0;
+	};
+};
+
+&sfa0 {
+	status = "okay";
+};

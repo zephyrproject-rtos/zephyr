@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SFA0 watches the 32 kHz clock against the 96 MHz CPU clock. The window
+ * centre comes from the target clock-frequency (32768 Hz).
+ */
+
+/ {
+	aliases {
+		clock-monitor = &sfa0;
+	};
+};
+
+&sfa0 {
+	status = "okay";
+};
