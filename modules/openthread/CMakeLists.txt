@@ -101,6 +101,7 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_DHCP6_CLIENT OT_DHCP6_CLIENT "Enable DHCP
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DHCP6_SERVER OT_DHCP6_SERVER "Enable DHCPv6 Server")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DIAG OT_DIAGNOSTIC "Enable Diagnostics support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_CLIENT OT_DNS_CLIENT "Enable DNS client support")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_CLIENT_BIND_UDP_TO_THREAD_NETIF OT_DNS_CLIENT_BIND_UDP_THREAD_NETIF "Bind DNS client socket to Thread netif")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_CLIENT_OVER_TCP OT_DNS_CLIENT_OVER_TCP "Enable dns query over tcp")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_DSO OT_DNS_DSO "Enable DNS Stateful Operations (DSO) support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY OT_DNS_UPSTREAM_QUERY "Enable forwarding DNS queries to upstream")
