@@ -53,24 +53,6 @@
 	};
 
 	soc {
-		gic: interrupt-controller@3021000 {
-			compatible = "arm,gic-v2", "arm,gic";
-			reg = <0x03021000 0x1000>,
-			      <0x03022000 0x2000>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
-		};
-
-		uart0: uart@5000000 {
-			compatible = "snps,dw-apb-uart", "ns16550";
-			reg = <0x05000000 0x400>;
-			reg-shift = <2>;
-			interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clock-frequency = <24000000>;
-			status = "disabled";
-		};
-
 		gpioa: gpio@300b000 {
 			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
 			reg = <0x0300b000 0x24>, <0x0300b000 0x400>;
@@ -164,6 +146,24 @@
 			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&gic>;
 			allwinner,hw-bank = <8>;
+			status = "disabled";
+		};
+
+		gic: interrupt-controller@3021000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0x03021000 0x1000>,
+			      <0x03022000 0x2000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+
+		uart0: uart@5000000 {
+			compatible = "snps,dw-apb-uart", "ns16550";
+			reg = <0x05000000 0x400>;
+			reg-shift = <2>;
+			interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <24000000>;
 			status = "disabled";
 		};
 	};
