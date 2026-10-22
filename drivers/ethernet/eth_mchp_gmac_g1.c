@@ -12,6 +12,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #include <zephyr/types.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/ring_buffer.h>
 
 LOG_MODULE_REGISTER(eth_mchp_gmac_g1, CONFIG_ETHERNET_LOG_LEVEL);
@@ -316,24 +317,31 @@ static void gmac_tx_completed(gmac_registers_t *gmac, struct gmac_queue *queue)
 	struct net_buf *frag;
 	uintptr_t ptr;
 
-	__ASSERT(tx_desc_list->buf_desc[tx_desc_list->tail].status & GMAC_TXW1_USED,
-		 "first buffer of a frame is not marked as own by GMAC");
 	while (tx_desc_list->tail != tx_desc_list->head) {
 		tx_desc = &tx_desc_list->buf_desc[tx_desc_list->tail];
-		tx_desc->status &= ~(GMAC_TXW1_LEN | GMAC_TXW1_LASTBUFFER | GMAC_TXW1_NOCRC |
-				     GMAC_TXW1_CHKSUMERR | GMAC_TXW1_LATECOLERR |
-				     GMAC_TXW1_TRANSERR | GMAC_TXW1_RETRYEXC | GMAC_TXW1_USED);
-		MODULO_INC(tx_desc_list->tail, tx_desc_list->len);
-		k_sem_give(&queue->tx_desc_sem);
-		ring_buf_get(&queue->tx_frag_rb, (uint8_t *)&ptr, sizeof(ptr));
-		frag = UINT_TO_POINTER(ptr);
-		net_pkt_frag_unref(frag);
-		LOG_DBG("Dropping frag %p", frag);
 
-		if (tx_desc->status & GMAC_TXW1_LASTBUFFER) {
-			tx_desc->status &= ~GMAC_TXW1_LASTBUFFER;
+		/* DMA marks only the first descriptor of a completed frame as used. */
+		if ((tx_desc->status & GMAC_TXW1_USED) == 0U) {
 			break;
 		}
+
+		do {
+			uint32_t status = tx_desc->status;
+
+			tx_desc->status = (status & GMAC_TXW1_WRAP) | GMAC_TXW1_USED;
+			MODULO_INC(tx_desc_list->tail, tx_desc_list->len);
+			k_sem_give(&queue->tx_desc_sem);
+			ring_buf_get(&queue->tx_frag_rb, (uint8_t *)&ptr, sizeof(ptr));
+			frag = UINT_TO_POINTER(ptr);
+			net_pkt_frag_unref(frag);
+			LOG_DBG("Dropping frag %p", frag);
+
+			if ((status & GMAC_TXW1_LASTBUFFER) != 0U) {
+				break;
+			}
+
+			tx_desc = &tx_desc_list->buf_desc[tx_desc_list->tail];
+		} while (tx_desc_list->tail != tx_desc_list->head);
 	}
 }
 
@@ -699,76 +707,60 @@ static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 	struct net_buf *frag;
 	uint8_t *frag_data;
 	uint16_t frag_len = 0;
-	uint32_t err_tx_queue_flushed_count_at_entry;
-	uint8_t pkt_buff_cnt = 0;
-	uint8_t free_desc_cnt = 0;
-	int8_t head_desc_index = 0;
+	uint16_t pkt_buff_cnt = 0;
+	unsigned int free_desc_cnt;
+	unsigned int irq_lock_key;
 
 	queue = &dev_data->queue_list[0];
-	err_tx_queue_flushed_count_at_entry = queue->err_tx_queue_flushed_count;
 	tx_desc_list = &queue->tx_desc_list;
-	tx_first_desc = &tx_desc_list->buf_desc[tx_desc_list->head];
 	frag = pkt->frags;
 
-	free_desc_cnt = k_sem_count_get(&queue->tx_desc_sem);
 	while (frag != NULL) {
 		frag = frag->frags;
 		pkt_buff_cnt++;
 	}
 
+	/* Do not expose a partially prepared frame to completion/error interrupts. */
+	irq_lock_key = irq_lock();
+	free_desc_cnt = k_sem_count_get(&queue->tx_desc_sem);
 	if (free_desc_cnt < pkt_buff_cnt) {
+		irq_unlock(irq_lock_key);
 		return -EIO;
 	}
 
+	tx_first_desc = &tx_desc_list->buf_desc[tx_desc_list->head];
 	frag = pkt->frags;
 
 	while (frag != NULL) {
 		uintptr_t ptr = POINTER_TO_UINT(frag);
-		unsigned int irq_lock_key;
 
 		frag_data = frag->data;
 		frag_len = frag->len;
-		k_sem_take(&queue->tx_desc_sem, K_FOREVER);
-		if (queue->err_tx_queue_flushed_count != err_tx_queue_flushed_count_at_entry) {
-			return -EIO;
-		}
+		k_sem_take(&queue->tx_desc_sem, K_NO_WAIT);
 
 		tx_desc = &tx_desc_list->buf_desc[tx_desc_list->head];
 		tx_desc->addr = (uint32_t)frag_data;
-		tx_desc->status |= GMAC_TXW1_USED;
-
-		if (frag->frags == NULL) {
-			tx_desc->status |= GMAC_TXW1_LASTBUFFER;
-		}
-
-		tx_desc->status &= ~GMAC_TXW1_LEN;
-		tx_desc->status |= (frag_len & GMAC_TXW1_LEN);
-		irq_lock_key = irq_lock();
+		tx_desc->status = (frag_len & GMAC_TXW1_LEN) |
+				 (frag->frags == NULL ? GMAC_TXW1_LASTBUFFER : 0U) |
+				 (tx_desc_list->head == tx_desc_list->len - 1U ?
+					  GMAC_TXW1_WRAP : 0U) |
+				 (tx_desc == tx_first_desc ? GMAC_TXW1_USED : 0U);
 		MODULO_INC(tx_desc_list->head, tx_desc_list->len);
-		irq_unlock(irq_lock_key);
 		__ASSERT(tx_desc_list->head != tx_desc_list->tail, "tx_desc_list overflow");
 		ring_buf_put(&queue->tx_frag_rb, (uint8_t *)&ptr, sizeof(ptr));
 		net_pkt_frag_ref(frag);
 		frag = frag->frags;
 	}
 
-	if (queue->err_tx_queue_flushed_count != err_tx_queue_flushed_count_at_entry) {
-		gmac_regs->GMAC_NCR |= GMAC_NCR_TSTART_Msk;
-
-		return -EIO;
-	}
-
-	head_desc_index = tx_desc_list->head;
-	MODULO_DEC(head_desc_index, tx_desc_list->len);
-	frag = pkt->frags;
-
-	while (pkt_buff_cnt) {
-		tx_desc_list->buf_desc[head_desc_index].status &= ~GMAC_TXW1_USED;
-		MODULO_DEC(head_desc_index, tx_desc_list->len);
-		pkt_buff_cnt--;
-	}
-
+	/* Keep DMA stopped at the new head until the next frame is ready. */
+	tx_desc_list->buf_desc[tx_desc_list->head].status =
+		(tx_desc_list->buf_desc[tx_desc_list->head].status & GMAC_TXW1_WRAP) |
+		GMAC_TXW1_USED;
+	barrier_dmem_fence_full();
+	tx_first_desc->status &= ~GMAC_TXW1_USED;
+	barrier_dmem_fence_full();
 	gmac_regs->GMAC_NCR |= GMAC_NCR_TSTART_Msk;
+	irq_unlock(irq_lock_key);
 
 	return 0;
 }
