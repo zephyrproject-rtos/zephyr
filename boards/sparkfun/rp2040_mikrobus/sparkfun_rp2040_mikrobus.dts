@@ -7,8 +7,8 @@
 /dts-v1/;
 
 / {
-	model = "Sparkfun RP2040 mikroBUS Development Board";
 	compatible = "sparkfun,rp2040-mikrobus";
+	model = "Sparkfun RP2040 mikroBUS Development Board";
 };
 
 #include "sparkfun_rp2040_mikrobus-common.dtsi"
