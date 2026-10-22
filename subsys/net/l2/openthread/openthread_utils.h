@@ -27,6 +27,7 @@ void add_ipv6_maddr_to_ot(struct openthread_context *context,
 void add_ipv6_maddr_to_zephyr(struct openthread_context *context);
 void rm_ipv6_addr_from_zephyr(struct openthread_context *context);
 void rm_ipv6_maddr_from_zephyr(struct openthread_context *context);
+void update_ml_prefix_onlink(struct openthread_context *context);
 
 int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt);
 struct net_pkt *pkt_list_peek(struct openthread_context *context);
