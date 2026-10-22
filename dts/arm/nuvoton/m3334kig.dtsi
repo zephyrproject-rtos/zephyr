@@ -8,11 +8,6 @@
 #include <nuvoton/m333x.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-		reg = <0x20000000 DT_SIZE_K(320)>;
-	};
-
 	soc {
 		fmc: flash-controller@4000c000 {
 			ranges = <0x0 0x0 DT_SIZE_K(512)>;
@@ -38,5 +33,10 @@
 			num-bidir-endpoints = <14>;
 			status = "disabled";
 		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(320)>;
 	};
 };
