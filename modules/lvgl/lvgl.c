@@ -45,6 +45,17 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 	UTIL_AND(IS_EQ(IS_MONOCHROME_DISPLAY, 1),                                                  \
 		 IS_EQ(CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER, 1))
 
+/* Map Zephyr config to LVGL's render modes. */
+#ifdef CONFIG_LV_Z_FULL_REFRESH
+#define RENDER_MODE LV_DISPLAY_RENDER_MODE_FULL
+#elif CONFIG_LV_Z_PARTIAL_REFRESH
+#define RENDER_MODE LV_DISPLAY_RENDER_MODE_PARTIAL
+#elif CONFIG_LV_Z_DIRECT_RENDERING
+#define RENDER_MODE LV_DISPLAY_RENDER_MODE_DIRECT
+#else
+#error No valid rendering mode configured
+#endif
+
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
 
 #define DISPLAY_WIDTH(n)  DT_PROP(DISPLAY_NODE(n), width)
@@ -141,10 +152,10 @@ static void lvgl_allocate_rendering_buffers_static(lv_display_t *display, int di
 {
 #ifdef CONFIG_LV_Z_DOUBLE_VDB
 	lv_display_set_buffers(display, buf0_p[disp_idx], buf1_p[disp_idx], disp_buf_size[disp_idx],
-			       LV_DISPLAY_RENDER_MODE_PARTIAL);
+			       RENDER_MODE);
 #else
 	lv_display_set_buffers(display, buf0_p[disp_idx], NULL, disp_buf_size[disp_idx],
-			       LV_DISPLAY_RENDER_MODE_PARTIAL);
+			       RENDER_MODE);
 #endif /* CONFIG_LV_Z_DOUBLE_VDB */
 
 #if ALLOC_MONOCHROME_CONV_BUFFER
@@ -219,7 +230,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 	lvgl_set_mono_conversion_buffer(vtile_buf, buf_size);
 #endif /* ALLOC_MONOCHROME_CONV_BUFFER */
 
-	lv_display_set_buffers(display, buf0, buf1, buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+	lv_display_set_buffers(display, buf0, buf1, buf_size, RENDER_MODE);
 	return 0;
 }
 #endif /* CONFIG_LV_Z_BUFFER_ALLOC_STATIC */
@@ -368,14 +379,6 @@ int lvgl_init(void)
 		if (err < 0) {
 			return err;
 		}
-#endif
-
-#ifdef CONFIG_LV_Z_FULL_REFRESH
-		lv_display_set_render_mode(lv_displays[i], LV_DISPLAY_RENDER_MODE_FULL);
-#elif CONFIG_LV_Z_PARTIAL_REFRESH
-		lv_display_set_render_mode(lv_displays[i], LV_DISPLAY_RENDER_MODE_PARTIAL);
-#elif CONFIG_LV_Z_DIRECT_RENDERING
-		lv_display_set_render_mode(lv_displays[i], LV_DISPLAY_RENDER_MODE_DIRECT);
 #endif
 	}
 
