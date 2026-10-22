@@ -10,8 +10,8 @@
 #include "xg24_rb4188a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs xG24 +20 dBm Antenna Diversity Radio Board (xG24-RB4188A, BRD4188B)";
 	compatible = "silabs,xg24_rb4188a", "silabs,efr32mg24";
+	model = "Silicon Labs xG24 +20 dBm Antenna Diversity Radio Board (xG24-RB4188A, BRD4188B)";
 
 	zephyr,user {
 		/* Antenna diversity RF switch control (SW_CTRL) */

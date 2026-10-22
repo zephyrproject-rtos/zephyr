@@ -12,8 +12,8 @@
 #include "xg22_rb4415a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs EFR32xG22E +6 dBm Radio Board (xG22-RB4415A, BRD4415A)";
 	compatible = "silabs,xg22_rb4415a", "silabs,efr32mg22";
+	model = "Silicon Labs EFR32xG22E +6 dBm Radio Board (xG22-RB4415A, BRD4415A)";
 
 	leds {
 		compatible = "gpio-leds";

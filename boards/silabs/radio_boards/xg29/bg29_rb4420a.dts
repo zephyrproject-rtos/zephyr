@@ -12,8 +12,8 @@
 #include "bg29_rb4420a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BG29-RB4420A";
 	compatible = "silabs,bg29_rb4420a", "silabs,efr32bg29";
+	model = "Silicon Labs BG29-RB4420A";
 
 	aliases {
 		pwm-led0 = &pwm_led0;
