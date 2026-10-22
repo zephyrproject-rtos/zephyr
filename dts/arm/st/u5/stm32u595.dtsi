@@ -13,28 +13,8 @@
 };
 
 / {
-	sram0: memory@20000000 {
-		/* SRAM1 + SRAM2 + SRAM3 + SRAM5 */
-		reg = <0x20000000 DT_SIZE_K(2496)>;
-	};
-
-	sram1: memory@28000000 {
-		/* SRAM4 */
-		reg = <0x28000000 DT_SIZE_K(16)>;
-	};
-
 	soc {
 		compatible = "st,stm32u595", "st,stm32u5", "simple-bus";
-
-		pinctrl: pin-controller@42020000 {
-			gpioj: gpio@42022400 {
-				compatible = "st,stm32-gpio";
-				reg = <0x42022400 0x400>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 9)>;
-			};
-		};
 
 		usart6: serial@40006400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
@@ -67,22 +47,6 @@
 			interrupts = <130 0>, <129 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
-		};
-
-		/* Available in STM32U59x/5Ax/5Fx/5Gx SoCs */
-		adc12_common: adc@42028000 {
-			adc2: adc@42028100 {
-				reg = <0x42028100 0x100>;
-				interrupts = <37 0>;
-				#io-channel-cells = <1>;
-				status = "disabled";
-			};
-		};
-
-		rng: rng@420c0800 {
-			nist-config = <0xf11f00>;
-			health-test-config = <0x92f3>;
-			noise-source-control = <0x1609>;
 		};
 
 		sai2: sai2@40015800 {
@@ -161,6 +125,32 @@
 			};
 		};
 
+		pinctrl: pin-controller@42020000 {
+			gpioj: gpio@42022400 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42022400 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 9)>;
+			};
+		};
+
+		/* Available in STM32U59x/5Ax/5Fx/5Gx SoCs */
+		adc12_common: adc@42028000 {
+			adc2: adc@42028100 {
+				reg = <0x42028100 0x100>;
+				interrupts = <37 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
+		};
+
+		rng: rng@420c0800 {
+			nist-config = <0xf11f00>;
+			health-test-config = <0x92f3>;
+			noise-source-control = <0x1609>;
+		};
+
 		dma2d: dma@5002b000 {
 			compatible = "st,stm32-dma2d";
 			reg = <0x5002b000 0xc00>;
@@ -183,5 +173,15 @@
 		#size-cells = <0>;
 		i2c = <&i2c6>;
 		status = "disabled";
+	};
+
+	sram0: memory@20000000 {
+		/* SRAM1 + SRAM2 + SRAM3 + SRAM5 */
+		reg = <0x20000000 DT_SIZE_K(2496)>;
+	};
+
+	sram1: memory@28000000 {
+		/* SRAM4 */
+		reg = <0x28000000 DT_SIZE_K(16)>;
 	};
 };

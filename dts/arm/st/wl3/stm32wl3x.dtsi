@@ -31,11 +31,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "SRAM0";
-	};
-
 	clocks {
 		/*
 		 * Default to 48 MHz crystal as this should be the
@@ -102,6 +97,18 @@
 	};
 
 	soc {
+		gpio_intc: interrupt-controller@40000000 {
+			compatible = "st,stm32wb0-gpio-intc";
+			reg = <0x40000000 0x40>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <1>;
+			num-lines = <32>;
+			interrupts = <15 0>, <16 0>;
+			interrupt-names = "gpioa", "gpiob";
+			line-ranges = <0 16>, <16 16>;
+		};
+
 		flash: flash-controller@40001000 {
 			/* Flash controller IP is identical to the STM32WB0 one */
 			compatible = "st,stm32wb0-flash-controller", "st,stm32-flash-controller";
@@ -124,52 +131,6 @@
 				write-block-size = <4>;
 				erase-block-size = <2048>;
 				max-erase-time = <40>;
-			};
-		};
-
-		rcc: rcc@48400000 {
-			compatible = "st,stm32wl3-rcc";
-			reg = <0x48400000 DT_SIZE_K(1)>;
-			#clock-cells = <2>;
-
-			rctl: reset-controller {
-				compatible = "st,stm32-rcc-rctl";
-				#reset-cells = <1>;
-			};
-		};
-
-		gpio_intc: interrupt-controller@40000000 {
-			compatible = "st,stm32wb0-gpio-intc";
-			reg = <0x40000000 0x40>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			#address-cells = <1>;
-			num-lines = <32>;
-			interrupts = <15 0>, <16 0>;
-			interrupt-names = "gpioa", "gpiob";
-			line-ranges = <0 16>, <16 16>;
-		};
-
-		pinctrl: pin-controller@48000000 {
-			compatible = "st,stm32-pinctrl";
-			reg = <0x48000000 DT_SIZE_M(2)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			gpioa: gpio@48000000 {
-				compatible = "st,stm32-gpio";
-				reg = <0x48000000 DT_SIZE_K(1)>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&rcc STM32_CLOCK(AHB0, 2)>;
-			};
-
-			gpiob: gpio@48100000 {
-				compatible = "st,stm32-gpio";
-				reg = <0x48100000 DT_SIZE_K(1)>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&rcc STM32_CLOCK(AHB0, 3)>;
 			};
 		};
 
@@ -209,6 +170,47 @@
 			status = "disabled";
 		};
 
+		pinctrl: pin-controller@48000000 {
+			compatible = "st,stm32-pinctrl";
+			reg = <0x48000000 DT_SIZE_M(2)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioa: gpio@48000000 {
+				compatible = "st,stm32-gpio";
+				reg = <0x48000000 DT_SIZE_K(1)>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB0, 2)>;
+			};
+
+			gpiob: gpio@48100000 {
+				compatible = "st,stm32-gpio";
+				reg = <0x48100000 DT_SIZE_K(1)>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB0, 3)>;
+			};
+		};
+
+		rcc: rcc@48400000 {
+			compatible = "st,stm32wl3-rcc";
+			reg = <0x48400000 DT_SIZE_K(1)>;
+			#clock-cells = <2>;
+
+			rctl: reset-controller {
+				compatible = "st,stm32-rcc-rctl";
+				#reset-cells = <1>;
+			};
+		};
+
+		rng: rng@48600000 {
+			compatible = "st,stm32-rng-noirq";
+			reg = <0x48600000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 18)>;
+			status = "disabled";
+		};
+
 		dma1: dma@48700000 {
 			compatible = "st,stm32-dma-v2";
 			reg = <0x48700000 256>;
@@ -232,13 +234,6 @@
 			status = "disabled";
 		};
 
-		rng: rng@48600000 {
-			compatible = "st,stm32-rng-noirq";
-			reg = <0x48600000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB0, 18)>;
-			status = "disabled";
-		};
-
 		aes: crypto@48900000 {
 			compatible = "st,stm32-aes";
 			reg = <0x48900000 0x400>;
@@ -247,6 +242,11 @@
 			interrupts = <13 0>;
 			status = "disabled";
 		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 };
 

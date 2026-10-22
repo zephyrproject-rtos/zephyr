@@ -43,6 +43,14 @@
 			};
 		};
 
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		timers15: timers@40014000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014000 0x400>;
@@ -64,14 +72,6 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
-		};
-
-		dac1: dac@40007400 {
-			compatible = "st,stm32-dac";
-			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-			#io-channel-cells = <1>;
-			status = "disabled";
 		};
 
 		dma1: dma@40020000 {

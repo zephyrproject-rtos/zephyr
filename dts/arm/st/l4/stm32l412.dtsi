@@ -19,37 +19,6 @@
 	soc {
 		compatible = "st,stm32l412", "st,stm32l4", "simple-bus";
 
-		rng: rng@50060800 {
-			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
-				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
-		};
-
-		usb: usb@40006800 {
-			compatible = "st,stm32-usb";
-			reg = <0x40006800 0x40000>;
-			interrupts = <67 0>;
-			interrupt-names = "usb";
-			num-bidir-endpoints = <8>;
-			ram-size = <1024>;
-			maximum-speed = "full-speed";
-			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 26)>,
-				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
-			status = "disabled";
-		};
-
-		i2c2: i2c@40005800 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40005800 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <33 0>, <34 0>;
-			interrupt-names = "event", "error";
-			status = "disabled";
-		};
-
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			reg = <0x40003800 0x400>;
@@ -68,6 +37,37 @@
 			resets = <&rctl STM32_RESET(APB1L, 18)>;
 			interrupts = <39 0>;
 			status = "disabled";
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		usb: usb@40006800 {
+			compatible = "st,stm32-usb";
+			reg = <0x40006800 0x40000>;
+			interrupts = <67 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <1024>;
+			maximum-speed = "full-speed";
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+			status = "disabled";
+		};
+
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 	};
 

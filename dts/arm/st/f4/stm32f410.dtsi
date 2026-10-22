@@ -15,67 +15,6 @@
 	soc {
 		compatible = "st,stm32f410", "st,stm32f4", "simple-bus";
 
-		spi2: spi@40003800 {
-			compatible = "st,stm32-spi";
-			reg = <0x40003800 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <36 0>;
-			st,spi-data-width = "limited-8-16-bit";
-			status = "disabled";
-		};
-
-		spi5: spi@40015000 {
-			compatible = "st,stm32-spi";
-			reg = <0x40015000 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
-			interrupts = <85 0>;
-			st,spi-data-width = "limited-8-16-bit";
-			status = "disabled";
-		};
-
-		i2s1: i2s@40013000 {
-			compatible = "st,stm32-i2s";
-			reg = <0x40013000 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
-			interrupts = <35 0>;
-			dmas = <&dma2 3 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
-			       <&dma2 2 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
-			dma-names = "tx", "rx";
-			status = "disabled";
-		};
-
-		i2s2: i2s@40003800 {
-			compatible = "st,stm32-i2s";
-			reg = <0x40003800 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <36 0>;
-			dmas = <&dma1 4 0 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
-			       <&dma1 3 0 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
-			dma-names = "tx", "rx";
-			status = "disabled";
-		};
-
-		i2s5: i2s@40015000 {
-			compatible = "st,stm32-i2s";
-			reg = <0x40015000 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
-			interrupts = <85 0>;
-			dmas = <&dma2 6 7 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
-			       <&dma2 5 7 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
-			dma-names = "tx", "rx";
-			status = "disabled";
-		};
-
 		timers6: timers@40001000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
@@ -93,11 +32,72 @@
 			};
 		};
 
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi";
+			reg = <0x40003800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <36 0>;
+			st,spi-data-width = "limited-8-16-bit";
+			status = "disabled";
+		};
+
+		i2s2: i2s@40003800 {
+			compatible = "st,stm32-i2s";
+			reg = <0x40003800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <36 0>;
+			dmas = <&dma1 4 0 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
+			       <&dma1 3 0 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
 			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		i2s1: i2s@40013000 {
+			compatible = "st,stm32-i2s";
+			reg = <0x40013000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			interrupts = <35 0>;
+			dmas = <&dma2 3 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
+			       <&dma2 2 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		spi5: spi@40015000 {
+			compatible = "st,stm32-spi";
+			reg = <0x40015000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
+			interrupts = <85 0>;
+			st,spi-data-width = "limited-8-16-bit";
+			status = "disabled";
+		};
+
+		i2s5: i2s@40015000 {
+			compatible = "st,stm32-i2s";
+			reg = <0x40015000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
+			interrupts = <85 0>;
+			dmas = <&dma2 6 7 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
+			       <&dma2 5 7 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
