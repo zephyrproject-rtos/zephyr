@@ -275,6 +275,27 @@ ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_forward_through_input)
 		     "Reply destination was not translated");
 	zassert_equal(sent_ipv4_ttl, 63U, "Reply TTL should be decremented once");
 
+	/* Reconnecting a dynamic uplink must not keep translating to its old address. */
+	zassert_true(net_if_ipv4_addr_rm(dummy_iface_b, &addr_b),
+		     "Cannot remove uplink address");
+	addr_b.s4_addr[3] = 3;
+	zassert_not_null(net_if_ipv4_addr_add(dummy_iface_b, &addr_b, NET_ADDR_MANUAL, 0),
+			 "Cannot replace uplink address");
+	zassert_true(net_if_ipv4_set_netmask_by_addr(dummy_iface_b, &addr_b, &netmask),
+		     "Cannot set replacement address netmask");
+
+	recv_udp_frame(dummy_iface_a, &client_addr, &server_addr, 1234, 4321, 64U);
+	zassert_true(forwarded_frame_sent(), "Request after reconnect was not forwarded");
+	zassert_equal_ptr(sent_iface, dummy_iface_b, "Wrong reconnected uplink");
+	zassert_true(net_ipv4_addr_cmp(&sent_ipv4_src, &addr_b),
+		     "Existing flow still uses the old uplink address");
+
+	recv_udp_frame(dummy_iface_b, &server_addr, &addr_b, 4321, 1234, 64U);
+	zassert_true(forwarded_frame_sent(), "Reply after reconnect was not forwarded");
+	zassert_equal_ptr(sent_iface, dummy_iface_a, "Wrong reply interface after reconnect");
+	zassert_true(net_ipv4_addr_cmp(&sent_ipv4_dst, &client_addr),
+		     "Reply after reconnect was not translated to the client");
+
 	net_ipv4_table_rule_del(rule_idx);
 	net_arp_clear_cache(dummy_iface_a);
 	net_arp_clear_cache(dummy_iface_b);

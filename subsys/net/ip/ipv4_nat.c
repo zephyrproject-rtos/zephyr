@@ -255,6 +255,14 @@ static int conn_track_match(struct net_pkt *pkt,
 			continue;
 		}
 
+		if (net_if_ipv4_addr_lookup_by_iface_raw(
+			    iptables.table[i].iface[NET_NAT_DIR_REPLY],
+			    iptables.table[i].tuple[NET_NAT_DIR_REPLY].dst) == NULL) {
+			NET_DBG("conn track %d has an unassigned external address", i);
+			conn_track_free(&iptables.table[i]);
+			continue;
+		}
+
 		if (conn_track_match_origin(pkt, iphdr,
 		    l4hdr, &iptables.table[i])) {
 			NET_DBG("find IN conn track %d", i);
