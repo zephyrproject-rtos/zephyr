@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - sensor
+    - rtio
+  harness: ztest
+  filter: dt_alias_exists("accel0")
+  integration_platforms:
+    - apard32690/max32690/m4
+  timeout: 120
+tests:
+  drivers.sensor.rtio_stream.adxl345:
+    platform_allow:
+      - apard32690/max32690/m4
+    extra_args:
+      - SHIELD=pmod_acl
+      - EXTRA_CONF_FILE=adxl345.conf
+      - EXTRA_DTC_OVERLAY_FILE=adxl345.overlay
+    harness_config:
+      fixture: pmod_acl
+  drivers.sensor.rtio_stream.adxl372:
+    platform_allow:
+      - apard32690/max32690/m4
+    extra_args:
+      - SHIELD=eval_adxl372_ardz
+      - EXTRA_CONF_FILE=adxl372.conf
+      - EXTRA_DTC_OVERLAY_FILE=adxl372.overlay
+    harness_config:
+      fixture: eval_adxl372_ardz
