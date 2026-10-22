@@ -155,6 +155,15 @@
 		init-out-low = <0x1f1f>;
 	};
 
+	ccs811: ccs811@5a {
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
+		vin-supply = <&ccs_pwr>;
+		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&sx1509b 11 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&sx1509b 12 GPIO_ACTIVE_LOW>;
+	};
+
 	lps22hb_press: lps22hb_press@5c {
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
@@ -166,15 +175,6 @@
 		reg = <0x5f>;
 		vin-supply = <&vdd_pwr>;
 		drdy-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
-	};
-
-	ccs811: ccs811@5a {
-		compatible = "ams,ccs811";
-		reg = <0x5a>;
-		vin-supply = <&ccs_pwr>;
-		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&sx1509b 11 GPIO_ACTIVE_LOW>;
-		wake-gpios = <&sx1509b 12 GPIO_ACTIVE_LOW>;
 	};
 };
 
