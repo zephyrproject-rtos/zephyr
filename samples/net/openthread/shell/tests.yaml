@@ -56,6 +56,7 @@ tests:
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
+      - esp32s31_function_coreboard/esp32s31/hpcore
   sample.net.openthread.shell.silabs:
     build_only: true
     extra_args:
