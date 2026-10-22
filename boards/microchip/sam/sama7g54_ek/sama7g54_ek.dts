@@ -48,11 +48,6 @@
 		};
 	};
 
-	ddram: ddram@60000000 {
-		compatible = "ddram";
-		reg = <0x60000000 DT_SIZE_M(512)>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 		status = "okay";
@@ -145,6 +140,11 @@
 		standby-gpios = <&pioc 16 GPIO_ACTIVE_HIGH>;
 		max-bitrate = <DT_FREQ_M(8)>;
 		#phy-cells = <0>;
+	};
+
+	ddram: ddram@60000000 {
+		compatible = "ddram";
+		reg = <0x60000000 DT_SIZE_M(512)>;
 	};
 };
 

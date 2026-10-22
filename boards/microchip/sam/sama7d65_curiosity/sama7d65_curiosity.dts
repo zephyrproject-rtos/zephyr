@@ -44,11 +44,6 @@
 		};
 	};
 
-	ddram: ddram@60000000 {
-		compatible = "ddram";
-		reg = <0x60000000 DT_SIZE_M(1024)>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 		status = "okay";
@@ -94,6 +89,11 @@
 		blue_pwm_led: blue_pwm_led {
 			pwms = <&pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+	};
+
+	ddram: ddram@60000000 {
+		compatible = "ddram";
+		reg = <0x60000000 DT_SIZE_M(1024)>;
 	};
 };
 
