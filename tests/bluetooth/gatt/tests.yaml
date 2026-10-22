@@ -43,7 +43,7 @@ tests:
       - bluetooth
       - gatt
   bluetooth.gatt.psa_memory_leak:
-    filter: CONFIG_BT_GATT_CACHING and CONFIG_MBEDTLS_PSA_CRYPTO_C
+    filter: CONFIG_BT_GATT_CACHING and CONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="test.overlay"
       - EXTRA_CONF_FILE="prj_psa_memory_leak.conf"
