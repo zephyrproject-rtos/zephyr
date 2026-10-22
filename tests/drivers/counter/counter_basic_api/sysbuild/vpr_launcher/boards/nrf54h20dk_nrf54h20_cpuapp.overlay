@@ -1,61 +1,61 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 &timer120 {
-	status = "reserved";
 	interrupt-parent = <&cpuflpr_clic>;
+	status = "reserved";
 };
 
 &timer121 {
-	status = "reserved";
 	interrupt-parent = <&cpuflpr_clic>;
+	status = "reserved";
 };
 
 &timer130 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &timer131 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &timer132 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &timer133 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &timer134 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &timer135 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &timer136 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &timer137 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &rtc130 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &rtc131 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };

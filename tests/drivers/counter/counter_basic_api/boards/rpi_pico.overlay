@@ -6,7 +6,6 @@
 / {
 	soc {
 		rpi_pico_pit_controller: rpi_pico_pit_controller@4005d000 {
-			status = "okay";
 			compatible = "raspberrypi,pico-pit";
 			reg = <0x4005d000 0x1000>;
 			clocks = <&clocks 0x5>;
@@ -15,13 +14,14 @@
 			#pico-pit-controller-cells = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "okay";
 
 			rpi_pico_pit_channel_0: rpi_pico_pit_channel@0 {
-				status = "okay";
 				compatible = "raspberrypi,pico-pit-channel";
 				reg = <0>;
 
 				#pico-pit-channel-cells = <0>;
+				status = "okay";
 			};
 		};
 	};

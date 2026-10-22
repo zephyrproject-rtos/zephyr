@@ -5,8 +5,8 @@
  */
 
 &timer0 {
-	status = "okay";
 	prescaler = <2>;
+	status = "okay";
 
 	counter {
 		status = "okay";
@@ -14,8 +14,8 @@
 };
 
 &timer1 {
-	status = "okay";
 	prescaler = <2>;
+	status = "okay";
 
 	counter {
 		status = "okay";
@@ -23,8 +23,8 @@
 };
 
 &timer2 {
-	status = "okay";
 	prescaler = <2>;
+	status = "okay";
 
 	counter {
 		status = "okay";
@@ -32,8 +32,8 @@
 };
 
 &timer3 {
-	status = "okay";
 	prescaler = <2>;
+	status = "okay";
 
 	counter {
 		status = "okay";
@@ -41,8 +41,8 @@
 };
 
 &lptimer0 {
-	status = "okay";
 	clock-source = <ADI_MAX32_PRPH_CLK_SRC_ERTCO>;
+	status = "okay";
 
 	counter {
 		status = "okay";
