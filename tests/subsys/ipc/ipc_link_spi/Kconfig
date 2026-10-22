@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_IPC_LINK_SPI_MISMATCH
+	bool "Test a peripheral with another frame size"
+	help
+	  Build the test of a controller facing a peripheral that runs
+	  another frame size, with the mismatch overlay, instead of the
+	  tests of a matching pair.
+
+source "Kconfig.zephyr"
