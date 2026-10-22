@@ -63,7 +63,7 @@ if EXTERNAL_ADDRESS_TRANSLATION
 
 config MM_TI_RAT
 	bool "Texas Instruments RAT module"
-	depends on EXTERNAL_ADDRESS_TRANSLATION
+	depends on SOC_FAMILY_TI_K3
 	help
 	  Enables Region based address translation support
 	  functions specific to TI SoCs.
