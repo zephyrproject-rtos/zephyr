@@ -143,6 +143,15 @@ void hci_iso(struct net_buf *buf)
 
 	BT_ISO_DATA_DBG("buf %p", buf);
 
+	if (!IS_ENABLED(CONFIG_BT_ISO_RX)) {
+		/* Nothing was set up to receive it, and the buffer comes from the
+		 * general RX pool, which may have no room for the metadata below
+		 */
+		LOG_ERR("ISO data without ISO receive support");
+		net_buf_unref(buf);
+		return;
+	}
+
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Invalid HCI ISO packet size (%u)", buf->len);
 		net_buf_unref(buf);
