@@ -64,20 +64,24 @@ static int http_client_url_fields_get(const uint8_t *url, const struct http_pars
 				      enum http_parser_url_fields url_field, uint8_t *field,
 				      uint16_t field_len)
 {
-	uint16_t off = purl->field_data[url_field].off;
-	uint16_t len = purl->field_data[url_field].len;
+	size_t off = purl->field_data[url_field].off;
+	size_t len = purl->field_data[url_field].len;
 
-	if (len == 0 || len >= field_len) {
+	if (len == 0) {
 		return -EINVAL;
 	}
 
 	if (url_field == UF_PATH) {
-		memcpy(field, url + off, strlen(url));
-		field[strlen(url)] = '\0';
-	} else {
-		memcpy(field, url + off, len);
-		field[len] = '\0';
+		/* The request URI is the path with the query and fragment that follow it. */
+		len = strlen(url) - off;
 	}
+
+	if (len >= field_len) {
+		return -ENOBUFS;
+	}
+
+	memcpy(field, url + off, len);
+	field[len] = '\0';
 
 	return 0;
 }
@@ -136,7 +140,10 @@ static int http_client_url_parser(struct http_client_sh_ctx *ctx, const uint8_t 
 	}
 
 	ret = http_client_url_fields_get(url, &purl, UF_PATH, uri, sizeof(ctx->url_fields.uri));
-	if (ret < 0) {
+	if (ret == -ENOBUFS) {
+		PR_ERROR("URL path too long (max %zu bytes)\n", sizeof(ctx->url_fields.uri) - 1);
+		return ret;
+	} else if (ret < 0) {
 		memcpy(uri, "/", sizeof("/"));
 	}
 
