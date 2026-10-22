@@ -3767,6 +3767,13 @@ static struct quic_endpoint *find_local_endpoint(const struct net_sockaddr *loca
 			continue;
 		}
 
+		/* The connections of a listener share its address, only the
+		 * listener itself is looked for
+		 */
+		if (!endpoints[i]->is_server || endpoints[i]->parent != NULL) {
+			continue;
+		}
+
 		if (IS_ENABLED(CONFIG_NET_IPV4) && local_addr->sa_family == NET_AF_INET) {
 			struct net_sockaddr_in *laddr_in =
 				net_sin(net_sad(&endpoints[i]->local_addr));
@@ -3779,8 +3786,13 @@ static struct quic_endpoint *find_local_endpoint(const struct net_sockaddr *loca
 					      &net_sin(local_addr)->sin_addr) &&
 			    (net_sin(local_addr)->sin_port == 0 ||
 			     laddr_in->sin_port == net_sin(local_addr)->sin_port)) {
-				ep = endpoints[i];
-				quic_endpoint_ref(ep);
+				/* A listener whose last reference is being
+				 * dropped must not be taken over
+				 */
+				if (quic_endpoint_ref_unless_zero(endpoints[i])) {
+					ep = endpoints[i];
+				}
+
 				break;
 			}
 		}
@@ -3798,8 +3810,13 @@ check_next:
 					      &net_sin6(local_addr)->sin6_addr) &&
 			    (net_sin6(local_addr)->sin6_port == 0 ||
 			     laddr_in->sin6_port == net_sin6(local_addr)->sin6_port)) {
-				ep = endpoints[i];
-				quic_endpoint_ref(ep);
+				/* A listener whose last reference is being
+				 * dropped must not be taken over
+				 */
+				if (quic_endpoint_ref_unless_zero(endpoints[i])) {
+					ep = endpoints[i];
+				}
+
 				break;
 			}
 		}
