@@ -154,9 +154,7 @@ struct i2c_esp32_config {
 	const uint32_t bitrate;
 	const uint32_t scl_timeout;
 
-#if CONFIG_I2C_BUS_RECOVERY
 	const bool recover_bus_on_init;
-#endif
 };
 
 static uint32_t i2c_get_src_clk_freq(i2c_clock_source_t clk_src)
@@ -1251,6 +1249,15 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_I2C_BUS_RECOVERY
+	if (config->recover_bus_on_init) {
+		ret = i2c_esp32_recover(dev);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif
+
 	i2c_hal_init(&data->hal, config->index);
 
 	i2c_hal_master_init(&data->hal);
@@ -1262,15 +1269,6 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-
-#if CONFIG_I2C_BUS_RECOVERY
-	if (config->recover_bus_on_init) {
-		ret = i2c_esp32_recover(dev);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-#endif
 
 #if I2C_SLEEP_RETENTION_ENABLED
 	if (config->index < SOC_HP_I2C_NUM) {
@@ -1303,13 +1301,6 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #define I2C_FREQUENCY(idx)						\
 	I2C_ESP32_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
-#if CONFIG_I2C_BUS_RECOVERY
-#define I2C_ESP32_RECOVER_BUS_ON_INIT(idx)                                                         \
-	.recover_bus_on_init = DT_NODE_HAS_PROP(I2C(idx), recover_bus_on_init),
-#else
-#define I2C_ESP32_RECOVER_BUS_ON_INIT(idx)
-#endif
-
 #define ESP32_I2C_INIT(idx)									   \
 												   \
 	PINCTRL_DT_DEFINE(I2C(idx));								   \
@@ -1337,7 +1328,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),				   \
 		.bitrate = I2C_FREQUENCY(idx),							   \
 		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
-		I2C_ESP32_RECOVER_BUS_ON_INIT(idx) \
+		.recover_bus_on_init = DT_PROP(I2C(idx), recover_bus_on_init), \
 	};											   \
 	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,		   \
 			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	   \
