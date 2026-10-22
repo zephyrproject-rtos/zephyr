@@ -27,6 +27,11 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		sdiconsole: sdi-console@e00000f4 {
+			compatible = "wch,sdi-console";
+			reg = <0xe00000f4 0x0c>;
+		};
+
 		pfic: interrupt-controller@e000e000 {
 			compatible = "wch,pfic";
 			reg = <0xe000e000 0x10>;
@@ -42,11 +47,6 @@
 			interrupt-parent = <&pfic>;
 			interrupts = <12>;
 			status = "okay";
-		};
-
-		sdiconsole: sdi-console@e00000f4 {
-			compatible = "wch,sdi-console";
-			reg = <0xe00000f4 0x0c>;
 		};
 	};
 };

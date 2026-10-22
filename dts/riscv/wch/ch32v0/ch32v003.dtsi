@@ -44,33 +44,33 @@
 	};
 
 	soc {
+		esig: esig@1ffff7e0 {
+			compatible = "wch,esig";
+			reg = <0x1ffff7e0 0x20>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(2)>;
 		};
 
-		flash: flash-controller@40022000 {
-			compatible = "wch,ch32v-flash-controller";
-			reg = <0x40022000 0x400>;
-			ranges;
+		tim2: counter@40000000 {
+			compatible = "wch,gptm";
+			reg = <0x40000000 16>;
+			prescaler = <1>;
+			channels = <4>;
+			clocks = <&rcc CH32V00X_CLOCK_TIM2>;
+			interrupt-parent = <&pfic>;
+			interrupts = <38>;
+			interrupt-names = "global";
+			status = "disabled";
 
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
-				reg = <0x8000000 DT_SIZE_K(16)>;
-				ranges = <0x0 0x08000000 DT_SIZE_K(16)>;
-				erase-block-size = <64>;
-				write-block-size = <64>;
-				#address-cells = <1>;
-				#size-cells = <1>;
+			pwm2: pwm {
+				compatible = "wch,gptm-pwm";
+				pwm-controller;
+				#pwm-cells = <3>;
+				status = "disabled";
 			};
-		};
-
-		pwr: pwr@40007000 {
-			compatible = "wch,pwr";
-			reg = <0x40007000 0x10>;
 		};
 
 		iwdg: watchdog@40003000 {
@@ -79,17 +79,20 @@
 			status = "disabled";
 		};
 
-		exti: interrupt-controller@40010400 {
-			compatible = "wch,exti";
-			reg = <0x40010400 16>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
+		i2c1: i2c@40005400 {
+			compatible = "wch,i2c";
+			reg = <0x40005400 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc CH32V00X_CLOCK_I2C1>;
 			interrupt-parent = <&pfic>;
-			num-lines = <8>;
-			interrupts = <20>;
-			line-ranges = <0 8>;
-			interrupt-names = "line0-7";
+			interrupts = <30>, <31>;
 			status = "disabled";
+		};
+
+		pwr: pwr@40007000 {
+			compatible = "wch,pwr";
+			reg = <0x40007000 0x10>;
 		};
 
 		pinctrl: pin-controller@40010000 {
@@ -129,46 +132,27 @@
 			};
 		};
 
-		i2c1: i2c@40005400 {
-			compatible = "wch,i2c";
-			reg = <0x40005400 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc CH32V00X_CLOCK_I2C1>;
+		exti: interrupt-controller@40010400 {
+			compatible = "wch,exti";
+			reg = <0x40010400 16>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
 			interrupt-parent = <&pfic>;
-			interrupts = <30>, <31>;
+			num-lines = <8>;
+			interrupts = <20>;
+			line-ranges = <0 8>;
+			interrupt-names = "line0-7";
 			status = "disabled";
 		};
 
-		usart1: uart@40013800 {
-			compatible = "wch,usart";
-			reg = <0x40013800 0x10>;
-			clocks = <&rcc CH32V00X_CLOCK_USART1>;
-			resets = <&rctl CH32_RESET(APB2, 14)>;
+		adc1: adc@40012400 {
+			compatible = "wch,adc";
+			reg = <0x40012400 16>;
+			clocks = <&rcc CH32V00X_CLOCK_ADC1>;
 			interrupt-parent = <&pfic>;
-			interrupts = <32>;
-		};
-
-		rcc: rcc@40021000 {
-			compatible = "wch,rcc";
-			reg = <0x40021000 0x10>;
-			#clock-cells = <1>;
-			status = "okay";
-
-			rctl: reset-controller {
-				compatible = "wch,ch32-rcc-rctl";
-				#reset-cells = <1>;
-			};
-		};
-
-		dma1: dma@40020000 {
-			compatible = "wch,wch-dma";
-			reg = <0x40020000 0x90>;
-			clocks = <&rcc CH32V00X_CLOCK_DMA1>;
-			#dma-cells = <1>;
-			interrupt-parent = <&pfic>;
-			interrupts = <22>, <23>, <24>, <25>, <26>, <27>, <28>;
-			dma-channels = <7>;
+			interrupts = <29>;
+			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		tim1: counter@40012c00 {
@@ -190,25 +174,6 @@
 			};
 		};
 
-		tim2: counter@40000000 {
-			compatible = "wch,gptm";
-			reg = <0x40000000 16>;
-			prescaler = <1>;
-			channels = <4>;
-			clocks = <&rcc CH32V00X_CLOCK_TIM2>;
-			interrupt-parent = <&pfic>;
-			interrupts = <38>;
-			interrupt-names = "global";
-			status = "disabled";
-
-			pwm2: pwm {
-				compatible = "wch,gptm-pwm";
-				pwm-controller;
-				#pwm-cells = <3>;
-				status = "disabled";
-			};
-		};
-
 		spi1: spi@40013000 {
 			compatible = "wch,spi";
 			reg = <0x40013000 0x24>;
@@ -220,19 +185,54 @@
 			status = "disabled";
 		};
 
-		adc1: adc@40012400 {
-			compatible = "wch,adc";
-			reg = <0x40012400 16>;
-			clocks = <&rcc CH32V00X_CLOCK_ADC1>;
+		usart1: uart@40013800 {
+			compatible = "wch,usart";
+			reg = <0x40013800 0x10>;
+			clocks = <&rcc CH32V00X_CLOCK_USART1>;
+			resets = <&rctl CH32_RESET(APB2, 14)>;
 			interrupt-parent = <&pfic>;
-			interrupts = <29>;
-			#io-channel-cells = <1>;
-			status = "disabled";
+			interrupts = <32>;
 		};
 
-		esig: esig@1ffff7e0 {
-			compatible = "wch,esig";
-			reg = <0x1ffff7e0 0x20>;
+		dma1: dma@40020000 {
+			compatible = "wch,wch-dma";
+			reg = <0x40020000 0x90>;
+			clocks = <&rcc CH32V00X_CLOCK_DMA1>;
+			#dma-cells = <1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <22>, <23>, <24>, <25>, <26>, <27>, <28>;
+			dma-channels = <7>;
+		};
+
+		rcc: rcc@40021000 {
+			compatible = "wch,rcc";
+			reg = <0x40021000 0x10>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "wch,ch32-rcc-rctl";
+				#reset-cells = <1>;
+			};
+		};
+
+		flash: flash-controller@40022000 {
+			compatible = "wch,ch32v-flash-controller";
+			reg = <0x40022000 0x400>;
+			ranges;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x8000000 DT_SIZE_K(16)>;
+				ranges = <0x0 0x08000000 DT_SIZE_K(16)>;
+				erase-block-size = <64>;
+				write-block-size = <64>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 	};
 };

@@ -8,16 +8,6 @@
 
 / {
 	soc {
-		usart3: uart@40004800 {
-			compatible = "wch,usart";
-			reg = <0x40004800 0x20>;
-			clocks = <&rcc CH32V10X_CLOCK_USART3>;
-			resets = <&rctl CH32_RESET(APB1, 18)>;
-			interrupt-parent = <&pfic>;
-			interrupts = <55>;
-			status = "disabled";
-		};
-
 		spi2: spi@40003800 {
 			compatible = "wch,spi";
 			reg = <0x40003800 0x24>;
@@ -26,6 +16,16 @@
 			interrupts = <52>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		usart3: uart@40004800 {
+			compatible = "wch,usart";
+			reg = <0x40004800 0x20>;
+			clocks = <&rcc CH32V10X_CLOCK_USART3>;
+			resets = <&rctl CH32_RESET(APB1, 18)>;
+			interrupt-parent = <&pfic>;
+			interrupts = <55>;
 			status = "disabled";
 		};
 
