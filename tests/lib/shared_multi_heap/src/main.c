@@ -7,12 +7,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/linker/linker-defs.h>
-#include <zephyr/kernel/mm.h>
+#if defined(CONFIG_ARM64)
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm64.h>
+#else
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#endif
 
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
 #define DT_DRV_COMPAT		zephyr_memory_region
+
+#define SMH_DT_MEM_UNKNOWN_DEFAULT DT_MEM_ARCH_ATTR_UNKNOWN
 
 #define RES0_CACHE_ADDR		DT_REG_ADDR(DT_NODELABEL(res0))
 #define RES1_NOCACHE_ADDR	DT_REG_ADDR(DT_NODELABEL(res1))
@@ -29,28 +34,13 @@ struct region_map {
 			.addr = (uintptr_t) DT_INST_REG_ADDR(n),		\
 			.size = DT_INST_REG_SIZE(n),				\
 			.attr = DT_INST_PROP_OR(n, zephyr_memory_attr,		\
-						DT_MEM_ARM_MPU_UNKNOWN),	\
+						SMH_DT_MEM_UNKNOWN_DEFAULT),	\
 		},								\
 	},
 
 struct region_map map[] = {
 	DT_INST_FOREACH_STATUS_OKAY(FOREACH_REG)
 };
-
-#if defined(CONFIG_MMU)
-static void smh_reg_map(struct shared_multi_heap_region *region)
-{
-	uint32_t mem_attr;
-	uint8_t *v_addr;
-
-	mem_attr = (region->attr == SMH_REG_ATTR_CACHEABLE) ? K_MEM_CACHE_WB : K_MEM_CACHE_NONE;
-	mem_attr |= K_MEM_PERM_RW;
-
-	k_mem_map_phys_bare(&v_addr, region->addr, region->size, mem_attr);
-
-	region->addr = (uintptr_t) v_addr;
-}
-#endif /* CONFIG_MMU */
 
 /*
  * Given a virtual address retrieve the original memory region that the mapping
@@ -67,34 +57,25 @@ static struct region_map *get_region_map(void *v_addr)
 	return NULL;
 }
 
-static inline enum shared_multi_heap_attr mpu_to_reg_attr(uint32_t dt_attr)
+static inline enum shared_multi_heap_attr dt_to_reg_attr(uint32_t dt_attr)
 {
-	/*
-	 * All the memory regions defined in the DT with the MPU property `RAM`
-	 * can be accessed and memory can be retrieved from using the attribute
-	 * `SMH_REG_ATTR_CACHEABLE`.
-	 *
-	 * All the memory regions defined in the DT with the MPU property
-	 * `RAM_NOCACHE` can be accessed and memory can be retrieved from using
-	 * the attribute `SMH_REG_ATTR_NON_CACHEABLE`.
-	 *
-	 * [MPU attr]   -> [SMH attr]
-	 *
-	 * RAM          -> SMH_REG_ATTR_CACHEABLE
-	 * RAM_NOCACHE  -> SMH_REG_ATTR_NON_CACHEABLE
-	 */
+#if defined(CONFIG_ARM64)
+	if (DT_MEM_ATTR_GET(dt_attr) & DT_MEM_CACHEABLE) {
+		return SMH_REG_ATTR_CACHEABLE;
+	}
+	return SMH_REG_ATTR_NON_CACHEABLE;
+#else
 	switch (DT_MEM_ARM_GET(dt_attr)) {
 	case DT_MEM_ARM_MPU_RAM:
 		return SMH_REG_ATTR_CACHEABLE;
 	case DT_MEM_ARM_MPU_RAM_NOCACHE:
 		return SMH_REG_ATTR_NON_CACHEABLE;
 	default:
-		/* How ? */
 		ztest_test_fail();
 	}
 
-	/* whatever */
 	return 0;
+#endif
 }
 
 static void fill_multi_heap(void)
@@ -105,27 +86,15 @@ static void fill_multi_heap(void)
 		reg_map = &map[idx];
 
 		/* zephyr,memory-attr property not found. Skip it. */
-		if (reg_map->region.attr == DT_MEM_ARM_MPU_UNKNOWN) {
+		if (reg_map->region.attr == SMH_DT_MEM_UNKNOWN_DEFAULT) {
 			continue;
 		}
 
 		/* Convert MPU attributes to shared-multi-heap capabilities */
-		reg_map->region.attr = mpu_to_reg_attr(reg_map->region.attr);
+		reg_map->region.attr = dt_to_reg_attr(reg_map->region.attr);
 
 		/* Assume for now that phys == virt */
 		reg_map->p_addr = reg_map->region.addr;
-
-#if defined(CONFIG_MMU)
-		/*
-		 * For MMU-enabled platform we have to MMU-map the physical
-		 * address retrieved by DT at run-time because the SMH
-		 * framework expects virtual addresses.
-		 *
-		 * For MPU-enabled platform the code is assuming that the
-		 * region are configured at build-time, so no map is needed.
-		 */
-		smh_reg_map(&reg_map->region);
-#endif /* CONFIG_MMU */
 
 		shared_multi_heap_add(&reg_map->region, NULL);
 	}
