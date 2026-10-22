@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/regulator/tle927x.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -25,6 +27,27 @@
 			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			tle927x@0 {
+				compatible = "infineon,tle927x";
+				reg = <0>;
+				spi-max-frequency = <4000000>;
+				status = "okay";
+
+				vcc2 {
+					compatible = "infineon,tle927x-vcc2";
+					regulator-initial-mode = <TLE927X_VCC2_MODE_NORMAL_STOP>;
+				};
+			};
 		};
 
 #include "native_sim_misc.dtsi"
