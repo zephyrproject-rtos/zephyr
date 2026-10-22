@@ -5,7 +5,7 @@
  */
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
 	loopback;
+	status = "okay";
 };
