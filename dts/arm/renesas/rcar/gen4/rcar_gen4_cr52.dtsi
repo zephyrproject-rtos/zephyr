@@ -42,13 +42,11 @@
 			reg = <0x40040000 0x100000>;
 		};
 
-		gic: interrupt-controller@f0000000 {
-			compatible = "arm,gic-v3", "arm,gic";
-			reg = <0xf0000000 0x1000>,
-			      <0xf0100000 0x20000>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
+		scif3: serial@e6c50000 {
+			compatible = "renesas,rcar-scif";
+			reg = <0xe6c50000 0x64>;
+			current-speed = <115200>;
+			status = "disabled";
 		};
 
 		scif0: serial@e6e60000 {
@@ -58,11 +56,13 @@
 			status = "disabled";
 		};
 
-		scif3: serial@e6c50000 {
-			compatible = "renesas,rcar-scif";
-			reg = <0xe6c50000 0x64>;
-			current-speed = <115200>;
-			status = "disabled";
+		gic: interrupt-controller@f0000000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0xf0000000 0x1000>,
+			      <0xf0100000 0x20000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
 		};
 	};
 };

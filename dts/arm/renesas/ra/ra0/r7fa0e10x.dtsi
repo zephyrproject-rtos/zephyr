@@ -9,14 +9,6 @@
 
 / {
 	soc {
-		sram0: memory@20004000 {
-			compatible = "mmio-sram";
-			reg = <0x20004000 DT_SIZE_K(12)>;
-			ranges = <0x0 0x20004000 DT_SIZE_K(12)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
-
 		code_flash_ctrl: code-flash-ctrl {
 			compatible = "renesas,ra-flash-lp-controller";
 			ranges;
@@ -51,6 +43,14 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+		};
+
+		sram0: memory@20004000 {
+			compatible = "mmio-sram";
+			reg = <0x20004000 DT_SIZE_K(12)>;
+			ranges = <0x0 0x20004000 DT_SIZE_K(12)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 	};
 

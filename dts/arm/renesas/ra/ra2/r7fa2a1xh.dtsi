@@ -18,9 +18,21 @@
 
 / {
 	soc {
+		trng: trng {
+			compatible = "renesas,ra-trng";
+			status = "disabled";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(32)>;
+		};
+
+		wdt: wdt@40044200 {
+			compatible = "renesas,ra-wdt";
+			reg = <0x40044200 0x200>;
+			clocks = <&pclkb 0 0>;
+			status = "disabled";
 		};
 
 		spi1: spi@40072100 {
@@ -86,18 +98,6 @@
 			channel = <RA_PWM_CHANNEL_6>;
 			clocks = <&pclkd MSTPD 6>;
 			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		trng: trng {
-			compatible = "renesas,ra-trng";
-			status = "disabled";
-		};
-
-		wdt: wdt@40044200 {
-			compatible = "renesas,ra-wdt";
-			reg = <0x40044200 0x200>;
-			clocks = <&pclkb 0 0>;
 			status = "disabled";
 		};
 
