@@ -350,6 +350,19 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 	}
 }
 
+static void ocpp_session_set_resp(struct ocpp_info *ctx, struct ocpp_session *sh, int status,
+				  int *idtxn)
+{
+	k_mutex_lock(&ctx->ilock, K_FOREVER);
+	if (ocpp_session_is_valid(sh)) {
+		sh->resp_status = status;
+		if (idtxn != NULL) {
+			sh->idtxn = *idtxn;
+		}
+	}
+	k_mutex_unlock(&ctx->ilock);
+}
+
 static int ocpp_process_server_msg(struct ocpp_info *ctx)
 {
 	ocpp_msg_fp_t fn;
@@ -401,7 +414,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 		ret = fn(ui->recv_buf, &binfo);
 		if (ret == 0 && sh != NULL) {
-			sh->resp_status = binfo.status;
+			ocpp_session_set_resp(ctx, sh, binfo.status, NULL);
 			ctx->hb_sec = binfo.interval;
 		}
 		break;
@@ -417,7 +430,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 		ret = fn(ui->recv_buf, &idinfo);
 		if (ret == 0) {
-			sh->resp_status = idinfo.auth_status;
+			ocpp_session_set_resp(ctx, sh, idinfo.auth_status, NULL);
 		}
 		break;
 	}
@@ -430,8 +443,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 		ret = fn(ui->recv_buf, &idtxn, &idinfo);
 		if (ret == 0) {
-			sh->idtxn = idtxn;
-			sh->resp_status = idinfo.auth_status;
+			ocpp_session_set_resp(ctx, sh, idinfo.auth_status, &idtxn);
 		}
 		break;
 	}

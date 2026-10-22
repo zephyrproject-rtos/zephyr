@@ -440,6 +440,7 @@ int ocpp_remote_stop_transaction(struct ocpp_info *ctx,
 		sh = to_session(node);
 		if (sh->is_active &&
 		    sh->idtxn == idtxn) {
+			msg->usr.stop_charge.id_con = sh->idcon;
 			is_found = true;
 			break;
 		}
@@ -447,7 +448,6 @@ int ocpp_remote_stop_transaction(struct ocpp_info *ctx,
 	k_mutex_unlock(&ctx->ilock);
 
 	if (is_found) {
-		msg->usr.stop_charge.id_con = sh->idcon;
 		ret = k_msgq_put(ctx->msgq, msg, K_MSEC(100));
 		if (ret == 0) {
 			resp = "Accepted";
