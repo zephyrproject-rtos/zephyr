@@ -3066,6 +3066,26 @@ static int quic_context_ref(struct quic_context *ctx)
 	return ref + 1;
 }
 
+/*
+ * Take a reference only if the context is still alive. Its reference count
+ * drops to zero before its teardown takes contexts_lock, so finding it on the
+ * context list does not make it alive. Returns true when a reference was
+ * taken.
+ */
+static bool quic_context_ref_unless_zero(struct quic_context *ctx)
+{
+	atomic_val_t ref;
+
+	do {
+		ref = atomic_get(&ctx->refcount);
+		if (ref == 0) {
+			return false;
+		}
+	} while (!atomic_cas(&ctx->refcount, ref, ref + 1));
+
+	return true;
+}
+
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 static int quic_context_unref_debug(struct quic_context *ctx, const char *caller, int line)
 #define quic_context_unref(ctx) quic_context_unref_debug(ctx, __func__, __LINE__)
@@ -5931,6 +5951,12 @@ void quic_test_endpoint_unref(struct quic_endpoint *ep)
 {
 	(void)quic_endpoint_unref(ep);
 }
+
+/* Let tests drop a reference to a context that no socket stands for */
+void quic_test_context_unref(struct quic_context *ctx)
+{
+	(void)quic_context_unref(ctx);
+}
 #endif /* CONFIG_NET_TEST */
 
 static struct quic_context *quic_context_init(struct quic_context *ctx)
@@ -7074,21 +7100,33 @@ ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
  * Creates a new quic_context for the connection, migrates the endpoint
  * into it, and enqueues it in the listening context's pending.accept_q.
  */
-static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
+ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 {
 	struct quic_context *listen_ctx;
 	struct quic_context *child_ctx;
 	struct quic_stream *stream, *tmp;
 	struct quic_stream *queued_streams[ARRAY_SIZE(streams)];
 	size_t queued_stream_count = 0U;
+	size_t migrated = 0U;
 
 	/* Only server child endpoints should be enqueued */
 	if (!child_ep->is_server || child_ep->parent == NULL) {
 		return;
 	}
 
-	/* Find the listening context via the parent (listening) endpoint */
+	/* Find the listening context via the parent (listening) endpoint, and
+	 * hold it until the connection has been handed over: closing the
+	 * listening socket at the same time could release it otherwise.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
 	listen_ctx = quic_find_context(child_ep->parent);
+	if (listen_ctx != NULL && !quic_context_ref_unless_zero(listen_ctx)) {
+		listen_ctx = NULL;
+	}
+
+	k_mutex_unlock(&contexts_lock);
+
 	if (listen_ctx == NULL) {
 		NET_ERR("[EP:%p/%d] Cannot find listening context for parent ep %d [%p]",
 			child_ep, quic_get_by_ep(child_ep),
@@ -7101,6 +7139,7 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	if (child_ctx == NULL) {
 		NET_ERR("[EP:%p/%d] Cannot allocate context for accepted connection",
 			child_ep, quic_get_by_ep(child_ep));
+		quic_context_unref(listen_ctx);
 		return;
 	}
 
@@ -7136,6 +7175,10 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 		sys_slist_find_and_remove(&listen_ctx->streams, &stream->node);
 		sys_slist_prepend(&child_ctx->streams, &stream->node);
 
+		/* The stream holds a reference to its context */
+		quic_context_ref(child_ctx);
+		migrated++;
+
 		stream->conn = child_ctx;
 		stream->ep = child_ep;
 	}
@@ -7158,6 +7201,9 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 			if (stream->conn == listen_ctx) {
 				sys_slist_find_and_remove(&listen_ctx->streams, &stream->node);
 				sys_slist_prepend(&child_ctx->streams, &stream->node);
+
+				quic_context_ref(child_ctx);
+				migrated++;
 
 				stream->conn = child_ctx;
 				stream->ep = child_ep;
@@ -7193,6 +7239,16 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	/* Make the child context reachable to accept() */
 	k_fifo_put(&listen_ctx->pending.accept_q, child_ctx);
 	k_sem_give(&listen_ctx->pending.accept_sem);
+
+	/* The migrated streams no longer hold the listening context, and the
+	 * handover is done
+	 */
+	while (migrated > 0U) {
+		quic_context_unref(listen_ctx);
+		migrated--;
+	}
+
+	quic_context_unref(listen_ctx);
 
 	k_yield();
 }
