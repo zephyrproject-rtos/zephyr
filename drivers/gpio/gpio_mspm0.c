@@ -325,8 +325,14 @@ static int gpio_mspm0_port_get_direction(const struct device *port, gpio_port_pi
 	uint32_t doe = sys_read32(config->base + GPIO_DOE31_0);
 
 	map &= config->common.port_pin_mask;
-	*inputs = map & ~doe;
-	*outputs = map & doe;
+
+	if (inputs != NULL) {
+		*inputs = map & ~doe;
+	}
+
+	if (outputs != NULL) {
+		*outputs = map & doe;
+	}
 
 	return 0;
 }
