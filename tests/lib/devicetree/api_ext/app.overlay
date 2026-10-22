@@ -17,18 +17,6 @@
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
 
-		test_sram1: sram@20000000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x20000000 0x1000>;
-			zephyr,memory-region = "SRAM_REGION";
-		};
-
-		test_sram2: sram@20001000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x20001000 0x1000>;
-			zephyr,memory-region = "SRAM@REGION#2";
-		};
-
 		test_fixed_clk: test-fixed-clock {
 			compatible = "fixed-clock";
 			clock-frequency = <25000000>;
@@ -38,20 +26,6 @@
 		test_clk: test-clock {
 			compatible = "vnd,clock";
 			#clock-cells = <2>;
-		};
-
-		test_adc_1: adc@10002000 {
-			compatible = "vnd,adc";
-			reg = <0x10002000 0x1000>;
-			#io-channel-cells = <1>;
-			status = "okay";
-		};
-
-		test_adc_2: adc@10003000 {
-			compatible = "vnd,adc";
-			reg = <0x10003000 0x1000>;
-			#io-channel-cells = <1>;
-			status = "okay";
 		};
 
 		test_mbox: mbox {
@@ -77,20 +51,6 @@
 			mbox-names = "tx", "rx", "zero";
 		};
 
-		test_dac_1: dac@10004000 {
-			compatible = "vnd,dac";
-			reg = <0x10004000 0x1000>;
-			#io-channel-cells = <1>;
-			status = "okay";
-		};
-
-		test_dac_2: dac@10005000 {
-			compatible = "vnd,dac";
-			reg = <0x10005000 0x1000>;
-			#io-channel-cells = <1>;
-			status = "okay";
-		};
-
 		/* there should only be one of these */
 		test_dac_outputs: dac-outputs {
 			compatible = "vnd,dac-outputs";
@@ -110,6 +70,46 @@
 			hwlocks = <&test_hwspinlock 1>, <&test_hwspinlock 2>;
 			hwlock-names = "rd", "wr";
 			status = "okay";
+		};
+
+		test_adc_1: adc@10002000 {
+			compatible = "vnd,adc";
+			reg = <0x10002000 0x1000>;
+			#io-channel-cells = <1>;
+			status = "okay";
+		};
+
+		test_adc_2: adc@10003000 {
+			compatible = "vnd,adc";
+			reg = <0x10003000 0x1000>;
+			#io-channel-cells = <1>;
+			status = "okay";
+		};
+
+		test_dac_1: dac@10004000 {
+			compatible = "vnd,dac";
+			reg = <0x10004000 0x1000>;
+			#io-channel-cells = <1>;
+			status = "okay";
+		};
+
+		test_dac_2: dac@10005000 {
+			compatible = "vnd,dac";
+			reg = <0x10005000 0x1000>;
+			#io-channel-cells = <1>;
+			status = "okay";
+		};
+
+		test_sram1: sram@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20000000 0x1000>;
+			zephyr,memory-region = "SRAM_REGION";
+		};
+
+		test_sram2: sram@20001000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20001000 0x1000>;
+			zephyr,memory-region = "SRAM@REGION#2";
 		};
 	};
 };
