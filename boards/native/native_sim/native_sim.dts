@@ -140,6 +140,15 @@
 		reg = <0x100 4>;
 	};
 
+	i2c_host: i2c_host {
+		compatible = "zephyr,native-linux-i2c";
+		/* Change to the i2c-dev node of the host adapter */
+		path = "/dev/i2c-0";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	spi0: spi@200 {
 		status = "okay";
 		compatible = "zephyr,spi-emul-controller";
