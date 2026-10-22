@@ -60,6 +60,19 @@
 		compatible = "nxp,port-pinctrl";
 	};
 
+	/*
+	 * Devices that lose their state in Deep Sleep. Deep Sleep keeps PD_MAIN
+	 * in retention, but only part of its logic has retention flops: the
+	 * peripherals without them are reset when it leaves retention (LPUART1,
+	 * TPM, LPSPI and LPI2C, for example), while the PORT pin configuration
+	 * is kept.
+	 */
+	deep_sleep_off_domain: deep-sleep-off-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&deep_sleep>;
+	};
+
 	hw_params: hw-params {
 		compatible = "nxp,mcxw-hw-params";
 		nvmem-cells = <&ieee802154_eui64_ifr0>;
@@ -209,6 +222,7 @@
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		dmas = <&edma 2 34>, <&edma 3 33>;
 		dma-names = "tx", "rx";
+		power-domains = <&deep_sleep_off_domain>;
 		status = "disabled";
 	};
 
