@@ -31,6 +31,7 @@ tests:
       - esp32h2_devkitm
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
+      - esp32p4x_function_ev_board/esp32p4/hpcore
       - bgm220_ek4314a
       - sixg301_rb4407a
       - slwrb4180b
