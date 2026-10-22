@@ -82,38 +82,17 @@
 			device_type = "memory";
 		};
 
-		uart_dbg: uart@f0005000 {
-			compatible = "ns16550";
-			reg = <0xf0005000 0x1000>;
-			clock-frequency = <33333333>;
-			interrupts = <30 1>;
-			reg-shift = <2>;
-		};
+		creg_gpio: creg_gpio@f00014b0 {
+			compatible = "snps,creg-gpio";
+			reg = <0xf00014b0 0x4>;
+			ngpios = <12>;
+			bit-per-gpio = <2>;
+			off-val = <0>;
+			on-val = <2>;
 
-		uart0: uart@f0026000 {
-			compatible = "ns16550";
-			reg = <0xf0026000 0x100>;
-			clock-frequency = <33333333>;
-			interrupts = <46 1>;
-			reg-shift = <2>;
-			status = "disabled";
-		};
+			gpio-controller;
+			#gpio-cells = <2>;
 
-		uart1: uart@f0027000 {
-			compatible = "ns16550";
-			reg = <0xf0027000 0x100>;
-			clock-frequency = <33333333>;
-			interrupts = <47 1>;
-			reg-shift = <2>;
-			status = "disabled";
-		};
-
-		uart2: uart@f0028000 {
-			compatible = "ns16550";
-			reg = <0xf0028000 0x100>;
-			clock-frequency = <33333333>;
-			interrupts = <48 1>;
-			reg-shift = <2>;
 			status = "disabled";
 		};
 
@@ -129,17 +108,44 @@
 			status = "disabled";
 		};
 
-		creg_gpio: creg_gpio@f00014b0 {
-			compatible = "snps,creg-gpio";
-			reg = <0xf00014b0 0x4>;
-			ngpios = <12>;
-			bit-per-gpio = <2>;
-			off-val = <0>;
-			on-val = <2>;
+		uart_dbg: uart@f0005000 {
+			compatible = "ns16550";
+			reg = <0xf0005000 0x1000>;
+			clock-frequency = <33333333>;
+			interrupts = <30 1>;
+			reg-shift = <2>;
+		};
 
-			gpio-controller;
-			#gpio-cells = <2>;
+		spi0: spi@f0020000 {
+			compatible = "snps,designware-spi";
+			reg = <0xf0020000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <40 1>;
+			fifo-depth = <32>;
+			max-xfer-size = <16>;
+			status = "disabled";
+		};
 
+		spi1: spi@f0021000 {
+			compatible = "snps,designware-spi";
+			reg = <0xf0021000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <41 1>;
+			fifo-depth = <32>;
+			max-xfer-size = <16>;
+			status = "disabled";
+		};
+
+		spi2: spi@f0022000 {
+			compatible = "snps,designware-spi";
+			reg = <0xf0022000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <42 1>;
+			fifo-depth = <32>;
+			max-xfer-size = <16>;
 			status = "disabled";
 		};
 
@@ -176,36 +182,30 @@
 			status = "disabled";
 		};
 
-		spi0: spi@f0020000 {
-			compatible = "snps,designware-spi";
-			reg = <0xf0020000 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <40 1>;
-			fifo-depth = <32>;
-			max-xfer-size = <16>;
+		uart0: uart@f0026000 {
+			compatible = "ns16550";
+			reg = <0xf0026000 0x100>;
+			clock-frequency = <33333333>;
+			interrupts = <46 1>;
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
-		spi1: spi@f0021000 {
-			compatible = "snps,designware-spi";
-			reg = <0xf0021000 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <41 1>;
-			fifo-depth = <32>;
-			max-xfer-size = <16>;
+		uart1: uart@f0027000 {
+			compatible = "ns16550";
+			reg = <0xf0027000 0x100>;
+			clock-frequency = <33333333>;
+			interrupts = <47 1>;
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
-		spi2: spi@f0022000 {
-			compatible = "snps,designware-spi";
-			reg = <0xf0022000 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <42 1>;
-			fifo-depth = <32>;
-			max-xfer-size = <16>;
+		uart2: uart@f0028000 {
+			compatible = "ns16550";
+			reg = <0xf0028000 0x100>;
+			clock-frequency = <33333333>;
+			interrupts = <48 1>;
+			reg-shift = <2>;
 			status = "disabled";
 		};
 	};
