@@ -53,6 +53,13 @@ int iso_tx_register(struct bt_iso_chan *iso_chan);
 int iso_tx_unregister(struct bt_iso_chan *iso_chan);
 
 /**
+ * @brief Drop all TX registrations without waiting for pending buffers
+ *
+ * To be used after bt_disable(), where pending buffers will never be completed.
+ */
+void iso_tx_reset(void);
+
+/**
  * @brief Test if the provided stream has been configured for TX
  *
  * @param iso_chan The channel to test for TX support

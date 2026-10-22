@@ -269,6 +269,8 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		node_rx = sync->iso.node_rx_estab;
 		link_sync_estab = node_rx->hdr.link;
 		link_sync_lost = sync_iso->node_rx_lost.rx.hdr.link;
+		/* hdr.next aliases hdr.link; terminate the returned single-node list */
+		sync_iso->node_rx_lost.rx.hdr.link = NULL;
 
 		ll_rx_link_release(link_sync_lost);
 		ll_rx_link_release(link_sync_estab);
