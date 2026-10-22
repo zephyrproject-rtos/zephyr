@@ -309,6 +309,7 @@ static void adxl372_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	uint8_t status1 = data->status1;
 
 	if (data->sqe == NULL) {
+		data->fifo_full_irq = 0;
 		return;
 	}
 
@@ -427,6 +428,7 @@ void adxl372_stream_irq_handler(const struct device *dev)
 	uint64_t cycles;
 	int rc;
 	if (data->sqe == NULL) {
+		data->fifo_full_irq = 0;
 		return;
 	}
 
