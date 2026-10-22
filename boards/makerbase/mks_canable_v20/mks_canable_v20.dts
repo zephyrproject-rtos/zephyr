@@ -8,8 +8,8 @@
 #include <st/g4/stm32g431c(6-8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "Makerbase MKS CANable V2.0";
 	compatible = "makerbase,mks-canable-v20";
+	model = "Makerbase MKS CANable V2.0";
 
 	chosen {
 		zephyr,sram = &sram0;
