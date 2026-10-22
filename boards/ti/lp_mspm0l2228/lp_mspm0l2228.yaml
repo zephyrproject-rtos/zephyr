@@ -10,16 +10,16 @@ ram: 32
 flash: 256
 supported:
   - adc
-  - gpio
-  - pinctrl
-  - uart
-  - pwm
-  - i2c
-  - spi
-  - vref
   - counter
-  - vref
   - dma
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - rtc
+  - spi
   - trng
+  - uart
+  - vref
   - watchdog
 vendor: ti
