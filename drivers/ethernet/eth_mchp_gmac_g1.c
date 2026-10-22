@@ -287,7 +287,7 @@ static int gmac_queue_init(gmac_registers_t *gmac_regs, struct gmac_queue *queue
 	gmac_regs->GMAC_DCFGR =
 		/* Receive Buffer Size (defined in multiples of 64 bytes) */
 		GMAC_DCFGR_DRBS(CONFIG_NET_BUF_DATA_SIZE >> 6) | GMAC_DCFGR_RXBMS(3) |
-		GMAC_DCFGR_FBLDO_INCR4 | GMAC_DMA_QUEUE_FLAGS;
+		GMAC_DCFGR_TXCOEN_Msk | GMAC_DCFGR_FBLDO_INCR4 | GMAC_DMA_QUEUE_FLAGS;
 	gmac_regs->GMAC_IER = GMAC_INT_EN_FLAGS;
 
 	queue->err_rx_queue_frames_dropped = 0U;
