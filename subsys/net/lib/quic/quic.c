@@ -3154,7 +3154,14 @@ static int quic_context_unref(struct quic_context *ctx)
 		quic_stats_merge_endpoint(ctx, ep);
 		sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
 		quic_endpoint_send_connection_close(ep, 0, NULL);
-		released[released_count++] = ep;
+
+		/* The list reference is dropped once, by whoever takes it
+		 * first
+		 */
+		if (!ep->list_ref_dropped) {
+			ep->list_ref_dropped = true;
+			released[released_count++] = ep;
+		}
 
 		if (ctx->listen == ep) {
 			ctx->listen = NULL;
@@ -3162,7 +3169,11 @@ static int quic_context_unref(struct quic_context *ctx)
 	}
 
 	if (ctx->listen != NULL) {
-		released[released_count++] = ctx->listen;
+		if (!ctx->listen->list_ref_dropped) {
+			ctx->listen->list_ref_dropped = true;
+			released[released_count++] = ctx->listen;
+		}
+
 		ctx->listen = NULL;
 	}
 
@@ -3928,6 +3939,14 @@ static void quic_check_idle_timeouts(struct k_work *work)
 			continue;
 		}
 
+		/* The references left on an endpoint whose list reference is
+		 * gone belong to whoever is using it, and they drop them
+		 * themselves
+		 */
+		if (ep->list_ref_dropped) {
+			continue;
+		}
+
 		/* Skip handshake timeout for listening endpoints (server parent).
 		 * Listening endpoints don't perform handshakes, they just wait for
 		 * incoming connections. Only child endpoints (with parent != NULL)
@@ -3950,6 +3969,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 								    QUIC_ERROR_PROTOCOL_VIOLATION,
 								    "Handshake timeout");
 
+				ep->list_ref_dropped = true;
 				expired[expired_count++] = ep;
 				continue;
 			}
@@ -3983,6 +4003,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 				 ep, quic_get_by_ep(ep), idle_time);
 
 			/* Per RFC 9000: No CONNECTION_CLOSE is sent for idle timeout */
+			ep->list_ref_dropped = true;
 			expired[expired_count++] = ep;
 			continue;
 		}
@@ -3997,6 +4018,10 @@ static void quic_check_idle_timeouts(struct k_work *work)
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
 
+	/* Drop the reference held for the endpoint list. The endpoint stays
+	 * on the list: the teardown of its context unlinks it, or the last
+	 * unref does if it comes first.
+	 */
 	for (int i = 0; i < expired_count; i++) {
 		quic_endpoint_unref(expired[i]);
 	}
@@ -6531,14 +6556,15 @@ static int quic_client_endpoint_init_cids(struct quic_endpoint *ep,
 	return 0;
 }
 
-static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
+static bool quic_endpoint_on_context_list(const struct quic_endpoint *ep)
 {
+	/* Every context counts, also one whose reference count reached zero:
+	 * it is being released and its teardown, which runs once it gets
+	 * contexts_lock, unlinks the endpoint and drops the list reference
+	 * itself. An unused context has no endpoints.
+	 */
 	for (int i = 0; i < ARRAY_SIZE(contexts); i++) {
 		struct quic_endpoint *endp, *tmp;
-
-		if (!quic_context_is_used(&contexts[i])) {
-			continue;
-		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&contexts[i].endpoints, endp, tmp, node) {
 			if (endp == ep) {
@@ -6567,8 +6593,13 @@ ZTESTABLE_STATIC void quic_release_orphan_client_endpoints(const struct net_sock
 		struct quic_endpoint *ep = endpoints[i];
 		struct quic_endpoint *matched;
 
+		/* An endpoint that a context has let go of is not an orphan,
+		 * even when it is on no context: the references it still has
+		 * belong to whoever is using it, for example the receive path
+		 * in the middle of a packet, and they drop them themselves.
+		 */
 		if (ep == NULL || atomic_get(&ep->refcount) == 0 || ep->is_server ||
-		    ep->sock < 0) {
+		    ep->sock < 0 || ep->list_ref_dropped) {
 			continue;
 		}
 
@@ -6577,20 +6608,23 @@ ZTESTABLE_STATIC void quic_release_orphan_client_endpoints(const struct net_sock
 			continue;
 		}
 
-		if (quic_endpoint_on_active_context(ep)) {
+		if (quic_endpoint_on_context_list(ep)) {
 			continue;
 		}
 
+		ep->list_ref_dropped = true;
 		orphans[orphan_count++] = ep;
 	}
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
 
+	/* Drop the reference that was meant for the endpoint list, and only
+	 * that one. Dropping every reference would free the endpoint under
+	 * anyone still using it.
+	 */
 	for (int i = 0; i < orphan_count; i++) {
-		while (atomic_get(&orphans[i]->refcount) > 0) {
-			quic_endpoint_unref(orphans[i]);
-		}
+		quic_endpoint_unref(orphans[i]);
 	}
 }
 
