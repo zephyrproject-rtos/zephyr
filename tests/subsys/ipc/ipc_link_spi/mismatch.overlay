@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The peripheral runs another frame size than the controller, and both probe slowly */
+&ipc_peripheral {
+	mtu = <128>;
+	retransmit-timeout-ms = <1000>;
+};
+
+&ipc_controller {
+	retransmit-timeout-ms = <1000>;
+};
