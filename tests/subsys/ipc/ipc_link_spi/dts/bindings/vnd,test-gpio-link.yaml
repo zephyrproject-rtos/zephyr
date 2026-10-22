@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Test GPIO port whose pins are wires between two drivers in one image: a level written by one
+  is read by the other, and fires its edge interrupts.
+
+compatible: "vnd,test-gpio-link"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

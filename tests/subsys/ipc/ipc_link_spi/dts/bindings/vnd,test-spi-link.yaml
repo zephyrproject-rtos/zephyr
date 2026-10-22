@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Test SPI bus of a pair: a transfer on the controller bus runs against the transfer armed on
+  its peer, the peripheral bus.
+
+compatible: "vnd,test-spi-link"
+
+include: spi-controller.yaml
+
+properties:
+  peer:
+    type: phandle
+    description: The peripheral bus, only set on the controller bus.
