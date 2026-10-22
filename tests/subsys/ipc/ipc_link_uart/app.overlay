@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	uart_a: uart-a {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <115200>;
+		tx-fifo-size = <1024>;
+		rx-fifo-size = <1024>;
+
+		ipc_a: ipc-uart {
+			compatible = "zephyr,ipc-uart";
+			mtu = <256>;
+			retransmit-timeout-ms = <100>;
+		};
+	};
+
+	uart_b: uart-b {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <115200>;
+		tx-fifo-size = <1024>;
+		rx-fifo-size = <1024>;
+
+		ipc_b: ipc-uart {
+			compatible = "zephyr,ipc-uart";
+			mtu = <256>;
+			retransmit-timeout-ms = <100>;
+		};
+	};
+
+	uart-emul-link {
+		compatible = "zephyr,uart-emul-link";
+		uarts = <&uart_a &uart_b>;
+	};
+};
