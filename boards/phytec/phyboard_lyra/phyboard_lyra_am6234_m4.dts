@@ -10,8 +10,8 @@
 #include <ti/am62x_m4.dtsi>
 
 / {
-	model = "PHYTEC phyBOARD-Lyra AM62x M4";
 	compatible = "phytec,phyboard-lyra-am62xx-m4", "ti,am625";
+	model = "PHYTEC phyBOARD-Lyra AM62x M4";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -27,8 +27,8 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <400000000>;
+			status = "okay";
 		};
 	};
 
