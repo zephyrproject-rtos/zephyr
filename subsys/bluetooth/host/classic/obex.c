@@ -1767,7 +1767,7 @@ int bt_obex_server_register(struct bt_obex_server *server, const struct bt_uuid_
 		return -EALREADY;
 	}
 
-	if (!sys_slist_is_empty(&server->obex->_servers) && server->uuid == NULL) {
+	if (!sys_slist_is_empty(&server->obex->_servers) && uuid == NULL) {
 		LOG_ERR("UUID of server %p should not be NULL", server);
 		return -EINVAL;
 	}
