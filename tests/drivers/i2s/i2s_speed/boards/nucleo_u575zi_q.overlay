@@ -29,17 +29,17 @@
 &sai1_a {
 	pinctrl-0 = <&sai1_sck_a_pe5 &sai1_fs_a_pe4 &sai1_sd_a_pe6>;
 	pinctrl-names = "default";
-	status = "okay";
 	mclk-divider = "div-256";
 	fifo-threshold = "empty";
 	dma-names = "tx";
+	status = "okay";
 };
 
 &sai1_b {
 	pinctrl-0 = <&sai1_sck_b_pf8 &sai1_fs_b_pf9 &sai1_sd_b_pe3>;
 	pinctrl-names = "default";
-	status = "okay";
 	mclk-divider = "div-256";
 	fifo-threshold = "empty";
 	dma-names = "rx";
+	status = "okay";
 };
