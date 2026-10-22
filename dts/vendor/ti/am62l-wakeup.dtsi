@@ -43,17 +43,6 @@
 		status = "disabled";
 	};
 
-	wkup_i2c0: i2c@2b200000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x2b200000 0x100>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		power-domains = <&scmi_pds 57>;
-		clocks = <&scmi_clk 262>;
-		clock-names = "fck";
-		status = "disabled";
-	};
-
 	wkup_rtc0: rtc@2b1f0000 {
 		compatible = "ti,k3-rtc-counter";
 		reg = <0x2b1f0000 0x64>;
@@ -67,5 +56,16 @@
 			alarms-count = <2>;
 			status = "disabled";
 		};
+	};
+
+	wkup_i2c0: i2c@2b200000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x2b200000 0x100>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		power-domains = <&scmi_pds 57>;
+		clocks = <&scmi_clk 262>;
+		clock-names = "fck";
+		status = "disabled";
 	};
 };
