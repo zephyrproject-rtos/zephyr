@@ -180,11 +180,31 @@ out:
 	return ret;
 }
 
+/* Ports that cannot disconnect a pin leave it as an input instead. */
+static int rpu_gpio_disconnect(const struct gpio_dt_spec *spec)
+{
+	int ret;
+
+	ret = gpio_pin_configure_dt(spec, GPIO_DISCONNECTED);
+	if (ret == -ENOTSUP) {
+		ret = gpio_pin_configure_dt(spec, GPIO_INPUT);
+	}
+
+	return ret;
+}
+
 int rpu_irq_remove(struct gpio_callback *irq_callback_data)
 {
 	int ret;
 
-	ret = gpio_pin_configure_dt(&host_irq_spec, GPIO_DISCONNECTED);
+	/* Not every port disables the interrupt when the pin is reconfigured. */
+	ret = gpio_pin_interrupt_configure_dt(&host_irq_spec, GPIO_INT_DISABLE);
+	if (ret != 0) {
+		LOG_ERR("Failed to disable interrupt on host_irq pin %d", host_irq_spec.pin);
+		goto out;
+	}
+
+	ret = rpu_gpio_disconnect(&host_irq_spec);
 	if (ret) {
 		LOG_ERR("Failed to remove host_irq pin %d", host_irq_spec.pin);
 		goto out;
@@ -250,7 +270,7 @@ static int rpu_gpio_config_early(void)
 	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		LOG_ERR("IOVDD GPIO configuration failed...");
-		gpio_pin_configure_dt(&bucken_spec, GPIO_DISCONNECTED);
+		rpu_gpio_disconnect(&bucken_spec);
 		return ret;
 	}
 #endif
@@ -262,7 +282,7 @@ static int rpu_gpio_config_early(void)
 		ret = gpio_pin_configure_dt(&supply_spec, GPIO_OUTPUT_INACTIVE);
 		if (ret) {
 			LOG_ERR("SUPPLY GPIO configuration failed...");
-			gpio_pin_configure_dt(&supply_spec, GPIO_DISCONNECTED);
+			rpu_gpio_disconnect(&supply_spec);
 			return ret;
 		}
 	}
@@ -341,7 +361,7 @@ static int rpu_gpio_config(void)
 		ret = gpio_pin_configure_dt(&supply_spec, (GPIO_OUTPUT | GPIO_INPUT));
 		if (ret) {
 			LOG_ERR("SUPPLY GPIO configuration failed...");
-			gpio_pin_configure_dt(&supply_spec, GPIO_DISCONNECTED);
+			rpu_gpio_disconnect(&supply_spec);
 			return ret;
 		}
 	}
@@ -357,7 +377,7 @@ static int rpu_gpio_config(void)
 	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, (GPIO_OUTPUT | GPIO_INPUT));
 	if (ret) {
 		LOG_ERR("IOVDD GPIO configuration failed...");
-		gpio_pin_configure_dt(&bucken_spec, GPIO_DISCONNECTED);
+		rpu_gpio_disconnect(&bucken_spec);
 		return ret;
 	}
 #endif
@@ -371,14 +391,14 @@ static int rpu_gpio_remove(void)
 {
 	int ret;
 
-	ret = gpio_pin_configure_dt(&bucken_spec, GPIO_DISCONNECTED);
+	ret = rpu_gpio_disconnect(&bucken_spec);
 	if (ret) {
 		LOG_ERR("BUCKEN GPIO remove failed...");
 		return ret;
 	}
 
 #ifdef NRF70_IOVDD_GPIO
-	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, GPIO_DISCONNECTED);
+	ret = rpu_gpio_disconnect(&iovdd_ctrl_spec);
 	if (ret) {
 		LOG_ERR("IOVDD GPIO remove failed...");
 		return ret;
@@ -386,7 +406,7 @@ static int rpu_gpio_remove(void)
 #endif
 
 	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO)) {
-		ret = gpio_pin_configure_dt(&supply_spec, GPIO_DISCONNECTED);
+		ret = rpu_gpio_disconnect(&supply_spec);
 		if (ret) {
 			LOG_ERR("SUPPLY GPIO remove failed...");
 			return ret;
