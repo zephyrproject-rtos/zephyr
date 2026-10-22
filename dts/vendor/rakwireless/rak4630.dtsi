@@ -90,17 +90,16 @@
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lora: lora@0 {
 		compatible = "semtech,sx1262";
 		reg = <0>;
-		status = "disabled";
 		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 		busy-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		rx-enable-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
@@ -109,5 +108,6 @@
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
 		tcxo-power-startup-delay-ms = <5>;
 		spi-max-frequency = <1000000>;
+		status = "disabled";
 	};
 };
