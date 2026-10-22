@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2025 Sensry GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54l15dk_nrf54l15_cpuapp-pinctrl.dtsi"
+
+/* Define interface labels before including the shared shield devices. */
+sensry_i2c: &i2c22 {};
+
+sensry_spi: &spi21 {};
+
+sensry_pdm: &pdm21 {};
+
+#include "../sensry_sensor_addon.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,uart-mcumgr = &uart30;
+		zephyr,bt-mon-uart = &uart30;
+		zephyr,bt-c2h-uart = &uart30;
+	};
+
+	/* DK LEDs share SPI MISO (P2.09) and chip-select pins (P1.10/P1.14). */
+	leds {
+		status = "disabled";
+	};
+
+	/* The DK PWM LED also uses the BMI270 chip-select pin P1.10. */
+	pwmleds {
+		status = "disabled";
+	};
+};
+
+&gpio1 {
+	tpm-cs-hog {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "TPM CS inactive";
+	};
+};
+
+/* PWM20 defaults to P1.10, which the shield uses for BMI270 chip select. */
+&pwm20 {
+	status = "disabled";
+};
+
+/* P1.04/P1.05 belong to PDM; use the DK's VCOM0 console. */
+&uart20 {
+	status = "disabled";
+};
+
+&uart30 {
+	status = "okay";
+};
+
+/* Map the shield interfaces to the DK controllers and header pins. */
+&sensry_i2c {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c22_default>;
+	pinctrl-1 = <&i2c22_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&sensry_spi {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi21_default>;
+	pinctrl-1 = <&spi21_sleep>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio1 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+		   <&gpio1 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	/* Conservative timing for shared SPI over the DK header connections. */
+	rx-delay = <5>;
+};
+
+&sensry_pdm {
+	pinctrl-0 = <&pdm21_default>;
+	pinctrl-1 = <&pdm21_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-source = "PCLK32M_HFXO";
+};
+
+&imu {
+	spi-max-frequency = <1000000>;
+	spi-cs-setup-delay-ns = <10000>;
+	spi-cs-hold-delay-ns = <10000>;
+};
+
+&magnetometer {
+	spi-max-frequency = <1000000>;
+	spi-cs-setup-delay-ns = <10000>;
+	spi-cs-hold-delay-ns = <10000>;
+};
