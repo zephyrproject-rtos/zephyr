@@ -41,23 +41,23 @@
 		compatible = "pwm-leds";
 
 		seeed_xiao_cob_led_pwm_led_0: xiao_cob_pwm_led_0 {
-			status = "disabled";
 			label = "COB LED on D2";
+			status = "disabled";
 		};
 
 		seeed_xiao_cob_led_pwm_led_1: xiao_cob_pwm_led_1 {
-			status = "disabled";
 			label = "COB LED on D3";
+			status = "disabled";
 		};
 
 		seeed_xiao_cob_led_pwm_led_2: xiao_cob_pwm_led_2 {
-			status = "disabled";
 			label = "COB LED on D8";
+			status = "disabled";
 		};
 
 		seeed_xiao_cob_led_pwm_led_3: xiao_cob_pwm_led_3 {
-			status = "disabled";
 			label = "COB LED on D9";
+			status = "disabled";
 		};
 	};
 };

@@ -11,10 +11,10 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	abrobot_72x40: ssd1306@3c {
 		compatible = "sinowealth,sh1106";

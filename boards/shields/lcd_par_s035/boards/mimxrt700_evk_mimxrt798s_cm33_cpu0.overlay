@@ -8,7 +8,6 @@
 #include <zephyr/dt-bindings/display/panel.h>
 
 &zephyr_lcdif {
-	status = "okay";
 	clock-frequency = <279000000>;
 	wr-period = <14>;
 	wr-assert = <6>;
@@ -18,10 +17,11 @@
 	reset-gpios = <&gpio2 15 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&pinmux_lcdif_dbi>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &st7796s {
-	status = "okay";
 	mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
 	color-coding = "MIPI_DBI_MODE_RGB565";
+	status = "okay";
 };
