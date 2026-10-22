@@ -369,3 +369,45 @@ TLS Credentials
 ===============
 
 .. doxygengroup:: tls_credentials
+
+TLS Credentials On-Device Key Generation
+========================================
+
+A device can generate its own TLS private key with the PSA Crypto API and create a Certificate
+Signing Request (CSR) for it, so the private key never leaves the device.
+Enable the feature with :kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN`.
+It requires the protected storage backend of the TLS credentials,
+:kconfig:option:`CONFIG_TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE`.
+
+The key is a persistent, non-exportable ECDSA key on the P-256 or the P-384 curve, enabled with
+:kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN_SECP256R1` and
+:kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN_SECP384R1`.
+Its PSA key ID is allocated from the range that :file:`include/zephyr/psa/key_ids.h` reserves for
+this feature, and it is registered for the security tag as
+:c:enumerator:`TLS_CREDENTIAL_PRIVATE_KEY_PSA`.
+The protected storage backend keeps the registration after a reboot.
+The functions only use keys in the reserved range, so they cannot use or destroy the keys of other
+PSA users.
+A key in the reserved range that no security tag is registered for is destroyed when a new key is
+generated, and its key ID is used again.
+Such a key is left over, for example, after its registration was removed with
+:c:func:`tls_credential_delete`, which does not destroy the key.
+:c:func:`tls_credential_keygen_key_id_get` gives the key ID, so that the key can also sign outside
+of TLS, for example a JSON Web Token.
+The key ID is valid until the key is deleted.
+
+The device certificate is issued by a certificate authority for the CSR and installed for the same
+security tag as :c:enumerator:`TLS_CREDENTIAL_PUBLIC_CERTIFICATE`.
+The public key is exported as a SubjectPublicKeyInfo structure, so it can be compared with the
+SubjectPublicKeyInfo of the certificate.
+
+Note the following limitations:
+
+* :c:func:`tls_credential_keygen_delete` keeps the other credentials of the security tag, for
+  example the device certificate, which no longer matches a new key.
+* A TLS socket that is open keeps the key ID, so its next handshake fails after the key is deleted.
+* Do not add a :c:enumerator:`TLS_CREDENTIAL_PRIVATE_KEY` for a security tag that has a generated
+  key. A TLS socket cannot use two private keys for one security tag.
+* The keys are stored in the default PSA key location.
+
+.. doxygengroup:: tls_credentials_keygen
