@@ -70,6 +70,7 @@ _names = [
     'stm32flash',
     'sy1xx',
     'teensy',
+    'ti_k3_dfu',
     'trace32',
     'uf2',
     'wchisp',
