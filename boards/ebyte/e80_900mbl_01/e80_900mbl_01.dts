@@ -10,8 +10,8 @@
 #include <dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ebyte E80 Module Development Board (HF)";
 	compatible = "stm32f103";
+	model = "Ebyte E80 Module Development Board (HF)";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -94,13 +94,12 @@
 &spi1 {
 	pinctrl-0 = <&spi1_sck_master_pa5 &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioa 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	status = "okay";
 
 	lora0: lora@0 {
 		compatible = "semtech,lr1121";
-		status = "okay";
 		reg = <0>;
 		spi-max-frequency = <1000000>;
 		reset-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
@@ -118,6 +117,7 @@
 		tcxo-voltage = <1800>;
 		use-dcdc;
 		rx-boosted;
+		status = "okay";
 	};
 };
 
