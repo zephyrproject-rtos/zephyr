@@ -52,19 +52,19 @@
 };
 
 &peripheral {
-	mbox1_b: mbox@4230000 {
+	mbox2_b: mbox@2440000 {
 		compatible = "nxp,mbox-imx-mu";
-		reg = <0x4230000 0x4000>;
-		interrupts = <21 0>;
+		reg = <0x2440000 0x4000>;
+		interrupts = <22 0>;
 		rx-channels = <4>;
 		#mbox-cells = <1>;
 		status = "okay";
 	};
 
-	mbox2_b: mbox@2440000 {
+	mbox1_b: mbox@4230000 {
 		compatible = "nxp,mbox-imx-mu";
-		reg = <0x2440000 0x4000>;
-		interrupts = <22 0>;
+		reg = <0x4230000 0x4000>;
+		interrupts = <21 0>;
 		rx-channels = <4>;
 		#mbox-cells = <1>;
 		status = "okay";

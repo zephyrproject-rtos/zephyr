@@ -69,6 +69,127 @@
 	};
 
 	soc {
+		netc: ethernet {
+			compatible = "nxp,imx-netc";
+			ranges;
+			interrupts = <294 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			netc_switch: switch@4cc00000 {
+				compatible = "nxp,netc-switch";
+				reg = <0x4cc00000 0x40000>,
+				      <0x4ca02000 0x1000>;
+				reg-names = "base", "pfconfig";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				switch_port0: switch_port@0 {
+					compatible = "zephyr,dsa-port";
+					reg = <0>;
+					status = "disabled";
+				};
+
+				switch_port1: switch_port@1 {
+					compatible = "zephyr,dsa-port";
+					reg = <1>;
+					status = "disabled";
+				};
+
+				/* Parallel interface is muxed with enetc_psi0. */
+				switch_port2: switch_port@2 {
+					compatible = "zephyr,dsa-port";
+					reg = <2>;
+					status = "disabled";
+				};
+
+				/* Internal port */
+				switch_port3: switch_port@3 {
+					compatible = "zephyr,dsa-port";
+					reg = <3>;
+					ethernet = <&enetc_psi3>;
+					phy-connection-type = "internal";
+					dsa-tag-protocol = <DSA_TAG_PROTO_NETC>;
+					status = "disabled";
+				};
+			};
+
+			enetc_psi0: ethernet@4cc80000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cc80000 0x10000>,
+				      <0x4cb00000 0x1000>;
+				reg-names = "port", "pfconfig";
+				mac-index = <0>;
+				si-index = <0>;
+				status = "disabled";
+			};
+
+			enetc_psi1: ethernet@4ccc0000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4ccc0000 0x10000>,
+				      <0x4cb40000 0x1000>;
+				reg-names = "port", "pfconfig";
+				mac-index = <1>;
+				si-index = <1>;
+				status = "disabled";
+			};
+
+			enetc_psi2: ethernet@4cd00000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cd00000 0x10000>,
+				      <0x4cb80000 0x1000>;
+				reg-names = "port", "pfconfig";
+				mac-index = <2>;
+				si-index = <2>;
+				status = "disabled";
+			};
+
+			/* Internal port */
+			enetc_psi3: ethernet@4cd40000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cd40000 0x10000>,
+				      <0x4ca00000 0x1000>;
+				reg-names = "port", "pfconfig";
+				mac-index = <3>;
+				si-index = <3>;
+				phy-connection-type = "internal";
+				status = "disabled";
+			};
+
+			netc_ptp_clock0: ptp_clock@4cd80000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cd80000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			netc_ptp_clock1: ptp_clock@4cda0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cda0000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			netc_ptp_clock2: ptp_clock@4cdc0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cdc0000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			emdio: mdio@4cde0000 {
+				compatible = "nxp,imx-netc-emdio";
+				reg = <0x4cde0000 0x10000>,
+				      <0x4cbc0000 0x40000>;
+				reg-names = "basic", "pfconfig";
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		edma2: dma@42000000 {
 			compatible = "nxp,mcux-edma";
 			reg = <0x42000000 0x210000>;
@@ -111,6 +232,30 @@
 			status = "disabled";
 		};
 
+		tstmr2: timer@42480000 {
+			compatible = "nxp,tstmr";
+			reg = <0x42480000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
+		/* WDOG clocks:
+		 * 0 - ipg_clk  : IMX943_CLK_BUSWAKEUP
+		 * 1 - lpo_clk  : IMX943_CLK_32K
+		 * 2 - int_clk  : IMX943_CLK_BUSWAKEUP
+		 * 3 - ext_clk  : IMX943_CLK_24M
+		 */
+		wdog5: watchdog@424b0000 {
+			compatible = "nxp,wdog32";
+			reg = <0x424b0000 0x1000>;
+			interrupts = <92 0>;
+			clocks = <&scmi_clk IMX943_CLK_32K>;
+			clock-names = "clksrc1";
+			clk-source = <1>;
+			clk-divider = <1>;
+			status = "disabled";
+		};
+
 		lpi2c3: i2c@42530000 {
 			compatible = "nxp,lpi2c";
 			reg = <0x42530000 0x4000>;
@@ -132,20 +277,6 @@
 			interrupts = <68 0>;
 			clocks = <&scmi_clk IMX943_CLK_LPI2C4>;
 			zephyr,pm-device-runtime-auto;
-			status = "disabled";
-		};
-
-		mu11_a: mbox@42730000 {
-			compatible = "nxp,mbox-imx-mu";
-			reg = <0x42730000 DT_SIZE_K(64)>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		mu11_b: mbox@42740000 {
-			compatible = "nxp,mbox-imx-mu";
-			reg = <0x42740000 DT_SIZE_K(64)>;
-			#mbox-cells = <1>;
 			status = "disabled";
 		};
 
@@ -180,6 +311,55 @@
 			reg = <0x425a0000 DT_SIZE_K(64)>;
 			interrupts = <77 3>;
 			clocks = <&scmi_clk IMX943_CLK_LPUART6>;
+			status = "disabled";
+		};
+
+		flexio1: flexio@425c0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425c0000 DT_SIZE_K(4)>;
+			interrupts = <48 0>;
+			clocks = <&scmi_clk IMX943_CLK_FLEXIO1>;
+			status = "disabled";
+		};
+
+		flexio2: flexio@425d0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425d0000 DT_SIZE_K(4)>;
+			interrupts = <49 0>;
+			clocks = <&scmi_clk IMX943_CLK_FLEXIO2>;
+			status = "disabled";
+		};
+
+		i2s2: i2s@42650000 {
+			compatible = "nxp,mcux-i2s";
+			reg = <0x42650000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&scmi_clk IMX943_CLK_SAI2>;
+			interrupts = <101 0>;
+			nxp,tx-channel = <1>;
+			status = "disabled";
+		};
+
+		i2s3: i2s@42660000 {
+			compatible = "nxp,mcux-i2s";
+			reg = <0x42660000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&scmi_clk IMX943_CLK_SAI3>;
+			interrupts = <102 0>;
+			nxp,tx-channel = <1>;
+			status = "disabled";
+		};
+
+		i2s4: i2s@42670000 {
+			compatible = "nxp,mcux-i2s";
+			reg = <0x42670000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&scmi_clk IMX943_CLK_SAI4>;
+			interrupts = <103 0>;
+			nxp,tx-channel = <1>;
 			status = "disabled";
 		};
 
@@ -247,6 +427,44 @@
 			clocks = <&scmi_clk IMX943_CLK_LPI2C8>;
 			zephyr,pm-device-runtime-auto;
 			status = "disabled";
+		};
+
+		mu11_a: mbox@42730000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42730000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu11_b: mbox@42740000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42740000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		gpt_hw_timer2: gpt@428a0000 {
+			compatible = "nxp,gpt-hw-timer";
+			reg = <0x428a0000 0x4000>;
+			interrupts = <144 0>;
+			status = "disabled";
+		};
+
+		gpt_hw_timer3: gpt@428b0000 {
+			compatible = "nxp,gpt-hw-timer";
+			reg = <0x428b0000 0x4000>;
+			interrupts = <145 0>;
+			status = "disabled";
+		};
+
+		gpt4: gpt@428c0000 {
+			compatible = "nxp,imx-gpt";
+			reg = <0x428c0000 0x4000>;
+			interrupts = <146 0>;
+			gptfreq = <DT_FREQ_M(24)>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(24)>;
+			clocks = <&scmi_clk IMX943_CLK_GPT4>;
 		};
 
 		lpuart9: serial@42a50000 {
@@ -379,22 +597,6 @@
 			status = "disabled";
 		};
 
-		flexio1: flexio@425c0000 {
-			compatible = "nxp,flexio";
-			reg = <0x425c0000 DT_SIZE_K(4)>;
-			interrupts = <48 0>;
-			clocks = <&scmi_clk IMX943_CLK_FLEXIO1>;
-			status = "disabled";
-		};
-
-		flexio2: flexio@425d0000 {
-			compatible = "nxp,flexio";
-			reg = <0x425d0000 DT_SIZE_K(4)>;
-			interrupts = <49 0>;
-			clocks = <&scmi_clk IMX943_CLK_FLEXIO2>;
-			status = "disabled";
-		};
-
 		edma4: dma@42df0000 {
 			compatible = "nxp,mcux-edma";
 			reg = <0x42df0000 0x210000>;
@@ -420,66 +622,6 @@
 			dma-requests = <123>;
 			no-error-irq;
 			nxp,version = <5>;
-			status = "disabled";
-		};
-
-		i2s2: i2s@42650000 {
-			compatible = "nxp,mcux-i2s";
-			reg = <0x42650000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&scmi_clk IMX943_CLK_SAI2>;
-			interrupts = <101 0>;
-			nxp,tx-channel = <1>;
-			status = "disabled";
-		};
-
-		i2s3: i2s@42660000 {
-			compatible = "nxp,mcux-i2s";
-			reg = <0x42660000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&scmi_clk IMX943_CLK_SAI3>;
-			interrupts = <102 0>;
-			nxp,tx-channel = <1>;
-			status = "disabled";
-		};
-
-		i2s4: i2s@42670000 {
-			compatible = "nxp,mcux-i2s";
-			reg = <0x42670000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&scmi_clk IMX943_CLK_SAI4>;
-			interrupts = <103 0>;
-			nxp,tx-channel = <1>;
-			status = "disabled";
-		};
-
-		edma1: dma@44000000 {
-			compatible = "nxp,mcux-edma";
-			reg = <0x44000000 0x210000>;
-			interrupts = <230 0>, <231 0>,
-				     <232 0>, <233 0>,
-				     <234 0>, <235 0>,
-				     <236 0>, <237 0>,
-				     <238 0>, <239 0>,
-				     <240 0>, <241 0>,
-				     <242 0>, <243 0>,
-				     <244 0>, <245 0>,
-				     <246 0>, <247 0>,
-				     <248 0>, <249 0>,
-				     <250 0>, <251 0>,
-				     <252 0>, <253 0>,
-				     <254 0>, <255 0>,
-				     <256 0>, <257 0>,
-				     <258 0>, <259 0>,
-				     <260 0>, <261 0>;
-			#dma-cells = <2>;
-			dma-channels = <32>;
-			dma-requests = <32>;
-			no-error-irq;
-			nxp,version = <4>;
 			status = "disabled";
 		};
 
@@ -541,6 +683,40 @@
 			#gpio-cells = <2>;
 			ngpios = <28>;
 			gpio-reserved-ranges = <10 6>;
+			status = "disabled";
+		};
+
+		edma1: dma@44000000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x44000000 0x210000>;
+			interrupts = <230 0>, <231 0>,
+				     <232 0>, <233 0>,
+				     <234 0>, <235 0>,
+				     <236 0>, <237 0>,
+				     <238 0>, <239 0>,
+				     <240 0>, <241 0>,
+				     <242 0>, <243 0>,
+				     <244 0>, <245 0>,
+				     <246 0>, <247 0>,
+				     <248 0>, <249 0>,
+				     <250 0>, <251 0>,
+				     <252 0>, <253 0>,
+				     <254 0>, <255 0>,
+				     <256 0>, <257 0>,
+				     <258 0>, <259 0>,
+				     <260 0>, <261 0>;
+			#dma-cells = <2>;
+			dma-channels = <32>;
+			dma-requests = <32>;
+			no-error-irq;
+			nxp,version = <4>;
+			status = "disabled";
+		};
+
+		tstmr1: timer@442c0000 {
+			compatible = "nxp,tstmr";
+			reg = <0x442c0000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
 			status = "disabled";
 		};
 
@@ -607,6 +783,13 @@
 			status = "disabled";
 		};
 
+		gpt_hw_timer1: gpt@446f0000 {
+			compatible = "nxp,gpt-hw-timer";
+			reg = <0x446f0000 0x4000>;
+			interrupts = <39 0>;
+			status = "disabled";
+		};
+
 		mu7: mbox@44700000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x44700000 DT_SIZE_K(64)>;
@@ -631,172 +814,6 @@
 			#gpio-cells = <2>;
 			ngpios = <16>;
 			status = "disabled";
-		};
-
-		gpt_hw_timer1: gpt@446f0000 {
-			compatible = "nxp,gpt-hw-timer";
-			reg = <0x446f0000 0x4000>;
-			interrupts = <39 0>;
-			status = "disabled";
-		};
-
-		gpt_hw_timer2: gpt@428a0000 {
-			compatible = "nxp,gpt-hw-timer";
-			reg = <0x428a0000 0x4000>;
-			interrupts = <144 0>;
-			status = "disabled";
-		};
-
-		gpt_hw_timer3: gpt@428b0000 {
-			compatible = "nxp,gpt-hw-timer";
-			reg = <0x428b0000 0x4000>;
-			interrupts = <145 0>;
-			status = "disabled";
-		};
-
-		gpt4: gpt@428c0000 {
-			compatible = "nxp,imx-gpt";
-			reg = <0x428c0000 0x4000>;
-			interrupts = <146 0>;
-			gptfreq = <DT_FREQ_M(24)>;
-			low-freq = <DT_FREQ_K(32)>;
-			osc-freq = <DT_FREQ_M(24)>;
-			clocks = <&scmi_clk IMX943_CLK_GPT4>;
-		};
-
-		tstmr1: timer@442c0000 {
-			compatible = "nxp,tstmr";
-			reg = <0x442c0000 0x8>;
-			clock-frequency = <DT_FREQ_M(24)>;
-			status = "disabled";
-		};
-
-		tstmr2: timer@42480000 {
-			compatible = "nxp,tstmr";
-			reg = <0x42480000 0x8>;
-			clock-frequency = <DT_FREQ_M(24)>;
-			status = "disabled";
-		};
-
-		netc: ethernet {
-			compatible = "nxp,imx-netc";
-			ranges;
-			interrupts = <294 0>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			enetc_psi0: ethernet@4cc80000 {
-				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cc80000 0x10000>,
-				      <0x4cb00000 0x1000>;
-				reg-names = "port", "pfconfig";
-				mac-index = <0>;
-				si-index = <0>;
-				status = "disabled";
-			};
-
-			enetc_psi1: ethernet@4ccc0000 {
-				compatible = "nxp,imx-netc-psi";
-				reg = <0x4ccc0000 0x10000>,
-				      <0x4cb40000 0x1000>;
-				reg-names = "port", "pfconfig";
-				mac-index = <1>;
-				si-index = <1>;
-				status = "disabled";
-			};
-
-			enetc_psi2: ethernet@4cd00000 {
-				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cd00000 0x10000>,
-				      <0x4cb80000 0x1000>;
-				reg-names = "port", "pfconfig";
-				mac-index = <2>;
-				si-index = <2>;
-				status = "disabled";
-			};
-
-			/* Internal port */
-			enetc_psi3: ethernet@4cd40000 {
-				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cd40000 0x10000>,
-				      <0x4ca00000 0x1000>;
-				reg-names = "port", "pfconfig";
-				mac-index = <3>;
-				si-index = <3>;
-				phy-connection-type = "internal";
-				status = "disabled";
-			};
-
-			netc_ptp_clock0: ptp_clock@4cd80000 {
-				compatible = "nxp,netc-ptp-clock";
-				reg = <0x4cd80000 0x10000>;
-				clocks = <&scmi_clk IMX943_CLK_ENET>;
-				status = "disabled";
-			};
-
-			netc_ptp_clock1: ptp_clock@4cda0000 {
-				compatible = "nxp,netc-ptp-clock";
-				reg = <0x4cda0000 0x10000>;
-				clocks = <&scmi_clk IMX943_CLK_ENET>;
-				status = "disabled";
-			};
-
-			netc_ptp_clock2: ptp_clock@4cdc0000 {
-				compatible = "nxp,netc-ptp-clock";
-				reg = <0x4cdc0000 0x10000>;
-				clocks = <&scmi_clk IMX943_CLK_ENET>;
-				status = "disabled";
-			};
-
-			emdio: mdio@4cde0000 {
-				compatible = "nxp,imx-netc-emdio";
-				reg = <0x4cde0000 0x10000>,
-				      <0x4cbc0000 0x40000>;
-				reg-names = "basic", "pfconfig";
-				clocks = <&scmi_clk IMX943_CLK_ENET>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-
-			netc_switch: switch@4cc00000 {
-				compatible = "nxp,netc-switch";
-				reg = <0x4cc00000 0x40000>,
-				      <0x4ca02000 0x1000>;
-				reg-names = "base", "pfconfig";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				switch_port0: switch_port@0 {
-					compatible = "zephyr,dsa-port";
-					reg = <0>;
-					status = "disabled";
-				};
-
-				switch_port1: switch_port@1 {
-					compatible = "zephyr,dsa-port";
-					reg = <1>;
-					status = "disabled";
-				};
-
-				/* Parallel interface is muxed with enetc_psi0. */
-				switch_port2: switch_port@2 {
-					compatible = "zephyr,dsa-port";
-					reg = <2>;
-					status = "disabled";
-				};
-
-				/* Internal port */
-				switch_port3: switch_port@3 {
-					compatible = "zephyr,dsa-port";
-					reg = <3>;
-					ethernet = <&enetc_psi3>;
-					phy-connection-type = "internal";
-					dsa-tag-protocol = <DSA_TAG_PROTO_NETC>;
-					status = "disabled";
-				};
-			};
 		};
 
 		flexio3: flexio@4d100000 {
@@ -870,23 +887,6 @@
 			#mbox-cells = <1>;
 			status = "disabled";
 		};
-
-		/* WDOG clocks:
-		 * 0 - ipg_clk  : IMX943_CLK_BUSWAKEUP
-		 * 1 - lpo_clk  : IMX943_CLK_32K
-		 * 2 - int_clk  : IMX943_CLK_BUSWAKEUP
-		 * 3 - ext_clk  : IMX943_CLK_24M
-		 */
-		wdog5: watchdog@424b0000 {
-			compatible = "nxp,wdog32";
-			reg = <0x424b0000 0x1000>;
-			interrupts = <92 0>;
-			clocks = <&scmi_clk IMX943_CLK_32K>;
-			clock-names = "clksrc1";
-			clk-source = <1>;
-			clk-divider = <1>;
-			status = "disabled";
-		};
 	};
 
 	/* Define memory regions for IPC between m33s and m71 */
@@ -894,6 +894,14 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x87000000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "DRAM_M33S_M71_IPC0";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+	};
+
+	/* Define memory regions for IPC between m33s and m71 */
+	dram_m33s_m71_sh_mem: memory@87000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "DRAM_M33S_M71_SH_MEM";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
@@ -912,6 +920,14 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
+	/* Define memory regions for IPC between m70 and m71 */
+	dram_m70_m71_sh_mem: memory@87008000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87008000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "DRAM_M70_M71_SH_MEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+	};
+
 	dram_m70_m71_ipc1: memory3@8700c000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x8700c000 DT_SIZE_K(16)>;
@@ -927,34 +943,18 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
-	dram_m33s_m70_ipc1: memory5@87014000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x87014000 DT_SIZE_K(16)>;
-		zephyr,memory-region = "DRAM_M33S_M70_IPC1";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
-	};
-
-	/* Define memory regions for IPC between m33s and m71 */
-	dram_m33s_m71_sh_mem: memory@87000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x87000000 DT_SIZE_K(32)>;
-		zephyr,memory-region = "DRAM_M33S_M71_SH_MEM";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
-	};
-
-	/* Define memory regions for IPC between m70 and m71 */
-	dram_m70_m71_sh_mem: memory@87008000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x87008000 DT_SIZE_K(32)>;
-		zephyr,memory-region = "DRAM_M70_M71_SH_MEM";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
-	};
-
 	/* Define memory regions for IPC between m33s and m70 */
 	dram_m33s_m70_sh_mem: memory@87010000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x87010000 DT_SIZE_K(32)>;
 		zephyr,memory-region = "DRAM_M33S_M70_SH_MEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+	};
+
+	dram_m33s_m70_ipc1: memory5@87014000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87014000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "DRAM_M33S_M70_IPC1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 };

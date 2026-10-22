@@ -8,6 +8,15 @@
 
 / {
 	soc {
+		spi2: spi@400ac000 {
+			reg = <0x400ac000 0x88>;
+			interrupts = <65 3>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1030, 12)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		i2c2: i2c@400e6000 {
 			compatible = "nxp,kinetis-i2c";
 			reg = <0x400e6000 0x1000>;
@@ -16,15 +25,6 @@
 			#size-cells = <0>;
 			interrupts = <74 0>;
 			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1028, 6)>;
-			status = "disabled";
-		};
-
-		spi2: spi@400ac000 {
-			reg = <0x400ac000 0x88>;
-			interrupts = <65 3>;
-			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1030, 12)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			status = "disabled";
 		};
 
