@@ -67,12 +67,9 @@ static uint64_t mtime(void)
  * Free-running mtime counter plus an absolute mtimecmp compare: a COMPARE
  * backend. mtime is 64 bits wide. The generic core owns the tick accounting;
  * this driver only reads the counter and arms the comparator. The public
- * cycle counter is the raw mtime scaled by the DT divider, so it overrides
- * the core's default.
+ * cycle counter returns raw mtime through the core's default getters.
  */
 #define TIMER_CORE_BACKEND_COMPARE_ORDERED
-#define TIMER_CORE_HAVE_CYCLE_GET_32
-#define TIMER_CORE_HAVE_CYCLE_GET_64
 #define TIMER_CORE_COUNTER_WIDTH 64
 
 static inline uint64_t timer_driver_cycle_get(void)
@@ -100,16 +97,6 @@ static void timer_isr(const void *arg)
 	set_mtimecmp(UINT64_MAX);
 
 	timer_core_announce();
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return ((uint32_t)mtime()) << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER;
-}
-
-uint64_t sys_clock_cycle_get_64(void)
-{
-	return mtime() << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER;
 }
 
 static int sys_clock_driver_init(void)
