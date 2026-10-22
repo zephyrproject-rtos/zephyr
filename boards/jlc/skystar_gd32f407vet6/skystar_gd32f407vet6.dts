@@ -10,8 +10,8 @@
 #include "skystar_gd32f407vet6-pinctrl.dtsi"
 
 / {
-	model = "JLC SkyStar_GD32F407VET6";
 	compatible = "jlc,skystar_gd32f407vet6";
+	model = "JLC SkyStar_GD32F407VET6";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -54,20 +54,20 @@
 };
 
 &usart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timer1 {
-	status = "okay";
 	prescaler = <168>;
+	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&pwm2_default>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
