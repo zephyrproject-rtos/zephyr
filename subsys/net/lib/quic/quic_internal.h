@@ -1268,6 +1268,12 @@ __net_socket struct quic_context {
 	/** Error code to be passed to application when connection is closed. */
 	int error_code;
 
+	/** The connection was closed, by the peer or by its endpoint going
+	 * away. Reported as POLLHUP, whether or not streams are still waiting
+	 * to be accepted.
+	 */
+	bool closed;
+
 	/** Stream priority */
 	uint8_t stream_priority;
 

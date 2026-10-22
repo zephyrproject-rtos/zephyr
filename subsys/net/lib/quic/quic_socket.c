@@ -703,13 +703,16 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 		}
 	}
 
-	/* Report POLLHUP when the connection has been closed (no endpoints
-	 * remain). This allows upper layers (e.g. the HTTP server) to
-	 * immediately detect and clean up stale connections instead of
-	 * waiting for an inactivity timer. POLLHUP is always reported
-	 * regardless of the requested events, per POSIX semantics.
+	/* Report POLLHUP when the connection has been closed: no endpoints
+	 * remain, or the connection was closed while streams the peer opened
+	 * are still waiting to be accepted. Those make the socket readable
+	 * too, so the hang-up would otherwise not show until they are taken.
+	 * This allows upper layers (e.g. the HTTP server) to immediately
+	 * detect and clean up stale connections instead of waiting for an
+	 * inactivity timer. POLLHUP is always reported regardless of the
+	 * requested events, per POSIX semantics.
 	 */
-	if (quic_ctx_is_eof(ctx)) {
+	if (quic_ctx_is_eof(ctx) || (!ctx->is_listening && ctx->closed)) {
 		pfd->revents |= ZSOCK_POLLHUP;
 	}
 
