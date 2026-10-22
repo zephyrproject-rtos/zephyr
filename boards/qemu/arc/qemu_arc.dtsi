@@ -43,14 +43,14 @@
 	};
 
 	sram0: sram@80400000 {
-		device_type = "memory";
 		reg = <0x80400000 DT_SRAM_SIZE>;
+		device_type = "memory";
 	};
 
 	ns16550_uart0: uart@f0000000 {
 		compatible = "ns16550";
-		clock-frequency = <10000000>;
 		reg = <0xf0000000 0x400>;
+		clock-frequency = <10000000>;
 		current-speed = <115200>;
 		interrupt-parent = <&intc>;
 		interrupts = <24 1>;
@@ -59,8 +59,8 @@
 
 	ns16550_uart1: uart@f0002000 {
 		compatible = "ns16550";
-		clock-frequency = <10000000>;
 		reg = <0xf0002000 0x400>;
+		clock-frequency = <10000000>;
 		current-speed = <115200>;
 		interrupt-parent = <&intc>;
 		interrupts = <25 1>;
