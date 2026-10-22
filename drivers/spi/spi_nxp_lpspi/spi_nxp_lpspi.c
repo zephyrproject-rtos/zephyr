@@ -219,8 +219,6 @@ static inline void lpspi_end_xfer(const struct device *dev)
 	struct lpspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
-	spi_context_complete(ctx, dev, 0);
-
 #ifdef CONFIG_CPU_CORTEX_M
 	const struct lpspi_config *config = dev->config;
 	NVIC_ClearPendingIRQ(config->irqn);
@@ -231,7 +229,9 @@ static inline void lpspi_end_xfer(const struct device *dev)
 		/* don't need to wait for TCR since we are at end of xfer + in IRQ context */
 	}
 	spi_context_cs_control(ctx, false);
-	spi_context_release(&data->ctx, 0);
+
+	/* Last, as the caller may start the next transfer as soon as it is woken */
+	spi_context_complete(ctx, dev, 0);
 }
 
 static void lpspi_isr(const struct device *dev)
@@ -422,11 +422,17 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	base->IER |= LPSPI_IER_TDIE_MASK | LPSPI_IER_RDIE_MASK;
 
 	ret = spi_context_wait_for_completion(ctx);
-	if (ret >= 0) {
+	/* spi_context_complete() releases the lock of an asynchronous transfer, and
+	 * by now ctx may already belong to the next caller.
+	 */
+	if (asynchronous && ret >= 0) {
 		return ret;
 	}
 
 error:
+	/* Not from the ISR: the next caller could then take this caller's
+	 * completion from the shared semaphore.
+	 */
 	spi_context_release(ctx, ret);
 	return ret;
 }
