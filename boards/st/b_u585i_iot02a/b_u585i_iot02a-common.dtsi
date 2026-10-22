@@ -225,18 +225,6 @@
 		drdy-gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
 	};
 
-	ism330dhcx@6b {
-		compatible = "st,ism330dhcx";
-		reg = <0x6b>;
-		drdy-gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
-	};
-
-	lps22hh@5d {
-		compatible = "st,lps22hh";
-		reg = <0x5d>;
-		drdy-gpios = <&gpiog 2 GPIO_ACTIVE_HIGH>;
-	};
-
 	eeprom0: eeprom@56 {
 		compatible = "atmel,at24";
 		reg = <0x56>;
@@ -247,9 +235,21 @@
 		status = "okay";
 	};
 
+	lps22hh@5d {
+		compatible = "st,lps22hh";
+		reg = <0x5d>;
+		drdy-gpios = <&gpiog 2 GPIO_ACTIVE_HIGH>;
+	};
+
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
+	};
+
+	ism330dhcx@6b {
+		compatible = "st,ism330dhcx";
+		reg = <0x6b>;
+		drdy-gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
 	};
 };
 
