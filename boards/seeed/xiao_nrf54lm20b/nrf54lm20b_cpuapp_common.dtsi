@@ -30,8 +30,8 @@
 
 	boot_mode0: boot_mode@0 {
 		compatible = "zephyr,retention";
-		status = "okay";
 		reg = <0x0 0x1>;
+		status = "okay";
 	};
 };
 
@@ -56,8 +56,8 @@
 };
 
 &vregmain {
-	status = "okay";
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	status = "okay";
 };
 
 &vregusb {
@@ -150,16 +150,15 @@ zephyr_uhc0: &usbhs {
 #include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 &spi00 {
-	status = "okay";
 
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	py25q128: py25q128ha@0 {
 		compatible = "jedec,spi-nor";
-		status = "disabled";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		jedec-id = [85 20 18];
@@ -174,6 +173,7 @@ zephyr_uhc0: &usbhs {
 		use-fast-read;
 		hold-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		wp-gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+		status = "disabled";
 	};
 };
 

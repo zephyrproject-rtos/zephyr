@@ -20,8 +20,8 @@
 #include "seeed_xiao_connector.dtsi"
 
 / {
-	model = "Seeed XIAO STM32C5";
 	compatible = "seeed,xiao-stm32c5";
+	model = "Seeed XIAO STM32C5";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -135,29 +135,29 @@
 		/* TinyUF2 Bootloader: 32KB — DO NOT MODIFY */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "uf2-bootloader";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "uf2-bootloader";
 		};
 
 		/* Application slot: 488KB (aligned with UF2 layout) — DO NOT MODIFY */
 		slot0_partition: partition@8000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(488)>;
+			label = "image-0";
 		};
 
 		/* OTA slot: 480KB */
 		slot1_partition: partition@82000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00082000 DT_SIZE_K(480)>;
+			label = "image-1";
 		};
 
 		/* Storage: 24KB */
 		storage_partition: partition@fa000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000fa000 DT_SIZE_K(24)>;
+			label = "storage";
 		};
 	};
 };
