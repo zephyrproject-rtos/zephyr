@@ -1662,20 +1662,20 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 	atomic_set_bit_to(adv->flags, BT_ADV_LIMITED, param &&
 			  (param->timeout > 0 || param->num_events > 0));
 
+	/* With privacy the call is needed also when the set holds a valid RPA: it then only
+	 * restarts the RPA timer, which stops at a rotation while nothing uses an RPA.
+	 */
 	if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
 		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
-		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
-		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
-		     !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID))) {
+		    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+			atomic_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED);
 			err = bt_id_set_adv_private_addr(adv, adv->options);
 		}
 	} else {
 		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
 		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
 		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
-		     (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		      !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID)))) {
+		     IS_ENABLED(CONFIG_BT_PRIVACY))) {
 			err = bt_id_set_adv_private_addr(adv, adv->options);
 		}
 	}

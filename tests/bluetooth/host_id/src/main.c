@@ -947,6 +947,49 @@ static ZTEST(bt_id_public_api, test_adv_rpa_update_failure_legacy_api)
 		   "Stopping paused advertising leaked its connection");
 	zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
 }
+
+static size_t kept_rpa_calls;
+
+static bool rpa_expired_keep(struct bt_le_ext_adv *adv)
+{
+	ARG_UNUSED(adv);
+
+	kept_rpa_calls++;
+
+	return false;
+}
+
+static ZTEST(bt_id_public_api, test_adv_start_restarts_rpa_timer)
+{
+	static const struct bt_le_ext_adv_cb cb = {
+		.rpa_expired = rpa_expired_keep,
+	};
+	struct bt_le_ext_adv *adv;
+	struct bt_le_oob oob = {0};
+
+	zassert_ok(bt_le_set_rpa_timeout(1U), "Failed to set the RPA timeout");
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, &cb, &adv),
+		   "Failed to create the advertising set");
+
+	/* The forced rotation schedules the next one in 1 s, which stops the RPA timer since
+	 * nothing advertises. The set keeps its RPA in both.
+	 */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+	k_sleep(K_MSEC(1500));
+	zassert_equal(kept_rpa_calls, 2U, "Unexpected number of rpa_expired calls");
+
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+	k_sleep(K_MSEC(1500));
+	zassert_equal(kept_rpa_calls, 3U, "Starting the set did not restart the RPA timer");
+
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the advertising set");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+	zassert_ok(bt_le_set_rpa_timeout(CONFIG_BT_RPA_TIMEOUT),
+		   "Failed to restore the RPA timeout");
+	/* Reschedules the pending rotation with the restored timeout */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+}
 #endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
 #endif /* defined(CONFIG_TEST_HCI_EXT_ADV) */
 
