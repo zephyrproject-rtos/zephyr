@@ -816,15 +816,11 @@ static void eth_mchp_queue0_isr(const struct device *dev)
 
 	LOG_DBG("GMAC_ISR=0x%08x", isr);
 
-	if (isr & GMAC_ISR_RCOMP_Msk) {
+	if (isr & (GMAC_INT_RX_ERR_BITS | GMAC_ISR_RCOMP_Msk)) {
 		tail_desc = &rx_desc_list->buf_desc[rx_desc_list->tail];
 		LOG_DBG("rx.w1=0x%08x, tail=%d", tail_desc->status, rx_desc_list->tail);
 		dev_data->rx_queue = queue;
 		k_sem_give(&dev_data->rx_int_sem);
-	}
-
-	if ((isr & GMAC_INT_RX_ERR_BITS) != 0) {
-		queue->err_rx_queue_flushed_count++;
 	}
 
 	if (isr & GMAC_ISR_TCOMP_Msk) {
