@@ -12,6 +12,9 @@ zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_BACKEND_VOLATILE
 zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE
   tls_credentials_protected_storage.c
 )
+zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_KEYGEN
+  tls_credentials_keygen.c
+)
 zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_SHELL
   tls_credentials_shell.c
 )
