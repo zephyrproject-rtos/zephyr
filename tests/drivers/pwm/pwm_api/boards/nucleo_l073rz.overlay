@@ -15,8 +15,8 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch3_pb10>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

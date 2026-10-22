@@ -12,8 +12,8 @@
 
 &gpt32e6 {
 	pwm6: pwm {
-		status = "okay";
 		pinctrl-0 = <&gpt6_pins>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

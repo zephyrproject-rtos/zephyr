@@ -21,8 +21,8 @@
 };
 
 &epwm1 {
-	status = "okay";
 	prescaler = <19>;
 	pinctrl-0 = <&epwm1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
