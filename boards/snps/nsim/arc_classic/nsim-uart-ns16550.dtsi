@@ -11,6 +11,11 @@
 #endif
 
 / {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
 	uart0: uart@f0000000 {
 		compatible = "ns16550";
 		reg = <0xf0000000 0x400>;
@@ -19,10 +24,5 @@
 		interrupt-parent = <&intc>;
 		interrupts = <UART0_IRQ_NUM 1>;
 		reg-shift = <2>;
-	};
-
-	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
 	};
 };

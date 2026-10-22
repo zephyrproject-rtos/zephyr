@@ -6,30 +6,6 @@
 
 / {
 	soc {
-		i2c@f0004000 {
-			interrupts = <25 1>;
-		};
-
-		i2c@f0005000 {
-			interrupts = <26 1>;
-		};
-
-		uart@f0008000 {
-			interrupts = <29 1>;
-		};
-
-		uart@f0009000 {
-			interrupts = <30 1>;
-		};
-
-		uart@f000a000 {
-			interrupts = <31 1>;
-		};
-
-		gpio@f0002000 {
-			interrupts = <24 1>;
-		};
-
 		creg_gpio: creg_gpio@f0000014 {
 			compatible = "snps,creg-gpio";
 			reg = <0xf0000014 0x4>;
@@ -42,6 +18,18 @@
 			#gpio-cells = <2>;
 
 			status = "okay";
+		};
+
+		gpio@f0002000 {
+			interrupts = <24 1>;
+		};
+
+		i2c@f0004000 {
+			interrupts = <25 1>;
+		};
+
+		i2c@f0005000 {
+			interrupts = <26 1>;
 		};
 
 		spi@f0006000 {
@@ -65,6 +53,18 @@
 
 		spi@f0007000 {
 			interrupts = <28 1>;
+		};
+
+		uart@f0008000 {
+			interrupts = <29 1>;
+		};
+
+		uart@f0009000 {
+			interrupts = <30 1>;
+		};
+
+		uart@f000a000 {
+			interrupts = <31 1>;
 		};
 	};
 };

@@ -11,6 +11,11 @@
 #define DT_SRAM_SIZE		DT_SIZE_M(4)
 
 / {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
 	/* We are carving out of DRAM for a pseudo flash and sram region */
 	flash0: flash@80000000 {
 		compatible = "soc-nv-flash";
@@ -20,10 +25,5 @@
 	sram0: sram@80400000 {
 		reg = <0x80400000 DT_SRAM_SIZE>;
 		device_type = "memory";
-	};
-
-	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
 	};
 };
