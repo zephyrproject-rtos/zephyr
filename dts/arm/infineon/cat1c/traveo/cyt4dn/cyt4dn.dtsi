@@ -40,21 +40,6 @@
 		};
 	};
 
-	sram_m0plus: memory@28000800 {
-		compatible = "mmio-sram";
-		reg = <0x28000800 DT_SIZE_K(30)>;
-	};
-
-	sram_m7_0: memory@28008000 {
-		compatible = "mmio-sram";
-		reg = <0x28008000 DT_SIZE_K(224)>;
-	};
-
-	sram_m7_1: memory@28040000 {
-		compatible = "mmio-sram";
-		reg = <0x28040000 DT_SIZE_K(256)>;
-	};
-
 	soc {
 		cpuss_intc: interrupt-controller@40200000 {
 			compatible = "infineon,sysintc";
@@ -601,5 +586,20 @@
 			zephyr,memory-region = "M7_1_DTCM";
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 		};
+	};
+
+	sram_m0plus: memory@28000800 {
+		compatible = "mmio-sram";
+		reg = <0x28000800 DT_SIZE_K(30)>;
+	};
+
+	sram_m7_0: memory@28008000 {
+		compatible = "mmio-sram";
+		reg = <0x28008000 DT_SIZE_K(224)>;
+	};
+
+	sram_m7_1: memory@28040000 {
+		compatible = "mmio-sram";
+		reg = <0x28040000 DT_SIZE_K(256)>;
 	};
 };
