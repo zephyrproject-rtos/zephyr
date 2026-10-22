@@ -45,6 +45,13 @@
  * configure(), start() and set_source() return -EBUSY unless the device is
  * active. stop() returns 0 without accessing inactive hardware. get_rate()
  * reads the retained result from RAM even while suspended.
+ *
+ * If SUSPEND fails and its gate-clock rollback also fails, hardware-accessing
+ * APIs return -EIO until a subsequent PM transition successfully enables the
+ * gate again. The IRQ remains disabled while the hardware is unavailable.
+ *
+ * The driver holds the node's zephyr,disabling-power-states constraints while
+ * either measurement mode is running.
  */
 
 #define DT_DRV_COMPAT nxp_freqme
@@ -57,6 +64,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #include <fsl_freqme.h>
@@ -112,6 +120,9 @@ struct nxp_freqme_config {
 	uint8_t tar_srcs_count;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t irq_num;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool pm_device_constraints;
+#endif
 };
 
 enum nxp_freqme_state {
@@ -165,7 +176,39 @@ struct nxp_freqme_data {
 	bool hw_active;
 	/* A failed SUSPEND could not restore the gate clock. */
 	bool hw_failed;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool power_locked;
+#endif
 };
+
+static void nxp_freqme_power_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	const struct nxp_freqme_config *config = dev->config;
+	struct nxp_freqme_data *data = dev->data;
+
+	if (config->pm_device_constraints && !data->power_locked) {
+		pm_policy_device_power_lock_get(dev);
+		data->power_locked = true;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static void nxp_freqme_power_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct nxp_freqme_data *data = dev->data;
+
+	if (data->power_locked) {
+		pm_policy_device_power_lock_put(dev);
+		data->power_locked = false;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
 
 static bool nxp_freqme_is_active(const struct device *dev)
 {
@@ -541,6 +584,8 @@ static int nxp_freqme_start(const struct device *dev)
 		data->started = true;
 		FREQME_EnableContinuousMode(config->base, true);
 	}
+	/* Serialize policy-lock acquisition with the completion ISR. */
+	nxp_freqme_power_lock_get(dev);
 	FREQME_StartMeasurementCycle(config->base);
 	k_spin_unlock(&data->lock, key);
 	return 0;
@@ -563,6 +608,7 @@ static int nxp_freqme_stop(const struct device *dev)
 		FREQME_TerminateMeasurementCycle(config->base);
 		data->state = NXP_FREQME_STATE_CONFIGURED;
 	}
+	nxp_freqme_power_lock_put(dev);
 	k_spin_unlock(&data->lock, key);
 	return 0;
 }
@@ -766,6 +812,7 @@ static void nxp_freqme_isr(const struct device *dev)
 			}
 			/* Auto-disarm before the callback so it may restart. */
 			data->state = NXP_FREQME_STATE_CONFIGURED;
+			nxp_freqme_power_lock_put(dev);
 		}
 	} else {
 		if ((flags & (uint32_t)kFREQME_OverflowInterruptStatusFlag) != 0U) {
@@ -897,6 +944,7 @@ static void nxp_freqme_hw_resume(const struct device *dev)
 	}
 	if (data->started) {
 		data->state = NXP_FREQME_STATE_RUNNING;
+		nxp_freqme_power_lock_get(dev);
 		FREQME_EnableContinuousMode(config->base, true);
 		FREQME_StartMeasurementCycle(config->base);
 	}
@@ -965,6 +1013,11 @@ static int nxp_freqme_pm_action(const struct device *dev, enum pm_device_action 
 				LOG_ERR("%s: suspend rollback failed (%d)",
 					dev->name, restore_ret);
 			}
+			if (restore_ret != 0 || !data->started) {
+				nxp_freqme_power_lock_put(dev);
+			}
+		} else {
+			nxp_freqme_power_lock_put(dev);
 		}
 		k_spin_unlock(&data->lock, key);
 
@@ -1067,6 +1120,14 @@ static DEVICE_API(clock_monitor, nxp_freqme_api) = {
 #define NXP_FREQME_REF_NODE(inst) DT_INST_CHILD(inst, reference_sources)
 #define NXP_FREQME_TAR_NODE(inst) DT_INST_CHILD(inst, target_sources)
 
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#define NXP_FREQME_PM_DEVICE_CONSTRAINTS_INIT(inst)                            \
+	.pm_device_constraints =                                               \
+		DT_INST_NODE_HAS_PROP(inst, zephyr_disabling_power_states),
+#else
+#define NXP_FREQME_PM_DEVICE_CONSTRAINTS_INIT(inst)
+#endif
+
 #define NXP_FREQME_DEVICE_INIT(inst)                                           \
 	BUILD_ASSERT(DT_NODE_EXISTS(NXP_FREQME_REF_NODE(inst)),                \
 		     "nxp,freqme: missing reference-sources node");            \
@@ -1115,6 +1176,7 @@ static DEVICE_API(clock_monitor, nxp_freqme_api) = {
 			(uint8_t)ARRAY_SIZE(nxp_freqme_tar_srcs_##inst),       \
 		.irq_config_func = nxp_freqme_irq_cfg_##inst,                  \
 		.irq_num = DT_INST_IRQN(inst),                                \
+		NXP_FREQME_PM_DEVICE_CONSTRAINTS_INIT(inst)                    \
 	};                                                                     \
 	PM_DEVICE_DT_INST_DEFINE(inst, nxp_freqme_pm_action);                  \
 	DEVICE_DT_INST_DEFINE(inst, nxp_freqme_init,                           \
