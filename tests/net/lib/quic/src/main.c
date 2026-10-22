@@ -7585,6 +7585,15 @@ ZTEST(net_socket_quic, test_508_unused_stream_ids_stay_unopened)
 		      "Room claimed for more unused streams than can be kept");
 }
 
+static struct quic_endpoint *server_test_ep(void)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+
+	ep->is_server = true;
+
+	return ep;
+}
+
 ZTEST(net_socket_quic, test_519_listener_kept_by_its_connections_is_taken_over)
 {
 	static const char addr_str[] = "127.0.0.1:54364";
@@ -7634,6 +7643,52 @@ ZTEST(net_socket_quic, test_519_listener_kept_by_its_connections_is_taken_over)
 	/* Let the connection go */
 	quic_test_endpoint_unref(listener);
 	zexpect_equal(atomic_get(&listener->refcount), 0, "Listener not released");
+}
+
+ZTEST(net_socket_quic, test_520_accept_moves_stream_references)
+{
+	static struct quic_stream stream;
+	struct quic_context *child;
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+	atomic_val_t listen_ref;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54365");
+
+	/* A connection of the listener with a stream that arrived before the
+	 * connection was accepted. The stream holds a reference to the
+	 * context it is on, as quic_get_stream() takes one.
+	 */
+	ep = server_test_ep();
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&stream, ctx, ep, 0);
+	atomic_inc(&ctx->refcount);
+	listen_ref = atomic_get(&ctx->refcount);
+
+	quic_connection_accept_enqueue(ep);
+
+	child = k_fifo_get(&ctx->pending.accept_q, K_NO_WAIT);
+	zassert_not_null(child, "Connection not enqueued for accept");
+	zexpect_equal_ptr(stream.conn, child, "Stream not moved to the connection");
+
+	/* The reference moves with the stream */
+	zexpect_equal(atomic_get(&ctx->refcount), listen_ref - 1,
+		      "Listening context keeps the reference of a moved stream");
+	zexpect_equal(atomic_get(&child->refcount), 2,
+		      "Connection context has no reference for its stream");
+
+	(void)sys_slist_find_and_remove(&child->streams, &stream.node);
+	(void)sys_slist_find_and_remove(&child->endpoints, &ep->node);
+	k_sem_reset(&ctx->pending.accept_sem);
+	quic_test_context_unref(child);
+	quic_test_context_unref(child);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
