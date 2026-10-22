@@ -164,6 +164,14 @@
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
+	/* Hynitron CST816S Capacitive Touch Controller (400KHz) */
+	cst816s: cst816s@15 {
+		compatible = "hynitron,cst8xx";
+		reg = <0x15>;
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		rst-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	};
+
 	bma421: bma421@18 {
 		compatible = "bosch,bma4xx";
 		reg = <0x18>;
@@ -174,14 +182,6 @@
 	hrs3300: hrs3300@44 {
 		compatible = "tian-yi-he-xin-hrs3300";
 		reg = <0x44>;
-	};
-
-	/* Hynitron CST816S Capacitive Touch Controller (400KHz) */
-	cst816s: cst816s@15 {
-		compatible = "hynitron,cst8xx";
-		reg = <0x15>;
-		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
-		rst-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 	};
 };
 
