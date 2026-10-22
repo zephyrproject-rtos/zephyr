@@ -41,6 +41,10 @@
  * TURN_ON restores the selected INPUTMUX routes and any configured measurement
  * parameters after CORE-domain power loss. It leaves measurement stopped
  * and the peripheral gate closed.
+ *
+ * configure(), start() and set_source() return -EBUSY unless the device is
+ * active. stop() returns 0 without accessing inactive hardware. get_rate()
+ * reads the retained result from RAM even while suspended.
  */
 
 #define DT_DRV_COMPAT nxp_freqme
@@ -162,6 +166,15 @@ struct nxp_freqme_data {
 	/* A failed SUSPEND could not restore the gate clock. */
 	bool hw_failed;
 };
+
+static bool nxp_freqme_is_active(const struct device *dev)
+{
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+
+	return state == PM_DEVICE_STATE_ACTIVE;
+}
 
 /*
  * Convert a measurement window (ns) into the REF_SCALE power-of-two exponent.
@@ -432,7 +445,18 @@ static int nxp_freqme_configure(const struct device *dev,
 	 * set_source() callers return -EBUSY, so the clock queries and HAL
 	 * writes below run against a stable source pair outside the spinlock.
 	 */
+	if (!nxp_freqme_is_active(dev)) {
+		LOG_ERR("%s: device is not active", dev->name);
+		return -EBUSY;
+	}
+
 	key = k_spin_lock(&data->lock);
+	if (!data->hw_active) {
+		ret = data->hw_failed ? -EIO : -EBUSY;
+		k_spin_unlock(&data->lock, key);
+		LOG_ERR("%s: hardware is not active (%d)", dev->name, ret);
+		return ret;
+	}
 	if (data->state == NXP_FREQME_STATE_RUNNING ||
 	    data->state == NXP_FREQME_STATE_CONFIGURING) {
 		k_spin_unlock(&data->lock, key);
@@ -484,8 +508,20 @@ static int nxp_freqme_start(const struct device *dev)
 	const struct nxp_freqme_config *config = dev->config;
 	struct nxp_freqme_data *data = dev->data;
 	k_spinlock_key_t key;
+	int ret;
+
+	if (!nxp_freqme_is_active(dev)) {
+		LOG_ERR("%s: device is not active", dev->name);
+		return -EBUSY;
+	}
 
 	key = k_spin_lock(&data->lock);
+	if (!data->hw_active) {
+		ret = data->hw_failed ? -EIO : -EBUSY;
+		k_spin_unlock(&data->lock, key);
+		LOG_ERR("%s: hardware is not active (%d)", dev->name, ret);
+		return ret;
+	}
 	if (data->state == NXP_FREQME_STATE_RUNNING ||
 	    data->state == NXP_FREQME_STATE_CONFIGURING) {
 		k_spin_unlock(&data->lock, key);
@@ -516,9 +552,11 @@ static int nxp_freqme_stop(const struct device *dev)
 	struct nxp_freqme_data *data = dev->data;
 	k_spinlock_key_t key;
 
+	/* SUSPEND already stopped an inactive device; only clear software state. */
 	key = k_spin_lock(&data->lock);
 	data->started = false;
-	if (data->state == NXP_FREQME_STATE_RUNNING) {
+	if (data->state == NXP_FREQME_STATE_RUNNING && data->hw_active &&
+	    nxp_freqme_is_active(dev)) {
 		if (data->cfg.mode == CLOCK_MONITOR_MODE_WINDOW) {
 			FREQME_EnableContinuousMode(config->base, false);
 		}
@@ -570,6 +608,11 @@ static int nxp_freqme_set_source(const struct device *dev, uint32_t reference, u
 		return -EINVAL;
 	}
 
+	if (!nxp_freqme_is_active(dev)) {
+		LOG_ERR("%s: device is not active", dev->name);
+		return -EBUSY;
+	}
+
 	/* Resolve the requested cookies up front. An unknown cookie - including
 	 * one for the wrong axis, which simply isn't in that table - fails with
 	 * -EINVAL without touching hardware or state. -ENOTSUP is reserved by
@@ -586,6 +629,12 @@ static int nxp_freqme_set_source(const struct device *dev, uint32_t reference, u
 
 	/* Claim the transaction against the current selection. */
 	key = k_spin_lock(&data->lock);
+	if (!data->hw_active) {
+		ret = data->hw_failed ? -EIO : -EBUSY;
+		k_spin_unlock(&data->lock, key);
+		LOG_ERR("%s: hardware is not active (%d)", dev->name, ret);
+		return ret;
+	}
 	if (data->state == NXP_FREQME_STATE_RUNNING ||
 	    data->state == NXP_FREQME_STATE_CONFIGURING) {
 		k_spin_unlock(&data->lock, key);
