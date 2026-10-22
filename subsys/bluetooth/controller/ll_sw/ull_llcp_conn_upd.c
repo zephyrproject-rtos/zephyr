@@ -622,12 +622,16 @@ static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 		ctx->state = LP_CU_STATE_WAIT_INSTANT;
 		break;
 	case LP_CU_EVT_UNKNOWN:
+		/* CPR is over; release the collision state set when it was sent */
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		/* Unsupported in peer, so disable locally for this connection */
 		feature_unmask_features(conn, LL_FEAT_BIT_CONN_PARAM_REQ);
 		ctx->data.cu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		lp_cu_ntf_complete(conn, ctx, evt, param);
 		break;
 	case LP_CU_EVT_REJECT:
+		/* CPR is over; release the collision state set when it was sent */
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.cu.error = pdu->llctrl.reject_ext_ind.error_code;
 		lp_cu_ntf_complete(conn, ctx, evt, param);
 		break;
