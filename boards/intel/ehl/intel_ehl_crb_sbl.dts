@@ -21,8 +21,8 @@
 };
 
 / {
-	model = "intel_ehl_crb";
 	compatible = "intel,elkhart_lake_crb_sbl";
+	model = "intel_ehl_crb";
 
 	chosen {
 		zephyr,sram = &dram0;
