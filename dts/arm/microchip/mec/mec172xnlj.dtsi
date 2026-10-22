@@ -45,15 +45,6 @@
 		};
 	};
 
-	flash0: flash@c0000 {
-		reg = <0x000c0000 0x58000>;
-	};
-
-	sram0: memory@118000 {
-		compatible = "mmio-sram";
-		reg = <0x00118000 0x10000>;
-	};
-
 	soc {
 #include "mec172x_common.dtsi"
 
@@ -90,6 +81,15 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+	};
+
+	flash0: flash@c0000 {
+		reg = <0x000c0000 0x58000>;
+	};
+
+	sram0: memory@118000 {
+		compatible = "mmio-sram";
+		reg = <0x00118000 0x10000>;
 	};
 };
 

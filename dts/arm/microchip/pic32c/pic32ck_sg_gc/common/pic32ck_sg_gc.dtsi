@@ -28,6 +28,10 @@
 	};
 
 	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
 		nvmctrl: flash-controller@44004000 {
 			reg = <0x44004000 0x7c>;
 			ranges;
@@ -45,10 +49,6 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
-		};
-
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
 		};
 
 		clock: clock@44012000 {
