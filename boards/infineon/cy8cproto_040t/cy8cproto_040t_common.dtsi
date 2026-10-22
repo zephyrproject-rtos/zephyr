@@ -10,11 +10,11 @@
 
 uart0: &scb0 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 	clocks = <&peri_clk_div0>;
 	pinctrl-0 = <&p2_3_scb0_uart_tx &p2_2_scb0_uart_rx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &peri_clk_div0 {
