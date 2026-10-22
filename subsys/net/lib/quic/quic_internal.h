@@ -1598,5 +1598,9 @@ void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
 void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr);
 struct quic_endpoint *quic_test_endpoint_alloc(void);
 void quic_test_endpoint_unref(struct quic_endpoint *ep);
+void quic_test_context_unref(struct quic_context *ctx);
+void quic_test_stream_unref(struct quic_stream *stream);
+void quic_test_streams_lock(bool lock);
+void quic_connection_accept_enqueue(struct quic_endpoint *child_ep);
 
 #endif /* CONFIG_NET_TEST */

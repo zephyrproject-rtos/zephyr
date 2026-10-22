@@ -1804,6 +1804,10 @@ static int quic_connection_accept(struct quic_context *listen_ctx,
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
+		/* Streams moved to the connection before it was accepted hold
+		 * references to it, so release them with the connection.
+		 */
+		quic_ctx_drain_incoming_streams(child_ctx);
 		quic_context_unref(child_ctx);
 		return -ENOSPC;
 	}
