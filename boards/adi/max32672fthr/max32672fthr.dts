@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32672FTHR";
 	compatible = "adi,max32672fthr";
+	model = "Analog Devices MAX32672FTHR";
 
 	chosen {
 		zephyr,code-partition = &code_partition;
@@ -156,9 +156,9 @@
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1a_mosi_p0_15 &spi1a_miso_p0_14 &spi1a_sck_p0_16 &spi1a_ss0_p0_17>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc_counter {
@@ -167,9 +167,9 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
@@ -179,8 +179,8 @@
 
 		storage_partition: partition@f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0xf0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

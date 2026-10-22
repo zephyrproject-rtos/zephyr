@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "Analog Devices MAX32680EVKIT";
 	compatible = "adi,max32680evkit";
+	model = "Analog Devices MAX32680EVKIT";
 
 	chosen {
 		zephyr,code-partition = &code_partition;
@@ -76,10 +76,10 @@
 
 		st7735: st7735@0 {
 			compatible = "sitronix,st7735r";
-			mipi-max-frequency = <DT_FREQ_M(6)>;
-			mipi-mode = "MIPI_DBI_MODE_SPI_3WIRE";
 
 			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(6)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_3WIRE";
 			width = <130>;
 			height = <132>;
 			x-offset = <0>;
@@ -138,15 +138,15 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0a_scl_p0_10 &i2c0a_sda_p0_11>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1a_scl_p0_16 &i2c1a_sda_p0_17>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma0 {
@@ -158,9 +158,9 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0a_mosi_p0_5 &spi0a_miso_p0_6 &spi0a_sck_p0_7 &spi0a_ss0_p0_4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi0a_mosi_p0_5 {
@@ -172,10 +172,10 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0a_mosi_p0_5 &spi0a_miso_p0_6 &spi0a_sck_p0_7>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+	status = "okay";
 };
 
 &w1 {
@@ -189,9 +189,9 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
@@ -201,8 +201,8 @@
 
 		storage_partition: partition@70000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x70000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
