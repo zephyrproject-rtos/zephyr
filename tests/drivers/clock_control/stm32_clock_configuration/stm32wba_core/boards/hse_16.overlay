@@ -10,8 +10,8 @@
  */
 
 &clk_hse {
-	status = "okay";
 	hse-div2;
+	status = "okay";
 };
 
 &rcc {

@@ -10,19 +10,19 @@
  */
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
 };
 
 &cpusw {
-	status = "okay";
 	clocks = <&rcc STM32_SRC_HSE CPU_SEL(2)>;
 	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
 };
 
 &perck {
-	status = "okay";
 	clocks = <&rcc STM32_SRC_HSE PER_SEL(2)>;
+	status = "okay";
 };
 
 &rcc {
