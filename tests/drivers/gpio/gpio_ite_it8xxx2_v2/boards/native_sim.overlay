@@ -11,10 +11,10 @@
 / {
 	intc: interrupt-controller@f03f00 {
 		compatible = "vnd,intc";
+		reg = <0x00f03f00 0x0100>;
 		#address-cells = <0>;
 		#interrupt-cells = <2>;
 		interrupt-controller;
-		reg = <0x00f03f00 0x0100>;
 	};
 
 	gpioa: gpio@f01601 {
