@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Mikroe STM32 M4 Clicker";
 	compatible = "st,stm32f415rg";
+	model = "Mikroe STM32 M4 Clicker";
 
 	chosen {
 		zephyr,sram = &sram0;
