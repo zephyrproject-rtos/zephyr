@@ -591,7 +591,7 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 		 * one that is closed already, which is fine, so only an ID
 		 * past everything opened so far is taken as never created.
 		 */
-		if (conn != NULL && (stream_id >> 2) >= conn->stream_id_counter) {
+		if (conn != NULL && (stream_id >> 2) >= *quic_stream_id_counter(conn, stream_id)) {
 			NET_DBG("[EP:%p/%d] STOP_SENDING for stream %" PRIu64
 				" that was never opened",
 				ep, quic_get_by_ep(ep), stream_id);

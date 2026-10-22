@@ -7178,7 +7178,8 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	 * None has been opened on this connection.
 	 */
 	ep->is_server = true;
-	zassert_equal(ctx->stream_id_counter, 0, "Unexpected streams on a new context");
+	zassert_equal(ctx->stream_id_counter[0], 0, "Unexpected streams on a new context");
+	zassert_equal(ctx->stream_id_counter[1], 0, "Unexpected streams on a new context");
 
 	ret = stop_sending_for_stream(ep, ctx, 1);
 	zassert_equal(ret, -EPROTO,
@@ -7198,10 +7199,10 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	 */
 	ep = reset_test_ep(&test_ep_a);
 	ep->is_server = true;
-	ctx->stream_id_counter = 1;
+	ctx->stream_id_counter[0] = 1;
 	ret = stop_sending_for_stream(ep, ctx, 1);
 	zassert_true(ret >= 0, "STOP_SENDING for a closed stream must be ignored (%d)", ret);
-	ctx->stream_id_counter = 0;
+	ctx->stream_id_counter[0] = 0;
 
 	/* A stream of the peer that we do not know is not ours to judge
 	 * here either.

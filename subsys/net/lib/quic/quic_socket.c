@@ -80,7 +80,7 @@ static int quic_connection_init(struct quic_context *ctx,
 					&net_sin(remote_addr)->sin_addr));
 	}
 
-	ctx->stream_id_counter = 0ULL;
+	memset(ctx->stream_id_counter, 0, sizeof(ctx->stream_id_counter));
 	ctx->id = connection_ids++;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
@@ -2455,7 +2455,9 @@ int quic_connection_close(int sock)
 
 static uint64_t quic_stream_id_get(struct quic_stream *stream)
 {
-	return ((stream->conn->stream_id_counter++) << 2) | (uint64_t)stream->type;
+	uint64_t *counter = quic_stream_id_counter(stream->conn, stream->type);
+
+	return ((*counter)++ << 2) | (uint64_t)stream->type;
 }
 
 int quic_stream_open(int connection_sock,

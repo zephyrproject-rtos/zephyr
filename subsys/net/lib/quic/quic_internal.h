@@ -1257,8 +1257,13 @@ __net_socket struct quic_context {
 	bool stats_metadata_valid;
 #endif /* CONFIG_NET_STATISTICS_QUIC */
 
-	/** Stream id counter */
-	uint64_t stream_id_counter;
+	/** Sequence number of the next stream of our own, per direction:
+	 * index 0 for bidirectional and 1 for unidirectional streams. The
+	 * IDs of each stream type are used in order (RFC 9000 ch. 2.1), so
+	 * the two directions need their own count. Use
+	 * quic_stream_id_counter() to pick one.
+	 */
+	uint64_t stream_id_counter[2];
 
 	/** Error code to be passed to application when connection is closed. */
 	int error_code;
@@ -1272,6 +1277,15 @@ __net_socket struct quic_context {
 	/** Information whether this context is the listening one */
 	bool is_listening : 1;
 };
+
+/**
+ * The counter of our own streams of the direction of a stream ID or a
+ * stream type: bit 1 of either is set for a unidirectional stream.
+ */
+static inline uint64_t *quic_stream_id_counter(struct quic_context *ctx, uint64_t id_or_type)
+{
+	return &ctx->stream_id_counter[(id_or_type & 2U) != 0U ? 1 : 0];
+}
 
 #if defined(CONFIG_QUIC_STATS_HISTORY)
 struct quic_closed_context_stats {

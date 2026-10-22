@@ -7110,7 +7110,7 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 
 	/* Inherit the listening endpoint reference so stream getsockopt works */
 	child_ctx->listen = NULL;
-	child_ctx->stream_id_counter = 0ULL;
+	memset(child_ctx->stream_id_counter, 0, sizeof(child_ctx->stream_id_counter));
 	child_ctx->id = connection_ids++;
 	child_ctx->is_listening = false;
 	quic_stats_merge_endpoint(child_ctx, child_ep);
