@@ -646,6 +646,7 @@ static int cmd_l2cap_credits(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+#if defined(CONFIG_BT_TESTING)
 static void l2cap_br_echo_req(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
 {
 	bt_shell_print("Incoming ECHO REQ data identifier %u len %u", identifier, buf->len);
@@ -655,18 +656,24 @@ static void l2cap_br_echo_req(struct bt_conn *conn, uint8_t identifier, struct n
 	}
 }
 
-static void l2cap_br_echo_rsp(struct bt_conn *conn, struct net_buf *buf)
+static void l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
 {
-	bt_shell_print("Incoming ECHO RSP data len %u", buf->len);
+	bt_shell_print("Incoming ECHO RSP data identifier %u len %u", identifier, buf->len);
 
 	if (buf->len > 0) {
 		bt_shell_hexdump(buf->data, buf->len);
 	}
 }
 
+static void l2cap_br_echo_reject(struct bt_conn *conn, uint8_t identifier)
+{
+	bt_shell_print("ECHO REQ identifier %u rejected", identifier);
+}
+
 static struct bt_l2cap_br_echo_cb echo_cb = {
 	.req = l2cap_br_echo_req,
 	.rsp = l2cap_br_echo_rsp,
+	.reject = l2cap_br_echo_reject,
 };
 
 static int cmd_l2cap_echo_reg(const struct shell *sh, size_t argc, char *argv[])
@@ -699,6 +706,7 @@ static int cmd_l2cap_echo_req(const struct shell *sh, size_t argc, char *argv[])
 {
 	static uint8_t buf_data[DATA_BREDR_MTU];
 	int err, len = DATA_BREDR_MTU;
+	uint8_t identifier;
 	struct net_buf *buf;
 
 	len = strtoul(argv[1], NULL, 10);
@@ -718,12 +726,14 @@ static int cmd_l2cap_echo_req(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	net_buf_add_mem(buf, buf_data, len);
-	err = bt_l2cap_br_echo_req(default_conn, buf);
+	err = bt_l2cap_br_echo_req(default_conn, buf, &identifier);
 	if (err < 0) {
 		shell_error(sh, "Unable to send ECHO REQ: %d", err);
 		net_buf_unref(buf);
 		return -ENOEXEC;
 	}
+
+	shell_print(sh, "ECHO REQ identifier %u sent", identifier);
 
 	return 0;
 }
@@ -763,6 +773,7 @@ static int cmd_l2cap_echo_rsp(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_TESTING */
 
 static int cmd_discoverable(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -2095,6 +2106,7 @@ static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 	"<window: window in units of 0.625 ms> "                                                   \
 	"<type: 0 for standard, 1 for interlaced>]"
 
+#if defined(CONFIG_BT_TESTING)
 SHELL_STATIC_SUBCMD_SET_CREATE(echo_cmds,
 	SHELL_CMD_ARG(register, NULL, HELP_NONE, cmd_l2cap_echo_reg, 1, 0),
 	SHELL_CMD_ARG(unregister, NULL, HELP_NONE, cmd_l2cap_echo_unreg, 1, 0),
@@ -2102,6 +2114,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(echo_cmds,
 	SHELL_CMD_ARG(rsp, NULL, "<identifier> <length of data>", cmd_l2cap_echo_rsp, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
+#endif /* CONFIG_BT_TESTING */
 
 #if defined(CONFIG_BT_L2CAP_CONNLESS)
 SHELL_STATIC_SUBCMD_SET_CREATE(connless_cmds,
@@ -2126,7 +2139,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	SHELL_CMD_ARG(credits, NULL, HELP_NONE, cmd_l2cap_credits, 1, 0),
 #endif /* CONFIG_BT_L2CAP_RET_FC */
+#if defined(CONFIG_BT_TESTING)
 	SHELL_CMD(echo, &echo_cmds, "L2CAP BR ECHO commands", cmd_default_handler),
+#endif /* CONFIG_BT_TESTING */
 #if defined(CONFIG_BT_L2CAP_CONNLESS)
 	SHELL_CMD(connless, &connless_cmds, "L2CAP connectionless commands", cmd_default_handler),
 #endif /* CONFIG_BT_L2CAP_CONNLESS */

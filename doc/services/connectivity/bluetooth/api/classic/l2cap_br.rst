@@ -11,8 +11,12 @@ ECHO Request/Response
 
 The L2CAP ECHO feature allows testing the connection by sending ECHO requests and receiving ECHO
 responses.
-Applications can register callbacks to monitor ECHO packets and send ECHO data.
-The feature is enabled through the configuration option: :kconfig:option:`CONFIG_BT_CLASSIC`.
+The stack answers a received ECHO request with an ECHO response without data, unless an
+application callback handles the request.
+
+The API to send ECHO requests and responses and to register callbacks is intended for testing,
+such as qualification testing. It is enabled through the configuration options
+:kconfig:option:`CONFIG_BT_CLASSIC` and :kconfig:option:`CONFIG_BT_TESTING`.
 
 Registering ECHO Callbacks
 ==========================
@@ -24,17 +28,23 @@ structure:
 
    static void echo_req_cb(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
    {
-       /* Handle ECHO request */
+       /* Handle ECHO request, answer with bt_l2cap_br_echo_rsp() */
    }
 
-   static void echo_rsp_cb(struct bt_conn *conn, struct net_buf *buf)
+   static void echo_rsp_cb(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
    {
-       /* Handle ECHO response */
+       /* Handle ECHO response to the request with this identifier */
+   }
+
+   static void echo_reject_cb(struct bt_conn *conn, uint8_t identifier)
+   {
+       /* The request with this identifier has been rejected */
    }
 
    static struct bt_l2cap_br_echo_cb echo_cb = {
        .req = echo_req_cb,
        .rsp = echo_rsp_cb,
+       .reject = echo_reject_cb,
    };
 
    bt_l2cap_br_echo_cb_register(&echo_cb);
@@ -48,12 +58,16 @@ bytes reserved for the L2CAP header:
 .. code-block:: c
 
    struct net_buf *buf;
+   uint8_t identifier;
 
    buf = net_buf_alloc(&pool, K_FOREVER);
    net_buf_reserve(buf, BT_L2CAP_BR_ECHO_REQ_RESERVE);
    net_buf_add_mem(buf, data, data_len);
 
-   bt_l2cap_br_echo_req(conn, buf);
+   bt_l2cap_br_echo_req(conn, buf, &identifier);
+
+One ECHO request can be outstanding per ACL connection. The ``rsp`` or ``reject`` callback is
+called with the identifier returned by :c:func:`bt_l2cap_br_echo_req`.
 
 Sending ECHO Response
 =====================
@@ -69,7 +83,7 @@ To send an ECHO response (typically in response to a received ECHO request), all
    net_buf_reserve(buf, BT_L2CAP_BR_ECHO_RSP_RESERVE);
    net_buf_add_mem(buf, data, data_len);
 
-   bt_l2cap_br_echo_rsp(conn, buf);
+   bt_l2cap_br_echo_rsp(conn, identifier, buf);
 
 The identifier parameter must match the identifier from the received ECHO request to properly
 correlate the response with the request.

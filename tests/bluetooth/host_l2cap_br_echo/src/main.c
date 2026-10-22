@@ -41,9 +41,10 @@ static struct bt_conn *conn;
 static uint8_t info_ident;
 static uint32_t echo_rsp_count;
 
-static void echo_rsp_cb(struct bt_conn *rsp_conn, struct net_buf *buf)
+static void echo_rsp_cb(struct bt_conn *rsp_conn, uint8_t ident, struct net_buf *buf)
 {
 	ARG_UNUSED(rsp_conn);
+	ARG_UNUSED(ident);
 	ARG_UNUSED(buf);
 
 	echo_rsp_count++;
@@ -85,15 +86,17 @@ static struct net_buf *echo_buf(void)
 static uint8_t send_echo_req(void)
 {
 	struct net_buf *buf = alloc_echo_buf(&tx_pool);
+	uint8_t ident = 0U;
 	int err;
 
-	err = bt_l2cap_br_echo_req(conn, buf);
+	err = bt_l2cap_br_echo_req(conn, buf, &ident);
 	zassert_equal(err, 0, "err %d", err);
 
 	zassert_equal_ptr(sys_slist_peek_tail(&sig_chan()->_pdu_tx_queue), &buf->node);
 	zassert_equal(buf->data[L2CAP_HDR_SIZE], ECHO_REQ);
+	zassert_equal(buf->data[L2CAP_HDR_SIZE + 1U], ident);
 
-	return buf->data[L2CAP_HDR_SIZE + 1U];
+	return ident;
 }
 
 static void recv_sig(uint8_t code, uint8_t ident, const void *data, uint16_t len)
@@ -169,7 +172,7 @@ ZTEST(l2cap_br_echo, test_echo_req_buf_unchanged)
 	struct net_buf *buf = echo_buf();
 	int err;
 
-	err = bt_l2cap_br_echo_req(conn, buf);
+	err = bt_l2cap_br_echo_req(conn, buf, NULL);
 	zassert_equal(err, -EINVAL, "err %d", err);
 	check_unchanged(buf);
 
@@ -182,13 +185,13 @@ ZTEST(l2cap_br_echo, test_echo_req_not_pending)
 	struct net_buf *buf = echo_buf();
 	int err;
 
-	err = bt_l2cap_br_echo_req(conn, buf);
+	err = bt_l2cap_br_echo_req(conn, buf, NULL);
 	zassert_equal(err, -EINVAL, "err %d", err);
 	net_buf_unref(buf);
 
 	/* -EBUSY would mean the first request is still waiting for a response */
 	buf = echo_buf();
-	err = bt_l2cap_br_echo_req(conn, buf);
+	err = bt_l2cap_br_echo_req(conn, buf, NULL);
 	zassert_equal(err, -EINVAL, "err %d", err);
 	net_buf_unref(buf);
 }
@@ -226,7 +229,7 @@ ZTEST(l2cap_br_echo, test_echo_req_with_info_req)
 	recv_sig(INFO_RSP, info_ident, feat_mask_rsp, sizeof(feat_mask_rsp));
 
 	buf = alloc_echo_buf(&tx_pool);
-	err = bt_l2cap_br_echo_req(conn, buf);
+	err = bt_l2cap_br_echo_req(conn, buf, NULL);
 	zassert_equal(err, -EBUSY, "err %d", err);
 	net_buf_unref(buf);
 

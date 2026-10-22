@@ -5500,8 +5500,18 @@ static void l2cap_br_reject_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct
 	struct bt_l2cap_br_chan *chan;
 
 	if ((l2cap->echo_ident != 0U) && (ident == l2cap->echo_ident)) {
+		struct bt_l2cap_br_echo_cb *callback;
+
 		LOG_WRN("ECHO REQ rejected");
+		/* Cleared first so that the callbacks can send the next request */
 		l2cap_br_echo_clear(l2cap);
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
+			if (callback->reject != NULL) {
+				callback->reject(conn, ident);
+			}
+		}
+
 		return;
 	}
 
@@ -5515,20 +5525,47 @@ static void l2cap_br_reject_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct
 	} while (chan != NULL);
 }
 
+/* Answer an Echo Request without data, for when no application callback does */
+static void l2cap_br_send_echo_rsp(struct bt_conn *conn, uint8_t ident)
+{
+	struct bt_l2cap_sig_hdr *hdr;
+	struct net_buf *buf;
+
+	buf = l2cap_br_create_pdu(&br_sig_pool, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_ERR("No buffer for ECHO RSP");
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_ECHO_RSP;
+	hdr->ident = ident;
+	hdr->len = 0U;
+
+	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+}
+
 static void l2cap_br_echo_req(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_br_echo_cb *callback;
 	struct net_buf_simple_state state;
+	bool handled = false;
 
 	net_buf_simple_save(&buf->b, &state);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
-		if (callback->req) {
+		if (callback->req != NULL) {
 			callback->req(conn, ident, buf);
 			/* The next callback gets the data whatever this one pulled */
 			net_buf_simple_restore(&buf->b, &state);
+			/* The callback is to answer with bt_l2cap_br_echo_rsp() */
+			handled = true;
 		}
+	}
+
+	if (!handled) {
+		l2cap_br_send_echo_rsp(conn, ident);
 	}
 }
 
@@ -5551,7 +5588,7 @@ static void l2cap_br_echo_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
 		if (callback->rsp) {
-			callback->rsp(conn, buf);
+			callback->rsp(conn, ident, buf);
 			/* The next callback gets the data whatever this one pulled */
 			net_buf_simple_restore(&buf->b, &state);
 		}
@@ -7021,6 +7058,7 @@ void bt_l2cap_br_init(void)
 	}
 }
 
+#if defined(CONFIG_BT_TESTING)
 int bt_l2cap_br_echo_cb_register(struct bt_l2cap_br_echo_cb *cb)
 {
 	if (cb == NULL) {
@@ -7049,12 +7087,13 @@ int bt_l2cap_br_echo_cb_unregister(struct bt_l2cap_br_echo_cb *cb)
 	return 0;
 }
 
-int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
+int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf, uint8_t *identifier)
 {
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_br *l2cap;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct net_buf_simple_state state;
+	uint8_t ident;
 	int err;
 
 	if ((conn == NULL) || (buf == NULL)) {
@@ -7099,11 +7138,12 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 	hdr = net_buf_push(buf, sizeof(*hdr));
 
 	hdr->code = BT_L2CAP_ECHO_REQ;
-	hdr->ident = l2cap_br_get_ident();
+	ident = l2cap_br_get_ident();
+	hdr->ident = ident;
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
 	/* Set before sending, since the response can come before the send returns */
-	l2cap->echo_ident = hdr->ident;
+	l2cap->echo_ident = ident;
 	bt_work_reschedule(&l2cap->echo_rtx_work, L2CAP_BR_ECHO_TIMEOUT);
 
 	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
@@ -7114,6 +7154,10 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 		l2cap_br_echo_clear(l2cap);
 		net_buf_simple_restore(&buf->b, &state);
 		return err;
+	}
+
+	if (identifier != NULL) {
+		*identifier = ident;
 	}
 
 	return 0;
@@ -7172,6 +7216,7 @@ int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_bu
 
 	return err;
 }
+#endif /* CONFIG_BT_TESTING */
 
 #if defined(CONFIG_BT_L2CAP_CONNLESS)
 

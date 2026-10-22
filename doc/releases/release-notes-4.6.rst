@@ -63,6 +63,12 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Bluetooth
+
+  * Classic
+
+    * Added the ``reject`` callback to :c:struct:`bt_l2cap_br_echo_cb`.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

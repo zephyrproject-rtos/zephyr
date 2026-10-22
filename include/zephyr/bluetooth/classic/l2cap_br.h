@@ -43,6 +43,11 @@ extern "C" {
  * different modules of an application are interested in tracking the ECHO request/response
  * signaling packets. If a callback is not of interest for an instance, it may be set to NULL and
  * will as a consequence not be used for that instance.
+ *
+ * If no registered instance has a @ref bt_l2cap_br_echo_cb.req callback, the stack answers a
+ * received ECHO request itself with an ECHO response without data.
+ *
+ * @kconfig_dep{CONFIG_BT_CLASSIC,CONFIG_BT_TESTING}
  */
 struct bt_l2cap_br_echo_cb {
 	/**
@@ -53,19 +58,34 @@ struct bt_l2cap_br_echo_cb {
 	 *
 	 * @param conn The ACL connection object.
 	 * @param identifier The identifier of the ECHO request.
-	 * @param buf Received ECHO data, valid until the callback returns.
+	 * @param buf Received ECHO data.
 	 */
 	void (*req)(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf);
 
 	/**
 	 * @brief A ECHO response has been received.
 	 *
-	 * This callback notifies the application of a ECHO response has been received.
+	 * This callback notifies the application of a ECHO response to the outstanding ECHO
+	 * request has been received.
 	 *
 	 * @param conn The ACL connection object.
-	 * @param buf Received ECHO data, valid until the callback returns.
+	 * @param identifier The identifier of the ECHO request, as returned by
+	 *                   bt_l2cap_br_echo_req().
+	 * @param buf Received ECHO data.
 	 */
-	void (*rsp)(struct bt_conn *conn, struct net_buf *buf);
+	void (*rsp)(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf);
+
+	/**
+	 * @brief A ECHO request has been rejected.
+	 *
+	 * This callback notifies the application of the peer has answered the outstanding ECHO
+	 * request with a Command Reject.
+	 *
+	 * @param conn The ACL connection object.
+	 * @param identifier The identifier of the ECHO request, as returned by
+	 *                   bt_l2cap_br_echo_req().
+	 */
+	void (*reject)(struct bt_conn *conn, uint8_t identifier);
 
 	/** @internal Internally used field for list handling */
 	sys_snode_t _node;
@@ -76,10 +96,13 @@ struct bt_l2cap_br_echo_cb {
  *
  * Register callbacks to monitor the packets of L2CAP BR echo request/response.
  *
+ * @kconfig_dep{CONFIG_BT_CLASSIC,CONFIG_BT_TESTING}
+ *
  * @param cb Callback struct. Must point to memory that remains valid.
  *
  * @retval 0 Success.
- * @retval -EEXIST if @p cb was already registered.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -EEXIST If @p cb was already registered.
  */
 int bt_l2cap_br_echo_cb_register(struct bt_l2cap_br_echo_cb *cb);
 
@@ -88,11 +111,13 @@ int bt_l2cap_br_echo_cb_register(struct bt_l2cap_br_echo_cb *cb);
  *
  * Unregister callbacks that are used to monitor the packets of L2CAP BR echo request/response.
  *
+ * @kconfig_dep{CONFIG_BT_CLASSIC,CONFIG_BT_TESTING}
+ *
  * @param cb Callback struct point to memory that remains valid.
  *
  * @retval 0 Success.
  * @retval -EINVAL If @p cb is NULL.
- * @retval -ENOENT if @p cb was not registered.
+ * @retval -ENOENT If @p cb was not registered.
  */
 int bt_l2cap_br_echo_cb_unregister(struct bt_l2cap_br_echo_cb *cb);
 
@@ -110,22 +135,34 @@ int bt_l2cap_br_echo_cb_unregister(struct bt_l2cap_br_echo_cb *cb);
  * @brief Send ECHO data through ECHO request
  *
  * Send ECHO data through ECHO request. The application is required to have reserved
- * @ref BT_L2CAP_BR_ECHO_REQ_RESERVE bytes in the buffer before sending. On error, the
- * application still owns @p buf and gets it back unchanged.
+ * @ref BT_L2CAP_BR_ECHO_REQ_RESERVE bytes in the buffer before sending.
+ *
+ * One ECHO request can be outstanding per ACL connection. It ends when the response or a
+ * Command Reject is received, reported through the @ref bt_l2cap_br_echo_cb.rsp and
+ * @ref bt_l2cap_br_echo_cb.reject callbacks with the same identifier, or when it times out.
+ *
+ * @kconfig_dep{CONFIG_BT_CLASSIC,CONFIG_BT_TESTING}
  *
  * @param conn The ACL connection object.
  * @param buf Sending ECHO data.
+ * @param identifier Set to the identifier of the ECHO request on success. May be NULL.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 Success. The stack owns @p buf.
+ * @retval -EINVAL Invalid argument, or not enough headroom in @p buf.
+ * @retval -EMSGSIZE @p buf does not fit in the signaling MTU.
+ * @retval -ENOTCONN No signaling channel on @p conn.
+ * @retval -EBUSY An ECHO request is outstanding on @p conn.
+ * @return Other negative error code if sending failed. The caller still owns @p buf.
  */
-int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf);
+int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf, uint8_t *identifier);
 
 /**
  * @brief Send ECHO data through ECHO response
  *
  * Send ECHO data through ECHO response. The application is required to have reserved
- * @ref BT_L2CAP_BR_ECHO_RSP_RESERVE bytes in the buffer before sending. On error, the
- * application still owns @p buf and gets it back unchanged.
+ * @ref BT_L2CAP_BR_ECHO_RSP_RESERVE bytes in the buffer before sending.
+ *
+ * @kconfig_dep{CONFIG_BT_CLASSIC,CONFIG_BT_TESTING}
  *
  * @param conn The ACL connection object.
  * @param identifier The identifier of the ECHO request.

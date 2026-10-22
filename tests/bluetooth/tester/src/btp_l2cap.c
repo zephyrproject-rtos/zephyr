@@ -1241,7 +1241,7 @@ static uint8_t send_echo_req(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	net_buf_reserve(buf, BT_L2CAP_BR_ECHO_REQ_RESERVE);
 	net_buf_add_mem(buf, cp->data, data_len);
 
-	err = bt_l2cap_br_echo_req(conn, buf);
+	err = bt_l2cap_br_echo_req(conn, buf, NULL);
 	bt_conn_unref(conn);
 	if (err != 0) {
 		LOG_ERR("Unable to ECHO REQ: %d", -err);
@@ -1396,9 +1396,10 @@ static void l2cap_br_echo_req(struct bt_conn *conn, uint8_t identifier, struct n
 	}
 }
 
-static void l2cap_br_echo_rsp(struct bt_conn *conn, struct net_buf *buf)
+static void l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
 {
 	ARG_UNUSED(conn);
+	ARG_UNUSED(identifier);
 	ARG_UNUSED(buf);
 }
 

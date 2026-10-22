@@ -86,14 +86,14 @@ static void echo_req_1(struct bt_conn *acl, uint8_t ident, struct net_buf *buf)
 	record(&echo_log[1], ident, buf);
 }
 
-static void echo_rsp_0(struct bt_conn *acl, struct net_buf *buf)
+static void echo_rsp_0(struct bt_conn *acl, uint8_t ident, struct net_buf *buf)
 {
-	record(&echo_rsp_log[0], 0, buf);
+	record(&echo_rsp_log[0], ident, buf);
 }
 
-static void echo_rsp_1(struct bt_conn *acl, struct net_buf *buf)
+static void echo_rsp_1(struct bt_conn *acl, uint8_t ident, struct net_buf *buf)
 {
-	record(&echo_rsp_log[1], 0, buf);
+	record(&echo_rsp_log[1], ident, buf);
 }
 
 static struct bt_l2cap_br_echo_cb echo_cb[] = {
@@ -160,18 +160,21 @@ static struct bt_l2cap_br_chan *sig_chan(void)
 static uint8_t send_echo_req(void)
 {
 	struct net_buf *buf;
+	uint8_t ident;
 	int err;
 
 	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	zassert_not_null(buf);
 	net_buf_reserve(buf, BT_L2CAP_BR_ECHO_REQ_RESERVE);
 
-	err = bt_l2cap_br_echo_req(conn, buf);
+	err = bt_l2cap_br_echo_req(conn, buf, &ident);
 	zassert_equal(err, 0, "err %d", err);
 	zassert_equal_ptr(sys_slist_peek_tail(&sig_chan()->_pdu_tx_queue), &buf->node);
 
 	/* L2CAP header, then the signaling header code and identifier */
-	return buf->data[5];
+	zassert_equal(buf->data[5], ident);
+
+	return ident;
 }
 
 static void *setup(void)
@@ -251,7 +254,7 @@ ZTEST(l2cap_br_sig, test_echo_rsp)
 
 	ARRAY_FOR_EACH_PTR(echo_rsp_log, rec) {
 		zassert_equal(rec->count, 1);
-		check(rec, 0, 0, "pq");
+		check(rec, 0, ident, "pq");
 	}
 }
 
