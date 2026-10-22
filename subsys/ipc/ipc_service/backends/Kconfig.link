@@ -82,3 +82,16 @@ module-help = Sets log level for the IPC link backend
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # IPC_SERVICE_BACKEND_LINK
+
+config IPC_SERVICE_BACKEND_LINK_UART
+	bool "IPC link transport over a UART"
+	default y
+	depends on DT_HAS_ZEPHYR_IPC_UART_ENABLED
+	depends on SERIAL
+	depends on UART_ASYNC_API || UART_INTERRUPT_DRIVEN
+	select IPC_SERVICE_BACKEND_LINK
+	select COBS
+	help
+	  IPC service instances over a UART, COBS-framed. Uses the
+	  asynchronous UART API when enabled, the interrupt-driven API
+	  otherwise.
