@@ -26,18 +26,18 @@
 
 ctimer0_pwm: &ctimer0 {
 	compatible = "nxp,ctimer-pwm";
-	status = "okay";
 	pinctrl-0 = <&pinmux_ctimer0_pwm>;
 	pinctrl-names = "default";
 	#pwm-cells = <3>;
+	status = "okay";
 };
 
 ctimer1_pwm: &ctimer1 {
 	compatible = "nxp,ctimer-pwm";
-	status = "okay";
 	pinctrl-0 = <&pinmux_ctimer1_pwm>;
 	pinctrl-names = "default";
 	#pwm-cells = <3>;
+	status = "okay";
 };
 
 / {
