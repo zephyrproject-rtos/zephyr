@@ -165,6 +165,7 @@ enum {
 
 	/* Retransmission and flow control flags*/
 	L2CAP_FLAG_RET_TIMER,   /* Retransmission timer is working */
+	L2CAP_FLAG_RET_LOST,    /* Channel lost to MaxTransmit */
 
 	/* Receiving S-frame/I-frame flags */
 	L2CAP_FLAG_RECV_FRAME_P,         /* Poll (P) flag of received frame */
@@ -1531,6 +1532,12 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 	struct bt_l2cap_br_chan *br_chan =
 		CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
+	/* A lost channel is closed: nothing more is sent on it */
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_LOST)) {
+		lower_data_ready(br_chan);
+		return NULL;
+	}
+
 	if (br_chan->_pdu_buf && bt_buf_has_view(br_chan->_pdu_buf)) {
 		LOG_ERR("already have view on %p", br_chan->_pdu_buf);
 		return NULL;
@@ -1791,6 +1798,7 @@ send_i_frame:
 				 * to the CLOSED state and appropriate action shall be taken to
 				 * report this to the upper layers.
 				 */
+				atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_LOST);
 				bt_l2cap_br_chan_disconnect(&br_chan->chan);
 				net_buf_unref(send_buf);
 				return NULL;
