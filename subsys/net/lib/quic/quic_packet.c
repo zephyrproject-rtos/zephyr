@@ -204,6 +204,51 @@ ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
  *   0x02 (LEN): Length field present
  *   0x01 (FIN): Final frame of stream
  */
+/* How many sequence numbers past the base a window keeps track of */
+#define STREAM_SEQ_WINDOW_SIZE 64U
+
+/* Tell whether a peer-initiated stream with this sequence number has been
+ * opened already.
+ */
+static bool stream_seq_was_opened(const struct quic_stream_seq_window *win, uint64_t seq)
+{
+	if (seq < win->base) {
+		return true;
+	}
+
+	if (seq - win->base >= STREAM_SEQ_WINDOW_SIZE) {
+		return false;
+	}
+
+	return (win->mask & BIT64(seq - win->base)) != 0U;
+}
+
+static void stream_seq_mark_opened(struct quic_stream_seq_window *win, uint64_t seq)
+{
+	if (seq < win->base) {
+		return;
+	}
+
+	if (seq - win->base >= STREAM_SEQ_WINDOW_SIZE) {
+		/* The peer is too far ahead for the window to keep the
+		 * numbers in between. Move the window up: numbers that drop
+		 * out of it count as opened, so a stream the peer skipped
+		 * that far cannot be opened later.
+		 */
+		uint64_t shift = seq - win->base - (STREAM_SEQ_WINDOW_SIZE - 1U);
+
+		win->mask = (shift >= STREAM_SEQ_WINDOW_SIZE) ? 0U : (win->mask >> shift);
+		win->base += shift;
+	}
+
+	win->mask |= BIT64(seq - win->base);
+
+	while ((win->mask & 1U) != 0U) {
+		win->mask >>= 1;
+		win->base++;
+	}
+}
+
 static int handle_stream_frame(struct quic_endpoint *ep,
 			       const uint8_t *buf, size_t len,
 			       size_t *consumed,
@@ -272,6 +317,27 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	/* Find or create the stream */
 	stream = quic_find_stream(conn, ep, stream_id);
 	if (stream == NULL) {
+		bool local_init = ((stream_id & 1U) != 0U) == ep->is_server;
+		struct quic_stream_seq_window *opened =
+			((stream_id & 2U) == 0U) ? &ep->rx_sl.opened_bidi : &ep->rx_sl.opened_uni;
+
+		/* A stream that is not found can be one that was closed
+		 * already, and the frame a late one, for example a FIN that
+		 * crossed our STOP_SENDING. All its data was received or is
+		 * not wanted any more, so the frame is discarded (RFC 9000
+		 * ch. 3.2) instead of opening the stream again. Stream IDs
+		 * are used in order (ch. 2.1), so a stream of ours with an ID
+		 * below the next one we would open was opened before.
+		 */
+		if ((local_init && (stream_id >> 2) < conn->stream_id_counter) ||
+		    (!local_init && stream_seq_was_opened(opened, stream_id >> 2))) {
+			NET_DBG("[EP:%p/%d] STREAM frame for closed stream %" PRIu64 " ignored",
+				ep, quic_get_by_ep(ep), stream_id);
+			*consumed = pos + data_len;
+
+			return pos + data_len;
+		}
+
 		/*
 		 * This is a new peer-initiated stream. Before allocating a slot,
 		 * verify the peer has not exceeded the stream limit we advertised.
@@ -340,6 +406,10 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 			NET_DBG("[CO:%p/%d] Failed to create stream %" PRIu64,
 				conn, quic_get_by_conn(conn), stream_id);
 			return -ENOMEM;
+		}
+
+		if (!local_init) {
+			stream_seq_mark_opened(opened, stream_id >> 2);
 		}
 
 		sys_slist_find_and_remove(&conn->streams, &stream->node);

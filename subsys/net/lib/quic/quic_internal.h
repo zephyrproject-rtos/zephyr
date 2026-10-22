@@ -669,6 +669,16 @@ struct quic_long_header_info {
 };
 
 /**
+ * The sequence numbers of one type of peer-initiated streams that have been
+ * opened: every number below @a base, and the ones whose bit is set in
+ * @a mask, bit 0 standing for @a base.
+ */
+struct quic_stream_seq_window {
+	uint64_t base;
+	uint64_t mask;
+};
+
+/**
  * QUIC endpoint information
  */
 struct quic_endpoint {
@@ -898,6 +908,11 @@ struct quic_endpoint {
 		uint64_t open_uni;   /* peer-initiated uni  streams currently open */
 		uint64_t total_bidi; /* peer-initiated bidi streams ever opened */
 		uint64_t total_uni;  /* peer-initiated uni  streams ever opened */
+		/* Which peer-initiated streams were opened, so that a late
+		 * frame for a closed one does not open it again.
+		 */
+		struct quic_stream_seq_window opened_bidi;
+		struct quic_stream_seq_window opened_uni;
 	} rx_sl;
 
 	/** Peer's transport parameters */
