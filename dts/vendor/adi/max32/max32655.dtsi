@@ -76,13 +76,17 @@
 			reg = <0x2001c000 DT_SIZE_K(16)>;
 		};
 
-		uart3: serial@40081400 {
-			compatible = "adi,max32-uart";
-			reg = <0x40081400 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 4>;
-			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
-			interrupts = <88 0>;
+		wut0: timer@40006400 {
+			compatible = "adi,max32-timer";
+			reg = <0x40006400 0x400>;
+			interrupts = <53 0>;
+			prescaler = <1>;
 			status = "disabled";
+
+			counter {
+				compatible = "adi,max32-wut";
+				status = "disabled";
+			};
 		};
 
 		dma0: dma@40028000 {
@@ -95,12 +99,11 @@
 			status = "disabled";
 		};
 
-		wdt1: watchdog@40080800 {
-			compatible = "adi,max32-watchdog";
-			reg = <0x40080800 0x400>;
-			interrupts = <57 0>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 1>;
-			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+		w1: w1@4003d000 {
+			compatible = "adi,max32-w1";
+			reg = <0x4003d000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 13>;
+			interrupts = <67 0>;
 			status = "disabled";
 		};
 
@@ -111,6 +114,33 @@
 			#size-cells = <0>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
 			interrupts = <16 0>;
+			status = "disabled";
+		};
+
+		i2s0: i2s0@40060000 {
+			compatible = "adi,max32-i2s";
+			reg = <0x40060000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			/*
+			 * DMA Configuration is provided as an example.
+			 * user is free to change dma channel index,
+			 * but tx and rx slot should be kept same as below
+			 *
+			 * ref to MAX32655 User Guide
+			 * Table 9-2: DMA Source and Destination by Peripheral
+			 */
+			dmas = <&dma0 0 MAX32_DMA_SLOT_I2S_TX>, <&dma0 1 MAX32_DMA_SLOT_I2S_RX>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		wdt1: watchdog@40080800 {
+			compatible = "adi,max32-watchdog";
+			reg = <0x40080800 0x400>;
+			interrupts = <57 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 1>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			status = "disabled";
 		};
 
@@ -144,42 +174,12 @@
 			};
 		};
 
-		w1: w1@4003d000 {
-			compatible = "adi,max32-w1";
-			reg = <0x4003d000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 13>;
-			interrupts = <67 0>;
-			status = "disabled";
-		};
-
-		wut0: timer@40006400 {
-			compatible = "adi,max32-timer";
-			reg = <0x40006400 0x400>;
-			interrupts = <53 0>;
-			prescaler = <1>;
-			status = "disabled";
-
-			counter {
-				compatible = "adi,max32-wut";
-				status = "disabled";
-			};
-		};
-
-		i2s0: i2s0@40060000 {
-			compatible = "adi,max32-i2s";
-			reg = <0x40060000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			/*
-			 * DMA Configuration is provided as an example.
-			 * user is free to change dma channel index,
-			 * but tx and rx slot should be kept same as below
-			 *
-			 * ref to MAX32655 User Guide
-			 * Table 9-2: DMA Source and Destination by Peripheral
-			 */
-			dmas = <&dma0 0 MAX32_DMA_SLOT_I2S_TX>, <&dma0 1 MAX32_DMA_SLOT_I2S_RX>;
-			dma-names = "tx", "rx";
+		uart3: serial@40081400 {
+			compatible = "adi,max32-uart";
+			reg = <0x40081400 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 4>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			interrupts = <88 0>;
 			status = "disabled";
 		};
 	};
