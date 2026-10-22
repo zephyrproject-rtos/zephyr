@@ -17,12 +17,6 @@
 		zephyr,touch = &virtio_input0;
 	};
 
-	fwcfg0: fw-cfg@10100000 {
-		compatible = "qemu,fw-cfg-mmio";
-		reg = <0x10100000 0x18>;
-		status = "okay";
-	};
-
 	reserved-memory {
 		ranges;
 		#address-cells = <1>;
@@ -40,6 +34,12 @@
 		memory-region = <&ramfb_mem>;
 		width = <1024>;
 		height = <768>;
+		status = "okay";
+	};
+
+	fwcfg0: fw-cfg@10100000 {
+		compatible = "qemu,fw-cfg-mmio";
+		reg = <0x10100000 0x18>;
 		status = "okay";
 	};
 };

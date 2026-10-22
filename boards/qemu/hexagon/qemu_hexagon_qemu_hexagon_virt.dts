@@ -44,19 +44,6 @@
 		zephyr,shell-uart = &uart0;
 	};
 
-	/* PL011 UART provided by QEMU virt machine */
-	uart0: uart@10000000 {
-		compatible = "arm,pl011", "arm,primecell";
-		reg = <0x10000000 0x200>;
-		interrupts = <0x2f 0x00>;
-		interrupt-names = "irq_0";
-		interrupt-parent = <&intc>;
-		clocks = <&uartclk &uartclk>;
-		clock-names = "uartclk", "apb_pclk";
-		current-speed = <115200>;
-		status = "okay";
-	};
-
 	soc {
 		ranges;
 		#address-cells = <1>;
@@ -75,6 +62,19 @@
 			reg = <0xab000000 0x1000>;
 			interrupts = <0x0c 0x00>;
 		};
+	};
+
+	/* PL011 UART provided by QEMU virt machine */
+	uart0: uart@10000000 {
+		compatible = "arm,pl011", "arm,primecell";
+		reg = <0x10000000 0x200>;
+		interrupts = <0x2f 0x00>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&intc>;
+		clocks = <&uartclk &uartclk>;
+		clock-names = "uartclk", "apb_pclk";
+		current-speed = <115200>;
+		status = "okay";
 	};
 
 	/* VirtIO MMIO transports provided by QEMU virt machine */
