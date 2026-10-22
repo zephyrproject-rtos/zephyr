@@ -26,5 +26,11 @@
 	BT_UUID_DECLARE_128(0x01, 0x23, 0x45, 0x67, 0x89, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,      \
 			    0x07, 0x08, 0x09, 0xFF, 0x11)
 
-#define NOTIFICATION_COUNT 10
-BUILD_ASSERT(NOTIFICATION_COUNT % 2 == 0);
+#define NOTIFICATION_COUNT          10U
+#define FALLBACK_SHORT_LEN          5U
+#define FALLBACK_NOTIFICATION_COUNT 4U
+
+/* Multiple Handle Value Notification adds a 2-octet value length field. */
+#define NOTIFY_MULT_VALUE_OVERHEAD 2U
+
+BUILD_ASSERT(NOTIFICATION_COUNT % 2U == 0U);

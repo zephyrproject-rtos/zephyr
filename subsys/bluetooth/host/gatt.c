@@ -2593,7 +2593,26 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE) && (CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS != 0)
 	if (gatt_cf_notify_multi(conn)) {
-		return gatt_notify_mult(conn, handle, params);
+		const size_t mult_overhead =
+			sizeof(struct bt_att_notify_mult) - sizeof(struct bt_att_notify);
+		const int max_ntf_size =
+			bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT(params));
+		int err;
+
+		/* Not connected anymore, or invalid channel options */
+		if (max_ntf_size < 0) {
+			return max_ntf_size;
+		}
+
+		if ((size_t)max_ntf_size >= mult_overhead + params->len) {
+			return gatt_notify_mult(conn, handle, params);
+		}
+
+		/* Keep already batched notifications ahead of this one. */
+		err = gatt_notify_flush(conn);
+		if (err < 0) {
+			return err;
+		}
 	}
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
