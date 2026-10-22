@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+struct device;
+
 /**
  * @brief IPC link backend counters
  * @defgroup ipc_link_api IPC link counters
@@ -54,6 +56,27 @@ struct ipc_link_stats {
 	/** Sessions ended after too many timeouts, or by an incompatible peer */
 	uint32_t disconnects;
 };
+
+/**
+ * @brief Get the counters of a link instance
+ *
+ * @param dev Link instance
+ * @param stats Filled with the counters
+ *
+ * @retval 0 on success
+ * @retval -ENOTSUP if CONFIG_IPC_SERVICE_LINK_STATS is disabled
+ */
+int ipc_link_stats_get(const struct device *dev, struct ipc_link_stats *stats);
+
+/**
+ * @brief Clear the counters of a link instance
+ *
+ * @param dev Link instance
+ *
+ * @retval 0 on success
+ * @retval -ENOTSUP if CONFIG_IPC_SERVICE_LINK_STATS is disabled
+ */
+int ipc_link_stats_reset(const struct device *dev);
 
 /**
  * @}
