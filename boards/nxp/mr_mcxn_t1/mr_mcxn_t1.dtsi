@@ -10,20 +10,6 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 / {
-	can_phy0: can-phy0 {
-		compatible = "nxp,tja1462", "can-transceiver-gpio";
-		standby-gpios = <&gpio4 14 GPIO_ACTIVE_HIGH>;
-		max-bitrate = <5000000>;
-		#phy-cells = <0>;
-	};
-
-	can_phy1: can-phy1 {
-		compatible = "nxp,tja1462", "can-transceiver-gpio";
-		standby-gpios = <&gpio4 17 GPIO_ACTIVE_HIGH>;
-		max-bitrate = <5000000>;
-		#phy-cells = <0>;
-	};
-
 	/*
 	 * Stacking-header connector nexus. Maps the raw GPIO control lines the
 	 * expansion boards use (sensor interrupts, resets, indicator and user
@@ -178,30 +164,9 @@ mr_mcxn_t1_flexio_pwm1: &flexpwm1_pwm0 {};
 
 mr_mcxn_t1_flexio_adc: &lpadc1 {};
 
-/* On-board hub IMU. */
 &flexcomm8_lpspi8 {
 	pinctrl-0 = <&pinmux_flexcomm8_lpspi>;
 	pinctrl-names = "default";
-
-	icm45686_0: icm45686_hub@0 {
-		compatible = "invensense,icm45686";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(20)>;
-		int-gpios = <&gpio3 22 GPIO_ACTIVE_HIGH>;
-		spi-cs-setup-delay-ns = <50>;
-		spi-cs-hold-delay-ns = <50>;
-		spi-interframe-delay-ns = <50>;
-		accel-pwr-mode = <ICM45686_DT_ACCEL_LN>;
-		accel-fs = <ICM45686_DT_ACCEL_FS_2>;
-		accel-odr = <ICM45686_DT_ACCEL_ODR_400>;
-		accel-lpf = <ICM45686_DT_ACCEL_LPF_BW_1_32>;
-		gyro-pwr-mode = <ICM45686_DT_GYRO_LN>;
-		gyro-fs = <ICM45686_DT_GYRO_FS_4000>;
-		gyro-odr = <ICM45686_DT_GYRO_ODR_400>;
-		gyro-lpf = <ICM45686_DT_GYRO_LPF_BW_1_32>;
-
-		fifo-watermark = <1>;
-	};
 };
 
 /*
@@ -263,18 +228,7 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 	pinctrl-0 = <&pinmux_enet_qos>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
-	phy-handle = <&phy>;
 	nxp,unique-mac;
-};
-
-&enet_mdio {
-	phy: ethernet-phy@12 {
-		compatible = "nxp,tja1103";
-		reg = <0x12>;
-		int-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
-		master-slave = "auto";
-		status = "okay";
-	};
 };
 
 &enet_ptp_clock {
@@ -284,11 +238,9 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 &flexcan0 {
 	pinctrl-0 = <&pinmux_flexcan0>;
 	pinctrl-names = "default";
-	phys = <&can_phy0>;
 };
 
 &flexcan1 {
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
-	phys = <&can_phy1>;
 };
