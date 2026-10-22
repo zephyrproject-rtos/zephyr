@@ -6,6 +6,13 @@
 /**
  * @file
  * @brief IPC link backend: the transport interface
+ *
+ * The IPC link backend runs the IPC service over any transport that moves frames between two
+ * processors. A transport driver, part of the backend, defines a device with
+ * @ref ipc_link_backend_ops as its API and a config whose first member is a
+ * @ref ipc_link_config. It implements @ref ipc_link_transport_api, and drives the link with
+ * ipc_link_pending(), ipc_link_tx_prepare(), ipc_link_rx_buf() and ipc_link_rx(), which may be
+ * called from any context.
  */
 
 #ifndef ZEPHYR_INCLUDE_IPC_IPC_LINK_H_
@@ -15,6 +22,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/device.h>
+#include <zephyr/ipc/ipc_service_backend.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,6 +66,140 @@ struct ipc_link_stats {
 	/** Sessions ended after too many timeouts, or by an incompatible peer */
 	uint32_t disconnects;
 };
+
+/** @brief Events returned by ipc_link_rx() */
+enum ipc_link_event {
+	/** A session started */
+	IPC_LINK_EVT_CONNECTED = BIT(0),
+	/** The frame had no valid header */
+	IPC_LINK_EVT_HDR_ERR = BIT(1),
+	/** The peer runs another protocol version or frame size */
+	IPC_LINK_EVT_PEER_MISMATCH = BIT(2),
+};
+
+/** @brief Transport operations */
+struct ipc_link_transport_api {
+	/**
+	 * @brief Start exchanging frames
+	 *
+	 * Called from ipc_service_open_instance().
+	 *
+	 * @param dev Link instance
+	 *
+	 * @retval 0 on success
+	 * @retval -errno on failure
+	 */
+	int (*open)(const struct device *dev);
+
+	/**
+	 * @brief A frame is pending
+	 *
+	 * Called from any context, possibly with the link locked: the transport wakes up what
+	 * sends the frame and returns, without calling the link back.
+	 *
+	 * @param dev Link instance
+	 */
+	void (*kick)(const struct device *dev);
+};
+
+/** @brief Link state, defined by the transport with the backend's private header */
+struct ipc_link;
+
+/** @brief Link configuration, the first member of the transport's device config */
+struct ipc_link_config {
+	/** Transport operations */
+	const struct ipc_link_transport_api *api;
+	/** Link state */
+	struct ipc_link *link;
+	/** Transmit buffers */
+	uint8_t *tx_bufs;
+	/** Receive buffers */
+	uint8_t *rx_bufs;
+	/** Frame size in bytes, a multiple of 4 */
+	uint16_t mtu;
+	/**
+	 * Time without acknowledgment before a payload is sent again, in milliseconds. Also the
+	 * interval of the boot announcements and of the polls for credits.
+	 */
+	uint32_t retransmit_timeout_ms;
+};
+
+/** @brief The IPC service backend operations of a link instance */
+extern const struct ipc_service_backend ipc_link_backend_ops;
+
+/**
+ * @brief Initialize a link instance
+ *
+ * Called from the transport's device init function.
+ *
+ * @param dev Link instance
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if the frame size or the retransmission timeout is invalid
+ */
+int ipc_link_init(const struct device *dev);
+
+/**
+ * @brief Whether a frame is to be sent
+ *
+ * @param dev Link instance
+ *
+ * @return True if ipc_link_tx_prepare() has a frame to build
+ */
+bool ipc_link_pending(const struct device *dev);
+
+/**
+ * @brief Build the next frame to send
+ *
+ * @param dev Link instance
+ * @param len Set to the frame length
+ *
+ * @return The frame, valid until the next call
+ */
+const uint8_t *ipc_link_tx_prepare(const struct device *dev, size_t *len);
+
+/**
+ * @brief Get the buffer the next frame is received into
+ *
+ * @param dev Link instance
+ *
+ * @return A buffer of the frame size, valid until the next ipc_link_rx()
+ */
+uint8_t *ipc_link_rx_buf(const struct device *dev);
+
+/**
+ * @brief Process the frame in the receive buffer
+ *
+ * The CRCs are computed in the caller's context, before the link is locked.
+ *
+ * @param dev Link instance
+ * @param len Received length, at most the frame size
+ * @param ok False if the transfer failed
+ *
+ * @return @ref ipc_link_event flags
+ */
+uint32_t ipc_link_rx(const struct device *dev, size_t len, bool ok);
+
+/**
+ * @brief Get the counters of a link instance
+ *
+ * @param dev Link instance
+ * @param stats Filled with the counters
+ *
+ * @retval 0 on success
+ * @retval -ENOTSUP if CONFIG_IPC_SERVICE_LINK_STATS is disabled
+ */
+int ipc_link_stats_get(const struct device *dev, struct ipc_link_stats *stats);
+
+/**
+ * @brief Clear the counters of a link instance
+ *
+ * @param dev Link instance
+ *
+ * @retval 0 on success
+ * @retval -ENOTSUP if CONFIG_IPC_SERVICE_LINK_STATS is disabled
+ */
+int ipc_link_stats_reset(const struct device *dev);
 
 /**
  * @}
