@@ -9,9 +9,9 @@
 	 * to save MPU entries
 	 */
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		openamp_shm: memory-region@62f00000 {
 			compatible = "zephyr,memory-region";
