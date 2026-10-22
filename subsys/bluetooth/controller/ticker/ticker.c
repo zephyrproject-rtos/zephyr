@@ -2030,16 +2030,21 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 				continue;
 			}
 
-			/* Delete or yield node, if not expired */
+			/* Delete or yield node, if not expired.
+			 * Yield of an expired node shall be deferred, as the
+			 * bottom half assigns the slot reservation that the
+			 * yield is to reduce.
+			 */
 			if ((state == 1U) ||
-			    (user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS)) {
+			    ((user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS) &&
+			     (state != 2U))) {
 				ticker_job_node_manage(instance, ticker,
 						       user_op, ticks_now,
 						       ticks_elapsed,
 						       insert_head);
 			} else {
-				/* Update on expired node requested, deferring
-				 * update until bottom half finishes.
+				/* Update or yield on expired node requested,
+				 * deferring until bottom half finishes.
 				 */
 				/* sched job to run after worker bottom half.
 				 */
