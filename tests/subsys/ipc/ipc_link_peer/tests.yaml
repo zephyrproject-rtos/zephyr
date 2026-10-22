@@ -1,0 +1,14 @@
+common:
+  tags:
+    - ipc
+  harness: pytest
+  integration_platforms:
+    - native_sim
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  extra_configs:
+    - CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+
+tests:
+  ipc.ipc_link.peer: {}
