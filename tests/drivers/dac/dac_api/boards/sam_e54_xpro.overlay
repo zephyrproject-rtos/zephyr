@@ -12,10 +12,10 @@
 };
 
 &dac {
-	status = "okay";
 	refsel = "int_ref";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	dac0: channel@0 {
 		reg = <0>;

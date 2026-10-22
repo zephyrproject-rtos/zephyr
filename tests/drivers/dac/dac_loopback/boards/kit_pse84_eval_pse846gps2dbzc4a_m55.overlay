@@ -21,17 +21,17 @@
 };
 
 &dac0 {
-	status = "okay";
 	clocks = <&peri0_group2_8bit_0>;
 	vref-source = <IFX_AUTANALOG_CTDAC_VREF_VDDA>;
 	topology = <IFX_AUTANALOG_CTDAC_TOPO_BUFFERED_EXTERNAL>;
 	out-buf-pwr = <IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_ULTRA_LOW>;
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@7 {
 		reg = <7>;
@@ -45,6 +45,6 @@
 
 /* Peripheral clock divider for DAC0 (PERI0, group 2, CLK_HF9) */
 &peri0_group2_8bit_0 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
