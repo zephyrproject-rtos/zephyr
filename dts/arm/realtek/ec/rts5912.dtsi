@@ -59,11 +59,11 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
 		interrupt-parent = <&nvic>;
-		ranges;
 
 		bbram: bb-ram@40005000 {
 			compatible = "realtek,rts5912-bbram";
@@ -167,8 +167,6 @@
 
 		espi0: espi0@400b1000 {
 			compatible = "realtek,rts5912-espi";
-			cs-gpios = <RTS5912_GPIO004 0>;
-			status = "disabled";
 
 			reg = <0x400b1000 0x200		/* espi target */
 			       0x400a0400 0x01c		/* port80 */
@@ -187,6 +185,7 @@
 			       0x400820e0 0x14			/* EMI7 */
 			       0x400a0100 0x1c			/* KBC */
 			       0x400b1600 0xd0>;		/* MBX */
+			cs-gpios = <RTS5912_GPIO004 0>;
 
 			reg-names = "espi_target", "port80", "acpi", "promt0", "promt1", "promt2",
 				    "promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
@@ -242,6 +241,7 @@
 					  "emi7", "oob_tx", "oob_rx",
 					  "oob_chg", "maf_tr", "flash_chg",
 					  "port80", "mbx";
+			status = "disabled";
 		};
 
 		slwtmr0: slwtmr0@4000c200 {
@@ -273,11 +273,11 @@
 		};
 
 		spi0: spi@40010400 {
+			compatible = "realtek,rts5912-spi";
+			reg = <0x40010400 0x3c>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "realtek,rts5912-spi";
 			clocks = <&sccon RTS5912_SCCON_SYS 0>;
-			reg = <0x40010400 0x3c>;
 			status = "disabled";
 		};
 
@@ -296,22 +296,22 @@
 			port = <0>;
 			clocks = <&sccon RTS5912_SCCON_UART UART0_CLKPWR>;
 			clock-names = "uart0";
-			status = "disabled";
 			uart-dev = <&uart0>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@40090000 {
 			compatible = "realtek,rts5912-pinctrl";
+			reg = <0x40090000 0x300>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x40090000 0x300>;
 
 			/* GPIO0-GPIO15 */
 			gpioa: gpio@40090000 {
 				compatible = "realtek,rts5912-gpio";
+				reg = <0x40090000 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40090000 0x40>;
 				ngpios = <16>;
 				interrupts = <0 0 1 0 2 0 3 0
 					      4 0 5 0 6 0 7 0
@@ -322,9 +322,9 @@
 			/* GPIO16-GPIO31 */
 			gpiob: gpio@40090040 {
 				compatible = "realtek,rts5912-gpio";
+				reg = <0x40090040 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40090040 0x40>;
 				ngpios = <16>;
 				interrupts = <16 0 17 0 18 0 19 0
 					      20 0 21 0 22 0 23 0
@@ -335,9 +335,9 @@
 			/* GPIO32-GPIO47 */
 			gpioc: gpio@40090080 {
 				compatible = "realtek,rts5912-gpio";
+				reg = <0x40090080 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40090080 0x40>;
 				ngpios = <16>;
 				interrupts = <32 0 33 0 34 0 35 0
 					      36 0 37 0 38 0 39 0
@@ -348,9 +348,9 @@
 			/* GPIO48-GPIO63 */
 			gpiod: gpio@400900c0 {
 				compatible = "realtek,rts5912-gpio";
+				reg = <0x400900c0 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x400900c0 0x40>;
 				ngpios = <16>;
 				interrupts = <48 0 49 0 50 0 51 0
 					      52 0 53 0 54 0 55 0
@@ -361,9 +361,9 @@
 			/* GPIO64-GPIO79 */
 			gpioe: gpio@40090100 {
 				compatible = "realtek,rts5912-gpio";
+				reg = <0x40090100 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40090100 0x40>;
 				ngpios = <16>;
 				interrupts = <64 0 65 0 66 0 67 0
 					      68 0 69 0 70 0 71 0
@@ -374,9 +374,9 @@
 			/* GPIO80-GPIO95 */
 			gpiof: gpio@40090140 {
 				compatible = "realtek,rts5912-gpio";
+				reg = <0x40090140 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40090140 0x40>;
 				ngpios = <16>;
 				interrupts = <80 0 81 0 82 0 83 0
 					      84 0 85 0 86 0 87 0
@@ -387,9 +387,9 @@
 			/* GPIO96-GPIO111 */
 			gpiog: gpio@40090180 {
 				compatible = "realtek,rts5912-gpio";
+				reg = <0x40090180 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40090180 0x40>;
 				ngpios = <16>;
 				interrupts = <96 0 97 0 98 0 99 0
 					      100 0 101 0 102 0 103 0
@@ -400,9 +400,9 @@
 			/* GPIO112-GPIO127 */
 			gpioh: gpio@400901c0 {
 				compatible = "realtek,rts5912-gpio";
+				reg = <0x400901c0 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x400901c0 0x40>;
 				ngpios = <16>;
 				interrupts = <112 0 113 0 114 0 115 0
 					      116 0 117 0 118 0 119 0
@@ -413,9 +413,9 @@
 			/* GPIO128-GPIO131 */
 			gpioi: gpio@40090200 {
 				compatible = "realtek,rts5912-gpio";
+				reg = <0x40090200 0x10>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40090200 0x10>;
 				ngpios = <4>;
 				interrupts = <128 0 129 0 130 0 131 0
 					      132 0 133 0 134 0 135 0
@@ -482,66 +482,66 @@
 
 		pwm0: pwm@4000f000 {
 			compatible = "realtek,rts5912-pwm";
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM0_CLKPWR>;
 			reg = <0x4000f000 0x0c>;
-			status = "disabled";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM0_CLKPWR>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm1: pwm@4000f00c {
 			compatible = "realtek,rts5912-pwm";
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM1_CLKPWR>;
 			reg = <0x4000f00c 0x0c>;
-			status = "disabled";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM1_CLKPWR>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm2: pwm@4000f018 {
 			compatible = "realtek,rts5912-pwm";
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM2_CLKPWR>;
 			reg = <0x4000f018 0x0c>;
-			status = "disabled";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM2_CLKPWR>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm3: pwm@4000f024 {
 			compatible = "realtek,rts5912-pwm";
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM3_CLKPWR>;
 			reg = <0x4000f024 0x0c>;
-			status = "disabled";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM3_CLKPWR>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm4: pwm@4000f030 {
 			compatible = "realtek,rts5912-pwm";
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM4_CLKPWR>;
 			reg = <0x4000f030 0x0c>;
-			status = "disabled";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM4_CLKPWR>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm5: pwm@4000f03c {
 			compatible = "realtek,rts5912-pwm";
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM5_CLKPWR>;
 			reg = <0x4000f03c 0x0c>;
-			status = "disabled";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM5_CLKPWR>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm6: pwm@4000f048 {
 			compatible = "realtek,rts5912-pwm";
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM6_CLKPWR>;
 			reg = <0x4000f048 0x0c>;
-			status = "disabled";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM6_CLKPWR>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm7: pwm@4000f054 {
 			compatible = "realtek,rts5912-pwm";
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM7_CLKPWR>;
 			reg = <0x4000f054 0x0c>;
-			status = "disabled";
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM7_CLKPWR>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		flash_controller: flash-controller@40010200 {
@@ -564,12 +564,12 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupt-parent = <&nvic>;
 			interrupts = <182 1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
 			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
 		};
 
 		i2c_1: i2c@4000d200 {
@@ -578,12 +578,12 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupt-parent = <&nvic>;
 			interrupts = <183 1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
 			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
 		};
 
 		i2c_2: i2c@4000d400 {
@@ -592,12 +592,12 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupt-parent = <&nvic>;
 			interrupts = <184 1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
 			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
 		};
 
 		i2c_3: i2c@4000d600 {
@@ -606,12 +606,12 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupt-parent = <&nvic>;
 			interrupts = <185 1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
 			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
 		};
 
 		i2c_4: i2c@4000d800 {
@@ -620,12 +620,12 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupt-parent = <&nvic>;
 			interrupts = <186 1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
 			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
 		};
 
 		i2c_5: i2c@4000da00 {
@@ -634,12 +634,12 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupt-parent = <&nvic>;
 			interrupts = <187 1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
 			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
 		};
 
 		i2c_6: i2c@4000dc00 {
@@ -648,12 +648,12 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupt-parent = <&nvic>;
 			interrupts = <188 1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
 			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
 		};
 
 		i2c_7: i2c@4000de00 {
@@ -662,12 +662,12 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupt-parent = <&nvic>;
 			interrupts = <189 1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
 			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
 		};
 
 		sha0: crypto@40000000 {
@@ -753,10 +753,10 @@
 	ulpm: ulpm {
 		compatible = "realtek,rts5912-ulpm";
 		wkup-pins-max = <6>; /* 6 system wake-up pins */
-		status = "disabled";
 
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 
 		wkup-pin@0 {
 			reg = <0x0>;
