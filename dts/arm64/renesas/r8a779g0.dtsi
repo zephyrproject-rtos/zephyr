@@ -70,24 +70,6 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 
-		gic: interrupt-controller@f1000000 {
-			compatible = "arm,gic-600", "arm,gic-v3", "arm,gic";
-			reg = <0 0xf1000000 0 0x20000>,
-			      <0 0xf1060000 0 0x110000>;
-			#interrupt-cells = <4>;
-			#address-cells = <0>;
-			interrupt-controller;
-			status = "okay";
-		};
-
-		cpg: clock-controller@e6150000 {
-			compatible = "renesas,r8a779g0-cpg-mssr";
-			reg = <0 0xe6150000 0 0x2e78>;
-			#clock-cells = <2>;
-			#power-domain-cells = <0>;
-			#reset-cells = <1>;
-		};
-
 		pfc: pin-controller@e6050000 {
 			compatible = "renesas,rcar-pfc";
 			reg = <0 0xe6050000 0 0x16c>, <0 0xe6050800 0 0x16c>,
@@ -187,6 +169,14 @@
 			status = "disabled";
 		};
 
+		cpg: clock-controller@e6150000 {
+			compatible = "renesas,r8a779g0-cpg-mssr";
+			reg = <0 0xe6150000 0 0x2e78>;
+			#clock-cells = <2>;
+			#power-domain-cells = <0>;
+			#reset-cells = <1>;
+		};
+
 		hscif0: serial@e6540000 {
 			compatible = "renesas,rcar-hscif";
 			reg = <0 0xe6540000 0 0x64>;
@@ -212,6 +202,16 @@
 			clocks = <&cpg CPG_MOD 517>, <&cpg CPG_CORE R8A779G0_CLK_SASYNCPERD1>;
 			current-speed = <921600>;
 			status = "disabled";
+		};
+
+		gic: interrupt-controller@f1000000 {
+			compatible = "arm,gic-600", "arm,gic-v3", "arm,gic";
+			reg = <0 0xf1000000 0 0x20000>,
+			      <0 0xf1060000 0 0x110000>;
+			#interrupt-cells = <4>;
+			#address-cells = <0>;
+			interrupt-controller;
+			status = "okay";
 		};
 	};
 
