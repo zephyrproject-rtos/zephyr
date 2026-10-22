@@ -16,8 +16,8 @@
 #include <dt-bindings/lora/sx126x.h>
 
 / {
-	model = "Heltec T114 v2";
 	compatible = "others,heltec-t114-v2";
+	model = "Heltec T114 v2";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -106,8 +106,8 @@
 
 		tft_display: st7789v@0 {
 			compatible = "sitronix,st7789v";
-			mipi-max-frequency = <8000000>;
 			reg = <0>;
+			mipi-max-frequency = <8000000>;
 			width = <135>;
 			height = <240>;
 			x-offset = <52>;
@@ -150,10 +150,10 @@
 };
 
 &adc {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	io-channels = <&adc 2>;
+	status = "okay";
 
 	channel@2 {
 		reg = <2>;
@@ -192,22 +192,22 @@
 
 &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&tft_spi_pins>;
 	pinctrl-1 = <&tft_spi_pins_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
 	rx-delay-supported;
 	rx-delay = <2>;
-	status = "okay";
 	pinctrl-0 = <&lora_spi_pins>;
 	pinctrl-1 = <&lora_spi_pins_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lora: sx1262@0 {
 		compatible = "semtech,sx1262";
@@ -225,11 +225,11 @@
 
 &uart1 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <9600>;
 	pinctrl-0 = <&gnss_uart_pins>;
 	pinctrl-1 = <&gnss_uart_pins_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	gnss: gnss-nmea-generic {
 		compatible = "gnss-nmea-generic";

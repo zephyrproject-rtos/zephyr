@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_amp.dtsi>
 
 / {
-	model = "Heltec Wireless Tracker V1.1 APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "Heltec Wireless Tracker V1.1 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
