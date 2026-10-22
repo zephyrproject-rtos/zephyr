@@ -696,7 +696,11 @@ enum hl78xx_evt_type {
 	HL78XX_LTE_FOTA_UPDATE_STATUS,
 	/** DNS resolution path completed and modem is ready for data transmission */
 	HL78XX_LTE_DNS_READY,
-	/** The AT command interface is ready for application use. */
+	/** The AT command interface is ready for application use. Dispatched once
+	 * per modem session, when the driver reaches airplane mode, the wait for
+	 * a registration or GNSS mode: after a power-up, and again after a
+	 * restart of the modem.
+	 */
 	HL78XX_LTE_AT_CMD_READY,
 	/** Phone functionality changed (+CFUN) */
 	HL78XX_LTE_PHONE_FUNCTIONALITY_UPDATE,

@@ -655,6 +655,17 @@ struct modem_event_system {
 	uint8_t event_buf[8];
 	struct ring_buf event_rb;
 	struct k_mutex event_rb_lock;
+	/* Script results (success, failure, AT command timeout) queued and not
+	 * handled yet: a state that must tell the result of its own script from
+	 * that of an earlier one starts its script when none is left.
+	 */
+	atomic_t script_results_queued;
+	/* The current state waits to start its script: another script held the
+	 * chat, or a script result was still queued. Until the script starts, a
+	 * script result is not the result of that script: see
+	 * hl78xx_is_stale_script_result().
+	 */
+	bool script_start_deferred;
 };
 
 enum hl78xx_at_cmd_terminal_result {

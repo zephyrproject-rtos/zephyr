@@ -250,6 +250,11 @@ Modem
   notification each, so the default of 16 uses more RAM than the 256-byte heap it replaces.
   (:github:`120425`)
 
+* Sierra Wireless HL78xx: ``HL78XX_LTE_AT_CMD_READY`` is now dispatched once per modem session
+  instead of once per power cycle: it is sent again after a restart the modem made on its own,
+  such as the restart that applies a RAT or band configuration. Applications that act on the
+  event must be ready to receive it more than once.
+
 * Sierra Wireless HL78xx: in builds without :kconfig:option:`CONFIG_HL78XX_GNSS`,
   :c:func:`hl78xx_set_phone_functionality` now defers a request for full functionality made in
   airplane mode on a modem session the driver has not configured: the driver runs its
