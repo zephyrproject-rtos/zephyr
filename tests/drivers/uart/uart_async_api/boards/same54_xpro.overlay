@@ -5,7 +5,6 @@
 };
 
 dut: &sercom1 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	#address-cells = <1>;
@@ -18,6 +17,7 @@ dut: &sercom1 {
 	/* Configure DMA channels for async operation */
 	dmas = <&dmac 0 6>, <&dmac 1 7>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 &sercom2 {
