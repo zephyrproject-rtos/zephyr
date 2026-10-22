@@ -59,6 +59,16 @@
 			reg = <0x20010000 DT_SIZE_K(32)>;
 		};
 
+		spi1: spi@40019000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40019000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
+
 		dma0: dma@40028000 {
 			compatible = "adi,max32-dma";
 			reg = <0x40028000 0x1000>;
@@ -76,16 +86,6 @@
 			#size-cells = <0>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
 			interrupts = <16 0>;
-			status = "disabled";
-		};
-
-		spi1: spi@40019000 {
-			compatible = "adi,max32-spi";
-			reg = <0x40019000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
-			interrupts = <17 0>;
 			status = "disabled";
 		};
 	};

@@ -91,10 +91,19 @@
 			reg = <0x200c0000 DT_SIZE_K(256)>;
 		};
 
-		trng: trng@400b5000 {
-			compatible = "adi,max32-trng";
-			reg = <0x400b5000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
+		wdt0: watchdog@40003000 {
+			compatible = "adi,max32-watchdog";
+			reg = <0x40003000 0x400>;
+			interrupts = <1 0>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			status = "disabled";
+		};
+
+		wdt1: watchdog@40003400 {
+			compatible = "adi,max32-watchdog";
+			reg = <0x40003400 0x400>;
+			interrupts = <57 0>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			status = "disabled";
 		};
 
@@ -140,6 +149,26 @@
 			};
 		};
 
+		dma0: dma@40028000 {
+			compatible = "adi,max32-dma";
+			reg = <0x40028000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>,
+				     <72 0>, <73 0>, <74 0>, <75 0>, <76 0>, <77 0>, <78 0>, <79 0>;
+			dma-channels = <16>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		hpb: hpb@40039000 {
+			compatible = "adi,max32-hpb";
+			reg = <0x40039000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 4 &gcr ADI_MAX32_CLOCK_BUS1 7>;
+			status = "disabled";
+		};
+
 		spi0: spi@40046000 {
 			compatible = "adi,max32-spi";
 			reg = <0x40046000 0x1000>;
@@ -170,43 +199,6 @@
 			status = "disabled";
 		};
 
-		spi3: spi@400be000 {
-			compatible = "adi,max32-spi";
-			reg = <0x400be000 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 14>;
-			interrupts = <56 0>;
-			status = "disabled";
-		};
-
-		wdt0: watchdog@40003000 {
-			compatible = "adi,max32-watchdog";
-			reg = <0x40003000 0x400>;
-			interrupts = <1 0>;
-			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-			status = "disabled";
-		};
-
-		wdt1: watchdog@40003400 {
-			compatible = "adi,max32-watchdog";
-			reg = <0x40003400 0x400>;
-			interrupts = <57 0>;
-			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-			status = "disabled";
-		};
-
-		dma0: dma@40028000 {
-			compatible = "adi,max32-dma";
-			reg = <0x40028000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
-			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>,
-				     <72 0>, <73 0>, <74 0>, <75 0>, <76 0>, <77 0>, <78 0>, <79 0>;
-			dma-channels = <16>;
-			#dma-cells = <2>;
-			status = "disabled";
-		};
-
 		usbhs: usbhs@400b1000 {
 			compatible = "adi,max32-usbhs";
 			reg = <0x400b1000 0x1000>;
@@ -219,12 +211,20 @@
 			status = "disabled";
 		};
 
-		hpb: hpb@40039000 {
-			compatible = "adi,max32-hpb";
-			reg = <0x40039000 0x1000>;
+		trng: trng@400b5000 {
+			compatible = "adi,max32-trng";
+			reg = <0x400b5000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
+			status = "disabled";
+		};
+
+		spi3: spi@400be000 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 4 &gcr ADI_MAX32_CLOCK_BUS1 7>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 14>;
+			interrupts = <56 0>;
 			status = "disabled";
 		};
 	};
