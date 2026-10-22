@@ -293,6 +293,15 @@
 		};
 	};
 
+	i2c_host: i2c {
+		compatible = "zephyr,native-linux-i2c";
+		/* Change to the i2c-dev node of the host adapter */
+		path = "/dev/i2c-0";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	i2c0: i2c@100 {
 		compatible = "zephyr,i2c-emul-controller";
 		reg = <0x100 4>;
