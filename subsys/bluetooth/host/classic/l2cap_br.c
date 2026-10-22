@@ -2851,41 +2851,36 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	return L2CAP_CONN_SECURITY_REJECT;
 }
 
+/* Of a Connection Response refusing a channel for security: the link goes down after it,
+ * whatever became of the channel
+ */
 static void l2cap_br_conn_rsp_sent_cb(struct bt_conn *conn, void *user_data, int err)
 {
-	uint16_t scid = POINTER_TO_UINT(user_data);
-	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_br *l2cap;
 
-	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
-	if (!chan) {
-		return;
-	}
+	ARG_UNUSED(user_data);
 
-	if (err != 0) {
-		/* Reported on the TX processor, which cannot wait for the HCI command: the
-		 * signalling channel, which outlives this one, disconnects the link instead
-		 */
-		if ((conn->state == BT_CONN_CONNECTED) &&
-		    atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONNECT_ACL)) {
-			struct bt_l2cap_br *l2cap = l2cap_br_find_signal_channel(conn);
-
-			if (l2cap != NULL) {
-				atomic_set_bit(l2cap->chan.flags, L2CAP_FLAG_DISCONNECT_ACL);
-				bt_work_reschedule(&l2cap->chan.retry_work, K_NO_WAIT);
-			}
-		}
-
-		return;
-	}
-
-	/* Check whether the ACL connection needs to be disconnected. */
-	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONNECT_ACL)) {
+	if (err == 0) {
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+		return;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return;
+	}
+
+	/* Reported on the TX processor, which cannot wait for the HCI command: the signalling
+	 * channel, which outlives the refused one, disconnects the link instead
+	 */
+	l2cap = l2cap_br_find_signal_channel(conn);
+	if (l2cap != NULL) {
+		atomic_set_bit(l2cap->chan.flags, L2CAP_FLAG_DISCONNECT_ACL);
+		bt_work_reschedule(&l2cap->chan.retry_work, K_NO_WAIT);
 	}
 }
 
 static void l2cap_br_send_conn_rsp(struct bt_l2cap_br *l2cap, uint16_t scid, uint16_t dcid,
-				   uint8_t ident, uint16_t result)
+				   uint8_t ident, uint16_t result, bt_conn_tx_cb_t cb)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct net_buf *buf;
@@ -2911,8 +2906,7 @@ static void l2cap_br_send_conn_rsp(struct bt_l2cap_br *l2cap, uint16_t scid, uin
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_NO_INFO);
 	}
 
-	if (bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, l2cap_br_conn_rsp_sent_cb,
-				UINT_TO_POINTER(scid))) {
+	if (bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, cb, NULL)) {
 		net_buf_unref(buf);
 	}
 }
@@ -2920,8 +2914,15 @@ static void l2cap_br_send_conn_rsp(struct bt_l2cap_br *l2cap, uint16_t scid, uin
 static void l2cap_br_conn_req_reply(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
 				    uint16_t result)
 {
+	bt_conn_tx_cb_t cb = NULL;
+
+	/* Decided here: the peer can take the channel down before the response is reported sent */
+	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_DISCONNECT_ACL)) {
+		cb = l2cap_br_conn_rsp_sent_cb;
+	}
+
 	l2cap_br_send_conn_rsp(l2cap, BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->rx.cid,
-			       BR_CHAN(chan)->ident, result);
+			       BR_CHAN(chan)->ident, result, cb);
 	BR_CHAN(chan)->ident = 0U;
 }
 
@@ -3172,7 +3173,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	return;
 
 no_chan:
-	l2cap_br_send_conn_rsp(l2cap, scid, 0, ident, result);
+	l2cap_br_send_conn_rsp(l2cap, scid, 0, ident, result, NULL);
 }
 
 #define L2CAP_QOS_TOKEN_RATE_DEFAULT        0x00000000
