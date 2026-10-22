@@ -136,10 +136,10 @@ zephyr_udc0: &usbotg_fs {
 	ext_flash_ctrl: qspi-flash-controller@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <100000000>;
 		cs-high-time = <2>; /* >= 50 ns */
-		status = "okay";
 		spi-bus-width = <4>;
 		writeoc = "PP_1_1_4";
 		reset-cmd;
@@ -147,18 +147,18 @@ zephyr_udc0: &usbotg_fs {
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+		status = "okay";
 
 		/* Sector erase 64KB uniform granularity for each Flash */
 		/* Subsector erase 4KB, 32KB granularity for each Flash */
 		ext_flash: w25q64_qspi: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(8)>; /* 8MB */
+			ranges;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };
@@ -174,11 +174,11 @@ zephyr_udc0: &usbotg_fs {
 		reg = <0>;
 		spi-max-frequency = <40000000>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
-		status = "okay";
 		jedec-id = [ef 40 17];
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+		status = "okay";
 	};
 };
 
