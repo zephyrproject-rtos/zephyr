@@ -21,8 +21,9 @@ config LV_Z_DOUBLE_VDB
 
 # Force full refresh. This prevents memory copy associated with partial
 # display refreshes, which is not necessary for the eLCDIF driver
-config LV_Z_FULL_REFRESH
-	default y
+choice LV_Z_RENDERING_MODE
+	default LV_Z_FULL_REFRESH
+endchoice
 
 config LV_DPI_DEF
 	default 128
