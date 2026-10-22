@@ -7331,6 +7331,113 @@ ZTEST(net_socket_quic, test_506_orphan_release_keeps_a_held_endpoint)
 	zexpect_equal(atomic_get(&ep->refcount), 0, "The endpoint was not released");
 }
 
+/* Feed a STREAM frame with the FIN bit and no data to the endpoint */
+static int stream_fin_for_stream(struct quic_endpoint *ep, struct quic_context *ctx,
+				 uint8_t stream_id)
+{
+	const uint8_t payload[] = {
+		QUIC_FRAME_TYPE_STREAM_BASE | 0x01, /* FIN, data to the end */
+		stream_id,
+	};
+	bool ack_only = false;
+	int ret;
+
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload), sizeof(payload),
+					 &ack_only);
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+/* Take the stream a frame just opened off the context, as if it had been
+ * accepted and closed again.
+ */
+static struct quic_stream *take_opened_stream(struct quic_context *ctx, uint64_t stream_id)
+{
+	struct quic_stream *stream = k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT);
+
+	zassert_not_null(stream, "Stream %" PRIu64 " was not opened", stream_id);
+	zassert_equal(stream->id, stream_id, "Opened stream %" PRIu64 " instead of %" PRIu64,
+		      stream->id, stream_id);
+	zassert_true(sys_slist_find_and_remove(&ctx->streams, &stream->node),
+		     "Stream %" PRIu64 " not on the context", stream_id);
+	k_sem_reset(&ctx->incoming.stream_sem);
+
+	return stream;
+}
+
+/* Put a stream back, so that closing the context releases it */
+static void return_opened_stream(struct quic_context *ctx, struct quic_stream *stream)
+{
+	sys_slist_append(&ctx->streams, &stream->node);
+	k_fifo_put(&ctx->incoming.stream_q, stream);
+}
+
+ZTEST(net_socket_quic, test_502_late_frame_does_not_reopen_a_closed_stream)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_stream *closed_4;
+	struct quic_stream *closed_8;
+	struct quic_stream *opened_0;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54354");
+
+	ep->is_server = true;
+	ep->rx_sl.max_bidi = 8;
+	ep->rx_sl.max_uni = 8;
+
+	/* The peer opens streams 8 and 4, in that order as packets can be
+	 * reordered. Opening 8 first must not stop 4 from being opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zassert_true(ret >= 0, "STREAM frame for stream 8 failed (%d)", ret);
+	closed_8 = take_opened_stream(ctx, 8);
+
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zassert_true(ret >= 0, "STREAM frame for stream 4 failed (%d)", ret);
+	closed_4 = take_opened_stream(ctx, 4);
+
+	/* Both are closed now. A late frame for either of them is ignored
+	 * and does not open the stream again.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zexpect_true(ret >= 0, "Late frame for stream 8 failed (%d)", ret);
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zexpect_true(ret >= 0, "Late frame for stream 4 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed peer stream was opened again");
+
+	/* Stream 0 was opened implicitly by stream 4 (RFC 9000 ch. 2.1) but
+	 * not used yet, so it can still be opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STREAM frame for stream 0 failed (%d)", ret);
+	opened_0 = take_opened_stream(ctx, 0);
+
+	/* A stream of our own that was opened and closed, stream 1 */
+	ctx->stream_id_counter = 1;
+	ret = stream_fin_for_stream(ep, ctx, 1);
+	zexpect_true(ret >= 0, "Late frame for our stream 1 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed stream of our own was opened as a peer stream");
+	ctx->stream_id_counter = 0;
+
+	return_opened_stream(ctx, opened_0);
+	return_opened_stream(ctx, closed_4);
+	return_opened_stream(ctx, closed_8);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
