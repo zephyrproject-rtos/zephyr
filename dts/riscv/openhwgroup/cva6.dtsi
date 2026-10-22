@@ -31,11 +31,22 @@
 		#address-cells = <0x01>;
 		#size-cells = <0x01>;
 
-		/* Xilinx MIG memory controller */
-		memory0: memory@80000000 {
-			reg = <0x80000000 0x40000000>;
-			device_type = "memory";
-			status = "okay";
+		/*
+		 * Core-local interrupt controller according to RISC-V spec
+		 */
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			reg = <0x2000000 0x40000>;
+			interrupts-extended = <&hlic 3 &hlic 7>;
+			status = "disabled";
+		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			interrupts-extended = <&hlic 7>;
+			reg-names = "mtime", "mtimecmp";
+			status = "disabled";
 		};
 
 		/* RISC-V Platform-level interrupt controller */
@@ -83,48 +94,6 @@
 		};
 
 		/*
-		 * Core-local interrupt controller according to RISC-V spec
-		 */
-		clint: clint@2000000 {
-			compatible = "sifive,clint0";
-			reg = <0x2000000 0x40000>;
-			interrupts-extended = <&hlic 3 &hlic 7>;
-			status = "disabled";
-		};
-
-		mtimer: timer@200bff8 {
-			compatible = "riscv,machine-timer";
-			reg = <0x200bff8 0x8 0x2004000 0x8>;
-			interrupts-extended = <&hlic 7>;
-			reg-names = "mtime", "mtimecmp";
-			status = "disabled";
-		};
-
-		/*
-		 * Xilinx AXI DMA.
-		 * Part of the Xilinx AXI Ethernet Subsystem.
-		 * Only on CISPA board.
-		 */
-		dma0: dma@41e00000 {
-			compatible = "xlnx,eth-dma";
-			reg = <0x41e00000 0x10000>;
-			#dma-cells = <0x01>;
-			clock-frequency = <DT_FREQ_M(50)>;
-			clock-names = "s_axi_lite_aclk";
-			clocks = <&clk_bus>;
-			interrupt-parent = <&plic>;
-			// TX - RX
-			// active-high level-triggered
-			interrupts = <8 4>, <9 4>;
-			// TX and RX
-			dma-channels = <2>;
-			xlnx,addrwidth = <0x40>;
-			xlnx,include-dre;
-			xlnx,num-queues = <0x1>;
-			status = "disabled";
-		};
-
-		/*
 		 * LowRISC ethernet subsystem.
 		 * Only on OpenHW Group board.
 		 */
@@ -153,6 +122,37 @@
 			xlnx,tri-default = <0xffffffff>;
 			xlnx,tri-default-2 = <0xffffffff>;
 			status = "disabled";
+		};
+
+		/*
+		 * Xilinx AXI DMA.
+		 * Part of the Xilinx AXI Ethernet Subsystem.
+		 * Only on CISPA board.
+		 */
+		dma0: dma@41e00000 {
+			compatible = "xlnx,eth-dma";
+			reg = <0x41e00000 0x10000>;
+			#dma-cells = <0x01>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			clock-names = "s_axi_lite_aclk";
+			clocks = <&clk_bus>;
+			interrupt-parent = <&plic>;
+			// TX - RX
+			// active-high level-triggered
+			interrupts = <8 4>, <9 4>;
+			// TX and RX
+			dma-channels = <2>;
+			xlnx,addrwidth = <0x40>;
+			xlnx,include-dre;
+			xlnx,num-queues = <0x1>;
+			status = "disabled";
+		};
+
+		/* Xilinx MIG memory controller */
+		memory0: memory@80000000 {
+			reg = <0x80000000 0x40000000>;
+			device_type = "memory";
+			status = "okay";
 		};
 	};
 };
