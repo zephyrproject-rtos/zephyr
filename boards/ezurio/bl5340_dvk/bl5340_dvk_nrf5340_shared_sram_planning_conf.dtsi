@@ -19,9 +19,9 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		sram0_shared: memory@20070000 {
 			/* SRAM allocated to shared memory */
