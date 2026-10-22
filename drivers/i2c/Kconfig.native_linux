@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_NATIVE_LINUX
+	bool "Native Linux I2C controller"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_I2C_ENABLED
+	depends on ARCH_POSIX
+	select NATIVE_USE_NSI_ERRNO
+	help
+	  native_sim I2C controller backed by a host i2c-dev node.
+
+config I2C_NATIVE_LINUX_BOUNCE_SIZE
+	int "Bounce buffer size of the native Linux I2C controller"
+	default 1024
+	range 2 65535
+	depends on I2C_NATIVE_LINUX
+	help
+	  Per-instance buffer for joining messages sent without RESTART.

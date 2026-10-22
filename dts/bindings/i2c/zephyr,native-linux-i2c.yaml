@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Native Linux I2C controller
+
+  native_sim I2C controller backed by a host i2c-dev node. The host adapter
+  must support plain I2C transfers and sets the bus speed: the controller
+  only stores the configuration it is given, and returns it from get_config().
+  Transfers run on a host thread while simulated time goes on.
+
+compatible: "zephyr,native-linux-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  path:
+    type: string
+    required: true
+    description: |
+      Host i2c-dev node, e.g. "/dev/i2c-1". Overridden by the
+      --<node name>_path command line option.
+
+examples:
+  - |
+      / {
+          i2c_host: i2c_host {
+            compatible = "zephyr,native-linux-i2c";
+            path = "/dev/i2c-1";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            sensor@76 {
+              compatible = "bosch,bme280";
+              reg = <0x76>;
+            };
+          };
+      };

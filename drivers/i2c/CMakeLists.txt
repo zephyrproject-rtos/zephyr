@@ -20,6 +20,16 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE i2c_handlers.c)
 
 add_subdirectory_ifdef(CONFIG_I2C_TARGET target)
 
+if(CONFIG_I2C_NATIVE_LINUX)
+  if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+    zephyr_library_sources(i2c_native_linux.c)
+    target_compile_options(native_simulator BEFORE INTERFACE -I${BOARD_DIR})
+    target_sources(native_simulator INTERFACE i2c_native_linux_bottom.c)
+  else()
+    message(FATAL_ERROR "CONFIG_I2C_NATIVE_LINUX is only available on Linux")
+  endif()
+endif()
+
 zephyr_library_include_directories_ifdef(CONFIG_I2C_AMEBA ${ZEPHYR_BASE}/drivers/dma)
 
 # zephyr-keep-sorted-start
