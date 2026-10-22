@@ -1594,5 +1594,9 @@ bool tls_server_ticket_cache_lookup(const uint8_t *ticket, size_t ticket_len,
 void tls_server_ticket_cache_consume(const uint8_t *ticket, size_t ticket_len);
 bool tls_ticket_age_acceptable(uint64_t issued_at_ms, uint32_t ticket_age_add,
 			       uint32_t obfuscated_ticket_age, uint64_t now_ms);
+void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
+void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr);
+struct quic_endpoint *quic_test_endpoint_alloc(void);
+void quic_test_endpoint_unref(struct quic_endpoint *ep);
 
 #endif /* CONFIG_NET_TEST */

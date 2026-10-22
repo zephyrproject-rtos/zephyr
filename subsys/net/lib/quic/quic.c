@@ -3366,7 +3366,7 @@ static bool quic_endpoint_ref_unless_zero(struct quic_endpoint *ep)
 }
 
 /* Notify all streams associated with this endpoint that the connection is closed */
-static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 {
 	int i;
 
@@ -5877,6 +5877,20 @@ fail:
 	return ret;
 }
 
+#if defined(CONFIG_NET_TEST)
+/* Let tests take an endpoint from the pool, as a connection would */
+struct quic_endpoint *quic_test_endpoint_alloc(void)
+{
+	return endpoint_alloc_from_slab(&endpoints_slab, K_NO_WAIT);
+}
+
+/* Let tests drop a reference, which frees the endpoint with the last one */
+void quic_test_endpoint_unref(struct quic_endpoint *ep)
+{
+	(void)quic_endpoint_unref(ep);
+}
+#endif /* CONFIG_NET_TEST */
+
 static struct quic_context *quic_context_init(struct quic_context *ctx)
 {
 	k_fifo_init(&ctx->pending.accept_q);
@@ -6399,7 +6413,7 @@ static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
  * without unlinking the endpoint (e.g. setsockopt failed before the endpoint
  * was attached to the context list).
  */
-static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
+ZTESTABLE_STATIC void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
 {
 	struct quic_endpoint *orphans[CONFIG_QUIC_MAX_ENDPOINTS] = { 0 };
 	int orphan_count = 0;
