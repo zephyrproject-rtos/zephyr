@@ -153,6 +153,7 @@ static int quic_connection_init(struct quic_context *ctx,
 
 fail:
 	sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ep->list_ref_dropped = true;
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
