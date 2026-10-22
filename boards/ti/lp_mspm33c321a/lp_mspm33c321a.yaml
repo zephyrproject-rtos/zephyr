@@ -7,11 +7,17 @@ toolchain:
 ram: 256
 flash: 1024
 supported:
+  - can
+  - counter
   - dma
-  - rtc
-  - pinctrl
-  - uart
   - gpio
   - i2c
+  - pinctrl
+  - pwm
+  - rtc
   - spi
+  - trng
+  - uart
+  - vref
+  - watchdog
 vendor: ti
