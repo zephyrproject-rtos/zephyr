@@ -20,9 +20,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -46,18 +46,18 @@
 		flash-controller@400fd000 {
 			compatible = "ti,stellaris-flash-controller";
 			reg = <0x400fd000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0x00000000 (256 * 1024)>;
+				ranges = <0x0 0x0 (256 * 1024)>;
 				erase-block-size = <1024>;
 				write-block-size = <4>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 (256 * 1024)>;
 			};
 		};
 

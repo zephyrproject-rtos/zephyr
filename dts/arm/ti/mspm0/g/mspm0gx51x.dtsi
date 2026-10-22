@@ -32,17 +32,17 @@
 		dac0: dac@40018000 {
 			compatible = "ti,mspm0-dac";
 			reg = <0x40018000 0x2000>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		gpioc: gpio@400a4000 {
 			compatible = "ti,mspm0-gpio";
 			reg = <0x400a4000 0x2000>;
 			interrupts = <1 0>;
-			status = "disabled";
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		timg8: timg8@40090000 {
