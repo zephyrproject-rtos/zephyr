@@ -101,6 +101,11 @@
 		status = "disabled";
 	};
 
+	ieee802154: ieee802154 {
+		compatible = "espressif,esp32-ieee802154";
+		status = "disabled";
+	};
+
 	ana_cmpr0: ana_cmpr0 {
 		compatible = "espressif,esp32-ana-cmpr";
 		unit = <0>;
