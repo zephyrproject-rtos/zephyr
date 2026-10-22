@@ -32,6 +32,15 @@
 		};
 	};
 
+	leds: leds {
+		compatible = "gpio-leds";
+
+		heartbeat_led: led_0 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "Heartbeat LED";
+		};
+	};
+
 	ddr0: memory@9cb00000 {
 		compatible = "mmio-sram";
 		reg = <0x9cb00000 DT_SIZE_M(1)>;
@@ -47,15 +56,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
 		zephyr,memory-region = "DDR";
-	};
-
-	leds: leds {
-		compatible = "gpio-leds";
-
-		heartbeat_led: led_0 {
-			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
-			label = "Heartbeat LED";
-		};
 	};
 };
 

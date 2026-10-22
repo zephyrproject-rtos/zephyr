@@ -26,10 +26,6 @@
 		zephyr,sram = &dram;
 	};
 
-	dram: memory@93c00000 {
-		reg = <0x93c00000 DT_SIZE_M(1)>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -41,6 +37,10 @@
 	psci {
 		compatible = "arm,psci-1.1";
 		method = "smc";
+	};
+
+	dram: memory@93c00000 {
+		reg = <0x93c00000 DT_SIZE_M(1)>;
 	};
 };
 
