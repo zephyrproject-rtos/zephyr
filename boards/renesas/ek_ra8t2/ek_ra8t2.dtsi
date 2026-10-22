@@ -370,8 +370,8 @@ pmod_header: &pmod2_header {};
 
 	ext_flash_ctrl: flash-controller@1 {
 		compatible = "renesas,ra-ospi-b-nor";
-		ranges = <0x0 0x78000000 DT_SIZE_M(128)>;
 		reg = <1>;
+		ranges = <0x0 0x78000000 DT_SIZE_M(128)>;
 		protocol-mode = <OSPI_OPI_MODE>;
 		nor-max-frequency = <DT_FREQ_M(133)>;
 		jedec-id = [9d 5a 1a];

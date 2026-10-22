@@ -10,8 +10,8 @@
 #include "mck_ra4t1-pinctrl.dtsi"
 
 / {
-	model = "Renesas MCK-RA4T1";
 	compatible = "renesas,ra4t1", "renesas,ra";
+	model = "Renesas MCK-RA4T1";
 
 	chosen {
 		zephyr,sram = &sram0;
