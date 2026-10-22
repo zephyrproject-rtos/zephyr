@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <realtek/bee/rtl8752h.dtsi>
+
+/ {
+	soc {
+		flash-controller@40080000 {
+			flash@800000 {
+				reg = <0x800000 DT_SIZE_K(1024)>;
+				ranges = <0x0 0x800000 DT_SIZE_K(1024)>;
+			};
+		};
+	};
+};

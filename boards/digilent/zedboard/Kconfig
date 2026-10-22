@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ZEDBOARD
+	select PINCTRL if UART_XLNX_PS

@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-0 = &ioex_it8801_pwm7;
+	};
+};
+
+&i2c4 {
+	status = "okay";
+
+	it8801_mfd: it8801@38 {
+		compatible = "ite,it8801-mfd";
+		reg = <0x38>;
+		irq-gpios = <&gpioa 1 0>;
+	};
+};
+
+#include <ite/it8801-common-cfg.dtsi>
+
+&ioex_it8801_pwm7 {
+	status = "okay";
+};

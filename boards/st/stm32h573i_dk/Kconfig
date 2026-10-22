@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H573I_DK
+	select TFM_PARTITION_FIRMWARE_UPDATE_SUPPORTED if BOARD_STM32H573I_DK_STM32H573XX_NS

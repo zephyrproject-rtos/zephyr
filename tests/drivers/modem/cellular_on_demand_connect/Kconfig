@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_ON_DEMAND_EARLY_ADMIN_UP
+	bool "Admit the PPP interface before the modem finishes booting"
+	depends on MODEM_CELLULAR_ON_DEMAND_CONNECT
+	help
+	  Selects the test variant that calls net_if_up() on the PPP interface
+	  before the modem emulator is attached, so the NET_EVENT_IF_ADMIN_UP
+	  edge arrives while the driver's state machine is still powering up and
+	  cannot act on it. Covers the admin level being re-derived on entry to
+	  the AWAIT_DIAL state.

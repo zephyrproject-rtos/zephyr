@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2021 Intel Corporation.
+
+if BOARD_QEMU_X86_LAKEMONT
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config KERNEL_VM_SIZE
+	default 0x400000
+
+# Unlike the SoC's usual targets, QEMU presents a PC-compatible machine
+# and loads the ELF image through its multiboot header.
+config X86_PC_COMPATIBLE
+	default y
+
+config QEMU_ICOUNT
+	default n if HPET_TIMER && SHELL
+
+config QEMU_ICOUNT_SHIFT
+	default 5
+
+endif # BOARD_QEMU_X86_LAKEMONT

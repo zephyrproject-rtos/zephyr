@@ -1,0 +1,99 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  QSPI hyperflash connected to the NXP S32 QSPI bus.
+
+compatible: "nxp,s32-qspi-hyperflash"
+
+include: "nxp,s32-qspi-device.yaml"
+
+properties:
+  device-id-word-addr:
+    required: true
+    type: int
+    description: |
+      The word address of the device ID in ASO (Application-Specific Object).
+      This address specifies the exact location within the memory where the device ID is stored.
+
+  rwds-low-dual-error:
+    type: boolean
+    description: |
+      Enable Read-Write Data Strobe (RWDS) dual error detect.
+
+  secure-region-locked:
+    type: boolean
+    description: |
+      The secure region is locked and cannot be accessed or modified.
+      This is particularly useful in scenarios where sensitive data needs protection from
+      unauthorized access, such as in financial applications or secure communication systems.
+      If it is disable, having access to all memory regions is beneficial during development
+      or debugging phases.
+
+  vcc-mv:
+    type: int
+    required: true
+    enum:
+      - 1800
+      - 3000
+    description: |
+      The memory operating voltage supply in mV.
+
+  drive-strength-ohm:
+    type: int
+    required: true
+    enum:
+      - 12
+      - 14
+      - 16
+      - 20
+      - 24
+      - 27
+      - 34
+      - 40
+      - 45
+      - 68
+      - 71
+      - 117
+    description: |
+      Specifies the output drive strength in ohm, which based on the operating device VCC.
+      The supported typical impedance settings:
+        For 1.8V: 117 Ohm, 68 Ohm, 45 Ohm, 34 Ohm, 27 Ohm, 24 Ohm, 20 Ohm
+        For 3V: 71 Ohm, 40 Ohm, 27 Ohm, 20 Ohm, 16 Ohm, 14 Ohm, 12 Ohm
+      See the xVCR[14:12] field in VCR configuration register in the memory device datasheet.
+
+  read-latency-cycles:
+    type: int
+    required: true
+    enum:
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+    description: |
+      Specifies the read latency in cycles, which is determined based on the operating frequency
+      as specified in the memory device datasheet.
+
+  support-only-uniform-sectors:
+    type: boolean
+    description: |
+      The memory device supports only uniform (256KB) sectors.
+
+  ppw-sectors-addr-mapping:
+    type: string
+    required: true
+    enum:
+      - LOW
+      - HIGH
+    description: |
+      The mapping of the parameter and read password sectors:
+        - LOW: Parameter and read password sectors mapped into lowest addresses
+        - HIGH: Parameter and read password sectors mapped into highest addresses

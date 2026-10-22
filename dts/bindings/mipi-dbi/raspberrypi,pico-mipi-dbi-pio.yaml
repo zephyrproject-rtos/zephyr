@@ -1,0 +1,95 @@
+# Copyright 2025 Christoph Schnetzler
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MIPI-DBI Mode B controller. It emulates MIPI DBI mode B
+  (8080 parallel interface) using PIO peripherals.
+
+compatible: "raspberrypi,pico-mipi-dbi-pio"
+
+include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+
+  dc-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data/command GPIO pin. Set to low when sending a command, or high when sending data.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Reset GPIO pin. Set high to reset the display.
+
+  wr-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Write GPIO pin for type B (Intel 8080) mode.
+
+  cs-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Chip-select GPIO pin.
+
+  data-pin-splits:
+    type: phandle-array
+    required: true
+    description: |
+      Pin assignment for parallel data bus. Pins can be split in up to 4 pairs. The sum
+      of consecutive pins of all splits must be equal to the bits specified in the selected
+      mipi-mode.
+
+      For example a 16 Bit parallel data bus with pins assigned in 4 splits:
+
+      mipi_dbi: mipi_dbi {
+        compatible = "raspberrypi,pico-mipi-dbi-pio";
+        ...
+        data-pin-splits = <&mipi_dbi  2 8>, // base pin =  2 consecutive pins = 8
+                          <&mipi_dbi 12 4>, // base pin = 12 consecutive pins = 4
+                          <&mipi_dbi 20 2>, // base pin = 20 consecutive pins = 2
+                          <&mipi_dbi 25 2>; // base pin = 25 consecutive pins = 2
+        ...
+        #data-pin-split-cells = <2>;
+      };
+
+  "#data-pin-split-cells":
+    type: int
+    const: 2
+
+  pio-clock-div:
+    type: int
+    default: 1
+    description: |
+      Clock divisor for PIO state machine
+
+      Range [1, 65536]
+
+      Rather than slowing the system clock itself, the clock divider
+      redefines how many system clock periods are considered to be
+      "one cycle", for execution purposes. This is useful if the display
+      driver needs a slower clock speed to meet its specifications.
+      The implementation needs four pio instructions to send a bit. Each
+      instruction takes exactly one cycle. This means the clock speed
+      seen by the display driver is already system clock divided by 4.
+      Bits are shifted out with the following speed:
+
+      Bit output shift rate [MHz] = system clock [MHz] / pio-clock-div / 4
+
+      For example:
+        system clock = 125 MHz
+        pio-clock-div = 1
+        The pios clock is as fast as the system clock. Each cycle takes 8ns.
+        Each bit takes 4 pio clock cycles, this results in 32ns or 31.25MHz
+
+        system clock = 125 MHz
+        pio-clock-div = 2
+        The pios clock is half the speed of the system clock. Each cycle takes 16ns.
+        Each bit takes 4 pio clock cycles, this results in 64ns or 15.625MHz
+
+data-pin-split-cells:
+  - base_pin
+  - consecutive_pins

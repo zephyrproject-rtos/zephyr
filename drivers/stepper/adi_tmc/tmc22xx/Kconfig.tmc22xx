@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMC2209
+	bool "Activate trinamic tmc2209 stepper driver"
+	depends on DT_HAS_ADI_TMC2209_ENABLED
+	select STEP_DIR_STEPPER
+	default y
+	help
+	  Stepper driver for TMC2209.

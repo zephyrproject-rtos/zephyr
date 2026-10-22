@@ -1,0 +1,12 @@
+description: OpenISA RV32M1 LPTMR peripheral
+
+compatible: "openisa,rv32m1-lptmr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

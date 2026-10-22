@@ -1,0 +1,6 @@
+shield:
+  name: arduino_modulino_thermo
+  full_name: Arduino Modulino Thermo
+  vendor: arduino
+  supported_features:
+    - sensor

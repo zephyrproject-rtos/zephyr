@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.adltc2990:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim

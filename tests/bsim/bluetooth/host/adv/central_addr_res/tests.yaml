@@ -1,0 +1,24 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpunet
+  harness: bsim
+
+tests:
+  bluetooth.host.adv.central_addr_res:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_adv_central_addr_res_prj_conf
+      tests_scripts:
+        - tests_scripts/central_addr_res.sh
+  bluetooth.host.adv.central_addr_res_no_car:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_adv_central_addr_res_overlay-no_privacy_conf
+      tests_scripts:
+        - tests_scripts/central_addr_res_no_car.sh
+    extra_args:
+      EXTRA_CONF_FILE=overlay-no_privacy.conf

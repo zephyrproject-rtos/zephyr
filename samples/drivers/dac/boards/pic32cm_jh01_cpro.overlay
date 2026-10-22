@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		dac = <&dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <10>;
+	};
+};
+
+&dac {
+	compatible = "microchip,dac-g2";
+	status = "okay";
+};

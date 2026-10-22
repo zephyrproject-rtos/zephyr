@@ -1,0 +1,11 @@
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	zephyr,user {
+		/* Connect your SPI CS pin to the D8 pin to run the test */
+		cs-loopback-gpios = <&arduino_header>,
+				    <ARDUINO_HEADER_R3_D8>,
+				    <(GPIO_ACTIVE_LOW | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
+	};
+};

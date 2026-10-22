@@ -1,0 +1,44 @@
+# Distributed Switch Architecture [DSA] configuration options
+
+# Copyright (c) 2020 DENX Software Engineering GmbH
+#               Lukasz Majewski <lukma@denx.de>
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_DSA
+	bool "Distributed Switch Architecture support"
+	help
+	  Enable Distributed Switch Architecture support.
+
+if NET_DSA
+
+config DSA_PORT_MAX_COUNT
+	int "DSA port max count"
+	default 8
+	help
+	  Set DSA port max count.
+
+config DSA_TAG_SIZE
+	int "DSA tag size in bytes"
+	default 0
+	help
+	  Set the DSA tag length in bytes.
+
+config DSA_CONDUIT_PROMISC_ON
+	bool "Run DSA conduit in promiscuous mode"
+	default y
+	select NET_PROMISCUOUS_MODE
+	help
+	  Some conduits leverage ingress filters to discard packets whose DMAC field does not match
+	  that programmed into the conduit's MAC before said packets are ever made available to the
+	  software. Such conduits typically need to run in promiscuous mode to ensure packets
+	  received on DSA ports being processed.
+
+
+module = NET_DSA
+module-dep = NET_LOG
+module-str = Log level for DSA
+module-help = Enables core DSA code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_DSA

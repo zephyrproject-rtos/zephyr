@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Commands that are an exception to cmake_style.py's lowercase rule: CMake
+# module commands, and Zephyr/sysbuild commands that extend a mixed-case
+# command, use a mixed-case 'Module_Action' convention. For these the canonical
+# mixed-case spelling below is the only accepted form, so both an all-lowercase
+# and any other casing are flagged.
+#
+# One canonical name per line. Downstream projects append their own names by
+# passing extra files like this one with --mixed-case-file.
+
+# ExternalProject module (https://cmake.org/cmake/help/latest/module/ExternalProject.html).
+ExternalProject_Add
+ExternalProject_Add_Step
+ExternalProject_Add_StepTargets
+ExternalProject_Add_StepDependencies
+ExternalProject_Get_Property
+
+# FetchContent module (https://cmake.org/cmake/help/latest/module/FetchContent.html).
+FetchContent_Declare
+FetchContent_MakeAvailable
+FetchContent_Populate
+FetchContent_GetProperties
+FetchContent_SetPopulated
+
+# Zephyr sysbuild extensions, modeled after ExternalProject_Add.
+ExternalZephyrProject_Add
+ExternalZephyrVariantProject_Add
+ExternalZephyrProject_Cmake

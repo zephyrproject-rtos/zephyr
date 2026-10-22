@@ -1,0 +1,14 @@
+common:
+  tags:
+    - drivers
+    - display
+  harness: ztest
+tests:
+  # section.subsection
+  drivers.display.callbacks:
+    platform_allow:
+      - stm32h7s78_dk/stm32h7s7xx
+      - mimxrt1170_evk@A/mimxrt1176/cm7
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_args:
+      - platform:mimxrt1170_evk@A/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0

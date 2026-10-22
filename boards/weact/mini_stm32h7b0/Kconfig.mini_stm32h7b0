@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MINI_STM32H7B0
+	select SOC_STM32H7B0XX

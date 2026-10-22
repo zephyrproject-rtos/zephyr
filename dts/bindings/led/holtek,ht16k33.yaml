@@ -1,0 +1,12 @@
+description: Holtek HT16K33 LEDs
+
+compatible: "holtek,ht16k33"
+
+include: i2c-device.yaml
+
+bus: ht16k33
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: IRQ pin

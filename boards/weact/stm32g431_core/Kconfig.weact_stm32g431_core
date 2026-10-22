@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Andreas Sandberg
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WEACT_STM32G431_CORE
+	select SOC_STM32G431XX

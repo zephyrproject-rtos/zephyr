@@ -1,0 +1,5 @@
+This test case verifies that kernel fatal error logging message can be captured.
+
+When the fatal error is triggered, if the debugging message function is turned on,
+the system can capture the print information.
+

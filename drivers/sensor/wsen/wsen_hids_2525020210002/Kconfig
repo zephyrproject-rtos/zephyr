@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config WSEN_HIDS_2525020210002
+	bool "WSEN-HIDS-2525020210002 humidity sensor"
+	default y
+	depends on DT_HAS_WE_WSEN_HIDS_2525020210002_ENABLED
+	depends on ZEPHYR_HAL_WURTHELEKTRONIK_MODULE
+	select I2C
+	select HAS_WESENSORS
+	help
+	  Enable driver for the WSEN-HIDS-2525020210002 I2C-based humidity sensor.

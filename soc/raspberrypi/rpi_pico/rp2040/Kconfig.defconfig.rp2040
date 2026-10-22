@@ -1,0 +1,10 @@
+# # Raspberry Pi RP2040 MCU
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BUILD_OUTPUT_UF2_USE_FLASH_BASE
+	default y if RP2_REQUIRES_SECOND_STAGE_BOOT
+
+config BUILD_OUTPUT_UF2_USE_FLASH_OFFSET
+	default y if !RP2_REQUIRES_SECOND_STAGE_BOOT

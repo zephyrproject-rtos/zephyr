@@ -1,0 +1,6 @@
+boards:
+  - name: imx93_var_dart
+    full_name: DART-MX93
+    vendor: variscite
+    socs:
+      - name: mimx9352

@@ -1,0 +1,105 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP BASIC Frequency Measurement (FREQME / fmeas) module.
+
+  Single-register FREQMECTRL variant (RT6xx / RT5xx / RW6xx) driven through
+  the MCUX SDK fsl_fmeas HAL. Measures a target clock against a reference
+  clock and returns the result in Hz. The reference and target inputs are
+  routed through the INPUTMUX peripheral via the Zephyr mux subsystem.
+
+  This hardware has no interrupt line and no MIN/MAX threshold registers, so
+  the Zephyr clock_monitor MEASURE (one-shot) mode is the only mode supported;
+  WINDOW mode is rejected with -ENOTSUP. The measurement window is HW/HAL-fixed
+  at 2^20 reference-clock cycles, so a MEASURE window_ns request is advisory.
+
+  Selectable clock sources are declared with two container child nodes,
+  "reference-sources" and "target-sources". Each container holds one child
+  node per selectable source, pairing an INPUTMUX route with an optional
+  frequency provider. The child marked "default-source" is the power-on
+  selection. clock_monitor_set_source() switches between the declared sources
+  at runtime, keyed by the INPUTMUX connection cookie (see mux-states).
+
+  A source's frequency provider is either "clock-frequency" (a fixed constant
+  in Hz) or "clocks" (queried through clock_control_get_rate()). When both are
+  present "clock-frequency" wins. A reference source must resolve to a nonzero
+  frequency (required by the driver to convert the raw result counter into Hz).
+  A target source may omit both (MEASURE-only; no frequency is predicted).
+
+  The driver does not enable the selected source clocks. The application must
+  ensure the chosen reference and target clocks are running before
+  configure()/start(); a source left off simply measures zero edges and is
+  reported as CLOCK_LOST.
+
+  Place NXP_FMEAS_*_REF_* cookies in "reference-sources" children and
+  NXP_FMEAS_*_TAR_* (or the shared NXP_FMEAS_* cookies) in "target-sources"
+  children. See <zephyr/dt-bindings/clock-monitor/nxp-fmeas.h>.
+
+compatible: "nxp,fmeas"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      FREQME peripheral gate clock (ipg), enabled by the driver via
+      clock_control_on().
+
+  resets:
+    required: true
+    description: |
+      FREQME peripheral reset line. The driver toggles it once at init to
+      release the block from reset; without it the FREQMECTRL register is
+      inert (writes dropped, reads return 0) and every measurement reports 0.
+
+child-binding:
+  description: |
+    Container for a set of selectable fmeas clock sources. Instantiated
+    twice per fmeas node, as "reference-sources" and "target-sources".
+
+  child-binding:
+    description: |
+      One selectable fmeas clock source: an INPUTMUX route paired with an
+      optional frequency provider.
+
+    include: [mux-consumer.yaml]
+
+    properties:
+      mux-states:
+        required: true
+        description: |
+          INPUTMUX route for this source, given as a single mux-states entry
+          <&inputmux channel connection> where:
+            - &inputmux is the INPUTMUX mux controller
+            - channel selects the FMEASURE_CH_SEL slot:
+                0 = reference (FMEASURE_CH_SEL[0])
+                1 = target    (FMEASURE_CH_SEL[1])
+            - connection is an NXP_FMEAS_* cookie from
+              <zephyr/dt-bindings/clock-monitor/nxp-fmeas.h>.
+          The connection cookie is also the runtime clock_monitor_set_source()
+          selector for this source.
+
+      clocks:
+        type: phandle-array
+        description: |
+          Frequency provider queried through clock_control_get_rate().
+          Ignored when clock-frequency is present.
+
+      clock-frequency:
+        type: int
+        description: |
+          Fixed frequency provider in Hz, used verbatim without querying
+          clock_control. Takes precedence over clocks. Use for sources whose
+          rate the clock_control driver cannot report (e.g. an external
+          crystal).
+
+      default-source:
+        type: boolean
+        description: |
+          Marks this source as the power-on selection for its container.
+          Exactly one child of each container must set it.

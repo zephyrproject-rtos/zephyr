@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2020 Friedt Professional Engineering Services, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio0 0 0>; /* Pin 0 */
+		in-gpios = <&gpio0 1 0>; /* Pin 1 */
+	};
+};
+
+&gpio0 {
+	ngpios = <2>;
+};

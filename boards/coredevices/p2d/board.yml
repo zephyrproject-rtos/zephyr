@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+boards:
+- name: p2d
+  full_name: Pebble 2 Duo
+  vendor: coredevices
+  socs:
+  - name: nrf52840

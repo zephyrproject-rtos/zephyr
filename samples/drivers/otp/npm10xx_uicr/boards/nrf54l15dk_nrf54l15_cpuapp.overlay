@@ -1,0 +1,29 @@
+/*
+ * Copyright (C) 2026 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pmic_i2c_default: pmic_i2c_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 11)>,
+				<NRF_PSEL(TWIM_SCL, 1, 12)>;
+			bias-pull-up;
+		};
+	};
+
+	pmic_i2c_sleep: pmic_i2c_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 11)>,
+				<NRF_PSEL(TWIM_SCL, 1, 12)>;
+			low-power-enable;
+		};
+	};
+};
+
+pmic_i2c: &i2c21 {
+	status = "okay";
+	pinctrl-0 = <&pmic_i2c_default>;
+	pinctrl-1 = <&pmic_i2c_sleep>;
+	pinctrl-names = "default", "sleep";
+};

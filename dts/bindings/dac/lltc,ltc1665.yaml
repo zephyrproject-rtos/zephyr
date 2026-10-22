@@ -1,0 +1,8 @@
+# Copyright (C) 2023 Marcus Folkesson <marcus.folkesson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: [dac-controller.yaml, spi-device.yaml]
+
+description: Linear Technology Micropower octal 8-Bit DAC
+
+compatible: "lltc,ltc1665"

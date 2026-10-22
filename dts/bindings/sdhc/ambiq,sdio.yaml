@@ -1,0 +1,28 @@
+# Copyright 2025, Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq SDIO host controller
+
+compatible: "ambiq,sdio"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  txdelay:
+    type: int
+    required: true
+    description: SDIO TX delay tap setting. Range 0 - 15.
+
+  rxdelay:
+    type: int
+    required: true
+    description: SDIO RX delay tap setting. Range 0 - 31.

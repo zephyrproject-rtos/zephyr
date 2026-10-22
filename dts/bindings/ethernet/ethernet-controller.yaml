@@ -1,0 +1,43 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Ethernet devices
+
+include:
+  - name: base.yaml
+  - name: ethernet-mac-address.yaml
+
+properties:
+  phy-handle:
+    type: phandle
+    dependency-mode: ignore
+    description: |
+      Specifies a reference to a node representing a PHY device.
+
+  phy-connection-type:
+    type: string
+    description: |
+      Specifies the interface connection type between ethernet MAC and PHY.
+    enum:
+      - "mii"
+      - "rmii"
+      - "gmii"
+      - "rgmii"
+      - "rgmii-id"
+      - "rgmii-txid"
+      - "rgmii-rxid"
+      - "tbi"
+      - "rtbi"
+      - "smii"
+      - "sgmii"
+      - "rev-mii"
+      - "xgmii"
+      - "moca"
+      - "qsgmii"
+      - "trgmii"
+      - "internal"
+
+  ptp-clock:
+    type: phandle
+    description: |
+      Corresponding ptp clock device.

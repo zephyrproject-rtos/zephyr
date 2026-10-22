@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Intercreate, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * MCUboot image: runs XIP from flash0 @ 0x0 (QEMU loads it at the reset
+ * vector) using the low 256 KB of SRAM as runtime. The flash-simulator map
+ * and partition table are the application's; include its overlay so both
+ * images agree, then add the MCUboot-only exec region and code partition.
+ */
+
+#include "../boards/mps2_an385.overlay"
+
+/delete-node/ &sram0;
+
+/ {
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0x00040000>;
+	};
+
+	image_ram: memory@20240000 {
+		compatible = "mmio-sram";
+		reg = <0x20240000 0x001bf000>;
+	};
+
+	chosen {
+		zephyr,code-partition = &boot_partition;
+		mcuboot,image-ram = &image_ram;
+	};
+};

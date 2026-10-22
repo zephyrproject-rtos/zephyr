@@ -1,0 +1,246 @@
+# Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_LVGL_MODULE
+	bool
+
+config LVGL
+	bool "LVGL support"
+	help
+	  This option enables the LVGL graphics library.
+
+if LVGL
+
+config LV_Z_DRAW_BUF_ALIGN
+	int
+	default 0
+	help
+	  Board default for CONFIG_LV_DRAW_BUF_ALIGN. 0 leaves the LVGL default.
+	  Applications set CONFIG_LV_DRAW_BUF_ALIGN instead.
+
+config LV_Z_DPI_DEF
+	int
+	default 0
+	help
+	  Board default for CONFIG_LV_DPI_DEF. 0 leaves the LVGL default.
+	  Applications set CONFIG_LV_DPI_DEF instead.
+
+config LV_Z_ATTRIBUTE_MEM_ALIGN_SIZE
+	int "Memory alignment size (bytes)"
+	default 4
+	range 1 256
+	help
+	  Alignment in bytes for LVGL buffers and constant data.
+
+module = LV_Z
+module-str = LVGL
+source "subsys/logging/Kconfig.template.log_config"
+
+config LV_Z_USE_ROUNDER_CB
+	bool
+	default y if LV_Z_AREA_X_ALIGNMENT_WIDTH != 1 || LV_Z_AREA_Y_ALIGNMENT_WIDTH != 1
+
+config APP_LINK_WITH_LVGL
+	bool "Link 'app' with LVGL"
+	default y
+	help
+	  Add LVGL header files to the 'app' include path. It may be
+	  disabled if the include paths for LVGL are causing aliasing
+	  issues for 'app'.
+
+config LV_Z_USE_FILESYSTEM
+	bool "LVGL file system support"
+	depends on FILE_SYSTEM
+	default y if FILE_SYSTEM
+	help
+	  Enable LittlevGL file system
+
+choice LV_Z_COLOR_FORMAT
+	prompt "Default color format for SoCs, boards and shields"
+	default LV_Z_COLOR_FORMAT_NONE
+	help
+	  Default of the LVGL LV_COLOR_FORMAT_DEFAULT choice, set by SoCs,
+	  boards and shields in Kconfig.defconfig files. Applications use the
+	  LV_COLOR_FORMAT_DEFAULT choice (CONFIG_LV_COLOR_FORMAT_*) instead.
+
+config LV_Z_COLOR_FORMAT_NONE
+	bool "No board default"
+	help
+	  Keep the default color format of the LVGL module.
+
+config LV_Z_COLOR_FORMAT_I1
+	bool "I1 (1 bit per pixel, monochrome)"
+
+config LV_Z_COLOR_FORMAT_L8
+	bool "L8 (8 bit grayscale)"
+
+config LV_Z_COLOR_FORMAT_RGB565
+	bool "RGB565"
+
+config LV_Z_COLOR_FORMAT_RGB565_SWAPPED
+	bool "RGB565 (big-endian)"
+
+config LV_Z_COLOR_FORMAT_RGB888
+	bool "RGB888"
+
+config LV_Z_COLOR_FORMAT_XRGB8888
+	bool "XRGB8888"
+
+config LV_Z_COLOR_FORMAT_ARGB8888
+	bool "ARGB8888"
+
+endchoice
+
+config LV_COLOR_16_SWAP
+	bool "Swap the 2 bytes of RGB565 color."
+
+config LV_Z_COLOR_MONO_HW_INVERSION
+	bool "Hardware pixel inversion (disables software pixel inversion)."
+
+config LV_Z_FLUSH_THREAD
+	bool "Flush LVGL frames in a separate thread"
+	help
+	  Flush LVGL frames in a separate thread, while the primary thread
+	  renders the next LVGL frame. Can be disabled if the performance
+	  gain this approach offers is not required
+
+if LV_Z_FLUSH_THREAD
+
+config LV_Z_FLUSH_THREAD_STACK_SIZE
+	int "Stack size for flushing thread"
+	default 1024
+	help
+	  Stack size for LVGL flush thread, which will call display_write
+
+config LV_Z_FLUSH_THREAD_PRIORITY
+	int "LVGL flush thread priority"
+	default -1
+	help
+	  Priority of LVGL flush thread.
+
+endif # LV_Z_FLUSH_THREAD
+
+config LV_Z_AREA_X_ALIGNMENT_WIDTH
+	int "Frame X alignment size"
+	default 1
+	help
+	  Number of pixels, X axis should be rounded to. Should be used to override
+	  the current frame dimensions to meet display and/or LCD host
+	  controller requirements. The value must be power of 2.
+
+config LV_Z_AREA_Y_ALIGNMENT_WIDTH
+	int "Frame Y alignment size"
+	default 1
+	help
+	  Number of pixels, Y axis should be rounded to. Should be used to override
+	  the current frame dimensions to meet display and/or LCD host
+	  controller requirements. The value must be power of 2.
+
+config LV_Z_AUTO_INIT
+	bool "Initialize LVGL before application startup"
+	default y
+	help
+	  Configure LVGL callbacks and display initialization before the application starts.
+	  This can be useful to disable if you need to change a display's pixel format
+	  prior to initialization. If using static allocation, ensure that LV_Z_BITS_PER_PIXEL
+	  is set correctly.
+
+config LV_Z_INIT_PRIORITY
+	int "Default init priority for LVGL"
+	default 90
+	depends on LV_Z_AUTO_INIT
+	help
+	  Priority used for the automatic initialization of LVGL.
+
+config LV_Z_LVGL_MUTEX
+	bool "Provide LVGL API mutex (un)locking functions"
+	help
+	  LVGL API functions are not thread-safe, provide functions for locking and unlocking.
+
+config LV_Z_RUN_LVGL_ON_WORKQUEUE
+	bool "Use a dedicated workqueue to run LVGL core"
+	imply LV_Z_AUTO_INIT
+	imply LV_Z_LVGL_MUTEX
+	help
+	  Runs the LVGL in a separate workqueue automatically
+	  without requiring user to add a timed loop for that. User can
+	  disable this option if periodic calls of LV timer
+	  is application responsibillity
+
+if LV_Z_RUN_LVGL_ON_WORKQUEUE
+
+config LV_Z_LVGL_WORKQUEUE_STACK_SIZE
+	int "Stack size of LVGL workqueue"
+	default 4096
+	help
+	  Stack size of the LVGL dedicated workqueue
+
+config LV_Z_LVGL_WORKQUEUE_PRIORITY
+	int "Priority of the LVGL workqueue"
+	default 0
+	help
+	  Priority of the LVGL dedicated workequeue.
+
+endif # LV_Z_RUN_LVGL_ON_WORKQUEUE
+
+config LV_Z_DRAW_DMA2D_DEFAULT
+	bool
+	help
+	  Board default for CONFIG_LV_USE_DRAW_DMA2D. Applications set
+	  CONFIG_LV_USE_DRAW_DMA2D instead.
+
+config LV_Z_DRAW_DMA2D
+	bool
+	help
+	  Set when the LVGL DMA2D renderer (CONFIG_LV_USE_DRAW_DMA2D) is enabled.
+
+config LV_Z_DRAW_DMA2D_INTERRUPT
+	bool
+	depends on LV_Z_DRAW_DMA2D
+	help
+	  SoC default for CONFIG_LV_USE_DRAW_DMA2D_INTERRUPT. Applications set
+	  CONFIG_LV_USE_DRAW_DMA2D_INTERRUPT instead.
+
+config LV_Z_DRAW_DMA2D_HAL_INCLUDE
+	string
+	depends on LV_Z_DRAW_DMA2D
+	help
+	  SoC default for CONFIG_LV_DRAW_DMA2D_HAL_INCLUDE: the CMSIS header of
+	  the target processor, e.g. "stm32f769xx.h" or "stm32f429xx.h". Empty
+	  leaves the LVGL default.
+
+config LV_Z_DRAW_DAVE2D
+	bool
+	imply RENESAS_DRW
+	help
+	  Set when the LVGL Dave2D renderer (CONFIG_LV_USE_DRAW_DAVE2D) is
+	  enabled. Enables the Renesas DRW driver it uses.
+
+config LV_Z_USE_OSAL
+	bool "Use OSAL enabling parallel rendering"
+	depends on DYNAMIC_THREAD
+	help
+	  Use the Zephyr LVGL OSAL to enable parallel rendering
+	  pipelines.
+
+config LV_Z_DRAW_PXP
+	bool
+	help
+	  Set when the LVGL PXP renderer (CONFIG_LV_USE_DRAW_PXP) is enabled.
+	  Enables the NXP PXP driver it uses.
+
+config LV_Z_PXP_INTERRUPT_PRIORITY
+	int "PXP interrupt priority"
+	depends on LV_Z_DRAW_PXP
+	default 3
+	help
+	  Sets the interrupt priority for PXP
+
+rsource "Kconfig.memory"
+rsource "Kconfig.input"
+rsource "Kconfig.shell"
+
+rsource "nemagfx/Kconfig"
+
+endif

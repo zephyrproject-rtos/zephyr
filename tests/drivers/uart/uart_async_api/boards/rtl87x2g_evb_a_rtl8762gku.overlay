@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	parity = "none";
+	stop-bits = "1";
+	data-bits = <8>;
+	dmas = <&dma0 3 BEE_DMA_HANDSHAKE_UART2_TX
+		(BEE_DMA_M2P | BEE_DMA_SRC_INC | BEE_DMA_DST_FIXED | BEE_DMA_SRC_WIDTH_8BIT |
+		 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
+		 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(1))>,
+	       <&dma0 2 BEE_DMA_HANDSHAKE_UART2_RX
+		(BEE_DMA_P2M | BEE_DMA_SRC_FIXED | BEE_DMA_DST_INC | BEE_DMA_SRC_WIDTH_8BIT |
+		 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
+		 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(0))>;
+	dma-names = "tx", "rx";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&pinctrl {
+	uart2_default: uart2_default {
+		group1 {
+			psels = <BEE_PSEL(UART2_TX, P3_0)>;
+			output-enable;
+			output-high;
+			bias-pull-up;
+		};
+
+		group2 {
+			psels = <BEE_PSEL(UART2_RX, P3_1)>;
+			output-disable;
+			bias-pull-up;
+		};
+	};
+};

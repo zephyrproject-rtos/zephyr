@@ -1,0 +1,6 @@
+board:
+  name: nucleo_u545re_q
+  full_name: Nucleo U545RE Q
+  vendor: st
+  socs:
+    - name: stm32u545xx

@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# This binding declares both "default:" and "required: true" for the
+# same property at each nesting level, which is redundant and reported.
+
+properties:
+  prop-required-with-default:
+    type: int
+    required: true
+    default: 1
+
+child-binding:
+  properties:
+    child-prop-required-with-default:
+      type: int
+      required: true
+      default: 2
+
+  child-binding:
+    properties:
+      grandchild-prop-required-with-default:
+        type: int
+        required: true
+        default: 3

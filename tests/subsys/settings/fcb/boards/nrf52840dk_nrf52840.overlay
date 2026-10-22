@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&flash0 {
+	partitions {
+		storage_partition: partition@de000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x000de000 0x00010000>;
+		};
+	};
+};

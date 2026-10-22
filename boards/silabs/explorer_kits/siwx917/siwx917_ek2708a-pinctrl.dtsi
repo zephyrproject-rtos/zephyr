@@ -1,0 +1,51 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+
+&pinctrl0 {
+	psram_default: psram_default {
+		group {
+			pinmux = <PSRAM_CLK_HP52>,
+				 <PSRAM_D0_HP53>,
+				 <PSRAM_D1_HP54>,
+				 <PSRAM_D2_HP56>,
+				 <PSRAM_D3_HP57>,
+				 <PSRAM_CSN0_HP55>;
+		};
+	};
+
+	ulpuart_default: ulpuart_default {
+		out {
+			pinmux = <ULPUART_TX_ULP11>;
+		};
+
+		in {
+			pinmux = <ULPUART_RX_ULP9>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group {
+			pinmux = <I2C0_SDA_HP6>, <I2C0_SCL_HP7>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		out {
+			pinmux = <GSPI_CLK_HP25>, <GSPI_MOSI_HP27>;
+		};
+
+		in {
+			pinmux = <GSPI_MISO_HP26>;
+		};
+	};
+
+	adc0_default: adc0_default {
+		group {
+			pinmux = <ADC_TOPGPIO_HP29>;
+		};
+	};
+};

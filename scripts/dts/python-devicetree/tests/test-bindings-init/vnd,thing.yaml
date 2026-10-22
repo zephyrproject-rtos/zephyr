@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Top level binding file (device binding) for testing
+# descriptions and compatible strings.
+
+description: The Thing device.
+
+compatible: "vnd,thing"
+
+include:
+  - name: base_amend.yaml
+  - name: thing.yaml
+
+child-binding:
+  compatible: "vnd,thing-child"
+  description: The Thing's child-binding.
+
+  child-binding:
+    compatible: "vnd,thing-grandchild"
+    description: The Thing's grandchild-binding.

@@ -1,0 +1,12 @@
+# Copyright (c) 2026, Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_SOC_LPC84X_IAP
+	bool "NXP LPC84x ROM IAP + FMC MMIO flash driver"
+	default y
+	depends on DT_HAS_NXP_IAP_FMC84X_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Flash driver for NXP LPC844/LPC845 devices.

@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&lpd_mio 3 0>; /* LPD_MIO3 */
+		in-gpios = <&lpd_mio 2 0>; /* LPD_MIO2 */
+	};
+};
+
+&lpd_gpio {
+	status = "okay";
+};
+
+&lpd_mio {
+	status = "okay";
+};

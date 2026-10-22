@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Serial Array Unit (SAU)
+
+compatible: "renesas,ra-sau"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  unit:
+    type: int
+    required: true
+    description: |
+      SAU unit index.
+
+  reg:
+    required: true

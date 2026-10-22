@@ -1,0 +1,9 @@
+# Copyright (c) 2025 CATIE
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Omron 2SMPB-02E digital barometric pressure sensor.
+
+compatible: "omron,2smpb-02e"
+
+include: [sensor-device.yaml, i2c-device.yaml]

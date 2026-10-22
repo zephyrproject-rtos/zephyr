@@ -1,0 +1,6 @@
+shield:
+  name: arduino_uno_click
+  full_name: Arduino UNO Click
+  vendor: arduino
+  supported_features:
+    - gpio

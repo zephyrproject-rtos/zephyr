@@ -1,0 +1,10 @@
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics IIS2ICLX 2-axis accelerometer sensor
+    accessed through SPI bus
+
+compatible: "st,iis2iclx"
+
+include: ["spi-device.yaml", "st,iis2iclx-common.yaml"]

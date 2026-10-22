@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon CYW20829 series MCUs
+config SOC_SERIES_CYW20829
+	bool
+	select SOC_FAMILY_INFINEON_CAT1B
+
+config SOC_SERIES
+	default "cyw20829" if SOC_SERIES_CYW20829
+
+# Infineon CYW20829 series MPNs
+config SOC_CYW20829B0LKML
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829B0232
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B0000
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B0010
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B1240
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B1340
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829B0062
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829B1062
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B1000
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW20829B1010
+	bool
+	select SOC_SERIES_CYW20829
+
+config SOC_CYW89829B1232
+	bool
+	select SOC_SERIES_CYW20829
+
+# Silicon-revision helper symbols. On B0 silicon the BLE controller boot
+# leaves CLK_HF0 on the 48 MHz BLE ECO path; the btstack-integration HCI
+# layer restores it to the 96 MHz FLL path only when COMPONENT_CYW20829B0 /
+# COMPONENT_CYW89829B0 is defined. B1 silicon does not need the restore.
+config SOC_CYW20829_B0
+	bool
+	default y if SOC_CYW20829B0LKML || SOC_CYW20829B0000 || SOC_CYW20829B0010
+
+config SOC_CYW89829_B0
+	bool
+	default y if SOC_CYW89829B0232 || SOC_CYW89829B0062
+
+config SOC
+	default "cyw20829b0lkml" if SOC_CYW20829B0LKML
+	default "cyw89829b0232" if SOC_CYW89829B0232
+	default "cyw20829b0000" if SOC_CYW20829B0000
+	default "cyw20829b0010" if SOC_CYW20829B0010
+	default "cyw20829b1240" if SOC_CYW20829B1240
+	default "cyw20829b1340" if SOC_CYW20829B1340
+	default "cyw89829b0062" if SOC_CYW89829B0062
+	default "cyw89829b1062" if SOC_CYW89829B1062
+	default "cyw20829b1000" if SOC_CYW20829B1000
+	default "cyw20829b1010" if SOC_CYW20829B1010
+	default "cyw89829b1232" if SOC_CYW89829B1232

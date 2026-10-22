@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MXCRYPTOLITE True Random Number Generator.
+
+  This is a child of an "infineon,mxcryptolite" node and shares its register
+  base address with the sibling crypto (AES / SHA-256) function.
+
+compatible: "infineon,mxcryptolite-trng"
+
+include: base.yaml

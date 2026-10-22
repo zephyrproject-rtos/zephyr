@@ -1,0 +1,8 @@
+board:
+  name: nucleo_n657x0_q
+  full_name: Nucleo N657X0-Q
+  vendor: st
+  socs:
+    - name: stm32n657xx
+      variants:
+        - name: sb

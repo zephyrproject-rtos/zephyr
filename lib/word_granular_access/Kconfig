@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WORD_GRANULAR_ACCESS
+	bool "Word Granular Access Memory Support"
+	help
+	  Enable support for word granular access to byte addressable memory.
+
+	  When enabled, this option adds library support for safely accessing
+	  word granular access memory regions, which require that all reads and writes
+	  be aligned to the word size and be in multiples of the word size.
+
+	  This is particularly useful for certain types of hardware peripherals,
+	  memory-mapped I/O regions, or specialized memory types that have strict
+	  access requirements.

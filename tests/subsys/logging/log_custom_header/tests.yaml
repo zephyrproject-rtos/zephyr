@@ -1,0 +1,9 @@
+common:
+  integration_platforms:
+    - native_sim
+
+tests:
+  logging.log_custom_header:
+    tags:
+      - log_custom_header
+      - logging

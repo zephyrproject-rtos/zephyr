@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_MAX22017
+	bool "Analog Devices MAX22017 DAC/GPIO chip"
+	default y
+	depends on SPI
+	select CRC
+	depends on DT_HAS_ADI_MAX22017_ENABLED
+	help
+	  Enable the driver for the Analog Devices MAX22017 DAC/GPIO chip

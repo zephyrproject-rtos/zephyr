@@ -1,0 +1,8 @@
+# Copyright (c) 2022 metraTec
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LPCXPRESSO55S06
+	select SOC_LPC55S06
+	select SOC_PART_NUMBER_LPC55S06JBD64

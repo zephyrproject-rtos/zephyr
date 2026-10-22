@@ -1,0 +1,20 @@
+identifier: kg100s_rb4332a
+name: KG100S Radio Board based on EFR32BG21 and SX1262 LoRa transceiver (KG100S-RB4332A, BRD4332A)
+type: mcu
+arch: arm
+ram: 96
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - counter
+  - gpio
+  - nvs
+  - uart
+  - dma
+  - pwm
+  - watchdog
+vendor: silabs

@@ -1,0 +1,14 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_ITE_IT8801_KBD
+	bool "ITE IT8801 keyboard matrix scan controller"
+	default y
+	depends on DT_HAS_ITE_IT8801_KBD_ENABLED
+	select I2C
+	select INPUT_KBD_MATRIX
+	select MFD
+	help
+	  Enable driver for ITE IT8801 I2C-based keyboard matrix scan.
+	  IT8801 support 8 KSI pins and 19 KSO pins [22:11] [6:0],
+	  KSO[22:18]can be configured to GPIO mode.

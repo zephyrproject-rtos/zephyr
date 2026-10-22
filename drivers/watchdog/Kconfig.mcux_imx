@@ -1,0 +1,12 @@
+# Watchdog configuration options
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_MCUX_IMX_WDOG
+	bool "MCUX IMX WDOG driver"
+	default y
+	depends on DT_HAS_NXP_IMX_WDOG_ENABLED
+	select PINCTRL
+	help
+	  Enable the mcux imx wdog driver.

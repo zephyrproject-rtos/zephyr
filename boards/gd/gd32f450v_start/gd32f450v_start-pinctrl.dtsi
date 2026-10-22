@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2022, Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gd32f450v(e-g-i-k)xx-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <USART0_TX_PB6>, <USART0_RX_PB7>;
+		};
+	};
+
+	pwm2_default: pwm2_default {
+		group1 {
+			pinmux = <TIMER2_CH0_PC6>;
+		};
+	};
+};

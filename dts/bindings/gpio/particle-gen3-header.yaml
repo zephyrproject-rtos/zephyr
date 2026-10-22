@@ -1,0 +1,43 @@
+# Copyright (C) 2020 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on Particle Gen3 (Feather) headers.
+
+    The Particle Gen3 boards are compatible with the Adafruit Feather
+    "shields" but use a different orientation and pin numbering scheme.
+
+    With the board oriented with the micro USB at the top:
+    * A 12-pin header on the right.  9 pins on this header are exposed
+      by this binding
+    * A 16-pin header.  13 pins on this header are exposed by this
+      binding.
+
+    This binding provides a nexus mapping for 22 pins where parent pins
+    0 through 8 correspond to the pins on the 12-pin header, starting
+    from the bottom; and pins 9 through 21 correspond to pins on the
+    16-pin header, skipping the bottom pin then assigning 9 through 19,
+    skipping over GND, and replacing the lower 3V3 with pin 20.  The
+    physical layout is depicted below.
+
+        21 RESETn
+        -  3V3
+        20 MODEn
+        -  GND
+        19 ADC0                  LiPo+   -
+        18 ADC1                  ENABLE  -
+        17 ADC2                  VBUS    -
+        16 ADC3                  PWM1    8
+        15 ADC4                  PWM0    7
+        14 SS                    PWM1    6
+        13 SCK                   PWM1    5
+        12 MOSI                  PWM1    4
+        11 MISO                  PWM3    3
+        10 RX                    PWM3    2
+         9 TX                    SCL     1
+        -  n/c                   SDA     0
+
+
+compatible: "particle-gen3-header"
+
+include: [gpio-nexus.yaml, base.yaml]

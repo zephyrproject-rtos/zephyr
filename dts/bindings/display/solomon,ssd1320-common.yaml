@@ -1,0 +1,80 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+include: display-controller.yaml
+
+properties:
+  oscillator-freq:
+    type: int
+    required: true
+    description: Front clock divider (3:0) / oscillator frequency (7:4). It can be set to 0x0.
+      If you get weird scanlines, increase oscillator frequency and play with phase length values,
+      for example set this to 0x70. Note this increases power consumption.
+
+  display-offset:
+    type: int
+    required: true
+    description: Vertical offset by com from 0 ~ 159. Typically 160 - height.
+
+  start-line:
+    type: int
+    required: true
+    description: Start line of display RAM to be displayed by selecting a value from 0 to 159.
+      Typically 0.
+
+  multiplex-ratio:
+    type: int
+    required: true
+    description: Multiplex ratio from 15MUX to 159MUX. Typically same value as height - 1.
+
+  remap-value:
+    type: int
+    required: true
+    description: Remap register
+
+      Has multiple configurations (see each bit setting in the datasheet)
+      - A[1] must be 1
+      - Sequential (0) or Alternative (Odd/Even) SEGs (A[4])
+      - Disable or Enable SEG left/right remap (A[5])
+
+      A[4] is needed when display has striping.
+
+  phase-length:
+    type: int
+    required: true
+    description: Phase Length for segment charging (7:4) and discharging (3:0).
+      Good values to try first are 0x1f and 0xf1.
+
+  internal-iref:
+    type: int
+    default: 0x10
+    description: Internal or external iref. 0x0 is External, 0x10 Internal.
+      Most displays use Internal.
+
+  precharge-voltage:
+    type: int
+    default: 0x1E
+    description: Set precharge voltage (4:0) from 0.10 x VCC to 0.5113 x VCC (0x1F).
+      0x1E is the reset default.
+
+  vcomh-voltage:
+    type: int
+    default: 0x20
+    description: Set COM deselect voltage (5:3) from 0.72 x VCC (0x0) to 0.84 x VCC (0x30)
+      0x20 is the reset default.
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting
+
+  greyscale-enhancement:
+    type: boolean
+    description: Enable low greyscale enhancement, partially undocumented.
+
+  inv-seg:
+    type: boolean
+    description: Invert segment order
+
+  inv-com:
+    type: boolean
+    description: Invert COM order

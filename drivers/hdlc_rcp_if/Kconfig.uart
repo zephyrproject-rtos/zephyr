@@ -1,0 +1,27 @@
+# Configuration options for NXP HDLC RCP UART communication Interface
+
+# Copyright (c) 2024 DENX Software Engineering GmbH
+#               Lukasz Majewski <lukma@denx.de>
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# HDLC UART communication Interface used by Zephyr running Openthread RCP host
+#
+
+config HDLC_RCP_IF_UART
+	bool "UART HDLC interface for Zephyr Openthread RCP host"
+	default y
+	depends on DT_HAS_UART_HDLC_RCP_IF_ENABLED
+	depends on UART_INTERRUPT_DRIVEN
+
+config OPENTHREAD_HDLC_RCP_IF_UART_RX_RING_BUFFER_SIZE
+	int "Set HDLC RCP IF UART RX ring buffer size"
+	default 4096
+	help
+	  RX buffer size for the OpenThread HDLC host UART.
+
+config OPENTHREAD_HDLC_RCP_IF_UART_TX_RING_BUFFER_SIZE
+	int "Set HDLC RCP IF UART TX ring buffer size"
+	default 1344
+	help
+	  TX buffer size for the OpenThread HDLC host UART.

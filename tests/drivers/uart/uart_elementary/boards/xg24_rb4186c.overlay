@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025, Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Connect EXP4 (PC1) and EXP7 (PA5) of the Expansion Pin header
+ */
+
+&pinctrl {
+	/delete-node/ eusart1_default;
+
+	eusart1_default: eusart1_default {
+		group0 {
+			pins = <EUSART1_TX_PA5>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART1_RX_PC1>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};
+
+dut: &eusart1 {
+	compatible = "silabs,eusart-uart";
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+	/delete-property/ cs-gpios;
+};

@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2024 Cienet
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rtc0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};

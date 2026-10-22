@@ -1,0 +1,59 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/alif-balletto-b1-pinctrl.h>
+
+&pinctrl {
+	uart2_default: uart2_default {
+		group0 {
+			pinmux = <PIN_P5_2__UART2_RX_B>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P5_3__UART2_TX_B>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pinmux = <PIN_P7_0__I2C0_SDA_C>,
+				 <PIN_P7_1__I2C0_SCL_C>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group0 {
+			pinmux = <PIN_P7_2__I2C1_SDA_C>,
+				 <PIN_P7_3__I2C1_SCL_C>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
+
+	gpio4_default: gpio4_default {
+		group0 {
+			/* Multicolor LED0: blue on P4_3, green on P4_5, red on P4_7 */
+			pinmux = <PIN_P4_3__GPIO>,
+				 <PIN_P4_5__GPIO>,
+				 <PIN_P4_7__GPIO>;
+		};
+	};
+
+	gpio5_default: gpio5_default {
+		group0 {
+			/* Navigation joystick JOY_SW1 to JOY_SW5 on SW3 */
+			pinmux = <PIN_P5_0__GPIO>,
+				 <PIN_P5_4__GPIO>,
+				 <PIN_P5_5__GPIO>,
+				 <PIN_P5_6__GPIO>,
+				 <PIN_P5_7__GPIO>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
+};

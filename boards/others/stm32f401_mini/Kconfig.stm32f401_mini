@@ -1,0 +1,5 @@
+# Copyright (c) 2022 Brian Bradley
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F401_MINI
+	select SOC_STM32F401XC

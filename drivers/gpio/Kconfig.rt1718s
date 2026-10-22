@@ -1,0 +1,35 @@
+# RT1718S driver configuration options
+
+# Copyright 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_RT1718S
+	bool "RT1718S I2C-based TCPC chip with GPIOs"
+	default y
+	depends on DT_HAS_RICHTEK_RT1718S_GPIO_PORT_ENABLED
+	help
+	  Enable driver GPIO for RT1718S I2C-based TCPC chip.
+
+if GPIO_RT1718S
+
+config RT1718S_INIT_PRIORITY
+	int "RT1718S GPIO init priority"
+	default 60
+	help
+	  RT1718S device driver initialization priority. The priority should be
+	  lower than I2C device.
+
+config GPIO_RT1718S_PORT_INIT_PRIORITY
+	int "RT1718S GPIO port init priority"
+	default 61
+	help
+	  RT1718S GPIO driver initialization priority. The priority should be lower
+	  than I2C & RT1718S_INIT_PRIORITY device.
+
+config GPIO_RT1718S_INTERRUPT
+	bool "RT1718S alert handler"
+	help
+	  Enable support for handling RT1718S Alert with a GPIO interrupt connected
+	  from the chip.
+
+endif # GPIO_RT1718S

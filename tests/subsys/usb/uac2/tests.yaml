@@ -1,0 +1,8 @@
+tests:
+  usb.uac2:
+    tags: usb
+    platform_allow:
+      - native_sim
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim

@@ -1,0 +1,10 @@
+# Copyright 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config GC9X01X
+	bool "GC9X01X display driver"
+	default y
+	depends on DT_HAS_GALAXYCORE_GC9X01X_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for GC9X01X display driver.

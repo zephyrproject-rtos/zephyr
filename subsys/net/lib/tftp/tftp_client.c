@@ -1,0 +1,546 @@
+/*
+ * Copyright (c) 2020 InnBlue
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
+
+#include <stddef.h>
+#include <string.h>
+#include <zephyr/net/tftp.h>
+#include "tftp_client.h"
+#include "net_private.h"
+
+#define ADDRLEN(sa) \
+	(sa->sa_family == NET_AF_INET ? \
+		sizeof(struct net_sockaddr_in) : sizeof(struct net_sockaddr_in6))
+
+static char *error_msg(struct tftpc *client, int rcv_size)
+{
+	size_t end = CLAMP((size_t)rcv_size, TFTP_HEADER_SIZE,
+			   sizeof(client->tftp_buf) - 1);
+
+	client->tftp_buf[end] = '\0';
+
+	return (char *)client->tftp_buf + TFTP_HEADER_SIZE;
+}
+
+/*
+ * Prepare a request as required by RFC1350. This packet can be sent
+ * out directly to the TFTP server.
+ */
+ZTESTABLE_STATIC size_t make_request(uint8_t *buf, int request,
+				     const char *remote_file, const char *mode)
+{
+	char *ptr = (char *)buf;
+	const char def_mode[] = "octet";
+	size_t len;
+
+	/* Fill in the Request Type. */
+	sys_put_be16(request, ptr);
+	ptr += 2;
+
+	/* Copy the name of the remote file. */
+	len = strnlen(remote_file, TFTP_MAX_FILENAME_SIZE);
+	strncpy(ptr, remote_file, TFTP_MAX_FILENAME_SIZE);
+	ptr += len;
+	*ptr++ = '\0';
+
+	/* Default to "Octet" if mode not specified. */
+	if (mode == NULL) {
+		mode = def_mode;
+	}
+
+	/* Copy the mode of operation. */
+	len = strnlen(mode, TFTP_MAX_MODE_SIZE);
+	strncpy(ptr, mode, TFTP_MAX_MODE_SIZE);
+	ptr += len;
+	*ptr++ = '\0';
+
+	return ptr - (char *)buf;
+}
+
+static bool request_fits(const char *remote_file, const char *mode)
+{
+	if (strnlen(remote_file, TFTP_MAX_FILENAME_SIZE + 1) > TFTP_MAX_FILENAME_SIZE) {
+		return false;
+	}
+
+	return mode == NULL || strnlen(mode, TFTP_MAX_MODE_SIZE + 1) <= TFTP_MAX_MODE_SIZE;
+}
+
+static const void *sa_addr(const struct net_sockaddr *sa)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6) && sa->sa_family == NET_AF_INET6) {
+		return &net_sin6(sa)->sin6_addr;
+	}
+
+	return &net_sin(sa)->sin_addr;
+}
+
+static bool same_address(const struct net_sockaddr *a, const struct net_sockaddr *b)
+{
+	if (a->sa_family != b->sa_family) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && a->sa_family == NET_AF_INET) {
+		return net_ipv4_addr_cmp(&net_sin(a)->sin_addr, &net_sin(b)->sin_addr);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && a->sa_family == NET_AF_INET6) {
+		return net_ipv6_addr_cmp(&net_sin6(a)->sin6_addr, &net_sin6(b)->sin6_addr);
+	}
+
+	return false;
+}
+
+static bool same_tid(const struct net_sockaddr *a, const struct net_sockaddr *b)
+{
+	if (!same_address(a, b)) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && a->sa_family == NET_AF_INET6) {
+		return net_sin6(a)->sin6_port == net_sin6(b)->sin6_port;
+	}
+
+	return net_sin(a)->sin_port == net_sin(b)->sin_port;
+}
+
+static int recv_from_peer(int sock, struct tftpc *client, const struct net_sockaddr *peer,
+			  bool match_port, struct net_sockaddr_storage *from)
+{
+	int64_t deadline = k_uptime_get() + CONFIG_TFTPC_REQUEST_TIMEOUT;
+	struct zsock_pollfd fds = {
+		.fd     = sock,
+		.events = ZSOCK_POLLIN,
+	};
+
+	while (true) {
+		struct net_sockaddr_storage from_addr = {0};
+		struct net_sockaddr *from_sa = net_sad(&from_addr);
+		net_socklen_t from_addr_len = sizeof(from_addr);
+		int64_t remaining = deadline - k_uptime_get();
+		int ret;
+
+		if (remaining <= 0) {
+			return -EAGAIN;
+		}
+
+		ret = zsock_poll(&fds, 1, (int)remaining);
+		if (ret < 0) {
+			return -errno;
+		} else if (ret == 0) {
+			return -EAGAIN;
+		}
+
+		ret = zsock_recvfrom(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0, from_sa,
+				     &from_addr_len);
+		if (ret < 0) {
+			return -errno;
+		}
+
+		if (match_port ? same_tid(from_sa, peer) : same_address(from_sa, peer)) {
+			if (from != NULL) {
+				memcpy(from, &from_addr, sizeof(*from));
+			}
+
+			return ret;
+		}
+
+		LOG_WRN_RATELIMIT("Discarding a datagram from %s, expected %s",
+				  net_sprint_addr(from_sa->sa_family, sa_addr(from_sa)),
+				  net_sprint_addr(peer->sa_family, sa_addr(peer)));
+	}
+}
+
+/*
+ * Send Data message to the TFTP Server and receive ACK message from it.
+ */
+static int send_data(int sock, struct tftpc *client, const struct net_sockaddr *peer,
+		     uint32_t block_no, const uint8_t *data_buffer, size_t data_size)
+{
+	int ret;
+	int send_count = 0, ack_count = 0;
+
+	LOG_DBG("Client send data: block no %u, size %zu", block_no, data_size + TFTP_HEADER_SIZE);
+
+	do {
+		if (send_count > TFTP_REQ_RETX) {
+			LOG_ERR("No more retransmits. Exiting");
+			return TFTPC_RETRIES_EXHAUSTED;
+		}
+
+		/* Prepare DATA packet, send it out then poll for ACK response */
+		sys_put_be16(DATA_OPCODE, client->tftp_buf);
+		sys_put_be16(block_no, client->tftp_buf + 2);
+		memcpy(client->tftp_buf + TFTP_HEADER_SIZE, data_buffer, data_size);
+
+		ret = zsock_send(sock, client->tftp_buf, data_size + TFTP_HEADER_SIZE, 0);
+		if (ret < 0) {
+			LOG_ERR("send() error: %d", -errno);
+			return -errno;
+		}
+
+		do {
+			if (ack_count > TFTP_REQ_RETX) {
+				LOG_WRN("No more waiting for ACK");
+				break;
+			}
+
+			ret = recv_from_peer(sock, client, peer, true, NULL);
+			if (ret == -EAGAIN) {
+				break;		/* no response, re-send data */
+			} else if (ret < 0) {
+				LOG_ERR("recv() error: %d", ret);
+				return ret;
+			}
+
+			if (ret < TFTP_HEADER_SIZE) {
+				break;
+			}
+
+			uint16_t opcode = sys_get_be16(client->tftp_buf);
+			uint16_t blockno = sys_get_be16(client->tftp_buf + 2);
+
+			if (ret != TFTP_HEADER_SIZE && opcode != ERROR_OPCODE) {
+				break; /* wrong response, re-send data */
+			}
+
+			LOG_DBG("Receive: opcode %u, block no %u, size %d",
+				opcode, blockno, ret);
+
+			if (opcode == ACK_OPCODE && blockno == block_no) {
+				return TFTPC_SUCCESS;
+			} else if (opcode == ACK_OPCODE && blockno < block_no) {
+				LOG_WRN("Server responded with obsolete block number.");
+				ack_count++;
+				continue; /* duplicated ACK */
+			} else if (opcode == ERROR_OPCODE) {
+				if (client->callback) {
+					struct tftp_evt evt = {
+						.type = TFTP_EVT_ERROR
+					};
+
+					evt.param.error.msg = error_msg(client, ret);
+					evt.param.error.code = blockno;
+					client->callback(&evt);
+				}
+				LOG_ERR("Server rejected the data block.");
+				return TFTPC_REMOTE_ERROR;
+			} else {
+				LOG_ERR("Server responded with invalid opcode or block number.");
+				break; /* wrong response, re-send data */
+			}
+		} while (true);
+
+		send_count++;
+	} while (true);
+}
+
+/*
+ * Send an Error Message to the TFTP Server.
+ */
+static inline int send_err(int sock, struct tftpc *client, int err_code, char *err_msg)
+{
+	uint32_t req_size;
+
+	LOG_DBG("Client sending error code: %d", err_code);
+
+	/* Fill in the "Err" Opcode and the actual error code. */
+	sys_put_be16(ERROR_OPCODE, client->tftp_buf);
+	sys_put_be16(err_code, client->tftp_buf + 2);
+	req_size = 4;
+
+	/* Copy the Error String. */
+	if (err_msg != NULL) {
+		size_t copy_len = strlen(err_msg);
+
+		if (copy_len > sizeof(client->tftp_buf) - req_size) {
+			copy_len = sizeof(client->tftp_buf) - req_size;
+		}
+
+		memcpy(client->tftp_buf + req_size, err_msg, copy_len);
+		req_size += copy_len;
+	}
+
+	/* Send Error to server. */
+	return zsock_send(sock, client->tftp_buf, req_size, 0);
+}
+
+/*
+ * Send an Ack Message to the TFTP Server.
+ */
+static inline int send_ack(int sock, struct tftphdr_ack *ackhdr)
+{
+	LOG_DBG("Client acking block number: %d", net_ntohs(ackhdr->block));
+
+	return zsock_send(sock, ackhdr, sizeof(struct tftphdr_ack), 0);
+}
+
+static int send_request(int sock, struct tftpc *client, int request, const char *remote_file,
+			const char *mode, struct net_sockaddr_storage *peer)
+{
+	int tx_count = 0;
+	size_t req_size;
+	int ret;
+
+	do {
+		tx_count++;
+
+		LOG_DBG("Sending TFTP request %d file %s", request,
+			remote_file);
+
+		req_size = make_request(client->tftp_buf, request, remote_file, mode);
+
+		/* Send the request to the server */
+		ret = zsock_sendto(sock, client->tftp_buf, req_size, 0,
+				   net_sad(&client->server_addr),
+				   ADDRLEN(net_sad(&client->server_addr)));
+		if (ret < 0) {
+			break;
+		}
+
+		ret = recv_from_peer(sock, client, net_sad(&client->server_addr), false, peer);
+		if (ret == -EAGAIN) {
+			LOG_DBG("Failed to get data from the TFTP Server"
+				", req. no. %d", tx_count);
+			continue;
+		} else if (ret < 0) {
+			break;
+		}
+
+		if (ret < TFTP_HEADER_SIZE) {
+			continue;
+		}
+
+		/* Limit communication to the specific address:port */
+		if (zsock_connect(sock, net_sad(peer), ADDRLEN(net_sad(peer))) < 0) {
+			ret = -errno;
+			LOG_ERR("connect failed, err %d", ret);
+			break;
+		}
+
+		break;
+
+	} while (tx_count <= TFTP_REQ_RETX);
+
+	return ret;
+}
+
+int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
+{
+	int sock;
+	uint32_t tftpc_block_no = 1;
+	uint32_t tftpc_index = 0;
+	int tx_count = 0;
+	struct net_sockaddr_storage peer = {0};
+	struct tftphdr_ack ackhdr = {
+		.opcode = net_htons(ACK_OPCODE),
+		.block = net_htons(1)
+	};
+	int rcv_size;
+	int ret;
+
+	if (client == NULL || !request_fits(remote_file, mode)) {
+		return -EINVAL;
+	}
+
+	sock = zsock_socket(client->server_addr.ss_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	if (sock < 0) {
+		LOG_ERR("Failed to create UDP socket: %d", errno);
+		return -errno;
+	}
+
+	/* Send out the READ request to the TFTP Server. */
+	ret = send_request(sock, client, READ_REQUEST, remote_file, mode, &peer);
+	rcv_size = ret;
+
+	while (rcv_size >= TFTP_HEADER_SIZE && rcv_size <= TFTPC_MAX_BUF_SIZE) {
+		/* Process server response. */
+		uint16_t opcode = sys_get_be16(client->tftp_buf);
+		uint16_t block_no = sys_get_be16(client->tftp_buf + 2);
+
+		LOG_DBG("Received data: opcode %u, block no %u, size %d",
+			opcode, block_no, rcv_size);
+
+		if (opcode == ERROR_OPCODE) {
+			if (client->callback) {
+				struct tftp_evt evt = {
+					.type = TFTP_EVT_ERROR
+				};
+
+				evt.param.error.msg = error_msg(client, rcv_size);
+				evt.param.error.code = block_no;
+				client->callback(&evt);
+			}
+			ret = TFTPC_REMOTE_ERROR;
+			break;
+		} else if (opcode != DATA_OPCODE) {
+			LOG_ERR("Server responded with invalid opcode.");
+			ret = TFTPC_REMOTE_ERROR;
+			break;
+		}
+
+		if (block_no == tftpc_block_no) {
+			uint32_t data_size = rcv_size - TFTP_HEADER_SIZE;
+
+			tftpc_block_no++;
+			ackhdr.block = net_htons(block_no);
+			tx_count = 0;
+
+			if (client->callback == NULL) {
+				LOG_ERR("No callback defined.");
+				if (send_err(sock, client, TFTP_ERROR_DISK_FULL, NULL) < 0) {
+					LOG_ERR("Failed to send error response, err: %d",
+						-errno);
+				}
+				ret = TFTPC_BUFFER_OVERFLOW;
+				goto get_end;
+			}
+
+			/* Send received data to client */
+			struct tftp_evt evt = {
+				.type = TFTP_EVT_DATA
+			};
+
+			evt.param.data.data_ptr = client->tftp_buf + TFTP_HEADER_SIZE;
+			evt.param.data.len      = data_size;
+			client->callback(&evt);
+
+			/* Update the index. */
+			tftpc_index += data_size;
+
+			/* Per RFC1350, the end of a transfer is marked
+			 * by datagram size < TFTPC_MAX_BUF_SIZE.
+			 */
+			if (rcv_size < TFTPC_MAX_BUF_SIZE) {
+				(void)send_ack(sock, &ackhdr);
+				ret = tftpc_index;
+				LOG_DBG("%d bytes received.", tftpc_index);
+				/* RFC1350: The host acknowledging the final DATA packet may
+				 * terminate its side of the connection on sending the final ACK.
+				 */
+				break;
+			}
+		}
+
+		do {
+			if (tx_count > TFTP_REQ_RETX) {
+				LOG_ERR("No more retransmits. Exiting");
+				ret = TFTPC_RETRIES_EXHAUSTED;
+				goto get_end;
+			}
+
+			/* Send ACK to the TFTP Server */
+			(void)send_ack(sock, &ackhdr);
+			tx_count++;
+
+			/* Receive data from the TFTP Server. */
+			ret = recv_from_peer(sock, client, net_sad(&peer), true, NULL);
+		} while (ret == -EAGAIN);
+
+		rcv_size = ret;
+	}
+
+	if (!(rcv_size >= TFTP_HEADER_SIZE && rcv_size <= TFTPC_MAX_BUF_SIZE)) {
+		ret = TFTPC_REMOTE_ERROR;
+	}
+
+get_end:
+	zsock_close(sock);
+	return ret;
+}
+
+int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
+	     const uint8_t *user_buf, uint32_t user_buf_size)
+{
+	int sock;
+	uint32_t tftpc_block_no = 1;
+	uint32_t tftpc_index = 0;
+	uint32_t send_size;
+	uint8_t *send_buffer;
+	struct net_sockaddr_storage peer = {0};
+	int ret;
+
+	if (client == NULL || user_buf == NULL || user_buf_size == 0 ||
+	    !request_fits(remote_file, mode)) {
+		return -EINVAL;
+	}
+
+	sock = zsock_socket(client->server_addr.ss_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	if (sock < 0) {
+		LOG_ERR("Failed to create UDP socket: %d", errno);
+		return -errno;
+	}
+
+	/* Send out the WRITE request to the TFTP Server. */
+	ret = send_request(sock, client, WRITE_REQUEST, remote_file, mode, &peer);
+
+	/* Check connection initiation result */
+	if (ret >= TFTP_HEADER_SIZE) {
+		uint16_t opcode = sys_get_be16(client->tftp_buf);
+		uint16_t block_no = sys_get_be16(client->tftp_buf + 2);
+
+		LOG_DBG("Receive: opcode %u, block no %u, size %d", opcode, block_no, ret);
+
+		if (opcode == ERROR_OPCODE) {
+			if (client->callback) {
+				struct tftp_evt evt = {
+					.type = TFTP_EVT_ERROR
+				};
+
+				evt.param.error.msg = error_msg(client, ret);
+				evt.param.error.code = block_no;
+				client->callback(&evt);
+			}
+			LOG_ERR("Server responded with service reject.");
+			ret = TFTPC_REMOTE_ERROR;
+			goto put_end;
+		} else if (opcode != ACK_OPCODE || block_no != 0) {
+			LOG_ERR("Server responded with invalid opcode or block number.");
+			ret = TFTPC_REMOTE_ERROR;
+			goto put_end;
+		}
+	} else {
+		ret = TFTPC_REMOTE_ERROR;
+		goto put_end;
+	}
+
+	/* Send out data by chunks */
+	do {
+		send_size = user_buf_size - tftpc_index;
+		if (send_size > TFTP_BLOCK_SIZE) {
+			send_size = TFTP_BLOCK_SIZE;
+		}
+		send_buffer = (uint8_t *)(user_buf + tftpc_index);
+
+		ret = send_data(sock, client, net_sad(&peer), tftpc_block_no, send_buffer,
+				send_size);
+		if (ret != TFTPC_SUCCESS) {
+			goto put_end;
+		} else {
+			tftpc_index += send_size;
+			tftpc_block_no++;
+		}
+
+		/* Per RFC1350, the end of a transfer is marked
+		 * by datagram size < TFTPC_MAX_BUF_SIZE.
+		 */
+		if (send_size < TFTP_BLOCK_SIZE) {
+			LOG_DBG("%d bytes sent.", tftpc_index);
+			ret = tftpc_index;
+			break;
+		}
+	} while (true);
+
+put_end:
+	zsock_close(sock);
+	return ret;
+}

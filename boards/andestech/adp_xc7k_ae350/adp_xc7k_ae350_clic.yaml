@@ -1,0 +1,24 @@
+identifier: adp_xc7k/ae350/clic
+name: Andes ADP-XC7K AE350 CLIC
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 512
+supported:
+  - gpio
+  - counter
+  - i2c
+  - spi
+  - eeprom
+  - watchdog
+  - flash
+  - dma
+  - led
+  - syscon
+  - hwinfo
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: andestech

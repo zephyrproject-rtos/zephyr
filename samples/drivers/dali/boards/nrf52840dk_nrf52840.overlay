@@ -1,0 +1,44 @@
+/*
+ * Copyright 2025 by Markus Becker
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * You need to include the following shields:
+ * arduino_uno_click
+ * mikroe_dali_2_click
+ *
+ */
+
+&mikroe_dali2_click {
+	tx-rx-propagation-max-us = <2400>;
+	tx-prog-delay-us = <(-320)>;
+	rx-max-latency-us = <80>;
+	rx-grey-area-us = <800>;
+};
+
+&pinctrl {
+	pwm0_default_dali: pwm0_default_dali {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 29)>; // mikrobus_header_1 2
+		};
+	};
+
+	pwm0_sleep_dali: pwm0_sleep_dali {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 29)>; // mikrobus_header_1 2
+			low-power-enable;
+		};
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default_dali>;
+	pinctrl-1 = <&pwm0_sleep_dali>;
+	pinctrl-names = "default", "sleep";
+};
+
+&timer2 {
+	compatible = "nordic,nrf-timer";
+	status = "okay";
+	prescaler = <4>;
+};

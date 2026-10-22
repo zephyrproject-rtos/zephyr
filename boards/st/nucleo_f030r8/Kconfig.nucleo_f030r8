@@ -1,0 +1,5 @@
+# Copyright (c) 2017 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F030R8
+	select SOC_STM32F030X8

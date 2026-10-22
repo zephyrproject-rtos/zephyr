@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2022 Linaro Limited
+ * Copyright (c) 2026 Witekio
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F0_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F0_CLOCK_H_
+
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
+
+/** @cond INTERNAL_HIDDEN */
+
+/** Bus gatting clocks */
+#define STM32_CLOCK_BUS_AHB1    0x014
+#define STM32_CLOCK_BUS_APB2    0x018
+#define STM32_CLOCK_BUS_APB1    0x01c
+
+#define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
+#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB1
+
+/** Domain clocks */
+
+/** System clock */
+/* defined in stm32_common_clocks.h */
+/** Fixed clocks  */
+/* Low speed clocks defined in stm32_common_clocks.h */
+#define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
+#define STM32_SRC_HSI14		(STM32_SRC_HSI + 1)
+#define STM32_SRC_HSI48		(STM32_SRC_HSI14 + 1)
+/** Bus clock */
+#define STM32_SRC_PCLK		(STM32_SRC_HSI48 + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
+/** PLL clock */
+#define STM32_SRC_PLLCLK	(STM32_SRC_TIMPCLK1 + 1)
+
+/** @brief RCC_CFGRx register offset */
+#define CFGR1_REG		0x04
+#define CFGR3_REG		0x30
+
+/** @brief RCC_BDCR register offset */
+#define BDCR_REG		0x20
+
+/** @brief Device domain clocks selection helpers */
+/** CFGR3 devices */
+#define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CFGR3_REG)
+#define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 4, 4, CFGR3_REG)
+#define CEC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 6, 6, CFGR3_REG)
+#define USB_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 7, CFGR3_REG)
+#define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CFGR3_REG)
+#define USART3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 19, 18, CFGR3_REG)
+/** BDCR devices */
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, BDCR_REG)
+
+/** CFGR1 devices */
+#define MCO1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 27, 24, CFGR1_REG)
+#define MCO1_PRE(val)		STM32_DT_CLOCK_SELECT((val), 30, 28, CFGR1_REG)
+#define MCO1_PRE_PLLDIV(pre_val, div_val) \
+	STM32_DT_CLOCK_SELECT((div_val << 3) | (pre_val), 31, 28, CFGR1_REG)
+
+/* MCO source clock selector */
+#define MCO_SEL_HSI14  (1)
+#define MCO_SEL_LSI    (2)
+#define MCO_SEL_LSE    (3)
+#define MCO_SEL_SYSCLK (4)
+#define MCO_SEL_HSI    (5)
+#define MCO_SEL_HSE    (6)
+#define MCO_SEL_PLL    (7)		/* PLL/2 or PLL, see below */
+#define MCO_SEL_HSI48  (8)
+
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1   (0)
+#define MCO_PRE_DIV_2   (1)
+#define MCO_PRE_DIV_4   (2)
+#define MCO_PRE_DIV_8   (3)
+#define MCO_PRE_DIV_16  (4)
+#define MCO_PRE_DIV_32  (5)
+#define MCO_PRE_DIV_64  (6)
+#define MCO_PRE_DIV_128 (7)
+
+/*
+ * MCO PLL source divider
+ *
+ * By default, the MCO_SEL_PLL source goes through a divide-by-2
+ * prescaler and outputs "PLL / 2". It is possible to output the
+ * undivided PLL clock by disabling the prescaler on some SoCs
+ * by using MCO_PLL_DIV_1.
+ *
+ * Refer to RM00091 Rev 10 §6.2.12 (or RM0360 Rev 5 §7.2.11) to
+ * determine if disabling the prescaler is possible on your SoC.
+ *
+ * Here is an example of how to declare the PLL as source with no division using
+ * the MCO1_PRE_PLLDIV macro:
+ *		&clk_hsi {
+ *			status = "okay";
+ *		};
+ *
+ *		&pll {
+ *			clocks = <&clk_hsi>;
+ *			prediv = <1>;
+ *			mul = <2>;
+ *			status = "okay";
+ *		};
+ *
+ *		&mco1 {
+ *			clocks = <&rcc STM32_SRC_PLLCLK (MCO1_SEL(MCO_SEL_PLL))>;
+ *			prescaler = <MCO1_PRE_PLLDIV(MCO_PRE_DIV_128, MCO_PLL_DIV_1)>;
+ *			pinctrl-0 = <&rcc_mco_pa8>;
+ *			pinctrl-names = "default";
+ *			status = "okay";
+ *		};
+ */
+#define MCO_PLL_DIV_2	(0)		/* default value */
+#define MCO_PLL_DIV_1	(1)
+
+/** @endcond */
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F0_CLOCK_H_ */

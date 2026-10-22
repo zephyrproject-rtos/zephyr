@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: can485dbv1/esp32/procpu
+name: CAN485 DevBoard V1 PROCPU
+vendor: weact
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - can
+  - counter
+  - entropy
+  - gpio
+  - hwinfo
+  - i2c
+  - nvs
+  - spi
+  - uart
+  - watchdog

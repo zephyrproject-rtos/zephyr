@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Linaro.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_KV260_R5
+
+config BUILD_OUTPUT_BIN
+	default y
+
+if USERSPACE
+
+config COMPILER_ISA_THUMB2
+	default n
+
+endif
+
+configdefault ISR_STACK_SIZE
+	default 512
+
+endif # BOARD_KV260_R5

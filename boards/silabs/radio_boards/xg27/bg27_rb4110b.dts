@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include "bg27_rb411xb.dtsi"
+
+/ {
+	model = "Silicon Labs BG27-RB4110B";
+	compatible = "silabs,bg27_rb4110b", "silabs,efr32bg27";
+};
+
+&dcdc {
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	status = "okay";
+};

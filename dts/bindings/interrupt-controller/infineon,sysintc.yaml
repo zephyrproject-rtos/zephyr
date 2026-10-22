@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon CAT1 CPUSS system interrupt multiplexer.
+
+  The CAT1 CPUSS routes peripheral system interrupts onto NvicMux NVIC
+  lines through a programmable multiplexer. This node is a container
+  for the individual mux channel nodes (infineon,sysintc-mux).
+
+  Peripherals set their interrupt-parent to a specific mux channel
+  child node to select which NvicMux line they are routed to.
+
+  System interrupts have no priority of their own; each takes the priority of
+  the NVIC line it is routed to, so changing a line's priority changes it for
+  every system interrupt on that line.
+
+  Example:
+    cpuss_intc: interrupt-controller@40200000 {
+        compatible = "infineon,sysintc";
+        reg = <0x40200000 0x10000>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        intmux_ch0: interrupt-controller@0 {
+            compatible = "infineon,sysintc-mux";
+            reg = <0>;
+            interrupt-controller;
+            #interrupt-cells = <2>;
+            interrupts = <0 1>;
+        };
+
+        intmux_ch1: interrupt-controller@1 {
+            compatible = "infineon,sysintc-mux";
+            reg = <1>;
+            interrupt-controller;
+            #interrupt-cells = <2>;
+            interrupts = <1 1>;
+        };
+    };
+
+compatible: "infineon,sysintc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0

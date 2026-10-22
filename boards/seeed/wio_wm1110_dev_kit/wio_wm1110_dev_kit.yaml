@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Ishraq Ibne Ashraf <ishraq.i.ashraf@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: wio_wm1110_dev_kit
+name: Wio-WM1110 Dev Kit
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - i2c
+  - led
+  - gpio
+  - sram
+  - flash
+  - uarte
+  - button
+  - pinctrl
+vendor: seeed

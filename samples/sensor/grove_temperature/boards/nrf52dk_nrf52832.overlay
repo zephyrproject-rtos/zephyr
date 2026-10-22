@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	ntc {
+		compatible = "seeed,grove-temperature";
+		io-channels = <&arduino_adc 0>;
+	};
+};

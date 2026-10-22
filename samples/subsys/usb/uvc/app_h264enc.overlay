@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "app.overlay"
+
+/ {
+	chosen {
+		zephyr,videoenc = &zephyr_h264enc;
+	};
+};

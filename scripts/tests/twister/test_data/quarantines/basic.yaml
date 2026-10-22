@@ -1,0 +1,6 @@
+- scenarios:
+  - test_a.check_1
+  platforms:
+  - demo_board_1
+  - demo_board_3
+  comment: "a1 on board_1 and board_3"

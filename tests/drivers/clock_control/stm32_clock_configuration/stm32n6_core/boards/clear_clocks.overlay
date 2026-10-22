@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay clears clocks back to a state equivalent to what could
+ * be found in stm32n6.dtsi
+ */
+
+&clk_hse {
+	status = "disabled";
+	/delete-property/ clock-frequency;
+	/delete-property/ hse-bypass;
+};
+
+&clk_hsi {
+	status = "disabled";
+	/delete-property/ hsi-div;
+};
+
+&clk_lse {
+	status = "disabled";
+};
+
+&ic1 {
+	status = "disabled";
+	/delete-property/ pll-src;
+	/delete-property/ ic-div;
+};
+
+&ic2 {
+	status = "disabled";
+	/delete-property/ pll-src;
+	/delete-property/ ic-div;
+};
+
+&ic6 {
+	status = "disabled";
+	/delete-property/ pll-src;
+	/delete-property/ ic-div;
+};
+
+&ic11 {
+	status = "disabled";
+	/delete-property/ pll-src;
+	/delete-property/ ic-div;
+};
+
+&pll1 {
+	status = "disabled";
+	/delete-property/ div-m;
+	/delete-property/ mul-n;
+	/delete-property/ div-p1;
+	/delete-property/ div-p2;
+	/delete-property/ clocks;
+};
+
+&rcc {
+	/delete-property/ clocks;
+	/delete-property/ clock-frequency;
+	/delete-property/ ahb-prescaler;
+	/delete-property/ apb1-prescaler;
+	/delete-property/ apb2-prescaler;
+	/delete-property/ apb4-prescaler;
+	/delete-property/ apb5-prescaler;
+	/delete-property/ timg-prescaler;
+};

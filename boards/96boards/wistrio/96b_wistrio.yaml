@@ -1,0 +1,14 @@
+identifier: 96b_wistrio
+name: 96boards WisTrio
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 16
+flash: 128
+supported:
+  - gpio
+  - i2c
+  - eeprom
+  - lora

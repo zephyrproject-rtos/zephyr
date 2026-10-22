@@ -1,0 +1,9 @@
+shield:
+  name: seeed_xiao_round_display
+  full_name: Round Display for XIAO
+  vendor: seeed
+  supported_features:
+    - display
+    - input
+    - rtc
+    - sdhc

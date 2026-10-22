@@ -1,0 +1,16 @@
+shields:
+  - name: adafruit_2_8_tft_touch_v2
+    full_name: Adafruit 2.8" TFT Touch Shield V2 (Uno)
+    vendor: adafruit
+    supported_features:
+      - display
+      - input
+      - sdhc
+
+  - name: adafruit_2_8_tft_touch_v2_nano
+    full_name: Adafruit 2.8" TFT Touch Shield V2 (Nano)
+    vendor: adafruit
+    supported_features:
+      - display
+      - input
+      - sdhc

@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+#
+description: |
+  Espressif USB-OTG full-speed controller (DWC2 compatible) with the internal
+  FS/LS PHY. The PHY D+/D- lines are routed to GPIO pads that the driver must
+  configure, so the pad numbers are provided by the phy-dp-pin and phy-dm-pin
+  properties.
+
+compatible: "espressif,esp32-usb-otg-fs"
+
+include: ["snps,dwc2.yaml"]
+
+properties:
+  clocks:
+    required: true
+
+  phy-dp-pin:
+    type: int
+    required: true
+    description: GPIO number of the internal FS/LS PHY D+ pad.
+
+  phy-dm-pin:
+    type: int
+    required: true
+    description: GPIO number of the internal FS/LS PHY D- pad.

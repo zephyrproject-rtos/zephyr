@@ -1,0 +1,53 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip SERCOM SPI
+
+  Group G1 SERCOM SPI includes the following hardware peripherals:
+    - module name="SERCOM" id="U2201" version="5.0.0"
+
+compatible: "microchip,sercom-g1-spi"
+
+include:
+  - name: spi-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  dipo:
+    type: int
+    required: true
+    description: |
+      Data In Pinout
+
+  dopo:
+    type: int
+    required: true
+    description: |
+      Data Out Pinout
+
+  dmas:
+    description: |
+      Optional TX & RX dma specifiers.  Each specifier will have a phandle
+      reference to the dmac controller, the channel number, and peripheral
+      trigger source.
+
+      For example dmas for TX, RX on SERCOM3
+         dmas = <&dmac 0 0xb>, <&dmac 1 0xa>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists.  This should be "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";

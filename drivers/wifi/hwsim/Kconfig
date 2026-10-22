@@ -1,0 +1,66 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_HWSIM
+	bool "Virtual Wi-Fi simulator driver (hwsim)"
+	depends on WIFI
+	depends on NET_L2_ETHERNET
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	help
+	  Registers N virtual Wi-Fi interfaces backed by an in-process
+	  frame relay bus. Intended for testing hostapd and wpa_supplicant
+	  on native_sim without real hardware.
+
+if WIFI_HWSIM
+
+module = WIFI_HWSIM
+module-str = Log level for WiFi hwsim driver
+module-help = Sets log level for the WiFi hwsim driver (wifi_hwsim module).
+source "subsys/logging/Kconfig.template.log_config"
+
+config WIFI_HWSIM_NUM_RADIOS
+	int "Number of virtual radios"
+	default 2
+	range 2 8
+	help
+	  Each radio becomes one net_if. Minimum 2 (one AP, one STA).
+
+config WIFI_HWSIM_DEFAULT_CHANNEL
+	int "Default channel (2.4 GHz)"
+	default 6
+	range 1 14
+
+config WIFI_HWSIM_DEFAULT_SIGNAL_DBM
+	int "Default simulated RSSI (dBm)"
+	default -50
+	range -100 -10
+
+config WIFI_HWSIM_CONNECT_TIMEOUT_SEC
+	int "Connect timeout in seconds (for tests)"
+	default 15
+	range 1 120
+	help
+	  Max time to wait for connect result in automated tests.
+
+config WIFI_HWSIM_SHELL
+	bool "hwsim shell commands"
+	depends on SHELL
+	default y
+	help
+	  Exposes 'hwsim channel/signal/loss/dump' shell commands for
+	  manual fault injection during interactive testing.
+
+config WIFI_HWSIM_RX_STACK_SIZE
+	int "RX thread stack size per radio"
+	default 2048
+
+config WIFI_HWSIM_MEM_SLAB_COUNT
+	int "Frame pool size (number of frames)"
+	default 32
+	help
+	  Number of struct hwsim_frame entries in the k_mem_slab pool. Each
+	  entry holds one in-flight frame (up to HWSIM_FRAME_MTU bytes) plus
+	  per-frame metadata.
+
+endif # WIFI_HWSIM

@@ -1,0 +1,54 @@
+# Copyright (c) 2023 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  An external clock signal driven by a PWM pin.
+
+  The devicetree must define a clock node:
+
+  pwmclock: pwmclock {
+      status = "okay";
+      compatible = "pwm-clock";
+      #clock-cells = <1>;
+      pwms = <&pwm_ccu40 2 PWM_HZ(1000000) PWM_POLARITY_NORMAL>;
+  };
+
+  This will create a device node with a clock-controller
+  API. Internally the device node will use PWM API to start the
+  clock signals at 1MHz. Note that the PWM_HZ() macro converts the
+  frequency to time (nanoseconds units). This may result in rounding
+  errors if the clock frequency is not an integer number of nanoseconds.
+  The clock frequency can be explicitly set using the clock-frequency
+  property.
+
+  The PWM node may need to be properly configured to generate
+  the target period (i.e. using prescaler options). See the documentation
+  for the target PWM driver.
+
+compatible: "pwm-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      Exact output frequency, in case the PWM period is not exact
+      but was rounded to nanoseconds. This property is optional.
+
+  pwm-on-delay:
+    type: int
+    default: 0
+    description:
+      Optional blocking delay in micro seconds to make sure that the PWM
+      clock has started after returning from clock_control_on().
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id

@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+
+	/* Example values from data sheet */
+	ina228_default_test: ina228@40 {
+		compatible = "ti,ina228";
+		reg = <0x40>;
+		rshunt-micro-ohms = <16200>;
+		current-lsb-microamps = <19>;
+		status = "okay";
+	};
+};

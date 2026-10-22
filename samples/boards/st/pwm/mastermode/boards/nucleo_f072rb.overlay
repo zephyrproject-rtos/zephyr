@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2026 Matthias Plöger <matze.ploeger@gmx.de>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/timer/stm32-timer.h>
+
+/ {
+	zephyr,user {
+		pwms = <&pwm3 3 PWM_USEC(400) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&timers1 {
+	status = "okay";
+	/**
+	 * Configure the TRGO output and counter mode of the timer instance.
+	 * A TRGO event is generated at each timer update event
+	 * (i.e., after each time the timer counter overflows)
+	 */
+	st,countermode = <STM32_TIM_COUNTERMODE_UP>;
+	st,mastermode = "UPDATE";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	status = "okay";
+	/**
+	 * Configure TIM3 to be reset every time TIM1 overflows.
+	 * Select TIM1 TRGO signal as input (= ITR0). Refer to RM0454 Rev.5
+	 * table 66 "TIM2 and TIM3 internal trigger connection" for details.
+	 */
+	st,countermode = <STM32_TIM_COUNTERMODE_UP>;
+	st,slavemode = "reset";
+	st,trigger-selection = "ITR0";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch3_pc8>;
+		pinctrl-names = "default";
+	};
+};

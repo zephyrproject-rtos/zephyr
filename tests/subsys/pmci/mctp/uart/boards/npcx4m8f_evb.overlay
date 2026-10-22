@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect RX to TX:
+ *  - CR_SIN2 to CR_SOUT2
+ * Note that there are different form factors of the board, so the actual pin
+ * numbers may vary. Check the relevant schematics for details.
+ */
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_sin_gp75 &uart2_sout_gp86>;
+	pinctrl-names = "default";
+};
+
+host_serial: &uart2 {};
+
+endpoint_serial: &uart2 {};

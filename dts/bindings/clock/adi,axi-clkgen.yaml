@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Devices AXI Clock Generator (MMCM wrapper)
+
+compatible: "adi,axi-clkgen"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Reference (input) clock frequency in Hz
+
+  "#clock-cells":
+    const: 0

@@ -1,0 +1,21 @@
+/*
+ * Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <common/freq.h>
+#include <microchip/sam/sama5/sama5d2/sama5d27cld1g.dtsi>
+
+/ {
+	clocks {
+		main_xtal {
+			clock-frequency = <DT_FREQ_M(24)>;
+		};
+
+		slow_xtal {
+			clock-frequency = <32768>;
+		};
+	};
+};

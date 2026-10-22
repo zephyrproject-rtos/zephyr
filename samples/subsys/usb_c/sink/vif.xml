@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<vif:VIF xmlns:vif="http://usb.org/VendorInfoFile.xsd">
+  <vif:Vendor_Name>Zephyr</vif:Vendor_Name>
+  <vif:Model_Part_Number>Sink</vif:Model_Part_Number>
+  <vif:Product_Revision>1</vif:Product_Revision>
+  <vif:TID>0</vif:TID>
+  <vif:VIF_Product_Type value="0">Port Product</vif:VIF_Product_Type>
+  <vif:Certification_Type value="0">End Product</vif:Certification_Type>
+</vif:VIF>

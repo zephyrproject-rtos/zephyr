@@ -1,0 +1,43 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Aesc Silicon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <aesc/hydrogen.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "aesc,elemrv-h-soc", "simple-bus";
+		ranges;
+
+		gpio0: gpio@f0000000 {
+			compatible = "aesc,gpio";
+			reg = <0xf0000000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <4 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		uart0: uart0@f0004000 {
+			compatible = "aesc,uart";
+			reg = <0xf0004000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <8 1>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@f0010000 {
+			compatible = "aesc,pinctrl";
+			reg = <0xf0010000 0x1000>;
+			status = "disabled";
+		};
+	};
+};

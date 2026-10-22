@@ -1,0 +1,10 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_IMX219
+	bool "IMX219 8 Mega-Pixel CMOS image sensor"
+	select I2C
+	depends on DT_HAS_SONY_IMX219_ENABLED
+	default y
+	help
+	  Enable driver for IMX219 8 Mega-Pixel CMOS image sensor

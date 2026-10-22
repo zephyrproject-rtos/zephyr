@@ -1,0 +1,27 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MCHP_RNBD451_BT || \
+	SHIELD_MCHP_RNBD451_BT_MIKROBUS || \
+	SHIELD_MCHP_RNBD451_BT_XPLAINED_PRO
+
+if BT
+
+config MAIN_STACK_SIZE
+	default 2048 if BT_HOST_CRYPTO
+
+config BT_BUF_ACL_TX_COUNT
+	default 12
+
+config BT_BUF_EVT_RX_COUNT
+	default 13
+
+config BT_BUF_EVT_DISCARDABLE_COUNT
+	default 12
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+endif # BT
+
+endif   # SHIELD_MCHP_RNBD451_BT

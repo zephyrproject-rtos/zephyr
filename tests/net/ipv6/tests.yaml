@@ -1,0 +1,43 @@
+common:
+  tags:
+    - net
+    - ipv6
+    - ipv6_pe
+  depends_on: netif
+tests:
+  net.ipv6:
+    extra_configs:
+      - CONFIG_NET_BUF_FIXED_DATA_SIZE=y
+      - CONFIG_NET_IPV6_PE=n
+  net.ipv6.variable_buf_size:
+    extra_configs:
+      - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y
+      - CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE=4096
+      - CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE=4096
+      - CONFIG_NET_IPV6_PE=n
+      - CONFIG_TEST_EXTRA_STACK_SIZE=1024
+  net.ipv6.privacy_extension.prefer_public:
+    extra_configs:
+      - CONFIG_NET_IPV6_PE=y
+      - CONFIG_NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES=y
+      - CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT=2
+      - CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=9
+      - CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=7
+  net.ipv6.privacy_extension.prefer_temporary:
+    extra_configs:
+      - CONFIG_NET_IPV6_PE=y
+      - CONFIG_NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES=n
+      - CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT=2
+      - CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=9
+      - CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=7
+  net.ipv6.send_after_nd_pending:
+    # The regression test in send_after_nd_pending.c needs an IPv4 packet to
+    # reuse the memory block a pending IPv6 packet released. It also drives
+    # the scheduler directly, which only orders the threads on one CPU: with
+    # SMP the sender keeps running on another core and the window never
+    # opens.
+    filter: not CONFIG_SMP
+    extra_configs:
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_SOCKETS=y
+      - CONFIG_NET_IPV6_PE=n

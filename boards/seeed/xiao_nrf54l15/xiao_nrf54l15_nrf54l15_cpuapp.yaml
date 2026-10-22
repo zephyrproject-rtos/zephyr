@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: xiao_nrf54l15/nrf54l15/cpuapp
+name: XIAO nRF54L15
+vendor: seeed
+arch: arm
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 188
+flash: 1428
+supported:
+  - adc
+  - counter
+  - dmic
+  - gpio
+  - i2c
+  - pwm
+  - retained_mem
+  - spi
+  - watchdog
+  - i2s
+  - xiao_gpio
+  - xiao_i2c
+  - xiao_spi
+  - xiao_serial
+  - xiao_adc

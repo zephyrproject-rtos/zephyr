@@ -1,0 +1,12 @@
+# Copyright (c) 2021-2024 MUNIC SA
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable Console
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+CONFIG_UART_CONSOLE=y
+CONFIG_CONSOLE=y

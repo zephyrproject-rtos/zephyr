@@ -1,0 +1,26 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+compatible: "nxp,lcd-pmod"
+
+description: |
+    GPIO pins exposed on NXP LCD pmod interface (e.g., used on LCD-PAR-035 panel).
+    These pins are exposed on a 12 pin connector. The pins have the
+    following assignments:
+
+      Pin Number    Usage
+      1             VCC
+      2             VCC
+      3             GND
+      4             GND
+      5             LCD PMOD interface WR pin
+      6             LCD touch controller I2C SCL
+      7             LCD PMOD interface D/C pin
+      8             LCD touch controller I2C SDA
+      9             LCD PMOD interface MOSI pin
+      10            LCD and touch reset
+      11            LCD PMOD interface CS pin
+      12            LCD touch interrupt
+
+include: [gpio-nexus.yaml, base.yaml]

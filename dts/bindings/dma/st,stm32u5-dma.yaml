@@ -1,0 +1,73 @@
+# Copyright (c) 2022 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32U5 DMA controller
+
+description: |
+  LPDMA/GPDMA/HPDMA direct memory access controllers; first found in STM32U5.
+
+  These DMA controllers contain various channels as well as a request multiplexer
+  that allows any of the DMA request lines to trigger an arbitrary channel, in a
+  similar fashion to the combined (DMA1/DMA2)+DMAMUX found in some STM32 series.
+
+  The DMA cells are used as follows:
+    - channel: DMA channel to use
+        (between 0 and (<dma-channels> - 1))
+    - slot: ID of request that should trigger the channel
+        (between 0 and (<dma-requests> - 1))
+    - channel-config: 32-bit configuration bitmask
+        (refer to include/zephyr/dt-bindings/dma/stm32_dma.h for details)
+
+compatible: "st,stm32u5-dma"
+
+include:
+  - name: st,stm32-dma.yaml
+    property-blocklist:
+      - st,mem2mem
+      - dma-offset
+
+properties:
+  "#dma-cells":
+    const: 3
+
+  interrupts:
+    description: |
+      One interrupt cell per channel, in order of channel numbers.
+
+      For example, if channel 0 has IRQn 74 and channel 1 has IRQn 47:
+        interrupts = <74 0>, <47 0>;
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config
+
+examples:
+  - |
+    /* Definition example: STM32U5 SoC DTSI */
+    gpdma1: dma@40020000 {
+      compatible = "st,stm32u5-dma";
+      #dma-cells = <3>;
+      reg = <0x40020000 DT_SIZE_K(1)>;
+      clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
+      interrupts = <29 0>, <30 0>, <31 0>, <32 0>,
+                   <33 0>, <34 0>, <35 0>, <36 0>,
+                   <80 0>, <81 0>, <82 0>, <83 0>,
+                   <84 0>, <85 0>, <86 0>, <87 0>;
+      dma-channels = <16>;
+      dma-requests = <114>;
+    };
+
+  - |
+    /*
+     * Usage example: SPI1 Rx/Tx via GPDMA on STM32U585
+     *
+     * Allocates channel 0/1 to Rx/Tx (request ID 6/7).
+     * Refer to your product's Reference Manual for
+     * the list and mapping of available DMA requests.
+     */
+    &spi1 {
+      dmas = <&gpdma 0 6 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_MEDIUM)>,
+             <&gpdma 1 7 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_MEDIUM)>;
+      dma-names = "rx", "tx";
+    };

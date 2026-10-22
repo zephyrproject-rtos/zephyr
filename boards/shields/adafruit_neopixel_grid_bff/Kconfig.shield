@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Ian Wakely
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADAFRUIT_NEOPIXEL_GRID_BFF
+	def_bool $(shields_list_contains,adafruit_neopixel_grid_bff)

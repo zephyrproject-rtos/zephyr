@@ -1,0 +1,6 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"

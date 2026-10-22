@@ -1,0 +1,24 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &acomp;
+	};
+
+	zephyr,user {
+		/* J4-4(GPIO_43) connect to J4-2(GPIO_42). */
+		test-gpios = <&hsgpio1 11 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&acomp {
+	status = "okay";
+	positive-input = "ch0";
+	negative-input = "vio-0p50";
+};

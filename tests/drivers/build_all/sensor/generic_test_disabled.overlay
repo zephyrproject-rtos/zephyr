@@ -1,0 +1,8 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&test_i2c_vl53l5cx {
+	status = "disabled";
+};

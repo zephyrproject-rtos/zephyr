@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic Split Channel Groups
+
+properties:
+  owned-channel-groups:
+    type: array
+    description: |
+      List of channel groups of a split-ownership peripheral that are to be
+      owned for use by the compiled domain.
+
+  nonsecure-channel-groups:
+    type: array
+    description: |
+      List of channel groups in a split-ownership, split-security peripheral
+      that are to be configured as nonsecure. In Trustzone systems, this
+      property is only evaluated for secure peripherals, as nonsecure channels
+      are implicitly specified through the owned-channels property. This
+      property is ignored in non-Trustzone systems.

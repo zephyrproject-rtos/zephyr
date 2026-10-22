@@ -1,0 +1,8 @@
+common:
+  tags:
+    - bluetooth
+    - bt_min_used_chans
+    - bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_min_used_chans.test:
+    type: unit

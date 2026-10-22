@@ -1,0 +1,70 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CM_PL Internal High-Frequency Oscillator (OSCHF)
+
+description: |
+  Internal High-Frequency Oscillator (OSCHF) with 1-24 MHz clock output
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cm-pl-oschf"
+
+properties:
+  oschf-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      On-Demand Configuration
+
+      0: The oscillator is always ON normally.
+      In standby sleep mode, oscillator will be OFF if there is no peripheral request,
+      unless run-in-standby-en is 1.
+      1: In both normal and standby sleep mode, The oscillator is ON,
+      when a peripheral is requesting the oscillator to be used as a clock source.
+      The oscillator is OFF if no peripheral is requesting the clock source.
+      Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait
+      for the clock to be on, if there is no peripheral request for the clock in the sequence of
+      clock Initialization. If required, better to turn on the clock using API, instead of
+      enabling both during startup.
+
+  oschf-frequency:
+    type: int
+    enum:
+      - 1000000
+      - 2000000
+      - 3000000
+      - 4000000
+      - 8000000
+      - 12000000
+      - 20000000
+      - 24000000
+
+    default: 24000000
+    description: |
+      oschf frequency
+
+      Clock frequency for OSCHF Oscillator Controller in Hertz
+      - 1000000 : 1MHz
+      - 2000000 : 2MHz
+      - 3000000 : 3MHz
+      - 4000000 : 4MHz
+      - 8000000 : 8MHz
+      - 12000000 : 12MHz
+      - 20000000 : 20MHz
+      - 24000000 : 24MHz
+
+  oschf-autotune-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Enable automatic tuning using 32.768 kHz from XOSC32K.
+
+      0: Disable autotune
+      1: Enable autotune

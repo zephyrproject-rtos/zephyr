@@ -1,0 +1,15 @@
+# DAC configuration options
+#
+# Copyright (c) 2025  Andreas Wolf <awolf002@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_DACX311
+	bool "TI DACx311/DACx411 DAC driver"
+	default y
+	depends on DT_HAS_TI_DAC8411_ENABLED || \
+		DT_HAS_TI_DAC8311_ENABLED || DT_HAS_TI_DAC7311_ENABLED || \
+		DT_HAS_TI_DAC6311_ENABLED || DT_HAS_TI_DAC5311_ENABLED
+	select SPI
+	help
+	  Enable the driver for TI DACx311/DACx411 chip.

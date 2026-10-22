@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Framework Computer Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRAMEWORK_LEDMATRIX
+	select RP2_FLASH_W25Q080

@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/imxrt/imxrt10xx/nxp_rt1050.dtsi>
+
+/*
+ * The RT1051 has no parallel camera interface (CSI), eLCDIF display
+ * controller or PXP pixel pipeline compared to the RT1052.
+ */
+/delete-node/ &csi;
+/delete-node/ &lcdif;
+/delete-node/ &pxp;

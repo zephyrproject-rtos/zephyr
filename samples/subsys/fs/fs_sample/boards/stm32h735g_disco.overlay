@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pll2 {
+	mul-n = <96>;
+	div-q = <6>;
+	div-r = <10>;
+};
+
+&sdmmc1 {
+	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
+		 <&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
+};

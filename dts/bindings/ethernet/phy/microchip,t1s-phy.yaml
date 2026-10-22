@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip's 10BASE-T1S PHYs support
+
+compatible: "microchip,t1s-phy"
+
+include:
+  - name: phy.yaml
+  - name: ethernet-phy-plca.yaml
+
+properties:
+  reg:
+    required: true
+    description: PHY address

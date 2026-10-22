@@ -1,0 +1,15 @@
+# Copyright (c) 2021 Katsuhiro Suzuki
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFive FE310 Watchdog driver
+
+compatible: "sifive,wdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -1,0 +1,6 @@
+board:
+  name: arduino_nano_r4
+  full_name: Arduino Nano R4
+  vendor: arduino
+  socs:
+    - name: r7fa4m1ab3cfm

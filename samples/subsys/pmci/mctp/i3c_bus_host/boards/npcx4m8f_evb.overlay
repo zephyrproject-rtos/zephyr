@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&rctl {
+	status = "okay";
+};
+
+/* I3C SDA J18.20 */
+/* I3C SCL J18.19 */
+&i3c0 {
+	status = "okay";
+	i3c-scl-hz = <7500000>;
+	i3c-od-scl-hz = <1500000>;
+
+	bcr = <0x67>;
+
+	mctp_endpoint0: mctp_endpoint0@20a00000011 {
+		compatible = "zephyr,mctp-i3c-endpoint";
+		reg = <0x0000 0x020a 0x00000011>;
+		status = "okay";
+	};
+};
+
+&pcc {
+	clock-frequency = <DT_FREQ_M(90)>; /* OFMCLK runs at 90MHz */
+	core-prescaler = <3>; /* CORE_CLK runs at 30MHz */
+	apb1-prescaler = <6>; /* APB1_CLK runs at 15MHz */
+	apb2-prescaler = <6>; /* APB2_CLK runs at 15MHz */
+	apb3-prescaler = <6>; /* APB3_CLK runs at 15MHz */
+	apb4-prescaler = <3>; /* APB4_CLK runs at 30MHz */
+};
+
+/ {
+	mctp_i3c: mctp_i3c {
+		compatible = "zephyr,mctp-i3c-controller";
+		endpoints = <&mctp_endpoint0>;
+		endpoint-ids = <11>;
+	};
+};

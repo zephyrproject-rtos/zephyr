@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	xiao_pads_d: pads {
+		compatible = "seeed,xiao-expand";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 21 0>,	/* D11 (UART1-RX) */
+			   <1 0 &gpio0 20 0>,	/* D12 (UART1-TX) */
+			   <2 0 &gpio0 17 0>,	/* D13 (I2C0-SCL) */
+			   <3 0 &gpio0 16 0>,	/* D14 (I2C0-SDA) */
+			   <4 0 &gpio0 11 0>,	/* D15 (SPI1-MOSI) */
+			   <5 0 &gpio0 12 0>,	/* D16 (SPI1-MISO) */
+			   <6 0 &gpio0 10 0>,	/* D17 (SPI1-SCK) */
+			   <7 0 &gpio0 9 0>;	/* D18 (SPI1-CS) */
+	};
+};
+
+xiao_pads_i2c: &i2c0 {};
+
+xiao_pads_spi: &spi1 {};
+
+xiao_pads_serial: &uart1 {};

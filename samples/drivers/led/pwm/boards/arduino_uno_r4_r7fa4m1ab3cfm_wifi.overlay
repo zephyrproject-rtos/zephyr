@@ -1,0 +1,30 @@
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
+
+/ {
+	leds {
+		status = "disabled";
+	};
+
+	pwm_leds {
+		status = "okay";
+	};
+};
+
+&pinctrl {
+	pwm2_default: pwm2_default {
+		group1 {
+			/* GTIOC2B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 1, 2)>;
+		};
+	};
+};
+
+&pwm2 {
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-names = "default";
+	interrupts = <30 1>, <31 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+	divider = <RA_PWM_SOURCE_DIV_1024>;
+};

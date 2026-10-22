@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * DTS overlay for Intel CFI01 pflash driver test on qemu_x86
+ */
+
+/delete-node/ &flash0;
+/delete-node/ &flash_sim0;
+/delete-node/ &eeprom1;
+
+/ {
+	chosen {
+		zephyr,flash = &pflash_mem;
+		zephyr,flash-controller = &pflash;
+		/delete-property/ zephyr,code-partition;
+	};
+
+	aliases {
+		/delete-property/ eeprom-1;
+	};
+
+	/* Add Intel CFI01 pflash device */
+	pflash: pflash@ffbc0000 {
+		compatible = "intel,pflash-cfi01";
+		reg = <0xffbc0000 DT_SIZE_M(4)>;
+		bank-width = <1>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		pflash_mem: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(4)>;
+			ranges = <0x0 0x0 DT_SIZE_M(4)>;
+			erase-block-size = <0x10000>;
+			write-block-size = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				storage_partition: partition@8c400 {
+					compatible = "zephyr,mapped-partition";
+					label = "storage";
+					reg = <0x0008c400 DT_SIZE_K(128)>;
+				};
+			};
+		};
+	};
+};

@@ -1,0 +1,31 @@
+identifier: nucleo_f091rc
+name: ST Nucleo F091RC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+flash: 256
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - can
+  - counter
+  - crc
+  - dac
+  - dma
+  - gpio
+  - i2c
+  - nvs
+  - pwm
+  - rtc
+  - spi
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: st

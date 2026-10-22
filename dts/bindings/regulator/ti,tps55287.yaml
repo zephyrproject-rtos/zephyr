@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: TPS55287 regulator
+
+compatible: "ti,tps55287"
+
+include:
+  - name: i2c-device.yaml
+  - name: regulator.yaml
+
+properties:
+  en-gpios:
+    type: phandle-array
+    description: |
+      GPIOs connected to the EN/UVLO signal, used to reset the device at
+      initialization.
+
+  cdc:
+    type: int
+    default: 0
+    description: |
+      Cable droop compensation:
+      0 = disabled (default)
+      1 = 0.1V output voltage raise with 50mV at Visp - Visn
+      2 = 0.2V output voltage raise with 50mV at Visp - Visn
+      3 = 0.3V output voltage raise with 50mV at Visp - Visn
+      4 = 0.4V output voltage raise with 50mV at Visp - Visn
+      5 = 0.5V output voltage raise with 50mV at Visp - Visn
+      6 = 0.6V output voltage raise with 50mV at Visp - Visn
+      7 = 0.7V output voltage raise with 50mV at Visp - Visn
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
+  r-is-milliohm:
+    type: int
+    description: |
+      Value of the current sense shunt resistor in milliohm, required for
+      current limit APIs.

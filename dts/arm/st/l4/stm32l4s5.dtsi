@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l4/stm32l4r5.dtsi>
+#include <st/l4/stm32l4_crypt.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l4s5", "st,stm32l4", "simple-bus";
+
+		hash: crypto@50060400 {
+			compatible = "st,stm32-hash";
+			reg = <0x50060400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			resets = <&rctl STM32_RESET(AHB2, 17)>;
+			status = "disabled";
+		};
+	};
+};

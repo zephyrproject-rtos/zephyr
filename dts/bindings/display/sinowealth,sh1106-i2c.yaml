@@ -1,0 +1,11 @@
+# Copyright (c) 2023, TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+title: SH1106 132x64 dot-matrix display controller on I2C bus
+
+description: |
+    The Sinowealth SH1106 is a monochrome OLED controller with a maximum 132x64 resolution.
+
+compatible: "sinowealth,sh1106"
+
+include: ["solomon,ssd1306-common.yaml", "i2c-device.yaml"]

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Verified on Edge and CAT1B (PSC3).
+config HWINFO_INFINEON
+	bool "Infineon unique device ID"
+	default y
+	depends on SOC_FAMILY_INFINEON_EDGE || \
+		(SOC_FAMILY_INFINEON_CAT1B && !SOC_SERIES_CYW20829)
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Infineon hwinfo driver.

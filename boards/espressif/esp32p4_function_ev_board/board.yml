@@ -1,0 +1,6 @@
+board:
+  name: esp32p4_function_ev_board
+  full_name: ESP32-P4-Function-EV-Board
+  vendor: espressif
+  socs:
+  - name: esp32p4

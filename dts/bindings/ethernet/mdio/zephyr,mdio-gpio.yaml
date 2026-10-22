@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Aleksandr Senin
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr MDIO bitbang driver
+
+compatible: "zephyr,mdio-gpio"
+
+include: mdio-controller.yaml
+
+properties:
+  mdc-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin for the MDC
+
+  mdio-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin for the MDIO

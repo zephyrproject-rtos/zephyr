@@ -1,0 +1,17 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxn947/mcxn947/cpu0/ns
+name: NXP FRDM-MCXN947 (CPU0) (Non-Secure)
+type: mcu
+arch: arm
+ram: 128
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported: []
+vendor: nxp

@@ -1,0 +1,10 @@
+# Copyright (c) 2025, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_RTS5912
+	bool "Realtek RTS5912 rtc driver"
+	default y
+	depends on CLOCK_CONTROL
+	depends on DT_HAS_REALTEK_RTS5912_RTC_ENABLED
+	help
+	  Enable support for Realtek RTC driver.

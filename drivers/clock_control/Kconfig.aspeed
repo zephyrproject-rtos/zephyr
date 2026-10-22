@@ -1,0 +1,9 @@
+# Copyright (c) 2022 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_AST10X0
+	bool "ASPEED clock control driver"
+	default y
+	depends on DT_HAS_ASPEED_AST10X0_CLOCK_ENABLED
+	help
+	  This option enables the clock driver for ASPEED AST10X0 series SOC.

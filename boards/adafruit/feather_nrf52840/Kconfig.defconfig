@@ -1,0 +1,15 @@
+# Adafruit Feather nRF52840 Express board configuration
+
+# Copyright (c) 2020 Tobias Svehagen
+# Copyright (c) 2024 Jacob Winther
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ADAFRUIT_FEATHER_NRF52840
+
+if BOARD_ADAFRUIT_FEATHER_NRF52840_NRF52840_UF2 || BOARD_ADAFRUIT_FEATHER_NRF52840_NRF52840_SENSE_UF2
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif
+
+endif # BOARD_ADAFRUIT_FEATHER_NRF52840

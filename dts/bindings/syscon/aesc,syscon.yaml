@@ -1,0 +1,17 @@
+#
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Aesc Silicon System Controller
+
+description: |
+  Read-only system controller exposing the platform identity, the silicon
+  revision, the build date, the reference clock frequency and a feature
+  bitmap. The register layout is identical on every Aesc Silicon platform;
+  the platform itself is encoded in the identity register.
+
+compatible: "aesc,syscon"
+
+include: [syscon.yaml]

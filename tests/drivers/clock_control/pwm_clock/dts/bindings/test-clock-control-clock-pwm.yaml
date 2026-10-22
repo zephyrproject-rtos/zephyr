@@ -1,0 +1,10 @@
+description: Example binding for a node using a PWM clock
+
+compatible: "test-clock-control-pwm-clock"
+
+include: base.yaml
+
+properties:
+  clocks:
+    required: true
+    description: Clock phandle array

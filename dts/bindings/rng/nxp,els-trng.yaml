@@ -1,0 +1,6 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP EdgeLock Secure Subsystem TRNG
+
+compatible: "nxp,els-trng"

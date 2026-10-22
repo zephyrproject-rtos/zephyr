@@ -1,0 +1,19 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "mr_navq95b_mimx9596_m7.dts"
+
+/ {
+	model = "NXP MR-NavQ95B NOR flash variant";
+
+	chosen {
+		zephyr,flash = &mx25um51345g;
+		zephyr,itcm = &itcm;
+		zephyr,code-partition = &slot0_partition;
+	};
+};

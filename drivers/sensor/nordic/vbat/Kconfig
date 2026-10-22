@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config NRF_VBAT
+	bool "nRF battery voltage sensor (SAADC via Zephyr ADC)"
+	default y
+	depends on DT_HAS_NORDIC_NRF_VBAT_ENABLED
+	select ADC
+	help
+	  Enable the Nordic nRF VBAT sensor driver. The devicetree node must
+	  specify io-channels defining an SAADC channel.

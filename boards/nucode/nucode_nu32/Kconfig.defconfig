@@ -1,0 +1,11 @@
+# NUCODE NU32 board configuration
+
+# Copyright (c) 2026 NUCODE Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCODE_NU32
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+endif # BOARD_NUCODE_NU32

@@ -1,0 +1,15 @@
+identifier: blackpill_f411ce
+name: WeAct Studio Black Pill V2.0
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - spi
+  - i2c
+  - uart
+  - pwm
+  - adc
+vendor: weact

@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: numaker_m3334ki
+name: NUVOTON NUMAKER-M3334KI Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 320
+flash: 512
+supported:
+  - gpio
+vendor: nuvoton

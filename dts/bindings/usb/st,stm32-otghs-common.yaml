@@ -1,0 +1,27 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for STM32 OTGHS controller
+
+include: [usb-ep.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  ram-size:
+    type: int
+    required: true
+    description: |
+      Size of USB dedicated RAM. STM32 SOC's reference
+      manual defines a shared FIFO size.
+
+  phys:
+    type: phandle
+    description: PHY provider specifier
+
+  clocks:
+    required: true

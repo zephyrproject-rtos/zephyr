@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MIN_HEAP
+	bool "Min-Heap Data Structure"
+	help
+		Enable support for a generic Min-Heap data structure library.
+
+		A Min-Heap is a binary tree-based data structure in which the
+		smallest element is always at the root. It supports efficient
+		insertion and removal of the minimum element in O(log n) time,
+		making it useful for priority queues, schedulers, and timeout
+		queues.
+
+		This implementation is designed for general-purpose use in both
+		kernel and application code. It supports static and dynamic
+		initialization and allows for custom comparator functions.
+
+		Note: This is unrelated to the kernel's heap memory allocator
+		(used for dynamic memory allocation with `k_malloc()` or
+		`k_heap_alloc()`). The "heap" in Min-Heap refers to the ordering
+		structure, not memory management.

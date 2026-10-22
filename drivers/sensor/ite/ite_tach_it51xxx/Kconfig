@@ -1,0 +1,13 @@
+# Copyright (c) 2025 ITE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_IT51XXX
+	bool "ITE it51xxx Tachometer sensor"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_TACH_ENABLED
+	depends on SOC_IT51XXX
+	select PINCTRL
+	help
+	  Enable the ITE it51xxx tachometer sensor,
+	  it51xxx supports three 16-bit tachometer sensor, each sensor has two
+	  input pin, and we need to select one input from them.

@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/power/r8a78000_pd.h>
+
+/ {
+	power-domains {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		vio4_pd: video-io4-pd@b {
+			compatible = "arm,scmi-power-domain";
+			reg = <R8A78000_PD_VIO4>;
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dptx0_pd: display-port-tx0-pd@8 {
+			compatible = "arm,scmi-power-domain";
+			reg = <R8A78000_PD_DP0>;
+			#power-domain-cells = <0>;
+			power-domains = <&vio4_pd>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dptx1_pd: display-port-tx1-pd@9 {
+			compatible = "arm,scmi-power-domain";
+			reg = <R8A78000_PD_DP1>;
+			#power-domain-cells = <0>;
+			power-domains = <&vio4_pd>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dptx2_pd: display-port-tx2-pd@a {
+			compatible = "arm,scmi-power-domain";
+			reg = <R8A78000_PD_DP2>;
+			#power-domain-cells = <0>;
+			power-domains = <&vio4_pd>;
+			zephyr,pm-device-runtime-auto;
+		};
+	};
+};

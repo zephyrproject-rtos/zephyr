@@ -1,0 +1,8 @@
+tests:
+  net.ipv4_nat:
+    min_ram: 16
+    tags:
+      - net
+      - ipv4
+      - nat
+    depends_on: netif

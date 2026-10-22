@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_INFINEON_MXCRYPTO
+	bool "Infineon MXCRYPTO hardware crypto driver"
+	default y
+	depends on DT_HAS_INFINEON_MXCRYPTO_CRYPTO_ENABLED
+	select MFD
+	select USE_INFINEON_MXCRYPTO_AES
+	select USE_INFINEON_MXCRYPTO_SHA
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  Enable the Infineon MXCRYPTO hardware-accelerated crypto driver
+	  for supported devices.  Provides AES-128/192/256 ECB, CBC, CTR,
+	  CCM and GCM cipher operations and SHA-224/256/384/512
+	  operations via the Zephyr crypto API.
+
+if CRYPTO_INFINEON_MXCRYPTO
+
+config CRYPTO_INFINEON_MXCRYPTO_MAX_SESSION
+	int "Maximum number of simultaneous crypto sessions"
+	default 4
+	help
+	  Number of concurrent cipher or hash sessions the driver supports.
+
+endif # CRYPTO_INFINEON_MXCRYPTO

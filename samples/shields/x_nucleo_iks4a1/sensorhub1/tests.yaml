@@ -1,0 +1,13 @@
+sample:
+  name: X-NUCLEO-IKS01A4 sensor shield
+tests:
+  sample.shields.x_nucleo_iks4a1.sensorhub1:
+    harness: shield
+    tags: shield
+    depends_on:
+      - arduino_i2c
+      - arduino_gpio
+    platform_allow:
+      - nucleo_f411re
+    integration_platforms:
+      - nucleo_f411re

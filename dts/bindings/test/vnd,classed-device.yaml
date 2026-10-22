@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test device declaring device classes
+
+compatible: "vnd,classed-device"
+
+include: vnd,class-base.yaml
+
+class: [vnd-class-a, vnd-class-b]

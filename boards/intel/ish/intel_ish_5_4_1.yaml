@@ -1,0 +1,14 @@
+identifier: intel_ish_5_4_1
+name: Intel ISH 5.4.1 SoC
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 640
+supported:
+  - serial
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel

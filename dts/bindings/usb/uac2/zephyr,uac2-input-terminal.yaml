@@ -1,0 +1,62 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB Audio Class 2 Input Terminal entity
+
+compatible: "zephyr,uac2-input-terminal"
+
+include: zephyr,uac2-channel-cluster.yaml
+
+properties:
+  terminal-type:
+    type: int
+    required: true
+    description: |
+      Terminal Type constant specified in USB Audio Terminal Types
+
+  assoc-terminal:
+    type: phandle
+    description: |
+      Associated terminal for bi-directional terminal types.
+
+  clock-source:
+    type: phandle
+    required: true
+    description: |
+      Connected clock entity
+
+  copy-protect-control:
+    type: string
+    description: Copy Protect Control capabilities
+    enum:
+      - "read-only"
+
+  connector-control:
+    type: string
+    description: Connector Control capabilities
+    enum:
+      - "read-only"
+
+  overload-control:
+    type: string
+    description: Overload Control capabilities
+    enum:
+      - "read-only"
+
+  cluster-control:
+    type: string
+    description: Cluster Control capabilities
+    enum:
+      - "read-only"
+
+  underflow-control:
+    type: string
+    description: Underflow Control capabilities
+    enum:
+      - "read-only"
+
+  overflow-control:
+    type: string
+    description: Overflow Control capabilities
+    enum:
+      - "read-only"

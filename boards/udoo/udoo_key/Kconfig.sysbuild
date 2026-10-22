@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Mohan Nagaraj
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UDOO_KEY_ESP32_PROCPU || BOARD_UDOO_KEY_ESP32_APPCPU
+
+choice BOOTLOADER
+	default BOOTLOADER_MCUBOOT
+endchoice
+
+endif

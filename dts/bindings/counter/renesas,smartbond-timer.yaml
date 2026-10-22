@@ -1,0 +1,25 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas SmartBond(tm) general purpose timers
+
+compatible: "renesas,smartbond-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-src:
+    required: true
+    type: phandle
+    description: |
+      Timer uses divn_clk or lp_clk
+
+  prescaler:
+    type: int
+    required: true
+    description: |
+      Clock prescaler at the input of the timer
+      Could be in range [0 .. 31] (CLK/(prescaler+1) )

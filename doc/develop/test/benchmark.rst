@@ -1,0 +1,342 @@
+.. _ztest_benchmarking:
+
+Benchmarking Framework
+######################
+
+The Zephyr benchmarking framework provides cycle-accurate performance
+measurements. It automates data collection and statistical calculation, offering
+a standardized way to evaluate execution metrics across the Zephyr ecosystem.
+
+Overview
+********
+
+This framework helps identify regressions and optimize critical paths by
+providing:
+
+* **Standardized API**: Macros that align with existing ``ztest`` conventions.
+* **Statistical Analysis**: Calculations of Mean, Standard Deviation, Standard
+  Error, and Min/Max values.
+* **Overhead Compensation**: Inclusion of a control test to account for the
+  benchmarking frameworks own execution time. The control is subtracted from
+  every reported statistic identically, so the corrected values are real
+  numbers that generally do not coincide with any single measurement.
+
+Configuration
+*************
+
+To use the benchmarking framework, you must enable the following Kconfig
+options:
+
+.. code-block:: cfg
+
+   CONFIG_ZTEST=y
+   CONFIG_ZTEST_BENCHMARK=y
+
+Usage
+*****
+
+A benchmark suite is defined similarly to the normal ztest testsuite by first
+defining the suite with ``ZTEST_BENCHMARK_SUITE`` and then adding individual
+benchmark tests to the suite using either ``ZTEST_BENCHMARK`` or ``ZTEST_BENCHMARK_TIMED`` macros.
+
+.. code-block:: c
+
+   #include <zephyr/ztest.h>
+
+   ZTEST_BENCHMARK_SUITE(<test suite name>, <setup_fn>, <teardown_fn>);
+
+
+Standard Benchmarks
+===================
+
+Standard benchmarks are sample-based, meaning they execute the test a specified number
+of times and measure the total cycles taken. This is useful for benchmarking critical paths where
+you want to understand the raw CPU performance in terms of cycles. It provides insights into the
+efficiency of the code and helps identify bottlenecks in terms of CPU usage.
+This benchmarking method is suitable for code that has consistent execution times and is not heavily
+influenced by external factors such as I/O operations or context switches.
+
+.. code-block:: c
+
+   #include <zephyr/ztest.h>
+
+   ZTEST_BENCHMARK_SUITE(<suite name>, NULL, NULL);
+
+   ZTEST_BENCHMARK(<suite name>, <benchmark name>, <number of samples>, <setup_fn>, <teardown_fn>)
+   {
+       /* Code to benchmark */
+   }
+
+A standard benchmark follows a flow where the setup function is called before each sample, the test
+function is executed for the specified number of samples, and the teardown function is called after
+each sample.
+
+Timed Benchmarks
+================
+
+Timed benchmarks in contrast to the standard benchmarks measures execution time of the code
+instead of cycles. This is useful for benchmarking code that may have variable execution
+times or when you want to measure the actual time taken rather than just CPU cycles of a critical
+path. It provides a broader view of performance characteristics, especially for code that involves
+I/O operations, context switches, or other factors that can influence execution time beyond raw CPU
+performance.
+
+.. code-block:: c
+
+   ZTEST_BENCHMARK_TIMED(<suite name>, <benchmark name>, <time in ms>, <setup_fn>, <teardown_fn>)
+   {
+         /* Code to benchmark */
+   }
+
+
+Unlike standard benchmarks that favor isolation, Timed Benchmarks executes setup and teardown
+functions only once allowing the test function to run hot within a dedicated time window.
+This will give a more realistic measurements as it includes the overhead of the system as it would
+be in a real-world scenario, such as interrupts, context switches, and other background tasks.
+
+Manual Benchmarks
+=================
+
+Standard and timed benchmarks are timed by the framework itself, which takes both timestamps in
+thread context around each invocation of the benchmark body. Some measurements cannot be expressed
+that way because their endpoints are captured in different execution contexts: for example the
+latency from raising an interrupt to the first instruction of its ISR, or from the end of an ISR to
+a woken thread running.
+
+Manual benchmarks keep the loop, the setup and the teardown in the framework and hand the body
+only the choice of what is measured, by bracketing it with :c:func:`ztest_benchmark_start` and
+:c:func:`ztest_benchmark_end`. The framework computes and reports the same statistics as for
+standard benchmarks.
+
+.. code-block:: c
+
+   ZTEST_BENCHMARK_MANUAL(<suite name>, <benchmark name>, <samples>, <setup_fn>, <teardown_fn>)
+   {
+         prepare();
+
+         ztest_benchmark_start();
+         operation_under_test();
+         ztest_benchmark_end();
+   }
+
+Both hooks only take a timestamp, so either may be called from an ISR and the span need not begin
+and end in the same execution context. For the latency from an interrupt to the thread it wakes,
+the ISR marks the start and the thread ends the span:
+
+.. code-block:: c
+
+   static void my_isr(const void *arg)
+   {
+         ztest_benchmark_start();
+   }
+
+   ZTEST_BENCHMARK_MANUAL(<suite name>, isr_exit_latency, 1000, NULL, NULL)
+   {
+         trigger_the_interrupt();
+
+         ztest_benchmark_end();
+   }
+
+The sample itself is computed once the body has returned, which is what keeps the statistics out
+of interrupt context: updating them uses floating point, which is not allowed in an ISR on every
+architecture. An iteration whose body marks no span contributes no sample.
+
+Manual benchmarks are corrected against a control of their own rather than the one the sampled
+benchmarks use. A manual span costs the two timestamps that bracket it and nothing else, where the
+sampled control also measures the indirect call to the benchmark body, which is not part of a
+manual span. A span whose ends are captured in two different contexts pays neither exactly, and no
+control can express that.
+
+The warmup applies here exactly as it does to a sampled benchmark: the framework runs the body
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` extra times and discards those spans, keeping the
+first as the cold cost. The body never has to distinguish between the two phases, and every
+measured iteration is preceded by exactly the same work as the one before it.
+
+Understanding Results
+*********************
+
+Standard Benchmarking Results
+=============================
+
+.. code-block:: console
+
+   <suite name> ###############################################
+   <benchmark name> ===========================================
+      Sample size:<number of samples>, total cycles: <total amount of cycles>
+      Mean(u): <mean cycles per sample>
+      Standard deviation(s): <cycles>
+      Standard Error(SE): <cycles>
+      Min: <cycles> (run #<sample number>)
+      Max: <cycles> (run #<sample number>)
+
+
+Statistical Metrics
+"""""""""""""""""""
+
+.. note::
+
+   :kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTLIERS` replaces the standard error line with the
+   number of samples that exceed the median by more than
+   :kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTLIER_MARGIN_DIV` allows, and that number as a
+   percentage. The margin matters because the counter resolution spreads the baseline over a
+   few counts; without it about half of any distribution would be reported. A latency
+   distribution is usually a baseline plus a handful of disturbed runs rather than samples of
+   one stochastic population, and a standard error over the two suggests an average that no
+   single execution ever produced -- ten thousand runs of 760 cycles and one of 1240 give a
+   standard error of 0.048, which reads as precision and is not, where ``1 / 10000 (0.010%)``
+   says what happened. Only the report changes; the standard error keeps its CSV column.
+
+* **Mean (u)**: The average number of cycles taken per sample. It provides a
+  central value representing the expected cost of execution.
+
+* **Standard Deviation (s)**: Measures the amount of variation or fluctuation of
+  the execution cost from the mean. A low standard deviation indicates that the
+  behavior is deterministic and consistent.
+
+* **Standard Error (SE)**: Estimates how far the sample mean is likely to be
+  from the "true" mean of the system. It provides insight into the statistical
+  reliability of the test. A lower SE indicates higher confidence in the
+  result.
+
+* **Min/Max**: The minimum and maximum cycle counts observed, along with which
+  sample they occurred on.
+
+Warmup and the cold cost
+""""""""""""""""""""""""
+
+A benchmark is defined as three phases: the setup, then
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` iterations that are executed but not recorded,
+then the measured samples. The warmup applies to every benchmark in the image.
+
+The very first execution is always unrecorded, whatever the warmup is set to. It runs with cold
+caches, branch predictors and TLBs and can be an order of magnitude slower than the steady state,
+and rather than discard that information the framework reports it on its own as the **cold cost**.
+The two answer different questions — what an operation costs the first time it is reached, and
+what it costs thereafter — and an application that runs a path once at startup cares about the
+first.
+
+Keeping it out of the distribution is what makes the distribution mean anything at the tail. A
+benchmark that reported the cold start in both places would have it decide the far percentiles:
+at ten thousand samples the nearest-rank p99.99 is the second largest value, so one cold start
+would be read as the steady-state tail.
+
+Raising the warmup beyond that costs accuracy on a micro benchmark whose whole cost is comparable
+to a cache miss, and with a large enough sample count the early iterations have no measurable
+effect on the mean, so the default of zero is the right starting point. Raise it when the
+benchmark is large enough for cache state to matter and the steady state is what you are after.
+
+Latency percentiles
+"""""""""""""""""""
+
+The mean and the standard error describe how precisely the average was
+estimated. That is the right question for throughput, but not for latency: a
+real-time system is characterised by how bad an individual operation can be,
+and that lives in the tail of the distribution rather than near the mean.
+
+Enable :kconfig:option:`CONFIG_ZTEST_BENCHMARK_PERCENTILES` to retain the
+individual samples and report ``min``, ``p50``, ``p90``, ``p99``, ``p99.9``,
+``p99.99`` and ``max`` alongside the usual statistics. In CSV mode each
+sampled and manual benchmark emits an additional ``P`` row; see
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV` for the columns.
+
+The difference this makes is clearest on a distribution with a tail. Measuring
+interrupt entry latency on a loaded system gives a mean of 1264 cycles with a
+standard error of 34, which describes no interrupt that actually occurred: the
+percentiles show 1216 cycles all the way out to p99, and 25184 beyond it.
+
+A percentile has to be resolvable by the number of samples taken. p99 needs at
+least 100 samples, p99.9 at least 1000 and p99.99 at least 10000; with fewer,
+the reported value degenerates to the maximum. Samples are retained in a
+buffer of :kconfig:option:`CONFIG_ZTEST_BENCHMARK_MAX_SAMPLES` entries of
+8 bytes each, which has to be at least as large as the sample count of the
+largest benchmark. The retained samples are the first ones taken rather than a
+sample of the whole run, so percentiles over a truncated prefix would miss
+whatever happened after the buffer filled, which is where the tail tends to
+live. A benchmark that overruns the buffer therefore reports no percentiles at
+all, and says how many samples did not fit.
+
+Plainly speaking, lower values are better for all metrics.
+Lower mean, min, and max values indicates better raw performance.
+Lower standard deviation and standard error values indicate more consistent and
+therefore reliable performance.
+
+Timed Benchmarking Results
+==========================
+
+.. code-block:: console
+
+   <benchmark name> ===============================================
+      Samples: <Number of samples executed during the benchmark>
+      Total Time: <Gross execution time>
+      Work Time: <Net execution time> ns (Net)
+      Ops/Sec: <average operations per second>
+      Cycles/Op: <average cycles per operation>
+
+Statistical Metrics
+"""""""""""""""""""
+
+* **Total Time**: The total time taken for all samples of the benchmark, including overhead.
+
+* **Work Time**: The total time taken for the code under test, excluding the overhead of the
+  benchmarking framework itself. This provides a more accurate measure of the actual performance of
+  the code being benchmarked.
+
+* **Ops/Sec**: The number of operations (samples) that can be performed per second, calculated by
+  dividing the number of samples by the net work time (in seconds). This metric is particularly
+  useful for understanding the throughput of the code being benchmarked.
+
+* **Cycles/Op**: The average number of CPU cycles taken per operation, calculated by dividing the
+  net number of cycles by the number of samples. This metric provides insight into the
+  efficiency of the code in terms of CPU usage.
+
+In general higher values for Ops/Sec are better as it indicates higher throughput, just as lower
+values for Cycles/Op are better. As the Cycles/Op and Ops/Sec metrics are derived from the same
+underlying data, they are reflecting the same performance characteristics from different
+perspectives. A high Ops/Sec should correspond to a low Cycles/Op, and vice versa.
+
+
+Benchmark Output Options
+========================
+
+The benchmarking framework provides several options for outputting results of benchmarking data. By
+default, results are printed in a verbose human-readable format that is easy to understand and
+interpret.
+Alternatively, you can enable the :kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV` Kconfig option
+to output results in a CSV format that can be easily imported by scripts for further analysis.
+The CSV output includes all the same metrics as the verbose output, but in a
+format that is more conducive to automated analysis and reporting.
+
+The standard benchmark csv output format is as follows:
+
+.. code-block:: console
+
+   S,<suite name>,<benchmark name>,<sample size>,<total cycles>,<mean>,<stddev>,<stderr>,<min>,<min sample>,<max>,<max sample>
+
+The timed benchmark csv output format is as follows:
+
+.. code-block:: console
+
+   T,<suite name>,<benchmark name>,<samples>,<total time>,<work time>,<ops/sec>,<cycles/op>
+
+
+Important Considerations
+************************
+
+* **Noise**: Benchmarking is inherently sensitive to system noise. To obtain as
+  accurate results as possible, disable unnecessary background tasks and
+  interrupts that may interfere with timing.
+
+* **Cache Warming**: The first sample of a benchmark may often be slower
+  due to cache misses and this can skew results slightly on small sample sizes,
+  choose a sufficiently large number of samples to mitigate this effect.
+
+* **Use setup/teardown functions**: It is *highly* encouraged to utilize the
+  setup and teardown functions to isolate the code under test as much as
+  possible. Excessive setup/teardown code in the benchmark code can introduce
+  noise and skew results *significantly* for small critical paths.
+
+
+API Reference
+*************
+
+.. doxygengroup:: ztest_benchmark

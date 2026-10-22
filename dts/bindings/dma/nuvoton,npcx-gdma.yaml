@@ -1,0 +1,69 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-GDMA node
+
+compatible: "nuvoton,npcx-gdma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+  chan-offset:
+    type: int
+    required: true
+    description: GDMA channel offset
+  support-npckn-v1:
+    type: boolean
+    description: |
+      This option enables the GDMA support for NPCKn.
+  "#dma-cells":
+    type: int
+    required: true
+    description: |
+      Number of items to expect in a DMA specifier.
+
+      A phandle to the GDMA controller plus the following two integer cells:
+        1. channel: the dma channel, each channel supports one GDMA request line.
+          0: channel 0
+          1: channel 1
+        2. config: A 32bit mask specifying the GDMA channel configuration
+            - bit 0-5:  Reserved. (default: 0x0)
+            - bit 6-7:  Direction  (see dma.h)
+                        - 0x0: MEM to MEM
+                        - 0x1: MEM to PERIPH
+                        - 0x2: PERIPH to MEM
+                        - 0x3: reserved for PERIPH to PERIPH
+            - bit 8-9:  Transfer Width Select. The address width must be aligned
+                        with the selected data width.
+                        - 0x0: Byte (8 bits)
+                        - 0x1: Word (16 bits)
+                        - 0x2: Double-Word (32 bits)
+                               This value is required if bit 10 is set to 1.
+                        - 0x3: Reserved
+            - bit 10:   16-byte transfer (address must be 16-byte aligned)
+                        - 0x0: Disable 16-byte transfer
+                        - 0x1: Enable 16-byte transfer
+            - bit 11:   Destination address direction.
+                        - 0x0: Destination address incremented successively. (default)
+                        - 0x1: Destination address decremented successively.
+            - bit 12:   Source address direction.
+                        - 0x0: Source address incremented successively. (default)
+                        - 0x1: Source address decremented successively.
+            - bit 13:   Destination address fixed.
+                        - 0x0: Change the Destination address during the GDMA
+                               operation. (default)
+                        - 0x1: Fixed address is used for each data transfer from
+                               the destination.
+            - bit 14:   Source address fixed.
+                        - 0x0: Change the source address during the GDMA operation. (default)
+                        - 0x1: Fixed address is used for each data transfer from
+                               the source.
+
+# -#dma-cells :
+# channel: the dma channel, each channel supports one DMA request line.
+# config : A 32bit mask specifying the DMA channel configuration
+dma-cells:
+  - channel
+  - config

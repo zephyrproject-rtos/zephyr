@@ -1,0 +1,13 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_MCXN236
+
+if BOOTLOADER_MCUBOOT
+choice MCUBOOT_BOOTLOADER_MODE
+	# Board only supports MCUBoot via "upgrade only" method:
+	default MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+endchoice
+endif #BOOTLOADER_MCUBOOT
+
+endif

@@ -1,0 +1,11 @@
+sample:
+  name: MPU Test
+tests:
+  sample.mpu.mpu_test:
+    arch_allow: arm
+    filter: CONFIG_CPU_HAS_MPU and not CONFIG_ARM64 and not CONFIG_SOC_SERIES_S32ZE
+    tags:
+      - mpu
+    harness: shell
+    integration_platforms:
+      - mps2/an385

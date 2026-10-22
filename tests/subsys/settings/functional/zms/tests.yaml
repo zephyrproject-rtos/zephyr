@@ -1,0 +1,24 @@
+tests:
+  settings.functional.zms:
+    platform_allow:
+      - qemu_x86
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - settings
+      - zms
+  settings.functional.zms.cache:
+    extra_configs:
+      - CONFIG_ZMS_LOOKUP_CACHE=y
+      - CONFIG_ZMS_LOOKUP_CACHE_SIZE=64
+      - CONFIG_ZMS_LOOKUP_CACHE_FOR_SETTINGS=y
+      - CONFIG_SETTINGS_ZMS_LL_CACHE=y
+      - CONFIG_SETTINGS_ZMS_LL_CACHE_SIZE=32
+    platform_allow:
+      - qemu_x86
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - settings
+      - zms

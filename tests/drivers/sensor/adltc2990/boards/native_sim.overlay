@@ -1,0 +1,98 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	adltc2990_0_0: adltc2990_0_0@1 {
+		compatible = "adi,adltc2990";
+		reg = <0x1>;
+		measurement-mode = <0 0>;
+		pins-v1-v2-current-resistor = <0>;
+		pins-v3-v4-current-resistor = <0>;
+		pin-v1-voltage-divider-resistors = <500 1000>;
+		pin-v2-voltage-divider-resistors = <110000 100000>;
+		pin-v3-voltage-divider-resistors = <7000 1000>;
+		pin-v4-voltage-divider-resistors = <500 1000>;
+	};
+
+	adltc2990_1_3: adltc2990_1_3@b {
+		compatible = "adi,adltc2990";
+		reg = <0xb>;
+		temperature-format = <0>;
+		acquistion-format = <1>;
+		measurement-mode = <1 3>;
+		pins-v1-v2-current-resistor = <1000000>;
+		pins-v3-v4-current-resistor = <0>;
+		pin-v1-voltage-divider-resistors = <0 1>;
+		pin-v2-voltage-divider-resistors = <0 1>;
+		pin-v3-voltage-divider-resistors = <0 1>;
+		pin-v4-voltage-divider-resistors = <0 1>;
+	};
+
+	adltc2990_4_3: adltc2990_4_3@c {
+		compatible = "adi,adltc2990";
+		reg = <0xc>;
+		measurement-mode = <4 3>;
+		pins-v1-v2-current-resistor = <1000000>;
+		pins-v3-v4-current-resistor = <0>;
+		pin-v1-voltage-divider-resistors = <0 1>;
+		pin-v2-voltage-divider-resistors = <0 1>;
+		pin-v3-voltage-divider-resistors = <0 1>;
+		pin-v4-voltage-divider-resistors = <0 1>;
+	};
+
+	adltc2990_5_3: adltc2990_5_3@d {
+		compatible = "adi,adltc2990";
+		reg = <0xd>;
+		temperature-format = <1>;
+		acquistion-format = <1>;
+		measurement-mode = <5 3>;
+		pins-v1-v2-current-resistor = <1000000>;
+		pins-v3-v4-current-resistor = <0>;
+		pin-v1-voltage-divider-resistors = <0 1>;
+		pin-v2-voltage-divider-resistors = <0 1>;
+		pin-v3-voltage-divider-resistors = <0 1>;
+		pin-v4-voltage-divider-resistors = <0 1>;
+	};
+
+	adltc2990_6_3: adltc2990_6_3@e {
+		compatible = "adi,adltc2990";
+		reg = <0xe>;
+		temperature-format = <1>;
+		acquistion-format = <1>;
+		measurement-mode = <6 3>;
+		pins-v1-v2-current-resistor = <10000>;
+		pins-v3-v4-current-resistor = <100000>;
+		pin-v1-voltage-divider-resistors = <500 1000>;
+		pin-v2-voltage-divider-resistors = <110000 100000>;
+		pin-v3-voltage-divider-resistors = <7000 1000>;
+		pin-v4-voltage-divider-resistors = <500 1000>;
+	};
+
+	adltc2990_7_3: adltc2990_7_3@f {
+		compatible = "adi,adltc2990";
+		reg = <0xf>;
+		temperature-format = <1>;
+		acquistion-format = <1>;
+		measurement-mode = <7 3>;
+		pins-v1-v2-current-resistor = <0>;
+		pins-v3-v4-current-resistor = <0>;
+		pin-v1-voltage-divider-resistors = <500 1000>;
+		pin-v2-voltage-divider-resistors = <110000 100000>;
+		pin-v3-voltage-divider-resistors = <7000 1000>;
+		pin-v4-voltage-divider-resistors = <500 1000>;
+	};
+
+	adltc2990_incorrect: adltc2990_incorrect@0 {
+		compatible = "adi,adltc2990";
+		reg = <0x0>;
+		measurement-mode = <8 4>;
+		pins-v1-v2-current-resistor = <0>;
+		pins-v3-v4-current-resistor = <0>;
+		pin-v1-voltage-divider-resistors = <500 1000>;
+		pin-v2-voltage-divider-resistors = <110000 100000>;
+		pin-v3-voltage-divider-resistors = <7000 1000>;
+		pin-v4-voltage-divider-resistors = <500 1000>;
+	};
+};

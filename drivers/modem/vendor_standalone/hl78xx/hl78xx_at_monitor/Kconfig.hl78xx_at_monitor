@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HL78XX_AT_MONITOR
+	bool "HL78XX parsed AT monitor"
+
+if HL78XX_AT_MONITOR
+
+config HL78XX_AT_MONITOR_HEAP_SIZE
+	int "Heap size for deferred AT notifications"
+	range 64 4096
+	default 512
+	help
+	  Heap size used to copy and queue parsed unsolicited AT notifications
+	  for deferred monitor dispatch in the system workqueue.
+	  Runtime monitor snapshot dispatch does not use this heap
+
+config HL78XX_AT_MONITOR_MAX_INSTANCE_MONITORS
+	int "Maximum number of runtime HL78xx AT monitors"
+	default 8
+	range 1 64
+	help
+	  Maximum number of runtime AT monitors that can be registered.
+	  This bound allows AT monitor dispatch to snapshot runtime monitors
+	  without allocating memory.
+
+
+module=HL78XX_AT_MONITOR
+module-dep=LOG
+module-str=Parsed AT monitor library
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # HL78XX_AT_MONITOR

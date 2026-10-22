@@ -1,0 +1,10 @@
+# Adafruit Feather ESP32-S3 board configuration
+
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_ADAFRUIT_FEATHER_ESP32S3_ESP32S3_PROCPU
+	default 256 if BOARD_ADAFRUIT_FEATHER_ESP32S3_ESP32S3_APPCPU

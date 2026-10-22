@@ -1,0 +1,11 @@
+# Copyright 2026 Toradex
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_NXP_IPWM
+	bool "NXP i.MX PWM driver"
+	default y
+	depends on DT_HAS_NXP_IPWM_ENABLED
+	select PINCTRL
+	help
+	  Enable the driver for the i.MX PWM block found on the i.MX8M family.
+	  This is not the FlexPWM block covered by PWM_MCUX.

@@ -1,0 +1,33 @@
+# reel board configuration
+
+# Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_REEL_BOARD
+
+config I2C
+	default y
+
+if FXOS8700
+
+choice FXOS8700_MODE
+	default FXOS8700_MODE_ACCEL
+endchoice
+
+endif # FXOS8700
+
+if LVGL
+
+choice LV_Z_COLOR_FORMAT
+	default LV_Z_COLOR_FORMAT_I1
+endchoice
+
+configdefault LV_Z_DPI_DEF
+	default 130
+
+config LV_Z_VDB_SIZE
+	default 16
+
+endif # LVGL
+
+endif # BOARD_REEL_BOARD

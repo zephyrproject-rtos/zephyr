@@ -1,0 +1,6 @@
+board:
+  name: usbcanfd_dual
+  full_name: USBCANFD DUAL
+  vendor: canmodule
+  socs:
+    - name: stm32g473xx

@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2021 Guðni Már Gilbert
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g4/stm32g431.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32g441", "st,stm32g4", "simple-bus";
+
+		aes: crypto@50060000 {
+			compatible = "st,stm32-aes";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 24)>;
+			resets = <&rctl STM32_RESET(AHB2, 24)>;
+			interrupts = <85 0>;
+			status = "disabled";
+		};
+	};
+};

@@ -1,0 +1,27 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: xg21_rb4196b
+name: EFR32xG21B 2.4 GHz 20 dBm Radio Board (xG21-RB4196B, BRD4196B)
+type: mcu
+arch: arm
+ram: 96
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - counter
+  - display
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - nvs
+  - pwm
+  - spi
+  - uart
+  - watchdog
+  - netif:openthread
+vendor: silabs

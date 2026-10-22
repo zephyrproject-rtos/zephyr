@@ -1,0 +1,4 @@
+tests:
+  utilities.red_black_tree:
+    tags: rbtree
+    type: unit

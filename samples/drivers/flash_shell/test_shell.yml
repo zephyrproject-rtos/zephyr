@@ -1,0 +1,2 @@
+- command: "flash page_info 0"
+  expected: "Page for address 0x0"

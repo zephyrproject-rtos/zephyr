@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFli DLL is a digital phase-locked loop peripheral, controlled by the RCC.
+  It can be used as a clock source for the system and peripherals.
+
+compatible: "sifli,sf32lb-dll"
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Frequency of the clock output (in Hz).

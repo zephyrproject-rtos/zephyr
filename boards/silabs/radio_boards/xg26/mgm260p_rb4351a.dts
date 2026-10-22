@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg26/mgm260pd32vna.dtsi>
+#include <silabs/xg26/clock-hfrcodpll-80m.dtsi>
+#include "xg26_common.dtsi"
+#include "mgm260p_rb4351a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs MGM260P 2.4 GHz +20 dBm Radio Board (MGM260P-RB4351A, BRD4351A)";
+	compatible = "silabs,mgm260p_rb4351a", "silabs,mgm26";
+};
+
+&led0 {
+	gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+};
+
+&led1 {
+	gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+};
+
+&button0 {
+	gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+};
+
+&button1 {
+	gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+};
+
+&sensor_enable {
+	enable-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+};
+
+&exp_header {
+	gpio-map = <3 0 &gpioa 8 0>,
+		   <4 0 &gpioc 0 0>,
+		   <5 0 &gpiob 5 0>,
+		   <6 0 &gpioc 1 0>,
+		   <7 0 &gpiob 0 0>,
+		   <8 0 &gpioc 2 0>,
+		   <9 0 &gpiob 1 0>,
+		   <10 0 &gpioc 3 0>,
+		   <11 0 &gpioc 9 0>,
+		   <12 0 &gpioa 5 0>,
+		   <13 0 &gpiod 5 0>,
+		   <14 0 &gpioa 6 0>,
+		   <15 0 &gpiob 2 0>,
+		   <16 0 &gpiob 3 0>;
+};
+
+&eusart1 {
+	cs-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+};
+
+&ls0xx_ls013b7dh03 {
+	disp-en-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+	extcomin-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+};
+
+&adc0 {
+	channel@0 {
+		zephyr,input-positive = <IADC_INPUT_PD4>;
+	};
+};
+
+&gpiob {
+	board-controller-enable {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};

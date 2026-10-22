@@ -1,0 +1,10 @@
+identifier: beagleplay/am6254/m4
+name: BeagleBoard.org BeaglePlay
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: beagle
+supported:
+  - uart

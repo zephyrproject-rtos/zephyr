@@ -1,0 +1,6 @@
+board:
+  name: kit_xmc72_evk
+  full_name: XMC7200 Evaluation Kit
+  vendor: infineon
+  socs:
+  - name: xmc7200d_e272k8384

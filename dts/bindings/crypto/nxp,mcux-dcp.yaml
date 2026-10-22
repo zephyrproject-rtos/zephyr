@@ -1,0 +1,12 @@
+# Copyright (c) 2023, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Data Co-Processor (DCP) Crypto accelerator.
+
+compatible: "nxp,mcux-dcp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

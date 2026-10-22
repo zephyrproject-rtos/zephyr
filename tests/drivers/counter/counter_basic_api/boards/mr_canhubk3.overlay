@@ -1,0 +1,15 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&stm0 {
+	prescaler = <1>;
+	status = "okay";
+};
+
+&stm1 {
+	prescaler = <64>;
+	status = "okay";
+};

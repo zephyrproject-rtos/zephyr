@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Liu Changjie
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CH32H417EVT_CH32H417_V3F
+
+configdefault MAIN_STACK_SIZE
+	default 512
+
+configdefault IDLE_STACK_SIZE
+	default 256
+
+configdefault ISR_STACK_SIZE
+	default 512
+
+endif # BOARD_CH32H417EVT_CH32H417_V3F

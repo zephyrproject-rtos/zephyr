@@ -1,0 +1,6 @@
+board:
+  name: frdm_mcxw23
+  full_name: FRDM-MCXW23
+  vendor: nxp
+  socs:
+    - name: mcxw236

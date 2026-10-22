@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/** STM32WB06 is identical to STM32WB07, except for RAM size */
+#include <st/wb0/stm32wb07.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32wb06", "st,stm32wb0", "simple-bus";
+	};
+};

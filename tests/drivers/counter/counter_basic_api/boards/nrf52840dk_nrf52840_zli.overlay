@@ -1,0 +1,23 @@
+&timer0 {
+	zli;
+};
+
+&timer1 {
+	zli;
+};
+
+&timer2 {
+	zli;
+};
+
+&timer3 {
+	zli;
+};
+
+&timer4 {
+	zli;
+};
+
+&rtc0 {
+	zli;
+};

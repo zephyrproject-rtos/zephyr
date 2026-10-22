@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Lexmark International, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_CORTEX_R5
+	select QEMU_TARGET

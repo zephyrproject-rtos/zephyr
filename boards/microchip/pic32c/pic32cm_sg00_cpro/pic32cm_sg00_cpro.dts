@@ -1,0 +1,256 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32c/pic32cm_sg_gc/pic32cm_sg00/pic32cm5112sg00100.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include "pic32cm_sg00_cpro-pinctrl.dtsi"
+
+/ {
+	model = "PIC32CM SG00 Curiosity Pro";
+	compatible = "microchip,pic32cm_sg00_cpro";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &nvmctrl;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &sercom4;
+		zephyr,shell-uart = &sercom4;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&porta 20 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+
+		led1: led_1 {
+			gpios = <&porta 18 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&portb 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&portb 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * MCUboot partition layout for PIC32CM SG00 (16 KB BFM, 512 KB PFM):
+		 *
+		 * Offsets relative to flash0 base (0x08000000):
+		 *
+		 *   boot:    0x0000000 - 0x0003FFF  (16 KB)  - MCUboot in BFM
+		 *   [gap]:   0x0004000 - 0x3FFFFFF  (unimplemented)
+		 *   slot0:   0x4000000 - 0x403BFFF  (240 KB) - primary image in PFM
+		 *   slot1:   0x403C000 - 0x4077FFF  (240 KB) - upgrade image in PFM
+		 *   storage: 0x4078000 - 0x407FFFF  (32 KB)  - scratch / NV storage
+		 */
+
+		/* 16 KB for MCUboot in BFM */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(16)>;
+		};
+
+		/* 240 KB for slot0 (primary image) in PFM */
+		slot0_partition: partition@4000000 {
+			label = "image-0";
+			compatible = "zephyr,mapped-partition";
+			reg = <0x4000000 DT_SIZE_K(240)>;
+		};
+
+		/* 240 KB for slot1 (upgrade image) in PFM */
+		slot1_partition: partition@403c000 {
+			label = "image-1";
+			compatible = "zephyr,mapped-partition";
+			reg = <0x403c000 DT_SIZE_K(240)>;
+		};
+
+		/* 32 KB for storage partition in PFM */
+		storage_partition: partition@4078000 {
+			label = "storage";
+			compatible = "zephyr,mapped-partition";
+			reg = <0x4078000 DT_SIZE_K(32)>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <72000000>;
+};
+
+&clock {
+	compatible = "microchip,pic32cm-sg-gc-clock";
+
+	xosc: xosc {
+		compatible = "microchip,pic32cm-sg-gc-xosc";
+		xosc-frequency = <12000000>;
+		xosc-en = <1>;
+		xosc-xtal-en = <1>;
+	};
+
+	dfll48m: dfll48m {
+		compatible = "microchip,pic32cm-sg-gc-dfll48m";
+		dfll48m-closed-loop-en = <1>;
+		dfll48m-multiply-factor = <4>;
+		dfll48m-src-gclk = "gclk0";
+		dfll48m-en = <1>;
+	};
+
+	dpll0: dpll0 {
+		compatible = "microchip,pic32cm-sg-gc-dpll";
+		dpll-bandwidth-sel = "4mhz-10mhz";
+		dpll-ref-division-factor = <2>;
+		dpll-feedback-divider-factor = <144>;
+		dpll-src = "xosc";
+		dpll-en = <1>;
+
+		dpll0out0: dpll0out0 {
+			subsystem = <CLOCK_MCHP_DPLL0_ID_OUT0>;
+			dpll-output-division-factor = <6>;
+			dpll-output-en = <1>;
+		};
+	};
+
+	xosc32k: xosc32k {
+		compatible = "microchip,pic32cm-sg-gc-xosc32k";
+		xosc32k-xtal-en = <1>;
+		xosc32k-control-gain-mode = "higher-than-cgm7";
+		xosc32k-en = <1>;
+	};
+
+	gclkgen: gclkgen {
+		compatible = "microchip,pic32cm-sg-gc-gclkgen";
+
+		gclkgen0 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN0>;
+			gclkgen-div-factor = <2>;
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-src = "pll0-clkout0";
+			gclkgen-en = <1>;
+		};
+	};
+
+	gclkperiph: gclkperiph {
+		compatible = "microchip,pic32cm-sg-gc-gclkperiph";
+		#clock-cells = <1>;
+
+		sercom1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
+	};
+
+	mclkdomain: mclkdomain {
+		compatible = "microchip,pic32cm-sg-gc-mclkdomain";
+
+		mclkcpu {
+			subsystem = <CLOCK_MCHP_MCLKDOMAIN_ID_CPU>;
+			mclk-div = <1>;
+		};
+	};
+
+	mclkperiph: mclkperiph {
+		compatible = "microchip,pic32cm-sg-gc-mclkperiph";
+		#clock-cells = <1>;
+
+		sercom1 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>;
+			mclk-en = <1>;
+		};
+	};
+};
+
+&porta {
+	status = "okay";
+};
+
+&portb {
+	status = "okay";
+};
+
+&sercom4 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom4_uart_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 0 24>, <&dmac 1 25>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&dmac {
+	status = "okay";
+};
+
+i2c0: &sercom1 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom1_i2c_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 2 6>, <&dmac 3 7>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&portc {
+	status = "okay";
+};
+
+&sercom2 {
+	compatible = "microchip,sercom-g1-spi";
+	dipo = <3>;
+	dopo = <0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&sercom2_spi_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&portc 17 GPIO_ACTIVE_LOW>;
+	dmas = <&dmac 2 8>, <&dmac 3 9>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};

@@ -1,0 +1,39 @@
+# Copyright (c), 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-init-microvolt
+      - regulator-always-on
+      - regulator-boot-on
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+
+properties:
+  regulator-init-microvolt:
+    default: 1100000
+
+  sleep-microvolt:
+    type: int
+    default: 1100000
+    enum:
+      - 600000
+      - 650000
+      - 700000
+      - 750000
+      - 800000
+      - 850000
+      - 900000
+      - 950000
+      - 1000000
+      - 1050000
+      - 1100000
+      - 1150000
+      - 1200000
+      - 1250000
+      - 1300000
+      - 1350000
+    description:
+      Regulator's voltage when system is in sleep mode.

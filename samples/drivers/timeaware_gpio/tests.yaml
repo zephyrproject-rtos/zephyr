@@ -1,0 +1,9 @@
+sample:
+  name: timeaware_gpio
+tests:
+  sample.drivers.timeaware_gpio:
+    tags:
+      - drivers
+    filter: dt_compat_enabled("intel,timeaware-gpio")
+    platform_allow:
+      - intel_adl_crb/alder_lake

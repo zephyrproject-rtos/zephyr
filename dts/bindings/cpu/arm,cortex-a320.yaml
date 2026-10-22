@@ -1,0 +1,8 @@
+# Copyright (c) 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: Arm Cortex-A320 CPU
+
+compatible: "arm,cortex-a320"
+
+include: cpu.yaml

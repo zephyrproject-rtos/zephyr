@@ -1,0 +1,17 @@
+identifier: qemu_arc/qemu_arc_hs
+name: QEMU Emulation for ARC HS
+type: qemu
+simulation:
+  - name: qemu
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+  - arcmwdt
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+ram: 4096
+vendor: snps

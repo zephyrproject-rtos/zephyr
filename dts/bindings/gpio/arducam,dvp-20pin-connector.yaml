@@ -1,0 +1,42 @@
+# Copyright 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: ArduCam 20-pin header camera connector.
+
+description: |
+  GPIO pins exposed on an ArduCam 20-pin header for camera modules.
+  Originally designed to connect Arducam modules to Arduino Giga R1,
+  but further used by other vendors of camera modules and devkits.
+
+  The connector layout is depicted below:
+
+     1   3V3          2   GND
+     3   SCL          4   SDA
+     5   VS           6   HS
+     7   PCLK         8   XCLK
+     9   D7           10  D6
+     11  D5           12  D4
+     13  D3           14  D2
+     15  D1           16  D0
+     17  PEN          18  PDN
+     19  GPIO0        20  GPIO1
+
+  In some variants, the last row containing the pins 19 and 20 is
+  not present, and the module is only providing 18 pins out of 20.
+
+  The following node labels can be used in devicetree:
+
+  - dvp_20pin_interface: the video interface that receives the video
+    feed and use with the zephyr,camera chosen node.
+
+  - dvp_20pin_i2c: the I2C device of the devkit on which the camera
+    module is instantiated.
+
+  - dvp_20pin_connector: the GPIO nexus using the arducam,dvp-20pin-connector
+    that defines the camera pins ('reset' (PEN), 'power-down' (PDN)...)
+
+  See <zephyr/dt-bindings/gpio/dvp-20pin-connector.h> for pin description.
+
+compatible: "arducam,dvp-20pin-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

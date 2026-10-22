@@ -1,0 +1,10 @@
+common:
+  tags:
+    - net_buf
+tests:
+  libraries.net_buf.buf_simple:
+    type: unit
+  libraries.net_buf.buf_simple.hardening:
+    type: unit
+    extra_configs:
+      - CONFIG_NET_BUF_HARDENING=y

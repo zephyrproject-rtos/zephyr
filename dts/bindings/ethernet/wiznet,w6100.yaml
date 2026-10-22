@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright 2026 Sayed Naser Moravej
+# SPDX-License-Identifier: Apache-2.0
+
+title: WIZnet W6100 Ethernet Controller
+
+description: W6100 standalone 10/100BASE-T Ethernet controller with SPI interface
+
+compatible: "wiznet,w6100"
+
+include: wiznet,ethernet-common.yaml
+
+properties:
+  int-gpios:
+    required: true

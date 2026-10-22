@@ -1,0 +1,60 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/stmod-plus-connector.h>
+
+/ {
+	grove_uart_header: grove-uart-connector {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &stmod_plus_connector STMOD_PLUS_MISO_RX 0>, /* RX */
+			   <1 0 &stmod_plus_connector STMOD_PLUS_MOSI_TX 0>; /* TX */
+	};
+
+	grove_i2c_header: grove-i2c-connector {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &stmod_plus_connector STMOD_PLUS_SCL 0>, /* SCL */
+			   <1 0 &stmod_plus_connector STMOD_PLUS_SDA 0>; /* SDA */
+	};
+
+	esp_01_header: esp-01-connector {
+		compatible = "esp-01-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <2 0 &stmod_plus_connector STMOD_PLUS_MISO_RX 0>, /* RXD */
+			   <3 0 &stmod_plus_connector STMOD_PLUS_PWM 0>,     /* GPIO2 */
+			   <4 0 &stmod_plus_connector STMOD_PLUS_ADC 0>,     /* CH_PD */
+			   <5 0 &stmod_plus_connector STMOD_PLUS_INT 0>,     /* GPIO0 */
+			   <6 0 &stmod_plus_connector STMOD_PLUS_RESET 0>,   /* RST */
+			   <7 0 &stmod_plus_connector STMOD_PLUS_MOSI_TX 0>; /* TXD */
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &stmod_plus_connector STMOD_PLUS_ADC 0>,     /* AN */
+			   <1 0 &stmod_plus_connector STMOD_PLUS_RESET 0>,   /* RST */
+			   <2 0 &stmod_plus_connector STMOD_PLUS_NSS_CTS 0>, /* CS */
+			   <3 0 &stmod_plus_connector STMOD_PLUS_SCK_RTS 0>, /* SCK */
+			   <4 0 &stmod_plus_connector STMOD_PLUS_MISOS 0>,   /* MISO */
+			   <5 0 &stmod_plus_connector STMOD_PLUS_MOSIS 0>,   /* MOSI */
+			   <6 0 &stmod_plus_connector STMOD_PLUS_PWM 0>,     /* PWM */
+			   <7 0 &stmod_plus_connector STMOD_PLUS_INT 0>,     /* INT */
+			   <8 0 &stmod_plus_connector STMOD_PLUS_MISO_RX 0>, /* RX */
+			   <9 0 &stmod_plus_connector STMOD_PLUS_MOSI_TX 0>, /* TX */
+			   <10 0 &stmod_plus_connector STMOD_PLUS_SCL 0>,    /* SCL */
+			   <11 0 &stmod_plus_connector STMOD_PLUS_SDA 0>;    /* SDA */
+	};
+};

@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_SILABS_SIWX91X
+	bool "Silabs SiWx91x instruction cache driver"
+	select CACHE_HAS_DRIVER
+	depends on SOC_FAMILY_SILABS_SIWX91X
+	depends on CACHE_MANAGEMENT
+	default y
+	help
+	  Enable support for the SiWx91x external AHB instruction cache.
+
+	  The SiWx91x has a read-only instruction cache for the QSPI flash. It
+	  has no data cache. Full invalidation is performed by toggling the cache
+	  clock gate. There is no per-line (range) invalidation.

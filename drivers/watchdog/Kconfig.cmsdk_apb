@@ -1,0 +1,22 @@
+# ARM CMSDK (Cortex-M System Design Kit) AHB WDOG cfg
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config WDOG_CMSDK_APB
+	bool "CMSDK APB Watchdog Driver for ARM family of MCUs"
+	default y
+	depends on DT_HAS_ARM_CMSDK_WATCHDOG_ENABLED
+	depends on RUNTIME_NMI
+	help
+	  Enable CMSDK APB Watchdog (WDOG_CMSDK_APB) Driver for ARM
+	  family of MCUs.
+
+config WDOG_CMSDK_APB_START_AT_BOOT
+	bool "Start Watchdog during boot"
+	depends on WDOG_CMSDK_APB
+	help
+	  Enable this setting to allow WDOG to be automatically started
+	  during device initialization. Note that once WDOG is started
+	  it must be reloaded before the counter reaches 0, otherwise
+	  the MCU will be reset.

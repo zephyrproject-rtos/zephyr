@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_THEJAS32
+	bool "C-DAC THEJAS32 GPIO driver"
+	default y
+	depends on DT_HAS_CDAC_THEJAS32_GPIO_ENABLED
+	help
+	  Enable the GPIO driver for the C-DAC THEJAS32 SoC.

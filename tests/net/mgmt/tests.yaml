@@ -1,0 +1,19 @@
+common:
+  depends_on: netif
+  min_ram: 16
+  tags:
+    - net
+    - mgmt
+tests:
+  net.management:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.management.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.workqueue:
+    extra_configs:
+      - CONFIG_NET_MGMT_EVENT_SYSTEM_WORKQUEUE=y
+  net.synchronous:
+    extra_configs:
+      - CONFIG_NET_MGMT_EVENT_DIRECT=y

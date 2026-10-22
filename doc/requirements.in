@@ -1,0 +1,43 @@
+# DOC: additional dependencies required to generate docs.
+#      Follow the "Getting Started" guide first.
+
+sphinx
+sphinx_rtd_theme~=3.0
+sphinx-tabs
+sphinxcontrib-svg2pdfconverter
+pygments!=2.19.0,>=2.21.0
+sphinx-notfound-page
+sphinx-copybutton
+sphinx-design
+sphinx-togglebutton
+sphinx-sitemap
+sphinx-autobuild
+sphinxcontrib.programoutput
+sphinxcontrib.mermaid
+
+# YAML validation. Used by zephyr_module.
+PyYAML>=6.0
+pykwalify
+
+# Used by pytest-twister-harness plugin (imported by autodoc)
+pytest
+pyserial
+
+# Doxygen doxmlparser
+doxmlparser
+
+# Used by the Zephyr domain to organize code samples
+anytree
+
+# Used to generate API coverage reports
+coverxygen!=1.8.2 # See https://github.com/psycofdj/coverxygen/issues/37
+
+# Used by Kconfig extension
+python-dotenv
+
+# Used to export requirements from the reqmgmt module (StrictDoc)
+strictdoc>=0.28.1
+
+# Used by the licensing extension
+reuse @ https://github.com/fsfe/reuse-tool/archive/f94ae0b1bb1d4d2ea91f49df88f3184c5d781a1d.tar.gz \
+       --hash=sha256:aa155da6b54c41b0bb7a5652a571a9187c019d71f3b1bb63469acc738cf4e811

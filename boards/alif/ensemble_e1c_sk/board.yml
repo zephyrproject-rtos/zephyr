@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: ensemble_e1c_sk
+  full_name: Alif Ensemble E1C StartKit
+  vendor: alif
+  socs:
+  - name: ae1c1f4051920ph0

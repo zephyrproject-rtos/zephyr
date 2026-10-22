@@ -1,0 +1,44 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DW_ICTL_ACE
+	bool "Designware Interrupt Controller for ACE"
+	default y
+	depends on DT_HAS_INTEL_ACE_INTC_ENABLED
+	depends on MULTI_LEVEL_INTERRUPTS
+	help
+	  Designware Interrupt Controller used by ACE.
+
+menuconfig DW_ICTL
+	bool "Designware Interrupt Controller"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_INTC_ENABLED
+	depends on MULTI_LEVEL_INTERRUPTS
+	help
+	  Designware Interrupt Controller can be used as a 2nd level interrupt
+	  controller which combines several sources of interrupt into one line
+	  that is then routed to the 1st level interrupt controller.
+
+
+if DW_ICTL
+
+config DW_ICTL_NAME
+	string "Name for Designware Interrupt Controller"
+	default "DW_ICTL"
+	help
+	  Give a name for the instance of Designware Interrupt Controller
+
+config DW_ISR_TBL_OFFSET
+	int "Offset in the SW ISR Table"
+	default 0
+	help
+	  This indicates the offset in the SW_ISR_TABLE beginning from where
+	  the ISRs for Designware Interrupt Controller are assigned.
+
+config DW_ICTL_INIT_PRIORITY
+	int "Init priority for DW interrupt controller"
+	default 48
+	help
+	  DesignWare Interrupt Controller initialization priority.
+
+endif # DW_ICTL

@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Aesc Silicon SPI flash controller.
+
+  Exposes the execute-in-place (XIP) mapped SPI NOR flash as a read-only flash
+  device. The flash region is described by a soc-nv-flash child node.
+
+  The soc-nv-flash node must carry the standard flash properties the flash API
+  and partition manager rely on: write-block-size and erase-block-size, and -
+  because partition offsets are expressed relative to the flash node but the
+  flash is read through the XIP window - a ranges entry mapping offset 0 onto the
+  XIP base address, plus #address-cells / #size-cells. For example:
+
+    flash_controller: flash-controller@f0024000 {
+        compatible = "aesc,spi-flash-controller";
+        reg = <0xf0024000 0x2000>;
+        ranges;
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        flash0: flash@a0000000 {
+            compatible = "soc-nv-flash";
+            reg = <0xa0000000 DT_SIZE_K(512)>;
+            write-block-size = <1>;
+            erase-block-size = <DT_SIZE_K(4)>;
+            /* Map the partition offset space onto the XIP window. */
+            ranges = <0x0 0xa0000000 DT_SIZE_K(512)>;
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            partitions {
+                ranges;
+                #address-cells = <1>;
+                #size-cells = <1>;
+
+                slot0_partition: partition@0 {
+                    compatible = "zephyr,mapped-partition";
+                    label = "code";
+                    reg = <0x0 DT_SIZE_K(512)>;
+                };
+            };
+        };
+    };
+
+compatible: "aesc,spi-flash-controller"
+
+include: flash-controller.yaml
+
+properties:
+  aesc,quad-mode:
+    type: boolean
+    description: |
+      Switch the XIP controller to quad (4-bit) SPI protocol at driver init.
+      Use this when no first-stage bootloader has already configured the
+      flash interface. When absent, the controller keeps its reset (single
+      bit) read mode.

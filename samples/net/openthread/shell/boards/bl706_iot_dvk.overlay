@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+		/* Use the full SRAM; the BLE exchange-memory reservation
+		 * (sram0_bt) is not needed for an 802.15.4-only build.
+		 */
+		zephyr,sram = &sram0;
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};

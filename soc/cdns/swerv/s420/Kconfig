@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_S420
+	select RISCV_SOC_INTERRUPT_INIT
+	select ATOMIC_OPERATIONS_BUILTIN

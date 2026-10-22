@@ -1,0 +1,37 @@
+#
+# Copyright (c) 2024 Gergo Vari <work@gergovari.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Maxim DS3231 I2C RTC/TCXO
+
+compatible: "maxim,ds3231-rtc"
+
+include: [rtc-device.yaml]
+
+properties:
+  freq-32khz-gpios:
+    type: phandle-array
+    description: |
+
+      32 KiHz open drain output
+
+      The DS3231 defaults to providing a 32 KiHz square wave on this
+      signal. The driver does not make use of this, but applications
+      may want access.
+
+  isw-gpios:
+    type: phandle-array
+    description: |
+
+      interrupt/square wave open drain output
+
+      The DS3231 uses this signal to notify when an alarm has triggered,
+      and also to produce a square wave aligned to the countdown chain.
+      Both capabilities are used within the driver.
+
+      This signal is optional. It is only required to use the alarm and
+      update callback APIs. Basic time get/set operations do not require
+      this signal, and the driver will still build and operate without
+      it, e.g. when the INT/SQW pin is left unconnected on the board.

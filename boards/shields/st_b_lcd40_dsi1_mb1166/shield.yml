@@ -1,0 +1,14 @@
+shields:
+  - name: st_b_lcd40_dsi1_mb1166
+    full_name: ST B-LCD40-DSI1
+    vendor: st
+    supported_features:
+      - input
+      - display
+
+  - name: st_b_lcd40_dsi1_mb1166_a09
+    full_name: ST B-LCD40-DSI1 (MB1166-A09)
+    vendor: st
+    supported_features:
+      - input
+      - display

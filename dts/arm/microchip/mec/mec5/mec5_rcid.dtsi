@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* From Microchip MEC5 MEC174x and onwards include three instances of the
+ * RC-ID peripheral.
+ * Include this file in the soc {} section in the relevant chip DTSI files
+ */
+rcid0: rcid@40001400 {
+	reg = <0x40001400 0x80>;
+	interrupts = <80 3>;
+	girqs = <17 10>;
+	status = "disabled";
+};
+
+rcid1: rcid@40001480 {
+	reg = <0x40001480 0x80>;
+	interrupts = <81 3>;
+	girqs = <17 11>;
+	status = "disabled";
+};
+
+rcid2: rcid@40001500 {
+	reg = <0x40001500 0x80>;
+	interrupts = <82 3>;
+	girqs = <17 12>;
+	status = "disabled";
+};

@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Renesas RX External Interrupt Option
+
+config RENESAS_RX_EXTERNAL_INTERRUPT
+	bool "Renesas RX External Interrupt Driver"
+	depends on DT_HAS_RENESAS_RX_EXTERNAL_INTERRUPT_ENABLED
+	default y
+	help
+	  Enable config options for Renesas RX external interrupt

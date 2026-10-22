@@ -1,0 +1,14 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_QNXHV_VM
+
+DT_TIMER_PATH := $(dt_nodelabel_path,timer)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_TIMER_PATH),clock-frequency)
+
+config NUM_IRQS
+	default 256
+
+endif

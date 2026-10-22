@@ -1,0 +1,24 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: Single Port Ethernet PHY with RMII 10/100 trancsceiver
+
+compatible: "microchip,lan8742"
+
+include: [ethernet-phy-common.yaml]
+
+on-bus: mdio
+
+properties:
+  reg:
+    required: true
+    description: |
+      5-bit MDIO PHY address for the attached PHY.
+
+  reset-gpios:
+    type: phandle-array
+    description: GPIO connected to MAC PHY reset signal pin. Reset is active low.
+
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex"]

@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+shields:
+  - name: mb1280_stmod_plus
+    full_name: MB1280 STMod+ Fan-Out
+    vendor: st
+    supported_features:
+      - gpio
+
+  - name: mb1280_stmod_plus_adc
+    full_name: MB1280 STMod+ Fan-Out ADC
+    vendor: st
+    supported_features:
+      - adc
+
+  - name: mb1280_stmod_plus_i2c
+    full_name: MB1280 STMod+ Fan-Out I2C
+    vendor: st
+    supported_features:
+      - i2c
+
+  - name: mb1280_stmod_plus_pwm
+    full_name: MB1280 STMod+ Fan-Out PWM
+    vendor: st
+    supported_features:
+      - pwm
+
+  - name: mb1280_stmod_plus_serial
+    full_name: MB1280 STMod+ Fan-Out Serial
+    vendor: st
+    supported_features:
+      - uart
+
+  - name: mb1280_stmod_plus_spi
+    full_name: MB1280 STMod+ Fan-Out SPI
+    vendor: st
+    supported_features:
+      - spi

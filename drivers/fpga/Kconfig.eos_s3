@@ -1,0 +1,9 @@
+# FPGA EOS S3 driver configuration options
+
+# Copyright (c) 2021 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config EOS_S3_FPGA
+	bool "EOS S3 fpga driver"
+	help
+	  Enable EOS S3 FPGA driver.

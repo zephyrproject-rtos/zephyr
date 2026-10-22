@@ -1,0 +1,8 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence Tensilica Xtensa LX4 CPU
+
+compatible: "cdns,tensilica-xtensa-lx4"
+
+include: cpu.yaml

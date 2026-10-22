@@ -1,0 +1,78 @@
+# Copyright (c) 2026 Silicon Signals Pvt. Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "LVGL Zephyr NemaGFX support"
+
+config LV_Z_USE_NEMA_GFX
+	bool
+	depends on DT_HAS_ST_NEOCHROM_GPU2D_ENABLED
+	select STM32_NEOCHROM_GPU2D
+	help
+	  Set when the LVGL NemaGFX renderer (CONFIG_LV_USE_NEMA_GFX) is
+	  enabled. Enables the NeoChrom GPU driver it uses.
+
+config LV_Z_NEMA_HAL_CUSTOM
+	bool
+	depends on LV_Z_USE_NEMA_GFX
+	help
+	  Set when the LVGL NemaGFX HAL choice is custom
+	  (CONFIG_LV_NEMA_HAL_CUSTOM). The Zephyr NemaGFX HAL is used then.
+
+config LV_Z_NEMA_USE_CACHE
+	bool
+	depends on LV_Z_USE_NEMA_GFX
+	help
+	  Board default for CONFIG_LV_NEMA_USE_CACHE. Applications set
+	  CONFIG_LV_NEMA_USE_CACHE instead.
+
+config LV_Z_NEMA_CACHE_HAL_INCLUDE
+	string
+	depends on LV_Z_USE_NEMA_GFX
+	help
+	  Board default for CONFIG_LV_NEMA_CACHE_HAL_INCLUDE: the header
+	  providing the CMSIS data cache maintenance functions used by the
+	  NemaGFX renderer. Empty leaves the LVGL default.
+
+config LV_Z_NEMA_LIB_M33_REVC
+	bool
+	help
+	  Board default for the LVGL NemaGFX library choice:
+	  CONFIG_LV_NEMA_LIB_M33_REVC.
+
+config LV_Z_NEMA_LIB_M33_NEMAPVG
+	bool
+	help
+	  Board default for the LVGL NemaGFX library choice:
+	  CONFIG_LV_NEMA_LIB_M33_NEMAPVG.
+
+config LV_Z_NEMA_LIB_M55
+	bool
+	help
+	  Board default for the LVGL NemaGFX library choice:
+	  CONFIG_LV_NEMA_LIB_M55.
+
+config LV_Z_NEMA_LIB_M7
+	bool
+	help
+	  Board default for the LVGL NemaGFX library choice:
+	  CONFIG_LV_NEMA_LIB_M7.
+
+if LV_Z_USE_NEMA_GFX && LV_Z_NEMA_HAL_CUSTOM
+
+config FPU
+	default y
+
+config LV_Z_NEMA_GFX_MULTI_THREAD
+	bool "Multi-thread support for NemaGFX"
+	default n
+
+config LV_Z_NEMA_HAL_RING_SIZE
+	int "NemaGFX ring size"
+	default 1024
+	help
+	  Size of the NemaGFX command ring.
+
+endif # LV_Z_USE_NEMA_GFX
+
+endmenu

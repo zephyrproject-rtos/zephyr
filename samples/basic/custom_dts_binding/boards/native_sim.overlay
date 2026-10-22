@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	load_switch: load_switch {
+		compatible = "power-switch";
+		gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+	};
+};

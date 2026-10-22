@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.28.0)
+
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(uart_errors)
+
+target_sources(app PRIVATE
+    src/uart_errors_common.c
+    src/test_parity.c
+    src/test_stop_bit.c
+    )

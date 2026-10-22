@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test requires jumper between:
+ *  - EVB's D3(PC10) -- D5(PC12)
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	zephyr,user {
+		pwms = <&epwm1 2 PWM_MSEC(2) PWM_POLARITY_NORMAL>;
+		gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	epwm1_default: epwm1_default {
+		group0 {
+			/* EVB's D3 --> PC10 */
+			pinmux = <PC10MFP_EPWM1_CH2>;
+		};
+	};
+};
+
+&epwm1 {
+	status = "okay";
+	prescaler = <19>;
+	pinctrl-0 = <&epwm1_default>;
+	pinctrl-names = "default";
+};

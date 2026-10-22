@@ -1,0 +1,27 @@
+# Copyright (c) 2024, STRIM, ALC
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP FlexIO SPI controller
+
+compatible: "nxp,flexio-spi"
+
+include: [spi-controller.yaml, "pinctrl-device.yaml"]
+
+properties:
+  sdo-pin:
+    type: int
+    required: true
+    description: |
+      Pin select for data output.
+
+  sdi-pin:
+    type: int
+    required: true
+    description: |
+      Pin select for data input.
+
+  sck-pin:
+    type: int
+    required: true
+    description: |
+      Pin select for clock.

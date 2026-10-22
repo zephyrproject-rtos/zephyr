@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config EK79007
+	bool "EK79007 display panel driver"
+	default y
+	depends on DT_HAS_FITIPOWER_EK79007_ENABLED
+	select MIPI_DSI
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_FITIPOWER_EK79007),bl-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_FITIPOWER_EK79007),reset-gpios)
+	help
+	  Enable driver for the EK79007 MIPI DSI display panel.
+
+config DISPLAY_EK79007_INIT_PRIORITY
+	int "Initialization priority"
+	depends on EK79007
+	default MIPI_DSI_INIT_PRIORITY
+	help
+	  EK79007 display driver initialization priority. The panel attaches
+	  to the MIPI DSI host, so it has to initialize after the host and
+	  after the controller streaming to it.

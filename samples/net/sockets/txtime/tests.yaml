@@ -1,0 +1,19 @@
+common:
+  harness: net
+  depends_on: netif
+  # We can only run this in platforms that support PTP clock and TXTIME
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+sample:
+  description: Socket SO_TXTIME sample
+  name: txtime-socket
+tests:
+  sample.net.sockets.txtime:
+    tags:
+      - net
+      - socket
+      - so_txtime
+      - tsn

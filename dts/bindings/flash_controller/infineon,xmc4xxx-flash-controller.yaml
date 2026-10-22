@@ -1,0 +1,5 @@
+description: XMC4XXX flash controller
+
+compatible: "infineon,xmc4xxx-flash-controller"
+
+include: flash-controller.yaml

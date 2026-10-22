@@ -1,0 +1,54 @@
+# LMP90xxx ADC configuration options
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_LMP90XXX
+	bool "LMP90xxx driver"
+	default y
+	depends on DT_HAS_TI_LMP90077_ENABLED || DT_HAS_TI_LMP90078_ENABLED || \
+		   DT_HAS_TI_LMP90079_ENABLED || DT_HAS_TI_LMP90080_ENABLED || \
+		   DT_HAS_TI_LMP90097_ENABLED || DT_HAS_TI_LMP90098_ENABLED || \
+		   DT_HAS_TI_LMP90099_ENABLED || DT_HAS_TI_LMP90100_ENABLED
+	select SPI
+	select ADC_CONFIGURABLE_INPUTS
+	select CRC
+	help
+	  Enable LMP90xxx ADC driver.
+
+	  The LMP90xxx is a multi-channel, low power sensor analog
+	  frontend (AFE).
+
+if ADC_LMP90XXX
+
+config ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 400
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+config ADC_LMP90XXX_ACQUISITION_THREAD_PRIO
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+config ADC_LMP90XXX_CRC
+	bool "Use Cyclic Redundancy Check (CRC)"
+	default y
+	help
+	  Use Cyclic Redundancy Check (CRC) to verify the integrity of
+	  the data read from the LMP90xxx.
+
+config ADC_LMP90XXX_GPIO
+	bool "GPIO support"
+	depends on GPIO
+	select GPIO_LMP90XXX
+	help
+	  Enable GPIO child device support in the LMP90xxx ADC driver.
+
+	  The GPIO functionality is handled by the LMP90xxx GPIO
+	  driver.
+
+endif # ADC_LMP90XXX

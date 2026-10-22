@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2019 Antony Pavlov <antonynpavlov@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The STM32L151 and STM32L152 differ in that
+ * the STM32L152 features an LCD controller.
+ */
+#include <st/l1/stm32l151.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l152", "st,stm32l1", "simple-bus";
+	};
+};

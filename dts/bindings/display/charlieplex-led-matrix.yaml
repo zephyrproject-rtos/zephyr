@@ -1,0 +1,86 @@
+# Copyright (c) 2026 Qualcomm Innovation Center, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Monochrome / grayscale LED matrix driven by charlieplexed GPIOs.
+
+  N GPIO lines drive up to N*(N-1) LEDs. Each pixel is lit by driving one of
+  the GPIO lines high and one low while all the other lines are held at high
+  impedance (input / disconnected). A timer (counter device) ISR scans the
+  pixels one at a time, fast enough that persistence of vision makes the whole
+  matrix appear lit. Grayscale is produced by modulating, per pixel, the
+  fraction of scan cycles in which that pixel is driven.
+
+  The framebuffer is laid out row-major (pixel index = y * width + x); the
+  pixel-pairs property maps each framebuffer pixel to the pair of GPIO lines
+  that light it.
+
+compatible: "charlieplex-led-matrix"
+
+include: display-controller.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The bank of charlieplexed GPIO lines that pixel-pairs indexes into. All
+      lines must be on GPIO controllers that support configuring a pin as
+      disconnected/high-impedance (the default for any standard Zephyr GPIO
+      controller).
+
+      The per-line GPIO polarity flag (e.g. GPIO_ACTIVE_LOW) is ignored: the
+      driver drives each line at physical levels, and every line is driven both
+      high and low across a scan depending on which pixel is lit, so polarity
+      has no meaning here. Use flags 0 (GPIO_ACTIVE_HIGH); a stray polarity
+      flag is harmless.
+
+  counter:
+    type: phandle
+    required: true
+    description: Timer instance used as the scan time source.
+
+  refresh-frequency:
+    type: int
+    required: true
+    description: Target whole-matrix refresh rate in Hz (e.g. 100).
+
+  pixel-pairs:
+    type: array
+    required: true
+    description: |
+      One entry per pixel, in framebuffer (row-major) order; length must equal
+      width * height. Each entry encodes the pair of GPIO lines that light that
+      pixel as (high_index << 8) | low_index, where the indices are positions
+      in the gpios list. The pixel is lit by driving gpios[high_index] high and
+      gpios[low_index] low.
+
+  grayscale-bits:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+    description: |
+      Number of brightness bits per pixel. 1 = monochrome (on/off). Higher
+      values trade refresh headroom for brightness levels (2^bits levels).
+
+examples:
+  - |
+    /* 2x2 matrix on 3 charlieplexed lines */
+    / {
+        matrix: charlieplex-led-matrix {
+            compatible = "charlieplex-led-matrix";
+            gpios = <&gpioa 0 0>, <&gpioa 1 0>, <&gpioa 2 0>;
+            counter = <&timer0>;
+            refresh-frequency = <100>;
+            width = <2>;
+            height = <2>;
+            grayscale-bits = <1>;
+            /* (high << 8) | low, framebuffer order */
+            /* pixel-pairs[0] = 0x0001 -> (0,0) lit by gpios[0] high, gpios[1] low */
+            pixel-pairs = <0x0001 0x0100 0x0002 0x0200>;
+        };
+    };

@@ -1,0 +1,4 @@
+tests:
+  kconfig.kconfigoptions:
+    tags: kconfigoptions
+    platform_allow: native_sim

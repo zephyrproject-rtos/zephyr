@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library_sources_ifdef(CONFIG_FIDO2_ATTESTATION_SELF fido2_attestation_self.c)
+zephyr_library_sources_ifdef(CONFIG_FIDO2_ATTESTATION_NONE fido2_attestation_none.c)

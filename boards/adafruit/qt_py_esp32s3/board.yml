@@ -1,0 +1,12 @@
+board:
+  name: adafruit_qt_py_esp32s3
+  full_name: QT Py ESP32-S3
+  vendor: adafruit
+  socs:
+  - name: esp32s3
+  revision:
+    format: "custom"
+    default: ""
+    revisions:
+    - name: ""
+    - name: "psram"

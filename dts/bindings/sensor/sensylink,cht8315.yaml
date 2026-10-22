@@ -1,0 +1,32 @@
+# Copyright (c) 2026 MASSDRIVER EI
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensylink CHT8315 Temperature and Humidity Sensor
+
+compatible: "sensylink,cht8315"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  alert-gpios:
+    type: phandle-array
+    description: |
+      ALERT pin.
+
+      This pin signals active low by default when produced by the sensor.
+
+  oneshot-mode:
+    type: boolean
+    description: |
+      Oneshot sampling mode. Reduces power consumption, but disables triggering
+      features.
+
+  heater:
+    type: boolean
+    description: |
+      Turn on heater. Consumption is 7mA at 3v3.
+
+  precision-mode:
+    type: boolean
+    description: |
+      Sample 14-bits instead of 13-bits.

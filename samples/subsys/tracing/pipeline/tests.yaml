@@ -1,0 +1,32 @@
+common:
+  tags:
+    - tracing
+    - debug
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "Sensor pipeline starting"
+      - "consumer[01]: frame (.*)"
+tests:
+  # Default build: the prj.conf baseline (CTF format, SEMIHOST backend).
+  sample.tracing.pipeline.ctf.semihost:
+    platform_allow:
+      - mps2/an385
+    integration_platforms:
+      - mps2/an385
+  # CTF to a file via the native backend.
+  sample.tracing.pipeline.native.ctf:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_args: EXTRA_CONF_FILE="prj_native_ctf.conf"
+  # Priority-inversion variant (semaphore bus) still runs and traces.
+  sample.tracing.pipeline.priority_inversion:
+    platform_allow:
+      - mps2/an385
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_args: CONFIG_SAMPLE_BUS_SEM=y

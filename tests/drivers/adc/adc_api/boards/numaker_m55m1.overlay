@@ -1,0 +1,40 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	zephyr,user {
+		io-channels = <&eadc0 6>, <&eadc0 8>;
+	};
+};
+
+&pinctrl {
+	/* EVB's UNO Pin A0 & A2 for ADC channel 6 & 8 */
+	eadc0_default: eadc0_default {
+		group0 {
+			pinmux = <PB6MFP_EADC0_CH6>, <PB8MFP_EADC0_CH8>;
+		};
+	};
+};
+
+&eadc0 {
+	status = "okay";
+	pinctrl-0 = <&eadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+
+	channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+};

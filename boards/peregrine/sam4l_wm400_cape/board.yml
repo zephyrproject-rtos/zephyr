@@ -1,0 +1,6 @@
+board:
+  name: sam4l_wm400_cape
+  full_name: SAM4L WM-400 Cape Board
+  vendor: peregrine
+  socs:
+    - name: sam4lc4b

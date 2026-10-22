@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer0 {
+	status = "okay";
+	interrupts = <8 0>;
+};
+
+/ {
+	busy-sim {
+		compatible = "vnd,busy-sim";
+		status = "okay";
+		counter = <&timer0>;
+		active-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+	};
+};

@@ -1,0 +1,13 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rtc0 {
+	status = "okay";
+};
+
+&irtc_wake {
+	status = "okay";
+};

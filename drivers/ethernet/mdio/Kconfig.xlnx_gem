@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Immo Birnbaum
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_XLNX_GEM
+	bool "Xilinx GEM MDIO controller driver"
+	default y
+	depends on DT_HAS_XLNX_GEM_MDIO_ENABLED
+	depends on ETH_XLNX_GEM
+	help
+	  Enable Xilinx GEM MDIO support.
+
+if MDIO_XLNX_GEM
+
+config MDIO_XLNX_GEM_IDLE_TIMEOUT_US
+	int "MDIO idle wait timeout"
+	default 1000000
+	help
+	  Timeout in microseconds to wait for the GEM MDIO Bus
+	  to become idle before or after a read or write operation.
+
+endif # MDIO_XLNX_GEM

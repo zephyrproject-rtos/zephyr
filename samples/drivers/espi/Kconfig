@@ -1,0 +1,28 @@
+# Private config options for eSPI sample app
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Enhanced Serial Peripheral Interface application"
+
+config ESPI_VIRTUAL_WIRE_TIMEOUT
+	int "Timeout for virtual wires"
+	default 5000
+	help
+	  Timeout for virtual wires
+
+config ESPI_USE_BOARD_POWER
+	bool "Use board power"
+	depends on $(dt_nodelabel_enabled,board_power)
+	select GPIO
+	default y
+
+config ESPI_CAF_FLASH_REGION
+	int "eSPI CAF flash test region start address"
+	default 466944
+	help
+	  Starting address in SPI flash memory for eSPI CAF flash test.
+	  Test will perform read/write operations to this region,
+	  so it should be erased and not used for other purposes.
+	  Refer to sample documentation for details.
+source "Kconfig.zephyr"

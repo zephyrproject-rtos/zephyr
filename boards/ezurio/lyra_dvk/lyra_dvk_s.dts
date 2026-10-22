@@ -1,0 +1,24 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * Copyright (c) 2026 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg22/bgm220sc22hna.dtsi>
+#include "lyra_dvk.dtsi"
+
+/ {
+	model = "Ezurio Lyra S DVK";
+	compatible = "ezurio,lyra_dvk_s", "silabs,efr32bg22";
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};

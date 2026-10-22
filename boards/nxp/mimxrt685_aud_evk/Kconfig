@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMXRT685_AUD_EVK
+	select BOARD_EARLY_INIT_HOOK

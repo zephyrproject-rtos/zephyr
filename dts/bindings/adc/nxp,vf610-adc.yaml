@@ -1,0 +1,34 @@
+# Copyright (c) 2021, Antonio Tessarolo
+# SPDX-License-Identifier: Apache-2.0
+
+description: Vf610 Adc
+
+compatible: "nxp,vf610-adc"
+
+include: [adc-controller.yaml, "nxp,rdc-policy.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: |
+      Select adc clock source: 0 clock from IPG, 1 clock from IPG divided 2, 2 async clock
+
+  clk-divider:
+    type: int
+    required: true
+    description: |
+      Select clock divider: 0 clock divided by 1, 1 clock divided by 2, 2 clock divided by 4,
+      3 clock divided by 8
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

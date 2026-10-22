@@ -1,0 +1,52 @@
+/*
+ * TreeTable — default styles
+ * All class names are prefixed with "tt-" to avoid collisions.
+ *
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* ---- Icon cell elements ---- */
+
+.tt-indent {
+  display: inline-block;
+  /* width is set via inline style by the library */
+}
+
+.tt-icon {
+  display: inline-block;
+  min-width: 1.2em;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  font-style: normal;
+  line-height: 1;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* When the icon is a leaf placeholder (no children), remove pointer cursor */
+.tt-icon.tt-icon-leaf {
+  cursor: default;
+}
+
+.tt-user-icon {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.tt-cell-content {
+  display: inline;
+  vertical-align: middle;
+}
+
+tbody tr.tt-row {
+  cursor: pointer;
+}
+
+/* Applied to the <table> element while a filter is active */
+table.tt-filtered tbody tr.tt-row:not(.tt-filter-match) > td {
+  color: #aaa;
+}

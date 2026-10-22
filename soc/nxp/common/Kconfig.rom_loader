@@ -1,0 +1,21 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_FLEXSPI_ROM_RAMLOADER
+	bool "Create output image that NXP ROM can load from FlexSPI to ram"
+	select BUILD_OUTPUT_HEX
+	depends on !FLASH_MCUX_FLEXSPI_XIP
+	help
+	  Builds an output image that the BootROM can load from the
+	  FlexSPI boot device into RAM region. The image will be loaded
+	  from FLEXSPI into the region specified by `zephyr,flash` node.
+
+if NXP_FLEXSPI_ROM_RAMLOADER
+
+FLASH_CHOSEN := zephyr,flash
+FLASH_BASE := $(dt_chosen_reg_addr_hex,$(FLASH_CHOSEN))
+FLEXSPI_BASE := $(dt_nodelabel_reg_addr_hex,flexspi,1)
+config BUILD_OUTPUT_ADJUST_LMA
+	default "$(FLEXSPI_BASE) - $(FLASH_BASE)"
+
+endif # NXP_FLEXSPI_ROM_RAMLOADER

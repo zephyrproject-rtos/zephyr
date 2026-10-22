@@ -1,0 +1,22 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+&timer137 {
+	interrupts = <467 (NRF_DEFAULT_IRQ_PRIORITY + 1)>;
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+};
+
+ipc0: &cpuapp_cpuppr_ipc {
+	status = "okay";
+	compatible = "zephyr,ipc-icbmsg";
+	tx-blocks = <15>;
+	rx-blocks = <15>;
+};

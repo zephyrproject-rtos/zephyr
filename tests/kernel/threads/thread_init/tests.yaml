@@ -1,0 +1,6 @@
+tests:
+  kernel.threads.init:
+    tags:
+      - kernel
+      - threads
+      - userspace

@@ -1,0 +1,9 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+i2s_tx: &sai1 {};
+
+i2s_rx: &sai1 {};

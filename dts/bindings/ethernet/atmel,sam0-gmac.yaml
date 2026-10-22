@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM0-family GMAC Ethernet
+
+compatible: "atmel,sam0-gmac"
+
+include: atmel,gmac-common.yaml

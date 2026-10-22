@@ -1,0 +1,17 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&emdio {
+	status = "okay";
+
+	phy2: phy@5 {
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	status = "okay";
+};

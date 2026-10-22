@@ -1,0 +1,31 @@
+# Copyright (c) 2022 Wolter HV <wolterhv@gmx.de>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ESP32
+	bool "ESP32 ADC driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_ADC_ENABLED
+	help
+	  Enable the driver implementation for the ESP32 ADC
+
+if ADC_ESP32
+
+config ADC_ESP32_DMA
+	bool "ESP32 ADC DMA Support"
+	select DMA if DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
+	help
+	  Enable the ADC DMA mode
+
+config ADC_ESP32_CONVERSION_TIMEOUT_US
+	int "Oneshot conversion completion timeout in microseconds"
+	default 2000
+	range 100 1000000
+	help
+	  Maximum time to wait for a oneshot conversion to complete
+	  before adc_read returns -ETIMEDOUT. A conversion cannot
+	  complete while a shared analog block is temporarily powered
+	  down, for example during a Wi-Fi modem sleep window; callers
+	  are expected to retry such reads.
+
+endif

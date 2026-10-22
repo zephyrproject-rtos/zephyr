@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.28.0)
+
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(debug_coredump_backends)
+
+target_sources(app PRIVATE src/main.c)
+
+zephyr_library_sources_ifdef(
+  CONFIG_DEBUG_COREDUMP_BACKEND_OTHER
+  src/coredump_backend_empty.c
+  )
+
+target_sources_ifdef(
+  CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING_UDP
+  app PRIVATE src/coredump_udp_receiver.c
+  )

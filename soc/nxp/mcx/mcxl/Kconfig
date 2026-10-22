@@ -1,0 +1,61 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MCXL
+	select CLOCK_CONTROL
+	select ARM
+	select HAS_MCUX
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK
+
+config SOC_MCXL255_CPU0
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CPU_CORTEX_M_HAS_DWT
+	select ARMV8_M_DSP
+	select SOC_RESET_HOOK
+	select ARM_TRUSTZONE_M
+	select HAS_MCUX_CACHE
+
+config SOC_MCXL255_CPU1
+	select CPU_CORTEX_M0PLUS
+
+config ADVC_DRIVER_USED
+	bool "NXP ADVC (Adaptive Voltage Control) driver support"
+	depends on SOC_MCXL255_CPU0 || SOC_MCXL255_CPU1
+	help
+	  Link the precompiled NXP ADVC library (fetched via west blobs)
+	  and enable the ADVC-aware code paths in the NXP power/clock
+	  drivers. When disabled, those drivers fall back to fixed
+	  voltage selection based on target frequency.
+
+config SOC_MCXL254_CPU0
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CPU_CORTEX_M_HAS_DWT
+	select ARMV8_M_DSP
+	select SOC_RESET_HOOK
+	select ARM_TRUSTZONE_M
+	select HAS_MCUX_CACHE
+
+config SOC_MCXL254_CPU1
+	select CPU_CORTEX_M0PLUS
+
+config SOC_MCXL253_CPU0
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CPU_CORTEX_M_HAS_DWT
+	select ARMV8_M_DSP
+	select SOC_RESET_HOOK
+	select ARM_TRUSTZONE_M
+	select HAS_MCUX_CACHE
+
+config SOC_MCXL253_CPU1
+	select CPU_CORTEX_M0PLUS

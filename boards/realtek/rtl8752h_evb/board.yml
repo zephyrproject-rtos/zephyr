@@ -1,0 +1,9 @@
+board:
+  name: rtl8752h_evb
+  full_name: RTL8752H Evaluation Board
+  vendor: realtek
+  socs:
+  - name: rtl8752hjl
+  - name: rtl8752hmf
+  - name: rtl8752hjf
+  - name: rtl8752hkf

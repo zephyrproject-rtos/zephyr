@@ -1,0 +1,7 @@
+# DECT NR+ USB Dongle board configuration
+
+# Copyright (c) 2026 Norik Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DECT_NR_PLUS_USB_DONGLE
+	select SOC_NRF9151_LACA

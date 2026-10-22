@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Secondary DSP cores are started by the test at run time. */
+
+&cpu1 {
+	zephyr,deferred-start;
+};
+
+&cpu2 {
+	zephyr,deferred-start;
+};
+
+&cpu3 {
+	zephyr,deferred-start;
+};

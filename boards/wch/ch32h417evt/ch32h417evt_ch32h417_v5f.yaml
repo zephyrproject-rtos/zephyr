@@ -1,0 +1,12 @@
+identifier: ch32h417evt/ch32h417/v5f
+name: WCH CH32H417EVT (V5F)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 255
+flash: 480
+supported:
+  - gpio
+  - serial
+vendor: wch

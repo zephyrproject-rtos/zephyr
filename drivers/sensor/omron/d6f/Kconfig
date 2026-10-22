@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config D6F
+	bool "D6F mass flow rate sensor"
+	default y
+	depends on DT_HAS_OMRON_D6F_P0001_ENABLED || DT_HAS_OMRON_D6F_P0010_ENABLED
+	select ADC
+	select FPU if CPU_HAS_FPU
+	help
+	  Enable Omron D6F mass flow rate sensor driver. The sensor series
+	  outputs an analogue voltage which is read using an ADC.

@@ -1,0 +1,23 @@
+# Copyright (c) 2020 Piotr Mienkowski
+# Copyright (c) 2020 TriaGnoSys GmbH
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SLWRB4180A || BOARD_SLWRB4180B || BOARD_XG21_RB4195B || BOARD_XG21_RB4196B
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+config FPU
+	default y if SOC_GECKO_USE_RAIL || BT
+
+if BT
+
+config MAIN_STACK_SIZE
+	default 3072 if PM
+	default 2304
+
+endif # BT
+
+endif

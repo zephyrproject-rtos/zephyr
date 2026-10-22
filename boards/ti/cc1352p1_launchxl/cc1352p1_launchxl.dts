@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2021 Florin Stancu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc1352r.dtsi>
+#include "../common/launchxl.dtsi"
+#include "../common/launchxl-flash.dtsi"
+#include "../common/launchxl_sky13317.dtsi"
+
+/ {
+	model = "TI CC1352P1 LaunchXL";
+	compatible = "ti,launchxl-cc1352p1";
+};

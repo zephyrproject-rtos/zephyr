@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Harpreet Saini
+# Author: Harpreet Saini <sainiharpreet29@yahoo.com>
+
+config RTC_DS1302
+	bool "MAXIM DS1302 RTC driver"
+	default y
+	depends on DT_HAS_MAXIM_DS1302_ENABLED
+	select SPI
+	help
+	  Enable the MAXIM DS1302 RTC driver.

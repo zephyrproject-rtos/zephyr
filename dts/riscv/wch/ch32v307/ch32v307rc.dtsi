@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Thomas Boje
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v307/ch32v307.dtsi>
+
+&gpiod {
+	gpio-reserved-ranges = <3 13>;
+};
+
+&gpioe {
+	gpio-reserved-ranges = <0 16>;
+};

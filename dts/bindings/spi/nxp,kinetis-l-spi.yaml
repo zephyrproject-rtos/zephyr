@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Gabriel Ivo <gabriel.bozi@usp.br>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Custom NXP Kinetis L series SPI Driver for kl25z
+compatible: "nxp,kinetis-l-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    description: SPI peripheral clock

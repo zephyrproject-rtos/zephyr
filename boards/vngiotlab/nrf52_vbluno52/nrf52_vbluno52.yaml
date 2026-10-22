@@ -1,0 +1,9 @@
+identifier: nrf52_vbluno52
+name: nRF52-VBLUno52
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 512

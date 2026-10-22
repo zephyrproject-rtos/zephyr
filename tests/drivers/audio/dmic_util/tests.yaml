@@ -1,0 +1,6 @@
+tests:
+  drivers.audio.dmic_util:
+    tags: dmic
+    harness: ztest
+    integration_platforms:
+      - native_sim

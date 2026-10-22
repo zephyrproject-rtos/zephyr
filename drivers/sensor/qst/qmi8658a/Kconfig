@@ -1,0 +1,28 @@
+# QST QMI8658A 6-axis IMU driver configuration options
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig QMI8658A
+	bool "QST QMI8658A 6-axis IMU"
+	default y
+	depends on DT_HAS_QST_QMI8658A_ENABLED
+	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_QST_QMI8658A),int-gpios)
+	help
+	  Enable driver for the QST QMI8658A six-axis IMU.
+
+if QMI8658A
+
+module = QMI8658A
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+config QMI8658A_TRIGGER_GLOBAL_THREAD
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_QST_QMI8658A),int-gpios)
+
+config QMI8658A_TRIGGER_OWN_THREAD
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_QST_QMI8658A),int-gpios)
+
+endif # QMI8658A

@@ -1,0 +1,22 @@
+description: |
+  STM32 flash memory.
+
+  This binding is for the flash memory itself, not the flash controller peripheral.
+  For that, see the "st,stm32-flash-controller" binding.
+
+include: soc-nv-flash.yaml
+
+compatible: "st,stm32-nv-flash"
+
+properties:
+  max-erase-time:
+    type: int
+    description: max erase time(millisecond) of a flash sector or page or half-page
+    required: true
+  bank2-flash-size:
+    type: int
+    deprecated: true
+    description: |
+      Deprecated. This property was used to obtain the sizes of flash banks on the Cortex-M4 of
+      dual core MCUs.  Said sizes are now derived from the size cell. It's safe to simply remove
+      this property.

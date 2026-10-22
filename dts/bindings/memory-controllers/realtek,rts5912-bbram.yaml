@@ -1,0 +1,12 @@
+# Copyright (c) 2025, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek, RTS5912 Battery Backed RAM node
+
+compatible: "realtek,rts5912-bbram"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

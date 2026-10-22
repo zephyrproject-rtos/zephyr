@@ -1,0 +1,12 @@
+board:
+  name: arduino_uno_r4
+  full_name: Arduino UNO R4 Minima/WiFi
+  vendor: arduino
+  revision:
+    format: custom
+    default: "minima"
+    revisions:
+      - name: "minima"
+      - name: "wifi"
+  socs:
+    - name: r7fa4m1ab3cfm

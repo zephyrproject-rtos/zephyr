@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "maix_m0s.dtsi"
+#include "maix_m0s_dock-pinctrl.dtsi"
+
+/ {
+	model = "Sipeed M0S Dock";
+
+	aliases {
+		led0 = &red_led_0;
+		sw0 = &button_0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led_0: led_0 {
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			label = "Red - LED0";
+		};
+
+		red_led_1: led_1 {
+			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+			label = "Red - LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button_0: sw0 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};

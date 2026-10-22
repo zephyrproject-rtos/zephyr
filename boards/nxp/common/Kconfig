@@ -1,0 +1,26 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NXP_SPSDK_IMAGE
+	bool "Generate bootable firmware image with SPSDK"
+	help
+	  Generate bootable firmware image with NXP Secure
+	  Provisioning SDK (SPSDK).
+
+choice BOARD_NXP_DDR_VERSION
+	prompt "On-board DDR memory version"
+	default BOARD_NXP_LPDDR5
+
+config BOARD_NXP_LPDDR4
+	bool "On-board memory is LPDDR4x memory"
+	help
+	  The on-board memory is LPDDR4x memory and will use
+	  LPDDR4x boot firmware.
+
+config BOARD_NXP_LPDDR5
+	bool "On-board memory is LPDDR5 memory"
+	help
+	  The on-board memory is LPDDR5 memory and will use
+	  LPDDR5 boot firmware.
+
+endchoice

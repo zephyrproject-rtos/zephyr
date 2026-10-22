@@ -1,0 +1,12 @@
+# IT51XXX PS2 configuration options
+
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config PS2_IT51XXX
+	bool "IT51XXX PS2 driver"
+	depends on DT_HAS_ITE_IT51XXX_PS2_ENABLED
+	select PINCTRL
+	default y
+	help
+	  Enable the IT51XXX PS2 driver.

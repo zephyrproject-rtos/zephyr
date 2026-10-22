@@ -1,0 +1,6 @@
+board:
+  name: efm32tg_stk3300
+  full_name: EFM32 Tiny Gecko (EFM32TG-STK3300)
+  vendor: silabs
+  socs:
+  - name: efm32tg840f32

@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+grove_i2c: &stmod_i2c {};
+
+mikrobus_i2c: &stmod_i2c {};

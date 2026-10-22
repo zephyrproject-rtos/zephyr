@@ -1,0 +1,30 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# This SoC boots an AHAB container image and has no vector table, so the boot
+# header is flash configuration block, external memory configuration data and
+# container. EXTERNAL_MEM_CONFIG_DATA is what makes the PSRAM usable as the
+# board's RAM: the ROM initializes the XSPI1 Xccela PSRAM from it before this
+# image runs, so no Zephyr PSRAM driver is needed.
+CONFIG_NXP_IMXRT_BOOT_HEADER=y
+CONFIG_EXTERNAL_MEM_CONFIG_DATA=y
+
+# XIP, FLASH_MCUX_XSPI_XIP, FLASH_BASE_ADDRESS and FLASH_SIZE are all derived
+# from the devicetree by soc/nxp/common/Kconfig.xspi_xip -- do not set them here.
+#
+# CODE_DATA_RELOCATION_SRAM would add an MPU entry for relocated code and pull in
+# the flash driver, which this target needs for nothing (it never writes flash and
+# carries no partitions) and which does not build for RT266x yet: the shared XSPI
+# drivers use xspi_config_t fields this part lacks and call
+# XSPI_Cache64_InvalidateCacheByRange, absent on a part whose cache is the LLC.
+CONFIG_CODE_DATA_RELOCATION_SRAM=n
+
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_GPIO=y
+CONFIG_ARM_MPU=y
+CONFIG_HW_STACK_PROTECTION=y

@@ -1,0 +1,37 @@
+# Copyright (C) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx Clocking Wizard (clkx5-wiz-1.0) for Versal2.
+
+compatible: "xlnx,clkx5-wiz-1.0"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address and size of the AXI-Lite register region.
+
+  clocks:
+    required: true
+    min-len: 1
+    max-len: 1
+    description: Phandle to the input reference clock for the MMCM.
+
+  "#clock-cells":
+    const: 1
+    description: |
+      One clock specifier cell representing the output clock index
+      (0-based, up to xlnx,num-out-clks - 1).
+
+  xlnx,num-out-clks:
+    type: int
+    required: true
+    description: |
+      Number of active output clocks configured in the IP (1 to 7).
+      Valid clock IDs passed to on/off/get_rate/set_rate are
+      0 to (xlnx,num-out-clks - 1).
+    enum: [1, 2, 3, 4, 5, 6, 7]
+
+clock-cells:
+  - clkid

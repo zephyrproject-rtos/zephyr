@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: RW612 PM flash check
+  description: Check external NOR flash health across RW612 low-power modes
+
+common:
+  tags:
+    - pm
+    - flash
+  platform_allow:
+    - frdm_rw612
+  integration_platforms:
+    - frdm_rw612
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "SUMMARY: PASS.*"
+
+tests:
+  sample.boards.nxp.frdm_rw612.pm_flash_check:
+    timeout: 120
+    harness_config:
+      type: one_line
+      regex:
+        - "SUMMARY: PASS.*"

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_MCXE31B
+
+configdefault ETH_DRIVER
+	default y
+
+endif # BOARD_FRDM_MCXE31B

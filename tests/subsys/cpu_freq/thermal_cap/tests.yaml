@@ -1,0 +1,14 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags: cpu_freq
+
+tests:
+  subsys.cpu_freq.thermal_cap:
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_x86
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_x86

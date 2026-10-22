@@ -1,0 +1,11 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: E-Ink ED2208-DOA (EL040EF1) Display Controller
+
+description: |
+  Controller of the E-Ink ED2208-DOA (EL040EF1) Spectra 6 e-ink display.
+
+compatible: "eink,ed2208-doa"
+
+include: eink,ed2208-gca.yaml

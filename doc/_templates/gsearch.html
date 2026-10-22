@@ -1,0 +1,17 @@
+{%- extends "!search.html" %}
+
+{%- block scripts %}
+  {{ super.super() }}
+  <link rel="stylesheet" href="{{ pathto('_static/css/gcs.css', 1) }}" type="text/css" />
+{%- endblock %}
+
+{% block footer %}
+  {{ super.super() }}
+{% endblock %}
+
+{% block body %}
+  <h2>{{ _('Search Results') }}</h2>
+  <script async src="https://cse.google.com/cse.js?cx={{ google_searchengine_id }}">
+  </script>
+  <div class="gcse-searchresults-only"></div>
+{% endblock %}

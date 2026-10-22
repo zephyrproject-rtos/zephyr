@@ -1,0 +1,16 @@
+identifier: cpkcor_ra8d1b
+name: Renesas CPKCOR-RA8D1B
+type: mcu
+arch: arm
+ram: 1024
+flash: 2016
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - watchdog
+  - usbd
+  - memc
+vendor: renesas

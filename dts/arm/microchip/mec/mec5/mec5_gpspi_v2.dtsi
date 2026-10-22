@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* From Microchip MEC5 MEC174x and onwards use GP-SPI controller version 2 hardware,
+ * a completely different design. Don't ask why it was given the same name;<)
+ * Include this file in the soc {} section in the relevant chip DTSI files
+ */
+gpspi0: spi@40009400 {
+	reg = <0x40009400 0x80>;
+	interrupts = <92 2>;
+	status = "disabled";
+};
+
+gpspi1: spi@40009480 {
+	reg = <0x40009480 0x80>;
+	interrupts = <94 2>;
+	status = "disabled";
+};

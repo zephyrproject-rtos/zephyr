@@ -1,0 +1,7 @@
+tests:
+  net.wireguard:
+    platform_allow: native_sim
+    tags:
+      - net
+      - wireguard
+    depends_on: netif

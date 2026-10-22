@@ -1,0 +1,13 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_GENERIC_LEON3
+
+config SPARC_CASA
+	default n
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif

@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NANO_CH57X
+	select SOC_CH570 if BOARD_NANO_CH57X_CH570
+	select SOC_CH572 if BOARD_NANO_CH57X_CH572

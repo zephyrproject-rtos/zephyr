@@ -1,0 +1,207 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# MCU series
+config SOC_SERIES_PSOC4000T
+	bool
+	select SOC_FAMILY_INFINEON_PSOC4
+	help
+	  PSOC4000T Series MCU
+
+config SOC_SERIES
+	default "psoc4000t" if SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046LQI_T452
+	bool
+	select SOC_SERIES_PSOC4000T
+
+# Automotive-qualified (AUTO) MPN used by the CY8CPROTO-040T-AUTO board
+config SOC_CY8C4046LQE_T1
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4025LQI_T411
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4025LQI_T441
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4025LQI_T451
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4026LQI_T411
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4026LQI_T441
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045LQI_T411
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045LQI_T441
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045LQI_T451
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046LQI_T411
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046LQI_T441
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046LQI_T451
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4025LQI_T412
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4025LQI_T442
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4025LQI_T452
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4026LQI_T412
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4026LQI_T442
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045LQI_T412
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045LQI_T442
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045LQI_T452
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045LQE_T1
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045LQS_T1
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046LQI_T412
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046LQI_T442
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046LQS_T1
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046LQQ_T412
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4025FNI_T412
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4025FNI_T442
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4025FNI_T452
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4026FNI_T412
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4026FNI_T442
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045FNI_T412
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045FNI_T442
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4045FNI_T452
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046FNI_T412
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046FNI_T442
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC_CY8C4046FNI_T452
+	bool
+	select SOC_SERIES_PSOC4000T
+
+config SOC
+	default "cy8c4046lqi_t452" if SOC_CY8C4046LQI_T452
+	default "cy8c4046lqe_t1" if SOC_CY8C4046LQE_T1
+	default "cy8c4025lqi_t411" if SOC_CY8C4025LQI_T411
+	default "cy8c4025lqi_t441" if SOC_CY8C4025LQI_T441
+	default "cy8c4025lqi_t451" if SOC_CY8C4025LQI_T451
+	default "cy8c4026lqi_t411" if SOC_CY8C4026LQI_T411
+	default "cy8c4026lqi_t441" if SOC_CY8C4026LQI_T441
+	default "cy8c4045lqi_t411" if SOC_CY8C4045LQI_T411
+	default "cy8c4045lqi_t441" if SOC_CY8C4045LQI_T441
+	default "cy8c4045lqi_t451" if SOC_CY8C4045LQI_T451
+	default "cy8c4046lqi_t411" if SOC_CY8C4046LQI_T411
+	default "cy8c4046lqi_t441" if SOC_CY8C4046LQI_T441
+	default "cy8c4046lqi_t451" if SOC_CY8C4046LQI_T451
+	default "cy8c4025lqi_t412" if SOC_CY8C4025LQI_T412
+	default "cy8c4025lqi_t442" if SOC_CY8C4025LQI_T442
+	default "cy8c4025lqi_t452" if SOC_CY8C4025LQI_T452
+	default "cy8c4026lqi_t412" if SOC_CY8C4026LQI_T412
+	default "cy8c4026lqi_t442" if SOC_CY8C4026LQI_T442
+	default "cy8c4045lqi_t412" if SOC_CY8C4045LQI_T412
+	default "cy8c4045lqi_t442" if SOC_CY8C4045LQI_T442
+	default "cy8c4045lqi_t452" if SOC_CY8C4045LQI_T452
+	default "cy8c4045lqe_t1" if SOC_CY8C4045LQE_T1
+	default "cy8c4045lqs_t1" if SOC_CY8C4045LQS_T1
+	default "cy8c4046lqi_t412" if SOC_CY8C4046LQI_T412
+	default "cy8c4046lqi_t442" if SOC_CY8C4046LQI_T442
+	default "cy8c4046lqs_t1" if SOC_CY8C4046LQS_T1
+	default "cy8c4046lqq_t412" if SOC_CY8C4046LQQ_T412
+	default "cy8c4025fni_t412" if SOC_CY8C4025FNI_T412
+	default "cy8c4025fni_t442" if SOC_CY8C4025FNI_T442
+	default "cy8c4025fni_t452" if SOC_CY8C4025FNI_T452
+	default "cy8c4026fni_t412" if SOC_CY8C4026FNI_T412
+	default "cy8c4026fni_t442" if SOC_CY8C4026FNI_T442
+	default "cy8c4045fni_t412" if SOC_CY8C4045FNI_T412
+	default "cy8c4045fni_t442" if SOC_CY8C4045FNI_T442
+	default "cy8c4045fni_t452" if SOC_CY8C4045FNI_T452
+	default "cy8c4046fni_t412" if SOC_CY8C4046FNI_T412
+	default "cy8c4046fni_t442" if SOC_CY8C4046FNI_T442
+	default "cy8c4046fni_t452" if SOC_CY8C4046FNI_T452

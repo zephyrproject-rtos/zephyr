@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Patryk Koscik <pkoscik@antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TOMU
+
+config USE_DT_CODE_PARTITION
+	default y
+
+endif # BOARD_TOMU

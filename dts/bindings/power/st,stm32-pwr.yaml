@@ -1,0 +1,12 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 power controller
+
+compatible: "st,stm32-pwr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026, Xsight Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		mhu0: mbox@88880000 {
+			compatible = "arm,mhuv2";
+			reg = <0x0 0x88880000 0x0 0x1000>,
+			      <0x0 0x88881000 0x0 0x1000>;
+			reg-names = "send", "recv";
+			interrupts = <GIC_SPI 88 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+		};
+	};
+};

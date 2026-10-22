@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA ADC_B scan-group configuration node.
+
+  A scan-group is a hardware unit of trigger and completion: each
+  scan-group has its own scan-end interrupt and is executed by exactly
+  one ADC converter (ADC0 or ADC1) selected via renesas,converter-unit-id.
+
+  This node carries configuration only; it does not bind a driver.
+  Channels become members of a scan-group via the renesas,scan-group
+  phandle in their child node under an adc-unit.
+
+  Example:
+    scan_group0: scan-group@0 {
+        compatible = "renesas,ra-adc-b-scan-group";
+        reg = <0>;
+        interrupts = <60 12>;
+        interrupt-names = "scanend";
+        renesas,converter-unit-id = <0>;
+    };
+
+compatible: "renesas,ra-adc-b-scan-group"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Hardware scan-group ID (0-7).
+
+  interrupts:
+    description: Scan-end interrupt for this scan-group.
+
+  interrupt-names:
+    description: Must contain "scanend" when interrupts is present.
+
+  renesas,converter-unit-id:
+    type: int
+    required: true
+    enum: [0, 1]
+    description: |
+      Selects which ADC converter executes this scan-group (0 = ADC0,
+      1 = ADC1). Must match the unit-id of the adc-unit that owns the
+      channels referencing this scan-group; the driver enforces this
+      with BUILD_ASSERT.
+
+      An int (not a phandle) is used because adc-unit -> channel ->
+      scan-group -> adc-unit would otherwise form a devicetree cycle.

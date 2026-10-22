@@ -1,0 +1,27 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common properties for WIZnet standalone Ethernet controllers
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt pin.
+
+      The interrupt pin is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+      Bindings that do not mark this property as required
+      operate in polling mode when it is omitted.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset pin.
+
+      The reset pin is active low.
+      If connected directly the MCU pin should be configured
+      as active low.

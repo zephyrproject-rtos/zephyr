@@ -1,0 +1,21 @@
+/*
+ * Copyright 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		led0 = &led_G3;
+	};
+
+	gpio-led {
+		compatible = "gpio-leds";
+
+		led_G3: led_G3 {
+			gpios = <&gpio_140_176 15 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};

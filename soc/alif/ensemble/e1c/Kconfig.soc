@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_E1C
+	bool
+	select SOC_FAMILY_ENSEMBLE
+
+config SOC_SERIES
+	default "e1c" if SOC_SERIES_E1C
+
+config SOC_AE1C1F4051920PH0
+	bool
+	select SOC_SERIES_E1C
+	help
+	  Alif Ensemble E1C (AE1C1F4051920PH0)
+
+config SOC_AE1C1F4051920PH0_RTSS_HE
+	bool
+	select SOC_AE1C1F4051920PH0
+	help
+	  AE1C1F4051920PH0 High Efficiency Real Time Subsystem (RTSS-HE).
+	  Cortex-M55 core optimized for power efficiency with a maximum frequency of 160 MHz.
+
+config SOC
+	default "ae1c1f4051920ph0" if SOC_AE1C1F4051920PH0

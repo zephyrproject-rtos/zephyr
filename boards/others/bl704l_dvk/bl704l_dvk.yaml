@@ -1,0 +1,28 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: bl704l_dvk
+name: BL704L Development Board
+type: mcu
+arch: riscv
+ram: 80
+flash: 1520
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - dma
+  - i2c
+  - pwm
+  - spi
+  - flash
+  - entropy
+  - crypto
+  - counter
+vendor: others

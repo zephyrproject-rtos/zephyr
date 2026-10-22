@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PA04 and PA05 */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&porta 4 0>;  /* EXT2.4 */
+		in-gpios = <&porta 5 0>; /* EXT2.3 */
+	};
+};

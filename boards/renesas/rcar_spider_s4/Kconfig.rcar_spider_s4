@@ -1,0 +1,6 @@
+# Copyright (c) 2023 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RCAR_SPIDER_S4
+	select SOC_R8A779F0_R52 if BOARD_RCAR_SPIDER_S4_R8A779F0_R52
+	select SOC_R8A779F0_A55 if BOARD_RCAR_SPIDER_S4_R8A779F0_A55

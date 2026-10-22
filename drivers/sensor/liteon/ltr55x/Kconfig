@@ -1,0 +1,13 @@
+# Lite-On LTR-329/LTR-553 sensor driver configuration
+
+# Copyright (c) 2025 Konrad Sikora
+# SPDX-License-Identifier: Apache-2.0
+
+config LTR55X
+	bool "LiteOn LTR-329/LTR-553 ambient light/proximity sensor support"
+	default y
+	depends on DT_HAS_LITEON_LTR329_ENABLED || DT_HAS_LITEON_LTR553_ENABLED
+	select I2C
+	help
+	  Enable driver for Lite-On LTR-329 ambient light sensor and
+	  LTR-55X ambient light plus proximity sensor.

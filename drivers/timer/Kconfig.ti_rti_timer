@@ -1,0 +1,12 @@
+# Copyright (C) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_RTI_TIMER
+	bool "TI RTI Timer"
+	default y
+	depends on DT_HAS_TI_AM26_RTITIMER_ENABLED
+	help
+
+	  This module implements a kernel device driver for TI RTI timer. This
+	  driver provides system tick interface.

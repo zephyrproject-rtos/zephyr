@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ST_B_M2MEM_PACK1
+	def_bool $(shields_list_contains,b_m2mem_pack1_mb1927_18ba) ||\
+		$(shields_list_contains,b_m2mem_pack1_mb1927_33ba) ||\
+		$(shields_list_contains,b_m2mem_pack1_mb1928_33la) ||\
+		$(shields_list_contains,b_m2mem_pack1_mb1928_33lb)
+
+config SHIELD_B_M2MEM_PACK1_MB1927_18BA
+	def_bool $(shields_list_contains,b_m2mem_pack1_mb1927_18ba)
+
+config SHIELD_B_M2MEM_PACK1_MB1927_33BA
+	def_bool $(shields_list_contains,b_m2mem_pack1_mb1927_33ba)
+
+config SHIELD_B_M2MEM_PACK1_MB1928_33LA
+	def_bool $(shields_list_contains,b_m2mem_pack1_mb1928_33la)
+
+config SHIELD_B_M2MEM_PACK1_MB1928_33LB
+	def_bool $(shields_list_contains,b_m2mem_pack1_mb1928_33lb)

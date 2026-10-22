@@ -1,0 +1,13 @@
+description: Bluetooth HCI driver for ST STM32WBA
+
+compatible: "st,hci-stm32wba"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "BT IPM"
+  bt-hci-bus:
+    default: "ipc"
+  bt-hci-quirks:
+    default: ["no-reset"]

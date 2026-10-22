@@ -1,0 +1,14 @@
+# Copyright (c) 2022, synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ARC YCCM (Y Closely Coupled Memory)
+  XY Memory is a feature to increase the DSP performance
+
+compatible: "arc,yccm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

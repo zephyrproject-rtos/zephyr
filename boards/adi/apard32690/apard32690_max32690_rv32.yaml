@@ -1,0 +1,12 @@
+identifier: apard32690/max32690/rv32
+name: apard32690 rv32
+vendor: adi
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - serial
+ram: 128
+flash: 96

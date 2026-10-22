@@ -1,0 +1,10 @@
+# PSOC CAT1B Configuration
+
+# Copyright (c) 2024 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_INFINEON_CAT1B
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_INFINEON_CAT1B

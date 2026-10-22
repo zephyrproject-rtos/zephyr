@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* I2C bus pins are exposed on the STMod+.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c1    PB9   CN3:10      PB8  CN3:7
+ *  i2c2    PH5   CN2:10      PH4  CN2:7
+ *
+ * Short Pin PB9 to PH5, and PB8 to PH4, for the test to pass.
+ */
+
+/delete-node/ &eeprom0;
+
+#define IC2_TEST_0_DMA_TX <&gpdma1 0 13 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_0_DMA_RX <&gpdma1 1 12 STM32_DMA_PERIPH_RX>
+
+i2c_test_0: &i2c1 {
+	dmas = IC2_TEST_0_DMA_TX, IC2_TEST_0_DMA_RX;
+	dma-names = "tx", "rx";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+#define IC2_TEST_1_DMA_TX <&gpdma1 2 16 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_1_DMA_RX <&gpdma1 3 15 STM32_DMA_PERIPH_RX>
+
+i2c_test_1: &i2c2 {
+	dmas = IC2_TEST_1_DMA_TX, IC2_TEST_1_DMA_RX;
+	dma-names = "tx", "rx";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

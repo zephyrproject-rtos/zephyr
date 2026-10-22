@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/* NOTE: shared between M7 and M4 DTS files */
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		led_g: led0 {
+			gpios = <&gpioj 0 GPIO_ACTIVE_HIGH>;
+			label = "RGB Green";
+		};
+
+		led_r: led1 {
+			gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
+			label = "RGB Red";
+		};
+
+		led_b: led2 {
+			gpios = <&gpioj 2 GPIO_ACTIVE_HIGH>;
+			label = "RGB Blue";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_btn: btn0 {
+			label = "USER BTN";
+			gpios = <&gpioi 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+};
+
+&rcc {
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&pwr {
+	power-supply = "ldo";
+};
+
+&uart5 {
+	pinctrl-0 = <&uart5_tx_pb6 &uart5_rx_pb12>;
+	pinctrl-names = "default";
+};
+
+&mailbox {
+	status = "okay";
+};

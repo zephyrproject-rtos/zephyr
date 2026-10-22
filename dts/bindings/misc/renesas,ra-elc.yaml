@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Event Link Controller
+
+compatible: "renesas,ra-elc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  "#renesas-elc-cells":
+    type: int
+    const: 2
+
+renesas-elc-cells:
+  - peripheral
+  - event

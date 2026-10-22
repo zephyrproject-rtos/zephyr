@@ -1,0 +1,9 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_R8A78000_R52
+
+config NUM_IRQS
+	default 992 # SPI (INTIDs 32..991)
+
+endif # SOC_R8A78000_R52

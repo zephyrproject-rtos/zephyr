@@ -1,0 +1,6 @@
+board:
+  name: heltec_wireless_tracker
+  full_name: Wireless Tracker (V1.1)
+  vendor: heltec
+  socs:
+  - name: esp32s3

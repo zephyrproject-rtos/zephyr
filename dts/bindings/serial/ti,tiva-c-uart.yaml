@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+description: TI Tiva C Series UART
+
+compatible: "ti,tiva-c-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      Phandle to the system clock providing the UART baud-rate reference.
+
+  peripheral-id:
+    type: int
+    required: true
+    description: |
+      UART peripheral index (0-7). Used to enable the clock via
+      SysCtlPeripheralEnable(SYSCTL_PERIPH_UARTn).
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

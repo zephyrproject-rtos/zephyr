@@ -1,0 +1,21 @@
+# Copyright 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if DISPLAY
+
+if LVGL
+
+config LV_COLOR_16_SWAP
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+# The AXP2101 gates the supply of most of the board, so bring the PMIC and its
+# regulators up before the drivers that sit behind them.
+config MFD_INIT_PRIORITY
+	default 70
+
+config REGULATOR_AXP192_AXP2101_INIT_PRIORITY
+	default 71

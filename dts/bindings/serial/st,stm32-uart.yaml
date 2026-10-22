@@ -1,0 +1,5 @@
+description: STM32 UART
+
+compatible: "st,stm32-uart"
+
+include: st,stm32-uart-base.yaml

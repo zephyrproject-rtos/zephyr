@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &ram;
+/delete-node/ &hscif0;
+/delete-node/ &scmi_res0;
+
+#include <mem.h>
+
+&mfis {
+	status = "disabled";
+};
+
+/ {
+	firmware {
+		/delete-node/ scmi;
+	};
+
+	hypervisor: hypervisor@58200000 {
+		compatible = "xen,xen";
+		reg = <0x0 0x58200000 0x0 0x40000
+		       0x0 0x39a00000 0x0 0x6600000>;
+		interrupts = <GIC_PPI 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "okay";
+	};
+
+	/*
+	 * Xen Dom0 BANK[0] 0x40000000-0x48000000 (128M); mapped 96M only.
+	 * DTB is at 0x47e00000, outside this node.
+	 */
+	ram: memory@40000000 {
+		device_type = "mmio-sram";
+		reg = <0x0 0x40000000 0x0 DT_SIZE_M(96)>;
+	};
+};

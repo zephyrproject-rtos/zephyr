@@ -1,0 +1,25 @@
+identifier: stm32mp255c_dhsbc/stm32mp255cxx/m33
+name: STM32MP255C_DHSBC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - gpio
+  - i2c
+  - can
+  - spi
+  - uart
+testing:
+  ignore_tags:
+    - cmsis_rtos_v2
+    - net
+    - mpu
+    - crypto
+    - aes
+    - cmm
+    - nfc
+ram: 8192
+flash: 8192
+vendor: dh

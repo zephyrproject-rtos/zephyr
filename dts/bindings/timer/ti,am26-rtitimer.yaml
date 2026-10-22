@@ -1,0 +1,21 @@
+# Copyright (C) 2025 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI RTI Timer
+
+  To use one of the RTI blocks as a system timer,
+  provide an alias 'systick-timer' that points to the RTI node of choice in devicetree.
+
+  NOTE - The driver uses Counter Block 0 by default
+  for the chosen RTI instance to generate interrupts.
+
+compatible: "ti,am26-rtitimer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

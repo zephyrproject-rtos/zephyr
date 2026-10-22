@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_M333X
+	bool
+	select SOC_FAMILY_NUMAKER
+	help
+	  Enable support for Nuvoton M333X MCU series
+
+config SOC_M333XXX
+	bool
+	select SOC_SERIES_M333X
+
+config SOC_SERIES
+	default "m333x" if SOC_SERIES_M333X
+
+config SOC
+	default "m333xxx" if SOC_M333XXX

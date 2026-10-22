@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_INFINEON_MXCRYPTOLITE
+	bool "Infineon MXCRYPTOLITE hardware crypto driver"
+	default y
+	depends on DT_HAS_INFINEON_MXCRYPTOLITE_CRYPTO_ENABLED
+	select MFD
+	select USE_INFINEON_MXCRYPTOLITE_AES
+	select USE_INFINEON_MXCRYPTOLITE_SHA256
+	help
+	  Enable the Infineon MXCRYPTOLITE hardware-accelerated crypto driver
+	  for supported devices.  Provides AES-128 ECB, CBC, CTR, and CCM cipher
+	  operations and SHA-256 hash operations via the Zephyr crypto API.
+
+if CRYPTO_INFINEON_MXCRYPTOLITE
+
+config CRYPTO_INFINEON_MXCRYPTOLITE_MAX_SESSION
+	int "Maximum number of simultaneous crypto sessions"
+	default 4
+	help
+	  Number of concurrent cipher or hash sessions the driver supports.
+
+endif # CRYPTO_INFINEON_MXCRYPTOLITE

@@ -1,0 +1,91 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+title: Microchip PWM g1 driver.
+
+description: |
+  Microchip Pulse Width Modulation Controller (PWM).
+
+  Group g1 PWM driver supports following hardware peripherals:
+    - module name="PWM" id="6343" version="802"
+
+  This driver is responsible for configuring and managing the PWM peripheral in
+  Microchip microprocessors.
+
+examples:
+  - |
+    /* 'pwm_led0' is a node representing a device (e.g., an LED) controlled by PWM. */
+    pwm_led0: pwm_led_0 {
+      status = "okay";
+      /*
+       * The 'pwms' property uses the phandle to the PWM controller (here, 'pwm0'),
+       * specifies channel 1, sets the PWM period to 20 milliseconds, and uses a
+       * polarity of normal.
+       *
+       * The order of the 'pwms' arguments matches the 'pwm-cells' definition:
+       * <&controller channel period polarity>
+       */
+      pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+    };
+
+compatible: "microchip,pwm-g1"
+
+include:
+  - name: base.yaml
+  - pwm-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clka-prescaler:
+    type: int
+    default: 1
+    enum: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    description: |
+      CLKA Source Clock Selection.
+      CLKA is derived by dividing the peripheral clock by this prescaler.
+
+  clka-divide-factor:
+    type: int
+    default: 0
+    description: |
+      CLKA Divide Factor.
+        0: CLKA clock is turned off
+        1: CLKA clock is clock selected by PREA
+        2 - 255: CLKA clock is clock selected by PREA divided by this factor
+    min: 0
+    max: 255
+
+  clkb-prescaler:
+    type: int
+    default: 1
+    enum: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    description: |
+      CLKB Source Clock Selection.
+      CLKB is derived by dividing the peripheral clock by this prescaler.
+
+  clkb-divide-factor:
+    type: int
+    default: 0
+    description: |
+      CLKB Divide Factor.
+        0: CLKB clock is turned off
+        1: CLKB clock is clock selected by PREB
+        2 - 255: CLKB clock is clock selected by PREB divided by this factor
+    min: 0
+    max: 255
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - polarity

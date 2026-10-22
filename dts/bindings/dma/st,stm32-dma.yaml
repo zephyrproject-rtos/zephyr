@@ -1,0 +1,36 @@
+# Copyright (c) 2019, Song Qiang <songqiang1304521@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 DMA controller
+
+  The STM32 DMA is a general-purpose direct memory access controller
+  capable of supporting 5 or 6 or 7 or 8 independent DMA channels.
+  Each stm32 soc with a DMA is of a special version type, which could be
+  V1 like stm32F4 or stm32F2 socs, they include FIFO control registers
+  or V2 like stm32L4 soc or stm322WB, some also have DMAMUX controller
+  or V2bis like stm32F1 or stm32L1, where requests are multiplexed
+
+compatible: "st,stm32-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  st,mem2mem:
+    type: boolean
+    description: If the DMA controller V1 supports memory to memory transfer
+
+  dma-offset:
+    type: int
+    description: |
+      offset in the table of channels when mapping to a DMAMUX
+      for 1st dma instance, offset is 0,
+      for 2nd dma instance, offset is the nb of dma channels of the 1st dma,
+      for 3rd dma instance, offset is the nb of dma channels of the 2nd dma
+      plus the nb of dma channels of the 1st dma instance, etc.

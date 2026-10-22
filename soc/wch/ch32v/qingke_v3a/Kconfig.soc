@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Lucy Wong
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_QINGKE_V3A
+	bool
+	select SOC_FAMILY_CH32V
+
+config SOC_SERIES
+	default "qingke_v3a" if SOC_SERIES_QINGKE_V3A
+
+rsource "Kconfig.soc.*"

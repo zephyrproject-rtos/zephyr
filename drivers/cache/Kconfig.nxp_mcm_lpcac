@@ -1,0 +1,14 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_NXP_MCM_LPCAC
+	bool "NXP MCM LPCAC code cache driver"
+	default y
+	select CACHE_HAS_DRIVER
+	depends on HAS_MCUX_MCM_LPCAC
+	help
+	  This option enables the LPCAC code cache driver for NXP SoCs whose
+	  Low Power Cache Controller is configured through the Miscellaneous
+	  Control Module (MCM) CPCR2 register (for example MCX W7x / KW45 /
+	  KW47), as opposed to the SYSCON LPCAC_CTRL register handled by
+	  CACHE_NXP_SYSCON_LPCAC.

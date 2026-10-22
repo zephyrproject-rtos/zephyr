@@ -1,0 +1,145 @@
+# Multilevel interrupt configuration
+
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+config MULTI_LEVEL_INTERRUPTS
+	bool "Multi-level interrupt support"
+	depends on GEN_SW_ISR_TABLE
+	help
+	  Multiple levels of interrupts are normally used to increase the
+	  number of addressable interrupts in a system. For example, if two
+	  levels are used, a second level interrupt aggregator would combine
+	  all interrupts routed to it into one IRQ line in the first level
+	  interrupt controller. If three levels are used, a third level
+	  aggregator combines its input interrupts into one IRQ line at the
+	  second level. The number of interrupt levels is usually determined
+	  by the hardware. (The term "aggregator" here means "interrupt
+	  controller".)
+
+if MULTI_LEVEL_INTERRUPTS
+config 1ST_LEVEL_INTERRUPT_BITS
+	int "Total number of first level interrupt bits"
+	range 1 32
+	default 8
+	help
+	  The number of bits to use of the 32 bit interrupt mask for first
+	  tier interrupts.
+
+config MAX_IRQ_PER_AGGREGATOR
+	int "Max IRQs per interrupt aggregator"
+	default 0
+
+	help
+	  The maximum number of interrupt inputs to any aggregator in the
+	  system.
+
+config 2ND_LEVEL_INTERRUPTS
+	bool "Second-level interrupt support"
+	help
+	  Second level interrupts are used to increase the number of
+	  addressable interrupts in a system.
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	int "Offset in _sw_isr_table for level 2 interrupts"
+	default 0
+	depends on 2ND_LEVEL_INTERRUPTS
+	help
+	  This is the offset in _sw_isr_table, the generated ISR handler table,
+	  where storage for 2nd level interrupt ISRs begins. This is
+	  typically allocated after ISRs for level 1 interrupts.
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	int "Total number of second level interrupt aggregators"
+	range 1 8
+	default 1
+	depends on 2ND_LEVEL_INTERRUPTS
+	help
+	  The number of level 2 interrupt aggregators to support. Each
+	  aggregator can manage at most MAX_IRQ_PER_AGGREGATOR level 2
+	  interrupts.
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	int "Total number of second level interrupt bits"
+	range 0 31
+	default 8
+	help
+	  The number of bits to use of the 32 bit interrupt mask for second
+	  tier interrupts.
+
+prev-level-num = 1
+cur-level-num = 2
+cur-level = 2ND
+aggregator = 0
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 1
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 2
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 3
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 4
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 5
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 6
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 7
+rsource "Kconfig.multilevel.aggregator_template"
+
+config 3RD_LEVEL_INTERRUPTS
+	bool "Third-level interrupt support"
+	depends on 2ND_LEVEL_INTERRUPTS
+	help
+	  Third level interrupts are used to increase the number of
+	  addressable interrupts in a system.
+
+config NUM_3RD_LEVEL_AGGREGATORS
+	int "Total number of third level interrupt aggregators"
+	range 1 8
+	default 1
+	depends on 3RD_LEVEL_INTERRUPTS
+	help
+	  The number of level 3 interrupt aggregators to support. Each
+	  aggregator can manage at most MAX_IRQ_PER_AGGREGATOR level 3
+	  interrupts.
+
+config 3RD_LVL_ISR_TBL_OFFSET
+	int "Offset in _sw_isr_table for level 3 interrupts"
+	default 0
+	depends on 3RD_LEVEL_INTERRUPTS
+	help
+	  This is the offset in _sw_isr_table, the generated ISR handler table,
+	  where storage for 3rd level interrupt ISRs begins. This is
+	  typically allocated after ISRs for level 2 interrupts.
+
+config 3RD_LEVEL_INTERRUPT_BITS
+	int "Total number of third level interrupt bits"
+	range 0 30
+	default 8
+	help
+	  The number of bits to use of the 32 bit interrupt mask for third
+	  tier interrupts.
+
+prev-level-num = 2
+cur-level-num = 3
+cur-level = 3RD
+aggregator = 0
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 1
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 2
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 3
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 4
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 5
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 6
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 7
+rsource "Kconfig.multilevel.aggregator_template"
+
+endif

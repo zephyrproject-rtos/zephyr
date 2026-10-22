@@ -1,0 +1,65 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Bouffalolab Power Controller
+
+description: |
+  Power Controller for Bouffalolab MCUs
+
+  Controls various power elements spread over multiple hardware ensembles, such as HBN and AON
+
+  example for bl61x:
+  / {
+    soc {
+      powerctrl: power-controller@2000e000 {
+          compatible = "bflb,power";
+          reg = <0x2000f000 0x1000>, <0x2000f000 0x1000>;
+          reg-names = "hbn", "aon";
+          status = "okay";
+
+          interrupt-parent = <&clic>;
+          interrupts = <67 1>, <68 1>, <69 1>;
+          interrupt-names = "hbn0", "hbn1", "bor";
+      };
+    };
+  };
+
+compatible: "bflb,power-controller"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  brown-out-threshold-microvolt:
+    type: int
+    default: 2400000
+    enum:
+      - 2000000 # BL60x, BL70x/L Only
+      - 2050000 # BL61x and BL808 only values up to 2400000
+      - 2100000
+      - 2150000
+      - 2200000
+      - 2250000
+      - 2300000
+      - 2350000
+      - 2400000 # Also available on BL60x and BL70x/L
+      - 2330000 # Range of possible values for BL616CL starting here
+      - 2370000
+      - 2420000
+      - 2460000
+      - 2510000
+      - 2560000
+      - 2610000
+      - 2670000
+    description: |
+      Defines Brown Out voltage.
+
+  brown-out-reset-disable:
+    type: boolean
+    description: |
+      Do not reset on Brown Out.

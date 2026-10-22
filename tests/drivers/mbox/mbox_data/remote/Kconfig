@@ -1,0 +1,13 @@
+# Copyright 2025 Analog Devices, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config CHANNELS_TO_TEST
+	int "Number of mbox TX/RX channel pairs to test"
+	default 4
+	help
+		The number of TX/RX channel pairs that should be exercised by
+		this test. This should match the number of pairs set in the
+		devicetree.

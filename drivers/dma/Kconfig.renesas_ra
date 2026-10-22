@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_RENESAS_RA
+	bool "Renesas RA DMAC"
+	default y
+	depends on DT_HAS_RENESAS_RA_DMA_ENABLED
+	select USE_RA_FSP_DMA
+	help
+	  Enable Renesas RA DMA Driver.

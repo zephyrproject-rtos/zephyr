@@ -1,0 +1,25 @@
+identifier: m5stack_nanoc6/esp32c6/hpcore
+name: M5Stack NanoC6 HP Core
+vendor: m5stack
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - watchdog
+  - uart
+  - dma
+  - pwm
+  - spi
+  - counter
+  - entropy
+  - i2c
+  - netif:openthread
+  - crypto
+  - retained_mem
+
+testing:
+  ignore_tags:
+    - bluetooth

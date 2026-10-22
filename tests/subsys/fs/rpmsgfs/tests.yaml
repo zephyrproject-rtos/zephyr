@@ -1,0 +1,19 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+common:
+  tags:
+    - filesystem
+    - rpmsgfs
+  platform_allow:
+    - imx95_evk/mimx9596/m7
+    - mr_navq95b/mimx9596/m7
+  integration_platforms:
+    - mr_navq95b/mimx9596/m7
+tests:
+  filesystem.rpmsgfs.default:
+    timeout: 60
+    build_only: true

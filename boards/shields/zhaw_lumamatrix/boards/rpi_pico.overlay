@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026, Institute of Embedded Systems ZHAW
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	pinctrl_bff_ws2812: pinctrl_bff_ws2812 {
+		ws2812 {
+			pinmux = <PIO0_P19>;
+		};
+	};
+};

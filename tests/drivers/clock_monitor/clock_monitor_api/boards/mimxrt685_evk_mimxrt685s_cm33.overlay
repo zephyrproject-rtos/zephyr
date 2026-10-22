@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	clock-monitor-test {
+		compatible = "test-clock-monitor";
+
+		/* fmeas: NXP FREQME (BASIC), MEASURE mode.
+		 *
+		 * The target is XTALIN, the on-board 24 MHz crystal
+		 */
+		fmeas {
+			monitor = <&fmeas>;
+			measure-expected-hz = <24000000>;
+		};
+	};
+};
+
+&inputmux {
+	status = "okay";
+};
+
+&fmeas_tar_ffro {
+	/delete-property/ default-source;
+};
+
+&fmeas_tar_xtalin {
+	default-source;
+};
+
+&fmeas {
+	status = "okay";
+};

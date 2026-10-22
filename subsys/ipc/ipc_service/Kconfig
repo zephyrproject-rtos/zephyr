@@ -1,0 +1,21 @@
+# Copyright (c) 2021 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IPC_SERVICE
+	bool "IPC service support multiple backends"
+	help
+	  Enables support for a service that can be shared by multiple
+	  users. Ability to work in different backends. The backend
+	  should be registered before application starts using
+	  the IPC Service.
+
+if IPC_SERVICE
+
+rsource "backends/Kconfig"
+rsource "lib/Kconfig"
+
+module = IPC_SERVICE
+module-str = IPC service and backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # IPC_SERVICE

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32c6/esp32c6_lpcore.dtsi>
+#include <espressif/partitions_0x0_default.dtsi>
+
+/ {
+	model = "m5stack_nanoc6 LPCORE";
+	compatible = "m5stack,nanoc6";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &ulp_ram;
+		zephyr,code-partition = &slot0_lpcore_partition;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
+};

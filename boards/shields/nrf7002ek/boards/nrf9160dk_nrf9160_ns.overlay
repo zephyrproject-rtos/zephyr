@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Disabled because of conflicts on P0.00 and P0.01 - Arduino pins D0 and D1
+ * (iovdd-ctrl-gpios and bucken-gpios in nrf7002ek, respectively).
+ */
+&uart1 {
+	status = "disabled";
+};
+
+/* Typically we use GPIO extender to resolve these conflicts but the
+ * GPIO pin used by extender itself conflicts with Wi-Fi (0.6), so,
+ * disable LEDs and Button0/1.
+ */
+&led0 {
+	status = "disabled";
+};
+
+&led1 {
+	status = "disabled";
+};
+
+&led2 {
+	status = "disabled";
+};
+
+&led3 {
+	status = "disabled";
+};
+
+&button0 {
+	status = "disabled";
+};
+
+&button1 {
+	status = "disabled";
+};

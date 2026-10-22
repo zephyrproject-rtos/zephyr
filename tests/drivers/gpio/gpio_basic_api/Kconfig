@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SKIP_PULL_TEST
+	bool "Skip the pull test even if the driver supports it"
+
+config GPIO_TEST_READ_DELAY
+	int "GPIO basic API test read delay in ms"
+	default 0
+	help
+	  Delay, in milliseconds, before reading the GPIO input in this
+	  test. This can help boards with slower GPIO signal propagation.

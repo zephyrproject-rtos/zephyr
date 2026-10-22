@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Zephyr Project
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	wifi_hwsim_0: wifi_hwsim@202 {
+		compatible = "zephyr,wifi-hwsim";
+		reg = <0x202 1>;
+		radio-index = <0>;
+		status = "okay";
+	};
+
+	wifi_hwsim_1: wifi_hwsim@203 {
+		compatible = "zephyr,wifi-hwsim";
+		reg = <0x203 1>;
+		radio-index = <1>;
+		status = "okay";
+	};
+};

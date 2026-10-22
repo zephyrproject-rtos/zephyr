@@ -1,0 +1,16 @@
+identifier: stm32h7_hdmi_board/stm32h747xx/m4
+name: STM32H7 HDMI Board (M4)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 1024
+supported:
+  - gpio
+testing:
+  ignore_tags:
+    - mpu
+    - net
+vendor: antmicro

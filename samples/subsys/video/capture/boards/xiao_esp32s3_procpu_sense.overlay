@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gc9a01_xiao_round_display {
+	orientation = "270";
+};

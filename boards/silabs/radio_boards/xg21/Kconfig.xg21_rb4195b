@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XG21_RB4195B
+	select SOC_EFR32MG21B010F1024IM32

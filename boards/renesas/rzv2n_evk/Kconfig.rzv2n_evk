@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RZV2N_EVK
+	select SOC_R9A09G056N48GBG_CM33

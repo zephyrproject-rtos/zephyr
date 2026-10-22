@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# XC32 sets TOOLCHAIN_HAS_PICOLIBC because the toolchain bundles picolibc
+# (libstdc++ relies on it), but that copy uses a 32-bit time_t. Force the
+# module build so Zephyr still gets the 64-bit time_t variant.
+choice PICOLIBC_SOURCE
+	default PICOLIBC_USE_MODULE
+endchoice
+
+choice LIBCPP_IMPLEMENTATION
+	default EXTERNAL_LIBCPP
+endchoice
+
+choice LINKER_ORPHAN_CONFIGURATION
+	default LINKER_ORPHAN_SECTION_PLACE
+endchoice

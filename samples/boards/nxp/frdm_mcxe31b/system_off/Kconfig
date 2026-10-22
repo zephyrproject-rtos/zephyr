@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "FRDM-MCXE31B system off demo"
+
+config APP_TEST_CYCLES
+	int "Number of standby cycles to execute"
+	range 1 1000
+	default 10
+	help
+	  Number of times the sample arms the RTC alarm and enters system off.
+	  The completed cycle count is stored in standby-retained noinit memory
+	  so it can be retrieved after each standby wake reset.
+
+source "Kconfig.zephyr"

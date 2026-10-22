@@ -1,0 +1,13 @@
+# Atmel SAM4E MCU series configuration options
+
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2018 Vincent van der Locht
+# Copyright (c) 2019-2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAM4E
+
+config NUM_IRQS
+	default 47
+
+endif # SOC_SERIES_SAM4E

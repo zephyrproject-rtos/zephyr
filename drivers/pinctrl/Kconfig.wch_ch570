@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_WCH_CH570
+	bool "WCH CH570 pin controller driver"
+	default y
+	depends on DT_HAS_WCH_CH570_PINCTRL_ENABLED
+	help
+	  WCH CH570-CH572 pin controller driver.

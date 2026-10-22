@@ -1,0 +1,11 @@
+# TI CC23X0 DMA configuration options
+
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_TI_CC23X0
+	bool "TI CC23X0 DMA driver"
+	default y
+	depends on DT_HAS_TI_CC23X0_DMA_ENABLED
+	help
+	  DMA driver for TI CC23X0 MCUs.

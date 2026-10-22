@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Microchip MEC165xB MCU core series
+
+config SOC_SERIES_MEC165XB
+	bool
+	select SOC_FAMILY_MICROCHIP_MEC
+	help
+	  Enable support for Microchip MEC Cortex-M4 MCU series
+
+config SOC_SERIES
+	default "mec165xb" if SOC_SERIES_MEC165XB
+
+config SOC_MEC1653B_NSZ
+	bool
+	select SOC_SERIES_MEC165XB
+
+config SOC
+	default "mec1653b_nsz" if SOC_MEC1653B_NSZ

@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Matija Tudan
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_L433RC_P
+	select SOC_STM32L433XX

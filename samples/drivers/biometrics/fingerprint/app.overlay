@@ -1,0 +1,23 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 Siratul Islam
+ *
+ * Sample devicetree overlay for a fingerprint sensor
+ */
+
+/ {
+	aliases {
+		fingerprint = &fingerprint0;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <57600>;
+
+	fingerprint0: fingerprint0 {
+		compatible = "zhiantec,zfm-x0";
+		status = "okay";
+		comm-addr = <0xffffffff>;
+	};
+};

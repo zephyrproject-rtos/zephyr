@@ -1,0 +1,34 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bee CAN controller.
+
+compatible: "realtek,bee-can"
+
+include: [can-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  rx-timestamp-prescaler:
+    type: int
+    description: |
+      Prescaler value for computing the RX timestamps of received frames.
+      The timestamp counter is derived from the CAN source clock divided by this value.
+      A value of 1 means the timestamp counter runs at the CAN source clock rate.
+    min: 1
+    max: 256

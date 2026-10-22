@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  depends_on: netif
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_x86
+  integration_platforms:
+    - native_sim
+  tags:
+    - net
+    - sntp
+tests:
+  net.config.sntp: {}
+  net.config.sntp.resync:
+    extra_args: EXTRA_CONF_FILE=resync.conf
+    # One test sits out a full resync interval.
+    timeout: 120

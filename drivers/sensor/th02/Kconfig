@@ -1,0 +1,10 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TH02
+	bool "TH02 Temperature Sensor"
+	default y
+	depends on DT_HAS_HOPERF_TH02_ENABLED
+	select I2C
+	help
+	  Enable driver for the TH02 temperature sensor.

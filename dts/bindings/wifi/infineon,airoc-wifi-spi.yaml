@@ -1,0 +1,39 @@
+description: |
+  AIROC Wi-Fi Connectivity over SPI.
+
+compatible: "infineon,airoc-wifi"
+
+include: [spi-device.yaml, "infineon,airoc-wifi.yaml"]
+
+properties:
+  wifi-host-wake-gpios:
+    required: true
+
+  bus-select-gpios:
+    required: true
+    description: |
+      Select bus mode.  This gpio must be held low before
+      wifi-reg-on-gpios goes high to select SPI bus mode.
+    type: phandle-array
+
+  spi-half-duplex:
+    description:
+      Use half-duplex communication;  if not present, full-
+      duplex operation is assumed.
+    type: boolean
+
+  spi-word-size:
+    description:
+      SPI word size in bits.  Since 8-bit word size is the
+      most common, that is selected as the default.
+    type: int
+    enum:
+      - 8
+      - 16
+      - 32
+    default: 8
+
+  spi-data-irq-shared:
+    description:
+      SPI data and IRQ share the same GPIO.
+    type: boolean

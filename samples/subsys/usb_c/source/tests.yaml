@@ -1,0 +1,12 @@
+sample:
+  name: USB-C SOURCE
+tests:
+  sample.usbc.source:
+    depends_on: tcpc
+    tags: usbc
+    platform_allow: stm32g081b_eval
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Unattached.SRC"

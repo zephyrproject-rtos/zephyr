@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config PULSE_IO_ESP32_RMT
+	bool "Espressif RMT Pulse IO backend"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_RMT_ENABLED
+	help
+	  Enable the Espressif RMT (Remote Control Transceiver) Pulse IO
+	  backend.
+
+if PULSE_IO_ESP32_RMT
+
+config PULSE_IO_ESP32_RMT_DMA
+	def_bool SOC_SERIES_ESP32S3
+	select DMA if DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
+	help
+	  Compile the RMT DMA path on SoCs whose RMT DMA generation the
+	  backend supports.
+
+config PULSE_IO_ESP32_RMT_DMA_WORDS
+	int "RMT DMA buffer size in RMT words"
+	depends on PULSE_IO_ESP32_RMT_DMA
+	default 256
+	help
+	  Size of the static transmit and receive DMA bounce buffers,
+	  in RMT symbol words (4 bytes each). Only used by the last
+	  transmit and receive channels when DMA is enabled through the
+	  dmas devicetree property.
+
+endif # PULSE_IO_ESP32_RMT

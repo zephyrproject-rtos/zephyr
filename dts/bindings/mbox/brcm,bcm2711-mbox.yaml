@@ -1,0 +1,15 @@
+description: Broadcom BCM2711 VideoCore mailbox
+
+compatible: "brcm,bcm2711-mbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+mbox-cells:
+  - channel

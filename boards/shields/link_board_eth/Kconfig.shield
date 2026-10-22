@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_LINK_BOARD_ETH
+	def_bool $(shields_list_contains,link_board_eth)

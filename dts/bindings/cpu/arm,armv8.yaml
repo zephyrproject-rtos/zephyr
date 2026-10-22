@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic ARMv8-A CPU
+
+compatible: "arm,armv8"
+
+include: cpu.yaml

@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		cpu@0 {
+			cpu-power-states = <&s2ram>;
+		};
+	};
+
+	power-states {
+		s2ram: s2ram {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <5000>;
+			exit-latency-us = <1000>;
+		};
+	};
+};

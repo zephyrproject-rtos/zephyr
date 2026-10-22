@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&porta 6 0>; /* EXT1.5 */
+		in-gpios = <&porta 7 0>;  /* EXT1.6 */
+	};
+};
+
+&porta {
+	status = "okay";
+};

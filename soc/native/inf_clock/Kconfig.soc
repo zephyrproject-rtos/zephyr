@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Nordic Semiconductor ASA
+
+config SOC_POSIX
+	bool
+	help
+	  SOC for to the POSIX arch. It emulates a CPU running at an infinitely fast
+	  clock. That means the CPU will always run in zero time until completion after
+	  each wake reason (e.g. interrupts), before going back to idle. Note that an
+	  infinite loop in the code which does not sleep the CPU will cause the process
+	  to appear "hung", as simulated time does not advance while the CPU does not
+	  sleep. Therefore do not use busy waits while waiting for something to happen
+	  (if needed use k_busy_wait()).
+	  Note that the interrupt handling is provided by the board.
+
+config SOC
+	default "native" if SOC_POSIX

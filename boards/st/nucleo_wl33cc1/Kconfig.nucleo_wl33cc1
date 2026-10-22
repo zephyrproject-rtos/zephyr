@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Anders Frandsen <anfran@anfran.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_WL33CC1
+	select SOC_STM32WL33XX

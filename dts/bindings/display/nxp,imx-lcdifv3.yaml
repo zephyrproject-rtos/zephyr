@@ -1,0 +1,23 @@
+# Copyright 2025-2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX LCDIFV3 (LCD Interface v3) controller
+
+compatible: "nxp,imx-lcdifv3"
+
+include: [base.yaml, lcd-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  media-axi-clk-rate:
+    type: int
+    required: true
+
+  media-apb-clk-rate:
+    type: int
+    required: true

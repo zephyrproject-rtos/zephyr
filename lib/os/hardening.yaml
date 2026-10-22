@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for OS library boot options.
+
+rules:
+  BOOT_BANNER:
+    value: n
+    rationale: |
+      The boot banner prints the exact Zephyr version to the console, letting anyone with console
+      access fingerprint the firmware and match it against known vulnerabilities for that release.
+    references: [CWE-200]
+
+  BOOT_DELAY:
+    value: 0
+    rationale: |
+      A boot delay widens the window in which an attacker can interact with the system before the
+      application has initialized; 0 removes the delay entirely.

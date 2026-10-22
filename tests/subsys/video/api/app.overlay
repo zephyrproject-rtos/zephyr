@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2024 tinyVision.ai Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_i2c: i2c@10002000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x10002000 0x1000>;
+			clock-frequency = <100000>;
+			status = "okay";
+
+			test_video_emul_imager: video_emul_imager@6 {
+				compatible = "zephyr,video-emul-imager";
+				status = "okay";
+				reg = <0x6>;
+
+				port {
+					test_video_emul_imager_ep_out: endpoint {
+						remote-endpoint-label = "test_video_emul_rx_ep_in";
+					};
+				};
+			};
+		};
+
+		test_video_emul_rx: video_emul_rx@10003000 {
+			compatible = "zephyr,video-emul-rx";
+			reg = <0x10003000 0x1000>;
+			status = "okay";
+
+			port {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				test_video_emul_rx_ep_in: endpoint@0 {
+					reg = <0x0>;
+					remote-endpoint-label = "test_video_emul_imager_ep_out";
+				};
+
+				test_video_emul_rx_ep_out: endpoint@1 {
+					reg = <0x1>;
+					remote-endpoint-label = "application";
+				};
+			};
+		};
+	};
+};

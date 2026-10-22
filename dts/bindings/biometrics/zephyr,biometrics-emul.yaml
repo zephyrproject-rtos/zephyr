@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Siratul Islam
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr emulated biometrics device for testing
+
+compatible: "zephyr,biometrics-emul"
+
+include: base.yaml

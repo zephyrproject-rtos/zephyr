@@ -1,0 +1,12 @@
+# NXP PCF8523 RTC
+
+# Copyright (c) 2023 Alvaro Garcia Gomez <maxpowel@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_PCF8563
+	bool "NXP PCF8563 RTC driver"
+	default y
+	depends on DT_HAS_NXP_PCF8563_ENABLED
+	select I2C
+	help
+	  Enable the NXP PCF8563 RTC driver.

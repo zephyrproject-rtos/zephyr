@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: numaker_m5531
+name: NUVOTON NUMAKER-M5531 Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 1536
+flash: 2048
+supported:
+  - gpio
+vendor: nuvoton

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Pinctrl groups that match on every xG21 radio board in this folder.
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/xg21-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PA5>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART0_RX_PA6>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};

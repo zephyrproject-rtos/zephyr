@@ -1,0 +1,16 @@
+identifier: udoo_key/esp32/procpu
+name: UDOO KEY PROCPU
+vendor: udoo
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+ram: 8192
+supported:
+  - gpio
+  - i2s
+  - uart
+  - watchdog
+  - entropy
+  - input
+  - netif:wifi

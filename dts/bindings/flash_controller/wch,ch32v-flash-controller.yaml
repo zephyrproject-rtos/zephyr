@@ -1,0 +1,13 @@
+description: WCH CH32V series flash controller
+
+compatible: "wch,ch32v-flash-controller"
+
+include: flash-controller.yaml
+
+properties:
+  erase-value:
+    type: int
+    default: 0xffff
+    description: >
+      Value of each uint16_t in an erased page. This is 0xFFFF on
+      the CH32V003 and CH32V00X and 0xE339 on the CH32V20x and 30x.

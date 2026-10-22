@@ -1,0 +1,8 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_X_NUCLEO_WBA25A1_UART
+	def_bool $(shields_list_contains,x_nucleo_wba25a1_uart)
+
+config SHIELD_X_NUCLEO_WBA25A1_SPI
+	def_bool $(shields_list_contains,x_nucleo_wba25a1_spi)

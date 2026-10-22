@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF71 GPIO port.
+
+  Extends the generic nordic,nrf-gpio binding with pad voltage selection for
+  PORTCNF.PWRCTRL, available on GPIO ports with a switchable floating-ground
+  supply rail (currently only P4 on nRF7120).
+
+compatible: "nordic,nrf71-p4-gpio"
+
+include: nordic,nrf-gpio.yaml
+
+properties:
+  nordic,pad-voltage:
+    type: string
+    enum:
+      - "1v8"
+      - "3v3"
+    default: "3v3"
+    description: |
+      Pad voltage for this port's floating-ground supply rail (PORTCNF.PWRCTRL).
+
+      WARNING!
+      If selecting 1v8, you must drive the VIOP4 with roughly 1.8V. Driving it
+      with 3.3V will damage this port.

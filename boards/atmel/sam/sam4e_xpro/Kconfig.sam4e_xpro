@@ -1,0 +1,5 @@
+# Copyright (c) 2019-2024 Gerson Fernando Budke
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SAM4E_XPRO
+	select SOC_SAM4E16E

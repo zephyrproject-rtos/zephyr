@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Notes: a 10kOhm register pull-up should be added for EK-RA8M1 P609
+ *
+ * EK-RA8M1        Mikroe LIN Click
+ *   P609 <-------------> RXD
+ *   P610 <-------------> TXD
+ *   GND  <-------------> GND
+ *   3.3V <-------------> 3V3
+ *   P601 <-------------> EN
+ *   P602 <-------------> WK
+ */
+
+&mikroe_lin_click {
+	wakeup-gpios = <&ioport6 1 GPIO_ACTIVE_HIGH>;
+	enable-gpios = <&ioport6 2 GPIO_ACTIVE_HIGH>;
+};
+
+&sci0 {
+	uart {
+		status = "disabled";
+	};
+};
+
+&ioport6 {
+	status = "okay";
+};

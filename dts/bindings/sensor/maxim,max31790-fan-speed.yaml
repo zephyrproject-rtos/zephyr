@@ -1,0 +1,23 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: fan speed measurement of Maxim Integrated MAX31790 PWM Controller
+
+compatible: "maxim,max31790-fan-speed"
+
+include: [sensor-device.yaml]
+
+on-bus: max31790
+
+properties:
+  channel:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+    required: true
+    description: PWM channel number

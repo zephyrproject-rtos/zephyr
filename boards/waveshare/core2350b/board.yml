@@ -1,0 +1,6 @@
+board:
+  name: core2350b
+  full_name: Waveshare Core2350B
+  vendor: waveshare
+  socs:
+    - name: rp2350b

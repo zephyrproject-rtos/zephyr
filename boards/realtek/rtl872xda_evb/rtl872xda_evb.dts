@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <realtek/amebadplus/amebadplus.dtsi>
+#include "rtl872xda_evb-pinctrl.dtsi"
+
+/ {
+	model = "RealTek AmebaDplus RTL872XDA EVB";
+	compatible = "realtek,rtl872xda_evb";
+
+	chosen {
+		zephyr,console = &loguart;
+		zephyr,shell-uart = &loguart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,entropy = &trng;
+		zephyr,bt-hci = &bt;
+		zephyr,flash-controller = &spic;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	reg = <0x0e000020 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0e000020 DT_SIZE_M(4)>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "bootloader";
+			reg = <0x00000000 0x00014000>;
+			read-only;
+		};
+
+		slot0_partition: partition@14000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00014000 0x001ec000>;
+		};
+
+		storage_partition: partition@250000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x00250000 0x00006000>;
+		};
+	};
+};
+
+&loguart {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+};
+
+&wifi1 {
+	status = "okay";
+};
+
+&spic {
+	status = "okay";
+};

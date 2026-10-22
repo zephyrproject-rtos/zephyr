@@ -1,0 +1,17 @@
+identifier: egis_et171
+name: Egis ET171
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 384
+supported:
+  - gpio
+  - counter
+  - flash
+  - watchdog
+testing:
+  ignore_tags:
+    - bluetooth
+    - spi

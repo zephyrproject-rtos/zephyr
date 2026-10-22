@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx window watchdog
+
+compatible: "xlnx,versal-wwdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: Reference to clock for window watchdog core.

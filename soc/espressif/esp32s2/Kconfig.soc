@@ -1,0 +1,27 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S2
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  ESP32-S2 Series
+
+config SOC_ESP32S2
+	bool
+	select SOC_SERIES_ESP32S2
+	help
+	  ESP32S2
+
+config SOC_SERIES
+	default "esp32s2" if SOC_SERIES_ESP32S2
+
+config SOC
+	default "esp32s2" if SOC_SERIES_ESP32S2
+
+config SOC_PART_NUMBER
+	default "ESP32S2" if SOC_ESP32S2
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32s2" if SOC_SERIES_ESP32S2

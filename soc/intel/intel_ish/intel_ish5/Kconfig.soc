@@ -1,0 +1,27 @@
+# Copyright (c) 2023-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_INTEL_ISH5
+	bool
+	select SOC_FAMILY_INTEL_ISH
+
+config SOC_SERIES
+	default "intel_ish5" if SOC_SERIES_INTEL_ISH5
+
+config SOC_INTEL_ISH_5_4_1
+	bool
+	select SOC_SERIES_INTEL_ISH5
+
+config SOC_INTEL_ISH_5_6_0
+	bool
+	select SOC_SERIES_INTEL_ISH5
+
+config SOC_INTEL_ISH_5_8_0
+	bool
+	select SOC_SERIES_INTEL_ISH5
+
+config SOC
+	default "intel_ish_5_4_1" if SOC_INTEL_ISH_5_4_1
+	default "intel_ish_5_6_0" if SOC_INTEL_ISH_5_6_0
+	default "intel_ish_5_8_0" if SOC_INTEL_ISH_5_8_0

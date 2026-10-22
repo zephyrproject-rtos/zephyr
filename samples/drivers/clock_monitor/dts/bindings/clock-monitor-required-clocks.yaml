@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Clocks a clock_monitor sample enables at startup.
+
+compatible: "clock-monitor-required-clocks"
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: Clocks to enable at startup.

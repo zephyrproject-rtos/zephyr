@@ -1,0 +1,10 @@
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LPS22HH pressure and temperature sensor connected to I2C
+    bus
+
+compatible: "st,lps22hh"
+
+include: ["i2c-device.yaml", "st,lps22hh-common.yaml"]

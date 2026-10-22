@@ -1,0 +1,18 @@
+# Copyright (c) 2020-2021 ATL Electronics
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon Shared GPIO Set
+
+compatible: "infineon,shared-gpio"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

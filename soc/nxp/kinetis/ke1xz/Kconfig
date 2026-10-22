@@ -1,0 +1,16 @@
+# Kinetis KE1xZ series MCU
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KE1XZ
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select HAS_PM
+	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK

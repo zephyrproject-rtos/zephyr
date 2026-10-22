@@ -1,0 +1,11 @@
+identifier: xenvm/xenvm/gicv3
+name: ARMv8 Xen Virtual Machine With GICv3
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - watchdog
+ram: 16384
+vendor: xen

@@ -1,0 +1,34 @@
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI BoosterPack GPIO header
+
+    GPIO pins exposed as BoosterPack headers on TI LaunchPads.
+
+    BoosterPack plug-in modules are available in 20 and 40 pin variants. The
+    20 pin variant has two 10 x 1 pin headers and the 40 pin variant has two
+    10 x 2 pin headers. Both variants are compatible and stackable.
+
+    The pins of the 20 pin variant and the outer row of the 40 pin variant are
+    numbered 1 through 20. The inner rows of the 40 pin variant are numbered 21
+    through 40. The BoosterPack pinout is depicted below:
+
+    1  3.3V     21 5V                    40 GPIO 20 GND
+    2  Analog   22 GND                   39 GPIO 19 GPIO / SPI CS
+    3  UART RXD 23 Analog                38 GPIO 18 GPIO
+    4  UART TXD 24 Analog                37 GPIO 17 GPIO
+    5  GPIO     25 Analog                36 GPIO 16 RESET
+    6  Analog   26 Analog                35 GPIO 15 SPI MOSI
+    7  SPI CLK  27 Analog                34 GPIO 14 SPI MISO
+    8  GPIO     28 Analog                33 GPIO 13 GPIO / SPI CS
+    9  I2C SCL  29                       32 GPIO 12 GPIO / SPI CS
+    10 I2C SDA  30                       31 GPIO 11 GPIO
+
+    Additional information about the BoosterPack pinout can be found at
+    http://processors.wiki.ti.com/index.php/BYOB or in the documentation for
+    a TI LaunchPad development kit,
+
+compatible: "ti,boosterpack-header"
+
+include: [gpio-nexus.yaml, base.yaml]

@@ -1,0 +1,9 @@
+# Copyright (c) 2023, TOKITA Hiroshi
+# Copyright (c) 2023, Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico PIO device
+
+compatible: "raspberrypi,pico-pio-device"
+
+include: pinctrl-device.yaml

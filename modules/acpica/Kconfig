@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ACPI driver support"
+
+config ACPI
+	bool
+
+if ACPI
+
+config ACPI_DSDT_SUPPORT
+	bool  "Build source code for DSDT ACPICA support"
+	default y if PCIE
+	help
+	  Build source code for DSDT support
+
+endif #ACPI
+
+endmenu

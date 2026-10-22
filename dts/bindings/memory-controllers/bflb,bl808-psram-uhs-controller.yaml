@@ -1,0 +1,19 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: BL808 UHS PSRAM Controller
+
+description: BL808 UHS PSRAM controller (MM subsystem)
+
+compatible: "bflb,bl808-psram-uhs-controller"
+
+include: base.yaml
+
+properties:
+  clocks:
+    required: true
+    description: |
+      UHS PLL clock that drives the PSRAM PHY (BL808_CLKID_CLK_UHSPLL). Its
+      rate is the PSRAM PCK frequency; the driver reads it at runtime and
+      derives the PHY/timing/refresh/calibration parameters from it. Set the
+      frequency on the clk_uhspll node's clock-frequency (supported 1800-2100 MHz).

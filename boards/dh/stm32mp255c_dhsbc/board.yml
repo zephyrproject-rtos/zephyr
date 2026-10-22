@@ -1,0 +1,6 @@
+board:
+  name: stm32mp255c_dhsbc
+  full_name: DHSBC STM32MP255C
+  vendor: dh
+  socs:
+    - name: stm32mp255cxx

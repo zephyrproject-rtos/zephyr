@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH Advanced-control Timer (ADTM) for PWM
+
+compatible: "wch,adtm-pwm"
+
+include: [base.yaml, pwm-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

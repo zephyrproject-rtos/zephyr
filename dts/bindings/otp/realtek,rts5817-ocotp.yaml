@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RTS5817 On-Chip OTP (One-Time Programmable) controller.
+
+compatible: "realtek,rts5817-ocotp"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  resets:
+    required: true
+
+  otp-size:
+    type: int
+    required: true
+    description: OTP Memory size in bytes
+
+  syscon-ldo:
+    type: phandle
+    required: true
+    description: |
+      phandle to dlink_ldo node.

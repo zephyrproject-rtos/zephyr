@@ -1,0 +1,260 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/mspm0/l/mspm0l1117.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <dt-bindings/pinctrl/mspm0-pinctrl.h>
+#include <dt-bindings/adc/adc.h>
+
+/ {
+	model = "BeagleBoard.org BeagleConnect Zepto";
+	compatible = "beagle,beagleconnect_zepto_mspm0l1117";
+
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		watchdog0 = &wdt0;
+		counter = &counterg0;
+		rtc = &rtc;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,entropy = &trng;
+		zephyr,rtc = &rtc;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 3>;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioa 18 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&flash0 {
+	status = "okay";
+};
+
+/* TODO: Remove these pinmux from here once upstream merges
+ * https://github.com/zephyrproject-rtos/hal_ti/pull/80
+ */
+&pinctrl {
+	status = "okay";
+
+	uart0_tx: uart0_tx {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	uart0_rx: uart0_rx {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+	};
+
+	analog_pa12: analog_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa14: analog_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa16: analog_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa17: analog_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa18: analog_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa22: analog_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa24: analog_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa25: analog_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa26: analog_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+
+	analog_pa27: analog_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_ANALOG)>;
+		input-enable;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_tx &uart0_rx>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&timg0 {
+	status = "okay";
+};
+
+&counterg0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+/* zephyr,acquisition-time should be overwritten by user based on their needs in overlays */
+&adc0 {
+	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+	ti,clk-divider = <1>;
+	ti,clk-range = <5>;
+	max-result-reg = <12>;
+	pinctrl-0 = <&analog_pa24>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	auto-powerdown;
+
+	/* PA27 */
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA26 */
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA25 */
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA24 (AN) */
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA18 (BSL) */
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA22 (RST) */
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA12 */
+	channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA14 */
+	channel@12 {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA16 */
+	channel@13 {
+		reg = <13>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* PA17 */
+	channel@14 {
+		reg = <14>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

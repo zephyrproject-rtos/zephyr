@@ -1,0 +1,16 @@
+identifier: kincony_kc868_a8/esp32/procpu
+name: KINCONY-KC868-A8 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - nvs
+  - counter
+  - entropy
+  - netif:eth
+vendor: kincony

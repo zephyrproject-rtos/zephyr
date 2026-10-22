@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Van Petrosyan
+# SPDX-License-Identifier: Apache-2.0
+
+config PCA953X
+	bool "PCA953x LED driver"
+	default y
+	depends on \
+		DT_HAS_NXP_PCA9530_ENABLED || \
+		DT_HAS_NXP_PCA9531_ENABLED || \
+		DT_HAS_NXP_PCA9532_ENABLED || \
+		DT_HAS_NXP_PCA9533_ENABLED
+	select I2C
+	help
+	  Enable driver support for the NXP PCA953x LED dimmer series.

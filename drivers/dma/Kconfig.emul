@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_EMUL
+	bool "Emulated DMA driver [EXPERIMENTAL]"
+	depends on DT_HAS_ZEPHYR_DMA_EMUL_ENABLED
+	select EXPERIMENTAL
+	help
+	  Emulated DMA Driver

@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon peripheral clock group
+
+compatible: "infineon,peri-clk"
+
+include: [base.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: Source CLK_HF feeding this peripheral group
+
+  ifx,peri-clk-inst:
+    type: int
+    required: true
+    description: PERI group and instance selector, IFX_PERI_GRP_INST_SEL(group, instance)

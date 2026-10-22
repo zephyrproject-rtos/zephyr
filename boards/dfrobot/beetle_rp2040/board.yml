@@ -1,0 +1,6 @@
+board:
+  name: beetle_rp2040
+  full_name: DFRobot Beetle RP2040
+  vendor: dfrobot
+  socs:
+  - name: rp2040

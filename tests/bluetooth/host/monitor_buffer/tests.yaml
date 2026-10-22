@@ -1,0 +1,8 @@
+common:
+  tags:
+    - bluetooth
+    - host
+    - ring_buffer
+tests:
+  bluetooth.host.monitor_buffer:
+    type: unit

@@ -1,0 +1,5 @@
+description: NXP MCXW Flash IFR Node
+
+compatible: "nxp,mcxw-ifr"
+
+include: [base.yaml, soc-nv-flash.yaml, fixed-layout.yaml]

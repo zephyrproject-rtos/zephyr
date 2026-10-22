@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Mbed TLS.
+
+rules:
+  MBEDTLS_DEBUG_C:
+    value: n
+    rationale: |
+      The Mbed TLS debug functions trace the TLS and X.509 code; at the information and verbose
+      levels they emit negotiated parameters, certificate contents and handshake secrets to anyone
+      who can read the debug output.
+    references: [CWE-532]
+
+  MBEDTLS_MEMORY_DEBUG:
+    value: n
+    profiles: [strict]
+    rationale: |
+      The Mbed TLS buffer allocator prints diagnostics on allocation failures and heap corruption,
+      including block headers that disclose the addresses and sizes of the buffers holding keys and
+      session state.
+    references: [CWE-200]
+
+  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG:
+    value: n
+    rationale: |
+      When the entropy driver is missing or fails, the PSA external RNG falls back to
+      sys_rand_get(), a non-cryptographic generator, instead of failing the request. Keys, nonces
+      and signatures generated through PSA then become predictable.
+    references: [CWE-338]
+
+  MBEDTLS_SSL_EARLY_DATA:
+    value: n
+    rationale: |
+      TLS 1.3 0-RTT early data is accepted before the handshake completes and has no replay
+      protection, so an attacker who captures it can resend the request it carries on a new
+      connection.
+    references: [CWE-294]
+
+  MBEDTLS_SSL_ENCRYPT_THEN_MAC:
+    value: y
+    rationale: |
+      The Encrypt-then-MAC extension (RFC 7366) authenticates TLS 1.2 CBC records before
+      decrypting them, removing the padding oracle that Lucky Thirteen and related attacks exploit
+      in the MAC-then-encrypt construction.
+    references: [CWE-203]
+
+  MBEDTLS_SSL_EXTENDED_MASTER_SECRET:
+    value: y
+    rationale: |
+      The Extended Master Secret extension (RFC 7627) binds the TLS 1.2 master secret to the
+      handshake transcript, preventing a man-in-the-middle from giving two connections the same
+      secrets to mount a triple-handshake attack.
+    references: [CWE-300]
+
+  PSA_CRYPTO_ENABLE_ALL:
+    value: n
+    rationale: |
+      Turns on every PSA algorithm and key type, including MD5, SHA-1 and unpadded ECB, making
+      these weak primitives available to any caller of the PSA crypto API.
+    references: [CWE-327]

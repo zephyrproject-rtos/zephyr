@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: QST QMI8658A 6-axis IMU
+
+compatible: "qst,qmi8658a"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Data-ready interrupt line connected to the sensor INT1 or INT2 pin.
+      Configure flags to match the signal level presented to the MCU.
+
+  int-pin:
+    type: int
+    default: 2
+    description: |
+      Sensor interrupt pin to use for data-ready: 1 for INT1, 2 for INT2.
+      The default is 2 because QMI8658A DRDY is routed to INT2 in the standard
+      configuration described by the datasheet interrupt mapping. Set this to 1
+      only when using a configuration that explicitly routes data-ready to INT1.
+    enum:
+      - 1
+      - 2
+
+  accel-fs:
+    type: int
+    default: 4
+    description: |
+      Accelerometer full-scale range in g.
+      The default is a general-purpose range that balances resolution with
+      headroom for typical handheld and board-level motion. Use 2 for highest
+      sensitivity at low acceleration, or 8/16 when higher acceleration is
+      expected.
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
+
+  gyro-fs:
+    type: int
+    default: 512
+    description: |
+      Gyroscope full-scale range in degrees per second (dps).
+      The default provides a practical balance between sensitivity and headroom
+      for common motion-tracking use. Use lower ranges for finer low-rate
+      motion, or higher ranges for faster rotational movement.
+    enum:
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+      - 2048
+
+  accel-odr:
+    type: int
+    default: 896
+    description: |
+      Requested accelerometer output data rate in Hz.
+      The default targets low-latency 6-DoF streaming and is paired with the
+      gyroscope default to keep both sensors at the same nominal rate. Use
+      lower values to reduce power and bandwidth, or higher values when maximum
+      update rate is needed.
+
+  gyro-odr:
+    type: int
+    default: 896
+    description: |
+      Requested gyroscope output data rate in Hz.
+      The default matches the accelerometer default to keep sampling rates
+      aligned for fused 6-DoF data. Use lower values to reduce power and
+      bandwidth, or higher values when faster gyro updates are required.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio.h>
+
+    qmi8658a@6b {
+      compatible = "qst,qmi8658a";
+      reg = <0x6b>;
+      accel-fs = <4>;
+      gyro-fs = <512>;
+      accel-odr = <896>;
+      gyro-odr = <896>;
+      int-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+      int-pin = <2>;
+    };

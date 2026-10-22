@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Måns Ansgariusson <mansgariusson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  benchmark.memory_allocators:
+    tags:
+      - benchmark
+    min_ram: 32
+    timeout: 120
+    integration_platforms:
+      - qemu_x86
+    arch_exclude:
+      - posix

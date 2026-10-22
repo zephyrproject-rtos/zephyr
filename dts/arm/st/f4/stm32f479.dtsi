@@ -1,0 +1,35 @@
+/*
+ * Copyright (C) 2025 Christopher Cichiwskyj
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f469.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32f479", "st,stm32f4", "simple-bus";
+
+		cryp: crypto@50060000 {
+			compatible = "st,stm32-cryp";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+
+		hash: crypto@50060400 {
+			compatible = "st,stm32-hash";
+			reg = <0x50060400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			resets = <&rctl STM32_RESET(AHB2, 5)>;
+			/* Do not provide interrupts property since the interrupt is shared with
+			 * the RNG device and the implementation currently does not well handle
+			 * that.
+			 *
+			 * interrupts = <80 0>;
+			 */
+			status = "disabled";
+		};
+	};
+};

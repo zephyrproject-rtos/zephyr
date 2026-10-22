@@ -1,0 +1,9 @@
+common:
+  build_only: true
+  extra_configs:
+    - CONFIG_BUILD_ONLY_NO_BLOBS=y
+  platform_allow:
+    - rtl8721f_evb
+    - rtl872xda_evb
+tests:
+  drivers.wifi.ameba: {}

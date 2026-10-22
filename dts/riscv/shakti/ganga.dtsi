@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2026 RISE Lab, IIT Madras
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "shakti,ganga";
+	model = "Shakti Ganga";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <156250>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			reg = <0>;
+			compatible = "riscv";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
+			mmu-type = "riscv,sv39";
+			clock-frequency = <DT_FREQ_M(40)>; /* ganga on Nexys Video runs at 40 MHz */
+
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	sram0: memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x10000000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "shakti,ganga-soc", "simple-bus";
+		ranges;
+
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic 3 &hlic 7>;
+			interrupt-names = "soft0", "timer0";
+			reg = <0x2000000 0x10000>;
+		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&hlic 7>;
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+		};
+
+		plic: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			#interrupt-cells = <2>;
+			#address-cells = <1>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			reg = <0xc000000 0x4000000>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <36>;
+		};
+
+		uart0: serial@11300 {
+			compatible = "shakti,uart";
+			reg = <0x11300 0x100>;
+			clock-frequency = <DT_FREQ_M(40)>;
+			current-speed = <19200>;
+			interrupt-parent = <&plic>;
+			interrupts = <29 1>;
+			status = "disabled";
+		};
+
+		uart1: serial@11400 {
+			compatible = "shakti,uart";
+			reg = <0x11400 0x100>;
+			clock-frequency = <DT_FREQ_M(40)>;
+			current-speed = <19200>;
+			interrupt-parent = <&plic>;
+			interrupts = <30 1>;
+			status = "disabled";
+		};
+	};
+};

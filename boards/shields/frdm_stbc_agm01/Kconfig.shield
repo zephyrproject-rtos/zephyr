@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Ryan Holleran
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_FRDM_STBC_AGM01
+	def_bool $(shields_list_contains,frdm_stbc_agm01)

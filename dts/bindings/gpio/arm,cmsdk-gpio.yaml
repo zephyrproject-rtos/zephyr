@@ -1,0 +1,19 @@
+description: ARM CMSDK GPIO
+
+compatible: "arm,cmsdk-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

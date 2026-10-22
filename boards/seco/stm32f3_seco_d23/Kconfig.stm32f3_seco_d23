@@ -1,0 +1,5 @@
+# Copyright (c) 2022, SECO Spa
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F3_SECO_D23
+	select SOC_STM32F302XC

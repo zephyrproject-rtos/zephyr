@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The board already declares both potentiometer channels, so this overlay
+ * only has to nominate them for the test.
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 12>, <&adc0 16>;
+	};
+};

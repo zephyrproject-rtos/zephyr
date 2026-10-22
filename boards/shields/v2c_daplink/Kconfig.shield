@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_V2C_DAPLINK
+	def_bool $(shields_list_contains,v2c_daplink)
+
+config SHIELD_V2C_DAPLINK_CFG
+	def_bool $(shields_list_contains,v2c_daplink_cfg)

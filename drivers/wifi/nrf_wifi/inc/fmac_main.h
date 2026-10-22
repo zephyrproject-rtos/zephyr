@@ -1,0 +1,264 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @brief Header containing FMAC interface specific declarations for the
+ * Zephyr OS layer of the Wi-Fi driver.
+ */
+
+#ifndef __ZEPHYR_FMAC_MAIN_H__
+#define __ZEPHYR_FMAC_MAIN_H__
+
+#include <stdio.h>
+
+#include <zephyr/version.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_if.h>
+#ifndef CONFIG_NRF70_RADIO_TEST
+#include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/ethernet.h>
+#ifdef CONFIG_NETWORKING
+#include <net_if.h>
+#endif /* CONFIG_NETWORKING */
+#ifdef CONFIG_NRF70_STA_MODE
+#include <drivers/driver_zephyr.h>
+#endif /* CONFIG_NRF70_STA_MODE */
+#include <system/fmac_api.h>
+#include <common/fmac_util.h>
+#else
+#include <radio_test/fmac_api.h>
+#endif /* !CONFIG_NRF70_RADIO_TEST */
+#include <host_rpu_umac_if.h>
+
+#define NRF70_DRIVER_VERSION "1."KERNEL_VERSION_STRING
+
+/* Calculate compile-time maximum for vendor stats */
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+#define MAX_VENDOR_STATS ((sizeof(struct rpu_sys_fw_stats) / sizeof(uint32_t)) + 1)
+#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
+
+#ifndef CONFIG_NRF70_OFFLOADED_RAW_TX
+#ifndef CONFIG_NRF70_RADIO_TEST
+
+#ifdef CONFIG_NRF70_DATA_TX
+#define NRF70_OPER_STATE_TRACKED 1
+#endif
+
+struct nrf_wifi_vif_ctx_zep {
+	const struct device *zep_dev_ctx;
+	struct net_if *zep_net_if_ctx;
+	void *supp_drv_if_ctx;
+	void *rpu_ctx_zep;
+	unsigned char vif_idx;
+	struct k_mutex vif_lock;
+
+	scan_result_cb_t disp_scan_cb;
+	bool scan_in_progress;
+	int scan_type;
+	uint16_t max_bss_cnt;
+	unsigned int scan_res_cnt;
+	struct k_work_delayable scan_timeout_work;
+	struct k_work disp_scan_res_work;
+
+	struct net_eth_addr mac_addr;
+	int if_type;
+	char ifname[16];
+	enum nrf_wifi_fmac_if_op_state if_op_state;
+	bool set_if_event_received;
+	int set_if_status;
+#ifdef CONFIG_NET_STATISTICS_ETHERNET
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+	struct net_stats_eth_vendor eth_stats_vendor_data[MAX_VENDOR_STATS];
+	char vendor_key_strings[MAX_VENDOR_STATS][16];
+#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
+	struct net_stats_eth eth_stats;
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
+#ifdef NRF70_OPER_STATE_TRACKED
+	bool authorized;
+	enum nrf_wifi_fmac_if_carr_state if_carr_state;
+	struct k_work nrf_wifi_net_iface_work;
+#endif /* NRF70_OPER_STATE_TRACKED */
+#ifdef CONFIG_NRF70_STA_MODE
+	unsigned int assoc_freq;
+	struct wpa_signal_info *signal_info;
+	struct wpa_conn_info *conn_info;
+	struct zep_wpa_supp_dev_callbk_fns supp_callbk_fns;
+	unsigned char twt_flows_map;
+	unsigned char twt_flow_in_progress_map;
+	struct wifi_ps_config *ps_info;
+	bool ps_config_info_evnt;
+	bool cookie_resp_received;
+	unsigned long rssi_record_timestamp_us;
+	signed short rssi;
+#endif /* CONFIG_NRF70_STA_MODE */
+#ifdef CONFIG_NRF70_AP_MODE
+	int inactive_time_sec;
+#endif /* CONFIG_NRF70_AP_MODE */
+#ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
+	struct k_work nrf_wifi_rpu_recovery_work;
+	struct k_work_delayable nrf_wifi_rpu_recovery_bringup_work;
+#endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
+	int rts_threshold_value;
+	unsigned short bss_max_idle_period;
+};
+
+struct nrf_wifi_vif_ctx_map {
+	const char *ifname;
+	struct nrf_wifi_vif_ctx_zep *vif_ctx;
+};
+#endif /* !CONFIG_NRF70_RADIO_TEST */
+
+struct nrf_wifi_ctx_zep {
+	void *drv_priv_zep;
+	void *rpu_ctx;
+#ifdef CONFIG_NRF70_RADIO_TEST
+	struct rpu_conf_params conf_params;
+	bool rf_test_run;
+	unsigned char rf_test;
+#else /* CONFIG_NRF70_RADIO_TEST */
+	struct nrf_wifi_vif_ctx_zep vif_ctx_zep[MAX_NUM_VIFS];
+#ifdef CONFIG_NRF70_UTIL
+	struct rpu_conf_params conf_params;
+	unsigned int extended_sleep_sec;
+#endif /* CONFIG_NRF70_UTIL */
+#endif /* CONFIG_NRF70_RADIO_TEST */
+	unsigned char *extended_capa, *extended_capa_mask;
+	unsigned int extended_capa_len;
+	struct k_mutex rpu_lock;
+#ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
+	bool rpu_recovery_in_progress;
+	unsigned long last_rpu_recovery_time_ms;
+	unsigned int rpu_recovery_retries;
+	int rpu_recovery_success;
+	int rpu_recovery_failure;
+	int wdt_irq_received;
+	int wdt_irq_ignored;
+#endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
+};
+
+#ifndef CONFIG_NRF70_RADIO_TEST
+static inline struct nrf_wifi_fmac_vif_ctx *nrf_wifi_get_fmac_vif_ctx(
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep)
+{
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx;
+
+	if (!vif_ctx_zep) {
+		return NULL;
+	}
+
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
+		return NULL;
+	}
+
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+
+	return sys_dev_ctx ? sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx] : NULL;
+}
+
+static inline bool nrf_wifi_txinjection_active(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep)
+{
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+	struct nrf_wifi_fmac_vif_ctx *fmac_vif_ctx = nrf_wifi_get_fmac_vif_ctx(vif_ctx_zep);
+
+	return fmac_vif_ctx && fmac_vif_ctx->txinjection_mode;
+#else
+	ARG_UNUSED(vif_ctx_zep);
+
+	return false;
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
+}
+
+static inline void nrf_wifi_clear_txinjection(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep)
+{
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+	struct nrf_wifi_fmac_vif_ctx *fmac_vif_ctx = nrf_wifi_get_fmac_vif_ctx(vif_ctx_zep);
+
+	if (fmac_vif_ctx) {
+		fmac_vif_ctx->txinjection_mode = false;
+	}
+#else
+	ARG_UNUSED(vif_ctx_zep);
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
+}
+
+static inline void nrf_wifi_clear_session_state(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep)
+{
+	nrf_wifi_clear_txinjection(vif_ctx_zep);
+#ifdef NRF70_OPER_STATE_TRACKED
+	vif_ctx_zep->authorized = false;
+	vif_ctx_zep->if_carr_state = NRF_WIFI_FMAC_IF_CARR_STATE_OFF;
+#endif /* NRF70_OPER_STATE_TRACKED */
+}
+
+static inline void nrf_wifi_refresh_oper_state(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep)
+{
+#ifdef NRF70_OPER_STATE_TRACKED
+	k_work_submit(&vif_ctx_zep->nrf_wifi_net_iface_work);
+#else
+	ARG_UNUSED(vif_ctx_zep);
+#endif /* NRF70_OPER_STATE_TRACKED */
+}
+
+#ifdef NRF70_OPER_STATE_TRACKED
+/* Single decision point for the dormant gate. Callers must hold vif_lock: this
+ * reaches the FMAC device context through rpu_ctx, which is freed under that
+ * lock.
+ */
+static inline bool nrf_wifi_iface_operational(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep)
+{
+	if (vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) {
+		return false;
+	}
+
+	if (vif_ctx_zep->if_type != NRF_WIFI_IFTYPE_STATION) {
+		return true;
+	}
+
+	return vif_ctx_zep->authorized || nrf_wifi_txinjection_active(vif_ctx_zep);
+}
+#endif /* NRF70_OPER_STATE_TRACKED */
+#endif /* !CONFIG_NRF70_RADIO_TEST */
+
+struct nrf_wifi_drv_priv_zep {
+	struct nrf_wifi_fmac_priv *fmac_priv;
+	/* TODO: Replace with a linked list to handle unlimited RPUs */
+	struct nrf_wifi_ctx_zep rpu_ctx_zep;
+};
+
+extern struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
+
+void nrf_wifi_scan_timeout_work(struct k_work *work);
+
+void configure_tx_pwr_settings(struct nrf_wifi_tx_pwr_ctrl_params *tx_pwr_ctrl_params,
+				struct nrf_wifi_tx_pwr_ceil_params *tx_pwr_ceil_params);
+void configure_board_dep_params(struct nrf_wifi_board_params *board_params);
+void set_tx_pwr_ceil_default(struct nrf_wifi_tx_pwr_ceil_params *pwr_ceil_params);
+const char *nrf_wifi_get_drv_version(void);
+char *nrf_wifi_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
+				   char *buf, int buflen);
+enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
+enum nrf_wifi_status nrf_wifi_fmac_dev_rem_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
+struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx(struct net_if *iface);
+#ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
+void nrf_wifi_rpu_recovery_cb(void *vif_ctx,
+		void *event_data,
+		unsigned int event_len);
+#endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
+#endif /* !CONFIG_NRF70_OFFLOADED_RAW_TX */
+#ifdef CONFIG_BUILD_ONLY_NO_BLOBS
+inline enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
+{
+	(void)rpu_ctx;
+
+	return NRF_WIFI_STATUS_SUCCESS;
+}
+#else
+enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx);
+#endif /* CONFIG_BUILD_ONLY_NO_BLOBS */
+#endif /* __ZEPHYR_FMAC_MAIN_H__ */

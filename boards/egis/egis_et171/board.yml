@@ -1,0 +1,6 @@
+board:
+  name: egis_et171
+  full_name: ET171 Development Board
+  vendor: egis
+  socs:
+    - name: et171

@@ -1,0 +1,6 @@
+board:
+  name: weact_stm32h562_core
+  full_name: STM32H562 Core Board
+  vendor: weact
+  socs:
+    - name: stm32h562xx

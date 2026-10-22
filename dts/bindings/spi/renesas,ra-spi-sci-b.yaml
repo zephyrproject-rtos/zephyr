@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: Renesas RA SCI B SPI
+
+description: Renesas RA SCI B SPI controller
+
+compatible: "renesas,ra-spi-sci-b"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  tx-dtc:
+    type: boolean
+    description: |
+      Use DTC (Data Transfer Controller) for TX transfers.
+
+  rx-dtc:
+    type: boolean
+    description: |
+      Use DTC (Data Transfer Controller) for RX transfers.
+
+  dma-names:
+    enum: ["tx", "rx"]
+    description: |
+      Names of the DMA channels used for TX and RX transfers.

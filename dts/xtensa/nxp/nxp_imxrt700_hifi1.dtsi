@@ -1,0 +1,41 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			clock-frequency = <DT_FREQ_M(250)>;
+			reg = <0>;
+		};
+	};
+
+	itcm0: memory@580000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x580000 DT_SIZE_K(32)>;
+	};
+
+	itcm1: memory@680000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x680000 DT_SIZE_K(512)>;
+	};
+
+	dtcm: memory@20700000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20700000 DT_SIZE_K(512)>;
+	};
+};

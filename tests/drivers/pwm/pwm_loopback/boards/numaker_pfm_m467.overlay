@@ -1,0 +1,28 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	epwm1_default: epwm1_default {
+		group0 {
+			/* EVB's D5, D3 --> PC12, PC10 */
+			pinmux = <PC12MFP_EPWM1_CH0>,
+				 <PC10MFP_EPWM1_CH2>;
+		};
+	};
+};
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&epwm1 0 0 PWM_POLARITY_NORMAL>,
+		       <&epwm1 2 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&epwm1 {
+	status = "okay";
+	prescaler = <19>;
+	pinctrl-0 = <&epwm1_default>;
+	pinctrl-names = "default";
+};

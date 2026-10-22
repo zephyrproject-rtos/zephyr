@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 James Bennion-Pedley
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v305/ch32v305.dtsi>
+
+&gpioa {
+	gpio-reserved-ranges = <0 12>;
+};
+
+&gpiob {
+	gpio-reserved-ranges = <0 5>;
+};
+
+&gpioc {
+	gpio-reserved-ranges = <6 7>;
+};
+
+&gpiod {
+	gpio-reserved-ranges = <0 16>;
+};
+
+&gpioe {
+	gpio-reserved-ranges = <0 16>;
+};

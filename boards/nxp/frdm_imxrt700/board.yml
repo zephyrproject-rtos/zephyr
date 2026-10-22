@@ -1,0 +1,6 @@
+board:
+  name: frdm_imxrt700
+  full_name: FRDM-IMXRT700
+  vendor: nxp
+  socs:
+  - name: mimxrt798s

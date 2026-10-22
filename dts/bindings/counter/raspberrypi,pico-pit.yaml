@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+title: Raspberry Pi Pico PIT
+
+description: |
+  Provides interrupt management and clock information to raspberrypi,pico-pit-channel devices.
+  They need to be child nodes of this node.
+
+compatible: "raspberrypi,pico-pit"
+
+include: base.yaml
+
+properties:
+  clocks:
+    required: true
+
+  interrupts:
+    required: true

@@ -1,0 +1,19 @@
+tests:
+  bluetooth.host.misc.hfc_multilink:
+    tags:
+      - bluetooth
+    depends_on: bsim
+    build: false
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpuapp
+    harness: bsim
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts
+    required_applications:
+      - application: bluetooth.host.misc.hfc_multilink.dut
+        path: dut
+      - application: bluetooth.host.misc.hfc_multilink.tester
+        path: tester

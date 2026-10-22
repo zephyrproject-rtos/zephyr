@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  nRF SoC battery voltage measurement via the SAADC (Zephyr ADC driver).
+  Reports SENSOR_CHAN_VOLTAGE in volts (sensor_value).
+
+compatible: "nordic,nrf-vbat"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      SAADC channel used for internal VBAT.
+
+  invert-voltage:
+    type: boolean
+    description: |
+      If true, the voltage value is inverted
+      i.e. for use when positive pin used for ground.
+
+  divider-ratio:
+    type: array
+    default: [1, 1]
+    description: |
+      Ratio between the VBAT voltage and the voltage presented to the SAADC,
+      expressed as two cells containing the numerator and denominator. For
+      example, <11 2> represents a ratio of 5.5.
+      The default value is set to <1 1> for input voltages that have not been divided.

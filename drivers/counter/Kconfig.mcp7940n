@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Laird Connectivity
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config COUNTER_MICROCHIP_MCP7940N
+	bool "Microchip MCP7940N RTC"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP7940N_ENABLED
+	select I2C
+	help
+	  Enable RTC driver based on Microchip MCP7940N I2C device.

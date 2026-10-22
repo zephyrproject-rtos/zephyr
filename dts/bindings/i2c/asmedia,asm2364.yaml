@@ -1,0 +1,16 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: ASMedia ASM2364 USB-to-PCIe bridge controller
+
+compatible: "asmedia,asm2364"
+
+include: base.yaml
+
+on-bus: i2c
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt GPIO for read requests

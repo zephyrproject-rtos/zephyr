@@ -1,0 +1,34 @@
+#
+# Copyright 2021 Grinn
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  current-lsb-microamps:
+    type: int
+    required: true
+    description: |
+      This value should be selected so that measurement resolution is
+      maximized, that is:
+
+        current-lsb(A) = maximum expected current(A) / 2^15
+
+      (sensor has 15 bits). For example, if maximum expected current is 15A:
+
+        current-lsb(A) = 15A / 2^15 ~= 457uA
+
+      Rounded values may be used for convenience, e.g. 500uA/LSB or 1mA/LSB
+      while keeping a good measurement resolution. The units are in uA/LSB
+      so that low maximum currents can be measured with enough resolution.
+
+  rshunt-micro-ohms:
+    type: int
+    required: true
+    description: Shunt resistor value in microOhms
+
+  alert-gpios:
+    type: phandle-array
+    description: Alert pin

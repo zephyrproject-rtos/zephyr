@@ -1,0 +1,6 @@
+board:
+  name: nandeval_h743zi
+  full_name: NAND Flash Evaluator
+  vendor: segger
+  socs:
+    - name: stm32h743xx

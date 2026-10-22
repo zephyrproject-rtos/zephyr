@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u0/stm32u073.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32u083", "st,stm32u0", "simple-bus";
+
+		lpuart3: serial@40008c00 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x40008c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
+			resets = <&rctl STM32_RESET(APB1L, 12)>;
+			interrupts = <30 0>;
+			status = "disabled";
+		};
+
+		aes: crypto@40026000 {
+			compatible = "st,stm32-aes";
+			reg = <0x40026000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 16)>;
+			resets = <&rctl STM32_RESET(AHB1, 16)>;
+			/* Interrupt is shared with RNG but driver does not yet support it
+			 * interrupts = <31 0>;
+			 */
+			status = "disabled";
+		};
+	};
+};

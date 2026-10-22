@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2026 Liu Changjie
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32h417/ch32h417_v5f.dtsi>
+#include "ch32h417evt-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "WCH CH32H417EVT";
+	compatible = "wch,ch32h417";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart8;
+		zephyr,shell-uart = &usart8;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led_0: led0 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+			label = "User LED PB1";
+		};
+	};
+
+	aliases {
+		led0 = &led_0;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&usart8 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart8_default>;
+	pinctrl-names = "default";
+};

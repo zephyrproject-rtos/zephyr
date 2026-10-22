@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_NXP_SPC_BANDGAP
+	bool "NXP SPC bandgap buffer driver"
+	default y
+	depends on DT_HAS_NXP_SPC_BANDGAP_BUFFER_ENABLED
+	help
+	  Enable the NXP SPC buffered bandgap output driver.
+
+config REGULATOR_NXP_SPC_BANDGAP_INIT_PRIORITY
+	int "NXP SPC bandgap buffer driver init priority"
+	default 45
+	depends on REGULATOR_NXP_SPC_BANDGAP
+	help
+	  Init priority for the NXP SPC buffered bandgap output.

@@ -1,0 +1,6 @@
+board:
+  name: crd40l26
+  full_name: CRD40L26-POC-C
+  vendor: cirrus
+  socs:
+    - name: stm32f401xd

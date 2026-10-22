@@ -1,0 +1,18 @@
+tests:
+  bluetooth.host.l2cap.ecred:
+    tags:
+      - bluetooth
+    depends_on: bsim
+    build: false
+    platform_allow:
+      - nrf52_bsim/native
+    harness: bsim
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts
+    required_applications:
+      - application: bluetooth.host.l2cap.ecred.dut
+        path: dut
+      - application: bluetooth.host.l2cap.ecred.peer
+        path: peer

@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config PULSE_IO_LOOPBACK
+	bool "Software loopback Pulse IO backend"
+	default y
+	depends on DT_HAS_ZEPHYR_PULSE_IO_LOOPBACK_ENABLED
+	help
+	  Enable the software loopback Pulse IO backend. It loops
+	  transmitted symbols back on receive so the subsystem API can
+	  be tested without hardware.

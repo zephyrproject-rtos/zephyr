@@ -1,0 +1,25 @@
+sample:
+  name: pulse_io byte transfer
+  description: Byte transfer over a pulse_io controller using the codec helpers
+common:
+  tags:
+    - drivers
+    - pulse_io
+  depends_on: pulse_io
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "sent 0x00 received 0x00"
+      - "sent 0x01 received 0x01"
+      - "sent 0x02 received 0x02"
+      - "sent 0x03 received 0x03"
+      - "sent 0x04 received 0x04"
+      - "byte transfer done"
+tests:
+  sample.drivers.pulse_io.byte_transfer:
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu

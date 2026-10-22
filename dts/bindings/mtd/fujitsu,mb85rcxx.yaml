@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fujitsu MB85RCXX series I2C FRAM
+
+compatible: "fujitsu,mb85rcxx"
+
+include: ["eeprom-base.yaml", i2c-device.yaml]
+
+properties:
+  size:
+    required: true
+    description: Total FRAM size in bytes.
+
+  pagesize:
+    type: int
+    description: |
+      Size of the single FRAM module in bytes.
+      If not provided it is assumed to be the same as total size.
+
+  address-width:
+    type: int
+    required: true
+    description: FRAM address width in bits.
+
+  wp-gpios:
+    type: phandle-array
+    description: GPIO to which the write-protect pin of the chip is connected.

@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Dipak Shetty
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_RTC_18_CLICK
+	def_bool $(shields_list_contains,mikroe_rtc_18_click)

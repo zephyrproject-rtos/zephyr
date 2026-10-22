@@ -1,0 +1,60 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	ftm0_default: ftm0_default {
+		group0 {
+			pinmux = <FTM0_CH0_PTD15>,
+				 <FTM0_CH1_PTD16>,
+				 <FTM0_CH4_PTB16>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	ftm3_default: ftm3_default {
+		group0 {
+			pinmux = <FTM3_CH5_PTC11>,
+				 <FTM3_CH0_PTB8>,
+				 <FTM3_CH1_PTB9>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
+/* To test this sample, connect
+ * PTC11(J1-12) ---> PTD15(J1-14)
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&ftm3 5 0 PWM_POLARITY_NORMAL>, /* PTC11 J1 pin 12 out*/
+		       <&ftm0 0 0 PWM_POLARITY_NORMAL>; /* PTD15 J1 pin 14 in */
+	};
+};
+
+&ftm0 {
+	status = "okay";
+	compatible = "nxp,ftm-pwm";
+	clock-source = "external";
+	prescaler = <32>;
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm0_default>;
+	pinctrl-names = "default";
+};
+
+&ftm3 {
+	status = "okay";
+	compatible = "nxp,ftm-pwm";
+	clock-source = "external";
+	prescaler = <128>;
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm3_default>;
+	pinctrl-names = "default";
+};

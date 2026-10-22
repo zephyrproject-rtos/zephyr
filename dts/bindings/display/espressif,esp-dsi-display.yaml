@@ -1,0 +1,34 @@
+#
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Espressif ESP32 MIPI DSI DPI scanout controller.
+
+  The DSI bridge streams a framebuffer to the DSI host DPI port, so it is
+  the display controller for a video-mode panel attached to that host. It
+  owns the framebuffers and is the node "zephyr,display" should point at,
+  while the panel controller only performs its own initialization.
+
+  This is a role of the MIPI DSI peripheral rather than a separate block,
+  so the node is a child of the DSI host and carries no registers of its
+  own. It is therefore the one child of that bus without a unit address,
+  which keeps the addressed range free for the panels attached to the bus.
+
+compatible: "espressif,esp-dsi-display"
+
+include: [lcd-controller.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  dma-channel:
+    type: int
+    required: true
+    min: 0
+    max: 3
+    description: |
+      2D-DMA channel that streams the framebuffer to the DSI bridge.

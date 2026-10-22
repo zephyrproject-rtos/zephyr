@@ -1,0 +1,99 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/nxp_mcxw7x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	soc {
+		fmu_0: memory-controller@40017000 {
+			/*
+			 * Map both physical internal flash and Flash
+			 * Logical Window (FLW). FLW is used for address
+			 * translation, the main core image should link
+			 * to FLW. Physical flash should be used only
+			 * for storage.
+			 */
+			ranges = <0x0 0x00000000 0x180000>, /* physical flash */
+				 <0x800000 0x00800000 0x128000>; /* FLW */
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "nxp,msf1";
+			reg = <0x40017000 0x30>;
+			interrupts = <27 0>;
+			status = "disabled";
+		};
+
+		stcm: sram@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(192)>;
+			/*
+			 * Map both secure and non-secure address ranges
+			 * since the shared stcm must be referenced with
+			 * non-secure address range.
+			 */
+			ranges = <0x0 0x20000000 0x28e00>, /* 128 K + 35.5K of the third bank*/
+				 <0x2e000 0x2002e000 DT_SIZE_K(8)>; /* Last 8K of the third bank */
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			stcm0: system_memory@0 {
+				/* Use secure address range */
+				reg = <0x0 0x28e00>;
+				compatible = "mmio-sram";
+			};
+		};
+
+		peripheral: peripheral@40000000 {
+			reg = <0x40000000 0x10000000>;
+			ranges = <0x0 0x40000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			pbridge0: pbridge@0 {
+				reg = <0x0 0x3e000>;
+				ranges = <0x0 0x0 0x3e000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			pbridge1: pbridge@180000 {
+				reg = <0x180000 0x80000>;
+				ranges = <0x0 0x180000 0x80000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			pbridge2: pbridge@200000 {
+				reg = <0x200000 0x3e000>;
+				ranges = <0x0 0x200000 0x3e000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			fast_peripheral0: fast_peripheral@80000 {
+				reg = <0x80000 0x50000>;
+				ranges = <0x0 0x80000 0x50000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			fast_peripheral1: fast_peripheral@100000 {
+				reg = <0x100000 0xb5000>;
+				ranges = <0x0 0x100000 0xb5000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+	};
+};
+#include "nxp_mcxw70_common.dtsi"

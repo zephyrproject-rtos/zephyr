@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SPI RTIO Loopback Test"
+
+config SAMPLE_DATA_WRITE_SIZE
+	int "Write size from perspective of controller in bytes"
+	default 4
+
+config SAMPLE_DATA_READ_SIZE
+	int "Read size from perspective of controller in bytes"
+	default 32
+
+choice SAMPLE_SPI_MODE
+	prompt "SPI mode used by controller and device"
+	default SAMPLE_SPI_MODE_0
+
+config SAMPLE_SPI_MODE_0
+	bool "Use SPI mode 0 for controller and device"
+
+config SAMPLE_SPI_MODE_1
+	bool "Use SPI mode 1 for controller and device"
+
+config SAMPLE_SPI_MODE_2
+	bool "Use SPI mode 2 for controller and device"
+
+config SAMPLE_SPI_MODE_3
+	bool "Use SPI mode 3 for controller and device"
+
+endchoice # SAMPLE_SPI_MODE
+
+choice SAMPLE_SPI_BIT_ORDER
+	prompt "SPI bit order used by controller and device"
+	default SAMPLE_SPI_BIT_ORDER_MSB
+
+config SAMPLE_SPI_BIT_ORDER_MSB
+	bool "Use MSB SPI bit order for controller and device"
+
+config SAMPLE_SPI_BIT_ORDER_LSB
+	bool "Use LSB SPI bit order for controller and device"
+
+endchoice # SAMPLE_SPI_BIT_ORDER
+
+source "Kconfig.zephyr"

@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rpi_5-pinctrl.dtsi"
+
+&rp1_pinctrl {
+	rp1_uart0_default: rp1_uart0_default {
+		group1 {
+			pinmux = <RP1_UART0_TX_P14>;
+		};
+
+		group2 {
+			pinmux = <RP1_UART0_RX_P15>;
+			input-enable;
+			input-schmitt-enable;
+			bias-pull-up;
+		};
+	};
+};

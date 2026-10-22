@@ -1,0 +1,16 @@
+common:
+  tags:
+    - logging
+  build_only: true
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+
+tests:
+  logging.log_disable:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "All done."

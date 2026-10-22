@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright Lothar Felten <lothar.felten@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_SAMPLE_SNTP_UPSTREAM_ADDRESS
+	string "Upstream SNTP server to synchronize from"
+	default ""
+	help
+	  Name or address of the SNTP server this sample queries in order to
+	  set the system clock before it starts serving time itself. There is
+	  no default, set it according to your network setup. If left empty,
+	  the sample starts the server without setting the clock, and the
+	  server will tell its clients that it is not synchronized.
+
+config NET_SAMPLE_SNTP_UPSTREAM_TIMEOUT_MS
+	int "Duration to wait for the upstream response"
+	default 2000
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"

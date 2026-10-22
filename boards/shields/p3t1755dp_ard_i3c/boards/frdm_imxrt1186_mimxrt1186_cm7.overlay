@@ -1,0 +1,9 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * I3C2 shield enablement is identical for CM33 and CM7 cores.
+ */
+
+#include "frdm_imxrt1186_mimxrt1186_cm33.overlay"

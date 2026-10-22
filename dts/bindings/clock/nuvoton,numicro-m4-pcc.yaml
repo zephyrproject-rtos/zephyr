@@ -1,0 +1,17 @@
+# Copyright (c) 2026, Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NuMicro M4 Peripheral Clock Controller (PCC)
+
+compatible: "nuvoton,numicro-m4-pcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 3
+
+clock-cells:
+  - clock-module-index
+  - clock-source
+  - clock-divider

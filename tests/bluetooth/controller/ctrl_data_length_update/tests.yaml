@@ -1,0 +1,16 @@
+common:
+  tags:
+    - bluetooth
+    - bt_data_length_update
+    - bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_data_length_update.test:
+    type: unit
+
+  bluetooth.controller.ctrl_data_length_update.test_nocodedphy:
+    type: unit
+    extra_args: CONF_FILE=prj_nocoded.conf
+
+  bluetooth.controller.ctrl_data_length_update.test_nophy:
+    type: unit
+    extra_args: CONF_FILE=prj_nophy.conf

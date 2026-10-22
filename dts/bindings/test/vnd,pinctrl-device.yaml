@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test device for pin controller.
+
+compatible: "vnd,pinctrl-device"
+
+include: [base.yaml, pinctrl-device.yaml]

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 ELAN Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# EM32F967 Pin Control configuration
+
+config PINCTRL_EM32
+	bool "EM32F967 pin control driver"
+	default y
+	depends on DT_HAS_ELAN_EM32_PINCTRL_ENABLED
+	select SYSCON
+	help
+	  Enable pin control driver for EM32F967 SoC.
+	  This driver provides pin multiplexing and configuration
+	  support for GPIO, UART, SPI, I2C, and PWM functions.

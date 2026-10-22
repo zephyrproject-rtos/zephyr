@@ -1,0 +1,103 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CM_JH External Crystal Oscillator (XOSC32K)
+
+description: |
+  32.768 kHz External Crystal Oscillator (XOSC32K) Control.
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cm-jh-xosc32k"
+
+properties:
+  xosc32k-startup-time:
+    type: string
+    enum:
+      - "122-us"
+      - "1.06-ms"
+      - "62.6-ms"
+      - "125-ms"
+      - "500-ms"
+      - "1-s"
+      - "2-s"
+      - "4-s"
+    default: "122-us"
+    description: |
+      Oscillator Start-Up Time
+
+  xosc32k-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: The oscillator is always on, if standby-en is true, else run in
+         Standby Sleep mode if requested by a peripheral.
+      1: Run if requested by peripheral
+      Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait for
+      the clock to be on, if there is no peripheral request for the clock in the sequence of clock
+      Initialization. If required, better to turn on the clock using API, instead of enabling both
+      during startup.
+
+  xosc32k-run-in-standby-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: Run if requested by peripheral
+      1: The oscillator is always on, if demand-en is false
+
+  xosc32k-1khz-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      1kHz Output Enable
+      0: to disable, 1: to enable
+
+  xosc32k-32khz-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      32kHz output is enable
+      0: to disable, 1: to enable
+
+  xosc32k-xtal-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Selects external clock or crystal oscillator
+      0 - External clock connected on XIN. XOUT can be used as general-purpose I/O.
+      1 - Crystal connected to XIN/XOUT.
+
+  xosc32k-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Oscillator Enable
+      0: to disable, 1: to enable
+
+  xosc32k-cfd-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Clock Failure Detector Enable
+      0: to disable, 1: to enable

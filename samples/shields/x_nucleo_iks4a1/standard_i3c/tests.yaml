@@ -1,0 +1,16 @@
+sample:
+  name: X-NUCLEO-IKS01A4 sensor shield interface with I3C
+common:
+  min_ram: 16
+tests:
+  sample.shields.x_nucleo_iks4a1.standard_i3c:
+    harness: shield
+    tags: shield
+    depends_on:
+      - arduino_i3c
+      - arduino_gpio
+    platform_allow:
+      - nucleo_c5a3zg
+      - nucleo_h503rb
+    integration_platforms:
+      - nucleo_c5a3zg

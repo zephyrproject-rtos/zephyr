@@ -1,0 +1,14 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This file adds prompts to allow setting the symbols in a
+# configuration file (e.g. 'prj.conf'), as needed for some of
+# the test variants.
+
+config BT_HCI_TX_PRIO
+	prompt ""
+
+config BT_RX_PRIO
+	prompt ""
+
+source "Kconfig.zephyr"

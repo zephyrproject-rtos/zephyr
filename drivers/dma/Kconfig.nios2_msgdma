@@ -1,0 +1,11 @@
+# Nios-II mSGDMA driver configuration options
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_NIOS2_MSGDMA
+	bool "Nios-II  Modular Scatter-Gather DMA(MSGDMA) driver"
+	default y
+	depends on DT_HAS_ALTR_MSGDMA_ENABLED
+	help
+	  Enable Nios-II Modular Scatter-Gather DMA(MSGDMA) driver.

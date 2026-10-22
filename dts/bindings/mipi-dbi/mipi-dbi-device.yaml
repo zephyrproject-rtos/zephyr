@@ -1,0 +1,60 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+#
+# Common fields for MIPI-DBI devices
+
+include: [base.yaml, power.yaml]
+
+on-bus: mipi-dbi
+
+properties:
+  mipi-max-frequency:
+    type: int
+    description: Maximum clock frequency of device's MIPI interface in Hz
+
+  mipi-mode:
+    type: string
+    description: |
+      MIPI DBI mode in use. These definitions should match those in
+      dt-bindings/mipi_dbi/mipi_dbi.h
+    enum:
+      - "MIPI_DBI_MODE_SPI_3WIRE"
+      - "MIPI_DBI_MODE_SPI_4WIRE"
+      - "MIPI_DBI_MODE_6800_BUS_16_BIT"
+      - "MIPI_DBI_MODE_6800_BUS_9_BIT"
+      - "MIPI_DBI_MODE_6800_BUS_8_BIT"
+      - "MIPI_DBI_MODE_8080_BUS_16_BIT"
+      - "MIPI_DBI_MODE_8080_BUS_9_BIT"
+      - "MIPI_DBI_MODE_8080_BUS_8_BIT"
+
+  color-coding:
+    type: string
+    description: |
+      Color coding for MIPI DBI Type A or Type B(6800/8080) interface. These definitions
+      should match those in dt-bindings/mipi_dbi/mipi_dbi.h
+    enum:
+      - "MIPI_DBI_MODE_RGB332"
+      - "MIPI_DBI_MODE_RGB444"
+      - "MIPI_DBI_MODE_RGB565"
+      - "MIPI_DBI_MODE_RGB666_1"
+      - "MIPI_DBI_MODE_RGB666_2"
+      - "MIPI_DBI_MODE_RGB888_1"
+      - "MIPI_DBI_MODE_RGB888_2"
+
+  te-mode:
+    type: string
+    default: "MIPI_DBI_TE_NO_EDGE"
+    description: |
+      MIPI DBI tearing enable signal mode. Defaults to disabled.
+    enum:
+      - "MIPI_DBI_TE_NO_EDGE"
+      - "MIPI_DBI_TE_RISING_EDGE"
+      - "MIPI_DBI_TE_FALLING_EDGE"
+
+  te-delay:
+    type: int
+    default: 0
+    description: |
+      Delay in microseconds to wait before transmitting display data after a
+      tearing enable synchronization signal is seen. Defaults to 0 since most
+      controllers will not need a delay.

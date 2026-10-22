@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TM6605 Linear Resonant Actuator (LRA) haptic driver from Titan Micro
+  Electronics. The chip plays one of 44 pre-programmed effects through an
+  LRA and is controlled over a write-only I2C interface (slave address
+  0x2D / 7-bit).
+
+compatible: "titanmec,tm6605"
+
+include: i2c-device.yaml
+
+properties:
+  default-effect:
+    type: int
+    default: 47
+    description: |
+      Effect ID written to the effect-select register when
+      haptics_start_output() is called without a prior call to
+      tm6605_select_effect(). Defaults to 47 ("Alert").
+
+      See <zephyr/drivers/haptics/tm6605.h> for the full list of valid
+      effect IDs. Effect 123 is the sleep command.

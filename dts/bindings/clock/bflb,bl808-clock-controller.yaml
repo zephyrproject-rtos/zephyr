@@ -1,0 +1,17 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Bouffalolab BL808 Clock Controller
+
+description: Bouffalolab BL808 Clock Controller
+
+compatible: "bflb,bl808-clock-controller"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id

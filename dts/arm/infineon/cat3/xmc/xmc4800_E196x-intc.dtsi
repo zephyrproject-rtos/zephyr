@@ -1,0 +1,7 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/infineon-xmc4xxx-intc.h>
+/* XMC4800 and XMC4700 share reference manuals for ERU */
+#include <infineon/cat3/xmc/xmc4700_F144x2048-intc.dtsi>
