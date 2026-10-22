@@ -9,8 +9,8 @@
 #include "hifive1-pinctrl.dtsi"
 
 / {
-	model = "SiFive HiFive 1";
 	compatible = "sifive,hifive1";
+	model = "SiFive HiFive 1";
 
 	aliases {
 		led0 = &led0;
@@ -102,10 +102,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* disabled (used by Flash ROM by default) */
@@ -114,19 +114,19 @@
 
 	flash0: flash@0 {
 		compatible = "issi,is25lp128", "jedec,spi-nor";
-		status = "disabled";
+		reg = <0>;
 		size = <134217728>;
 		jedec-id = [96 60 18];
-		reg = <0>;
 		spi-max-frequency = <133000000>;
+		status = "disabled";
 	};
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_cs0_default &spi1_cs2_default &spi1_cs3_default
 		     &spi1_mosi_default &spi1_miso_default &spi1_sck_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi2 {
@@ -138,20 +138,20 @@
 };
 
 &pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_1_default &pwm1_2_default &pwm1_3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pwm2_1_default &pwm2_2_default &pwm2_3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 arduino_i2c: &i2c0 {
-	status = "okay";
 	clock-frequency = <100000>;
 	pinctrl-0 = <&i2c0_0_default &i2c0_1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
