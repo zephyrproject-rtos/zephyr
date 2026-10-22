@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Sensry GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SENSRY_SENSOR_ADDON
+
+# The shield does not connect the PCA9554 INT pin to the host.
+config GPIO_PCA_SERIES_INTERRUPT
+	default n
+
+endif # SHIELD_SENSRY_SENSOR_ADDON

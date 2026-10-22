@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2025 Sensry GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54l15dk_nrf54l15_cpuapp-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,uart-mcumgr = &uart30;
+		zephyr,bt-mon-uart = &uart30;
+		zephyr,bt-c2h-uart = &uart30;
+	};
+
+	/* DK LEDs share SPI MISO (P2.09) and chip-select pins (P1.10/P1.14). */
+	leds {
+		status = "disabled";
+	};
+
+	/* The DK PWM LED also uses the BMI270 chip-select pin P1.10. */
+	pwmleds {
+		status = "disabled";
+	};
+};
+
+/*
+ * Keep the unused TPM chip select inactive with a GPIO hog. Without this, the
+ * unselected TPM drives the shared SPI MISO line and the shield sensors fail
+ * to probe.
+ */
+&gpio1 {
+	tpm-cs-hog {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "TPM CS inactive";
+	};
+};
+
+/* PWM20 defaults to P1.10, which the shield uses for BMI270 chip select. */
+&pwm20 {
+	status = "disabled";
+};
+
+/* P1.04/P1.05 belong to PDM; use the DK's VCOM0 console. */
+&uart20 {
+	status = "disabled";
+};
+
+&uart30 {
+	status = "okay";
+};
+
+/*
+ * The shield wires SPI to the P2 header (P2.06/P2.08/P2.09). On the nRF54L15,
+ * SPIM22 can only use P1 pins; P2 routing is available on SPIM20/SPIM21 and
+ * only in constant-latency mode. Use SPI21 and leave the DK's
+ * nordic_expansion_spi (SPI22) binding on the P1 header untouched.
+ */
+&sensry_i2c {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c22_default>;
+	pinctrl-1 = <&i2c22_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};
+
+&sensry_spi {
+	/* Index matches the device reg: 0 = BMI270 (P1.10), 1 = LIS2MDL (P1.14). */
+	cs-gpios = <&nordic_expansion_header 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+		   <&nordic_expansion_header 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	pinctrl-0 = <&spi21_default>;
+	pinctrl-1 = <&spi21_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};
+
+&sensry_pdm {
+	clock-source = "PCLK32M_HFXO";
+	pinctrl-0 = <&pdm21_default>;
+	pinctrl-1 = <&pdm21_sleep>;
+	pinctrl-names = "default", "sleep";
+};
