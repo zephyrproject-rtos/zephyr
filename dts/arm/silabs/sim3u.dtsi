@@ -25,10 +25,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
 	pinctrl: pinctrl {
 		compatible = "silabs,si32-pinctrl";
 		status = "okay";
@@ -37,13 +33,6 @@
 	clocks {
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		pll0: pll0@4003b000 {
-			compatible = "silabs,si32-pll";
-			reg = <0x4003b000>;
-			#clock-cells = <0>;
-			status = "disabled";
-		};
 
 		clk_ahb: clk-ahb {
 			compatible = "silabs,si32-ahb";
@@ -58,48 +47,16 @@
 			clocks = <&clk_ahb>;
 			status = "disabled";
 		};
+
+		pll0: pll0@4003b000 {
+			compatible = "silabs,si32-pll";
+			reg = <0x4003b000>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
 	};
 
 	soc {
-		dma: dma-controller@40036000 {
-			compatible = "silabs,si32-dma";
-			reg = <0x40036000 0x1000>;
-			interrupts = <4 0>, <5 0>, <6 0>, <7 0>,
-				     <8 0>, <9 0>, <10 0>, <11 0>,
-				     <12 0>, <13 0>, <14 0>, <15 0>,
-				     <16 0>, <17 0>, <18 0>, <19 0>;
-			dma-channels = <16>;
-			#dma-cells = <3>;
-			status = "disabled";
-		};
-
-		crypto: crypto@40027000 {
-			compatible = "silabs,si32-aes";
-			reg = <0x40027000 0x1000>;
-			interrupts = <42 0>;
-			dmas = <&dma 5 0 0>,
-			       <&dma 6 0 0>,
-			       <&dma 7 0 0>;
-			dma-names = "tx", "rx", "xor";
-			status = "disabled";
-		};
-
-		flash: flash-controller@4002e000 {
-			compatible = "silabs,si32-flash-controller";
-			reg = <0x4002e000 0x1000>;
-			ranges;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				write-block-size = <2>;
-			};
-		};
-
 		usart0: usart@40000000 {
 			compatible = "silabs,si32-usart";
 			reg = <0x40000000 0x1000>;
@@ -113,6 +70,17 @@
 			reg = <0x40001000 0x1000>;
 			interrupts = <28 0>;
 			clocks = <&clk_apb>;
+			status = "disabled";
+		};
+
+		crypto: crypto@40027000 {
+			compatible = "silabs,si32-aes";
+			reg = <0x40027000 0x1000>;
+			interrupts = <42 0>;
+			dmas = <&dma 5 0 0>,
+			       <&dma 6 0 0>,
+			       <&dma 7 0 0>;
+			dma-names = "tx", "rx", "xor";
 			status = "disabled";
 		};
 
@@ -147,6 +115,38 @@
 			#gpio-cells = <2>;
 			ngpios = <16>;
 		};
+
+		flash: flash-controller@4002e000 {
+			compatible = "silabs,si32-flash-controller";
+			reg = <0x4002e000 0x1000>;
+			ranges;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				write-block-size = <2>;
+			};
+		};
+
+		dma: dma-controller@40036000 {
+			compatible = "silabs,si32-dma";
+			reg = <0x40036000 0x1000>;
+			interrupts = <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>,
+				     <16 0>, <17 0>, <18 0>, <19 0>;
+			dma-channels = <16>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
 	};
 };
 
