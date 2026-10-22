@@ -10,8 +10,8 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
@@ -23,9 +23,9 @@
 
 			test_uart_eswifi: eswifi-uart {
 				compatible = "inventek,eswifi-uart";
-				status = "okay";
 				wakeup-gpios = <&test_gpio 0 0>;
 				resetn-gpios = <&test_gpio 0 0>;
+				status = "okay";
 			};
 		};
 	};

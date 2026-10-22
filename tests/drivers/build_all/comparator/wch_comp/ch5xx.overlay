@@ -16,7 +16,7 @@
 };
 
 &cmp0 {
-	status = "okay";
 	pinctrl-0 = <&cmp0_pins>;
 	pinctrl-names = "default";
+	status = "okay";
 };

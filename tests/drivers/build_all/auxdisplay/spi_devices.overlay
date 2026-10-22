@@ -10,18 +10,17 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 
 		test_spi: spi@33334444 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices at spi.dtsi */
@@ -30,14 +29,15 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
+			status = "okay";
 
 			test_spi_pt6314: pt6314@0 {
 				compatible = "ptc,pt6314";
 				reg = <0>;
-				status = "okay";
 				spi-max-frequency = <1000000>;
 				columns = <20>;
 				rows = <2>;
+				status = "okay";
 			};
 		};
 	};

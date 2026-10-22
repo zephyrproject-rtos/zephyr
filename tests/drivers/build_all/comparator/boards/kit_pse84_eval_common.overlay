@@ -22,21 +22,21 @@
 };
 
 &lpcomp0_0 {
-	status = "okay";
 	output-mode = "direct";
 	power = "ulp";
 	intr-type = "both";
 	input-p = "gpio";
 	input-n = "local_vref";
+	status = "okay";
 };
 
 &lpcomp0_1 {
-	status = "disabled";
 	output-mode = "direct";
 	power = "ulp";
 	intr-type = "both";
 	input-p = "gpio";
 	input-n = "local_vref";
+	status = "disabled";
 };
 
 &autanalog {

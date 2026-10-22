@@ -22,15 +22,15 @@
 			};
 
 			test_gpio0: gpio@30070 {
-				interrupt-parent = <&test_intc>;
 				compatible = "altr,pio-1.0";
 				reg = <0x30070 0x10>;
+				interrupt-parent = <&test_intc>;
 				gpio-controller;
 				#gpio-cells = <0x2>;
-				status = "okay";
 				ngpios = <16>;
 				#direction = "input";
 				interrupts = <28>;
+				status = "okay";
 			};
 		};
 	};

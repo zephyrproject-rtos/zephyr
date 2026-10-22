@@ -828,13 +828,13 @@ test_i2c_tsl2540: tsl2540@71 {
 test_i2c_adltc2990@72 {
 	compatible = "adi,adltc2990";
 	reg = <0x72>;
-	status = "okay";
 	measurement-mode = <7 3>;
 	pins-v1-v2-current-resistor = <1>;
 	pin-v1-voltage-divider-resistors = <100 10>;
 	pin-v2-voltage-divider-resistors = <100 10>;
 	pin-v3-voltage-divider-resistors = <100 100>;
 	pin-v4-voltage-divider-resistors = <0 1>;
+	status = "okay";
 };
 
 test_i2c_hm330x@73 {
@@ -875,10 +875,10 @@ test_i2c_lps22df: lps22df@79 {
 	compatible = "st,lps22df";
 	reg = <0x79>;
 	drdy-gpios = <&test_gpio 0 0>;
-	status = "okay";
 	odr = <LPS2xDF_DT_ODR_10HZ>;
 	lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
 	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
+	status = "okay";
 };
 
 test_i2c_hs300x: hs300x@7a {
@@ -890,11 +890,11 @@ test_i2c_lps28dfw: lps28dfw@7b {
 	compatible = "st,lps28dfw";
 	reg = <0x7b>;
 	drdy-gpios = <&test_gpio 0 0>;
-	status = "okay";
 	odr = <LPS2xDF_DT_ODR_10HZ>;
 	lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
 	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
 	fs = <LPS28DFW_DT_FS_MODE_1_1260>;
+	status = "okay";
 };
 
 test_i2c_lis2du12: lis2du12@7c {
@@ -945,12 +945,12 @@ test_i2c_vishay_vcnl36825t: vcnl36825t@81 {
 
 test_i2c_tmag5273: tmag5273@82 {
 	compatible = "ti,tmag5273";
-	status = "okay";
 	reg = <0x82>;
 	int-gpios = <&test_gpio 15 1>;
 
 	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
 	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
+	status = "okay";
 };
 
 test_i2c_ens160: ens160@83 {
@@ -967,8 +967,8 @@ test_i2c_tsl2591: tsl2591@84 {
 
 test_i2c_max31790: max31790@85 {
 	compatible = "maxim,max31790";
-	status = "okay";
 	reg = <0x85>;
+	status = "okay";
 
 	max31790_fan_fault: max31790_fan_fault {
 		compatible = "maxim,max31790-fan-fault";
@@ -977,38 +977,38 @@ test_i2c_max31790: max31790@85 {
 
 	max31790_fan_speed_1: max31790_fan_speed_1 {
 		compatible = "maxim,max31790-fan-speed";
-		status = "okay";
 		channel = <1>;
+		status = "okay";
 	};
 
 	max31790_fan_speed_2: max31790_fan_speed_2 {
 		compatible = "maxim,max31790-fan-speed";
-		status = "okay";
 		channel = <2>;
+		status = "okay";
 	};
 
 	max31790_fan_speed_3: max31790_fan_speed_3 {
 		compatible = "maxim,max31790-fan-speed";
-		status = "okay";
 		channel = <3>;
+		status = "okay";
 	};
 
 	max31790_fan_speed_4: max31790_fan_speed_4 {
 		compatible = "maxim,max31790-fan-speed";
-		status = "okay";
 		channel = <4>;
+		status = "okay";
 	};
 
 	max31790_fan_speed_5: max31790_fan_speed_5 {
 		compatible = "maxim,max31790-fan-speed";
-		status = "okay";
 		channel = <5>;
+		status = "okay";
 	};
 
 	max31790_fan_speed_6: max31790_fan_speed_6 {
 		compatible = "maxim,max31790-fan-speed";
-		status = "okay";
 		channel = <6>;
+		status = "okay";
 	};
 };
 
@@ -1049,10 +1049,10 @@ test_i2c_lis2dux12: lis2dux12@8a {
 
 test_i2c_iis328dq: iis328dq@8b {
 	compatible = "st,iis328dq";
-	status = "okay";
 	reg = <0x8b>;
 	int2-gpios = <&test_gpio 0 0>;
 	threshold-int-pad = <2>;
+	status = "okay";
 };
 
 test_i2c_nct75: test_i2c_nct75@8c {
@@ -1161,10 +1161,10 @@ test_i2c_bmp390: bmp390@99 {
 apds_9306: apds9306@9a {
 	compatible = "avago,apds9306";
 	reg = <0x9a>;
-	status = "okay";
 	gain = <1>;
 	resolution = <13>;
 	measurement-period = <2000>;
+	status = "okay";
 };
 
 test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@9b {
@@ -1176,11 +1176,11 @@ test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@9b {
 test_i2c_ilps22qs: ilps22qs@9c {
 	compatible = "st,ilps22qs";
 	reg = <0x9c>;
-	status = "okay";
 	odr = <LPS2xDF_DT_ODR_10HZ>;
 	lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
 	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
 	fs = <ILPS22QS_DT_FS_MODE_1_1260>;
+	status = "okay";
 };
 
 test_i2c_sts4x: sts4x@9d {
@@ -1206,8 +1206,8 @@ test_i2c_npm2100: npm2100@9f {
 
 test_i2c_mlx90394: mlx90394@a0 {
 	compatible = "melexis,mlx90394";
-	status = "okay";
 	reg = <0xa0>;
+	status = "okay";
 };
 
 test_i2c_scd40: scd40@a1 {
@@ -1265,11 +1265,11 @@ test_i2c_lis2duxs12: lis2duxs12@a7 {
 
 test_i2c_tmag3001: tmag3001@a8 {
 	compatible = "ti,tmag3001";
-	status = "okay";
 	reg = <0xa8>;
 	int-gpios = <&test_gpio 15 1>;
 	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
 	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
+	status = "okay";
 };
 
 test_i2c_tmp435: tmp435@a9 {
@@ -1545,8 +1545,8 @@ test_i2c_qmi8658a: qmi8658a@cb {
 };
 
 test_i2c_npm10xx: npm10xx@cc {
-	reg = <0xcc>;
 	compatible = "nordic,npm10xx";
+	reg = <0xcc>;
 
 	sensor {
 		compatible = "nordic,npm10xx-adc";
@@ -1573,10 +1573,10 @@ test_i2c_cht8315: cht8315@cf {
 test_i2c_pac194x: pac194x@d0 {
 	compatible = "microchip,pac194x";
 	reg = <0xd0>;
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	microchip,refresh-mode = <PAC_REFRESH_AUTO_NOWAIT>;
+	status = "okay";
 
 	channel@1 {
 		reg = <0x1>;
