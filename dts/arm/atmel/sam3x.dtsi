@@ -24,9 +24,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m3";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -53,9 +53,9 @@
 
 		spi0: spi@40008000 {
 			compatible = "atmel,sam-spi";
+			reg = <0x40008000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40008000 0x4000>;
 			interrupts = <24 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 24>;
 			status = "disabled";
@@ -63,9 +63,9 @@
 
 		spi1: spi@4000c000 {
 			compatible = "atmel,sam-spi";
+			reg = <0x4000c000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4000c000 0x4000>;
 			interrupts = <25 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 25>;
 			status = "disabled";
@@ -81,6 +81,12 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			/*
+			 * SAM3X doesn't support erase pages command and must
+			 * be keeped disabled.
+			 */
+			status = "disabled";
+
 			flash0: flash@80000 {
 				compatible = "soc-nv-flash";
 				reg = <0x00080000 0x80000>;
@@ -88,12 +94,6 @@
 				write-block-size = <16>;
 				erase-block-size = <512>;
 			};
-
-			/*
-			 * SAM3X doesn't support erase pages command and must
-			 * be keeped disabled.
-			 */
-			status = "disabled";
 		};
 
 		wdt: watchdog@400e1a50 {
@@ -106,24 +106,24 @@
 
 		twi0: i2c@4008c000 {
 			compatible = "atmel,sam-i2c-twi";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x4008c000 0x128>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <22 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		twi1: i2c@40090000 {
 			compatible = "atmel,sam-i2c-twi";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40090000 0x128>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <23 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 23>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		uart: uart@400e0800 {
@@ -168,9 +168,9 @@
 
 		pinctrl: pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
+			ranges = <0x400e0e00 0x400e0e00 0xc00>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x400e0e00 0x400e0e00 0xc00>;
 
 			pioa: pio@400e0e00 {
 				compatible = "atmel,sam-gpio";

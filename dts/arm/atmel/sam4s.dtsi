@@ -26,9 +26,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -86,31 +86,31 @@
 
 		twi0: i2c@40018000 {
 			compatible = "atmel,sam-i2c-twi";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40018000 0x128>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <19 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 19>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		twi1: i2c@4001c000 {
 			compatible = "atmel,sam-i2c-twi";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x4001c000 0x128>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <20 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 20>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi0: spi@40008000 {
 			compatible = "atmel,sam-spi";
+			reg = <0x40008000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40008000 0x4000>;
 			interrupts = <21 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 21>;
 			status = "disabled";
@@ -161,9 +161,9 @@
 
 		pinctrl: pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
+			ranges = <0x400e0e00 0x400e0e00 0x600>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x400e0e00 0x400e0e00 0x600>;
 			status = "okay";
 
 			pioa: gpio@400e0e00 {
@@ -237,8 +237,8 @@
 			reg = <0x4003c000 0x4000>;
 			interrupts = <30 1>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 30>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		rstc: rstc@400e1400 {
@@ -250,9 +250,9 @@
 
 		smc: smc@400e0000 {
 			compatible = "atmel,sam-smc";
+			reg = <0x400e0000 0x200>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x400e0000 0x200>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
 			status = "disabled";
 		};
