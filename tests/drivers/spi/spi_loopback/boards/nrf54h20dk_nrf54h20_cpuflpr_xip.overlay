@@ -54,16 +54,16 @@
 	zephyr,pm-device-runtime-auto;
 	status = "okay";
 
-	slow@1 {
-		compatible = "test-spi-loopback-slow";
-		reg = <1>;
-		spi-max-frequency = <DT_FREQ_M(4)>;
-	};
-
 	dut_fast: fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+
+	slow@1 {
+		compatible = "test-spi-loopback-slow";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
 	};
 };
 
