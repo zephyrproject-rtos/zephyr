@@ -116,7 +116,6 @@ static void uart_rx_wait(const struct device *dev, void *user_data)
 static int rts5912_uart_init(const struct device *dev)
 {
 	const struct uart_rts5912_device_config *const dev_cfg = dev->config;
-	struct uart_rts5912_dev_data *const dev_data = dev->data;
 	int rc;
 
 	if (!device_is_ready(dev_cfg->clk_dev)) {
@@ -134,6 +133,7 @@ static int rts5912_uart_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_PM)
+	struct uart_rts5912_dev_data *const dev_data = dev->data;
 	const uint32_t uart_reg = uart_ns16550_get_port(dev_cfg->uart_dev);
 	uint32_t wf_cycle_count = k_us_to_cyc_ceil32(RTS5912_MAXIMUM_UART_POLLING_TIME_US);
 	uint32_t wf_start = k_cycle_get_32();
