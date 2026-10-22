@@ -11,11 +11,19 @@ include: base.yaml
 properties:
   sdio-reset-gpios:
     type: phandle-array
-    required: true
+    description: |
+      GPIO used to reset the BT/WLAN CPUs through the SDIO reset line.
+      Optional: when not defined, the driver skips the power-on reset
+      sequence on this line (e.g. when the reset is owned by another
+      driver such as Wi-Fi, or the line is used by another function).
 
   w-disable-gpios:
     type: phandle-array
-    required: true
+    description: |
+      GPIO used to reset the BT/WLAN CPUs through the W_DISABLE line.
+      Optional: when not defined, the driver skips the power-on reset
+      sequence on this line (e.g. when the reset is owned by another
+      driver such as Wi-Fi, or the line is used by another function).
 
   hci-operation-speed:
     type: int
