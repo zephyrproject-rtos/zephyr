@@ -19,6 +19,7 @@ config MM_DRV_PAGE_SIZE
 
 config MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
 	bool "Power off unused RAM"
+	depends on MM_DRV_INTEL_ADSP_MTL_TLB
 	help
 	  Allows TLB driver to remap unused RAM - unused
 	  being defined as memory ranging from linker script
