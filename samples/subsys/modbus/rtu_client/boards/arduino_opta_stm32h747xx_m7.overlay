@@ -5,9 +5,10 @@
  */
 
 &usart3 {
+
+	status = "okay";
+
 	modbus0 {
 		status = "okay";
 	};
-
-	status = "okay";
 };
