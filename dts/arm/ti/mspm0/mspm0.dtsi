@@ -152,10 +152,6 @@
 	};
 
 	soc {
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
-		};
-
 		vref0: vref@40030000 {
 			compatible = "ti,mspm0-vref";
 			reg = <0x40030000 0x2000>;

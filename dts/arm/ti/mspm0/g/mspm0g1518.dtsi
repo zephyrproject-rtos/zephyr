@@ -15,6 +15,7 @@
 		 * Sram Bank 1 (sram1) is unchecked
 		 */
 		sram0: memory@20000000 {
+			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(64)>;
 		};
 
