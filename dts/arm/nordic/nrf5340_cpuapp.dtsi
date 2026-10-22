@@ -73,27 +73,14 @@
 #include "nrf5340_cpuapp_peripherals.dtsi"
 		};
 
-		flash_controller: flash-controller@50039000 {
-			compatible = "nordic,nrf53-flash-controller";
-			reg = <0x50039000 0x1000>;
-			ranges;
-			partial-erase;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				reg = <0x0 DT_SIZE_K(1024)>;
-				ranges = <0x0 0x0 DT_SIZE_K(1024)>;
-				erase-block-size = <4096>;
-				write-block-size = <4>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				status = "okay";
-			};
+		/* Additional Non-Secure GPIOTE instance */
+		gpiote1: gpiote@4002f000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x4002f000 0x1000>;
+			interrupts = <47 5>;
+			instance = <1>;
+			status = "disabled";
 		};
-
-		/* Additional Secure peripherals */
 
 		spu: spu@50003000 {
 			compatible = "nordic,nrf-spu";
@@ -115,13 +102,24 @@
 			status = "disabled";
 		};
 
-		/* Additional Non-Secure GPIOTE instance */
-		gpiote1: gpiote@4002f000 {
-			compatible = "nordic,nrf-gpiote";
-			reg = <0x4002f000 0x1000>;
-			interrupts = <47 5>;
-			instance = <1>;
-			status = "disabled";
+		flash_controller: flash-controller@50039000 {
+			compatible = "nordic,nrf53-flash-controller";
+			reg = <0x50039000 0x1000>;
+			ranges;
+			partial-erase;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(1024)>;
+				ranges = <0x0 0x0 DT_SIZE_K(1024)>;
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "okay";
+			};
 		};
 
 		cryptocell: crypto@50844000 {
@@ -131,6 +129,8 @@
 			interrupts = <68 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 		};
+
+		/* Additional Secure peripherals */
 	};
 
 	/* Default IPC description */
