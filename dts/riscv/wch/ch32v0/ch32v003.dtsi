@@ -17,28 +17,28 @@
 / {
 	clocks {
 		clk_hse: clk-hse {
-			#clock-cells = <0>;
 			compatible = "wch,ch32v00x-hse-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		clk_hsi: clk-hsi {
-			#clock-cells = <0>;
 			compatible = "wch,ch32v00x-hsi-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(24)>;
 			status = "disabled";
 		};
 
 		clk_lsi: clk-lsi {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_K(128)>;
 			status = "disabled";
 		};
 
 		pll: pll {
-			#clock-cells = <0>;
 			compatible = "wch,ch32v00x-pll-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 	};
@@ -52,10 +52,10 @@
 		flash: flash-controller@40022000 {
 			compatible = "wch,ch32v-flash-controller";
 			reg = <0x40022000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
@@ -81,9 +81,9 @@
 
 		exti: interrupt-controller@40010400 {
 			compatible = "wch,exti";
+			reg = <0x40010400 16>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			reg = <0x40010400 16>;
 			interrupt-parent = <&pfic>;
 			num-lines = <8>;
 			interrupts = <20>;
@@ -131,9 +131,9 @@
 
 		i2c1: i2c@40005400 {
 			compatible = "wch,i2c";
+			reg = <0x40005400 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40005400 0x400>;
 			clocks = <&rcc CH32V00X_CLOCK_I2C1>;
 			interrupt-parent = <&pfic>;
 			interrupts = <30>, <31>;
@@ -215,9 +215,9 @@
 			clocks = <&rcc CH32V00X_CLOCK_SPI1>;
 			interrupt-parent = <&pfic>;
 			interrupts = <33>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		adc1: adc@40012400 {

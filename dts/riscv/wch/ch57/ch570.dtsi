@@ -25,8 +25,8 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				ranges = <0x0 0x00000000 DT_SIZE_K(256)>;
 				reg = <0x00000000 DT_SIZE_K(256)>;
+				ranges = <0x0 0x00000000 DT_SIZE_K(256)>;
 
 				#address-cells = <1>;
 				#size-cells = <1>;
