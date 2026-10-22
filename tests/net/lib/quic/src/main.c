@@ -929,6 +929,51 @@ ZTEST(net_socket_quic, test_040_stream_type_helpers_for_local_streams)
 	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_041_local_stream_ids_count_per_direction)
+{
+	static const struct {
+		int direction;
+		uint64_t id;
+	} opens[] = {
+		/* The IDs of each type are used in order (RFC 9000 ch. 2.1),
+		 * whatever streams of the other direction are opened between
+		 * them.
+		 */
+		{ QUIC_STREAM_BIDIRECTIONAL, 1 },
+		{ QUIC_STREAM_UNIDIRECTIONAL, 3 },
+		{ QUIC_STREAM_UNIDIRECTIONAL, 7 },
+		{ QUIC_STREAM_BIDIRECTIONAL, 5 },
+	};
+	int socks[ARRAY_SIZE(opens)];
+	int ret, conn_sock;
+
+	ret = quic_connection_open(NULL,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	conn_sock = ret;
+
+	ARRAY_FOR_EACH(opens, i) {
+		uint64_t stream_id = UINT64_MAX;
+
+		ret = quic_stream_open(conn_sock, QUIC_STREAM_SERVER, opens[i].direction, 0);
+		zassert_true(ret >= 0, "Failed to open stream %zu (%d)", i, ret);
+		socks[i] = ret;
+
+		ret = quic_stream_get_id(socks[i], &stream_id);
+		zassert_equal(ret, 0, "Failed to get the ID of stream %zu (%d)", i, ret);
+		zexpect_equal(stream_id, opens[i].id, "Stream %zu got ID %" PRIu64 ", expected %"
+			      PRIu64, i, stream_id, opens[i].id);
+	}
+
+	ARRAY_FOR_EACH(socks, i) {
+		ret = quic_stream_close(socks[i]);
+		zassert_equal(ret, 0, "Failed to close stream %zu (%d)", i, ret);
+	}
+
+	ret = quic_connection_close(conn_sock);
+	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
+}
+
 /* Test 050: Variable-length integer encoding/decoding */
 ZTEST(net_socket_quic, test_050_len_encode_decode)
 {
