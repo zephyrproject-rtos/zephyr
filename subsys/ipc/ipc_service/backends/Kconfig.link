@@ -95,3 +95,33 @@ config IPC_SERVICE_BACKEND_LINK_UART
 	  IPC service instances over a UART, COBS-framed. Uses the
 	  asynchronous UART API when enabled, the interrupt-driven API
 	  otherwise.
+
+config IPC_SERVICE_BACKEND_LINK_SPI
+	bool "IPC link transport over an SPI bus"
+	default y
+	depends on DT_HAS_ZEPHYR_IPC_SPI_ENABLED || DT_HAS_ZEPHYR_IPC_SPI_PERIPHERAL_ENABLED
+	depends on SPI
+	depends on GPIO
+	depends on (SPI_PERIPHERAL && SPI_ASYNC) || !DT_HAS_ZEPHYR_IPC_SPI_PERIPHERAL_ENABLED
+	select IPC_SERVICE_BACKEND_LINK
+	help
+	  IPC service instances over an SPI bus, one frame each way per
+	  transaction, between a controller and a peripheral MCU with a
+	  ready and an interrupt line. The peripheral role needs an SPI
+	  driver with peripheral mode and the asynchronous API.
+
+if IPC_SERVICE_BACKEND_LINK_SPI
+
+config IPC_SERVICE_BACKEND_LINK_SPI_STACK_SIZE
+	int "Transfer thread stack size"
+	default 1024
+	help
+	  Stack of the thread running the transactions.
+
+config IPC_SERVICE_BACKEND_LINK_SPI_PRIORITY
+	int "Transfer thread priority"
+	default 2
+	help
+	  Priority of the thread running the transactions.
+
+endif # IPC_SERVICE_BACKEND_LINK_SPI
