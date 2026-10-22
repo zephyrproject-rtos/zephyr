@@ -47,6 +47,11 @@
 	};
 
 	soc {
+		bt: bt {
+			compatible = "realtek,ameba-bt-hci";
+			status = "disabled";
+		};
+
 		ram_image2_entry: memory@20004da0 {
 			compatible = "zephyr,memory-region";
 			reg = <0x20004da0 0x20>;
@@ -316,11 +321,6 @@
 			dmas = <&dma 4 24 0>,
 			       <&dma 5 23 0>;
 			dma-names = "rx", "tx";
-			status = "disabled";
-		};
-
-		bt: bt {
-			compatible = "realtek,ameba-bt-hci";
 			status = "disabled";
 		};
 	};
