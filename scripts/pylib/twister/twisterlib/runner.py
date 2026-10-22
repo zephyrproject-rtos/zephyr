@@ -362,7 +362,7 @@ class CMake:
             if log_msg:
                 pattern = (
                     r"region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|"
-                    r"dram\d_\d_seg|iram\d_\d_seg)' "
+                    r"dram\d_\d_seg|iram\d_\d_seg|sram\d_\d_seg)' "
                     "overflowed by"
                 )
                 overflow_found = re.findall(pattern, log_msg)
