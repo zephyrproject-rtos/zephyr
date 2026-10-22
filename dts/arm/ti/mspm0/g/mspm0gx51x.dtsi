@@ -36,15 +36,6 @@
 			status = "disabled";
 		};
 
-		gpioc: gpio@400a4000 {
-			compatible = "ti,mspm0-gpio";
-			reg = <0x400a4000 0x2000>;
-			interrupts = <1 0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-
 		timg8: timg8@40090000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40090000 0x2000>;
@@ -93,9 +84,12 @@
 			};
 		};
 
-		spi2: spi@4046c000 {
-			compatible = "ti,mspm0-spi";
-			reg = <0x4046c000 0x2000>;
+		gpioc: gpio@400a4000 {
+			compatible = "ti,mspm0-gpio";
+			reg = <0x400a4000 0x2000>;
+			interrupts = <1 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
 			status = "disabled";
 		};
 
@@ -103,6 +97,12 @@
 			compatible = "ti,mspm0-aes";
 			reg = <0x40442000 0x2000>;
 			interrupts = <28 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@4046c000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x4046c000 0x2000>;
 			status = "disabled";
 		};
 
