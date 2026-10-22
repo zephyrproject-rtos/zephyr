@@ -3122,6 +3122,7 @@ static int quic_context_unref(struct quic_context *ctx)
 		quic_stats_merge_endpoint(ctx, ep);
 		sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
 		quic_endpoint_send_connection_close(ep, 0, NULL);
+		ep->list_ref_dropped = true;
 		released[released_count++] = ep;
 
 		if (ctx->listen == ep) {
@@ -3130,6 +3131,7 @@ static int quic_context_unref(struct quic_context *ctx)
 	}
 
 	if (ctx->listen != NULL) {
+		ctx->listen->list_ref_dropped = true;
 		released[released_count++] = ctx->listen;
 		ctx->listen = NULL;
 	}
@@ -6426,8 +6428,13 @@ static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remo
 		struct quic_endpoint *ep = endpoints[i];
 		struct quic_endpoint *matched;
 
+		/* An endpoint that a context has let go of is not an orphan,
+		 * even when it is on no context: the references it still has
+		 * belong to whoever is using it, for example the receive path
+		 * in the middle of a packet, and they drop them themselves.
+		 */
 		if (ep == NULL || atomic_get(&ep->refcount) == 0 || ep->is_server ||
-		    ep->sock < 0) {
+		    ep->sock < 0 || ep->list_ref_dropped) {
 			continue;
 		}
 
@@ -6440,16 +6447,19 @@ static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remo
 			continue;
 		}
 
+		ep->list_ref_dropped = true;
 		orphans[orphan_count++] = ep;
 	}
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
 
+	/* Drop the reference that was meant for the endpoint list, and only
+	 * that one. Dropping every reference would free the endpoint under
+	 * anyone still using it.
+	 */
 	for (int i = 0; i < orphan_count; i++) {
-		while (atomic_get(&orphans[i]->refcount) > 0) {
-			quic_endpoint_unref(orphans[i]);
-		}
+		quic_endpoint_unref(orphans[i]);
 	}
 }
 
