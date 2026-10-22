@@ -129,6 +129,7 @@ struct gmac_queue {
 	volatile uint32_t err_rx_queue_frames_dropped;
 	volatile uint32_t err_rx_queue_flushed_count;
 	volatile uint32_t err_tx_queue_flushed_count;
+	atomic_t rx_error_pending;
 	enum queue_idx que_idx;
 };
 
@@ -292,6 +293,7 @@ static int gmac_queue_init(gmac_registers_t *gmac_regs, struct gmac_queue *queue
 	queue->err_rx_queue_frames_dropped = 0U;
 	queue->err_rx_queue_flushed_count = 0U;
 	queue->err_tx_queue_flushed_count = 0U;
+	atomic_clear(&queue->rx_error_pending);
 
 	LOG_INF("Queue %d activated", queue->que_idx);
 
@@ -690,7 +692,11 @@ static void gmac_rx_thread(void *arg1, void *unused1, void *unused2)
 		if (res == 0) {
 			struct gmac_queue *queue = dev_data->rx_queue;
 
-			gmac_rx(gmac_regs, queue);
+			if (atomic_cas(&queue->rx_error_pending, 1, 0) != 0) {
+				gmac_rx_error_handler(gmac_regs, queue);
+			} else {
+				gmac_rx(gmac_regs, queue);
+			}
 		}
 	}
 }
@@ -778,15 +784,15 @@ static void eth_mchp_queue0_isr(const struct device *dev)
 
 	LOG_DBG("GMAC_ISR=0x%08x", isr);
 
-	if (isr & GMAC_ISR_RCOMP_Msk) {
+	if ((isr & GMAC_INT_RX_ERR_BITS) != 0) {
+		atomic_set(&queue->rx_error_pending, 1);
+	}
+
+	if ((isr & (GMAC_INT_RX_ERR_BITS | GMAC_ISR_RCOMP_Msk)) != 0U) {
 		tail_desc = &rx_desc_list->buf_desc[rx_desc_list->tail];
 		LOG_DBG("rx.w1=0x%08x, tail=%d", tail_desc->status, rx_desc_list->tail);
 		dev_data->rx_queue = queue;
 		k_sem_give(&dev_data->rx_int_sem);
-	}
-
-	if ((isr & GMAC_INT_RX_ERR_BITS) != 0) {
-		queue->err_rx_queue_flushed_count++;
 	}
 
 	if (isr & GMAC_ISR_TCOMP_Msk) {
