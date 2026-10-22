@@ -2,17 +2,26 @@
  * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/init.h>
 #include <zephyr/device.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
+#if defined(CONFIG_SECOND_CORE_MCUX)
+#include <fsl_mu.h>
+#endif
 #include <soc.h>
 #include <fsl_glikey.h>
+#include <power/power_cross_domain.h>
 #include <sram_banks.h>
 
 /* System oscillator settling time in us */
 #define SYSOSC_SETTLING_US 220U
 /* xtal frequency in Hz */
 #define XTAL_SYS_CLK_HZ    24000000U
+
+#if defined(CONFIG_SECOND_CORE_MCUX)
+#define IMXRT7XX_CPU1_BOOT_FLAG 0x1U
+#endif
 
 #if CONFIG_SOC_MIMXRT798S_CM33_CPU0
 #define SYSCON_BASE DT_REG_ADDR(DT_NODELABEL(syscon0))
@@ -637,4 +646,109 @@ static void edma_enable_all_request(uint8_t instance)
 		*reg |= 0xFFFFFFFFU;
 	}
 }
+#endif
+
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0)
+/**
+ * @brief Kickoff secondary core (CPU1).
+ *
+ * Kick the secondary core out of reset and wait for it to indicate boot. The
+ * core image was already copied to RAM in soc_early_init_hook()
+ */
+static void second_core_boot(void)
+{
+	/* Get the boot address for the second core */
+	uint32_t boot_address = (uint32_t)(DT_REG_ADDR(DT_CHOSEN(zephyr_code_cpu1_partition)));
+
+	/*
+	 * Power up the SRAM partitions CPU1 needs before releasing it: the RAM it
+	 * boots from and the RAM it links against. Both come from CPU0's chosen
+	 * nodes rather than node labels, so the mask follows whatever memory CPU1
+	 * is pointed at instead of hard-coding this board's current choice, and it
+	 * replaces a hand-maintained constant.
+	 *
+	 * These are votes on CPU1's behalf, needed only because CPU1 cannot cast its
+	 * own before it runs. They are handed back below.
+	 */
+	uint32_t cpu1_sram_pu = POWER_SRAM_MASK_FOR_NODE(DT_CHOSEN(zephyr_code_cpu1_partition)) |
+				POWER_SRAM_MASK_FOR_NODE(DT_CHOSEN(zephyr_sram_cpu1_partition));
+
+	PMC0->PDRUNCFG2 &= ~cpu1_sram_pu;
+	PMC0->PDRUNCFG3 &= ~cpu1_sram_pu;
+
+	/* Power up sense_main_clk, the bus clock of CPU1 and its private peripherals */
+	POWER_DisablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
+	POWER_ApplyPD();
+
+	/*
+	 * CPU1 clocks XSPI2 from COMMON_BASE, which the branch above points at
+	 * FRO1_DIV1. FRO1 has no field in SLEEPCON1, so CPU1 cannot hold it up over
+	 * a CPU0 low-power window and CPU0 has no way to detect the dependency:
+	 * COMNBASECLKSEL says what feeds COMMON_BASE, not who consumes it, and the
+	 * Sense-side selects are in CLKCTL1, which this build cannot address. Say it
+	 * here, where both cores' clock trees are set up.
+	 */
+	power_cross_domain_request(PWR_RES_FRO1);
+
+	/* RT700 specific CPU1 boot sequence */
+	/* Glikey write enable, GLIKEY4 */
+	GlikeyWriteEnable(GLIKEY4, 1U);
+
+	/* Boot source for Core 1 from RAM. */
+	SYSCON3->CPU1_NSVTOR = ((uint32_t)(void *)boot_address >> 7U);
+	SYSCON3->CPU1_SVTOR = ((uint32_t)(void *)boot_address >> 7U);
+
+	GlikeyClearConfig(GLIKEY4);
+
+	/* Enable cpu1 clock. */
+	CLOCK_EnableClock(kCLOCK_Cpu1);
+
+	/* Clear reset*/
+	RESET_ClearPeripheralReset(kCPU1_RST_SHIFT_RSTn);
+
+	/* Release cpu wait*/
+	SYSCON3->CPU_STATUS &= ~SYSCON3_CPU_STATUS_CPU_WAIT_MASK;
+
+	/* Wait CPU1 booted */
+	RESET_ClearPeripheralReset(kMU1_RST_SHIFT_RSTn);
+	MU_Init(MU1_MUA);
+
+	while (MU_GetFlags(MU1_MUA) != IMXRT7XX_CPU1_BOOT_FLAG) {
+	}
+
+	/*
+	 * CPU1 is up, so hand the proxy votes back. CPU1's board_early_init_hook()
+	 * runs before its PRE_KERNEL_2 boot flag goes out, so by the time the wait
+	 * above returns CPU1 has claimed all of this in PMC1/SLEEPCON1 itself.
+	 *
+	 * Keeping them would leave CPU0's run bank voting keep for resources CPU0 does
+	 * not use, and a keep vote from either core wins the aggregation (RM 27.3.2.2).
+	 * That costs nothing today -- CPU1 is running and voting the same way -- but it
+	 * would override CPU1's own decision the moment CPU1 gains a low-power state of
+	 * its own, which is exactly the case RM 12.5.2 Table 167 forbids. The bits CPU1
+	 * is holding up stay up; only CPU0's redundant vote goes away.
+	 */
+	PMC0->PDRUNCFG2 |= cpu1_sram_pu & ~POWER_SRAM_KEEPALIVE;
+	PMC0->PDRUNCFG3 |= cpu1_sram_pu & ~POWER_SRAM_KEEPALIVE;
+	POWER_EnablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
+	POWER_ApplyPD();
+}
+
+void board_late_init_hook(void)
+{
+	second_core_boot();
+}
+#endif
+
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
+static int second_core_notify_boot(void)
+{
+	RESET_ClearPeripheralReset(kMU1_RST_SHIFT_RSTn);
+	MU_Init(MU1_MUB);
+	MU_SetFlags(MU1_MUB, IMXRT7XX_CPU1_BOOT_FLAG);
+
+	return 0;
+}
+
+SYS_INIT(second_core_notify_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
