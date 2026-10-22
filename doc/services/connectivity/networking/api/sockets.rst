@@ -410,4 +410,7 @@ Note the following limitations:
   key. A TLS socket cannot use two private keys for one security tag.
 * The keys are stored in the default PSA key location.
 
+The :ref:`TLS credentials shell <tls_credentials_shell>` provides the same functions with the
+``cred keygen``, ``cred keydel``, ``cred csr`` and ``cred pubkey`` commands.
+
 .. doxygengroup:: tls_credentials_keygen

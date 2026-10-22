@@ -11,3 +11,6 @@ tests:
   net.tls_credentials.keygen.p256_only:
     extra_configs:
       - CONFIG_TLS_CREDENTIALS_KEYGEN_SECP384R1=n
+  net.tls_credentials.keygen.no_shell_commands:
+    extra_configs:
+      - CONFIG_TLS_CREDENTIALS_SHELL_KEYGEN=n
