@@ -35,7 +35,7 @@
 
 	ext_memory: memory@90000000 {
 		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_G(2)>; /* 2 Gbits */
+		reg = <0x90000000 DT_SIZE_M(256)>; /* 2 Gbits */
 		zephyr,memory-region = "EXTMEM";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
