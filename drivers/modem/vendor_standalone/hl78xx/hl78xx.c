@@ -554,6 +554,16 @@ static void hl78xx_log_state_changed(enum hl78xx_state last_state, enum hl78xx_s
 	LOG_INF("switch from %s to %s", hl78xx_state_str(last_state), hl78xx_state_str(new_state));
 }
 
+/**
+ * @brief Tell whether an event reports the result of a chat script.
+ */
+static bool hl78xx_is_script_result(enum hl78xx_event evt)
+{
+	return (evt == MODEM_HL78XX_EVENT_SCRIPT_SUCCESS) ||
+	       (evt == MODEM_HL78XX_EVENT_SCRIPT_FAILED) ||
+	       (evt == MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT);
+}
+
 static void hl78xx_event_dispatch_handler(struct k_work *item)
 {
 	struct hl78xx_data *data =
@@ -568,6 +578,10 @@ static void hl78xx_event_dispatch_handler(struct k_work *item)
 	LOG_DBG("dequeued %d events", events_cnt);
 
 	for (uint8_t i = 0; i < events_cnt; i++) {
+		/* A result counts as queued until its turn comes */
+		if (hl78xx_is_script_result((enum hl78xx_event)events[i])) {
+			(void)atomic_dec(&data->events.script_results_queued);
+		}
 		hl78xx_event_handler(data, (enum hl78xx_event)events[i]);
 	}
 }
@@ -575,7 +589,10 @@ static void hl78xx_event_dispatch_handler(struct k_work *item)
 void hl78xx_delegate_event(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	k_mutex_lock(&data->events.event_rb_lock, K_FOREVER);
-	ring_buf_put(&data->events.event_rb, (uint8_t *)&evt, 1);
+	if ((ring_buf_put(&data->events.event_rb, (uint8_t *)&evt, 1) == 1U) &&
+	    hl78xx_is_script_result(evt)) {
+		(void)atomic_inc(&data->events.script_results_queued);
+	}
 	k_mutex_unlock(&data->events.event_rb_lock);
 	k_work_submit_to_queue(&modem_workq, &data->events.event_dispatch_work);
 }
@@ -2190,7 +2207,7 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		(void)hl78xx_get_uart_config(data);
-		/* Reset per-cycle flag so AT_CMD_READY is dispatched exactly once. */
+		/* Reset the per-session flag so AT_CMD_READY is dispatched once for it. */
 		data->status.at_cmd_ready_sent = false;
 		LOG_DBG("Current baudrate after post-restart script: %d",
 			data->status.uart.current_baudrate);
@@ -3695,8 +3712,33 @@ static int hl78xx_on_airplane_mode_state_enter(struct hl78xx_data *data)
 	return hl78xx_run_cfun_query_script_async(data);
 }
 
+/**
+ * @brief Enter AIRPLANE again for the session that a restart of the modem began.
+ *
+ * Waits on the state timer while a script still holds the chat, the aborted
+ * one or a command sent since, or while a script result is still queued.
+ */
+static void hl78xx_airplane_restart_entry(struct hl78xx_data *data)
+{
+	if (modem_chat_is_running(&data->chat) ||
+	    (atomic_get(&data->events.script_results_queued) > 0)) {
+		hl78xx_reschedule_timer(data, K_MSEC(100));
+		return;
+	}
+
+	hl78xx_enter_state(data, MODEM_HL78XX_STATE_AIRPLANE);
+}
+
 static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
+	if (data->status.boot.airplane_restart_pending && hl78xx_is_script_result(evt)) {
+		/* The result of a script the restart interrupted: the state is
+		 * entered again for the new session.
+		 */
+		LOG_DBG("Result of the ended session ignored: %s", hl78xx_event_str(evt));
+		return;
+	}
+
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		if (!data->status.at_cmd_ready_sent) {
@@ -3717,6 +3759,28 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 			break;
 		}
 #endif /* CONFIG_HL78XX_GNSS */
+		break;
+
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		/* The modem restarted while it waited in airplane mode, and the new
+		 * session is not configured. Enter the state again: the entry sets
+		 * airplane mode on the new session and its result announces the AT
+		 * channel. A script that still waits for the ended session is
+		 * aborted first, and the entry follows on the timeout.
+		 */
+		LOG_DBG("Modem restart detected %d", __LINE__);
+		data->status.boot.init_sequence_completed = false;
+		data->status.boot.airplane_restart_pending = true;
+		if (modem_chat_is_running(&data->chat)) {
+			hl78xx_chat_abort_active_script(data);
+		}
+		hl78xx_airplane_restart_entry(data);
+		break;
+
+	case MODEM_HL78XX_EVENT_TIMEOUT:
+		if (data->status.boot.airplane_restart_pending) {
+			hl78xx_airplane_restart_entry(data);
+		}
 		break;
 
 #ifdef CONFIG_HL78XX_GNSS
@@ -3748,6 +3812,9 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 
 static int hl78xx_on_airplane_mode_state_leave(struct hl78xx_data *data)
 {
+	/* The entry after a restart must not fire in the next state */
+	hl78xx_stop_timer(data);
+	data->status.boot.airplane_restart_pending = false;
 	return 0;
 }
 /* pwroff script moved to hl78xx_chat.c */

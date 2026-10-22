@@ -1198,6 +1198,13 @@ void hl78xx_reset_modem_session_state(struct hl78xx_data *data)
 	data->status.phone_functionality.valid = false;
 	data->status.phone_functionality.in_progress = false;
 	data->status.phone_functionality.functionality = HL78XX_FULLY_FUNCTIONAL;
+	/* The AT channel of the ended session was announced once; the new
+	 * session is announced again at its AWAIT_REGISTERED or airplane
+	 * entry. A requested restart clears this itself; a restart the modem
+	 * made on its own (band or RAT configuration script, crash) only
+	 * passes through here.
+	 */
+	data->status.at_cmd_ready_sent = false;
 }
 
 bool hl78xx_is_rsrp_value_valid(int16_t rsrp)

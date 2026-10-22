@@ -437,6 +437,10 @@ struct hl78xx_modem_boot_status {
 	bool is_booted_previously;
 	bool init_sequence_completed;
 	enum hl78xx_module_status status;
+	/* AIRPLANE waits to enter the state again after a restart of the modem:
+	 * until it does, a script result belongs to the ended session.
+	 */
+	bool airplane_restart_pending;
 };
 
 struct hl78xx_gprs_status {
@@ -654,6 +658,11 @@ struct modem_event_system {
 	uint8_t event_buf[8];
 	struct ring_buf event_rb;
 	struct k_mutex event_rb_lock;
+	/* Script results (success, failure, AT command timeout) queued and not
+	 * handled yet: a state that must tell the result of its own script from
+	 * that of an earlier one starts its script when none is left.
+	 */
+	atomic_t script_results_queued;
 };
 
 enum hl78xx_at_cmd_terminal_result {
