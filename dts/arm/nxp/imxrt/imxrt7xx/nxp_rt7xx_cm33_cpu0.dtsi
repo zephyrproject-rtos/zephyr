@@ -70,10 +70,10 @@
 	};
 
 	dsp: dsp {
-		#address-cells = <1>;
-		#size-cells = <1>;
 
 		compatible = "nxp,rt700-dsp-ctrl-hifi4";
+		#address-cells = <1>;
+		#size-cells = <1>;
 		sysctl = <&syscon0>;
 
 		status = "disabled";
@@ -166,9 +166,9 @@
 	inputmux0: inputmux@26000 {
 		compatible = "nxp,inputmux";
 		reg = <0x26000 0x1000>;
-		status = "disabled";
 		#mux-control-cells = <1>;
 		#mux-state-cells = <2>;
+		status = "disabled";
 	};
 
 	freqme0: freqme@23000 {
@@ -258,93 +258,93 @@
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x28000 0x1000>;
 		interrupts = <3 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl0 MCUX_CTIMER0_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer1: timer@29000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x29000 0x1000>;
 		interrupts = <4 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl0 MCUX_CTIMER1_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer2: timer@2a000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x2a000 0x1000>;
 		interrupts = <32 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl0 MCUX_CTIMER2_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer3: timer@2b000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x2b000 0x1000>;
 		interrupts = <6 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl0 MCUX_CTIMER3_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer4: timer@2c000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x2c000 0x1000>;
 		interrupts = <33 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl0 MCUX_CTIMER4_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	edma0: dma-controller@140000 {
-		#dma-cells = <2>;
 		compatible = "nxp,mcux-edma";
-		nxp,version = <4>;
+		reg = <0x140000 0x1000>;
+		#dma-cells = <2>;
 		dma-channels = <16>;
 		dma-requests = <105>;
 		clocks = <&clkctl0 MCUX_EDMA0_CLK>;
-		reg = <0x140000 0x1000>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(2, 5)>;
 		interrupts = <59 0>, <60 0>, <61 0>, <62 0>,
 			     <63 0>, <64 0>, <65 0>, <66 0>,
 			     <67 0>, <68 0>, <69 0>, <70 0>,
 			     <71 0>, <72 0>, <73 0>, <74 0>;
 		no-error-irq;
+		nxp,version = <4>;
 		status = "disabled";
 	};
 
 	edma1: dma-controller@160000 {
-		#dma-cells = <2>;
 		compatible = "nxp,mcux-edma";
-		nxp,version = <4>;
+		reg = <0x160000 0x1000>;
+		#dma-cells = <2>;
 		dma-channels = <16>;
 		dma-requests = <105>;
 		clocks = <&clkctl0 MCUX_EDMA1_CLK>;
-		reg = <0x160000 0x1000>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(2, 6)>;
 		interrupts = <75 0>, <76 0>, <77 0>, <78 0>,
 			     <79 0>, <80 0>, <81 0>, <82 0>,
 			     <83 0>, <84 0>, <85 0>, <86 0>,
 			     <87 0>, <88 0>, <89 0>, <90 0>;
 		no-error-irq;
+		nxp,version = <4>;
 		status = "disabled";
 	};
 
@@ -365,7 +365,6 @@
 
 	gpio0: gpio@100000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x100000 0x1000>, <0x4000 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO0_CLK>;
@@ -374,11 +373,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio0>;
+		status = "disabled";
 	};
 
 	gpio1: gpio@102000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x102000 0x1000>, <0x4080 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO1_CLK>;
@@ -387,11 +386,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio1>;
+		status = "disabled";
 	};
 
 	gpio2: gpio@104000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x104000 0x1000>, <0x4100 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO2_CLK>;
@@ -400,11 +399,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio2>;
+		status = "disabled";
 	};
 
 	gpio3: gpio@106000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x106000 0x1000>, <0x4180 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO3_CLK>;
@@ -413,11 +412,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio3>;
+		status = "disabled";
 	};
 
 	gpio4: gpio@108000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x108000 0x1000>, <0xa5000 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO4_CLK>;
@@ -426,11 +425,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio4>;
+		status = "disabled";
 	};
 
 	gpio5: gpio@10a000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x10a000 0x1000>, <0xa5080 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO5_CLK>;
@@ -439,11 +438,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio5>;
+		status = "disabled";
 	};
 
 	gpio6: gpio@10c000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x10c000 0x1000>, <0xa5100 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO6_CLK>;
@@ -452,11 +451,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio6>;
+		status = "disabled";
 	};
 
 	gpio7: gpio@10e000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x10e000 0x1000>, <0xa5180 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl0 MCUX_GPIO7_CLK>;
@@ -465,20 +464,21 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio7>;
+		status = "disabled";
 	};
 
 	flexcomm0: flexcomm@110000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x110000 0x1000>;
-		interrupts = <7 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(2, 30)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <7 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 30)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm0_lpuart0: serial@110000 {
 			compatible = "nxp,lpuart";
@@ -512,15 +512,15 @@
 	flexcomm1: flexcomm@111000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x111000 0x1000>;
-		interrupts = <8 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(2, 31)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <8 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 31)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm1_lpuart1: serial@111000 {
 			compatible = "nxp,lpuart";
@@ -554,15 +554,15 @@
 	flexcomm2: flexcomm@112000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x112000 0x1000>;
-		interrupts = <9 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 0)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <9 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 0)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm2_lpuart2: serial@112000 {
 			compatible = "nxp,lpuart";
@@ -596,15 +596,15 @@
 	flexcomm3: flexcomm@113000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x113000 0x1000>;
-		interrupts = <10 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 1)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <10 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 1)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm3_lpuart3: serial@113000 {
 			compatible = "nxp,lpuart";
@@ -638,15 +638,15 @@
 	flexcomm4: flexcomm@171000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x171000 0x1000>;
-		interrupts = <11 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 2)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <11 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 2)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm4_lpuart4: serial@171000 {
 			compatible = "nxp,lpuart";
@@ -680,15 +680,15 @@
 	flexcomm5: flexcomm@172000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x172000 0x1000>;
-		interrupts = <12 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 3)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <12 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 3)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm5_lpuart5: serial@172000 {
 			compatible = "nxp,lpuart";
@@ -722,15 +722,15 @@
 	flexcomm6: flexcomm@173000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x173000 0x1000>;
-		interrupts = <35 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 4)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <35 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 4)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm6_lpuart6: serial@173000 {
 			compatible = "nxp,lpuart";
@@ -764,15 +764,15 @@
 	flexcomm7: flexcomm@174000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x174000 0x1000>;
-		interrupts = <36 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 5)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <36 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 5)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm7_lpuart7: serial@174000 {
 			compatible = "nxp,lpuart";
@@ -806,15 +806,15 @@
 	flexcomm8: flexcomm@199000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x199000 0x1000>;
-		interrupts = <47 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 6)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <47 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 6)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm8_lpuart8: serial@199000 {
 			compatible = "nxp,lpuart";
@@ -848,15 +848,15 @@
 	flexcomm9: flexcomm@19a000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19a000 0x1000>;
-		interrupts = <48 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 7)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <48 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 7)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm9_lpuart9: serial@19a000 {
 			compatible = "nxp,lpuart";
@@ -890,15 +890,15 @@
 	flexcomm10: flexcomm@19b000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19b000 0x1000>;
-		interrupts = <49 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 8)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <49 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 8)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm10_lpuart10: serial@19b000 {
 			compatible = "nxp,lpuart";
@@ -932,15 +932,15 @@
 	flexcomm11: flexcomm@19c000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19c000 0x1000>;
-		interrupts = <50 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 9)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <50 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 9)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm11_lpuart11: serial@19c000 {
 			compatible = "nxp,lpuart";
@@ -974,15 +974,15 @@
 	flexcomm12: flexcomm@19d000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19d000 0x1000>;
-		interrupts = <51 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 10)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <51 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 10)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm12_lpuart12: serial@19d000 {
 			compatible = "nxp,lpuart";
@@ -1016,15 +1016,15 @@
 	flexcomm13: flexcomm@19e000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x19e000 0x1000>;
-		interrupts = <52 0>;
-		resets = <&rstctl0 NXP_SYSCON_RESET(3, 11)>;
-		power-domains = <&peripheral_domain>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <52 0>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 11)>;
+		power-domains = <&peripheral_domain>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm13_lpuart13: serial@19e000 {
 			compatible = "nxp,lpuart";
@@ -1086,11 +1086,11 @@
 	};
 
 	micfil: micfil@20e000 {
-		#address-cells = <1>;
-		#size-cells = <0>;
 
 		compatible = "nxp,micfil";
 		reg = <0x20e000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		interrupts = <18 0>;
 		clocks = <&clkctl0 MCUX_MICFIL_CLK>;
@@ -1207,7 +1207,6 @@
 	usdhc0: memory-controller@412000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x412000 0x1000>;
-		status = "disabled";
 		interrupts = <37 0>;
 		clocks = <&clkctl4 MCUX_USDHC1_CLK>;
 		resets = <&rstctl4 NXP_SYSCON_RESET(11, 4)>;
@@ -1215,12 +1214,12 @@
 		max-current-180 = <1020>;
 		max-bus-freq = <DT_FREQ_M(208)>;
 		min-bus-freq = <DT_FREQ_K(400)>;
+		status = "disabled";
 	};
 
 	usdhc1: memory-controller@413000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x413000 0x1000>;
-		status = "disabled";
 		interrupts = <38 0>;
 		clocks = <&clkctl4 MCUX_USDHC2_CLK>;
 		resets = <&rstctl4 NXP_SYSCON_RESET(11, 5)>;
@@ -1228,6 +1227,7 @@
 		max-current-180 = <1020>;
 		max-bus-freq = <DT_FREQ_M(208)>;
 		min-bus-freq = <DT_FREQ_K(400)>;
+		status = "disabled";
 	};
 
 	mrt0: timer@2d000 {
@@ -1269,9 +1269,9 @@
 	flexio: flexio@416000 {
 		compatible = "nxp,flexio";
 		reg = <0x416000 0x1000>;
-		status = "disabled";
 		interrupts = <55 0>;
 		clocks = <&clkctl4 MCUX_FLEXIO0_CLK>;
+		status = "disabled";
 	};
 
 	os_timer_cpu0: timer@207000 {
@@ -1287,8 +1287,8 @@
 		reg = <0xe000 0x1000>;
 		clocks = <&clkctl0 MCUX_WWDT0_CLK>;
 		interrupts = <42 0>;
-		status = "disabled";
 		clk-divider = <1>;
+		status = "disabled";
 	};
 
 	wwdt1: watchdog@2e000 {
@@ -1296,16 +1296,16 @@
 		reg = <0x2e000 0x1000>;
 		clocks = <&clkctl0 MCUX_WWDT1_CLK>;
 		interrupts = <43 0>;
-		status = "disabled";
 		clk-divider = <1>;
+		status = "disabled";
 	};
 
 	sai0: audio-controller@152000 {
 		compatible = "nxp,mcux-i2s";
+		reg = <0x152000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = <0x152000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI0_CLK>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 13)>;
 		pinmuxes = <&syscon0 0x240 0x1>;
@@ -1320,10 +1320,10 @@
 
 	sai1: audio-controller@153000 {
 		compatible = "nxp,mcux-i2s";
+		reg = <0x153000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = <0x153000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI1_CLK>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 14)>;
 		pinmuxes = <&syscon0 0x240 0x1>;
@@ -1338,10 +1338,10 @@
 
 	sai2: audio-controller@154000 {
 		compatible = "nxp,mcux-i2s";
+		reg = <0x154000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = <0x154000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI2_CLK>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 15)>;
 		pinmuxes = <&syscon0 0x240 0x1>;
@@ -1358,10 +1358,10 @@
 		compatible = "nxp,sctimer-pwm";
 		reg = <0x114000 0x1000>;
 		interrupts = <5 0>;
-		status = "disabled";
 		clocks = <&clkctl0 MCUX_SCTIMER_CLK>;
 		prescaler = <8>;
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	lcdif: lcd-controller@480000 {
@@ -1370,16 +1370,16 @@
 		interrupts = <56 0>;
 		resets = <&rstctl4 NXP_SYSCON_RESET(10, 3)>;
 		clocks = <&clkctl4 MCUX_LCDIF_CLK>;
-		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	mipi_dsi: dsi@417000 {
 		compatible = "nxp,mipi-dsi-2l";
+		reg = <0x417000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x417000 0x1000>;
 		interrupts = <58 0>;
 		clocks = <&clkctl4 MCUX_MIPI_DSI_DPHY_CLK>,
 			 <&clkctl4 MCUX_MIPI_DSI_ESC_CLK>,
@@ -1464,27 +1464,27 @@
 
 &xspi0 {
 	compatible = "nxp,xspi";
-	status = "disabled";
 	interrupts = <118 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl0 MCUX_XSPI0_CLK>;
+	status = "disabled";
 };
 
 &xspi1 {
 	compatible = "nxp,xspi";
-	status = "disabled";
 	interrupts = <119 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl0 MCUX_XSPI1_CLK>;
+	status = "disabled";
 };
 
 &xspi2 {
 	compatible = "nxp,xspi";
-	status = "disabled";
 	interrupts = <120 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
+	status = "disabled";
 };

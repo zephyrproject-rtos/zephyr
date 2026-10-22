@@ -19,8 +19,8 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -153,10 +153,10 @@
 
 		lpi2c0: i2c@40066000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x40066000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40066000 0x1000>;
 			interrupts = <24 0>;
 			clocks = <&clock NXP_S32_LPI2C0_CLK>;
 			status = "disabled";
@@ -164,10 +164,10 @@
 
 		lpi2c1: i2c@40067000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x40067000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40067000 0x1000>;
 			interrupts = <25 0>;
 			status = "disabled";
 		};

@@ -17,9 +17,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -40,9 +40,9 @@
 		};
 
 		ocram_sys: memory@20200000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20200000 DT_SIZE_K(256)>;
+			device_type = "memory";
 		};
 
 		ocram_s_code: code@180000 {
@@ -51,9 +51,9 @@
 		};
 
 		ocram_s_sys: memory@20180000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20180000 DT_SIZE_K(32)>;
+			device_type = "memory";
 		};
 
 		gpio1: gpio@30200000 {
@@ -125,8 +125,8 @@
 			status = "okay";
 
 			pinctrl: pinctrl {
-				status = "okay";
 				compatible = "nxp,imx8m-pinctrl";
+				status = "okay";
 			};
 		};
 

@@ -14,30 +14,30 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(200)>;
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <1>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(200)>;
 		};
 
 		cpu@2 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <2>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(200)>;
 		};
 
 		cpu@3 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <3>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(200)>;
 		};
 	};
@@ -83,9 +83,9 @@
 			interrupts = <88 0>;
 			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
 			max-load-value = <0xffffffff>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			pit0_channel0: pit0_channel@0 {
 				compatible = "nxp,pit-channel";
@@ -118,9 +118,9 @@
 			interrupts = <89 0>;
 			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
 			max-load-value = <0xffffffff>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			pit1_channel0: pit1_channel@0 {
 				compatible = "nxp,pit-channel";
@@ -153,9 +153,9 @@
 			interrupts = <90 0>;
 			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
 			max-load-value = <0xffffffff>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			pit2_channel0: pit2_channel@0 {
 				compatible = "nxp,pit-channel";
@@ -188,9 +188,9 @@
 			interrupts = <91 0>;
 			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
 			max-load-value = <0xffffffff>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			pit3_channel0: pit3_channel@0 {
 				compatible = "nxp,pit-channel";

@@ -35,9 +35,9 @@
 		clocks = <&syscon MCUX_LPSPI0_CLK>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		status = "disabled";
 		rx-fifo-size = <4>;
 		tx-fifo-size = <4>;
+		status = "disabled";
 	};
 
 	lpspi1: spi@9d000 {
@@ -47,9 +47,9 @@
 		clocks = <&syscon MCUX_LPSPI1_CLK>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		status = "disabled";
 		rx-fifo-size = <4>;
 		tx-fifo-size = <4>;
+		status = "disabled";
 	};
 
 	lpi2c0: i2c@9a000 {
@@ -81,8 +81,8 @@
 		reg = <0x92000 0x1000>;
 		interrupts = <149 0>;
 		clocks = <&syscon MCUX_AON_LPADC_CLK>;
-		status = "disabled";
 		#io-channel-cells = <1>;
+		status = "disabled";
 	};
 };
 
@@ -109,8 +109,8 @@
 		reg = <0xc000 0x1000>;
 		interrupts = <60 0>;
 		clocks = <&syscon MCUX_WWDT0_CLK>;
-		status = "disabled";
 		clk-divider = <1>;
+		status = "disabled";
 	};
 };
 
@@ -119,7 +119,6 @@
 		compatible = "nxp,lpc-lpadc";
 		reg = <0xaf000 0x1000>;
 		interrupts = <62 0>;
-		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
 		voltage-ref = <1>;
@@ -129,42 +128,43 @@
 		offset-value-b = <0>;
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
+		status = "disabled";
 	};
 
 	ctimer0: ctimer@4000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x4000 0x1000>;
 		interrupts = <39 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&syscon MCUX_CTIMER0_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer1: ctimer@5000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x5000 0x1000>;
 		interrupts = <40 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&syscon MCUX_CTIMER1_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer2: ctimer@6000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x6000 0x1000>;
 		interrupts = <41 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&syscon MCUX_CTIMER2_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 };
 
