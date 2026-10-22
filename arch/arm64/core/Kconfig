@@ -313,7 +313,27 @@ config ARM64_SET_VMPIDR_EL2
 
 if ARM_MMU
 
+choice ARM64_PAGE_SIZE
+	prompt "Page size"
+	default ARM64_PAGE_SIZE_4KB
+	help
+	  Allows choosing one of the three possible page sizes. The level
+	  of the translation table is determined by a combination of page
+	  size and virtual address space size.
+
+config ARM64_PAGE_SIZE_4KB
+	bool "4KB"
+
+config ARM64_PAGE_SIZE_16KB
+	bool "16KB"
+
+config ARM64_PAGE_SIZE_64KB
+	bool "64KB"
+endchoice
+
 config MMU_PAGE_SIZE
+	default 0x10000 if ARM64_PAGE_SIZE_64KB
+	default 0x4000 if ARM64_PAGE_SIZE_16KB
 	default 0x1000
 
 choice ARM64_VA_BITS
