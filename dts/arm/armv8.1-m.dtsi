@@ -8,16 +8,16 @@
 
 / {
 	soc {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
 		interrupt-parent = <&nvic>;
-		ranges;
 
 		nvic: interrupt-controller@e000e100 {
-			#address-cells = <1>;
 			compatible = "arm,v8.1m-nvic";
 			reg = <0xe000e100 0xc00>;
+			#address-cells = <1>;
 			interrupt-controller;
 			#interrupt-cells = <2>;
 		};
