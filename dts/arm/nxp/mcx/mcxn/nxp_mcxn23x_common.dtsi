@@ -253,6 +253,12 @@
 		reg = <0x11000 0x10>;
 		interrupts = <71 0>;
 		clocks = <&syscon MCUX_FREQME_CLK>;
+		/*
+		 * FREQME is inactive in Deep Sleep and Power Down. Deep Power Down
+		 * removes power from FREQME and its INPUTMUX routes.
+		 */
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 
 		reference-sources {
