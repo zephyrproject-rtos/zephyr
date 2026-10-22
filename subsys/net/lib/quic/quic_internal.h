@@ -668,6 +668,23 @@ struct quic_long_header_info {
 	size_t pn_offset;
 };
 
+/* A peer can leave at most as many stream IDs of a type unused as it may
+ * still open, and that is bounded by the streams we allow it.
+ */
+#define QUIC_STREAM_SEQ_GAPS_MAX MAX(CONFIG_QUIC_MAX_STREAMS_BIDI, CONFIG_QUIC_MAX_STREAMS_UNI)
+
+/**
+ * The sequence numbers of one type of peer-initiated streams that have been
+ * opened: every number below @a next, except the @a gap_count numbers in
+ * @a gaps. A gap is a stream that a higher one opened implicitly (RFC 9000
+ * ch. 2.1) and that has not been used yet.
+ */
+struct quic_stream_seq_set {
+	uint64_t next;
+	uint64_t gaps[QUIC_STREAM_SEQ_GAPS_MAX];
+	uint8_t gap_count;
+};
+
 /**
  * QUIC endpoint information
  */
@@ -898,6 +915,11 @@ struct quic_endpoint {
 		uint64_t open_uni;   /* peer-initiated uni  streams currently open */
 		uint64_t total_bidi; /* peer-initiated bidi streams ever opened */
 		uint64_t total_uni;  /* peer-initiated uni  streams ever opened */
+		/* Which peer-initiated streams were opened, so that a late
+		 * frame for a closed one does not open it again.
+		 */
+		struct quic_stream_seq_set opened_bidi;
+		struct quic_stream_seq_set opened_uni;
 	} rx_sl;
 
 	/** Peer's transport parameters */
@@ -1625,5 +1647,9 @@ void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
 void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr);
 struct quic_endpoint *quic_test_endpoint_alloc(void);
 void quic_test_endpoint_unref(struct quic_endpoint *ep);
+
+bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq);
+bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq);
+void stream_seq_mark_opened(struct quic_stream_seq_set *set, uint64_t seq);
 
 #endif /* CONFIG_NET_TEST */
