@@ -451,7 +451,9 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 	k_work_cancel_delayable(&br_chan->monitor_work);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
-	atomic_clear(BR_CHAN(chan)->flags);
+	ARRAY_FOR_EACH(BR_CHAN(chan)->flags, i) {
+		atomic_clear(&BR_CHAN(chan)->flags[i]);
+	}
 }
 
 #define L2CAP_BR_RETRY_INTERVAL_MAX 100
@@ -7031,7 +7033,9 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	l2cap->chan.chan.ops = &ops;
 	*chan = &l2cap->chan.chan;
 	k_queue_init(&l2cap->recv_pending_queue);
-	atomic_set(l2cap->chan.flags, 0);
+	ARRAY_FOR_EACH(l2cap->chan.flags, i) {
+		atomic_clear(&l2cap->chan.flags[i]);
+	}
 	l2cap->echo_ident = 0U;
 	k_work_init_delayable(&l2cap->echo_rtx_work, l2cap_br_echo_timeout);
 	return 0;
@@ -7411,7 +7415,9 @@ static int l2cap_br_connless_accept(struct bt_conn *conn, struct bt_l2cap_chan *
 	br_chan->rx.mtu = BT_L2CAP_RX_MTU - BT_L2CAP_CONNLESS_SDU_HDR_SIZE;
 	br_chan->tx.mtu = L2CAP_BR_MIN_MTU;
 	*chan = &br_chan->chan;
-	atomic_set(br_chan->flags, 0);
+	ARRAY_FOR_EACH(br_chan->flags, i) {
+		atomic_clear(&br_chan->flags[i]);
+	}
 	return 0;
 }
 
