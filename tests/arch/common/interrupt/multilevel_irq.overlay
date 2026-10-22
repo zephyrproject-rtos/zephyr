@@ -15,6 +15,22 @@
 			interrupt-controller;
 		};
 
+		test_l3_irq: interrupt-holder {
+			compatible = "vnd,interrupt-holder";
+			interrupts = <13 3>;
+			interrupt-parent = <&test_l2_irq>;
+			interrupt-names = "test";
+			status = "okay";
+		};
+
+		test_l3_irq_inc: interrupt-holder-inc {
+			compatible = "vnd,interrupt-holder";
+			interrupts = <16 3>; /* +3 */
+			interrupt-parent = <&test_l2_irq>;
+			interrupt-names = "test";
+			status = "okay";
+		};
+
 		test_l1_irq: interrupt-controller@bbbbcccc {
 			compatible = "vnd,intc";
 			reg = <0xbbbbcccc 0x1000>;
@@ -22,23 +38,6 @@
 			#interrupt-cells = <2>;
 			interrupts = <11 0>;
 			interrupt-parent = <&test_cpu_intc>;
-		};
-
-		test_l2_irq: interrupt-controller@bbbccccc {
-			compatible = "vnd,intc";
-			reg = <0xbbbccccc 0x1000>;
-			interrupt-controller;
-			#interrupt-cells = <2>;
-			interrupts = <12 0>;
-			interrupt-parent = <&test_l1_irq>;
-		};
-
-		test_l3_irq: interrupt-holder {
-			compatible = "vnd,interrupt-holder";
-			interrupts = <13 3>;
-			interrupt-parent = <&test_l2_irq>;
-			interrupt-names = "test";
-			status = "okay";
 		};
 
 		test_l1_irq_inc: interrupt-controller@bbbbdccc {
@@ -59,12 +58,13 @@
 			interrupt-parent = <&test_l1_irq>;
 		};
 
-		test_l3_irq_inc: interrupt-holder-inc {
-			compatible = "vnd,interrupt-holder";
-			interrupts = <16 3>; /* +3 */
-			interrupt-parent = <&test_l2_irq>;
-			interrupt-names = "test";
-			status = "okay";
+		test_l2_irq: interrupt-controller@bbbccccc {
+			compatible = "vnd,intc";
+			reg = <0xbbbccccc 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <12 0>;
+			interrupt-parent = <&test_l1_irq>;
 		};
 	};
 };
