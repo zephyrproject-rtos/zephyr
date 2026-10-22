@@ -16,22 +16,6 @@
 	};
 
 	soc {
-		adc1: adc@42004800 {
-			compatible = "atmel,sam0-adc";
-			reg = <0x42004800 0x30>;
-			interrupts = <26 0>;
-			interrupt-names = "resrdy";
-			clocks = <&gclk 34>, <&mclk 0x1c 18>;
-			clock-names = "GCLK", "MCLK";
-
-			#io-channel-cells = <1>;
-
-			prescaler = <4>;
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
-		};
-
 		sercom4: sercom@42001400 {
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42001400 0x40>;
@@ -81,6 +65,22 @@
 			atmel,assigned-clock-names = "GCLK";
 
 			bosch,mram-cfg = <0x0 28 8 6 0 0 1 1>;
+			status = "disabled";
+		};
+
+		adc1: adc@42004800 {
+			compatible = "atmel,sam0-adc";
+			reg = <0x42004800 0x30>;
+			interrupts = <26 0>;
+			interrupt-names = "resrdy";
+			clocks = <&gclk 34>, <&mclk 0x1c 18>;
+			clock-names = "GCLK", "MCLK";
+
+			#io-channel-cells = <1>;
+
+			prescaler = <4>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
