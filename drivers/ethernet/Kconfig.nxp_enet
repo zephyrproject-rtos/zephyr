@@ -46,27 +46,70 @@ config ETH_NXP_ENET_RX_BUFFERS
 	default 6
 	range 6 16
 	help
-	  Set the number of RX buffers provided to the NXP ENET driver.
+	  Depth of the receive DMA buffer-descriptor ring.
 
 config ETH_NXP_ENET_TX_BUFFERS
 	int "Number of TX buffers for ethernet driver"
+	default 16 if ETH_NXP_ENET_TX_ZERO_COPY
 	default 1
+	range 2 16 if ETH_NXP_ENET_TX_ZERO_COPY
 	range 1 16
 	help
-	  Set the number of TX buffers provided to the NXP ENET driver.
+	  Depth of the transmit DMA buffer-descriptor ring. Zero-copy TX hands
+	  the HAL one buffer descriptor per non-empty net_buf fragment, so the
+	  ring must hold a whole worst-case frame: at least
+	  ceil(NET_ETH_MAX_FRAME_SIZE / NET_BUF_DATA_SIZE) + 1 descriptors
+	  (enforced by a BUILD_ASSERT in the driver). The copy path transmits a
+	  linear bounce buffer and works with a single descriptor.
+
+config ETH_NXP_ENET_TX_ZERO_COPY
+	bool "Zero-copy TX (DMA directly from net_buf fragments)"
+	depends on !ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
+	depends on !PTP_CLOCK_NXP_ENET
+	help
+	  DMA directly from the net_buf fragments instead of copying each
+	  outgoing frame into a driver TX buffer, removing one memcpy per
+	  packet. Incompatible with DTCM DMA buffers (no cache maintenance)
+	  and the PTP Tx-timestamp path.
+
+config ETH_NXP_ENET_RX_ZERO_COPY
+	bool "Zero-copy RX (DMA directly into net_buf-backed buffers)"
+	depends on !ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
+	depends on !PTP_CLOCK_NXP_ENET
+	depends on NET_BUF_FIXED_DATA_SIZE
+	help
+	  DMA received frames straight into the network stack's RX data buffers
+	  instead of copying each frame out of a driver buffer. The MAC scatters
+	  a frame across several buffers, so NET_BUF_DATA_SIZE need not hold a
+	  whole frame, but it must meet the HAL minimum and the ENET DMA/cache
+	  alignment (enforced by BUILD_ASSERTs); this is why it is not default on.
+	  Incompatible with DTCM DMA buffers and the PTP Rx-timestamp path.
+
+config ETH_NXP_ENET_RX_ZERO_COPY_BUFFERS
+	int "Zero-copy RX buffer lookup-table size"
+	depends on ETH_NXP_ENET_RX_ZERO_COPY
+	default 64
+	range 8 512
+	help
+	  Size of the driver table mapping a DMA buffer back to its net_buf. It
+	  must cover every buffer the HAL holds at once (the DMA ring plus the
+	  replacement it allocates before releasing a received buffer). The
+	  buffers themselves come from NET_BUF_RX_COUNT, not from here.
 
 config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
 	int "NXP ENET RX thread stack size"
+	default 2048 if ETH_NXP_ENET_RX_ZERO_COPY
 	default 1600
 	help
-	  ENET RX thread stack size in bytes.
+	  ENET RX thread stack size in bytes. Zero-copy RX walks the HAL
+	  rxBuffArray and the net_buf/net_pkt teardown on this thread, so it
+	  needs more stack than the copy path.
 
 config ETH_NXP_ENET_RX_THREAD_PRIORITY
 	int "NXP ENET driver RX cooperative thread priority"
 	default 2
 	help
-	  ENET MAC Driver handles RX in cooperative workqueue thread.
-	  This options sets the priority of that thread.
+	  Priority level of the RX thread.
 
 config ETH_NXP_ENET_RMII_EXT_CLK
 	bool "RMII clock from external sources"
