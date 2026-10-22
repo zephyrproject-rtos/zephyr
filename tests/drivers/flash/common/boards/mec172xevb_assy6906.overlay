@@ -8,17 +8,16 @@
 
 &qspi0 {
 	compatible = "microchip,xec-qmspi-ldma";
-	status = "okay";
 	pinctrl-0 = <&shd_clk_gpio056
 		     &shd_io0_gpio223
 		     &shd_io1_gpio224>;
 	pinctrl-names = "default";
 
 	cs-gpios = <MCHP_GPIO_DECODE_002 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	w25q128jv: w25q128jv@0 {
 		compatible = "jedec,spi-nor";
-		status = "okay";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(24)>;
 		size = <DT_SIZE_M(16)>;  // bits
@@ -26,5 +25,6 @@
 		t-enter-dpd = <6000>; // 3 ms double it
 		t-exit-dpd = <6000>; // 3 ms double it
 		jedec-id = [ef 40 18];
+		status = "okay";
 	};
 };
