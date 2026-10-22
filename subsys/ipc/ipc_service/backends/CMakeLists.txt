@@ -12,5 +12,6 @@ if(CONFIG_IPC_SERVICE_BACKEND_LINK)
   # The backend and its transports share the state of the links and see the protocol core
   zephyr_library_named(ipc_service_link)
   zephyr_library_sources(ipc_link.c)
+  zephyr_library_sources_ifdef(CONFIG_IPC_SERVICE_BACKEND_LINK_UART ipc_link_uart.c)
   zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/ipc/ipc_service/lib)
 endif()

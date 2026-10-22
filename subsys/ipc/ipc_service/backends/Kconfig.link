@@ -83,3 +83,39 @@ module-help = Sets log level for the IPC link backend
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # IPC_SERVICE_BACKEND_LINK
+
+config IPC_SERVICE_BACKEND_LINK_UART
+	bool "IPC link transport over a UART"
+	default y
+	depends on DT_HAS_ZEPHYR_IPC_UART_ENABLED
+	depends on SERIAL
+	depends on UART_ASYNC_API || UART_INTERRUPT_DRIVEN
+	select IPC_SERVICE_BACKEND_LINK
+	select COBS
+	help
+	  IPC service instances over a UART, COBS-framed. Uses the
+	  asynchronous UART API when enabled and implemented by the UART
+	  driver, the interrupt-driven API otherwise.
+
+if IPC_SERVICE_BACKEND_LINK_UART
+
+config IPC_SERVICE_BACKEND_LINK_UART_RX_CHUNK_SIZE
+	int "Asynchronous receive buffer size"
+	range 8 4096
+	default 64
+	help
+	  Size in bytes of each of the two buffers the asynchronous UART API
+	  receives into, per instance. A buffer is handed over when it is
+	  full or after the idle timeout, and the frame checks run before
+	  the next one is: larger buffers leave them more time at a high
+	  baud rate.
+
+config IPC_SERVICE_BACKEND_LINK_UART_RX_IDLE_TIMEOUT_US
+	int "Asynchronous receive idle timeout"
+	range 1 1000000
+	default 1000
+	help
+	  Time in microseconds without a byte after which the asynchronous
+	  UART API hands over what it received.
+
+endif # IPC_SERVICE_BACKEND_LINK_UART
