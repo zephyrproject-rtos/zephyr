@@ -6,3 +6,4 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(tls_credentials_keygen)
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_TLS_CREDENTIALS_SHELL_KEYGEN app PRIVATE src/shell.c)
