@@ -18,16 +18,16 @@
 		};
 	};
 
-	sram0: memory@60000000 {
-		compatible = "mmio-sram";
-		reg = <0x60000000 0x4000000>;
-		device_type = "memory";
-	};
-
 	soc {
 		compatible = "simple-bus";
 		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
+	};
+
+	sram0: memory@60000000 {
+		compatible = "mmio-sram";
+		reg = <0x60000000 0x4000000>;
+		device_type = "memory";
 	};
 };
