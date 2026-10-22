@@ -117,7 +117,7 @@ static DEVICE_API(dma, dw_dma_driver_api) = {
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
 			    DT_INST_IRQ(inst, priority), dw_dma_isr,	\
 			    DEVICE_DT_INST_GET(inst),			\
-			    DT_INST_IRQ(inst, sense));			\
+			    DT_INST_IRQ(inst, flags));			\
 		irq_enable(DT_INST_IRQN(inst));				\
 	}
 

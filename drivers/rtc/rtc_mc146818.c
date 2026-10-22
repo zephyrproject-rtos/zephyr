@@ -529,7 +529,7 @@ static DEVICE_API(rtc, rtc_mc146818_driver_api) = {
 		IRQ_CONNECT(DT_INST_IRQN(0),					\
 				DT_INST_IRQ(0, priority),			\
 				rtc_mc146818_isr, DEVICE_DT_INST_GET(n),	\
-				DT_INST_IRQ(0, sense));				\
+				DT_INST_IRQ(0, flags));				\
 										\
 		irq_enable(DT_INST_IRQN(0));					\
 										\
