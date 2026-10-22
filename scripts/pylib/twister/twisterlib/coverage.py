@@ -345,28 +345,35 @@ class Lcov(CoverageTool):
             logger.error("LCOV capture report stage failed with %s", ret)
             return ret, {}
 
-        # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
+        # We want to remove tests/* and tests/ztest/test/* but save tests/ztest.
+        # This overlay is best-effort: builds with no tests/ztest/* coverage
+        # (nothing extracted) are the common case, not an error, and some lcov
+        # versions exit non-zero on an empty extract result despite the
+        # --ignore-errors empty above, so a failure here must not abort the
+        # whole report.
         cmd = ["--extract", coveragefile,
                os.path.join(self.base_dir, "tests", "ztest", "*"),
                "--output-file", ztestfile]
         ret = self.run_lcov(cmd, coveragelog)
         if ret:
-            logger.error("LCOV extract report stage failed with %s", ret)
-            return ret, {}
+            logger.debug("LCOV extract report stage found nothing to keep (%s)", ret)
 
         files = []
-        if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
+        if ret == 0 and os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
             cmd = ["--remove", ztestfile,
                    os.path.join(self.base_dir, "tests/ztest/test/*"),
                    "--output-file", ztestfile]
             ret = self.run_lcov(cmd, coveragelog)
             if ret:
-                logger.error("LCOV remove ztest report stage failed with %s", ret)
-                return ret, {}
-
-            files = [coveragefile, ztestfile]
+                logger.debug("LCOV remove ztest report stage failed with %s", ret)
+                files = [coveragefile]
+            else:
+                files = [coveragefile, ztestfile]
         else:
             files = [coveragefile]
+        # The ztest overlay above is best-effort; do not propagate its
+        # exit status into the mandatory stages that follow.
+        ret = 0
 
         for i in self.ignores:
             cmd = ["--remove", coveragefile, i, "--output-file", coveragefile]
