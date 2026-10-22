@@ -11,21 +11,18 @@
 
 / {
 	soc {
-		pinctrl: pinctrl@ff180000 {
-			compatible = "xlnx,pinctrl-zynqmp";
-			reg = <0xff180000 0xc80>;
-		};
-
 		flash0: flash@c0000000 {
 			compatible = "soc-nv-flash";
 			reg = <0xc0000000 DT_SIZE_M(32)>;
 			status = "disabled";
 		};
 
-		ocm: memory@fffc0000 {
-			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
-			reg = <0xfffc0000 DT_SIZE_K(256)>;
-			zephyr,memory-region = "OCM";
+		mc: memory-controller@fd070000 {
+			compatible = "xlnx,zynqmp-ddrc-2.40a";
+			reg = <0xfd070000 0x30000>;
+			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
 		};
 
 		uart0: uart@ff000000 {
@@ -46,56 +43,118 @@
 			status = "disabled";
 		};
 
-		ttc0: timer@ff110000 {
-			compatible = "xlnx,ttcps";
-			reg = <0xff110000 0x1000>;
-			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 37 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 38 IRQ_TYPE_LEVEL
+		i2c0: i2c@ff020000 {
+			compatible = "cdns,i2c";
+			reg = <0xff020000 0x1000>;
+			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_0", "irq_1", "irq_2";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-depth = <16>;
 			status = "disabled";
 		};
 
-		ttc1: timer@ff120000 {
-			compatible = "xlnx,ttcps";
-			reg = <0xff120000 0x1000>;
-			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 40 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 41 IRQ_TYPE_LEVEL
+		i2c1: i2c@ff030000 {
+			compatible = "cdns,i2c";
+			reg = <0xff030000 0x1000>;
+			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_0", "irq_1", "irq_2";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-depth = <16>;
 			status = "disabled";
 		};
 
-		ttc2: timer@ff130000 {
-			compatible = "xlnx,ttcps";
-			reg = <0xff130000 0x1000>;
-			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 43 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 44 IRQ_TYPE_LEVEL
+		spi0: spi@ff040000 {
+			compatible = "cdns,spi";
+			reg = <0xff040000 0x1000>;
+			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_0", "irq_1", "irq_2";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
 			status = "disabled";
 		};
 
-		ttc3: timer@ff140000 {
-			compatible = "xlnx,ttcps";
-			reg = <0xff140000 0x1000>;
-			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 46 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 47 IRQ_TYPE_LEVEL
+		spi1: spi@ff050000 {
+			compatible = "cdns,spi";
+			reg = <0xff050000 0x1000>;
+			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_0", "irq_1", "irq_2";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
 			status = "disabled";
+		};
+
+		psgpio: gpio@ff0a0000 {
+			compatible = "xlnx,ps-gpio";
+			reg = <0xff0a0000 0x1000>;
+			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			psgpio_bank0: psgpio_bank@0 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <26>;
+				status = "okay";
+			};
+
+			psgpio_bank1: psgpio_bank@1 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x1>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <26>;
+				status = "okay";
+			};
+
+			psgpio_bank2: psgpio_bank@2 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x2>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <26>;
+				status = "okay";
+			};
+
+			psgpio_bank3: psgpio_bank@3 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+
+			psgpio_bank4: psgpio_bank@4 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x4>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+
+			psgpio_bank5: psgpio_bank@5 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x5>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
 		};
 
 		gem0: ethernet@ff0b0000 {
@@ -218,128 +277,6 @@
 			};
 		};
 
-		psgpio: gpio@ff0a0000 {
-			compatible = "xlnx,ps-gpio";
-			reg = <0xff0a0000 0x1000>;
-			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_0";
-
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-
-			psgpio_bank0: psgpio_bank@0 {
-				compatible = "xlnx,ps-gpio-bank";
-				reg = <0x0>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <26>;
-				status = "okay";
-			};
-
-			psgpio_bank1: psgpio_bank@1 {
-				compatible = "xlnx,ps-gpio-bank";
-				reg = <0x1>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <26>;
-				status = "okay";
-			};
-
-			psgpio_bank2: psgpio_bank@2 {
-				compatible = "xlnx,ps-gpio-bank";
-				reg = <0x2>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <26>;
-				status = "okay";
-			};
-
-			psgpio_bank3: psgpio_bank@3 {
-				compatible = "xlnx,ps-gpio-bank";
-				reg = <0x3>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <32>;
-				status = "okay";
-			};
-
-			psgpio_bank4: psgpio_bank@4 {
-				compatible = "xlnx,ps-gpio-bank";
-				reg = <0x4>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <32>;
-				status = "okay";
-			};
-
-			psgpio_bank5: psgpio_bank@5 {
-				compatible = "xlnx,ps-gpio-bank";
-				reg = <0x5>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <32>;
-				status = "okay";
-			};
-		};
-
-		i2c0: i2c@ff020000 {
-			compatible = "cdns,i2c";
-			reg = <0xff020000 0x1000>;
-			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			fifo-depth = <16>;
-			status = "disabled";
-		};
-
-		i2c1: i2c@ff030000 {
-			compatible = "cdns,i2c";
-			reg = <0xff030000 0x1000>;
-			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			fifo-depth = <16>;
-			status = "disabled";
-		};
-
-		mc: memory-controller@fd070000 {
-			compatible = "xlnx,zynqmp-ddrc-2.40a";
-			reg = <0xfd070000 0x30000>;
-			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			status = "disabled";
-		};
-
-		spi0: spi@ff040000 {
-			compatible = "cdns,spi";
-			reg = <0xff040000 0x1000>;
-			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			fifo-width = <8>;
-			rx-fifo-depth = <128>;
-			tx-fifo-depth = <128>;
-			status = "disabled";
-		};
-
-		spi1: spi@ff050000 {
-			compatible = "cdns,spi";
-			reg = <0xff050000 0x1000>;
-			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			fifo-width = <8>;
-			rx-fifo-depth = <128>;
-			tx-fifo-depth = <128>;
-			status = "disabled";
-		};
-
 		qspi: spi@ff0f0000 {
 			compatible = "xlnx,zynqmp-qspi-1.0";
 			reg = <0xff0f0000 0x1000>;
@@ -348,6 +285,63 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		ttc0: timer@ff110000 {
+			compatible = "xlnx,ttcps";
+			reg = <0xff110000 0x1000>;
+			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 37 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 38 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1", "irq_2";
+			status = "disabled";
+		};
+
+		ttc1: timer@ff120000 {
+			compatible = "xlnx,ttcps";
+			reg = <0xff120000 0x1000>;
+			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 40 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 41 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1", "irq_2";
+			status = "disabled";
+		};
+
+		ttc2: timer@ff130000 {
+			compatible = "xlnx,ttcps";
+			reg = <0xff130000 0x1000>;
+			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 43 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 44 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1", "irq_2";
+			status = "disabled";
+		};
+
+		ttc3: timer@ff140000 {
+			compatible = "xlnx,ttcps";
+			reg = <0xff140000 0x1000>;
+			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 46 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 47 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1", "irq_2";
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@ff180000 {
+			compatible = "xlnx,pinctrl-zynqmp";
+			reg = <0xff180000 0xc80>;
 		};
 
 		rtc: rtc@ffa60000 {
@@ -360,6 +354,12 @@
 			interrupt-names = "alarm", "sec";
 			clock-frequency = <32768>;
 			status = "disabled";
+		};
+
+		ocm: memory@fffc0000 {
+			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
+			reg = <0xfffc0000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "OCM";
 		};
 	};
 };
