@@ -12,7 +12,7 @@ config WIFI_BFLB_WIFI4
 	# CRC32 backs the blob's beacon integrity stream.
 	select CRC
 	# SW CCMP (PSA) for the data-TX encrypt workaround.
-	select MBEDTLS_PSA_CRYPTO_C
+	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_AES
 	select PSA_WANT_ALG_CCM
 	help
