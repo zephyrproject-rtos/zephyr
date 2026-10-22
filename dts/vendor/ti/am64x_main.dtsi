@@ -14,9 +14,9 @@
 
 	dmsc: system-controller@44043000 {
 		compatible = "ti,k2g-sci";
+		reg = <0x44043000 0xfe0>;
 		mbox-names = "rx", "tx";
 		reg-names = "debug_messages";
-		reg = <0x44043000 0xfe0>;
 		status = "disabled";
 
 		k3_clks: clock-controller {
@@ -27,8 +27,8 @@
 
 	secure_proxy_main: mailbox0@4d000000 {
 		compatible = "ti,secure-proxy";
-		reg-names = "target_data", "rt", "scfg";
 		reg = <0x4d000000 0x80000>, <0x4a600000 0x80000>, <0x4a400000 0x80000>;
+		reg-names = "target_data", "rt", "scfg";
 		#mbox-cells = <1>;
 		status = "disabled";
 	};
@@ -37,9 +37,9 @@
 		compatible = "ti,control-module";
 		reg = <0xf0000 DT_SIZE_K(32)>;
 		ranges = <0x00 0xf0000 DT_SIZE_K(32)>;
-		ti,unlock-offsets = <0x1008 0x5008>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ti,unlock-offsets = <0x1008 0x5008>;
 
 		main_pinctrl: pinctrl@4000 {
 			compatible = "ti,k3-pinctrl";
@@ -51,11 +51,11 @@
 	main_mmr_cfg0: syscon@43000000 {
 		compatible = "ti,control-module", "syscon";
 		reg = <0x43000000 DT_SIZE_K(128)>;
-		ti,unlock-offsets = <0x5008 0x9008>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		#epwm-tbclk-cells = <2>;
 		#clksel-cells = <2>;
+		ti,unlock-offsets = <0x5008 0x9008>;
 	};
 
 	main_timer0: timer@2400000 {
@@ -372,9 +372,9 @@
 		compatible = "ti,omap-mcspi";
 		reg = <0x20100000 0x400>;
 		clock-frequency = <DT_FREQ_M(50)>;
-		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
 
@@ -382,9 +382,9 @@
 		compatible = "ti,omap-mcspi";
 		reg = <0x20110000 0x400>;
 		clock-frequency = <DT_FREQ_M(50)>;
-		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
 
@@ -392,9 +392,9 @@
 		compatible = "ti,omap-mcspi";
 		reg = <0x20120000 0x400>;
 		clock-frequency = <DT_FREQ_M(50)>;
-		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
 
@@ -402,9 +402,9 @@
 		compatible = "ti,omap-mcspi";
 		reg = <0x20130000 0x400>;
 		clock-frequency = <DT_FREQ_M(50)>;
-		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
 
@@ -412,19 +412,19 @@
 		compatible = "ti,omap-mcspi";
 		reg = <0x20140000 0x400>;
 		clock-frequency = <DT_FREQ_M(50)>;
-		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
 
 	main_adc0: adc@28001000 {
 		compatible = "ti,am335x-adc";
 		reg = <0x28001000 DT_SIZE_K(1)>;
-		status = "disabled";
 		#io-channel-cells = <1>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	main_rti0: watchdog@e000000 {
@@ -546,12 +546,12 @@
 		power-domains = <&mmcsd0_pd>;
 		max-bus-freq = <DT_FREQ_M(200)>;
 		min-bus-freq = <DT_FREQ_M(0)>;
+		mmc-hs200-1_8v;
 		ti,is-embedded;
 		ti,dll-present;
 		ti,driver-strength-ohm = <50>;
 		ti,clkbuf-sel = <0x7>;
 		ti,trm-icp = <0x2>;
-		mmc-hs200-1_8v;
 		ti,otap-del-sel-hs200 = <0x7>;
 		ti,otap-del-sel-ddr52 = <0x6>;
 		ti,itap-del-sel-legacy = <0x10>;

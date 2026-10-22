@@ -275,9 +275,9 @@
 		compatible = "ti,omap-mcspi";
 		reg = <0x20100000 0x400>;
 		clock-frequency = <DT_FREQ_M(50)>;
-		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
 
@@ -318,10 +318,10 @@
 		reg-names = "host", "subsys";
 		max-bus-freq = <DT_FREQ_M(200)>;
 		min-bus-freq = <DT_FREQ_M(0)>;
+		mmc-hs200-1_8v;
 		ti,is-embedded;
 		ti,driver-strength-ohm = <50>;
 		ti,clkbuf-sel = <0x7>;
-		mmc-hs200-1_8v;
 		ti,otap-del-sel-legacy = <0x00>;
 		ti,otap-del-sel-hs = <0x0>;
 		ti,otap-del-sel-hs200 = <0x6>;
