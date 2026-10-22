@@ -997,6 +997,14 @@ static int quic_send_stream_fin(struct quic_stream *stream, struct quic_endpoint
 	uint64_t sent_pn;
 	int ret;
 
+	/* A unidirectional stream that the peer opened is receive-only for
+	 * us (RFC 9000 ch. 2.1): it has no sending part that could be
+	 * finished, and a STREAM frame on it is an error for the peer.
+	 */
+	if ((stream->id & 2U) != 0U && ((stream->id & 1U) != 0U) != ep->is_server) {
+		return 0;
+	}
+
 	/*
 	 * STREAM frame type bits:
 	 *   0x04 (OFF) = offset field present
