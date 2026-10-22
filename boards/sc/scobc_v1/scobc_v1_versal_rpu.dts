@@ -46,12 +46,12 @@
 };
 
 &sdhci1 {
-	status = "disabled";
+	status = "okay";
 
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		bus-width = <8>;
-		disk-name = "mmc0";
-		status = "disabled";
+		disk-name = "SD2";
+		status = "okay";
 	};
 };
