@@ -7425,6 +7425,166 @@ ZTEST(net_socket_quic, test_523_orphan_release_leaves_a_closing_context_alone)
 	quic_test_endpoint_unref(ep);
 }
 
+/* Feed a STREAM frame with the FIN bit and no data to the endpoint */
+static int stream_fin_for_stream(struct quic_endpoint *ep, struct quic_context *ctx,
+				 uint8_t stream_id)
+{
+	const uint8_t payload[] = {
+		QUIC_FRAME_TYPE_STREAM_BASE | 0x01, /* FIN, data to the end */
+		stream_id,
+	};
+	bool ack_only = false;
+	int ret;
+
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload), sizeof(payload),
+					 &ack_only);
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+/* Take the stream a frame just opened off the context, as if it had been
+ * accepted and closed again.
+ */
+static struct quic_stream *take_opened_stream(struct quic_context *ctx, uint64_t stream_id)
+{
+	struct quic_stream *stream = k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT);
+
+	zassert_not_null(stream, "Stream %" PRIu64 " was not opened", stream_id);
+	zassert_equal(stream->id, stream_id, "Opened stream %" PRIu64 " instead of %" PRIu64,
+		      stream->id, stream_id);
+	zassert_true(sys_slist_find_and_remove(&ctx->streams, &stream->node),
+		     "Stream %" PRIu64 " not on the context", stream_id);
+	k_sem_reset(&ctx->incoming.stream_sem);
+
+	return stream;
+}
+
+/* Put a stream back, so that closing the context releases it */
+static void return_opened_stream(struct quic_context *ctx, struct quic_stream *stream)
+{
+	sys_slist_append(&ctx->streams, &stream->node);
+	k_fifo_put(&ctx->incoming.stream_q, stream);
+}
+
+ZTEST(net_socket_quic, test_502_late_frame_does_not_reopen_a_closed_stream)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_stream *closed_4;
+	struct quic_stream *closed_8;
+	struct quic_stream *opened_0;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54354");
+
+	ep->is_server = true;
+	ep->rx_sl.max_bidi = 8;
+	ep->rx_sl.max_uni = 8;
+
+	/* The peer opens streams 8 and 4, in that order as packets can be
+	 * reordered. Opening 8 first must not stop 4 from being opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zassert_true(ret >= 0, "STREAM frame for stream 8 failed (%d)", ret);
+	closed_8 = take_opened_stream(ctx, 8);
+
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zassert_true(ret >= 0, "STREAM frame for stream 4 failed (%d)", ret);
+	closed_4 = take_opened_stream(ctx, 4);
+
+	/* Both are closed now. A late frame for either of them is ignored
+	 * and does not open the stream again.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zexpect_true(ret >= 0, "Late frame for stream 8 failed (%d)", ret);
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zexpect_true(ret >= 0, "Late frame for stream 4 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed peer stream was opened again");
+
+	/* Stream 0 was opened implicitly by stream 4 (RFC 9000 ch. 2.1) but
+	 * not used yet, so it can still be opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STREAM frame for stream 0 failed (%d)", ret);
+	opened_0 = take_opened_stream(ctx, 0);
+
+	/* A stream of our own that was opened and closed, stream 1 */
+	ctx->stream_id_counter[0] = 1;
+	ret = stream_fin_for_stream(ep, ctx, 1);
+	zexpect_true(ret >= 0, "Late frame for our stream 1 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed stream of our own was opened as a peer stream");
+	ctx->stream_id_counter[0] = 0;
+
+	return_opened_stream(ctx, opened_0);
+	return_opened_stream(ctx, closed_4);
+	return_opened_stream(ctx, closed_8);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_508_unused_stream_ids_stay_unopened)
+{
+	struct quic_stream_seq_set set = { 0 };
+	uint64_t top = ARRAY_SIZE(set.gaps);
+
+	/* The peer leaves stream 0 unused while it opens and closes more
+	 * streams than any fixed window would cover. Stream 0 is opened
+	 * implicitly only and can still be used later.
+	 */
+	for (uint64_t seq = 1; seq <= 70; seq++) {
+		zassert_true(stream_seq_gaps_fit(&set, seq), "No room for stream %" PRIu64, seq);
+		stream_seq_mark_opened(&set, seq);
+	}
+
+	zexpect_false(stream_seq_was_opened(&set, 0), "An unused stream was taken as opened");
+	zexpect_true(stream_seq_was_opened(&set, 1), "An opened stream was not taken as opened");
+	zexpect_true(stream_seq_was_opened(&set, 70), "An opened stream was not taken as opened");
+	zexpect_false(stream_seq_was_opened(&set, 71),
+		      "A stream not opened yet was taken as opened");
+
+	stream_seq_mark_opened(&set, 0);
+	zexpect_true(stream_seq_was_opened(&set, 0), "A late first stream was not opened");
+	zexpect_equal(set.gap_count, 0, "%u unused streams left", set.gap_count);
+
+	/* Packets reordered: the highest stream the gaps allow comes first,
+	 * then each lower one. All of them can be opened.
+	 */
+	memset(&set, 0, sizeof(set));
+	zassert_true(stream_seq_gaps_fit(&set, top), "No room for stream %" PRIu64, top);
+	stream_seq_mark_opened(&set, top);
+
+	for (uint64_t seq = 0; seq < top; seq++) {
+		zexpect_false(stream_seq_was_opened(&set, seq),
+			      "Stream %" PRIu64 " taken as opened before it was used", seq);
+	}
+
+	for (uint64_t seq = top; seq > 0; seq--) {
+		stream_seq_mark_opened(&set, seq - 1U);
+	}
+
+	for (uint64_t seq = 0; seq <= top; seq++) {
+		zexpect_true(stream_seq_was_opened(&set, seq),
+			     "Stream %" PRIu64 " not opened", seq);
+	}
+
+	/* Leaving more streams unused than there is room for is more than
+	 * the peer may open.
+	 */
+	memset(&set, 0, sizeof(set));
+	zexpect_false(stream_seq_gaps_fit(&set, top + 1U),
+		      "Room claimed for more unused streams than can be kept");
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
