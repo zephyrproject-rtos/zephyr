@@ -23,14 +23,14 @@
 			memory-region = <&sram_2001C000>;
 
 			flash_sim0: flash_sim@0 {
-				status = "okay";
 				compatible = "soc-nv-flash";
+				reg = <0x00000000 DT_SIZE_K(16)>;
 				erase-block-size = <512>;
 				/* the flash_simulator test uses a write block
 				 * size of 4 for alignment test, so set it to 4.
 				 */
 				write-block-size = <4>;
-				reg = <0x00000000 DT_SIZE_K(16)>;
+				status = "okay";
 			};
 		};
 	};
@@ -43,8 +43,8 @@
 		#size-cells = <1>;
 
 		lfsram_partition: partition@0 {
-			label = "lfsram";
 			reg = <0x00000000 DT_SIZE_K(16)>;
+			label = "lfsram";
 		};
 	};
 };
