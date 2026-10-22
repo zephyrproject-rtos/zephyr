@@ -58,6 +58,9 @@ struct openthread_context {
 
 	/** Array for storing net_pkt for OpenThread internal usage */
 	struct pkt_list_elem pkt_list[CONFIG_OPENTHREAD_PKT_LIST_SIZE];
+
+	/** Mesh-local prefix added as on-link prefix (unspecified if none) */
+	struct net_in6_addr ml_onlink_prefix;
 };
 /**
  * INTERNAL_HIDDEN @endcond
