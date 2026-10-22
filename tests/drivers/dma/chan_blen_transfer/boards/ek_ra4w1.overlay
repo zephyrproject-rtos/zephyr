@@ -10,4 +10,8 @@
 	interrupt-names = "ch0", "ch1";
 };
 
-tst_dma0: &dma0 {};
+/ {
+	zephyr,user {
+		dma-test-devs = <&dma0>;
+	};
+};

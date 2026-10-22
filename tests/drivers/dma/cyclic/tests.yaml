@@ -8,4 +8,4 @@ tests:
       - xmc47_relax_kit
       - xmc45_relax_kit
       - pic32cz_ca80_cult
-    filter: dt_nodelabel_enabled("tst_dma0")
+    filter: dt_node_has_prop("/zephyr,user", "dma-test-devs")
