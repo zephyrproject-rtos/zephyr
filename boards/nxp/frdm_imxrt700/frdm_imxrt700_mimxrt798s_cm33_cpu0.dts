@@ -143,3 +143,12 @@
 		};
 	};
 };
+
+&mbox1_a {
+	status = "okay";
+};
+
+&sema420 {
+	domain-id = <0>;
+	status = "okay";
+};
