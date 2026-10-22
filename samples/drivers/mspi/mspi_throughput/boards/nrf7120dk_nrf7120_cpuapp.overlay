@@ -19,8 +19,8 @@
 };
 
 &mspi00 {
-	status = "okay";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	status = "okay";
 
 	/* Dummy device so the controller has a defined target (dev_idx 0) for throughput tests. */
 	mspi_dummy: mspi_dummy@0 {

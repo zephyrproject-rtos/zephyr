@@ -17,8 +17,8 @@
 };
 
 &spi0 {
-	status = "okay";
 	port-sel = <0>;
 	chip-select = <0>;
 	lines = <4>;
+	status = "okay";
 };

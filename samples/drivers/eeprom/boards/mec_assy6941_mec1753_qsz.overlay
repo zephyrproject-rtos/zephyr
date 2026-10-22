@@ -16,10 +16,10 @@
 };
 
 &eeprom {
-	status = "okay";
 	pinctrl-0 = <&pspi_cs_n_gpio256
 		     &pspi_clk_gpio257
 		     &pspi_sdi_gpio252
 		     &pspi_sdo_gpio251>;
 	pinctrl-names = "default";
+	status = "okay";
 };
