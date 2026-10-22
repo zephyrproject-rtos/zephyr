@@ -21,20 +21,6 @@
 			d-cache-line-size = <64>;
 		};
 
-		cpu1: cpu@1 {
-			compatible = "cdns,tensilica-xtensa-lx7";
-			reg = <1>;
-			device_type = "cpu";
-			cpu-power-states = <&d3>;
-		};
-
-		cpu2: cpu@2 {
-			compatible = "cdns,tensilica-xtensa-lx7";
-			reg = <2>;
-			device_type = "cpu";
-			cpu-power-states = <&d3>;
-		};
-
 		power-states {
 			d0i3: idle {
 				compatible = "zephyr,power-state";
@@ -54,24 +40,20 @@
 				status = "disabled";
 			};
 		};
-	};
 
-	sram0: memory@a0020000 {
-		compatible = "mmio-sram";
-		reg = <0xa0020000 DT_SIZE_K(2816)>;
-		device_type = "memory";
-	};
+		cpu1: cpu@1 {
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <1>;
+			device_type = "cpu";
+			cpu-power-states = <&d3>;
+		};
 
-	sram0virtual: virtualmemory@a0020000 {
-		compatible = "mmio-sram";
-		reg = <0xa0020000 DT_SIZE_K(8192)>;
-		device_type = "memory";
-	};
-
-	sram1: memory@a0000000 {
-		compatible = "mmio-sram";
-		reg = <0xa0000000 DT_SIZE_K(64)>;
-		device_type = "memory";
+		cpu2: cpu@2 {
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <2>;
+			device_type = "cpu";
+			cpu-power-states = <&d3>;
+		};
 	};
 
 	sysclk: system-clock {
@@ -103,54 +85,17 @@
 		#clock-cells = <0>;
 	};
 
-	IMR1: memory@a1000000 {
-		compatible = "intel,adsp-imr";
-		reg = <0xa1000000 DT_SIZE_M(16)>;
-		block-size = <0x1000>;
-		zephyr,memory-region = "IMR1";
-	};
-
 	soc {
-		l1ccap: l1ccap@1fe80080 {
-			compatible = "intel,adsp-l1ccap";
-			reg = <0x1fe80080 0x4>;
-		};
-
-		l1ccfg: l1ccfg@1fe80084 {
-			compatible = "intel,adsp-l1ccfg";
-			reg = <0x1fe80084 0x4>;
-		};
-
-		l1pcfg: l1pcfg@1fe80088 {
-			compatible = "intel,adsp-l1pcfg";
-			reg = <0x1fe80088 0x4>;
-		};
-
-		hsbcap: hsbcap@71d00 {
-			compatible = "intel,adsp-hsbcap";
-			reg = <0x71d00 0x4>;
-		};
-
-		lsbpm: lsbpm@71d80 {
-			compatible = "intel,adsp-lsbpm";
-			reg = <0x71d80 0x0008>;
-		};
-
-		imria1: imria1@162080 {
-			compatible = "intel,adsp-imria1";
-			reg = <0x162080 0x0008>;
-		};
-
-		hsbpm: hsbpm@17a800 {
-			compatible = "intel,adsp-hsbpm";
-			reg = <0x17a800 0x0008>;
-		};
-
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
+		};
+
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&tts>;
 		};
 
 		dmic0: dmic0@10000 {
@@ -281,11 +226,6 @@
 			status = "okay";
 		};
 
-		sspbase: ssp_base@28800 {
-			compatible = "intel,ssp-sspbase";
-			reg = <0x28800 0x1000>;
-		};
-
 		ssp0: ssp@28000 {
 			compatible = "intel,ssp";
 			reg = <0x00028000 0x1000
@@ -307,6 +247,11 @@
 				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
+		};
+
+		sspbase: ssp_base@28800 {
+			compatible = "intel,ssp-sspbase";
+			reg = <0x28800 0x1000>;
 		};
 
 		ssp1: ssp@29000 {
@@ -471,6 +416,16 @@
 			status = "okay";
 		};
 
+		hsbcap: hsbcap@71d00 {
+			compatible = "intel,adsp-hsbcap";
+			reg = <0x71d00 0x4>;
+		};
+
+		lsbpm: lsbpm@71d80 {
+			compatible = "intel,adsp-lsbpm";
+			reg = <0x71d80 0x0008>;
+		};
+
 		shim: shim@71f00 {
 			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
@@ -618,6 +573,16 @@
 			status = "okay";
 		};
 
+		imria1: imria1@162080 {
+			compatible = "intel,adsp-imria1";
+			reg = <0x162080 0x0008>;
+		};
+
+		hsbpm: hsbpm@17a800 {
+			compatible = "intel,adsp-hsbpm";
+			reg = <0x17a800 0x0008>;
+		};
+
 		sha: adsp-sha@17df00 {
 			compatible = "intel,adsp-sha";
 			reg = <0x17df00 0xd0>;
@@ -631,9 +596,19 @@
 			write-bit-idx = <15>;
 		};
 
-		timer: timer {
-			compatible = "intel,adsp-timer";
-			syscon = <&tts>;
+		l1ccap: l1ccap@1fe80080 {
+			compatible = "intel,adsp-l1ccap";
+			reg = <0x1fe80080 0x4>;
+		};
+
+		l1ccfg: l1ccfg@1fe80084 {
+			compatible = "intel,adsp-l1ccfg";
+			reg = <0x1fe80084 0x4>;
+		};
+
+		l1pcfg: l1pcfg@1fe80088 {
+			compatible = "intel,adsp-l1pcfg";
+			reg = <0x1fe80088 0x4>;
 		};
 	};
 
@@ -792,5 +767,30 @@
 			zephyr,pm-device-runtime-auto;
 			status = "okay";
 		};
+	};
+
+	sram1: memory@a0000000 {
+		compatible = "mmio-sram";
+		reg = <0xa0000000 DT_SIZE_K(64)>;
+		device_type = "memory";
+	};
+
+	sram0: memory@a0020000 {
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(2816)>;
+		device_type = "memory";
+	};
+
+	sram0virtual: virtualmemory@a0020000 {
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(8192)>;
+		device_type = "memory";
+	};
+
+	IMR1: memory@a1000000 {
+		compatible = "intel,adsp-imr";
+		reg = <0xa1000000 DT_SIZE_M(16)>;
+		block-size = <0x1000>;
+		zephyr,memory-region = "IMR1";
 	};
 };

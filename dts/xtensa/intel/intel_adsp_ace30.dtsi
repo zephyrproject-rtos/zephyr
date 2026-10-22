@@ -21,20 +21,6 @@
 			d-cache-line-size = <64>;
 		};
 
-		cpu1: cpu@1 {
-			compatible = "cdns,tensilica-xtensa-lx7";
-			reg = <1>;
-			device_type = "cpu";
-			cpu-power-states = <&d0i3 &d3>;
-		};
-
-		cpu2: cpu@2 {
-			compatible = "cdns,tensilica-xtensa-lx7";
-			reg = <2>;
-			device_type = "cpu";
-			cpu-power-states = <&d0i3 &d3>;
-		};
-
 		power-states {
 			d0i3: idle {
 				compatible = "zephyr,power-state";
@@ -54,18 +40,20 @@
 				status = "disabled";
 			};
 		};
-	};
 
-	sram0virtual: virtualmemory@a0020000 {
-		compatible = "mmio-sram";
-		reg = <0xa0020000 DT_SIZE_K(8192)>;
-		device_type = "memory";
-	};
+		cpu1: cpu@1 {
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <1>;
+			device_type = "cpu";
+			cpu-power-states = <&d0i3 &d3>;
+		};
 
-	sram1: memory@a0000000 {
-		compatible = "mmio-sram";
-		reg = <0xa0000000 DT_SIZE_K(64)>;
-		device_type = "memory";
+		cpu2: cpu@2 {
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <2>;
+			device_type = "cpu";
+			cpu-power-states = <&d0i3 &d3>;
+		};
 	};
 
 	sysclk: system-clock {
@@ -97,49 +85,7 @@
 		#clock-cells = <0>;
 	};
 
-	IMR1: memory@a1000000 {
-		compatible = "intel,adsp-imr";
-		reg = <0xa1000000 DT_SIZE_M(16)>;
-		block-size = <0x1000>;
-		zephyr,memory-region = "IMR1";
-	};
-
 	soc {
-		l1ccap: l1ccap@3fe80080 {
-			compatible = "intel,adsp-l1ccap";
-			reg = <0x3fe80080 0x4>;
-		};
-
-		l1ccfg: l1ccfg@3fe80084 {
-			compatible = "intel,adsp-l1ccfg";
-			reg = <0x3fe80084 0x4>;
-		};
-
-		l1pcfg: l1pcfg@3fe80088 {
-			compatible = "intel,adsp-l1pcfg";
-			reg = <0x3fe80088 0x4>;
-		};
-
-		hsbcap: hsbcap@71d00 {
-			compatible = "intel,adsp-hsbcap";
-			reg = <0x71d00 0x4>;
-		};
-
-		lsbpm: lsbpm@71d80 {
-			compatible = "intel,adsp-lsbpm";
-			reg = <0x71d80 0x0008>;
-		};
-
-		imria1: imria1@162080 {
-			compatible = "intel,adsp-imria1";
-			reg = <0x162080 0x0008>;
-		};
-
-		hsbpm: hsbpm@17a800 {
-			compatible = "intel,adsp-hsbpm";
-			reg = <0x17a800 0x0008>;
-		};
-
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;
@@ -147,9 +93,20 @@
 			#interrupt-cells = <3>;
 		};
 
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&tts>;
+		};
+
 		hdamlddmic: hdamlddmic@cc0 {
 			compatible = "intel,adsp-hda-dmic-cap";
 			reg = <0xcc0 0x40>;
+			status = "okay";
+		};
+
+		hdamlssp: hdamlssp@d00 {
+			compatible = "intel,adsp-hda-ssp-cap";
+			reg = <0xd00 0x40>;
 			status = "okay";
 		};
 
@@ -237,12 +194,6 @@
 		sspbase: ssp_base@28000 {
 			compatible = "intel,ssp-sspbase";
 			reg = <0x28000 0x1000>;
-		};
-
-		hdamlssp: hdamlssp@d00 {
-			compatible = "intel,adsp-hda-ssp-cap";
-			reg = <0xd00 0x40>;
-			status = "okay";
 		};
 
 		ssp0: ssp@28100 {
@@ -485,14 +436,6 @@
 			};
 		};
 
-		mic_privacy: mic-prv@71a40 {
-			compatible = "intel,adsp-mic-privacy";
-			reg = <0x71a40 0x8000>;
-			interrupts = <29 0 0>;
-			interrupt-parent = <&ace_intc>;
-			status = "okay";
-		};
-
 		mem_window0: mem_window@70200 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x70200 0x8>;
@@ -521,11 +464,12 @@
 			read-only;
 		};
 
-		adsp_idc: ace_idc@92000 {
-			compatible = "intel,adsp-idc";
-			reg = <0x92000 0x0400>;
-			interrupts = <24 0 0>;
+		mic_privacy: mic-prv@71a40 {
+			compatible = "intel,adsp-mic-privacy";
+			reg = <0x71a40 0x8000>;
+			interrupts = <29 0 0>;
 			interrupt-parent = <&ace_intc>;
+			status = "okay";
 		};
 
 		dfpmcch: dfpmcch@71ac0 {
@@ -578,6 +522,16 @@
 				#power-domain-cells = <0>;
 				zephyr,pm-device-runtime-auto;
 			};
+		};
+
+		hsbcap: hsbcap@71d00 {
+			compatible = "intel,adsp-hsbcap";
+			reg = <0x71d00 0x4>;
+		};
+
+		lsbpm: lsbpm@71d80 {
+			compatible = "intel,adsp-lsbpm";
+			reg = <0x71d80 0x0008>;
 		};
 
 		shim: shim@71f00 {
@@ -670,6 +624,13 @@
 			status = "okay";
 		};
 
+		adsp_idc: ace_idc@92000 {
+			compatible = "intel,adsp-idc";
+			reg = <0x92000 0x0400>;
+			interrupts = <24 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
 		/* This is actually an array of per-core designware
 		 * controllers, but the special setup and extra
 		 * masking layer makes it easier for MTL to handle
@@ -685,6 +646,16 @@
 			interrupt-parent = <&core_intc>;
 		};
 
+		imria1: imria1@162080 {
+			compatible = "intel,adsp-imria1";
+			reg = <0x162080 0x0008>;
+		};
+
+		hsbpm: hsbpm@17a800 {
+			compatible = "intel,adsp-hsbpm";
+			reg = <0x17a800 0x0008>;
+		};
+
 		tlb: tlb@17e000 {
 			compatible = "intel,adsp-mtl-tlb";
 			reg = <0x17e000 0x1000>;
@@ -693,9 +664,19 @@
 			write-bit-idx = <15>;
 		};
 
-		timer: timer {
-			compatible = "intel,adsp-timer";
-			syscon = <&tts>;
+		l1ccap: l1ccap@3fe80080 {
+			compatible = "intel,adsp-l1ccap";
+			reg = <0x3fe80080 0x4>;
+		};
+
+		l1ccfg: l1ccfg@3fe80084 {
+			compatible = "intel,adsp-l1ccfg";
+			reg = <0x3fe80084 0x4>;
+		};
+
+		l1pcfg: l1pcfg@3fe80088 {
+			compatible = "intel,adsp-l1pcfg";
+			reg = <0x3fe80088 0x4>;
 		};
 	};
 
@@ -854,5 +835,24 @@
 			zephyr,pm-device-runtime-auto;
 			status = "okay";
 		};
+	};
+
+	sram1: memory@a0000000 {
+		compatible = "mmio-sram";
+		reg = <0xa0000000 DT_SIZE_K(64)>;
+		device_type = "memory";
+	};
+
+	sram0virtual: virtualmemory@a0020000 {
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(8192)>;
+		device_type = "memory";
+	};
+
+	IMR1: memory@a1000000 {
+		compatible = "intel,adsp-imr";
+		reg = <0xa1000000 DT_SIZE_M(16)>;
+		block-size = <0x1000>;
+		zephyr,memory-region = "IMR1";
 	};
 };
