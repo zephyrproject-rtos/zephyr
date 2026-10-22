@@ -44,10 +44,10 @@
 
 	firmware {
 		scmi {
-			#address-cells = <1>;
-			#size-cells = <0>;
 
 			compatible = "arm,scmi";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			shmem = <&scmi_res0>;
 			mboxes = <&mfis 66>;
 			mbox-names = "tx";
@@ -81,8 +81,8 @@
 
 	soc {
 		compatible = "simple-bus";
-		interrupt-parent = <&gic>;
 		ranges;
+		interrupt-parent = <&gic>;
 
 		mfis: mailbox@18800000 {
 			compatible = "renesas,rcar-mfis-mbox";
@@ -189,10 +189,10 @@
 
 		gic: interrupt-controller@39000000 {
 			compatible = "arm,gic-v3", "arm,gic";
-			redistributor-stride = <0x40000>; /* 256kB stride */
-			redistributor-regions = <1>;
 			reg = <0x39000000 0x20000>, /* GICD */
 			      <0x39080000 0x810000>; /* GICR */
+			redistributor-stride = <0x40000>; /* 256kB stride */
+			redistributor-regions = <1>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
