@@ -10,8 +10,8 @@
 #include <st/h7/stm32h743vitx-pinctrl.dtsi>
 
 / {
-	model = "Google Icetower development board";
 	compatible = "google,icetower-fpmcu";
+	model = "Google Icetower development board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -28,9 +28,9 @@
 };
 
 &clk_hsi {
-	status = "okay";
 	hsi-div = <1>;
 	clock-frequency = <DT_FREQ_M(64)>;
+	status = "okay";
 };
 
 &clk_hsi48 {
@@ -53,9 +53,9 @@
 };
 
 &rng {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(AHB2, 6)>,
 		 <&rcc STM32_SRC_HSI48 RNG_SEL(0)>;
+	status = "okay";
 };
 
 /* USART1: Servo UART (console) */
