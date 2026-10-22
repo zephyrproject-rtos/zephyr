@@ -3073,6 +3073,15 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (buf->len < handler->expect_len) {
 		LOG_ERR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
 		err = BT_ATT_ERR_INVALID_PDU;
+	} else if (buf->len + sizeof(*hdr) > bt_att_mtu(att_chan)) {
+		/* Core v5.3 Vol 3 Part F 3.4.2: a PDU is at most ATT_MTU octets
+		 * long. L2CAP Basic mode on the unenhanced bearer does not
+		 * enforce any MTU, so this also bounds what is copied out of a
+		 * received PDU into the ATT buffers.
+		 */
+		LOG_WRN("Too long ATT PDU (%zu) received for code 0x%02x", buf->len + sizeof(*hdr),
+			hdr->code);
+		err = BT_ATT_ERR_INVALID_PDU;
 	} else {
 		err = handler->func(att_chan, buf);
 	}
