@@ -13,10 +13,10 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "intel,lakemont", "intel,x86";
-			d-cache-line-size = <64>;
 			reg = <0>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 	};
 
@@ -40,9 +40,9 @@
 	 * defined in the board configuration's DTS.
 	 */
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 };

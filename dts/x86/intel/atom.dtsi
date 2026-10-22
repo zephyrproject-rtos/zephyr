@@ -13,17 +13,17 @@
 		#size-cells = <0>;
 
 		cpu: cpu@0 {
+			reg = <0>;
 			device_type = "cpu";
 			d-cache-line-size = <64>;
-			reg = <0>;
 		};
 	};
 
 	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
-		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
 	};
 
@@ -36,15 +36,15 @@
 	};
 
 	dram0: memory@DT_DRAM_BASE {
-		device_type = "memory";
 		reg = <DT_ADDR(DT_DRAM_BASE) DT_DRAM_SIZE>;
+		device_type = "memory";
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		uart0: uart@3f8 {
 			compatible = "ns16550";
@@ -81,6 +81,8 @@
 			compatible = "motorola,mc146818-mfd";
 			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
 
+			status = "okay";
+
 			rtc: counter: rtc {
 				compatible = "motorola,mc146818";
 				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
@@ -89,8 +91,6 @@
 
 				status = "okay";
 			};
-
-			status = "okay";
 		};
 	};
 };

@@ -15,17 +15,17 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "intel,elkhart-lake", "intel,x86_64";
-			d-cache-line-size = <64>;
 			reg = <0>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "intel,elkhart-lake", "intel,x86_64";
-			d-cache-line-size = <64>;
 			reg = <1>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 	};
 
@@ -34,8 +34,8 @@
 	};
 
 	dram0: memory@0 {
-		device_type = "memory";
 		reg = <0x0 DT_DRAM_SIZE>;
+		device_type = "memory";
 	};
 
 	ibecc: ibecc {
@@ -45,9 +45,9 @@
 
 	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
-		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
 	};
 
@@ -60,11 +60,11 @@
 	};
 
 	pcie0: pcie0 {
+		compatible = "pcie-controller";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "pcie-controller";
 		acpi-hid = "PNP0A08";
-		ranges;
 
 		ptm_root0: ptm_root0 {
 			compatible = "ptm-root";
@@ -85,8 +85,8 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
-			status = "okay";
 			current-speed = <115200>;
+			status = "okay";
 		};
 
 		uart1: uart1 {
@@ -99,9 +99,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "okay";
-			current-speed = <115200>;
 		};
 
 		uart2: uart2 {
@@ -114,9 +114,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "okay";
-			current-speed = <115200>;
 		};
 
 		uart_pse_0: uart_pse_0 {
@@ -129,9 +129,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "disabled";
-			current-speed = <115200>;
 		};
 
 		uart_pse_1: uart_pse_1 {
@@ -144,9 +144,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "disabled";
-			current-speed = <115200>;
 		};
 
 		uart_pse_2: uart_pse_2 {
@@ -159,9 +159,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "disabled";
-			current-speed = <115200>;
 		};
 
 		uart_pse_3: uart_pse_3 {
@@ -174,9 +174,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "disabled";
-			current-speed = <115200>;
 		};
 
 		uart_pse_4: uart_pse_4 {
@@ -189,9 +189,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "disabled";
-			current-speed = <115200>;
 		};
 
 		uart_pse_5: uart_pse_5 {
@@ -204,9 +204,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "disabled";
-			current-speed = <115200>;
 		};
 
 		smbus0: smbus0 {
@@ -418,10 +418,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		vtd: vtd@fed91000 {
 			compatible = "intel,vt-d";
@@ -440,9 +440,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <3 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "disabled";
-			current-speed = <115200>;
 		};
 
 		uart2_fixed: uart@fe042000 {
@@ -454,9 +454,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <4 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "disabled";
-			current-speed = <115200>;
 		};
 
 		gpio_0_b: gpio@fd6e0700 {
@@ -719,6 +719,8 @@
 			compatible = "motorola,mc146818-mfd";
 			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
 
+			status = "okay";
+
 			rtc: counter: rtc {
 				compatible = "motorola,mc146818";
 				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
@@ -733,8 +735,6 @@
 				size = <241>;
 				status = "okay";
 			};
-
-			status = "okay";
 		};
 	};
 };
