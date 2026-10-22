@@ -26,6 +26,17 @@
  * derive REF_SCALE and the WINDOW thresholds, never turned on. If a source is
  * left off the measurement simply counts zero edges and surfaces CLOCK_LOST.
  * Only the peripheral's own gate clock is enabled here, through clock_control.
+ *
+ * With CONFIG_PM_DEVICE_RUNTIME the consumer holds the runtime reference in
+ * both modes. Call pm_device_runtime_get() before clock_monitor_configure()
+ * and keep the reference until the monitor is no longer needed. A MEASURE
+ * completion does not release it; the consumer calls pm_device_runtime_put()
+ * when finished.
+ *
+ * SUSPEND stops measurement and interrupt delivery before closing the gate.
+ * RESUME opens the gate and restarts WINDOW monitoring that was running
+ * before SUSPEND. An interrupted MEASURE cycle is not restarted; the consumer
+ * handles the missing completion through its own timeout.
  */
 
 #define DT_DRV_COMPAT nxp_freqme
@@ -37,6 +48,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 
 #include <fsl_freqme.h>
@@ -80,7 +92,7 @@ struct nxp_freqme_source {
 
 struct nxp_freqme_config {
 	FREQME_Type *base;
-	/* Peripheral gate clock (clocks "ipg"), enabled via clock_control_on(). */
+	/* Peripheral gate clock (clocks "ipg"). */
 	const struct device    *gate_clk_dev;
 	clock_control_subsys_t  gate_clk_subsys;
 	/* Selectable reference / target sources; the is_default source is the
@@ -91,6 +103,7 @@ struct nxp_freqme_config {
 	const struct nxp_freqme_source *tar_srcs;
 	uint8_t tar_srcs_count;
 	void (*irq_config_func)(const struct device *dev);
+	uint32_t irq_num;
 };
 
 enum nxp_freqme_state {
@@ -138,6 +151,12 @@ struct nxp_freqme_data {
 	struct freqme_hw_params params;
 	/* Whether configure() has applied a configuration to this instance. */
 	bool configured;
+	/* Whether WINDOW monitoring should restart on RESUME. */
+	bool started;
+	/* API and ISR register access is enabled. */
+	bool hw_active;
+	/* A failed SUSPEND could not restore the gate clock. */
+	bool hw_failed;
 };
 
 /*
@@ -479,6 +498,7 @@ static int nxp_freqme_start(const struct device *dev)
 	 */
 	data->state = NXP_FREQME_STATE_RUNNING;
 	if (data->cfg.mode == CLOCK_MONITOR_MODE_WINDOW) {
+		data->started = true;
 		FREQME_EnableContinuousMode(config->base, true);
 	}
 	FREQME_StartMeasurementCycle(config->base);
@@ -493,6 +513,7 @@ static int nxp_freqme_stop(const struct device *dev)
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&data->lock);
+	data->started = false;
 	if (data->state == NXP_FREQME_STATE_RUNNING) {
 		if (data->cfg.mode == CLOCK_MONITOR_MODE_WINDOW) {
 			FREQME_EnableContinuousMode(config->base, false);
@@ -624,6 +645,7 @@ static int nxp_freqme_set_source(const struct device *dev, uint32_t reference, u
 	data->has_rate = false;
 	data->clock_lost = false;
 	data->configured = false;
+	data->started = false;
 	data->state = NXP_FREQME_STATE_IDLE;
 	k_spin_unlock(&data->lock, key);
 	return 0;
@@ -643,16 +665,21 @@ static void nxp_freqme_isr(const struct device *dev)
 {
 	const struct nxp_freqme_config *config = dev->config;
 	struct nxp_freqme_data *data = dev->data;
-	uint32_t flags = FREQME_GetInterruptStatusFlags(config->base);
+	uint32_t flags;
 	uint32_t evts = 0U;
 	uint32_t rate = 0U;
 	clock_monitor_callback_t cb = NULL;
 	void *user_data = NULL;
 	k_spinlock_key_t key;
 
-	FREQME_ClearInterruptStatusFlags(config->base, flags);
-
 	key = k_spin_lock(&data->lock);
+	if (!data->hw_active || !data->configured) {
+		k_spin_unlock(&data->lock, key);
+		return;
+	}
+
+	flags = FREQME_GetInterruptStatusFlags(config->base);
+	FREQME_ClearInterruptStatusFlags(config->base, flags);
 
 	/* A pending interrupt may run after stop() (or a fresh configure())
 	 * has already left the RUNNING state; discard it.
@@ -718,6 +745,31 @@ static void nxp_freqme_isr(const struct device *dev)
 	}
 }
 
+static int nxp_freqme_clock_on(const struct device *dev)
+{
+	const struct nxp_freqme_config *config = dev->config;
+	int ret;
+
+	ret = clock_control_on(config->gate_clk_dev, config->gate_clk_subsys);
+	if (ret != 0) {
+		LOG_ERR("%s: failed to enable gate clock (%d)", dev->name, ret);
+	}
+	return ret;
+}
+
+static int nxp_freqme_clock_off(const struct device *dev)
+{
+	const struct nxp_freqme_config *config = dev->config;
+	int ret;
+
+	ret = clock_control_off(config->gate_clk_dev, config->gate_clk_subsys);
+	if (ret != 0) {
+		LOG_ERR("%s: failed to disable gate clock (%d)",
+			dev->name, ret);
+	}
+	return ret;
+}
+
 /*
  * Enable the peripheral clock, route the selected sources and restore any
  * configuration retained in RAM.
@@ -728,9 +780,8 @@ static int nxp_freqme_hw_bringup(const struct device *dev)
 	struct nxp_freqme_data *data = dev->data;
 	int ret;
 
-	ret = clock_control_on(config->gate_clk_dev, config->gate_clk_subsys);
+	ret = nxp_freqme_clock_on(dev);
 	if (ret != 0) {
-		LOG_ERR("%s: failed to enable gate clock (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -756,10 +807,102 @@ static int nxp_freqme_hw_bringup(const struct device *dev)
 	return 0;
 }
 
+static void nxp_freqme_hw_stop(const struct device *dev)
+{
+	const struct nxp_freqme_config *config = dev->config;
+	struct nxp_freqme_data *data = dev->data;
+
+	if (data->state == NXP_FREQME_STATE_RUNNING) {
+		FREQME_EnableContinuousMode(config->base, false);
+		FREQME_TerminateMeasurementCycle(config->base);
+		data->state = NXP_FREQME_STATE_CONFIGURED;
+	}
+	/* Unconfigured hardware may still be held in peripheral reset. */
+	if (data->configured) {
+		FREQME_DisableInterrupts(config->base,
+			(uint32_t)kFREQME_ReadyInterruptEnable |
+			(uint32_t)kFREQME_OverflowInterruptEnable |
+			(uint32_t)kFREQME_UnderflowInterruptEnable);
+		FREQME_ClearInterruptStatusFlags(config->base,
+			FREQME_GetInterruptStatusFlags(config->base));
+	}
+}
+
+static void nxp_freqme_hw_resume(const struct device *dev)
+{
+	const struct nxp_freqme_config *config = dev->config;
+	struct nxp_freqme_data *data = dev->data;
+
+	data->hw_failed = false;
+	data->hw_active = true;
+	if (data->configured) {
+		FREQME_EnableInterrupts(config->base, data->params.int_mask);
+	}
+	if (data->started) {
+		data->state = NXP_FREQME_STATE_RUNNING;
+		FREQME_EnableContinuousMode(config->base, true);
+		FREQME_StartMeasurementCycle(config->base);
+	}
+	irq_enable(config->irq_num);
+}
+
+static int nxp_freqme_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct nxp_freqme_config *config = dev->config;
+	struct nxp_freqme_data *data = dev->data;
+	k_spinlock_key_t key;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = nxp_freqme_clock_on(dev);
+		if (ret != 0) {
+			return ret;
+		}
+		key = k_spin_lock(&data->lock);
+		nxp_freqme_hw_resume(dev);
+		k_spin_unlock(&data->lock, key);
+
+		return 0;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		key = k_spin_lock(&data->lock);
+		if (data->state == NXP_FREQME_STATE_CONFIGURING) {
+			k_spin_unlock(&data->lock, key);
+			LOG_ERR("%s: configuration is in progress", dev->name);
+			return -EBUSY;
+		}
+		irq_disable(config->irq_num);
+		if (data->hw_active) {
+			nxp_freqme_hw_stop(dev);
+		}
+		data->hw_active = false;
+		ret = nxp_freqme_clock_off(dev);
+		if (ret != 0) {
+			int restore_ret = nxp_freqme_clock_on(dev);
+
+			if (restore_ret == 0) {
+				nxp_freqme_hw_resume(dev);
+			} else {
+				data->hw_failed = true;
+				LOG_ERR("%s: suspend rollback failed (%d)",
+					dev->name, restore_ret);
+			}
+		}
+		k_spin_unlock(&data->lock, key);
+
+		return ret;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int nxp_freqme_init(const struct device *dev)
 {
 	const struct nxp_freqme_config *config = dev->config;
 	struct nxp_freqme_data *data = dev->data;
+	int ret;
 
 	data->state = NXP_FREQME_STATE_IDLE;
 	data->cur_ref_idx = nxp_freqme_default_idx(config->ref_srcs,
@@ -774,7 +917,17 @@ static int nxp_freqme_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	return nxp_freqme_hw_bringup(dev);
+	ret = nxp_freqme_hw_bringup(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = nxp_freqme_clock_off(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return pm_device_driver_init(dev, nxp_freqme_pm_action);
 }
 
 static DEVICE_API(clock_monitor, nxp_freqme_api) = {
@@ -862,9 +1015,9 @@ static DEVICE_API(clock_monitor, nxp_freqme_api) = {
 	DT_FOREACH_CHILD(NXP_FREQME_TAR_NODE(inst), NXP_FREQME_SRC_MUX_DEFINE) \
 	static void nxp_freqme_irq_cfg_##inst(const struct device *dev)        \
 	{                                                                      \
+		irq_disable(DT_INST_IRQN(inst));                               \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),   \
 			    nxp_freqme_isr, DEVICE_DT_INST_GET(inst), 0);      \
-		irq_enable(DT_INST_IRQN(inst));                                \
 	}                                                                      \
 	static const struct nxp_freqme_source nxp_freqme_ref_srcs_##inst[] = { \
 		DT_FOREACH_CHILD_SEP(NXP_FREQME_REF_NODE(inst),                \
@@ -888,8 +1041,11 @@ static DEVICE_API(clock_monitor, nxp_freqme_api) = {
 		.tar_srcs_count =                                              \
 			(uint8_t)ARRAY_SIZE(nxp_freqme_tar_srcs_##inst),       \
 		.irq_config_func = nxp_freqme_irq_cfg_##inst,                  \
+		.irq_num = DT_INST_IRQN(inst),                                \
 	};                                                                     \
-	DEVICE_DT_INST_DEFINE(inst, nxp_freqme_init, NULL,                     \
+	PM_DEVICE_DT_INST_DEFINE(inst, nxp_freqme_pm_action);                  \
+	DEVICE_DT_INST_DEFINE(inst, nxp_freqme_init,                           \
+			      PM_DEVICE_DT_INST_GET(inst),                     \
 			      &nxp_freqme_data_##inst, &nxp_freqme_cfg_##inst, \
 			      POST_KERNEL, CONFIG_CLOCK_MONITOR_INIT_PRIORITY, \
 			      &nxp_freqme_api);
