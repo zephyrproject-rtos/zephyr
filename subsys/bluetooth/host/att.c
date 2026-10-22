@@ -2458,11 +2458,16 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		LOG_DBG("buf %p handle 0x%04x offset %u", buf, handle, data->offset);
 
 		net_buf_simple_reset(&reassembled_data);
-		net_buf_simple_add_mem(&reassembled_data, buf->data, buf->len);
 
-		err = exec_write_reassemble(handle, data->offset,
-					    &chan->att->prep_queue,
-					    &reassembled_data);
+		if (buf->len > net_buf_simple_tailroom(&reassembled_data)) {
+			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+		} else {
+			(void)net_buf_simple_add_mem(&reassembled_data, buf->data, buf->len);
+
+			err = exec_write_reassemble(handle, data->offset, &chan->att->prep_queue,
+						    &reassembled_data);
+		}
+
 		if (err != BT_ATT_ERR_SUCCESS) {
 			/* Discard queued buffers */
 			net_buf_unref(buf);
