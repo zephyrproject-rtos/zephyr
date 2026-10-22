@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Sipeed Tang Mega 138K Pro Dock AE350 Demo";
 	compatible = "sipeed,tang-mega-138k-pro-dock-ae350-demo";
+	model = "Sipeed Tang Mega 138K Pro Dock AE350 Demo";
 
 	aliases {
 		led0 = &led0;
