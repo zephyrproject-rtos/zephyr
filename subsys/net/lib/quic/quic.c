@@ -3382,15 +3382,22 @@ static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 	for (i = 0; i < ARRAY_SIZE(contexts); i++) {
 		struct quic_context *ctx = &contexts[i];
 		struct quic_stream *stream, *tmp;
+		bool affected;
 
 		if (!quic_context_is_used(ctx)) {
 			continue;
 		}
 
-		ctx->error_code = -ECONNRESET;
+		/* Only the connection the endpoint belongs to, or that has
+		 * streams on it, is closed. Other connections, including a
+		 * new one that reuses the context of a closed one, are not.
+		 */
+		affected = sys_slist_find(&ctx->endpoints, &ep->node, NULL);
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 			if (stream->ep == ep) {
+				affected = true;
+
 				NET_DBG("[EP:%p/%d] Notifying stream %" PRIu64
 					" of connection close",
 					ep, quic_get_by_ep(ep), stream->id);
@@ -3407,6 +3414,13 @@ static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 				ep->is_closing_notified = true;
 			}
 		}
+
+		if (!affected) {
+			continue;
+		}
+
+		ctx->error_code = -ECONNRESET;
+		ctx->closed = true;
 
 		/* This will release any accepts waiting on this stream */
 		k_sem_give(&ctx->incoming.stream_sem);
@@ -5901,6 +5915,7 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 	 */
 	ctx->sock = -1;
 	ctx->error_code = 0;
+	ctx->closed = false;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 	memset(&ctx->stats, 0, sizeof(ctx->stats));
