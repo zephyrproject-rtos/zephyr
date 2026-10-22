@@ -1609,6 +1609,58 @@ ZTEST(mcp_server_tests, test_13_tools_call_reply_then_fail)
 	cleanup_test_tools();
 }
 
+/*
+ * The tools array of a tools/list response must be able to use the whole
+ * message, not just a small fixed-size JSON chunk.
+ */
+ZTEST(mcp_server_tests, test_14_tools_list_larger_than_json_chunk)
+{
+	int ret;
+	size_t msg_len;
+	const char *msg;
+	char name[CONFIG_MCP_TOOL_NAME_MAX_LEN];
+	struct mcp_tool_record tool = {
+		.metadata = {
+			.input_schema = "{\"type\":\"object\",\"properties\":{"
+					"\"channel\":{\"type\":\"integer\",\"minimum\":0},"
+					"\"value\":{\"type\":\"number\"},"
+					"\"unit\":{\"type\":\"string\"}},"
+					"\"required\":[\"channel\",\"value\"]}",
+#ifdef CONFIG_MCP_TOOL_DESC
+			.description = "Tool with a description and an input schema long "
+				       "enough for a few of them to exceed 1 KB",
+#endif
+#ifdef CONFIG_MCP_TOOL_TITLE
+			.title = "Large Tool",
+#endif
+#ifdef CONFIG_MCP_TOOL_OUTPUT_SCHEMA
+			.output_schema = "{\"type\":\"object\"}",
+#endif
+		},
+		.callback = stub_tool_callback_1
+	};
+
+	for (int i = 0; i < CONFIG_MCP_MAX_TOOLS; i++) {
+		snprintk(tool.metadata.name, sizeof(tool.metadata.name), "large_tool_%d", i);
+		ret = mcp_server_add_tool(server, &tool);
+		zassert_equal(ret, 0, "Tool %d should register successfully", i);
+	}
+
+	send_tools_list_request(valid_client_binding, 3400);
+
+	msg = mcp_transport_mock_get_last_message(valid_client_binding, &msg_len);
+	zassert_not_null(msg, "Response data should not be NULL");
+	zassert_true(msg_len > MCP_MAX_JSON_CHUNK_LEN, "Response should exceed %d bytes, got %zu",
+		     MCP_MAX_JSON_CHUNK_LEN, msg_len);
+	zassert_not_null(strstr(msg, "\"result\""), "Response should contain result field");
+
+	for (int i = 0; i < CONFIG_MCP_MAX_TOOLS; i++) {
+		snprintk(name, sizeof(name), "large_tool_%d", i);
+		zassert_not_null(strstr(msg, name), "Response should contain %s", name);
+		mcp_server_remove_tool(server, name);
+	}
+}
+
 static void *mcp_server_tests_setup(void)
 {
 	int ret;
