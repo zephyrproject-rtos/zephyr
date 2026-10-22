@@ -15,8 +15,8 @@
 #include <intel/atom.dtsi>
 
 / {
-	model = "ACRN";
 	compatible = "acrn";
+	model = "ACRN";
 
 	cpus {
 		timebase-frequency = <DT_FREQ_M(1500)>;
@@ -34,22 +34,22 @@
 	};
 
 	pcie0: pcie0 {
+		compatible = "pcie-controller";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "pcie-controller";
 		acpi-hid = "PNP0A03";
-		ranges;
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &cpu {
