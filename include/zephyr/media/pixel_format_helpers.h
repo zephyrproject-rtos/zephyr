@@ -698,6 +698,112 @@ typedef uint32_t pixel_format_t;
 	(0 PIX_FMT_FOREACH_YUV_FULL_PLANAR(_PIX_FMT_FMT_OR_EQ, pixfmt)		\
 	   PIX_FMT_FOREACH_RGB_FULL_PLANAR(_PIX_FMT_FMT_OR_EQ, pixfmt))
 
+/** @cond INTERNAL_HIDDEN */
+/* Register fixed-size formats with their storage bits per pixel, including padding. */
+#define Z_PIX_FMT_FOREACH_BPP(X, ...)				\
+	X(MONO01, 1U, __VA_ARGS__)					\
+	X(MONO10, 1U, __VA_ARGS__)					\
+	X(L4, 4U, __VA_ARGS__)					\
+	X(I4, 4U, __VA_ARGS__)					\
+	X(SBGGR8, 8U, __VA_ARGS__)				\
+	X(SGBRG8, 8U, __VA_ARGS__)				\
+	X(SGRBG8, 8U, __VA_ARGS__)				\
+	X(SRGGB8, 8U, __VA_ARGS__)				\
+	X(GREY, 8U, __VA_ARGS__)					\
+	X(SBGGR10P, 10U, __VA_ARGS__)				\
+	X(SGBRG10P, 10U, __VA_ARGS__)				\
+	X(SGRBG10P, 10U, __VA_ARGS__)				\
+	X(SRGGB10P, 10U, __VA_ARGS__)				\
+	X(Y10P, 10U, __VA_ARGS__)					\
+	X(SBGGR12P, 12U, __VA_ARGS__)				\
+	X(SGBRG12P, 12U, __VA_ARGS__)				\
+	X(SGRBG12P, 12U, __VA_ARGS__)				\
+	X(SRGGB12P, 12U, __VA_ARGS__)				\
+	X(Y12P, 12U, __VA_ARGS__)					\
+	X(NV12, 12U, __VA_ARGS__)					\
+	X(NV21, 12U, __VA_ARGS__)					\
+	X(YUV420, 12U, __VA_ARGS__)				\
+	X(YVU420, 12U, __VA_ARGS__)				\
+	X(SBGGR14P, 14U, __VA_ARGS__)				\
+	X(SGBRG14P, 14U, __VA_ARGS__)				\
+	X(SGRBG14P, 14U, __VA_ARGS__)				\
+	X(SRGGB14P, 14U, __VA_ARGS__)				\
+	X(Y14P, 14U, __VA_ARGS__)					\
+	X(RGB565, 16U, __VA_ARGS__)				\
+	X(RGB565X, 16U, __VA_ARGS__)				\
+	X(AL88, 16U, __VA_ARGS__)					\
+	X(YUYV, 16U, __VA_ARGS__)					\
+	X(YVYU, 16U, __VA_ARGS__)					\
+	X(UYVY, 16U, __VA_ARGS__)					\
+	X(VYUY, 16U, __VA_ARGS__)					\
+	X(SBGGR8P16, 16U, __VA_ARGS__)				\
+	X(SGBRG8P16, 16U, __VA_ARGS__)				\
+	X(SGRBG8P16, 16U, __VA_ARGS__)				\
+	X(SRGGB8P16, 16U, __VA_ARGS__)				\
+	X(SBGGR10, 16U, __VA_ARGS__)				\
+	X(SGBRG10, 16U, __VA_ARGS__)				\
+	X(SGRBG10, 16U, __VA_ARGS__)				\
+	X(SRGGB10, 16U, __VA_ARGS__)				\
+	X(SBGGR12, 16U, __VA_ARGS__)				\
+	X(SGBRG12, 16U, __VA_ARGS__)				\
+	X(SGRBG12, 16U, __VA_ARGS__)				\
+	X(SRGGB12, 16U, __VA_ARGS__)				\
+	X(SBGGR14, 16U, __VA_ARGS__)				\
+	X(SGBRG14, 16U, __VA_ARGS__)				\
+	X(SGRBG14, 16U, __VA_ARGS__)				\
+	X(SRGGB14, 16U, __VA_ARGS__)				\
+	X(SBGGR16, 16U, __VA_ARGS__)				\
+	X(SGBRG16, 16U, __VA_ARGS__)				\
+	X(SGRBG16, 16U, __VA_ARGS__)				\
+	X(SRGGB16, 16U, __VA_ARGS__)				\
+	X(Y8P16, 16U, __VA_ARGS__)				\
+	X(Y10, 16U, __VA_ARGS__)					\
+	X(Y12, 16U, __VA_ARGS__)					\
+	X(Y14, 16U, __VA_ARGS__)					\
+	X(Y16, 16U, __VA_ARGS__)					\
+	X(NV16, 16U, __VA_ARGS__)					\
+	X(NV61, 16U, __VA_ARGS__)					\
+	X(BGR24, 24U, __VA_ARGS__)				\
+	X(RGB24, 24U, __VA_ARGS__)				\
+	X(RGB24PLANAR, 24U, __VA_ARGS__)			\
+	X(NV24, 24U, __VA_ARGS__)					\
+	X(NV42, 24U, __VA_ARGS__)					\
+	X(YUV24, 24U, __VA_ARGS__)				\
+	X(XYUV32, 32U, __VA_ARGS__)				\
+	X(ARGB32, 32U, __VA_ARGS__)				\
+	X(ABGR32, 32U, __VA_ARGS__)				\
+	X(RGBA32, 32U, __VA_ARGS__)				\
+	X(BGRA32, 32U, __VA_ARGS__)				\
+	X(XRGB32, 32U, __VA_ARGS__)				\
+	X(XBGR32, 32U, __VA_ARGS__)				\
+	X(RGBX32, 32U, __VA_ARGS__)				\
+	X(BGRX32, 32U, __VA_ARGS__)
+
+#define Z_PIX_FMT_BPP_MATCH(suffix, bpp, pixfmt) ((pixfmt) == PIX_FMT_##suffix) ? (bpp) :
+#define Z_PIX_FMT_BPP_CASE(suffix, bpp, ...) case PIX_FMT_##suffix: return (bpp);
+/** @endcond */
+
+/**
+ * @brief Get the storage bits per pixel as a constant expression
+ *
+ * Include padding and chroma subsampling in the bit count. For example, unpacked 10-bit
+ * Bayer formats occupy 16 bits per pixel, while packed formats occupy 10 bits per pixel.
+ *
+ * The result is an integer constant expression when @p pixfmt is an integer constant
+ * expression, allowing use in static initializers and array sizes. This macro is not
+ * suitable for preprocessor @c \#if expressions.
+ *
+ * @warning The argument may be evaluated multiple times and must not have side effects.
+ * Use pix_fmt_bpp() for runtime expressions requiring single evaluation.
+ *
+ * @param pixfmt FourCC pixel format value.
+ *
+ * @retval 0 The format is unknown or has a variable number of bits per pixel.
+ * @return Storage size in bits per pixel for this format.
+ */
+#define PIX_FMT_BITS_PER_PIXEL(pixfmt) \
+	(Z_PIX_FMT_FOREACH_BPP(Z_PIX_FMT_BPP_MATCH, pixfmt) 0U)
+
 /**
  * @brief Get number of bits per pixel of a pixel format
  *
@@ -709,83 +815,7 @@ typedef uint32_t pixel_format_t;
 static inline size_t pix_fmt_bpp(pixel_format_t pixfmt)
 {
 	switch (pixfmt) {
-	case PIX_FMT_SBGGR8:
-	case PIX_FMT_SGBRG8:
-	case PIX_FMT_SGRBG8:
-	case PIX_FMT_SRGGB8:
-	case PIX_FMT_GREY:
-		return 8;
-	case PIX_FMT_SBGGR10P:
-	case PIX_FMT_SGBRG10P:
-	case PIX_FMT_SGRBG10P:
-	case PIX_FMT_SRGGB10P:
-	case PIX_FMT_Y10P:
-		return 10;
-	case PIX_FMT_SBGGR12P:
-	case PIX_FMT_SGBRG12P:
-	case PIX_FMT_SGRBG12P:
-	case PIX_FMT_SRGGB12P:
-	case PIX_FMT_Y12P:
-	case PIX_FMT_NV12:
-	case PIX_FMT_NV21:
-	case PIX_FMT_YUV420:
-	case PIX_FMT_YVU420:
-		return 12;
-	case PIX_FMT_SBGGR14P:
-	case PIX_FMT_SGBRG14P:
-	case PIX_FMT_SGRBG14P:
-	case PIX_FMT_SRGGB14P:
-	case PIX_FMT_Y14P:
-		return 14;
-	case PIX_FMT_RGB565:
-	case PIX_FMT_YUYV:
-	case PIX_FMT_YVYU:
-	case PIX_FMT_UYVY:
-	case PIX_FMT_VYUY:
-	case PIX_FMT_SBGGR8P16:
-	case PIX_FMT_SGBRG8P16:
-	case PIX_FMT_SGRBG8P16:
-	case PIX_FMT_SRGGB8P16:
-	case PIX_FMT_SBGGR10:
-	case PIX_FMT_SGBRG10:
-	case PIX_FMT_SGRBG10:
-	case PIX_FMT_SRGGB10:
-	case PIX_FMT_SBGGR12:
-	case PIX_FMT_SGBRG12:
-	case PIX_FMT_SGRBG12:
-	case PIX_FMT_SRGGB12:
-	case PIX_FMT_SBGGR14:
-	case PIX_FMT_SGBRG14:
-	case PIX_FMT_SGRBG14:
-	case PIX_FMT_SRGGB14:
-	case PIX_FMT_SBGGR16:
-	case PIX_FMT_SGBRG16:
-	case PIX_FMT_SGRBG16:
-	case PIX_FMT_SRGGB16:
-	case PIX_FMT_Y8P16:
-	case PIX_FMT_Y10:
-	case PIX_FMT_Y12:
-	case PIX_FMT_Y14:
-	case PIX_FMT_Y16:
-	case PIX_FMT_NV16:
-	case PIX_FMT_NV61:
-		return 16;
-	case PIX_FMT_BGR24:
-	case PIX_FMT_RGB24:
-	case PIX_FMT_NV24:
-	case PIX_FMT_NV42:
-	case PIX_FMT_YUV24:
-		return 24;
-	case PIX_FMT_XYUV32:
-	case PIX_FMT_ARGB32:
-	case PIX_FMT_ABGR32:
-	case PIX_FMT_RGBA32:
-	case PIX_FMT_BGRA32:
-	case PIX_FMT_XRGB32:
-	case PIX_FMT_XBGR32:
-	case PIX_FMT_RGBX32:
-	case PIX_FMT_BGRX32:
-		return 32;
+	Z_PIX_FMT_FOREACH_BPP(Z_PIX_FMT_BPP_CASE, 0U)
 	default:
 		/* Variable number of bits per pixel or unknown format */
 		return 0;
