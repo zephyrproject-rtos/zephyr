@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A single MRAM bank within a Nordic MRAM memory node. Each bank maps to one
+  entry in the parent controller's "nordic,mutexes" list, at the same index.
+
+compatible: "nordic,mram-bank"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  nordic,mutex-index:
+    type: int
+    description: |
+      Index into the parent controller's "nordic,mutexes" list, selecting the
+      hardware mutex that serializes access to this bank. Omit it for banks that
+      do not require cross-domain hardware-mutex locking.

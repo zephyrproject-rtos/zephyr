@@ -10,3 +10,19 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  "#mutex-cells":
+    type: int
+    const: 1
+    description: |
+      Number of cells in a "nordic,mutex" specifier. The single cell is the
+      index of the hardware mutex within this MUTEX instance.
+
+  nordic,mutex-count:
+    type: int
+    description: |
+      Number of hardware mutexes provided by this MUTEX instance. Used to
+      statically verify that a claimed mutex index is within range.
+
+mutex-cells:
+  - index
