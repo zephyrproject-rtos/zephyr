@@ -126,9 +126,6 @@ struct gmac_queue {
 	struct k_sem tx_desc_sem;
 	struct net_buf **rx_frag_list;
 	struct ring_buf tx_frag_rb;
-	volatile uint32_t err_rx_queue_frames_dropped;
-	volatile uint32_t err_rx_queue_flushed_count;
-	volatile uint32_t err_tx_queue_flushed_count;
 	atomic_t rx_error_pending;
 	enum queue_idx que_idx;
 };
@@ -290,9 +287,6 @@ static int gmac_queue_init(gmac_registers_t *gmac_regs, struct gmac_queue *queue
 		GMAC_DCFGR_TXCOEN_Msk | GMAC_DCFGR_FBLDO_INCR4 | GMAC_DMA_QUEUE_FLAGS;
 	gmac_regs->GMAC_IER = GMAC_INT_EN_FLAGS;
 
-	queue->err_rx_queue_frames_dropped = 0U;
-	queue->err_rx_queue_flushed_count = 0U;
-	queue->err_tx_queue_flushed_count = 0U;
 	atomic_clear(&queue->rx_error_pending);
 
 	LOG_INF("Queue %d activated", queue->que_idx);
@@ -353,7 +347,6 @@ static void gmac_tx_error_handler(gmac_registers_t *gmac, struct gmac_queue *que
 	uintptr_t ptr;
 
 	gmac->GMAC_NCR &= ~GMAC_NCR_TXEN_Msk;
-	queue->err_tx_queue_flushed_count++;
 
 	while (ring_buf_get(&queue->tx_frag_rb, (uint8_t *)&ptr, sizeof(ptr)) == sizeof(ptr)) {
 		frag = UINT_TO_POINTER(ptr);
@@ -373,7 +366,6 @@ static void gmac_tx_error_handler(gmac_registers_t *gmac, struct gmac_queue *que
 static void gmac_rx_error_handler(gmac_registers_t *gmac, struct gmac_queue *queue)
 {
 	gmac->GMAC_NCR &= ~GMAC_NCR_RXEN_Msk;
-	queue->err_rx_queue_flushed_count++;
 	queue->rx_desc_list.tail = 0U;
 
 	LOG_DBG("rx Err");
@@ -550,7 +542,6 @@ static struct net_pkt *gmac_extract_and_replace_buffers(struct gmac_queue *queue
 			rx_desc = &rx_desc_list->buf_desc[i];
 		}
 
-		queue->err_rx_queue_frames_dropped++;
 		*err_no = -ENOMEM;
 
 		return NULL;
@@ -581,7 +572,6 @@ static struct net_pkt *gmac_extract_and_replace_buffers(struct gmac_queue *queue
 				rx_desc = &rx_desc_list->buf_desc[i];
 			}
 
-			queue->err_rx_queue_frames_dropped++;
 			net_pkt_unref(rx_pkt);
 			*err_no = -ENOMEM;
 
