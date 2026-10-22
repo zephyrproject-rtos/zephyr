@@ -3837,6 +3837,13 @@ static struct quic_endpoint *find_local_endpoint(const struct net_sockaddr *loca
 			continue;
 		}
 
+		/* The connections of a listener share its address, only the
+		 * listener itself is looked for
+		 */
+		if (!endpoints[i]->is_server || endpoints[i]->parent != NULL) {
+			continue;
+		}
+
 		if (IS_ENABLED(CONFIG_NET_IPV4) && local_addr->sa_family == NET_AF_INET) {
 			struct net_sockaddr_in *laddr_in =
 				net_sin(net_sad(&endpoints[i]->local_addr));
@@ -3849,8 +3856,13 @@ static struct quic_endpoint *find_local_endpoint(const struct net_sockaddr *loca
 					      &net_sin(local_addr)->sin_addr) &&
 			    (net_sin(local_addr)->sin_port == 0 ||
 			     laddr_in->sin_port == net_sin(local_addr)->sin_port)) {
-				ep = endpoints[i];
-				quic_endpoint_ref(ep);
+				/* A listener whose last reference is being
+				 * dropped must not be taken over
+				 */
+				if (quic_endpoint_ref_unless_zero(endpoints[i])) {
+					ep = endpoints[i];
+				}
+
 				break;
 			}
 		}
@@ -3868,8 +3880,13 @@ check_next:
 					      &net_sin6(local_addr)->sin6_addr) &&
 			    (net_sin6(local_addr)->sin6_port == 0 ||
 			     laddr_in->sin6_port == net_sin6(local_addr)->sin6_port)) {
-				ep = endpoints[i];
-				quic_endpoint_ref(ep);
+				/* A listener whose last reference is being
+				 * dropped must not be taken over
+				 */
+				if (quic_endpoint_ref_unless_zero(endpoints[i])) {
+					ep = endpoints[i];
+				}
+
 				break;
 			}
 		}
@@ -7239,9 +7256,13 @@ ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child
 	 * The close sets accept_closed and takes the connections still
 	 * waiting for accept under contexts_lock, and the connection is
 	 * queued under the same lock below, so a connection is either not
-	 * handed over or taken by the close.
+	 * handed over or taken by the close. An endpoint that is not on the
+	 * list was detached by the close of an earlier listening socket whose
+	 * listener endpoint this one has taken over: it is not handed over
+	 * either.
 	 */
-	if (listen_ctx->accept_closed) {
+	if (listen_ctx->accept_closed ||
+	    !sys_slist_find_and_remove(&listen_ctx->endpoints, &child_ep->node)) {
 		k_mutex_unlock(&streams_lock);
 		k_mutex_unlock(&endpoints_lock);
 		k_mutex_unlock(&contexts_lock);
@@ -7254,7 +7275,6 @@ ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child
 		return;
 	}
 
-	sys_slist_find_and_remove(&listen_ctx->endpoints, &child_ep->node);
 	sys_slist_prepend(&child_ctx->endpoints, &child_ep->node);
 
 	/* Migrate any pending streams to the new context as well. This can happen

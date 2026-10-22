@@ -33,7 +33,28 @@ static int quic_connection_init(struct quic_context *ctx,
 	if (remote_addr == NULL) {
 		/* Server side, find endpoint by local address only */
 		ep = find_local_endpoint(local_addr);
-		if (ep == NULL) {
+		if (ep != NULL) {
+			/* The listener of a closed context lives on while its
+			 * connections hold it as their parent. The new context
+			 * takes it over, the reference just taken becomes its
+			 * list reference. A listener of a live context cannot
+			 * be shared.
+			 */
+			if (!ep->list_ref_dropped) {
+				quic_endpoint_unref(ep);
+				k_mutex_unlock(&endpoints_lock);
+				k_mutex_unlock(&contexts_lock);
+				return -EADDRINUSE;
+			}
+
+			ep->list_ref_dropped = false;
+			sys_slist_prepend(&ctx->endpoints, &ep->node);
+			ctx->listen = ep;
+			ctx->is_listening = true;
+
+			NET_DBG("[EP:%p/%d] Listener taken over by a new context", ep,
+				quic_get_by_ep(ep));
+		} else {
 			ep = alloc_local_endpoint(ctx, local_addr);
 			if (ep == NULL) {
 				k_mutex_unlock(&endpoints_lock);
