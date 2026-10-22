@@ -7438,6 +7438,56 @@ ZTEST(net_socket_quic, test_502_late_frame_does_not_reopen_a_closed_stream)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_507_stream_frame_for_stream_that_cannot_receive)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54358");
+
+	/* As a server, stream 1 would be our first bidirectional stream,
+	 * and none has been opened on this connection.
+	 */
+	ep->is_server = true;
+	ep->rx_sl.max_bidi = 8;
+	ep->rx_sl.max_uni = 8;
+	zassert_equal(ctx->stream_id_counter, 0, "Unexpected streams on a new context");
+
+	ret = stream_fin_for_stream(ep, ctx, 1);
+	zexpect_equal(ret, -EPROTO,
+		      "STREAM frame for a stream of ours that was never opened must close the "
+		      "connection (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A stream of ours was opened as a peer stream");
+
+	/* Stream 3 is a unidirectional stream of ours, so send-only for us,
+	 * also once it has been opened.
+	 */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = true;
+	ctx->stream_id_counter = 1;
+	ret = stream_fin_for_stream(ep, ctx, 3);
+	zexpect_equal(ret, -EPROTO,
+		      "STREAM frame for a send-only stream must close the connection (%d)", ret);
+	ctx->stream_id_counter = 0;
+
+	/* The same for a client, whose first bidirectional stream is 0 */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = false;
+	ep->rx_sl.max_bidi = 8;
+	ret = stream_fin_for_stream(ep, ctx, 0);
+	zexpect_equal(ret, -EPROTO,
+		      "STREAM frame for a client stream that was never opened must close the "
+		      "connection (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A stream of ours was opened as a peer stream");
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_501_idle_timer_restarts_on_first_send_after_receive)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
