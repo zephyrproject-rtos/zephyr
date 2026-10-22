@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -40,18 +41,31 @@ static struct bt_conn *conn;
 /* Identifier of the Information Request sent on connection, left unanswered */
 static uint8_t info_ident;
 static uint32_t echo_rsp_count;
+static uint8_t echo_rsp_ident;
+static uint32_t echo_reject_count;
+static uint8_t echo_reject_ident;
 
 static void echo_rsp_cb(struct bt_conn *rsp_conn, uint8_t ident, struct net_buf *buf)
 {
 	ARG_UNUSED(rsp_conn);
-	ARG_UNUSED(ident);
 	ARG_UNUSED(buf);
 
 	echo_rsp_count++;
+	echo_rsp_ident = ident;
 }
 
+static void echo_reject_cb(struct bt_conn *reject_conn, uint8_t ident)
+{
+	ARG_UNUSED(reject_conn);
+
+	echo_reject_count++;
+	echo_reject_ident = ident;
+}
+
+/* No req callback, so the stack answers Echo Requests itself */
 static struct bt_l2cap_br_echo_cb echo_cb = {
 	.rsp = echo_rsp_cb,
+	.reject = echo_reject_cb,
 };
 
 static struct bt_l2cap_br_chan *sig_chan(void)
@@ -150,6 +164,9 @@ static void before(void *fixture)
 	ARG_UNUSED(fixture);
 
 	echo_rsp_count = 0U;
+	echo_rsp_ident = 0U;
+	echo_reject_count = 0U;
+	echo_reject_ident = 0U;
 }
 
 /* Release the PDUs queued for sending, as there is no controller */
@@ -249,6 +266,7 @@ ZTEST(l2cap_br_echo, test_echo_rsp_ident_mismatch)
 
 	recv_echo_rsp(echo_ident);
 	zassert_equal(echo_rsp_count, 1U);
+	zassert_equal(echo_rsp_ident, echo_ident);
 
 	/* The response ended the request, so another one can be sent */
 	recv_echo_rsp(send_echo_req());
@@ -265,7 +283,28 @@ ZTEST(l2cap_br_echo, test_echo_req_rejected)
 
 	recv_sig(CMD_REJECT, echo_ident, reason, sizeof(reason));
 	zassert_equal(sig_chan()->state, BT_L2CAP_CONNECTED);
+	zassert_equal(echo_reject_count, 1U);
+	zassert_equal(echo_reject_ident, echo_ident);
+	zassert_equal(echo_rsp_count, 0U);
 
 	recv_echo_rsp(send_echo_req());
 	zassert_equal(echo_rsp_count, 1U);
+}
+
+/* Without a req callback, the stack answers an Echo Request without data */
+ZTEST(l2cap_br_echo, test_echo_req_answered_by_stack)
+{
+	struct net_buf *rsp;
+	sys_snode_t *node;
+
+	recv_sig(ECHO_REQ, 0x42U, ECHO_DATA, strlen(ECHO_DATA));
+
+	node = sys_slist_peek_tail(&sig_chan()->_pdu_tx_queue);
+	zassert_not_null(node, "no Echo Response sent");
+	rsp = CONTAINER_OF(node, struct net_buf, node);
+
+	zassert_equal(rsp->len, L2CAP_HDR_SIZE + SIG_HDR_SIZE);
+	zassert_equal(rsp->data[L2CAP_HDR_SIZE], ECHO_RSP);
+	zassert_equal(rsp->data[L2CAP_HDR_SIZE + 1U], 0x42U);
+	zassert_equal(sys_get_le16(&rsp->data[L2CAP_HDR_SIZE + 2U]), 0U);
 }
