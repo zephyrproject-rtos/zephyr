@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 
 / {
-	model = "STMicroelectronics STM32MP257F-DK board";
 	compatible = "st,stm32mp257f-dk", "st,stm32mp25";
+	model = "STMicroelectronics STM32MP257F-DK board";
 
 	chosen {
 		zephyr,console = &uart5;

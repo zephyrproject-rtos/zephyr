@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32G0316 Discovery board";
 	compatible = "st,stm32g0316-disco";
+	model = "STMicroelectronics STM32G0316 Discovery board";
 
 	aliases {
 		led0 = &green_led_1;

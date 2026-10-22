@@ -8,8 +8,8 @@
 #include <st/f1/stm32f107v(b-c)tx-pinctrl.dtsi>
 
 / {
-	model = "STMicroelectronics STM32-MICRIUM evaluation board";
 	compatible = "st,stm32-micrium";
+	model = "STMicroelectronics STM32-MICRIUM evaluation board";
 
 	chosen {
 		zephyr,console = &usart2;

@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
-	model = "STMicroelectronics B-U585I-IOT02A discovery kit";
 	compatible = "st,b-u585i-iot02a";
+	model = "STMicroelectronics B-U585I-IOT02A discovery kit";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -41,9 +41,9 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * Following flash partition is dedicated to the use of b_u585i_iot02a
@@ -52,29 +52,29 @@
 		 */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(416)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@78000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00078000 DT_SIZE_K(420)>;
+			label = "image-1";
 		};
-
-		/* Unused range [0xe1000..0xeffff] */
 
 		storage_partition: partition@f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
+
+		/* Unused range [0xe1000..0xeffff] */
 	};
 };
 

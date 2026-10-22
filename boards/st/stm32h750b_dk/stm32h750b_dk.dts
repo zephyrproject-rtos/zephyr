@@ -8,8 +8,8 @@
 #include "stm32h750b_dk-common.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H750B DISCOVERY KIT";
 	compatible = "st,stm32h750b-dk";
+	model = "STMicroelectronics STM32H750B DISCOVERY KIT";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -26,8 +26,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x00000000 DT_SIZE_M(128)>; /* 128MB */
+			label = "storage";
 		};
 	};
 };
