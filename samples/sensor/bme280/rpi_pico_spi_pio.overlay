@@ -16,11 +16,10 @@
 	status = "okay";
 
 	pio0_spi0: pio0_spi0 {
-		pinctrl-0 = <&pio0_spi0_default>;
-		pinctrl-names = "default";
 
 		compatible = "raspberrypi,pico-spi-pio";
-		status = "okay";
+		pinctrl-0 = <&pio0_spi0_default>;
+		pinctrl-names = "default";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
@@ -28,6 +27,7 @@
 		cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		clk-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		sdo-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 
 		bme280@0 {
 			compatible = "bosch,bme280";

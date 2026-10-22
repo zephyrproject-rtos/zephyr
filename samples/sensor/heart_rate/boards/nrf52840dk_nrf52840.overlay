@@ -12,10 +12,10 @@
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	bh1790: bh1790@5b {
 		compatible = "rohm,bh1790";

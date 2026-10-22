@@ -5,12 +5,11 @@
  */
 
 &i2c1 {
-	status = "okay";
 	compatible = "st,stm32-i2c-v1";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	ina219@40 {
-		status = "okay";
 		compatible = "ti,ina219";
 		reg = <0x40>;
 		brng = <0>;
@@ -19,5 +18,6 @@
 		badc = <13>;
 		shunt-milliohm = <100>;
 		lsb-microamp = <10>;
+		status = "okay";
 	};
 };

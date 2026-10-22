@@ -30,23 +30,23 @@
 
 &i2c30 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-
-	// Flash buffer size is needed for the I2C bootloader to flash the firmware
-	zephyr,flash-buf-max-size = <8250>;
 
 	pinctrl-0 = <&i2c30_default>;
 	pinctrl-1 = <&i2c30_sleep>;
 	pinctrl-names = "default", "sleep";
 
+	// Flash buffer size is needed for the I2C bootloader to flash the firmware
+	zephyr,flash-buf-max-size = <8250>;
+	status = "okay";
+
 	biometric_hub: max32664c@55 {
 		compatible = "maxim,max32664c";
 		reg = <0x55>;
-		status = "okay";
 		reset-gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
 		mfio-gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
 		use-max86141;
+		status = "okay";
 	};
 };
 
