@@ -477,10 +477,20 @@ static int airoc_mgmt_send(const struct device *dev, struct net_pkt *pkt)
 	ret = whd_network_send_ethernet_data(airoc_if, (void *)buf);
 	if (ret != CY_RSLT_SUCCESS) {
 		LOG_ERR("whd_network_send_ethernet_data failed");
-		/* WHD does not consume the buffer on a synchronous failure, so
-		 * release it here to avoid leaking it from the TX pool.
+		/*
+		 * WHD already called whd_buffer_release() before these
+		 * results, so releasing again destroys the same net_buf
+		 * twice. A full access-category queue and a failed header
+		 * adjust both return WHD_BUFFER_ALLOC_FAIL. The send-queue
+		 * mutex failure returns WHD_SEMAPHORE_ERROR, and an
+		 * out-of-range bsscfgidx returns WHD_UNKNOWN_INTERFACE.
+		 * Other failures, including CHECK_PACKET_NULL, leave the
+		 * buffer with the caller.
 		 */
-		airoc_wifi_buffer_release((whd_buffer_t)buf, WHD_NETWORK_TX);
+		if ((ret != WHD_BUFFER_ALLOC_FAIL) && (ret != WHD_SEMAPHORE_ERROR) &&
+		    (ret != WHD_UNKNOWN_INTERFACE)) {
+			airoc_wifi_buffer_release((whd_buffer_t)buf, WHD_NETWORK_TX);
+		}
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 		data->stats.errors.tx++;
 #endif
