@@ -25,6 +25,7 @@ tests:
       - esp32c5_devkitc/esp32c5/hpcore
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
+      - esp32s31_function_coreboard/esp32s31/hpcore
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
   sample.net.openthread.ftd.coap.server.esp:
@@ -32,6 +33,7 @@ tests:
       - esp32c5_devkitc/esp32c5/hpcore
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
+      - esp32s31_function_coreboard/esp32s31/hpcore
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
       - CONFIG_OT_COAP_SAMPLE_SERVER=y
