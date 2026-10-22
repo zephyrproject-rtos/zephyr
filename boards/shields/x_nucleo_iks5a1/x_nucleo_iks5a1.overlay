@@ -15,14 +15,6 @@
 };
 
 &arduino_i2c {
-	ism6hg256x_6a_x_nucleo_iks5a1: ism6hg256x@6a {
-		compatible = "st,ism6hg256x";
-		reg = <0x6a>;
-
-		int1-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
-		drdy-pin = <1>;
-	};
-
 	iis2mdc_1e_x_nucleo_iks5a1: iis2mdc@1e {
 		compatible = "st,iis2mdc";
 		reg = <0x1e>;
@@ -32,5 +24,13 @@
 	ilps22qs_5c_x_nucleo_iks5a1: ilps22qs@5c {
 		compatible = "st,ilps22qs";
 		reg = <0x5c>;
+	};
+
+	ism6hg256x_6a_x_nucleo_iks5a1: ism6hg256x@6a {
+		compatible = "st,ism6hg256x";
+		reg = <0x6a>;
+
+		int1-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+		drdy-pin = <1>;
 	};
 };

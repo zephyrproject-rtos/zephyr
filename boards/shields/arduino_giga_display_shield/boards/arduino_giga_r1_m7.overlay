@@ -79,14 +79,6 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
-	gt911: gt911@5d {
-		compatible = "goodix,gt911";
-		reg = <0x5d>;
-		alt-addr = <0x14>;
-		reset-gpios = <&gpioi 2 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpioi 1 GPIO_ACTIVE_HIGH>;
-	};
-
 	is31fl3197@50 {
 		compatible = "issi,is31fl3197";
 		reg = <0x50>;
@@ -97,5 +89,13 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+	};
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		alt-addr = <0x14>;
+		reset-gpios = <&gpioi 2 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpioi 1 GPIO_ACTIVE_HIGH>;
 	};
 };

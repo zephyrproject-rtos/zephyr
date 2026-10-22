@@ -60,18 +60,18 @@
 &xiao_i2c {
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	pcf8563_xiao_round_display: pcf8563@51 {
-		compatible = "nxp,pcf8563";
-		reg = <0x51>;
-		status = "okay";
-	};
-
 	chsc6x_xiao_round_display: chsc6x@2e {
 		compatible = "chipsemi,chsc6x";
 		reg = <0x2e>;
 		irq-gpios = <&xiao_d 7 GPIO_ACTIVE_LOW>;
 		screen-width = <240>;
 		screen-height = <240>;
+		status = "okay";
+	};
+
+	pcf8563_xiao_round_display: pcf8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
 		status = "okay";
 	};
 };
