@@ -8,13 +8,13 @@
 
 / {
 	chosen {
+		watchdog0 = &wdt0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,bt-hci = &bt_hci_ipc0;
-		watchdog0 = &wdt0;
 	};
 
 	gpio_fwd: nrf-gpio-forwarder {
@@ -94,9 +94,9 @@
 };
 
 &adc {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -134,18 +134,18 @@
 
 &i2s0 {
 	compatible = "nordic,nrf-i2s";
-	status = "okay";
 	pinctrl-0 = <&i2s0_default>;
 	pinctrl-1 = <&i2s0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_serial: &uart1 {
@@ -158,10 +158,10 @@ arduino_serial: &uart1 {
 
 arduino_i2c: &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	vbat_sensor: ina231@44 {
 		compatible = "ti,ina230";
@@ -210,18 +210,18 @@ arduino_i2c: &i2c1 {
 
 arduino_spi: &spi4 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>,
 		   <&gpio0 11 GPIO_ACTIVE_LOW>, <&gpio0 17 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	sdhc0: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
-		status = "okay";
 		spi-max-frequency = <8000000>;
+		status = "okay";
 
 		sdmmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -241,10 +241,10 @@ arduino_spi: &spi4 {
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {
