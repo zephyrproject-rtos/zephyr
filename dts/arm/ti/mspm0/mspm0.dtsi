@@ -176,10 +176,6 @@
 			reg = <0x41c40000 0x400>;
 		};
 
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
-		};
-
 		flashctl: flash-controller@400cd000 {
 			compatible = "ti,mspm0-flash-controller";
 			reg = <0x400cd000 0x2000>;
