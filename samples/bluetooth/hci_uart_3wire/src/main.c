@@ -780,8 +780,6 @@ static void rx_thread(void *p1, void *p2, void *p3)
 				h5.tx_seq = 0;
 				k_spin_unlock(&tx_lock, key);
 
-				h5_reset_rx();
-
 				h5.rx_ack = 0;
 				h5.link_state = INIT;
 				h5.tx_ack = 0;
