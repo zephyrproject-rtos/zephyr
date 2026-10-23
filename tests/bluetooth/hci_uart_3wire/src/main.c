@@ -38,6 +38,8 @@
 /* Longer than the sample waits before it acknowledges or retransmits */
 #define ACK_WAIT K_MSEC(300)
 
+static const uint8_t hw_err_evt[] = { BT_HCI_EVT_HARDWARE_ERROR, 1U, 0x00 };
+
 static const struct device *const uart = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_c2h_uart));
 
 /* Packets the sample sent to the HCI driver */
@@ -211,6 +213,45 @@ static void expect_no_tx(void)
 	zassert_equal(uart_emul_get_tx_data(uart, tx, sizeof(tx)), 0U, "Unexpected output");
 }
 
+static void put_ack(uint8_t ack)
+{
+	uint8_t out[FRAME_MAX(0U)];
+	uint8_t hdr[HDR_LEN];
+
+	hdr_set(hdr, false, 0U, ack, PKT_ACK, 0U);
+	put(out, frame(out, hdr, NULL, 0U));
+}
+
+/* Returns the sequence number the sample sent the event with */
+static uint8_t send_evt(void)
+{
+	const struct device *hci = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci));
+	uint8_t expected[FRAME_MAX(sizeof(hw_err_evt))];
+	uint8_t hdr[HDR_LEN];
+	size_t expected_len;
+	struct net_buf *buf;
+	uint32_t tx_len;
+	uint8_t evt_seq;
+	uint8_t tx[64];
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_HARDWARE_ERROR, false, K_NO_WAIT);
+	zassert_not_null(buf);
+	net_buf_add_mem(buf, hw_err_evt, sizeof(hw_err_evt));
+	zassert_ok(bt_hci_recv_err(hci, buf));
+	k_sleep(K_MSEC(10));
+
+	/* Exactly the event, as a reliable packet with any sequence number */
+	tx_len = uart_emul_get_tx_data(uart, tx, sizeof(tx));
+	zassert_true(tx_len > 1U);
+	evt_seq = tx[1] & 0x07U;
+	hdr_set(hdr, true, evt_seq, seq, PKT_EVT, sizeof(hw_err_evt));
+	expected_len = frame(expected, hdr, hw_err_evt, sizeof(hw_err_evt));
+	zassert_equal(tx_len, expected_len);
+	zassert_mem_equal(tx, expected, expected_len);
+
+	return evt_seq;
+}
+
 /* Start from an Active link at sequence number 0, also after a failed test */
 static void before(void *fixture)
 {
@@ -243,6 +284,25 @@ ZTEST(hci_uart_3wire, test_command)
 	expect_cmd(1U);
 	next_seq();
 	expect_ack();
+}
+
+ZTEST(hci_uart_3wire, test_event_after_link_setup)
+{
+	static const uint8_t sync[] = { 0x01, 0x7e };
+	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
+	uint8_t evt_seq;
+
+	/* The TX thread last ran before the link became active */
+	put_link(false, sync, sizeof(sync));
+	put_cmd(true, seq, 11U);
+	expect_cmd(11U);
+	next_seq();
+	put_link(false, conf, sizeof(conf));
+	(void)uart_emul_flush_tx_data(uart);
+
+	evt_seq = send_evt();
+	put_ack((evt_seq + 1U) % 8U);
+	expect_no_tx();
 }
 
 ZTEST(hci_uart_3wire, test_header_checksum)
