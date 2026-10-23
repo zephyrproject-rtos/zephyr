@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Aspeed Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ASPEED AST27XX SCU1 clock controller.
+
+  The node is a child of the SCU1 syscon node, whose register block holds the
+  clock stop, clock select and PLL registers. The clock specifier cell is an
+  ID from include/zephyr/dt-bindings/clock/ast27xx_clock.h.
+
+compatible: "aspeed,ast27xx-scu1-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clkid
