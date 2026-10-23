@@ -187,7 +187,6 @@ static struct net_buf *ec_host_cmd_buf_alloc_int(const uint8_t ep)
 
 static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 {
-	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 	struct net_buf *buf;
 	int ret;
@@ -201,7 +200,7 @@ static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue EP IN INT: %d", ret);
-		(void)usbd_ep_buf_free(uds_ctx, buf);
+		net_buf_unref(buf);
 		return ret;
 	}
 	atomic_clear_bit(&ctx->flags, EC_HOST_CMD_EVENT_PENDING);
