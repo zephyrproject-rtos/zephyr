@@ -171,6 +171,14 @@ Libraries / Subsystems
     command was run without that argument and its remaining arguments, which usually failed
     with a wrong argument count.
 
+* ZMS
+
+  * :c:func:`zms_delete_physical` and :c:func:`zms_delete_physical_hist` erase an entry, or only its
+    old versions, from the flash instead of marking it deleted, including the stale copies left in
+    recycled sectors on devices without erase. Enable them with
+    :kconfig:option:`CONFIG_ZMS_PHYSICAL_DELETE`, see the ZMS documentation and the
+    :zephyr:code-sample:`zms-physical-delete` sample.
+
 Devicetree
 **********
 
