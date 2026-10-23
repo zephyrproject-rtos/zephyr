@@ -534,7 +534,7 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 
 	buf = ec_host_cmd_buf_alloc_int(ec_host_cmd_get_in_int_ep(c_data));
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buf INT OUT: %d", ret);
+		LOG_ERR("Failed to allocate buf IN INT");
 		k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 		return -ENOMEM;
 	}
@@ -545,7 +545,7 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		net_buf_unref(buf);
-		LOG_ERR("Failed to enqueue EP INT OUT: %d", ret);
+		LOG_ERR("Failed to enqueue EP IN INT: %d", ret);
 		k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 		return ret;
 	}
