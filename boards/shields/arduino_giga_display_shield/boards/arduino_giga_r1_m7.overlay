@@ -30,21 +30,6 @@
 
 	disp-on-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
-
-	/* sitronix, st7701 */
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		hsync-active = <1>;
-		vsync-active = <0>;
-		de-active = <0>;
-		pixelclk-active = <0>;
-		hback-porch = <6>;
-		hsync-len = <8>;
-		hfront-porch = <1>;
-		vback-porch = <40>;
-		vsync-len = <32>;
-		vfront-porch = <8>;
-	};
 };
 
 /* ltdc uses pll3_r as pixel clock */
@@ -60,7 +45,7 @@
 
 &zephyr_mipi_dsi {
 	status = "okay";
-
+	st,ltdc = <&zephyr_lcd_controller>;
 	pll-ndiv = <125>;
 	pll-idf = <4>;
 	pll-odf = <0>;

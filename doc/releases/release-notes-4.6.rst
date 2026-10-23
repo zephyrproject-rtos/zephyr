@@ -63,6 +63,12 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Display
+
+  * :c:func:`display_set_timing` and :c:func:`display_get_timing`, with the optional
+    :c:member:`display_driver_api.set_timing` and :c:member:`display_driver_api.get_timing`
+    callbacks, to set and get the display timings at runtime.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

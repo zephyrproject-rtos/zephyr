@@ -78,6 +78,8 @@ struct stm32_ltdc_cb_data {
 
 struct display_stm32_ltdc_data {
 	LTDC_HandleTypeDef hltdc;
+	struct display_timing timing;
+	bool started;
 	enum display_pixel_format current_pixel_format;
 	uint8_t current_pixel_size;
 	uint8_t *frame_buffer;
@@ -92,6 +94,8 @@ struct display_stm32_ltdc_data {
 struct display_stm32_ltdc_config {
 	uint32_t width;
 	uint32_t height;
+	bool has_timings;
+	struct display_timing timing;
 	struct gpio_dt_spec disp_on_gpio;
 	struct gpio_dt_spec bl_ctrl_gpio;
 	const struct stm32_pclken *pclken;
@@ -194,10 +198,9 @@ static int stm32_ltdc_set_yuv(const struct device *dev)
 #if defined(STM32_LTDC_HAS_YUV)
 	struct display_stm32_ltdc_data *data = dev->data;
 	LTDC_LayerFlexYUVCoPlanarTypeDef cfg = {0};
-	const struct display_stm32_ltdc_config *config = dev->config;
 
 	/* An odd width would split a pair of pixels across two lines */
-	if ((config->width % 2U) != 0U) {
+	if ((data->timing.hactive % 2U) != 0U) {
 		return -EINVAL;
 	}
 
@@ -209,8 +212,8 @@ static int stm32_ltdc_set_yuv(const struct device *dev)
 	cfg.Layer.Alpha0 = data->hltdc.LayerCfg[0].Alpha0;
 	cfg.Layer.BlendingFactor1 = data->hltdc.LayerCfg[0].BlendingFactor1;
 	cfg.Layer.BlendingFactor2 = data->hltdc.LayerCfg[0].BlendingFactor2;
-	cfg.Layer.ImageWidth = config->width;
-	cfg.Layer.ImageHeight = config->height;
+	cfg.Layer.ImageWidth = data->timing.hactive;
+	cfg.Layer.ImageHeight = data->timing.vactive;
 	cfg.FlexYUV.YUVOrder = LTDC_YUV_ORDER_LUMINANCE_FIRST;
 	cfg.FlexYUV.LuminanceOrder = LTDC_YUV_LUMINANCE_ORDER_EVEN_FIRST;
 	cfg.FlexYUV.ChrominanceOrder = LTDC_YUV_CHROMIANCE_ORDER_U_FIRST;
@@ -314,16 +317,15 @@ static void stm32_ltdc_partial_write(const struct device *dev,
 				     const struct display_buffer_descriptor *desc,
 				     uint8_t *dst, const uint8_t *src)
 {
-	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
 
 	dst += x * data->current_pixel_size;
-	dst += y * config->width * data->current_pixel_size;
+	dst += y * data->timing.hactive * data->current_pixel_size;
 
 	for (uint16_t row = 0; row < desc->height; row++) {
 		(void)memcpy(dst, src, desc->width * data->current_pixel_size);
 		sys_cache_data_flush_range(dst, desc->width * data->current_pixel_size);
-		dst += config->width * data->current_pixel_size;
+		dst += data->timing.hactive * data->current_pixel_size;
 		src += desc->pitch * data->current_pixel_size;
 	}
 }
@@ -361,12 +363,16 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 				const struct display_buffer_descriptor *desc,
 				const void *buf)
 {
-	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
 	uint8_t *dst = NULL;
 
+	if (!data->started) {
+		LOG_ERR("Display timings not set");
+		return -EBUSY;
+	}
+
 	/* Validate the given parameters */
-	if (x + desc->width > config->width || y + desc->height > config->height) {
+	if (x + desc->width > data->timing.hactive || y + desc->height > data->timing.vactive) {
 		LOG_ERR("Rectangle does not fit into the display");
 		return -EINVAL;
 	}
@@ -384,11 +390,11 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 	/* Use buf as ltdc frame buffer directly if it has length same as ltdc frame buffer. */
 	if ((x == 0) && (y == 0) &&
-	    (desc->width == config->width) &&
-	    (desc->height == config->height) &&
+	    (desc->width == data->timing.hactive) &&
+	    (desc->height == data->timing.vactive) &&
 	    (desc->pitch == desc->width)) {
-		sys_cache_data_flush_range((void *)buf, config->height * config->width *
-					   data->current_pixel_size);
+		sys_cache_data_flush_range((void *)buf, data->timing.vactive *
+					   data->timing.hactive * data->current_pixel_size);
 
 		/* Avoid waiting for a frame sync when the active buffer is unchanged. */
 		if (buf != data->front_buf) {
@@ -420,7 +426,7 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 		stm32_ltdc_partial_write(dev, x, y, desc, dst, buf);
 
-		sys_cache_data_flush_range(dst, config->height * config->width *
+		sys_cache_data_flush_range(dst, data->timing.vactive * data->timing.hactive *
 						data->current_pixel_size);
 
 		stm32_ltdc_sync_frame(data, dst);
@@ -436,26 +442,25 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 				const struct display_buffer_descriptor *desc,
 				void *buf)
 {
-	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
 	uint8_t *dst = buf;
 	const uint8_t *src = data->front_buf;
 	uint16_t row;
 
 	/* Validate the given parameters */
-	if (x + desc->width > config->width || y + desc->height > config->height) {
+	if (x + desc->width > data->timing.hactive || y + desc->height > data->timing.vactive) {
 		LOG_ERR("Rectangle does not fit into the display");
 		return -EINVAL;
 	}
 
 	/* src = pointer to upper left pixel of the rectangle to be read from frame buffer */
 	src += (x * data->current_pixel_size);
-	src += (y * config->width * data->current_pixel_size);
+	src += (y * data->timing.hactive * data->current_pixel_size);
 
 	for (row = 0; row < desc->height; row++) {
 		(void)memcpy(dst, src, desc->width * data->current_pixel_size);
 		sys_cache_data_flush_range(dst, desc->width * data->current_pixel_size);
-		src += (config->width * data->current_pixel_size);
+		src += (data->timing.hactive * data->current_pixel_size);
 		dst += (desc->pitch * data->current_pixel_size);
 	}
 
@@ -615,6 +620,63 @@ static int stm32_ltdc_display_unregister_event_cb(const struct device *dev, uint
 #define STM32_LTDC_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
+static void stm32_ltdc_update_timing(struct display_stm32_ltdc_data *data,
+				     const struct display_timing *timing)
+{
+	LTDC_InitTypeDef *init = &data->hltdc.Init;
+
+	data->timing = *timing;
+
+	init->HSPolarity = timing->hsync_active ? LTDC_HSPOL_ACTIVE_HIGH : LTDC_HSPOL_ACTIVE_LOW;
+	init->VSPolarity = timing->vsync_active ? LTDC_VSPOL_ACTIVE_HIGH : LTDC_VSPOL_ACTIVE_LOW;
+	init->DEPolarity = timing->de_active ? LTDC_DEPOL_ACTIVE_HIGH : LTDC_DEPOL_ACTIVE_LOW;
+	init->PCPolarity = timing->pixelclk_active ? LTDC_PCPOL_ACTIVE_HIGH : LTDC_PCPOL_ACTIVE_LOW;
+	init->HorizontalSync = timing->hsync_len - 1;
+	init->VerticalSync = timing->vsync_len - 1;
+	init->AccumulatedHBP = timing->hback_porch + timing->hsync_len - 1;
+	init->AccumulatedVBP = timing->vback_porch + timing->vsync_len - 1;
+	init->AccumulatedActiveW = timing->hback_porch + timing->hsync_len + timing->hactive - 1;
+	init->AccumulatedActiveH = timing->vback_porch + timing->vsync_len + timing->vactive - 1;
+	init->TotalWidth = timing->hback_porch + timing->hsync_len + timing->hactive +
+			   timing->hfront_porch - 1;
+	init->TotalHeigh = timing->vback_porch + timing->vsync_len + timing->vactive +
+			   timing->vfront_porch - 1;
+}
+
+static int stm32_ltdc_start(const struct device *dev)
+{
+	struct display_stm32_ltdc_data *data = dev->data;
+	int err;
+
+	/* Initialise the LTDC peripheral */
+	err = HAL_LTDC_Init(&data->hltdc);
+	if (err != HAL_OK) {
+		return err;
+	}
+
+	/* Configure layer 1 (only one layer is used) */
+	/* LTDC starts fetching pixels and sending them to display after this call */
+	if (IS_ENABLED(STM32_LTDC_HAS_YUV) &&
+	    data->current_pixel_format == PIXEL_FORMAT_YUYV) {
+		err = stm32_ltdc_set_yuv(dev);
+	} else {
+		err = HAL_LTDC_ConfigLayer(&data->hltdc, &data->hltdc.LayerCfg[0], LTDC_LAYER_1);
+	}
+	if (err != 0) {
+		return err;
+	}
+
+	/* Disable layer 2, since it not used */
+	__HAL_LTDC_LAYER_DISABLE(&data->hltdc, LTDC_LAYER_2);
+
+	/* Set the line interrupt position */
+	LTDC->LIPCR = 0U;
+
+	data->started = true;
+
+	return 0;
+}
+
 static int stm32_ltdc_init(const struct device *dev)
 {
 	int err;
@@ -687,12 +749,6 @@ static int stm32_ltdc_init(const struct device *dev)
 #endif
 #endif /* CONFIG_STM32_LTDC_DISABLE_FMC_BANK1 */
 
-	/* Initialise the LTDC peripheral */
-	err = HAL_LTDC_Init(&data->hltdc);
-	if (err != HAL_OK) {
-		return err;
-	}
-
 #if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
 	data->frame_buffer = shared_multi_heap_aligned_alloc(
 			CONFIG_STM32_LTDC_FB_SMH_ATTRIBUTE,
@@ -708,20 +764,16 @@ static int stm32_ltdc_init(const struct device *dev)
 	data->hltdc.LayerCfg[0].FBStartAdress = (uint32_t) data->frame_buffer;
 #endif
 
-	/* Configure layer 1 (only one layer is used) */
-	/* LTDC starts fetching pixels and sending them to display after this call */
-	err = HAL_LTDC_ConfigLayer(&data->hltdc, &data->hltdc.LayerCfg[0], LTDC_LAYER_1);
-	if (err != HAL_OK) {
-		return err;
+	/* Keep the timings set with display_set_timing() across PM resume */
+	if (!data->started) {
+		/* Without timings, the LTDC is started by display_set_timing() */
+		if (!config->has_timings) {
+			return 0;
+		}
+		stm32_ltdc_update_timing(data, &config->timing);
 	}
 
-	/* Disable layer 2, since it not used */
-	__HAL_LTDC_LAYER_DISABLE(&data->hltdc, LTDC_LAYER_2);
-
-	/* Set the line interrupt position */
-	LTDC->LIPCR = 0U;
-
-	return 0;
+	return stm32_ltdc_start(dev);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -780,6 +832,61 @@ static int stm32_ltdc_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
+static int stm32_ltdc_set_timing(const struct device *dev,
+				 const struct display_timing *timing)
+{
+	const struct display_stm32_ltdc_config *config = dev->config;
+	struct display_stm32_ltdc_data *data = dev->data;
+	LTDC_LayerCfgTypeDef *layer = &data->hltdc.LayerCfg[0];
+
+	if ((timing->hactive == 0U) || (timing->vactive == 0U)) {
+		return -EINVAL;
+	}
+
+	/* The frame buffer is sized for the devicetree width and height */
+	if ((uint32_t)timing->hactive * timing->vactive > config->width * config->height) {
+		return -ENOMEM;
+	}
+
+	if (data->started) {
+		__HAL_LTDC_DISABLE(&data->hltdc);
+		data->started = false;
+	}
+
+	stm32_ltdc_update_timing(data, timing);
+
+	layer->WindowX0 = 0;
+	layer->WindowX1 = timing->hactive;
+	layer->WindowY0 = 0;
+	layer->WindowY1 = timing->vactive;
+	layer->ImageWidth = timing->hactive;
+	layer->ImageHeight = timing->vactive;
+	layer->FBStartAdress = (uint32_t)data->frame_buffer;
+
+	data->frame_buffer_len = STM32_LTDC_INIT_PIXEL_SIZE * timing->hactive * timing->vactive;
+	data->front_buf = data->frame_buffer;
+	data->pend_buf = data->frame_buffer;
+
+	if (stm32_ltdc_start(dev) != 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int stm32_ltdc_get_timing(const struct device *dev, struct display_timing *timing)
+{
+	struct display_stm32_ltdc_data *data = dev->data;
+
+	if (!data->started) {
+		return -ENODATA;
+	}
+
+	*timing = data->timing;
+
+	return 0;
+}
+
 static DEVICE_API(display, stm32_ltdc_display_api) = {
 	.write = stm32_ltdc_write,
 	.read = stm32_ltdc_read,
@@ -787,6 +894,8 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 	.get_capabilities = stm32_ltdc_get_capabilities,
 	.set_pixel_format = stm32_ltdc_set_pixel_format,
 	.set_orientation = stm32_ltdc_set_orientation,
+	.set_timing = stm32_ltdc_set_timing,
+	.get_timing = stm32_ltdc_get_timing,
 	.blanking_off = stm32_ltdc_display_blanking_off,
 	.blanking_on = stm32_ltdc_display_blanking_on,
 	.register_event_cb = stm32_ltdc_display_register_event_cb,
@@ -848,54 +957,6 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 		.hltdc = {									\
 			.Instance = (LTDC_TypeDef *) DT_INST_REG_ADDR(inst),			\
 			.Init = {								\
-				.HSPolarity = (DT_PROP(DT_INST_CHILD(inst, display_timings),	\
-						hsync_active) ?					\
-						LTDC_HSPOL_ACTIVE_HIGH : LTDC_HSPOL_ACTIVE_LOW),\
-				.VSPolarity = (DT_PROP(DT_INST_CHILD(inst,			\
-						display_timings), vsync_active) ?		\
-						LTDC_VSPOL_ACTIVE_HIGH : LTDC_VSPOL_ACTIVE_LOW),\
-				.DEPolarity = (DT_PROP(DT_INST_CHILD(inst,			\
-						display_timings), de_active) ?			\
-						LTDC_DEPOL_ACTIVE_HIGH : LTDC_DEPOL_ACTIVE_LOW),\
-				.PCPolarity = (DT_PROP(DT_INST_CHILD(inst,			\
-						display_timings), pixelclk_active) ?		\
-						LTDC_PCPOL_ACTIVE_HIGH : LTDC_PCPOL_ACTIVE_LOW),\
-				.HorizontalSync = DT_PROP(DT_INST_CHILD(inst,			\
-							display_timings), hsync_len) - 1,	\
-				.VerticalSync = DT_PROP(DT_INST_CHILD(inst,			\
-							display_timings), vsync_len) - 1,	\
-				.AccumulatedHBP = DT_PROP(DT_INST_CHILD(inst,			\
-							display_timings), hback_porch) +	\
-							DT_PROP(DT_INST_CHILD(inst,		\
-							display_timings), hsync_len) - 1,	\
-				.AccumulatedVBP = DT_PROP(DT_INST_CHILD(inst,			\
-							display_timings), vback_porch) +	\
-							DT_PROP(DT_INST_CHILD(inst,		\
-							display_timings), vsync_len) - 1,	\
-				.AccumulatedActiveW = DT_PROP(DT_INST_CHILD(inst,		\
-							display_timings), hback_porch) +	\
-							DT_PROP(DT_INST_CHILD(inst,		\
-							display_timings), hsync_len) +		\
-							DT_INST_PROP(inst, width) - 1,		\
-				.AccumulatedActiveH = DT_PROP(DT_INST_CHILD(inst,		\
-							display_timings), vback_porch) +	\
-							DT_PROP(DT_INST_CHILD(inst,		\
-							display_timings), vsync_len) +		\
-							DT_INST_PROP(inst, height) - 1,		\
-				.TotalWidth = DT_PROP(DT_INST_CHILD(inst,			\
-						display_timings), hback_porch) +		\
-						DT_PROP(DT_INST_CHILD(inst,			\
-						display_timings), hsync_len) +			\
-						DT_INST_PROP(inst, width) +			\
-						DT_PROP(DT_INST_CHILD(inst,			\
-						display_timings), hfront_porch) - 1,		\
-				.TotalHeigh = DT_PROP(DT_INST_CHILD(inst,			\
-						display_timings), vback_porch) +		\
-						DT_PROP(DT_INST_CHILD(inst,			\
-						display_timings), vsync_len) +			\
-						DT_INST_PROP(inst, height) +			\
-						DT_PROP(DT_INST_CHILD(inst,			\
-						display_timings), vfront_porch) - 1,		\
 				.Backcolor.Red =						\
 					DT_INST_PROP_OR(inst, def_back_color_red, 0xFF),	\
 				.Backcolor.Green =						\
@@ -933,6 +994,33 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 	static const struct display_stm32_ltdc_config stm32_ltdc_config_##inst = {		\
 		.width = DT_INST_PROP(inst, width),						\
 		.height = DT_INST_PROP(inst, height),						\
+		.has_timings = DT_NODE_EXISTS(DT_INST_CHILD(inst, display_timings)),		\
+		.timing = {									\
+			IF_ENABLED(DT_NODE_EXISTS(DT_INST_CHILD(inst, display_timings)), (	\
+			.hactive = DT_INST_PROP(inst, width),					\
+			.vactive = DT_INST_PROP(inst, height),					\
+			.hsync_len = DT_PROP(DT_INST_CHILD(inst, display_timings),		\
+					hsync_len),						\
+			.hfront_porch = DT_PROP(DT_INST_CHILD(inst, display_timings),		\
+					hfront_porch),						\
+			.hback_porch = DT_PROP(DT_INST_CHILD(inst, display_timings),		\
+					hback_porch),						\
+			.vsync_len = DT_PROP(DT_INST_CHILD(inst, display_timings),		\
+					vsync_len),						\
+			.vfront_porch = DT_PROP(DT_INST_CHILD(inst, display_timings),		\
+					vfront_porch),						\
+			.vback_porch = DT_PROP(DT_INST_CHILD(inst, display_timings),		\
+					vback_porch),						\
+			.hsync_active = DT_PROP(DT_INST_CHILD(inst, display_timings),		\
+					hsync_active),						\
+			.vsync_active = DT_PROP(DT_INST_CHILD(inst, display_timings),		\
+					vsync_active),						\
+			.de_active = DT_PROP(DT_INST_CHILD(inst, display_timings),		\
+					de_active),						\
+			.pixelclk_active = DT_PROP(DT_INST_CHILD(inst, display_timings),	\
+					pixelclk_active),					\
+			))									\
+		},										\
 		.disp_on_gpio = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, disp_on_gpios),		\
 				(GPIO_DT_SPEC_INST_GET(inst, disp_on_gpios)), ({ 0 })),		\
 		.bl_ctrl_gpio = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, bl_ctrl_gpios),		\
