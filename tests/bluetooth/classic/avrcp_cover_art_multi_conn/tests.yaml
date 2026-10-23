@@ -1,0 +1,30 @@
+tests:
+  bluetooth.classic.avrcp.cover_art_multi_conn:
+    platform_allow:
+    - native_sim
+    integration_platforms:
+    - native_sim
+    tags:
+    - bluetooth
+    - avrcp
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      # Three BR/EDR boards are needed, so the suite is only built unless the
+      # fixture is supplied: twister -X bt_classic_multi_test
+      fixture: bt_classic_multi_test
+      required_devices:
+      # Two more boards, same platform and image, take the server roles
+      - {}
+      - {}
+    timeout: 300
+  bluetooth.classic.avrcp.cover_art_multi_conn.no_blobs:
+    platform_allow:
+    - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+    - bluetooth
+    - avrcp
+    extra_args:
+    - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 300
+    build_only: true
