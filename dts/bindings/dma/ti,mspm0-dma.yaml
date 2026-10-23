@@ -27,6 +27,11 @@ properties:
     description: |
       Number of FULL-featured DMA channels on this instance, counted from channel 0.
 
+  ti,gather-mode:
+    type: boolean
+    description: |
+      Whether gather mode is supported on this controller instance or not.
+
   ti,round-robin-priority:
     type: boolean
     description: |
