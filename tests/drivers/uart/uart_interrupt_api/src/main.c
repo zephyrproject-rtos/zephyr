@@ -52,6 +52,10 @@ static void uart_fifo_callback(const struct device *dev, void *user_data)
 			 * otherwise main app might never run.
 			 */
 			data_transmit_done = true;
+			/* Disable uart_irq_tx after the data transmit is done,
+			 * as we don't need any more interrupts.
+			 */
+			uart_irq_tx_disable(dev);
 		}
 	}
 }
@@ -75,9 +79,6 @@ static int test_fifo_tx_sizes(void)
 	uart_irq_tx_enable(uart_dev);
 
 	k_sleep(K_MSEC(500));
-
-	/* Verify uart_irq_tx_disable() */
-	uart_irq_tx_disable(uart_dev);
 
 	if (!data_transmit_done) {
 		return TC_FAIL;
