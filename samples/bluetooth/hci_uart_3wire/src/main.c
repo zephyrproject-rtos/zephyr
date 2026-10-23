@@ -192,7 +192,7 @@ static void process_unack(void)
 	LOG_DBG("rx_ack %u tx_ack %u tx_seq %u unack_queue_len %u", h5.rx_ack, h5.tx_ack, h5.tx_seq,
 		unack_queue_len);
 
-	while (unack_queue_len > 0) {
+	while (number_removed > 0U) {
 		if (next_seq == h5.rx_ack) {
 			/* Next sequence number is the same as last received
 			 * ack number

@@ -252,6 +252,15 @@ static uint8_t send_evt(void)
 	return evt_seq;
 }
 
+static void expect_evt_retransmitted(uint8_t evt_seq)
+{
+	uint8_t hdr[HDR_LEN];
+
+	k_sleep(ACK_WAIT);
+	hdr_set(hdr, true, evt_seq, seq, PKT_EVT, sizeof(hw_err_evt));
+	expect_tx(hdr, hw_err_evt, sizeof(hw_err_evt));
+}
+
 /* Start from an Active link at sequence number 0, also after a failed test */
 static void before(void *fixture)
 {
@@ -372,34 +381,34 @@ ZTEST(hci_uart_3wire, test_split_escape)
 
 ZTEST(hci_uart_3wire, test_unsupported_type)
 {
-	static const uint8_t evt[] = { BT_HCI_EVT_HARDWARE_ERROR, 1U, 0x00 };
-	const struct device *hci = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci));
 	uint8_t out[FRAME_MAX(0U)];
 	uint8_t hdr[HDR_LEN];
-	struct net_buf *buf;
-	uint8_t tx[64];
 	uint8_t evt_seq;
 
-	/* An event for the Host, kept until it is acknowledged */
-	buf = bt_buf_get_evt(BT_HCI_EVT_HARDWARE_ERROR, false, K_NO_WAIT);
-	zassert_not_null(buf);
-	net_buf_add_mem(buf, evt, sizeof(evt));
-	zassert_ok(bt_hci_recv_err(hci, buf));
-	k_sleep(K_MSEC(10));
-	zassert_true(uart_emul_get_tx_data(uart, tx, sizeof(tx)) > 1U);
-	evt_seq = tx[1] & 0x07U;
+	evt_seq = send_evt();
 
 	/* Reserved type 6 declaring one octet and carrying none, acknowledging the event */
 	hdr_set(hdr, false, 0U, (evt_seq + 1U) % 8U, 6U, 1U);
 	put(out, frame(out, hdr, NULL, 0U));
 
 	/* The acknowledgment was discarded with the packet */
-	k_sleep(ACK_WAIT);
-	hdr_set(hdr, true, evt_seq, seq, PKT_EVT, sizeof(evt));
-	expect_tx(hdr, evt, sizeof(evt));
+	expect_evt_retransmitted(evt_seq);
 
-	hdr_set(hdr, false, 0U, (evt_seq + 1U) % 8U, PKT_ACK, 0U);
-	put(out, frame(out, hdr, NULL, 0U));
+	put_ack((evt_seq + 1U) % 8U);
+	expect_no_tx();
+}
+
+ZTEST(hci_uart_3wire, test_ack_out_of_window)
+{
+	uint8_t evt_seq;
+
+	evt_seq = send_evt();
+
+	/* Acknowledges one packet more than was sent */
+	put_ack((evt_seq + 2U) % 8U);
+	expect_evt_retransmitted(evt_seq);
+
+	put_ack((evt_seq + 1U) % 8U);
 	expect_no_tx();
 }
 
