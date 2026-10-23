@@ -15,6 +15,7 @@ ram: 2048
 flash: 64
 supported:
   - smp
+  - netif:eth
 testing:
   timeout_multiplier: 8
   ignore_tags:

@@ -144,9 +144,8 @@ static uint32_t smsc_mii_bitbang_read(struct smsc_data *sc)
 {
 	uint16_t val;
 
-	__ASSERT(FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)) == 3,
-		 "%s called with bank %d (!=3)", __func__,
-		 FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)));
+	__ASSERT(smsc_current_bank(sc) == 3, "%s called with bank %u (!=3)", __func__,
+		 smsc_current_bank(sc));
 
 	val = smsc_read_2(sc, MGMT);
 	delay(1); /* Simulate a timing sequence */
@@ -156,9 +155,8 @@ static uint32_t smsc_mii_bitbang_read(struct smsc_data *sc)
 
 static void smsc_mii_bitbang_write(struct smsc_data *sc, uint16_t val)
 {
-	__ASSERT(FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)) == 3,
-		 "%s called with bank %d (!=3)", __func__,
-		 FIELD_GET(BSR_BANK_MASK, smsc_read_2(sc, BSR)));
+	__ASSERT(smsc_current_bank(sc) == 3, "%s called with bank %u (!=3)", __func__,
+		 smsc_current_bank(sc));
 
 	smsc_write_2(sc, MGMT, val);
 	delay(1); /* Simulate a timing sequence */
@@ -826,7 +824,7 @@ int eth_init(const struct device *dev)
 static struct eth_context eth_0_context;
 
 static struct eth_config eth_0_config = {
-	DEVICE_MMIO_ROM_INIT(DT_PARENT(DT_DRV_INST(0))),
+	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 };
 
@@ -872,7 +870,7 @@ static DEVICE_API(mdio, mdio_smsc_api) = {
 };
 
 const struct mdio_smsc_config mdio_smsc_config_0 = {
-	.eth_dev = DEVICE_DT_GET(DT_CHILD(DT_INST_PARENT(0), ethernet)),
+	.eth_dev = DEVICE_DT_GET(DT_INST_PARENT(0)),
 };
 
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &mdio_smsc_config_0, POST_KERNEL,

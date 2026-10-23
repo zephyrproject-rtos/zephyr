@@ -11,4 +11,7 @@ config ATOMIC_OPERATIONS_ARCH
 	depends on SMP
 	default y
 
+configdefault ETH_DRIVER
+	default y
+
 endif # BOARD_FVP_BASE_REVC_2XAEM

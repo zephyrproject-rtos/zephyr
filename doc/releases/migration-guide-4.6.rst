@@ -47,6 +47,34 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
+Ethernet
+========
+
+* The :dtcompatible:`smsc,lan91c111` node now holds the controller registers itself and the
+  :dtcompatible:`smsc,lan91c111-mdio` node is its child, instead of both being children of a node
+  with the registers. Move ``compatible``, ``interrupts`` and ``phy-handle`` of the MAC node into
+  its parent and make the MDIO node a child of it:
+
+  .. code-block:: devicetree
+
+     eth: ethernet@1a000000 {
+             compatible = "smsc,lan91c111";
+             reg = <0x1a000000 0x1000>;
+             interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+             phy-handle = <&phy>;
+
+             mdio: mdio {
+                     compatible = "smsc,lan91c111-mdio";
+                     #address-cells = <1>;
+                     #size-cells = <0>;
+
+                     phy: ethernet-phy@0 {
+                             compatible = "ethernet-phy";
+                             reg = <0>;
+                     };
+             };
+     };
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
