@@ -56,6 +56,7 @@ LOG_MODULE_REGISTER(clock_control_lfclk, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 /* Client to request HFXO to synthesize low frequency clock. */
 static struct onoff_client lfsynth_cli;
 #endif
+static z_nrf_clock_control_lf_on_cb_t lfclk_user_cb;
 
 static inline void anomaly_132_workaround(void)
 {
@@ -147,8 +148,8 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 
 	while (!(nrfx_clock_lfclk_running_check((void *)&type) &&
 		 ((type == target_type) || (mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE)))) {
-		/* Synth source start is almost instant and LFCLKSTARTED may
-		 * happen before calling idle. That would lead to deadlock.
+		/* Go to sleep only if waiting for LFXO availability which takes hudreds of
+		 *  milliseconds.
 		 */
 		if (!DT_ENUM_HAS_VALUE(CLOCK_NODE_LFCLK, k32src, synth)) {
 			if (isr_mode || !IS_ENABLED(CONFIG_MULTITHREADING)) {
@@ -170,6 +171,9 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 			 */
 			common_clear_pending_irq();
 			nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_LFCLKSTART);
+			if (mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE) {
+				break;
+			}
 		}
 	}
 
@@ -224,23 +228,52 @@ static void lfrc_clock_event_handler(nrfx_clock_lfrc_evt_type_t event)
 }
 #endif
 
-void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
+#if CONFIG_CLOCK_CONTROL_NRF_ONOFF
+static void lfclk_cb(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state, int res)
+{
+	ARG_UNUSED(mgr);
+	ARG_UNUSED(cli);
+	ARG_UNUSED(state);
+	ARG_UNUSED(res);
+
+	if (lfclk_user_cb) {
+		lfclk_user_cb();
+	}
+}
+#else
+static void lfclk_cb(const struct device *dev, clock_control_subsys_t subsys, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(subsys);
+	ARG_UNUSED(user_data);
+
+	if (lfclk_user_cb) {
+		lfclk_user_cb();
+	}
+}
+#endif
+
+void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode,
+			       z_nrf_clock_control_lf_on_cb_t cb)
 {
 	static atomic_t on;
-#if CONFIG_CLOCK_CONTROL_NRF_ONOFF
-	static struct onoff_client cli;
-#endif
 
 	if (atomic_set(&on, 1) == 0) {
 		int err;
 
+	lfclk_user_cb = cb;
 #if CONFIG_CLOCK_CONTROL_NRF_ONOFF
+	static struct onoff_client cli;
 	struct onoff_manager *mgr = &((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->mgr;
 
-	sys_notify_init_spinwait(&cli.notify);
+	if (cb) {
+		sys_notify_init_callback(&cli.notify, lfclk_cb);
+	} else {
+		sys_notify_init_spinwait(&cli.notify);
+	}
 	err = onoff_request(mgr, &cli);
 #else
-	err = common_async_start(CLOCK_DEVICE_LFCLK, NULL, NULL, COMMON_CTX_API);
+	err = common_async_start(CLOCK_DEVICE_LFCLK, lfclk_cb, NULL, COMMON_CTX_API);
 #endif
 		__ASSERT_NO_MSG(err >= 0);
 	}

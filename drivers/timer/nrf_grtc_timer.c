@@ -608,7 +608,7 @@ static int grtc_post_init(void)
 				   ? CLOCK_CONTROL_NRF_LF_START_AVAILABLE
 				   : CLOCK_CONTROL_NRF_LF_START_STABLE);
 
-	z_nrf_clock_control_lf_on(mode);
+	z_nrf_clock_control_lf_on(mode, NULL);
 #endif
 
 #if defined(CONFIG_NRF_GRTC_ALWAYS_ON)

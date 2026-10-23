@@ -530,7 +530,7 @@ static int init_rtc(const struct device *dev, uint32_t prescaler)
 	int err;
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF) || defined(CONFIG_CLOCK_CONTROL_NRF_LFCLK)
-	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_NOWAIT);
+	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_NOWAIT, NULL);
 #endif
 
 	nrfy_rtc_prescaler_set(rtc, prescaler);
