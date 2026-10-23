@@ -26,6 +26,7 @@
 		pwm-led0 = &green_pwm_led;
 		pwm-led1 = &blue_pwm_led;
 		pwm-led2 = &red_pwm_led;
+		die-temp0 = &temp0;
 	};
 
 	chosen {
@@ -140,6 +141,10 @@
 	vref-mv = <3300>;
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&temp0 {
 	status = "okay";
 };
 
