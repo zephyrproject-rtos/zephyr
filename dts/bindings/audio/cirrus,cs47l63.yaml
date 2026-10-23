@@ -1,0 +1,136 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cirrus Logic CS47L63 Low-Power Audio DSP
+
+compatible: "cirrus,cs47l63"
+
+include: spi-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  irq-gpios:
+    type: phandle-array
+    description:
+      Interrupt request (IRQ) output.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description:
+      Digital reset input.
+
+  cirrus,asp:
+    type: int
+    enum: [1, 2]
+    default: 1
+    description: |
+      Audio serial port the host's I2S is wired to. ASP1 on the
+      nRF5340 Audio DK.
+
+  cirrus,input:
+    type: string
+    default: "line"
+    enum:
+      - "line"
+      - "pdm"
+    description: |
+      Input this serial port captures from: line is IN2L/IN2R, the analog
+      line pair; pdm is IN1L/IN1R in digital mode, a PDM microphone.
+
+  cirrus,in2-single-ended:
+    type: boolean
+    description: |
+      IN2L and IN2R are wired single-ended, on IN2LP and IN2RP only. If
+      absent they are wired as differential pairs, IN2xP to IN2xN, the
+      part's reset setting. One setting covers both channels. Applies to
+      every serial port whose cirrus,input is "line".
+
+  cirrus,hp-load-below-20-ohm:
+    type: boolean
+    description: |
+      The headphone load on OUTP/OUTN has a DC resistance below 20 ohms.
+      If absent the load is taken as 20 ohms or more, the part's reset
+      setting.
+
+  gpio1-gpios:
+    type: phandle-array
+    description:
+      GPIO1 input with bus-keeper
+
+  gpio2-gpios:
+    type: phandle-array
+    description:
+      GPIO2 input with bus-keeper
+
+  gpio3-gpios:
+    type: phandle-array
+    description:
+      GPIO3 input with bus-keeper
+
+  gpio4-gpios:
+    type: phandle-array
+    description:
+      GPIO4 input with bus-keeper
+
+  gpio5-gpios:
+    type: phandle-array
+    description:
+      GPIO5 input with bus-keeper
+
+  gpio6-gpios:
+    type: phandle-array
+    description:
+      GPIO6 input with bus-keeper
+
+  gpio7-gpios:
+    type: phandle-array
+    description:
+      GPIO7 input with bus-keeper
+
+  gpio8-gpios:
+    type: phandle-array
+    description:
+      GPIO8 input with bus-keeper
+
+  gpio9-gpios:
+    type: phandle-array
+    description:
+      GPIO9 input with bus-keeper
+
+  gpio10-gpios:
+    type: phandle-array
+    description:
+      GPIO10 input with bus-keeper
+
+  gpio11-gpios:
+    type: phandle-array
+    description:
+      GPIO11 input with bus-keeper
+
+  gpio12-gpios:
+    type: phandle-array
+    description:
+      GPIO12 input with bus-keeper
+
+child-binding:
+  description: |
+    Second audio serial port of the same CS47L63. Output and input volume
+    and mute belong to the parent; both ports share one MCLK and frame rate.
+  properties:
+    cirrus,asp:
+      type: int
+      required: true
+      enum: [1, 2]
+      description: Serial port of this node; must differ from the parent's.
+    cirrus,input:
+      type: string
+      default: "line"
+      enum:
+        - "line"
+        - "pdm"
+      description: |
+        Input this serial port captures from: line is IN2L/IN2R, the analog
+        line pair; pdm is IN1L/IN1R in digital mode, a PDM microphone.

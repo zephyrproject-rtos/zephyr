@@ -220,6 +220,9 @@ enum audio_codec_error_type {
 
 	/** Output direct-current */
 	AUDIO_CODEC_ERROR_DC = BIT(4),
+
+	/** Clock loss */
+	AUDIO_CODEC_ERROR_CLOCK = BIT(5),
 };
 
 /**
