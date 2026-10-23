@@ -3072,7 +3072,14 @@ static int quic_context_ref(struct quic_context *ctx)
  * context list does not make it alive. Returns true when a reference was
  * taken.
  */
+#if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
+static bool quic_context_ref_unless_zero_debug(struct quic_context *ctx, const char *caller,
+					       int line)
+#define quic_context_ref_unless_zero(ctx)                                      \
+	quic_context_ref_unless_zero_debug(ctx, __func__, __LINE__)
+#else
 static bool quic_context_ref_unless_zero(struct quic_context *ctx)
+#endif
 {
 	atomic_val_t ref;
 
@@ -3082,6 +3089,11 @@ static bool quic_context_ref_unless_zero(struct quic_context *ctx)
 			return false;
 		}
 	} while (!atomic_cas(&ctx->refcount, ref, ref + 1));
+
+#if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
+	NET_DBG("[CO:%p/%d] Context ref %ld (%s():%d)", ctx, quic_get_by_conn(ctx),
+		ref + 1, caller, line);
+#endif
 
 	return true;
 }
@@ -6035,9 +6047,17 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	return stream;
 }
 
-static struct quic_stream *quic_get_stream(struct quic_context *conn)
+ZTESTABLE_STATIC struct quic_stream *quic_get_stream(struct quic_context *conn)
 {
 	struct quic_stream *stream = NULL;
+
+	/* The stream holds a reference to its context. A context whose
+	 * count already reached zero is being released, and a stream added
+	 * to it would keep pointing at it after its slot is reused.
+	 */
+	if (!quic_context_ref_unless_zero(conn)) {
+		return NULL;
+	}
 
 	k_mutex_lock(&streams_lock, K_FOREVER);
 
@@ -6053,11 +6073,14 @@ static struct quic_stream *quic_get_stream(struct quic_context *conn)
 		sys_slist_prepend(&conn->streams, &stream->node);
 
 		stream->conn = conn;
-		quic_context_ref(conn);
 		break;
 	}
 
 	k_mutex_unlock(&streams_lock);
+
+	if (stream == NULL) {
+		quic_context_unref(conn);
+	}
 
 	return stream;
 }
