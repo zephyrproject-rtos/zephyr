@@ -70,6 +70,11 @@ BUILD_ASSERT(CORE_CLK_FREQ == MCG_LITE_OUT_FREQ,
 	     "cpu0 clock-frequency does not match MCGOUTCLK / core_clk clock-div");
 BUILD_ASSERT((uint64_t)CPU_FREQ <= 24000000ULL * FLASH_CLK_DIV, "Bus/flash clock above 24 MHz");
 
+/* OSC_CR[SCxP] takes one bit per capacitor, not a value in pF */
+#define OSC_CAP_LOAD(pf)                                                                           \
+	((((pf) & 2) ? kOSC_Cap2P : 0U) | (((pf) & 4) ? kOSC_Cap4P : 0U) |                         \
+	 (((pf) & 8) ? kOSC_Cap8P : 0U) | (((pf) & 16) ? kOSC_Cap16P : 0U))
+
 /* Decode the clock name selector from the encoded `name` cell */
 #define DT_CLOCK_NAME(node_id) \
 	KINETIS_SIM_CLOCK_DECODE_NAME(DT_PHA(node_id, clocks, name))
@@ -117,7 +122,7 @@ const sim_clock_config_t simConfig_BOARD_BootClockRUN = {
 
 const osc_config_t oscConfig_BOARD_BootClockRUN = {
 	.freq = DT_PROP(OSC_NODE, clock_frequency),
-	.capLoad = DT_PROP_OR(OSC_NODE, load_capacitance_picofarads, 0),
+	.capLoad = OSC_CAP_LOAD(DT_PROP_OR(OSC_NODE, load_capacitance_picofarads, 0)),
 #if DT_ENUM_HAS_VALUE(OSC_NODE, mode, external)
 	.workMode = kOSC_ModeExt,
 #elif DT_ENUM_HAS_VALUE(OSC_NODE, mode, low_power)
