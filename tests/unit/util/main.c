@@ -1203,6 +1203,206 @@ ZTEST(util, test_utf8_count_chars_invalid_utf)
 	zassert_equal(count, expected_result, "Failed to detect invalid UTF");
 }
 
+struct utf8_is_valid_test {
+	const char *str;
+	const char *desc;
+};
+
+/* The string is accepted by utf8_is_valid() when checked up to its NULL terminator */
+ZTEST_P(util, test_utf8_is_valid_accepted)
+{
+	const struct utf8_is_valid_test *test = ZTEST_GET_PARAM_PTR(struct utf8_is_valid_test);
+
+	zassert_true(utf8_is_valid(test->str, strlen(test->str)), "Refused %s", test->desc);
+}
+
+/* The string is refused by utf8_is_valid() when checked up to its NULL terminator */
+ZTEST_P(util, test_utf8_is_valid_refused)
+{
+	const struct utf8_is_valid_test *test = ZTEST_GET_PARAM_PTR(struct utf8_is_valid_test);
+
+	zassert_false(utf8_is_valid(test->str, strlen(test->str)), "Accepted %s", test->desc);
+}
+
+static const struct utf8_is_valid_test utf8_well_formed[] = {
+	{"", "an empty string"},
+	{"I have 15 char.", "ASCII"},
+	{"Hello دنیا!🌍", "mixed 1-byte to 4-byte characters"},
+	{"\x7f", "U+007F, the last 1-byte code point"},
+	{"\xc2\x80", "U+0080, the first 2-byte code point"},
+	{"\xdf\xbf", "U+07FF, the last 2-byte code point"},
+	{"\xe0\xa0\x80", "U+0800, the first 3-byte code point"},
+	{"\xed\x9f\xbf", "U+D7FF, the last code point below the surrogates"},
+	{"\xee\x80\x80", "U+E000, the first code point above the surrogates"},
+	{"\xef\xbf\xbd", "U+FFFD, the replacement character"},
+	{"\xef\xbf\xbe", "U+FFFE, a noncharacter"},
+	{"\xef\xbf\xbf", "U+FFFF, the last 3-byte code point"},
+	{"\xf0\x90\x80\x80", "U+10000, the first 4-byte code point"},
+	{"\xf4\x8f\xbf\xbf", "U+10FFFF, the last code point"},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(utf8_well_formed_vals, utf8_well_formed);
+ZTEST_INSTANTIATE_TEST_SUITE_P(well_formed, util, test_utf8_is_valid_accepted,
+			       utf8_well_formed_vals);
+
+ZTEST(util, test_utf8_is_valid_zero_byte)
+{
+	/* A zero byte within the length is U+0000 and does not end the check */
+	const char zero[] = {'\0'};
+	const char zero_inside[] = {'a', '\0', 'b'};
+	const char bad_after_zero[] = {'a', '\0', (char)0x80};
+
+	zexpect_true(utf8_is_valid(zero, sizeof(zero)), "Refused U+0000");
+	zexpect_true(utf8_is_valid(zero_inside, sizeof(zero_inside)),
+		     "Refused U+0000 inside a string");
+	zexpect_false(utf8_is_valid(bad_after_zero, sizeof(bad_after_zero)),
+		      "Accepted a continuation byte after U+0000");
+}
+
+static const struct utf8_is_valid_test utf8_bad_lead[] = {
+	{"\x80", "the first continuation byte as a lead"},
+	{"\xbf", "the last continuation byte as a lead"},
+	{"abc\x80", "a continuation byte after ASCII"},
+	{"\xc2\x80\x80", "a continuation byte after a whole sequence"},
+	{"\xf8\x88\x80\x80\x80", "a 5-byte sequence"},
+	{"\xfc\x84\x80\x80\x80\x80", "a 6-byte sequence"},
+	{"\xfe", "0xFE"},
+	{"\xff", "0xFF"},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(utf8_bad_lead_vals, utf8_bad_lead);
+ZTEST_INSTANTIATE_TEST_SUITE_P(bad_lead, util, test_utf8_is_valid_refused, utf8_bad_lead_vals);
+
+static const struct utf8_is_valid_test utf8_bad_continuation[] = {
+	{"\xc2z", "ASCII as byte 2 of 2"},
+	{"\xc2\xc0", "0xC0 as byte 2 of 2"},
+	{"\xe2z\xac", "ASCII as byte 2 of 3"},
+	{"\xe2\x82z", "ASCII as byte 3 of 3"},
+	{"\xf0z\x8c\x8d", "ASCII as byte 2 of 4"},
+	{"\xf0\x9fz\x8d", "ASCII as byte 3 of 4"},
+	{"\xf0\x9f\x8cz", "ASCII as byte 4 of 4"},
+	{"\xe2\x82\xc3\xa9", "a lead byte as byte 3 of 3"},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(utf8_bad_continuation_vals, utf8_bad_continuation);
+ZTEST_INSTANTIATE_TEST_SUITE_P(bad_continuation, util, test_utf8_is_valid_refused,
+			       utf8_bad_continuation_vals);
+
+struct utf8_is_valid_cut_test {
+	const char *str;
+	size_t len;
+	const char *desc;
+};
+
+/*
+ * The string is accepted whole and refused when the length cuts its last character short.
+ * The bytes after the length are valid continuation bytes, so only the length ends it.
+ */
+ZTEST_P(util, test_utf8_is_valid_truncated)
+{
+	const struct utf8_is_valid_cut_test *test =
+		ZTEST_GET_PARAM_PTR(struct utf8_is_valid_cut_test);
+
+	zexpect_true(utf8_is_valid(test->str, strlen(test->str)), "Refused %s", test->desc);
+	zexpect_false(utf8_is_valid(test->str, test->len), "Accepted %s cut to %zu bytes",
+		      test->desc, test->len);
+}
+
+static const struct utf8_is_valid_cut_test utf8_truncated[] = {
+	{"\xc3\xa9", 1U, "U+00E9 (2 bytes)"},
+	{"\xe2\x82\xac", 1U, "U+20AC (3 bytes)"},
+	{"\xe2\x82\xac", 2U, "U+20AC (3 bytes)"},
+	{"\xf0\x9f\x8c\x8d", 1U, "U+1F30D (4 bytes)"},
+	{"\xf0\x9f\x8c\x8d", 2U, "U+1F30D (4 bytes)"},
+	{"\xf0\x9f\x8c\x8d", 3U, "U+1F30D (4 bytes)"},
+	{"abc\xe2\x82\xac", 5U, "abc and U+20AC (6 bytes)"},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(utf8_truncated_vals, utf8_truncated);
+ZTEST_INSTANTIATE_TEST_SUITE_P(by_length, util, test_utf8_is_valid_truncated, utf8_truncated_vals);
+
+ZTEST(util, test_utf8_is_valid_zero_length)
+{
+	/* No byte is checked, not even an invalid one */
+	zassert_true(utf8_is_valid("\xff", 0U), "Refused a zero length");
+}
+
+static const struct utf8_is_valid_test utf8_overlong[] = {
+	{"\xc0\x80", "U+0000 in 2 bytes"},
+	{"\xc0\xaf", "U+002F in 2 bytes"},
+	{"\xc1\xbf", "U+007F in 2 bytes"},
+	{"\xe0\x80\xaf", "U+002F in 3 bytes"},
+	{"\xe0\x9f\xbf", "U+07FF in 3 bytes"},
+	{"\xf0\x80\x81\x81", "U+0041 in 4 bytes"},
+	{"\xf0\x8f\xbf\xbf", "U+FFFF in 4 bytes"},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(utf8_overlong_vals, utf8_overlong);
+ZTEST_INSTANTIATE_TEST_SUITE_P(overlong, util, test_utf8_is_valid_refused, utf8_overlong_vals);
+
+static const struct utf8_is_valid_test utf8_surrogate[] = {
+	{"\xed\xa0\x80", "U+D800, the first high surrogate"},
+	{"\xed\xaf\xbf", "U+DBFF, the last high surrogate"},
+	{"\xed\xb0\x80", "U+DC00, the first low surrogate"},
+	{"\xed\xbf\xbf", "U+DFFF, the last low surrogate"},
+	{"\xed\xa0\xbc\xed\xbc\x8d", "U+1F30D as a surrogate pair"},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(utf8_surrogate_vals, utf8_surrogate);
+ZTEST_INSTANTIATE_TEST_SUITE_P(surrogate, util, test_utf8_is_valid_refused, utf8_surrogate_vals);
+
+static const struct utf8_is_valid_test utf8_above_last_code_point[] = {
+	{"\xf4\x90\x80\x80", "U+110000"},
+	{"\xf5\x80\x80\x80", "U+140000"},
+	{"\xf7\xbf\xbf\xbf", "U+1FFFFF, the last 4-byte sequence"},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(utf8_above_last_code_point_vals, utf8_above_last_code_point);
+ZTEST_INSTANTIATE_TEST_SUITE_P(above_last_code_point, util, test_utf8_is_valid_refused,
+			       utf8_above_last_code_point_vals);
+
+/* The examples of RFC 3629 section 7 */
+static const struct utf8_is_valid_test utf8_rfc3629_examples[] = {
+	{"\x41\xe2\x89\xa2\xce\x91\x2e", "U+0041 U+2262 U+0391 U+002E"},
+	{"\xed\x95\x9c\xea\xb5\xad\xec\x96\xb4", "U+D55C U+AD6D U+C5B4"},
+	{"\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e", "U+65E5 U+672C U+8A9E"},
+	{"\xef\xbb\xbf\xf0\xa3\x8e\xb4", "U+233B4 after a byte order mark"},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(utf8_rfc3629_examples_vals, utf8_rfc3629_examples);
+ZTEST_INSTANTIATE_TEST_SUITE_P(rfc3629_examples, util, test_utf8_is_valid_accepted,
+			       utf8_rfc3629_examples_vals);
+
+/* The invalid sequences that RFC 3629 names in sections 3 and 10 */
+static const struct utf8_is_valid_test utf8_rfc3629_invalid[] = {
+	{"\xc0\x80", "the overlong sequence C0 80"},
+	{"\xed\xa1\x8c\xed\xbe\xb4", "the surrogate pair ED A1 8C ED BE B4"},
+	{"\x2f\xc0\xae\x2e\x2f", "the illegal sequence 2F C0 AE 2E 2F"},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(utf8_rfc3629_invalid_vals, utf8_rfc3629_invalid);
+ZTEST_INSTANTIATE_TEST_SUITE_P(rfc3629_invalid, util, test_utf8_is_valid_refused,
+			       utf8_rfc3629_invalid_vals);
+
+/* RFC 3629 section 1: the octet values C0, C1, F5 to FF never appear */
+ZTEST_DEFINE_PARAM_VALUES(utf8_never_appearing_vals, uint8_t, 0xC0, 0xC1, 0xF5, 0xF6, 0xF7, 0xF8,
+			  0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF);
+
+ZTEST_P(util, test_utf8_is_valid_never_appearing_octet)
+{
+	uint8_t octet = ZTEST_GET_PARAM(uint8_t);
+	/* As a lead byte, alone and before 1 to 3 continuation bytes */
+	const char str[] = {(char)octet, (char)0x80, (char)0x80, (char)0x80};
+
+	for (size_t len = 1; len <= sizeof(str); len++) {
+		zexpect_false(utf8_is_valid(str, len),
+			      "Accepted 0x%02X before %zu continuation bytes", octet, len - 1);
+	}
+}
+
+ZTEST_INSTANTIATE_TEST_SUITE_P(rfc3629, util, test_utf8_is_valid_never_appearing_octet,
+			       utf8_never_appearing_vals);
+
 ZTEST(util, test_util_eq)
 {
 	uint8_t src1[16];
