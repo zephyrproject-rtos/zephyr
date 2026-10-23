@@ -40,6 +40,15 @@ Display API on top of a DSI link.
 As with DBI, applications never call DSI functions directly. They remain portable by using the
 generic Display API, while the driver handles the DSI transactions internally.
 
+Display Timings
+***************
+
+Display controllers that drive a panel over a video interface, such as an LCD-TFT controller,
+generate the panel's sync and porch timings. These timings are usually set in devicetree with a
+``display-timings`` node. A controller can also support setting them at runtime with
+:c:func:`display_set_timing`, for example when a MIPI DSI host forwards the timings of the attached
+panel. Devicetree timings, if any, are the default and are restored on reset or re-initialization.
+
 API Reference
 *************
 
