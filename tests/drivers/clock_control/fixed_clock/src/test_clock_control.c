@@ -34,8 +34,7 @@ ZTEST(fixed_clk, test_fixed_rate_clk_on_off_status_rate)
 		      "%s: Unexpected status (%d)", dev->name, status);
 
 	err = clock_control_off(dev, 0);
-	zassert_equal(0, err, "%s: Expected 0, got (%d)",
-		      dev->name, err);
+	zassert_equal(-ENOTSUP, err, "%s: Expected -ENOTSUP, got (%d)", dev->name, err);
 
 	status = clock_control_get_status(dev, 0);
 	zassert_equal(status, CLOCK_CONTROL_STATUS_ON,
