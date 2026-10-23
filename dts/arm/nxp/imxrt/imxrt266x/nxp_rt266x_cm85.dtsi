@@ -55,6 +55,31 @@
 			};
 		};
 	};
+
+	/*
+	 * The three run modes, in the descending load-threshold order the cpu_freq
+	 * policies expect. The thresholds are a starting point to tune per
+	 * project, not measured break-even points.
+	 */
+	performance-states {
+		pstate_high_performance_run: pstate-0 {
+			compatible = "nxp,rt2k-pmu-pstate";
+			load-threshold = <60>;
+			cpu-frequency-level = "high-performance-run";
+		};
+
+		pstate_normal_run: pstate-1 {
+			compatible = "nxp,rt2k-pmu-pstate";
+			load-threshold = <30>;
+			cpu-frequency-level = "normal-run";
+		};
+
+		pstate_low_leakage_run: pstate-2 {
+			compatible = "nxp,rt2k-pmu-pstate";
+			load-threshold = <0>;
+			cpu-frequency-level = "low-leakage-run";
+		};
+	};
 };
 
 /*

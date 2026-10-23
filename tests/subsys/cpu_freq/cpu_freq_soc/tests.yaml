@@ -10,6 +10,7 @@ tests:
       - frdm_mcxn236
       - frdm_imx93/mimx9352/a55/smp
       - frdm_imx91/mimx9131
+      - mimxrt2660_evk/mimxrt2663/cm85
     integration_platforms:
       - native_sim
       - native_sim/native/64

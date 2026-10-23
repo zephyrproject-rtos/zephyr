@@ -873,6 +873,93 @@ static void soc_clock_apply_od_run(void)
 	ConfigCGUDig_SS();                   /* CMPT / MAIN / MEDIA / AUDIO / COMM / WAKE */
 }
 
+#if defined(CONFIG_CPU_FREQ_PSTATE_SET_SOC)
+/*******************************************************************************
+ * Run-mode switching
+ *****************************************************************************
+ */
+/*
+ * Run modes select and divide the sources soc_clock_init() established. Only
+ * the MAIN, NPU and MEDIABUS roots change; PLLs and peripheral roots retain
+ * their boot configuration. With the EVK's 1000 MHz main PLL output and
+ * 792 MHz core PLL, Normal Run uses CPU/NPU rates of 792/500 MHz and Low Leakage
+ * Run uses 500/396 MHz. Both reduced modes use a 250 MHz MEDIA bus.
+ */
+
+void soc_clock_switch_to_high_performance_run(void)
+{
+	static const clock_root_config_t cpu_cfg = {
+		.mux = DT_PROP(DT_NODELABEL(main_rootclk), clock_mux),
+		.div = DT_PROP(DT_NODELABEL(main_rootclk), clock_div),
+		.sndDiv = DT_PROP(DT_NODELABEL(main_rootclk), clock_second_div),
+	};
+	static const clock_root_config_t npu_cfg = {
+		.mux = DT_PROP(DT_NODELABEL(npu_rootclk), clock_mux),
+		.div = DT_PROP(DT_NODELABEL(npu_rootclk), clock_div),
+		.sndDiv = 1U,
+	};
+	static const clock_root_config_t media_cfg = {
+		.mux = DT_PROP(DT_NODELABEL(mediabus_rootclk), clock_mux),
+		.div = DT_PROP(DT_NODELABEL(mediabus_rootclk), clock_div),
+		.sndDiv = 1U,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_CGU_MAIN_ROOTCLK, &cpu_cfg);
+	CLOCK_SetRootClock(kCLOCK_Root_CGU_NPU_ROOTCLK, &npu_cfg);
+	CLOCK_SetRootClock(kCLOCK_Root_CGU_MEDIABUS_ROOTCLK, &media_cfg);
+	SystemCoreClockUpdate();
+}
+
+void soc_clock_switch_to_normal_run(void)
+{
+	static const clock_root_config_t cpu_cfg = {
+		.mux = kCLOCK_CGU_MAIN_ClockRoot_COREPLL_OUT,
+		.div = 1U,
+		.sndDiv = DT_PROP(DT_NODELABEL(main_rootclk), clock_second_div),
+	};
+	static const clock_root_config_t npu_cfg = {
+		.mux = kCLOCK_NPU_ClockRoot_MAINPLL_DIVOUT1,
+		.div = 2U,
+		.sndDiv = 1U,
+	};
+	static const clock_root_config_t media_cfg = {
+		.mux = kCLOCK_MEDIABUS_ClockRoot_SYSPLL_DIVOUT2,
+		.div = 2U,
+		.sndDiv = 1U,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_CGU_MAIN_ROOTCLK, &cpu_cfg);
+	CLOCK_SetRootClock(kCLOCK_Root_CGU_NPU_ROOTCLK, &npu_cfg);
+	CLOCK_SetRootClock(kCLOCK_Root_CGU_MEDIABUS_ROOTCLK, &media_cfg);
+	SystemCoreClockUpdate();
+}
+
+void soc_clock_switch_to_low_leakage_run(void)
+{
+	static const clock_root_config_t cpu_cfg = {
+		.mux = kCLOCK_CGU_MAIN_ClockRoot_PLL_PFDX,
+		.div = 2U,
+		.sndDiv = DT_PROP(DT_NODELABEL(main_rootclk), clock_second_div),
+	};
+	static const clock_root_config_t npu_cfg = {
+		.mux = kCLOCK_NPU_ClockRoot_COREPLL_OUT,
+		.div = 2U,
+		.sndDiv = 1U,
+	};
+	static const clock_root_config_t media_cfg = {
+		.mux = kCLOCK_MEDIABUS_ClockRoot_SYSPLL_DIVOUT2,
+		.div = 2U,
+		.sndDiv = 1U,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_CGU_MAIN_ROOTCLK, &cpu_cfg);
+	CLOCK_SetRootClock(kCLOCK_Root_CGU_NPU_ROOTCLK, &npu_cfg);
+	CLOCK_SetRootClock(kCLOCK_Root_CGU_MEDIABUS_ROOTCLK, &media_cfg);
+	SystemCoreClockUpdate();
+}
+
+#endif /* CONFIG_CPU_FREQ_PSTATE_SET_SOC */
+
 /*******************************************************************************
  * Static helpers
  *****************************************************************************
