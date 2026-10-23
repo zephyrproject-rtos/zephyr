@@ -96,6 +96,7 @@ struct h5_data {
 	struct k_fifo		tx_queue;
 	struct k_fifo		rx_queue;
 	struct k_fifo		unack_queue;
+	struct k_mutex		tx_mutex;
 
 	struct k_work_delayable ack_work;
 	struct k_work_delayable retx_work;
@@ -302,8 +303,13 @@ static void h5_send(const struct device *dev, const uint8_t *payload, uint8_t ty
 {
 	const struct h5_config *cfg = dev->config;
 	struct h5_data *h5 = dev->data;
+	__maybe_unused int err;
 	uint8_t hdr[4];
 	int i;
+
+	/* uart_poll_out() may block, and frames come from several threads */
+	err = k_mutex_lock(&h5->tx_mutex, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
 
 	hexdump("<= ", payload, len);
 
@@ -339,6 +345,9 @@ static void h5_send(const struct device *dev, const uint8_t *payload, uint8_t ty
 	}
 
 	uart_poll_out(cfg->uart, SLIP_DELIMITER);
+
+	err = k_mutex_unlock(&h5->tx_mutex);
+	__ASSERT_NO_MSG(err == 0);
 }
 
 /* Delayed work taking care about retransmitting packets */
@@ -777,6 +786,7 @@ static void h5_init(const struct device *dev)
 	h5->tx_win = 4U;
 
 	/* TX thread */
+	k_mutex_init(&h5->tx_mutex);
 	k_fifo_init(&h5->tx_queue);
 	tid = k_thread_create(cfg->tx_thread, cfg->tx_stack, cfg->tx_stack_size,
 			      tx_thread, (void *)dev, NULL, NULL,
