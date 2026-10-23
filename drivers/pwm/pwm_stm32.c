@@ -265,6 +265,8 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 				uint32_t period_cycles, uint32_t pulse_cycles,
 				pwm_flags_t flags)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	const struct pwm_stm32_config *cfg = dev->config;
 	TIM_TypeDef *timer = cfg->timer;
 
@@ -397,6 +399,8 @@ static int pwm_stm32_configure_capture(const struct device *dev,
 				       pwm_capture_callback_handler_t cb,
 				       void *user_data)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	/*
 	 * Capture is implemented in two different ways, depending on the
 	 * four-channel-capture-support setting in the node.
@@ -485,6 +489,8 @@ static int pwm_stm32_configure_capture(const struct device *dev,
 
 static int pwm_stm32_enable_capture(const struct device *dev, uint32_t channel)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	const struct pwm_stm32_config *cfg = dev->config;
 	TIM_TypeDef *timer = cfg->timer;
 	struct pwm_stm32_data *data = dev->data;
@@ -534,6 +540,8 @@ static int pwm_stm32_enable_capture(const struct device *dev, uint32_t channel)
 
 static int pwm_stm32_disable_capture(const struct device *dev, uint32_t channel)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	const struct pwm_stm32_config *cfg = dev->config;
 	TIM_TypeDef *timer = cfg->timer;
 
@@ -571,6 +579,8 @@ static int pwm_stm32_disable_capture(const struct device *dev, uint32_t channel)
 
 static void pwm_stm32_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	const struct pwm_stm32_config *cfg = dev->config;
 	TIM_TypeDef *timer = cfg->timer;
 	struct pwm_stm32_data *data = dev->data;
@@ -685,6 +695,8 @@ static void pwm_stm32_isr(const struct device *dev)
 static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 					uint32_t channel, uint64_t *cycles)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct pwm_stm32_data *data = dev->data;
 	const struct pwm_stm32_config *cfg = dev->config;
 
@@ -705,6 +717,8 @@ static DEVICE_API(pwm, pwm_stm32_driver_api) = {
 
 static int pwm_stm32_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct pwm_stm32_data *data = dev->data;
 	const struct pwm_stm32_config *cfg = dev->config;
 	TIM_TypeDef *timer = cfg->timer;

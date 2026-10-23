@@ -56,6 +56,8 @@
 
 static void iwdg_stm32_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct iwdg_stm32_data *data = dev->data;
 	IWDG_TypeDef *iwdg = ((const struct iwdg_stm32_config *)dev->config)->instance;
 
@@ -117,6 +119,8 @@ static void iwdg_stm32_convert_timeout(uint32_t timeout,
 
 static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	const struct iwdg_stm32_config *cfg = dev->config;
 	struct iwdg_stm32_data *data = dev->data;
 	uint32_t tickstart;
@@ -215,6 +219,8 @@ static int iwdg_stm32_disable(const struct device *dev)
 static int iwdg_stm32_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *config)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct iwdg_stm32_data *data = dev->data;
 	uint32_t timeout = config->window.max * USEC_PER_MSEC;
 	uint32_t prescaler = 0U;
@@ -252,6 +258,8 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 
 static int iwdg_stm32_feed(const struct device *dev, int channel_id)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	const struct iwdg_stm32_config *cfg = dev->config;
 
 	ARG_UNUSED(channel_id);
@@ -269,6 +277,8 @@ static DEVICE_API(wdt, iwdg_stm32_api) = {
 
 static int iwdg_stm32_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 /* Enable watchdog clock if needed */
 #if DT_INST_NODE_HAS_PROP(0, clocks)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);

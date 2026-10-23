@@ -491,6 +491,8 @@ static inline void rtc_stm32_disable_alarm(uint16_t id)
 
 static void rtc_stm32_isr(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_stm32_data *data = dev->data;
 	struct rtc_stm32_alrm *p_rtc_alrm;
 	int id = 0;
@@ -531,6 +533,8 @@ static void rtc_stm32_irq_config(const struct device *dev)
 
 static int rtc_stm32_init(const struct device *dev)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
 	__maybe_unused struct rtc_stm32_data *data = dev->data;
@@ -626,6 +630,8 @@ static int rtc_stm32_init(const struct device *dev)
 
 static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_stm32_data *data = dev->data;
 	uint32_t real_year = timeptr->tm_year + TM_YEAR_REF;
 	int err;
@@ -707,6 +713,8 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 
 static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_stm32_data *data = dev->data;
 
 	uint32_t rtc_date, rtc_time;
@@ -891,6 +899,8 @@ static int rtc_stm32_alarm_get_supported_fields(const struct device *dev, uint16
 static int rtc_stm32_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
 			struct rtc_time *timeptr)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_stm32_data *data = dev->data;
 	int err = 0;
 
@@ -934,6 +944,8 @@ unlock:
 static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
 			const struct rtc_time *timeptr)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_stm32_data *data = dev->data;
 	struct rtc_stm32_alrm *p_rtc_alrm;
 	int err = 0;
@@ -1069,6 +1081,8 @@ unlock:
 static int rtc_stm32_alarm_set_callback(const struct device *dev, uint16_t id,
 			rtc_alarm_callback callback, void *user_data)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_stm32_data *data = dev->data;
 	struct rtc_stm32_alrm *p_rtc_alrm;
 	int err = 0;
@@ -1097,6 +1111,8 @@ unlock:
 
 static int rtc_stm32_alarm_is_pending(const struct device *dev, uint16_t id)
 {
+	DEVICE_DT_INST_ASSUME(dev);
+
 	struct rtc_stm32_data *data = dev->data;
 	struct rtc_stm32_alrm *p_rtc_alrm;
 	int ret = 0;
