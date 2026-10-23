@@ -2541,9 +2541,14 @@ static int context_setup_raw_ip_packet(net_sa_family_t family,
 			return -ENOBUFS;
 		}
 
+		hdr_len = (ipv4_hdr->vhl & 0x0F) * 4;
+		if (hdr_len < sizeof(struct net_ipv4_hdr) ||
+		    hdr_len > net_pkt_get_len(pkt)) {
+			return -EINVAL;
+		}
+
 		net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
-		hdr_len = (ipv4_hdr->vhl & 0x0F) * 4;
 		if (hdr_len > sizeof(struct net_ipv4_hdr)) {
 			net_pkt_set_ipv4_opts_len(
 				pkt, hdr_len - sizeof(struct net_ipv4_hdr));
