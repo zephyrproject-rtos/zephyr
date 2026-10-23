@@ -144,6 +144,7 @@ struct dma_ti_mspm0_config {
 	uint8_t dma_max_channels;
 	void (*irq_config_func)(void);
 	uint8_t num_full_channels;
+	bool gather_mode;
 	bool round_robin;
 	uint8_t burst_size;
 };
@@ -264,19 +265,29 @@ static inline uint32_t dma_ti_mspm0_get_transfer_mode(struct dma_config *config)
 	}
 }
 
-static inline uint32_t dma_ti_mspm0_get_extended_mode(uint32_t dma_slot)
+static inline int dma_ti_mspm0_get_extended_mode(const struct dma_ti_mspm0_config *cfg,
+						 uint32_t dma_slot, uint32_t *em)
 {
 	uint32_t extmode = TI_MSPM0_DMA_SLOT_EXTMODE(dma_slot);
 
 	switch (extmode) {
 	case TI_MSPM0_DMA_SLOT_EXTMODE_FILL:
-		return DMA_MSPM0_EM_FILL;
+		*em = DMA_MSPM0_EM_FILL;
+		break;
 	case TI_MSPM0_DMA_SLOT_EXTMODE_TABLE:
-		return DMA_MSPM0_EM_TABLE;
+		*em = DMA_MSPM0_EM_TABLE;
+		break;
 	case TI_MSPM0_DMA_SLOT_EXTMODE_GATHER:
-		return DMA_MSPM0_EM_GATHER;
+		if (!cfg->gather_mode) {
+			LOG_ERR("Gather mode not supported by this DMA");
+			return -ENOTSUP;
+		}
+
+		*em = DMA_MSPM0_EM_GATHER;
+		break;
 	default:
-		return DMA_MSPM0_EM_NORMAL;
+		*em = DMA_MSPM0_EM_NORMAL;
+		break;
 	}
 
 	return 0;
@@ -335,7 +346,11 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_DSTINCR, temp);
 
-	em = dma_ti_mspm0_get_extended_mode(config->dma_slot);
+	ret = dma_ti_mspm0_get_extended_mode(cfg, config->dma_slot, &em);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (em != DMA_MSPM0_EM_NORMAL && !dma_ti_mspm0_is_full_channel(cfg, channel)) {
 		return -ENOTSUP;
 	}
@@ -698,6 +713,7 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 										\
 	static const struct dma_ti_mspm0_config dma_cfg_##inst = {		\
 		.num_full_channels = DT_INST_PROP(inst, ti_num_full_channels),	\
+		.gather_mode	  = DT_INST_PROP(inst, ti_gather_mode),		\
 		.regs		  = (struct dma_mspm0_regs *)DT_INST_REG_ADDR(inst),	\
 		.dma_max_channels = DT_INST_PROP(inst, dma_channels),		\
 		.irq_config_func  = dma_ti_mspm0_irq_cfg_##inst,		\
