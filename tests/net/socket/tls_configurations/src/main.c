@@ -106,7 +106,7 @@ static int create_socket(void)
 
 	addr.sin_family = NET_AF_INET;
 	addr.sin_port = net_htons(CONFIG_SERVER_PORT);
-	zsock_inet_pton(NET_AF_INET, "127.0.0.1", &addr.sin_addr);
+	zsock_inet_pton(NET_AF_INET, CONFIG_SERVER_ADDR, &addr.sin_addr);
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 	socket_fd = zsock_socket(addr.sin_family, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_3);

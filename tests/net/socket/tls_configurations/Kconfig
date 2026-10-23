@@ -17,4 +17,8 @@ config TLS_CONFIGURATIONS_PSK_FORMAT_OPAQUE
 
 endchoice
 
+config SERVER_ADDR
+	string "Server address"
+	default "127.0.0.1" # For native_sim target
+
 source "Kconfig.zephyr"
