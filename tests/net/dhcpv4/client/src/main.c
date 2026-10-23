@@ -307,10 +307,16 @@ static const unsigned char ack_no_dns[] = {
 
 static const struct net_in_addr server_addr = { { { 192, 0, 2, 1 } } };
 /* The address the replies carry as the server identifier, which is the one
- * a client in REQUESTING expects a NAK to come from.
+ * a client in REQUESTING expects a NAK to name.
  */
 static const struct net_in_addr server_id_addr = { { { 10, 184, 9, 1 } } };
 static const struct net_in_addr client_addr = { { { 255, 255, 255, 255 } } };
+/* A relay agent between the server and the client, which sends the replies
+ * it relays from its own address.
+ */
+static const struct net_in_addr relay_addr = { { { 10, 184, 9, 254 } } };
+/* Another server on the same network, which no offer names. */
+static const struct net_in_addr other_server_id_addr = { { { 10, 184, 9, 2 } } };
 
 #define SERVER_PORT		67
 #define CLIENT_PORT		68
@@ -365,6 +371,11 @@ static uint8_t init_reboot_request_count;
 static bool short_lease;
 static bool drop_requests;
 static bool nak_requests;
+/* The IP source of a NAK and the server identifier it carries. A NULL
+ * identifier leaves the option out.
+ */
+static const struct net_in_addr *nak_src_addr;
+static const struct net_in_addr *nak_server_id;
 static bool no_router_option;
 static bool zero_router_option;
 /* Whether the handler for the leased address going away starts or stops the
@@ -475,6 +486,8 @@ static void dhcp_test_reset_iface(struct net_if *iface)
 	short_lease = false;
 	drop_requests = false;
 	nak_requests = false;
+	nak_src_addr = &server_id_addr;
+	nak_server_id = &server_id_addr;
 	no_router_option = false;
 	zero_router_option = false;
 	renewal_reply = RENEWAL_ACK;
@@ -734,15 +747,15 @@ static struct net_pkt *prepare_dhcp_nak(struct net_if *iface, uint32_t xid)
 	uint8_t empty_buf[SIZE_OF_FILE] = { 0 };
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(iface, DHCPV4_MESSAGE_SIZE, NET_AF_INET,
-					NET_IPPROTO_UDP, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, DHCPV4_MESSAGE_SIZE + DHCPV4_OLV_MSG_SERVER_ID,
+					NET_AF_INET, NET_IPPROTO_UDP, K_FOREVER);
 	if (pkt == NULL) {
 		return NULL;
 	}
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
-	if (net_ipv4_create(pkt, &server_id_addr, &client_addr) ||
+	if (net_ipv4_create(pkt, nak_src_addr, &client_addr) ||
 	    net_udp_create(pkt, net_htons(SERVER_PORT), net_htons(CLIENT_PORT))) {
 		goto fail;
 	}
@@ -760,8 +773,18 @@ static struct net_pkt *prepare_dhcp_nak(struct net_if *iface, uint32_t xid)
 	    net_pkt_write(pkt, cookie, sizeof(cookie)) ||
 	    net_pkt_write_u8(pkt, DHCPV4_OPTIONS_MSG_TYPE) ||
 	    net_pkt_write_u8(pkt, 1) ||
-	    net_pkt_write_u8(pkt, NET_DHCPV4_MSG_TYPE_NAK) ||
-	    net_pkt_write_u8(pkt, DHCPV4_OPTIONS_END)) {
+	    net_pkt_write_u8(pkt, NET_DHCPV4_MSG_TYPE_NAK)) {
+		goto fail;
+	}
+
+	if (nak_server_id != NULL &&
+	    (net_pkt_write_u8(pkt, DHCPV4_OPTIONS_SERVER_ID) ||
+	     net_pkt_write_u8(pkt, sizeof(*nak_server_id)) ||
+	     net_pkt_write(pkt, nak_server_id->s4_addr, sizeof(*nak_server_id)))) {
+		goto fail;
+	}
+
+	if (net_pkt_write_u8(pkt, DHCPV4_OPTIONS_END)) {
 		goto fail;
 	}
 
@@ -1996,6 +2019,70 @@ ZTEST(dhcpv4_tests, test_nak_to_request_paces_the_restart)
 	zassert_true(discovers_seen > seen, "Client did not restart after the delay");
 
 	net_dhcpv4_stop(iface);
+}
+
+/* Refuse every request with a NAK from @p src carrying @p server_id, and
+ * check whether the client restarts with a discover. An ignored NAK leaves
+ * the client retransmitting the request, and it gives up only after
+ * DHCPV4_MAX_NUMBER_OF_ATTEMPTS, well after the restart delay.
+ */
+static void check_nak_to_request(const struct net_in_addr *src,
+				 const struct net_in_addr *server_id, bool restart_expected)
+{
+	struct net_if *iface;
+	uint32_t evt;
+	int seen;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	nak_requests = true;
+	nak_src_addr = src;
+	nak_server_id = server_id;
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait(&events, EVT_DHCP_NAK, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_NAK, "Request was not refused %08x", evt);
+
+	seen = discovers_seen;
+
+	k_sleep(K_SECONDS(DHCPV4_RESTART_DELAY + 4));
+
+	if (restart_expected) {
+		zexpect_true(discovers_seen > seen, "Client did not restart after the NAK");
+	} else {
+		zexpect_equal(discovers_seen, seen, "Client restarted on a NAK it should ignore");
+		zexpect_equal(iface->config.dhcpv4.state, NET_DHCPV4_REQUESTING,
+			      "Client left REQUESTING, state %s",
+			      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+	}
+
+	net_dhcpv4_stop(iface);
+}
+
+/* A relay agent forwards the NAK from its own address. The server identifier
+ * still names the server the client requested from, so the client restarts.
+ */
+ZTEST(dhcpv4_tests, test_relayed_nak_to_request_restarts)
+{
+	check_nak_to_request(&relay_addr, &server_id_addr, true);
+}
+
+/* A NAK whose server identifier names another server is not an answer to
+ * the request, even when its IP source is the requested server's address.
+ */
+ZTEST(dhcpv4_tests, test_nak_from_other_server_id_is_ignored)
+{
+	check_nak_to_request(&server_id_addr, &other_server_id_addr, false);
+}
+
+/* Without a server identifier, the IP source decides whether the NAK comes
+ * from the requested server.
+ */
+ZTEST(dhcpv4_tests, test_nak_without_server_id_matches_the_source)
+{
+	check_nak_to_request(&server_id_addr, NULL, true);
 }
 
 /* The lease's router replaces a gateway that was already there, and giving
