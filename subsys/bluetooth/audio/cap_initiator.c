@@ -994,9 +994,9 @@ bool bt_cap_initiator_valid_unicast_group_param(const struct bt_cap_unicast_grou
 		return false;
 	}
 
-	if (param->params_count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	if (param->params_count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT) {
 		LOG_DBG("Too many streams provided: %u/%u", param->params_count,
-			UNICAST_GROUP_STREAM_CNT);
+			UNICAST_GROUP_CIS_CNT);
 		return false;
 	}
 
@@ -1011,9 +1011,9 @@ bool bt_cap_initiator_valid_unicast_group_param(const struct bt_cap_unicast_grou
 
 struct cap_to_bap_unicast_params {
 	struct bt_bap_unicast_group_stream_param
-		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT * 2U];
+		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT * 2U];
 	struct bt_bap_unicast_group_stream_pair_param
-		pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+		pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 	struct bt_bap_unicast_group_param group_param;
 };
 
@@ -1268,10 +1268,10 @@ bool bt_cap_initiator_valid_unicast_audio_start_param(
 		return false;
 	}
 
-	if (param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	if (param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT) {
 		LOG_DBG("param->count (%zu) is larger than "
-			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT (%d)",
-			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT (%d)",
+			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 		return false;
 	}
 
@@ -1677,7 +1677,7 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 {
 	struct bt_conn
-		*conns[MIN(CONFIG_BT_MAX_CONN, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT)];
+		*conns[MIN(CONFIG_BT_MAX_CONN, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT)];
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
 	struct bt_cap_initiator_proc_param *proc_param;
 	struct bt_bap_unicast_group *unicast_group;
@@ -2362,10 +2362,10 @@ static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_u
 		return false;
 	}
 
-	if (param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	if (param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT) {
 		LOG_DBG("param->count (%zu) is larger than "
-			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT (%d)",
-			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT (%d)",
+			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 		return false;
 	}
 
@@ -2685,10 +2685,10 @@ bool bt_cap_initiator_valid_unicast_audio_stop_param(
 		return false;
 	}
 
-	if (param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	if (param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT) {
 		LOG_DBG("param->count (%zu) is larger than "
-			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT (%d)",
-			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT (%d)",
+			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 		return false;
 	}
 
