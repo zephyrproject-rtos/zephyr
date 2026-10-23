@@ -104,9 +104,11 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		ieee802154_eui64_ifr0: ieee802154-eui64@1002000 {
-			reg = <0x1002000 0x8>;
+		/* CFPA CUST_802_15_4_MAC_ADDR0/1 (CFPA base 0x1000010 + 0x148) */
+		ieee802154_eui64_ifr0: ieee802154-eui64@1000158 {
+			reg = <0x1000158 0x8>;
 			#nvmem-cell-cells = <0>;
+			read-only;
 			status = "disabled";
 		};
 	};
