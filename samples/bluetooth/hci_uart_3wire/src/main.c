@@ -517,10 +517,10 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 				break;
 			default:
 				LOG_ERR("Wrong packet type %u", type);
-				h5.rx_state = END;
+				h5_reset_rx();
 				break;
 			}
-			if (!remaining) {
+			if (h5.rx_state == PAYLOAD && remaining == 0) {
 				h5.rx_state = END;
 			}
 			break;
