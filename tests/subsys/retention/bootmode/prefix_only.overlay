@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Prefix only, no boot mode byte: the prefix is a bootloader magic value */
+&boot_mode {
+	reg = <0x0 0x4>;
+	prefix = [ef 69 16 f0];
+};

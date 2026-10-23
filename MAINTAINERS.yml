@@ -5831,6 +5831,7 @@ Retention:
     - include/zephyr/retention/
     - subsys/retention/
     - doc/services/storage/retention/
+    - tests/subsys/retention/
   labels:
     - "area: Retention"
 
