@@ -461,4 +461,18 @@ int supplicant_p2p_oper(const struct device *dev, struct net_if *iface,
 			struct wifi_p2p_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
+#ifdef CONFIG_WIFI_MGMT_ROAMING_DHCP
+/**
+ * @brief Gateway probe done to start or skip DHCP
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
+ * @param same_gw old and new APs with same gateway
+ *
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_gw_probe_done(const struct device *dev, struct net_if *iface,
+			     bool same_gw);
+#endif /* CONFIG_WIFI_MGMT_ROAMING_DHCP */
+
 #endif /* ZEPHYR_SUPP_MGMT_H */
