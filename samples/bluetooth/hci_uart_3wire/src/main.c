@@ -790,16 +790,17 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			if (buf->len > 2) {
 				uint8_t tx_win = buf->data[2] & 0x07;
 
-				/* Configuration field present */
-				h5.tx_win = MIN(h5.tx_win, tx_win);
+				/* Configuration Field present. The Sliding Window Size is one
+				 * to seven (Core 6.3 Vol 4 Part D 8.8.2): a 0 would stop every
+				 * reliable packet to the Host, so it is taken as the smallest
+				 * valid size.
+				 */
+				h5.tx_win = MIN(H5_TX_WIN, MAX(tx_win, 1U));
 			}
 
 			conf_rsp[2] = h5.tx_win;
 
-			/*
-			 * The Host sends Config Response messages with a
-			 * Configuration Field.
-			 */
+			/* The Controller's CONFIG RESPONSE carries the Configuration Field (8.8) */
 			h5_send(conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp), 0U);
 
 			LOG_DBG("Finished H5 configuration, tx_win %u", h5.tx_win);
