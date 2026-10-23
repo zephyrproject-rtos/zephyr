@@ -27,6 +27,16 @@
 			status = "okay";
 		};
 	};
+
+	uart_c: uart-emul-c {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+
+		h5_c: bt-hci-3wire-uart {
+			compatible = "zephyr,bt-hci-3wire-uart";
+			status = "okay";
+		};
+	};
 };
 
 &bt_hci_userchan {

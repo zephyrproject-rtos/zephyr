@@ -61,6 +61,9 @@ static bool reliable_packet(uint8_t type)
 #define H5_RX_ACK_TIMEOUT	K_MSEC(250 * 2 / 3)
 #define H5_TX_ACK_TIMEOUT	K_MSEC(250)
 
+/* Core 6.3 Vol 4 Part D 8.1 suggests four link establishment messages per second */
+#define H5_LINK_INTERVAL	K_MSEC(250)
+
 #define SLIP_DELIMITER	0xc0
 #define SLIP_ESC	0xdb
 #define SLIP_ESC_DELIM	0xdc
@@ -105,6 +108,8 @@ struct h5_data {
 	struct k_work_delayable ack_work;
 	struct k_work_delayable retx_work;
 	struct k_sem		tx_win_sem;
+	/* Ends the wait between link establishment messages */
+	struct k_sem		link_sem;
 
 	uint8_t			tx_win;
 	uint8_t			tx_ack;
@@ -684,6 +689,11 @@ static int h5_queue(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
+static void h5_set_txwin(struct h5_data *h5, uint8_t *conf)
+{
+	conf[2] = h5->tx_win & 0x07;
+}
+
 static void tx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
@@ -693,9 +703,6 @@ static void tx_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	LOG_DBG("");
-
-	/* FIXME: make periodic sending */
-	h5_send(dev, sync_req, HCI_3WIRE_LINK_PKT, sizeof(sync_req), 0U);
 
 	while (true) {
 		k_spinlock_key_t key;
@@ -707,12 +714,13 @@ static void tx_thread(void *p1, void *p2, void *p3)
 
 		switch (h5->link_state) {
 		case UNINIT:
-			/* FIXME: send sync */
-			k_sleep(K_MSEC(100));
+			h5_send(dev, sync_req, HCI_3WIRE_LINK_PKT, sizeof(sync_req), 0U);
+			(void)k_sem_take(&h5->link_sem, H5_LINK_INTERVAL);
 			break;
 		case INIT:
-			/* FIXME: send conf */
-			k_sleep(K_MSEC(100));
+			h5_set_txwin(h5, conf_req);
+			h5_send(dev, conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req), 0U);
+			(void)k_sem_take(&h5->link_sem, H5_LINK_INTERVAL);
 			break;
 		case ACTIVE:
 			if (h5->unack_queue_len >= h5->tx_win) {
@@ -747,11 +755,6 @@ static void tx_thread(void *p1, void *p2, void *p3)
 			break;
 		}
 	}
-}
-
-static void h5_set_txwin(struct h5_data *h5, uint8_t *conf)
-{
-	conf[2] = h5->tx_win & 0x07;
 }
 
 static void rx_thread(void *p1, void *p2, void *p3)
@@ -808,6 +811,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			}
 
 			LOG_DBG("Finished H5 configuration, tx_win %u", h5->tx_win);
+
+			k_sem_give(&h5->link_sem);
 		} else {
 			LOG_ERR("Not handled yet %x %x", buf->data[0], buf->data[1]);
 		}
@@ -835,6 +840,7 @@ static void h5_init(const struct device *dev)
 
 	/* TX thread */
 	k_mutex_init(&h5->tx_mutex);
+	k_sem_init(&h5->link_sem, 0, 1);
 	k_fifo_init(&h5->tx_queue);
 	tid = k_thread_create(cfg->tx_thread, cfg->tx_stack, cfg->tx_stack_size,
 			      tx_thread, (void *)dev, NULL, NULL,

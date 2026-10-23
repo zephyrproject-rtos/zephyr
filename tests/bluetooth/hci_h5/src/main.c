@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -66,6 +67,12 @@ extern struct k_work_q uart_emul_work_q;
 
 /* Set when the receive callback runs in the interrupt handler instead of a thread */
 static bool recv_from_isr;
+
+/* Brought up step by step by its test case */
+static struct ctlr link_ctlr = {
+	.hci = DEVICE_DT_GET(DT_NODELABEL(h5_c)),
+	.uart = DEVICE_DT_GET(DT_NODELABEL(uart_c)),
+};
 
 static void hdr_set(uint8_t hdr[HDR_LEN], bool reliable, uint8_t seq, uint8_t ack, uint8_t type,
 		    uint16_t len)
@@ -246,6 +253,42 @@ static int recv(const struct device *dev, struct net_buf *buf)
 	net_buf_unref(buf);
 
 	return -ENODEV;
+}
+
+static int recv_link(const struct device *dev, struct net_buf *buf)
+{
+	ARG_UNUSED(dev);
+
+	if (k_current_get() == k_work_queue_thread_get(&uart_emul_work_q)) {
+		recv_from_isr = true;
+	}
+
+	k_fifo_put(&link_ctlr.rx, buf);
+
+	return 0;
+}
+
+/* Times the driver sent this link control message since the last check */
+static size_t count_link_tx(struct ctlr *c, const uint8_t *msg, size_t len)
+{
+	uint8_t expected[FRAME_MAX(3U)];
+	uint8_t hdr[HDR_LEN];
+	size_t expected_len;
+	uint8_t tx[256];
+	size_t count = 0U;
+	uint32_t tx_len;
+
+	hdr_set(hdr, false, 0U, c->seq, PKT_LINK, len);
+	expected_len = frame(expected, hdr, msg, len);
+	tx_len = uart_emul_get_tx_data(c->uart, tx, sizeof(tx));
+
+	for (size_t i = 0U; i + expected_len <= tx_len; i++) {
+		if (memcmp(&tx[i], expected, expected_len) == 0) {
+			count++;
+		}
+	}
+
+	return count;
 }
 
 static void *setup(void)
@@ -613,6 +656,34 @@ ZTEST(hci_h5, test_short_link_packet)
 	put_link(c, false, sync, 1U);
 	put_link(c, false, sync, 0U);
 	expect_no_tx(c);
+}
+
+ZTEST(hci_h5, test_link_establishment)
+{
+	static const uint8_t sync[] = { 0x01, 0x7e };
+	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
+	static const uint8_t conf_rsp[] = { 0x04, 0x7b, 0x04 };
+	struct ctlr *c = &link_ctlr;
+
+	k_fifo_init(&c->rx);
+	zassert_ok(bt_hci_open(c->hci, recv_link));
+
+	/* Uninitialized: SYNC until SYNC RESPONSE */
+	k_sleep(K_SECONDS(1));
+	zassert_true(count_link_tx(c, sync, sizeof(sync)) >= 3U);
+	put_link(c, false, sync_rsp, sizeof(sync_rsp));
+
+	/* Initialized: CONFIG until CONFIG RESPONSE */
+	k_sleep(K_SECONDS(1));
+	zassert_true(count_link_tx(c, conf, sizeof(conf)) >= 3U);
+	put_link(c, false, conf_rsp, sizeof(conf_rsp));
+
+	(void)uart_emul_flush_tx_data(c->uart);
+	put_evt(c, true, c->seq, 16U);
+	expect_evt(c, 16U);
+	next_seq(c);
+	expect_ack(c);
 }
 
 ZTEST(hci_h5, test_interleaved_instances)
