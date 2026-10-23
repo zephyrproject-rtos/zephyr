@@ -27,6 +27,7 @@ struct usart_sam_dev_cfg {
 	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
 	bool hw_flow_control;
+	bool rs485_mode;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t	irq_config_func;
@@ -243,6 +244,8 @@ static uint32_t usart_sam_cfg2sam_flow_ctrl(uint8_t flow_ctrl)
 	switch (flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
 		return US_MR_USART_MODE_HW_HANDSHAKING;
+	case UART_CFG_FLOW_CTRL_RS485:
+		return US_MR_USART_MODE_RS485;
 	case UART_CFG_FLOW_CTRL_NONE:
 	default:
 		return US_MR_USART_MODE_NORMAL;
@@ -258,6 +261,8 @@ static uint8_t usart_sam_get_flow_ctrl(const struct device *dev)
 	switch (usart->US_MR & US_MR_USART_MODE_Msk) {
 	case US_MR_USART_MODE_HW_HANDSHAKING:
 		return UART_CFG_FLOW_CTRL_RTS_CTS;
+	case US_MR_USART_MODE_RS485:
+		return UART_CFG_FLOW_CTRL_RS485;
 	case US_MR_USART_MODE_NORMAL:
 	default:
 		return UART_CFG_FLOW_CTRL_NONE;
@@ -515,6 +520,8 @@ static int usart_sam_init(const struct device *dev)
 	};
 	if (cfg->hw_flow_control) {
 		uart_config.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS;
+	} else if (cfg->rs485_mode) {
+		uart_config.flow_ctrl = UART_CFG_FLOW_CTRL_RS485;
 	}
 	return usart_sam_configure(dev, &uart_config);
 }
@@ -545,10 +552,15 @@ static DEVICE_API(uart, usart_sam_driver_api) = {
 };
 
 #define USART_SAM_DECLARE_CFG(n, IRQ_FUNC_INIT)				\
+	BUILD_ASSERT(!(DT_INST_PROP(n, hw_flow_control) &&		\
+		       DT_INST_PROP(n, atmel_rs485_mode)),		\
+		     "hw-flow-control and atmel,rs485-mode are exclusive");	\
+									\
 	static const struct usart_sam_dev_cfg usart##n##_sam_config = {	\
 		.regs = (Usart *)DT_INST_REG_ADDR(n),			\
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
 		.hw_flow_control = DT_INST_PROP(n, hw_flow_control),	\
+		.rs485_mode = DT_INST_PROP(n, atmel_rs485_mode),	\
 									\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 									\
