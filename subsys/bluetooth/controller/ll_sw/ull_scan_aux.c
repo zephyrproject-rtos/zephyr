@@ -485,7 +485,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		}
 
 		if (is_scan_req) {
-			LL_ASSERT_DBG(aux && aux->rx_last);
+			LL_ASSERT(aux && aux->rx_last);
 
 			aux->rx_last->rx_ftr.extra = rx;
 			aux->rx_last = rx;
@@ -1376,6 +1376,35 @@ int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
 	return 0;
 }
 
+int ull_scan_aux_stop_by_parent(const void *parent)
+{
+	LL_ASSERT(parent != NULL);
+
+	for (uint8_t handle = 0U; handle < CONFIG_BT_CTLR_SCAN_AUX_SET; handle++) {
+		struct ll_scan_aux_set *aux = &ll_scan_aux_pool[handle];
+		void *aux_parent;
+		int err;
+
+		if (aux->parent != parent) {
+			continue;
+		}
+
+		err = ull_scan_aux_stop(aux);
+		if (err != 0 && err != -EALREADY) {
+			return err;
+		}
+
+		/* Use a local variable to assert on auxiliary context's release.
+		 * Under race condition a released aux context can be allocated for
+		 * reception of chain PDU of a periodic sync role.
+		 */
+		aux_parent = aux->parent;
+		LL_ASSERT(!aux_parent || (aux_parent != parent));
+	}
+
+	return 0;
+}
+
 static int init_reset(void)
 {
 	/* Initialize adv aux pool. */
@@ -1927,7 +1956,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		}
 
 		if (is_scan_req) {
-			LL_ASSERT_DBG(chain && chain->rx_last);
+			LL_ASSERT(chain && chain->rx_last);
 
 			chain->rx_last->rx_ftr.extra = rx;
 			chain->rx_last = rx;
