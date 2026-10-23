@@ -25,4 +25,16 @@ typedef uint8_t secure_storage_packed_create_flags_t;
 void secure_storage_zeroize(void *buf, size_t len);
 #endif
 
+#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
+/** Format specifier for logging a `psa_storage_uid_t`. */
+#define PSA_UID_FMT           "%#llx"
+/** Argument for logging a `psa_storage_uid_t` with @ref PSA_UID_FMT. */
+#define PSA_UID_ARGS(psa_uid) (unsigned long long)(psa_uid)
+#else
+/** Format specifier for logging a `psa_storage_uid_t`. */
+#define PSA_UID_FMT           "%#lx"
+/** Argument for logging a `psa_storage_uid_t` with @ref PSA_UID_FMT. */
+#define PSA_UID_ARGS(psa_uid) (unsigned long)(psa_uid)
+#endif
+
 #endif

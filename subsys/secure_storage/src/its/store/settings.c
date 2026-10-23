@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <stdio.h>
 
-LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
+LOG_MODULE_DECLARE(secure_storage_its, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
 static int init_settings_subsys(void)
 {

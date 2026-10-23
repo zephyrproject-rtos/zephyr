@@ -58,6 +58,18 @@ Networking
 Other subsystems
 ****************
 
+Secure Storage
+==============
+
+* The default PS implementation changed from
+  :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS` to the newly added
+  :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`. The latter stores PS entries
+  in a way that is not compatible with the former, and existing entries are not migrated.
+  On devices that already have PS entries stored, explicitly enable
+  :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS` to keep the previous behavior.
+  Otherwise these entries can no longer be read and may become impossible to overwrite or remove.
+  See :ref:`secure_storage` for details.
+
 Modules
 *******
 
