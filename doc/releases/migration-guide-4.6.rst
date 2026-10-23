@@ -52,6 +52,25 @@ Device Drivers and Devicetree
 Bluetooth
 *********
 
+Bluetooth Audio
+===============
+
+.. zephyr-keep-sorted-start re(^\* \w)
+
+* MCP
+
+  * The media proxy API has been removed and users will need to use the ``bt_mcs``, ``bt_mcc`` or
+    ``bt_mcp_media_control_server`` APIs. Users of the media player API like
+    ``media_proxy_pl_init`` can seemlessly switch to using
+    :c:func:`bt_mcp_media_control_server_register`.
+    Users using the ``bt_mcc`` API can continue as is, but ``struct mpl_cmd`` is now
+    ``struct bt_mcs_cmd``, and ``struct mpl_search`` is now ``struct bt_mcs_search``.
+    Uses of ``media_proxy_ctrl_`` for local operations can in most places just search-and-replace
+    with ``bt_mcp_media_control_``. Uses of ``media_proxy_ctrl_`` for remote operations will need to
+    switch to the ``bt_mcc`` API. (:github:`102994`)
+
+.. zephyr-keep-sorted-stop
+
 Networking
 **********
 

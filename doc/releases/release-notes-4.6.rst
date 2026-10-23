@@ -50,6 +50,12 @@ API Changes
 Removed APIs and options
 ========================
 
+* Bluetooth
+
+  * Audio
+
+    * All ``media_proxy_`` functions and definitions for Bluetooth have been removed.
+
 Deprecated APIs and options
 ===========================
 
@@ -62,6 +68,13 @@ New APIs and options
   instead.
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
+
+* Bluetooth
+
+  * Audio
+
+    * ``bt_mcp_media_control_server_*`` APIs for controlling the local media player has
+      been added.
 
 .. zephyr-keep-sorted-stop
 
