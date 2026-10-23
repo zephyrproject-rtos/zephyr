@@ -134,6 +134,23 @@ config ESP_HOSTED_MCU_EVENT_TASK_POLL_MS
 	  the worst-case receive latency: every request and response pays
 	  up to one poll period.
 
+config ESP_HOSTED_MCU_RESTART_STACK_SIZE
+	int "Restart work queue stack size"
+	default 2048
+	help
+	  Stack of the work queue that runs the restart listeners after a
+	  coprocessor restart. A listener issues RPCs and keeps a request and
+	  a response message on it. A listener the application registers
+	  with esp_hosted_mcu_register_restart_cb() runs on it too.
+
+config ESP_HOSTED_MCU_RESTART_PRIORITY
+	int "Restart work queue priority"
+	default 5
+	help
+	  Priority of the work queue that runs the restart listeners. The
+	  listeners block while they wait for RPC responses, so the priority
+	  only decides how soon the recovery runs against other threads.
+
 module = ESP_HOSTED_MCU
 module-str = esp-hosted-mcu
 source "subsys/logging/Kconfig.template.log_config"
