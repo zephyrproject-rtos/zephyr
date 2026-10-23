@@ -5966,6 +5966,7 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 	 * closes fd 0.
 	 */
 	ctx->sock = -1;
+	ctx->accept_closed = false;
 	ctx->error_code = 0;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
@@ -7117,6 +7118,11 @@ ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child
 		return;
 	}
 
+	child_ctx->listen = NULL;
+	child_ctx->stream_id_counter = 0ULL;
+	child_ctx->id = connection_ids++;
+	child_ctx->is_listening = false;
+
 	/* Migrate the child endpoint from the listening context to the new one.
 	 * streams_lock is taken as well: a stream whose last reference is
 	 * dropped meanwhile reads its context and leaves it under that lock,
@@ -7126,6 +7132,26 @@ ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child
 	k_mutex_lock(&contexts_lock, K_FOREVER);
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 	k_mutex_lock(&streams_lock, K_FOREVER);
+
+	/* A listening socket that is closed accepts nothing any more. The
+	 * endpoint stays on the listening context and is closed with it.
+	 * The close sets accept_closed and takes the connections still
+	 * waiting for accept under contexts_lock, and the connection is
+	 * queued under the same lock below, so a connection is either not
+	 * handed over or taken by the close.
+	 */
+	if (listen_ctx->accept_closed) {
+		k_mutex_unlock(&streams_lock);
+		k_mutex_unlock(&endpoints_lock);
+		k_mutex_unlock(&contexts_lock);
+
+		NET_DBG("[EP:%p/%d] Listening socket closed, connection not accepted",
+			child_ep, quic_get_by_ep(child_ep));
+
+		quic_context_unref(child_ctx);
+		quic_context_unref(listen_ctx);
+		return;
+	}
 
 	sys_slist_find_and_remove(&listen_ctx->endpoints, &child_ep->node);
 	sys_slist_prepend(&child_ctx->endpoints, &child_ep->node);
@@ -7197,15 +7223,6 @@ ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child
 		}
 	}
 
-	k_mutex_unlock(&streams_lock);
-	k_mutex_unlock(&endpoints_lock);
-	k_mutex_unlock(&contexts_lock);
-
-	/* Inherit the listening endpoint reference so stream getsockopt works */
-	child_ctx->listen = NULL;
-	child_ctx->stream_id_counter = 0ULL;
-	child_ctx->id = connection_ids++;
-	child_ctx->is_listening = false;
 	quic_stats_merge_endpoint(child_ctx, child_ep);
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 	quic_stats_set_context_metadata(child_ctx, child_ep);
@@ -7220,6 +7237,10 @@ ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child
 	/* Make the child context reachable to accept() */
 	k_fifo_put(&listen_ctx->pending.accept_q, child_ctx);
 	k_sem_give(&listen_ctx->pending.accept_sem);
+
+	k_mutex_unlock(&streams_lock);
+	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
 
 	/* The migrated streams no longer hold the listening context, and the
 	 * handover is done
