@@ -993,6 +993,39 @@ bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type,
 	return false;
 }
 
+bool ull_filter_lll_local_irk_resolve(uint8_t addr_type, const uint8_t *addr)
+{
+	/* Unable to resolve if AR is disabled or the address is no RPA */
+	if ((rl_enable == 0U) || (addr_type == 0U) || ((addr[5] & 0xc0) != 0x40)) {
+		return false;
+	}
+
+	for (uint8_t i = 0U; i < ARRAY_SIZE(rl); i++) {
+		bool tried = false;
+
+		if ((rl[i].taken == 0U) || (rl[i].lirk == 0U)) {
+			continue;
+		}
+
+		/* The entries of a local identity share its IRK, which is tried
+		 * once
+		 */
+		for (uint8_t j = 0U; j < i; j++) {
+			if ((rl[j].taken != 0U) && (rl[j].lirk != 0U) &&
+			    (memcmp(rl[j].local_irk, rl[i].local_irk, IRK_SIZE) == 0)) {
+				tried = true;
+				break;
+			}
+		}
+
+		if (!tried && bt_rpa_irk_matches(rl[i].local_irk, (const bt_addr_t *)addr)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool ull_filter_lll_rl_enabled(void)
 {
 	return rl_enable;

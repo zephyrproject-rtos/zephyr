@@ -4,7 +4,9 @@
 
 # The scanner reports anonymous extended advertising undirected and directed
 # to it, without and with AD data in an AUX_ADV_IND, and sends AUX_SCAN_REQs
-# only to scannable advertising with an AdvA
+# only to scannable advertising with an AdvA. It reports advertising directed
+# to a resolvable private address in an ADV_EXT_IND without AdvA when the
+# address resolves with its local IRK.
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 exe="bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
@@ -25,8 +27,11 @@ cd ${BSIM_OUT_PATH}/bin
 Execute "./${exe}" \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=anon_adv
 
+# The scanner resolves a TargetA with its local IRK, which takes the AES of
+# the simulated hardware instead of the identity function of the simulation
 Execute "./${exe}" \
-  -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=anon_scan
+  -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=anon_scan \
+  -RealEncryption=1
 
 Execute ./bs_device_2G4_playback \
   -v=${verbosity_level} -s=${simulation_id} -d=2 -inputf=${playback} -rxoff -rssioff

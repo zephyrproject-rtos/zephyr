@@ -5,10 +5,12 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
@@ -35,13 +37,44 @@ static const bt_addr_le_t other_addr = {
 	.a = { { 0x03, 0x00, 0x00, 0x00, 0x00, 0xC0 } },
 };
 
-/* The AD data of the anonymous advertising in AUX_ADV_INDs, which the
- * playback device of the test scripts sends: undirected, directed with the
- * TargetA in the AUX_ADV_IND, and directed with it in the ADV_EXT_IND
+/* The AdvA of the directed advertising to a resolvable private address,
+ * C0:00:00:00:00:05, which the playback device of anonymous.sh sends with the
+ * AdvA only in the AUX_ADV_IND
  */
-#define AD_UNDIRECTED   0x01U
-#define AD_DIRECTED     0x02U
-#define AD_DIRECTED_PRI 0x03U
+static const bt_addr_le_t rpa_directed_addr = {
+	.type = BT_ADDR_LE_RANDOM,
+	.a = { { 0x05, 0x00, 0x00, 0x00, 0x00, 0xC0 } },
+};
+
+/* The local IRK of the resolving list entry of the scanner, the IRK of the
+ * sample data of the random address hash function ah (Core Spec v6.3, Vol 3,
+ * Part H, Appendix D.7) in HCI octet order. The TargetA of the directed
+ * advertising to a resolvable private address is generated from it.
+ */
+static const uint8_t local_irk[16] = {
+	0x9b, 0x7d, 0x39, 0x0a, 0xa6, 0x10, 0x10, 0x34,
+	0x05, 0xad, 0xc8, 0x57, 0xa3, 0x34, 0x02, 0xec,
+};
+
+/* The peer of the resolving list entry, a device that is not in the
+ * simulation, C0:00:00:00:00:06, so that no AdvA selects the entry
+ */
+static const bt_addr_le_t rl_peer_addr = {
+	.type = BT_ADDR_LE_RANDOM,
+	.a = { { 0x06, 0x00, 0x00, 0x00, 0x00, 0xC0 } },
+};
+
+/* The AD data of the advertising in AUX_ADV_INDs, which the playback device
+ * of the test scripts sends: anonymous undirected, directed with the TargetA
+ * in the AUX_ADV_IND, and directed with it in the ADV_EXT_IND, and directed
+ * with a resolvable private address in the ADV_EXT_IND that resolves with the
+ * local IRK and one that does not
+ */
+#define AD_UNDIRECTED         0x01U
+#define AD_DIRECTED           0x02U
+#define AD_DIRECTED_PRI       0x03U
+#define AD_DIRECTED_RPA       0x04U
+#define AD_DIRECTED_RPA_OTHER 0x05U
 
 /* The advertising set of the playback device whose AUX_ADV_IND announces a
  * TxPower that its extended header has no room for, which may not be reported
@@ -59,6 +92,8 @@ static const bt_addr_le_t other_addr = {
 #define REPORT_DIRECTED_PRI_AD BIT(4)
 #define REPORT_OTHER           BIT(5)
 #define REPORT_TRUNCATED       BIT(6)
+#define REPORT_DIRECTED_RPA    BIT(7)
+#define REPORT_RPA_OTHER       BIT(8)
 
 static atomic_t reports;
 
@@ -133,6 +168,16 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 	bool is_directed = ((info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0U);
 	uint8_t ad_value = 0U;
 
+	if (bt_addr_le_eq(info->addr, &rpa_directed_addr)) {
+		bt_data_parse(buf, ad_parse, &ad_value);
+
+		(void)atomic_or(&reports, (is_directed && (ad_value == AD_DIRECTED_RPA)) ?
+						  REPORT_DIRECTED_RPA :
+						  REPORT_RPA_OTHER);
+
+		return;
+	}
+
 	/* The Host reports anonymous advertising as from BT_ADDR_LE_ANY */
 	if (!bt_addr_le_eq(info->addr, BT_ADDR_LE_ANY)) {
 		return;
@@ -188,6 +233,37 @@ static atomic_val_t scan(uint8_t options)
 	return atomic_get(&reports);
 }
 
+/* A resolving list entry with the local IRK, and address resolution enabled,
+ * through HCI, as the Host adds entries only for bonded peers
+ */
+static void local_irk_add(void)
+{
+	struct bt_hci_cp_le_set_addr_res_enable *enable;
+	struct bt_hci_cp_le_add_dev_to_rl *entry;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	TEST_ASSERT(buf != NULL, "No HCI command buffer");
+
+	entry = net_buf_add(buf, sizeof(*entry));
+	bt_addr_le_copy(&entry->peer_id_addr, &rl_peer_addr);
+	(void)memset(entry->peer_irk, 0, sizeof(entry->peer_irk));
+	(void)memcpy(entry->local_irk, local_irk, sizeof(entry->local_irk));
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
+	TEST_ASSERT(err == 0, "Resolving list add failed (err %d)", err);
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	TEST_ASSERT(buf != NULL, "No HCI command buffer");
+
+	enable = net_buf_add(buf, sizeof(*enable));
+	enable->enable = BT_HCI_ADDR_RES_ENABLE;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADDR_RES_ENABLE, buf, NULL);
+	TEST_ASSERT(err == 0, "Address resolution enable failed (err %d)", err);
+}
+
 static void scanner_init(void)
 {
 	bt_addr_le_t addr = scanner_addr;
@@ -198,6 +274,8 @@ static void scanner_init(void)
 
 	err = bt_enable(NULL);
 	TEST_ASSERT(err == 0, "Bluetooth init failed (err %d)", err);
+
+	local_irk_add();
 
 	err = bt_le_scan_cb_register(&scan_cb);
 	TEST_ASSERT(err == 0, "Scan callback register failed (err %d)", err);
@@ -213,10 +291,13 @@ static void test_anon_scan(void)
 
 	reported = scan(BT_LE_SCAN_OPT_NONE);
 	TEST_ASSERT(reported == (REPORT_UNDIRECTED | REPORT_DIRECTED | REPORT_UNDIRECTED_AD |
-				 REPORT_DIRECTED_AD | REPORT_DIRECTED_PRI_AD),
+				 REPORT_DIRECTED_AD | REPORT_DIRECTED_PRI_AD | REPORT_DIRECTED_RPA),
 		    "Anonymous advertising reported as 0x%lx", (unsigned long)reported);
 
-	/* The Filter Accept List has no entry for anonymous advertising */
+	/* The Filter Accept List has no entry for anonymous advertising, nor
+	 * for the advertiser of the directed advertising to a resolvable
+	 * private address
+	 */
 	reported = scan(BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST);
 	TEST_ASSERT(reported == 0, "Anonymous advertising reported as 0x%lx with the list",
 		    (unsigned long)reported);
