@@ -1999,16 +1999,28 @@ static uint16_t get_ssa_record_len(struct net_buf *buf)
 	uint16_t len;
 	uint8_t seq;
 
+	if (buf->len < sizeof(uint8_t)) {
+		goto buffer_too_small;
+	}
 	seq = net_buf_pull_u8(buf);
 
 	switch (seq) {
 	case BT_SDP_SEQ8:
+		if (buf->len < sizeof(uint8_t)) {
+			goto buffer_too_small;
+		}
 		len = net_buf_pull_u8(buf);
 		break;
 	case BT_SDP_SEQ16:
+		if (buf->len < sizeof(uint16_t)) {
+			goto buffer_too_small;
+		}
 		len = net_buf_pull_be16(buf);
 		break;
 	case BT_SDP_SEQ32:
+		if (buf->len < sizeof(uint32_t)) {
+			goto buffer_too_small;
+		}
 		len = net_buf_pull_be32(buf);
 		break;
 	default:
@@ -2018,6 +2030,10 @@ static uint16_t get_ssa_record_len(struct net_buf *buf)
 	}
 
 	return len;
+
+buffer_too_small:
+	LOG_WRN("Invalid ssa record buffer size");
+	return 0U;
 }
 
 static uint16_t get_record_len(struct bt_sdp_client *session)
