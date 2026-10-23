@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_irtc
 
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/irq.h>
 #include "rtc_utils.h"
@@ -14,6 +15,11 @@
 struct nxp_irtc_config {
 	RTC_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	/* Bus clock gate. NULL when the instance has no 'clocks' property. */
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+#endif
 	bool is_output_clock_enabled;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
 	uint8_t clock_src;
@@ -481,6 +487,22 @@ static int nxp_irtc_init(const struct device *dev)
 	struct nxp_irtc_data *data = dev->data;
 #endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	/* The register interface needs its bus clock before the first access. */
+	if (config->clock_dev != NULL) {
+		int ret;
+
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif
+
 	nxp_irtc_unlock_registers(irtc_reg);
 
 	reg = irtc_reg->CTRL;
@@ -588,13 +610,23 @@ static DEVICE_API(rtc, rtc_nxp_irtc_driver_api) = {
 #define NXP_IRTC_CLOCK_FREQUENCY_INIT(n)
 #endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+#define NXP_IRTC_CLOCK_GATE_INIT(n)                                                                \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                                        \
+		    (.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                     \
+		     .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),), \
+		    ())
+#else
+#define NXP_IRTC_CLOCK_GATE_INIT(n)
+#endif
+
 #define RTC_NXP_IRTC_DEVICE_INIT(n)                                                                \
 	NXP_IRTC_CONFIG_FUNC(n)                                                                    \
 	static const struct nxp_irtc_config nxp_irtc_config_##n = {                                \
 		.base = (RTC_Type *)DT_INST_REG_ADDR(n),                                           \
-		NXP_IRTC_CLOCK_SELECTION_INIT(n)                                \
-		NXP_IRTC_CLOCK_FREQUENCY_INIT(n)                                \
-		.share_counter = DT_INST_PROP(n, share_counter),                \
+		NXP_IRTC_CLOCK_GATE_INIT(n) NXP_IRTC_CLOCK_SELECTION_INIT(n)                       \
+			NXP_IRTC_CLOCK_FREQUENCY_INIT(n)                                           \
+				.share_counter = DT_INST_PROP(n, share_counter),                   \
 		.is_output_clock_enabled = DT_INST_PROP(n, output_clk_en),                         \
 		.irq_config_func = nxp_irtc_config_func_##n,                                       \
 	};                                                                                         \
