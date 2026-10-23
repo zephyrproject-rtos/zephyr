@@ -17,7 +17,6 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 
 #include <zephyr/net_buf.h>
@@ -832,8 +831,6 @@ static int hci_uart_init(void)
 	return 0;
 }
 
-SYS_INIT(hci_uart_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-
 int main(void)
 {
 	/* incoming events and data from the controller */
@@ -871,6 +868,12 @@ int main(void)
 	k_work_init_delayable(&retx_work, retx_timeout);
 
 	h5.tx_win = H5_TX_WIN;
+
+	/* The interrupt handler uses the queues and work items set up above */
+	err = hci_uart_init();
+	if (err != 0) {
+		return err;
+	}
 
 	while (1) {
 		struct net_buf *buf;

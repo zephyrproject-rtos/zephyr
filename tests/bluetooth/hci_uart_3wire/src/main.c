@@ -93,8 +93,9 @@ static void sample_main(void *p1, void *p2, void *p3)
 	(void)hci_uart_3wire_main();
 }
 
+/* Started late, after the Host has sent its first SYNC */
 K_THREAD_DEFINE(sample, CONFIG_MAIN_STACK_SIZE, sample_main, NULL, NULL, NULL,
-		CONFIG_MAIN_THREAD_PRIORITY, 0, 0);
+		CONFIG_MAIN_THREAD_PRIORITY, 0, 100);
 
 static void hdr_set(uint8_t hdr[HDR_LEN], bool reliable, uint8_t hdr_seq, uint8_t ack, uint8_t type,
 		    uint16_t len)
@@ -129,6 +130,20 @@ static size_t frame(uint8_t *out, const uint8_t hdr[HDR_LEN], const uint8_t *pay
 
 	return n;
 }
+
+static int put_early_sync(void)
+{
+	static const uint8_t sync[] = { 0x01, 0x7e };
+	uint8_t out[FRAME_MAX(sizeof(sync))];
+	uint8_t hdr[HDR_LEN];
+
+	hdr_set(hdr, false, 0U, 0U, PKT_LINK, sizeof(sync));
+	(void)uart_emul_put_rx_data(uart, out, frame(out, hdr, sync, sizeof(sync)));
+
+	return 0;
+}
+
+SYS_INIT(put_early_sync, APPLICATION, 99);
 
 /* The command cut to its first len octets */
 static size_t cmd_frame(uint8_t *out, const uint8_t hdr[HDR_LEN], uint8_t param, size_t len)
@@ -265,6 +280,23 @@ static void expect_evt_retransmitted(uint8_t evt_seq)
 	expect_tx(hdr, hw_err_evt, sizeof(hw_err_evt));
 }
 
+struct hci_uart_3wire_fixture {
+	/* The sample's output after the early SYNC */
+	uint8_t early_tx[16];
+	uint32_t early_tx_len;
+};
+
+static void *setup(void)
+{
+	static struct hci_uart_3wire_fixture fixture;
+
+	k_sleep(K_MSEC(200));
+	fixture.early_tx_len =
+		uart_emul_get_tx_data(uart, fixture.early_tx, sizeof(fixture.early_tx));
+
+	return &fixture;
+}
+
 /* Start from an Active link at sequence number 0, also after a failed test */
 static void before(void *fixture)
 {
@@ -289,6 +321,19 @@ static void before(void *fixture)
 
 	(void)uart_emul_flush_tx_data(uart);
 	seq = 0U;
+}
+
+ZTEST_F(hci_uart_3wire, test_early_sync)
+{
+	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+	uint8_t expected[FRAME_MAX(sizeof(sync_rsp))];
+	uint8_t hdr[HDR_LEN];
+	size_t len;
+
+	hdr_set(hdr, false, 0U, 0U, PKT_LINK, sizeof(sync_rsp));
+	len = frame(expected, hdr, sync_rsp, sizeof(sync_rsp));
+	zassert_equal(fixture->early_tx_len, len);
+	zassert_mem_equal(fixture->early_tx, expected, len);
 }
 
 ZTEST(hci_uart_3wire, test_command)
@@ -526,4 +571,4 @@ ZTEST(hci_uart_3wire, test_short_link_packet)
 	expect_no_tx();
 }
 
-ZTEST_SUITE(hci_uart_3wire, NULL, NULL, before, NULL, NULL);
+ZTEST_SUITE(hci_uart_3wire, NULL, setup, before, NULL, NULL);
