@@ -21,6 +21,7 @@
 
 #define PKT_ACK  0x00U
 #define PKT_CMD  0x01U
+#define PKT_EVT  0x04U
 #define PKT_LINK 0x0fU
 
 #define SLIP_DELIMITER 0xc0U
@@ -202,6 +203,14 @@ static void expect_ack(void)
 	expect_tx(hdr, NULL, 0U);
 }
 
+static void expect_no_tx(void)
+{
+	uint8_t tx[64];
+
+	k_sleep(ACK_WAIT);
+	zassert_equal(uart_emul_get_tx_data(uart, tx, sizeof(tx)), 0U, "Unexpected output");
+}
+
 /* Start from an Active link at sequence number 0, also after a failed test */
 static void before(void *fixture)
 {
@@ -271,6 +280,39 @@ ZTEST(hci_uart_3wire, test_data_integrity_check)
 	expect_cmd(5U);
 	next_seq();
 	expect_ack();
+}
+
+ZTEST(hci_uart_3wire, test_unsupported_type)
+{
+	static const uint8_t evt[] = { BT_HCI_EVT_HARDWARE_ERROR, 1U, 0x00 };
+	const struct device *hci = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci));
+	uint8_t out[FRAME_MAX(0U)];
+	uint8_t hdr[HDR_LEN];
+	struct net_buf *buf;
+	uint8_t tx[64];
+	uint8_t evt_seq;
+
+	/* An event for the Host, kept until it is acknowledged */
+	buf = bt_buf_get_evt(BT_HCI_EVT_HARDWARE_ERROR, false, K_NO_WAIT);
+	zassert_not_null(buf);
+	net_buf_add_mem(buf, evt, sizeof(evt));
+	zassert_ok(bt_hci_recv_err(hci, buf));
+	k_sleep(K_MSEC(10));
+	zassert_true(uart_emul_get_tx_data(uart, tx, sizeof(tx)) > 1U);
+	evt_seq = tx[1] & 0x07U;
+
+	/* Reserved type 6 declaring one octet and carrying none, acknowledging the event */
+	hdr_set(hdr, false, 0U, (evt_seq + 1U) % 8U, 6U, 1U);
+	put(out, frame(out, hdr, NULL, 0U));
+
+	/* The acknowledgment was discarded with the packet */
+	k_sleep(ACK_WAIT);
+	hdr_set(hdr, true, evt_seq, seq, PKT_EVT, sizeof(evt));
+	expect_tx(hdr, evt, sizeof(evt));
+
+	hdr_set(hdr, false, 0U, (evt_seq + 1U) % 8U, PKT_ACK, 0U);
+	put(out, frame(out, hdr, NULL, 0U));
+	expect_no_tx();
 }
 
 ZTEST_SUITE(hci_uart_3wire, NULL, NULL, before, NULL, NULL);

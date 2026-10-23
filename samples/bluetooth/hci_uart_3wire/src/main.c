@@ -509,8 +509,8 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 				break;
 			default:
 				LOG_ERR("Wrong packet type %u", type);
-				h5.rx_state = END;
-				break;
+				h5_reset_rx();
+				continue;
 			}
 			if (!remaining) {
 				h5.rx_state = END;
