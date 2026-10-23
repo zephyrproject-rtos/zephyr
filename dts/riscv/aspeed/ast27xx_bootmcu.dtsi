@@ -62,5 +62,11 @@
 			clocks = <&sysclk1 SCU1_CLK_GATE_UART12CLK>;
 			status = "disabled";
 		};
+
+		mtimer: timer@14c36000 {
+			compatible = "aspeed,ast2700-bootmcu-timer";
+			reg = <0x14c36000 0x40>;
+			interrupts-extended = <&hlic 7>;
+		};
 	};
 };
