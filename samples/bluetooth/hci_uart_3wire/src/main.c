@@ -296,8 +296,14 @@ static uint8_t h5_slip_byte(uint8_t byte)
 
 static void h5_send(const uint8_t *payload, uint8_t type, int len)
 {
+	static K_MUTEX_DEFINE(tx_mutex);
+	__maybe_unused int err;
 	uint8_t hdr[4];
 	int i;
+
+	/* uart_poll_out() may block, and frames come from several threads */
+	err = k_mutex_lock(&tx_mutex, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
 
 	hexdump("<= ", payload, len);
 
@@ -333,6 +339,9 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 	}
 
 	uart_poll_out(h5_dev, SLIP_DELIMITER);
+
+	err = k_mutex_unlock(&tx_mutex);
+	__ASSERT_NO_MSG(err == 0);
 }
 
 /* Delayed work taking care about retransmitting packets */
