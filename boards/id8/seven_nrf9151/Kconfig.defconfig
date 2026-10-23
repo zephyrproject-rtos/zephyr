@@ -1,0 +1,14 @@
+# Seven_nrf9151 board configuration
+
+# Copyright (c) 2026 ID8 Engineering AB
+# SPDX-License-Identifier: Apache-2.0
+#
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if BOARD_SEVEN_NRF9151 || BOARD_SEVEN_NRF9151_NS
+
+config BOARD_SEVEN
+	select USE_DT_CODE_PARTITION if BOARD_SEVEN_NRF9151_NS
+
+endif # BOARD_SEVEN_NRF9151 || BOARD_SEVEN_NRF9151_NS
