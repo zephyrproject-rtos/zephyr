@@ -385,6 +385,23 @@ ZTEST(hci_h5, test_reliable_link_packet)
 	expect_ack(c);
 }
 
+ZTEST(hci_h5, test_short_link_packet)
+{
+	static const uint8_t sync[] = { 0x01, 0x7e };
+	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+	struct ctlr *c = &ctlrs[0];
+	uint8_t hdr[HDR_LEN];
+
+	put_link(c, false, sync, sizeof(sync));
+	hdr_set(hdr, false, 0U, c->seq, PKT_LINK, sizeof(sync_rsp));
+	expect_tx(c, hdr, sync_rsp, sizeof(sync_rsp));
+
+	/* The signal buffer still holds the SYNC message */
+	put_link(c, false, sync, 1U);
+	put_link(c, false, sync, 0U);
+	expect_no_tx(c);
+}
+
 ZTEST(hci_h5, test_interleaved_instances)
 {
 	struct ctlr *a = &ctlrs[0];
