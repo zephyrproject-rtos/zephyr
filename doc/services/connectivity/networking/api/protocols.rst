@@ -13,6 +13,7 @@ Protocols
    coap_oscore
    ftp_client
    http_client
+   http_client_multiprotocol
    http_server
    lwm2m
    mcp

@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/http/frame.h>
 #include <zephyr/net/http/parser.h>
 #include <zephyr/net/http/hpack.h>
 #include <zephyr/net/http/status.h>
@@ -377,15 +378,6 @@ struct http2_stream_ctx {
 
 	/** Flag indicating that END_STREAM flag was sent. */
 	bool end_stream_sent : 1;
-};
-
-/** @brief HTTP/2 frame representation. */
-struct http2_frame {
-	uint32_t length; /**< Frame payload length. */
-	uint32_t stream_identifier; /**< Stream ID the frame belongs to. */
-	uint8_t type; /**< Frame type. */
-	uint8_t flags; /**< Frame flags. */
-	uint8_t padding_len; /**< Frame padding length. */
 };
 
 /** @brief Context for capturing HTTP headers */

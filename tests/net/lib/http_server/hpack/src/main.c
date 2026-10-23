@@ -504,7 +504,7 @@ ZTEST(http2_hpack, test_http2_hpack_literal_not_indexed_decode)
  * buffer is configured to hold, which keeps the encoder on the literal
  * path and the value decodable without one.
  */
-#define TEST_LONG_VALUE_LEN MAX(408, 2 * HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE)
+#define TEST_LONG_VALUE_LEN MAX(408, 2 * HTTP_HUFFMAN_DECODE_BUFFER_SIZE)
 
 static char test_long_value[TEST_LONG_VALUE_LEN + 1];
 static uint8_t test_long_buf[TEST_LONG_VALUE_LEN + 16];
@@ -538,6 +538,157 @@ ZTEST(http2_hpack, test_http2_hpack_long_value_encode_decode)
 	zexpect_equal(dec.value_len, hdr.value_len, "Decoded a %zu byte value, encoded %zu",
 		      dec.value_len, hdr.value_len);
 	zexpect_mem_equal(dec.value, hdr.value, dec.value_len, "Header value wrongly decoded");
+}
+
+ZTEST(http2_hpack, test_http2_hpack_empty_value_encode_decode)
+{
+	struct http_hpack_header_buf hdr = { 0 };
+	struct http_hpack_header_buf dec = { 0 };
+	int enc_ret, dec_ret;
+
+	hdr.name = "x-empty";
+	hdr.name_len = strlen(hdr.name);
+	hdr.value = "";
+	hdr.value_len = 0;
+
+	enc_ret = http_hpack_encode_header(test_buf, sizeof(test_buf), &hdr);
+	zassert_true(enc_ret > 0, "Cannot encode the header (%d)", enc_ret);
+
+	dec_ret = http_hpack_decode_header(test_buf, enc_ret, &dec);
+	zassert_equal(dec_ret, enc_ret, "Decoded %d of the %d bytes encoded", dec_ret, enc_ret);
+	zassert_equal(dec.name_len, hdr.name_len, "Wrong decoded header name length");
+	zassert_mem_equal(dec.name, hdr.name, dec.name_len, "Header name wrongly decoded");
+	zassert_equal(dec.value_len, 0, "Decoded a %zu byte value", dec.value_len);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_size_update)
+{
+	static const uint8_t update_zero[] = { 0x20 };
+	static const uint8_t update_100[] = { 0x3f, 0x45 };
+	/* An indexed field, :status 200. */
+	static const uint8_t field[] = { 0x88 };
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	ret = http_hpack_decode_header(update_zero, sizeof(update_zero), &dec);
+	zassert_equal(ret, sizeof(update_zero), "Size update rejected (%d)", ret);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE, "Entry type %d", dec.type);
+	zassert_equal(dec.table_size, 0, "Table size %u", dec.table_size);
+	zassert_equal(dec.name_len, 0, "Size update decoded as a field");
+
+	ret = http_hpack_decode_header(update_100, sizeof(update_100), &dec);
+	zassert_equal(ret, sizeof(update_100), "Size update rejected (%d)", ret);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE, "Entry type %d", dec.type);
+	zassert_equal(dec.table_size, 100, "Table size %u", dec.table_size);
+
+	ret = http_hpack_decode_header(field, sizeof(field), &dec);
+	zassert_equal(ret, sizeof(field), "Field rejected (%d)", ret);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_oversized_field)
+{
+	/* A literal field with the name "x" and a Huffman-coded value that
+	 * decodes to more than the decoding buffer holds.
+	 */
+	static uint8_t value[2 * HTTP_HUFFMAN_DECODE_BUFFER_SIZE];
+	static uint8_t encoded[sizeof(value)];
+	static uint8_t entry[8 + sizeof(value)];
+	struct http_hpack_header_buf dec = { 0 };
+	size_t len = 0;
+	int ret;
+
+	memset(value, 'a', sizeof(value));
+	ret = http_hpack_huffman_encode(value, sizeof(value), encoded, sizeof(encoded));
+	zassert_true(ret > 0, "Cannot Huffman-encode the value (%d)", ret);
+
+	entry[len++] = 0x00;
+	entry[len++] = 0x01;
+	entry[len++] = 'x';
+	entry[len++] = 0x80 | 0x7f;
+	entry[len++] = (uint8_t)(((ret - 127) % 128) | 0x80);
+	entry[len++] = (uint8_t)((ret - 127) / 128);
+	memcpy(entry + len, encoded, ret);
+	len += ret;
+
+	ret = http_hpack_decode_header(entry, len, &dec);
+	zassert_equal(ret, len, "Entry not consumed (%d, %zu bytes)", ret, len);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
+	zassert_true(dec.oversized, "Field not reported as oversized");
+}
+
+ZTEST(http2_hpack, test_http2_hpack_oversized_field_invalid)
+{
+	/* A literal field whose Huffman-coded value overflows the decoding
+	 * buffer and then runs into an EOS symbol: an error, not an oversized
+	 * field (RFC 7541, Section 5.2).
+	 */
+	static uint8_t value[2 * HTTP_HUFFMAN_DECODE_BUFFER_SIZE];
+	static uint8_t encoded[sizeof(value) + 4];
+	static uint8_t entry[8 + sizeof(encoded)];
+	struct http_hpack_header_buf dec = { 0 };
+	size_t len = 0;
+	int ret;
+
+	memset(value, 'a', sizeof(value));
+	ret = http_hpack_huffman_encode(value, sizeof(value), encoded, sizeof(encoded) - 4);
+	zassert_true(ret > 0, "Cannot Huffman-encode the value (%d)", ret);
+	memset(encoded + ret, 0xff, 4);
+	ret += 4;
+
+	entry[len++] = 0x00;
+	entry[len++] = 0x01;
+	entry[len++] = 'x';
+	entry[len++] = 0x80 | 0x7f;
+	entry[len++] = (uint8_t)(((ret - 127) % 128) | 0x80);
+	entry[len++] = (uint8_t)((ret - 127) / 128);
+	memcpy(entry + len, encoded, ret);
+	len += ret;
+
+	ret = http_hpack_decode_header(entry, len, &dec);
+	zassert_equal(ret, -EBADMSG, "Invalid oversized string accepted (%d)", ret);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_integer_overflow)
+{
+	/* Literal fields with a name length of 2^32 - 1 (five continuation
+	 * bytes, the last one at the limit), and ones that run past 32 bits
+	 * by a high group, a sixth byte and the final addition.
+	 */
+	static const uint8_t at_limit[] = { 0x00, 0x7f, 0x80, 0xff, 0xff, 0xff, 0x0f };
+	static const uint8_t high_group[] = { 0x00, 0x7f, 0x80, 0x80, 0x80, 0x80, 0x10 };
+	static const uint8_t six_bytes[] = { 0x00, 0x7f, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01 };
+	static const uint8_t wrapped[] = { 0x00, 0x7f, 0x82, 0xff, 0xff, 0xff, 0x0f, 'x',
+					   0x01, 'v' };
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	ret = http_hpack_decode_header(at_limit, sizeof(at_limit), &dec);
+	zassert_equal(ret, -EAGAIN, "Largest integer rejected (%d)", ret);
+
+	ret = http_hpack_decode_header(high_group, sizeof(high_group), &dec);
+	zassert_equal(ret, -EBADMSG, "High group accepted (%d)", ret);
+
+	ret = http_hpack_decode_header(six_bytes, sizeof(six_bytes), &dec);
+	zassert_equal(ret, -EBADMSG, "Six-byte integer accepted (%d)", ret);
+
+	ret = http_hpack_decode_header(wrapped, sizeof(wrapped), &dec);
+	zassert_equal(ret, -EBADMSG, "Wrapped integer accepted (%d)", ret);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_indexed_empty_value)
+{
+	/* Static table entry 15, accept-charset, has an empty value. */
+	static const uint8_t indexed[] = { 0x8f };
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	ret = http_hpack_decode_header(indexed, sizeof(indexed), &dec);
+	zassert_equal(ret, sizeof(indexed), "Indexed entry rejected (%d)", ret);
+	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
+	zassert_equal(dec.name_len, strlen("accept-charset"), "Name length %zu", dec.name_len);
+	zassert_mem_equal(dec.name, "accept-charset", dec.name_len, "Wrong name");
+	zassert_equal(dec.value_len, 0, "Decoded a %zu byte value", dec.value_len);
 }
 
 ZTEST_SUITE(http2_hpack, NULL, NULL, NULL, NULL, NULL);

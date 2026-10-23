@@ -12,6 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_
 #define ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -98,16 +99,35 @@ enum http_hpack_static_key {
 /* TODO Kconfig */
 #define HTTP2_HEADER_FIELD_MAX_LEN 256
 
-#if defined(CONFIG_HTTP_SERVER)
-#define HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE CONFIG_HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
+#if defined(CONFIG_HTTP_HUFFMAN_DECODE_BUFFER_SIZE)
+#define HTTP_HUFFMAN_DECODE_BUFFER_SIZE CONFIG_HTTP_HUFFMAN_DECODE_BUFFER_SIZE
 #else
-#define HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE 0
+#define HTTP_HUFFMAN_DECODE_BUFFER_SIZE 0
 #endif
 
 /** @endcond */
 
+/** Kind of HPACK entry decoded. */
+enum http_hpack_entry_type {
+	/** A header field. */
+	HTTP_HPACK_ENTRY_FIELD,
+	/** A dynamic table size update, carrying no field. */
+	HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE,
+};
+
 /** HTTP2 header field with decoding buffer. */
 struct http_hpack_header_buf {
+	/** Kind of the entry decoded last. */
+	enum http_hpack_entry_type type;
+
+	/** Dynamic table size requested by a size update entry. */
+	uint32_t table_size;
+
+	/** Whether a string of the field was larger than the decoding buffer
+	 *  and was dropped. The entry is consumed, but the field is not usable.
+	 */
+	bool oversized;
+
 	/** A pointer to the decoded header field name. */
 	const char *name;
 
@@ -121,7 +141,7 @@ struct http_hpack_header_buf {
 	size_t value_len;
 
 	/** Encoding/Decoding buffer. Used with Huffman encoding/decoding. */
-	uint8_t buf[HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE];
+	uint8_t buf[HTTP_HUFFMAN_DECODE_BUFFER_SIZE];
 
 	/** Length of the data in the decoding buffer. */
 	size_t datalen;
@@ -137,6 +157,8 @@ int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 			     struct http_hpack_header_buf *header);
 int http_hpack_encode_header(uint8_t *buf, size_t buflen,
 			     struct http_hpack_header_buf *header);
+int http_hpack_encode_field(uint8_t *buf, size_t buflen, struct http_hpack_header_buf *header,
+			    const char *name, const char *value);
 
 /** @endcond */
 

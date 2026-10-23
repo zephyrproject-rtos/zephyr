@@ -1,0 +1,19 @@
+common:
+  tags:
+    - http
+    - net
+    - http_client
+  depends_on: netif
+  min_ram: 128
+  min_flash: 256
+  platform_allow:
+    - native_sim
+    - qemu_x86
+  integration_platforms:
+    - native_sim
+tests:
+  net.http_client.http2: {}
+  net.http_client.http2.tls:
+    min_ram: 192
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-tls.conf"
