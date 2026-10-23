@@ -68,6 +68,58 @@ static struct esp32_wifi_runtime esp32_data;
  */
 static K_SEM_DEFINE(esp32_sta_started_sem, 0, 1);
 
+#if CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM > 0
+#define ESP32_WIFI_RX_NET_BUF_COUNT CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
+#else
+#define ESP32_WIFI_RX_NET_BUF_COUNT CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM
+#endif
+
+/*
+ * Pool-relative side table for the ESP-IDF RX buffer each frag wraps,
+ * indexed by net_buf_id(). This cannot live in the frag's own user_data:
+ * once the frag reaches the TCP receive path, tcp_set_seq()/tcp_get_seq()
+ * (subsys/net/ip/tcp.c) read and write a uint32_t at user_data offset 0
+ * for out-of-order/SACK bookkeeping on *any* net_buf queued there,
+ * clobbering whatever this driver stored. net_buf_id() is the documented
+ * escape for exactly this (see its kerneldoc; same pattern used by the
+ * Bluetooth host) -- it hands back a buffer's zero-based slot index
+ * within its fixed pool, stable for as long as that buffer is allocated,
+ * safe to key an external array with.
+ */
+static void *esp32_wifi_rx_eb_table[ESP32_WIFI_RX_NET_BUF_COUNT];
+
+static void esp32_wifi_rx_buf_destroy(struct net_buf *buf)
+{
+	esp_wifi_internal_free_rx_buffer(esp32_wifi_rx_eb_table[net_buf_id(buf)]);
+	net_buf_destroy(buf);
+}
+
+NET_BUF_POOL_FIXED_DEFINE(esp32_wifi_rx_bufs, ESP32_WIFI_RX_NET_BUF_COUNT, 1,
+			  0, esp32_wifi_rx_buf_destroy);
+
+static struct net_pkt *esp32_wifi_rx_pkt_alloc(struct net_if *iface, void *buffer,
+					       uint16_t len, void *eb)
+{
+	struct net_buf *frag;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_on_iface(iface, K_NO_WAIT);
+	if (pkt == NULL) {
+		return NULL;
+	}
+
+	frag = net_buf_alloc_with_data(&esp32_wifi_rx_bufs, buffer, len, K_NO_WAIT);
+	if (frag == NULL) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
+
+	esp32_wifi_rx_eb_table[net_buf_id(frag)] = eb;
+	net_pkt_frag_add(pkt, frag);
+
+	return pkt;
+}
+
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 NET_IF_DT_INST_DECLARE(0, 1);
 #define esp32_wifi_iface_ap NET_IF_DT_INST_GET(0, 1)
@@ -389,16 +441,13 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
+	pkt = esp32_wifi_rx_pkt_alloc(esp32_wifi_iface, buffer, len, eb);
 	if (pkt == NULL) {
-		LOG_ERR("Failed to allocate net buffer");
 		esp_wifi_internal_free_rx_buffer(eb);
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+		esp32_data.stats.errors.rx++;
+#endif
 		return -EIO;
-	}
-
-	if (net_pkt_write(pkt, buffer, len) < 0) {
-		LOG_ERR("Failed to write to net buffer");
-		goto pkt_unref;
 	}
 
 	if (net_recv_data(esp32_wifi_iface, pkt) < 0) {
@@ -411,11 +460,9 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 	esp32_data.stats.pkts.rx++;
 #endif
 
-	esp_wifi_internal_free_rx_buffer(eb);
 	return 0;
 
 pkt_unref:
-	esp_wifi_internal_free_rx_buffer(eb);
 	net_pkt_unref(pkt);
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
@@ -443,17 +490,13 @@ static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface_ap, len,
-					   NET_AF_UNSPEC, 0, K_MSEC(100));
+	pkt = esp32_wifi_rx_pkt_alloc(esp32_wifi_iface_ap, buffer, len, eb);
 	if (pkt == NULL) {
 		esp_wifi_internal_free_rx_buffer(eb);
-		LOG_ERR("Failed to get net buffer");
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+		esp32_ap_sta_data.stats.errors.rx++;
+#endif
 		return -EIO;
-	}
-
-	if (net_pkt_write(pkt, buffer, len) < 0) {
-		LOG_ERR("Failed to write pkt");
-		goto pkt_unref;
 	}
 
 	if (net_recv_data(esp32_wifi_iface_ap, pkt) < 0) {
@@ -466,11 +509,9 @@ static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 	esp32_ap_sta_data.stats.pkts.rx++;
 #endif
 
-	esp_wifi_internal_free_rx_buffer(eb);
 	return 0;
 
 pkt_unref:
-	esp_wifi_internal_free_rx_buffer(eb);
 	net_pkt_unref(pkt);
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
