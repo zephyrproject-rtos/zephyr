@@ -97,6 +97,17 @@ spi0: &scb0 {
 	pinctrl-0 = <&p11_3_scb0_spi_mosi &p11_0_scb0_spi_miso &p11_2_scb0_spi_clk>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio_prt11 1 GPIO_ACTIVE_LOW>;
+	dmas = <&dma1 16>, <&dma1 17>;
+	dma-names = "tx", "rx";
+	mux-states = <&trigmux CYT4DN_TRIG_OUT_1TO1_1_SCB_TX_TO_PDMA10
+		      IFX_TRIGMUX_LEVEL IFX_TRIGMUX_ON>,
+		     <&trigmux CYT4DN_TRIG_OUT_1TO1_1_SCB_RX_TO_PDMA10
+		      IFX_TRIGMUX_LEVEL IFX_TRIGMUX_ON>;
+	mux-state-names = "tx", "rx";
+};
+
+&trigmux {
+	status = "okay";
 };
 
 &gpio_prt7 {
