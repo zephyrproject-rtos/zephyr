@@ -355,6 +355,14 @@ ZTEST(sh, test_shell_wildcards_dynamic)
 	test_shell_execute_cmd("test_dynamic d* c*", 2);
 }
 
+/* test that a pattern matching no command is passed to the handler as typed */
+ZTEST(sh, test_shell_wildcards_no_match)
+{
+	test_shell_execute_cmd("test_wildcard_literal x?y*", 1);
+	test_shell_execute_cmd("test_wildcard_literal \"x?y*\"", 1);
+	test_shell_execute_cmd("test_wildcard_literal xy", 0);
+}
+
 
 static int cmd_test_module(const struct shell *sh, size_t argc, char **argv)
 {
@@ -393,6 +401,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_test_shell_cmdl,
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_REGISTER(test_wildcard, &m_sub_test_shell_cmdl, NULL, cmd_wildcard);
+
+static int cmd_wildcard_literal(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+
+	return ((argc == 2U) && (strcmp(argv[1], "x?y*") == 0)) ? 1 : 0;
+}
+
+SHELL_CMD_ARG_REGISTER(test_wildcard_literal, NULL, NULL, cmd_wildcard_literal, 2, 0);
 
 
 static int cmd_dynamic(const struct shell *sh, size_t argc, char **argv)
