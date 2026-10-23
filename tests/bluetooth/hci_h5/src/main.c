@@ -237,6 +237,24 @@ static void before(void *fixture)
 	}
 }
 
+ZTEST(hci_h5, test_header_checksum)
+{
+	struct ctlr *c = &ctlrs[0];
+	uint8_t out[FRAME_MAX(EVT_LEN)];
+	uint8_t hdr[HDR_LEN];
+
+	hdr_set(hdr, true, c->seq, 0U, PKT_EVT, EVT_LEN);
+	hdr[3]++;
+	put(c, out, evt_frame(out, hdr, 1U, EVT_LEN));
+	expect_no_evt(c);
+
+	/* The discarded packet took no sequence number */
+	put_evt(c, true, c->seq, 2U);
+	expect_evt(c, 2U);
+	next_seq(c);
+	expect_ack(c);
+}
+
 ZTEST(hci_h5, test_zero_length_event)
 {
 	struct ctlr *c = &ctlrs[0];
