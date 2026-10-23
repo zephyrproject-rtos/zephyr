@@ -7,4 +7,7 @@ if SOC_AST2700_BOOTMCU
 configdefault NUM_IRQS
 	default 16
 
+configdefault CLOCK_CONTROL
+	default y
+
 endif # SOC_AST2700_BOOTMCU

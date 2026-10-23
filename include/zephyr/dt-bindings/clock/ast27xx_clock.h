@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2023 Aspeed Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_AST27XX_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_AST27XX_H_
+
+/* SCU1 clock gates: bank 0 at SCU1 0x240, bank 1 at SCU1 0x260 */
+#define SCU1_CLK_GATE_L0CLK     (0)
+#define SCU1_CLK_GATE_L1CLK     (1)
+#define SCU1_CLK_GATE_ESPI0CLK  (2)
+#define SCU1_CLK_GATE_ESPI1CLK  (3)
+#define SCU1_CLK_GATE_SDCLK     (4)
+#define SCU1_CLK_GATE_IPEREFCLK (5) /* io die pcie ref clk */
+#define SCU1_CLK_GATE_REFCLK    (6)
+#define SCU1_CLK_GATE_LPCHCLK   (7)
+#define SCU1_CLK_GATE_MAC0CLK   (8)
+#define SCU1_CLK_GATE_MAC1CLK   (9)
+#define SCU1_CLK_GATE_MAC2CLK   (10)
+#define SCU1_CLK_GATE_UART0CLK  (11)
+#define SCU1_CLK_GATE_UART1CLK  (12)
+#define SCU1_CLK_GATE_UART2CLK  (13)
+#define SCU1_CLK_GATE_UART3CLK  (14)
+#define SCU1_CLK_GATE_I2CCLK    (15)
+#define SCU1_CLK_GATE_I3C0CLK   (16)
+#define SCU1_CLK_GATE_I3C1CLK   (17)
+#define SCU1_CLK_GATE_I3C2CLK   (18)
+#define SCU1_CLK_GATE_I3C3CLK   (19)
+#define SCU1_CLK_GATE_I3C4CLK   (20)
+#define SCU1_CLK_GATE_I3C5CLK   (21)
+#define SCU1_CLK_GATE_I3C6CLK   (22)
+#define SCU1_CLK_GATE_I3C7CLK   (23)
+#define SCU1_CLK_GATE_I3C8CLK   (24)
+#define SCU1_CLK_GATE_I3C9CLK   (25)
+#define SCU1_CLK_GATE_I3C10CLK  (26)
+#define SCU1_CLK_GATE_I3C11CLK  (27)
+#define SCU1_CLK_GATE_I3C12CLK  (28)
+#define SCU1_CLK_GATE_I3C13CLK  (29)
+#define SCU1_CLK_GATE_I3C14CLK  (30)
+#define SCU1_CLK_GATE_I3C15CLK  (31)
+
+#define SCU1_CLK_GATE_UART5CLK     (32 + 0)
+#define SCU1_CLK_GATE_UART6CLK     (32 + 1)
+#define SCU1_CLK_GATE_UART7CLK     (32 + 2)
+#define SCU1_CLK_GATE_UART8CLK     (32 + 3)
+#define SCU1_CLK_GATE_UART9CLK     (32 + 4)
+#define SCU1_CLK_GATE_UART10CLK    (32 + 5)
+#define SCU1_CLK_GATE_UART11CLK    (32 + 6)
+#define SCU1_CLK_GATE_UART12CLK    (32 + 7)
+#define SCU1_CLK_GATE_FSICLK       (32 + 8)
+#define SCU1_CLK_GATE_LTPI0TXCLK   (32 + 9)
+#define SCU1_CLK_GATE_LTPICLK      (32 + 10)
+#define SCU1_CLK_GATE_VGALCLK      (32 + 11)
+#define SCU1_CLK_GATE_USBUARTCLK   (32 + 12)
+#define SCU1_CLK_GATE_CANCLK       (32 + 13)
+#define SCU1_CLK_GATE_USBCLK       (32 + 14)
+#define SCU1_CLK_GATE_SLICLK       (32 + 15)
+#define SCU1_CLK_GATE_E2MCLK       (32 + 16)
+#define SCU1_CLK_GATE_PORTCUSB2CLK (32 + 17)
+#define SCU1_CLK_GATE_PORTDUSB2CLK (32 + 18)
+#define SCU1_CLK_GATE_LTPI1TXCLK   (32 + 19)
+
+#define SCU1_CLK_GATE_NUM (SCU1_CLK_GATE_LTPI1TXCLK + 1)
+
+/* SCU1 clocks that are not gates */
+#define SCU1_CLK_HPLL      (SCU1_CLK_GATE_NUM + 0)
+#define SCU1_CLK_APLL      (SCU1_CLK_GATE_NUM + 1)
+#define SCU1_CLK_DPLL      (SCU1_CLK_GATE_NUM + 2)
+#define SCU1_CLK_UARTX     (SCU1_CLK_GATE_NUM + 3)
+#define SCU1_CLK_HUARTX    (SCU1_CLK_GATE_NUM + 4)
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_AST27XX_H_ */
