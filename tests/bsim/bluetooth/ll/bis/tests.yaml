@@ -102,3 +102,33 @@ tests:
         - tests_scripts/past.sh
         - tests_scripts/past_default_past_params.sh
         - tests_scripts/past_send_from_broadcaster.sh
+  bluetooth.controller.bis.past_dle_min:
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpunet
+    extra_args:
+      CONF_FILE=prj_past.conf
+    extra_overlay_confs:
+      - overlay-past_dle_min.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_bis_prj_past_conf_overlay-past_dle_min_conf
+      tests_scripts:
+        - tests_scripts/past_dle_min.sh
+  bluetooth.controller.bis.past_dle_min_rx:
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpunet
+    extra_args:
+      CONF_FILE=prj_past.conf
+    extra_overlay_confs:
+      - overlay-past_dle_min.conf
+      - overlay-past_sender_cis.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_ll_bis_prj_past_conf_overlay-past_dle_min_conf_overlay-past_sender_cis_conf
+      tests_scripts:
+        - tests_scripts/past_dle_min_rx.sh
+    required_applications:
+      - application: bluetooth.controller.bis.past_dle_min

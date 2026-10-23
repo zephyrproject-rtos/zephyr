@@ -31,6 +31,10 @@ app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf com
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-scan_aux_use_chains.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_file=prj_vs_dp.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_file=prj_past.conf compile
+app=tests/bsim/bluetooth/ll/bis conf_file=prj_past.conf \
+  conf_overlay=overlay-past_dle_min.conf compile
+app=tests/bsim/bluetooth/ll/bis conf_file=prj_past.conf \
+  conf_overlay="overlay-past_dle_min.conf;overlay-past_sender_cis.conf" compile
 
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
   conf_file=prj_dut_llcp.conf compile
