@@ -89,6 +89,7 @@ enum {
 	ATT_ENHANCED,
 	ATT_PENDING_SENT,
 	ATT_OUT_OF_SYNC_SENT,
+	ATT_BR,
 
 	/* Total number of flags - must be at the end of the enum */
 	ATT_NUM_FLAGS,
@@ -112,12 +113,21 @@ struct bt_att_tx_meta_data {
 struct bt_att_chan {
 	/* Connection this channel is associated with */
 	struct bt_att		*att;
-	struct bt_l2cap_le_chan	chan;
+	union {
+		struct bt_l2cap_le_chan	chan;
+#if defined(CONFIG_BT_ATT_BR)
+		struct bt_l2cap_br_chan	br_chan;
+#endif /* CONFIG_BT_ATT_BR */
+	};
 	ATOMIC_DEFINE(flags, ATT_NUM_FLAGS);
 	struct bt_att_req	*req;
 	struct k_fifo		tx_queue;
 	struct k_work_delayable	timeout_work;
 	sys_snode_t		node;
+#if defined(CONFIG_BT_ATT_BR)
+	/* Owners of a BR/EDR channel: the L2CAP layer and, while connecting, the caller */
+	atomic_t		br_refs;
+#endif /* CONFIG_BT_ATT_BR */
 };
 
 static bool bt_att_is_enhanced(struct bt_att_chan *chan)
@@ -130,6 +140,104 @@ static bool bt_att_is_enhanced(struct bt_att_chan *chan)
 	return atomic_test_bit(chan->flags, ATT_ENHANCED);
 }
 
+static bool att_chan_is_br(const struct bt_att_chan *chan)
+{
+	return IS_ENABLED(CONFIG_BT_ATT_BR) && atomic_test_bit(chan->flags, ATT_BR);
+}
+
+/* Accessors for the L2CAP channel backing an ATT bearer */
+static struct bt_l2cap_chan *att_chan_get_l2cap(struct bt_att_chan *chan)
+{
+	return &chan->chan.chan;
+}
+
+static struct bt_conn *att_chan_get_conn(struct bt_att_chan *att_chan)
+{
+	return att_chan->chan.chan.conn;
+}
+
+static uint16_t att_chan_get_tx_cid(const struct bt_att_chan *chan)
+{
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		return chan->br_chan.tx.cid;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	return chan->chan.tx.cid;
+}
+
+static uint16_t att_chan_get_rx_mtu(const struct bt_att_chan *chan)
+{
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		return chan->br_chan.rx.mtu;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	return chan->chan.rx.mtu;
+}
+
+static uint16_t att_chan_get_tx_mtu(const struct bt_att_chan *chan)
+{
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		return chan->br_chan.tx.mtu;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	return chan->chan.tx.mtu;
+}
+
+static void att_chan_set_rx_mtu(struct bt_att_chan *chan, uint16_t mtu)
+{
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		chan->br_chan.rx.mtu = mtu;
+		return;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	chan->chan.rx.mtu = mtu;
+}
+
+static void att_chan_set_tx_mtu(struct bt_att_chan *chan, uint16_t mtu)
+{
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		chan->br_chan.tx.mtu = mtu;
+		return;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	chan->chan.tx.mtu = mtu;
+}
+
+/* Tear down the bearer after a protocol error or a transaction timeout */
+static int att_chan_disconnect_bearer(struct bt_att_chan *chan)
+{
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		/* The BR/EDR ACL may be used by other profiles, close only the ATT bearer */
+		return bt_l2cap_chan_disconnect(att_chan_get_l2cap(chan));
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	return bt_conn_disconnect(att_chan_get_conn(chan), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+}
+
+/* Send a PDU on an Unenhanced ATT bearer */
+static int att_chan_send_uatt(struct bt_att_chan *chan, struct net_buf *buf)
+{
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan)) {
+		return bt_l2cap_br_chan_send_cb(att_chan_get_l2cap(chan), buf, NULL, NULL);
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	return bt_l2cap_send_pdu(&chan->chan, buf, NULL, NULL);
+}
+
 static uint16_t bt_att_mtu(struct bt_att_chan *chan)
 {
 	/* Core v5.3 Vol 3 Part F 3.4.2:
@@ -137,7 +245,7 @@ static uint16_t bt_att_mtu(struct bt_att_chan *chan)
 	 *         The server and client shall set ATT_MTU to the minimum of the
 	 *         Client Rx MTU and the Server Rx MTU.
 	 */
-	return MIN(chan->chan.rx.mtu, chan->chan.tx.mtu);
+	return MIN(att_chan_get_rx_mtu(chan), att_chan_get_tx_mtu(chan));
 }
 
 /* ATT connection specific data */
@@ -366,6 +474,7 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf);
 
 static void att_chan_mtu_updated(struct bt_att_chan *updated_chan);
 static void bt_att_disconnected(struct bt_l2cap_chan *chan);
+static const struct bt_l2cap_chan_ops att_chan_ops;
 
 static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op);
 
@@ -381,9 +490,9 @@ static void att_disconnect(struct bt_att_chan *chan)
 
 	LOG_DBG("ATT disconnecting device %s", bt_conn_dst_str(chan->att->conn));
 
-	bt_att_disconnected(&chan->chan.chan);
+	bt_att_disconnected(att_chan_get_l2cap(chan));
 
-	err = bt_conn_disconnect(chan->chan.chan.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = att_chan_disconnect_bearer(chan);
 	if (err) {
 		LOG_ERR("Disconnecting failed (err %d)", err);
 	}
@@ -413,8 +522,9 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_EATT) && hdr->code == BT_ATT_OP_MTU_REQ &&
-	    chan->chan.tx.cid != BT_L2CAP_CID_ATT) {
+	if (hdr->code == BT_ATT_OP_MTU_REQ &&
+	    (att_chan_is_br(chan) ||
+	     (IS_ENABLED(CONFIG_BT_EATT) && att_chan_get_tx_cid(chan) != BT_L2CAP_CID_ATT))) {
 		/* The Exchange MTU sub-procedure shall only be supported on
 		 * the LE Fixed Channel Unenhanced ATT bearer
 		 */
@@ -439,8 +549,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 
 		/* Check if the channel is ready to send in case of a request */
 		if (att_op_get_type(hdr->code) == ATT_REQUEST &&
-		    !atomic_test_bit(chan->chan.chan.status,
-				     BT_L2CAP_STATUS_OUT)) {
+		    !atomic_test_bit(att_chan_get_l2cap(chan)->status, BT_L2CAP_STATUS_OUT)) {
 			return -EAGAIN;
 		}
 
@@ -450,7 +559,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		/* bt_l2cap_chan_send does actually return the number of bytes
 		 * that could be sent immediately.
 		 */
-		err = bt_l2cap_chan_send(&chan->chan.chan, buf);
+		err = bt_l2cap_chan_send(att_chan_get_l2cap(chan), buf);
 		if (err < 0) {
 			data->att_chan = prev_chan;
 			atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
@@ -470,6 +579,13 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
+		/* Core v6.2 Vol 3 Part F 3.4.5.4: not used on BR/EDR, the
+		 * bearer is always encrypted.
+		 */
+		if (att_chan_is_br(chan)) {
+			return -ENOTSUP;
+		}
+
 		net_buf_simple_save(&buf->b, &state);
 
 		err = bt_smp_sign(chan->att->conn, buf);
@@ -498,7 +614,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 
 	data->att_chan = chan;
 
-	err = bt_l2cap_send_pdu(&chan->chan, buf, NULL, NULL);
+	err = att_chan_send_uatt(chan, buf);
 	if (err) {
 		if (err == -ENOBUFS) {
 			LOG_ERR("Ran out of TX buffers or contexts.");
@@ -741,7 +857,7 @@ static void chan_req_notif_sent(struct bt_att_tx_meta_data *user_data)
 	uint16_t attr_count = data->attr_count;
 	void *ud = data->user_data;
 
-	LOG_DBG("chan %p CID 0x%04X", chan, chan->chan.tx.cid);
+	LOG_DBG("chan %p CID 0x%04X", chan, att_chan_get_tx_cid(chan));
 
 	if (!atomic_test_bit(chan->flags, ATT_CONNECTED)) {
 		LOG_ERR("ATT channel not connected");
@@ -776,7 +892,7 @@ static void att_on_sent_cb(struct bt_att_tx_meta_data *meta)
 	if (!bt_att_is_enhanced(meta->att_chan)) {
 		struct bt_att_chan *att_chan = meta->att_chan;
 		struct bt_conn *conn = att_chan->att->conn;
-		struct bt_l2cap_chan *l2cap_chan = &att_chan->chan.chan;
+		struct bt_l2cap_chan *l2cap_chan = att_chan_get_l2cap(att_chan);
 
 		ARG_UNUSED(conn);
 		LOG_DBG("UATT bearer, calling bt_att_sent: conn %p chan %p", conn, l2cap_chan);
@@ -950,9 +1066,10 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	uint16_t mtu_client, mtu_server;
 
 	/* Exchange MTU sub-procedure shall only be supported on the
-	 * LE Fixed Channel Unenhanced ATT bearer.
+	 * LE Fixed Channel Unenhanced ATT bearer. On BR/EDR the MTU is
+	 * negotiated by L2CAP configuration (Core v6.2 Vol 3 Part G 4.3.1).
 	 */
-	if (bt_att_is_enhanced(chan)) {
+	if (bt_att_is_enhanced(chan) || att_chan_is_br(chan)) {
 		return BT_ATT_ERR_NOT_SUPPORTED;
 	}
 
@@ -984,8 +1101,8 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	/* The ATT_EXCHANGE_MTU_REQ/RSP is just an alternative way of
 	 * communicating the L2CAP MTU.
 	 */
-	chan->chan.rx.mtu = mtu_server;
-	chan->chan.tx.mtu = mtu_client;
+	att_chan_set_rx_mtu(chan, mtu_server);
+	att_chan_set_tx_mtu(chan, mtu_client);
 
 	LOG_DBG("Negotiated MTU %u", bt_att_mtu(chan));
 
@@ -1103,12 +1220,12 @@ static uint8_t att_mtu_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	/* The following must equal the value we sent in the req. We assume this
 	 * is a rsp to `gatt_exchange_mtu_encode`.
 	 */
-	chan->chan.rx.mtu = BT_LOCAL_ATT_MTU_UATT;
+	att_chan_set_rx_mtu(chan, BT_LOCAL_ATT_MTU_UATT);
 	/* The ATT_EXCHANGE_MTU_REQ/RSP is just an alternative way of
 	 * communicating the L2CAP MTU.
 	 */
 
-	chan->chan.tx.mtu = mtu;
+	att_chan_set_tx_mtu(chan, mtu);
 
 	LOG_DBG("Negotiated MTU %u", bt_att_mtu(chan));
 
@@ -1264,7 +1381,7 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct find_type_data *data = user_data;
 	struct bt_att_chan *chan = data->chan;
-	struct bt_conn *conn = chan->chan.chan.conn;
+	struct bt_conn *conn = att_chan_get_conn(chan);
 	int read;
 	uint8_t uuid[16];
 	struct net_buf *frag;
@@ -1473,7 +1590,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 			     struct net_buf *buf, uint16_t offset,
 			     attr_read_cb cb, void *user_data)
 {
-	struct bt_conn *conn = chan->chan.chan.conn;
+	struct bt_conn *conn = att_chan_get_conn(chan);
 	ssize_t read;
 	struct net_buf *frag;
 	size_t len, total = 0;
@@ -1531,7 +1648,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct read_type_data *data = user_data;
 	struct bt_att_chan *chan = data->chan;
-	struct bt_conn *conn = chan->chan.chan.conn;
+	struct bt_conn *conn = att_chan_get_conn(chan);
 	ssize_t read;
 
 	/* Skip if doesn't match */
@@ -1670,7 +1787,7 @@ static uint8_t att_read_type_req(struct bt_att_chan *chan, struct net_buf *buf)
 	 *   other than 0x0001 to 0xFFFF.
 	 * (Core Specification 5.4 Vol 3. Part G. 2.5.2.1 Robust Caching).
 	 */
-	if (!bt_gatt_change_aware(chan->chan.chan.conn, true)) {
+	if (!bt_gatt_change_aware(att_chan_get_conn(chan), true)) {
 		if (bt_uuid_cmp(&u.uuid, BT_UUID_GATT_INCLUDE) != 0 &&
 		    bt_uuid_cmp(&u.uuid, BT_UUID_GATT_CHRC) != 0 &&
 		    (start_handle != BT_ATT_FIRST_ATTRIBUTE_HANDLE ||
@@ -1698,7 +1815,7 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct read_data *data = user_data;
 	struct bt_att_chan *chan = data->chan;
-	struct bt_conn *conn = chan->chan.chan.conn;
+	struct bt_conn *conn = att_chan_get_conn(chan);
 	int ret;
 
 	LOG_DBG("handle 0x%04x", handle);
@@ -1868,7 +1985,7 @@ static uint8_t read_vl_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct read_data *data = user_data;
 	struct bt_att_chan *chan = data->chan;
-	struct bt_conn *conn = chan->chan.chan.conn;
+	struct bt_conn *conn = att_chan_get_conn(chan);
 	struct bt_att_read_mult_vl_rsp *rsp;
 	int read;
 
@@ -2547,7 +2664,7 @@ static uint8_t att_write_cmd(struct bt_att_chan *chan, struct net_buf *buf)
 #if defined(CONFIG_BT_SIGNING)
 static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *buf)
 {
-	struct bt_conn *conn = chan->chan.chan.conn;
+	struct bt_conn *conn = att_chan_get_conn(chan);
 	struct bt_att_signed_write_cmd *req;
 	uint16_t handle;
 	int err;
@@ -2555,7 +2672,7 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 	/* The Signed Write Without Response sub-procedure shall only be supported
 	 * on the LE Fixed Channel Unenhanced ATT bearer.
 	 */
-	if (bt_att_is_enhanced(chan)) {
+	if (bt_att_is_enhanced(chan) || att_chan_is_br(chan)) {
 		/* No response for this command */
 		return 0;
 	}
@@ -2683,7 +2800,7 @@ static uint8_t att_error_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	int ret;
 
 	/* Check if error can be handled by elevating security. */
-	ret = att_change_security(chan->chan.chan.conn, err);
+	ret = att_change_security(att_chan_get_conn(chan), err);
 	if (ret == 0 || ret == -EBUSY) {
 		/* ATT timeout work is normally cancelled in att_handle_rsp.
 		 * However retrying is special case, so the timeout shall
@@ -3040,15 +3157,10 @@ static att_type_t att_op_get_type(uint8_t op)
 	return ATT_UNKNOWN;
 }
 
-static struct bt_conn *get_conn(struct bt_att_chan *att_chan)
-{
-	return att_chan->chan.chan.conn;
-}
-
 static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
-	struct bt_conn *conn = get_conn(att_chan);
+	struct bt_conn *conn = att_chan_get_conn(att_chan);
 	struct bt_att_hdr *hdr;
 	const struct att_handler *handler;
 	uint8_t err;
@@ -3105,9 +3217,31 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
-static struct bt_att *att_get(struct bt_conn *conn)
+/* Get the Unenhanced ATT bearer: the LE fixed channel or the BR/EDR channel */
+static struct bt_att_chan *att_get_uatt_chan(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
+
+	if (IS_ENABLED(CONFIG_BT_ATT_BR) && bt_conn_is_br(conn)) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+			if (chan->ops == &att_chan_ops) {
+				return ATT_CHAN(chan);
+			}
+		}
+
+		return NULL;
+	}
+
+	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
+	if (chan == NULL) {
+		return NULL;
+	}
+
+	return ATT_CHAN(chan);
+}
+
+static struct bt_att *att_get(struct bt_conn *conn)
+{
 	struct bt_att_chan *att_chan;
 
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -3115,13 +3249,18 @@ static struct bt_att *att_get(struct bt_conn *conn)
 		return NULL;
 	}
 
-	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
-	if (!chan) {
-		LOG_ERR("Unable to find ATT channel");
+	att_chan = att_get_uatt_chan(conn);
+	if (!att_chan) {
+		if (bt_conn_is_br(conn)) {
+			/* The ATT bearer is optional on BR/EDR */
+			LOG_DBG("No ATT channel on BR/EDR conn %p", conn);
+		} else {
+			LOG_ERR("Unable to find ATT channel");
+		}
+
 		return NULL;
 	}
 
-	att_chan = ATT_CHAN(chan);
 	if (!atomic_test_bit(att_chan->flags, ATT_CONNECTED)) {
 		LOG_ERR("ATT channel not connected");
 		return NULL;
@@ -3300,9 +3439,8 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 static void bt_att_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
-	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 
-	LOG_DBG("chan %p cid 0x%04x", le_chan, le_chan->tx.cid);
+	LOG_DBG("chan %p cid 0x%04x", chan, att_chan_get_tx_cid(att_chan));
 
 	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
 
@@ -3310,21 +3448,23 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	k_work_init_delayable(&att_chan->timeout_work, att_timeout);
 
-	bt_gatt_connected(le_chan->chan.conn);
+	bt_gatt_connected(att_chan_get_conn(att_chan));
 }
 
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
 	struct bt_att *att = att_chan->att;
-	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	bool connected;
 
-	LOG_DBG("chan %p cid 0x%04x", le_chan, le_chan->tx.cid);
+	LOG_DBG("chan %p cid 0x%04x", chan, att_chan_get_tx_cid(att_chan));
 
 	if (!att_chan->att) {
 		LOG_DBG("Ignore disconnect on detached ATT chan");
 		return;
 	}
+
+	connected = atomic_test_bit(att_chan->flags, ATT_CONNECTED);
 
 	att_chan_detach(att_chan);
 
@@ -3335,7 +3475,10 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 
 	att_reset(att);
 
-	bt_gatt_disconnected(le_chan->chan.conn);
+	/* A BR/EDR channel is also released when its L2CAP connection fails */
+	if (connected || !att_chan_is_br(att_chan)) {
+		bt_gatt_disconnected(att_chan_get_conn(att_chan));
+	}
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -3376,10 +3519,9 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 				  uint8_t hci_status)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
-	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
-	struct bt_conn *conn = le_chan->chan.conn;
+	struct bt_conn *conn = att_chan_get_conn(att_chan);
 
-	LOG_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x %s", le_chan, conn,
+	LOG_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x %s", chan, conn,
 		conn->handle, conn->sec_level, hci_status, bt_hci_err_to_str(hci_status));
 
 	if (!att_chan->att) {
@@ -3461,12 +3603,8 @@ static void bt_att_status(struct bt_l2cap_chan *ch, atomic_t *status)
 	sys_slist_prepend(&chan->att->reqs, &req->node);
 }
 
-static void bt_att_released(struct bt_l2cap_chan *ch)
+static void att_chan_free(struct bt_att_chan *chan)
 {
-	struct bt_att_chan *chan = ATT_CHAN(ch);
-
-	LOG_DBG("chan %p", chan);
-
 	/* Drop any pending/in-flight ATT TX metadata still referencing this
 	 * channel, so the deferred att_on_sent_cb()/bt_att_sent() work cannot
 	 * dereference the channel after it is freed here. Bluetooth uses a
@@ -3482,6 +3620,22 @@ static void bt_att_released(struct bt_l2cap_chan *ch)
 	k_mem_slab_free(&chan_slab, (void *)chan);
 }
 
+static void bt_att_released(struct bt_l2cap_chan *ch)
+{
+	struct bt_att_chan *chan = ATT_CHAN(ch);
+
+	LOG_DBG("chan %p", chan);
+
+#if defined(CONFIG_BT_ATT_BR)
+	if (att_chan_is_br(chan) && atomic_dec(&chan->br_refs) > 1) {
+		/* Still referenced by bt_att_br_chan_connect() */
+		return;
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	att_chan_free(chan);
+}
+
 #if defined(CONFIG_BT_EATT)
 static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
 {
@@ -3493,23 +3647,24 @@ static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
 }
 #endif /* CONFIG_BT_EATT */
 
+static const struct bt_l2cap_chan_ops att_chan_ops = {
+	.connected = bt_att_connected,
+	.disconnected = bt_att_disconnected,
+	.recv = bt_att_recv,
+	.sent = bt_att_sent,
+	.status = bt_att_status,
+#if defined(CONFIG_BT_SMP)
+	.encrypt_change = bt_att_encrypt_change,
+#endif /* CONFIG_BT_SMP */
+	.released = bt_att_released,
+#if defined(CONFIG_BT_EATT)
+	.reconfigured = bt_att_reconfigured,
+#endif /* CONFIG_BT_EATT */
+};
+
 static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 {
 	int quota = 0;
-	static struct bt_l2cap_chan_ops ops = {
-		.connected = bt_att_connected,
-		.disconnected = bt_att_disconnected,
-		.recv = bt_att_recv,
-		.sent = bt_att_sent,
-		.status = bt_att_status,
-	#if defined(CONFIG_BT_SMP)
-		.encrypt_change = bt_att_encrypt_change,
-	#endif /* CONFIG_BT_SMP */
-		.released = bt_att_released,
-	#if defined(CONFIG_BT_EATT)
-		.reconfigured = bt_att_reconfigured,
-	#endif /* CONFIG_BT_EATT */
-	};
 	struct bt_att_chan *chan;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
@@ -3529,7 +3684,7 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 	}
 
 	(void)memset(chan, 0, sizeof(*chan));
-	chan->chan.chan.ops = &ops;
+	att_chan_get_l2cap(chan)->ops = &att_chan_ops;
 	k_fifo_init(&chan->tx_queue);
 	atomic_set(chan->flags, flags);
 	chan->att = att;
@@ -3539,14 +3694,19 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 		/* EATT: The MTU will be sent in the ECRED conn req/rsp PDU. The
 		 * TX MTU is received on L2CAP-level.
 		 */
-		chan->chan.rx.mtu = BT_LOCAL_ATT_MTU_EATT;
+		att_chan_set_rx_mtu(chan, BT_LOCAL_ATT_MTU_EATT);
+	} else if (att_chan_is_br(chan)) {
+		/* BR/EDR: ATT_MTU is the minimum of the MTUs negotiated by
+		 * L2CAP configuration (Core v6.2 Vol 3 Part G 5.1.1).
+		 */
+		att_chan_set_rx_mtu(chan, BT_LOCAL_ATT_MTU_UATT);
 	} else {
 		/* UATT: L2CAP Basic is not able to communicate the L2CAP MTU
 		 * without help. ATT has to manage the MTU. The initial MTU is
 		 * defined by spec.
 		 */
-		chan->chan.tx.mtu = BT_ATT_DEFAULT_LE_MTU;
-		chan->chan.rx.mtu = BT_ATT_DEFAULT_LE_MTU;
+		att_chan_set_tx_mtu(chan, BT_ATT_DEFAULT_LE_MTU);
+		att_chan_set_rx_mtu(chan, BT_ATT_DEFAULT_LE_MTU);
 	}
 
 	return chan;
@@ -3596,19 +3756,14 @@ static void att_enhanced_connection_work_handler(struct k_work *work)
 }
 #endif /* CONFIG_BT_EATT */
 
-static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
+static struct bt_att *att_new(struct bt_conn *conn)
 {
 	struct bt_att *att;
-	struct bt_att_chan *chan;
-
-	LOG_DBG("conn %p handle %u", conn, conn->handle);
 
 	if (k_mem_slab_alloc(&att_slab, (void **)&att, K_NO_WAIT)) {
 		LOG_ERR("No available ATT context for conn %p", conn);
-		return -ENOMEM;
+		return NULL;
 	}
-
-	att_handle_rsp_thread = k_current_get();
 
 	(void)memset(att, 0, sizeof(*att));
 	att->conn = conn;
@@ -3620,13 +3775,30 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 			      att_enhanced_connection_work_handler);
 #endif /* CONFIG_BT_EATT */
 
+	return att;
+}
+
+static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
+{
+	struct bt_att *att;
+	struct bt_att_chan *chan;
+
+	LOG_DBG("conn %p handle %u", conn, conn->handle);
+
+	att = att_new(conn);
+	if (att == NULL) {
+		return -ENOMEM;
+	}
+
+	att_handle_rsp_thread = k_current_get();
+
 	chan = att_chan_new(att, 0);
 	if (!chan) {
 		k_mem_slab_free(&att_slab, (void *)att);
 		return -ENOMEM;
 	}
 
-	*ch = &chan->chan.chan;
+	*ch = att_chan_get_l2cap(chan);
 
 	return 0;
 }
@@ -3639,6 +3811,103 @@ BT_L2CAP_FIXED_CHANNEL_DEFINE(z_att_fixed_chan) = {
 	.cid = BT_L2CAP_CID_ATT,
 	.accept = bt_att_accept,
 };
+
+#if defined(CONFIG_BT_ATT_BR)
+static int att_br_chan_new(struct bt_conn *conn, atomic_val_t refs, struct bt_att_chan **chan)
+{
+	struct bt_att *att;
+
+	if (att_get_uatt_chan(conn) != NULL) {
+		return -EALREADY;
+	}
+
+	att = att_new(conn);
+	if (att == NULL) {
+		return -ENOMEM;
+	}
+
+	*chan = att_chan_new(att, BIT(ATT_BR));
+	if (*chan == NULL) {
+		k_mem_slab_free(&att_slab, (void *)att);
+		return -ENOMEM;
+	}
+
+	atomic_set(&(*chan)->br_refs, refs);
+
+	return 0;
+}
+
+int bt_att_br_chan_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
+{
+	struct bt_att_chan *chan;
+	int err;
+
+	LOG_DBG("conn %p", conn);
+
+	err = att_br_chan_new(conn, 1, &chan);
+	if (err != 0) {
+		return err;
+	}
+
+	*ch = att_chan_get_l2cap(chan);
+
+	return 0;
+}
+
+int bt_att_br_chan_connect(struct bt_conn *conn)
+{
+	struct bt_att_chan *chan;
+	int err;
+
+	LOG_DBG("conn %p", conn);
+
+	/* Hold a reference so the channel outlives a synchronous L2CAP failure */
+	err = att_br_chan_new(conn, 2, &chan);
+	if (err != 0) {
+		return err;
+	}
+
+	chan->br_chan.required_sec_level = BT_SECURITY_L2;
+
+	err = bt_l2cap_chan_connect(conn, att_chan_get_l2cap(chan), BT_ATT_PSM);
+	if (err != 0 && chan->att != NULL) {
+		/* L2CAP did not take the channel, so it will not release it */
+		struct bt_att *att = chan->att;
+
+		att_chan_detach(chan);
+		att_reset(att);
+		att_chan_free(chan);
+
+		return err;
+	}
+
+	if (atomic_dec(&chan->br_refs) == 1) {
+		/* L2CAP has released the channel already */
+		att_chan_free(chan);
+	}
+
+	return err;
+}
+
+bool bt_att_br_chan_connected(struct bt_conn *conn)
+{
+	struct bt_att_chan *chan = att_get_uatt_chan(conn);
+
+	return chan != NULL && atomic_test_bit(chan->flags, ATT_CONNECTED);
+}
+
+int bt_att_br_chan_disconnect(struct bt_conn *conn)
+{
+	struct bt_att_chan *chan;
+
+	chan = att_get_uatt_chan(conn);
+	if (chan == NULL) {
+		return -ENOTCONN;
+	}
+
+	return bt_l2cap_chan_disconnect(att_chan_get_l2cap(chan));
+}
+#endif /* CONFIG_BT_ATT_BR */
 
 #if defined(CONFIG_BT_EATT)
 static k_timeout_t credit_based_connection_delay(struct bt_conn *conn)
@@ -3794,7 +4063,7 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 			break;
 		}
 
-		chan[i] = &att_chan->chan.chan;
+		chan[i] = att_chan_get_l2cap(att_chan);
 		i++;
 	}
 
@@ -3856,7 +4125,7 @@ int bt_eatt_disconnect(struct bt_conn *conn)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
 		if (bt_att_is_enhanced(chan)) {
-			err = bt_l2cap_chan_disconnect(&chan->chan.chan);
+			err = bt_l2cap_chan_disconnect(att_chan_get_l2cap(chan));
 		}
 	}
 
@@ -3878,7 +4147,7 @@ int bt_eatt_disconnect_one(struct bt_conn *conn)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
 		if (bt_att_is_enhanced(chan)) {
-			return bt_l2cap_chan_disconnect(&chan->chan.chan);
+			return bt_l2cap_chan_disconnect(att_chan_get_l2cap(chan));
 		}
 	}
 
@@ -3896,7 +4165,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, att_chan, node) {
 		if (bt_att_is_enhanced(att_chan)) {
-			chans[i] = &att_chan->chan.chan;
+			chans[i] = att_chan_get_l2cap(att_chan);
 			i++;
 		}
 	}
@@ -3928,7 +4197,7 @@ static int bt_eatt_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 
 	att_chan = att_chan_new(att, BIT(ATT_ENHANCED));
 	if (att_chan) {
-		*chan = &att_chan->chan.chan;
+		*chan = att_chan_get_l2cap(att_chan);
 		return 0;
 	}
 
@@ -3973,6 +4242,10 @@ void bt_att_init(void)
 	if (IS_ENABLED(CONFIG_BT_EATT)) {
 		bt_eatt_init();
 	}
+
+#if defined(CONFIG_BT_ATT_BR)
+	bt_att_br_init();
+#endif /* CONFIG_BT_ATT_BR */
 }
 
 uint16_t bt_att_get_mtu(struct bt_conn *conn)
@@ -4028,8 +4301,8 @@ int bt_att_get_max_notify_size(struct bt_conn *conn, enum bt_att_chan_opt chan_o
 		return -EINVAL;
 	}
 
-	if (!bt_conn_is_le(conn)) {
-		LOG_DBG("conn %p is not LE ACL", conn);
+	if (!bt_conn_is_le(conn) && !(IS_ENABLED(CONFIG_BT_ATT_BR) && bt_conn_is_br(conn))) {
+		LOG_DBG("conn %p is not an ACL with an ATT bearer", conn);
 		return -EINVAL;
 	}
 
@@ -4075,15 +4348,15 @@ static void att_chan_mtu_updated(struct bt_att_chan *updated_chan)
 		if (chan == updated_chan) {
 			continue;
 		}
-		max_tx = MAX(max_tx, chan->chan.tx.mtu);
-		max_rx = MAX(max_rx, chan->chan.rx.mtu);
+		max_tx = MAX(max_tx, att_chan_get_tx_mtu(chan));
+		max_rx = MAX(max_rx, att_chan_get_rx_mtu(chan));
 	}
 
 	/* If either maximum MTU has changed */
-	if ((updated_chan->chan.tx.mtu > max_tx) ||
-	    (updated_chan->chan.rx.mtu > max_rx)) {
-		max_tx = MAX(max_tx, updated_chan->chan.tx.mtu);
-		max_rx = MAX(max_rx, updated_chan->chan.rx.mtu);
+	if ((att_chan_get_tx_mtu(updated_chan) > max_tx) ||
+	    (att_chan_get_rx_mtu(updated_chan) > max_rx)) {
+		max_tx = MAX(max_tx, att_chan_get_tx_mtu(updated_chan));
+		max_rx = MAX(max_rx, att_chan_get_rx_mtu(updated_chan));
 		bt_gatt_att_max_mtu_changed(att->conn, max_tx, max_rx);
 	}
 }
@@ -4300,15 +4573,13 @@ void bt_att_clear_out_of_sync_sent(struct bt_conn *conn)
 
 bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn)
 {
-	struct bt_l2cap_chan *l2cap_chan;
 	struct bt_att_chan *att_chan;
 
-	l2cap_chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
-	if (!l2cap_chan) {
+	att_chan = att_get_uatt_chan(conn);
+	if (att_chan == NULL) {
 		return false;
 	}
 
-	att_chan = ATT_CHAN(l2cap_chan);
 	return atomic_test_bit(att_chan->flags, ATT_OUT_OF_SYNC_SENT);
 }
 

@@ -113,6 +113,10 @@ endif()
 
 zephyr_iterable_section(NAME bt_gatt_service_static KVMA RAM_REGION GROUP RODATA_REGION)
 
+if(CONFIG_BT_ATT_BR)
+  zephyr_iterable_section(NAME bt_att_br_sdp_service KVMA RAM_REGION GROUP RODATA_REGION)
+endif()
+
 if(CONFIG_BT_MESH)
   zephyr_iterable_section(NAME bt_mesh_subnet_cb KVMA RAM_REGION GROUP RODATA_REGION)
   zephyr_iterable_section(NAME bt_mesh_app_key_cb KVMA RAM_REGION GROUP RODATA_REGION)
