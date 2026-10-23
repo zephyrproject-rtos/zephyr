@@ -345,13 +345,15 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		sys_slist_find_and_remove(&conn->streams, &stream->node);
 		sys_slist_prepend(&conn->streams, &stream->node);
 
-		/* Queue for accept() call */
-		k_fifo_put(&conn->incoming.stream_q, stream);
+		/* Queue for accept() call. The socket can be closed while
+		 * the stream was set up, and the stream is released then.
+		 */
+		if (!quic_ctx_queue_incoming_stream(conn, stream)) {
+			return -ENOENT;
+		}
 
 		NET_DBG("[CO:%p/%d] Queued new incoming stream %" PRIu64 " for accept on sock %d",
 			conn, quic_get_by_conn(conn), stream_id, conn->sock);
-
-		k_sem_give(&conn->incoming.stream_sem);
 
 		k_yield();
 	}
