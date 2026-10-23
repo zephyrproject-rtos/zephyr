@@ -7097,7 +7097,9 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 	}
 
 	adv_info->length = data_len;
-	(void)memcpy(adv_info->data, data, data_len);
+	if (data_len > 0U) {
+		(void)memcpy(adv_info->data, data, data_len);
+	}
 }
 
 static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
@@ -8053,7 +8055,9 @@ no_ext_hdr:
 			sep->rssi = rssi;
 			sep->cte_type = cte_type;
 			sep->length = data_len_frag;
-			memcpy(&sep->data[0], data, data_len_frag);
+			if (data_len_frag > 0U) {
+				(void)memcpy(&sep->data[0], data, data_len_frag);
+			}
 
 			data += data_len_frag;
 			data_len -= data_len_frag;
