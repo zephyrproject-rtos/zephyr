@@ -357,6 +357,70 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DT_INST_GET_COMMA(inst) DEVICE_DT_INST_GET(inst),
 
+/** @cond INTERNAL_HIDDEN */
+
+/* One "||" term of a DEVICE_DT_ASSUME_COMPAT() condition. */
+#define Z_DEVICE_DT_ASSUME_TERM(node_id, dev) ((dev) == DEVICE_DT_GET(node_id)) ||
+
+/* All terms of one compatible. */
+#define Z_DEVICE_DT_ASSUME_COMPAT_TERMS(compat, dev)                                               \
+	DT_FOREACH_STATUS_OKAY_VARGS(compat, Z_DEVICE_DT_ASSUME_TERM, dev)
+
+/* Without any device object there is nothing to promise. */
+#define Z_DEVICE_DT_ASSUME(dev, terms)                                                             \
+	COND_CODE_1(IS_EMPTY(terms), ((void)(dev)), (CODE_ASSUME(terms false)))
+
+/** @endcond */
+
+/**
+ * @brief Promise the compiler that @p dev is a device of one of the given
+ * compatibles.
+ *
+ * Expands to a @ref CODE_ASSUME stating that @p dev points to the device
+ * object of one of the enabled devicetree nodes with one of the given
+ * compatibles. This is an optimizer hint only: it is never checked at run
+ * time, not even with @kconfig{CONFIG_ASSERT}.
+ *
+ * Use it as the first statement of a driver's API functions, before any
+ * declaration that reads `dev->config` or `dev->data`, since some compilers
+ * only use the promise for the code that follows it. When exactly one node is
+ * enabled, the compiler can then replace `dev->config`, `dev->data` and loads
+ * from the `const` configuration structure with constants. With several
+ * nodes it normally costs nothing.
+ *
+ * @warning If the promise does not hold, the behavior is undefined. Only use
+ * this in functions that are reached exclusively through the device objects
+ * the driver defines for the given compatibles, such as its own API
+ * functions and interrupt handlers. Every enabled node of every given compatible must result in a
+ * device object, since each of them is referenced and a missing one fails to
+ * link. Do not use it when:
+ * - the API structure is shared with another compatible or another source
+ *   file (drivers that `#undef DT_DRV_COMPAT` without listing every
+ *   compatible here, common implementations shared by several drivers),
+ * - devices for the API are also created with DEVICE_DEFINE() or outside
+ *   the driver,
+ * - the function may be called with other devices, such as a parent or bus.
+ *
+ * If there is no enabled node with any of the given compatibles, this expands
+ * to `(void)(dev)`.
+ *
+ * @param dev `const struct device *` the promise is made about
+ * @param ... one or more lowercase-and-underscores devicetree compatibles
+ */
+#define DEVICE_DT_ASSUME_COMPAT(dev, ...)                                                          \
+	Z_DEVICE_DT_ASSUME(                                                                        \
+		dev, FOR_EACH_FIXED_ARG(Z_DEVICE_DT_ASSUME_COMPAT_TERMS, (), dev, __VA_ARGS__))
+
+/**
+ * @brief Promise the compiler that @p dev is an instance of `DT_DRV_COMPAT`.
+ *
+ * This is equivalent to `DEVICE_DT_ASSUME_COMPAT(dev, DT_DRV_COMPAT)`; see
+ * that macro for the rules and caveats.
+ *
+ * @param dev `const struct device *` the promise is made about
+ */
+#define DEVICE_DT_INST_ASSUME(dev) DEVICE_DT_ASSUME_COMPAT(dev, DT_DRV_COMPAT)
+
 /**
  * @brief Get a @ref device reference from a devicetree compatible.
  *
