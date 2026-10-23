@@ -26,7 +26,9 @@ LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 #else
 #define SX126X_IS_GFSK(data) false
 #endif
+#define SX126X_TX_TIMEOUT_MARGIN_MS 1000U
 
+static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len);
 static void sx126x_handle_irq_error(const struct device *dev, int status);
 
 void sx126x_unlock(const struct device *dev)
@@ -395,7 +397,9 @@ int sx126x_set_rx_gain(const struct device *dev, bool boosted)
 
 static int sx126x_set_tx(const struct device *dev, uint32_t timeout_ms)
 {
-	uint32_t timeout = SX126X_MS_TO_TIMEOUT(timeout_ms);
+	/* Longer packets use the software watchdog instead of wrapping the 24-bit timer. */
+	uint32_t timeout = timeout_ms > SX126X_MAX_TIMEOUT_MS ? SX126X_TX_TIMEOUT_NONE :
+			   SX126X_MS_TO_TIMEOUT(timeout_ms);
 	uint8_t buf[3];
 
 	sys_put_be24(timeout, buf);
@@ -632,11 +636,24 @@ static int sx126x_chip_init(const struct device *dev)
 	return 0;
 }
 
+static void sx126x_set_irq_deadline(const struct device *dev, k_timepoint_t deadline)
+{
+	struct sx126x_data *data = dev->data;
+
+	K_SPINLOCK(&data->irq_lock) {
+		data->irq_deadline = deadline;
+	}
+}
+
 static void sx126x_dio1_callback(const struct device *dev)
 {
 	struct sx126x_data *data = dev->data;
 
-	atomic_set(&data->irq_pending, 1);
+	/* Record timeliness before IRQ work or cleanup can pass the deadline. */
+	K_SPINLOCK(&data->irq_lock) {
+		data->irq_late = sys_timepoint_expired(data->irq_deadline);
+		atomic_set(&data->irq_pending, 1);
+	}
 	k_work_submit(&data->irq_work);
 }
 
@@ -849,6 +866,8 @@ static void sx126x_complete_tx(const struct device *dev, int status)
 	struct sx126x_data *data = dev->data;
 	struct sx126x_tx_result result = { .status = status };
 
+	data->tx_watchdog_active = false;
+	k_work_cancel_delayable(&data->tx_timeout_work);
 	if (data->tx_async_signal != NULL) {
 		k_poll_signal_raise(data->tx_async_signal, status);
 		data->tx_async_signal = NULL;
@@ -856,12 +875,12 @@ static void sx126x_complete_tx(const struct device *dev, int status)
 	k_msgq_put(&data->tx_msgq, &result, K_NO_WAIT);
 }
 
-static void sx126x_handle_irq_tx_done(const struct device *dev)
+static void sx126x_handle_irq_tx_done(const struct device *dev, bool late)
 {
 	int ret = sx126x_finish(dev, 0);
 
 	LOG_DBG("TX done");
-	sx126x_complete_tx(dev, ret);
+	sx126x_complete_tx(dev, ret < 0 ? ret : (late ? -ETIMEDOUT : 0));
 }
 
 static void sx126x_rx_restart(const struct device *dev)
@@ -889,7 +908,8 @@ static void sx126x_rx_restart(const struct device *dev)
 	}
 }
 
-static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_status)
+static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_status,
+				      bool late)
 {
 	struct sx126x_data *data = dev->data;
 	struct sx126x_rx_result result = { 0 };
@@ -927,6 +947,9 @@ static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_sta
 out:
 	if (data->rx_cb == NULL) {
 		result.status = sx126x_finish(dev, result.status);
+		if (result.status >= 0 && late) {
+			result.status = -EAGAIN;
+		}
 		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
 		return;
 	}
@@ -990,6 +1013,20 @@ static void sx126x_handle_irq_timeout(const struct device *dev)
 	}
 }
 
+static void sx126x_tx_timeout_work_handler(struct k_work *work)
+{
+	struct sx126x_data *data = CONTAINER_OF(k_work_delayable_from_work(work),
+						  struct sx126x_data, tx_timeout_work);
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	/* A canceled watchdog may have been waiting for the mutex during a new send. */
+	if (data->tx_watchdog_active && atomic_get(&data->state) == SX126X_STATE_TX &&
+	    sys_timepoint_expired(data->tx_deadline)) {
+		sx126x_handle_irq_timeout(data->dev);
+	}
+	sx126x_unlock(data->dev);
+}
+
 static void sx126x_handle_irq_error(const struct device *dev, int status)
 {
 	struct sx126x_data *data = dev->data;
@@ -1007,28 +1044,32 @@ static void sx126x_handle_irq_error(const struct device *dev, int status)
 	}
 }
 
-static void sx126x_irq_work_handler(struct k_work *work)
+/* Handle a pending interrupt notification with the device lock held. */
+static void sx126x_process_irq(const struct device *dev)
 {
-	struct sx126x_data *data = CONTAINER_OF(work, struct sx126x_data, irq_work);
-	const struct device *dev = data->dev;
+	struct sx126x_data *data = dev->data;
 	uint16_t irq_status = 0;
-	bool pending;
+	bool pending, late;
 	int ret;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-	pending = atomic_clear(&data->irq_pending) != 0;
-	if (!pending) {
-		goto out;
+	K_SPINLOCK(&data->irq_lock) {
+		pending = atomic_clear(&data->irq_pending) != 0;
+		late = data->irq_late;
 	}
+	if (!pending) {
+		return;
+	}
+	/* CW operation has no packet completion interrupts. */
 	if (atomic_get(&data->state) == SX126X_REST_STATE ||
-	    atomic_get(&data->state) == SX126X_STATE_SUSPENDED) {
-		goto out;
+	    atomic_get(&data->state) == SX126X_STATE_SUSPENDED ||
+	    (atomic_get(&data->state) == SX126X_STATE_TX && !data->tx_watchdog_active)) {
+		return;
 	}
 
 	ret = sx126x_get_irq_status(dev, &irq_status);
 	if (ret < 0) {
 		sx126x_handle_irq_error(dev, ret);
-		goto out;
+		return;
 	}
 
 	LOG_DBG("IRQ status: 0x%04x", irq_status);
@@ -1037,18 +1078,18 @@ static void sx126x_irq_work_handler(struct k_work *work)
 	ret = sx126x_clear_irq_status(dev, irq_status);
 	if (ret < 0) {
 		sx126x_handle_irq_error(dev, ret);
-		goto out;
+		return;
 	}
 
 	if ((irq_status & SX126X_IRQ_TX_DONE) != 0 &&
 	    atomic_get(&data->state) == SX126X_STATE_TX) {
-		sx126x_handle_irq_tx_done(dev);
+		sx126x_handle_irq_tx_done(dev, late);
 	}
 
 	if ((irq_status & SX126X_IRQ_RX_DONE) != 0 &&
 	    (atomic_get(&data->state) == SX126X_STATE_RX ||
 	     atomic_get(&data->state) == SX126X_STATE_RX_DUTY_CYCLE)) {
-		sx126x_handle_irq_rx_done(dev, irq_status);
+		sx126x_handle_irq_rx_done(dev, irq_status, late);
 		/* A timeout in this status belongs to the finished reception, not to an
 		 * operation the callback started.
 		 */
@@ -1066,8 +1107,15 @@ static void sx126x_irq_work_handler(struct k_work *work)
 	    atomic_get(&data->state) != SX126X_STATE_SUSPENDED) {
 		sx126x_hal_dio1_irq_enable(dev);
 	}
-out:
-	sx126x_unlock(dev);
+}
+
+static void sx126x_irq_work_handler(struct k_work *work)
+{
+	struct sx126x_data *data = CONTAINER_OF(work, struct sx126x_data, irq_work);
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	sx126x_process_irq(data->dev);
+	sx126x_unlock(data->dev);
 }
 
 static int sx126x_set_configured_packet_params(const struct device *dev, uint8_t payload_len,
@@ -1231,6 +1279,7 @@ static int sx126x_send_start(const struct device *dev,
 				  struct k_poll_signal *async, bool synchronous)
 {
 	struct sx126x_data *data = dev->data;
+	uint32_t timeout_ms;
 	int ret;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -1297,12 +1346,16 @@ static int sx126x_send_start(const struct device *dev,
 	/* Enable antenna and set TX path */
 	sx126x_set_rf_path(dev, true, true);
 
-	/* Start transmission with 10 second timeout */
-	ret = sx126x_set_tx(dev, 10000);
+	timeout_ms = sx126x_lora_airtime(dev, data_len) + SX126X_TX_TIMEOUT_MARGIN_MS;
+	data->tx_deadline = sys_timepoint_calc(K_MSEC(timeout_ms));
+	sx126x_set_irq_deadline(dev, data->tx_deadline);
+	ret = sx126x_set_tx(dev, timeout_ms);
 	if (ret < 0) {
 		goto out_error;
 	}
 
+	data->tx_watchdog_active = true;
+	k_work_reschedule(&data->tx_timeout_work, sys_timepoint_timeout(data->tx_deadline));
 	sx126x_unlock(dev);
 	return 0;
 
@@ -1334,12 +1387,22 @@ static int sx126x_lora_send(const struct device *dev,
 	}
 
 	/* Wait for TX completion */
-	ret = k_msgq_get(&data->tx_msgq, &result, K_SECONDS(15));
+	ret = k_msgq_get(&data->tx_msgq, &result, sys_timepoint_timeout(data->tx_deadline));
 	k_mutex_lock(&data->lock, K_FOREVER);
+	if (ret < 0) {
+		/* An interrupt that came in time may still wait for the workqueue. */
+		sx126x_process_irq(dev);
+	}
+	/* The operation may have completed while the caller waited for the lock. */
+	if (ret < 0 && k_msgq_get(&data->tx_msgq, &result, K_NO_WAIT) == 0) {
+		ret = 0;
+	}
 	data->sync_pending = false;
 	if (ret < 0) {
 		LOG_ERR("TX timeout");
 		/* Chip is still transmitting, abort first */
+		data->tx_watchdog_active = false;
+		k_work_cancel_delayable(&data->tx_timeout_work);
 		ret = 0;
 		if (atomic_get(&data->state) == SX126X_STATE_TX) {
 			ret = sx126x_set_sleep(dev);
@@ -1402,6 +1465,7 @@ static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 	timeout = sys_timepoint_timeout(deadline);
 	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
 		     ? 0 : k_ticks_to_ms_ceil64(timeout.ticks);
+	sx126x_set_irq_deadline(dev, deadline);
 	ret = sx126x_set_rx(dev, timeout_ms);
 	if (ret < 0) {
 		sx126x_set_sleep(dev);
@@ -1415,6 +1479,14 @@ static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 	/* Wait for RX completion */
 	ret = k_msgq_get(&data->rx_msgq, &result, sys_timepoint_timeout(deadline));
 	k_mutex_lock(&data->lock, K_FOREVER);
+	if (ret < 0) {
+		/* An interrupt that came in time may still wait for the workqueue. */
+		sx126x_process_irq(dev);
+	}
+	/* The operation may have completed while the caller waited for the lock. */
+	if (ret < 0 && k_msgq_get(&data->rx_msgq, &result, K_NO_WAIT) == 0) {
+		ret = 0;
+	}
 	data->sync_pending = false;
 	if (ret < 0) {
 		LOG_DBG("RX timeout");
@@ -1513,6 +1585,7 @@ static int sx126x_lora_recv_async(const struct device *dev,
 	sx126x_set_rf_path(dev, true, false);
 
 	/* Start continuous reception */
+	sx126x_set_irq_deadline(dev, sys_timepoint_calc(K_FOREVER));
 	ret = sx126x_set_rx(dev, 0);
 	if (ret < 0) {
 		data->rx_cb = NULL;
@@ -1661,6 +1734,7 @@ static int sx126x_lora_recv_duty_cycle(const struct device *dev,
 	}
 
 	deadline = sys_timepoint_calc(timeout);
+	sx126x_set_irq_deadline(dev, deadline);
 	k_msgq_purge(&data->rx_msgq);
 
 	ret = sx126x_duty_cycle_start(dev);
@@ -1671,6 +1745,14 @@ static int sx126x_lora_recv_duty_cycle(const struct device *dev,
 	/* Block until a packet arrives or timeout */
 	ret = k_msgq_get(&data->rx_msgq, &result, sys_timepoint_timeout(deadline));
 	k_mutex_lock(&data->lock, K_FOREVER);
+	if (ret < 0) {
+		/* An interrupt that came in time may still wait for the workqueue. */
+		sx126x_process_irq(dev);
+	}
+	/* The operation may have completed while the caller waited for the lock. */
+	if (ret < 0 && k_msgq_get(&data->rx_msgq, &result, K_NO_WAIT) == 0) {
+		ret = 0;
+	}
 	data->sync_pending = false;
 	if (ret < 0) {
 		LOG_DBG("RX duty cycle timeout");
@@ -1729,6 +1811,7 @@ static int sx126x_lora_recv_duty_cycle_async(const struct device *dev,
 		return ret;
 	}
 
+	sx126x_set_irq_deadline(dev, sys_timepoint_calc(K_FOREVER));
 	return sx126x_duty_cycle_start(dev);
 }
 
@@ -1947,6 +2030,7 @@ static int sx126x_init(const struct device *dev)
 	k_msgq_init(&data->rx_msgq, (char *)&data->rx_result,
 		    sizeof(struct sx126x_rx_result), 1);
 	k_work_init(&data->irq_work, sx126x_irq_work_handler);
+	k_work_init_delayable(&data->tx_timeout_work, sx126x_tx_timeout_work_handler);
 	data->dev = dev;
 	atomic_set(&data->state, SX126X_STATE_IDLE);
 	data->config_valid = false;

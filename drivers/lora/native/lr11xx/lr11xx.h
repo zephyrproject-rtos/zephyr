@@ -72,6 +72,14 @@ struct lr11xx_data {
 
 	/* Async TX signal */
 	struct k_poll_signal *tx_async_signal;
+	struct k_work_delayable tx_timeout_work;
+	k_timepoint_t tx_deadline;
+	bool tx_watchdog_active;
+
+	/* Deadline and interrupt timing shared with the ISR. */
+	struct k_spinlock irq_lock;
+	k_timepoint_t irq_deadline;
+	bool irq_late;
 
 	/* Deferred work for interrupt handling */
 	atomic_t irq_pending;
