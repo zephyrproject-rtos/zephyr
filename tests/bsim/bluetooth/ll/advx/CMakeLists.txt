@@ -24,3 +24,9 @@ zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
   )
+
+# src/anonymous.c checks the Direct_Address_Type of the HCI event in its own
+# bt_hci_le_adv_ext_report(), which hands the event on to the one of the Host
+set_source_files_properties(${ZEPHYR_BASE}/subsys/bluetooth/host/scan.c
+  DIRECTORY ${ZEPHYR_BASE}/subsys/bluetooth/host
+  PROPERTIES COMPILE_DEFINITIONS bt_hci_le_adv_ext_report=real_bt_hci_le_adv_ext_report)
