@@ -707,7 +707,9 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		hexdump("=> ", buf->data, buf->len);
 
-		if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
+		if (buf->len < sizeof(sync_req)) {
+			LOG_ERR("Link control packet too short (len %u)", buf->len);
+		} else if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
 			if (h5.link_state == ACTIVE) {
 				net_buf_fifo_purge(&h5.unack_queue);
 
