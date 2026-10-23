@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,6 +98,12 @@
 		/delete-node/ qtmr@401e0000;
 		/delete-node/ qtmr@401e4000;
 		/delete-node/ qtmr@401e8000;
+
+		/* Remove ACMP, it doesn't exist on RT1010 */
+		/delete-node/ cmp@40094000;
+		/delete-node/ cmp@40094008;
+		/delete-node/ cmp@40094010;
+		/delete-node/ cmp@40094018;
 
 		/* Fixup FlexSPI its a different location on RT1010 */
 		/delete-node/ spi@402a8000;
