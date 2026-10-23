@@ -86,6 +86,88 @@ config TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
 	  Note that this feature is supported only by a subset of hardware
 	  watchdogs.
 
+config TASK_WDT_THREAD_INFO
+	bool "Report the thread owning a timed out channel"
+	help
+	  Record the thread owning each channel, which by default is the
+	  thread which fed the channel last. When a channel times out, log
+	  the owner thread's name, state, priority and unused stack space
+	  (if CONFIG_INIT_STACKS and CONFIG_THREAD_STACK_INFO are enabled)
+	  before calling the callback or resetting the system.
+
+config TASK_WDT_COREDUMP
+	bool "Core dump the owner thread before resetting the system"
+	depends on TASK_WDT_THREAD_INFO
+	depends on DEBUG_COREDUMP
+	help
+	  If a channel without a callback times out, create a core dump
+	  before resetting the system, with the owner thread as the faulting
+	  thread. Combined with CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS,
+	  this allows to find out where the owner thread was stuck.
+
+config TASK_WDT_FAULT_REASONS
+	bool "Fault reasons and minimum feed interval"
+	help
+	  Allow to add channels with task_wdt_add_ext(), whose callback is
+	  told the reason of the fault, and to set a minimum interval between
+	  two feeds of a channel with task_wdt_window_set(). Feeding a channel
+	  too early is reported as a fault, which detects a thread stuck in a
+	  loop feeding its channel.
+
+DT_CHOSEN_TASK_WDT_RESET_INFO := zephyr,task-wdt-reset-info
+
+menuconfig TASK_WDT_RESET_INFO
+	bool "Keep the cause of a task watchdog reset"
+	select CRC
+	help
+	  When a channel times out and its callback does not return (or there
+	  is no callback), store a record with the channel, the name of its
+	  owner thread (if CONFIG_TASK_WDT_THREAD_INFO and CONFIG_THREAD_NAME
+	  are enabled), the uptime and the number of consecutive task watchdog
+	  resets. After the reset, the record can be read with
+	  task_wdt_reset_info_get().
+
+if TASK_WDT_RESET_INFO
+
+choice TASK_WDT_RESET_INFO_BACKEND
+	prompt "Reset information storage"
+	default TASK_WDT_RESET_INFO_NOINIT
+
+config TASK_WDT_RESET_INFO_NOINIT
+	bool "Non-initialized RAM"
+	help
+	  Store the record in RAM which is not cleared at boot. The record
+	  survives a reset as long as the hardware retains the RAM contents.
+
+config TASK_WDT_RESET_INFO_RETENTION
+	bool "Retention area"
+	depends on RETENTION
+	depends on RETENTION_MUTEX_FORCE_DISABLE
+	depends on RETAINED_MEM_MUTEX_FORCE_DISABLE
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_TASK_WDT_RESET_INFO))
+	help
+	  Store the record in the retention area selected with the
+	  zephyr,task-wdt-reset-info chosen node. The record is written from
+	  the task watchdog timer interrupt, so the retention and retained
+	  memory mutexes have to be disabled, and the retained memory driver
+	  must not block, as the RAM based drivers.
+
+endchoice
+
+config TASK_WDT_RESET_INFO_HW_FALLBACK
+	bool "Detect resets by the hardware watchdog fallback"
+	depends on TASK_WDT_HW_FALLBACK
+	depends on HWINFO
+	default y
+	help
+	  If the hardware reset cause is a watchdog reset but no record was
+	  stored by the task watchdog, report that the hardware watchdog
+	  fallback reset the system, which means the whole system was stuck.
+	  The application has to clear the hardware reset cause with
+	  hwinfo_clear_reset_cause() after the task watchdog was initialized.
+
+endif # TASK_WDT_RESET_INFO
+
 config TASK_WDT_SHELL
 	bool "Task watchdog shell utilities"
 	depends on SHELL
