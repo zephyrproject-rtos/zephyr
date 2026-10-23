@@ -664,16 +664,18 @@ static void process_events(struct k_poll_event *ev, int count)
 				seq = h5.tx_seq;
 				if (reliable_packet(type)) {
 					h5.tx_seq = (seq + 1) % 8;
+					k_fifo_put(&h5.unack_queue, net_buf_ref(buf));
+					unack_queue_len++;
 				}
 
-				k_fifo_put(&h5.unack_queue, net_buf_ref(buf));
-				unack_queue_len++;
 				k_spin_unlock(&tx_lock, key);
 
 				h5_send(buf->data, type, buf->len, seq);
 				net_buf_unref(buf);
 
-				k_work_reschedule(&retx_work, H5_TX_ACK_TIMEOUT);
+				if (reliable_packet(type)) {
+					k_work_reschedule(&retx_work, H5_TX_ACK_TIMEOUT);
+				}
 			}
 			break;
 		case K_POLL_STATE_NOT_READY:
