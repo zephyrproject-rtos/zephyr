@@ -274,7 +274,7 @@ int net_route_ipv6_mcast_forward_packet(struct net_pkt *pkt,
 				continue;
 			}
 
-			pkt_cpy = net_pkt_clone(pkt, K_NO_WAIT);
+			pkt_cpy = net_pkt_tx_clone(pkt, route->ifaces[i], K_NO_WAIT);
 			if (pkt_cpy == NULL) {
 				err--;
 				continue;
@@ -282,6 +282,9 @@ int net_route_ipv6_mcast_forward_packet(struct net_pkt *pkt,
 
 			net_pkt_set_forwarding(pkt_cpy, true);
 			net_pkt_set_orig_iface(pkt_cpy, pkt->iface);
+			/* The clone carries the link address types of the ingress
+			 * L2, set them for the egress one.
+			 */
 			net_pkt_set_iface(pkt_cpy, route->ifaces[i]);
 
 			if (net_send_data(pkt_cpy) >= 0) {
