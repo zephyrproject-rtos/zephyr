@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,46 @@
 
 #define CLOCK_DIVIDER(clk) DT_PROP_OR(CLOCK_NODEID(clk), clock_div, 1) - 1
 
+/* MCGOUTCLK as described by the MCG-Lite node */
+#if DT_ENUM_HAS_VALUE(MCG_NODE, clock_source, hirc)
+#define MCG_LITE_OUT_SRC  kMCGLITE_ClkSrcHirc
+#define MCG_LITE_OUT_FREQ IRC48M_CLK_FREQ
+#elif DT_ENUM_HAS_VALUE(MCG_NODE, clock_source, lirc)
+#define MCG_LITE_OUT_SRC  kMCGLITE_ClkSrcLirc
+#define MCG_LITE_OUT_FREQ (DT_PROP(MCG_NODE, lirc_frequency) >> DT_PROP(MCG_NODE, fcrdiv))
+#elif DT_ENUM_HAS_VALUE(MCG_NODE, clock_source, ext)
+#if !DT_NODE_HAS_PROP(MCG_NODE, clocks)
+#error "MCG-Lite EXT mode needs clocks = <&osc> on the mcg node"
+#elif !DT_SAME_NODE(DT_CLOCKS_CTLR(MCG_NODE), OSC_NODE)
+#error "MCG-Lite EXT mode only supports the osc node as clock input"
+#endif
+#define MCG_LITE_OUT_SRC  kMCGLITE_ClkSrcExt
+#define MCG_LITE_OUT_FREQ DT_PROP(OSC_NODE, clock_frequency)
+#endif
+
+/* HIRC feeds MCGPCLK only while it is enabled or drives MCGOUTCLK */
+#define MCG_LITE_HIRC_ON                                                                           \
+	(DT_PROP(MCG_NODE, hirc_enable) || DT_ENUM_HAS_VALUE(MCG_NODE, clock_source, hirc))
+/* Same for LIRC and MCGIRCLK */
+#define MCG_LITE_LIRC_ON                                                                           \
+	(DT_PROP(MCG_NODE, lirc_enable) || DT_ENUM_HAS_VALUE(MCG_NODE, clock_source, lirc))
+
+BUILD_ASSERT(MCG_LITE_OUT_FREQ > 0, "MCGOUTCLK frequency is 0, check the osc clock-frequency");
+BUILD_ASSERT(!DT_PROP(MCG_NODE, lirc_stop_enable) || DT_PROP(MCG_NODE, lirc_enable),
+	     "lirc-stop-enable has no effect without lirc-enable");
+BUILD_ASSERT(CLOCK_DIVIDER(core_clk) <= 15, "core_clk clock-div must be 1..16");
+BUILD_ASSERT(CLOCK_DIVIDER(flash_clk) <= 7, "flash_clk clock-div must be 1..8");
+
+#define CPU_FREQ      DT_PROP(DT_NODELABEL(cpu0), clock_frequency)
+#define CORE_CLK_DIV  DT_PROP(CLOCK_NODEID(core_clk), clock_div)
+#define FLASH_CLK_DIV DT_PROP(CLOCK_NODEID(flash_clk), clock_div)
+/* MCGOUTCLK actually seen by cpu0 after the core_clk divider */
+#define CORE_CLK_FREQ ((uint64_t)CPU_FREQ * CORE_CLK_DIV)
+
+BUILD_ASSERT(CORE_CLK_FREQ == MCG_LITE_OUT_FREQ,
+	     "cpu0 clock-frequency does not match MCGOUTCLK / core_clk clock-div");
+BUILD_ASSERT((uint64_t)CPU_FREQ <= 24000000ULL * FLASH_CLK_DIV, "Bus/flash clock above 24 MHz");
+
 /* Decode the clock name selector from the encoded `name` cell */
 #define DT_CLOCK_NAME(node_id) \
 	KINETIS_SIM_CLOCK_DECODE_NAME(DT_PHA(node_id, clocks, name))
@@ -50,19 +90,23 @@
 		 ? SIM_MODULE_CLK_SEL_MCGIRCLK_CLK                                                 \
 		 : SIM_MODULE_CLK_SEL_DISABLED)
 
+/* A SOPT2 module clock selection is only useful if its source is running */
+#define MODULE_CLK_SEL_RUNNING(sel)                                                                \
+	((((sel) != SIM_MODULE_CLK_SEL_IRC48M_CLK) || MCG_LITE_HIRC_ON) &&                         \
+	 (((sel) != SIM_MODULE_CLK_SEL_MCGIRCLK_CLK) || MCG_LITE_LIRC_ON))
+
 /*******************************************************************************
  * Variables
  ******************************************************************************/
 
 const mcglite_config_t mcgliteConfig_BOARD_BootClockRUN = {
-	.outSrc = kMCGLITE_ClkSrcHirc, /* MCGOUTCLK source is HIRC */
-	.irclkEnableMode = kMCGLITE_IrclkEnable, /* MCGIRCLK enabled */
-	.ircs = kMCGLITE_Lirc8M, /* Slow internal reference (LIRC) 8 MHz clock */
-	/* Low-frequency Reference Clock Divider */
-	.fcrdiv = DT_PROP_OR(MCG_NODE, fcrdiv, 0),
-	/* Second Low-frequency Reference Clock Divider */
-	.lircDiv2 = DT_PROP_OR(MCG_NODE, lircdiv2, 0),
-	.hircEnableInNotHircMode = true, /* HIRC source is enabled */
+	.outSrc = MCG_LITE_OUT_SRC,
+	.irclkEnableMode = (DT_PROP(MCG_NODE, lirc_enable) ? kMCGLITE_IrclkEnable : 0U) |
+			   (DT_PROP(MCG_NODE, lirc_stop_enable) ? kMCGLITE_IrclkEnableInStop : 0U),
+	.ircs = DT_PROP(MCG_NODE, lirc_frequency) == 8000000 ? kMCGLITE_Lirc8M : kMCGLITE_Lirc2M,
+	.fcrdiv = DT_PROP(MCG_NODE, fcrdiv),
+	.lircDiv2 = DT_PROP(MCG_NODE, lircdiv2),
+	.hircEnableInNotHircMode = DT_PROP(MCG_NODE, hirc_enable),
 };
 
 const sim_clock_config_t simConfig_BOARD_BootClockRUN = {
@@ -85,8 +129,7 @@ const osc_config_t oscConfig_BOARD_BootClockRUN = {
 #endif
 	.oscerConfig = {
 		.enableMode = kOSC_ErClkEnable,
-	}
-};
+	}};
 
 __weak void clock_init(void)
 {
@@ -95,7 +138,7 @@ __weak void clock_init(void)
 	/* Initializes OSC0 according to board configuration. */
 	CLOCK_InitOsc0(&oscConfig_BOARD_BootClockRUN);
 	CLOCK_SetXtal0Freq(oscConfig_BOARD_BootClockRUN.freq);
-	/* Set MCG to HIRC mode. */
+	/* Switch MCG-Lite to the clock source given in devicetree. */
 	CLOCK_SetMcgliteConfig(&mcgliteConfig_BOARD_BootClockRUN);
 	/* Set the clock configuration in SIM module. */
 	CLOCK_SetSimConfig(&simConfig_BOARD_BootClockRUN);
@@ -103,10 +146,14 @@ __weak void clock_init(void)
 	SystemCoreClock = DT_PROP(DT_NODELABEL(cpu0), clock_frequency);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	/* Set LPUART0 clock source. */
+	BUILD_ASSERT(MODULE_CLK_SEL_RUNNING(LPUART_CLOCK_SEL(lpuart0)),
+		     "lpuart0 clock source is not running, check the mcg node");
 	CLOCK_SetLpuart0Clock(LPUART_CLOCK_SEL(lpuart0));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
 	/* Set LPUART1 clock source. */
+	BUILD_ASSERT(MODULE_CLK_SEL_RUNNING(LPUART_CLOCK_SEL(lpuart1)),
+		     "lpuart1 clock source is not running, check the mcg node");
 	CLOCK_SetLpuart1Clock(LPUART_CLOCK_SEL(lpuart1));
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_tpm)
@@ -114,9 +161,13 @@ __weak void clock_init(void)
 	 * Select the clock source using an arbitrary enabled TPM node.
 	 * All TPM nodes should use the same clock source in device tree.
 	 */
+	BUILD_ASSERT(MODULE_CLK_SEL_RUNNING(
+			     TPM_CLOCK_SEL(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_kinetis_tpm))),
+		     "TPM clock source is not running, check the mcg node");
 	CLOCK_SetTpmClock(TPM_CLOCK_SEL(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_kinetis_tpm)));
 #endif
 #if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
+	BUILD_ASSERT(MCG_LITE_HIRC_ON, "USB needs HIRC, set hirc-enable on the mcg node");
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcIrc48M, IRC48M_CLK_FREQ);
 #endif
 }
