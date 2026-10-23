@@ -1,0 +1,135 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IPC_SERVICE_BACKEND_LINK
+	bool "IPC link backend"
+	select IPC_SERVICE_LINK
+	help
+	  IPC service backend over a transport that exchanges frames between
+	  two processors. Selected by the transports.
+
+if IPC_SERVICE_BACKEND_LINK
+
+config IPC_SERVICE_BACKEND_LINK_INIT_PRIORITY
+	int "Initialization priority"
+	default 80
+	help
+	  Initialization priority of the link instances, after the UART, SPI
+	  and GPIO drivers they use.
+
+config IPC_SERVICE_BACKEND_LINK_NUM_EP
+	int "Endpoints per instance"
+	range 1 254
+	default 8
+	help
+	  Number of endpoints an instance can register.
+
+config IPC_SERVICE_BACKEND_LINK_EPT_NAME_MAX
+	int "Longest endpoint name"
+	range 1 64
+	default 32
+	help
+	  Longest endpoint name in bytes, carried in the bind messages.
+
+config IPC_SERVICE_BACKEND_LINK_RX_BUFFERS
+	int "Receive buffers per instance"
+	range 2 8
+	default 3
+	help
+	  Frame buffers to receive into. One is always armed for the next
+	  frame, the others hold received frames until their messages are
+	  delivered and released: they are the credits given to the peer.
+	  One less than this is also the number of payloads sent before the
+	  first is acknowledged, as a peer configured alike has no credits
+	  for more.
+
+config IPC_SERVICE_BACKEND_LINK_MAX_RETRANSMITS
+	int "Timeouts before the session ends"
+	range 0 255
+	default 10
+	help
+	  Timeouts in a row without an answer from the peer, while a
+	  payload waits for its acknowledgment or for credits, before the
+	  session ends, the endpoints are unbound and the link announces
+	  its boot again. 0 keeps sending.
+
+config IPC_SERVICE_BACKEND_LINK_WQ_ENABLE
+	bool "Dedicated work queue"
+	default y
+	help
+	  Call the endpoint callbacks from a work queue of the backend,
+	  shared by all instances, rather than from the system work queue.
+
+if IPC_SERVICE_BACKEND_LINK_WQ_ENABLE
+
+config IPC_SERVICE_BACKEND_LINK_WQ_STACK_SIZE
+	int "Work queue stack size"
+	default 2048
+	help
+	  Stack of the work queue calling the endpoint callbacks.
+
+config IPC_SERVICE_BACKEND_LINK_WQ_PRIORITY
+	int "Work queue priority"
+	default 2
+	help
+	  Priority of the work queue calling the endpoint callbacks.
+
+endif # IPC_SERVICE_BACKEND_LINK_WQ_ENABLE
+
+config IPC_SERVICE_BACKEND_LINK_SHELL
+	bool "Shell commands"
+	depends on SHELL
+	select IPC_SERVICE_LINK_STATS
+	help
+	  The ipc_link command shows and clears the counters of the link
+	  instances.
+
+module = IPC_SERVICE_BACKEND_LINK
+module-str = IPC link backend
+module-help = Sets log level for the IPC link backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # IPC_SERVICE_BACKEND_LINK
+
+config IPC_SERVICE_BACKEND_LINK_UART
+	bool "IPC link transport over a UART"
+	default y
+	depends on DT_HAS_ZEPHYR_IPC_UART_ENABLED
+	depends on SERIAL
+	depends on UART_ASYNC_API || UART_INTERRUPT_DRIVEN
+	select IPC_SERVICE_BACKEND_LINK
+	select COBS
+	help
+	  IPC service instances over a UART, COBS-framed. Uses the
+	  asynchronous UART API when enabled, the interrupt-driven API
+	  otherwise.
+
+config IPC_SERVICE_BACKEND_LINK_SPI
+	bool "IPC link transport over an SPI bus"
+	default y
+	depends on DT_HAS_ZEPHYR_IPC_SPI_ENABLED || DT_HAS_ZEPHYR_IPC_SPI_PERIPHERAL_ENABLED
+	depends on SPI
+	depends on GPIO
+	depends on (SPI_PERIPHERAL && SPI_ASYNC) || !DT_HAS_ZEPHYR_IPC_SPI_PERIPHERAL_ENABLED
+	select IPC_SERVICE_BACKEND_LINK
+	help
+	  IPC service instances over an SPI bus, one frame each way per
+	  transaction, between a controller and a peripheral MCU with a
+	  ready and an interrupt line. The peripheral role needs an SPI
+	  driver with peripheral mode and the asynchronous API.
+
+if IPC_SERVICE_BACKEND_LINK_SPI
+
+config IPC_SERVICE_BACKEND_LINK_SPI_STACK_SIZE
+	int "Transfer thread stack size"
+	default 1024
+	help
+	  Stack of the thread running the transactions.
+
+config IPC_SERVICE_BACKEND_LINK_SPI_PRIORITY
+	int "Transfer thread priority"
+	default 2
+	help
+	  Priority of the thread running the transactions.
+
+endif # IPC_SERVICE_BACKEND_LINK_SPI
