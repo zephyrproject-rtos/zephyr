@@ -7482,6 +7482,32 @@ ZTEST(net_socket_quic, test_524_listener_close_releases_connections_not_accepted
 	quic_test_context_unref(ctx);
 }
 
+ZTEST(net_socket_quic, test_526_no_stream_on_a_context_being_released)
+{
+	struct quic_stream *stream;
+	struct quic_context *ctx;
+	atomic_val_t ref;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54371");
+
+	/* The count of the context has reached zero, its teardown has not
+	 * run yet: a stream must not be added to it
+	 */
+	ref = atomic_get(&ctx->refcount);
+	atomic_set(&ctx->refcount, 0);
+
+	stream = quic_get_stream(ctx);
+	zexpect_is_null(stream, "Stream created on a context being released");
+	zexpect_equal(atomic_get(&ctx->refcount), 0, "Context brought back");
+
+	atomic_set(&ctx->refcount, ref);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
