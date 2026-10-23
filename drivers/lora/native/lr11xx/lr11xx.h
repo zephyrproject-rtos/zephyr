@@ -43,6 +43,7 @@ struct lr11xx_data {
 	/* Current configuration */
 	struct lora_modem_config config;
 	bool config_valid;
+	bool needs_reset;
 
 	/* TX completion via message queue */
 	struct k_msgq tx_msgq;

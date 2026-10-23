@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 #define SX126X_IS_GFSK(data) false
 #endif
 
+static void sx126x_handle_irq_error(const struct device *dev, int status);
+
 void sx126x_unlock(const struct device *dev)
 {
 	struct sx126x_data *data = dev->data;
@@ -692,6 +694,38 @@ static int sx126x_reconnect_rf_gpios(const struct device *dev)
 }
 #endif /* CONFIG_PM_DEVICE */
 
+static void sx126x_mark_fault(const struct device *dev)
+{
+	struct sx126x_data *data = dev->data;
+	bool reset = !data->needs_reset;
+	int ret;
+
+	/* Reconfiguration must reset hardware whose state is no longer known. */
+	data->config_valid = false;
+	data->needs_reset = true;
+	data->rx_cb = NULL;
+	data->rx_cb_user_data = NULL;
+	ret = sx126x_hal_set_dio1_callback(dev, NULL);
+	if (ret < 0) {
+		LOG_ERR("Failed to disable interrupt: %d", ret);
+	}
+	atomic_set(&data->state, SX126X_REST_STATE);
+
+	/* Reset stops a radio left in RX or TX even when it ignores commands. */
+	if (reset) {
+		ret = sx126x_hal_reset(dev);
+		if (ret == 0 && IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP)) {
+			uint8_t cfg = SX126X_SLEEP_COLD_START;
+
+			ret = sx126x_hal_write_cmd(dev, SX126X_CMD_SET_SLEEP, &cfg, 1);
+		}
+		if (ret < 0) {
+			LOG_ERR("Failed to reset radio: %d", ret);
+		}
+	}
+	sx126x_set_rf_path(dev, false, false);
+}
+
 static int sx126x_set_sleep(const struct device *dev)
 {
 	struct sx126x_data *data = dev->data;
@@ -700,7 +734,6 @@ static int sx126x_set_sleep(const struct device *dev)
 
 	pm_device_busy_set(dev);
 
-	sx126x_set_rf_path(dev, false, false);
 	if (atomic_get(&data->state) == SX126X_STATE_SLEEP) {
 		return 0;
 	}
@@ -715,6 +748,7 @@ static int sx126x_set_sleep(const struct device *dev)
 		ret = sx126x_hal_wakeup(dev);
 		if (ret < 0) {
 			LOG_ERR("Failed to wake radio for standby: %d", ret);
+			sx126x_mark_fault(dev);
 			return ret;
 		}
 	}
@@ -723,8 +757,12 @@ static int sx126x_set_sleep(const struct device *dev)
 	ret = sx126x_set_standby(dev, SX126X_STANDBY_RC);
 	if (ret < 0) {
 		LOG_ERR("Failed to enter standby: %d", ret);
+		sx126x_mark_fault(dev);
 		return ret;
 	}
+
+	/* Disable the RF path only once standby has stopped the PA. */
+	sx126x_set_rf_path(dev, false, false);
 
 	if (!IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP)) {
 		atomic_set(&data->state, SX126X_STATE_IDLE);
@@ -734,12 +772,14 @@ static int sx126x_set_sleep(const struct device *dev)
 	ret = sx126x_hal_set_dio1_callback(dev, NULL);
 	if (ret < 0) {
 		LOG_ERR("Failed to disable interrupt: %d", ret);
+		sx126x_mark_fault(dev);
 		return ret;
 	}
 
 	ret = sx126x_hal_write_cmd(dev, SX126X_CMD_SET_SLEEP, &cfg, 1);
 	if (ret < 0) {
 		LOG_ERR("Failed to enter sleep: %d", ret);
+		sx126x_mark_fault(dev);
 		return ret;
 	}
 	atomic_set(&data->state, SX126X_STATE_SLEEP);
@@ -760,6 +800,14 @@ static int sx126x_ensure_ready(const struct device *dev)
 
 	pm_device_busy_set(dev);
 
+	if (data->needs_reset) {
+		ret = sx126x_chip_init(dev);
+		if (ret < 0) {
+			return ret;
+		}
+		data->needs_reset = false;
+	}
+
 	/*
 	 * Wake the chip from sleep by sending GET_STATUS. The NSS edge
 	 * wakes the chip which then initializes into STDBY_RC (warm start
@@ -771,6 +819,7 @@ static int sx126x_ensure_ready(const struct device *dev)
 		ret = sx126x_hal_wakeup(dev);
 		if (ret < 0) {
 			LOG_ERR("Failed to wake radio: %d", ret);
+			sx126x_mark_fault(dev);
 			return ret;
 		}
 	}
@@ -779,6 +828,7 @@ static int sx126x_ensure_ready(const struct device *dev)
 	ret = sx126x_clear_irq_status(dev, SX126X_IRQ_ALL);
 	if (ret < 0) {
 		LOG_ERR("Failed to clear interrupt status: %d", ret);
+		sx126x_mark_fault(dev);
 		return ret;
 	}
 
@@ -787,6 +837,7 @@ static int sx126x_ensure_ready(const struct device *dev)
 	ret = sx126x_hal_set_dio1_callback(dev, sx126x_dio1_callback);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable interrupt: %d", ret);
+		sx126x_mark_fault(dev);
 		return ret;
 	}
 
@@ -848,13 +899,13 @@ static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_sta
 
 	/* Get received packet info */
 	ret = sx126x_get_rx_buffer_status(dev, &payload_len, &offset);
-	if (ret < 0) {
-		LOG_ERR("Failed to get RX buffer status");
-		result.status = ret;
-		goto out;
+	if (ret == 0) {
+		ret = sx126x_get_packet_status(dev, &result.rssi, &result.snr);
 	}
-
-	sx126x_get_packet_status(dev, &result.rssi, &result.snr);
+	if (ret < 0) {
+		LOG_ERR("Failed to get RX packet status");
+		goto io_error;
+	}
 
 	if (irq_status & SX126X_IRQ_CRC_ERR) {
 		LOG_WRN("CRC error");
@@ -866,8 +917,7 @@ static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_sta
 	ret = sx126x_hal_read_buffer(dev, offset, data->rx_buf, result.len);
 	if (ret < 0) {
 		LOG_ERR("Failed to read RX buffer");
-		result.status = ret;
-		goto out;
+		goto io_error;
 	}
 
 	result.status = result.len;
@@ -899,6 +949,15 @@ out:
 	if (data->rx_cb != NULL && data->rx_generation == generation) {
 		sx126x_rx_restart(dev);
 	}
+	return;
+
+io_error:
+	/* Async reception cannot report the error, so it drops the packet and listens on. */
+	if (data->rx_cb != NULL) {
+		sx126x_rx_restart(dev);
+	} else {
+		sx126x_handle_irq_error(dev, ret);
+	}
 }
 
 static void sx126x_handle_irq_timeout(const struct device *dev)
@@ -918,7 +977,7 @@ static void sx126x_handle_irq_timeout(const struct device *dev)
 		return;
 	}
 
-	/* Report cleanup failures instead of the timeout. */
+	/* A failed cleanup requires reconfiguration, which matters more than the timeout. */
 	ret = sx126x_set_sleep(dev);
 
 	if (state == SX126X_STATE_TX) {
@@ -926,6 +985,23 @@ static void sx126x_handle_irq_timeout(const struct device *dev)
 	} else if (data->rx_cb == NULL) {
 		/* Sync RX timeout */
 		struct sx126x_rx_result result = { .status = ret < 0 ? ret : -EAGAIN };
+
+		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
+	}
+}
+
+static void sx126x_handle_irq_error(const struct device *dev, int status)
+{
+	struct sx126x_data *data = dev->data;
+	enum sx126x_state state = atomic_get(&data->state);
+
+	LOG_ERR("IRQ processing failed: %d", status);
+	status = sx126x_finish(dev, status);
+	sx126x_mark_fault(dev);
+	if (state == SX126X_STATE_TX) {
+		sx126x_complete_tx(dev, status);
+	} else if (data->sync_pending) {
+		struct sx126x_rx_result result = { .status = status };
 
 		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
 	}
@@ -951,7 +1027,7 @@ static void sx126x_irq_work_handler(struct k_work *work)
 
 	ret = sx126x_get_irq_status(dev, &irq_status);
 	if (ret < 0) {
-		LOG_ERR("IRQ processing failed: %d", ret);
+		sx126x_handle_irq_error(dev, ret);
 		goto out;
 	}
 
@@ -960,7 +1036,7 @@ static void sx126x_irq_work_handler(struct k_work *work)
 	/* Clear handled IRQs */
 	ret = sx126x_clear_irq_status(dev, irq_status);
 	if (ret < 0) {
-		LOG_ERR("IRQ processing failed: %d", ret);
+		sx126x_handle_irq_error(dev, ret);
 		goto out;
 	}
 
@@ -1035,6 +1111,7 @@ int sx126x_config_begin(const struct device *dev)
 		return -EBUSY;
 	}
 
+	data->config_valid = false;
 	ret = sx126x_ensure_ready(dev);
 	if (ret < 0) {
 		atomic_set(&data->state, SX126X_REST_STATE);
@@ -1751,6 +1828,8 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 		return -EBUSY;
 	}
 
+	/* CW changes frequency and PA settings outside the cached configuration. */
+	data->config_valid = false;
 	ret = sx126x_ensure_ready(dev);
 	if (ret < 0) {
 		goto out_unlock;

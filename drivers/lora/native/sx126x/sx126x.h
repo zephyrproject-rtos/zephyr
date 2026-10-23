@@ -50,6 +50,7 @@ struct sx126x_data {
 	 */
 	struct lora_modem_config_gfsk gfsk_config;
 	bool gfsk;
+	bool needs_reset;
 
 	/* TX completion via message queue */
 	struct k_msgq tx_msgq;

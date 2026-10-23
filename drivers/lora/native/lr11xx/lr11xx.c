@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(lr11xx, CONFIG_LORA_LOG_LEVEL);
 	(IS_ENABLED(CONFIG_LORA_LR11XX_NATIVE_SLEEP) \
 	 ? LR11XX_STATE_SLEEP : LR11XX_STATE_IDLE)
 
+static void lr11xx_handle_irq_error(const struct device *dev, int status);
+
 static int bandwidth_to_reg(enum lora_signal_bandwidth bw, uint8_t *reg)
 {
 	switch (bw) {
@@ -550,6 +552,37 @@ static void lr11xx_irq_callback(const struct device *dev)
 	k_work_submit(&data->irq_work);
 }
 
+static void lr11xx_mark_fault(const struct device *dev)
+{
+	struct lr11xx_data *data = dev->data;
+	bool reset = !data->needs_reset;
+	int ret;
+
+	/* Reconfiguration must reset hardware whose state is no longer known. */
+	data->config_valid = false;
+	data->needs_reset = true;
+	data->rx_cb = NULL;
+	data->rx_cb_user_data = NULL;
+	ret = lr11xx_hal_set_irq_callback(dev, NULL);
+	if (ret < 0) {
+		LOG_ERR("Failed to disable interrupt: %d", ret);
+	}
+	atomic_set(&data->state, LR11XX_REST_STATE);
+
+	/* Reset stops a radio left in RX or TX even when it ignores commands. */
+	if (reset) {
+		ret = lr11xx_hal_reset(dev);
+		if (ret == 0 && IS_ENABLED(CONFIG_LORA_LR11XX_NATIVE_SLEEP)) {
+			uint8_t cfg[5] = { LR11XX_SLEEP_COLD_START, 0x00, 0x00, 0x00, 0x00 };
+
+			ret = lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_SLEEP, cfg, sizeof(cfg));
+		}
+		if (ret < 0) {
+			LOG_ERR("Failed to reset radio: %d", ret);
+		}
+	}
+}
+
 static int lr11xx_set_sleep(const struct device *dev)
 {
 	struct lr11xx_data *data = dev->data;
@@ -570,6 +603,7 @@ static int lr11xx_set_sleep(const struct device *dev)
 		ret = lr11xx_hal_wakeup(dev);
 		if (ret < 0) {
 			LOG_ERR("Failed to wake radio for standby: %d", ret);
+			lr11xx_mark_fault(dev);
 			return ret;
 		}
 	}
@@ -578,6 +612,7 @@ static int lr11xx_set_sleep(const struct device *dev)
 	ret = lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
 	if (ret < 0) {
 		LOG_ERR("Failed to enter standby: %d", ret);
+		lr11xx_mark_fault(dev);
 		return ret;
 	}
 
@@ -589,6 +624,7 @@ static int lr11xx_set_sleep(const struct device *dev)
 	ret = lr11xx_hal_set_irq_callback(dev, NULL);
 	if (ret < 0) {
 		LOG_ERR("Failed to disable interrupt: %d", ret);
+		lr11xx_mark_fault(dev);
 		return ret;
 	}
 
@@ -596,12 +632,14 @@ static int lr11xx_set_sleep(const struct device *dev)
 	ret = lr11xx_set_lf_clk(dev, LR11XX_LF_CLOCK_RC);
 	if (ret < 0) {
 		LOG_ERR("Failed to set LF clock for sleep: %d", ret);
+		lr11xx_mark_fault(dev);
 		return ret;
 	}
 
 	ret = lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_SLEEP, cfg, sizeof(cfg));
 	if (ret < 0) {
 		LOG_ERR("Failed to enter sleep: %d", ret);
+		lr11xx_mark_fault(dev);
 		return ret;
 	}
 	atomic_set(&data->state, LR11XX_STATE_SLEEP);
@@ -621,16 +659,26 @@ static int lr11xx_ensure_ready(const struct device *dev)
 	struct lr11xx_data *data = dev->data;
 	int ret;
 
+	if (data->needs_reset) {
+		ret = lr11xx_chip_init(dev);
+		if (ret < 0) {
+			return ret;
+		}
+		data->needs_reset = false;
+	}
+
 	if (IS_ENABLED(CONFIG_LORA_LR11XX_NATIVE_SLEEP)) {
 		ret = lr11xx_hal_wakeup(dev);
 		if (ret != 0) {
 			LOG_ERR("Failed to wake radio: %d", ret);
+			lr11xx_mark_fault(dev);
 			return ret;
 		}
 
 		ret = lr11xx_set_lf_clk(dev, config->lf_clk);
 		if (ret != 0) {
 			LOG_ERR("Failed to restore LF clock: %d", ret);
+			lr11xx_mark_fault(dev);
 			return ret;
 		}
 	}
@@ -639,6 +687,7 @@ static int lr11xx_ensure_ready(const struct device *dev)
 	ret = lr11xx_clear_irq_status(dev, LR11XX_IRQ_ALL);
 	if (ret < 0) {
 		LOG_ERR("Failed to clear interrupt status: %d", ret);
+		lr11xx_mark_fault(dev);
 		return ret;
 	}
 
@@ -647,6 +696,7 @@ static int lr11xx_ensure_ready(const struct device *dev)
 	ret = lr11xx_hal_set_irq_callback(dev, lr11xx_irq_callback);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable interrupt: %d", ret);
+		lr11xx_mark_fault(dev);
 		return ret;
 	}
 
@@ -708,13 +758,13 @@ static void lr11xx_handle_irq_rx_done(const struct device *dev, uint32_t irq_sta
 
 	/* Get received packet info */
 	ret = lr11xx_get_rx_buffer_status(dev, &payload_len, &offset);
-	if (ret < 0) {
-		LOG_ERR("Failed to get RX buffer status");
-		result.status = ret;
-		goto out;
+	if (ret == 0) {
+		ret = lr11xx_get_packet_status(dev, &result.rssi, &result.snr);
 	}
-
-	lr11xx_get_packet_status(dev, &result.rssi, &result.snr);
+	if (ret < 0) {
+		LOG_ERR("Failed to get RX packet status");
+		goto io_error;
+	}
 
 	if (irq_status & LR11XX_IRQ_CRC_ERR) {
 		LOG_WRN("CRC error");
@@ -726,8 +776,7 @@ static void lr11xx_handle_irq_rx_done(const struct device *dev, uint32_t irq_sta
 	ret = lr11xx_hal_read_buffer(dev, offset, data->rx_buf, result.len);
 	if (ret < 0) {
 		LOG_ERR("Failed to read RX buffer");
-		result.status = ret;
-		goto out;
+		goto io_error;
 	}
 
 	result.status = result.len;
@@ -759,6 +808,15 @@ out:
 	if (data->rx_cb != NULL && data->rx_generation == generation) {
 		lr11xx_rx_restart(dev);
 	}
+	return;
+
+io_error:
+	/* Async reception cannot report the error, so it drops the packet and listens on. */
+	if (data->rx_cb != NULL) {
+		lr11xx_rx_restart(dev);
+	} else {
+		lr11xx_handle_irq_error(dev, ret);
+	}
 }
 
 static void lr11xx_handle_irq_timeout(const struct device *dev)
@@ -778,7 +836,7 @@ static void lr11xx_handle_irq_timeout(const struct device *dev)
 		return;
 	}
 
-	/* Report cleanup failures instead of the timeout. */
+	/* A failed cleanup requires reconfiguration, which matters more than the timeout. */
 	ret = lr11xx_set_sleep(dev);
 
 	if (state == LR11XX_STATE_TX) {
@@ -786,6 +844,23 @@ static void lr11xx_handle_irq_timeout(const struct device *dev)
 	} else if (data->rx_cb == NULL) {
 		/* Sync RX timeout */
 		struct lr11xx_rx_result result = { .status = ret < 0 ? ret : -EAGAIN };
+
+		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
+	}
+}
+
+static void lr11xx_handle_irq_error(const struct device *dev, int status)
+{
+	struct lr11xx_data *data = dev->data;
+	enum lr11xx_state state = atomic_get(&data->state);
+
+	LOG_ERR("IRQ processing failed: %d", status);
+	status = lr11xx_finish(dev, status);
+	lr11xx_mark_fault(dev);
+	if (state == LR11XX_STATE_TX) {
+		lr11xx_complete_tx(dev, status);
+	} else if (data->sync_pending) {
+		struct lr11xx_rx_result result = { .status = status };
 
 		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
 	}
@@ -810,7 +885,7 @@ static void lr11xx_irq_work_handler(struct k_work *work)
 
 	ret = lr11xx_hal_read_status(dev, NULL, &irq_status);
 	if (ret < 0) {
-		LOG_ERR("IRQ processing failed: %d", ret);
+		lr11xx_handle_irq_error(dev, ret);
 		goto out;
 	}
 
@@ -819,7 +894,7 @@ static void lr11xx_irq_work_handler(struct k_work *work)
 	/* Clear handled IRQs */
 	ret = lr11xx_clear_irq_status(dev, irq_status);
 	if (ret < 0) {
-		LOG_ERR("IRQ processing failed: %d", ret);
+		lr11xx_handle_irq_error(dev, ret);
 		goto out;
 	}
 
@@ -926,6 +1001,7 @@ static int lr11xx_lora_config(const struct device *dev,
 		return -EBUSY;
 	}
 
+	data->config_valid = false;
 	ret = lr11xx_ensure_ready(dev);
 	if (ret < 0) {
 		atomic_set(&data->state, LR11XX_REST_STATE);
@@ -1529,6 +1605,8 @@ static int lr11xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 		return -EBUSY;
 	}
 
+	/* CW changes frequency and PA settings outside the cached configuration. */
+	data->config_valid = false;
 	ret = lr11xx_ensure_ready(dev);
 	if (ret < 0) {
 		goto out_unlock;
