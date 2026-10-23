@@ -955,7 +955,9 @@ int z_arm_mmu_init(bool is_primary_core)
 	reg_val  = __get_SCTLR();
 	reg_val |= ARM_MMU_SCTLR_AFE_BIT;
 	reg_val |= ARM_MMU_SCTLR_ICACHE_ENABLE_BIT;
-	reg_val |= ARM_MMU_SCTLR_DCACHE_ENABLE_BIT;
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		reg_val |= ARM_MMU_SCTLR_DCACHE_ENABLE_BIT;
+	}
 	reg_val |= ARM_MMU_SCTLR_MMU_ENABLE_BIT;
 	__set_SCTLR(reg_val);
 
