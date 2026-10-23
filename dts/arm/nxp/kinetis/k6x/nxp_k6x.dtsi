@@ -404,6 +404,30 @@
 			status = "disabled";
 		};
 
+		cmp0: cmp@40073000 {
+			compatible = "nxp,cmp";
+			reg = <0x40073000 0x8>;
+			interrupts = <40 0>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 19)>;
+			status = "disabled";
+		};
+
+		cmp1: cmp@40073008 {
+			compatible = "nxp,cmp";
+			reg = <0x40073008 0x8>;
+			interrupts = <41 0>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 19)>;
+			status = "disabled";
+		};
+
+		cmp2: cmp@40073010 {
+			compatible = "nxp,cmp";
+			reg = <0x40073010 0x8>;
+			interrupts = <70 0>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 19)>;
+			status = "disabled";
+		};
+
 		rcm: rcm@4007f000 {
 			compatible = "nxp,rcm-hwinfo";
 			reg = <0x4007f000 0x1000>;
