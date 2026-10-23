@@ -310,13 +310,12 @@ static int imx219_enum_frmival(const struct device *dev, struct video_frmival_en
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	fie->discrete.numerator = 1;
-	fie->discrete.denominator = imx219_framerates[fie->index];
+	fie->discrete = USEC_PER_SEC / imx219_framerates[fie->index];
 
 	return 0;
 }
 
-static int imx219_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int imx219_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct imx219_config *cfg = dev->config;
 	struct imx219_data *drv_data = dev->data;
@@ -350,18 +349,17 @@ static int imx219_set_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	frmival->numerator = 1;
-	frmival->denominator = drv_data->fps = imx219_framerates[fie.index];
+	drv_data->fps = imx219_framerates[fie.index];
+	*frmival = USEC_PER_SEC / drv_data->fps;
 
 	return 0;
 }
 
-static int imx219_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int imx219_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	struct imx219_data *drv_data = dev->data;
 
-	frmival->numerator = 1;
-	frmival->denominator = drv_data->fps;
+	*frmival = drv_data->fps != 0 ? USEC_PER_SEC / drv_data->fps : 0;
 
 	return 0;
 }
@@ -506,10 +504,7 @@ static int imx219_init(const struct device *dev)
 		.height = imx219_fmts[0].height_min,
 		.pixelformat = imx219_fmts[0].pixelformat,
 	};
-	struct video_frmival frmival = {
-		.numerator = 1,
-		.denominator = IMX219_15FPS,
-	};
+	uint32_t frmival = USEC_PER_SEC / IMX219_15FPS;
 	uint32_t reg;
 	int ret;
 

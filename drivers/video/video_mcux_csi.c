@@ -376,14 +376,14 @@ static int video_mcux_csi_set_signal(const struct device *dev, struct k_poll_sig
 }
 #endif
 
-static int video_mcux_csi_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_mcux_csi_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_mcux_csi_config *config = dev->config;
 
 	return video_set_frmival(config->source_dev, frmival);
 }
 
-static int video_mcux_csi_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_mcux_csi_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_mcux_csi_config *config = dev->config;
 

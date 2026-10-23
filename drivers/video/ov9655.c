@@ -393,10 +393,9 @@ static int ov9655_set_stream(const struct device *dev, bool enable, enum video_b
 	return 0;
 }
 
-static int ov9655_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int ov9655_get_frmival(const struct device *dev, uint32_t *frmival)
 {
-	frmival->numerator = 1;
-	frmival->denominator = 30;
+	*frmival = USEC_PER_SEC / 30;
 
 	return 0;
 }
@@ -408,8 +407,7 @@ static int ov9655_enum_frmival(const struct device *dev, struct video_frmival_en
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	fie->discrete.numerator = 1;
-	fie->discrete.denominator = 30;
+	fie->discrete = USEC_PER_SEC / 30;
 
 	return 0;
 }

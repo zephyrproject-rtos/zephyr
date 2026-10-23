@@ -460,32 +460,31 @@ static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_
 
 	fie->type = sensor_fie.type;
 	if (sensor_fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-		fie->discrete = sensor_fie.discrete;
-		fie->discrete.numerator *= capture_rate;
+		fie->discrete = sensor_fie.discrete * capture_rate;
 	} else {
 		fie->stepwise = sensor_fie.stepwise;
-		fie->stepwise.min.numerator *= capture_rate;
-		fie->stepwise.max.numerator *= capture_rate;
-		fie->stepwise.step.numerator *= capture_rate;
+		fie->stepwise.min *= capture_rate;
+		fie->stepwise.max *= capture_rate;
+		fie->stepwise.step *= capture_rate;
 	}
 
 	return 0;
 }
 
-static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_stm32_dcmi_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	struct video_frmival_enum fie = {
 		.format = &data->fmt,
 	};
-	struct video_frmival best_sensor_frmival;
-	uint32_t best_diff_us = INT32_MAX;
+	uint32_t best_sensor_frmival = 0;
+	uint32_t best_diff_us = UINT32_MAX;
 	uint32_t diff_us = 0, a, b;
 	int best_capture_rate = 1;
 	int ret;
 
-	a = video_frmival_nsec(frmival) / USEC_PER_MSEC;
+	a = *frmival;
 
 	/*
 	 * Try to figure out a frameinterval setting allow to reach as close as
@@ -494,17 +493,16 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_f
 	 */
 	for (int capture_rate = 1; capture_rate <= STM32_DCMI_MAX_FRAME_DROP; capture_rate *= 2) {
 		/*
-		 * Take into consideration the drop done by the DCMI hence multiply
-		 * denominator by the rate introduced by the DCMI
+		 * Take into consideration the drop done by the DCMI hence divide
+		 * the target sensor interval by the rate introduced by the DCMI
 		 */
-		fie.discrete.numerator = frmival->numerator;
-		fie.discrete.denominator = frmival->denominator * capture_rate;
+		fie.discrete = *frmival / capture_rate;
 
 		ret = video_closest_frmival(config->sensor_dev, &fie);
 		if (ret < 0) {
-			return ret;
+			continue;
 		}
-		b = video_frmival_nsec(&fie.discrete) * capture_rate / USEC_PER_MSEC;
+		b = fie.discrete * capture_rate;
 		diff_us = a > b ? a - b : b - a;
 		if (diff_us < best_diff_us) {
 			best_diff_us = diff_us;
@@ -516,19 +514,22 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_f
 		}
 	}
 
+	if (best_diff_us == UINT32_MAX) {
+		return -EINVAL;
+	}
+
 	/*
 	 * Give back the achieved frame interval achieved, ensuring to take into
 	 * consideration the DCMI frame control
 	 */
-	frmival->numerator = best_sensor_frmival.numerator * best_capture_rate;
-	frmival->denominator = best_sensor_frmival.denominator;
+	*frmival = best_sensor_frmival * best_capture_rate;
 
 	data->capture_rate = best_capture_rate;
 
 	return video_set_frmival(config->sensor_dev, &best_sensor_frmival);
 }
 
-static int video_stm32_dcmi_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_stm32_dcmi_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
@@ -539,7 +540,7 @@ static int video_stm32_dcmi_get_frmival(const struct device *dev, struct video_f
 		return ret;
 	}
 
-	frmival->numerator *= data->capture_rate;
+	*frmival *= data->capture_rate;
 
 	return 0;
 }
