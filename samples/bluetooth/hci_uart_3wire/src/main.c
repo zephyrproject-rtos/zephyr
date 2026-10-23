@@ -37,6 +37,7 @@ static struct k_thread rx_thread_data;
 
 static struct k_work_delayable ack_work;
 static struct k_work_delayable retx_work;
+static struct k_work_delayable link_work;
 
 #define HCI_3WIRE_ACK_PKT	0x00
 #define HCI_COMMAND_PKT		0x01
@@ -65,6 +66,9 @@ static bool reliable_packet(uint8_t type)
  */
 #define H5_RX_ACK_TIMEOUT	K_MSEC(250 * 2 / 3)
 #define H5_TX_ACK_TIMEOUT	K_MSEC(250)
+
+/* Core 6.3 Vol 4 Part D 8.1 suggests four link establishment messages per second */
+#define H5_LINK_INTERVAL	K_MSEC(250)
 
 #define SLIP_DELIMITER	0xc0
 #define SLIP_ESC	0xdb
@@ -121,6 +125,8 @@ static struct h5 {
 static uint8_t unack_queue_len;
 /* tx_seq, unack_queue and unack_queue_len */
 static struct k_spinlock tx_lock;
+/* Held while a frame is written, and while a link restart resets the queues and state */
+static K_MUTEX_DEFINE(tx_mutex);
 
 static const uint8_t sync_req[] = { 0x01, 0x7e };
 static const uint8_t sync_rsp[] = { 0x02, 0x7d };
@@ -308,7 +314,6 @@ static uint8_t h5_slip_byte(uint8_t byte)
 
 static void h5_send(const uint8_t *payload, uint8_t type, int len, uint8_t seq)
 {
-	static K_MUTEX_DEFINE(tx_mutex);
 	__maybe_unused int err;
 	uint8_t hdr[4];
 	int i;
@@ -316,6 +321,15 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len, uint8_t seq)
 	/* uart_poll_out() may block, and frames come from several threads */
 	err = k_mutex_lock(&tx_mutex, K_FOREVER);
 	__ASSERT_NO_MSG(err == 0);
+
+	/* Only link control packets outside the Active state (Core 6.3 Vol 4 Part D 8.1, 8.8.1),
+	 * decided under the mutex that a link restart changes the state under
+	 */
+	if (h5.link_state != ACTIVE && type != HCI_3WIRE_LINK_PKT) {
+		err = k_mutex_unlock(&tx_mutex);
+		__ASSERT_NO_MSG(err == 0);
+		return;
+	}
 
 	hexdump("<= ", payload, len);
 
@@ -406,6 +420,23 @@ static void ack_timeout(struct k_work *work)
 	LOG_DBG("");
 
 	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0, 0U);
+}
+
+/* SYNC and CONFIG are repeated until they are answered (Core 6.3 Vol 4 Part D 8.1, 8.2) */
+static void link_timeout(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (h5.link_state == UNINIT) {
+		h5_send(sync_req, HCI_3WIRE_LINK_PKT, sizeof(sync_req), 0U);
+	} else if (h5.link_state == INIT) {
+		/* The Controller sends CONFIG without a Configuration Field (8.8) */
+		h5_send(conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req), 0U);
+	} else {
+		return;
+	}
+
+	k_work_schedule(&link_work, H5_LINK_INTERVAL);
 }
 
 static void h5_process_complete_packet(uint8_t *hdr)
@@ -660,7 +691,10 @@ static void process_events(struct k_poll_event *ev, int count)
 			if (ev->tag == 0) {
 				/* Wait until a buffer is available */
 				buf = k_fifo_get(&tx_queue, K_NO_WAIT);
-				__ASSERT_NO_MSG(buf);
+				/* Emptied by a link restart since k_poll() returned */
+				if (buf == NULL) {
+					break;
+				}
 
 				/* Pass buffer to the stack */
 				err = bt_send(buf);
@@ -765,7 +799,19 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			LOG_ERR("Link control packet too short (len %u)", buf->len);
 		} else if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
 			if (h5.link_state == ACTIVE) {
-				k_spinlock_key_t key = k_spin_lock(&tx_lock);
+				/* The Host has reset: link establishment starts over (8.3) */
+				__maybe_unused int err;
+				k_spinlock_key_t key;
+
+				/* No frame is sent while the queues and the link state change */
+				err = k_mutex_lock(&tx_mutex, K_FOREVER);
+				__ASSERT_NO_MSG(err == 0);
+
+				while ((cache = k_fifo_get(&tx_queue, K_NO_WAIT))) {
+					net_buf_unref(cache);
+				}
+
+				key = k_spin_lock(&tx_lock);
 
 				while ((cache = k_fifo_get(&h5.unack_queue, K_NO_WAIT))) {
 					net_buf_unref(cache);
@@ -781,11 +827,28 @@ static void rx_thread(void *p1, void *p2, void *p3)
 				k_spin_unlock(&tx_lock, key);
 
 				h5.rx_ack = 0;
-				h5.link_state = INIT;
+				h5.link_state = UNINIT;
 				h5.tx_ack = 0;
+
+				err = k_mutex_unlock(&tx_mutex);
+				__ASSERT_NO_MSG(err == 0);
+
+				/* Ends tx_thread() polling for packets to send */
+				k_poll_signal_raise(&tx_queue_change, 0);
 			}
 
 			h5_send(sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp), 0U);
+
+			/* The sample waits for the Host's SYNC before it sends its own (8.1) */
+			if (h5.link_state == UNINIT) {
+				k_work_schedule(&link_work, K_NO_WAIT);
+			}
+		} else if (!memcmp(buf->data, sync_rsp, sizeof(sync_rsp))) {
+			/* Ignored once past the Uninitialized state (8.2, 8.3) */
+			if (h5.link_state == UNINIT) {
+				h5.link_state = INIT;
+				k_work_reschedule(&link_work, K_NO_WAIT);
+			}
 		} else if (!memcmp(buf->data, conf_req, 2)) {
 			if (buf->len > 2) {
 				uint8_t tx_win = buf->data[2] & 0x07;
@@ -798,12 +861,15 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 			/* The Controller's CONFIG RESPONSE carries the Configuration Field (8.8) */
 			h5_send(conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp), 0U);
+		} else if (!memcmp(buf->data, conf_rsp, 2)) {
+			/* Discarded outside the Initialized state (8.1, 8.3) */
+			if (h5.link_state == INIT) {
+				LOG_DBG("Finished H5 configuration, tx_win %u", h5.tx_win);
 
-			LOG_DBG("Finished H5 configuration, tx_win %u", h5.tx_win);
-
-			h5.link_state = ACTIVE;
-			/* tx_thread() only polls for packets to send in the Active state */
-			k_poll_signal_raise(&tx_queue_change, 0);
+				h5.link_state = ACTIVE;
+				/* tx_thread() only polls for packets to send in the Active state */
+				k_poll_signal_raise(&tx_queue_change, 0);
+			}
 		} else {
 			LOG_ERR("Not handled yet %x %x", buf->data[0], buf->data[1]);
 		}
@@ -871,6 +937,7 @@ int main(void)
 	/* Init delayed work */
 	k_work_init_delayable(&ack_work, ack_timeout);
 	k_work_init_delayable(&retx_work, retx_timeout);
+	k_work_init_delayable(&link_work, link_timeout);
 
 	h5.tx_win = H5_TX_WIN;
 
