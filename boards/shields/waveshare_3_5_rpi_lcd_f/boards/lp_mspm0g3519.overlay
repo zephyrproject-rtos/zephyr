@@ -37,9 +37,3 @@
 &st7796s_display {
 	mipi-max-frequency = <40000000>;
 };
-
-&i2c1 {
-	pinctrl-0 = <&i2c1_scl_pb2 &i2c1_sda_pb3>;
-	pinctrl-names = "default";
-	status = "disabled";
-};
