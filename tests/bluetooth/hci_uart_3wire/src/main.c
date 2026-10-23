@@ -341,4 +341,20 @@ ZTEST(hci_uart_3wire, test_reliable_link_packet)
 	expect_ack();
 }
 
+ZTEST(hci_uart_3wire, test_short_link_packet)
+{
+	static const uint8_t sync[] = { 0x01, 0x7e };
+	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+	uint8_t hdr[HDR_LEN];
+
+	put_link(false, sync, sizeof(sync));
+	hdr_set(hdr, false, 0U, 0U, PKT_LINK, sizeof(sync_rsp));
+	expect_tx(hdr, sync_rsp, sizeof(sync_rsp));
+
+	/* The signal buffer still holds the SYNC message */
+	put_link(false, sync, 1U);
+	put_link(false, sync, 0U);
+	expect_no_tx();
+}
+
 ZTEST_SUITE(hci_uart_3wire, NULL, NULL, before, NULL, NULL);
