@@ -329,10 +329,15 @@ static void h5_send(const struct device *dev, const uint8_t *payload, uint8_t ty
 
 	(void)memset(hdr, 0, sizeof(hdr));
 
-	/* Set ACK for outgoing packet and stop delayed work */
+	/* Cancelled before tx_ack is read, so that an acknowledgment scheduled after the read
+	 * is still sent, and not by the pure acknowledgment itself: its work item could not be
+	 * submitted again while being cancelled.
+	 */
+	if (type != HCI_3WIRE_ACK_PKT) {
+		(void)k_work_cancel_delayable(&h5->ack_work);
+	}
+
 	H5_SET_ACK(hdr, h5->tx_ack);
-	/* If cancel fails we may ack the same seq number twice, this is OK. */
-	(void)k_work_cancel_delayable(&h5->ack_work);
 
 	if (reliable_packet(type)) {
 		H5_SET_RELIABLE(hdr);
