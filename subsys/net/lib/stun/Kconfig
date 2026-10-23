@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STUN
+	bool "STUN (Session Traversal Utilities for NAT) library [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select PSA_CRYPTO
+	select CRC
+	select UTF8
+	imply PSA_WANT_ALG_HMAC
+	imply PSA_WANT_KEY_TYPE_HMAC
+	imply PSA_WANT_ALG_SHA_1
+	imply PSA_WANT_ALG_SHA_256
+	help
+	  STUN message codec as defined in RFC 8489: parsing and building of
+	  messages, the MESSAGE-INTEGRITY and MESSAGE-INTEGRITY-SHA256
+	  attributes (computed through the PSA Crypto API), FINGERPRINT and
+	  the attributes ICE (RFC 8445) adds. The library does no I/O.
+
+	  Both integrity attributes need HMAC of the PSA Crypto API,
+	  MESSAGE-INTEGRITY with SHA-1 and MESSAGE-INTEGRITY-SHA256 with
+	  SHA-256. All of it is enabled by default. The functions that
+	  compute or verify an attribute return -EIO if the backend lacks
+	  what the attribute needs.
+
+if STUN
+
+module = STUN
+module-dep = NET_LOG
+module-str = Log level for STUN
+module-help = Enable the log of the STUN library.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # STUN

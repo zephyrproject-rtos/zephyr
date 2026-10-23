@@ -63,6 +63,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Networking
+
+  * :ref:`STUN <stun_interface>` message codec (:kconfig:option:`CONFIG_STUN`)
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -100,6 +104,12 @@ New Samples
 
 Libraries / Subsystems
 **********************
+
+* Networking
+
+  * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
+    :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
+    MESSAGE-INTEGRITY, FINGERPRINT and the address attributes.
 
 Other notable changes
 *********************
