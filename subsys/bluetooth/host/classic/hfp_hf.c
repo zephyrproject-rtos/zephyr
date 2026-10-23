@@ -4260,7 +4260,6 @@ static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
-	struct net_buf *buf;
 
 	LOG_DBG("hf disconnected!");
 	if (bt_hf->disconnected) {
@@ -4284,11 +4283,7 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 	 * in the K_FOREVER allocation in hfp_hf_send_cmd() waiting for the
 	 * exhausted pool to be refilled.
 	 */
-	buf = k_fifo_get(&hf->tx_pending, K_NO_WAIT);
-	while (buf != NULL) {
-		net_buf_unref(buf);
-		buf = k_fifo_get(&hf->tx_pending, K_NO_WAIT);
-	}
+	net_buf_fifo_purge(&hf->tx_pending);
 
 	hf->acl = NULL;
 }

@@ -63,6 +63,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Network buffers
+
+  * :c:func:`net_buf_fifo_purge`
+  * :c:func:`net_buf_slist_purge`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
