@@ -313,7 +313,8 @@ static DEVICE_API(led_strip, ws2812_uart_api) = {
 
 #define WS2812_UART_DEVICE(idx)                                                                    \
 	WS2812_UART_CHECK(idx);                                                                    \
-	static uint8_t ws2812_uart_##idx##_px_buf[WS2812_UART_BUFSZ(idx)];                         \
+	static uint8_t ws2812_uart_##idx##_px_buf[WS2812_UART_BUFSZ(idx)]                          \
+		IF_ENABLED(CONFIG_WS2812_STRIP_UART_FORCE_NOCACHE, (__nocache));                   \
 	static struct ws2812_uart_data ws2812_uart_##idx##_data;                                   \
 	static const uint8_t ws2812_uart_##idx##_color_mapping[] =                                 \
 		DT_INST_PROP(idx, color_mapping);                                                  \
