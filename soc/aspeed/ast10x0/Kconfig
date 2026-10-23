@@ -3,6 +3,7 @@
 # Copyright (c) 2021 ASPEED Technology Inc.
 
 config SOC_SERIES_AST10X0
+	select SOC_RESET_HOOK
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_HAS_FPU
