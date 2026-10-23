@@ -28,6 +28,13 @@ config SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY
 	  equivalent to waiting for stability if clock source does not have
 	  intermediate state.
 
+	  For GRTC, this option applies only to the cold boot. GRTC is always on so after any reset
+	  other than pin reset/power on, LFXO is already running.
+
+	  Use with care, as initial system clock source has lower accuracy and there is a short
+	  system clock freeze when switching from RC to XO. That is the price for shorter boot time.
+
+
 config SYSTEM_CLOCK_WAIT_FOR_STABILITY
 	bool "Wait for stability"
 	help

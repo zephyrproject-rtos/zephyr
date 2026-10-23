@@ -65,6 +65,16 @@
 	DT_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_lfclk), k32src_frequency)
 #endif
 
+/* Deferred LFLPRC -> LFXO switch is only safe on images that control oscillators. */
+#if	(defined(CONFIG_NRF_GRTC_TIMER_SOURCE_LFXO) && \
+	 defined(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) && \
+	 !(defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && \
+	   defined(CONFIG_NRF_SKIP_CLOCK_CONFIG)))
+#define NRF_GRTC_DEFER_LFXO_SWITCH 1
+#include <nrfx_clock_lfclk.h>
+static bool lfxo_switch;
+#endif
+
 /* Threshold used to determine if there is a risk of unexpected GRTC COMPARE event coming
  * from previous CC value.
  */
@@ -536,6 +546,22 @@ void sys_clock_disable(void)
 #endif
 }
 
+#if NRF_GRTC_DEFER_LFXO_SWITCH && (defined(CONFIG_CLOCK_CONTROL_NRF) ||                           \
+	(defined(CONFIG_CLOCK_CONTROL_NRF_COMMON) &&                                               \
+	 !defined(CONFIG_HAS_NORDIC_MULTI_OPTION_CLOCKS)))
+static void clkstarted_cb(void)
+{
+	nrf_grtc_sys_counter_set(NRF_GRTC, false);
+	nrf_grtc_task_trigger(NRF_GRTC, NRF_GRTC_TASK_STOP);
+	while (*(volatile uint32_t *)(NRF_GRTC_BASE + 0x6b0) == 0) {
+		/* wait until rtcounter is not busy. */
+	}
+	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
+	nrf_grtc_task_trigger(NRF_GRTC, NRF_GRTC_TASK_START);
+	nrf_grtc_sys_counter_set(NRF_GRTC, true);
+}
+#endif
+
 static int sys_clock_driver_init(void)
 {
 	int err_code;
@@ -554,8 +580,26 @@ static int sys_clock_driver_init(void)
 	/* Switch to LFPRC as the low-frequency clock source. */
 	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFLPRC);
 #elif defined(CONFIG_NRF_GRTC_TIMER_SOURCE_LFXO)
-	/* Switch to LFXO as the low-frequency clock source. */
-	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
+	nrf_grtc_clksel_t  clk_src = NRF_GRTC_CLKSEL_LFXO;
+
+#ifdef NRF_GRTC_DEFER_LFXO_SWITCH
+	nrf_clock_lfclk_t type;
+
+	/* If LFXO is running, use it directly (no runtime switch). Since GRTC is always
+	 * on, LFXO is running after non-cold boot. In that case we don't do the runtime
+	 * switch from RC to XO.
+	 */
+	if (!(nrfx_clock_lfclk_running_check((void *)&type) &&
+	      (type == NRF_CLOCK_LFCLK_XTAL))) {
+		clk_src = NRF_GRTC_CLKSEL_LFLPRC;
+		lfxo_switch = true;
+	}
+#endif
+
+	/* Non-secure: LFXO is started by TF-M; use it directly (no runtime switch).
+	 * If runtime switch is enabled, use LFPRC instead.
+	 */
+	nrfx_grtc_clock_source_set(clk_src);
 #else
 	/* Use LFCLK as the low-frequency clock source. */
 	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFCLK);
@@ -597,18 +641,21 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
+/* It cannot be done in EARLY because then k_cpu_atomic_idle() will not work as arch specific
+ * init is not yet done. We do it immediately after clock control init.
+ */
 static int grtc_post_init(void)
 {
 #if defined(CONFIG_CLOCK_CONTROL_NRF) || (defined(CONFIG_CLOCK_CONTROL_NRF_COMMON) &&              \
 					  !defined(CONFIG_HAS_NORDIC_MULTI_OPTION_CLOCKS))
 	static const enum nrf_lfclk_start_mode mode =
-		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT)
-			? CLOCK_CONTROL_NRF_LF_START_NOWAIT
-			: (IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY)
-				   ? CLOCK_CONTROL_NRF_LF_START_AVAILABLE
-				   : CLOCK_CONTROL_NRF_LF_START_STABLE);
+		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ? CLOCK_CONTROL_NRF_LF_START_NOWAIT :
+		(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
+		 CLOCK_CONTROL_NRF_LF_START_AVAILABLE : CLOCK_CONTROL_NRF_LF_START_STABLE);
+	z_nrf_clock_control_lf_on_cb_t cb = COND_CODE_1(NRF_GRTC_DEFER_LFXO_SWITCH,
+		(lfxo_switch ? clkstarted_cb : NULL), (NULL));
 
-	z_nrf_clock_control_lf_on(mode, NULL);
+	z_nrf_clock_control_lf_on(mode, cb);
 #endif
 
 #if defined(CONFIG_NRF_GRTC_ALWAYS_ON)
@@ -712,5 +759,5 @@ int nrf_grtc_timer_clock_driver_init(void)
 #else
 /* Init must follow soc init and precede LOG_CORE_INIT() */
 SYS_INIT(sys_clock_driver_init, EARLY, 1);
-SYS_INIT(grtc_post_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(grtc_post_init, PRE_KERNEL_1, UTIL_INC(CONFIG_CLOCK_CONTROL_INIT_PRIORITY));
 #endif
