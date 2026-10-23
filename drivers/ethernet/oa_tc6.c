@@ -379,8 +379,11 @@ int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_
 
 int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
 {
-	uint8_t oa_tx[64U] = {0};
+	/* Avoid the nRF5340 nrfx SPIM fault with a NULL TX payload; see issue #123580 */
+	uint8_t oa_tx[tc6->cps];
 	uint32_t hdr;
+
+	memset(oa_tx, 0, sizeof(oa_tx));
 
 	hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 0) |
 	      FIELD_PREP(OA_DATA_HDR_NORX, 1);
