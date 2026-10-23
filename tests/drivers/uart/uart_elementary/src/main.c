@@ -142,11 +142,15 @@ ZTEST(uart_elementary, test_uart_proper_configuration)
 
 	int err;
 	struct uart_config test_expected_uart_config;
-	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
-						.parity = UART_CFG_PARITY_NONE,
-						.stop_bits = UART_CFG_STOP_BITS_1,
-						.data_bits = UART_CFG_DATA_BITS_8,
-						.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS };
+	struct uart_config test_uart_config = {
+		.baudrate = UART_BAUDRATE,
+		.parity = UART_CFG_PARITY_NONE,
+		.stop_bits = UART_CFG_STOP_BITS_1,
+		.data_bits = UART_CFG_DATA_BITS_8,
+		.flow_ctrl = IS_ENABLED(CONFIG_UART_ELEMENTARY_NO_FLOW_CTRL)
+				? UART_CFG_FLOW_CTRL_NONE
+				: UART_CFG_FLOW_CTRL_RTS_CTS,
+	};
 
 	err = uart_configure(uart_dev, &test_uart_config);
 	zassert_equal(err, 0, "'uart_configure' api call - unexpected error: %d", err);
@@ -183,11 +187,15 @@ ZTEST(uart_elementary, test_uart_improper_configuration)
 	Z_TEST_SKIP_IFDEF(CONFIG_DUAL_UART_TEST);
 
 	int err;
-	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
-						.parity = 7,
-						.stop_bits = UART_CFG_STOP_BITS_1,
-						.data_bits = UART_CFG_DATA_BITS_8,
-						.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS };
+	struct uart_config test_uart_config = {
+		.baudrate = UART_BAUDRATE,
+		.parity = 7,
+		.stop_bits = UART_CFG_STOP_BITS_1,
+		.data_bits = UART_CFG_DATA_BITS_8,
+		.flow_ctrl = IS_ENABLED(CONFIG_UART_ELEMENTARY_NO_FLOW_CTRL)
+				? UART_CFG_FLOW_CTRL_NONE
+				: UART_CFG_FLOW_CTRL_RTS_CTS,
+	};
 
 	err = uart_configure(uart_dev, &test_uart_config);
 	zassert_not_equal(
@@ -203,11 +211,15 @@ ZTEST(uart_elementary, test_uart_improper_configuration)
 ZTEST(uart_elementary, test_uart_basic_transmission)
 {
 	int err;
-	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
-						.parity = UART_CFG_PARITY_ODD,
-						.stop_bits = UART_CFG_STOP_BITS_1,
-						.data_bits = UART_CFG_DATA_BITS_8,
-						.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS };
+	struct uart_config test_uart_config = {
+		.baudrate = UART_BAUDRATE,
+		.parity = UART_CFG_PARITY_ODD,
+		.stop_bits = UART_CFG_STOP_BITS_1,
+		.data_bits = UART_CFG_DATA_BITS_8,
+		.flow_ctrl = IS_ENABLED(CONFIG_UART_ELEMENTARY_NO_FLOW_CTRL)
+				? UART_CFG_FLOW_CTRL_NONE
+				: UART_CFG_FLOW_CTRL_RTS_CTS,
+	};
 
 	err = uart_configure(uart_dev, &test_uart_config);
 	zassert_equal(err, 0, "Unexpected error when configuring UART0: %d", err);

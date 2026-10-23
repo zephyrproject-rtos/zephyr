@@ -48,6 +48,7 @@ tests:
       - nucleo_h753zi
       - nucleo_l152re
       - stm32n6570_dk/stm32n657xx/sb
+      - pic32cm_sg00_cpro
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
   drivers.uart.uart_elementary.esp.pm:
@@ -174,3 +175,11 @@ tests:
     extra_configs:
       - CONFIG_SERIAL=y
       - CONFIG_UART_USE_RUNTIME_CONFIGURE=y
+  drivers.uart.uart_elementary_dual_mchp:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - pic32cm_sg00_cpro
+    extra_args:
+      - FILE_SUFFIX="dual_uart"
+    extra_configs:
+      - CONFIG_DUAL_UART_TEST=y

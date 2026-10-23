@@ -16,4 +16,10 @@ config UART_BAUDRATE_MISMATCH
 	  UART baudrate for DUT_AUX that is intentionally different from DUT
 	  to test error detection.
 
+config UART_ELEMENTARY_NO_FLOW_CTRL
+	bool "Skip hardware flow control in elementary UART tests"
+	help
+	  Use UART_CFG_FLOW_CTRL_NONE instead of UART_CFG_FLOW_CTRL_RTS_CTS
+	  for boards whose UART driver does not support hardware flow control.
+
 source "Kconfig.zephyr"
