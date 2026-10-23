@@ -48,6 +48,10 @@ static struct ctlr ctlrs[] = {
 		.hci = DEVICE_DT_GET(DT_NODELABEL(h5_a)),
 		.uart = DEVICE_DT_GET(DT_NODELABEL(uart_a)),
 	},
+	{
+		.hci = DEVICE_DT_GET(DT_NODELABEL(h5_b)),
+		.uart = DEVICE_DT_GET(DT_NODELABEL(uart_b)),
+	},
 };
 
 /* The emulated UART calls the driver's interrupt handler from this work queue */
@@ -247,6 +251,30 @@ ZTEST(hci_h5, test_zero_length_event)
 	expect_evt(c, 3U);
 	next_seq(c);
 	expect_ack(c);
+}
+
+ZTEST(hci_h5, test_interleaved_instances)
+{
+	struct ctlr *a = &ctlrs[0];
+	struct ctlr *b = &ctlrs[1];
+	uint8_t out[FRAME_MAX(EVT_LEN)];
+	uint8_t hdr[HDR_LEN];
+	size_t len;
+
+	hdr_set(hdr, true, a->seq, 0U, PKT_EVT, EVT_LEN);
+	len = evt_frame(out, hdr, 9U, EVT_LEN);
+
+	/* A whole packet on one instance while the other is inside a header */
+	put(a, out, 3U);
+	put_evt(b, true, b->seq, 10U);
+	put(a, &out[3], len - 3U);
+
+	expect_evt(a, 9U);
+	expect_evt(b, 10U);
+	next_seq(a);
+	next_seq(b);
+	expect_ack(a);
+	expect_ack(b);
 }
 
 ZTEST_SUITE(hci_h5, NULL, setup, before, NULL, NULL);

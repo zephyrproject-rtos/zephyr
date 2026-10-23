@@ -89,6 +89,8 @@ struct h5_data {
 	const struct device     *dev;
 
 	struct net_buf		*rx_buf;
+	uint8_t			rx_hdr[4];
+	uint16_t		rx_remaining;
 
 	struct k_fifo		tx_queue;
 	struct k_fifo		rx_queue;
@@ -428,11 +430,10 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 {
 	const struct device *dev = user_data;
 	struct h5_data *h5 = dev->data;
-	static int remaining;
+	uint8_t *hdr = h5->rx_hdr;
+	size_t buf_tailroom;
 	uint8_t byte;
 	int ret;
-	static uint8_t hdr[4];
-	size_t buf_tailroom;
 
 	while (true) {
 		uart_irq_update(uart);
@@ -450,7 +451,7 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 		case START:
 			if (byte == SLIP_DELIMITER) {
 				h5->rx_state = HEADER;
-				remaining = sizeof(hdr);
+				h5->rx_remaining = sizeof(h5->rx_hdr);
 			}
 			break;
 		case HEADER:
@@ -458,7 +459,7 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 			 * with starting one.
 			 */
 			if (byte == SLIP_DELIMITER) {
-				remaining = sizeof(hdr);
+				h5->rx_remaining = sizeof(h5->rx_hdr);
 				continue;
 			}
 
@@ -467,14 +468,14 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 				continue;
 			}
 
-			memcpy(&hdr[sizeof(hdr) - remaining], &byte, 1);
-			remaining--;
+			memcpy(&hdr[sizeof(h5->rx_hdr) - h5->rx_remaining], &byte, 1);
+			h5->rx_remaining--;
 
-			if (remaining) {
+			if (h5->rx_remaining != 0U) {
 				break;
 			}
 
-			remaining = H5_HDR_LEN(hdr);
+			h5->rx_remaining = H5_HDR_LEN(hdr);
 
 			switch (H5_HDR_PKT_TYPE(hdr)) {
 			case HCI_EVENT_PKT:
@@ -482,7 +483,7 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 				 * the exact event type, so a packet without
 				 * payload never gets one.
 				 */
-				if (remaining == 0) {
+				if (h5->rx_remaining == 0U) {
 					LOG_ERR("Zero-length event packet");
 					h5_reset_rx(h5);
 					continue;
@@ -527,7 +528,7 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 				h5->rx_state = END;
 				break;
 			}
-			if (!remaining) {
+			if (h5->rx_remaining == 0U) {
 				h5->rx_state = END;
 			}
 			break;
@@ -558,8 +559,8 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 			}
 
 			net_buf_add_mem(h5->rx_buf, &byte, sizeof(byte));
-			remaining--;
-			if (!remaining) {
+			h5->rx_remaining--;
+			if (h5->rx_remaining == 0U) {
 				h5->rx_state = END;
 			}
 			break;
