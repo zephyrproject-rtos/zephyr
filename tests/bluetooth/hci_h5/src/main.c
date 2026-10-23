@@ -37,8 +37,8 @@
 /* Longer than the driver waits before it sends an acknowledgment */
 #define ACK_WAIT K_MSEC(300)
 
-/* H:4 type and HCI_Reset */
-NET_BUF_POOL_DEFINE(cmd_pool, 1, 4, 0, NULL);
+/* H:4 type and HCI_Reset, one more than the sliding window */
+NET_BUF_POOL_DEFINE(cmd_pool, 5, 4, 0, NULL);
 
 static const uint8_t reset_cmd[] = { 0x03, 0x0c, 0x00 };
 
@@ -199,16 +199,22 @@ static void put_ack(struct ctlr *c, uint8_t ack)
 	put(c, out, frame(out, hdr, NULL, 0U));
 }
 
-/* Returns the sequence number the driver sent HCI_Reset with */
-static uint8_t send_reset(struct ctlr *c)
+static void queue_reset(struct ctlr *c)
 {
 	struct net_buf *buf = net_buf_alloc(&cmd_pool, K_NO_WAIT);
-	uint8_t tx[64];
 
 	zassert_not_null(buf);
 	net_buf_add_u8(buf, BT_HCI_H4_CMD);
 	net_buf_add_mem(buf, reset_cmd, sizeof(reset_cmd));
 	zassert_ok(bt_hci_send(c->hci, buf));
+}
+
+/* Returns the sequence number the driver sent HCI_Reset with */
+static uint8_t send_reset(struct ctlr *c)
+{
+	uint8_t tx[64];
+
+	queue_reset(c);
 	k_sleep(K_MSEC(10));
 	zassert_true(uart_emul_get_tx_data(c->uart, tx, sizeof(tx)) > 1U);
 
@@ -245,7 +251,8 @@ static int recv(const struct device *dev, struct net_buf *buf)
 static void *setup(void)
 {
 	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
-	static const uint8_t conf_rsp[] = { 0x04, 0x7b };
+	/* Sliding window of four, as the driver proposes */
+	static const uint8_t conf_rsp[] = { 0x04, 0x7b, 0x04 };
 
 	ARRAY_FOR_EACH_PTR(ctlrs, c) {
 		k_fifo_init(&c->rx);
@@ -260,14 +267,41 @@ static void *setup(void)
 	return NULL;
 }
 
+/* Acknowledges the reliable packets the driver keeps retransmitting */
+static void ack_all(struct ctlr *c)
+{
+	bool reliable;
+
+	do {
+		uint8_t tx[256];
+		uint8_t seq = 0U;
+		uint32_t len;
+
+		reliable = false;
+		k_sleep(ACK_WAIT);
+		len = uart_emul_get_tx_data(c->uart, tx, sizeof(tx));
+
+		/* A header octet follows each opening delimiter */
+		for (uint32_t i = 0U; i + 1U < len; i++) {
+			if (tx[i] == SLIP_DELIMITER && tx[i + 1U] != SLIP_DELIMITER &&
+			    (tx[i + 1U] & BIT(7)) != 0U) {
+				reliable = true;
+				seq = tx[i + 1U] & 0x07U;
+			}
+		}
+
+		if (reliable) {
+			put_ack(c, (seq + 1U) % 8U);
+		}
+	} while (reliable);
+}
+
 /* Start from a known state also after a failed test */
 static void before(void *fixture)
 {
 	static const uint8_t sync[] = { 0x01, 0x7e };
 
 	ARG_UNUSED(fixture);
-
-	k_sleep(ACK_WAIT);
 
 	ARRAY_FOR_EACH_PTR(ctlrs, c) {
 		struct net_buf *buf;
@@ -277,7 +311,7 @@ static void before(void *fixture)
 			net_buf_unref(buf);
 		}
 
-		(void)uart_emul_flush_tx_data(c->uart);
+		ack_all(c);
 
 		/* SYNC RESPONSE carries the sequence number the driver expects */
 		put_link(c, false, sync, sizeof(sync));
@@ -421,6 +455,43 @@ ZTEST(hci_h5, test_ack_out_of_window)
 	expect_reset_retransmitted(c, seq);
 
 	put_ack(c, (seq + 1U) % 8U);
+	expect_no_tx(c);
+}
+
+ZTEST(hci_h5, test_sliding_window)
+{
+	struct ctlr *c = &ctlrs[0];
+	uint8_t expected[4U * FRAME_MAX(sizeof(reset_cmd))];
+	uint8_t tx[sizeof(expected) + 16U];
+	uint8_t hdr[HDR_LEN];
+	size_t len = 0U;
+	uint32_t tx_len;
+	uint8_t seq;
+
+	/* One more than the sliding window */
+	for (uint8_t i = 0U; i < 5U; i++) {
+		queue_reset(c);
+	}
+
+	k_sleep(K_MSEC(10));
+	tx_len = uart_emul_get_tx_data(c->uart, tx, sizeof(tx));
+	zassert_true(tx_len > 1U);
+	seq = tx[1] & 0x07U;
+
+	for (uint8_t i = 0U; i < 4U; i++) {
+		hdr_set(hdr, true, (seq + i) % 8U, c->seq, PKT_CMD, sizeof(reset_cmd));
+		len += frame(&expected[len], hdr, reset_cmd, sizeof(reset_cmd));
+	}
+
+	zassert_equal(tx_len, len);
+	zassert_mem_equal(tx, expected, len);
+
+	/* The acknowledgment makes room for the fifth */
+	put_ack(c, (seq + 4U) % 8U);
+	hdr_set(hdr, true, (seq + 4U) % 8U, c->seq, PKT_CMD, sizeof(reset_cmd));
+	expect_tx(c, hdr, reset_cmd, sizeof(reset_cmd));
+
+	put_ack(c, (seq + 5U) % 8U);
 	expect_no_tx(c);
 }
 
