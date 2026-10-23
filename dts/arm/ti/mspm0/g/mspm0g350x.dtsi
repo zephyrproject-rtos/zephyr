@@ -73,5 +73,6 @@
 &dma {
 	dma-channels = <7>;
 	ti,num-full-channels = <3>;
+	ti,gather-mode;
 	status = "okay";
 };
