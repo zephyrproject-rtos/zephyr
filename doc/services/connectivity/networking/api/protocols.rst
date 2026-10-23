@@ -19,6 +19,7 @@ Protocols
    mqtt
    mqtt_sn
    ocpp
+   rfc2217
    rtp
    tftp
    latmon
