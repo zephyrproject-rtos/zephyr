@@ -43,6 +43,15 @@ config HWINFO_NXP_RCM
 	help
 	  Enable NXP Kinetis RCM hwinfo driver.
 
+config HWINFO_NXP_RESETCON
+	bool "NXP RESETCON reset cause"
+	default y
+	depends on DT_HAS_NXP_RESETCON_HWINFO_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable the NXP RESETCON (Reset Controller) hwinfo driver for reset
+	  cause reporting on NXP MCUs with the RESETCON module.
+
 config HWINFO_NXP_RGM
 	bool "NXP MC_RGM reset cause"
 	default y
