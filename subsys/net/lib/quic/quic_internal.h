@@ -1654,6 +1654,7 @@ struct quic_endpoint *quic_test_endpoint_alloc(void);
 void quic_test_endpoint_unref(struct quic_endpoint *ep);
 void quic_test_context_unref(struct quic_context *ctx);
 void quic_connection_accept_enqueue(struct quic_endpoint *child_ep);
+struct quic_stream *quic_get_stream(struct quic_context *conn);
 
 bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq);
 bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq);
