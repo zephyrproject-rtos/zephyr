@@ -523,6 +523,11 @@ static int esp_hosted_mcu_sdio_transfer(const struct device *dev, const uint8_t 
 	return (pending > 0) ? (int)pending : 0;
 }
 
+/*
+ * No reattach: a restarted coprocessor stays silent until the host raises
+ * open-data-path again, and the running counters above no longer match its
+ * own, so esp_hosted_mcu_reattach() returns -ENOTSUP over SDIO.
+ */
 const struct esp_hosted_mcu_transport_api esp_hosted_mcu_sdio_api = {
 	.init = esp_hosted_mcu_sdio_init,
 	.transfer = esp_hosted_mcu_sdio_transfer,

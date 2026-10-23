@@ -11,6 +11,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/slist.h>
 
 #include <esp_hosted_mcu_rpc.pb.h>
 
@@ -207,6 +208,14 @@ struct esp_hosted_mcu_transport_api {
 	 * no event source waits out the timeout instead.
 	 */
 	void (*wait_for_rx)(const struct device *dev, k_timeout_t timeout);
+	/*
+	 * Optional: put the backend back in step with a coprocessor that restarted
+	 * while the host kept running, dropping what it still holds from the
+	 * previous run, such as a frame a transmit shifted in. Called by
+	 * esp_hosted_mcu_reattach(). A backend that cannot follow such a restart
+	 * leaves it NULL, and esp_hosted_mcu_reattach() then returns -ENOTSUP.
+	 */
+	void (*reattach)(const struct device *dev);
 };
 
 /* Core per-instance immutable config, filled from devicetree. */
@@ -249,6 +258,77 @@ int esp_hosted_mcu_register_rpc_event(esp_hosted_mcu_event_cb_t cb, void *user_d
  * Consumers may branch on it to adapt to older firmware.
  */
 uint32_t esp_hosted_mcu_fw_version(void);
+
+/*
+ * Listener for a coprocessor restart. The coprocessor keeps nothing a consumer
+ * set up in it across a restart, such as its esp_wifi bring-up or its Bluetooth
+ * controller, so a consumer that has to keep working registers one and
+ * restores that state from its handler.
+ */
+struct esp_hosted_mcu_restart_cb {
+	sys_snode_t node;
+	/*
+	 * Runs once the core is attached to the coprocessor's new run; may issue
+	 * RPCs. Must not call esp_hosted_mcu_reattach().
+	 */
+	void (*handler)(struct esp_hosted_mcu_restart_cb *cb);
+};
+
+/*
+ * Register a restart listener. The handlers run one after another, in the
+ * order they were registered: on the core's own work queue when the core
+ * detects the restart (CONFIG_ESP_HOSTED_MCU_RESTART_DETECT), or on the thread
+ * that calls esp_hosted_mcu_reattach(). The Wi-Fi and Bluetooth HCI drivers
+ * register theirs during device init, so a listener registered from main() or
+ * later runs after they restored their state.
+ *
+ * cb must stay valid for as long as the core runs. Registering it again has
+ * no effect. Call from thread context.
+ */
+void esp_hosted_mcu_register_restart_cb(struct esp_hosted_mcu_restart_cb *cb);
+
+/*
+ * Re-establish the link after the coprocessor was restarted behind the
+ * driver's back - for example re-flashed through its UART ROM loader and
+ * released from reset by whatever performed the update - and run the restart
+ * listeners. With CONFIG_ESP_HOSTED_MCU_RESTART_DETECT the core does this by
+ * itself once the restarted coprocessor sends its boot event; this call is for
+ * builds without it, for firmware that sends no boot event, and for a caller
+ * that restarted the coprocessor itself and waits for the listeners to finish.
+ *
+ * A listener run or an RPC round trip already in progress is waited out first;
+ * the timeout starts after it. If the core detected a restart whose listeners
+ * have not run yet, they run on the calling thread and the call returns 0. A
+ * recovery the core had under way when the call was made, or ran for a boot
+ * event that arrived while the call waited, counts as the one of this restart:
+ * the call returns 0 without running the listeners again. Otherwise it forgets
+ * the learned firmware version and the receive data buffered from the previous
+ * run, waits for the boot event or asks for the version until the timeout, and
+ * then runs the listeners. The reset line is not touched. RPC callers block
+ * while it waits.
+ *
+ * The timeout bounds only that wait, which is why the caller sets it: how
+ * long the coprocessor takes to come back depends on the image it was given
+ * and on how it was restarted, and the caller is the one that restarted it.
+ * K_NO_WAIT forgets the previous run's state and returns -ETIMEDOUT, unless the
+ * core detected the restart as above.
+ *
+ * Without a boot event the call cannot tell a restart from none: a coprocessor
+ * that did not restart still answers the version query, and the listeners run
+ * all the same. Likewise, with detection enabled, calling it after the core
+ * finished its recovery from a restart runs the listeners a second time. A boot
+ * event that arrives while the call waits or runs the listeners is taken as the
+ * one of the restart it handles.
+ *
+ * The listeners run on the calling thread, so its stack must hold theirs.
+ *
+ * Returns 0 once the listeners ran for this restart, here or in the core's
+ * recovery (read the version with esp_hosted_mcu_fw_version()), -ETIMEDOUT if
+ * the coprocessor neither sent its boot event nor answered the version query
+ * within the timeout, -ENOTSUP if the transport cannot follow a restart, or
+ * -ENODEV if the core never came up.
+ */
+int esp_hosted_mcu_reattach(k_timeout_t timeout);
 
 /*
  * Send an RPC request and block for its matching response. On success resp
