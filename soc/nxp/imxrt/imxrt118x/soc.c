@@ -689,6 +689,13 @@ __weak void clock_init(void)
 
 #endif /* CONFIG_DT_HAS_NXP_MCUX_I3C_ENABLED */
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+	/* Configure MIC using AUDIO_PLL_CLK: 393.216 MHz / 16 = 24.576 MHz */
+	rootCfg.mux = kCLOCK_MIC_ClockRoot_MuxAudioPllOut;
+	rootCfg.div = 16;
+	CLOCK_SetRootClock(kCLOCK_Root_Mic, &rootCfg);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_UDC_NXP_EHCI
 	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
