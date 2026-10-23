@@ -19,6 +19,7 @@ enum sx126x_state {
 	SX126X_STATE_TX,
 	SX126X_STATE_RX,
 	SX126X_STATE_RX_DUTY_CYCLE,
+	SX126X_STATE_CONFIG,
 };
 
 struct sx126x_tx_result {
@@ -35,9 +36,10 @@ struct sx126x_rx_result {
 struct sx126x_data {
 	struct sx126x_hal_data hal;
 
-	/* Current state (atomic for lock-free state transitions) */
+	/* Radio state and operation ownership, protected by lock */
 	atomic_t state;
 	struct k_mutex lock;
+	bool sync_pending;
 
 	/* Current configuration */
 	struct lora_modem_config config;
@@ -59,9 +61,13 @@ struct sx126x_data {
 	/* RX data buffer (shared between IRQ handler and recv) */
 	uint8_t rx_buf[SX126X_MAX_PAYLOAD_LEN];
 
-	/* Async RX callback */
+	/* Async RX callback and generation, protected by lock */
+	uint32_t rx_generation;
 	lora_recv_cb rx_cb;
 	void *rx_cb_user_data;
+	/* Thread running rx_cb without the lock, signalled on rx_cb_done */
+	k_tid_t rx_cb_thread;
+	struct k_condvar rx_cb_done;
 
 	/* RX duty cycle parameters (in SX126x timeout ticks) */
 	struct {
@@ -73,6 +79,7 @@ struct sx126x_data {
 	struct k_poll_signal *tx_async_signal;
 
 	/* Deferred work for interrupt handling */
+	atomic_t irq_pending;
 	struct k_work irq_work;
 	const struct device *dev;
 };
