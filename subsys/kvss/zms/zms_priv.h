@@ -38,6 +38,20 @@
 #define ZMS_ATE_FORMAT_MASK     GENMASK(19, 16)
 #define ZMS_GET_ATE_FORMAT(x)   FIELD_GET(ZMS_ATE_FORMAT_MASK, x)
 #define ZMS_MIN_ATE_NUM         5
+/* Flag set in the offset field of:
+ * - a delete ATE written by zms_delete_physical(). The other bits of the field hold the end of
+ *   the data of the sector at that time, so that it can still be recovered once the ATEs of the
+ *   scrubbed data are overwritten.
+ * - a gc_done ATE, to tell that the sector being garbage collected has memory cells that were
+ *   written twice in its current cycle.
+ */
+#define ZMS_ATE_OFFSET_FLAG     BIT(31)
+/* Flag set in the offset field of a data end marker ATE, written by zms_delete_physical_hist()
+ * before it overwrites the ATEs of old versions of an entry that stays alive. The marker has
+ * the ZMS_HEAD_ID and a zero length. The other bits of the field hold the end of the data of
+ * the sector at that time. It must not be taken for a gc_done ATE.
+ */
+#define ZMS_ATE_OFFSET_MARKER   BIT(30)
 
 #define ZMS_INVALID_SECTOR_NUM -1
 

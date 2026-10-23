@@ -22,7 +22,8 @@ LOG_MODULE_REGISTER(fs_zms, CONFIG_ZMS_LOG_LEVEL);
 
 static int zms_prev_ate(struct zms_fs *fs, uint64_t *addr, struct zms_ate *ate);
 static int zms_ate_valid(struct zms_fs *fs, const struct zms_ate *entry);
-static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr, uint32_t prev_cycle_cnt);
+static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr, uint32_t prev_cycle_cnt,
+			     bool extra_write);
 static int zms_get_full_sector_cycle(struct zms_fs *fs, uint64_t addr, uint32_t *cycle_cnt);
 static int zms_get_sector_cycle(struct zms_fs *fs, uint64_t addr, uint8_t *cycle_cnt);
 static int zms_get_sector_header(struct zms_fs *fs, uint64_t addr, struct zms_ate *empty_ate,
@@ -576,12 +577,13 @@ static bool zms_empty_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
  * - valid ate
  * - len = 0
  * - id = ZMS_HEAD_ID
+ * - not a data end marker
  * return true if valid, false otherwise
  */
 static bool zms_gc_done_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
 {
 	return (zms_ate_valid_different_sector(fs, entry, entry->cycle_cnt) && (!entry->len) &&
-		(entry->id == ZMS_HEAD_ID));
+		(entry->id == ZMS_HEAD_ID) && ((entry->offset & ZMS_ATE_OFFSET_MARKER) == 0U));
 }
 
 /* zms_sector_closed checks whether the current sector is closed, which would imply
@@ -622,7 +624,8 @@ static int zms_validate_closed_sector(struct zms_fs *fs, uint64_t addr, struct z
 }
 
 /* store an entry in flash */
-static int zms_flash_write_entry(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
+static int zms_flash_write_entry(struct zms_fs *fs, zms_id_t id, const void *data, size_t len,
+				 bool physical_delete)
 {
 	int rc;
 	struct zms_ate entry;
@@ -643,6 +646,12 @@ static int zms_flash_write_entry(struct zms_fs *fs, zms_id_t id, const void *dat
 	} else if ((len > 0) && (len <= ZMS_DATA_IN_ATE_SIZE)) {
 		/* Copy data into entry for small data (at most ZMS_DATA_IN_ATE_SIZE bytes) */
 		memcpy(&entry.data, data, len);
+	} else if (physical_delete) {
+		/* Keep the end of the data, the ATEs of the entries are about to be overwritten.
+		 * The ID tells a delete ATE from a data end marker.
+		 */
+		entry.offset = (uint32_t)SECTOR_OFFSET(fs->data_wra) |
+			       ((id == ZMS_HEAD_ID) ? ZMS_ATE_OFFSET_MARKER : ZMS_ATE_OFFSET_FLAG);
 	}
 
 	zms_ate_crc8_update(&entry);
@@ -680,7 +689,7 @@ static int zms_wipe_partition(struct zms_fs *fs)
 		if (rc) {
 			return rc;
 		}
-		rc = zms_add_empty_ate(fs, addr, prev_cycle_cnt);
+		rc = zms_add_empty_ate(fs, addr, prev_cycle_cnt, false);
 		if (rc) {
 			return rc;
 		}
@@ -697,6 +706,7 @@ static int zms_recover_last_ate(struct zms_fs *fs, uint64_t *addr, uint64_t *dat
 	uint64_t data_end_offset;
 	uint64_t data_end_addr;
 	uint64_t ate_end_addr;
+	uint32_t data_end_flag;
 	struct zms_ate end_ate;
 	int rc;
 
@@ -722,6 +732,26 @@ static int zms_recover_last_ate(struct zms_fs *fs, uint64_t *addr, uint64_t *dat
 		 * Unconditionally update ATE write address.
 		 */
 		*addr = ate_end_addr;
+		data_end_flag = (end_ate.id == ZMS_HEAD_ID) ? ZMS_ATE_OFFSET_MARKER
+							    : ZMS_ATE_OFFSET_FLAG;
+		if ((end_ate.len == 0U) && ((end_ate.offset & data_end_flag) != 0U)) {
+			/* Delete ATE of zms_delete_physical() or data end marker of
+			 * zms_delete_physical_hist(): it holds the end of the data written so far,
+			 * which is not recoverable from the ATEs of the entries they have
+			 * overwritten.
+			 */
+			data_end_offset = end_ate.offset & ~data_end_flag;
+			if ((data_end_offset >= SECTOR_OFFSET(data_end_addr)) &&
+			    (data_end_offset <= SECTOR_OFFSET(ate_end_addr))) {
+				data_end_addr &= ADDR_SECT_MASK;
+				data_end_addr += data_end_offset;
+				*data_wra = data_end_addr;
+			} else {
+				LOG_WRN("Ignoring ATE with invalid data end %llu",
+					data_end_offset);
+			}
+			goto continue_ate_scan;
+		}
 		if (end_ate.len <= ZMS_DATA_IN_ATE_SIZE) {
 			goto continue_ate_scan;
 		}
@@ -870,7 +900,7 @@ static int zms_sector_close(struct zms_fs *fs)
 	return 0;
 }
 
-static int zms_add_gc_done_ate(struct zms_fs *fs)
+static int zms_add_gc_done_ate(struct zms_fs *fs, bool extra_write)
 {
 	struct zms_ate gc_done_ate;
 
@@ -881,6 +911,9 @@ static int zms_add_gc_done_ate(struct zms_fs *fs)
 	gc_done_ate.id = ZMS_HEAD_ID;
 	gc_done_ate.len = 0U;
 	gc_done_ate.offset = (uint32_t)SECTOR_OFFSET(fs->data_wra);
+	if (extra_write) {
+		gc_done_ate.offset |= ZMS_ATE_OFFSET_FLAG;
+	}
 	gc_done_ate.cycle_cnt = fs->sector_cycle;
 
 	zms_ate_crc8_update(&gc_done_ate);
@@ -922,7 +955,12 @@ static inline int zms_verify_and_increment_cycle_cnt(struct zms_fs *fs, uint64_t
 	return 0;
 }
 
-static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr, uint32_t prev_cycle_cnt)
+/* Write the empty ATE of a freshly erased sector, which starts a new write cycle of the sector.
+ * extra_write tells that the previous cycle wrote some memory cells twice (see
+ * zms_ate_scrubbed()), the cycle count is then incremented one more time.
+ */
+static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr, uint32_t prev_cycle_cnt,
+			     bool extra_write)
 {
 	struct zms_ate empty_ate;
 	uint8_t cycle_cnt;
@@ -961,7 +999,18 @@ static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr, uint32_t prev_cyc
 		return rc;
 	}
 #if !defined(CONFIG_ZMS_ID_64BIT)
-	empty_ate.full_cycle_cnt = prev_cycle_cnt + 1;
+	empty_ate.full_cycle_cnt = prev_cycle_cnt + 1 + (extra_write ? 1U : 0U);
+#else
+	/* There is no separate full cycle counter with 64-bit IDs, cycle_cnt is the only counter.
+	 * Incrementing it a second time keeps it different from the close ATE cycle count, as
+	 * zms_verify_and_increment_cycle_cnt() skips that value.
+	 */
+	if (extra_write) {
+		rc = zms_verify_and_increment_cycle_cnt(fs, addr, &cycle_cnt);
+		if (rc < 0) {
+			return rc;
+		}
+	}
 #endif
 	empty_ate.cycle_cnt = cycle_cnt;
 
@@ -1127,6 +1176,30 @@ static int zms_find_ate_with_id(struct zms_fs *fs, zms_id_t id, uint64_t start_a
 	return prev_found;
 }
 
+/* Value written over data and ATEs by zms_delete_physical() */
+static inline uint8_t zms_scrub_value(struct zms_fs *fs)
+{
+	return (uint8_t)~fs->flash_parameters->erase_value;
+}
+
+/* Tell if an ATE was overwritten by zms_delete_physical(). A valid ATE can never be made only of
+ * the scrub value because the crc8 of such a content is not equal to this value.
+ * The memory cells of a scrubbed ATE and of its data were written a second time in the current
+ * cycle of the sector, which must be accounted for in the cycle count when the sector is erased.
+ */
+static bool zms_ate_scrubbed(struct zms_fs *fs, const struct zms_ate *ate)
+{
+	uint8_t value = zms_scrub_value(fs);
+
+	for (size_t i = 0; i < sizeof(*ate); i++) {
+		if (((const uint8_t *)ate)[i] != value) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 /* garbage collection: the address ate_wra has been updated to the new sector
  * that has just been started. The data to gc is in the sector after this new
  * sector.
@@ -1148,6 +1221,7 @@ static int zms_gc(struct zms_fs *fs)
 	uint64_t data_addr;
 	uint64_t stop_addr;
 	uint8_t previous_cycle = 0;
+	bool extra_write = false;
 
 	rc = zms_get_sector_cycle(fs, fs->ate_wra, &fs->sector_cycle);
 	if (rc == -ENOENT) {
@@ -1157,7 +1231,7 @@ static int zms_gc(struct zms_fs *fs)
 			return rc;
 		}
 		/* sector never used */
-		rc = zms_add_empty_ate(fs, fs->ate_wra, 0);
+		rc = zms_add_empty_ate(fs, fs->ate_wra, 0, false);
 		if (rc) {
 			return rc;
 		}
@@ -1205,6 +1279,14 @@ static int zms_gc(struct zms_fs *fs)
 		rc = zms_prev_ate(fs, &gc_addr, &gc_ate);
 		if (rc) {
 			return rc;
+		}
+
+		if (IS_ENABLED(CONFIG_ZMS_PHYSICAL_DELETE) && zms_ate_scrubbed(fs, &gc_ate)) {
+			/* Each memory cell is overwritten at most once per cycle: whatever the
+			 * number of scrubbed entries, the sector gets one extra write.
+			 */
+			extra_write = true;
+			continue;
 		}
 
 		if (!zms_ate_valid(fs, &gc_ate) || !gc_ate.len) {
@@ -1270,7 +1352,7 @@ gc_done:
 	/* Write a GC_done ATE to mark the end of this operation
 	 */
 
-	rc = zms_add_gc_done_ate(fs);
+	rc = zms_add_gc_done_ate(fs, extra_write);
 	if (rc) {
 		return rc;
 	}
@@ -1290,7 +1372,7 @@ gc_done:
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 	zms_lookup_cache_invalidate(fs, sec_addr >> ADDR_SECT_SHIFT);
 #endif
-	rc = zms_add_empty_ate(fs, sec_addr, saved_full_cycle_cnt);
+	rc = zms_add_empty_ate(fs, sec_addr, saved_full_cycle_cnt, extra_write);
 
 	return rc;
 }
@@ -1442,7 +1524,7 @@ static int zms_init(struct zms_fs *fs)
 			if (rc) {
 				goto end;
 			}
-			rc = zms_add_empty_ate(fs, addr, 0);
+			rc = zms_add_empty_ate(fs, addr, 0, false);
 			if (rc) {
 				goto end;
 			}
@@ -1550,6 +1632,7 @@ static int zms_init(struct zms_fs *fs)
 		 * Look for a marker (gc_done_ate) that indicates that gc was finished.
 		 */
 		bool gc_done_marker = false;
+		bool extra_write = false;
 		struct zms_ate gc_done_ate;
 		uint32_t saved_full_cycle_cnt = 0;
 
@@ -1563,6 +1646,7 @@ static int zms_init(struct zms_fs *fs)
 
 			if (zms_gc_done_ate_valid(fs, &gc_done_ate)) {
 				gc_done_marker = true;
+				extra_write = (gc_done_ate.offset & ZMS_ATE_OFFSET_FLAG) != 0U;
 				break;
 			}
 			addr += fs->ate_size;
@@ -1581,7 +1665,7 @@ static int zms_init(struct zms_fs *fs)
 			if (rc < 0) {
 				goto end;
 			}
-			rc = zms_add_empty_ate(fs, addr, saved_full_cycle_cnt);
+			rc = zms_add_empty_ate(fs, addr, saved_full_cycle_cnt, extra_write);
 			goto end;
 		}
 		LOG_INF("No GC Done marker found: restarting gc");
@@ -1593,7 +1677,7 @@ static int zms_init(struct zms_fs *fs)
 		if (rc) {
 			goto end;
 		}
-		rc = zms_add_empty_ate(fs, fs->ate_wra, saved_full_cycle_cnt);
+		rc = zms_add_empty_ate(fs, fs->ate_wra, saved_full_cycle_cnt, false);
 		if (rc) {
 			goto end;
 		}
@@ -1624,7 +1708,7 @@ end:
 	 * space when doing gc.
 	 */
 	if ((!rc) && (SECTOR_OFFSET(fs->ate_wra) == (fs->sector_size - 3 * fs->ate_size))) {
-		rc = zms_add_gc_done_ate(fs);
+		rc = zms_add_gc_done_ate(fs, false);
 	}
 	k_mutex_unlock(&fs->zms_lock);
 
@@ -1743,7 +1827,11 @@ int zms_mount_force(struct zms_fs *fs)
 	return zms_mount_internal(fs, true);
 }
 
-ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
+/* physical_delete is set by zms_delete_physical() to always write a delete ATE that keeps the end
+ * of the data, even if the entry is already deleted.
+ */
+static ssize_t zms_write_internal(struct zms_fs *fs, zms_id_t id, const void *data, size_t len,
+				  bool physical_delete)
 {
 	int rc;
 	size_t data_size;
@@ -1776,6 +1864,10 @@ ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
 
 #ifdef CONFIG_ZMS_NO_DOUBLE_WRITE
 	uint64_t wlk_addr;
+
+	if (physical_delete) {
+		goto skip_double_write_check;
+	}
 
 	/* find latest entry with same id */
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
@@ -1844,6 +1936,7 @@ ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 no_cached_entry:
 #endif /* CONFIG_ZMS_LOOKUP_CACHE */
+skip_double_write_check:
 #endif /* CONFIG_ZMS_NO_DOUBLE_WRITE */
 
 	/* calculate required space if the entry contains data */
@@ -1875,7 +1968,7 @@ no_cached_entry:
 		if ((SECTOR_OFFSET(fs->ate_wra)) &&
 		    (fs->ate_wra >= (fs->data_wra + required_space)) &&
 		    (SECTOR_OFFSET(fs->ate_wra - fs->ate_size) || !len)) {
-			rc = zms_flash_write_entry(fs, id, data, len);
+			rc = zms_flash_write_entry(fs, id, data, len, physical_delete);
 			if (rc) {
 				goto end;
 			}
@@ -1899,10 +1992,287 @@ end:
 	return rc;
 }
 
+ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
+{
+	return zms_write_internal(fs, id, data, len, false);
+}
+
 int zms_delete(struct zms_fs *fs, zms_id_t id)
 {
 	return zms_write(fs, id, NULL, 0);
 }
+
+#ifdef CONFIG_ZMS_PHYSICAL_DELETE
+/* Overwrite len bytes at addr with the inverse of the erase value. The inverse is used because
+ * programming the erase value over existing data would leave it unchanged on devices that
+ * need an explicit erase.
+ * Chunks that already hold the scrub value are not written again. When keep_erased is set, chunks
+ * that hold the erase value are not written either: on a device that does not erase, they were
+ * already overwritten by ZMS (junk ATEs written when closing a sector) and hold no data any more.
+ */
+static int zms_flash_scrub(struct zms_fs *fs, uint64_t addr, size_t len, bool reverse,
+			   bool keep_erased)
+{
+	int rc;
+	size_t chunk;
+	size_t block_size = reverse ? fs->flash_parameters->write_block_size
+				    : zms_round_down_write_block_size(fs, ZMS_BLOCK_SIZE);
+	uint8_t value = zms_scrub_value(fs);
+	uint8_t buf[ZMS_BLOCK_SIZE];
+	size_t done = 0;
+
+	(void)memset(buf, value, block_size);
+	len = zms_al_size(fs, len);
+
+	while (done < len) {
+		uint64_t chunk_addr;
+
+		chunk = MIN(block_size, len - done);
+		chunk_addr = reverse ? addr + len - done - chunk : addr + done;
+		rc = zms_flash_cmp_const(fs, chunk_addr, value, chunk);
+		if (rc < 0) {
+			return rc;
+		}
+		if ((rc > 0) && keep_erased) {
+			rc = zms_flash_cmp_const(fs, chunk_addr, fs->flash_parameters->erase_value,
+						 chunk);
+			if (rc < 0) {
+				return rc;
+			}
+		}
+		if (rc > 0) {
+			rc = zms_flash_al_wrt(fs, chunk_addr, buf, chunk);
+			if (rc) {
+				return rc;
+			}
+		}
+		done += chunk;
+	}
+
+	return 0;
+}
+
+/* What a scan erases of an entry. The sectors must be scanned from the newest to the oldest. */
+struct zms_scrub {
+	zms_id_t id;
+	/* Keep the newest version of the entry, erase only the older ones */
+	bool keep_newest;
+	/* Number of older versions that are still to erase, negative for all of them */
+	int32_t old_left;
+	/* The newest version was met */
+	bool newest_seen;
+};
+
+/* Scan the sector at sec_addr once and scrub what it holds about sc->id:
+ * - the ATEs that carry the id, with their data, in the area written during the current cycle of
+ *   the sector (from the newest ATE to the oldest),
+ * - then, on devices that do not erase, the free gap between the end of the data and the newest
+ *   ATE. It holds what earlier cycles of the sector left there, including data whose ATE was
+ *   overwritten by the ATEs of the current cycle and which no ATE can designate any more.
+ * The end of the data is found while walking the ATEs, so the gap needs no second scan.
+ */
+static int zms_scrub_sector(struct zms_fs *fs, uint64_t sec_addr, struct zms_scrub *sc)
+{
+	int rc;
+	uint64_t ate_addr;
+	uint64_t data_end = 0;
+	uint64_t end;
+	uint32_t newest;
+	uint32_t ate_area_end = (uint32_t)(fs->sector_size - 2U * fs->ate_size);
+	uint8_t cycle;
+	bool erases = (flash_params_get_erase_cap(fs->flash_parameters) &
+		       FLASH_ERASE_C_EXPLICIT) != 0;
+	struct zms_ate empty_ate;
+	struct zms_ate close_ate;
+	struct zms_ate ate;
+	int valid;
+
+	rc = zms_get_sector_header(fs, sec_addr, &empty_ate, &close_ate);
+	if (rc) {
+		return rc;
+	}
+
+	if (!zms_empty_ate_valid(fs, &empty_ate)) {
+		/* Sector never used */
+		return 0;
+	}
+	cycle = empty_ate.cycle_cnt;
+
+	if (SECTOR_NUM(sec_addr) == SECTOR_NUM(fs->ate_wra)) {
+		/* Open sector */
+		newest = (uint32_t)SECTOR_OFFSET(fs->ate_wra + fs->ate_size);
+		data_end = SECTOR_OFFSET(fs->data_wra);
+	} else if (zms_sector_closed(fs, &empty_ate, &close_ate)) {
+		newest = close_ate.offset;
+	} else {
+		/* Erased sector: it holds no ATE of the current cycle */
+		newest = ate_area_end;
+	}
+
+	for (uint32_t off = newest; off < ate_area_end; off += fs->ate_size) {
+		ate_addr = sec_addr + off;
+		rc = zms_flash_ate_rd(fs, ate_addr, &ate);
+		if (rc) {
+			return rc;
+		}
+
+		valid = zms_ate_valid_different_sector(fs, &ate, cycle);
+		if (valid) {
+			/* Entries with data outside the ATE and the delete ATEs and markers, which
+			 * keep the end of the data, tell where the data written so far stops.
+			 */
+			if (ate.len > ZMS_DATA_IN_ATE_SIZE) {
+				end = (uint64_t)ate.offset + zms_al_size(fs, ate.len);
+			} else if (ate.len == 0U) {
+				end = ate.offset & ~(ZMS_ATE_OFFSET_FLAG | ZMS_ATE_OFFSET_MARKER);
+			} else {
+				end = 0;
+			}
+			data_end = MAX(data_end, MIN(end, newest));
+		}
+
+		if (ate.id != sc->id) {
+			continue;
+		}
+
+		if (valid && (ate.len == 0U)) {
+			/* delete ATE: it stays, and it is the newest state of the entry if it is
+			 * the first one met
+			 */
+			sc->newest_seen = true;
+			continue;
+		}
+
+		if (valid && sc->keep_newest && !sc->newest_seen) {
+			sc->newest_seen = true;
+			continue;
+		}
+
+		/* An ATE that is not valid is a leftover of an interrupted scrub: it is always
+		 * erased. Valid ones are the older versions, erased as long as the count allows.
+		 */
+		if (valid && (sc->old_left == 0)) {
+			continue;
+		}
+		if (valid && (sc->old_left > 0)) {
+			sc->old_left--;
+		}
+
+		if (valid && (ate.len > ZMS_DATA_IN_ATE_SIZE)) {
+			/* Scrub the data first: the ATE tells where it is */
+			rc = zms_flash_scrub(fs, sec_addr + ate.offset, ate.len, false, false);
+			if (rc) {
+				return rc;
+			}
+		}
+
+		/* Then scrub the ATE. This is also the case for an entry whose data lives inside
+		 * the ATE and for an ATE damaged by an interrupted scrub that still carries the ID.
+		 * A scrubbed ATE is recognized by the garbage collection, which accounts for the
+		 * extra write.
+		 */
+		rc = zms_flash_scrub(fs, ate_addr, sizeof(struct zms_ate), true, false);
+		if (rc) {
+			return rc;
+		}
+	}
+
+	if (erases || (data_end >= newest)) {
+		/* The erase of the sector removes the data, or there is no gap */
+		return 0;
+	}
+
+	return zms_flash_scrub(fs, sec_addr + data_end, newest - data_end, false, true);
+}
+
+/* Write a data end marker, unless the newest ATE of the open sector already is the one that
+ * tells the current end of the data.
+ */
+static int zms_write_data_end_marker(struct zms_fs *fs)
+{
+	int rc;
+	struct zms_ate newest;
+	uint64_t addr = fs->ate_wra + fs->ate_size;
+
+	if (SECTOR_OFFSET(addr) < (fs->sector_size - 2U * fs->ate_size)) {
+		rc = zms_flash_ate_rd(fs, addr, &newest);
+		if (rc) {
+			return rc;
+		}
+		if (zms_ate_valid(fs, &newest) && (newest.len == 0U) &&
+		    (newest.id == ZMS_HEAD_ID) && ((newest.offset & ZMS_ATE_OFFSET_MARKER) != 0U) &&
+		    ((newest.offset & ~ZMS_ATE_OFFSET_MARKER) == SECTOR_OFFSET(fs->data_wra))) {
+			return 0;
+		}
+	}
+
+	rc = zms_write_internal(fs, ZMS_HEAD_ID, NULL, 0, true);
+
+	return (rc < 0) ? rc : 0;
+}
+
+int zms_delete_physical_hist(struct zms_fs *fs, zms_id_t id, int32_t hist_cnt)
+{
+	int rc;
+	uint32_t sector_num;
+	struct zms_scrub sc = {
+		.id = id,
+		.keep_newest = (hist_cnt >= 0),
+		.old_left = (hist_cnt > 0) ? hist_cnt : -1,
+		.newest_seen = false,
+	};
+
+	if (!fs) {
+		LOG_ERR("Invalid fs");
+		return -EINVAL;
+	}
+
+	if (!fs->ready) {
+		LOG_ERR("zms not initialized");
+		return -EACCES;
+	}
+
+	if ((id == ZMS_HEAD_ID) || (hist_cnt < -1)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&fs->zms_lock, K_FOREVER);
+
+	/* The ATEs overwritten below can no longer be used by the mount to recover the data write
+	 * address, so a record of it is written first. This is a delete ATE of the entry when all
+	 * its versions go: the ID is gone even if the scrub is interrupted. Otherwise, it is a
+	 * data end marker. In both cases calling this function again finishes the job.
+	 */
+	if (hist_cnt < 0) {
+		rc = zms_write_internal(fs, id, NULL, 0, true);
+		rc = (rc < 0) ? rc : 0;
+	} else {
+		rc = zms_write_data_end_marker(fs);
+	}
+	if (rc) {
+		goto end;
+	}
+
+	/* From the open sector backwards, so that the newest version is met first */
+	sector_num = SECTOR_NUM(fs->ate_wra);
+	for (uint32_t i = 0; i < fs->sector_count; i++) {
+		rc = zms_scrub_sector(fs, (uint64_t)sector_num << ADDR_SECT_SHIFT, &sc);
+		if (rc) {
+			goto end;
+		}
+		sector_num = (sector_num == 0U) ? fs->sector_count - 1U : sector_num - 1U;
+	}
+	rc = 0;
+end:
+	k_mutex_unlock(&fs->zms_lock);
+	return rc;
+}
+
+int zms_delete_physical(struct zms_fs *fs, zms_id_t id)
+{
+	return zms_delete_physical_hist(fs, id, -1);
+}
+#endif /* CONFIG_ZMS_PHYSICAL_DELETE */
 
 ssize_t zms_read_hist(struct zms_fs *fs, zms_id_t id, void *data, size_t len, uint32_t cnt)
 {
