@@ -702,6 +702,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		/* Only link control packets come from the signal pool */
 		if (net_buf_pool_get(buf->pool_id) != &h5_pool) {
 			bt_hci_recv(dev, net_buf_take(&buf));
+		} else if (buf->len < 2U) {
+			LOG_ERR("Link control packet too short (len %u)", buf->len);
 		} else if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
 			if (h5->link_state == ACTIVE) {
 				/* TODO Reset H5 */
