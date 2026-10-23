@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* FlexIO D12 output on PIO5_0 (Arduino D12) */
+
+/ {
+	aliases {
+		pwm-test = &flexio_pwm;
+	};
+};
+
+&flexio {
+	status = "okay";
+
+	flexio_pwm: flexio_pwm {
+		compatible = "nxp,flexio-pwm";
+		#pwm-cells = <3>;
+		pinctrl-0 = <&pinmux_flexio_pwm>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm_0 {
+			pin-id = <12>;
+			prescaler = <1>;
+		};
+	};
+};
