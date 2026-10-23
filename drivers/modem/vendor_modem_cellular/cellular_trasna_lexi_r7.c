@@ -14,7 +14,8 @@ MODEM_CHAT_MATCHES_DEFINE(trasna_lexi_r7_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATC
 MODEM_CHAT_MATCH_DEFINE(trasna_lexi_r7_sim_ready_match, "+UUSIMSTAT: 6", "", NULL);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	trasna_lexi_r7_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=0", ok_match),
+	trasna_lexi_r7_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+USIMSTAT=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", trasna_lexi_r7_sim_ready_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
