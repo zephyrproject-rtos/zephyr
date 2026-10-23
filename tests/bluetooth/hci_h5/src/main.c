@@ -356,6 +356,35 @@ ZTEST(hci_h5, test_unsupported_type)
 	expect_no_tx(c);
 }
 
+ZTEST(hci_h5, test_unreliable_event)
+{
+	struct ctlr *c = &ctlrs[0];
+
+	/* Takes no sequence number */
+	put_evt(c, false, 0U, 6U);
+	expect_evt(c, 6U);
+
+	put_evt(c, true, c->seq, 7U);
+	expect_evt(c, 7U);
+	next_seq(c);
+	expect_ack(c);
+}
+
+ZTEST(hci_h5, test_reliable_link_packet)
+{
+	static const uint8_t conf_rsp[] = { 0x04, 0x7b };
+	struct ctlr *c = &ctlrs[0];
+
+	/* Takes a sequence number */
+	put_link(c, true, conf_rsp, sizeof(conf_rsp));
+	next_seq(c);
+
+	put_evt(c, true, c->seq, 8U);
+	expect_evt(c, 8U);
+	next_seq(c);
+	expect_ack(c);
+}
+
 ZTEST(hci_h5, test_interleaved_instances)
 {
 	struct ctlr *a = &ctlrs[0];
