@@ -63,6 +63,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Relay
+
+  * Added the :ref:`Relay <relay_api>` driver class, a hardware-agnostic
+    on/off relay output API.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -90,6 +95,11 @@ New Drivers
 ..
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
+
+* Relay
+
+  * :dtcompatible:`zephyr,gpio-relay`
+  * :dtcompatible:`zephyr,pwm-relay`
 
 New Samples
 ***********

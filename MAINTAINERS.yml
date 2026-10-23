@@ -2798,6 +2798,22 @@ Documentation Infrastructure:
   tests:
     - drivers.regulator
 
+"Drivers: Relay":
+  status: maintained
+  maintainers:
+    - Vec7or
+  files:
+    - doc/hardware/peripherals/relay.rst
+    - drivers/relay/
+    - dts/bindings/relay/
+    - include/zephyr/drivers/relay/
+    - tests/drivers/build_all/relay/
+    - tests/drivers/relay/
+  labels:
+    - "area: Relay"
+  tests:
+    - drivers.relay
+
 "Drivers: Reset":
   status: odd fixes
   files:
