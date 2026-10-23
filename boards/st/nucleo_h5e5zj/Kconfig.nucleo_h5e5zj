@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H5E5ZJ
+	select SOC_STM32H5E5XX

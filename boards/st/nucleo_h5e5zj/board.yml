@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: nucleo_h5e5zj
+  full_name: Nucleo H5E5ZJ
+  vendor: st
+  socs:
+    - name: stm32h5e5xx
