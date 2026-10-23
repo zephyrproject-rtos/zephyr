@@ -91,6 +91,7 @@ static bool reliable_packet(uint8_t type)
 
 static struct h5 {
 	struct net_buf		*rx_buf;
+	bool			rx_esc;
 
 	struct k_fifo		tx_queue;
 	struct k_fifo		rx_queue;
@@ -145,20 +146,23 @@ static void h5_reset_rx(void)
 		h5.rx_buf = NULL;
 	}
 
+	h5.rx_esc = false;
 	h5.rx_state = START;
 }
 
+/* Returns -EAGAIN after an escape octet: the escaped octet follows */
 static int h5_unslip_byte(uint8_t *byte)
 {
-	int count;
+	if (!h5.rx_esc) {
+		if (*byte == SLIP_ESC) {
+			h5.rx_esc = true;
+			return -EAGAIN;
+		}
 
-	if (*byte != SLIP_ESC) {
 		return 0;
 	}
 
-	do {
-		count = uart_fifo_read(h5_dev, byte, sizeof(*byte));
-	} while (!count);
+	h5.rx_esc = false;
 
 	switch (*byte) {
 	case SLIP_ESC_DELIM:
@@ -451,10 +455,16 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 			 */
 			if (byte == SLIP_DELIMITER) {
 				remaining = sizeof(hdr);
+				h5.rx_esc = false;
 				continue;
 			}
 
-			if (h5_unslip_byte(&byte) < 0) {
+			ret = h5_unslip_byte(&byte);
+			if (ret == -EAGAIN) {
+				continue;
+			}
+
+			if (ret < 0) {
 				h5_reset_rx();
 				continue;
 			}
@@ -523,7 +533,12 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 				continue;
 			}
 
-			if (h5_unslip_byte(&byte) < 0) {
+			ret = h5_unslip_byte(&byte);
+			if (ret == -EAGAIN) {
+				continue;
+			}
+
+			if (ret < 0) {
 				h5_reset_rx();
 				continue;
 			}

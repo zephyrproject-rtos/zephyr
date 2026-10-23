@@ -282,6 +282,34 @@ ZTEST(hci_uart_3wire, test_data_integrity_check)
 	expect_ack();
 }
 
+ZTEST(hci_uart_3wire, test_split_escape)
+{
+	uint8_t out[2U * FRAME_MAX(CMD_LEN)];
+	uint8_t hdr[HDR_LEN];
+	size_t len;
+
+	/* The parameter is sent escaped, and the line pauses after the escape octet */
+	hdr_set(hdr, true, seq, 0U, PKT_CMD, CMD_LEN);
+	len = cmd_frame(out, hdr, SLIP_DELIMITER, CMD_LEN);
+	zassert_equal(out[len - 3U], SLIP_ESC);
+	put(out, len - 2U);
+	put(&out[len - 2U], 2U);
+	expect_cmd(SLIP_DELIMITER);
+	next_seq();
+
+	/* A delimiter after an escape octet ends the packet */
+	out[0] = SLIP_DELIMITER;
+	out[1] = BIT(7);
+	out[2] = SLIP_ESC;
+	out[3] = SLIP_DELIMITER;
+	hdr_set(hdr, true, seq, 0U, PKT_CMD, CMD_LEN);
+	len = 4U + cmd_frame(&out[4], hdr, 6U, CMD_LEN);
+	put(out, len);
+	expect_cmd(6U);
+	next_seq();
+	expect_ack();
+}
+
 ZTEST(hci_uart_3wire, test_unsupported_type)
 {
 	static const uint8_t evt[] = { BT_HCI_EVT_HARDWARE_ERROR, 1U, 0x00 };
