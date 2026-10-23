@@ -171,6 +171,62 @@ the most recent ones to the oldest ones. If it finds a valid ATE with a matching
 its data and returns the number of bytes that were read.
 If a history count is provided and different than 0, older data with same ID is retrieved.
 
+ZMS physical delete
+===================
+
+:c:func:`zms_delete` only writes a delete ATE. The data of the entry and of all its previous
+versions stays in the storage until garbage collection erases their sector, so it can still be
+read directly from the flash.
+
+When :kconfig:option:`CONFIG_ZMS_PHYSICAL_DELETE` is enabled, :c:func:`zms_delete_physical`
+additionally overwrites the stored data of every version of the entry. It works in this order:
+
+#. A delete ATE is written, as :c:func:`zms_delete` does. The entry is logically deleted from
+   this point on. This ATE is always written, even if the entry is already deleted, and its
+   ``offset`` field is flagged and holds the end of the data written in the sector so far.
+#. All the ATEs are walked from the newest to the oldest. For each ATE with the requested ID, the
+   data is overwritten if it is stored outside of the ATE, then the whole ATE is overwritten,
+   which makes it invalid. The ATE is overwritten from its last byte to its first one, so that
+   the data is erased before the ID.
+
+The ATEs of the erased entries are not valid anymore, so the mount can no longer use them to
+recover the address where the next data must be written. It uses the end of the data stored in
+the flagged delete ATE instead, otherwise new data could be written over bytes that were
+overwritten.
+
+The value written is the inverse of the flash erase value (``0x00`` for an erase value of
+``0xFF``). Programming the erase value itself would not change the content of a flash that needs
+an explicit erase.
+
+The operation is not atomic, but it is safe against power loss: if it is interrupted, the entry is
+already deleted and calling :c:func:`zms_delete_physical` again completes the erasure. Areas that
+were already overwritten are not written again.
+
+The scrub writes some memory cells a second time during the current write cycle of their sector.
+To keep the cycle count a valid estimation of the wear, this extra write is added to the cycle
+count of the sector when the sector is erased by garbage collection. The sector is then recycled
+with a cycle count increased by 2 instead of 1, whatever the number of entries that were erased
+physically in it, because every cell is overwritten at most once per cycle.
+A sector holding overwritten data is recognized by the garbage collection, which scans all its
+ATEs anyway: an ATE made only of the overwritten value cannot be a valid one. The garbage
+collection stores the result in its ``gc_done`` ATE, so that the extra write is also counted if the
+mount has to complete an interrupted erase of the sector. With :kconfig:option:`CONFIG_ZMS_ID_64BIT`
+the cycle counter is the ``uint8_t`` counter of the empty ATE, which is incremented twice.
+An erasure that was interrupted is counted once :c:func:`zms_delete_physical` has been called
+again and completed it. The wipe done by :c:func:`zms_clear` does not account for it.
+
+.. note::
+
+   - The storage must accept programming an already written location without an erase. This is
+     the case for RRAM and for NOR flash without ECC or write-once words. Otherwise the call
+     fails with the error returned by the flash driver.
+   - The whole storage is browsed, so the call can take a long time. The lookup cache does not
+     speed it up.
+   - The delete ATE of the entry stays in the storage, with its ID.
+   - Only versions that are still present in the ATE area of a sector are erased. Stale ATEs
+     left behind by earlier cycles on devices that do not erase sectors are not reachable and are
+     not erased.
+
 ZMS entry enumeration (iterator API)
 ====================================
 
@@ -495,7 +551,8 @@ Storage systems that rely on an erase value (NVS as an example) need to emulate 
 write operations. This causes a significant decrease in the life expectancy of these devices
 as well as more delays for write operations and initialization of the device when it is empty.
 ZMS uses a cycle count mechanism that avoids emulating erase operations for these devices.
-It also guarantees that every memory location is written only once for each cycle of sector write.
+It also guarantees that every memory location is written only once for each cycle of sector write. The only exception is the data erased
+by :c:func:`zms_delete_physical`, which is accounted for in the cycle count.
 
 As an example, to erase a 4096-byte sector on devices that do not require an erase operation
 using NVS, 256 flash writes must be performed (supposing that ``write-block-size`` = 16 bytes), while

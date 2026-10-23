@@ -1,0 +1,15 @@
+sample:
+  name: ZMS Physical Delete
+
+tests:
+  sample.zms.physical_delete:
+    tags: zms
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=y
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "PASS: physical delete succeeded"
