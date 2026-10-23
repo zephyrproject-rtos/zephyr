@@ -173,6 +173,7 @@ static struct net_pkt *ipv4_reassemble_packet(struct net_ipv4_reassembly *reass)
 	struct net_ipv4_hdr *ipv4_hdr;
 	struct net_pkt *pkt;
 	struct net_buf *last;
+	size_t hdr_len;
 	int i;
 	int ret;
 	uint16_t chksum = 0;
@@ -200,10 +201,11 @@ static struct net_pkt *ipv4_reassemble_packet(struct net_ipv4_reassembly *reass)
 			return NULL;
 		}
 
-		LOG_DBG("Removing %d bytes from start of pkt %p", net_pkt_ip_hdr_len(pkt),
-			pkt->buffer);
+		hdr_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt);
 
-		if (net_pkt_pull(pkt, net_pkt_ip_hdr_len(pkt))) {
+		LOG_DBG("Removing %zu bytes from start of pkt %p", hdr_len, pkt->buffer);
+
+		if (net_pkt_pull(pkt, hdr_len)) {
 			LOG_ERR("Failed to pull headers");
 			ipv4_reassembly_cancel(reass->id, &reass->src, &reass->dst);
 			return NULL;
@@ -323,7 +325,8 @@ static int ipv4_fragments_are_ready(struct net_ipv4_reassembly *reass)
 			return 0;
 		}
 
-		payload_len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt);
+		payload_len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+			      net_pkt_ipv4_opts_len(pkt);
 
 		if (payload_len < 0) {
 			return -EBADMSG;
@@ -383,7 +386,8 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	more = (flag & NET_IPV4_MORE_FRAG_MASK) ? true : false;
 	net_pkt_set_ipv4_fragment_flags(pkt, flag);
 
-	if (more && (net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt)) % 8) {
+	if (more && (net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+		     net_pkt_ipv4_opts_len(pkt)) % 8) {
 		/* Fragment length is not multiple of 8, discard the packet and send bad IP
 		 * header error.
 		 */
