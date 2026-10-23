@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 ASPEED Technology Inc.
+
+config SOC_AST2700_BOOTMCU
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select RISCV_VECTORED_MODE
+	select GEN_IRQ_VECTOR_TABLE
+	select INCLUDE_RESET_VECTOR
