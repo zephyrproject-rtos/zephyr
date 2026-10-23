@@ -254,7 +254,7 @@ struct bt_cap_common_proc_param {
 	union {
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
 		struct bt_cap_initiator_proc_param
-			initiator[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+			initiator[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 #if defined(CONFIG_BT_CAP_COMMANDER)
 		struct bt_cap_commander_proc_param commander[CONFIG_BT_MAX_CONN];
