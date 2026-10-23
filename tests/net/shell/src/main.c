@@ -235,4 +235,25 @@ ZTEST(net_shell_test_suite, test_net_shell_http_get_url_too_long)
 	zassert_equal(ret, -ENOBUFS, "Long path accepted (%d)", ret);
 }
 
+ZTEST(net_shell_test_suite, test_net_shell_http_get_query_too_long)
+{
+	static char cmd[CONFIG_SHELL_CMD_BUFF_SIZE];
+	static const char prefix[] = "net http get http://a?";
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_HTTP_CLIENT) || IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
+		ztest_test_skip();
+	}
+
+	/* Without a path the query is still part of the request target, so a
+	 * query that does not fit into the URL buffer must be rejected.
+	 */
+	memcpy(cmd, prefix, sizeof(prefix) - 1);
+	memset(cmd + sizeof(prefix) - 1, 'x', sizeof(cmd) - sizeof(prefix));
+	cmd[sizeof(cmd) - 1] = '\0';
+
+	ret = shell_execute_cmd(NULL, cmd);
+	zexpect_equal(ret, -ENOBUFS, "Long query accepted (%d)", ret);
+}
+
 ZTEST_SUITE(net_shell_test_suite, NULL, test_setup, NULL, NULL, NULL);
