@@ -5,7 +5,7 @@ description: Nordic nRF power control node
 
 compatible: "nordic,nrf-power"
 
-include: base.yaml
+include: ["base.yaml", "nordic,nrf-reset-reason.yaml"]
 
 properties:
   reg:
