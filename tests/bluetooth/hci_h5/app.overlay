@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,bt-hci = &h5_a;
+	};
+
+	uart_a: uart-emul-a {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+
+		h5_a: bt-hci-3wire-uart {
+			compatible = "zephyr,bt-hci-3wire-uart";
+			status = "okay";
+		};
+	};
+};
+
+&bt_hci_userchan {
+	status = "disabled";
+};
