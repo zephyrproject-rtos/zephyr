@@ -7508,6 +7508,70 @@ ZTEST(net_socket_quic, test_526_no_stream_on_a_context_being_released)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_532_no_stream_queued_after_close)
+{
+	struct quic_stream *stream;
+	struct quic_context *ctx;
+	bool queued;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54382");
+
+	/* The receive path set up a stream the peer opened, and the socket
+	 * is closed before the stream is queued for accept.
+	 */
+	stream = quic_get_stream(ctx);
+	zassert_not_null(stream, "No stream");
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zassert_equal(atomic_get(&ctx->refcount), 1, "Only the stream holds the context");
+
+	queued = quic_ctx_queue_incoming_stream(ctx, stream);
+	zexpect_false(queued, "Stream queued on a closed socket");
+	zexpect_equal(atomic_get(&stream->refcount), 0, "Stream not released");
+	zexpect_equal(atomic_get(&ctx->refcount), 0, "Context not released");
+}
+
+ZTEST(net_socket_quic, test_533_no_stream_queued_on_a_released_connection)
+{
+	struct quic_stream *stream;
+	struct quic_context *child;
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+	bool queued;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54383");
+
+	/* A connection waits for accept, and the receive path set up a
+	 * stream the peer opened on it when the listening socket is closed.
+	 */
+	ep = server_test_ep();
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	quic_connection_accept_enqueue(ep);
+
+	child = k_fifo_peek_head(&ctx->pending.accept_q);
+	zassert_not_null(child, "Connection not enqueued for accept");
+
+	stream = quic_get_stream(child);
+	zassert_not_null(stream, "No stream");
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zassert_equal(atomic_get(&child->refcount), 1, "Only the stream holds the connection");
+
+	queued = quic_ctx_queue_incoming_stream(child, stream);
+	zexpect_false(queued, "Stream queued on a released connection");
+	zexpect_equal(atomic_get(&stream->refcount), 0, "Stream not released");
+	zexpect_equal(atomic_get(&child->refcount), 0, "Connection not released");
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
