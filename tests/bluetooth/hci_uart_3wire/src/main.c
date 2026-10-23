@@ -173,6 +173,12 @@ static void expect_cmd(uint8_t param)
 	net_buf_unref(buf);
 }
 
+static void expect_no_cmd(void)
+{
+	k_sleep(K_MSEC(100));
+	zassert_true(k_fifo_is_empty(&h2c), "Unexpected packet");
+}
+
 /* The sample's output since the last check is exactly this packet */
 static void expect_tx(const uint8_t hdr[HDR_LEN], const uint8_t *payload, size_t len)
 {
@@ -226,6 +232,23 @@ ZTEST(hci_uart_3wire, test_command)
 {
 	put_cmd(true, seq, 1U);
 	expect_cmd(1U);
+	next_seq();
+	expect_ack();
+}
+
+ZTEST(hci_uart_3wire, test_header_checksum)
+{
+	uint8_t out[FRAME_MAX(CMD_LEN)];
+	uint8_t hdr[HDR_LEN];
+
+	hdr_set(hdr, true, seq, 0U, PKT_CMD, CMD_LEN);
+	hdr[3]++;
+	put(out, cmd_frame(out, hdr, 2U, CMD_LEN));
+	expect_no_cmd();
+
+	/* The discarded packet took no sequence number */
+	put_cmd(true, seq, 3U);
+	expect_cmd(3U);
 	next_seq();
 	expect_ack();
 }
