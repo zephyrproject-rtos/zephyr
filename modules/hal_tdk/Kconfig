@@ -59,6 +59,12 @@ config USE_EMD_ICM42370
 	depends on ZEPHYR_HAL_TDK_MODULE
 	depends on DT_HAS_INVENSENSE_ICM42370P_ENABLED
 
+config USE_EMD_ICTX53XX
+	bool "ICTX53XX TMR Magnetometer Sensors"
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on DT_HAS_INVENSENSE_ICTX53XX_ENABLED
+
 config USE_EMD_ICP101XX
 	bool "ICP101XX Barometric Pressure and Temperature Sensors"
 	imply TDK_HAL
