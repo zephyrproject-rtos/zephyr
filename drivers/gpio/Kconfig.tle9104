@@ -13,7 +13,7 @@ menuconfig GPIO_TLE9104
 
 config GPIO_TLE9104_INIT_PRIORITY
 	int "Init priority"
-	default 75
+	default MFD_INIT_PRIORITY
 	depends on GPIO_TLE9104
 	help
 	  Device driver initialization priority.

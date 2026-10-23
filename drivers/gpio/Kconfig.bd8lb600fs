@@ -16,7 +16,7 @@ if GPIO_BD8LB600FS
 
 config GPIO_BD8LB600FS_INIT_PRIORITY
 	int "Init priority"
-	default 75
+	default MFD_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 

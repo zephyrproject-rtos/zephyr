@@ -10,12 +10,3 @@ config MFD_RV3028
 	  Enable the parent MFD driver for the Micro Crystal RV3028 RTC.
 	  This driver owns the I2C register access and shared resources used by
 	  the RV3028 functional child drivers.
-
-config MFD_RV3028_INIT_PRIORITY
-	int "RV3028 MFD initialization priority"
-	depends on MFD_RV3028
-	default 50
-	help
-	  Initialization priority for the Micro Crystal RV3028 MFD driver.
-	  It must be earlier than the initialization priority of RV3028
-	  child drivers.
