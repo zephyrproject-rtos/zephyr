@@ -118,6 +118,8 @@ static struct h5 {
 } h5;
 
 static uint8_t unack_queue_len;
+/* tx_seq, unack_queue and unack_queue_len */
+static struct k_spinlock tx_lock;
 
 static const uint8_t sync_req[] = { 0x01, 0x7e };
 static const uint8_t sync_rsp[] = { 0x02, 0x7d };
@@ -181,11 +183,13 @@ static int h5_unslip_byte(uint8_t *byte)
 
 static void process_unack(void)
 {
+	k_spinlock_key_t key = k_spin_lock(&tx_lock);
 	uint8_t next_seq = h5.tx_seq;
 	uint8_t number_removed = unack_queue_len;
 	bool acked = false;
 
 	if (!unack_queue_len) {
+		k_spin_unlock(&tx_lock, key);
 		return;
 	}
 
@@ -229,6 +233,8 @@ static void process_unack(void)
 
 		acked = true;
 	}
+
+	k_spin_unlock(&tx_lock, key);
 
 	if (acked) {
 		k_poll_signal_raise(&tx_queue_change, 0);
@@ -294,7 +300,7 @@ static uint8_t h5_slip_byte(uint8_t byte)
 	}
 }
 
-static void h5_send(const uint8_t *payload, uint8_t type, int len)
+static void h5_send(const uint8_t *payload, uint8_t type, int len, uint8_t seq)
 {
 	static K_MUTEX_DEFINE(tx_mutex);
 	__maybe_unused int err;
@@ -316,8 +322,7 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 
 	if (reliable_packet(type)) {
 		H5_SET_RELIABLE(hdr);
-		H5_SET_SEQ(hdr, h5.tx_seq);
-		h5.tx_seq = (h5.tx_seq + 1) % 8;
+		H5_SET_SEQ(hdr, seq);
 	}
 
 	H5_SET_TYPE(hdr, type);
@@ -352,6 +357,7 @@ static void retx_timeout(struct k_work *work)
 	LOG_DBG("unack_queue_len %u", unack_queue_len);
 
 	if (unack_queue_len) {
+		k_spinlock_key_t key = k_spin_lock(&tx_lock);
 		struct k_fifo tmp_queue;
 		struct net_buf *buf;
 
@@ -375,6 +381,8 @@ static void retx_timeout(struct k_work *work)
 		while ((buf = k_fifo_get(&tmp_queue, K_NO_WAIT))) {
 			k_fifo_put(&h5.tx_queue, buf);
 		}
+
+		k_spin_unlock(&tx_lock, key);
 	}
 
 	k_poll_signal_raise(&tx_queue_change, 0);
@@ -386,7 +394,7 @@ static void ack_timeout(struct k_work *work)
 
 	LOG_DBG("");
 
-	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0);
+	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0, 0U);
 }
 
 static void h5_process_complete_packet(uint8_t *hdr)
@@ -610,8 +618,10 @@ static uint8_t h5_get_type(struct net_buf *buf)
 
 static void process_events(struct k_poll_event *ev, int count)
 {
+	k_spinlock_key_t key;
 	struct net_buf *buf;
 	uint8_t type;
+	uint8_t seq;
 	int err;
 
 	LOG_DBG("count %d", count);
@@ -646,13 +656,22 @@ static void process_events(struct k_poll_event *ev, int count)
 				__ASSERT_NO_MSG(buf);
 
 				type = h5_get_type(buf);
-				h5_send(buf->data, type, buf->len);
 
-				/* buf is dequeued from tx_queue and queued to unack
-				 * queue.
+				/* Queued before it is sent, as uart_poll_out() may block, with a
+				 * reference of its own in case it is acknowledged meanwhile
 				 */
-				k_fifo_put(&h5.unack_queue, buf);
+				key = k_spin_lock(&tx_lock);
+				seq = h5.tx_seq;
+				if (reliable_packet(type)) {
+					h5.tx_seq = (seq + 1) % 8;
+				}
+
+				k_fifo_put(&h5.unack_queue, net_buf_ref(buf));
 				unack_queue_len++;
+				k_spin_unlock(&tx_lock, key);
+
+				h5_send(buf->data, type, buf->len, seq);
+				net_buf_unref(buf);
 
 				k_work_reschedule(&retx_work, H5_TX_ACK_TIMEOUT);
 			}
@@ -727,6 +746,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			LOG_ERR("Link control packet too short (len %u)", buf->len);
 		} else if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
 			if (h5.link_state == ACTIVE) {
+				k_spinlock_key_t key = k_spin_lock(&tx_lock);
+
 				while ((cache = k_fifo_get(&h5.unack_queue, K_NO_WAIT))) {
 					net_buf_unref(cache);
 				}
@@ -737,15 +758,17 @@ static void rx_thread(void *p1, void *p2, void *p3)
 					net_buf_unref(cache);
 				}
 
+				h5.tx_seq = 0;
+				k_spin_unlock(&tx_lock, key);
+
 				h5_reset_rx();
 
 				h5.rx_ack = 0;
 				h5.link_state = INIT;
 				h5.tx_ack = 0;
-				h5.tx_seq = 0;
 			}
 
-			h5_send(sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp));
+			h5_send(sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp), 0U);
 		} else if (!memcmp(buf->data, conf_req, 2)) {
 			if (buf->len > 2) {
 				uint8_t tx_win = buf->data[2] & 0x07;
@@ -760,7 +783,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			 * The Host sends Config Response messages with a
 			 * Configuration Field.
 			 */
-			h5_send(conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp));
+			h5_send(conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp), 0U);
 
 			LOG_DBG("Finished H5 configuration, tx_win %u", h5.tx_win);
 
