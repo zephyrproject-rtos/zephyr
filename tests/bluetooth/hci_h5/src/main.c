@@ -18,6 +18,7 @@
 #include <zephyr/ztest.h>
 
 #define PKT_ACK  0x00U
+#define PKT_CMD  0x01U
 #define PKT_EVT  0x04U
 #define PKT_LINK 0x0fU
 
@@ -34,6 +35,9 @@
 
 /* Longer than the driver waits before it sends an acknowledgment */
 #define ACK_WAIT K_MSEC(300)
+
+/* H:4 type and HCI_Reset */
+NET_BUF_POOL_DEFINE(cmd_pool, 1, 4, 0, NULL);
 
 struct ctlr {
 	const struct device *hci;
@@ -175,6 +179,14 @@ static void expect_ack(struct ctlr *c)
 	expect_tx(c, hdr, NULL, 0U);
 }
 
+static void expect_no_tx(struct ctlr *c)
+{
+	uint8_t tx[64];
+
+	k_sleep(ACK_WAIT);
+	zassert_equal(uart_emul_get_tx_data(c->uart, tx, sizeof(tx)), 0U, "Unexpected output");
+}
+
 static int recv(const struct device *dev, struct net_buf *buf)
 {
 	if (k_current_get() == k_work_queue_thread_get(&uart_emul_work_q)) {
@@ -309,6 +321,39 @@ ZTEST(hci_h5, test_truncated_packet)
 	expect_no_evt(c);
 	next_seq(c);
 	expect_ack(c);
+}
+
+ZTEST(hci_h5, test_unsupported_type)
+{
+	static const uint8_t reset[] = { 0x03, 0x0c, 0x00 };
+	struct ctlr *c = &ctlrs[0];
+	uint8_t out[FRAME_MAX(0U)];
+	uint8_t hdr[HDR_LEN];
+	struct net_buf *buf;
+	uint8_t tx[64];
+	uint8_t seq;
+
+	buf = net_buf_alloc(&cmd_pool, K_NO_WAIT);
+	zassert_not_null(buf);
+	net_buf_add_u8(buf, BT_HCI_H4_CMD);
+	net_buf_add_mem(buf, reset, sizeof(reset));
+	zassert_ok(bt_hci_send(c->hci, buf));
+	k_sleep(K_MSEC(10));
+	zassert_true(uart_emul_get_tx_data(c->uart, tx, sizeof(tx)) > 1U);
+	seq = tx[1] & 0x07U;
+
+	/* Reserved type 6 declaring one octet and carrying none, acknowledging the command */
+	hdr_set(hdr, false, 0U, (seq + 1U) % 8U, 6U, 1U);
+	put(c, out, frame(out, hdr, NULL, 0U));
+
+	/* The acknowledgment was discarded with the packet */
+	k_sleep(ACK_WAIT);
+	hdr_set(hdr, true, seq, c->seq, PKT_CMD, sizeof(reset));
+	expect_tx(c, hdr, reset, sizeof(reset));
+
+	hdr_set(hdr, false, 0U, (seq + 1U) % 8U, PKT_ACK, 0U);
+	put(c, out, frame(out, hdr, NULL, 0U));
+	expect_no_tx(c);
 }
 
 ZTEST(hci_h5, test_interleaved_instances)
