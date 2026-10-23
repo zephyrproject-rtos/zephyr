@@ -8009,6 +8009,133 @@ ZTEST(net_socket_quic, test_543_ack_and_loss_keep_stream_references)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_503_close_notifies_only_its_connection)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx_a;
+	struct quic_context *ctx_b;
+	int sock_a;
+	int sock_b;
+	int ret;
+
+	ctx_a = open_test_listener(&sock_a, "127.0.0.1:54355");
+	ctx_b = open_test_listener(&sock_b, "127.0.0.1:54356");
+
+	/* Use the contexts as connections. The endpoint belongs to the
+	 * first one only.
+	 */
+	ctx_a->is_listening = false;
+	ctx_b->is_listening = false;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx_a->endpoints, &ep->node);
+	k_sem_reset(&ctx_a->incoming.stream_sem);
+	k_sem_reset(&ctx_b->incoming.stream_sem);
+	ctx_b->error_code = 0;
+
+	quic_endpoint_notify_streams_closed(ep);
+
+	zexpect_equal(k_sem_count_get(&ctx_a->incoming.stream_sem), 1,
+		      "The connection of the endpoint was not woken");
+	zexpect_equal(ctx_a->error_code, -ECONNRESET, "Wrong error %d", ctx_a->error_code);
+	zexpect_true(ctx_a->closed, "The connection of the endpoint was not closed");
+
+	zexpect_equal(k_sem_count_get(&ctx_b->incoming.stream_sem), 0,
+		      "Another connection was woken");
+	zexpect_equal(ctx_b->error_code, 0, "Another connection got error %d", ctx_b->error_code);
+	zexpect_false(ctx_b->closed, "Another connection was closed");
+
+	(void)sys_slist_find_and_remove(&ctx_a->endpoints, &ep->node);
+	ctx_a->is_listening = true;
+	ctx_b->is_listening = true;
+
+	ret = quic_connection_close(sock_a);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock_a, -errno);
+	ret = quic_connection_close(sock_b);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock_b, -errno);
+}
+
+ZTEST(net_socket_quic, test_531_failed_connection_leaves_its_listener_open)
+{
+	static struct quic_stream waiting;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54381");
+
+	/* A connection of the listener that is not accepted yet, with a
+	 * stream the peer opened, goes away.
+	 */
+	ep->is_server = true;
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&waiting, ctx, ep, 0);
+	k_sem_reset(&ctx->incoming.stream_sem);
+	ctx->error_code = 0;
+
+	quic_endpoint_notify_streams_closed(ep);
+
+	zexpect_is_null(waiting.ep, "The stream of the connection was not notified");
+	zexpect_equal(ctx->error_code, 0, "The listener got error %d", ctx->error_code);
+	zexpect_false(ctx->closed, "The listener was closed");
+	zexpect_equal(k_sem_count_get(&ctx->incoming.stream_sem), 0, "The listener was woken");
+
+	/* Its own endpoint going away closes the listener */
+	quic_endpoint_notify_streams_closed(ctx->listen);
+
+	zexpect_equal(ctx->error_code, -ECONNRESET, "Wrong error %d", ctx->error_code);
+	zexpect_true(ctx->closed, "The listener was not closed");
+
+	unlink_test_stream(&waiting, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->error_code = 0;
+	ctx->closed = false;
+	ep->parent = NULL;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_504_closed_connection_hangs_up_with_streams_waiting)
+{
+	static struct quic_stream waiting;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct zsock_pollfd pfd;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54357");
+
+	/* Use the context as a connection whose peer opened a stream that
+	 * is not accepted yet, and then closed the connection.
+	 */
+	ctx->is_listening = false;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&waiting, ctx, ep, 3);
+	k_fifo_put(&ctx->incoming.stream_q, &waiting);
+	ctx->closed = true;
+
+	pfd.fd = sock;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+	ret = zsock_poll(&pfd, 1, 0);
+	zexpect_equal(ret, 1, "poll() returned %d", ret);
+	zexpect_true((pfd.revents & ZSOCK_POLLIN) != 0, "The waiting stream is not reported");
+	zexpect_true((pfd.revents & ZSOCK_POLLHUP) != 0, "The hang-up is not reported");
+
+	(void)k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT);
+	unlink_test_stream(&waiting, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->closed = false;
+	ctx->is_listening = true;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
