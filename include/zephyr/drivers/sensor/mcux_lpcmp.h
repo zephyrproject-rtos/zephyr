@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief Data structure for the NXP MCUX low-power analog comparator (LPCMP)
+ * @ingroup mcux_lpcmp_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_MCUX_LPCMP_H_
@@ -18,6 +19,13 @@ extern "C" {
 #endif
 
 #include <zephyr/drivers/sensor.h>
+
+/**
+ * @brief NXP MCUX low-power analog comparator (LPCMP)
+ * @defgroup mcux_lpcmp_interface MCUX LPCMP
+ * @ingroup sensor_interface_ext_nxp
+ * @{
+ */
 
 /**
  * @brief lpcmp channels.
@@ -90,6 +98,8 @@ enum sensor_attribute_mcux_lpcmp {
 	 */
 	SENSOR_ATTR_MCUX_LPCMP_COUT_EVENT_TO_CLOSE_WINDOW
 };
+
+/** @} */
 
 #ifdef __cplusplus
 }
