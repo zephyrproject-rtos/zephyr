@@ -160,6 +160,11 @@
 	status = "okay";
 };
 
+&rtc {
+	clock-source = "LPO";
+	status = "okay";
+};
+
 &crc {
 	status = "okay";
 };
