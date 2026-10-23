@@ -237,6 +237,25 @@
 			status = "disabled";
 		};
 
+		adc: adc@e1000000 {
+			compatible = "microchip,adc-g2";
+			reg = <0xe1000000 0x200>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_GCK 25>;
+			clock-names = "adc_clk";
+			assigned-clock-rates = <40000000>;
+			min-adc-clock-rates = <200000>;
+			max-adc-clock-rates = <20000000>;
+			startup-time-us = <5>;
+			max-oversampling-ratio = <256>;
+			temperature-startup-us = <20>;
+			temperature-channel = <31>;
+			num-channels = <16>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		aes: aes@e1600000 {
 			compatible = "microchip,aes-g1";
 			reg = <0xe1600000 0x100>;

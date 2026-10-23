@@ -276,6 +276,27 @@
 			status = "disabled";
 		};
 
+		adc: adc@e1000000 {
+			compatible = "microchip,adc-g2";
+			reg = <0xe1000000 0x200>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_GCK 26>;
+			clock-names = "adc_clk";
+			assigned-clock-rates = <80000000>;
+			dmas = <&dma0 2 0>;
+			dma-names = "rx";
+			min-adc-clock-rates = <200000>;
+			max-adc-clock-rates = <20000000>;
+			startup-time-us = <5>;
+			max-oversampling-ratio = <256>;
+			temperature-startup-us = <20>;
+			temperature-channel = <31>;
+			num-channels = <16>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		dma2: dma-controller@e1200000 {
 			compatible = "atmel,sam-xdmac";
 			reg = <0xe1200000 0x1000>;
