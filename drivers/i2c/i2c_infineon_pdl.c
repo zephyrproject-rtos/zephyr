@@ -136,15 +136,24 @@ static const cy_stc_scb_i2c_config_t _i2c_default_config = {
 
 typedef void (*ifx_cat1_i2c_event_callback_t)(void *callback_arg, uint32_t event);
 
-cy_rslt_t _i2c_abort_async(const struct device *dev)
+/**
+ * @brief Ask the controller to abort the transfer in progress.
+ *
+ * Returns without waiting for the STOP, so it is safe from the interrupt
+ * handler.  The PDL clears CY_SCB_I2C_MASTER_BUSY from the SCB interrupt once
+ * the STOP completes; wait for that from thread context with
+ * ifx_cat1_i2c_wait_controller_idle().  Does nothing when no transfer is
+ * running.
+ *
+ * @param[in] dev I2C device instance.
+ */
+static void ifx_cat1_i2c_abort_request(const struct device *dev)
 {
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 
-	uint16_t timeout_us = 10000;
-
 	if (data->pending == CAT1_I2C_PENDING_NONE) {
-		return CY_RSLT_SUCCESS;
+		return;
 	}
 
 	if (data->pending == CAT1_I2C_PENDING_RX) {
@@ -152,16 +161,47 @@ cy_rslt_t _i2c_abort_async(const struct device *dev)
 	} else {
 		Cy_SCB_I2C_MasterAbortWrite(config->base, &data->context);
 	}
+}
+
+/**
+ * @brief Wait up to 10 ms for the controller to go idle.
+ *
+ * Thread context only.  CY_SCB_I2C_MASTER_BUSY is cleared by the SCB
+ * interrupt, so a wait inside that interrupt always runs to the timeout.
+ *
+ * @param[in] dev I2C device instance.
+ *
+ * @retval 0 The controller is idle.
+ * @retval -ETIMEDOUT The controller was still busy after 10 ms.
+ */
+static int ifx_cat1_i2c_wait_controller_idle(const struct device *dev)
+{
+	struct ifx_cat1_i2c_data *data = dev->data;
+	uint16_t timeout_us = 10000U;
+
+	while (((data->context.masterStatus & CY_SCB_I2C_MASTER_BUSY) != 0U) &&
+	       (timeout_us != 0U)) {
+		Cy_SysLib_DelayUs(1U);
+		timeout_us--;
+	}
+
+	return (timeout_us == 0U) ? -ETIMEDOUT : 0;
+}
+
+cy_rslt_t _i2c_abort_async(const struct device *dev)
+{
+	struct ifx_cat1_i2c_data *data = dev->data;
+
+	if (data->pending == CAT1_I2C_PENDING_NONE) {
+		return CY_RSLT_SUCCESS;
+	}
+
+	ifx_cat1_i2c_abort_request(dev);
 
 	/* After abort, next I2C operation can be initiated only after
 	 * CY_SCB_I2C_MASTER_BUSY is cleared, so waiting for that event to occur.
 	 */
-	while ((CY_SCB_I2C_MASTER_BUSY & data->context.masterStatus) && (timeout_us != 0)) {
-		Cy_SysLib_DelayUs(1);
-		timeout_us--;
-	}
-
-	if (0 == timeout_us) {
+	if (ifx_cat1_i2c_wait_controller_idle(dev) != 0) {
 		return CY_SCB_I2C_MASTER_MANUAL_TIMEOUT;
 	}
 
@@ -250,13 +290,15 @@ static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 
 	if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
-		(void)_i2c_abort_async(dev);
 		/*
-		 * Abort does not confirm the controller went idle when it times out,
-		 * so clear the async state unconditionally. This stops the
-		 * interrupt handler from starting a spurious read after a failed
-		 * write and leaving a stale completion for the next transfer.
+		 * Waiting here for the STOP would spin for the full timeout:
+		 * the status that reports it is cleared by this interrupt.
+		 * Request the abort only; the transfer thread waits for the
+		 * controller to go idle.  Clearing the async state now stops
+		 * the interrupt handler from starting a spurious read after a
+		 * failed write.
 		 */
+		ifx_cat1_i2c_abort_request(dev);
 		data->pending = CAT1_I2C_PENDING_NONE;
 		data->error = true;
 		k_sem_give(&data->transfer_sem);
@@ -973,6 +1015,18 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 
 		/* Check for an error during the transfer */
 		if (data->error) {
+			/*
+			 * The interrupt handler only requested the STOP.  Returning
+			 * before it completes would start the next transfer on a
+			 * busy controller, and the completion event the STOP
+			 * raises would leave a count on transfer_sem that ends the
+			 * next wait at once.
+			 */
+			if (ifx_cat1_i2c_wait_controller_idle(dev) != 0) {
+				LOG_WRN("I2C controller did not go idle after an error");
+			}
+			k_sem_reset(&data->transfer_sem);
+
 			pm_policy_device_power_lock_put(dev);
 			(void)pm_device_runtime_put(dev);
 			k_sem_give(&data->operation_sem);
