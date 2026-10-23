@@ -29,5 +29,6 @@ supported:
   - spi
   - uart
   - dac
+  - dmic
   - i2s
 vendor: nxp
