@@ -362,12 +362,20 @@ ARM64 arch:
     - kernel
 
 ASPEED Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - billy-tsai
   files:
+    - boards/aspeed/
     - soc/aspeed/
     - dts/arm/aspeed/
+    - dts/riscv/aspeed/
+    - dts/bindings/*/aspeed,*
     - drivers/*/*_ast10x0.c
+    - drivers/*/*_ast27xx*.c
+    - drivers/*/*ast2700*.c
     - drivers/*/Kconfig.aspeed
+    - include/zephyr/dt-bindings/*/ast27xx*
   labels:
     - "platform: ASPEED"
 
