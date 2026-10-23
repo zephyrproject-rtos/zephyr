@@ -1,0 +1,102 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Multipurpose Clock Generator Lite (MCG_Lite)
+
+  MCG_Lite is the reduced MCG on MCXC and K32L2 parts. It has no FLL
+  or PLL. MCGOUTCLK is taken from one of three sources:
+
+    - HIRC: 48 MHz high-frequency internal reference clock
+    - LIRC: 8 MHz or 2 MHz low-frequency internal reference clock,
+      divided by 2^fcrdiv (LIRC_DIV1)
+    - EXT: the external clock or crystal oscillator (OSC0)
+
+  MCGIRCLK is LIRC_DIV1 further divided by 2^lircdiv2. MCGPCLK is the HIRC
+  output for peripherals.
+
+compatible: "nxp,mcg-lite"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+  clocks:
+    description: |
+      External clock input (OSC0). Required when clock-source is "ext".
+
+  clock-source:
+    type: string
+    default: "hirc"
+    enum:
+      - "hirc"
+      - "lirc"
+      - "ext"
+    description: |
+      MCGOUTCLK source, programmed to MCG_C1[CLKS]. Out of reset the part
+      runs from LIRC 8 MHz; the default here selects HIRC 48 MHz.
+
+  lirc-frequency:
+    type: int
+    default: 8000000
+    enum:
+      - 2000000
+      - 8000000
+    description: |
+      LIRC frequency in Hz, programmed to MCG_C2[IRCS]. The default is the
+      reset value of MCG_C2[IRCS].
+
+  fcrdiv:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      First LIRC divider (MCG_SC[FCRDIV]). Division factor is 2^fcrdiv.
+      The default is the reset value.
+
+  lircdiv2:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Second LIRC divider (MCG_MC[LIRC_DIV2]), applied after fcrdiv to
+      produce MCGIRCLK. Division factor is 2^lircdiv2. The default is the
+      reset value.
+
+  lirc-enable:
+    type: boolean
+    description: |
+      Keep LIRC running when it is not the MCGOUTCLK source, so MCGIRCLK
+      and LIRC_CLK stay available to peripherals (MCG_C1[IRCLKEN]).
+
+  lirc-stop-enable:
+    type: boolean
+    description: |
+      Keep LIRC running in Stop mode (MCG_C1[IREFSTEN]). Only takes effect
+      together with lirc-enable.
+
+  hirc-enable:
+    type: boolean
+    description: |
+      Keep HIRC running when it is not the MCGOUTCLK source, so MCGPCLK
+      stays available to peripherals (MCG_MC[HIRCEN]). Must be left out
+      before entering VLPR.
+
+clock-cells:
+  - name
+
+examples:
+  - |
+    # LIRC 8 MHz as MCGOUTCLK, with HIRC kept running for peripherals:
+    &mcg {
+            clock-source = "lirc";
+            lirc-frequency = <DT_FREQ_M(8)>;
+            fcrdiv = <1>;
+            lirc-enable;
+            hirc-enable;
+    };
