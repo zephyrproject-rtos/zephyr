@@ -30,10 +30,14 @@ config IPC_SERVICE_BACKEND_RPMSG_SHMEM_INIT_PRIORITY
 	  RPMsg static vrings backend.
 
 config IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
-	int "Max number of registered endpoints per instance"
+	int "Max number of registered endpoints per instance [DEPRECATED]"
 	default 2
 	help
-	  Maximal number of endpoints that can be registered for one instance
-	  for RPMSG backend.
+	  Deprecated: use IPC_SERVICE_RPMSG_NUM_ENDPOINTS_PER_INSTANCE instead.
+	  This value supplies the default for the RPMsg library option.
+
+config IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE_DEPRECATED
+	def_bool IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE != 2
+	select DEPRECATED
 
 endif # IPC_SERVICE_BACKEND_RPMSG

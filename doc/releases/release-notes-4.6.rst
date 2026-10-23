@@ -53,6 +53,9 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* :kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE`:
+  see :ref:`migration_4.6`.
+
 New APIs and options
 ====================
 ..
