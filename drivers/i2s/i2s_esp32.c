@@ -37,11 +37,16 @@
 LOG_MODULE_REGISTER(i2s_esp32, CONFIG_I2S_LOG_LEVEL);
 
 /* I2S_CLK_SRC_DEFAULT is an auto-select sentinel on esp32p4, not an
- * alias of a module clock, so its rate resolves to zero. PLL_F160M is
- * available on the revisions zephyr supports.
+ * alias of a module clock, so its rate resolves to zero. The 160 MHz
+ * PLL is a clock source from revision 3. Earlier revisions use the
+ * crystal.
  */
 #ifdef CONFIG_SOC_SERIES_ESP32P4
+#if CONFIG_SOC_ESP32P4_REV_MIN_FULL >= 300
 #define I2S_ESP32_CLK_SRC I2S_CLK_SRC_PLL_160M
+#else
+#define I2S_ESP32_CLK_SRC I2S_CLK_SRC_XTAL
+#endif
 #else
 #define I2S_ESP32_CLK_SRC I2S_CLK_SRC_DEFAULT
 #endif
