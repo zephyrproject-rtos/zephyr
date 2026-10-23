@@ -63,6 +63,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Audio
+
+  * :c:enumerator:`AUDIO_CODEC_ERROR_CLOCK`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -90,6 +94,10 @@ New Drivers
 ..
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
+
+* Audio
+
+  * :dtcompatible:`cirrus,cs47l63` (:github:`118752`)
 
 New Samples
 ***********
