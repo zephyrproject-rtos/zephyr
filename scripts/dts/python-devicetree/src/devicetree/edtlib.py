@@ -1174,8 +1174,11 @@ class Node:
       A list with the nodes that the node directly depends on
 
     status:
-      The node's status property value, as a string, or "okay" if the node
-      has no status property set.
+      The node's effective status, as a string. This is the node's own status
+      property value, or "okay" if the node has no status property set, except
+      that a node whose own status is "okay" inherits the status of its parent
+      when the parent's status is not "okay". A node with a non-"okay" status
+      of its own keeps that value regardless of its parent.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
@@ -1424,6 +1427,12 @@ class Node:
             as_string = "okay"
         else:
             as_string = status.to_string()
+
+        if as_string == "okay":
+            # Nodes below a node that is not "okay" are not "okay" either.
+            parent = self.parent
+            if parent is not None and parent.status != "okay":
+                as_string = parent.status
 
         return as_string
 

@@ -115,6 +115,10 @@
 	k32src-accuracy-ppm = <250>;
 };
 
+&power {
+	status = "okay";
+};
+
 &gpregret1 {
 	status = "okay";
 

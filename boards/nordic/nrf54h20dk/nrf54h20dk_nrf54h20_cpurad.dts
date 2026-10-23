@@ -119,6 +119,10 @@ slot1_partition: &cpurad_slot1_partition {
 	pinctrl-names = "default", "sleep";
 };
 
+&radio {
+	status = "okay";
+};
+
 &cpurad_ieee802154 {
 	status = "okay";
 };

@@ -139,8 +139,23 @@ def handle_disabled_node(node: edtlib.Node) -> list[str]:
     Handle diagnosis for a disabled DT node.
     """
     edt = node.edt
-    status_prop = node._node.props.get('status')
-    lines = [f"'{format_node(node)}' is disabled in {status_prop.filename}:{status_prop.lineno}"]
+
+    # A node inherits a non-okay status from its parent, so the property that
+    # disables the node may sit on an ancestor.
+    disabled_by = node
+    while disabled_by.parent is not None and disabled_by.parent.status != "okay":
+        disabled_by = disabled_by.parent
+    status_prop = disabled_by._node.props['status']
+    if disabled_by is node:
+        lines = [
+            f"'{format_node(node)}' is disabled in {status_prop.filename}:{status_prop.lineno}"
+        ]
+    else:
+        lines = [
+            f"'{format_node(node)}' is disabled because its parent "
+            f"'{format_node(disabled_by)}' is disabled in "
+            f"{status_prop.filename}:{status_prop.lineno}"
+        ]
 
     # Show dependency
     users = getattr(node, "required_by", [])
@@ -166,7 +181,10 @@ def handle_disabled_node(node: edtlib.Node) -> list[str]:
             f"""{', '.join([f"'{ref}'" for ref in sorted(alias_refs)])}"""
         )
 
-    lines.append("\nTry enabling the node by setting its 'status' property to 'okay'.")
+    if disabled_by is node:
+        lines.append("\nTry enabling the node by setting its 'status' property to 'okay'.")
+    else:
+        lines.append("\nTry enabling the parent node by setting its 'status' property to 'okay'.")
 
     return lines
 

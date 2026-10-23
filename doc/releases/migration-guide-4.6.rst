@@ -47,6 +47,14 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
+* A devicetree node now inherits the status of its parent node when the parent is not
+  ``"okay"``: every node below a ``"disabled"`` (or ``"reserved"``) node is treated as
+  ``"disabled"`` (or ``"reserved"``), even if it has ``status = "okay";`` itself. Such nodes
+  no longer get a ``struct device``, no longer count toward ``DT_NUM_INST_STATUS_OKAY()`` and
+  no longer enable ``CONFIG_DT_HAS_<compat>_ENABLED``. Boards and applications that relied on
+  enabled nodes below a disabled parent, for example a device on a bus controller that is
+  disabled, must enable the parent node.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
