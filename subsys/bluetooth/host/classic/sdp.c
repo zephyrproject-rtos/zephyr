@@ -1996,6 +1996,7 @@ static uint16_t get_ss_record_len(struct net_buf *buf)
 
 static uint16_t get_ssa_record_len(struct net_buf *buf)
 {
+	uint32_t len_32b;
 	uint16_t len;
 	uint8_t seq;
 
@@ -2021,7 +2022,12 @@ static uint16_t get_ssa_record_len(struct net_buf *buf)
 		if (buf->len < sizeof(uint32_t)) {
 			goto buffer_too_small;
 		}
-		len = net_buf_pull_be32(buf);
+		len_32b = net_buf_pull_be32(buf);
+		if (len_32b > UINT16_MAX) {
+			LOG_WRN("SDP length exceeds 16-bit max");
+			return 0U;
+		}
+		len = (uint16_t)len_32b;
 		break;
 	default:
 		LOG_WRN("Sequence type 0x%02x not handled", seq);
