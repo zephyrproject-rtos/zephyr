@@ -484,13 +484,13 @@ static int nxp_irtc_init(const struct device *dev)
 	nxp_irtc_unlock_registers(irtc_reg);
 
 	reg = irtc_reg->CTRL;
+	/* Some IRTC revisions (e.g. RT2660) have no CLKO_DIS bit. */
+#if defined(RTC_CTRL_CLKO_DIS_MASK)
 	reg &= ~(uint16_t)RTC_CTRL_CLKO_DIS_MASK;
+	reg |= RTC_CTRL_CLKO_DIS(!config->is_output_clock_enabled);
+#endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
 	reg &= ~(uint16_t)RTC_CTRL_CLK_SEL_MASK;
-#endif
-
-	reg |= RTC_CTRL_CLKO_DIS(!config->is_output_clock_enabled);
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
 	reg |= RTC_CTRL_CLK_SEL(config->clock_src);
 #endif
 
