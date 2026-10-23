@@ -268,21 +268,8 @@ overlay file is located at:
 
    boards/nxp/mimxrt1180_evk/cm7_code_hyperram.overlay
 
-The MPU attributes for the board also need to be changed in this file:
-
-.. code-block:: none
-
-   boards/nxp/mimxrt1180_evk/cm7/mpu_regions.c
-
-Changing the line below enables execution from the HyperRAM region by setting the flash attribute:
-
-.. code-block:: none
-
-   #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hyperram0))
-        MPU_REGION_ENTRY("HYPER_RAM", REGION_HYPER_RAM_BASE_ADDRESS,
-   -                        REGION_RAM_ATTR(REGION_HYPER_RAM_SIZE)),
-   +                        REGION_FLASH_ATTR(REGION_HYPER_RAM_SIZE)),
-   #endif
+The board MPU configuration maps HyperRAM as executable when it is the chosen ``zephyr,flash``,
+so no change to ``cm7/mpu_regions.c`` is needed.
 
 Memory Usage
 ============
