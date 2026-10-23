@@ -2851,6 +2851,12 @@ Other notable changes
     application, and the shared Espressif partition tables no longer reserve a scratch
     partition. See the :ref:`migration guide <migration_4.5>`.
 
+* Microchip
+
+  * The default ``west flash`` runner for the Microchip development boards with PIC32C family
+    devices has changed from ``jlink`` to ``mplab_ipe`` (the MPLAB IPE programmer, invoking
+    ``ipecmd``). Pass ``--runner jlink`` to keep using J-Link.
+
 * NXP
 
   * The NXP LPC DTSI files have been reorganized from the flat
