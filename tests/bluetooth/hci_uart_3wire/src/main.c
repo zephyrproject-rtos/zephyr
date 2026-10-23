@@ -253,4 +253,24 @@ ZTEST(hci_uart_3wire, test_header_checksum)
 	expect_ack();
 }
 
+ZTEST(hci_uart_3wire, test_data_integrity_check)
+{
+	static const uint8_t cmd[] = { 0x1a, 0x0c, 1U, 4U, 0x00, 0x00 };
+	uint8_t out[FRAME_MAX(sizeof(cmd))];
+	uint8_t hdr[HDR_LEN];
+
+	/* Never configured, so discarded with or without the check octets */
+	hdr_set(hdr, true, seq, 0U, PKT_CMD, CMD_LEN);
+	hdr[0] |= BIT(6);
+	hdr[3] = ~(hdr[0] + hdr[1] + hdr[2]);
+	put(out, frame(out, hdr, cmd, CMD_LEN));
+	put(out, frame(out, hdr, cmd, sizeof(cmd)));
+	expect_no_cmd();
+
+	put_cmd(true, seq, 5U);
+	expect_cmd(5U);
+	next_seq();
+	expect_ack();
+}
+
 ZTEST_SUITE(hci_uart_3wire, NULL, NULL, before, NULL, NULL);
