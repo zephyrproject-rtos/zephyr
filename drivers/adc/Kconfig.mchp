@@ -9,3 +9,31 @@ config ADC_MCHP_G1
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable support for the Microchip ADC driver on G1 ADC peripherals.
+
+config ADC_MCHP_G3
+	bool "Microchip ADC support for G3 peripherals"
+	depends on DT_HAS_MICROCHIP_ADC_G3_ENABLED
+	default y
+	select PINCTRL
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable support for the Microchip ADC driver on G3 ADC peripherals.
+
+config ADC_MCHP_G3_DMA_DRIVEN
+	bool "Microchip ADC G3 DMA support"
+	default y
+	depends on ADC_MCHP_G3
+	depends on $(dt_compat_all_has_prop,$(DT_COMPAT_MICROCHIP_ADC_G3),dmas)
+	select DMA
+	help
+	  This enables DMA driven transfers for the ADC peripheral.
+	  Requires DMA controller and dmas property in device tree.
+
+config ADC_MCHP_G3_DMA_BUFFER_SIZE
+	int "Microchip ADC G3 DMA buffer size"
+	default 512
+	range 512 4096
+	depends on ADC_MCHP_G3_DMA_DRIVEN
+	help
+	  This driver use a scratch buffer to handle unaligned accesses.
+	  Specify the DMA buffer size here.
