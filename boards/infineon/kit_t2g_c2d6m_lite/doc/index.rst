@@ -25,7 +25,7 @@ Kit Features
 ============
 
 - Evaluation board for CYT4DN MCU in 327-BGA package, dual-core Arm® Cortex® M7 CPUs running at 320-MHz and an Arm® Cortex® M0+ CPU running at 100-MHz
-- Full-system approach on the board, featuring Gigabit Ethernet PHY and connector, CAN FD transceiver, user LEDs, buttons, and potentiometer
+- Full-system approach on the board, featuring a Gigabit Ethernet PHY (Realtek RTL8211FI on RGMII) with RJ45 connector, CAN FD transceiver, user LEDs, buttons, and potentiometer
 - Headers compatible with Arduino for interfacing Arduino shields
 - Fully compatible with ModusToolbox™ v3.0
 - KitProg3 on-board SWD programmer/debugger, USB-UART, and USB-I2C bridge functionality through USB connector
