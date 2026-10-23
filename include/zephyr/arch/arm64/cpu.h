@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_
 
-#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/util.h>
 #include <stdbool.h>
 
 /** @cond INTERNAL_HIDDEN */
