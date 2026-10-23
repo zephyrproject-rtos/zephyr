@@ -11,7 +11,7 @@ The kit provides an on-board SEGGER J-Link debugger, a USB virtual COM port,
 two user LEDs, two push buttons, GPIO breakout pads, a mikroBUS socket and a
 Qwiic connector.
 
-.. figure:: simg301_ek2719a.png
+.. figure:: sixg301-ek2719a.webp
    :align: center
    :alt: SixG301 Explorer Kit (BRD2719A)
 
