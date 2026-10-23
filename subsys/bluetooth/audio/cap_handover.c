@@ -56,7 +56,7 @@ bool bt_cap_handover_is_handover_broadcast_source(
 
 struct cap_unicast_group_stream_lookup {
 	struct bt_cap_stream *active_sink_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
-	struct bt_cap_stream *streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_cap_stream *streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 	size_t active_sink_streams_cnt;
 	size_t cnt;
 };

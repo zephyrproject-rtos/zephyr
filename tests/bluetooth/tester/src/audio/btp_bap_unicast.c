@@ -1212,7 +1212,7 @@ static uint8_t client_add_ase_to_cis(struct btp_bap_unicast_connection *u_conn, 
 	struct btp_bap_unicast_stream *stream;
 
 	if (cig_id >= CONFIG_BT_ISO_MAX_CIG ||
-	    cis_id >= CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	    cis_id >= CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT) {
 		return -EINVAL;
 	}
 

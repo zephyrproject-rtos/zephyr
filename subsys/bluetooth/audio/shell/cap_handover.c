@@ -560,10 +560,10 @@ static int cap_handover_broadcast_to_unicast_init_stream_params(
 		return -ENOEXEC;
 	}
 
-	if (MAX(lookup_data.cnt, conn_cnt) > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	if (MAX(lookup_data.cnt, conn_cnt) > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT) {
 		shell_error(sh, "Cannot setup %zu unicast streams in a single group (max %d)",
 			    MAX(lookup_data.cnt, conn_cnt),
-			    CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+			    CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 
 		return -ENOEXEC;
 	}
