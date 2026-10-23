@@ -104,8 +104,8 @@
 };
 
 &pll2 {
-	div-m = <1>;
-	mul-n = <10>;
+	div-m = <4>;
+	mul-n = <120>;
 	div-p = <1>;
 	div-q = <1>;
 	div-r = <1>;
