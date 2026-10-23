@@ -315,4 +315,30 @@ ZTEST(hci_uart_3wire, test_unsupported_type)
 	expect_no_tx();
 }
 
+ZTEST(hci_uart_3wire, test_unreliable_command)
+{
+	/* Takes no sequence number */
+	put_cmd(false, 0U, 7U);
+	expect_cmd(7U);
+
+	put_cmd(true, seq, 8U);
+	expect_cmd(8U);
+	next_seq();
+	expect_ack();
+}
+
+ZTEST(hci_uart_3wire, test_reliable_link_packet)
+{
+	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+
+	/* Takes a sequence number */
+	put_link(true, sync_rsp, sizeof(sync_rsp));
+	next_seq();
+
+	put_cmd(true, seq, 9U);
+	expect_cmd(9U);
+	next_seq();
+	expect_ack();
+}
+
 ZTEST_SUITE(hci_uart_3wire, NULL, NULL, before, NULL, NULL);
