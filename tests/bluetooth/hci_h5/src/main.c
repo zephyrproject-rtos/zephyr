@@ -255,6 +255,27 @@ ZTEST(hci_h5, test_header_checksum)
 	expect_ack(c);
 }
 
+ZTEST(hci_h5, test_data_integrity_check)
+{
+	static const uint8_t evt[] = { BT_HCI_EVT_HARDWARE_ERROR, 1U, 11U, 0x00, 0x00 };
+	struct ctlr *c = &ctlrs[0];
+	uint8_t out[FRAME_MAX(sizeof(evt))];
+	uint8_t hdr[HDR_LEN];
+
+	/* Never configured, so discarded with or without the check octets */
+	hdr_set(hdr, true, c->seq, 0U, PKT_EVT, EVT_LEN);
+	hdr[0] |= BIT(6);
+	hdr[3] = ~(hdr[0] + hdr[1] + hdr[2]);
+	put(c, out, frame(out, hdr, evt, EVT_LEN));
+	put(c, out, frame(out, hdr, evt, sizeof(evt)));
+	expect_no_evt(c);
+
+	put_evt(c, true, c->seq, 12U);
+	expect_evt(c, 12U);
+	next_seq(c);
+	expect_ack(c);
+}
+
 ZTEST(hci_h5, test_zero_length_event)
 {
 	struct ctlr *c = &ctlrs[0];
