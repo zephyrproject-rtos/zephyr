@@ -704,16 +704,18 @@ static void tx_thread(void *p1, void *p2, void *p3)
 			seq = h5->tx_seq;
 			if (reliable_packet(type)) {
 				h5->tx_seq = (seq + 1) % 8;
+				k_fifo_put(&h5->unack_queue, net_buf_ref(buf));
+				h5->unack_queue_len++;
 			}
 
-			k_fifo_put(&h5->unack_queue, net_buf_ref(buf));
-			h5->unack_queue_len++;
 			k_spin_unlock(&h5->tx_lock, key);
 
 			h5_send(dev, buf->data, type, buf->len, seq);
 			net_buf_unref(buf);
 
-			k_work_reschedule(&h5->retx_work, H5_TX_ACK_TIMEOUT);
+			if (reliable_packet(type)) {
+				k_work_reschedule(&h5->retx_work, H5_TX_ACK_TIMEOUT);
+			}
 
 			break;
 		}
