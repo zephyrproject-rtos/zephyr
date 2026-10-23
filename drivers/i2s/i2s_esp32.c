@@ -206,7 +206,7 @@ static int i2s_esp32_stop_transfer(const struct device *dev, enum i2s_dir dir);
 static void IRAM_ATTR i2s_esp32_rx_callback(const struct device *dma_dev, void *arg,
 					    uint32_t channel, int status)
 #else
-static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
+static void IRAM_ATTR i2s_esp32_rx_callback(void *arg)
 #endif /* SOC_GDMA_SUPPORTED */
 {
 	const struct device *dev = (const struct device *)arg;
@@ -229,15 +229,6 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 
 #if SOC_GDMA_SUPPORTED
 	if (status < 0) {
-		dev_data->state = I2S_STATE_ERROR;
-		LOG_DBG("RX status bad: %d", status);
-		goto rx_disable;
-	}
-#else
-	if ((status & I2S_LL_EVENT_RX_DSCR_ERR) != 0) {
-		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
-		stream->data->mem_block = NULL;
-		stream->data->mem_block_len = 0;
 		dev_data->state = I2S_STATE_ERROR;
 		LOG_DBG("RX status bad: %d", status);
 		goto rx_disable;
@@ -351,8 +342,7 @@ static void IRAM_ATTR i2s_esp32_rx_handler(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
 	const i2s_hal_context_t *hal = &(dev_cfg->hal);
-	uint32_t status =
-		i2s_hal_get_intr_status(hal) & (I2S_LL_RX_EVENT_MASK | I2S_LL_EVENT_RX_DSCR_ERR);
+	uint32_t status = i2s_hal_get_intr_status(hal) & I2S_LL_RX_EVENT_MASK;
 
 	if (status == 0) {
 		return;
@@ -360,7 +350,7 @@ static void IRAM_ATTR i2s_esp32_rx_handler(void *arg)
 
 	i2s_hal_clear_intr_status(hal, status);
 	if (status & I2S_LL_EVENT_RX_EOF) {
-		i2s_esp32_rx_callback((void *)arg, status);
+		i2s_esp32_rx_callback((void *)arg);
 	}
 }
 
@@ -599,7 +589,7 @@ tx_disable:
 static void IRAM_ATTR i2s_esp32_tx_callback(const struct device *dma_dev, void *arg,
 					    uint32_t channel, int status)
 #else
-static void IRAM_ATTR i2s_esp32_tx_callback(void *arg, int status)
+static void IRAM_ATTR i2s_esp32_tx_callback(void *arg)
 #endif /* SOC_GDMA_SUPPORTED */
 {
 	const struct device *dev = (const struct device *)arg;
@@ -638,14 +628,6 @@ static void IRAM_ATTR i2s_esp32_tx_callback(void *arg, int status)
 	k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
 	stream->data->mem_block = NULL;
 	stream->data->mem_block_len = 0;
-
-#if !SOC_GDMA_SUPPORTED
-	if ((status & I2S_LL_EVENT_TX_DSCR_ERR) != 0) {
-		dev_data->state = I2S_STATE_ERROR;
-		LOG_DBG("TX bad status: %d", status);
-		goto tx_disable;
-	}
-#endif /* !SOC_GDMA_SUPPORTED */
 
 #if SOC_GDMA_SUPPORTED
 	if (stream->data->next_block != NULL) {
@@ -707,8 +689,7 @@ static void IRAM_ATTR i2s_esp32_tx_handler(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
 	const i2s_hal_context_t *hal = &(dev_cfg->hal);
-	uint32_t status =
-		i2s_hal_get_intr_status(hal) & (I2S_LL_TX_EVENT_MASK | I2S_LL_EVENT_TX_DSCR_ERR);
+	uint32_t status = i2s_hal_get_intr_status(hal) & I2S_LL_TX_EVENT_MASK;
 
 	if (status == 0) {
 		return;
@@ -716,7 +697,7 @@ static void IRAM_ATTR i2s_esp32_tx_handler(void *arg)
 
 	i2s_hal_clear_intr_status(hal, status);
 	if (status & I2S_LL_EVENT_TX_EOF) {
-		i2s_esp32_tx_callback((void *)arg, status);
+		i2s_esp32_tx_callback((void *)arg);
 	}
 }
 
