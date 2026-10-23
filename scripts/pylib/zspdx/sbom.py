@@ -4,7 +4,9 @@
 
 import logging
 import os
+import uuid
 from dataclasses import dataclass
+from datetime import datetime
 
 from packaging.version import Version
 
@@ -14,12 +16,17 @@ from zspdx.walker import Walker, WalkerConfig
 
 _logger = logging.getLogger(__name__)
 
+# Base of the default document namespaces. It is intentionally _not_ an actual
+# URL where the documents will be stored.
+DEFAULT_NAMESPACE_BASE = "http://spdx.org/spdxdocs/zephyr"
+
 
 # SBOMConfig contains settings that will be passed along to the various
 # SBOM maker subcomponents.
 @dataclass(eq=True)
 class SBOMConfig:
-    # prefix for Document namespaces; should not end with "/"
+    # prefix for Document namespaces; should not end with "/"; a default one
+    # is generated if empty
     namespace_prefix: str = ""
 
     # location of build directory
@@ -36,6 +43,9 @@ class SBOMConfig:
 
     # should also add an SPDX document for the SDK?
     include_sdk: bool = False
+
+    # creation time to record in the documents; the current time if None
+    created: datetime | None = None
 
 
 # create Cmake file-based API directories and query file
@@ -72,6 +82,33 @@ def setup_cmake_query(build_dir):
     return True
 
 
+def default_namespace_prefix(sbom_graph, spdx_version, created=None):
+    """
+    Return a namespace prefix for documents that were given none.
+
+    Arguments:
+        - sbom_graph: scanned SBOMGraph the documents are serialized from.
+        - spdx_version: SPDX specification version of the documents.
+        - created: fixed creation time of the documents, or None.
+    Returns: prefix with a random UUID when created is None. Otherwise, the
+             UUID is derived from the creation time, the SPDX version and the
+             hashes of the graph's files, so the same build always gets the
+             same prefix and builds with different contents do not share one.
+    """
+    if created is None:
+        return f"{DEFAULT_NAMESPACE_BASE}-{uuid.uuid4()}"
+
+    name = "\n".join(
+        [
+            str(int(created.timestamp())),
+            str(spdx_version),
+            *sorted(f.hashes.get("SHA256", "") for f in sbom_graph.files.values()),
+        ]
+    )
+    namespace = uuid.uuid5(uuid.NAMESPACE_URL, DEFAULT_NAMESPACE_BASE)
+    return f"{DEFAULT_NAMESPACE_BASE}-{uuid.uuid5(namespace, name)}"
+
+
 # main entry point for SBOM maker
 # Arguments:
 #   1) cfg: SBOMConfig
@@ -98,12 +135,19 @@ def make_spdx(cfg):
     if not sbom_graph:
         _logger.error("SPDX walker failed; bailing")
         return False
+    if cfg.created is not None:
+        sbom_graph.created = cfg.created
 
     # set up scanner configuration
     scanner_cfg = ScannerConfig()
 
     # scan SBOM graph
     scan_sbom_graph(scanner_cfg, sbom_graph)
+
+    if not sbom_graph.namespace_prefix:
+        sbom_graph.namespace_prefix = default_namespace_prefix(
+            sbom_graph, cfg.spdx_version, cfg.created
+        )
 
     # route to appropriate serializer based on version
     if cfg.spdx_version.major == 2:

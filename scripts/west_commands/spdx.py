@@ -5,7 +5,6 @@
 import logging
 import os
 import sys
-import uuid
 
 from west.commands import WestCommand
 
@@ -14,6 +13,7 @@ from build_helpers import forward_logging_to_west
 script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(script_dir, "pylib/"))
 from zspdx.sbom import SBOMConfig, make_spdx, setup_cmake_query  # noqa: E402
+from zspdx.util import source_date_epoch  # noqa: E402
 from zspdx.version import (  # noqa: E402
     SPDX_VERSION_2_3,
     SPDX_VERSION_3_1,
@@ -123,11 +123,6 @@ class ZephyrSpdx(WestCommand):
             self.wrn("SPDX 3.1 support is experimental; the 3.1 spec is still in development.")
         if args.namespace_prefix:
             cfg.namespace_prefix = args.namespace_prefix
-        else:
-            # create default namespace according to SPDX spec
-            # note that this is intentionally _not_ an actual URL where
-            # this document will be stored
-            cfg.namespace_prefix = f"http://spdx.org/spdxdocs/zephyr-{str(uuid.uuid4())}"
         if args.spdx_dir:
             cfg.spdx_dir = args.spdx_dir
         else:
@@ -136,6 +131,10 @@ class ZephyrSpdx(WestCommand):
             cfg.analyze_includes = True
         if args.include_sdk:
             cfg.include_sdk = True
+        try:
+            cfg.created = source_date_epoch()
+        except ValueError as e:
+            self.die(str(e))
 
         # make sure SPDX directory exists, or create it if it doesn't
         if os.path.exists(cfg.spdx_dir):
