@@ -15,4 +15,7 @@ config STATIC_INIT_GNU
 configdefault UART_NS16550_ACCESS_WORD_ONLY
 	default y
 
+config OTP
+	default y if HWINFO
+
 endif
