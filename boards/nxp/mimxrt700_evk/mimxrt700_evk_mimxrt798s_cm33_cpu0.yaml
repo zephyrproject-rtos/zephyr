@@ -28,4 +28,5 @@ supported:
   - flash
   - memc
   - crc
+  - entropy
 vendor: nxp
