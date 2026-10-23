@@ -298,6 +298,34 @@ ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len);
 int zms_delete(struct zms_fs *fs, zms_id_t id);
 
 /**
+ * @brief Delete an entry and physically erase the data of all its versions
+ *
+ * Writes a delete ATE for the entry, then walks back through all the previous versions of
+ * the entry and overwrites their data, then their ATE, in the storage with the inverse of the
+ * erase value of the flash. Only the delete ATE of the entry remains.
+ *
+ * The operation is not atomic. If it is interrupted by a power loss the entry is already
+ * deleted, and calling this function again completes the erasure.
+ *
+ * @note The whole storage may be walked, so this call can be slow.
+ * @note The memory cells that are overwritten are written twice in the current cycle of their
+ * sector. This extra write is added to the cycle count of the sector when it is erased.
+ * @note The storage device must accept overwriting programmed locations without an erase.
+ * Available only when @kconfig{CONFIG_ZMS_PHYSICAL_DELETE} is enabled.
+ *
+ * @param fs Pointer to the file system.
+ * @param id ID of the entry to be deleted.
+ *
+ * @retval 0 on success.
+ * @retval -EACCES if ZMS is still not initialized.
+ * @retval -ENXIO if there is a device error.
+ * @retval -EIO if there is a memory read/write error.
+ * @retval -EINVAL if `fs` is NULL.
+ * @retval -ENOSPC if no space is left on the device for the delete ATE.
+ */
+int zms_delete_physical(struct zms_fs *fs, zms_id_t id);
+
+/**
  * @brief Read an entry from the file system.
  *
  * @param fs Pointer to the file system.

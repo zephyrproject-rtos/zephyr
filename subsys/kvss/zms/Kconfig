@@ -86,6 +86,15 @@ config ZMS_NO_DOUBLE_WRITE
 	  This option will reduce write performance as it will need to do a research of the
 	  data in the whole storage before any write.
 
+config ZMS_PHYSICAL_DELETE
+	bool "Physical deletion of entries"
+	help
+	  Enable zms_delete_physical(), which deletes an entry and overwrites the stored data
+	  of all its previous versions in the storage.
+	  This requires a storage device that tolerates overwriting already programmed
+	  locations (no ECC and no write-once words), otherwise the call fails with the error
+	  reported by the flash driver.
+
 module = ZMS
 module-str = zms
 source "subsys/logging/Kconfig.template.log_config"
