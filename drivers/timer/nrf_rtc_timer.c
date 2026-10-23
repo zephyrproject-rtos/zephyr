@@ -779,7 +779,7 @@ static int sys_clock_driver_init(void)
 			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
 			CLOCK_CONTROL_NRF_LF_START_STABLE);
 
-	z_nrf_clock_control_lf_on(mode);
+	z_nrf_clock_control_lf_on(mode, NULL);
 #endif
 
 #if CUSTOM_COUNTER_BIT_WIDTH

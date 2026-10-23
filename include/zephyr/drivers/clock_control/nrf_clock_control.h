@@ -167,6 +167,9 @@ bool z_nrf_clock_calibration_is_in_progress(void);
 struct onoff_manager __deprecated *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys);
 #endif
 
+/** @brief Callback to be called when clock is stable. */
+typedef void (*z_nrf_clock_control_lf_on_cb_t)(void);
+
 /** @brief Permanently enable low frequency clock.
  *
  * Low frequency clock is usually enabled during application lifetime because
@@ -174,8 +177,11 @@ struct onoff_manager __deprecated *z_nrf_clock_control_get_onoff(clock_control_s
  * it but never release.
  *
  * @param start_mode Specify if function should block until clock is available.
+ * @param cb Optional callback to be called when clock is stable. Used if @p start_mode is
+ * not @p CLOCK_CONTROL_NRF_LF_START_STABLE. Only first user of the clock will get the callback.
  */
-void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode);
+void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode,
+			       z_nrf_clock_control_lf_on_cb_t cb);
 
 /** @brief Request high frequency clock from Bluetooth Controller.
  *
