@@ -129,6 +129,11 @@ __net_socket struct websocket_context {
 
 	/** 1 if this websocket is a client, 0 if a server */
 	uint8_t is_client : 1;
+
+	/** A send failed in a way that may have left part of a frame with the
+	 * peer. The frame stream is torn, so nothing more is sent on it.
+	 */
+	uint8_t tx_broken : 1;
 };
 
 #if defined(CONFIG_NET_TEST)
