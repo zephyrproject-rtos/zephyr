@@ -2090,6 +2090,14 @@ static int sdp_client_notify_result(struct bt_conn *conn, struct bt_sdp_client *
 
 		net_buf_simple_save(&session->rec_buf->b, &buf_state);
 		rec_len = get_record_len(session);
+
+		/* reject any record whose declared length exceeds the remaining buffer */
+		if ((rec_len == 0U || session->rec_buf->len < rec_len)
+			&& state != UUID_PARTIAL_RESOLVED) {
+			LOG_WRN("Malformed SDP record, len exceeds actual buffer size");
+			return -EBADMSG;
+		}
+
 		/* tell the user about multi record resolution */
 		if (session->rec_buf->len > rec_len) {
 			result.next_record_hint = true;
