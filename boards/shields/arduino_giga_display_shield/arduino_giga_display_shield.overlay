@@ -43,7 +43,7 @@
 			pixelclk-active = <0>;
 			hback-porch = <6>;
 			hsync-len = <8>;
-			hfront-porch = <1>;
+			hfront-porch = <16>;
 			vback-porch = <40>;
 			vsync-len = <32>;
 			vfront-porch = <8>;
