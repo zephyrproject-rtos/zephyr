@@ -233,6 +233,12 @@
 			status = "disabled";
 		};
 
+		rfsys: retained-memory@40041000 {
+			compatible = "zephyr,retained-reg";
+			reg = <0x40041000 0x20>;
+			status = "disabled";
+		};
+
 		sim: sim@40047000 {
 			compatible = "nxp,kinetis-sim", "nxp,sim-uuid";
 			reg = <0x40047000 0x1060>;
