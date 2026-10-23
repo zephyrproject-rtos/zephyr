@@ -122,6 +122,15 @@ tests:
       - native_sim
     platform_exclude: nrf52dk/nrf52810
     harness: keyboard
+  bluetooth.shell.shell_br.testing:
+    extra_configs:
+      - CONFIG_BT_TESTING=y
+    extra_args: CONF_FILE="prj_br.conf"
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    build_only: true
   bluetooth.shell.no_privacy:
     integration_platforms:
       - native_sim
