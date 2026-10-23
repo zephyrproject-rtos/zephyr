@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Sensor clock API
+ * @ingroup sensor_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_CLOCK_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_CLOCK_H_
 
@@ -12,6 +18,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @addtogroup sensor_interface
+ * @{
+ */
 
 /**
  * @brief Retrieve the current sensor clock cycles.
@@ -37,6 +48,8 @@ int sensor_clock_get_cycles(uint64_t *cycles);
  * @return Time in nanoseconds.
  */
 uint64_t sensor_clock_cycles_to_ns(uint64_t cycles);
+
+/** @} */
 
 #ifdef __cplusplus
 }
