@@ -43,8 +43,17 @@
 #define SYSCTL_EXLFCTL_OFFSET        0x1318 /**< LFCLK_IN control */
 
 #if defined(CONFIG_SOC_SERIES_AM13E)
-#define SYSCTL_XTALCR_OFFSET 0x1474 /**< XTAL control */
-#define SYSCTL_X1CNT_OFFSET  0x147C /**< X1 oscillator activity counter */
+#define SYSCTL_XTALCR_OFFSET      0x1474 /**< XTAL control */
+#define SYSCTL_X1CNT_OFFSET       0x147C /**< X1 oscillator activity counter */
+/*
+ * AM13SPARESOCLOCK2: bit 0 selects SRAM3 bus path.
+ * Reset = 1 (C-AHB alias at 0x00C18000).
+ * Write 0 to switch SRAM3 to SBUS/S-AHB, making banks 0-3
+ * one contiguous 128 KB region from 0x20000000.
+ */
+#define SYSCTL_SRAM3_MUX_OFFSET   0x14A4
+#define SYSCTL_SRAM3_MUX_SEL_SBUS 0x0U
+#define SYSCTL_SRAM3_MUX_SEL_CBUS BIT(0)
 #endif
 
 /* sysosccfg bits */

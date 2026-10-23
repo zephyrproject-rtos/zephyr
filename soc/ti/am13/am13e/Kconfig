@@ -14,3 +14,10 @@ config SOC_AM13E23019
 	select CPU_CORTEX_M_HAS_VTOR
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
+
+config AM13E_SRAM_UNIFIED
+	bool "Unified 128 KB SRAM layout (banks 0-3 via S-AHB)"
+	select SOC_RESET_HOOK
+	help
+	  Switch SRAM3 from its C-AHB code-region alias to the S-AHB data-region
+	  path so that all four 32 KB SRAM banks appear as one contiguous region.
