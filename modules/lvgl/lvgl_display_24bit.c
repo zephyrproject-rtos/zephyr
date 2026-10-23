@@ -13,7 +13,6 @@ void lvgl_flush_cb_24bit(lv_display_t *display, const lv_area_t *area, uint8_t *
 {
 	uint16_t w;
 	uint16_t h;
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
 	struct lvgl_display_flush flush;
 
 #if defined(CONFIG_LV_Z_DIRECT_RENDERING)
