@@ -1329,7 +1329,7 @@ static const struct ethernet_api eth_api = {
 	INTEL_IGC_SETUP_QUEUE_WORK(n);                                                             \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_intel_igc_init, NULL, &eth_data_##n, &eth_cfg_##n,    \
 				      CONFIG_ETH_INIT_PRIORITY, &eth_api,                          \
-				      CONFIG_ETH_INTEL_IGC_NET_MTU);                               \
+				      NET_ETH_MTU);                                                \
 	INTEL_IGC_MAC_CONFIG_IRQ(n)
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_IGC_MAC_INIT)
