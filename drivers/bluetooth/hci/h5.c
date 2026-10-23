@@ -102,6 +102,7 @@ struct h5_data {
 
 	struct k_work_delayable ack_work;
 	struct k_work_delayable retx_work;
+	struct k_sem		tx_win_sem;
 
 	uint8_t			tx_win;
 	uint8_t			tx_ack;
@@ -242,6 +243,7 @@ static void process_unack(struct h5_data *h5)
 		net_buf_unref(buf);
 		h5->unack_queue_len--;
 		number_removed--;
+		k_sem_give(&h5->tx_win_sem);
 	}
 
 	k_spin_unlock(&h5->tx_lock, key);
@@ -388,6 +390,7 @@ static void retx_timeout(struct k_work *work)
 			k_fifo_put(&h5->tx_queue, buf);
 			h5->tx_seq = (h5->tx_seq - 1) & 0x07;
 			h5->unack_queue_len--;
+			k_sem_give(&h5->tx_win_sem);
 		}
 
 		/* Queue saved packets from temp queue */
@@ -705,6 +708,12 @@ static void tx_thread(void *p1, void *p2, void *p3)
 			k_sleep(K_MSEC(100));
 			break;
 		case ACTIVE:
+			if (h5->unack_queue_len >= h5->tx_win) {
+				/* Room comes from an acknowledgment or a retransmission */
+				k_sem_take(&h5->tx_win_sem, K_FOREVER);
+				break;
+			}
+
 			buf = k_fifo_get(&h5->tx_queue, K_FOREVER);
 			type = h5_get_type(buf);
 
@@ -788,7 +797,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			h5->link_state = ACTIVE;
 			if (buf->len > 2) {
 				/* Configuration field present */
-				h5->tx_win = (buf->data[2] & 0x07);
+				h5->tx_win = MAX(buf->data[2] & 0x07, 1);
 			}
 
 			LOG_DBG("Finished H5 configuration, tx_win %u", h5->tx_win);
@@ -839,6 +848,7 @@ static void h5_init(const struct device *dev)
 	/* Init delayed work */
 	k_work_init_delayable(&h5->ack_work, ack_timeout);
 	k_work_init_delayable(&h5->retx_work, retx_timeout);
+	k_sem_init(&h5->tx_win_sem, 0, 1);
 }
 
 static int h5_open(const struct device *dev)
