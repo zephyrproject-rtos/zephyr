@@ -114,6 +114,15 @@ Audio Codec
   When using a :dtcompatible:`fixed-clock` node,
   :kconfig:option:`CONFIG_CLOCK_CONTROL_FIXED_RATE_CLOCK` must be enabled.
 
+Clock control
+=============
+
+* NXP MCXC and K32L2B3 SoCs now use the :dtcompatible:`nxp,mcg-lite` binding and driver
+  for the MCG-Lite clock generator. Out-of-tree devicetrees must update the mcg node to use
+  the new compatible and replace any use of ``KINETIS_MCG_OUT_CLK`` with
+  ``NXP_MCG_LITE_OUT_CLK``. The ``lircdiv2`` property is no longer supported by
+  :dtcompatible:`nxp,kinetis-mcg` and should be removed from existing devicetrees.
+
 Comparator
 ==========
 
