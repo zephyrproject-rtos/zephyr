@@ -114,6 +114,9 @@ struct pinctrl_soc_pinmux {
 	uint32_t input_daisy: 4;  /* Mux value for SELECT_INPUT_DAISY register */
 	uint8_t pue_mux: 1;       /* Unused on RT266x (single register layout) */
 	uint8_t pdrv_mux: 1;      /* Unused on RT266x (single register layout) */
+	uint32_t gpr_register;    /* MODCON XBAR IOMUX direction register, or 0 */
+	uint8_t gpr_shift;        /* Direction bit of this pad */
+	uint8_t gpr_val;          /* 1 = pad feeds the crossbar, 0 = crossbar drives the pad */
 };
 
 struct pinctrl_soc_pin {
@@ -123,6 +126,7 @@ struct pinctrl_soc_pin {
 
 typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 
+/* clang-format off */
 #define MCUX_IMX_PINMUX(node_id)                                                                   \
 	{                                                                                          \
 		.mux_register = DT_PROP_BY_IDX(node_id, pinmux, 0),                                \
@@ -130,9 +134,14 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 		.input_register = DT_PROP_BY_IDX(node_id, pinmux, 2),                              \
 		.mux_mode = DT_PROP_BY_IDX(node_id, pinmux, 1),                                    \
 		.input_daisy = DT_PROP_BY_IDX(node_id, pinmux, 3),                                 \
+		IF_ENABLED(DT_NODE_HAS_PROP(node_id, gpr),                                         \
+			   (.gpr_register = DT_PROP_BY_IDX(node_id, gpr, 0),                       \
+			    .gpr_shift = DT_PROP_BY_IDX(node_id, gpr, 1),                          \
+			    .gpr_val = DT_PROP_BY_IDX(node_id, gpr, 2),))                          \
 		.pue_mux = 0,                                                                      \
 		.pdrv_mux = 0,                                                                     \
 	}
+/* clang-format on */
 
 #define Z_PINCTRL_PINMUX(group_id, pin_prop, idx)                                                  \
 	MCUX_IMX_PINMUX(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx))

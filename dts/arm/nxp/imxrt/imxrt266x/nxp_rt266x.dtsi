@@ -1441,40 +1441,79 @@
 		};
 	};
 
+	/* Inter-peripheral crossbars (HSP domain) */
+	xbar0: hsp_xbar_0: xbar@42820000 {
+		compatible = "nxp,mcux-xbar";
+		reg = <0x42820000 0x4000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_XBAR0,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+		status = "disabled";
+	};
+
+	xbar1: hsp_xbar_1: xbar@42830000 {
+		compatible = "nxp,mcux-xbar";
+		reg = <0x42830000 0x4000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_XBAR1,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+		status = "disabled";
+	};
+
+	xbar2: hsp_xbar_2: xbar@42840000 {
+		compatible = "nxp,mcux-xbar";
+		reg = <0x42840000 0x4000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_XBAR2,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+		status = "disabled";
+	};
+
 	/* EQDC / quadrature decoder (HSP domain), IRQ 153..156 */
 	qdec0: hsp_eqdc_0: qdec@420c0000 {
-		compatible = "nxp,mcux-qdec";
+		compatible = "nxp,mcux-eqdc";
 		reg = <0x420c0000 0x4000>;
 		interrupts = <153 0>;
+		interrupt-names = "index";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC0,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
+		counts-per-revolution = <1>;
 		status = "disabled";
 	};
 
 	qdec1: hsp_eqdc_1: qdec@420d0000 {
-		compatible = "nxp,mcux-qdec";
+		compatible = "nxp,mcux-eqdc";
 		reg = <0x420d0000 0x4000>;
 		interrupts = <154 0>;
+		interrupt-names = "index";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC1,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
+		counts-per-revolution = <1>;
 		status = "disabled";
 	};
 
 	qdec2: hsp_eqdc_2: qdec@428c0000 {
-		compatible = "nxp,mcux-qdec";
+		compatible = "nxp,mcux-eqdc";
 		reg = <0x428c0000 0x4000>;
 		interrupts = <155 0>;
+		interrupt-names = "index";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC2,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
+		counts-per-revolution = <1>;
 		status = "disabled";
 	};
 
 	qdec3: hsp_eqdc_3: qdec@428d0000 {
-		compatible = "nxp,mcux-qdec";
+		compatible = "nxp,mcux-eqdc";
 		reg = <0x428d0000 0x4000>;
 		interrupts = <156 0>;
+		interrupt-names = "index";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QDC3,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
+		counts-per-revolution = <1>;
 		status = "disabled";
 	};
 

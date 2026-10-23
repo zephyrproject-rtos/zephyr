@@ -19,7 +19,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		uint32_t input_daisy = pins[i].pinmux.input_daisy;
 		uint32_t config_register = pins[i].pinmux.config_register;
 		uint32_t pin_ctrl_flags = pins[i].pin_ctrl_flags;
-#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX) ||                \
+	defined(CONFIG_SOC_SERIES_IMXRT266X)
 		volatile uint32_t *gpr_register =
 			(volatile uint32_t *)((uintptr_t)pins[i].pinmux.gpr_register);
 		if (gpr_register) {
