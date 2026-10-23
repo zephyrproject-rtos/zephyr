@@ -101,6 +101,15 @@ New Samples
 Libraries / Subsystems
 **********************
 
+Devicetree
+**********
+
+* :dtcompatible:`gnss-nmea-generic` supports optional enable and reset GPIOs, with configurable
+  reset pulse and wake-up delays.
+
+* :dtcompatible:`zephyr,charger-gpio` supports charging and charge-complete status inputs,
+  including chargers without a software-controlled enable pin.
+
 Other notable changes
 *********************
 

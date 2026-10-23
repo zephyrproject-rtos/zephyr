@@ -56,6 +56,10 @@ Connections and IOs
 +-------+-----------+--------------+----------------------------+
 | P0.26 | IN        | UART0 RX     | L76K GNSS TX               |
 +-------+-----------+--------------+----------------------------+
+| P1.09 | OUT       | GPIO         | L76K wake (active high)    |
++-------+-----------+--------------+----------------------------+
+| P1.06 | OUT       | GPIO         | L76K reset (active high)   |
++-------+-----------+--------------+----------------------------+
 | P0.05 | OUT       | TWIM0 SCL    | SH1106 OLED I\ :sup:`2`\ C |
 +-------+-----------+--------------+----------------------------+
 | P0.06 | I/O       | TWIM0 SDA    | SH1106 OLED I\ :sup:`2`\ C |
@@ -80,6 +84,10 @@ Connections and IOs
 +-------+-----------+--------------+----------------------------+
 | P0.31 | AIN7      | ADC          | Battery voltage sense      |
 +-------+-----------+--------------+----------------------------+
+| P1.13 | IN        | GPIO         | Charging (active low)      |
++-------+-----------+--------------+----------------------------+
+| P1.15 | IN        | GPIO         | Charge done (active low)   |
++-------+-----------+--------------+----------------------------+
 | P0.21 | OUT       | QSPI SCK     | Puya P25Q16H flash         |
 +-------+-----------+--------------+----------------------------+
 | P0.20 | I/O       | QSPI IO0     | Puya P25Q16H flash         |
@@ -97,6 +105,25 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+Power Management
+================
+
+The L76K receiver uses the ``gnss`` alias. With :kconfig:option:`CONFIG_PM_DEVICE` enabled,
+the receiver starts in standby. Resume it with ``pm_device_action_run()`` and
+``PM_DEVICE_ACTION_RESUME`` before receiving navigation data. Suspending it with
+``PM_DEVICE_ACTION_SUSPEND`` drives its wake pin low and stops the UART. The reset signal is
+inverted by a transistor and is asserted for 100 ms during driver initialization.
+
+Enable :kconfig:option:`CONFIG_SENSOR` and :kconfig:option:`CONFIG_ADC` to read the battery
+voltage through the ``vbatt`` node. The 10 kOhm / 10 kOhm divider has a 100 nF filter capacitor;
+the driver waits 5 ms after enabling the divider before sampling.
+
+Enable :kconfig:option:`CONFIG_CHARGER` to query ``CHARGER_PROP_STATUS`` on the ``charger0``
+alias. The CN3165 exposes charging and charge-complete inputs. Charging is controlled by the
+hardware, so software cannot enable or disable it. When neither status input is active, the
+driver reports ``CHARGER_STATUS_NOT_CHARGING``; these signals alone do not distinguish a missing
+power source from suspended charging.
 
 Programming and Debugging
 *************************
