@@ -17,10 +17,6 @@
 	model = "TI AM13E230X Launchpad";
 	compatible = "ti,am13e23019";
 
-	aliases {
-		watchdog0 = &wdt0;
-	};
-
 	chosen {
 		zephyr,sram = &sram0_1_2;
 		zephyr,flash = &flash0;
@@ -34,6 +30,7 @@
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &btn_s2;
+		watchdog0 = &wdt0;
 	};
 
 	keys {
@@ -130,7 +127,6 @@
 &unicomm4_uart {
 	status = "okay";
 	current-speed = <115200>;
-
 	pinctrl-0 = <&uc4_tx_sda_pico_pa0 &uc4_rx_scl_sclk_pa1>;
 	pinctrl-names = "default";
 };
@@ -155,7 +151,6 @@
 &ecap0 {
 	status = "okay";
 	interrupts = <29 0>;
-
 	pinctrl-0 = <&outputxbar8_pb3>;
 	pinctrl-names = "default";
 
@@ -167,7 +162,6 @@
 &ecap1 {
 	status = "okay";
 	interrupts = <30 0>;
-
 	pinctrl-0 = <&gpio_pb4>;
 	pinctrl-names = "default";
 
