@@ -323,6 +323,35 @@ ZTEST(hci_h5, test_truncated_packet)
 	expect_ack(c);
 }
 
+ZTEST(hci_h5, test_split_escape)
+{
+	struct ctlr *c = &ctlrs[0];
+	uint8_t out[2U * FRAME_MAX(EVT_LEN)];
+	uint8_t hdr[HDR_LEN];
+	size_t len;
+
+	/* The code is sent escaped, and the line pauses after the escape octet */
+	hdr_set(hdr, true, c->seq, 0U, PKT_EVT, EVT_LEN);
+	len = evt_frame(out, hdr, SLIP_DELIMITER, EVT_LEN);
+	zassert_equal(out[len - 3U], SLIP_ESC);
+	put(c, out, len - 2U);
+	put(c, &out[len - 2U], 2U);
+	expect_evt(c, SLIP_DELIMITER);
+	next_seq(c);
+
+	/* A delimiter after an escape octet ends the packet */
+	out[0] = SLIP_DELIMITER;
+	out[1] = BIT(7);
+	out[2] = SLIP_ESC;
+	out[3] = SLIP_DELIMITER;
+	hdr_set(hdr, true, c->seq, 0U, PKT_EVT, EVT_LEN);
+	len = 4U + evt_frame(&out[4], hdr, 14U, EVT_LEN);
+	put(c, out, len);
+	expect_evt(c, 14U);
+	next_seq(c);
+	expect_ack(c);
+}
+
 ZTEST(hci_h5, test_unsupported_type)
 {
 	static const uint8_t reset[] = { 0x03, 0x0c, 0x00 };
