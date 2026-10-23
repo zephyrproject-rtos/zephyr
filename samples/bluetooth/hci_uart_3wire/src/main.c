@@ -385,7 +385,7 @@ static void h5_process_complete_packet(uint8_t *hdr)
 	/* rx_ack should be in every packet */
 	h5.rx_ack = H5_HDR_ACK(hdr);
 
-	if (reliable_packet(H5_HDR_PKT_TYPE(hdr))) {
+	if (H5_HDR_RELIABLE(hdr) != 0U) {
 		/* For reliable packet increment next transmit ack number */
 		h5.tx_ack = (h5.tx_ack + 1) % 8;
 		/* Submit delayed work to ack the packet */
