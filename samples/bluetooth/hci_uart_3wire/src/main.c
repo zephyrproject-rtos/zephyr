@@ -756,6 +756,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			LOG_DBG("Finished H5 configuration, tx_win %u", h5.tx_win);
 
 			h5.link_state = ACTIVE;
+			/* tx_thread() only polls for packets to send in the Active state */
+			k_poll_signal_raise(&tx_queue_change, 0);
 		} else {
 			LOG_ERR("Not handled yet %x %x", buf->data[0], buf->data[1]);
 		}
