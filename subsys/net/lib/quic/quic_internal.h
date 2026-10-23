@@ -1303,6 +1303,11 @@ __net_socket struct quic_context {
 	 */
 	bool closed;
 
+	/** The application closed the socket: nothing is accepted on it any
+	 * more. Written under contexts_lock.
+	 */
+	bool accept_closed;
+
 	/** Stream priority */
 	uint8_t stream_priority;
 
