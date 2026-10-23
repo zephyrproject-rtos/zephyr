@@ -304,11 +304,11 @@ static int lr11xx_set_rx_duty_cycle(const struct device *dev,
 	return lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_RX_DUTY_CYCLE, buf, 7);
 }
 
-static int lr11xx_set_rx(const struct device *dev, uint32_t timeout_ms)
+static int lr11xx_set_rx(const struct device *dev, uint64_t timeout_ms)
 {
 	uint32_t timeout;
 
-	if (timeout_ms == 0) {
+	if (timeout_ms == 0 || timeout_ms > LR11XX_MAX_TIMEOUT_MS) {
 		timeout = LR11XX_RX_TIMEOUT_CONTINUOUS;
 	} else {
 		timeout = LR11XX_MS_TO_TIMEOUT(timeout_ms);
@@ -1195,7 +1195,8 @@ static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
 {
 	struct lr11xx_data *data = dev->data;
 	struct lr11xx_rx_result result;
-	uint32_t timeout_ms;
+	k_timepoint_t deadline = sys_timepoint_calc(timeout);
+	uint64_t timeout_ms;
 	int ret;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -1240,9 +1241,10 @@ static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
 		return ret;
 	}
 
-	/* Start reception (0 = continuous for K_FOREVER) */
+	/* The software deadline also covers waits beyond the radio timer range. */
+	timeout = sys_timepoint_timeout(deadline);
 	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
-		     ? 0 : k_ticks_to_ms_ceil32(timeout.ticks);
+		     ? 0 : k_ticks_to_ms_ceil64(timeout.ticks);
 	ret = lr11xx_set_rx(dev, timeout_ms);
 	if (ret < 0) {
 		lr11xx_set_sleep(dev);
@@ -1254,7 +1256,7 @@ static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
 	k_mutex_unlock(&data->lock);
 
 	/* Wait for RX completion */
-	ret = k_msgq_get(&data->rx_msgq, &result, timeout);
+	ret = k_msgq_get(&data->rx_msgq, &result, sys_timepoint_timeout(deadline));
 	k_mutex_lock(&data->lock, K_FOREVER);
 	data->sync_pending = false;
 	if (ret < 0) {
@@ -1372,17 +1374,10 @@ static int lr11xx_lora_recv_async(const struct device *dev,
 	return 0;
 }
 
-static int lr11xx_duty_cycle_start(const struct device *dev,
-				   k_timeout_t rx_period,
-				   k_timeout_t sleep_period)
+static int lr11xx_duty_cycle_start(const struct device *dev)
 {
 	struct lr11xx_data *data = dev->data;
 	int ret;
-
-	data->duty_cycle.rx_period = LR11XX_MS_TO_TIMEOUT(
-		k_ticks_to_ms_ceil32(rx_period.ticks));
-	data->duty_cycle.sleep_period = LR11XX_MS_TO_TIMEOUT(
-		k_ticks_to_ms_ceil32(sleep_period.ticks));
 
 	ret = lr11xx_set_packet_params(dev,
 				       data->config.preamble_len,
@@ -1416,11 +1411,23 @@ out_error:
 	return ret;
 }
 
-static int lr11xx_duty_cycle_enter(const struct device *dev,
-				   lora_recv_cb cb, void *user_data)
+static int lr11xx_duty_cycle_enter(const struct device *dev, k_timeout_t rx_period,
+				   k_timeout_t sleep_period, lora_recv_cb cb, void *user_data)
 {
 	struct lr11xx_data *data = dev->data;
+	uint64_t rx_ms, sleep_ms;
 	int ret;
+
+	if (K_TIMEOUT_EQ(rx_period, K_FOREVER) || rx_period.ticks <= 0 ||
+	    K_TIMEOUT_EQ(sleep_period, K_FOREVER) || sleep_period.ticks <= 0) {
+		return -EINVAL;
+	}
+
+	rx_ms = k_ticks_to_ms_ceil64(rx_period.ticks);
+	sleep_ms = k_ticks_to_ms_ceil64(sleep_period.ticks);
+	if (rx_ms > LR11XX_MAX_TIMEOUT_MS || sleep_ms > LR11XX_MAX_TIMEOUT_MS) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -1445,6 +1452,8 @@ static int lr11xx_duty_cycle_enter(const struct device *dev,
 		return ret;
 	}
 
+	data->duty_cycle.rx_period = LR11XX_MS_TO_TIMEOUT(rx_ms);
+	data->duty_cycle.sleep_period = LR11XX_MS_TO_TIMEOUT(sleep_ms);
 	data->sync_pending = cb == NULL;
 	data->rx_generation++;
 	data->rx_cb = cb;
@@ -1462,22 +1471,24 @@ static int lr11xx_lora_recv_duty_cycle(const struct device *dev,
 {
 	struct lr11xx_data *data = dev->data;
 	struct lr11xx_rx_result result;
+	k_timepoint_t deadline;
 	int ret;
 
-	ret = lr11xx_duty_cycle_enter(dev, NULL, NULL);
+	ret = lr11xx_duty_cycle_enter(dev, rx_period, sleep_period, NULL, NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
+	deadline = sys_timepoint_calc(timeout);
 	k_msgq_purge(&data->rx_msgq);
 
-	ret = lr11xx_duty_cycle_start(dev, rx_period, sleep_period);
+	ret = lr11xx_duty_cycle_start(dev);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Block until a packet arrives or timeout */
-	ret = k_msgq_get(&data->rx_msgq, &result, timeout);
+	ret = k_msgq_get(&data->rx_msgq, &result, sys_timepoint_timeout(deadline));
 	k_mutex_lock(&data->lock, K_FOREVER);
 	data->sync_pending = false;
 	if (ret < 0) {
@@ -1532,12 +1543,12 @@ static int lr11xx_lora_recv_duty_cycle_async(const struct device *dev,
 		return ret;
 	}
 
-	ret = lr11xx_duty_cycle_enter(dev, cb, user_data);
+	ret = lr11xx_duty_cycle_enter(dev, rx_period, sleep_period, cb, user_data);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return lr11xx_duty_cycle_start(dev, rx_period, sleep_period);
+	return lr11xx_duty_cycle_start(dev);
 }
 
 static uint32_t lr11xx_lora_airtime(const struct device *dev, uint32_t data_len)
