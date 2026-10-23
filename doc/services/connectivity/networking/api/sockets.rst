@@ -382,14 +382,14 @@ It requires the protected storage backend of the TLS credentials,
 The key is a persistent, non-exportable ECDSA key on the P-256 or the P-384 curve, enabled with
 :kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN_SECP256R1` and
 :kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN_SECP384R1`.
-Its PSA key ID is allocated from the range that :file:`include/zephyr/psa/key_ids.h` reserves for
-this feature, and it is registered for the security tag as
-:c:enumerator:`TLS_CREDENTIAL_PRIVATE_KEY_PSA`.
+Its PSA key ID comes from the key store, by default from the range that
+:file:`include/zephyr/psa/key_ids.h` reserves for this feature, and it is registered for the
+security tag as :c:enumerator:`TLS_CREDENTIAL_PRIVATE_KEY_PSA`.
 The protected storage backend keeps the registration after a reboot.
-The functions only use keys in the reserved range, so they cannot use or destroy the keys of other
-PSA users.
-A key in the reserved range that no security tag is registered for is destroyed when a new key is
-generated, and its key ID is used again.
+The functions only use keys with key IDs of the key store, so they cannot use or destroy the keys
+of other PSA users.
+A key with a key ID of the key store that no security tag is registered for is destroyed when a new
+key is generated, and its key ID is used again.
 Such a key is left over, for example, after its registration was removed with
 :c:func:`tls_credential_delete`, which does not destroy the key.
 :c:func:`tls_credential_keygen_key_id_get` gives the key ID, so that the key can also sign outside
@@ -408,7 +408,15 @@ Note the following limitations:
 * A TLS socket that is open keeps the key ID, so its next handshake fails after the key is deleted.
 * Do not add a :c:enumerator:`TLS_CREDENTIAL_PRIVATE_KEY` for a security tag that has a generated
   key. A TLS socket cannot use two private keys for one security tag.
-* The keys are stored in the default PSA key location.
+
+The key store decides where the keys are stored and which key IDs they get.
+With :kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN_KEY_STORE_DEFAULT`, the keys are persistent
+keys in the default PSA key location, with key IDs from the reserved range.
+With :kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN_KEY_STORE_CUSTOM`, the application or the vendor
+implements the key store, for example to store the keys in a hardware key location.
+The key generation then uses and destroys only keys with key IDs of that key store.
+
+.. doxygengroup:: tls_credentials_keygen_store
 
 The :ref:`TLS credentials shell <tls_credentials_shell>` provides the same functions with the
 ``cred keygen``, ``cred keydel``, ``cred csr`` and ``cred pubkey`` commands.

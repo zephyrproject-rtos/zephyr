@@ -54,12 +54,14 @@ enum tls_credential_keygen_type {
  *
  * Creates a persistent, non-exportable key pair in PSA key storage and registers it with the
  * TLS credentials module as @ref TLS_CREDENTIAL_PRIVATE_KEY_PSA. The private key never leaves
- * the device. The PSA key ID is allocated from the range reserved for this library, see
- * @c ZEPHYR_PSA_TLS_CREDENTIALS_KEYGEN_KEY_ID_RANGE_BEGIN in @c zephyr/psa/key_ids.h.
+ * the device. The key store gives the location and the PSA key ID of the key, see
+ * @ref tls_credentials_keygen_store. The default key store allocates the key ID from the range
+ * reserved for this library, see @c ZEPHYR_PSA_TLS_CREDENTIALS_KEYGEN_KEY_ID_RANGE_BEGIN in
+ * @c zephyr/psa/key_ids.h.
  *
- * A key in the reserved range that no security tag is registered for is destroyed, and its key
- * ID is used again. Such a key is left over, for example, after its registration was removed
- * with @ref tls_credential_delete.
+ * A key with a key ID of the key store that no security tag is registered for is destroyed, and
+ * its key ID is used again. Such a key is left over, for example, after its registration was
+ * removed with @ref tls_credential_delete.
  *
  * @note Do not add a @ref TLS_CREDENTIAL_PRIVATE_KEY for the same security tag afterwards. A
  *       TLS socket cannot use two private keys for one security tag.
@@ -69,9 +71,9 @@ enum tls_credential_keygen_type {
  *
  * @retval 0 On success.
  * @retval -EINVAL Invalid key type.
- * @retval -ENOTSUP The key type is not enabled.
  * @retval -EEXIST The security tag already has a private key.
- * @retval -ENOSPC No free key ID in the reserved range.
+ * @retval -ENOSPC No free key ID in the key store.
+ * @retval -ENOTSUP The key type is not enabled, or the key store does not support it.
  * @retval -EIO PSA operation failed.
  * @return Other negative errno from @ref tls_credential_add, or from reading the TLS credentials.
  */

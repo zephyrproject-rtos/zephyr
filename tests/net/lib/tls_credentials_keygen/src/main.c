@@ -369,3 +369,15 @@ ZTEST(tls_credentials_keygen_api, test_csr_size_macro)
 	zassert_ok(tls_credential_keygen_csr(TEST_SEC_TAG, subject, der, sizeof(der), &len),
 		   "TLS_CREDENTIAL_KEYGEN_CSR_SIZE() is too small");
 }
+
+ZTEST(tls_credentials_keygen_range, test_range_full)
+{
+	if (KEY_ID_COUNT > 2) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(tls_credential_keygen_generate(TEST_SEC_TAG, P256));
+	zassert_ok(tls_credential_keygen_generate(TEST_SEC_TAG_2, P256));
+	zassert_equal(tls_credential_keygen_generate(TEST_SEC_TAG_LARGE, P256), -ENOSPC,
+		      "a full key store must be reported");
+}

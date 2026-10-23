@@ -15,8 +15,14 @@
 /* Outside of the PSA user key ID range, as used by nRF Cloud. */
 #define TEST_SEC_TAG_LARGE 16842753
 
+#if defined(CONFIG_TLS_CREDENTIALS_KEYGEN_KEY_STORE_CUSTOM)
+/* Range of the custom key store of the test, see test_store.c. */
+#define KEY_ID_MIN   (ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_BEGIN + 0x1000)
+#define KEY_ID_COUNT 2
+#else
 #define KEY_ID_MIN   ZEPHYR_PSA_TLS_CREDENTIALS_KEYGEN_KEY_ID_RANGE_BEGIN
 #define KEY_ID_COUNT ZEPHYR_PSA_TLS_CREDENTIALS_KEYGEN_KEY_ID_RANGE_SIZE
+#endif
 /* A key of another user of PSA, outside of the reserved range. */
 #define FOREIGN_KEY_ID ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_BEGIN
 
