@@ -786,7 +786,8 @@
 
 			sai1_a: sai1a@40015404 {
 				reg = <0x40015404 0x20>;
-				dmas = <&dma1 1 108 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				dmas = <&dmamux1 0 108
+					(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -794,7 +795,8 @@
 
 			sai1_b: sai1b@40015424 {
 				reg = <0x40015424 0x20>;
-				dmas = <&dma1 2 109 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				dmas = <&dmamux1 1 109
+					(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
