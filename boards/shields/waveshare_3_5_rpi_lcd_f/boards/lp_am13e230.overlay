@@ -1,0 +1,61 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+&unicomm2 {
+	status = "okay";
+};
+
+&uc2_tx_sda_pa22 {
+	input-enable;
+	drive-open-drain;
+	bias-disable;
+};
+
+&uc2_rx_scl_pa23 {
+	drive-open-drain;
+	bias-disable;
+};
+
+&unicomm2_i2c {
+	status = "okay";
+	pinctrl-0 = <&uc2_tx_sda_pa22 &uc2_rx_scl_pa23>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	gt911_touch: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		alt-addr = <0x14>;
+		irq-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpioa 16 GPIO_ACTIVE_LOW>;
+		screen-width = <320>;
+		screen-height = <480>;
+	};
+};
+
+&unicomm3 {
+	status = "okay";
+};
+
+&unicomm3_spi {
+	status = "okay";
+	pinctrl-0 = <&uc3_rx_scl_sclk_pb5
+		     &uc3_tx_sda_pico_pb10
+		     &uc3_rts_poci_pa20>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 21 GPIO_ACTIVE_LOW>;
+};
+
+&waveshare_3_5_rpi_lcd_f_mipi_dbi {
+	dc-gpios = <&gpioa 25 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpioa 17 GPIO_ACTIVE_LOW>;
+	spi-dev = <&unicomm3_spi>;
+};
+
+&st7796s_display {
+	mipi-max-frequency = <10000000>;
+};
