@@ -69,22 +69,22 @@ static int bandwidth_to_hz(enum lora_signal_bandwidth bw, uint32_t *bw_hz)
 {
 	switch (bw) {
 	case BW_7_KHZ:
-		*bw_hz = 7810;
+		*bw_hz = 7812;
 		return 0;
 	case BW_10_KHZ:
-		*bw_hz = 10420;
+		*bw_hz = 10417;
 		return 0;
 	case BW_15_KHZ:
-		*bw_hz = 15630;
+		*bw_hz = 15625;
 		return 0;
 	case BW_20_KHZ:
-		*bw_hz = 20830;
+		*bw_hz = 20833;
 		return 0;
 	case BW_31_KHZ:
 		*bw_hz = 31250;
 		return 0;
 	case BW_41_KHZ:
-		*bw_hz = 41670;
+		*bw_hz = 41667;
 		return 0;
 	case BW_62_KHZ:
 		*bw_hz = 62500;
@@ -149,6 +149,10 @@ static int sx126x_validate_config(const struct device *dev, const struct lora_mo
 			LOG_ERR("Invalid bandwidth for LLCC68");
 			return -EINVAL;
 		}
+	}
+
+	if (config->cad.mode != LORA_CAD_MODE_NONE) {
+		return -ENOTSUP;
 	}
 
 	if (bandwidth_to_reg(config->bandwidth, &bw_reg) < 0) {
@@ -1502,13 +1506,17 @@ static int sx126x_lora_recv_duty_cycle_async(const struct device *dev,
 static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 {
 	struct sx126x_data *data = dev->data;
-	uint32_t t_preamble_us, t_payload_us, t_sym_us, n_payload, bw_hz;
-	uint8_t sf, cr, hdr_len;
-	int32_t tmp;
-	bool de, crc;
+	struct lora_modem_config config;
+	uint32_t bw_hz, payload_symbols, denominator;
+	uint64_t quarter_symbols, chips;
+	int32_t payload_bits;
+	uint8_t sf;
+	bool ldro;
 	int ret;
 
-	if (!data->config_valid) {
+	k_mutex_lock(&data->lock, K_FOREVER);
+	if (!data->config_valid || data_len > SX126X_MAX_PAYLOAD_LEN) {
+		k_mutex_unlock(&data->lock);
 		return 0;
 	}
 
@@ -1525,39 +1533,43 @@ static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 				 (data->gfsk_config.packet_crc_disable ? 0 : 2)) *
 				BITS_PER_BYTE;
 
-		return DIV_ROUND_UP(bits * MSEC_PER_SEC, data->gfsk_config.bitrate);
+		uint32_t airtime = DIV_ROUND_UP(bits * MSEC_PER_SEC, data->gfsk_config.bitrate);
+
+		k_mutex_unlock(&data->lock);
+		return airtime;
 	}
 
-	/* Calculate symbol time in microseconds */
-	ret = bandwidth_to_hz(data->config.bandwidth, &bw_hz);
+	config = data->config;
+	k_mutex_unlock(&data->lock);
+
+	ret = bandwidth_to_hz(config.bandwidth, &bw_hz);
 	__ASSERT_NO_MSG(ret == 0);
-	sf = data->config.datarate;
+	sf = config.datarate;
+	ldro = should_enable_ldro(sf, config.bandwidth, dev->config);
 
-	/* Symbol time = 2^SF / BW (seconds) */
-	/* In microseconds: (2^SF * 1000000) / BW */
-	t_sym_us = ((1UL << sf) * 1000000UL) / bw_hz;
-
-	/* Preamble time (4.25 extra symbols) */
-	t_preamble_us = (data->config.preamble_len + 4) * t_sym_us +
-			(t_sym_us / 4);
-
-	/* Payload symbol count calculation (from LoRa modem designer's guide) */
-	de = should_enable_ldro(sf, data->config.bandwidth, dev->config);
-	crc = !data->config.packet_crc_disable;
-	cr = data->config.coding_rate;
-	hdr_len = data->config.explicit_header_disable ? 0 : 20;
-
-	tmp = 8 * data_len - 4 * sf + 8 + hdr_len + 16 * crc;
-	if (tmp < 0) {
-		tmp = 0;
+	/* SF5/SF6 carry eight more payload bits in the header. */
+	payload_bits = 8 * (int32_t)data_len - 4 * sf + 28;
+	if (config.explicit_header_disable) {
+		payload_bits -= 20;
 	}
+	if (!config.packet_crc_disable) {
+		payload_bits += 16;
+	}
+	if (sf <= SF_6) {
+		payload_bits -= 8;
+		ldro = false;
+	}
+	denominator = 4U * (sf - (ldro ? 2U : 0U));
+	payload_symbols = 8U + DIV_ROUND_UP(MAX(payload_bits, 0), denominator) *
+			      (config.coding_rate + 4U);
 
-	n_payload = 8 + (((tmp + 4 * (sf - 2 * de) - 1) /
-			  (4 * (sf - 2 * de))) * (cr + 4));
-	t_payload_us = n_payload * t_sym_us;
+	/* SF5/SF6 use two extra synchronization symbols. Keep quarter symbols exact. */
+	quarter_symbols = 4ULL * (config.preamble_len + payload_symbols + 4U +
+				 (sf <= SF_6 ? 2U : 0U)) + 1U;
+	chips = quarter_symbols * (1ULL << sf) / 4U;
 
-	/* Total airtime in milliseconds */
-	return (t_preamble_us + t_payload_us + 500) / 1000;
+	/* Round up once, after converting the complete packet duration to milliseconds. */
+	return DIV_ROUND_UP(chips * 1000U, bw_hz);
 }
 
 static int sx126x_lora_rssi(const struct device *dev, int16_t *rssi)
