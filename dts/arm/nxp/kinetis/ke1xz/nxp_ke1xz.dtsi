@@ -64,6 +64,17 @@
 		};
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc0 26>, <&adc0 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <740500>;
+		sensor-slope-cold = <1564>;
+		sensor-slope-hot = <1564>;
+		status = "disabled";
+	};
+
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
 	};
