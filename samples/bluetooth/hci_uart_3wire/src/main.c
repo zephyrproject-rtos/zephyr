@@ -472,6 +472,13 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 				continue;
 			}
 
+			/* The CONFIG RESPONSE never selects data integrity checks */
+			if (H5_HDR_CRC(hdr) != 0U) {
+				LOG_ERR("Unexpected data integrity check");
+				h5_reset_rx();
+				continue;
+			}
+
 			remaining = H5_HDR_LEN(hdr);
 			type = H5_HDR_PKT_TYPE(hdr);
 
