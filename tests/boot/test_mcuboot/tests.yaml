@@ -45,6 +45,7 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - rddrone_fmuk66
       - twr_ke18f
       - vmu_rt1170/mimxrt1176/cm7
