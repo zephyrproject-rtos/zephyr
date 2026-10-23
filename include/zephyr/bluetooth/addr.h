@@ -23,7 +23,7 @@ extern "C" {
  * @brief Bluetooth device address definitions and utilities.
  * @defgroup bt_addr Device Address
  * @since 1.0
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -377,6 +377,28 @@ int bt_addr_le_from_str(const char *str, bt_addr_le_t *addr);
  *                  @p id is invalid, or @p addr is not an RPA.
  */
 int bt_addr_le_rpa_resolve(uint8_t id, const bt_addr_le_t *addr, bt_addr_le_t *resolved_addr);
+
+/** Size of an Identity Resolving Key in octets. */
+#define BT_IRK_SIZE 16U
+
+/**
+ * @brief Check whether a Resolvable Private Address was generated from an IRK.
+ *
+ * Computes the hash of the random part of @p rpa with @p irk and compares it
+ * with the hash part of @p rpa.
+ *
+ * Available when the Host or the Controller provides AES, that is with
+ * @kconfig{CONFIG_BT_HOST_CRYPTO} or @kconfig{CONFIG_BT_CTLR_CRYPTO}.
+ *
+ * @param rpa Resolvable private address to check.
+ * @param irk Identity Resolving Key, least significant octet first, in the same
+ *            byte order as the IRK used by bt_id_create() and bt_id_reset_irk().
+ *
+ * @retval true  @p rpa was generated from @p irk.
+ * @retval false @p rpa is not a resolvable private address (see BT_ADDR_IS_RPA()),
+ *               was not generated from @p irk, or the AES operation failed.
+ */
+bool bt_addr_matches_irk(const bt_addr_t *rpa, const uint8_t irk[BT_IRK_SIZE]);
 
 /**
  * @}

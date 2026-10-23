@@ -17,6 +17,7 @@
 
 #include "common/bt_str.h"
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/crypto.h>
 
 #define LOG_LEVEL CONFIG_BT_RPA_LOG_LEVEL
@@ -51,22 +52,24 @@ static int ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
 	return 0;
 }
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CTLR_PRIVACY)
-bool bt_rpa_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
+bool bt_addr_matches_irk(const bt_addr_t *rpa, const uint8_t irk[BT_IRK_SIZE])
 {
 	uint8_t hash[3];
 	int err;
 
-	LOG_DBG("IRK %s bdaddr %s", bt_hex(irk, 16), bt_addr_str(addr));
+	if (!BT_ADDR_IS_RPA(rpa)) {
+		return false;
+	}
 
-	err = ah(irk, addr->val + 3, hash);
+	LOG_DBG("IRK %s rpa %s", bt_hex(irk, BT_IRK_SIZE), bt_addr_str(rpa));
+
+	err = ah(irk, rpa->val + 3, hash);
 	if (err) {
 		return false;
 	}
 
-	return !memcmp(addr->val, hash, 3);
+	return memcmp(rpa->val, hash, 3) == 0;
 }
-#endif
 
 #if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_CTLR_PRIVACY)
 int bt_rpa_create(const uint8_t irk[16], bt_addr_t *rpa)
