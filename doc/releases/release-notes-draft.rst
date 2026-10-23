@@ -103,6 +103,12 @@ New APIs and options
   * Added PSA Protected Storage backend, enable with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
 
+* ZMS
+
+  * :c:func:`zms_delete_physical`
+  * :c:func:`zms_delete_physical_hist`
+  * :kconfig:option:`CONFIG_ZMS_PHYSICAL_DELETE`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
