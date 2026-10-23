@@ -54,6 +54,10 @@ static void set_systimer_alarm(uint64_t time)
 
 static uint64_t get_systimer_alarm(void)
 {
+	if (systimer_hal.dev == NULL) {
+		return 0;
+	}
+
 	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 }
 
