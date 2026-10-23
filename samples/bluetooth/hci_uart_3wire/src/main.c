@@ -87,6 +87,14 @@ static bool reliable_packet(uint8_t type)
 #define H5_SET_LEN(hdr, len)	(((hdr)[1] |= ((len) & 0x0f) << 4), \
 				 ((hdr)[2] |= (len) >> 4))
 
+/* Core 6.3 Vol 4 Part D 4.7: the four header octets, the checksum included, add up to 0xff
+ * modulo 256
+ */
+static bool h5_hdr_checksum_valid(const uint8_t *hdr)
+{
+	return ((hdr[0] + hdr[1] + hdr[2] + hdr[3]) & 0xffU) == 0xffU;
+}
+
 #define H5_TX_WIN		4
 
 static struct h5 {
@@ -464,6 +472,12 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 
 			if (remaining) {
 				break;
+			}
+
+			if (!h5_hdr_checksum_valid(hdr)) {
+				LOG_ERR("Invalid header checksum");
+				h5_reset_rx();
+				continue;
 			}
 
 			remaining = H5_HDR_LEN(hdr);
