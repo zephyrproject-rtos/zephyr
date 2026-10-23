@@ -136,7 +136,7 @@ ZTEST(crc, test_crc16_ansi)
 	/* CRC-16/ANSI, CRC-16/MODBUS, CRC-16/USB, CRC-16/IBM
 	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-modbus
 	 * check=0x4b37
-	 * poly is 0x1021, reflected 0xA001
+	 * poly is 0x8005, reflected 0xA001
 	 */
 	zassert_equal(crc16_c, 0x4b37);
 	zassert_equal(crc16_reflect(0xA001, 0xffff, test, sizeof(test)), crc16_c);
