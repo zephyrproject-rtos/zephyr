@@ -67,6 +67,11 @@
 			status = "disabled";
 		};
 
+		sfr: sfr@f8030000 {
+			compatible = "syscon";
+			reg = <0xf8030000 0x100>;
+		};
+
 		pit: timer@f8048030 {
 			compatible = "microchip,pit-g1-timer";
 			reg = <0xf8048030 0x4000>;
