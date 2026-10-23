@@ -452,6 +452,30 @@ ZTEST(socket_af_inet_raw, test_raw_v6_sock_send_proto_ipproto_raw)
 	test_raw_sock_send(NET_AF_INET6, NET_IPPROTO_RAW);
 }
 
+ZTEST(socket_af_inet_raw, test_raw_v4_sock_send_bad_hdr_len)
+{
+	struct net_ipv4_hdr *ipv4 = (struct net_ipv4_hdr *)tx_buf;
+	uint16_t len = sizeof(tx_buf);
+	int ret;
+
+	prepare_raw_and_udp_sock_and_addr(NET_AF_INET, NET_IPPROTO_RAW);
+	prepare_raw_ip_packet(NET_AF_INET, tx_buf, &len);
+
+	/* IHL of 15 words, but only the fixed header is sent */
+	ipv4->vhl = 0x4f;
+	ret = zsock_send(raw_sock, tx_buf, NET_IPV4H_LEN, 0);
+	zexpect_equal(ret, -1, "Header longer than the data was sent");
+	zexpect_equal(errno, EINVAL, "Unexpected errno (%d)", errno);
+
+	ipv4->vhl = 0x44;
+	ret = zsock_send(raw_sock, tx_buf, len, 0);
+	zexpect_equal(ret, -1, "Header shorter than 20 bytes was sent");
+	zexpect_equal(errno, EINVAL, "Unexpected errno (%d)", errno);
+
+	ret = zsock_recv(udp_sock, rx_buf, sizeof(rx_buf), 0);
+	zexpect_equal(ret, -1, "Malformed packet was received");
+}
+
 static void test_raw_sock_sendto(net_sa_family_t family)
 {
 	uint16_t len = sizeof(tx_buf);
