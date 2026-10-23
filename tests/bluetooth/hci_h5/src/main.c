@@ -444,6 +444,34 @@ ZTEST(hci_h5, test_unreliable_send)
 	expect_no_tx(c);
 }
 
+ZTEST(hci_h5, test_duplicate_packet)
+{
+	struct ctlr *c = &ctlrs[0];
+
+	put_evt(c, true, c->seq, 15U);
+	expect_evt(c, 15U);
+	next_seq(c);
+	expect_ack(c);
+
+	/* Retransmitted as if the acknowledgment had been lost */
+	put_evt(c, true, (c->seq + 7U) % 8U, 15U);
+	expect_no_evt(c);
+	expect_ack(c);
+}
+
+ZTEST(hci_h5, test_truncated_header)
+{
+	static const uint8_t octet[] = { SLIP_DELIMITER, BIT(7), SLIP_DELIMITER };
+	static const uint8_t escape[] = { SLIP_DELIMITER, SLIP_ESC, SLIP_DELIMITER };
+	struct ctlr *c = &ctlrs[0];
+
+	put(c, octet, sizeof(octet));
+	expect_ack(c);
+
+	put(c, escape, sizeof(escape));
+	expect_ack(c);
+}
+
 ZTEST(hci_h5, test_unreliable_event)
 {
 	struct ctlr *c = &ctlrs[0];
