@@ -1748,6 +1748,55 @@ struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface,
 #endif
 }
 
+/* Allocate a packet and leave the part of the timeout that was not spent
+ * waiting for the slab in *timeout for the buffer allocation.
+ */
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+static struct net_pkt *pkt_alloc_on_iface_wait(struct k_mem_slab *slab, struct net_if *iface,
+					       k_timeout_t *timeout, const char *caller, int line)
+#else
+static struct net_pkt *pkt_alloc_on_iface_wait(struct k_mem_slab *slab, struct net_if *iface,
+					       k_timeout_t *timeout)
+#endif
+{
+	struct net_pkt *pkt;
+	k_timepoint_t end;
+
+	/* As in pkt_alloc_buffer(), take the slab without waiting first. When
+	 * that works none of the caller's timeout has gone, so it can be
+	 * handed to the buffer allocation untouched and the clock stays out
+	 * of the common path entirely.
+	 */
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	pkt = pkt_alloc_on_iface(slab, iface, K_NO_WAIT, caller, line);
+#else
+	pkt = pkt_alloc_on_iface(slab, iface, K_NO_WAIT);
+#endif
+	if (pkt != NULL) {
+		return pkt;
+	}
+
+	if (K_TIMEOUT_EQ(*timeout, K_NO_WAIT)) {
+		return NULL;
+	}
+
+	end = sys_timepoint_calc(*timeout);
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	pkt = pkt_alloc_on_iface(slab, iface, *timeout, caller, line);
+#else
+	pkt = pkt_alloc_on_iface(slab, iface, *timeout);
+#endif
+	if (pkt == NULL) {
+		return NULL;
+	}
+
+	/* Waiting for the slab used up part of the caller's budget. */
+	*timeout = sys_timepoint_timeout(end);
+
+	return pkt;
+}
+
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static struct net_pkt *
 pkt_alloc_with_buffer(struct k_mem_slab *slab,
@@ -1778,37 +1827,13 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 	NET_DBG("On iface %d (%p) size %zu", net_if_get_by_iface(iface), iface, size);
 #endif /* CONFIG_NET_RAW_MODE */
 
-	/* As in pkt_alloc_buffer(), take the slab without waiting first. When
-	 * that works none of the caller's timeout has gone, so it can be
-	 * handed to the buffer allocation untouched and the clock stays out
-	 * of the common path entirely.
-	 */
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	pkt = pkt_alloc_on_iface(slab, iface, K_NO_WAIT, caller, line);
+	pkt = pkt_alloc_on_iface_wait(slab, iface, &timeout, caller, line);
 #else
-	pkt = pkt_alloc_on_iface(slab, iface, K_NO_WAIT);
+	pkt = pkt_alloc_on_iface_wait(slab, iface, &timeout);
 #endif
-
 	if (pkt == NULL) {
-		k_timepoint_t end;
-
-		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			return NULL;
-		}
-
-		end = sys_timepoint_calc(timeout);
-
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		pkt = pkt_alloc_on_iface(slab, iface, timeout, caller, line);
-#else
-		pkt = pkt_alloc_on_iface(slab, iface, timeout);
-#endif
-		if (pkt == NULL) {
-			return NULL;
-		}
-
-		/* Waiting for the slab used up part of the caller's budget. */
-		timeout = sys_timepoint_timeout(end);
+		return NULL;
 	}
 
 	net_pkt_set_family(pkt, family);
@@ -2262,26 +2287,48 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	clone_pkt_cb(pkt, clone_pkt);
 }
 
-static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt,
-					      struct k_mem_slab *slab,
+/* Clone pkt on slab for iface. With l2_reserve the buffer is allocated as
+ * for a new packet on iface, so the L2 of a TX packet can reserve its header
+ * space. Without it the buffer is a plain copy.
+ */
+static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt, struct k_mem_slab *slab,
+					      struct net_if *iface, bool l2_reserve,
 					      k_timeout_t timeout)
 {
 	size_t cursor_offset = net_pkt_get_current_offset(pkt);
 	bool overwrite = net_pkt_is_being_overwritten(pkt);
 	struct net_pkt_cursor backup;
 	struct net_pkt *clone_pkt;
+	int ret;
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	clone_pkt = pkt_alloc_with_buffer(slab, net_pkt_iface(pkt),
-					  net_pkt_get_len(pkt),
-					  NET_AF_UNSPEC, 0, timeout,
-					  __func__, __LINE__);
+	clone_pkt = pkt_alloc_on_iface_wait(slab, iface, &timeout, __func__, __LINE__);
 #else
-	clone_pkt = pkt_alloc_with_buffer(slab, net_pkt_iface(pkt),
-					  net_pkt_get_len(pkt),
-					  NET_AF_UNSPEC, 0, timeout);
+	clone_pkt = pkt_alloc_on_iface_wait(slab, iface, &timeout);
 #endif
-	if (!clone_pkt) {
+	if (clone_pkt == NULL) {
+		return NULL;
+	}
+
+	net_pkt_set_family(clone_pkt, NET_AF_UNSPEC);
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	if (l2_reserve) {
+		ret = net_pkt_alloc_buffer_debug(clone_pkt, net_pkt_get_len(pkt), 0, timeout,
+						 __func__, __LINE__);
+	} else {
+		ret = net_pkt_alloc_buffer_raw_debug(clone_pkt, net_pkt_get_len(pkt), timeout,
+						     __func__, __LINE__);
+	}
+#else
+	if (l2_reserve) {
+		ret = net_pkt_alloc_buffer(clone_pkt, net_pkt_get_len(pkt), 0, timeout);
+	} else {
+		ret = net_pkt_alloc_buffer_raw(clone_pkt, net_pkt_get_len(pkt), timeout);
+	}
+#endif
+	if (ret != 0) {
+		net_pkt_unref(clone_pkt);
 		return NULL;
 	}
 
@@ -2319,12 +2366,22 @@ static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt,
 
 struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout)
 {
-	return net_pkt_clone_internal(pkt, pkt->slab, timeout);
+	return net_pkt_clone_internal(pkt, pkt->slab, net_pkt_iface(pkt), true, timeout);
 }
 
 struct net_pkt *net_pkt_rx_clone(struct net_pkt *pkt, k_timeout_t timeout)
 {
-	return net_pkt_clone_internal(pkt, &rx_pkts, timeout);
+	return net_pkt_clone_internal(pkt, &rx_pkts, net_pkt_iface(pkt), true, timeout);
+}
+
+struct net_pkt *net_pkt_tx_clone(struct net_pkt *pkt, struct net_if *iface, k_timeout_t timeout)
+{
+	return net_pkt_clone_internal(pkt, &tx_pkts, iface, true, timeout);
+}
+
+struct net_pkt *net_pkt_tx_clone_raw(struct net_pkt *pkt, struct net_if *iface, k_timeout_t timeout)
+{
+	return net_pkt_clone_internal(pkt, &tx_pkts, iface, false, timeout);
 }
 
 struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, k_timeout_t timeout)
