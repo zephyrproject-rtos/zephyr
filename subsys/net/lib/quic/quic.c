@@ -6035,9 +6035,17 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	return stream;
 }
 
-static struct quic_stream *quic_get_stream(struct quic_context *conn)
+ZTESTABLE_STATIC struct quic_stream *quic_get_stream(struct quic_context *conn)
 {
 	struct quic_stream *stream = NULL;
+
+	/* The stream holds a reference to its context. A context whose
+	 * count already reached zero is being released, and a stream added
+	 * to it would keep pointing at it after its slot is reused.
+	 */
+	if (!quic_context_ref_unless_zero(conn)) {
+		return NULL;
+	}
 
 	k_mutex_lock(&streams_lock, K_FOREVER);
 
@@ -6053,11 +6061,14 @@ static struct quic_stream *quic_get_stream(struct quic_context *conn)
 		sys_slist_prepend(&conn->streams, &stream->node);
 
 		stream->conn = conn;
-		quic_context_ref(conn);
 		break;
 	}
 
 	k_mutex_unlock(&streams_lock);
+
+	if (stream == NULL) {
+		quic_context_unref(conn);
+	}
 
 	return stream;
 }
