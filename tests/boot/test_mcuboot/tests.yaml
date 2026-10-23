@@ -20,6 +20,7 @@ tests:
       - frdm_ke17z
       - frdm_ke17z512
       - frdm_mcxa156
+      - frdm_mcxe247
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_mcxw71
