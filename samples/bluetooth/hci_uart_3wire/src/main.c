@@ -150,6 +150,11 @@ static void h5_reset_rx(void)
 
 	h5.rx_esc = false;
 	h5.rx_state = START;
+
+	/* Discarded packets are acknowledged too (Core 6.3 Vol 4 Part D 6.5, 6.7) */
+	if (h5.link_state == ACTIVE) {
+		k_work_schedule(&ack_work, H5_RX_ACK_TIMEOUT);
+	}
 }
 
 /* Returns -EAGAIN after an escape octet: the escaped octet follows */
@@ -471,6 +476,12 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 			 * with starting one.
 			 */
 			if (byte == SLIP_DELIMITER) {
+				if (remaining != sizeof(hdr) || h5.rx_esc) {
+					LOG_ERR("Truncated packet header");
+					h5_reset_rx();
+					h5.rx_state = HEADER;
+				}
+
 				remaining = sizeof(hdr);
 				h5.rx_esc = false;
 				continue;
