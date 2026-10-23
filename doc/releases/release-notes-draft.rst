@@ -135,6 +135,13 @@ Libraries / Subsystems
     as defined in :rfc:`3629`; overlong sequences, UTF-16 surrogates and code
     points above U+10FFFF are refused.
 
+* Shell
+
+  * With :kconfig:option:`CONFIG_SHELL_WILDCARD` enabled, an argument containing ``*`` or ``?``
+    that matches no subcommand is now passed to the command handler unchanged. Previously the
+    command was run without that argument and its remaining arguments, which usually failed
+    with a wrong argument count.
+
 Devicetree
 **********
 
