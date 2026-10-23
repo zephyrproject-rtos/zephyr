@@ -437,10 +437,10 @@ static void mcc_discover_cb(struct bt_conn *conn, int err)
 	svc_chrc_handles.ots_handles.obj_name = mcc_inst->otc.obj_name_handle;
 	svc_chrc_handles.ots_handles.obj_type = mcc_inst->otc.obj_type_handle;
 	svc_chrc_handles.ots_handles.obj_size = mcc_inst->otc.obj_size_handle;
-	svc_chrc_handles.ots_handles.obj_id = mcc_inst->otc.obj_id_handle;
 	svc_chrc_handles.ots_handles.obj_properties = mcc_inst->otc.obj_properties_handle;
 	svc_chrc_handles.ots_handles.obj_created = mcc_inst->otc.obj_created_handle;
 	svc_chrc_handles.ots_handles.obj_modified = mcc_inst->otc.obj_modified_handle;
+	svc_chrc_handles.ots_handles.obj_id = mcc_inst->otc.obj_id_handle;
 	svc_chrc_handles.ots_handles.oacp = mcc_inst->otc.oacp_handle;
 	svc_chrc_handles.ots_handles.olcp = mcc_inst->otc.olcp_handle;
 
