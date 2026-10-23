@@ -35,12 +35,14 @@
 &dma0 {
 	dma-channels = <4>;
 	ti,num-full-channels = <2>;
+	ti,gather-mode;
 	status = "okay";
 };
 
 &dma1 {
 	dma-channels = <12>;
 	ti,num-full-channels = <6>;
+	ti,gather-mode;
 	status = "okay";
 };
 
