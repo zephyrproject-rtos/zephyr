@@ -2396,6 +2396,35 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 		 struct net_pkt *pkt_src,
 		 size_t length);
 
+/** @cond INTERNAL_HIDDEN */
+
+#if defined(NET_PKT_DEBUG_ENABLED)
+
+struct net_pkt *net_pkt_clone_debug(struct net_pkt *pkt, k_timeout_t timeout,
+				    const char *caller, int line);
+#define net_pkt_clone(_pkt, _timeout)					\
+	net_pkt_clone_debug(_pkt, _timeout, __func__, __LINE__)
+
+struct net_pkt *net_pkt_rx_clone_debug(struct net_pkt *pkt, k_timeout_t timeout,
+				       const char *caller, int line);
+#define net_pkt_rx_clone(_pkt, _timeout)				\
+	net_pkt_rx_clone_debug(_pkt, _timeout, __func__, __LINE__)
+
+struct net_pkt *net_pkt_tx_clone_debug(struct net_pkt *pkt, struct net_if *iface,
+				       k_timeout_t timeout, const char *caller, int line);
+#define net_pkt_tx_clone(_pkt, _iface, _timeout)			\
+	net_pkt_tx_clone_debug(_pkt, _iface, _timeout, __func__, __LINE__)
+
+struct net_pkt *net_pkt_tx_clone_raw_debug(struct net_pkt *pkt, struct net_if *iface,
+					   k_timeout_t timeout, const char *caller,
+					   int line);
+#define net_pkt_tx_clone_raw(_pkt, _iface, _timeout)			\
+	net_pkt_tx_clone_raw_debug(_pkt, _iface, _timeout, __func__, __LINE__)
+
+#endif /* NET_PKT_DEBUG_ENABLED */
+/** @endcond */
+
+#if !defined(NET_PKT_DEBUG_ENABLED)
 /**
  * @brief Clone pkt and its buffer. The cloned packet will be allocated on
  *        the same pool as the original one.
@@ -2406,7 +2435,9 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
  * @return NULL if error, cloned packet otherwise.
  */
 struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout);
+#endif
 
+#if !defined(NET_PKT_DEBUG_ENABLED)
 /**
  * @brief Clone pkt and its buffer. The cloned packet will be allocated on
  *        the RX packet poll.
@@ -2417,6 +2448,45 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout);
  * @return NULL if error, cloned packet otherwise.
  */
 struct net_pkt *net_pkt_rx_clone(struct net_pkt *pkt, k_timeout_t timeout);
+#endif
+
+#if !defined(NET_PKT_DEBUG_ENABLED)
+/**
+ * @brief Clone pkt and its buffer on the TX packet pool for transmission
+ *        on @p iface.
+ *
+ * The clone is allocated on @p iface, so the L2 of that interface reserves
+ * its link layer header space as it does for a packet allocated with
+ * net_pkt_alloc_with_buffer(). Use this to re-send a received packet whose
+ * link layer header has been removed, for example when forwarding it.
+ *
+ * @param pkt Original pkt to be cloned
+ * @param iface Interface the clone is sent on
+ * @param timeout Timeout to wait for free buffer
+ *
+ * @return NULL if error, cloned packet otherwise.
+ */
+struct net_pkt *net_pkt_tx_clone(struct net_pkt *pkt, struct net_if *iface, k_timeout_t timeout);
+#endif
+
+#if !defined(NET_PKT_DEBUG_ENABLED)
+/**
+ * @brief Clone pkt and its buffer on the TX packet pool for transmission
+ *        on @p iface without reserving link layer header space.
+ *
+ * The buffer of the clone is a plain copy of the original. Use this for
+ * packets that already carry their link layer header, for example frames
+ * forwarded by the Ethernet bridge.
+ *
+ * @param pkt Original pkt to be cloned
+ * @param iface Interface the clone is sent on
+ * @param timeout Timeout to wait for free buffer
+ *
+ * @return NULL if error, cloned packet otherwise.
+ */
+struct net_pkt *net_pkt_tx_clone_raw(struct net_pkt *pkt, struct net_if *iface,
+				     k_timeout_t timeout);
+#endif
 
 /**
  * @brief Clone pkt and increase the refcount of its buffer.
