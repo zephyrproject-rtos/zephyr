@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -280,9 +281,40 @@ static void expect_evt_retransmitted(uint8_t evt_seq)
 	expect_tx(hdr, hw_err_evt, sizeof(hw_err_evt));
 }
 
+/* Times the link control message appears in tx */
+static size_t count_link(const uint8_t *tx, size_t tx_len, const uint8_t *msg, size_t len)
+{
+	uint8_t expected[FRAME_MAX(3U)];
+	uint8_t hdr[HDR_LEN];
+	size_t expected_len;
+	size_t count = 0U;
+
+	hdr_set(hdr, false, 0U, seq, PKT_LINK, len);
+	expected_len = frame(expected, hdr, msg, len);
+
+	for (size_t i = 0U; i + expected_len <= tx_len; i++) {
+		if (memcmp(&tx[i], expected, expected_len) == 0) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+/* Times the sample sent the link control message since the last check */
+static size_t count_link_tx(const uint8_t *msg, size_t len)
+{
+	uint8_t tx[256];
+	uint32_t tx_len;
+
+	tx_len = uart_emul_get_tx_data(uart, tx, sizeof(tx));
+
+	return count_link(tx, tx_len, msg, len);
+}
+
 struct hci_uart_3wire_fixture {
 	/* The sample's output after the early SYNC */
-	uint8_t early_tx[16];
+	uint8_t early_tx[64];
 	uint32_t early_tx_len;
 };
 
@@ -301,8 +333,10 @@ static void *setup(void)
 static void before(void *fixture)
 {
 	static const uint8_t sync[] = { 0x01, 0x7e };
+	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
 	/* Sliding window size 4 */
 	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
+	static const uint8_t conf_rsp[] = { 0x04, 0x7b };
 	struct net_buf *buf;
 
 	ARG_UNUSED(fixture);
@@ -314,10 +348,10 @@ static void before(void *fixture)
 	}
 
 	/* A SYNC in the Active state restarts the link */
-	for (int i = 0; i < 2; i++) {
-		put_link(false, sync, sizeof(sync));
-		put_link(false, conf, sizeof(conf));
-	}
+	put_link(false, sync, sizeof(sync));
+	put_link(false, sync_rsp, sizeof(sync_rsp));
+	put_link(false, conf, sizeof(conf));
+	put_link(false, conf_rsp, sizeof(conf_rsp));
 
 	(void)uart_emul_flush_tx_data(uart);
 	seq = 0U;
@@ -326,14 +360,10 @@ static void before(void *fixture)
 ZTEST_F(hci_uart_3wire, test_early_sync)
 {
 	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
-	uint8_t expected[FRAME_MAX(sizeof(sync_rsp))];
-	uint8_t hdr[HDR_LEN];
-	size_t len;
 
-	hdr_set(hdr, false, 0U, 0U, PKT_LINK, sizeof(sync_rsp));
-	len = frame(expected, hdr, sync_rsp, sizeof(sync_rsp));
-	zassert_equal(fixture->early_tx_len, len);
-	zassert_mem_equal(fixture->early_tx, expected, len);
+	zassert_equal(
+		count_link(fixture->early_tx, fixture->early_tx_len, sync_rsp, sizeof(sync_rsp)),
+		1U);
 }
 
 ZTEST(hci_uart_3wire, test_command)
@@ -360,18 +390,9 @@ ZTEST(hci_uart_3wire, test_ack_delay)
 
 ZTEST(hci_uart_3wire, test_event_after_link_setup)
 {
-	static const uint8_t sync[] = { 0x01, 0x7e };
-	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
 	uint8_t evt_seq;
 
-	/* The TX thread last ran before the link became active */
-	put_link(false, sync, sizeof(sync));
-	put_cmd(true, seq, 11U);
-	expect_cmd(11U);
-	next_seq();
-	put_link(false, conf, sizeof(conf));
-	(void)uart_emul_flush_tx_data(uart);
-
+	/* before() restarted the link after the TX thread last ran */
 	evt_seq = send_evt();
 	put_ack((evt_seq + 1U) % 8U);
 	expect_no_tx();
@@ -582,17 +603,47 @@ ZTEST(hci_uart_3wire, test_reliable_link_packet)
 
 ZTEST(hci_uart_3wire, test_short_link_packet)
 {
-	static const uint8_t sync[] = { 0x01, 0x7e };
-	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
+	static const uint8_t conf_rsp[] = { 0x04, 0x7b, 0x04 };
 	uint8_t hdr[HDR_LEN];
 
-	put_link(false, sync, sizeof(sync));
-	hdr_set(hdr, false, 0U, 0U, PKT_LINK, sizeof(sync_rsp));
-	expect_tx(hdr, sync_rsp, sizeof(sync_rsp));
+	put_link(false, conf, sizeof(conf));
+	hdr_set(hdr, false, 0U, seq, PKT_LINK, sizeof(conf_rsp));
+	expect_tx(hdr, conf_rsp, sizeof(conf_rsp));
 
-	/* The signal buffer still holds the SYNC message */
-	put_link(false, sync, 1U);
-	put_link(false, sync, 0U);
+	/* The signal buffer still holds the CONFIG message */
+	put_link(false, conf, 1U);
+	put_link(false, conf, 0U);
+	expect_no_tx();
+}
+
+ZTEST(hci_uart_3wire, test_link_establishment)
+{
+	static const uint8_t sync[] = { 0x01, 0x7e };
+	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
+	static const uint8_t ctlr_conf[] = { 0x03, 0xfc };
+	static const uint8_t conf_rsp[] = { 0x04, 0x7b };
+	uint8_t evt_seq;
+
+	/* A SYNC restarts the link: SYNC until SYNC RESPONSE */
+	put_link(false, sync, sizeof(sync));
+	seq = 0U;
+	k_sleep(K_SECONDS(1));
+	zassert_true(count_link_tx(sync, sizeof(sync)) >= 3U);
+	put_link(false, sync_rsp, sizeof(sync_rsp));
+
+	/* Initialized: CONFIG until CONFIG RESPONSE */
+	k_sleep(K_SECONDS(1));
+	zassert_true(count_link_tx(ctlr_conf, sizeof(ctlr_conf)) >= 3U);
+	put_link(false, conf, sizeof(conf));
+	put_link(false, conf_rsp, sizeof(conf_rsp));
+
+	/* Active: packets for the Host go out from sequence number 0 */
+	(void)uart_emul_flush_tx_data(uart);
+	evt_seq = send_evt();
+	zassert_equal(evt_seq, 0U);
+	put_ack(1U);
 	expect_no_tx();
 }
 
