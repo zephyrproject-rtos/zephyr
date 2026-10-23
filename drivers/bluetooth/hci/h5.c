@@ -546,6 +546,15 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 			}
 			break;
 		case PAYLOAD:
+			if (byte == SLIP_DELIMITER) {
+				LOG_ERR("Packet shorter than its header");
+				h5_reset_rx(h5);
+				/* The delimiter may start the next packet */
+				h5->rx_state = HEADER;
+				h5->rx_remaining = sizeof(h5->rx_hdr);
+				continue;
+			}
+
 			if (h5_unslip_byte(uart, &byte) < 0) {
 				h5_reset_rx(h5);
 				continue;

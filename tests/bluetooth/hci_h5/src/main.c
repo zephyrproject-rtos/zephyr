@@ -292,6 +292,25 @@ ZTEST(hci_h5, test_zero_length_event)
 	expect_ack(c);
 }
 
+ZTEST(hci_h5, test_truncated_packet)
+{
+	struct ctlr *c = &ctlrs[0];
+	uint8_t out[2U * FRAME_MAX(EVT_LEN)];
+	uint8_t hdr[HDR_LEN];
+	size_t len;
+
+	/* One octet short of its header, followed by a complete packet */
+	hdr_set(hdr, true, c->seq, 0U, PKT_EVT, EVT_LEN);
+	len = evt_frame(out, hdr, 4U, EVT_LEN - 1U);
+	len += evt_frame(&out[len], hdr, 5U, EVT_LEN);
+	put(c, out, len);
+
+	expect_evt(c, 5U);
+	expect_no_evt(c);
+	next_seq(c);
+	expect_ack(c);
+}
+
 ZTEST(hci_h5, test_interleaved_instances)
 {
 	struct ctlr *a = &ctlrs[0];
