@@ -97,6 +97,8 @@ struct h5_data {
 	struct k_fifo		rx_queue;
 	struct k_fifo		unack_queue;
 	struct k_mutex		tx_mutex;
+	/* tx_seq, unack_queue and unack_queue_len */
+	struct k_spinlock	tx_lock;
 
 	struct k_work_delayable ack_work;
 	struct k_work_delayable retx_work;
@@ -189,10 +191,12 @@ static int h5_unslip_byte(struct h5_data *h5, uint8_t *byte)
 
 static void process_unack(struct h5_data *h5)
 {
+	k_spinlock_key_t key = k_spin_lock(&h5->tx_lock);
 	uint8_t next_seq = h5->tx_seq;
 	uint8_t number_removed = h5->unack_queue_len;
 
 	if (!h5->unack_queue_len) {
+		k_spin_unlock(&h5->tx_lock, key);
 		return;
 	}
 
@@ -234,6 +238,8 @@ static void process_unack(struct h5_data *h5)
 		h5->unack_queue_len--;
 		number_removed--;
 	}
+
+	k_spin_unlock(&h5->tx_lock, key);
 }
 
 static void h5_print_header(const uint8_t *hdr, const char *str)
@@ -299,7 +305,8 @@ static uint8_t h5_slip_byte(const struct device *uart, uint8_t byte)
 	}
 }
 
-static void h5_send(const struct device *dev, const uint8_t *payload, uint8_t type, int len)
+static void h5_send(const struct device *dev, const uint8_t *payload, uint8_t type, int len,
+		    uint8_t seq)
 {
 	const struct h5_config *cfg = dev->config;
 	struct h5_data *h5 = dev->data;
@@ -322,8 +329,7 @@ static void h5_send(const struct device *dev, const uint8_t *payload, uint8_t ty
 
 	if (reliable_packet(type)) {
 		H5_SET_RELIABLE(hdr);
-		H5_SET_SEQ(hdr, h5->tx_seq);
-		h5->tx_seq = (h5->tx_seq + 1) % 8;
+		H5_SET_SEQ(hdr, seq);
 	}
 
 	H5_SET_TYPE(hdr, type);
@@ -359,6 +365,7 @@ static void retx_timeout(struct k_work *work)
 	LOG_DBG("unack_queue_len %u", h5->unack_queue_len);
 
 	if (h5->unack_queue_len) {
+		k_spinlock_key_t key = k_spin_lock(&h5->tx_lock);
 		struct k_fifo tmp_queue;
 		struct net_buf *buf;
 
@@ -382,6 +389,8 @@ static void retx_timeout(struct k_work *work)
 		while ((buf = k_fifo_get(&tmp_queue, K_NO_WAIT))) {
 			k_fifo_put(&h5->tx_queue, buf);
 		}
+
+		k_spin_unlock(&h5->tx_lock, key);
 	}
 }
 
@@ -392,7 +401,7 @@ static void ack_timeout(struct k_work *work)
 
 	LOG_DBG("");
 
-	h5_send(h5->dev, NULL, HCI_3WIRE_ACK_PKT, 0);
+	h5_send(h5->dev, NULL, HCI_3WIRE_ACK_PKT, 0, 0U);
 }
 
 static void h5_process_complete_packet(const struct device *dev, uint8_t *hdr)
@@ -665,11 +674,13 @@ static void tx_thread(void *p1, void *p2, void *p3)
 	LOG_DBG("");
 
 	/* FIXME: make periodic sending */
-	h5_send(dev, sync_req, HCI_3WIRE_LINK_PKT, sizeof(sync_req));
+	h5_send(dev, sync_req, HCI_3WIRE_LINK_PKT, sizeof(sync_req), 0U);
 
 	while (true) {
+		k_spinlock_key_t key;
 		struct net_buf *buf;
 		uint8_t type;
+		uint8_t seq;
 
 		LOG_DBG("link_state %u", h5->link_state);
 
@@ -686,13 +697,21 @@ static void tx_thread(void *p1, void *p2, void *p3)
 			buf = k_fifo_get(&h5->tx_queue, K_FOREVER);
 			type = h5_get_type(buf);
 
-			h5_send(dev, buf->data, type, buf->len);
-
-			/* buf is dequeued from tx_queue and queued to unack
-			 * queue.
+			/* Queued before it is sent, as uart_poll_out() may block, with a
+			 * reference of its own in case it is acknowledged meanwhile
 			 */
-			k_fifo_put(&h5->unack_queue, buf);
+			key = k_spin_lock(&h5->tx_lock);
+			seq = h5->tx_seq;
+			if (reliable_packet(type)) {
+				h5->tx_seq = (seq + 1) % 8;
+			}
+
+			k_fifo_put(&h5->unack_queue, net_buf_ref(buf));
 			h5->unack_queue_len++;
+			k_spin_unlock(&h5->tx_lock, key);
+
+			h5_send(dev, buf->data, type, buf->len, seq);
+			net_buf_unref(buf);
 
 			k_work_reschedule(&h5->retx_work, H5_TX_ACK_TIMEOUT);
 
@@ -733,7 +752,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 				/* TODO Reset H5 */
 			}
 
-			h5_send(dev, sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp));
+			h5_send(dev, sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp), 0U);
 		} else if (!memcmp(buf->data, sync_rsp, sizeof(sync_rsp))) {
 			if (h5->link_state == ACTIVE) {
 				/* TODO Reset H5 */
@@ -741,17 +760,17 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 			h5->link_state = INIT;
 			h5_set_txwin(h5, conf_req);
-			h5_send(dev, conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req));
+			h5_send(dev, conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req), 0U);
 		} else if (!memcmp(buf->data, conf_req, 2)) {
 			/*
 			 * The Host sends Config Response messages without a
 			 * Configuration Field.
 			 */
-			h5_send(dev, conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp));
+			h5_send(dev, conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp), 0U);
 
 			/* Then send Config Request with Configuration Field */
 			h5_set_txwin(h5, conf_req);
-			h5_send(dev, conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req));
+			h5_send(dev, conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req), 0U);
 		} else if (!memcmp(buf->data, conf_rsp, 2)) {
 			h5->link_state = ACTIVE;
 			if (buf->len > 2) {
