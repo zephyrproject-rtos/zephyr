@@ -732,8 +732,10 @@ static void rpa_timeout(struct k_work *work)
 	adv_enabled = le_adv_rpa_timeout();
 	le_rpa_invalidate();
 
-	/* IF no roles using the RPA is running we can stop the RPA timer */
-	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+	/* If no roles using the RPA are running we can stop the RPA timer. Without
+	 * a Broadcaster there are no advertising sets to call rpa_expired for.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) || !IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		if (!(adv_enabled || atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
 		      bt_le_scan_active_scanner_running())) {
 			return;
@@ -1667,7 +1669,7 @@ int bt_id_reset_irk(uint8_t id, uint8_t *irk)
 		return -EBUSY;
 	}
 
-	if (bt_keys_has_bond(id)) {
+	if (IS_ENABLED(CONFIG_BT_SMP) && bt_keys_has_bond(id)) {
 		return -ENOTEMPTY;
 	}
 
@@ -1771,6 +1773,22 @@ uint8_t bt_id_read_public_addr(bt_addr_le_t *addr)
 	return 1U;
 }
 
+/* IRK = d1(IR, 1, 0), Core v6.3, Vol 3, Part H, Appendix B.2.3 */
+static bool irk_from_ir(const uint8_t ir[16], uint8_t irk[BT_IRK_SIZE])
+{
+	static const uint8_t invalid_ir[16] = { 0 };
+
+	if (util_memeq(ir, invalid_ir, sizeof(invalid_ir))) {
+		return false;
+	}
+
+	sys_put_le16(1U, &irk[0]);
+	sys_put_le16(0U, &irk[2]);
+	(void)memset(&irk[4], 0, BT_IRK_SIZE - 4);
+
+	return bt_encrypt_le(ir, irk, irk) == 0;
+}
+
 int bt_setup_public_id_addr(void)
 {
 	bt_addr_le_t addr;
@@ -1789,7 +1807,7 @@ int bt_setup_public_id_addr(void)
 	bt_read_identity_root(ir);
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY_RANDOMIZE_IR)) {
-		if (!bt_smp_irk_get(ir, ir_irk)) {
+		if (irk_from_ir(ir, ir_irk)) {
 			irk = ir_irk;
 		}
 	}
@@ -1879,7 +1897,7 @@ int bt_setup_random_id_addr(void)
 
 			if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !IS_ENABLED(CONFIG_BT_PRIVACY_RANDOMIZE_IR)) {
-				if (!bt_smp_irk_get(addrs[i].ir, ir_irk)) {
+				if (irk_from_ir(addrs[i].ir, ir_irk)) {
 					irk = ir_irk;
 				}
 			}

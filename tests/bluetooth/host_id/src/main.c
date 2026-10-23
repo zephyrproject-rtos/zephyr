@@ -973,6 +973,56 @@ static ZTEST(bt_id_public_api, test_nrpa_adv_rejects_conn_create_with_host_resol
 }
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_SMP) */
 #endif /* CONFIG_BT_BROADCASTER && (!CONFIG_BT_EXT_ADV || CONFIG_BT_EXT_ADV_LEGACY_SUPPORT) */
+
+#if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_BT_BROADCASTER) &&                              \
+	defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+/* Scan through one expiry of the RPA timeout. Report whether
+ * rpa_timeout() started the RPA timer again.
+ */
+static int scan_through_rpa_timeout(const struct bt_le_scan_param *param, uint16_t rpa_timeout_s,
+				    bool *pending)
+{
+	int err;
+
+	err = bt_le_scan_start(param, NULL);
+	if (err != 0) {
+		return err;
+	}
+
+	/* Wait half a second past the RPA timeout: rpa_timeout() has run,
+	 * and the next expiry is still ahead.
+	 */
+	(void)k_sleep(K_MSEC(rpa_timeout_s * MSEC_PER_SEC + 500U));
+	*pending = k_work_delayable_is_pending(&bt_dev.rpa_update);
+
+	return bt_le_scan_stop();
+}
+
+static ZTEST(bt_id_public_api, test_rpa_timer_stops_without_active_scanner)
+{
+	const uint16_t rpa_timeout_s = 1U;
+	struct bt_le_oob oob;
+	bool passive_pending = false;
+	bool active_pending = false;
+	int passive_err;
+	int active_err;
+
+	zassert_ok(bt_le_set_rpa_timeout(rpa_timeout_s), "Failed to set the RPA timeout");
+	/* Start a new RPA period, which uses the new timeout */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to get the local address");
+
+	passive_err = scan_through_rpa_timeout(BT_LE_SCAN_PASSIVE, rpa_timeout_s, &passive_pending);
+	active_err = scan_through_rpa_timeout(BT_LE_SCAN_ACTIVE, rpa_timeout_s, &active_pending);
+
+	zassert_ok(bt_le_set_rpa_timeout(CONFIG_BT_RPA_TIMEOUT),
+		   "Failed to restore the RPA timeout");
+
+	zassert_ok(passive_err, "Passive scanning failed: %d", passive_err);
+	zassert_ok(active_err, "Active scanning failed: %d", active_err);
+	zassert_false(passive_pending, "The RPA timer kept running for a passive scanner");
+	zassert_true(active_pending, "The RPA timer stopped for an active scanner");
+}
+#endif /* CONFIG_BT_OBSERVER && !CONFIG_BT_BROADCASTER && CONFIG_BT_RPA_TIMEOUT_DYNAMIC */
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
 /* The public identity address reaches the driver through the common driver

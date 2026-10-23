@@ -51,7 +51,7 @@ static int ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
 	return 0;
 }
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CTLR_PRIVACY)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_CTLR_PRIVACY)
 bool bt_rpa_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 {
 	uint8_t hash[3];
