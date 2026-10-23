@@ -4,20 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_PCNT_ESP32_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_PCNT_ESP32_H_
-
-#include <zephyr/drivers/sensor.h>
-
 /**
  * @file
  * @brief ESP32 PCNT driver public extensions.
+ * @ingroup pcnt_esp32_interface
  *
  * Helpers for addressing a specific PCNT unit through the legacy
  * sensor_attr_set()/sensor_attr_get()/sensor_trigger_set() APIs, which
  * do not natively carry a channel index. Multi-unit access through the
  * Read-and-Decode API uses sensor_chan_spec.chan_idx directly and does
  * not need these helpers.
+ */
+
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_PCNT_ESP32_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_PCNT_ESP32_H_
+
+#include <zephyr/drivers/sensor.h>
+
+/**
+ * @brief Espressif ESP32 pulse counter (PCNT)
+ * @defgroup pcnt_esp32_interface ESP32 PCNT
+ * @ingroup sensor_interface_ext_espressif
+ * @{
  */
 
 /**
@@ -40,5 +48,7 @@ enum sensor_attribute_pcnt_esp32 {
 	 */
 	SENSOR_ATTR_PCNT_ESP32_RESET = SENSOR_ATTR_PRIV_START,
 };
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_PCNT_ESP32_H_ */
