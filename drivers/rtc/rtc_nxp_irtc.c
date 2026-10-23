@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -164,15 +164,34 @@ static int nxp_irtc_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	const struct nxp_irtc_config *config = dev->config;
 	struct nxp_irtc_data *data = dev->data;
 	RTC_Type *irtc_reg = config->base;
+	uint8_t alm_match;
 
 	if (id != 0 || (mask && (timeptr == 0)) ||
 	    (timeptr && !rtc_utils_validate_rtc_time(timeptr, mask))) {
 		return -EINVAL;
 	}
 
-	data->alarm_pending = false;
+	/* Reject a day/month/year combination before any register is touched. */
+	switch ((mask & (BIT(3) | BIT(4) | BIT(5))) >> 3) {
+	case 0x00:
+		alm_match = 0x0;
+		break;
+	case 0x01:
+		alm_match = 0x1;
+		break;
+	case 0x03:
+		alm_match = 0x2;
+		break;
+	case 0x07:
+		alm_match = 0x3;
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	uint32_t key = irq_lock();
+
+	data->alarm_pending = false;
 
 	nxp_irtc_unlock_registers(irtc_reg);
 
@@ -203,28 +222,19 @@ static int nxp_irtc_alarm_set_time(const struct device *dev, uint16_t id, uint16
 
 	/* Clearing out the ALARM Flag Field then setting the correct value */
 	irtc_reg->CTRL &= ~((uint16_t)RTC_CTRL_ALM_MATCH_MASK);
-	uint8_t year_month_day_mask = (mask & (BIT(3) | BIT(4) | BIT(5))) >> 3;
+	irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(alm_match);
 
-	switch (year_month_day_mask) {
-	case 0x00:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x0);
-		break;
-	case 0x01:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x1);
-		break;
-	case 0x03:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x2);
-		break;
-	case 0x07:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x3);
-		break;
-	default:
-		irq_unlock(key);
-		return -EINVAL;
+	if (mask == 0U) {
+		/* A zero mask disables the alarm. */
+		irtc_reg->IER &= ~(uint16_t)RTC_IER_ALM_IE_MASK;
+	} else {
+		/*
+		 * Every match sets ALM_IS, enabled or not, so drop a stale flag
+		 * before enabling; only a match after this call may fire.
+		 */
+		irtc_reg->ISR = RTC_ISR_ALM_IS_MASK;
+		irtc_reg->IER |= RTC_IER_ALM_IE_MASK;
 	}
-
-	/* Enabling Alarm Interrupts */
-	irtc_reg->IER |= RTC_ISR_ALM_IS_MASK;
 	data->alarm_mask = mask;
 
 	irq_unlock(key);
@@ -296,10 +306,12 @@ static int nxp_irtc_alarm_is_pending(const struct device *dev, uint16_t id)
 		return -EINVAL;
 	}
 
-	__disable_irq();
+	/* irq_lock() nests; __enable_irq() would unmask unconditionally. */
+	uint32_t key = irq_lock();
+
 	ret = data->alarm_pending ? 1 : 0;
 	data->alarm_pending = false;
-	__enable_irq();
+	irq_unlock(key);
 
 	return ret;
 }
@@ -503,15 +515,21 @@ static void nxp_irtc_isr(const struct device *dev)
 	RTC_Type *irtc_reg = config->base;
 	struct nxp_irtc_data *data = dev->data;
 	uint32_t key = irq_lock();
+	uint16_t status;
 
 	nxp_irtc_unlock_registers(irtc_reg);
 	/* Clearing ISR Register since w1c */
-	irtc_reg->ISR = irtc_reg->ISR;
-	if (data->alarm_callback) {
-		data->alarm_callback(dev, 0, data->alarm_user_data);
-		data->alarm_pending = false;
-	} else {
-		data->alarm_pending = true;
+	status = irtc_reg->ISR;
+	irtc_reg->ISR = status;
+	/* ISR flags are set whether or not their interrupt is enabled. */
+	status &= irtc_reg->IER;
+	if ((status & RTC_ISR_ALM_IS_MASK) != 0U) {
+		if (data->alarm_callback) {
+			data->alarm_callback(dev, 0, data->alarm_user_data);
+			data->alarm_pending = false;
+		} else {
+			data->alarm_pending = true;
+		}
 	}
 	irq_unlock(key);
 #endif /* CONFIG_RTC_ALARM */
