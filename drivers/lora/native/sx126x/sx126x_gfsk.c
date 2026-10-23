@@ -273,6 +273,6 @@ int sx126x_lora_config_gfsk(const struct device *dev, const struct lora_modem_co
 
 out:
 	ret = sx126x_finish(dev, ret);
-	k_mutex_unlock(&data->lock);
+	sx126x_unlock(dev);
 	return ret;
 }

@@ -20,6 +20,7 @@ enum sx126x_state {
 	SX126X_STATE_RX,
 	SX126X_STATE_RX_DUTY_CYCLE,
 	SX126X_STATE_CONFIG,
+	SX126X_STATE_SUSPENDED,
 };
 
 struct sx126x_tx_result {
@@ -88,6 +89,7 @@ int sx126x_set_packet_type(const struct device *dev, uint8_t type);
 int sx126x_set_rx_gain(const struct device *dev, bool boosted);
 int sx126x_finish(const struct device *dev, int status);
 int sx126x_config_begin(const struct device *dev);
+void sx126x_unlock(const struct device *dev);
 int sx126x_config_carrier(const struct device *dev, uint32_t frequency, int8_t tx_power);
 
 #endif /* ZEPHYR_DRIVERS_LORA_SX126X_SX126X_INTERNAL_H_ */
