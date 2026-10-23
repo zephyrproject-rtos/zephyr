@@ -32,6 +32,169 @@ channels without passing around a context or device pointer in the firmware.
 The maximum number of channels is predefined via Kconfig and should be adjusted
 to match exactly the number of channels required by the application.
 
+Thread Information
+******************
+
+With :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO` enabled, each channel
+records the thread owning it. By default, this is the thread which fed the
+channel last. If the channel is fed on behalf of another thread, the owner can
+be set explicitly with :c:func:`task_wdt_channel_thread_set`.
+
+When a channel times out, the task watchdog logs the owner thread's name,
+state, priority and unused stack space before calling the channel callback or
+resetting the system. :c:func:`task_wdt_channel_info_get` and the
+``task_wdt list`` shell command show the owner, period and time left of each
+channel.
+
+If :kconfig:option:`CONFIG_TASK_WDT_COREDUMP` is enabled as well, a core dump
+is created with the owner thread as the faulting thread before the system is
+reset, which helps to find out where the thread was stuck.
+
+Fault Reasons
+*************
+
+With :kconfig:option:`CONFIG_TASK_WDT_FAULT_REASONS` enabled, a channel added
+with :c:func:`task_wdt_add_ext` has a callback which is told the reason of the
+fault (:c:enum:`task_wdt_fault_reason`) and the thread owning the channel.
+
+A channel can also check that it is not fed too often. After
+:c:func:`task_wdt_window_set`, feeding the channel again sooner than the given
+minimum interval after the previous feed is reported as
+:c:enumerator:`TASK_WDT_FAULT_TOO_EARLY`. This detects a thread stuck in a loop
+which keeps feeding its channel. The fault is reported from
+:c:func:`task_wdt_feed`, in the context of the feeding thread, while timeouts
+are reported from the timer interrupt. Channels added with
+:c:func:`task_wdt_add` handle this fault like a timeout.
+
+Checkpoint Supervision
+**********************
+
+With :kconfig:option:`CONFIG_TASK_WDT_SUPERVISION` enabled, the task watchdog
+can also check the program flow of an entity, for example the main loop of a
+thread. The entity is defined at build time with
+:c:macro:`TASK_WDT_SUPERVISION_DEFINE`, from a list of checkpoints and the
+checkpoints allowed to follow each of them, and a list of deadlines between
+two checkpoints. The application reports each checkpoint it reaches with
+:c:func:`task_wdt_checkpoint`.
+
+.. code-block:: c
+
+   enum { CP_START, CP_WORK, CP_END };
+
+   static const uint32_t next[] = {
+           [CP_START] = BIT(CP_WORK),
+           [CP_WORK] = BIT(CP_WORK) | BIT(CP_END),
+           [CP_END] = BIT(CP_START),
+   };
+
+   /* CP_END has to be reached between 10 ms and 50 ms after CP_START */
+   static const struct task_wdt_deadline deadlines[] = {
+           {.start = CP_START, .end = CP_END, .min_ms = 10, .max_ms = 50},
+   };
+
+   TASK_WDT_SUPERVISION_DEFINE(main_loop, next, deadlines);
+
+After :c:func:`task_wdt_supervision_start`, the faults of the entity are
+reported on a channel which is still fed as usual:
+
+* :c:enumerator:`TASK_WDT_FAULT_SEQUENCE` if a checkpoint is not allowed after
+  the previous one,
+* :c:enumerator:`TASK_WDT_FAULT_DEADLINE_MIN` if the end of a deadline is reached
+  too early,
+* :c:enumerator:`TASK_WDT_FAULT_DEADLINE_MAX` if the end of a deadline is not
+  reached in time.
+
+The first two are reported from :c:func:`task_wdt_checkpoint`, the last one
+from the timer interrupt. Deadlines use the same kernel timer as the channels,
+no additional timer is needed. Only one deadline of an entity runs at a time,
+and :c:func:`task_wdt_resume` cancels the running deadlines.
+
+.. note::
+
+   Checkpoint supervision provides alive, deadline and logical program flow
+   monitoring mechanisms as required by functional safety standards. Using it
+   does not make an application compliant with such a standard.
+
+Reset Information
+*****************
+
+With :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO` enabled, the task watchdog
+stores a record before the system is reset because a channel timed out. The
+record is also stored if the channel callback resets the system. After the
+reset, :c:func:`task_wdt_reset_info_get` returns the channel, the name of its
+owner thread (with :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO` and
+:kconfig:option:`CONFIG_THREAD_NAME`), the uptime at the time of the reset and
+the number of consecutive task watchdog resets. A reset caused by feeding a
+channel too early is reported as :c:enumerator:`TASK_WDT_RESET_TOO_EARLY`, and
+the checkpoint supervision faults have their own reset reasons as well. The
+count restarts from zero
+after any other reset or a call to :c:func:`task_wdt_reset_info_clear`.
+
+The record is written from the timer interrupt. By default, it is kept in RAM
+which is not cleared at boot (:kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_NOINIT`).
+Alternatively, it can be kept in a :ref:`retention <retention_api>` area which
+is selected with the ``zephyr,task-wdt-reset-info`` chosen node
+(:kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_RETENTION`). As the retention API
+is used from the interrupt, its mutexes have to be disabled with
+:kconfig:option:`CONFIG_RETENTION_MUTEX_FORCE_DISABLE` and
+:kconfig:option:`CONFIG_RETAINED_MEM_MUTEX_FORCE_DISABLE`. The retained memory
+driver must not block or sleep either, which is the case for the RAM based
+drivers but not for the drivers accessing an external device over a bus.
+
+If the hardware watchdog fallback resets the system, the task watchdog cannot
+store a record. With :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_HW_FALLBACK`,
+a watchdog reset reported by :c:func:`hwinfo_get_reset_cause` without a record
+is returned as :c:enumerator:`TASK_WDT_RESET_HW_FALLBACK`, which means the whole
+system was stuck.
+
+With :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE` enabled, the task watchdog
+sets the boot mode :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_BOOT_MODE` with
+:c:func:`bootmode_set` before the system is reset for the
+:kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_RESETS` th consecutive time. The
+application or the bootloader can check it with :c:func:`bootmode_check` and
+start a minimal configuration instead of resetting forever. As for the
+retention backend, the retention and retained memory mutexes have to be
+disabled.
+
+Groups and Recovery
+*******************
+
+With :kconfig:option:`CONFIG_TASK_WDT_GROUPS` enabled, channels can be assigned
+to a group with :c:func:`task_wdt_channel_group_set`. The group defines what
+happens when one of its channels has a fault:
+
+* :c:enumerator:`TASK_WDT_ACTION_CALLBACK` calls the channel callback, or
+  resets the system if there is none, as for channels without a group.
+* :c:enumerator:`TASK_WDT_ACTION_RECOVER` calls the recovery function of the
+  group from a dedicated work queue, so it runs in thread context and can, for
+  example, restart the faulty thread. The channel has to be fed within the
+  recovery time, otherwise the system is reset. A supervised entity attached
+  to the channel starts over.
+* :c:enumerator:`TASK_WDT_ACTION_RESET_SYSTEM` resets the system without
+  calling the channel callback.
+
+.. code-block:: c
+
+   static void restart(const struct task_wdt_fault *fault, void *user_data)
+   {
+           /* restart the thread owning fault->channel_id */
+   }
+
+   static const struct task_wdt_escalation escalation = {
+           .faults = 3,
+           .period_ms = 60000,
+   };
+
+   TASK_WDT_GROUP_DEFINE(workers, TASK_WDT_ACTION_RECOVER, restart, &escalation);
+
+   task_wdt_channel_group_set(channel_id, &workers);
+
+With an escalation, the faults of all channels of the group are counted. After
+the given number of faults within the period, the group moves to the next,
+more severe action, up to a system reset. :c:func:`task_wdt_group_action_get`
+returns the current action and :c:func:`task_wdt_group_reset` restores the
+initial one and ends the recovery of the channels of the group.
+
 Configuration Options
 *********************
 
@@ -47,6 +210,34 @@ Related configuration options can be found under
 * :kconfig:option:`CONFIG_TASK_WDT_MIN_TIMEOUT`
 
 * :kconfig:option:`CONFIG_TASK_WDT_HW_FALLBACK_DELAY`
+
+* :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO`
+
+* :kconfig:option:`CONFIG_TASK_WDT_COREDUMP`
+
+* :kconfig:option:`CONFIG_TASK_WDT_FAULT_REASONS`
+
+* :kconfig:option:`CONFIG_TASK_WDT_SUPERVISION`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_NOINIT`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_RETENTION`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_HW_FALLBACK`
+
+* :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE`
+
+* :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_RESETS`
+
+* :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_BOOT_MODE`
+
+* :kconfig:option:`CONFIG_TASK_WDT_GROUPS`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RECOVERY_STACK_SIZE`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RECOVERY_PRIORITY`
 
 API Reference
 *************

@@ -575,6 +575,9 @@ device.
    * - zephyr,system-timer-companion
      - Selects the device used to keep time while the primary system timer is
        inactive in low-power states. It must implement the :ref:`counter_api` API.
+   * - zephyr,task-wdt-reset-info
+     - Retention area used by the :ref:`task_wdt_api` to keep the cause of a
+       reset, see :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_RETENTION`.
    * - zephyr,tflm-storage
      - Selects the :dtcompatible:`memory region <zephyr,memory-region>`
        used by the :zephyr:code-sample:`tflite-ethosu` sample.
