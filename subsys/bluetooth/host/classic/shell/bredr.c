@@ -2044,6 +2044,39 @@ static int cmd_l2cap_connless_send(const struct shell *sh, size_t argc, char *ar
 }
 #endif /* CONFIG_BT_L2CAP_CONNLESS */
 
+static void br_remote_name_cb(const bt_addr_t *addr, const char *name, uint8_t status)
+{
+	if (name == NULL) {
+		bt_shell_print("Remote name request for %s failed (status 0x%02x)",
+			       bt_addr_str(addr), status);
+		return;
+	}
+
+	bt_shell_print("Remote name of %s: %s", bt_addr_str(addr), name);
+}
+
+static int cmd_remote_name(const struct shell *sh, size_t argc, char *argv[])
+{
+	bt_addr_t addr;
+	int err;
+
+	err = bt_addr_from_str(argv[1], &addr);
+	if (err != 0) {
+		shell_error(sh, "Invalid peer address (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	err = bt_br_remote_name_request(&addr, br_remote_name_cb);
+	if (err != 0) {
+		shell_error(sh, "Remote name request failed (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Remote name request pending");
+
+	return 0;
+}
+
 static int cmd_write_eir_name(const struct shell *sh, size_t argc, char *argv[])
 {
 	const char *name = bt_get_name();
@@ -2156,6 +2189,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(pscan-mode, NULL, "<mode: r0, fr1, mr1, sr1, fr2, sr2>",
 		      cmd_pscan_mode, 2, 0),
 	SHELL_CMD_ARG(pscan-param, NULL, HELP_PSCAN_PARAM, cmd_pscan_param, 4, 0),
+	SHELL_CMD_ARG(remote-name, NULL, HELP_ADDR, cmd_remote_name, 2, 0),
 	SHELL_CMD_ARG(sdp-find, NULL, "[HFPAG, HFPHF, A2SRC, A2SNK, PNP, AVRCP_CT, AVRCP_TG]",
 		      cmd_sdp_find_record, 1, 1),
 	SHELL_CMD_ARG(switch-role, NULL, "<value: central, peripheral>", cmd_switch_role, 2, 0),

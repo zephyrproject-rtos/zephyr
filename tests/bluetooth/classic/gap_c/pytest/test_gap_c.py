@@ -6,7 +6,7 @@ import logging
 import sys
 
 from bumble import hci
-from bumble.core import DeviceClass
+from bumble.core import BT_BR_EDR_TRANSPORT, DeviceClass
 from bumble.device import Device
 from bumble.hci import Address, HCI_Write_Page_Timeout_Command
 from bumble.snoop import BtSnooper
@@ -452,6 +452,200 @@ async def tc_gap_c_6(hci_port, shell, dut, address) -> None:
             assert found, "Connected event was received when it should have failed"
 
 
+async def tc_gap_c_7(hci_port, shell, dut, address) -> None:
+    case_name = 'GAP-C-7: Remote Name Request without Connection'
+    logger.info(f'<<< Start {case_name} ...')
+
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        # init Dongle bluetooth
+        device = Device.with_hci(
+            'Bumble-RNR',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            device.host.snooper = BtSnooper(snoop_file)
+            await device_power_on(device)
+            dongle_address = str(device.public_address).replace(r'/P', '')
+            # Start of Initial Condition
+            await device.set_connectable(True)  # Set peripheral as connectable
+            shell.exec_command("bt disconnect")
+            # End of Initial Condition
+
+            # Test Start
+            logger.info("Step 1: DUT requests the name of tester")
+            lines = shell.exec_command(f"br remote-name {dongle_address}")
+            assert any("Remote name request pending" in line for line in lines)
+
+            logger.info("Step 2: Tester responds with its name")
+            expected = f"Remote name of {dongle_address}: Bumble-RNR"
+            found = any(expected in line for line in lines)
+            if not found:
+                found, _ = await _wait_for_shell_response(dut, expected)
+            assert found, "Remote name was not received"
+
+
+async def tc_gap_c_8(hci_port, shell, dut, address) -> None:
+    case_name = 'GAP-C-8: Remote Name Request on a Connection Initiated by Tester'
+    logger.info(f'<<< Start {case_name} ...')
+    dut_address = address.split(" ")[0]
+
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        # init Dongle bluetooth
+        device = Device.with_hci(
+            'Bumble-RNR',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            device.host.snooper = BtSnooper(snoop_file)
+            await device_power_on(device)
+            dongle_address = str(device.public_address).replace(r'/P', '')
+            # Start of Initial Condition
+            await device.set_connectable(True)  # Set peripheral as connectable
+            shell.exec_command("bt disconnect")
+            await send_cmd_to_iut(shell, dut, "br pscan on")
+            # End of Initial Condition
+
+            # Test Start
+            logger.info("Step 1: Tester connects to DUT")
+            await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
+            found, _ = await _wait_for_shell_response(dut, "Connected")
+            assert found, "Connected event not received"
+
+            logger.info("Step 2: DUT requests the name of tester")
+            lines = shell.exec_command(f"br remote-name {dongle_address}")
+            assert any("Remote name request pending" in line for line in lines)
+
+            logger.info("Step 3: Tester responds with its name")
+            expected = f"Remote name of {dongle_address}: Bumble-RNR"
+            found = any(expected in line for line in lines)
+            if not found:
+                found, _ = await _wait_for_shell_response(dut, expected)
+            assert found, "Remote name was not received"
+
+            logger.info("Step 4: Tester initiates disconnection")
+            connection = device.find_connection_by_bd_addr(Address(dut_address))
+            assert connection is not None, "No connection found with the DUT"
+            await connection.disconnect()
+            found, _ = await _wait_for_shell_response(dut, "Disconnected")
+            assert found, "Disconnection event not received"
+            await send_cmd_to_iut(shell, dut, "br pscan off")
+
+
+async def tc_gap_c_9(hci_port, shell, dut, address) -> None:
+    case_name = 'GAP-C-9: Remote Name Request during General Inquiry'
+    logger.info(f'<<< Start {case_name} ...')
+
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        # init Dongle bluetooth
+        device = Device.with_hci(
+            'Bumble-RNR',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            device.host.snooper = BtSnooper(snoop_file)
+            await device_power_on(device)
+            dongle_address = str(device.public_address).replace(r'/P', '')
+            # Start of Initial Condition
+            await device.set_discoverable(True)  # Set peripheral as discoverable
+            await device.set_connectable(True)  # Set peripheral as connectable
+            shell.exec_command("bt disconnect")
+            await send_cmd_to_iut(shell, dut, "br discovery off")
+            # End of Initial Condition
+
+            # Test Start
+            logger.info("Step 1: DUT initiates general inquiry")
+            lines = shell.exec_command("br discovery on 16")
+            assert any("Discovery started" in line for line in lines)
+            # Let the tester be found before its name is requested
+            await asyncio.sleep(2)
+
+            logger.info("Step 2: DUT requests the name of tester while inquiry is running")
+            lines = shell.exec_command(f"br remote-name {dongle_address}")
+            assert any("Remote name request pending" in line for line in lines)
+
+            logger.info("Step 3: Tester responds with its name")
+            expected = f"Remote name of {dongle_address}: Bumble-RNR"
+            found = any(expected in line for line in lines)
+            if not found:
+                found, lines = await _wait_for_shell_response(dut, expected)
+            assert found, "Remote name was not received"
+
+            logger.info("Step 4: Inquiry is not reported complete by the name request")
+            assert not any("BR/EDR discovery complete" in line for line in lines)
+            found, _ = await _wait_for_shell_response(dut, "BR/EDR discovery complete", 3)
+            assert not found, "Discovery was reported complete before the inquiry ended"
+
+            logger.info("Step 5: Inquiry completes at the end of the inquiry length")
+            found, lines = await _wait_for_shell_response(dut, dongle_address, 30)
+            assert found, "Discovery complete event not received"
+            assert any("BR/EDR discovery complete" in line for line in lines)
+
+
+async def tc_gap_c_10(hci_port, shell, dut, address) -> None:
+    case_name = 'GAP-C-10: Remote Name Request Rejected while Another is Pending'
+    logger.info(f'<<< Start {case_name} ...')
+    absent_address = '00:11:22:33:44:55'
+
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        # init Dongle bluetooth
+        device = Device.with_hci(
+            'Bumble-RNR',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            device.host.snooper = BtSnooper(snoop_file)
+            await device_power_on(device)
+            dongle_address = str(device.public_address).replace(r'/P', '')
+            # Start of Initial Condition
+            await device.set_connectable(True)  # Set peripheral as connectable
+            shell.exec_command("bt disconnect")
+            # End of Initial Condition
+
+            # Test Start
+            logger.info("Step 1: DUT requests the name of an absent device")
+            lines = shell.exec_command(f"br remote-name {absent_address}")
+            assert any("Remote name request pending" in line for line in lines)
+
+            logger.info("Step 2: A second request is rejected while the first is pending")
+            lines = shell.exec_command(f"br remote-name {dongle_address}")
+            assert any("Remote name request failed (err -16)" in line for line in lines)
+
+            logger.info("Step 3: The pending request completes with a page timeout")
+            found, _ = await _wait_for_shell_response(
+                dut, f"Remote name request for {absent_address} failed (status 0x04)", 60
+            )
+            assert found, "Pending remote name request did not complete"
+
+            logger.info("Step 4: A new request succeeds")
+            lines = shell.exec_command(f"br remote-name {dongle_address}")
+            assert any("Remote name request pending" in line for line in lines)
+            expected = f"Remote name of {dongle_address}: Bumble-RNR"
+            found = any(expected in line for line in lines)
+            if not found:
+                found, _ = await _wait_for_shell_response(dut, expected)
+            assert found, "Remote name was not received"
+
+
 class TestGAPCentral:
     def test_gap_c_1(self, shell: Shell, dut: DeviceAdapter, device_under_test):
         """Test GAP-C-1: General Inquiry followed by Connection and Active Disconnection."""
@@ -488,3 +682,27 @@ class TestGAPCentral:
         logger.info(f'Running test_gap_c_6 {device_under_test}')
         hci, iut_address = device_under_test
         asyncio.run(tc_gap_c_6(hci, shell, dut, iut_address))
+
+    def test_gap_c_7(self, shell: Shell, dut: DeviceAdapter, device_under_test):
+        """Test GAP-C-7: Remote Name Request without Connection."""
+        logger.info(f'Running test_gap_c_7 {device_under_test}')
+        hci, iut_address = device_under_test
+        asyncio.run(tc_gap_c_7(hci, shell, dut, iut_address))
+
+    def test_gap_c_8(self, shell: Shell, dut: DeviceAdapter, device_under_test):
+        """Test GAP-C-8: Remote Name Request on a Connection Initiated by Tester."""
+        logger.info(f'Running test_gap_c_8 {device_under_test}')
+        hci, iut_address = device_under_test
+        asyncio.run(tc_gap_c_8(hci, shell, dut, iut_address))
+
+    def test_gap_c_9(self, shell: Shell, dut: DeviceAdapter, device_under_test):
+        """Test GAP-C-9: Remote Name Request during General Inquiry."""
+        logger.info(f'Running test_gap_c_9 {device_under_test}')
+        hci, iut_address = device_under_test
+        asyncio.run(tc_gap_c_9(hci, shell, dut, iut_address))
+
+    def test_gap_c_10(self, shell: Shell, dut: DeviceAdapter, device_under_test):
+        """Test GAP-C-10: Remote Name Request Rejected while Another is Pending."""
+        logger.info(f'Running test_gap_c_10 {device_under_test}')
+        hci, iut_address = device_under_test
+        asyncio.run(tc_gap_c_10(hci, shell, dut, iut_address))
