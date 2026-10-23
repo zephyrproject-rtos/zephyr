@@ -39,6 +39,8 @@
 /* H:4 type and HCI_Reset */
 NET_BUF_POOL_DEFINE(cmd_pool, 1, 4, 0, NULL);
 
+static const uint8_t reset_cmd[] = { 0x03, 0x0c, 0x00 };
+
 struct ctlr {
 	const struct device *hci;
 	const struct device *uart;
@@ -185,6 +187,40 @@ static void expect_no_tx(struct ctlr *c)
 
 	k_sleep(ACK_WAIT);
 	zassert_equal(uart_emul_get_tx_data(c->uart, tx, sizeof(tx)), 0U, "Unexpected output");
+}
+
+static void put_ack(struct ctlr *c, uint8_t ack)
+{
+	uint8_t out[FRAME_MAX(0U)];
+	uint8_t hdr[HDR_LEN];
+
+	hdr_set(hdr, false, 0U, ack, PKT_ACK, 0U);
+	put(c, out, frame(out, hdr, NULL, 0U));
+}
+
+/* Returns the sequence number the driver sent HCI_Reset with */
+static uint8_t send_reset(struct ctlr *c)
+{
+	struct net_buf *buf = net_buf_alloc(&cmd_pool, K_NO_WAIT);
+	uint8_t tx[64];
+
+	zassert_not_null(buf);
+	net_buf_add_u8(buf, BT_HCI_H4_CMD);
+	net_buf_add_mem(buf, reset_cmd, sizeof(reset_cmd));
+	zassert_ok(bt_hci_send(c->hci, buf));
+	k_sleep(K_MSEC(10));
+	zassert_true(uart_emul_get_tx_data(c->uart, tx, sizeof(tx)) > 1U);
+
+	return tx[1] & 0x07U;
+}
+
+static void expect_reset_retransmitted(struct ctlr *c, uint8_t seq)
+{
+	uint8_t hdr[HDR_LEN];
+
+	k_sleep(ACK_WAIT);
+	hdr_set(hdr, true, seq, c->seq, PKT_CMD, sizeof(reset_cmd));
+	expect_tx(c, hdr, reset_cmd, sizeof(reset_cmd));
 }
 
 static int recv(const struct device *dev, struct net_buf *buf)
@@ -354,34 +390,36 @@ ZTEST(hci_h5, test_split_escape)
 
 ZTEST(hci_h5, test_unsupported_type)
 {
-	static const uint8_t reset[] = { 0x03, 0x0c, 0x00 };
 	struct ctlr *c = &ctlrs[0];
 	uint8_t out[FRAME_MAX(0U)];
 	uint8_t hdr[HDR_LEN];
-	struct net_buf *buf;
-	uint8_t tx[64];
 	uint8_t seq;
 
-	buf = net_buf_alloc(&cmd_pool, K_NO_WAIT);
-	zassert_not_null(buf);
-	net_buf_add_u8(buf, BT_HCI_H4_CMD);
-	net_buf_add_mem(buf, reset, sizeof(reset));
-	zassert_ok(bt_hci_send(c->hci, buf));
-	k_sleep(K_MSEC(10));
-	zassert_true(uart_emul_get_tx_data(c->uart, tx, sizeof(tx)) > 1U);
-	seq = tx[1] & 0x07U;
+	seq = send_reset(c);
 
 	/* Reserved type 6 declaring one octet and carrying none, acknowledging the command */
 	hdr_set(hdr, false, 0U, (seq + 1U) % 8U, 6U, 1U);
 	put(c, out, frame(out, hdr, NULL, 0U));
 
 	/* The acknowledgment was discarded with the packet */
-	k_sleep(ACK_WAIT);
-	hdr_set(hdr, true, seq, c->seq, PKT_CMD, sizeof(reset));
-	expect_tx(c, hdr, reset, sizeof(reset));
+	expect_reset_retransmitted(c, seq);
 
-	hdr_set(hdr, false, 0U, (seq + 1U) % 8U, PKT_ACK, 0U);
-	put(c, out, frame(out, hdr, NULL, 0U));
+	put_ack(c, (seq + 1U) % 8U);
+	expect_no_tx(c);
+}
+
+ZTEST(hci_h5, test_ack_out_of_window)
+{
+	struct ctlr *c = &ctlrs[0];
+	uint8_t seq;
+
+	seq = send_reset(c);
+
+	/* Acknowledges one packet more than was sent */
+	put_ack(c, (seq + 2U) % 8U);
+	expect_reset_retransmitted(c, seq);
+
+	put_ack(c, (seq + 1U) % 8U);
 	expect_no_tx(c);
 }
 
