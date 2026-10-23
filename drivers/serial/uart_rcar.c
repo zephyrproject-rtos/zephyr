@@ -15,6 +15,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
 struct uart_rcar_cfg {
 	DEVICE_MMIO_ROM; /* Must be first */
@@ -33,6 +35,7 @@ struct uart_rcar_data {
 	struct uart_config current_config;
 	uint32_t clk_rate;
 	struct k_spinlock lock;
+	bool configured;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
@@ -116,6 +119,9 @@ struct uart_rcar_data {
 /* HSSRR (Sampling Rate Register) */
 #define HSSRR_SRE            BIT(15)      /* Sampling Rate Register Enable */
 #define HSSRR_SRCYC_DEF_VAL  0x7          /* Sampling rate default value */
+
+#define UART_RCAR_CONFIGURE_TIMEOUT_US (300U * USEC_PER_MSEC)
+#define UART_RCAR_CONFIGURE_POLL_US    100U
 
 static uint8_t uart_rcar_read_8(const struct device *dev, uint32_t offs)
 {
@@ -251,7 +257,31 @@ static int uart_rcar_configure(const struct device *dev,
 		return ret;
 	}
 
+	/* Wait for the TX FIFO and shift register without holding the lock. */
+	if (!WAIT_FOR((uart_rcar_read_16(dev, SCFSR) & SCFSR_TEND) != 0U,
+		      UART_RCAR_CONFIGURE_TIMEOUT_US,
+		      k_busy_wait(UART_RCAR_CONFIGURE_POLL_US))) {
+		return -EBUSY;
+	}
+
 	key = k_spin_lock(&data->lock);
+
+	/* Preserve in-flight data when the requested configuration is already applied. */
+	if (data->configured &&
+	    cfg->baudrate == data->current_config.baudrate &&
+	    cfg->parity == data->current_config.parity &&
+	    cfg->stop_bits == data->current_config.stop_bits &&
+	    cfg->data_bits == data->current_config.data_bits &&
+	    cfg->flow_ctrl == data->current_config.flow_ctrl) {
+		k_spin_unlock(&data->lock, key);
+		return 0;
+	}
+
+	/* A TX writer may have queued another byte before the lock was acquired. */
+	if ((uart_rcar_read_16(dev, SCFSR) & SCFSR_TEND) == 0U) {
+		k_spin_unlock(&data->lock, key);
+		return -EBUSY;
+	}
 
 	/* Disable Transmit and Receive */
 	reg_val = uart_rcar_read_16(dev, SCSCR);
@@ -306,6 +336,7 @@ static int uart_rcar_configure(const struct device *dev,
 	uart_rcar_write_16(dev, SCSCR, reg_val);
 
 	data->current_config = *cfg;
+	data->configured = true;
 
 	k_spin_unlock(&data->lock, key);
 
