@@ -6,6 +6,7 @@
 
 #include <freq.h>
 #include <mem.h>
+#include <zephyr/dt-bindings/clock/ast27xx_clock.h>
 
 / {
 	#address-cells = <1>;
@@ -44,10 +45,21 @@
 			reg = <0x14b80000 DT_SIZE_K(244)>;
 		};
 
+		syscon1: syscon@14c02000 {
+			compatible = "syscon";
+			reg = <0x14c02000 0x2000>;
+
+			sysclk1: system-clock {
+				compatible = "aspeed,ast27xx-scu1-clock";
+				#clock-cells = <1>;
+			};
+		};
+
 		uart12: serial@14c33b00 {
 			compatible = "ns16550";
 			reg = <0x14c33b00 0x100>;
 			reg-shift = <2>;
+			clocks = <&sysclk1 SCU1_CLK_GATE_UART12CLK>;
 			status = "disabled";
 		};
 	};
