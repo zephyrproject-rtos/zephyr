@@ -500,16 +500,18 @@ enum ethernet_checksum_support {
 	ETHERNET_CHECKSUM_SUPPORT_NONE			= NET_IF_CHECKSUM_NONE_BIT,
 	/** Device supports checksum offloading for the IPv4 header */
 	ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER		= NET_IF_CHECKSUM_IPV4_HEADER_BIT,
-	/** Device supports checksum offloading for ICMPv4 payload (implies IPv4 header) */
+	/** Device supports checksum offloading for ICMPv4 payload */
 	ETHERNET_CHECKSUM_SUPPORT_IPV4_ICMP		= NET_IF_CHECKSUM_IPV4_ICMP_BIT,
-	/** Device supports checksum offloading for the IPv6 header */
-	ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER		= NET_IF_CHECKSUM_IPV6_HEADER_BIT,
-	/** Device supports checksum offloading for ICMPv6 payload (implies IPv6 header) */
+	/** Device supports checksum offloading for TCP payload in IPv4 */
+	ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP		= NET_IF_CHECKSUM_IPV4_TCP_BIT,
+	/** Device supports checksum offloading for UDP payload in IPv4 */
+	ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP		= NET_IF_CHECKSUM_IPV4_UDP_BIT,
+	/** Device supports checksum offloading for ICMPv6 payload */
 	ETHERNET_CHECKSUM_SUPPORT_IPV6_ICMP		= NET_IF_CHECKSUM_IPV6_ICMP_BIT,
-	/** Device supports TCP checksum offloading for all supported IP protocols */
-	ETHERNET_CHECKSUM_SUPPORT_TCP			= NET_IF_CHECKSUM_TCP_BIT,
-	/** Device supports UDP checksum offloading for all supported IP protocols */
-	ETHERNET_CHECKSUM_SUPPORT_UDP			= NET_IF_CHECKSUM_UDP_BIT,
+	/** Device supports checksum offloading for TCP payload in IPv6 */
+	ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP		= NET_IF_CHECKSUM_IPV6_TCP_BIT,
+	/** Device supports checksum offloading for UDP payload in IPv6 */
+	ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP		= NET_IF_CHECKSUM_IPV6_UDP_BIT,
 };
 
 /** @cond INTERNAL_HIDDEN */
