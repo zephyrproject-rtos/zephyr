@@ -1,0 +1,32 @@
+common:
+  tags:
+    - task_wdt
+  harness: ztest
+  expect_reboot: true
+  platform_allow:
+    - qemu_cortex_m3
+  integration_platforms:
+    - qemu_cortex_m3
+tests:
+  subsys.task_wdt.reset_info.noinit: {}
+  subsys.task_wdt.reset_info.retention:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/qemu_cortex_m3_retention.overlay
+    extra_configs:
+      - CONFIG_RETAINED_MEM=y
+      - CONFIG_RETAINED_MEM_MUTEX_FORCE_DISABLE=y
+      - CONFIG_RETENTION=y
+      - CONFIG_RETENTION_MUTEX_FORCE_DISABLE=y
+      - CONFIG_TASK_WDT_RESET_INFO_RETENTION=y
+  subsys.task_wdt.reset_info.safe_mode:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/qemu_cortex_m3_safe_mode.overlay
+    extra_configs:
+      - CONFIG_RETAINED_MEM=y
+      - CONFIG_RETAINED_MEM_MUTEX_FORCE_DISABLE=y
+      - CONFIG_RETENTION=y
+      - CONFIG_RETENTION_MUTEX_FORCE_DISABLE=y
+      - CONFIG_RETENTION_BOOT_MODE=y
+      - CONFIG_TASK_WDT_RESET_INFO_RETENTION=y
+      - CONFIG_TASK_WDT_SAFE_MODE=y
+      - CONFIG_TASK_WDT_SAFE_MODE_RESETS=2
