@@ -414,6 +414,13 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR)) {
+		/* Check that offset and length are even */
+		if (((offset & 0x1) != 0) || ((len & 0x1U) != 0U)) {
+			return -EINVAL;
+		}
+	}
+
 	if (memc_flexspi_is_running_xip(data->controller)) {
 		/*
 		 * ==== ENTER CRITICAL SECTION ====
@@ -422,12 +429,6 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		 */
 		key = irq_lock();
 		memc_flexspi_wait_bus_idle(data->controller);
-	}
-	if (IS_ENABLED(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR)) {
-		/* Check that write size and length are even */
-		if ((offset & 0x1) || (len & 0x1)) {
-			return -EINVAL;
-		}
 	}
 
 	while (len) {
