@@ -31,6 +31,8 @@ tests:
       - frdm_ke15z
       - frdm_mcxc242
       - frdm_mcxe247
+      - sama7g54_ek
+      - sama7d65_curiosity
       - siwx917_rb4342a
       - slwrb4180a
       - xg27_rb4194a
