@@ -1,0 +1,14 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ASPEED_AST2700_BOOTMCU_TIMER
+	bool "ASPEED AST2700 BootMCU system timer"
+	default y
+	depends on RISCV_M_MODE
+	depends on DT_HAS_ASPEED_AST2700_BOOTMCU_TIMER_ENABLED
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  Enable the system timer driver for the ASPEED AST2700 BootMCU.
+	  The timer provides a 64-bit counter running at 1 MHz and an alarm
+	  connected to the RISC-V machine timer interrupt.
