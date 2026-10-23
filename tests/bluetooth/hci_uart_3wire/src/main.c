@@ -355,6 +355,31 @@ ZTEST(hci_uart_3wire, test_data_integrity_check)
 	expect_ack();
 }
 
+ZTEST(hci_uart_3wire, test_duplicate_packet)
+{
+	put_cmd(true, seq, 12U);
+	expect_cmd(12U);
+	next_seq();
+	expect_ack();
+
+	/* Retransmitted as if the acknowledgment had been lost */
+	put_cmd(true, (seq + 7U) % 8U, 12U);
+	expect_no_cmd();
+	expect_ack();
+}
+
+ZTEST(hci_uart_3wire, test_truncated_header)
+{
+	static const uint8_t octet[] = { SLIP_DELIMITER, BIT(7), SLIP_DELIMITER };
+	static const uint8_t escape[] = { SLIP_DELIMITER, SLIP_ESC, SLIP_DELIMITER };
+
+	put(octet, sizeof(octet));
+	expect_ack();
+
+	put(escape, sizeof(escape));
+	expect_ack();
+}
+
 ZTEST(hci_uart_3wire, test_split_escape)
 {
 	uint8_t out[2U * FRAME_MAX(CMD_LEN)];
