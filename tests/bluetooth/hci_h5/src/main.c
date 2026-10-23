@@ -661,10 +661,12 @@ ZTEST(hci_h5, test_short_link_packet)
 ZTEST(hci_h5, test_link_establishment)
 {
 	static const uint8_t sync[] = { 0x01, 0x7e };
+	static const uint8_t long_sync[] = { 0x01, 0x7e, 0x00 };
 	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
 	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
 	static const uint8_t conf_rsp[] = { 0x04, 0x7b, 0x04 };
 	struct ctlr *c = &link_ctlr;
+	uint8_t hdr[HDR_LEN];
 
 	k_fifo_init(&c->rx);
 	zassert_ok(bt_hci_open(c->hci, recv_link));
@@ -672,16 +674,32 @@ ZTEST(hci_h5, test_link_establishment)
 	/* Uninitialized: SYNC until SYNC RESPONSE */
 	k_sleep(K_SECONDS(1));
 	zassert_true(count_link_tx(c, sync, sizeof(sync)) >= 3U);
+
+	/* Anything else is discarded and answered with SYNC at once */
+	k_sleep(K_MSEC(100));
+	(void)uart_emul_flush_tx_data(c->uart);
+	hdr_set(hdr, false, 0U, c->seq, PKT_LINK, sizeof(sync));
+	put_link(c, false, conf, 2U);
+	expect_tx(c, hdr, sync, sizeof(sync));
+	put_link(c, false, long_sync, sizeof(long_sync));
+	expect_tx(c, hdr, sync, sizeof(sync));
+	put_evt(c, true, c->seq, 16U);
+	expect_no_evt(c);
+	expect_tx(c, hdr, sync, sizeof(sync));
 	put_link(c, false, sync_rsp, sizeof(sync_rsp));
 
-	/* Initialized: CONFIG until CONFIG RESPONSE */
+	/* Initialized: CONFIG until CONFIG RESPONSE, and no other packet counts */
 	k_sleep(K_SECONDS(1));
 	zassert_true(count_link_tx(c, conf, sizeof(conf)) >= 3U);
+	put_link(c, true, conf_rsp, sizeof(conf_rsp));
+	put_evt(c, true, c->seq, 17U);
+	expect_no_evt(c);
 	put_link(c, false, conf_rsp, sizeof(conf_rsp));
 
+	/* Active: sequence numbers start from zero */
 	(void)uart_emul_flush_tx_data(c->uart);
-	put_evt(c, true, c->seq, 16U);
-	expect_evt(c, 16U);
+	put_evt(c, true, c->seq, 18U);
+	expect_evt(c, 18U);
 	next_seq(c);
 	expect_ack(c);
 }

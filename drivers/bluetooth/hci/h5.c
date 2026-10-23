@@ -160,6 +160,15 @@ static const uint8_t conf_rsp[] = { 0x04, 0x7b };
 #define SIG_BUF_SIZE (BT_BUF_RESERVE + MAX_SIG_LEN)
 NET_BUF_POOL_DEFINE(h5_pool, SIGNAL_COUNT, SIG_BUF_SIZE, 0, NULL);
 
+/* Core 6.3 Vol 4 Part D 8.1: an invalid packet in the Uninitialized state is answered with SYNC */
+static void h5_invalid_packet(struct h5_data *h5)
+{
+	if (h5->link_state == UNINIT) {
+		/* tx_thread() sends it now instead of at its next interval */
+		k_sem_give(&h5->link_sem);
+	}
+}
+
 static void h5_reset_rx(struct h5_data *h5)
 {
 	net_buf_drop(&h5->rx_buf);
@@ -170,6 +179,8 @@ static void h5_reset_rx(struct h5_data *h5)
 	/* Discarded packets are acknowledged too (Core 6.3 Vol 4 Part D 6.5, 6.7) */
 	if (h5->link_state == ACTIVE) {
 		k_work_schedule(&h5->ack_work, H5_RX_ACK_TIMEOUT);
+	} else {
+		h5_invalid_packet(h5);
 	}
 }
 
@@ -431,6 +442,20 @@ static void h5_process_complete_packet(const struct device *dev, uint8_t *hdr)
 
 	LOG_DBG("");
 
+	/* Sequence numbers start in the Active state, and only link establishment messages, which
+	 * are unreliable, are valid before it (Core 6.3 Vol 4 Part D 8.3 to 8.7, 8.8.1)
+	 */
+	if (h5->link_state != ACTIVE) {
+		if (H5_HDR_PKT_TYPE(hdr) == HCI_3WIRE_LINK_PKT && H5_HDR_RELIABLE(hdr) == 0U) {
+			k_fifo_put(&h5->rx_queue, net_buf_take(&h5->rx_buf));
+		} else {
+			net_buf_drop(&h5->rx_buf);
+			h5_invalid_packet(h5);
+		}
+
+		return;
+	}
+
 	/* rx_ack should be in every packet */
 	h5->rx_ack = H5_HDR_ACK(hdr);
 
@@ -452,7 +477,12 @@ static void h5_process_complete_packet(const struct device *dev, uint8_t *hdr)
 		net_buf_unref(buf);
 		break;
 	case HCI_3WIRE_LINK_PKT:
-		k_fifo_put(&h5->rx_queue, buf);
+		/* Link establishment messages are unreliable (8.4 to 8.7) */
+		if (H5_HDR_RELIABLE(hdr) == 0U) {
+			k_fifo_put(&h5->rx_queue, buf);
+		} else {
+			net_buf_unref(buf);
+		}
 		break;
 	case HCI_EVENT_PKT:
 	case HCI_ACLDATA_PKT:
@@ -779,42 +809,57 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			bt_hci_recv(dev, net_buf_take(&buf));
 		} else if (buf->len < 2U) {
 			LOG_ERR("Link control packet too short (len %u)", buf->len);
-		} else if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
+			h5_invalid_packet(h5);
+		} else if (buf->len == sizeof(sync_req) &&
+			   !memcmp(buf->data, sync_req, sizeof(sync_req))) {
 			if (h5->link_state == ACTIVE) {
 				/* TODO Reset H5 */
 			}
 
 			h5_send(dev, sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp), 0U);
-		} else if (!memcmp(buf->data, sync_rsp, sizeof(sync_rsp))) {
-			if (h5->link_state == ACTIVE) {
-				/* TODO Reset H5 */
+		} else if (buf->len == sizeof(sync_rsp) &&
+			   !memcmp(buf->data, sync_rsp, sizeof(sync_rsp))) {
+			/* Ignored once past the Uninitialized state (8.2, 8.3) */
+			if (h5->link_state == UNINIT) {
+				h5->link_state = INIT;
+				h5_set_txwin(h5, conf_req);
+				h5_send(dev, conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req), 0U);
 			}
-
-			h5->link_state = INIT;
-			h5_set_txwin(h5, conf_req);
-			h5_send(dev, conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req), 0U);
 		} else if (!memcmp(buf->data, conf_req, 2)) {
-			/*
-			 * The Host sends Config Response messages without a
-			 * Configuration Field.
-			 */
-			h5_send(dev, conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp), 0U);
+			/* Not valid in the Uninitialized state (8.1) */
+			if (h5->link_state != UNINIT) {
+				/*
+				 * The Host sends Config Response messages without a
+				 * Configuration Field.
+				 */
+				h5_send(dev, conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp), 0U);
+			} else {
+				h5_invalid_packet(h5);
+			}
 
 			/* Then send Config Request with Configuration Field */
-			h5_set_txwin(h5, conf_req);
-			h5_send(dev, conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req), 0U);
-		} else if (!memcmp(buf->data, conf_rsp, 2)) {
-			h5->link_state = ACTIVE;
-			if (buf->len > 2) {
-				/* Configuration field present */
-				h5->tx_win = MAX(buf->data[2] & 0x07, 1);
+			if (h5->link_state == INIT) {
+				h5_set_txwin(h5, conf_req);
+				h5_send(dev, conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req), 0U);
 			}
+		} else if (!memcmp(buf->data, conf_rsp, 2)) {
+			/* Discarded outside the Initialized state (8.1, 8.3) */
+			if (h5->link_state == INIT) {
+				h5->link_state = ACTIVE;
+				if (buf->len > 2) {
+					/* Configuration field present */
+					h5->tx_win = MAX(buf->data[2] & 0x07, 1);
+				}
 
-			LOG_DBG("Finished H5 configuration, tx_win %u", h5->tx_win);
+				LOG_DBG("Finished H5 configuration, tx_win %u", h5->tx_win);
 
-			k_sem_give(&h5->link_sem);
+				k_sem_give(&h5->link_sem);
+			} else {
+				h5_invalid_packet(h5);
+			}
 		} else {
 			LOG_ERR("Not handled yet %x %x", buf->data[0], buf->data[1]);
+			h5_invalid_packet(h5);
 		}
 
 		net_buf_drop(&buf);
