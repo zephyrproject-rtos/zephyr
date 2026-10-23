@@ -19,6 +19,10 @@
 	compatible = "nxp,mimxrt2663";
 	model = "NXP MIMXRT2660-EVK board";
 
+	aliases {
+		rtc = &rtc0;
+	};
+
 	chosen {
 		/*
 		 * XIP from the XSPI0 NOR, data in the XSPI1 PSRAM, both initialized
@@ -93,6 +97,10 @@
 };
 
 &gpio5 {
+	status = "okay";
+};
+
+&rtc0 {
 	status = "okay";
 };
 
