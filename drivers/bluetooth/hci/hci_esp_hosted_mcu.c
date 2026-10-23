@@ -29,7 +29,11 @@ struct hci_esp_hosted_mcu_data {
 	struct bt_hci_driver_data common;
 	const struct device *dev;
 	bool rx_started;
+	struct esp_hosted_mcu_restart_cb restart_cb;
 };
+
+/* Serialises open and close with the restart listener. */
+static K_MUTEX_DEFINE(hci_esp_hosted_mcu_lock);
 
 /*
  * The core delivers received frames on its single shared receive thread, which
@@ -268,6 +272,16 @@ static void hci_esp_hosted_mcu_rx_thread(void *p1, void *p2, void *p3)
 K_THREAD_STACK_DEFINE(hci_esp_hosted_mcu_rx_stack, CONFIG_BT_HCI_ESP_HOSTED_MCU_RX_STACK_SIZE);
 static struct k_thread hci_esp_hosted_mcu_rx_thread_data;
 
+/* Drop the frames queued for delivery. */
+static void hci_esp_hosted_mcu_drop_queued(void)
+{
+	struct hci_esp_hosted_mcu_rx_frame *frame;
+
+	while ((frame = k_fifo_get(&hci_esp_hosted_mcu_rx_fifo, K_NO_WAIT)) != NULL) {
+		k_mem_slab_free(&hci_esp_hosted_mcu_rx_slab, (void *)frame);
+	}
+}
+
 static int hci_esp_hosted_mcu_send(const struct device *dev, struct net_buf *buf)
 {
 	uint8_t pkt_type;
@@ -347,6 +361,8 @@ static int hci_esp_hosted_mcu_open(const struct device *dev)
 		return -ENODEV;
 	}
 
+	k_mutex_lock(&hci_esp_hosted_mcu_lock, K_FOREVER);
+
 	/*
 	 * Publish the device for the delivery thread and start it before the
 	 * receive callback is registered, so a frame can never reach an
@@ -371,35 +387,79 @@ static int hci_esp_hosted_mcu_open(const struct device *dev)
 	 */
 	ret = hci_esp_hosted_mcu_enable_controller();
 	if (ret) {
-		return ret;
+		goto out;
 	}
 
 	/* Route HCI_IF frames from the core demux into this driver. */
 	esp_hosted_mcu_register_if(ESP_HOSTED_MCU_HCI_IF, hci_esp_hosted_mcu_rx, (void *)dev);
 
 	data->dev = dev;
-	return 0;
+
+out:
+	k_mutex_unlock(&hci_esp_hosted_mcu_lock);
+	return ret;
 }
 
 static int hci_esp_hosted_mcu_close(const struct device *dev)
 {
 	struct hci_esp_hosted_mcu_data *data = dev->data;
-	struct hci_esp_hosted_mcu_rx_frame *frame;
+
+	k_mutex_lock(&hci_esp_hosted_mcu_lock, K_FOREVER);
 
 	/* Stop the core from dispatching further HCI frames to this driver. */
 	esp_hosted_mcu_unregister_if(ESP_HOSTED_MCU_HCI_IF);
 	hci_esp_hosted_mcu_rx_dev = NULL;
 
 	/* Drop any frames already queued for delivery. */
-	while ((frame = k_fifo_get(&hci_esp_hosted_mcu_rx_fifo, K_NO_WAIT)) != NULL) {
-		k_mem_slab_free(&hci_esp_hosted_mcu_rx_slab, (void *)frame);
-	}
+	hci_esp_hosted_mcu_drop_queued();
 
 	/* Bring the coprocessor controller down so a later open starts clean. */
 	(void)hci_esp_hosted_mcu_feature_bt(RpcFeatureCommand_Feature_Command_BT_Disable);
 	(void)hci_esp_hosted_mcu_feature_bt(RpcFeatureCommand_Feature_Command_BT_Deinit);
 
 	data->dev = NULL;
+
+	k_mutex_unlock(&hci_esp_hosted_mcu_lock);
+	return 0;
+}
+
+/*
+ * Restart listener. The coprocessor lost its Bluetooth controller along with
+ * its previous run. While the driver is open, drop the frames still queued
+ * from that run and enable the controller again, so it answers HCI Reset. The
+ * host stack keeps the previous run's state; an application resets it with
+ * bt_disable() and bt_enable() from a thread of its own, woken by its own
+ * listener.
+ */
+static void hci_esp_hosted_mcu_restarted(struct esp_hosted_mcu_restart_cb *cb)
+{
+	struct hci_esp_hosted_mcu_data *data =
+		CONTAINER_OF(cb, struct hci_esp_hosted_mcu_data, restart_cb);
+
+	k_mutex_lock(&hci_esp_hosted_mcu_lock, K_FOREVER);
+
+	/* A closed driver has nothing to restore: the next open enables the controller. */
+	if (data->dev != NULL) {
+		hci_esp_hosted_mcu_drop_queued();
+		if (hci_esp_hosted_mcu_enable_controller() != 0) {
+			LOG_ERR("controller not enabled after a coprocessor restart");
+		}
+	}
+
+	k_mutex_unlock(&hci_esp_hosted_mcu_lock);
+}
+
+/*
+ * Listen for coprocessor restarts from device init, so this listener runs
+ * before any an application registers.
+ */
+static int hci_esp_hosted_mcu_init(const struct device *dev)
+{
+	struct hci_esp_hosted_mcu_data *data = dev->data;
+
+	data->restart_cb.handler = hci_esp_hosted_mcu_restarted;
+	esp_hosted_mcu_register_restart_cb(&data->restart_cb);
+
 	return 0;
 }
 
@@ -413,8 +473,9 @@ static DEVICE_API(bt_hci, hci_esp_hosted_mcu_api) = {
 	static struct hci_esp_hosted_mcu_data hci_esp_hosted_mcu_data_##inst;                      \
 	static const struct bt_hci_driver_config hci_esp_hosted_mcu_config_##inst =                \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_esp_hosted_mcu_data_##inst,                   \
-			      &hci_esp_hosted_mcu_config_##inst, POST_KERNEL,                      \
-			      CONFIG_ESP_HOSTED_MCU_INIT_PRIORITY, &hci_esp_hosted_mcu_api);
+	DEVICE_DT_INST_DEFINE(inst, hci_esp_hosted_mcu_init, NULL,                                 \
+			      &hci_esp_hosted_mcu_data_##inst, &hci_esp_hosted_mcu_config_##inst,  \
+			      POST_KERNEL, CONFIG_ESP_HOSTED_MCU_INIT_PRIORITY,                    \
+			      &hci_esp_hosted_mcu_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HCI_ESP_HOSTED_MCU_INIT)
