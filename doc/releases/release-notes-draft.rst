@@ -165,6 +165,13 @@ Libraries / Subsystems
     prefer Nagle's algorithm can disable
     :kconfig:option:`CONFIG_HTTP_SERVER_TCP_NODELAY`.
 
+* Shell
+
+  * With :kconfig:option:`CONFIG_SHELL_WILDCARD` enabled, an argument containing ``*`` or ``?``
+    that matches no subcommand is now passed to the command handler unchanged. Previously the
+    command was run without that argument and its remaining arguments, which usually failed
+    with a wrong argument count.
+
 Devicetree
 **********
 
