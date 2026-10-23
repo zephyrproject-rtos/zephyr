@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <common/freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
@@ -19,6 +20,7 @@
 	compatible = "microchip,sama7d65curiosity", "microchip,sama7d6", "microchip,sama7";
 
 	aliases {
+		adc0 = &adc;
 		eeprom-0 = &eeprom0;
 		led0 = &led_blue;
 		pwm-0 = &pwm;
@@ -95,6 +97,12 @@
 			pwms = <&pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
+};
+
+&adc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_mikrobus_an_default>;
+	status = "okay";
 };
 
 &aes {
@@ -249,6 +257,18 @@
 		group1 {
 			pinmux = <PIN_PB19__FLEXCOM10_IO1>,
 				 <PIN_PB20__FLEXCOM10_IO0>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_mikrobus_an_default: pinctrl_mikrobus_an_default {
+		mikrobus1_ad2 {
+			pinmux = <PIN_PC5__GPIO>;
+			bias-disable;
+		};
+
+		mikrobus2_ad8 {
+			pinmux = <PIN_PC13__GPIO>;
 			bias-disable;
 		};
 	};
