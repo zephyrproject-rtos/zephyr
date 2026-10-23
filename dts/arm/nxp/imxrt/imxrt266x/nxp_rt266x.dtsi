@@ -1672,6 +1672,18 @@
 		status = "disabled";
 	};
 
+	rtc0: vbat_rtc: rtc@46340000 {
+		compatible = "nxp,irtc";
+		reg = <0x46340000 0x1000>;
+		interrupts = <251 0>;
+		clocks = <&wake_ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_VBAT_RTC_HP,
+						IMX_CCM_ROOT_NONE)>;
+		clock-frequency = <32768>;
+		prescaler = <1>;
+		alarms-count = <1>;
+		status = "disabled";
+	};
+
 	gpio5: vbat_gpio: gpio@46350000 {
 		compatible = "nxp,imx-gpio-v2";
 		reg = <0x46350000 0x4000>;
