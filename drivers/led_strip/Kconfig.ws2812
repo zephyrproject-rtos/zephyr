@@ -39,6 +39,17 @@ config WS2812_STRIP_UART
 	  This method requires a high-speed UART and carefully crafted
 	  byte frames to meet the strict WS2812 timing protocol.
 
+if WS2812_STRIP_UART
+
+config WS2812_STRIP_UART_FORCE_NOCACHE
+	bool "Place led buffer in __nocache section"
+	default y if DCACHE && DMA
+	help
+	  For UART communication using DMA, place the WS2812 UART buffer in the __nocache section to
+	  ensure it is stored in uncached memory, as DMA usually requires access to uncached regions.
+
+endif
+
 config WS2812_STRIP_I2S
 	bool "WS2812 LED strip I2S driver"
 	default y
