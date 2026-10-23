@@ -85,6 +85,7 @@ grown to be mature and feature-rich, as can be seen in the section below.
     * Logical Link Control and Adaptation Protocol (L2CAP)
     * Serial Port emulation (RFCOMM protocol)
     * Service Discovery Protocol (SDP)
+    * Attribute Protocol (ATT) and Generic Attribute Profile (GATT) over BR/EDR
 
   * Clean HCI driver abstraction
 

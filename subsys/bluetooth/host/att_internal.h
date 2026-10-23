@@ -18,6 +18,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define BT_ATT_PSM		0x1f
 #define BT_EATT_PSM		0x27
 #define BT_ATT_DEFAULT_LE_MTU	23
 #define BT_ATT_TIMEOUT_SEC	30
@@ -325,6 +326,13 @@ void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req);
 
 /* Disconnect EATT channels */
 int bt_eatt_disconnect(struct bt_conn *conn);
+
+/* BR/EDR Unenhanced ATT bearer (PSM BT_ATT_PSM), used by classic/att_br.c */
+int bt_att_br_chan_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan);
+int bt_att_br_chan_connect(struct bt_conn *conn);
+int bt_att_br_chan_disconnect(struct bt_conn *conn);
+bool bt_att_br_chan_connected(struct bt_conn *conn);
+void bt_att_br_init(void);
 
 /** @brief Find a pending ATT request by its user_data pointer.
  *  @param conn The connection the request was issued on.
