@@ -71,6 +71,8 @@ struct i2c_ti_unicomm_config {
 
 	uint32_t timer_period;
 
+	uint32_t bitrate; /* Clock frequency from DT (Hz) */
+
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -201,6 +203,35 @@ static int i2c_ti_unicomm_init(const struct device *dev)
 	/* Set timer period */
 	sys_write32(cfg->timer_period, cfg->unicomm_i2cc_base + UNICOMM_I2CC_TPR);
 
+	/*
+	 * Set timer period.
+	 * If clock-frequency is specified in DT, compute TPR from the bus clock
+	 * and the requested speed. Otherwise fall back to the hardcoded default.
+	 */
+	if (cfg->bitrate != 0U) {
+		uint32_t busclk_hz = 0U;
+		int ret2 = clock_control_get_rate(DEVICE_DT_GET(DT_NODELABEL(ckm)),
+						  (clock_control_subsys_t)cfg->clock_subsys,
+						  &busclk_hz);
+
+		if (ret2 == 0 && busclk_hz != 0U) {
+			uint32_t functional_clk_hz = busclk_hz / ((uint32_t)cfg->clkdiv + 1U);
+			uint32_t tpr = functional_clk_hz / (I2CC_SCL_LP_HP * cfg->bitrate);
+
+			if (tpr > 1U) {
+				tpr -= 1U;
+				sys_write32(tpr, cfg->unicomm_i2cc_base + UNICOMM_I2CC_TPR);
+			} else {
+				sys_write32(cfg->timer_period,
+					    cfg->unicomm_i2cc_base + UNICOMM_I2CC_TPR);
+			}
+		} else {
+			sys_write32(cfg->timer_period, cfg->unicomm_i2cc_base + UNICOMM_I2CC_TPR);
+		}
+	} else {
+		sys_write32(cfg->timer_period, cfg->unicomm_i2cc_base + UNICOMM_I2CC_TPR);
+	}
+
 	/* Enable module with clock stretching */
 	sys_write32(sys_read32(cfg->unicomm_i2cc_base + UNICOMM_I2CC_CONFIG) | I2CC_CONFIG_ENABLE |
 			    I2CC_CONFIG_CLKSTRETCH_ENABLE,
@@ -214,19 +245,46 @@ static int i2c_ti_unicomm_init(const struct device *dev)
 static int i2c_ti_unicomm_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_ti_unicomm_config *cfg = dev->config;
+#if defined(CONFIG_I2C_TARGET)
 	struct i2c_ti_unicomm_data *data = dev->data;
+	bool is_target = data->is_target;
+#endif
 	uint32_t speed_hz;
 	uint32_t busclk_hz;
 	uint32_t functional_clk_hz;
 	uint32_t tpr;
 	int ret;
 
-	/* Reset a controller device */
-	if ((dev_config & I2C_MODE_CONTROLLER)) {
-		/* Changing controller/target mode at runtime is not supported */
-		if (data->is_target == true) {
+	/* Runtime config overrides DT; fall back to DT bitrate if no explicit speed set */
+	if (I2C_SPEED_GET(dev_config) == I2C_SPEED_DT) {
+		speed_hz = cfg->bitrate;
+		if (speed_hz == 0) {
+			speed_hz = 100000U; /* default if DT also missing */
+		}
+	} else {
+		switch (I2C_SPEED_GET(dev_config)) {
+		case I2C_SPEED_STANDARD:
+			speed_hz = 100000U;
+			break;
+		case I2C_SPEED_FAST:
+			speed_hz = 400000U;
+			break;
+		case I2C_SPEED_FAST_PLUS:
+			speed_hz = 1000000U;
+			break;
+		default:
 			return -ENOTSUP;
 		}
+	}
+
+	/* Reset a controller device */
+	if ((dev_config & I2C_MODE_CONTROLLER)) {
+#if defined(CONFIG_I2C_TARGET)
+		/* Changing controller/target mode at runtime is not supported */
+		if (is_target == true) {
+			return -ENOTSUP;
+		}
+#endif
 
 		ret = i2c_ti_unicomm_init(dev);
 
@@ -234,20 +292,6 @@ static int i2c_ti_unicomm_configure(const struct device *dev, uint32_t dev_confi
 			return ret;
 		}
 	} else {
-		return -ENOTSUP;
-	}
-
-	switch (I2C_SPEED_GET(dev_config)) {
-	case I2C_SPEED_STANDARD:
-		speed_hz = 100000U;
-		break;
-	case I2C_SPEED_FAST:
-		speed_hz = 400000U;
-		break;
-	case I2C_SPEED_FAST_PLUS:
-		speed_hz = 1000000U;
-		break;
-	default:
 		return -ENOTSUP;
 	}
 
@@ -663,9 +707,9 @@ static void i2c_ti_unicomm_target_isr(const struct device *dev)
 
 static void i2c_ti_unicomm_isr(const struct device *dev)
 {
+#if defined(CONFIG_I2C_TARGET)
 	struct i2c_ti_unicomm_data *data = dev->data;
 
-#if defined(CONFIG_I2C_TARGET)
 	if (data->is_target == true) {
 		i2c_ti_unicomm_target_isr(dev);
 		return;
@@ -706,6 +750,7 @@ static DEVICE_API(i2c, i2c_ti_unicomm_api) = {.configure = i2c_ti_unicomm_config
 		.irq_config_func = i2c_ti_unicomm_irq_config_func_##index,                         \
 		.rx_fifo_threshold = DT_INST_PROP_OR(index, rxfifo_threshold, 0),                  \
 		.tx_fifo_threshold = DT_INST_PROP_OR(index, txfifo_threshold, 0),                  \
+		.bitrate = DT_INST_PROP_OR(index, clock_frequency, 0),				   \
 	};                                                                                         \
                                                                                                    \
 	static struct i2c_ti_unicomm_data i2c_data_##index;                                        \

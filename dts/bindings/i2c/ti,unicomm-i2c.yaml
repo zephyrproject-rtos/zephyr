@@ -5,7 +5,7 @@ description: TI UNICOMM I2C Controller/Target (combined)
 
 compatible: "ti,unicomm-i2c"
 
-include: [base.yaml, pinctrl-device.yaml]
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 bus: i2c
 
@@ -20,12 +20,6 @@ properties:
     required: true
 
   clocks:
-    required: true
-
-  pinctrl-0:
-    required: true
-
-  pinctrl-names:
     required: true
 
   rxfifo-threshold:
