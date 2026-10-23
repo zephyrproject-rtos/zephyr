@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# UF2 family IDs of the boards whose SoC is not in the UF2 family list. The IDs
+# are not registered, they are only meaningful for this sample.
+config APP_UF2_FAMILY_ID_DEFAULT
+	string
+	default "0x36e80ca7" if BOARD_FRDM_K64F
+	default "0xdb68893d" if BOARD_NRF54LM20DK
