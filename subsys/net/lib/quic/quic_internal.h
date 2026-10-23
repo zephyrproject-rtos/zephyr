@@ -1269,6 +1269,11 @@ __net_socket struct quic_context {
 	/** Streams connected to this context */
 	sys_slist_t streams;
 
+	/** The application closed the socket: nothing is accepted on it any
+	 * more. Written under contexts_lock, so not a bit field.
+	 */
+	bool accept_closed;
+
 	/** Information whether this context is the listening one */
 	bool is_listening : 1;
 };
