@@ -271,6 +271,16 @@ config BT_CTLR_SCAN_DATA_LEN_MAX
 	help
 	  Maximum Extended Scanning Data Length.
 
+config BT_CTLR_SCAN_TGTA_LOCAL_IRK
+	bool "Resolve TargetA without AdvA using the local IRKs"
+	depends on BT_OBSERVER && BT_CTLR_PRIVACY
+	help
+	  Resolve a TargetA that is a resolvable private address in an
+	  extended advertising PDU without AdvA with each local IRK of the
+	  resolving list. Without it, the basic scanner filter policy ignores
+	  such directed advertising. The resolution runs in the radio ISR, with
+	  one AES operation per distinct local IRK.
+
 config BT_CTLR_CHECK_SAME_PEER_SYNC
 	# Hidden Kconfig to add same peer synchronization check
 	bool
