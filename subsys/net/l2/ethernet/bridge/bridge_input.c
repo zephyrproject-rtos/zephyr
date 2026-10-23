@@ -50,7 +50,7 @@ static void eth_bridge_fdb_forward_handler(struct eth_bridge_fdb_entry *entry, v
 		return;
 	}
 
-	out_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+	out_pkt = net_pkt_tx_clone_raw(pkt, entry->iface, K_NO_WAIT);
 	if (out_pkt == NULL) {
 		NET_ERR("No enough memory for pkt clone");
 		return;
@@ -60,7 +60,6 @@ static void eth_bridge_fdb_forward_handler(struct eth_bridge_fdb_entry *entry, v
 		net_if_get_by_iface(orig_iface), net_if_get_by_iface(entry->iface));
 
 	net_pkt_set_l2_bridged(out_pkt, true);
-	net_pkt_set_iface(out_pkt, entry->iface);
 	net_pkt_set_orig_iface(out_pkt, orig_iface);
 	net_if_queue_tx(entry->iface, out_pkt);
 }
@@ -84,13 +83,12 @@ static int eth_bridge_forward(struct net_if *bridge, struct net_if *orig_iface, 
 {
 	struct net_pkt *out_pkt;
 
-	out_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+	out_pkt = net_pkt_tx_clone_raw(pkt, bridge, K_NO_WAIT);
 	if (out_pkt == NULL) {
 		return -ENOMEM;
 	}
 
 	net_pkt_set_l2_bridged(out_pkt, true);
-	net_pkt_set_iface(out_pkt, bridge);
 	net_pkt_set_orig_iface(out_pkt, orig_iface);
 
 	NET_DBG("Passing rx pkt %p (orig %p) to bridge %d tx path from %d",
