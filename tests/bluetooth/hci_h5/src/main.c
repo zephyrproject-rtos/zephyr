@@ -19,6 +19,7 @@
 
 #define PKT_ACK  0x00U
 #define PKT_CMD  0x01U
+#define PKT_SCO  0x03U
 #define PKT_EVT  0x04U
 #define PKT_LINK 0x0fU
 
@@ -420,6 +421,26 @@ ZTEST(hci_h5, test_ack_out_of_window)
 	expect_reset_retransmitted(c, seq);
 
 	put_ack(c, (seq + 1U) % 8U);
+	expect_no_tx(c);
+}
+
+ZTEST(hci_h5, test_unreliable_send)
+{
+	/* Connection handle 1, no data */
+	static const uint8_t sco[] = { 0x01, 0x00, 0x00 };
+	struct net_buf *buf = net_buf_alloc(&cmd_pool, K_NO_WAIT);
+	struct ctlr *c = &ctlrs[0];
+	uint8_t hdr[HDR_LEN];
+
+	zassert_not_null(buf);
+	net_buf_add_u8(buf, BT_HCI_H4_SCO);
+	net_buf_add_mem(buf, sco, sizeof(sco));
+	zassert_ok(bt_hci_send(c->hci, buf));
+	k_sleep(K_MSEC(10));
+
+	/* Without a sequence number, and never retransmitted */
+	hdr_set(hdr, false, 0U, c->seq, PKT_SCO, sizeof(sco));
+	expect_tx(c, hdr, sco, sizeof(sco));
 	expect_no_tx(c);
 }
 
