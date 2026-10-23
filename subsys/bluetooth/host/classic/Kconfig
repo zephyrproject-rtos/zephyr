@@ -183,6 +183,29 @@ config BT_L2CAP_BR_MONITOR_TIMEOUT
 	  a maximum of 12000 milliseconds.
 endif # BT_L2CAP_RET_FC
 
+config BT_ATT_BR
+	bool "ATT over BR/EDR [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable the Unenhanced ATT bearer over BR/EDR, an L2CAP channel on the
+	  ATT PSM (0x001F) in Basic mode. GATT client and server procedures can
+	  then be used on BR/EDR connections. The ATT_MTU is the result of the
+	  L2CAP configuration and the Exchange MTU and Signed Write procedures
+	  are not supported on this bearer.
+
+config BT_ATT_BR_SDP_RECORDS
+	int "Number of SDP records for GATT services"
+	depends on BT_ATT_BR
+	default 4
+	range 2 32
+	help
+	  Maximum number of primary services published in the SDP database
+	  with the ATT bearer over BR/EDR, as required for a service that is
+	  available on BR/EDR (Core v6.2 Vol 3 Part C 15.4 and Part G 9).
+	  The GAP and GATT services use two records, the other records are
+	  for the services defined with BT_ATT_BR_SDP_SERVICE(). Services
+	  beyond this number are not published and a warning is logged.
+
 config BT_RFCOMM
 	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
 	select EXPERIMENTAL

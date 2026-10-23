@@ -22,6 +22,7 @@
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
@@ -479,6 +480,46 @@ static int cmd_l2cap_register(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_ATT_BR)
+static int cmd_att_connect(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	err = bt_att_br_connect(default_conn);
+	if (err != 0) {
+		shell_error(sh, "ATT connect failed (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "ATT connection pending");
+
+	return 0;
+}
+
+static int cmd_att_disconnect(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	err = bt_att_br_disconnect(default_conn);
+	if (err != 0) {
+		shell_error(sh, "ATT disconnect failed (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_ATT_BR */
 
 static int cmd_l2cap_connect(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -2134,6 +2175,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
+#if defined(CONFIG_BT_ATT_BR)
+	SHELL_CMD_ARG(att-connect, NULL, HELP_NONE, cmd_att_connect, 1, 0),
+	SHELL_CMD_ARG(att-disconnect, NULL, HELP_NONE, cmd_att_disconnect, 1, 0),
+#endif /* CONFIG_BT_ATT_BR */
 	SHELL_CMD_ARG(auth-pincode, NULL, "<pincode>", cmd_auth_pincode, 2, 0),
 	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
