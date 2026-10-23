@@ -53,7 +53,7 @@ static void gpio_edge_isr(const struct device *dev, struct gpio_callback *cb, ui
 	int pin_state;
 	uint32_t current_time = k_cycle_get_32();
 
-	if (ctx.sampling_done || ++ctx.skip_cnt < CONFIG_SKIP_EDGE_NUM) {
+	if (ctx.sampling_done || ++ctx.skip_cnt <= CONFIG_SKIP_EDGE_NUM) {
 		return;
 	}
 
