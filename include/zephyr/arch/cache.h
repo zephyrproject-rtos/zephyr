@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#if defined(CONFIG_DCACHE) || defined(__DOXYGEN__)
+#if defined(CONFIG_DCACHE) || defined(CONFIG_ARCH_HAS_DCACHE_OPS) || defined(__DOXYGEN__)
 
 /**
  * @brief Enable the d-cache
@@ -180,7 +180,7 @@ size_t arch_dcache_line_size_get(void);
 
 #endif /* CONFIG_DCACHE_LINE_SIZE_DETECT_SUPPORT || __DOXYGEN__ */
 
-#endif /* CONFIG_DCACHE || __DOXYGEN__ */
+#endif /* CONFIG_DCACHE || CONFIG_ARCH_HAS_DCACHE_OPS || __DOXYGEN__ */
 
 #if defined(CONFIG_ICACHE) || defined(__DOXYGEN__)
 
