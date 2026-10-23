@@ -356,7 +356,11 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 #if NRF_PDM_HAS_SELECTABLE_CLOCK
 	nrfx_cfg.mclksrc = drv_cfg->clk_src == ACLK
 			 ? NRF_PDM_MCLKSRC_ACLK
+#if NRF_PDM_HAS_PCLK16M
+			 : NRF_PDM_MCLKSRC_PCLK16M;
+#elif NRF_PDM_HAS_PCLK32M
 			 : NRF_PDM_MCLKSRC_PCLK32M;
+#endif
 #endif
 	nrfx_pdm_output_t output_config = {
 		.base_clock_freq = (NRF_PDM_HAS_SELECTABLE_CLOCK && drv_cfg->clk_src == ACLK)
