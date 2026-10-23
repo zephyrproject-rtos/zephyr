@@ -55,6 +55,9 @@ LOG_MODULE_REGISTER(i2c_infineon, CONFIG_I2C_LOG_LEVEL);
 #define CAT1_I2C_SPEED_FAST_HZ      (400000UL)
 #define CAT1_I2C_SPEED_FAST_PLUS_HZ (1000000UL)
 
+/* Bound on waiting for the controller to go idle after an abort */
+#define IFX_CAT1_I2C_IDLE_TIMEOUT_US 10000U
+
 /* Data structure */
 struct ifx_cat1_event_callback_data {
 	cy_israddress callback;
@@ -136,15 +139,24 @@ static const cy_stc_scb_i2c_config_t _i2c_default_config = {
 
 typedef void (*ifx_cat1_i2c_event_callback_t)(void *callback_arg, uint32_t event);
 
-cy_rslt_t _i2c_abort_async(const struct device *dev)
+/**
+ * @brief Ask the controller to abort the transfer in progress.
+ *
+ * Returns without waiting for the STOP, so it is safe from the interrupt
+ * handler.  The PDL clears CY_SCB_I2C_MASTER_BUSY from the SCB interrupt once
+ * the STOP completes; wait for that from thread context with
+ * ifx_cat1_i2c_wait_controller_idle().  Does nothing when no transfer is
+ * running.
+ *
+ * @param[in] dev I2C device instance.
+ */
+static void ifx_cat1_i2c_abort_request(const struct device *dev)
 {
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 
-	uint16_t timeout_us = 10000;
-
 	if (data->pending == CAT1_I2C_PENDING_NONE) {
-		return CY_RSLT_SUCCESS;
+		return;
 	}
 
 	if (data->pending == CAT1_I2C_PENDING_RX) {
@@ -152,22 +164,29 @@ cy_rslt_t _i2c_abort_async(const struct device *dev)
 	} else {
 		Cy_SCB_I2C_MasterAbortWrite(config->base, &data->context);
 	}
+}
 
-	/* After abort, next I2C operation can be initiated only after
-	 * CY_SCB_I2C_MASTER_BUSY is cleared, so waiting for that event to occur.
-	 */
-	while ((CY_SCB_I2C_MASTER_BUSY & data->context.masterStatus) && (timeout_us != 0)) {
-		Cy_SysLib_DelayUs(1);
-		timeout_us--;
+/**
+ * @brief Wait for the controller to go idle, up to IFX_CAT1_I2C_IDLE_TIMEOUT_US.
+ *
+ * Thread context only.  CY_SCB_I2C_MASTER_BUSY is cleared by the SCB
+ * interrupt, so a wait inside that interrupt always runs to the timeout.
+ *
+ * @param[in] dev I2C device instance.
+ *
+ * @retval 0 The controller is idle.
+ * @retval -ETIMEDOUT The controller was still busy at the timeout.
+ */
+static int ifx_cat1_i2c_wait_controller_idle(const struct device *dev)
+{
+	struct ifx_cat1_i2c_data *data = dev->data;
+
+	if (!WAIT_FOR((data->context.masterStatus & CY_SCB_I2C_MASTER_BUSY) == 0U,
+		      IFX_CAT1_I2C_IDLE_TIMEOUT_US, k_busy_wait(1U))) {
+		return -ETIMEDOUT;
 	}
 
-	if (0 == timeout_us) {
-		return CY_SCB_I2C_MASTER_MANUAL_TIMEOUT;
-	}
-
-	data->pending = CAT1_I2C_PENDING_NONE;
-
-	return CY_RSLT_SUCCESS;
+	return 0;
 }
 
 static void ifx_handle_target_read_event(const struct device *dev)
@@ -250,13 +269,15 @@ static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 
 	if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
-		(void)_i2c_abort_async(dev);
 		/*
-		 * Abort does not confirm the controller went idle when it times out,
-		 * so clear the async state unconditionally. This stops the
-		 * interrupt handler from starting a spurious read after a failed
-		 * write and leaving a stale completion for the next transfer.
+		 * Waiting here for the STOP would spin for the full timeout:
+		 * the status that reports it is cleared by this interrupt.
+		 * Request the abort only; the transfer thread waits for the
+		 * controller to go idle.  Clearing the async state now stops
+		 * the interrupt handler from starting a spurious read after a
+		 * failed write.
 		 */
+		ifx_cat1_i2c_abort_request(dev);
 		data->pending = CAT1_I2C_PENDING_NONE;
 		data->error = true;
 		k_sem_give(&data->transfer_sem);
@@ -932,10 +953,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 				(void)Cy_SCB_I2C_MasterSendStop(config->base, 1U, &data->context);
 			}
 
-			pm_policy_device_power_lock_put(dev);
-			(void)pm_device_runtime_put(dev);
-			k_sem_give(&data->operation_sem);
-			return ret;
+			goto out;
 		}
 
 		append = hold_bus;
@@ -945,38 +963,34 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		 */
 		ret = k_sem_take(&data->transfer_sem, config->transfer_timeout);
 		if (ret != 0) {
-			cy_rslt_t abort_status;
-
 			/* The transfer did not complete in time, for example a
-			 * target holding the bus low. Abort the async operation,
-			 * then reset the shared async state with the SCB
-			 * interrupt masked so a late completion cannot race the
-			 * teardown or leak into the next transfer.
+			 * target holding the bus low. Abort the async operation.
 			 */
-			abort_status = _i2c_abort_async(dev);
-			if (abort_status != CY_RSLT_SUCCESS) {
-				LOG_WRN("I2C abort did not confirm controller idle "
-					"(0x%x); bus may be stuck", abort_status);
+			ifx_cat1_i2c_abort_request(dev);
+			if (ifx_cat1_i2c_wait_controller_idle(dev) != 0) {
+				LOG_WRN("I2C abort did not confirm controller idle; "
+					"bus may be stuck");
 			}
 
-			irq_disable(config->irq_num);
-			data->pending = CAT1_I2C_PENDING_NONE;
-			k_sem_reset(&data->transfer_sem);
-			data->irq_cause &= ~I2C_CAT1_EVENTS_MASK;
-			irq_enable(config->irq_num);
-
-			pm_policy_device_power_lock_put(dev);
-			(void)pm_device_runtime_put(dev);
-			k_sem_give(&data->operation_sem);
-			return -ETIMEDOUT;
+			ret = -ETIMEDOUT;
+			goto out;
 		}
 
 		/* Check for an error during the transfer */
 		if (data->error) {
-			pm_policy_device_power_lock_put(dev);
-			(void)pm_device_runtime_put(dev);
-			k_sem_give(&data->operation_sem);
-			return -EIO;
+			/*
+			 * The interrupt handler only requested the STOP.  Returning
+			 * before it completes would start the next transfer on a
+			 * busy controller, and the completion event the STOP
+			 * raises would leave a count on transfer_sem that ends the
+			 * next wait at once.
+			 */
+			if (ifx_cat1_i2c_wait_controller_idle(dev) != 0) {
+				LOG_WRN("I2C controller did not go idle after an error");
+			}
+
+			ret = -EIO;
+			goto out;
 		}
 
 		if (data->rx_overrun) {
@@ -990,20 +1004,32 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 				(void)Cy_SCB_I2C_MasterSendStop(config->base, 1U, &data->context);
 			}
 
-			pm_policy_device_power_lock_put(dev);
-			(void)pm_device_runtime_put(dev);
-			k_sem_give(&data->operation_sem);
-			return -EIO;
+			ret = -EIO;
+			goto out;
 		}
 	}
 
-	/* Disable I2C Interrupt */
+	ret = 0;
+
+out:
+	/*
+	 * Every exit after a submission passes through here.  After an abort,
+	 * the STOP's completion event can still arrive and would end the next
+	 * transfer's wait.  With the SCB interrupt masked, clear the async state
+	 * and any count already posted, and drop the controller events from
+	 * irq_cause so a completion that arrives later, after a failed wait for
+	 * idle, never reaches the event handler.
+	 */
+	irq_disable(config->irq_num);
+	data->pending = CAT1_I2C_PENDING_NONE;
+	k_sem_reset(&data->transfer_sem);
 	data->irq_cause &= ~I2C_CAT1_EVENTS_MASK;
+	irq_enable(config->irq_num);
 
 	pm_policy_device_power_lock_put(dev);
 	(void)pm_device_runtime_put(dev);
 	k_sem_give(&data->operation_sem);
-	return 0;
+	return ret;
 }
 
 static int ifx_cat1_i2c_init(const struct device *dev)
