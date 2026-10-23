@@ -84,6 +84,8 @@ New Shields
 ..
   Same as above, this will also be recomputed at the time of the release.
 
+* :ref:`RAK13800 WisBlock Ethernet Module <rakwireless_rak13800>`
+
 New Drivers
 ***********
 
