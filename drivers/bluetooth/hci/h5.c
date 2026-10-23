@@ -475,6 +475,12 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 				break;
 			}
 
+			if (((hdr[0] + hdr[1] + hdr[2] + hdr[3]) & 0xffU) != 0xffU) {
+				LOG_ERR("Invalid header checksum");
+				h5_reset_rx(h5);
+				continue;
+			}
+
 			h5->rx_remaining = H5_HDR_LEN(hdr);
 
 			switch (H5_HDR_PKT_TYPE(hdr)) {
