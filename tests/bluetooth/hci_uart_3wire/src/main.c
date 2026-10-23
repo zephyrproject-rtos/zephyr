@@ -388,6 +388,43 @@ ZTEST(hci_uart_3wire, test_ack_delay)
 	expect_tx(hdr, NULL, 0U);
 }
 
+ZTEST(hci_uart_3wire, test_link_states)
+{
+	static const uint8_t sync[] = { 0x01, 0x7e };
+	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
+	static const uint8_t conf_rsp[] = { 0x04, 0x7b };
+	static const uint8_t conf_rsp_win4[] = { 0x04, 0x7b, 0x04 };
+	static const uint8_t sync_long[] = { 0x01, 0x7e, 0x00 };
+
+	/* Uninitialized: other packets are discarded and answered with SYNC at once */
+	put_link(false, sync, sizeof(sync));
+	seq = 0U;
+	k_sleep(K_MSEC(50));
+	(void)uart_emul_flush_tx_data(uart);
+	put_cmd(true, 5U, 14U);
+	zassert_equal(count_link_tx(sync, sizeof(sync)), 1U);
+	put_link(false, conf, sizeof(conf));
+	expect_no_cmd();
+	zassert_equal(count_link_tx(conf_rsp_win4, sizeof(conf_rsp_win4)), 0U);
+	put_link(false, sync_rsp, sizeof(sync_rsp));
+
+	/* Initialized: only link establishment messages count, which are unreliable */
+	put_link(true, conf_rsp, sizeof(conf_rsp));
+	put_cmd(true, 0U, 15U);
+	expect_no_cmd();
+	put_link(false, conf, sizeof(conf));
+	put_link(false, conf_rsp, sizeof(conf_rsp));
+
+	/* Active: sequence numbers start from 0, and SYNC is exactly two octets */
+	(void)uart_emul_flush_tx_data(uart);
+	put_link(false, sync_long, sizeof(sync_long));
+	put_cmd(true, seq, 16U);
+	expect_cmd(16U);
+	next_seq();
+	expect_ack();
+}
+
 ZTEST(hci_uart_3wire, test_event_after_link_setup)
 {
 	uint8_t evt_seq;

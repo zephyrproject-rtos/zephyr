@@ -148,6 +148,15 @@ static K_FIFO_DEFINE(tx_queue);
 static struct k_poll_signal tx_queue_change =
 	K_POLL_SIGNAL_INITIALIZER(tx_queue_change);
 
+/* Core 6.3 Vol 4 Part D 8.1: an invalid packet in the Uninitialized state is answered with SYNC */
+static void h5_invalid_packet(void)
+{
+	if (h5.link_state == UNINIT) {
+		/* Without waiting for the next interval */
+		k_work_reschedule(&link_work, K_NO_WAIT);
+	}
+}
+
 static void h5_reset_rx(void)
 {
 	if (h5.rx_buf) {
@@ -161,6 +170,8 @@ static void h5_reset_rx(void)
 	/* Discarded packets are acknowledged too (Core 6.3 Vol 4 Part D 6.5, 6.7) */
 	if (h5.link_state == ACTIVE) {
 		k_work_schedule(&ack_work, H5_RX_ACK_TIMEOUT);
+	} else {
+		h5_invalid_packet();
 	}
 }
 
@@ -445,6 +456,23 @@ static void h5_process_complete_packet(uint8_t *hdr)
 
 	LOG_DBG("");
 
+	/* Sequence numbers start in the Active state, and only link establishment messages, which
+	 * are unreliable, are valid before it (Core 6.3 Vol 4 Part D 8.3 to 8.7, 8.8.1)
+	 */
+	if (h5.link_state != ACTIVE) {
+		buf = h5.rx_buf;
+		h5.rx_buf = NULL;
+
+		if (H5_HDR_PKT_TYPE(hdr) == HCI_3WIRE_LINK_PKT && H5_HDR_RELIABLE(hdr) == 0U) {
+			k_fifo_put(&h5.rx_queue, buf);
+		} else {
+			net_buf_unref(buf);
+			h5_invalid_packet();
+		}
+
+		return;
+	}
+
 	/* rx_ack should be in every packet */
 	h5.rx_ack = H5_HDR_ACK(hdr);
 
@@ -696,6 +724,12 @@ static void process_events(struct k_poll_event *ev, int count)
 					break;
 				}
 
+				/* Not passed to the Controller outside the Active state (8.8.1) */
+				if (h5.link_state != ACTIVE) {
+					net_buf_unref(buf);
+					break;
+				}
+
 				/* Pass buffer to the stack */
 				err = bt_send(buf);
 				if (err) {
@@ -797,7 +831,9 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		if (buf->len < 2U) {
 			LOG_ERR("Link control packet too short (len %u)", buf->len);
-		} else if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
+			h5_invalid_packet();
+		} else if (buf->len == sizeof(sync_req) &&
+			   memcmp(buf->data, sync_req, sizeof(sync_req)) == 0) {
 			if (h5.link_state == ACTIVE) {
 				/* The Host has reset: link establishment starts over (8.3) */
 				__maybe_unused int err;
@@ -843,12 +879,16 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			if (h5.link_state == UNINIT) {
 				k_work_schedule(&link_work, K_NO_WAIT);
 			}
-		} else if (!memcmp(buf->data, sync_rsp, sizeof(sync_rsp))) {
+		} else if (buf->len == sizeof(sync_rsp) &&
+			   memcmp(buf->data, sync_rsp, sizeof(sync_rsp)) == 0) {
 			/* Ignored once past the Uninitialized state (8.2, 8.3) */
 			if (h5.link_state == UNINIT) {
 				h5.link_state = INIT;
 				k_work_reschedule(&link_work, K_NO_WAIT);
 			}
+		} else if (h5.link_state == UNINIT && memcmp(buf->data, conf_req, 2) == 0) {
+			/* Not valid in the Uninitialized state (8.1) */
+			h5_invalid_packet();
 		} else if (!memcmp(buf->data, conf_req, 2)) {
 			if (buf->len > 2) {
 				uint8_t tx_win = buf->data[2] & 0x07;
@@ -869,9 +909,12 @@ static void rx_thread(void *p1, void *p2, void *p3)
 				h5.link_state = ACTIVE;
 				/* tx_thread() only polls for packets to send in the Active state */
 				k_poll_signal_raise(&tx_queue_change, 0);
+			} else {
+				h5_invalid_packet();
 			}
 		} else {
 			LOG_ERR("Not handled yet %x %x", buf->data[0], buf->data[1]);
+			h5_invalid_packet();
 		}
 
 		net_buf_unref(buf);
