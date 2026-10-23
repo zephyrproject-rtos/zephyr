@@ -7691,6 +7691,54 @@ ZTEST(net_socket_quic, test_520_accept_moves_stream_references)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_524_listener_close_releases_connections_not_accepted)
+{
+	struct quic_context *child;
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+	int sock;
+	int ret;
+
+	/* A connection waits for accept when the listening socket closes */
+	ctx = open_test_listener(&sock, "127.0.0.1:54368");
+	ep = server_test_ep();
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	quic_connection_accept_enqueue(ep);
+
+	child = k_fifo_peek_head(&ctx->pending.accept_q);
+	zassert_not_null(child, "Connection not enqueued for accept");
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zexpect_equal(atomic_get(&child->refcount), 0,
+		      "Connection waiting for accept not released with the listener");
+
+	/* The listening socket is closed, but its context is still held,
+	 * for example by a hand-over that has just started
+	 */
+	ctx = open_test_listener(&sock, "127.0.0.1:54369");
+	atomic_inc(&ctx->refcount);
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+
+	ep = server_test_ep();
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	quic_connection_accept_enqueue(ep);
+
+	zexpect_true(k_fifo_is_empty(&ctx->pending.accept_q),
+		     "Connection handed over to a closed listening socket");
+	zexpect_true(sys_slist_find(&ctx->endpoints, &ep->node, NULL),
+		     "Endpoint taken from a closed listening socket");
+
+	quic_test_context_unref(ctx);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
