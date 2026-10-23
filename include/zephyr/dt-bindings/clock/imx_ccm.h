@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022,2024-2025 NXP
+ * Copyright 2017-2022,2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,5 +106,14 @@
 #define IMX_CCM_PWM3_CLK		0x1902UL
 /** PWM4 peripheral clock identifier */
 #define IMX_CCM_PWM4_CLK		0x1903UL
+
+/** ACMP1 peripheral clock identifier */
+#define IMX_CCM_ACMP1_CLK 0x1A00UL
+/** ACMP2 peripheral clock identifier */
+#define IMX_CCM_ACMP2_CLK 0x1A01UL
+/** ACMP3 peripheral clock identifier */
+#define IMX_CCM_ACMP3_CLK 0x1A02UL
+/** ACMP4 peripheral clock identifier */
+#define IMX_CCM_ACMP4_CLK 0x1A03UL
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_H_ */
