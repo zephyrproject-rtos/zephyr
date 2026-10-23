@@ -441,6 +441,29 @@ ZTEST(hci_uart_3wire, test_ack_out_of_window)
 	expect_no_tx();
 }
 
+ZTEST(hci_uart_3wire, test_sliding_window_size)
+{
+	static const uint8_t conf_win0[] = { 0x03, 0xfc, 0x00 };
+	static const uint8_t conf_win4[] = { 0x03, 0xfc, 0x04 };
+	static const uint8_t conf_rsp_win1[] = { 0x04, 0x7b, 0x01 };
+	static const uint8_t conf_rsp_win4[] = { 0x04, 0x7b, 0x04 };
+	uint8_t hdr[HDR_LEN];
+	uint8_t evt_seq;
+
+	/* A window size of 0 is taken as 1 */
+	put_link(false, conf_win0, sizeof(conf_win0));
+	hdr_set(hdr, false, 0U, seq, PKT_LINK, sizeof(conf_rsp_win1));
+	expect_tx(hdr, conf_rsp_win1, sizeof(conf_rsp_win1));
+
+	evt_seq = send_evt();
+	put_ack((evt_seq + 1U) % 8U);
+	expect_no_tx();
+
+	/* A later CONFIG negotiates the window anew */
+	put_link(false, conf_win4, sizeof(conf_win4));
+	expect_tx(hdr, conf_rsp_win4, sizeof(conf_rsp_win4));
+}
+
 ZTEST(hci_uart_3wire, test_unreliable_send)
 {
 	/* Connection handle 1, no data */
