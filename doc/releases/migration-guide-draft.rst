@@ -55,6 +55,15 @@ ADC
   conversions of :c:func:`adc_raw_to_millivolts_dt` and :c:func:`adc_raw_to_millivolts` are
   6.25% too low.
 
+Clock control
+=============
+
+* NXP MCXC and K32L2B3 SoCs now use the :dtcompatible:`nxp,mcg-lite` binding and driver
+  for the MCG-Lite clock generator. Out-of-tree devicetrees must update the mcg node to use
+  the new compatible and replace any use of KINETIS_MCG_OUT_CLK with NXP_MCG_LITE_OUT_CLK.
+  The lircdiv2 property is no longer supported by :dtcompatible:`nxp,kinetis-mcg` and
+  should be removed from existing devicetrees.
+
 Ethernet
 ========
 
