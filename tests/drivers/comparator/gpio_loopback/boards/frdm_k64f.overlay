@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/kinetis/k6x/pinctrl/MK64FN1M0VLL12-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * PTC2 (J1-14) looped back to CMP0 input PTC7 (J1-13).
+ */
+
+/ {
+	aliases {
+		test-comp = &cmp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	cmp0_default: cmp0_default {
+		group0 {
+			pinmux = <CMP0_IN1_PTC7>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+};
+
+&cmp0 {
+	pinctrl-0 = <&cmp0_default>;
+	pinctrl-names = "default";
+
+	positive-mux-input = "IN1";
+	negative-mux-input = "IN7";	/* DAC output = VDD / 2 */
+	dac-vref-source = "VIN2";
+	dac-value = <31>;
+	status = "okay";
+};

@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/imxrt/imxrt5xx/pinctrl/MIMXRT595SFFOC-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * PIO3_14 (J47-9) looped back to ACMP input PIO2_15 (J47-10).
+ */
+
+/ {
+	aliases {
+		test-comp = &acmp;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio3 14 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	acmp_default: acmp_default {
+		group0 {
+			pinmux = <ACMP0_ACMP_IN4_PIO2_15>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+			nxp,analog-mode;
+		};
+	};
+};
+
+&acmp {
+	pinctrl-0 = <&acmp_default>;
+	pinctrl-names = "default";
+
+	positive-mux-input = "IN4";
+	positive-port-input = "MUX";
+	negative-mux-input = "IN7";
+	negative-port-input = "DAC";
+
+	discrete-mode-enable-positive-channel;
+
+	dac-vref-source = "VIN2";
+	dac-value = <127>;
+	dac-enable;
+	status = "okay";
+};
