@@ -298,6 +298,85 @@ ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len);
 int zms_delete(struct zms_fs *fs, zms_id_t id);
 
 /**
+ * @brief Delete an entry and physically erase the data of all its versions
+ *
+ * Writes a delete ATE for the entry, then walks back through all the previous versions of
+ * the entry and overwrites their data, then their ATE, in the storage with the inverse of the
+ * erase value of the flash. Only the delete ATE of the entry remains.
+ *
+ * On devices that do not erase sectors, the free space of every sector, where earlier cycles of
+ * the sector may have left data that no ATE designates any more, is overwritten as well,
+ * whatever the ID of the entries it held.
+ *
+ * The operation is not atomic. If it is interrupted by a power loss the entry is already
+ * deleted, and calling this function again completes the erasure.
+ *
+ * @note The whole storage may be walked, so this call can be slow.
+ * @note The memory cells that are overwritten are written twice in the current cycle of their
+ * sector. This extra write is added to the cycle count of the sector when it is erased, except
+ * for the overwritten free space.
+ * @note The storage device must accept overwriting programmed locations without an erase.
+ * @note Once this function has been used, the storage must not be mounted by a ZMS that does not
+ * have it: it could write data over the overwritten bytes, which corrupts it on devices that
+ * need an erase to write a location again.
+ * Available only when @kconfig{CONFIG_ZMS_PHYSICAL_DELETE} is enabled.
+ *
+ * @param fs Pointer to the file system.
+ * @param id ID of the entry to be deleted.
+ *
+ * @retval 0 on success.
+ * @retval -EACCES if ZMS is still not initialized.
+ * @retval -ENXIO if there is a device error.
+ * @retval -EIO if there is a memory read/write error.
+ * @retval -EINVAL if `fs` is NULL.
+ * @retval -ENOSPC if no space is left on the device for the delete ATE.
+ */
+int zms_delete_physical(struct zms_fs *fs, zms_id_t id);
+
+/**
+ * @brief Physically erase the old versions of an entry, or all of them
+ *
+ * Same as zms_delete_physical() when @p hist_cnt is -1. Otherwise the entry stays alive: its
+ * newest version is not touched, and the data, then the ATE, of its older versions are
+ * overwritten in the storage with the inverse of the erase value of the flash. No delete ATE is
+ * written, a data end marker ATE is written instead (unless the last ATE written already is
+ * one) to let the mount recover the end of the data written in the sector. If the newest state
+ * of the entry is a delete, it stays as it is and all the versions before it are older ones.
+ *
+ * After the call the erased versions can no longer be read with zms_read_hist(): the history of
+ * the entry is shortened accordingly.
+ *
+ * The operation is not atomic. If it is interrupted by a power loss, calling this function again
+ * completes the erasure.
+ *
+ * @note The whole storage may be walked, so this call can be slow.
+ * @note The memory cells that are overwritten are written twice in the current cycle of their
+ * sector. This extra write is added to the cycle count of the sector when it is erased, except
+ * for the overwritten free space.
+ * @note On devices that do not erase sectors, the free space of every sector is overwritten as
+ * well, as zms_delete_physical() does.
+ * @note The storage device must accept overwriting programmed locations without an erase.
+ * @note Once this function has been used, the storage must not be mounted by a ZMS that does not
+ * have it: it could write data over the overwritten bytes, which corrupts it on devices that
+ * need an erase to write a location again.
+ * Available only when @kconfig{CONFIG_ZMS_PHYSICAL_DELETE} is enabled.
+ *
+ * @param fs Pointer to the file system.
+ * @param id ID of the entry.
+ * @param hist_cnt Number of old versions to erase, starting from the one that precedes the
+ * newest version. -1 deletes the entry and erases all its versions, 0 erases all the old
+ * versions and keeps the newest one, a positive value erases at most that number of old versions.
+ *
+ * @retval 0 on success.
+ * @retval -EACCES if ZMS is still not initialized.
+ * @retval -ENXIO if there is a device error.
+ * @retval -EIO if there is a memory read/write error.
+ * @retval -EINVAL if `fs` is NULL, `id` is reserved or `hist_cnt` is lower than -1.
+ * @retval -ENOSPC if no space is left on the device for the delete ATE or the marker ATE.
+ */
+int zms_delete_physical_hist(struct zms_fs *fs, zms_id_t id, int32_t hist_cnt);
+
+/**
  * @brief Read an entry from the file system.
  *
  * @param fs Pointer to the file system.
