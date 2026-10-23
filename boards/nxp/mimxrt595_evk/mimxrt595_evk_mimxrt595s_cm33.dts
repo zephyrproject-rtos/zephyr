@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023, NXP
+ * Copyright 2022-2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -161,6 +161,11 @@
 };
 
 &crc {
+	status = "okay";
+};
+
+&sema42 {
+	domain-id = <1>;
 	status = "okay";
 };
 
