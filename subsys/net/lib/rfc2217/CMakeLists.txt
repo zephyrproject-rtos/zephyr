@@ -4,3 +4,4 @@
 zephyr_library()
 
 zephyr_library_sources(rfc2217.c)
+zephyr_library_sources_ifdef(CONFIG_NET_RFC2217_SERVER rfc2217_server.c)
