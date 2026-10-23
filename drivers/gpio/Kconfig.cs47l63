@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_CS47L63
+	bool "CS47L63 GPIO driver"
+	default y
+	depends on DT_HAS_CIRRUS_CS47L63_GPIO_ENABLED && AUDIO_CODEC_CS47L63_GPIO
+	help
+	  GPIO1 to GPIO12 of the Cirrus Logic CS47L63 as a GPIO controller,
+	  without interrupts. The first access boots the part, so a GPIO hog
+	  on this controller does that at GPIO hogs init, and a failure there
+	  stops the remaining hogs of the board.
+
+config GPIO_CS47L63_INIT_PRIORITY
+	int "CS47L63 GPIO driver init priority"
+	default 70
+	depends on GPIO_CS47L63
+	help
+	  Must be greater than AUDIO_CODEC_INIT_PRIORITY. A board that uses GPIO
+	  hogs on this controller sets GPIO_HOGS_INIT_PRIORITY above it.
