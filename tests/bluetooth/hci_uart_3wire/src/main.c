@@ -21,6 +21,7 @@
 
 #define PKT_ACK  0x00U
 #define PKT_CMD  0x01U
+#define PKT_SCO  0x03U
 #define PKT_EVT  0x04U
 #define PKT_LINK 0x0fU
 
@@ -39,6 +40,9 @@
 #define ACK_WAIT K_MSEC(300)
 
 static const uint8_t hw_err_evt[] = { BT_HCI_EVT_HARDWARE_ERROR, 1U, 0x00 };
+
+/* H:4 type and an SCO packet without data */
+NET_BUF_POOL_DEFINE(sco_pool, 1, 4, 0, NULL);
 
 static const struct device *const uart = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_c2h_uart));
 
@@ -409,6 +413,26 @@ ZTEST(hci_uart_3wire, test_ack_out_of_window)
 	expect_evt_retransmitted(evt_seq);
 
 	put_ack((evt_seq + 1U) % 8U);
+	expect_no_tx();
+}
+
+ZTEST(hci_uart_3wire, test_unreliable_send)
+{
+	/* Connection handle 1, no data */
+	static const uint8_t sco[] = { 0x01, 0x00, 0x00 };
+	const struct device *hci = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci));
+	struct net_buf *buf = net_buf_alloc(&sco_pool, K_NO_WAIT);
+	uint8_t hdr[HDR_LEN];
+
+	zassert_not_null(buf);
+	net_buf_add_u8(buf, BT_HCI_H4_SCO);
+	net_buf_add_mem(buf, sco, sizeof(sco));
+	zassert_ok(bt_hci_recv_err(hci, buf));
+	k_sleep(K_MSEC(10));
+
+	/* Without a sequence number, and never retransmitted */
+	hdr_set(hdr, false, 0U, seq, PKT_SCO, sizeof(sco));
+	expect_tx(hdr, sco, sizeof(sco));
 	expect_no_tx();
 }
 
