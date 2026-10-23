@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The second UART, on a pseudoterminal of the host */
+&uart1 {
+	status = "okay";
+};
+
+/ {
+	rfc2217-server {
+		compatible = "zephyr,rfc2217-server";
+		uart = <&uart1>;
+		port = <2217>;
+	};
+};
