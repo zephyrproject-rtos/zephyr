@@ -35,6 +35,7 @@
 #define MODEM_CMUX_T1_TIMEOUT          (K_MSEC(CONFIG_MODEM_CMUX_T1_TIMEOUT))
 #define MODEM_CMUX_T2_TIMEOUT          (K_MSEC(CONFIG_MODEM_CMUX_T2_TIMEOUT))
 #define MODEM_CMUX_T3_TIMEOUT          (K_SECONDS(CONFIG_MODEM_CMUX_T3_TIMEOUT))
+#define MODEM_CMUX_N2_RETRIES          3
 
 /*************************************************************************************************/
 /*                                          Instances                                            */
@@ -955,6 +956,58 @@ ZTEST(modem_cmux, test_modem_cmux_dlci_close_open_sync)
 	modem_backend_mock_wait_for_transaction(&bus_mock);
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
 	zassert_true(modem_pipe_open(dlci2_pipe, K_SECONDS(10)) == 0, "Failed to open DLCI2 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
+static int count_frames(const uint8_t *buf, int len, const uint8_t *frame, size_t frame_len)
+{
+	int count = 0;
+
+	for (int i = 0; (i + frame_len) <= len; i += frame_len) {
+		if (memcmp(&buf[i], frame, frame_len) == 0) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlci_open_retries)
+{
+	uint32_t events;
+	int ret;
+
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
+	zassert_ok(modem_pipe_close(dlci1_pipe, K_SECONDS(10)), "Failed to close DLCI1");
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_disc);
+	zassert_ok(modem_pipe_close(dlci2_pipe, K_SECONDS(10)), "Failed to close DLCI2");
+	modem_backend_mock_reset(&bus_mock);
+	k_event_clear(&cmux_event, UINT32_MAX);
+
+	/* Open both DLCIs at once, the peer never responds */
+	zassert_ok(modem_pipe_open_async(dlci1_pipe));
+	zassert_ok(modem_pipe_open_async(dlci2_pipe));
+	events = k_event_wait_all(&cmux_event, EVENT_CMUX_DLCI1_CLOSED | EVENT_CMUX_DLCI2_CLOSED,
+				  false, K_MSEC(CONFIG_MODEM_CMUX_T1_TIMEOUT *
+						(MODEM_CMUX_N2_RETRIES + 2)));
+	zassert_equal(events, EVENT_CMUX_DLCI1_CLOSED | EVENT_CMUX_DLCI2_CLOSED,
+		      "DLCI open should fail");
+
+	/* Each DLCI sends SABM once and retries it N2 times */
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(count_frames(buffer1, ret, cmux_frame_dlci1_sabm_cmd,
+				   sizeof(cmux_frame_dlci1_sabm_cmd)),
+		      MODEM_CMUX_N2_RETRIES + 1, "Incorrect number of DLCI1 SABM frames");
+	zassert_equal(count_frames(buffer1, ret, cmux_frame_dlci2_sabm_cmd,
+				   sizeof(cmux_frame_dlci2_sabm_cmd)),
+		      MODEM_CMUX_N2_RETRIES + 1, "Incorrect number of DLCI2 SABM frames");
+
+	/* Restore DLCIs */
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
+	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)), "Failed to open DLCI2 pipe");
 	modem_backend_mock_wait_for_transaction(&bus_mock);
 }
 
