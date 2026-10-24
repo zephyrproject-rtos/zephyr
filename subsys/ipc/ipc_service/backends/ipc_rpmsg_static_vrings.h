@@ -1,8 +1,11 @@
 /*
  * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ * Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <limits.h>
 
 #include <openamp/virtio_ring.h>
 #include <openamp/rpmsg_virtio.h>
@@ -133,13 +136,16 @@
 /*
  * Size of the status region (possibly a multiple of the cache line size).
  */
-#define VDEV_STATUS_SIZE	CONFIG_IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
+#define VDEV_STATUS_SIZE CONFIG_IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
 
-#define VIRTQUEUE_ID_HOST	(0)
-#define VIRTQUEUE_ID_REMOTE	(1)
+#define VIRTQUEUE_ID_HOST   (0)
+#define VIRTQUEUE_ID_REMOTE (1)
 
-#define ROLE_HOST		VIRTIO_DEV_DRIVER
-#define ROLE_REMOTE		VIRTIO_DEV_DEVICE
+#define ROLE_HOST   VIRTIO_DEV_DRIVER
+#define ROLE_REMOTE VIRTIO_DEV_DEVICE
+
+/* The descriptor count must be a power of two representable by uint16_t. */
+#define MAX_LOG2_NUM_DESC (sizeof(uint16_t) * CHAR_BIT - 1U)
 
 static inline size_t vq_ring_size(unsigned int num, unsigned int buf_size)
 {
@@ -149,20 +155,25 @@ static inline size_t vq_ring_size(unsigned int num, unsigned int buf_size)
 static inline size_t shm_size(unsigned int num, unsigned int buf_size)
 {
 	return (VRING_COUNT * (vq_ring_size(num, buf_size) +
-		ROUND_UP(vring_size(num, MEM_ALIGNMENT), MEM_ALIGNMENT)));
+			       ROUND_UP(vring_size(num, MEM_ALIGNMENT), MEM_ALIGNMENT)));
 }
 
 static inline unsigned int optimal_num_desc(size_t mem_size, unsigned int buf_size)
 {
 	size_t available;
-	unsigned int num_desc = 1;
+	unsigned int log2_num_desc = 0;
+
+	if (mem_size < VDEV_STATUS_SIZE) {
+		return 0;
+	}
 
 	available = mem_size - VDEV_STATUS_SIZE;
 
-	while (available > shm_size(num_desc, buf_size)) {
-		num_desc++;
+	while ((log2_num_desc <= MAX_LOG2_NUM_DESC) &&
+	       (available >= shm_size(1U << log2_num_desc, buf_size))) {
+		log2_num_desc++;
 	}
 
-	/* if num_desc == 1 there is not enough memory */
-	return (--num_desc == 0) ? 0 : (1 << LOG2(num_desc));
+	/* If even one descriptor does not fit, log2_num_desc is still zero. */
+	return (log2_num_desc == 0) ? 0 : (1U << (log2_num_desc - 1U));
 }
