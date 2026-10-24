@@ -37,6 +37,7 @@
 		watchdog0 = &wdt0;
 		buzzer0 = &buzzer;
 		sdhc0 = &sdhc0;
+		i2s-codec-tx = &i2s0;
 	};
 
 	buzzer: buzzer {
@@ -176,6 +177,12 @@
 		reg = <0x2e>;
 		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
 };
 
 &spi2 {
