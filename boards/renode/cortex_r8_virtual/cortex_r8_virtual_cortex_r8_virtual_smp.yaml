@@ -1,0 +1,21 @@
+identifier: cortex_r8_virtual/cortex_r8_virtual/smp
+name: Cortex R8 Virtual Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 131072
+simulation:
+  - name: renode
+    exec: renode
+testing:
+  timeout_multiplier: 6
+  ignore_tags:
+    - net
+    - bluetooth
+  renode:
+    uart: sysbus.uart0
+    resc: boards/renode/cortex_r8_virtual/support/cortex_r8_virtual_smp.resc
+supported:
+  - smp
+  - uart

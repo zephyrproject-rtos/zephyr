@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+:name: Cortex-R8-Virtual-SMP
+:description: This script is prepared to run Zephyr on a virtual dual-core Cortex-R8 board.
+
+$name?="Cortex-R8-Virtual-SMP"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription $ORIGIN/cortex_r8_virtual_smp.repl
+
+machine SetSerialExecution True
+
+showAnalyzer uart0
+cpu PerformanceInMips 50
+cpu1 PerformanceInMips 50
+
+macro reset
+"""
+    sysbus LoadELF $elf
+"""
+runMacro $reset

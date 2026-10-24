@@ -183,6 +183,11 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	push {r0, r1}
 
+#if (defined(CONFIG_GIC_V1) || defined(CONFIG_GIC_V2)) && defined(CONFIG_SMP)
+	/* Mask out GICC_IAR.CPUID [12:10] */
+	bic r0, r0, #0x1c00
+#endif
+
 #ifdef CONFIG_ARM_TRACK_ACTIVE_IRQ
 	/*
 	 * Publish the acknowledged INTID for arch_irq_get_active(). The value
@@ -292,11 +297,17 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	add r0, #1
 	str r0, [r2, #___cpu_t_nested_OFFSET]
 
-	/* If not nested: switch to IRQ stack and save current sp on it. */
+	/*
+	 * If not nested: switch to the IRQ stack and save current sp on it.
+	 * Stay in SYS mode so that a nested IRQ does not clobber lr_irq.
+	 */
 	cmp r0, #1
 	bhi 1f
 	mov r0, sp
 	cps #MODE_IRQ
+	mov r1, sp
+	cps #MODE_SYS
+	mov sp, r1
 	push {r0}
 1:
 #ifdef CONFIG_TRACING_ISR
@@ -335,6 +346,11 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	push {r0, r1}
+
+#if (defined(CONFIG_GIC_V1) || defined(CONFIG_GIC_V2)) && defined(CONFIG_SMP)
+	/* Mask out GICC_IAR.CPUID [12:10] */
+	bic r0, r0, #0x1c00
+#endif
 
 #ifdef CONFIG_ARM_TRACK_ACTIVE_IRQ
 	/*
@@ -412,20 +428,11 @@ z_arm_cortex_ar_irq_done:
 	str r0, [r2, #___cpu_t_nested_OFFSET]
 	/* Do not context switch if exiting a nested interrupt */
 	cmp r0, #0
-	/* Note that this function is only called from `z_arm_svc`,
-	 *	while handling irq_offload, with below modes set:
-	 *	```
-	 *		if (cpu interrupts are nested)
-	 *			mode=MODE_SYS
-	 *		else
-	 *			mode=MODE_IRQ
-	 *	```
-	 */
+	/* Also reached from `z_arm_svc` for irq_offload, in MODE_SYS */
 	bhi __EXIT_INT
 
 	/* retrieve pointer to the current thread */
 	pop {r0}
-	cps #MODE_SYS
 	mov sp, r0
 
 	ldr r1, [r2, #___cpu_t_current_OFFSET]

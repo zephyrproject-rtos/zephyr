@@ -232,6 +232,8 @@ config ARMV7_R
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_ARM
 	select ISA_THUMB2
+	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  This option signifies the use of an ARMv7-R processor
 	  implementation.
