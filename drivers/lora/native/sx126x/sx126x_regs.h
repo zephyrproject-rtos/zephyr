@@ -268,6 +268,11 @@
 /* Random Number Generator */
 #define SX126X_REG_RANDOM_NUMBER_GEN        0x0819
 
+/* Version String */
+#define SX126X_REG_VERSION_STRING           0x0320
+#define SX126X_REG_VERSION_STRING_LEN       16
+#define SX126X_VERSION_STRING_COMPARE_LEN   6
+
 /* Status Byte Decoding */
 #define SX126X_STATUS_CHIP_MODE_MASK        0xE0
 #define SX126X_STATUS_CHIP_MODE_SHIFT       5
