@@ -55,6 +55,11 @@ static int pinctrl_aesc_init(const struct device *dev)
 	struct pinctrl_aesc_data *data = DEV_DATA(dev);
 	uintptr_t *base_addr = (uintptr_t *)DEVICE_MMIO_GET(dev);
 
+	if (ip_id_get_id(base_addr) != IP_ID_PINMUX) {
+		LOG_ERR("Unexpected IP core ID %u.", ip_id_get_id(base_addr));
+		return -ENODEV;
+	}
+
 	LOG_DBG("IP core version: %i.%i.%i.",
 		ip_id_get_major_version(base_addr),
 		ip_id_get_minor_version(base_addr),
