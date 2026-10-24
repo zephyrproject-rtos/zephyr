@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mps2_default_an521_cpu0.dts"
+
+/ {
+	added-by-default-two {};
+};

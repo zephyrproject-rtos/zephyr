@@ -102,6 +102,7 @@ class Board:
     full_name: str = None
     arch: str = None
     vendor: str = None
+    default_qualifier: str = None
     revision_format: str = None
     revision_default: str = None
     revision_exact: bool = False
@@ -188,6 +189,7 @@ def load_v2_boards(board_name, board_yml, systems):
                 directories=[board_yml.parent],
                 vendor=board.get('vendor'),
                 full_name=board.get('full_name'),
+                default_qualifier=board.get('default_qualifier'),
                 revision_format=board.get('revision', {}).get('format'),
                 revision_default=board.get('revision', {}).get('default'),
                 revision_exact=board.get('revision', {}).get('exact', False),
@@ -202,6 +204,12 @@ def load_v2_boards(board_name, board_yml, systems):
             if duplicates:
                 raise RuntimeError(
                     f'Duplicated board qualifiers detected {duplicates} for board: '
+                    f'{board["name"]}.\nPlease check content of: {board_yml.as_posix()}\n'
+                )
+            if board.get('default_qualifier') is not None and \
+               board['default_qualifier'] not in board_qualifiers:
+                raise RuntimeError(
+                    f'Default qualifier {board["default_qualifier"]} not found for board: '
                     f'{board["name"]}.\nPlease check content of: {board_yml.as_posix()}\n'
                 )
     return boards, board_extensions
@@ -324,6 +332,52 @@ def board_v2_qualifiers_csv(board):
     return ",".join(board_v2_qualifiers(board))
 
 
+def board_v2_default_qualifier(board):
+    if board.default_qualifier is not None:
+        return board.default_qualifier
+
+    if len(board.socs) == 1:
+        return board.socs[0].name
+
+    return None
+
+
+def board_v2_target_aliases(board, qualifier, revision=None):
+    aliases = []
+    default_qualifier = board_v2_default_qualifier(board)
+
+    if revision is None:
+        aliases.append(f"{board.name}/{qualifier}")
+    else:
+        aliases.append(f"{board.name}@{revision}/{qualifier}")
+        if revision == board.revision_default:
+            aliases.append(f"{board.name}/{qualifier}")
+
+    if default_qualifier == qualifier:
+        if revision is None:
+            aliases.append(board.name)
+        else:
+            aliases.append(f"{board.name}@{revision}")
+            if revision == board.revision_default:
+                aliases.append(board.name)
+
+    if default_qualifier is not None and qualifier.startswith(default_qualifier + '/'):
+        suffix = qualifier.removeprefix(default_qualifier)
+        if revision is None:
+            aliases.append(f"{board.name}/{suffix}")
+        else:
+            aliases.append(f"{board.name}@{revision}/{suffix}")
+            if revision == board.revision_default:
+                aliases.append(f"{board.name}/{suffix}")
+
+    deduped = []
+    for alias in aliases:
+        if alias not in deduped:
+            deduped.append(alias)
+
+    return deduped
+
+
 def dump_v2_boards(args):
     boards = find_v2_boards(args)
     if args.fuzzy_match is not None:
@@ -341,6 +395,7 @@ def dump_v2_boards(args):
                     [str(x.as_posix()) for x in b.directories]),
                 VENDOR='VENDOR;' + notfound(b.vendor),
                 HWM='HWM;' + b.hwm,
+                DEFAULT_QUALIFIER='DEFAULT_QUALIFIER;' + notfound(board_v2_default_qualifier(b)),
                 REVISION_DEFAULT='REVISION_DEFAULT;' + notfound(b.revision_default),
                 REVISION_FORMAT='REVISION_FORMAT;' + notfound(b.revision_format),
                 REVISION_EXACT='REVISION_EXACT;' + str(b.revision_exact),

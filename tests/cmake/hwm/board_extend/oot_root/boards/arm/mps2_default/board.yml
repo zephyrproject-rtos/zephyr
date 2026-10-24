@@ -1,0 +1,10 @@
+board:
+  name: mps2_default
+  full_name: V2M MPS2 default qualifier test
+  vendor: arm
+  default_qualifier: an521/cpu0
+  socs:
+    - name: an521
+      variants:
+        - name: two
+          cpucluster: cpu0
