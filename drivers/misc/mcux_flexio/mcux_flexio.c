@@ -20,6 +20,7 @@ struct mcux_flexio_config {
 	FLEXIO_Type *base;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_cfg;
 	void (*irq_config_func)(const struct device *dev);
 	void (*irq_enable_func)(void);
 	void (*irq_disable_func)(void);
@@ -131,6 +132,12 @@ static int mcux_flexio_init(const struct device *dev)
 
 	k_mutex_init(&data->lock);
 
+	if (config->clock_cfg != NULL) {
+		if (clock_control_configure(config->clock_dev, config->clock_cfg, NULL) != 0) {
+			return -EINVAL;
+		}
+	}
+
 	FLEXIO_GetDefaultConfig(&flexio_config);
 #if !(defined(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT) && \
 		(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT == 0))
@@ -239,6 +246,10 @@ int nxp_flexio_child_attach(const struct device *dev,
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.clock_cfg = (clock_control_subsys_t)COND_CODE_1(	\
+			DT_INST_CLOCKS_HAS_NAME(n, source),		\
+			(DT_INST_CLOCKS_CELL_BY_NAME(n, source, name)),	\
+			(0U)),						\
 		.irq_config_func = mcux_flexio_irq_config_func_##n,	\
 		.irq_enable_func = mcux_flexio_irq_enable_func_##n,	\
 		.irq_disable_func = mcux_flexio_irq_disable_func_##n,	\

@@ -1,0 +1,63 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * FlexIO1 drives the same four pads as LPSPI0, so that one is disabled here.
+ * Move J53 to 1-2 to route them away from the LCD, then short J56 pin 5 (SDO)
+ * to J56 pin 6 (SDI) for the loopback.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&lpspi0 {
+	status = "disabled";
+};
+
+&pinctrl {
+	pinmux_flexio1_spi: pinmux_flexio1_spi {
+		group0 {
+			pinmux = <&main__iomuxc_pio3_20_hsp_flexio1_fxio_d20>,	/* sck */
+				 <&main__iomuxc_pio3_21_hsp_flexio1_fxio_d21>,	/* sdo */
+				 <&main__iomuxc_pio3_22_hsp_flexio1_fxio_d22>,	/* sdi */
+				 <&main__iomuxc_pio3_23_hsp_gpio1_gpio23>;	/* cs  */
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&flexio1 {
+	status = "okay";
+
+	flexio1_spi: flexio1_spi {
+		compatible = "nxp,flexio-spi";
+		cs-gpios = <&gpio1 23 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sck-pin = <20>;
+		sdo-pin = <21>;
+		sdi-pin = <22>;
+		pinctrl-0 = <&pinmux_flexio1_spi>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		slow@0 {
+			compatible = "test-spi-loopback-slow";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+
+		fast@0 {
+			compatible = "test-spi-loopback-fast";
+			reg = <0>;
+			spi-max-frequency = <4000000>;
+		};
+	};
+};
