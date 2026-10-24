@@ -10,6 +10,10 @@ Sensing Subsystem
 Overview
 ********
 
+..note::
+
+   This subsystem is deprecated.
+
 Sensing Subsystem is a high level sensor framework inside the OS user
 space service layer. It is a framework focused on sensor fusion, client
 arbitration, sampling, timing, scheduling and sensor based power management.
@@ -242,8 +246,6 @@ Device Tree Configuration
 
 Sensing subsystem using device tree to configuration all sensor instances and their properties,
 reporting relationships.
-
-See the example :zephyr_file:`samples/subsys/sensing/simple/boards/native_sim.overlay`
 
 API Reference
 *************
