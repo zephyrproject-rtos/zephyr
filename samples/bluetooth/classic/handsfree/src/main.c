@@ -19,10 +19,60 @@
 #include <zephyr/bluetooth/classic/hfp_hf.h>
 #include <zephyr/settings/settings.h>
 
+#if defined(CONFIG_HFP_AUDIO_PATH_SCO_HCI)
+#include "sco_hci.h"
+#else
 #include "pcm.h"
 #include "codec.h"
+#endif
 
 static struct bt_conn *active_sco_conn;
+
+#if defined(CONFIG_HFP_HF_AUTO_ANSWER)
+static struct bt_hfp_hf_call *incoming_call;
+static struct k_work_delayable call_accept_work;
+
+static void call_accept_work_handler(struct k_work *work)
+{
+	struct bt_hfp_hf_call *call = incoming_call;
+	int err;
+
+	ARG_UNUSED(work);
+
+	if (call == NULL) {
+		return;
+	}
+
+	err = bt_hfp_hf_accept(call);
+	if (err != 0) {
+		printk("Failed to accept call %p (err %d)\n", call, err);
+	}
+}
+
+static void auto_answer_start(struct bt_hfp_hf_call *call)
+{
+	incoming_call = call;
+	/* Already pending work keeps its original deadline, so repeated RING
+	 * indications do not postpone answering the call.
+	 */
+	k_work_schedule(&call_accept_work, K_SECONDS(CONFIG_HFP_HF_AUTO_ANSWER_DELAY));
+}
+
+static void auto_answer_stop(void)
+{
+	(void)k_work_cancel_delayable(&call_accept_work);
+	incoming_call = NULL;
+}
+#else
+static void auto_answer_start(struct bt_hfp_hf_call *call)
+{
+	ARG_UNUSED(call);
+}
+
+static void auto_answer_stop(void)
+{
+}
+#endif /* CONFIG_HFP_HF_AUTO_ANSWER */
 
 static void hf_connected(struct bt_conn *conn, struct bt_hfp_hf *hf)
 {
@@ -31,9 +81,11 @@ static void hf_connected(struct bt_conn *conn, struct bt_hfp_hf *hf)
 
 static void hf_disconnected(struct bt_hfp_hf *hf)
 {
+	auto_answer_stop();
 	printk("HFP HF Disconnected!\n");
 }
 
+#if !defined(CONFIG_HFP_AUDIO_PATH_SCO_HCI)
 static void pcm_rx_cb(const uint8_t *data, uint32_t len)
 {
 	int err;
@@ -61,6 +113,7 @@ static void codec_rx_cb(const uint8_t *data, uint32_t len)
 		printk("Failed to transmit Codec data: %d\n", err);
 	}
 }
+#endif /* !CONFIG_HFP_AUDIO_PATH_SCO_HCI */
 
 static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 {
@@ -78,6 +131,19 @@ static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 
 	printk("SCO air mode %u\n", info.sco.air_mode);
 
+#if defined(CONFIG_HFP_AUDIO_PATH_SCO_HCI)
+	err = sco_hci_init(info.sco.air_mode);
+	if (err != 0) {
+		printk("Failed to initialize SCO over HCI for air mode %u\n", info.sco.air_mode);
+		return;
+	}
+
+	err = sco_hci_start(sco_conn);
+	if (err != 0) {
+		printk("Failed to start SCO over HCI\n");
+		return;
+	}
+#else
 	err = pcm_init(info.sco.air_mode);
 	if (err != 0) {
 		printk("Failed to initialize PCM for air mode %u\n", info.sco.air_mode);
@@ -101,6 +167,7 @@ static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 		printk("Failed to start CODEC\n");
 		return;
 	}
+#endif
 }
 
 static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
@@ -113,6 +180,12 @@ static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 
 	bt_conn_drop(&active_sco_conn);
 
+#if defined(CONFIG_HFP_AUDIO_PATH_SCO_HCI)
+	err = sco_hci_stop();
+	if (err != 0) {
+		printk("Failed to stop SCO over HCI\n");
+	}
+#else
 	err = pcm_rx_stop();
 	if (err != 0) {
 		printk("Failed to stop PCM\n");
@@ -122,6 +195,7 @@ static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 	if (err != 0) {
 		printk("Failed to stop CODEC\n");
 	}
+#endif
 
 	printk("HF SCO disconnected\n");
 }
@@ -144,6 +218,7 @@ static void hf_remote_ringing(struct bt_hfp_hf_call *call)
 static void hf_incoming(struct bt_hfp_hf *hf, struct bt_hfp_hf_call *call)
 {
 	printk("HF call %p incoming\n", call);
+	auto_answer_start(call);
 }
 
 static void hf_incoming_held(struct bt_hfp_hf_call *call)
@@ -153,16 +228,19 @@ static void hf_incoming_held(struct bt_hfp_hf_call *call)
 
 static void hf_accept(struct bt_hfp_hf_call *call)
 {
+	auto_answer_stop();
 	printk("HF call %p accepted\n", call);
 }
 
 static void hf_reject(struct bt_hfp_hf_call *call)
 {
+	auto_answer_stop();
 	printk("HF call %p rejected\n", call);
 }
 
 static void hf_terminate(struct bt_hfp_hf_call *call)
 {
+	auto_answer_stop();
 	printk("HF call %p terminated\n", call);
 }
 
@@ -184,6 +262,7 @@ static void hf_battery(struct bt_hfp_hf *hf, uint32_t value)
 static void hf_ring_indication(struct bt_hfp_hf_call *call)
 {
 	printk("HF call %p ring\n", call);
+	auto_answer_start(call);
 }
 
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
@@ -263,6 +342,10 @@ static void bt_ready(int err)
 static void handsfree_enable(void)
 {
 	int err;
+
+#if defined(CONFIG_HFP_HF_AUTO_ANSWER)
+	k_work_init_delayable(&call_accept_work, call_accept_work_handler);
+#endif /* CONFIG_HFP_HF_AUTO_ANSWER */
 
 	err = bt_hfp_hf_register(&hf_cb);
 	if (err < 0) {

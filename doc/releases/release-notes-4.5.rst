@@ -681,6 +681,23 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LTK`
     * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LK`
+    * Added SCO data transport over HCI with:
+
+      * :kconfig:option:`CONFIG_BT_SCO_OVER_HCI`
+      * :kconfig:option:`CONFIG_BT_BUF_SCO_RX_SIZE`
+      * :kconfig:option:`CONFIG_BT_BUF_SCO_TX_SIZE`
+      * :kconfig:option:`CONFIG_BT_BUF_SCO_RX_COUNT`
+      * :kconfig:option:`CONFIG_BT_BUF_SCO_TX_COUNT`
+      * :c:func:`bt_sco_buf_alloc`
+      * :c:func:`bt_sco_send`
+      * :c:func:`bt_sco_recv_cb_set`
+      * :c:enumerator:`BT_BUF_SCO_IN`
+      * :c:enumerator:`BT_BUF_SCO_OUT`
+      * :c:macro:`BT_BUF_SCO_SIZE`
+      * :c:macro:`BT_BUF_SCO_RX_SIZE`
+      * :c:macro:`BT_BUF_SCO_TX_SIZE`
+      * :c:macro:`BT_BUF_SCO_RX_COUNT`
+
     * :c:func:`bt_sdp_unregister_service`
     * :kconfig:option:`CONFIG_BT_L2CAP_SIG_TX_BUF_COUNT` to set the number of L2CAP signaling TX
       buffers.

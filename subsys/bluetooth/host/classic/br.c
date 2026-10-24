@@ -889,8 +889,10 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	bt_dev.br.mtu = sys_le16_to_cpu(rp->acl_max_len);
 	pkts = sys_le16_to_cpu(rp->acl_max_num);
+	bt_dev.br.sco_mtu = rp->sco_max_len;
 
 	LOG_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.br.mtu);
+	LOG_DBG("SCO buffers: mtu %u", bt_dev.br.sco_mtu);
 
 	k_sem_init(&bt_dev.br.pkts, pkts, pkts);
 }
