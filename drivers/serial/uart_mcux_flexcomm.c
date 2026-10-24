@@ -388,6 +388,11 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 
 	/* Set up structure to reconfigure UART */
 	USART_GetDefaultConfig(&usart_config);
+	/* The defaults leave both directions disabled, which would make USART_Init
+	 * skip the FIFO enable and trigger setup that init_common did.
+	 */
+	usart_config.enableTx = true;
+	usart_config.enableRx = true;
 
 	/* Set parity */
 	if (cfg->parity == UART_CFG_PARITY_ODD) {
@@ -436,6 +441,14 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 		usart_config.enableHardwareFlowControl = true;
 	} else {
 		return -ENOTSUP;
+	}
+
+	/* UART_TX_DONE is reported when the DMA has handed the last byte to the TX FIFO,
+	 * so the FIFO and the shift register may still hold data here. Let them drain
+	 * before the reconfiguration changes the line settings under them.
+	 */
+	while (!(config->base->FIFOSTAT & USART_FIFOSTAT_TXEMPTY_MASK) ||
+	       !(config->base->STAT & USART_STAT_TXIDLE_MASK)) {
 	}
 
 	/* Wait for USART to finish transmission and turn off */
@@ -547,9 +560,6 @@ static int mcux_flexcomm_uart_tx(const struct device *dev, const uint8_t *buf,
 		irq_unlock(key);
 		return ret;
 	}
-
-	/* Enable interrupt for when TX fifo is empty (all data transmitted) */
-	config->base->FIFOINTENSET |= USART_FIFOINTENSET_TXLVL_MASK;
 
 	/* Enable TX DMA requests */
 	USART_EnableTxDMA(config->base, true);
@@ -847,7 +857,31 @@ static void mcux_flexcomm_uart_dma_tx_callback(const struct device *dma_device, 
 	/* Timeout did not happen */
 	(void)k_work_cancel_delayable(&data->tx_data.timeout_work);
 
+	if (status != DMA_STATUS_COMPLETE || data->tx_data.xfer_len == 0) {
+		irq_unlock(key);
+		return;
+	}
+
+	/* The DMA channel is idle again, so the next uart_tx() can start right away and
+	 * keep the TX FIFO fed. The bytes still in the FIFO leave the pins on their own.
+	 */
+	struct uart_event tx_done_event = {
+		.type = UART_TX_DONE,
+		.data.tx.buf = data->tx_data.xfer_buf,
+		.data.tx.len = data->tx_data.xfer_len,
+	};
+
+	data->tx_data.xfer_len = 0;
+	data->tx_data.xfer_buf = NULL;
+
 	irq_unlock(key);
+
+	async_user_callback(dev, &tx_done_event);
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	/* Releases the lock only once STAT.TXIDLE is set, see mcux_flexcomm_pm_unlock_if_idle */
+	mcux_flexcomm_pm_policy_state_lock_put(dev);
+#endif
 }
 
 /* This callback is from the RX DMA and consumed by this driver */
@@ -1064,35 +1098,6 @@ static void mcux_flexcomm_isr(const struct device *dev)
 
 			/* Write 1 to clear start bit status bit */
 			config->base->STAT |= USART_STAT_START_MASK;
-		}
-
-		/* Handle TX interrupt (TXLVL = 0)
-		 * Default TXLVL interrupt happens when TXLVL = 0, which
-		 * has not been changed by this driver, so in this case the
-		 * TX interrupt should happen when transfer is complete
-		 * because DMA filling TX fifo is faster than transmitter rate
-		 */
-		if (config->base->FIFOINTSTAT & USART_FIFOINTSTAT_TXLVL_MASK) {
-
-			/* Disable interrupt */
-			config->base->FIFOINTENCLR = USART_FIFOINTENCLR_TXLVL_MASK;
-
-			/* Set up TX done event to notify the user of completion */
-			struct uart_event tx_done_event = {
-				.type = UART_TX_DONE,
-				.data.tx.buf = data->tx_data.xfer_buf,
-				.data.tx.len = data->tx_data.xfer_len,
-			};
-
-			/* Reset TX data */
-			data->tx_data.xfer_len = 0;
-			data->tx_data.xfer_buf = NULL;
-
-			async_user_callback(dev, &tx_done_event);
-
-#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
-			mcux_flexcomm_pm_policy_state_lock_put(dev);
-#endif
 		}
 
 	}
