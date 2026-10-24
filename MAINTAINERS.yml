@@ -3572,6 +3572,7 @@ Infineon AURIX Platforms:
     - ssekar15
   files:
     - soc/infineon/aurix/
+    - boards/infineon/kit_a2g_tc375_lite/
     - boards/qemu/tricore/
     - drivers/*/*aurix*
     - include/zephyr/drivers/*/*aurix*
