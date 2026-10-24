@@ -26,6 +26,9 @@ Run exemplary test shell application by Twister:
   # hardware
   ./scripts/twister -p nrf52840dk/nrf52840 --device-testing --device-serial /dev/ttyACM0 -T samples/subsys/testsuite/pytest/shell
 
+  # hardware over RTT
+  ./scripts/twister -p nrf52840dk/nrf52840 --device-testing --device-rtt -T samples/subsys/testsuite/pytest/shell --test sample.pytest.rtt
+
 or build shell application by west and call pytest directly:
 
 .. code-block:: sh
