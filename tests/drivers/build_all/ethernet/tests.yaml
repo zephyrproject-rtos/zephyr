@@ -3,12 +3,14 @@ common:
   tags:
     - drivers
     - ethernet
-  depends_on:
-    - eth
 tests:
-  net.ethernet.build.default: {}
+  net.ethernet.build.default:
+    depends_on:
+      - eth
 
   net.ethernet.build.spi:
+    depends_on:
+      - eth
     extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
     extra_configs:
       - CONFIG_SPI=y
@@ -18,6 +20,8 @@ tests:
       - native_sim/native/64
 
   net.ethernet.build.stm32_ethernet:
+    depends_on:
+      - eth
     filter: dt_compat_enabled("st,stm32-ethernet")
     extra_configs:
       - CONFIG_ETH_STM32_MULTICAST_FILTER=y
@@ -25,6 +29,8 @@ tests:
       - stm32h573i_dk
 
   net.ethernet.build.dwmac:
+    depends_on:
+      - eth
     extra_configs:
       - CONFIG_ETH_STM32_HAL=n
       - CONFIG_ETH_ESP32=n
@@ -50,7 +56,18 @@ tests:
       - mr_canhubk3
       - xmc47_relax_kit
 
+  # The board does not declare Ethernet support, its applications enable the
+  # interface with an overlay, as boards/intel_socfpga_agilex5_socdk.overlay
+  net.ethernet.build.dwc_xgmac:
+    filter: dt_compat_enabled("snps,dwcxgmac")
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET=y
+    platform_allow:
+      - intel_socfpga_agilex5_socdk
+
   net.ethernet.build.uart:
+    depends_on:
+      - eth
     extra_args: DTC_OVERLAY_FILE="uart_devices.overlay"
     extra_configs:
       - CONFIG_SERIAL=y

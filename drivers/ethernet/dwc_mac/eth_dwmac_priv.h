@@ -1348,6 +1348,8 @@ extern const struct ethernet_api dwmac_api;
 #define TDES3_THL				GENMASK(22, 19)
 #define TDES3_TSE				BIT(18)
 #define TDES3_CIC				GENMASK(17, 16)
+/* Checksum Insertion Control: IPv4 header checksum only */
+#define TDES3_CIC_IP_HDR			FIELD_PREP(TDES3_CIC, 1)
 #define TDES3_TPL				GENMASK(17, 0)
 #define TDES3_FL				GENMASK(14, 0)
 

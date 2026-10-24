@@ -281,6 +281,7 @@ int net_route_ipv6_mcast_forward_packet(struct net_pkt *pkt,
 			}
 
 			net_pkt_set_forwarding(pkt_cpy, true);
+			net_pkt_set_chksum_done(pkt_cpy, true);
 			net_pkt_set_orig_iface(pkt_cpy, pkt->iface);
 			net_pkt_set_iface(pkt_cpy, route->ifaces[i]);
 

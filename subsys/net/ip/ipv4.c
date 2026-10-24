@@ -285,9 +285,11 @@ static enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
 
 		/* Re-sending a packet received for another host is forwarding
 		 * even when it leaves through the interface it arrived on. The
-		 * flag makes the send path decrement the TTL.
+		 * flag makes the send path decrement the TTL. The transport
+		 * layer checksum is the sender's.
 		 */
 		net_pkt_set_forwarding(pkt, true);
+		net_pkt_set_chksum_done(pkt, true);
 
 		ret = net_route_ipv4_packet(pkt, nexthop);
 		if (ret < 0) {

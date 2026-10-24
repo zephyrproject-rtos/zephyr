@@ -60,6 +60,8 @@ static void eth_bridge_fdb_forward_handler(struct eth_bridge_fdb_entry *entry, v
 		net_if_get_by_iface(orig_iface), net_if_get_by_iface(entry->iface));
 
 	net_pkt_set_l2_bridged(out_pkt, true);
+	/* The frame keeps the checksums of its sender */
+	net_pkt_set_chksum_done(out_pkt, true);
 	net_pkt_set_iface(out_pkt, entry->iface);
 	net_pkt_set_orig_iface(out_pkt, orig_iface);
 	net_if_queue_tx(entry->iface, out_pkt);
@@ -90,6 +92,8 @@ static int eth_bridge_forward(struct net_if *bridge, struct net_if *orig_iface, 
 	}
 
 	net_pkt_set_l2_bridged(out_pkt, true);
+	/* The frame keeps the checksums of its sender */
+	net_pkt_set_chksum_done(out_pkt, true);
 	net_pkt_set_iface(out_pkt, bridge);
 	net_pkt_set_orig_iface(out_pkt, orig_iface);
 
