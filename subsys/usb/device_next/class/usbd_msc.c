@@ -66,7 +66,7 @@ struct CSW {
 #error "SCSI buffer must be at least USB bulk endpoint wMaxPacketSize"
 #endif
 
-UDC_BUF_POOL_DEFINE(msc_ep_pool, MSC_NUM_INSTANCES * (1 + MSC_NUM_BUFFERS),
+UDC_BUF_POOL_DEFINE(msc_ep_pool, MSC_NUM_INSTANCES * (2 + MSC_NUM_BUFFERS),
 		    0, sizeof(struct udc_buf_info), NULL);
 
 struct msc_event {
@@ -106,7 +106,6 @@ enum msc_bot_state {
 	MSC_BBB_PROCESS_READ,
 	MSC_BBB_PROCESS_WRITE,
 	MSC_BBB_SEND_CSW,
-	MSC_BBB_WAIT_FOR_CSW_SENT,
 	MSC_BBB_WAIT_FOR_RESET_RECOVERY,
 };
 
@@ -116,8 +115,12 @@ struct msc_bot_ctx {
 	const struct usb_desc_header *const *const fs_desc;
 	const struct usb_desc_header *const *const hs_desc;
 	uint8_t *scsi_bufs[MSC_NUM_BUFFERS];
+	uint8_t *cbw_buf;
+	uint8_t *csw_buf;
 	atomic_t bits;
 	enum msc_bot_state state;
+	bool cbw_queued;
+	bool csw_queued;
 	uint8_t scsi_bufs_used;
 	uint8_t num_in_queued;
 	uint8_t num_out_queued;
@@ -322,11 +325,10 @@ static void msc_queue_cbw(struct usbd_class_data *const c_data)
 {
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
 	struct net_buf *buf;
-	uint8_t *scsi_buf;
 	uint8_t ep;
 	int ret;
 
-	if (ctx->num_out_queued) {
+	if (ctx->cbw_queued) {
 		/* Already queued */
 		return;
 	}
@@ -336,8 +338,7 @@ static void msc_queue_cbw(struct usbd_class_data *const c_data)
 
 	LOG_DBG("Queuing OUT");
 	ep = msc_get_bulk_out(c_data);
-	scsi_buf = msc_alloc_scsi_buf(ctx);
-	buf = msc_buf_alloc_data(ep, scsi_buf, USBD_MAX_BULK_MPS);
+	buf = msc_buf_alloc_data(ep, ctx->cbw_buf, USBD_MAX_BULK_MPS);
 
 	/* The pool is large enough to support all allocations. Failing alloc
 	 * indicates either a memory leak or logic error.
@@ -348,11 +349,10 @@ static void msc_queue_cbw(struct usbd_class_data *const c_data)
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
-		msc_free_scsi_buf(ctx, scsi_buf);
 		/* 6.6.2 Internal Device Error */
 		msc_stall_and_wait_for_recovery(ctx);
 	} else {
-		ctx->num_out_queued++;
+		ctx->cbw_queued = true;
 	}
 }
 
@@ -607,15 +607,17 @@ static void msc_handle_bulk_out(struct msc_bot_ctx *ctx,
 		}
 	} else if (ctx->state == MSC_BBB_PROCESS_WRITE) {
 		msc_process_write(ctx, buf, len);
+	} else {
+		/* 6.6.2 Internal Device Error */
+		msc_stall_and_wait_for_recovery(ctx);
 	}
 }
 
 static void msc_handle_bulk_in(struct msc_bot_ctx *ctx,
 			       uint8_t *buf, size_t len)
 {
-	if (ctx->state == MSC_BBB_WAIT_FOR_CSW_SENT) {
+	if (buf == ctx->csw_buf) {
 		LOG_DBG("CSW sent");
-		ctx->state = MSC_BBB_EXPECT_CBW;
 	} else if (ctx->state == MSC_BBB_PROCESS_READ) {
 		struct scsi_ctx *lun = &ctx->luns[ctx->cbw.bCBWLUN];
 
@@ -642,7 +644,6 @@ static void msc_handle_bulk_in(struct msc_bot_ctx *ctx,
 static void msc_send_csw(struct msc_bot_ctx *ctx)
 {
 	struct net_buf *buf;
-	uint8_t *scsi_buf;
 	uint8_t ep;
 	int ret;
 
@@ -655,12 +656,36 @@ static void msc_send_csw(struct msc_bot_ctx *ctx)
 	__ASSERT(ctx->scsi_bufs_used == 0,
 		 "CSW can be sent only if SCSI buffers are free");
 
+	/* Ensure we can accept new CBW before CSW is enqueued to prevent host
+	 * timeout on possible retransmission due to corrupted ACK handshake.
+	 * CBW enqueue here ensures host side completion of the transfer with
+	 * CBW that we just finished processing. This is safe to do because
+	 * 3.4 Command Queuing prohibits the host from transferring CBW before
+	 * receiving CSW for any outstanding CBW.
+	 */
+	msc_queue_cbw(ctx->class_node);
+
+	if (ctx->state == MSC_BBB_WAIT_FOR_RESET_RECOVERY) {
+		/* CBW enqueue failed, abort CSW */
+		return;
+	}
+
+	if (ctx->csw_queued) {
+		/* Previous CSW can be still hanging if the ACK handshake from
+		 * host was corrupted on the bus. Host is now expected to issue
+		 * IN token for current CSW, which will cause the previous CSW
+		 * to be transmitted and ignored by host (due to data toggle
+		 * mismatch), which will trigger CSW completion handler. Just
+		 * wait until this function is called again.
+		 */
+		return;
+	}
+
 	/* Convert dCSWDataResidue to LE, other fields are already set */
 	ctx->csw.dCSWDataResidue = sys_cpu_to_le32(ctx->csw.dCSWDataResidue);
 	ep = msc_get_bulk_in(ctx->class_node);
-	scsi_buf = msc_alloc_scsi_buf(ctx);
-	memcpy(scsi_buf, &ctx->csw, sizeof(ctx->csw));
-	buf = msc_buf_alloc_data(ep, scsi_buf, sizeof(ctx->csw));
+	memcpy(ctx->csw_buf, &ctx->csw, sizeof(ctx->csw));
+	buf = msc_buf_alloc_data(ep, ctx->csw_buf, sizeof(ctx->csw));
 	/* The pool is large enough to support all allocations. Failing alloc
 	 * indicates either a memory leak or logic error.
 	 */
@@ -670,12 +695,11 @@ static void msc_send_csw(struct msc_bot_ctx *ctx)
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
-		msc_free_scsi_buf(ctx, scsi_buf);
 		/* 6.6.2 Internal Device Error */
 		msc_stall_and_wait_for_recovery(ctx);
 	} else {
-		ctx->num_in_queued++;
-		ctx->state = MSC_BBB_WAIT_FOR_CSW_SENT;
+		ctx->csw_queued = true;
+		ctx->state = MSC_BBB_EXPECT_CBW;
 	}
 }
 
@@ -706,12 +730,18 @@ static void usbd_msc_handle_request(struct usbd_class_data *c_data,
 	}
 
 ep_request_error:
-	if (bi->ep == msc_get_bulk_out(c_data)) {
-		ctx->num_out_queued--;
-	} else if (bi->ep == msc_get_bulk_in(c_data)) {
-		ctx->num_in_queued--;
+	if (buf->__buf == ctx->cbw_buf) {
+		ctx->cbw_queued = false;
+	} else if (buf->__buf == ctx->csw_buf) {
+		ctx->csw_queued = false;
+	} else {
+		if (bi->ep == msc_get_bulk_out(c_data)) {
+			ctx->num_out_queued--;
+		} else if (bi->ep == msc_get_bulk_in(c_data)) {
+			ctx->num_in_queued--;
+		}
+		msc_free_scsi_buf(ctx, buf->__buf);
 	}
-	msc_free_scsi_buf(ctx, buf->__buf);
 	usbd_ep_buf_free(uds_ctx, buf);
 }
 
@@ -761,6 +791,16 @@ static void usbd_msc_thread(void *arg1, void *arg2, void *arg3)
 
 		if (ctx->state == MSC_BBB_PROCESS_CBW) {
 			msc_process_cbw(ctx);
+
+			if (ctx->state == MSC_BBB_PROCESS_READ) {
+				/* CBW was processed and from now on data will
+				 * flow on IN endpoint. However, we do not know
+				 * whether the host has seen CBW ACK. Enqueue
+				 * CBW so a host that retransmits CBW (due to
+				 * corrupted ACK) can start issuing IN tokens.
+				 */
+				msc_queue_cbw(ctx->class_node);
+			}
 		}
 
 		if (ctx->state == MSC_BBB_PROCESS_READ) {
@@ -1004,12 +1044,16 @@ static const struct usbd_class_api msc_bot_api = {
 
 #define DEFINE_MSC_BOT_CLASS_DATA(x, _)						\
 	DEFINE_SCSI_BUFS(x)							\
+	UDC_STATIC_BUF_DEFINE(cbw_buf_##x, USBD_MAX_BULK_MPS);			\
+	UDC_STATIC_BUF_DEFINE(csw_buf_##x, sizeof(struct CSW));			\
 										\
 	static struct msc_bot_ctx msc_bot_ctx_##x = {				\
 		.desc = &msc_bot_desc_##x,					\
 		.fs_desc = msc_bot_fs_desc_##x,					\
 		.hs_desc = msc_bot_hs_desc_##x,					\
 		.scsi_bufs = { NAME_SCSI_BUFS(x) },				\
+		.cbw_buf = cbw_buf_##x,						\
+		.csw_buf = csw_buf_##x,						\
 	};									\
 										\
 	USBD_DEFINE_CLASS(msc_##x, &msc_bot_api, &msc_bot_ctx_##x,		\
