@@ -55,8 +55,10 @@ static bool reliable_packet(uint8_t type)
 	}
 }
 
-/* FIXME: Correct timeout */
-#define H5_RX_ACK_TIMEOUT	K_MSEC(250)
+/* Core 6.3 Vol 4 Part D 12.1: acknowledge within 2 x Tmax and resend after 3 x Tmax, with a
+ * fixed Tmax rather than one derived from the baud rate
+ */
+#define H5_RX_ACK_TIMEOUT	K_MSEC(250 * 2 / 3)
 #define H5_TX_ACK_TIMEOUT	K_MSEC(250)
 
 #define SLIP_DELIMITER	0xc0
