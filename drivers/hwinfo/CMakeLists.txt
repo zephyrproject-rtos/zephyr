@@ -9,12 +9,12 @@ zephyr_library_sources_ifdef(CONFIG_HWINFO hwinfo_weak_impl.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_SHELL hwinfo_shell.c)
 
 if(CONFIG_HWINFO_NATIVE)
-  if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+  if(CMAKE_HOST_UNIX)
     zephyr_library_sources(hwinfo_native.c)
 
     target_sources(native_simulator INTERFACE hwinfo_native_bottom.c)
   else()
-    message(FATAL_ERROR "CONFIG_HWINFO_NATIVE is only available on Linux")
+    message(FATAL_ERROR "CONFIG_HWINFO_NATIVE is only available on Unix hosts")
   endif()
 endif()
 
