@@ -901,7 +901,7 @@ static int uart_ns16550_pm_action(const struct device *dev, enum pm_device_actio
 		if (dev_cfg->clock_dev != NULL) {
 			ret = clock_control_off(dev_cfg->clock_dev, dev_cfg->clock_subsys);
 		}
-		if (ret != 0 && ret != -EALREADY && ret != -ENOSYS) {
+		if (ret != 0 && ret != -EALREADY && ret != -ENOSYS && ret != -ENOTSUP) {
 			return ret;
 		}
 		break;
