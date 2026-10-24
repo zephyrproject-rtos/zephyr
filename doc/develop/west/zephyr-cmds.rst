@@ -558,6 +558,30 @@ checksum.
     sha256sum zephyr/patches/zephyr/my-zephyr-change.patch
     7d57ca78d5214f422172cc47fed9d0faa6d97a0796c02485bff0bf29455765e9
 
+Applying patches from every west project
+----------------------------------------
+
+By default, ``west patch`` only uses the ``patches.yml`` of the manifest repository. Use ``--all``
+to use the ``zephyr/patches.yml`` of every west project:
+
+.. code-block:: bash
+
+    west patch apply --all
+    west patch apply --all --roll-back
+    west patch reverse --all
+
+How it works:
+
+* ``apply --all`` goes through the west projects in reverse manifest order, so the manifest
+  repository goes last. ``reverse --all`` goes the other way.
+* West projects that are inactive, not cloned, or have no ``patches.yml`` are skipped.
+* A west project can patch any module, as set by ``module``.
+* Patches for modules that are not found are skipped, with a warning.
+* Only the manifest repository can patch itself. Patches for it from other west projects are
+  skipped, with a warning.
+* With ``--roll-back``, a failed patch cleans all modules patched so far, by all west projects.
+* ``--all`` cannot be used with ``--src-module``.
+
 It is also possible to use ``west patch gh-fetch`` to fetch patches from a GitHub pull request and
 automatically create or update the ``patches.yml`` file. This can be useful when the author already
 has a number of changes captured in existing upstream pull requests.

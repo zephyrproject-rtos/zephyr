@@ -16,6 +16,7 @@ from pathlib import Path
 import pykwalify.core
 import yaml
 from west.commands import WestCommand
+from west.manifest import MANIFEST_PROJECT_INDEX
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
 import zephyr_module
@@ -55,6 +56,8 @@ class Patch(WestCommand):
 
                 Run "west patch apply" to apply patches.
                 See "west patch apply --help" for details.
+
+                Use "--all" to apply the patches.yml of every west project.
 
             Reversing Patches:
 
@@ -182,8 +185,17 @@ class Patch(WestCommand):
                 All changes in the module will be lost, including changes that
                 are not part of any patch.""",
         )
+        apply_arg_parser.add_argument(
+            "--all",
+            help="""
+                Apply the patches.yml of every west project.
+                The manifest repository goes last.
+                Cannot be used with -sm/--src-module.""",
+            action="store_true",
+            default=False,
+        )
 
-        subparsers.add_parser(
+        reverse_arg_parser = subparsers.add_parser(
             "reverse",
             help="Reverse patches",
             formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -196,6 +208,15 @@ class Patch(WestCommand):
                 processed in reverse order of apply.
             """
             ),
+        )
+        reverse_arg_parser.add_argument(
+            "--all",
+            help="""
+                Reverse the patches.yml of every west project,
+                in the opposite order of "apply --all".
+                Cannot be used with -sm/--src-module.""",
+            action="store_true",
+            default=False,
         )
 
         subparsers.add_parser(
@@ -290,6 +311,10 @@ class Patch(WestCommand):
         return parser
 
     def filter_args(self, args):
+        """Fill in the paths in args.
+
+        Paths default to the manifest repository, or to args.src_module if set.
+        """
         try:
             manifest_path = self.config.get("manifest.path")
         except BaseException:
@@ -319,10 +344,7 @@ class Patch(WestCommand):
         elif not args.patch_yml.is_absolute():
             args.patch_yml = manifest_dir / args.patch_yml
 
-        if args.west_workspace is None:
-            args.west_workspace = topdir
-        elif not args.west_workspace.is_absolute():
-            args.west_workspace = topdir / args.west_workspace
+        self.resolve_west_workspace(args)
 
         if args.dst_modules is not None:
             args.dst_modules = [self.get_module_path(m) for m in args.dst_modules]
@@ -344,11 +366,11 @@ class Patch(WestCommand):
             self.die(f"ERROR: Malformed yaml {args.patch_yml}: {e}")
 
     def do_run(self, args, _):
-        self.filter_args(args)
+        if args.subcommand in ("apply", "reverse") and args.all:
+            self.patch_all_west_projects(args)
+            return
 
-        west_config = Path(args.west_workspace) / ".west" / "config"
-        if not os.path.isfile(west_config):
-            self.die(f"{args.west_workspace} is not a valid west workspace")
+        self.filter_args(args)
 
         yml = self.load_yml(args, args.subcommand in ["gh-fetch"])
         if yml is None:
@@ -443,6 +465,35 @@ class Patch(WestCommand):
         if not patches:
             return True
 
+        processed_patch_count, failed_patch, patched_modules = self.process_patches(
+            args, yml, patch_cmd, test_cmd, reverse_order, dst_mods
+        )
+
+        if not failed_patch:
+            self.inf(f"{processed_patch_count} patches processed successfully \\o/")
+            return True
+
+        # Only the apply subcommand has the --roll-back option, so we need to check for it first
+        if hasattr(args, "roll_back") and args.roll_back:
+            self.clean(args, yml, patched_modules)
+
+        self.err(f"failed to process patch {failed_patch}, is there a conflict?")
+        return False
+
+    def process_patches(self, args, yml, patch_cmd, test_cmd,
+                        reverse_order=False, dst_mods=None):
+        """
+        Run patch_cmd for each patch. Stop at the first failure.
+
+        Arguments: same as patch()
+
+        Returns (patch_count, failed_patch, patched_mods):
+            - patch_count: number of patches processed
+            - failed_patch: the patch that failed, or None
+            - patched_mods: modules the command ran in
+        """
+        patches = yml.get("patches", [])
+
         patch_count = 0
         failed_patch = None
         patched_mods = set()
@@ -477,16 +528,7 @@ class Patch(WestCommand):
 
             patch_count += 1
 
-        if not failed_patch:
-            self.inf(f"{patch_count} patches processed successfully \\o/")
-            return True
-
-        # Only the apply subcommand has the --roll-back option, so we need to check for it first
-        if hasattr(args, "roll_back") and args.roll_back:
-            self.clean(args, yml, patched_mods)
-
-        self.err(f"failed to process patch {failed_patch}, is there a conflict?")
-        return False
+        return patch_count, failed_patch, patched_mods
 
     def apply(self, args, yml, dst_mods=None):
         success = self.patch(
@@ -511,6 +553,128 @@ class Patch(WestCommand):
 
         if not success:
             self.die("failed to reverse patches")
+
+    def patch_all_west_projects(self, args):
+        """Run "apply" or "reverse" for every west project.
+
+        "apply" goes in reverse manifest order, so the manifest repository goes last.
+        "reverse" goes in manifest order.
+        With --roll-back, a failure cleans all modules patched so far.
+        """
+        if args.src_module is not None:
+            self.die(f"-sm/--src-module cannot be used with '{args.subcommand} --all'")
+
+        self.resolve_west_workspace(args)
+
+        if args.subcommand == "apply":
+            patch_cmd, test_cmd, reverse_order = "apply-command", "reverse-test-command", False
+        else:
+            patch_cmd, test_cmd, reverse_order = "reverse-command", "apply-test-command", True
+
+        # NOTE: this needs the manifest repository in manifest.projects. If
+        # https://github.com/zephyrproject-rtos/west/issues/327 is fixed, add it back here.
+        projects = [
+            p for p in self.manifest.projects
+            if self.manifest.is_active(p) and p.abspath and Path(p.abspath).is_dir()
+        ]
+        if not reverse_order:
+            projects.reverse()
+
+        # (args, yml, modules) of each project, to roll back all of them on failure
+        patched = []
+
+        for project in projects:
+            project_args, yml = self.load_project_yml(args, project)
+            if yml is None:
+                continue
+
+            self.inf(f"Processing patches of {project.name}")
+            processed_patch_count, failed_patch, patched_modules = self.process_patches(
+                project_args, yml,
+                patch_cmd=patch_cmd,
+                test_cmd=test_cmd,
+                reverse_order=reverse_order,
+                dst_mods=project_args.dst_modules
+            )
+            # Skip projects that patched nothing: clean() with no modules would clean
+            # every module of the patches.yml.
+            if patched_modules:
+                patched.append((project_args, yml, patched_modules))
+
+            if failed_patch:
+                # Only the apply subcommand has the --roll-back option
+                if getattr(args, "roll_back", False):
+                    self.clean_all(patched)
+                self.die(f"{project.name}: failed to process patch {failed_patch}, "
+                         "is there a conflict?")
+
+            self.inf(f"{processed_patch_count} patches processed successfully \\o/")
+
+    def resolve_west_workspace(self, args):
+        if args.west_workspace is None:
+            args.west_workspace = Path(self.topdir)
+        elif not args.west_workspace.is_absolute():
+            args.west_workspace = Path(self.topdir) / args.west_workspace
+
+        west_config = Path(args.west_workspace) / ".west" / "config"
+        if not west_config.is_file():
+            self.die(f"{args.west_workspace} is not a valid west workspace")
+
+    def load_project_yml(self, args, project):
+        """Load the patches.yml of one west project.
+
+        Uses a copy of args, with src_module set to the project.
+        Drops patches for modules that are not found. Drops patches for the manifest
+        repository, unless they come from the manifest repository itself.
+
+        Returns (project args, yml). yml is None if there is nothing to do.
+        """
+        project_args = argparse.Namespace(**vars(args))
+        project_args.src_module = project.abspath
+
+        self.filter_args(project_args)
+
+        if not project_args.patch_yml.is_file():
+            return project_args, None
+
+        yml = self.load_yml(project_args, False)
+        if yml is None or not yml.get("patches", []):
+            return project_args, None
+
+        is_manifest_project = project is self.manifest.projects[MANIFEST_PROJECT_INDEX]
+        manifest_repo = Path(self.manifest.repo_abspath).resolve()
+
+        patches = []
+        not_found = []
+        manifest_repo_patches = []
+        for patch_info in yml["patches"]:
+            mod = self.get_module_path(patch_info["module"])
+            if mod is None:
+                not_found.append(patch_info)
+            elif (
+                not is_manifest_project
+                and (Path(self.topdir) / mod).resolve().is_relative_to(manifest_repo)
+            ):
+                manifest_repo_patches.append(patch_info)
+            else:
+                patches.append(patch_info)
+
+        if not_found:
+            self.wrn(f"{project.name}: skipping {len(not_found)} patches, module not found: "
+                     f"{', '.join(sorted({p['module'] for p in not_found}))}")
+        if manifest_repo_patches:
+            self.wrn(f"{project.name}: skipping {len(manifest_repo_patches)} patches for "
+                     "the manifest repository, only the manifest repository can patch itself")
+
+        if not patches:
+            return project_args, None
+
+        return project_args, dict(yml, patches=patches)
+
+    def clean_all(self, patched):
+        """Clean all patched modules, last patched first."""
+        for project_args, yml, patched_modules in reversed(patched):
+            self.clean(project_args, yml, patched_modules)
 
     def clean(self, args, yml, dst_mods=None):
         clean_cmd = yml["clean-command"]
