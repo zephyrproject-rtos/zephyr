@@ -18,6 +18,7 @@ tests:
       - samd21_xpro
       - same54_xpro
       - sam_v71_xult/samv71q21b
+      - rpi_5/bcm2712
     harness: console
     harness_config:
       type: one_line
