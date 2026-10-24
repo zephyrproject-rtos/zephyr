@@ -1,0 +1,76 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: Reference Clock (REFCLK) configuration.
+compatible: "microchip,pic32cx-bz-refclk"
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: Clock subsystem
+
+    refclk-div:
+      type: int
+      default: 0
+      description: Reference Clock Divider (0 = no divider, 2*1 - 2*32767)
+
+    refclk-stop-in-idle-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: Stop peripheral in Idle Mode
+
+    refclk-run-in-sleep-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: Continue to run oscillator in the Sleep mode
+
+    refclk-pin-out-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: Output the reference clock to REFOx pin
+
+    refclk-src-sel:
+      type: string
+      enum:
+        - "frc"
+        - "spll1"
+        - "posc"
+        - "sosc"
+        - "lprc"
+        - "spll3"
+        - "pbclk1"
+        - "sysclk"
+        - "refipin"
+      default: "frc"
+      description: Reference Clock source oscillator Select
+
+    refclk-trim-val:
+      type: int
+      default: 0
+      description: Provide fractional additive to refclk_div value (0- 511) /512
+
+    refclk-refi-freq:
+      type: int
+      default: 8000000
+      description: Input reference clock frequency
+
+    refclk-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: Enable Reference Oscillator Module
