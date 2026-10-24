@@ -247,7 +247,13 @@ static void ifx_cat1_uart_poll_out(const struct device *dev, unsigned char c)
 {
 	struct ifx_cat1_uart_data *data = dev->data;
 
-	(void)cyhal_uart_putc(&data->obj, (uint32_t)c);
+	/* Refused while a power transition is pending, and nothing was queued. */
+	if (cyhal_uart_putc(&data->obj, (uint32_t)c) != CY_RSLT_SUCCESS) {
+		return;
+	}
+
+	while (!Cy_SCB_UART_IsTxComplete(data->obj.base)) {
+	}
 }
 
 static int ifx_cat1_uart_err_check(const struct device *dev)
@@ -987,9 +993,32 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	data->hw_resource.block_num = _get_hw_block_num(config->reg_addr);
 
 	/* Configure dt provided device signals when available */
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	const struct pinctrl_state *state;
+
+	ret = pinctrl_lookup_state(config->pcfg, PINCTRL_STATE_DEFAULT, &state);
 	if (ret < 0) {
 		return ret;
+	}
+
+	ret = pinctrl_apply_state_direct(config->pcfg, state);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* cyhal parks TX high before disabling the SCB for DeepSleep, but only when it
+	 * knows the pin; left as NC the pad floats for the whole sleep. Identify it by
+	 * looking each pinctrl entry up in the HAL's mux table for this SCB.
+	 */
+	for (uint8_t i = 0; i < state->pin_cnt; i++) {
+		cyhal_gpio_t gpio =
+			CYHAL_GET_GPIO(CAT1_PINMUX_GET_PORT_NUM(state->pins[i].pinmux),
+				       CAT1_PINMUX_GET_PIN_NUM(state->pins[i].pinmux));
+
+		if (_CYHAL_UTILS_GET_RESOURCE_INST(gpio, cyhal_pin_map_scb_uart_tx,
+						   &data->hw_resource) != NULL) {
+			uart_init_cfg.gpios.pin_tx = gpio;
+			break;
+		}
 	}
 
 	/* Allocates clock for selected IP block */
