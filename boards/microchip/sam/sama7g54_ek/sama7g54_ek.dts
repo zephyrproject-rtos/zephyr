@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <common/freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
 #include <dt-bindings/sam/sama7g5/sama7g54/sama7g54-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -20,6 +21,7 @@
 	compatible = "microchip,sama7g5ek", "microchip,sama7g5", "microchip,sama7";
 
 	aliases {
+		adc0 = &adc;
 		led0 = &led_green;
 		eeprom-0 = &eeprom0;
 		eeprom-1 = &eeprom1;
@@ -146,6 +148,12 @@
 		max-bitrate = <DT_FREQ_M(8)>;
 		#phy-cells = <0>;
 	};
+};
+
+&adc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_mikrobus_an_default>;
+	status = "okay";
 };
 
 &aes {
@@ -418,6 +426,18 @@
 		group1 {
 			pinmux = <PIN_PC18__FLEXCOM9_IO0>,
 				 <PIN_PC19__FLEXCOM9_IO1>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_mikrobus_an_default: pinctrl_mikrobus_an_default {
+		mikrobus1_ad14 {
+			pinmux = <PIN_PD0__GPIO>;
+			bias-disable;
+		};
+
+		mikrobus2_ad15 {
+			pinmux = <PIN_PD1__GPIO>;
 			bias-disable;
 		};
 	};
