@@ -1468,6 +1468,35 @@ ZTEST(modem_cmux, test_modem_cmux_close_down_entering_power_save)
 			  sizeof(cmux_frame_control_peer_cld_ack), "Incorrect CLD ack sent");
 }
 
+ZTEST(modem_cmux, test_modem_cmux_receive_while_changing_state)
+{
+	static const enum modem_cmux_state states[] = {
+		MODEM_CMUX_STATE_ENTER_POWERSAVE,
+		MODEM_CMUX_STATE_CONFIRM_POWERSAVE,
+		MODEM_CMUX_STATE_DISCONNECTING,
+	};
+	uint32_t events;
+	int ret;
+
+	ARRAY_FOR_EACH(states, i) {
+		/* Data from the peer is still delivered */
+		test_modem_cmux_force_state(states[i]);
+		modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_at_at,
+				       sizeof(cmux_frame_dlci1_at_at));
+		events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_RECEIVE_READY, false,
+				      K_MSEC(100));
+		zassert_equal(events, EVENT_CMUX_DLCI1_RECEIVE_READY,
+			      "Data not received in state %d", states[i]);
+
+		ret = modem_pipe_receive(dlci1_pipe, buffer1, sizeof(buffer1));
+		zassert_equal(ret, sizeof(cmux_frame_data_dlci1_at_at),
+			      "Incorrect number of bytes received in state %d", states[i]);
+		zassert_mem_equal(buffer1, cmux_frame_data_dlci1_at_at,
+				  sizeof(cmux_frame_data_dlci1_at_at),
+				  "Incorrect data received in state %d", states[i]);
+	}
+}
+
 ZTEST(modem_cmux, test_modem_cmux_dlc0_sabm_connected)
 {
 	uint32_t events;
