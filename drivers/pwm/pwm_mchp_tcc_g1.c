@@ -294,7 +294,7 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 		}
 
 		PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(pulse);
-		PWM_REG(mchp_pwm_cfg->regs)->TCC_PER = TCC_PER_PER(period);
+		PWM_REG(mchp_pwm_cfg->regs)->TCC_PERBUF = TCC_PERBUF_PERBUF(period);
 		ret_val = MCHP_PWM_SUCCESS;
 	}
 
