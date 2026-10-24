@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2026 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -204,6 +205,22 @@ bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
  * @retval false Power state is unavailable.
  */
 bool pm_policy_state_is_available(enum pm_state state, uint8_t substate_id);
+
+/**
+ * @brief Get the set of power states that are currently available.
+ *
+ * Returns a bitmask holding the same information as pm_policy_state_is_available()
+ * for every power state at once, in constant time. A set bit means the state is
+ * neither locked nor disabled by the current latency requirement.
+ *
+ * Bit n of the returned mask corresponds to the n-th enabled node with compatible
+ * ``zephyr,power-state`` in the devicetree. This order may not match other power
+ * state orderings. See the definition of ``substates`` in ``policy_state_lock.c``
+ * for more details.
+ *
+ * @return Bitmask of the available power states. Zero if no state is available.
+ */
+uint32_t pm_policy_state_available_mask(void);
 
 /**
  * @brief Check if any power state can be used.
