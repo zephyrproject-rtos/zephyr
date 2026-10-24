@@ -16,6 +16,7 @@ on:
       - 'scripts/coredump/**'
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
+      - 'scripts/tests/build/**'
       - 'scripts/tests/hardenconfig/**'
       - '.github/workflows/scripts_tests.yml'
   pull_request:
@@ -30,6 +31,7 @@ on:
       - 'scripts/coredump/**'
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
+      - 'scripts/tests/build/**'
       - 'scripts/tests/hardenconfig/**'
       - '.github/workflows/scripts_tests.yml'
 
@@ -87,4 +89,5 @@ jobs:
           ZEPHYR_BASE: ./
         run: |
           echo "Run script tests"
-          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/coredump/tests ./scripts/kconfig ./scripts/tests/hardenconfig
+          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/coredump/tests \
+            ./scripts/kconfig ./scripts/tests/hardenconfig ./scripts/tests/build
