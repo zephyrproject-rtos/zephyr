@@ -258,7 +258,28 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	csrr t2, RV_STATUS
 	sr t2, __struct_arch_esf_mstatus_OFFSET(sp)
 
-#if defined(CONFIG_FPU_SHARING)
+#ifdef CONFIG_FPU_SHARING
+#ifdef CONFIG_RISCV_ISA_EXT_ZFINX
+	/*
+	 * With Zfinx the floating-point registers are the integer registers,
+	 * which the esf already covers. Only fcsr (a 32-bit CSR) has to be
+	 * saved for this exception level.
+	 */
+	frcsr t0
+	sw t0, __struct_arch_esf_zfinx_fcsr_OFFSET(sp)
+
+	/*
+	 * Increment _current->arch.exception_depth (a uint8_t, hence lb/sb).
+	 * z_riscv_switch() uses it to tell whether the outgoing thread's fcsr
+	 * is already saved in an esf on its stack (depth != 0) or still live
+	 * in the CSR and has to be stored in the thread struct (depth == 0).
+	 */
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lb t1, _thread_offset_to_exception_depth(t0)
+	add t1, t1, 1
+	sb t1, _thread_offset_to_exception_depth(t0)
+#endif /* CONFIG_RISCV_ISA_EXT_ZFINX */
+#ifdef CONFIG_RISCV_ISA_EXT_F
 	/* determine if FPU access was disabled */
 	li t1, MSTATUS_FS
 	and t1, t1, t2
@@ -395,6 +416,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 
 	/* configure the FPU for exception mode */
 	call z_riscv_fpu_enter_exc
+#endif /* CONFIG_RISCV_ISA_EXT_F */
 #endif /* CONFIG_FPU_SHARING */
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -915,7 +937,8 @@ no_reschedule:
 	jal ra, __soc_restore_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-#if defined(CONFIG_FPU_SHARING)
+#ifdef CONFIG_FPU_SHARING
+#ifdef CONFIG_RISCV_ISA_EXT_F
 	/* FPU handling upon exception mode exit */
 	mv a0, sp
 	call z_riscv_fpu_exit_exc
@@ -926,7 +949,19 @@ no_reschedule:
 	add t1, t1, -1
 	sb t1, _thread_offset_to_exception_depth(t0)
 fp_trap_exit:
-#endif
+#endif /* CONFIG_RISCV_ISA_EXT_F */
+#ifdef CONFIG_RISCV_ISA_EXT_ZFINX
+	/* Restore the interrupted context's Zfinx floating-point control/status. */
+	lw t0, __struct_arch_esf_zfinx_fcsr_OFFSET(sp)
+	fscsr t0
+
+	/* decrement _current->arch.exception_depth (a uint8_t, hence lb/sb) */
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lb t1, _thread_offset_to_exception_depth(t0)
+	add t1, t1, -1
+	sb t1, _thread_offset_to_exception_depth(t0)
+#endif /* CONFIG_RISCV_ISA_EXT_ZFINX */
+#endif /* CONFIG_FPU_SHARING */
 
 	/* Restore RV_EPC and MSTATUS registers */
 	lr t0, __struct_arch_esf_mepc_OFFSET(sp)
