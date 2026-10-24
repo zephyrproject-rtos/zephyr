@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+tst_dma0: &dma {
+	status = "okay";
+};
