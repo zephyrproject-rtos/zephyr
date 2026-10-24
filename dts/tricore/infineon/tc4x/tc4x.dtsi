@@ -1,0 +1,76 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <skeleton.dtsi>
+#include <zephyr/dt-bindings/clock/infineon-aurix-ccu.h>
+
+/* Peripherals at the same address on all TC4x devices */
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "infineon,tricore", "infineon,tc18";
+			reg = <0>;
+		};
+	};
+
+	flashctrl: flash-controller@f8040000 {
+		reg = <0xf8040000 0x200>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&ir>;
+		compatible = "simple-bus";
+		ranges;
+
+		/* Ports P00 to P40 */
+		pinctrl: pinctrl@f003a000 {
+			compatible = "infineon,aurix-tc4x-pinctrl", "infineon,aurix-pinctrl";
+			reg = <0xf003a000 0xa400>;
+		};
+
+		ccu: clock-controller@f0064000 {
+			compatible = "infineon,aurix-tc4x-ccu", "infineon,aurix-ccu";
+			reg = <0xf0064000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		ir: interrupt_controller@f4430000 {
+			compatible = "infineon,aurix-ir";
+			reg = <0xf4430000 0x2000 0xf4432000 0x4000>;
+			reg-names = "ir", "src";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+
+		asclin0: asclin@f46c0000 {
+			compatible = "infineon,asclin-uart";
+			reg = <0xf46c0000 0x200>;
+			clocks = <&ccu AURIX_CCU_ASCLINF>;
+			status = "disabled";
+		};
+
+		stm0: stm: timer@f8800000 {
+			compatible = "infineon,aurix-stm";
+			reg = <0xf8800000 0x200>;
+			clocks = <&ccu AURIX_CCU_STM>;
+			interrupts = <0x8 1>, <0xa 1>;
+			status = "disabled";
+		};
+	};
+};
