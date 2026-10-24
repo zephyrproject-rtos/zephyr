@@ -9,6 +9,9 @@ if SOC_SERIES_TC3X
 config NUM_IRQS
 	default 256
 
+config CLOCK_CONTROL
+	default y
+
 endif
 
 if SOC_SERIES_TC4X
