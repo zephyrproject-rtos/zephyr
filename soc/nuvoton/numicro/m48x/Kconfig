@@ -12,5 +12,8 @@ config SOC_SERIES_M48X
 	select CLOCK_CONTROL
 	select RESET
 
+config SOC_M483
+	select HAS_NUMICRO_HAL
+
 config SOC_M487
 	select HAS_NUMICRO_HAL

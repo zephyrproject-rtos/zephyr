@@ -1,0 +1,6 @@
+board:
+  name: numaker_m483kg
+  full_name: NuMaker-M483KG
+  vendor: nuvoton
+  socs:
+  - name: m483
