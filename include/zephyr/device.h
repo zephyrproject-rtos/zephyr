@@ -173,8 +173,7 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config.
- * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
- * POST_KERNEL).
+ * @param level The device's initialization level.
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -240,8 +239,7 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config field.
- * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
- * POST_KERNEL).
+ * @param level The device's initialization level.
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -1326,17 +1324,6 @@ device_get_dt_nodelabels(const struct device *dev)
 			      node_id, dev_id)
 
 /**
- * @brief Issue an error if the given init level is not supported.
- *
- * @param level Init level
- */
-#define Z_DEVICE_CHECK_INIT_LEVEL(level)                                       \
-	COND_CASE_1(Z_INIT_PRE_KERNEL_1_##level, (),                           \
-		    Z_INIT_PRE_KERNEL_2_##level, (),                           \
-		    Z_INIT_POST_KERNEL_##level, (),                            \
-		    (ZERO_OR_COMPILE_ERROR(0)))
-
-/**
  * @brief Define the init entry for a device.
  *
  * @param node_id Devicetree node id for the device (DT_INVALID_NODE if a
@@ -1346,8 +1333,6 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param prio Initialization priority.
  */
 #define Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, level, prio)                                   \
-	Z_DEVICE_CHECK_INIT_LEVEL(level)                                                           \
-                                                                                                   \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
 		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \

@@ -181,19 +181,6 @@ bool z_sys_post_kernel;
 extern int do_device_init(const struct device *dev);
 
 /**
- * @brief Initialize state for all static devices.
- *
- * The state object is always zero-initialized, but this may not be
- * sufficient.
- */
-static void z_device_state_init(void)
-{
-	STRUCT_SECTION_FOREACH(device, dev) {
-		k_object_init(dev);
-	}
-}
-
-/**
  * @brief Execute all the init entry initialization functions at a given level
  *
  * @details Invokes the initialization routine for each init entry object
@@ -226,6 +213,11 @@ static void z_sys_init_run_level(enum init_level level)
 
 		sys_trace_sys_init_enter(entry, level);
 		if (dev != NULL) {
+			/* do any necessary initialization of static device. The state object is
+			 * always zero-initialized, but this may not be sufficient.
+			 */
+			k_object_init(dev);
+
 			if ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) == 0U) {
 				result = do_device_init(dev);
 			}
@@ -548,8 +540,6 @@ FUNC_NORETURN void z_cstart(void)
 #if defined(CONFIG_MULTITHREADING)
 	z_dummy_thread_init(&_thread_dummy);
 #endif /* CONFIG_MULTITHREADING */
-	/* do any necessary initialization of static devices */
-	z_device_state_init();
 
 	soc_early_init_hook();
 
