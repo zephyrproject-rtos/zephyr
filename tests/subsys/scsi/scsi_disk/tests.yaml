@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  subsys.scsi.disk:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - scsi
+      - disk
