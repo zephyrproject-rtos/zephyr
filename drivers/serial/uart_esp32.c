@@ -399,14 +399,6 @@ static int uart_esp32_irq_tx_ready(const struct device *dev)
 		uart_hal_get_intr_ena_status(&data->hal) & UART_INTR_TXFIFO_EMPTY);
 }
 
-static void uart_esp32_irq_rx_disable(const struct device *dev)
-{
-	struct uart_esp32_data *data = dev->data;
-
-	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
-	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
-}
-
 static int uart_esp32_irq_tx_complete(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
@@ -493,6 +485,14 @@ static void uart_esp32_irq_rx_enable(const struct device *dev)
 	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
 }
 
+static void uart_esp32_irq_rx_disable(const struct device *dev)
+{
+	struct uart_esp32_data *data = dev->data;
+
+	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
+	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
+}
+
 static void uart_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
@@ -532,6 +532,11 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	struct uart_event evt = {0};
 	struct dma_status dma_status = {0};
 	unsigned int key = irq_lock();
+
+	if (data->async.rx_buf == NULL || data->async.rx_len == 0U) {
+		irq_unlock(key);
+		return;
+	}
 
 	/* If the receive buffer is not complete we reload the DMA at current buffer position and
 	 * let the timeout callback handle the notifications
@@ -578,6 +583,7 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 
 	/*Notify RX_DISABLED when there is no buffer*/
 	if (!data->async.rx_buf) {
+		uart_esp32_irq_rx_disable(uart_dev);
 		evt.type = UART_RX_DISABLED;
 		if (data->async.cb) {
 			data->async.cb(uart_dev, &evt, data->async.user_data);
@@ -666,6 +672,11 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	struct uart_event evt = {0};
 	int err = 0;
 	unsigned int key = irq_lock();
+
+	if (data->async.rx_buf == NULL || data->async.rx_len == 0U) {
+		irq_unlock(key);
+		return;
+	}
 
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
@@ -867,6 +878,8 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 		LOG_ERR("Error stopping Rx DMA (%d)", err);
 		goto unlock;
 	}
+
+	uart_esp32_irq_rx_disable(dev);
 
 	/*If any bytes have been received notify RX_RDY*/
 	evt.type = UART_RX_RDY;
