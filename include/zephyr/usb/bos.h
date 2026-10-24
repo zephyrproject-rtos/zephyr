@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation
  * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +47,21 @@ enum usb_bos_capability_types {
 	USB_BOS_CAPABILITY_EXTENSION = 0x02,
 	/** Platform-specific capability (e.g., WebUSB, MS OS). */
 	USB_BOS_CAPABILITY_PLATFORM = 0x05,
+	/** Billboard capability */
+	USB_BOS_CAPABILITY_BILLBOARD = 0x0D,
+	/** Billboard Ex capability */
+	USB_BOS_CAPABILITY_BILLBOARD_EX = 0x0F,
 };
+
+/** Generic device capability descriptor header. */
+struct usb_bos_capability_header {
+	/** Descriptor length. */
+	uint8_t bLength;
+	/** Descriptor type. Must be set to @ref USB_DESC_DEVICE_CAPABILITY. */
+	uint8_t bDescriptorType;
+	/** Device capability type. See @ref usb_bos_capability_types. */
+	uint8_t bDevCapabilityType;
+} __packed;
 
 /**
  * BOS USB 2.0 extension capability descriptor
