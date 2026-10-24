@@ -209,6 +209,7 @@ properties:
       - 8
       - 12
       - 15
+      - 40
     description: |
       Valid bit-depth of RAM block Power-Down control (RAM_PD) registers.
       Each bit in RAM_PDn can power down the relevant RAM block by setting

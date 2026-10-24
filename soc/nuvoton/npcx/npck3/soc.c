@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Nuvoton Technology Corporation.
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,11 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-extern void scfg_init(void);
+BUILD_ASSERT((CONFIG_SOC_NPCK_EPURST_DEBOUNCE_TIME_SEC > 0) &&
+		     (CONFIG_SOC_NPCK_EPURST_DEBOUNCE_TIME_SEC < 32),
+	     "Debounce time must be between 1 and 31 seconds.");
 
+extern void scfg_init(void);
 void soc_early_init_hook(void)
 {
 	struct glue_reg *inst_glue = (struct glue_reg *)
@@ -25,6 +28,10 @@ void soc_early_init_hook(void)
 	if (IS_ENABLED(CONFIG_SOC_NPCK_EPURST_DISABLE)) {
 		/* EXT_PURST# signal is not selected to the pin by default */
 		inst_glue->EPURST_CTL &= ~BIT(NPCX_EPURST_CTL_EPUR2_EN);
+	} else {
+		inst_glue->EPURST_CTL |= BIT(NPCX_EPURST_CTL_EPUR2_EN);
+		SET_FIELD(inst_glue->EPURST_DBC, NPCX_EPURST_EPUR_DBC,
+			  CONFIG_SOC_NPCK_EPURST_DEBOUNCE_TIME_SEC);
 	}
 
 	if (IS_ENABLED(CONFIG_SOC_NPCK_DEBUG_DISABLE)) {

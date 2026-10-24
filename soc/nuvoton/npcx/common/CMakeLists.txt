@@ -11,19 +11,32 @@ zephyr_include_directories(${CONFIG_NPCX_SOC_VARIANT}/include)
 
 # Check for disabling header CRC.
 if(NOT DEFINED CONFIG_NPCX_HEADER_ENABLE_HEADER_CRC)
-    set(NPCX_HEADER_HCRC "-nohcrc")
+  set(NPCX_HEADER_HCRC "-nohcrc")
 endif()
 
 # Check for disabling firmware CRC.
 if(NOT DEFINED CONFIG_NPCX_HEADER_ENABLE_FIRMWARE_CRC)
-    set(NPCX_HEADER_FCRC "-nofcrc")
+  set(NPCX_HEADER_FCRC "-nofcrc")
+endif()
+
+# Check if Use ARM Reset Table Entry is enabled
+if(DEFINED CONFIG_NPCX_HEADER_USE_ARM_RESET)
+  list(APPEND NPCX_HEADER_USE_ARM_RESET_ARGS -usearmrst)
+endif()
+
+# Check if the firmware load address/entry point checks are disabled
+if(DEFINED CONFIG_NPCX_HEADER_NO_FW_ADDR_CHECK)
+  list(APPEND NPCX_HEADER_NO_FW_ADDR_CHECK_ARGS -no_fw_addr_check)
+  message(WARNING "CONFIG_NPCX_HEADER_NO_FW_ADDR_CHECK is enabled: ecst will "
+    "not validate the firmware load address and entry point against the "
+    "Code RAM boundaries. An invalid image may be generated and fail to "
+    "boot.")
 endif()
 
 if(DEFINED CONFIG_NPCX_IMAGE_OUTPUT_BIN)
   set(NPCX_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}.npcx.bin)
   string(TOUPPER "${CONFIG_SOC}" soc_name_upper)
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${SOC_${soc_name_upper}_DIR}/common/ecst/ecst.py
+  set_property(TARGET zephyr_property_target APPEND PROPERTY NPCX_ECST_ARGS
     -i ${KERNEL_BIN_NAME}
     -o ${NPCX_BIN_NAME}
     ${NPCX_HEADER_HCRC} ${NPCX_HEADER_FCRC}
@@ -32,6 +45,11 @@ if(DEFINED CONFIG_NPCX_IMAGE_OUTPUT_BIN)
     -spiclkratio ${CONFIG_NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO}
     -spimaxclk ${CONFIG_NPCX_HEADER_SPI_MAX_CLOCK}
     -spireadmode ${CONFIG_NPCX_HEADER_SPI_READ_MODE}
+    ${NPCX_HEADER_NO_FW_ADDR_CHECK_ARGS}
+  )
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${SOC_${soc_name_upper}_DIR}/common/ecst/ecst.py
+    $<TARGET_PROPERTY:zephyr_property_target,NPCX_ECST_ARGS>
   )
   if(DEFINED CONFIG_NPCX_IMAGE_OUTPUT_HEX)
     set(NPCX_HEX_NAME ${CONFIG_KERNEL_BIN_NAME}.npcx.hex)

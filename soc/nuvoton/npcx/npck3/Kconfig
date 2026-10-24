@@ -29,4 +29,11 @@ config SOC_NPCK_DEBUG_DISABLE
 	help
 	  Disable all K3 debug interface during initialization.
 
+config SOC_NPCK_EPURST_DEBOUNCE_TIME_SEC
+	int "Debounce time of the EXT_PURST"
+	default 10
+	help
+	  This option specifies the debounce time for EXT_PURST. The unit is seconds,
+	  and the valid value is from 1 to 31.
+
 endif # SOC_SERIES_NPCK3
