@@ -72,8 +72,14 @@ static const struct arm_mpu_region mpu_regions[] = {
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hyperram0))
+#if DT_SAME_NODE(DT_CHOSEN(zephyr_flash), DT_NODELABEL(hyperram0))
+	/* The code executes from HyperRAM, so the region must not be execute-never. */
+	MPU_REGION_ENTRY("HYPER_RAM", REGION_HYPER_RAM_BASE_ADDRESS,
+			 REGION_FLASH_ATTR(REGION_HYPER_RAM_SIZE)),
+#else
 	MPU_REGION_ENTRY("HYPER_RAM", REGION_HYPER_RAM_BASE_ADDRESS,
 			 ARM_MPU_SRAM_REGION_ATTR(REGION_HYPER_RAM_SIZE)),
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(w25q128jw))
