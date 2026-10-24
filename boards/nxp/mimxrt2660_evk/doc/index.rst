@@ -91,6 +91,9 @@ Connections and I/Os
 +-----------+-----------------+------------------------------------+
 | User SW   | WAKE GPIO0 0    | PIO1_0 (WAKE_SS_BTN)               |
 +-----------+-----------------+------------------------------------+
+| CAN1      | FlexCAN1 TX, RX | PIO2_16, PIO2_17 (TJA1040 U44,     |
+|           |                 | J74; J82 at 2-3)                   |
++-----------+-----------------+------------------------------------+
 | XSPI0     | SCLK0, SS0_N,   | PIO6_0, PIO6_1, PIO6_2..PIO6_5     |
 |           | DATA0..DATA3    | (quad; the flash is not wired      |
 |           |                 | octal on this board)               |

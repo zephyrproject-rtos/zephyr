@@ -51,6 +51,19 @@
 };
 
 /*
+ * CAN1 on J74. The TMUX1574 U57 shares PIO2_14..PIO2_17 with the PDM
+ * microphones; J82 at its default 2-3 selects CAN.
+ */
+&flexcan1 {
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <1000000>;
+	};
+};
+
+/*
  * U24 Winbond W25H512NWEAM: 512 Mbit (64 MB) serial NOR, 1.8 V, quad.
  * Boot ROM configures the pins and brings XSPI0 up for XIP from the flash
  * configuration block (xip/); no Zephyr driver programs this node at runtime.
