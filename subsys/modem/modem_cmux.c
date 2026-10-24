@@ -2187,7 +2187,10 @@ static void modem_cmux_dlci_close_handler(struct k_work *item)
 			dlci_close(dlci);
 			return;
 		}
-	} else if (dlci->state == MODEM_CMUX_DLCI_STATE_OPEN) {
+	} else if ((dlci->state == MODEM_CMUX_DLCI_STATE_OPEN) ||
+		   (dlci->state == MODEM_CMUX_DLCI_STATE_OPENING)) {
+		/* Stop opening, the peer may already have accepted our SABM */
+		k_work_cancel_delayable(&dlci->open_work);
 		dlci->state = MODEM_CMUX_DLCI_STATE_CLOSING;
 		dlci->retry_count = 0;
 	} else {
