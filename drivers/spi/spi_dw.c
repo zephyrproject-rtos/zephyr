@@ -113,6 +113,7 @@ static void push_data(const struct device *dev)
 				data = UNALIGNED_GET((uint16_t *)
 						     (spi->ctx.tx_buf));
 				break;
+			case 3:
 			case 4:
 				data = UNALIGNED_GET((uint32_t *)
 						     (spi->ctx.tx_buf));
@@ -162,6 +163,7 @@ static void pull_data(const struct device *dev)
 			case 2:
 				UNALIGNED_PUT(data, (uint16_t *)spi->ctx.rx_buf);
 				break;
+			case 3:
 			case 4:
 				UNALIGNED_PUT(data, (uint32_t *)spi->ctx.rx_buf);
 				break;
