@@ -4740,8 +4740,9 @@ static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 }
 
 static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
-						  const struct net_in_addr *dst,
-						  uint8_t *best_so_far, bool ll)
+						      const struct net_in_addr *dst,
+						      uint8_t *best_so_far, bool ll,
+						      bool allow_loopback)
 {
 	struct net_if_ipv4 *ipv4;
 	struct net_in_addr *src = NULL;
@@ -4766,6 +4767,11 @@ static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 		}
 
 		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].ipv4.address.in_addr) != ll) {
+			continue;
+		}
+
+		if (!allow_loopback &&
+		    net_ipv4_is_addr_loopback(&ipv4->unicast[i].ipv4.address.in_addr)) {
 			continue;
 		}
 
@@ -4834,6 +4840,10 @@ static struct net_in_addr *if_ipv4_get_addr(struct net_if *iface,
 			continue;
 		}
 
+		if (!ll && net_ipv4_is_addr_loopback(&ipv4->unicast[i].ipv4.address.in_addr)) {
+			continue;
+		}
+
 		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].ipv4.address.in_addr)) {
 			if (!ll) {
 				continue;
@@ -4871,9 +4881,18 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 {
 	const struct net_in_addr *src = NULL;
 	uint8_t best_match = 0U;
+	bool allow_loopback;
 
 	if (dst == NULL) {
 		return NULL;
+	}
+
+	/* An unspecified destination is used while binding a wildcard socket. */
+	allow_loopback = net_ipv4_is_addr_loopback(dst) || net_ipv4_is_addr_unspecified(dst);
+
+	/* Allow loopback sources for multicast explicitly scoped to an interface. */
+	if (dst_iface != NULL && net_ipv4_is_addr_mcast(dst)) {
+		allow_loopback = true;
 	}
 
 	if (dst_iface == NULL && !net_ipv4_is_ll_addr(dst)) {
@@ -4884,15 +4903,14 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 		/* If caller has supplied interface, then use that */
 		if (dst_iface) {
-			src = net_if_ipv4_get_best_match(dst_iface, dst,
-							 &best_match, false);
+			src = net_if_ipv4_get_best_match(dst_iface, dst, &best_match, false,
+							 allow_loopback);
 		} else {
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct net_in_addr *addr;
 
-				addr = net_if_ipv4_get_best_match(iface, dst,
-								  &best_match,
-								  false);
+				addr = net_if_ipv4_get_best_match(iface, dst, &best_match, false,
+								  allow_loopback);
 				if (addr) {
 					src = addr;
 				}
@@ -4906,9 +4924,8 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 			struct net_in_addr *addr;
 
 			STRUCT_SECTION_FOREACH(net_if, iface) {
-				addr = net_if_ipv4_get_best_match(iface, dst,
-								  &best_match,
-								  true);
+				addr = net_if_ipv4_get_best_match(iface, dst, &best_match, true,
+								  allow_loopback);
 				if (addr) {
 					src = addr;
 				}
@@ -4918,9 +4935,8 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 			 * be used if it has a valid LL address, and there was
 			 * no better match on any other interface.
 			 */
-			addr = net_if_ipv4_get_best_match(net_if_get_default(),
-							  dst, &best_match,
-							  true);
+			addr = net_if_ipv4_get_best_match(net_if_get_default(), dst, &best_match,
+							  true, allow_loopback);
 			if (addr) {
 				src = addr;
 			}

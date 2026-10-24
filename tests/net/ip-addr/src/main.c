@@ -1050,6 +1050,140 @@ ZTEST(ip_addr_fn, test_ipv6_v4_mapped)
 		      "Extracted IPv4 address does not match original (192.168.0.1)");
 }
 
+static void add_loopback_addr(void)
+{
+	const struct net_in_addr loopback_addr = NET_INADDR_LOOPBACK_INIT;
+
+	zassert_not_null(net_if_ipv4_addr_add(second_iface, &loopback_addr, NET_ADDR_MANUAL, 0),
+			 "Loopback IPv4 address add failed");
+}
+
+ZTEST(ip_addr_fn, test_external_destination_ignores_loopback)
+{
+	const struct net_in_addr test_addr = {{{192, 0, 2, 1}}};
+	const struct net_in_addr netmask = {{{255, 255, 255, 0}}};
+	/* The destination shares a longer prefix with 127/8 than TEST-NET-1. */
+	const struct net_in_addr destination = {{{10, 0, 0, 1}}};
+	const struct net_in_addr *selected;
+	struct net_if_addr *ifaddr;
+
+	add_loopback_addr();
+
+	ifaddr = net_if_ipv4_addr_add(default_iface, &test_addr, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Test IPv4 address add failed");
+	net_if_ipv4_set_netmask_by_addr(default_iface, &test_addr, &netmask);
+
+	selected = net_if_ipv4_select_src_addr(NULL, &destination);
+	zassert_equal(selected->s_addr, test_addr.s_addr,
+		      "External destination selected the wrong source");
+	zassert_equal_ptr(net_if_ipv4_select_src_iface(&destination), default_iface,
+			  "External destination selected loopback interface");
+}
+
+ZTEST(ip_addr_fn, test_loopback_destination_uses_loopback)
+{
+	const struct net_in_addr destination = NET_INADDR_LOOPBACK_INIT;
+	const struct net_in_addr *selected;
+
+	add_loopback_addr();
+
+	selected = net_if_ipv4_select_src_addr(NULL, &destination);
+	zassert_equal(selected->s_addr, destination.s_addr,
+		      "Loopback destination selected a non-loopback source");
+}
+
+ZTEST(ip_addr_fn, test_external_destination_rejects_scoped_loopback)
+{
+	const struct net_in_addr loopback_addr = NET_INADDR_LOOPBACK_INIT;
+	const struct net_in_addr destination = {{{198, 51, 100, 1}}};
+	const struct net_in_addr *selected;
+	struct net_if *loopback_iface = NULL;
+
+	add_loopback_addr();
+
+	zassert_not_null(net_if_ipv4_addr_lookup(&loopback_addr, &loopback_iface),
+			 "Loopback IPv4 address is missing");
+	zassert_not_null(loopback_iface, "Loopback interface is missing");
+
+	selected = net_if_ipv4_select_src_addr(loopback_iface, &destination);
+	zassert_true(net_ipv4_is_addr_unspecified(selected),
+		     "External destination selected a scoped loopback source");
+}
+
+ZTEST(ip_addr_fn, test_scoped_multicast_uses_loopback)
+{
+	const struct net_in_addr loopback_addr = NET_INADDR_LOOPBACK_INIT;
+	const struct net_in_addr destination = {{{224, 0, 0, 2}}};
+	const struct net_in_addr *selected;
+
+	add_loopback_addr();
+
+	selected = net_if_ipv4_select_src_addr(second_iface, &destination);
+	zassert_equal(selected->s_addr, loopback_addr.s_addr,
+		      "Scoped multicast did not select the loopback source");
+}
+
+ZTEST(ip_addr_fn, test_unscoped_multicast_rejects_loopback)
+{
+	const struct net_in_addr destination = {{{224, 0, 0, 2}}};
+	const struct net_in_addr *selected;
+
+	add_loopback_addr();
+
+	selected = net_if_ipv4_select_src_addr(NULL, &destination);
+	zassert_true(net_ipv4_is_addr_unspecified(selected),
+		     "Unscoped multicast selected a loopback source");
+}
+
+ZTEST(ip_addr_fn, test_unspecified_destination_preserves_loopback)
+{
+	const struct net_in_addr loopback_addr = NET_INADDR_LOOPBACK_INIT;
+	const struct net_in_addr destination = NET_INADDR_ANY_INIT;
+	const struct net_in_addr *selected;
+
+	add_loopback_addr();
+
+	selected = net_if_ipv4_select_src_addr(NULL, &destination);
+	zassert_equal(selected->s_addr, loopback_addr.s_addr,
+		      "Unspecified destination excluded the loopback source");
+	zassert_equal_ptr(net_if_ipv4_select_src_iface(&destination), second_iface,
+			  "Unspecified destination selected the wrong interface");
+}
+
+ZTEST(ip_addr_fn, test_ipv4_global_address_rejects_loopback)
+{
+	const struct net_in_addr link_local_addr = {{{169, 254, 1, 2}}};
+	const struct net_in_addr *selected;
+
+	add_loopback_addr();
+
+	zassert_is_null(net_if_ipv4_get_global_addr(second_iface, NET_ADDR_PREFERRED),
+			"Global address lookup returned a loopback address");
+	zassert_is_null(net_if_ipv4_get_global_addr(second_iface, NET_ADDR_ANY_STATE),
+			"Global address lookup returned a loopback address in any state");
+
+	zassert_not_null(net_if_ipv4_addr_add(second_iface, &link_local_addr, NET_ADDR_MANUAL, 0));
+	zassert_is_null(net_if_ipv4_get_global_addr(second_iface, NET_ADDR_PREFERRED),
+			"Global address lookup returned a link-local address");
+	selected = net_if_ipv4_get_ll(second_iface, NET_ADDR_PREFERRED);
+	zassert_not_null(selected);
+	zassert_equal(selected->s_addr, link_local_addr.s_addr);
+}
+
+ZTEST(ip_addr_fn, test_ipv4_global_address_skips_loopback)
+{
+	const struct net_in_addr global_addr = {{{192, 0, 2, 1}}};
+	const struct net_in_addr *selected;
+
+	add_loopback_addr();
+
+	zassert_not_null(net_if_ipv4_addr_add(second_iface, &global_addr, NET_ADDR_MANUAL, 0));
+	selected = net_if_ipv4_get_global_addr(second_iface, NET_ADDR_PREFERRED);
+	zassert_not_null(selected);
+	zassert_equal(selected->s_addr, global_addr.s_addr,
+		      "Global address lookup did not skip the loopback address");
+}
+
 void clear_addr4(struct net_if *iface, struct net_if_addr *addr, void *user_data)
 {
 	addr->is_used = false;
