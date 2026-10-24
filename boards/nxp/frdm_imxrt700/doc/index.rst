@@ -37,19 +37,6 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-The ``frdm_imxrt700`` board targets enable the following features in this
-baseline port:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port (debug console)         |
-+-----------+------------+-------------------------------------+
-
-Additional peripherals will be enabled in follow-up work.
-
 Programming and Debugging
 *************************
 

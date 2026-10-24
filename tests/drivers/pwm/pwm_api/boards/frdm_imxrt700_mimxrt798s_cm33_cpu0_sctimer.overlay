@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SCT0_OUT2 is the output wired to a pin, the blue LED. */
+/ {
+	aliases {
+		pwm-test = &sc_timer;
+	};
+};
