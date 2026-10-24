@@ -1074,6 +1074,46 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_disc)
 }
 
 /*
+ * Test: work is scheduled on the dedicated modem workqueue.
+ *
+ * All CMUX work must run on the same workqueue, otherwise handlers run
+ * concurrently and race on the CMUX state.
+ */
+ZTEST(modem_cmux, test_modem_cmux_dedicated_workqueue)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+	uint32_t events;
+
+	if (!IS_ENABLED(CONFIG_MODEM_DEDICATED_WORKQUEUE)) {
+		ztest_test_skip();
+	}
+
+	/* Empty transmit request schedules the transmit and runtime PM work */
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0));
+	zassert_not_equal(cmux.transmit_work.queue, &k_sys_work_q,
+			  "Transmit work scheduled on system workqueue");
+	zassert_not_equal(cmux.runtime_pm_work.queue, &k_sys_work_q,
+			  "Runtime PM work scheduled on system workqueue");
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.idle_timeout = saved_timeout;
+
+	/* Peer closing the multiplexer schedules the disconnect work */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_disc_cmd,
+			       sizeof(cmux_frame_dlci0_disc_cmd));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	zassert_not_equal(cmux.disconnect_work.queue, &k_sys_work_q,
+			  "Disconnect work scheduled on system workqueue");
+
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED,
+		      "DLCI0 DISC should cause CMUX disconnection");
+}
+
+/*
  * Test: peer-initiated power save.
  *
  * The peer sends a PSC command to CMUX. CMUX acknowledges with a PSC response
