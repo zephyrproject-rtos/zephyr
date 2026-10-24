@@ -425,9 +425,12 @@ ZTEST(hci_h5, test_split_escape)
 
 ZTEST(hci_h5, test_unsupported_type)
 {
+	uint8_t expected[FRAME_MAX(0U) + FRAME_MAX(sizeof(reset_cmd))];
 	struct ctlr *c = &ctlrs[0];
 	uint8_t out[FRAME_MAX(0U)];
+	uint8_t tx[sizeof(expected)];
 	uint8_t hdr[HDR_LEN];
+	size_t len;
 	uint8_t seq;
 
 	seq = send_reset(c);
@@ -436,8 +439,16 @@ ZTEST(hci_h5, test_unsupported_type)
 	hdr_set(hdr, false, 0U, (seq + 1U) % 8U, 6U, 1U);
 	put(c, out, frame(out, hdr, NULL, 0U));
 
-	/* The acknowledgment was discarded with the packet */
-	expect_reset_retransmitted(c, seq);
+	/* Acknowledged as a discarded packet, and its acknowledgment number not used: the
+	 * command is retransmitted
+	 */
+	k_sleep(ACK_WAIT);
+	hdr_set(hdr, false, 0U, c->seq, PKT_ACK, 0U);
+	len = frame(expected, hdr, NULL, 0U);
+	hdr_set(hdr, true, seq, c->seq, PKT_CMD, sizeof(reset_cmd));
+	len += frame(&expected[len], hdr, reset_cmd, sizeof(reset_cmd));
+	zassert_equal(uart_emul_get_tx_data(c->uart, tx, sizeof(tx)), len);
+	zassert_mem_equal(tx, expected, len);
 
 	put_ack(c, (seq + 1U) % 8U);
 	expect_no_tx(c);
@@ -513,6 +524,21 @@ ZTEST(hci_h5, test_unreliable_send)
 	hdr_set(hdr, false, 0U, c->seq, PKT_SCO, sizeof(sco));
 	expect_tx(c, hdr, sco, sizeof(sco));
 	expect_no_tx(c);
+}
+
+ZTEST(hci_h5, test_ack_delay)
+{
+	struct ctlr *c = &ctlrs[0];
+	uint8_t hdr[HDR_LEN];
+
+	put_evt(c, true, c->seq, 19U);
+	expect_evt(c, 19U);
+	next_seq(c);
+
+	/* Before a peer that resends after 250 ms, as the driver itself does */
+	k_sleep(K_MSEC(200));
+	hdr_set(hdr, false, 0U, c->seq, PKT_ACK, 0U);
+	expect_tx(c, hdr, NULL, 0U);
 }
 
 ZTEST(hci_h5, test_duplicate_packet)
