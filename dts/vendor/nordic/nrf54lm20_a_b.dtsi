@@ -892,6 +892,7 @@
 
 			power: power@10e000 {
 				compatible = "nordic,nrf-power";
+				reset-reason-available;
 				reg = <0x10e000 0x1000>;
 				ranges = <0x0 0x10e000 0x1000>;
 				interrupts = <270 NRF_DEFAULT_IRQ_PRIORITY>;
