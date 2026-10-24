@@ -67,6 +67,12 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
 };
 
 &cpu0 {
@@ -81,6 +87,10 @@
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
 	clocks = <&syspll>;
+};
+
+&mfpclk {
+	status = "okay";
 };
 
 &canclk {
@@ -117,6 +127,8 @@
 
 &dac0 {
 	status = "okay";
+	fifo-enable;
+	sample-rate-hz = <1000>;
 };
 
 &spi0 {
