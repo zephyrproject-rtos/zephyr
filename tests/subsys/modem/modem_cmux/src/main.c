@@ -124,6 +124,7 @@ static uint8_t cmux_frame_control_cld_ack[] = {0xF9, 0x03, 0xEF, 0x05, 0xC1, 0x0
 static uint8_t cmux_frame_dlci0_disc_cmd[] = {0xF9, 0x01, 0x53, 0x01, 0x9C, 0xF9};
 static uint8_t cmux_frame_dlci0_ua_ack[] = {0xF9, 0x01, 0x73, 0x01, 0xB6, 0xF9};
 static uint8_t cmux_frame_dlci0_dm_rsp[] = {0xF9, 0x03, 0x1F, 0x01, 0x36, 0xF9};
+static uint8_t cmux_frame_dlci0_sabm_cmd[] = {0xF9, 0x01, 0x3F, 0x01, 0x7D, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_cmd[] = {0xF9, 0x07, 0x3F, 0x01, 0xDE, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_ack[] = {0xF9, 0x07, 0x73, 0x01, 0x15, 0xF9};
 static uint8_t cmux_frame_dlci1_disc_cmd[] = {0xF9, 0x07, 0x53, 0x01, 0x3F, 0xF9};
@@ -1277,6 +1278,28 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_dm)
 
 	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
 	zassert_equal(ret, 0, "Unexpected data sent after DLCI0 DM");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlc0_sabm_connected)
+{
+	uint32_t events;
+	int ret;
+
+	/* SABM from the peer while connected is confirmed with UA */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_sabm_cmd,
+			       sizeof(cmux_frame_dlci0_sabm_cmd));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci0_ua_ack), "UA not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci0_ua_ack, sizeof(cmux_frame_dlci0_ua_ack),
+			  "Incorrect UA sent");
+
+	/* The existing connection is kept */
+	events = k_event_test(&cmux_event, EVENT_CMUX_CONNECTED | EVENT_CMUX_DISCONNECTED);
+	zassert_equal(events, 0, "Connection state should not change");
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_CONNECTED, "CMUX should stay connected");
+	zassert_true(cmux.initiator, "CMUX should stay initiator");
 }
 
 ZTEST(modem_cmux, test_modem_cmux_connect_rejected)
