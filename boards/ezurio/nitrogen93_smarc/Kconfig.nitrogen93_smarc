@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright 2025 NXP
+# SPDX-FileCopyrightText: Copyright 2026 Ezurio
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NITROGEN93_SMARC
+	select SOC_MIMX9352_A55
+	select SOC_PART_NUMBER_MIMX9352DVVXM
