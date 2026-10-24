@@ -2771,6 +2771,10 @@ Other notable changes
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
 
+  * Added the :ref:`kernel_critical_section_monitor`, enabled by
+    :kconfig:option:`CONFIG_CRITICAL_SECTION_MONITOR`, to record per-CPU maximum IRQ-locked,
+    spinlock wait and hold times. The ``kernel critical`` shell command reports the statistics.
+
 * Timer
 
   * With :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` enabled, a driver may no
