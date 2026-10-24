@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Wires mux_api to the AM13E2 Input XBAR. Only SELECT / RAW_INPUTSELECT
+ * registers are programmed, so no external signal wiring is needed.
+ */
+
+#include <zephyr/dt-bindings/mux/ti_am13e2_xbar_in.h>
+
+&xbar1 {
+	status = "okay";
+};
+
+/ {
+	mux_consumer: mux-consumer {
+		compatible = "vnd,mux-consumer-test";
+		/* control: INPUTXBAR channel 0 — driven at runtime and read back.
+		 * state:   channel 1 → GPIO36 raw, baked in DT for apply/get.
+		 */
+		mux-controls = <&xbar1 0>;
+		mux-states = <&xbar1 1 AM13E2_XBAR_IN_STATE(36, 1)>;
+		status = "okay";
+	};
+};
