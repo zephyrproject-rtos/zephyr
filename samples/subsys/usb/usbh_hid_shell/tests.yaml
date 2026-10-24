@@ -1,0 +1,25 @@
+sample:
+  name: USB HID Host shell sample
+
+tests:
+  sample.usbh.hid:
+    depends_on: usbh
+    tags:
+      - usb
+      - hid
+    platform_allow:
+      - ek_ra8m2/r7ka8m2jflcac/cm85
+    build_only: true
+
+  sample.usbh.hid.functional:
+    depends_on: usbh
+    tags:
+      - usb
+      - hid
+    platform_allow:
+      - ek_ra8m2/r7ka8m2jflcac/cm85
+    harness: shell
+    harness_config:
+      fixture: usb_hid_device    # requires a real HID device connected
+      shell_commands_file: hid_test_commands.yml
+    timeout: 10

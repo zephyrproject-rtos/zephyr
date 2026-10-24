@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation
  * Copyright (c) 2018,2021 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +21,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 /**
  * @brief hid.h API
  * @defgroup usb_hid_definitions USB HID common definitions
@@ -35,7 +38,12 @@ extern "C" {
  */
 
 /** HID Specification release v1.11 */
-#define USB_HID_VERSION			0x0111
+#define USB_HID_VERSION 0x0111
+
+/** USB HID empty subclass */
+#define USB_HID_SUBCLASS_NONE 0x00
+/** USB HID boot subclass */
+#define USB_HID_SUBCLASS_BOOT 0x01
 
 /** USB HID Class HID descriptor type */
 #define USB_DESC_HID			0x21
@@ -133,6 +141,9 @@ extern "C" {
 
 /* Usage page and IDs from Universal Serial Bus HID Usage Tables */
 
+/** HID Usage ID constructor */
+#define HID_USAGE_ID(Page, Id) ((((Page) & 0xFFFF) << 16) | ((Id) & 0xFFFF))
+
 /** HID Generic Desktop Controls Usage page */
 #define HID_USAGE_GEN_DESKTOP		0x01
 /** HID Keyboard Usage page */
@@ -141,6 +152,8 @@ extern "C" {
 #define HID_USAGE_GEN_LEDS		0x08
 /** HID Button Usage page */
 #define HID_USAGE_GEN_BUTTON		0x09
+/** HID Consumer Usage page */
+#define HID_USAGE_CONSUMER		0x0C
 /** HID Sensors Usage page */
 #define HID_USAGE_SENSORS		0x20
 
@@ -164,6 +177,13 @@ extern "C" {
 #define HID_USAGE_GEN_DESKTOP_Y		0x31
 /** HID Generic Desktop Wheel Usage ID */
 #define HID_USAGE_GEN_DESKTOP_WHEEL	0x38
+/** HID Generic Desktop System Control ID */
+#define HID_USAGE_GEN_DESKTOP_SYSTEM_CONTROL 0x80
+
+/** HID  Generic desktop keybaord left control Usage ID */
+#define HID_USAGE_GEN_DESKTOP_KEYBOARD_LEFT_CTRL 0xE0
+/** HID  Generic desktop keybaord right GUI Usage ID */
+#define HID_USAGE_GEN_DESKTOP_KEYBOARD_RIGHT_GUI 0xE7
 
 /** HID Sensors Collection Usage ID */
 #define HID_USAGE_SENSOR_TYPE_COLLECTION			0x001
@@ -191,6 +211,13 @@ extern "C" {
 #define HID_USAGE_SENSORS_SENSOR_STATE_ACCESS_DENIED		0x805
 /** HID Sensors Sensor State Error Usage ID */
 #define HID_USAGE_SENSORS_SENSOR_STATE_ERROR			0x806
+
+/** HID Consumer Undefined Usage ID */
+#define HID_USAGE_CONSUMER_UNDEFINED 0x00
+/** HID Consumer Control  ID */
+#define HID_USAGE_CONSUMER_CONTROL   0x01
+/** HID Consumer AC pan */
+#define HID_USAGE_CONSUMER_AC_PAN    0x0238
 
 /**
  * @}
@@ -567,6 +594,30 @@ extern "C" {
 		HID_INPUT(0x00),				\
 	HID_END_COLLECTION,					\
 }
+
+/**
+ * @brief HID button codes.
+ */
+enum hid_btn_code {
+	/** Button 1 */
+	HID_BTN_1 = 1,
+	/** Button 2 */
+	HID_BTN_2 = 2,
+	/** Button 3 */
+	HID_BTN_3 = 3,
+	/** Button 4 */
+	HID_BTN_4 = 4,
+	/** Button 5 */
+	HID_BTN_5 = 5,
+	/** Button 6 */
+	HID_BTN_6 = 6,
+	/** Button 7 */
+	HID_BTN_7 = 7,
+	/** Button 8 */
+	HID_BTN_8 = 8,
+	/** Button 9 */
+	HID_BTN_9 = 9,
+};
 
 /**
  * @brief HID keyboard button codes.
