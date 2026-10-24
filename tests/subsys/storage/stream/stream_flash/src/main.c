@@ -254,6 +254,53 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_multi_page)
 	VERIFY_WRITTEN(0, BUF_LEN * (num_pages + 1));
 }
 
+/* Stream across several pages starting page_offset bytes into a page, then read the
+ * whole stream back and compare it to what was written.
+ */
+static void verify_multi_page_write_at_page_offset(size_t page_offset)
+{
+	static uint8_t pattern[TESTBUF_SIZE];
+	/* End the stream at the end of the third page, so it crosses two page boundaries */
+	size_t len = (3 * page_size) - page_offset;
+	int rc;
+
+	zassume_true(page_size <= MAX_PAGE_SIZE, "page size is too large");
+
+	/* Byte pattern without the erase value, so erased data can't pass as written */
+	for (size_t i = 0; i < len; i++) {
+		pattern[i] = (i % 254) + 1;
+	}
+
+	init_target();
+
+	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE + page_offset,
+			       FLASH_AVAILABLE - page_offset, NULL);
+	zassert_equal(rc, 0, "expected success");
+
+	rc = stream_flash_buffered_write(&ctx, pattern, len, true);
+	zassert_equal(rc, 0, "expected success");
+
+	rc = flash_read(fdev, FLASH_BASE + page_offset, read_buf, len);
+	zassert_equal(rc, 0, "should succeed");
+
+	for (size_t i = 0; i < len; i++) {
+		zassert_equal(read_buf[i], pattern[i],
+			      "mismatch at stream offset %zu (flash offset 0x%lx): "
+			      "expected 0x%02x, got 0x%02x",
+			      i, (long)(FLASH_BASE + page_offset + i), pattern[i], read_buf[i]);
+	}
+}
+
+ZTEST(lib_stream_flash, test_stream_flash_buffered_write_multi_page_aligned_offset)
+{
+	verify_multi_page_write_at_page_offset(0);
+}
+
+ZTEST(lib_stream_flash, test_stream_flash_buffered_write_multi_page_unaligned_offset)
+{
+	verify_multi_page_write_at_page_offset(ROUND_UP(56, flash_get_write_block_size(fdev)));
+}
+
 ZTEST(lib_stream_flash, test_stream_flash_bytes_written)
 {
 	int rc;
