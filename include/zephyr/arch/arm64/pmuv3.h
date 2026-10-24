@@ -121,6 +121,7 @@ typedef enum {
 /** @cond INTERNAL_HIDDEN */
 
 int arch_pmu_init(void);
+int arch_pmu_init_secondary(void);
 uint32_t arch_pmu_num_counters(void);
 void arch_pmu_get_info(pmu_info_t *info);
 int arch_pmu_counter_config(uint32_t counter, pmu_evt_t event);
