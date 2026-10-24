@@ -46,6 +46,8 @@ static struct bt_a2dp_ep *found_peer_sbc_endpoint;
 static struct bt_a2dp_ep *registered_sbc_endpoint;
 static struct bt_a2dp_stream sbc_stream;
 static struct bt_a2dp_stream_ops stream_ops;
+static bool retry_config_on_timeout;
+BT_A2DP_SBC_EP_CFG_DEFAULT(sbc_cfg, A2DP_SBC_SAMP_FREQ_44100);
 
 static struct k_work_delayable send_media;
 NET_BUF_POOL_DEFINE(a2dp_tx_media_pool, CONFIG_BT_MAX_CONN,
@@ -304,10 +306,31 @@ static int app_reconfig_req(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_
 
 static void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
+	int err;
+
 	if (rsp_err_code == 0) {
+		retry_config_on_timeout = false;
 		bt_shell_print("success to configure");
-	} else {
+		return;
+	}
+
+	if (rsp_err_code != BT_AVDTP_TIME_OUT) {
+		retry_config_on_timeout = false;
 		bt_shell_error("fail to configure");
+		return;
+	}
+
+	bt_shell_error("fail to configure (timeout)");
+
+	if (!retry_config_on_timeout) {
+		return;
+	}
+
+	retry_config_on_timeout = false;
+	err = bt_a2dp_stream_config(default_a2dp, stream, registered_sbc_endpoint,
+				    found_peer_sbc_endpoint, &sbc_cfg);
+	if (err != 0) {
+		bt_shell_error("fail to retry configure (err %d)", err);
 	}
 }
 
@@ -547,10 +570,16 @@ static struct bt_a2dp_stream_ops stream_ops = {
 	.suspended = stream_suspended,
 };
 
-BT_A2DP_SBC_EP_CFG_DEFAULT(sbc_cfg, A2DP_SBC_SAMP_FREQ_44100);
 static int cmd_configure(const struct shell *sh, int32_t argc, char *argv[])
 {
 	int err;
+
+	retry_config_on_timeout = false;
+
+	if (argc > 1 && strcmp(argv[1], "retry") != 0) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
 
 	if (default_a2dp == NULL) {
 		shell_error(sh, "a2dp is not connected");
@@ -568,9 +597,11 @@ static int cmd_configure(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	bt_a2dp_stream_cb_register(&sbc_stream, &stream_ops);
+	retry_config_on_timeout = argc > 1;
 	err = bt_a2dp_stream_config(default_a2dp, &sbc_stream, registered_sbc_endpoint,
 				    found_peer_sbc_endpoint, &sbc_cfg);
 	if (err != 0) {
+		retry_config_on_timeout = false;
 		shell_error(sh, "fail to configure (err %d)", err);
 		return -ENOEXEC;
 	}
@@ -775,7 +806,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(connect, NULL, HELP_NONE, cmd_connect, 1, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(discover_peer_eps, NULL, HELP_NONE, cmd_get_peer_eps, 1, 1),
-	SHELL_CMD_ARG(configure, NULL, HELP_NONE, cmd_configure, 1, 0),
+	SHELL_CMD_ARG(configure, NULL, "[retry]", cmd_configure, 1, 1),
 	SHELL_CMD_ARG(establish, NULL, HELP_NONE, cmd_establish, 1, 0),
 	SHELL_CMD_ARG(reconfigure, NULL, HELP_NONE, cmd_reconfigure, 1, 0),
 	SHELL_CMD_ARG(release, NULL, HELP_NONE, cmd_release, 1, 0),
