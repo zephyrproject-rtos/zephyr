@@ -875,7 +875,7 @@ static void modem_cmux_on_cld_command(struct modem_cmux *cmux, struct modem_cmux
 		 * response to be sent&handled, then close our side.
 		 */
 		cmux->retry_count = MODEM_CMUX_N2_RETRIES;
-		k_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
+		modem_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
 	}
 }
 
@@ -1083,7 +1083,7 @@ static void modem_cmux_on_control_frame_disc(struct modem_cmux *cmux)
 		disconnect(cmux);
 	} else {
 		set_state(cmux, MODEM_CMUX_STATE_DISCONNECTING);
-		k_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
+		modem_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
 	}
 }
 
@@ -1394,7 +1394,7 @@ static bool modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 				modem_cmux_tx_bypass(cmux, &(char){MODEM_CMUX_SOF}, 1);
 			}
 			if (is_waking_up(cmux)) {
-				k_work_reschedule(&cmux->transmit_work, K_NO_WAIT);
+				modem_work_reschedule(&cmux->transmit_work, K_NO_WAIT);
 			}
 			break;
 		}
@@ -1679,7 +1679,7 @@ static void modem_cmux_runtime_pm_handler(struct k_work *item)
 			return;
 		}
 		modem_cmux_send_psc(cmux);
-		k_work_reschedule(&cmux->runtime_pm_work, MODEM_CMUX_T3_TIMEOUT);
+		modem_work_reschedule(&cmux->runtime_pm_work, MODEM_CMUX_T3_TIMEOUT);
 		return;
 	}
 	if (cmux->state == MODEM_CMUX_STATE_ENTER_POWERSAVE) {
@@ -1697,7 +1697,7 @@ static void runtime_pm_keepalive(struct modem_cmux *cmux)
 	}
 
 	cmux->idle_timepoint = sys_timepoint_calc(cmux->config.idle_timeout);
-	k_work_reschedule(&cmux->runtime_pm_work, cmux->config.idle_timeout);
+	modem_work_reschedule(&cmux->runtime_pm_work, cmux->config.idle_timeout);
 }
 
 /** Transmit bytes bypassing the CMUX buffers.
@@ -1984,7 +1984,7 @@ static int modem_cmux_dlci_pipe_api_transmit_chain(void *data,
 	if (frags[0].size == 0 || frags[0].data == NULL) {
 		/* Allow empty transmit request to wake up CMUX */
 		runtime_pm_keepalive(cmux);
-		k_work_reschedule(&cmux->transmit_work, K_NO_WAIT);
+		modem_work_reschedule(&cmux->transmit_work, K_NO_WAIT);
 		return 0;
 	}
 
