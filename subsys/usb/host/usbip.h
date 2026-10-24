@@ -82,6 +82,7 @@ struct usbip_cmd_submit {
 	uint32_t length;
 	int32_t start_frame;
 	int32_t numof_iso_pkts;
+	/* linux/drivers/usb/usbip/usbip_common.c fits it into urb->interval: bInterval value */
 	int32_t interval;
 	uint8_t setup[8];
 } __packed;
