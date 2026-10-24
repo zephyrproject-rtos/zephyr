@@ -1584,6 +1584,116 @@ static int continue_transfer(struct uvc_host_data *const host_data,
 	return 0;
 }
 
+/*
+ * Add the data of one payload to the current frame and hand the frame over at
+ * its end. Returns the buffer the next payload goes to, NULL when none is queued.
+ */
+static struct video_buffer *process_payload(struct uvc_host_data *const host_data,
+					    struct video_buffer *vbuf, const uint8_t *const data,
+					    const uint32_t data_size, const uint8_t frame_id,
+					    const uint8_t end_frame,
+					    const uint32_t presentation_time)
+{
+	if (data_size > 0) {
+		if (vbuf->bytesused == 0U) {
+			if (host_data->current_frame_timestamp != presentation_time) {
+				host_data->current_frame_timestamp = presentation_time;
+			}
+		} else if (presentation_time != host_data->current_frame_timestamp) {
+			host_data->save_picture = false;
+		} else {
+			/* Normal frame continuation */
+		}
+
+		if (host_data->save_picture && vbuf != NULL) {
+			if (data_size > (vbuf->size - vbuf->bytesused)) {
+				LOG_WRN("Buffer overflow: used=%u, payload=%u, capacity=%u",
+					vbuf->bytesused, data_size, vbuf->size);
+				host_data->save_picture = true;
+				vbuf->bytesused = 0U;
+				host_data->vbuf_offset = 0;
+			} else if (frame_id == host_data->expect_frame_id) {
+				memcpy((void *)(((uint8_t *)vbuf->buffer) + vbuf->bytesused), data,
+				       data_size);
+				vbuf->bytesused += data_size;
+				host_data->vbuf_offset = vbuf->bytesused;
+
+				LOG_DBG("Processed %u payload bytes (FID:%u), total: %u, EOF: %u",
+					data_size, frame_id, vbuf->bytesused, end_frame);
+			} else {
+				host_data->save_picture = false;
+				LOG_DBG("Frame ID mismatch: expected %u, got %u - discarding",
+					host_data->expect_frame_id, frame_id);
+			}
+		}
+	}
+
+	if (end_frame == 0) {
+		return vbuf;
+	}
+
+	if (!host_data->save_picture) {
+		if (host_data->discard_first_frame) {
+			host_data->discard_first_frame = 0;
+		}
+
+		if (vbuf != NULL) {
+			if (vbuf->bytesused != 0) {
+				host_data->discard_frame_cnt++;
+			}
+			vbuf->bytesused = 0U;
+			host_data->vbuf_offset = 0;
+		}
+
+		host_data->expect_frame_id = frame_id ^ 1;
+		host_data->save_picture = true;
+		return vbuf;
+	}
+
+	if (vbuf == NULL || vbuf->bytesused == 0) {
+		return vbuf;
+	}
+
+	LOG_DBG("Frame completed: %u bytes (FID: %u)", vbuf->bytesused, frame_id);
+
+	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
+		return vbuf;
+	}
+
+	k_mutex_lock(&host_data->lock, K_FOREVER);
+
+	if (host_data->current_vbuf != vbuf) {
+		LOG_DBG("Buffer %p already processed by another callback", vbuf);
+		k_mutex_unlock(&host_data->lock);
+		return vbuf;
+	}
+
+	(void)k_fifo_get(&host_data->fifo_in, K_NO_WAIT);
+	k_fifo_put(&host_data->fifo_out, vbuf);
+
+	host_data->expect_frame_id = host_data->expect_frame_id ^ 1;
+	host_data->save_picture = true;
+
+	host_data->vbuf_offset = 0;
+	host_data->transfer_count = 0;
+
+	if (IS_ENABLED(CONFIG_POLL) && host_data->sig != NULL) {
+		LOG_DBG("Raising VIDEO_BUF_DONE signal");
+		k_poll_signal_raise(host_data->sig, VIDEO_BUF_DONE);
+	}
+
+	vbuf = k_fifo_peek_head(&host_data->fifo_in);
+	if (vbuf != NULL) {
+		vbuf->bytesused = 0;
+		memset(vbuf->buffer, 0, vbuf->size);
+	}
+
+	host_data->current_vbuf = vbuf;
+	k_mutex_unlock(&host_data->lock);
+
+	return vbuf;
+}
+
 /* Buffer the stream is written to, NULL while the application holds all of them */
 static struct video_buffer *get_current_vbuf(struct uvc_host_data *const host_data)
 {
@@ -1652,102 +1762,8 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 
 	data_size = buf->len - header_length;
 
-	if (data_size > 0) {
-		if (vbuf->bytesused == 0U) {
-			if (host_data->current_frame_timestamp != presentation_time) {
-				host_data->current_frame_timestamp = presentation_time;
-			}
-		} else if (presentation_time != host_data->current_frame_timestamp) {
-			host_data->save_picture = false;
-		} else {
-			/* Normal frame continuation */
-		}
-
-		if (host_data->save_picture && vbuf != NULL) {
-			if (data_size > (vbuf->size - vbuf->bytesused)) {
-				LOG_WRN("Buffer overflow: used=%u, payload=%u, capacity=%u",
-					vbuf->bytesused, data_size, vbuf->size);
-				host_data->save_picture = true;
-				vbuf->bytesused = 0U;
-				host_data->vbuf_offset = 0;
-			} else if (frame_id == host_data->expect_frame_id) {
-				memcpy((void *)(((uint8_t *)vbuf->buffer) + vbuf->bytesused),
-				       (void *)(((uint8_t *)buf->data) + header_length), data_size);
-				vbuf->bytesused += data_size;
-				host_data->vbuf_offset = vbuf->bytesused;
-
-				LOG_DBG("Processed %u payload bytes (FID:%u), total: %u, EOF: %u",
-					data_size, frame_id, vbuf->bytesused, end_frame);
-			} else {
-				host_data->save_picture = false;
-				LOG_DBG("Frame ID mismatch: expected %u, got %u - discarding",
-					host_data->expect_frame_id, frame_id);
-			}
-		}
-	}
-
-	if (end_frame == 0) {
-		goto cleanup;
-	}
-
-	if (!host_data->save_picture) {
-		if (host_data->discard_first_frame) {
-			host_data->discard_first_frame = 0;
-		}
-
-		if (vbuf != NULL) {
-			if (vbuf->bytesused != 0) {
-				host_data->discard_frame_cnt++;
-			}
-			vbuf->bytesused = 0U;
-			host_data->vbuf_offset = 0;
-		}
-
-		host_data->expect_frame_id = frame_id ^ 1;
-		host_data->save_picture = true;
-		goto cleanup;
-	}
-
-	if (vbuf == NULL || vbuf->bytesused == 0) {
-		goto cleanup;
-	}
-
-	LOG_DBG("Frame completed: %u bytes (FID: %u)", vbuf->bytesused, frame_id);
-
-	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
-		goto cleanup;
-	}
-
-	k_mutex_lock(&host_data->lock, K_FOREVER);
-
-	if (host_data->current_vbuf != vbuf) {
-		LOG_DBG("Buffer %p already processed by another callback", vbuf);
-		k_mutex_unlock(&host_data->lock);
-		goto cleanup;
-	}
-
-	(void)k_fifo_get(&host_data->fifo_in, K_NO_WAIT);
-	k_fifo_put(&host_data->fifo_out, vbuf);
-
-	host_data->expect_frame_id = host_data->expect_frame_id ^ 1;
-	host_data->save_picture = true;
-
-	host_data->vbuf_offset = 0;
-	host_data->transfer_count = 0;
-
-	if (IS_ENABLED(CONFIG_POLL) && host_data->sig != NULL) {
-		LOG_DBG("Raising VIDEO_BUF_DONE signal");
-		k_poll_signal_raise(host_data->sig, VIDEO_BUF_DONE);
-	}
-
-	vbuf = k_fifo_peek_head(&host_data->fifo_in);
-	if (vbuf != NULL) {
-		vbuf->bytesused = 0;
-		memset(vbuf->buffer, 0, vbuf->size);
-	}
-
-	host_data->current_vbuf = vbuf;
-	k_mutex_unlock(&host_data->lock);
+	vbuf = process_payload(host_data, vbuf, (uint8_t *)buf->data + header_length, data_size,
+			       frame_id, end_frame, presentation_time);
 
 cleanup:
 	net_buf_unref(buf);
