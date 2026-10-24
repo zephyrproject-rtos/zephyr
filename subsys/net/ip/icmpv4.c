@@ -542,6 +542,20 @@ drop:
 	return NET_DROP;
 }
 
+static bool icmpv4_is_error_type(uint8_t type)
+{
+	switch (type) {
+	case NET_ICMPV4_DST_UNREACH:
+	case NET_ICMPV4_SOURCE_QUENCH:
+	case NET_ICMPV4_REDIRECT:
+	case NET_ICMPV4_TIME_EXCEEDED:
+	case NET_ICMPV4_BAD_IP_HEADER:
+		return true;
+	default:
+		return false;
+	}
+}
+
 int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
@@ -560,14 +574,24 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	}
 
 	if (ip_hdr->proto == NET_IPPROTO_ICMP) {
-		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
-						      struct net_icmp_hdr);
-		struct net_icmp_hdr *icmp_hdr;
+		bool overwrite = net_pkt_is_being_overwritten(orig);
+		uint8_t icmp_type;
+		int ret;
 
-		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(
-							orig, &icmpv4_access);
-		if (!icmp_hdr || icmp_hdr->code < 8) {
-			/* We must not send ICMP errors back */
+		/* The ICMP header follows the IPv4 header and its options */
+		net_pkt_set_overwrite(orig, true);
+		ret = net_pkt_skip(orig, (ip_hdr->vhl & NET_IPV4_IHL_MASK) * 4U);
+		if (ret == 0) {
+			ret = net_pkt_read_u8(orig, &icmp_type);
+		}
+
+		net_pkt_set_overwrite(orig, overwrite);
+		net_pkt_cursor_init(orig);
+
+		/* RFC 1122 ch. 3.2.2, no ICMP error is sent about an ICMP
+		 * error message.
+		 */
+		if (ret < 0 || icmpv4_is_error_type(icmp_type)) {
 			err = -EINVAL;
 			goto drop_no_pkt;
 		}
