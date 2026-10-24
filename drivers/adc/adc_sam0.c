@@ -461,6 +461,15 @@ static int adc_sam0_init(const struct device *dev)
 			  | GCLK_CLKCTRL_ID(cfg->gclk_id);
 #endif
 
+	/*
+	 * Reset the ADC. The registers written below that are enable-protected
+	 * (the prescaler, CALIB, and REFCTRL on some SoCs) would otherwise not
+	 * take the writes if something before, such as a bootloader, left the
+	 * ADC enabled.
+	 */
+	adc->CTRLA.reg = ADC_CTRLA_SWRST;
+	wait_synchronization(adc);
+
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {
 		return retval;
