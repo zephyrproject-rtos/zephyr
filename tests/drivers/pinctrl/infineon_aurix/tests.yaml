@@ -4,6 +4,8 @@ tests:
       - drivers
       - pinctrl
     platform_allow:
+      - kit_a2g_tc375_lite/tc375tp/cpu0
+      - kit_a3g_tc4d7_lite/tc4d7xp/cpu0
       - qemu_tc3x
       - qemu_tc4x
     integration_platforms:
