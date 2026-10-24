@@ -300,6 +300,19 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Sensors
+=======
+
+* The :dtcompatible:`st,stts22h` driver now supports device power management. With device
+  runtime PM enabled on the sensor, through ``zephyr,pm-device-runtime-auto`` or
+  :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`, the chip stays in power-down mode
+  until a runtime reference is held on it. Applications have to call
+  :c:func:`pm_device_runtime_get` before they fetch samples or use the threshold trigger, and
+  allow one conversion period before the first sample. :c:func:`sensor_sample_fetch` returns
+  ``-EBUSY`` while the device is not active; a sampling frequency set in that state is applied
+  on the next resume. Without device runtime PM the sensor is resumed at init and runs as
+  before. (:github:`123471`)
+
 Timers
 ======
 
