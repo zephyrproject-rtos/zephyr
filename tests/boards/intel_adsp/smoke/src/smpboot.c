@@ -48,9 +48,10 @@ static void thread_fn(void *a, void *b, void *c)
 }
 
 /* Needless to say: since this is starting the SMP CPUs, it needs to
- * be the first test run!
+ * be the first test run! Ztest runs the cases of a suite in alphabetical
+ * order, which is what the "1st" in the name is for.
  */
-ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
+ZTEST(intel_adsp_boot, test_1st_cpu_deferred_start)
 {
 	unsigned int num_cpus = arch_num_cpus();
 
