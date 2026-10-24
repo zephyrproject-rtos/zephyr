@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Bluetooth common options.
+
+rules:
+  BT_DEBUG_MONITOR_UART:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Sends every HCI command, event and data packet over the console UART in the btmon monitor
+      format, giving anyone with access to the port all Bluetooth traffic in plaintext, including
+      the long-term keys the host passes to the controller.
+    references: [CWE-532]
