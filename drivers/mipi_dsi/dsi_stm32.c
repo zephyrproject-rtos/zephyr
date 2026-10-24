@@ -369,6 +369,21 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 	return 0;
 }
 
+static int mipi_dsi_stm32_detach(const struct device *dev, uint8_t channel,
+				 const struct mipi_dsi_device *mdev)
+{
+	struct mipi_dsi_stm32_data *data = dev->data;
+	HAL_StatusTypeDef ret;
+
+	ret = HAL_DSI_Stop(&data->hdsi);
+	if (ret != HAL_OK) {
+		LOG_ERR("Stop DSI host failed! (%d)", ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel,
 				       struct mipi_dsi_msg *msg)
 {
@@ -453,6 +468,7 @@ static ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel
 
 static DEVICE_API(mipi_dsi, dsi_stm32_api) = {
 	.attach = mipi_dsi_stm32_attach,
+	.detach = mipi_dsi_stm32_detach,
 	.transfer = mipi_dsi_stm32_transfer,
 };
 
