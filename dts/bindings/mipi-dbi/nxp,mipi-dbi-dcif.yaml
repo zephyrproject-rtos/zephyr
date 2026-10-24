@@ -1,0 +1,77 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  DBI settings for NXP DCIF display controller. DCIF is used in DPI mode by default,
+  when used in DBI mode the compatible needs to change in a board/shield overlay.
+  For example:
+
+  &dcif {
+      compatible = "nxp,mipi-dbi-dcif";
+      clock-frequency = <200000000>;
+      width = <480>;
+      height = <320>;
+      wr-high = <13>;
+      wr-low = <13>;
+      cs-setup = <3>;
+      cs-hold = <2>;
+  };
+
+compatible: "nxp,mipi-dbi-dcif"
+
+include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml", "reset-device.yaml"]
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      The DBI clock source frequency. DCIF drives the DBI bus directly from a
+      fixed clock root with no on-chip divider, so this value is not read by
+      the driver -- it documents the frequency the wr-high/wr-low/cs-setup/
+      cs-hold cycle counts below were computed against.
+
+  width:
+    type: int
+    required: true
+    description: |
+      Panel width in pixels. DCIF requires the overall output size to be
+      configured even in DBI mode; this value is only used as the driver's
+      init-time placeholder before the first display write, since every
+      write_display() call reprograms the output size to that call's actual
+      update area.
+
+  height:
+    type: int
+    required: true
+    description: |
+      Panel height in pixels. See width above.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin.
+
+  wr-high:
+    type: int
+    required: true
+    description: |
+      WRX (Type B) or E (Type A) signal high time, in DBI clock cycles.
+
+  wr-low:
+    type: int
+    required: true
+    description: |
+      WRX (Type B) or E (Type A) signal low time, in DBI clock cycles.
+
+  cs-setup:
+    type: int
+    required: true
+    description: |
+      CSX setup time before WRX/E toggles, in DBI clock cycles.
+
+  cs-hold:
+    type: int
+    required: true
+    description: |
+      CSX hold time after WRX/E toggles, in DBI clock cycles.
