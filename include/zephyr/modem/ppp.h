@@ -91,6 +91,8 @@ struct modem_ppp {
 
 	/* Allocated network packet being created */
 	struct net_pkt *rx_pkt;
+	/* FCS of the received header bytes not stored in rx_pkt */
+	uint16_t rx_pkt_fcs;
 
 	/* Packet being sent */
 	enum modem_ppp_transmit_state transmit_state;
