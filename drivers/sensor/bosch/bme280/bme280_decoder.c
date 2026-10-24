@@ -83,12 +83,12 @@ static int bme280_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec 
 		break;
 	case SENSOR_CHAN_PRESS:
 		if (edata->has_press) {
-			int32_t readq = edata->reading.comp_press;
-			int32_t convq = BME280_PRESS_CONV_KPA * pow(2, 31 - BME280_PRESS_SHIFT);
+			/* Compensated pressure is in Pa, in UQ24.8 (datasheet 4.2.3) */
+			int64_t readq = edata->reading.comp_press;
 
 			out->readings[0].pressure =
-				(int32_t)((((int64_t)readq) << (31 - BME280_PRESS_SHIFT)) /
-					  ((int64_t)convq));
+				(int32_t)((readq << (31 - BME280_PRESS_SHIFT)) /
+					  (256LL * BME280_PRESS_CONV_KPA));
 			out->shift = BME280_PRESS_SHIFT;
 		} else {
 			return -ENODATA;
