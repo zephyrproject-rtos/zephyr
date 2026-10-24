@@ -3085,13 +3085,21 @@ static int dw_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint16
  * @param cfg Config struct with functions and parameters used by the I3C driver
  * to send bus events
  *
- * @return @see i3c_device_find.
+ * @retval 0 If successful.
+ * @retval -EBUSY If another config is already registered.
  */
 static int dw_i3c_target_register(const struct device *dev, struct i3c_target_config *cfg)
 {
 	struct dw_i3c_data *data = dev->data;
 
+	__ASSERT((cfg != NULL), "Registering a device with NULL config");
+
+	if (data->target_config != NULL) {
+		return -EBUSY;
+	}
+
 	data->target_config = cfg;
+
 	return 0;
 }
 
@@ -3106,11 +3114,22 @@ static int dw_i3c_target_register(const struct device *dev, struct i3c_target_co
  * @param cfg Config struct with functions and parameters used by the I3C driver
  * to send bus events
  *
- * @return @see i3c_device_find.
+ * @retval 0 If successful.
+ * @retval -EINVAL If @p cfg is not the registered config.
  */
 static int dw_i3c_target_unregister(const struct device *dev, struct i3c_target_config *cfg)
 {
-	/* no way to disable? maybe write DA to 0? */
+	struct dw_i3c_data *data = dev->data;
+
+	if ((data->target_config != NULL) && (data->target_config != cfg)) {
+		return -EINVAL;
+	}
+
+	/* Dropping the binding is all this can do: the IP keeps ACKing its
+	 * assigned address
+	 */
+	data->target_config = NULL;
+
 	return 0;
 }
 #endif /* CONFIG_I3C_TARGET */
