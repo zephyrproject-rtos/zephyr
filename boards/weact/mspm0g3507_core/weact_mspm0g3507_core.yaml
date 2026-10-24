@@ -1,0 +1,17 @@
+identifier: weact_mspm0g3507_core
+name: WeAct MSPM0G3507 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 128
+supported:
+  - uart
+  - gpio
+  - dac
+  - spi
+  - vref
+vendor: weact
