@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: m5stack_coremp135
+  full_name: M5Stack CoreMP135
+  vendor: m5stack
+  socs:
+    - name: stm32mp135dxx
+      variants:
+        # Starts Zephyr directly from the STM32MP13 boot ROM in SYSRAM.
+        - name: fsbl

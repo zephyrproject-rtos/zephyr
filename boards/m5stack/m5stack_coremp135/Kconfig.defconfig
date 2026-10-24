@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STACK_COREMP135_STM32MP135DXX_FSBL
+
+config SOC_SERIES_STM32MP13X_FSBL
+	default y
+
+endif # BOARD_M5STACK_COREMP135_STM32MP135DXX_FSBL
