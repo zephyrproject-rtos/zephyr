@@ -50,7 +50,7 @@
  */
 #define TX_TIMEOUT K_MSEC(100)
 
-/* One SDU is sent */
+/* One SDU is sent at a time */
 NET_BUF_POOL_FIXED_DEFINE(sdu_pool, 1, BT_L2CAP_SDU_CHAN_SEND_RESERVE + sizeof(DATA),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 /* The PDUs that the Host sent and the test has not taken yet: at most a signalling
@@ -440,6 +440,68 @@ static ZTEST(host_l2cap_le_tx, test_no_credits)
 	buf = tx(PEER_CID);
 	zassert_equal(net_buf_pull_le16(buf), strlen(DATA));
 	zassert_equal(buf->len, strlen(DATA));
+	zassert_mem_equal(buf->data, DATA, strlen(DATA));
+	net_buf_unref(buf);
+}
+
+/* Given by the status callback once the channel is out of credits */
+static K_SEM_DEFINE(paused_sem, 0, 1);
+/* What the status callback saw: the credits left and the command's result */
+static atomic_val_t paused_credits;
+static int paused_err;
+
+/* Out of credits, wait for the Controller, as bt_conn_disconnect() does */
+static void chan_status(struct bt_l2cap_chan *ch, atomic_t *status)
+{
+	if (atomic_test_bit(status, BT_L2CAP_STATUS_OUT)) {
+		return;
+	}
+
+	paused_credits = atomic_get(&BT_L2CAP_LE_CHAN(ch)->tx.credits);
+	paused_err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_VERSION_INFO, NULL, NULL);
+	k_sem_give(&paused_sem);
+}
+
+/* The status callback of a channel that runs out of credits may wait for the Controller */
+static ZTEST(host_l2cap_le_tx, test_status_sync)
+{
+	static const struct bt_l2cap_chan_ops ops = {
+		.recv = chan_recv,
+		.status = chan_status,
+	};
+	static struct bt_l2cap_le_chan status_chan;
+	/* Not a CID of the other test */
+	const uint16_t peer_cid = PEER_CID + 2U;
+	struct net_buf *buf;
+	uint8_t ident;
+
+	status_chan.chan.ops = &ops;
+	status_chan.rx.mtu = LE_MIN_MTU;
+	zassert_ok(bt_l2cap_chan_connect(conn, &status_chan.chan, PSM));
+
+	/* Credit for one K-frame */
+	ident = tx_sig(BT_L2CAP_LE_CONN_REQ);
+	buf = sig_cmd(BT_L2CAP_LE_CONN_RSP, ident);
+	net_buf_add_le16(buf, peer_cid);
+	net_buf_add_le16(buf, LE_MIN_MTU);
+	net_buf_add_le16(buf, LE_MIN_MTU);
+	net_buf_add_le16(buf, 1U);
+	net_buf_add_le16(buf, BT_L2CAP_LE_SUCCESS);
+	recv_sig(buf);
+	zassert_equal(status_chan.state, BT_L2CAP_CONNECTED);
+
+	buf = net_buf_alloc(&sdu_pool, K_NO_WAIT);
+	zassert_not_null(buf);
+	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
+	(void)net_buf_add_mem(buf, DATA, strlen(DATA));
+	zassert_ok(bt_l2cap_chan_send(&status_chan.chan, buf));
+
+	zassert_ok(k_sem_take(&paused_sem, TX_TIMEOUT), "The status callback did not return");
+	zassert_equal(paused_credits, 0);
+	zassert_ok(paused_err);
+
+	buf = tx(peer_cid);
+	zassert_equal(net_buf_pull_le16(buf), strlen(DATA));
 	zassert_mem_equal(buf->data, DATA, strlen(DATA));
 	net_buf_unref(buf);
 }
