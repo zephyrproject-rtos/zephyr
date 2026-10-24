@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* TIM3 channel 2 shares PB5. */
+&pwm3 {
+	status = "disabled";
+};
+
+&ptp_clock {
+	pinctrl-0 = <&eth_pps_out_pb5>;
+	pinctrl-names = "default";
+};
