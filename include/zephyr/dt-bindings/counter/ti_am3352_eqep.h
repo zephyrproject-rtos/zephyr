@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_COUNTER_TI_AM3352_EQEP_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_COUNTER_TI_AM3352_EQEP_H_
+
+/*
+ * QEPSRCSEL.QEPASEL/QEPBSEL/QEPISEL values (AM13E-only). Matches
+ * DL_EQEP_SOURCE in the vendor driverlib and TRM Table 25-1.
+ */
+#define TI_EQEP_SRC_INPUT_XBAR 0
+#define TI_EQEP_SRC_CMPSS0     1
+#define TI_EQEP_SRC_CMPSS1     2
+#define TI_EQEP_SRC_CMPSS2     3
+#define TI_EQEP_SRC_CMPSS3     4
+#define TI_EQEP_SRC_PWMXBAR1   5
+#define TI_EQEP_SRC_PWMXBAR2   6
+#define TI_EQEP_SRC_PWMXBAR3   7
+#define TI_EQEP_SRC_PWMXBAR4   8
+#define TI_EQEP_SRC_PWMXBAR5   9
+#define TI_EQEP_SRC_PWMXBAR6   10
+#define TI_EQEP_SRC_PWMXBAR7   11
+#define TI_EQEP_SRC_PWMXBAR8   12
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_COUNTER_TI_AM3352_EQEP_H_ */
