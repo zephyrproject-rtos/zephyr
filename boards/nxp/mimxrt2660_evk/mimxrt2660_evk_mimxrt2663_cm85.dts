@@ -40,6 +40,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,display = &dcif;
 	};
 };
 
@@ -55,6 +56,14 @@
 };
 
 &lpuart0 {
+	status = "okay";
+};
+
+&lpi2c0 {
+	status = "okay";
+};
+
+&media_ccm {
 	status = "okay";
 };
 
@@ -104,4 +113,11 @@
 
 &psram {
 	status = "okay";
+};
+
+zephyr_lcdif: &dcif {
+	/* PCA9555 pin 9: Parallel RGB backlight-enable. */
+	backlight-gpios = <&pca9555 9 GPIO_ACTIVE_HIGH>;
+	/* PCAL6524 pin 16: Parallel RGB power-enable. */
+	power-gpios = <&pcal6524 16 GPIO_ACTIVE_HIGH>;
 };

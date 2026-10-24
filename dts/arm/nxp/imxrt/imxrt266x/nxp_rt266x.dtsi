@@ -486,6 +486,16 @@
 			clock-mux = <IMX_CCM_MUX_PERI3_MAINPLL_DIVX>;
 			clock-div = <1>;
 		};
+
+		/* Peripheral distribution root used by media domain peripherals. */
+		/* CLOCK_ROOT42 */
+		peri5_rootclk: clock-root@2a0 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x2a0 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_PERI_ROOTCLK5>;
+			clock-mux = <IMX_CCM_MUX_PERI5_MAINPLL_DIVX>;
+			clock-div = <1>;
+		};
 	};
 
 	cmpt_ccm: clock-controller@44060000 {
@@ -1890,6 +1900,18 @@
 		compatible = "nxp,imx-csi";
 		reg = <0x4c090000 0x1000>;
 		interrupts = <326 0>;
+		status = "disabled";
+	};
+
+	dcif: dcif@4c200000 {
+		compatible = "nxp,dcif";
+		reg = <0x4c200000 0x1000>;
+		interrupts = <317 0>;
+		clock-names = "gate", "source";
+		clocks = <&media_ccm IMX_CCM_CLK(IMX_CCM_LPCG_MEDIA_DCIF,
+						 IMX_CCM_ROOT_MEDIA_DCPIXEL_FCLK)>,
+			 <&media_ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MEDIA_DCPIXEL_FCLK,
+						      IMX_CCM_MUX_DCPIXEL_PERI5, 1, 1)>;
 		status = "disabled";
 	};
 
