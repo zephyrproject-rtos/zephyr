@@ -313,9 +313,12 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {
 	struct scmi_pinctrl_settings settings;
 	uint8_t config_cnt = 0;
+	int ret;
 
-	/* Pin ID */
-	settings.id = pin->pin;
+	ret = pfc_rcar_get_scmi_pin_id(pin->pin, &settings.id);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/*
 	 * Peripheral function or GPIO mode.
@@ -326,10 +329,11 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 	settings.function = (pin->flags & RCAR_PIN_FLAGS_FUNC_SET) ?
 			     pin->func.func : SCMI_PINCTRL_NO_FUNCTION;
 
-	/* Bias enable/disable */
-	if (pin->flags & RCAR_PIN_FLAGS_PULL_SET) {
+	/* Bias disable, pull-up and pull-down go in PULL_MODE below */
+	if (((pin->flags & RCAR_PIN_FLAGS_PULL_SET) != 0U) &&
+	    ((pin->flags & RCAR_PIN_FLAGS_PUEN) == 0U)) {
 		settings.config[config_cnt++] = SCMI_PINCTRL_BIAS_DISABLE;
-		settings.config[config_cnt++] = (pin->flags & RCAR_PIN_FLAGS_PUEN) ? 0 : 1;
+		settings.config[config_cnt++] = 1;
 	}
 
 	/* Drive strength, in uA */
