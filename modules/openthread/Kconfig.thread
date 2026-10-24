@@ -208,6 +208,24 @@ config OPENTHREAD_CLI_LINK_METRICS_ENH_ACK_VERBOSE
 	  MAC transmit-done path, which on platforms with synchronous/blocking
 	  CLI transport may break SED fast-poll timing.
 
+config OPENTHREAD_IP6_INIT_EXT_ADDR_POOL_ENABLE
+	bool "Initialize external IPv6 address pools at runtime"
+	depends on !OPENTHREAD_COPROCESSOR
+	help
+	  Initialize the external unicast and multicast IPv6 address pools at
+	  runtime. Their sizes are configured by
+	  OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS and
+	  OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS.
+
+config OPENTHREAD_CLI_IFCONFIG_INIT_ENABLE
+	bool "OpenThread CLI ifconfig init command"
+	depends on OPENTHREAD_IP6_INIT_EXT_ADDR_POOL_ENABLE
+	depends on OPENTHREAD_SHELL
+	depends on OPENTHREAD_MANUAL_START
+	help
+	  Enable the OpenThread CLI "ifconfig init" command for testing. When
+	  enabled, the command must be run before "ifconfig up".
+
 config OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS
 	int "The maximum number of supported IPv6 addresses allows to be externally added"
 	range 0 32
