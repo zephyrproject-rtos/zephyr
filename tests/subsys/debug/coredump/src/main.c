@@ -40,6 +40,7 @@ __no_optimization void func_3(uint32_t *addr)
 	defined(CONFIG_BOARD_MPFS_ICICLE) || \
 	defined(CONFIG_BOARD_LONGAN_NANO) || \
 	defined(CONFIG_BOARD_QEMU_XTENSA) || \
+	(defined(CONFIG_BOARD_QEMU_HEXAGON) && !defined(CONFIG_MMU)) || \
 	defined(CONFIG_BOARD_RISCV32_VIRTUAL) || \
 	defined(CONFIG_SOC_FAMILY_INTEL_ISH) || \
 	defined(CONFIG_SOC_FAMILY_INTEL_ADSP) || \

@@ -43,7 +43,19 @@
 #define EVENT_CTX_USR       0x68
 #define EVENT_CTX_R28       0x6C
 #define EVENT_CTX_SCRATCH   0x70
+#if defined(CONFIG_GDBSTUB) || defined(CONFIG_DEBUG_COREDUMP)
+#define EVENT_CTX_R16_R17   0x78
+#define EVENT_CTX_R18_R19   0x80
+#define EVENT_CTX_R20_R21   0x88
+#define EVENT_CTX_R22_R23   0x90
+#define EVENT_CTX_R24_R25   0x98
+#define EVENT_CTX_R26_R27   0xA0
+#define EVENT_CTX_GP        0xA8
+#define EVENT_CTX_UGP       0xAC
+#define EVENT_CTX_SIZE      0xB0  /* 8-byte aligned */
+#else
 #define EVENT_CTX_SIZE      0x78  /* 8-byte aligned */
+#endif
 
 GTEXT(z_hexagon_enhanced_machine_check)
 GTEXT(z_hexagon_enhanced_exception)
@@ -52,6 +64,12 @@ GTEXT(z_hexagon_enhanced_interrupt)
 GTEXT(z_hexagon_event_handler)
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_hexagon_arch_switch)
+#ifdef CONFIG_HW_STACK_PROTECTION
+GTEXT(z_hexagon_event_exit_stack_protect)
+#endif
+#ifdef CONFIG_USERSPACE
+GTEXT(z_hexagon_event_exit_user_sync)
+#endif
 GDATA(_kernel)
 
 /* offsets.h will be generated and included during build */
@@ -70,10 +88,21 @@ GDATA(_kernel)
 	memw(r29+#EVENT_CTX_GELR) = r0
 
 	/* Save GSR (g1 = guest status at time of event).
-	 * H2 has already disabled guest interrupts (GSR.IE=0).
+	 * H2 has already disabled guest interrupts (GSR.IE=0), but does
+	 * not touch UM (bit 31): GSR.UM is a software-defined semantic H2
+	 * just leaves as it was in the interrupted context. A trap0 taken
+	 * from a user thread would otherwise run this whole handler with
+	 * UM still set to 1, so kernel data reachable only through the
+	 * U=0 fixed-tail RAM entries (see hexagon_fixed_tail_init()) would
+	 * fault. Clear UM here so the handler body runs at guest
+	 * privilege like every other RTOS's trap handler; EVENT_EXIT
+	 * restores the original saved value below before vmrte, which
+	 * re-applies the interrupted thread's real UM on return.
 	 */
 	r0 = gsr
 	memw(r29+#EVENT_CTX_GSR) = r0
+	r0 = clrbit(r0, #31)
+	gsr = r0
 
 	/* Save remaining volatile registers */
 	{
@@ -119,6 +148,26 @@ GDATA(_kernel)
 	memw(r29+#EVENT_CTX_M1) = r0
 	r0 = usr
 	memw(r29+#EVENT_CTX_USR) = r0
+
+#if defined(CONFIG_GDBSTUB) || defined(CONFIG_DEBUG_COREDUMP)
+	/* Save callee-saved GPRs and GP/UGP before C code can clobber them. */
+	{
+		memd(r29+#EVENT_CTX_R16_R17) = r17:16
+		memd(r29+#EVENT_CTX_R18_R19) = r19:18
+	}
+	{
+		memd(r29+#EVENT_CTX_R20_R21) = r21:20
+		memd(r29+#EVENT_CTX_R22_R23) = r23:22
+	}
+	{
+		memd(r29+#EVENT_CTX_R24_R25) = r25:24
+		memd(r29+#EVENT_CTX_R26_R27) = r27:26
+	}
+	r0 = gp
+	memw(r29+#EVENT_CTX_GP) = r0
+	r0 = ugp
+	memw(r29+#EVENT_CTX_UGP) = r0
+#endif
 
 	/* Call C handler with event number and saved context */
 	{
@@ -170,7 +219,7 @@ GDATA(_kernel)
 	/* Check if we need to switch: if (r0 == 0) no switch */
 	{
 		p0 = cmp.eq(r0, #0)
-		if (p0.new) jump:t ##_event_restore_\event_id
+		if (p0.new) jump:t ##_event_no_switch_\event_id
 	}
 
 	/* Reload old thread pointer from scratch slot */
@@ -184,7 +233,31 @@ GDATA(_kernel)
 		r1 = add(r5, #___thread_t_switch_handle_OFFSET)
 		call ##z_hexagon_arch_switch
 	}
+
+#ifdef CONFIG_HW_STACK_PROTECTION
+	/* Update FRAMELIMIT for the newly scheduled thread */
+	{
+		call ##z_hexagon_event_exit_stack_protect
+	}
+#endif
+
+_event_no_switch_\event_id:
 #endif /* CONFIG_MULTITHREADING */
+
+#ifdef CONFIG_USERSPACE
+	/*
+	 * _current now points to the thread that will actually resume; sync
+	 * _hexagon_user_mode_active for it before the restore below returns.
+	 */
+	{
+		call ##z_hexagon_event_exit_user_sync
+	}
+
+	/* Reinstall this thread's hardware memory-domain map, if needed. */
+	{
+		call ##z_hexagon_mem_domain_switch
+	}
+#endif
 
 _event_restore_\event_id:
 	/* Restore r28 */
@@ -205,6 +278,26 @@ _event_restore_\event_id:
 	m1 = r0
 	r0 = memw(r29+#EVENT_CTX_USR)
 	usr = r0
+
+#if defined(CONFIG_GDBSTUB) || defined(CONFIG_DEBUG_COREDUMP)
+	/* Restore callee-saved GPRs and GP/UGP. */
+	{
+		r17:16 = memd(r29+#EVENT_CTX_R16_R17)
+		r19:18 = memd(r29+#EVENT_CTX_R18_R19)
+	}
+	{
+		r21:20 = memd(r29+#EVENT_CTX_R20_R21)
+		r23:22 = memd(r29+#EVENT_CTX_R22_R23)
+	}
+	{
+		r25:24 = memd(r29+#EVENT_CTX_R24_R25)
+		r27:26 = memd(r29+#EVENT_CTX_R26_R27)
+	}
+	r0 = memw(r29+#EVENT_CTX_GP)
+	gp = r0
+	r0 = memw(r29+#EVENT_CTX_UGP)
+	ugp = r0
+#endif
 
 	/* Restore link register */
 	{

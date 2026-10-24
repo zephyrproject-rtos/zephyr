@@ -72,6 +72,83 @@
 #define __HEXAGON_C_UNC   0x6 /* Uncached memory */
 #define __HEXAGON_C_WB_L2 0x7 /* Write-back, with L2 */
 
+/*
+ * Linear translation-list entry (VM_TRANS_TYPE_LINEAR).
+ *
+ * Each entry is two 32-bit words (low, high). An all-zero entry
+ * terminates the list. The "chain" bit in the high word lets one
+ * list continue into another buffer at a different address.
+ *
+ * Low word:  ppn:24 (0-23) | cccc:3 (24-26) | weak_ccc:1 (27) | xwru:4 (28-31)
+ * High word: vpn:20 (0-19) | size:4 (20-23) | unused:5 (24-28) |
+ *            extend:1 (29) | shared:1 (30) | chain:1 (31)
+ *
+ * xwru nibble (bit within the nibble, not the word):
+ *   U = bit 0 (0x1), R = bit 1 (0x2), W = bit 2 (0x4), X = bit 3 (0x8)
+ */
+#define __HVM_LINEAR_U 0x1
+#define __HVM_LINEAR_R 0x2
+#define __HVM_LINEAR_W 0x4
+#define __HVM_LINEAR_X 0x8
+
+/* Linear entry "size" field encodings (high word, bits 20-23) */
+#define __HVM_LINEAR_SIZE_4KB  0
+#define __HVM_LINEAR_SIZE_16KB 1
+#define __HVM_LINEAR_SIZE_64KB 2
+#define __HVM_LINEAR_SIZE_256KB 3
+#define __HVM_LINEAR_SIZE_1MB  4
+#define __HVM_LINEAR_SIZE_4MB  5
+#define __HVM_LINEAR_SIZE_16MB 6
+
+#define __HVM_LINEAR_CHAIN  (1U << 31)
+#define __HVM_LINEAR_SHARED (1U << 30)
+
+#ifndef _ASMLANGUAGE
+/*
+ * One entry in a VM_TRANS_TYPE_LINEAR translation list.
+ *
+ * ppn/vpn are page numbers (address >> 12), matching the HVM PTE
+ * convention; the caller is responsible for right-shifting physical
+ * and virtual addresses before filling these fields.
+ */
+struct hexagon_linear_entry {
+	uint32_t low;
+	uint32_t high;
+};
+
+/**
+ * @brief Build one VM_TRANS_TYPE_LINEAR entry.
+ *
+ * @param entry Entry to fill in.
+ * @param pa Physical address (must be aligned to size_class's granule).
+ * @param va Virtual address (must be aligned to size_class's granule).
+ * @param size_class One of the __HVM_LINEAR_SIZE_* encodings.
+ * @param xwru xwru permission nibble, built from __HVM_LINEAR_{R,W,X,U}.
+ * @param cache_attr One of the __HEXAGON_C_* cache attribute encodings.
+ * @param extra_high Extra high-word bits ORed in verbatim, e.g.
+ *                    __HVM_LINEAR_SHARED, or 0.
+ */
+static inline void hexagon_linear_entry_set(struct hexagon_linear_entry *entry, uintptr_t pa,
+					     uintptr_t va, uint32_t size_class, uint32_t xwru,
+					     uint32_t cache_attr, uint32_t extra_high)
+{
+	entry->low = ((pa >> 12) & 0xFFFFFFU) | ((cache_attr & 0x7U) << 24) | (xwru << 28);
+	entry->high = ((va >> 12) & 0xFFFFFU) | ((size_class & 0xFU) << 20) | extra_high;
+}
+
+/**
+ * @brief Turn one entry into a chain link to another translation list.
+ *
+ * @param entry Entry to overwrite (its previous content is discarded).
+ * @param next Address of the next list this entry chains to.
+ */
+static inline void hexagon_linear_entry_set_chain(struct hexagon_linear_entry *entry, void *next)
+{
+	entry->low = (uint32_t)(uintptr_t)next;
+	entry->high = __HVM_LINEAR_CHAIN;
+}
+#endif /* _ASMLANGUAGE */
+
 #define VM_CLOBBERLIST_ABIV2                                                                       \
 	"r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14",   \
 		"r15", "r28", "r31", "sa0", "lc0", "sa1", "lc1", "m0", "m1", "usr", "p0", "p1",    \
@@ -298,7 +375,7 @@ static inline int32_t hexagon_vm_newmap(void *addr, uint32_t type, uint32_t tlb_
 			 : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
 			   "r11", "r12", "r13", "r14", "r15", "r28", "r31",
 			   "sa0", "lc0", "sa1", "lc1", "m0", "m1", "usr",
-			   "p0", "p1", "p2", "p3");
+			   "p0", "p1", "p2", "p3", "memory");
 	return r0_val;
 }
 

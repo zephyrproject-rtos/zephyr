@@ -28,6 +28,7 @@ GTEXT(__start)
 GTEXT(__reset_handler)
 GTEXT(_machine_check_handler)
 GTEXT(_general_exception_handler)
+GTEXT(_debug_handler)
 GTEXT(_trap0_handler)
 GTEXT(_interrupt_handler)
 
@@ -57,7 +58,7 @@ SECTION_FUNC(reset, __start)
 	/* 2: General exception */
 	jump #_general_exception_handler
 	/* 3: Debug */
-	jump #_unhandled_event
+	jump #_debug_handler
 	/* 4: Reserved */
 	jump #_unhandled_event
 	/* 5: Trap0 (syscall) */
@@ -136,8 +137,10 @@ SECTION_FUNC(TEXT, _unhandled_event)
 	jump ##z_hexagon_fatal_error
 
 SECTION_FUNC(TEXT, _machine_check_handler)
-	r0 = #1
-	jump ##z_hexagon_fatal_error
+	jump ##z_hexagon_enhanced_machine_check
+
+SECTION_FUNC(TEXT, _debug_handler)
+	jump ##z_hexagon_enhanced_exception
 
 /*
  * General exception handler.
@@ -200,7 +203,12 @@ SECTION_FUNC(TEXT, _setup_page_table)
 	r2 = asl(r2, #2)          /* PDE byte offset */
 	r0 = add(r5, r2)
 
-	r2 = #(__HVM_PTE_R | __HVM_PTE_W | __HVM_PTE_X)
+	/*
+	 * U is set unconditionally: this is the only mapping code, data
+	 * and stacks ever get, so it must already be usable from user
+	 * mode -- there is no separate supervisor-only region to split.
+	 */
+	r2 = #(__HVM_PTE_R | __HVM_PTE_W | __HVM_PTE_X | __HVM_PTE_U)
 	r3 = #(__HEXAGON_C_WB_L2 << 6)
 	r2 = or(r2, r3)
 	r2 = or(r2, #__HVM_PDE_S_4MB)
@@ -223,11 +231,13 @@ _page_table_done:
 	/* Map PL011 UART device at 0x10000000 (PDE byte offset 0x100).
 	 * The shared bit bypasses H2's guestmap translation so the
 	 * guest physical address is used directly as the host address.
+	 * U is set as with the RAM mapping above: trap0 dispatch (e.g.
+	 * uart_poll_out()) runs at USER tier and needs it to access this page.
 	 */
 	r0 = add(r5, #0x100)
 	r1.h = #0x1000
 	r1.l = #0x0000
-	r2 = #(__HVM_PTE_R | __HVM_PTE_W | __HVM_PTE_SHARED)
+	r2 = #(__HVM_PTE_R | __HVM_PTE_W | __HVM_PTE_U | __HVM_PTE_SHARED)
 	r3 = #(__HEXAGON_C_DEV << 6)
 	r2 = or(r2, r3)
 	r2 = or(r2, #__HVM_PDE_S_4MB)
@@ -264,6 +274,7 @@ _page_table_done:
 
 	.section .bss.page_table, "aw", @nobits
 	.align 4096
+GDATA(_hexagon_page_table)
 _hexagon_page_table:
 	.skip 4096
 #endif /* CONFIG_MMU */
