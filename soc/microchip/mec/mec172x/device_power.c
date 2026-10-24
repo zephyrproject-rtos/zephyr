@@ -33,14 +33,6 @@
 #define VBATM_XEC_BASE_ADDR						\
 	((uintptr_t)(DT_REG_ADDR(DT_NODELABEL(bbram))))
 
-#define BTMR16_0_ADDR	DT_REG_ADDR(DT_NODELABEL(timer0))
-#define BTMR16_1_ADDR	DT_REG_ADDR(DT_NODELABEL(timer1))
-#define BTMR16_2_ADDR	DT_REG_ADDR(DT_NODELABEL(timer2))
-#define BTMR16_3_ADDR	DT_REG_ADDR(DT_NODELABEL(timer3))
-#define BTMR32_0_ADDR	DT_REG_ADDR(DT_NODELABEL(timer4))
-#define BTMR32_1_ADDR	DT_REG_ADDR(DT_NODELABEL(timer5))
-#define VBATM_XEC_ADDR	DT_REG_ADDR(DT_NODELABEL(vbr))
-
 #ifdef DEBUG_DEEP_SLEEP_CLK_REQ
 void soc_debug_sleep_clk_req(void)
 {
@@ -57,6 +49,41 @@ void soc_debug_sleep_clk_req(void)
 	sys_write32(pcr->SYS_SLP_CTRL, vbm_addr);
 	vbm_addr += 4;
 	sys_write32(ecs->SLP_STS_MIRROR, vbm_addr);
+}
+#endif
+
+/*
+ * arch_busy_wait()'s free-running counter is not a Zephyr device (no
+ * PM_DEVICE hook), so it can't be stopped/restarted at the driver level.
+ * Derive its base address from the same "busy-wait-timer" DT phandle
+ * mchp_xec_rtos_timer.c uses to stop/restart.
+ */
+#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT) &&                                                   \
+	DT_NODE_HAS_PROP(DT_NODELABEL(rtimer), busy_wait_timer)
+#define BUSY_WAIT_TMR_ADDR DT_REG_ADDR(DT_PHANDLE(DT_NODELABEL(rtimer), busy_wait_timer))
+
+static void deep_sleep_save_busy_wait_timer(void)
+{
+	uintptr_t ctrl_addr = BUSY_WAIT_TMR_ADDR + MCHP_BTMR_CTRL_OFS;
+
+	sys_write32(sys_read32(ctrl_addr) & ~(MCHP_BTMR_CTRL_START | MCHP_BTMR_CTRL_ENABLE),
+		    ctrl_addr);
+}
+
+static void deep_sleep_restore_busy_wait_timer(void)
+{
+	uintptr_t ctrl_addr = BUSY_WAIT_TMR_ADDR + MCHP_BTMR_CTRL_OFS;
+
+	sys_write32(sys_read32(ctrl_addr) | MCHP_BTMR_CTRL_ENABLE | MCHP_BTMR_CTRL_START,
+		    ctrl_addr);
+}
+#else
+static void deep_sleep_save_busy_wait_timer(void)
+{
+}
+
+static void deep_sleep_restore_busy_wait_timer(void)
+{
 }
 #endif
 
@@ -123,33 +150,6 @@ void soc_deep_sleep_wake_dis(void)
 /* Variables used to save various HW state */
 #ifdef DEEP_SLEEP_PERIPH_SAVE_RESTORE
 
-const struct ds_timer_info ds_timer_tbl[NUM_DS_TIMER_ENTRIES] = {
-	{
-		(uintptr_t)(BTMR16_0_ADDR + MCHP_BTMR_CTRL_OFS),
-		MCHP_BTMR_CTRL_HALT, 0
-	},
-	{
-		(uintptr_t)(BTMR16_1_ADDR + MCHP_BTMR_CTRL_OFS),
-		MCHP_BTMR_CTRL_HALT, 0
-	},
-	{
-		(uintptr_t)(BTMR16_2_ADDR + MCHP_BTMR_CTRL_OFS),
-		MCHP_BTMR_CTRL_HALT, 0
-	},
-	{
-		(uintptr_t)(BTMR16_3_ADDR + MCHP_BTMR_CTRL_OFS),
-		MCHP_BTMR_CTRL_HALT, 0
-	},
-	{
-		(uintptr_t)(BTMR32_0_ADDR + MCHP_BTMR_CTRL_OFS),
-		MCHP_BTMR_CTRL_HALT, 0
-	},
-	{
-		(uintptr_t)(BTMR32_1_ADDR + MCHP_BTMR_CTRL_OFS),
-		MCHP_BTMR_CTRL_HALT, 0
-	},
-};
-
 static struct ds_dev_info ds_ctx;
 
 static void deep_sleep_save_ecs(void)
@@ -186,23 +186,6 @@ static void deep_sleep_save_uarts(void)
 }
 #endif
 
-static void deep_sleep_save_timers(void)
-{
-	const struct ds_timer_info *p;
-	uint32_t i;
-
-	p = &ds_timer_tbl[0];
-	for (i = 0; i < NUM_DS_TIMER_ENTRIES; i++) {
-		ds_ctx.timers[i] = sys_read32(p->addr);
-		if (p->stop_mask) {
-			sys_write32(ds_ctx.timers[i] | p->stop_mask, p->addr);
-		} else {
-			sys_write32(0, p->addr);
-		}
-		p++;
-	}
-}
-
 static void deep_sleep_restore_ecs(void)
 {
 #ifdef DEEP_SLEEP_JTAG
@@ -223,24 +206,6 @@ static void deep_sleep_restore_uarts(void)
 	regs1->ACTV = ds_ctx.uart_info[1];
 }
 #endif
-
-static void deep_sleep_restore_timers(void)
-{
-	const struct ds_timer_info *p;
-	uint32_t i, temp;
-
-	p = &ds_timer_tbl[0];
-	for (i = 0; i < NUM_DS_TIMER_ENTRIES; i++) {
-		if (p->stop_mask) {
-			temp = sys_read32(p->addr) & ~(p->stop_mask);
-			sys_write32(temp, p->addr);
-		} else {
-			sys_write32(ds_ctx.timers[i] & ~p->restore_mask,
-				    p->addr);
-		}
-		p++;
-	}
-}
 
 #ifdef DEEP_SLEEP_PERIPH_SAVE_RESTORE_EXTENDED
 
@@ -365,7 +330,7 @@ void soc_deep_sleep_periph_save(void)
 	deep_sleep_save_blocks();
 #endif
 	deep_sleep_save_ecs();
-	deep_sleep_save_timers();
+	deep_sleep_save_busy_wait_timer();
 #ifdef DEEP_SLEEP_UART_SAVE_RESTORE
 	deep_sleep_save_uarts();
 #endif
@@ -377,7 +342,7 @@ void soc_deep_sleep_periph_restore(void)
 #ifdef DEEP_SLEEP_UART_SAVE_RESTORE
 	deep_sleep_restore_uarts();
 #endif
-	deep_sleep_restore_timers();
+	deep_sleep_restore_busy_wait_timer();
 #ifdef DEEP_SLEEP_PERIPH_SAVE_RESTORE_EXTENDED
 	deep_sleep_restore_blocks();
 #endif
