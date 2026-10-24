@@ -195,7 +195,9 @@ static int peci_npcx_transfer(const struct device *dev, struct peci_msg *msg)
 		 * The read data block is stored at the offset 0 ~ (N-1).
 		 * The read block FCS is stored at offset N.
 		 */
-		peci_rx_buf->buf[i] = reg->PECI_RD_FCS;
+		if (peci_rx_buf->buf != NULL) {
+			peci_rx_buf->buf[i] = reg->PECI_RD_FCS;
+		}
 		LOG_DBG("Wr FCS:0x%02x|Rd FCS:0x%02x", reg->PECI_WR_FCS, reg->PECI_RD_FCS);
 	}
 
