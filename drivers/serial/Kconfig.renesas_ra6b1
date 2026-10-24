@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_RA6B1
+	bool "Renesas RA6B1 UART"
+	default y
+	depends on DT_HAS_RENESAS_RA6B1_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  Enable Renesas RA6B1 UART Driver.
+
+if UART_RA6B1
+
+config UART_RA6B1_UART_FIFO_ENABLE
+	bool "RA6B1 UART FIFO usage enable"
+	default y
+	help
+	  Enable RA6B1 UART FIFO
+
+endif
