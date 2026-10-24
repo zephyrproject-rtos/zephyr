@@ -8,6 +8,7 @@ common:
     - frdm_ke17z512
     - mimxrt1170_evk/mimxrt1176/cm7
     - mimxrt1170_evk/mimxrt1176/cm4
+    - frdm_imxrt1152/mimxrt1152
     - mimxrt1180_evk/mimxrt1189/cm33
     - mimxrt1180_evk/mimxrt1189/cm7
     - mimxrt700_evk/mimxrt798s/cm33_cpu0
