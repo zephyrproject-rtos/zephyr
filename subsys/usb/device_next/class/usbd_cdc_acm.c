@@ -1145,17 +1145,29 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 	uint32_t wrote;
 
 	while (true) {
+		bool exhausted;
+
 		key = k_spin_lock(&data->lock);
 		wrote = cdc_acm_tx_put_locked(dev, &c, 1);
+		exhausted = data->tx_fifo.current == NULL;
 		k_spin_unlock(&data->lock, key);
 
 		if (wrote == 1) {
 			break;
 		}
 
-		if (k_is_in_isr() || !data->flow_ctrl) {
+		if (!k_can_yield()) {
 			LOG_WRN_ONCE("No TX buffer available, discard data");
-			goto cdc_acm_poll_out_schedule;
+			break;
+		}
+
+		if (data->echo_mitigated && !data->flow_ctrl && exhausted) {
+			LOG_WRN_ONCE("No TX buffer available, discard data");
+			break;
+		}
+
+		if (data->echo_mitigated) {
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
 
 		k_msleep(1);
@@ -1165,7 +1177,6 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 	 * one byte per USB transfer. The latency increase is negligible while
 	 * the increased throughput and reduced CPU usage is easily observable.
 	 */
-cdc_acm_poll_out_schedule:
 	if (data->echo_mitigated) {
 		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
 	}
