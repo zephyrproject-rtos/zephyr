@@ -25,7 +25,7 @@
 		zephyr,sram = &sram_dcode;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,ipc = &ipc0;
+		zephyr,ipc = &rproc_ipm;
 		zephyr,ipc_shm = &ipc_shm;
 		zephyr,sram1 = &ddr_ext;
 	};
@@ -83,6 +83,15 @@
 		compatible = "zephyr,mbox-ipm";
 		mboxes = <&mbox0 0>, <&mbox0 1>;
 		mbox-names = "tx", "rx";
+	};
+
+	/*
+	 * Answers the shutdown request TI's Linux kernel sends before it stops
+	 * this core, and passes every other message to the application.
+	 */
+	rproc_ipm: rproc-ipm {
+		compatible = "ti,k3-rproc-ipm";
+		ipm-node = <&ipc0>;
 	};
 };
 
