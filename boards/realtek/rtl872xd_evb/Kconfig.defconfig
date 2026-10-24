@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RTL872XD_EVB
+
+# The image is linked at offset 0 of the flash window, not at slot0_partition's
+# offset, so limit its size to the partition instead of using the code partition.
+config FLASH_LOAD_SIZE
+	default $(dt_nodelabel_reg_size_hex,slot0_partition)
+
+endif # BOARD_RTL872XD_EVB
