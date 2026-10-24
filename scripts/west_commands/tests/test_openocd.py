@@ -6,8 +6,9 @@ import argparse
 from unittest.mock import MagicMock, patch
 
 import pytest
-from conftest import RC_GDB, RC_OPENOCD
+from conftest import RC_GDB, RC_KERNEL_ELF, RC_OPENOCD
 
+from runners.core import FileType
 from runners.openocd import OpenOcdBinaryRunner
 
 TEST_SERIAL = 'E7038EAD'
@@ -202,3 +203,89 @@ def test_gdb_init(
 
     cmd = check_call_ignore_sigint.call_args[0][0]
     assert cmd[-len(expected_tail) :] == expected_tail
+
+
+#
+# 'west load' writes the ELF into RAM and resumes at its entry point instead
+# of resetting, which would run whatever the reset vector points at. The
+# same sequence serves 'west flash --file-type=elf'.
+#
+
+ENTRY = 0x80000000
+RESUME = ['-c', f'resume 0x{ENTRY:016x}', '-c', 'shutdown']
+RESET_INIT = ['-c', 'reset init']
+LOAD_IMAGE = ['-c', f'load_image {RC_KERNEL_ELF}']
+VERIFY_IMAGE = ['-c', f'verify_image {RC_KERNEL_ELF}']
+
+
+def create_with_config(cfg, argv):
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    OpenOcdBinaryRunner.add_parser(parser)
+    return OpenOcdBinaryRunner.create(cfg, parser.parse_args(argv))
+
+
+def openocd_tail(cmd):
+    '''The arguments after 'targets', i.e. what the command adds.'''
+    return cmd[cmd.index('-c targets') + 1 :]
+
+
+@pytest.mark.parametrize(
+    'argv, expected_tail',
+    [
+        ([], RESET_INIT + LOAD_IMAGE + RESUME),
+        # --cmd-reset-halt replaces the reset, e.g. with a plain halt.
+        (['--cmd-reset-halt', 'halt'], ['-c', 'halt'] + LOAD_IMAGE + RESUME),
+        (['--cmd-pre-load', 'x'], ['-c', 'x'] + RESET_INIT + LOAD_IMAGE + RESUME),
+        (['--verify'], RESET_INIT + LOAD_IMAGE + VERIFY_IMAGE + RESUME),
+        (['--verify-only'], VERIFY_IMAGE + RESUME),
+        (
+            ['--verify', '--cmd-post-verify', 'y'],
+            RESET_INIT + LOAD_IMAGE + VERIFY_IMAGE + ['-c', 'y'] + RESUME,
+        ),
+    ],
+)
+@patch('runners.openocd.elf_entry_point', return_value=ENTRY)
+@patch('runners.openocd.OpenOcdBinaryRunner.ensure_output')
+@patch('runners.openocd.OpenOcdBinaryRunner.check_call')
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+def test_load(
+    require, check_call, ensure_output, elf_entry_point, argv, expected_tail, runner_config
+):
+    runner = create_with_config(runner_config._replace(file=None), argv)
+    runner.run('load')
+
+    assert openocd_tail(check_call.call_args[0][0]) == expected_tail
+    elf_entry_point.assert_called_once_with(RC_KERNEL_ELF)
+
+
+@patch('runners.openocd.elf_entry_point', return_value=ENTRY)
+@patch('runners.openocd.OpenOcdBinaryRunner.check_call')
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+def test_load_file_type_elf(require, check_call, elf_entry_point, runner_config):
+    '''--file-type=elf makes run_common pass the ELF as cfg.file.'''
+    cfg = runner_config._replace(file=RC_KERNEL_ELF, file_type=FileType.ELF)
+    create_with_config(cfg, []).run('load')
+
+    assert openocd_tail(check_call.call_args[0][0]) == RESET_INIT + LOAD_IMAGE + RESUME
+
+
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+def test_load_rejects_non_elf(require, runner_config):
+    cfg = runner_config._replace(file='test-zephyr.hex', file_type=FileType.HEX)
+    with pytest.raises(ValueError, match='only an ELF'):
+        create_with_config(cfg, []).run('load')
+
+
+@patch('runners.openocd.elf_entry_point', return_value=ENTRY)
+@patch('runners.openocd.OpenOcdBinaryRunner.check_call')
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+def test_flash_elf_matches_load(require, check_call, elf_entry_point, runner_config):
+    '''Flashing an ELF is the same RAM load sequence as 'load'.'''
+    cfg = runner_config._replace(file=RC_KERNEL_ELF, file_type=FileType.ELF)
+    create_with_config(cfg, []).run('flash')
+
+    assert openocd_tail(check_call.call_args[0][0]) == RESET_INIT + LOAD_IMAGE + RESUME
+
+
+def test_load_capability():
+    assert 'load' in OpenOcdBinaryRunner.capabilities().commands

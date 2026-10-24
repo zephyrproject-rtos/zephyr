@@ -63,6 +63,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* West
+
+  * New :ref:`west load <west-load>` command: loads an image linked to run from RAM
+    (``CONFIG_XIP=n``) into RAM over the debug probe and starts it, without programming flash.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

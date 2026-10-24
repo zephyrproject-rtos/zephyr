@@ -5,7 +5,7 @@ Building, Flashing and Debugging
 
 Zephyr provides several :ref:`west extension commands <west-extensions>` for
 building, flashing, and interacting with Zephyr programs running on a board:
-``build``, ``flash``, ``debug``, ``debugserver``, ``rtt``, and ``attach``.
+``build``, ``flash``, ``debug``, ``debugserver``, ``rtt``, ``attach``, and ``load``.
 
 For information on adding board support for the flashing and debugging
 commands, see :ref:`flash-and-debug-support` in the board porting guide.
@@ -726,6 +726,40 @@ You can :ref:`configure <west-config-cmd>` ``west debug`` and
      - Boolean, default ``true``. If ``false``, do not rebuild on west debug.
    * - ``debugserver.rebuild``
      - Boolean, default ``true``. If ``false``, do not rebuild on west debugserver.
+
+.. _west-load:
+
+Loading into RAM: ``west load``
+*******************************
+
+.. tip:: Run ``west load -h`` for additional help.
+
+From a Zephyr build directory, re-build the binary, load it into RAM over the
+debug probe and start it::
+
+  west load
+
+Unlike ``west flash``, nothing is written to flash, so the image is gone at the
+next reset. The image must be linked to run from RAM, i.e. built with
+:kconfig:option:`CONFIG_XIP` disabled; ``west load`` refuses other builds.
+
+The command uses the board's debug runner by default. As with ``west flash``,
+``--build-dir`` selects a build directory and ``--runner`` another runner;
+``west load --context`` lists the runners that support the command.
+
+Configuration Options
+=====================
+
+You can :ref:`configure <west-config-cmd>` ``west load`` using these options.
+
+.. list-table::
+   :widths: 10 30
+   :header-rows: 1
+
+   * - Option
+     - Description
+   * - ``load.rebuild``
+     - Boolean, default ``true``. If ``false``, do not rebuild on west load.
 
 Flash and debug runners
 ***********************

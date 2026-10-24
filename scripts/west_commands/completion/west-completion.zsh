@@ -37,6 +37,7 @@ _west_cmds() {
   'attach[interactively debug a board]'
   'rtt[open an rtt shell]'
   'reset[reset the board to reboot]'
+  'load[load the image into RAM over the debug probe and run it]'
   'zephyr-export[export Zephyr installation as a CMake config package]'
   'spdx[create SPDX bill of materials]'
   'blobs[work with binary blobs]'
@@ -608,6 +609,10 @@ _west_simulate() {
   }
 
 _west_reset() {
+  __comp_west_runner_cmd
+}
+
+_west_load() {
   __comp_west_runner_cmd
 }
 

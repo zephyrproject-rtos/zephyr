@@ -79,7 +79,7 @@ Flashing and Debugging
 ----------------------
 
 Flashing and debugging are done with the ``west flash``, ``west debug``,
-``west debugserver``, ``west attach`` and ``west rtt`` commands, which are
+``west debugserver``, ``west attach``, ``west rtt`` and ``west load`` commands, which are
 documented in :ref:`west-build-flash-debug`. These commands require west, so
 they are not available if you are using Zephyr without it.
 

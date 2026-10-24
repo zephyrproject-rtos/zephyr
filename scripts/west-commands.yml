@@ -57,6 +57,9 @@ west-commands:
       - name: reset
         class: Reset
         help: reset the board to reboot
+      - name: load
+        class: Load
+        help: load the image into RAM over the debug probe and run it
   - file: scripts/west_commands/export.py
     commands:
       - name: zephyr-export
