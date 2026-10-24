@@ -367,6 +367,7 @@ enum dup_action {
 	COPY,
 };
 
+static inline int l1_table_to_track_pos(uint32_t *l1_table);
 static bool dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup_action action);
 #endif /* CONFIG_USERSPACE */
 
@@ -1261,6 +1262,29 @@ static ALWAYS_INLINE uint32_t vaddr_from_pt_pos(uint32_t l1_pos, uint32_t l2_pos
 }
 
 /**
+ * @brief Drop the L2 table references held by a L1 table and release it.
+ *
+ * @param[in] l1_table Pointer to the level 1 page table.
+ * @param[in] num_entries Number of leading L1 PTEs that have been set up.
+ */
+static void free_l1_table(uint32_t *l1_table, uint32_t num_entries)
+{
+	for (uint32_t l1_pos = 0; l1_pos < num_entries; l1_pos++) {
+		if (!is_pte_illegal(l1_table[l1_pos])) {
+			uint32_t *l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
+
+			K_SPINLOCK(&xtensa_counter_lock) {
+				l2_page_tables_counter_dec(l2_table);
+			}
+		}
+
+		l1_table[l1_pos] = PTE_L1_ILLEGAL;
+	}
+
+	atomic_clear_bit(l1_page_tables_track, l1_table_to_track_pos(l1_table));
+}
+
+/**
  * @brief Duplicate an existing level 2 page table.
  *
  * This allocates a new level 2 page table and duplicates the PTEs from an existing
@@ -1314,12 +1338,13 @@ static uint32_t *dup_l2_table(uint32_t *src_l2_table, enum dup_action action)
 static uint32_t *dup_l1_table(void)
 {
 	uint32_t *l1_table = alloc_l1_table();
+	uint32_t l1_pos;
 
 	if (!l1_table) {
 		return NULL;
 	}
 
-	for (uint32_t l1_pos = 0; l1_pos < L1_PAGE_TABLE_NUM_ENTRIES; l1_pos++) {
+	for (l1_pos = 0; l1_pos < L1_PAGE_TABLE_NUM_ENTRIES; l1_pos++) {
 		if (is_pte_illegal(xtensa_kernel_ptables[l1_pos]) ||
 			(l1_pos == XTENSA_MMU_L1_POS(XTENSA_MMU_PTEVADDR))) {
 			l1_table[l1_pos] = PTE_L1_ILLEGAL;
@@ -1359,6 +1384,9 @@ static uint32_t *dup_l1_table(void)
 
 			if (l2_need_dup) {
 				l2_table = dup_l2_table(src_l2_table, RESTORE);
+				if (l2_table == NULL) {
+					goto no_l2_table_err;
+				}
 			} else {
 				l2_table = src_l2_table;
 				K_SPINLOCK(&xtensa_counter_lock) {
@@ -1379,6 +1407,11 @@ static uint32_t *dup_l1_table(void)
 	}
 
 	return l1_table;
+
+no_l2_table_err:
+	free_l1_table(l1_table, l1_pos);
+
+	return NULL;
 }
 
 /**
@@ -1417,10 +1450,11 @@ static bool dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 		k_spin_unlock(&xtensa_counter_lock, key);
 		return true;
 	}
+	k_spin_unlock(&xtensa_counter_lock, key);
 
+	/* alloc_l2_table() takes xtensa_counter_lock itself. */
 	l2_table = dup_l2_table(src_l2_table, action);
 	if (l2_table == NULL) {
-		k_spin_unlock(&xtensa_counter_lock, key);
 		LOG_ERR("Cannot duplicate L2 page table %p", src_l2_table);
 		return false;
 	}
@@ -1430,6 +1464,7 @@ static bool dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 	 */
 	l1_table[l1_pos] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 
+	key = k_spin_lock(&xtensa_counter_lock);
 	l2_page_tables_counter_dec(src_l2_table);
 
 	k_spin_unlock(&xtensa_counter_lock, key);
@@ -1465,14 +1500,15 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 		goto err;
 	}
 
-	domain->arch.ptables = ptables;
-
 	domain->arch.asid = asid_alloc();
 	__ASSERT(domain->arch.asid != 0, "No ASIDs available");
 	if (domain->arch.asid == 0) {
+		free_l1_table(ptables, L1_PAGE_TABLE_NUM_ENTRIES);
 		ret = -ENOMEM;
 		goto err;
 	}
+
+	domain->arch.ptables = ptables;
 
 	sys_slist_append(&xtensa_domain_list, &domain->arch.node);
 
@@ -1624,6 +1660,10 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		}
 
 		xtensa_dtlb_vaddr_invalidate((void *)page);
+
+		if ((attrs & XTENSA_MMU_PERM_X) == XTENSA_MMU_PERM_X) {
+			xtensa_itlb_vaddr_invalidate((void *)page);
+		}
 	}
 }
 
@@ -1884,6 +1924,11 @@ static int mem_buffer_validate(const void *addr, size_t size, int write, uint8_t
 	/* addr/size arbitrary, fix this up into an aligned region */
 	k_mem_region_align((uintptr_t *)&virt, &aligned_size,
 			   (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
+
+	/* Reject if the buffer end or its page-aligned size wraps */
+	if ((size > (UINTPTR_MAX - (uintptr_t)addr)) || (aligned_size < size)) {
+		return -1;
+	}
 
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += CONFIG_MMU_PAGE_SIZE) {
