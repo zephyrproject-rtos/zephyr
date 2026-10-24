@@ -872,6 +872,23 @@ static void uart_clear_interrupts(sercom_registers_t *regs, bool is_clock_extern
 
 #ifdef CONFIG_UART_MCHP_ASYNC
 /**
+ * @brief Check if the UART TX complete interrupt is enabled.
+ *
+ * This function checks if the TX complete interrupt is enabled for the specified UART instance.
+ *
+ * @param regs Pointer to the sercom_registers_t structure.
+ * @param is_clock_external Boolean to indicate external or internal clock
+ * @return True if interrupt is enabled, false otherwise.
+ */
+static bool uart_is_tx_complete_interrupt_enabled(sercom_registers_t *regs,
+						  bool is_clock_external)
+{
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	return ((usart->SERCOM_INTENSET & SERCOM_USART_INTENSET_TXC_Msk) != 0);
+}
+
+/**
  * @brief Get the UART DATA register address.
  *
  * Returns the address of the SERCOM USART DATA register.
@@ -1017,7 +1034,9 @@ static void uart_mchp_isr(const struct device *dev)
 	sercom_registers_t *regs = cfg->regs;
 	bool is_clock_external = cfg->is_clock_external;
 
-	if ((dev_data->tx_len != 0) && (0 != uart_is_tx_complete(regs, is_clock_external))) {
+	if ((dev_data->tx_len != 0) &&
+	    uart_is_tx_complete_interrupt_enabled(regs, is_clock_external) &&
+	    uart_is_tx_complete(regs, is_clock_external)) {
 		uart_enable_tx_complete_interrupt(regs, is_clock_external, false);
 		k_work_cancel_delayable(&dev_data->tx_timeout_work);
 
@@ -1710,6 +1729,7 @@ static int uart_mchp_tx_halt(uart_mchp_dev_data_t *dev_data)
 	dev_data->tx_buf = NULL;
 	dev_data->tx_len = 0U;
 
+	uart_enable_tx_complete_interrupt(cfg->regs, cfg->is_clock_external, false);
 	dma_stop(cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel);
 
 	irq_unlock(key);
@@ -1891,8 +1911,13 @@ static void uart_mchp_dma_tx_done(const struct device *dma_dev, void *arg, uint3
 
 	uart_mchp_dev_data_t *const dev_data = (uart_mchp_dev_data_t *const)arg;
 	const uart_mchp_dev_cfg_t *const cfg = dev_data->cfg;
+	unsigned int key = irq_lock();
 
-	uart_enable_tx_complete_interrupt(cfg->regs, cfg->is_clock_external, true);
+	if (dev_data->tx_len != 0U) {
+		uart_enable_tx_complete_interrupt(cfg->regs, cfg->is_clock_external, true);
+	}
+
+	irq_unlock(key);
 }
 
 /* Handle RX buffer completion in async mode */
