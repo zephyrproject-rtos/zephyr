@@ -10,6 +10,8 @@
 #include <zephyr/drivers/disk.h>
 #include <zephyr/ztest.h>
 
+#include "sd_ops.h"
+
 
 #define SECTOR_COUNT 32
 #define SECTOR_SIZE 512 /* subsystem should set all cards to 512 byte blocks */
@@ -22,6 +24,12 @@ static uint32_t sector_size;
 static uint32_t sector_count;
 
 #define SDMMC_UNALIGN_OFFSET 1
+
+/* Longer than the SD stack's own timeouts, so only a hanging driver hits it */
+#define QUERY_HANG_TIMEOUT_MS (CONFIG_SD_DATA_TIMEOUT + 1000)
+
+K_THREAD_STACK_DEFINE(query_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread query_thread;
 
 
 /*
@@ -126,6 +134,46 @@ ZTEST(sd_stack, test_write)
 	ret = sdmmc_write_blocks(&card, buf + SDMMC_UNALIGN_OFFSET,
 		block_addr, SECTOR_COUNT - 1);
 	zassert_equal(ret, 0, "Unaligned write failed");
+}
+
+static void query_written_entry(void *p1, void *p2, void *p3)
+{
+	uint32_t *num_written = p1;
+	int *ret = p2;
+
+	ARG_UNUSED(p3);
+
+	*ret = card_query_written(&card, num_written);
+}
+
+/*
+ * Verify that the card reports how many blocks the last write programmed
+ * (ACMD22). The SD stack sends this command after a failed write.
+ * The query runs in a separate thread, so a driver that hangs fails this
+ * test instead of stalling the rest of the suite. The thread is preemptible
+ * and has lower priority than the test thread, so it can be aborted even if
+ * the driver busy-waits.
+ */
+ZTEST(sd_stack, test_write_num_written)
+{
+	k_tid_t tid;
+	uint32_t num_written = 0;
+	int query_ret;
+	int ret;
+
+	ret = sdmmc_write_blocks(&card, buf, 0, SECTOR_COUNT);
+	zassert_equal(ret, 0, "Write to card failed");
+
+	tid = k_thread_create(&query_thread, query_stack, K_THREAD_STACK_SIZEOF(query_stack),
+			      query_written_entry, &num_written, &query_ret, NULL,
+			      K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+	ret = k_thread_join(tid, K_MSEC(QUERY_HANG_TIMEOUT_MS));
+	if (ret != 0) {
+		k_thread_abort(tid);
+	}
+	zassert_equal(ret, 0, "Driver did not complete ACMD22 request, aborted it");
+	zassert_equal(query_ret, 0, "Reading number of written blocks failed");
+	zassert_equal(num_written, SECTOR_COUNT, "Card reports wrong number of written blocks");
 }
 
 /* Test reads and writes interleaved, to verify data is making it on disk */

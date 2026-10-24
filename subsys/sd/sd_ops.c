@@ -609,7 +609,7 @@ int card_read_blocks(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
  * Sends ACMD22 (number of written blocks) to see how many blocks were written
  * to a card
  */
-static int card_query_written(struct sd_card *card, uint32_t *num_written)
+int card_query_written(struct sd_card *card, uint32_t *num_written)
 {
 	int ret;
 	struct sdhc_command cmd;
