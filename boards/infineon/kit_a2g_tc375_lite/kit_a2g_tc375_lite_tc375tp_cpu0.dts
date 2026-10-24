@@ -10,6 +10,8 @@
 
 #include <infineon/tc3x/tc375tp.dtsi>
 #include <infineon/tc3x/tc375tp-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Infineon AURIX TC375 lite kit";
@@ -21,6 +23,36 @@
 		zephyr,console = &asclin0;
 		zephyr,shell-uart = &asclin0;
 		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&p00 5 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led1: led_1 {
+			gpios = <&p00 6 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&p00 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 
 	clocks {
@@ -69,6 +101,10 @@
 };
 
 &stm0 {
+	status = "okay";
+};
+
+&p00 {
 	status = "okay";
 };
 

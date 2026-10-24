@@ -16,5 +16,6 @@ env:
 ram: 240
 flash: 3072
 supported:
+  - gpio
   - uart
 vendor: infineon

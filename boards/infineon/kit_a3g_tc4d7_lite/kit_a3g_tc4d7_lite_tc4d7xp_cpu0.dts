@@ -10,6 +10,8 @@
 
 #include <infineon/tc4x/tc4d7xp.dtsi>
 #include <infineon/tc4x/tc4d7xp-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Infineon AURIX TC4D7 lite kit";
@@ -21,6 +23,36 @@
 		zephyr,console = &asclin0;
 		zephyr,shell-uart = &asclin0;
 		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&p03 9 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led1: led_1 {
+			gpios = <&p03 10 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&p03 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 
 	clocks {
@@ -75,6 +107,10 @@
 };
 
 &stm0 {
+	status = "okay";
+};
+
+&p03 {
 	status = "okay";
 };
 
