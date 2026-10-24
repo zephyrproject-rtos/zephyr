@@ -1,0 +1,10 @@
+common:
+  tags: linker
+  harness: ztest
+  platform_allow:
+    - nucleo_f401re
+  integration_platforms:
+    - nucleo_f401re
+tests:
+  application_development.romstart_flash_base:
+    filter: CONFIG_CPU_CORTEX_M_HAS_VTOR
