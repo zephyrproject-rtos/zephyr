@@ -108,9 +108,7 @@ Ethernet
 NETC driver supports to manage the Physical Station Interface (PSI).
 The first ENET1 port could be enabled on M7 DDR and A55 platforms.
 
-For A55 Core, NETC depends on GIC ITS, so need to make sure to allocate heap memory to
-be larger than 851968 bytes. Enabling GIC ITS raises the system heap minimum to
-that value, so no manual :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE` is needed.
+For the A55 core, NETC uses GIC ITS for interrupts.
 
 Programming and Debugging (A55)
 *******************************

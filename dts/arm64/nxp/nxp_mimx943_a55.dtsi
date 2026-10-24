@@ -73,6 +73,7 @@
 		its: msi-controller@48040000 {
 			compatible = "arm,gic-v3-its";
 			reg = <0x48040000 0x20000>;
+			zephyr,device-id-bits = <8>;
 			status = "okay";
 		};
 	};
