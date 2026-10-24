@@ -1,0 +1,13 @@
+# Private config options to the J1939 sample
+
+# Copyright (c) 2026 Deere & Company
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "J1939 sample"
+
+config SAMPLE_LOOPBACK_MODE
+	bool "Use CAN loopback mode"
+	help
+	  Set the CAN controller to loopback mode. This allows testing without a second board.
+
+source "Kconfig.zephyr"

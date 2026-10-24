@@ -1,0 +1,7 @@
+tests:
+  canbus.j1939.core:
+    tags:
+      - can
+      - j1939
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
