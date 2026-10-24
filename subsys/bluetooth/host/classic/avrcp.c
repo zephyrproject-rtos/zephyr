@@ -95,9 +95,11 @@ NET_BUF_POOL_FIXED_DEFINE(avctp_ctrl_tx_pool, CONFIG_BT_MAX_CONN,
 			  BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 NET_BUF_POOL_DEFINE(avctp_browsing_rx_pool, BT_BUF_ACL_RX_COUNT,
 		    CONFIG_BT_AVRCP_BROWSING_L2CAP_MTU,
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+#endif
 /*
  * This macros returns true if the CT/TG has been initialized, which
  * typically happens after the avrcp callback have been registered.
@@ -666,6 +668,7 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t
 	return 0;
 }
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 static struct net_buf *avrcp_create_browsing_pdu(struct bt_avrcp *avrcp)
 {
 	return bt_avrcp_create_pdu(NULL);
@@ -688,6 +691,7 @@ static int avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, bt_a
 
 	return 0;
 }
+#endif
 
 static int bt_avrcp_send_unit_info_err_rsp(struct bt_avrcp *avrcp, uint8_t tid)
 {
@@ -4004,6 +4008,7 @@ int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid)
 	return bt_avrcp_send_subunit_info(tg->avrcp, tid, BT_AVRCP_RSP_STABLE);
 }
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 static int bt_avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, uint8_t pdu_id,
 				  uint8_t avctp_type, uint8_t tid)
 {
@@ -4060,7 +4065,6 @@ static int bt_avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, u
 	return avrcp_browsing_send(avrcp, buf, avctp_type, tid);
 }
 
-#if defined(CONFIG_BT_AVRCP_BROWSING)
 static inline int avrcp_ct_precheck(struct bt_avrcp_ct *ct, struct net_buf *buf)
 {
 	if ((ct == NULL) || (ct->avrcp == NULL) || (buf == NULL)) {
