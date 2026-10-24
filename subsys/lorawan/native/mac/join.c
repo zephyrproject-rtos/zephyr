@@ -237,6 +237,7 @@ static void mac_finish_join_accept(struct lwan_ctx *ctx,
 	mac_reset_channel_plan(ctx, &frame[MHDR_SIZE], frame_len - MHDR_SIZE);
 
 	atomic_set_bit(ctx->flags, LWAN_FLAG_JOINED);
+	ctx->pending = 0;
 }
 
 static int mac_apply_join_accept(struct lwan_ctx *ctx,
@@ -478,6 +479,9 @@ void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req)
 	const struct lwan_join_req *join_req = req->data;
 	struct join_state state;
 	int ret;
+
+	/* Clear the JOINED flag as we are now clearing session state */
+	atomic_clear_bit(ctx->flags, LWAN_FLAG_JOINED);
 
 	join_state_init(&state, join_req);
 
