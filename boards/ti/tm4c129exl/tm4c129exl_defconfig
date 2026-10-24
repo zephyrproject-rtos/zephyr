@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Author: Luciano Carricart <carricartluciano@gmail.com> (TM4C129 support)
+# Based on TM4C123 support by Sri Surya <srisurya@linumiz.com>
+
+# Default configuration for TI EK-TM4C129EXL Crypto Connected LaunchPad
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
