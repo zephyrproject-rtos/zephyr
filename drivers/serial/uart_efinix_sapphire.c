@@ -23,12 +23,16 @@
 #define BSP_UART_WRITE_AVAILABILITY_MASK GENMASK(23, 16)
 #define BSP_UART_READ_OCCUPANCY_MASK     GENMASK(31, 24)
 
+#define BSP_UART_FRAME_PARITY_SHIFT 8
+#define BSP_UART_FRAME_STOP_SHIFT   16
+
 #define UART0_DATA_REG_ADDR   UART0_BASE_ADDR + BSP_UART_DATA
 #define UART0_STATUS_REG_ADDR UART0_BASE_ADDR + BSP_UART_STATUS
 #define UART0_CLOCK_REG_ADDR  UART0_BASE_ADDR + BSP_UART_CLOCK_DIVIDER
 #define UART0_FRAME_REG_ADDR  UART0_BASE_ADDR + BSP_UART_FRAME_CONFIG
 
 #define UART0_SAMPLE_PER_BAUD 8
+#define UART0_DATA_LENGTH     8 /* bits */
 #define UART0_PARITY          0 /* Off */
 #define UART0_STOP            0 /* 1 stop bit */
 
@@ -78,7 +82,9 @@ static int uart_efinix_sapphire_init(const struct device *dev)
 	sys_write32(prescaler, UART0_CLOCK_REG_ADDR);
 
 	/* 8 data bits, no parity, 1 stop bit */
-	uint32_t frame_config = (UART0_SAMPLE_PER_BAUD - 1) | UART0_PARITY << 8 | UART0_STOP << 16;
+	uint32_t frame_config = (UART0_DATA_LENGTH - 1) |
+				UART0_PARITY << BSP_UART_FRAME_PARITY_SHIFT |
+				UART0_STOP << BSP_UART_FRAME_STOP_SHIFT;
 
 	sys_write32(frame_config, UART0_FRAME_REG_ADDR);
 
