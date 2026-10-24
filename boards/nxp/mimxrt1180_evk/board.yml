@@ -4,3 +4,14 @@ board:
   vendor: nxp
   socs:
     - name: mimxrt1189
+  revision:
+    format: custom
+    default: hyperram
+    revisions:
+      - name: hyperram
+        description: >
+          Default hardware configuration with on-board HyperRAM installed.
+      - name: sdram
+        description: >
+          SDRAM variant: HyperRAM removed, SEMC SDRAM (W9825G6KH x2, 64MB)
+          installed.
