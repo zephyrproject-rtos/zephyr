@@ -1,0 +1,56 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Short the two buses together, with pull-ups to VDDIO on both lines:
+ *   P9.0 (SCB0 SCL) <-> P8.1 (SCB5 SCL)
+ *   P9.2 (SCB0 SDA) <-> P8.3 (SCB5 SDA)
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+&i2c0 {
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
+
+i2c1: &scb5 {
+	compatible = "infineon,i2c";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	/* scb5 is clocked from peripheral group 6, not group 4 like scb0. */
+	clocks = <&peri0_group6_16_5bit_0>;
+	pinctrl-0 = <&p8_1_scb5_i2c_scl &p8_3_scb5_i2c_sda>;
+	pinctrl-names = "default";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
+
+&peri0_group6_16_5bit_0 {
+	status = "okay";
+};
+
+&p8_1_scb5_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p8_3_scb5_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
