@@ -10,9 +10,11 @@
 	/delete-node/ partitions;
 };
 
-&cpuapp_sram {
-	/* ranges is kept so that ram03_sram still translates to 0x200e0000 */
-	reg = <0x0 DT_SIZE_K(896)>;
+&cpuapp_sram_app {
+	/* Start after the KMU push area, ranges of cpuapp_sram is kept so that ram03_sram still
+	 * translates to 0x200e0000.
+	 */
+	reg = <0x60 (DT_SIZE_K(896) - 0x60)>;
 };
 
 &ram03_sram {

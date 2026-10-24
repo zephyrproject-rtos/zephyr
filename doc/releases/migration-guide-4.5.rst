@@ -240,6 +240,23 @@ Boards
     :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` or
     :kconfig:option:`CONFIG_SOC_SERIES_NRF71`.
 
+* On the Nordic nRF54L and nRF71 Series SoCs, the push area that the Key Management Unit (KMU) of
+  CRACEN uses to push keys is now reserved at the start of the SRAM by the ``kmu_push_area``
+  devicetree node of the SoC. The ``zephyr,sram`` chosen node of the in-tree boards is now
+  ``cpuapp_sram_app``, a child node of ``cpuapp_sram`` that starts after the push area. The nodes
+  are not present when ``USE_NON_SECURE_ADDRESS_MAP`` is used. Out-of-tree boards that use the
+  CRACEN KMU key push should be updated, as otherwise the application RAM overlaps the push area
+  without any diagnostic. Boards that do not use it can keep using the whole RAM:
+
+  * Replace ``zephyr,sram = &cpuapp_sram`` with ``zephyr,sram = &cpuapp_sram_app``.
+  * To limit the SRAM available to the application, resize ``cpuapp_sram_app`` and keep its
+    offset, for example ``reg = <0x60 (DT_SIZE_K(184) - 0x60)>``. Changing ``reg`` of
+    ``cpuapp_sram`` no longer changes the SRAM that ``zephyr,sram`` refers to.
+  * If the memory layout deletes and redefines ``cpuapp_sram``, assign the redefined node to
+    ``zephyr,sram`` and leave the first ``0x60`` bytes of the SRAM free.
+  * Remove custom nodes and linker sections that reserve the push area, such as
+    ``nrf_kmu_reserved_push_area``. They would overlap the ``kmu_push_area`` node.
+
 * Aesc Silicon ``elemrv`` board is renamed to ``elemrv_flask_n``.
 
 * The STMicroelectronics ``stm32mp157c_dk2`` board has been renamed to
