@@ -22,19 +22,21 @@
 #define SCD4X_CMD_FORCED_RECALIB                 10
 #define SCD4X_CMD_SET_AUTOMATIC_CALIB_ENABLE     11
 #define SCD4X_CMD_GET_AUTOMATIC_CALIB_ENABLE     12
-#define SCD4X_CMD_LOW_POWER_PERIODIC_MEASUREMENT 13
-#define SCD4X_CMD_GET_DATA_READY_STATUS          14
-#define SCD4X_CMD_PERSIST_SETTINGS               15
-#define SCD4X_CMD_SELF_TEST                      16
-#define SCD4X_CMD_FACTORY_RESET                  17
-#define SCD4X_CMD_MEASURE_SINGLE_SHOT            18
-#define SCD4X_CMD_MEASURE_SINGLE_SHOT_RHT        19
-#define SCD4X_CMD_POWER_DOWN                     20
-#define SCD4X_CMD_WAKE_UP                        21
-#define SCD4X_CMD_SET_SELF_CALIB_INITIAL_PERIOD  22
-#define SCD4X_CMD_GET_SELF_CALIB_INITIAL_PERIOD  23
-#define SCD4X_CMD_SET_SELF_CALIB_STANDARD_PERIOD 24
-#define SCD4X_CMD_GET_SELF_CALIB_STANDARD_PERIOD 25
+#define SCD4X_CMD_SET_AUTOMATIC_CALIB_TARGET     13
+#define SCD4X_CMD_GET_AUTOMATIC_CALIB_TARGET     14
+#define SCD4X_CMD_LOW_POWER_PERIODIC_MEASUREMENT 15
+#define SCD4X_CMD_GET_DATA_READY_STATUS          16
+#define SCD4X_CMD_PERSIST_SETTINGS               17
+#define SCD4X_CMD_SELF_TEST                      18
+#define SCD4X_CMD_FACTORY_RESET                  19
+#define SCD4X_CMD_MEASURE_SINGLE_SHOT            20
+#define SCD4X_CMD_MEASURE_SINGLE_SHOT_RHT        21
+#define SCD4X_CMD_POWER_DOWN                     22
+#define SCD4X_CMD_WAKE_UP                        23
+#define SCD4X_CMD_SET_SELF_CALIB_INITIAL_PERIOD  24
+#define SCD4X_CMD_GET_SELF_CALIB_INITIAL_PERIOD  25
+#define SCD4X_CMD_SET_SELF_CALIB_STANDARD_PERIOD 26
+#define SCD4X_CMD_GET_SELF_CALIB_STANDARD_PERIOD 27
 
 #define SCD4X_CRC_POLY 0x31
 #define SCD4X_CRC_INIT 0xFF
@@ -70,6 +72,7 @@ struct scd4x_data {
 	uint16_t temp_sample;
 	uint16_t humi_sample;
 	uint16_t co2_sample;
+	bool power_latched;
 };
 
 struct cmds_t {
@@ -78,11 +81,11 @@ struct cmds_t {
 };
 
 const struct cmds_t scd4x_cmds[] = {
-	{0x3646, 30},   {0x21B1, 0},  {0x3F86, 500}, {0xEC05, 1},   {0x241D, 1},     {0x2318, 1},
-	{0x2427, 1},    {0x2322, 1},  {0xE000, 1},   {0xE000, 1},   {0x362F, 400},   {0x2416, 1},
-	{0x2313, 1},    {0x21AC, 0},  {0xE4B8, 1},   {0x3615, 800}, {0x3639, 10000}, {0x3632, 1200},
-	{0x219D, 5000}, {0x2196, 50}, {0x36E0, 1},   {0x36F6, 30},  {0x2445, 1},     {0x2340, 1},
-	{0x244E, 1},    {0x234B, 1},
+	{0x3646, 30},    {0x21B1, 0},    {0x3F86, 500},  {0xEC05, 1},  {0x241D, 1},   {0x2318, 1},
+	{0x2427, 1},     {0x2322, 1},    {0xE000, 1},    {0xE000, 1},  {0x362F, 400}, {0x2416, 1},
+	{0x2313, 1},     {0x243A, 1},    {0x233F, 1},    {0x21AC, 0},  {0xE4B8, 1},   {0x3615, 800},
+	{0x3639, 10000}, {0x3632, 1200}, {0x219D, 5000}, {0x2196, 50}, {0x36E0, 1},   {0x36F6, 30},
+	{0x2445, 1},     {0x2340, 1},    {0x244E, 1},    {0x234B, 1},
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_SCD4X_SCD4X_H_ */
