@@ -277,7 +277,7 @@ static void process(const struct log_backend *const backend,
 		break;
 	case SHELL_LOG_BACKEND_PANIC:
 		z_shell_cmd_line_erase(sh);
-		process_log_msg(sh, log_output, msg, true, colors);
+		process_log_msg(sh, log_output, msg, false, colors);
 
 		break;
 
