@@ -41,6 +41,9 @@
 		pinctrl: pinctrl@f003a000 {
 			compatible = "infineon,aurix-tc4x-pinctrl", "infineon,aurix-pinctrl";
 			reg = <0xf003a000 0xa400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 
 		ccu: clock-controller@f0064000 {

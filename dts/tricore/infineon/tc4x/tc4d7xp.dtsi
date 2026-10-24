@@ -26,3 +26,14 @@
 		#size-cells = <1>;
 	};
 };
+
+&pinctrl {
+	p03: gpio@f003ac00 {
+		compatible = "infineon,aurix-tc4x-gpio", "infineon,aurix-gpio";
+		reg = <0xf003ac00 0x400>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		status = "disabled";
+	};
+};

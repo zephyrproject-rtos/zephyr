@@ -71,6 +71,9 @@
 		pinctrl: pinctrl@f003a000 {
 			compatible = "infineon,aurix-tc3x-pinctrl", "infineon,aurix-pinctrl";
 			reg = <0xf003a000 0x2900>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
 };
