@@ -75,6 +75,18 @@
 			status = "disabled";
 		};
 
+		/* fsource0 = fBACK 100 MHz; dividers keep fSTM at 50 MHz */
+		ccu: clock-controller@f0036000 {
+			compatible = "infineon,aurix-tc3x-ccu", "infineon,aurix-ccu";
+			reg = <0xf0036000 0x100>;
+			#clock-cells = <1>;
+			sri-div = <1>;
+			spb-div = <2>;
+			fsi-div = <1>;
+			stm-div = <2>;
+			asclinf-div = <1>;
+		};
+
 		ir: interrupt_controller@f0037000 {
 			compatible = "infineon,aurix-ir";
 			reg = <0xf0037000 0x10000 0xf0038000 0x10000>;
