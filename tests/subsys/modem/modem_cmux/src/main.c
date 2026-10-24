@@ -1480,6 +1480,18 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_sabm_connected)
 	zassert_true(cmux.initiator, "CMUX should stay initiator");
 }
 
+ZTEST(modem_cmux, test_modem_cmux_bus_pipe_closed)
+{
+	uint32_t events;
+
+	/* Bus pipe closed underneath the connected CMUX */
+	zassert_ok(modem_pipe_close(bus_mock_pipe, K_SECONDS(10)), "Failed to close bus pipe");
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "Bus pipe close should disconnect CMUX");
+
+	zassert_ok(modem_pipe_open(bus_mock_pipe, K_SECONDS(10)), "Failed to open bus pipe");
+}
+
 ZTEST(modem_cmux, test_modem_cmux_connect_rejected)
 {
 	uint32_t events;

@@ -218,6 +218,10 @@ struct modem_cmux {
 	struct k_work_delayable connect_work;
 	struct k_work_delayable disconnect_work;
 	struct k_work_delayable runtime_pm_work;
+	struct k_work bus_closed_work;
+
+	/* Bus pipe closed by us to save power */
+	bool bus_close_expected;
 
 	/* Synchronize actions */
 	struct k_event event;
