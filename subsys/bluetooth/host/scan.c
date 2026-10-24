@@ -50,8 +50,6 @@ struct scanner_state {
 	ATOMIC_DEFINE(scan_flags, BT_LE_SCAN_USER_NUM_FLAGS);
 	struct bt_le_scan_param explicit_scan_param;
 	struct bt_le_scan_param used_scan_param;
-	struct k_mutex scan_update_mutex;
-	struct k_mutex scan_explicit_params_mutex;
 };
 
 enum scan_action {
@@ -65,6 +63,12 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 static sys_slist_t scan_cbs = SYS_SLIST_STATIC_INIT(&scan_cbs);
 
 static struct scanner_state scan_state;
+
+/* Not part of scan_state: bt_scan_reset() clears that, while an application
+ * thread can hold these.
+ */
+static K_MUTEX_DEFINE(scan_update_mutex);
+static K_MUTEX_DEFINE(scan_explicit_params_mutex);
 
 #if defined(CONFIG_BT_EXT_ADV)
 /* A buffer used to reassemble advertisement data from the controller. */
@@ -161,8 +165,6 @@ void bt_scan_softreset(void)
 void bt_scan_reset(void)
 {
 	memset(&scan_state, 0x0, sizeof(scan_state));
-	k_mutex_init(&scan_state.scan_update_mutex);
-	k_mutex_init(&scan_state.scan_explicit_params_mutex);
 	bt_scan_softreset();
 }
 
@@ -490,7 +492,7 @@ static int scan_update(void)
 	struct bt_le_scan_param scan_param;
 
 	/* Prevent partial updates of the scanner state. */
-	err = k_mutex_lock(&scan_state.scan_update_mutex, K_NO_WAIT);
+	err = k_mutex_lock(&scan_update_mutex, K_NO_WAIT);
 
 	if (err) {
 		return err;
@@ -531,7 +533,7 @@ static int scan_update(void)
 		break;
 	}
 
-	k_mutex_unlock(&scan_state.scan_update_mutex);
+	k_mutex_unlock(&scan_update_mutex);
 
 	return err;
 }
@@ -1984,7 +1986,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	/* Prevent multiple threads to try to enable explicit scanning at the same time.
 	 * That could lead to unwanted overwriting of scan_state.explicit_scan_param.
 	 */
-	err = k_mutex_lock(&scan_state.scan_explicit_params_mutex, K_NO_WAIT);
+	err = k_mutex_lock(&scan_explicit_params_mutex, K_NO_WAIT);
 
 	if (err) {
 		return err;
@@ -1993,7 +1995,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	err = scan_check_if_state_allowed(BT_LE_SCAN_USER_EXPLICIT_SCAN);
 
 	if (err) {
-		k_mutex_unlock(&scan_state.scan_explicit_params_mutex);
+		k_mutex_unlock(&scan_explicit_params_mutex);
 		return err;
 	}
 
@@ -2002,7 +2004,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 
 	scan_dev_found_cb = cb;
 	err = bt_le_scan_user_add(BT_LE_SCAN_USER_EXPLICIT_SCAN);
-	k_mutex_unlock(&scan_state.scan_explicit_params_mutex);
+	k_mutex_unlock(&scan_explicit_params_mutex);
 
 	return err;
 }
@@ -2015,7 +2017,7 @@ int bt_le_scan_stop(void)
 	/* Take the same lock as bt_le_scan_start(), so that the state it sets
 	 * up is not cleared while it is still being set up.
 	 */
-	err = k_mutex_lock(&scan_state.scan_explicit_params_mutex, K_NO_WAIT);
+	err = k_mutex_lock(&scan_explicit_params_mutex, K_NO_WAIT);
 	if (err != 0) {
 		return err;
 	}
@@ -2034,7 +2036,7 @@ int bt_le_scan_stop(void)
 
 	err = bt_le_scan_user_remove(BT_LE_SCAN_USER_EXPLICIT_SCAN);
 
-	unlock_err = k_mutex_unlock(&scan_state.scan_explicit_params_mutex);
+	unlock_err = k_mutex_unlock(&scan_explicit_params_mutex);
 	__ASSERT_NO_MSG(unlock_err == 0);
 
 	return err;
