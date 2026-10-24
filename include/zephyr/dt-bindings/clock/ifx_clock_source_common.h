@@ -36,6 +36,7 @@
 #define IFX_DPLL250_0     23 /*!< 250MHz Digital Phase-Locked Loop Clock 0 */
 #define IFX_DPLL250_1     24 /*!< 250MHz Digital Phase-Locked Loop Clock 1 */
 #define IFX_DPLL500       25 /*!< 500MHz Digital Phase-Locked Loop Clock */
+#define IFX_HPOSC         26 /*!< High Precision Oscillator Input Clock */
 
 #define IFX_CLK_HF_NO_DIVIDE    0  /**< don't divide clkHf */
 #define IFX_CLK_HF_DIVIDE_BY_2  1  /**< divide clkHf by 2 */
