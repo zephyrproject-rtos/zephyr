@@ -117,8 +117,6 @@ struct eth_dwc_xgmac_config {
 	uint8_t num_dma_chnl;
 	/* Number of traffic classes configured */
 	uint8_t num_TCs;
-	/* Maximum transfer unit length configured */
-	uint16_t mtu;
 	/* Transmit FIFO size */
 	uint32_t tx_fifo_size;
 	/* Receive FIFO size */
@@ -1166,8 +1164,6 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
 				   NET_LINK_ETHERNET);
 	net_if_carrier_off(iface);
 	ethernet_init(iface);
-	net_if_set_mtu(iface, dev_conf->mtu);
-	LOG_DBG("%s: MTU size is set to %d", dev->name, dev_conf->mtu);
 	if (device_is_ready(dev_conf->phy_dev)) {
 		phy_link_callback_set(dev_conf->phy_dev, &phy_link_state_change_callback,
 				      (void *)dev);
@@ -1716,7 +1712,6 @@ static const struct ethernet_api eth_dwc_xgmac_apis = {
 		.num_rx_Qs = DT_INST_PROP(port, num_rx_queues),                                    \
 		.num_dma_chnl = DT_INST_PROP(port, num_dma_ch),                                    \
 		.num_TCs = DT_INST_PROP(port, num_tc),                                             \
-		.mtu = DT_INST_PROP(port, max_frame_size),                                         \
 		.tx_fifo_size = DT_INST_PROP(port, tx_fifo_size),                                  \
 		.rx_fifo_size = DT_INST_PROP(port, rx_fifo_size),                                  \
 		.dma_cfg.wr_osr_lmt = DT_INST_PROP(port, wr_osr_lmt),                              \
@@ -1760,7 +1755,7 @@ static const struct ethernet_api eth_dwc_xgmac_apis = {
 	ETH_NET_DEVICE_DT_INST_DEFINE(port, eth_dwc_xgmac_dev_init, NULL,                          \
 				      &eth_dwc_xgmac##port##_dev_data,                             \
 				      &eth_dwc_xgmac##port##_dev_cfg, CONFIG_ETH_INIT_PRIORITY,    \
-				      &eth_dwc_xgmac_apis, DT_INST_PROP(port, max_frame_size));
+				      &eth_dwc_xgmac_apis, NET_ETH_MTU);
 
 /* Top-level device initialization macro - bundles all of the above */
 #define ETH_DWC_XGMAC_INITIALIZE(port)                                                             \
