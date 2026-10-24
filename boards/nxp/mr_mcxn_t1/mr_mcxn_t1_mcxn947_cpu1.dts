@@ -11,8 +11,8 @@
 #include "mr_mcxn_t1.dtsi"
 
 / {
-	model = "NXP MR-MCXN-T1 board";
 	compatible = "nxp,mcxn947", "nxp,mcx";
+	model = "NXP MR-MCXN-T1 board";
 
 	cpus {
 		/delete-node/ cpu@0;

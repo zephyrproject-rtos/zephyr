@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "Kincony KC868_A32 APPCPU";
 	compatible = "espressif,esp32";
+	model = "Kincony KC868_A32 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

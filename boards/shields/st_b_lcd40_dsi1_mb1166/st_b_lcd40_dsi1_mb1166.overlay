@@ -17,7 +17,6 @@
 	status = "okay";
 
 	otm8009a: otm8009a@0 {
-		status = "okay";
 		compatible = "orisetech,otm8009a";
 		reg = <0x0>;
 		height = <800>;
@@ -27,14 +26,15 @@
 		data-lanes = <2>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
 		rotation = <90>;
+		status = "okay";
 	};
 };
 
 &zephyr_lcd_controller {
-	status = "okay";
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	status = "okay";
 
 	/* orisetech, otm8009a */
 	display-timings {
@@ -57,9 +57,9 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&dsi_lcd_qsh_030 4 GPIO_ACTIVE_LOW>;
-		status = "okay";
 		inverted-y;
 		screen-width = <800>;
 		screen-height = <480>;
+		status = "okay";
 	};
 };

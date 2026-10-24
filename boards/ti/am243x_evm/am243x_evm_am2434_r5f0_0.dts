@@ -11,8 +11,8 @@
 #include "am243x_evm_am2434_r5f0_0-pinctrl.dtsi"
 
 / {
-	model = "TI AM243x EVM R5F Cluster 0 Core 0";
 	compatible = "ti,am243x-evm-r5f-cluster-0-core-0";
+	model = "TI AM243x EVM R5F Cluster 0 Core 0";
 
 	chosen {
 		zephyr,sram = &sram;
@@ -41,6 +41,12 @@
 		};
 	};
 
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&main_mbox6 0>, <&main_mbox6 1>;
+		mbox-names = "rx", "tx";
+	};
+
 	rsc_table: memory@a0100000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xa0100000 DT_SIZE_K(4)>;
@@ -53,12 +59,6 @@
 		reg = <0xa5000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "IPC_SHM";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
-	};
-
-	ipc0: ipc {
-		compatible = "zephyr,mbox-ipm";
-		mboxes = <&main_mbox6 0>, <&main_mbox6 1>;
-		mbox-names = "rx", "tx";
 	};
 };
 
@@ -75,10 +75,10 @@
 };
 
 &main_uart0 {
-	status = "okay";
 	pinctrl-0 = <&main_uart0_tx &main_uart0_rx>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &mcu_gpio0 {
@@ -90,19 +90,18 @@
 &main_i2c0 {
 	pinctrl-0 = <&main_i2c0_scl &main_i2c0_sda>;
 	pinctrl-names = "default";
-	status = "okay";
 	power-domains = <&i2c0_pd>;
+	status = "okay";
 };
 
 &main_mcspi0 {
 	pinctrl-0 = <&spi0_clk &spi0_cs0 &spi0_d0 &spi0_d1>;
 	pinctrl-names = "default";
-	status = "okay";
 	power-domains = <&mcspi0_pd>;
+	status = "okay";
 };
 
 &main_adc0 {
-	ti,fifo = <0>;
 	pinctrl-0 = <&main_adc0_ain0
 		     &main_adc0_ain1
 		     &main_adc0_ain2
@@ -112,8 +111,9 @@
 		     &main_adc0_ain6
 		     &main_adc0_ain7>;
 	pinctrl-names = "default";
-	status = "okay";
 	power-domains = <&adc0_pd>;
+	ti,fifo = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -226,7 +226,6 @@
 
 /* SD */
 &main_sdhci1 {
-	status = "okay";
 
 	pinctrl-0 = <&mmc1_cmd
 		     &mmc1_clk
@@ -238,6 +237,7 @@
 		     &mmc1_sdcd
 		     &mmc1_clklb>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sd {
 		compatible = "zephyr,sdmmc-disk";
@@ -275,8 +275,8 @@
 
 	flash0: flash@0 {
 		compatible = "infineon,s28hx512t", "jedec,nor";
-		status = "okay";
 		reg = <0>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(64)>; /* 64 MB - input in Bytes */
 		jedec-id = [34 5b 1a];
 		size = <DT_SIZE_M(512)>; /* 512 Mbits(64 MB) - input in Bits */
 		erase-block-size = <DT_SIZE_K(256)>;
@@ -293,16 +293,16 @@
 		t-reset-recovery = <90000>; /* 90us */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x60000000 DT_SIZE_M(64)>; /* 64 MB - input in Bytes */
+		status = "okay";
 
 		flash0_memory: flash@0 {
 			compatible = "zephyr,memory-region", "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>; /* 64 MB - input in Bytes */
-			zephyr,memory-region = "FSS_DAT0";
-			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
+			zephyr,memory-region = "FSS_DAT0";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 		};
 	};
 };

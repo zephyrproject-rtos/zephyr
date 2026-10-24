@@ -10,8 +10,8 @@
 #include <mem.h>
 
 / {
-	model = "microchip,mpfs-icicle-kit";
 	compatible = "microchip,mpfs-icicle-kit", "microchip,mpfs";
+	model = "microchip,mpfs-icicle-kit";
 
 	aliases {
 		led0 = &led0;
@@ -41,9 +41,9 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <150000000>;
+	status = "okay";
 };
 
 &qspi0 {

@@ -16,8 +16,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "Analog Devices AD-APARD32690-SL";
 	compatible = "adi,apard32690";
+	model = "Analog Devices AD-APARD32690-SL";
 
 	chosen {
 		zephyr,console = &uart1;

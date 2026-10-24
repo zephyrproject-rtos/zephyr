@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nuvoton NuMaker M031KI board";
 	compatible = "nuvoton,numaker-m031ki";
+	model = "Nuvoton NuMaker M031KI board";
 
 	aliases {
 		led0 = &red_led;
@@ -48,26 +48,26 @@
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x0 0xfe00>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@fe00 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0xfe00 0x34100>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@43f00 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x43f00 0x34100>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@78000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x78000 0x8000>;
+			label = "storage";
 		};
 	};
 };

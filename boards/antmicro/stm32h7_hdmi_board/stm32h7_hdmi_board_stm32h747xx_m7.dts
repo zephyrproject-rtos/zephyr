@@ -12,8 +12,8 @@
 #include "stm32h7_hdmi_board.dtsi"
 
 / {
-	model = "Antmicro STM32H7 Hdmi Board";
 	compatible = "antmicro,stm32h7-hdmi-board";
+	model = "Antmicro STM32H7 Hdmi Board";
 
 	chosen {
 		zephyr,crc = &crc;
@@ -33,19 +33,19 @@
 		sw0 = &user_btn;
 	};
 
-	sdram2: sdram@d0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
-		reg = <0xd0000000 DT_SIZE_M(32)>;
-		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
 	ext_memory: memory@90000000 {
 		compatible = "zephyr,memory-region";
 		reg = <0x90000000 DT_SIZE_G(2)>; /* 2 Gbits */
 		zephyr,memory-region = "EXTMEM";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xd0000000 DT_SIZE_M(32)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
@@ -110,8 +110,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0 DT_SIZE_M(128)>;
+				label = "storage";
 			};
 		};
 	};
@@ -126,7 +126,6 @@
 };
 
 &fmc {
-	status = "okay";
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1 &fmc_nbl2_pi4 &fmc_nbl3_pi5
 		     &fmc_sdclk_pg8 &fmc_sdnwe_pc0 &fmc_sdcke0_pc3 &fmc_sdne0_pc2
 		     &fmc_sdcke1_ph7 &fmc_sdne1_ph6 &fmc_sdnras_pf11 &fmc_sdncas_pg15
@@ -143,6 +142,7 @@
 		     &fmc_d27_pi3 &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9
 		     &fmc_d31_pi10>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	/* Give alias for easy access in overlays */
 	fmc_sdram: sdram {};
@@ -205,8 +205,8 @@ pmod_uart: &usart2 {
 		     &spi4_sck_pe2
 		     &spi4_nss_pe4>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	usba_p1: zephyr_uhc0: max3421e@0 {
 		compatible = "maxim,max3421e-spi";
@@ -223,8 +223,8 @@ pmod_spi: &spi5 {
 		     &spi5_sck_pk0
 		     &spi5_nss_pf6>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	usba_p2: zephyr_uhc1: max3421e@0 {
 		compatible = "maxim,max3421e-spi";
@@ -271,12 +271,12 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &fdcan2 {
-	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	bitrate = <125000>;
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <8000000>;

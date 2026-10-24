@@ -9,8 +9,8 @@
 #include "pan1783_nrf5340_cpuapp_common.dtsi"
 
 / {
-	model = "Panasonic PAN1783 EVB (NRF5340) Application";
 	compatible = "panasonic,pan1783-evb-cpuapp";
+	model = "Panasonic PAN1783 EVB (NRF5340) Application";
 
 	chosen {
 		zephyr,sram = &sram0_image;

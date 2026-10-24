@@ -32,12 +32,12 @@
 };
 
 ipc0: &cpuapp_cpuppr_ipc {
-	status = "okay";
 	mbox-names = "tx", "rx";
 	tx-region = <&cpuppr_cpuapp_ipc_shm>;
 	rx-region = <&cpuapp_cpuppr_ipc_shm>;
 	tx-blocks = <15>;
 	rx-blocks = <15>;
+	status = "okay";
 };
 
 &cpuppr_vevif {
@@ -49,16 +49,16 @@ ipc0: &cpuapp_cpuppr_ipc {
 };
 
 &grtc {
-	status = "okay";
 	owned-channels = <5>;
+	status = "okay";
 };
 
 &uart135 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart135_default>;
 	pinctrl-1 = <&uart135_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart136 {

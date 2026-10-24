@@ -11,8 +11,8 @@
 #include <espressif/partitions_0x1000_amp_8M.dtsi>
 
 / {
-	model = "CAN485 DevBoard V1 APPCPU";
 	compatible = "weact,can485dbv1", "espressif,esp32";
+	model = "CAN485 DevBoard V1 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

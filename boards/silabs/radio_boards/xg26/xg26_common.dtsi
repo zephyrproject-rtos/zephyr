@@ -251,9 +251,9 @@
 };
 
 &ieee802154 {
-	status = "okay";
 	hfxo = <&hfxo>;
 	sleep-clock = <&lfxo>;
+	status = "okay";
 };
 
 &protimer {

@@ -11,8 +11,8 @@
 #include "zedboard-pinctrl.dtsi"
 
 / {
-	model = "Avnet ZedBoard";
 	compatible = "avnet,zedboard", "xlnx,zynq-7000";
+	model = "Avnet ZedBoard";
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -35,28 +35,16 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a9";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu1: cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a9";
 			reg = <1>;
+			device_type = "cpu";
 		};
-	};
-
-	/*
-	 * 512 MB DDR3. Reserve the low 1 MB so Zephyr does not overlap memory
-	 * still in use by U-Boot (relocated code/heap and leftover GEM DMA
-	 * descriptors); loading Zephyr at 0x0 was observed to corrupt GEM DMA
-	 * when booting via U-Boot. The vector table at 0x0 lives within this
-	 * reserved region. 1 MB is a conservative margin, not a hard minimum.
-	 */
-	sram0: memory@100000 {
-		compatible = "mmio-sram";
-		reg = <0x00100000 DT_SIZE_M(511)>;
 	};
 
 	leds {
@@ -83,6 +71,18 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	/*
+	 * 512 MB DDR3. Reserve the low 1 MB so Zephyr does not overlap memory
+	 * still in use by U-Boot (relocated code/heap and leftover GEM DMA
+	 * descriptors); loading Zephyr at 0x0 was observed to corrupt GEM DMA
+	 * when booting via U-Boot. The vector table at 0x0 lives within this
+	 * reserved region. 1 MB is a conservative margin, not a hard minimum.
+	 */
+	sram0: memory@100000 {
+		compatible = "mmio-sram";
+		reg = <0x00100000 DT_SIZE_M(511)>;
+	};
 };
 
 /* The GTC is clocked at 1/2 of the CPU frequency (CPU_3x2x) */
@@ -91,11 +91,11 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <50000000>;
 	pinctrl-0 = <&pinctrl_uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &psgpio {
@@ -103,10 +103,10 @@
 };
 
 &gem0 {
-	status = "okay";
 	phy-handle = <&gem0_phy>;
 	clock-frequency = <1000000000>;
 	local-mac-address = [00 00 00 01 02 03];
+	status = "okay";
 };
 
 &gem0_mdio {

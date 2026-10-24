@@ -9,8 +9,8 @@
 #include "kit_t2g_c2d6m_lite_common.dtsi"
 
 / {
-	model = "Infineon Evaluation board for CYT4DNJBZS M7 Core 1";
 	compatible = "infineon,kit_t2g_c2d6m_lite", "infineon,cyt4dn";
+	model = "Infineon Evaluation board for CYT4DNJBZS M7 Core 1";
 
 	aliases {
 		led0 = &user_led3;

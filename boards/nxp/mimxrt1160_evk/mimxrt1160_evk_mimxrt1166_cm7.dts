@@ -10,8 +10,8 @@
 #include "mimxrt1160_evk.dtsi"
 
 / {
-	model = "NXP MIMXRT1160-EVK board";
 	compatible = "nxp,mimxrt1166";
+	model = "NXP MIMXRT1160-EVK board";
 
 	chosen {
 		zephyr,sram = &sdram0;
@@ -26,12 +26,6 @@
 		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,cpu1-region = &ocram;
 		zephyr,ipc = &mailbox_a;
-	};
-
-	sdram0: memory@80000000 {
-		/* Winbond W9825G6KH-5I */
-		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
 
 	aliases {
@@ -74,11 +68,17 @@
 			   <32 0 &gpio11 16 0>,	/* Pin 32, PWR_EN */
 			   <34 0 &gpio9 29 0>;	/* Pin 34, BL_PWM */
 	};
+
+	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(64)>;
+		/* Winbond W9825G6KH-5I */
+		device_type = "memory";
+	};
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &flexcan3 {
@@ -122,15 +122,15 @@
 };
 
 zephyr_udc0: &usb1 {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 &usbphy1 {
-	status = "okay";
 	tx-d-cal = <7>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
 };
 
 &mailbox_a {

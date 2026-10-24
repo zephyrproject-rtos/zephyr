@@ -9,8 +9,8 @@
 #include <egis/egis_et171.dtsi>
 
 / {
-	model = "Egis ET171C";
 	compatible = "egis,egis_et171";
+	model = "Egis ET171C";
 
 	aliases {
 		watchdog0 = &wdt;
@@ -41,17 +41,17 @@
 		};
 	};
 
-	flash0: flash@80000000 {
-		compatible = "soc-nv-flash";
-		reg = <0x80000000 DT_SIZE_K(1024)>;
-	};
-
 	clocks {
 		clk_mtimer: clk_mtimer {
 			compatible = "fixed-clock";
 			clock-frequency = <18037518>;
 			status = "disabled";
 		};
+	};
+
+	flash0: flash@80000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80000000 DT_SIZE_K(1024)>;
 	};
 };
 
@@ -60,9 +60,9 @@
 };
 
 &uart0 {
-	status = "okay";
 	clock-frequency = <18037518>;
 	current-speed = <38400>;
+	status = "okay";
 };
 
 &gpio0 {

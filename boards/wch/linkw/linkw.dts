@@ -12,8 +12,8 @@
 #include "linkw-pinctrl.dtsi"
 
 / {
-	model = "linkw";
 	compatible = "wch,ch32v208";
+	model = "linkw";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -99,10 +99,10 @@
 };
 
 &usart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &iwdg {

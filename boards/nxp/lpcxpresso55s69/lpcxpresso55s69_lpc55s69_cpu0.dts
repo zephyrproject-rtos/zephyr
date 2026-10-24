@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP LPCXpresso55S69 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
+	model = "NXP LPCXpresso55S69 board";
 
 	cpus {
 		/delete-node/ cpu@1;
@@ -121,9 +121,9 @@
 };
 
 &sdif {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sdif_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
@@ -133,8 +133,8 @@
 };
 
 &hs_lspi {
-	status = "okay";
 	cs-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &wwdt0 {
@@ -142,9 +142,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &mailbox0 {
@@ -157,8 +157,8 @@
 };
 
 zephyr_udc0: &usbhs {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 zephyr_uhc0: &usbhfs {
@@ -170,15 +170,15 @@ zephyr_uhc0: &usbhfs {
 zephyr_uhc1: &usbhhs {
 	pinctrl-0 = <&pinmux_usbhhs>;
 	pinctrl-names = "default";
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 &usbphy1 {
-	status = "okay";
 	tx-d-cal = <5>;
 	tx-cal-45-dp-ohms = <10>;
 	tx-cal-45-dm-ohms = <10>;
+	status = "okay";
 };
 
 &ctimer0 {
@@ -203,18 +203,18 @@ zephyr_uhc1: &usbhhs {
 
 /* I2S receive channel */
 i2s0: &flexcomm6 {
-	status = "okay";
 	compatible = "nxp,lpc-i2s";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 /* I2S transmit channel */
 i2s1: &flexcomm7 {
-	status = "okay";
 	compatible = "nxp,lpc-i2s";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 &sc_timer {

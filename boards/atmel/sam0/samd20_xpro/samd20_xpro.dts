@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "SAM D20 Xplained Pro";
 	compatible = "samd20,xpro", "atmel,samd20j18", "atmel,samd20";
+	model = "SAM D20 Xplained Pro";
 
 	chosen {
 		zephyr,console = &sercom3;
@@ -56,13 +56,12 @@
 };
 
 &rtc {
-	status = "okay";
 	counter-mode = "clock";
 	prescaler = <1024>;
+	status = "okay";
 };
 
 &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <1>;
@@ -72,10 +71,10 @@
 
 	pinctrl-0 = <&sercom0_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom2 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
@@ -83,10 +82,10 @@
 
 	pinctrl-0 = <&sercom2_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom3 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -94,10 +93,10 @@
 
 	pinctrl-0 = <&sercom3_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom4 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
@@ -105,13 +104,14 @@
 
 	pinctrl-0 = <&sercom4_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * The final 16 KiB is reserved for the application.
@@ -120,8 +120,8 @@
 		 */
 		storage_partition: partition@3c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0003c000 0x00004000>;
+			label = "storage";
 		};
 	};
 };

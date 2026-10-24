@@ -8,8 +8,8 @@
 #include <st/f4/stm32f407Xe.dtsi>
 
 / {
-	model = "SEGGER STM32F407 Trace Reference Board";
 	compatible = "segger,trb-stm32f407";
+	model = "SEGGER STM32F407 Trace Reference Board";
 
 	chosen {
 		zephyr,sram = &sram0;

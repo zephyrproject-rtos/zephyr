@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32G491RE-NUCLEO board";
 	compatible = "st,stm32g491re-nucleo";
+	model = "STMicroelectronics STM32G491RE-NUCLEO board";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -149,9 +149,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -159,9 +159,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -179,33 +179,33 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(34)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8800 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00008800 DT_SIZE_K(236)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@43800 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00043800 DT_SIZE_K(238)>;
+			label = "image-1";
 		};
 
 		/* Set 4Kb of storage at the end of the 512Kb of flash */
 		storage_partition: partition@7f000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0007f000 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };
@@ -215,7 +215,7 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };

@@ -18,7 +18,7 @@
 
 	rylr_lora_modem: rylr_lora_modem {
 		compatible = "reyax,rylrxxx";
-		status = "okay";
 		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };

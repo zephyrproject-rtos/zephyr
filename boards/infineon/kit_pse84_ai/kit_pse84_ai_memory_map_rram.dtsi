@@ -19,34 +19,34 @@
 	status = "okay";
 
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		reserved_extended_boot: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "reserved-extended-boot";
 			reg = <0x0 0x11000>;
+			label = "reserved-extended-boot";
 			read-only;
 		};
 
 		boot_partition: partition@11000 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x11000 0x40000>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		storage_partition_rram: partition@51000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage-rram";
 			reg = <0x51000 0x12000>;
+			label = "storage-rram";
 		};
 
 		reserved_security: partition@63000 {
 			compatible = "zephyr,mapped-partition";
-			label = "reserved-security";
 			reg = <0x63000 0x1d000>;
+			label = "reserved-security";
 			read-only;
 		};
 	};

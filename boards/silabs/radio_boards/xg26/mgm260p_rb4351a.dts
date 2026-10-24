@@ -11,8 +11,8 @@
 #include "mgm260p_rb4351a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs MGM260P 2.4 GHz +20 dBm Radio Board (MGM260P-RB4351A, BRD4351A)";
 	compatible = "silabs,mgm260p_rb4351a", "silabs,mgm26";
+	model = "Silicon Labs MGM260P 2.4 GHz +20 dBm Radio Board (MGM260P-RB4351A, BRD4351A)";
 };
 
 &led0 {

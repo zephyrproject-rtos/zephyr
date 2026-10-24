@@ -10,7 +10,6 @@
 &spi3 {
 	gd25lb256: gd25lb256e3ir@1 {
 		compatible = "jedec,spi-nor";
-		status = "okay";
 		reg = <1>;
 		spi-max-frequency = <60000000>;
 		jedec-id = [c8 67 19];
@@ -22,5 +21,6 @@
 		has-dpd;
 		t-enter-dpd = <3000>;
 		t-exit-dpd = <30000>;
+		status = "okay";
 	};
 };

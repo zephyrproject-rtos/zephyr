@@ -10,6 +10,6 @@
 #include <amd/acp_7_0.dtsi>
 
 / {
-	model = "AMD ACP_7_0 Audio DSP";
 	compatible = "acp_7_0";
+	model = "AMD ACP_7_0 Audio DSP";
 };

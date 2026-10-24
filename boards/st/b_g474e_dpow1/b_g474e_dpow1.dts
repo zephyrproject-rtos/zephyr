@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "B-G474E-DPOW1 Discovery board";
 	compatible = "st,b-g474e-dpow1";
+	model = "B-G474E-DPOW1 Discovery board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -150,9 +150,9 @@
 &adc2 {
 	pinctrl-0 = <&adc2_in8_pc2>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@8 {
 		reg = <8>;
@@ -165,7 +165,6 @@
 };
 
 &ucpd1 {
-	status = "okay";
 
 	/*
 	 * UCPD is fed directly from HSI which is @ 16MHz. The ucpd_clk goes to
@@ -193,6 +192,7 @@
 	hbitclkdiv = <27>;
 	pinctrl-0 = <&ucpd1_cc1_pb6 &ucpd1_cc2_pb4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb {
