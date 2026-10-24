@@ -2419,6 +2419,40 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout);
 struct net_pkt *net_pkt_rx_clone(struct net_pkt *pkt, k_timeout_t timeout);
 
 /**
+ * @brief Clone pkt and its buffer on the TX packet pool for transmission
+ *        on @p iface.
+ *
+ * The clone is allocated on @p iface, so the L2 of that interface reserves
+ * its link layer header space as it does for a packet allocated with
+ * net_pkt_alloc_with_buffer(). Use this to re-send a received packet whose
+ * link layer header has been removed, for example when forwarding it.
+ *
+ * @param pkt Original pkt to be cloned
+ * @param iface Interface the clone is sent on
+ * @param timeout Timeout to wait for free buffer
+ *
+ * @return NULL if error, cloned packet otherwise.
+ */
+struct net_pkt *net_pkt_tx_clone(struct net_pkt *pkt, struct net_if *iface, k_timeout_t timeout);
+
+/**
+ * @brief Clone pkt and its buffer on the TX packet pool for transmission
+ *        on @p iface without reserving link layer header space.
+ *
+ * The buffer of the clone is a plain copy of the original. Use this for
+ * packets that already carry their link layer header, for example frames
+ * forwarded by the Ethernet bridge.
+ *
+ * @param pkt Original pkt to be cloned
+ * @param iface Interface the clone is sent on
+ * @param timeout Timeout to wait for free buffer
+ *
+ * @return NULL if error, cloned packet otherwise.
+ */
+struct net_pkt *net_pkt_tx_clone_raw(struct net_pkt *pkt, struct net_if *iface,
+				     k_timeout_t timeout);
+
+/**
  * @brief Clone pkt and increase the refcount of its buffer.
  *
  * @param pkt Original pkt to be shallow cloned
