@@ -488,6 +488,13 @@
 		};
 	};
 
+	/* Reset cause is available without pins or a peripheral clock. */
+	resetcon: reset-controller@40530000 {
+		compatible = "nxp,resetcon-hwinfo";
+		reg = <0x40530000 0x1000>;
+		status = "okay";
+	};
+
 	cmpt_ccm: clock-controller@44060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x44060000 0x4000>;
