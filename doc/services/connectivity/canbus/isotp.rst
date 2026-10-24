@@ -41,6 +41,80 @@ many CF the sender is allowed to send, before he has to wait for another FC.
    :align: center
    :alt: ISO-TP Sequence
 
+On Classical CAN, the PCI occupies the first bytes of the CAN frame data, with
+the frame type in the upper nibble of the first byte. The diagrams below show
+one byte per row, most significant bit first. CAN FD frames longer than 8 bytes
+and payloads larger than 4095 bytes use extended forms of the SF and FF headers.
+
+.. mermaid::
+   :caption: Single frame (SF)
+   :alt: Single frame: the upper nibble of byte 0 is frame type 0 and the lower
+         nibble is the payload length SF_DL, followed by up to 7 payload bytes.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+       bitsPerRow: 8
+   ---
+   packet
+     0-3: "SF_DL"
+     4-7: "Type = 0"
+     8-15: "Data ..."
+
+.. mermaid::
+   :caption: First frame (FF)
+   :alt: First frame: the upper nibble of byte 0 is frame type 1, the lower
+         nibble of byte 0 and byte 1 hold the 12-bit payload length FF_DL,
+         followed by 6 payload bytes.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+       bitsPerRow: 8
+   ---
+   packet
+     0-3: "FF_DL [11:8]"
+     4-7: "Type = 1"
+     8-15: "FF_DL [7:0]"
+     16-23: "Data ..."
+
+.. mermaid::
+   :caption: Consecutive frame (CF)
+   :alt: Consecutive frame: the upper nibble of byte 0 is frame type 2 and the
+         lower nibble is the sequence number SN, followed by up to 7 payload
+         bytes.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+       bitsPerRow: 8
+   ---
+   packet
+     0-3: "SN"
+     4-7: "Type = 2"
+     8-15: "Data ..."
+
+.. mermaid::
+   :caption: Flow control frame (FC)
+   :alt: Flow control frame: the upper nibble of byte 0 is frame type 3 and the
+         lower nibble is the flow status FS, byte 1 is the block size BS and
+         byte 2 is the minimum separation time STmin.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+       bitsPerRow: 8
+   ---
+   packet
+     0-3: "FS"
+     4-7: "Type = 3"
+     8-15: "BS"
+     16-23: "STmin"
+
 API Reference
 *************
 
