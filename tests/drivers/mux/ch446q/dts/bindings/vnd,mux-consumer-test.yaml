@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Consumer fixture for the CH446Q mux backend test. Carries mux-controls
+  and mux-states pointing at the CH446Q controllers under test.
+
+compatible: "vnd,mux-consumer-test"
+
+include: [base.yaml, mux-consumer.yaml]
