@@ -217,6 +217,8 @@ struct modem_cellular_data {
 	 * the modem already powered; the init script then confirms it responds.
 	 */
 	bool power_on_skipped;
+	/** Set when a suspend arrives while CMUX is connecting; acted on once it settles. */
+	bool suspend_pending;
 
 #if defined(CONFIG_MODEM_CELLULAR_STATS)
 	/** Operational statistics, exposed via cellular_get_stats(). */
