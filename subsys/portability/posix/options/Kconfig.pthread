@@ -185,6 +185,14 @@ config POSIX_THREAD_SAFE_FUNCTIONS
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xsh_chap02.html#tag_22_02_09_07
 
+config POSIX_NON_PORTABLE
+	bool "Non-portable POSIX threads extensions"
+	default n
+	help
+	  Select 'y' here to enable non-portable POSIX threads extensions
+	  such as pthread_setname_np(), pthread_getname_np(),
+	  pthread_timedjoin_np(), and pthread_tryjoin_np().
+
 module = PTHREAD
 module-str = POSIX thread
 source "subsys/logging/Kconfig.template.log_config"
