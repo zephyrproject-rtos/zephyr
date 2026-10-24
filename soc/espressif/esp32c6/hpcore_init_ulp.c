@@ -9,6 +9,7 @@
 #include <zephyr/storage/flash_map.h>
 
 #include <bootloader_flash_priv.h>
+#include <spi_flash_mmap.h>
 #include <ulp_lp_core.h>
 #include <esp_sleep.h>
 
@@ -16,6 +17,12 @@ LOG_MODULE_REGISTER(lp_core_loader, CONFIG_KERNEL_LOG_LEVEL);
 
 void IRAM_ATTR lp_core_image_init(void)
 {
+	const uint32_t lpcore_img_off = PARTITION_OFFSET(slot0_lpcore_partition);
+	const uint32_t lpcore_img_size = CONFIG_ESP32_ULP_COPROC_RESERVE_MEM;
+	spi_flash_mmap_handle_t map_handle;
+	const void *data;
+	esp_err_t err;
+
 	/*
 	 * Skip LP core loading on deep sleep wakeup - LP core is already
 	 * running and LP RAM contents are preserved.
@@ -24,20 +31,26 @@ void IRAM_ATTR lp_core_image_init(void)
 		return;
 	}
 
-	const uint32_t lpcore_img_off = PARTITION_OFFSET(slot0_lpcore_partition);
-	const uint32_t lpcore_img_size = CONFIG_ESP32_ULP_COPROC_RESERVE_MEM;
-
-	const uint8_t *data = (const uint8_t *)bootloader_mmap(lpcore_img_off, lpcore_img_size);
+	err = spi_flash_mmap(lpcore_img_off, lpcore_img_size, SPI_FLASH_MMAP_DATA, &data,
+			     &map_handle);
+	if (err != ESP_OK) {
+		LOG_ERR("Failed to mmap LP core image at 0x%x: %d", lpcore_img_off, err);
+		return;
+	}
 
 	if (*(const uint32_t *)data == 0xffffffff) {
 		LOG_ERR("LP core partition at 0x%x is erased; LP image not flashed",
 			lpcore_img_off);
+		spi_flash_munmap(map_handle);
 		return;
 	}
 
 	if (ulp_lp_core_load_binary(data, lpcore_img_size) != 0) {
+		spi_flash_munmap(map_handle);
 		return;
 	}
+
+	spi_flash_munmap(map_handle);
 
 	/*
 	 * On C6, lp_core_ll_reset_register() is a no-op, so HP_CPU

@@ -37,3 +37,9 @@ config SOC
 
 config SOC_PART_NUMBER
 	default "ESP32C61" if SOC_ESP32C61
+
+if SOC_SERIES_ESP32C61
+
+rsource "Kconfig.caps"
+
+endif
