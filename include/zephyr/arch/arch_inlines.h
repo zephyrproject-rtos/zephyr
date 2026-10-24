@@ -24,6 +24,8 @@
 #include <zephyr/arch/xtensa/arch_inlines.h>
 #elif defined(CONFIG_RISCV)
 #include <zephyr/arch/riscv/arch_inlines.h>
+#elif defined(CONFIG_M68K)
+#include <zephyr/arch/m68k/arch_inlines.h>
 #elif defined(CONFIG_MIPS)
 #include <zephyr/arch/mips/arch_inlines.h>
 #elif defined(CONFIG_OPENRISC)

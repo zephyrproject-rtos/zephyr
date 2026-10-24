@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Dimitri Varpusvuori
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_M68K
+
+config CONSOLE
+	default y
+
+config SERIAL
+	default y
+
+config UART_CONSOLE
+	default y
+
+config QEMU_ICOUNT_SHIFT
+	default 6 if QEMU_ICOUNT
+
+if GOLDFISH_PIC
+
+config NUM_IRQS
+	default 448
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 256
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 6
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 25
+
+config 2ND_LVL_INTR_01_OFFSET
+	default 26
+
+config 2ND_LVL_INTR_02_OFFSET
+	default 27
+
+config 2ND_LVL_INTR_03_OFFSET
+	default 28
+
+config 2ND_LVL_INTR_04_OFFSET
+	default 29
+
+config 2ND_LVL_INTR_05_OFFSET
+	default 30
+
+endif # GOLDFISH_PIC
+
+endif # BOARD_QEMU_M68K
