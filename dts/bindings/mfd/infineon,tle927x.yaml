@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon TLE927x high-end System Basis Chip (SBC).
+
+  This is the common binding for the TLE927x family, covering the TLE9271 and
+  compatible variants.
+
+  The SPI interface runs at up to 4 MHz, so spi-max-frequency must be set
+  accordingly. The SBC requires SPI mode 1 (CPOL=0, CPHA=1) and LSB-first
+  transfers, which the driver sets itself.
+
+  The watchdog, the VCC2 regulator and the HS-CAN transceiver are exposed as
+  child nodes. VCC1 has no software enable, voltage or mode, so it is not a
+  regulator device: its supervision is configured by the properties below and
+  its faults are reported through mfd_tle927x_read_faults() in SUP_STAT
+  (VCC1_UV, VCC1_OV, VCC1_SC).
+
+  The application must install and set up the watchdog early. The long open
+  window starts when RO is released, not when the first SPI command is sent
+  (datasheet 5.1.1), so the deadline covers the whole boot: startup software,
+  clock init, driver init and the first watchdog feed together must fit inside
+  the minimum 240 ms. A boot that takes longer causes a watchdog reset.
+
+compatible: "infineon,tle927x"
+
+include: spi-device.yaml
+
+bus: tle927x
+
+properties:
+  reset-threshold:
+    type: string
+    default: "vrt1"
+    enum:
+      - "vrt1"
+      - "vrt2"
+      - "vrt3"
+      - "disabled"
+    description: |
+      VCC1 undervoltage reset threshold, M_S_CTRL.VCC1_RT. VCC1 is the buck
+      output supplying the microcontroller. "vrt1" is the highest threshold and
+      matches the power-on-reset value. "disabled" turns off the VCC1 undervoltage
+      reset entirely, in which case undervoltage detection must be done outside the SBC.
+
+  overvoltage-reset:
+    type: boolean
+    description: |
+      Set M_S_CTRL.VCC1_OV_RST so a VCC1 overvoltage triggers a reset and the
+      SBC enters Restart mode. Off by default, matching the power-on-reset
+      value.
+
+  fsi-disable:
+    type: boolean
+    description: |
+      Disable the fail-safe input at init by setting HW_CTRL.FSI_FO2, turning
+      the FSI pin into the FO2 output. Set this when the FSI pin is left
+      unconnected on the board, otherwise the fail-safe input misbehaves.
+
+  wk-disable:
+    type: boolean
+    description: |
+      Clear WK_CTRL_2.WK_EN at init so the WK pin is not a wake source. Set
+      this when the WK pin is tied to a fixed level on the board: WK_EN is set
+      after power-on, so a Sleep command would otherwise be accepted with a
+      wake source that can never fire, leaving VCC1 off until VS is removed.
+      With WK disabled, Sleep is rejected (SPI_FAIL, SBC Restart) unless the
+      CAN or LIN transceiver is enabled as a wake source.
