@@ -556,6 +556,17 @@ static void modem_cmux_bus_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 		}
 		modem_work_schedule(&cmux->transmit_work, K_NO_WAIT);
 		break;
+	case MODEM_PIPE_EVENT_CLOSED:
+		/*
+		 * Classify each closure as it happens, so an unexpected closure can not be
+		 * merged into a pending expected one and lost.
+		 */
+		if (atomic_cas(&cmux->bus_close_expected, 1, 0)) {
+			break;
+		}
+		/* Invoked with the pipe locked, handle from the workqueue */
+		modem_work_submit(&cmux->bus_closed_work);
+		break;
 	default:
 		break;
 	}
@@ -855,6 +866,27 @@ static void disconnect(struct modem_cmux *cmux)
 	modem_cmux_dlci_pipes_release(cmux);
 }
 
+static void modem_cmux_close_bus_for_powersave(struct modem_cmux *cmux)
+{
+	atomic_set(&cmux->bus_close_expected, 1);
+	if (modem_pipe_close_async(cmux->pipe) < 0) {
+		/* No closed event will follow */
+		atomic_clear(&cmux->bus_close_expected);
+	}
+}
+
+static void modem_cmux_bus_closed_handler(struct k_work *item)
+{
+	struct modem_cmux *cmux = CONTAINER_OF(item, struct modem_cmux, bus_closed_work);
+
+	if (cmux->state == MODEM_CMUX_STATE_DISCONNECTED) {
+		return;
+	}
+
+	LOG_WRN("Bus pipe closed");
+	disconnect(cmux);
+}
+
 static void modem_cmux_on_cld_command(struct modem_cmux *cmux, struct modem_cmux_command *command)
 {
 	if (command->type.cr) {
@@ -952,7 +984,7 @@ static void modem_cmux_on_psc_response(struct modem_cmux *cmux)
 	k_mutex_unlock(&cmux->transmit_rb_lock);
 
 	if (cmux->config.close_pipe_on_power_save) {
-		modem_pipe_close_async(cmux->pipe);
+		modem_cmux_close_bus_for_powersave(cmux);
 	}
 }
 
@@ -1752,7 +1784,7 @@ static void modem_cmux_runtime_pm_handler(struct k_work *item)
 			set_state(cmux, MODEM_CMUX_STATE_POWERSAVE);
 			LOG_DBG("Entered power saving mode (no handshake)");
 			if (cmux->config.close_pipe_on_power_save) {
-				modem_pipe_close_async(cmux->pipe);
+				modem_cmux_close_bus_for_powersave(cmux);
 			}
 			return;
 		}
@@ -1897,7 +1929,7 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 			set_state(cmux, MODEM_CMUX_STATE_POWERSAVE);
 			LOG_DBG("Entered power saving mode");
 			if (cmux->config.close_pipe_on_power_save) {
-				modem_pipe_close_async(cmux->pipe);
+				modem_cmux_close_bus_for_powersave(cmux);
 			}
 		}
 		modem_cmux_dlci_notify_transmit_idle(cmux);
@@ -2294,6 +2326,7 @@ void modem_cmux_init(struct modem_cmux *cmux, const struct modem_cmux_config *co
 	k_work_init_delayable(&cmux->connect_work, modem_cmux_connect_handler);
 	k_work_init_delayable(&cmux->disconnect_work, modem_cmux_disconnect_handler);
 	k_work_init_delayable(&cmux->runtime_pm_work, modem_cmux_runtime_pm_handler);
+	k_work_init(&cmux->bus_closed_work, modem_cmux_bus_closed_handler);
 	k_event_init(&cmux->event);
 	set_state(cmux, MODEM_CMUX_STATE_DISCONNECTED);
 
@@ -2340,6 +2373,7 @@ int modem_cmux_attach(struct modem_cmux *cmux, struct modem_pipe *pipe)
 	cmux->pipe = pipe;
 	ring_buf_reset(&cmux->transmit_rb);
 	cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
+	atomic_clear(&cmux->bus_close_expected);
 	modem_pipe_attach(cmux->pipe, modem_cmux_bus_callback, cmux);
 
 	K_SPINLOCK(&cmux->work_lock) {
@@ -2450,6 +2484,7 @@ void modem_cmux_release(struct modem_cmux *cmux)
 	k_work_cancel_delayable_sync(&cmux->disconnect_work, &sync);
 	k_work_cancel_delayable_sync(&cmux->transmit_work, &sync);
 	k_work_cancel_delayable_sync(&cmux->receive_work, &sync);
+	k_work_cancel_sync(&cmux->bus_closed_work, &sync);
 
 	/* Unreference pipe */
 	cmux->pipe = NULL;

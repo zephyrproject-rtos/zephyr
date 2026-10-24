@@ -1515,6 +1515,58 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_sabm_connected)
 	zassert_true(cmux.initiator, "CMUX should stay initiator");
 }
 
+ZTEST(modem_cmux, test_modem_cmux_bus_pipe_closed)
+{
+	uint32_t events;
+
+	/* Bus pipe closed underneath the connected CMUX */
+	zassert_ok(modem_pipe_close(bus_mock_pipe, K_SECONDS(10)), "Failed to close bus pipe");
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "Bus pipe close should disconnect CMUX");
+
+	zassert_ok(modem_pipe_open(bus_mock_pipe, K_SECONDS(10)), "Failed to open bus pipe");
+}
+
+/*
+ * Test: bus pipe fails to close when entering power save.
+ *
+ * A failed close emits no closed event, so a later unexpected bus pipe close
+ * must still disconnect CMUX.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_close_failed)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	bool saved_cpp = cmux.config.close_pipe_on_power_save;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+	uint32_t events;
+
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.close_pipe_on_power_save = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+
+	/* Enter power saving, the bus pipe fails to close */
+	bus_mock.close_error = -EIO;
+	modem_backend_mock_prime(&bus_mock, &transaction_control_psc_initiator);
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_POWERSAVE, K_MSEC(300)),
+		     "CMUX should enter POWERSAVE after idle timeout and PSC ack");
+	zassert_true(k_event_test(&bus_mock_pipe->event, BIT(0)), "Bus pipe should still be open");
+	bus_mock.close_error = 0;
+
+	/* Bus pipe closed underneath CMUX */
+	zassert_ok(modem_pipe_close(bus_mock_pipe, K_SECONDS(10)), "Failed to close bus pipe");
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "Bus pipe close should disconnect CMUX");
+
+	/* Restore */
+	zassert_ok(modem_pipe_open(bus_mock_pipe, K_SECONDS(10)), "Failed to open bus pipe");
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.close_pipe_on_power_save = saved_cpp;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+}
+
 ZTEST(modem_cmux, test_modem_cmux_connect_rejected)
 {
 	uint32_t events;
