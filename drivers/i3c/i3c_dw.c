@@ -485,6 +485,9 @@ struct dw_i3c_data {
 
 #ifdef CONFIG_I3C_TARGET
 	struct i3c_target_config *target_config;
+#ifdef CONFIG_I3C_TARGET_BUFFER_MODE
+	uint8_t target_buf[CONFIG_I3C_DW_TARGET_BUF_SIZE];
+#endif /* CONFIG_I3C_TARGET_BUFFER_MODE */
 #endif /* CONFIG_I3C_TARGET */
 	struct k_sem sem_xfer;
 	struct k_mutex mt;
@@ -840,9 +843,36 @@ static void dw_i3c_process_response(const struct device *dev, uint32_t resp)
 		const struct i3c_target_callbacks *target_cb =
 			(data->target_config != NULL) ? data->target_config->callbacks : NULL;
 		uint32_t rx_data;
+		bool rx_drained = false;
 		int j, k;
 
-		for (j = 0; j < cmd->rx_len; j += 4) {
+#ifdef CONFIG_I3C_TARGET_BUFFER_MODE
+		if (target_cb != NULL && target_cb->buf_write_received_cb != NULL) {
+			const uint16_t kept =
+				MIN(cmd->rx_len, (uint16_t)sizeof(data->target_buf));
+
+			if (kept < cmd->rx_len) {
+				LOG_WRN("%s: %u-byte write truncated to %u, raise "
+					"CONFIG_I3C_DW_TARGET_BUF_SIZE",
+					dev->name, cmd->rx_len, kept);
+			}
+
+			/* Drain whole words, but only keep what the buffer holds. */
+			for (j = 0; j < cmd->rx_len; j += 4) {
+				rx_data = sys_read32(dw_i3c_regs(dev) + RX_TX_DATA_PORT);
+				for (k = 0; (k < MIN(4, cmd->rx_len - j)) && ((j + k) < kept);
+				     k++) {
+					data->target_buf[j + k] = (rx_data >> (8 * k)) & 0xff;
+				}
+			}
+
+			target_cb->buf_write_received_cb(data->target_config, data->target_buf,
+							 kept);
+			rx_drained = true;
+		}
+#endif /* CONFIG_I3C_TARGET_BUFFER_MODE */
+
+		for (j = 0; !rx_drained && j < cmd->rx_len; j += 4) {
 			rx_data = sys_read32(dw_i3c_regs(dev) + RX_TX_DATA_PORT);
 			if (target_cb == NULL || target_cb->write_received_cb == NULL) {
 				continue;
@@ -1953,7 +1983,17 @@ static int i3c_dw_irq(const struct device *dev)
 
 		/* Read Requested when the CMDQ is empty*/
 		if (status & INTR_READ_REQ_RECV_STAT) {
-			if (target_cb != NULL && target_cb->read_requested_cb != NULL) {
+			bool notified = false;
+
+#ifdef CONFIG_I3C_TARGET_BUFFER_MODE
+			if ((target_cb != NULL) && (target_cb->buf_read_requested_cb != NULL)) {
+				(void)target_cb->buf_read_requested_cb(data->target_config, NULL,
+								       NULL, NULL);
+				notified = true;
+			}
+#endif /* CONFIG_I3C_TARGET_BUFFER_MODE */
+			if (!notified && (target_cb != NULL) &&
+			    (target_cb->read_requested_cb != NULL)) {
 				/* Inform app so that it can send data. */
 				target_cb->read_requested_cb(data->target_config, NULL);
 			}
@@ -3207,6 +3247,18 @@ static int dw_i3c_init(const struct device *dev)
 	data->cmdfifodepth = QUEUE_SIZE_CAPABILITY_CMD_BUF_DWORD_SIZE(queue_capability);
 	data->respfifodepth = QUEUE_SIZE_CAPABILITY_RESP_BUF_DWORD_SIZE(queue_capability);
 	data->ibififodepth = QUEUE_SIZE_CAPABILITY_IBI_BUF_DWORD_SIZE(queue_capability);
+
+#ifdef CONFIG_I3C_TARGET_BUFFER_MODE
+	/* The RX FIFO bounds a private write, so a smaller buffer discards
+	 * bytes the IP accepted
+	 */
+	if (CONFIG_I3C_DW_TARGET_BUF_SIZE < (data->rxfifodepth * BYTES_PER_DWORD)) {
+		LOG_WRN("%s: target buffer is %u B but the RX FIFO holds %u B; longer writes "
+			"will be truncated",
+			dev->name, (unsigned int)CONFIG_I3C_DW_TARGET_BUF_SIZE,
+			(unsigned int)(data->rxfifodepth * BYTES_PER_DWORD));
+	}
+#endif /* CONFIG_I3C_TARGET_BUFFER_MODE */
 
 	/* get HDR capabilities and the device role (both live in HW_CAPABILITY) */
 	ctrl_config->supported_hdr = 0;
