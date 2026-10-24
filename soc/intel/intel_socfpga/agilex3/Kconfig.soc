@@ -1,0 +1,12 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# Copyright (c) 2026 Altera Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_AGILEX3
+	bool
+	select SOC_FAMILY_INTEL_SOCFPGA
+	help
+	  Intel SoC FPGA Agilex3
+
+config SOC
+	default "agilex3" if SOC_AGILEX3
