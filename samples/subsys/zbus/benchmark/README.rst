@@ -23,7 +23,8 @@ Notice we have the following parameters:
 * **CONFIG_BM_ONE_TO** number of consumers to send (1 up to 8 consumers);
 * **CONFIG_BM_LISTENERS** Use y to perform the benchmark listeners;
 * **CONFIG_BM_SUBSCRIBERS** Use y to perform the benchmark subscribers;
-* **CONFIG_BM_MSG_SUBSCRIBERS** Use y to perform the benchmark message subscribers.
+* **CONFIG_BM_MSG_SUBSCRIBERS** Use y to perform the benchmark message subscribers;
+* **CONFIG_BM_ASYNC_LISTENERS** Use y to perform the benchmark async listeners.
 
 Sample Output
 =============
