@@ -690,7 +690,7 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread, int excluded_p
 	}
 
 	LOG_DBG("configure user thread %p's context", thread);
-	if ((thread->base.user_options & K_USER) != 0) {
+	if (k_thread_is_user_thread(thread)) {
 		/* K_USER thread stack needs a region */
 		ret = insert_region(dyn_regions,
 				    max_region_num,
