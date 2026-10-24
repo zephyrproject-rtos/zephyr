@@ -183,7 +183,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	zfp->mp = mp;
 	rc = mp->fs->open(zfp, file_name, flags);
 	if (rc < 0) {
-		LOG_ERR("file open error (%d)", rc);
+		LOG_ERR("file open error '%s' (%d)", file_name, rc);
 		zfp->mp = NULL;
 		return rc;
 	}
@@ -195,7 +195,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		/* Truncate the opened file to 0 length */
 		rc = mp->fs->truncate(zfp, 0);
 		if (rc < 0) {
-			LOG_ERR("file truncation failed (%d)", rc);
+			LOG_ERR("file truncation failed '%s' (%d)", file_name, rc);
 			/* The backend file was opened successfully above, so we
 			 * must close it here to avoid leaking the backend file
 			 * handle and any associated resources. fs_close() cannot
@@ -403,7 +403,7 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 	if (rc < 0) {
 		zdp->mp = NULL;
 		zdp->dirp = NULL;
-		LOG_ERR("directory open error (%d)", rc);
+		LOG_ERR("directory open error '%s' (%d)", abs_path, rc);
 	}
 
 	return rc;
@@ -538,7 +538,7 @@ int fs_mkdir(const char *abs_path)
 
 	rc = mp->fs->mkdir(mp, abs_path);
 	if (rc < 0) {
-		LOG_ERR("failed to create directory (%d)", rc);
+		LOG_ERR("failed to create directory '%s' (%d)", abs_path, rc);
 	}
 
 	return rc;
@@ -570,7 +570,7 @@ int fs_unlink(const char *abs_path)
 
 	rc = mp->fs->unlink(mp, abs_path);
 	if (rc < 0) {
-		LOG_ERR("failed to unlink path (%d)", rc);
+		LOG_ERR("failed to unlink '%s' (%d)", abs_path, rc);
 	}
 
 	return rc;
@@ -610,7 +610,7 @@ int fs_rename(const char *from, const char *to)
 
 	rc = mp->fs->rename(mp, from, to);
 	if (rc < 0) {
-		LOG_ERR("failed to rename file or dir (%d)", rc);
+		LOG_ERR("failed to rename '%s' -> '%s' (%d)", from, to, rc);
 	}
 
 	return rc;
@@ -659,7 +659,7 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	if (rc == -ENOENT) {
 		/* File doesn't exist, which is a valid stat response */
 	} else if (rc < 0) {
-		LOG_ERR("failed get file or dir stat (%d)", rc);
+		LOG_ERR("failed to get file or dir stat '%s' (%d)", abs_path, rc);
 	}
 	return rc;
 }
@@ -686,7 +686,7 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 
 	rc = mp->fs->statvfs(mp, abs_path, stat);
 	if (rc < 0) {
-		LOG_ERR("failed get file or dir stat (%d)", rc);
+		LOG_ERR("failed to get file or dir statvfs '%s' (%d)", abs_path, rc);
 	}
 
 	return rc;
