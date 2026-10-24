@@ -46,6 +46,20 @@ struct vl53l1x_data {
 #endif
 };
 
+/* An instance without int-gpios is polled, even with interrupt mode enabled */
+static bool vl53l1x_use_interrupt(const struct device *dev)
+{
+#ifdef CONFIG_VL53L1X_INTERRUPT_MODE
+	const struct vl53l1x_config *config = dev->config;
+
+	return config->gpio1.port != NULL;
+#else
+	ARG_UNUSED(dev);
+
+	return false;
+#endif
+}
+
 static VL53L1_Error vl53l1x_read_sensor(struct vl53l1x_data *drv_data)
 {
 	VL53L1_Error ret;
@@ -316,10 +330,12 @@ static int vl53l1x_sample_fetch(const struct device *dev,
 #ifdef CONFIG_VL53L1X_INTERRUPT_MODE
 	const struct vl53l1x_config *config = dev->config;
 
-	ret = gpio_pin_interrupt_configure_dt(&config->gpio1, GPIO_INT_EDGE_TO_INACTIVE);
-	if (ret < 0) {
-		LOG_ERR("[%s] Unable to config interrupt", dev->name);
-		return -EIO;
+	if (vl53l1x_use_interrupt(dev)) {
+		ret = gpio_pin_interrupt_configure_dt(&config->gpio1, GPIO_INT_EDGE_TO_INACTIVE);
+		if (ret < 0) {
+			LOG_ERR("[%s] Unable to config interrupt", dev->name);
+			return -EIO;
+		}
 	}
 #endif
 
@@ -353,7 +369,7 @@ static int vl53l1x_channel_get(const struct device *dev,
 		return -EBUSY;
 	}
 
-	if (IS_ENABLED(CONFIG_VL53L1X_INTERRUPT_MODE) == 0) {
+	if (!vl53l1x_use_interrupt(dev)) {
 		/* Using driver poling mode */
 		ret = vl53l1x_read_sensor(drv_data);
 		if (ret != VL53L1_ERROR_NONE) {
