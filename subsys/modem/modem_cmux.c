@@ -1822,8 +1822,7 @@ static bool powersave_wait_wakeup(struct modem_cmux *cmux)
 			ret = modem_pipe_open(cmux->pipe, K_FOREVER);
 			if (ret < 0) {
 				LOG_ERR("Failed to open pipe for wake up (%d)", ret);
-				set_state(cmux, MODEM_CMUX_STATE_DISCONNECTED);
-				modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
+				disconnect(cmux);
 				return true;
 			}
 		}

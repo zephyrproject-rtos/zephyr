@@ -1865,6 +1865,53 @@ ZTEST(modem_cmux, test_modem_cmux_power_save_close_pipe)
 }
 
 /*
+ * Test: bus pipe fails to re-open on wakeup.
+ *
+ * When the bus pipe closed for power save cannot be re-opened, CMUX must
+ * disconnect and close the DLCI pipes.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_reopen_failed)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	bool saved_cpp = cmux.config.close_pipe_on_power_save;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+	uint32_t events;
+
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.close_pipe_on_power_save = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+
+	modem_backend_mock_prime(&bus_mock, &transaction_control_psc_initiator);
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_POWERSAVE, K_MSEC(300)),
+		     "CMUX should enter POWERSAVE after idle timeout and PSC ack");
+
+	/* Transmitting data triggers wakeup, the bus pipe fails to open */
+	bus_mock.open_error = -EIO;
+	zassert_equal(modem_pipe_transmit(dlci2_pipe, cmux_frame_data_dlci2_ppp_18,
+					  sizeof(cmux_frame_data_dlci2_ppp_18)),
+		      (int)sizeof(cmux_frame_data_dlci2_ppp_18),
+		      "Transmit during POWERSAVE should queue data");
+
+	events = k_event_wait_all(&cmux_event,
+				  EVENT_CMUX_DISCONNECTED | EVENT_CMUX_DLCI1_CLOSED |
+				  EVENT_CMUX_DLCI2_CLOSED,
+				  false, K_MSEC(100));
+	zassert_equal(events,
+		      EVENT_CMUX_DISCONNECTED | EVENT_CMUX_DLCI1_CLOSED | EVENT_CMUX_DLCI2_CLOSED,
+		      "CMUX should disconnect and close DLCIs");
+
+	/* Restore */
+	bus_mock.open_error = 0;
+	zassert_ok(modem_pipe_open(bus_mock_pipe, K_SECONDS(10)), "Failed to open bus pipe");
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.close_pipe_on_power_save = saved_cpp;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+}
+
+/*
  * Test: no_powersave_handshake.
  *
  * When no_powersave_handshake is set, CMUX must skip the in-band handshake

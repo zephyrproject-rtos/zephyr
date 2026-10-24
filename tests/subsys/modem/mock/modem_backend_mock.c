@@ -18,6 +18,10 @@ static int modem_backend_mock_open(void *data)
 {
 	struct modem_backend_mock *mock = (struct modem_backend_mock *)data;
 
+	if (mock->open_error != 0) {
+		return mock->open_error;
+	}
+
 	modem_pipe_notify_opened(&mock->pipe);
 	return 0;
 }
