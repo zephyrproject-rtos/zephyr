@@ -35,6 +35,9 @@ LOG_MODULE_REGISTER(ADS1X1X, CONFIG_ADC_LOG_LEVEL);
 #define ADC_ADS1X1X_CONFIGURABLE_INPUTS 1
 #endif
 
+/* One converter: the channels of a sequence are converted one after the other */
+#define ADS1X1X_MAX_CHANNELS 4
+
 #define ADS1X1X_CONFIG_OS BIT(15)
 #define ADS1X1X_CONFIG_MUX(x) ((x) << 12)
 #define ADS1X1X_CONFIG_PGA(x) ((x) << 9)
@@ -149,16 +152,27 @@ struct ads1x1x_config {
 	bool pga;
 };
 
+struct ads1x1x_channel {
+	/* Configuration register of the channel, without the OS bit */
+	uint16_t config;
+	/* Time to wait before the conversion can be done */
+	k_timeout_t ready_time;
+	bool configured;
+	bool differential;
+};
+
 struct ads1x1x_data {
 	const struct device *dev;
 	struct adc_context ctx;
-	k_timeout_t ready_time;
+	struct ads1x1x_channel channels[ADS1X1X_MAX_CHANNELS];
+	/* Channels of the sequence that are still to be converted */
+	uint32_t channels_left;
+	uint8_t channel;
 	struct k_sem acq_sem;
 	int16_t *buffer;
 	int16_t *repeat_buffer;
 	struct k_thread thread;
 	k_tid_t	tid;
-	bool differential;
 #ifdef ADC_ADS1X1X_TRIGGER
 	struct gpio_callback gpio_cb;
 	struct k_work work;
@@ -239,18 +253,14 @@ static int ads1x1x_write_reg(const struct device *dev, enum ads1x1x_reg reg_addr
 
 static int ads1x1x_start_conversion(const struct device *dev)
 {
-	/* send start sampling command */
-	uint16_t config;
-	int ret;
+	struct ads1x1x_data *data = dev->data;
+	uint8_t channel = find_lsb_set(data->channels_left) - 1;
 
-	ret = ads1x1x_read_reg(dev, ADS1X1X_REG_CONFIG, &config);
-	if (ret != 0) {
-		return ret;
-	}
-	config |= ADS1X1X_CONFIG_OS;
-	ret = ads1x1x_write_reg(dev, ADS1X1X_REG_CONFIG, config);
+	data->channel = channel;
 
-	return ret;
+	/* Selecting the input of the channel and starting the conversion is one write */
+	return ads1x1x_write_reg(dev, ADS1X1X_REG_CONFIG,
+				 data->channels[channel].config | ADS1X1X_CONFIG_OS);
 }
 
 #ifdef ADC_ADS1X1X_TRIGGER
@@ -287,9 +297,9 @@ static int ads1x1x_enable_conv_ready_signal(const struct device *dev)
 }
 #endif
 
-static inline int ads1x1x_acq_time_to_dr(const struct device *dev, uint16_t acq_time)
+static inline int ads1x1x_acq_time_to_dr(const struct device *dev, uint16_t acq_time,
+					 k_timeout_t *ready_time)
 {
-	struct ads1x1x_data *data = dev->data;
 	const struct ads1x1x_config *ads_config = dev->config;
 	const uint32_t *odr_delay = ads_config->odr_delay;
 	uint32_t odr_delay_us = 0;
@@ -350,7 +360,7 @@ static inline int ads1x1x_acq_time_to_dr(const struct device *dev, uint16_t acq_
 	/* As per the datasheet, 25us is needed to wake-up from power down mode
 	 */
 	odr_delay_us += 25;
-	data->ready_time = K_USEC(odr_delay_us);
+	*ready_time = K_USEC(odr_delay_us);
 
 	return odr;
 }
@@ -360,7 +370,7 @@ static int ads1x1x_wait_data_ready(const struct device *dev)
 	int rc;
 	struct ads1x1x_data *data = dev->data;
 
-	k_sleep(data->ready_time);
+	k_sleep(data->channels[data->channel].ready_time);
 	uint16_t status = 0;
 
 	rc = ads1x1x_read_reg(dev, ADS1X1X_REG_CONFIG, &status);
@@ -379,15 +389,29 @@ static int ads1x1x_wait_data_ready(const struct device *dev)
 	return rc;
 }
 
+static uint8_t ads1x1x_channel_count(const struct device *dev)
+{
+	const struct ads1x1x_config *config = dev->config;
+
+	/* Without an input multiplexer, or a way to choose its input, there is only one channel */
+	if (IS_ENABLED(ADC_ADS1X1X_CONFIGURABLE_INPUTS) && config->multiplexer) {
+		return ADS1X1X_MAX_CHANNELS;
+	}
+
+	return 1;
+}
+
 static int ads1x1x_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
 	const struct ads1x1x_config *ads_config = dev->config;
 	struct ads1x1x_data *data = dev->data;
+	struct ads1x1x_channel *channel;
+	k_timeout_t ready_time;
 	uint16_t config = 0;
 	int dr = 0;
 
-	if (channel_cfg->channel_id != 0) {
+	if (channel_cfg->channel_id >= ads1x1x_channel_count(dev)) {
 		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
@@ -435,10 +459,7 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	}
 #endif /* ADC_ADS1X1X_CONFIGURABLE_INPUTS */
 
-	/* store differential mode to determine supported resolution */
-	data->differential = channel_cfg->differential;
-
-	dr = ads1x1x_acq_time_to_dr(dev, channel_cfg->acquisition_time);
+	dr = ads1x1x_acq_time_to_dr(dev, channel_cfg->acquisition_time, &ready_time);
 	if (dr < 0) {
 		LOG_ERR("unsupported channel acquisition time 0x%02x",
 			channel_cfg->acquisition_time);
@@ -486,12 +507,27 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	/* disable comparator */
 	config |= ADS1X1X_CONFIG_COMP_MODE;
 
-	return ads1x1x_write_reg(dev, ADS1X1X_REG_CONFIG, config);
+	/*
+	 * Only store the settings: they are written when a conversion starts. The lock waits for
+	 * a running sequence, which uses them.
+	 */
+	adc_context_lock(&data->ctx, false, NULL);
+
+	channel = &data->channels[channel_cfg->channel_id];
+	channel->config = config;
+	channel->ready_time = ready_time;
+	/* the differential mode determines the supported resolution */
+	channel->differential = channel_cfg->differential;
+	channel->configured = true;
+
+	adc_context_release(&data->ctx, 0);
+
+	return 0;
 }
 
 static int ads1x1x_validate_buffer_size(const struct adc_sequence *sequence)
 {
-	size_t needed = sizeof(int16_t);
+	size_t needed = POPCOUNT(sequence->channels) * sizeof(int16_t);
 
 	if (sequence->options) {
 		needed *= (1 + sequence->options->extra_samplings);
@@ -508,16 +544,49 @@ static int ads1x1x_validate_sequence(const struct device *dev, const struct adc_
 {
 	const struct ads1x1x_config *config = dev->config;
 	struct ads1x1x_data *data = dev->data;
-	uint8_t resolution = data->differential ? config->resolution : config->resolution - 1;
+	uint32_t mask = sequence->channels;
+	bool differential = false;
+	bool first = true;
+	uint8_t resolution;
 	int err;
 
-	if (sequence->resolution != resolution) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+	if (mask == 0 || (mask & ~(BIT(ads1x1x_channel_count(dev)) - 1)) != 0) {
+		LOG_ERR("unsupported channels 0x%x", mask);
 		return -ENOTSUP;
 	}
 
-	if (sequence->channels != BIT(0)) {
-		LOG_ERR("only channel 0 supported");
+#ifdef ADC_ADS1X1X_TRIGGER
+	if (config->alert_rdy.port && POPCOUNT(mask) > 1) {
+		LOG_ERR("several channels in a sequence do not work with the ALERT/RDY pin");
+		return -ENOTSUP;
+	}
+#endif
+
+	for (uint8_t channel = 0; channel < ADS1X1X_MAX_CHANNELS; channel++) {
+		const struct ads1x1x_channel *ch = &data->channels[channel];
+
+		if (!(mask & BIT(channel))) {
+			continue;
+		}
+
+		if (!ch->configured) {
+			LOG_ERR("channel %d is not set up", channel);
+			return -EINVAL;
+		}
+
+		/* A sequence has one resolution, and it depends on the mode of the channels */
+		if (first) {
+			differential = ch->differential;
+			first = false;
+		} else if (ch->differential != differential) {
+			LOG_ERR("single-ended and differential channels in one sequence");
+			return -ENOTSUP;
+		}
+	}
+
+	resolution = differential ? config->resolution : config->resolution - 1;
+	if (sequence->resolution != resolution) {
+		LOG_ERR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
@@ -550,6 +619,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	int ret;
 
 	data->repeat_buffer = data->buffer;
+	data->channels_left = ctx->sequence.channels;
 
 	ret = ads1x1x_start_conversion(data->dev);
 	if (ret != 0) {
@@ -632,6 +702,22 @@ static int ads1x1x_adc_perform_read(const struct device *dev)
 	 * division rather than shifting
 	 */
 	*data->buffer++ = buf / (1 << (16 - config->resolution));
+	data->channels_left &= ~BIT(data->channel);
+
+	if (data->channels_left != 0) {
+		/* Convert the next channel of the sequence. Only the acquisition thread gets here,
+		 * because several channels are not supported together with the ALERT/RDY pin.
+		 */
+		rc = ads1x1x_start_conversion(dev);
+		if (rc != 0) {
+			adc_context_complete(&data->ctx, rc);
+			return rc;
+		}
+
+		k_sem_give(&data->acq_sem);
+
+		return 0;
+	}
 
 	adc_context_on_sampling_done(&data->ctx, dev);
 
