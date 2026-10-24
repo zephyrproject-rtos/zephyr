@@ -1744,9 +1744,21 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
+	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
 	int res = -1;
 	k_timeout_t timeout;
+	uint32_t transfer_dir = LL_SPI_GetTransferDirection(cfg->spi);
+	uint32_t done_flags;
+
+	/* Only the DMA of the active direction(s) is started for this chunk */
+	if (transfer_dir == LL_SPI_FULL_DUPLEX) {
+		done_flags = SPI_STM32_DMA_DONE_FLAG;
+	} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
+		done_flags = SPI_STM32_DMA_TX_DONE_FLAG;
+	} else {
+		done_flags = SPI_STM32_DMA_RX_DONE_FLAG;
+	}
 
 	/*
 	 * In peripheral mode we do not know when the transaction will start. Hence,
@@ -1768,7 +1780,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 			return -EIO;
 		}
 
-		if ((data->status_flags & SPI_STM32_DMA_DONE_FLAG) == SPI_STM32_DMA_DONE_FLAG) {
+		if ((data->status_flags & done_flags) == done_flags) {
 			return 0;
 		}
 	}
