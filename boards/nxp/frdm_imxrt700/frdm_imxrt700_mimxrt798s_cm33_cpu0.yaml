@@ -14,7 +14,10 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - dma
   - gpio
+  - i2c
   - uart
   - serial
+  - spi
 vendor: nxp
