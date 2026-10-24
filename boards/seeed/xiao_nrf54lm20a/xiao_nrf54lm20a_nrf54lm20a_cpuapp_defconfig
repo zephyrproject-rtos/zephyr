@@ -18,5 +18,7 @@ CONFIG_ARM_MPU=y
 CONFIG_CACHE_MANAGEMENT=y
 CONFIG_EXTERNAL_CACHE=y
 
-CONFIG_REGULATOR=y
-CONFIG_REGULATOR_FIXED_INIT_PRIORITY=45
+# REGULATOR is not set here: the board Kconfig.defconfig default (y unless
+# building MCUboot itself) provides it, and the CONFIG_REGULATOR_FIXED_*
+# assignments that used to sit here were leftovers of the removed power_en
+# GPIO regulator node (no zephyr,regulator-fixed node exists on this board).
