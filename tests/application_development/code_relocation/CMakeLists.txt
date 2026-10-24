@@ -37,6 +37,8 @@ zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_TEXT)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION RAM_DATA)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_BSS)
 
+zephyr_late_relocation(SRAM2)
+
 # Test NOKEEP support. Placing both KEEP and NOKEEP symbols in the same location
 # (this and test_file2.c in RAM) should work fine.
 zephyr_code_relocate(FILES ${ZEPHYR_BASE}/kernel/sem.c ${RAM_PHDR} LOCATION RAM NOKEEP)

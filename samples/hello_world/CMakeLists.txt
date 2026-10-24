@@ -5,4 +5,6 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(hello_world)
 
+zephyr_code_relocate(FILES ${ZEPHYR_BASE}/samples/hello_world/src/main.c LATECOPY LOCATION PSRAM)
+
 target_sources(app PRIVATE src/main.c)
