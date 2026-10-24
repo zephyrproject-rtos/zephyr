@@ -121,7 +121,7 @@ static int skip_fqdn(uint8_t *answer, int buf_sz)
 				return -EINVAL;
 			}
 			break;
-		} else if (answer[i] < DNS_LABEL_MAX_SIZE) {
+		} else if (answer[i] <= DNS_LABEL_MAX_SIZE) {
 			i += answer[i] + 1;
 		} else {
 			return -EINVAL;
