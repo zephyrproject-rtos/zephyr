@@ -76,6 +76,17 @@ def find_rtt_block(elf_file: str) -> int | None:
     return None
 
 
+def elf_entry_point(elf_file: str) -> int:
+    '''Return the entry point address (e_entry) of an ELF file.'''
+    if ELFTOOLS_MISSING:
+        raise RuntimeError('the Python dependency elftools was missing; '
+                           'see the getting started guide for details on '
+                           'how to fix')
+
+    with open(elf_file, 'rb') as f:
+        return ELFFile(f).header['e_entry']
+
+
 class _DebugDummyPopen:
 
     def terminate(self):
