@@ -2404,8 +2404,11 @@ static int cmd_help(const struct shell *sh, size_t argc, char **argv)
 
 	if (IS_ENABLED(CONFIG_SHELL_HELP)) {
 		/* For NULL argument function will print all root commands */
+		z_shell_lock(sh);
 		z_shell_help_subcmd_print(sh, NULL,
 					 "\nAvailable commands:\n");
+		z_transport_buffer_flush(sh);
+		z_shell_unlock(sh);
 	} else {
 		const struct shell_static_entry *entry;
 		size_t idx = 0;
