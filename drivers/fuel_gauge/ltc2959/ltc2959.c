@@ -530,7 +530,7 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->temperature_dk = ((uint32_t)raw_temp * LTC2959_TEMP_K_SF) >> 16;
 		break;
 	}
-	case FUEL_GAUGE_REMAINING_CAPACITY_UAH: {
+	case FUEL_GAUGE_REMAINING_CAPACITY: {
 		uint32_t acr;
 
 		ret = ltc2959_read_acr(dev, &acr);
@@ -539,7 +539,7 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			return ret;
 		}
 
-		val->remaining_capacity_uah = ltc2959_counts_to_uah(acr, cfg);
+		val->remaining_capacity = ltc2959_counts_to_uah(acr, cfg);
 		break;
 	}
 	case FUEL_GAUGE_ADC_MODE:
@@ -640,8 +640,8 @@ static int ltc2959_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		ret = ltc2959_set_cc_config(dev, val.cc_config);
 		break;
 
-	case FUEL_GAUGE_REMAINING_CAPACITY_UAH: {
-		uint32_t counts = ltc2959_uah_to_counts(val.remaining_capacity_uah, cfg);
+	case FUEL_GAUGE_REMAINING_CAPACITY: {
+		uint32_t counts = ltc2959_uah_to_counts(val.remaining_capacity, cfg);
 
 		if (counts == LTC2959_ACR_CLR) {
 			counts = LTC2959_ACR_CLR - 1;
