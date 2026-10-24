@@ -68,6 +68,27 @@ static uint32_t pacs_snk_location;
 static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_NONE;
 static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_NONE;
 
+static sys_slist_t pacs_cbs = SYS_SLIST_STATIC_INIT(&pacs_cbs);
+static K_MUTEX_DEFINE(pacs_cbs_mutex);
+
+#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) || defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
+static void pacs_location_changed(struct bt_conn *conn, enum bt_audio_dir dir,
+				  enum bt_audio_location location)
+{
+	struct bt_pacs_cb *listener, *next;
+
+	(void)k_mutex_lock(&pacs_cbs_mutex, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&pacs_cbs, listener, next, _node) {
+		if (listener->location != NULL) {
+			listener->location(conn, dir, location);
+		}
+	}
+
+	(void)k_mutex_unlock(&pacs_cbs_mutex);
+}
+#endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
+
 enum {
 	FLAG_ACTIVE,
 	FLAG_SINK_PAC_CHANGED,
@@ -495,7 +516,6 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 {
 	enum bt_audio_location location;
 
-	ARG_UNUSED(conn);
 	ARG_UNUSED(attr);
 	ARG_UNUSED(flags);
 
@@ -513,7 +533,10 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	set_snk_location(location);
+	if (location != pacs_snk_location) {
+		set_snk_location(location);
+		pacs_location_changed(conn, BT_AUDIO_DIR_SINK, location);
+	}
 
 	return len;
 }
@@ -608,7 +631,6 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 {
 	uint32_t location;
 
-	ARG_UNUSED(conn);
 	ARG_UNUSED(attr);
 	ARG_UNUSED(flags);
 
@@ -626,7 +648,10 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	set_src_location(location);
+	if (location != pacs_src_location) {
+		set_src_location(location);
+		pacs_location_changed(conn, BT_AUDIO_DIR_SOURCE, location);
+	}
 
 	return len;
 }
@@ -1562,6 +1587,94 @@ int bt_pacs_set_location(enum bt_audio_dir dir, enum bt_audio_location location)
 	default:
 		return -EINVAL;
 	}
+
+	return 0;
+}
+
+int bt_pacs_get_location(enum bt_audio_dir dir, enum bt_audio_location *location)
+{
+	if (location == NULL) {
+		LOG_DBG("location is NULL");
+
+		return -EINVAL;
+	}
+
+	switch (dir) {
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+	case BT_AUDIO_DIR_SINK:
+		if (!atomic_test_bit(pacs.flags, PACS_FLAG_REGISTERED) ||
+		    !atomic_test_bit(pacs.flags, PACS_FLAG_SNK_LOC)) {
+			LOG_DBG("Sink location not registered");
+
+			return -ENOENT;
+		}
+
+		*location = (enum bt_audio_location)pacs_snk_location;
+
+		return 0;
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+	case BT_AUDIO_DIR_SOURCE:
+		if (!atomic_test_bit(pacs.flags, PACS_FLAG_REGISTERED) ||
+		    !atomic_test_bit(pacs.flags, PACS_FLAG_SRC_LOC)) {
+			LOG_DBG("Source location not registered");
+
+			return -ENOENT;
+		}
+
+		*location = (enum bt_audio_location)pacs_src_location;
+
+		return 0;
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+	default:
+		LOG_DBG("Invalid dir %d or no location support", dir);
+
+		return -EINVAL;
+	}
+}
+
+int bt_pacs_register_cb(struct bt_pacs_cb *cb)
+{
+	if (cb == NULL) {
+		LOG_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	(void)k_mutex_lock(&pacs_cbs_mutex, K_FOREVER);
+
+	if (sys_slist_find(&pacs_cbs, &cb->_node, NULL)) {
+		(void)k_mutex_unlock(&pacs_cbs_mutex);
+		LOG_DBG("cb %p is already registered", cb);
+
+		return -EEXIST;
+	}
+
+	sys_slist_append(&pacs_cbs, &cb->_node);
+
+	(void)k_mutex_unlock(&pacs_cbs_mutex);
+
+	return 0;
+}
+
+int bt_pacs_unregister_cb(struct bt_pacs_cb *cb)
+{
+	if (cb == NULL) {
+		LOG_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	(void)k_mutex_lock(&pacs_cbs_mutex, K_FOREVER);
+
+	if (!sys_slist_find_and_remove(&pacs_cbs, &cb->_node)) {
+		(void)k_mutex_unlock(&pacs_cbs_mutex);
+		LOG_DBG("cb %p is not registered", cb);
+
+		return -ENOENT;
+	}
+
+	(void)k_mutex_unlock(&pacs_cbs_mutex);
 
 	return 0;
 }
