@@ -18,6 +18,10 @@ else()
   set(QEMU_MACH virt)
 endif()
 
+if(CONFIG_RISCV_S_MODE)
+  string(APPEND qemu_riscv_cpu ",s=on,u=on,pmp=on,priv_spec=v1.12.0,sv32=on")
+endif()
+
 set(QEMU_BOARD_FLAGS
   -machine ${QEMU_MACH}
   -bios none

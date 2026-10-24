@@ -11,6 +11,7 @@
 / {
 	cpus {
 		riscv,isa-base = "rv32i";
-		riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei", "zkr";
+		riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei", "zicntr",
+				       "zkr";
 	};
 };
