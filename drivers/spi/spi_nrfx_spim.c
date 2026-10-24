@@ -31,11 +31,11 @@ static void transfer_end(const struct device *dev, int ret)
 	struct driver_data *dev_data = dev->data;
 	const struct spi_config *spi_cfg = dev_data->ctx.config;
 
-	pm_device_runtime_put(dev);
-
 	if (ret || (spi_cfg->operation & SPI_HOLD_ON_CS) == 0) {
 		spi_nrfx_spim_common_cs_clear(dev, spi_cfg);
 	}
+
+	pm_device_runtime_put(dev);
 
 	spi_context_complete(&dev_data->ctx, dev, ret);
 }
