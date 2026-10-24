@@ -1584,12 +1584,33 @@ static int continue_transfer(struct uvc_host_data *const host_data,
 	return 0;
 }
 
+/* Buffer the stream is written to, NULL while the application holds all of them */
+static struct video_buffer *get_current_vbuf(struct uvc_host_data *const host_data)
+{
+	struct video_buffer *vbuf;
+
+	k_mutex_lock(&host_data->lock, K_FOREVER);
+
+	vbuf = host_data->current_vbuf;
+	if (vbuf == NULL) {
+		vbuf = k_fifo_peek_head(&host_data->fifo_in);
+		if (vbuf != NULL) {
+			vbuf->bytesused = 0;
+			host_data->current_vbuf = vbuf;
+		}
+	}
+
+	k_mutex_unlock(&host_data->lock);
+
+	return vbuf;
+}
+
 /* ISO transfer completion callback */
 static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer)
 {
 	struct uvc_host_data *const host_data = (void *)xfer->priv;
 	struct uvc_payload_header *payload_header = NULL;
-	struct video_buffer *vbuf = host_data->current_vbuf;
+	struct video_buffer *vbuf = get_current_vbuf(host_data);
 	struct net_buf *buf = xfer->buf;
 	uint32_t presentation_time = 0;
 	uint32_t header_length = 0;
@@ -1598,7 +1619,9 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 	uint8_t end_frame = 0;
 
 	if (vbuf == NULL) {
+		/* Drop the data, the frame in progress is incomplete */
 		LOG_DBG("No current buffer available, ignoring callback");
+		host_data->save_picture = false;
 		goto cleanup;
 	}
 
@@ -1721,15 +1744,14 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 	if (vbuf != NULL) {
 		vbuf->bytesused = 0;
 		memset(vbuf->buffer, 0, vbuf->size);
-		host_data->current_vbuf = vbuf;
 	}
 
+	host_data->current_vbuf = vbuf;
 	k_mutex_unlock(&host_data->lock);
 
 cleanup:
 	net_buf_unref(buf);
-	if ((atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) &&
-	    (vbuf != NULL)) {
+	if (atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
 		continue_transfer(host_data, xfer, vbuf);
 	}
 
