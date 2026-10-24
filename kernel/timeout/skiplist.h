@@ -36,7 +36,7 @@ static uint8_t sl_top;
 
 /*
  * Scratch predecessor vector shared by insert and remove. Both run with
- * timeout_lock held and neither keeps it across an unlock, so one array is
+ * z_timeout_lock held and neither keeps it across an unlock, so one array is
  * enough. Any future caller must hold that lock too.
  */
 static struct _timeout *sl_update[SKIPLIST_LEVELS];
