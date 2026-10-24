@@ -157,7 +157,7 @@ config SYS_HEAP_CANARIES
 config SYS_HEAP_CANARIES_RANDOM
 	bool "Use random base for heap canaries"
 	depends on SYS_HEAP_CANARIES
-	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	depends on HAS_RANDOM_GENERATOR
 	default y
 	help
 	  Use a random base value for heap canary computation,
