@@ -14,6 +14,8 @@
 
 #include "phy_oa_tc14_plca.h"
 
+#include "../eth_lan865x_priv.h"
+
 #define LOG_MODULE_NAME phy_mc_t1s
 #define LOG_LEVEL       CONFIG_PHY_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -133,6 +135,12 @@ struct mc_t1s_data {
 	void *cb_data;
 	struct k_work_delayable phy_monitor_work;
 	struct k_sem sem;
+
+	/** Cached PLCA configuration for restoration after hardware reset */
+	struct phy_plca_cfg plca_cache;
+
+	/** true when plca_cache holds a valid configuration */
+	bool plca_cached;
 };
 
 static int phy_mc_t1s_read(const struct device *dev, uint16_t reg, uint32_t *data)
@@ -565,7 +573,19 @@ static int phy_mc_t1s_set_plca_cfg(const struct device *dev, struct phy_plca_cfg
 		return ret;
 	}
 
-	return lan86xx_config_collision_detection(dev, plca_cfg->enable);
+	ret = lan86xx_config_collision_detection(dev, plca_cfg->enable);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * Cache the successfully applied PLCA configuration for
+	 * restoration after hardware reset during error recovery.
+	 */
+	memcpy(&data->plca_cache, plca_cfg, sizeof(data->plca_cache));
+	data->plca_cached = true;
+
+	return 0;
 }
 
 static int phy_mc_t1s_set_dt_plca(const struct device *dev)
@@ -587,6 +607,72 @@ static int phy_mc_t1s_set_dt_plca(const struct device *dev)
 	return phy_mc_t1s_set_plca_cfg(dev, &plca_cfg);
 }
 
+/**
+ * @brief Re-apply PHY hardware configuration after a reset event.
+ *
+ * Re-applies chip-specific analog fixup registers (AN1760/AN1699) based
+ * on the cached phy_id.  Restores the cached PLCA configuration if one
+ * was previously applied at runtime, otherwise falls back to devicetree.
+ *
+ * @param dev The PHY device.
+ *
+ * @retval 0 on success.
+ * @retval -errno on failure.
+ */
+static int phy_mc_t1s_config_init(const struct device *dev)
+{
+	struct mc_t1s_data *data = dev->data;
+	int ret;
+
+	switch (data->phy_id) {
+	case PHY_ID_LAN867X_REVC1:
+	case PHY_ID_LAN867X_REVC2:
+		ret = phy_mc_lan867x_revc_config_init(dev);
+		break;
+	case PHY_ID_LAN865X_REVB:
+		ret = phy_mc_lan865x_revb_config_init(dev);
+		break;
+	case PHY_ID_LAN867X_REVD0:
+		ret = phy_mc_lan867x_revd0_config_init(dev);
+		break;
+	default:
+		LOG_ERR("Unsupported PHY ID during reinit: 0x%08x", data->phy_id);
+		return -ENODEV;
+	}
+
+	if (ret != 0) {
+		LOG_ERR("PHY config_init fixup failed: %d", ret);
+		return ret;
+	}
+
+	if (data->plca_cached) {
+		ret = phy_mc_t1s_set_plca_cfg(dev, &data->plca_cache);
+	} else {
+		ret = phy_mc_t1s_set_dt_plca(dev);
+	}
+
+	if (ret != 0) {
+		LOG_ERR("PHY PLCA restore failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int lan865x_phy_callback(const struct device *phy_dev, enum lan865x_phy_event event, void *cb_data)
+{
+	ARG_UNUSED(cb_data);
+
+	switch (event) {
+	case LAN865X_PHY_EVENT_RESET:
+		LOG_DBG("PHY reset event received, re-applying configuration");
+		return phy_mc_t1s_config_init(phy_dev);
+	default:
+		LOG_WRN("Unknown PHY event: %d", event);
+		return -ENOTSUP;
+	}
+}
+
 static int phy_mc_t1s_init(const struct device *dev)
 {
 	struct mc_t1s_data *data = dev->data;
@@ -595,6 +681,7 @@ static int phy_mc_t1s_init(const struct device *dev)
 	k_sem_init(&data->sem, 1, 1);
 
 	data->dev = dev;
+	data->plca_cached = false;
 
 	ret = phy_mc_t1s_id(dev, &data->phy_id);
 	if (ret < 0) {
