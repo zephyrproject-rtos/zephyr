@@ -64,7 +64,7 @@ struct stream_rx {
 	/**
 	 * @brief The configured channels of the stream
 	 *
-	 * Used to determine whether to send data to USB and count number of channels
+	 * Used to determine whether to send data to the output and count number of channels
 	 */
 	enum bt_audio_location lc3_chan_allocation;
 
@@ -80,7 +80,7 @@ struct stream_rx {
 /**
  * @brief Function to call for each SDU received
  *
- * Will decode with LC3 and send to USB if enabled
+ * Will decode with LC3 and send to the output if enabled
  */
 void stream_rx_recv(struct bt_bap_stream *bap_stream, const struct bt_iso_recv_info *info,
 		    struct net_buf *buf);
