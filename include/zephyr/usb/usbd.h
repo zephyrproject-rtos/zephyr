@@ -529,6 +529,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.fs_desc = &fs_desc_##device_name,			\
 		IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (			\
 		.hs_desc = &hs_desc_##device_name,			\
+		.descriptors = SYS_DLIST_STATIC_INIT(&device_name.descriptors),  \
 		))							\
 	}
 
