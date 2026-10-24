@@ -687,7 +687,7 @@ static void pinnacle_data_ready_gpio_callback(const struct device *dev, struct g
 {
 	struct pinnacle_data *drv_data = CONTAINER_OF(cb, struct pinnacle_data, dr_cb_data);
 
-	k_work_submit(&drv_data->work);
+	input_work_submit(&drv_data->work);
 }
 
 static void pinnacle_work_cb(struct k_work *work)
