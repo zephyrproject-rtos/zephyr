@@ -11,11 +11,19 @@
 /*
  * Note : use IFX_PATH_PSOC4_IMO for internal main oscillator as src
  * use IFX_PATH_PSOC4_EXT for External clock as src
+ * use IFX_PATH_PSOC4_HPOSC for high precision oscillator as src (HVMS/PA only)
  *
  * Usage : input src for clk_hf
  */
-#define IFX_PATH_PSOC4_IMO 0
-#define IFX_PATH_PSOC4_EXT 1
+#define IFX_PATH_PSOC4_IMO   0
+#define IFX_PATH_PSOC4_EXT   1
+#define IFX_PATH_PSOC4_HPOSC 3
+
+/*
+ * Usage : input src for clk_lf (HVMS/PA only)
+ */
+#define IFX_PATH_PSOC4_LF_ILO  0
+#define IFX_PATH_PSOC4_LF_PILO 1
 
 /*
  * Note : use IFX_PATH_PSOC4_PUMP_GND for No clock, connect to gnd
