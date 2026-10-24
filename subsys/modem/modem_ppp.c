@@ -308,6 +308,11 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 		break;
 
 	case MODEM_PPP_RECEIVE_STATE_HDR_CTRL_UNESCAPE:
+		if (byte == MODEM_PPP_CODE_DELIMITER) {
+			/* 7D 7E is an aborted frame, look for the next one */
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+			break;
+		}
 		byte ^= MODEM_PPP_VALUE_ESCAPE;
 		ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
 		__fallthrough;
@@ -396,6 +401,18 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 		break;
 
 	case MODEM_PPP_RECEIVE_STATE_UNESCAPING:
+		if (byte == MODEM_PPP_CODE_DELIMITER) {
+			/* 7D 7E is an aborted frame, the delimiter may start the next one */
+			LOG_DBG("Aborted PPP frame");
+			net_pkt_unref(ppp->rx_pkt);
+			ppp->rx_pkt = NULL;
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+#if defined(CONFIG_NET_STATISTICS_PPP)
+			ppp->stats.drop++;
+#endif
+			break;
+		}
+
 		if (net_pkt_write_u8(ppp->rx_pkt, (byte ^ MODEM_PPP_VALUE_ESCAPE)) < 0) {
 			LOG_WRN("Dropped PPP frame");
 			net_pkt_unref(ppp->rx_pkt);
