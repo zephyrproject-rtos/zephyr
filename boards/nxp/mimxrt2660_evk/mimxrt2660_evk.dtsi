@@ -11,6 +11,9 @@
 	aliases {
 		led0 = &user_led;
 		sw0 = &user_button;
+		ambient-temp0 = &p3t1755;
+		i2s-codec-tx = &sai0;
+		i2s-tx = &sai0;
 	};
 
 	leds {
@@ -47,6 +50,12 @@
 &lpuart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
+
+/* Alternate UART; left disabled until an overlay enables it. */
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
 };
 
@@ -98,5 +107,24 @@
 		reg = <0x80000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "PSRAM";
 		status = "disabled";
+	};
+};
+
+&sai0 {
+	pinctrl-0 = <&pinmux_sai0>;
+	pinctrl-names = "default";
+	mclk-output;
+	nxp,rx-sync-mode;
+};
+
+&lpi2c1 {
+	/* WM8962 audio codec, J60 at 2-3 connects SAI0 to it. */
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI0,
+					   IMX_CCM_ROOT_AUDIO_SAI0_MCLK0)>;
+		clock-names = "mclk";
 	};
 };

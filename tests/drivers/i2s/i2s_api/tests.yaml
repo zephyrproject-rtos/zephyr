@@ -16,6 +16,7 @@ tests:
       - frdm_mcxn236/mcxn236
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+      - mimxrt2660_evk/mimxrt2663/cm85
       - phyboard_atlas/mimxrt1176/cm7
   drivers.i2s.gpio_loopback:
     depends_on:
