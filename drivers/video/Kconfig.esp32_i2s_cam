@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_ESP32_I2S_CAM
+	bool "ESP32 I2S camera interface driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_I2S_CAM_ENABLED
+	help
+	  Enable the parallel camera interface driver for the ESP32, using the
+	  I2S0 peripheral in camera slave mode.
+
+	  The interrupt handler copies each DMA chunk into the video buffer,
+	  which limits the sustained input rate to about 4.5 MB/s with the
+	  buffers in PSRAM. Frames arriving faster are dropped and the buffer
+	  is kept. 640x480 RGB565 needs an XCLK of 10 MHz or lower; 320x240
+	  works at 20 MHz.
+
+if VIDEO_ESP32_I2S_CAM
+
+config VIDEO_ESP32_I2S_CAM_DMA_CHUNKS
+	int "Number of DMA chunks"
+	default 4
+	range 2 16
+	help
+	  Number of 4092 byte DMA chunks allocated in internal RAM. Each chunk
+	  holds 1023 bytes of camera data, which the interrupt handler copies
+	  into the video buffer. More chunks tolerate a longer interrupt
+	  latency but do not raise the sustained input rate.
+
+endif # VIDEO_ESP32_I2S_CAM

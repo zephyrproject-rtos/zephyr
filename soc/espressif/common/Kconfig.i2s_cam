@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+# The I2S camera driver fills the video buffers with the CPU, so they can be
+# in PSRAM when it is available.
+if VIDEO_ESP32_I2S_CAM && ESP_SPIRAM
+
+configdefault VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
+	default y
+
+configdefault VIDEO_BUFFER_SMH_ATTRIBUTE
+	default 2 # SMH_REG_ATTR_EXTERNAL
+
+endif # VIDEO_ESP32_I2S_CAM && ESP_SPIRAM
