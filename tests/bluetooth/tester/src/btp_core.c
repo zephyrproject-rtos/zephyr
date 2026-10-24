@@ -153,6 +153,12 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_RFCOMM)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_RFCOMM);
 #endif /* CONFIG_BT_RFCOMM */
+#if defined(CONFIG_BT_AVRCP)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_AVRCP);
+#endif /* CONFIG_BT_AVRCP */
+#if defined(CONFIG_BT_AVCTP)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_AVCTP);
+#endif /* CONFIG_BT_AVCTP */
 
 	*rsp_len = SUPPORTED_SERVICES_RSP_LEN;
 
@@ -314,6 +320,16 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_rfcomm();
 		break;
 #endif /* CONFIG_BT_RFCOMM */
+#if defined(CONFIG_BT_AVRCP)
+	case BTP_SERVICE_ID_AVRCP:
+		status = tester_init_avrcp();
+		break;
+#endif /* CONFIG_BT_AVRCP */
+#if defined(CONFIG_BT_AVCTP)
+	case BTP_SERVICE_ID_AVCTP:
+		status = tester_init_avctp();
+		break;
+#endif /* CONFIG_BT_AVCTP */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -479,6 +495,16 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_rfcomm();
 		break;
 #endif /* CONFIG_BT_RFCOMM */
+#if defined(CONFIG_BT_AVRCP)
+	case BTP_SERVICE_ID_AVRCP:
+		status = tester_unregister_avrcp();
+		break;
+#endif /* CONFIG_BT_AVRCP */
+#if defined(CONFIG_BT_AVCTP)
+	case BTP_SERVICE_ID_AVCTP:
+		status = tester_unregister_avctp();
+		break;
+#endif /* CONFIG_BT_AVCTP */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;
