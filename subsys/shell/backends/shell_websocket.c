@@ -29,7 +29,10 @@ static void ws_server_cb(struct net_socket_service_event *evt);
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(websocket_server, ws_server_cb,
 				      SHELL_WEBSOCKET_SERVICE_COUNT);
 
-static void ws_end_client_connection(struct shell_websocket *ws)
+/* The send work handler must not wait for itself, so it passes in_send_work
+ * and only prevents further submissions.
+ */
+static void ws_end_client_connection(struct shell_websocket *ws, bool in_send_work)
 {
 	int ret;
 
@@ -46,7 +49,13 @@ static void ws_end_client_connection(struct shell_websocket *ws)
 	ws->fds[0].fd = -1;
 	ws->output_lock = false;
 
-	k_work_cancel_delayable_sync(&ws->send_work, &ws->work_sync);
+	if (in_send_work) {
+		(void)k_work_cancel_delayable(&ws->send_work);
+	} else {
+		struct k_work_sync sync;
+
+		(void)k_work_cancel_delayable_sync(&ws->send_work, &sync);
+	}
 
 	ret = net_socket_service_register(&websocket_server, ws->fds,
 					  ARRAY_SIZE(ws->fds), NULL);
@@ -86,7 +95,8 @@ static int ws_send(struct shell_websocket *ws, bool block)
 		if (ret < 0) {
 			ret = -errno;
 			LOG_ERR("Failed to send %d, shutting down", -ret);
-			ws_end_client_connection(ws);
+			/* Only the send work handler sends without blocking. */
+			ws_end_client_connection(ws, !block);
 			return ret;
 		}
 
@@ -157,7 +167,7 @@ static void ws_recv(struct shell_websocket *ws, struct zsock_pollfd *pollfd)
 
 error:
 	k_mutex_unlock(&ws->rx_lock);
-	ws_end_client_connection(ws);
+	ws_end_client_connection(ws, false);
 }
 
 static void ws_server_cb(struct net_socket_service_event *evt)
@@ -175,7 +185,7 @@ static void ws_server_cb(struct net_socket_service_event *evt)
 		LOG_ERR("Websocket socket %d error (%d)", evt->event.fd, sock_error);
 
 		if (evt->event.fd == ws->fds[0].fd) {
-			return ws_end_client_connection(ws);
+			return ws_end_client_connection(ws, false);
 		}
 
 		return;
@@ -203,7 +213,7 @@ static int shell_ws_init(struct shell_websocket *ctx, int ws_socket)
 		/* There is already a websocket connection to this shell,
 		 * kick the previous connection out.
 		 */
-		ws_end_client_connection(ctx);
+		ws_end_client_connection(ctx, false);
 	}
 
 	ctx->fds[0].fd = ws_socket;
@@ -276,6 +286,7 @@ static int sh_write(const struct shell_transport *transport,
 {
 	struct shell_websocket_line_buf *lb;
 	struct shell_websocket *ws;
+	struct k_work_sync sync;
 	uint32_t timeout;
 	bool was_running;
 	size_t copy_len;
@@ -289,7 +300,7 @@ static int sh_write(const struct shell_transport *transport,
 	/* Stop the transmission timer, so it does not interrupt the operation.
 	 */
 	timeout = k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&ws->send_work));
-	was_running = k_work_cancel_delayable_sync(&ws->send_work, &ws->work_sync);
+	was_running = k_work_cancel_delayable_sync(&ws->send_work, &sync);
 
 	do {
 		if (lb->len + length - *cnt > WEBSOCKET_LINE_SIZE) {
