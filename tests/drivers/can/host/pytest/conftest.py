@@ -32,7 +32,8 @@ def fixture_context(request, dut: DeviceAdapter) -> str:
     ctx = request.config.getoption('--can-context')
 
     if ctx is None:
-        for fixture in dut.device_config.fixtures:
+        # No fixtures are needed when the can sidecar provides the bus.
+        for fixture in dut.device_config.fixtures or []:
             if fixture.startswith('can:'):
                 ctx = fixture.split(sep=':', maxsplit=1)[1]
                 break
@@ -68,8 +69,16 @@ def can_dut(dut: DeviceAdapter, shell: Shell, chosen: str) -> BusABC:
 
 
 @pytest.fixture
-def can_host(context: str) -> BusABC:
+def can_host(context: str, sidecar_params: dict[str, str]) -> BusABC:
     """Return host CAN bus."""
-    bus = Bus(config_context=context)
+    iface = sidecar_params.get('iface')
+    if iface:
+        # The twister "can" sidecar created this SocketCAN interface for this
+        # run, so use it directly rather than a python-can configuration context
+        # the user would otherwise have to set up by hand.
+        logger.info('using SocketCAN interface "%s" from the can sidecar', iface)
+        bus = Bus(interface='socketcan', channel=iface, fd=True)
+    else:
+        bus = Bus(config_context=context)
     yield bus
     bus.shutdown()
