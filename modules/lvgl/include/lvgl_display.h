@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright 2023 NXP
+ * Copyright (c) 2026 Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,7 @@
 #ifndef ZEPHYR_MODULES_LVGL_DISPLAY_H_
 #define ZEPHYR_MODULES_LVGL_DISPLAY_H_
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/display.h>
 #include <lvgl.h>
 
@@ -18,13 +20,13 @@ extern "C" {
 struct lvgl_disp_data {
 	const struct device *display_dev;
 	struct display_capabilities cap;
-#ifdef CONFIG_LV_Z_FLUSH_THREAD
 	struct k_sem flush_complete;
-#endif
 #ifdef CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER
 	uint8_t *mono_conv_buf;
 	uint32_t mono_conv_buf_size;
 #endif
+	uint32_t vsync_event_handle;
+	bool vsync_event_registered;
 	bool blanking_on;
 };
 
@@ -41,6 +43,8 @@ void lvgl_flush_cb_8bit(lv_display_t *display, const lv_area_t *area, uint8_t *p
 void lvgl_flush_cb_16bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
 void lvgl_flush_cb_24bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
 void lvgl_flush_cb_32bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
+
+void lvgl_wait_cb(lv_display_t *display);
 
 void lvgl_rounder_cb_mono(lv_event_t *e);
 
