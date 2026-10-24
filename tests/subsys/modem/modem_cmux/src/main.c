@@ -974,6 +974,49 @@ ZTEST(modem_cmux, test_modem_cmux_dlci_open_retries)
 	modem_backend_mock_wait_for_transaction(&bus_mock);
 }
 
+ZTEST(modem_cmux, test_modem_cmux_dlci_close_while_opening)
+{
+	uint32_t events;
+	int ret;
+
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
+	zassert_ok(modem_pipe_close(dlci1_pipe, K_SECONDS(10)), "Failed to close DLCI1");
+	modem_backend_mock_reset(&bus_mock);
+	k_event_clear(&cmux_event, UINT32_MAX);
+
+	/* Pipe state as for a pipe that has never been opened, otherwise the pipe
+	 * reports it is already closed without requesting the close from CMUX.
+	 */
+	k_event_clear(&dlci1_pipe->event, UINT32_MAX);
+
+	/* Start opening, the peer does not respond */
+	zassert_ok(modem_pipe_open_async(dlci1_pipe));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_sabm_cmd), "SABM not sent");
+
+	/* Close while opening */
+	zassert_ok(modem_pipe_close_async(dlci1_pipe));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_disc_cmd), "DISC not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci1_disc_cmd, sizeof(cmux_frame_dlci1_disc_cmd),
+			  "Incorrect DISC sent");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_ua_ack, sizeof(cmux_frame_dlci1_ua_ack));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_CLOSED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DLCI1_CLOSED, "DLCI1 not closed");
+
+	/* Opening is not retried */
+	k_msleep(CONFIG_MODEM_CMUX_T1_TIMEOUT + TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "Unexpected data sent after close");
+
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
 ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 {
 	const uint8_t transmit[2];
