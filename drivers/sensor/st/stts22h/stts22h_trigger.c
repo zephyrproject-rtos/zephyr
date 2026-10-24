@@ -62,32 +62,32 @@ static void stts22h_handle_interrupt(const struct device *dev)
 		return;
 	}
 
-	if (stts22h_temp_trshld_src_get(ctx, &status) < 0) {
-		LOG_ERR("Failed to read threshold status");
-	}
-
-	if (stts22h->thsld_handler != NULL &&
-	    (status.under_thl || status.over_thh)) {
-		stts22h->thsld_handler(dev, stts22h->thsld_trigger);
-	}
-
-	/* PM turn-off may have run while the status read or the handler blocked */
-	if (atomic_get(&stts22h->int_enabled) == 0) {
-		return;
-	}
-
+	/*
+	 * Re-arm before reading STATUS: the read releases INT, and an assertion
+	 * at the next conversion must find the interrupt armed.
+	 */
 	ret = gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
+		/* This event is still delivered below */
 		LOG_ERR("Could not re-arm interrupt: %d", ret);
-		return;
 	}
 
-	/* PM turn-off may also have run between the check above and the re-arm */
+	/* PM turn-off may have run between the check above and the re-arm */
 	if (atomic_get(&stts22h->int_enabled) == 0) {
 		ret = gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
 		if (ret < 0) {
 			LOG_ERR("Could not disarm interrupt: %d", ret);
 		}
+		return;
+	}
+
+	if (stts22h_temp_trshld_src_get(ctx, &status) < 0) {
+		LOG_ERR("Failed to read threshold status");
+	}
+
+	if (stts22h->thsld_handler != NULL &&
+	    (status.under_thl != 0U || status.over_thh != 0U)) {
+		stts22h->thsld_handler(dev, stts22h->thsld_trigger);
 	}
 }
 
