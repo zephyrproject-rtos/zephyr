@@ -1,0 +1,16 @@
+# ICTX53XX High Precision 3-axis TMR Magnetometer Sensor
+#
+# Copyright (c) 2025 TDK Invensense
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ICTX53XX
+	bool "ICTX53XX High Precision 3-axis TMR Magnetometer Sensor"
+	default y
+	depends on DT_HAS_INVENSENSE_ICTX53XX_ENABLED
+	depends on ZEPHYR_HAL_TDK_MODULE
+	select I2C
+	select I2C_RTIO
+	select USE_EMD_ICTX53XX
+	help
+	  Enable driver for ICTX53XX I2C-based TMR Magnetometer Sensor.
