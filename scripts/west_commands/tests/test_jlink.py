@@ -12,6 +12,7 @@ from unittest.mock import patch
 import pytest
 from conftest import RC_GDB, RC_KERNEL_ELF
 
+from runners.core import FileType
 from runners.jlink import JLinkBinaryRunner
 
 #
@@ -167,3 +168,92 @@ def test_gdb_init_requires_the_capability(runner_config):
 
     with pytest.raises(ValueError, match="doesn't support --gdb-init"):
         NoGdbInit.create(runner_config._replace(file=None), args)
+
+
+#
+# 'load' writes the ELF into RAM with a J-Link Commander script, like 'flash',
+# and starts it at the ELF entry point instead of resetting. A reset after
+# loading could clear RAM, and the reset vector most likely points at flash.
+#
+
+ENTRY = 0x20000000
+LOAD_SCRIPT = [
+    'ExitOnError 1',
+    'r',
+    'LE',
+    f'loadfile "{RC_KERNEL_ELF}"',
+    f'WReg PC 0x{ENTRY:x}',
+    'g',
+    'writeDP 1 0',
+    'readDP 1',
+    'q',
+]
+
+
+def load_script(runner_config, argv, big_endian=False):
+    '''Build the Commander script 'load' would run.'''
+    runner = create_from_args(runner_config, argv)
+    runner._build_conf = SimpleNamespace(getboolean=lambda option: big_endian)
+
+    with (
+        patch('runners.jlink.os.path.isfile', return_value=True),
+        patch('runners.jlink.elf_entry_point', return_value=ENTRY),
+    ):
+        elf_file, lines = runner.get_default_load_commands()
+
+    assert elf_file == RC_KERNEL_ELF
+    return lines
+
+
+@pytest.mark.parametrize(
+    'argv, expected',
+    [
+        # run_common passes --reset unless the board says --no-reset.
+        (['--reset'], LOAD_SCRIPT),
+        # --no-reset only halts, for targets that lose state on reset.
+        (['--no-reset'], ['ExitOnError 1', 'h', *LOAD_SCRIPT[2:]]),
+        (['--reset', '--reset-type', 'pin'], ['RSetType pin', *LOAD_SCRIPT]),
+        (['--reset', '--pre-script-cmd', 'X'], ['X', *LOAD_SCRIPT]),
+    ],
+)
+def test_load_script(runner_config, argv, expected):
+    assert load_script(runner_config, argv) == expected
+
+
+def test_load_script_big_endian(runner_config):
+    assert load_script(runner_config, ['--reset'], big_endian=True)[2] == 'BE'
+
+
+def test_load_requires_elf(runner_config):
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    JLinkBinaryRunner.add_parser(parser)
+    args = parser.parse_args(['--device', TEST_DEVICE])
+    cfg = runner_config._replace(file='x.hex', file_type=FileType.HEX)
+    runner = JLinkBinaryRunner.create(cfg, args)
+
+    with pytest.raises(ValueError, match='elf file required'):
+        runner.get_default_load_commands()
+
+
+def test_load_runs_commander_not_gdb(runner_config):
+    '''The script goes to J-Link Commander; no GDB server is started.'''
+    runner = create_from_args(runner_config, ['--reset'])
+    runner._jlink_version = TEST_JLINK_VERSION
+    runner._build_conf = SimpleNamespace(getboolean=lambda option: False)
+
+    with (
+        patch('runners.jlink.MISSING_REQUIREMENTS', False),
+        patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch),
+        patch('runners.jlink.os.path.isfile', return_value=True),
+        patch('runners.jlink.elf_entry_point', return_value=ENTRY),
+        patch.object(JLinkBinaryRunner, 'run_flash_cmd') as commander,
+        patch.object(JLinkBinaryRunner, 'run_server_and_client') as gdb,
+    ):
+        runner.run('load')
+
+    commander.assert_called_once()
+    gdb.assert_not_called()
+
+
+def test_load_capability():
+    assert 'load' in JLinkBinaryRunner.capabilities().commands
