@@ -18,7 +18,8 @@ properties:
   flip-configuration:
     type: int
     required: true
-    description: 3 bits, MV[2], MX[1], MY[0]
+    enum: [0, 1, 2, 3]
+    description: 2 bits, MX[1], MY[0]. MV[2] bit needs to be 0 because zephyr uses vtile.
 
   duty:
     type: int
