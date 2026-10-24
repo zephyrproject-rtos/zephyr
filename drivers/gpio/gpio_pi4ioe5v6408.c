@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(pi4ioe5v6408, CONFIG_GPIO_LOG_LEVEL);
 
 #define NUM_PINS 8U
 #define ALL_PINS ((uint8_t)BIT_MASK(NUM_PINS))
+#define INT_RETRY_DELAY K_MSEC(10)
 
 struct pi4ioe5v6408_pin_state {
 	uint8_t dir;
@@ -56,7 +57,7 @@ struct pi4ioe5v6408_data {
 	struct pi4ioe5v6408_irq_state irq_state;
 	struct k_sem lock;
 	struct gpio_callback int_cb;
-	struct k_work work;
+	struct k_work_delayable work;
 	struct k_timer poll_timer;
 	const struct device *dev;
 	sys_slist_t callbacks;
@@ -94,6 +95,7 @@ static void pi4ioe5v6408_handle_interrupt(const struct device *dev)
 	uint8_t prev, curr, transitioned;
 	uint8_t fired = 0;
 	uint8_t status;
+	bool retry = false;
 	int rc;
 
 	k_sem_take(&data->lock, K_FOREVER);
@@ -101,17 +103,17 @@ static void pi4ioe5v6408_handle_interrupt(const struct device *dev)
 	if (!irq->rising && !irq->falling) {
 		if (cfg->interrupt_enabled) {
 			/* Reading this is what releases INT. */
-			(void)i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &status);
+			rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &status);
+			retry = rc != 0;
 		}
-		k_sem_give(&data->lock);
-		return;
+		goto out;
 	}
 
 	prev = irq->last_input;
 	rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_IN_STATE, &curr);
 	if (rc) {
-		k_sem_give(&data->lock);
-		return;
+		retry = cfg->interrupt_enabled;
+		goto out;
 	}
 	irq->last_input = curr;
 	transitioned = prev ^ curr;
@@ -120,21 +122,32 @@ static void pi4ioe5v6408_handle_interrupt(const struct device *dev)
 	fired |= irq->falling & transitioned & prev;
 
 	if (cfg->interrupt_enabled) {
-		(void)pi4ioe5v6408_set_input_default(dev, irq->rising | irq->falling, curr);
+		rc = pi4ioe5v6408_set_input_default(dev, irq->rising | irq->falling, curr);
+		if (rc != 0) {
+			retry = true;
+			goto out;
+		}
 	}
 
-	(void)i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &status);
+	rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_INT_STATUS, &status);
+	retry = cfg->interrupt_enabled && rc != 0;
 
+out:
 	k_sem_give(&data->lock);
 
 	if (fired) {
 		gpio_fire_callbacks(&data->callbacks, dev, fired);
 	}
+	if (retry) {
+		/* A failed transaction may leave INT asserted without another edge. */
+		(void)k_work_reschedule(&data->work, INT_RETRY_DELAY);
+	}
 }
 
 static void pi4ioe5v6408_work_handler(struct k_work *work)
 {
-	struct pi4ioe5v6408_data *data = CONTAINER_OF(work, struct pi4ioe5v6408_data, work);
+	struct pi4ioe5v6408_data *data =
+		CONTAINER_OF(k_work_delayable_from_work(work), struct pi4ioe5v6408_data, work);
 
 	pi4ioe5v6408_handle_interrupt(data->dev);
 }
@@ -143,7 +156,7 @@ static void pi4ioe5v6408_poll_timer(struct k_timer *timer)
 {
 	struct pi4ioe5v6408_data *data = CONTAINER_OF(timer, struct pi4ioe5v6408_data, poll_timer);
 
-	k_work_submit(&data->work);
+	(void)k_work_reschedule(&data->work, K_NO_WAIT);
 }
 
 static void pi4ioe5v6408_int_cb(const struct device *port, struct gpio_callback *cb, uint32_t pins)
@@ -153,7 +166,7 @@ static void pi4ioe5v6408_int_cb(const struct device *port, struct gpio_callback 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
 
-	k_work_submit(&data->work);
+	(void)k_work_reschedule(&data->work, K_NO_WAIT);
 }
 
 static int pi4ioe5v6408_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
@@ -424,7 +437,7 @@ static int pi4ioe5v6408_init(const struct device *dev)
 		}
 
 		data->dev = dev;
-		k_work_init(&data->work, pi4ioe5v6408_work_handler);
+		k_work_init_delayable(&data->work, pi4ioe5v6408_work_handler);
 
 		rc = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
 		if (rc) {
@@ -447,7 +460,7 @@ static int pi4ioe5v6408_init(const struct device *dev)
 		 * plus a callback dispatch when something actually changes.
 		 */
 		data->dev = dev;
-		k_work_init(&data->work, pi4ioe5v6408_work_handler);
+		k_work_init_delayable(&data->work, pi4ioe5v6408_work_handler);
 		k_timer_init(&data->poll_timer, pi4ioe5v6408_poll_timer, NULL);
 		k_timer_start(&data->poll_timer,
 			      K_MSEC(CONFIG_GPIO_PI4IOE5V6408_POLL_PERIOD_MS),
