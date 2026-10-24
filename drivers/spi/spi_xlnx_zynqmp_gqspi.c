@@ -245,7 +245,7 @@ static int xlnx_zynqmp_gqspi_configure(const struct device *dev, const struct sp
 		LOG_ERR("unsupported frequency %d", spi_cfg->frequency);
 		return -ENOTSUP;
 	}
-	data->spi_cfg &= ~GQSPI_CFG_BAUD_RATE_DIV_MASK;
+	data->spi_cfg &= ~(GQSPI_CFG_BAUD_RATE_DIV_MASK << GQSPI_CFG_BAUD_RATE_DIV_SHIFT);
 	data->spi_cfg |= (baud_div << GQSPI_CFG_BAUD_RATE_DIV_SHIFT);
 
 	if (spi_cfg->operation & SPI_MODE_CPHA) {
