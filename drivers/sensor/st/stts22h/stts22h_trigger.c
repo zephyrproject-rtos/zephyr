@@ -19,6 +19,11 @@
 
 LOG_MODULE_DECLARE(STTS22H, CONFIG_SENSOR_LOG_LEVEL);
 
+static const gpio_flags_t gpio_int_cfg[2] = {
+			GPIO_INT_EDGE_TO_ACTIVE,
+			GPIO_INT_LEVEL_ACTIVE,
+			};
+
 /**
  * stts22h_trigger_set - link external trigger to event data ready
  */
@@ -63,7 +68,7 @@ static void stts22h_handle_interrupt(const struct device *dev)
 		stts22h->thsld_handler(dev, stts22h->thsld_trigger);
 	}
 
-	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, gpio_int_cfg[cfg->int_mode]);
 }
 
 static void stts22h_gpio_callback(const struct device *dev,
@@ -158,5 +163,5 @@ int stts22h_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->int_gpio, gpio_int_cfg[cfg->int_mode]);
 }
