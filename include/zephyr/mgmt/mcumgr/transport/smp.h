@@ -344,6 +344,17 @@ struct smp_client_transport_entry {
 int smp_transport_init(struct smp_transport *smpt);
 
 /**
+ * @brief Enqueues an incoming SMP request packet for processing.
+ *
+ * This function always consumes the supplied net_buf.
+ *
+ * @param smtp                  The transport to use to send the corresponding
+ *                                  response(s).
+ * @param nb                    The request packet to process.
+ */
+void smp_rx_req(struct smp_transport *smtp, struct net_buf *nb);
+
+/**
  * @brief	Used to remove queued requests for an SMP transport that are no longer valid. A
  *		smp_transport_query_valid_check_fn() function must be registered for this to
  *		function. If the smp_transport_query_valid_check_fn() function returns false

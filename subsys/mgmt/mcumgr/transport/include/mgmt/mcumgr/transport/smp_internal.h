@@ -39,17 +39,6 @@ struct smp_hdr {
 struct smp_transport;
 struct zephyr_smp_transport;
 
-/**
- * @brief Enqueues an incoming SMP request packet for processing.
- *
- * This function always consumes the supplied net_buf.
- *
- * @param smtp                  The transport to use to send the corresponding
- *                                  response(s).
- * @param nb                    The request packet to process.
- */
-void smp_rx_req(struct smp_transport *smtp, struct net_buf *nb);
-
 #ifdef CONFIG_SMP_CLIENT
 /**
  * @brief Get work queue for SMP client.
