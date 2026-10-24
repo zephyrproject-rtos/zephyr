@@ -1635,11 +1635,15 @@
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x42050000 0x304>;
 		interrupts = <112 0>;
+		/* gate = peripheral LPCG; source = MAIN_ADC0_FCLK root (PERI3/50 = 8 MHz). */
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_ADC0,
-					   IMX_CCM_ROOT_MAIN_ADC0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_ADC0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_ADC0_FCLK,
+						IMX_CCM_MUX_ADC0_PERI3, 50, 1)>;
 		voltage-ref = <1>;
 		calibration-average = <128>;
-		power-level = <0>;
+		no-power-level;
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
@@ -1650,11 +1654,15 @@
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x42850000 0x304>;
 		interrupts = <113 0>;
+		/* gate = peripheral LPCG; source = MAIN_ADC1_FCLK root (PERI3/50 = 8 MHz). */
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_ADC1,
-					   IMX_CCM_ROOT_MAIN_ADC1_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_ADC1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_ADC1_FCLK,
+						IMX_CCM_MUX_ADC1_PERI3, 50, 1)>;
 		voltage-ref = <1>;
 		calibration-average = <128>;
-		power-level = <0>;
+		no-power-level;
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
@@ -1665,6 +1673,9 @@
 		compatible = "nxp,lpdac";
 		reg = <0x42060000 0x1000>;
 		interrupts = <114 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_DAC,
+					   IMX_CCM_ROOT_NONE)>;
+		voltage-reference = <0>;
 		#io-channel-cells = <1>;
 		status = "disabled";
 	};
