@@ -15,7 +15,7 @@ static inline void z_vrfy_sys_rand_get(void *dst, size_t len)
 }
 #include <zephyr/syscalls/sys_rand_get_mrsh.c>
 
-#ifdef CONFIG_CSPRNG_ENABLED
+#if defined(CONFIG_CSPRNG_ENABLED) || defined(CONFIG_TEST_CSPRNG_GENERATOR)
 static inline int z_vrfy_sys_csrand_get(void *dst, size_t len)
 {
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(dst, len));
@@ -23,4 +23,4 @@ static inline int z_vrfy_sys_csrand_get(void *dst, size_t len)
 	return z_impl_sys_csrand_get(dst, len);
 }
 #include <zephyr/syscalls/sys_csrand_get_mrsh.c>
-#endif
+#endif /* CONFIG_CSPRNG_ENABLED || CONFIG_TEST_CSPRNG_GENERATOR */

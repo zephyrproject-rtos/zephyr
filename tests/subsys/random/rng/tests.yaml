@@ -12,6 +12,16 @@ tests:
     extra_args: CONF_FILE=prj_sw_random_systimer.conf
     integration_platforms:
       - qemu_x86
+  crypto.rng.test_csprng_userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    min_ram: 16
+    tags:
+      - userspace
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_TEST_CSPRNG_GENERATOR=y
+    integration_platforms:
+      - qemu_x86
   crypto.rng.random_hw_xoshiro:
     extra_args: CONF_FILE=prj_hw_random_xoshiro.conf
     filter: CONFIG_ENTROPY_HAS_DRIVER
