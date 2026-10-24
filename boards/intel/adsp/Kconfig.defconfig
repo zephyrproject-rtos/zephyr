@@ -4,8 +4,8 @@
 
 if DAI_INTEL_SSP
 
-config DAI_SSP_HAS_POWER_CONTROL
-	def_bool y
+configdefault DAI_SSP_HAS_POWER_CONTROL
+	default y
 
 endif
 
