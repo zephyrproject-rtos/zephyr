@@ -9,6 +9,7 @@ tests:
       - nucleo_f302r8
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
       - pic32cm_jh01_cpro
     timeout: 600
   drivers.counter.basic_api.nrf_zli:
@@ -119,12 +120,88 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
       - pic32cm_jh01_cpro
     timeout: 600
     extra_args:
-      - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/microchip/sam_e54_xpro_tc0.overlay"
-      - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE=boards/microchip/pic32cx_sg41_cult_tc0.overlay"
       - FILE_SUFFIX=tc0
+  drivers.counter.basic_api.mchp_tc1:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
+    timeout: 600
+    extra_args:
+      - FILE_SUFFIX=tc1
+  drivers.counter.basic_api.mchp_tc2:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
+    timeout: 600
+    extra_args:
+      - FILE_SUFFIX=tc2
+  drivers.counter.basic_api.mchp_tc3:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
+    timeout: 600
+    extra_args:
+      - FILE_SUFFIX=tc3
+  drivers.counter.basic_api.mchp_tc4:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
+    timeout: 600
+    extra_args:
+      - FILE_SUFFIX=tc4
+  drivers.counter.basic_api.mchp_tc5:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
+    timeout: 600
+    extra_args:
+      - FILE_SUFFIX=tc5
+  drivers.counter.basic_api.mchp_tc6:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
+    timeout: 600
+    extra_args:
+      - FILE_SUFFIX=tc6
+  drivers.counter.basic_api.mchp_tc7:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
+    timeout: 600
+    extra_args:
+      - FILE_SUFFIX=tc7
   drivers.counter.basic_api.mchp_rtc:
     tags:
       - drivers
