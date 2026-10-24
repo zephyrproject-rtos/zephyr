@@ -1996,20 +1996,38 @@ static uint16_t get_ss_record_len(struct net_buf *buf)
 
 static uint16_t get_ssa_record_len(struct net_buf *buf)
 {
+	uint32_t len_32b;
 	uint16_t len;
 	uint8_t seq;
 
+	if (buf->len < sizeof(uint8_t)) {
+		goto buffer_too_small;
+	}
 	seq = net_buf_pull_u8(buf);
 
 	switch (seq) {
 	case BT_SDP_SEQ8:
+		if (buf->len < sizeof(uint8_t)) {
+			goto buffer_too_small;
+		}
 		len = net_buf_pull_u8(buf);
 		break;
 	case BT_SDP_SEQ16:
+		if (buf->len < sizeof(uint16_t)) {
+			goto buffer_too_small;
+		}
 		len = net_buf_pull_be16(buf);
 		break;
 	case BT_SDP_SEQ32:
-		len = net_buf_pull_be32(buf);
+		if (buf->len < sizeof(uint32_t)) {
+			goto buffer_too_small;
+		}
+		len_32b = net_buf_pull_be32(buf);
+		if (len_32b > UINT16_MAX) {
+			LOG_WRN("SDP length exceeds 16-bit max");
+			return 0U;
+		}
+		len = (uint16_t)len_32b;
 		break;
 	default:
 		LOG_WRN("Sequence type 0x%02x not handled", seq);
@@ -2018,6 +2036,10 @@ static uint16_t get_ssa_record_len(struct net_buf *buf)
 	}
 
 	return len;
+
+buffer_too_small:
+	LOG_WRN("Invalid ssa record buffer size");
+	return 0U;
 }
 
 static uint16_t get_record_len(struct bt_sdp_client *session)
@@ -2074,6 +2096,14 @@ static int sdp_client_notify_result(struct bt_conn *conn, struct bt_sdp_client *
 
 		net_buf_simple_save(&session->rec_buf->b, &buf_state);
 		rec_len = get_record_len(session);
+
+		/* reject any record whose declared length exceeds the remaining buffer */
+		if ((rec_len == 0U || session->rec_buf->len < rec_len)
+			&& state != UUID_PARTIAL_RESOLVED) {
+			LOG_WRN("Malformed SDP record, len exceeds actual buffer size");
+			return -EBADMSG;
+		}
+
 		/* tell the user about multi record resolution */
 		if (session->rec_buf->len > rec_len) {
 			result.next_record_hint = true;
