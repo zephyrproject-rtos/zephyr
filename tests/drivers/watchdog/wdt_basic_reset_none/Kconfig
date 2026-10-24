@@ -31,4 +31,6 @@ config TEST_WDT_TIMEOUT_UNIT_TICKS
 	bool "Use watchdog timeout unit in ticks"
 	default n
 	help
-	  Enable this option to configure the watchdog timeout unit in system ticks
+	  Enable this option to express TEST_WDT_SLEEP_TIME in system ticks
+	  instead of milliseconds. The wait for the watchdog callback stays in
+	  milliseconds.
