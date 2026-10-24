@@ -113,22 +113,43 @@ static struct k_thread *poller_thread(struct z_poller *p)
 	return p ? CONTAINER_OF(p, struct k_thread, poller) : NULL;
 }
 
+/* The thread whose priority orders a poller among an object's waiters: the
+ * polling thread itself, or the queue thread that runs a triggered work item.
+ */
+static struct k_thread *poller_prio_thread(struct z_poller *p)
+{
+	if (p->mode == MODE_POLL) {
+		return poller_thread(p);
+	}
+
+	return CONTAINER_OF(p, struct k_work_poll, poller)->workq->thread_id;
+}
+
+static int32_t poller_prio_cmp(struct z_poller *p1, struct z_poller *p2)
+{
+	struct k_thread *t1 = poller_prio_thread(p1);
+	struct k_thread *t2 = poller_prio_thread(p2);
+
+	if ((t1 == NULL) || (t2 == NULL)) {
+		return (int32_t)(t1 != NULL) - (int32_t)(t2 != NULL);
+	}
+
+	return z_sched_prio_cmp(t1, t2);
+}
+
 static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 			     struct z_poller *poller)
 {
 	struct k_poll_event *pending;
 
 	pending = (struct k_poll_event *)sys_dlist_peek_tail(events);
-	if ((pending == NULL) ||
-		(z_sched_prio_cmp(poller_thread(pending->poller),
-							   poller_thread(poller)) > 0)) {
+	if ((pending == NULL) || (poller_prio_cmp(pending->poller, poller) > 0)) {
 		sys_dlist_append(events, &event->_node);
 		return;
 	}
 
 	SYS_DLIST_FOR_EACH_CONTAINER(events, pending, _node) {
-		if (z_sched_prio_cmp(poller_thread(poller),
-					poller_thread(pending->poller)) > 0) {
+		if (poller_prio_cmp(poller, pending->poller) > 0) {
 			sys_dlist_insert(&pending->_node, &event->_node);
 			return;
 		}
