@@ -152,6 +152,8 @@ static void smc_callback(uint32_t c_token, struct sip_svc_response *response)
 				(uint32_t *)k_malloc(sizeof(uint32_t) * resp_len);
 			if (!private_data->mbox_response_data) {
 				LOG_ERR("Failed to allocate memory for mailbox response data");
+				LOG_DBG("\tFree response memory %p",
+					(char *)response->resp_data_addr);
 				k_free((char *)response->resp_data_addr);
 				k_sem_give(&(private_data->smc_sem));
 				return;
