@@ -352,8 +352,8 @@ static int sdmmc_read_switch(struct sd_card *card)
 	} else {
 		card->switch_caps.uhs_max_dtr = UHS_UNSUPPORTED;
 	}
+	card->switch_caps.bus_speed = status[13];
 	if (card->sd_version >= SD_SPEC_VER3_0) {
-		card->switch_caps.bus_speed = status[13];
 		card->switch_caps.sd_drv_type = status[9];
 		card->switch_caps.sd_current_limit = status[7];
 	}
