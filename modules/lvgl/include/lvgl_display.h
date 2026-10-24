@@ -15,6 +15,13 @@
 extern "C" {
 #endif
 
+/* LVGL renders 1 bit per pixel, which the monochrome conversion buffer requires. */
+#if (CONFIG_LV_Z_BITS_PER_PIXEL == 1) || defined(CONFIG_LV_COLOR_FORMAT_I1)
+#define IS_MONOCHROME_DISPLAY 1
+#else
+#define IS_MONOCHROME_DISPLAY 0
+#endif
+
 struct lvgl_disp_data {
 	const struct device *display_dev;
 	struct display_capabilities cap;
