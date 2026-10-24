@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SEEED_XIAO_DISPLAY_0_96
+	def_bool $(shields_list_contains,seeed_xiao_display_0_96)
+
+config SHIELD_SEEED_XIAO_DISPLAY_1_14
+	def_bool $(shields_list_contains,seeed_xiao_display_1_14)
+
+config SHIELD_SEEED_XIAO_DISPLAY_1_47
+	def_bool $(shields_list_contains,seeed_xiao_display_1_47)

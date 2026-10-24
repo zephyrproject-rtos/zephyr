@@ -1,0 +1,56 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Common part of the XIAO display boards (0.96", 1.14" and 1.47").
+ */
+
+#include <freq.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		accel0 = &lsm6ds3tr_c_seeed_xiao_display;
+	};
+
+	/* The backlight stays off until D18 is driven high */
+	backlight_seeed_xiao_display: backlight {
+		compatible = "regulator-fixed";
+		regulator-name = "backlight";
+		enable-gpios = <&xiao_plus_d 18 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	mipi_dbi_seeed_xiao_display: mipi-dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&xiao_spi>;
+		dc-gpios = <&xiao_d 3 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&xiao_plus_d 17 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+/* D6 and D7 are used by the display boards */
+&xiao_serial {
+	status = "disabled";
+};
+
+&xiao_i2c {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lsm6ds3tr_c_seeed_xiao_display: lsm6ds3tr-c@6a {
+		compatible = "st,lsm6dsl";
+		reg = <0x6a>;
+		irq-gpios = <&xiao_plus_d 14 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&xiao_spi {
+	status = "okay";
+	cs-gpios = <&xiao_d 2 GPIO_ACTIVE_LOW>;
+};
