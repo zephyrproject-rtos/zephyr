@@ -21,6 +21,25 @@ struct silabs_clock_control_config {
 static enum clock_control_status silabs_clock_control_get_status(const struct device *dev,
 								 clock_control_subsys_t sys);
 
+/* The sl_clock_manager functions report a sl_status_t, which says far more
+ * than "unsupported": keep the reason.
+ */
+static int silabs_clock_status_to_errno(sl_status_t status)
+{
+	switch (status) {
+	case SL_STATUS_OK:
+		return 0;
+	case SL_STATUS_INVALID_PARAMETER:
+	case SL_STATUS_NULL_POINTER:
+		return -EINVAL;
+	case SL_STATUS_NOT_AVAILABLE:
+	case SL_STATUS_NOT_SUPPORTED:
+		return -ENOTSUP;
+	default:
+		return -EIO;
+	}
+}
+
 static int silabs_clock_control_on(const struct device *dev, clock_control_subsys_t sys)
 {
 	const struct silabs_clock_control_cmu_config *cfg = sys;
@@ -31,11 +50,8 @@ static int silabs_clock_control_on(const struct device *dev, clock_control_subsy
 	}
 
 	status = sl_clock_manager_enable_bus_clock(&cfg->bus_clock);
-	if (status != SL_STATUS_OK) {
-		return -ENOTSUP;
-	}
 
-	return 0;
+	return silabs_clock_status_to_errno(status);
 }
 
 static int silabs_clock_control_off(const struct device *dev, clock_control_subsys_t sys)
@@ -44,11 +60,8 @@ static int silabs_clock_control_off(const struct device *dev, clock_control_subs
 	sl_status_t status;
 
 	status = sl_clock_manager_disable_bus_clock(&cfg->bus_clock);
-	if (status != SL_STATUS_OK) {
-		return -ENOTSUP;
-	}
 
-	return 0;
+	return silabs_clock_status_to_errno(status);
 }
 
 static int silabs_clock_control_get_rate(const struct device *dev, clock_control_subsys_t sys,
@@ -58,11 +71,8 @@ static int silabs_clock_control_get_rate(const struct device *dev, clock_control
 	sl_status_t status;
 
 	status = sl_clock_manager_get_clock_branch_frequency(cfg->branch, rate);
-	if (status != SL_STATUS_OK) {
-		return -ENOTSUP;
-	}
 
-	return 0;
+	return silabs_clock_status_to_errno(status);
 }
 
 static enum clock_control_status silabs_clock_control_get_status(const struct device *dev,
