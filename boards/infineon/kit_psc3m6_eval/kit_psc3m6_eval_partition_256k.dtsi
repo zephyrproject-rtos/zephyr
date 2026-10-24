@@ -6,9 +6,13 @@
  */
 
 /*
- * Two 128 KB mcuboot slots, 256 KB total. Valid only for the 256 KB-flash,
- * 64 KB-RAM PSC3M6 MPNs (psc3m6fds2a*q1). The 512 KB MPNs (psc3m6ges3a*q1)
- * must use psc3m6_partition_512k.dtsi instead.
+ * Reference partition layout for 256 KB flash PSC3M6 devices.
+ *
+ * Note: kit_psc3m6_eval uses a 512 KB flash SoC (kit_psc3m6_eval_partition_512k.dtsi).
+ * This file is not included by default, but is provided as an example layout
+ * for custom boards with 256 KB flash.
+ *
+ * Layout: Two 120 KB application slots + a 16 KB storage partition, 256 KB total.
  */
 / {
 	reserved-memory {
@@ -32,13 +36,19 @@
 		slot0_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
 			label = "slot0";
-			reg = <0x0 DT_SIZE_K(128)>;
+			reg = <0x0 DT_SIZE_K(120)>;
 		};
 
-		slot1_partition: partition@20000 {
+		slot1_partition: partition@1e000 {
 			compatible = "zephyr,mapped-partition";
 			label = "slot1";
-			reg = <0x20000 DT_SIZE_K(128)>;
+			reg = <0x1e000 DT_SIZE_K(120)>;
+		};
+
+		storage_partition: partition@3c000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x3c000 DT_SIZE_K(16)>;
 		};
 	};
 };
