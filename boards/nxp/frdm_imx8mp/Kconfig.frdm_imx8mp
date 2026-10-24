@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+
+config BOARD_FRDM_IMX8MP
+	select SOC_MIMX8ML8_M7 if BOARD_FRDM_IMX8MP_MIMX8ML8_M7 || BOARD_FRDM_IMX8MP_MIMX8ML8_M7_DDR
+	select SOC_PART_NUMBER_MIMX8ML8DVNLZ
