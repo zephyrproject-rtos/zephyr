@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * 64-bit native_sim loads the kernel at 0x400000. Describe that window as
+ * zephyr,sram so IS_SRAM_ADDRESS() accepts the fake virtqueue buffers.
+ */
+#include "native_sim_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+	};
+
+	sram0: memory@400000 {
+		device_type = "memory";
+		reg = <0x400000 0x4000000>;
+	};
+};

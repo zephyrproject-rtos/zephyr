@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The fake virtio device uses a zephyr,user node so the console driver can be
+ * instantiated without a real transport.
+ */
+/ {
+	fake_virtio: fake-virtio {
+		compatible = "zephyr,user";
+		status = "okay";
+
+		fake_console: console {
+			compatible = "virtio,console";
+			status = "okay";
+		};
+	};
+};
