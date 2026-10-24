@@ -124,6 +124,15 @@ static K_WORK_DEFINE(rx_work, rx_work_handler);
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
+/* The Host relies on the cooperative priority of its threads for mutual
+ * exclusion, which K_PRIO_COOP() gives only below CONFIG_NUM_COOP_PRIORITIES.
+ * This check and the one in conn.c go away once the Host no longer relies
+ * on cooperative scheduling, see
+ * https://github.com/zephyrproject-rtos/zephyr/issues/116316
+ */
+BUILD_ASSERT(CONFIG_BT_RX_PRIO < CONFIG_NUM_COOP_PRIORITIES,
+	     "The Bluetooth RX workqueue needs a cooperative priority");
+
 bool bt_is_work_thread(void)
 {
 	return k_current_get() == bt_workq.thread_id;
