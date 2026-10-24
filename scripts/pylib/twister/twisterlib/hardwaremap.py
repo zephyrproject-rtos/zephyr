@@ -256,6 +256,7 @@ class HardwareMap:
             if flash_with_test is None:
                 flash_with_test = self.options.device_flash_with_test
             serial_pty = dut.get('serial_pty')
+            runner_console = dut.get('runner_console', False)
             flash_before = dut.get('flash_before')
             if flash_before is None:
                 flash_before = self.options.flash_before and (not flash_with_test)
@@ -276,7 +277,9 @@ class HardwareMap:
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
             run_with_fixture_only = dut.get('run_with_fixture_only', False)
-            connected = dut.get('connected') and ((serial or serial_pty) is not None)
+            connected = dut.get('connected') and (
+                (serial or serial_pty) is not None or runner_console
+            )
             west_flash_cmd = dut.get('west_flash_cmd', "")
             if not connected:
                 continue
@@ -300,6 +303,7 @@ class HardwareMap:
                               flash_timeout=flash_timeout,
                               flash_with_test=flash_with_test,
                               run_with_fixture_only=run_with_fixture_only,
+                              runner_console=runner_console,
                               west_flash_cmd=west_flash_cmd)
                 new_dut.fixtures = fixtures
                 new_dut.counter = 0
