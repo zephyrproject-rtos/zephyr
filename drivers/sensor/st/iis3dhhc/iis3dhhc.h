@@ -22,19 +22,19 @@
 #include "iis3dhhc_reg.h"
 
 struct iis3dhhc_config {
-	int (*bus_init)(const struct device *dev);
+	stmdev_ctx_t ctx;
+	union {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		const struct spi_dt_spec spi;
+#endif
+	} stmemsc_cfg;
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 	struct gpio_dt_spec int_gpio;
-#endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_dt_spec spi;
 #endif
 };
 
 struct iis3dhhc_data {
 	int16_t acc[3];
-
-	stmdev_ctx_t *ctx;
 
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 	struct gpio_callback gpio_cb;
@@ -53,8 +53,6 @@ struct iis3dhhc_data {
 
 #endif /* CONFIG_IIS3DHHC_TRIGGER */
 };
-
-int iis3dhhc_spi_init(const struct device *dev);
 
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 int iis3dhhc_trigger_set(const struct device *dev,
