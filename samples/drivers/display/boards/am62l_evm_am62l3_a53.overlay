@@ -1,0 +1,21 @@
+/*
+ * Copyright (C) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&main_i2c0 {
+	status = "okay";
+};
+
+&display_mcu {
+	status = "okay";
+};
+
+&dsi0 {
+	data-lanes = <2>;
+
+	rpi_td2: panel@0 {
+		status = "okay";
+	};
+};

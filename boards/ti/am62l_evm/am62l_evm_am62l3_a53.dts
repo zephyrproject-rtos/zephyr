@@ -19,6 +19,7 @@
 		zephyr,sram = &ddr0;
 		zephyr,flash-controller = &main_ospi0;
 		zephyr,flash = &flash0_memory;
+		zephyr,display = &dss;
 	};
 
 	aliases {
@@ -273,4 +274,27 @@
 			ranges;
 		};
 	};
+};
+
+&dss {
+	data-width = <24>;
+	height = <1280>;
+	width = <720>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		clock-frequency = <83330000>;
+		hfront-porch = <239>;
+		hback-porch = <50>;
+		hsync-len = <33>;
+		vfront-porch = <20>;
+		vback-porch = <30>;
+		vsync-len = <2>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <1>;
+		pixelclk-active = <0>;
+	};
+
+	status = "okay";
 };
