@@ -165,7 +165,7 @@ static void *nsem_open_func(void *p)
 	const char *name = (char *)p;
 
 	for (int i = 0; i < CONFIG_TEST_SEM_N_LOOPS; i++) {
-		zassert_not_null(sem_open(name, 0, 0, 0), "%s is NULL", name);
+		zassert_not_null(sem_open(name, 0), "%s is NULL", name);
 		k_msleep(1);
 	}
 
@@ -197,13 +197,13 @@ ZTEST(posix_semaphores, test_named_semaphore)
 	sem_t *sem1, *sem2, *different_sem1;
 
 	/* If `name` is invalid */
-	sem1 = sem_open(NULL, 0, 0, 0);
+	sem1 = sem_open(NULL, 0);
 	zassert_equal(errno, EINVAL);
 	zassert_equal_ptr(sem1, SEM_FAILED);
 	zassert_equal(nsem_get_list_len(), 0);
 
 	/* Attempt to open a named sem that doesn't exist */
-	sem1 = sem_open("sem1", 0, 0, 0);
+	sem1 = sem_open("sem1", 0);
 	zassert_equal(errno, ENOENT);
 	zassert_equal_ptr(sem1, SEM_FAILED);
 	zassert_equal(nsem_get_list_len(), 0);
@@ -216,7 +216,7 @@ ZTEST(posix_semaphores, test_named_semaphore)
 	}
 	name_too_long[sizeof(name_too_long) - 1] = '\0';
 
-	sem1 = sem_open(name_too_long, 0, 0, 0);
+	sem1 = sem_open(name_too_long, 0);
 	zassert_equal(errno, ENAMETOOLONG, "\"%s\" should be longer than %d", name_too_long,
 		      CONFIG_POSIX_SEM_NAMELEN_MAX);
 	zassert_equal_ptr(sem1, SEM_FAILED);
@@ -241,10 +241,10 @@ ZTEST(posix_semaphores, test_named_semaphore)
 		sem_t *new_sem1, *new_sem2;
 
 		/* oflags are ignored (except when both O_CREAT & O_EXCL are set) */
-		new_sem1 = sem_open("sem1", i % 2 == 0 ? O_CREAT : 0, 0, 0);
+		new_sem1 = ((i % 2) == 0) ? sem_open("sem1", O_CREAT, 0, 0) : sem_open("sem1", 0);
 		zassert_not_null(new_sem1);
 		zassert_equal_ptr(new_sem1, sem1); /* Should point to the same sem */
-		new_sem2 = sem_open("sem2", i % 2 == 0 ? O_CREAT : 0, 0, 0);
+		new_sem2 = ((i % 2) == 0) ? sem_open("sem2", O_CREAT, 0, 0) : sem_open("sem2", 0);
 		zassert_not_null(new_sem2);
 		zassert_equal_ptr(new_sem2, sem2);
 
@@ -256,6 +256,18 @@ ZTEST(posix_semaphores, test_named_semaphore)
 		zassert_equal(nsem_get_list_len(), 2);
 	}
 
+	/* Creation attributes are ignored when named semaphore already exists */
+	{
+		sem_t *existing_sem;
+
+		existing_sem = sem_open("sem1", O_CREAT, 0, (CONFIG_POSIX_SEM_VALUE_MAX + 1));
+		zassert_not_null(existing_sem);
+		zassert_equal_ptr(existing_sem, sem1);
+		zassert_equal(nsem_get_ref_count(sem1), 2 + CONFIG_TEST_SEM_N_LOOPS + 1);
+		zassert_ok(sem_close(existing_sem));
+		zassert_equal(nsem_get_ref_count(sem1), 2 + CONFIG_TEST_SEM_N_LOOPS);
+	}
+
 	/* O_CREAT and O_EXCL are set and the named semaphore already exists */
 	zassert_equal_ptr((sem_open("sem1", O_CREAT | O_EXCL, 0, 0)), SEM_FAILED);
 	zassert_equal(errno, EEXIST);
@@ -263,6 +275,16 @@ ZTEST(posix_semaphores, test_named_semaphore)
 
 	zassert_equal(sem_close(NULL), -1);
 	zassert_equal(errno, EINVAL);
+	zassert_equal(nsem_get_list_len(), 2);
+
+	{
+		sem_t unnamed_sem;
+
+		zassert_ok(sem_init(&unnamed_sem, 0, 1));
+		zassert_equal(sem_close(&unnamed_sem), -1);
+		zassert_equal(errno, EINVAL);
+		zassert_ok(sem_destroy(&unnamed_sem));
+	}
 	zassert_equal(nsem_get_list_len(), 2);
 
 	/* Close sem */
