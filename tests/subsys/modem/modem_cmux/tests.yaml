@@ -13,3 +13,6 @@ tests:
   modem.modem_cmux.transmit_chain:
     extra_configs:
       - CONFIG_TEST_MODEM_MOCK_BACKEND_TRANSMIT_CHAIN=y
+  modem.modem_cmux.dedicated_workqueue:
+    extra_configs:
+      - CONFIG_MODEM_DEDICATED_WORKQUEUE=y
