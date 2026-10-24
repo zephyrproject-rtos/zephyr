@@ -442,6 +442,16 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 		return -1;
 	}
 
+	{
+		const struct timeval tv = { .tv_sec = 10 };
+
+		if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+			printk("Failed to set socket receive timeout (%d)\n", errno);
+			(void)close(socket_fd);
+			return -1;
+		}
+	}
+
 	printk("Socket opened\n");
 
 	*port = htons(SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT);
@@ -465,6 +475,7 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 	ret = recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
 	if (ret != 2) {
 		printk("Invalid response\n");
+		(void)close(socket_fd);
 		return -1;
 	}
 
