@@ -61,11 +61,36 @@ config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
 	help
 	  ENET RX thread stack size in bytes.
 
+choice ETH_NXP_ENET_RX_THREAD_TYPE
+	prompt "How the ENET RX thread should work"
+	default ETH_NXP_ENET_RX_THREAD_PREEMPTIVE if NET_TC_THREAD_PREEMPTIVE
+	default ETH_NXP_ENET_RX_THREAD_COOPERATIVE
+	help
+	  Please select the RX thread to be either pre-emptive or
+	  co-operative. The default follows NET_TC_THREAD_TYPE, so that the
+	  driver thread and the traffic class threads are of the same kind
+	  unless asked otherwise.
+
+config ETH_NXP_ENET_RX_THREAD_COOPERATIVE
+	bool "Use a co-operative RX thread"
+	depends on COOP_ENABLED
+	help
+	  With a co-operative thread, the thread cannot be pre-empted.
+
+config ETH_NXP_ENET_RX_THREAD_PREEMPTIVE
+	bool "Use a pre-emptive RX thread"
+	depends on PREEMPT_ENABLED
+	help
+	  With a pre-emptive thread, the thread can be pre-empted. This
+	  might reduce receive throughput.
+
+endchoice
+
 config ETH_NXP_ENET_RX_THREAD_PRIORITY
-	int "NXP ENET driver RX cooperative thread priority"
+	int "NXP ENET driver RX thread priority"
 	default 2
 	help
-	  ENET MAC Driver handles RX in cooperative workqueue thread.
+	  ENET MAC Driver handles RX in a workqueue thread.
 	  This options sets the priority of that thread.
 
 config ETH_NXP_ENET_RMII_EXT_CLK
