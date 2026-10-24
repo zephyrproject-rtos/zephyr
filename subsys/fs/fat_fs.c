@@ -265,11 +265,20 @@ static int fatfs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 		return -EINVAL;
 	}
 
-	if ((pos < 0) || (pos > f_size((FIL *)zfp->filep))) {
+	/*
+	 * FatFs extends a file open for writing up to a position past its end, with zeros, as
+	 * fs_truncate() does. It would clip the position of a read-only file to its size instead.
+	 */
+	if ((pos < 0) || ((pos > f_size((FIL *)zfp->filep)) && ((zfp->flags & FS_O_WRITE) == 0U))) {
 		return -EINVAL;
 	}
 
 	res = f_lseek(zfp->filep, pos);
+
+	/* The file is extended up to the last free cluster when the volume gets full */
+	if ((res == FR_OK) && (f_tell((FIL *)zfp->filep) != pos)) {
+		return -ENOSPC;
+	}
 
 	return translate_error(res);
 }
