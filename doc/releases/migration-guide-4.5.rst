@@ -197,6 +197,10 @@ Boards
   <REGULATOR_RPI_PICO_MODE_NORMAL>`` properties are now set by default in the SoC dtsi. Boards
   that previously set them explicitly can remove those lines. (:github:`114751`)
 
+* On RP2040, the ``mbox`` node was split into ``mbox0`` and ``mbox1`` to provide
+  per-core mailbox instances. The ``ipm_mbox`` node was renamed to ``ipm_mbox0`` and
+  ``ipm_mbox1``, respectively.
+
 * On RP2350 (rpi_pico family), the ``hazard3`` and ``m33`` cpucluster qualifiers are deprecated in
   favor of ``hazard3_0`` and ``m33_0``, which explicitly identify the cluster as CPU0 and pave the
   way for dual-core support. All in-tree RP2350 boards have been migrated to the new qualifiers
