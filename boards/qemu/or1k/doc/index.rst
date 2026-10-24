@@ -12,6 +12,10 @@ This configuration provides support for an or1k CPU core and these devices:
 * NS16550 UART
 
 
+By default, the QEMU ``virt`` machine is used. The ``qemu_or1k/qemu_or1k/sim`` variant
+uses the QEMU ``or1k-sim`` machine instead, which additionally provides an OpenCores
+Ethernet MAC (ethoc).
+
 .. note::
    This board configuration makes no claims about its suitability for use
    with an actual OpenRISC 1000 hardware system, or any other hardware system.
