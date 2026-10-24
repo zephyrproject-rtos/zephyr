@@ -95,3 +95,7 @@
 &dma1 {
 	status = "okay";
 };
+
+&dmamux1 {
+	status = "okay";
+};

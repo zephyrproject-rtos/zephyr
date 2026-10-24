@@ -17,7 +17,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/cache.h>
 
-#include <stm32_ll_dma.h>
 #include <stm32_bitops.h>
 
 #include <zephyr/logging/log.h>
@@ -38,17 +37,25 @@ static const uint32_t sai_fifo_threshold[] = {
 	SAI_FIFOTHRESHOLD_FULL,
 };
 
+/* Maximum time to wait for the TX DMA to push data into the SAI FIFO */
+#define SAI_FIFO_FILL_TIMEOUT_US 1000U
+
+/* Maximum time for a sub-block to stop: one frame at the lowest supported rate */
+#define SAI_DISABLE_TIMEOUT_US 1000U
+
+/* SAI FIFO depth in words */
+#define SAI_FIFO_DEPTH 8U
+
 struct queue_item {
 	void *buffer;
 	size_t size;
 };
 
 struct stream {
-	DMA_TypeDef *reg;
-
 	const struct device *dma_dev;
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
+	struct dma_block_config dma_blk_cfg;
 
 	/* DMA size of a source block transfer in bytes according SAI data size. */
 	uint8_t dma_src_size;
@@ -69,7 +76,6 @@ struct stream {
 
 struct stm32_sai_sub_data {
 	SAI_HandleTypeDef hsai;
-	DMA_HandleTypeDef hdma;
 	struct stream stream;
 };
 
@@ -106,113 +112,246 @@ static inline void sai_sub_disable(SAI_HandleTypeDef *hsai, i2s_opt_t options)
 
 	__HAL_SAI_DISABLE(hsai);
 
+	/*
+	 * SAIEN clears at the end of the current frame. Wait for it, so that a following
+	 * start does not see the sub-block as enabled and skip re-enabling it.
+	 */
+	if (!WAIT_FOR(stm32_reg_read_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN) == 0U,
+		      SAI_DISABLE_TIMEOUT_US, k_busy_wait(1))) {
+		LOG_ERR("SAI sub-block %p disable timeout", hsai->Instance);
+		return;
+	}
+
 	LOG_DBG("SAI Disabled");
 }
 
-void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
+static void sai_sub_stop(const struct device *dev)
 {
-	struct stm32_sai_sub_data *sub_data = CONTAINER_OF(hsai, struct stm32_sai_sub_data, hsai);
+	struct stm32_sai_sub_data *sub_data = dev->data;
+	SAI_HandleTypeDef *hsai = &sub_data->hsai;
+
+	stm32_reg_clear_bits(&hsai->Instance->CR1, SAI_xCR1_DMAEN);
+	sai_sub_disable(hsai, sub_data->stream.i2s_cfg.options);
+}
+
+static void sai_sub_dma_addr_get(const struct device *dev, uint32_t *src, uint32_t *dst)
+{
+	const struct stm32_sai_sub_cfg *sub_cfg = dev->config;
+	struct stm32_sai_sub_data *sub_data = dev->data;
+	uint32_t dr = (uint32_t)&sub_data->hsai.Instance->DR;
+	uint32_t mem = (uint32_t)sub_data->stream.mem_block;
+
+	if (sub_cfg->dir == I2S_DIR_TX) {
+		*src = mem;
+		*dst = dr;
+	} else {
+		*src = dr;
+		*dst = mem;
+	}
+}
+
+static int sai_sub_dma_start(const struct device *dev)
+{
+	const struct stm32_sai_sub_cfg *sub_cfg = dev->config;
+	struct stm32_sai_sub_data *sub_data = dev->data;
 	struct stream *stream = &sub_data->stream;
+	struct dma_block_config *blk_cfg = &stream->dma_blk_cfg;
+	SAI_HandleTypeDef *hsai = &sub_data->hsai;
 	int ret;
 
-	/* Exit the callback, Stream is stopped */
-	if (stream->state == I2S_STATE_ERROR) {
-		goto exit;
+	memset(blk_cfg, 0, sizeof(*blk_cfg));
+	blk_cfg->block_size = stream->mem_block_len;
+	sai_sub_dma_addr_get(dev, &blk_cfg->source_address, &blk_cfg->dest_address);
+
+	if (sub_cfg->dir == I2S_DIR_TX) {
+		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	} else {
+		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 	}
 
-	if (stream->mem_block == NULL) {
-		if (stream->state != I2S_STATE_READY) {
-			stream->state = I2S_STATE_ERROR;
-			LOG_ERR("RX mem_block NULL");
-			sai_sub_disable(hsai, stream->i2s_cfg.options);
-			goto exit;
-		} else {
-			return;
+	stream->dma_cfg.head_block = blk_cfg;
+
+	ret = dma_config(stream->dma_dev, stream->dma_channel, &stream->dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure DMA channel %u: %d", stream->dma_channel, ret);
+		return ret;
+	}
+
+	ret = dma_start(stream->dma_dev, stream->dma_channel);
+	if (ret < 0) {
+		LOG_ERR("Failed to start DMA channel %u: %d", stream->dma_channel, ret);
+		return ret;
+	}
+
+	if ((sub_cfg->dir == I2S_DIR_RX) && !stream->master &&
+	    (stm32_reg_read_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN) != 0U)) {
+		/*
+		 * An RX target (synchronous or not) can be left enabled between transfers.
+		 * Restart it so that reception resumes on the first slot of a frame.
+		 * It provides no clocks, so this does not affect any other sub-block.
+		 */
+		__HAL_SAI_DISABLE(hsai);
+		if (!WAIT_FOR(stm32_reg_read_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN) == 0U,
+			      SAI_DISABLE_TIMEOUT_US, k_busy_wait(1))) {
+			LOG_ERR("RX disable timeout");
+			(void)dma_stop(stream->dma_dev, stream->dma_channel);
+			return -ETIMEDOUT;
+		}
+		stm32_reg_set_bits(&hsai->Instance->CR2, SAI_xCR2_FFLUSH);
+	}
+
+	if (sub_cfg->dir == I2S_DIR_RX) {
+		/* Discard samples left in the FIFO since the previous transfer */
+		for (uint32_t i = 0U; i < SAI_FIFO_DEPTH; i++) {
+			if (stm32_reg_read_bits(&hsai->Instance->SR, SAI_xSR_FLVL) ==
+			    SAI_FIFOSTATUS_EMPTY) {
+				break;
+			}
+			(void)stm32_reg_read(&hsai->Instance->DR);
 		}
 	}
 
-	struct queue_item item = {.buffer = stream->mem_block, .size = stream->mem_block_len};
+	stm32_reg_set_bits(&hsai->Instance->CR1, SAI_xCR1_DMAEN);
 
-	ret = k_msgq_put(&stream->queue, &item, K_NO_WAIT);
-	if (ret < 0) {
-		stream->state = I2S_STATE_ERROR;
-		sai_sub_disable(hsai, stream->i2s_cfg.options);
-		goto exit;
+	/* Enable the SAI only once the TX FIFO holds data, to avoid an underrun */
+	if ((sub_cfg->dir == I2S_DIR_TX) &&
+	    !WAIT_FOR(stm32_reg_read_bits(&hsai->Instance->SR, SAI_xSR_FLVL) !=
+			      SAI_FIFOSTATUS_EMPTY,
+		      SAI_FIFO_FILL_TIMEOUT_US, k_busy_wait(1))) {
+		LOG_ERR("TX FIFO fill timeout");
+		stm32_reg_clear_bits(&hsai->Instance->CR1, SAI_xCR1_DMAEN);
+		(void)dma_stop(stream->dma_dev, stream->dma_channel);
+		return -ETIMEDOUT;
 	}
+
+	if (stm32_reg_read_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN) == 0U) {
+		__HAL_SAI_ENABLE(hsai);
+	}
+
+	return 0;
+}
+
+static int sai_sub_dma_reload(const struct device *dev)
+{
+	struct stm32_sai_sub_data *sub_data = dev->data;
+	struct stream *stream = &sub_data->stream;
+	uint32_t src, dst;
+	int ret;
+
+	sai_sub_dma_addr_get(dev, &src, &dst);
+
+	ret = dma_reload(stream->dma_dev, stream->dma_channel, src, dst, stream->mem_block_len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return dma_start(stream->dma_dev, stream->dma_channel);
+}
+
+static void sai_sub_dma_stop(const struct device *dev)
+{
+	struct stm32_sai_sub_data *sub_data = dev->data;
+	struct stream *stream = &sub_data->stream;
+	int ret;
+
+	stm32_reg_clear_bits(&sub_data->hsai.Instance->CR1, SAI_xCR1_DMAEN);
+
+	ret = dma_stop(stream->dma_dev, stream->dma_channel);
+	if (ret < 0) {
+		LOG_ERR("Failed to stop DMA channel %u: %d", stream->dma_channel, ret);
+	}
+
+	/* Stop the bit clock as well when it is gated */
+	sai_sub_disable(&sub_data->hsai, stream->i2s_cfg.options);
+}
+
+static void sai_sub_rx_callback(const struct device *dev)
+{
+	struct stm32_sai_sub_data *sub_data = dev->data;
+	struct stream *stream = &sub_data->stream;
+	struct queue_item item = {
+		.buffer = stream->mem_block,
+		.size = stream->mem_block_len,
+	};
+	int ret;
+
+	if (stream->state != I2S_STATE_RUNNING && stream->state != I2S_STATE_STOPPING) {
+		sai_sub_stop(dev);
+		return;
+	}
+
+	if (item.buffer == NULL) {
+		stream->state = I2S_STATE_ERROR;
+		LOG_ERR("RX mem_block NULL");
+		sai_sub_stop(dev);
+		return;
+	}
+
+	stream->mem_block = NULL;
 
 	if (stream->state == I2S_STATE_STOPPING) {
 		stream->state = I2S_STATE_READY;
 		LOG_DBG("Stopping RX ...");
-		sai_sub_disable(hsai, stream->i2s_cfg.options);
-		goto exit;
+		sai_sub_stop(dev);
+	} else {
+		/* Restart the transfer first: the SAI FIFO only holds a few samples */
+		ret = k_mem_slab_alloc(stream->i2s_cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
+		if (ret == 0) {
+			stream->mem_block_len = stream->i2s_cfg.block_size;
+			ret = sai_sub_dma_reload(dev);
+		}
+
+		if (ret < 0) {
+			stream->state = I2S_STATE_ERROR;
+			LOG_ERR("RX restart failed: %d", ret);
+			sai_sub_stop(dev);
+		}
 	}
 
-	ret = k_mem_slab_alloc(stream->i2s_cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
+	/*
+	 * On SoCs with a data cache, the RX memory slab buffer must be placed
+	 * in non-cacheable memory (__nocache with CONFIG_NOCACHE_MEMORY=y).
+	 */
+	ret = k_msgq_put(&stream->queue, &item, K_NO_WAIT);
 	if (ret < 0) {
+		k_mem_slab_free(stream->i2s_cfg.mem_slab, item.buffer);
 		stream->state = I2S_STATE_ERROR;
-		sai_sub_disable(hsai, stream->i2s_cfg.options);
-		goto exit;
+		LOG_ERR("RX queue full");
+		sai_sub_stop(dev);
 	}
-
-	stream->mem_block_len = stream->i2s_cfg.block_size;
-
-	if (HAL_SAI_Receive_DMA(hsai, stream->mem_block,
-				stream->mem_block_len / stream->dma_src_size) != HAL_OK) {
-		LOG_ERR("HAL_SAI_Receive_DMA: <FAILED>");
-	}
-
-exit:
-	/* EXIT */
 }
 
-void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
+static void sai_sub_tx_callback(const struct device *dev)
 {
-	struct stm32_sai_sub_data *sub_data = CONTAINER_OF(hsai, struct stm32_sai_sub_data, hsai);
+	struct stm32_sai_sub_data *sub_data = dev->data;
 	struct stream *stream = &sub_data->stream;
-	void *mem_block_tmp = stream->mem_block;
+	void *done = stream->mem_block;
 	struct queue_item item;
 	int ret;
 
-	if (stream->state == I2S_STATE_ERROR) {
-		LOG_ERR("TX bad status: %d, Stopping...", stream->state);
-		sai_sub_disable(hsai, stream->i2s_cfg.options);
-		goto exit;
-	}
+	stream->mem_block = NULL;
 
-	if (stream->mem_block == NULL) {
-		if (stream->state != I2S_STATE_READY) {
-			stream->state = I2S_STATE_ERROR;
-			LOG_ERR("TX mem_block NULL");
-			sai_sub_disable(hsai, stream->i2s_cfg.options);
-			goto exit;
-		} else {
-			return;
-		}
+	if (stream->state != I2S_STATE_RUNNING && stream->state != I2S_STATE_STOPPING) {
+		LOG_ERR("TX bad status: %d, Stopping...", stream->state);
+		sai_sub_stop(dev);
+		goto out;
 	}
 
 	if (stream->last_block) {
 		LOG_DBG("TX Stopped ...");
 		stream->state = I2S_STATE_READY;
-		stream->mem_block = NULL;
-		sai_sub_disable(hsai, stream->i2s_cfg.options);
-		goto exit;
+		sai_sub_stop(dev);
+		goto out;
 	}
 
-	/* Exit callback, no more data in the queue */
-	/* Reset I2S state */
-	if (k_msgq_num_used_get(&stream->queue) == 0) {
+	/* No more data in the queue: reset I2S state */
+	if (k_msgq_get(&stream->queue, &item, K_NO_WAIT) < 0) {
 		LOG_DBG("Exit TX callback, no more data in the queue");
 		stream->state = I2S_STATE_READY;
-		stream->mem_block = NULL;
-		sai_sub_disable(hsai, stream->i2s_cfg.options);
-		goto exit;
-	}
-
-	ret = k_msgq_get(&stream->queue, &item, K_NO_WAIT);
-	if (ret < 0) {
-		stream->state = I2S_STATE_ERROR;
-		sai_sub_disable(hsai, stream->i2s_cfg.options);
-		goto exit;
+		sai_sub_stop(dev);
+		goto out;
 	}
 
 	stream->mem_block = item.buffer;
@@ -220,45 +359,44 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 
 	sys_cache_data_flush_range(stream->mem_block, stream->mem_block_len);
 
-	if (HAL_SAI_Transmit_DMA(hsai, stream->mem_block,
-				 stream->mem_block_len / stream->dma_src_size) != HAL_OK) {
-		LOG_ERR("HAL_SAI_Transmit_DMA: <FAILED>");
+	ret = sai_sub_dma_reload(dev);
+	if (ret < 0) {
+		stream->state = I2S_STATE_ERROR;
+		LOG_ERR("TX DMA reload failed: %d", ret);
+		sai_sub_stop(dev);
 	}
 
-exit:
-	/* Free memory slab & exit */
-	k_mem_slab_free(stream->i2s_cfg.mem_slab, mem_block_tmp);
+out:
+	/* Release the block that has just been transferred */
+	if (done != NULL) {
+		k_mem_slab_free(stream->i2s_cfg.mem_slab, done);
+	}
 }
 
-void HAL_SAI_ErrorCallback(SAI_HandleTypeDef *hsai)
+static void dma_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
 {
-	switch (HAL_SAI_GetError(hsai)) {
-	case HAL_SAI_ERROR_NONE:
-		LOG_INF("No error");
-		break;
-	case HAL_SAI_ERROR_OVR:
-		LOG_WRN("Overrun Error");
-		break;
-	case HAL_SAI_ERROR_UDR:
-		LOG_WRN("Underrun Error");
-		break;
-	case HAL_SAI_ERROR_AFSDET:
-		LOG_WRN("Anticipated Frame synchronisation detection");
-		break;
-	case HAL_SAI_ERROR_LFSDET:
-		LOG_WRN("Late Frame synchronisation detection");
-		break;
-	case HAL_SAI_ERROR_CNREADY:
-		LOG_WRN("codec not ready");
-		break;
-	case HAL_SAI_ERROR_TIMEOUT:
-		LOG_WRN("Timeout error");
-		break;
-	case HAL_SAI_ERROR_DMA:
-		LOG_WRN("DMA error");
-		break;
-	default:
-		LOG_ERR("Unknown error");
+	const struct device *dev = arg;
+	const struct stm32_sai_sub_cfg *sub_cfg = dev->config;
+	struct stm32_sai_sub_data *sub_data = dev->data;
+
+	ARG_UNUSED(dma_dev);
+
+	if (status < 0) {
+		LOG_ERR("DMA callback error with channel %u: %d", channel, status);
+		sub_data->stream.state = I2S_STATE_ERROR;
+		sai_sub_stop(dev);
+		return;
+	}
+
+	/* Only the end of the block is of interest */
+	if (status != DMA_STATUS_COMPLETE) {
+		return;
+	}
+
+	if (sub_cfg->dir == I2S_DIR_TX) {
+		sai_sub_tx_callback(dev);
+	} else {
+		sai_sub_rx_callback(dev);
 	}
 }
 
@@ -295,84 +433,6 @@ static int stm32_sai_clock_en(const struct device *dev)
 	return 0;
 }
 
-static int sai_sub_dma_init(const struct device *dev)
-{
-	struct stm32_sai_sub_data *sub_data = dev->data;
-	struct stream *stream = &sub_data->stream;
-	struct dma_config *dma_cfg = &sub_data->stream.dma_cfg;
-	uint16_t source_addr_adj, dest_addr_adj;
-	int ret;
-
-	SAI_HandleTypeDef *hsai = &sub_data->hsai;
-	DMA_HandleTypeDef *hdma = &sub_data->hdma;
-
-	if (!device_is_ready(stream->dma_dev)) {
-		LOG_ERR("%s DMA device not ready", stream->dma_dev->name);
-		return -ENODEV;
-	}
-
-	/* Proceed to the minimum Zephyr DMA driver init */
-	dma_cfg->user_data = hdma;
-	if (dma_cfg->channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
-		source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-		dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-	} else {
-		source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-	}
-
-	/* HACK: This field is used to inform driver that it is overridden */
-	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
-
-	ret = dma_config(stream->dma_dev, stream->dma_channel, dma_cfg);
-	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d", stream->dma_channel);
-		return ret;
-	}
-
-	ret = dma_stm32_zcfg_to_halcfg(stream->dma_dev, dma_cfg, &hdma->Init,
-				       source_addr_adj, dest_addr_adj);
-	if (ret < 0) {
-		return ret;
-	}
-
-#if defined(CONFIG_DMA_STM32U5)
-	hdma->Init.SrcBurstLength = 1;
-	hdma->Init.DestBurstLength = 1;
-	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
-#endif
-
-	hdma->Instance = STM32_DMA_GET_INSTANCE(stream->reg, stream->dma_channel);
-
-	if (dma_cfg->channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
-		__HAL_LINKDMA(hsai, hdmatx, sub_data->hdma);
-	} else {
-		__HAL_LINKDMA(hsai, hdmarx, sub_data->hdma);
-	}
-
-	if (HAL_DMA_Init(&sub_data->hdma) != HAL_OK) {
-		LOG_ERR("HAL_DMA_Init: <FAILED>");
-		return -EIO;
-	}
-
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	if (HAL_DMA_ConfigChannelAttributes(&sub_data->hdma, DMA_CHANNEL_SEC | DMA_CHANNEL_PRIV |
-					    DMA_CHANNEL_SRC_SEC | DMA_CHANNEL_DEST_SEC) != HAL_OK) {
-		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
-		return -EIO;
-	}
-#elif defined(CONFIG_DMA_STM32U5)
-	if (HAL_DMA_ConfigChannelAttributes(&sub_data->hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
-		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
-		return -EIO;
-	}
-#endif
-
-	LOG_DBG("dma@%08x Init: <OK>", (uint32_t)hdma->Instance);
-
-	return 0;
-}
-
 static int sai_sub_init(const struct device *dev)
 {
 	struct stm32_sai_sub_data *sub_data = dev->data;
@@ -399,29 +459,12 @@ static int sai_sub_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Initialize DMA */
-	ret = sai_sub_dma_init(dev);
-	if (ret < 0) {
-		LOG_ERR("SAI Sub-Block DMA Init <FAILED>, ret: %d", ret);
-		return ret;
-	}
+	sub_data->stream.dma_cfg.user_data = (void *)dev;
 
 	/* State set to not ready until successfully configured */
 	stream->state = I2S_STATE_NOT_READY;
 
 	return 0;
-}
-
-static void dma_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
-{
-	DMA_HandleTypeDef *hdma = arg;
-
-	ARG_UNUSED(dma_dev);
-
-	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
-	}
-	HAL_DMA_IRQHandler(hdma);
 }
 
 #if defined(CONFIG_SOC_SERIES_STM32F4X)
@@ -626,6 +669,12 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	/* DMA transfers match the SAI data register access width */
+	stream->dma_cfg.source_data_size = stream->dma_src_size;
+	stream->dma_cfg.dest_data_size = stream->dma_src_size;
+	stream->dma_cfg.source_burst_length = stream->dma_src_size;
+	stream->dma_cfg.dest_burst_length = stream->dma_src_size;
+
 	/* MonoStereoMode */
 	switch (stream->i2s_cfg.channels) {
 	case 1:
@@ -694,10 +743,13 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 		__HAL_SAI_ENABLE(hsai);
 
 		if (sub_cfg->dir == I2S_DIR_TX) {
-			/* Prime the FIFO with a dummy sample so the controller
-			 * actually starts clocking out frames.
+			/* Prime the FIFO with a silent frame so the controller
+			 * actually starts clocking out frames. A whole frame keeps
+			 * the following data aligned on the first slot.
 			 */
-			stm32_reg_write(&hsai->Instance->DR, 0U);
+			for (uint8_t i = 0U; i < stream->i2s_cfg.channels; i++) {
+				stm32_reg_write(&hsai->Instance->DR, 0U);
+			}
 		} else {
 			/* Discard whatever's in DR to clear FIFO state
 			 * before the real DMA-driven reads begin.
@@ -779,7 +831,6 @@ static int stream_start(const struct device *dev, enum i2s_dir dir)
 {
 	struct stm32_sai_sub_data *sub_data = dev->data;
 	struct stream *stream = &sub_data->stream;
-	SAI_HandleTypeDef *hsai = &sub_data->hsai;
 	struct queue_item item;
 	int ret;
 
@@ -793,26 +844,20 @@ static int stream_start(const struct device *dev, enum i2s_dir dir)
 		stream->mem_block_len = item.size;
 
 		sys_cache_data_flush_range(stream->mem_block, stream->mem_block_len);
-
-		if (HAL_SAI_Transmit_DMA(hsai, stream->mem_block,
-					 stream->mem_block_len / stream->dma_src_size) != HAL_OK) {
-			LOG_ERR("HAL_SAI_Transmit_DMA: <FAILED>");
-			return -EIO;
-		}
 	} else {
-
 		ret = k_mem_slab_alloc(stream->i2s_cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
 		if (ret < 0) {
 			return -ENOMEM;
 		}
 
 		stream->mem_block_len = stream->i2s_cfg.block_size;
+	}
 
-		if (HAL_SAI_Receive_DMA(hsai, stream->mem_block,
-					stream->mem_block_len / stream->dma_src_size) != HAL_OK) {
-			LOG_ERR("HAL_SAI_Receive_DMA: <FAILED>");
-			return -EIO;
-		}
+	ret = sai_sub_dma_start(dev);
+	if (ret < 0) {
+		k_mem_slab_free(stream->i2s_cfg.mem_slab, stream->mem_block);
+		stream->mem_block = NULL;
+		return ret;
 	}
 
 	return 0;
@@ -825,6 +870,7 @@ static void queue_drop(const struct device *dev)
 	struct queue_item item;
 
 	if (stream->mem_block != NULL) {
+		k_mem_slab_free(stream->i2s_cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
 		stream->mem_block_len = 0;
 	}
@@ -897,29 +943,34 @@ static int stm32_sai_sub_trigger(const struct device *dev, enum i2s_dir dir,
 		irq_unlock(key);
 		break;
 	case I2S_TRIGGER_DROP:
-		key = irq_lock();
 		LOG_DBG("I2S_TRIGGER_DROP");
 
 		if (stream->state == I2S_STATE_NOT_READY) {
 			LOG_ERR("DROP - invalid state: %d", (int)stream->state);
-			irq_unlock(key);
 			return -EIO;
 		}
 
+		/* Stop an ongoing transfer before releasing its buffer */
+		sai_sub_dma_stop(dev);
+
+		key = irq_lock();
 		stream->queue_drop(dev);
 		stream->state = I2S_STATE_READY;
 
 		irq_unlock(key);
 		break;
 	case I2S_TRIGGER_PREPARE:
-		key = irq_lock();
 		LOG_DBG("I2S_TRIGGER_PREPARE");
 
 		if (stream->state != I2S_STATE_ERROR) {
 			LOG_ERR("PREPARE - invalid state: %d", (int)stream->state);
-			irq_unlock(key);
 			return -EIO;
 		}
+
+		/* A transfer may still be armed when the error was raised */
+		sai_sub_dma_stop(dev);
+
+		key = irq_lock();
 		stream->queue_drop(dev);
 		stream->state = I2S_STATE_READY;
 
@@ -981,16 +1032,12 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 	.stream = {                                                                                \
 		.dma_dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                      \
 		.dma_channel = DT_DMAS_CELL_BY_IDX(node, 0, channel),                              \
-		.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(node, dmas, 0)),               \
 		.dma_cfg = {                                                                       \
 			.dma_slot = STM32_DT_DMA_SLOT_BY_IDX(node, 0),                             \
 			.channel_direction = src##_TO_##dest,                                      \
+			.block_count = 1,                                                          \
 			.dma_callback = dma_callback,                                              \
 			.channel_priority = STM32_DMA_CONFIG_PRIORITY(                             \
-				STM32_DT_DMA_CHANNEL_CONFIG_BY_IDX(node, 0)),                      \
-			.source_data_size = STM32_DMA_CONFIG_##src##_DATA_SIZE(                    \
-				STM32_DT_DMA_CHANNEL_CONFIG_BY_IDX(node, 0)),                      \
-			.dest_data_size = STM32_DMA_CONFIG_##dest##_DATA_SIZE(                     \
 				STM32_DT_DMA_CHANNEL_CONFIG_BY_IDX(node, 0)),                      \
 		},                                                                                 \
 		.stream_start = stream_start,                                                      \
