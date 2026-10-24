@@ -2280,6 +2280,12 @@ static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action a
 		if (err < 0) {
 			return err;
 		}
+		/*
+		 * STOP may not retain the SPI controller configuration. Force
+		 * the next transfer to restore CR1/CR2 even when the client
+		 * reuses the same spi_config pointer.
+		 */
+		data->ctx.config = NULL;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Stop device clock. */
