@@ -9,6 +9,7 @@
 #include <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 /*
  * i.MX RT266x shared peripheral tree. The CPU, its TCMs and its NVIC
@@ -18,17 +19,18 @@
  *
  *   SRAM0  0x22000000   256K
  *   SRAM1  0x22040000   256K
- *   SRAM2  0x22080000   256K
+ *   SRAM2  0x22080000   256K, upper half non-cacheable (sram_noncache)
  *
  * The core-local ITCM and DTCM are declared in the per-core file. The data
  * sheet's "1.5M SRAM" is the die total across the subsystem memory controllers;
  * these 768 KB are what the CM85 map exposes as general-purpose.
  *
- * No zephyr,memory-attr here: MPU regions come only from the generic
- * arm_mpu_regions.c (FLASH_0/SRAM_0 from the chosen nodes). Adding memory-attr
- * would program them from devicetree as well, and on ARMv8-M two enabled regions
- * over the same address are UNPREDICTABLE and fault when the MPU is enabled. A
- * memory that is neither chosen node does need it -- see the board files.
+ * Only sram_noncache carries zephyr,memory-attr. The chosen nodes' regions
+ * come from the generic arm_mpu_regions.c (FLASH_0/SRAM_0), so adding
+ * memory-attr there would program them twice, and on ARMv8-M two enabled
+ * regions over one address are UNPREDICTABLE and fault when the MPU is
+ * enabled. A memory that is neither chosen node does need it -- see the
+ * board files.
  */
 
 /*
@@ -68,8 +70,16 @@
 
 	sram2: memory@22080000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x22080000 DT_SIZE_K(256)>;
+		reg = <0x22080000 DT_SIZE_K(128)>;
 		zephyr,memory-region = "SRAM2";
+	};
+
+	/* Upper half of SRAM2, non-cacheable, as the SDK's m_ncache. */
+	sram_noncache: memory@220a0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x220a0000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "SRAM_NONCACHE";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 };
 
@@ -607,6 +617,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART0_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART0_FCLK,
 						IMX_CCM_MUX_LPUART0_PERI3, 5, 1)>;
+		dmas = <&edma0 0 179>, <&edma0 1 180>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -619,6 +631,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART1_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART1_FCLK,
 						IMX_CCM_MUX_LPUART1_PERI3, 5, 1)>;
+		dmas = <&edma0 2 181>, <&edma0 3 182>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -631,6 +645,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART2_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART2_FCLK,
 						IMX_CCM_MUX_LPUART2_PERI3, 5, 1)>;
+		dmas = <&edma0 4 183>, <&edma0 5 184>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -643,6 +659,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART3_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART3_FCLK,
 						IMX_CCM_MUX_LPUART3_PERI3, 5, 1)>;
+		dmas = <&edma0 6 185>, <&edma0 7 186>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -655,6 +673,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART4_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART4_FCLK,
 						IMX_CCM_MUX_LPUART4_PERI3, 5, 1)>;
+		dmas = <&edma0 8 187>, <&edma0 9 188>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -667,6 +687,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART5_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART5_FCLK,
 						IMX_CCM_MUX_LPUART5_PERI3, 5, 1)>;
+		dmas = <&edma0 10 189>, <&edma0 11 190>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -679,6 +701,8 @@
 					   IMX_CCM_ROOT_WAKE_LPUART0_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPUART0_FCLK,
 						IMX_CCM_MUX_WAKE_LPUART0_PERI7, 1, 1)>;
+		dmas = <&edma2 0 26>, <&edma2 1 27>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -691,6 +715,8 @@
 					   IMX_CCM_ROOT_WAKE_LPUART1_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPUART1_FCLK,
 						IMX_CCM_MUX_WAKE_LPUART1_PERI7, 1, 1)>;
+		dmas = <&edma2 2 28>, <&edma2 3 29>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -805,8 +831,11 @@
 		#size-cells = <0>;
 		reg = <0x42910000 0x4000>;
 		interrupts = <176 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPI2C1,
-					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPI2C1_FCLK,
+						IMX_CCM_MUX_LPI2C1_PERI3, 5, 1)>;
 		status = "disabled";
 	};
 
@@ -839,9 +868,11 @@
 		compatible = "nxp,lpspi";
 		reg = <0x42160000 0x4000>;
 		interrupts = <179 0>;
-		clock-names = "gate";
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPSPI0,
-					   IMX_CCM_ROOT_MAIN_LPSPI0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPSPI0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPSPI0_FCLK,
+						IMX_CCM_MUX_LPSPI0_FRO192M, 2, 1)>;
 		tx-fifo-size = <16>;
 		rx-fifo-size = <16>;
 		#address-cells = <1>;
@@ -1767,21 +1798,35 @@
 		status = "disabled";
 	};
 
-	/* USB OTG (COMM domain) - EHCI controller, IRQ 304 */
+	/*
+	 * USB OTG (COMM domain) - EHCI controller, IRQ 304.
+	 *
+	 * clocks[1] is the PHY PLL, which also ungates the controller and
+	 * releases its reset. The driver skips a clock with rate 0, as it
+	 * must for clocks[0]: the CCM has no set_rate().
+	 */
 	usb0: comm_usbc: usbd@4a0a0000 {
 		compatible = "nxp,ehci";
 		reg = <0x4a0a0000 0x200>;
 		interrupts = <304 0>;
 		interrupt-names = "usb_otg";
+		clock-names = "gate", "phyclk";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_USB0,
-					   IMX_CCM_ROOT_COMM_USB0_PHYCLK)>;
+					   IMX_CCM_ROOT_COMM_USB0_PHYCLK)>,
+			 <&usbphy0 0>;
+		clock-rates = <0 DT_FREQ_M(480)>;
 		num-bidir-endpoints = <8>;
 		status = "disabled";
 	};
 
+	/*
+	 * nxp,usbphy enables the USB drivers' PHY init and trim properties;
+	 * nxp,imx-usbphy-pll provides the PLL clock.
+	 */
 	usbphy0: comm_usbphy: usb-phy@4a0f0000 {
-		compatible = "nxp,usbphy";
+		compatible = "nxp,imx-usbphy-pll", "nxp,usbphy";
 		reg = <0x4a0f0000 0x1000>;
+		#clock-cells = <1>;
 		status = "disabled";
 	};
 

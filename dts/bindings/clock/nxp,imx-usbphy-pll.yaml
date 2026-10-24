@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP i.MX RT USB PHY 480 MHz PLL as a clock provider. Enabling the clock
+  locks the PLL and releases the USB controller reset. The output rate is
+  fixed, so the specifier cell is unused.
+
+compatible: "nxp,imx-usbphy-pll"
+
+include: ["nxp,usbphy.yaml", clock-controller.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - name
