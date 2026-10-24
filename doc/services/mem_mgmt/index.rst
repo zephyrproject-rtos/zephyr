@@ -49,6 +49,42 @@ See :zephyr_file:`include/zephyr/dt-bindings/memory-attr/memory-attr-arm.h` and
 for more details about MPU usage. Also see :ref:`cache_guide` for details on how
 Zephyr handles caching.
 
+ARM MPU permissions can also be expressed using generic, composable memory
+attributes. A region with an explicit permission set is installed in the MPU
+when :kconfig:option:`CONFIG_ARM_MPU` and :kconfig:option:`CONFIG_MEM_ATTR` are
+enabled. For example:
+
+.. code-block:: devicetree
+
+   text_region: memory@10000000 {
+	   reg = <0x10000000 0x10000>;
+	   zephyr,memory-attr =
+	       <(DT_MEM_READABLE | DT_MEM_EXECUTABLE | DT_MEM_CACHEABLE)>;
+   };
+
+   ipc_region: memory@20000000 {
+	   reg = <0x20000000 0x10000>;
+	   zephyr,memory-attr =
+	       <(DT_MEM_READABLE | DT_MEM_WRITABLE | DT_MEM_NON_CACHEABLE |
+	          DT_MEM_SHAREABLE | DT_MEM_USERSPACE)>;
+   };
+
+The supported normal-memory policies are cacheable read/write data,
+cacheable read-only data, cacheable read-only executable text, explicitly
+read/write executable cacheable memory, and non-cacheable shareable read/write
+userspace data. Ordinary policies grant privileged access only. The userspace
+attribute explicitly grants corresponding unprivileged access and is currently
+supported only by the shared-memory policy.
+
+On ARMv7-R, ``DT_MEM_SHAREABLE`` selects normal, shareable memory. On ARMv8-R,
+it selects outer-shareable memory. The supported shareable policy is always
+non-cacheable and execute-never. ARMv7-R regions must have a power-of-two size
+of at least the MPU minimum and an address aligned to that size. ARMv8-R
+regions must have addresses and sizes aligned to the MPU minimum and must not
+overlap another enabled region. Each distinct MPU range and policy requires a
+separate devicetree node and consumes one MPU region. Generic permission
+policies are currently supported only on ARMv7-R and ARMv8-R.
+
 The conventional and recommended way to deal and manage with memory regions
 marked with attributes is by using the provided ``mem-attr`` helper library by
 enabling :kconfig:option:`CONFIG_MEM_ATTR`. When this option is enabled the
