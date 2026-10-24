@@ -266,6 +266,28 @@ enum display_pixel_format {
 	 * which is what makes it worth writing pictures out in.
 	 */
 	PIXEL_FORMAT_YUYV = BIT(15),
+
+	/**
+	 * @brief 2-plane YUV 4:2:0 format.
+	 *
+	 * A full-resolution Y (luma) plane followed immediately by a
+	 * half-resolution, interleaved U/V (chroma) plane.
+	 *
+	 * Below shows how data are organized in memory, for a 4x2 image.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   | Byte 2   | Byte 3   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | (row 0, Y plane)
+	 *   Byte 4   | Byte 5   | Byte 6   | Byte 7   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | (row 1, Y plane)
+	 *   Byte 8   | Byte 9   | Byte 10   | Byte 11   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Uuuuuuuu | Vvvvvvvv | Uuuuuuuu | Vvvvvvvv | (row 0, interleaved U/V plane)
+	 * @endcode
+	 */
+	PIXEL_FORMAT_NV12 = BIT(16),
 };
 
 /**
@@ -291,7 +313,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U) +				\
 	(((fmt & PIXEL_FORMAT_L_4) >> 14) * 4U) +				\
-	(((fmt & PIXEL_FORMAT_YUYV) >> 15) * 16U))
+	(((fmt & PIXEL_FORMAT_YUYV) >> 15) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_NV12) >> 16) * 12U))
 
 /**
  * @brief Display screen information
