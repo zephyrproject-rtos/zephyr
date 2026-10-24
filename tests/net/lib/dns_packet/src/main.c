@@ -1671,6 +1671,60 @@ ZTEST(dns_packet, test_dns_qname_limits)
 		      "Empty label before the root accepted");
 }
 
+/* Build a response with one A record whose owner name is a single,
+ * uncompressed label of label_len octets.
+ */
+static size_t make_answer_with_label(uint8_t *buf, size_t size, uint8_t label_len)
+{
+	static const uint8_t header[DNS_HEADER_SIZE] = {
+		0x01, 0x00, 0x81, 0x80, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+	};
+	static const uint8_t rr[] = {
+		0x00, 0x01,             /* Type A */
+		0x00, 0x01,             /* Class IN */
+		0x00, 0x00, 0x00, 0x3c, /* TTL */
+		0x00, 0x04,             /* RR data length */
+		0xc0, 0x00, 0x02, 0x01, /* Address */
+	};
+	size_t pos = 0;
+
+	zassert_true(sizeof(header) + 1 + label_len + 1 + sizeof(rr) <= size);
+
+	memcpy(&buf[pos], header, sizeof(header));
+	pos += sizeof(header);
+	buf[pos++] = label_len;
+	memset(&buf[pos], 'a', label_len);
+	pos += label_len;
+	buf[pos++] = 0x00;
+	memcpy(&buf[pos], rr, sizeof(rr));
+	pos += sizeof(rr);
+
+	return pos;
+}
+
+ZTEST(dns_packet, test_dns_answer_label_limits)
+{
+	/* RFC 1035 ch. 3.1: a label is at most 63 octets */
+	static uint8_t buf[128];
+	struct dns_msg_t dns_msg = {
+		.msg = buf,
+		.answer_offset = DNS_HEADER_SIZE,
+	};
+	enum dns_rr_type type = DNS_RR_TYPE_INVALID;
+	uint32_t ttl = 0U;
+	int ret;
+
+	dns_msg.msg_size = make_answer_with_label(buf, sizeof(buf), 63);
+	ret = dns_unpack_answer(&dns_msg, 0, &ttl, &type);
+	zexpect_ok(ret, "63 octet owner label rejected (%d)", ret);
+	zexpect_equal(type, DNS_RR_TYPE_A, "Wrong answer type %d", type);
+	zexpect_equal(ttl, 60U, "Wrong TTL %u", ttl);
+
+	dns_msg.msg_size = make_answer_with_label(buf, sizeof(buf), 64);
+	ret = dns_unpack_answer(&dns_msg, 0, &ttl, &type);
+	zexpect_equal(ret, -EINVAL, "64 octet owner label accepted (%d)", ret);
+}
+
 ZTEST_SUITE(dns_packet, NULL, NULL, NULL, NULL, NULL);
 /* TODO:
  *	1) add malformed DNS data (mostly done)
