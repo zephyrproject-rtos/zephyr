@@ -112,6 +112,11 @@ struct uvc_host_data {
 	uint32_t discard_frame_cnt;
 	uint32_t current_frame_timestamp;
 
+	/* Bulk streaming: bytes received of the current payload, 0 before its header */
+	uint32_t bulk_payload_len;
+	uint32_t bulk_pts;
+	uint8_t bulk_header_info;
+
 	struct video_buffer *current_vbuf;
 	struct uhc_transfer *video_transfer[CONFIG_USBH_VIDEO_CONCURRENT_TRANSFERS];
 
@@ -134,6 +139,7 @@ struct uvc_host_data {
 };
 
 static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer);
+static int stream_bulk_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer);
 
 /* Configure UVC device interfaces */
 static int configure_device(struct usbh_class_data *const c_data)
@@ -206,7 +212,12 @@ static const void *get_vs_desc_end(const struct usb_if_descriptor *const if_desc
 
 	header_desc = (const void *)usbh_desc_get_next(if_desc);
 
-	if (!vs_header_is_valid(header_desc)) {
+	/* Some devices put the endpoint descriptor before the header */
+	while (header_desc != NULL && header_desc->bDescriptorType == USB_DESC_ENDPOINT) {
+		header_desc = (const void *)usbh_desc_get_next(header_desc);
+	}
+
+	if (header_desc == NULL || !vs_header_is_valid(header_desc)) {
 		LOG_ERR("Invalid VS header descriptor");
 		return NULL;
 	}
@@ -920,6 +931,65 @@ scan_interface_endpoints(const struct usb_if_descriptor *const if_desc,
 	return best_ep;
 }
 
+static bool ep_is_bulk(const struct usb_ep_descriptor *const ep_desc)
+{
+	return (ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK) == USB_EP_TYPE_BULK;
+}
+
+/* Select the bulk IN endpoint of the VideoStreaming interface, alternate 0 */
+static int select_bulk_endpoint(struct uvc_host_data *const host_data)
+{
+	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
+	uint32_t max_payload = sys_le32_to_cpu(host_data->probe.dwMaxPayloadTransferSize);
+	const struct usb_ep_descriptor *ep_desc = NULL;
+	const struct usb_if_descriptor *if_desc;
+	const struct usb_desc_header *desc;
+	uint32_t size;
+	uint16_t mps;
+
+	if_desc = usbh_desc_get_iface(host_data->udev, stream_info->iface->bInterfaceNumber);
+	if (if_desc == NULL) {
+		return -ENODEV;
+	}
+
+	desc = (const struct usb_desc_header *)if_desc;
+	while ((desc = usbh_desc_get_next(desc)) != NULL &&
+	       desc->bDescriptorType != USB_DESC_INTERFACE) {
+		const struct usb_ep_descriptor *ep = (const void *)desc;
+
+		if (desc->bDescriptorType == USB_DESC_ENDPOINT && usbh_desc_is_valid_endpoint(ep) &&
+		    ep_is_bulk(ep) && USB_EP_DIR_IS_IN(ep->bEndpointAddress)) {
+			ep_desc = ep;
+			break;
+		}
+	}
+
+	if (ep_desc == NULL) {
+		return -ENOTSUP;
+	}
+
+	/*
+	 * A payload may be larger than any transfer buffer, transfers are a
+	 * multiple of the packet size so that only the last one of a payload
+	 * can be short. Leave room in the pool for control transfers.
+	 */
+	mps = USB_MPS_EP_SIZE(ep_desc->wMaxPacketSize);
+	size = CONFIG_UHC_BUF_POOL_SIZE / (CONFIG_USBH_VIDEO_CONCURRENT_TRANSFERS + 1);
+	if (max_payload != 0U) {
+		size = MIN(size, max_payload);
+	}
+	size = MAX(ROUND_DOWN(size, mps), mps);
+
+	stream_info->iface = if_desc;
+	stream_info->ep = ep_desc;
+	stream_info->ep_mps_mult = size;
+
+	LOG_DBG("Bulk streaming on iface %u EP 0x%02x, %u byte transfers",
+		if_desc->bInterfaceNumber, ep_desc->bEndpointAddress, size);
+
+	return 0;
+}
+
 /* Select streaming alternate setting based on bandwidth */
 static int select_streaming_alternate(struct uvc_host_data *const host_data,
 				      uint32_t required_bandwidth)
@@ -967,6 +1037,11 @@ static int select_streaming_alternate(struct uvc_host_data *const host_data,
 	}
 
 	if (selected_endpoint == NULL) {
+		/* No isochronous alternate setting fits, the device may stream over bulk */
+		if (select_bulk_endpoint(host_data) == 0) {
+			return 0;
+		}
+
 		LOG_ERR("No EP satisfies bandwidth %u and payload size %u", required_bandwidth,
 			max_tpl);
 		return -ENOTSUP;
@@ -1521,7 +1596,8 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	LOG_DBG("Initiating transfer: ep=0x%02x, vbuf=%p", stream_ep->bEndpointAddress, vbuf);
 
 	xfer = usbh_xfer_alloc(host_data->udev, stream_ep->bEndpointAddress,
-			       stream_iso_req_cb, host_data);
+			       ep_is_bulk(stream_ep) ? stream_bulk_req_cb : stream_iso_req_cb,
+			       host_data);
 	if (xfer == NULL) {
 		LOG_ERR("Failed to allocate transfer");
 		return -ENOMEM;
@@ -1578,12 +1654,143 @@ static int continue_transfer(struct uvc_host_data *const host_data,
 	return 0;
 }
 
+/*
+ * Add the data of one payload to the current frame and hand the frame over at
+ * its end. Returns the buffer the next payload goes to, NULL when none is queued.
+ */
+static struct video_buffer *process_payload(struct uvc_host_data *const host_data,
+					    struct video_buffer *vbuf, const uint8_t *const data,
+					    const uint32_t data_size, const uint8_t frame_id,
+					    const uint8_t end_frame,
+					    const uint32_t presentation_time)
+{
+	if (data_size > 0) {
+		if (vbuf->bytesused == 0U) {
+			if (host_data->current_frame_timestamp != presentation_time) {
+				host_data->current_frame_timestamp = presentation_time;
+			}
+		} else if (presentation_time != host_data->current_frame_timestamp) {
+			host_data->save_picture = false;
+		} else {
+			/* Normal frame continuation */
+		}
+
+		if (host_data->save_picture && vbuf != NULL) {
+			if (data_size > (vbuf->size - vbuf->bytesused)) {
+				LOG_WRN("Buffer overflow: used=%u, payload=%u, capacity=%u",
+					vbuf->bytesused, data_size, vbuf->size);
+				host_data->save_picture = true;
+				vbuf->bytesused = 0U;
+				host_data->vbuf_offset = 0;
+			} else if (frame_id == host_data->expect_frame_id) {
+				memcpy((void *)(((uint8_t *)vbuf->buffer) + vbuf->bytesused), data,
+				       data_size);
+				vbuf->bytesused += data_size;
+				host_data->vbuf_offset = vbuf->bytesused;
+
+				LOG_DBG("Processed %u payload bytes (FID:%u), total: %u, EOF: %u",
+					data_size, frame_id, vbuf->bytesused, end_frame);
+			} else {
+				host_data->save_picture = false;
+				LOG_DBG("Frame ID mismatch: expected %u, got %u - discarding",
+					host_data->expect_frame_id, frame_id);
+			}
+		}
+	}
+
+	if (end_frame == 0) {
+		return vbuf;
+	}
+
+	if (!host_data->save_picture) {
+		if (host_data->discard_first_frame) {
+			host_data->discard_first_frame = 0;
+		}
+
+		if (vbuf != NULL) {
+			if (vbuf->bytesused != 0) {
+				host_data->discard_frame_cnt++;
+			}
+			vbuf->bytesused = 0U;
+			host_data->vbuf_offset = 0;
+		}
+
+		host_data->expect_frame_id = frame_id ^ 1;
+		host_data->save_picture = true;
+		return vbuf;
+	}
+
+	if (vbuf == NULL || vbuf->bytesused == 0) {
+		return vbuf;
+	}
+
+	LOG_DBG("Frame completed: %u bytes (FID: %u)", vbuf->bytesused, frame_id);
+
+	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
+		return vbuf;
+	}
+
+	k_mutex_lock(&host_data->lock, K_FOREVER);
+
+	if (host_data->current_vbuf != vbuf) {
+		LOG_DBG("Buffer %p already processed by another callback", vbuf);
+		k_mutex_unlock(&host_data->lock);
+		return vbuf;
+	}
+
+	(void)k_fifo_get(&host_data->fifo_in, K_NO_WAIT);
+	k_fifo_put(&host_data->fifo_out, vbuf);
+
+	host_data->expect_frame_id = host_data->expect_frame_id ^ 1;
+	host_data->save_picture = true;
+
+	host_data->vbuf_offset = 0;
+	host_data->transfer_count = 0;
+
+	if (IS_ENABLED(CONFIG_POLL) && host_data->sig != NULL) {
+		LOG_DBG("Raising VIDEO_BUF_DONE signal");
+		k_poll_signal_raise(host_data->sig, VIDEO_BUF_DONE);
+	}
+
+	vbuf = k_fifo_peek_head(&host_data->fifo_in);
+	if (vbuf != NULL) {
+		vbuf->bytesused = 0;
+		memset(vbuf->buffer, 0, vbuf->size);
+	}
+
+	host_data->current_vbuf = vbuf;
+	k_mutex_unlock(&host_data->lock);
+
+	return vbuf;
+}
+
+/* Buffer the stream is written to, NULL while the application holds all of them */
+static struct video_buffer *get_current_vbuf(struct uvc_host_data *const host_data)
+{
+	struct video_buffer *vbuf;
+
+	k_mutex_lock(&host_data->lock, K_FOREVER);
+
+	vbuf = host_data->current_vbuf;
+	if (vbuf == NULL) {
+		vbuf = k_fifo_peek_head(&host_data->fifo_in);
+		if (vbuf != NULL) {
+			vbuf->bytesused = 0;
+			host_data->current_vbuf = vbuf;
+		}
+	}
+
+	k_mutex_unlock(&host_data->lock);
+
+	return vbuf;
+}
+
 /* ISO transfer completion callback */
 static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer)
 {
 	struct uvc_host_data *const host_data = (void *)xfer->priv;
 	struct uvc_payload_header *payload_header = NULL;
-	struct video_buffer *vbuf = host_data->current_vbuf;
+	struct video_buffer *vbuf = get_current_vbuf(host_data);
 	struct net_buf *buf = xfer->buf;
 	uint32_t presentation_time = 0;
 	uint32_t header_length = 0;
@@ -1592,7 +1799,9 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 	uint8_t end_frame = 0;
 
 	if (vbuf == NULL) {
+		/* Drop the data, the frame in progress is incomplete */
 		LOG_DBG("No current buffer available, ignoring callback");
+		host_data->save_picture = false;
 		goto cleanup;
 	}
 
@@ -1623,107 +1832,86 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 
 	data_size = buf->len - header_length;
 
-	if (data_size > 0) {
-		if (vbuf->bytesused == 0U) {
-			if (host_data->current_frame_timestamp != presentation_time) {
-				host_data->current_frame_timestamp = presentation_time;
-			}
-		} else if (presentation_time != host_data->current_frame_timestamp) {
-			host_data->save_picture = false;
-		} else {
-			/* Normal frame continuation */
-		}
+	vbuf = process_payload(host_data, vbuf, (uint8_t *)buf->data + header_length, data_size,
+			       frame_id, end_frame, presentation_time);
 
-		if (host_data->save_picture && vbuf != NULL) {
-			if (data_size > (vbuf->size - vbuf->bytesused)) {
-				LOG_WRN("Buffer overflow: used=%u, payload=%u, capacity=%u",
-					vbuf->bytesused, data_size, vbuf->size);
-				host_data->save_picture = true;
-				vbuf->bytesused = 0U;
-				host_data->vbuf_offset = 0;
-			} else if (frame_id == host_data->expect_frame_id) {
-				memcpy((void *)(((uint8_t *)vbuf->buffer) + vbuf->bytesused),
-				       (void *)(((uint8_t *)buf->data) + header_length), data_size);
-				vbuf->bytesused += data_size;
-				host_data->vbuf_offset = vbuf->bytesused;
-
-				LOG_DBG("Processed %u payload bytes (FID:%u), total: %u, EOF: %u",
-					data_size, frame_id, vbuf->bytesused, end_frame);
-			} else {
-				host_data->save_picture = false;
-				LOG_DBG("Frame ID mismatch: expected %u, got %u - discarding",
-					host_data->expect_frame_id, frame_id);
-			}
-		}
+cleanup:
+	net_buf_unref(buf);
+	if (atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
+		continue_transfer(host_data, xfer, vbuf);
 	}
 
-	if (end_frame == 0) {
-		goto cleanup;
-	}
+	return 0;
+}
 
-	if (!host_data->save_picture) {
-		if (host_data->discard_first_frame) {
-			host_data->discard_first_frame = 0;
-		}
-
-		if (vbuf != NULL) {
-			if (vbuf->bytesused != 0) {
-				host_data->discard_frame_cnt++;
-			}
-			vbuf->bytesused = 0U;
-			host_data->vbuf_offset = 0;
-		}
-
-		host_data->expect_frame_id = frame_id ^ 1;
-		host_data->save_picture = true;
-		goto cleanup;
-	}
-
-	if (vbuf == NULL || vbuf->bytesused == 0) {
-		goto cleanup;
-	}
-
-	LOG_DBG("Frame completed: %u bytes (FID: %u)", vbuf->bytesused, frame_id);
+/* Bulk transfer completion callback, a payload may span several transfers */
+static int stream_bulk_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer)
+{
+	struct uvc_host_data *const host_data = (void *)xfer->priv;
+	uint32_t max_payload = sys_le32_to_cpu(host_data->probe.dwMaxPayloadTransferSize);
+	struct video_buffer *vbuf = get_current_vbuf(host_data);
+	struct net_buf *buf = xfer->buf;
+	const uint8_t *data = buf->data;
+	uint32_t data_size = buf->len;
+	bool payload_end;
 
 	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
 		goto cleanup;
 	}
 
-	k_mutex_lock(&host_data->lock, K_FOREVER);
-
-	if (host_data->current_vbuf != vbuf) {
-		LOG_DBG("Buffer %p already processed by another callback", vbuf);
-		k_mutex_unlock(&host_data->lock);
+	if (xfer->err != 0) {
+		if (xfer->err != -ECONNRESET) {
+			LOG_WRN("Bulk request failed, err %d", xfer->err);
+		}
+		host_data->bulk_payload_len = 0;
 		goto cleanup;
 	}
 
-	(void)k_fifo_get(&host_data->fifo_in, K_NO_WAIT);
-	k_fifo_put(&host_data->fifo_out, vbuf);
+	if (host_data->bulk_payload_len == 0U) {
+		const struct uvc_payload_header *header = (const void *)data;
+		const size_t min_length = offsetof(struct uvc_payload_header, dwPresentationTime);
+		const size_t pts_length = offsetof(struct uvc_payload_header, scrSourceClockSTC);
 
-	host_data->expect_frame_id = host_data->expect_frame_id ^ 1;
-	host_data->save_picture = true;
+		if (data_size < min_length || header->bHeaderLength < min_length ||
+		    header->bHeaderLength > data_size) {
+			/* Not the start of a payload, wait for the next one */
+			goto cleanup;
+		}
 
-	host_data->vbuf_offset = 0;
-	host_data->transfer_count = 0;
+		host_data->bulk_header_info = header->bmHeaderInfo;
+		host_data->bulk_pts = 0;
+		if ((header->bmHeaderInfo & UVC_BMHEADERINFO_HAS_PRESENTATIONTIME) != 0U &&
+		    header->bHeaderLength >= pts_length) {
+			host_data->bulk_pts =
+				sys_get_le32((const uint8_t *)&header->dwPresentationTime);
+		}
 
-	if (IS_ENABLED(CONFIG_POLL) && host_data->sig != NULL) {
-		LOG_DBG("Raising VIDEO_BUF_DONE signal");
-		k_poll_signal_raise(host_data->sig, VIDEO_BUF_DONE);
+		data += header->bHeaderLength;
+		data_size -= header->bHeaderLength;
 	}
 
-	vbuf = k_fifo_peek_head(&host_data->fifo_in);
-	if (vbuf != NULL) {
-		vbuf->bytesused = 0;
-		memset(vbuf->buffer, 0, vbuf->size);
-		host_data->current_vbuf = vbuf;
+	host_data->bulk_payload_len += buf->len;
+	payload_end = buf->len < host_data->current_stream_iface_info.ep_mps_mult ||
+		      (max_payload != 0U && host_data->bulk_payload_len >= max_payload);
+	if (payload_end) {
+		host_data->bulk_payload_len = 0;
 	}
 
-	k_mutex_unlock(&host_data->lock);
+	if (vbuf == NULL) {
+		/* Drop the data, the frame in progress is incomplete */
+		host_data->save_picture = false;
+		goto cleanup;
+	}
+
+	vbuf = process_payload(host_data, vbuf, data, data_size,
+			       host_data->bulk_header_info & UVC_BMHEADERINFO_FRAMEID,
+			       payload_end ? (host_data->bulk_header_info &
+					      UVC_BMHEADERINFO_END_OF_FRAME) : 0U,
+			       host_data->bulk_pts);
 
 cleanup:
 	net_buf_unref(buf);
-	if ((atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) &&
-	    (vbuf != NULL)) {
+	if (atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
 		continue_transfer(host_data, xfer, vbuf);
 	}
 
@@ -3036,6 +3224,16 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 		}
 
 		k_mutex_unlock(&host_data->lock);
+
+		/* A bulk stream stops with CLEAR_FEATURE(ENDPOINT_HALT) */
+		if (stream_info->ep != NULL && ep_is_bulk(stream_info->ep)) {
+			ret = usbh_req_clear_sfs_halt(host_data->udev,
+						      stream_info->ep->bEndpointAddress);
+			if (ret != 0) {
+				LOG_WRN("Failed to clear halt on EP 0x%02x: %d",
+					stream_info->ep->bEndpointAddress, ret);
+			}
+		}
 	}
 
 	ret = usbh_device_interface_set(host_data->udev, interface_num, alt, false);
@@ -3045,6 +3243,7 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 	}
 
 	if (enable) {
+		host_data->bulk_payload_len = 0;
 		atomic_set_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING);
 
 		k_mutex_lock(&host_data->lock, K_FOREVER);
