@@ -201,6 +201,9 @@ elseif(CONFIG_STACK_CANARIES_ALL)
 elseif(CONFIG_STACK_CANARIES_EXPLICIT)
   zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_explicit>>")
   zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_explicit>>")
+else()
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_none>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_none>>")
 endif()
 
 # @Intent: Obtain compiler optimizations flags and store in variables
