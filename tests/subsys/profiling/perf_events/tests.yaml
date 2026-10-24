@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its
+# SPDX-FileCopyrightText: affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  profiling.perf_events.core:
+    tags:
+      - perf
+      - profiling
+    integration_platforms:
+      - native_sim
+  profiling.perf_events.shell:
+    tags:
+      - perf
+      - profiling
+      - shell
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_PROFILING_PERF_EVENTS_SHELL=y
+    integration_platforms:
+      - native_sim
