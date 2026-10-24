@@ -168,7 +168,15 @@ int cpu_load_get_cpu(unsigned int cpu_id, bool reset)
 	idle_us = MIN(idle_us, total_us);
 	active_us = total_us - idle_us;
 
-	res = (uint32_t)((1000 * active_us) / total_us);
+	/* Lets avoid 64 bit division by ensuring that active_us can be multiplied by 1000 without
+	 * an overflow.
+	 */
+	while ((total_us > UINT32_MAX) || (active_us > UINT32_MAX / 1000U)) {
+		active_us >>= 1;
+		total_us >>= 1;
+	}
+
+	res = ((1000UL * (uint32_t)active_us) / (uint32_t)total_us);
 
 	return res;
 }
