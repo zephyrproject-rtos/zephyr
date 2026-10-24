@@ -1,0 +1,25 @@
+identifier: pico4ml_pro
+name: Arducam Pico4ML-Pro
+type: mcu
+arch: arm
+flash: 2048
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock
+  - counter
+  - display
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - input
+  - sdhc
+  - spi
+  - uart
+  - usbd
+  - watchdog
+  - wifi
+vendor: arducam
