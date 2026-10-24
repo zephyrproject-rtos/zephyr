@@ -1,0 +1,25 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RAKwireless RAK12035 capacitive soil moisture and temperature sensor.
+
+  The probe is an ATtiny441 with RAKwireless firmware, accessed over I2C.
+  Default 7-bit address is 0x20 (programmable). See the datasheet at
+  https://docs.rakwireless.com/product-categories/wisblock/rak12035/datasheet/
+
+  The sensor reports an unscaled capacitance value, probe temperature, and a
+  two-point calibrated soil moisture percentage. The percentage is relative
+  to the stored dry and wet calibration points; it is not air relative
+  humidity or volumetric water content.
+
+compatible: "rakwireless,rak12035"
+
+include: [sensor-device.yaml, i2c-device.yaml, power.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional active-low reset signal. The driver leaves the signal
+      deasserted and uses it to reset the sensor during initialization.
