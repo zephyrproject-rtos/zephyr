@@ -28,3 +28,6 @@ CONFIG_TIMEOUT_64BIT=y
 
 # Cache management
 CONFIG_CACHE_MANAGEMENT=y
+
+# Ethos-U85 connects via ACE (cache-coherent) - no SW cache maintenance needed
+CONFIG_ETHOS_U_DCACHE=n
