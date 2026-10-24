@@ -1,0 +1,92 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <infineon/tc4x/tc4d7xp.dtsi>
+#include <infineon/tc4x/tc4d7xp-pinctrl.dtsi>
+
+/ {
+	model = "Infineon AURIX TC4D7 lite kit";
+	compatible = "infineon,kit-a3g-tc4d7-lite";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &dsram0;
+		zephyr,console = &asclin0;
+		zephyr,shell-uart = &asclin0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	clocks {
+		/* 25 MHz crystal */
+		fosc: fosc {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(25)>;
+			#clock-cells = <0>;
+		};
+	};
+};
+
+/*
+ * fPLL0 = 25 MHz * 20 = 500 MHz, reached through the ramp oscillator at
+ * 400 MHz: fSRI and fSTM 500 MHz, fTPB 250 MHz, fSPB, fCPB and fFSI
+ * 100 MHz. Peripheral PLL fDCO 800 MHz: fPLL1 160 MHz, fPLL2 =
+ * 800 MHz / (2.0 * 2) = 200 MHz = fASCLINF, fPLL3 400 MHz.
+ */
+&ccu {
+	clocks = <&fosc>;
+	ramp-upper-mhz = <400>;
+	sri-div = <1>;
+	spb-div = <5>;
+	cpb-div = <5>;
+	tpb-div = <2>;
+	fsi-div = <5>;
+	stm-div = <1>;
+	asclinf-div = <1>;
+
+	sys-pll {
+		p-div = <1>;
+		n-div = <20>;
+		k2-div = <1>;
+	};
+
+	per-pll {
+		p-div = <1>;
+		n-div = <32>;
+		k2-div = <5>;
+		k3-div = <2>;
+		k3-prediv = <20>;
+		k4-div = <2>;
+	};
+};
+
+/* USB virtual COM port of the on-board debugger */
+&asclin0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&asclin0_tx_p14_0 &asclin0_rx_p14_1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&stm0 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_M(4)>;
+		};
+	};
+};

@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_a3g_tc4d7_lite/tc4d7xp/cpu0
+name: AURIX TC4D7 lite kit (CPU0)
+type: mcu
+arch: tricore
+toolchain:
+  - tricore
+  - host/llvm
+env:
+  - TRICORE_TOOLCHAIN_PATH
+ram: 240
+flash: 4096
+supported:
+  - uart
+vendor: infineon
