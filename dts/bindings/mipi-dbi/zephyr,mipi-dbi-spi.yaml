@@ -22,6 +22,23 @@ properties:
       Data/command gpio pin. Required when using 4 wire SPI mode (Mode C1).
       Set to low when sending a command, or high when sending data.
 
+  dc-gpios-shared:
+    type: boolean
+    description: |
+      Set this property if the data/command pin is physically shared with
+      another function of the SPI bus, such as a controller MISO line that
+      pinctrl also assigns to the same pad. When set, the driver takes
+      ownership of the bus, drives the pin only for the duration of a
+      transfer, and then re-applies the default pin control state of the bus
+      before dropping that ownership, which hands the pad back so another
+      device can use it while the display is idle. The bus must therefore be
+      described with pin control.
+
+      A pin shared with the MISO line cannot carry a 4 wire read, and a read
+      of any mode would hand the bus over while the pad is still muxed away
+      from it, so reads are refused on a shared pin and the controllers on
+      such a bus have to be write-only.
+
   te-gpios:
     type: phandle-array
     description: |
