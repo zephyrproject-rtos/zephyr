@@ -19,3 +19,11 @@ rules:
       Prints registers and fault state to the console when a fatal error occurs, exposing internal
       state to anyone with console access; level 0 suppresses the dump entirely.
     references: [CWE-209]
+
+  MPU_ALLOW_FLASH_WRITE:
+    value: n
+    rationale: |
+      Maps the flash region writable as well as executable in the MPU, so a stray or
+      attacker-directed store into code memory no longer faults. On ARMv8 MPUs the write permission
+      also extends to unprivileged threads.
+    references: [CWE-119]
