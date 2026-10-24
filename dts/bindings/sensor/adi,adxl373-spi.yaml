@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Jhonata Poma-Hansen
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADXL373 3-axis high-g accelerometer, accessed through SPI bus.
+  The ADXL373 shares the ADXL372 register map, so the odr and bw codes
+  are the same, but they select different frequencies:
+  odr 0-4 select 320, 640, 1280, 2560 and 5120 Hz,
+  bw 0-4 select 160, 320, 640, 1280 and 2560 Hz.
+  The hpf codes select the same fractions of the ODR as on the ADXL372.
+  The ADXL373 reports the same part ID as the ADXL372, so the driver
+  cannot tell them apart: a wrong compatible gives readings off by a
+  factor of two.
+
+compatible: "adi,adxl373"
+
+include: ["spi-device.yaml", "adi,adxl372-common.yaml"]
