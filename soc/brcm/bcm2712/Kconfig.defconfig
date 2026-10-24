@@ -3,10 +3,10 @@
 
 if SOC_BCM2712
 
-config NUM_IRQS
-	default 280
+configdefault NUM_IRQS
+	default 512
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 54000000
 
 endif
