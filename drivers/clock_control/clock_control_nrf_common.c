@@ -368,7 +368,7 @@ int common_api_blocking_start(const struct device *dev, clock_control_subsys_t s
 	int err;
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	err = common_api_start(dev, NULL, common_blocking_start_callback, &sem);
