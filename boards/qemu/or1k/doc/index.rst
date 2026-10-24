@@ -12,6 +12,10 @@ This configuration provides support for an or1k CPU core and these devices:
 * NS16550 UART
 
 
+By default, the QEMU ``virt`` machine is used. The ``qemu_or1k/qemu_or1k/sim`` variant
+uses the QEMU ``or1k-sim`` machine instead, which additionally provides an OpenCores
+Ethernet MAC (ethoc) with a PHY at MDIO address 1.
+
 .. note::
    This board configuration makes no claims about its suitability for use
    with an actual OpenRISC 1000 hardware system, or any other hardware system.
@@ -69,6 +73,21 @@ QEMU, and display the following console output:
 
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
+Networking
+==========
+
+The ``qemu_or1k/qemu_or1k/sim`` variant supports networking through its Ethernet MAC. Select
+QEMU user networking (:kconfig:option:`CONFIG_NET_QEMU_USER`) or a TAP interface on the host
+(:kconfig:option:`CONFIG_NET_QEMU_ETHERNET`), for example with the
+:zephyr:code-sample:`dhcpv4-client` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :host-os: unix
+   :board: qemu_or1k/qemu_or1k/sim
+   :gen-args: -DCONFIG_NET_QEMU_USER=y
+   :goals: run
 
 
 References

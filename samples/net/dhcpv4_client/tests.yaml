@@ -15,6 +15,7 @@ tests:
         - "Run dhcpv4 client"
         - "Address\\[[0-9]+\\]: 10\\.0\\.2\\."
     platform_allow:
+      - qemu_or1k/qemu_or1k/sim
       - qemu_riscv32
       - qemu_riscv32e
       - qemu_riscv64
