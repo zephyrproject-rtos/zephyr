@@ -37,4 +37,38 @@
 			drive-strength = "normal";
 		};
 	};
+
+	/* USDHC0 to the SD card slot (J47) through the U72 level translator */
+	pinmux_usdhc0: pinmux_usdhc0 {
+		group0 {
+			pinmux = <SDHC0_CMD_PIO7_1>,
+				 <USDHC0_USDHC_DATA0_PIO7_6>,
+				 <USDHC0_USDHC_DATA1_PIO7_7>,
+				 <USDHC0_USDHC_DATA2_PIO7_8>,
+				 <USDHC0_USDHC_DATA3_PIO7_9>,
+				 <SDHC0_CARD_DET_N_PIO7_11>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			nxp,drive-current = <3>;
+		};
+
+		group1 {
+			pinmux = <SDHC0_CLK_PIO7_0>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			nxp,drive-current = <3>;
+		};
+
+		/* SD power switch enable (U52) on PIO7_10 as GPIO */
+		group2 {
+			pinmux = <GPIO7_GPIO10_PIO7_10>;
+			bias-pull-down;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
 };

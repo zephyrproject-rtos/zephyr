@@ -18,6 +18,7 @@
 		led0 = &green_led;
 		led1 = &blue_led;
 		sw0 = &user_button_1;
+		sdhc0 = &usdhc0;
 	};
 
 	chosen {
@@ -81,6 +82,10 @@
 	status = "okay";
 };
 
+&gpio7 {
+	status = "okay";
+};
+
 &green_led {
 	status = "okay";
 };
@@ -139,5 +144,24 @@
 			#size-cells = <1>;
 			ranges;
 		};
+	};
+};
+
+/*
+ * USDHC0 reaches the SD card slot through the U72 level translator.
+ * Its voltage select (PIO7_3) is pulled low, so the card runs at 3.3V.
+ */
+&usdhc0 {
+	status = "okay";
+	pwr-gpios = <&gpio7 10 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio7 11 GPIO_ACTIVE_LOW>;
+	no-1-8-v;
+	pinctrl-0 = <&pinmux_usdhc0>;
+	pinctrl-names = "default";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
 	};
 };
