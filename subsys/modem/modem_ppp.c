@@ -16,6 +16,8 @@
 LOG_MODULE_REGISTER(modem_ppp, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #define MODEM_PPP_FRAME_TAIL_SIZE	(2)
+/* Shortest valid frame after the Address and Control fields: compressed Protocol and FCS */
+#define MODEM_PPP_FRAME_MIN_SIZE	(1 + MODEM_PPP_FRAME_TAIL_SIZE)
 
 /* FCS computed over the Address (0xFF) and Control (0x03) fields */
 #define MODEM_PPP_FCS_ADDR_CTRL		(0x3DE3)
@@ -345,6 +347,17 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 	case MODEM_PPP_RECEIVE_STATE_WRITING:
 		if (byte == MODEM_PPP_CODE_DELIMITER) {
 			LOG_DBG("Received PPP frame (len %zu)", net_pkt_get_len(ppp->rx_pkt));
+
+			if (net_pkt_get_len(ppp->rx_pkt) < MODEM_PPP_FRAME_MIN_SIZE) {
+				LOG_WRN("Dropped PPP frame, too short");
+				net_pkt_unref(ppp->rx_pkt);
+				ppp->rx_pkt = NULL;
+				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+#if defined(CONFIG_NET_STATISTICS_PPP)
+				ppp->stats.drop++;
+#endif
+				break;
+			}
 
 			if (modem_ppp_rx_pkt_fcs_is_valid(ppp) == false) {
 				LOG_WRN("Dropped PPP frame, invalid FCS");
