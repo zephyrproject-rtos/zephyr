@@ -126,7 +126,8 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	return __get_PRIMASK() == 0U;
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	return __get_BASEPRI() == 0U;
+	/* irq_lock() uses BASEPRI, but PRIMASK also masks interrupts. */
+	return (__get_BASEPRI() == 0U) && (__get_PRIMASK() == 0U);
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) ||                                \
 	defined(CONFIG_ARM_A_PROFILE_AARCH32)
 	unsigned int cpsr;
