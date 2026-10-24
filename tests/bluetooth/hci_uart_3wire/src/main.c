@@ -344,6 +344,20 @@ ZTEST(hci_uart_3wire, test_command)
 	expect_ack();
 }
 
+ZTEST(hci_uart_3wire, test_ack_delay)
+{
+	uint8_t hdr[HDR_LEN];
+
+	put_cmd(true, seq, 1U);
+	expect_cmd(1U);
+	next_seq();
+
+	/* Before a Host that resends after 250 ms, as the sample itself does */
+	k_sleep(K_MSEC(200));
+	hdr_set(hdr, false, 0U, seq, PKT_ACK, 0U);
+	expect_tx(hdr, NULL, 0U);
+}
+
 ZTEST(hci_uart_3wire, test_event_after_link_setup)
 {
 	static const uint8_t sync[] = { 0x01, 0x7e };
@@ -455,9 +469,12 @@ ZTEST(hci_uart_3wire, test_split_escape)
 
 ZTEST(hci_uart_3wire, test_unsupported_type)
 {
+	uint8_t expected[FRAME_MAX(0U) + FRAME_MAX(sizeof(hw_err_evt))];
 	uint8_t out[FRAME_MAX(0U)];
+	uint8_t tx[sizeof(expected)];
 	uint8_t hdr[HDR_LEN];
 	uint8_t evt_seq;
+	size_t len;
 
 	evt_seq = send_evt();
 
@@ -465,8 +482,16 @@ ZTEST(hci_uart_3wire, test_unsupported_type)
 	hdr_set(hdr, false, 0U, (evt_seq + 1U) % 8U, 6U, 1U);
 	put(out, frame(out, hdr, NULL, 0U));
 
-	/* The acknowledgment was discarded with the packet */
-	expect_evt_retransmitted(evt_seq);
+	/* Acknowledged as a discarded packet, and its acknowledgment number not used: the
+	 * event is retransmitted
+	 */
+	k_sleep(ACK_WAIT);
+	hdr_set(hdr, false, 0U, seq, PKT_ACK, 0U);
+	len = frame(expected, hdr, NULL, 0U);
+	hdr_set(hdr, true, evt_seq, seq, PKT_EVT, sizeof(hw_err_evt));
+	len += frame(&expected[len], hdr, hw_err_evt, sizeof(hw_err_evt));
+	zassert_equal(uart_emul_get_tx_data(uart, tx, sizeof(tx)), len);
+	zassert_mem_equal(tx, expected, len);
 
 	put_ack((evt_seq + 1U) % 8U);
 	expect_no_tx();
