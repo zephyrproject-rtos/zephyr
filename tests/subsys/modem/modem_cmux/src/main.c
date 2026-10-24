@@ -642,6 +642,38 @@ ZTEST(modem_cmux, test_modem_cmux_flow_control_dlci2)
 		     "Incorrect data received");
 }
 
+ZTEST(modem_cmux, test_modem_cmux_receive_flow_control_dlci2)
+{
+	int ret;
+
+	/* Start with an empty receive buffer */
+	modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+
+	/* Fill the receive buffer above the flow control threshold */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_52, sizeof(cmux_frame_dlci2_ppp_52));
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_18, sizeof(cmux_frame_dlci2_ppp_18));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci2_msc_fcon_cmd), "MSC with FC set not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci2_msc_fcon_cmd,
+			  sizeof(cmux_frame_dlci2_msc_fcon_cmd), "Incorrect MSC with FC set");
+
+	/* Draining the receive buffer clears flow control */
+	ret = modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	zassert_equal(ret,
+		      sizeof(cmux_frame_data_dlci2_ppp_52) + sizeof(cmux_frame_data_dlci2_ppp_18),
+		      "Incorrect number of bytes received");
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci2_msc_cmd), "MSC with FC cleared not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci2_msc_cmd, sizeof(cmux_frame_dlci2_msc_cmd),
+			  "Incorrect MSC with FC cleared");
+}
+
 ZTEST(modem_cmux, test_modem_cmux_msc_cmd_ack)
 {
 	int ret;
