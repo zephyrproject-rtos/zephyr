@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	aliases {
 		stepper-ctrl = &mikroe_h_bridge_4_click;
@@ -14,9 +16,9 @@
 		status = "okay";
 		compatible = "zephyr,h-bridge-stepper-ctrl";
 
-		gpios = <&mikrobus_header 0 GPIO_ACTIVE_LOW>, /* IN1 */
-			<&mikrobus_header 1 GPIO_ACTIVE_LOW>, /* IN2 */
-			<&mikrobus_header 6 GPIO_ACTIVE_LOW>, /* IN3 */
-			<&mikrobus_header 7 GPIO_ACTIVE_LOW>; /* IN4 */
+		gpios = <&mikrobus_header MIKROBUS_AN GPIO_ACTIVE_LOW>, /* IN1 */
+			<&mikrobus_header MIKROBUS_RST GPIO_ACTIVE_LOW>, /* IN2 */
+			<&mikrobus_header MIKROBUS_PWM GPIO_ACTIVE_LOW>, /* IN3 */
+			<&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>; /* IN4 */
 	};
 };

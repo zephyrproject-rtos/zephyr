@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 &mikrobus_spi {
 	status = "okay";
 
@@ -13,8 +15,8 @@
 		spi-cs-setup-delay-ns = <1000>;
 		phy-handle = <&phy_mikroe_two_wire_eth_click>;
 
-		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
-		rst-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
+		int-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;
+		rst-gpios = <&mikrobus_header MIKROBUS_RST GPIO_ACTIVE_LOW>;
 
 		spi-max-frequency = <20000000>;
 
