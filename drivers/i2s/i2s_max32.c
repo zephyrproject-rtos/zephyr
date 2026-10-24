@@ -597,6 +597,11 @@ static int i2s_max32_configure_single(const struct device *dev, enum i2s_dir dir
 		return 0;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	ret = i2s_cfg_to_max32_cfg(i2s_cfg, &mxc_cfg, config->i2s_clk_freq);
 	if (ret < 0) {
 		LOG_ERR("Failed to convert I2S config to MAX32 config");

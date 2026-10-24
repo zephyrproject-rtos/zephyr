@@ -160,6 +160,11 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		return 0;
 	}
 
+	if (i2s_config_in->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	data->i2s_data_format = i2s_data_format_default;
 	data->i2s_io_config = i2s_io_config_default;
 	data->i2s_hal_cfg.eData = &data->i2s_data_format;
