@@ -11,6 +11,7 @@
 	aliases {
 		led0 = &user_led;
 		sw0 = &user_button;
+		rtt-custom-section = &sram0;
 	};
 
 	leds {
