@@ -517,4 +517,11 @@ void *canfd_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(canfd, canfd_predicate, canfd_setup, NULL, NULL, NULL);
+void canfd_teardown(void *f)
+{
+	ARG_UNUSED(f);
+
+	can_common_test_teardown();
+}
+
+ZTEST_SUITE(canfd, canfd_predicate, canfd_setup, NULL, NULL, canfd_teardown);
