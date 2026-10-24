@@ -69,6 +69,18 @@ UART2   CN3202
 UART0 is the Linux console and stays with the root cell, so Zephyr uses UART1
 on **CN3201**.
 
+GPIO
+----
+
+No GPIO bank is enabled by default, because which pins Zephyr may use is decided
+by the Jailhouse cell rather than the board. The plain ``genio-510-evk-zephyr``
+cell grants GPIO 38 and GPIO 40, pins 6 and 8 of ``gpio32_63``. An application
+enables the bank in an overlay and selects the GPIO function for its pins, as
+:zephyr_file:`tests/drivers/gpio/gpio_basic_api/boards/mt8370_genio_510_evk_mt8188_a55.overlay`
+does. Pin interrupts come from the SoC's external interrupt controller, edge- or
+level-triggered. Under Jailhouse that controller is shared with Linux line by
+line, and Zephyr changes only the lines it enables.
+
 Programming and Debugging
 *************************
 
