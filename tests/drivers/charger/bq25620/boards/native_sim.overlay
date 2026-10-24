@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2026 Testo SE & Co. KGaA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&i2c0 {
+	/* Minimal configuration, initialized by the test */
+	bq25620_min: bq25620@6a {
+		compatible = "ti,bq25620";
+		reg = <0x6a>;
+		status = "okay";
+
+		charger_min: charger {
+			compatible = "ti,bq25620-charger";
+			constant-charge-current-max-microamp = <1040000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			zephyr,deferred-init;
+		};
+	};
+
+	bq25620: bq25620@6b {
+		compatible = "ti,bq25620";
+		reg = <0x6b>;
+		status = "okay";
+		int-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+
+		charger: charger {
+			compatible = "ti,bq25620-charger";
+			ce-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+			constant-charge-current-max-microamp = <2000000>;
+			constant-charge-voltage-max-microvolt = <4350000>;
+			precharge-current-microamp = <80000>;
+			charge-term-current-microamp = <120000>;
+			re-charge-threshold-microvolt = <200000>;
+			ti,input-current-limit-microamp = <500000>;
+			ti,input-voltage-limit-microvolt = <4400000>;
+			ti,min-sys-voltage-microvolt = <3120000>;
+			ti,vindpm-bat-track-microvolt = <0>;
+			ti,q1-fullon;
+			ti,disable-timer-2x;
+			ti,precharge-timer = "0.62h";
+			ti,fast-charge-timer = "28h";
+			ti,disable-auto-battery-discharge;
+			ti,vbus-ovp-microvolt = <6300000>;
+			ti,ibat-peak-current-microamp = <6000000>;
+			ti,charge-rate = "2C";
+			ti,thermal-regulation-celsius = <60>;
+			ti,switching-frequency-hz = <1650000>;
+			ti,converter-drive-strength = "normal";
+			ti,ts-ignore;
+		};
+	};
+};

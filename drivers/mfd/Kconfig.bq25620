@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_BQ25620
+	bool "TI BQ25620 multi-function device driver"
+	default y
+	depends on DT_HAS_TI_BQ25620_ENABLED
+	select I2C
+	help
+	  Enable the TI BQ25620 battery charger multi-function device driver.
+
+config EMUL_BQ25620
+	bool "TI BQ25620 emulator"
+	default y
+	depends on EMUL
+	depends on MFD_BQ25620
+	help
+	  Enable the I2C emulator of the TI BQ25620 battery charger.

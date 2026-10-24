@@ -1,0 +1,167 @@
+/*
+ * Copyright (c) 2026 Testo SE & Co. KGaA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_MFD_MFD_BQ25620_H_
+#define ZEPHYR_DRIVERS_MFD_MFD_BQ25620_H_
+
+#include <zephyr/sys/util.h>
+
+/*
+ * Register map of the TI BQ25620. 16-bit registers are little endian, the
+ * value field of the limit registers is left aligned to the bit given by the
+ * *_SHIFT definition.
+ */
+#define BQ25620_REG_ICHG         0x02
+#define BQ25620_REG_VREG         0x04
+#define BQ25620_REG_IINDPM       0x06
+#define BQ25620_REG_VINDPM       0x08
+#define BQ25620_REG_VSYSMIN      0x0e
+#define BQ25620_REG_IPRECHG      0x10
+#define BQ25620_REG_ITERM        0x12
+#define BQ25620_REG_CHG_CTRL_0   0x14
+#define BQ25620_REG_TIMER_CTRL   0x15
+#define BQ25620_REG_CHG_CTRL_1   0x16
+#define BQ25620_REG_CHG_CTRL_2   0x17
+#define BQ25620_REG_CHG_CTRL_3   0x18
+#define BQ25620_REG_CHG_CTRL_4   0x19
+#define BQ25620_REG_NTC_CTRL_0   0x1a
+#define BQ25620_REG_CHG_STAT_0   0x1d
+#define BQ25620_REG_CHG_STAT_1   0x1e
+#define BQ25620_REG_FAULT_STAT_0 0x1f
+#define BQ25620_REG_CHG_FLAG_0   0x20
+#define BQ25620_REG_CHG_FLAG_1   0x21
+#define BQ25620_REG_FAULT_FLAG_0 0x22
+#define BQ25620_REG_CHG_MASK_0   0x23
+#define BQ25620_REG_CHG_MASK_1   0x24
+#define BQ25620_REG_FAULT_MASK_0 0x25
+#define BQ25620_REG_PART_INFO    0x38
+
+/* Number of registers, including the reserved ones */
+#define BQ25620_REG_COUNT 0x39
+
+/* REG0x02 Charge Current Limit */
+#define BQ25620_ICHG_SHIFT   6
+#define BQ25620_ICHG_MASK    GENMASK(11, 6)
+#define BQ25620_ICHG_STEP_UA 80000
+#define BQ25620_ICHG_MIN_UA  80000
+#define BQ25620_ICHG_MAX_UA  3520000
+
+/* REG0x04 Charge Voltage Limit */
+#define BQ25620_VREG_SHIFT   3
+#define BQ25620_VREG_MASK    GENMASK(11, 3)
+#define BQ25620_VREG_STEP_UV 10000
+#define BQ25620_VREG_MIN_UV  3500000
+#define BQ25620_VREG_MAX_UV  4800000
+
+/* REG0x06 Input Current Limit */
+#define BQ25620_IINDPM_SHIFT   4
+#define BQ25620_IINDPM_MASK    GENMASK(11, 4)
+#define BQ25620_IINDPM_STEP_UA 20000
+#define BQ25620_IINDPM_MIN_UA  100000
+#define BQ25620_IINDPM_MAX_UA  3200000
+
+/* REG0x08 Input Voltage Limit */
+#define BQ25620_VINDPM_SHIFT   5
+#define BQ25620_VINDPM_MASK    GENMASK(13, 5)
+#define BQ25620_VINDPM_STEP_UV 40000
+#define BQ25620_VINDPM_MIN_UV  3800000
+#define BQ25620_VINDPM_MAX_UV  16800000
+
+/* REG0x0E Minimal System Voltage */
+#define BQ25620_VSYSMIN_SHIFT   6
+#define BQ25620_VSYSMIN_MASK    GENMASK(11, 6)
+#define BQ25620_VSYSMIN_STEP_UV 80000
+#define BQ25620_VSYSMIN_MIN_UV  2560000
+#define BQ25620_VSYSMIN_MAX_UV  3840000
+
+/* REG0x10 Pre-charge Control */
+#define BQ25620_IPRECHG_SHIFT   4
+#define BQ25620_IPRECHG_MASK    GENMASK(8, 4)
+#define BQ25620_IPRECHG_STEP_UA 20000
+#define BQ25620_IPRECHG_MIN_UA  20000
+#define BQ25620_IPRECHG_MAX_UA  620000
+
+/* REG0x12 Termination Control */
+#define BQ25620_ITERM_SHIFT   3
+#define BQ25620_ITERM_MASK    GENMASK(8, 3)
+#define BQ25620_ITERM_STEP_UA 10000
+#define BQ25620_ITERM_MIN_UA  10000
+#define BQ25620_ITERM_MAX_UA  620000
+
+/* REG0x14 Charge Control 0 */
+#define BQ25620_CHG_CTRL_0_Q1_FULLON        BIT(7)
+#define BQ25620_CHG_CTRL_0_Q4_FULLON        BIT(6)
+#define BQ25620_CHG_CTRL_0_VINDPM_BAT_TRACK BIT(1)
+#define BQ25620_CHG_CTRL_0_VRECHG           BIT(0)
+
+/* REG0x15 Charge Timer Control */
+#define BQ25620_TIMER_CTRL_TMR2X_EN       BIT(3)
+#define BQ25620_TIMER_CTRL_EN_SAFETY_TMRS BIT(2)
+#define BQ25620_TIMER_CTRL_PRECHG_TMR     BIT(1)
+#define BQ25620_TIMER_CTRL_CHG_TMR        BIT(0)
+
+/* REG0x16 Charger Control 1 */
+#define BQ25620_CHG_CTRL_1_EN_AUTO_IBATDIS BIT(7)
+#define BQ25620_CHG_CTRL_1_EN_CHG          BIT(5)
+#define BQ25620_CHG_CTRL_1_WATCHDOG        GENMASK(1, 0)
+
+/* REG0x17 Charger Control 2 */
+#define BQ25620_CHG_CTRL_2_REG_RST       BIT(7)
+#define BQ25620_CHG_CTRL_2_TREG          BIT(6)
+#define BQ25620_CHG_CTRL_2_SET_CONV_FREQ GENMASK(5, 4)
+#define BQ25620_CHG_CTRL_2_SET_CONV_STRN GENMASK(3, 2)
+#define BQ25620_CHG_CTRL_2_VBUS_OVP      BIT(0)
+
+/* REG0x19 Charger Control 4 */
+#define BQ25620_CHG_CTRL_4_IBAT_PK  GENMASK(7, 6)
+#define BQ25620_CHG_CTRL_4_CHG_RATE GENMASK(1, 0)
+
+/* REG0x1A NTC Control 0 */
+#define BQ25620_NTC_CTRL_0_TS_IGNORE BIT(7)
+
+/* REG0x1D Charger Status 0 */
+#define BQ25620_CHG_STAT_0_SAFETY_TMR_STAT BIT(1)
+#define BQ25620_CHG_STAT_0_WD_STAT         BIT(0)
+
+/* REG0x1E Charger Status 1 */
+#define BQ25620_CHG_STAT_1_CHG_STAT  GENMASK(4, 3)
+#define BQ25620_CHG_STAT_1_VBUS_STAT GENMASK(2, 0)
+
+#define BQ25620_CHG_STAT_NOT_CHARGING 0x0
+#define BQ25620_CHG_STAT_CC           0x1
+#define BQ25620_CHG_STAT_CV           0x2
+#define BQ25620_CHG_STAT_TOP_OFF      0x3
+
+#define BQ25620_VBUS_STAT_NONE 0x0
+#define BQ25620_VBUS_STAT_OTG  0x7
+
+/* REG0x1F FAULT Status 0 */
+#define BQ25620_FAULT_STAT_0_VBUS_FAULT BIT(7)
+#define BQ25620_FAULT_STAT_0_BAT_FAULT  BIT(6)
+#define BQ25620_FAULT_STAT_0_SYS_FAULT  BIT(5)
+#define BQ25620_FAULT_STAT_0_OTG_FAULT  BIT(4)
+#define BQ25620_FAULT_STAT_0_TSHUT      BIT(3)
+#define BQ25620_FAULT_STAT_0_TS_STAT    GENMASK(2, 0)
+
+#define BQ25620_TS_STAT_NORMAL     0x0
+#define BQ25620_TS_STAT_COLD       0x1
+#define BQ25620_TS_STAT_HOT        0x2
+#define BQ25620_TS_STAT_COOL       0x3
+#define BQ25620_TS_STAT_WARM       0x4
+#define BQ25620_TS_STAT_PRECOOL    0x5
+#define BQ25620_TS_STAT_PREWARM    0x6
+#define BQ25620_TS_STAT_BIAS_FAULT 0x7
+
+/* REG0x23..REG0x25 mask registers, same layout as the flag registers */
+#define BQ25620_CHG_MASK_0_ALL   GENMASK(6, 0)
+#define BQ25620_CHG_MASK_1_ALL   (BIT(3) | BIT(0))
+#define BQ25620_FAULT_MASK_0_ALL (GENMASK(7, 3) | BIT(0))
+
+/* REG0x38 Part Information */
+#define BQ25620_PART_INFO_PN GENMASK(5, 3)
+#define BQ25620_PN_BQ25620   0x0
+
+#endif /* ZEPHYR_DRIVERS_MFD_MFD_BQ25620_H_ */
