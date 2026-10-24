@@ -14,6 +14,11 @@
 #
 # zephyr-keep-sorted-start re(^\s+")
 ALSO_MISSING
+# All ANDES_CLANG_USE_* are in cmake/toolchain/andes-clang/Kconfig
+# which is only included if Andes Clang is selected but
+# not other toolchains, so compliance check would complain.
+ANDES_CLANG_USE_LD
+ANDES_CLANG_USE_LLD
 APP_LINK_WITH_
 # Application log level is not detected correctly as
 # the option is defined using a template, so it can't
