@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+choice TEST_LORAWAN_NATIVE_REGION
+	prompt "LoRaWAN native test region"
+	default TEST_LORAWAN_NATIVE_REGION_EU868
+
+config TEST_LORAWAN_NATIVE_REGION_EU868
+	bool "EU868"
+	depends on LORAWAN_REGION_EU868
+
+endchoice

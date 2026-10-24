@@ -196,6 +196,11 @@ struct lwan_region_ops {
 	 * @param airtime_ms On-air time in milliseconds.
 	 */
 	void (*record_tx)(uint32_t freq, uint32_t airtime_ms);
+
+#if defined(CONFIG_ZTEST)
+	/** Reset region state to its boot-time defaults. */
+	void (*reset)(void);
+#endif /* CONFIG_ZTEST */
 };
 
 /* Returns NULL if the region is not supported by this backend */

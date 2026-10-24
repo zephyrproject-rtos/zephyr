@@ -81,6 +81,15 @@ static struct eu868_sub_band eu868_sub_bands[EU868_SUB_BAND_COUNT] = {
 	{ .freq_min = KHZ(869700), .freq_max = KHZ(870000), .duty_cycle_inv = 100 },
 };
 
+#if defined(CONFIG_ZTEST)
+static void eu868_reset(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(eu868_sub_bands); i++) {
+		eu868_sub_bands[i].available_at = 0;
+	}
+}
+#endif /* CONFIG_ZTEST */
+
 static int eu868_get_sub_band(uint32_t freq)
 {
 	for (int i = 0; i < EU868_SUB_BAND_COUNT; i++) {
@@ -231,7 +240,7 @@ static int eu868_apply_cflist(const uint8_t cflist[16],
 		freq *= CFLIST_FREQ_STEP_HZ;
 
 		if (freq == 0) {
-			ch[idx].enabled = false;
+			ch[idx] = (struct lwan_channel){ 0 };
 			continue;
 		}
 
@@ -358,7 +367,8 @@ static int eu868_select_data_channel(const struct lwan_channel *ch,
 	uint8_t idx;
 
 	for (size_t i = 0; i < count; i++) {
-		if (!ch[i].enabled || dr < ch[i].min_dr || dr > ch[i].max_dr) {
+		if (!ch[i].enabled || ch[i].frequency == 0 ||
+		    dr < ch[i].min_dr || dr > ch[i].max_dr) {
 			continue;
 		}
 
@@ -475,4 +485,7 @@ const struct lwan_region_ops eu868_ops = {
 	.select_join_channel = eu868_select_join_channel,
 	.select_data_channel = eu868_select_data_channel,
 	.record_tx = eu868_record_tx,
+#if defined(CONFIG_ZTEST)
+	.reset = eu868_reset,
+#endif /* CONFIG_ZTEST */
 };
