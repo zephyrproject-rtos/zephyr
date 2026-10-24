@@ -18,6 +18,7 @@ config USBC_PPC_INIT_PRIORITY
 
 config USBC_PPC_SHELL
 	bool "Shell commands for PPC"
+	depends on SHELL
 	help
 	  Add useful shell commands to manipulate and debug the PPCs
 
