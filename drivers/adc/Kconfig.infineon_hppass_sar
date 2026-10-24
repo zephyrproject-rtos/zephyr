@@ -21,6 +21,12 @@ config ADC_INFINEON_HPPASS_SAR
 
 if ADC_INFINEON_HPPASS_SAR
 
+config ADC_INFINEON_HPPASS_SAR_V3
+	def_bool DT_HAS_INFINEON_HPPASS_SAR_ADC_V3_ENABLED
+	help
+	  Set when the SAR node carries the MCPASS v3 register layout, which
+	  moves the sequencer, channel config and result registers.
+
 config ADC_INFINEON_HPPASS_SAR_INIT_PRIORITY
 	int "Infineon HPPASS SAR ADC driver init priority"
 	default 80

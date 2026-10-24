@@ -39,6 +39,10 @@
 #include "cy_hppass.h"
 #include "mfd_infineon_hppass_regs.h"
 
+/* The trigger count is the one PDL constant that tracks the revision. */
+BUILD_ASSERT(IS_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3) == (CY_HPPASS_TRIG_NUM == 16U),
+	     "HPPASS compatible does not match the device's MCPASS revision");
+
 LOG_MODULE_REGISTER(mfd_infineon_hppass, CONFIG_MFD_LOG_LEVEL);
 
 /* Driver data and config structures */

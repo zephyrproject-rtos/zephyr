@@ -18,7 +18,7 @@ Hardware
 - **Connectivity:** CAN FD, SCB (UART/SPI/I2C)
 - **Security:** TrustZone-M
 - **Debug:** SEGGER J-Link (requires SEGGER J-Link version v9.68 or later)
-- **User I/O:** Two user LEDs, two user buttons
+- **User I/O:** Two user LEDs, two user buttons, potentiometer
 
 Kit Contents
 ============
@@ -95,6 +95,8 @@ Default Zephyr Peripheral Mapping
 | P10.2     | GPIO            | Button SW4                 |
 +-----------+-----------------+----------------------------+
 | P2.0      | GPIO            | Button SW3                 |
++-----------+-----------------+----------------------------+
+| AN_B4     | SAR ADC ch 12   | Potentiometer              |
 +-----------+-----------------+----------------------------+
 
 System Clock

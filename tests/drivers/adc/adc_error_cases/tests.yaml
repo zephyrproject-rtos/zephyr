@@ -30,3 +30,4 @@ tests:
       - pic32cm_jh01_cpro
       - it8xxx2_evb
       - it82xx2_evb
+      - kit_psc3m6_eval/psc3m6ges3ahq1
