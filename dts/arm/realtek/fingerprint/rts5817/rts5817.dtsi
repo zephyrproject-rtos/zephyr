@@ -10,8 +10,15 @@
 		zephyr,flash = &flash0;
 	};
 
-	flash0: memory@1800000 {
-		compatible = "soc-nv-flash";
-		reg = <0x1800000 DT_SIZE_M(2)>;
+	soc {
+		flash_controller: flash-controller@40000000 {
+			flash0: flash0@1800000 {
+				compatible = "soc-nv-flash";
+				reg = <0x1800000 0x1fef00>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x1100 0x1800000 0x1fef00>;
+			};
+		};
 	};
 };
