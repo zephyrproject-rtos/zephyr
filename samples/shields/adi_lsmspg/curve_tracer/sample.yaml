@@ -1,0 +1,15 @@
+sample:
+  description: AD5592R NPN curve tracer demo for the ADALM-LSMSPG shield
+  name: adi_lsmspg curve tracer
+
+tests:
+  sample.shields.adi_lsmspg.curve_tracer:
+    depends_on:
+      - feather_spi
+    platform_allow: max32666fthr/max32666/cpu0
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Type 'curvetrace' to run a trace"
+    tags: shield
