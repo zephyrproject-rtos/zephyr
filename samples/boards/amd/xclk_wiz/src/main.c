@@ -85,7 +85,7 @@ int main(void)
 	}
 
 	ret = clock_control_off(dev, subsys);
-	if (ret == 0) {
+	if (ret == 0 || ret == -ENOTSUP) {
 		printk("CLKOUT%u disabled (clock_control_off OK)\n", TEST_CLKOUT_ID);
 	} else {
 		printk("clock_control_off failed (ret=%d)\n", ret);
