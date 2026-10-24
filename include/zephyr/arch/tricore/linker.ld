@@ -307,6 +307,9 @@ GROUP_END(DTCM)
 	SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
 #endif
 
+	/* HighTec LLVM function attribute records: not loaded, kept as is */
+	SECTION_PROLOGUE(.hightec.function.traits, 0,) { KEEP(*(.hightec.function.traits*)) }
+
 	/* lld keeps .eh_frame even with --gc-sections; discard it. */
 #if !defined(CONFIG_CPP_EXCEPTIONS)
 	/DISCARD/ : { *(.eh_frame) }
