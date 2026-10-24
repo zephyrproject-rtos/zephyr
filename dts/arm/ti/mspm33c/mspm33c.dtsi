@@ -5,6 +5,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <freq.h>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
 
 / {
 	cpus {
@@ -19,7 +20,119 @@
 		};
 	};
 
+	ckm: clock-module {
+		compatible = "ti,mspm0-ckm";
+		#clock-cells = <1>;
+		sysctl = <&sysctl>;
+		factoryregion = <&factoryregion>;
+		fri = <&fri>;
+		memcfg = <&memcfg>;
+	};
+
+	clocks: clocks {
+		hfclk: hfclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+
+		hsclk: hsclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+
+		lfclk: lfclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			clocks = <&lfosc>;
+		};
+
+		ulpclk: ulpclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+		};
+
+		mclk: mclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			clocks = <&sysosc>;
+		};
+
+		mclk_div_2: mclk_div_2 {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			clk-div = <2>;
+		};
+
+		mclk_div_4: mclk_div_4 {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			clk-div = <4>;
+		};
+
+		mfpclk: mfpclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			clocks = <&sysosc>;
+			status = "disabled";
+		};
+
+		canclk: canclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+	};
+
+	oscillators: oscillators {
+		hfxt: hfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			status = "disabled";
+		};
+
+		lfxt: lfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			status = "disabled";
+		};
+
+		lfosc: lfosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <32768>;
+		};
+
+		sysosc: sysosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+	};
+
 	soc {
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+			status = "okay";
+		};
+
+		factoryregion: syscon@80111000 {
+			compatible = "syscon";
+			reg = <0x80111000 0x80>;
+		};
+
+		fri: syscon@40028000 {
+			compatible = "syscon";
+			reg = <0x40028000 0x2000>;
+		};
+
+		memcfg: syscon@4002a000 {
+			compatible = "syscon";
+			reg = <0x4002a000 0x2000>;
+		};
+
 		sram0: memory@30000000 {
 			compatible = "mmio-sram";
 		};
@@ -40,11 +153,11 @@
 			};
 		};
 
-		pinctrl: pin-controller@400f0000 {
+		pinctrl: pin-controller@400cc000 {
 			compatible = "ti,mspm0-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x400f0000 0x6000>;
+			reg = <0x400cc000 0x6000>;
 
 			gpioa: gpio@400f0000 {
 				compatible = "ti,mspm0-gpio";
@@ -71,6 +184,150 @@
 				status = "disabled";
 				gpio-controller;
 				#gpio-cells = <2>;
+			};
+		};
+
+		unicomm1_0: unicomm1_0@40582000 {
+			reg = <0x40582000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <25 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm1_0_uart: unicomm1_0_uart@40502000 {
+				reg = <0x40502000 DT_SIZE_K(8)>;
+				interrupts = <25 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_4>;
+				status = "disabled";
+			};
+		};
+
+		unicomm1_1: unicomm1_1@40584000 {
+			reg = <0x40584000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <26 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm1_1_uart: unicomm1_1_uart@40504000 {
+				reg = <0x40504000 DT_SIZE_K(8)>;
+				interrupts = <26 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_4>;
+				status = "disabled";
+			};
+		};
+
+		unicomm12: unicomm12@40688000 {
+			reg = <0x40688000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			unicomm-fixed-mode;
+			interrupts = <30 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm12_uart: unicomm12_uart@40608000 {
+				reg = <0x40608000 DT_SIZE_K(8)>;
+				interrupts = <30 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+			};
+		};
+
+		unicomm13_0: unicomm13_0@4068a000 {
+			reg = <0x4068a000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <31 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm13_0_uart: unicomm13_0_uart@4060a000 {
+				reg = <0x4060a000 DT_SIZE_K(8)>;
+				interrupts = <31 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK>;
+				clk-div = <1>;
+				status = "disabled";
+			};
+		};
+
+		unicomm13_1: unicomm13_1@40780000 {
+			reg = <0x40780000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <50 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm13_1_uart: unicomm13_1_uart@40700000 {
+				reg = <0x40700000 DT_SIZE_K(8)>;
+				interrupts = <50 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK>;
+				clk-div = <1>;
+				status = "disabled";
+			};
+		};
+
+		unicomm13_2: unicomm13_2@40782000 {
+			reg = <0x40782000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <51 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm13_2_uart: unicomm13_2_uart@40702000 {
+				reg = <0x40702000 DT_SIZE_K(8)>;
+				interrupts = <51 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK>;
+				clk-div = <1>;
+				status = "disabled";
+			};
+		};
+
+		unicomm13_3: unicomm13_3@40784000 {
+			reg = <0x40784000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <52 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm13_3_uart: unicomm13_3_uart@40704000 {
+				reg = <0x40704000 DT_SIZE_K(8)>;
+				interrupts = <52 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK>;
+				clk-div = <1>;
+				status = "disabled";
 			};
 		};
 	};
