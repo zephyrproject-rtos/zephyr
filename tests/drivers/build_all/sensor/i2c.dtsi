@@ -531,6 +531,11 @@ test_i2c_iis2iclx: iis2iclx@4c {
 	odr = <IIS2ICLX_DT_ODR_833Hz>;
 };
 
+test_i2c_tc74: tc74@4d {
+	compatible = "microchip,tc74";
+	reg = <0x4d>;
+};
+
 test_i2c_itds_2533020201601: wsen_itds_2533020201601@4e {
 	compatible = "we,wsen-itds-2533020201601";
 	reg = <0x4e>;
