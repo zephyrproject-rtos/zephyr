@@ -1,0 +1,13 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Multimedia Pipeline network streaming sample"
+
+config SAMPLE_NET_STREAM_SELFTEST
+	bool "Run a self-test client instead of waiting for a player"
+	help
+	  Write the input file at startup and start a client thread that
+	  connects to the sink, counts the JPEG frames it receives and logs
+	  PASS or FAIL.
+
+source "Kconfig.zephyr"
