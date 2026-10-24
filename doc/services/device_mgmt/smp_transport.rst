@@ -220,7 +220,89 @@ UART and the data can be verified before being passed, this option is not needed
 be enabled with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT`, the timeout for
 this can be set with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS`.
 
+.. _mcumgr_smp_transport_ethernet:
+
+Raw Ethernet
+************
+
+Enable :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_ETHERNET` to carry SMP packets directly in Ethernet
+frames without using the IP stack. This transport is experimental.
+
+EtherType
+=========
+
+Set :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_ETHERNET_ETHERTYPE` explicitly on the device and configure
+the host client to use the same value. There is no usable default; zero causes a build error.
+EtherType values are in the range ``0x0600`` through ``0xFFFF``. This numeric range does not mean
+that arbitrary values are available for a new protocol.
+
+.. warning::
+
+   The sample uses ``0x88B5``, IEEE Local Experimental EtherType 1. This value and ``0x88B6``,
+   Local Experimental EtherType 2, are intended for development within a controlled experimental
+   network and must not be used in shipped products. Production deployments require an EtherType
+   assigned for the protocol. Independently developed protocols using the same experimental
+   EtherType can conflict on the same network.
+
+Payload format
+==============
+
+Each Ethernet payload carries one complete SMP packet followed by any Ethernet padding:
+
+.. table::
+    :align: center
+
+    +------------------+------------------+--------------------------------------+
+    | Content          | Size             | Description                          |
+    +==================+==================+======================================+
+    | SMP header       | 8 bytes          | Standard SMP header                  |
+    +------------------+------------------+--------------------------------------+
+    | SMP payload      | ``nh_len`` bytes | Command or response data             |
+    +------------------+------------------+--------------------------------------+
+    | Padding          | Variable         | Padding to the minimum Ethernet      |
+    |                  |                  | frame size                           |
+    +------------------+------------------+--------------------------------------+
+
+The SMP packet length is eight bytes plus ``nh_len``. On reception, bytes after that packet are
+ignored as Ethernet padding, regardless of their contents. Padding is not part of the SMP packet.
+The transport does not fragment or reassemble packets; the complete SMP packet must fit within
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE` and the interface MTU. Transmissions exceeding
+the interface MTU are rejected.
+
+Reception and access
+====================
+
+The transport accepts unicast requests on any Ethernet interface. Replies are unicast to the
+request's source MAC address, using the receiving interface's MAC address as their source.
+Broadcast and multicast requests are always dropped before they reach SMP command handlers.
+Group discovery is not supported.
+
+Destination checks are enforced by the transport regardless of the interface's hardware MAC
+filter configuration. An interface may deliver multicast frames even without a configured filter
+entry, for example when it accepts all multicast traffic or a multicast hash collides. Such
+frames are still rejected by the SMP transport, as are missing or invalid destination addresses.
+
+.. warning::
+
+   Any host on the same Ethernet segment that can deliver frames to the device can reach this
+   transport. The transport does not provide authentication or encryption. Accepted requests can
+   invoke any enabled SMP command, including reset and firmware operations, subject to application
+   access controls. Unicast addressing and EtherType selection do not provide authorization.
+
+Opening and closing
+===================
+
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_ETHERNET_AUTOMATIC_INIT` opens the transport at boot and is
+enabled by default. Disable it to control reception from the application with
+:c:func:`smp_ethernet_open` and :c:func:`smp_ethernet_close`. Both functions return zero, and repeated calls
+are harmless. These APIs are not thread safe; the application must serialize calls.
+
+Closing the transport drops subsequent incoming requests. It does not cancel requests already
+passed to SMP for processing, and it does not prevent transmission of their replies.
+
 API Reference
 *************
 
 .. doxygengroup:: mcumgr_transport_smp
+
+.. doxygengroup:: mcumgr_transport_ethernet
