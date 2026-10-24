@@ -711,6 +711,29 @@ ZTEST(modem_cmux, test_modem_cmux_msc_cmd_ack)
 		     "Incorrect MSC ACK received");
 }
 
+ZTEST(modem_cmux, test_modem_cmux_flow_control_reset_on_open)
+{
+	/* Peer MSC with RTR cleared stops transmission on DLCI1 */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_msc_cmd,
+			       sizeof(cmux_frame_control_msc_cmd));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	zassert_equal(modem_pipe_transmit(dlci1_pipe, cmux_frame_data_dlci1_at_at,
+					  sizeof(cmux_frame_data_dlci1_at_at)),
+		      0, "Transmit should be blocked by flow control");
+
+	/* Flow control from the previous session does not apply after reopening */
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
+	zassert_ok(modem_pipe_close(dlci1_pipe, K_SECONDS(10)), "Failed to close DLCI1");
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+
+	zassert_equal(modem_pipe_transmit(dlci1_pipe, cmux_frame_data_dlci1_at_at,
+					  sizeof(cmux_frame_data_dlci1_at_at)),
+		      sizeof(cmux_frame_data_dlci1_at_at),
+		      "Transmit should not be blocked after reopening");
+}
+
 ZTEST(modem_cmux, test_modem_cmux_dlci1_close_open)
 {
 	int ret;

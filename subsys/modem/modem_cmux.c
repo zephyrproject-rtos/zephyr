@@ -1242,6 +1242,8 @@ static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci *dlci)
 	case MODEM_CMUX_DLCI_STATE_OPENING:
 		LOG_DBG("DLCI %u opened", dlci->dlci_address);
 		dlci->state = MODEM_CMUX_DLCI_STATE_OPEN;
+		dlci->flow_control = false;
+		dlci->rx_full = false;
 		modem_pipe_notify_opened(&dlci->pipe);
 		k_work_cancel_delayable(&dlci->open_work);
 		k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
@@ -1324,6 +1326,8 @@ static void modem_cmux_on_dlci_frame_sabm(struct modem_cmux_dlci *dlci)
 	LOG_DBG("DLCI %u SABM request accepted, DLCI opened", dlci->dlci_address);
 	dlci->state = MODEM_CMUX_DLCI_STATE_OPEN;
 	dlci->msc_sent = false;
+	dlci->flow_control = false;
+	dlci->rx_full = false;
 	modem_pipe_notify_opened(&dlci->pipe);
 	k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
 	ring_buf_reset(&dlci->receive_rb);
