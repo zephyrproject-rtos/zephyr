@@ -38,6 +38,9 @@
 
 #include "hal/debug.h"
 
+#define CTRL_CHAN_NONE  0xFFU
+#define CTRL_CHAN_DEFER 0xFEU
+
 static int init_reset(void);
 static void prepare(void *param);
 static void create_prepare_bh(void *param);
@@ -50,6 +53,7 @@ static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
 static void isr_rx_done(void *param);
 static void isr_done(void *param);
+static void ctrl_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter);
 static void next_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter,
 			   uint16_t data_chan_id);
 static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
@@ -99,6 +103,42 @@ void lll_sync_iso_prepare(void *param)
 {
 	prepare(param);
 	prepare_bh(param);
+}
+
+void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll)
+{
+	uint8_t stream_count;
+	bool release = false;
+
+	ARG_UNUSED(handle);
+
+	stream_count = BT_CTLR_SYNC_ISO_STREAM_MAX;
+	while (stream_count != 0U) {
+		uint8_t payload_count;
+
+		stream_count--;
+		payload_count = lll->payload_count_max;
+		while (payload_count != 0U) {
+			struct node_rx_pdu *node_rx;
+
+			payload_count--;
+			node_rx = lll->payload[stream_count][payload_count];
+			if (node_rx == NULL) {
+				continue;
+			}
+
+			lll->payload[stream_count][payload_count] = NULL;
+
+			node_rx->hdr.type = NODE_RX_TYPE_RELEASE;
+			iso_rx_put(node_rx->hdr.link, node_rx);
+
+			release = true;
+		}
+	}
+
+	if (release) {
+		iso_rx_sched();
+	}
 }
 
 static int init_reset(void)
@@ -242,6 +282,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	/* Initialize control subevent flag */
 	lll->ctrl = 0U;
+	lll->ctrl_chan_use = CTRL_CHAN_NONE;
 
 	/* Calculate the Access Address for the BIS event */
 	util_bis_aa_le32(lll->bis_curr, lll->seed_access_addr, access_addr);
@@ -824,10 +865,16 @@ isr_rx_find_subevent:
 				}
 			} else {
 				lll->bis_curr = lll->num_bis;
+				lll->ctrl_chan_use = CTRL_CHAN_DEFER;
 			}
 		} else {
 			lll->bis_curr = lll->num_bis;
+			lll->ctrl_chan_use = CTRL_CHAN_DEFER;
 		}
+	}
+
+	if (skipped) {
+		lll->ctrl_chan_use = CTRL_CHAN_DEFER;
 	}
 
 	/* Control subevent */
@@ -887,15 +934,16 @@ isr_rx_next_subevent:
 
 	/* Set the channel to use */
 	if (!bis) {
-		const uint16_t event_counter =
-				(lll->payload_count / lll->bn) - 1U;
+		if (lll->ctrl_chan_use == CTRL_CHAN_DEFER) {
+			uint16_t event_counter;
 
-		/* Calculate the radio channel to use for ISO event */
-		data_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
-						   lll->data_chan_map,
-						   lll->data_chan_count,
-						   &lll->data_chan_prn_s,
-						   &lll->data_chan_remap_idx);
+			event_counter = (lll->payload_count / lll->bn) - 1U;
+			ctrl_chan_calc(lll, event_counter);
+		} else {
+			LL_ASSERT(lll->ctrl_chan_use != CTRL_CHAN_NONE);
+		}
+
+		data_chan_use = lll->ctrl_chan_use;
 	} else if (!skipped) {
 		data_chan_use = lll->next_chan_use;
 	} else {
@@ -1237,6 +1285,22 @@ static void isr_done(void *param)
 	}
 }
 
+static void ctrl_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter)
+{
+	uint8_t access_addr[4];
+	uint16_t data_chan_id;
+	uint16_t remap_idx;
+	uint16_t prn_s;
+
+	/* BIS_Number 0 is the BIG Control logical link */
+	util_bis_aa_le32(0U, lll->seed_access_addr, access_addr);
+	data_chan_id = lll_chan_id(access_addr);
+
+	/* Calculate the radio channel to use for ISO event */
+	lll->ctrl_chan_use = lll_chan_iso_event(event_counter, data_chan_id, lll->data_chan_map,
+						lll->data_chan_count, &prn_s, &remap_idx);
+}
+
 static void next_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter,
 			   uint16_t data_chan_id)
 {
@@ -1265,6 +1329,8 @@ static void next_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter,
 						lll->data_chan_count,
 						&lll->data_chan_prn_s,
 						&lll->data_chan_remap_idx);
+	} else {
+		ctrl_chan_calc(lll, event_counter);
 	}
 }
 
