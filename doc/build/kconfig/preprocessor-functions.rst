@@ -25,6 +25,10 @@ The functions listed below are used to get devicetree information into Kconfig.
 The ``*_int`` version of each function returns the value as a decimal integer,
 while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
 
+``$(dt_node_int_prop_int)`` and ``$(dt_node_int_prop_hex)`` accept any devicetree
+property type whose value is a single integer, i.e. ``int`` and
+``uint32-or-uint64``.
+
 .. code-block:: none
 
    $(dt_alias_enabled,<node alias>)
