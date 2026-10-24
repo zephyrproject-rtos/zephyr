@@ -1171,6 +1171,7 @@ static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci *dlci)
 		k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
 		ring_buf_reset(&dlci->receive_rb);
 		k_mutex_unlock(&dlci->receive_rb_lock);
+		dlci->rx_full = false;
 		if (dlci->cmux->initiator) {
 			modem_cmux_send_msc(dlci->cmux, dlci);
 			dlci->msc_sent = true;
@@ -1241,6 +1242,7 @@ static void modem_cmux_on_dlci_frame_sabm(struct modem_cmux_dlci *dlci)
 	k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
 	ring_buf_reset(&dlci->receive_rb);
 	k_mutex_unlock(&dlci->receive_rb_lock);
+	dlci->rx_full = false;
 }
 
 static void modem_cmux_on_dlci_frame_disc(struct modem_cmux_dlci *dlci)
@@ -2016,6 +2018,31 @@ static int modem_cmux_dlci_pipe_api_transmit_chain(void *data,
 	return modem_cmux_transmit_data_frame(cmux, &frame);
 }
 
+static void modem_cmux_dlci_rx_resume_handler(struct k_work *item)
+{
+	struct modem_cmux_dlci *dlci = CONTAINER_OF(item, struct modem_cmux_dlci, rx_resume_work);
+	/* Ring buffer can be smaller than CONFIG_MODEM_CMUX_MTU for user pipes */
+	uint32_t rb_capacity = ring_buf_capacity_get(&dlci->receive_rb);
+	uint32_t not_full_threshold = MIN(rb_capacity, CONFIG_MODEM_CMUX_MTU);
+	uint32_t space;
+
+	/* The work may be submitted after the CMUX has been released */
+	if (!dlci->rx_full || dlci->state != MODEM_CMUX_DLCI_STATE_OPEN ||
+	    !is_connected(dlci->cmux)) {
+		return;
+	}
+
+	k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
+	space = ring_buf_space_get(&dlci->receive_rb);
+	k_mutex_unlock(&dlci->receive_rb_lock);
+
+	if (space >= not_full_threshold) {
+		LOG_DBG("DLCI %u receive buffer is no longer full", dlci->dlci_address);
+		dlci->rx_full = false;
+		modem_cmux_send_msc(dlci->cmux, dlci);
+	}
+}
+
 static int modem_cmux_dlci_pipe_api_receive(void *data, uint8_t *buf, size_t size)
 {
 	struct modem_cmux_dlci *dlci = (struct modem_cmux_dlci *)data;
@@ -2029,17 +2056,11 @@ static int modem_cmux_dlci_pipe_api_receive(void *data, uint8_t *buf, size_t siz
 
 	ret = ring_buf_get(&dlci->receive_rb, buf, size);
 	k_mutex_unlock(&dlci->receive_rb_lock);
-	/* Flow control handling if we previously paused RX */
+	/* Flow control handling if we previously paused RX. The flow control state and
+	 * command encoding are owned by the workqueue, so resume RX from there.
+	 */
 	if (dlci->rx_full) {
-		/* Ring buffer can be smaller than CONFIG_MODEM_CMUX_MTU for user pipes */
-		uint32_t rb_capacity = ring_buf_capacity_get(&dlci->receive_rb);
-		uint32_t not_full_threshold = MIN(rb_capacity, CONFIG_MODEM_CMUX_MTU);
-
-		if (ring_buf_space_get(&dlci->receive_rb) >= not_full_threshold) {
-			LOG_DBG("DLCI %u receive buffer is no longer full", dlci->dlci_address);
-			dlci->rx_full = false;
-			modem_cmux_send_msc(dlci->cmux, dlci);
-		}
+		modem_work_submit(&dlci->rx_resume_work);
 	}
 
 	return ret;
@@ -2172,6 +2193,7 @@ static void modem_cmux_dlci_pipes_release(struct modem_cmux *cmux)
 		modem_pipe_notify_closed(&dlci->pipe);
 		k_work_cancel_delayable_sync(&dlci->open_work, &sync);
 		k_work_cancel_delayable_sync(&dlci->close_work, &sync);
+		k_work_cancel_sync(&dlci->rx_resume_work, &sync);
 	}
 }
 
@@ -2223,6 +2245,7 @@ struct modem_pipe *modem_cmux_dlci_init(struct modem_cmux *cmux, struct modem_cm
 	modem_pipe_init(&dlci->pipe, dlci, &modem_cmux_dlci_pipe_api);
 	k_work_init_delayable(&dlci->open_work, modem_cmux_dlci_open_handler);
 	k_work_init_delayable(&dlci->close_work, modem_cmux_dlci_close_handler);
+	k_work_init(&dlci->rx_resume_work, modem_cmux_dlci_rx_resume_handler);
 	dlci->state = MODEM_CMUX_DLCI_STATE_CLOSED;
 	sys_slist_append(&dlci->cmux->dlcis, &dlci->node);
 
