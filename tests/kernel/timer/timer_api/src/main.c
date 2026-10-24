@@ -1178,6 +1178,76 @@ ZTEST(timer_api, test_timer_cleanup_pending)
 #endif
 }
 
+#if defined(CONFIG_MULTITHREADING)
+static struct k_timer expired_stop_timer;
+static struct k_thread expired_stop_threads[2];
+static K_THREAD_STACK_ARRAY_DEFINE(expired_stop_stacks, 2, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static K_SEM_DEFINE(expired_stop_started, 0, 2);
+static K_SEM_DEFINE(expired_stop_done, 0, 2);
+static uint32_t expired_stop_status[2];
+
+static void expired_stop_waiter(void *p1, void *p2, void *p3)
+{
+	uint32_t *status = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_give(&expired_stop_started);
+	*status = k_timer_status_sync(&expired_stop_timer);
+	k_sem_give(&expired_stop_done);
+}
+#endif
+
+ZTEST(timer_api, test_stop_expired_wakes_status_waiter)
+{
+#if !defined(CONFIG_MULTITHREADING)
+	ztest_test_skip();
+#else
+	k_timer_init(&expired_stop_timer, NULL, NULL);
+	k_timer_start(&expired_stop_timer, K_SECONDS(3600), K_NO_WAIT);
+
+	for (size_t i = 0; i < ARRAY_SIZE(expired_stop_threads); i++) {
+		expired_stop_status[i] = UINT32_MAX;
+		k_thread_create(&expired_stop_threads[i], expired_stop_stacks[i],
+				K_THREAD_STACK_SIZEOF(expired_stop_stacks[i]), expired_stop_waiter,
+				&expired_stop_status[i], NULL, NULL, K_HIGHEST_THREAD_PRIO, 0,
+				K_NO_WAIT);
+	}
+
+	zassert_ok(k_sem_take(&expired_stop_started, K_FOREVER));
+	zassert_ok(k_sem_take(&expired_stop_started, K_FOREVER));
+	/* Allow both waiters to pend before scheduling the expiration. */
+	k_msleep(10);
+	k_timer_start(&expired_stop_timer, K_MSEC(DURATION), K_NO_WAIT);
+
+	int expiry_ret = k_sem_take(&expired_stop_done, K_MSEC(2 * DURATION));
+	int second_ret = k_sem_take(&expired_stop_done, K_NO_WAIT);
+
+	k_timer_stop(&expired_stop_timer);
+
+	int stop_ret = k_sem_take(&expired_stop_done, K_MSEC(2 * DURATION));
+
+	if (expiry_ret != 0 || second_ret == 0 || stop_ret != 0) {
+		/* Clean up the threads even if the waiter was not released. */
+		for (size_t i = 0; i < ARRAY_SIZE(expired_stop_threads); i++) {
+			k_thread_abort(&expired_stop_threads[i]);
+		}
+	} else {
+		for (size_t i = 0; i < ARRAY_SIZE(expired_stop_threads); i++) {
+			zassert_ok(k_thread_join(&expired_stop_threads[i], K_MSEC(DURATION)));
+		}
+	}
+
+	zassert_ok(expiry_ret, "expiration did not release a status_sync waiter");
+	zassert_equal(second_ret, -EBUSY, "expiration released both status_sync waiters");
+	zassert_ok(stop_ret, "status_sync waiter remained blocked after stop");
+	zassert_true((expired_stop_status[0] == 1U && expired_stop_status[1] == 0U) ||
+			     (expired_stop_status[0] == 0U && expired_stop_status[1] == 1U),
+		     "waiters did not report one expiration and one stop");
+#endif
+}
+
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 		       k_timer_stop_t stop_fn)
 {
