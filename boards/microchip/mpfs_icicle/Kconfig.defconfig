@@ -7,4 +7,31 @@ choice SPI_NOR_SFDP
 	default SPI_NOR_SFDP_RUNTIME
 endchoice
 
+configdefault ETH_DRIVER
+	default y
+
+configdefault NET_TX_STACK_SIZE
+	default 8192
+
+configdefault NET_RX_STACK_SIZE
+	default 8192
+
+configdefault NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+configdefault NET_IF_MAX_IPV4_COUNT
+	default 2
+
+configdefault NET_IF_MAX_IPV6_COUNT
+	default 2
+
+configdefault ZVFS_POLL_MAX
+	default 8
+
 endif
