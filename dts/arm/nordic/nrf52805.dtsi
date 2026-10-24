@@ -188,6 +188,9 @@
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";
 			reg = <0x40007000 0x1000>;
+			nordic,saadc-inputs = <&gpio0 4 NRF_SAADC_AIN2>,
+					      <&gpio0 5 NRF_SAADC_AIN3>;
+
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <7 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -360,6 +363,7 @@
 		gpio0: gpio@50000000 {
 			compatible = "nordic,nrf-gpio";
 			gpio-controller;
+			#adc-gpio-cells = <2>;
 			reg = <0x50000000 0x1000>;
 			#gpio-cells = <2>;
 			status = "disabled";
