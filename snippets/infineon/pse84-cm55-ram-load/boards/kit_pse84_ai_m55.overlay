@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * kit_pse84_ai_common.overlay (applied before this one, see snippet.yml)
+ * provides snippet_pse84_cm55_ram_load_dst, the same SoCMEM region the CM33
+ * enable_cm55 companion copies this image's code/rodata/data-shadow into
+ * before releasing this core, which then executes in place from RAM
+ * instead of from flash0_sahb/m55_xip. zephyr,sram keeps using the
+ * separate m55_data region, untouched by the CM33 copy.
+ *
+ * zephyr,code-partition is deleted rather than also repointed at
+ * snippet_pse84_cm55_ram_load_dst: with CONFIG_USE_DT_CODE_PARTITION=n
+ * (boards/kit_pse84_ai_m55.conf), it would go unused anyway, and leaving
+ * the board's own m55_xip-pointing default in place would misleadingly
+ * suggest this build still has a code partition on external flash.
+ */
+/ {
+	chosen {
+		zephyr,flash = &snippet_pse84_cm55_ram_load_dst;
+		/delete-property/ zephyr,code-partition;
+	};
+};
