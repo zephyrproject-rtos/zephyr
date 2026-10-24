@@ -71,6 +71,10 @@
 #define OA_DATA_FTR_FD   BIT(15)
 #define OA_DATA_FTR_EV   BIT(14)
 #define OA_DATA_FTR_EBO  GENMASK(13, 8)
+/* Receive Timestamp Added: set only when the MAC-PHY actually prepended a HW
+ * timestamp to this frame; always 0 when SV = 0.
+ */
+#define OA_DATA_FTR_RTSA BIT(7)
 #define OA_DATA_FTR_TXC  GENMASK(5, 1)
 #define OA_DATA_FTR_P    BIT(0)
 
