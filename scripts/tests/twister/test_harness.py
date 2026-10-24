@@ -10,6 +10,7 @@ import logging as logger
 import os
 import re
 import textwrap
+import time
 from unittest import mock
 
 import pytest
@@ -21,8 +22,10 @@ from twisterlib.harness import (
     HarnessImporter,
     Pytest,
     Robot,
+    Script,
     Test,
 )
+from twisterlib.jobserver import JobHandle
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestCase, TestSuite
@@ -2096,6 +2099,167 @@ def test_gtest_typed_tests_with_custom_type_names_are_distinct(gtest):
     assert gtest.status == TwisterStatus.PASS
     assert gtest.instance.get_case_by_name("id.Prefix.TypedSuite.MyInt.TestA").status == TwisterStatus.PASS
     assert gtest.instance.get_case_by_name("id.Prefix.TypedSuite.MyInt.TestB").status == TwisterStatus.PASS
+
+
+class FakeJobServer:
+    """Hands out a fixed number of job tokens without blocking, like twister's job server
+    when that many workers have finished."""
+
+    def __init__(self, free):
+        self.free = free
+        self.taken = 0
+        self.max_taken = 0
+
+    def try_get_job(self):
+        if self.taken >= self.free:
+            return None
+        self.taken += 1
+        self.max_taken = max(self.max_taken, self.taken)
+        return JobHandle(self._release)
+
+    def _release(self):
+        self.taken -= 1
+
+
+def _make_script_harness(tmp_path, scripts, parallel=True, free_jobs=0):
+    """Return a Script harness over the given {name: body} shell scripts in tmp_path."""
+    scripts_dir = tmp_path / "tests_scripts"
+    os.makedirs(scripts_dir, exist_ok=True)
+    for name, body in scripts.items():
+        path = scripts_dir / name
+        with open(path, "w") as file:
+            file.write("#!/bin/sh\n" + body)
+        os.chmod(path, 0o700)
+
+    instance = mock.Mock()
+    instance.testcases = []
+    instance.add_testcase.side_effect = lambda name, freeform=False: (
+        instance.testcases.append(TestCase(name)) or instance.testcases[-1]
+    )
+    instance.reason = ""
+    instance.testsuite.source_dir = str(tmp_path)
+    instance.testsuite.harness_config = HarnessConfig(
+        tests_scripts=["tests_scripts"], tests_scripts_parallel=parallel
+    )
+    instance.handler.options.extra_test_args = []
+    instance.platform.name = "mock_platform"
+
+    harness = Script()
+    harness.id = "tests.scripts"
+    harness.instance = instance
+    harness.jobserver = FakeJobServer(free_jobs)
+    harness.running_dir = str(tmp_path)
+    harness.source_dir = str(tmp_path)
+    harness.log_file_path = str(tmp_path / "twister_harness.log")
+    return harness
+
+
+SCRIPT_HARNESS_SCRIPTS = {
+    "a_pass.sh": "echo a-out\nexit 0\n",
+    "b_fail.sh": "echo b-out\nexit 3\n",
+    "c_pass.sh": "sleep 0.2\necho c-out\nexit 0\n",
+    "d_pass.sh": "echo d-out\nexit 0\n",
+}
+
+
+@pytest.mark.parametrize("parallel, free_jobs", [(False, 0), (True, 0), (True, 3), (True, 16)])
+def test_script_run(tmp_path, parallel, free_jobs):
+    harness = _make_script_harness(tmp_path, SCRIPT_HARNESS_SCRIPTS, parallel, free_jobs)
+
+    assert harness.run(timeout=30) is True
+
+    assert harness.instance.status == TwisterStatus.FAIL
+    names = [tc.name for tc in harness.instance.testcases]
+    assert names == [
+        "tests.scripts.a_pass.sh",
+        "tests.scripts.b_fail.sh",
+        "tests.scripts.c_pass.sh",
+        "tests.scripts.d_pass.sh",
+    ]
+    statuses = [tc.status for tc in harness.instance.testcases]
+    assert statuses == [
+        TwisterStatus.PASS, TwisterStatus.FAIL, TwisterStatus.PASS, TwisterStatus.PASS
+    ]
+    failed = harness.instance.testcases[1]
+    assert failed.reason == "Script b_fail.sh failed with return code 3"
+    assert failed.output == "b-out"
+    assert all(tc.duration > 0 for tc in harness.instance.testcases)
+    assert harness.instance.execution_time >= max(
+        tc.duration for tc in harness.instance.testcases
+    )
+    # every extra job taken from the job server was given back
+    assert harness.jobserver.taken == 0
+    assert harness.jobserver.max_taken <= free_jobs
+
+    with open(harness.log_file_path) as file:
+        log = file.read()
+    # one block per script, in listing order, each with its own output and return code
+    assert log.index("a_pass.sh") < log.index("b_fail.sh") < log.index("c_pass.sh")
+    assert "a-out\n=== Return code: 0" in log
+    assert "b-out\n=== Return code: 3" in log
+    assert "c-out\n=== Return code: 0" in log
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+def test_script_run_timeout(tmp_path, parallel):
+    # a_slow.sh exits 0 when terminated: the timeout alone must fail its test case
+    harness = _make_script_harness(
+        tmp_path,
+        {"a_slow.sh": "trap 'exit 0' TERM\nsleep 5 &\nwait\n", "b_pass.sh": "exit 0\n"},
+        parallel=parallel,
+        free_jobs=1,
+    )
+
+    start = time.time()
+    harness.run(timeout=0.5)
+    elapsed = time.time() - start
+
+    assert harness.instance.status == TwisterStatus.FAIL
+    assert harness.instance.reason == "Test timeout"
+    assert harness.instance.testcases[0].status == TwisterStatus.FAIL
+    assert harness.instance.testcases[0].reason == "Script a_slow.sh timed out"
+    assert harness.instance.testcases[1].status == TwisterStatus.PASS
+    # bounded by the timeout, the process tree kill and the drain grace period
+    assert elapsed < 0.5 + 6 + Script.OUTPUT_DRAIN_GRACE + 2
+
+
+@pytest.mark.parametrize(
+    "parallel, free_jobs, expected",
+    [(True, 1, TwisterStatus.PASS), (True, 0, TwisterStatus.FAIL), (False, 5, TwisterStatus.FAIL)],
+    ids=["free job", "no free job", "opted out"],
+)
+def test_script_run_parallel_overlap(tmp_path, parallel, free_jobs, expected):
+    # a_wait.sh passes only if b_flag.sh runs while it is waiting
+    flag = tmp_path / "b_started"
+    harness = _make_script_harness(
+        tmp_path,
+        {
+            "a_wait.sh": f"for i in $(seq 1 100); do [ -e {flag} ] && exit 0; sleep 0.05; done\n"
+                         "exit 7\n",
+            "b_flag.sh": f"touch {flag}\n",
+        },
+        parallel=parallel,
+        free_jobs=free_jobs,
+    )
+
+    harness.run(timeout=30)
+
+    assert harness.instance.testcases[0].status == expected
+    assert harness.instance.testcases[1].status == TwisterStatus.PASS
+
+
+def test_script_run_parallel_record(tmp_path):
+    harness = _make_script_harness(
+        tmp_path,
+        {"a.sh": "sleep 0.2\necho 'val=1'\n", "b.sh": "echo 'val=2'\n", "c.sh": "echo 'val=3'\n"},
+        free_jobs=2,
+    )
+    harness.record_patterns = [re.compile(r"val=(?P<val>\d+)")]
+
+    harness.run(timeout=30)
+
+    assert harness.instance.status == TwisterStatus.PASS
+    assert harness.recording == [{"val": "1"}, {"val": "2"}, {"val": "3"}]
 
 
 def test_bsim_build(monkeypatch, tmp_path):
