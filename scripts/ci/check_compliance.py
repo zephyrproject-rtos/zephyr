@@ -789,6 +789,9 @@ class DevicetreeLintingCheck(ComplianceTest):
                 "--outputFormat",
                 "json",
                 "--format",
+                "--enableSortNodesAndProperties",
+                "--sortNodesNodesBy",
+                "address",
                 "--patchFile",
                 temp_patch,
             ]
