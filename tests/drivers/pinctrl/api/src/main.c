@@ -120,6 +120,32 @@ ZTEST(pinctrl_api, test_apply_state)
 #endif
 }
 
+/**
+ * @brief Test that pinctrl_apply_state() propagates backend errors.
+ */
+ZTEST(pinctrl_api, test_apply_state_propagates_error)
+{
+	int ret;
+
+	pinctrl_configure_pins_fake.return_val = -EIO;
+
+	ret = pinctrl_apply_state(pcfg0, PINCTRL_STATE_DEFAULT);
+
+	zassert_equal(-EIO, ret);
+	zassert_equal(1, pinctrl_configure_pins_fake.call_count);
+}
+
+/**
+ * @brief Test that pinctrl_apply_state() rejects a missing state.
+ *
+ * Verify that -ENOENT is returned without calling pinctrl_configure_pins().
+ */
+ZTEST(pinctrl_api, test_apply_state_missing_state)
+{
+	zassert_equal(-ENOENT, pinctrl_apply_state(pcfg0, PINCTRL_STATE_MYSTATE));
+	zassert_equal(0, pinctrl_configure_pins_fake.call_count);
+}
+
 /** Test device 0 alternative pins for default state */
 PINCTRL_DT_STATE_PINS_DEFINE(DT_PATH(zephyr_user), test_device0_alt_default);
 /** Test device 0 alternative pins for sleep state */
