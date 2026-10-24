@@ -20,6 +20,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/cache.h>
 #if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
@@ -87,6 +88,10 @@ struct display_stm32_ltdc_data {
 	struct k_sem sem;
 	struct k_sem cb_sem;
 	struct stm32_ltdc_cb_data cb;
+#ifdef CONFIG_PM
+	/* Power states that stop the LTDC, locked while it scans out */
+	struct pm_state_constraints disabling_states;
+#endif
 };
 
 struct display_stm32_ltdc_config {
@@ -721,6 +726,14 @@ static int stm32_ltdc_init(const struct device *dev)
 	/* Set the line interrupt position */
 	LTDC->LIPCR = 0U;
 
+#ifdef CONFIG_PM
+	/*
+	 * The LTDC now scans out the frame buffer until it is suspended. Keep the
+	 * SoC out of the power states that would stop it mid-frame.
+	 */
+	pm_policy_state_constraints_get(&data->disabling_states);
+#endif
+
 	return 0;
 }
 
@@ -728,6 +741,7 @@ static int stm32_ltdc_init(const struct device *dev)
 static int stm32_ltdc_suspend(const struct device *dev)
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
+	__maybe_unused struct display_stm32_ltdc_data *data = dev->data;
 	int err;
 
 	/* Turn off disp_en (if its GPIO is defined in device tree) */
@@ -752,8 +766,15 @@ static int stm32_ltdc_suspend(const struct device *dev)
 	/* Turn off LTDC peripheral clock */
 	err = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &config->pclken[0]);
+	if (err < 0) {
+		return err;
+	}
 
-	return err;
+#ifdef CONFIG_PM
+	pm_policy_state_constraints_put(&data->disabling_states);
+#endif
+
+	return 0;
 }
 
 static int stm32_ltdc_pm_action(const struct device *dev,
@@ -827,9 +848,24 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 #error "Only RGB_888 is supported as a LTDC output (aka panel or mipi-dsi input format)"
 #endif
 
+#if defined(CONFIG_PM)
+#define STM32_LTDC_DISABLING_STATES_DEFINE(inst)						\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, zephyr_disabling_power_states),			\
+		   (static PM_STATE_CONSTRAINTS_LIST_DEFINE(DT_DRV_INST(inst),			\
+							    zephyr_disabling_power_states);))
+#define STM32_LTDC_DISABLING_STATES_INIT(inst)							\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, zephyr_disabling_power_states),			\
+		   (.disabling_states = PM_STATE_CONSTRAINTS_GET(DT_DRV_INST(inst),		\
+						zephyr_disabling_power_states),))
+#else
+#define STM32_LTDC_DISABLING_STATES_DEFINE(inst)
+#define STM32_LTDC_DISABLING_STATES_INIT(inst)
+#endif
+
 #define STM32_LTDC_DEVICE(inst)									\
 	STM32_LTDC_FRAME_BUFFER_DEFINE(inst);                       \
 	STM32_LTDC_DEVICE_PINCTRL_INIT(inst);							\
+	STM32_LTDC_DISABLING_STATES_DEFINE(inst)						\
 	PM_DEVICE_DT_INST_DEFINE(inst, stm32_ltdc_pm_action);					\
 	static void stm32_ltdc_irq_config_func_##inst(const struct device *dev)			\
 	{											\
@@ -845,6 +881,7 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 		.frame_buffer_len = STM32_LTDC_FRAME_BUFFER_LEN(inst),				\
 		.front_buf = STM32_LTDC_FRAME_BUFFER_ADDR(inst),				\
 		.pend_buf = STM32_LTDC_FRAME_BUFFER_ADDR(inst),					\
+		STM32_LTDC_DISABLING_STATES_INIT(inst)						\
 		.hltdc = {									\
 			.Instance = (LTDC_TypeDef *) DT_INST_REG_ADDR(inst),			\
 			.Init = {								\
