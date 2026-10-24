@@ -7,7 +7,7 @@
 /*
  * @addtogroup t_i2c_basic
  * @{
- * @defgroup t_i2c_read_write test_i2c_read_write
+ * @defgroup t_i2c_ram_read_write test_i2c_ram_read_write
  * @brief TestPurpose: verify I2C master can read and write
  * @}
  */
