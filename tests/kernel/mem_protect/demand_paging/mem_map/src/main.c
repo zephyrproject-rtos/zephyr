@@ -338,6 +338,59 @@ ZTEST(demand_paging, test_unmap_anon_pages)
 	 ztest_test_fail();
 }
 
+/**
+ * @brief Verify that unmapping never-touched pages keeps the backing store
+ *        consistent.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * With CONFIG_DEMAND_MAPPING, pages of a new anonymous mapping hold a special
+ * location token until first touched and own no backing store slot.
+ * Unmapping them must not release a slot. The backing store is then cycled
+ * by over-committing RAM again, which must still page out and in correctly.
+ * Skipped without CONFIG_DEMAND_MAPPING.
+ *
+ * Test steps:
+ * - Map anonymous memory and unmap it without touching it.
+ * - Map more anonymous memory than free RAM, write every page and read every
+ *   page back.
+ * - Unmap it.
+ *
+ * Expected result:
+ * - No fault or assertion, and all data reads back intact.
+ *
+ * @see k_mem_map()
+ * @see k_mem_unmap()
+ */
+ZTEST(demand_paging, test_unmap_untouched_anon_pages)
+{
+	size_t size;
+	char *mem;
+
+	if (!IS_ENABLED(CONFIG_DEMAND_MAPPING)) {
+		ztest_test_skip();
+	}
+
+	mem = k_mem_map(HALF_BYTES, K_MEM_PERM_RW);
+	zassert_not_null(mem, "failed to map untouched memory");
+	k_mem_unmap(mem, HALF_BYTES);
+
+	size = k_mem_free_get() + HALF_BYTES;
+	mem = k_mem_map(size, K_MEM_PERM_RW);
+	zassert_not_null(mem, "failed to map memory size %zu", size);
+
+	for (size_t i = 0; i < size; i += CONFIG_MMU_PAGE_SIZE) {
+		mem[i] = nums[(i / CONFIG_MMU_PAGE_SIZE) % 10];
+	}
+	for (size_t i = 0; i < size; i += CONFIG_MMU_PAGE_SIZE) {
+		zassert_equal(mem[i], nums[(i / CONFIG_MMU_PAGE_SIZE) % 10],
+			      "data corrupted at offset %zu", i);
+	}
+
+	k_mem_unmap(mem, size);
+}
+
 static void test_k_mem_page_out(void)
 {
 	unsigned long faults;
