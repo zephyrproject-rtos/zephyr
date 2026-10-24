@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - lib
+    - utilities
+  type: unit
+tests:
+  utilities.bitmap: {}
+  utilities.bitmap.cpp:
+    extra_configs:
+      - CONFIG_CPP=y
