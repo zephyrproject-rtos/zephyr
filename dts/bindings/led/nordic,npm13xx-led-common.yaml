@@ -3,6 +3,8 @@
 
 description: Nordic nPM13xx LED controller common properties
 
+class: led
+
 properties:
   nordic,led0-mode:
     type: string
