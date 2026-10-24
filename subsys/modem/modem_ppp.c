@@ -16,6 +16,13 @@
 LOG_MODULE_REGISTER(modem_ppp, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #define MODEM_PPP_FRAME_TAIL_SIZE	(2)
+/* Shortest valid frame after the Address and Control fields: compressed Protocol and FCS */
+#define MODEM_PPP_FRAME_MIN_SIZE	(1 + MODEM_PPP_FRAME_TAIL_SIZE)
+
+/* FCS computed over the Address (0xFF) and Control (0x03) fields */
+#define MODEM_PPP_FCS_ADDR_CTRL		(0x3DE3)
+/* FCS computed over a frame including its own FCS field, RFC 1662 C.2 */
+#define MODEM_PPP_FCS_GOOD		(0xF0B8)
 
 #define MODEM_PPP_CODE_DELIMITER	(0x7E)
 #define MODEM_PPP_CODE_ESCAPE		(0x7D)
@@ -104,7 +111,7 @@ static uint32_t modem_ppp_wrap(struct modem_ppp *ppp, uint8_t *buffer, uint32_t 
 			 *   ppp->tx_pkt_fcs = modem_ppp_fcs_update(ppp->tx_pkt_fcs, 0x03);
 			 */
 			ARG_UNUSED(modem_ppp_fcs_init);
-			ppp->tx_pkt_fcs = 0x3DE3;
+			ppp->tx_pkt_fcs = MODEM_PPP_FCS_ADDR_CTRL;
 			/* Next state */
 			if (net_pkt_is_ppp(ppp->tx_pkt)) {
 				ppp->transmit_state = MODEM_PPP_TRANSMIT_STATE_DATA;
@@ -205,6 +212,16 @@ static bool modem_ppp_is_byte_expected(uint8_t byte, uint8_t expected_byte)
 	return false;
 }
 
+static void modem_ppp_link_dead(struct modem_ppp *ppp)
+{
+	if (atomic_test_and_set_bit(&ppp->state, MODEM_PPP_STATE_DEAD_BIT) == true) {
+		return;
+	}
+
+	net_if_carrier_off(ppp->iface);
+	ppp_mgmt_raise_phase_dead_event(ppp->iface);
+}
+
 static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
 {
 	ppp->rx_pkt = net_pkt_rx_alloc_with_buffer(ppp->iface, CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE,
@@ -215,6 +232,7 @@ static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
 		return;
 	}
 
+	ppp->rx_pkt_fcs = 0xFFFF;
 	net_pkt_cursor_init(ppp->rx_pkt);
 	if (net_pkt_write_u8(ppp->rx_pkt, byte) < 0) {
 		net_pkt_unref(ppp->rx_pkt);
@@ -227,6 +245,17 @@ static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
 	ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
 }
 
+static bool modem_ppp_rx_pkt_fcs_is_valid(struct modem_ppp *ppp)
+{
+	uint16_t fcs = ppp->rx_pkt_fcs;
+
+	for (struct net_buf *buf = ppp->rx_pkt->buffer; buf != NULL; buf = buf->frags) {
+		fcs = crc16_ccitt(fcs, buf->data, buf->len);
+	}
+
+	return fcs == MODEM_PPP_FCS_GOOD;
+}
+
 static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 {
 	switch (ppp->receive_state) {
@@ -235,9 +264,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			if (ppp->receive_offset == unsocilicited_no_carrier_len) {
 				LOG_WRN("Received 'NO CARRIER' event");
 				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
-				atomic_set_bit(&ppp->state, MODEM_PPP_STATE_DEAD_BIT);
-				net_if_carrier_off(ppp->iface);
-				ppp_mgmt_raise_phase_dead_event(ppp->iface);
+				modem_ppp_link_dead(ppp);
 			}
 			break;
 		}
@@ -291,6 +318,11 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 		break;
 
 	case MODEM_PPP_RECEIVE_STATE_HDR_CTRL_UNESCAPE:
+		if (byte == MODEM_PPP_CODE_DELIMITER) {
+			/* 7D 7E is an aborted frame, look for the next one */
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+			break;
+		}
 		byte ^= MODEM_PPP_VALUE_ESCAPE;
 		ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
 		__fallthrough;
@@ -311,6 +343,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			}
 
 			LOG_DBG("Receiving PPP frame");
+			ppp->rx_pkt_fcs = MODEM_PPP_FCS_ADDR_CTRL;
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
 			net_pkt_cursor_init(ppp->rx_pkt);
 		} else {
@@ -322,6 +355,28 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 	case MODEM_PPP_RECEIVE_STATE_WRITING:
 		if (byte == MODEM_PPP_CODE_DELIMITER) {
 			LOG_DBG("Received PPP frame (len %zu)", net_pkt_get_len(ppp->rx_pkt));
+
+			if (net_pkt_get_len(ppp->rx_pkt) < MODEM_PPP_FRAME_MIN_SIZE) {
+				LOG_WRN("Dropped PPP frame, too short");
+				net_pkt_unref(ppp->rx_pkt);
+				ppp->rx_pkt = NULL;
+				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+#if defined(CONFIG_NET_STATISTICS_PPP)
+				ppp->stats.drop++;
+#endif
+				break;
+			}
+
+			if (modem_ppp_rx_pkt_fcs_is_valid(ppp) == false) {
+				LOG_WRN("Dropped PPP frame, invalid FCS");
+				net_pkt_unref(ppp->rx_pkt);
+				ppp->rx_pkt = NULL;
+				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+#if defined(CONFIG_NET_STATISTICS_PPP)
+				ppp->stats.chkerr++;
+#endif
+				break;
+			}
 
 			/* Remove FCS */
 			net_pkt_remove_tail(ppp->rx_pkt, MODEM_PPP_FRAME_TAIL_SIZE);
@@ -367,6 +422,18 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 		break;
 
 	case MODEM_PPP_RECEIVE_STATE_UNESCAPING:
+		if (byte == MODEM_PPP_CODE_DELIMITER) {
+			/* 7D 7E is an aborted frame, the delimiter may start the next one */
+			LOG_DBG("Aborted PPP frame");
+			net_pkt_unref(ppp->rx_pkt);
+			ppp->rx_pkt = NULL;
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+#if defined(CONFIG_NET_STATISTICS_PPP)
+			ppp->stats.drop++;
+#endif
+			break;
+		}
+
 		if (net_pkt_write_u8(ppp->rx_pkt, (byte ^ MODEM_PPP_VALUE_ESCAPE)) < 0) {
 			LOG_WRN("Dropped PPP frame");
 			net_pkt_unref(ppp->rx_pkt);
@@ -418,9 +485,26 @@ static void modem_ppp_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 		modem_work_submit(&ppp->send_work);
 		break;
 
+	case MODEM_PIPE_EVENT_CLOSED:
+		/* Invoked with the pipe locked, the carrier can't be changed here */
+		modem_work_submit(&ppp->closed_work);
+		break;
+
 	default:
 		break;
 	}
+}
+
+static void modem_ppp_closed_handler(struct k_work *item)
+{
+	struct modem_ppp *ppp = CONTAINER_OF(item, struct modem_ppp, closed_work);
+
+	if (atomic_test_bit(&ppp->state, MODEM_PPP_STATE_ATTACHED_BIT) == false) {
+		return;
+	}
+
+	LOG_WRN("Pipe closed");
+	modem_ppp_link_dead(ppp);
 }
 
 static void modem_ppp_send_handler(struct k_work *item)
@@ -677,6 +761,7 @@ void modem_ppp_release(struct modem_ppp *ppp)
 	modem_pipe_release(ppp->pipe);
 	k_work_cancel_sync(&ppp->send_work, &sync);
 	k_work_cancel_sync(&ppp->process_work, &sync);
+	k_work_cancel_sync(&ppp->closed_work, &sync);
 	ppp->pipe = NULL;
 	ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
 
@@ -710,6 +795,7 @@ int modem_ppp_init_internal(const struct device *dev)
 	ring_buf_init(&ppp->transmit_rb, ppp->buf_size, ppp->transmit_buf);
 	k_work_init(&ppp->send_work, modem_ppp_send_handler);
 	k_work_init(&ppp->process_work, modem_ppp_process_handler);
+	k_work_init(&ppp->closed_work, modem_ppp_closed_handler);
 	k_fifo_init(&ppp->tx_pkt_fifo);
 
 #if CONFIG_MODEM_STATS

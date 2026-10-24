@@ -57,4 +57,8 @@ config SAMPLE_CELLULAR_IMSI_LIST_3
 
 endmenu
 
+# Increase stack size due to DNS calls on the main thread
+configdefault MAIN_STACK_SIZE
+	default 2048
+
 source "Kconfig.zephyr"
