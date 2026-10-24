@@ -559,6 +559,41 @@ ZTEST(pthread, test_pthread_setschedprio)
 	zassert_ok(pthread_join(th, NULL));
 }
 
+static int cleanup_order[2];
+static int cleanup_calls;
+
+static void cleanup_record(void *arg)
+{
+	cleanup_order[cleanup_calls++] = POINTER_TO_INT(arg);
+}
+
+static void *cleanup_on_exit_fn(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	pthread_cleanup_push(cleanup_record, INT_TO_POINTER(1));
+	pthread_cleanup_push(cleanup_record, INT_TO_POINTER(2));
+	pthread_exit(NULL);
+	pthread_cleanup_pop(0);
+	pthread_cleanup_pop(0);
+
+	return NULL;
+}
+
+ZTEST(pthread, test_pthread_cleanup_on_exit)
+{
+	pthread_t th;
+
+	cleanup_calls = 0;
+	zassert_ok(pthread_create(&th, NULL, cleanup_on_exit_fn, NULL));
+	zassert_ok(pthread_join(th, NULL));
+
+	/* handlers still pushed at pthread_exit() run in reverse push order */
+	zassert_equal(cleanup_calls, 2);
+	zassert_equal(cleanup_order[0], 2);
+	zassert_equal(cleanup_order[1], 1);
+}
+
 static void before(void *arg)
 {
 	ARG_UNUSED(arg);
