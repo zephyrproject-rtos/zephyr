@@ -18,6 +18,7 @@ config CPU_CORTEX_A
 	select CPU_HAS_ICACHE
 	select ARCH_HAS_PMU
 	select ARCH_SUPPORTS_COREDUMP_THREADS
+	select ARCH_FATAL_ERROR_HAS_THREAD_CONTEXT
 	# On SMP, threads on other CPUs may be actively running with a stale
 	# callee_saved.sp_elx, so THREAD_STACK_TOP cannot rely on the saved SP.
 	# Dump the full stack allocation instead (matches RISC-V and Xtensa).
