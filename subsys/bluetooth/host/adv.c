@@ -967,6 +967,15 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 	}
 }
 
+/* Drops the resume of a set paused for an RPA update, see adv_enable_rpa() */
+static void adv_rpa_update_cancel(struct bt_le_ext_adv *adv)
+{
+	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RPA_UPDATE) &&
+	    IS_ENABLED(CONFIG_BT_PERIPHERAL) && atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
+		le_adv_stop_free_conn(adv, 0);
+	}
+}
+
 static int adv_start_legacy(struct bt_le_ext_adv *adv,
 			   const struct bt_le_adv_param *param,
 			   const struct bt_data *ad, size_t ad_len,
@@ -1443,6 +1452,8 @@ int bt_le_adv_stop(void)
 
 	(void)bt_le_lim_adv_cancel_timeout(adv);
 
+	adv_rpa_update_cancel(adv);
+
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		/* Legacy advertiser exists, but is not currently advertising.
 		 * This happens when keep advertising behavior is active but
@@ -1622,7 +1633,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 			const struct bt_le_ext_adv_start_param *param)
 {
 	struct bt_conn *conn = NULL;
-	int err;
+	int err = 0;
 
 	if (adv == NULL) {
 		LOG_DBG("adv is NULL");
@@ -1633,6 +1644,8 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return -EALREADY;
 	}
+
+	adv_rpa_update_cancel(adv);
 
 	if (IS_ENABLED(CONFIG_BT_SMP) && atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
 		bt_id_pending_keys_update();
@@ -1649,25 +1662,35 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 	atomic_set_bit_to(adv->flags, BT_ADV_LIMITED, param &&
 			  (param->timeout > 0 || param->num_events > 0));
 
+	/* With privacy the call is needed also when the set holds a valid RPA: it then only
+	 * restarts the RPA timer, which stops at a rotation while nothing uses an RPA.
+	 */
 	if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
 		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
-		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
-		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
-		     !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID))) {
-			bt_id_set_adv_private_addr(adv, adv->options);
+		    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+			atomic_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED);
+			err = bt_id_set_adv_private_addr(adv, adv->options);
 		}
 	} else {
 		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
 		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
 		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
-		     (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		      !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID)))) {
-			bt_id_set_adv_private_addr(adv, adv->options);
+		     IS_ENABLED(CONFIG_BT_PRIVACY))) {
+			err = bt_id_set_adv_private_addr(adv, adv->options);
 		}
 	}
 
-	err = bt_le_adv_set_enable_ext(adv, true, param);
+	if (err != 0 && !BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		/* The set shares the device random address, which cannot
+		 * change while scanning or initiating: keep the one in use.
+		 */
+		err = 0;
+	}
+
+	if (err == 0) {
+		err = bt_le_adv_set_enable_ext(adv, true, param);
+	}
+
 	if (err) {
 		LOG_ERR("Failed to start advertiser");
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
@@ -1699,6 +1722,8 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 	}
 
 	(void)bt_le_lim_adv_cancel_timeout(adv);
+
+	adv_rpa_update_cancel(adv);
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return 0;
@@ -1765,6 +1790,8 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return -EINVAL;
 	}
+
+	adv_rpa_update_cancel(adv);
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {

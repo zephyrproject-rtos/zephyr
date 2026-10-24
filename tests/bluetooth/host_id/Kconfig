@@ -7,4 +7,11 @@
 config BT_HCI_SET_PUBLIC_ADDR
 	prompt "Public address support in the test driver"
 
+config TEST_HCI_EXT_ADV
+	bool "Extended advertising support in the test driver"
+	depends on BT_EXT_ADV
+	help
+	  Report LE Extended Advertising to the Host, so that advertising sets
+	  get their own random addresses.
+
 source "Kconfig.zephyr"

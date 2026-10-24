@@ -473,7 +473,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv, uint32_t options)
 			atomic_set_bit(adv->flags, BT_ADV_RPA_VALID);
 		}
 
-		return 0;
+		return err;
 	}
 
 	err = adv_rpa_get(adv, &rpa);
@@ -575,6 +575,9 @@ static void adv_pause_rpa(struct bt_le_ext_adv *adv, void *data)
 
 		atomic_set_bit(adv->flags, BT_ADV_RPA_UPDATE);
 		*adv_enabled = true;
+	} else if (atomic_test_bit(adv->flags, BT_ADV_RPA_UPDATE)) {
+		/* Still paused since an earlier RPA update failed */
+		*adv_enabled = true;
 	}
 }
 
@@ -598,18 +601,31 @@ static bool le_adv_rpa_timeout(void)
 
 static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 {
-	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RPA_UPDATE)) {
-		int err;
+	int err;
 
-		err = bt_id_set_adv_private_addr(adv, adv->options);
-		if (err) {
-			LOG_WRN("Failed to update advertiser RPA address (%d)", err);
-		}
+	if (!atomic_test_bit(adv->flags, BT_ADV_RPA_UPDATE)) {
+		return;
+	}
 
-		err = bt_le_adv_set_enable_ext(adv, true, NULL);
-		if (err) {
-			LOG_ERR("Failed to enable advertising (err %d)", err);
-		}
+	err = bt_id_set_adv_private_addr(adv, adv->options);
+	if (err != 0) {
+		/* Resuming with the old RPA would advertise it with the data
+		 * the rpa_expired callback set for the new one. Stay paused
+		 * and retry at the next RPA rotation.
+		 */
+		LOG_ERR("Failed to update advertiser RPA address (%d)", err);
+		return;
+	}
+
+	/* Cleared if the application started or stopped the set meanwhile */
+	if (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RPA_UPDATE)) {
+		return;
+	}
+
+	err = bt_le_adv_set_enable_ext(adv, true, NULL);
+	if (err != 0) {
+		LOG_ERR("Failed to enable advertising (err %d)", err);
+		atomic_set_bit(adv->flags, BT_ADV_RPA_UPDATE);
 	}
 }
 
