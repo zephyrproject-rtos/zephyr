@@ -18,7 +18,7 @@ if UDC_DWC2
 
 config UDC_DWC2_DMA
 	bool "DWC2 USB DMA support"
-	default y if !SOC_SERIES_XMC4XXX
+	default y if !SOC_SERIES_XMC4XXX && !SOC_BCM2712
 	help
 	  Enable Buffer DMA if DWC2 USB controller supports Internal DMA.
 
@@ -39,7 +39,7 @@ config UDC_DWC2_PTI
 
 config UDC_DWC2_STACK_SIZE
 	int "UDC DWC2 driver internal thread stack size"
-	default 1024 if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4
+	default 1024 if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4 || SOC_BCM2712
 	default 512
 	help
 	  DWC2 driver internal thread stack size.
