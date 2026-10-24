@@ -5,11 +5,14 @@
  */
 
 #include "mimxrt2660_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	aliases {
 		led0 = &user_led;
+		die-temp0 = &temp0;
 		sw0 = &user_button;
 	};
 
@@ -49,6 +52,34 @@
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
 };
+
+/*
+ * LPADC0 CH0A = PIO3_0 (J94 pin 13); CH0B = PIO3_1 (J94 pin 14).
+ * Input range 0-1.8 V (VDDA_1V8_DATACONV reference).
+ */
+&adc0 {
+	pinctrl-0 = <&pinmux_adc0>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* Internal temperature sensor: both-side differential, as the RM requires. */
+	channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 131)>;
+		zephyr,differential;
+		zephyr,input-positive = <MCUX_LPADC_CH9A>;
+		zephyr,input-negative = <MCUX_LPADC_CH9B>;
+	};
+};
+
+&temp0 {
+	io-channels = <&adc0 9>;
+};
+
+/* LPDAC output on test point TP29 (ball L5, DAC_OUT). */
 
 /*
  * U24 Winbond W25H512NWEAM: 512 Mbit (64 MB) serial NOR, 1.8 V, quad.
