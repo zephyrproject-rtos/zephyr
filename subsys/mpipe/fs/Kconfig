@@ -1,0 +1,37 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MPIPE_FS
+	bool "Filesystem plugin support"
+	depends on FILE_SYSTEM
+	help
+	  A source that reads a file in fixed-size blocks and a sink that writes
+	  whatever reaches it, on any mounted Zephyr file system.
+
+	  Neither knows what it is carrying: a file is a stream of bytes with no
+	  format attached, so the source announces no capability of its own and
+	  whatever follows it - typically a parser - works the format out. That
+	  makes these the usual way to drive a graph without hardware.
+
+if MPIPE_FS
+
+config MPIPE_FS_BLOCK_SIZE
+	int "Size of a buffer to read/write from/to a file"
+	default 4096
+	help
+	  Default blocksize (read/write chunk size) used when the element blocksize
+	  property is not set.
+	  Also used as the size of each internal buffer when file_src falls back to
+	  its own static buffer pool.
+
+config MPIPE_FS_NUM_BUFS
+	int "Number of buffers in the internal output pool"
+	range 1 255
+	default 1
+	help
+	  Number of static buffers in file_src's internal net_buf pool.
+	  1 may be enough for fully synchronous pipelines; use >1 if downstream can
+	  retain buffers asynchronously.
+	  If downstream proposes a pool, file_src uses it instead.
+
+endif # MPIPE_FS
