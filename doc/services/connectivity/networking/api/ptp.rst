@@ -92,6 +92,45 @@ Kconfig choice:
   (:kconfig:option:`CONFIG_PTP_DELAY_MECHANISM_E2E`) and is supported on all
   transport protocols (UDP IPv4, UDP IPv6 and IEEE 802.3).
 
+System clock synchronization
+****************************
+
+The PTP stack disciplines the PTP Hardware Clock (PHC) of the Ethernet
+interface. With :kconfig:option:`CONFIG_PTP_SYSTEM_CLOCK_SYNC` enabled, the
+stack also sets the system realtime clock (``SYS_CLOCK_REALTIME``, used by
+``clock_gettime(CLOCK_REALTIME)``, ``time()`` and log timestamps) from the PHC.
+
+The system clock is set once the PTP Instance is in the ``TIME_RECEIVER``
+state and the clock servo has locked, and afterwards at most every
+:kconfig:option:`CONFIG_PTP_SYSTEM_CLOCK_SYNC_INTERVAL` seconds. A step of the
+PHC causes the system clock to be set again as soon as the servo has locked
+again. Between updates the system clock runs from the kernel tick source, so
+its accuracy is limited by the tick resolution and the drift of the system
+timer.
+
+If the grandmaster announces the PTP timescale (``ptpTimescale``), the PHC
+time (TAI) is converted to UTC by subtracting ``currentUtcOffset`` from the
+timePropertiesDS. If the grandmaster does not mark the offset as valid
+(``currentUtcOffsetValid``), 37 seconds are subtracted instead. TAI - UTC has
+been 37 seconds since the last leap second at the end of 2016. With the
+abolition of leap seconds in May 2027 (`CGPM 2026 Resolution 5
+<https://www.bipm.org/en/cgpm-2026/resolution-5>`_), UTC is not expected to
+change again for centuries, so the offset stays at 37 seconds. UT1, the time
+given by the rotation of the Earth, keeps diverging from UTC in the meantime;
+the BIPM continues to monitor this difference.
+With :kconfig:option:`CONFIG_PTP_SYSTEM_CLOCK_SYNC_REQUIRE_UTC_OFFSET` the
+system clock is left unchanged in that case instead.
+
+An arbitrary timescale has no defined epoch, so by default the system clock is
+left unchanged, for example when synchronized to a Zephyr grandmaster. With
+:kconfig:option:`CONFIG_PTP_SYSTEM_CLOCK_SYNC_ARBITRARY_TIMESCALE` the PHC
+time is used as is, which gives UTC only if the PHC of the grandmaster counts
+UTC seconds since the Unix epoch.
+
+The timePropertiesDS follows every Announce message
+of the current parent, so a change of the UTC offset is applied with the next
+update.
+
 Supported Management messages
 *****************************
 
