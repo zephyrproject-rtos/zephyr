@@ -3575,10 +3575,12 @@ Infineon AURIX Platforms:
     - boards/qemu/tricore/
     - drivers/*/*aurix*
     - include/zephyr/drivers/*/*aurix*
+    - include/zephyr/dt-bindings/*/infineon-aurix*
     - dts/bindings/*/infineon,asclin*
     - dts/bindings/*/infineon,aurix*
     - dts/bindings/*/infineon,tc*
     - dts/tricore/
+    - tests/drivers/*/infineon_aurix*/
   labels:
     - "platform: Infineon AURIX"
   description: >-
