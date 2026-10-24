@@ -9,7 +9,8 @@
 /* See www.ti.com/lit/pdf/slau356f, Chapter 22, for MSP432P4XX UART info. */
 
 /* include driverlib/gpio.h (from the msp432p4xx SDK) before Z's uart.h so
- * that the definition of BIT is not overridden */
+ * that the definition of BIT is not overridden
+ */
 #include <driverlib/gpio.h>
 
 #include <zephyr/drivers/uart.h>
@@ -157,6 +158,11 @@ static int uart_msp432p4xx_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_msp432p4xx_config *config = dev->config;
 
+	if (!MAP_UART_getInterruptStatus(config->base,
+					 EUSCI_A_UART_RECEIVE_INTERRUPT_FLAG)) {
+		return -1;
+	}
+
 	*c = MAP_UART_receiveData(config->base);
 
 	return 0;
@@ -177,14 +183,11 @@ static int uart_msp432p4xx_fifo_fill(const struct device *dev,
 	const struct uart_msp432p4xx_config *config = dev->config;
 	unsigned int num_tx = 0U;
 
-	while ((size - num_tx) > 0) {
-		MAP_UART_transmitData(config->base, tx_data[num_tx]);
-		if (MAP_UART_getInterruptStatus(config->base,
-			EUSCI_A_UART_TRANSMIT_COMPLETE_INTERRUPT_FLAG)) {
-			num_tx++;
-		} else {
-			break;
-		}
+	uint32_t txflag = EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG;
+
+	while ((size - num_tx) > 0 &&
+	       MAP_UART_getInterruptStatus(config->base, txflag)) {
+		MAP_UART_transmitData(config->base, tx_data[num_tx++]);
 	}
 
 	return (int)num_tx;
@@ -299,26 +302,18 @@ static void uart_msp432p4xx_irq_callback_set(const struct device *dev,
 /**
  * @brief Interrupt service routine.
  *
- * This simply calls the callback function, if one exists.
- *
- * @param arg Argument to ISR.
+ * Invokes the registered callback.  For TX, TXIFG is a level-sensitive flag
+ * that stays set while the TX buffer is empty.  The callback must call
+ * uart_irq_tx_disable() once it has no more data to send; otherwise the ISR
+ * will re-fire continuously until TX interrupts are disabled.
  */
 static void uart_msp432p4xx_isr(const struct device *dev)
 {
-	const struct uart_msp432p4xx_config *config = dev->config;
 	struct uart_msp432p4xx_dev_data_t * const dev_data = dev->data;
-	unsigned int int_status;
-
-	int_status = MAP_UART_getEnabledInterruptStatus(config->base);
 
 	if (dev_data->cb) {
 		dev_data->cb(dev, dev_data->cb_data);
 	}
-	/*
-	 * Clear interrupts only after cb called, as Zephyr UART clients expect
-	 * to check interrupt status during the callback.
-	 */
-	MAP_UART_disableInterrupt(config->base, int_status);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
