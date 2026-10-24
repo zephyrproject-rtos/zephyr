@@ -1,0 +1,7 @@
+tests:
+  mpipe.aud.dt_codec:
+    tags:
+      - mpipe
+      - audio
+    platform_allow:
+      - native_sim/native/64

@@ -1,0 +1,27 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-codec-tx = &i2s_tx0;
+		i2s-codec-rx = &i2s_rx0;
+	};
+
+	codec1: audio_codec1 {
+		compatible = "zephyr,dummy-codec";
+		status = "okay";
+	};
+};
+
+&i2s_tx0 {
+	status = "okay";
+	codec = <&codec1>;
+};
+
+&i2s_rx0 {
+	status = "okay";
+	codec = <&codec1>;
+};
