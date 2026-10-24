@@ -1,0 +1,16 @@
+# Copyright 2026 Xiaomi Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.28.0)
+
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(hci_virt)
+
+if(NOT CONFIG_SOC_SERIES_BSIM_NRFXX)
+  message(FATAL_ERROR "This sample requires a bsim board")
+endif()
+
+target_sources(app PRIVATE src/main.c)
+
+target_sources(native_simulator INTERFACE src/hci_virt_bottom_socket.c)
