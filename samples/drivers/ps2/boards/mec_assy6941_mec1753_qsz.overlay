@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	ps2_clk0a_gpio114_lp: ps2_clk0a_gpio114_lp {
+		pinmux = <MCHP_XEC_PINMUX(0114, MCHP_AF1)>;
+		low-power-enable;
+	};
+
+	ps2_dat0a_gpio115_lp: ps2_dat0a_gpio115_lp {
+		pinmux = <MCHP_XEC_PINMUX(0115, MCHP_AF1)>;
+		low-power-enable;
+	};
+};
+
+&ps2_0 { /* PS2DAT0A */
+	compatible = "microchip,xec-ps2";
+	status = "okay";
+	pinctrl-0 = <&ps2_clk0a_gpio114 &ps2_dat0a_gpio115>;
+	pinctrl-1 = <&ps2_clk0a_gpio114_lp &ps2_dat0a_gpio115_lp>;
+	pinctrl-names = "default", "sleep";
+	wakerx-gpios = <MCHP_GPIO_DECODE_115 GPIO_ACTIVE_HIGH>;
+	wakeup-source;
+};
+
+/ {
+	aliases {
+		ps2-port0 = &ps2_0;
+	};
+};

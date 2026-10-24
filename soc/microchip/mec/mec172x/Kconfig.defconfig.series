@@ -32,8 +32,4 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 
 endif # MCHP_XEC_RTOS_TIMER
 
-config PS2_XEC
-	default y
-	depends on PS2
-
 endif # SOC_SERIES_MEC172X
