@@ -56,6 +56,8 @@ class GdbStub_ARM64(GdbStub):
     ARCH_DATA_BLK_STRUCT_V1 = "<" + ("Q" * 22)
     # v2: v1 + fp, sp            (24 regs, 192 bytes)
     ARCH_DATA_BLK_STRUCT_V2 = "<" + ("Q" * 24)
+    # v3: v2 + x19-x28           (34 regs, 272 bytes)
+    ARCH_DATA_BLK_STRUCT_V3 = "<" + ("Q" * 34)
 
     GDB_SIGNAL_DEFAULT = 7
     GDB_G_PKT_NUM_REGS = 33
@@ -89,8 +91,11 @@ class GdbStub_ARM64(GdbStub):
         block_len = len(arch_data_blk)
 
         has_fp_sp = block_len == struct.calcsize(cls.ARCH_DATA_BLK_STRUCT_V2)
+        has_callee = block_len == struct.calcsize(cls.ARCH_DATA_BLK_STRUCT_V3)
 
-        if has_fp_sp:
+        if has_callee:
+            tu = struct.unpack(cls.ARCH_DATA_BLK_STRUCT_V3, arch_data_blk)
+        elif has_fp_sp:
             tu = struct.unpack(cls.ARCH_DATA_BLK_STRUCT_V2, arch_data_blk)
         else:
             tu = struct.unpack(cls.ARCH_DATA_BLK_STRUCT_V1, arch_data_blk)
@@ -117,17 +122,44 @@ class GdbStub_ARM64(GdbStub):
         registers[RegNum.X17] = tu[17]
         registers[RegNum.X18] = tu[18]
 
-        registers[RegNum.LR] = tu[19]
-        # tu[20] is SPSR - not a GDB GP register, skip it
-        registers[RegNum.PC] = tu[21]  # ELR = faulting/live PC
-
-        if has_fp_sp:
+        if has_callee:
+            registers[RegNum.X19] = tu[19]
+            registers[RegNum.X20] = tu[20]
+            registers[RegNum.X21] = tu[21]
+            registers[RegNum.X22] = tu[22]
+            registers[RegNum.X23] = tu[23]
+            registers[RegNum.X24] = tu[24]
+            registers[RegNum.X25] = tu[25]
+            registers[RegNum.X26] = tu[26]
+            registers[RegNum.X27] = tu[27]
+            registers[RegNum.X28] = tu[28]
+            registers[RegNum.LR] = tu[29]
+            # tu[30] is SPSR - not a GDB GP register, skip it
+            registers[RegNum.PC] = tu[31]  # ELR = faulting/live PC
+            registers[RegNum.X29] = tu[32]  # FP
+            registers[RegNum.SP_EL0] = tu[33]  # SP
+            logger.debug(
+                "LR=0x%016x PC=0x%016x FP=0x%016x SP=0x%016x X19=0x%016x X28=0x%016x",
+                tu[29],
+                tu[31],
+                tu[32],
+                tu[33],
+                tu[19],
+                tu[28],
+            )
+        elif has_fp_sp:
+            registers[RegNum.LR] = tu[19]
+            # tu[20] is SPSR - not a GDB GP register, skip it
+            registers[RegNum.PC] = tu[21]  # ELR = faulting/live PC
             registers[RegNum.X29] = tu[22]  # FP
             registers[RegNum.SP_EL0] = tu[23]  # SP
             logger.debug(
                 "LR=0x%016x PC=0x%016x FP=0x%016x SP=0x%016x", tu[19], tu[21], tu[22], tu[23]
             )
         else:
+            registers[RegNum.LR] = tu[19]
+            # tu[20] is SPSR - not a GDB GP register, skip it
+            registers[RegNum.PC] = tu[21]  # ELR = faulting/live PC
             logger.debug("LR=0x%016x PC=0x%016x (no FP/SP)", tu[19], tu[21])
 
         return registers
