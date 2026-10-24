@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief Common functions for Analog Devices DS2477,DS2485 1-Wire Masters
+ * @brief Common functions for Analog Devices DS2477,DS2485 1-Wire controllers
  */
 
 #include "w1_ds2477_85_common.h"
@@ -302,8 +302,8 @@ int w1_ds2477_85_init(const struct device *dev)
 	/* RPUP/BUF configuration is applied after a bus reset */
 	(void)ds2477_85_reset_bus(dev);
 
-	LOG_DBG("w1-ds2477/85 init; %d slave devices",
-		cfg->master_config.slave_count);
+	LOG_DBG("w1-ds2477/85 init; %d peripheral devices",
+		cfg->controller_config.peripheral_count);
 
 	return 0;
 }
