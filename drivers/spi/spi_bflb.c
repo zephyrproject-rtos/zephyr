@@ -38,14 +38,21 @@ LOG_MODULE_REGISTER(spi_bflb, CONFIG_SPI_LOG_LEVEL);
  */
 #elif defined(CONFIG_SOC_SERIES_BL61X)
 #include <zephyr/dt-bindings/clock/bflb_bl61x_clock.h>
-#define GLB_SPI_MODE_ADDRESS (GLB_BASE + GLB_PARM_CFG0_OFFSET)
+#define GLB_SPI_MODE_ADDRESS	(GLB_BASE + GLB_PARM_CFG0_OFFSET)
 #define SPI_FIFO_SIZE		32
 #define SPI_MAX_FREQ		MHZ(80)
 #define SPI_MAX_INPUT_FREQ	MHZ(160)
 #define SPI_MAX_XCLK_FREQ	MHZ(20)
 #elif defined(CONFIG_SOC_SERIES_BL616CL)
 #include <zephyr/dt-bindings/clock/bflb_bl616cl_clock.h>
-#define GLB_SPI_MODE_ADDRESS (GLB_BASE + GLB_PARM_CFG0_OFFSET)
+#define GLB_SPI_MODE_ADDRESS	(GLB_BASE + GLB_PARM_CFG0_OFFSET)
+#define SPI_FIFO_SIZE		32
+#define SPI_MAX_FREQ		MHZ(80)
+#define SPI_MAX_INPUT_FREQ	MHZ(160)
+#define SPI_MAX_XCLK_FREQ	MHZ(20)
+#elif defined(CONFIG_SOC_SERIES_BL808)
+#include <zephyr/dt-bindings/clock/bflb_bl808_clock.h>
+#define GLB_SPI_MODE_ADDRESS	(GLB_BASE + GLB_PARM_CFG0_OFFSET)
 #define SPI_FIFO_SIZE		32
 #define SPI_MAX_FREQ		MHZ(80)
 #define SPI_MAX_INPUT_FREQ	MHZ(160)
@@ -144,6 +151,35 @@ static uint32_t spi_bflb_get_clk(const struct device *dev)
 	}
 
 	clock_control_get_rate(clock_ctrl, (void *)BL616CL_CLKID_CLK_160M, &uclk);
+	return uclk / (spi_divider + 1);
+}
+
+#elif defined(CONFIG_SOC_SERIES_BL808)
+
+static uint32_t spi_bflb_get_clk(void)
+{
+	uint32_t uclk;
+	uint32_t spi_divider;
+	uint32_t spi_mux;
+	const struct device *clock_ctrl =  DEVICE_DT_GET_ANY(bflb_clock_controller);
+	uint32_t main_clock = clock_bflb_get_root_clock();
+
+	/* mux -> spiclk */
+	spi_divider = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+	spi_mux = (spi_divider & GLB_SPI_CLK_SEL_MSK) >> GLB_SPI_CLK_SEL_POS;
+	spi_divider = (spi_divider & GLB_SPI_CLK_DIV_MSK) >> GLB_SPI_CLK_DIV_POS;
+
+	if (spi_mux > 0) {
+		if (main_clock == BFLB_MAIN_CLOCK_RC32M
+			|| main_clock == BFLB_MAIN_CLOCK_PLL_RC32M) {
+			return BFLB_RC32M_FREQUENCY / (spi_divider + 1);
+		}
+		clock_control_get_rate(clock_ctrl, (void *)BFLB_CLKID_CLK_CRYSTAL, &uclk);
+
+		return uclk / (spi_divider + 1);
+	}
+
+	clock_control_get_rate(clock_ctrl, (void *)BL808_CLKID_CLK_160M, &uclk);
 	return uclk / (spi_divider + 1);
 }
 
@@ -270,6 +306,36 @@ static int spi_bflb_configure_freqs(const struct device *dev, const struct spi_c
 		return -EINVAL;
 	} else if (config->frequency > SPI_MAX_XCLK_FREQ
 		&& clock_control_get_rate(clock_ctrl, (void *)BL61X_CLKID_CLK_160M, &tmpb) >= 0) {
+		/* select PLL mux */
+		tmp |= 0U <<  GLB_SPI_CLK_SEL_POS;
+	} else {
+		/* select XCLK */
+		tmp |= 1U <<  GLB_SPI_CLK_SEL_POS;
+	}
+	sys_write32(tmp, GLB_BASE + GLB_SPI_CFG0_OFFSET);
+
+	while (spi_bflb_get_clk() > SPI_MAX_INPUT_FREQ) {
+		clkdiv++;
+		tmp = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+		tmp &= GLB_SPI_CLK_DIV_UMSK;
+		tmp |= clkdiv << GLB_SPI_CLK_DIV_POS;
+		sys_write32(tmp, GLB_BASE + GLB_SPI_CFG0_OFFSET);
+	}
+
+	tmp = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+	tmp |= GLB_SPI_CLK_EN_MSK;
+	sys_write32(tmp, GLB_BASE + GLB_SPI_CFG0_OFFSET);
+#elif defined(CONFIG_SOC_SERIES_BL808)
+	const struct device *clock_ctrl =  DEVICE_DT_GET_ANY(bflb_clock_controller);
+
+	tmp = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+	tmp &= GLB_SPI_CLK_DIV_UMSK;
+	tmp &= GLB_SPI_CLK_SEL_UMSK;
+	tmp &= GLB_SPI_CLK_EN_UMSK;
+	if (config->frequency > SPI_MAX_FREQ) {
+		return -EINVAL;
+	} else if (config->frequency > SPI_MAX_XCLK_FREQ
+		&& clock_control_get_rate(clock_ctrl, (void *)BL808_CLKID_CLK_160M, &tmpb) >= 0) {
 		/* select PLL mux */
 		tmp |= 0U <<  GLB_SPI_CLK_SEL_POS;
 	} else {
