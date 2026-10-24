@@ -88,8 +88,14 @@ extern "C" {
  * Only the first transactional SQE is submitted to an iodev, the
  * remaining SQEs are never individually submitted but instead considered
  * to be part of the transaction to the single iodev. The first sqe in the
- * sequence holds the iodev that will be used and the last holds the userdata
- * that will be returned in a single completion on failure/success.
+ * sequence holds the iodev that will be used.
+ *
+ * Each member produces its own completion rather than the transaction producing
+ * one, so a consumer can tell which member a completion came from by that
+ * member's userdata. The set still succeeds or fails as a whole: on success
+ * every member reports the same result, and on failure the first member reports
+ * the error and the ones behind it report -ECANCELED. A member carrying
+ * @ref RTIO_SQE_NO_RESPONSE stays silent, as any submission does.
  */
 #define RTIO_SQE_TRANSACTION BIT(1)
 
@@ -126,6 +132,9 @@ extern "C" {
 
 /**
  * @brief The SQE does not produce a CQE.
+ *
+ * This covers every way the submission can finish, including being canceled,
+ * which otherwise completes like any other failure.
  */
 #define RTIO_SQE_NO_RESPONSE BIT(5)
 
