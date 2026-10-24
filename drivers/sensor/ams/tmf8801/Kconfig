@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+config TMF8801
+	bool "TMF8801 ToF sensor"
+	default y
+	depends on DT_HAS_AMS_TMF8801_ENABLED
+	select I2C
+	help
+	  Enable TMF8801 driver.
