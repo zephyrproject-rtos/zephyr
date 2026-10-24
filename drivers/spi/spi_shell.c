@@ -40,10 +40,6 @@
 	(COND_CODE_1(DT_SAME_NODE(DT_PARENT(node_id), DT_BUS(node_id)),                           \
 	(COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), (fn), ())), ())), ())
 
-/* Create specified number of empty structs, separated by ',' */
-#define _EMPTY_STRUCT_INST(idx, list) {0}
-#define CREATE_NUM_EMPTY_STRUCTS(num) LISTIFY(num, _EMPTY_STRUCT_INST, (,))
-
 /* Struct representing either a spi bus or a spi device. */
 struct spi_shell_device {
 	/* Device name. Either a spi bus or a spi device. */
@@ -65,19 +61,22 @@ struct map {
 		.spec = SPI_DT_SPEC_GET(node_id, 0),                                               \
 	},
 
-#define INST_SPI_SHELL_DEVICE_AS_SPI_DEV_AS_SPI_BUS(dev)                                           \
-	(struct spi_shell_device)                                                                  \
+/* Instantiate a spi_shell_device struct for a spi bus node. The bus device pointer is
+ * resolved by name on first use in find_spec_by_label(), since the node's driver may not
+ * be part of the build.
+ */
+#define INST_SPI_SHELL_DEVICE_AS_SPI_BUS(node_id)                                                  \
 	{                                                                                          \
-		.name = dev->name,                                                                 \
+		.name = DEVICE_DT_NAME(node_id),                                                   \
 		.spec = {                                                                          \
-			.bus = dev,                                                                \
+			.bus = NULL,                                                               \
 			.config =                                                                  \
 				{                                                                  \
 					.frequency = 1000000,                                      \
 					.operation = SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8),     \
 				},                                                                 \
 		},                                                                                 \
-	}
+	},
 
 #define INST_MAP(nodelabel, node_id)                                                               \
 	{.label = STRINGIFY(nodelabel), .name = DEVICE_DT_NAME(node_id)},
@@ -89,15 +88,15 @@ struct map {
 #define INST_ALL_SPI_DEVICES_AS_SPI_SHELL_DEVICES(node_id)                                         \
 	RUN_FN_ON_SPI_DEVICE(node_id, INST_SPI_SHELL_DEVICE_AS_SPI_DEV(node_id))
 
-/* List of spi shell devices. At compile time we instantiate structs for all spi devices.
- * Additional empty space is reserved for the spi buses, which are added in spi_buses_init at
- * runtime.
+/* List of spi shell devices. At compile time we instantiate structs for all spi devices
+ * and, through the "spi" device class, for all spi buses. The trailing empty struct keeps
+ * the array valid when the devicetree contains neither.
  */
 static struct spi_shell_device spi_shell_devices[] = {
 	DT_FOREACH_STATUS_OKAY_NODE(INST_ALL_SPI_DEVICES_AS_SPI_SHELL_DEVICES)
-		CREATE_NUM_EMPTY_STRUCTS(CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS)};
-static size_t num_spi_shell_devices =
-	ARRAY_SIZE(spi_shell_devices) - CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS;
+	DT_FOREACH_CLASS_STATUS_OKAY(spi, INST_SPI_SHELL_DEVICE_AS_SPI_BUS)
+	{0}};
+static const size_t num_spi_shell_devices = ARRAY_SIZE(spi_shell_devices) - 1;
 
 #define INST_MAPS_FROM_SPI_DEVICE_NODELABELS(node_id)                                              \
 	RUN_FN_ON_SPI_DEVICE(node_id, DT_FOREACH_NODELABEL_VARGS(node_id, INST_MAP, node_id))
@@ -105,92 +104,27 @@ static size_t num_spi_shell_devices =
 #define INST_MAPS_FROM_SPI_DEVICE_NODE_ID(node_id)                                                 \
 	RUN_FN_ON_SPI_DEVICE(node_id, INST_MAP_FROM_NODE_ID(node_id))
 
-/* A list of maps. At compile time we create maps for all nodelabels and node_ids of spi devices.
- * Additional empty space is reserved for the spi buses, which are added in spi_buses_init at
- * runtime.
+/* Instantiate map structs for a spi bus node: one for each of its nodelabels and one for
+ * its node name.
+ */
+#define INST_MAPS_FROM_SPI_BUS(node_id)                                                            \
+	DT_FOREACH_NODELABEL_VARGS(node_id, INST_MAP, node_id)                                     \
+	INST_MAP_FROM_NODE_ID(node_id)
+
+/* A list of maps. At compile time we create maps for all nodelabels and node names of spi
+ * devices and spi buses. The trailing empty struct keeps the array valid when the
+ * devicetree contains neither.
  */
 static struct map maps[] = {
 	DT_FOREACH_STATUS_OKAY_NODE(INST_MAPS_FROM_SPI_DEVICE_NODELABELS)
-		DT_FOREACH_STATUS_OKAY_NODE(INST_MAPS_FROM_SPI_DEVICE_NODE_ID)
-			CREATE_NUM_EMPTY_STRUCTS(CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS)};
-static size_t num_maps = ARRAY_SIZE(maps) - CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS;
-
-static bool device_is_spi(const struct device *dev)
-{
-	return DEVICE_API_IS(spi, dev);
-}
+	DT_FOREACH_STATUS_OKAY_NODE(INST_MAPS_FROM_SPI_DEVICE_NODE_ID)
+	DT_FOREACH_CLASS_STATUS_OKAY(spi, INST_MAPS_FROM_SPI_BUS)
+	{0}};
+static const size_t num_maps = ARRAY_SIZE(maps) - 1;
 
 static bool device_is_gpio(const struct device *dev)
 {
 	return DEVICE_API_IS(gpio, dev);
-}
-
-/**
- * @brief Initialize spi buses at runtime.
- *
- * Since Zephyr currently doesn't support getting a device for all spi buses at compile time in a
- * generic way, we do it at runtime.
- *
- * For each spi bus device we:
- * - add an entry to spi_shell_devices array
- * - add an entry to maps array by its name
- * - add an entry to maps array for each it's nodelabel
- */
-static int spi_buses_init(void)
-{
-	int idx = 0;
-
-	while (1) {
-		const struct device *dev = shell_device_filter(idx, device_is_spi);
-
-		idx++;
-
-		if (dev == NULL) {
-			break;
-		}
-
-		if (num_spi_shell_devices == ARRAY_SIZE(spi_shell_devices)) {
-			printk("ERROR: not enough space in spi_shell_devices array\n");
-			printk("Increase CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS.\n");
-			break;
-		}
-
-		spi_shell_devices[num_spi_shell_devices++] =
-			INST_SPI_SHELL_DEVICE_AS_SPI_DEV_AS_SPI_BUS(dev);
-
-		maps[num_maps++] = (struct map){
-			.label = dev->name,
-			.name = dev->name,
-		};
-
-#ifdef CONFIG_DEVICE_DT_METADATA
-		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
-
-		if (nl == NULL) {
-			/* No nodelabel for this device, so we can skip the rest. */
-			continue;
-		}
-
-		if (num_maps + nl->num_nodelabels > ARRAY_SIZE(maps)) {
-			printk("ERROR: not enough space in maps array\n");
-			printk("Increase CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS.\n");
-			break;
-		}
-
-		for (size_t i = 0; i < nl->num_nodelabels; i++) {
-			maps[num_maps++] = (struct map){
-				.label = nl->nodelabels[i],
-				.name = dev->name,
-			};
-		}
-#endif
-	}
-
-	if (num_spi_shell_devices == 0) {
-		printk("ERROR: no spi devices or spi buses are enabled, check devicetree.\n");
-	}
-
-	return 0;
 }
 
 /**
@@ -207,12 +141,6 @@ static int spi_buses_init(void)
 static struct spi_dt_spec *find_spec_by_label(const char *label)
 {
 	const char *name = NULL;
-	static bool initialized;
-
-	if (!initialized) {
-		spi_buses_init();
-		initialized = true;
-	}
 
 	for (size_t i = 0; i < num_maps; i++) {
 		if (strcmp(label, maps[i].label) == 0) {
@@ -222,12 +150,50 @@ static struct spi_dt_spec *find_spec_by_label(const char *label)
 	}
 
 	if (name == NULL) {
-		return NULL;
+		/* Not a devicetree SPI bus or device: fall back to looking the
+		 * label up as a device name, so that SPI devices registered
+		 * without a devicetree node keep working. Such devices get no
+		 * completion entries and share one configuration slot.
+		 */
+		static struct spi_shell_device fallback;
+		const struct device *dev = device_get_binding(label);
+
+		if (dev == NULL || !DEVICE_API_IS(spi, dev)) {
+			return NULL;
+		}
+
+		if (fallback.spec.bus != dev) {
+			fallback = (struct spi_shell_device){
+				.name = dev->name,
+				.spec = {
+					.bus = dev,
+					.config = {
+						.frequency = 1000000,
+						.operation = SPI_OP_MODE_CONTROLLER |
+							     SPI_WORD_SET(8),
+					},
+				},
+			};
+		}
+
+		return &fallback.spec;
 	}
 
 	for (size_t i = 0; i < num_spi_shell_devices; i++) {
 		if (strcmp(name, spi_shell_devices[i].name) == 0) {
-			return &spi_shell_devices[i].spec;
+			struct spi_dt_spec *spec = &spi_shell_devices[i].spec;
+
+			if (spec->bus == NULL) {
+				const struct device *dev =
+					device_get_binding(spi_shell_devices[i].name);
+
+				if (dev == NULL || !DEVICE_API_IS(spi, dev)) {
+					return NULL;
+				}
+				spec->bus = dev;
+			}
+
+			return spec;
 		}
 	}
 
