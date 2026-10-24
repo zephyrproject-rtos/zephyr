@@ -41,12 +41,6 @@ LOG_MODULE_REGISTER(input_ch9350l, CONFIG_INPUT_LOG_LEVEL);
 #define CH9350L_FRAME_MOUSE_BUTTON_BYTE	0
 #define CH9350L_FRAME_MOUSE_X_BYTE	1
 #define CH9350L_FRAME_MOUSE_Y_BYTE	3
-#define CH9350L_FRAME_MOUSE_RELMID	0x7FFF
-#define CH9350L_FRAME_MOUSE_RELNEG	0x8000
-
-#define CH9350L_RAWMOUSE_TO_REL(_val) (_val > CH9350L_FRAME_MOUSE_RELMID ?			\
-	-(CH9350L_FRAME_MOUSE_RELMID - (const int16_t)(_val - CH9350L_FRAME_MOUSE_RELNEG))	\
-	: (const int16_t)_val)
 
 #define CH9350L_FRAME_MOUSE_BTN_LEFT	0x1
 #define CH9350L_FRAME_MOUSE_BTN_RIGHT	0x2
@@ -165,22 +159,20 @@ static void ch9350l_mouse(const struct device *dev, const uint8_t *values, uint8
 {
 	struct ch9350l_data *data = dev->data;
 	const uint8_t button = values[CH9350L_FRAME_MOUSE_BUTTON_BYTE];
-	const uint16_t raw_x = sys_get_le16(&values[CH9350L_FRAME_MOUSE_X_BYTE]);
-	const uint16_t raw_y = sys_get_le16(&values[CH9350L_FRAME_MOUSE_Y_BYTE]);
-	const int16_t x = CH9350L_RAWMOUSE_TO_REL(raw_x);
-	const int16_t y = CH9350L_RAWMOUSE_TO_REL(raw_y);
+	const int16_t x = (int16_t)sys_get_le16(&values[CH9350L_FRAME_MOUSE_X_BYTE]);
+	const int16_t y = (int16_t)sys_get_le16(&values[CH9350L_FRAME_MOUSE_Y_BYTE]);
 
 	input_report(dev, INPUT_EV_REL, INPUT_REL_X, x, true, K_FOREVER);
 	input_report(dev, INPUT_EV_REL, INPUT_REL_Y, y, true, K_FOREVER);
 
 	for (size_t i = 0; i < 8; i++) {
 		if (button & BIT(i) && !(data->last_mouse_btns & BIT(i))) {
-			if (input_report(dev, INPUT_EV_DEVICE,
+			if (input_report(dev, INPUT_EV_KEY,
 				ch9350l_mouse_map(dev, BIT(i)), 1, true, K_FOREVER)) {
 				LOG_ERR("Input failed to be enqueued");
 			}
 		} else if (data->last_mouse_btns & BIT(i) && !(button & BIT(i))) {
-			if (input_report(dev, INPUT_EV_DEVICE,
+			if (input_report(dev, INPUT_EV_KEY,
 				ch9350l_mouse_map(dev, BIT(i)), 0, true, K_FOREVER)) {
 				LOG_ERR("Input failed to be enqueued");
 			}
