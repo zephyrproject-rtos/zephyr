@@ -105,6 +105,7 @@ void arch_timing_stop(void)
 	DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
 }
 
+__no_instrumentation__
 timing_t arch_timing_counter_get(void)
 {
 	return (timing_t)z_arm_dwt_get_cycles();
