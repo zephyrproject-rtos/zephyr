@@ -196,7 +196,11 @@ int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg)
 		return ret;
 	}
 
+	if (reply_buffer.status != SCMI_SUCCESS) {
+		return scmi_status_to_errno(reply_buffer.status);
+	}
+
 	*cfg = reply_buffer.data;
 
-	return scmi_status_to_errno(reply_buffer.status);
+	return 0;
 }
