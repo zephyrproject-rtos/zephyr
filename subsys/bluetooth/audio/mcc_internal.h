@@ -81,6 +81,7 @@ struct mcs_instance_t {
 #ifdef CONFIG_BT_MCC_OTS
 	uint16_t scp_handle;
 	uint16_t search_results_obj_id_handle;
+	uint16_t ots_obj_changed_handle;
 #endif /* CONFIG_BT_MCC_OTS */
 #if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID)
 	uint16_t content_control_id_handle;
