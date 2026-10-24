@@ -5,11 +5,12 @@
 
 """tests for subfolder_list.py"""
 
+import hashlib
 import os
 import sys
 import time
 
-sys.path.insert(0, os.path.join(os.environ["ZEPHYR_BASE"], "scripts"))
+sys.path.insert(0, os.path.join(os.environ["ZEPHYR_BASE"], "scripts", "build"))
 import subfolder_list as iut  # Implementation Under Test
 
 OUT_FILE = "out_file.txt"
@@ -57,8 +58,9 @@ def test_links(tmpdir):
     for i in dirs_range:
         expect_links.append("%s_%s%d" % (dirs_dir, DIR_NAME_PREFIX, i))
     for i in subdirs_range:
-        expect_links.append("%s_%s%d_%s%d" % (
-            dirs_dir, DIR_NAME_PREFIX, subdirs_parent_sfx, DIR_NAME_PREFIX, i))
+        expect_links.append(
+            "%s_%s%d_%s%d" % (dirs_dir, DIR_NAME_PREFIX, subdirs_parent_sfx, DIR_NAME_PREFIX, i)
+        )
 
     tmpdir.mkdir(dirs_dir)
     os.chdir(dirs_dir)
@@ -123,3 +125,76 @@ def test_trigger_file(tmpdir):
 
     assert (time_now - st_info.st_atime) <= time_since_touch
     assert (time_now - st_info.st_mtime) <= time_since_touch
+
+
+def run_main(monkeypatch, roots, links=None, excluded=()):
+    """Run the script with the given roots and return the listed directories"""
+    argv = ["subfolder_list.py", "--out-file", OUT_FILE]
+    for root in roots:
+        argv += ["--directory", str(root)]
+    if links is not None:
+        argv += ["--create-links", str(links)]
+    for directory in excluded:
+        argv += ["--exclude-directory", str(directory)]
+    monkeypatch.setattr(sys, "argv", argv)
+    iut.main()
+    with open(OUT_FILE) as out_fo:
+        return [line.strip() for line in out_fo]
+
+
+def test_multiple_roots(tmpdir, monkeypatch):
+    """Test directories of several roots are listed"""
+    tmpdir.chdir()
+    roots = [tmpdir.join(name, "include") for name in ("first", "second")]
+    for root in roots:
+        root.join("nested").ensure(dir=True)
+
+    expect = [str(path) for root in roots for path in (root, root.join("nested"))]
+    assert run_main(monkeypatch, roots) == expect
+    assert run_main(monkeypatch, roots[1:]) == expect[2:]
+
+
+def test_multiple_roots_links(tmpdir, monkeypatch):
+    """Test the first root keeps flat links and other roots do not collide"""
+    tmpdir.chdir()
+    links_dir = tmpdir.join("links")
+    roots = [tmpdir.join(name, "include") for name in ("first", "second")]
+    for root in roots:
+        root.join("nested").ensure(dir=True)
+    second_links = links_dir.join(hashlib.sha256(str(roots[1]).encode()).hexdigest())
+
+    expect = [
+        str(links_dir.join("include")),
+        str(links_dir.join("include_nested")),
+        str(second_links.join("include")),
+        str(second_links.join("include_nested")),
+    ]
+    for _ in range(2):
+        assert run_main(monkeypatch, roots, links_dir) == expect
+    assert run_main(monkeypatch, roots[:1], links_dir) == expect[:2]
+    assert run_main(monkeypatch, roots, links_dir) == expect
+
+    targets = [str(root.join(sub)) for root in roots for sub in ("", "nested")]
+    assert [os.path.realpath(link) for link in expect] == [os.path.realpath(t) for t in targets]
+
+
+def test_missing_directory(tmpdir, monkeypatch):
+    """Test a missing root is skipped until it is created"""
+    tmpdir.chdir()
+    present = tmpdir.mkdir("present")
+    missing = tmpdir.join("missing")
+
+    assert run_main(monkeypatch, [missing, present]) == [str(present)]
+    missing.mkdir()
+    assert run_main(monkeypatch, [missing, present]) == [str(missing), str(present)]
+
+
+def test_excluded_directories(tmpdir, monkeypatch):
+    """Test excluded directories and .git are not walked"""
+    tmpdir.chdir()
+    root = tmpdir.mkdir("app")
+    for path in ("api", "build/generated", ".git/refs", "build-other"):
+        root.join(path).ensure(dir=True)
+
+    expect = [str(root.join(path)) for path in ("", "api", "build-other")]
+    assert run_main(monkeypatch, [root], excluded=[root.join("build")]) == expect
