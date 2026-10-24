@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *	Andrew Davis <afd@ti.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am62a_mcu_r5.dtsi>
+#include "sk_am62a_am62a7_mcu_r5f0_0-pinctrl.dtsi"
+
+/ {
+	model = "TI AM62Ax STARTER KIT (SK) R5F";
+	compatible = "ti,am62ax_sk_r5f0_0", "ti,am62a7";
+
+	chosen {
+		zephyr,sram = &ddr1;
+		zephyr,ipc = &ipc0;
+		zephyr,ipc_shm = &ddr0;
+		zephyr,console = &mcu_uart0;
+		zephyr,shell-uart = &mcu_uart0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+	};
+
+	ddr0: memory@9b800000 {
+		compatible = "mmio-sram";
+		reg = <0x9b800000 DT_SIZE_M(1)>;
+	};
+
+	rsc_table: memory@9b900000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9b900000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	ddr1: memory@9b901000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9b901000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
+		zephyr,memory-region = "DRAM";
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&main_mbox2 0>, <&main_mbox2 1>;
+		mbox-names = "tx", "rx";
+	};
+
+	onboard_osc: onboard-osc {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(25)>;
+		#clock-cells = <0>;
+	};
+};
+
+&mcu_timer0 {
+	status = "okay";
+};
+
+&main_mbox2 {
+	status = "okay";
+};
+
+&mcu_uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&mcu_uart0_rx_default &mcu_uart0_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
