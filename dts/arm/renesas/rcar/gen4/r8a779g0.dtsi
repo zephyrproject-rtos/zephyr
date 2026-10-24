@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,156 @@
 			clocks = <&cpg CPG_MOD 515>, <&cpg CPG_CORE R8A779G0_CLK_SASYNCPERD1>;
 			current-speed = <921600>;
 			status = "disabled";
+		};
+
+		cmt1: timer@e6130000 {
+			compatible = "renesas,rcar-cmt-timer";
+			reg = <0xe6130000 0x500>, <0xe6131000 0x4>;
+			clocks = <&cpg CPG_MOD 911>, <&cpg CPG_CORE R8A779G0_CLK_CPEX>;
+			clock-frequency = <1041250>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			counter0: cmt1_0@0 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x0 0x48>;
+				interrupts = <GIC_SPI 262 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <0>;
+				status = "disabled";
+			};
+
+			counter1: cmt1_1@100 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x100 0x48>;
+				interrupts = <GIC_SPI 263 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <1>;
+				status = "disabled";
+			};
+
+			counter2: cmt1_2@200 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x200 0x48>;
+				interrupts = <GIC_SPI 264 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <2>;
+				status = "disabled";
+			};
+
+			counter3: cmt1_3@300 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x300 0x48>;
+				interrupts = <GIC_SPI 265 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <3>;
+				status = "disabled";
+			};
+
+			counter4: cmt1_4@400 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x400 0x48>;
+				interrupts = <GIC_SPI 266 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <4>;
+				status = "disabled";
+			};
+		};
+
+		cmt2: timer@e6140000 {
+			compatible = "renesas,rcar-cmt-timer";
+			reg = <0xe6140000 0x500>, <0xe6141000 0x4>;
+			clocks = <&cpg CPG_MOD 912>, <&cpg CPG_CORE R8A779G0_CLK_CPEX>;
+			clock-frequency = <1041250>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			counter5: cmt2_0@0 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x0 0x48>;
+				interrupts = <GIC_SPI 270 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <0>;
+				status = "disabled";
+			};
+
+			counter6: cmt2_1@100 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x100 0x48>;
+				interrupts = <GIC_SPI 271 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <1>;
+				status = "disabled";
+			};
+
+			counter7: cmt2_2@200 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x200 0x48>;
+				interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <2>;
+				status = "disabled";
+			};
+
+			counter8: cmt2_3@300 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x300 0x48>;
+				interrupts = <GIC_SPI 273 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <3>;
+				status = "disabled";
+			};
+
+			counter9: cmt2_4@400 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x400 0x48>;
+				interrupts = <GIC_SPI 274 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <4>;
+				status = "disabled";
+			};
+		};
+
+		cmt3: timer@e6148000 {
+			compatible = "renesas,rcar-cmt-timer";
+			reg = <0xe6148000 0x500>, <0xe6149000 0x4>;
+			clocks = <&cpg CPG_MOD 913>, <&cpg CPG_CORE R8A779G0_CLK_CPEX>;
+			clock-frequency = <1041250>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			counter10: cmt3_0@0 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x0 0x48>;
+				interrupts = <GIC_SPI 278 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <0>;
+				status = "disabled";
+			};
+
+			counter11: cmt3_1@100 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x100 0x48>;
+				interrupts = <GIC_SPI 279 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <1>;
+				status = "disabled";
+			};
+
+			counter12: cmt3_2@200 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x200 0x48>;
+				interrupts = <GIC_SPI 280 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <2>;
+				status = "disabled";
+			};
+
+			counter13: cmt3_3@300 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x300 0x48>;
+				interrupts = <GIC_SPI 281 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <3>;
+				status = "disabled";
+			};
+
+			counter14: cmt3_4@400 {
+				compatible = "renesas,rcar-cmt-counter";
+				reg = <0x400 0x48>;
+				interrupts = <GIC_SPI 282 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				channel-index = <4>;
+				status = "disabled";
+			};
 		};
 	};
 
