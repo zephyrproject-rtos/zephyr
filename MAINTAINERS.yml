@@ -3573,6 +3573,7 @@ Infineon AURIX Platforms:
   files:
     - soc/infineon/aurix/
     - boards/infineon/kit_a2g_tc375_lite/
+    - boards/infineon/kit_a3g_tc4d7_lite/
     - boards/qemu/tricore/
     - drivers/*/*aurix*
     - include/zephyr/drivers/*/*aurix*
