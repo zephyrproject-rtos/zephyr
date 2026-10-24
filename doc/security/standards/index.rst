@@ -17,3 +17,4 @@ needed to build certifiable, compliant products using Zephyr.
 
    cyber-resilience-act.rst
    etsi-303645.rst
+   mdr-2017-745.rst

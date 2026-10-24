@@ -1,0 +1,191 @@
+.. _mdr_2017_745:
+
+Medical Device Regulation (MDR 2017/745)
+########################################
+
+.. warning::
+   This document is for informational purposes only and does not constitute legal,
+   regulatory, or conformity advice. Placing a medical device on the market and
+   demonstrating conformity with the applicable requirements is the responsibility of the
+   device manufacturer and depends on how Zephyr is configured and integrated. Consult the
+   regulation itself and, where relevant, a notified body or a qualified regulatory expert.
+
+Overview
+********
+
+**Regulation (EU) 2017/745 on medical devices (MDR)** governs the placing on the market and
+putting into service of medical devices in the European Union. It applies since 26 May 2021,
+replacing the earlier Medical Devices Directive (93/42/EEC), and its goal is to ensure a high
+level of safety and performance for medical devices throughout their lifetime.
+
+Many modern medical devices — from smart monitoring wearables to therapeutic and diagnostic
+equipment — are built around embedded, connected, software-driven systems. For such devices
+the MDR imposes requirements that touch software reliability, risk management, and, explicitly,
+**information security**. These requirements are most relevant to firmware and platform choices.
+
+This page explains how the MDR relates to the Zephyr Project. Zephyr is **not** a medical
+device, is not placed on the market as one, and is not itself assessed or certified for MDR
+conformity. Instead, Zephyr is a **component building block**: a manufacturer integrating
+Zephyr into a medical device uses Zephyr's features and development process as part of the
+technical evidence needed to meet the applicable requirements. Meeting the MDR remains the
+manufacturer's responsibility.
+
+Unlike paid standards, the regulation itself is freely available on EUR-Lex (see
+`External resources`_). This page summarizes the parts most relevant to an embedded platform
+and maps Zephyr's capabilities to them, rather than reproducing the regulatory text.
+
+Structure and scope
+*******************
+
+The MDR is organized into articles and annexes. The parts most relevant to an embedded
+software platform are the **General Safety and Performance Requirements (GSPR)** in Annex I,
+in particular the requirements addressing electronic programmable systems and software.
+
+Devices are assigned to risk **classes I, IIa, IIb and III** (increasing risk), which
+determine the conformity assessment route and, for most classes, the involvement of a
+**notified body**. The classification does not change the platform-level building blocks a
+manufacturer needs, but it does affect the depth of evidence required.
+
+.. list-table:: Annex I GSPR provisions most relevant to embedded software
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Provision
+     - Scope
+   * - 14.2(d)
+     - Reducing, as far as possible, risks linked to the possible negative interaction
+       between software and the IT environment in which it operates.
+   * - 17.1
+     - Devices that incorporate electronic programmable systems and software shall be
+       designed to ensure repeatability, reliability and performance in line with their
+       intended use, with appropriate measures for fault conditions.
+   * - 17.2
+     - Software shall be developed and manufactured in accordance with the state of the art,
+       taking into account the development lifecycle, risk management (including
+       **information security**), verification and validation.
+   * - 17.4
+     - Manufacturers shall set out minimum requirements concerning hardware, IT network
+       characteristics and IT security measures, including **protection against unauthorised
+       access**, necessary to run the software as intended.
+   * - 18
+     - Requirements for active devices and devices connected to them.
+
+Supplementary guidance published by the Medical Device Coordination Group, notably
+**MDCG 2019-16 on cybersecurity for medical devices**, elaborates how these requirements are
+interpreted for connected and software-driven devices. The closely related
+**Regulation (EU) 2017/746 (IVDR)** applies analogous requirements to in vitro diagnostic
+devices.
+
+Roles and responsibilities
+**************************
+
+The MDR assigns responsibilities across distinct economic operators. Understanding where
+Zephyr sits clarifies which obligations apply to whom:
+
+**Manufacturer**
+  Designs, produces and places the device on the market under its own name, and bears
+  responsibility for conformity, technical documentation, and post-market surveillance.
+
+**Importer / distributor**
+  Makes the device available on the EU market; verifies that the manufacturer met its
+  obligations.
+
+**Notified body**
+  Independent conformity assessment body that audits and certifies devices in the applicable
+  risk classes.
+
+A developer building a medical device on top of Zephyr acts as (part of) the
+**manufacturer**, and Zephyr is a software component within that device. Zephyr provides
+building blocks that make the applicable requirements achievable; it does not discharge the
+manufacturer's obligations.
+
+How Zephyr supports the MDR
+***************************
+
+The table below maps the software- and security-relevant GSPR themes to Zephyr features and
+documentation that a manufacturer can use as building blocks. This is an indicative mapping,
+not a conformity claim: whether a specific requirement is met depends on the device's
+configuration, hardware, intended use, and integration.
+
+.. list-table:: MDR software/security themes mapped to Zephyr building blocks
+   :header-rows: 1
+   :widths: 30 70
+
+   * - MDR theme
+     - Relevant Zephyr building blocks
+   * - Repeatability, reliability and performance (17.1)
+     - Deterministic real-time scheduling, resource and memory management, watchdog support,
+       and defined fault handling contributing to reliable operation.
+   * - Software lifecycle and risk management (17.2)
+     - A documented security process and threat model (:ref:`security-overview`),
+       :ref:`secure coding guidelines <coding_guidelines>`, a coordinated vulnerability
+       handling process (:ref:`reporting`), and SBOM generation via :ref:`west spdx
+       <west-spdx>` for supply-chain transparency.
+   * - Information security in the lifecycle (17.2)
+     - Cryptographic services (PSA Crypto API, TLS/DTLS) and verified/secure boot with image
+       signing (MCUboot, :ref:`west sign <west-sign>`). See :ref:`security-overview`.
+   * - Protection against unauthorised access (17.4)
+     - Thread-level privilege separation via :ref:`user mode <memory_domain>`, hardware
+       memory protection, :ref:`system call verification <syscall_verification>`, and the
+       :ref:`hardening tool <hardening>` to reduce attack surface.
+   * - Secure and reliable updates (17.2, 17.4)
+     - Integrity-checked firmware updates (:ref:`dfu`) built on signed images, enabling
+       vulnerabilities to be remediated over the device lifetime.
+   * - Minimizing attack surface (17.4)
+     - Configurable networking stack and the ability to disable unused interfaces and
+       services via :ref:`Kconfig <kconfig>` and the :ref:`hardening tool <hardening>`.
+
+Software lifecycle and state of the art
+========================================
+
+Article 17.2 requires software to be developed "in accordance with the state of the art".
+For medical device software this state of the art is expressed primarily through
+**IEC 62304** (medical device software lifecycle processes) and **IEC 81001-5-1** (health
+software security activities in the product lifecycle). Zephyr does not implement these
+processes on a manufacturer's behalf, but supports them through:
+
+* A documented security process and threat model: :ref:`security-overview`.
+* :ref:`Secure coding guidelines <coding_guidelines>` and :ref:`secure development
+  practices <secure code>`.
+* A coordinated vulnerability handling and disclosure process (PSIRT): :ref:`reporting`.
+* Software Bill of Materials (SBOM) generation for supply-chain transparency via
+  :ref:`west spdx <west-spdx>`.
+
+Conformity and shared responsibility
+************************************
+
+Zephyr is not assessed or certified for MDR conformity, and using Zephyr does not by itself
+make a device compliant. Conformity is demonstrated per device by the manufacturer, according
+to the device's risk class and intended use, and — for most classes — with the involvement of
+a notified body. Zephyr's role is to provide the technical building blocks and process
+evidence that make reaching the applicable requirements practical, under a shared-responsibility
+model where the final configuration and integration decisions rest with the manufacturer.
+
+External resources
+******************
+
+Official texts and guidance
+===========================
+
+* `Regulation (EU) 2017/745 (MDR) on EUR-Lex
+  <https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02017R0745-20250110>`_
+* `Regulation (EU) 2017/746 (IVDR) on EUR-Lex
+  <https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02017R0746-20250110>`_
+* `MDCG endorsed documents and other guidance
+  <https://health.ec.europa.eu/medical-devices-sector/new-regulations/guidance-mdcg-endorsed-documents-and-other-guidance_en>`_
+
+Related regulations and standards
+==================================
+
+* :ref:`cra_faq` – the EU Cyber Resilience Act, whose cybersecurity requirements apply
+  horizontally to products with digital elements.
+* :ref:`etsi_303645` – baseline security requirements for consumer IoT, relevant to
+  connected wearable and home medical devices.
+
+Zephyr-specific resources
+=========================
+
+* :ref:`security-overview`
+* :ref:`reporting`
+* :ref:`hardening`
+* :ref:`west-spdx`
