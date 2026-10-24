@@ -1,4 +1,5 @@
 # Copyright 2026 NXP
+# Copyright (c) 2026 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WUC
@@ -21,6 +22,7 @@ config WUC_INIT_PRIORITY
 
 # zephyr-keep-sorted-start
 rsource "Kconfig.mcux_wuc"
+rsource "Kconfig.siwx91x"
 # zephyr-keep-sorted-stop
 
 endif # WAKEUP_CONTROL

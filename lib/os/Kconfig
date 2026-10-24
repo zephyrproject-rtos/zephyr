@@ -149,6 +149,14 @@ config POWEROFF
 	help
 	  Enable support for system power off.
 
+config PRE_POWEROFF_HOOK
+	bool "add Pre poweroff hook"
+	depends on HAS_POWEROFF
+	depends on POWEROFF
+	help
+	  Enable support for z_sys_pre_poweroff_hook in system power off.
+
+
 config BOOT_BANNER
 	bool "Boot banner"
 	default y
