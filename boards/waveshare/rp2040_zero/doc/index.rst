@@ -8,7 +8,7 @@ RP2040-Zero, A Low-Cost, High-Performance Pico-Like MCU Board Based On Raspberry
 Hardware
 ********
 - RP2040 microcontroller chip designed by Raspberry Pi in the United Kingdom.
-- Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz.
+- Dual-core Arm Cortex M0+ processor, flexible clock running up to 200 MHz.
 - 264KB of SRAM, and 2MB of on-board Flash memory.
 - USB-C connector, keeps it up to date, easier to use.
 - The castellated module allows soldering direct to carrier boards.

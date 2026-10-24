@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* 12 MHz / 1 * 100 / 6 / 1 = 200 MHz */
+&pll_sys {
+	clock-div = <1>;
+	fb-div = <100>;
+	post-div1 = <6>;
+	post-div2 = <1>;
+};
+
+&clk_sys {
+	clock-frequency = <200000000>;
+};
+
+&clk_peri {
+	clock-frequency = <200000000>;
+};

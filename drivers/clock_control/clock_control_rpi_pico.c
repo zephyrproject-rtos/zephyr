@@ -24,6 +24,7 @@
 #include <hardware/watchdog.h>
 #include <hardware/resets.h>
 #include <hardware/ticks.h>
+#include <hardware/vreg.h>
 
 /* Undefine to prevent conflicts with header definitions */
 #undef pll_sys
@@ -44,6 +45,8 @@
 #define PLL_FB_DIV_MAX   320
 #define PLL_POST_DIV_MIN 1
 #define PLL_POST_DIV_MAX 7
+#define RP2040_VREG_BOOST_THRESHOLD_HZ 133000000
+#define RP2040_VREG_SETTLE_US 1000
 
 #define ROSC_PHASE_PASSWD_VALUE_PASS _u(0xAA)
 
@@ -680,6 +683,18 @@ int clock_control_rpi_pico_reconfigure(const struct device *dev)
 	while (clocks_hw->clk[RPI_PICO_CLKID_CLK_REF].selected != 0x1) {
 		;
 	}
+
+#if defined(CONFIG_SOC_SERIES_RP2040)
+	if (CLOCK_FREQ_clk_sys > RP2040_VREG_BOOST_THRESHOLD_HZ) {
+		if (vreg_get_voltage() < VREG_VOLTAGE_1_15) {
+			const uint32_t settle_cycles =
+				(uint32_t)((RP2040_VREG_SETTLE_US *
+					    (uint64_t)CLOCK_FREQ_xosc) / 1000000);
+			vreg_set_voltage(VREG_VOLTAGE_1_15);
+			busy_wait_at_least_cycles(settle_cycles);
+		}
+	}
+#endif
 
 	/* Configure pll */
 	for (uint32_t i = 0; i < RPI_PICO_PLL_COUNT; i++) {

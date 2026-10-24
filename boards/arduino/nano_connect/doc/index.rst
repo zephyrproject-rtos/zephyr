@@ -22,7 +22,7 @@ Key features of the Nano RP2040 Connect:
 Hardware
 ********
 
-- Raspberry Pi RP2040 (dual-core Arm Cortex-M0+ at 133 MHz)
+- Raspberry Pi RP2040 (dual-core Arm Cortex-M0+ at 200 MHz)
 - SRAM: 264 KB
 - Flash: 16 MB (AT25SF128A)
 - u-blox NINA-W102 (Wi-Fi 802.11b/g/n, Bluetooth 4.2)
