@@ -68,6 +68,21 @@ static void *cmd_complete(struct net_buf **buf, uint8_t plen, uint16_t opcode)
 	return net_buf_add(*buf, plen);
 }
 
+static struct net_buf *cmd_status(uint8_t status, uint16_t opcode)
+{
+	struct bt_hci_evt_cmd_status *cs;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_CMD_STATUS, sizeof(*cs));
+	cs = net_buf_add(buf, sizeof(*cs));
+	cs->status = status;
+	cs->ncmd = 1U;
+	cs->opcode = sys_cpu_to_le16(opcode);
+
+	return buf;
+}
+
 static void generic_success(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
 {
 	struct bt_hci_evt_cc_status *rp;
@@ -130,6 +145,7 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, ui
 	rp = cmd_complete(evt, sizeof(*rp), opcode);
 	rp->status = BT_HCI_ERR_SUCCESS;
 	(void)memset(rp->features, 0, sizeof(rp->features));
+	rp->features[0] = BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
 }
 
 static void le_read_buffer_size(struct net_buf *buf, struct net_buf **evt, uint8_t len,
@@ -270,18 +286,11 @@ static void disconnect_rsp_handler(struct k_work *work)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct bt_hci_evt_disconn_complete *complete;
-	struct bt_hci_evt_cmd_status *status;
 	struct net_buf *evt;
 
 	ARG_UNUSED(work);
 
-	evt = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
-	evt_create(evt, BT_HCI_EVT_CMD_STATUS, sizeof(*status));
-	status = net_buf_add(evt, sizeof(*status));
-	status->status = disconnect_status;
-	status->ncmd = 1U;
-	status->opcode = sys_cpu_to_le16(BT_HCI_OP_DISCONNECT);
-	bt_hci_recv(dev, evt);
+	bt_hci_recv(dev, cmd_status(disconnect_status, BT_HCI_OP_DISCONNECT));
 
 	if (disconnect_status != BT_HCI_ERR_SUCCESS) {
 		return;
@@ -327,6 +336,47 @@ static void host_ncp_handle(const struct net_buf *cmd)
 	k_sem_give(&host_ncp_sem);
 }
 
+/* How often the controller has been asked to update the connection
+ * parameters. It takes its time to accept an update.
+ */
+static unsigned int conn_update_count;
+
+static void conn_update_rsp_handler(struct k_work *work)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+
+	ARG_UNUSED(work);
+
+	bt_hci_recv(dev, cmd_status(BT_HCI_ERR_SUCCESS, BT_HCI_OP_LE_CONN_UPDATE));
+}
+
+static K_WORK_DELAYABLE_DEFINE(conn_update_rsp_work, conn_update_rsp_handler);
+
+/* The peer supports the Connection Parameters Request procedure, as the
+ * controller does, so the Host updates the connection parameters with a
+ * command.
+ */
+static void remote_features_rsp(const struct device *dev, const struct net_buf *cmd)
+{
+	const struct bt_hci_cp_le_read_remote_features *cp = (const void *)cmd->data;
+	struct bt_hci_evt_le_remote_feat_complete *complete;
+	struct bt_hci_evt_le_meta_event *meta;
+	struct net_buf *evt;
+
+	bt_hci_recv(dev, cmd_status(BT_HCI_ERR_SUCCESS, BT_HCI_OP_LE_READ_REMOTE_FEATURES));
+
+	evt = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
+	evt_create(evt, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta) + sizeof(*complete));
+	meta = net_buf_add(evt, sizeof(*meta));
+	meta->subevent = BT_HCI_EVT_LE_REMOTE_FEAT_COMPLETE;
+	complete = net_buf_add(evt, sizeof(*complete));
+	(void)memset(complete, 0, sizeof(*complete));
+	complete->status = BT_HCI_ERR_SUCCESS;
+	complete->handle = cp->handle;
+	complete->features[0] = BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
+	bt_hci_recv(dev, evt);
+}
+
 static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 {
 	struct net_buf *evt = NULL;
@@ -356,6 +406,17 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 			(void)k_work_schedule(&disconnect_rsp_work, disconnect_rsp_delay);
 		}
 
+		return;
+	}
+
+	if (opcode == BT_HCI_OP_LE_READ_REMOTE_FEATURES) {
+		remote_features_rsp(dev, cmd);
+		return;
+	}
+
+	if (opcode == BT_HCI_OP_LE_CONN_UPDATE) {
+		conn_update_count++;
+		(void)k_work_schedule(&conn_update_rsp_work, K_MSEC(10));
 		return;
 	}
 
@@ -392,6 +453,9 @@ static __maybe_unused int driver_close(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	close_count++;
+
+	/* A response that has not been delivered is lost with the transport */
+	(void)k_work_cancel_delayable(&conn_update_rsp_work);
 
 	return close_err;
 }
@@ -442,9 +506,11 @@ static void before(void *fixture)
 
 	/* The Host asserts in the tests where the controller stops or the
 	 * driver blocks, which leaves it in the middle of bt_enable(), so each
-	 * of those tests runs alone.
+	 * of those tests runs alone. So does the test with bt_disable() on the
+	 * system workqueue, whose configuration is there only for it.
 	 */
-	if (IS_ENABLED(CONFIG_TEST_CTLR_STOPS) || IS_ENABLED(CONFIG_TEST_SEND_BLOCKS)) {
+	if (IS_ENABLED(CONFIG_TEST_CTLR_STOPS) || IS_ENABLED(CONFIG_TEST_SEND_BLOCKS) ||
+	    IS_ENABLED(CONFIG_TEST_DISABLE_ON_SYSWQ)) {
 		ztest_test_skip();
 	}
 
@@ -672,6 +738,7 @@ ZTEST_SUITE(bt_send_blocks, NULL, NULL, NULL, NULL, NULL);
 
 static K_SEM_DEFINE(connected_sem, 0, 1);
 static K_SEM_DEFINE(disconnected_sem, 0, 1);
+static unsigned int disconnected_count;
 static struct bt_conn *test_conn;
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -687,6 +754,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	ARG_UNUSED(conn);
 	ARG_UNUSED(reason);
 
+	disconnected_count++;
 	k_sem_give(&disconnected_sem);
 }
 
@@ -879,6 +947,249 @@ static ZTEST(bt_disable, test_command_in_flight_at_close)
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
 	bt_conn_unref(test_conn);
 	test_conn = NULL;
+}
+
+static K_THREAD_STACK_DEFINE(disable_stack, CONFIG_ZTEST_STACK_SIZE);
+static struct k_thread disable_thread;
+static int disable_err;
+
+static void disable_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	disable_err = bt_disable();
+}
+
+/* Call bt_disable() in a thread above the Bluetooth workqueue */
+static void disable_in_thread(void)
+{
+	disable_err = -EINPROGRESS;
+	k_thread_create(&disable_thread, disable_stack, K_THREAD_STACK_SIZEOF(disable_stack),
+			disable_entry, NULL, NULL, NULL, K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1), 0,
+			K_NO_WAIT);
+}
+
+static void count_conn(struct bt_conn *conn, void *user_data)
+{
+	unsigned int *count = user_data;
+
+	ARG_UNUSED(conn);
+
+	(*count)++;
+}
+
+/* The disconnected callback has run once, and the connection object is let go
+ * of when the test drops its reference.
+ */
+static void expect_conn_released(void)
+{
+	unsigned int count = 0U;
+
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnection");
+	zassert_equal(disconnected_count, 1U, "The disconnected callback ran %u times",
+		      disconnected_count);
+
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, count_conn, &count);
+	zassert_equal(count, 0U, "%u connections are left", count);
+}
+
+/* Connect, and have the Host start a parameter update that waits for a command
+ * buffer: the test takes all of them, onto @p held.
+ */
+static void start_param_update(sys_slist_t *held)
+{
+	struct bt_hci_cp_le_read_remote_features *cp;
+	struct net_buf *buf;
+
+	conn_update_count = 0U;
+	disconnected_count = 0U;
+	k_sem_reset(&disconnected_sem);
+
+	connect_as_peripheral();
+
+	/* The remote features tell the Host that the peer supports the
+	 * Connection Parameters Request procedure too, so the update takes a
+	 * command.
+	 */
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(TEST_CONN_HANDLE);
+	zassert_ok(bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_REMOTE_FEATURES, buf, NULL),
+		   "Reading the remote features failed");
+
+	/* With every command buffer taken, the update that the Host starts after
+	 * the timeout waits for one.
+	 */
+	sys_slist_init(held);
+	buf = bt_hci_cmd_alloc(K_NO_WAIT);
+	while (buf != NULL) {
+		net_buf_slist_put(held, buf);
+		buf = bt_hci_cmd_alloc(K_NO_WAIT);
+	}
+
+	/* Past the timeout the Host starts the update, which then waits */
+	(void)k_sleep(K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT + 1));
+}
+
+static void release_bufs(sys_slist_t *held)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_slist_get(held);
+	while (buf != NULL) {
+		net_buf_unref(buf);
+		buf = net_buf_slist_get(held);
+	}
+}
+
+/* The connection that bt_disable() takes down is in the middle of a parameter
+ * update that the Host started, which waits for a command buffer. The
+ * disconnected callback has to run all the same, and the connection object has
+ * to be let go of.
+ */
+static ZTEST(bt_disable, test_param_update_during_disable)
+{
+	sys_slist_t held;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	start_param_update(&held);
+
+	/* A thread above the Bluetooth workqueue that waits for a command buffer
+	 * as well gets the next one, so its bt_disable() resets the controller and
+	 * takes the connection down while the update is still in progress.
+	 */
+	disable_in_thread();
+	k_yield();
+	net_buf_unref(net_buf_slist_get(&held));
+	zassert_ok(k_thread_join(&disable_thread, K_SECONDS(1)), "bt_disable() did not return");
+	release_bufs(&held);
+
+	zassert_ok(disable_err, "Bluetooth disable failed (err %d)", disable_err);
+	zassert_equal(conn_update_count, 1U, "The controller was asked for %u updates",
+		      conn_update_count);
+	expect_conn_released();
+}
+
+static K_SEM_DEFINE(syswq_release, 0, 1);
+
+static void syswq_hold_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	(void)k_sem_take(&syswq_release, K_FOREVER);
+}
+
+static K_WORK_DEFINE(syswq_hold_work, syswq_hold_handler);
+
+/* The update timer of the connection that bt_disable() takes down expires
+ * while bt_disable() waits for the system workqueue to notify what was sent on
+ * the connection. The disconnected callback has to wait for that, and run once.
+ */
+static ZTEST(bt_disable, test_update_timer_during_disable)
+{
+	unsigned int early_count;
+	bool waited;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	disconnected_count = 0U;
+	k_sem_reset(&disconnected_sem);
+	k_sem_reset(&syswq_release);
+
+	connect_as_peripheral();
+
+	/* With the system workqueue held up, bt_disable() takes the connection
+	 * down and then waits there for longer than the update timeout.
+	 */
+	zassert_equal(k_work_submit(&syswq_hold_work), 1, "Holding the system workqueue failed");
+	disable_in_thread();
+	(void)k_sleep(K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT + 1));
+
+	waited = (k_thread_join(&disable_thread, K_NO_WAIT) == -EBUSY);
+	early_count = disconnected_count;
+	k_sem_give(&syswq_release);
+	zassert_ok(k_thread_join(&disable_thread, K_SECONDS(1)), "bt_disable() did not return");
+
+	zassert_true(waited, "bt_disable() did not wait for the system workqueue");
+	zassert_ok(disable_err, "Bluetooth disable failed (err %d)", disable_err);
+	expect_conn_released();
+	zassert_equal(early_count, 0U, "The disconnected callback ran %u times during the wait",
+		      early_count);
+}
+
+BUILD_ASSERT(!IS_ENABLED(CONFIG_TEST_DISABLE_ON_SYSWQ) ||
+		     (CONFIG_SYSTEM_WORKQUEUE_PRIORITY < K_PRIO_COOP(CONFIG_BT_RX_PRIO)),
+	     "The system workqueue has to run above the Bluetooth workqueue");
+
+static K_SEM_DEFINE(disable_done, 0, 1);
+
+/* No command buffer is left when bt_disable() returns: the update, which waits
+ * for one, has the buffer of the reset.
+ */
+static bool update_has_buf;
+
+static void disable_handler(struct k_work *work)
+{
+	struct net_buf *buf;
+
+	ARG_UNUSED(work);
+
+	disable_err = bt_disable();
+
+	buf = bt_hci_cmd_alloc(K_NO_WAIT);
+	update_has_buf = (buf == NULL);
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+
+	k_sem_give(&disable_done);
+}
+
+static K_WORK_DEFINE(disable_work, disable_handler);
+
+ZTEST_SUITE(bt_disable_syswq, NULL, NULL, NULL, NULL, NULL);
+
+/* As in test_param_update_during_disable, with bt_disable() called on the
+ * system workqueue, which transmits the HCI commands here. bt_disable() must
+ * not wait for the update, which needs the system workqueue to send its
+ * command.
+ */
+static ZTEST(bt_disable_syswq, test_param_update_during_disable_on_syswq)
+{
+	sys_slist_t held;
+
+	if (!IS_ENABLED(CONFIG_TEST_DISABLE_ON_SYSWQ)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(bt_enable(NULL), "Bluetooth init failed");
+
+	start_param_update(&held);
+
+	/* The system workqueue runs above the Bluetooth workqueue here, so its
+	 * bt_disable() gets the next command buffer, as the thread does in
+	 * test_param_update_during_disable, and takes the connection down
+	 * while the update is still in progress.
+	 */
+	zassert_equal(k_work_submit(&disable_work), 1, "Submitting bt_disable() failed");
+	k_yield();
+	net_buf_unref(net_buf_slist_get(&held));
+	zassert_ok(k_sem_take(&disable_done, K_SECONDS(1)), "bt_disable() did not return");
+	release_bufs(&held);
+
+	zassert_ok(disable_err, "Bluetooth disable failed (err %d)", disable_err);
+	zassert_true(update_has_buf, "The update did not wait for a command buffer");
+	expect_conn_released();
 }
 
 ZTEST_SUITE(bt_conn_tx, NULL, NULL, before, NULL, NULL);
