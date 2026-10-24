@@ -34,7 +34,7 @@
 	};
 
 	/*
-	 * W6300 uses GPIO15-22 for SPI/QSPI. Define SPI0 pins on P2-P4
+	 * W6300 uses GPIO15-22 for QSPI. Define SPI0 pins on P2-P4
 	 * for other peripherals.
 	 */
 	spi0_default: spi0_default {
@@ -45,6 +45,25 @@
 		group2 {
 			pinmux = <SPI0_RX_P4>;
 			input-enable;
+		};
+	};
+
+	pio0_qspi_default: pio0_qspi_default {
+		/* SCK (GPIO17) */
+		group1 {
+			pinmux = <PIO0_P17>;
+			drive-strength = <12>;
+			slew-rate = <1>;
+		};
+
+		/* IO0-IO3 (GPIO18-21) - bidirectional */
+		group2 {
+			pinmux = <PIO0_P18>, <PIO0_P19>, <PIO0_P20>, <PIO0_P21>;
+			drive-strength = <12>;
+			slew-rate = <1>;
+			input-enable;
+			input-schmitt-enable;
+			bias-pull-down;
 		};
 	};
 
