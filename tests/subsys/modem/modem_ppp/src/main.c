@@ -578,6 +578,25 @@ ZTEST(modem_ppp, test_ppp_no_carrier_received_first)
 	zassert_false(net_if_is_carrier_ok(&test_iface), "NO CARRIER should turn carrier off");
 }
 
+ZTEST(modem_ppp, test_ppp_pipe_closed)
+{
+	zassert_false(ppp.state & BIT(MODEM_PPP_STATE_DEAD_BIT));
+	zassert_true(net_if_is_carrier_ok(&test_iface), "Carrier should be on before close");
+
+	/* Pipe closed underneath the attached PPP instance */
+	zassert_ok(modem_pipe_close(mock_pipe, K_SECONDS(10)), "Failed to close mock pipe");
+	k_msleep(100);
+
+	zassert_true(ppp.state & BIT(MODEM_PPP_STATE_DEAD_BIT), "Pipe close should kill link");
+	zassert_false(net_if_is_carrier_ok(&test_iface), "Pipe close should turn carrier off");
+
+	/* Restore the open pipe for the following tests */
+	modem_ppp_release(&ppp);
+	zassert_ok(modem_pipe_open(mock_pipe, K_SECONDS(10)), "Failed to open mock pipe");
+	zassert_ok(modem_ppp_attach(&ppp, mock_pipe), "Failed to reattach PPP");
+	zassert_true(net_if_is_carrier_ok(&test_iface), "Carrier should be on after attach");
+}
+
 ZTEST(modem_ppp, test_corrupt_start_end_ppp_frame_receive)
 {
 	struct net_pkt *pkt;

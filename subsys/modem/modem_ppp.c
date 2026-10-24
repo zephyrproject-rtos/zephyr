@@ -212,6 +212,16 @@ static bool modem_ppp_is_byte_expected(uint8_t byte, uint8_t expected_byte)
 	return false;
 }
 
+static void modem_ppp_link_dead(struct modem_ppp *ppp)
+{
+	if (atomic_test_and_set_bit(&ppp->state, MODEM_PPP_STATE_DEAD_BIT) == true) {
+		return;
+	}
+
+	net_if_carrier_off(ppp->iface);
+	ppp_mgmt_raise_phase_dead_event(ppp->iface);
+}
+
 static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
 {
 	ppp->rx_pkt = net_pkt_rx_alloc_with_buffer(ppp->iface, CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE,
@@ -254,9 +264,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			if (ppp->receive_offset == unsocilicited_no_carrier_len) {
 				LOG_WRN("Received 'NO CARRIER' event");
 				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
-				atomic_set_bit(&ppp->state, MODEM_PPP_STATE_DEAD_BIT);
-				net_if_carrier_off(ppp->iface);
-				ppp_mgmt_raise_phase_dead_event(ppp->iface);
+				modem_ppp_link_dead(ppp);
 			}
 			break;
 		}
@@ -477,9 +485,26 @@ static void modem_ppp_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 		modem_work_submit(&ppp->send_work);
 		break;
 
+	case MODEM_PIPE_EVENT_CLOSED:
+		/* Invoked with the pipe locked, the carrier can't be changed here */
+		modem_work_submit(&ppp->closed_work);
+		break;
+
 	default:
 		break;
 	}
+}
+
+static void modem_ppp_closed_handler(struct k_work *item)
+{
+	struct modem_ppp *ppp = CONTAINER_OF(item, struct modem_ppp, closed_work);
+
+	if (atomic_test_bit(&ppp->state, MODEM_PPP_STATE_ATTACHED_BIT) == false) {
+		return;
+	}
+
+	LOG_WRN("Pipe closed");
+	modem_ppp_link_dead(ppp);
 }
 
 static void modem_ppp_send_handler(struct k_work *item)
@@ -736,6 +761,7 @@ void modem_ppp_release(struct modem_ppp *ppp)
 	modem_pipe_release(ppp->pipe);
 	k_work_cancel_sync(&ppp->send_work, &sync);
 	k_work_cancel_sync(&ppp->process_work, &sync);
+	k_work_cancel_sync(&ppp->closed_work, &sync);
 	ppp->pipe = NULL;
 	ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
 
@@ -769,6 +795,7 @@ int modem_ppp_init_internal(const struct device *dev)
 	ring_buf_init(&ppp->transmit_rb, ppp->buf_size, ppp->transmit_buf);
 	k_work_init(&ppp->send_work, modem_ppp_send_handler);
 	k_work_init(&ppp->process_work, modem_ppp_process_handler);
+	k_work_init(&ppp->closed_work, modem_ppp_closed_handler);
 	k_fifo_init(&ppp->tx_pkt_fifo);
 
 #if CONFIG_MODEM_STATS
