@@ -37,7 +37,6 @@
 				compatible = "st,psram-device", "aps-z8";
 				reg = <0>;
 				size = <DT_SIZE_M(64)>;
-				st,mem-type = "apmem";
 				mspi-max-frequency = <DT_FREQ_M(133)>;
 				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 				mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
@@ -50,9 +49,10 @@
 				tx-dummy = <5>;
 				memmap-config = <1 0 DT_SIZE_M(64) 0>;
 				ce-break-config = <1024 4>;
+				aps-version = "APS6408L";
+				st,mem-type = "apmem";
 				st,timing-config = <1>;
 				zephyr,pm-device-runtime-auto;
-				aps-version = "APS6408L";
 			};
 		};
 	};

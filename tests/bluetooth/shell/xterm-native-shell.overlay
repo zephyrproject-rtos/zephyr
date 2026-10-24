@@ -13,8 +13,8 @@
  */
 
 &uart1 {
-	status = "disabled";
 	compatible = "zephyr,native-pty-uart";
+	status = "disabled";
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-1;
 	/delete-property/ pinctrl-names;
@@ -26,8 +26,8 @@
 };
 
 &uart0 {
-	status = "okay";
 	compatible = "zephyr,native-pty-uart";
+	status = "okay";
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-1;
 	/delete-property/ pinctrl-names;

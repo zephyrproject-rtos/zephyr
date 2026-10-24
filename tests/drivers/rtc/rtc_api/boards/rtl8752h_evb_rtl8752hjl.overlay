@@ -11,8 +11,8 @@
 };
 
 &rtc_counter {
-	status = "okay";
 	prescaler = <1>;
+	status = "okay";
 
 	rtc: rtc {
 		compatible = "zephyr,rtc-counter";

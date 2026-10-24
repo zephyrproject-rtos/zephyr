@@ -10,8 +10,8 @@
 	partitions {
 		storage_partition: partition@de000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000de000 0x00010000>;
+			label = "storage";
 		};
 	};
 };

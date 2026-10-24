@@ -15,9 +15,9 @@
 
 &xspi1 {
 	mspi_device: mspi_device@0 {
-		status = "okay";
 		compatible = "zephyr,emul-device-mspi";
 		reg = <0x0>;
 		mspi-max-frequency = <DT_FREQ_M(48)>;
+		status = "okay";
 	};
 };

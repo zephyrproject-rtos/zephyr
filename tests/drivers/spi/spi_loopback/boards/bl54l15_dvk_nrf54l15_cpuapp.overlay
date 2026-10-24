@@ -31,12 +31,12 @@
 /delete-node/ &mx25r64;
 
 &spi00 {
-	status = "okay";
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

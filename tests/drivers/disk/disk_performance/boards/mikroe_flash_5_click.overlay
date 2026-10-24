@@ -10,8 +10,8 @@
 		#size-cells = <1>;
 
 		ftl_partition: partition@0 {
-			label = "ftl";
 			reg = <0x00000000 DT_SIZE_M(128)>;
+			label = "ftl";
 		};
 	};
 };

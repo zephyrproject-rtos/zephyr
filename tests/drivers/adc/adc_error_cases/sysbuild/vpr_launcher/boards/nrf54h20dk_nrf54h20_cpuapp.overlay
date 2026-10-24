@@ -6,6 +6,6 @@
 #include "../../../boards/nrf54h20dk_nrf54h20_common.dtsi"
 
 &adc {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };

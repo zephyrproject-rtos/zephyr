@@ -9,11 +9,11 @@
 };
 
 &gpio0 {
-	status = "okay";
 	sense-edge-mask = <0x60>;
+	status = "okay";
 };
 
 &gpiote130 {
-	status = "okay";
 	owned-channels = <0 1>;
+	status = "okay";
 };

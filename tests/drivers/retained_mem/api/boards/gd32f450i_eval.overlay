@@ -11,11 +11,11 @@
 };
 
 &backup_sram {
-	status = "okay";
 	vin-supply = <&bldo>;
+	status = "okay";
 };
 
 &bldo {
-	status = "okay";
 	regulator-boot-on;
+	status = "okay";
 };

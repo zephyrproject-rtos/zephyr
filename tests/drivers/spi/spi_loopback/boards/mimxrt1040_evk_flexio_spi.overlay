@@ -38,7 +38,6 @@
 
 	flexio3_spi0: flexio3_spi0 {
 		compatible = "nxp,flexio-spi";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cs-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
@@ -47,18 +46,18 @@
 		sck-pin = <4>;
 		pinctrl-0 = <&pinmux_flexio3spi0>;
 		pinctrl-names = "default";
+		status = "okay";
 
 		slow@0 {
-			status = "okay";
 			compatible = "test-spi-loopback-slow";
 			reg = <0>;
 			spi-max-frequency = <500000>;
+			status = "okay";
 		};
 	};
 
 	flexio3_spi1: flexio3_spi1 {
 		compatible = "nxp,flexio-spi";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
@@ -67,12 +66,13 @@
 		sck-pin = <5>;
 		pinctrl-0 = <&pinmux_flexio3spi1>;
 		pinctrl-names = "default";
+		status = "okay";
 
 		fast@0 {
-			status = "okay";
 			compatible = "test-spi-loopback-fast";
 			reg = <0>;
 			spi-max-frequency = <4000000>;
+			status = "okay";
 		};
 	};
 };

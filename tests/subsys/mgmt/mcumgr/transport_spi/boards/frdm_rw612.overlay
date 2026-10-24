@@ -9,13 +9,13 @@
 / {
 	spibb0: spibb0 {
 		compatible = "zephyr,spi-bitbang";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&hsgpio0 7 GPIO_ACTIVE_HIGH>;
 		sdo-gpios = <&hsgpio0 9 GPIO_ACTIVE_HIGH>;
 		sdi-gpios = <&hsgpio0 8 0>;
 		cs-gpios = <&hsgpio0 10 GPIO_ACTIVE_LOW>;
+		status = "okay";
 
 		smp_spi: smp-spi@0 {
 			compatible = "zephyr,smp-spi";

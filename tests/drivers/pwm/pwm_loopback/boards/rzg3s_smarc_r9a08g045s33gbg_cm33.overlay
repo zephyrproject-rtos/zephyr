@@ -17,16 +17,16 @@
 
 &gpt32e3 {
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&gpt3_pins>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &gpt32e6 {
 	pwm6: pwm {
-		status = "okay";
 		pinctrl-0 = <&gpt6_pins>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

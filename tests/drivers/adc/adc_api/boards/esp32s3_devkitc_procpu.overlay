@@ -11,9 +11,11 @@
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	dmas = <&dma 2>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -30,8 +32,6 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
-
-	dmas = <&dma 2>;
 };
 
 &dma {

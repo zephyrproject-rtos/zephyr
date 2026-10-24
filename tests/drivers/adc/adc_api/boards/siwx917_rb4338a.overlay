@@ -23,6 +23,8 @@
 	pinctrl-names = "default";
 	silabs,adc-ref-voltage = <3300>;
 
+	status = "okay";
+
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_1";
@@ -40,6 +42,4 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <7>;
 	};
-
-	status = "okay";
 };

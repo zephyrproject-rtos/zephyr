@@ -4,9 +4,9 @@
  */
 
 &dma0 {
-	status = "okay";
 	interrupts = <86 1>, <85 1>, <84 1>, <83 1>;
 	interrupt-names = "ch0", "ch1", "ch2", "ch3";
+	status = "okay";
 };
 
 &spi0 {

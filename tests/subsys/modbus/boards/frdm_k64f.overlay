@@ -9,15 +9,15 @@
 
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
-		status = "okay";
 		de-gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;	/* red LED */
 		re-gpios = <&gpioe 26 GPIO_ACTIVE_LOW>;	/* green LED */
+		status = "okay";
 	};
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	modbus1 {
 		compatible = "zephyr,modbus-serial";
