@@ -379,13 +379,14 @@ int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_
 
 int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
 {
+	uint8_t oa_tx[64U] = {0};
 	uint32_t hdr;
 
 	hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 0) |
 	      FIELD_PREP(OA_DATA_HDR_NORX, 1);
 	hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
 
-	return oa_tc6_chunk_spi_transfer(tc6, NULL, NULL, hdr, ftr);
+	return oa_tc6_chunk_spi_transfer(tc6, NULL, oa_tx, hdr, ftr);
 }
 
 int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
@@ -417,7 +418,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		if (!buf_rx) {
 			buf_rx = net_pkt_get_frag(pkt, buf_rx_size, OA_TC6_BUF_ALLOC_TIMEOUT);
 			if (!buf_rx) {
-				LOG_ERR("OA RX: Can't allocate RX buffer fordata!");
+				LOG_ERR("OA RX: Can't allocate RX buffer for data!");
 				return -ENOMEM;
 			}
 		}

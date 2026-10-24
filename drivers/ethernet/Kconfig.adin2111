@@ -54,4 +54,13 @@ config ETH_ADIN2111_BUFFER_SIZE
 	help
 	  Transmission and reception buffer size.
 
+config ETH_ADIN2111_OA_MAX_RCA_COUNT
+	int "Maximum OA chunks handled per transfer"
+	range 1 255
+	default 255
+	help
+	   Maximum number of OPEN Alliance chunks transmitted or received in one SPI
+	   transfer. Lower values reduce OA buffer memory but may require more SPI
+	   transfers for large TX frames.
+
 endif # ETH_ADIN2111
