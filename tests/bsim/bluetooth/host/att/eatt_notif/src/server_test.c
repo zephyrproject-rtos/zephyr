@@ -13,6 +13,7 @@ CREATE_FLAG(flag_discover_complete);
 extern enum bst_result_t bst_result;
 
 CREATE_FLAG(flag_is_connected);
+CREATE_FLAG(flag_small_received);
 
 static struct bt_conn *g_conn;
 
@@ -135,6 +136,10 @@ static uint8_t notify_cb(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	if (length == 1U) {
+		SET_FLAG(flag_small_received);
+	}
+
 	return BT_GATT_ITER_CONTINUE;
 }
 
@@ -151,7 +156,7 @@ void subscribed_cb(struct bt_conn *conn, uint8_t err,
 
 static struct bt_gatt_discover_params disc_params;
 static struct bt_gatt_subscribe_params subscribe_params;
-static void gatt_subscribe(void)
+static void gatt_subscribe(uint16_t value)
 {
 	int err;
 
@@ -162,7 +167,7 @@ static void gatt_subscribe(void)
 	/* Use the BT_GATT_AUTO_DISCOVER_CCC feature */
 	subscribe_params.ccc_handle = 0;
 	subscribe_params.disc_params = &disc_params,
-	subscribe_params.value = BT_GATT_CCC_NOTIFY;
+	subscribe_params.value = value;
 	subscribe_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	subscribe_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
@@ -207,12 +212,55 @@ static void test_main(void)
 
 	/* Subscribe to the server characteristic. */
 	gatt_discover();
-	gatt_subscribe();
+	gatt_subscribe(BT_GATT_CCC_NOTIFY);
 
 	printk("Waiting for final sync\n");
 	device_sync_wait();
 
 	PASS("Server Passed\n");
+}
+
+static void mtu_test(uint16_t ccc_value)
+{
+	int err;
+	const struct bt_data ad[] = {
+		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR))
+	};
+
+	device_sync_init(CENTRAL_ID);
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+	}
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		FAIL("Advertising failed to start (err %d)\n", err);
+	}
+
+	WAIT_FOR_FLAG(flag_is_connected);
+
+	while (bt_eatt_count(g_conn) < CONFIG_BT_EATT_MAX) {
+		k_sleep(K_TICKS(1));
+	}
+
+	gatt_discover();
+	gatt_subscribe(ccc_value);
+
+	WAIT_FOR_FLAG(flag_small_received);
+
+	PASS("Server Passed\n");
+}
+
+static void test_mtu(void)
+{
+	mtu_test(BT_GATT_CCC_NOTIFY);
+}
+
+static void test_ind_mtu(void)
+{
+	mtu_test(BT_GATT_CCC_INDICATE);
 }
 
 static const struct bst_test_instance test_server[] = {
@@ -221,6 +269,18 @@ static const struct bst_test_instance test_server[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
+	},
+	{
+		.test_id = "server_mtu",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_mtu
+	},
+	{
+		.test_id = "server_ind_mtu",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_ind_mtu
 	},
 	BSTEST_END_MARKER
 };
