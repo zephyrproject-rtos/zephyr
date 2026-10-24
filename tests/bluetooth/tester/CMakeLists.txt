@@ -34,7 +34,8 @@ if(CONFIG_BT_OTS)
 endif()
 
 if(CONFIG_BT_RFCOMM)
-    target_sources(app PRIVATE src/btp_rfcomm.c)
+  target_sources(app PRIVATE src/btp_rfcomm.c)
+  target_sources(app PRIVATE src/btp_spp.c)
 endif()
 
 zephyr_library_include_directories(src src/btp src/audio/btp)
