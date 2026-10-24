@@ -97,7 +97,9 @@ static struct bt_gatt_attr test1_attrs[] = {
 
 static struct bt_gatt_service test1_svc = BT_GATT_SERVICE(test1_attrs);
 
-ZTEST_SUITE(test_gatt, NULL, NULL, NULL, NULL, NULL);
+static void test_gatt_after(void *fixture);
+
+ZTEST_SUITE(test_gatt, NULL, NULL, NULL, test_gatt_after, NULL);
 
 ZTEST(test_gatt, test_gatt_register)
 {
@@ -420,6 +422,185 @@ ZTEST(test_gatt, test_gatt_foreach)
 			      "Attribute UUID don't match");
 		zassert_equal(attr->user_data, &nfy_enabled,
 			      "Attribute value don't match");
+	}
+}
+
+static const struct bt_uuid_128 walk_a_uuid = BT_UUID_INIT_128(
+	0xf6, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+static const struct bt_uuid_128 walk_b_uuid = BT_UUID_INIT_128(
+	0xf7, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static struct bt_gatt_attr walk_a_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&walk_a_uuid),
+};
+
+static struct bt_gatt_service walk_a_svc = BT_GATT_SERVICE(walk_a_attrs);
+
+static struct bt_gatt_attr walk_b_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&walk_b_uuid),
+};
+
+static struct bt_gatt_service walk_b_svc = BT_GATT_SERVICE(walk_b_attrs);
+
+/* What the walk does when it calls back into service A */
+enum walk_mode {
+	/* Wake the thread that unregisters service A */
+	WALK_WAKE,
+	/* The same, and then block for a while */
+	WALK_WAKE_AND_BLOCK,
+	/* Unregister service A */
+	WALK_UNREGISTER_SELF,
+};
+
+static K_THREAD_STACK_DEFINE(walk_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(unregister_stack,
+			     CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread walk_thread;
+static struct k_thread unregister_thread;
+static bool walk_thread_started;
+static bool unregister_thread_started;
+static K_SEM_DEFINE(unregister_sem, 0, 1);
+static enum walk_mode walk_mode;
+static int unregister_err;
+static size_t walk_b_visits;
+
+static void unregister_entry(void *p1, void *p2, void *p3)
+{
+	ARGS_UNUSED(p1, p2, p3);
+
+	(void)k_sem_take(&unregister_sem, K_FOREVER);
+	unregister_err = bt_gatt_service_unregister(&walk_a_svc);
+}
+
+static uint8_t walk_attr(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
+{
+	ARG_UNUSED(handle);
+	ARG_UNUSED(user_data);
+
+	if (attr == &walk_a_attrs[0]) {
+		switch (walk_mode) {
+		case WALK_WAKE:
+			/* Wakes the unregistering thread without blocking
+			 * this one
+			 */
+			k_sem_give(&unregister_sem);
+			break;
+		case WALK_WAKE_AND_BLOCK:
+			k_sem_give(&unregister_sem);
+			k_sleep(K_MSEC(10));
+			break;
+		case WALK_UNREGISTER_SELF:
+			unregister_err = bt_gatt_service_unregister(&walk_a_svc);
+			break;
+		}
+	} else if (IS_ARRAY_ELEMENT(walk_b_attrs, attr)) {
+		walk_b_visits++;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void walk_entry(void *p1, void *p2, void *p3)
+{
+	ARGS_UNUSED(p1, p2, p3);
+
+	bt_gatt_foreach_attr(walk_a_attrs[0].handle,
+			     walk_b_attrs[ARRAY_SIZE(walk_b_attrs) - 1].handle, walk_attr, NULL);
+}
+
+/* Walk services A and B in a preemptible thread, with service A unregistered
+ * while the walk calls back into it.
+ */
+static void walk_and_unregister(enum walk_mode mode)
+{
+	zassert_ok(bt_gatt_service_register(&walk_a_svc), "Service A registration failed");
+	zassert_ok(bt_gatt_service_register(&walk_b_svc), "Service B registration failed");
+
+	walk_mode = mode;
+	unregister_err = -EINPROGRESS;
+	walk_b_visits = 0U;
+
+	/* The unregistering thread waits for the walk before the walk starts:
+	 * both start once this cooperative test thread waits for them, the
+	 * higher-priority one first.
+	 */
+	if (mode != WALK_UNREGISTER_SELF) {
+		(void)k_thread_create(&unregister_thread, unregister_stack,
+				      K_THREAD_STACK_SIZEOF(unregister_stack), unregister_entry,
+				      NULL, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+		unregister_thread_started = true;
+	}
+
+	(void)k_thread_create(&walk_thread, walk_stack, K_THREAD_STACK_SIZEOF(walk_stack),
+			      walk_entry, NULL, NULL, NULL, K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
+	walk_thread_started = true;
+
+	zassert_ok(k_thread_join(&walk_thread, K_SECONDS(1)), "The walk did not end");
+	if (mode != WALK_UNREGISTER_SELF) {
+		zassert_ok(k_thread_join(&unregister_thread, K_SECONDS(1)),
+			   "The unregister did not end");
+	}
+
+	zassert_ok(unregister_err, "Service A unregister failed (%d)", unregister_err);
+	zassert_equal(walk_b_visits, ARRAY_SIZE(walk_b_attrs),
+		      "The walk visited %zu of %zu attributes of service B", walk_b_visits,
+		      ARRAY_SIZE(walk_b_attrs));
+
+	zassert_ok(bt_gatt_service_unregister(&walk_b_svc), "Service B unregister failed");
+}
+
+/* A preemptible thread that walks the database can be woken from, and so be
+ * preempted by, a thread that unregisters the service the walk is in. The
+ * walk must still reach the services after it.
+ */
+static ZTEST(test_gatt, test_gatt_foreach_unregister)
+{
+	walk_and_unregister(WALK_WAKE);
+}
+
+/* The same when the callback blocks, which lets the unregistering thread run
+ * also with the scheduler locked.
+ */
+static ZTEST(test_gatt, test_gatt_foreach_unregister_blocked)
+{
+	walk_and_unregister(WALK_WAKE_AND_BLOCK);
+}
+
+/* A callback that unregisters the service of its own attribute: the walk still
+ * reaches the services after it.
+ */
+static ZTEST(test_gatt, test_gatt_foreach_unregister_self)
+{
+	walk_and_unregister(WALK_UNREGISTER_SELF);
+}
+
+/* A test that fails can leave its threads running and its services registered:
+ * clean up, so that the next test starts from the same state
+ */
+static void test_gatt_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (walk_thread_started) {
+		k_thread_abort(&walk_thread);
+		walk_thread_started = false;
+	}
+
+	if (unregister_thread_started) {
+		k_thread_abort(&unregister_thread);
+		unregister_thread_started = false;
+	}
+
+	k_sem_reset(&unregister_sem);
+
+	if (bt_gatt_service_is_registered(&walk_a_svc)) {
+		(void)bt_gatt_service_unregister(&walk_a_svc);
+	}
+
+	if (bt_gatt_service_is_registered(&walk_b_svc)) {
+		(void)bt_gatt_service_unregister(&walk_b_svc);
 	}
 }
 

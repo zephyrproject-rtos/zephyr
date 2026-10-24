@@ -92,6 +92,38 @@ static sys_slist_t callback_list = SYS_SLIST_STATIC_INIT(&callback_list);
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static sys_slist_t db;
+
+/* Held while db is walked or changed, and for db_generation. Changes are also
+ * made under the host lock, so code that holds the host lock can read db
+ * without it. It is never held while another lock is taken or while the stack
+ * calls out of the GATT core, so that it can be taken under any other lock, as
+ * in the settings handlers that walk db.
+ */
+static K_MUTEX_DEFINE(db_mutex);
+
+static void db_lock(void)
+{
+	__maybe_unused int err = k_mutex_lock(&db_mutex, K_FOREVER);
+
+	__ASSERT(err == 0, "failed to lock the GATT database (err %d)", err);
+}
+
+static void db_unlock(void)
+{
+	__maybe_unused int err = k_mutex_unlock(&db_mutex);
+
+	__ASSERT(err == 0, "failed to unlock the GATT database (err %d)", err);
+}
+
+#define DB_LOCK_ASSERT()                                                                           \
+	__ASSERT(db_mutex.owner == k_current_get(), "GATT database lock not held by %p",           \
+		 k_current_get())
+
+/* Changed whenever a service is added to or removed from db. A walk of db lets
+ * go of db_mutex while it calls back into an attribute, and finds its place
+ * again by handle if db changed meanwhile.
+ */
+static uint64_t db_generation;
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
 enum gatt_global_flags {
@@ -1152,6 +1184,8 @@ static void gatt_insert(struct bt_gatt_service *svc, uint16_t last_handle)
 {
 	struct bt_gatt_service *tmp, *prev = NULL;
 
+	DB_LOCK_ASSERT();
+
 	if (last_handle == 0 || svc->attrs[0].handle > last_handle) {
 		sys_slist_append(&db, &svc->node);
 		return;
@@ -1170,6 +1204,30 @@ static void gatt_insert(struct bt_gatt_service *svc, uint16_t last_handle)
 
 		prev = tmp;
 	}
+}
+
+/* Find the first attribute in db with a handle of at least handle */
+static bool db_find(uint16_t handle, struct bt_gatt_service **found, size_t *attr_index)
+{
+	struct bt_gatt_service *svc;
+
+	DB_LOCK_ASSERT();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&db, svc, node) {
+		if (svc->attrs[svc->attr_count - 1].handle < handle) {
+			continue;
+		}
+
+		for (size_t i = 0; i < svc->attr_count; i++) {
+			if (svc->attrs[i].handle >= handle) {
+				*found = svc;
+				*attr_index = i;
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 static int gatt_register(struct bt_gatt_service *svc)
@@ -1212,7 +1270,10 @@ populate:
 			bt_uuid_str(attrs->uuid), attrs->perm);
 	}
 
+	db_lock();
 	gatt_insert(svc, last_handle);
+	db_generation++;
+	db_unlock();
 
 	return 0;
 }
@@ -1636,9 +1697,15 @@ static void gatt_unregister_ccc(struct bt_gatt_ccc_managed_user_data *ccc)
 
 static int gatt_unregister(struct bt_gatt_service *svc)
 {
+	db_lock();
+
 	if (!sys_slist_find_and_remove(&db, &svc->node)) {
+		db_unlock();
 		return -ENOENT;
 	}
+
+	db_generation++;
+	db_unlock();
 
 	for (uint16_t i = 0; i < svc->attr_count; i++) {
 		struct bt_gatt_attr *attr = &svc->attrs[i];
@@ -1683,10 +1750,10 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 
 	bt_dev_lock();
 
-	/* The RX-path readers of the database (the ATT request handlers
-	 * iterating the attributes) do not take the host lock and rely on
-	 * cooperative scheduling: hold the scheduler lock as well so that
-	 * they cannot preempt a preemptible caller mid-update.
+	/* The database itself is under db_mutex, but the RX-path readers of
+	 * the other state that is changed here do not take the host lock and
+	 * rely on cooperative scheduling: hold the scheduler lock as well so
+	 * that they cannot preempt a preemptible caller mid-update.
 	 */
 	k_sched_lock();
 
@@ -2007,40 +2074,82 @@ static uint8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 	return result;
 }
 
+/* Walk db with the matching of gatt_foreach_iter(). db_mutex is held while
+ * the attributes are found and matched, and let go of while the walk calls back
+ * into them. A service can then be added or removed, and the walk finds its
+ * place again, without touching a service that is gone.
+ */
 static void foreach_attr_type_dyndb(uint16_t start_handle, uint16_t end_handle,
 				    const struct bt_uuid *uuid,
 				    const void *attr_data, uint16_t num_matches,
 				    bt_gatt_attr_func_t func, void *user_data)
 {
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
-	size_t i;
 	struct bt_gatt_service *svc;
+	uint64_t generation;
+	size_t attr_index;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&db, svc, node) {
-		struct bt_gatt_service *next;
+	db_lock();
 
-		next = SYS_SLIST_PEEK_NEXT_CONTAINER(svc, node);
-		if (next) {
-			/* Skip ahead if start is not within service handles */
-			if (next->attrs[0].handle <= start_handle) {
+	generation = db_generation;
+	if (!db_find(start_handle, &svc, &attr_index)) {
+		db_unlock();
+		return;
+	}
+
+	while (true) {
+		const struct bt_gatt_attr *attr = &svc->attrs[attr_index];
+		uint16_t handle = attr->handle;
+		uint8_t result;
+
+		if (handle > end_handle) {
+			break;
+		}
+
+		/* The attribute matches if it has the UUID and the user data
+		 * asked for, where given. num_matches counts the matches that
+		 * are still to be called back for.
+		 */
+		if ((uuid == NULL || bt_uuid_cmp(uuid, attr->uuid) == 0) &&
+		    (attr_data == NULL || attr_data == attr->user_data)) {
+			num_matches--;
+
+			db_unlock();
+
+			result = func(attr, handle, user_data);
+
+			db_lock();
+
+			if (result == BT_GATT_ITER_STOP || num_matches == 0U) {
+				break;
+			}
+
+			if (generation != db_generation) {
+				/* The service may be gone: carry on after the
+				 * attribute just visited.
+				 */
+				generation = db_generation;
+				if (handle == BT_ATT_LAST_ATTRIBUTE_HANDLE ||
+				    !db_find(handle + 1U, &svc, &attr_index)) {
+					break;
+				}
+
 				continue;
 			}
 		}
 
-		for (i = 0; i < svc->attr_count; i++) {
-			struct bt_gatt_attr *attr = &svc->attrs[i];
-
-			if (gatt_foreach_iter(attr, attr->handle,
-					      start_handle,
-					      end_handle,
-					      uuid, attr_data,
-					      &num_matches,
-					      func, user_data) ==
-			    BT_GATT_ITER_STOP) {
-				return;
+		attr_index++;
+		if (attr_index == svc->attr_count) {
+			svc = SYS_SLIST_PEEK_NEXT_CONTAINER(svc, node);
+			if (svc == NULL) {
+				break;
 			}
+
+			attr_index = 0;
 		}
 	}
+
+	db_unlock();
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 }
 
