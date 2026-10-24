@@ -28,13 +28,14 @@ zephyr_include_directories(${pdl_dev_edge_dir}/include)
 zephyr_include_directories(${pdl_dev_edge_dir}/include/ip)
 zephyr_library_sources(${pdl_dev_edge_dir}/source/cy_device.c)
 
-if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "armclang")
-  zephyr_library_sources(${pdl_drv_dir}/source/TOOLCHAIN_ARM/cy_syslib_ext.S)
-  zephyr_code_relocate(FILES ${pdl_drv_dir}/source/TOOLCHAIN_ARM/cy_syslib_ext.S LOCATION ${sram_code})
-else()
-  zephyr_library_sources(${pdl_drv_dir}/source/TOOLCHAIN_GCC_ARM/cy_syslib_ext.S)
-  zephyr_code_relocate(FILES ${pdl_drv_dir}/source/TOOLCHAIN_GCC_ARM/cy_syslib_ext.S LOCATION ${sram_code})
-endif()
+# The PDL's cy_syslib_ext.S (SysLib routines that must run from RAM) emits a single ".text"
+# section that zephyr_code_relocate() cannot capture. Additionally, the PDL holds copies
+# for each supported toolchain that are discovered through MTB's own build system.
+# Maintain a Zephyr copy with per-symbol .text.<fn> sections instead and relocate it into
+# the SRAM code region.
+zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/cy_syslib_ext.S)
+zephyr_code_relocate(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cy_syslib_ext.S LOCATION ${sram_code})
+
 
 # Peripheral drivers
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C ${pdl_drv_dir}/source/cy_scb_i2c.c)
