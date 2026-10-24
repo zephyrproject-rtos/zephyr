@@ -1,0 +1,14 @@
+# STC31 CO2 sensor configuration options
+
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config STC31
+	bool "Sensirion STC31 CO2 Sensor"
+	default y
+	depends on DT_HAS_SENSIRION_STC31_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable driver for the Sensirion STC31 thermal conductivity
+	  carbon dioxide sensor.
