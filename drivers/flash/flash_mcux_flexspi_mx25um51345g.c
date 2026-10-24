@@ -18,6 +18,7 @@
 #endif
 
 #define NOR_ERASE_VALUE	0xff
+#define NOR_MACRONIX_VENDOR_ID	0xc2U
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 static uint8_t nor_write_buf[SPI_NOR_PAGE_SIZE];
@@ -75,15 +76,6 @@ struct flash_flexspi_nor_data {
 };
 
 static const uint32_t flash_flexspi_nor_lut[][4] = {
-	[READ_ID_OPI] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,		kFLEXSPI_8PAD, 0x9F,
-				kFLEXSPI_Command_DDR,		kFLEXSPI_8PAD, 0x60),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_RADDR_DDR,	kFLEXSPI_8PAD, 0x20,
-				kFLEXSPI_Command_DUMMY_DDR,	kFLEXSPI_8PAD, 0x16),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_DDR,	kFLEXSPI_8PAD, 0x04,
-				kFLEXSPI_Command_STOP,		kFLEXSPI_1PAD, 0x0),
-	},
-
 	[WRITE_ENABLE] = {
 		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR,		kFLEXSPI_1PAD, 0x06,
 				kFLEXSPI_Command_STOP,		kFLEXSPI_1PAD, 0),
@@ -97,6 +89,15 @@ static const uint32_t flash_flexspi_nor_lut[][4] = {
 	},
 
 #if (NOR_FLASH_ENABLE_OCTAL_CMD == 0x1)
+	[READ_ID_OPI] = {
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR,		kFLEXSPI_8PAD, 0x9F,
+				kFLEXSPI_Command_SDR,		kFLEXSPI_8PAD, 0x60),
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_RADDR_SDR,	kFLEXSPI_8PAD, 0x20,
+				kFLEXSPI_Command_DUMMY_SDR,	kFLEXSPI_8PAD, 0x04),
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR,	kFLEXSPI_8PAD, 0x04,
+				kFLEXSPI_Command_STOP,		kFLEXSPI_1PAD, 0x0),
+	},
+
 	[READ_STATUS_REG] = {
 		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR,		kFLEXSPI_8PAD, 0x05,
 				kFLEXSPI_Command_SDR,		kFLEXSPI_8PAD, 0xFA),
@@ -139,6 +140,15 @@ static const uint32_t flash_flexspi_nor_lut[][4] = {
 				kFLEXSPI_Command_WRITE_SDR,	kFLEXSPI_8PAD, 0x04),
 	},
 #else
+	[READ_ID_OPI] = {
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,		kFLEXSPI_8PAD, 0x9F,
+				kFLEXSPI_Command_DDR,		kFLEXSPI_8PAD, 0x60),
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_RADDR_DDR,	kFLEXSPI_8PAD, 0x20,
+				kFLEXSPI_Command_DUMMY_DDR,	kFLEXSPI_8PAD, 0x16),
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_DDR,	kFLEXSPI_8PAD, 0x04,
+				kFLEXSPI_Command_STOP,		kFLEXSPI_1PAD, 0x0),
+	},
+
 	[READ_STATUS_REG] = {
 		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,		kFLEXSPI_8PAD, 0x05,
 				kFLEXSPI_Command_DDR,		kFLEXSPI_8PAD, 0xFA),
@@ -575,14 +585,18 @@ static int flash_flexspi_nor_init(const struct device *dev)
 
 	memc_flexspi_reset(data->controller);
 
-	if (flash_flexspi_enable_octal_mode(dev)) {
-		LOG_ERR("Could not enable octal mode");
-		return -EIO;
-	}
+	/* The boot ROM may already have switched the flash to octal mode */
+	if ((flash_flexspi_nor_get_vendor_id(dev, &vendor_id) != 0) ||
+	    (vendor_id != NOR_MACRONIX_VENDOR_ID)) {
+		if (flash_flexspi_enable_octal_mode(dev) != 0) {
+			LOG_ERR("Could not enable octal mode");
+			return -EIO;
+		}
 
-	if (flash_flexspi_nor_get_vendor_id(dev, &vendor_id)) {
-		LOG_ERR("Could not read vendor id");
-		return -EIO;
+		if (flash_flexspi_nor_get_vendor_id(dev, &vendor_id) != 0) {
+			LOG_ERR("Could not read vendor id");
+			return -EIO;
+		}
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);
 
