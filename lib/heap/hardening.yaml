@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the sys_heap allocator.
+
+rules:
+  SYS_HEAP_HARDENING_NONE:
+    value: n
+    rationale: |
+      Removes all runtime validation from the sys_heap allocator, so a double free or a heap buffer
+      overflow silently corrupts allocator metadata instead of being caught on the free path.
+    references: [CWE-122, CWE-415]
+
+  SYS_HEAP_INFO:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Adds sys_heap_print_info(), which prints a heap's free-list buckets and chunk layout to the
+      console: the allocator state needed to turn a heap overflow into a reliable exploit.
+    references: [CWE-200]
+
+  SYS_HEAP_RUNTIME_STATS:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Tracks free, allocated and peak allocated bytes for every heap, giving anyone who can read the
+      counters, for example through the kernel shell, feedback on heap exhaustion and grooming
+      attempts.
+    references: [CWE-200]
+
+  SYS_HEAP_STRESS:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Builds sys_heap_stress(), a test routine that drives a heap to a target fill level with
+      randomized allocations and frees, leaving code in the image that exhausts and fragments a heap
+      on demand.
+    references: [CWE-489]
