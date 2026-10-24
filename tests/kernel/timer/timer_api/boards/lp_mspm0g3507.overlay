@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Enable system timer for this test. */
+&system_timer {
+	status = "okay";
+};
