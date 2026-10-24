@@ -172,6 +172,7 @@ static const struct wiznet_regs w5500_regs = {
 	.s0_cr = W5500_S0_CR,
 	.s0_ir = W5500_S0_IR,
 	.s0_irclr = W5500_S0_IR,
+	.s0_imr = W5500_S0_IMR,
 	.s0_tx_wr = W5500_S0_TX_WR,
 	.s0_rx_rsr = W5500_S0_RX_RSR,
 	.s0_rx_rd = W5500_S0_RX_RD,
