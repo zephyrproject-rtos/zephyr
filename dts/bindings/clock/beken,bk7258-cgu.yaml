@@ -1,0 +1,46 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Beken BK7258 clock generation unit (CGU).
+
+  The clock controller in the SYS block. It gates the peripheral clocks and
+  selects the source and divider of the clocks derived from the crystal and
+  the PLLs.
+
+  The clock specifier has one cell, the clock ID. Clock IDs are defined in
+  include/zephyr/dt-bindings/clock/beken_bk7258_clock.h.
+
+compatible: "beken,bk7258-cgu"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Frequency of the crystal driving the SoC, in Hz.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id
+
+examples:
+  - |
+    cgu: clock-controller@44010000 {
+        compatible = "beken,bk7258-cgu";
+        reg = <0x44010000 0x40>;
+        clock-frequency = <DT_FREQ_M(26)>;
+        #clock-cells = <1>;
+    };
+
+    uart0: serial@44820000 {
+        compatible = "beken,bk7258-uart";
+        reg = <0x44820000 0x100>;
+        clocks = <&cgu BK7258_CLK_UART0>;
+    };

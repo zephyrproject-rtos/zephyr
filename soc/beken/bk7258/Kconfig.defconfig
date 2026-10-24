@@ -1,0 +1,23 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_BK7258
+
+config NUM_IRQS
+	default 64
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+# Zephyr is started by the BootROM, not from reset, so return the core
+# registers and system blocks to their reset values at boot.
+config INIT_ARCH_HW_AT_BOOT
+	default y
+
+config BUILD_OUTPUT_BIN
+	default y
+
+config USE_DT_CODE_PARTITION
+	default y
+
+endif # SOC_BK7258
