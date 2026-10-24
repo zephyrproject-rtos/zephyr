@@ -17,6 +17,59 @@ from gitlint.rules import CommitRule, RuleViolation, CommitMessageTitle, LineRul
 from gitlint.options import IntOption, StrOption
 import re
 
+# Trailers git keeps in one block at the end of a commit message, such as:
+#
+#   Signed-off-by: ...
+#   Assisted-by: ...
+#   Co-authored-by: ...
+#   Fixes: ...
+#   (cherry picked from commit ...)
+#
+# Matched by shape rather than against a list of token names, so trailers
+# adopted later need no change here. The tradeoff is that prose shaped like a
+# trailer, "LED: PB2 -> PE4", cannot be told apart from one.
+TRAILER_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9-]*:\s*\S')
+CHERRY_PICK_RE = re.compile(r'^\(cherry picked from .+\)$')
+
+
+def is_trailer(line):
+    return bool(TRAILER_RE.match(line) or CHERRY_PICK_RE.match(line))
+
+
+def is_trailer_continuation(line):
+    return line[:1].isspace() and line.strip() != ''
+
+
+def strip_trailer_block(body):
+    """Return the body lines with the trailing trailer block removed.
+
+    Only the final paragraph is a candidate, and it is dropped only if it
+    opens with a trailer and holds nothing but trailers and continuations.
+    Requiring the first line to be a trailer stops a stray continuation from
+    opening a block; requiring all of them stops one prose line from being
+    dropped along with the rest.
+
+    A body running into the trailers with no blank line between them is a
+    single paragraph, so its prose is judged by shape like everything else.
+    """
+    lines = list(body)
+
+    while lines and lines[-1].strip() == '':
+        lines.pop()
+
+    # Walk back to the blank line that opens the final paragraph.
+    start = len(lines)
+    while start > 0 and lines[start - 1].strip() != '':
+        start -= 1
+
+    paragraph = lines[start:]
+    if (paragraph and is_trailer(paragraph[0])
+            and all(is_trailer(x) or is_trailer_continuation(x) for x in paragraph)):
+        return lines[:start]
+
+    return lines
+
+
 class BodyMinLineCount(CommitRule):
     # A rule MUST have a human friendly name
     name = "body-min-line-count"
@@ -25,10 +78,10 @@ class BodyMinLineCount(CommitRule):
     id = "UC6"
 
     # A rule MAY have an options_spec if its behavior should be configurable.
-    options_spec = [IntOption('min-line-count', 1, "Minimum body line count excluding Signed-off-by")]
+    options_spec = [IntOption('min-line-count', 1, "Minimum body line count excluding trailers")]
 
     def validate(self, commit):
-        filtered = [x for x in commit.message.body if not x.lower().startswith("signed-off-by") and x != '']
+        filtered = [x for x in strip_trailer_block(commit.message.body) if x != '']
         line_count = len(filtered)
         min_line_count = self.options['min-line-count'].value
         if line_count < min_line_count:
