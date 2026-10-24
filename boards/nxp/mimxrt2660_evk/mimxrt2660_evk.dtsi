@@ -51,6 +51,17 @@
 };
 
 /*
+ * LPADC0 CH0A = PIO3_0 (J94 pin 13); CH0B = PIO3_1 (J94 pin 14).
+ * Input range 0-1.8 V (VDDA_1V8_DATACONV reference).
+ */
+&adc0 {
+	pinctrl-0 = <&pinmux_adc0>;
+	pinctrl-names = "default";
+};
+
+/* LPDAC output on test point TP29 (ball L5, DAC_OUT). */
+
+/*
  * U24 Winbond W25H512NWEAM: 512 Mbit (64 MB) serial NOR, 1.8 V, quad.
  * Boot ROM configures the pins and brings XSPI0 up for XIP from the flash
  * configuration block (xip/); no Zephyr driver programs this node at runtime.
