@@ -154,3 +154,7 @@ uart4: &scb4 {
 &watchdog0 {
 	status = "okay";
 };
+
+&mcwdt0 {
+	status = "okay";
+};
