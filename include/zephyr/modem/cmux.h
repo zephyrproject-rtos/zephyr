@@ -154,6 +154,7 @@ struct modem_cmux_dlci {
 
 	/* State */
 	enum modem_cmux_dlci_state state;
+	uint8_t retry_count;
 
 	/* Statistics */
 #if CONFIG_MODEM_STATS
