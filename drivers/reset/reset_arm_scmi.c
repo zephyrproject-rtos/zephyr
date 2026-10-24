@@ -93,6 +93,6 @@ static DEVICE_API(reset, reset_arm_scmi_driver_api) = {
 static struct scmi_reset_drv_data scmi_reset_data;
 
 DT_INST_SCMI_PROTOCOL_DEFINE(0, &reset_scmi_init, NULL, &scmi_reset_data, NULL,
-			     PRE_KERNEL_1, CONFIG_RESET_INIT_PRIORITY,
+			     SCMI_PROTOCOL_INIT_LEVEL, CONFIG_RESET_ARM_SCMI_INIT_PRIORITY,
 			     &reset_arm_scmi_driver_api, SCMI_RESET_PROTOCOL_SUPPORTED_VERSION,
 			     NULL);
