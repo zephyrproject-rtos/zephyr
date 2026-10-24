@@ -1,0 +1,145 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices ADXL380 accelerometer (±4/8/16 g)
+
+  When setting the accelerometer DTS properties, make sure to include
+  adxl380.h and use the macros defined there:
+  #include <zephyr/dt-bindings/sensor/adxl380.h>
+
+compatible: "adi,adxl380"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  range:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+    description: |
+      Selects the accelerometer full-scale measurement range. Default value
+      corresponds to the reset value of the device. Refer to the macros from
+      <zephyr/dt-bindings/sensor/adxl380.h>:
+      - 0: ±4 g  (ADXL380_DT_RANGE_4G)
+      - 1: ±8 g  (ADXL380_DT_RANGE_8G)
+      - 2: ±16 g (ADXL380_DT_RANGE_16G)
+
+  op-mode:
+    type: int
+    default: 12
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 6
+      - 7
+      - 8
+      - 10
+      - 11
+      - 12
+      - 14
+      - 15
+    description: |
+      Operating mode. Default is High Performance mode. Refer to the macros
+      from <zephyr/dt-bindings/sensor/adxl380.h>:
+      - 0:  ADXL38X_DT_OP_STANDBY
+      - 1:  ADXL38X_DT_OP_HS
+      - 2:  ADXL38X_DT_OP_ULP
+      - 3:  ADXL38X_DT_OP_VLP
+      - 4:  ADXL38X_DT_OP_LP
+      - 6:  ADXL38X_DT_OP_LP_ULP
+      - 7:  ADXL38X_DT_OP_LP_VLP
+      - 8:  ADXL38X_DT_OP_RBW
+      - 10: ADXL38X_DT_OP_RBW_ULP
+      - 11: ADXL38X_DT_OP_RBW_VLP
+      - 12: ADXL38X_DT_OP_HP
+      - 14: ADXL38X_DT_OP_HP_ULP
+      - 15: ADXL38X_DT_OP_HP_VLP
+
+  fifo-watermark:
+    type: int
+    default: 96
+    description: |
+      FIFO watermark level, in FIFO words. X, Y, Z and temperature are stored
+      per sample set, so this must be a multiple of 4 and at most 320.
+
+  hpf-corner:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+    description: |
+      High-pass filter corner frequency (fraction of ODR). Default is filter
+      off. Refer to the macros from <zephyr/dt-bindings/sensor/adxl380.h>:
+      - 0: ADXL38X_DT_HPF_OFF
+      - 1: ADXL38X_DT_HPF_24_7e_4
+      - 2: ADXL38X_DT_HPF_6_2084e_4
+      - 3: ADXL38X_DT_HPF_1_5545e_4
+      - 4: ADXL38X_DT_HPF_0_3862e_4
+      - 5: ADXL38X_DT_HPF_0_0954e_4
+      - 6: ADXL38X_DT_HPF_0_0238e_4
+
+  int-pol:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: |
+      Interrupt pin polarity. Default is active high (device default). Refer to
+      the macros from <zephyr/dt-bindings/sensor/adxl380.h>:
+      - 0: Active high (ADXL38X_DT_INT_POL_ACTIVE_HIGH)
+      - 1: Active low  (ADXL38X_DT_INT_POL_ACTIVE_LOW)
+
+  double-speed:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: |
+      Double the output data rate by running the digital path from a 1024 kHz
+      system clock instead of the 512 kHz default (sets the DIG_EN double-speed
+      bit). ADXL380 only; the ADXL382 is already clocked at 1024 kHz internally,
+      so this has no effect there. Default is disabled (device default). Refer to
+      the macros from <zephyr/dt-bindings/sensor/adxl380.h>:
+      - 0: Disabled (ADXL38X_DT_DOUBLE_SPEED_DISABLED)
+      - 1: Enabled  (ADXL38X_DT_DOUBLE_SPEED_ENABLED)
+
+  int0-gpios:
+    type: phandle-array
+    description: |
+      The INT0 interrupt output. Either this or int1-gpios routes interrupts to
+      the host; if both are defined, int0 is used.
+
+  int1-gpios:
+    type: phandle-array
+    description: |
+      The INT1 interrupt output. Used when int0-gpios is not defined.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/adxl380.h>
+
+    &spi0 {
+      adxl380: adxl380@0 {
+        compatible = "adi,adxl380";
+        reg = <0>;
+        spi-max-frequency = <8000000>;
+        range = <ADXL380_DT_RANGE_4G>;
+        op-mode = <ADXL38X_DT_OP_HP>;
+        int0-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+      };
+    };
