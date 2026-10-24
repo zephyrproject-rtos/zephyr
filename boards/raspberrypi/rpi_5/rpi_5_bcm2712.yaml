@@ -2,6 +2,8 @@ identifier: rpi_5
 name: Raspberry Pi 5
 type: mcu
 arch: arm64
+supported:
+  - usbd
 toolchain:
   - zephyr
   - cross-compile

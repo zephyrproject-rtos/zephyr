@@ -49,6 +49,10 @@
 	pinctrl-names = "default";
 };
 
+&zephyr_udc0 {
+	status = "okay";
+};
+
 &gpio0_0 {
 	status = "okay";
 };
