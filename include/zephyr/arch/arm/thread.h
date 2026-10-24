@@ -92,6 +92,12 @@ struct _thread_arch {
 #ifdef _ARM_M_SWITCH
 	uint32_t iciit_pc;
 	uint32_t iciit_apsr;
+
+	/* Handle arm_m_switch() is restoring this thread from, valid while
+	 * it runs arm_m_switch_restore(). Not derivable from the stack: the
+	 * FPU prologue advances SP past the frame base before the restore.
+	 */
+	uint32_t restore_handle;
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)

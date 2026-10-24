@@ -93,6 +93,16 @@ bool arm_m_must_switch(void);
 void arm_m_exc_exit(void);
 
 /**
+ * @brief Out-of-line tail of arm_m_switch(): restores the incoming thread.
+ *
+ * Branched to with SP already pointing at the incoming thread's switch frame
+ * and interrupts still locked. Kept out of line so the whole restore occupies
+ * one known address range, which arm_m_cpu_to_switch() uses to recognize a
+ * thread interrupted while restoring itself.
+ */
+void arm_m_switch_restore(void);
+
+/**
  * @brief Recover an interrupted IT/ICI instruction after a context switch.
  *
  * The function is called from the fault handler that follows the deliberate
@@ -261,6 +271,13 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 	 * double-spill).  But all registers are restored fully
 	 * (because we might be switching to an interrupt-saved frame)
 	 */
+#ifdef CONFIG_USE_SWITCH
+	/* Remember the frame the restore below pops, so the save path can
+	 * hand it straight back if an interrupt lands mid-restore.
+	 */
+	_current->arch.restore_handle = (uint32_t)switch_to;
+#endif
+
 	register uint32_t r4 __asm__("r4") = (uint32_t)switch_to;
 	register uint32_t r5 __asm__("r5") = (uint32_t)switched_from;
 	__asm__ volatile(_R7_CLOBBER_OPT("push {r7};")
@@ -318,30 +335,14 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 			  */
 			 "str sp, [r5];"
 			 "mov sp, r4;"
-			 "msr basepri, r0;"
 
-#if defined(CONFIG_USERSPACE) && defined(CONFIG_USE_SWITCH)
-			 "  msr control, r8;" /* Now we can drop privilege */
-#endif
-
-	/* Restore is super simple: pop the flags (and stack limit if
-	 * enabled) then slurp in the whole GPR set in two
-	 * instructions. (The instruction encoding disallows popping
-	 * both LR and PC in a single instruction)
+	/* The restore itself lives out of line in arm_m_switch_restore():
+	 * this function is inlined at every arch_switch() call site, so the
+	 * save path needs one unique address range to recognize a thread
+	 * that was interrupted part way through its own restore.  r0 (zero)
+	 * and r8 (the CONTROL value) are live across the branch.
 	 */
-#ifdef CONFIG_BUILTIN_STACK_GUARD
-			 "pop {r1-r2};"
-			 "msr psplim, r1;"
-#else
-			 "pop {r2};"
-#endif
-#ifdef _ARM_M_SWITCH_HAVE_DSP
-			 "msr apsr_nzcvqg, r2;" /* bonkers syntax */
-#else
-			 "msr apsr_nzcvq, r2;" /* not even source-compatible! */
-#endif
-			 "pop {r0-r12, lr};"
-			 "pop {pc};"
+			 "b arm_m_switch_restore;"
 
 			 "3:" /* Label for restore address */
 			 _R7_CLOBBER_OPT("pop {r7};")::"r"(r4),
