@@ -7,11 +7,8 @@
 #define ZEPHYR_DRIVERS_HAPTICS_CIRRUS_CS40L26_H_
 
 #include "cs40lxx.h"
-#include <sys/types.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/haptics.h>
-#include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log_instance.h>
 
@@ -27,28 +24,31 @@ extern "C" {
 #define CS40L26_OTPID_MIN 0x1U
 #define CS40L26_OTPID_MAX 0xEU
 
-/* Non-deterministic firmware registers */
-#define CS40L26_REG_PM_TIMER_TIMEOUT_TICKS      0
-#define CS40L26_REG_PM_ACTIVE_TIMEOUT           1
-#define CS40L26_REG_PM_STDBY_TIMEOUT            2
-#define CS40L26_REG_PM_POWER_ON_SEQUENCE        3
-#define CS40L26_REG_DYNAMIC_F0_ENABLED          4
-#define CS40L26_REG_HALO_STATE                  5
-#define CS40L26_REG_RE_EST_STATUS               6
-#define CS40L26_REG_VIBEGEN_F0_OTP_STORED       7
-#define CS40L26_REG_VIBEGEN_REDC_OTP_STORED     8
-#define CS40L26_REG_VIBEGEN_COMPENSATION_ENABLE 9
-#define CS40L26_REG_F0_EST_REDC                 10
-#define CS40L26_REG_F0_EST                      11
-#define CS40L26_REG_LOGGER_ENABLE               12
-#define CS40L26_REG_LOGGER_DATA                 13
-#define CS40L26_REG_BUZZ_FREQ                   14
-#define CS40L26_REG_BUZZ_LEVEL                  15
-#define CS40L26_REG_BUZZ_DURATION               16
-#define CS40L26_REG_MAILBOX_QUEUE_WT            17
-#define CS40L26_REG_MAILBOX_QUEUE_RD            18
-#define CS40L26_REG_MAILBOX_STATUS              19
-#define CS40L26_REG_SOURCE_ATTENUATION          20
+enum { /* Non-deterministic firmware registers */
+	CS40L26_REG_PM_TIMER_TIMEOUT_TICKS,
+	CS40L26_REG_PM_STDBY_TIMEOUT,
+	CS40L26_REG_PM_ACTIVE_TIMEOUT,
+	CS40L26_REG_PM_POWER_ON_SEQUENCE,
+	CS40L26_REG_VIBEGEN_F0_OTP_STORED,
+	CS40L26_REG_VIBEGEN_REDC_OTP_STORED,
+	CS40L26_REG_VIBEGEN_COMPENSATION_ENABLE,
+	CS40L26_REG_RE_EST_STATUS,
+	CS40L26_REG_LOGGER_ENABLE,
+	CS40L26_REG_LOGGER_DATA,
+	CS40L26_REG_DYNAMIC_F0_ENABLED,
+	CS40L26_REG_HALO_STATE,
+	CS40L26_REG_SOURCE_ATTENUATION,
+	CS40L26_REG_BUZZ_FREQ,
+	CS40L26_REG_BUZZ_LEVEL,
+	CS40L26_REG_BUZZ_DURATION,
+	CS40L26_REG_GPIO_EVENT_BASE,
+	CS40L26_REG_F0_EST_REDC,
+	CS40L26_REG_F0_EST,
+	CS40L26_REG_MAILBOX_QUEUE_WT,
+	CS40L26_REG_MAILBOX_QUEUE_RD,
+	CS40L26_REG_MAILBOX_STATUS,
+	CS40L26_NUM_FIRMWARE_REGISTERS,
+};
 
 struct cs40l26_calibration {
 	/* Coil DC resistance in signed Q6.17 format (Ohms * (24 / 2.9)) */
@@ -72,6 +72,9 @@ struct cs40l26_config {
 	const struct cs40lxx_io_bus io_bus;
 	const struct gpio_dt_spec reset_gpio;
 	const struct gpio_dt_spec interrupt_gpio;
+	const struct gpio_dt_spec *const trigger_gpios;
+	const int *const trigger_mapping;
+	const uint8_t num_triggers;
 	const struct device *flash;
 	const off_t flash_offset;
 };
@@ -88,22 +91,6 @@ struct cs40l26_data {
 	struct cs40l26_calibration calibration;
 	uint32_t output;
 };
-
-int cs40l26_firmware_read(const struct device *const dev, const uint32_t firmware_control,
-			  uint32_t *const rx);
-int cs40l26_firmware_read_offset(const struct device *const dev, const uint32_t firmware_control,
-				 uint32_t *const rx, const off_t offset);
-int cs40l26_firmware_write(const struct device *const dev, const uint32_t firmware_control,
-			   uint32_t val);
-int cs40l26_firmware_burst_write(const struct device *const dev, const uint32_t firmware_control,
-				 uint32_t *const tx, const uint32_t len);
-int cs40l26_firmware_raw_write(const struct device *const dev, const uint32_t firmware_control,
-			       uint32_t *const tx, const uint32_t len);
-int cs40l26_firmware_multi_write(const struct device *const dev,
-				 const struct cs40lxx_multi_write *const multi_write,
-				 const uint32_t len);
-int cs40l26_firmware_poll(const struct device *const dev, const uint32_t firmware_control,
-			  const uint32_t val, const k_timeout_t timeout);
 
 #ifdef __cplusplus
 }
