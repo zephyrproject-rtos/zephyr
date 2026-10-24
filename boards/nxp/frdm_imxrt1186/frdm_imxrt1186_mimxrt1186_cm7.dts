@@ -25,8 +25,10 @@
 
 	hyperram0: memory@28000000 {
 		/* Winbond W957A8MFYA5K */
+		compatible = "zephyr,memory-region";
 		device_type = "memory";
 		reg = <0x28000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "HYPER_RAM";
 		/*
 		 * HyperRAM on FRDM-IMXRT1186 is connected to FlexSPI and initialized by ROM
 		 * reading the XMCD configuration from xip/frdmimxrt1186_flexspi_nor_config.c
