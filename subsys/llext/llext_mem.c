@@ -330,6 +330,11 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 		case LLEXT_MEM_VENEER:
 #endif
 			flags = K_MEM_PERM_EXEC;
+
+			k_mem_update_flags(addr, size, flags);
+
+			sys_cache_instr_invd_range(addr, size);
+
 			break;
 		case LLEXT_MEM_DATA:
 		case LLEXT_MEM_BSS:
