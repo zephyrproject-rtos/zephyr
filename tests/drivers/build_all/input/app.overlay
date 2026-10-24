@@ -361,6 +361,13 @@
 				threshold-windows = "narrow", "wide", "narrow";
 				threshold-midpoints = <3 0 7>;
 			};
+
+			axs5106l@11 {
+				compatible = "chipsourcetek,axs5106l";
+				reg = <0x11>;
+				irq-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 1 0>;
+			};
 		};
 
 		spi@2 {
