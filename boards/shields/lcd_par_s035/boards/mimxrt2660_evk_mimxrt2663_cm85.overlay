@@ -1,0 +1,39 @@
+/*
+ * Copyright 2026, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&zephyr_mipi_dbi_parallel {
+	compatible = "nxp,mipi-dbi-dcif";
+
+	/*
+	 * backlight-gpios/power-gpios are the board's own defaults for the
+	 * LCM_RGB_5INCH DPI panel, unrelated to this shield.
+	 */
+	/delete-property/ backlight-gpios;
+	/delete-property/ power-gpios;
+
+	pinctrl-0 = <&pinmux_dcif_dbi>;
+	pinctrl-names = "default";
+
+	/*
+	 * DBI clock is the fixed 400 MHz pixel clock with no on-chip divider,
+	 * cs-hold below are precomputed against this frequency for a 50 Hz frame
+	 * rate:
+	 *   wrCycle = 400e6 / (480 * 320 * 50) = 52 -> wr-high = wr-low = 26
+	 *   cs-setup = ceil(15ns / 5ns) = 3, cs-hold = ceil(10ns / 5ns) = 2
+	 */
+	clock-frequency = <400000000>;
+	width = <480>;
+	height = <320>;
+	wr-high = <26>;
+	wr-low = <26>;
+	cs-setup = <3>;
+	cs-hold = <2>;
+
+	/* LCD_PAR_S035 connector pin 11: LCD and touch reset. */
+	reset-gpios = <&nxp_lcd_8080_connector 11 GPIO_ACTIVE_HIGH>;
+};

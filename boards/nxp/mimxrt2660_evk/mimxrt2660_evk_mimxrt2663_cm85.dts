@@ -41,6 +41,17 @@
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 	};
+
+	/* This node describes the GPIO pins of the 8080 interface. */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <9 0 &gpio1 22 0>,	/* Pin 9, LCD touch INT */
+			   <10 0 &gpio1 21 0>,	/* Pin 10, LCD backlight control */
+			   <11 0 &gpio1 23 0>;	/* Pin 11, LCD and touch reset */
+	};
 };
 
 /*
@@ -59,6 +70,10 @@
 };
 
 &gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
 	status = "okay";
 };
 
@@ -105,3 +120,5 @@
 &psram {
 	status = "okay";
 };
+
+nxp_8080_touch_panel_i2c: &lpi2c1 {};
