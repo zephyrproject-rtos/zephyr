@@ -1374,6 +1374,33 @@ int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
 	return 0;
 }
 
+int ull_scan_aux_stop_by_parent(void *parent)
+{
+	for (uint8_t handle = 0U; handle < CONFIG_BT_CTLR_SCAN_AUX_SET; handle++) {
+		struct ll_scan_aux_set *aux = &ll_scan_aux_pool[handle];
+		void *aux_parent;
+		int err;
+
+		if (aux->parent != parent) {
+			continue;
+		}
+
+		err = ull_scan_aux_stop(aux);
+		if (err != 0 && err != -EALREADY) {
+			return err;
+		}
+
+		/* Use a local variable to assert on auxiliary context's release.
+		 * Under race condition a released aux context can be allocated for
+		 * reception of chain PDU of a periodic sync role.
+		 */
+		aux_parent = aux->parent;
+		LL_ASSERT_DBG(!aux_parent || (aux_parent != parent));
+	}
+
+	return 0;
+}
+
 static int init_reset(void)
 {
 	/* Initialize adv aux pool. */
