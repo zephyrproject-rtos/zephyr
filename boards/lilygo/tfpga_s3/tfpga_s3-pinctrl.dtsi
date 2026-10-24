@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Sahaj Sarup
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SCL_GPIO11>,
+				 <I2C0_SDA_GPIO10>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SCL_GPIO39>,
+				 <I2C1_SDA_GPIO38>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_SCLK_GPIO3>,
+				 <SPIM2_MISO_GPIO4>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO1>;
+			output-low;
+		};
+	};
+};
