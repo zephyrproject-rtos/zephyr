@@ -3,6 +3,7 @@
 #include <zephyr/linker/iterable_sections.h>
 
 	ITERABLE_SECTION_ROM(tracing_backend, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_ROM(instr_backend, Z_LINK_ITERABLE_SUBALIGN)
 
 	SECTION_DATA_PROLOGUE(zephyr_dbg_info,,)
 	{
