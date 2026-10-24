@@ -6413,8 +6413,10 @@ TI SimpleLink Platforms:
     - bogdanovs
     - jpanisbl
     - glneo
+    - wizath
   files:
     - boards/ti/cc*/
+    - boards/ti/lp_em_cc35x1/
     - boards/ti/msp*/
     - drivers/*/*cc13*
     - drivers/*/*cc23*

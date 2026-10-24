@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI GPIO nexus node.
+
+compatible: "ti,cc35xx-gpio"
+
+include: [gpio-nexus.yaml, base.yaml]

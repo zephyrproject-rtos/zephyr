@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	boosterpack_header: connector {
+		compatible = "ti,boosterpack-header";
+		#gpio-cells = <2>;
+		gpio-map = <3 0 &gpios 18 0>,	/* UART0_RX */
+			   <4 0 &gpios 17 0>,	/* UART0_TX */
+			   <5 0 &gpios 10 0>,	/* I2C1_DATA */
+			   <6 0 &gpios 11 0>,	/* I2C1_CLK */
+			   <7 0 &gpios 27 0>,	/* SPI0_CLK */
+			   <8 0 &gpios 14 0>,	/* SPI1_CLK */
+			   <9 0 &gpios 33 0>,	/* I2C0_CLK */
+			   <10 0 &gpios 32 0>,	/* I2C0_DATA */
+			   <11 0 &gpios 15 0>,	/* SPI1_MISO */
+			   <12 0 &gpios 12 0>,	/* SPI1_CS */
+			   <13 0 &gpios 13 0>,	/* SPI1_MOSI */
+			   <14 0 &gpios 28 0>,	/* SPI0_MISO */
+			   <15 0 &gpios 29 0>,	/* SPI0_MOSI */
+			   <17 0 &gpios 30 0>,	/* PWM / Green LED */
+			   <18 0 &gpios 26 0>,	/* SPI0_CS */
+			   <19 0 &gpios 2 0>,	/* Button 1 */
+			   <25 0 &gpios 4 0>,	/* ADC4 */
+			   <26 0 &gpios 3 0>,	/* ADC5 */
+			   <30 0 &gpios 31 0>,	/* I2S_DATA1 */
+			   <31 0 &gpios 34 0>,	/* CAN_RX / Red LED */
+			   <32 0 &gpios 30 0>,	/* CAN_TX */
+			   <36 0 &gpios 35 0>,	/* Blue LED */
+			   <37 0 &gpios 16 0>,	/* UART0_RTS */
+			   <38 0 &gpios 19 0>,	/* UART0_CTS */
+			   <40 0 &gpios 36 0>;	/* Button 2 */
+	};
+};
+
+boosterpack_serial: &uart0 {};

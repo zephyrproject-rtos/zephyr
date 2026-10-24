@@ -1,0 +1,61 @@
+{
+    "ini_composer_outputs": {
+        "ini_to_h_paths": {
+            "ini_to_h": null
+        }
+    },
+    "linker_update": {
+        "linker_cmd_paths": {
+            "linker_cmd_genlibs": null
+        }
+    },
+    "vendor_unsigned_images_paths": {
+        "actions_req_paths": {
+            "query": null,
+            "programming": null,
+            "debug": null
+        },
+        "vendor_images_paths": {
+            "programming_instructions": null,
+            "primary_vendor_image": null,
+            "secondary_vendor_image": null,
+            "primary_vendor_sbl": null,
+            "secondary_vendor_sbl": null
+        }
+    },
+    "vendor_signed_container_and_action_req_generation": {
+        "signature_generation_info": {
+            "target_device_info": {
+                "id_list": {}
+            },
+            "sig_generation_methodology": {
+                "type": "local"
+            },
+            "public_key_path": null,
+            "info": null,
+            "siginning_credential": null,
+            "remote_serve_connection_info": null
+        }
+    },
+    "programming_debug_and_ota_signed_components": {
+        "tbl_container_programming": null,
+        "primary_tbl": null,
+        "secondary_tbl": null,
+        "primary_ti_wsoc": null,
+        "secondary_ti_wsoc": null,
+        "primary_ti_wsoc_bl2": null,
+        "secondary_ti_wsoc_bl2": null,
+        "actions_req_paths": {
+            "query": null,
+            "programming": "zephyr/flash/programming_action_request.sign.bin",
+            "debug": "zephyr/flash/debug_action_request.sign.bin"
+        },
+        "boot_sector": null,
+        "programming_instructions": "zephyr/flash/programming_instructions_image.sign.bin",
+        "primary_vendor_image": "zephyr/flash/vendor_image.sign.bin",
+        "secondary_vendor_image": null,
+        "primary_vendor_sbl": null,
+        "secondary_vendor_sbl": null,
+        "protected_storage": null
+    }
+}

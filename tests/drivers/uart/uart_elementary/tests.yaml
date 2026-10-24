@@ -7,6 +7,15 @@ common:
   harness_config:
     fixture: gpio_loopback
 tests:
+  drivers.uart.uart_elementary.cc35xx_internal_loopback:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - lp_em_cc35x1/cc3551e
+    integration_platforms:
+      - lp_em_cc35x1/cc3551e
+    harness_config: {}
+    extra_args: DTC_OVERLAY_FILE=boards/lp_em_cc35x1_cc3551e_internal_loopback.overlay
+
   drivers.uart.uart_elementary:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
