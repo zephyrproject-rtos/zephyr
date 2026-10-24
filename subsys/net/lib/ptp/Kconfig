@@ -366,6 +366,27 @@ config PTP_PEER_DELAY_MAX_NS
 	  update meanLinkDelay. Adjust this sanity threshold to the expected network
 	  topology and PTP profile; it is not a clock-accuracy requirement.
 
+config PTP_SYSTEM_CLOCK_SYNC
+	bool "Set the system realtime clock from the PTP clock"
+	help
+	  While the PTP Instance is synchronized to a timeTransmitter and the
+	  clock servo is locked, periodically set SYS_CLOCK_REALTIME from the
+	  PTP Hardware Clock. If the grandmaster distributes the PTP timescale
+	  (TAI), the time is converted to UTC using the currentUtcOffset from
+	  the timePropertiesDS. With an arbitrary timescale the PTP Hardware
+	  Clock time is used as is.
+
+config PTP_SYSTEM_CLOCK_SYNC_INTERVAL
+	int "Interval between system realtime clock updates in seconds"
+	depends on PTP_SYSTEM_CLOCK_SYNC
+	default 60
+	range 1 86400
+	help
+	  Minimum time between two updates of SYS_CLOCK_REALTIME. The first
+	  update after the servo locks, including after a clock step, is
+	  done immediately. Between updates the system clock runs from the
+	  kernel tick source and drifts relative to the PTP Hardware Clock.
+
 config PTP_DISABLED_PRESENT
 	bool
 	default y

@@ -92,6 +92,26 @@ Kconfig choice:
   (:kconfig:option:`CONFIG_PTP_DELAY_MECHANISM_E2E`) and is supported on all
   transport protocols (UDP IPv4, UDP IPv6 and IEEE 802.3).
 
+System clock synchronization
+****************************
+
+The PTP stack disciplines the PTP Hardware Clock (PHC) of the Ethernet
+interface. With :kconfig:option:`CONFIG_PTP_SYSTEM_CLOCK_SYNC` enabled, the
+stack also sets the system realtime clock (``SYS_CLOCK_REALTIME``, used by
+``clock_gettime(CLOCK_REALTIME)``, ``time()`` and log timestamps) from the PHC.
+
+The system clock is set once the PTP Instance is in the ``TIME_RECEIVER``
+state and the clock servo has locked, and afterwards at most every
+:kconfig:option:`CONFIG_PTP_SYSTEM_CLOCK_SYNC_INTERVAL` seconds. A step of the
+PHC causes the system clock to be set again as soon as the servo has locked
+again. Between updates the system clock runs from the kernel tick source, so
+its accuracy is limited by the tick resolution and the drift of the system
+timer.
+
+If the grandmaster announces the PTP timescale (TAI), the PHC time is
+converted to UTC by subtracting ``currentUtcOffset`` from the
+timePropertiesDS. With an arbitrary timescale the PHC time is used as is.
+
 Supported Management messages
 *****************************
 
