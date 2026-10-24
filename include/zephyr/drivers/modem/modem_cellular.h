@@ -254,8 +254,6 @@ struct modem_cellular_user_pipe {
  *
  */
 struct modem_cellular_config_scripts {
-	/** Optional script that configures the modem's UART baud rate. */
-	const struct modem_chat_script *set_baudrate;
 	/** Script that initializes the modem and enables CMUX. Must not be NULL. */
 	const struct modem_chat_script *init;
 	/** Optional script that waits for network registration before dialing. */
@@ -271,12 +269,14 @@ struct modem_cellular_config_scripts {
 };
 
 /**
- * @brief Vendor-specific cellular modem configuration.
+ * @brief Vendor-specific common cellular modem configuration.
  *
  * Define one constant object for each modem variant. The referenced scripts and unsolicited-match
  * array must remain valid for the lifetime of every device instance that uses this configuration.
+ *
+ * This structure is for configuration that is common between all driver instances.
  */
-struct modem_cellular_vendor_config {
+struct modem_cellular_vendor_config_common {
 	/** Chat scripts implementing the modem lifecycle. */
 	struct modem_cellular_config_scripts scripts;
 	/** Unsolicited modem response matches. */
@@ -299,6 +299,10 @@ struct modem_cellular_vendor_config {
 	 * the device.
 	 */
 	const char *chat_filter;
+	/** Time modem takes to change baudrate, in milliseconds */
+	uint16_t baudrate_update_delay_ms;
+	/** Delay between de-asserting the reset pin and pulsing the power pin, in milliseconds */
+	uint16_t reset_power_on_delay_ms;
 	/** Duration of the modem power-key pulse, in milliseconds. */
 	uint16_t power_pulse_duration_ms;
 	/** Duration of the modem reset pulse, in milliseconds. */
@@ -316,12 +320,36 @@ struct modem_cellular_vendor_config {
 	bool force_autostart;
 };
 
+/**
+ * @brief Vendor-inst-specific cellular modem configuration.
+ *
+ * Define one constant object for each modem instance. The referenced scripts must remain valid for
+ * the lifetime of every device instance that uses this configuration.
+ */
+struct modem_cellular_vendor_config_inst {
+	/** Optional script that configures the modem's UART baud rate. */
+	const struct modem_chat_script *set_baudrate;
+	/** Integer baudrate associated with @a set_baudrate */
+	uint32_t target_baudrate;
+};
+
+/**
+ * @brief Modem configuration that varies per vendor and instance
+ */
+struct modem_cellular_vendor_config {
+	/** Common configuration shared between all vendor instances */
+	const struct modem_cellular_vendor_config_common *common;
+	/** Optional configuration that varies per instance */
+	const struct modem_cellular_vendor_config_inst *instance;
+	/** Vendor specific instance configuration */
+	const void *vendor_inst;
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 struct modem_cellular_config {
 	const struct device *uart;
 	const struct modem_cellular_vendor_config *vendor;
-	const void *vendor_specific;
 	struct modem_ppp *ppp;
 	struct gpio_dt_spec power_gpio;
 	struct gpio_dt_spec reset_gpio;
@@ -506,6 +534,41 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 		MODEM_CHAT_MATCH("OK", "", NULL))
 
 /**
+ * @brief Construct AT+IPR command from devicetree node
+ *
+ * @param inst Devicetree instance number.
+ */
+#define _MODEM_CELLULAR_IPR_CMD(inst) "AT+IPR=" STRINGIFY(DT_INST_PROP_OR(inst, target_baudrate, 0))
+
+/**
+ * @brief Define the standard script for updating the modem baudrate
+ *
+ * The script is not required to be used if defined.
+ *
+ * @param inst Devicetree instance number.
+ */
+#define MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst)                                           \
+	MODEM_CHAT_SCRIPT_CMDS_DEFINE(                                                             \
+		MODEM_CELLULAR_INST_NAME(baudrate_cmds, inst),                                     \
+		MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),                                      \
+		MODEM_CHAT_SCRIPT_CMD_RESP(_MODEM_CELLULAR_IPR_CMD(inst), ok_match));              \
+                                                                                                   \
+	MODEM_CHAT_SCRIPT_DEFINE(__maybe_unused MODEM_CELLULAR_INST_NAME(baudrate_script, inst),   \
+				 MODEM_CELLULAR_INST_NAME(baudrate_cmds, inst), abort_matches,     \
+				 modem_cellular_chat_callback_handler, 1);
+
+/**
+ * @brief Helper macro for populating @ref modem_cellular_vendor_config_inst baudrate fields
+ *
+ * @param inst Devicetree instance number.
+ */
+#define MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst)                                    \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, target_baudrate),                                  \
+		(.set_baudrate = &MODEM_CELLULAR_INST_NAME(baudrate_script, inst),                 \
+		.target_baudrate = DT_INST_PROP(inst, target_baudrate)),                           \
+		(.set_baudrate = NULL))
+
+/**
  * @brief Define common chat matches used by cellular modem scripts.
  *
  * Invoke this macro once at file scope. It defines matches for successful commands, common command
@@ -576,15 +639,12 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
  * @param inst Devicetree instance number.
  * @param vendor_config Pointer to a constant @ref modem_cellular_vendor_config object. Must not be
  *        NULL and must remain valid for the lifetime of the device.
- * @param _vendor_specific Pointer to an arbitrary vendor-specific configuration structure. Can be
- *        NULL.
  */
-#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, vendor_config, _vendor_specific)                      \
+#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, vendor_config)                                        \
 	BUILD_ASSERT(vendor_config != NULL, "vendor_config must be non-NULL");                     \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.vendor = vendor_config,                                                           \
-		.vendor_specific = _vendor_specific,                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
