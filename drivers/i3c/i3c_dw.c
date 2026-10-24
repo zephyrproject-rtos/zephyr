@@ -145,7 +145,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define IBI_QUEUE_CTRL     0x24
 #define IBI_MR_REQ_REJECT  0x2C
 #define IBI_SIR_REQ_REJECT 0x30
-#define IBI_SIR_REQ_ID(x)  ((((x) & GENMASK(6, 5)) >> 5) + ((x) & GENMASK(4, 0)))
+#define IBI_SIR_REQ_ID(x)  (((((x) & GENMASK(6, 5)) >> 5) + ((x) & GENMASK(4, 0))) % 32U)
 #define IBI_REQ_REJECT_ALL GENMASK(31, 0)
 
 #define RESET_CTRL            0x34
