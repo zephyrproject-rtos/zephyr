@@ -91,7 +91,7 @@
 	SECTION_PROLOGUE(struct_type##_area, ,) \
 	{ \
 		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 /**
  * @brief Define a read-write iterable section output.
