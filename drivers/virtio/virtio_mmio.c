@@ -98,6 +98,11 @@ struct virtq *virtio_mmio_get_virtqueue(const struct device *dev, uint16_t queue
 static void virtio_mmio_notify_queue(const struct device *dev, uint16_t queue_idx)
 {
 	struct virtio_mmio_data *data = dev->data;
+	struct virtq *vq = virtio_mmio_get_virtqueue(dev, queue_idx);
+
+	if (vq != NULL && !virtq_notification_needed(vq)) {
+		return;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&data->notify_lock);
 

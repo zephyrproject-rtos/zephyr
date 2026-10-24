@@ -108,7 +108,7 @@ struct virtq_used_elem {
  */
 struct virtq_used {
 	/**
-	 * ring flags, e.g. VIRTQ_USED_F_NO_NOTIFY, currently unused
+	 * ring flags, see VIRTQ_USED_F_NO_NOTIFY
 	 */
 	uint16_t flags;
 	/**
