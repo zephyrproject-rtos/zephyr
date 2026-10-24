@@ -10,6 +10,10 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/pinctrl.h>
 
+#if defined(CONFIG_NET_POWER_MANAGEMENT) && defined(CONFIG_PM_DEVICE)
+#include <zephyr/pm/device.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_nxp_enet_qos, CONFIG_ETHERNET_LOG_LEVEL);
 
@@ -401,6 +405,14 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	 * completion interrupt and the abort path.
 	 */
 	key = irq_lock();
+
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	/* Serialize the suspend flag check with DMA descriptor publication. */
+	if (net_if_is_suspended(data->iface)) {
+		irq_unlock(key);
+		return -EBUSY;
+	}
+#endif
 
 	/* One descriptor always stays unused so the tail pointer, which the DMA
 	 * treats as exclusive, never points at an owned descriptor.
@@ -1318,6 +1330,73 @@ static const struct ethernet_api api_funcs = {
 #endif
 };
 
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+static int eth_nxp_enet_qos_device_pm_action(const struct device *dev,
+					  enum pm_device_action action)
+{
+	const struct nxp_enet_qos_mac_data *data = dev->data;
+	unsigned int key;
+	int ret;
+
+	if (action != PM_DEVICE_ACTION_SUSPEND && action != PM_DEVICE_ACTION_RESUME) {
+		return -ENOTSUP;
+	}
+	if (data->iface == NULL || k_is_in_isr()) {
+		return -EBUSY;
+	}
+
+	/* Network PM calls lock this mutex recursively. Acquire it without
+	 * waiting so a contended lock cannot block system PM in the idle thread.
+	 */
+	ret = k_mutex_lock(&data->iface->lock, K_NO_WAIT);
+	if (ret != 0) {
+		return -EBUSY;
+	}
+
+	if (action == PM_DEVICE_ACTION_RESUME) {
+		ret = net_if_resume(data->iface);
+		goto out;
+	}
+
+	key = irq_lock();
+	ret = -EBUSY;
+
+	/* Check pending driver work before setting the suspend flag. The TX
+	 * path uses the same IRQ lock to check that flag and publish descriptors.
+	 */
+	if (k_work_busy_get(&data->rx.rx_work) != 0 || data->tx.aborting ||
+	    data->tx.frame_used != 0U || data->tx.desc_used != 0U ||
+	    atomic_get(&data->rx.rbu_flag) != 0) {
+		goto unlock;
+	}
+
+	for (size_t i = 0; i < NUM_RX_BUFDESC; ++i) {
+		if ((data->rx.descriptors[i].write.control3 & OWN_FLAG) == 0U) {
+			goto unlock;
+		}
+	}
+
+	ret = net_if_suspend(data->iface);
+	if (ret == -EALREADY) {
+		/* Do not take ownership of an independently suspended interface. */
+		ret = -EBUSY;
+	}
+
+unlock:
+	irq_unlock(key);
+out:
+	net_if_unlock(data->iface);
+	return ret;
+}
+
+#define ETH_NXP_ENET_QOS_PM_DEVICE_INIT(n) \
+	PM_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_qos_device_pm_action);
+#define ETH_NXP_ENET_QOS_PM_DEVICE_GET(n) PM_DEVICE_DT_INST_GET(n)
+#else
+#define ETH_NXP_ENET_QOS_PM_DEVICE_INIT(n)
+#define ETH_NXP_ENET_QOS_PM_DEVICE_GET(n) NULL
+#endif /* CONFIG_NET_POWER_MANAGEMENT */
+
 #define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)                                                    \
 	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||                                    \
 			     DT_INST_PROP(n, zephyr_random_mac_address) ||                         \
@@ -1377,7 +1456,9 @@ static const struct ethernet_api api_funcs = {
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_QOS_DRIVER_INIT)
 
 #define NXP_ENET_QOS_MAC_DEVICE_DEFINE(n)                                                          \
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_qos_init, NULL,                              \
+	ETH_NXP_ENET_QOS_PM_DEVICE_INIT(n)                                                        \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_qos_init,                                   \
+				      ETH_NXP_ENET_QOS_PM_DEVICE_GET(n),                          \
 				      &enet_qos_##n##_mac_data, &enet_qos_##n##_mac_config,        \
 				      CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
