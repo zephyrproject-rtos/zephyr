@@ -236,7 +236,23 @@ struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
 	struct net_pkt send_data;
+	/* Cached last fragment of send_data, so tcp_pkt_append() does not
+	 * have to walk the whole in-flight window from the head on every
+	 * queued write. Invalidated (set to NULL) whenever send_data.buffer
+	 * becomes NULL.
+	 */
+	struct net_buf *send_data_last_frag;
 	struct net_buf *queue_recv_data;
+	/* Cached tail fragment of queue_recv_data, maintained only across the
+	 * "append new out-of-order segment after the queue" path in
+	 * tcp_queue_recv_data(). Every other mutation of queue_recv_data
+	 * (replace, prepend, drop, merge-and-flush) invalidates this back to
+	 * NULL rather than trying to reason about the new tail, since those
+	 * paths are infrequent and getting the cache wrong would silently
+	 * corrupt reassembly; the append path is the one that runs once per
+	 * out-of-order segment and is worth not walking the whole queue for.
+	 */
+	struct net_buf *queue_recv_data_last_frag;
 	struct net_if *iface;
 	void *recv_user_data;
 	sys_slist_t send_queue;
