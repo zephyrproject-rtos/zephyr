@@ -9,6 +9,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <skeleton.dtsi>
+#include <zephyr/dt-bindings/clock/infineon-aurix-ccu.h>
 
 / {
 	model = "QEMU AURIX TC39x";
@@ -63,7 +64,7 @@
 		asclin0: asclin@f0000600 {
 			compatible = "infineon,asclin-uart";
 			reg = <0xf0000600 256>;
-			clock-frequency = <DT_FREQ_M(100)>;
+			clocks = <&ccu AURIX_CCU_ASCLINF>;
 			status = "disabled";
 		};
 

@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
@@ -80,7 +81,8 @@ struct uart_asclin_data {
 
 struct uart_asclin_config {
 	mem_addr_t base;
-	uint32_t clock_freq;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	uint16_t prescaler;
 	uint8_t oversampling;
 	uint8_t samplepoint;
@@ -253,9 +255,20 @@ static int uart_asclin_init(const struct device *dev)
 {
 	const struct uart_asclin_config *cfg = dev->config;
 	const struct uart_asclin_data *data = dev->data;
+	uint32_t clock_freq;
 	int ret;
 
-	ret = uart_asclin_enable_module(cfg->base);
+	if (!device_is_ready(cfg->clock_dev)) {
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+	if (ret == 0) {
+		ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &clock_freq);
+	}
+	if (ret == 0) {
+		ret = uart_asclin_enable_module(cfg->base);
+	}
 	if (ret != 0) {
 		return ret;
 	}
@@ -267,7 +280,7 @@ static int uart_asclin_init(const struct device *dev)
 
 	uart_asclin_set_bittime(cfg->base, cfg->oversampling, cfg->prescaler, cfg->samplepoint,
 				cfg->median_filter);
-	uart_asclin_set_baudrate(cfg->base, data->uart_cfg->baudrate, cfg->clock_freq,
+	uart_asclin_set_baudrate(cfg->base, data->uart_cfg->baudrate, clock_freq,
 				 cfg->oversampling);
 	uart_asclin_set_framecfg(cfg->base, data->uart_cfg->data_bits + 4,
 				 data->uart_cfg->stop_bits,
@@ -301,7 +314,8 @@ static DEVICE_API(uart, uart_asclin_driver_api) = {
 	static struct uart_asclin_data uart_asclin_dev_data_##n = {.uart_cfg = &uart_cfg_##n};     \
 	static const struct uart_asclin_config uart_asclin_dev_cfg_##n = {                         \
 		.base = (mem_addr_t)DT_INST_REG_ADDR(n),                                           \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, id),                \
 		.oversampling = DT_INST_PROP_OR(n, oversampling, 16),                              \
 		.samplepoint = DT_INST_PROP_OR(n, samplepoint, 8),                                 \
 		.median_filter = DT_INST_PROP(n, median_filter),                                   \
