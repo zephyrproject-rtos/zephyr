@@ -1328,7 +1328,7 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 
 	modem_cmux_log_received_frame(&cmux->frame);
 
-	if (cmux->state != MODEM_CMUX_STATE_CONNECTED) {
+	if (cmux->state < MODEM_CMUX_STATE_CONNECTED) {
 		LOG_DBG("Unexpected DLCI frame in state %d", cmux->state);
 		return;
 	}
