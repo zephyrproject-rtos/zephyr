@@ -19,6 +19,7 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -115,4 +116,8 @@
 	status = "okay";
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
 };

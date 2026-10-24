@@ -11,6 +11,10 @@
 	model = "TI LP_MSPM33C321A/MSPM33C321A";
 	compatible = "ti,lp-mspm33c321a";
 
+	aliases {
+		rtc = &rtc;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -23,5 +27,9 @@
 };
 
 &sram0 {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };
