@@ -14,10 +14,12 @@ toolchain:
   - gnuarmemb
 supported:
   - can
+  - counter
   - gpio
   - uart
   - clock_control
   - pinctrl
+  - pwm
   - rtc
   - watchdog
 vendor: infineon

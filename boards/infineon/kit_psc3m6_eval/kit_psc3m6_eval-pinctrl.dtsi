@@ -31,3 +31,8 @@
 &p5_3_can1_ttcan_tx {
 	drive-push-pull;
 };
+
+/* PWM (TCPWM0_6) pin drive mode */
+&p5_0_pwm0_6 {
+	drive-push-pull;
+};
