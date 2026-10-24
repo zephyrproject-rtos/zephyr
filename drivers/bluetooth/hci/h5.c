@@ -55,9 +55,14 @@ static bool reliable_packet(uint8_t type)
 	}
 }
 
-/* FIXME: Correct timeout */
-#define H5_RX_ACK_TIMEOUT	K_MSEC(250)
-#define H5_TX_ACK_TIMEOUT	K_MSEC(250)
+/* Core 6.3 Vol 4 Part D 12.1 recommends resending a reliable packet after 3 x Tmax and
+ * acknowledging within 2 x Tmax, Tmax being the time the largest packet takes at the baud rate in
+ * use. The driver does not derive Tmax from the baud rate: it resends after a fixed 250 ms and
+ * acknowledges within two thirds of that.
+ */
+#define H5_TX_ACK_TIMEOUT_MS	250U
+#define H5_TX_ACK_TIMEOUT	K_MSEC(H5_TX_ACK_TIMEOUT_MS)
+#define H5_RX_ACK_TIMEOUT	K_MSEC(H5_TX_ACK_TIMEOUT_MS * 2U / 3U)
 
 #define SLIP_DELIMITER	0xc0
 #define SLIP_ESC	0xdb
