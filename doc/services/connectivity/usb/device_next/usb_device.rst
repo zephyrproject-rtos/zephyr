@@ -29,6 +29,8 @@ Samples
 
 * :zephyr:code-sample:`uac2-implicit-feedback`
 
+* :zephyr:code-sample:`uac2-loopback`
+
 * :zephyr:code-sample:`uvc`
 
 * :zephyr:code-sample:`bluetooth_hci_usb`
