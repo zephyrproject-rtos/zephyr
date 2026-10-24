@@ -33,6 +33,13 @@ Supported Features
 
 See `Raspberry Pi hardware`_ for the complete list of hardware features.
 
+USB device controller
+=====================
+
+The BCM2712 DWC2 controller provides USB device support through the USB-C connector.
+The driver uses PIO transfers and manages controller power through the VideoCore firmware mailbox.
+Firmware transactions use a reserved 4 KiB shared-memory region immediately above the kernel RAM.
+
 Programming and Debugging
 *************************
 

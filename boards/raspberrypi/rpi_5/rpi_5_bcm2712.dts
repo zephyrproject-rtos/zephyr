@@ -8,6 +8,8 @@
 
 #include <broadcom/bcm2712.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
+#include <zephyr/dt-bindings/power/rpi_bcm283x_power.h>
 #include "rpi_5-pinctrl.dtsi"
 
 / {
@@ -36,6 +38,40 @@
 			label = "ACT";
 		};
 	};
+
+	reserved-memory {
+		ranges;
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		/* Keep firmware transactions outside the kernel RAM region. */
+		vc_mem: memory@280000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0 0x280000 0x1000>;
+			zephyr,memory-region = "VC_SHARED_RAM";
+		};
+	};
+
+	rpi_fw: firmware {
+		compatible = "raspberrypi,bcm283x-firmware";
+		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
+		mbox-names = "vc";
+		shared-memory = <&vc_mem>;
+	};
+
+	power-domains {
+		usb_power: power-domain-usb {
+			compatible = "raspberrypi,bcm283x-power";
+			firmware = <&rpi_fw>;
+			#power-domain-cells = <0>;
+			power-domain-id = <RPI_POWER_DOMAIN_USB_HCD>;
+			zephyr,pm-device-runtime-auto;
+		};
+	};
+};
+
+&mbox0 {
+	status = "okay";
 };
 
 &gio_aon {
@@ -46,6 +82,11 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart10_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&zephyr_udc0 {
+	power-domains = <&usb_power>;
 	status = "okay";
 };
 
