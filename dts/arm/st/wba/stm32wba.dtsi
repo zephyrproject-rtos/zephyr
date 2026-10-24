@@ -636,6 +636,14 @@
 		status = "disabled";
 	};
 
+	vref: vref {
+		compatible = "st,stm32-vref";
+		nvmem-cells = <&vrefint_otp>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc4 0>;
+		status = "disabled";
+	};
+
 	swj_port: swj_port {
 		compatible = "swj-connector";
 		pinctrl-0 = <&debug_jtms_swdio_pa13 &debug_jtck_swclk_pa14
