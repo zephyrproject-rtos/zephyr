@@ -123,15 +123,16 @@ static bool virtio_pci_read_cap(
 	pcie_bdf_t bdf, uint8_t cfg_type, void *cap_struct, size_t cap_struct_size)
 {
 	struct virtio_pci_cap tmp;
-	uint16_t status = (pcie_conf_read(bdf, STATUS_COMMAND_REG) & GENMASK(31, 16)) >> 16;
+	uint16_t status =
+		(sys_le32_to_cpu(pcie_conf_read(bdf, STATUS_COMMAND_REG)) & GENMASK(31, 16)) >> 16;
 
 	if (!(status & BIT(CABABILITY_LIST_VALID_BIT))) {
 		LOG_ERR("no capability list for device with bdf 0x%x", bdf);
 		return false;
 	}
 
-	uint32_t cap_ptr =
-		pcie_conf_read(bdf, CAPABILITIES_POINTER_REG) & CAPABILITIES_POINTER_MASK;
+	uint32_t cap_ptr = sys_le32_to_cpu(pcie_conf_read(bdf, CAPABILITIES_POINTER_REG)) &
+			   CAPABILITIES_POINTER_MASK;
 	uint32_t cap_off = cap_ptr / sizeof(uint32_t);
 
 	/*
@@ -153,10 +154,12 @@ static bool virtio_pci_read_cap(
 				(tmp.cap_len - sizeof(struct virtio_pci_cap)) / sizeof(uint32_t);
 			size_t extra_data_offset =
 				cap_off + sizeof(struct virtio_pci_cap) / sizeof(uint32_t);
-			uint32_t *extra_data =
-				(uint32_t *)((struct virtio_pci_cap *)cap_struct + 1);
+			struct virtio_pci_cap *cap = cap_struct;
+			uint32_t *extra_data = (uint32_t *)(cap + 1);
 
-			*(struct virtio_pci_cap *)cap_struct = tmp;
+			*cap = tmp;
+			cap->offset = sys_le32_to_cpu(cap->offset);
+			cap->length = sys_le32_to_cpu(cap->length);
 
 			for (int i = 0; i < extra_data_words; i++) {
 				extra_data[i] = pcie_conf_read(bdf, extra_data_offset + i);
@@ -220,10 +223,8 @@ static void virtio_pci_notify_queue(const struct device *dev, uint16_t queue_idx
  */
 static void virtio_pci_write64(uint64_t val, uint64_t *dst)
 {
-	uint64_t val_le = sys_cpu_to_le64(val);
-
-	((uint32_t *)dst)[0] = val_le & GENMASK64(31, 0);
-	((uint32_t *)dst)[1] = (val_le & GENMASK64(63, 32)) >> 32;
+	((uint32_t *)dst)[0] = sys_cpu_to_le32((uint32_t)val);
+	((uint32_t *)dst)[1] = sys_cpu_to_le32((uint32_t)(val >> 32));
 }
 
 static int virtio_pci_set_virtqueue(
@@ -401,19 +402,19 @@ static int virtio_pci_write_driver_feature_bit_range_check(
 static bool virtio_pci_read_status_bit(const struct device *dev, int bit)
 {
 	struct virtio_pci_data *data = dev->data;
-	uint32_t mask = BIT(bit);
+	uint8_t mask = (uint8_t)BIT(bit);
 
 	barrier_dmem_fence_full();
-	return sys_le32_to_cpu(data->common_cfg->device_status) & mask;
+	return (data->common_cfg->device_status & mask) != 0U;
 }
 
 static void virtio_pci_write_status_bit(const struct device *dev, int bit)
 {
 	struct virtio_pci_data *data = dev->data;
-	uint32_t mask = BIT(bit);
+	uint8_t mask = (uint8_t)BIT(bit);
 
 	barrier_dmem_fence_full();
-	data->common_cfg->device_status |= sys_cpu_to_le32(mask);
+	data->common_cfg->device_status |= mask;
 }
 
 static int virtio_pci_init_common(const struct device *dev)
