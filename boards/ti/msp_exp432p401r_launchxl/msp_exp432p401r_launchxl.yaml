@@ -7,4 +7,6 @@ toolchain:
   - gnuarmemb
 ram: 64
 flash: 256
+supported:
+  - adc
 vendor: ti
