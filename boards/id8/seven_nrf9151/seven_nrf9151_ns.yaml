@@ -1,0 +1,21 @@
+identifier: seven/nrf9151/ns
+name: seven_nrf9151_non_secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 128
+flash: 192
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - uart
+  - spi
+  - watchdog
+  - counter
+  - adc
+  - netif:modem
+vendor: id8
+sysbuild: true

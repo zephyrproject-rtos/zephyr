@@ -1,0 +1,19 @@
+identifier: seven/nrf9151
+name: seven_nrf9151
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 88
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - uart
+  - spi
+  - watchdog
+  - counter
+  - adc
+vendor: id8

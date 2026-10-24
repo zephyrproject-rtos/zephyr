@@ -1,0 +1,7 @@
+# Seven nRF9151 board configuration
+
+# Copyright (c) 2026 ID8 Engineering AB
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SEVEN
+	select SOC_NRF9151_LACA

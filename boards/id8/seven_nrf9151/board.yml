@@ -1,0 +1,8 @@
+board:
+  name: seven
+  full_name: Seven nRF9151
+  vendor: id8
+  socs:
+  - name: nrf9151
+    variants:
+    - name: 'ns'

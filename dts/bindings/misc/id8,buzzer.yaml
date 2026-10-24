@@ -1,0 +1,12 @@
+# Copyright (c) 2026 ID8 Engineering AB
+# SPDX-License-Identifier: Apache-2.0
+
+description: ID8 buzzer driven from a PWM output
+
+compatible: "id8,buzzer"
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+    description: PWM specifier used to drive the buzzer.
