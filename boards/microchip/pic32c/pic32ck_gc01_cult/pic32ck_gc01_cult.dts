@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <microchip/pic32c/pic32ck_sg_gc/pic32ck_gc01/pic32ck2051gc01144.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	model = "PIC32CK GC01 Curiosity Ultra";
@@ -23,6 +24,8 @@
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		i2c0 = &sercom4;
+		eeprom-0 = &at24_eeprom;
 	};
 
 	leds {
@@ -291,4 +294,23 @@
 
 &portd {
 	status = "okay";
+};
+
+&sercom4 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom4_i2c_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	at24_eeprom: eeprom@56 {
+		compatible = "atmel,at24";
+		reg = <0x56>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+	};
 };
