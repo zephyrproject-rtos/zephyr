@@ -1,0 +1,217 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/battery/battery.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include "esp32s3_touch_lcd_1_47-pinctrl.dtsi"
+
+/ {
+	model = "ESP32-S3-Touch-LCD-1.47 PROCPU";
+	compatible = "waveshare,esp32-s3-touch-lcd-1.47";
+
+	aliases {
+		fuel-gauge0 = &fuel_gauge;
+		i2c-0 = &i2c0;
+		pwm-0 = &ledc0;
+		pwm-lcd0 = &pwm_lcd0;
+		sdhc0 = &sdhc0;
+		sw0 = &button0;
+		uart-0 = &uart0;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &jd9853;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_lcd0: pwm_lcd0 {
+			pwms = <&ledc0 0 PWM_KHZ(5) PWM_POLARITY_NORMAL>;
+			label = "LCD Backlight";
+		};
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 1>;
+		output-ohms = <100000>;
+		full-ohms = <(200000 + 100000)>;
+		skip-calibration; /* ESP32 ADC does not support calibration */
+	};
+
+	/*
+	 * This composite fuel gauge describes a single-cell Li-Po battery connected to the
+	 * battery header. Enable the node to enable battery state-of-charge estimation based
+	 * on the battery voltage (adapt the capacity value to the battery in use).
+	 */
+	fuel_gauge: fuel_gauge {
+		status = "disabled";
+		compatible = "zephyr,fuel-gauge-composite";
+		source-primary = <&vbatt>;
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+		charge-full-design-microamp-hours = <500000>;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;	/* GPIO45 */
+		reset-gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;	/* GPIO40 */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* JD9853 controller, driven through its ST7789V compatible command set */
+		jd9853: st7789v@0 {
+			status = "okay";
+			compatible = "sitronix,st7789v";
+			reg = <0>;
+			mipi-max-frequency = <80000000>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			width = <172>;
+			height = <320>;
+			x-offset = <34>;
+			y-offset = <0>;
+			mdac = <0x48>;	/* MX, BGR */
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			inversion-off;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* GPIO12, battery voltage through a 200K/100K divider */
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+/* Shared by the AXS5106L touch controller and the SCL/SDA header pins */
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&ledc0 {
+	status = "okay";
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+};
+
+&spi2 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+};
+
+&sdhc {
+	sdhc0: sdhc@0 {
+		status = "okay";
+		pinctrl-0 = <&sdhc0_default>;
+		pinctrl-names = "default";
+		max-bus-freq = <40000000>;
+		bus-width = <4>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
