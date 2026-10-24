@@ -197,10 +197,191 @@ int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout
 	return ret;
 }
 
+static bool virtq_add_free_desc_locked(struct virtq *v, uint16_t desc_idx)
+{
+	/* A duplicate used entry must not grow the free count past the queue size. */
+	if (v->free_desc_n >= v->num) {
+		return false;
+	}
+
+	if (k_stack_push(&v->free_desc_stack, desc_idx) != 0) {
+		return false;
+	}
+
+	v->free_desc_n++;
+
+	return true;
+}
+
 void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx)
 {
-	k_stack_push(&v->free_desc_stack, desc_idx);
-	K_SPINLOCK(&v->lock) {
-		v->free_desc_n++;
+	k_spinlock_key_t key = k_spin_lock(&v->lock);
+
+	(void)virtq_add_free_desc_locked(v, desc_idx);
+	k_spin_unlock(&v->lock, key);
+}
+
+uint16_t virtq_get_free_desc_count(struct virtq *v)
+{
+	k_spinlock_key_t key = k_spin_lock(&v->lock);
+	uint16_t count = v->free_desc_n;
+
+	k_spin_unlock(&v->lock, key);
+
+	return count;
+}
+
+void virtq_process_used(struct virtq *v)
+{
+	void (*irq_cb)(void *) = NULL;
+	void *irq_cb_data = NULL;
+	k_spinlock_key_t key;
+	uint16_t used_snapshot;
+	uint16_t budget;
+
+	if (v->num == 0U) {
+		return;
+	}
+
+	/*
+	 * Process at most the entries completed at entry time. A callback may
+	 * requeue a buffer and the device may complete it immediately, so
+	 * draining until the used ring is empty could keep this pass running
+	 * indefinitely. Newer completions are handled by the next call.
+	 */
+	key = k_spin_lock(&v->lock);
+	if (v->faulted) {
+		k_spin_unlock(&v->lock, key);
+		return;
+	}
+
+	used_snapshot = sys_le16_to_cpu(v->used->idx);
+	budget = (uint16_t)(used_snapshot - v->last_used_idx);
+	if (budget > v->num) {
+		/*
+		 * A compliant device cannot complete more buffers than the queue
+		 * holds. Reject the batch: the last num slots may belong to older
+		 * completions, so processing them could return in-flight buffers.
+		 */
+		v->invalid_used_count++;
+		v->faulted = true;
+		k_spin_unlock(&v->lock, key);
+		return;
+	}
+
+	barrier_dmem_fence_full();
+	k_spin_unlock(&v->lock, key);
+
+	while (budget > 0U) {
+		uint16_t used_idx;
+
+		key = k_spin_lock(&v->lock);
+
+		/* Another context may have faulted the queue while we were unlocked. */
+		if (v->faulted) {
+			k_spin_unlock(&v->lock, key);
+			break;
+		}
+
+		used_idx = sys_le16_to_cpu(v->used->idx);
+		barrier_dmem_fence_full();
+
+		/* Another context may have consumed the remaining entries. */
+		if (v->last_used_idx == used_idx) {
+			k_spin_unlock(&v->lock, key);
+			break;
+		}
+
+		uint16_t idx = v->last_used_idx % v->num;
+		uint32_t chain_head = sys_le32_to_cpu(v->used->ring[idx].id);
+		uint32_t used_len = sys_le32_to_cpu(v->used->ring[idx].len);
+
+		/* The device writes the used ring and its descriptor id is untrusted. */
+		if (chain_head >= v->num) {
+			v->invalid_used_count++;
+			v->last_used_idx++;
+			k_spin_unlock(&v->lock, key);
+			budget--;
+			continue;
+		}
+
+		struct virtq_receive_callback_entry cbe = v->recv_cbs[chain_head];
+		uint16_t curr = (uint16_t)chain_head;
+		uint16_t chain_len = 1U;
+		bool valid = true;
+
+		/*
+		 * Validate the whole chain before touching the free stack. A
+		 * malformed or cyclic chain must not return descriptors or feed
+		 * duplicates into the free stack.
+		 */
+		for (uint16_t i = 0U; i < v->num; i++) {
+			uint16_t flags = sys_le16_to_cpu(v->desc[curr].flags);
+
+			if ((flags & VIRTQ_DESC_F_NEXT) == 0U) {
+				break;
+			}
+
+			uint16_t next = sys_le16_to_cpu(v->desc[curr].next);
+
+			if (next >= v->num) {
+				valid = false;
+				break;
+			}
+
+			curr = next;
+			chain_len++;
+
+			if (i == (uint16_t)(v->num - 1U)) {
+				/* No terminal descriptor within the queue size. */
+				valid = false;
+			}
+		}
+
+		if (valid && ((uint32_t)v->free_desc_n + chain_len > v->num)) {
+			valid = false;
+		}
+
+		v->last_used_idx++;
+		if (!valid) {
+			v->invalid_used_count++;
+			k_spin_unlock(&v->lock, key);
+			budget--;
+			continue;
+		}
+
+		curr = (uint16_t)chain_head;
+		for (uint16_t i = 0U; i < chain_len; i++) {
+			uint16_t next = sys_le16_to_cpu(v->desc[curr].next);
+
+			if (!virtq_add_free_desc_locked(v, curr)) {
+				v->invalid_used_count++;
+			}
+			curr = next;
+		}
+
+		v->irq_pending = true;
+		k_spin_unlock(&v->lock, key);
+		budget--;
+
+		if (cbe.cb != NULL) {
+			cbe.cb(cbe.opaque, used_len);
+		}
+	}
+
+	/*
+	 * Deliver the coalesced notification once per pass, including for
+	 * completions reclaimed by a thread.
+	 */
+	key = k_spin_lock(&v->lock);
+	if (!v->faulted && k_is_in_isr() && v->irq_pending) {
+		v->irq_pending = false;
+		irq_cb = v->irq_cb;
+		irq_cb_data = v->irq_cb_data;
+	}
+
+	k_spin_unlock(&v->lock, key);
+	if (irq_cb != NULL) {
+		irq_cb(irq_cb_data);
 	}
 }
