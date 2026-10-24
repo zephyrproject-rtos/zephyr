@@ -2107,8 +2107,8 @@ static void modem_cmux_dlci_open_handler(struct k_work *item)
 	}
 
 	if (dlci->state == MODEM_CMUX_DLCI_STATE_OPENING) {
-		dlci->cmux->retry_count++;
-		if (dlci->cmux->retry_count > MODEM_CMUX_N2_RETRIES) {
+		dlci->retry_count++;
+		if (dlci->retry_count > MODEM_CMUX_N2_RETRIES) {
 			LOG_ERR("DLCI %u open failed after %u retries", dlci->dlci_address,
 				MODEM_CMUX_N2_RETRIES);
 			dlci_close(dlci);
@@ -2117,7 +2117,7 @@ static void modem_cmux_dlci_open_handler(struct k_work *item)
 	} else {
 		dlci->state = MODEM_CMUX_DLCI_STATE_OPENING;
 		dlci->msc_sent = false;
-		cmux->retry_count = 0;
+		dlci->retry_count = 0;
 	}
 
 	struct modem_cmux_frame frame = {
@@ -2149,8 +2149,8 @@ static void modem_cmux_dlci_close_handler(struct k_work *item)
 	cmux = dlci->cmux;
 
 	if (dlci->state == MODEM_CMUX_DLCI_STATE_CLOSING) {
-		cmux->retry_count++;
-		if (cmux->retry_count > MODEM_CMUX_N2_RETRIES) {
+		dlci->retry_count++;
+		if (dlci->retry_count > MODEM_CMUX_N2_RETRIES) {
 			LOG_ERR("DLCI %u close failed after %u retries", dlci->dlci_address,
 				MODEM_CMUX_N2_RETRIES);
 			dlci_close(dlci);
@@ -2158,7 +2158,7 @@ static void modem_cmux_dlci_close_handler(struct k_work *item)
 		}
 	} else if (dlci->state == MODEM_CMUX_DLCI_STATE_OPEN) {
 		dlci->state = MODEM_CMUX_DLCI_STATE_CLOSING;
-		cmux->retry_count = 0;
+		dlci->retry_count = 0;
 	} else {
 		/* DLCI already closed */
 		return;
