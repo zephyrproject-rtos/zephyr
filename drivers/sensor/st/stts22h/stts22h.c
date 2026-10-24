@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
@@ -82,7 +83,10 @@ static const uint8_t stts22h_map[6] = {0, 1, 25, 50, 100, 200};
 static int stts22h_odr_set(const struct device *dev,
 			   const struct sensor_value *val)
 {
+	struct stts22h_data *data = dev->data;
+	stts22h_odr_temp_t odr_raw;
 	int odr;
+	int ret;
 
 	for (odr = 0; odr < ARRAY_SIZE(stts22h_map); odr++) {
 		if (val->val1 <= stts22h_map[odr]) {
@@ -92,21 +96,37 @@ static int stts22h_odr_set(const struct device *dev,
 
 	switch (odr) {
 	case 0:
-		return stts22h_set_odr_raw(dev, STTS22H_POWER_DOWN);
+		odr_raw = STTS22H_POWER_DOWN;
+		break;
 	case 1:
-		return stts22h_set_odr_raw(dev, STTS22H_1Hz);
+		odr_raw = STTS22H_1Hz;
+		break;
 	case 2:
-		return stts22h_set_odr_raw(dev, STTS22H_25Hz);
+		odr_raw = STTS22H_25Hz;
+		break;
 	case 3:
-		return stts22h_set_odr_raw(dev, STTS22H_50Hz);
+		odr_raw = STTS22H_50Hz;
+		break;
 	case 4:
-		return stts22h_set_odr_raw(dev, STTS22H_100Hz);
+		odr_raw = STTS22H_100Hz;
+		break;
 	case 5:
-		return stts22h_set_odr_raw(dev, STTS22H_200Hz);
+		odr_raw = STTS22H_200Hz;
+		break;
 	default:
 		LOG_ERR("bad frequency: %d (odr = %d)", val->val1, odr);
 		return -EINVAL;
 	}
+
+	ret = stts22h_set_odr_raw(dev, odr_raw);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Restored on PM resume */
+	data->odr = odr_raw;
+
+	return 0;
 }
 #if CONFIG_STTS22H_TRIGGER
 static inline uint32_t stts22h_val_to_threshold(const struct sensor_value *val)
@@ -144,6 +164,7 @@ static int stts22h_attr_set(const struct device *dev,
 #if CONFIG_STTS22H_TRIGGER
 	case SENSOR_ATTR_UPPER_THRESH: {
 		const struct stts22h_config *cfg = dev->config;
+		struct stts22h_data *data = dev->data;
 		stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 		uint32_t raw_value = stts22h_val_to_threshold(val);
@@ -155,10 +176,13 @@ static int stts22h_attr_set(const struct device *dev,
 			LOG_DBG("Could not set high threshold");
 			return -EIO;
 		}
+		/* Restored on PM turn-on when int-gpios is set */
+		data->temp_hi = (uint8_t)raw_value;
 		return 0;
 	}
 	case SENSOR_ATTR_LOWER_THRESH: {
 		const struct stts22h_config *cfg = dev->config;
+		struct stts22h_data *data = dev->data;
 		stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 		uint32_t raw_value = stts22h_val_to_threshold(val);
@@ -170,6 +194,8 @@ static int stts22h_attr_set(const struct device *dev,
 			LOG_DBG("Could not set low threshold ");
 			return -EIO;
 		}
+		/* Restored on PM turn-on when int-gpios is set */
+		data->temp_lo = (uint8_t)raw_value;
 		return 0;
 	}
 #endif
@@ -194,56 +220,107 @@ static int stts22h_init_chip(const struct device *dev)
 {
 	const struct stts22h_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	uint8_t chip_id, odr;
+	uint8_t chip_id;
 
 	if (stts22h_dev_id_get(ctx, &chip_id) < 0) {
 		LOG_ERR("Failed reading chip id");
 		return -EIO;
 	}
 
-	LOG_INF("chip id 0x%02x", chip_id);
+	LOG_DBG("chip id 0x%02x", chip_id);
 
 	if (stts22h_auto_increment_set(ctx, 1) < 0) {
 		LOG_ERR("Failed to set autoincr");
 		return -EIO;
 	}
 
-	/* set odr from DT */
-	odr = cfg->odr;
-	LOG_INF("sensor odr is %d", odr);
-	if (stts22h_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("Failed to set sampling rate");
+	/* CTRL keeps its mode across an MCU reset that does not cycle the supply */
+	if (stts22h_set_odr_raw(dev, STTS22H_POWER_DOWN) < 0) {
+		LOG_ERR("Failed to set power-down mode");
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int stts22h_init(const struct device *dev)
+/*
+ * The chip leaves TURN_ON in power-down mode with auto-increment set and,
+ * with int-gpios, the thresholds restored and the interrupt enabled.
+ * RESUME restarts conversions at the last ODR.
+ */
+static int stts22h_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct stts22h_data *data = dev->data;
 #ifdef CONFIG_STTS22H_TRIGGER
 	const struct stts22h_config *cfg = dev->config;
 #endif
+	int ret;
+
+	/*
+	 * Every action but TURN_OFF needs I2C. I2C cannot block in the idle
+	 * thread (system-managed device PM, which skips -ENOTSUP) or in an ISR
+	 * (a power domain that reports power changes from its interrupt). A
+	 * TURN_ON that cannot run must be reported as failed, not unsupported.
+	 * TURN_OFF handles those contexts in stts22h_config_interrupt().
+	 */
+	if ((action != PM_DEVICE_ACTION_TURN_OFF) && !k_can_yield()) {
+		return (action == PM_DEVICE_ACTION_TURN_ON) ? -EWOULDBLOCK : -ENOTSUP;
+	}
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* The power domain's startup-delay-us must cover the 12 ms boot time */
+		ret = stts22h_init_chip(dev);
+		if (ret < 0) {
+			return ret;
+		}
+#ifdef CONFIG_STTS22H_TRIGGER
+		if (cfg->int_gpio.port != NULL) {
+			return stts22h_config_interrupt(dev, true);
+		}
+#endif
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		return stts22h_set_odr_raw(dev, data->odr);
+	case PM_DEVICE_ACTION_SUSPEND:
+		return stts22h_set_odr_raw(dev, STTS22H_POWER_DOWN);
+	case PM_DEVICE_ACTION_TURN_OFF:
+#ifdef CONFIG_STTS22H_TRIGGER
+		/* Without supply the INT line level is undefined */
+		if (cfg->int_gpio.port != NULL) {
+			return stts22h_config_interrupt(dev, false);
+		}
+#endif
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int stts22h_init(const struct device *dev)
+{
+	const struct stts22h_config *cfg = dev->config;
+	struct stts22h_data *data = dev->data;
 
 	LOG_INF("Initialize device %s", dev->name);
 	data->dev = dev;
-
-	if (stts22h_init_chip(dev) < 0) {
-		LOG_ERR("Failed to initialize chip");
-		return -EIO;
-	}
+	data->odr = cfg->odr;
 
 #ifdef CONFIG_STTS22H_TRIGGER
-	if (cfg->int_gpio.port) {
+	data->temp_hi = cfg->temp_hi;
+	data->temp_lo = cfg->temp_lo;
+
+	/* A failed init may be retried; the thread and GPIO callback exist once */
+	if (cfg->int_gpio.port != NULL && !data->trigger_ready) {
 		if (stts22h_init_interrupt(dev) < 0) {
 			LOG_ERR("Failed to initialize interrupt.");
 			return -EIO;
 		}
+		data->trigger_ready = true;
 	}
 #endif
 
-	return 0;
+	return pm_device_driver_init(dev, stts22h_pm_action);
 }
 
 #define STTS22H_DEFINE(inst)									\
@@ -259,7 +336,9 @@ static int stts22h_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, stts22h_init, NULL,					\
+	PM_DEVICE_DT_INST_DEFINE(inst, stts22h_pm_action);					\
+												\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, stts22h_init, PM_DEVICE_DT_INST_GET(inst),		\
 			      &stts22h_data_##inst, &stts22h_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &stts22h_api_funcs);			\
 
