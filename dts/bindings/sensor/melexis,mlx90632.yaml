@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) Michele Tavecchio <tavecchiomichele03@gmail.com>
+# SPDX-FileCopyrightText: Copyright (c) Alessandro Sola <alessandrosola03@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Melexis MLX90632 Infrared Temperature Sensor. See datasheet at
+  https://www.melexis.com/en/documents/documentation/datasheets/datasheet-mlx90632
+
+compatible: "melexis,mlx90632"
+
+include: [sensor-device.yaml, i2c-device.yaml]
