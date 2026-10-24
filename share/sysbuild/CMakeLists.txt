@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.28.0)
 
 
 if(NOT DEFINED APP_DIR AND DEFINED ENV{APP_DIR})
-  set(APP_DIR $ENV{APP_DIR})
+  file(TO_CMAKE_PATH "$ENV{APP_DIR}" APP_DIR)
 endif()
 
 if(NOT DEFINED APP_DIR)
