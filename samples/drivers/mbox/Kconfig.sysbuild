@@ -8,7 +8,7 @@ source "share/sysbuild/Kconfig"
 
 config REMOTE_BOARD
 	string "Remote board"
-	default "adp_xc7k/ae350" if $(BOARD) = "adp_xc7k"
+	default "adp_xc7k/ae350_25" if $(BOARD) = "adp_xc7k"
 	default "bl54l15_dvk/nrf54l15/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "bl54l15_dvk/nrf54l15/cpuapp"
 	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
 	default "esp32_devkitc/esp32/appcpu" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32_devkitc/esp32/procpu"

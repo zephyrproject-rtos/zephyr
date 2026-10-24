@@ -4,6 +4,7 @@
 if DT_HAS_ANDESTECH_ANDESCORE_V5_ENABLED
 
 rsource "andes/Kconfig"
+rsource "andes/Kconfig.core"
 
 endif # DT_HAS_ANDESTECH_ANDESCORE_V5_ENABLED
 

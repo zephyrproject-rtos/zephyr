@@ -1,0 +1,13 @@
+board:
+  name: adp_xc7k
+  full_name: ADP-XC7K
+  vendor: andestech
+  socs:
+  - name: ae350_22
+    variants:
+    - name: clic
+  - name: ae350_23
+    variants:
+    - name: clic
+  - name: ae350_25
+  - name: ae350_x45

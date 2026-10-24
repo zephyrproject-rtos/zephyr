@@ -4,3 +4,15 @@ family:
   - name: ae350
     socs:
     - name: ae350
+    - name: ae350_22
+    - name: ae350_225
+    - name: ae350_23
+    - name: ae350_25
+    - name: ae350_x25
+    - name: ae350_27
+    - name: ae350_x27
+    - name: ae350_45
+    - name: ae350_x45
+    - name: ae350_46
+    - name: ae350_x46
+    - name: ae350_x65

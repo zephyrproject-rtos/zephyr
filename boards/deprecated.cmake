@@ -127,3 +127,15 @@ set(kit_psc3m6_evk_DEPRECATED
 set(kit_psc3m6_evk/psc3m6ges3ahq1_DEPRECATED
     kit_psc3m6_eval/psc3m6ges3ahq1
 )
+set(tang_mega_138k_pro_dock/ae350_DEPRECATED
+    tang_mega_138k_pro_dock/ae350_25
+)
+set(tang_mega_138k_pro_dock/ae350/demo_DEPRECATED
+    tang_mega_138k_pro_dock/ae350_25/demo
+)
+set(adp_xc7k/ae350_DEPRECATED
+    adp_xc7k/ae350_25
+)
+set(adp_xc7k/ae350/clic_DEPRECATED
+    adp_xc7k/ae350_23/clic
+)

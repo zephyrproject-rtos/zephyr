@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <andes/andes_v5_ae350.dtsi>
-#include "adp_xc7k_ae350_common.dtsi"
+#include "adp_xc7k_common.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {

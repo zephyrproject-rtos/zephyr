@@ -82,7 +82,7 @@ tests:
     arch_allow: riscv
     platform_exclude:
       - m2gl025_miv
-      - adp_xc7k/ae350
+      - adp_xc7k/ae350_25
       - nrf9280pdk/nrf9280/cpuppr
       - nrf9280pdk/nrf9280/cpuppr/xip
     filter: CONFIG_RISCV_PRIVILEGED and not CONFIG_RISCV_SMP_IPI_SBI
