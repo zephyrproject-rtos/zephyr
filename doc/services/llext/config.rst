@@ -252,11 +252,17 @@ unsigned load / store exception handler for Xtensa with the following option.
         When an unsigned load / store instruction triggers an unsupported
         load / store exception, the exception handler will perform the
         operation itself with supported word sized and aligned loads /
-        stores. Does not currently support VLIW.
+        stores.
 
-As mentioned in the option description, to use this option you must also disable
-VLIW, as enabling VLIW causes the compiler to generate signed load / store
-instructions.
+        Note that compilers may pack multiple instructions into a single
+        Very Long Instruction Word (VLIW). Exceptions caused by unsigned
+        load/store operations in these VLIW instructions are not supported
+        by this exception handler, so COMPILER_CODEGEN_VLIW_DISABLED must
+        be set to prevent VLIW instruction generation.
+
+As mentioned in the option description, you may also need to disable VLIW
+generation, as unsigned load / store instructions packed in these VLIW
+instructions are not supported by the exception handler.
 
 :kconfig:option:`CONFIG_COMPILER_CODEGEN_VLIW_DISABLED`
 
