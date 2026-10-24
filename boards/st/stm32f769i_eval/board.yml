@@ -1,0 +1,6 @@
+board:
+  name: stm32f769i_eval
+  full_name: STM32F769I Evaluation
+  vendor: st
+  socs:
+    - name: stm32f769xx
