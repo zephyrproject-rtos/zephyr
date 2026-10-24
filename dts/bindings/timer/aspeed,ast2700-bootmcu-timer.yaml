@@ -1,0 +1,18 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ASPEED AST2700 BootMCU system timer with a free-running 64-bit counter
+  clocked at 1 MHz and a 64-bit alarm. The alarm drives the RISC-V machine
+  timer interrupt.
+
+compatible: "aspeed,ast2700-bootmcu-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts-extended:
+    required: true
