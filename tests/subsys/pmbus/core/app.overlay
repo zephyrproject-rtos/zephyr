@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	i2c1: i2c@400 {
+		compatible = "zephyr,i2c-emul-controller";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#forward-cells = <1>;
+		reg = <0x400 4>;
+		status = "okay";
+	};
+
+	smbus0: smbus0 {
+		compatible = "zephyr,smbus-i2c";
+		i2c = <&i2c0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+	};
+};
+
+&i2c0 {
+	forwards = <&i2c1 0x40>;
+};

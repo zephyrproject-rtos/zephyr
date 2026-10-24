@@ -105,6 +105,17 @@ config SMBUS_STM32_SMBALERT
 
 endif # SMBUS_STM32
 
+config SMBUS_I2C
+	bool "Generic SMBus over I2C driver"
+	default y
+	depends on DT_HAS_ZEPHYR_SMBUS_I2C_ENABLED
+	depends on I2C
+	select SMBUS_SOFT_PEC
+	help
+	  Enable the generic SMBus controller driver that runs SMBus protocols
+	  on top of any I2C controller, with software PEC. Block read and block
+	  process call are not supported.
+
 source "drivers/smbus/Kconfig.it51xxx"
 
 endif # SMBUS

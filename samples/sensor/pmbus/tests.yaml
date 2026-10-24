@@ -1,0 +1,12 @@
+sample:
+  name: PMBus sensor sample
+tests:
+  sample.sensor.pmbus:
+    tags:
+      - sensors
+      - pmbus
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    build_only: true

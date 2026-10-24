@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic PMBus device read through the sensor API.
+
+  READ_VOUT, READ_IOUT, READ_POUT and READ_TEMPERATURE_1 of page 0 are
+  exposed as the voltage, current, power and ambient temperature channels,
+  when the device supports them. Support is detected at initialization.
+  READ_VOUT requires the ULINEAR16 output voltage mode, the other commands
+  the LINEAR11 format.
+
+  Example:
+
+    &smbus0 {
+      pmbus@40 {
+        compatible = "zephyr,pmbus";
+        reg = <0x40>;
+      };
+    };
+
+compatible: "zephyr,pmbus"
+
+include: [sensor-device.yaml, smbus-device.yaml]
+
