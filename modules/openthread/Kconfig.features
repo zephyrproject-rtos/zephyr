@@ -159,6 +159,18 @@ config OPENTHREAD_DIAG
 config OPENTHREAD_DNS_CLIENT
 	bool "DNS client support"
 
+config OPENTHREAD_DNS_CLIENT_BIND_UDP_TO_THREAD_NETIF
+	bool "Bind DNS client UDP socket to the Thread network interface"
+	depends on OPENTHREAD_DNS_CLIENT
+	default y if OPENTHREAD_ZEPHYR_BORDER_ROUTER
+	help
+	  Bind the OpenThread DNS client UDP socket to the internal Thread
+	  network interface, so that DNS queries are routed by the OpenThread
+	  stack. When disabled, the socket is unbound and, on a Border Router,
+	  the Zephyr network stack may route queries towards a Thread DNS
+	  server (e.g. a mesh-local address) through the backbone interface
+	  default router instead of the Thread interface.
+
 config OPENTHREAD_DNS_CLIENT_OVER_TCP
 	bool "DNS query over tcp"
 
