@@ -8,3 +8,9 @@ config REALTEK_AMEBA_OS_WRAPPER
 	help
 	  Enable the Realtek Ameba OS wrapper abstraction layer.
 	  This provides RTOS abstraction for Ameba HAL drivers.
+
+if REALTEK_AMEBA_OS_WRAPPER
+
+rsource "Kconfig.timer"
+
+endif
