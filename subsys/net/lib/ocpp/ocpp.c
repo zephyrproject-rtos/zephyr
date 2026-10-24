@@ -102,7 +102,7 @@ bool ocpp_session_is_valid(struct ocpp_session *sh)
 	k_mutex_lock(&gctx->ilock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_NODE(&gctx->slist, node) {
 		lsh = to_session(node);
-		if (lsh == sh) {
+		if (lsh == sh && !lsh->is_closing) {
 			is_found = true;
 			break;
 		}
@@ -276,19 +276,24 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 		case PDU_METER_VALUES:
 		{
 			union ocpp_io_value io;
-			sys_snode_t *node;
+			sys_snode_t *node, *next;
 			struct ocpp_session *lsh;
 
-			/* list of all active session */
+			/* The send drops ilock and can block, so the session is
+			 * pinned with is_busy to stop ocpp_session_close() from
+			 * freeing it mid-walk. Concurrent close of any other session
+			 * cannot leave the walk on a freed node.
+			 */
 			k_mutex_lock(&ctx->ilock, K_FOREVER);
-			SYS_SLIST_FOR_EACH_NODE(&ctx->slist, node) {
+			node = sys_slist_peek_head(&ctx->slist);
+			while (node != NULL) {
 				lsh = to_session(node);
-				if (lsh == sh ||
-				    !lsh->is_active) {
+				if (lsh == sh || !lsh->is_active) {
+					node = sys_slist_peek_next(node);
 					continue;
 				}
 
-				k_mutex_lock(&lsh->slock, K_FOREVER);
+				lsh->is_busy = true;
 				k_mutex_unlock(&ctx->ilock);
 				io.meter_val.id_con = lsh->idcon;
 				for (i = 0; i < OCPP_OMM_END; i++) {
@@ -302,7 +307,13 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 							  io.meter_val.val);
 				}
 				k_mutex_lock(&ctx->ilock, K_FOREVER);
-				k_mutex_unlock(&lsh->slock);
+				next = sys_slist_peek_next(node);
+				lsh->is_busy = false;
+				if (lsh->is_closing) {
+					sys_slist_find_and_remove(&ctx->slist, node);
+					k_free(lsh);
+				}
+				node = next;
 			}
 			k_mutex_unlock(&ctx->ilock);
 			break;
@@ -337,6 +348,19 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 			break;
 		}
 	}
+}
+
+static void ocpp_session_set_resp(struct ocpp_info *ctx, struct ocpp_session *sh, int status,
+				  int *idtxn)
+{
+	k_mutex_lock(&ctx->ilock, K_FOREVER);
+	if (ocpp_session_is_valid(sh)) {
+		sh->resp_status = status;
+		if (idtxn != NULL) {
+			sh->idtxn = *idtxn;
+		}
+	}
+	k_mutex_unlock(&ctx->ilock);
 }
 
 static int ocpp_process_server_msg(struct ocpp_info *ctx)
@@ -382,7 +406,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 	fn = ctx->pfn[pdu];
 
 	switch (pdu) {
-	char skey[CISTR50];
+	char skey[CISTR50 + 1];
 
 	case PDU_BOOTNOTIFICATION:
 	{
@@ -390,7 +414,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 		ret = fn(ui->recv_buf, &binfo);
 		if (ret == 0 && sh != NULL) {
-			sh->resp_status = binfo.status;
+			ocpp_session_set_resp(ctx, sh, binfo.status, NULL);
 			ctx->hb_sec = binfo.interval;
 		}
 		break;
@@ -406,7 +430,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 		ret = fn(ui->recv_buf, &idinfo);
 		if (ret == 0) {
-			sh->resp_status = idinfo.auth_status;
+			ocpp_session_set_resp(ctx, sh, idinfo.auth_status, NULL);
 		}
 		break;
 	}
@@ -419,8 +443,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 		ret = fn(ui->recv_buf, &idtxn, &idinfo);
 		if (ret == 0) {
-			sh->idtxn = idtxn;
-			sh->resp_status = idinfo.auth_status;
+			ocpp_session_set_resp(ctx, sh, idinfo.auth_status, &idtxn);
 		}
 		break;
 	}
@@ -447,7 +470,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 	case PDU_CHANGE_CONFIGURATION:
 	{
-		char sval[CISTR500] = {0};
+		char sval[CISTR500 + 1] = {0};
 
 		memset(skey, 0, sizeof(skey));
 		ret = fn(ui->recv_buf, skey, sval);
@@ -615,6 +638,7 @@ int ocpp_upstream_init(struct ocpp_info *ctx, struct ocpp_cs_info *csi)
 
 	websocket_init();
 
+	/* keep last, ocpp_init() frees ctx if this function fails */
 	k_thread_create(&ui->tinfo, ocpp_wsreader_stack,
 			CONFIG_OCPP_WSREADER_THREAD_STACKSIZE,
 			ocpp_wsreader, ctx, NULL, NULL,
@@ -704,7 +728,6 @@ int ocpp_session_open(ocpp_session_handle_t *hndl)
 	sh->idcon = INVALID_CONN_ID;
 	sh->idtxn = INVALID_TXN_ID;
 	sh->ctx = gctx;
-	k_mutex_init(&sh->slock);
 
 	k_mutex_lock(&gctx->ilock, K_FOREVER);
 	sys_slist_append(&gctx->slist, &sh->node);
@@ -717,21 +740,29 @@ int ocpp_session_open(ocpp_session_handle_t *hndl)
 
 void ocpp_session_close(ocpp_session_handle_t hndl)
 {
-	bool is_removed;
 	struct ocpp_session *sh = (struct ocpp_session *)hndl;
+	sys_snode_t *prev;
 
 	if (sh == NULL) {
 		return;
 	}
 
 	k_mutex_lock(&gctx->ilock, K_FOREVER);
-	is_removed = sys_slist_find_and_remove(&gctx->slist, &sh->node);
-	k_mutex_unlock(&gctx->ilock);
-
-	if (is_removed) {
-		k_mutex_lock(&sh->slock, K_FOREVER);
-		k_free(sh);
+	if (!sys_slist_find(&gctx->slist, &sh->node, &prev)) {
+		k_mutex_unlock(&gctx->ilock);
+		return;
 	}
+
+	if (sh->is_busy) {
+		sh->is_active = false;
+		sh->is_closing = true;
+		k_mutex_unlock(&gctx->ilock);
+		return;
+	}
+
+	sys_slist_remove(&gctx->slist, prev, &sh->node);
+	k_mutex_unlock(&gctx->ilock);
+	k_free(sh);
 }
 
 int ocpp_init(struct ocpp_cp_info *cpi,
@@ -779,16 +810,17 @@ int ocpp_init(struct ocpp_cp_info *cpi,
 	val.ival = cpi->num_of_con;
 	ocpp_set_cfg_val(CFG_NO_OF_CONNECTORS, &val);
 
-	ret = ocpp_upstream_init(ctx, csi);
-	if (ret < 0) {
-		LOG_ERR("ocpp upstream init fail %d", ret);
-		goto out;
-	}
-
 	/* free after success of bootnotification to CS */
 	cp = (struct ocpp_cp_info *)k_calloc(1, sizeof(struct ocpp_cp_info));
 	if (cp == NULL) {
 		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = ocpp_upstream_init(ctx, csi);
+	if (ret < 0) {
+		LOG_ERR("ocpp upstream init fail %d", ret);
+		k_free(cp);
 		goto out;
 	}
 
@@ -804,6 +836,7 @@ int ocpp_init(struct ocpp_cp_info *cpi,
 	return 0;
 
 out:
+	gctx = NULL;
 	k_free(ctx);
 	return ret;
 }

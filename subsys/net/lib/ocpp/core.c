@@ -196,7 +196,8 @@ int ocpp_authorize(ocpp_session_handle_t hndl, char *idtag,
 	struct ocpp_wamp_rpc_msg rmsg = {0};
 	ocpp_msg_fp_t fn;
 
-	if (idtag == NULL || status == NULL || !ocpp_session_is_valid(sh)) {
+	if (idtag == NULL || status == NULL || !ocpp_session_is_valid(sh) ||
+	    strlen(idtag) > CISTR20) {
 		return -EINVAL;
 	}
 
@@ -439,6 +440,7 @@ int ocpp_remote_stop_transaction(struct ocpp_info *ctx,
 		sh = to_session(node);
 		if (sh->is_active &&
 		    sh->idtxn == idtxn) {
+			msg->usr.stop_charge.id_con = sh->idcon;
 			is_found = true;
 			break;
 		}
@@ -446,7 +448,6 @@ int ocpp_remote_stop_transaction(struct ocpp_info *ctx,
 	k_mutex_unlock(&ctx->ilock);
 
 	if (is_found) {
-		msg->usr.stop_charge.id_con = sh->idcon;
 		ret = k_msgq_put(ctx->msgq, msg, K_MSEC(100));
 		if (ret == 0) {
 			resp = "Accepted";
