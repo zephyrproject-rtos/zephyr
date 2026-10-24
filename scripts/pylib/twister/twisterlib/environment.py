@@ -292,12 +292,32 @@ Artificially long but functional example:
     parser.add_argument(
         "-a", "--arch", action="append",
         help="Arch filter for testing. Takes precedence over --platform. "
-             "If unspecified, test all arches. Multiple invocations "
-             "are treated as a logical 'or' relationship")
+             "When combined with --vendor or SoC filters, those filters "
+             "select the initial platform scope and --arch narrows the "
+             "resulting instances. If unspecified, test all arches. "
+             "Multiple invocations are treated as a logical 'or' relationship")
 
     parser.add_argument(
             "--vendor", action="append", default=[],
             help="Vendor filter for testing")
+
+    parser.add_argument(
+        "--soc-family", action="append", default=[],
+        help="SoC family filter for testing, as declared in the SoC's soc.yml file. "
+             "May be combined with --vendor, --soc-series and --soc, in which case a "
+             "platform must match all of the given filters.")
+
+    parser.add_argument(
+        "--soc-series", action="append", default=[],
+        help="SoC series filter for testing, as declared in the SoC's soc.yml file. "
+             "May be combined with --vendor, --soc-family and --soc, in which case a "
+             "platform must match all of the given filters.")
+
+    parser.add_argument(
+        "--soc", action="append", default=[],
+        help="SoC filter for testing, as declared in the SoC's soc.yml file. "
+             "May be combined with --vendor, --soc-family and --soc-series, in which "
+             "case a platform must match all of the given filters.")
 
     parser.add_argument(
         "-p", "--platform", action="append", default=[],
