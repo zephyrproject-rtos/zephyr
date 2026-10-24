@@ -29,7 +29,8 @@
 #define SPI_NRFX_RAM_BUF_SIZE CONFIG_SPI_NRFX_RAM_BUFFER_SIZE
 #elif CONFIG_SPI_NRFX_DMM_BUFFER_SIZE
 #define SPI_NRFX_HAS_DMM_BUF 1
-#define SPI_NRFX_DMM_BUF_SIZE CONFIG_SPI_NRFX_DMM_BUFFER_SIZE
+#define SPI_NRFX_DMM_BUF_SIZE(inst) \
+	DT_INST_PROP_OR(inst, dmm_buffer_size, CONFIG_SPI_NRFX_DMM_BUFFER_SIZE)
 #endif
 
 #if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(nordic_nrf_spim, wake_gpios)
@@ -72,6 +73,7 @@ struct spi_nrfx_common_config {
 	uint8_t *rx_ram_buf;
 #elif SPI_NRFX_HAS_DMM_BUF
 	void *mem_reg;
+	size_t dmm_buffer_size;
 #endif
 	uint32_t max_freq;
 	uint16_t max_transfer_len;
@@ -145,6 +147,10 @@ int spi_nrfx_spim_common_deinit(const struct device *dev);
 
 #define SPI_NRFX_COMMON_DEFINE(inst, _data)							\
 	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(inst));			\
+	IF_ENABLED(SPI_NRFX_HAS_DMM_BUF,							\
+		(BUILD_ASSERT(SPI_NRFX_DMM_BUF_SIZE(inst) > 0 &&				\
+			      SPI_NRFX_DMM_BUF_SIZE(inst) <= UINT16_MAX,			\
+			      "SPIM DMM buffer size must be between 1 and 65535");))	\
 	SPI_NRFX_COMMON_IRQ_DEFINE(inst, _data)							\
 	SPI_NRFX_COMMON_RAM_BUF_DEFINE(inst);							\
 	SPI_NRFX_COMMON_CS_GPIOS_DEFINE(inst);							\
@@ -194,6 +200,7 @@ int spi_nrfx_spim_common_deinit(const struct device *dev);
 		SPI_NRFX_HAS_DMM_BUF,								\
 		(										\
 			.mem_reg = DMM_DEV_TO_REG(DT_DRV_INST(inst)),				\
+			.dmm_buffer_size = SPI_NRFX_DMM_BUF_SIZE(inst),				\
 		)										\
 	)
 
