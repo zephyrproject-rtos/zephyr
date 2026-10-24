@@ -818,12 +818,38 @@ if(NOT (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows))
   set(syscalls_links --create-links ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_links)
 endif()
 
-# When running CMake it must be ensured that all dependencies are correctly acquired.
+# Track the same directories passed to the syscall parser.
+set(syscall_scan_dirs
+  "${ZEPHYR_BASE}/include"
+  "${ZEPHYR_BASE}/drivers"
+  "${ZEPHYR_BASE}/subsys/net"
+)
+
+if(CONFIG_APPLICATION_DEFINED_SYSCALL)
+  list(APPEND SYSCALL_INCLUDE_DIRS ${APPLICATION_SOURCE_DIR})
+endif()
+
+if(CONFIG_ZTEST)
+  list(APPEND SYSCALL_INCLUDE_DIRS ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
+endif()
+
+get_property(
+  syscalls_include_list
+  TARGET syscalls_interface
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+)
+list(APPEND SYSCALL_INCLUDE_DIRS ${syscalls_include_list})
+
+foreach(d IN LISTS syscall_scan_dirs SYSCALL_INCLUDE_DIRS)
+  list(APPEND syscalls_subfolders --directory "${d}")
+  list(APPEND glob_syscalls_headers "${d}/*.h")
+endforeach()
+
 execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/build/subfolder_list.py
-  --directory        ${ZEPHYR_BASE}/include      # Walk this directory
+  ${syscalls_subfolders}                         # Walk these directories
   --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
   --trigger-file     ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
   ${syscalls_links}                              # If defined, create symlinks for dependencies
@@ -831,7 +857,7 @@ execute_process(
 file(STRINGS ${syscalls_subdirs_txt} PARSE_SYSCALLS_PATHS_DEPENDS ENCODING UTF-8)
 
 # Each header file must be monitored as file modifications are not reflected on directory level.
-file(GLOB_RECURSE PARSE_SYSCALLS_HEADER_DEPENDS ${ZEPHYR_BASE}/include/*.h)
+file(GLOB_RECURSE PARSE_SYSCALLS_HEADER_DEPENDS ${glob_syscalls_headers})
 
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
   # On windows only adding/removing files or folders will be reflected in depends.
@@ -855,7 +881,7 @@ else()
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/subfolder_list.py
-    --directory        ${ZEPHYR_BASE}/include      # Walk this directory
+    ${syscalls_subfolders}                         # Walk these directories
     --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
     --trigger-file     ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
     ${syscalls_links}                              # If defined, create symlinks for dependencies
@@ -874,14 +900,7 @@ else()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${syscalls_subdirs_txt})
 endif()
 
-# syscall declarations are searched for in the SYSCALL_INCLUDE_DIRS
-if(CONFIG_APPLICATION_DEFINED_SYSCALL)
-  list(APPEND SYSCALL_INCLUDE_DIRS ${APPLICATION_SOURCE_DIR})
-endif()
-
 if(CONFIG_ZTEST)
-  list(APPEND SYSCALL_INCLUDE_DIRS ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
-
   if(CONFIG_NO_OPTIMIZATIONS AND CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS)
     message(WARNING "Running tests with CONFIG_NO_OPTIMIZATIONS is generally "
     "not supported and known to break in many cases due to stack overflow or "
@@ -889,15 +908,12 @@ if(CONFIG_ZTEST)
     "specifically tuned to run in this configuration. To disable this warning "
     "set CONFIG_ZTEST_WARN_NO_OPTIMIZATIONS=n.")
   endif()
-
 endif()
 
-get_property(
-  syscalls_include_list
-  TARGET syscalls_interface
-  PROPERTY INTERFACE_INCLUDE_DIRECTORIES
-)
-list(APPEND SYSCALL_INCLUDE_DIRS ${syscalls_include_list})
+# syscall declarations are searched for in the syscall_scan_dirs and SYSCALL_INCLUDE_DIRS
+foreach(d IN LISTS syscall_scan_dirs)
+  list(APPEND parse_syscalls_scan_args --scan "${d}")
+endforeach()
 
 foreach(d ${SYSCALL_INCLUDE_DIRS})
   list(APPEND parse_syscalls_include_args
@@ -912,9 +928,7 @@ add_custom_command(
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/build/parse_syscalls.py
-  --scan             ${ZEPHYR_BASE}/include         # Read files from this dir
-  --scan             ${ZEPHYR_BASE}/drivers         # For net sockets
-  --scan             ${ZEPHYR_BASE}/subsys/net      # More net sockets
+  ${parse_syscalls_scan_args}                       # Search for syscall declarations in these dirs
   ${parse_syscalls_include_args}                    # Read files from these dirs also
   --json-file        ${syscalls_json}               # Write this file
   --tag-struct-file  ${struct_tags_json}            # Write subsystem list to this file
