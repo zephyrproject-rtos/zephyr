@@ -1,0 +1,13 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: script
+
+tests:
+  bluetooth.classic.sim.l2cap_echo.basic:
+    timeout: 120
+    harness_config:
+      tests_scripts:
+        - tests_scripts/basic.sh
