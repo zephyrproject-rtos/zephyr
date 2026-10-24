@@ -15,6 +15,7 @@ CREATE_FLAG(flag_discover_complete);
 CREATE_FLAG(flag_write_complete);
 CREATE_FLAG(flag_subscribed_short);
 CREATE_FLAG(flag_subscribed_long);
+CREATE_FLAG(flag_mtu_exchanged);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
@@ -26,6 +27,7 @@ static void exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exch
 {
 	if (!err) {
 		printk("MTU exchange done\n");
+		SET_FLAG(flag_mtu_exchanged);
 	} else {
 		printk("MTU exchange failed (err %" PRIu8 ")\n", err);
 	}
@@ -218,10 +220,19 @@ static void test_subscribed(struct bt_conn *conn,
 }
 
 static volatile size_t num_notifications;
+static volatile size_t received_len;
 uint8_t test_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params, const void *data,
 		    uint16_t length)
 {
 	printk("Received notification #%u with length %d\n", num_notifications++, length);
+	received_len += length;
+
+	/* Every value the server sends starts 0, 1, 2, ... and wraps at UINT8_MAX */
+	for (uint16_t i = 0; i < length; i++) {
+		if (((const uint8_t *)data)[i] != (uint8_t)i) {
+			FAIL("Unexpected value at offset %u\n", i);
+		}
+	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -302,7 +313,7 @@ static void subscribe(struct bt_gatt_subscribe_params *params, bool subscribe)
 
 }
 
-static void test_main(void)
+static void setup(void)
 {
 	int err;
 
@@ -319,6 +330,7 @@ static void test_main(void)
 	printk("Scanning successfully started\n");
 
 	WAIT_FOR_FLAG(flag_is_connected);
+	WAIT_FOR_FLAG(flag_mtu_exchanged);
 
 	err = bt_conn_set_security(g_conn, BT_SECURITY_L2);
 	if (err) {
@@ -346,6 +358,11 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_subscribed_long);
 
 	printk("Subscribed\n");
+}
+
+static void test_main(void)
+{
+	setup();
 
 	while (num_notifications < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
@@ -362,12 +379,53 @@ static void test_main(void)
 	PASS("GATT client Passed\n");
 }
 
+static void test_mtu(void)
+{
+	size_t expected_len;
+
+	setup();
+
+	/* One ATT_MULTIPLE_HANDLE_VALUE_NTF with two values filling the ATT_MTU */
+	expected_len = bt_gatt_get_mtu(g_conn) - 1U - 2U * NOTIFY_MULT_TUPLE_HDR_LEN;
+
+	while (num_notifications < 2) {
+		k_sleep(K_MSEC(10));
+	}
+
+	if (received_len != expected_len) {
+		FAIL("Received %zu octets, expected %zu\n", received_len, expected_len);
+	}
+
+	PASS("GATT client Passed\n");
+}
+
+static void test_disconnect(void)
+{
+	setup();
+
+	WAIT_FOR_FLAG_UNSET(flag_is_connected);
+
+	PASS("GATT client Passed\n");
+}
+
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "gatt_client_disconnect",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_disconnect,
+	},
+	{
+		.test_id = "gatt_client_mtu",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_mtu,
 	},
 	BSTEST_END_MARKER,
 };
