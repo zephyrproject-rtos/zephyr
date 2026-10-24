@@ -610,6 +610,27 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
+		udc: udc@40100000 {
+			compatible = "realtek,bee-udc", "snps,dwc2";
+			reg = <0x40100000 0x40000>;
+			interrupts = <77 0>, <78 0>;
+			num-in-eps = <6>;
+			num-out-eps = <6>;
+			ghwcfg1 = <0>;
+			ghwcfg2 = <0x2298d454>;
+			ghwcfg4 = <0xd600aa20>;
+			/* Sizes are in 32-bit words and must not exceed the
+			 * power-on values of GRXFSIZ, GNPTXFSIZ and DIEPTXF1-5
+			 * (2176, 32, 512, 256, 512, 96, 128), while their sum
+			 * must not exceed DFIFODEPTH (2128 words). The Tx FIFOs
+			 * are at their power-on size; Rx is the remainder.
+			 */
+			g-rx-fifo-size = <592>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <512 256 512 96 128>;
+			status = "disabled";
+		};
 	};
 };
 
