@@ -13,9 +13,13 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
 
+#include <aurix_endinit.h>
+
 #define DT_DRV_COMPAT infineon_asclin_uart
 
 #define UART_ASCLIN_FIFO_SIZE 16
+
+#define ASCLIN_CLC 0x00
 
 #if CONFIG_SOC_SERIES_TC3X
 #define ASCLIN_TXFIFOCON   0x0C
@@ -43,6 +47,8 @@
 #define ASCLIN_CSR         0x13C
 #endif
 
+#define CLC_DISR            BIT(0)
+#define CLC_DISS            BIT(1)
 #define BITCON_PRESCALER    GENMASK(11, 0)
 #define BITCON_OVERSAMPLING GENMASK(19, 16)
 #define BITCON_SAMPLEPOINT  GENMASK(27, 24)
@@ -111,6 +117,19 @@ static inline void uart_asclin_set_bittime(mem_addr_t base, uint8_t oversampling
 			  (median_filter ? BITCON_SM : 0);
 
 	sys_write32(bitcon, base + ASCLIN_BITCON);
+}
+
+/* Leave the module disable state; CLC is CPU ENDINIT protected on TC3x */
+static int uart_asclin_enable_module(mem_addr_t base)
+{
+	unsigned int key = aurix_endinit_cpu_unlock();
+
+	sys_write32(sys_read32(base + ASCLIN_CLC) & ~CLC_DISR, base + ASCLIN_CLC);
+	aurix_endinit_cpu_lock(key);
+
+	return WAIT_FOR((sys_read32(base + ASCLIN_CLC) & CLC_DISS) == 0, 1000, k_busy_wait(1))
+		       ? 0
+		       : -ETIMEDOUT;
 }
 
 static inline int uart_asclin_set_clk(mem_addr_t base, uint8_t clksel)
@@ -234,6 +253,12 @@ static int uart_asclin_init(const struct device *dev)
 {
 	const struct uart_asclin_config *cfg = dev->config;
 	const struct uart_asclin_data *data = dev->data;
+	int ret;
+
+	ret = uart_asclin_enable_module(cfg->base);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (uart_asclin_set_clk(cfg->base, UART_ASCLIN_CLKSEL_OFF)) {
 		return -ETIMEDOUT;
