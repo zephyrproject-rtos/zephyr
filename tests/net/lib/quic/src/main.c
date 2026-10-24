@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_QUIC_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/quic.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "net_private.h"
 #include "pmtu.h"
@@ -7214,6 +7215,271 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 
 	ret = quic_connection_close(sock);
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+static struct quic_endpoint *server_test_ep(void)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+
+	ep->is_server = true;
+
+	return ep;
+}
+
+ZTEST(net_socket_quic, test_520_accept_moves_stream_references)
+{
+	static struct quic_stream stream;
+	struct quic_context *child;
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+	atomic_val_t listen_ref;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54365");
+
+	/* A connection of the listener with a stream that arrived before the
+	 * connection was accepted. The stream holds a reference to the
+	 * context it is on, as quic_get_stream() takes one.
+	 */
+	ep = server_test_ep();
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&stream, ctx, ep, 0);
+	atomic_inc(&ctx->refcount);
+	listen_ref = atomic_get(&ctx->refcount);
+
+	quic_connection_accept_enqueue(ep);
+
+	child = k_fifo_get(&ctx->pending.accept_q, K_NO_WAIT);
+	zassert_not_null(child, "Connection not enqueued for accept");
+	zexpect_equal_ptr(stream.conn, child, "Stream not moved to the connection");
+
+	/* The reference moves with the stream */
+	zexpect_equal(atomic_get(&ctx->refcount), listen_ref - 1,
+		      "Listening context keeps the reference of a moved stream");
+	zexpect_equal(atomic_get(&child->refcount), 2,
+		      "Connection context has no reference for its stream");
+
+	(void)sys_slist_find_and_remove(&child->streams, &stream.node);
+	(void)sys_slist_find_and_remove(&child->endpoints, &ep->node);
+	k_sem_reset(&ctx->pending.accept_sem);
+	quic_test_context_unref(child);
+	quic_test_context_unref(child);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+static void accept_enqueue_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	quic_connection_accept_enqueue(p1);
+}
+
+ZTEST(net_socket_quic, test_534_stream_released_during_accept_hand_over)
+{
+	static K_THREAD_STACK_DEFINE(stack, 4096);
+	static struct k_thread thread;
+	static struct quic_stream stream;
+	struct quic_context *child;
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+	atomic_val_t listen_ref;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54384");
+
+	/* A stream of a connection that is not accepted yet, taken by the
+	 * application from the listener and closed while the connection is
+	 * handed over.
+	 */
+	ep = server_test_ep();
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&stream, ctx, ep, QUIC_STREAM_ID_UNASSIGNED);
+	stream.sock = -1;
+	atomic_set(&stream.refcount, 1);
+	atomic_inc(&ctx->refcount);
+	listen_ref = atomic_get(&ctx->refcount);
+
+	/* The stream has no ID, so its release does not look up its
+	 * endpoint, which takes contexts_lock: the hand-over holds that
+	 * lock while it waits.
+	 */
+	quic_test_streams_lock(true);
+
+	k_thread_create(&thread, stack, K_THREAD_STACK_SIZEOF(stack), accept_enqueue_thread,
+			ep, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(10));
+
+	zexpect_equal_ptr(stream.conn, ctx, "Stream moved while it can be released");
+
+	quic_test_stream_unref(&stream);
+	quic_test_streams_lock(false);
+
+	ret = k_thread_join(&thread, K_SECONDS(1));
+	zassert_ok(ret, "Hand-over did not finish (%d)", ret);
+
+	child = k_fifo_get(&ctx->pending.accept_q, K_NO_WAIT);
+	zassert_not_null(child, "Connection not enqueued for accept");
+
+	zexpect_is_null(stream.conn, "Released stream still on a context");
+	zexpect_equal(atomic_get(&ctx->refcount), listen_ref - 1,
+		      "Listening context reference of the stream not dropped once");
+	zexpect_equal(atomic_get(&child->refcount), 1,
+		      "Connection context holds a reference of the released stream");
+
+	(void)sys_slist_find_and_remove(&child->streams, &stream.node);
+	(void)sys_slist_find_and_remove(&child->endpoints, &ep->node);
+	k_sem_reset(&ctx->pending.accept_sem);
+	while (atomic_get(&child->refcount) > 0) {
+		quic_test_context_unref(child);
+	}
+
+	ep->parent = NULL;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_530_failed_accept_releases_moved_streams)
+{
+	static int fds[64];
+	static struct quic_stream stream;
+	struct quic_context *child;
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+	size_t fd_count = 0U;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54380");
+
+	/* A connection of the listener with a stream that arrived before the
+	 * connection was accepted and waits in the incoming queue.
+	 */
+	ep = server_test_ep();
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&stream, ctx, ep, QUIC_STREAM_ID_UNASSIGNED);
+	stream.sock = -1;
+	atomic_set(&stream.refcount, 1);
+	atomic_inc(&ctx->refcount);
+	k_fifo_put(&ctx->incoming.stream_q, &stream);
+	k_sem_give(&ctx->incoming.stream_sem);
+
+	quic_connection_accept_enqueue(ep);
+
+	child = k_fifo_peek_head(&ctx->pending.accept_q);
+	zassert_not_null(child, "Connection not enqueued for accept");
+	zassert_equal_ptr(stream.conn, child, "Stream not moved to the connection");
+
+	/* Only the stream is checked, so the test endpoint stays out of the
+	 * release of the connection.
+	 */
+	(void)sys_slist_find_and_remove(&child->endpoints, &ep->node);
+
+	/* No descriptor left for the accepted connection */
+	while (fd_count < ARRAY_SIZE(fds)) {
+		ret = zvfs_reserve_fd();
+		if (ret < 0) {
+			break;
+		}
+
+		fds[fd_count++] = ret;
+	}
+
+	zassert_true(fd_count < ARRAY_SIZE(fds), "Descriptor table not exhausted");
+
+	ret = zsock_accept(sock, NULL, NULL);
+	zexpect_equal(ret, -1, "Accept succeeded without a descriptor");
+	zexpect_equal(errno, ENOSPC, "Unexpected error %d", errno);
+
+	for (size_t i = 0U; i < fd_count; i++) {
+		zvfs_free_fd(fds[i]);
+	}
+
+	zexpect_equal(atomic_get(&stream.refcount), 0, "Moved stream not released");
+	zexpect_is_null(stream.conn, "Moved stream still on the connection");
+	zexpect_equal(atomic_get(&child->refcount), 0, "Connection context not released");
+
+	if (atomic_get(&child->refcount) > 0) {
+		(void)k_fifo_get(&child->incoming.stream_q, K_NO_WAIT);
+		(void)sys_slist_find_and_remove(&child->streams, &stream.node);
+		while (atomic_get(&child->refcount) > 0) {
+			quic_test_context_unref(child);
+		}
+	}
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_524_listener_close_releases_connections_not_accepted)
+{
+	static struct quic_stream stream;
+	struct quic_context *child;
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+	int sock;
+	int ret;
+
+	/* A connection waits for accept when the listening socket closes */
+	ctx = open_test_listener(&sock, "127.0.0.1:54368");
+	ep = server_test_ep();
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	/* with a stream that is moved to it and waits for accept as well */
+	link_test_stream(&stream, ctx, ep, QUIC_STREAM_ID_UNASSIGNED);
+	stream.sock = -1;
+	atomic_set(&stream.refcount, 1);
+	atomic_inc(&ctx->refcount);
+	k_fifo_put(&ctx->incoming.stream_q, &stream);
+	k_sem_give(&ctx->incoming.stream_sem);
+
+	quic_connection_accept_enqueue(ep);
+
+	child = k_fifo_peek_head(&ctx->pending.accept_q);
+	zassert_not_null(child, "Connection not enqueued for accept");
+	zassert_equal_ptr(stream.conn, child, "Stream not moved to the connection");
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zexpect_equal(atomic_get(&stream.refcount), 0,
+		      "Stream of the connection not released with the listener");
+	zexpect_equal(atomic_get(&child->refcount), 0,
+		      "Connection waiting for accept not released with the listener");
+
+	/* The listening socket is closed, but its context is still held,
+	 * for example by a hand-over that has just started
+	 */
+	ctx = open_test_listener(&sock, "127.0.0.1:54369");
+	atomic_inc(&ctx->refcount);
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+
+	ep = server_test_ep();
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	quic_connection_accept_enqueue(ep);
+
+	zexpect_true(k_fifo_is_empty(&ctx->pending.accept_q),
+		     "Connection handed over to a closed listening socket");
+	zexpect_true(sys_slist_find(&ctx->endpoints, &ep->node, NULL),
+		     "Endpoint taken from a closed listening socket");
+
+	quic_test_context_unref(ctx);
 }
 
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)

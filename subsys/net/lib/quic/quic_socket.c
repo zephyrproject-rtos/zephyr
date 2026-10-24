@@ -541,6 +541,43 @@ static void quic_ctx_drain_incoming_streams(struct quic_context *ctx)
 	}
 }
 
+/*
+ * The application closes the socket of a context, so nothing is accepted on
+ * it any more. Release the streams and the connections that were handed over
+ * to it but not accepted yet: each holds a reference to a context. The flag is
+ * set under contexts_lock, where a connection is handed over, so that either
+ * the hand-over sees it or the connection is taken here.
+ */
+static void quic_ctx_release_unaccepted(struct quic_context *ctx)
+{
+	struct quic_context *waiting[CONFIG_QUIC_MAX_CONTEXTS];
+	size_t waiting_count = 0;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
+	ctx->accept_closed = true;
+
+	while (waiting_count < ARRAY_SIZE(waiting)) {
+		waiting[waiting_count] = k_fifo_get(&ctx->pending.accept_q, K_NO_WAIT);
+		if (waiting[waiting_count] == NULL) {
+			break;
+		}
+
+		waiting_count++;
+	}
+
+	k_mutex_unlock(&contexts_lock);
+
+	quic_ctx_drain_incoming_streams(ctx);
+
+	for (size_t i = 0; i < waiting_count; i++) {
+		NET_DBG("[CO:%p/%d] Releasing connection that was not accepted",
+			waiting[i], quic_get_by_conn(waiting[i]));
+		quic_ctx_drain_incoming_streams(waiting[i]);
+		quic_context_unref(waiting[i]);
+	}
+}
+
 static int quic_ctx_close_vmeth(void *obj)
 {
 	struct quic_context *ctx = obj;
@@ -565,11 +602,7 @@ static int quic_ctx_close_vmeth(void *obj)
 	 */
 	ctx->sock = -1;
 
-	/*
-	 * Release any unaccepted incoming streams. Each holds a context ref;
-	 * without this, ctx->refcount stays elevated and the context leaks.
-	 */
-	quic_ctx_drain_incoming_streams(ctx);
+	quic_ctx_release_unaccepted(ctx);
 
 	quic_context_unref(ctx);
 
@@ -1804,6 +1837,10 @@ static int quic_connection_accept(struct quic_context *listen_ctx,
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
+		/* Streams moved to the connection before it was accepted hold
+		 * references to it, so release them with the connection.
+		 */
+		quic_ctx_drain_incoming_streams(child_ctx);
 		quic_context_unref(child_ctx);
 		return -ENOSPC;
 	}
@@ -2439,12 +2476,13 @@ int quic_connection_close(int sock)
 	}
 
 	/*
-	 * Release any peer-initiated streams that were received but never
-	 * accepted via zsock_accept(). Each holds a context reference; without
-	 * this the context refcount stays elevated and quic_context_unref()
-	 * below never reaches zero, leaving the context pool slot occupied.
+	 * Release any peer-initiated streams and connections that were
+	 * received but never accepted via zsock_accept(). Each holds a context
+	 * reference; without this the context refcount stays elevated and
+	 * quic_context_unref() below never reaches zero, leaving the context
+	 * pool slot occupied.
 	 */
-	quic_ctx_drain_incoming_streams(ctx);
+	quic_ctx_release_unaccepted(ctx);
 
 	(void)sock_obj_core_dealloc(ctx->sock);
 	quic_context_unref(ctx);
