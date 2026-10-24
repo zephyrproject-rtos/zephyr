@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_USB_CLASS_USBD_DFU_H
 
 #include <stdint.h>
+#include <zephyr/toolchain.h>
 
 /* DFU Class Subclass */
 #define USB_DFU_SUBCLASS		0x01
@@ -162,9 +163,9 @@ struct usbd_dfu_image {
 		.if_desc = &usbd_dfu_iface_##id,					\
 		.priv = ipriv,								\
 		.sd_nd = &usbd_dfu_str_##id,						\
+		.next_cb = inext,							\
 		.read_cb = iread,							\
 		.write_cb = iwrite,							\
-		.next_cb = inext,							\
 	}
 
 /**
