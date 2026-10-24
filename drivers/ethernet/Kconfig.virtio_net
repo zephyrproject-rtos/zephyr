@@ -5,6 +5,7 @@ menuconfig ETH_VIRTIO_NET
 	bool "VIRTIO networking paravirtualization device driver"
 	default y
 	depends on DT_HAS_VIRTIO_NET_ENABLED
+	depends on NET_BUF_FIXED_DATA_SIZE
 	select VIRTIO
 
 if ETH_VIRTIO_NET
@@ -19,6 +20,43 @@ config ETH_NIC_MODEL
 
 config ETH_VIRTIO_NET_RX_BUFFERS
 	int "VIRTIO network device receive buffers"
+	default 16
+	range 1 256
+	help
+	  Number of fragments of the receive buffer pool handed to the device
+	  at the same time, each one a descriptor of the receive virtqueue.
+	  A frame is received into as many of them as it needs, so together
+	  they must hold a maximum size frame, and NET_BUF_RX_COUNT must
+	  leave fragments for the network stack to process received frames.
+
+config ETH_VIRTIO_NET_RX_REFILL_THREAD_PRIORITY
+	int "Receive buffer refill thread priority"
+	default 0
+	help
+	  Priority of the thread that hands fragments to the device once the
+	  receive buffer pool was empty when a frame was received.
+
+config ETH_VIRTIO_NET_TX_BUFFERS
+	int "VIRTIO network device transmit buffers"
 	default 4
+	range 1 64
+	help
+	  Number of packets that can be handed to the device at the same
+	  time. The transmit virtqueue is sized to hold the descriptor
+	  chains of all of them, one descriptor per fragment plus one for
+	  the header.
+
+config ETH_VIRTIO_NET_MULTICAST_FILTER
+	bool "Multicast destination address filtering"
+	default y
+	depends on NET_L2_ETHERNET
+	help
+	  Enable support for multicast destination address filtering in the
+	  device. The multicast MAC addresses the Ethernet L2 tracks for the
+	  interface are programmed into the MAC table of the device with its
+	  receive filter commands, so only multicast sent to those addresses
+	  is delivered. This needs the VIRTIO_NET_F_CTRL_RX feature of the
+	  device. If disabled, the device is asked to deliver all multicast
+	  frames instead.
 
 endif
