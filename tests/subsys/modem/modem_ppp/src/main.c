@@ -66,6 +66,13 @@ static uint8_t ppp_frame_wrapped_bad_fcs[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21
 					      0x7D, 0x21, 0x7D, 0x21, 0x7D, 0x20,
 					      0x7D, 0x24, 0xD1, 0xB6, 0x7E};
 
+/*
+ * Frames aborted with 7D 7E, mid-body and after the escaped Control field.
+ * The 7E of each abort sequence opens the next frame.
+ */
+static uint8_t ppp_frame_aborted[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21, 0x7D, 0x21, 0x7D,
+				      0x7E, 0xFF, 0x7D, 0x7E};
+
 /* Custom ACCM (Only 0-15 need to be escaped) */
 static uint32_t accm_custom1 = 0x0000ffff;
 static uint8_t ppp_frame_wrapped_accm1[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21, 0x16, 0x7D,
@@ -470,6 +477,26 @@ ZTEST(modem_ppp, test_ppp_frame_receive_bad_fcs)
 
 	/* Following valid frame is still received */
 	put_and_validate_wrapped_frame();
+}
+
+ZTEST(modem_ppp, test_ppp_frame_receive_after_abort)
+{
+	/* Aborted frames are discarded */
+	modem_backend_mock_put(&mock, ppp_frame_aborted, sizeof(ppp_frame_aborted));
+
+	/* Frame opened by the delimiter of the last abort sequence is received */
+	modem_backend_mock_put(&mock, &ppp_frame_wrapped[1], sizeof(ppp_frame_wrapped) - 1);
+	zassert_ok(k_sem_take(&rx_pkt_sem, K_SECONDS(1)), "Timeout waiting for received frame");
+	zassert_equal(k_sem_take(&rx_pkt_sem, K_MSEC(100)), -EAGAIN,
+		      "Aborted frames should be dropped");
+	zassert_true(received_packets_len == 1, "Expected to receive one network packet");
+	zassert_true(net_pkt_get_len(received_packets[0]) == sizeof(ppp_frame_unwrapped),
+		     "Received net pkt data len incorrect");
+
+	net_pkt_cursor_init(received_packets[0]);
+	net_pkt_read(received_packets[0], buffer, sizeof(ppp_frame_unwrapped));
+	zassert_true(memcmp(buffer, ppp_frame_unwrapped, sizeof(ppp_frame_unwrapped)) == 0,
+		     "Received net pkt data incorrect");
 }
 
 ZTEST(modem_ppp, test_carrier_follows_attach_release)
