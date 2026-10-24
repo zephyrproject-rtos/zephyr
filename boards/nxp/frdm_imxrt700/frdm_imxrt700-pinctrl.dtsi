@@ -37,4 +37,19 @@
 			drive-strength = "normal";
 		};
 	};
+
+	/* XSPI0 to the W25Q25PW quad NOR (U39) */
+	pinmux_xspi0: pinmux_xspi0 {
+		group0 {
+			pinmux = <XSPI0_SCK_A_PIO6_1>,
+				 <XSPI0_PCS_A_0_PIO6_2>,
+				 <XSPI0_DATA0_PIO6_3>,
+				 <XSPI0_DATA1_PIO6_4>,
+				 <XSPI0_DATA2_PIO6_5>,
+				 <XSPI0_DATA3_PIO6_6>;
+			drive-strength = "normal";
+			slew-rate = "normal";
+			input-enable;
+		};
+	};
 };
