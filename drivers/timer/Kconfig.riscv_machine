@@ -17,6 +17,14 @@ config RISCV_MACHINE_TIMER
 
 if RISCV_MACHINE_TIMER
 
+config RISCV_MACHINE_TIMER_NO_64BIT_MMIO
+	bool
+	depends on 64BIT
+	help
+	  Some RISC-V implementations do not support atomic 64-bit
+	  MMIO stores to mtimecmp. Select this to use the 32-bit write
+	  sequence (high=max, low=val, high=val) on 64-bit targets.
+
 config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
 	int
 	default 0

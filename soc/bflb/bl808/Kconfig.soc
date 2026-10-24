@@ -11,6 +11,21 @@ config SOC_SERIES_BL808
 config SOC_SERIES
 	default "bl808" if SOC_SERIES_BL808
 
+config SOC_SERIES_BL808_M0
+	bool
+	help
+	  BL808 M0 core (T-Head E907, RV32IMAFC)
+
+config SOC_SERIES_BL808_D0
+	bool
+	help
+	  BL808 D0 core (T-Head C906, RV64IMAFDC)
+
+config SOC_SERIES_BL808_LP
+	bool
+	help
+	  BL808 LP core (T-Head E902, RV32EMC)
+
 config SOC_BL808C09Q2I
 	bool
 	select SOC_SERIES_BL808
@@ -18,6 +33,36 @@ config SOC_BL808C09Q2I
 config SOC_BL808D09Q2I
 	bool
 	select SOC_SERIES_BL808
+
+config SOC_BL808C09Q2I_M0
+	bool
+	select SOC_BL808C09Q2I
+	select SOC_SERIES_BL808_M0
+
+config SOC_BL808C09Q2I_D0
+	bool
+	select SOC_BL808C09Q2I
+	select SOC_SERIES_BL808_D0
+
+config SOC_BL808C09Q2I_LP
+	bool
+	select SOC_BL808C09Q2I
+	select SOC_SERIES_BL808_LP
+
+config SOC_BL808D09Q2I_M0
+	bool
+	select SOC_BL808D09Q2I
+	select SOC_SERIES_BL808_M0
+
+config SOC_BL808D09Q2I_D0
+	bool
+	select SOC_BL808D09Q2I
+	select SOC_SERIES_BL808_D0
+
+config SOC_BL808D09Q2I_LP
+	bool
+	select SOC_BL808D09Q2I
+	select SOC_SERIES_BL808_LP
 
 config SOC
 	default "bl808c09q2i" if SOC_BL808C09Q2I

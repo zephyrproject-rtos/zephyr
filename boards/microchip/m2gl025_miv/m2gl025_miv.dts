@@ -25,7 +25,3 @@
 	current-speed = <115200>;
 	clock-frequency = <66000000>;
 };
-
-&mtimer {
-	clock-frequency = <4000000>;
-};

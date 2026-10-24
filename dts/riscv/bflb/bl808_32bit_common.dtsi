@@ -1,0 +1,218 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Peripherals accessible to the 32-Bits CPUs:
+ * M0 and LP share interrupt mapping and methods and can use the same configuration,
+ * with one exception: LP interrupts only go up to interrupt 48 and interrupts past that will not
+ * be fired on LP.
+ *
+ */
+
+#include <bflb/bl808.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	tsen: tsen {
+		compatible = "bflb,tsen";
+		io-channels = <&adc0 0>;
+		status = "disabled";
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		adc0: adc@20002000 {
+			compatible = "bflb,adc";
+			reg = <0x20002000 0x400 0x2000f000 0x1000>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <41 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		sec_eng_trng: trng@20004000 {
+			compatible = "bflb,sec-eng-trng";
+			reg = <0x20004000 0x100>;
+			interrupts = <26 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		sec_eng_sha: sha@20004000 {
+			compatible = "bflb,sec-eng-sha";
+			reg = <0x20004000 0x100>, <0x20004000 0x600>;
+			reg-names = "sha", "sec_eng";
+			interrupts = <26 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		sec_eng_aes: aes@20004100 {
+			compatible = "bflb,sec-eng-aes";
+			reg = <0x20004100 0x100>, <0x20004000 0x600>;
+			reg-names = "aes", "sec_eng";
+			interrupts = <26 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		uart0: uart@2000a000 {
+			compatible = "bflb,uart";
+			reg = <0x2000a000 0x100>;
+			interrupts = <44 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		uart1: uart@2000a100 {
+			compatible = "bflb,uart";
+			reg = <0x2000a100 0x100>;
+			interrupts = <45 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		uart2: uart@2000aa00 {
+			compatible = "bflb,uart";
+			reg = <0x2000aa00 0x100>;
+			interrupts = <46 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		spi0: spi@2000a200 {
+			compatible = "bflb,spi";
+			reg = <0x2000a200 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <43 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@2000a300 {
+			compatible = "bflb,i2c";
+			reg = <0x2000a300 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <48 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		pwm0: pwm@2000a400 {
+			compatible = "bflb,pwm-2";
+			reg = <0x2000a400 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+
+			interrupts = <49 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		wdt0: watchdog@2000a500 {
+			compatible = "bflb,wdt";
+			reg = <0x2000a500 0x100>;
+			interrupts = <54 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		timer: timer@2000a500 {
+			compatible = "bflb,timer";
+			reg = <0x2000a500 0x100>;
+			clocks = <&clk_crystal>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			timer0: channel@0 {
+				compatible = "bflb,timer-channel";
+				reg = <0>;
+				status = "disabled";
+
+				interrupts = <52 1>;
+				interrupt-parent = <&clic>;
+			};
+
+			timer1: channel@1 {
+				compatible = "bflb,timer-channel";
+				reg = <1>;
+				status = "disabled";
+
+				interrupts = <53 1>;
+				interrupt-parent = <&clic>;
+			};
+		};
+
+		irx: irx@2000a600 {
+			compatible = "bflb,irx";
+			reg = <0x2000a600 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <36 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@2000a900 {
+			compatible = "bflb,i2c";
+			reg = <0x2000a900 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <55 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		dma0: dma@2000c000 {
+			compatible = "bflb,dma";
+			reg = <0x2000c000 0x1000>;
+			#dma-cells = <2>;
+			dma-channels = <8>;
+
+			interrupts = <31 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		dma1: dma@20071000 {
+			compatible = "bflb,dma";
+			reg = <0x20071000 0x1000>;
+			#dma-cells = <2>;
+			dma-channels = <4>;
+
+			interrupts = <32 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		sdhc0: sdhc@20060000 {
+			compatible = "bflb,sdhc";
+			reg = <0x20060000 0x200>;
+			status = "disabled";
+
+			interrupts = <33 1>;
+			interrupt-parent = <&clic>;
+		};
+	};
+};
+
+/* D0 may also access these but has no interrupt mapping */
+&sf_ctrl {
+	interrupts = <29 1>;
+	interrupt-parent = <&clic>;
+};
+
+&gpios {
+	interrupts = <60 1>, <47 1>;
+	interrupt-names = "gpio", "fifo";
+	interrupt-parent = <&clic>;
+};
