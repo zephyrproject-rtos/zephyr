@@ -100,6 +100,13 @@ config CPU_CORTEX_A510
 	  power-efficient processing optimized for embedded applications with
 	  ARMv9-A features.
 
+config CPU_CORTEX_A520
+	bool
+	select CPU_CORTEX_A
+	select ARMV9_A
+	help
+	  This option signifies the use of a Cortex-A520 CPU
+
 config CPU_CORTEX_A320
 	bool
 	select CPU_CORTEX_A
