@@ -1716,3 +1716,10 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_cht8305: cht8305@df {
+	compatible = "sensylink,cht8305";
+	reg = <0xdf>;
+	heater;
+	disable-clock-stretching;
+};
