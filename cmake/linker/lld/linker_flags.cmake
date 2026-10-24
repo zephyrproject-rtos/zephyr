@@ -13,6 +13,8 @@ endif()
 
 set_property(TARGET linker PROPERTY no_position_independent "${LINKERFLAGPREFIX},--no-pie")
 
+set_property(TARGET linker PROPERTY position_independent_elf "${LINKERFLAGPREFIX},-pie ${LINKERFLAGPREFIX},--no-dynamic-linker ${LINKERFLAGPREFIX},--apply-dynamic-relocs")
+
 set_property(TARGET linker PROPERTY lto_arguments)
 set_property(TARGET linker PROPERTY lto_arguments_st)
 

@@ -28,21 +28,24 @@ typedef void (* ISR)(const void *);
 #endif
 """
 
-    def __init__(self, intlist_data, config, log):
+    def __init__(self, intlist_data, intlist_addr, config, log):
         """Initialize the parser.
 
         The function prepares parser to work.
         Parameters:
         - intlist_data: The binary data from intlist section
+        - intlist_addr: The address of the intlist section in the image
         - config: The configuration object
         - log: The logging object, has to have error and debug methods
         """
         self.__config = config
         self.__log = log
-        intlist = self.__read_intlist(intlist_data)
-        self.__vt, self.__swt, self.__nv = self.__parse_intlist(intlist)
+        intlist, raw_addr, entry_sz, param_offset = self.__read_intlist(intlist_data, intlist_addr)
+        self.__vt, self.__swt, self.__nv, self.__param_reloc = self.__parse_intlist(
+            intlist, raw_addr, entry_sz, param_offset
+        )
 
-    def __read_intlist(self, intlist_data):
+    def __read_intlist(self, intlist_data, intlist_addr):
         """read a binary file containing the contents of the kernel's .intList
         section. This is an instance of a header created by
         include/zephyr/linker/intlist.ld:
@@ -75,6 +78,7 @@ typedef void (* ISR)(const void *);
         header_raw = struct.unpack_from(intlist_header_fmt, intlist_data, 0)
         self.__log.debug(str(header_raw))
 
+        raw_addr = intlist_addr + header_sz
         intlist["num_vectors"] = header_raw[0]
         intlist["offset"] = header_raw[1]
         intdata = intlist_data[header_sz:]
@@ -82,8 +86,14 @@ typedef void (* ISR)(const void *);
         # Extract information about interrupts
         if self.__config.check_64b():
             intlist_entry_fmt = prefix + "iiQQ"
+            ptr_sz = 8
         else:
             intlist_entry_fmt = prefix + "iiII"
+            ptr_sz = 4
+
+        entry_sz = struct.calcsize(intlist_entry_fmt)
+        # "param" is the last field of struct _isr_list, right after "func"
+        param_offset = entry_sz - ptr_sz
 
         intlist["interrupts"] = [i for i in struct.iter_unpack(intlist_entry_fmt, intdata)]
 
@@ -94,9 +104,9 @@ typedef void (* ISR)(const void *);
         for irq in intlist["interrupts"]:
             self.__log.debug(f"{hex(irq[2]):<10} {irq[0]:<3} {irq[1]:<3}   {hex(irq[3])}")
 
-        return intlist
+        return intlist, raw_addr, entry_sz, param_offset
 
-    def __parse_intlist(self, intlist):
+    def __parse_intlist(self, intlist, raw_addr, entry_sz, param_offset):
         """All the intlist data are parsed into swt and vt arrays.
 
         The vt array is prepared for hardware interrupt table.
@@ -110,12 +120,22 @@ typedef void (* ISR)(const void *);
 
         Parameters:
         - intlist: The preprocessed list of intlist section content (see read_intlist)
+        - raw_addr: The address of the first _isr_list entry in the intlist section
+        - entry_sz: The size in bytes of a single _isr_list entry
+        - param_offset: The byte offset of the "param" field within a _isr_list entry
 
         Return:
-        vt, swt - parsed vt and swt arrays (see function description above)
+        vt, swt, nvec, param_reloc - parsed vt and swt arrays (see function description
+        above), the number of vectors, and the list of (table_index, client_index) pairs
+        whose parameter needs relocation
         """
         nvec = intlist["num_vectors"]
         offset = intlist["offset"]
+        param_reloc = []
+        is_reloc_image = self.__config.check_relocatable()
+
+        if is_reloc_image:
+            self.__log.debug("We are handling relocatable image")
 
         if nvec > pow(2, 15):
             raise ValueError('nvec is too large, check endianness.')
@@ -183,9 +203,23 @@ typedef void (* ISR)(const void *);
                             + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked "
                             + "on the same irq multiple times?"
                         )
+                param_addr = raw_addr + param_offset
+                if is_reloc_image and self.__config.need_reloc(param_addr):
+                    # Record its table_index as well as its index in shared structure
+                    # (if it applies). Please note that if the 2nd item is 0, we can not
+                    # determine whether it is a shared interrupt or not, we will have to
+                    # check other data.
+                    param_reloc.append((table_index, len(swt[table_index])))
+                    self.__log.debug(
+                        f"Relocation needed: parameter address {param_addr:#08x}, "
+                        f"index {table_index}"
+                    )
+
                 swt[table_index].append((param, func))
 
-        return vt, swt, nvec
+            raw_addr += entry_sz
+
+        return vt, swt, nvec, param_reloc
 
     def __write_code_irq_vector_table(self, fp):
         fp.write(self.source_assembly_header)
@@ -205,7 +239,16 @@ typedef void (* ISR)(const void *);
             fp.write(f"\t__asm(ARCH_IRQ_VECTOR_JUMP_CODE({func_as_string}));\n")
         fp.write("}\n")
 
-    def __write_address_irq_vector_table(self, fp):
+    def __write_address_irq_vector_table(self, fp, reloc=False):
+        if reloc:
+            vt_addr = self.__config.get_addr_from_sym(self.__config.irq_vector_array_name)
+            if vt_addr is None:
+                self.__log.error(
+                    f"Cannot resolve {self.__config.irq_vector_array_name} address "
+                    "from zephyr_pre0.elf"
+                )
+            fp.write(f"uintptr_t z_irq_vector_table_pre0_addr = {vt_addr:#x};\n")
+
         fp.write(f"const uintptr_t __irq_vector_table _irq_vector_table[{self.__nv}] = {{\n")
         for i in range(self.__nv):
             func = self.__vt[i]
@@ -216,11 +259,17 @@ typedef void (* ISR)(const void *);
             if isinstance(func, int):
                 fp.write(f"\t{func},\n")
             else:
-                fp.write(f"\t((uintptr_t)&{func}),\n")
+                if reloc:
+                    addr = self.__config.get_addr_from_sym(func)
+                    if addr is None:
+                        self.__log.error(f"Cannot resolve {func} address from zephyr_pre0.elf")
+                    fp.write(f"\t{addr},\n")
+                else:
+                    fp.write(f"\t((uintptr_t)&{func}),\n")
 
         fp.write("};\n")
 
-    def __write_shared_table(self, fp):
+    def __write_shared_table(self, fp, reloc=False):
         if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
             fp.write("const ")
         fp.write(
@@ -237,17 +286,30 @@ typedef void (* ISR)(const void *);
                 client_list = self.__swt[i]
 
             if client_num <= 1:
-                fp.write("\t{ },\n")
+                if reloc:
+                    # explicitly state that there is 0 elements here
+                    fp.write("\t{ .client_num = 0, .clients = {}  },\n")
+                else:
+                    fp.write("\t{ },\n")
             else:
                 fp.write(f"\t{{ .client_num = {client_num}, .clients = {{ ")
                 for j in range(0, client_num):
                     routine = client_list[j][1]
                     arg = client_list[j][0]
 
-                    fp.write(
-                        f"{{ .isr = (ISR){hex(routine) if isinstance(routine, int) else routine}, "
-                        f".arg = (const void *){hex(arg)} }},"
-                    )
+                    if reloc:
+                        if not isinstance(routine, int):
+                            addr = self.__config.get_addr_from_sym(routine)
+                            if addr is None:
+                                self.__log.error(
+                                    f"Cannot resolve {routine} address from zephyr_pre0.elf"
+                                )
+                        else:
+                            addr = routine
+                        fp.write(f"{{ .isr = (ISR){hex(addr)}, .arg = (const void *){hex(arg)} }},")
+                    else:
+                        isr = hex(routine) if isinstance(routine, int) else routine
+                        fp.write(f"{{ .isr = (ISR){isr}, .arg = (const void *){hex(arg)} }},")
 
                 fp.write(" },\n},\n")
 
@@ -305,7 +367,9 @@ typedef void (* ISR)(const void *);
         self.write_isr_case_default_block(fp)
 
     def write_isr_table_array(self, fp):
-        if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
+        if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS") and not self.__config.check_sym(
+            "CONFIG_PIC_OPTIONS"
+        ):
             fp.write("const ")
         fp.write(f"struct _isr_table_entry __sw_isr_table _sw_isr_table[{self.__nv}] = {{\n")
 
@@ -328,6 +392,11 @@ typedef void (* ISR)(const void *);
 
             if isinstance(func, int):
                 func_as_string = f"{func:#x}"
+            elif self.__config.check_relocatable():
+                addr = self.__config.get_addr_from_sym(func)
+                if addr is None:
+                    self.__log.error(f"Cannot resolve {func} address from zephyr_pre0.elf")
+                func_as_string = f"{addr:#x}"
             else:
                 func_as_string = func
 
@@ -343,11 +412,11 @@ typedef void (* ISR)(const void *);
         fp.write(self.source_header)
 
         if self.__config.check_shared_interrupts():
-            self.__write_shared_table(fp)
+            self.__write_shared_table(fp, self.__config.check_relocatable())
 
         if self.__vt:
             if self.__config.check_sym("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS"):
-                self.__write_address_irq_vector_table(fp)
+                self.__write_address_irq_vector_table(fp, self.__config.check_relocatable())
             elif self.__config.check_sym("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE"):
                 self.__write_code_irq_vector_table(fp)
             else:
@@ -355,6 +424,18 @@ typedef void (* ISR)(const void *);
 
         if not self.__swt:
             return
+
+        if self.__config.check_relocatable():
+            swt_addr = self.__config.get_addr_from_sym(self.__config.sw_isr_array_name)
+            if swt_addr is None:
+                self.__log.error(
+                    f"Cannot resolve {self.__config.sw_isr_array_name} address from zephyr_pre0.elf"
+                )
+            fp.write(f"uintptr_t z_sw_isr_table_pre0_addr = {swt_addr:#x};\n")
+            fp.write("struct _isr_reloc_param_info reloc_param_list[] = { \n")
+            for idx1, idx2 in self.__param_reloc:
+                fp.write(f"\t{{ {idx1}, {idx2}  }}, \n")
+            fp.write("\t{-1, -1} };\n")
 
         fp.write("\n")
 

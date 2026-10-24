@@ -31,6 +31,11 @@ void _isr_wrapper(void);
 /* Spurious interrupt handler. Throws an error if called */
 void z_irq_spurious(const void *unused);
 
+struct _isr_reloc_param_info {
+	int table_index;
+	int shared_index;
+};
+
 /*
  * Note the order: arg first, then ISR. This allows a table entry to be
  * loaded arg -> r0, isr -> r3 in _isr_wrapper with one ldmia instruction,
@@ -46,7 +51,7 @@ struct _isr_table_entry {
  * irq line
  */
 extern
-#ifndef CONFIG_DYNAMIC_INTERRUPTS
+#if !defined(CONFIG_DYNAMIC_INTERRUPTS) && !defined(CONFIG_PIC_OPTIONS)
 	const
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 	struct _isr_table_entry _sw_isr_table[];

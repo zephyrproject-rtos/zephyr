@@ -145,9 +145,13 @@ function(compiler_set_linker_properties)
     set(target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
   endif()
 
+  if(DEFINED CONFIG_PIC_OPTIONS)
+    set(pic_flag "-fPIC")
+  endif()
+
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} ${COMPILER_OPTIMIZATION_FLAG} ${simple_options}
-    ${target_flag}
+    ${target_flag} ${pic_flag}
     --print-libgcc-file-name
     OUTPUT_VARIABLE library_path
     OUTPUT_STRIP_TRAILING_WHITESPACE

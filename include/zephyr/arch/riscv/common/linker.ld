@@ -130,27 +130,97 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 SECTIONS
     {
 
+#ifndef CONFIG_PIC_OPTIONS
 #include <zephyr/linker/rel-sections.ld>
+#endif
 #include <zephyr/linker/llext-sections.ld>
 
     /*
      * The .plt and .iplt are here according to
      * 'riscv32-zephyr-elf-ld --verbose', before text section.
      */
-    SECTION_PROLOGUE(.plt,,)
+#ifndef CONFIG_PIC_OPTIONS
+    SECTION_PROLOGUE(.plt,,ALIGN(0x1000))
 	{
 		*(.plt)
+        *(.got)
+		*(.got.plt)
 	}
 
     SECTION_PROLOGUE(.iplt,,)
 	{
 		*(.iplt)
 	}
+#else
+    SECTION_PROLOGUE(.dynsym,,)
+    {
+        /*
+         * Define the symbol relative to a section: the linker emits no
+         * relocation for absolute symbols, so it would not move with the
+         * load address.
+         */
+        __rom_region_start = .;
+        *(.dynsym)
+    }
+
+    SECTION_PROLOGUE(.dynstr,,)
+    {
+        *(.dynstr)
+    }
+
+    SECTION_PROLOGUE(.hash,,)
+    {
+        *(.hash)
+    }
+
+    SECTION_PROLOGUE(.got,, ALIGN(0x1000))
+    {
+        __got_start = .;
+        *(.got.plt) *(.got)
+        __got_end = .;
+    }
+
+    SECTION_PROLOGUE(.rela.plt,, ALIGN(0x1000))
+    {
+        __rel_plt_start = .;
+        *(.rela.plt*)
+        __rel_plt_end = .;
+    }
+
+    /*
+     * A static PIE has no dynamic linker and no PLT stubs, so this section
+     * is expected to be empty. The explicit rule only keeps the linker from
+     * warning about an orphan .plt section.
+     */
+    SECTION_PROLOGUE(.plt,,)
+    {
+        *(.plt)
+    }
+
+    SECTION_PROLOGUE(.rela.dyn,, ALIGN(0x1000))
+    {
+        __rel_dyn_start = .;
+        KEEP(*(.rela*))
+    }
+    /*
+     * Keep outside the section: .rela.dyn is synthesized by the linker, so
+     * "." inside the block does not include its contents.
+     */
+    __rel_dyn_end = .;
+
+    /DISCARD/ : { *(.dynamic*) }
+#endif
 
     GROUP_START(ROMABLE_REGION)
+#ifndef CONFIG_PIC_OPTIONS
     __rom_region_start = ROM_BASE;
+#endif
 
+#if CONFIG_RISCV_ROM_START_ALIGNMENT > 0
+    SECTION_PROLOGUE(rom_start,, ALIGN(CONFIG_RISCV_ROM_START_ALIGNMENT))
+#else
     SECTION_PROLOGUE(rom_start,,)
+#endif
     {
 		. = ALIGN(16);
 /* Located in generated directory. This file is populated by calling
@@ -348,7 +418,8 @@ SECTIONS
 		  * As memory is cleared in words only, it is simpler to ensure the BSS
 		  * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
 		  */
-		  __bss_end = ALIGN(4);
+		  . = ALIGN(4);
+		  __bss_end = .;
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 #include <zephyr/linker/common-noinit.ld>
