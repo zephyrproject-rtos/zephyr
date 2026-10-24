@@ -23,7 +23,7 @@ static sys_slist_t *usbd_configs(struct usbd_context *uds_ctx,
 	case USBD_SPEED_FS:
 		return &uds_ctx->fs_configs;
 	case USBD_SPEED_HS:
-		return &uds_ctx->hs_configs;
+		return usbd_get_hs_configs(uds_ctx);
 	default:
 		return NULL;
 	}
@@ -33,9 +33,14 @@ struct usbd_config_node *usbd_config_get(struct usbd_context *const uds_ctx,
 					 const enum usbd_speed speed,
 					 const uint8_t cfg)
 {
+	sys_slist_t *configs = usbd_configs(uds_ctx, speed);
 	struct usbd_config_node *cfg_nd;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(usbd_configs(uds_ctx, speed), cfg_nd, node) {
+	if (configs == NULL) {
+		return NULL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(configs, cfg_nd, node) {
 		if (usbd_config_get_value(cfg_nd) == cfg) {
 			return cfg_nd;
 		}
@@ -290,29 +295,29 @@ int usbd_add_configuration(struct usbd_context *const uds_ctx,
 	}
 
 	configs = usbd_configs(uds_ctx, speed);
-	switch (speed) {
-	case USBD_SPEED_HS:
-		SYS_SLIST_FOR_EACH_NODE(&uds_ctx->fs_configs, node) {
-			if (node == &cfg_nd->node) {
-				LOG_ERR("HS config already on FS list");
-				ret = -EINVAL;
-				goto add_configuration_exit;
-			}
-		}
-		break;
-	case USBD_SPEED_FS:
-		SYS_SLIST_FOR_EACH_NODE(&uds_ctx->hs_configs, node) {
-			if (node == &cfg_nd->node) {
-				LOG_ERR("FS config already on HS list");
-				ret = -EINVAL;
-				goto add_configuration_exit;
-			}
-		}
-		break;
-	default:
+	if (configs == NULL) {
 		LOG_ERR("Unsupported configuration speed");
 		ret = -ENOTSUP;
 		goto add_configuration_exit;
+	}
+
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		const bool hs = (speed == USBD_SPEED_HS);
+		sys_slist_t *other_configs = hs ? &uds_ctx->fs_configs :
+						  usbd_get_hs_configs(uds_ctx);
+
+		SYS_SLIST_FOR_EACH_NODE(other_configs, node) {
+			if (node == &cfg_nd->node) {
+				if (hs) {
+					LOG_ERR("HS config already on FS list");
+				} else {
+					LOG_ERR("FS config already on HS list");
+				}
+
+				ret = -EINVAL;
+				goto add_configuration_exit;
+			}
+		}
 	}
 
 	if (sys_slist_find_and_remove(configs, &cfg_nd->node)) {
