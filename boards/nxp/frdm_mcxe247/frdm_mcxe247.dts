@@ -198,6 +198,34 @@
 	status = "okay";
 };
 
+&enet {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+};
+
+&enet_mac {
+	status = "okay";
+	phy-handle = <&phy0>;
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+
+	phy0: ethernet-phy@0 {
+		compatible = "microchip,lan8742";
+		reg = <0>;
+		reset-gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+};
+
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
