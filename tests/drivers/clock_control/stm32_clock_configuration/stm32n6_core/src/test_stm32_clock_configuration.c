@@ -6,6 +6,7 @@
 
 #include <soc.h>
 #include <stm32_bitops.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/ztest.h>
 
@@ -17,6 +18,19 @@ ZTEST(stm32n6_clock_core_config, test_cpuclk_freq)
 		      "Expected cpuclk_freq: %d. Actual cupclk_freq: %d",
 		      CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, cpuclk_freq);
 }
+
+#if defined(TEST_PLL_RATE)
+ZTEST(stm32n6_clock_core_config, test_sysclk_rate)
+{
+	const struct device *rcc = DEVICE_DT_GET(DT_NODELABEL(rcc));
+	struct stm32_pclken clock = {.bus = STM32_SRC_SYSCLK};
+	uint32_t rate;
+
+	zassert_ok(clock_control_get_rate(rcc, (clock_control_subsys_t)&clock, &rate));
+	zassert_equal(rate, TEST_PLL_RATE, "Reported SYSCLK does not match the configured rate");
+}
+
+#endif
 
 ZTEST(stm32n6_clock_core_config, test_cpuclk_src)
 {
