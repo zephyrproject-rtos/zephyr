@@ -14,12 +14,14 @@ LOG_MODULE_REGISTER(mcux_dcp, CONFIG_CRYPTO_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/crypto/crypto.h>
+#include <zephyr/crypto/mcux_dcp.h>
 #include <zephyr/sys/util.h>
 
 #include <fsl_dcp.h>
 
-#define CRYPTO_DCP_CIPHER_CAPS		(CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS |\
-					CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
+#define CRYPTO_DCP_CIPHER_CAPS		(CAP_RAW_KEY | CAP_OPAQUE_KEY_HNDL |\
+					CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS |\
+					CAP_NO_IV_PREFIX)
 #define CRYPTO_DCP_HASH_CAPS		(CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
 
 struct crypto_dcp_session {
@@ -61,6 +63,13 @@ static struct crypto_dcp_session *get_session(const struct device *dev)
 	for (size_t i = 0; i < CONFIG_CRYPTO_MCUX_DCP_MAX_SESSION; ++i) {
 		if (!data->sessions[i].in_use) {
 			data->sessions[i].in_use = true;
+
+			/* Default to the appropriate user key slot with no
+			 * swapping. The caller will change these if a hardware
+			 * key is used.
+			 */
+			data->sessions[i].handle.keySlot = kDCP_KeySlot0 + i;
+			data->sessions[i].handle.swapConfig = kDCP_NoSwap;
 
 			k_mutex_unlock(&sessions_lock);
 			return &data->sessions[i];
@@ -229,7 +238,33 @@ static int crypto_dcp_cipher_begin_session(const struct device *dev, struct ciph
 
 	ctx->drv_sessn_state = session;
 
-	status = DCP_AES_SetKey(cfg->base, &session->handle, ctx->key.bit_stream, ctx->keylen);
+	if (ctx->flags & CAP_OPAQUE_KEY_HNDL) {
+		struct crypto_mcux_dcp_opaque_key *key = ctx->key.handle;
+
+		if (key->slot == CRYPTO_MCUX_DCP_OTP_KEY) {
+			session->handle.keySlot = kDCP_OtpKey;
+		} else if (key->slot == CRYPTO_MCUX_DCP_OTP_UNIQUE_KEY) {
+			session->handle.keySlot = kDCP_OtpUniqueKey;
+		} else {
+			free_session(session);
+			return -EINVAL;
+		}
+
+		if (key->swap & CRYPTO_MCUX_DCP_SWAP_KEY_BYTES) {
+			session->handle.swapConfig |= kDCP_KeyByteSwap;
+		}
+
+		if (key->swap & CRYPTO_MCUX_DCP_SWAP_KEY_WORDS) {
+			session->handle.swapConfig |= kDCP_KeyWordSwap;
+		}
+
+		/* For OTP keys, this just checks if the key is ready. */
+		status = DCP_AES_SetKey(cfg->base, &session->handle, NULL, 0x10u);
+	} else {
+		status = DCP_AES_SetKey(cfg->base, &session->handle,
+					ctx->key.bit_stream, ctx->keylen);
+	}
+
 	if (status != kStatus_Success) {
 		free_session(session);
 		return fsl_to_errno(status);
@@ -327,12 +362,10 @@ static int crypto_dcp_init(const struct device *dev)
 
 	DCP_Init(cfg->base, &hal_cfg);
 
-	/* Assign unique channels/key slots to each session */
+	/* Assign unique channels to each session */
 	for (size_t i = 0; i < CONFIG_CRYPTO_MCUX_DCP_MAX_SESSION; ++i) {
 		data->sessions[i].in_use = false;
 		data->sessions[i].handle.channel = kDCP_Channel0 << i;
-		data->sessions[i].handle.keySlot = kDCP_KeySlot0 + i;
-		data->sessions[i].handle.swapConfig = kDCP_NoSwap;
 	}
 
 	return 0;
