@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../../uart_async_api/boards/kit_pse84_eval_pse846gps2dbzc4a_m55.overlay"
+#include "../../../counter/counter_basic_api/boards/kit_pse84_eval_common.overlay"
+
+counter_dev: &counter0_0 {
+	status = "okay";
+};
