@@ -1274,16 +1274,19 @@ static void modem_cmux_on_dlci_frame_disc(struct modem_cmux_dlci *dlci)
 {
 	struct modem_cmux *cmux = dlci->cmux;
 
-	modem_cmux_connect_response_transmit(cmux);
+	switch (dlci->state) {
+	case MODEM_CMUX_DLCI_STATE_OPEN:
+	case MODEM_CMUX_DLCI_STATE_CLOSING:
+		modem_cmux_connect_response_transmit(cmux);
+		LOG_DBG("DLCI %u disconnected", dlci->dlci_address);
+		dlci_close(dlci);
+		break;
 
-	if (dlci->state != MODEM_CMUX_DLCI_STATE_OPEN) {
+	default:
+		/* 3GPP TS 27.010: 5.3.4 DISC received in disconnected mode */
 		modem_cmux_dm_response_transmit(cmux);
-		return;
+		break;
 	}
-
-	LOG_DBG("DLCI %u disconnected", dlci->dlci_address);
-	dlci->state = MODEM_CMUX_DLCI_STATE_CLOSED;
-	modem_pipe_notify_closed(&dlci->pipe);
 }
 
 static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
