@@ -20,3 +20,6 @@ zephyr_iterable_section(NAME test_rom2 KVMA RAM_REGION GROUP RODATA_REGION)
 zephyr_iterable_section(NAME test_rom_named KVMA RAM_REGION GROUP RODATA_REGION)
 zephyr_iterable_section(NAME test_rom_numeric NUMERIC KVMA RAM_REGION GROUP RODATA_REGION)
 zephyr_iterable_section(NAME romn_alt KVMA RAM_REGION GROUP RODATA_REGION)
+
+zephyr_linker_sources(SECTIONS sections-rom-large.ld)
+zephyr_iterable_section(NAME test_rom_large KVMA RAM_REGION GROUP RODATA_REGION)
