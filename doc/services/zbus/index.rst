@@ -1159,6 +1159,10 @@ Related configuration options:
   observers to statically allocate;
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE` use user-provided runtime
   observers nodes;
+* :kconfig:option:`CONFIG_TRACING_ZBUS` traces channel publish, read, notify, claim and finish
+  calls, each observer the dispatcher notifies, subscribers waiting for notifications, and async
+  listener callbacks, when :kconfig:option:`CONFIG_TRACING` is enabled. The CTF backend records them
+  as ``zbus_*`` events;
 * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT` enable proxy agent communication support.
 
 Proxy Agent Configuration Options
