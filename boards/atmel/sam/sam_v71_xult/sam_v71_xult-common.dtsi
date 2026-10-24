@@ -198,6 +198,12 @@
 	pinctrl-0 = <&twihs0_default>;
 	pinctrl-names = "default";
 
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+		fs-ratio = <512>;
+	};
+
 	eeprom: eeprom@5f {
 		compatible = "atmel,at24", "atmel,24mac402";
 		reg = <0x5f>;
@@ -362,6 +368,10 @@ zephyr_udc0: &usbhs {
 
 	dma-names = "rx", "tx";
 	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
+};
+
+&xdmac {
+	status = "okay";
 };
 
 &can1 {
