@@ -154,6 +154,10 @@ static int modem_backend_mock_close(void *data)
 {
 	struct modem_backend_mock *mock = (struct modem_backend_mock *)data;
 
+	if (mock->close_error != 0) {
+		return mock->close_error;
+	}
+
 	modem_pipe_notify_closed(&mock->pipe);
 	return 0;
 }
