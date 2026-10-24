@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Simon Guinot <simon.guinot@sequanux.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_STRIP_CACHE
+	bool "LED strip cache driver"
+	default y
+	depends on DT_HAS_ZEPHYR_LED_STRIP_CACHE_ENABLED
+	help
+	  Enable this driver to support a virtual LED device bridging the LED
+	  and LED strip APIs. The driver provides a cache for one or more LED
+	  strip devices.
+
+config LED_STRIP_CACHE_UPDATE_ALL
+	bool "Update all LEDs on each update"
+	default n
+	depends on LED_STRIP_CACHE
+	help
+	  Always update all LEDs of a strip instead of stopping at the targeted
+	  LED.
+
+	  By default, the LED strip cache driver updates a strip only up to the
+	  targeted LED. But some backend controllers may be unable to keep the
+	  signal low after a transmission. A high signal at the end of the
+	  transmission may be interpreted as an additional bit by the next LED,
+	  which can affect its state. In that case you may try to enable this
+	  option.
