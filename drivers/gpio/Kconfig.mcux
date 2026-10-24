@@ -8,5 +8,6 @@ config GPIO_MCUX
 	bool "MCUX GPIO driver"
 	default y
 	depends on DT_HAS_NXP_KINETIS_GPIO_ENABLED
+	select PINCTRL
 	help
 	  Enable the MCUX pinmux driver.
