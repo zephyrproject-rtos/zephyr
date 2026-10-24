@@ -132,6 +132,13 @@ static int event_handler_bus_reset(struct usbd_context *const uds_ctx)
 		return ret;
 	}
 
+	/*
+	 * Classes resolve endpoint addresses from the bus speed, which may
+	 * differ between FS and HS. Complete the cancelled transfers before
+	 * the speed changes.
+	 */
+	event_handler_ep_request(uds_ctx);
+
 	LOG_INF("Actual device speed %u", udc_device_speed(uds_ctx->dev));
 	udc_speed = udc_device_speed(uds_ctx->dev);
 	switch (udc_speed) {
