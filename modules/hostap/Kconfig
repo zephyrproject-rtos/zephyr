@@ -191,11 +191,11 @@ config WIFI_NM_WPA_SUPPLICANT_MBO
 config WIFI_NM_WPA_SUPPLICANT_WNM
 	bool "Wireless Network Management support"
 	default y
+endif
 
 config WIFI_NM_WPA_SUPPLICANT_RRM
 	bool "Radio Resource Management support"
-	default y
-endif
+	default y if WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
 
 config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
 	bool "Legacy (non-FIPS) crypto for backward compatibility"
@@ -562,6 +562,7 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 config WIFI_NM_WPA_SUPPLICANT_NAN
 	bool "NAN (Neighbor Awareness Networking) support"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	select WIFI_NM_WPA_SUPPLICANT_RRM
 
 config WIFI_NAN_MAX_SSI_LEN
 	int "Maximum length of NAN service specific info"
