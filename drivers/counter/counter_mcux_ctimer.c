@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 LOG_MODULE_REGISTER(mcux_ctimer, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -26,6 +27,8 @@ LOG_MODULE_REGISTER(mcux_ctimer, CONFIG_COUNTER_LOG_LEVEL);
 #else
 #define NUM_CHANNELS 4
 #endif
+
+#define CTIMER_MATCH_INT_MASK(chan) (CTIMER_MCR_MR0I_MASK << ((uint32_t)(chan) * 3U))
 
 #ifdef CONFIG_COUNTER_CAPTURE
 #define CTIMER_CAPTURE_INT_MASK(chan)    (CTIMER_CCR_CAP0I_MASK << ((uint32_t)(chan) * 3U))
@@ -49,6 +52,13 @@ struct mcux_lpc_ctimer_data {
 	struct mcux_lpc_ctimer_channel_data channels[NUM_CHANNELS];
 	counter_top_callback_t top_callback;
 	void *top_user_data;
+#ifdef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
+	/* Wrap set through set_top_value(), reprogrammed after a power-down. */
+	uint32_t top_ticks;
+#endif /* CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP */
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool power_locked;
+#endif
 };
 
 #ifdef CONFIG_COUNTER_CAPTURE
@@ -76,13 +86,56 @@ struct mcux_lpc_ctimer_config {
 	const struct mcux_lpc_ctimer_mux_entry *mux_entries;
 	uint8_t mux_entries_count;
 #endif /* CONFIG_COUNTER_CAPTURE */
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool pm_device_constraints;
+#endif
 };
+
+/*
+ * Block the power states the node declares in zephyr,disabling-power-states for
+ * exactly as long as the counter is running and the device is active: taken when
+ * the counter is started, dropped when the device suspends, and taken again when a
+ * resume brings back a counter that was left running.
+ *
+ * The flag records whether the lock is held, so a start or a stop called twice
+ * leaves the count balanced.
+ */
+static void mcux_lpc_ctimer_power_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+	struct mcux_lpc_ctimer_data *data = dev->data;
+
+	if (config->pm_device_constraints && !data->power_locked) {
+		pm_policy_device_power_lock_get(dev);
+		data->power_locked = true;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static void mcux_lpc_ctimer_power_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct mcux_lpc_ctimer_data *data = dev->data;
+
+	if (data->power_locked) {
+		pm_policy_device_power_lock_put(dev);
+		data->power_locked = false;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
 
 static int mcux_lpc_ctimer_start(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 
 	CTIMER_StartTimer(config->base);
+
+	mcux_lpc_ctimer_power_lock_get(dev);
 
 	return 0;
 }
@@ -92,6 +145,8 @@ static int mcux_lpc_ctimer_stop(const struct device *dev)
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 
 	CTIMER_StopTimer(config->base);
+
+	mcux_lpc_ctimer_power_lock_put(dev);
 
 	return 0;
 }
@@ -163,24 +218,28 @@ static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 					       .enableCounterStop = false,
 					       .outControl = kCTIMER_Output_NoAction,
 					       .outPinInitState = false,
-					       .enableInterrupt = true };
+					       /* Armed below, once the match value is in place. */
+					       .enableInterrupt = false };
 
 	/*
-	 * A previously cancelled alarm can leave its match value programmed; on
-	 * this SoC the counter reaching that value latches the channel's status
-	 * flag even while the match interrupt is disabled. Mask this channel's
-	 * interrupt and drop any latched flag before registering the callback so
-	 * a stale match cannot be delivered as a spurious expiry. Only the match
-	 * armed by CTIMER_SetupMatch() below, which re-enables the interrupt, can
-	 * then reach the callback.
+	 * A previously cancelled alarm can leave its match value programmed, and
+	 * CTIMER_SetupMatch() writes MCR before MR. Letting it enable the match
+	 * interrupt would briefly arm that stale value, and the counter reaching
+	 * it would be delivered as a spurious expiry.
+	 *
+	 * Keep the channel masked while the new match value is written --
+	 * CTIMER_SetupMatch() drops the channel's status flag right after -- and
+	 * enable the interrupt only once the channel describes the alarm being
+	 * armed, so the first match that can reach the callback is that one.
 	 */
-	CTIMER_DisableInterrupts(config->base, (1U << chan_id));
-	CTIMER_ClearStatusFlags(config->base, (1U << chan_id));
+	CTIMER_DisableInterrupts(config->base, CTIMER_MATCH_INT_MASK(chan_id));
+
+	CTIMER_SetupMatch(config->base, chan_id, &match_config);
 
 	data->channels[chan_id].alarm_callback = alarm_cfg->callback;
 	data->channels[chan_id].alarm_user_data = alarm_cfg->user_data;
 
-	CTIMER_SetupMatch(config->base, chan_id, &match_config);
+	CTIMER_EnableInterrupts(config->base, CTIMER_MATCH_INT_MASK(chan_id));
 
 	return 0;
 }
@@ -190,7 +249,7 @@ static int mcux_lpc_ctimer_cancel_alarm(const struct device *dev, uint8_t chan_i
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 	struct mcux_lpc_ctimer_data *data = dev->data;
 
-	CTIMER_DisableInterrupts(config->base, (1 << chan_id));
+	CTIMER_DisableInterrupts(config->base, CTIMER_MATCH_INT_MASK(chan_id));
 	/*
 	 * Drop any match flag latched for this channel (see set_alarm) so a
 	 * cancelled alarm cannot be delivered once the channel is re-armed.
@@ -238,6 +297,7 @@ static int mcux_lpc_ctimer_set_top_value(const struct device *dev,
 					       .outPinInitState = false,
 					       .enableInterrupt = true };
 
+	data->top_ticks = cfg->ticks;
 	CTIMER_SetupMatch(config->base, NUM_CHANNELS, &match_config);
 #endif
 
@@ -494,16 +554,10 @@ static void mcux_lpc_ctimer_isr(const struct device *dev)
 #endif
 }
 
-static int mcux_lpc_ctimer_init_common(const struct device *dev)
+static int mcux_lpc_ctimer_configure(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
-	struct mcux_lpc_ctimer_data *data = dev->data;
 	ctimer_config_t ctimer_config;
-
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
 
 #ifdef CONFIG_COUNTER_CAPTURE
 	int ret;
@@ -521,17 +575,6 @@ static int mcux_lpc_ctimer_init_common(const struct device *dev)
 	}
 #endif /* CONFIG_COUNTER_CAPTURE */
 
-	for (uint8_t chan = 0; chan < NUM_CHANNELS; chan++) {
-		data->channels[chan].alarm_callback = NULL;
-		data->channels[chan].alarm_user_data = NULL;
-#ifdef CONFIG_COUNTER_CAPTURE
-		data->channels[chan].capture_callback = NULL;
-		data->channels[chan].capture_user_data = NULL;
-		data->channels[chan].capture_flags = 0U;
-		data->channels[chan].capture_single_shot = false;
-#endif /* CONFIG_COUNTER_CAPTURE */
-	}
-
 	CTIMER_GetDefaultConfig(&ctimer_config);
 
 	ctimer_config.mode = config->mode;
@@ -545,26 +588,106 @@ static int mcux_lpc_ctimer_init_common(const struct device *dev)
 	return 0;
 }
 
+static int mcux_lpc_ctimer_turn_on(const struct device *dev)
+{
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+	int ret;
+
+	ret = mcux_lpc_ctimer_configure(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+#ifdef CONFIG_PM_DEVICE
+	struct mcux_lpc_ctimer_data *data = dev->data;
+
+	/* The match channels came back reset, so bookkeeping that still names a
+	 * match would keep its channel busy for a match that cannot arrive.
+	 */
+	for (uint8_t chan = 0; chan < NUM_CHANNELS; chan++) {
+		data->channels[chan].alarm_callback = NULL;
+		data->channels[chan].alarm_user_data = NULL;
+#ifdef CONFIG_COUNTER_CAPTURE
+		data->channels[chan].capture_callback = NULL;
+		data->channels[chan].capture_user_data = NULL;
+		data->channels[chan].capture_flags = 0U;
+		data->channels[chan].capture_single_shot = false;
+#endif /* CONFIG_COUNTER_CAPTURE */
+	}
+
+#ifdef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
+	/* Zero means set_top_value() was never called. */
+	if (data->top_ticks != 0U) {
+		ctimer_match_config_t match_config = { .matchValue = data->top_ticks,
+						       .enableCounterReset = true,
+						       .enableCounterStop = false,
+						       .outControl = kCTIMER_Output_NoAction,
+						       .outPinInitState = false,
+						       .enableInterrupt = true };
+
+		CTIMER_SetupMatch(config->base, NUM_CHANNELS, &match_config);
+	}
+#endif /* CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP */
+#endif /* CONFIG_PM_DEVICE */
+
+	/* A resume always follows a turn-on and takes the clock. */
+	return clock_control_off(config->clock_dev, config->clock_subsys);
+}
+
+static int mcux_lpc_ctimer_resume(const struct device *dev)
+{
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+	int ret;
+
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Reading TCR needs the clock on. A counter still enabled is one the
+	 * consumer started and never stopped, so take its protection again.
+	 */
+	if ((config->base->TCR & CTIMER_TCR_CEN_MASK) != 0U) {
+		mcux_lpc_ctimer_power_lock_get(dev);
+	}
+
+	return 0;
+}
+
+static int mcux_lpc_ctimer_suspend(const struct device *dev)
+{
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+
+	mcux_lpc_ctimer_power_lock_put(dev);
+
+	return clock_control_off(config->clock_dev, config->clock_subsys);
+}
+
 static int mcux_lpc_ctimer_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		break;
+		return mcux_lpc_ctimer_resume(dev);
 	case PM_DEVICE_ACTION_SUSPEND:
-		break;
+		return mcux_lpc_ctimer_suspend(dev);
 	case PM_DEVICE_ACTION_TURN_OFF:
-		break;
+		return 0;
 	case PM_DEVICE_ACTION_TURN_ON:
-		mcux_lpc_ctimer_init_common(dev);
-		break;
+		return mcux_lpc_ctimer_turn_on(dev);
 	default:
 		return -ENOTSUP;
 	}
-	return 0;
 }
 
 static int mcux_lpc_ctimer_init(const struct device *dev)
 {
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
 	 * which is invoked by pm_device_driver_init().
 	 */
@@ -619,6 +742,13 @@ static DEVICE_API(counter, mcux_ctimer_driver_api) = {
 #define COUNTER_LPC_CTIMER_MUX_INIT(id)
 #endif /* CONFIG_COUNTER_CAPTURE */
 
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#define COUNTER_LPC_CTIMER_PM_DEVICE_CONSTRAINTS_INIT(id)                                          \
+	.pm_device_constraints = DT_INST_NODE_HAS_PROP(id, zephyr_disabling_power_states),
+#else
+#define COUNTER_LPC_CTIMER_PM_DEVICE_CONSTRAINTS_INIT(id)
+#endif
+
 #define COUNTER_LPC_CTIMER_DEVICE(id) \
 	COUNTER_LPC_CTIMER_PINCTRL_DEFINE(id) \
 	COUNTER_LPC_CTIMER_MUX_DEFINE(id) \
@@ -639,6 +769,7 @@ static DEVICE_API(counter, mcux_ctimer_driver_api) = {
 		COUNTER_LPC_CTIMER_PINCTRL_INIT(id) \
 		COUNTER_LPC_CTIMER_MUX_INIT(id) \
 		.irq_config_func = mcux_lpc_ctimer_irq_config_##id,	\
+		COUNTER_LPC_CTIMER_PM_DEVICE_CONSTRAINTS_INIT(id) \
 	};                     \
 	PM_DEVICE_DT_INST_DEFINE(id, mcux_lpc_ctimer_pm_action);                                   \
 	static struct mcux_lpc_ctimer_data mcux_lpc_ctimer_data_##id;                              \

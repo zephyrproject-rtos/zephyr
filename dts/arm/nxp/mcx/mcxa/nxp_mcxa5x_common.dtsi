@@ -496,6 +496,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	ctimer1: ctimer@5000 {
@@ -508,6 +510,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	ctimer2: ctimer@6000 {
@@ -520,6 +524,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	ctimer3: ctimer@7000 {
@@ -532,6 +538,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	ctimer4: ctimer@8000 {
@@ -544,6 +552,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	smartdma: smartdma@e000 {
