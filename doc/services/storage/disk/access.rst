@@ -120,8 +120,28 @@ a block device. The flashdisk instances are defined in devicetree:
 The cache size specified in :dtcompatible:`zephyr,flash-disk` node should be
 equal to backing partition minimum erasable block size.
 
+Semihost file-backed disk support
+*********************************
+
+The :dtcompatible:`zephyr,semihost-disk` driver stores a disk in a file on the
+semihosting host, such as QEMU run with semihosting enabled. The disk contents
+persist in the host file between runs. The instances are defined in devicetree:
+
+.. code-block:: devicetree
+
+    / {
+        semihost_disk0 {
+            compatible = "zephyr,semihost-disk";
+            disk-name = "SEMIHOST";
+            sector-size = <512>;
+            sector-count = <2048>;
+        };
+    };
+
+The driver requires :kconfig:option:`CONFIG_SEMIHOST`.
+
 NVMe disk support
-=================
+*****************
 
 NVMe disks are also supported
 
