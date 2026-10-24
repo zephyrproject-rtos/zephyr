@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RPI_ZERO_2W
+
+config PM_DEVICE
+	default y if PM
+
+if PM_DEVICE
+
+config POWER_DOMAIN
+	default y
+
+config PM_DEVICE_POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
+endif # BOARD_RPI_ZERO_2W
