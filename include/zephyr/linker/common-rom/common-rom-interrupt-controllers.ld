@@ -7,3 +7,7 @@
 #include <zephyr/linker/iterable_sections.h>
 
 	ITERABLE_SECTION_ROM(intc_table, 4)
+
+#ifdef CONFIG_IRQ_DISPATCH_WRAPPER
+	ITERABLE_SECTION_ROM(irq_dispatch_hook, 4)
+#endif /* CONFIG_IRQ_DISPATCH_WRAPPER */
