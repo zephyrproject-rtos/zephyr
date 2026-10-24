@@ -603,7 +603,7 @@ int main(void)
 
 	if (ret < 0) {
 		printk("Failed to send echos\n");
-		return -1;
+		goto power_cycle;
 	}
 
 	ret = sample_transmit_packets(net_sad(&sample_test_dns_addrinfo.ai_addr_storage),
@@ -611,7 +611,6 @@ int main(void)
 
 	if (ret < 0) {
 		printk("Failed to send packets\n");
-		return -1;
 	}
 
 power_cycle:
@@ -648,7 +647,6 @@ power_cycle:
 
 	if (ret < 0) {
 		printk("Failed to send echos after restart\n");
-		return -1;
 	}
 
 	printk("Final interface down\n");
