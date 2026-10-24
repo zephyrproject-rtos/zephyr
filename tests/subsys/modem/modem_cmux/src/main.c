@@ -1058,6 +1058,9 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_disc)
 	int ret;
 	uint32_t events;
 
+	/* Retry count as left by a successful connect */
+	cmux.retry_count = 0;
+
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_disc_cmd,
 			       sizeof(cmux_frame_dlci0_disc_cmd));
 
@@ -1071,6 +1074,10 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_disc)
 	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
 	zassert_equal(events, EVENT_CMUX_DISCONNECTED,
 		      "DLCI0 DISC should cause CMUX disconnection");
+
+	/* The peer has already closed the multiplexer, no CLD may be sent */
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "Unexpected data sent after DLCI0 DISC");
 }
 
 /*

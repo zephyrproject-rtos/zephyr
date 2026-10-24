@@ -1083,6 +1083,10 @@ static void modem_cmux_on_control_frame_disc(struct modem_cmux *cmux)
 		disconnect(cmux);
 	} else {
 		set_state(cmux, MODEM_CMUX_STATE_DISCONNECTING);
+		/* We did not initiate the disconnect, so don't send CLD, just wait for our
+		 * response to be sent, then close our side.
+		 */
+		cmux->retry_count = MODEM_CMUX_N2_RETRIES;
 		modem_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
 	}
 }
