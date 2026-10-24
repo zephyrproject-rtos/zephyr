@@ -60,6 +60,19 @@
 		compatible = "simple-bus";
 		ranges;
 
+		/* fsource0 = fBACK 100 MHz; dividers at their reset values */
+		ccu: clock-controller@f0064000 {
+			compatible = "infineon,aurix-tc4x-ccu", "infineon,aurix-ccu";
+			reg = <0xf0064000 0x1000>;
+			#clock-cells = <1>;
+			sri-div = <1>;
+			spb-div = <2>;
+			tpb-div = <1>;
+			fsi-div = <1>;
+			stm-div = <2>;
+			asclinf-div = <1>;
+		};
+
 		ir: interrupt_controller@f4430000 {
 			compatible = "infineon,aurix-ir";
 			reg = <0xf4430000 0x20000 0xf4432000 0x40000>;
