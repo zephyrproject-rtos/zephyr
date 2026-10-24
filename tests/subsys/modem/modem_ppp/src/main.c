@@ -55,10 +55,16 @@ static uint8_t ppp_frame_unwrapped[] = {0xC0, 0x21, 0x01, 0x01, 0x00, 0x04};
  * Same frame as ppp_frame_wrapped but with the Address (0xFF) and Control
  * (0x03) fields omitted (ACFC). The receiver must start the frame on the first
  * non-0xFF byte and deliver the same payload. The LCP protocol (0xC0 0x21) is
- * used because its first octet is not an HDLC-escaped value.
+ * used because its first octet is not an HDLC-escaped value. The FCS covers
+ * only the fields present, so it differs from the uncompressed frame.
  */
 static uint8_t ppp_frame_wrapped_acfc[] = {0x7E, 0xC0, 0x21, 0x7D, 0x21, 0x7D, 0x21,
-					   0x7D, 0x20, 0x7D, 0x24, 0xD1, 0xB5, 0x7E};
+					   0x7D, 0x20, 0x7D, 0x24, 0x6A, 0x9B, 0x7E};
+
+/* Same frame as ppp_frame_wrapped with a corrupted FCS */
+static uint8_t ppp_frame_wrapped_bad_fcs[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21,
+					      0x7D, 0x21, 0x7D, 0x21, 0x7D, 0x20,
+					      0x7D, 0x24, 0xD1, 0xB6, 0x7E};
 
 /* Custom ACCM (Only 0-15 need to be escaped) */
 static uint32_t accm_custom1 = 0x0000ffff;
@@ -100,7 +106,7 @@ static uint8_t ip_frame_wrapped_acfc[] = {
 	0x20, 0xE8, 0x7D, 0x31, 0xC1, 0xE9, 0x7D, 0x23, 0xFB, 0x7D, 0x25, 0x20, 0x7D, 0x2A,
 	0x2B, 0x36, 0x26, 0x25, 0x7D, 0x32, 0x8C, 0x3E, 0x7D, 0x20, 0x7D, 0x35, 0xBD, 0xF3,
 	0x2D, 0x7D, 0x20, 0x7D, 0x2B, 0x7D, 0x20, 0x7D, 0x27, 0x7D, 0x20, 0x7D, 0x24, 0x7D,
-	0x20, 0x7D, 0x24, 0x7D, 0x2A, 0x7D, 0x20, 0x7D, 0x2A, 0x7D, 0x20, 0xD4, 0x31, 0x7E};
+	0x20, 0x7D, 0x24, 0x7D, 0x2A, 0x7D, 0x20, 0x7D, 0x2A, 0x7D, 0x20, 0x73, 0x4B, 0x7E};
 
 /*
  * Same IP frame with both ACFC and PFC applied, as the Neoway N717 sends
@@ -112,7 +118,7 @@ static uint8_t ip_frame_wrapped_pfc_acfc[] = {
 	0x7D, 0x31, 0xC1, 0xE9, 0x7D, 0x23, 0xFB, 0x7D, 0x25, 0x20, 0x7D, 0x2A, 0x2B, 0x36,
 	0x26, 0x25, 0x7D, 0x32, 0x8C, 0x3E, 0x7D, 0x20, 0x7D, 0x35, 0xBD, 0xF3, 0x2D, 0x7D,
 	0x20, 0x7D, 0x2B, 0x7D, 0x20, 0x7D, 0x27, 0x7D, 0x20, 0x7D, 0x24, 0x7D, 0x20, 0x7D,
-	0x24, 0x7D, 0x2A, 0x7D, 0x20, 0x7D, 0x2A, 0x7D, 0x20, 0xD4, 0x31, 0x7E};
+	0x24, 0x7D, 0x2A, 0x7D, 0x20, 0x7D, 0x2A, 0x7D, 0x20, 0xF0, 0x7F, 0x7E};
 
 static uint8_t corrupt_start_end_ppp_frame_wrapped[] = {0x2A, 0x46, 0x7E, 0x7E, 0xFF, 0x7D, 0x23,
 							0xC0, 0x21, 0x7D, 0x21, 0x7D, 0x21, 0x7D,
@@ -264,35 +270,38 @@ static bool test_modem_ppp_validate_fill(const uint8_t *data, size_t size)
 	return true;
 }
 
-static void test_modem_ppp_generate_ppp_frame(uint8_t *frame, size_t size)
+/* Write the FCS over the FF 03 header and frame body into the last two bytes */
+static void test_modem_ppp_set_fcs(uint8_t *frame, size_t size)
 {
-	uint8_t byte;
+	static const uint8_t header[] = {0xFF, 0x03};
 	uint16_t fcs;
 
-	test_modem_ppp_prng_random(true);
+	fcs = crc16_ccitt(0xFFFF, header, sizeof(header));
+	fcs = crc16_ccitt(fcs, frame, size - 2) ^ 0xFFFF;
 
-	byte = 0x03;
-	fcs = crc16_ccitt(0xFFFF, &byte, 0x01);
+	frame[size - 2] = fcs;
+	frame[size - 1] = fcs >> 8;
+}
+
+static void test_modem_ppp_generate_ppp_frame(uint8_t *frame, size_t size)
+{
+	test_modem_ppp_prng_random(true);
 
 	frame[0] = 0x00;
 	frame[1] = 0x21;
 
 	for (size_t i = 2; i < (size - 2); i++) {
-		byte = test_modem_ppp_prng_random(false);
-		frame[i] = byte;
+		frame[i] = test_modem_ppp_prng_random(false);
 	}
 
-	fcs = crc16_ccitt(fcs, frame, size) ^ 0xFFFF;
-
-	frame[size - 2] = fcs >> 8;
-	frame[size - 1] = fcs;
+	test_modem_ppp_set_fcs(frame, size);
 }
 
 /*
  * Generate a PPP frame whose body never contains a byte that HDLC has to escape
  * (< 0x20, 0x7D or 0x7E). The whole body therefore travels through the
  * bulk-write span path on receive, stressing the mid-span fragment allocation.
- * The last two bytes act as the FCS and are stripped by the receiver.
+ * The last two bytes are the FCS and are stripped by the receiver.
  */
 static void test_modem_ppp_generate_clean_ppp_frame(uint8_t *frame, size_t size)
 {
@@ -301,13 +310,15 @@ static void test_modem_ppp_generate_clean_ppp_frame(uint8_t *frame, size_t size)
 	frame[0] = 0x00;
 	frame[1] = 0x21;
 
-	for (size_t i = 2; i < size; i++) {
+	for (size_t i = 2; i < (size - 2); i++) {
 		if ((byte == 0x7D) || (byte == 0x7E)) {
 			byte = 0x7F;
 		}
 		frame[i] = byte;
 		byte = (byte == 0xFF) ? 0x20 : (byte + 1);
 	}
+
+	test_modem_ppp_set_fcs(frame, size);
 }
 
 /*
@@ -315,14 +326,14 @@ static void test_modem_ppp_generate_clean_ppp_frame(uint8_t *frame, size_t size)
  * runs of clean bytes, including consecutive escapes. On receive this keeps
  * switching between the span path and the per-byte path (spans of length 0/1
  * fall back to per-byte), which the bulk-write optimisation must leave intact.
- * The last two bytes act as the FCS and are stripped by the receiver.
+ * The last two bytes are the FCS and are stripped by the receiver.
  */
 static void test_modem_ppp_generate_escape_heavy_ppp_frame(uint8_t *frame, size_t size)
 {
 	frame[0] = 0x00;
 	frame[1] = 0x21;
 
-	for (size_t i = 2; i < size; i++) {
+	for (size_t i = 2; i < (size - 2); i++) {
 		switch (i % 8) {
 		case 0:
 			frame[i] = 0x7E; /* delimiter code, escaped to 7D 5E */
@@ -335,6 +346,8 @@ static void test_modem_ppp_generate_escape_heavy_ppp_frame(uint8_t *frame, size_
 			break;
 		}
 	}
+
+	test_modem_ppp_set_fcs(frame, size);
 }
 
 static size_t test_modem_ppp_wrap_ppp_frame(uint8_t *wrapped, const uint8_t *frame, size_t size)
@@ -445,6 +458,17 @@ static void put_and_validate_wrapped_frame(void)
 ZTEST(modem_ppp, test_ppp_frame_receive)
 {
 	/* Basic wrapped frame */
+	put_and_validate_wrapped_frame();
+}
+
+ZTEST(modem_ppp, test_ppp_frame_receive_bad_fcs)
+{
+	/* Frame with a corrupted FCS is discarded */
+	modem_backend_mock_put(&mock, ppp_frame_wrapped_bad_fcs, sizeof(ppp_frame_wrapped_bad_fcs));
+	zassert_equal(k_sem_take(&rx_pkt_sem, K_MSEC(100)), -EAGAIN,
+		      "Frame with invalid FCS should be dropped");
+
+	/* Following valid frame is still received */
 	put_and_validate_wrapped_frame();
 }
 

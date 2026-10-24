@@ -17,6 +17,11 @@ LOG_MODULE_REGISTER(modem_ppp, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #define MODEM_PPP_FRAME_TAIL_SIZE	(2)
 
+/* FCS computed over the Address (0xFF) and Control (0x03) fields */
+#define MODEM_PPP_FCS_ADDR_CTRL		(0x3DE3)
+/* FCS computed over a frame including its own FCS field, RFC 1662 C.2 */
+#define MODEM_PPP_FCS_GOOD		(0xF0B8)
+
 #define MODEM_PPP_CODE_DELIMITER	(0x7E)
 #define MODEM_PPP_CODE_ESCAPE		(0x7D)
 #define MODEM_PPP_VALUE_ESCAPE		(0x20)
@@ -104,7 +109,7 @@ static uint32_t modem_ppp_wrap(struct modem_ppp *ppp, uint8_t *buffer, uint32_t 
 			 *   ppp->tx_pkt_fcs = modem_ppp_fcs_update(ppp->tx_pkt_fcs, 0x03);
 			 */
 			ARG_UNUSED(modem_ppp_fcs_init);
-			ppp->tx_pkt_fcs = 0x3DE3;
+			ppp->tx_pkt_fcs = MODEM_PPP_FCS_ADDR_CTRL;
 			/* Next state */
 			if (net_pkt_is_ppp(ppp->tx_pkt)) {
 				ppp->transmit_state = MODEM_PPP_TRANSMIT_STATE_DATA;
@@ -215,6 +220,7 @@ static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
 		return;
 	}
 
+	ppp->rx_pkt_fcs = 0xFFFF;
 	net_pkt_cursor_init(ppp->rx_pkt);
 	if (net_pkt_write_u8(ppp->rx_pkt, byte) < 0) {
 		net_pkt_unref(ppp->rx_pkt);
@@ -225,6 +231,17 @@ static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
 
 	LOG_DBG("Receiving ACFC PPP frame");
 	ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
+}
+
+static bool modem_ppp_rx_pkt_fcs_is_valid(struct modem_ppp *ppp)
+{
+	uint16_t fcs = ppp->rx_pkt_fcs;
+
+	for (struct net_buf *buf = ppp->rx_pkt->buffer; buf != NULL; buf = buf->frags) {
+		fcs = crc16_ccitt(fcs, buf->data, buf->len);
+	}
+
+	return fcs == MODEM_PPP_FCS_GOOD;
 }
 
 static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
@@ -311,6 +328,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			}
 
 			LOG_DBG("Receiving PPP frame");
+			ppp->rx_pkt_fcs = MODEM_PPP_FCS_ADDR_CTRL;
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
 			net_pkt_cursor_init(ppp->rx_pkt);
 		} else {
@@ -322,6 +340,17 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 	case MODEM_PPP_RECEIVE_STATE_WRITING:
 		if (byte == MODEM_PPP_CODE_DELIMITER) {
 			LOG_DBG("Received PPP frame (len %zu)", net_pkt_get_len(ppp->rx_pkt));
+
+			if (modem_ppp_rx_pkt_fcs_is_valid(ppp) == false) {
+				LOG_WRN("Dropped PPP frame, invalid FCS");
+				net_pkt_unref(ppp->rx_pkt);
+				ppp->rx_pkt = NULL;
+				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+#if defined(CONFIG_NET_STATISTICS_PPP)
+				ppp->stats.chkerr++;
+#endif
+				break;
+			}
 
 			/* Remove FCS */
 			net_pkt_remove_tail(ppp->rx_pkt, MODEM_PPP_FRAME_TAIL_SIZE);
