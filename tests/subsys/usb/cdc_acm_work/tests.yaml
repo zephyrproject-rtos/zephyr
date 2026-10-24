@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Neoventor AB
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim/native
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+  tags:
+    - usb
+  harness: ztest
+tests:
+  usb.cdc_acm_work:
+    extra_configs:
+      - CONFIG_USBD_CDC_ACM_WORKQUEUE=y
+  usb.cdc_acm_work.system_workqueue:
+    extra_configs:
+      - CONFIG_USBD_CDC_ACM_WORKQUEUE=n
