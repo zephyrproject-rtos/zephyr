@@ -193,6 +193,14 @@ For example:
    :goals: build flash
    :west-args: --sysbuild
 
+
+Using Wi-Fi via W102 Module
+***************************
+
+In order to use the Wi-Fi functionality provided by the W102 module, you first
+need to flash the `esp_at`_ firmware onto the module. This firmware can be
+built and flashed following the directions `on the ADI developer portal`_.
+
 Debugging
 =========
 
@@ -206,3 +214,7 @@ References
 
 .. _AD-APARD32690-SL solution center:
    https://developer.analog.com/solutions/max32690
+
+.. _esp_at: https://github.com/espressif/esp-at
+.. _on the ADI developer portal:
+  https://analogdevicesinc.github.io/system-level/solutions/reference-designs/ad-apard32690-sl/nina-w102/
