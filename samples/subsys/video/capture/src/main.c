@@ -278,8 +278,7 @@ static int app_setup_video_controls(const struct device *const camera_dev)
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
 		ret = video_set_ctrl(camera_dev, &ctrl);
 		if (ret < 0) {
-			LOG_ERR("Failed to set horizontal flip");
-			return ret;
+			LOG_WRN("Failed to set horizontal flip");
 		}
 	}
 
@@ -287,8 +286,7 @@ static int app_setup_video_controls(const struct device *const camera_dev)
 		ctrl.id = VIDEO_CID_VFLIP;
 		ret = video_set_ctrl(camera_dev, &ctrl);
 		if (ret < 0) {
-			LOG_ERR("Failed to set vertical flip");
-			return ret;
+			LOG_WRN("Failed to set vertical flip");
 		}
 	}
 
