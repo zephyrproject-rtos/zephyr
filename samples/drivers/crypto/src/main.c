@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
  * Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +49,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT realtek_bee_aes
 #elif CONFIG_CRYPTO_MSPM0_AES
 #define CRYPTO_DEV_COMPAT ti_mspm0_aes
+#elif CONFIG_CRYPTO_INFINEON_MXCRYPTOLITE
+#define CRYPTO_DEV_COMPAT infineon_mxcryptolite_crypto
 #else
 #error "You need to enable one crypto device"
 #endif
