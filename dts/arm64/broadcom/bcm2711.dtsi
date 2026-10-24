@@ -12,6 +12,8 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
+	interrupt-parent = <&gic>;
+
 	cpus {
 		clock-frequency = <DT_FREQ_M(540)>;
 		enable-method = "spin-table";
@@ -21,35 +23,33 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <0>;
+			device_type = "cpu";
 			cpu-release-addr = <0x0 0x000000d8>;
 		};
 
 		cpu1: cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <1>;
+			device_type = "cpu";
 			cpu-release-addr = <0x0 0x000000e0>;
 		};
 
 		cpu2: cpu@2 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <2>;
+			device_type = "cpu";
 			cpu-release-addr = <0x0 0x000000e8>;
 		};
 
 		cpu3: cpu@3 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <3>;
+			device_type = "cpu";
 			cpu-release-addr = <0x0 0x000000f0>;
 		};
 	};
-
-	interrupt-parent = <&gic>;
 
 	timer {
 		compatible = "arm,armv8-timer";
@@ -81,24 +81,9 @@
 		dma-ranges = <0xc0000000 0x0 0x40000000>;
 
 		sram0: memory@200000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x200000 0x80000>;
-		};
-
-		gic: interrupt-controller@ff841000 {
-			compatible = "arm,gic-v2", "arm,gic";
-			reg = <0xff841000 0x1000>,
-			      <0xff842000 0x2000>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
-		};
-
-		rng: rng@fe104000 {
-			compatible = "brcm,iproc-rng200";
-			reg = <0xfe104000 0x28>;
-			status = "disabled";
+			device_type = "memory";
 		};
 
 		mbox0: mbox@fe00b880 {
@@ -108,6 +93,12 @@
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&gic>;
 			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		rng: rng@fe104000 {
+			compatible = "brcm,iproc-rng200";
+			reg = <0xfe104000 0x28>;
 			status = "disabled";
 		};
 
@@ -150,16 +141,6 @@
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "uart0";
 			clocks = <&clk_uart>;
-			status = "disabled";
-		};
-
-		uart1: uart@fe215040 {
-			compatible = "brcm,bcm283x-aux-uart", "ns16550";
-			reg = <0xfe215040 0x40>;
-			reg-shift = <2>;
-			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			clock-frequency = <DT_FREQ_M(500)>;
 			status = "disabled";
 		};
 
@@ -214,17 +195,6 @@
 			status = "disabled";
 		};
 
-		i2c1: i2c@fe804000 {
-			compatible = "brcm,bcm2711-i2c";
-			reg = <0xfe804000 0x200>;
-			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&clk_vpu>;
-			status = "disabled";
-		};
-
 		i2c3: i2c@fe205600 {
 			compatible = "brcm,bcm2711-i2c";
 			reg = <0xfe205600 0x200>;
@@ -269,6 +239,27 @@
 			status = "disabled";
 		};
 
+		uart1: uart@fe215040 {
+			compatible = "brcm,bcm283x-aux-uart", "ns16550";
+			reg = <0xfe215040 0x40>;
+			reg-shift = <2>;
+			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <DT_FREQ_M(500)>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@fe804000 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe804000 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
 		usb0: usb@fe980000 {
 			compatible = "brcm,bcm2835-usb", "snps,dwc2";
 			reg = <0xfe980000 0x10000>;
@@ -283,6 +274,15 @@
 			g-np-tx-fifo-size = <32>;
 			g-tx-fifo-size = <512 512 512 512 512 256 256>;
 			status = "disabled";
+		};
+
+		gic: interrupt-controller@ff841000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0xff841000 0x1000>,
+			      <0xff842000 0x2000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
 		};
 	};
 

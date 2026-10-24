@@ -16,9 +16,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -37,12 +37,12 @@
 
 		pcc: clock-controller@4000d000 {
 			compatible = "nuvoton,npcm-pcc";
-			/* Cells for clock id */
-			#clock-cells = <1>;
 			/* First reg region is Power Management Controller */
 			/* Second reg region is Core Domain Clock Generator */
 			reg = <0x4000d000 0x2000
 			       0x400b5000 0x2000>;
+			/* Cells for clock id */
+			#clock-cells = <1>;
 			reg-names = "pmc", "cdcg";
 		};
 	};

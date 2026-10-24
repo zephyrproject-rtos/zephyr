@@ -28,30 +28,6 @@
 #include "nxp_mcxl_aon.dtsi"
 
 &peripheral {
-	lpspi0: spi@9c000 {
-		compatible = "nxp,lpspi";
-		reg = <0x9c000 0x1000>;
-		interrupts = <28 0>;
-		clocks = <&syscon MCUX_LPSPI0_CLK>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-		rx-fifo-size = <4>;
-		tx-fifo-size = <4>;
-	};
-
-	lpspi1: spi@9d000 {
-		compatible = "nxp,lpspi";
-		reg = <0x9d000 0x1000>;
-		interrupts = <29 0>;
-		clocks = <&syscon MCUX_LPSPI1_CLK>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-		rx-fifo-size = <4>;
-		tx-fifo-size = <4>;
-	};
-
 	lpi2c0: i2c@9a000 {
 		compatible = "nxp,lpi2c";
 		reg = <0x9a000 0x1000>;
@@ -73,6 +49,30 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	lpspi0: spi@9c000 {
+		compatible = "nxp,lpspi";
+		reg = <0x9c000 0x1000>;
+		interrupts = <28 0>;
+		clocks = <&syscon MCUX_LPSPI0_CLK>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		rx-fifo-size = <4>;
+		tx-fifo-size = <4>;
+		status = "disabled";
+	};
+
+	lpspi1: spi@9d000 {
+		compatible = "nxp,lpspi";
+		reg = <0x9d000 0x1000>;
+		interrupts = <29 0>;
+		clocks = <&syscon MCUX_LPSPI1_CLK>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		rx-fifo-size = <4>;
+		tx-fifo-size = <4>;
+		status = "disabled";
+	};
 };
 
 &aon_peripheral {
@@ -81,8 +81,8 @@
 		reg = <0x92000 0x1000>;
 		interrupts = <149 0>;
 		clocks = <&syscon MCUX_AON_LPADC_CLK>;
-		status = "disabled";
 		#io-channel-cells = <1>;
+		status = "disabled";
 	};
 };
 
@@ -109,17 +109,52 @@
 		reg = <0xc000 0x1000>;
 		interrupts = <60 0>;
 		clocks = <&syscon MCUX_WWDT0_CLK>;
-		status = "disabled";
 		clk-divider = <1>;
+		status = "disabled";
 	};
 };
 
 &peripheral {
+	ctimer0: ctimer@4000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x4000 0x1000>;
+		interrupts = <39 0>;
+		clk-source = <1>;
+		clocks = <&syscon MCUX_CTIMER0_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		status = "disabled";
+	};
+
+	ctimer1: ctimer@5000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x5000 0x1000>;
+		interrupts = <40 0>;
+		clk-source = <1>;
+		clocks = <&syscon MCUX_CTIMER1_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		status = "disabled";
+	};
+
+	ctimer2: ctimer@6000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x6000 0x1000>;
+		interrupts = <41 0>;
+		clk-source = <1>;
+		clocks = <&syscon MCUX_CTIMER2_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		status = "disabled";
+	};
+
 	lpadc0: adc@af000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0xaf000 0x1000>;
 		interrupts = <62 0>;
-		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
 		voltage-ref = <1>;
@@ -129,42 +164,7 @@
 		offset-value-b = <0>;
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
-	};
-
-	ctimer0: ctimer@4000 {
-		compatible = "nxp,lpc-ctimer";
-		reg = <0x4000 0x1000>;
-		interrupts = <39 0>;
 		status = "disabled";
-		clk-source = <1>;
-		clocks = <&syscon MCUX_CTIMER0_CLK>;
-		mode = <0>;
-		input = <0>;
-		prescale = <0>;
-	};
-
-	ctimer1: ctimer@5000 {
-		compatible = "nxp,lpc-ctimer";
-		reg = <0x5000 0x1000>;
-		interrupts = <40 0>;
-		status = "disabled";
-		clk-source = <1>;
-		clocks = <&syscon MCUX_CTIMER1_CLK>;
-		mode = <0>;
-		input = <0>;
-		prescale = <0>;
-	};
-
-	ctimer2: ctimer@6000 {
-		compatible = "nxp,lpc-ctimer";
-		reg = <0x6000 0x1000>;
-		interrupts = <41 0>;
-		status = "disabled";
-		clk-source = <1>;
-		clocks = <&syscon MCUX_CTIMER2_CLK>;
-		mode = <0>;
-		input = <0>;
-		prescale = <0>;
 	};
 };
 

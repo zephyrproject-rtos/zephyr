@@ -12,9 +12,9 @@
  */
 / {
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		sram0_s: sram0_s@34000000 {
 			/* Secure image SRAM */
@@ -31,14 +31,14 @@
 
 		slot0_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "slot0";
 			reg = <0x0 DT_SIZE_K(256)>;
+			label = "slot0";
 		};
 
 		slot1_partition: partition@40000 {
 			compatible = "zephyr,mapped-partition";
-			label = "slot1";
 			reg = <0x40000 DT_SIZE_K(256)>;
+			label = "slot1";
 		};
 	};
 };

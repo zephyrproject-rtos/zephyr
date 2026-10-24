@@ -21,12 +21,6 @@
 			status = "disabled";
 		};
 
-		spi1: spi@4046a000 {
-			compatible = "ti,mspm0-spi";
-			reg = <0x4046a000 0x2000>;
-			status = "disabled";
-		};
-
 		timg0: timg0@40084000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40084000 0x2000>;
@@ -91,20 +85,10 @@
 			};
 		};
 
-		timg12: timg12@40870000 {
-			compatible = "ti,mspm0-timer";
-			reg = <0x40870000 0x2000>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
-			interrupts = <2 0>;
-			ti,clk-prescaler = <0>; /* No prescaler */
-			ti,clk-div = <1>;
+		spi1: spi@4046a000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x4046a000 0x2000>;
 			status = "disabled";
-
-			counterg12: counterg12 {
-				compatible = "ti,mspm0-timer-counter";
-				resolution = <32>;
-				status = "disabled";
-			};
 		};
 
 		tima0: tima0@40860000 {
@@ -119,6 +103,22 @@
 			countera0: countera0 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg12: timg12@40870000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40870000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <2 0>;
+			ti,clk-prescaler = <0>; /* No prescaler */
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg12: counterg12 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <32>;
 				status = "disabled";
 			};
 		};

@@ -27,33 +27,17 @@
 		timebase-frequency = <DT_FREQ_M(25)>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r5f";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
 	atcm: memory@0 {
-		device_type = "memory";
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x00000000 DT_SIZE_K(32)>;
-		zephyr,memory-region = "ATCM";
-	};
-
-	btcm: memory@41010000 {
 		device_type = "memory";
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x41010000 DT_SIZE_K(32)>;
-		zephyr,memory-region = "BTCM";
-	};
-
-	vim: interrupt-controller@7ff0000 {
-		#address-cells = <1>;
-		compatible = "ti,vim";
-		reg = <0x07ff0000 0x2800>;
-		interrupt-controller;
-		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
-		status = "okay";
+		zephyr,memory-region = "ATCM";
 	};
 
 	systick_timer: timer@4800000 {
@@ -61,6 +45,15 @@
 		reg = <0x04800000 0x70>;
 		interrupts = <0 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&vim>;
+		status = "okay";
+	};
+
+	vim: interrupt-controller@7ff0000 {
+		compatible = "ti,vim";
+		reg = <0x07ff0000 0x2800>;
+		#address-cells = <1>;
+		interrupt-controller;
+		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
 		status = "okay";
 	};
 
@@ -72,5 +65,12 @@
 		usr-id = <2>;
 		#mbox-cells = <1>;
 		status = "okay";
+	};
+
+	btcm: memory@41010000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x41010000 DT_SIZE_K(32)>;
+		device_type = "memory";
+		zephyr,memory-region = "BTCM";
 	};
 };

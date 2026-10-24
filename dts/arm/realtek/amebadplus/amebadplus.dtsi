@@ -20,9 +20,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m55";
 			reg = <0>;
+			device_type = "cpu";
 			d-cache-line-size = <32>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -34,19 +34,24 @@
 		#size-cells = <1>;
 
 		clk_sys: clk_sys {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(260)>;
 		};
 
 		rcc: rcc@41008000 {
 			compatible = "realtek,ameba-rcc";
-			#clock-cells = <1>;
 			reg = <0x41008000 0x400>;
+			#clock-cells = <1>;
 		};
 	};
 
 	soc {
+		bt: bt {
+			compatible = "realtek,ameba-bt-hci";
+			status = "disabled";
+		};
+
 		ram_image2_entry: memory@20004da0 {
 			compatible = "zephyr,memory-region";
 			reg = <0x20004da0 0x20>;
@@ -316,11 +321,6 @@
 			dmas = <&dma 4 24 0>,
 			       <&dma 5 23 0>;
 			dma-names = "rx", "tx";
-			status = "disabled";
-		};
-
-		bt: bt {
-			compatible = "realtek,ameba-bt-hci";
 			status = "disabled";
 		};
 	};

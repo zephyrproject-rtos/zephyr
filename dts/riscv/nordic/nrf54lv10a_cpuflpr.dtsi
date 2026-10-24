@@ -19,13 +19,13 @@ clic: &cpuflpr_clic {};
 / {
 	soc {
 		compatible = "simple-bus";
-		interrupt-parent = <&cpuflpr_clic>;
 		ranges;
+		interrupt-parent = <&cpuflpr_clic>;
 
 		cpuflpr_sram: memory@2001fc00 {
+			compatible = "mmio-sram";
 			reg = <0x2001fc00 DT_SIZE_K(64)>;
 			ranges = <0x0 0x2001fc00 DT_SIZE_K(64)>;
-			compatible = "mmio-sram";
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
@@ -48,7 +48,6 @@ clic: &cpuflpr_clic {};
 &cpuflpr {
 	cpuflpr_vevif_rx: mailbox {
 		compatible = "nordic,nrf-vevif-task-rx";
-		status = "okay";
 		interrupt-parent = <&cpuflpr_clic>;
 		interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>,
 			     <17 NRF_DEFAULT_IRQ_PRIORITY>,
@@ -60,14 +59,15 @@ clic: &cpuflpr_clic {};
 		#mbox-cells = <1>;
 		nordic,tasks = <7>;
 		nordic,tasks-mask = <0x007f0000>;
+		status = "okay";
 	};
 };
 
 &rram_controller {
 	cpuflpr_rram: rram@ed000 {
+		compatible = "soc-nv-flash";
 		reg = <0xed000 DT_SIZE_K(64)>;
 		ranges = <0x0 0xed000 DT_SIZE_K(64)>;
-		compatible = "soc-nv-flash";
 		erase-block-size = <4096>;
 		write-block-size = <16>;
 		#address-cells = <1>;

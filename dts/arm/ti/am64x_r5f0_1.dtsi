@@ -23,8 +23,8 @@
 };
 
 &dmsc {
-	ti,host-id = <38>;
 	mboxes = <&secure_proxy_main 6>, <&secure_proxy_main 7>;
+	ti,host-id = <38>;
 };
 
 &secure_proxy_main {

@@ -7,22 +7,7 @@
 #include <st/wb/stm32wb55.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(192)>;
-	};
-
 	soc {
-		flash-controller@58004000 {
-			flash0: flash@8000000 {
-				/* Physical flash size is 1MByte but the last 148kByte
-				 * are assigned to the wireless firmware running on
-				 * Cortex-M0 companion.
-				 */
-				reg = <0x08000000 DT_SIZE_K(876)>;
-				ranges = <0 0x8000000 DT_SIZE_K(876)>;
-			};
-		};
-
 		power@58000400 {
 			wakeup-controller {
 				wkup@2 {
@@ -38,5 +23,20 @@
 				};
 			};
 		};
+
+		flash-controller@58004000 {
+			flash0: flash@8000000 {
+				/* Physical flash size is 1MByte but the last 148kByte
+				 * are assigned to the wireless firmware running on
+				 * Cortex-M0 companion.
+				 */
+				reg = <0x08000000 DT_SIZE_K(876)>;
+				ranges = <0 0x8000000 DT_SIZE_K(876)>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(192)>;
 	};
 };
