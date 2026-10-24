@@ -564,8 +564,13 @@ static inline bool z_log_unordered_pending(void)
 	return IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && unordered_cnt;
 }
 
-bool z_impl_log_process(void)
+/* Process one pending message. Returns true if more messages are pending.
+ * @p processed is set when a message was processed by this call.
+ */
+static bool log_process_one(bool *processed)
 {
+	*processed = false;
+
 	if (!IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
 		return false;
 	}
@@ -583,6 +588,7 @@ bool z_impl_log_process(void)
 		msg_process(msg);
 		z_log_msg_free(msg);
 		atomic_dec(&buffered_cnt);
+		*processed = true;
 	} else if (CONFIG_LOG_PROCESSING_LATENCY_US > 0 && !K_TIMEOUT_EQ(backoff, K_NO_WAIT)) {
 		/* If backoff is requested, it means that there are pending
 		 * messages but they are too new and processing shall back off
@@ -612,6 +618,13 @@ bool z_impl_log_process(void)
 	}
 
 	return msg != NULL && z_log_msg_pending();
+}
+
+bool z_impl_log_process(void)
+{
+	bool processed;
+
+	return log_process_one(&processed);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1021,9 +1034,13 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 			}
 		}
 
+		bool processed;
 
-		if (log_process() == false) {
-			if (processed_any) {
+		if (log_process_one(&processed) == false) {
+			/* A single pending message is processed by a call that
+			 * also reports nothing more pending.
+			 */
+			if (processed_any || processed) {
 				processed_any = false;
 				log_backend_notify_all(LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
 			}
