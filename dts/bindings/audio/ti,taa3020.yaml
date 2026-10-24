@@ -1,0 +1,67 @@
+description: Texas Instruments TAA3929 Audio ADC
+
+compatible: "ti,taa3020"
+
+include: i2c-device.yaml
+
+properties:
+  gpio1-gpios:
+    type: phandle-array
+
+  areg-internal-en:
+    type: boolean
+    description: |
+      Enable the internal regulator. Make sure to set this correctly according
+      to the datasheet. Depending on your hardware design, using the wrong value
+      for this boolean might lead to hardware damage!
+
+child-binding:
+  description: Channel of TI taa3020
+  include: base.yaml
+  compatible: "ti,taa3020-channel"
+  properties:
+    reg:
+      required: true
+
+    in-type:
+      type: string
+      default: "microphone"
+      enum:
+        - "microphone"
+        - "line"
+      description: |
+        Channel input type.
+
+    in-src:
+      type: string
+      default: "differential"
+      enum:
+        - "differential"
+        - "single-ended"
+        - "pdm"
+      description: |
+        Channel input source selection.
+
+    coupling:
+      type: string
+      default: "ac"
+      enum:
+        - "ac"
+        - "dc"
+      description: |
+        Channel input coupling.
+
+    impedance:
+      type: string
+      default: "2_5k"
+      enum:
+        - "2_5k"
+        - "10k"
+        - "20k"
+      description: |
+        Channel input impedance in ohms.
+
+    agc-en:
+      type: boolean
+      description: |
+        Enable or disable automatic gain controller (AGC) for this channel.
