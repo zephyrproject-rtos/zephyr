@@ -4118,7 +4118,22 @@
  * includes) declares the class in its `class:` key. Unlike
  * DT_FOREACH_STATUS_OKAY(), which takes a single compatible, this
  * iterates over every enabled node whose binding declares the given
- * class, regardless of compatible.
+ * class, regardless of compatible. Use it to generate entries for all
+ * nodes of a class instead of listing their compatibles.
+ *
+ * The expansion is the enabled nodes whose bindings declare the class,
+ * which is not the same set as the devices implementing that class API
+ * in a given build. A node is included because its binding declares the
+ * class, not because a driver implementing the API was built for it:
+ * which driver is built is a Kconfig decision, and a binding may declare
+ * several classes whose drivers are mutually exclusive. A device can
+ * also implement the API without appearing here, if its binding does not
+ * declare the class or if it has no devicetree node at all.
+ *
+ * If @p fn uses DEVICE_DT_GET(), check the device with
+ * DEVICE_API_IS() before calling class APIs on it. If no driver at all
+ * was built for an enabled node, DEVICE_DT_GET() on that node is an
+ * undefined reference at link time.
  *
  * There are no guarantees about the order in which nodes appear in the
  * expansion, and @p fn is responsible for adding commas, semicolons,
@@ -4370,6 +4385,12 @@
 
 /**
  * @brief Get the number of status `okay` nodes of a device class
+ *
+ * Like DT_FOREACH_CLASS_STATUS_OKAY(), this counts the enabled nodes
+ * whose bindings declare the class. That is not a count of the devices
+ * implementing the class API in a given build; see
+ * DT_FOREACH_CLASS_STATUS_OKAY() for why the two sets differ.
+ *
  * @param _class lowercase-and-underscores device class name
  * @return Number of enabled nodes whose binding declares the class
  */
@@ -4411,10 +4432,11 @@
  * @brief Does a devicetree node belong to a device class?
  *
  * A node belongs to a device class when its binding (or a binding it
- * includes) declares the class in its `class:` key. The class names
- * which device API class(es) the node's drivers can implement; which
- * driver is actually built for the node is a Kconfig decision this
- * macro knows nothing about.
+ * includes) declares the class in its `class:` key. It is useful in a
+ * BUILD_ASSERT() to check that a phandle or chosen node refers to a node
+ * of the expected class. The class names which device API class(es) the
+ * node's drivers can implement; which driver is actually built for the
+ * node is a Kconfig decision this macro knows nothing about.
  *
  * The node's status has no effect on the value.
  *
