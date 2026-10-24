@@ -392,6 +392,13 @@ static int pwm_nrfx_init(const struct device *dev)
 
 	ANOMALY_109_EGU_IRQ_CONNECT(NRFX_PWM_NRF52_ANOMALY_109_EGU_INSTANCE);
 
+#ifdef CONFIG_SOC_SERIES_BSIM_NRFXX
+	/* For simulation the DT provided peripheral address needs to be corrected */
+	((struct pinctrl_dev_config *)config->pcfg)->reg =
+		(uintptr_t)nhw_convert_periph_base_addr((void *)config->pcfg->reg);
+	data->pwm.p_reg = nhw_convert_periph_base_addr((void *)data->pwm.p_reg);
+#endif
+
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 	}
@@ -403,6 +410,11 @@ static int pwm_nrfx_init(const struct device *dev)
 	}
 
 	return pm_device_driver_init(dev, pwm_nrfx_pm_action);
+}
+
+static void pwm_irq_handler(const void *arg)
+{
+	nrfx_pwm_irq_handler((nrfx_pwm_t *)arg);
 }
 
 #define PWM_MEM_REGION(inst)     DT_PHANDLE(DT_DRV_INST(inst), memory_regions)
@@ -450,7 +462,7 @@ static int pwm_nrfx_init(const struct device *dev)
 	static int pwm_nrfx_init##inst(const struct device *dev)		     \
 	{									     \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),	     \
-			    nrfx_pwm_irq_handler, &pwm_nrfx_##inst##_data.pwm, 0);   \
+			    pwm_irq_handler, &pwm_nrfx_##inst##_data.pwm, 0);   \
 		return pwm_nrfx_init(dev);					     \
 	};									     \
 	PM_DEVICE_DT_INST_DEFINE(inst, pwm_nrfx_pm_action);			     \

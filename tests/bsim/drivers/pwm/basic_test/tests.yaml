@@ -1,0 +1,13 @@
+tests:
+  drivers.pwm.basic:
+    tags:
+      - drivers
+      - gpio
+      - pwm
+    depends_on: bsim
+    platform_allow:
+      - nrf52_bsim
+      - nrf54l15bsim/nrf54l15/cpuapp
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bsim_drivers_pwm_basic_test_prj_conf
