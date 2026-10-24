@@ -73,6 +73,10 @@ static uint8_t ppp_frame_wrapped_bad_fcs[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21
 static uint8_t ppp_frame_aborted[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21, 0x7D, 0x21, 0x7D,
 				      0x7E, 0xFF, 0x7D, 0x7E};
 
+/* Frames with a valid FCS but no Protocol field, with and without ACFC */
+static uint8_t ppp_frame_empty[] = {0x7E, 0xFF, 0x7D, 0x23, 0x7D, 0x3C, 0xC2, 0x7E};
+static uint8_t ppp_frame_empty_acfc[] = {0x7E, 0x7D, 0x20, 0x7D, 0x20, 0x7E};
+
 /* Custom ACCM (Only 0-15 need to be escaped) */
 static uint32_t accm_custom1 = 0x0000ffff;
 static uint8_t ppp_frame_wrapped_accm1[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21, 0x16, 0x7D,
@@ -497,6 +501,18 @@ ZTEST(modem_ppp, test_ppp_frame_receive_after_abort)
 	net_pkt_read(received_packets[0], buffer, sizeof(ppp_frame_unwrapped));
 	zassert_true(memcmp(buffer, ppp_frame_unwrapped, sizeof(ppp_frame_unwrapped)) == 0,
 		     "Received net pkt data incorrect");
+}
+
+ZTEST(modem_ppp, test_ppp_frame_receive_too_short)
+{
+	/* Frames too short to hold a Protocol field are discarded */
+	modem_backend_mock_put(&mock, ppp_frame_empty, sizeof(ppp_frame_empty));
+	modem_backend_mock_put(&mock, ppp_frame_empty_acfc, sizeof(ppp_frame_empty_acfc));
+	zassert_equal(k_sem_take(&rx_pkt_sem, K_MSEC(100)), -EAGAIN,
+		      "Frames without a Protocol field should be dropped");
+
+	/* Following valid frame is still received */
+	put_and_validate_wrapped_frame();
 }
 
 ZTEST(modem_ppp, test_carrier_follows_attach_release)
