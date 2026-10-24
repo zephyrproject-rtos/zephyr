@@ -24,6 +24,9 @@
 /** Low-frequency clock type */
 #define IFX_CLK_LF  2
 
+/** Peripheral clock type, the clock of the peripheral bus (clk_peri) */
+#define IFX_CLK_PERI 3
+
 /** Infineon clock specifier */
 struct ifx_clk {
 	/** Clock type */

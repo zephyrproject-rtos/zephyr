@@ -60,6 +60,9 @@ static inline int ifx_clk_get_rate(const struct device *dev, clock_control_subsy
 	case IFX_CLK_HF:
 		*rate = Cy_SysClk_ClkHfGetFrequency(clk->clk_id);
 		break;
+	case IFX_CLK_PERI:
+		*rate = Cy_SysClk_ClkPeriGetFrequency();
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -205,6 +208,13 @@ static int ifx_clk_init(const struct device *dev)
 	DT_NODE_HAS_PROP(DT_NODELABEL(clk_mem), clock_div)
 	if (DT_PROP(DT_NODELABEL(clk_mem), clock_div) > 0) {
 		Cy_SysClk_ClkMemSetDivider(DT_PROP(DT_NODELABEL(clk_mem), clock_div) - 1);
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_peri)) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(clk_peri), clock_div)
+	if (DT_PROP(DT_NODELABEL(clk_peri), clock_div) > 0) {
+		Cy_SysClk_ClkPeriSetDivider(DT_PROP(DT_NODELABEL(clk_peri), clock_div) - 1);
 	}
 #endif
 

@@ -1,7 +1,10 @@
 # Copyright (c) 2026 Immo Birnbaum
 # SPDX-License-Identifier: Apache-2.0
 
-description: Xilinx GEM MDIO node
+description: |
+  Xilinx GEM MDIO node.
+
+  Deprecated. Use cdns,macb-mdio with the Cadence MACB/GEM driver instead.
 
 compatible: "xlnx,gem-mdio"
 
