@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026 Sahaj Sarup
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+
+	/*MPU6050*/
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO11>,
+				 <I2C0_SCL_GPIO10>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	/*Expansion Header*/
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO40>,
+				 <I2C1_SCL_GPIO41>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	/*Expansion Header*/
+	spim0_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO37>,
+				 <SPIM3_SCLK_GPIO36>,
+				 <SPIM3_CSEL_GPIO42>;
+		};
+
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO35>;
+			output-low;
+		};
+	};
+
+	mcpwm0_default: mcpwm0_default {
+		group1 {
+			pinmux = <MCPWM0_OUT0A_GPIO5>, /*Motor 1*/
+				 <MCPWM0_OUT0B_GPIO6>, /*Motor 2*/
+				 <MCPWM0_OUT1A_GPIO3>, /*Motor 3*/
+				 <MCPWM0_OUT1B_GPIO4>; /*Motor 4*/
+			output-enable;
+		};
+	};
+
+	/*Status LEDs*/
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH0_GPIO7>,
+				 <LEDC_CH1_GPIO8>,
+				 <LEDC_CH2_GPIO9>;
+			output-enable;
+		};
+	};
+};
