@@ -352,6 +352,7 @@ void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 		 * dereference of thread->base will occur.
 		 */
 		while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
+			z_wait_thread_timeout_inflight(thread);
 		}
 	} else {
 		halt_thread(thread, terminate ? _THREAD_DEAD : _THREAD_SUSPENDED, &key);
@@ -576,6 +577,7 @@ void z_unpend_thread(struct k_thread *thread)
 	}
 	while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
 		z_sched_spinlock_unlock(key);
+		z_wait_thread_timeout_inflight(thread);
 		key = z_sched_spinlock_lock();
 	}
 	z_sched_spinlock_unlock(key);
@@ -893,6 +895,7 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 			if (key != NULL) {
 				while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
 					z_sched_spinlock_unlock(*key);
+					z_wait_thread_timeout_inflight(thread);
 					*key = z_sched_spinlock_lock();
 				}
 			}

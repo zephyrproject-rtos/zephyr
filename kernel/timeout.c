@@ -273,6 +273,18 @@ int z_try_abort_timeout(struct _timeout *to)
 	return ret;
 }
 
+void z_timeout_wait_inflight_spin(const struct _timeout *to)
+{
+	/* Lockless: the announcing CPU clears the slot (under timeout_lock)
+	 * once the handler has returned. A stale read only costs another
+	 * round trip through z_try_abort_timeout().
+	 */
+	while (((uintptr_t)*(struct _timeout *volatile *)&inflight_timeout &
+		~INFLIGHT_SUPERSEDED_BIT) == (uintptr_t)to) {
+		arch_nop();
+	}
+}
+
 bool z_timeout_inflight_superseded(const struct _timeout *to)
 {
 	bool superseded = false;
