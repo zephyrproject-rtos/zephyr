@@ -237,6 +237,16 @@
 			};
 		};
 
+		ltdc: ltdc@48010000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x48010000 DT_SIZE_K(1)>;
+			interrupts = <158 0>, <159 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(LTDC, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(LTDC, STM32_RST)>;
+			status = "disabled";
+		};
+
 		dcmipp: dcmipp@48030000 {
 			compatible = "st,stm32-dcmipp";
 			reg = <0x48030000 DT_SIZE_K(4)>;

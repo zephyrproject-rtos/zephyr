@@ -171,6 +171,14 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 	case 2:
 		data->hdsi.Init.NumberOfLanes = DSI_TWO_DATA_LANES;
 		break;
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp25_mipi_dsi)
+	case 3:
+		data->hdsi.Init.NumberOfLanes = DSI_THREE_DATA_LANES;
+		break;
+	case 4:
+		data->hdsi.Init.NumberOfLanes = DSI_FOUR_DATA_LANES;
+		break;
+#endif
 	default:
 		LOG_ERR("Number of DSI lanes (%d) not supported!", config->data_lanes);
 		return -ENOTSUP;
@@ -184,6 +192,11 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 	}
 
 	data->pixel_clk_khz /= 1000;
+	if (data->pixel_clk_khz == 0U) {
+		LOG_ERR("Pixel clock not configured");
+		return -EINVAL;
+	}
+
 	ret = clock_control_get_rate(config->rcc, (clock_control_subsys_t)&config->ref_clk,
 				     &hse_clock);
 	if (ret) {
@@ -191,7 +204,22 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 		return ret;
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_mipi_dsi)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp25_mipi_dsi)
+	/*
+	 * LANE_BYTE_CLOCK = CLK_IN / IDF * NDIV / ODF * 2 / 8, with the register
+	 * encodings IDF = PLLIDF + 1, NDIV = PLLNDIV + 2 and ODF = 2^PLLODF.
+	 */
+	data->lane_clk_khz = hse_clock / 1000 * (data->pll_init.PLLNDIV + 2) /
+			     (data->pll_init.PLLIDF + 1) / (1UL << data->pll_init.PLLODF) * 2 / 8;
+	data->pll_init.RefClkin = hse_clock / 1000;
+
+	hal_ret = HAL_DSI_GetPhyDataRate(data->lane_clk_khz * 8 / 1000,
+					 &data->hdsi.Init.PhyDataRate);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("Get DSI PHY data rate failed! (%d)", hal_ret);
+		return -EIO;
+	}
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_mipi_dsi)
 	/* LANE_BYTE_CLOCK = CLK_IN / PLLIDF * 2 * PLLNDIV / PLLODF / 8 */
 	data->lane_clk_khz = hse_clock / data->pll_init.PLLIDF * 2 * data->pll_init.PLLNDIV /
 			     data->pll_init.PLLODF / 8 / 1000;
@@ -242,7 +270,7 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 		return -EIO;
 	}
 
-#ifndef CONFIG_SOC_SERIES_STM32U5X
+#if !defined(CONFIG_SOC_SERIES_STM32U5X) && !defined(CONFIG_SOC_SERIES_STM32MP2X)
 
 	if (config->lp_rx_filter_freq) {
 		hal_ret = HAL_DSI_SetLowPowerRXFilter(&data->hdsi, config->lp_rx_filter_freq);
