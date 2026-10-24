@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(intc_gicv3_its, LOG_LEVEL_ERR);
 
 #define GITS_BASER_NR_REGS              8
 
+static atomic_t nlpi_intid = ATOMIC_INIT(GIC_LPI_INT_BASE);
+
 /* convenient access to all redistributors base address */
 extern mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 
@@ -498,9 +500,9 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 	struct gicv3_its_data *data = dev->data;
 	int ret;
 
-	/* TOFIX check device_id, event_id & intid bounds */
+	/* TOFIX check device_id & event_id bounds */
 
-	if (intid < 8192) {
+	if (!arm_gic_lpi_is_valid(intid)) {
 		return -EINVAL;
 	}
 
@@ -596,7 +598,16 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 
 static unsigned int gicv3_its_alloc_intid(const struct device *dev)
 {
-	return atomic_inc(&nlpi_intid);
+	atomic_val_t intid;
+
+	do {
+		intid = atomic_get(&nlpi_intid);
+		if (!arm_gic_lpi_is_valid(intid)) {
+			return ITS_INTID_INVALID;
+		}
+	} while (!atomic_cas(&nlpi_intid, intid, intid + 1));
+
+	return intid;
 }
 
 static uint32_t gicv3_its_get_msi_addr(const struct device *dev)
