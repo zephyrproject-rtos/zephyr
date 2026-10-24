@@ -35,7 +35,7 @@ extern "C" {
  * @brief Generic Access Profile (GAP)
  * @defgroup bt_gap Generic Access Profile (GAP)
  * @since 1.0
- * @version 1.1.1
+ * @version 1.2.0
  * @ingroup bluetooth
  * @{
  */
@@ -647,6 +647,29 @@ void bt_br_foreach_bond(void (*func)(const struct bt_br_bond_info *info, void *u
  *  @return  Zero for success, non-zero otherwise.
  */
 int bt_br_write_eir(const struct bt_data *eir, size_t eir_count, bool fec_required);
+
+/** @brief Set the AFH host channel classification of the local Controller.
+ *
+ *  The classification persists until it is overwritten or the Controller is
+ *  reset.
+ *
+ *  @note The interval between two successive calls shall be at least one
+ *        second, and at least Nmin channels have to be marked as unknown
+ *        (Core Specification 6.3, Vol 4, Part E, Section 7.3.46 and Vol 2,
+ *        Part B, Section 2.3.1). Neither is checked here.
+ *
+ *  @param bit_map  10 octets, one bit per channel from 2402 MHz to 2480 MHz.
+ *                   0 marks the channel as bad, 1 as unknown. Bit 79 is
+ *                   reserved and is cleared before the command is sent.
+ *
+ *  @retval 0 Success.
+ *  @retval -EAGAIN The Bluetooth subsystem is not ready.
+ *  @retval -ENOTSUP The Controller does not report support for the command.
+ *  @retval -ENOBUFS No HCI command buffer was available.
+ *  @return Any other negative value is the Controller error status as
+ *          translated by the host.
+ */
+int bt_br_set_afh(const uint8_t bit_map[10]);
 
 /**
  * @}
