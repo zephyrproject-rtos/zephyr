@@ -98,6 +98,45 @@ static struct esp_hosted_mcu_rpc_ctx esp_hosted_mcu_rpc;
  */
 static struct k_spinlock esp_hosted_mcu_rpc_ctx_lock;
 
+/*
+ * Boot events of the coprocessor. The event task counts them in events;
+ * handled is the count the last attach covered, so the two differ while a
+ * restart waits for its listeners. reattaching is set while
+ * esp_hosted_mcu_reattach() attaches: a boot event then belongs to the
+ * restart that call handles rather than starting another one.
+ */
+struct esp_hosted_mcu_boot_state {
+	uint32_t events;
+	uint32_t handled;
+	bool reattaching;
+};
+
+static struct esp_hosted_mcu_boot_state esp_hosted_mcu_boot;
+
+/* Guards esp_hosted_mcu_boot against the event task. */
+static struct k_spinlock esp_hosted_mcu_boot_lock;
+
+/*
+ * Serialises the runs of the restart listeners and guards their list. Both
+ * are initialised statically: a consumer may register before the core's own
+ * init has run.
+ */
+static K_MUTEX_DEFINE(esp_hosted_mcu_restart_lock);
+static sys_slist_t esp_hosted_mcu_restart_cbs = SYS_SLIST_STATIC_INIT(&esp_hosted_mcu_restart_cbs);
+
+#if defined(CONFIG_ESP_HOSTED_MCU_RESTART_DETECT)
+/*
+ * The listeners issue RPCs, whose responses the event task delivers, and may
+ * block for seconds, so they run on a queue of their own: neither the event
+ * task nor the system work queue can wait that long.
+ */
+static K_KERNEL_STACK_DEFINE(esp_hosted_mcu_restart_stack,
+			     CONFIG_ESP_HOSTED_MCU_RESTART_STACK_SIZE);
+static struct k_work_q esp_hosted_mcu_restart_wq;
+static void esp_hosted_mcu_restart_work_handler(struct k_work *work);
+static K_WORK_DEFINE(esp_hosted_mcu_restart_work, esp_hosted_mcu_restart_work_handler);
+#endif
+
 static struct esp_hosted_mcu_data esp_hosted_mcu_data_0;
 
 static const struct esp_hosted_mcu_config esp_hosted_mcu_config_0 = {
@@ -139,6 +178,27 @@ int esp_hosted_mcu_register_rpc_event(esp_hosted_mcu_event_cb_t cb, void *user_d
 	compiler_barrier();
 	esp_hosted_mcu_data_0.rpc_event_cb = cb;
 	return 0;
+}
+
+void esp_hosted_mcu_register_restart_cb(struct esp_hosted_mcu_restart_cb *cb)
+{
+	sys_snode_t *prev = NULL;
+
+	k_mutex_lock(&esp_hosted_mcu_restart_lock, K_FOREVER);
+	if (!sys_slist_find(&esp_hosted_mcu_restart_cbs, &cb->node, &prev)) {
+		sys_slist_append(&esp_hosted_mcu_restart_cbs, &cb->node);
+	}
+	k_mutex_unlock(&esp_hosted_mcu_restart_lock);
+}
+
+/* Run the restart listeners in registration order. The caller holds the restart lock. */
+static void esp_hosted_mcu_run_restart_cbs(void)
+{
+	struct esp_hosted_mcu_restart_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&esp_hosted_mcu_restart_cbs, cb, node) {
+		cb->handler(cb);
+	}
 }
 
 /*
@@ -362,11 +422,103 @@ static void esp_hosted_mcu_dispatch_serial(struct esp_hosted_mcu_data *data,
 }
 
 /*
+ * Count a boot event and store the firmware version it carries, if any, in
+ * one step, so esp_hosted_mcu_reattach() never sees the one without the other.
+ * The first boot event is the coprocessor's boot at init, which init waits
+ * for; every later one means the coprocessor restarted behind the host's back.
+ * Counting events, rather than asking whether init has finished, keeps a first
+ * event that lands after init stopped waiting for it from passing for a
+ * restart.
+ */
+static void esp_hosted_mcu_boot_event(struct esp_hosted_mcu_data *data, const uint32_t *version)
+{
+	bool restart = false;
+
+	K_SPINLOCK(&esp_hosted_mcu_boot_lock) {
+		if (version != NULL) {
+			data->fw_version = *version;
+		}
+		esp_hosted_mcu_boot.events++;
+		if (esp_hosted_mcu_boot.events == 1U) {
+			esp_hosted_mcu_boot.handled = 1U;
+		} else {
+			restart = !esp_hosted_mcu_boot.reattaching;
+		}
+	}
+
+	if (!restart) {
+		return;
+	}
+
+	LOG_WRN("coprocessor restarted");
+
+	/* Without detection the restart stays counted for esp_hosted_mcu_reattach(). */
+	if (!IS_ENABLED(CONFIG_ESP_HOSTED_MCU_RESTART_DETECT)) {
+		return;
+	}
+
+	/*
+	 * A round trip in flight was sent to the previous run and will never be
+	 * answered, so fail it now rather than after its full timeout.
+	 */
+	K_SPINLOCK(&esp_hosted_mcu_rpc_ctx_lock) {
+		if (esp_hosted_mcu_rpc.pending) {
+			esp_hosted_mcu_rpc.pending = false;
+			data->rpc_resp_status = -ECONNRESET;
+			k_sem_give(&data->rpc_sem);
+		}
+	}
+
+#if defined(CONFIG_ESP_HOSTED_MCU_RESTART_DETECT)
+	if (k_work_submit_to_queue(&esp_hosted_mcu_restart_wq, &esp_hosted_mcu_restart_work) < 0) {
+		LOG_ERR("restart recovery not queued");
+	}
+#endif
+}
+
+#if defined(CONFIG_ESP_HOSTED_MCU_RESTART_DETECT)
+static void esp_hosted_mcu_restart_work_handler(struct k_work *work)
+{
+	bool run = false;
+
+	ARG_UNUSED(work);
+
+	k_mutex_lock(&esp_hosted_mcu_restart_lock, K_FOREVER);
+
+	/*
+	 * Mark the restart handled before the listeners run, where
+	 * esp_hosted_mcu_reattach() marks it after them: a further restart during
+	 * their run is then a new one and queues this work again. That call may
+	 * also have run the listeners for this restart already.
+	 */
+	K_SPINLOCK(&esp_hosted_mcu_boot_lock) {
+		run = esp_hosted_mcu_boot.handled != esp_hosted_mcu_boot.events;
+		esp_hosted_mcu_boot.handled = esp_hosted_mcu_boot.events;
+	}
+
+	if (run) {
+		LOG_INF("coprocessor firmware v%u.%u.%u after restart",
+			ESP_HOSTED_MCU_FW_VERSION_MAJOR(esp_hosted_mcu_data_0.fw_version),
+			ESP_HOSTED_MCU_FW_VERSION_MINOR(esp_hosted_mcu_data_0.fw_version),
+			ESP_HOSTED_MCU_FW_VERSION_PATCH(esp_hosted_mcu_data_0.fw_version));
+		esp_hosted_mcu_run_restart_cbs();
+	}
+
+	k_mutex_unlock(&esp_hosted_mcu_restart_lock);
+}
+#endif
+
+/*
  * Parse the boot-time priv event. Its body is a stream of {tag, length,
- * value} triplets; only the firmware version is consumed, every other tag
- * is skipped by its own length. This is the fallback source for firmware
- * too old to answer the version RPC, so it only fills in a version that
- * has not been learned already.
+ * value} triplets; only the firmware version and the SDIO buffer config are
+ * consumed, every other tag is skipped by its own length. The version here is
+ * the one of the run that sent the event, so it replaces whatever was learned
+ * before: after a restart the previous value is stale, and for firmware too
+ * old to answer the version RPC this event is the only source.
+ *
+ * Only a well-formed boot event counts as a boot and supplies the version, so
+ * a corrupt frame cannot pass for a restart: of the init type, with the body
+ * inside the frame and every tag inside the body.
  */
 static void esp_hosted_mcu_priv_event(struct esp_hosted_mcu_data *data, const uint8_t *payload,
 				      uint16_t len)
@@ -376,6 +528,8 @@ static void esp_hosted_mcu_priv_event(struct esp_hosted_mcu_data *data, const ui
 	const uint16_t hdr_len = sizeof(struct esp_hosted_mcu_priv_event);
 	uint16_t off = 0;
 	uint16_t body;
+	uint32_t version = 0;
+	bool has_version = false;
 
 	if (len < hdr_len) {
 		return;
@@ -396,8 +550,9 @@ static void esp_hosted_mcu_priv_event(struct esp_hosted_mcu_data *data, const ui
 		}
 
 		if (tag == ESP_HOSTED_MCU_PRIV_TAG_FIRMWARE_VERSION &&
-		    tag_len == sizeof(uint32_t) && data->fw_version == 0) {
-			data->fw_version = sys_get_le32(&ev->event_data[off]);
+		    tag_len == sizeof(uint32_t)) {
+			version = sys_get_le32(&ev->event_data[off]);
+			has_version = true;
 		} else if (tag == ESP_HOSTED_MCU_PRIV_TAG_SDIO_BUF_CONFIG &&
 			   tag_len == sizeof(struct esp_hosted_mcu_sdio_buf_config)) {
 			const struct esp_hosted_mcu_sdio_buf_config *cfg =
@@ -417,6 +572,10 @@ static void esp_hosted_mcu_priv_event(struct esp_hosted_mcu_data *data, const ui
 		}
 
 		off += tag_len;
+	}
+
+	if (ev->event_type == ESP_HOSTED_MCU_PRIV_EVENT_INIT && ev->event_len <= len - hdr_len) {
+		esp_hosted_mcu_boot_event(data, has_version ? &version : NULL);
 	}
 }
 
@@ -640,6 +799,198 @@ uint32_t esp_hosted_mcu_fw_version(void)
 	return esp_hosted_mcu_data_0.fw_version;
 }
 
+/* True once a boot event arrived after the event count was events. */
+static bool esp_hosted_mcu_boot_since(uint32_t events)
+{
+	bool seen = false;
+
+	K_SPINLOCK(&esp_hosted_mcu_boot_lock) {
+		seen = esp_hosted_mcu_boot.events != events;
+	}
+
+	return seen;
+}
+
+/* Milliseconds left until end, at most cap; cap when end never comes. */
+static int32_t esp_hosted_mcu_ms_left(k_timepoint_t end, int32_t cap)
+{
+	k_timeout_t left = sys_timepoint_timeout(end);
+
+	if (K_TIMEOUT_EQ(left, K_FOREVER)) {
+		return cap;
+	}
+
+	return (int32_t)MIN(k_ticks_to_ms_ceil64(left.ticks), (uint64_t)cap);
+}
+
+/*
+ * Wait until the boot event arrives or the coprocessor answers the version
+ * query, up to end. Returns true once either happened.
+ */
+static bool esp_hosted_mcu_await_boot(struct esp_hosted_mcu_data *data, uint32_t events,
+				      k_timepoint_t end)
+{
+	while (!sys_timepoint_expired(end)) {
+		Rpc req = Rpc_init_zero;
+		Rpc resp = Rpc_init_zero;
+		int ret = 0;
+
+		/* As at init, let the boot event land before asking over RPC. */
+		for (k_timepoint_t wait =
+			     sys_timepoint_calc(K_MSEC(ESP_HOSTED_MCU_BOOT_EVENT_WAIT));
+		     !esp_hosted_mcu_boot_since(events) && !sys_timepoint_expired(wait) &&
+		     !sys_timepoint_expired(end);) {
+			k_msleep(10);
+		}
+		if (esp_hosted_mcu_boot_since(events)) {
+			return true;
+		}
+		if (sys_timepoint_expired(end)) {
+			break;
+		}
+
+		/* A coprocessor still booting does not answer; the loop asks again. */
+		req.msg_id = RpcId_Req_GetCoprocessorFwVersion;
+		ret = esp_hosted_mcu_rpc_call(
+			&req, &resp, esp_hosted_mcu_ms_left(end, ESP_HOSTED_MCU_BOOT_EVENT_WAIT));
+		if (ret == 0) {
+			const Rpc_Resp_GetCoprocessorFwVersion *fw =
+				&resp.payload.resp_get_coprocessor_fwversion;
+
+			data->fw_version =
+				ESP_HOSTED_MCU_FW_VERSION_VAL(fw->major1, fw->minor1, fw->patch1);
+		}
+		pb_release(Rpc_fields, &resp);
+
+		if (ret == 0) {
+			return true;
+		}
+	}
+
+	return esp_hosted_mcu_boot_since(events);
+}
+
+int esp_hosted_mcu_reattach(k_timeout_t timeout)
+{
+	const struct device *dev = esp_hosted_mcu_data_0.dev;
+	const struct esp_hosted_mcu_config *cfg;
+	struct esp_hosted_mcu_data *data;
+	k_timepoint_t end;
+	uint32_t entry_events = 0;
+	uint32_t events = 0;
+	bool busy = false;
+	bool pending = false;
+	bool recovered = false;
+	bool attached = false;
+	bool requeue = false;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+	cfg = dev->config;
+	data = dev->data;
+
+	if (cfg->transport->reattach == NULL) {
+		return -ENOTSUP;
+	}
+
+	/* What was under way when the call was made, before waiting for it. */
+	K_SPINLOCK(&esp_hosted_mcu_boot_lock) {
+		entry_events = esp_hosted_mcu_boot.events;
+	}
+#if defined(CONFIG_ESP_HOSTED_MCU_RESTART_DETECT)
+	busy = k_work_busy_get(&esp_hosted_mcu_restart_work) != 0;
+#endif
+
+	/*
+	 * Wait out a listener run in progress, then a round trip in flight, and
+	 * only then start the caller's timeout. The RPC lock stays held while
+	 * waiting for the coprocessor, so no other request reaches it before the
+	 * version query below; the mutex is recursive, so the query takes it
+	 * again on this thread.
+	 */
+	k_mutex_lock(&esp_hosted_mcu_restart_lock, K_FOREVER);
+	k_mutex_lock(&esp_hosted_mcu_rpc_lock, K_FOREVER);
+	end = sys_timepoint_calc(timeout);
+
+	/*
+	 * A restart the core detected but has not run the listeners for yet is
+	 * the one to handle, and needs no wait. A recovery that was under way
+	 * when the call was made, or that ran for a boot event arriving while
+	 * the call waited for the locks, was the one of this restart: the
+	 * listeners do not run again. Otherwise the version was learned from
+	 * the previous run; it is forgotten here, in one step with the event
+	 * count, so a boot event cannot store the new one in between. From here
+	 * on a boot event belongs to the restart this call handles.
+	 */
+	K_SPINLOCK(&esp_hosted_mcu_boot_lock) {
+		pending = esp_hosted_mcu_boot.handled != esp_hosted_mcu_boot.events;
+		recovered = !pending && (busy || esp_hosted_mcu_boot.events != entry_events);
+		esp_hosted_mcu_boot.handled = esp_hosted_mcu_boot.events;
+		esp_hosted_mcu_boot.reattaching = true;
+		events = esp_hosted_mcu_boot.events;
+		if (!pending && !recovered) {
+			data->fw_version = 0;
+		}
+	}
+
+	if (pending) {
+		attached = true;
+	} else if (recovered) {
+		/* The listeners already ran for this restart. */
+	} else {
+		/* Receive data the transport holds belongs to the previous run too. */
+		cfg->transport->reattach(dev);
+		attached = esp_hosted_mcu_await_boot(data, events, end);
+	}
+
+	/*
+	 * Release the RPC lock before the listeners run: a listener waits for
+	 * its consumer's own lock, whose holder may be waiting for this one.
+	 */
+	k_mutex_unlock(&esp_hosted_mcu_rpc_lock);
+
+	if (attached) {
+		LOG_INF("coprocessor firmware v%u.%u.%u after restart",
+			ESP_HOSTED_MCU_FW_VERSION_MAJOR(data->fw_version),
+			ESP_HOSTED_MCU_FW_VERSION_MINOR(data->fw_version),
+			ESP_HOSTED_MCU_FW_VERSION_PATCH(data->fw_version));
+		esp_hosted_mcu_run_restart_cbs();
+	} else if (recovered) {
+		/* Nothing left to run. */
+	} else {
+		LOG_WRN("coprocessor sent no boot event and did not answer the version query");
+	}
+
+	/*
+	 * Mark the restart handled only now that the listeners ran, where the
+	 * detection work marks it before them: the coprocessor does not order its
+	 * boot event after the version response, so an event that trails the
+	 * response is this restart's own. An event that came after the wait gave
+	 * up is still unhandled and goes to the detection work.
+	 */
+	K_SPINLOCK(&esp_hosted_mcu_boot_lock) {
+		if (attached) {
+			esp_hosted_mcu_boot.handled = esp_hosted_mcu_boot.events;
+		}
+		esp_hosted_mcu_boot.reattaching = false;
+		requeue = esp_hosted_mcu_boot.handled != esp_hosted_mcu_boot.events;
+	}
+
+#if defined(CONFIG_ESP_HOSTED_MCU_RESTART_DETECT)
+	if (requeue &&
+	    k_work_submit_to_queue(&esp_hosted_mcu_restart_wq, &esp_hosted_mcu_restart_work) < 0) {
+		LOG_ERR("restart recovery not queued");
+	}
+#else
+	ARG_UNUSED(requeue);
+#endif
+
+	k_mutex_unlock(&esp_hosted_mcu_restart_lock);
+
+	return (attached || recovered) ? 0 : -ETIMEDOUT;
+}
+
 /*
  * Ask the coprocessor for its firmware version and log what it runs against
  * the version this host was built for. The version is informational: the
@@ -718,6 +1069,17 @@ static int esp_hosted_mcu_core_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+#if defined(CONFIG_ESP_HOSTED_MCU_RESTART_DETECT)
+	/* Started before the event task, which queues the restart work. */
+	const struct k_work_queue_config restart_wq_cfg = {
+		.name = "esp_hosted_mcu_restart",
+	};
+
+	k_work_queue_start(&esp_hosted_mcu_restart_wq, esp_hosted_mcu_restart_stack,
+			   K_KERNEL_STACK_SIZEOF(esp_hosted_mcu_restart_stack),
+			   CONFIG_ESP_HOSTED_MCU_RESTART_PRIORITY, &restart_wq_cfg);
+#endif
 
 	data->tid = k_thread_create(&event_thread, event_stack, K_KERNEL_STACK_SIZEOF(event_stack),
 				    esp_hosted_mcu_event_task, (void *)dev, NULL, NULL,

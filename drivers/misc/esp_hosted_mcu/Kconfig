@@ -134,6 +134,42 @@ config ESP_HOSTED_MCU_EVENT_TASK_POLL_MS
 	  the worst-case receive latency: every request and response pays
 	  up to one poll period.
 
+config ESP_HOSTED_MCU_RESTART_DETECT
+	bool "Recover from a coprocessor restart"
+	depends on ESP_HOSTED_MCU_SPI
+	default y
+	help
+	  Take a second boot event from the coprocessor as a restart behind
+	  the host's back, for example after its firmware was replaced, and
+	  recover without a host reboot: fail the RPC round trip in flight,
+	  then run the listeners registered with
+	  esp_hosted_mcu_register_restart_cb(), which bring the Wi-Fi
+	  interface and the Bluetooth controller up again, on a work queue of
+	  the core's own.
+
+	  The first boot event is the one of the reset the driver issues at
+	  init. Over SDIO a restarted coprocessor stays silent until the host
+	  opens its data path again, so a restart cannot be seen there.
+
+if ESP_HOSTED_MCU_RESTART_DETECT
+
+config ESP_HOSTED_MCU_RESTART_STACK_SIZE
+	int "Restart work queue stack size"
+	default 2048
+	help
+	  Stack of the work queue that runs the restart listeners. A listener
+	  issues RPCs and keeps a request and a response message on it.
+
+config ESP_HOSTED_MCU_RESTART_PRIORITY
+	int "Restart work queue priority"
+	default 5
+	help
+	  Priority of the work queue that runs the restart listeners. The
+	  listeners block while they wait for RPC responses, so the priority
+	  only decides how soon the recovery runs against other threads.
+
+endif # ESP_HOSTED_MCU_RESTART_DETECT
+
 module = ESP_HOSTED_MCU
 module-str = esp-hosted-mcu
 source "subsys/logging/Kconfig.template.log_config"
