@@ -144,6 +144,11 @@ struct ticker_expire_info_internal {
 #define TICKER_USER_OP_TYPE_STOP         7
 #define TICKER_USER_OP_TYPE_STOP_ABS     8
 
+/* Ticker node states, i.e. difference of node req and ack counts */
+#define TICKER_NODE_STATE_IDLE           0U
+#define TICKER_NODE_STATE_SCHEDULED      1U
+#define TICKER_NODE_STATE_EXPIRED        2U
+
 /* Slot window re-schedule states */
 #define TICKER_RESCHEDULE_STATE_NONE     0
 #define TICKER_RESCHEDULE_STATE_PENDING  1
@@ -366,6 +371,20 @@ static struct ticker_instance _instance[TICKER_INSTANCE_MAX];
 #if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 static inline uint8_t ticker_add_to_remainder(uint32_t *remainder, uint32_t to_add);
 #endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
+
+/**
+ * @brief Get ticker node state
+ *
+ * @param ticker Pointer to ticker
+ *
+ * @return ticker node req ack differential value
+ *
+ * @internal
+ */
+static inline uint8_t ticker_state_get(struct ticker_node *ticker)
+{
+	return (ticker->req - ticker->ack) & 0xff;
+}
 
 /**
  * @brief Update elapsed index
@@ -1318,6 +1337,7 @@ void ticker_worker(void *param)
 		uint32_t ticks_to_expire;
 		uint8_t must_expire_skip;
 		uint32_t ticks_drift;
+		uint8_t state;
 
 		ticker = &node[ticker_id_head];
 
@@ -1335,8 +1355,11 @@ void ticker_worker(void *param)
 		ticker_id_head = ticker->next;
 		must_expire_skip = 0U;
 
+		/* Determine the ticker state */
+		state = ticker_state_get(ticker);
+
 		/* Skip if not scheduled to execute */
-		if (((ticker->req - ticker->ack) & 0xff) != 1U) {
+		if (state != TICKER_NODE_STATE_SCHEDULED) {
 			continue;
 		}
 
@@ -2000,14 +2023,14 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 				continue;
 			}
 
-			/* determine the ticker state */
-			state = (ticker->req - ticker->ack) & 0xff;
+			/* Determine the ticker state */
+			state = ticker_state_get(ticker);
 
 			/* if not started or update not required,
 			 * set status and continue.
 			 */
 			if ((user_op->op > TICKER_USER_OP_TYPE_STOP_ABS) ||
-			    ((state == 0U) &&
+			    ((state == TICKER_NODE_STATE_IDLE) &&
 #if defined(CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP)
 			     !ticker->start_pending &&
 #endif /* CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP */
@@ -2030,16 +2053,21 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 				continue;
 			}
 
-			/* Delete or yield node, if not expired */
-			if ((state == 1U) ||
-			    (user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS)) {
+			/* Delete or yield node, if not expired.
+			 * Yield of an expired node shall be deferred, as the
+			 * bottom half assigns the slot reservation that the
+			 * yield is to reduce.
+			 */
+			if ((state == TICKER_NODE_STATE_SCHEDULED) ||
+			    ((user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS) &&
+			     (state != TICKER_NODE_STATE_EXPIRED))) {
 				ticker_job_node_manage(instance, ticker,
 						       user_op, ticks_now,
 						       ticks_elapsed,
 						       insert_head);
 			} else {
-				/* Update on expired node requested, deferring
-				 * update until bottom half finishes.
+				/* Update or yield on expired node requested,
+				 * deferring until bottom half finishes.
 				 */
 				/* sched job to run after worker bottom half.
 				 */
@@ -2111,7 +2139,8 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		ticks_latency -= ticks_to_expire;
 		ticks_expired += ticks_to_expire;
 
-		state = (ticker->req - ticker->ack) & 0xff;
+		/* Determine the ticker state */
+		state = ticker_state_get(ticker);
 
 #if !defined(CONFIG_BT_TICKER_LOW_LAT)
 		/* Node with lazy count did not expire with callback, but
@@ -2141,8 +2170,8 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		/* If a reschedule is set pending, we will need to keep
 		 * the slot_previous information
 		 */
-		if (ticker_ticks_slot && (state == 2U) && !skip_collision &&
-		    !TICKER_RESCHEDULE_PENDING(ticker)) {
+		if (ticker_ticks_slot && (state == TICKER_NODE_STATE_EXPIRED) &&
+		    (skip_collision == 0U) && !TICKER_RESCHEDULE_PENDING(ticker)) {
 			instance->ticker_id_slot_previous = id_expired;
 			instance->ticks_slot_previous = ticker_ticks_slot;
 		}
@@ -2294,7 +2323,8 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			 * collision shall generate a operation function
 			 * callback with failure status.
 			 */
-			if (state && ((state == 1U) || skip_collision) &&
+			if ((state != TICKER_NODE_STATE_IDLE) &&
+			    ((state == TICKER_NODE_STATE_SCHEDULED) || (skip_collision != 0U)) &&
 			    ticker->fp_op_func) {
 				ticker->fp_op_func(TICKER_STATUS_FAILURE,
 						   ticker->op_context);
@@ -2904,6 +2934,7 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 				 * via user operation TICKER_USER_OP_TYPE_START
 				 */
 				uint8_t first;
+				uint8_t state;
 
 				user_op = &user_ops[user_ops_first];
 				first = user_ops_first + 1;
@@ -2925,8 +2956,10 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 				ticker->start_pending = 0U;
 #endif /* CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP */
 
-				if (((ticker->req -
-				      ticker->ack) & 0xff) != 0U) {
+				/* Determine the ticker state */
+				state = ticker_state_get(ticker);
+
+				if (state != TICKER_NODE_STATE_IDLE) {
 					ticker_job_op_cb(user_op,
 							 TICKER_STATUS_FAILURE);
 					continue;
