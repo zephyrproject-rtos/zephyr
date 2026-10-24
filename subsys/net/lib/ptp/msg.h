@@ -34,6 +34,14 @@ extern "C" {
 #define PTP_MSG_TWO_STEP_FLAG		  BIT(1)
 #define PTP_MSG_UNICAST_FLAG		  BIT(2)
 
+/* values of the bits of the second octet of the flagField array */
+#define PTP_MSG_LEAP61_FLAG		  BIT(0)
+#define PTP_MSG_LEAP59_FLAG		  BIT(1)
+#define PTP_MSG_UTC_OFFSET_VALID_FLAG	  BIT(2)
+#define PTP_MSG_PTP_TIMESCALE_FLAG	  BIT(3)
+#define PTP_MSG_TIME_TRACEABLE_FLAG	  BIT(4)
+#define PTP_MSG_FREQ_TRACEABLE_FLAG	  BIT(5)
+
 /**
  * @brief PTP message type.
  */
