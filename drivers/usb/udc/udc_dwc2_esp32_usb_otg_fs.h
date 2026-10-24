@@ -140,10 +140,17 @@ static inline int esp32_usb_otg_enable_phy(struct phy_context_t *phy_ctx, bool e
 static inline int esp32_usb_otg_shutdown(const struct esp32_usb_otg_fs_config *cfg,
 					 struct esp32_usb_otg_fs_data *data)
 {
+	int ret;
+
 	usb_wrap_hal_disable();
 	esp_intr_free(data->int_handle);
 
-	return clock_control_off(cfg->clock_dev, cfg->clock_subsys);
+	ret = clock_control_off(cfg->clock_dev, cfg->clock_subsys);
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	}
+
+	return ret;
 }
 
 #define QUIRK_ESP32_USB_OTG_INST(n)                                                                \
