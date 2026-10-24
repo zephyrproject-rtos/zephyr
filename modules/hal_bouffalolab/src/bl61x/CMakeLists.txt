@@ -30,8 +30,6 @@ if(CONFIG_WIFI_BFLB)
     set(MACSW_CFG_LIB libmacsw_config_bl616_bridge.a)
   elseif(CONFIG_WIFI_BFLB_WIFI6_MACSW_ACK)
     set(MACSW_CFG_LIB libmacsw_config_bl616_ack.a)
-  elseif(CONFIG_WIFI_BFLB_WIFI6_MACSW_COEX)
-    set(MACSW_CFG_LIB libmacsw_config_bl616_coex.a)
   endif()
 
   message(STATUS "BL61x WiFi MACSW: ${MACSW_CFG_LIB}")
