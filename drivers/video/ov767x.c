@@ -7,6 +7,7 @@
 
 #define DT_DRV_COMPAT ovti_ov7670
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -29,6 +30,11 @@ struct ov767x_config {
 #if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, pwdn_gpios) ||                                 \
 	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7675, pwdn_gpios)
 	struct gpio_dt_spec pwdn;
+#endif
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, clocks) ||                                     \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7675, clocks)
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 #endif
 };
 
@@ -687,6 +693,23 @@ static int ov767x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, clocks) ||                                     \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7675, clocks)
+	/* The sensor does not answer on SCCB without its input clock */
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret < 0) {
+			LOG_ERR("Could not enable input clock: %d", ret);
+			return ret;
+		}
+		/* At least 1ms of clock before the first SCCB access */
+		k_msleep(1);
+	}
+#endif
+
 #if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, pwdn_gpios) ||                                 \
 	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7675, pwdn_gpios)
 	/* Power up camera module */
@@ -825,13 +848,25 @@ static DEVICE_API(video, ov767x_api) = {
 #define OV767X_PWDN_GPIO(inst)
 #endif
 
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, clocks) ||                                     \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7675, clocks)
+#define OV767X_CLOCK(inst)                                                                         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                                           \
+		    (.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                        \
+		     .clock_subsys =                                                               \
+			     (clock_control_subsys_t)DT_INST_PHA_OR(inst, clocks, id, 0),),        \
+		    ())
+#else
+#define OV767X_CLOCK(inst)
+#endif
+
 #define OV767X_INIT(inst, id)                                                                      \
 	static const struct ov767x_config ov##id##_config##inst = {                                \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.camera_model = id,                                                                \
 		.fmts = ov##id##_fmts,                                                             \
 		.pclk_hb_disable = DT_INST_PROP(inst, pclk_hb_disable),                            \
-		OV767X_RESET_GPIO(inst)	OV767X_PWDN_GPIO(inst)};                                   \
+		OV767X_RESET_GPIO(inst) OV767X_PWDN_GPIO(inst) OV767X_CLOCK(inst)};                \
                                                                                                    \
 	static struct ov767x_data ov##id##_data##inst;                                             \
                                                                                                    \
