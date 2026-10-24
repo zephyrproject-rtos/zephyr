@@ -41,6 +41,31 @@ ZTEST(sys_util, test_wait_for)
 	zassert_true(end-start >= expected, "wait for 1ms");
 }
 
+static bool wait_for_preempted_expr(int *cnt, int target_cnt, uint32_t busy_wait_us)
+{
+	k_busy_wait(busy_wait_us);
+	return ++(*cnt) == target_cnt;
+}
+
+/**
+ * @brief Test wait_for re-evaluates expr on timeout after preemption
+ *
+ * @see WAIT_FOR()
+ */
+ZTEST(sys_util, test_wait_for_preempted)
+{
+	const uint32_t timeout_us = 100;
+	const uint32_t preempt_us = timeout_us * 2;
+	int i = 0;
+
+	zassert_true(WAIT_FOR(wait_for_preempted_expr(&i, 2, preempt_us), timeout_us, NULL));
+	zassert_equal(i, 2);
+
+	i = 0;
+	zassert_false(WAIT_FOR(wait_for_preempted_expr(&i, 3, preempt_us), timeout_us, NULL));
+	zassert_equal(i, 2);
+}
+
 /**
  * @brief Test NUM_VA_ARGS works as expected with typical use cases
  *
