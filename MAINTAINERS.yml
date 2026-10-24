@@ -3572,7 +3572,6 @@ Infineon AURIX Platforms:
     - ssekar15
   files:
     - soc/infineon/aurix/
-    - soc/qemu/tricore/
     - boards/qemu/tricore/
     - drivers/*/*aurix*
     - include/zephyr/drivers/*/*aurix*
