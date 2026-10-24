@@ -57,8 +57,12 @@ static int stm32_clock_control_on(const struct device *dev, clock_control_subsys
 	case STM32_CLOCK_BUS_MLAHB:
 		LL_MLAHB_GRP1_EnableClock(pclken->enr);
 		break;
-	default:
+	case STM32_CLOCK_BUS_AHB1:
+	case STM32_CLOCK_BUS_IOP:
+		/* No gate register in the MP1 RCC for these two groups */
 		return -ENOTSUP;
+	default:
+		return -EINVAL;
 	}
 
 	return 0;
@@ -107,8 +111,12 @@ static int stm32_clock_control_off(const struct device *dev, clock_control_subsy
 	case STM32_CLOCK_BUS_MLAHB:
 		LL_MLAHB_GRP1_DisableClock(pclken->enr);
 		break;
-	default:
+	case STM32_CLOCK_BUS_AHB1:
+	case STM32_CLOCK_BUS_IOP:
+		/* No gate register in the MP1 RCC for these two groups */
 		return -ENOTSUP;
+	default:
+		return -EINVAL;
 	}
 
 	return 0;
