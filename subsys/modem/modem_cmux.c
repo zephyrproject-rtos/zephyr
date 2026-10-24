@@ -1053,9 +1053,15 @@ static void modem_cmux_dm_response_transmit(struct modem_cmux *cmux)
 
 static void modem_cmux_on_control_frame_sabm(struct modem_cmux *cmux)
 {
-	if ((cmux->state == MODEM_CMUX_STATE_CONNECTED) ||
-	    (cmux->state == MODEM_CMUX_STATE_DISCONNECTING)) {
+	if (cmux->state == MODEM_CMUX_STATE_DISCONNECTING) {
 		LOG_DBG("Connect request not accepted");
+		return;
+	}
+
+	if ((cmux->state != MODEM_CMUX_STATE_DISCONNECTED) &&
+	    (cmux->state != MODEM_CMUX_STATE_CONNECTING)) {
+		LOG_DBG("CMUX already connected");
+		modem_cmux_connect_response_transmit(cmux);
 		return;
 	}
 
