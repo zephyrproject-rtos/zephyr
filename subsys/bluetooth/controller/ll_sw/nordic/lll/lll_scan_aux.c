@@ -411,7 +411,14 @@ bool lll_scan_aux_addr_match_get(const struct lll_scan *lll,
 	const struct pdu_adv_ext_hdr *ext_hdr;
 
 	ext_hdr = &pdu->adv_ext_ind.ext_hdr;
-	if (unlikely(!ext_hdr->adv_addr)) {
+
+	/* Without an extended header, there are no flags and no AdvA. What
+	 * the radio matched where a legacy PDU has its AdvA is no address.
+	 */
+	if (unlikely((pdu->adv_ext_ind.ext_hdr_len == 0U) || (ext_hdr->adv_addr == 0U))) {
+		*devmatch_ok = 0U;
+		*irkmatch_ok = 0U;
+
 		return false;
 	}
 
@@ -973,6 +980,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 {
 	struct node_rx_ftr *ftr;
 
+	bool tgta_resolved = false;
 	bool dir_report = false;
 
 	if (0) {
@@ -981,7 +989,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	} else if (lll->conn && !lll->conn->central.cancelled &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) &&
 		   lll_scan_ext_tgta_check(lll, false, true, pdu,
-					   rl_idx, NULL)) {
+					   rl_idx, NULL, NULL)) {
 		struct lll_scan_aux *lll_aux_to_use;
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
@@ -1180,14 +1188,14 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		    (lll->lll_aux && !lll->lll_aux->state)) &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
 		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx,
-					   &dir_report)) {
+					   &dir_report, &tgta_resolved)) {
 #else /* !CONFIG_BT_CENTRAL */
 	} else if (lll && lll->type &&
 		   ((lll_aux && !lll_aux->state) ||
 		    (lll->lll_aux && !lll->lll_aux->state)) &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
 		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx,
-					   &dir_report)) {
+					   &dir_report, &tgta_resolved)) {
 #endif /* !CONFIG_BT_CENTRAL */
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
@@ -1292,6 +1300,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
+		ftr->direct_resolved = (rl_idx != FILTER_IDX_NONE) || tgta_resolved;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
@@ -1319,12 +1328,12 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		   ((lll_aux && lll_aux->is_chain_sched) ||
 		    (lll->lll_aux && lll->lll_aux->is_chain_sched) ||
 		    lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx,
-					    &dir_report))) {
+					    &dir_report, &tgta_resolved))) {
 #else /* !CONFIG_BT_CENTRAL */
 	} else if ((lll_aux && lll_aux->is_chain_sched) ||
 		   (lll->lll_aux && lll->lll_aux->is_chain_sched) ||
 		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx,
-					   &dir_report)) {
+					   &dir_report, &tgta_resolved)) {
 #endif /* !CONFIG_BT_CENTRAL */
 
 		ftr = &(node_rx->rx_ftr);
@@ -1384,6 +1393,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
+		ftr->direct_resolved = (rl_idx != FILTER_IDX_NONE) || tgta_resolved;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
@@ -1688,6 +1698,9 @@ static bool isr_rx_connect_rsp_check(struct lll_scan *lll,
 				     struct pdu_adv *pdu_tx,
 				     struct pdu_adv *pdu_rx, uint8_t rl_idx)
 {
+	const uint8_t *adva;
+	bool is_adva;
+
 	if (unlikely(pdu_rx->type != PDU_ADV_TYPE_AUX_CONNECT_RSP)) {
 		return false;
 	}
@@ -1703,9 +1716,19 @@ static bool isr_rx_connect_rsp_check(struct lll_scan *lll,
 		return false;
 	}
 
-	return lll_scan_adva_check(lll, pdu_rx->tx_addr,
-			&pdu_rx->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
-			rl_idx) &&
+	adva = &pdu_rx->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
+
+	/* With the Filter Accept List, the Host gives no peer address, so the
+	 * advertiser is the one the AUX_CONNECT_REQ was sent to.
+	 */
+	if ((lll->filter_policy & SCAN_FP_FILTER) != 0U) {
+		is_adva = (pdu_rx->tx_addr == pdu_tx->rx_addr) &&
+			  util_memeq(adva, pdu_tx->connect_ind.adv_addr, BDADDR_SIZE);
+	} else {
+		is_adva = lll_scan_adva_check(lll, pdu_rx->tx_addr, adva, rl_idx);
+	}
+
+	return is_adva &&
 	       (pdu_rx->rx_addr == pdu_tx->tx_addr) &&
 	       (memcmp(&pdu_rx->adv_ext_ind.ext_hdr.data[TGTA_OFFSET],
 		       pdu_tx->connect_ind.init_addr, BDADDR_SIZE) == 0);
