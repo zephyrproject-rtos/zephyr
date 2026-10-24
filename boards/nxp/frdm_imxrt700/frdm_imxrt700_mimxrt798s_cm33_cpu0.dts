@@ -23,6 +23,8 @@
 	chosen {
 		zephyr,flash = &w25q25pw;
 		zephyr,sram = &sram0;
+		zephyr,code-cpu1-partition = &sram_code;
+		zephyr,sram-cpu1-partition = &sram3;
 		zephyr,console = &flexcomm0_lpuart0;
 		zephyr,shell-uart = &flexcomm0_lpuart0;
 	};
@@ -140,4 +142,13 @@
 			ranges;
 		};
 	};
+};
+
+&mbox1_a {
+	status = "okay";
+};
+
+&sema420 {
+	domain-id = <0>;
+	status = "okay";
 };
