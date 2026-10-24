@@ -32,6 +32,18 @@ To build and flash the application:
    :goals: build flash
    :compact:
 
+The sample runs on any board with a USB device controller. It is built and tested on the
+following boards, which cover the supported USB device controller drivers:
+
+* :zephyr:board:`nrf52840dk`
+* :zephyr:board:`nrf54h20dk`
+* :zephyr:board:`frdm_k64f`
+* :zephyr:board:`nucleo_f429zi`
+* :zephyr:board:`stm32f723e_disco`
+* :zephyr:board:`nucleo_f413zh`
+* :zephyr:board:`mimxrt685_evk`
+* :zephyr:board:`mimxrt1060_evk`
+
 Using the MIDI interface
 ************************
 
