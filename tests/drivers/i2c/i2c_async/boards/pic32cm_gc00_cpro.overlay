@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect EEPROM 3 Click to Mikro-Bus header via i2c0 (sercom1, PD1=SDA, PD0=SCL) */
+
+/ {
+	aliases {
+		eeprom-0 = &eeprom;
+	};
+};
+
+&i2c0 {
+	eeprom: eeprom@54 {
+		compatible = "atmel,at24";
+		reg = <0x54>;
+		size = <262144>;
+		pagesize = <256>;
+		address-width = <16>;
+		timeout = <5>;
+	};
+};
