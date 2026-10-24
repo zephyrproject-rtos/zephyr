@@ -518,6 +518,7 @@ struct settings_store_itf {
 	 *
 	 * @return Actual size of value that corresponds to name on success, negative value on
 	 * failure
+	 * -ENOENT if the Key doesn't exist.
 	 */
 	ssize_t (*csi_load_one)(struct settings_store *cs, const char *name, char *buf,
 				size_t buf_len);
