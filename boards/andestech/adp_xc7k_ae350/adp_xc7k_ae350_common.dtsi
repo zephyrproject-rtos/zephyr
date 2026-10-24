@@ -156,10 +156,6 @@
 	};
 };
 
-&l2_cache {
-	status = "okay";
-};
-
 &syscon {
 	status = "okay";
 };
