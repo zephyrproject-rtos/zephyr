@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mediatek/mt7628.dtsi>
+
+/ {
+	model = "TP-Link TL-WA850RE v6";
+	compatible = "tplink,wa850re-v6", "mediatek,mt7628";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &dram0;
+	};
+
+	/*
+	 * The board has 32 MiB of DRAM at 0x80000000. The first MiB is left
+	 * out because the CP0 exception vectors are installed at 0x80000180.
+	 * U-Boot loads the image at the start of this region.
+	 */
+	dram0: memory@80100000 {
+		device_type = "memory";
+		reg = <0x80100000 DT_SIZE_M(31)>;
+	};
+};
+
+/* 25 MHz crystal */
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(575)>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <57600>;
+};
