@@ -269,7 +269,11 @@ endif()
 
 if(((${MCUX_DEVICE} MATCHES "MIMXRT1[0-9][0-9][0-9]") AND (NOT (CONFIG_SOC_MIMXRT1166_CM4 OR
     CONFIG_SOC_MIMXRT1175_CM4 OR CONFIG_SOC_MIMXRT1176_CM4 OR CONFIG_SOC_MIMXRT1189_CM33))) OR
+    (${MCUX_DEVICE} MATCHES "MIMXRT266") OR
     ((${MCUX_DEVICE} MATCHES "MIMX9596") AND CONFIG_SOC_MIMX9596_M7))
+  # MIMXRT266x is Cortex-M85 (ARMv8.1-M), which this driver has no backend
+  # for; its L1 maintenance calls are the same CMSIS SCB_*DCache_by_Addr()
+  # the Cortex-M7 backend already uses, so it is reused rather than added.
   set_variable_ifdef(CONFIG_HAS_MCUX_CACHE		CONFIG_MCUX_COMPONENT_driver.cache_armv7_m7)
 elseif((${MCUX_DEVICE} MATCHES "MIMXRT(5|6)") OR (${MCUX_DEVICE} MATCHES "RW61") OR (${MCUX_DEVICE} MATCHES "MCXN.4."))
   set_variable_ifdef(CONFIG_HAS_MCUX_CACHE		CONFIG_MCUX_COMPONENT_driver.cache_cache64)
@@ -415,7 +419,7 @@ if(CONFIG_SOC_FAMILY_MCXN AND (NOT CONFIG_SOC_MCXN947) AND (NOT CONFIG_SOC_MCXN5
   set_variable_ifdef(CONFIG_SOC_FLASH_MCUX CONFIG_MCUX_COMPONENT_driver.romapi_flashiap)
 endif()
 
-if(CONFIG_SOC_FAMILY_NXP_IMXRT)
+if(CONFIG_SOC_SERIES_IMXRT10XX OR CONFIG_SOC_SERIES_IMXRT11XX)
   set_variable_ifdef(CONFIG_ETH_NXP_ENET CONFIG_MCUX_COMPONENT_driver.ocotp)
 endif()
 

@@ -16,6 +16,7 @@ tests:
       - stm32f723e_disco
       - nucleo_f413zh
       - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt2660_evk/mimxrt2663/cm85
       - max32690evkit/max32690/m4
     tags: usb
   sample.usb_device_next.hid-mouse-bc12:

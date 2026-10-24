@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT2660_EVK
+
+configdefault ETH_DRIVER
+	default y if NETWORKING
+
+endif # BOARD_MIMXRT2660_EVK
