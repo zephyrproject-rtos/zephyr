@@ -51,7 +51,7 @@
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
-			interrupts-extended = <&hlic 3>, <&hlic 7>;
+			interrupts-extended = <&hlic 3>;
 			reg = <0x2000000 0x10000>;
 		};
 
