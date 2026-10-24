@@ -603,11 +603,15 @@ static void ifx_cat1_spi_dma_stop(struct ifx_cat1_spi_data *data)
 
 static int ifx_cat1_spi_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
+	struct ifx_cat1_spi_data *const data = dev->data;
+
 	spi_free(dev);
 
 #ifdef CONFIG_SPI_INFINEON_DMA
 	ifx_cat1_spi_dma_stop(dev->data);
 #endif
+
+	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }

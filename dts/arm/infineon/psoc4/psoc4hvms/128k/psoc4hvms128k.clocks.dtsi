@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The 128K device has 7 dividers of each type, the common file describes 6. */
+&peri_div {
+	peri_clk_div6: peri-clk-div6 {
+		#clock-cells = <0>;
+		compatible = "infineon,peri-div";
+		div-type = <DIV_16_BIT>;
+		channel = <6>;
+		clock-div = <1>;
+		status = "disabled";
+	};
+
+	peri_clk_fract_div6: peri-clk-fract-div6 {
+		#clock-cells = <0>;
+		compatible = "infineon,peri-div";
+		div-type = <DIV_16_5_BIT>;
+		channel = <6>;
+		clock-div = <1>;
+		status = "disabled";
+	};
+};
