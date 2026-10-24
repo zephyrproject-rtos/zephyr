@@ -49,14 +49,39 @@ config COMMON_LIBC_TIME
 
 config COMMON_LIBC_MALLOC
 	bool "Common C library malloc implementation"
-	select NEED_LIBC_MEM_PARTITION if COMMON_LIBC_MALLOC_ARENA_SIZE != 0
 	help
 	  Common implementation of malloc family that uses the kernel heap
 	  API.
 
+choice
+	prompt "Common C library malloc implementation type"
+	depends on COMMON_LIBC_MALLOC
+	default COMMON_LIBC_MALLOC_SINGLE
+	help
+	  Select the implementation type for malloc family of functions.
+
+config COMMON_LIBC_MALLOC_SINGLE
+	bool "Common C library malloc implementation with single shared heap"
+	select NEED_LIBC_MEM_PARTITION if COMMON_LIBC_MALLOC_ARENA_SIZE != 0
+	help
+	  Implement malloc with a single heap in a z_malloc_partition shared
+	  by all threads. User threads need to be given access to this
+	  partition in order to use malloc.
+
+config COMMON_LIBC_MALLOC_TLS
+	bool "Common C library malloc implementation with TLS-based per-thread heaps"
+	depends on THREAD_LOCAL_STORAGE
+	depends on SYS_SYNC_HEAP
+	help
+	  Implement malloc with dedicated per-thread assigned heaps. Both user
+	  and kernel threads need to be assigned a heap before they are started
+	  in order to use malloc.
+
+endchoice
+
 config COMMON_LIBC_MALLOC_ARENA_SIZE
 	int "Size of the common C library malloc arena"
-	depends on COMMON_LIBC_MALLOC
+	depends on COMMON_LIBC_MALLOC_SINGLE
 	default 0 if MINIMAL_LIBC
 	default 16384 if MMU
 	default 2048 if USERSPACE && MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
@@ -80,6 +105,15 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 	  malloc heap. Otherwise, on systems with an MMU the default is
 	  16kB and all other systems will default to using all remaining
 	  ram for the malloc heap.
+
+config COMMON_LIBC_MALLOC_TLS_FALLBACK
+	bool "Kernel threads fall back to system heap"
+	depends on COMMON_LIBC_MALLOC_TLS
+	depends on HEAP_MEM_POOL_SIZE > 0
+	default y
+	help
+	  If no heap has been assigned, kernel threads fall back to allocate
+	  from the system heap.
 
 config COMMON_LIBC_CALLOC
 	bool "Common C library calloc"
