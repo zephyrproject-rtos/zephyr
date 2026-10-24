@@ -452,7 +452,7 @@ int wiznet_init(const struct device *dev)
 	int err;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI master port %s not ready", cfg->spi.bus->name);
+		LOG_ERR("SPI bus %s not ready", cfg->spi.bus->name);
 		return -EINVAL;
 	}
 

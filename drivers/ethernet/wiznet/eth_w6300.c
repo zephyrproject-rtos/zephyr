@@ -684,7 +684,7 @@ static int w6300_init(const struct device *dev)
 	struct w6300_runtime *ctx = dev->data;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
+		LOG_ERR("SPI bus %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}
 
