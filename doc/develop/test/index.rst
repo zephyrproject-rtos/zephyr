@@ -7,6 +7,7 @@ Testing
    :maxdepth: 1
 
    ztest
+   vanes
    benchmark
    coverage
    BabbleSim<bsim>

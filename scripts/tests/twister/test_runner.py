@@ -385,6 +385,7 @@ TESTDATA_2_2 = [
       'arg1', 'arg2',
       '-DBOARD=<platform name>',
       '-DSNIPPET=dummy snippet 1;ds2',
+      '-DVANES=gpio.loopback',
       '-DMODULES=dummy_stage_1,ds2',
       '-Pzephyr_base/cmake/package_helper.cmake']),
     (False, [],
@@ -402,7 +403,8 @@ TESTDATA_2_2 = [
       '-DAPP_DIR=' + os.path.join('source', 'dir'),
       'arg1', 'arg2',
       '-DBOARD=<platform name>',
-      '-DSNIPPET=dummy snippet 1;ds2']),
+      '-DSNIPPET=dummy snippet 1;ds2',
+      '-DVANES=gpio.loopback']),
 ]
 
 @pytest.mark.parametrize(
@@ -457,6 +459,7 @@ def test_cmake_run_cmake(
     instance_mock.testsuite = mock.Mock()
     instance_mock.testsuite.name = 'testcase'
     instance_mock.testsuite.required_snippets = ['dummy snippet 1', 'ds2']
+    instance_mock.testsuite.setups = ['gpio.loopback']
     instance_mock.sidecar = None
     instance_mock.testcases = [mock.Mock(), mock.Mock()]
     instance_mock.testcases[0].status = TwisterStatus.NONE

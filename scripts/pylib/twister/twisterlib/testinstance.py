@@ -58,6 +58,9 @@ class TestInstance(StatusMixin):
 
         self.testsuite: TestSuite = testsuite
         self.platform: Platform = platform
+        # the scenario's harness configuration, replaced by a copy when the
+        # platform's test setup changes what it needs to run
+        self.harness_config = testsuite.harness_config
 
         self._status = TwisterStatus.NONE
         self.reason = None
@@ -319,10 +322,10 @@ class TestInstance(StatusMixin):
         if testsuite_runnable := self.testsuite.harness in SUPPORTED_HARNESSES:
             if device_testing:
                 testsuite_runnable = HardwareReservationManager(
-                    hardware_map, self.platform.name, self.testsuite.harness_config
+                    hardware_map, self.platform.name, self.harness_config
                 ).is_runnable()
 
-            elif fixture := self.testsuite.harness_config.fixture:
+            elif fixture := self.harness_config.fixture:
                 # if we have a fixture that is also being supplied on the
                 # command-line, then we need to run the test, not just build it.
                 testsuite_runnable = all(f in set(cli_fixtures) for f in fixture)
