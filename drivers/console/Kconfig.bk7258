@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BK7258_MBOX_CONSOLE
+	bool "Beken BK7258: forward printk over the mailbox LOG channel"
+	default n
+	depends on SOC_BK7258
+	select PRINTK
+	help
+	  This core has no UART of its own: UART0 belongs to the peer.
+	  Without this option the only way to print is to write straight into the
+	  FIFO of the port the peer is using, relying on UART_BK7258_NO_HW_INIT to
+	  keep its hands off that core's UART registers -- which works, but takes
+	  over the peer's device.
+
+	  With this option the printk output is accumulated into lines and sent to
+	  the peer over the LOG logical channel (0x1E, MB_CMD_LOG_OUT), and the
+	  peer prints it to UART0. Verified on hardware: the peer prints the
+	  strings verbatim.
+
+	  With this enabled:
+	    - printk / LOG_* output goes over the mailbox instead of the UART TX
+	      FIFO
+	    - before the mailbox is up (PRE_KERNEL) it still falls back to the
+	      previous hook, i.e. the UART, so the board is not blind from the
+	      moment it powers on
+	    - a line is dropped when the mailbox channel is busy (losing one line
+	      of console output is acceptable; blocking interrupt context for it is
+	      not)
+
+	  Note that the peer prints the string as-is, without an ap0:/ap1: prefix.
+
+	  The line length and the rotating slots are properties of the mailbox
+	  transport, not of this driver, and live in soc.h as
+	  SOC_MB_LOG_LINE_LEN. The shell transport (SERIAL_BK7258_MBOX) uses the
+	  same primitive, so a second copy of them would only drift.

@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Mailbox console transport: this core has no UART of its own, so the
+# console it gives to the shell is carried over the inter-core mailbox.
+#
+# This device is a serial device in the Zephyr sense, but there is no UART
+# behind it -- the other end is the peer. The node therefore has no reg, no
+# interrupts and no baud rate: those settings belong to the peer.
+
+description: |
+  Beken BK7258 console transport over the inter-core mailbox.
+
+  Output is accumulated into lines by the driver and handed to the peer as LOG
+  messages, which the peer prints on UART0. Input arrives the other way round: a
+  line typed on the peer's console as `ap_cmd <text>` is forwarded here,
+  where poll_in() hands it to the shell.
+
+  Only poll_in and poll_out are implemented, so a build that gives this device
+  to the shell must select SHELL_BACKEND_SERIAL_API_POLLING.
+
+  Example devicetree node:
+
+    mbox_uart: mbox-uart {
+        compatible = "beken,bk7258-mbox-uart";
+        status = "okay";
+    };
+
+compatible: "beken,bk7258-mbox-uart"
+
+include: [uart-controller.yaml]

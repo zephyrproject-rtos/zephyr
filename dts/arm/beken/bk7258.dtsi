@@ -1,0 +1,207 @@
+/*
+ * Copyright (c) 2026 Beken Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+
+/*
+ * The NVIC priority field is 3 bits wide, as in the vendor CMSIS device header.
+ * The value has to be stated here: armv8-m.dtsi only supplies the nvic node
+ * skeleton, while the binding marks the property as required.
+ */
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			clock-frequency = <120000000>;
+		};
+	};
+
+	/*
+	 * SRAM available to this image. The SoC has 640 KB of shared SRAM in
+	 * total; 256 KB of it is claimed here.
+	 */
+	sram0: memory@28010000 {
+		compatible = "mmio-sram";
+		reg = <0x28010000 0x40000>;
+	};
+
+	/*
+	 * Code region. The vector table sits at the start of it, so offset 0 of
+	 * the objcopy -O binary output is the start of the application slot in
+	 * flash. Fetches from this window are handled by hardware, so
+	 * soc-nv-flash is enough to run from here.
+	 */
+	flash0: flash@2150000 {
+		compatible = "soc-nv-flash";
+		reg = <0x02150000 0x121000>;   /* 1156 KB */
+		erase-block-size = <0x1000>;
+		write-block-size = <4>;
+	};
+
+	/*
+	 * The flash device as seen by this core.
+	 *
+	 * Do not confuse it with flash0 above:
+	 * flash0     the XIP code window used for linking (soc-nv-flash, no
+	 *            driver), addressed from 0x02150000
+	 * flash_ap   the device backing read/write/erase, addressed physically
+	 *            (same offsets as the partition table and the bootloader, see
+	 *            the binding)
+	 *
+	 * reg points at the controller register block, which this core really can
+	 * see at 0x44030000, but the driver must never issue a controller
+	 * command: doing so resets the whole chip. Read, write and erase all go
+	 * to the flash service on the peer over the mailbox.
+	 *
+	 * Not even a read goes through the XIP window. The window serves the
+	 * packed image area (32 bytes of data followed by 2 of CRC, which the
+	 * hardware consumes as it fetches), and reading a region that was not
+	 * written that way resets the chip. Measured: physical 0x165000 is fine,
+	 * physical 0x290000 resets (before and after erasing that sector), and
+	 * physical 0x7FA000 resets. There is no address boundary to encode here,
+	 * it depends on how the bytes behind the address were written, so no
+	 * xip-limit property is provided; see the binding.
+	 */
+	flash_ap: flash@44030000 {
+		compatible = "beken,bk7258-flash";
+		reg = <0x44030000 0x100>;
+		size = <0x800000>;      /* 8 MB: JEDEC ID 0x00c86517 -> 2^23 */
+		crc-step = <34>;        /* 32 B of data + 2 B of CRC */
+		crc-data = <32>;
+		status = "disabled";
+	};
+
+	/* 26 MHz on-board crystal */
+	xtal26m: clock-xtal26m {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <26000000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&nvic>;
+		ranges;
+
+		/*
+		 * UART0: the console. Base 0x44820000, NVIC IRQ 4, TX on GPIO11
+		 * and RX on GPIO10, both function 0.
+		 */
+		uart0: serial@44820000 {
+			compatible = "beken,bk7258-uart";
+			reg = <0x44820000 0x1000>;
+			interrupts = <4 0>;
+			clock-frequency = <26000000>;
+			current-speed = <115200>;
+			clock-source = "xtal";
+			tx-pin = <11>;
+			rx-pin = <10>;
+			tx-func = <0>;
+			rx-func = <0>;
+			status = "disabled";   /* enabled by the board dts */
+		};
+
+		/*
+		 * GPIO controller.
+		 *
+		 * base 0x44000400 (AON domain: this core and the peer share this
+		 * register file)
+		 * NVIC IRQ 55 (icu_map.h: INT_SRC_GPIO)
+		 * second-level enable: bit 23 at 0x4401008C
+		 *
+		 * ngpios is 32 and not SOC_GPIO_NUM (56): Zephyr's gpio_port_value_t
+		 * and gpio_port_pins_t are both uint32_t, and there is no 64-bit port
+		 * width option, so one controller tops out at 32 pins.
+		 *
+		 * gpio-reserved-ranges = <10 2> protects UART0's GPIO10/11: that port
+		 * is the peer's console, and writing to it takes the board down.
+		 */
+		gpio0: gpio@44000400 {
+			compatible = "beken,bk7258-gpio";
+			reg = <0x44000400 0x200>;
+			interrupts = <55 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			gpio-reserved-ranges = <10 2>;
+			status = "disabled";   /* enabled by the board dts */
+		};
+
+		/*
+		 * Second bank: the same register file, pins 32..55.
+		 *
+		 * A Zephyr GPIO controller cannot cover more than 32 pins at once,
+		 * because the port-wide calls take a 32-bit mask, so the chip's 56 pins
+		 * are presented as two controllers over one register file. This one
+		 * declares all 56 pins and reserves 0..31, which is the standard way to
+		 * say "only these are mine": a pin number below 32 is rejected here and
+		 * belongs to the first bank, while 32 and above are rejected there.
+		 *
+		 * Interrupts stay with the first bank: there is one interrupt for all of
+		 * the chip's pins, and two devices cannot register the same handler.
+		 */
+		gpio1: gpio@44000480 {
+			compatible = "beken,bk7258-gpio";
+			/*
+			 * The reg window is the slice of the register file that backs
+			 * this bank's pins (pin 32 lives at base + 4 * 32 = 0x44000480;
+			 * 24 pins x 4 bytes = 0x60).  It is descriptive: the driver
+			 * addresses a pin by its number, not through this reg.
+			 */
+			reg = <0x44000480 0x60>;
+			interrupts = <55 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <56>;
+			gpio-reserved-ranges = <0 32>;
+			status = "disabled";   /* enabled by the board dts */
+		};
+
+		/* UART1: 0x45830000, IRQ 15, GPIO0 = TX / GPIO1 = RX */
+		uart1: serial@45830000 {
+			compatible = "beken,bk7258-uart";
+			reg = <0x45830000 0x1000>;
+			interrupts = <15 0>;
+			clock-frequency = <26000000>;
+			current-speed = <115200>;
+			clock-source = "xtal";
+			tx-pin = <0>;
+			rx-pin = <1>;
+			tx-func = <0>;
+			rx-func = <0>;
+			status = "disabled";
+		};
+
+		/* UART2: 0x45840000, IRQ 16, GPIO31 = TX / GPIO30 = RX */
+		uart2: serial@45840000 {
+			compatible = "beken,bk7258-uart";
+			reg = <0x45840000 0x1000>;
+			interrupts = <16 0>;
+			clock-frequency = <26000000>;
+			current-speed = <115200>;
+			clock-source = "xtal";
+			tx-pin = <31>;
+			rx-pin = <30>;
+			tx-func = <0>;
+			rx-func = <0>;
+			status = "disabled";
+		};
+	};
+};

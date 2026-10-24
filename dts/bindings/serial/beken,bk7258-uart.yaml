@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Beken BK7258 UART controller, driven in polled mode.
+
+  There is no pinctrl driver for this SoC yet, so pin muxing is written to
+  registers by the driver and the binding carries tx-pin / rx-pin itself
+  instead of including pinctrl-device.yaml.
+
+  Example devicetree node:
+
+    uart0: serial@44820000 {
+        compatible = "beken,bk7258-uart";
+        reg = <0x44820000 0x1000>;
+        interrupts = <4 0>;
+        clock-frequency = <26000000>;
+        current-speed = <115200>;
+        tx-pin = <11>;          /* GPIO11 = UART0_TXD, function 0 */
+        rx-pin = <10>;          /* GPIO10 = UART0_RXD, function 0 */
+        tx-func = <0>;
+        rx-func = <0>;
+        status = "okay";
+    };
+
+compatible: "beken,bk7258-uart"
+
+include: [uart-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: UART register window (UART0 = 0x44820000)
+
+  interrupts:
+    description: NVIC interrupt line. UART0 = 4, UART1 = 15, UART2 = 16.
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Clock source frequency of the UART, used to compute the divider. Use
+      26000000 for the XTAL path and 120000000 for the APLL path.
+      Divider: clk_div = clock-frequency / current-speed - 1
+
+  tx-pin:
+    type: int
+    required: true
+    description: TX pin number (GPIO numbering). 11 for UART0.
+
+  rx-pin:
+    type: int
+    required: true
+    description: RX pin number (GPIO numbering). 10 for UART0.
+
+  tx-func:
+    type: int
+    default: 0
+    description: |
+      Function number of the TX pin (0..7), an index into that pin's function
+      table. Entry 0 of GPIO11 is UART0_TXD, hence 0.
+
+  rx-func:
+    type: int
+    default: 0
+    description: Same as tx-func. Entry 0 of GPIO10 is UART0_RXD, hence 0.
+
+  clock-source:
+    type: string
+    default: "xtal"
+    enum:
+      - "xtal"
+      - "apll"
+    description: |
+      Clock source. xtal is the on-board 26 MHz crystal (the reset default),
+      apll is the 120 MHz audio PLL. Baud rate error at 115200 is +0.31% for
+      xtal and -0.06% for apll.

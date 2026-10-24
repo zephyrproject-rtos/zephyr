@@ -1,0 +1,65 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# BK7258 GPIO controller
+
+description: |
+  Beken BK7258 GPIO controller.
+
+  Hardware facts, cross-checked against the vendor SoC headers:
+
+    base        SOC_AON_GPIO_REG_BASE = 0x44000400 (AON domain, shared with the
+                peer)
+    pins        SOC_GPIO_NUM = 56, one 32-bit configuration word per pin
+    NVIC        IRQ 55 (icu_map.h: INT_SRC_GPIO)
+    2nd enable  bit 23 of cpu1_int_32_63_en in the SYSTEM domain (= IRQ 55 - 32)
+
+  Why ngpios is 32 and not 56: Zephyr's gpio_port_value_t and
+  gpio_port_pins_t are both uint32_t and there is no 64-bit port width option,
+  so one gpio-controller tops out at 32 pins. GPIO32..55 need a second bank
+  node sharing the same IRQ 55 (see the SoC dtsi).
+
+  This binding does not include pinctrl-device.yaml: muxing on the BK7258 is a
+  two-level scheme (pin configuration word bit 6 plus a function number in the
+  SYSTEM domain) with no separate pinctrl driver yet, so the GPIO and peripheral
+  drivers handle their own muxing.
+
+compatible: "beken,bk7258-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+# Names of the two cells in a specifier, which is how the devicetree compiler
+# learns how many cells to read. This key sits at the top level of the binding;
+# the node's own "#gpio-cells = <2>" in the SoC dtsi says the same thing to a
+# human. Nothing in this tree took this controller as a phandle until the
+# panel's overlay did, which is why the omission survived this long: a GPIO
+# binding that is never used as a phandle builds fine without it.
+gpio-cells:
+  - pin
+  - flags
+
+# The generic properties ngpios / gpio-reserved-ranges / gpio-line-names come
+# from the included gpio-controller.yaml and are deliberately not repeated here
+# (repeating them gains nothing and lets the two copies drift apart). The values
+# used in this port, and the reasoning, are in the comments in the SoC dtsi.
+
+properties:
+  "#gpio-cells":
+    const: 2
+    description: |
+      Two cells per specifier: the pin number and the flags. The number has to
+      be stated here and not only in the node, because it is the binding that
+      tells the devicetree compiler how many cells to read from a specifier.
+      Nothing in this tree took the controller as a phandle until the panel's
+      overlay did, so a tree that builds without this can still be complete --
+      which is why it went unnoticed until now.
+
+  reg:
+    required: true
+    description: GPIO register window (AON_GPIO at 0x44000400; 0x200 is enough)
+
+  interrupts:
+    required: true
+    description: |
+      NVIC interrupt line, fixed at 55 (INT_SRC_GPIO in icu_map.h::ICU_DEV_MAP).
+      The second cell is the priority (arm,num-irq-priority-bits = 3, so 0..7).

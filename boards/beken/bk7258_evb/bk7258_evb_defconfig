@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Board defconfig for the BK7258 EVB
+#
+# Principle: enable only what "hello_world can talk on the UART" needs. Nothing
+# extra, so that a failure can be bisected quickly.
+
+# --- Architecture / SoC ---
+# ARM / CPU_CORTEX_M / CPU_CORTEX_M33 / ARMV8_M_MAINLINE are provided by the
+# SoC's select chain (see port/soc/beken/bk7258/Kconfig), so the board defconfig
+# does not repeat them: that is the HWMv2 convention. The architecture and CPU
+# are decided by the SoC, and a board only describes what differs on that board.
+# Chain: BOARD_BK7258_EVB (def_bool y in boards/Kconfig.v2)
+#          -> select SOC_BK7258 -> SOC_SERIES_BK7258
+#          -> select ARM / CPU_CORTEX_M33 (-> CPU_CORTEX_M, ARMV8_M_MAINLINE)
+#                       / ARM_TRUSTZONE_M
+CONFIG_MAIN_STACK_SIZE=2048
+CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE=2048
+CONFIG_ISR_STACK_SIZE=2048
+
+# --- Clocks ---
+# SysTick runs from the CPU clock. The reference build has
+# CPU_FREQ_HZ=120000000.
+# Open question #4: if BL2 did not configure the CPU for 120 MHz this has to
+# change with it, or k_sleep and every timeout are off. Debug tree #2 derives
+# the real frequency from the baud rate.
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000
+CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+
+# --- UART console ---
+CONFIG_SERIAL=y
+CONFIG_UART_CONSOLE=y
+CONFIG_CONSOLE=y
+CONFIG_PRINTK=y
+
+# --- Logging: off for now, to keep the console quiet (enable level by level
+#     when something needs investigating) ---
+CONFIG_LOG=n
+
+# --- Things deliberately not wanted (written out so a future default cannot
+#     turn them on) ---
+CONFIG_SMP=n
+CONFIG_PICOLIBC=y
+CONFIG_MINIMAL_LIBC=n
+
+# --- Memory ---
+CONFIG_HEAP_MEM_POOL_SIZE=4096

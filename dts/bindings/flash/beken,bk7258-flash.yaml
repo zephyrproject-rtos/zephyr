@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: >
+  Beken BK7258 flash, as seen by this core.
+
+  The core never talks to the controller: the flash command pipeline is shared
+  with the other core and is left in quad / continuous-read mode, so any
+  command from here would take both cores down. Read, program and erase go to
+  the flash service on the other core over the inter-core mailbox.
+
+  The XIP window at 0x02000000 is where the core executes from, and it is not
+  a general read path either: it serves the packed image area, in which every
+  32 bytes of data are followed by 2 bytes of CRC, and reading a region that
+  was not written that way resets the chip. Measured: reading physical
+  0x165000 (packed image) through the window is fine, reading physical
+  0x290000 (a data partition) resets the chip whether or not that sector has
+  been erased, and reading 0x7FA000 (EasyFlash ENV) does the same.
+
+compatible: "beken,bk7258-flash"
+
+include: [flash-controller.yaml, base.yaml]
+
+properties:
+  size:
+    type: int
+    required: true
+    description: >
+      Physical size of the flash in bytes, that is, the address space a
+      controller read command operates on.
+
+      There are two address spaces; do not mix them up:
+
+        physical  the raw byte stream: every 32 bytes of data are followed
+                  by 2 bytes of CRC
+        XIP       what the core sees through the window at 0x02000000, where
+                  the hardware has already consumed the CRC bytes
+
+      xip = (physical / 34) * 32 + (physical % 34)
+
+      Offsets used by this driver are physical, matching the partition table
+      and the bootloader.
+
+  crc-step:
+    type: int
+    default: 34
+    description: Physical bytes in one CRC group (32 data + 2 CRC)
+
+  crc-data:
+    type: int
+    default: 32
+    description: Payload bytes in one CRC group

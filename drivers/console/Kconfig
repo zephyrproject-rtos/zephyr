@@ -341,3 +341,5 @@ config WCH_SDI_CONSOLE
 	  console in release builds.
 
 endif # CONSOLE
+
+source "drivers/console/Kconfig.bk7258"

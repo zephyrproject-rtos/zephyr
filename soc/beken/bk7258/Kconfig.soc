@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Visible symbols of the BK7258 series, selectable by the user or by a
+# board. The dependency-only counterparts live in Kconfig in this
+# directory.
+
+config SOC_SERIES_BK7258
+	bool
+	help
+	  Beken BK7258 series.
+
+	  Up to 480 MHz. Peripheral interrupts go straight to the NVIC (there is
+	  no cascaded interrupt controller), peripheral registers live at
+	  0x44000000..0x4B110000, and code executes in place (XIP) from
+	  0x02000000.
+
+config SOC_SERIES
+	default "bk7258" if SOC_SERIES_BK7258
+
+config SOC_BK7258
+	bool
+	help
+	  Beken BK7258 SoC.
+
+config SOC
+	default "bk7258" if SOC_BK7258
+
+config SOC_BK7258_IPC_HEARTBEAT
+	bool "Report power-up and keep the mailbox heartbeat going"
+	help
+	  Send a POWER_UP indication once, then a heartbeat every 2 s over the
+	  mailbox.
+
+	  The firmware the device ships with supervises this core: it waits 2 s
+	  for the power-up indication after releasing this core, and 6 s between
+	  heartbeats, before it resets the whole chip. Keep this enabled with
+	  that firmware, or the chip is reset about 8 s after boot and the
+	  console never shows any output from this core.

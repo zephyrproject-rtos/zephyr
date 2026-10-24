@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Board Kconfig defaults for the BK7258 EVB: only "what value an existing
+# Kconfig symbol takes on this board".
+
+if BOARD_BK7258_EVB
+
+config BOARD
+	default "bk7258_evb"
+
+# No MPU for now.
+# Reason: this SoC isolates with TrustZone (SAU) rather than a bare MPU, and
+# enabling the MPU early tends to HardFault on a mis-configured region, which
+# hides the real problem. Enable it later, configured from the SoC memory map.
+config ARM_MPU
+	default n
+
+# The shell's console on this board is the mailbox transport
+# (beken,bk7258-mbox-uart), and that transport hands over a whole line at
+# once rather than one character at a time: the peer's shell RX buffer is
+# SHELL_RX_BUF_LEN = 140 bytes (cp/components/bk_cli/shell_task.c:97) and its
+# "ap_cmd <text>" helper appends CRLF before forwarding, so a single burst can
+# be ~140 bytes. shell_uart.c discards bytes silently once its own RX ring is
+# full, and the upstream default of 64 would truncate a long command line.
+# 256 matches the driver's own 256-byte input ring (the driver accepts at most
+# 255 bytes in one message) and is the value upstream uses when a console is
+# line-buffered rather than typed (MCUMGR_TRANSPORT_SHELL).
+config SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
+	default 256 if SHELL
+
+endif # BOARD_BK7258_EVB

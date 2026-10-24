@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Visible symbols of the Beken SoC family. Sourced directly by HWMv2;
+# the per-series counterparts are pulled in with rsource below.
+
+rsource "*/Kconfig.soc"
