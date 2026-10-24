@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <cmsis_core.h>
+#include <zephyr/irq.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
@@ -57,7 +57,7 @@ bool board_daplink_is_fitted(void)
 	 * level-detect non-interrupt signal to determine if the DAPLink shield
 	 * is fitted.
 	 */
-	return !NVIC_GetPendingIRQ(DT_IRQN(DAPLINK_QSPI_MUX_NODE));
+	return !k_irq_is_pending(DT_IRQN(DAPLINK_QSPI_MUX_NODE));
 }
 
 /* The board init must take place after the GPIO driver is initialized;
