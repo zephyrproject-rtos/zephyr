@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Simon Maurer <mail@maurer.systems>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx Zynq 7000 Quad SPI Flash Controller
+
+compatible: "xlnx,zynq-qspi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    required: true
