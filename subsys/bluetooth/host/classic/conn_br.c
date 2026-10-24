@@ -149,33 +149,79 @@ const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn)
 	return &conn->br.dst;
 }
 
+/* ACL buffer referenced by each view in acl_views, indexed by net_buf_id() */
+static struct net_buf *acl_view_parent[BT_BUF_ACL_RX_COUNT];
+
+static void acl_view_destroy(struct net_buf *view)
+{
+	struct net_buf *parent = acl_view_parent[net_buf_id(view)];
+
+	net_buf_destroy(view);
+	net_buf_unref(parent);
+}
+
+/* Views for all but the last L2CAP PDU of an HCI ACL packet that carries
+ * several. A receiver may keep a PDU's buffer after bt_l2cap_recv() returns
+ * (e.g. an RFCOMM recv() returning -EINPROGRESS), so it must not share the
+ * cursor that moves on to the next PDU.
+ */
+NET_BUF_POOL_FIXED_DEFINE(acl_views, BT_BUF_ACL_RX_COUNT, 0, 0, acl_view_destroy);
+
 void bt_br_acl_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
 {
 	uint16_t acl_total_len;
 	struct bt_l2cap_hdr *hdr;
 	struct net_buf_simple_state state;
+	struct net_buf *view;
 
-	do {
-		net_buf_simple_save(&buf->b, &state);
+	while (true) {
+		if (buf->len < sizeof(*hdr)) {
+			LOG_WRN("Too short L2CAP PDU (%u < %zu)", buf->len, sizeof(*hdr));
+			break;
+		}
 
 		hdr = (void *)buf->data;
 		if (u16_add_overflow(sys_le16_to_cpu(hdr->len),
 				     sizeof(*hdr), &acl_total_len)) {
-			LOG_ERR("L2CAP PDU length overflow");
+			LOG_WRN("L2CAP PDU length overflow");
 			break;
 		}
-		if (buf->len > acl_total_len) {
-			LOG_DBG("Multiple L2CAP packet (%u > %u)", buf->len, acl_total_len);
-			buf->len = acl_total_len;
-		} else if (buf->len < acl_total_len) {
-			LOG_ERR("Short packet (%u < %u)", buf->len, acl_total_len);
+		if (buf->len < acl_total_len) {
+			LOG_WRN("Short packet (%u < %u)", buf->len, acl_total_len);
 			break;
 		}
-		bt_l2cap_recv(conn, net_buf_ref(buf), complete);
+		if (buf->len == acl_total_len) {
+			/* The last PDU takes over the reference to buf */
+			bt_l2cap_recv(conn, buf, complete);
+			return;
+		}
 
-		net_buf_simple_restore(&buf->b, &state);
+		LOG_DBG("Multiple L2CAP packet (%u > %u)", buf->len, acl_total_len);
+
+		view = net_buf_alloc_len(&acl_views, 0, K_NO_WAIT);
+		if (view == NULL) {
+			/* Dropping the PDU would lose data the peer has spent
+			 * flow control credits on, so share the cursor instead:
+			 * only a receiver keeping this PDU sees it move.
+			 */
+			LOG_ERR("No view for L2CAP PDU");
+			net_buf_simple_save(&buf->b, &state);
+			buf->len = acl_total_len;
+			bt_l2cap_recv(conn, net_buf_ref(buf), complete);
+			net_buf_simple_restore(&buf->b, &state);
+			net_buf_pull(buf, acl_total_len);
+			continue;
+		}
+
+		net_buf_simple_clone(&buf->b, &view->b);
+		view->len = acl_total_len;
+		view->size = net_buf_headroom(buf) + acl_total_len;
+		view->flags = NET_BUF_EXTERNAL_DATA;
+		acl_view_parent[net_buf_id(view)] = net_buf_ref(buf);
+
 		net_buf_pull(buf, acl_total_len);
-	} while (buf->len > 0);
+		bt_l2cap_recv(conn, view, complete);
+	}
 
 	net_buf_unref(buf);
 }
