@@ -14,6 +14,8 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - arduino_gpio
+  - adc
   - gpio
   - uart
   - serial
