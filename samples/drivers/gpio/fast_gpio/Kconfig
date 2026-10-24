@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Fast GPIO source set sample"
+
+config FAST_GPIO_CLAIM
+	bool "Claim the gpio source set into the application"
+	default y
+	help
+	  Claim the gpio source set out of its libraries and combine it
+	  with the application hot path in one translation unit using
+	  CMake's unity build. The GPIO driver stays enabled and
+	  registered normally; only where it is compiled changes. Disable
+	  to build the same application against the driver in its usual
+	  library, with every call dispatched through the device api
+	  vtable.
+
+source "Kconfig.zephyr"
