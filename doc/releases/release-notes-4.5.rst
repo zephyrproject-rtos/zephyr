@@ -69,10 +69,13 @@ Major enhancements with this release include:
 
   - :ref:`LIN <lin>` for the Local Interconnect Network automotive serial bus,
 
-  - :ref:`MUX <mux_api>` for hardware signal multiplexers, and
+  - :ref:`MUX <mux_api>` for hardware signal multiplexers,
 
   - :ref:`Pulse IO <pulse_io_api>` for hardware that generates and captures timed digital edges,
-    as needed by addressable LED strips and infrared transceivers.
+    as needed by addressable LED strips and infrared transceivers, and
+
+  - :ref:`SCSI mid-layer <scsi_midlayer>` for transport-neutral initiator command
+    execution and shared CDB helpers (USB device MSC uses opcodes only).
 
 **Security and SBOM improvements**
   This release improves SBOM generation, hardening checks and cryptographic acceleration:
@@ -1052,6 +1055,17 @@ New APIs and options
   * :c:func:`ring_buf_get_ptr`
   * :c:func:`ring_buf_commit`
   * :c:func:`ring_buf_consume`
+
+* SCSI
+
+  * :ref:`SCSI mid-layer <scsi_midlayer>` (:c:func:`scsi_exec`, :c:func:`scsi_device_probe`,
+    CDB builders in :zephyr_file:`include/zephyr/scsi/scsi_cmd.h`)
+  * :c:func:`scsi_disk_register`, :c:func:`scsi_partition_walk`, and
+    :c:func:`scsi_partition_find_fat_volume` when
+    :kconfig:option:`CONFIG_DISK_DRIVER_SCSI` is enabled
+  * :c:func:`disk_partition_walk`, :c:func:`disk_partition_find_fat_volume`, and
+    :c:func:`disk_partition_find_ext2_volume` when :kconfig:option:`CONFIG_DISK_PARTITION`
+    is enabled
 
 * Secure Storage
 
