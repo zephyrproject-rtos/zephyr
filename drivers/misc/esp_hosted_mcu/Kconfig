@@ -22,6 +22,8 @@ choice ESP_HOSTED_MCU_TRANSPORT
 	prompt "esp-hosted-mcu transport"
 	default ESP_HOSTED_MCU_SPI \
 		if $(dt_compat_on_bus,$(DT_COMPAT_ESPRESSIF_ESP_HOSTED_MCU),spi)
+	default ESP_HOSTED_MCU_UART \
+		if $(dt_compat_on_bus,$(DT_COMPAT_ESPRESSIF_ESP_HOSTED_MCU),uart)
 	default ESP_HOSTED_MCU_SDIO
 
 config ESP_HOSTED_MCU_SPI
@@ -40,6 +42,15 @@ config ESP_HOSTED_MCU_SDIO
 	help
 	  Communicate with the coprocessor over the SDIO bus, using the SLC
 	  register window and a reset GPIO.
+
+config ESP_HOSTED_MCU_UART
+	bool "UART transport"
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ESPRESSIF_ESP_HOSTED_MCU),uart)
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Communicate with the coprocessor over UART with a reset GPIO.
+	  No handshake or data-ready lines; framing is length-prefixed.
 
 endchoice
 
@@ -63,9 +74,21 @@ config ESP_HOSTED_MCU_SPI_RESET_SETTLE_MS
 	  requests after a cold boot. SDIO needs no equivalent: it retries
 	  enumeration until the coprocessor answers.
 
+config ESP_HOSTED_MCU_UART_RESET_SETTLE_MS
+	int "Delay after reset for UART (ms)"
+	depends on ESP_HOSTED_MCU_UART
+	default 500
+	range 0 5000
+	help
+	  How long to wait after releasing reset before using the UART bus.
+	  The coprocessor needs time to boot after a reset before it can
+	  accept frames. Raise it if the coprocessor misses the first
+	  requests after a cold boot.
+
 config ESP_HOSTED_MCU_INIT_PRIORITY
 	int "esp-hosted-mcu core init priority"
 	default SDHC_INIT_PRIORITY if ESP_HOSTED_MCU_SDIO
+	default SERIAL_INIT_PRIORITY if ESP_HOSTED_MCU_UART
 	default SPI_INIT_PRIORITY
 	help
 	  POST_KERNEL init priority of the core device. It is derived from the
@@ -133,6 +156,14 @@ config ESP_HOSTED_MCU_EVENT_TASK_POLL_MS
 	  check is a single four-byte register read, so the interval sets
 	  the worst-case receive latency: every request and response pays
 	  up to one poll period.
+
+config ESP_HOSTED_MCU_FRAME_SIZE
+	int "Transport frame size"
+	default 3200 if ESP_HOSTED_MCU_UART
+	default 1600
+	help
+	  Maximum frame size used for communication with the coprocessor. Must
+	  be a multiple of 4 bytes to satisfy DMA alignment requirements.
 
 module = ESP_HOSTED_MCU
 module-str = esp-hosted-mcu

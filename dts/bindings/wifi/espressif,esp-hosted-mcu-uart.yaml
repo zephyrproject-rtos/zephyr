@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP-Hosted-MCU Wi-Fi co-processor over UART.
+
+  An Espressif SoC running esp-hosted-mcu coprocessor firmware, attached to the
+  host over UART. The protocol is length-prefixed framing with no handshake or
+  data-ready GPIOs: the host reads the fixed 12-byte header, parses the
+  little-endian len field, and reads exactly that many payload bytes.
+
+  The coprocessor is restarted through a dedicated reset line wired to a host
+  GPIO.
+
+  The coprocessor firmware version the host expects is a Kconfig option, not a
+  devicetree property: the firmware is flashed to a separate chip and the driver
+  queries it at init.
+
+compatible: "espressif,esp-hosted-mcu"
+
+include: uart-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Coprocessor reset line, driven by the host. Active low.
+
+examples:
+  - |
+    &uart2 {
+            esp_hosted_mcu: esp-hosted-mcu {
+                    compatible = "espressif,esp-hosted-mcu";
+                    reset-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+                    status = "okay";
+            };
+    };

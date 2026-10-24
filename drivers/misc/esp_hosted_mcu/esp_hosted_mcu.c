@@ -32,6 +32,12 @@ struct esp_hosted_mcu_sdio_config;
 extern const struct esp_hosted_mcu_sdio_config esp_hosted_mcu_sdio_config_0;
 #define ESP_HOSTED_MCU_TRANSPORT_API    (&esp_hosted_mcu_sdio_api)
 #define ESP_HOSTED_MCU_TRANSPORT_CONFIG (&esp_hosted_mcu_sdio_config_0)
+#elif defined(CONFIG_ESP_HOSTED_MCU_UART)
+extern const struct esp_hosted_mcu_transport_api esp_hosted_mcu_uart_api;
+struct esp_hosted_mcu_uart_config;
+extern const struct esp_hosted_mcu_uart_config esp_hosted_mcu_uart_config_0;
+#define ESP_HOSTED_MCU_TRANSPORT_API    (&esp_hosted_mcu_uart_api)
+#define ESP_HOSTED_MCU_TRANSPORT_CONFIG (&esp_hosted_mcu_uart_config_0)
 #else
 extern const struct esp_hosted_mcu_transport_api esp_hosted_mcu_spi_api;
 struct esp_hosted_mcu_spi_config;
@@ -45,6 +51,8 @@ extern const struct esp_hosted_mcu_spi_config esp_hosted_mcu_spi_config_0;
 
 /* Max frames drained per receive wake before yielding back to the system. */
 #define ESP_HOSTED_MCU_RX_BURST 16
+
+#define MORE_FRAGMENT BIT(0)
 
 /*
  * Core per-instance state. Owns the transport link, the RPC round-trip
@@ -471,7 +479,7 @@ static void esp_hosted_mcu_process_one(struct esp_hosted_mcu_data *data,
  * next walk in the middle of a payload.
  */
 static uint16_t esp_hosted_mcu_process_frame(struct esp_hosted_mcu_data *data, const uint8_t *buf,
-					     uint16_t len)
+					     uint16_t len, uint16_t carry)
 {
 	uint16_t off = 0;
 
@@ -479,6 +487,59 @@ static uint16_t esp_hosted_mcu_process_frame(struct esp_hosted_mcu_data *data, c
 		const struct esp_hosted_mcu_header *hdr =
 			(const struct esp_hosted_mcu_header *)(buf + off);
 		uint32_t frame_len = (uint32_t)hdr->offset + hdr->len;
+
+		if (hdr->flags & MORE_FRAGMENT) {
+			/* Jump to carry offset to find newest fragment */
+			const struct esp_hosted_mcu_header *frag_hdr =
+				(const struct esp_hosted_mcu_header *)(buf + carry);
+			if (frag_hdr->flags & MORE_FRAGMENT) {
+				/* We haven't found the final fragment yet, keep processing */
+				return 0;
+			}
+			/*
+			 * Reassemble the frame from its fragments.
+			 * Each fragment is [header | payload]; compact
+			 * by copying each payload right after the
+			 * previous one, leaving only the first header.
+			 */
+			frag_hdr = (const struct esp_hosted_mcu_header *)(buf + off);
+			uint8_t *dst = (uint8_t *)buf + off + frag_hdr->offset;
+			uint16_t total_len = 0;
+			struct esp_hosted_mcu_header tmp;
+
+			do {
+				const uint8_t *src = (const uint8_t *)frag_hdr +
+					frag_hdr->offset;
+
+				if ((const uint8_t *)frag_hdr + frag_hdr->offset +
+				    frag_hdr->len > buf + len) {
+					return off;
+				}
+
+				/* Save header before overwriting it */
+				memcpy(&tmp, frag_hdr, ESP_HOSTED_MCU_HEADER_SIZE);
+				memmove(dst, src, tmp.len);
+				dst += tmp.len;
+				total_len += tmp.len;
+
+				if (!(tmp.flags & MORE_FRAGMENT)) {
+					break;
+				}
+
+				frag_hdr = (const struct esp_hosted_mcu_header *)
+					((const uint8_t *)frag_hdr +
+					 tmp.offset + tmp.len);
+			} while ((const uint8_t *)frag_hdr + ESP_HOSTED_MCU_HEADER_SIZE
+				<= buf + len);
+
+			/*
+			 * Patch the first header to reflect the
+			 * reassembled payload length.
+			 */
+			((struct esp_hosted_mcu_header *)(buf + off))->len =
+				total_len;
+			frame_len = (uint32_t)hdr->offset + total_len;
+		}
 
 		if (hdr->len == 0 || hdr->len > ESP_HOSTED_MCU_MAX_PAYLOAD ||
 		    hdr->offset != ESP_HOSTED_MCU_HEADER_SIZE) {
@@ -568,7 +629,7 @@ static void esp_hosted_mcu_event_task(void *p1, void *p2, void *p3)
 			}
 
 			total = carry + (uint16_t)len;
-			done = esp_hosted_mcu_process_frame(data, rx + pad, total);
+			done = esp_hosted_mcu_process_frame(data, rx + pad, total, carry);
 
 			/*
 			 * Keep an unfinished trailing frame and prepend it to

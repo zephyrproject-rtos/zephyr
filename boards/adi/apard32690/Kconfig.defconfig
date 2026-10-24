@@ -5,4 +5,7 @@ if BOARD_APARD32690
 configdefault ETH_DRIVER
 	default y
 
+config NET_IF_MAX_IPV4_COUNT
+	default 2 if ETH_DRIVER &&  WIFI
+
 endif # BOARD_APARD32690
