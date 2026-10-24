@@ -131,6 +131,7 @@ static uint8_t cmux_frame_dlci1_disc_cmd[] = {0xF9, 0x07, 0x53, 0x01, 0x3F, 0xF9
 static uint8_t cmux_frame_dlci1_msc_cmd[] = {0xF9, 0x03, 0xEF, 0x09, 0xE3,
 					     0x05, 0x07, 0x8D, 0xFB, 0xF9};
 static uint8_t cmux_frame_dlci1_ua_ack[] = {0xF9, 0x07, 0x73, 0x01, 0x15, 0xF9};
+static uint8_t cmux_frame_dlci1_peer_sabm_cmd[] = {0xF9, 0x05, 0x3F, 0x01, 0xBF, 0xF9};
 static uint8_t cmux_frame_dlci1_peer_disc_cmd[] = {0xF9, 0x05, 0x53, 0x01, 0x5E, 0xF9};
 static uint8_t cmux_frame_dlci1_peer_ua_rsp[] = {0xF9, 0x05, 0x73, 0x01, 0x74, 0xF9};
 static uint8_t cmux_frame_dlci1_peer_dm_rsp[] = {0xF9, 0x05, 0x1F, 0x01, 0x95, 0xF9};
@@ -1095,6 +1096,58 @@ ZTEST(modem_cmux, test_modem_cmux_dlci_peer_disc)
 	zassert_mem_equal(buffer1, cmux_frame_dlci1_peer_dm_rsp,
 			  sizeof(cmux_frame_dlci1_peer_dm_rsp), "Incorrect DM sent");
 
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlci_peer_sabm)
+{
+	uint32_t events;
+	int ret;
+
+	/* Start closing, the peer tries to open at the same time */
+	zassert_ok(modem_pipe_close_async(dlci1_pipe));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_disc_cmd), "DISC not sent");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_peer_sabm_cmd,
+			       sizeof(cmux_frame_dlci1_peer_sabm_cmd));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_peer_dm_rsp), "SABM should be rejected");
+	zassert_mem_equal(buffer1, cmux_frame_dlci1_peer_dm_rsp,
+			  sizeof(cmux_frame_dlci1_peer_dm_rsp), "Incorrect DM sent");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_ua_ack, sizeof(cmux_frame_dlci1_ua_ack));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_CLOSED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DLCI1_CLOSED, "DLCI1 not closed");
+
+	/* Start opening, the peer opens at the same time */
+	zassert_ok(modem_pipe_open_async(dlci1_pipe));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_sabm_cmd), "SABM not sent");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_peer_sabm_cmd,
+			       sizeof(cmux_frame_dlci1_peer_sabm_cmd));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_OPEN, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DLCI1_OPEN, "DLCI1 not opened");
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_peer_ua_rsp), "UA not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci1_peer_ua_rsp,
+			  sizeof(cmux_frame_dlci1_peer_ua_rsp), "Incorrect UA sent");
+
+	/* Our SABM is not retried */
+	k_msleep(CONFIG_MODEM_CMUX_T1_TIMEOUT + TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "Unexpected data sent after open");
+
+	/* Reopen DLCI1 from our side, which also sends our MSC */
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
+	zassert_ok(modem_pipe_close(dlci1_pipe, K_SECONDS(10)), "Failed to close DLCI1");
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
 	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
 	modem_backend_mock_wait_for_transaction(&bus_mock);
