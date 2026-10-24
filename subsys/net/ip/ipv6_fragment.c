@@ -28,6 +28,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "nbr.h"
 #include "6lo.h"
 #include "route.h"
+#include "pmtu.h"
 #include "net_stats.h"
 
 /* Timeout for various buffer allocations in this file. */
@@ -834,4 +835,73 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	return 0;
+}
+
+enum net_verdict net_ipv6_prepare_for_send_fragment(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct net_ipv6_hdr *ip_hdr;
+	size_t pkt_len;
+	uint16_t mtu;
+	int ret;
+
+	NET_ASSERT(pkt && pkt->buffer);
+
+	/* If we have already fragmented the packet, the fragment id will
+	 * contain a proper value and we can skip other checks.
+	 */
+	if (net_pkt_ipv6_fragment_id(pkt) != 0U) {
+		return NET_OK;
+	}
+
+	ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
+	if (!ip_hdr) {
+		return NET_DROP;
+	}
+
+	pkt_len = net_pkt_get_len(pkt);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6_PMTU)) {
+		struct net_sockaddr_in6 dst = {
+			.sin6_family = NET_AF_INET6,
+		};
+
+		net_ipv6_addr_copy_raw((uint8_t *)&dst.sin6_addr, ip_hdr->dst);
+
+		ret = net_pmtu_get_mtu((struct net_sockaddr *)&dst);
+		if (ret <= 0) {
+			goto use_interface_mtu;
+		}
+
+		mtu = ret;
+	} else {
+use_interface_mtu:
+		mtu = net_if_get_mtu(net_pkt_iface(pkt));
+		mtu = MAX(NET_IPV6_MTU, mtu);
+	}
+
+	if (mtu >= pkt_len) {
+		return NET_OK;
+	}
+
+	if (net_pkt_dont_fragment(pkt)) {
+		return NET_DROP;
+	}
+
+	ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt), pkt, pkt_len, mtu);
+	if (ret < 0) {
+		NET_DBG("Cannot fragment IPv6 pkt (%d)", ret);
+		return NET_DROP;
+	}
+
+	/* We need to unref here because we simulate the packet
+	 * sending.
+	 */
+	net_pkt_unref(pkt);
+
+	/* No need to continue with the sending as the packet
+	 * is now split and its fragments will be sent
+	 * separately to network.
+	 */
+	return NET_CONTINUE;
 }

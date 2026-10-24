@@ -616,6 +616,29 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
+/**
+ * @brief Fragment an IPv6 packet that does not fit the MTU.
+ *
+ * If the packet is larger than the path MTU (or the interface MTU), it is
+ * split and the fragments are sent. The original packet is then released.
+ *
+ * @param pkt Network packet
+ *
+ * @return NET_OK if the packet can be sent as is, NET_CONTINUE if it was
+ *         fragmented and the fragments were sent, NET_DROP if it cannot be
+ *         sent.
+ */
+#if defined(CONFIG_NET_IPV6_FRAGMENT) && defined(CONFIG_NET_NATIVE_IPV6)
+enum net_verdict net_ipv6_prepare_for_send_fragment(struct net_pkt *pkt);
+#else
+static inline enum net_verdict net_ipv6_prepare_for_send_fragment(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return NET_OK;
+}
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+
 #if defined(CONFIG_NET_IPV6_IID_STABLE) || defined(CONFIG_NET_IPV6_PE)
 /**
  * @brief Get the HMAC key used to derive interface identifiers, generating

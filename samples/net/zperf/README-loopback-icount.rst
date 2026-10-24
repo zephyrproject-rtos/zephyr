@@ -59,7 +59,8 @@ The runner lives in :file:`src/main.c`, guarded by
         - UDP with an oversized payload that forces **IP fragmentation** on TX
           and reassembly on RX. Only run when the matching
           :kconfig:option:`CONFIG_NET_IPV4_FRAGMENT` /
-          :kconfig:option:`CONFIG_NET_IPV6_FRAGMENT` is enabled.
+          :kconfig:option:`CONFIG_NET_IPV6_FRAGMENT` is enabled. The datagram is
+          fragmented only with :kconfig:option:`CONFIG_NET_LOOPBACK_FRAGMENT`.
       * - ``tcp4`` / ``tcp6``
         - Baseline TCP (Nagle on).
       * - ``tcp4_nodelay`` / ``tcp6_nodelay``
@@ -144,8 +145,12 @@ A few non-obvious points are baked into :file:`overlay-loopback-icount.conf`:
   :kconfig:option:`CONFIG_NET_IPV6_FRAGMENT` are enabled and the runner adds an
   extra UDP run per family whose payload
   (``CONFIG_ZPERF_LOOPBACK_SELFTEST_FRAG_PACKET_SIZE``, 2000 by default) exceeds
-  the MTU. This drives the fragmentation path in ``ipv4.c`` / ``ipv6.c`` on TX
-  and the reassembly path on RX (the ``*_frag`` markers).
+  the MTU. This drives the fragmentation path in ``ipv4_fragment.c`` /
+  ``ipv6_fragment.c`` on TX and the reassembly path on RX (the ``*_frag``
+  markers). Loopback normally delivers an oversized datagram whole, without
+  running the IP send checks, so the overlay also enables
+  :kconfig:option:`CONFIG_NET_LOOPBACK_FRAGMENT`. Without it the ``*_frag``
+  runs measure large unfragmented datagrams.
   :kconfig:option:`CONFIG_NET_ZPERF_MAX_PACKET_SIZE` is raised above this payload.
 - **Traffic classes and priority.** The overlay configures more than one TX/RX
   traffic class (:kconfig:option:`CONFIG_NET_TC_TX_COUNT` /
@@ -187,21 +192,21 @@ Expected output (values are deterministic and repeat exactly across runs on a
 given build; the exact numbers depend on the toolchain, packet size, icount
 shift and tick rate, so treat them as an example)::
 
-   ZPERF-RESULT udp4_mbps=13.099
-   ZPERF-RESULT udp4_frag_mbps=20.249
-   ZPERF-RESULT tcp4_mbps=5.970
-   ZPERF-RESULT tcp4_nodelay_mbps=5.876
-   ZPERF-RESULT udp6_mbps=13.310
-   ZPERF-RESULT udp6_frag_mbps=20.059
-   ZPERF-RESULT tcp6_mbps=5.979
-   ZPERF-RESULT tcp6_nodelay_mbps=5.910
+   ZPERF-RESULT udp4_mbps=14.324
+   ZPERF-RESULT udp4_frag_mbps=13.037
+   ZPERF-RESULT tcp4_mbps=7.094
+   ZPERF-RESULT tcp4_nodelay_mbps=7.055
+   ZPERF-RESULT udp6_mbps=14.644
+   ZPERF-RESULT udp6_frag_mbps=11.962
+   ZPERF-RESULT tcp6_mbps=7.220
+   ZPERF-RESULT tcp6_nodelay_mbps=7.183
    ZPERF-DONE
 
 The IPv4 and IPv6 TCP numbers are close because the default payload is the IPv6
 TCP MSS; see the MSS caveat under `Implementation notes / gotchas`_. The
-``*_frag`` (fragmented) UDP runs report a *higher* number than the baseline UDP
-runs because the larger datagram amortizes the fixed per-datagram overhead over
-more payload, even after accounting for the fragmentation work.
+``*_frag`` (fragmented) UDP runs report a lower number than the baseline UDP
+runs: each datagram is split into two packets on TX and copied together again
+on RX.
 
 Run through twister
 ===================

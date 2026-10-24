@@ -909,6 +909,7 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	struct net_if *iface = NULL;
 	struct net_ipv6_hdr *ip_hdr;
 	struct net_in6_addr dst_ip;
+	enum net_verdict verdict;
 	struct net_nbr *nbr;
 	int ret;
 
@@ -921,58 +922,10 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 
 	net_ipv6_addr_copy_raw(dst_ip.s6_addr, ip_hdr->dst);
 
-#if defined(CONFIG_NET_IPV6_FRAGMENT)
-	/* If we have already fragmented the packet, the fragment id will
-	 * contain a proper value and we can skip other checks.
-	 */
-	if (net_pkt_ipv6_fragment_id(pkt) == 0U) {
-		size_t pkt_len = net_pkt_get_len(pkt);
-		uint16_t mtu;
-
-		if (IS_ENABLED(CONFIG_NET_IPV6_PMTU)) {
-			struct net_sockaddr_in6 dst = {
-				.sin6_family = NET_AF_INET6,
-			};
-
-			net_ipv6_addr_copy_raw((uint8_t *)&dst.sin6_addr, ip_hdr->dst);
-
-			ret = net_pmtu_get_mtu((struct net_sockaddr *)&dst);
-			if (ret <= 0) {
-				goto use_interface_mtu;
-			}
-
-			mtu = ret;
-		} else {
-use_interface_mtu:
-			mtu = net_if_get_mtu(net_pkt_iface(pkt));
-			mtu = MAX(NET_IPV6_MTU, mtu);
-		}
-
-		if (mtu < pkt_len) {
-			if (net_pkt_dont_fragment(pkt)) {
-				return NET_DROP;
-			}
-
-			ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt),
-							   pkt, pkt_len, mtu);
-			if (ret < 0) {
-				NET_DBG("Cannot fragment IPv6 pkt (%d)", ret);
-				return NET_DROP;
-			}
-
-			/* We need to unref here because we simulate the packet
-			 * sending.
-			 */
-			net_pkt_unref(pkt);
-
-			/* No need to continue with the sending as the packet
-			 * is now split and its fragments will be sent
-			 * separately to network.
-			 */
-			return NET_CONTINUE;
-		}
+	verdict = net_ipv6_prepare_for_send_fragment(pkt);
+	if (verdict != NET_OK) {
+		return verdict;
 	}
-#endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 	/* If the IPv6 destination address is not link local, then try to get
 	 * the next hop from routing table if we have multi interface routing

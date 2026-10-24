@@ -207,6 +207,18 @@ config NET_LOOPBACK_MTU
 	help
 	  This option sets the MTU for loopback interface.
 
+config NET_LOOPBACK_FRAGMENT
+	bool "Fragment packets larger than the loopback MTU"
+	depends on NET_IPV4_FRAGMENT || NET_IPV6_FRAGMENT
+	help
+	  Packets sent over the loopback interface skip the IP send checks,
+	  so a datagram larger than NET_LOOPBACK_MTU is delivered whole. With
+	  this option the IP fragmentation step is run for them, and such a
+	  datagram is sent as fragments and reassembled on reception. This
+	  applies to every interface using the dummy L2. Only meant for
+	  testing and benchmarking the fragmentation code, as it makes
+	  loopback traffic slower.
+
 module = NET_LOOPBACK
 module-dep = LOG
 module-str = Log level for network loopback driver

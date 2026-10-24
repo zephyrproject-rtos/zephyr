@@ -1,0 +1,17 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_x86
+  integration_platforms:
+    - native_sim
+tests:
+  net.loopback.fragment:
+    extra_configs:
+      - CONFIG_NET_LOOPBACK_FRAGMENT=y
+  net.loopback.no_fragment:
+    extra_configs:
+      - CONFIG_NET_LOOPBACK_FRAGMENT=n
