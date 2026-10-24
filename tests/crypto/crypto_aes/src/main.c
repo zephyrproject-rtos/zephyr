@@ -29,6 +29,8 @@
 #define CRYPTO_DEV_COMPAT realtek_bee_aes
 #elif CONFIG_CRYPTO_INFINEON_MXCRYPTOLITE
 #define CRYPTO_DEV_COMPAT infineon_mxcryptolite_crypto
+#elif DT_HAS_COMPAT_STATUS_OKAY(lowrisc_opentitan_aes)
+#define CRYPTO_DEV_COMPAT lowrisc_opentitan_aes
 #elif CONFIG_CRYPTO_INFINEON_MXCRYPTO
 #define CRYPTO_DEV_COMPAT infineon_mxcrypto_crypto
 #else
