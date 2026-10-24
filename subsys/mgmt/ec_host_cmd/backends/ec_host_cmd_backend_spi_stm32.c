@@ -869,7 +869,7 @@ static int ec_host_cmd_spi_stm32_pm_action(const struct device *dev, enum pm_dev
 		/* Stop device clock. */
 		err = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					(clock_control_subsys_t)&cfg->pclken[0]);
-		if (err != 0) {
+		if (err != 0 && err != -ENOTSUP) {
 			return err;
 		}
 
