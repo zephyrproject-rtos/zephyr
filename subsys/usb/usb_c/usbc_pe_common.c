@@ -208,8 +208,27 @@ void pe_set_data_role(const struct device *dev, enum tc_data_role dr)
 
 	/* Notify TCPC of role update */
 	tcpc_set_roles(data->tcpc, pe->power_role, pe->data_role);
+
 	/* Inform Device Policy Manager of Data Role Change */
 	policy_notify(dev, (dr == TC_ROLE_UFP) ? DATA_ROLE_IS_UFP : DATA_ROLE_IS_DFP);
+}
+
+/**
+ * @brief Sets Power Role
+ */
+void pe_set_power_role(const struct device *dev, enum tc_power_role pr)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+
+	/* Update power role. */
+	pe->power_role = pr;
+
+	/* Notify TCPC of role update */
+	tcpc_set_roles(data->tcpc, pe->power_role, pe->data_role);
+
+	/* Inform Device Policy Manager of Power Role Change */
+	policy_notify(dev, (pr == TC_ROLE_SOURCE) ? POWER_ROLE_IS_SOURCE : POWER_ROLE_IS_SINK);
 }
 
 /**
