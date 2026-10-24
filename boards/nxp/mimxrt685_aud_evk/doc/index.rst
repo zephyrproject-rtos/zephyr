@@ -48,19 +48,23 @@ functionality of a pin.
 +---------+-----------------+----------------------------+
 | Name    | Function        | Usage                      |
 +=========+=================+============================+
-| PIO0_2  | USART           | USART RX                   |
-+---------+-----------------+----------------------------+
 | PIO0_1  | USART           | USART TX                   |
 +---------+-----------------+----------------------------+
+| PIO0_2  | USART           | USART RX                   |
++---------+-----------------+----------------------------+
+| PIO0_10 | GPIO            | SW2                        |
++---------+-----------------+----------------------------+
 | PIO0_14 | GPIO            | GREEN LED                  |
++---------+-----------------+----------------------------+
+| PIO0_15 | I2C             | CS42448 SCL                |
++---------+-----------------+----------------------------+
+| PIO0_16 | I2C             | CS42448 SDA                |
 +---------+-----------------+----------------------------+
 | PIO0_26 | GPIO            | BLUE LED                   |
 +---------+-----------------+----------------------------+
 | PIO0_31 | GPIO            | RED LED                    |
 +---------+-----------------+----------------------------+
 | PIO1_1  | GPIO            | SW1                        |
-+---------+-----------------+----------------------------+
-| PIO0_10 | GPIO            | SW2                        |
 +---------+-----------------+----------------------------+
 
 System Clock
@@ -72,8 +76,9 @@ as a source for the system clock.
 Serial Port
 ===========
 
-The MIMXRT685 SoC has 8 FLEXCOMM interfaces for serial communication. One is
-configured as USART for the console and the remaining are not used.
+FLEXCOMM0 is configured as USART for the console. FLEXCOMM2 is configured
+as I2C for communication with the control port of the onboard CS42448 codec.
+The codec's control port limits the I2C bus clock to 100 kHz.
 
 Programming and Debugging
 *************************
