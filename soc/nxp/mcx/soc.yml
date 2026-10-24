@@ -24,6 +24,7 @@ family:
   - name: mcxc141
   - name: mcxc142
   - name: mcxc242
+  - name: mcxc243
   - name: mcxc444
 - name: mcxe
   series:
@@ -126,6 +127,8 @@ runners:
       - qualifiers:
         - mcxc242
       - qualifiers:
+        - mcxc243
+      - qualifiers:
         - mcxc444
       - qualifiers:
         - mcxe245
@@ -223,6 +226,8 @@ runners:
         - mcxc142
       - qualifiers:
         - mcxc242
+      - qualifiers:
+        - mcxc243
       - qualifiers:
         - mcxc444
       - qualifiers:
