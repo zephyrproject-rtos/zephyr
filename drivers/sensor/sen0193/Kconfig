@@ -1,0 +1,8 @@
+config SEN0193
+    bool "DFRobot SEN0193 Capacitive Soil Moisture Sensor"
+    default y
+    depends on DT_HAS_DFROBOT_SEN0193_ENABLED
+    depends on ADC
+    help
+      Enable driver for the SEN0193 Capacitive Soil Moisture Sensor (v1.0.2).
+      This driver abstracts raw ADC reads into a calibrated 0-100% moisture value.
