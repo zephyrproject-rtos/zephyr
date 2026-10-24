@@ -8,9 +8,9 @@
 #include <fsl_clock.h>
 #include <fsl_spc.h>
 #include <soc.h>
-#if defined(CONFIG_UDC_NXP_EHCI)
-#define SCG_TRIM_UNLOCK_KEY     0x5a5a0001U
-#define BOARD_XTAL_FREQ_HZ      24000000U
+#if defined(CONFIG_UDC_NXP_EHCI) || defined(CONFIG_UHC_NXP_EHCI)
+#define SCG_TRIM_UNLOCK_KEY 0x5a5a0001U
+#define BOARD_XTAL_FREQ_HZ  24000000U
 #endif
 
 /* Core clock frequency: 200MHz from PLL */
@@ -401,7 +401,8 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateTSI0);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && defined(CONFIG_UDC_NXP_EHCI)
+#if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && defined(CONFIG_UDC_NXP_EHCI)) ||              \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh0)) && defined(CONFIG_UHC_NXP_EHCI)))
 	/* Voltage delay for USB LDO ramp-up */
 	SPC0->ACTIVE_VDELAY = 0x0500;
 	SPC0->ACTIVE_CFG |= SPC_ACTIVE_CFG_CORELDO_VDD_DS_MASK;
