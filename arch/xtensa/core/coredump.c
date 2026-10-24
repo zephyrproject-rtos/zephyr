@@ -141,7 +141,7 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	int regs_blk_remaining;
 
 	/* Calculate number of high registers. */
-	num_high_regs = (uint8_t *)bsa - (uint8_t *)frame + sizeof(void *);
+	num_high_regs = (uint8_t *)bsa - ((uint8_t *)frame + sizeof(void *));
 	num_high_regs /= sizeof(uintptr_t);
 
 	/* And high registers are always comes in 4 in a block. */
@@ -176,6 +176,8 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 		arch_blk.r.a11 = frame->blks[regs_blk_remaining].r3;
 	}
 	if (regs_blk_remaining > 0) {
+		regs_blk_remaining--;
+
 		arch_blk.r.a12 = frame->blks[regs_blk_remaining].r0;
 		arch_blk.r.a13 = frame->blks[regs_blk_remaining].r1;
 		arch_blk.r.a14 = frame->blks[regs_blk_remaining].r2;
