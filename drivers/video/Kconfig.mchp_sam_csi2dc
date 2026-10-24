@@ -1,0 +1,22 @@
+# Microchip SAM CSI-2 Demux Controller driver configuration options
+
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCHP_SAM_CSI2DC
+	bool "Microchip SAM CSI-2 Demux Controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SAMA7G5_CSI2DC_ENABLED
+	select VIDEO_MCHP_SAM_CSI2HOST
+	help
+	  Enable the driver for the CSI-2 Demux Controller found on the Microchip
+	  SAMA7G5 family. It converts the CSI-2 stream received by the MIPI CSI-2
+	  host controller into a parallel stream for the Image Sensor Controller.
+
+config VIDEO_MCHP_SAM_CSI2DC_INIT_PRIORITY
+	int "Microchip SAM CSI-2 Demux Controller init priority"
+	default 62
+	depends on VIDEO_MCHP_SAM_CSI2DC
+	help
+	  Initialization priority of the CSI-2 Demux Controller. It must
+	  initialize after the MIPI CSI-2 host controller.

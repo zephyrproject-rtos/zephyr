@@ -1,0 +1,22 @@
+# Microchip SAM Image Sensor Controller driver configuration options
+
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCHP_SAM_ISC
+	bool "Microchip SAM Image Sensor Controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SAMA7G5_ISC_ENABLED
+	help
+	  Enable the driver for the eXtended Image Sensor Controller (XISC) found
+	  on the Microchip SAMA7G5 family. It captures a parallel video stream,
+	  optionally converts raw Bayer frames to RGB or YUV, and writes the
+	  frames to memory.
+
+config VIDEO_MCHP_SAM_ISC_INIT_PRIORITY
+	int "Microchip SAM Image Sensor Controller init priority"
+	default 63
+	depends on VIDEO_MCHP_SAM_ISC
+	help
+	  Initialization priority of the Image Sensor Controller. It must
+	  initialize after the device providing its parallel input.

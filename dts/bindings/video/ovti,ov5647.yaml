@@ -1,0 +1,67 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  OV5647 5 Mega-Pixel CMOS image sensor
+
+  The sensor streams 10-bit raw Bayer frames over a MIPI CSI-2 D-PHY link, cropped
+  out of the middle of its pixel array. Its own automatic exposure and gain control
+  drive the image by default.
+
+compatible: "ovti,ov5647"
+
+include: i2c-device.yaml
+
+properties:
+  clocks:
+    required: true
+    description: |
+      Reference clock feeding the sensor, from which it derives its link frequency
+      and pixel rate. Only its rate is used, so a fixed-clock describing the rate
+      the board supplies is enough.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETB pin is asserted to cause a hard reset. The sensor receives this as
+      an active-low signal.
+
+  powerdown-gpios:
+    type: phandle-array
+    description: |
+      The PWDN pin is asserted to disable the sensor. The sensor receives this as an
+      active-high signal.
+
+  horizontal-flip:
+    type: boolean
+    description: |
+      Mirror the frames, so that the column the sensor reads out first ends up on the
+      right rather than on the left.
+
+  vertical-flip:
+    type: boolean
+    description: |
+      Flip the frames, so that the row the sensor reads out first ends up at the
+      bottom rather than at the top.
+
+      Both properties describe how the module is mounted rather than a preference,
+      which is why they belong to the board: set whichever of them makes the frames
+      come out the way up the scene is. The sensor flips its pixel array and the
+      window its own processing takes out of it together, so the Bayer phase of the
+      frames is the same either way and nothing downstream has to be told.
+
+  clock-noncontinuous:
+    type: boolean
+    description: |
+      Gate the clock lane between packets and mark the end of every line, instead of
+      running the clock continuously.
+
+      Only set this when the receiver tracks a gated clock, and when whatever it
+      feeds tolerates the resulting gaps: a demux driving a parallel output from the
+      serial clock stalls along with it.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
