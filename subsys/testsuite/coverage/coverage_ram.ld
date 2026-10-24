@@ -76,6 +76,7 @@ SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
 	MPU_MIN_SIZE_ALIGN
 	__gcov_bss_start = .;
 	*(".bss.__gcov0.*");
+	*(".sbss.__gcov0.*");
 	. = ALIGN(4);
 	MPU_MIN_SIZE_ALIGN
 	__gcov_bss_end = .;

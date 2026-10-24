@@ -821,6 +821,23 @@ void z_riscv_pmp_init(void)
 		}
 	}
 
+#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
+	/*
+	 * GCOV counters live in __gcov_bss and must be writable from user mode
+	 * when instrumented code (e.g. z_thread_entry) runs after mret.
+	 */
+	uintptr_t gcov_start = (uintptr_t)__gcov_bss_start;
+	size_t gcov_size = (uintptr_t)__gcov_bss_end - gcov_start;
+
+	if (gcov_size > 0U) {
+		bool ok = set_pmp_entry(&index, PMP_R | PMP_W, gcov_start, gcov_size,
+					pmp_addr, pmp_cfg, PMP_USABLE_SLOTS);
+
+		__ASSERT(ok, "failed to map __gcov_bss for coverage");
+		ARG_UNUSED(ok);
+	}
+#endif
+
 #ifdef CONFIG_PMP_STACK_GUARD
 #ifdef CONFIG_MULTITHREADING
 	/* clang-format off */
