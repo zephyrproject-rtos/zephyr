@@ -19,6 +19,7 @@
 
 	aliases {
 		led0 = &led_act;
+		sdhc0 = &sdio1;
 	};
 
 	chosen {
@@ -36,6 +37,40 @@
 			gpios = <&gio_aon 9 GPIO_ACTIVE_LOW>;
 			label = "ACT";
 		};
+	};
+
+	sd_vcc: regulator-sd-vcc {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-sd";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		enable-gpios = <&gio_aon 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	sd_io: regulator-sd-io {
+		compatible = "regulator-gpio";
+		regulator-name = "vdd-sd-io";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-init-microvolt = <3300000>;
+		regulator-always-on;
+		startup-delay-us = <5000>;
+		gpios = <&gio_aon 3 GPIO_ACTIVE_HIGH>;
+		states = <3300000 0>;
+	};
+};
+
+&sdio1 {
+	bus-width = <4>;
+	max-bus-freq = <50000000>;
+	cd-gpios = <&gio_aon 5 GPIO_ACTIVE_LOW>;
+	vmmc-supply = <&sd_vcc>;
+	vqmmc-supply = <&sd_io>;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 	};
 };
 
