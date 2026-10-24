@@ -9,21 +9,16 @@
 #include <zephyr/dt-bindings/pinctrl/infineon-aurix-pinctrl.h>
 
 /* The emulated SoC has no port model; the pin writes have no effect */
-&{/soc} {
-	pinctrl: pinctrl@f003a000 {
-		compatible = "infineon,aurix-tc3x-pinctrl", "infineon,aurix-pinctrl";
-		reg = <0xf003a000 0x2900>;
+&pinctrl {
+	/* ASCLIN0 TX on P14.0 (ALT2) and RX on P14.1 with a pull-up */
+	test_tx: test_tx {
+		pinmux = <AURIX_PINMUX(14, 0, 2)>;
+		output-enable;
+	};
 
-		/* ASCLIN0 TX on P14.0 (ALT2) and RX on P14.1 with a pull-up */
-		test_tx: test_tx {
-			pinmux = <AURIX_PINMUX(14, 0, 2)>;
-			output-enable;
-		};
-
-		test_rx: test_rx {
-			pinmux = <AURIX_PINMUX(14, 1, 0)>;
-			bias-pull-up;
-		};
+	test_rx: test_rx {
+		pinmux = <AURIX_PINMUX(14, 1, 0)>;
+		bias-pull-up;
 	};
 };
 
