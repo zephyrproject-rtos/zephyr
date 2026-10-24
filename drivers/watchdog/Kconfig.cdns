@@ -1,0 +1,12 @@
+# Copyright (c) 2026 David Paul-Beier
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_CDNS
+	bool "Cadence watchdog timer driver"
+	default y
+	depends on DT_HAS_CDNS_WDT_R1P2_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	select HAS_WDT_NO_CALLBACKS
+	help
+	  Enable the driver for the Cadence watchdog timer (r1p2), used as
+	  the System Watchdog Timer of the Zynq-7000.
