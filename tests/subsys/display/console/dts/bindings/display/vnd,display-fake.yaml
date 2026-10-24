@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: RGB565 display that counts the writes it receives, for tests
+
+compatible: "vnd,display-fake"
+
+include: display-controller.yaml
