@@ -1,0 +1,24 @@
+sample:
+  name: Counter capture multiple periods
+  description: Measure periods of two signals using capture channels on one counter
+common:
+  tags:
+    - drivers
+    - counter
+    - pwm
+  depends_on:
+    - counter
+    - pwm
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: false
+    regex:
+      - "channel 1: average period"
+      - "channel 2: average period"
+tests:
+  sample.drivers.counter.capture_multiple_periods:
+    platform_allow:
+      - nucleo_c5a3zg
+    integration_platforms:
+      - nucleo_c5a3zg
