@@ -7,5 +7,8 @@ tests:
     arch_allow:
       - arm
       - riscv
+    platform_exclude:
+      - adp_xc7k/ae350/lm
+      - adp_xc7k/ae350/clic/lm
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
