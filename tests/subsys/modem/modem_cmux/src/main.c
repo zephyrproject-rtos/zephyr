@@ -123,6 +123,7 @@ static uint8_t cmux_frame_control_cld_cmd[] = {0xF9, 0x03, 0xEF, 0x05, 0xC3, 0x0
 static uint8_t cmux_frame_control_cld_ack[] = {0xF9, 0x03, 0xEF, 0x05, 0xC1, 0x01, 0xF2, 0xF9};
 static uint8_t cmux_frame_dlci0_disc_cmd[] = {0xF9, 0x01, 0x53, 0x01, 0x9C, 0xF9};
 static uint8_t cmux_frame_dlci0_ua_ack[] = {0xF9, 0x01, 0x73, 0x01, 0xB6, 0xF9};
+static uint8_t cmux_frame_dlci0_dm_rsp[] = {0xF9, 0x03, 0x1F, 0x01, 0x36, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_cmd[] = {0xF9, 0x07, 0x3F, 0x01, 0xDE, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_ack[] = {0xF9, 0x07, 0x73, 0x01, 0x15, 0xF9};
 static uint8_t cmux_frame_dlci1_disc_cmd[] = {0xF9, 0x07, 0x53, 0x01, 0x3F, 0xF9};
@@ -1207,6 +1208,64 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_disc)
 	/* The peer has already closed the multiplexer, no CLD may be sent */
 	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
 	zassert_equal(ret, 0, "Unexpected data sent after DLCI0 DISC");
+}
+
+/* Reconnect CMUX as initiator and open both DLCIs */
+static void test_modem_cmux_restore(void)
+{
+	modem_cmux_release(&cmux);
+	zassert_ok(modem_cmux_attach(&cmux, bus_mock_pipe));
+	modem_backend_mock_prime(&bus_mock, &transaction_control_sabm);
+	zassert_ok(modem_cmux_connect(&cmux));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
+	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlc0_dm)
+{
+	uint32_t events;
+	int ret;
+
+	/* Peer is in disconnected mode */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_dm_rsp, sizeof(cmux_frame_dlci0_dm_rsp));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "DLCI0 DM should disconnect CMUX");
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "Unexpected data sent after DLCI0 DM");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_connect_rejected)
+{
+	uint32_t events;
+	int ret;
+
+	modem_backend_mock_prime(&bus_mock, &transaction_control_cld);
+	zassert_ok(modem_cmux_disconnect(&cmux));
+	modem_backend_mock_reset(&bus_mock);
+	k_event_clear(&cmux_event, UINT32_MAX);
+
+	zassert_ok(modem_cmux_connect_async(&cmux));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_control_sabm_cmd), "SABM not sent");
+
+	/* Peer rejects the connection, fail without retrying */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_dm_rsp, sizeof(cmux_frame_dlci0_dm_rsp));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false,
+			      K_MSEC(CONFIG_MODEM_CMUX_T1_TIMEOUT / 2));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "DM should fail the connection");
+
+	k_msleep(CONFIG_MODEM_CMUX_T1_TIMEOUT + TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "SABM retried after DM");
+
+	test_modem_cmux_restore();
 }
 
 /*

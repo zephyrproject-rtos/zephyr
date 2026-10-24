@@ -1093,11 +1093,28 @@ static void modem_cmux_on_control_frame_disc(struct modem_cmux *cmux)
 	}
 }
 
+static void modem_cmux_on_control_frame_dm(struct modem_cmux *cmux)
+{
+	if (cmux->state == MODEM_CMUX_STATE_DISCONNECTED) {
+		return;
+	}
+
+	if (cmux->state == MODEM_CMUX_STATE_CONNECTING) {
+		LOG_WRN("CMUX connection rejected");
+	} else {
+		LOG_WRN("CMUX disconnected by peer");
+	}
+
+	disconnect(cmux);
+}
+
 static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 {
 	modem_cmux_log_received_frame(&cmux->frame);
 
-	if (is_active(cmux) && cmux->frame.cr == cmux->initiator) {
+	/* DM is always a response, so is not dropped */
+	if (is_active(cmux) && cmux->frame.cr == cmux->initiator &&
+	    cmux->frame.type != MODEM_CMUX_FRAME_TYPE_DM) {
 		LOG_DBG("Drop a response frame");
 		return;
 	}
@@ -1116,6 +1133,10 @@ static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 		break;
 	case MODEM_CMUX_FRAME_TYPE_DISC:
 		modem_cmux_on_control_frame_disc(cmux);
+		break;
+
+	case MODEM_CMUX_FRAME_TYPE_DM:
+		modem_cmux_on_control_frame_dm(cmux);
 		break;
 
 	default:
