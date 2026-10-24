@@ -1,0 +1,10 @@
+tests:
+  drivers.ptp_clock.nxp_enet_rate_math:
+    tags:
+      - drivers
+      - ptp_clock
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
