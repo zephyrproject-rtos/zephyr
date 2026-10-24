@@ -1,0 +1,45 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+title: Microchip MSPI G1 QSPI driver
+
+description: |
+    Microchip MSPI driver bindings.
+
+    Group g1 MSPI driver supports following hardware peripherals:
+    - name="QSPI" id="U2008" version="1.6.3"
+
+compatible: "microchip,qspi-g1-mspi"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+  - mspi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: APB, AHB, and AHB2X.
+
+  clock-names:
+    required: true
+    enum: ["apb", "ahb", "ahb2x"]
+
+  scramble-key:
+    type: int
+    description: |
+      32-bit user key for QSPI scrambling. Required if scrambling is used.
+      WARNING: This key is stored in plain text in the devicetree. For
+      production use, consider secure key provisioning mechanisms.
+
+  scramble-random-disable:
+    type: boolean
+    description: |
+      When set, the scrambling algorithm uses only the user key (portable
+      between devices). When not set (default), a chip-specific random value
+      is included (more secure but data cannot be unscrambled by other chips).
