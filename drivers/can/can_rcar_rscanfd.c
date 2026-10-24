@@ -303,6 +303,7 @@ struct can_rcar_rscanfd_global_config {
 	rcar_generic_clk_t global_clk;
 	rcar_generic_clk_t module_clk;
 	uint32_t num_enabled_channels;
+	void (*configure_isr)(void);
 };
 
 struct can_rcar_rscanfd_global_data {
@@ -535,7 +536,8 @@ static void can_rcar_rscanfd_set_communication_enabled(const struct device *dev,
  * Configure the rules table by creating one rule that matches them all (reception frames).
  * The reception filters are currently implemented in software.
  */
-static inline void can_rcar_rscanfd_configure_acceptance_filter_list(const struct device *dev)
+static inline void can_rcar_rscanfd_configure_acceptance_filter_list(const struct device *dev,
+								     uint32_t afl_entry_index)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
 	uint32_t base_offset, val, shift;
@@ -560,8 +562,7 @@ static inline void can_rcar_rscanfd_configure_acceptance_filter_list(const struc
 	val |= 1 << shift;
 	can_rcar_rscanfd_write(dev, base_offset, val);
 
-	/* A page contains 16 consecutive entries */
-	base_offset = config->channel * CAN_RCAR_RSCANFD_AFL_ENTRY_SIZE;
+	base_offset = afl_entry_index * CAN_RCAR_RSCANFD_AFL_ENTRY_SIZE;
 	/* Clear the CAN ID as it won't be taken into account by the mask register */
 	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDGAFLIDN, 0);
 	/* Accept all received CAN frames */
@@ -1578,7 +1579,8 @@ static int can_rcar_rscanfd_init(const struct device *dev)
 		return ret;
 	}
 
-	can_rcar_rscanfd_configure_acceptance_filter_list(dev);
+	can_rcar_rscanfd_configure_acceptance_filter_list(dev,
+		global_data->enabled_channels_count);
 
 	can_rcar_rscanfd_configure_communication_path(dev);
 
@@ -1717,15 +1719,27 @@ static DEVICE_API(can, can_rcar_rscanfd_driver_api) = {
 /*
  * A channel of the CAN controller.
  */
-#define RSCANFD_INIT(n)									\
-	PINCTRL_DT_INST_DEFINE(n);							\
-											\
+
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+#define RSCANFD_CONFIGURE_IRQ(n)							\
 	static void can_rcar_rscanfd_configure_irq_##n(void)				\
 	{										\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),			\
 			    can_rcar_rscanfd_isr, DEVICE_DT_INST_GET(n), 0);		\
 		irq_enable(DT_INST_IRQN(n));						\
-	}										\
+	}
+#else
+#define RSCANFD_CONFIGURE_IRQ(n)							\
+	static void can_rcar_rscanfd_configure_irq_##n(void)				\
+	{										\
+		return;									\
+	}
+#endif
+
+#define RSCANFD_INIT(n)									\
+	PINCTRL_DT_INST_DEFINE(n);							\
+											\
+	RSCANFD_CONFIGURE_IRQ(n)							\
 											\
 	static const struct can_rcar_rscanfd_config can_rcar_rscanfd_config_##n = {	\
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(n, 0, RSCANFD_MAX_BITRATE),	\
@@ -1805,6 +1819,10 @@ static int can_rcar_rscanfd_global_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN4
+	config->configure_isr();
+#endif
+
 	LOG_DBG("CAN controller IP version: 0x%08X, number of enabled channels: %u.",
 		sys_read32(config->reg + RSCANFD_CFDGIPV), config->num_enabled_channels);
 
@@ -1819,7 +1837,8 @@ static int can_rcar_rscanfd_global_init(const struct device *dev)
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				  \
 		.global_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 0),				  \
 		.module_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 1),				  \
-		.num_enabled_channels = DT_INST_CHILD_NUM_STATUS_OKAY(n)			  \
+		.num_enabled_channels = DT_INST_CHILD_NUM_STATUS_OKAY(n),			  \
+		.configure_isr = NULL								  \
 	};											  \
 												  \
 	static struct can_rcar_rscanfd_global_data can_rcar_rscanfd_global_data_##n;		  \
@@ -1833,3 +1852,58 @@ static int can_rcar_rscanfd_global_init(const struct device *dev)
 			 NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(RSCANFD_GLOBAL_INIT);
+
+/*
+ * CAN controller global in R-Car V4H
+ */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT renesas_rcar_v4h_rscanfd_global
+
+/* R-Car V4H uses single IRQ for all channels */
+static __maybe_unused void can_rcar_rscanfd_isr_shared(const void *arg)
+{
+	const void *const *channel_isr_param = arg;
+
+	/* Loop through all active channel and check what channel cause interrupt */
+	for (uint32_t i = 0; i < CAN_RCAR_RSCANFD_CHANNELS_COUNT; i++) {
+		/* This channel is not active */
+		if (channel_isr_param[i] == NULL) {
+			continue;
+		}
+
+		can_rcar_rscanfd_isr(channel_isr_param[i]);
+	}
+}
+
+#define GET_CHANNEL_DEV(n) DEVICE_DT_GET_OR_NULL(n),
+
+#define V4H_RSCANFD_GLOBAL_INIT(n)								  \
+	static const void *can_channel_isr_param_##n[CAN_RCAR_RSCANFD_CHANNELS_COUNT] = {	  \
+		DT_INST_FOREACH_CHILD(n, GET_CHANNEL_DEV)					  \
+	};											  \
+	static void can_rcar_configure_isr_global_##n(void)					  \
+	{											  \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),				  \
+			    can_rcar_rscanfd_isr_shared, can_channel_isr_param_##n, 0);		  \
+		irq_enable(DT_INST_IRQN(n));							  \
+	}											  \
+	static const struct can_rcar_rscanfd_global_config can_rcar_rscanfd_global_config_##n = { \
+		.reg = DT_INST_REG_ADDR(n),							  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				  \
+		.global_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 0),				  \
+		.module_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 1),				  \
+		.num_enabled_channels = DT_INST_CHILD_NUM_STATUS_OKAY(n),			  \
+		.configure_isr = can_rcar_configure_isr_global_##n				  \
+	};											  \
+												  \
+	static struct can_rcar_rscanfd_global_data can_rcar_rscanfd_global_data_##n;		  \
+												  \
+	DEVICE_DT_INST_DEFINE(n, can_rcar_rscanfd_global_init,					  \
+			 NULL,									  \
+			 &can_rcar_rscanfd_global_data_##n,					  \
+			 &can_rcar_rscanfd_global_config_##n,					  \
+			 POST_KERNEL,								  \
+			 CONFIG_KERNEL_INIT_PRIORITY_DEVICE,					  \
+			 NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(V4H_RSCANFD_GLOBAL_INIT);
