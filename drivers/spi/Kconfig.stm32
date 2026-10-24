@@ -27,6 +27,10 @@ config SPI_STM32_DMA
 	help
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
+	  Full-duplex controller transfers use DMA. Full-duplex
+	  peripheral transfers use DMA when the transaction is a
+	  single continuous buffer. Half-duplex and multi-buffer
+	  peripheral transactions do not use DMA.
 	  This can be used with the SPI_RTIO config to have SPI
 	  transactions using DMA + RTIO
 

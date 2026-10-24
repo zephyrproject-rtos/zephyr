@@ -505,6 +505,53 @@ static void spi_dma_enable_requests(SPI_TypeDef *spi)
 	}
 }
 
+static int spi_stm32_dma_load(const struct device *dev, uint32_t transfer_dir)
+{
+	struct spi_stm32_data *data = dev->data;
+
+	if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
+		data->tx_len = data->rx_len = spi_context_max_continuous_chunk(&data->ctx);
+		return spi_dma_move_buffers(dev, data->tx_len);
+	}
+
+	if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
+		data->tx_len = data->ctx.tx_len;
+		return spi_dma_move_tx_buffers(dev, data->tx_len);
+	}
+
+	data->rx_len = data->ctx.rx_len;
+	return spi_dma_move_rx_buffers(dev, data->rx_len);
+}
+
+#ifdef CONFIG_SPI_RTIO
+static void spi_stm32_dma_abort(const struct device *dev)
+{
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
+
+	LL_SPI_DisableDMAReq_TX(cfg->spi);
+	LL_SPI_DisableDMAReq_RX(cfg->spi);
+	(void)dma_stop(data->dma_rx.dma_dev, data->dma_rx.channel);
+	(void)dma_stop(data->dma_tx.dma_dev, data->dma_tx.channel);
+}
+#endif /* CONFIG_SPI_RTIO */
+
+/* DMA does not use TSIZE. Drop a size left behind by a non-DMA transfer. */
+static void spi_stm32_dma_clear_tsize(SPI_TypeDef *spi)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (ll_get_transfer_size(spi) != 0U) {
+		if (LL_SPI_IsEnabled(spi)) {
+			ll_disable_spi(spi);
+		}
+
+		ll_set_transfer_size(spi, 0U);
+	}
+#else
+	ARG_UNUSED(spi);
+#endif /* st_stm32h7_spi */
+}
+
 static void spi_stm32_dma_tx_done(const struct device *dev)
 {
 	const struct spi_stm32_config *cfg = dev->config;
@@ -1038,8 +1085,8 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 		}
 #endif /* CONFIG_DCACHE */
 		uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
-		size_t dma_len;
 		int ret = 0;
+		bool peripheral = false;
 
 		struct dma_config *rx_cfg = &data->dma_rx.dma_cfg;
 		struct dma_config *tx_cfg = &data->dma_tx.dma_cfg;
@@ -1049,30 +1096,49 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 		tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
 		tx_cfg->dest_data_size   = tx_cfg->dest_burst_length   = dfs;
 
+#ifdef CONFIG_SPI_PERIPHERAL
+		peripheral = (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL);
+#endif /* CONFIG_SPI_PERIPHERAL */
+
+		/*
+		 * The peripheral starts shifting on the NSS edge. Arm DMA before SPE
+		 * is set so that edge is not serviced from an empty FIFO.
+		 */
+		if (peripheral && LL_SPI_IsEnabled(spi)) {
+			ll_disable_spi(spi);
+		}
+
+		spi_stm32_dma_clear_tsize(spi);
 		spi_dma_enable_requests(spi);
+
+		data->status_flags = 0;
+
+		if (peripheral) {
+			ret = spi_stm32_dma_load(dev, transfer_dir);
+			if (ret != 0) {
+				LOG_ERR("Failed to start SPI DMA transfer");
+				spi_stm32_dma_abort(dev);
+				spi_stm32_iodev_complete(dev, -EIO);
+				return;
+			}
+		}
+
 		LL_SPI_Enable(spi);
 		spi_stm32_cs_control(dev, true);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		LL_SPI_StartMasterTransfer(spi);
+		if (!peripheral) {
+			LL_SPI_StartMasterTransfer(spi);
+		}
 #endif /* st_stm32h7_spi */
 
-		data->status_flags = 0;
-		data->tx_len = data->ctx.tx_len;
-		data->rx_len = data->ctx.rx_len;
-
-		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
-			dma_len = spi_context_max_continuous_chunk(&data->ctx);
-			ret = spi_dma_move_buffers(dev, dma_len);
-		} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
-			dma_len = data->ctx.tx_len;
-			ret = spi_dma_move_tx_buffers(dev, dma_len);
-		} else {
-			dma_len = data->ctx.rx_len;
-			ret = spi_dma_move_rx_buffers(dev, dma_len);
-		}
-		if (ret != 0) {
-			LOG_ERR("Failed to start SPI DMA transfer");
-			spi_stm32_iodev_complete(dev, -EIO);
+		if (!peripheral) {
+			ret = spi_stm32_dma_load(dev, transfer_dir);
+			if (ret != 0) {
+				LOG_ERR("Failed to start SPI DMA transfer");
+				spi_stm32_dma_abort(dev);
+				spi_stm32_iodev_complete(dev, -EIO);
+				return;
+			}
 		}
 
 		return;
@@ -1961,9 +2027,16 @@ static int transceive_dma(const struct device *dev,
 	SPI_TypeDef *spi = cfg->spi;
 	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
 	uint32_t transfer_dir = ll_get_transfer_direction(spi);
-	int ret;
+	int ret = 0;
 	int err;
 	uint8_t dfs = bits2bytes(config->operation);
+	bool peripheral = false;
+	bool dma_primed = false;
+	bool peripheral_hd_tx = false;
+
+#ifdef CONFIG_SPI_PERIPHERAL
+	peripheral = (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL);
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 	k_sem_reset(&data->status_sem);
 
@@ -1972,29 +2045,47 @@ static int transceive_dma(const struct device *dev,
 	tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
 	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = dfs;
 
+	/*
+	 * Peripheral mode starts on the NSS edge. Make sure SPE is clear before
+	 * the DMA request bits are written, then arm DMA before setting SPE.
+	 */
+	if (peripheral && LL_SPI_IsEnabled(spi)) {
+		ll_disable_spi(spi);
+	}
+
+	spi_stm32_dma_clear_tsize(spi);
+
 	/* Set request before enabling (otherwise SPI CFG1 reg may be write protected) */
 	spi_dma_enable_requests(spi);
+
+	if (peripheral) {
+		data->status_flags = 0;
+		ret = spi_stm32_dma_load(dev, transfer_dir);
+		if (ret != 0) {
+			goto dma_finish;
+		}
+
+		dma_primed = true;
+	}
+
 	LL_SPI_Enable(spi);
 	spi_stm32_cs_control(dev, true);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
+	if (!peripheral) {
 		LL_SPI_StartMasterTransfer(spi);
 	}
 #endif /* st_stm32h7_spi */
 
 	do {
-		data->status_flags = 0;
-
-		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
-			data->tx_len = data->rx_len = spi_context_max_continuous_chunk(&data->ctx);
-			ret = spi_dma_move_buffers(dev, data->tx_len);
-		} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
-			data->tx_len = data->ctx.tx_len;
-			ret = spi_dma_move_tx_buffers(dev, data->tx_len);
-		} else {
-			data->rx_len = data->ctx.rx_len;
-			ret = spi_dma_move_rx_buffers(dev, data->rx_len);
+		if (!dma_primed) {
+			data->status_flags = 0;
+			ret = spi_stm32_dma_load(dev, transfer_dir);
+			if (ret != 0) {
+				break;
+			}
 		}
+
+		dma_primed = false;
 
 #ifdef CONFIG_SPI_ASYNC
 		if (data->ctx.asynchronous) {
@@ -2025,16 +2116,15 @@ static int transceive_dma(const struct device *dev,
 		}
 	} while (spi_stm32_transfer_ongoing(data));
 
+dma_finish:
 	/* spi complete relies on SPI Status Reg which cannot be disabled */
 	spi_stm32_complete(dev, ret);
 
 #ifdef CONFIG_SPI_PERIPHERAL
-	bool peripheral_hd_tx = spi_context_is_peripheral(&data->ctx) &&
-				(config->operation & SPI_HALF_DUPLEX) &&
-				(ll_get_transfer_direction(spi) == STM32_SPI_HALF_DUPLEX_TX);
-#else
-	bool peripheral_hd_tx = false;
-#endif
+	peripheral_hd_tx = spi_context_is_peripheral(&data->ctx) &&
+			   (config->operation & SPI_HALF_DUPLEX) &&
+			   (ll_get_transfer_direction(spi) == STM32_SPI_HALF_DUPLEX_TX);
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 	/* Keep SPE enabled for SPI_HOLD_ON_CS or Peripheral Half-Duplex TX */
 	if (!peripheral_hd_tx && !(config->operation & SPI_HOLD_ON_CS)) {
@@ -2064,6 +2154,64 @@ static int transceive_dma(const struct device *dev,
 #endif /* !CONFIG_SPI_RTIO */
 #endif /* CONFIG_SPI_STM32_DMA */
 
+#if defined(CONFIG_SPI_STM32_DMA)
+/*
+ * Peripheral DMA is programmed once for the whole transaction.
+ * Return 1 when that single segment is enough, 0 when there is no data,
+ * -EINVAL when a buffer is not a whole number of frames, and -ENOTSUP when
+ * another DMA segment would be required while NSS stays asserted.
+ */
+static int spi_stm32_peripheral_dma_check(const struct spi_buf_set *tx_bufs,
+					  const struct spi_buf_set *rx_bufs,
+					  uint8_t dfs)
+{
+	const struct spi_buf_set *sets[2] = { tx_bufs, rx_bufs };
+	size_t segments[2] = { 0U, 0U };
+	size_t frames[2] = { 0U, 0U };
+
+	for (size_t i = 0U; i < ARRAY_SIZE(sets); i++) {
+		const struct spi_buf_set *set = sets[i];
+
+		if (set == NULL || set->buffers == NULL) {
+			continue;
+		}
+
+		for (size_t n = 0U; n < set->count; n++) {
+			size_t len = set->buffers[n].len;
+
+			if (len == 0U) {
+				continue;
+			}
+
+			if ((len % dfs) != 0U) {
+				return -EINVAL;
+			}
+
+			segments[i]++;
+			frames[i] += len / dfs;
+		}
+	}
+
+	if ((frames[0] == 0U) && (frames[1] == 0U)) {
+		return 0;
+	}
+
+	/*
+	 * A second buffer, or unequal full-duplex lengths, needs DMA to be
+	 * reloaded while the controller is still clocking. H7-compatible SPI
+	 * only starts a peripheral transfer on an NSS edge, and earlier SPI
+	 * IPs drop the frames clocked during the reload. Both need
+	 * scatter-gather before multi-buffer peripheral DMA can work.
+	 */
+	if ((segments[0] > 1U) || (segments[1] > 1U) ||
+	    ((frames[0] != 0U) && (frames[1] != 0U) && (frames[0] != frames[1]))) {
+		return -ENOTSUP;
+	}
+
+	return 1;
+}
+#endif /* CONFIG_SPI_STM32_DMA */
+
 static int transceive(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
@@ -2079,13 +2227,42 @@ static int transceive(const struct device *dev,
 	__maybe_unused SPI_TypeDef *spi = cfg->spi;
 
 #if defined(CONFIG_SPI_STM32_DMA)
-	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) &&
-	    (config->operation & SPI_HALF_DUPLEX) == 0U) {
-		/* DMA can only be used for full-duplex controller mode */
-		use_dma = (data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL);
-	} else {
-		LOG_ERR("SPI DMA is only supported for full-duplex controller mode");
-		return -ENOTSUP;
+	if ((data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL)) {
+		if ((config->operation & SPI_HALF_DUPLEX) != 0U) {
+			LOG_ERR("SPI DMA is not supported in half-duplex mode");
+			return -ENOTSUP;
+		}
+
+		use_dma = true;
+
+		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
+			uint8_t dfs = bits2bytes(config->operation);
+			int dma_check = spi_stm32_peripheral_dma_check(tx_bufs, rx_bufs, dfs);
+
+			if (dma_check == 0) {
+				use_dma = false;
+			} else if (dma_check < 0) {
+				if (dma_check == -EINVAL) {
+					return -EINVAL;
+				}
+
+#if defined(CONFIG_SPI_RTIO)
+				/*
+				 * RTIO keeps using the DMA channels programmed in
+				 * devicetree, so a multi-buffer peripheral transaction
+				 * cannot fall back from inside that path.
+				 */
+				LOG_ERR("SPI peripheral DMA requires a single continuous buffer");
+				return -ENOTSUP;
+#else
+				LOG_WRN_ONCE("SPI peripheral DMA requires a single "
+					     "continuous buffer. Falling back to %s mode.",
+					     IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) ?
+					     "interrupt" : "polling");
+				use_dma = false;
+#endif /* CONFIG_SPI_RTIO */
+			}
+		}
 	}
 #endif /* CONFIG_SPI_STM32_DMA */
 
