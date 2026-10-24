@@ -149,6 +149,10 @@ GTEXT(z_riscv_custom_stack_guard_enable)
 GTEXT(z_riscv_custom_stack_guard_disable)
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+GTEXT(get_isr_entry)
+#endif /* CONFIG_GEN_SW_ISR_TABLE_SWITCH */
+
 /* exports */
 GTEXT(_isr_wrapper)
 
@@ -801,20 +805,45 @@ on_irq_stack:
 	 */
 	jal ra, __soc_handle_irq
 
-#if defined CONFIG_GEN_SW_ISR_TABLE
+/*
+ * Point t0 at the struct _isr_table_entry of the IRQ index in a0. Its layout
+ * is:
+ * +0          : arg
+ * +RV_REGSIZE : isr
+ */
+#if defined CONFIG_GEN_SW_ISR_TABLE_SWITCH
 	/*
-	 * Call corresponding registered function in _sw_isr_table.
+	 * get_isr_entry(int irq_index, struct _isr_table_entry *entry) fills an
+	 * entry passed by pointer, so hand it scratch space on the stack. 16
+	 * bytes keep the stack aligned and fit the entry on both rv32 and rv64.
+	 */
+	addi sp, sp, -16
+	mv a1, sp
+	call get_isr_entry
+	mv t0, sp
+
+#elif defined CONFIG_GEN_SW_ISR_TABLE
+
+	/*
+	 * Index _sw_isr_table directly.
 	 * (table is 2-word wide, we should shift index accordingly)
 	 */
 	la t0, _sw_isr_table
 	slli a0, a0, (RV_REGSHIFT + 1)
 	add t0, t0, a0
+#endif
 
+#if defined CONFIG_GEN_SW_ISR_TABLE
 	/* Load argument in a0 register */
 	lr a0, 0(t0)
 
 	/* Load ISR function address in register t1 */
 	lr t1, RV_REGSIZE(t0)
+
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+	/* Release the scratch entry now that both fields are in registers */
+	addi sp, sp, 16
+#endif
 #else
 	/* Load spurious interrupt function in case _sw_isr_table does not exist */
 	la t1, z_irq_spurious
