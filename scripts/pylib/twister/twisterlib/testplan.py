@@ -664,6 +664,10 @@ class TestPlan:
 
                 suite_yaml_path, suite_path = self._resolve_suite_yaml_path(dirpath, filename, root)
 
+                alt_config_dir = None
+                if suite_yaml_path != os.path.join(dirpath, filename):
+                    alt_config_dir = os.path.dirname(suite_yaml_path)
+
                 try:
                     parsed_data = TwisterConfigParser(suite_yaml_path, self.suite_schema)
                     parsed_data.load()
@@ -672,6 +676,7 @@ class TestPlan:
 
                     for name in parsed_data.scenarios:
                         suite_dict = parsed_data.get_scenario(name)
+                        suite_dict['alt_config_dir'] = alt_config_dir
                         suite = TestSuite(
                             root,
                             suite_path,
