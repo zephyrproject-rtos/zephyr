@@ -148,6 +148,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	iframe->a3 = (uint32_t)p2;
 	iframe->a4 = (uint32_t)p3;
 
+	iframe->lr = 0;
 	iframe->xpsr = A_BIT | MODE_SYS;
 #if defined(CONFIG_BIG_ENDIAN)
 	iframe->xpsr |= E_BIT;
