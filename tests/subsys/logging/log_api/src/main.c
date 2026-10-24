@@ -801,6 +801,29 @@ ZTEST(test_log_api, test_log_arg_evaluation)
 #undef TEST_MSG_0_PREFIX
 }
 
+/*
+ * The hexdump string argument must be logged as given, even when the
+ * caller's variable has the same name as the documented macro parameter.
+ */
+ZTEST(test_log_api, test_log_hexdump_str_arg_name)
+{
+	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+	uint8_t data[] = {1, 2, 3, 4};
+	const char *_str = "hexdump";
+
+	log_setup(false);
+
+	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), Z_LOG_LOCAL_DOMAIN_ID,
+					 LOG_LEVEL_INF, "hexdump", data, sizeof(data));
+	mock_log_backend_generic_record(&backend1, LOG_CURRENT_MODULE_ID(),
+					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
+					exp_timestamp++, "hexdump", data, sizeof(data));
+
+	LOG_HEXDUMP_INF(data, sizeof(data), _str);
+
+	process_and_validate(false, false);
+}
+
 static void log_wrn_once_run(int i)
 {
 	LOG_WRN_ONCE("once %d", i);
