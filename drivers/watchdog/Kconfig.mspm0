@@ -7,3 +7,4 @@ config WDT_MSPM0
 	bool "MSPM0 Windowed Watchdog (WWDT) Driver"
 	default y
 	depends on DT_HAS_TI_MSPM0_WATCHDOG_ENABLED
+	select SHARED_INTERRUPTS
