@@ -29,6 +29,14 @@ config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	  functions are mapped to the SoC interrupt control interface, which is
 	  implemented at the SoC level.
 
+config ARM64_EFI
+	bool "EFI"
+	default y
+	depends on BUILD_OUTPUT_EFI
+	help
+	  Enable EFI support. This means you build your image with zefi
+	  support. See arch/arm64/zefi/README.txt for more information.
+
 rsource "core/Kconfig"
 
 endmenu
