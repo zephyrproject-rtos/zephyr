@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  arch_allow: xtensa
+  platform_allow:
+    - qemu_xtensa/dc233c
+  integration_platforms:
+    - qemu_xtensa/dc233c
+  tags:
+    - kernel
+    - linker
+tests:
+  arch.xtensa.bss_clear: {}
+  arch.xtensa.bss_clear.skip:
+    extra_configs:
+      - CONFIG_TEST_SKIP_BSS_CLEAR=y

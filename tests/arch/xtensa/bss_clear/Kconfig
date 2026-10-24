@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_SKIP_BSS_CLEAR
+	bool "Skip Xtensa startup BSS clearing"
+	select SKIP_BSS_CLEAR
