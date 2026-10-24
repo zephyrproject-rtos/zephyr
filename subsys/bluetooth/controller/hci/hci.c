@@ -7221,6 +7221,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
 	struct net_buf *evt_buf;
+	bool anon_allow = false;
 	bool devmatch = false;
 	uint8_t data_len = 0U;
 	uint8_t evt_type = 0U;
@@ -7513,6 +7514,10 @@ no_ext_hdr:
 			devmatch = devmatch_curr;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+			anon_allow = node_rx_curr->rx_ftr.anon_allow;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+
 		} else {
 			/* TODO: Validate current value with previous */
 
@@ -7586,9 +7591,16 @@ no_ext_hdr:
 		adv = (void *)node_rx_curr->pdu;
 	} while (1);
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
-	    !devmatch) {
+	/* The LLL lets PDUs without AdvA through, as a later PDU of the event
+	 * can have it. Advertising without any AdvA is reported only if the ULL
+	 * recorded with the ADV_EXT_IND that the scanner filter policy allows
+	 * it. A PDU received for a periodic sync that is being created is not
+	 * reported unless the scanner filter policy allows its AdvA.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
+	    (((adv_addr == NULL) && !anon_allow) ||
+	     (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && (adv_addr != NULL) &&
+	      !devmatch))) {
 		node_rx_extra_list_release(node_rx->rx_ftr.extra);
 		return;
 	}
