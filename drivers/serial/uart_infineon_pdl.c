@@ -1662,7 +1662,10 @@ static int ifx_cat1_uart_init(const struct device *dev)
 #endif
 
 #if defined(CONFIG_INFINEON_INTC_SYSINTC)
-	irq_enable(config->irq_num);
+	/* Only interrupt-driven instances install a handler */
+	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+		irq_enable(config->irq_num);
+	}
 #endif /* CONFIG_INFINEON_INTC_SYSINTC */
 
 #if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
@@ -1676,7 +1679,10 @@ static int ifx_cat1_uart_init(const struct device *dev)
 					     &(data->context));
 
 	if (result == CY_RSLT_SUCCESS) {
-		irq_enable(config->irq_num);
+		/* Only interrupt-driven instances install a handler */
+		if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+			irq_enable(config->irq_num);
+		}
 
 		Cy_SCB_UART_Enable(config->reg_addr);
 	} else {
@@ -1812,7 +1818,10 @@ static int ifx_cat1_uart_pm_action(const struct device *dev, enum pm_device_acti
 		ifx_cat1_uart_dma_trigmux_connect(dev);
 #endif
 
-		irq_enable(config->irq_num);
+		/* Only interrupt-driven instances install a handler */
+		if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+			irq_enable(config->irq_num);
+		}
 		break;
 	}
 #endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */
