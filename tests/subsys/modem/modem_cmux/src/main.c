@@ -121,6 +121,10 @@ static uint8_t cmux_frame_control_sabm_cmd[] = {0xF9, 0x03, 0x3F, 0x01, 0x1C, 0x
 static uint8_t cmux_frame_control_sabm_ack[] = {0xF9, 0x03, 0x73, 0x01, 0xD7, 0xF9};
 static uint8_t cmux_frame_control_cld_cmd[] = {0xF9, 0x03, 0xEF, 0x05, 0xC3, 0x01, 0xF2, 0xF9};
 static uint8_t cmux_frame_control_cld_ack[] = {0xF9, 0x03, 0xEF, 0x05, 0xC1, 0x01, 0xF2, 0xF9};
+static uint8_t cmux_frame_control_peer_cld_cmd[] = {0xF9, 0x01, 0xEF, 0x05,
+						    0xC3, 0x01, 0x93, 0xF9};
+static uint8_t cmux_frame_control_peer_cld_ack[] = {0xF9, 0x01, 0xEF, 0x05,
+						    0xC1, 0x01, 0x93, 0xF9};
 static uint8_t cmux_frame_dlci0_disc_cmd[] = {0xF9, 0x01, 0x53, 0x01, 0x9C, 0xF9};
 static uint8_t cmux_frame_dlci0_ua_ack[] = {0xF9, 0x01, 0x73, 0x01, 0xB6, 0xF9};
 static uint8_t cmux_frame_dlci0_dm_rsp[] = {0xF9, 0x03, 0x1F, 0x01, 0x36, 0xF9};
@@ -1418,6 +1422,42 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_dm)
 
 	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
 	zassert_equal(ret, 0, "Unexpected data sent after DLCI0 DM");
+}
+
+static void test_modem_cmux_force_state(enum modem_cmux_state state)
+{
+	k_event_clear(&cmux_event, UINT32_MAX);
+	modem_backend_mock_reset(&bus_mock);
+	cmux.state = state;
+	k_event_set(&cmux.event, BIT(state));
+}
+
+ZTEST(modem_cmux, test_modem_cmux_close_down_entering_power_save)
+{
+	uint32_t events;
+	int ret;
+
+	/* Peer closes the multiplexer with DISC while we request power saving */
+	test_modem_cmux_force_state(MODEM_CMUX_STATE_ENTER_POWERSAVE);
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_disc_cmd,
+			       sizeof(cmux_frame_dlci0_disc_cmd));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "DISC should disconnect CMUX");
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci0_ua_ack), "Only UA should be sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci0_ua_ack, sizeof(cmux_frame_dlci0_ua_ack),
+			  "Incorrect UA sent");
+
+	/* Peer closes the multiplexer with CLD while we confirm power saving */
+	test_modem_cmux_force_state(MODEM_CMUX_STATE_CONFIRM_POWERSAVE);
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_peer_cld_cmd,
+			       sizeof(cmux_frame_control_peer_cld_cmd));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "CLD should disconnect CMUX");
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_control_peer_cld_ack), "Only CLD ack should be sent");
+	zassert_mem_equal(buffer1, cmux_frame_control_peer_cld_ack,
+			  sizeof(cmux_frame_control_peer_cld_ack), "Incorrect CLD ack sent");
 }
 
 ZTEST(modem_cmux, test_modem_cmux_dlc0_sabm_connected)
