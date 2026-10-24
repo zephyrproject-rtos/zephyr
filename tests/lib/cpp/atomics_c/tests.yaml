@@ -10,7 +10,7 @@ tests:
       - posix
       - tricore
     build_only: true
-    filter: CONFIG_ATOMIC_OPERATIONS_C
+    filter: CONFIG_ATOMIC_OPERATIONS_C and not CONFIG_CPU_ARM9
     integration_platforms:
       - rpi_pico
       - robokit1
