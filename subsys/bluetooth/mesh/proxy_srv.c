@@ -480,12 +480,6 @@ static const struct bt_data net_id_ad[] = {
 	BT_DATA(BT_DATA_SVC_DATA16, proxy_svc_data, NET_ID_LEN),
 };
 
-static int randomize_bt_addr(void)
-{
-	/* TODO: There appears to be no way to force an RPA/NRPA refresh. */
-	return 0;
-}
-
 static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 		      uint8_t hash[16], int32_t duration)
 {
@@ -509,15 +503,11 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 		return err;
 	}
 
-	/* MshPRTv1.1: 7.2.2.2.4: The AdvA field shall be regenerated whenever the Random field is
-	 * regenerated.
+	/* MshPRTv1.1: 7.2.2.2.4 and 7.2.2.2.5: The AdvA field shall be regenerated whenever the
+	 * Random field is regenerated. The callers regenerate the Random field before every
+	 * advertising start, and the host generates a new NRPA on every start with
+	 * BT_LE_ADV_OPT_USE_NRPA.
 	 */
-	err = randomize_bt_addr();
-	if (err) {
-		LOG_ERR("AdvA refresh failed: %d", err);
-		return err;
-	}
-
 	proxy_svc_data[2] = type;
 	memcpy(&proxy_svc_data[3], &hash[8], 8);
 
