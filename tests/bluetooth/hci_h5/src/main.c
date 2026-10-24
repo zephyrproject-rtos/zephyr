@@ -50,6 +50,12 @@ static struct ctlr ctlrs[] = {
 	},
 };
 
+/* The emulated UART calls the driver's interrupt handler from this work queue */
+extern struct k_work_q uart_emul_work_q;
+
+/* Set when the receive callback runs in the interrupt handler instead of a thread */
+static bool recv_from_isr;
+
 static void hdr_set(uint8_t hdr[HDR_LEN], bool reliable, uint8_t seq, uint8_t ack, uint8_t type,
 		    uint16_t len)
 {
@@ -128,6 +134,7 @@ static void expect_evt(struct ctlr *c, uint8_t code)
 	struct net_buf *buf = k_fifo_get(&c->rx, K_MSEC(100));
 
 	zassert_not_null(buf, "No event with code %u", code);
+	zassert_false(recv_from_isr, "Receive callback called in the interrupt handler");
 	zassert_equal(buf->len, sizeof(evt));
 	zassert_mem_equal(buf->data, evt, sizeof(evt), "Expected code %u, got %u", code,
 			  buf->data[3]);
@@ -166,6 +173,10 @@ static void expect_ack(struct ctlr *c)
 
 static int recv(const struct device *dev, struct net_buf *buf)
 {
+	if (k_current_get() == k_work_queue_thread_get(&uart_emul_work_q)) {
+		recv_from_isr = true;
+	}
+
 	ARRAY_FOR_EACH_PTR(ctlrs, c) {
 		if (c->hci == dev) {
 			k_fifo_put(&c->rx, buf);

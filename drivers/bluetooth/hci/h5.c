@@ -413,8 +413,8 @@ static void h5_process_complete_packet(const struct device *dev, uint8_t *hdr)
 	case HCI_EVENT_PKT:
 	case HCI_ACLDATA_PKT:
 	case HCI_ISODATA_PKT:
-		hexdump("=> ", buf->data, buf->len);
-		bt_hci_recv(dev, buf);
+		/* For rx_thread(): the receive callback is called from thread context */
+		k_fifo_put(&h5->rx_queue, buf);
 		break;
 	}
 }
@@ -676,7 +676,10 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		hexdump("=> ", buf->data, buf->len);
 
-		if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
+		/* Only link control packets come from the signal pool */
+		if (net_buf_pool_get(buf->pool_id) != &h5_pool) {
+			bt_hci_recv(dev, net_buf_take(&buf));
+		} else if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
 			if (h5->link_state == ACTIVE) {
 				/* TODO Reset H5 */
 			}
@@ -712,7 +715,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			LOG_ERR("Not handled yet %x %x", buf->data[0], buf->data[1]);
 		}
 
-		net_buf_unref(buf);
+		net_buf_drop(&buf);
 
 		/* Make sure we don't hog the CPU if the rx_queue never
 		 * gets empty.
@@ -788,7 +791,7 @@ static DEVICE_API(bt_hci, h5_driver_api) = {
 };
 
 #define BT_UART_DEVICE_INIT(inst) \
-	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE); \
+	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_H5_RX_STACK_SIZE); \
 	static struct k_thread rx_thread_##inst; \
 	static K_KERNEL_STACK_DEFINE(tx_thread_stack_##inst, CONFIG_BT_DRV_TX_STACK_SIZE); \
 	static struct k_thread tx_thread_##inst; \
