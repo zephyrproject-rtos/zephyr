@@ -38,6 +38,13 @@ tests:
       - apollo510_evb
       - stm32h7b3i_dk
 
+  sample.drivers.mspi.flash.bitbang:
+    filter: dt_compat_enabled("zephyr,mspi-bitbang-controller")
+    platform_allow:
+      - stm32h573i_dk
+    extra_args:
+      - FILE_SUFFIX="bitbang"
+
   sample.drivers.mspi.flash.x_nucleo_pgeez1:
     tags:
       - shield
