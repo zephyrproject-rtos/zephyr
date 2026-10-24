@@ -206,14 +206,23 @@ int arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const e
 	int type = ELF32_R_TYPE(rel->r_info);
 	uintptr_t sh_addr;
 
-	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
+	if (sym->st_shndx < ext->sect_cnt) {
+		/*
+		 * Resolve via the symbol's own section rather than assuming .text -
+		 * e.g. one-per-symbol C++ COMDAT sections for template instantiations
+		 * don't live in the merged .text section. STT_SECTION symbols always
+		 * have st_value == 0 (the offset is baked into the addend instead),
+		 * so adding it here is a no-op for that case.
+		 */
 		elf_shdr_t *shdr = ext->sect_hdrs + sym->st_shndx;
 
 		/* shdr->sh_addr is NULL when not built for a specific address */
-		sh_addr = shdr->sh_addr &&
+		sh_addr = (shdr->sh_addr &&
 			(!ldr_parm->section_detached || !ldr_parm->section_detached(shdr)) ?
-			shdr->sh_addr : (uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx);
+			shdr->sh_addr : (uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx)) +
+			sym->st_value;
 	} else {
+		/* SHN_ABS / SHN_COMMON or similar reserved index: best-effort fallback */
 		sh_addr = ldr->sects[LLEXT_MEM_TEXT].sh_addr;
 	}
 
