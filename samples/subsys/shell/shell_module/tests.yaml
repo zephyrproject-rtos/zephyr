@@ -62,6 +62,17 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE="overlay-bt.conf"
       - DTC_OVERLAY_FILE="bt.overlay"
+  sample.shell.shell_module.spp:
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    tags:
+      - shell
+      - bluetooth
+    required_snippets:
+      - spp-console
   sample.shell.shell_module.login:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
