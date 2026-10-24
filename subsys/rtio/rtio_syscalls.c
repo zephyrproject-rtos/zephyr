@@ -102,30 +102,44 @@ static inline int z_vrfy_rtio_sqe_copy_in_get_handles(struct rtio *r, const stru
 	if (handles != NULL) {
 		K_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(handles, sqe_count, sizeof(*handles)));
 	}
-	struct rtio_sqe *sqe;
-	uint32_t acquirable = rtio_sqe_acquirable(r);
 
-	if (acquirable < sqe_count) {
-		return -ENOMEM;
-	}
+	struct rtio_iodev_sqe *head = NULL;
+	struct rtio_iodev_sqe *tail = NULL;
 
+	/* Verify the copy, not the caller's memory, and queue only once it all
+	 * passes. A rejected entry then costs only what this call acquired.
+	 */
+	for (size_t i = 0; i < sqe_count; i++) {
+		struct rtio_iodev_sqe *iodev_sqe = rtio_sqe_pool_alloc(r->sqe_pool);
 
-	for (int i = 0; i < sqe_count; i++) {
-		sqe = rtio_sqe_acquire(r);
-		__ASSERT_NO_MSG(sqe != NULL);
-		if (handles != NULL) {
-			handles[i] = rtio_sqe_handle(r, sqe);
+		if (iodev_sqe == NULL) {
+			rtio_sqe_list_free(r, head);
+			return -ENOMEM;
 		}
-		*sqe = sqes[i];
 
-		if (!rtio_vrfy_sqe(sqe)) {
-			rtio_sqe_drop_all(r);
+		iodev_sqe->sqe = sqes[i];
+		iodev_sqe->next = NULL;
+
+		if (tail == NULL) {
+			head = iodev_sqe;
+		} else {
+			tail->next = iodev_sqe;
+		}
+		tail = iodev_sqe;
+
+		if (handles != NULL) {
+			handles[i] = rtio_sqe_handle(r, &iodev_sqe->sqe);
+		}
+
+		if (!rtio_vrfy_sqe(&iodev_sqe->sqe)) {
+			rtio_sqe_list_free(r, head);
 			K_OOPS(true);
 		}
 	}
 
-	/* Already copied *and* verified, no need to redo */
-	return z_impl_rtio_sqe_copy_in_get_handles(r, NULL, NULL, 0);
+	rtio_sqe_list_queue(r, head);
+
+	return 0;
 }
 #include <zephyr/syscalls/rtio_sqe_copy_in_get_handles_mrsh.c>
 

@@ -641,12 +641,15 @@ ZTEST(rtio_api, test_rtio_chain_cancel_member)
 	zassert_equal_ptr((void *)0, cqe.userdata, "Head await should complete");
 	zassert_ok(cqe.result, "Head await should complete ok");
 
-	/* Check the pool first: both slots back means the tail is done being
-	 * resolved, so the absence of a completion below is a real result rather
-	 * than one that has not landed yet.
+	/* Reclaiming the pool only works once both entries are back, so this is a
+	 * barrier against checking the completions below too early.
 	 */
-	zassert_equal(rtio_sqe_acquirable(r), RTIO_CHAIN_MEMBER_ELEMS,
-		      "Both slots should be back in the pool");
+	struct rtio_sqe *slots[RTIO_CHAIN_MEMBER_ELEMS];
+
+	zassert_ok(rtio_sqe_acquire_array(r, RTIO_CHAIN_MEMBER_ELEMS, slots),
+		   "Both slots should be back in the pool");
+	rtio_sqe_drop_all(r);
+
 	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
 		      "Canceled tail should not complete");
 }
@@ -698,9 +701,12 @@ ZTEST(rtio_api, test_rtio_chain_cancel_cascade)
 	zassert_equal_ptr((void *)0, cqe.userdata, "Head await should complete");
 	zassert_ok(cqe.result, "Head await should complete ok");
 
-	/* All three slots back means the middle and tail are both fully resolved. */
-	zassert_equal(rtio_sqe_acquirable(r), RTIO_CHAIN_CASCADE_ELEMS,
-		      "All slots should be back in the pool");
+	/* Barrier: the pool only reclaims once all three are resolved */
+	struct rtio_sqe *slots[RTIO_CHAIN_CASCADE_ELEMS];
+
+	zassert_ok(rtio_sqe_acquire_array(r, RTIO_CHAIN_CASCADE_ELEMS, slots),
+		   "All slots should be back in the pool");
+	rtio_sqe_drop_all(r);
 
 	/* Neither the canceled middle nor the tail behind it may complete. */
 	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
@@ -1226,12 +1232,17 @@ ZTEST(rtio_api, test_rtio_delay_cancel)
 		}
 	}
 
-	/* Active cancellation frees the canceled delays right away rather than
-	 * leaving them to fire, so the pool reflects the freed slots before any
-	 * simulated time passes.
+	/* Canceled delays are freed at once rather than left to fire. Taking
+	 * exactly that many and then failing to take one more pins the count.
 	 */
-	zassert_equal(rtio_sqe_acquirable(r), RTIO_DELAY_CANCEL_ELEMS - expected_completions,
-		      "Canceled delays should be removed and freed immediately");
+	const size_t expected_freed = RTIO_DELAY_CANCEL_ELEMS - expected_completions;
+	struct rtio_sqe *freed[RTIO_DELAY_CANCEL_ELEMS];
+
+	zassert_ok(rtio_sqe_acquire_array(r, expected_freed, freed),
+		   "Canceled delays should be removed and freed immediately");
+	zassert_equal(-ENOMEM, rtio_sqe_acquire_array(r, 1, freed),
+		      "Only the canceled delays should have been freed");
+	rtio_sqe_drop_all(r);
 
 	/* Wait past the longest delay so every timer has fired. */
 	k_sleep(K_MSEC(delay_ms[RTIO_DELAY_CANCEL_ELEMS - 1] + 20));
@@ -1777,6 +1788,43 @@ ZTEST(rtio_api, test_rtio_acquire_array)
 	zassert_equal(res, -ENOMEM, "Expected to have no more sqes available");
 
 	rtio_sqe_drop_all(&r_acquire_array);
+}
+
+RTIO_DEFINE(r_copy_in, SQE_POOL_SIZE, CQE_POOL_SIZE);
+
+ZTEST(rtio_api, test_rtio_copy_in_rollback)
+{
+	TC_PRINT("rtio copy in rollback\n");
+
+	struct rtio *r = &r_copy_in;
+	struct rtio_sqe sqes[SQE_POOL_SIZE + 1];
+	rtio_sqe_handle_t handles[SQE_POOL_SIZE];
+
+	for (int i = 0; i < ARRAY_SIZE(sqes); i++) {
+		rtio_sqe_prep_nop(&sqes[i], NULL, NULL);
+	}
+
+	/* An oversized copy queues nothing and returns everything it took */
+	zassert_equal(-ENOMEM, rtio_sqe_copy_in(r, sqes, SQE_POOL_SIZE + 1),
+		      "Expected the oversized copy to be rejected");
+
+	zassert_ok(rtio_sqe_copy_in_get_handles(r, sqes, handles, SQE_POOL_SIZE),
+		   "Expected the rejected copy to have returned every entry");
+
+	for (int i = 0; i < SQE_POOL_SIZE; i++) {
+		zassert_not_null(rtio_iodev_sqe_from_handle(r, handles[i]),
+				 "Expected a live handle for every copied sqe");
+	}
+
+	zassert_equal(-ENOMEM, rtio_sqe_copy_in(r, sqes, 1),
+		      "Expected no entries left after filling the pool");
+
+	rtio_sqe_drop_all(r);
+
+	zassert_ok(rtio_sqe_copy_in(r, sqes, SQE_POOL_SIZE),
+		   "Expected the dropped entries to be reusable");
+
+	rtio_sqe_drop_all(r);
 }
 
 RTIO_DEFINE(r_cqe_callback, SQE_POOL_SIZE, CQE_POOL_SIZE);

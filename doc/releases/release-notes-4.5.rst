@@ -359,6 +359,10 @@ Removed APIs and options
     * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
     * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION``
 
+* RTIO
+
+    * ``rtio_sqe_acquirable()``
+
 * Shell
 
     * ``kernel log_level``, replaced by ``log enable``

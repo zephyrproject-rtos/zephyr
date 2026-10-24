@@ -3161,6 +3161,16 @@ RTIO
   ``MODE=report`` flags the remaining ``rtio_sqe_cancel()`` call sites and any leftover
   ``RTIO_SQE_CANCELED`` uses, including writes, which have no mechanical rewrite.
 
+* ``rtio_sqe_acquirable()`` has been removed. The free count it returned was kept in a plain
+  counter updated from both the submitting thread and the completion context, so it drifted away
+  from the real number of free entries and never recovered. Code that used it to decide whether a
+  batch would fit should attempt the acquire instead and handle the failure:
+  :c:func:`rtio_sqe_copy_in`, :c:func:`rtio_sqe_copy_in_get_handles` and
+  :c:func:`rtio_sqe_acquire_array` queue either all of the submissions or none of them and return
+  ``-ENOMEM`` otherwise, and :c:func:`rtio_sqe_acquire` returns ``NULL`` when the pool is empty.
+  Code that used it to observe that every entry had been returned can reclaim the pool with
+  :c:func:`rtio_sqe_acquire_array`, which only succeeds once that is true.
+
 Secure Storage
 ==============
 

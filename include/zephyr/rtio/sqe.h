@@ -938,7 +938,6 @@ static inline void rtio_iodev_sqe_await_signal(struct rtio_iodev_sqe *iodev_sqe,
 struct rtio_sqe_pool {
 	struct mpsc free_q;
 	const uint16_t pool_size;
-	uint16_t pool_free;
 	struct rtio_iodev_sqe *pool;
 };
 
@@ -968,8 +967,6 @@ static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *p
 	 */
 	atomic_or(&iodev_sqe->status, RTIO_SQE_ALLOCD);
 
-	pool->pool_free--;
-
 	return iodev_sqe;
 }
 
@@ -983,8 +980,6 @@ static inline void rtio_sqe_pool_free(struct rtio_sqe_pool *pool, struct rtio_io
 	atomic_set(&iodev_sqe->status, gen);
 
 	mpsc_push(&pool->free_q, &iodev_sqe->q);
-
-	pool->pool_free++;
 }
 
 #if CONFIG_RTIO_SQE_PLACEMENT_DTCM
@@ -1003,7 +998,6 @@ static inline void rtio_sqe_pool_free(struct rtio_sqe_pool *pool, struct rtio_io
 	STRUCT_SECTION_ITERABLE(rtio_sqe_pool, name) = {	\
 		.free_q = MPSC_INIT((name.free_q)),	\
 		.pool_size = sz,				\
-		.pool_free = sz,				\
 		.pool = CONCAT(_sqe_pool_, name),		\
 	}
 
