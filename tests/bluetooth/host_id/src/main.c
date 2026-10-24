@@ -637,6 +637,33 @@ ZTEST(bt_id_public_api, test_oob_rejects_invalid_identity)
 }
 
 #if defined(CONFIG_BT_PRIVACY)
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+static ZTEST(bt_id_public_api, test_rpa_age_survives_timeout_change)
+{
+	struct bt_le_oob oob = {0};
+
+	/* Generates a new RPA and schedules its rotation. */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to get a new RPA");
+	zassert_true(bt_id_rpa_is_new(), "A just generated RPA is not new");
+
+	k_sleep(K_SECONDS(1));
+	zassert_false(bt_id_rpa_is_new(), "A 1 s old RPA is new");
+
+	zassert_ok(bt_le_set_rpa_timeout(CONFIG_BT_RPA_TIMEOUT / 2U),
+		   "Failed to shorten the RPA timeout");
+	zassert_false(bt_id_rpa_is_new(), "Shortening the RPA timeout made the RPA new");
+
+	/* The next RPA is scheduled with the shorter timeout. */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to get a new RPA");
+	zassert_true(bt_id_rpa_is_new(), "A just generated RPA is not new");
+	k_sleep(K_SECONDS(1));
+	zassert_false(bt_id_rpa_is_new(), "A 1 s old RPA is new");
+
+	zassert_ok(bt_le_set_rpa_timeout(CONFIG_BT_RPA_TIMEOUT),
+		   "Failed to restore the RPA timeout");
+}
+#endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+
 static bool is_zero_irk(const uint8_t *irk)
 {
 	for (size_t i = 0U; i < BT_IRK_SIZE; i++) {
