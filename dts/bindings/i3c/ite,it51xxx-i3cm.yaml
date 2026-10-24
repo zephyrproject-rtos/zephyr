@@ -7,6 +7,8 @@ compatible: "ite,it51xxx-i3cm"
 
 include: [i3c-controller.yaml, pinctrl-device.yaml]
 
+class: [i3c, i2c]
+
 properties:
   reg:
     required: true
