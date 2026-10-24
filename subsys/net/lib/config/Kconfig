@@ -32,10 +32,6 @@ config NET_CONFIG_AUTO_INIT
 
 if NET_CONFIG_AUTO_INIT
 
-config NET_CONFIG_INIT_PRIO
-	int "Startup priority for the network application init"
-	default 95
-
 config NET_CONFIG_NEED_IPV6
 	bool "This application wants IPv6 support"
 	select NET_IPV6

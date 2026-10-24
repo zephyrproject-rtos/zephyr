@@ -30,6 +30,23 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Anchor left by the automatic network configuration.
+ *
+ * When @kconfig{CONFIG_NET_CONFIG_AUTO_INIT} is enabled the network is
+ * configured at boot by an anchored init entry (see SYS_INIT_ANCHORED()).
+ * Services that need the network configured before they initialize order
+ * themselves after it, typically with a conditional dependency so that they
+ * still initialize when automatic configuration is disabled:
+ *
+ * @code{.c}
+ * #define SYS_ANCHOR_my_service \
+ *	SYS_ANCHOR_AFTER_IF(CONFIG_NET_CONFIG_AUTO_INIT, SYS_ANCHOR_net_config, my_service)
+ * SYS_INIT_ANCHORED(my_service, my_service_init, APPLICATION);
+ * @endcode
+ */
+#define SYS_ANCHOR_net_config SYS_ANCHOR(net_config)
+
 /* Flags that tell what kind of functionality is needed by the client. */
 /**
  * @brief Application needs routers to be set so that connectivity to remote
