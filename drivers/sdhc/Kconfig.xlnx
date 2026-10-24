@@ -4,7 +4,7 @@
 config XLNX_SDHC
 	bool "xlnx sdhc driver"
 	default y
-	depends on DT_HAS_XLNX_VERSAL_8_9A_ENABLED
+	depends on DT_HAS_XLNX_VERSAL_8_9A_ENABLED || DT_HAS_ARASAN_SDHCI_8_9A_ENABLED
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select SDHC_SUPPORTS_UHS
 	select EVENTS
@@ -14,6 +14,24 @@ config XLNX_SDHC
 	  Enable xilinx SD/EMMC host controller driver
 
 if XLNX_SDHC
+
+choice XLNX_SDHC_TRANSFER_MODE
+	prompt "Data transfer mode"
+	default XLNX_SDHC_PIO if DT_HAS_ARASAN_SDHCI_8_9A_ENABLED
+	default XLNX_SDHC_ADMA2
+
+config XLNX_SDHC_ADMA2
+	bool "ADMA2"
+	help
+	  Transfer data with the controller's ADMA2 engine.
+
+config XLNX_SDHC_PIO
+	bool "PIO"
+	help
+	  Transfer data through the Buffer Data Port by polling. Required on
+	  Zynq-7000, where ADMA2 is not yet supported.
+
+endchoice
 
 # Xilinx SDHC DMA buffers require cache-line alignment
 config SDHC_BUFFER_ALIGNMENT

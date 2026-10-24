@@ -230,7 +230,7 @@
 		};
 
 		sdhc0: mmc@e0100000 {
-			compatible = "xlnx,versal-8.9a";
+			compatible = "arasan,sdhci-8.9a";
 			reg = <0xe0100000 0x1000>;
 			status = "disabled";
 			clocks = <&sdhci_ref_clk>;
@@ -239,7 +239,7 @@
 		};
 
 		sdhc1: mmc@e0101000 {
-			compatible = "xlnx,versal-8.9a";
+			compatible = "arasan,sdhci-8.9a";
 			reg = <0xe0101000 0x1000>;
 			status = "disabled";
 			clocks = <&sdhci_ref_clk>;

@@ -21,6 +21,25 @@
 
 LOG_MODULE_REGISTER(xlnx_sdhc, CONFIG_SD_LOG_LEVEL);
 
+/* struct reg_base is not __packed (see xlnx_sdhc.h); pin the register layout */
+BUILD_ASSERT(offsetof(struct reg_base, block_size) == 0x04);
+BUILD_ASSERT(offsetof(struct reg_base, argument) == 0x08);
+BUILD_ASSERT(offsetof(struct reg_base, present_state) == 0x24);
+BUILD_ASSERT(offsetof(struct reg_base, clock_ctrl) == 0x2C);
+BUILD_ASSERT(offsetof(struct reg_base, normal_int_stat) == 0x30);
+BUILD_ASSERT(offsetof(struct reg_base, normal_int_stat_en) == 0x34);
+BUILD_ASSERT(offsetof(struct reg_base, capabilities) == 0x40);
+BUILD_ASSERT(offsetof(struct reg_base, capabilities_upr) == 0x44);
+BUILD_ASSERT(offsetof(struct reg_base, max_current_cap) == 0x48);
+BUILD_ASSERT(offsetof(struct reg_base, max_current_cap_upr) == 0x4C);
+BUILD_ASSERT(offsetof(struct reg_base, adma_sys_addr) == 0x58);
+BUILD_ASSERT(offsetof(struct reg_base, adma_sys_addr_upr) == 0x5C);
+BUILD_ASSERT(offsetof(struct reg_base, host_cntrl_version) == 0xFE);
+BUILD_ASSERT(offsetof(struct reg_base, cq_ver) == 0x200);
+BUILD_ASSERT(offsetof(struct reg_base, phy_ctrl1) == 0x270);
+BUILD_ASSERT(offsetof(struct reg_base, itap_dly) == 0xF0F8);
+BUILD_ASSERT(offsetof(struct reg_base, otap_dly) == 0xF0FC);
+
 #define CHECK_BITS(b) ((uint64_t)1 << (b))
 
 #define XLNX_SDHC_SLOT_TYPE(dev) \
@@ -88,6 +107,12 @@ struct xlnx_sdhc_config {
 	bool hs200_mode;
 	/**< Support hs400 mode */
 	bool hs400_mode;
+	/**< Capabilities reports an embedded slot for a removable SD slot */
+	bool broken_slot_type;
+	/**< SD input/output tap-delay registers are present */
+	bool has_tap_delay;
+	/**< Maximum SD clock frequency */
+	uint32_t f_max;
 	/**< delay given to card to power up or down fully */
 	uint16_t powerdelay;
 };
@@ -225,6 +250,7 @@ static int xlnx_sdhc_setup_adma(const struct device *dev, const struct sdhc_data
 	uint32_t descnum;
 	const uint8_t *buff = data->data;
 	size_t desc_size;
+	uint64_t desc_addr;
 	int ret = 0;
 
 	if ((data->block_size * data->blocks) < XLNX_SDHC_DESC_MAX_LENGTH) {
@@ -271,7 +297,9 @@ static int xlnx_sdhc_setup_adma(const struct device *dev, const struct sdhc_data
 		return ret;
 	}
 
-	reg->adma_sys_addr = ((uintptr_t)&(dev_data->adma2_descrtbl[0]) & ~(uintptr_t)0x0);
+	desc_addr = (uint64_t)(uintptr_t)&(dev_data->adma2_descrtbl[0]);
+	reg->adma_sys_addr = (uint32_t)desc_addr;
+	reg->adma_sys_addr_upr = (uint32_t)(desc_addr >> 32);
 
 	return ret;
 }
@@ -458,7 +486,8 @@ static int8_t xlnx_sdhc_cmd(const struct device *dev, struct sdhc_command *cmd, 
 		k_event_clear(&dev_data->irq_event, XLNX_SDHC_TXFR_INTR_EN_MASK);
 	}
 
-	reg->transfer_mode = dev_data->transfermode;
+	/* Zynq-7000 rejects a no-data command with data-transfer bits set */
+	reg->transfer_mode = data ? dev_data->transfermode : 0;
 	reg->cmd = command;
 
 	/* Check for response */
@@ -522,6 +551,85 @@ static int8_t xlnx_sdhc_xfr(const struct device *dev, struct sdhc_data *data)
 
 /**
  * @brief
+ * Wait for a PIO event and acknowledge it. With an interrupt line the ISR
+ * clears the status bits, so the event is taken from the ISR instead.
+ */
+static int8_t xlnx_sdhc_pio_wait(const struct device *dev, uint32_t event, uint32_t timeout_ms)
+{
+	const struct xlnx_sdhc_config *config = dev->config;
+	volatile struct reg_base *reg = (struct reg_base *)DEVICE_MMIO_GET(dev);
+	struct sd_data *dev_data = dev->data;
+	uint32_t mask = event | XLNX_SDHC_INTR_ERR_MASK;
+	uint32_t events;
+	int8_t ret;
+
+	if (config->irq_config_func == NULL) {
+		ret = xlnx_sdhc_wait_for_events((void *)&reg->normal_int_stat, timeout_ms, mask);
+		if (ret != 0) {
+			return ret;
+		}
+		if ((reg->normal_int_stat & XLNX_SDHC_INTR_ERR_MASK) != 0U) {
+			reg->err_int_stat = XLNX_SDHC_ERROR_INTR_ALL;
+			return -EIO;
+		}
+		reg->normal_int_stat = event;
+		return 0;
+	}
+
+	events = k_event_wait(&dev_data->irq_event, mask, false, K_MSEC(timeout_ms));
+	k_event_clear(&dev_data->irq_event, event);
+	if ((events & XLNX_SDHC_INTR_ERR_MASK) != 0U) {
+		return -EIO;
+	}
+	if ((events & event) == 0U) {
+		return -EAGAIN;
+	}
+	return 0;
+}
+
+/**
+ * @brief
+ * PIO block transfer: wait for buffer-ready per block, then copy through the
+ * Buffer Data Port.
+ */
+static int8_t xlnx_sdhc_pio_xfr(const struct device *dev, struct sdhc_data *data, bool read)
+{
+	volatile struct reg_base *reg = (struct reg_base *)DEVICE_MMIO_GET(dev);
+	uint8_t *buf = data->data;
+	uint32_t ready_mask = read ? XLNX_SDHC_INTR_BRR_MASK : XLNX_SDHC_INTR_BWR_MASK;
+	int8_t ret;
+
+	for (uint32_t blk = 0; blk < data->blocks; blk++) {
+		ret = xlnx_sdhc_pio_wait(dev, ready_mask, data->timeout_ms);
+		if (ret != 0) {
+			LOG_ERR("Block %u/%u buffer-ready failed: %d", blk, data->blocks, ret);
+			return ret;
+		}
+
+		for (uint32_t i = 0; i < data->block_size / 4U; i++) {
+			if (read) {
+				uint32_t w = reg->data_port;
+
+				memcpy(buf + (blk * data->block_size) + (i * 4U), &w, 4U);
+			} else {
+				uint32_t w;
+
+				memcpy(&w, buf + (blk * data->block_size) + (i * 4U), 4U);
+				reg->data_port = w;
+			}
+		}
+	}
+
+	ret = xlnx_sdhc_pio_wait(dev, XLNX_SDHC_INTR_TC_MASK, data->timeout_ms);
+	if (ret != 0) {
+		LOG_ERR("Transfer complete failed: %d", ret);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief
  * Performs data and command transfer and check for transfer complete
  */
 static int xlnx_sdhc_transfer(const struct device *dev, struct sdhc_command *cmd,
@@ -552,6 +660,14 @@ static int xlnx_sdhc_transfer(const struct device *dev, struct sdhc_command *cmd
 		cache_len = data_len;
 		dma_buf = data->data;
 		read = (dev_data->transfermode & XLNX_SDHC_TM_DAT_DIR_SEL_MASK) != 0U;
+
+		if (IS_ENABLED(CONFIG_XLNX_SDHC_PIO)) {
+			ret = xlnx_sdhc_cmd(dev, cmd, true);
+			if (ret != 0) {
+				return ret;
+			}
+			return xlnx_sdhc_pio_xfr(dev, data, read);
+		}
 
 		cache_line_size = sys_cache_data_line_size_get();
 		if (read && (cache_line_size != 0U)) {
@@ -659,9 +775,11 @@ static int xlnx_sdhc_request(const struct device *dev, struct sdhc_command *cmd,
 	int ret;
 
 	if (dev_data->transfermode == 0U) {
-		dev_data->transfermode = XLNX_SDHC_TM_DMA_EN_MASK |
-			XLNX_SDHC_TM_BLK_CNT_EN_MASK |
-			XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		dev_data->transfermode =
+			XLNX_SDHC_TM_BLK_CNT_EN_MASK | XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		if (IS_ENABLED(CONFIG_XLNX_SDHC_ADMA2)) {
+			dev_data->transfermode |= XLNX_SDHC_TM_DMA_EN_MASK;
+		}
 	}
 
 	switch (cmd->opcode) {
@@ -717,10 +835,11 @@ static int xlnx_sdhc_host_props(const struct device *dev, struct sdhc_host_props
 	const struct xlnx_sdhc_config *config = dev->config;
 	const volatile struct reg_base *reg = (struct reg_base *)DEVICE_MMIO_GET(dev);
 	struct sd_data *dev_data = dev->data;
-	const uint64_t cap = reg->capabilities;
-	const uint64_t current = reg->max_current_cap;
+	const uint64_t cap = (uint64_t)reg->capabilities | ((uint64_t)reg->capabilities_upr << 32);
+	const uint64_t current =
+		(uint64_t)reg->max_current_cap | ((uint64_t)reg->max_current_cap_upr << 32);
 
-	props->f_max = SD_CLOCK_208MHZ;
+	props->f_max = config->f_max;
 	props->f_min = SDMMC_CLOCK_400KHZ;
 
 	props->power_delay = config->powerdelay;
@@ -749,6 +868,9 @@ static int xlnx_sdhc_host_props(const struct device *dev, struct sdhc_host_props
 	props->host_caps.sdr50_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap, XLNX_SDHC_SDR50_SUPPORT);
 	props->host_caps.slot_type = (uint8_t)((cap >> XLNX_SDHC_SLOT_TYPE_SHIFT) &
 			XLNX_SDHC_SLOT_TYPE_GET);
+	if (config->broken_slot_type) {
+		props->host_caps.slot_type = XLNX_SDHC_SD_SLOT;
+	}
 	props->host_caps.bus_8_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
 			XLNX_SDHC_8BIT_SUPPORT);
 	props->bus_4_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
@@ -1187,6 +1309,7 @@ static void xlnx_sdhc_config_emmc_itap_delay(const struct device *dev,
  */
 static int8_t xlnx_sdhc_set_timing(const struct device *dev, enum sdhc_timing_mode timing)
 {
+	const struct xlnx_sdhc_config *config = dev->config;
 	volatile struct reg_base *reg = (struct reg_base *)DEVICE_MMIO_GET(dev);
 	const struct sd_data *dev_data = dev->data;
 	uint16_t mode = 0;
@@ -1237,7 +1360,7 @@ static int8_t xlnx_sdhc_set_timing(const struct device *dev, enum sdhc_timing_mo
 	if (dev_data->has_phy == true) {
 		xlnx_sdhc_config_emmc_otap_delay(dev, timing);
 		xlnx_sdhc_config_emmc_itap_delay(dev, timing);
-	} else {
+	} else if (config->has_tap_delay) {
 		xlnx_sdhc_config_sd_otap_delay(dev, timing);
 		xlnx_sdhc_config_sd_itap_delay(dev, timing);
 	}
@@ -1350,8 +1473,10 @@ static int xlnx_sdhc_host_reset(const struct device *dev)
 	/* Data line time out interval */
 	reg->timeout_ctrl = XLNX_SDHC_DAT_LINE_TIMEOUT;
 
-	/* Select ADMA2 */
-	reg->host_ctrl1 = XLNX_SDHC_ADMA2_64;
+	if (IS_ENABLED(CONFIG_XLNX_SDHC_ADMA2)) {
+		/* Select ADMA2 */
+		reg->host_ctrl1 = XLNX_SDHC_ADMA2_64;
+	}
 
 	reg->block_size = XLNX_SDHC_BLK_SIZE_512;
 
@@ -1481,6 +1606,10 @@ static DEVICE_API(sdhc, xlnx_sdhc_api) = {
 			reg->normal_int_stat = XLNX_SDHC_INTR_BRR_MASK;                           \
 			k_event_post(&dev_data->irq_event, XLNX_SDHC_INTR_BRR_MASK);              \
 		}                                                                                 \
+		if ((reg->normal_int_stat & XLNX_SDHC_INTR_BWR_MASK) != 0U) {                     \
+			reg->normal_int_stat = XLNX_SDHC_INTR_BWR_MASK;                           \
+			k_event_post(&dev_data->irq_event, XLNX_SDHC_INTR_BWR_MASK);              \
+		}                                                                                 \
 		if ((reg->normal_int_stat & XLNX_SDHC_INTR_TC_MASK) != 0U) {                      \
 			reg->normal_int_stat = XLNX_SDHC_INTR_TC_MASK;                            \
 			k_event_post(&dev_data->irq_event, XLNX_SDHC_INTR_TC_MASK);               \
@@ -1509,7 +1638,7 @@ static DEVICE_API(sdhc, xlnx_sdhc_api) = {
 #define XLNX_SDHC_INTR_FUNC_REG_API(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts),          \
 		(XLNX_SDHC_INTR_FUNC_REG(n)), (XLNX_SDHC_INTR_FUNC_REG_NULL))
 
-#define XLNX_SDHC_INIT(n)                                                                         \
+#define XLNX_SDHC_INIT(n, max_freq, slot_type_broken, tap_delay)                                  \
 	XLNX_SDHC_INTR_CONFIG_API(n)                                                              \
 	const static struct xlnx_sdhc_config xlnx_sdhc_inst_##n = {                               \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                             \
@@ -1519,6 +1648,9 @@ static DEVICE_API(sdhc, xlnx_sdhc_api) = {
 		.powerdelay = DT_INST_PROP_OR(n, power_delay_ms, 0),                              \
 		.hs200_mode = DT_INST_PROP_OR(n, mmc_hs200_1_8v, 0),                              \
 		.hs400_mode = DT_INST_PROP_OR(n, mmc_hs400_1_8v, 0),                              \
+		.broken_slot_type = slot_type_broken,                                             \
+		.f_max = max_freq,                                                                \
+		.has_tap_delay = tap_delay,                                                       \
 	};                                                                                        \
 	static struct sd_data data##n;                                                            \
 	                                                                                          \
@@ -1526,4 +1658,9 @@ static DEVICE_API(sdhc, xlnx_sdhc_api) = {
 			&xlnx_sdhc_inst_##n, POST_KERNEL,                                         \
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &xlnx_sdhc_api);
 
-DT_INST_FOREACH_STATUS_OKAY(XLNX_SDHC_INIT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(XLNX_SDHC_INIT, SD_CLOCK_208MHZ, false, true)
+
+/* Zynq-7000: no PHY/tap-delay block (no UHS); Capabilities misreports the slot type */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT arasan_sdhci_8_9a
+DT_INST_FOREACH_STATUS_OKAY_VARGS(XLNX_SDHC_INIT, SD_CLOCK_50MHZ, true, false)
