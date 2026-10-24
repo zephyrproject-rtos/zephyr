@@ -4467,6 +4467,33 @@ NXP Platform Drivers:
     - "platform: NXP"
   description: NXP Drivers
 
+NXP Platform Ethernet:
+  status: maintained
+  maintainers:
+    - Martin-Pitonak-NXP
+    - protohohol
+  files:
+    - drivers/ethernet/eth_nxp_enet_qos/
+    - drivers/ethernet/nxp_imx_netc/
+    - drivers/ethernet/*nxp*
+    - drivers/ethernet/*/*nxp*
+    - drivers/ethernet/dsa/dsa_tag_netc.*
+    - drivers/ethernet/phy/*tja*
+    - dts/bindings/ethernet/nxp,*
+    - dts/bindings/ethernet/mdio/nxp,*
+    - dts/bindings/ethernet/phy/nxp,*
+    - dts/bindings/dsa/nxp,*
+    - include/zephyr/dt-bindings/ethernet/nxp_*
+    - include/zephyr/drivers/ethernet/eth_nxp_*
+  files-regex-exclude:
+    - .*s32.*
+  labels:
+    - "platform: NXP"
+    - "area: Ethernet"
+  description: >-
+    NXP ethernet MAC, MDIO and PHY drivers for the MCUXpresso platforms
+    (ENET, ENET_QOS, i.MX NETC, DWC ethernet QoS), excluding S32.
+
 NXP Platform Wireless:
   status: maintained
   maintainers:
