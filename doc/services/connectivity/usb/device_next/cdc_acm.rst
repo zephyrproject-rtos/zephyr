@@ -84,9 +84,12 @@ configure the shell to use the CDC ACM UART as the serial backend. See sample
 Since the use case as a serial backend is very common and no configuration is
 necessary at runtime for the CDC ACM UART, the stack offers a helper that
 performs the steps described in :ref:`usb_device_next_howto_configure`. The
-helper is enabled by the :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT`
-and initializes the USB device stack with a single CDC ACM instance. Sample
-:zephyr:code-sample:`usb-cdc-acm-console` demonstrates how to use it.
+helper is enabled by the :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT`.
+It initializes the USB device stack and registers CDC ACM instances. If only one
+instance is available, it registers this single CDC ACM instance. If more than
+one instance is available, the stack identifies and registers UART devices in a
+specific order using the chosen node properties.
+Sample :zephyr:code-sample:`usb-cdc-acm-console` demonstrates how to use it.
 
 :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT` should also be used
 by the boards like :zephyr:board:`nrf52840dongle`, which do not have a debug

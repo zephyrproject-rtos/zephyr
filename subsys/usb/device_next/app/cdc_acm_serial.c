@@ -43,9 +43,32 @@ USBD_CONFIGURATION_DEFINE(cdc_acm_serial_hs_config,
 			  attributes,
 			  CONFIG_CDC_ACM_SERIAL_MAX_POWER, &hs_cfg_desc);
 
+#define GET_CHOSEN_OR_NULL(chosen)						\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_CHOSEN(chosen), zephyr_cdc_acm_uart),	\
+		    (DEVICE_DT_GET_OR_NULL(DT_CHOSEN(chosen))),			\
+		    (NULL))
 
-static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
-			      const enum usbd_speed speed)
+/*
+ * The CDC ACM instances are registered in the same order that they appear in
+ * this array. Therefore, they are always presented in the same order on the
+ * host side. Add new entries at the end.
+ */
+const static struct device *uart_devs[] = {
+	GET_CHOSEN_OR_NULL(zephyr_console),
+	GET_CHOSEN_OR_NULL(zephyr_shell_uart),
+	GET_CHOSEN_OR_NULL(zephyr_uart_mcumgr),
+	GET_CHOSEN_OR_NULL(zephyr_bt_c2h_uart),
+	GET_CHOSEN_OR_NULL(zephyr_ot_uart),
+	GET_CHOSEN_OR_NULL(zephyr_bt_mon_uart),
+};
+
+/* This allows to keep old behavior when there is only one compatible node,
+ * regardless of chosen property.
+ */
+const struct device *uart_dev = DEVICE_DT_GET_ANY(zephyr_cdc_acm_uart);
+
+static int register_cdc_acm(struct usbd_context *const uds_ctx,
+			    const enum usbd_speed speed)
 {
 	struct usbd_config_node *cfg_nd;
 	int err;
@@ -62,11 +85,27 @@ static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
 		return err;
 	}
 
-	err = usbd_register_class(&cdc_acm_serial, "cdc_acm_0", speed, 1);
-	if (err) {
-		LOG_ERR("Failed to register classes");
-		return err;
+	if (DT_NUM_INST_STATUS_OKAY(zephyr_cdc_acm_uart) > 1) {
+		for (int n = 0; n < ARRAY_SIZE(uart_devs); n++) {
+			if (uart_devs[n] == NULL) {
+				continue;
+			}
+
+			err = usbd_register_class(&cdc_acm_serial,
+						  uart_devs[n]->name, speed, 1);
+			if (err != 0 && err != -EALREADY) {
+				LOG_ERR("Failed to register %s", uart_devs[n]->name);
+				return err;
+			}
+		}
+	} else {
+		err = usbd_register_class(&cdc_acm_serial,
+					  uart_dev->name, speed, 1);
+		if (err != 0) {
+			return err;
+		}
 	}
+
 
 	return usbd_device_set_code_triple(uds_ctx, speed,
 					   USB_BCC_MISCELLANEOUS, 0x02, 0x01);
@@ -105,13 +144,13 @@ static int cdc_acm_serial_init_device(void)
 
 	if (USBD_SUPPORTS_HIGH_SPEED &&
 	    usbd_caps_speed(&cdc_acm_serial) == USBD_SPEED_HS) {
-		err = register_cdc_acm_0(&cdc_acm_serial, USBD_SPEED_HS);
+		err = register_cdc_acm(&cdc_acm_serial, USBD_SPEED_HS);
 		if (err) {
 			return err;
 		}
 	}
 
-	err = register_cdc_acm_0(&cdc_acm_serial, USBD_SPEED_FS);
+	err = register_cdc_acm(&cdc_acm_serial, USBD_SPEED_FS);
 	if (err) {
 		return err;
 	}

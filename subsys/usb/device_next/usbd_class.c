@@ -319,13 +319,13 @@ int usbd_register_class(struct usbd_context *const uds_ctx,
 	/* TODO: does it still need to be atomic ? */
 	if (atomic_test_bit(&c_nd->state, USBD_CCTX_REGISTERED)) {
 		LOG_WRN("Class instance already registered");
-		ret = -EBUSY;
+		ret = -EALREADY;
 		goto register_class_error;
 	}
 
 	if ((c_data->uds_ctx != NULL) && (c_data->uds_ctx != uds_ctx)) {
 		LOG_ERR("Class registered to other context at different speed");
-		ret = -EBUSY;
+		ret = -EALREADY;
 		goto register_class_error;
 	}
 
