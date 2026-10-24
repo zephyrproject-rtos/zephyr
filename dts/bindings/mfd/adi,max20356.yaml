@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices MAX20356 wearable PMIC (MFD parent).
+
+  The MAX20356 integrates three bucks, one buck-boost, four LDOs, three load
+  switches, a battery charger, a fuel gauge (separate I2C target), eight
+  multi-purpose control (MPC) GPIOs, and a watchdog. Selecting this compatible
+  configures the driver for the MAX20356 variant; the LDO4Cfg.LDO4RTC bit is
+  rejected on this variant (MAX20358 only).
+
+compatible: "adi,max20356"
+
+include: "adi,max2035x-common.yaml"
