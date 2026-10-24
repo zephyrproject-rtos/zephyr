@@ -12,8 +12,12 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_HEXAGON_THREAD_H_
 #define ZEPHYR_INCLUDE_ARCH_HEXAGON_THREAD_H_
 
+/* Hexagon requires 8-byte stack alignment. */
+#define ARCH_STACK_PTR_ALIGN 8
+
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
+#include <zephyr/arch/arch_interface.h>
 
 /**
  * @brief Callee-saved register context for cooperative context switching.
@@ -55,19 +59,59 @@ struct _callee_saved {
 
 typedef struct _callee_saved _callee_saved_t;
 
+/* Thread flags */
+#define HEXAGON_THREAD_FLAG_STACK_PROT 0x04
+
 /**
  * @brief Architecture-specific thread data.
  */
 struct _thread_arch {
 	/** Return value from arch_switch. */
 	uint32_t swap_return_value;
+
+	/* Flags */
+	uint8_t flags;
+
+#ifdef CONFIG_HW_STACK_PROTECTION
+	/* Stack protection FRAMELIMIT value */
+	uint32_t framelimit;
+#endif
+
+#ifdef CONFIG_USERSPACE
+	/*
+	 * 1 while this thread runs in Hexagon user mode. Mirrored into the
+	 * global _hexagon_user_mode_active flag by z_hexagon_user_mode_sync()
+	 * on every event exit.
+	 */
+	uint8_t priv_level;
+
+	/*
+	 * 1 while a trap0 handler for this thread has re-enabled guest
+	 * interrupts and not yet returned to user mode. Lets
+	 * z_hexagon_event_exit_user_sync() tell a genuine return to user
+	 * mode apart from resuming an interrupted trap0 handler.
+	 */
+	uint8_t trap0_active;
+
+	/* Entry point and arguments for a K_USER thread, saved by
+	 * arch_new_thread() and consumed by hexagon_user_thread_entry().
+	 */
+	k_thread_entry_t user_entry;
+	void *user_p1;
+	void *user_p2;
+	void *user_p3;
+
+	/*
+	 * Dedicated kernel-mode stack used while executing in kernel mode
+	 * (trap0/exception handling); see arch_user_mode_enter()'s comment
+	 * in userspace.c for why it can't be carved out of anything else.
+	 */
+	uint8_t priv_stack[CONFIG_PRIVILEGED_STACK_SIZE] __aligned(ARCH_STACK_PTR_ALIGN);
+#endif
 };
 
 typedef struct _thread_arch _thread_arch_t;
 
 #endif /* _ASMLANGUAGE */
-
-/* Hexagon requires 8-byte stack alignment. */
-#define ARCH_STACK_PTR_ALIGN 8
 
 #endif /* ZEPHYR_INCLUDE_ARCH_HEXAGON_THREAD_H_ */
