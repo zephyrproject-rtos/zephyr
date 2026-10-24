@@ -47,13 +47,11 @@ static ALWAYS_INLINE bool arch_is_in_nested_exception(const struct arch_esf *esf
 }
 
 /**
- * @brief No current implementation where core dump is not supported
+ * @brief Set z_arm_coredump_fault_sp (implemented in public cortex_a_r/exception.h)
  *
  * @param esf exception frame
- * @param exc_return EXC_RETURN value present in LR after exception entry.
+ * @param exc_return EXC_RETURN value (unused on Cortex-A/R)
  */
-static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_t exc_return)
-{}
 
 #if defined(CONFIG_USERSPACE)
 /*

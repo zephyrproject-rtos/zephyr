@@ -16,6 +16,7 @@
 GTEXT(z_arm_exc_exit);
 #else
 #include <zephyr/types.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +78,28 @@ struct arch_esf {
 };
 
 extern uint32_t z_arm_coredump_fault_sp;
+
+/**
+ * @brief Set z_arm_coredump_fault_sp to the pre-fault stack pointer.
+ *
+ * On Cortex-A/R the exception assembly software-pushes the basic frame
+ * onto the banked mode stack, so the pre-fault SP is just above the frame.
+ *
+ * @param esf exception frame pointer
+ * @param exc_return unused on Cortex-A/R (no EXC_RETURN mechanism)
+ */
+static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_t exc_return)
+{
+	ARG_UNUSED(exc_return);
+#ifdef CONFIG_DEBUG_COREDUMP
+	z_arm_coredump_fault_sp = POINTER_TO_UINT(esf) + sizeof(esf->basic);
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	z_arm_coredump_fault_sp += sizeof(esf->fpu);
+#endif
+#else
+	ARG_UNUSED(esf);
+#endif /* CONFIG_DEBUG_COREDUMP */
+}
 
 extern void z_arm_exc_exit(bool fatal);
 
