@@ -10,11 +10,11 @@
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <st/h7/stm32h753Xi.dtsi>
-#include "stm32h7_renode_reference_board-pinctrl.dtsi"
+#include "stm32h7_renode_reference_platform-pinctrl.dtsi"
 
 / {
 	model = "Antmicro STM32H7 Renode Reference Platform";
-	compatible = "antmicro,stm32h7_renode_reference_board";
+	compatible = "antmicro,stm32h7_renode_reference_platform";
 
 	chosen {
 		zephyr,crc = &crc;
