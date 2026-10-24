@@ -8,7 +8,7 @@
 
 struct cb_bits {
 	FILE f;
-	cbprintf_cb out;
+	cbprintf_cb out __aligned(8);
 	void	*ctx;
 };
 
