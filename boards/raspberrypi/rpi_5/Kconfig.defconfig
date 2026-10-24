@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RPI_5
+
+config PM_DEVICE
+	default y if UDC_DWC2
+
+if PM_DEVICE
+
+config POWER_DOMAIN
+	default y
+
+config PM_DEVICE_RUNTIME
+	default y if UDC_DWC2
+
+endif # PM_DEVICE
+
+endif # BOARD_RPI_5
