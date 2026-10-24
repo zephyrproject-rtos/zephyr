@@ -62,13 +62,19 @@ static uint32_t elapsed(uint32_t *val_out)
 	const struct tmr_cmsdk_apb_cfg *const cfg = &cfg_inst0;
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
 
-	uint32_t value = cfg->timer->value;
+	uint32_t val1 = cfg->timer->value;
+	bool wrapped = (cfg->timer->intstatus & 1U) != 0U;
+	uint32_t val2 = cfg->timer->value;
 
 	if (val_out != NULL) {
-		*val_out = value;
+		*val_out = val2;
 	}
 
-	return data->load - value;
+	if ((wrapped && (val2 != 0U)) || (val1 < val2)) {
+		return data->load + (data->load - val2);
+	}
+
+	return data->load - val2;
 }
 
 static inline uint32_t timer_driver_cycle_get(void)
@@ -103,6 +109,12 @@ static void timer_driver_set_reload(uint32_t rel)
 	} else {
 		data->cycle_count += (val1 - val2);
 	}
+
+	/* cycle_count has already been updated, clear the irq to prevent
+	 * subsequent update in the isr after this function returns.
+	 */
+	cfg->timer->intclear = TIMER_CTRL_INT_CLEAR;
+	NVIC_ClearPendingIRQ(TIMER_IRQ);
 }
 
 /*
