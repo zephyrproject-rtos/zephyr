@@ -45,6 +45,17 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define LFXO_NODE DT_NODELABEL(lfxo)
 
+#if !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
+/* Powered off. */
+#define P4_PWRCTRL_VALUE NRF_GPIO_PORT_PWRCTRL_OFF
+#elif DT_ENUM_HAS_VALUE(DT_NODELABEL(gpio4), nordic_pad_voltage, 1v8)
+/* Intended for VDDIO = 1.8 V. */
+#define P4_PWRCTRL_VALUE NRF_GPIO_PORT_PWRCTRL_FLOATING_GND_0V
+#else
+/* Intended for VDDIO > 1.8 V. */
+#define P4_PWRCTRL_VALUE NRF_GPIO_PORT_PWRCTRL_FLOATING_GND_BUF
+#endif
+
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 
 struct mpc_region_override {
@@ -261,13 +272,7 @@ int nordicsemi_nrf71_init(void)
 	 * The selected voltage mode must match what actually drives the port's VDDIO
 	 * pin on the board; mismatching them can damage the port.
 	 */
-#if !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
-	NRF_P4->PWRCTRL = P4_PWRCTRL_OFF;
-#elif DT_ENUM_HAS_VALUE(DT_NODELABEL(gpio4), nordic_pad_voltage, 1v8)
-	NRF_P4->PWRCTRL = P4_PWRCTRL_1V8;
-#else
-	NRF_P4->PWRCTRL = P4_PWRCTRL_3V3;
-#endif
+	nrf_gpio_port_pwrctrl_set(NRF_P4, P4_PWRCTRL_VALUE);
 
 	/* Configure LFXO capacitive load if internal load capacitors are used */
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
