@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -39,19 +40,38 @@ static size_t *coredump_size =
 	(size_t *)&in_memory_coredump[IN_MEMORY_CANARY_SIZE];
 static uint8_t *cur_ptr;
 
+/* Write back to RAM, as the data cache does not survive a reset */
+static int in_memory_flush(void *addr, size_t size)
+{
+	int ret = sys_cache_data_flush_range(addr, size);
 
-static inline void in_memory_invalidate(void)
+	/* Nothing is cached, so nothing needs writing back */
+	if (ret == -ENOTSUP || ret == -EAGAIN) {
+		return 0;
+	}
+
+	if (ret != 0) {
+		LOG_ERR("Cannot flush in-memory coredump (%d)", ret);
+	}
+
+	return ret;
+}
+
+static inline int in_memory_invalidate(void)
 {
 	memset(in_memory_coredump, 0, IN_MEMORY_CANARY_SIZE);
 	memset(&in_memory_coredump[IN_MEMORY_END], 0, IN_MEMORY_CANARY_SIZE);
 	*coredump_size = 0;
 	cur_ptr = NULL;
+
+	/* Clearing the end canary in RAM is enough to invalidate the dump */
+	return in_memory_flush(&in_memory_coredump[IN_MEMORY_END], IN_MEMORY_CANARY_SIZE);
 }
-static inline void in_memory_erase(void)
+static inline int in_memory_erase(void)
 {
 	LOG_DBG("Erasing in-memory coredump\n");
 
-	in_memory_invalidate();
+	return in_memory_invalidate();
 }
 
 static int in_memory_is_valid(void)
@@ -91,7 +111,10 @@ static int in_memory_copy_to(struct coredump_cmd_copy_arg *copy_arg)
 
 static void coredump_in_memory_backend_start(void)
 {
-	in_memory_erase();
+	/* Never overwrite a dump that a reset could still find valid */
+	if (in_memory_erase() != 0) {
+		return;
+	}
 
 	LOG_ERR(COREDUMP_PREFIX_STR "LOCATION %p", (void *)in_memory_coredump);
 
@@ -110,10 +133,18 @@ static void coredump_in_memory_backend_start(void)
 
 static void coredump_in_memory_backend_end(void)
 {
-	memcpy(&in_memory_coredump[IN_MEMORY_END],
-	       in_memory_canary, IN_MEMORY_CANARY_SIZE);
+	if (cur_ptr == NULL) {
+		return;
+	}
 
 	*coredump_size = cur_ptr - &in_memory_coredump[IN_MEMORY_START];
+
+	/* The end canary commits the dump, so it must reach RAM last */
+	if (in_memory_flush(in_memory_coredump, IN_MEMORY_START + *coredump_size) == 0) {
+		memcpy(&in_memory_coredump[IN_MEMORY_END],
+		       in_memory_canary, IN_MEMORY_CANARY_SIZE);
+		(void)in_memory_flush(&in_memory_coredump[IN_MEMORY_END], IN_MEMORY_CANARY_SIZE);
+	}
 
 	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_END_STR);
 }
@@ -125,7 +156,7 @@ static void coredump_in_memory_backend_buffer_output(uint8_t *buf,
 
 	LOG_DBG("Output buffer size %lu", (unsigned long)buflen);
 
-	if (cur_ptr == &in_memory_coredump[IN_MEMORY_END]) {
+	if (cur_ptr == NULL || cur_ptr == &in_memory_coredump[IN_MEMORY_END]) {
 		/* Once full, we silently ignore the request */
 		return;
 	}
@@ -168,16 +199,14 @@ static int coredump_in_memory_backend_cmd(enum coredump_cmd_id cmd_id,
 	case COREDUMP_CMD_VERIFY_STORED_DUMP:
 		return in_memory_is_valid();
 	case COREDUMP_CMD_ERASE_STORED_DUMP:
-		in_memory_erase();
-		break;
+		return in_memory_erase();
 	case COREDUMP_CMD_COPY_STORED_DUMP:
 		if (arg == NULL) {
 			return -EINVAL;
 		}
 		return in_memory_copy_to((struct coredump_cmd_copy_arg *)arg);
 	case COREDUMP_CMD_INVALIDATE_STORED_DUMP:
-		in_memory_invalidate();
-		break;
+		return in_memory_invalidate();
 	default:
 		return -EINVAL;
 	}
