@@ -121,8 +121,6 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 	if (current_line_number == 0) {
 		/* VSync event occurs at the beginning of the frame, line number = 0 */
 
-		/* Set next interrupt in case the user has programmed a line event */
-		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
 
 		k_sem_take(&data->cb_sem, K_NO_WAIT);
 
@@ -131,6 +129,16 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 			event_handled = data->cb.cb_fn(data->cb.dev,
 				DISPLAY_EVENT_VSYNC, &event_data, data->cb.user_data);
 		}
+
+		/* Grab Latest line IRQ number if changed in callback */
+		uint32_t current_int_line = data->hltdc.Instance->LIPCR;
+
+		if (current_int_line != 0) {
+			data->cb.user_line_number = current_int_line;
+		}
+
+		/* Set next interrupt in case the user has programmed a line event */
+		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
 
 		k_sem_give(&data->cb_sem);
 
@@ -176,6 +184,9 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 			} else {
 				HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
 			}
+		} else {
+			/* If you haven't changed the IRQ line set it back to 0 for frame refresh */
+			HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
 		}
 	}
 
@@ -549,12 +560,6 @@ static int stm32_ltdc_display_register_event_cb(const struct device *dev, displa
 		return -ENOSYS;
 	}
 
-	/* VSync can only be detected by LTDC line interrupt,
-	 * so the line event is programmed accordingly
-	 */
-	if (event_mask & DISPLAY_EVENT_VSYNC) {
-		HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
-	}
 
 	*out_reg_handle = 1U;
 
@@ -578,6 +583,11 @@ static int stm32_ltdc_display_register_event_cb(const struct device *dev, displa
 
 	if (data->cb.user_line_number > (data->hltdc.Instance->CPSR & 0xFFFF)) {
 		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
+	} else if (event_mask & DISPLAY_EVENT_VSYNC) {
+		/* VSync can only be detected by LTDC line interrupt,
+		 * so the line event is programmed accordingly
+		 */
+		HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
 	}
 
 	return 0;
