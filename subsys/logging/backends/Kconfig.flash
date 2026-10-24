@@ -1,0 +1,123 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_Z_LOG_PARTITION := zephyr,log-partition
+
+config LOG_BACKEND_FLASH
+	bool "Flash partition backend"
+	depends on LOG_MODE_DEFERRED
+	depends on FLASH
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_LOG_PARTITION))
+	select FLASH_MAP
+	select CRC
+	select LOG_DICTIONARY_SUPPORT
+	help
+	  When enabled, log messages are appended to the flash partition the
+	  zephyr,log-partition chosen node points at, in the dictionary wire
+	  format, and can be read back through log_backend_flash_read().
+
+	  Only memory that does not need an explicit erase before a write, such
+	  as RRAM and MRAM, is supported; the backend refuses to start on memory
+	  that does.
+
+	  The log is only erased on request, never to make room: once the
+	  partition is full, further messages are dropped and counted.
+
+if LOG_BACKEND_FLASH
+
+config LOG_BACKEND_FLASH_BUILD_ID
+	string "Expression identifying the running firmware"
+	help
+	  C expression of type const char * that identifies the firmware, stored
+	  in the partition header and compared against what is there before
+	  anything is appended.
+
+	  A stored record holds the address of its format string, so it can only
+	  be decoded against the exact binary that wrote it, and a change
+	  anywhere in the image can move the format strings of code that was not
+	  touched. There is therefore no useful default: the expression has to
+	  name something that changes whenever the image does, such as the
+	  version string an application already builds with.
+
+	  The expression is not stringified, it reaches the compiler as source.
+	  It cannot contain quotes or spaces: it is a macro, a global variable
+	  or a function call, and whatever declares it belongs in
+	  LOG_BACKEND_FLASH_BUILD_ID_HEADER. Firmware with no identifier of its
+	  own defines a macro in that header rather than spelling a string
+	  literal here.
+
+	  Set it to NULL to store no build id and make no check. The log is then
+	  appended to whatever wrote it, and reading it back against the wrong
+	  firmware produces nonsense rather than an error. That is a reasonable
+	  trade for a device whose firmware is never updated in the field, and
+	  it is deliberately not the default: leaving this empty is an error, so
+	  that giving the log no identity is something chosen rather than
+	  something arrived at.
+
+	  Only the first LOG_BACKEND_FLASH_BUILD_ID_SIZE characters are stored
+	  and compared.
+
+config LOG_BACKEND_FLASH_BUILD_ID_HEADER
+	string "Header to include for the build id expression"
+	help
+	  Header the backend includes before using
+	  LOG_BACKEND_FLASH_BUILD_ID, for example "zephyr/app_version.h" when
+	  the expression is STRINGIFY(APP_BUILD_VERSION). Leave empty when the
+	  expression needs nothing declared.
+
+	  The backend is built as part of Zephyr rather than of the application,
+	  so a header the application provides is not on the include path by
+	  default. Put it there from the application's CMakeLists.txt:
+
+	    zephyr_include_directories(src)
+
+config LOG_BACKEND_FLASH_AUTOSTART
+	bool "Automatically start the flash backend"
+	default y
+	help
+	  When enabled, the backend starts along with the logging subsystem.
+	  Disable it to have the application enable the backend itself, with
+	  log_backend_enable().
+
+config LOG_BACKEND_FLASH_SHELL
+	bool "Shell commands for the flash backend"
+	depends on SHELL
+	help
+	  Adds a "log_flash" command that says what the log partition holds,
+	  prints the stored records, dumps them as hex for decoding on a host,
+	  and erases the log.
+
+	  Printing a record means formatting it against the running firmware,
+	  which the command refuses when the log was written by another build,
+	  since a record holds the address of its format string. The hex dump
+	  works on any log and is what log_parser.py takes.
+
+if LOG_BACKEND_FLASH_SHELL
+
+config LOG_BACKEND_FLASH_SHELL_RECORD_MAX
+	int "Largest record the shell can read back"
+	default 256
+	range 32 $(INT32_MAX)
+	help
+	  Records are read one at a time, so this only has to hold the largest
+	  of them. A record that does not fit is reported and skipped.
+
+config LOG_BACKEND_FLASH_SHELL_TEXT_MAX
+	int "Longest formatted message the shell prints"
+	default 128
+	range 32 $(INT32_MAX)
+	help
+	  A message longer than this is printed truncated.
+
+endif # LOG_BACKEND_FLASH_SHELL
+
+config LOG_BACKEND_FLASH_WRITE_BLOCK_MAX
+	int "Largest supported flash write block size"
+	default 16
+	range 1 256
+	help
+	  Size of the buffer holding the write block a record is being appended
+	  to. The backend refuses to start when the partition needs writes
+	  larger than this.
+
+endif # LOG_BACKEND_FLASH

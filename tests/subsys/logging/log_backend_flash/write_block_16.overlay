@@ -1,0 +1,15 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * A write block larger than one byte is the interesting case: records do not
+ * start on a block boundary, so the backend has to buffer the tail of the
+ * partially filled block and rewrite it when the next record arrives. 16 bytes
+ * is what the nRF RRAM controller uses.
+ */
+&flash0 {
+	write-block-size = <16>;
+};
