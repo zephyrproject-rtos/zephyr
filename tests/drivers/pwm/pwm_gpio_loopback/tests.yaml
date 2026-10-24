@@ -71,31 +71,50 @@ tests:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
   drivers.pwm.gpio_loopback_tc0.mchp:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc0.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cm_jh01_cpro
+    extra_args:
+      - FILE_SUFFIX=tc0
 
   drivers.pwm.gpio_loopback_tc1.mchp:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc1.overlay"
     platform_allow:
       - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tc1
+
+  drivers.pwm.gpio_loopback_tc2.mchp:
+    platform_allow:
+      - pic32cm_jh01_cpro
+    extra_args:
+      - FILE_SUFFIX=tc2
+
+  drivers.pwm.gpio_loopback_tc3.mchp:
+    platform_allow:
+      - pic32cm_jh01_cpro
+    extra_args:
+      - FILE_SUFFIX=tc3
 
   drivers.pwm.gpio_loopback_tc4.mchp:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc4.overlay"
     platform_allow:
       - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tc4
 
   drivers.pwm.gpio_loopback_tc5.mchp:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
     platform_allow:
       - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tc5
 
   drivers.pwm.gpio_loopback_tc6.mchp:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc6.overlay"
     platform_allow:
       - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tc6
 
   drivers.pwm.gpio_loopback_tc7.mchp:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc7.overlay"
     platform_allow:
       - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tc7
