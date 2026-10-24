@@ -31,6 +31,48 @@
 		};
 	};
 
+	pinmux_lpuart8: pinmux_lpuart8 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_03_lpuart8_rx>,
+				 <&iomuxc_gpio_ad_02_lpuart8_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpi2c1: pinmux_lpi2c1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_08_lpi2c1_scl>,
+				 <&iomuxc_gpio_ad_09_lpi2c1_sda>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c4: pinmux_lpi2c4 {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_12_lpi2c4_scl>,
+				 <&iomuxc_gpio_disp_b2_13_lpi2c4_sda>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpspi1: pinmux_lpspi1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_29_lpspi1_pcs0>,
+				 <&iomuxc_gpio_ad_28_lpspi1_sck>,
+				 <&iomuxc_gpio_ad_31_lpspi1_sdi>,
+				 <&iomuxc_gpio_ad_30_lpspi1_sdo>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_flexspi1: pinmux_flexspi1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_sd_b2_05_flexspi1_a_dqs>,

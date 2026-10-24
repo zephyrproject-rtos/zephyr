@@ -107,6 +107,7 @@ tests:
       - platform:mimxrt1160_evk/mimxrt1166/cm7:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
       - platform:mimxrt1170_evk@A/mimxrt1176/cm7:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
       - platform:mimxrt1170_evk@B/mimxrt1176/cm7:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:frdm_imxrt1152/mimxrt1152:"DTC_OVERLAY_FILE=nxp/dut_lpuart8_loopback.overlay;nxp/enable_edma0.overlay"
       - platform:vmu_rt1170/mimxrt1176/cm7:"DTC_OVERLAY_FILE=nxp/dut_lpuart4_loopback.overlay"
       - platform:mimxrt1180_evk/mimxrt1189/cm33:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
       - platform:mimxrt1050_evk/mimxrt1052/hyperflash:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"

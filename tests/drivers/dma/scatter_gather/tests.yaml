@@ -12,6 +12,7 @@ tests:
       - mimxrt1010_evk
       - mimxrt685_evk/mimxrt685s/cm33
       - mimxrt1060_evk/mimxrt1062/qspi
+      - frdm_imxrt1152/mimxrt1152
       - lpcxpresso55s36
       - native_sim
       - native_sim/native/64
