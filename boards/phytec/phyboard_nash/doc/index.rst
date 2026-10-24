@@ -6,15 +6,14 @@ phyBOARD-Nash i.MX93
 Overview
 ********
 
-The phyBOARD-Nash is based on the phyCORE-i.MX93 SoM is based on the NXP i.MX93
+The phyBOARD-Nash is based on the phyCORE-i.MX93 SoM, which is based on the NXP i.MX93
 SoC. It features common industrial interfaces and can be used as a reference for
 development or in the final product. It is an entry-level development board,
 which helps developers to get familiar with the module before investing a large
 amount of resources in more specific designs.
 
-i.MX93 MPU is composed of one cluster of 2x Cortex-A55 cores and a single
-Cortex-M33 core. Zephyr OS is ported to run on one of the Cortex-A55 core as
-well as the Cortex-M33 core.
+The i.MX93 SoC is composed of one cluster of 2x Cortex-A55 cores and a single
+Cortex-M33 core. Zephyr can be used on the Cortex-A55 as well as on the Cortex-M33.
 
 - Memory:
 
@@ -53,6 +52,9 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+.. note::
+   It's recommended to disable peripherals used by the M33-Core on the Linux host.
 
 Devices
 ========
@@ -127,11 +129,17 @@ display the following console output:
     *** Booting Zephyr OS build v3.7.0-848-gb4d99b124c6d ***
     Hello World! phyboard_nash/mimx9352/m33
 
-Starting the M33-Core from U-Boot and Linux
-===========================================
+Starting and using the M33-Core from U-Boot and Linux
+=====================================================
 
-Loading binaries and starting the M33-Core is supported from Linux via
-remoteproc. Please check the `phyCORE-i.MX93 BSP Manual`_ for more information.
+Loading binaries and starting the M33-Core is supported from Linux via remoteproc
+or from U-boot by directly copying the firmware binary. Please check the
+`phyCORE-i.MX93 BSP Manual`_ for more information.
+
+Usually M33-Core applications need to communicate to the Linux host.
+Typically OpenAMP / RPMsg is used for that.
+You can find more Information about how to use OpenAMP with the PHYTEC BSP here:
+`Coprocessor Documentation`_
 
 References
 ==========
@@ -140,5 +148,9 @@ For more information refer to the `PHYTEC website`_.
 
 .. _PHYTEC website:
    https://www.phytec.eu/en/produkte/development-kits/phyboard-nash/
+
 .. _phyCORE-i.MX93 BSP Manual:
-   https://phytec.github.io/doc-bsp-yocto/bsp/imx9/imx9.html
+   https://phytec.github.io/doc-bsp-yocto/bsp/imx9/imx91-93/head.html#running-mcore-examples
+
+.. _Coprocessor Documentation:
+      https://phytec.github.io/doc-bsp-yocto/coprocessor/coprocessor.html

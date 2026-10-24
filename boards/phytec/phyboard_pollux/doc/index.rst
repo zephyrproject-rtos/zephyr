@@ -54,8 +54,8 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-It's recommended to disable peripherals used by the M7-Core on the host running
-on the Linux host.
+.. note::
+   It's recommended to disable peripherals used by the M7-Core on the Linux host.
 
 Connections and IOs
 ===================
@@ -82,11 +82,11 @@ UART
 GPIO
 ----
 
-The pinmuxing for the GPIOs is the standard pinmuxing of the mimx8mp devicetree
-created by NXP and can be found at
-:zephyr_file:`dts/arm/nxp/imx/nxp_imx8ml_m7.dtsi`. The Pinout of the phyBOARD-Polis
-can be found at the `PHYTEC website`_.
+GPIO is fully functional.
+GPIO usage can interfere with Linux if GPIO isn't disabled on Linux
 
+The Pinout of the phyBOARD-Pollux can be found here:
+`PHYTEC website`_
 
 I2C
 ---
@@ -126,6 +126,9 @@ Programming and Debugging
 The i.MX8MP does not have a separate flash for the M7-Core. Because of this
 the A53-Core has to load the program for the M7-Core to the right memory
 address, set the PC and start the processor.
+This can be done using U-Boot or Linux via remoteproc.
+
+Please note that remoteproc only supports the TCM memory region.
 
 The M7 can use up to 3 different RAMs (currently, only two configurations are
 supported: ITCM and DDR). These are the memory mapping for A53 and M7:
@@ -183,9 +186,9 @@ Connecting to the Serial Console
 ================================
 
 A serial console for both the application CPU and the Cortex M7 coprocessor are
-available via the onboard dual USB-to-UART converter. If you use Linux, create a
-udev rule (as ``root``) to fix a permission issue when not using root for
-flashing.
+available via the onboard dual USB-to-UART converter. If you use Linux, you
+need to create a udev rule (as ``root``) to fix a permission issue when not
+using root for connecting to the serial port.
 
 .. code-block:: console
 
@@ -218,13 +221,6 @@ JLink can be connected to the compatible JTAG connector on Phytec's
 
    PEB-EVAL-01
 
-Before flashing or debugging via a JTAG debug adapter,
-the M7 core has to be switched on:
-
-.. code-block:: console
-
-   u-boot=> bootaux 0x7e0000
-
 Here is an example for the :zephyr:code-sample:`hello_world` application:
 
 .. zephyr-app-commands::
@@ -246,12 +242,17 @@ Starting a debug session is similar to flashing:
    :board: phyboard_pollux/mimx8ml8/m7
    :goals: debug
 
-Starting the M7-Core from U-Boot and Linux
-==========================================
+Starting and using the M7-Core from U-Boot and Linux
+====================================================
 
 Loading binaries and starting the M7-Core is supported from Linux via remoteproc
 or from U-boot by directly copying the firmware binary. Please check the
 `phyCORE-i.MX 8M Plus BSP Manual`_ for more information.
+
+Usually M7-Core applications need to communicate to the Linux host.
+Typically OpenAMP / RPMsg is used for that.
+You can find more Information about how to use OpenAMP with the PHYTEC BSP here:
+`Coprocessor Documentation`_
 
 References
 ==========
@@ -269,4 +270,7 @@ References
    https://www.segger.com/downloads/jlink/
 
 .. _phyCORE-i.MX 8M Plus BSP Manual:
-   https://phytec.github.io/doc-bsp-yocto/bsp/imx8/imx8mp/imx8mp.html
+   https://phytec.github.io/doc-bsp-yocto/bsp/imx8/imx8mp/head.html#running-mcore-examples
+
+.. _Coprocessor Documentation:
+   https://phytec.github.io/doc-bsp-yocto/coprocessor/coprocessor.html

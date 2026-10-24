@@ -14,7 +14,7 @@ customer-specific application and enables parallel development of the software
 and carrier board for the phyCORE-i.MX 8M Mini/Nano.
 
 The phyBOARD-Polis is composed of a quad Cortex-A53 cluster and a single
-Cortex-M4 core. Zephyr OS is ported to run on both clusters.
+Cortex-M4 core.
 
 As a powerful, industrial single-board computer (SBC), the phyBOARD-Polis is
 equipped with a variety of standard interfaces which are available on standard
@@ -66,13 +66,15 @@ the phyCORE-i.MX 8M Mini/Nano.
    :alt: phyBOARD-Polis
    :width: 500
 
-More information about the board can be found at the
-`PHYTEC website`_.
+More information about the board can be found at the `PHYTEC website`_.
 
 Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+.. note::
+   It is recommended to disable peripherals used by the M4-Core on the Linux host.
 
 Connections and IOs
 ===================
@@ -133,8 +135,12 @@ and green.
 GPIO:
 -----
 
-The pinmuxing for the GPIOs is the standard pinmuxing of the mimx8mm devicetree
-created by NXP. You can find it here:
+GPIO is fully functional.
+GPIO usage can interfere with Linux if GPIO isn't disabled on Linux
+
+The Pinout of the phyBOARD-Polis can be found here:
+
+`PHYTEC website`_
 
 CAN:
 ----
@@ -148,10 +154,6 @@ devicetree.
   There is a bug in the MCP2518 driver that causes the enable pin of the
   transceiver to be not set. This causes a ENETDOWN error when trying to send
   a CAN frame. Receiving CAN frames in *listen-only* mode is possible.
-
-The Pinout of the phyBOARD-Polis can be found here:
-
-`PHYTEC website`_
 
 System Clock
 ============
@@ -239,12 +241,10 @@ Programming and Debugging (M4)
 The i.MX8MM does not have a separate flash for the M4-Core. Because of this
 the A53-Core has to load the program for the M4-Core to the right memory
 address, set the PC and start the processor.
-This can be done with U-Boot or Phytec's Linux BSP via remoteproc.
+This can be done using U-Boot or Linux via remoteproc.
 
-Because remoteproc in Phytec's BSP only writes to the TCM memory area,
-everything was tested in this memory area.
-
-You can read more about remoteproc in Phytec's BSP here: `Remoteproc BSP`_
+The M4-Core can either use the TCM (Tightly Coupled Memory) or the OCRAM memory.
+Please note that remoteproc only supports the TCM memory region.
 
 These are the memory mapping for A53 and M4:
 
@@ -287,70 +287,51 @@ By default Zephyr is configured to use the TCM memory area and CONFIG_XIP is
 disabled. If you want to use the OCRAM memory area you have to enable
 CONFIG_XIP.
 
-Starting the M4-Core via U-Boot
+Starting and using the M4-Core from U-Boot and Linux
+====================================================
+
+Loading binaries and starting the M4-Core is supported from Linux via remoteproc
+or from U-boot by directly copying the firmware binary. Please check the
+`phyCORE-i.MX 8M Mini BSP Manual`_ for more information.
+
+Usually M4-Core applications need to communicate to the Linux host.
+Typically OpenAMP / RPMsg is used for that.
+You can find more Information about how to use OpenAMP with the PHYTEC BSP here:
+`Coprocessor Documentation`_
+
+Flashing and Debugging via JTAG
 ===============================
 
-Load the compiled zephyr.bin to memory address 0x4800000.
-This should output something like this:
+The phyBOARD-Polis can be debugged using a JTAG or SWD debug adapter. A Segger
+JLink can be connected to the compatible JTAG connector on Phytec's
+``PEB-EVAL-01`` shield.
+
+.. figure:: img/PEB-EVAL-01.jpg
+   :alt: PEB-EVAL-01
+   :width: 350
+
+   PEB-EVAL-01
+
+Here is an example for the :zephyr:code-sample:`hello_world` application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: phyboard_polis/mimx8mm6/m4
+   :goals: flash
+
+The console should now show the output of the application:
 
 .. code-block:: console
 
-   u-boot=> tftp 0x48000000 192.168.3.10:zephyr.bin
-   Using ethernet@30be0000 device
-   TFTP from server 192.168.3.10; our IP address is 192.168.3.11
-   Filename 'zephyr.bin'.
-   Load address: 0x48000000
-   Loading: ##
-            2 KiB/s
-   done
-   Bytes transferred = 27240 (6a68 hex)
+   *** Booting Zephyr OS build v3.7.0 ***
+   Hello World! phyboard_polis/mimx8mm6/m4
 
-Because it's not possible to load directly to the TCM memory area you have to
-copy the binaries. The last argument given is the size of the file in bytes,
-you can copy it from the output of the last command.
+Starting a debug session is similar to flashing:
 
-.. code-block:: console
-
-   u-boot=> cp.b 0x48000000 0x7e0000 27240
-
-And finally starting the M4-Core at the right memory address:
-
-.. code-block:: console
-
-   u-boot=> bootaux 0x7e0000
-   ## Starting auxiliary core stack = 0x20003A58, pc = 0x1FFE1905...
-
-
-Starting the M4-Core via remoteproc
-===================================
-
-Copy the zephyr.elf to ``/lib/firmware`` on the target. Maybe a Zephyr sample
-will be included in a future BSP release.
-
-.. note::
-   In order to use remoteproc you have to add ``imx8mm-phycore-rpmsg.dtbo`` at
-   the end of the line in the ``/boot/bootenv.txt``, then reboot the target.
-
-.. warning::
-   Remoteproc only reads firmware files from the ``/lib/firmware`` directory!
-   If you try to load a binary from another location unexpected errors will
-   occur!
-
-To load and start a firmware use this commands:
-
-.. code-block:: console
-
-   target$ echo /lib/firmware/zephyr.elf > /sys/class/remoteproc/remoteproc0/firmware
-   target$ echo start > /sys/class/remoteproc/remoteproc0/state
-   [   90.700611] remoteproc remoteproc0: powering up imx-rproc
-   [   90.706114] remoteproc remoteproc0: Direct firmware load for /lib/firmware/zephyr.elf failed w2
-   [   90.716571] remoteproc remoteproc0: Falling back to sysfs fallback for: /lib/firmware/zephyr.elf
-   [   90.739280] remoteproc remoteproc0: Booting fw image /lib/firmware/zephyr.elf, size 599356
-   [   90.804448] remoteproc remoteproc0: remote processor imx-rproc is now up
-
-
-The M4-Core is now started up and running. You can see the output from Zephyr
-on UART4.
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: phyboard_polis/mimx8mm6/m4
+   :goals: debug
 
 Debugging
 =========
@@ -438,14 +419,14 @@ For example: disabling ECSPI1 in Linux to use it on the M4-Core with Zephyr:
 .. _PHYTEC website:
    https://www.phytec.de/produkte/single-board-computer/phyboard-polis-imx8m-mini/
 
-.. _phyBOARD-Polis pinout:
-   https://download.phytec.de/Products/phyBOARD-Polis-iMX8M_Mini/TechData/phyCORE-i.MX8M_MINI_Pin_Muxing_Table.A1.xlsx?_ga=2.237582016.1177557183.1660563641-1900651135.1634193918
-
-.. _Remoteproc BSP:
-   https://wiki.phytec.com/pages/releaseview.action?pageId=472257137#L1002e.A3i.MX8MMini/NanoBSPManual-RunningExamplesfromLinuxusingRemoteproc
-
 .. _i.MX 8M Applications Processor Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMX8MMRM
 
 .. _JLink Software:
    https://www.segger.com/downloads/jlink/
+
+.. _phyCORE-i.MX 8M Mini BSP Manual:
+   https://phytec.github.io/doc-bsp-yocto/bsp/imx8/imx8mm/head.html#running-mcore-examples
+
+.. _Coprocessor Documentation:
+   https://phytec.github.io/doc-bsp-yocto/coprocessor/coprocessor.html
