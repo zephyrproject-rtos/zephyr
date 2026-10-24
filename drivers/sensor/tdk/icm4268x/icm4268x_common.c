@@ -64,6 +64,9 @@ int icm4268x_reset(const struct device *dev)
 	case ICM4268X_VARIANT_ICM42686:
 		expected_who_am_i = WHO_AM_I_ICM42686;
 		break;
+	case ICM4268X_VARIANT_IIM42653:
+		expected_who_am_i = WHO_AM_I_IIM42653;
+		break;
 	default:
 		LOG_ERR("Invalid variant: %d", dev_data->cfg.variant);
 		return -EINVAL;

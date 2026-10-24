@@ -346,7 +346,9 @@ void icm4268x_unlock(const struct device *dev)
 		COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),	\
 			(.variant = ICM4268X_VARIANT_ICM42688,), (		\
 		COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42686),	\
-			(.variant = ICM4268X_VARIANT_ICM42686,), ())))		\
+			(.variant = ICM4268X_VARIANT_ICM42686,), (		\
+		COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_iim42653),	\
+			(.variant = ICM4268X_VARIANT_IIM42653,), ())))))	\
 		.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),		\
 		.accel_fs = DT_INST_PROP(inst, accel_fs),			\
 		.accel_odr = DT_INST_PROP(inst, accel_odr),			\
@@ -392,16 +394,23 @@ void icm4268x_unlock(const struct device *dev)
 		     (DT_INST_PROP(inst, accel_fs) <=  ICM42688_DT_ACCEL_FS_2),			   \
 		"Invalid accel-fs configured for ICM42688. Please revisit DTS config-set");
 
+#define IIM42653_BUILD_CONFIG_VALIDATION(inst)							   \
+	BUILD_ASSERT(DT_INST_PROP(inst, accel_fs) <= IIM42653_DT_ACCEL_FS_4,			   \
+		"Invalid accel-fs configured for IIM42653. Please revisit DTS config-set");
+
 #define ICM4268X_INIT(inst)                                                                        \
 												   \
 	BUILD_ASSERT(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688) ||			   \
-		     DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42686),			   \
+		     DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42686) ||			   \
+		     DT_INST_NODE_HAS_COMPAT(inst, invensense_iim42653),			   \
 		"Please define additional compatible property to dts node: "			   \
-		"<invensense,icm42688> or <invensense,icm42686>");				   \
+		"<invensense,icm42688>, <invensense,icm42686> or <invensense,iim42653>");	   \
 												   \
 												   \
 	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),				   \
 		    (ICM42688_BUILD_CONFIG_VALIDATION(inst)), ());				   \
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_iim42653),				   \
+		    (IIM42653_BUILD_CONFIG_VALIDATION(inst)), ());				   \
 												   \
 	ICM4268X_DEFINE_DATA(inst);                                                                \
                                                                                                    \
