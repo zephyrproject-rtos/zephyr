@@ -102,7 +102,8 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		timebase-frequency = <DT_FREQ_M(1)>;
+		/* Should be evenly dividing the typical BCLK (72MHz) */
+		timebase-frequency = <DT_FREQ_M(8)>;
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
