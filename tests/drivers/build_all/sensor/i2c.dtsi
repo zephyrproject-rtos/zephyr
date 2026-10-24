@@ -1716,3 +1716,9 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_max40109: max40109@df {
+	compatible = "adi,max40109";
+	reg = <0xdf>;
+	interrupt-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+};
