@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Raydium RM67162 display controller common properties
+
+include: display-controller.yaml
+
+properties:
+  init-sequence:
+    type: string
+    default: "g1120b0mipi"
+    enum:
+      - "g1120b0mipi"
+      - "lilygo-t-display-s3-amoled"
+    description: |
+      Manufacturer settings written to the controller at initialization.
+      They come from the panel vendor and differ between panels.
+
+      - g1120b0mipi: 400x392 panel of the G1120B0MIPI module
+      - lilygo-t-display-s3-amoled: 1.91" 240x536 panel of the LilyGO
+        T-Display S3 AMOLED boards
+
+  rotation:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 90
+      - 180
+      - 270
+    description: |
+      Initial display rotation (clockwise) in degrees. The width and height
+      properties describe the panel before this rotation is applied.

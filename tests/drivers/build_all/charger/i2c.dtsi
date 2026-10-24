@@ -183,3 +183,19 @@ bq24298@f {
 
 	ce-gpios = <&test_gpio 0 0>;
 };
+
+bq25896@10 {
+	compatible = "ti,bq25896";
+	reg = <0x10>;
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+	precharge-current-microamp = <128000>;
+	charge-term-current-microamp = <128000>;
+};
+
+sy6970@11 {
+	compatible = "silergy,sy6970";
+	reg = <0x11>;
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+};

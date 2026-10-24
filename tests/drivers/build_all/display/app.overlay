@@ -549,6 +549,19 @@
 				bias = <3>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_mipi_dbi_rm67162: rm67162@2b {
+				compatible = "raydium,rm67162";
+				init-sequence = "lilygo-t-display-s3-amoled";
+				reg = <0x2b>;
+				mipi-max-frequency = <40000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				width = <240>;
+				height = <536>;
+				rotation = <90>;
+				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
+				te-mode = "MIPI_DBI_TE_RISING_EDGE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
