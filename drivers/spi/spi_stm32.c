@@ -1616,7 +1616,7 @@ static int spi_stm32_configure(const struct device *dev,
 	data->ctx.config = config;
 
 	LOG_DBG("Installed config %p: freq %uHz (div = %u), mode %u/%u/%u, peripheral %u",
-		config, clock >> br, 1 << br,
+		config, clock >> (br + shift), 1 << (br + shift),
 		(SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0,
 		(SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0,
 		(SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) ? 1 : 0,
