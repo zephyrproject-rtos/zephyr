@@ -12,7 +12,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
-/* Maximum data sent in single transfer (Bytes) */
+/* Maximum number of data items in a single transfer. */
 #define DMA_STM32_MAX_DATA_ITEMS	0xffff
 
 struct dma_stm32_stream {
@@ -25,6 +25,21 @@ struct dma_stm32_stream {
 	volatile bool busy;
 	uint32_t src_size;
 	uint32_t dst_size;
+#ifdef CONFIG_DMA_STM32_V1
+	struct {
+		bool enable;
+		bool completed;
+		uint32_t transfer_unit_size;
+		uint32_t total_items;
+		uint32_t chunk_items_nb;
+		uint32_t chunks_total;
+		uint32_t chunks_completed;
+		uint32_t next_chunk;
+		uint32_t memory_address;
+		uint32_t memory_addr_adj;
+		uint32_t periph_addr_adj;
+	} dbm;
+#endif
 	void *user_data; /* holds the client data */
 	dma_callback_t dma_callback;
 	bool cyclic;
@@ -79,6 +94,12 @@ bool dma_stm32_is_dme_active(DMA_TypeDef *DMAx, uint32_t id);
 void dma_stm32_clear_dme(DMA_TypeDef *DMAx, uint32_t id);
 bool dma_stm32_is_fe_active(DMA_TypeDef *DMAx, uint32_t id);
 void dma_stm32_clear_fe(DMA_TypeDef *DMAx, uint32_t id);
+/* "auto_chunk" - aka automatic DBM */
+uint32_t dma_stm32_chunk_items(uint32_t total_items);
+uint32_t dma_stm32_chunk_address(const struct dma_stm32_stream *stream, uint32_t chunk);
+void dma_stm32_program_chunked(DMA_TypeDef *dma, uint32_t id, struct dma_stm32_stream *stream);
+void dma_stm32_set_inactive_target(DMA_TypeDef *dma, uint32_t id, struct dma_stm32_stream *stream,
+				   uint32_t address);
 #endif
 
 #ifdef CONFIG_DMA_STM32_V2
