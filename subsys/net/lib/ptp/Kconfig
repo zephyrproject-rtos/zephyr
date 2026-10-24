@@ -415,6 +415,51 @@ config PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL
 	  of the timestamps gives proportionally larger rate changes. Set
 	  PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM together with this option.
 
+config PTP_SYSTEM_CLOCK_SYNC
+	bool "Set the system realtime clock from the PTP clock"
+	help
+	  While the PTP Instance is synchronized to a timeTransmitter and the
+	  clock servo is locked, periodically set SYS_CLOCK_REALTIME from the
+	  PTP Hardware Clock. The time is converted from TAI to UTC using the
+	  currentUtcOffset from the timePropertiesDS, or 37 seconds if the
+	  grandmaster does not mark it as valid. The system clock is set only
+	  if the grandmaster announces the PTP timescale, unless
+	  PTP_SYSTEM_CLOCK_SYNC_ARBITRARY_TIMESCALE is enabled.
+
+if PTP_SYSTEM_CLOCK_SYNC
+
+config PTP_SYSTEM_CLOCK_SYNC_REQUIRE_UTC_OFFSET
+	bool "Require a valid UTC offset"
+	help
+	  Set the system realtime clock from the PTP timescale only if the
+	  grandmaster marks the currentUtcOffset as valid. Without this
+	  option, 37 seconds, TAI - UTC since 2017, are used if the offset is
+	  not marked as valid. With the abolition of leap seconds in May 2027
+	  (CGPM 2026 Resolution 5), UTC is not expected to change again for
+	  centuries, so this offset stays valid. UT1, the time given by the
+	  rotation of the Earth, keeps diverging from UTC in the meantime.
+
+config PTP_SYSTEM_CLOCK_SYNC_ARBITRARY_TIMESCALE
+	bool "Accept an arbitrary timescale"
+	help
+	  Also set the system realtime clock if the grandmaster distributes an
+	  arbitrary timescale, as a Zephyr grandmaster does. The PTP Hardware
+	  Clock time is used unchanged, so the system clock shows UTC only if
+	  the PTP Hardware Clock of the grandmaster counts UTC seconds since
+	  the Unix epoch.
+
+config PTP_SYSTEM_CLOCK_SYNC_INTERVAL
+	int "Interval between system realtime clock updates in seconds"
+	default 60
+	range 1 86400
+	help
+	  Minimum time between two updates of SYS_CLOCK_REALTIME. The first
+	  update after the servo locks, including after a clock step, is
+	  done immediately. Between updates the system clock runs from the
+	  kernel tick source and drifts relative to the PTP Hardware Clock.
+
+endif # PTP_SYSTEM_CLOCK_SYNC
+
 config PTP_DISABLED_PRESENT
 	bool
 	default y

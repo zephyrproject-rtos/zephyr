@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/precision_timing/precision_clock_ptp.h>
 #include <zephyr/precision_timing/precision_pi.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/slist.h>
 
 #include "btca.h"
@@ -67,6 +68,12 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #define SYNC_SERVO_UNLOCKED_STEP_NS (100LL * NSEC_PER_MSEC)
 #define SYNC_SERVO_LOCK_SAMPLES 3U
 #define SYNC_SERVO_OUTLIER_SAMPLES 2U
+
+/* TAI - UTC since 2017-01-01, IEEE 1588-2019 9.4. Leap seconds are abolished
+ * in May 2027 (CGPM 2026 Resolution 5), so UTC is not expected to change for
+ * centuries.
+ */
+#define PTP_UTC_OFFSET_DEFAULT 37
 
 /*
  * With PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL, an elapsed time longer than this
@@ -129,6 +136,9 @@ struct ptp_clock {
 	int8_t sync_log_interval;
 	/* Sync origin time of the last sample applied by the servo, 0 if none */
 	uint64_t sync_servo_last_t1;
+#if defined(CONFIG_PTP_SYSTEM_CLOCK_SYNC)
+	k_timepoint_t sys_clock_next_update;
+#endif
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -292,7 +302,7 @@ static void clock_update_grandmaster(void)
 	ptp_clk.parent_ds.gm_priority1 = ptp_clk.default_ds.priority1;
 	ptp_clk.parent_ds.gm_priority2 = ptp_clk.default_ds.priority2;
 
-	ptp_clk.time_prop_ds.current_utc_offset = 37; /* IEEE 1588-2019 9.4 */
+	ptp_clk.time_prop_ds.current_utc_offset = PTP_UTC_OFFSET_DEFAULT;
 	ptp_clk.time_prop_ds.time_src = ptp_clk.time_src;
 	ptp_clk.time_prop_ds.flags = 0;
 }
@@ -814,6 +824,9 @@ static __noinline int clock_step(const struct precision_clock *precision_clk,
 	 */
 	memset(&ptp_clk.timestamp, 0, sizeof(ptp_clk.timestamp));
 	ptp_clk.current_ds.mean_delay = 0;
+#if defined(CONFIG_PTP_SYSTEM_CLOCK_SYNC)
+	ptp_clk.sys_clock_next_update = sys_timepoint_calc(K_NO_WAIT);
+#endif
 	clock_servo_reset();
 
 	LOG_WRN("Set clock time: %" PRIu64 ".%09u", (uint64_t)(target_time / NSEC_PER_SEC),
@@ -876,6 +889,67 @@ static __noinline int clock_adjust_rate(const struct precision_clock *precision_
 	return 0;
 }
 
+#if defined(CONFIG_PTP_SYSTEM_CLOCK_SYNC)
+static void clock_update_system_clock(const struct precision_clock *precision_clk)
+{
+	const struct ptp_time_prop_ds *tpds = &ptp_clk.time_prop_ds;
+	precision_time_t phc_time;
+	struct timespec ts;
+	int16_t utc_offset;
+	int ret;
+
+	if (!ptp_clk.sync_servo_locked) {
+		return;
+	}
+
+	if (!sys_timepoint_expired(ptp_clk.sys_clock_next_update)) {
+		return;
+	}
+
+	/* SYS_CLOCK_REALTIME is UTC, an arbitrary timescale has no defined epoch. */
+	if ((tpds->flags & PTP_MSG_PTP_TIMESCALE_FLAG) != 0U) {
+		if ((tpds->flags & PTP_MSG_UTC_OFFSET_VALID_FLAG) != 0U) {
+			utc_offset = tpds->current_utc_offset;
+		} else if (!IS_ENABLED(CONFIG_PTP_SYSTEM_CLOCK_SYNC_REQUIRE_UTC_OFFSET)) {
+			/* An offset not marked as valid is often 0 or outdated. */
+			utc_offset = PTP_UTC_OFFSET_DEFAULT;
+		} else {
+			return;
+		}
+	} else if (IS_ENABLED(CONFIG_PTP_SYSTEM_CLOCK_SYNC_ARBITRARY_TIMESCALE)) {
+		utc_offset = 0;
+	} else {
+		return;
+	}
+
+	ret = precision_clock_read(precision_clk, &phc_time);
+	if (ret < 0) {
+		LOG_WRN_RATELIMIT("Failed to read PHC time for system clock (err %d)", ret);
+		return;
+	}
+
+	ret = precision_time_sub(phc_time, (int64_t)utc_offset * NSEC_PER_SEC, &phc_time);
+	if (ret < 0 || phc_time < 0) {
+		LOG_WRN_RATELIMIT("PHC time not representable as UTC");
+		return;
+	}
+
+	ts.tv_sec = (time_t)(phc_time / NSEC_PER_SEC);
+	ts.tv_nsec = (long)(phc_time % NSEC_PER_SEC);
+
+	ret = sys_clock_settime(SYS_CLOCK_REALTIME, &ts);
+	if (ret < 0) {
+		LOG_WRN_RATELIMIT("Failed to set system clock (err %d)", ret);
+		return;
+	}
+
+	LOG_DBG("Set system clock: %" PRId64 ".%09ld", (int64_t)ts.tv_sec, ts.tv_nsec);
+
+	ptp_clk.sys_clock_next_update =
+		sys_timepoint_calc(K_SECONDS(CONFIG_PTP_SYSTEM_CLOCK_SYNC_INTERVAL));
+}
+#endif /* CONFIG_PTP_SYSTEM_CLOCK_SYNC */
+
 static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 					 ptp_timeinterval mean_delay, bool ingress_ts_valid)
 {
@@ -924,6 +998,9 @@ static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 
 	ret = clock_adjust_rate(precision_clk, offset);
 	if (ret >= 0) {
+#if defined(CONFIG_PTP_SYSTEM_CLOCK_SYNC)
+		clock_update_system_clock(precision_clk);
+#endif
 		return;
 	}
 
