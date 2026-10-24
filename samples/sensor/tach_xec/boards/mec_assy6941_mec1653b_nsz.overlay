@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * ict0_tach0_gpio050 routes GPIO050 to the TACH0 input on alternate function 1,
+ * matching the routing the MEC172x EVB uses. gtach0_gpio050 is the alternate
+ * function 2 routing of the same pin and is not what TACH0 reads.
+ */
+&tach0 {
+	status = "okay";
+	pinctrl-0 = <&ict0_tach0_gpio050>;
+	pinctrl-names = "default";
+	tach-edges = <5>;
+	pulses-per-round = <2>;
+};
