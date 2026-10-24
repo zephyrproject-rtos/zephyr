@@ -10,6 +10,10 @@
 	};
 };
 
+&tc0 {
+	status = "okay";
+};
+
 &qdec0 {
 	status = "okay";
 };

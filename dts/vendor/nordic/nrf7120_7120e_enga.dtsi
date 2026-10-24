@@ -1090,7 +1090,6 @@
 				reg = <0x10e000 0x1000>;
 				ranges = <0x0 0x10e000 0x1000>;
 				interrupts = <261 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <1>;
 

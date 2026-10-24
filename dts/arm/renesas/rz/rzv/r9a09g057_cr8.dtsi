@@ -219,7 +219,6 @@
 				     <GIC_SPI 406 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -237,7 +236,6 @@
 				     <GIC_SPI 409 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -255,7 +253,6 @@
 				     <GIC_SPI 412 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -273,7 +270,6 @@
 				     <GIC_SPI 415 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -291,7 +287,6 @@
 				     <GIC_SPI 418 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -309,7 +304,6 @@
 				     <GIC_SPI 421 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -327,7 +321,6 @@
 				     <GIC_SPI 424 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -345,7 +338,6 @@
 				     <GIC_SPI 427 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -363,7 +355,6 @@
 				     <GIC_SPI 430 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -381,7 +372,6 @@
 				     <GIC_SPI 433 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -399,7 +389,6 @@
 				     <GIC_SPI 436 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -417,7 +406,6 @@
 				     <GIC_SPI 439 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -435,7 +423,6 @@
 				     <GIC_SPI 442 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -453,7 +440,6 @@
 				     <GIC_SPI 445 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -471,7 +457,6 @@
 				     <GIC_SPI 448 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -489,7 +474,6 @@
 				     <GIC_SPI 451 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "ovf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -1158,7 +1142,6 @@
 			channel = <0>;
 			interrupts = <GIC_SPI 17 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -1172,7 +1155,6 @@
 			channel = <1>;
 			interrupts = <GIC_SPI 18 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -1186,7 +1168,6 @@
 			channel = <2>;
 			interrupts = <GIC_SPI 19 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -1200,7 +1181,6 @@
 			channel = <3>;
 			interrupts = <GIC_SPI 20 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -1214,7 +1194,6 @@
 			channel = <4>;
 			interrupts = <GIC_SPI 21 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -1228,7 +1207,6 @@
 			channel = <5>;
 			interrupts = <GIC_SPI 22 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -1242,7 +1220,6 @@
 			channel = <6>;
 			interrupts = <GIC_SPI 23 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -1256,7 +1233,6 @@
 			channel = <7>;
 			interrupts = <GIC_SPI 24 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";

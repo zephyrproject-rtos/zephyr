@@ -160,6 +160,10 @@
 	pinctrl-names = "default";
 };
 
+&rtc {
+	status = "okay";
+};
+
 /* RTC is the wakeup source for PM modes 3,4 */
 &rtc_highres {
 	status = "okay";

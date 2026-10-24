@@ -325,7 +325,6 @@
 				compatible = "nordic,nrf-radio";
 				reg = <0x8a000 0x1000>;
 				interrupts = <138 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				dfe-supported;
 				ieee802154-supported;
 				ble-2mbps-supported;
@@ -895,7 +894,6 @@
 				reg = <0x10e000 0x1000>;
 				ranges = <0x0 0x10e000 0x1000>;
 				interrupts = <270 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <1>;
 
