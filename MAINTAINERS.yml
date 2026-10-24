@@ -2537,6 +2537,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - ithinuel
+    - TomasGalbickaNXP
   files:
     - include/zephyr/drivers/mbox.h
     - drivers/mbox/
@@ -3524,6 +3525,7 @@ IPC:
     - anangl
   collaborators:
     - arnopo
+    - TomasGalbickaNXP
   files:
     - include/zephyr/ipc/
     - samples/subsys/ipc/
