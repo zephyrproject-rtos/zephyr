@@ -359,6 +359,9 @@ bool arm_gic_irq_is_enabled(unsigned int irq);
 /**
  * @brief Check if an interrupt is pending
  *
+ * @note The GICv3 driver does not implement this operation for LPIs.
+ * An LPI ID triggers an assertion; with assertions disabled, this function returns false.
+ *
  * @param irq interrupt ID
  * @return Returns true if interrupt is pending, false otherwise
  */
@@ -367,12 +370,20 @@ bool arm_gic_irq_is_pending(unsigned int irq);
 /**
  * @brief Set interrupt as pending
  *
+ * @note The GICv3 driver does not implement this operation for LPIs.
+ * An LPI ID triggers an assertion; with assertions disabled, this function returns
+ * without accessing GIC registers.
+ *
  * @param irq interrupt ID
  */
 void arm_gic_irq_set_pending(unsigned int irq);
 
 /**
  * @brief Clear the pending irq
+ *
+ * @note The GICv3 driver does not implement this operation for LPIs.
+ * An LPI ID triggers an assertion; with assertions disabled, this function returns
+ * without accessing GIC registers.
  *
  * @param irq interrupt ID
  */
