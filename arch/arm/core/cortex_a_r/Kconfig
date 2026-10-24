@@ -199,6 +199,17 @@ config CPU_CORTEX_R52
 	help
 	  This option signifies the use of a Cortex-R52 CPU
 
+config CPU_NAME
+	default "cortex-a5" if CPU_CORTEX_A5
+	default "cortex-a7" if CPU_CORTEX_A7
+	default "cortex-a9" if CPU_CORTEX_A9
+	default "cortex-a32" if CPU_CORTEX_A32
+	default "cortex-r4" if CPU_CORTEX_R4
+	default "cortex-r5" if CPU_CORTEX_R5
+	default "cortex-r7" if CPU_CORTEX_R7
+	default "cortex-r8" if CPU_CORTEX_R8
+	default "cortex-r52" if CPU_CORTEX_R52
+
 config CPU_CORTEX_R52_CACHE_SEGREGATION
 	bool "Control segregation of L1 I/D-Cache ways between Flash and AXIM"
 	depends on CPU_CORTEX_R52

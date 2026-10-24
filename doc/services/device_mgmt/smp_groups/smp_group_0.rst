@@ -781,7 +781,7 @@ where:
     |          | * ``b`` Build date and time (requires                             |
     |          | :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME`) |br| |
     |          | * ``m`` Machine |br|                                              |
-    |          | * ``p`` Processor |br|                                            |
+    |          | * ``p`` Processor (:kconfig:option:`CONFIG_CPU_NAME`) |br|        |
     |          | * ``i`` Hardware platform |br|                                    |
     |          | * ``o`` Operating system |br|                                     |
     |          | * ``a`` All fields (shorthand for all above options) |br|         |

@@ -9,6 +9,16 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
+config CPU_NAME
+	default "em4_dmips" if CPU_EM4_DMIPS
+	default "em4_fpus" if CPU_EM4_FPUS
+	default "em4_fpuda" if CPU_EM4_FPUDA
+	default "arcem" if CPU_EM4 || CPU_EM6
+	default "archs" if CPU_HS3X
+	default "hs4x" if CPU_HS4X
+	default "hs5x" if CPU_HS5X
+	default "hs6x" if CPU_HS6X
+
 config CPU_ARCEM
 	bool
 	select ATOMIC_OPERATIONS_C

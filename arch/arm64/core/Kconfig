@@ -124,6 +124,18 @@ config CPU_CORTEX_R82
 	help
 	  This option signifies the use of a Cortex-R82 CPU
 
+config CPU_NAME
+	default "cortex-a53" if CPU_CORTEX_A53
+	default "cortex-a55" if CPU_CORTEX_A55
+	default "cortex-a57" if CPU_CORTEX_A57
+	default "cortex-a72" if CPU_CORTEX_A72
+	default "cortex-a76" if CPU_CORTEX_A76 || CPU_CORTEX_A76_A55
+	default "cortex-a78" if CPU_CORTEX_A78
+	default "cortex-a510" if CPU_CORTEX_A510
+	default "cortex-a320" if CPU_CORTEX_A320
+	default "cortex-a720" if CPU_CORTEX_A720
+	default "cortex-r82" if CPU_CORTEX_R82
+
 config HAS_ARM_SMCCC
 	bool
 	help

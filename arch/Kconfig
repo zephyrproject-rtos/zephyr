@@ -1510,6 +1510,14 @@ config ARCH
 	help
 	  System architecture string.
 
+config CPU_NAME
+	string
+	default ARCH
+	help
+	  Name of the CPU core the image is built for, for example
+	  "cortex-m4". Architectures provide defaults for the cores they
+	  support; SoCs can override it in Kconfig.defconfig.
+
 config TOOLCHAIN_HAS_BUILTIN_FFS
 	bool
 	default y if !(64BIT && RISCV)

@@ -12,6 +12,9 @@ config CPU_ARM926EJ_S
 	help
 	  This option signifies the use of a ARM926EJ-S CPU.
 
+config CPU_NAME
+	default "arm926ej-s" if CPU_ARM926EJ_S
+
 config ARMV5TEJ
 	bool
 	select ARMV5TE
