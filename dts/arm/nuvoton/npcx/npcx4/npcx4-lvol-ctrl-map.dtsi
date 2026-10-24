@@ -220,5 +220,137 @@
 		lvol_io60: lvolb7 {
 			lvols = <&scfg 11 7>;
 		};
+
+		/* Low-Voltage IO Control C */
+		lvol_iog0: lvolc0 {
+			lvols = <&scfg 12 0>;
+		};
+
+		lvol_iog1: lvolc1 {
+			lvols = <&scfg 12 1>;
+		};
+
+		lvol_iog2: lvolc2 {
+			lvols = <&scfg 12 2>;
+		};
+
+		lvol_iog3: lvolc3 {
+			lvols = <&scfg 12 3>;
+		};
+
+		lvol_iog4: lvolc4 {
+			lvols = <&scfg 12 4>;
+		};
+
+		lvol_iog5: lvolc5 {
+			lvols = <&scfg 12 5>;
+		};
+
+		lvol_iog6: lvolc6 {
+			lvols = <&scfg 12 6>;
+		};
+
+		lvol_iog7: lvolc7 {
+			lvols = <&scfg 12 7>;
+		};
+
+		/* Low-Voltage IO Control D */
+		lvol_ioh0: lvold0 {
+			lvols = <&scfg 13 0>;
+		};
+
+		lvol_ioh1: lvold1 {
+			lvols = <&scfg 13 1>;
+		};
+
+		lvol_ioh2: lvold2 {
+			lvols = <&scfg 13 2>;
+		};
+
+		lvol_ioh3: lvold3 {
+			lvols = <&scfg 13 3>;
+		};
+
+		lvol_ioh4: lvold4 {
+			lvols = <&scfg 13 4>;
+		};
+
+		lvol_ioh5: lvold5 {
+			lvols = <&scfg 13 5>;
+		};
+
+		lvol_ioh6: lvold6 {
+			lvols = <&scfg 13 6>;
+		};
+
+		lvol_ioh7: lvold7 {
+			lvols = <&scfg 13 7>;
+		};
+
+		/* Low-Voltage IO Control E */
+		lvol_ioj0: lvole0 {
+			lvols = <&scfg 14 0>;
+		};
+
+		lvol_ioj1: lvole1 {
+			lvols = <&scfg 14 1>;
+		};
+
+		lvol_ioj2: lvole2 {
+			lvols = <&scfg 14 2>;
+		};
+
+		lvol_ioj3: lvole3 {
+			lvols = <&scfg 14 3>;
+		};
+
+		lvol_ioj4: lvole4 {
+			lvols = <&scfg 14 4>;
+		};
+
+		lvol_ioj5: lvole5 {
+			lvols = <&scfg 14 5>;
+		};
+
+		lvol_ioj6: lvole6 {
+			lvols = <&scfg 14 6>;
+		};
+
+		lvol_ioj7: lvole7 {
+			lvols = <&scfg 14 7>;
+		};
+
+		/* Low-Voltage IO Control F */
+		lvol_iok0: lvolf0 {
+			lvols = <&scfg 15 0>;
+		};
+
+		lvol_iok1: lvolf1 {
+			lvols = <&scfg 15 1>;
+		};
+
+		lvol_iok2: lvolf2 {
+			lvols = <&scfg 15 2>;
+		};
+
+		lvol_iok3: lvolf3 {
+			lvols = <&scfg 15 3>;
+		};
+
+		lvol_iok4: lvolf4 {
+			lvols = <&scfg 15 4>;
+		};
+
+		lvol_iok5: lvolf5 {
+			lvols = <&scfg 15 5>;
+		};
+
+		lvol_iok6: lvolf6 {
+			lvols = <&scfg 15 6>;
+		};
+
+		lvol_iok7: lvolf7 {
+			lvols = <&scfg 15 7>;
+		};
 	};
 };
