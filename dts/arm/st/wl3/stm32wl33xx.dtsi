@@ -6,6 +6,7 @@
  */
 
 #include <st/wl3/stm32wl3x.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	soc {
@@ -45,6 +46,17 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 0)>;
 			interrupts = <5 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			status = "disabled";
+		};
+
+		adc1: adc@41006000 {
+			compatible = "st,stm32wb0-adc";
+			reg = <0x41006000 DT_SIZE_K(1)>;
+			/* Digital (always-on) and analog (on-demand) ADC clock domains */
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_CLOCK(APB1, 5)>;
+			interrupts = <12 0>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 	};
