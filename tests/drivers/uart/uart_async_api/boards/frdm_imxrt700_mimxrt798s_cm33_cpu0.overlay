@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* LP_FLEXCOMM2 LPUART on PIO1_11/PIO1_12 in internal loopback, no wiring
+ * needed. The pads get their own group without input-enable, so the
+ * receiver does not latch noise from the line during init.
+ */
+&pinctrl {
+	pinmux_flexcomm2_lpuart_loopback: pinmux_flexcomm2_lpuart_loopback {
+		group0 {
+			pinmux = <LP_FLEXCOMM2_P0_PIO1_11>,
+				 <LP_FLEXCOMM2_P1_PIO1_12>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
+};
+
+&flexcomm2 {
+	status = "okay";
+};
+
+dut: &flexcomm2_lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm2_lpuart_loopback>;
+	pinctrl-names = "default";
+	nxp,loopback;
+	dmas = <&edma0 2 49>, <&edma0 3 50>;
+	dma-names = "rx", "tx";
+};
+
+&edma0 {
+	status = "okay";
+};
