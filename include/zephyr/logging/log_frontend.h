@@ -51,6 +51,10 @@ void log_frontend_msg(const void *source,
 		      const struct log_msg_desc desc,
 		      uint8_t *package, const void *data);
 
+void log_frontend_msg_with_timestamp(const void *source,
+		      const struct log_msg_desc desc,
+		      uint8_t *package, const void *data, log_timestamp_t timestamp);
+
 /** @brief Log message with 0 arguments.
  *
  * Optimized version for log message which does not have arguments (only string).
