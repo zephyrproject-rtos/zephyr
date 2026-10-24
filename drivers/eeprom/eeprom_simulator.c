@@ -14,6 +14,8 @@
 #endif /* CONFIG_ARCH_POSIX */
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/drivers/eeprom.h>
 
 #include <zephyr/init.h>
@@ -87,7 +89,14 @@ static bool eeprom_erase_at_start;
 static bool eeprom_rm_at_exit;
 static bool eeprom_in_ram;
 #else
-static uint8_t mock_eeprom[DT_INST_PROP(0, size)];
+#define MOCK_EEPROM_SECTION                                                                        \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(0, memory_region),                                       \
+		    (Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(                           \
+			    DT_INST_PHANDLE(0, memory_region)))),                                  \
+		    ())
+
+static uint8_t mock_eeprom[DT_INST_PROP(0, size)] MOCK_EEPROM_SECTION;
+static const bool eeprom_erase_at_start = !DT_INST_NODE_HAS_PROP(0, memory_region);
 #endif /* CONFIG_ARCH_POSIX */
 
 static int eeprom_range_is_valid(const struct device *dev, off_t offset,
@@ -235,7 +244,10 @@ static int eeprom_mock_init(const struct device *dev)
 
 static int eeprom_mock_init(const struct device *dev)
 {
-	memset(mock_eeprom, 0xFF, ARRAY_SIZE(mock_eeprom));
+	if (eeprom_erase_at_start) {
+		memset(mock_eeprom, 0xFF, ARRAY_SIZE(mock_eeprom));
+	}
+
 	return 0;
 }
 

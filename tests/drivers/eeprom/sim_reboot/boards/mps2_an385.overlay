@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	sram_203F0000: sram@203f0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x203f0000 0x10000>;
+		zephyr,memory-region = "EepromSim";
+		status = "okay";
+	};
+
+	sim_eeprom: eeprom {
+		compatible = "zephyr,sim-eeprom";
+		size = <1024>;
+		memory-region = <&sram_203F0000>;
+	};
+};
