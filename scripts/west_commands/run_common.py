@@ -102,6 +102,18 @@ def import_from_path(module_name, file_path):
 def command_verb(command):
     return "flash" if command.name == "flash" else "debug"
 
+def check_runs_from_ram(command, build_conf):
+    '''Die unless the image is linked to run from RAM (CONFIG_XIP=n).
+
+    The "load" command writes the image into RAM and starts it there. An
+    XIP image executes in place from flash, so it would not run, and with
+    some probes loading it would even program flash, which "load" promises
+    not to do.'''
+    if build_conf.getboolean('CONFIG_XIP'):
+        command.die(f'west {command.name} only works with images linked to run from RAM, '
+                    'but this build has CONFIG_XIP=y and executes in place from flash. '
+                    'Rebuild with CONFIG_XIP=n, or use "west flash".')
+
 def add_parser_common(command, parser_adder=None, parser=None):
     if parser_adder is not None:
         parser = parser_adder.add_parser(
@@ -342,6 +354,9 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     cache = load_cmake_cache(build_dir, user_args)
     build_conf = BuildConfiguration(build_dir)
     board = build_conf.get('CONFIG_BOARD_TARGET')
+
+    if command_name == 'load':
+        check_runs_from_ram(command, build_conf)
 
     if board_image_count is not None and board in board_image_count:
         board_image_count[board].flashed += 1

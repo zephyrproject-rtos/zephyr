@@ -289,6 +289,7 @@ _RUNNERCAPS_COMMANDS = {
     "robot",
     "rtt",
     "reset",
+    "load",
 }
 
 
@@ -301,8 +302,8 @@ class RunnerCaps:
 
     Available capabilities:
 
-    - commands: set of supported commands; default is {'flash',
-      'debug', 'debugserver', 'attach', 'simulate', 'robot', 'rtt'}.
+    - commands: set of supported commands; default is every command in
+      _RUNNERCAPS_COMMANDS.
 
     - dev_id: whether the runner supports device identifiers, in the form of an
       -i, --dev-id option. This is useful when the user has multiple debuggers

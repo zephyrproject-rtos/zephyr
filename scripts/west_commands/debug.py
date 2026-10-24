@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-'''west "debug", "debugserver", and "attach" commands.'''
+'''west "debug", "debugserver", "attach", "rtt", "reset", and "load" commands.'''
 
 from textwrap import dedent
 
@@ -104,6 +104,28 @@ class Reset(WestCommand):
         parser = add_parser_common(self, parser_adder)
         parser.set_defaults(rebuild=False)
         return parser
+
+    def do_run(self, my_args, runner_args):
+        do_run_common(self, my_args, runner_args)
+
+
+class Load(WestCommand):
+
+    def __init__(self):
+        super().__init__(
+            'load',
+            '',
+            description=dedent('''
+            Load the image into RAM over the debug probe and run it.
+
+            Nothing is written to flash, so the image is gone at the next
+            reset. Only images linked to run from RAM (CONFIG_XIP=n) are
+            accepted.'''),
+            accepts_unknown_args=True)
+        self.runner_key = 'debug-runner'  # in runners.yaml
+
+    def do_add_parser(self, parser_adder):
+        return add_parser_common(self, parser_adder)
 
     def do_run(self, my_args, runner_args):
         do_run_common(self, my_args, runner_args)
