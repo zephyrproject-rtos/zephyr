@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
+
 / {
 	aliases {
 		watchdog0 = &wdog_0;
@@ -39,13 +41,13 @@
 			sleep: sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				exit-latency-us = <10>;
+				exit-latency-us = <140>;
 			};
 
 			deep_sleep: deep-sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				exit-latency-us = <11>;
+				exit-latency-us = <180>;
 			};
 		};
 
@@ -58,6 +60,19 @@
 
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
+	};
+
+	/*
+	 * Devices that lose their state in Deep Sleep. Deep Sleep keeps PD_MAIN
+	 * in retention, but only part of its logic has retention flops: the
+	 * peripherals without them are reset when it leaves retention (LPUART1,
+	 * TPM, LPSPI and LPI2C, for example), while the PORT pin configuration
+	 * is kept.
+	 */
+	deep_sleep_off_domain: deep-sleep-off-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&deep_sleep>;
 	};
 
 	hw_params: hw-params {
@@ -209,6 +224,7 @@
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		dmas = <&edma 2 34>, <&edma 3 33>;
 		dma-names = "tx", "rx";
+		power-domains = <&deep_sleep_off_domain>;
 		status = "disabled";
 	};
 
@@ -480,6 +496,8 @@
 		prescale-glitch-filter-bypass;
 		resolution = <32>;
 		status = "disabled";
+		wakeup-source;
+		wakeup-ctrls = <&wuu_0 NXP_WUU_MODULE_1_INT>;
 	};
 
 	lptmr_1: timer@6000 {

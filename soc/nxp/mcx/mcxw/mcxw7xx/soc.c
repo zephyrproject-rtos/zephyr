@@ -10,6 +10,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/logging/log.h>
 
 #include <soc.h>
 
@@ -17,8 +18,12 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <fsl_cmc.h>
+#include <fsl_spc.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
+#define MCXW7_SPC_ADDR (SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc))
 
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
@@ -119,6 +124,22 @@ void soc_early_init_hook(void)
 	nxp_mcxw72_trdc_init();
 #endif
 
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	/*
+	 * A wakeup from Power Down or Deep Power Down goes through a reset: release
+	 * the peripheral and IO pad isolation, and clear the low-power requests
+	 * left from the entry.
+	 */
+	if ((CMC_GetSystemResetStatus(MCXW7_CMC_ADDR) & kCMC_WakeUpReset) != 0U) {
+		SPC_ClearPeriphIOIsolationFlag(MCXW7_SPC_ADDR);
+		for (uint32_t i = 0U; i < SPC_PD_STATUS_COUNT; i++) {
+			SPC_ClearPowerDomainLowPowerRequestFlag(MCXW7_SPC_ADDR,
+								(spc_power_domain_id_t)i);
+		}
+		SPC_ClearLowPowerRequest(MCXW7_SPC_ADDR);
+	}
+#endif
+
 #ifdef CONFIG_SOC_MCXW70AC
 	/* This is temporarily placed in the SoC layer.
 	 * Once TSTMR support is available, this logic should be moved to the
@@ -153,6 +174,11 @@ static int soc_nbu_init(void)
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #if defined(CONFIG_NXP_NBU)
 	nxp_nbu_init();
+#elif defined(CONFIG_PM) && defined(CONFIG_SOC_MCXW70AC)
+	/* Hold the NBU CM3 in reset as not used. The radio domain low-power entry
+	 * is requested for each low-power state in pm_state_set().
+	 */
+	RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_CPU_RST_MASK;
 #elif defined(CONFIG_PM)
 	/* Shutdown NBU as not used */
 
