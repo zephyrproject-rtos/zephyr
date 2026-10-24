@@ -8,6 +8,7 @@
 
 #include <ti/am62l3_a53.dtsi>
 #include "am62l_evm_am62l3_a53-pinctrl.dtsi"
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	model = "TI AM62L EVALUATION MODULE (EVM)";
@@ -272,5 +273,21 @@
 			#size-cells = <1>;
 			ranges;
 		};
+	};
+};
+
+&dsi0 {
+	status = "okay";
+	data-lanes = <2>;
+
+	rpi_td2: panel@0 {
+		compatible = "ilitek,ili9881c";
+		reg = <0>;
+		data-lanes = <2>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		reset-gpios = <&display_mcu 0 GPIO_ACTIVE_HIGH>;
+		width = <720>;
+		height = <1280>;
+		status = "disabled";
 	};
 };

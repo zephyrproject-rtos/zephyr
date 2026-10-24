@@ -25,3 +25,10 @@ config ILI9881C_DSI
 		$(dt_compat_any_has_prop,$(DT_COMPAT_ILITEK_ILI9881C),bl-gpios)
 	help
 	  Enable driver for ILI9881C_DSI display driver.
+
+config ILI9881C_DSI_RPI_TOUCH_DISPLAY
+	bool "ILI9881C_DSI init sequence for the Raspberry Pi Touch Display 2"
+	depends on ILI9881C_DSI
+	help
+	  Use the register init sequence tuned for the Raspberry Pi Touch
+	  Display 2 (7") panel instead of the generic ILI9881C init sequence.
