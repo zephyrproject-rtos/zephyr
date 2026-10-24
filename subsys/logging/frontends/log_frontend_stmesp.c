@@ -359,7 +359,7 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 	hdr.log.has_data = desc.data_len > 0 ? 1 : 0;
 
 	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
-		STMESP_Type *stm_esp;
+		STMESP_Type *stm_esp = 0;
 		int err;
 
 		err = stmesp_get_port(get_channel(), &stm_esp);
@@ -412,7 +412,7 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 		DICT_HDR_INITIALIZER(desc.level, get_source_id(source), 0);
 
 	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
-		STMESP_Type *stm_esp;
+		STMESP_Type *stm_esp = 0;
 		int err;
 
 		err = stmesp_get_port(get_channel(), &stm_esp);
@@ -486,7 +486,7 @@ void log_frontend_simple_0(const void *source, uint32_t level, const char *fmt)
 	static const union cbprintf_package_hdr package_hdr = {.desc = {.len = 2}};
 
 	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
-		STMESP_Type *stm_esp;
+		STMESP_Type *stm_esp = 0;
 		int err;
 
 		err = stmesp_get_port(get_channel(), &stm_esp);
@@ -513,7 +513,7 @@ void log_frontend_simple_1(const void *source, uint32_t level, const char *fmt, 
 	static const union cbprintf_package_hdr package_hdr = {.desc = {.len = 2 + 1}};
 
 	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
-		STMESP_Type *stm_esp;
+		STMESP_Type *stm_esp = 0;
 		int err;
 
 		err = stmesp_get_port(get_channel(), &stm_esp);
@@ -543,7 +543,7 @@ void log_frontend_simple_2(const void *source, uint32_t level, const char *fmt, 
 	static const union cbprintf_package_hdr package_hdr = {.desc = {.len = 2 + 2}};
 
 	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
-		STMESP_Type *stm_esp;
+		STMESP_Type *stm_esp = 0;
 		int err;
 
 		err = stmesp_get_port(get_channel(), &stm_esp);
@@ -589,7 +589,7 @@ void log_frontend_init(void)
 	 * coprocessors (FLPR and PPR).
 	 */
 	TYPE_SECTION_START_EXTERN(struct log_source_const_data, log_const);
-	STMESP_Type *stm_esp;
+	STMESP_Type *stm_esp = 0;
 	uintptr_t log_const_start;
 	uintptr_t log_str_start;
 
@@ -605,7 +605,7 @@ void log_frontend_stmesp_dummy_write(void)
 {
 #define STMESP_DUMMY_WORD 0xaabbccdd
 
-	STMESP_Type *stm_esp;
+	STMESP_Type *stm_esp = 0;
 
 	(void)stmesp_get_port(CONFIG_LOG_FRONTEND_STMESP_FLUSH_PORT_ID, &stm_esp);
 	STM_D32(stm_esp, STMESP_DUMMY_WORD, false, false);
@@ -629,7 +629,7 @@ void log_frontend_stmesp_pre_sleep(void)
 #if EARLY_BUF_SIZE > 0
 int log_frontend_stmesp_etr_ready(void)
 {
-	STMESP_Type *stm_esp;
+	STMESP_Type *stm_esp = 0;
 	uint16_t len;
 	uint32_t *buf = NULL;
 	int err;
@@ -667,7 +667,7 @@ int log_frontend_stmesp_etr_ready(void)
 void log_frontend_stmesp_log0(const void *source, uint32_t x)
 {
 	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
-		STMESP_Type *port;
+		STMESP_Type *port = 0;
 		int err = stmesp_get_port((uint32_t)x +
 			CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG_BASE, &port);
 		uint16_t source_id = log_source_id(source);
@@ -683,7 +683,7 @@ void log_frontend_stmesp_log0(const void *source, uint32_t x)
 void log_frontend_stmesp_log1(const void *source, uint32_t x, uint32_t arg)
 {
 	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
-		STMESP_Type *port;
+		STMESP_Type *port = 0;
 		int err = stmesp_get_port((uint32_t)x +
 			CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG_BASE, &port);
 		uint16_t source_id = log_source_id(source);
