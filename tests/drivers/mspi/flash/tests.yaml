@@ -39,6 +39,12 @@ tests:
       - stm32h573i_dk
     extra_configs:
       - CONFIG_MSPI_DMA=y
+  drivers.mspi.flash.bitbang:
+    filter: dt_compat_enabled("zephyr,mspi-bitbang-controller")
+    platform_allow:
+      - stm32h573i_dk
+    extra_args:
+      - FILE_SUFFIX="bitbang"
   drivers.mspi.flash.stm32.memmap:
     platform_allow:
       - stm32h573i_dk
