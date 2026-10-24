@@ -140,6 +140,9 @@ offload:
     bhi 1f
     mov r0, sp
     cps #MODE_IRQ
+    mov r1, sp
+    cps #MODE_SYS
+    mov sp, r1
     push {r0}
 
 1:
