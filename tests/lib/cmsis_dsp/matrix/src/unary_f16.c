@@ -306,8 +306,8 @@ static void test_op2v(int op, const uint16_t *ref, size_t length)
 
 		/* Load matrix data */
 		memcpy(mat_in1.pData, in_com1,
-		       2 * rows * internal * sizeof(float16_t));
-		memcpy(vec, in_vec1, 2 * internal * sizeof(float16_t));
+		       rows * internal * sizeof(float16_t));
+		memcpy(vec, in_vec1, internal * sizeof(float16_t));
 
 		/* Run test function */
 		switch (op) {
