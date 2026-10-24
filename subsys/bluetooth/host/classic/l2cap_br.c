@@ -165,6 +165,7 @@ enum {
 
 	/* Retransmission and flow control flags*/
 	L2CAP_FLAG_RET_TIMER,   /* Retransmission timer is working */
+	L2CAP_FLAG_RET_LOST,    /* Channel lost to MaxTransmit */
 
 	/* Receiving S-frame/I-frame flags */
 	L2CAP_FLAG_RECV_FRAME_P,         /* Poll (P) flag of received frame */
@@ -442,7 +443,9 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 	k_work_cancel_delayable(&br_chan->monitor_work);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
-	atomic_clear(BR_CHAN(chan)->flags);
+	ARRAY_FOR_EACH(BR_CHAN(chan)->flags, i) {
+		atomic_clear(&BR_CHAN(chan)->flags[i]);
+	}
 }
 
 #define L2CAP_BR_RETRY_INTERVAL_MAX 100
@@ -1529,6 +1532,12 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 	struct bt_l2cap_br_chan *br_chan =
 		CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
+	/* A lost channel is closed: nothing more is sent on it */
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_LOST)) {
+		lower_data_ready(br_chan);
+		return NULL;
+	}
+
 	if (br_chan->_pdu_buf && bt_buf_has_view(br_chan->_pdu_buf)) {
 		LOG_ERR("already have view on %p", br_chan->_pdu_buf);
 		return NULL;
@@ -1768,17 +1777,19 @@ send_i_frame:
 			 */
 			actual_pdu_len -= BT_L2CAP_RT_FC_SDU_LEN_SIZE;
 
-			tx_win->transmit_counter++;
 			tx_win->srej = false;
 			tx_win->retransmit = false;
 
+			/* Compared before counting this transmission, which would wrap the counter
+			 * for a MaxTransmit of 255
+			 */
 			if (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_ERET) {
-				if (br_chan->tx.max_transmit &&
-				    (tx_win->transmit_counter > br_chan->tx.max_transmit)) {
+				if ((br_chan->tx.max_transmit != 0U) &&
+				    (tx_win->transmit_counter >= br_chan->tx.max_transmit)) {
 					disconnect = true;
 				}
 			} else {
-				if (tx_win->transmit_counter > br_chan->tx.max_transmit) {
+				if (tx_win->transmit_counter >= br_chan->tx.max_transmit) {
 					disconnect = true;
 				}
 			}
@@ -1789,10 +1800,13 @@ send_i_frame:
 				 * to the CLOSED state and appropriate action shall be taken to
 				 * report this to the upper layers.
 				 */
+				atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_LOST);
 				bt_l2cap_br_chan_disconnect(&br_chan->chan);
 				net_buf_unref(send_buf);
 				return NULL;
 			}
+
+			tx_win->transmit_counter++;
 
 			LOG_WRN("Retransmission I-frame %u: buf %p chan %p len %zu", tx_win->tx_seq,
 				pdu, br_chan, pdu_len);
@@ -6961,7 +6975,9 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	l2cap->chan.chan.ops = &ops;
 	*chan = &l2cap->chan.chan;
 	k_queue_init(&l2cap->recv_pending_queue);
-	atomic_set(l2cap->chan.flags, 0);
+	ARRAY_FOR_EACH(l2cap->chan.flags, i) {
+		atomic_clear(&l2cap->chan.flags[i]);
+	}
 	return 0;
 }
 
@@ -7335,7 +7351,9 @@ static int l2cap_br_connless_accept(struct bt_conn *conn, struct bt_l2cap_chan *
 	br_chan->rx.mtu = BT_L2CAP_RX_MTU - BT_L2CAP_CONNLESS_SDU_HDR_SIZE;
 	br_chan->tx.mtu = L2CAP_BR_MIN_MTU;
 	*chan = &br_chan->chan;
-	atomic_set(br_chan->flags, 0);
+	ARRAY_FOR_EACH(br_chan->flags, i) {
+		atomic_clear(&br_chan->flags[i]);
+	}
 	return 0;
 }
 
