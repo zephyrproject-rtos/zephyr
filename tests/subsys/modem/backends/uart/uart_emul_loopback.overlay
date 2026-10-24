@@ -1,0 +1,18 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	dut: uart-emul {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		loopback;
+
+		/*
+		 * Hold enough incoming data to exercise the backend's
+		 * receive-buffer-full path while RX processing is delayed.
+		 */
+		rx-fifo-size = <4096>;
+
+		/* Accommodate the test's 8192-byte transmission. */
+		tx-fifo-size = <8192>;
+	};
+};
