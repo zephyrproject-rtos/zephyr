@@ -7,6 +7,13 @@ if SOC_FAMILY_BFLB
 config MAIN_STACK_SIZE
 	default 4096
 
+DT_CHOSEN_BFLB_HEAP_RAM_EARLY := bflb,heap-ram-early
+DT_CHOSEN_BFLB_HEAP_RAM_LATE := bflb,heap-ram-late
+
+configdefault MBEDTLS_HEAP_CUSTOM_SECTION
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_BFLB_HEAP_RAM_EARLY))
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_BFLB_HEAP_RAM_LATE)) && MEMC
+
 rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_BFLB

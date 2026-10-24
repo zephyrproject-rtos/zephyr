@@ -17,8 +17,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <lmac_types.h>
 #include <bl60x_fw_api.h>
 #include <lmac_mac.h>
 #include <lmac_msg.h>
@@ -76,6 +76,7 @@ LOG_MODULE_DECLARE(bflb_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 /* MM/ME init parameters (vendor defaults). */
 #define BFLB_TX_LIFETIME_MS         2000U
+#define BFLB_HT_CAPA_SGI_20         BIT(5)
 #define BFLB_MM_PHY_PARAM_BAND0     0x1U /* only band-config the 2.4G PHY supports */
 #define BFLB_MM_UAPSD_TIMEOUT_US    3000U
 #define BFLB_MM_LP_CLK_ACCURACY_PPM 20U
@@ -488,14 +489,69 @@ static int bflb_send_status_cmd(struct bflb_wifi_dev *d, const char *name, uint1
 	return 0;
 }
 
+/* Rate word: format [13:11], short GI [9], bandwidth [8:7], index [6:0].
+ * Non-HT and HT20 single-stream rates are decoded.
+ */
+#define RATE_INFO_FMT_MASK GENMASK(13, 11)
+#define RATE_INFO_SGI      BIT(9)
+#define RATE_INFO_BW_MASK  GENMASK(8, 7)
+#define RATE_INFO_IDX_MASK 0x7fU
+#define RATE_FMT_NON_HT    0U
+#define RATE_FMT_HT_MF     2U
+#define RATE_FMT_HT_GF     3U
+
+const uint16_t bflb_wifi_legacy_rates_100kbps[] = {
+	10, 20, 55, 110, 60, 90, 120, 180, 240, 360, 480, 540,
+};
+
+/* HT20 MCS0-7 with the long guard interval, in 100 kbps units */
+static const uint16_t bflb_wifi_ht20_rates_100kbps[] = {
+	65, 130, 195, 260, 390, 520, 585, 650,
+};
+
+int bflb_wifi_phy_rate_kbps(uint8_t sta_idx)
+{
+	uint32_t info;
+	uint32_t rate;
+	uint32_t fmt;
+	uint32_t idx;
+
+	if (bflb_wifi_sta_rate_info(sta_idx, &info) != 0) {
+		return 0;
+	}
+
+	fmt = FIELD_GET(RATE_INFO_FMT_MASK, info);
+	idx = info & RATE_INFO_IDX_MASK;
+
+	if (fmt == RATE_FMT_NON_HT) {
+		if (idx >= ARRAY_SIZE(bflb_wifi_legacy_rates_100kbps)) {
+			return 0;
+		}
+		return (int)bflb_wifi_legacy_rates_100kbps[idx] * 100;
+	}
+
+	if (((fmt != RATE_FMT_HT_MF) && (fmt != RATE_FMT_HT_GF)) ||
+	    ((info & RATE_INFO_BW_MASK) != 0U) ||
+	    (idx >= ARRAY_SIZE(bflb_wifi_ht20_rates_100kbps))) {
+		return 0;
+	}
+
+	rate = (uint32_t)bflb_wifi_ht20_rates_100kbps[idx] * 100U;
+	/* The short guard interval shortens each symbol from 4 us to 3.6 us */
+	if ((info & RATE_INFO_SGI) != 0U) {
+		rate = rate * 10U / 9U;
+	}
+
+	return (int)rate;
+}
+
 static void bflb_init_me_config(struct me_config_req *m)
 {
 	memset(m, 0, sizeof(*m));
-	/* Force legacy 802.11g -- with HT advertised the AP enables A-MPDU/
-	 * BlockAck for unicast TX and the BL602 MAC HW BA reassembly path
-	 * doesn't reliably surface unicast frames afterwards.
-	 */
-	m->ht_supp = 0;
+	/* HT20, MCS0-7, short GI */
+	m->ht_supp = 1;
+	m->ht_cap.ht_capa_info = BFLB_HT_CAPA_SGI_20;
+	m->ht_cap.mcs_rate[0] = 0xFF;
 	m->vht_supp = 0;
 	m->ps_on = 0;
 	m->tx_lft = BFLB_TX_LIFETIME_MS;
