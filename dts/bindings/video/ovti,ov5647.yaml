@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  OV5647 raw image sensor
+
+  The OV5647 is a 5 Mpx raw Bayer image sensor with a MIPI CSI-2 image data
+  interface and a CCI (I2C compatible) control bus.
+
+compatible: "ovti,ov5647"
+
+include: i2c-device.yaml
+
+properties:
+  clocks:
+    description: Reference to the XVCLK clock, which must be 6 to 27 MHz.
+    required: true
+
+  pwdn-gpios:
+    type: phandle-array
+    description: |
+      Reference to the GPIO connected to the PWDN pin. The sensor receives
+      this as an active-high signal.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
