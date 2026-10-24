@@ -1254,13 +1254,24 @@ static void modem_cmux_on_dlci_frame_sabm(struct modem_cmux_dlci *dlci)
 {
 	struct modem_cmux *cmux = dlci->cmux;
 
-	modem_cmux_connect_response_transmit(cmux);
-
-	if (dlci->state == MODEM_CMUX_DLCI_STATE_OPEN) {
-		LOG_DBG("Unexpected SABM frame");
+	switch (dlci->state) {
+	case MODEM_CMUX_DLCI_STATE_OPEN:
+		LOG_DBG("DLCI %u already open", dlci->dlci_address);
+		modem_cmux_connect_response_transmit(cmux);
 		return;
+
+	case MODEM_CMUX_DLCI_STATE_CLOSING:
+		LOG_DBG("DLCI %u closing, SABM rejected", dlci->dlci_address);
+		modem_cmux_dm_response_transmit(cmux);
+		return;
+
+	default:
+		break;
 	}
 
+	modem_cmux_connect_response_transmit(cmux);
+	/* Stop retrying our own SABM if we were opening */
+	k_work_cancel_delayable(&dlci->open_work);
 	LOG_DBG("DLCI %u SABM request accepted, DLCI opened", dlci->dlci_address);
 	dlci->state = MODEM_CMUX_DLCI_STATE_OPEN;
 	dlci->msc_sent = false;
