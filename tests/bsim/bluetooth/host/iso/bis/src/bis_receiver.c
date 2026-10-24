@@ -336,6 +336,7 @@ static void test_main(void)
 	bk_sync_send();
 
 	LOG_INF("Waiting for sync lost");
+	WAIT_FOR_FLAG_UNSET(flag_pa_synced);
 	WAIT_FOR_FLAG_UNSET(flag_iso_connected);
 
 	TEST_PASS("Test passed");
