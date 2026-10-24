@@ -150,6 +150,7 @@ struct modem_cmux_dlci {
 	/* Work */
 	struct k_work_delayable open_work;
 	struct k_work_delayable close_work;
+	struct k_work rx_resume_work;
 
 	/* State */
 	enum modem_cmux_dlci_state state;
