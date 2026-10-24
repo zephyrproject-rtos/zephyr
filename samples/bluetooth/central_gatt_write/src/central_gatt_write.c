@@ -12,12 +12,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 
-extern int mtu_exchange(struct bt_conn *conn);
-extern int write_cmd(struct bt_conn *conn);
-extern struct bt_conn *conn_connected;
-extern uint32_t last_write_rate;
-extern uint32_t *write_countdown;
-extern void (*start_scan_func)(void);
+#include "gatt_write.h"
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
@@ -95,6 +90,10 @@ uint32_t central_gatt_write(uint32_t count)
 	last_write_rate = 0U;
 	write_countdown = &count;
 
+	if (IS_ENABLED(CONFIG_USE_NOTIFY) && !IS_ENABLED(CONFIG_USE_FULL_DUPLEX)) {
+		notify_rx_window_start(count);
+	}
+
 	if (count != 0U) {
 		printk("GATT Write countdown %u on connection.\n", count);
 	} else {
@@ -113,39 +112,99 @@ uint32_t central_gatt_write(uint32_t count)
 	start_scan_func();
 
 	while (true) {
-		struct bt_conn *conn = NULL;
-
-		if (conn_connected) {
-			/* Get a connection reference to ensure that a
-			 * reference is maintained in case disconnected
-			 * callback is called while we perform GATT Write
-			 * command.
-			 */
-			conn = bt_conn_ref(conn_connected);
+		if (conn_connected == NULL) {
+			(void)k_sleep(K_SECONDS(1));
+			continue;
 		}
 
-		if (conn) {
-			(void)write_cmd(conn);
-			bt_conn_unref(conn);
-
-			/* Passing `0` will not use GATT Write Cmd countdown.
-			 * Below code block will be optimized out by the linker.
+		if (IS_ENABLED(CONFIG_USE_NOTIFY) && !IS_ENABLED(CONFIG_USE_FULL_DUPLEX)) {
+			/* Simplex: the central only subscribes and receives.
+			 * Reception happens in the subscribe callback, so no
+			 * connection reference is needed here; just poll until
+			 * the current RX measurement window is complete.
 			 */
-			if (count) {
-				if ((count % 1000U) == 0U) {
-					printk("GATT Write countdown %u\n", count);
-				}
-
-				count--;
-				if (!count) {
-					break;
-				}
+			if (notify_rx_window_done()) {
+				break;
 			}
 
-			k_yield();
-		} else {
-			k_sleep(K_SECONDS(1));
+			/* Sleep briefly instead of busy-looping, so it does not
+			 * starve lower priority threads while waiting for
+			 * the notification count to increment.
+			 */
+			(void)k_sleep(K_MSEC(100));
+			continue;
 		}
+
+		/* Hold a reference across the transmit so the connection is not
+		 * freed by the disconnected callback mid-transmit. bt_conn_ref()
+		 * returns NULL if the connection was torn down concurrently.
+		 */
+		struct bt_conn *conn = conn_connected;
+
+		if (conn != NULL) {
+			conn = bt_conn_ref(conn);
+		}
+
+		if (conn == NULL) {
+			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_USE_NOTIFY)) {
+			/* Full-duplex: the central both transmits notifications
+			 * (TX) and receives them from the peripheral (RX),
+			 * mirroring the peripheral. Terminate on its own TX
+			 * countdown so the two streams stay independent (as in
+			 * the Write path).
+			 */
+			err = notify_data(conn);
+			if (err != 0) {
+				/* Not subscribed yet (-EAGAIN), out of buffers
+				 * (-ENOMEM) or the link is going down (-ENOTCONN):
+				 * back off about one connection interval before
+				 * retrying. Sleeping (not yielding) lets time
+				 * advance so a pending disconnect is delivered.
+				 */
+				k_timeout_t delay = K_MSEC(10);
+				struct bt_conn_info info;
+
+				if (bt_conn_get_info(conn, &info) == 0) {
+					delay = K_USEC(info.le.interval_us);
+				}
+
+				bt_conn_unref(conn);
+				(void)k_sleep(delay);
+				continue;
+			}
+		} else {
+			err = write_cmd(conn);
+			if (err != 0 && err != -ENOMEM) {
+				/* -ENOMEM just means no TX buffer was free this
+				 * iteration and is retried on the next one; any
+				 * other error is unexpected.
+				 */
+				printk("%s: write_cmd failed (%d)\n", __func__, err);
+			}
+		}
+
+		bt_conn_unref(conn);
+
+		/* Passing `0` will not use the countdown; the block below is
+		 * optimized out by the linker in that case.
+		 */
+		if (count != 0U) {
+			if ((count % 1000U) == 0U) {
+				printk("GATT %s countdown %u\n",
+				       IS_ENABLED(CONFIG_USE_NOTIFY) ? "Notify" : "Write",
+				       count);
+			}
+
+			count--;
+			if (count == 0U) {
+				break;
+			}
+		}
+
+		k_yield();
 	}
 
 	return last_write_rate;

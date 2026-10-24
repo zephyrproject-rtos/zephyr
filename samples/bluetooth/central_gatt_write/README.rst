@@ -31,3 +31,27 @@ After flashing, the sample scans for nearby Bluetooth LE devices, connects to th
 first one found, and continuously sends GATT Write Without Response commands. Use
 the :zephyr:code-sample:`ble_peripheral_gatt_write` sample on a second board as the
 peripheral.
+
+Notification modes
+******************
+
+By default both peers exchange GATT Write Without Response commands. Two Kconfig
+options (defined in ``Kconfig.gatt_write``) select notification-based workloads
+instead:
+
+* ``CONFIG_USE_NOTIFY`` switches the workload to GATT Notifications: the
+  peripheral streams notifications and the central subscribes to and receives
+  them.
+* ``CONFIG_USE_FULL_DUPLEX`` (enabled by default, and only meaningful together
+  with ``CONFIG_USE_NOTIFY``) makes both peers subscribe to and notify each
+  other. Disable it to run the one-directional (simplex) path where only the
+  peripheral notifies and the central receives.
+
+For example, to build in simplex notification mode:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/central_gatt_write
+   :board: <board>
+   :goals: build
+   :gen-args: -DCONFIG_USE_NOTIFY=y -DCONFIG_USE_FULL_DUPLEX=n
+   :compact:
