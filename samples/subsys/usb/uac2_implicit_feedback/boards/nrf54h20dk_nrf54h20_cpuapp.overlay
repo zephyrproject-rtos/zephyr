@@ -18,12 +18,12 @@
 };
 
 i2s_rxtx: &tdm130 {
-	status = "okay";
 	pinctrl-0 = <&tdm130_default_alt>;
 	pinctrl-names = "default";
 	memory-regions = <&cpuapp_dma_region>;
 	mck-clock-source = "ACLK";
 	sck-clock-source = "ACLK";
+	status = "okay";
 };
 
 &audiopll {

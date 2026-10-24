@@ -31,8 +31,8 @@
 		#size-cells = <1>;
 
 		lfs1_part: partition@0 {
-			label = "storage";
 			reg = <0x00000000 DT_SIZE_M(8)>;
+			label = "storage";
 		};
 	};
 };

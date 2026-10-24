@@ -28,8 +28,8 @@
 };
 
 &usart6 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	tmc6460: tmc6460 {
 		compatible = "adi,tmc6460";

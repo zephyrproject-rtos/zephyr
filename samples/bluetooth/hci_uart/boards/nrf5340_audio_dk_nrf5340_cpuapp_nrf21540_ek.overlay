@@ -25,6 +25,6 @@
 &uart0 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <1000000>;
-	status = "okay";
 	hw-flow-control;
+	status = "okay";
 };

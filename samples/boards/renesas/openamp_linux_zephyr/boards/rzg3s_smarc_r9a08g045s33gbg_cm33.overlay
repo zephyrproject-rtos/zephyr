@@ -10,9 +10,9 @@
 	 * to save MPU entries
 	 */
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		openamp_shm: memory-region@62f00000 {
 			compatible = "zephyr,memory-region";
@@ -25,6 +25,17 @@
 	chosen {
 		zephyr,ipc_shm = &vring_shm0;
 		zephyr,ipc = &mbox_consumer;
+	};
+
+	mbox_consumer: mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox1 0>, <&mbox1 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	rsctbl: memory@62f00000 {
+		compatible = "mmio-sram";
+		reg = <0x62f00000 0x1000>;
 	};
 
 	/* Memory region for MBOX (MHU) driver */
@@ -47,17 +58,6 @@
 	vring_shm0: memory@63200000 {
 		compatible = "mmio-sram";
 		reg = <0x63200000 0x300000>;
-	};
-
-	rsctbl: memory@62f00000 {
-		compatible = "mmio-sram";
-		reg = <0x62f00000 0x1000>;
-	};
-
-	mbox_consumer: mbox-consumer {
-		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox1 0>, <&mbox1 0>;
-		mbox-names = "tx", "rx";
 	};
 };
 
