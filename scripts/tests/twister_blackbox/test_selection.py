@@ -261,11 +261,33 @@ class TestSubset:
     @pytest.mark.parametrize(
         'subset, expected_names',
         [
-            ('1/2', ['dummy.device.group', 'dummy.agnostic.group1.subgroup2']),
-            ('2/2', ['dummy.agnostic.group2', 'dummy.agnostic.group1.subgroup1']),
-            ('1/3', ['dummy.device.group', 'dummy.agnostic.group1.subgroup2']),
-            ('2/3', ['dummy.agnostic.group2']),
-            ('3/3', ['dummy.agnostic.group1.subgroup1']),
+            (
+                '1/2',
+                [
+                    'dummy.agnostic.group1.subgroup2',
+                    'dummy.agnostic_cpp.group1.subgroup2',
+                    'dummy.agnostic.group2',
+                    'dummy.agnostic_cpp.group2',
+                ],
+            ),
+            (
+                '2/2',
+                [
+                    'dummy.device.group',
+                    'dummy.agnostic_cpp.group1.subgroup1',
+                    'dummy.agnostic.group1.subgroup1',
+                ],
+            ),
+            (
+                '1/3',
+                [
+                    'dummy.agnostic.group1.subgroup2',
+                    'dummy.agnostic_cpp.group1.subgroup1',
+                    'dummy.agnostic_cpp.group2',
+                ],
+            ),
+            ('2/3', ['dummy.device.group', 'dummy.agnostic.group2']),
+            ('3/3', ['dummy.agnostic_cpp.group1.subgroup2', 'dummy.agnostic.group1.subgroup1']),
         ],
         ids=['first_half', 'second_half', 'first_third', 'mid_third', 'last_third'],
     )
