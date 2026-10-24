@@ -42,6 +42,7 @@
 #include <zephyr/modem/pipe.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 
 #include <modem_backend_mock.h>
 
@@ -256,10 +257,24 @@ static uint8_t ppp_frame[256];
 static size_t ppp_frame_len;
 static bool ppp_frame_escaped;
 
+static size_t dce_ppp_put_escaped(uint8_t *out, size_t pos, uint8_t byte)
+{
+	if (byte == PPP_FLAG || byte == PPP_ESCAPE || byte < 0x20) {
+		out[pos++] = PPP_ESCAPE;
+		out[pos++] = byte ^ PPP_ESCAPE_MASK;
+	} else {
+		out[pos++] = byte;
+	}
+
+	return pos;
+}
+
 static void dce_ppp_send(const uint8_t *payload, size_t len)
 {
+	static const uint8_t header[] = {PPP_ADDRESS, PPP_CONTROL};
 	uint8_t out[64];
 	size_t pos = 0;
+	uint16_t fcs;
 
 	out[pos++] = PPP_FLAG;
 	out[pos++] = PPP_ADDRESS;
@@ -267,19 +282,13 @@ static void dce_ppp_send(const uint8_t *payload, size_t len)
 	out[pos++] = PPP_CONTROL ^ PPP_ESCAPE_MASK;
 
 	for (size_t i = 0; i < len; i++) {
-		if (payload[i] == PPP_FLAG || payload[i] == PPP_ESCAPE || payload[i] < 0x20) {
-			out[pos++] = PPP_ESCAPE;
-			out[pos++] = payload[i] ^ PPP_ESCAPE_MASK;
-		} else {
-			out[pos++] = payload[i];
-		}
+		pos = dce_ppp_put_escaped(out, pos, payload[i]);
 	}
 
-	/* modem_ppp strips the frame tail without checking it, so any two bytes
-	 * that need no escaping will do for the FCS.
-	 */
-	out[pos++] = 0xAA;
-	out[pos++] = 0xBB;
+	fcs = crc16_ccitt(0xFFFF, header, sizeof(header));
+	fcs = crc16_ccitt(fcs, payload, len) ^ 0xFFFF;
+	pos = dce_ppp_put_escaped(out, pos, fcs & 0xFF);
+	pos = dce_ppp_put_escaped(out, pos, fcs >> 8);
 	out[pos++] = PPP_FLAG;
 
 	__ASSERT_NO_MSG(pos <= sizeof(out));
