@@ -774,7 +774,7 @@ static int cmd_device_interface(const struct shell *sh,
 	iface = strtol(argv[2], NULL, 10);
 	alt = strtol(argv[3], NULL, 10);
 
-	err = usbh_req_set_alt(udev, iface, alt);
+	err = usbh_device_interface_set(udev, iface, alt, false);
 	if (err) {
 		shell_error(sh, "host: Failed to set interface alternate");
 	} else {
