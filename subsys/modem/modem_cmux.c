@@ -1060,6 +1060,8 @@ static void modem_cmux_on_control_frame_sabm(struct modem_cmux *cmux)
 	}
 
 	LOG_DBG("CMUX connection request received");
+	/* Stop retrying our own connection request */
+	k_work_cancel_delayable(&cmux->connect_work);
 	cmux->initiator = false;
 	set_state(cmux, MODEM_CMUX_STATE_CONNECTED);
 	modem_cmux_connect_response_transmit(cmux);

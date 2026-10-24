@@ -938,6 +938,50 @@ ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 	modem_backend_mock_wait_for_transaction(&bus_mock);
 }
 
+ZTEST(modem_cmux, test_modem_cmux_connect_peer_sabm)
+{
+	uint32_t events;
+	int ret;
+
+	/* Disconnect CMUX */
+	modem_backend_mock_prime(&bus_mock, &transaction_control_cld);
+	zassert_ok(modem_cmux_disconnect(&cmux));
+	modem_backend_mock_reset(&bus_mock);
+
+	/* Start connecting, discard our SABM */
+	zassert_ok(modem_cmux_connect_async(&cmux));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_control_sabm_cmd), "SABM not sent");
+
+	/* Peer connects first, accept it */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_sabm_cmd,
+			       sizeof(cmux_frame_control_sabm_cmd));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_CONNECTED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_CONNECTED, "Failed to connect CMUX");
+
+	/* Only the UA response may be sent, our SABM must not be retried */
+	k_msleep(CONFIG_MODEM_CMUX_T1_TIMEOUT + TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_control_sabm_ack), "Unexpected data sent");
+	zassert_mem_equal(buffer1, cmux_frame_control_sabm_ack, sizeof(cmux_frame_control_sabm_ack),
+			  "Incorrect UA sent");
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_CONNECTED, "CMUX should stay connected");
+
+	/* Restore CMUX as initiator */
+	modem_cmux_release(&cmux);
+	zassert_ok(modem_cmux_attach(&cmux, bus_mock_pipe));
+	modem_backend_mock_prime(&bus_mock, &transaction_control_sabm);
+	zassert_ok(modem_cmux_connect(&cmux));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
+	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
 ZTEST(modem_cmux, test_modem_drop_frames_with_invalid_length)
 {
 	int ret;
