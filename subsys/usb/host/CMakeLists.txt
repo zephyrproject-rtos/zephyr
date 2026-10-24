@@ -34,6 +34,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USBH_HID_BOOT_CLASS
+  class/usbh_hid_boot.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_USBIP
   usbip.c
 )

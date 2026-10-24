@@ -10,3 +10,12 @@ tests:
   sample.input.input_dump_shell:
     extra_configs:
       - CONFIG_SHELL=y
+  sample.input.input_dump.usb_hid_boot:
+    extra_args:
+      - EXTRA_CONF_FILE="usb_hid_boot.conf"
+      - SHIELD="sparkfun_max3421e"
+    platform_allow:
+      - stm32h747i_disco/stm32h747xx/m7
+    tags:
+      - shield
+      - usb
