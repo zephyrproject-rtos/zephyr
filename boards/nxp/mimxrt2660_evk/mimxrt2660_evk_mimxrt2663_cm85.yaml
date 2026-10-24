@@ -16,4 +16,8 @@ flash: 65536
 supported:
   - gpio
   - uart
+  - dma
+  - i2c
+  - spi
+  - sdhc
 vendor: nxp

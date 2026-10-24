@@ -11,6 +11,8 @@
 	aliases {
 		led0 = &user_led;
 		sw0 = &user_button;
+		ambient-temp0 = &p3t1755;
+		sdhc0 = &usdhc0;
 	};
 
 	leds {
@@ -47,6 +49,12 @@
 &lpuart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
+
+/* Alternate UART; left disabled until an overlay enables it. */
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
 };
 
@@ -98,5 +106,58 @@
 		reg = <0x80000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "PSRAM";
 		status = "disabled";
+	};
+};
+
+/*
+ * LPI2C0 carries the two IO expanders the uSD slot depends on: U23 (PCAL6524)
+ * drives SD_PWREN through an NX3P1100 load switch, and U24 (PCA9555) reports
+ * card detect. Each expander has its own interrupt line.
+ */
+&lpi2c0 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+
+	pcal6524: pcal6524@22 {
+		compatible = "nxp,pcal6524";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+		int-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+	};
+
+	pca9555: pca9555@21 {
+		compatible = "nxp,pca9555";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		int-gpios = <&gpio1 29 GPIO_ACTIVE_LOW>;
+	};
+};
+
+/*
+ * uSD slot. Power and card detect come from the LPI2C0 expanders above:
+ * SD_PWREN is PCAL6524 P2_5 (active high) and card detect is PCA9555 P0_4
+ * (active low). 1.8 V signalling is left off until the level translator
+ * timing is characterized.
+ */
+&usdhc0 {
+	pwr-gpios = <&pcal6524 21 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&pca9555 4 GPIO_ACTIVE_LOW>;
+	power-delay-ms = <500>;
+	no-1-8-v;
+	pinctrl-0 = <&pinmux_usdhc0>;
+	pinctrl-1 = <&pinmux_usdhc0_slow>;
+	pinctrl-2 = <&pinmux_usdhc0_med>;
+	pinctrl-3 = <&pinmux_usdhc0_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
 	};
 };

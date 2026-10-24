@@ -607,6 +607,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART0_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART0_FCLK,
 						IMX_CCM_MUX_LPUART0_PERI3, 5, 1)>;
+		dmas = <&edma0 0 179>, <&edma0 1 180>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -619,6 +621,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART1_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART1_FCLK,
 						IMX_CCM_MUX_LPUART1_PERI3, 5, 1)>;
+		dmas = <&edma0 2 181>, <&edma0 3 182>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -631,6 +635,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART2_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART2_FCLK,
 						IMX_CCM_MUX_LPUART2_PERI3, 5, 1)>;
+		dmas = <&edma0 4 183>, <&edma0 5 184>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -643,6 +649,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART3_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART3_FCLK,
 						IMX_CCM_MUX_LPUART3_PERI3, 5, 1)>;
+		dmas = <&edma0 6 185>, <&edma0 7 186>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -655,6 +663,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART4_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART4_FCLK,
 						IMX_CCM_MUX_LPUART4_PERI3, 5, 1)>;
+		dmas = <&edma0 8 187>, <&edma0 9 188>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -667,6 +677,8 @@
 					   IMX_CCM_ROOT_MAIN_LPUART5_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART5_FCLK,
 						IMX_CCM_MUX_LPUART5_PERI3, 5, 1)>;
+		dmas = <&edma0 10 189>, <&edma0 11 190>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -679,6 +691,8 @@
 					   IMX_CCM_ROOT_WAKE_LPUART0_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPUART0_FCLK,
 						IMX_CCM_MUX_WAKE_LPUART0_PERI7, 1, 1)>;
+		dmas = <&edma2 0 26>, <&edma2 1 27>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -691,6 +705,8 @@
 					   IMX_CCM_ROOT_WAKE_LPUART1_FCLK)>,
 			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPUART1_FCLK,
 						IMX_CCM_MUX_WAKE_LPUART1_PERI7, 1, 1)>;
+		dmas = <&edma2 2 28>, <&edma2 3 29>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -793,8 +809,11 @@
 		#size-cells = <0>;
 		reg = <0x42140000 0x4000>;
 		interrupts = <175 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPI2C0,
-					   IMX_CCM_ROOT_MAIN_LPI2C0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPI2C0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPI2C0_FCLK,
+						IMX_CCM_MUX_LPI2C0_PERI3, 5, 1)>;
 		status = "disabled";
 	};
 
@@ -805,8 +824,11 @@
 		#size-cells = <0>;
 		reg = <0x42910000 0x4000>;
 		interrupts = <176 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPI2C1,
-					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPI2C1_FCLK,
+						IMX_CCM_MUX_LPI2C1_PERI3, 5, 1)>;
 		status = "disabled";
 	};
 
@@ -839,9 +861,11 @@
 		compatible = "nxp,lpspi";
 		reg = <0x42160000 0x4000>;
 		interrupts = <179 0>;
-		clock-names = "gate";
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPSPI0,
-					   IMX_CCM_ROOT_MAIN_LPSPI0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPSPI0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPSPI0_FCLK,
+						IMX_CCM_MUX_LPSPI0_FRO192M, 2, 1)>;
 		tx-fifo-size = <16>;
 		rx-fifo-size = <16>;
 		#address-cells = <1>;
@@ -1745,8 +1769,12 @@
 		compatible = "nxp,imx-usdhc";
 		reg = <0x4a080000 0x10000>;
 		interrupts = <307 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_USDHC0,
-					   IMX_CCM_ROOT_COMM_USDHC0_FCLK)>;
+					   IMX_CCM_ROOT_COMM_USDHC0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_COMM_USDHC0_FCLK,
+						IMX_CCM_MUX_USDHC0_COMM_PERI1_DIV2,
+						2, 1)>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
 		max-bus-freq = <DT_FREQ_M(208)>;
@@ -1758,8 +1786,12 @@
 		compatible = "nxp,imx-usdhc";
 		reg = <0x4a090000 0x10000>;
 		interrupts = <308 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_USDHC1,
-					   IMX_CCM_ROOT_COMM_USDHC1_FCLK)>;
+					   IMX_CCM_ROOT_COMM_USDHC1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_COMM_USDHC1_FCLK,
+						IMX_CCM_MUX_USDHC1_COMM_PERI2_DIV2,
+						2, 1)>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
 		max-bus-freq = <DT_FREQ_M(208)>;
