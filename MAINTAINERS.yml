@@ -1498,7 +1498,6 @@ Documentation:
     - carlescufi
   files:
     - AGENTS.md
-    - CLAUDE.md
     - CODE_OF_CONDUCT.md
     - CONTRIBUTING.rst
     - doc/glossary.rst
