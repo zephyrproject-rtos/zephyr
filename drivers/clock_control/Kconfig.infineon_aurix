@@ -11,3 +11,11 @@ config CLOCK_CONTROL_INFINEON_AURIX_TC4X
 	help
 	  Clock control driver for the CLOCK module of Infineon AURIX TC4x
 	  devices: PLL, ramp oscillator and clock domain divider setup.
+
+config CLOCK_CONTROL_INFINEON_AURIX_TC3X
+	bool "Infineon AURIX TC3x clock control driver"
+	default y
+	depends on DT_HAS_INFINEON_AURIX_TC3X_CCU_ENABLED
+	help
+	  Clock control driver for the SCU clock registers of Infineon AURIX
+	  TC3x devices: oscillator, PLL and clock domain divider setup.
