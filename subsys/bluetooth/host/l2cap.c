@@ -341,6 +341,13 @@ static void l2cap_rx_process(struct k_work *work)
 		net_buf_unref(buf);
 	}
 }
+
+static void l2cap_status_process(struct k_work *work)
+{
+	struct bt_l2cap_le_chan *ch = CONTAINER_OF(work, struct bt_l2cap_le_chan, status_work);
+
+	ch->chan.ops->status(&ch->chan, ch->chan.status);
+}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
@@ -400,6 +407,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	 * always succeed.
 	 */
 	k_work_init_delayable(&le_chan->rtx_work, l2cap_rtx_timeout);
+	k_work_init(&le_chan->status_work, l2cap_status_process);
 
 	if (L2CAP_LE_CID_IS_DYN(le_chan->rx.cid)) {
 		k_work_init(&le_chan->rx_work, l2cap_rx_process);
@@ -858,7 +866,12 @@ static void chan_take_credit(struct bt_l2cap_le_chan *lechan)
 		atomic_clear_bit(lechan->chan.status, BT_L2CAP_STATUS_OUT);
 
 		if (lechan->chan.ops->status) {
-			lechan->chan.ops->status(&lechan->chan, lechan->chan.status);
+			/* Not called here: the TX processor holds the host lock,
+			 * and sends the HCI commands that the callback may wait for.
+			 */
+			__maybe_unused int err = bt_work_submit(&lechan->status_work);
+
+			__ASSERT(err >= 0, "status work not submitted (err %d)", err);
 		}
 	}
 #endif
@@ -1409,10 +1422,11 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 		k_work_cancel_delayable(&le_chan->rtx_work);
 	}
 
-	/* Make sure the RX work is not left queued with a reference to a
-	 * channel object that may be freed or re-used after this call.
+	/* Make sure the RX and status work are not left queued with a reference
+	 * to a channel object that may be freed or re-used after this call.
 	 */
 	(void)k_work_cancel(&le_chan->rx_work);
+	(void)k_work_cancel(&le_chan->status_work);
 
 	/* Remove buffers on the SDU RX queue */
 	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
