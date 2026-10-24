@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
@@ -83,6 +84,7 @@ struct uart_asclin_config {
 	mem_addr_t base;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	const struct pinctrl_dev_config *pcfg;
 	uint16_t prescaler;
 	uint8_t oversampling;
 	uint8_t samplepoint;
@@ -294,6 +296,11 @@ static int uart_asclin_init(const struct device *dev)
 		return -ETIMEDOUT;
 	}
 
+	/* Route the pins once the module drives its idle levels */
+	if (IS_ENABLED(CONFIG_PINCTRL) && cfg->pcfg != NULL) {
+		return pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	}
+
 	return 0;
 }
 
@@ -303,6 +310,7 @@ static DEVICE_API(uart, uart_asclin_driver_api) = {
 };
 
 #define UART_ASCLIN_DEVICE_INIT(n)                                                                 \
+	IF_ENABLED(DT_INST_PINCTRL_HAS_IDX(n, 0), (PINCTRL_DT_INST_DEFINE(n);))                    \
 	static struct uart_config uart_cfg_##n = {                                                 \
 		.baudrate = DT_INST_PROP_OR(n, current_speed, 115200),                             \
 		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),                    \
@@ -316,6 +324,8 @@ static DEVICE_API(uart, uart_asclin_driver_api) = {
 		.base = (mem_addr_t)DT_INST_REG_ADDR(n),                                           \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, id),                \
+		.pcfg = COND_CODE_1(DT_INST_PINCTRL_HAS_IDX(n, 0),                                 \
+				    (PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),                  \
 		.oversampling = DT_INST_PROP_OR(n, oversampling, 16),                              \
 		.samplepoint = DT_INST_PROP_OR(n, samplepoint, 8),                                 \
 		.median_filter = DT_INST_PROP(n, median_filter),                                   \
