@@ -1528,7 +1528,7 @@ def test_projectbuilder_process(
     instance_mock.testsuite.harness = 'test'
     instance_mock.testsuite.harness_config = HarnessConfig()
     instance_mock.required_applications = []
-    env_mock = mock.Mock()
+    env_mock = mock.Mock(diff_changes=None)
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
     pb.options = mock.Mock()
@@ -3021,6 +3021,7 @@ def test_twisterrunner_run(
     tr.options.retry_interval = 10
     tr.options.retry_build_errors = True
     tr.options.jobs = None
+    tr.options.diff_base = None
     tr.options.build_only = None
     tr.options.extra_args = ['USE_CCACHE=0']
     for k, v in options.items():
