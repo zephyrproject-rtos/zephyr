@@ -1,0 +1,14 @@
+common:
+  platform_allow:
+    - esp32s3_devkitc/esp32s3/procpu
+  integration_platforms:
+    - esp32s3_devkitc/esp32s3/procpu
+  tags:
+    - kernel
+tests:
+  arch.xtensa.save_restore_pie.eager:
+    extra_configs:
+      - CONFIG_ESP32S3_EAGER_PIE_SHARING=y
+  arch.xtensa.save_restore_pie.lazy:
+    extra_configs:
+      - CONFIG_ESP32S3_LAZY_PIE_SHARING=y
