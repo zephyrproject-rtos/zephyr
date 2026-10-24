@@ -6,6 +6,7 @@ toolchain:
   - zephyr
 ram: 128
 supported:
+  - dac
   - flash
   - gpio
   - i2c

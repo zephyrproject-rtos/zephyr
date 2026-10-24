@@ -1575,5 +1575,14 @@
 			num-out-endpoints = <4>;
 			clocks = <&ecpm IT51XXX_ECPM_CGCTRL3R_OFF BIT(1)>;
 		};
+
+		dac0: dac@f01a00 {
+			compatible = "ite,it51xxx-dac";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f01a00 0x04>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
