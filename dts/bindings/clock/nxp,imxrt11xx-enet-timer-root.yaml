@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Powersoft S.p.A.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  i.MX RT11xx clock root of an ENET 1588 timer (ENET_TIMER1 or ENET_TIMER2).
+
+  clock_init() sets the source and the divider of the root from this node. The
+  default of the SoC devicetree is SYS_PLL1_DIV2 / 5, which gives 100 MHz. A board
+  or an application selects another root with an overlay, for example:
+
+    &enet_timer2_root {
+            clock-mux = <IMXRT11XX_ENET_TIMER_SRC_AUDIO_PLL>;
+            clock-div = <2>;
+    };
+
+  The IMXRT11XX_ENET_TIMER_SRC_* values are in
+  include/zephyr/dt-bindings/clock/nxp_imxrt11xx_enet_timer.h.
+
+  The source must be running before the Ethernet driver starts the timer, which for
+  AUDIO_PLL means that the driver that sets up that PLL must initialize first. The
+  root frequency must not exceed the maximum of the SoC voltage mode (i.MX RT1170:
+  100 MHz in under-drive, 200 MHz in nominal and overdrive).
+
+compatible: "nxp,imxrt11xx-enet-timer-root"
+
+include: clock-controller.yaml
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clock-mux:
+    type: int
+    required: true
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Source of the clock root:
+
+        0: OSC_RC_48M_DIV2
+        1: OSC_24M
+        2: OSC_RC_400M
+        3: OSC_RC_16M
+        4: SYS_PLL1_DIV2
+        5: AUDIO_PLL
+        6: SYS_PLL1_DIV5 (not enabled by clock_init(), refused at build time)
+        7: SYS_PLL2_PFD1
+
+  clock-div:
+    type: int
+    required: true
+    min: 1
+    max: 255
+    description: |
+      Divider of the clock root. The CCM can divide by 256, but clock_init() gives the divider
+      to the HAL in an 8-bit field, where 256 would become 0 (divide by 1).
