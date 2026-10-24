@@ -3590,6 +3590,7 @@ Infineon Platforms:
   maintainers:
     - sreeramIfx
     - teburd
+    - parthitce
   collaborators:
     - mcatee-infineon
     - talih0
@@ -3599,7 +3600,6 @@ Infineon Platforms:
     - lauracarlesso
     - MerinMGeorge
     - ifx-rmcs
-    - parthitce
     - stites-infineon
   files:
     - boards/cypress/
