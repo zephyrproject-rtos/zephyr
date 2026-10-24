@@ -31,6 +31,15 @@
 		};
 	};
 
+	pinmux_flexpwm1_pwm3: pinmux_flexpwm1_pwm3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b1_38_flexpwm1_pwm3_a>,
+				 <&iomuxc_gpio_emc_b1_39_flexpwm1_pwm3_b>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_flexspi1: pinmux_flexspi1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_sd_b2_05_flexspi1_a_dqs>,

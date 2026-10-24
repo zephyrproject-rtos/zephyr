@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Channel 0 drives the red user LED */
+/ {
+	aliases {
+		pwm-test = &flexpwm1_pwm3;
+	};
+};

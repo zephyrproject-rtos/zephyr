@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 NXP
+ * Copyright 2021-2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,20 @@
 		};
 
 		/delete-node/ dma-controller@40c14000;
+
+		/*
+		 * RTWDOG3 resets the Cortex-M7. Clock source 1 is the 32 kHz LPO,
+		 * divided by 256 so the 16-bit counter reaches about 512 s.
+		 */
+		rtwdog3: watchdog@40038000 {
+			compatible = "nxp,rtwdog";
+			reg = <0x40038000 0x10>;
+			interrupts = <113 0>;
+			clocks = <&lpo32k>;
+			clk-source = <1>;
+			clk-divider = <256>;
+			status = "disabled";
+		};
 
 		flexram: flexram@40028000 {
 			compatible = "nxp,flexram";

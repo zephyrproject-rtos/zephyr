@@ -1,0 +1,34 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* QTMR1 timer 1 on the red user LED pad, in place of FLEXPWM1 */
+/ {
+	aliases {
+		pwm-test = &qtmr1;
+	};
+};
+
+&pinctrl {
+	pinmux_qtmr1: pinmux_qtmr1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b1_38_qtimer1_timer1>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+};
+
+&flexpwm1_pwm3 {
+	status = "disabled";
+};
+
+&qtmr1 {
+	pinctrl-0 = <&pinmux_qtmr1>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+	prescaler = <32>;
+	status = "okay";
+};

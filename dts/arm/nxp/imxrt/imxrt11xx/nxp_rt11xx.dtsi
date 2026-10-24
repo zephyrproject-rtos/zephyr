@@ -56,6 +56,13 @@
 		#clock-cells = <0>;
 	};
 
+	/* 32 kHz clock from the 32 kHz crystal, or the 32 kHz RC on its loss */
+	lpo32k: lpo32k {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		ewm0: ewm@4002c000 {
 			compatible = "nxp,ewm";
@@ -1066,6 +1073,24 @@
 			reg = <0x401b0000 0x4000>;
 			interrupts = <160 0>;
 			status = "disabled";
+		};
+
+		snvs: snvs@40c90000 {
+			compatible = "nxp,imx-snvs";
+			reg = <0x40c90000 0x4000>;
+
+			snvs_rtc: rtc {
+				compatible = "nxp,imx-snvs-rtc";
+				interrupts = <66 0>;
+				wakeup-source;
+				status = "disabled";
+
+				counter_rtc: counter_rtc {
+					compatible = "zephyr,rtc-counter";
+					alarms-count = <2>;
+					status = "disabled";
+				};
+			};
 		};
 
 		anatop: anatop@40c84000 {
