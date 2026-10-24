@@ -187,6 +187,7 @@ uint32_t arm_m_switch_control;
 #define SWITCH_TO_SYNTH_ALIGN(sw, hw) do {                              \
 	struct synth_frame_align tmp = { 0 };                           \
 	SWITCH_TO_SYNTH_INNER(sw, tmp, tmp.base.base);                  \
+	tmp.base.base.apsr |= XPSR_STACK_ALIGN;                              \
 	hw = tmp;                                                       \
 } while (false)
 
@@ -297,6 +298,11 @@ bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr)
 #define PSPLIM(f) 0
 #endif
 
+/* Returns true if a hardware frame with pointer hw_frame would be
+ * misaligned, and need an alignment word added.
+ */
+#define FRAME_NEEDS_PADDING(hw_frame) (((uint32_t)hw_frame) & 4)
+
 /* Converts, in place, a pickled "switch" frame from a suspended
  * thread to a "synthesized" format that can be restored by the CPU
  * hardware on exception exit.
@@ -318,7 +324,7 @@ static void *arm_m_switch_to_cpu(void *sp)
 		f = CONTAINER_OF(sp, union frame, zfp.have_fpu);
 		splim = PSPLIM(f);
 		__asm__ volatile("vldm %0, {s0-s31}" ::"r"(&f->zfp.s_regs[0]));
-		padded = f->zfp.u.sw.apsr & XPSR_STACK_ALIGN;
+		padded = FRAME_NEEDS_PADDING(&f->zfp.u.hw);
 		if (padded) {
 			SWITCH_TO_SYNTH_ALIGN(f->zfp.u.sw, f->synth_a);
 		} else {
@@ -327,7 +333,7 @@ static void *arm_m_switch_to_cpu(void *sp)
 	} else {
 		f = CONTAINER_OF(sp, union frame, z.have_fpu);
 		splim = PSPLIM(f);
-		padded = f->z.u.sw.apsr & XPSR_STACK_ALIGN;
+		padded = FRAME_NEEDS_PADDING(&f->z.u.hw);
 		if (padded) {
 			SWITCH_TO_SYNTH_ALIGN(f->z.u.sw, f->synth_a);
 		} else {
@@ -336,7 +342,7 @@ static void *arm_m_switch_to_cpu(void *sp)
 	}
 #else
 	f = CONTAINER_OF(sp, union frame, z.u.sw);
-	padded = f->z.u.sw.apsr & XPSR_STACK_ALIGN;
+	padded = FRAME_NEEDS_PADDING(&f->z.u.hw);
 	splim = PSPLIM(f);
 
 	if (padded) {
@@ -587,6 +593,9 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 		n->apsr = _current->arch.iciit_apsr;
 		_current->arch.iciit_pc = 0;
 	}
+
+	__ASSERT((((uint32_t)next) & 0b111) == 0,
+		 "psp is not 8-byte aligned after ctx. switch on exception return");
 
 #if !defined(CONFIG_MULTITHREADING)
 	arm_m_last_switch_handle = last;
