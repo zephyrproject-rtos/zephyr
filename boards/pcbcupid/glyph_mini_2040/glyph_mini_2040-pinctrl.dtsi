@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2024 PCB Cupid
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	/* UART0 - GP0/GP1 */
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_P0>, <UART0_RX_P1>;
+		};
+	};
+
+	/* UART1 - GP4/GP5 (shared with SPI0 MISO/SS and I2C0 SDA/SCL) */
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_P4>, <UART1_RX_P5>;
+		};
+	};
+
+	/* SPI0 - GP2(SCK)/GP3(MOSI)/GP4(MISO)/GP5(SS) */
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_SCK_P2>, <SPI0_TX_P3>, <SPI0_RX_P4>, <SPI0_CSN_P5>;
+		};
+	};
+
+	/* SPI1 - GP10(SCK)/GP11(MOSI)/GP12(MISO)/GP13(SS) */
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <SPI1_SCK_P10>, <SPI1_TX_P11>, <SPI1_RX_P12>, <SPI1_CSN_P13>;
+		};
+	};
+
+	/* I2C0 (Wire0) - GP8/GP9 (shared with SPI1 RX/CSN and UART1 alt TX/RX) */
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_P8>, <I2C0_SCL_P9>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	/* I2C1 (Wire1) - GP26/GP27 */
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_P26>, <I2C1_SCL_P27>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	/* ADC - GP26/GP27/GP28/GP29 */
+	adc_default: adc_default {
+		group1 {
+			pinmux = <ADC_CH0_P26>, <ADC_CH1_P27>, <ADC_CH2_P28>, <ADC_CH3_P29>;
+		};
+	};
+};
