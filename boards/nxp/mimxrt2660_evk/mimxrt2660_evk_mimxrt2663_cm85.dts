@@ -66,6 +66,10 @@
 	status = "okay";
 };
 
+&lptmr0 {
+	status = "okay";
+};
+
 &cpu0 {
 	/*
 	 * The CPU rate, not the system timer's -- SysTick counts the external

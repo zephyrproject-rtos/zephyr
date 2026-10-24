@@ -1318,7 +1318,7 @@
 		reg = <0x421e0000 0x4000>;
 		interrupts = <149 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER0,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr0_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1350,7 +1350,7 @@
 		reg = <0x421f0000 0x4000>;
 		interrupts = <150 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER1,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr1_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1382,7 +1382,7 @@
 		reg = <0x429e0000 0x4000>;
 		interrupts = <151 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER2,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr2_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1414,7 +1414,7 @@
 		reg = <0x429f0000 0x4000>;
 		interrupts = <152 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_QTIMER3,
-					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
 
 		qtmr3_timer0: timer0 {
 			compatible = "nxp,imx-tmr";
@@ -1439,6 +1439,16 @@
 			channel = <3>;
 			status = "disabled";
 		};
+	};
+
+	/* STM (HSP domain), IRQ 78 */
+	stm0: hsp_stm: stm@429b0000 {
+		compatible = "nxp,stm";
+		reg = <0x429b0000 0x4000>;
+		interrupts = <78 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_STM,
+					   IMX_CCM_ROOT_MAIN_MAIN_CLK_DIVIDED)>;
+		status = "disabled";
 	};
 
 	/* EQDC / quadrature decoder (HSP domain), IRQ 153..156 */
@@ -1478,13 +1488,16 @@
 		status = "disabled";
 	};
 
-	/* LPIT (HSP domain), IRQ 115/116 */
+	/* LPIT (HSP domain), IRQ 115/116. PERI3 (400 MHz) / 5 = 80 MHz. */
 	lpit0: hsp_lpit_0: lpit@42070000 {
 		compatible = "nxp,lpit";
 		reg = <0x42070000 0x1000>;
 		interrupts = <115 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPIT0,
-					   IMX_CCM_ROOT_MAIN_LPIT0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPIT0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPIT0_FCLK,
+						IMX_CCM_MUX_LPIT0_PERI3, 5, 1)>;
 		max-load-value = <0xffffffff>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -1519,8 +1532,11 @@
 		compatible = "nxp,lpit";
 		reg = <0x42860000 0x1000>;
 		interrupts = <116 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPIT1,
-					   IMX_CCM_ROOT_MAIN_LPIT1_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPIT1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPIT1_FCLK,
+						IMX_CCM_MUX_LPIT1_PERI3, 5, 1)>;
 		max-load-value = <0xffffffff>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -1551,12 +1567,22 @@
 		};
 	};
 
-	/* LPTMR (WAKE domain), IRQ 222/223 */
+	/*
+	 * LPTMR (WAKE domain), IRQ 222/223. clk-source 0 runs at 32.768 kHz on
+	 * all three instances: the WAKE ones from their lptmrN_fclk root set to
+	 * ULP32K below, the VBAT one from the VBAT domain directly.
+	 * clock-frequency has to match.
+	 */
 	lptmr1: wake_lptmr_0: timer@46130000 {
 		compatible = "nxp,lptmr";
 		reg = <0x46130000 0x1000>;
 		interrupts = <222 0>;
-		clock-frequency = <DT_FREQ_M(80)>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPTIMER0,
+					   IMX_CCM_ROOT_WAKE_LPTMR0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPTMR0_FCLK,
+						IMX_CCM_MUX_LPTMR0_ULP32K, 1, 1)>;
+		clock-frequency = <32768>;
 		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
@@ -1567,7 +1593,12 @@
 		compatible = "nxp,lptmr";
 		reg = <0x46140000 0x1000>;
 		interrupts = <223 0>;
-		clock-frequency = <DT_FREQ_M(80)>;
+		clock-names = "gate", "source";
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPTIMER1,
+					   IMX_CCM_ROOT_WAKE_LPTMR1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_WAKE_LPTMR1_FCLK,
+						IMX_CCM_MUX_LPTMR1_ULP32K, 1, 1)>;
+		clock-frequency = <32768>;
 		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
@@ -1578,7 +1609,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x46330000 0x1000>;
 		interrupts = <250 0>;
-		clock-frequency = <DT_FREQ_M(80)>;
+		clock-frequency = <32768>;
 		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;

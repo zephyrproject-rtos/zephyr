@@ -9,6 +9,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
 #if defined(CONFIG_GIC)
@@ -50,6 +51,8 @@ struct mcux_lptmr_config {
 	void (*irq_config_func)(const struct device *dev);
 	struct wuc_dt_spec wuc;
 	bool wakeup_source;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_cfg;
 };
 
 static ALWAYS_INLINE void irq_set_pending(unsigned int irq)
@@ -465,7 +468,12 @@ static void mcux_lptmr_isr(const struct device *dev)
 
 	k_spin_unlock(&data->lock, key);
 #else
-	if (data->top_callback) {
+	/*
+	 * The flag clear crosses into the LPTMR clock domain. A fast core can
+	 * leave the ISR before it lands and take the interrupt again with no
+	 * flag set; that entry is not a turnaround.
+	 */
+	if ((flags != 0U) && (data->top_callback != NULL)) {
 		data->top_callback(dev, data->top_user_data);
 	}
 #endif
@@ -510,6 +518,16 @@ static int mcux_lptmr_init(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
 	lptmr_config_t lptmr_config;
+
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		if (clock_control_configure(config->clock_dev, config->clock_cfg, NULL) != 0) {
+			return -EINVAL;
+		}
+	}
 
 	LPTMR_GetDefaultConfig(&lptmr_config);
 	lptmr_config.timerMode = config->mode;
@@ -619,6 +637,12 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.wuc = COND_CODE_1(CONFIG_WUC,					\
 			(WUC_DT_SPEC_GET_OR(DT_DRV_INST(n), {0})), ({0})),	\
 		.wakeup_source = DT_INST_PROP_OR(n, wakeup_source, 0),		\
+		.clock_dev = COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(n, source),	\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, source))),\
+			(NULL)),						\
+		.clock_cfg = (clock_control_subsys_t)COND_CODE_1(		\
+			DT_INST_CLOCKS_HAS_NAME(n, source),			\
+			(DT_INST_CLOCKS_CELL_BY_NAME(n, source, name)), (0U)),	\
 	};									\
 										\
 	PM_DEVICE_DT_INST_DEFINE(n, mcux_lptmr_pm_action);			\
