@@ -693,6 +693,74 @@ ZTEST(modem_cmux, test_modem_cmux_receive_flow_control_dlci2)
 			  "Incorrect MSC with FC cleared");
 }
 
+/* Stop the bus transmitting and fill the CMUX transmit buffer with data */
+static void test_modem_cmux_fill_transmit_buffer(void)
+{
+	bus_mock.transmit_paused = true;
+
+	while (modem_pipe_transmit(dlci2_pipe, cmux_frame_data_large,
+				   sizeof(cmux_frame_data_large)) > 0) {
+	}
+}
+
+/* Let the bus transmit the CMUX transmit buffer again */
+static void test_modem_cmux_resume_transmit(void)
+{
+	bus_mock.transmit_paused = false;
+	zassert_ok(modem_pipe_transmit(dlci2_pipe, NULL, 0));
+	k_msleep(TRANSMISSION_DELAY_MS * 5);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_receive_flow_control_retry)
+{
+	int ret;
+
+	/* Start with an empty receive buffer */
+	modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	/* Fill the receive buffer above the flow control threshold */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_52, sizeof(cmux_frame_dlci2_ppp_52));
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_18, sizeof(cmux_frame_dlci2_ppp_18));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+
+	/* Draining the receive buffer while the transmit buffer is full */
+	test_modem_cmux_fill_transmit_buffer();
+	modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	/* The MSC clearing flow control follows the queued data */
+	test_modem_cmux_resume_transmit();
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_true(ret > (int)sizeof(cmux_frame_dlci2_msc_cmd), "Queued data not sent");
+	zassert_mem_equal(&buffer1[ret - sizeof(cmux_frame_dlci2_msc_cmd)],
+			  cmux_frame_dlci2_msc_cmd, sizeof(cmux_frame_dlci2_msc_cmd),
+			  "MSC with FC cleared not sent");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_power_save_psc_not_sent)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+
+	test_modem_cmux_fill_transmit_buffer();
+
+	/* PSC cannot be queued when the idle timeout expires */
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+	k_msleep(150);
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_CONNECTED,
+		      "CMUX should stay CONNECTED when PSC is not sent");
+
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+	test_modem_cmux_resume_transmit();
+}
+
 ZTEST(modem_cmux, test_modem_cmux_msc_cmd_ack)
 {
 	int ret;

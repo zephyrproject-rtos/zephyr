@@ -715,7 +715,7 @@ static void modem_cmux_acknowledge_received_frame(struct modem_cmux *cmux)
 	}
 }
 
-static void modem_cmux_send_psc(struct modem_cmux *cmux)
+static bool modem_cmux_send_psc(struct modem_cmux *cmux)
 {
 	uint16_t len;
 	uint8_t *data = modem_cmux_command_encode(&(struct modem_cmux_command){
@@ -736,7 +736,7 @@ static void modem_cmux_send_psc(struct modem_cmux *cmux)
 	};
 
 	LOG_DBG("Sending PSC command");
-	modem_cmux_transmit_cmd_frame(cmux, &frame);
+	return modem_cmux_transmit_cmd_frame(cmux, &frame);
 }
 
 static void modem_cmux_send_msc(struct modem_cmux *cmux, struct modem_cmux_dlci *dlci)
@@ -785,7 +785,8 @@ static void modem_cmux_send_msc(struct modem_cmux *cmux, struct modem_cmux_dlci 
 
 	LOG_DBG("Sending MSC command for DLCI %u, FC:%d RTR: %d DV: %d", addr.dlci_address,
 		signals.fc, signals.rtr, signals.dv);
-	modem_cmux_transmit_cmd_frame(cmux, &frame);
+	/* Sent again once the transmit buffer has drained */
+	dlci->msc_pending = !modem_cmux_transmit_cmd_frame(cmux, &frame);
 }
 
 static void modem_cmux_on_msc_command(struct modem_cmux *cmux, struct modem_cmux_command *command)
@@ -1739,6 +1740,24 @@ static void modem_cmux_receive_handler(struct k_work *item)
 	}
 }
 
+static void modem_cmux_dlci_send_pending_msc(struct modem_cmux *cmux)
+{
+	sys_snode_t *node;
+	struct modem_cmux_dlci *dlci;
+
+	SYS_SLIST_FOR_EACH_NODE(&cmux->dlcis, node) {
+		dlci = (struct modem_cmux_dlci *)node;
+		if (!dlci->msc_pending) {
+			continue;
+		}
+		if (dlci->state != MODEM_CMUX_DLCI_STATE_OPEN) {
+			dlci->msc_pending = false;
+			continue;
+		}
+		modem_cmux_send_msc(cmux, dlci);
+	}
+}
+
 static void modem_cmux_dlci_notify_transmit_idle(struct modem_cmux *cmux)
 {
 	sys_snode_t *node;
@@ -1778,7 +1797,12 @@ static void modem_cmux_runtime_pm_handler(struct k_work *item)
 			}
 			return;
 		}
-		modem_cmux_send_psc(cmux);
+		if (!modem_cmux_send_psc(cmux)) {
+			LOG_WRN("PSC not sent, not entering power saving mode");
+			set_state(cmux, MODEM_CMUX_STATE_CONNECTED);
+			runtime_pm_keepalive(cmux);
+			return;
+		}
 		modem_work_reschedule(&cmux->runtime_pm_work, MODEM_CMUX_T3_TIMEOUT);
 		return;
 	}
@@ -1918,6 +1942,9 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 			if (cmux->config.close_pipe_on_power_save) {
 				modem_cmux_close_bus_for_powersave(cmux);
 			}
+		}
+		if (is_active(cmux)) {
+			modem_cmux_dlci_send_pending_msc(cmux);
 		}
 		modem_cmux_dlci_notify_transmit_idle(cmux);
 	}

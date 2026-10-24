@@ -69,6 +69,10 @@ static int modem_backend_mock_transmit_chain(void *data,
 	int written = 0;
 	int ret;
 
+	if (mock->transmit_paused) {
+		return 0;
+	}
+
 	if (mock->bridge) {
 		struct modem_backend_mock *t_mock = mock->bridge;
 
@@ -117,6 +121,10 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 {
 	struct modem_backend_mock *mock = (struct modem_backend_mock *)data;
 	int ret;
+
+	if (mock->transmit_paused) {
+		return 0;
+	}
 
 	size = (mock->limit < size) ? mock->limit : size;
 
