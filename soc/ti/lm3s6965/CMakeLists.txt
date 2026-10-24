@@ -4,8 +4,6 @@ zephyr_library()
 
 zephyr_library_sources(
   soc_config.c
-  reboot.S
-  sys_arch_reboot.c
   )
 
 zephyr_library_include_directories(
