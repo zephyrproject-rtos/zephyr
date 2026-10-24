@@ -9,9 +9,10 @@ menuconfig DPS310
 	bool "DPS310 sensor"
 	default y
 	depends on DT_HAS_INFINEON_DPS310_ENABLED
-	select I2C
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INFINEON_DPS310),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INFINEON_DPS310),spi)
 	help
-	  Enable driver for DPS310 I2C-based temperature and pressure sensor.
+	  Enable driver for the DPS310 temperature and pressure sensor.
 
 if DPS310
 
