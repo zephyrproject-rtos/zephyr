@@ -24,7 +24,7 @@
 			 * for storage.
 			 */
 			ranges = <0x0 0x10000000 0x180000>, /* physical flash */
-				 <0x800000 0x800000 0x128000>; /* FLW */
+				 <0x800000 0x10800000 0x128000>; /* FLW */
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "nxp,msf1";

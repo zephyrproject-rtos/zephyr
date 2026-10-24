@@ -4,10 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
+
 / {
 	soc {
 		sram: sram@4000000 {
-			ranges = <0x4000000 0x4000000 0x20004000>;
+			ranges = <0x4000000 0x4000000 DT_SIZE_K(16)>,
+				 <0x20004000 0x20004000 DT_SIZE_K(112)>;
 		};
 
 		peripheral: peripheral@40000000 {
@@ -16,7 +19,7 @@
 
 		iap: flash-controller@40034000 {
 			reg = <0x40034000 0x18>;
-			ranges;
+			ranges = <0x0 0x0 DT_SIZE_K(1016)>;
 		};
 	};
 };

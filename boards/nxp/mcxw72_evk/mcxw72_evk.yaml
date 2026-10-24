@@ -2,8 +2,8 @@ identifier: mcxw72_evk
 name: NXP MCXW72-EVK
 type: mcu
 arch: arm
-ram: 264
-flash: 2048
+ram: 232
+flash: 2024
 toolchain:
   - zephyr
   - gnuarmemb
