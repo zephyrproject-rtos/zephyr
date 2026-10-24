@@ -7,6 +7,7 @@ config SDHC_LITEX_LITESDCARD
 	depends on DT_HAS_LITEX_MMC_ENABLED
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select EVENTS
+	select USE_LITEX_CSR
 	help
 	  sdhc driver for LiteX LiteSDCard.
 

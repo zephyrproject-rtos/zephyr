@@ -9,6 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_litex.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include "clock_control_litex.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -17,8 +18,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <zephyr/kernel.h>
-
-#include <soc.h>
 
 LOG_MODULE_REGISTER(CLK_CTRL_LITEX, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
