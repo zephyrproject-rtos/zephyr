@@ -880,25 +880,23 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 	const struct mcux_lpuart_config *config = dev->config;
 	LPUART_Type *lpuart = get_base(dev);
 
+	/*
+	 * Claim the transmitter with interrupts locked only for the check: the DMA
+	 * configuration below runs with interrupts enabled. The buffer is released
+	 * when the transfer is done or aborted. If a transfer is still in progress,
+	 * the async UART API requires -EBUSY.
+	 */
 	unsigned int key = irq_lock();
 
-	/* If a previous transfer is still in progress, the async UART API requires -EBUSY. */
-	struct dma_status status;
-	const int get_status_result = dma_get_status(config->tx_dma_config.dma_dev,
-						     config->tx_dma_config.dma_channel,
-						     &status);
-
-	if (get_status_result < 0) {
-		irq_unlock(key);
-		LOG_ERR("Failed to get DMA(Tx) status (%d)", get_status_result);
-		return get_status_result;
-	}
-
-	if (status.busy) {
+	if (data->async.tx_dma_params.buf != NULL) {
 		irq_unlock(key);
 		LOG_DBG("UART TX busy (DMA ch %u)", config->tx_dma_config.dma_channel);
 		return -EBUSY;
 	}
+
+	data->async.tx_dma_params.buf = buf;
+	data->async.tx_dma_params.buf_len = len;
+	irq_unlock(key);
 
 	int ret;
 
@@ -906,8 +904,6 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 
 	(void)sys_cache_data_flush_range((void *)buf, len);
 
-	data->async.tx_dma_params.buf = buf;
-	data->async.tx_dma_params.buf_len = len;
 	data->async.tx_dma_params.active_dma_block.source_address = (uint32_t)buf;
 	data->async.tx_dma_params.active_dma_block.dest_address =
 		LPUART_GetDataRegisterAddress(lpuart);
@@ -937,7 +933,13 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 	} else {
 		LOG_ERR("Error configuring UART DMA: %x", ret);
 	}
-	irq_unlock(key);
+
+	if (ret != 0) {
+		/* Release the transmitter */
+		data->async.tx_dma_params.buf = NULL;
+		data->async.tx_dma_params.buf_len = 0U;
+	}
+
 	return ret;
 }
 
@@ -969,6 +971,11 @@ static int mcux_lpuart_tx_abort(const struct device *dev)
 			.data.tx.buf = data->async.tx_dma_params.buf,
 			.data.tx.len = bytes_transmitted
 		};
+
+		/* Release the transmitter */
+		data->async.tx_dma_params.buf = NULL;
+		data->async.tx_dma_params.buf_len = 0U;
+
 		async_user_callback(dev, &tx_aborted_event);
 	}
 	return ret;
