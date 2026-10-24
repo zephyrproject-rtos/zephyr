@@ -111,17 +111,45 @@ stages of initialization with the help of the Virtio API.
 
 The first thing the device-specific driver does is feature bits negotiation. It uses :c:func:`virtio_read_device_feature_bit`
 to determine which features the device offers, and then selects the ones it needs using :c:func:`virtio_write_driver_feature_bit`.
-After all required features have been selected, the device-specific driver calls :c:func:`virtio_commit_feature_bits`. Then, virtqueues
-are initialized with :c:func:`virtio_init_virtqueues`. This function enumerates the virtqueues, invoking the provided callback
-:c:type:`virtio_enumerate_queues` to determine the required size of each virtqueue. Initialization process is finalized by calling
-:c:func:`virtio_finalize_init`. From this point, if none of the functions returned errors, the virtqueues are operational. If the
+After all required features have been selected, the device-specific driver calls
+:c:func:`virtio_commit_feature_bits`. Then, virtqueues are initialized with
+:c:func:`virtio_init_virtqueues`. This function sets up each virtqueue with the size it was defined
+with, limited to the maximum size the device supports for it. Initialization process is finalized
+by calling :c:func:`virtio_finalize_init`. From this point, if none of the functions returned
+errors, the virtqueues are operational. If the
 specific device provides one, the device-specific config can be obtained by calling :c:func:`virtio_get_device_specific_config`.
+
+The virtqueues passed to :c:func:`virtio_init_virtqueues` are owned by the device-specific driver
+and allocated statically, usually as members of its data structure. Their storage is defined with
+:c:macro:`VIRTQ_STORAGE_DEFINE` and assigned to them with :c:macro:`VIRTQ_INITIALIZER`. Each
+of them is given the size the driver wants to use, a virtqueue that is enumerated but not used is
+defined with a size of 0. The size a virtqueue actually got is found in its ``num`` member after
+the initialization, as the device may support less.
+
+.. code-block:: c
+
+   struct my_data {
+           struct virtq vqs[2];
+   };
+
+   VIRTQ_STORAGE_DEFINE(my_rxq, 16);
+   VIRTQ_STORAGE_DEFINE(my_txq, 4);
+
+   static struct my_data my_data = {
+           .vqs = {
+                   VIRTQ_INITIALIZER(my_rxq, 16),
+                   VIRTQ_INITIALIZER(my_txq, 4),
+           },
+   };
+
+   ret = virtio_init_virtqueues(vdev, data->vqs, ARRAY_SIZE(data->vqs));
 
 Virtqueue operation
 ===================
-Once the virtqueues are operational, they can be used to send and receive data. To do so, the pointer to the nth
-virtqueue has to be acquired using :c:func:`virtio_get_virtqueue`. To send data consisting of a descriptor chain,
-:c:func:`virtq_add_buffer_chain` has to be used. Along the descriptor chain, it takes pointer to the callback that
+Once the virtqueues are operational, they can be used to send and receive data. The
+device-specific driver accesses them directly, as it owns them. To send data consisting of a
+descriptor chain, :c:func:`virtq_add_buffer_chain` has to be used. Along the descriptor chain, it
+takes pointer to the callback that
 will be invoked once the device returns the given descriptor chain. After that, the virtqueue has to be notified using
 :c:func:`virtio_notify_virtqueue` from the Virtio API.
 

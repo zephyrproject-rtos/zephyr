@@ -55,7 +55,10 @@ LOG_MODULE_REGISTER(spi_virtio, CONFIG_SPI_LOG_LEVEL);
 #define VIRTIO_SPI_PARAM_ERR 1
 #define VIRTIO_SPI_TRANS_ERR 2
 
-/* head, tx buffer, rx buffer and result */
+/*
+ * head, tx buffer, rx buffer and result, a single request is in flight at a time and takes
+ * at most these four descriptors
+ */
 #define VIRTIO_SPI_MAX_BUFS 4
 
 /* length clocked out per request when both directions are placeholders */
@@ -106,7 +109,7 @@ struct spi_virtio_config {
 
 struct spi_virtio_data {
 	struct spi_context ctx;
-	struct virtq *requestq;
+	struct virtq requestq;
 	struct k_sem done;
 	uint32_t used_len;
 	struct virtio_spi_transfer_head head;
@@ -379,8 +382,8 @@ static int spi_virtio_transfer(const struct device *dev, size_t len, bool last)
 	 * A single request is in flight at a time and the transport returns the
 	 * descriptors before completing it, so the queue never runs out.
 	 */
-	ret = virtq_add_buffer_chain(data->requestq, bufs, n, readable, spi_virtio_request_cb, data,
-				     K_NO_WAIT);
+	ret = virtq_add_buffer_chain(&data->requestq, bufs, n, readable, spi_virtio_request_cb,
+				     data, K_NO_WAIT);
 	if (ret != 0) {
 		LOG_ERR("failed to queue a %zu byte transfer: %d", len, ret);
 		return ret;
@@ -487,16 +490,6 @@ static DEVICE_API(spi, spi_virtio_api) = {
 	.release = spi_virtio_release,
 };
 
-static uint16_t spi_virtio_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *opaque)
-{
-	if (q_index != VIRTIO_SPI_REQUESTQ) {
-		return 0;
-	}
-
-	/* a single request is in flight at a time, and takes at most four descriptors */
-	return MIN(VIRTIO_SPI_MAX_BUFS, q_size_max);
-}
-
 static int spi_virtio_init(const struct device *dev)
 {
 	const struct spi_virtio_config *cfg = dev->config;
@@ -537,21 +530,15 @@ static int spi_virtio_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = virtio_init_virtqueues(cfg->vdev, 1, spi_virtio_enum_queues_cb, data);
+	ret = virtio_init_virtqueues(cfg->vdev, &data->requestq, 1);
 	if (ret != 0) {
 		LOG_ERR("virtio_init_virtqueues failed: %d", ret);
 		return ret;
 	}
 
-	data->requestq = virtio_get_virtqueue(cfg->vdev, VIRTIO_SPI_REQUESTQ);
-	if (data->requestq == NULL) {
-		LOG_ERR("failed to get the request virtqueue");
-		return -ENODEV;
-	}
-
-	if (data->requestq->num < VIRTIO_SPI_MAX_BUFS) {
+	if (data->requestq.num < VIRTIO_SPI_MAX_BUFS) {
 		LOG_ERR("request virtqueue holds %u descriptors, %u are needed",
-			data->requestq->num, VIRTIO_SPI_MAX_BUFS);
+			data->requestq.num, VIRTIO_SPI_MAX_BUFS);
 		return -ENOTSUP;
 	}
 
@@ -565,9 +552,11 @@ static int spi_virtio_init(const struct device *dev)
 }
 
 #define SPI_VIRTIO_DEFINE(inst)                                                                    \
+	VIRTQ_STORAGE_DEFINE(spi_virtio_vq_##inst, VIRTIO_SPI_MAX_BUFS);                           \
 	static struct spi_virtio_data spi_virtio_data_##inst = {                                   \
 		SPI_CONTEXT_INIT_LOCK(spi_virtio_data_##inst, ctx),                                \
 		SPI_CONTEXT_INIT_SYNC(spi_virtio_data_##inst, ctx),                                \
+		.requestq = VIRTQ_INITIALIZER(spi_virtio_vq_##inst, VIRTIO_SPI_MAX_BUFS),          \
 	};                                                                                         \
 	static const struct spi_virtio_config spi_virtio_config_##inst = {                         \
 		.vdev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                               \

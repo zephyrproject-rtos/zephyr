@@ -114,7 +114,7 @@ void virtio_pci_isr(const struct device *dev)
 	struct virtio_pci_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->isr_lock);
 
-	virtio_isr(dev, *data->isr_status, data->virtqueue_count);
+	virtio_isr(dev, *data->isr_status, data->virtqueues, data->virtqueue_count);
 
 	k_spin_unlock(&data->isr_lock, key);
 }
@@ -226,7 +226,7 @@ static void virtio_pci_write64(uint64_t val, uint64_t *dst)
 	((uint32_t *)dst)[1] = (val_le & GENMASK64(63, 32)) >> 32;
 }
 
-static int virtio_pci_set_virtqueue(
+static void virtio_pci_set_virtqueue(
 	const struct device *dev, uint16_t virtqueue_n, struct virtq *virtqueue)
 {
 	struct virtio_pci_data *data = dev->data;
@@ -234,17 +234,6 @@ static int virtio_pci_set_virtqueue(
 	data->common_cfg->queue_select = sys_cpu_to_le16(virtqueue_n);
 	barrier_dmem_fence_full();
 
-	uint16_t max_queue_size = sys_le16_to_cpu(data->common_cfg->queue_size);
-
-	if (max_queue_size < virtqueue->num) {
-		LOG_ERR(
-			"virtio pci device doesn't support queue %d bigger than %d, tried to set one with size %d",
-			virtqueue_n,
-			max_queue_size,
-			virtqueue->num
-		);
-		return -EINVAL;
-	}
 	data->common_cfg->queue_size = sys_cpu_to_le16(virtqueue->num);
 	virtio_pci_write64(
 		k_mem_phys_addr(virtqueue->desc), (void *)&data->common_cfg->queue_desc
@@ -257,12 +246,10 @@ static int virtio_pci_set_virtqueue(
 	);
 	data->common_cfg->queue_msix_vector = sys_cpu_to_le16(VIRTIO_PCI_MSIX_NO_VECTOR);
 	data->common_cfg->queue_enable = sys_cpu_to_le16(1);
-
-	return 0;
 }
 
 static int virtio_pci_init_virtqueues(
-	const struct device *dev, uint16_t num_queues, virtio_enumerate_queues cb, void *opaque)
+	const struct device *dev, struct virtq *virtqueues, uint16_t num_queues)
 {
 	struct virtio_pci_data *data = dev->data;
 	uint16_t queue_count = sys_le16_to_cpu(data->common_cfg->num_queues);
@@ -272,33 +259,23 @@ static int virtio_pci_init_virtqueues(
 		return -EINVAL;
 	}
 
-	data->virtqueues = k_malloc(num_queues * sizeof(struct virtq));
-	if (!data->virtqueues) {
-		LOG_ERR("failed to allocate virtqueue array");
-		return -ENOMEM;
-	}
+	data->virtqueues = virtqueues;
 	data->virtqueue_count = num_queues;
 
 	int ret = 0;
-	int created_queues = 0;
 	int activated_queues = 0;
 
 	for (int i = 0; i < num_queues; i++) {
 		data->common_cfg->queue_select = sys_cpu_to_le16(i);
 		barrier_dmem_fence_full();
 
-		uint16_t queue_size = cb(i, sys_le16_to_cpu(data->common_cfg->queue_size), opaque);
-
-		ret = virtq_create(&data->virtqueues[i], queue_size);
+		ret = virtq_create(&data->virtqueues[i],
+				   sys_le16_to_cpu(data->common_cfg->queue_size));
 		if (ret != 0) {
 			goto fail;
 		}
-		created_queues++;
 
-		ret = virtio_pci_set_virtqueue(dev, i, &data->virtqueues[i]);
-		if (ret != 0) {
-			goto fail;
-		}
+		virtio_pci_set_virtqueue(dev, i, &data->virtqueues[i]);
 		activated_queues++;
 	}
 
@@ -310,11 +287,8 @@ fail:
 		barrier_dmem_fence_full();
 		data->common_cfg->queue_enable = sys_cpu_to_le16(0);
 	}
-	for (int j = 0; j < created_queues; j++) {
-		virtq_free(&data->virtqueues[j]);
-	}
-	k_free(data->virtqueues);
 	data->virtqueue_count = 0;
+	data->virtqueues = NULL;
 
 	return ret;
 }
@@ -544,13 +518,6 @@ static int virtio_pci_init_common(const struct device *dev)
 	return 0;
 };
 
-struct virtq *virtio_pci_get_virtqueue(const struct device *dev, uint16_t queue_idx)
-{
-	struct virtio_pci_data *data = dev->data;
-
-	return queue_idx < data->virtqueue_count ? &data->virtqueues[queue_idx] : NULL;
-}
-
 void *virtio_pci_get_device_specific_config(const struct device *dev)
 {
 	struct virtio_pci_data *data = dev->data;
@@ -586,7 +553,6 @@ int virtio_pci_commit_feature_bits(const struct device *dev)
 }
 
 static DEVICE_API(virtio, virtio_pci_driver_api) = {
-	.get_virtqueue = virtio_pci_get_virtqueue,
 	.notify_virtqueue = virtio_pci_notify_queue,
 	.get_device_specific_config = virtio_pci_get_device_specific_config,
 	.read_device_feature_bit = virtio_pci_read_device_feature_bit,
