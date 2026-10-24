@@ -1,0 +1,8 @@
+# Copyright (c) 2025-2026 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE KB106X flash controller
+
+compatible: "ene,kb106x-flash-controller"
+
+include: flash-controller.yaml
