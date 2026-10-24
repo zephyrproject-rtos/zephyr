@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_TC375TP
+	bool
+	select SOC_SERIES_TC3X
+
+config SOC_TC375TP_CPU0
+	bool
+	select SOC_TC375TP
+
+config SOC
+	default "tc375tp" if SOC_TC375TP

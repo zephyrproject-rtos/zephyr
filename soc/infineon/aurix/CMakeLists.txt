@@ -7,3 +7,7 @@
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/tricore/linker.ld CACHE INTERNAL "")
 
 zephyr_include_directories(common)
+
+if(NOT CONFIG_SOC_QEMU_TC3X AND NOT CONFIG_SOC_QEMU_TC4X)
+  add_subdirectory(${SOC_SERIES})
+endif()

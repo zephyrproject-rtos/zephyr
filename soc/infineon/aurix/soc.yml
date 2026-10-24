@@ -10,6 +10,9 @@ family:
       - name: tc3x
         socs:
           - name: qemu_tc3x
+          - name: tc375tp
+            cpuclusters:
+              - name: cpu0
       - name: tc4x
         socs:
           - name: qemu_tc4x
