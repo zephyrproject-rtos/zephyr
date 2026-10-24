@@ -1128,25 +1128,15 @@ static sl_hal_eusart_stop_bits_t eusart_cfg2ll_stopbits(enum uart_config_stop_bi
 	}
 }
 
-static sl_hal_eusart_data_bits_t eusart_cfg2ll_databits(enum uart_config_data_bits db,
-						      enum uart_config_parity p)
+static sl_hal_eusart_data_bits_t eusart_cfg2ll_databits(enum uart_config_data_bits db)
 {
 	switch (db) {
 	case UART_CFG_DATA_BITS_7:
-		if (p == UART_CFG_PARITY_NONE) {
-			return SL_HAL_EUSART_DATA_BITS_7;
-		} else {
-			return SL_HAL_EUSART_DATA_BITS_8;
-		}
+		return SL_HAL_EUSART_DATA_BITS_7;
 	case UART_CFG_DATA_BITS_9:
 		return SL_HAL_EUSART_DATA_BITS_9;
 	case UART_CFG_DATA_BITS_8:
 	default:
-		if (p == UART_CFG_PARITY_NONE) {
-			return SL_HAL_EUSART_DATA_BITS_8;
-		} else {
-			return SL_HAL_EUSART_DATA_BITS_9;
-		}
 		return SL_HAL_EUSART_DATA_BITS_8;
 	}
 }
@@ -1180,7 +1170,7 @@ static int eusart_configure_peripheral(const struct device *dev, bool enable)
 								init.oversampling);
 	init.parity = eusart_cfg2ll_parity(data->uart_cfg.parity);
 	init.stop_bits = eusart_cfg2ll_stopbits(data->uart_cfg.stop_bits);
-	init.data_bits = eusart_cfg2ll_databits(data->uart_cfg.data_bits, data->uart_cfg.parity);
+	init.data_bits = eusart_cfg2ll_databits(data->uart_cfg.data_bits);
 	advanced_init.hw_flow_control_mode = eusart_cfg2ll_hwctrl(data->uart_cfg.flow_ctrl);
 	init.advanced_config = &advanced_init;
 
