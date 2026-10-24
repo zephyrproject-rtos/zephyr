@@ -16,16 +16,25 @@
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,sram = &dram;
+		zephyr,pcie-controller = &pcie2x1l2;
 	};
 
 	dram: memory@10000000 {
 		compatible = "mmio-sram";
 		device_type = "memory";
-		reg = <0x10000000 DT_SIZE_M(128)>;
+		reg = <0x0 0x10000000 0x0 DT_SIZE_M(128)>;
 	};
 };
 
 &uart2 {
 	status = "okay";
 	current-speed = <1500000>;
+};
+
+&its0 {
+	status = "okay";
+};
+
+&pcie2x1l2 {
+	status = "okay";
 };

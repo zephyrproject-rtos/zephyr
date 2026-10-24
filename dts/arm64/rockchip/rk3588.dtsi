@@ -10,11 +10,17 @@
 #include <zephyr/dt-bindings/reset/rk3588-cru-reset.h>
 
 / {
-	#address-cells = <1>;
-	#size-cells = <1>;
+	#address-cells = <2>;
+	#size-cells = <2>;
 
 	compatible = "rockchip,rk3588";
 	interrupt-parent = <&gic>;
+
+	/* Keep the inherited "soc" bus consistent with the 64-bit root bus. */
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -79,14 +85,30 @@
 	};
 
 	gic: interrupt-controller@fe600000 {
-		#address-cells = <1>;
+		#address-cells = <2>;
+		#size-cells = <2>;
 		compatible = "arm,gic-v3", "arm,gic";
 		#interrupt-cells = <4>;
 		interrupt-controller;
+		ranges;
 
-		reg = <0xfe600000 0x10000>, /* GICD */
-		      <0xfe680000 0x100000>; /* GICR */
+		reg = <0x0 0xfe600000 0x0 0x10000>, /* GICD */
+		      <0x0 0xfe680000 0x0 0x100000>; /* GICR */
 		status = "okay";
+
+		its0: msi-controller@fe640000 {
+			compatible = "arm,gic-v3-its";
+			reg = <0x0 0xfe640000 0x0 0x20000>;
+			msi-controller;
+			status = "disabled";
+		};
+
+		its1: msi-controller@fe660000 {
+			compatible = "arm,gic-v3-its";
+			reg = <0x0 0xfe660000 0x0 0x20000>;
+			msi-controller;
+			status = "disabled";
+		};
 	};
 
 	psci {
@@ -105,19 +127,19 @@
 
 	sys_grf: syscon@fd58c000 {
 		compatible = "syscon";
-		reg = <0xfd58c000 0x1000>;
+		reg = <0x0 0xfd58c000 0x0 0x1000>;
 		status = "okay";
 	};
 
 	php_grf: syscon@fd5b0000 {
 		compatible = "syscon";
-		reg = <0xfd5b0000 0x1000>;
+		reg = <0x0 0xfd5b0000 0x0 0x1000>;
 		status = "okay";
 	};
 
 	cru: clock-controller@fd7c0000 {
 		compatible = "rockchip,rk3588-cru";
-		reg = <0xfd7c0000 0x5c000>;
+		reg = <0x0 0xfd7c0000 0x0 0x5c000>;
 		status = "okay";
 
 		cru_clk: clock-controller {
@@ -133,9 +155,54 @@
 		};
 	};
 
+	pcie2x1l2: pcie@fe190000 {
+		compatible = "rockchip,rk3588-pcie";
+		device_type = "pci";
+		reg = <0x0 0xfe190000 0x0 0x10000>,
+		      <0xa 0x41000000 0x0 0x400000>,
+		      <0x0 0xf4000000 0x0 0x100000>,
+		      <0x0 0xfd5bc000 0x0 0x100>,
+		      <0x0 0xfee00000 0x0 0x100>,
+		      <0x0 0xfec40000 0x0 0x100>,
+		      <0x0 0xfd5f0000 0x0 0x10000>;
+		reg-names = "pcie_apb", "pcie_dbi", "config", "pipe_phy_grf",
+			    "combphy", "gpio", "ioc";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		msi-parent = <&its0>;
+		bus-range = <0x0 0xf>;
+		num-lanes = <1>;
+		max-link-speed = <2>;
+		clocks = <&cru_clk PCLK_TOP_ROOT>, <&cru_clk PCLK_GPIO3>,
+			 <&cru_clk PCLK_PHP_ROOT>, <&cru_clk ACLK_PCIE_ROOT>,
+			 <&cru_clk ACLK_PCIE_BRIDGE>, <&cru_clk ACLK_PHP_GIC_ITS>,
+			 <&cru_clk ACLK_PHP_ROOT>, <&cru_clk ACLK_MMU_PCIE>,
+			 <&cru_clk ACLK_PCIE_1L2_DBI>, <&cru_clk ACLK_PCIE_1L2_MSTR>,
+			 <&cru_clk ACLK_PCIE_1L2_SLV>, <&cru_clk PCLK_PCIE_1L2>,
+			 <&cru_clk CLK_PCIE_AUX4>, <&cru_clk CLK_PIPEPHY0_PIPE_G>,
+			 <&cru_clk CLK_PCIE1L2_PIPE>, <&cru_clk PCLK_PCIE_COMBO_PIPE_PHY0>,
+			 <&cru_clk CLK_REF_PIPE_PHY0>;
+		clock-names = "top", "gpio", "php-pclk", "pcie-aclk", "pcie-bridge", "its",
+			      "php-aclk", "mmu", "aclk-dbi", "aclk-mst", "aclk-slv",
+			      "pclk", "aux", "phy-pipe", "pipe", "phy-apb", "ref";
+		resets = <&cru_rst SRST_PCIE4_POWER_UP>, <&cru_rst SRST_P_PCIE4>,
+			 <&cru_rst SRST_REF_PIPE_PHY0>, <&cru_rst SRST_P_PCIE2_PHY0>;
+		reset-names = "pwr", "pipe", "phy", "phy-apb";
+		interrupts = <GIC_SPI 253 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 252 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 251 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 250 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 249 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "sys", "pmc", "msg", "legacy", "err";
+		ranges = <0x01000000 0x0 0xf4100000 0x0 0xf4100000 0x0 0x00100000>,
+			 <0x02000000 0x0 0xf4200000 0x0 0xf4200000 0x0 0x00e00000>,
+			 <0x03000000 0xa 0x00000000 0xa 0x00000000 0x0 0x40000000>;
+		status = "disabled";
+	};
+
 	uart2: serial@feb50000 {
 		compatible = "rockchip,rk3588-uart", "ns16550";
-		reg = <0xfeb50000 0x100>;
+		reg = <0x0 0xfeb50000 0x0 0x100>;
 		interrupts = <GIC_SPI 333 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		clock-frequency = <12000000>;
 		reg-shift = <2>;
@@ -144,7 +211,7 @@
 
 	uart3: serial@feb60000 {
 		compatible = "rockchip,rk3588-uart", "ns16550";
-		reg = <0xfeb60000 0x100>;
+		reg = <0x0 0xfeb60000 0x0 0x100>;
 		interrupts = <GIC_SPI 334 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		clock-frequency = <24000000>;
 		reg-shift = <2>;
@@ -153,7 +220,7 @@
 
 	gmac0: ethernet@fe1b0000 {
 		compatible = "rockchip,rk3588-gmac", "snps,dwmac";
-		reg = <0xfe1b0000 0x10000>;
+		reg = <0x0 0xfe1b0000 0x0 0x10000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 227 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		clocks = <&cru_clk CLK_GMAC_125M>, <&cru_clk CLK_GMAC_50M>,
@@ -185,7 +252,7 @@
 
 	gmac1: ethernet@fe1c0000 {
 		compatible = "rockchip,rk3588-gmac", "snps,dwmac";
-		reg = <0xfe1c0000 0x10000>;
+		reg = <0x0 0xfe1c0000 0x0 0x10000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 234 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		clocks = <&cru_clk CLK_GMAC_125M>, <&cru_clk CLK_GMAC_50M>,

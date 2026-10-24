@@ -14,6 +14,21 @@ CONFIG_UART_CONSOLE=y
 # ARMv8 NS world with cache management
 CONFIG_ARMV8_A_NS=y
 CONFIG_CACHE_MANAGEMENT=y
+CONFIG_ARM64_VA_BITS_40=y
+CONFIG_ARM64_PA_BITS_40=y
+CONFIG_KERNEL_VM_SIZE=0x2000000
+
+# The PCIe driver maps the controller, PHY and GPIO register windows
+# through the MMU at init time, which needs more translation tables
+# than the default.
+CONFIG_MAX_XLAT_TABLES=32
+
+# PCIe and MSI for the onboard Ethernet controller
+CONFIG_CLOCK_CONTROL=y
+CONFIG_RESET=y
+CONFIG_GIC_V3_ITS=y
+CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT=y
+CONFIG_GIC_V3_ITS_DMA_NONCOHERENT=y
 
 CONFIG_TICKLESS_KERNEL=y
 
