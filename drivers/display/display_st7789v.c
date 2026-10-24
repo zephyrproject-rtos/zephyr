@@ -185,8 +185,9 @@ static int st7789v_write(const struct device *dev,
 	int ret;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * pixel_size * desc->height) <= desc->buf_size,
-			"Input buffer too small");
+	__ASSERT(((((size_t)desc->height - 1U) * desc->pitch + desc->width) * pixel_size) <=
+			 desc->buf_size,
+		 "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
 		desc->width, desc->height, x, y);
@@ -199,7 +200,7 @@ static int st7789v_write(const struct device *dev,
 		write_h = 1U;
 		nbr_of_writes = desc->height;
 		mipi_desc.height = 1;
-		mipi_desc.buf_size = desc->pitch * pixel_size;
+		mipi_desc.buf_size = desc->width * pixel_size;
 	} else {
 		write_h = desc->height;
 		nbr_of_writes = 1U;
