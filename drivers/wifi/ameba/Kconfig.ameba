@@ -76,6 +76,20 @@ config RTK_AP_IPV4_GATEWAY
 	help
 	  Gateway for SoftAP clients (usually the AP itself).
 
+config WIFI_AMEBA_FAST_CONNECT
+	bool "Wi-Fi fast reconnect (store last AP profile)"
+	default y if SOC_SERIES_AMEBASMART
+	select SETTINGS
+	select NVS
+	select FLASH
+	select FLASH_MAP
+	# Selecting NVS makes the SETTINGS_BACKEND choice default to SETTINGS_NVS.
+	help
+	  The WHC host stores the last AP profile through the settings API
+	  and reloads it at boot to skip scan/auth. This backs those calls
+	  with NVS on the "storage" partition instead of the WHC library's
+	  weak no-op stubs.
+
 config SINGLE_CORE_WIFI
 	bool
 	depends on SOC_SERIES_AMEBAD
@@ -83,5 +97,6 @@ config SINGLE_CORE_WIFI
 
 config WHC_HOST
 	bool
+	default y if !SINGLE_CORE_WIFI
 
 endif

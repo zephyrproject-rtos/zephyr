@@ -36,6 +36,8 @@ extern "C" {
 #include <zephyr/dt-bindings/clock/amebad_clock.h>
 #elif defined(CONFIG_SOC_SERIES_AMEBAG2)
 #include <zephyr/dt-bindings/clock/amebag2_clock.h>
+#elif defined(CONFIG_SOC_SERIES_AMEBASMART)
+#include <zephyr/dt-bindings/clock/amebasmart_clock.h>
 #else
 #error "Please select the correct Ameba SoC series."
 #endif

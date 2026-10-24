@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# Configurations here work for all rtl8730e_evb variants
+
+# enable rcc
+config CLOCK_CONTROL
+	default y
+
+# Only CA32 enables a GPIO controller. KM4/KM0 would build an empty gpio library.
+config GPIO
+	default y if SOC_RTL8730E_CA32
+
+config NOCACHE_MEMORY
+	default y
+
+if BOARD_RTL8730E_EVB
+
+# CA32 has two Cortex-A32 cores.
+config SMP
+	default y if SOC_RTL8730E_CA32
+
+config USE_SWITCH
+	default y if SOC_RTL8730E_CA32
+
+# The FPU_SHARING lazy save pushes ~300 B of VFP regs onto the UND/ABT stack.
+# The 256 B default overflows on the first FPU trap.
+config ARMV7_EXCEPTION_STACK_SIZE
+	default 1024
+
+endif # BOARD_RTL8730E_EVB

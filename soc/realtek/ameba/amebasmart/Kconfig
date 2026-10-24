@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# Select arch symbols here, not in Kconfig.soc: sysbuild loads Kconfig.soc
+# standalone, where they do not exist.
+config SOC_SERIES_AMEBASMART
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+
+config SOC_RTL8730E_CA32
+	select ARM
+	select CPU_CORTEX_A32
+	select ARM_ARCH_TIMER
+	select CPU_HAS_FPU
+	select FPU
+	select CPU_HAS_NEON
+	select VFP_DP_D32_FP16_FMAC
+	select CORTEX_A_R_PRIMARY_CORE_MPID_ZERO if SMP
+
+# KM4: network processor (Real-M300V, Cortex-M55 compatible).
+config SOC_RTL8730E_KM4
+	select ARM
+	select CPU_CORTEX_M55
+	select ARMV8_M_DSP
+	select CPU_HAS_ARM_MPU
+	select ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+	select CPU_HAS_VFP
+	select DYNAMIC_INTERRUPTS
+
+# KM0: low-power core (Real-M200, Cortex-M23 compatible).
+config SOC_RTL8730E_KM0
+	select ARM
+	select CPU_CORTEX_M23
+	select CPU_HAS_ARM_MPU
+	select ARM_MPU
+	select DYNAMIC_INTERRUPTS
+	# The image runs from SRAM, not 0x0, so the vector table needs VTOR.
+	select CPU_CORTEX_M_HAS_VTOR
+	# SysTick is optional on Armv8-M baseline, but KM0 implements it and uses
+	# it as the kernel timer.
+	select CPU_CORTEX_M_HAS_SYSTICK

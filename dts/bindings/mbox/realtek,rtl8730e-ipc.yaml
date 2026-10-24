@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek RTL8730E (AmebaSmart) per-core IPC doorbell block, 8 channels per
+  direction on one interrupt line. The mbox cell is the absolute register bit
+  (0..31), since the TX/RX group shift depends on the link direction.
+
+compatible: "realtek,rtl8730e-ipc"
+
+include: [mailbox-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#mbox-cells":
+    const: 1
+
+# The mbox API reads the cell named "channel". Any other name silently resolves to 0.
+mbox-cells:
+  - channel

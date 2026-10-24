@@ -1,0 +1,18 @@
+sample:
+  name: RTL8730E CA32<->KM4/KM0 OpenAMP rpmsg link test
+tests:
+  sample.ipc.rtl8730e_rpmsg.host:
+    build_only: true
+    platform_allow:
+      - rtl8730e_evb/rtl8730e/ca32
+    tags: ipc
+  sample.ipc.rtl8730e_rpmsg.remote_km4:
+    build_only: true
+    platform_allow:
+      - rtl8730e_evb/rtl8730e/km4
+    tags: ipc
+  sample.ipc.rtl8730e_rpmsg.remote_km0:
+    build_only: true
+    platform_allow:
+      - rtl8730e_evb/rtl8730e/km0
+    tags: ipc

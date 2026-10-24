@@ -35,7 +35,19 @@ extern "C" {
  */
 static inline uint32_t arch_sys_bit_rev32(uint32_t x)
 {
+#if defined(__GNUC__) && !defined(__clang__) && (__GNUC__ < 14)
+	/*
+	 * GCC before 14 lacks the __rbit intrinsic in arm_acle.h. RBIT exists on
+	 * every AArch32 core that can select CONFIG_ARCH_HAS_BIT_REV.
+	 */
+	uint32_t ret;
+
+	__asm__ ("rbit %0, %1" : "=r"(ret) : "r"(x));
+
+	return ret;
+#else
 	return __rbit(x);
+#endif
 }
 
 /**

@@ -22,6 +22,9 @@
 #include <zephyr/net/wifi_nm.h>
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #include <zephyr/logging/log.h>
+#ifdef CONFIG_WIFI_AMEBA_FAST_CONNECT
+#include <zephyr/settings/settings.h>
+#endif
 LOG_MODULE_REGISTER(ameba_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 /* use global iface pointer to support any ethernet driver */
@@ -40,6 +43,11 @@ static struct net_mgmt_event_callback ameba_dhcp_cb;
 
 static int dev_init_done;
 static unsigned char if_init_idx;
+
+#ifndef CONFIG_SINGLE_CORE_WIFI
+/* Upper bound on the wait for the NP core to report the Wi-Fi MAC running. */
+#define AMEBA_WIFI_START_TIMEOUT_MS 5000U
+#endif
 
 #ifndef CONFIG_SINGLE_CORE_WIFI
 extern int (*rx_callback_ptr)(uint8_t idx, void *buffer, uint16_t len);
@@ -107,8 +115,11 @@ static int ameba_wifi_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-/* should called in driver after rx */
-static int eth_rtk_rx(uint8_t idx, void *buffer, uint16_t len)
+/*
+ * Must stay global: it overrides the WHC library's __weak stub called via extern.
+ * If static, the stub is linked and all RX is dropped.
+ */
+int eth_rtk_rx(uint8_t idx, void *buffer, uint16_t len)
 {
 	struct net_pkt *pkt;
 
@@ -272,7 +283,11 @@ report:
 	return 0;
 }
 
-static void ameba_wifi_handle_connect_event(void)
+/*
+ * Must stay global: it overrides the WHC library's __weak stub called via extern.
+ * If static, link-up is never reported and DHCP never starts.
+ */
+void ameba_wifi_handle_connect_event(void)
 {
 	net_eth_carrier_on(ameba_wifi_iface[STA_WLAN_INDEX]);
 
@@ -593,8 +608,42 @@ static void ameba_wifi_init(struct net_if *iface)
 	dev_data->if_idx = if_init_idx;
 
 	if (if_init_idx == STA_WLAN_INDEX) {
+#ifdef CONFIG_WIFI_AMEBA_FAST_CONNECT
+		/* wifi_init() loads the fast-reconnect profile through settings. */
+		int err = settings_subsys_init();
+
+		if (err != 0) {
+			LOG_ERR("settings_subsys_init failed (%d); fast reconnect disabled",
+				err);
+		}
+#endif
 		wlan_int_enable();
 		wifi_init();
+
+#ifndef CONFIG_SINGLE_CORE_WIFI
+		/*
+		 * wifi_init() only spawns the lower-priority WHC host init thread, and
+		 * host API calls take a NULL mutex until it clears NP_READY. Sleep until
+		 * then, and until the MAC runs, so the MAC-address IPC below is serviced.
+		 */
+		uint32_t deadline = k_uptime_get_32() + AMEBA_WIFI_START_TIMEOUT_MS;
+
+		while ((HAL_READ32(REG_AON_WIFI_IPC, 0) & AON_BIT_WIFI_INIC_NP_READY) != 0U) {
+			if (k_uptime_get_32() >= deadline) {
+				LOG_ERR("WHC host init did not complete");
+				break;
+			}
+			k_msleep(1);
+		}
+
+		while (wifi_is_running(STA_WLAN_INDEX) == 0) {
+			if (k_uptime_get_32() >= deadline) {
+				LOG_ERR("Wi-Fi firmware did not start");
+				break;
+			}
+			k_msleep(1);
+		}
+#endif /* CONFIG_SINGLE_CORE_WIFI */
 	}
 
 	/* Start interface when we are actually connected with Wi-Fi network */
