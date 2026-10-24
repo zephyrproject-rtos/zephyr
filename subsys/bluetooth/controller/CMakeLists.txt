@@ -204,6 +204,12 @@ zephyr_library_include_directories_ifdef(
   ll_sw/openisa/hci
   )
 
+zephyr_library_include_directories_ifdef(
+  CONFIG_BT_LLL_VENDOR_BSIM
+  "ll_sw/bsim"
+  "ll_sw/bsim/hci"
+  )
+
 add_subdirectory_ifdef(
   CONFIG_BT_CTLR_COEX_DRIVERS
   coex
@@ -217,6 +223,11 @@ add_subdirectory_ifdef(
 add_subdirectory_ifdef(
   CONFIG_BT_LLL_VENDOR_OPENISA
   ll_sw/openisa
+  )
+
+add_subdirectory_ifdef(
+  CONFIG_BT_LLL_VENDOR_BSIM
+  "ll_sw/bsim"
   )
 
 zephyr_library_compile_options_ifdef(

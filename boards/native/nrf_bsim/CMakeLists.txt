@@ -92,4 +92,8 @@ add_subdirectory(${ZEPHYR_BASE}/boards/native/common/extra_args/
   ${CMAKE_CURRENT_BINARY_DIR}/extra_args
 )
 
+if(CONFIG_DT_HAS_ZEPHYR_BSIM_2G4_RADIO_ENABLED)
+  add_subdirectory(neutral_2g4_radio)
+endif()
+
 include(../common/natsim_config.cmake)
