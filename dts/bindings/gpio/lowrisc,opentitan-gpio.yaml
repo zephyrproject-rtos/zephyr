@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 Yousef Kitaneh
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  lowRISC OpenTitan GPIO controller providing:
+  - 32 GPIO pins
+  - Configurable interrupt per GPIO for detecting rising edge, falling edge,
+    or active low/high input
+  - Two ways to update GPIO output: direct-write and masked (thread-safe) update
+
+compatible: "lowrisc,opentitan-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
