@@ -49,109 +49,138 @@ LOG_MODULE_REGISTER(sensor_shell, CONFIG_SENSOR_LOG_LEVEL);
 		   "Currently only supports `data_ready`.",                                        \
 		   "<device_name> <on/off> <trigger_name>")
 
-static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
-	[SENSOR_CHAN_ACCEL_X] = "accel_x",
-	[SENSOR_CHAN_ACCEL_Y] = "accel_y",
-	[SENSOR_CHAN_ACCEL_Z] = "accel_z",
-	[SENSOR_CHAN_ACCEL_XYZ] = "accel_xyz",
-	[SENSOR_CHAN_GYRO_X] = "gyro_x",
-	[SENSOR_CHAN_GYRO_Y] = "gyro_y",
-	[SENSOR_CHAN_GYRO_Z] = "gyro_z",
-	[SENSOR_CHAN_GYRO_XYZ] = "gyro_xyz",
-	[SENSOR_CHAN_MAGN_X] = "magn_x",
-	[SENSOR_CHAN_MAGN_Y] = "magn_y",
-	[SENSOR_CHAN_MAGN_Z] = "magn_z",
-	[SENSOR_CHAN_MAGN_XYZ] = "magn_xyz",
-	[SENSOR_CHAN_DIE_TEMP] = "die_temp",
-	[SENSOR_CHAN_AMBIENT_TEMP] = "ambient_temp",
-	[SENSOR_CHAN_PRESS] = "press",
-	[SENSOR_CHAN_PROX] = "prox",
-	[SENSOR_CHAN_HUMIDITY] = "humidity",
-	[SENSOR_CHAN_AMBIENT_LIGHT] = "ambient_light",
-	[SENSOR_CHAN_LIGHT] = "light",
-	[SENSOR_CHAN_IR] = "ir",
-	[SENSOR_CHAN_RED] = "red",
-	[SENSOR_CHAN_GREEN] = "green",
-	[SENSOR_CHAN_BLUE] = "blue",
-	[SENSOR_CHAN_ALTITUDE] = "altitude",
-	[SENSOR_CHAN_PM_1_0_CF] = "pm_1_0_cf",
-	[SENSOR_CHAN_PM_2_5_CF] = "pm_2_5_cf",
-	[SENSOR_CHAN_PM_10_CF] = "pm_10_cf",
-	[SENSOR_CHAN_PM_1_0] = "pm_1_0",
-	[SENSOR_CHAN_PM_2_5] = "pm_2_5",
-	[SENSOR_CHAN_PM_10] = "pm_10",
-	[SENSOR_CHAN_PM_0_3_COUNT] = "pm_0_3_count",
-	[SENSOR_CHAN_PM_0_5_COUNT] = "pm_0_5_count",
-	[SENSOR_CHAN_PM_1_0_COUNT] = "pm_1_0_count",
-	[SENSOR_CHAN_PM_2_5_COUNT] = "pm_2_5_count",
-	[SENSOR_CHAN_PM_5_COUNT] = "pm_5_0_count",
-	[SENSOR_CHAN_PM_10_COUNT] = "pm_10_count",
-	[SENSOR_CHAN_DISTANCE] = "distance",
-	[SENSOR_CHAN_CO2] = "co2",
-	[SENSOR_CHAN_O2] = "o2",
-	[SENSOR_CHAN_VOC] = "voc",
-	[SENSOR_CHAN_GAS_RES] = "gas_resistance",
-	[SENSOR_CHAN_FLOW_RATE] = "flow_rate",
-	[SENSOR_CHAN_VOLUME] = "volume",
-	[SENSOR_CHAN_VOLTAGE] = "voltage",
-	[SENSOR_CHAN_VSHUNT] = "vshunt",
-	[SENSOR_CHAN_CURRENT] = "current",
-	[SENSOR_CHAN_POWER] = "power",
-	[SENSOR_CHAN_RESISTANCE] = "resistance",
-	[SENSOR_CHAN_ROTATION] = "rotation",
-	[SENSOR_CHAN_POS_DX] = "pos_dx",
-	[SENSOR_CHAN_POS_DY] = "pos_dy",
-	[SENSOR_CHAN_POS_DZ] = "pos_dz",
-	[SENSOR_CHAN_POS_DXYZ] = "pos_dxyz",
-	[SENSOR_CHAN_RPM] = "rpm",
-	[SENSOR_CHAN_FREQUENCY] = "frequency",
-	[SENSOR_CHAN_GAUGE_VOLTAGE] = "gauge_voltage",
-	[SENSOR_CHAN_GAUGE_AVG_CURRENT] = "gauge_avg_current",
-	[SENSOR_CHAN_GAUGE_STDBY_CURRENT] = "gauge_stdby_current",
-	[SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT] = "gauge_max_load_current",
-	[SENSOR_CHAN_GAUGE_TEMP] = "gauge_temp",
-	[SENSOR_CHAN_GAUGE_STATE_OF_CHARGE] = "gauge_state_of_charge",
-	[SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY] = "gauge_full_cap",
-	[SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY] = "gauge_remaining_cap",
-	[SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY] = "gauge_nominal_cap",
-	[SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY] = "gauge_full_avail_cap",
-	[SENSOR_CHAN_GAUGE_AVG_POWER] = "gauge_avg_power",
-	[SENSOR_CHAN_GAUGE_STATE_OF_HEALTH] = "gauge_state_of_health",
-	[SENSOR_CHAN_GAUGE_TIME_TO_EMPTY] = "gauge_time_to_empty",
-	[SENSOR_CHAN_GAUGE_TIME_TO_FULL] = "gauge_time_to_full",
-	[SENSOR_CHAN_GAUGE_CYCLE_COUNT] = "gauge_cycle_count",
-	[SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE] = "gauge_design_voltage",
-	[SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE] = "gauge_desired_voltage",
-	[SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT] = "gauge_desired_charging_current",
-	[SENSOR_CHAN_GAME_ROTATION_VECTOR] = "game_rotation_vector",
-	[SENSOR_CHAN_GRAVITY_VECTOR] = "gravity_vector",
-	[SENSOR_CHAN_GBIAS_XYZ] = "gbias_xyz",
-	[SENSOR_CHAN_ENCODER_COUNT] = "encoder_count",
-	[SENSOR_CHAN_ENCODER_REVOLUTIONS] = "encoder_revolutions",
-	[SENSOR_CHAN_ALL] = "all",
-};
+#define X_SENSOR_CHANNEL_NAME(X) \
+	X(SENSOR_CHAN_ACCEL_X, "accel_x") \
+	X(SENSOR_CHAN_ACCEL_Y, "accel_y") \
+	X(SENSOR_CHAN_ACCEL_Z, "accel_z") \
+	X(SENSOR_CHAN_ACCEL_XYZ, "accel_xyz") \
+	X(SENSOR_CHAN_GYRO_X, "gyro_x") \
+	X(SENSOR_CHAN_GYRO_Y, "gyro_y") \
+	X(SENSOR_CHAN_GYRO_Z, "gyro_z") \
+	X(SENSOR_CHAN_GYRO_XYZ, "gyro_xyz") \
+	X(SENSOR_CHAN_MAGN_X, "magn_x") \
+	X(SENSOR_CHAN_MAGN_Y, "magn_y") \
+	X(SENSOR_CHAN_MAGN_Z, "magn_z") \
+	X(SENSOR_CHAN_MAGN_XYZ, "magn_xyz") \
+	X(SENSOR_CHAN_DIE_TEMP, "die_temp") \
+	X(SENSOR_CHAN_AMBIENT_TEMP, "ambient_temp") \
+	X(SENSOR_CHAN_PRESS, "press") \
+	X(SENSOR_CHAN_PROX, "prox") \
+	X(SENSOR_CHAN_HUMIDITY, "humidity") \
+	X(SENSOR_CHAN_AMBIENT_LIGHT, "ambient_light") \
+	X(SENSOR_CHAN_LIGHT, "light") \
+	X(SENSOR_CHAN_IR, "ir") \
+	X(SENSOR_CHAN_RED, "red") \
+	X(SENSOR_CHAN_GREEN, "green") \
+	X(SENSOR_CHAN_BLUE, "blue") \
+	X(SENSOR_CHAN_ALTITUDE, "altitude") \
+	X(SENSOR_CHAN_PM_1_0_CF, "pm_1_0_cf") \
+	X(SENSOR_CHAN_PM_2_5_CF, "pm_2_5_cf") \
+	X(SENSOR_CHAN_PM_10_CF, "pm_10_cf") \
+	X(SENSOR_CHAN_PM_1_0, "pm_1_0") \
+	X(SENSOR_CHAN_PM_2_5, "pm_2_5") \
+	X(SENSOR_CHAN_PM_10, "pm_10") \
+	X(SENSOR_CHAN_PM_0_3_COUNT, "pm_0_3_count") \
+	X(SENSOR_CHAN_PM_0_5_COUNT, "pm_0_5_count") \
+	X(SENSOR_CHAN_PM_1_0_COUNT, "pm_1_0_count") \
+	X(SENSOR_CHAN_PM_2_5_COUNT, "pm_2_5_count") \
+	X(SENSOR_CHAN_PM_5_COUNT, "pm_5_0_count") \
+	X(SENSOR_CHAN_PM_10_COUNT, "pm_10_count") \
+	X(SENSOR_CHAN_DISTANCE, "distance") \
+	X(SENSOR_CHAN_CO2, "co2") \
+	X(SENSOR_CHAN_O2, "o2") \
+	X(SENSOR_CHAN_VOC, "voc") \
+	X(SENSOR_CHAN_GAS_RES, "gas_resistance") \
+	X(SENSOR_CHAN_FLOW_RATE, "flow_rate") \
+	X(SENSOR_CHAN_VOLUME, "volume") \
+	X(SENSOR_CHAN_VOLTAGE, "voltage") \
+	X(SENSOR_CHAN_VSHUNT, "vshunt") \
+	X(SENSOR_CHAN_CURRENT, "current") \
+	X(SENSOR_CHAN_POWER, "power") \
+	X(SENSOR_CHAN_RESISTANCE, "resistance") \
+	X(SENSOR_CHAN_ROTATION, "rotation") \
+	X(SENSOR_CHAN_POS_DX, "pos_dx") \
+	X(SENSOR_CHAN_POS_DY, "pos_dy") \
+	X(SENSOR_CHAN_POS_DZ, "pos_dz") \
+	X(SENSOR_CHAN_POS_DXYZ, "pos_dxyz") \
+	X(SENSOR_CHAN_RPM, "rpm") \
+	X(SENSOR_CHAN_FREQUENCY, "frequency") \
+	X(SENSOR_CHAN_GAUGE_VOLTAGE, "gauge_voltage") \
+	X(SENSOR_CHAN_GAUGE_AVG_CURRENT, "gauge_avg_current") \
+	X(SENSOR_CHAN_GAUGE_STDBY_CURRENT, "gauge_stdby_current") \
+	X(SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT, "gauge_max_load_current") \
+	X(SENSOR_CHAN_GAUGE_TEMP, "gauge_temp") \
+	X(SENSOR_CHAN_GAUGE_STATE_OF_CHARGE, "gauge_state_of_charge") \
+	X(SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY, "gauge_full_cap") \
+	X(SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY, "gauge_remaining_cap") \
+	X(SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY, "gauge_nominal_cap") \
+	X(SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY, "gauge_full_avail_cap") \
+	X(SENSOR_CHAN_GAUGE_AVG_POWER, "gauge_avg_power") \
+	X(SENSOR_CHAN_GAUGE_STATE_OF_HEALTH, "gauge_state_of_health") \
+	X(SENSOR_CHAN_GAUGE_TIME_TO_EMPTY, "gauge_time_to_empty") \
+	X(SENSOR_CHAN_GAUGE_TIME_TO_FULL, "gauge_time_to_full") \
+	X(SENSOR_CHAN_GAUGE_CYCLE_COUNT, "gauge_cycle_count") \
+	X(SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE, "gauge_design_voltage") \
+	X(SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE, "gauge_desired_voltage") \
+	X(SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT, "gauge_desired_charging_current") \
+	X(SENSOR_CHAN_GAME_ROTATION_VECTOR, "game_rotation_vector") \
+	X(SENSOR_CHAN_GRAVITY_VECTOR, "gravity_vector") \
+	X(SENSOR_CHAN_GBIAS_XYZ, "gbias_xyz") \
+	X(SENSOR_CHAN_ENCODER_COUNT, "encoder_count") \
+	X(SENSOR_CHAN_ENCODER_REVOLUTIONS, "encoder_revolutions") \
+	X(SENSOR_CHAN_ALL, "all")
 
+#define X(SENSOR_CHAN, SENSOR_CHAN_NAME) [SENSOR_CHAN] = SENSOR_CHAN_NAME,
+static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
+	X_SENSOR_CHANNEL_NAME(X)};
+#undef X
+
+#define X(SENSOR_CHAN, SENSOR_CHAN_NAME) + 1
+BUILD_ASSERT(0 X_SENSOR_CHANNEL_NAME(X) == SENSOR_CHAN_COMMON_COUNT,
+	"sensor_channel_name entry count does not match SENSOR_CHAN_COMMON_COUNT");
+#undef X
+
+#define X(SENSOR_CHAN, SENSOR_CHAN_NAME) < SENSOR_CHAN && SENSOR_CHAN
+BUILD_ASSERT(-1 X_SENSOR_CHANNEL_NAME(X) < SENSOR_CHAN_COMMON_COUNT,
+	"sensor_channel_name enum values are not strictly increasing");
+#undef X
+
+#define X_SENSOR_ATTRIBUTE_NAME(X) \
+	X(SENSOR_ATTR_SAMPLING_FREQUENCY, "sampling_frequency") \
+	X(SENSOR_ATTR_LOWER_THRESH, "lower_thresh") \
+	X(SENSOR_ATTR_UPPER_THRESH, "upper_thresh") \
+	X(SENSOR_ATTR_SLOPE_TH, "slope_th") \
+	X(SENSOR_ATTR_SLOPE_DUR, "slope_dur") \
+	X(SENSOR_ATTR_HYSTERESIS, "hysteresis") \
+	X(SENSOR_ATTR_OVERSAMPLING, "oversampling") \
+	X(SENSOR_ATTR_FULL_SCALE, "full_scale") \
+	X(SENSOR_ATTR_OFFSET, "offset") \
+	X(SENSOR_ATTR_CALIB_TARGET, "calib_target") \
+	X(SENSOR_ATTR_CONFIGURATION, "configuration") \
+	X(SENSOR_ATTR_CALIBRATION, "calibration") \
+	X(SENSOR_ATTR_FEATURE_MASK, "feature_mask") \
+	X(SENSOR_ATTR_ALERT, "alert") \
+	X(SENSOR_ATTR_FF_DUR, "ff_dur") \
+	X(SENSOR_ATTR_BATCH_DURATION, "batch_dur") \
+	X(SENSOR_ATTR_GAIN, "gain") \
+	X(SENSOR_ATTR_RESOLUTION, "resolution") \
+	X(SENSOR_ATTR_CHIP_ID, "chip_id")
+
+#define X(SENSOR_CHAN, SENSOR_CHAN_NAME) [SENSOR_CHAN] = SENSOR_CHAN_NAME,
 static const char *const sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
-	[SENSOR_ATTR_SAMPLING_FREQUENCY] = "sampling_frequency",
-	[SENSOR_ATTR_LOWER_THRESH] = "lower_thresh",
-	[SENSOR_ATTR_UPPER_THRESH] = "upper_thresh",
-	[SENSOR_ATTR_SLOPE_TH] = "slope_th",
-	[SENSOR_ATTR_SLOPE_DUR] = "slope_dur",
-	[SENSOR_ATTR_HYSTERESIS] = "hysteresis",
-	[SENSOR_ATTR_OVERSAMPLING] = "oversampling",
-	[SENSOR_ATTR_FULL_SCALE] = "full_scale",
-	[SENSOR_ATTR_OFFSET] = "offset",
-	[SENSOR_ATTR_CALIB_TARGET] = "calib_target",
-	[SENSOR_ATTR_CONFIGURATION] = "configuration",
-	[SENSOR_ATTR_CALIBRATION] = "calibration",
-	[SENSOR_ATTR_FEATURE_MASK] = "feature_mask",
-	[SENSOR_ATTR_ALERT] = "alert",
-	[SENSOR_ATTR_FF_DUR] = "ff_dur",
-	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
-	[SENSOR_ATTR_GAIN] = "gain",
-	[SENSOR_ATTR_RESOLUTION] = "resolution",
-	[SENSOR_ATTR_CHIP_ID] = "chip_id",
+	X_SENSOR_ATTRIBUTE_NAME(X)
 };
+#undef X
+
+#define X(SENSOR_CHAN, SENSOR_CHAN_NAME) + 1
+BUILD_ASSERT(0 X_SENSOR_ATTRIBUTE_NAME(X) == SENSOR_ATTR_COMMON_COUNT,
+	"sensor_attribute_name entry count does not match SENSOR_ATTR_COMMON_COUNT");
+#undef X
+
+#define X(SENSOR_CHAN, SENSOR_CHAN_NAME) < SENSOR_CHAN && SENSOR_CHAN
+BUILD_ASSERT(-1 X_SENSOR_ATTRIBUTE_NAME(X) < SENSOR_ATTR_COMMON_COUNT,
+	"sensor_attribute_name enum values are not strictly increasing");
+#undef X
 
 enum sample_stats_state {
 	SAMPLE_STATS_STATE_UNINITIALIZED = 0,
@@ -278,7 +307,7 @@ RTIO_IODEV_DEFINE(iodev_sensor_shell_read, &__sensor_iodev_api, &iodev_sensor_sh
 /* Create the RTIO context to service the reading */
 RTIO_DEFINE_WITH_MEMPOOL(sensor_read_rtio, 8, 8, 32, 64, 4);
 
-static int parse_named_int(const char *name, const char *const heystack[], size_t count)
+static int parse_named_int(const char *name, const char *const haystack[], size_t count)
 {
 	char *endptr;
 	int i;
@@ -292,7 +321,7 @@ static int parse_named_int(const char *name, const char *const heystack[], size_
 
 	/* Channel name is not a number, look it up */
 	for (i = 0; i < count; i++) {
-		if (strcmp(name, heystack[i]) == 0) {
+		if (haystack[i] != NULL && strcmp(name, haystack[i]) == 0) {
 			return i;
 		}
 	}
