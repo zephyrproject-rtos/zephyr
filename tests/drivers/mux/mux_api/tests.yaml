@@ -17,6 +17,7 @@ tests:
     filter: dt_compat_enabled("nxp,trgmux")
     platform_allow:
       - frdm_mcxe247
+      - frdm_mcxe31b
     integration_platforms:
       - frdm_mcxe247
     extra_configs:
