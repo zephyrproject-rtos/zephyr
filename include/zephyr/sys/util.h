@@ -1109,6 +1109,9 @@ static ALWAYS_INLINE uint64_t sys_lcm_s(int32_t a, int32_t b)
 			({ delay_stmt; });                                                         \
 			Z_SPIN_DELAY(10);                                                          \
 		}                                                                                  \
+		if (!_wf_ret) {                                                                    \
+			_wf_ret = (expr);                                                          \
+		}                                                                                  \
 		(_wf_ret);                                                                         \
 	})
 
