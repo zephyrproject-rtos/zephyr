@@ -108,7 +108,7 @@ int wiznet_command(const struct device *dev, uint8_t cmd);
 int wiznet_readbuf(const struct device *dev, uint16_t offset, uint8_t *buf, size_t len);
 int wiznet_writebuf(const struct device *dev, uint16_t offset, uint8_t *buf, size_t len);
 
-void wiznet_rx(const struct device *dev);
+int wiznet_rx(const struct device *dev);
 int wiznet_tx(const struct device *dev, struct net_pkt *pkt);
 
 void wiznet_iface_init(struct net_if *iface);
