@@ -2879,6 +2879,13 @@ static int smp_init(struct bt_smp *smp)
 	 */
 	(void)atomic_and(smp->flags, BIT(SMP_FLAG_SEC_REQ));
 
+	/* A DH key calculation of an earlier pairing may still hold the peer's
+	 * public key, which is cleared below
+	 */
+	if (IS_ENABLED(CONFIG_BT_ECC)) {
+		bt_dh_key_gen_cancel(smp->pkey);
+	}
+
 	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
 	 */
@@ -5023,6 +5030,11 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 		    (keys->flags & BT_KEYS_DEBUG))) {
 			bt_keys_clear(keys);
 		}
+	}
+
+	/* A DH key calculation may still hold the peer's public key */
+	if (IS_ENABLED(CONFIG_BT_ECC)) {
+		bt_dh_key_gen_cancel(smp->pkey);
 	}
 
 	(void)memset(smp, 0, sizeof(*smp));
