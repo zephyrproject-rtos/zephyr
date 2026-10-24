@@ -261,6 +261,14 @@ static uint8_t cmux_frame_control_psc_initiator_ack[] = {0xF9, 0x03, 0xFF, 0x05,
 							 0x41, 0x01, 0xE7, 0xF9};
 
 /*
+ * NSC response from peer to the PSC command of the CMUX initiator.
+ * NSC response type (ea=1, cr=0, value=0x04 -> 0x11), length=1 (0x03),
+ * value is the PSC command type (0x43).
+ */
+static uint8_t cmux_frame_control_psc_initiator_nsc[] = {0xF9, 0x03, 0xEF, 0x07, 0x11,
+							 0x03, 0x43, 0x11, 0xF9};
+
+/*
  * Three flags should trigger peer to start retrying flag characters.
  * This is used for wakeup sequence.
  */
@@ -1682,6 +1690,58 @@ ZTEST(modem_cmux, test_modem_cmux_power_save_cmux_initiated)
 	/* Restore config to avoid affecting subsequent tests */
 	cmux.config.enable_runtime_power_management = saved_rpm;
 	cmux.config.idle_timeout = saved_timeout;
+}
+
+/*
+ * Test: PSC response without a PSC command.
+ *
+ * A PSC response received while CMUX did not request power saving, for
+ * example one arriving after the T3 timeout, must not enter power save.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_unexpected_response)
+{
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_psc_ack,
+			       sizeof(cmux_frame_control_psc_ack));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_CONNECTED,
+		      "CMUX should ignore a PSC response it did not request");
+}
+
+/*
+ * Test: power save not supported by peer.
+ *
+ * When the peer responds to the PSC command with NSC, CMUX must return to
+ * CONNECTED immediately rather than waiting for the T3 timeout.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_not_supported)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+	int ret;
+
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_ENTER_POWERSAVE, K_MSEC(150)),
+		     "CMUX should be in ENTER_POWERSAVE after idle timeout");
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, (int)sizeof(cmux_frame_control_psc_initiator_cmd),
+		      "PSC command should have been sent by CMUX, got %d bytes", ret);
+
+	/* Peer does not support power saving */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_psc_initiator_nsc,
+			       sizeof(cmux_frame_control_psc_initiator_nsc));
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_CONNECTED, TRANSMISSION_DELAY),
+		     "CMUX should return to CONNECTED on NSC");
+
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
 }
 
 /*
