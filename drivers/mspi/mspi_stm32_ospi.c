@@ -1450,23 +1450,25 @@ static int mspi_stm32_ospi_suspend(const struct device *dev)
 
 	/* Disable device clock. */
 	ret = clock_control_off(clk, (clock_control_subsys_t)(uintptr_t)&cfg->pclken[0]);
-	if (ret < 0) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("Failed to disable MSPI clock during PM suspend process");
 		return ret;
 	}
 
 	/* Optional alternate clocks */
 	if (cfg->pclk_len > 1) {
-		if (clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				      (clock_control_subsys_t)&cfg->pclken[1]) != 0) {
+		ret = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					(clock_control_subsys_t)&cfg->pclken[1]);
+		if (ret != 0 && ret != -ENOTSUP) {
 			LOG_ERR("Could not enable XSPI Manager clock");
 			return -EIO;
 		}
 	}
 
 	if (cfg->pclk_len > 2) {
-		if (clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				      (clock_control_subsys_t)&cfg->pclken[2]) != 0) {
+		ret = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					(clock_control_subsys_t)&cfg->pclken[2]);
+		if (ret != 0 && ret != -ENOTSUP) {
 			LOG_ERR("Could not enable XSPI Manager clock");
 			return -EIO;
 		}
