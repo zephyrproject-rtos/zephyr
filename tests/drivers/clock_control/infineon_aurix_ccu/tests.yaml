@@ -1,0 +1,12 @@
+common:
+  tags:
+    - drivers
+    - clock_control
+  platform_allow:
+    - qemu_tc4x
+  integration_platforms:
+    - qemu_tc4x
+tests:
+  drivers.clock.infineon_aurix_ccu: {}
+  drivers.clock.infineon_aurix_ccu.per_pll:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="per_pll.overlay"
