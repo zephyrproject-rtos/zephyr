@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,6 +145,15 @@ struct virtq_receive_callback_entry {
 	 * argument passed to the callback function
 	 */
 	void *opaque;
+	/**
+	 * used length in bytes captured when the device returns this chain
+	 */
+	uint32_t used_len;
+	/**
+	 * next completed chain head while processing a used ring batch,
+	 * UINT16_MAX terminates the list
+	 */
+	uint16_t completed_next;
 };
 
 /**
@@ -192,6 +202,14 @@ struct virtq {
 	 * amount of free descriptors in the free_desc_stack
 	 */
 	uint16_t free_desc_n;
+
+	/**
+	 * bitmap tracking submitted-but-unreturned chain heads, one bit per
+	 * descriptor. Set when a chain is published to the available ring and
+	 * cleared when it is returned, so used ring entries that do not name a
+	 * chain currently awaiting completion can be rejected
+	 */
+	atomic_t *in_flight;
 
 	/**
 	 * array with callbacks invoked after receiving buffers back from the device

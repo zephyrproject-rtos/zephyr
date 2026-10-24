@@ -7,6 +7,7 @@
 #include <zephyr/drivers/virtio/virtqueue.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/util.h>
@@ -52,7 +53,11 @@ int virtq_create(struct virtq *v, size_t size)
 		descriptor_table_size + available_ring_size + used_ring_pad + used_ring_size;
 	size_t recv_cbs_pad = WB_UP(shared_size) - shared_size;
 	size_t recv_cbs_size = recv_cbs_pad + sizeof(struct virtq_receive_callback_entry) * size;
-	size_t v_size = shared_size + recv_cbs_size + size * sizeof(stack_data_t);
+	size_t stack_size = size * sizeof(stack_data_t);
+	size_t in_flight_offset =
+		ROUND_UP(shared_size + recv_cbs_size + stack_size, sizeof(atomic_t));
+	size_t in_flight_size = ATOMIC_BITMAP_SIZE(size) * sizeof(atomic_t);
+	size_t v_size = in_flight_offset + in_flight_size;
 
 	uint8_t *v_area = k_aligned_alloc(16, v_size);
 
@@ -68,6 +73,7 @@ int virtq_create(struct virtq *v, size_t size)
 	v->used = (struct virtq_used *)((uint8_t *)v->avail + available_ring_size + used_ring_pad);
 	v->recv_cbs = (struct virtq_receive_callback_entry *)((uint8_t *)v->used + used_ring_size +
 							      recv_cbs_pad);
+	v->in_flight = size != 0U ? (atomic_t *)(v_area + in_flight_offset) : NULL;
 
 	/*
 	 * At the beginning of the descriptor table, the available ring and the used ring have to be
@@ -175,6 +181,8 @@ int virtq_add_buffer_chain(
 
 	k_spinlock_key_t key = k_spin_lock(&v->lock);
 
+	v->recv_cbs[head].completed_next = UINT16_MAX;
+	atomic_set_bit(v->in_flight, head);
 	virtq_add_available(v, head);
 	k_spin_unlock(&v->lock, key);
 
@@ -199,7 +207,13 @@ int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout
 
 void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx)
 {
-	k_stack_push(&v->free_desc_stack, desc_idx);
+	int ret = k_stack_push(&v->free_desc_stack, desc_idx);
+
+	if (ret != 0) {
+		LOG_ERR("free descriptor stack full, dropping descriptor %u", desc_idx);
+		return;
+	}
+
 	K_SPINLOCK(&v->lock) {
 		v->free_desc_n++;
 	}
