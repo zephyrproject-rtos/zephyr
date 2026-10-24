@@ -131,6 +131,16 @@
 				#clock-cells = <1>;
 			};
 		};
+
+		trng: random@45024000 {
+			compatible = "microchip,trng-g1-entropy";
+			reg = <0x45024000 0x24>;
+			interrupts = <147 0>;
+			interrupt-names = "datardy";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TRNG_APB>;
+			clock-names = "mclk";
+			status = "disabled";
+		};
 	};
 };
 

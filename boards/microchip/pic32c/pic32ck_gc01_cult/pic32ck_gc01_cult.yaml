@@ -11,6 +11,7 @@ flash: 2048
 ram: 512
 supported:
   - clock_control
+  - entropy
   - gpio
   - pinctrl
 vendor: microchip
