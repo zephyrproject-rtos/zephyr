@@ -10,6 +10,11 @@
 #include <wch/ch32h417/ch32h417.dtsi>
 
 / {
+	cpus {
+		/* SysTick uses HCLK: 480 MHz SYSCLK divided by four. */
+		timebase-frequency = <DT_FREQ_M(120)>;
+	};
+
 	soc {
 		sram0: memory@200c0400 {
 			compatible = "mmio-sram";
