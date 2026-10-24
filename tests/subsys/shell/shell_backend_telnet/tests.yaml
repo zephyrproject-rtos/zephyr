@@ -1,0 +1,16 @@
+common:
+  depends_on: netif
+  tags:
+    - shell
+    - net
+  harness: ztest
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  shell.backend.telnet: {}
+  shell.backend.telnet.iac_reply:
+    extra_configs:
+      - CONFIG_SHELL_TELNET_SUPPORT_COMMAND=y
