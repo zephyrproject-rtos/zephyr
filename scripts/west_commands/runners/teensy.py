@@ -7,7 +7,7 @@
 import os
 import subprocess
 
-from runners.core import ZephyrBinaryRunner
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 
 class TeensyBinaryRunner(ZephyrBinaryRunner):
@@ -23,6 +23,10 @@ class TeensyBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def name(cls):
         return 'teensy'
+
+    @classmethod
+    def capabilities(cls):
+        return RunnerCaps(commands={'flash'})
 
     @classmethod
     def do_add_parser(cls, parser):
