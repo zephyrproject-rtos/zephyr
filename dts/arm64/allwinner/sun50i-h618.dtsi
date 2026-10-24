@@ -166,5 +166,35 @@
 			allwinner,hw-bank = <8>;
 			status = "disabled";
 		};
+
+		sid: efuse@3006000 {
+			compatible = "allwinner,sunxi-sid";
+			reg = <0x03006000 0x1000>;
+			status = "okay";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				sid_device_id: device-id@0 {
+					reg = <0x0 0x10>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				sid_eui64: eui64@10 {
+					reg = <0x10 0x8>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+			};
+		};
+	};
+
+	hwinfo: hwinfo {
+		compatible = "zephyr,hwinfo-nvmem";
+		nvmem-cells = <&sid_device_id>, <&sid_eui64>;
+		nvmem-cell-names = "device-id", "eui64";
 	};
 };
