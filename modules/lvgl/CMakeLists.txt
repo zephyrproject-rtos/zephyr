@@ -60,6 +60,13 @@ if(CONFIG_LVGL)
 
   zephyr_library_sources(${LVGL_SRC_FILES})
 
+  if(CONFIG_LV_USE_THORVG_INTERNAL)
+    file(GLOB_RECURSE LVGL_THORVG_SRC_FILES CONFIGURE_DEPENDS
+      ${LVGL_DIR}/src/libs/thorvg/*.cpp
+    )
+    zephyr_library_sources(${LVGL_THORVG_SRC_FILES})
+  endif()
+
   zephyr_library_sources(
       lvgl.c
       lvgl_display.c
