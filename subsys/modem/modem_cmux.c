@@ -861,8 +861,8 @@ static void modem_cmux_on_cld_command(struct modem_cmux *cmux, struct modem_cmux
 		modem_cmux_acknowledge_received_frame(cmux);
 	}
 
-	if (cmux->state != MODEM_CMUX_STATE_DISCONNECTING &&
-	    cmux->state != MODEM_CMUX_STATE_CONNECTED) {
+	if (cmux->state != MODEM_CMUX_STATE_DISCONNECTING && !is_active(cmux) &&
+	    !is_transitioning_to_powersave(cmux)) {
 		LOG_WRN("Unexpected close down");
 		return;
 	}
@@ -1081,8 +1081,8 @@ static void modem_cmux_on_control_frame_disc(struct modem_cmux *cmux)
 {
 	modem_cmux_connect_response_transmit(cmux);
 
-	if (cmux->state != MODEM_CMUX_STATE_DISCONNECTING &&
-	    cmux->state != MODEM_CMUX_STATE_CONNECTED) {
+	if (cmux->state != MODEM_CMUX_STATE_DISCONNECTING && !is_active(cmux) &&
+	    !is_transitioning_to_powersave(cmux)) {
 		LOG_WRN("Unexpected close down");
 		return;
 	}
