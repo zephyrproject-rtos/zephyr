@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * ADXL372 on the eval_adxl372_ardz shield: the accel0 alias comes from the
+ * shield. Its resolution is 100 mg per LSB, hence the wide 1 g tolerance.
+ */
+
+&adxl372_eval_adxl372_ardz {
+	odr = <2>; /* 1600 Hz */
+};
+
+/ {
+	zephyr,user {
+		stream-rate-hz = <1600>;
+		rate-tolerance-percent = <5>;
+		one-g-tolerance-mg = <400>;
+	};
+};
