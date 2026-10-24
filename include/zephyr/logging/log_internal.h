@@ -118,6 +118,13 @@ void z_log_msg_init(void);
  */
 void z_log_msg_commit(struct log_msg *msg);
 
+/** @brief Commit compressed log message.
+ *
+ * @param msg Message.
+ * @param len Length of the message in 32 bit words.
+ */
+void z_log_msg_compressed_commit(struct log_msg_compressed *msg, size_t len);
+
 /** @brief Get pending log message.
  *
  * @param[out] backoff Recommended backoff needed to maintain ordering of processed
