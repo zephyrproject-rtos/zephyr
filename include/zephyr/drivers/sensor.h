@@ -1806,10 +1806,6 @@ static inline int sensor_value_scale(const struct sensor_value *inp, int32_t sca
 }
 
 /**
- * @}
- */
-
-/**
  * @brief Get the decoder name for the current driver
  *
  * This function depends on @c DT_DRV_COMPAT being defined.
@@ -1844,6 +1840,10 @@ static inline int sensor_value_scale(const struct sensor_value *inp, int32_t sca
 #define SENSOR_DECODER_API_DT_DEFINE()                                                             \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT), (), (static))                        \
 	const STRUCT_SECTION_ITERABLE(sensor_decoder_api, SENSOR_DECODER_NAME())
+
+/**
+ * @}
+ */
 
 #define Z_MAYBE_SENSOR_DECODER_DECLARE_INTERNAL_IDX(node_id, prop, idx)                            \
 	extern const struct sensor_decoder_api UTIL_CAT(                                           \

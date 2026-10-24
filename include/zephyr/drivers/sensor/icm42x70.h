@@ -4,22 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Extended public API for ICM42X70 MEMS sensor
+ * @ingroup icm42x70_interface
+ *
+ * Some capabilities and operational requirements for this sensor
+ * cannot be expressed within the sensor driver abstraction.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM42X70_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM42X70_H_
 
 #include <zephyr/drivers/sensor.h>
 
 /**
- * @file
- * @brief Extended public API for ICM42X70 MEMS sensor
- *
- * Some capabilities and operational requirements for this sensor
- * cannot be expressed within the sensor driver abstraction.
+ * @brief TDK InvenSense ICM42x70 6-axis IMU family
+ * @defgroup icm42x70_interface ICM42X70
+ * @ingroup sensor_interface_ext_tdk
+ * @{
  */
 
-/** ICM42X70 power mode */
-#define ICM42X70_LOW_NOISE_MODE (0)
-#define ICM42X70_LOW_POWER_MODE (1)
+/**
+ * @name ICM42X70 power modes
+ * @{
+ */
+#define ICM42X70_LOW_NOISE_MODE (0) /**< Low-noise mode */
+#define ICM42X70_LOW_POWER_MODE (1) /**< Low-power mode */
+/** @} */
 
 /**
  * @brief Extended sensor attributes for ICM42X70 MEMS sensor
@@ -47,4 +59,7 @@ enum sensor_attribute_icm42x70 {
 	/** Averaging configuration */
 	SENSOR_ATTR_AVERAGING,
 };
+
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM42X70_H_ */

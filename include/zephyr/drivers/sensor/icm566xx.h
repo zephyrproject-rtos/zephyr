@@ -4,17 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Extended public API for ICM566XX MEMS sensor
+ * @ingroup icm566xx_interface
+ *
+ * Some capabilities and operational requirements for this sensor
+ * cannot be expressed within the sensor driver abstraction.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM566XX_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM566XX_H_
 
 #include <zephyr/drivers/sensor.h>
 
 /**
- * @file
- * @brief Extended public API for ICM566XX MEMS sensor
- *
- * Some capabilities and operational requirements for this sensor
- * cannot be expressed within the sensor driver abstraction.
+ * @addtogroup icm566xx_interface
+ * @{
  */
 
 /** ICM566XX Low Noise Power Mode */
@@ -49,4 +55,7 @@ enum sensor_attribute_icm566xx {
 	/** Averaging configuration */
 	SENSOR_ATTR_AVERAGING,
 };
+
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_ICM566XX_H_ */
