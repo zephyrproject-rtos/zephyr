@@ -120,7 +120,7 @@ static uint32_t get_pllout_frequency(int pll_id)
 
 	__ASSERT_NO_MSG(pllm_div && pllout_div1 && pllout_div2);
 
-	return (pllsrc_freq / pllm_div) * plln_mul / (pllout_div1 * pllout_div2);
+	return (uint64_t)pllsrc_freq * plln_mul / ((uint64_t)pllm_div * pllout_div1 * pllout_div2);
 }
 
 __unused uint32_t get_icout_frequency(uint32_t icsrc, int div)
