@@ -45,6 +45,15 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define LFXO_NODE DT_NODELABEL(lfxo)
 
+/* TF-M configures LFXO as non-secure (see spu_periph_init_cfg() in target_cfg_71.c), so when this
+ * file is built as part of TF-M, LFXO must be accessed through its non-secure address.
+ */
+#ifdef __ZEPHYR__
+#define LFXO_REG NRF_LFXO
+#else
+#define LFXO_REG NRF_LFXO_NS
+#endif
+
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 
 struct mpc_region_override {
@@ -219,6 +228,15 @@ int nordicsemi_nrf71_init(void)
 	 */
 	SystemCoreClock = NRF_PERIPH_GET_FREQUENCY(DT_NODELABEL(cpu));
 
+#if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
+	!defined(__ZEPHYR__)
+	/* Configure LFXO capacitive load if internal load capacitors are used */
+#if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
+	nrf_lfxo_cload_set(LFXO_REG,
+			(uint8_t)(DT_PROP(LFXO_NODE, load_capacitance_femtofarad) / 1000));
+#endif
+#endif
+
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Skip for tf-m, configuration exist in target_cfg_71.c */
 	mpc_configuration();
@@ -269,11 +287,6 @@ int nordicsemi_nrf71_init(void)
 	NRF_P4->PWRCTRL = P4_PWRCTRL_3V3;
 #endif
 
-	/* Configure LFXO capacitive load if internal load capacitors are used */
-#if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
-	nrf_lfxo_cload_set(NRF_LFXO,
-			(uint8_t)(DT_PROP(LFXO_NODE, load_capacitance_femtofarad) / 1000));
-#endif
 #endif /* (NRF_APPLICATION && !CONFIG_TRUSTED_EXECUTION_NONSECURE) || !__ZEPHYR__  */
 
 #ifdef __ZEPHYR__
