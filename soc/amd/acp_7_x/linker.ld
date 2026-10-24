@@ -29,7 +29,7 @@ OUTPUT_ARCH(xtensa)
 #define DRAM1_BASE                      0xE0010000
 #define DRAM1_SIZE                      0x10000
 #define SRAM1_BASE                      0x6000C000
-#define SRAM1_SIZE                      0x350000
+#define SRAM1_SIZE                      0x3F4000
 
 /* Vector base addresses (aliasing core-isa.h definitions with _IRAM suffix) */
 #define XCHAL_RESET_VECTOR_PADDR_IRAM         XCHAL_RESET_VECTOR_PADDR

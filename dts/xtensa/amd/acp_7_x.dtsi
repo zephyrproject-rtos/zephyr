@@ -597,6 +597,25 @@
 			dai-index = <2>;
 		};
 
+		dmic_dai0: dmic-dai0 {
+			compatible = "amd,dmic-dai";
+			status = "okay";
+			dai-index = <0>;
+		};
+
+		dmic_dai1: dmic-dai1 {
+			compatible = "amd,dmic-dai";
+			status = "okay";
+			dai-index = <1>;
+		};
+
+		acp_dmic_dma: acp-dmic-dma {
+			compatible = "amd,acp-dmic-dma";
+			#dma-cells = <3>;
+			dma-channels = <8>;
+			status = "okay";
+		};
+
 		acp_tdm_dma: acp-tdm-dma {
 			compatible = "amd,acp-tdm-dma";
 			#dma-cells = <3>;
