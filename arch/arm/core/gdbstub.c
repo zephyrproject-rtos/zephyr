@@ -166,10 +166,10 @@ size_t arch_gdb_reg_writeall(struct gdb_ctx *c, uint8_t *hex, size_t hexlen)
 		if (hex[i] != 'x') {
 			/* check if the stub supports this register */
 			for (unsigned int j = 0; j < GDB_NUM_REGS; j++) {
-				if (packet_pos[j] != i) {
+				if ((unsigned int)packet_pos[j] * 8U != i) {
 					continue;
 				}
-				int r = hex2bin(hex + i * 8, 8, (uint8_t *)(c->registers + j), 4);
+				int r = hex2bin(hex + i, 8, (uint8_t *)(c->registers + j), 4);
 
 				if (r == 0) {
 					return 0;
