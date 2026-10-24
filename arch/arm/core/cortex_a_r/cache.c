@@ -13,7 +13,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/cache.h>
+#include <zephyr/arch/cache.h>
 #include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
@@ -21,7 +21,7 @@
 #define	CTR_DMINLINE_SHIFT	16
 #define	CTR_DMINLINE_MASK	BIT_MASK(4)
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_DCACHE) || defined(CONFIG_ARCH_HAS_DCACHE_OPS)
 
 static size_t dcache_line_size;
 

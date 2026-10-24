@@ -892,6 +892,14 @@ config ARCH_HAS_USERSPACE
 config ARCH_HAS_EXECUTABLE_PAGE_BIT
 	bool
 
+config ARCH_HAS_DCACHE_OPS
+	bool
+	help
+	  This hidden option is selected by the target architecture if it provides
+	  d-cache maintenance operations through the generic arch/cache.h interface
+	  when CONFIG_DCACHE is disabled.  The arm64 port has its own inline
+	  implementation and does not select this option.
+
 config ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	bool
 
