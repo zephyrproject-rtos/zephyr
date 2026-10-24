@@ -1,0 +1,50 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/mcxa/nxp_mcxa5x.dtsi>
+#include "frdm_mcxa577.dtsi"
+
+/ {
+	model = "NXP FRDM_MCXA577 board";
+	compatible = "nxp,mcxa577", "nxp,mcx";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
+		zephyr,crc = &crc;
+	};
+};
+
+&enet {
+	pinctrl-0 = <&pinmux_enet_qos>;
+	pinctrl-names = "default";
+	phy-connection-type = "mii";
+	phy-handle = <&phy>;
+};
+
+/* The internal 10BASE-T1S PHY shares P1_2 with ENET0_MDC, so disable it. */
+&t1s {
+	status = "disabled";
+};
+
+&enet_mdio {
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		status = "okay";
+	};
+};
+
+/* LPUART1 cannot be used: P1_8/P1_9 carry ENET0_TXD2/TXD3 in MII mode. */
+&lpuart1 {
+	status = "disabled";
+};
