@@ -16,5 +16,9 @@ app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_hci_uart.conf conf_overlay=
     cmake_extra_args=-DEXTRA_DTC_OVERLAY_FILE=hci-uart.overlay compile
 app=samples/bluetooth/hci_uart compile
 app=samples/bluetooth/hci_uart_async compile
+app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_hci_uart.conf \
+    cmake_extra_args=-DEXTRA_DTC_OVERLAY_FILE=hci-3wire-uart.overlay \
+    exe_name=bs_${BOARD_TS}_${app}_prj_split_hci_uart_conf_3wire compile
+app=samples/bluetooth/hci_uart_3wire compile
 
 wait_for_background_jobs
