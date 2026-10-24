@@ -941,6 +941,11 @@ static void modem_cmux_on_psc_command(struct modem_cmux *cmux)
 
 static void modem_cmux_on_psc_response(struct modem_cmux *cmux)
 {
+	if (cmux->state != MODEM_CMUX_STATE_ENTER_POWERSAVE) {
+		LOG_DBG("Unexpected PSC response");
+		return;
+	}
+
 	LOG_DBG("Enter power saving");
 	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
 	set_state(cmux, MODEM_CMUX_STATE_POWERSAVE);
@@ -948,6 +953,20 @@ static void modem_cmux_on_psc_response(struct modem_cmux *cmux)
 
 	if (cmux->config.close_pipe_on_power_save) {
 		modem_pipe_close_async(cmux->pipe);
+	}
+}
+
+static void modem_cmux_on_nsc_response(struct modem_cmux *cmux,
+				       const struct modem_cmux_command *command)
+{
+	struct modem_cmux_command_type type = modem_cmux_command_type_decode(command->value[0]);
+
+	LOG_WRN("Command %s not supported by peer", modem_cmux_command_type_to_str(type.value));
+
+	if ((type.value == MODEM_CMUX_COMMAND_PSC) &&
+	    (cmux->state == MODEM_CMUX_STATE_ENTER_POWERSAVE)) {
+		set_state(cmux, MODEM_CMUX_STATE_CONNECTED);
+		runtime_pm_keepalive(cmux);
 	}
 }
 
@@ -976,6 +995,9 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 			break;
 		case MODEM_CMUX_COMMAND_PSC:
 			modem_cmux_on_psc_response(cmux);
+			break;
+		case MODEM_CMUX_COMMAND_NSC:
+			modem_cmux_on_nsc_response(cmux, &command);
 			break;
 		default:
 			/* Responses to other commands are ignored */
