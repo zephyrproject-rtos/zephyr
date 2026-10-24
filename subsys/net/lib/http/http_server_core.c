@@ -1371,6 +1371,20 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 
 			zsock_close(stream_fd);
 			invalidate_poll_fd(&ctx->fds[i]);
+
+			if (h3_is_connection_error(ret)) {
+				/* For example a second control or QPACK
+				 * stream, which is a connection error of
+				 * type H3_STREAM_CREATION_ERROR (RFC 9114
+				 * ch. 6.2.1, RFC 9204 ch. 4.2). Giving up
+				 * the stream alone is not enough.
+				 */
+				LOG_DBG("[%p] H3: stream fd %d rejected (%d), "
+					"closing connection", client, stream_fd, ret);
+				close_h3_or_plain_client(client, ctx->fds,
+							 ARRAY_SIZE(ctx->fds));
+			}
+
 			return;
 		}
 	}
@@ -1857,6 +1871,46 @@ void http_server_get_content_type_from_extension(char *url, char *content_type,
 			return;
 		}
 	}
+}
+
+/**
+ * Write the value of an Allow header field (RFC 9110 ch. 10.2.1) for a set of
+ * methods, for example "GET, POST". A 405 response has to carry this field
+ * with the methods the target resource supports (RFC 9110 ch. 15.5.6).
+ *
+ * @param methods Bitmask of the supported methods, BIT(HTTP_GET) and so on.
+ * @param buf     Buffer for the NUL terminated value.
+ * @param len     Size of the buffer.
+ *
+ * @return Length of the value, or -ENOBUFS if it does not fit.
+ */
+int http_server_format_allow(uint32_t methods, char *buf, size_t len)
+{
+	size_t pos = 0;
+
+	if (len == 0) {
+		return -ENOBUFS;
+	}
+
+	buf[0] = '\0';
+
+	for (uint32_t method = 0; method < 32U; method++) {
+		int ret;
+
+		if ((methods & BIT(method)) == 0U) {
+			continue;
+		}
+
+		ret = snprintk(buf + pos, len - pos, "%s%s", pos > 0 ? ", " : "",
+			       http_method_str((enum http_method)method));
+		if (ret < 0 || (size_t)ret >= len - pos) {
+			return -ENOBUFS;
+		}
+
+		pos += ret;
+	}
+
+	return (int)pos;
 }
 
 int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t len)

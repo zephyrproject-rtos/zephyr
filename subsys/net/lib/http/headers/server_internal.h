@@ -79,8 +79,12 @@ struct h3_conn_ctx {
 	/* Peer settings */
 	struct h3_peer_settings peer_settings;
 
+	/* Identifier carried by the last GOAWAY frame of the peer */
+	uint64_t peer_goaway_id;
+
 	/* State flags */
 	bool settings_sent;
+	bool peer_goaway_received;
 	bool initialized;
 };
 
@@ -90,6 +94,7 @@ int handle_http3_request(struct http_client_ctx *client);
 int handle_http3_stream_fin(struct http_client_ctx *client);
 int h3_open_uni_streams(struct http_client_ctx *client, int quic_sock);
 int h3_identify_uni_stream(struct http_client_ctx *client, int fd);
+bool h3_is_connection_error(int err);
 int h3_handle_control_stream(struct http_client_ctx *client, int fd);
 int h3_handle_qpack_encoder_stream(struct http_client_ctx *client, int fd);
 int h3_handle_qpack_decoder_stream(struct http_client_ctx *client, int fd);
@@ -116,6 +121,13 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 void http_server_remove_dot_segments(char *path);
 int http_server_path_len_without_query(const char *path);
 int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t len);
+
+/* Room for the names of all methods the method bitmask of a resource can
+ * hold, separated by ", ", and the terminating NUL.
+ */
+#define HTTP_SERVER_ALLOW_VALUE_SIZE 256
+
+int http_server_format_allow(uint32_t methods, char *buf, size_t len);
 int http_server_sendall_iov(struct http_client_ctx *client, struct net_iovec *iov, size_t iovlen);
 void http_server_get_content_type_from_extension(char *url, char *content_type,
 						 size_t content_type_size);

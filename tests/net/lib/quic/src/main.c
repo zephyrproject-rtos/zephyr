@@ -7216,6 +7216,320 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_503_close_notifies_only_its_connection)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx_a;
+	struct quic_context *ctx_b;
+	int sock_a;
+	int sock_b;
+	int ret;
+
+	ctx_a = open_test_listener(&sock_a, "127.0.0.1:54355");
+	ctx_b = open_test_listener(&sock_b, "127.0.0.1:54356");
+
+	/* The endpoint belongs to the first connection only */
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx_a->endpoints, &ep->node);
+	k_sem_reset(&ctx_a->incoming.stream_sem);
+	k_sem_reset(&ctx_b->incoming.stream_sem);
+	ctx_b->error_code = 0;
+
+	quic_endpoint_notify_streams_closed(ep);
+
+	zexpect_equal(k_sem_count_get(&ctx_a->incoming.stream_sem), 1,
+		      "The connection of the endpoint was not woken");
+	zexpect_equal(ctx_a->error_code, -ECONNRESET, "Wrong error %d", ctx_a->error_code);
+	zexpect_true(ctx_a->closed, "The connection of the endpoint was not closed");
+
+	zexpect_equal(k_sem_count_get(&ctx_b->incoming.stream_sem), 0,
+		      "Another connection was woken");
+	zexpect_equal(ctx_b->error_code, 0, "Another connection got error %d", ctx_b->error_code);
+	zexpect_false(ctx_b->closed, "Another connection was closed");
+
+	(void)sys_slist_find_and_remove(&ctx_a->endpoints, &ep->node);
+
+	ret = quic_connection_close(sock_a);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock_a, -errno);
+	ret = quic_connection_close(sock_b);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock_b, -errno);
+}
+
+ZTEST(net_socket_quic, test_504_closed_connection_hangs_up_with_streams_waiting)
+{
+	static struct quic_stream waiting;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct zsock_pollfd pfd;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54357");
+
+	/* Use the context as a connection whose peer opened a stream that
+	 * is not accepted yet, and then closed the connection.
+	 */
+	ctx->is_listening = false;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&waiting, ctx, ep, 3);
+	k_fifo_put(&ctx->incoming.stream_q, &waiting);
+	ctx->closed = true;
+
+	pfd.fd = sock;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+	ret = zsock_poll(&pfd, 1, 0);
+	zexpect_equal(ret, 1, "poll() returned %d", ret);
+	zexpect_true((pfd.revents & ZSOCK_POLLIN) != 0, "The waiting stream is not reported");
+	zexpect_true((pfd.revents & ZSOCK_POLLHUP) != 0, "The hang-up is not reported");
+
+	(void)k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT);
+	unlink_test_stream(&waiting, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->closed = false;
+	ctx->is_listening = true;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_506_orphan_release_keeps_a_held_endpoint)
+{
+	struct net_sockaddr_in remote = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4433),
+		.sin_addr = { { { 192, 0, 2, 1 } } },
+	};
+	struct quic_endpoint *ep;
+
+	/* A client endpoint that is on no connection, as left behind by a
+	 * failed open
+	 */
+	ep = quic_test_endpoint_alloc();
+	zassert_not_null(ep, "Cannot allocate an endpoint");
+	ep->is_server = false;
+	ep->handshake.completed = true;
+	ep->sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(ep->sock >= 0, "Cannot create a socket (%d)", errno);
+	memcpy(&ep->remote_addr, &remote, sizeof(remote));
+
+	/* Someone else, such as the receive path in the middle of a packet,
+	 * holds the endpoint too.
+	 */
+	atomic_inc(&ep->refcount);
+
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The reference of another holder was dropped");
+
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	zexpect_equal(atomic_get(&ep->refcount), 1, "The list reference was dropped twice");
+
+	/* Let the other holder go as well */
+	ep->list_ref_dropped = false;
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	zexpect_equal(atomic_get(&ep->refcount), 0, "The endpoint was not released");
+}
+
+/* Feed a STREAM frame with the FIN bit and no data to the endpoint */
+static int stream_fin_for_stream(struct quic_endpoint *ep, struct quic_context *ctx,
+				 uint8_t stream_id)
+{
+	const uint8_t payload[] = {
+		QUIC_FRAME_TYPE_STREAM_BASE | 0x01, /* FIN, data to the end */
+		stream_id,
+	};
+	bool ack_only = false;
+	int ret;
+
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload), sizeof(payload),
+					 &ack_only);
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+/* Take the stream a frame just opened off the context, as if it had been
+ * accepted and closed again.
+ */
+static struct quic_stream *take_opened_stream(struct quic_context *ctx, uint64_t stream_id)
+{
+	struct quic_stream *stream = k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT);
+
+	zassert_not_null(stream, "Stream %" PRIu64 " was not opened", stream_id);
+	zassert_equal(stream->id, stream_id, "Opened stream %" PRIu64 " instead of %" PRIu64,
+		      stream->id, stream_id);
+	zassert_true(sys_slist_find_and_remove(&ctx->streams, &stream->node),
+		     "Stream %" PRIu64 " not on the context", stream_id);
+	k_sem_reset(&ctx->incoming.stream_sem);
+
+	return stream;
+}
+
+/* Put a stream back, so that closing the context releases it */
+static void return_opened_stream(struct quic_context *ctx, struct quic_stream *stream)
+{
+	sys_slist_append(&ctx->streams, &stream->node);
+	k_fifo_put(&ctx->incoming.stream_q, stream);
+}
+
+ZTEST(net_socket_quic, test_502_late_frame_does_not_reopen_a_closed_stream)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_stream *closed_4;
+	struct quic_stream *closed_8;
+	struct quic_stream *opened_0;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54354");
+
+	ep->is_server = true;
+	ep->rx_sl.max_bidi = 8;
+	ep->rx_sl.max_uni = 8;
+
+	/* The peer opens streams 8 and 4, in that order as packets can be
+	 * reordered. Opening 8 first must not stop 4 from being opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zassert_true(ret >= 0, "STREAM frame for stream 8 failed (%d)", ret);
+	closed_8 = take_opened_stream(ctx, 8);
+
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zassert_true(ret >= 0, "STREAM frame for stream 4 failed (%d)", ret);
+	closed_4 = take_opened_stream(ctx, 4);
+
+	/* Both are closed now. A late frame for either of them is ignored
+	 * and does not open the stream again.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zexpect_true(ret >= 0, "Late frame for stream 8 failed (%d)", ret);
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zexpect_true(ret >= 0, "Late frame for stream 4 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed peer stream was opened again");
+
+	/* Stream 0 was opened implicitly by stream 4 (RFC 9000 ch. 2.1) but
+	 * not used yet, so it can still be opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STREAM frame for stream 0 failed (%d)", ret);
+	opened_0 = take_opened_stream(ctx, 0);
+
+	/* A stream of our own that was opened and closed, stream 1 */
+	ctx->stream_id_counter = 1;
+	ret = stream_fin_for_stream(ep, ctx, 1);
+	zexpect_true(ret >= 0, "Late frame for our stream 1 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed stream of our own was opened as a peer stream");
+	ctx->stream_id_counter = 0;
+
+	return_opened_stream(ctx, opened_0);
+	return_opened_stream(ctx, closed_4);
+	return_opened_stream(ctx, closed_8);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_507_stream_frame_for_stream_that_cannot_receive)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54358");
+
+	/* As a server, stream 1 would be our first bidirectional stream,
+	 * and none has been opened on this connection.
+	 */
+	ep->is_server = true;
+	ep->rx_sl.max_bidi = 8;
+	ep->rx_sl.max_uni = 8;
+	zassert_equal(ctx->stream_id_counter, 0, "Unexpected streams on a new context");
+
+	ret = stream_fin_for_stream(ep, ctx, 1);
+	zexpect_equal(ret, -EPROTO,
+		      "STREAM frame for a stream of ours that was never opened must close the "
+		      "connection (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A stream of ours was opened as a peer stream");
+
+	/* Stream 3 is a unidirectional stream of ours, so send-only for us,
+	 * also once it has been opened.
+	 */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = true;
+	ctx->stream_id_counter = 1;
+	ret = stream_fin_for_stream(ep, ctx, 3);
+	zexpect_equal(ret, -EPROTO,
+		      "STREAM frame for a send-only stream must close the connection (%d)", ret);
+	ctx->stream_id_counter = 0;
+
+	/* The same for a client, whose first bidirectional stream is 0 */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = false;
+	ep->rx_sl.max_bidi = 8;
+	ret = stream_fin_for_stream(ep, ctx, 0);
+	zexpect_equal(ret, -EPROTO,
+		      "STREAM frame for a client stream that was never opened must close the "
+		      "connection (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A stream of ours was opened as a peer stream");
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_501_idle_timer_restarts_on_first_send_after_receive)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	int64_t stale = k_uptime_get() - 5000;
+	uint64_t pn = 0;
+
+	/* A packet from the peer was processed a while ago */
+	quic_endpoint_restart_idle_timer(ep);
+	ep->idle.last_rx_time = stale;
+
+	/* A packet that does not ask for an acknowledgment is no activity */
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 50, false,
+				     false, 0);
+	zexpect_equal(ep->idle.last_rx_time, stale,
+		      "Idle timer restarted by a packet that is not ack-eliciting");
+
+	/* The first ack-eliciting packet after the receive restarts it */
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 100, true,
+				     false, 0);
+	zexpect_true(ep->idle.last_rx_time > stale,
+		     "Idle timer not restarted by the first ack-eliciting packet");
+
+	/* Further ones do not, or sending alone would keep the connection
+	 * from ever timing out.
+	 */
+	ep->idle.last_rx_time = stale;
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 100, true,
+				     false, 0);
+	zexpect_equal(ep->idle.last_rx_time, stale,
+		      "Idle timer restarted again without a packet from the peer");
+
+	/* After the next packet from the peer the same applies anew */
+	quic_endpoint_restart_idle_timer(ep);
+	ep->idle.last_rx_time = stale;
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 100, true,
+				     false, 0);
+	zexpect_true(ep->idle.last_rx_time > stale,
+		     "Idle timer not restarted by the first send after a receive");
+
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {

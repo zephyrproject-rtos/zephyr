@@ -2766,8 +2766,10 @@ ZTEST(server_function_tests, test_http1_409_method_not_allowed)
 		"Content-Type: text/html\r\n"
 		"Content-Length: 13\r\n\r\n"
 		TEST_STATIC_PAYLOAD;
+	/* The resource is a static one, which is served for GET only */
 	static const char expected_response[] =
-		"HTTP/1.1 405 Method Not Allowed\r\n";
+		"HTTP/1.1 405 Method Not Allowed\r\n"
+		"Allow: GET\r\n";
 	size_t offset = 0;
 	int ret;
 
@@ -2793,7 +2795,8 @@ ZTEST(server_function_tests, test_http1_upgrade_409_method_not_allowed)
 		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n\r\n"
 		TEST_STATIC_PAYLOAD;
 	const struct http_header expected_headers[] = {
-		{.name = ":status", .value = "405"}
+		{.name = ":status", .value = "405"},
+		{.name = "allow", .value = "GET"},
 	};
 	size_t offset = 0;
 	int ret;
@@ -2810,7 +2813,7 @@ ZTEST(server_function_tests, test_http1_upgrade_409_method_not_allowed)
 	expect_http2_settings_frame(&offset, false);
 	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
 				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM,
-				   expected_headers, 1);
+				   expected_headers, ARRAY_SIZE(expected_headers));
 }
 
 ZTEST(server_function_tests, test_http2_409_method_not_allowed)
@@ -2824,7 +2827,8 @@ ZTEST(server_function_tests, test_http2_409_method_not_allowed)
 		TEST_HTTP2_GOAWAY,
 	};
 	const struct http_header expected_headers[] = {
-		{.name = ":status", .value = "405"}
+		{.name = ":status", .value = "405"},
+		{.name = "allow", .value = "GET"},
 	};
 	size_t offset = 0;
 	int ret;
@@ -2839,7 +2843,7 @@ ZTEST(server_function_tests, test_http2_409_method_not_allowed)
 	expect_http2_settings_frame(&offset, true);
 	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
 				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM,
-				   expected_headers, 1);
+				   expected_headers, ARRAY_SIZE(expected_headers));
 }
 
 ZTEST(server_function_tests, test_http1_500_internal_server_error)
