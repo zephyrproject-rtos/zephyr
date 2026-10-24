@@ -804,7 +804,19 @@ static void airoc_event_task(void)
 
 		case WLC_E_DEAUTH_IND:
 		case WLC_E_DISASSOC_IND:
-			net_if_dormant_on(airoc_wifi_iface);
+			/* This fires for AP-side client disassociation too (same
+			 * msgq, tagged via is_ap_event), but airoc_wifi_iface is
+			 * this driver's single shared net_if. Marking it dormant
+			 * on a routine client disconnect clears NET_IF_RUNNING
+			 * (update_operational_state() -> notify_iface_down()) and
+			 * makes net_if_is_up() report the AP interface as down,
+			 * even though nothing actually brought the radio down.
+			 * Only losing our own STA association should mark this
+			 * interface dormant.
+			 */
+			if (!airoc_event.is_ap_event) {
+				net_if_dormant_on(airoc_wifi_iface);
+			}
 			break;
 
 		default:
@@ -1159,6 +1171,14 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 
 	data->is_ap_up = true;
 	airoc_if = airoc_ap_if;
+	/* This secondary interface is created at runtime
+	 * (whd_add_secondary_interface(), above), after net_if_post_init()'s
+	 * boot-time sweep already ran, nothing else ever calls net_if_up()
+	 * on it, so net_if_is_up() stays false and every net_context_sendto()
+	 * on this interface (e.g. the DHCPv4 server's own replies) fails with
+	 * -ENETDOWN before even looking at the destination address.
+	 */
+	net_if_up(iface);
 	net_if_dormant_off(iface);
 error:
 
