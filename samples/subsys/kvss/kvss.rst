@@ -4,3 +4,9 @@
    :glob: **/*
 
    Samples that demonstrate how to interact with Key-Value Storage Systems
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   zms/zms_provisioning/README
