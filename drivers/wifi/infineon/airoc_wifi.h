@@ -10,6 +10,9 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/net/wifi_mgmt.h>
 
+#include "airoc_wifi_security.h"
+#include "airoc_wifi_connect_security.h"
+
 #ifdef CONFIG_AIROC_WIFI_BUS_SDIO
 #include <zephyr/sd/sd.h>
 #include <zephyr/sd/sdio.h>
@@ -104,6 +107,8 @@ struct airoc_wifi_data {
 	uint32_t key_mgmt_suite;
 #endif
 };
+
+extern struct airoc_wifi_data airoc_wifi_data;
 
 union airoc_wifi_bus {
 #if defined(CONFIG_AIROC_WIFI_BUS_SDIO)

@@ -267,8 +267,13 @@ whd_result_t whd_bus_sdio_register_oob_intr(whd_driver_t whd_driver)
 {
 #if DT_INST_NODE_HAS_PROP(0, wifi_host_wake_gpios)
 	int ret;
-	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct airoc_wifi_data *data = dev->data;
+	/* Not DEVICE_DT_GET(DT_DRV_INST(0))->data: that only resolves when the
+	 * net_if was registered via NET_DEVICE_DT_INST_DEFINE, which isn't the
+	 * case under CONFIG_WIFI_NM_WPA_SUPPLICANT (see airoc_wifi.c). Use the
+	 * same singleton directly, matching how whd_bus_sdio_oob_irq_handler
+	 * and the SDIO card callback in this file already get at it.
+	 */
+	struct airoc_wifi_data *data = &airoc_wifi_data;
 
 	/* Get OOB pin info */
 	const whd_oob_config_t *oob_config = &whd_driver->bus_priv->sdio_config.oob_config;
