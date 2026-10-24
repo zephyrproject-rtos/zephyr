@@ -69,6 +69,10 @@
 struct shell_stream unicast_streams[CONFIG_BT_ISO_MAX_CHAN] = {0};
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+struct unicast_group_cfg default_unicast_group_cfg = {
+	.packing = BT_ISO_PACKING_SEQUENTIAL,
+	.sca = BT_GAP_SCA_UNKNOWN,
+};
 struct unicast_group default_unicast_group = {0};
 static struct bt_bap_unicast_client_cb unicast_client_cbs;
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -102,6 +106,12 @@ struct named_lc3_preset default_source_preset = {
 struct named_lc3_preset default_broadcast_source_preset = {
 	"16_2_1", BT_BAP_LC3_BROADCAST_PRESET_16_2_1(DEFAULT_LOCATION, DEFAULT_CONTEXT)};
 #endif /* IS_BAP_INITIATOR */
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+struct broadcast_group_cfg default_broadcast_group_cfg = {
+	.packing = BT_ISO_PACKING_SEQUENTIAL,
+};
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 static const struct named_lc3_preset lc3_unicast_presets[] = {
 	{"8_1_1", BT_BAP_LC3_UNICAST_PRESET_8_1_1(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
@@ -1289,14 +1299,51 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+int unicast_group_cfg_get(struct unicast_group_cfg *cfg)
+{
+	*cfg = default_unicast_group_cfg;
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	if ((cfg->iso_interval != 0U) != (cfg->c_to_p_ft != 0U || cfg->p_to_c_ft != 0U)) {
+		bt_shell_error("Group iso_interval and flush_timeout must be set together");
+
+		return -EINVAL;
+	}
+
+	/* Both directions require a valid flush timeout, even when one is unused. */
+	if (cfg->c_to_p_ft == 0U) {
+		cfg->c_to_p_ft = cfg->p_to_c_ft;
+	} else if (cfg->p_to_c_ft == 0U) {
+		cfg->p_to_c_ft = cfg->c_to_p_ft;
+	}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+
+	return 0;
+}
+
 static int set_group_param(
 	const struct shell *sh, struct bt_bap_unicast_group_param *group_param,
 	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)],
 	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)])
 {
+	struct unicast_group_cfg group_cfg;
 	size_t source_cnt = 0U;
 	size_t sink_cnt = 0U;
 	size_t cnt = 0U;
+	int err;
+
+	err = unicast_group_cfg_get(&group_cfg);
+	if (err != 0) {
+		return err;
+	}
+
+	group_param->packing = group_cfg.packing;
+	group_param->sca = group_cfg.sca;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	group_param->iso_interval = group_cfg.iso_interval;
+	group_param->c_to_p_ft = group_cfg.c_to_p_ft;
+	group_param->p_to_c_ft = group_cfg.p_to_c_ft;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream = bap_stream_from_shell_stream(&unicast_streams[i]);
@@ -1306,7 +1353,6 @@ static int set_group_param(
 			struct bt_bap_unicast_group_stream_param *stream_param;
 
 			stream_param = &stream_params[cnt];
-
 			stream_param->stream = stream;
 			if (stream_dir(stream) == BT_AUDIO_DIR_SINK) {
 				stream_param->qos = &uni_stream->qos;
@@ -1328,7 +1374,6 @@ static int set_group_param(
 		return -ENOEXEC;
 	}
 
-	group_param->packing = BT_ISO_PACKING_SEQUENTIAL;
 	group_param->params = pair_param;
 	group_param->params_count = MAX(source_cnt, sink_cnt);
 
@@ -2147,9 +2192,252 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 	return argn;
 }
 
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+static ssize_t parse_test_qos_args(const struct shell *sh, size_t argn, size_t argc, char *argv[],
+				   struct named_lc3_preset *named_preset, bool unicast)
+{
+	struct bt_bap_qos_cfg *qos = &named_preset->preset.qos;
+
+	for (; argn < argc; argn++) {
+		const char *arg = argv[argn];
+		unsigned long val;
+		int err = 0;
+
+		if (strcmp(arg, "nse") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse NSE from %s: %d", argv[argn], err);
+
+				return -1;
+			}
+
+			if (val < BT_ISO_NSE_MIN || val > BT_ISO_NSE_MAX) {
+				shell_error(sh, "Invalid NSE %lu (range %u-%u)", val,
+					    BT_ISO_NSE_MIN, BT_ISO_NSE_MAX);
+
+				return -1;
+			}
+
+			qos->num_subevents = (uint8_t)val;
+		} else if (strcmp(arg, "bn") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse BN from %s: %d", argv[argn], err);
+
+				return -1;
+			}
+
+			if (val < BT_ISO_BN_MIN || val > BT_ISO_BN_MAX) {
+				shell_error(sh, "Invalid BN %lu (range %u-%u)", val, BT_ISO_BN_MIN,
+					    BT_ISO_BN_MAX);
+
+				return -1;
+			}
+
+			qos->burst_number = (uint8_t)val;
+		} else if (strcmp(arg, "max_pdu") == 0) {
+			const uint16_t min_pdu =
+				unicast ? BT_ISO_CONNECTED_PDU_MIN : BT_ISO_BROADCAST_PDU_MIN;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return -1;
+			}
+
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Failed to parse max PDU from %s: %d", argv[argn],
+					    err);
+
+				return -1;
+			}
+
+			if (val < min_pdu || val > BT_ISO_PDU_MAX) {
+				shell_error(sh, "Invalid max PDU %lu (range %u-%u)", val, min_pdu,
+					    BT_ISO_PDU_MAX);
+
+				return -1;
+			}
+
+			qos->max_pdu = (uint16_t)val;
+		} else { /* we are no longer parsing QoS values */
+			/* Decrement to return taken argument */
+			argn--;
+			break;
+		}
+	}
+
+	return argn;
+}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+
+static int parse_group_cfg_val(const struct shell *sh, size_t argc, char *argv[], size_t *argn,
+			       unsigned long min, unsigned long max, bool zero_unsets,
+			       unsigned long *val)
+{
+	const char *name = argv[*argn];
+	int err = 0;
+
+	if (++(*argn) == argc) {
+		shell_help(sh);
+
+		return -EINVAL;
+	}
+
+	*val = shell_strtoul(argv[*argn], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse %s from %s: %d", name, argv[*argn], err);
+
+		return -EINVAL;
+	}
+
+	if ((*val != 0U || !zero_unsets) && !IN_RANGE(*val, min, max)) {
+		shell_error(sh, "Invalid %s %lu (range %lu-%lu%s)", name, *val, min, max,
+			    zero_unsets ? ", 0 to unset" : "");
+
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void print_group_cfg_override(const struct shell *sh, const char *name, uint16_t old_val,
+			  unsigned long val)
+{
+	if (old_val != 0U && old_val != val) {
+		shell_info(sh, "Overriding group %s %u with %lu", name, old_val, val);
+	}
+}
+
+/* Exactly one of @p unicast_cfg and @p broadcast_cfg is non-NULL */
+static ssize_t parse_group_cfg_args(const struct shell *sh, size_t argn, size_t argc,
+				    char *argv[], enum bt_audio_dir dir,
+				    struct unicast_group_cfg *unicast_cfg,
+				    struct broadcast_group_cfg *broadcast_cfg)
+{
+	for (; argn < argc; argn++) {
+		const char *arg = argv[argn];
+		unsigned long val;
+
+		if (strcmp(arg, "packing") == 0) {
+			uint8_t *packing = unicast_cfg != NULL ? &unicast_cfg->packing
+							       : &broadcast_cfg->packing;
+
+			if (parse_group_cfg_val(sh, argc, argv, &argn, BT_ISO_PACKING_SEQUENTIAL,
+						BT_ISO_PACKING_INTERLEAVED, false, &val) != 0) {
+				return -1;
+			}
+
+			print_group_cfg_override(sh, arg, *packing, val);
+			*packing = (uint8_t)val;
+		} else if (strcmp(arg, "sca") == 0) {
+			if (unicast_cfg == NULL) {
+				shell_error(sh, "sca is only valid for unicast presets");
+
+				return -1;
+			}
+
+			if (parse_group_cfg_val(sh, argc, argv, &argn, BT_GAP_SCA_UNKNOWN,
+						BT_GAP_SCA_0_20, false, &val) != 0) {
+				return -1;
+			}
+
+			print_group_cfg_override(sh, arg, unicast_cfg->sca, val);
+			unicast_cfg->sca = (uint8_t)val;
+		}
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		else if (strcmp(arg, "iso_interval") == 0) {
+			uint16_t *iso_interval = unicast_cfg != NULL
+							 ? &unicast_cfg->iso_interval
+							 : &broadcast_cfg->iso_interval;
+
+			if (parse_group_cfg_val(sh, argc, argv, &argn, BT_ISO_ISO_INTERVAL_MIN,
+						BT_ISO_ISO_INTERVAL_MAX, true, &val) != 0) {
+				return -1;
+			}
+
+			print_group_cfg_override(sh, arg, *iso_interval, val);
+			*iso_interval = (uint16_t)val;
+		} else if (strcmp(arg, "flush_timeout") == 0) {
+			uint8_t *ft;
+
+			if (unicast_cfg == NULL) {
+				shell_error(sh, "flush_timeout is only valid for unicast presets");
+
+				return -1;
+			}
+
+			if (parse_group_cfg_val(sh, argc, argv, &argn, BT_ISO_FT_MIN,
+						BT_ISO_FT_MAX, true, &val) != 0) {
+				return -1;
+			}
+
+			/* The flush timeout applies to the direction of the preset */
+			if (dir == BT_AUDIO_DIR_SINK) {
+				ft = &unicast_cfg->c_to_p_ft;
+				print_group_cfg_override(sh, "c_to_p_ft", *ft, val);
+			} else {
+				ft = &unicast_cfg->p_to_c_ft;
+				print_group_cfg_override(sh, "p_to_c_ft", *ft, val);
+			}
+
+			*ft = (uint8_t)val;
+		} else if (strcmp(arg, "irc") == 0) {
+			if (broadcast_cfg == NULL) {
+				shell_error(sh, "irc is only valid for broadcast presets");
+
+				return -1;
+			}
+
+			if (parse_group_cfg_val(sh, argc, argv, &argn, BT_ISO_IRC_MIN,
+						BT_ISO_IRC_MAX, true, &val) != 0) {
+				return -1;
+			}
+
+			print_group_cfg_override(sh, arg, broadcast_cfg->irc, val);
+			broadcast_cfg->irc = (uint8_t)val;
+		} else if (strcmp(arg, "pto") == 0) {
+			if (broadcast_cfg == NULL) {
+				shell_error(sh, "pto is only valid for broadcast presets");
+
+				return -1;
+			}
+
+			if (parse_group_cfg_val(sh, argc, argv, &argn, BT_ISO_PTO_MIN,
+						BT_ISO_PTO_MAX, false, &val) != 0) {
+				return -1;
+			}
+
+			print_group_cfg_override(sh, arg, broadcast_cfg->pto, val);
+			broadcast_cfg->pto = (uint8_t)val;
+		}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+		else { /* we are no longer parsing group values */
+			/* Decrement to return taken argument */
+			argn--;
+			break;
+		}
+	}
+
+	return argn;
+}
+
 static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct named_lc3_preset *named_preset;
+	struct named_lc3_preset *named_preset;
 	enum bt_audio_dir dir;
 	bool unicast = true;
 
@@ -2171,35 +2459,27 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 	if (argc > 2) {
 		struct bt_audio_codec_cfg *codec_cfg;
+		const struct named_lc3_preset *selected_preset;
+		struct named_lc3_preset preset_backup;
 
-		named_preset = bap_get_named_preset(unicast, dir, argv[2]);
-		if (named_preset == NULL) {
+		selected_preset = bap_get_named_preset(unicast, dir, argv[2]);
+		if (selected_preset == NULL) {
 			shell_error(sh, "Unable to parse named_preset %s", argv[2]);
 			return -ENOEXEC;
 		}
 
-		if (!strcmp(argv[1], "sink")) {
-			named_preset = memcpy(&default_sink_preset, named_preset,
-					      sizeof(default_sink_preset));
-			codec_cfg = &default_sink_preset.preset.codec_cfg;
-		} else if (!strcmp(argv[1], "source")) {
-			named_preset = memcpy(&default_source_preset, named_preset,
-					      sizeof(default_sink_preset));
-			codec_cfg = &default_source_preset.preset.codec_cfg;
-		} else if (!strcmp(argv[1], "broadcast")) {
-			named_preset = memcpy(&default_broadcast_source_preset, named_preset,
-					      sizeof(default_sink_preset));
-			codec_cfg = &default_broadcast_source_preset.preset.codec_cfg;
-		} else {
-			shell_error(sh, "Invalid dir: %s", argv[1]);
-
-			return -ENOEXEC;
-		}
+		memcpy(&preset_backup, named_preset, sizeof(preset_backup));
+		memcpy(named_preset, selected_preset, sizeof(*named_preset));
+		codec_cfg = &named_preset->preset.codec_cfg;
 
 		if (argc > 3) {
-			struct bt_audio_codec_cfg codec_cfg_backup;
-
-			memcpy(&codec_cfg_backup, codec_cfg, sizeof(codec_cfg_backup));
+			/* Group values are only applied if all arguments are valid */
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+			struct unicast_group_cfg unicast_cfg = default_unicast_group_cfg;
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+			struct broadcast_group_cfg broadcast_cfg = default_broadcast_group_cfg;
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 			for (size_t argn = 3U; argn < argc; argn++) {
 				const char *arg = argv[argn];
@@ -2210,8 +2490,8 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 					if (++argn == argc) {
 						shell_help(sh);
 
-						memcpy(codec_cfg, &codec_cfg_backup,
-						       sizeof(codec_cfg_backup));
+						memcpy(named_preset, &preset_backup,
+						       sizeof(*named_preset));
 
 						return SHELL_CMD_HELP_PRINTED;
 					}
@@ -2219,8 +2499,8 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 					ret = parse_config_data_args(sh, argn, argc, argv,
 								     codec_cfg);
 					if (ret < 0) {
-						memcpy(codec_cfg, &codec_cfg_backup,
-						       sizeof(codec_cfg_backup));
+						memcpy(named_preset, &preset_backup,
+						       sizeof(*named_preset));
 
 						return -ENOEXEC;
 					}
@@ -2232,8 +2512,8 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 					if (++argn == argc) {
 						shell_help(sh);
 
-						memcpy(codec_cfg, &codec_cfg_backup,
-						       sizeof(codec_cfg_backup));
+						memcpy(named_preset, &preset_backup,
+						       sizeof(*named_preset));
 
 						return SHELL_CMD_HELP_PRINTED;
 					}
@@ -2241,8 +2521,79 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 					ret = parse_config_meta_args(sh, argn, argc, argv,
 								     codec_cfg);
 					if (ret < 0) {
-						memcpy(codec_cfg, &codec_cfg_backup,
-						       sizeof(codec_cfg_backup));
+						memcpy(named_preset, &preset_backup,
+						       sizeof(*named_preset));
+
+						return -ENOEXEC;
+					}
+
+					argn = ret;
+				} else if (strcmp(arg, "qos") == 0) {
+					ssize_t ret;
+
+					if (++argn == argc) {
+						shell_help(sh);
+
+						memcpy(named_preset, &preset_backup,
+						       sizeof(*named_preset));
+
+						return SHELL_CMD_HELP_PRINTED;
+					}
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+					ret = parse_test_qos_args(sh, argn, argc, argv,
+								  named_preset, unicast);
+#else
+					shell_error(sh, "QoS test parameter overrides require "
+							"CONFIG_BT_ISO_TEST_PARAMS");
+					ret = -1;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+					if (ret < 0) {
+						memcpy(named_preset, &preset_backup,
+						       sizeof(*named_preset));
+
+						return -ENOEXEC;
+					}
+
+					argn = ret;
+				} else if (strcmp(arg, "group_config") == 0) {
+					struct unicast_group_cfg *ucfg = NULL;
+					struct broadcast_group_cfg *bcfg = NULL;
+					ssize_t ret;
+
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+					if (unicast) {
+						ucfg = &unicast_cfg;
+					}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+					if (!unicast) {
+						bcfg = &broadcast_cfg;
+					}
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+					if (ucfg == NULL && bcfg == NULL) {
+						shell_error(sh, "group_config not supported");
+						memcpy(named_preset, &preset_backup,
+						       sizeof(*named_preset));
+
+						return -ENOEXEC;
+					}
+
+					if (++argn == argc) {
+						shell_help(sh);
+
+						memcpy(named_preset, &preset_backup,
+						       sizeof(*named_preset));
+
+						return SHELL_CMD_HELP_PRINTED;
+					}
+
+					ret = parse_group_cfg_args(sh, argn, argc, argv, dir, ucfg,
+								   bcfg);
+					if (ret < 0) {
+						memcpy(named_preset, &preset_backup,
+						       sizeof(*named_preset));
 
 						return -ENOEXEC;
 					}
@@ -2251,10 +2602,18 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 				} else {
 					shell_error(sh, "Invalid argument: %s", arg);
 					shell_help(sh);
+					memcpy(named_preset, &preset_backup, sizeof(*named_preset));
 
 					return -ENOEXEC;
 				}
 			}
+
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+			default_unicast_group_cfg = unicast_cfg;
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+			default_broadcast_group_cfg = broadcast_cfg;
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 		}
 	}
 
@@ -2262,6 +2621,28 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 	print_codec_cfg(0, &named_preset->preset.codec_cfg);
 	print_qos(&named_preset->preset.qos);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+	if (unicast) {
+		const struct unicast_group_cfg *cfg = &default_unicast_group_cfg;
+
+		shell_print(sh, "Unicast group: packing %u sca %u", cfg->packing, cfg->sca);
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		shell_print(sh, "  iso_interval %u c_to_p_ft %u p_to_c_ft %u", cfg->iso_interval,
+			    cfg->c_to_p_ft, cfg->p_to_c_ft);
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	if (!unicast) {
+		const struct broadcast_group_cfg *cfg = &default_broadcast_group_cfg;
+
+		shell_print(sh, "Broadcast group: packing %u", cfg->packing);
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		shell_print(sh, "  iso_interval %u irc %u pto %u", cfg->iso_interval, cfg->irc,
+			    cfg->pto);
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	}
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 	return 0;
 }
@@ -3336,6 +3717,11 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 
 				return -ENOEXEC;
 			}
+		} else {
+			shell_error(sh, "Invalid argument: %s", arg);
+			shell_help(sh);
+
+			return -ENOEXEC;
 		}
 
 		i++;
@@ -3351,6 +3737,25 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	shell_print(sh, "Generated broadcast_id 0x%06X", broadcast_id);
 
 	copy_broadcast_source_preset(&default_source, named_preset);
+	create_param.packing = default_broadcast_group_cfg.packing;
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	if (default_broadcast_group_cfg.iso_interval != 0U) {
+		if (default_source.qos.num_subevents == 0U ||
+		    default_source.qos.burst_number == 0U ||
+		    default_source.qos.max_pdu == 0U || default_broadcast_group_cfg.irc == 0U) {
+			shell_error(sh, "Broadcast iso_interval requires explicit nse, bn, "
+				       "max_pdu and irc matching the SDU interval and size");
+
+			return -ENOEXEC;
+		}
+
+		/* Apply the BIG test parameters to the create_param structure */
+		create_param.irc = default_broadcast_group_cfg.irc;
+		create_param.pto = default_broadcast_group_cfg.pto;
+		create_param.iso_interval = default_broadcast_group_cfg.iso_interval;
+	}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	(void)memset(stream_params, 0, sizeof(stream_params));
 	for (i = 0U; i < ARRAY_SIZE(stream_params); i++) {
@@ -4260,6 +4665,22 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 	"[program_info_uri <URI>]" HELP_SEP "[audio_active_state <state>]" HELP_SEP                \
 	"[bcast_flag]" HELP_SEP "[extended <meta>]" HELP_SEP "[vendor <meta>]]"
 
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+#define HELP_CFG_QOS                                                                               \
+	"\n[qos" HELP_SEP "[nse <nse>]" HELP_SEP "[bn <bn>]" HELP_SEP "[max_pdu <max_pdu>]]"
+#define HELP_CFG_GROUP_ISO_TEST                                                                    \
+	HELP_SEP "[iso_interval <iso_interval> (0 to unset)]" HELP_SEP                             \
+	"[flush_timeout <flush_timeout> (unicast only, preset direction, 0 to unset)]" HELP_SEP    \
+	"[irc <irc> (broadcast only)]" HELP_SEP "[pto <pto> (broadcast only)]" HELP_SEP            \
+	"(broadcast iso_interval requires explicit nse, bn, max_pdu and irc)"
+#else
+#define HELP_CFG_QOS            ""
+#define HELP_CFG_GROUP_ISO_TEST ""
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+#define HELP_CFG_GROUP                                                                             \
+	"\n[group_config (group-wide, last value wins)" HELP_SEP                                   \
+	"[packing <packing>]" HELP_SEP "[sca <sca> (unicast only)]" HELP_CFG_GROUP_ISO_TEST "]"
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	bap_cmds,
 	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1,
@@ -4267,7 +4688,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	SHELL_CMD_ARG(select_broadcast, NULL, "<stream>", cmd_select_broadcast_source, 2, 0),
 	SHELL_CMD_ARG(create_broadcast, NULL, "[preset <preset_name>] [enc <broadcast_code>]",
-		      cmd_create_broadcast, 1, 2),
+		      cmd_create_broadcast, 1, 4),
 	SHELL_CMD_ARG(start_broadcast, NULL, "", cmd_start_broadcast, 1, 0),
 	SHELL_CMD_ARG(stop_broadcast, NULL, "", cmd_stop_broadcast, 1, 0),
 	SHELL_CMD_ARG(delete_broadcast, NULL, "", cmd_delete_broadcast, 1, 0),
@@ -4308,8 +4729,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif /* CONFIG_BT_BAP_UNICAST */
 #if IS_BAP_INITIATOR
 	SHELL_CMD_ARG(preset, NULL,
-		      "<sink, source, broadcast> [preset] " HELP_CFG_DATA " " HELP_CFG_META,
-		      cmd_preset, 2, 34),
+		      "<sink, source, broadcast> [preset] " HELP_CFG_DATA " " HELP_CFG_META
+		      " " HELP_CFG_QOS " " HELP_CFG_GROUP,
+		      cmd_preset, 2, IS_ENABLED(CONFIG_BT_ISO_TEST_PARAMS) ? 50 : 39),
 #endif /* IS_BAP_INITIATOR */
 #if defined(CONFIG_BT_AUDIO_TX)
 	SHELL_CMD_ARG(send, NULL, "Send to Audio Stream [data]", cmd_send, 1, 1),
