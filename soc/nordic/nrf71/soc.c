@@ -274,6 +274,15 @@ int nordicsemi_nrf71_init(void)
 	nrf_lfxo_cload_set(NRF_LFXO,
 			(uint8_t)(DT_PROP(LFXO_NODE, load_capacitance_femtofarad) / 1000));
 #endif
+
+#if DT_NODE_HAS_PROP(LFXO_NODE, idac_init)
+	/* Must be set before the LFXO is requested */
+	nrf_lfxo_amplitude_ctrl_t ampl_ctrl;
+
+	nrf_lfxo_amplitude_control_get(NRF_LFXO, &ampl_ctrl);
+	ampl_ctrl.idac_init = DT_PROP(LFXO_NODE, idac_init);
+	nrf_lfxo_amplitude_control_set(NRF_LFXO, &ampl_ctrl);
+#endif
 #endif /* (NRF_APPLICATION && !CONFIG_TRUSTED_EXECUTION_NONSECURE) || !__ZEPHYR__  */
 
 #ifdef __ZEPHYR__
@@ -295,4 +304,41 @@ void soc_reset_hook(void)
 	SystemInit();
 	nordicsemi_nrf71_init();
 }
+#endif
+
+#if defined(__ZEPHYR__) && defined(NRF_APPLICATION) && defined(CONFIG_MULTITHREADING) &&           \
+	DT_ENUM_HAS_VALUE(LFXO_NODE, mode, pixo) &&                                                \
+	((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfclk)) &&                                          \
+	  DT_ENUM_HAS_VALUE(DT_NODELABEL(lfclk), k32src, xtal)) ||                                 \
+	 defined(CONFIG_NRF_GRTC_TIMER_SOURCE_LFXO))
+#define LFXO_PIXO_POLL_MS 10
+
+static void lfxo_pixo_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(lfxo_pixo_work, lfxo_pixo_work_handler);
+
+/* PIXO cannot start the crystal, so switch once Pierce start-up is done */
+static void lfxo_pixo_work_handler(struct k_work *work)
+{
+	nrf_lfxo_status_t status;
+
+	ARG_UNUSED(work);
+
+	nrf_lfxo_status_get(NRF_LFXO, &status);
+	if (!status.running) {
+		k_work_schedule(&lfxo_pixo_work, K_MSEC(LFXO_PIXO_POLL_MS));
+		return;
+	}
+
+	nrf_lfxo_mode_set(NRF_LFXO, NRF_LFXO_OSCILLATOR_MODE_PIXO, false);
+	LOG_DBG("LFXO switch to PIXO mode requested");
+}
+
+static int lfxo_pixo_init(void)
+{
+	k_work_schedule(&lfxo_pixo_work, K_NO_WAIT);
+
+	return 0;
+}
+
+SYS_INIT(lfxo_pixo_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 #endif

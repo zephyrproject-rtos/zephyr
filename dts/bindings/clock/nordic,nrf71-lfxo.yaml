@@ -54,3 +54,21 @@ properties:
     description: |
       Load capacitance in femtofarads. This property is only used when
       load-capacitors is set to "internal".
+
+  mode:
+    type: string
+    enum:
+      - "pierce"
+      - "pixo"
+    description: |
+      Oscillator mode. The LFXO always starts in Pierce mode. If set to
+      "pixo", the LFXO is switched to PIXO mode once it is running. If not
+      set, the LFXO stays in Pierce mode.
+
+  idac-init:
+    type: int
+    min: 1
+    max: 31
+    description: |
+      Initial IDAC code for the Pierce mode amplitude control. Use the LFXO
+      IDAC calibration sample to find the value for a board.
