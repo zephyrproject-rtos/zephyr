@@ -17,7 +17,6 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 
 #include <zephyr/net_buf.h>
@@ -38,6 +37,7 @@ static struct k_thread rx_thread_data;
 
 static struct k_work_delayable ack_work;
 static struct k_work_delayable retx_work;
+static struct k_work_delayable link_work;
 
 #define HCI_3WIRE_ACK_PKT	0x00
 #define HCI_COMMAND_PKT		0x01
@@ -61,9 +61,14 @@ static bool reliable_packet(uint8_t type)
 	}
 }
 
-/* FIXME: Correct timeout */
-#define H5_RX_ACK_TIMEOUT	K_MSEC(250)
+/* Core 6.3 Vol 4 Part D 12.1: acknowledge within 2 x Tmax and resend after 3 x Tmax, with a
+ * fixed Tmax rather than one derived from the baud rate
+ */
+#define H5_RX_ACK_TIMEOUT	K_MSEC(250 * 2 / 3)
 #define H5_TX_ACK_TIMEOUT	K_MSEC(250)
+
+/* Core 6.3 Vol 4 Part D 8.1 suggests four link establishment messages per second */
+#define H5_LINK_INTERVAL	K_MSEC(250)
 
 #define SLIP_DELIMITER	0xc0
 #define SLIP_ESC	0xdb
@@ -91,6 +96,7 @@ static bool reliable_packet(uint8_t type)
 
 static struct h5 {
 	struct net_buf		*rx_buf;
+	bool			rx_esc;
 
 	struct k_fifo		tx_queue;
 	struct k_fifo		rx_queue;
@@ -117,6 +123,10 @@ static struct h5 {
 } h5;
 
 static uint8_t unack_queue_len;
+/* tx_seq, unack_queue and unack_queue_len */
+static struct k_spinlock tx_lock;
+/* Held while a frame is written, and while a link restart resets the queues and state */
+static K_MUTEX_DEFINE(tx_mutex);
 
 static const uint8_t sync_req[] = { 0x01, 0x7e };
 static const uint8_t sync_rsp[] = { 0x02, 0x7d };
@@ -138,6 +148,15 @@ static K_FIFO_DEFINE(tx_queue);
 static struct k_poll_signal tx_queue_change =
 	K_POLL_SIGNAL_INITIALIZER(tx_queue_change);
 
+/* Core 6.3 Vol 4 Part D 8.1: an invalid packet in the Uninitialized state is answered with SYNC */
+static void h5_invalid_packet(void)
+{
+	if (h5.link_state == UNINIT) {
+		/* Without waiting for the next interval */
+		k_work_reschedule(&link_work, K_NO_WAIT);
+	}
+}
+
 static void h5_reset_rx(void)
 {
 	if (h5.rx_buf) {
@@ -145,20 +164,30 @@ static void h5_reset_rx(void)
 		h5.rx_buf = NULL;
 	}
 
+	h5.rx_esc = false;
 	h5.rx_state = START;
+
+	/* Discarded packets are acknowledged too (Core 6.3 Vol 4 Part D 6.5, 6.7) */
+	if (h5.link_state == ACTIVE) {
+		k_work_schedule(&ack_work, H5_RX_ACK_TIMEOUT);
+	} else {
+		h5_invalid_packet();
+	}
 }
 
+/* Returns -EAGAIN after an escape octet: the escaped octet follows */
 static int h5_unslip_byte(uint8_t *byte)
 {
-	int count;
+	if (!h5.rx_esc) {
+		if (*byte == SLIP_ESC) {
+			h5.rx_esc = true;
+			return -EAGAIN;
+		}
 
-	if (*byte != SLIP_ESC) {
 		return 0;
 	}
 
-	do {
-		count = uart_fifo_read(h5_dev, byte, sizeof(*byte));
-	} while (!count);
+	h5.rx_esc = false;
 
 	switch (*byte) {
 	case SLIP_ESC_DELIM:
@@ -177,18 +206,20 @@ static int h5_unslip_byte(uint8_t *byte)
 
 static void process_unack(void)
 {
+	k_spinlock_key_t key = k_spin_lock(&tx_lock);
 	uint8_t next_seq = h5.tx_seq;
 	uint8_t number_removed = unack_queue_len;
 	bool acked = false;
 
 	if (!unack_queue_len) {
+		k_spin_unlock(&tx_lock, key);
 		return;
 	}
 
 	LOG_DBG("rx_ack %u tx_ack %u tx_seq %u unack_queue_len %u", h5.rx_ack, h5.tx_ack, h5.tx_seq,
 		unack_queue_len);
 
-	while (unack_queue_len > 0) {
+	while (number_removed > 0U) {
 		if (next_seq == h5.rx_ack) {
 			/* Next sequence number is the same as last received
 			 * ack number
@@ -225,6 +256,8 @@ static void process_unack(void)
 
 		acked = true;
 	}
+
+	k_spin_unlock(&tx_lock, key);
 
 	if (acked) {
 		k_poll_signal_raise(&tx_queue_change, 0);
@@ -290,24 +323,42 @@ static uint8_t h5_slip_byte(uint8_t byte)
 	}
 }
 
-static void h5_send(const uint8_t *payload, uint8_t type, int len)
+static void h5_send(const uint8_t *payload, uint8_t type, int len, uint8_t seq)
 {
+	__maybe_unused int err;
 	uint8_t hdr[4];
 	int i;
+
+	/* uart_poll_out() may block, and frames come from several threads */
+	err = k_mutex_lock(&tx_mutex, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
+
+	/* Only link control packets outside the Active state (Core 6.3 Vol 4 Part D 8.1, 8.8.1),
+	 * decided under the mutex that a link restart changes the state under
+	 */
+	if (h5.link_state != ACTIVE && type != HCI_3WIRE_LINK_PKT) {
+		err = k_mutex_unlock(&tx_mutex);
+		__ASSERT_NO_MSG(err == 0);
+		return;
+	}
 
 	hexdump("<= ", payload, len);
 
 	(void)memset(hdr, 0, sizeof(hdr));
 
-	/* Set ACK for outgoing packet and stop delayed work */
+	/* Cancelled before tx_ack is read, so that an acknowledgment scheduled after the read
+	 * is still sent, and not by the pure acknowledgment itself: its work item could not be
+	 * submitted again while being cancelled.
+	 */
+	if (type != HCI_3WIRE_ACK_PKT) {
+		(void)k_work_cancel_delayable(&ack_work);
+	}
+
 	H5_SET_ACK(hdr, h5.tx_ack);
-	/* If cancel fails we may ack the same seq number twice, this is OK. */
-	(void)k_work_cancel_delayable(&ack_work);
 
 	if (reliable_packet(type)) {
 		H5_SET_RELIABLE(hdr);
-		H5_SET_SEQ(hdr, h5.tx_seq);
-		h5.tx_seq = (h5.tx_seq + 1) % 8;
+		H5_SET_SEQ(hdr, seq);
 	}
 
 	H5_SET_TYPE(hdr, type);
@@ -329,6 +380,9 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 	}
 
 	uart_poll_out(h5_dev, SLIP_DELIMITER);
+
+	err = k_mutex_unlock(&tx_mutex);
+	__ASSERT_NO_MSG(err == 0);
 }
 
 /* Delayed work taking care about retransmitting packets */
@@ -339,6 +393,7 @@ static void retx_timeout(struct k_work *work)
 	LOG_DBG("unack_queue_len %u", unack_queue_len);
 
 	if (unack_queue_len) {
+		k_spinlock_key_t key = k_spin_lock(&tx_lock);
 		struct k_fifo tmp_queue;
 		struct net_buf *buf;
 
@@ -362,6 +417,8 @@ static void retx_timeout(struct k_work *work)
 		while ((buf = k_fifo_get(&tmp_queue, K_NO_WAIT))) {
 			k_fifo_put(&h5.tx_queue, buf);
 		}
+
+		k_spin_unlock(&tx_lock, key);
 	}
 
 	k_poll_signal_raise(&tx_queue_change, 0);
@@ -373,7 +430,24 @@ static void ack_timeout(struct k_work *work)
 
 	LOG_DBG("");
 
-	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0);
+	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0, 0U);
+}
+
+/* SYNC and CONFIG are repeated until they are answered (Core 6.3 Vol 4 Part D 8.1, 8.2) */
+static void link_timeout(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (h5.link_state == UNINIT) {
+		h5_send(sync_req, HCI_3WIRE_LINK_PKT, sizeof(sync_req), 0U);
+	} else if (h5.link_state == INIT) {
+		/* The Controller sends CONFIG without a Configuration Field (8.8) */
+		h5_send(conf_req, HCI_3WIRE_LINK_PKT, sizeof(conf_req), 0U);
+	} else {
+		return;
+	}
+
+	k_work_schedule(&link_work, H5_LINK_INTERVAL);
 }
 
 static void h5_process_complete_packet(uint8_t *hdr)
@@ -382,10 +456,27 @@ static void h5_process_complete_packet(uint8_t *hdr)
 
 	LOG_DBG("");
 
+	/* Sequence numbers start in the Active state, and only link establishment messages, which
+	 * are unreliable, are valid before it (Core 6.3 Vol 4 Part D 8.3 to 8.7, 8.8.1)
+	 */
+	if (h5.link_state != ACTIVE) {
+		buf = h5.rx_buf;
+		h5.rx_buf = NULL;
+
+		if (H5_HDR_PKT_TYPE(hdr) == HCI_3WIRE_LINK_PKT && H5_HDR_RELIABLE(hdr) == 0U) {
+			k_fifo_put(&h5.rx_queue, buf);
+		} else {
+			net_buf_unref(buf);
+			h5_invalid_packet();
+		}
+
+		return;
+	}
+
 	/* rx_ack should be in every packet */
 	h5.rx_ack = H5_HDR_ACK(hdr);
 
-	if (reliable_packet(H5_HDR_PKT_TYPE(hdr))) {
+	if (H5_HDR_RELIABLE(hdr) != 0U) {
 		/* For reliable packet increment next transmit ack number */
 		h5.tx_ack = (h5.tx_ack + 1) % 8;
 		/* Submit delayed work to ack the packet */
@@ -450,11 +541,23 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 			 * with starting one.
 			 */
 			if (byte == SLIP_DELIMITER) {
+				if (remaining != sizeof(hdr) || h5.rx_esc) {
+					LOG_ERR("Truncated packet header");
+					h5_reset_rx();
+					h5.rx_state = HEADER;
+				}
+
 				remaining = sizeof(hdr);
+				h5.rx_esc = false;
 				continue;
 			}
 
-			if (h5_unslip_byte(&byte) < 0) {
+			ret = h5_unslip_byte(&byte);
+			if (ret == -EAGAIN) {
+				continue;
+			}
+
+			if (ret < 0) {
 				h5_reset_rx();
 				continue;
 			}
@@ -464,6 +567,19 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 
 			if (remaining) {
 				break;
+			}
+
+			if (((hdr[0] + hdr[1] + hdr[2] + hdr[3]) & 0xffU) != 0xffU) {
+				LOG_ERR("Invalid header checksum");
+				h5_reset_rx();
+				continue;
+			}
+
+			/* The CONFIG RESPONSE never selects data integrity checks */
+			if (H5_HDR_CRC(hdr) != 0U) {
+				LOG_ERR("Unexpected data integrity check");
+				h5_reset_rx();
+				continue;
 			}
 
 			remaining = H5_HDR_LEN(hdr);
@@ -496,8 +612,8 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 				break;
 			default:
 				LOG_ERR("Wrong packet type %u", type);
-				h5.rx_state = END;
-				break;
+				h5_reset_rx();
+				continue;
 			}
 			if (!remaining) {
 				h5.rx_state = END;
@@ -510,7 +626,12 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 				continue;
 			}
 
-			if (h5_unslip_byte(&byte) < 0) {
+			ret = h5_unslip_byte(&byte);
+			if (ret == -EAGAIN) {
+				continue;
+			}
+
+			if (ret < 0) {
 				h5_reset_rx();
 				continue;
 			}
@@ -573,8 +694,10 @@ static uint8_t h5_get_type(struct net_buf *buf)
 
 static void process_events(struct k_poll_event *ev, int count)
 {
+	k_spinlock_key_t key;
 	struct net_buf *buf;
 	uint8_t type;
+	uint8_t seq;
 	int err;
 
 	LOG_DBG("count %d", count);
@@ -596,7 +719,16 @@ static void process_events(struct k_poll_event *ev, int count)
 			if (ev->tag == 0) {
 				/* Wait until a buffer is available */
 				buf = k_fifo_get(&tx_queue, K_NO_WAIT);
-				__ASSERT_NO_MSG(buf);
+				/* Emptied by a link restart since k_poll() returned */
+				if (buf == NULL) {
+					break;
+				}
+
+				/* Not passed to the Controller outside the Active state (8.8.1) */
+				if (h5.link_state != ACTIVE) {
+					net_buf_unref(buf);
+					break;
+				}
 
 				/* Pass buffer to the stack */
 				err = bt_send(buf);
@@ -609,15 +741,26 @@ static void process_events(struct k_poll_event *ev, int count)
 				__ASSERT_NO_MSG(buf);
 
 				type = h5_get_type(buf);
-				h5_send(buf->data, type, buf->len);
 
-				/* buf is dequeued from tx_queue and queued to unack
-				 * queue.
+				/* Queued before it is sent, as uart_poll_out() may block, with a
+				 * reference of its own in case it is acknowledged meanwhile
 				 */
-				k_fifo_put(&h5.unack_queue, buf);
-				unack_queue_len++;
+				key = k_spin_lock(&tx_lock);
+				seq = h5.tx_seq;
+				if (reliable_packet(type)) {
+					h5.tx_seq = (seq + 1) % 8;
+					k_fifo_put(&h5.unack_queue, net_buf_ref(buf));
+					unack_queue_len++;
+				}
 
-				k_work_reschedule(&retx_work, H5_TX_ACK_TIMEOUT);
+				k_spin_unlock(&tx_lock, key);
+
+				h5_send(buf->data, type, buf->len, seq);
+				net_buf_unref(buf);
+
+				if (reliable_packet(type)) {
+					k_work_reschedule(&retx_work, H5_TX_ACK_TIMEOUT);
+				}
 			}
 			break;
 		case K_POLL_STATE_NOT_READY:
@@ -686,8 +829,26 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		hexdump("=> ", buf->data, buf->len);
 
-		if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
+		if (buf->len < 2U) {
+			LOG_ERR("Link control packet too short (len %u)", buf->len);
+			h5_invalid_packet();
+		} else if (buf->len == sizeof(sync_req) &&
+			   memcmp(buf->data, sync_req, sizeof(sync_req)) == 0) {
 			if (h5.link_state == ACTIVE) {
+				/* The Host has reset: link establishment starts over (8.3) */
+				__maybe_unused int err;
+				k_spinlock_key_t key;
+
+				/* No frame is sent while the queues and the link state change */
+				err = k_mutex_lock(&tx_mutex, K_FOREVER);
+				__ASSERT_NO_MSG(err == 0);
+
+				while ((cache = k_fifo_get(&tx_queue, K_NO_WAIT))) {
+					net_buf_unref(cache);
+				}
+
+				key = k_spin_lock(&tx_lock);
+
 				while ((cache = k_fifo_get(&h5.unack_queue, K_NO_WAIT))) {
 					net_buf_unref(cache);
 				}
@@ -698,36 +859,62 @@ static void rx_thread(void *p1, void *p2, void *p3)
 					net_buf_unref(cache);
 				}
 
-				h5_reset_rx();
+				h5.tx_seq = 0;
+				k_spin_unlock(&tx_lock, key);
 
 				h5.rx_ack = 0;
-				h5.link_state = INIT;
+				h5.link_state = UNINIT;
 				h5.tx_ack = 0;
-				h5.tx_seq = 0;
+
+				err = k_mutex_unlock(&tx_mutex);
+				__ASSERT_NO_MSG(err == 0);
+
+				/* Ends tx_thread() polling for packets to send */
+				k_poll_signal_raise(&tx_queue_change, 0);
 			}
 
-			h5_send(sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp));
+			h5_send(sync_rsp, HCI_3WIRE_LINK_PKT, sizeof(sync_rsp), 0U);
+
+			/* The sample waits for the Host's SYNC before it sends its own (8.1) */
+			if (h5.link_state == UNINIT) {
+				k_work_schedule(&link_work, K_NO_WAIT);
+			}
+		} else if (buf->len == sizeof(sync_rsp) &&
+			   memcmp(buf->data, sync_rsp, sizeof(sync_rsp)) == 0) {
+			/* Ignored once past the Uninitialized state (8.2, 8.3) */
+			if (h5.link_state == UNINIT) {
+				h5.link_state = INIT;
+				k_work_reschedule(&link_work, K_NO_WAIT);
+			}
+		} else if (h5.link_state == UNINIT && memcmp(buf->data, conf_req, 2) == 0) {
+			/* Not valid in the Uninitialized state (8.1) */
+			h5_invalid_packet();
 		} else if (!memcmp(buf->data, conf_req, 2)) {
 			if (buf->len > 2) {
 				uint8_t tx_win = buf->data[2] & 0x07;
 
-				/* Configuration field present */
-				h5.tx_win = MIN(h5.tx_win, tx_win);
+				/* Configuration field present, 0 (not allowed) taken as 1 */
+				h5.tx_win = MIN(H5_TX_WIN, MAX(tx_win, 1U));
 			}
 
 			conf_rsp[2] = h5.tx_win;
 
-			/*
-			 * The Host sends Config Response messages with a
-			 * Configuration Field.
-			 */
-			h5_send(conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp));
+			/* The Controller's CONFIG RESPONSE carries the Configuration Field (8.8) */
+			h5_send(conf_rsp, HCI_3WIRE_LINK_PKT, sizeof(conf_rsp), 0U);
+		} else if (!memcmp(buf->data, conf_rsp, 2)) {
+			/* Discarded outside the Initialized state (8.1, 8.3) */
+			if (h5.link_state == INIT) {
+				LOG_DBG("Finished H5 configuration, tx_win %u", h5.tx_win);
 
-			LOG_DBG("Finished H5 configuration, tx_win %u", h5.tx_win);
-
-			h5.link_state = ACTIVE;
+				h5.link_state = ACTIVE;
+				/* tx_thread() only polls for packets to send in the Active state */
+				k_poll_signal_raise(&tx_queue_change, 0);
+			} else {
+				h5_invalid_packet();
+			}
 		} else {
 			LOG_ERR("Not handled yet %x %x", buf->data[0], buf->data[1]);
+			h5_invalid_packet();
 		}
 
 		net_buf_unref(buf);
@@ -757,8 +944,6 @@ static int hci_uart_init(void)
 
 	return 0;
 }
-
-SYS_INIT(hci_uart_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 int main(void)
 {
@@ -795,8 +980,15 @@ int main(void)
 	/* Init delayed work */
 	k_work_init_delayable(&ack_work, ack_timeout);
 	k_work_init_delayable(&retx_work, retx_timeout);
+	k_work_init_delayable(&link_work, link_timeout);
 
 	h5.tx_win = H5_TX_WIN;
+
+	/* The interrupt handler uses the queues and work items set up above */
+	err = hci_uart_init();
+	if (err != 0) {
+		return err;
+	}
 
 	while (1) {
 		struct net_buf *buf;
