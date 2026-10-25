@@ -84,6 +84,11 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 {
 	const uint8_t *data = buf;
 
+	if (find_client(conn)->cli == NULL) {
+		LOG_WRN("No Proxy Client found");
+		return -ENOTCONN;
+	}
+
 	if (len < 1) {
 		LOG_WRN("Too small Proxy PDU");
 		return -EINVAL;
@@ -928,6 +933,11 @@ static ssize_t proxy_ccc_write(struct bt_conn *conn,
 	}
 
 	client = find_client(conn);
+	if (client->cli == NULL) {
+		LOG_WRN("No Proxy Client found");
+		return -ENOTCONN;
+	}
+
 	if (client->filter_type == NONE) {
 		client->filter_type = ACCEPT;
 		bt_mesh_wq_submit(&client->send_beacons);
