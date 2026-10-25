@@ -2939,6 +2939,8 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 
 			bt_cap_common_abort_proc(next_bap_stream->conn, err);
 			cap_initiator_unicast_audio_proc_complete(active_proc);
+
+			return;
 		}
 	} else {
 		struct bt_cap_initiator_proc_param *proc_param;
