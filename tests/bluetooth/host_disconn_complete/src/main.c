@@ -3,11 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Disconnection Complete events for a handle that the Host has no connection
- * object for. The next connection with the handle stays up.
+/* Disconnection Complete events that come before the Host has a connection
+ * object with the handle: the connection is still being set up, or there is
+ * none. The connection is taken down with the usual callbacks, and the next
+ * connection with the handle stays up.
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -35,14 +38,28 @@
  */
 #define GENERIC_RP_SIZE 64U
 
-#define CONN_HANDLE 0x0001U
+#define CONN_HANDLE  0x0001U
+/* A handle of a connection that the Host has no object for */
+#define OTHER_HANDLE 0x0002U
+
+#define REASON BT_HCI_ERR_REMOTE_USER_TERM_CONN
 
 struct cmd_handler {
 	uint16_t opcode;
 	uint8_t len;
-	/* Sets evt to NULL when it sends its events itself */
+	/* Sets evt to NULL when it sends its events itself, or none */
 	void (*handler)(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode);
 };
+
+/* Advertising handle of the last LE Set Extended Advertising Parameters */
+static uint8_t last_adv_handle;
+
+/* With read_phy_hold, the controller keeps the response to HCI LE Read PHY
+ * until the test sends it with read_phy_respond().
+ */
+static bool read_phy_hold;
+static uint16_t read_phy_handle;
+static K_SEM_DEFINE(read_phy_sem, 0, 1);
 
 static K_SEM_DEFINE(disconnect_sem, 0, 1);
 
@@ -173,6 +190,21 @@ static void le_read_max_adv_data_len(struct net_buf *buf, struct net_buf **evt, 
 	rp->max_adv_data_len = sys_cpu_to_le16(BT_GAP_ADV_MAX_EXT_ADV_DATA_LEN);
 }
 
+static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+				 uint16_t opcode)
+{
+	const struct bt_hci_cp_le_set_ext_adv_param *cp = (const void *)buf->data;
+	struct bt_hci_rp_le_set_ext_adv_param *rp;
+
+	ARG_UNUSED(len);
+
+	last_adv_handle = cp->handle;
+
+	rp = cmd_complete(evt, sizeof(*rp), opcode);
+	rp->status = BT_HCI_ERR_SUCCESS;
+	rp->tx_power = 0;
+}
+
 static struct net_buf *read_phy_rsp(uint16_t handle, uint8_t status)
 {
 	struct bt_hci_rp_le_read_phy *rp;
@@ -193,6 +225,13 @@ static void le_read_phy(struct net_buf *buf, struct net_buf **evt, uint8_t len, 
 
 	ARG_UNUSED(len);
 	ARG_UNUSED(opcode);
+
+	if (read_phy_hold) {
+		read_phy_handle = sys_le16_to_cpu(cp->handle);
+		*evt = NULL;
+		k_sem_give(&read_phy_sem);
+		return;
+	}
 
 	*evt = read_phy_rsp(sys_le16_to_cpu(cp->handle), BT_HCI_ERR_SUCCESS);
 }
@@ -269,6 +308,11 @@ static const struct cmd_handler cmds[] = {
 		BT_HCI_OP_LE_READ_MAX_ADV_DATA_LEN,
 		sizeof(struct bt_hci_rp_le_read_max_adv_data_len),
 		le_read_max_adv_data_len,
+	},
+	{
+		BT_HCI_OP_LE_SET_EXT_ADV_PARAM,
+		sizeof(struct bt_hci_rp_le_set_ext_adv_param),
+		le_set_ext_adv_param,
 	},
 	{
 		BT_HCI_OP_LE_READ_PHY,
@@ -348,6 +392,12 @@ static DEVICE_API(bt_hci, driver_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
 
+/* Send the response that the controller holds */
+static void read_phy_respond(uint8_t status)
+{
+	bt_hci_recv(DEVICE_DT_INST_GET(0), read_phy_rsp(read_phy_handle, status));
+}
+
 static void le_meta_event(uint8_t subevent, const void *data, uint8_t len)
 {
 	struct bt_hci_evt_le_meta_event *meta;
@@ -380,8 +430,20 @@ static void conn_complete(uint16_t handle, uint8_t role)
 	le_meta_event(BT_HCI_EVT_LE_ENH_CONN_COMPLETE, &evt, sizeof(evt));
 }
 
-/* What the connected callback was last called with */
+static void adv_set_terminated(uint16_t handle)
+{
+	const struct bt_hci_evt_le_adv_set_terminated evt = {
+		.status = BT_HCI_ERR_SUCCESS,
+		.adv_handle = last_adv_handle,
+		.conn_handle = sys_cpu_to_le16(handle),
+	};
+
+	le_meta_event(BT_HCI_EVT_LE_ADV_SET_TERMINATED, &evt, sizeof(evt));
+}
+
+/* What the callbacks were last called with */
 static uint8_t connected_err;
+static uint8_t disconnected_reason;
 
 static K_SEM_DEFINE(connected_sem, 0, 1);
 static K_SEM_DEFINE(disconnected_sem, 0, 1);
@@ -398,8 +460,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	ARG_UNUSED(conn);
-	ARG_UNUSED(reason);
 
+	disconnected_reason = reason;
 	k_sem_give(&disconnected_sem);
 }
 
@@ -418,6 +480,14 @@ static struct bt_conn *connect_central(uint16_t handle)
 	conn_complete(handle, BT_HCI_ROLE_CENTRAL);
 
 	return conn;
+}
+
+/* The connection came up and was taken down */
+static void expect_disconnected(uint8_t reason)
+{
+	zassert_ok(k_sem_take(&connected_sem, K_SECONDS(1)), "No connected callback");
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnected callback");
+	zassert_equal(disconnected_reason, reason, "Disconnected with 0x%02x", disconnected_reason);
 }
 
 /* The connection object is freed once the application has let go of it */
@@ -452,6 +522,8 @@ static void before(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
+	read_phy_hold = false;
+	k_sem_reset(&read_phy_sem);
 	k_sem_reset(&disconnect_sem);
 
 	zassert_ok(bt_enable(NULL), "Bluetooth init failed");
@@ -484,6 +556,81 @@ static void *setup(void)
 
 ZTEST_SUITE(disconn_complete, NULL, setup, before, after, NULL);
 
+/* The priority handler of the Disconnection Complete event runs before the
+ * connection complete event has been handled. The connection comes up as
+ * disconnected and is taken down.
+ */
+static ZTEST(disconn_complete, test_before_conn_complete)
+{
+	struct bt_conn *conn = NULL;
+
+	zassert_ok(
+		bt_conn_le_create(&peer, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &conn),
+		"Creating the connection failed");
+
+	k_sched_lock();
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_CENTRAL);
+	disconn_complete(CONN_HANDLE, REASON);
+	k_sched_unlock();
+
+	expect_disconnected(REASON);
+	zassert_equal(connected_err, REASON, "Connected with 0x%02x", connected_err);
+	expect_recycled(conn);
+
+	expect_next_connection(CONN_HANDLE);
+}
+
+/* A disconnection that the controller reports while the Host reads the PHY of
+ * a new connection, before the connected callbacks.
+ */
+static ZTEST(disconn_complete, test_during_read_phy)
+{
+	struct bt_conn *conn;
+
+	read_phy_hold = true;
+	conn = connect_central(CONN_HANDLE);
+	zassert_ok(k_sem_take(&read_phy_sem, K_SECONDS(1)), "The PHY was not read");
+
+	disconn_complete(CONN_HANDLE, REASON);
+	read_phy_respond(BT_HCI_ERR_SUCCESS);
+
+	expect_disconnected(REASON);
+	zassert_equal(connected_err, REASON, "Connected with 0x%02x", connected_err);
+	expect_recycled(conn);
+
+	read_phy_hold = false;
+	expect_next_connection(CONN_HANDLE);
+}
+
+/* The same for a peripheral with several advertising sets, which sets the
+ * connection up when the advertising set terminated event has named the set.
+ * The controller refuses the read of a connection that is gone.
+ */
+static ZTEST(disconn_complete, test_during_read_phy_adv_set)
+{
+	struct bt_le_ext_adv *adv;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, &adv),
+		   "Creating the advertising set failed");
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Starting the advertising set failed");
+
+	read_phy_hold = true;
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	adv_set_terminated(CONN_HANDLE);
+	zassert_ok(k_sem_take(&read_phy_sem, K_SECONDS(1)), "The PHY was not read");
+
+	disconn_complete(CONN_HANDLE, REASON);
+	read_phy_respond(BT_HCI_ERR_UNKNOWN_CONN_ID);
+
+	expect_disconnected(REASON);
+	zassert_equal(connected_err, REASON, "Connected with 0x%02x", connected_err);
+	expect_recycled(NULL);
+
+	read_phy_hold = false;
+	expect_next_connection(CONN_HANDLE);
+}
+
 /* The Host disconnects a connection that it did not expect. The next
  * connection with the handle is not taken for the one that went down.
  */
@@ -495,4 +642,31 @@ static ZTEST(disconn_complete, test_no_conn)
 		      "Connected callback for an unexpected connection");
 
 	expect_next_connection(CONN_HANDLE);
+}
+
+/* The priority handler keeps no more handles than there can be connections.
+ * A disconnection of a connection that is being set up, which it could not
+ * keep, still takes the connection down.
+ */
+static ZTEST(disconn_complete, test_not_recorded)
+{
+	struct bt_conn *conn;
+
+	read_phy_hold = true;
+	conn = connect_central(CONN_HANDLE);
+	zassert_ok(k_sem_take(&read_phy_sem, K_SECONDS(1)), "The PHY was not read");
+
+	for (uint16_t i = 0U; i < CONFIG_BT_MAX_CONN; i++) {
+		disconn_complete(OTHER_HANDLE + i, REASON);
+	}
+
+	disconn_complete(CONN_HANDLE, REASON);
+	read_phy_respond(BT_HCI_ERR_SUCCESS);
+
+	expect_disconnected(REASON);
+	expect_recycled(conn);
+
+	read_phy_hold = false;
+	expect_next_connection(CONN_HANDLE);
+	expect_next_connection(OTHER_HANDLE);
 }

@@ -1262,6 +1262,13 @@ static void hci_disconn_complete(struct net_buf *buf)
 		return;
 	}
 
+	if (conn->state != BT_CONN_DISCONNECT_COMPLETE) {
+		/* The priority handler ran before the connection was set up */
+		conn_handle_disconnected_drop(handle);
+		conn->err = evt->reason;
+		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
+	}
+
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 	if (!bt_conn_is_le(conn)) {
@@ -1658,7 +1665,6 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
 	__ASSERT_NO_MSG(evt->status == BT_HCI_ERR_SUCCESS);
 
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
-	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 	uint8_t id;
@@ -1778,6 +1784,11 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
 	}
 #endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
+	/* Checked after the commands above, during which the controller may
+	 * have reported a disconnection.
+	 */
+	const uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
+
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
 	if (disconnect_reason) {
@@ -1811,7 +1822,6 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 	__ASSERT_NO_MSG(evt->status == BT_HCI_ERR_SUCCESS);
 
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
-	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 
@@ -1866,6 +1876,11 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 	} else {
 		bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr[conn->id]);
 	}
+
+	/* Checked after the commands above, during which the controller may
+	 * have reported a disconnection.
+	 */
+	const uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
