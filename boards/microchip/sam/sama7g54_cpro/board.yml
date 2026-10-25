@@ -1,0 +1,6 @@
+board:
+  name: sama7g54_cpro
+  full_name: SAMA7G54 Curiosity Pro Kit
+  vendor: microchip
+  socs:
+    - name: sama7g54
