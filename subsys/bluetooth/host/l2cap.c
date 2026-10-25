@@ -2492,6 +2492,7 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 {
 	struct bt_l2cap_le_credits *ev;
 	struct net_buf *buf;
+	int err;
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 
@@ -2499,9 +2500,11 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 				      sizeof(*ev));
 	if (!buf) {
 		LOG_ERR("Unable to send credits update");
-		/* Disconnect would probably not work either so the only
-		 * option left is to shutdown the channel.
-		 */
+		/* Without credits the peer would wait on the channel forever */
+		err = bt_l2cap_chan_disconnect(&chan->chan);
+		if (err != 0) {
+			LOG_ERR("Unable to disconnect (err %d)", err);
+		}
 		l2cap_chan_shutdown(&chan->chan);
 		return;
 	}
@@ -2851,6 +2854,11 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 				buf->len,
 				chan->rx.mps);
 			l2cap_chan_send_credits(chan, credits);
+		}
+
+		/* A channel that could not give the credits has dropped the SDU */
+		if (bt_l2cap_chan_get_state(&chan->chan) != BT_L2CAP_CONNECTED) {
+			return;
 		}
 
 		l2cap_chan_le_recv_seg(chan, buf);
