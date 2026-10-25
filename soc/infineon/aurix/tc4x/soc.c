@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/arch/cpu.h>
+#include <zephyr/sys/reboot.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
@@ -23,6 +24,16 @@
 
 #define CORE_ID_MASK GENMASK(2, 0)
 #define CPU_WDT_MAX  5
+
+/* PINRST stays 0, or the pads stay in reset (erratum SMM_TC.006) */
+#define SMM_BASE            0xF0060000UL
+#define SMM_SWRSTCON        (SMM_BASE + 0xC0UL)
+#define SMM_RSTTRIGCTRLA    (SMM_BASE + 0x114UL)
+#define RSTTRIGCTRLA_SW     GENMASK(26, 24)
+#define RSTTRIGCTRLA_PINRST BIT(30)
+#define RSTTRIG_SW_SYSTEM   1U
+#define RSTTRIG_SW_APP      2U
+#define SWRSTCON_SWRSTREQ   BIT(1)
 
 void z_tricore_wdt_boot(void);
 
@@ -50,5 +61,20 @@ void z_tricore_wdt_boot(void)
 
 	if (core == 0U) {
 		wdt_disable(WDTSYS_CTRLA);
+	}
+}
+
+/* Warm reboot is an application reset, cold reboot a system reset */
+void sys_arch_reboot(int type)
+{
+	uint32_t sw = (type == SYS_REBOOT_COLD) ? RSTTRIG_SW_SYSTEM : RSTTRIG_SW_APP;
+	uint32_t val = sys_read32(SMM_RSTTRIGCTRLA);
+
+	val &= ~(RSTTRIGCTRLA_SW | RSTTRIGCTRLA_PINRST);
+	sys_write32(val | FIELD_PREP(RSTTRIGCTRLA_SW, sw), SMM_RSTTRIGCTRLA);
+	sys_write32(SWRSTCON_SWRSTREQ, SMM_SWRSTCON);
+
+	for (;;) {
+		/* The reset takes effect shortly after the request */
 	}
 }
