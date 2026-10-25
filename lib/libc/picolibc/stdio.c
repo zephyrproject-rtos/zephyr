@@ -21,9 +21,6 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 	const char *buf = buffer;
 
 	for (int i = 0; i < nbytes; i++) {
-		if (*(buf + i) == '\n') {
-			(*_stdout_hook)('\r');
-		}
 		(*_stdout_hook)(*(buf + i));
 	}
 	return nbytes;
