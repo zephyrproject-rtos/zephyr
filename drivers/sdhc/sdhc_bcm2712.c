@@ -45,6 +45,7 @@ LOG_MODULE_REGISTER(sdhc_bcm2712, CONFIG_SDHC_LOG_LEVEL);
 #define SDHC_INT_DATA_DONE BIT(1)
 #define SDHC_INT_WRITE_RDY BIT(4)
 #define SDHC_INT_READ_RDY  BIT(5)
+#define SDHC_INT_CARD      BIT(8)
 #define SDHC_INT_RETUNE    BIT(12)
 #define SDHC_INT_ERROR     BIT(15)
 #define SDHC_ERR_TIMEOUT   (BIT(16) | BIT(20))
@@ -168,7 +169,13 @@ struct bcm2712_data {
 	struct k_event irq_event;
 	uint32_t irq_status;
 	uint32_t irq_mask;
+	/* STAT_EN shadow, updated only by set_status_mask() with irq_lock held. */
+	uint32_t status_enable;
 	uint32_t adma_error;
+	sdhc_interrupt_cb_t card_callback;
+	void *card_user_data;
+	bool card_irq_enabled;
+	bool card_irq_pending;
 	bool accepting_irq;
 	bool dma_enabled;
 	/* Fatal states require sdhc_hw_reset() and card reinitialization. */
@@ -519,13 +526,38 @@ static void select_dma_mode(const struct device *dev, bool dma)
 	sdhc_standard_write32(dev, SDHC_REG_HOST_CTRL1, control);
 }
 
+/* Call with irq_lock held; CARD follows the current registration and pending state. */
+static void set_status_mask(const struct device *dev, uint32_t mask)
+{
+	struct bcm2712_data *data = dev->data;
+
+	mask &= ~SDHC_INT_CARD;
+	if (data->card_irq_enabled && !data->card_irq_pending) {
+		mask |= SDHC_INT_CARD;
+	}
+
+	data->status_enable = mask;
+	sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_STAT_EN, mask);
+}
+
 /* All Signal Enable changes and request boundaries are serialized with the ISR. */
 static void set_irq_mask(const struct device *dev, uint32_t mask)
 {
 	struct bcm2712_data *data = dev->data;
+	uint32_t card_enable = 0U;
 
-	data->irq_mask = mask;
-	sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_SIG_EN, mask);
+	data->irq_mask = mask & ~SDHC_INT_CARD;
+	/* Card interrupts remain enabled between requests, unlike completion signals. */
+	if (data->card_irq_enabled && !data->card_irq_pending) {
+		card_enable = SDHC_INT_CARD;
+	}
+
+	/* Like sdhci_enable_sdio_irq_nolock(), gate the level in both enable registers. */
+	if ((data->status_enable & SDHC_INT_CARD) != card_enable) {
+		set_status_mask(dev, data->status_enable);
+	}
+
+	sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_SIG_EN, data->irq_mask | card_enable);
 }
 
 static void stop_irq(const struct device *dev)
@@ -571,11 +603,27 @@ static void __unused bcm2712_isr(const struct device *dev)
 {
 	struct bcm2712_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->irq_lock);
-	uint32_t status = sdhc_standard_read32(dev, SDHC_REG_NORMAL_INT_STAT) & SDHC_STATUS_MASK;
+	sdhc_interrupt_cb_t callback = NULL;
+	void *user_data = NULL;
+	uint32_t status = sdhc_standard_read32(dev, SDHC_REG_NORMAL_INT_STAT);
+
+	if ((status & SDHC_INT_CARD) != 0U && data->card_irq_enabled && !data->card_irq_pending) {
+		/* The ISR callback must defer blocking work and rearm after servicing the card. */
+		data->card_irq_pending = true;
+		set_irq_mask(dev, data->irq_mask);
+		callback = data->card_callback;
+		user_data = data->card_user_data;
+	}
+
+	status &= SDHC_STATUS_MASK;
 
 	if (!data->accepting_irq) {
 		sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_STAT, status);
 		k_spin_unlock(&data->irq_lock, key);
+
+		if (callback != NULL) {
+			callback(dev, SDHC_INT_SDIO, user_data);
+		}
 
 		return;
 	}
@@ -602,6 +650,10 @@ static void __unused bcm2712_isr(const struct device *dev)
 	}
 
 	k_spin_unlock(&data->irq_lock, key);
+	if (callback != NULL) {
+		callback(dev, SDHC_INT_SDIO, user_data);
+	}
+
 	LOG_DBG("IRQ status 0x%08x", status);
 }
 
@@ -626,10 +678,22 @@ static uint32_t read_status(const struct device *dev)
 static int bcm2712_reset(const struct device *dev)
 {
 	struct bcm2712_data *data = dev->data;
+	k_spinlock_key_t key;
 	int ret;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
-	stop_irq(dev);
+
+	key = k_spin_lock(&data->irq_lock);
+
+	data->card_irq_enabled = false;
+	data->card_irq_pending = false;
+	data->card_callback = NULL;
+	data->card_user_data = NULL;
+	data->accepting_irq = false;
+	set_irq_mask(dev, 0U);
+	(void)sdhc_standard_read32(dev, SDHC_REG_NORMAL_INT_SIG_EN);
+	k_spin_unlock(&data->irq_lock, key);
+
 	ret = reset_lines(dev, SDHC_RESET_ALL);
 
 	if (ret == 0) {
@@ -637,8 +701,11 @@ static int bcm2712_reset(const struct device *dev)
 	}
 
 	if (ret == 0) {
-		sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_SIG_EN, 0U);
-		sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_STAT_EN, SDHC_STATUS_MASK);
+		key = k_spin_lock(&data->irq_lock);
+		/* Reset clears the hardware register even when the cached mask is unchanged. */
+		set_status_mask(dev, SDHC_STATUS_MASK);
+		set_irq_mask(dev, 0U);
+		k_spin_unlock(&data->irq_lock, key);
 		sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_STAT, SDHC_STATUS_MASK);
 		sdhc_standard_write32(dev, SDHC_REG_CLOCK_CTRL, SDHC_TIMEOUT_MAX);
 	}
@@ -843,7 +910,8 @@ static int bcm2712_tune(const struct device *dev)
 		.response_type = SD_RSP_TYPE_R1,
 	};
 	int64_t deadline = k_uptime_get() + SDHC_TUNING_TIMEOUT_MS;
-	uint32_t status_enable = sdhc_standard_read32(dev, SDHC_REG_NORMAL_INT_STAT_EN);
+	k_spinlock_key_t key;
+	uint32_t status_enable;
 	uint16_t control;
 	int ret = -EIO;
 
@@ -854,6 +922,10 @@ static int bcm2712_tune(const struct device *dev)
 	if (host->io.clock == 0U || host->io.power_mode != SDHC_POWER_ON) {
 		return -EINVAL;
 	}
+
+	key = k_spin_lock(&host->irq_lock);
+	status_enable = host->status_enable & ~SDHC_INT_CARD;
+	k_spin_unlock(&host->irq_lock, key);
 
 	stop_irq(dev);
 	select_dma_mode(dev, false);
@@ -870,14 +942,13 @@ static int bcm2712_tune(const struct device *dev)
 
 		begin_request(dev);
 		/* Tuning emits Buffer Read Ready, without ordinary command/data completion. */
-		sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_STAT_EN, SDHC_INT_READ_RDY);
+		key = k_spin_lock(&host->irq_lock);
+		set_status_mask(dev, SDHC_INT_READ_RDY);
 
 		if (config->irq_config_func != NULL) {
-			k_spinlock_key_t key = k_spin_lock(&host->irq_lock);
-
 			set_irq_mask(dev, SDHC_INT_READ_RDY);
-			k_spin_unlock(&host->irq_lock, key);
 		}
+		k_spin_unlock(&host->irq_lock, key);
 
 		sdhc_standard_write32(dev, SDHC_REG_BLOCK_SIZE, 64U);
 		sdhc_standard_write32(dev, SDHC_REG_ARGUMENT1, 0U);
@@ -906,7 +977,9 @@ static int bcm2712_tune(const struct device *dev)
 	}
 
 	stop_irq(dev);
-	sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_STAT_EN, status_enable);
+	key = k_spin_lock(&host->irq_lock);
+	set_status_mask(dev, status_enable);
+	k_spin_unlock(&host->irq_lock, key);
 	sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_STAT, SDHC_STATUS_MASK);
 	select_dma_mode(dev, host->dma_enabled);
 	host->tuned = ret == 0;
@@ -1081,7 +1154,10 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd, stru
 	int64_t deadline = k_uptime_get() + cmd->timeout_ms;
 	bool busy = (flags & 3U) == 3U;
 	bool dma = false;
-	bool read = cmd->opcode != SD_WRITE_SINGLE_BLOCK && cmd->opcode != SD_WRITE_MULTIPLE_BLOCK;
+	bool read = cmd->opcode == SDIO_RW_EXTENDED
+			    ? (cmd->arg & BIT(SDIO_CMD_ARG_RW_SHIFT)) == 0U
+			    : cmd->opcode != SD_WRITE_SINGLE_BLOCK &&
+				      cmd->opcode != SD_WRITE_MULTIPLE_BLOCK;
 	uint32_t transfer = 0U;
 	uint32_t inhibit = SDHC_STATE_CMD_INHIBIT;
 	uint32_t command_status;
@@ -1113,7 +1189,6 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd, stru
 			}
 
 			dma = ret == 0;
-
 			if (!dma) {
 				LOG_DBG("CMD%u uses PIO: ADMA2 unavailable (%u blocks of %u)",
 					cmd->opcode, data->blocks, data->block_size);
@@ -1137,7 +1212,8 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd, stru
 				sdhc_standard_write32(dev, SDHC_REG_SDMA_SYS_ADDR_ARG2,
 						      data->blocks);
 				transfer |= SDHC_TRANSFER_AUTO_CMD23;
-			} else {
+			} else if (cmd->opcode == SD_READ_MULTIPLE_BLOCK ||
+				   cmd->opcode == SD_WRITE_MULTIPLE_BLOCK) {
 				transfer |= SDHC_TRANSFER_STOP;
 			}
 		}
@@ -1598,8 +1674,70 @@ static int bcm2712_setup(const struct device *dev)
 	return 0;
 }
 
+static int bcm2712_enable_interrupt(const struct device *dev, sdhc_interrupt_cb_t callback,
+				    int sources, void *user_data)
+{
+	const struct bcm2712_config *config = dev->config;
+	struct bcm2712_data *data = dev->data;
+	k_spinlock_key_t key;
+	bool enable = (sources & SDHC_INT_SDIO) != 0;
+
+	if ((sources & ~SDHC_INT_SDIO) != 0) {
+		return -EINVAL;
+	}
+
+	if (enable && callback == NULL) {
+		return -EINVAL;
+	}
+
+	if (config->irq_config_func == NULL) {
+		return -ENOSYS;
+	}
+
+	key = k_spin_lock(&data->irq_lock);
+	data->card_callback = enable ? callback : NULL;
+	data->card_user_data = enable ? user_data : NULL;
+	data->card_irq_enabled = enable;
+	data->card_irq_pending = false;
+	set_irq_mask(dev, data->irq_mask);
+	k_spin_unlock(&data->irq_lock, key);
+
+	return 0;
+}
+
+static int bcm2712_disable_interrupt(const struct device *dev, int sources)
+{
+	const struct bcm2712_config *config = dev->config;
+	struct bcm2712_data *data = dev->data;
+	k_spinlock_key_t key;
+
+	if ((sources & ~SDHC_INT_SDIO) != 0) {
+		return -EINVAL;
+	}
+
+	if ((sources & SDHC_INT_SDIO) == 0) {
+		return 0;
+	}
+
+	if (config->irq_config_func == NULL) {
+		return -ENOSYS;
+	}
+
+	key = k_spin_lock(&data->irq_lock);
+	data->card_irq_enabled = false;
+	data->card_irq_pending = false;
+	set_irq_mask(dev, data->irq_mask);
+	data->card_callback = NULL;
+	data->card_user_data = NULL;
+	k_spin_unlock(&data->irq_lock, key);
+
+	return 0;
+}
+
 static const DEVICE_API(sdhc, bcm2712_api) = {
 	.reset = bcm2712_reset,
+	.enable_interrupt = bcm2712_enable_interrupt,
+	.disable_interrupt = bcm2712_disable_interrupt,
 	.request = bcm2712_request,
 	.set_io = bcm2712_set_io,
 	.get_card_present = bcm2712_card_present,
