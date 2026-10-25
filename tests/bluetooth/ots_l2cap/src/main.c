@@ -26,6 +26,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#include <zephyr/bluetooth/services/ots.h>
+
+#include "host/att_internal.h"
 #include "host/conn_internal.h"
 #include "host/l2cap_internal.h"
 #include "services/ots/ots_client_internal.h"
@@ -59,10 +62,11 @@ BUILD_ASSERT(CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU > BT_L2CAP_SDU_RX_MTU);
  */
 #define TX_TIMEOUT K_MSEC(100)
 
-/* The PDUs that the Host sent and the test has not taken yet: the test takes
- * each one before the Host has a reason to send another
+/* The PDUs that the Host sent and the test has not taken yet. At most three
+ * wait at once: in the client read case, the ATT request and the responses to
+ * the peer's disconnection and connection requests.
  */
-NET_BUF_POOL_FIXED_DEFINE(sent_pool, 2, LE_ACL_MAX_LEN, 0, NULL);
+NET_BUF_POOL_FIXED_DEFINE(sent_pool, 3, LE_ACL_MAX_LEN, 0, NULL);
 
 /* A channel context, as an OTS instance or an OTS client instance registers it */
 struct test_ctx {
@@ -81,6 +85,9 @@ static struct test_ctx ctxs[CONFIG_BT_OTS_MAX_INST_CNT + OTS_CLIENT_INST_COUNT];
 
 /* The cases use one channel without credits and one with */
 BUILD_ASSERT(ARRAY_SIZE(ctxs) == 2U);
+
+/* The ACL connection the peer established */
+static struct bt_conn *conn;
 
 /* The PDUs that the Host sent */
 static K_FIFO_DEFINE(sent);
@@ -546,6 +553,64 @@ static void connect_chan(uint8_t i, uint16_t credits)
 	net_buf_unref(buf);
 }
 
+#if defined(CONFIG_BT_OTS_CLIENT)
+/* The next signalling PDU with the given code, draining any other PDUs the Host
+ * sends meanwhile (the ATT write of the OACP command, an earlier response). The
+ * signalling header is pulled; *ident is the identifier.
+ */
+static struct net_buf *wait_sig(uint8_t code, uint8_t *ident)
+{
+	while (true) {
+		struct bt_l2cap_sig_hdr *sig;
+		struct bt_l2cap_hdr *hdr;
+		struct net_buf *buf;
+
+		buf = k_fifo_get(&sent, TX_TIMEOUT);
+		zassert_not_null(buf, "Expected signalling code 0x%02x", code);
+
+		hdr = net_buf_pull_mem(buf, sizeof(*hdr));
+		if (sys_le16_to_cpu(hdr->cid) == BT_L2CAP_CID_LE_SIG) {
+			sig = net_buf_pull_mem(buf, sizeof(*sig));
+			if (sig->code == code) {
+				*ident = sig->ident;
+				return buf;
+			}
+		}
+
+		net_buf_unref(buf);
+	}
+}
+
+/* Accept, as the peer, the channel the Host connects as the OTS client. The
+ * response advertises the peer's own receive parameters, which the read does
+ * not use.
+ */
+static void send_conn_rsp(uint8_t ident, uint16_t dcid)
+{
+	struct net_buf *buf;
+
+	buf = sig_cmd(BT_L2CAP_LE_CONN_RSP, ident);
+	net_buf_add_le16(buf, dcid);
+	net_buf_add_le16(buf, PEER_MTU);
+	net_buf_add_le16(buf, PEER_MPS);
+	net_buf_add_le16(buf, 0U);
+	net_buf_add_le16(buf, BT_L2CAP_LE_SUCCESS);
+	recv_sig(buf);
+}
+
+/* The peer answers the ATT Write Request of the OACP command, which leaves the
+ * OTS client free for its next procedure
+ */
+static void recv_att_write_rsp(void)
+{
+	struct net_buf *buf;
+
+	buf = rx_pdu();
+	net_buf_add_u8(buf, BT_ATT_OP_WRITE_RSP);
+	recv_pdu(buf, BT_L2CAP_CID_ATT);
+}
+#endif /* CONFIG_BT_OTS_CLIENT */
+
 /* Two channel contexts, each connected by the peer. The first channel gets no
  * credits from the peer.
  */
@@ -555,7 +620,6 @@ static void *setup(void)
 		.type = BT_ADDR_LE_PUBLIC,
 		.a = { .val = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 } },
 	};
-	struct bt_conn *conn;
 
 	/* Each byte holds the channel index in its top bit and its offset in the
 	 * others, so a byte that reaches the wrong channel or offset shows
@@ -688,3 +752,86 @@ static ZTEST(ots_l2cap, test_tx_failed_next_sdu)
 	connect_chan(1U, 2U);
 	send_waiting_sdu();
 }
+
+#if defined(CONFIG_BT_OTS_CLIENT)
+/* GATT handles a discovery of the peer's OTS would have filled in */
+#define CLIENT_START_HANDLE 0x0010U
+#define CLIENT_END_HANDLE   0x0020U
+#define CLIENT_OACP_HANDLE  0x0015U
+/* The peer's CIDs for the client channel and for the later incoming channel */
+#define CLIENT_PEER_CID   0x0060U
+#define INCOMING_PEER_CID 0x0070U
+
+static int obj_data_read(struct bt_ots_client *inst, struct bt_conn *link, uint32_t offset,
+			 uint32_t len, uint8_t *data, bool is_complete)
+{
+	ARGS_UNUSED(inst, link, offset, len, data, is_complete);
+
+	return BT_OTS_CONTINUE;
+}
+
+/* After an OTS client transfer, the client's channel context is free but keeps
+ * the client's receive callback. The acceptor must not hand that context to an
+ * incoming channel, where a received SDU would run the client receive path with
+ * no transfer in progress.
+ */
+static ZTEST(ots_l2cap, test_client_context_not_reused_on_accept)
+{
+	static struct bt_ots_client otc;
+	static struct bt_ots_client_cb cb = { .obj_data_read = obj_data_read };
+	struct bt_l2cap_le_conn_req *req;
+	struct bt_l2cap_le_conn_rsp *rsp;
+	struct net_buf *buf;
+	uint16_t host_cid;
+	uint16_t result;
+	uint8_t ident;
+
+	(void)memset(&otc, 0, sizeof(otc));
+	otc.start_handle = CLIENT_START_HANDLE;
+	otc.end_handle = CLIENT_END_HANDLE;
+	otc.oacp_handle = CLIENT_OACP_HANDLE;
+	otc.cur_object.size.cur = 1U;
+	otc.cb = &cb;
+	zassert_ok(bt_ots_client_register(&otc));
+
+	/* Start reading an object: the client connects a channel and marks a
+	 * transfer in progress.
+	 */
+	(void)bt_ots_client_read_object_data(&otc, conn);
+
+	buf = wait_sig(BT_L2CAP_LE_CONN_REQ, &ident);
+	req = net_buf_pull_mem(buf, sizeof(*req));
+	zassert_equal(sys_le16_to_cpu(req->psm), OTS_PSM);
+	host_cid = sys_le16_to_cpu(req->scid);
+	net_buf_unref(buf);
+	send_conn_rsp(ident, CLIENT_PEER_CID);
+	recv_att_write_rsp();
+
+	/* Close the channel before any object data: the client ends the transfer
+	 * and frees its context, which keeps the client's receive callback.
+	 */
+	buf = sig_cmd(BT_L2CAP_DISCONN_REQ, PEER_IDENT);
+	net_buf_add_le16(buf, host_cid);
+	net_buf_add_le16(buf, CLIENT_PEER_CID);
+	recv_sig(buf);
+
+	/* A peer now opens the OTS PSM. The acceptor must not reuse the client's
+	 * context; this image has no free server context, so it refuses.
+	 */
+	buf = sig_cmd(BT_L2CAP_LE_CONN_REQ, PEER_IDENT + 1U);
+	net_buf_add_le16(buf, OTS_PSM);
+	net_buf_add_le16(buf, INCOMING_PEER_CID);
+	net_buf_add_le16(buf, PEER_MTU);
+	net_buf_add_le16(buf, PEER_MPS);
+	net_buf_add_le16(buf, 1U);
+	recv_sig(buf);
+
+	buf = wait_sig(BT_L2CAP_LE_CONN_RSP, &ident);
+	zassert_equal(ident, PEER_IDENT + 1U);
+	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
+	result = sys_le16_to_cpu(rsp->result);
+	net_buf_unref(buf);
+
+	zassert_equal(result, BT_L2CAP_LE_ERR_NO_RESOURCES, "accepted with result 0x%04x", result);
+}
+#endif /* CONFIG_BT_OTS_CLIENT */
