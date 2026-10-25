@@ -70,7 +70,7 @@ static void uart_poll_timer_stopped(struct k_timer *timer)
 
 static void uart_poll_timeout(struct k_timer *timer)
 {
-	char c;
+	unsigned char c;
 	const struct device *dev = k_timer_user_data_get(timer);
 
 	while (uart_poll_in(dev, &c) == 0) {
