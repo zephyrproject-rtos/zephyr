@@ -30,6 +30,7 @@
 #include <sys/errno.h>
 
 #include "audio/bap_endpoint.h"
+#include "bap_unicast_client.h"
 #include "cap_initiator.h"
 #include "conn.h"
 #include "expects_util.h"
@@ -336,6 +337,29 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_disa
 		zassert_equal(state, BT_BAP_EP_STATE_QOS_CONFIGURED,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
 	}
+}
+
+static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_disable_next_fail)
+{
+	int err;
+
+	ARRAY_FOR_EACH(fixture->cap_streams, i) {
+		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
+				       BT_BAP_EP_STATE_STREAMING);
+	}
+
+	/* CAP disables the second stream when the first one has been disabled */
+	mock_bap_unicast_client_set_disable_err(&fixture->cap_streams[1].bap_stream, -ENOMEM);
+
+	err = bt_cap_initiator_unicast_audio_stop(&fixture->audio_stop_param);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_complete_cb", 1,
+			   mock_cap_initiator_unicast_stop_complete_cb_fake.call_count);
+
+	err = mock_cap_initiator_unicast_stop_complete_cb_fake.arg0_val;
+	zassert_equal(err, -ENOMEM, "Unexpected err %d", err);
 }
 
 static ZTEST_F(cap_initiator_test_unicast_stop,
