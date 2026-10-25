@@ -138,7 +138,8 @@ except_syscall:
 	sh    	%d5, %d15, 12
 	insert	%d5, %d5, %d15, 6, 16
 	mov.a 	%a4, %d5
-	call  	z_tricore_fatal_error
+	/* Filters the reason raised from user mode */
+	call  	z_tricore_user_except
 
 syscall_return:
 	rslcx

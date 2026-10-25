@@ -64,12 +64,18 @@ config TRICORE_MPU
 	select CPU_HAS_MPU
 	select MPU
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	select ARCH_HAS_USERSPACE
 	select ARCH_HAS_STACK_PROTECTION
+	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select MEM_DOMAIN_HAS_THREAD_LIST if USERSPACE
+	select GEN_PRIV_STACKS if USERSPACE
 	select SRAM_REGION_PERMISSIONS
 	help
 	  Enable the TriCore Memory Protection Unit. The MPU enforces per-region
-	  read, write and execute access permissions and provides a stack guard
-	  with HW_STACK_PROTECTION.
+	  read, write and execute access permissions and provides stack guard and
+	  user-thread isolation when combined with USERSPACE.
 
 if TRICORE_MPU
 

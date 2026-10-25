@@ -7,3 +7,7 @@
 add_subdirectory(core)
 
 zephyr_link_libraries($<TARGET_PROPERTY:linker,no_warn_rwx_segments>)
+
+# The TriCore clang driver does not accept -mno-global-merge (an Arm and
+# AArch64 option); clear the property so USERSPACE builds do not add it.
+set_compiler_property(PROPERTY no_global_merge "")

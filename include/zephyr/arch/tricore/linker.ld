@@ -172,6 +172,16 @@ SECTIONS
 	_image_ram_start = .;
 #include <snippets-ram-sections.ld>
 
+#if defined(CONFIG_USERSPACE)
+#define APP_SHARED_ALIGN . = ALIGN(8);
+#define SMEM_PARTITION_ALIGN MPU_ALIGN
+
+#include <app_smem.ld>
+
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+#endif /* CONFIG_USERSPACE */
+
 	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
 		. = ALIGN(8);

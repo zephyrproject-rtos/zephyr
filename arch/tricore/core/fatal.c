@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/fatal_types.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/arch/tricore/exception.h>
 #if CONFIG_MPU_STACK_GUARD
 #include <zephyr/arch/tricore/mpu.h>
@@ -17,6 +18,14 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #include "kernel_arch_data.h"
+
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_tricore_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_tricore_user_string_nlen),
+};
+#endif /* CONFIG_USERSPACE */
 
 static const char *const z_tricore_trap_cause_str(uint8_t trap_class, uint8_t tin)
 {
@@ -157,6 +166,17 @@ static bool bad_stack_pointer(struct z_tricore_upper_context *upper)
 	}
 #endif
 
+#if CONFIG_USERSPACE
+	/* Check if the user stack pointer is outside of its allowed stack */
+	if ((upper->psw & BIT(11)) == 0) {
+		if (upper->a10 < _current->stack_info.start ||
+		    upper->a10 >= _current->stack_info.start + _current->stack_info.size -
+					  _current->stack_info.delta) {
+			return true;
+		}
+	}
+#endif
+
 	return false;
 }
 
@@ -171,6 +191,32 @@ void z_tricore_fault(uint8_t trap_class, uint8_t tin)
 		upper = UINT_TO_POINTER(((lower->pcxi & 0xF0000) << 12) |
 					((lower->pcxi & 0xFFFF) << 6));
 	}
+
+#ifdef CONFIG_USERSPACE
+	/*
+	 * A fault in the user string walker returns to its fixup, with rslcx
+	 * and rfe: a C return would underflow PSW.CDC.
+	 */
+	bool is_mpu_trap = (trap_class == TRICORE_TRAP_INTERNAL_PROTECTION_TRAPS &&
+			    (tin == TRICORE_TRAP1_MPR || tin == TRICORE_TRAP1_MPW));
+	bool is_bus_dse = (trap_class == TRICORE_TRAP_SYSTEM_BUS_PERIPHERAL_ERRORS &&
+			   tin == TRICORE_TRAP4_DSE);
+
+	if (is_mpu_trap || is_bus_dse) {
+		for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
+			unsigned long start = (unsigned long)exceptions[i].start;
+			unsigned long end = (unsigned long)exceptions[i].end;
+
+			if (lower->a11 >= start && lower->a11 < end) {
+				unsigned long fixup_pc = (unsigned long)exceptions[i].fixup;
+
+				lower->a11 = fixup_pc;
+				__asm volatile("dsync\n\tisync\n\trslcx\n\trfe\n" ::: "memory");
+				CODE_UNREACHABLE;
+			}
+		}
+	}
+#endif /* CONFIG_USERSPACE */
 
 	/* CSA and call-depth traps are reported as stack overflows */
 	if (trap_class == TRICORE_TRAP_CONTEXT_MANAGEMENT &&
@@ -198,4 +244,33 @@ void __weak z_tricore_fault_fcu(void)
 		/* FCU faults are not expected to be recoverable, so just loop here. */
 	}
 #endif
+}
+
+#ifdef CONFIG_USERSPACE
+FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
+{
+	z_tricore_fatal_error(K_ERR_KERNEL_OOPS, ssf_ptr);
+
+	CODE_UNREACHABLE;
+}
+
+#endif
+
+/*
+ * User mode may only raise K_ERR_STACK_CHK_FAIL. Not FUNC_NORETURN, the
+ * fatal handler can return in tests.
+ */
+void z_tricore_user_except(unsigned int reason, const struct arch_esf *ssf)
+{
+#ifdef CONFIG_USERSPACE
+	struct z_tricore_upper_context *upper =
+		UINT_TO_POINTER(((ssf->pcxi & 0xF0000) << 12) |
+				((ssf->pcxi & 0xFFFF) << 6));
+	bool caller_was_user = ((upper->psw >> 10) & 0x3) != 0x2;
+
+	if (caller_was_user && reason != K_ERR_STACK_CHK_FAIL) {
+		reason = K_ERR_KERNEL_OOPS;
+	}
+#endif
+	z_tricore_fatal_error(reason, ssf);
 }
