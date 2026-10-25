@@ -671,17 +671,26 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req
 static void bt_att_sent(struct bt_l2cap_chan *ch)
 {
 	struct bt_att_chan *chan = ATT_CHAN(ch);
-	struct bt_att *att = chan->att;
+	struct bt_att *att;
 	int err;
 
 	LOG_DBG("chan %p", chan);
 
-	atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
+	/* Under the locks of bt_att_send(). Waiting for them can outlast the
+	 * bearer: disconnection clears its connection before freeing it, and
+	 * detaching clears chan->att.
+	 */
+	bt_dev_lock();
+	k_sched_lock();
 
-	if (!att) {
+	if (ch->conn == NULL || chan->att == NULL) {
 		LOG_DBG("Ignore sent on detached ATT chan");
-		return;
+		goto unlock;
 	}
+
+	att = chan->att;
+
+	atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
 
 	/* Process pending requests first since they require a response they
 	 * can only be processed one at time while if other queues were
@@ -694,7 +703,7 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 		if (req != NULL) {
 			err = bt_att_chan_req_send(chan, req);
 			if (err == 0) {
-				return;
+				goto unlock;
 			}
 
 			/* Prepend back to the list as it could not be sent */
@@ -705,11 +714,15 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	/* Process channel queue */
 	err = process_queue(chan, &chan->tx_queue);
 	if (!err) {
-		return;
+		goto unlock;
 	}
 
 	/* Process global queue */
 	(void)process_queue(chan, &att->tx_queue);
+
+unlock:
+	k_sched_unlock();
+	bt_dev_unlock();
 }
 
 static void chan_rebegin_att_timeout(struct bt_att_tx_meta_data *user_data)
@@ -788,6 +801,12 @@ static void att_on_sent_cb(struct bt_att_tx_meta_data *meta)
 		 * SDUs. Call it manually instead.
 		 */
 		bt_att_sent(l2cap_chan);
+
+		/* The bearer may have gone while bt_att_sent() waited */
+		if (l2cap_chan->conn == NULL || att_chan->att == NULL) {
+			LOG_DBG("Bearer detached, dropping ATT cb");
+			return;
+		}
 	}
 
 	switch (op_type) {
