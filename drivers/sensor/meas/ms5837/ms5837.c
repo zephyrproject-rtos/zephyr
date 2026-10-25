@@ -294,12 +294,28 @@ static int ms5837_read_prom(const struct device *dev, const uint8_t cmd,
 	return 0;
 }
 
+static int ms5837_reset(const struct device *dev)
+{
+	const struct ms5837_config *cfg = dev->config;
+	uint8_t cmd = MS5837_CMD_RESET;
+	int err;
+
+	err = i2c_write_dt(&cfg->i2c, &cmd, 1);
+	if (err < 0) {
+		return err;
+	}
+
+	/* Wait for the PROM to reload after reset */
+	k_msleep(3);
+
+	return 0;
+}
+
 static int ms5837_init(const struct device *dev)
 {
 	struct ms5837_data *data = dev->data;
 	const struct ms5837_config *cfg = dev->config;
 	int err;
-	uint8_t cmd;
 
 	data->pressure = 0;
 	data->temperature = 0;
@@ -314,8 +330,7 @@ static int ms5837_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	cmd = MS5837_CMD_RESET;
-	err = i2c_write_dt(&cfg->i2c, &cmd, 1);
+	err = ms5837_reset(dev);
 	if (err < 0) {
 		return err;
 	}
