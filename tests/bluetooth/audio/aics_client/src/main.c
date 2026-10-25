@@ -65,10 +65,14 @@ static void aics_client_discover(struct aics_client_test_suite_fixture *fixture)
 				  BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
 		BT_GATT_CHRC_INIT(BT_UUID_AICS_CONTROL, 0x000DU, BT_GATT_CHRC_WRITE),
 		BT_GATT_CHRC_INIT(BT_UUID_AICS_DESCRIPTION, 0x000FU, BT_GATT_CHRC_READ),
+		/* Not an AICS characteristic, so the client ignores it */
+		BT_GATT_CHRC_INIT(BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678,
+									 0x1234, 0x56789abcdef0)),
+				  0x0011U, BT_GATT_CHRC_READ),
 	};
 	const struct bt_aics_discover_param param = {
 		.start_handle = 0x0001U,
-		.end_handle = 0x000FU,
+		.end_handle = 0x0011U,
 	};
 	struct bt_gatt_discover_params *params;
 	int err;
