@@ -38,7 +38,8 @@ LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_CLIENT_LOG_LEVEL);
 #define OT_CHAN_COUNT (COND_CODE_1(CONFIG_BT_OTS, (CONFIG_BT_OTS_MAX_INST_CNT), (0)) + \
 		       COND_CODE_1(CONFIG_BT_OTS_CLIENT, (OTS_CLIENT_INST_COUNT), (0)))
 
-NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, 1,
+/* A buffer per channel: a channel sends an SDU only once its previous one is sent */
+NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, OT_CHAN_COUNT,
 			  BT_L2CAP_SDU_BUF_SIZE(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
@@ -61,7 +62,13 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 	len = MIN(len, l2cap_ctx->tx.len - l2cap_ctx->tx.len_sent);
 
 	/* Prepare buffer for sending. */
-	buf = net_buf_alloc(&ot_chan_tx_pool, K_FOREVER);
+	buf = net_buf_alloc(&ot_chan_tx_pool, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_ERR("Unable to allocate buffer for CoC data");
+
+		return -ENOMEM;
+	}
+
 	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, &l2cap_ctx->tx.data[l2cap_ctx->tx.len_sent], len);
 
@@ -102,7 +109,18 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
 
 	/* Ongoing TX - sending next chunk. */
 	if (l2cap_ctx->tx.len != l2cap_ctx->tx.len_sent) {
-		ots_l2cap_send(l2cap_ctx);
+		int err;
+
+		err = ots_l2cap_send(l2cap_ctx);
+		if (err != 0) {
+			/* No further sent() callback: end the transfer with the channel */
+			(void)memset(&l2cap_ctx->tx, 0, sizeof(l2cap_ctx->tx));
+
+			err = bt_l2cap_chan_disconnect(chan);
+			if (err != 0) {
+				LOG_WRN("Unable to disconnect channel %p: %d", chan, err);
+			}
+		}
 
 		return;
 	}
@@ -258,6 +276,8 @@ int bt_gatt_ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	err = ots_l2cap_send(l2cap_ctx);
 	if (err) {
 		LOG_ERR("Unable to send data over CoC: %d", err);
+		/* Nothing was queued: leave the context free for another transfer */
+		(void)memset(&l2cap_ctx->tx, 0, sizeof(l2cap_ctx->tx));
 
 		return err;
 	}
