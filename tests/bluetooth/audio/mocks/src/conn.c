@@ -131,8 +131,9 @@ void mock_bt_conn_security_changed(struct bt_conn *conn, bt_security_t level,
 
 bool bt_conn_is_type(const struct bt_conn *conn, enum bt_conn_type type)
 {
-	ARG_UNUSED(conn);
-	ARG_UNUSED(type);
+	if (conn == NULL) {
+		return false;
+	}
 
-	return true;
+	return (conn->info.type & type) != 0;
 }
