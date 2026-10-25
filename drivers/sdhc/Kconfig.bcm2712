@@ -20,8 +20,10 @@ config SDHC_BCM2712
 	  SDR104 multi-block transfers require a card that supports CMD23.
 	  The boot firmware must configure the SD pins before starting Zephyr.
 	  Use interrupts when devicetree provides an interrupt specifier;
-	  otherwise poll for completion. Validated with SD memory cards.
-	  SDIO and eMMC operation is untested.
+	  otherwise poll for completion. Support SD memory and SDIO requests.
+	  Requests are limited to 512 bytes per block, including SDIO.
+	  SDIO card interrupts require a devicetree interrupt specifier.
+	  eMMC-specific modes are not implemented.
 	  Tuning, I/O-transition, Auto CMD23 and controller recovery failures
 	  latch the host until the application calls sdhc_hw_reset() and
 	  reinitializes the card. The SD stack does not reset the host itself.
