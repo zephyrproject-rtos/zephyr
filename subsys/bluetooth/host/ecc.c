@@ -47,6 +47,10 @@ enum {
 	PENDING_PUB_KEY,
 	PENDING_DHKEY,
 
+	/* A completed operation waits for its delivery by ecc_ready() */
+	PUB_KEY_READY,
+	DHKEY_READY,
+
 	/* Total number of flags - must be at the end of the enum */
 	NUM_FLAGS,
 };
@@ -60,6 +64,9 @@ static struct {
 		uint8_t public_key_be[BT_PUB_KEY_LEN];
 		uint8_t dhkey_be[BT_DH_KEY_LEN];
 	};
+
+	/* Result of the completed operation */
+	int err;
 } ecc;
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
@@ -126,11 +133,91 @@ static void set_key_attributes(psa_key_attributes_t *attr)
 	psa_set_key_algorithm(attr, PSA_ALG_ECDH);
 }
 
+static void pub_key_ready(void)
+{
+	struct bt_pub_key_cb *cb, *next;
+	sys_slist_t cbs;
+	int err;
+
+	/* Publish the key, detach the registered callbacks and clear the
+	 * pending state under the host lock, then invoke the callbacks
+	 * without it, so that the lock is never held across application
+	 * callbacks.
+	 */
+	bt_dev_lock();
+
+	if (!atomic_test_and_clear_bit(flags, PUB_KEY_READY)) {
+		/* None generated, or disrupted since: the disruption
+		 * completed the registered callbacks.
+		 */
+		bt_dev_unlock();
+		return;
+	}
+
+	err = ecc.err;
+	if (err == 0) {
+		sys_memcpy_swap(pub_key, ecc.public_key_be, BT_PUB_KEY_COORD_LEN);
+		sys_memcpy_swap(&pub_key[BT_PUB_KEY_COORD_LEN],
+				&ecc.public_key_be[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
+		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+	}
+
+	cbs = pub_key_cb_slist;
+	sys_slist_init(&pub_key_cb_slist);
+	atomic_clear_bit(flags, PENDING_PUB_KEY);
+	bt_dev_unlock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cbs, cb, next, node) {
+		if (cb->func != NULL) {
+			cb->func(err != 0 ? NULL : pub_key);
+		}
+	}
+}
+
+static void dh_key_ready(void)
+{
+	uint8_t dhkey[BT_DH_KEY_LEN];
+	bt_dh_key_cb_t cb;
+	int err;
+
+	/* Take the callback and the result and clear the pending state under
+	 * the host lock, then invoke the callback without it.
+	 */
+	bt_dev_lock();
+
+	if (!atomic_test_and_clear_bit(flags, DHKEY_READY)) {
+		bt_dev_unlock();
+		return;
+	}
+
+	cb = dh_key_cb;
+	dh_key_cb = NULL;
+	err = ecc.err;
+	if (err == 0) {
+		sys_memcpy_swap(dhkey, ecc.dhkey_be, sizeof(ecc.dhkey_be));
+	}
+	atomic_clear_bit(flags, PENDING_DHKEY);
+	bt_dev_unlock();
+
+	if (cb != NULL) {
+		cb(err != 0 ? NULL : dhkey);
+	}
+}
+
+/* SMP continues pairing from the callbacks, so they run on the Bluetooth
+ * workqueue, serialized with the rest of SMP.
+ */
+static void ecc_ready(struct k_work *work)
+{
+	pub_key_ready();
+	dh_key_ready();
+}
+
+static K_WORK_DEFINE(ecc_ready_work, ecc_ready);
+
 static void generate_pub_key(struct k_work *work)
 {
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
-	struct bt_pub_key_cb *cb, *next;
-	sys_slist_t cbs;
 	psa_key_id_t key_id;
 	uint8_t tmp_pub_key_buf[BT_PUB_KEY_LEN + 1];
 	size_t tmp_len;
@@ -181,11 +268,6 @@ destroy:
 	}
 
 done:
-	/* Publish the key, detach the registered callbacks and clear the
-	 * pending state under the host lock, then invoke the callbacks
-	 * without it, so that the lock is never held across application
-	 * callbacks.
-	 */
 	bt_dev_lock();
 
 	if (disruptions != pub_key_disruptions) {
@@ -198,31 +280,17 @@ done:
 		return;
 	}
 
-	if (err == 0) {
-		sys_memcpy_swap(pub_key, ecc.public_key_be, BT_PUB_KEY_COORD_LEN);
-		sys_memcpy_swap(&pub_key[BT_PUB_KEY_COORD_LEN],
-				&ecc.public_key_be[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
-		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
-	}
-
-	cbs = pub_key_cb_slist;
-	sys_slist_init(&pub_key_cb_slist);
-	atomic_clear_bit(flags, PENDING_PUB_KEY);
+	ecc.err = err;
+	atomic_set_bit(flags, PUB_KEY_READY);
 	bt_dev_unlock();
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cbs, cb, next, node) {
-		if (cb->func) {
-			cb->func(err ? NULL : pub_key);
-		}
-	}
+	bt_work_submit(&ecc_ready_work);
 }
 
 K_WORK_DEFINE(pub_key_work, generate_pub_key);
 
 static void generate_dh_key(struct k_work *work)
 {
-	uint8_t dhkey[BT_DH_KEY_LEN];
-	bt_dh_key_cb_t cb;
 	int err;
 
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -266,21 +334,12 @@ destroy:
 	}
 
 exit:
-	/* Take the callback and the result and clear the pending state under
-	 * the host lock, then invoke the callback without it.
-	 */
 	bt_dev_lock();
-	cb = dh_key_cb;
-	dh_key_cb = NULL;
-	if (err == 0) {
-		sys_memcpy_swap(dhkey, ecc.dhkey_be, sizeof(ecc.dhkey_be));
-	}
-	atomic_clear_bit(flags, PENDING_DHKEY);
+	ecc.err = err;
+	atomic_set_bit(flags, DHKEY_READY);
 	bt_dev_unlock();
 
-	if (cb != NULL) {
-		cb(err ? NULL : dhkey);
-	}
+	bt_work_submit(&ecc_ready_work);
 }
 
 K_WORK_DEFINE(dh_key_work, generate_dh_key);
@@ -301,7 +360,7 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 	}
 
 	/* The callback list and the pending state are only accessed under
-	 * the host lock (see generate_pub_key()).
+	 * the host lock (see pub_key_ready()).
 	 */
 	bt_dev_lock();
 
@@ -349,6 +408,7 @@ void bt_pub_key_hci_disrupted(void)
 	cbs = pub_key_cb_slist;
 	sys_slist_init(&pub_key_cb_slist);
 	atomic_clear_bit(flags, PENDING_PUB_KEY);
+	atomic_clear_bit(flags, PUB_KEY_READY);
 	bt_dev_unlock();
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cbs, cb, next, node) {
@@ -375,8 +435,8 @@ int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb)
 {
 	/* The pending state and the callback are only accessed under the
 	 * host lock; the shared key storage is written under it here and
-	 * then owned by the worker until it clears the pending state (see
-	 * generate_dh_key()).
+	 * then owned by the worker and the delivery until the pending state
+	 * is cleared (see dh_key_ready()).
 	 */
 	bt_dev_lock();
 

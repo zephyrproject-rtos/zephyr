@@ -6070,6 +6070,18 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 			return err;
 		}
 
+		if (bt_is_work_thread()) {
+			/* The key is delivered on this thread, so waiting for it here could only
+			 * time out.
+			 */
+			__maybe_unused int mutex_err;
+
+			mutex_err = k_mutex_unlock(&pub_key_gen.lock);
+			__ASSERT_NO_MSG(mutex_err == 0);
+
+			return -EAGAIN;
+		}
+
 		/* 30 seconds is an arbitrary number. Increase if fails earlier on certain
 		 * platforms.
 		 */

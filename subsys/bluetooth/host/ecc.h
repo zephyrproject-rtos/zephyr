@@ -30,6 +30,10 @@ struct bt_pub_key_cb {
 	 *  available (either because of a failure to read it or because it is
 	 *  being regenerated).
 	 *
+	 *  Called on the Bluetooth workqueue. bt_pub_key_hci_disrupted() calls
+	 *  it in its caller's context instead, and so does bt_pub_key_gen()
+	 *  with CONFIG_BT_USE_DEBUG_KEYS.
+	 *
 	 *  @param key The local public key, or NULL in case of no key.
 	 */
 	void (*func)(const uint8_t key[BT_PUB_KEY_LEN]);
@@ -91,7 +95,8 @@ const uint8_t *bt_pub_key_get(void);
 /*  @typedef bt_dh_key_cb_t
  *  @brief Callback type for DH Key calculation.
  *
- *  Used to notify of the calculated DH Key.
+ *  Used to notify of the calculated DH Key. Called on the Bluetooth
+ *  workqueue.
  *
  *  @param key The DH Key, or NULL in case of failure.
  */
