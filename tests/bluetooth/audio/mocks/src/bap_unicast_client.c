@@ -28,12 +28,15 @@
 
 #include "audio/bap_endpoint.h"
 #include "audio/bap_iso.h"
+#include "bap_unicast_client.h"
 #include "conn.h"
 
 LOG_MODULE_REGISTER(bt_bap_unicast_client, CONFIG_BT_BAP_UNICAST_CLIENT_LOG_LEVEL);
 
 static sys_slist_t unicast_client_cbs = SYS_SLIST_STATIC_INIT(&unicast_client_cbs);
 static struct bt_bap_unicast_group bap_unicast_group;
+static const struct bt_bap_stream *disable_err_stream;
+static int disable_err;
 
 static struct unicast_client {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -44,6 +47,12 @@ static struct unicast_client {
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 	struct bt_conn *conn;
 } uni_cli_insts[CONFIG_BT_MAX_CONN];
+
+void mock_bap_unicast_client_set_disable_err(const struct bt_bap_stream *stream, int err)
+{
+	disable_err_stream = stream;
+	disable_err = err;
+}
 
 bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep)
 {
@@ -390,6 +399,12 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 		break;
 	default:
 		return -EINVAL;
+	}
+
+	if (stream == disable_err_stream) {
+		disable_err_stream = NULL;
+
+		return disable_err;
 	}
 
 	/* Even though the ASCS spec does not have the disabling state for sink ASEs, the unicast
