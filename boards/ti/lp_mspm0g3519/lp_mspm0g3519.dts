@@ -103,6 +103,23 @@
 		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_12)>;
 		input-enable;
 	};
+
+	/* BoosterPack I2C: pin 9 (SCL) is PC2 and pin 10 (SDA) is PC3, I2C2 function (PINCM76,
+	 * PINCM77, function 2). SoC pinctrl data has no I2C2 groups for these pins.
+	 */
+	/omit-if-no-ref/ i2c2_scl_pc2: i2c2_scl_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	/omit-if-no-ref/ i2c2_sda_pc3: i2c2_sda_pc3 {
+		pinmux = <MSP_PINMUX(77, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
 };
 
 &gpioa {
