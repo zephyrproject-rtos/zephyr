@@ -8,8 +8,19 @@ description: |
   Infineon AURIX port as GPIO controller.
 
   The node is a child of the pin controller node and covers the register
-  block of one port, with at most 16 pins (ngpios). Interrupts are not
-  supported.
+  block of one port, with at most 16 pins (ngpios).
+
+  Pin interrupts use the external request unit (ERU) of the SCU. Each entry
+  of infineon,eru-inputs routes one pin of the port to an ERU input channel
+  and an ERU output channel; entry i uses interrupt i of the node, which is
+  the service request of that output channel (SRC_SCUERUy). The ERU detects
+  edges only. Example for P02.1, ERU input channel 2 input B (1), output
+  channel 2 on TC3x (SRC_SCUERU2 is service request 546):
+
+    &p02 {
+            interrupts = <546 30>;
+            infineon,eru-inputs = <1 2 1 2>;
+    };
 
 compatible: "infineon,aurix-gpio"
 
@@ -21,6 +32,14 @@ properties:
 
   "#gpio-cells":
     const: 2
+
+  infineon,eru-inputs:
+    type: array
+    description: |
+      Four cells per pin with an interrupt: pin, ERU input channel, request
+      input of the channel (0 is input A) and ERU output channel. The input
+      for a pin is listed in the device data sheet (SCU_E_REQ signals) and
+      the SoC user manual appendix.
 
 gpio-cells:
   - pin
