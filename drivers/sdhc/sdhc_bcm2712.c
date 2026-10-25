@@ -153,6 +153,7 @@ struct bcm2712_config {
 	bool sdr50;
 	bool sdr104;
 	bool no_1_8_v;
+	bool non_removable;
 	void (*irq_config_func)(const struct device *dev);
 	uintptr_t cfg_addr;
 	size_t cfg_size;
@@ -235,18 +236,24 @@ static int bcm2712_power(const struct device *dev, bool on)
 	if (on == data->powered) {
 		return 0;
 	}
+
 	if (on) {
-		ret = regulator_set_voltage(config->vqmmc, 3300000, 3300000);
+		ret = config->vqmmc != NULL ? regulator_set_voltage(config->vqmmc, 3300000, 3300000)
+					    : 0;
+
 		if (ret != 0) {
 			return ret;
 		}
+
 		ret = regulator_enable(config->vmmc);
 	} else {
 		ret = regulator_disable(config->vmmc);
 	}
+
 	if (ret == 0) {
 		data->powered = on;
 	}
+
 	return ret;
 }
 
@@ -271,8 +278,19 @@ static void bcm2712_set_timing(const struct device *dev, enum sdhc_timing_mode t
 static int bcm2712_card_present(const struct device *dev)
 {
 	const struct bcm2712_config *config = dev->config;
+	int ret;
 
-	return gpio_pin_get_dt(&config->cd);
+	if (config->non_removable) {
+		return 1;
+	}
+
+	ret = gpio_pin_get_dt(&config->cd);
+
+	if (ret < 0) {
+		LOG_ERR("Card detection failed: %d", ret);
+	}
+
+	return ret > 0 ? 1 : 0;
 }
 
 static int bcm2712_dma_map(const struct device *dev, const void *buffer, size_t len,
@@ -1475,7 +1493,7 @@ static int bcm2712_set_io(const struct device *dev, struct sdhc_io *io)
 		ret = bcm2712_power(dev, io->power_mode == SDHC_POWER_ON);
 	}
 
-	if (ret == 0 && io->power_mode == SDHC_POWER_ON &&
+	if (ret == 0 && config->vqmmc != NULL && io->power_mode == SDHC_POWER_ON &&
 	    (power_on || io->signal_voltage != host->io.signal_voltage)) {
 		int32_t voltage = io->signal_voltage == SD_VOL_1_8_V ? 1800000 : 3300000;
 		uint16_t control2;
@@ -1502,6 +1520,8 @@ static int bcm2712_set_io(const struct device *dev, struct sdhc_io *io)
 		if (ret == 0) {
 			host->io.signal_voltage = io->signal_voltage;
 		}
+	} else if (ret == 0 && io->power_mode == SDHC_POWER_ON && config->vqmmc == NULL) {
+		host->io.signal_voltage = SD_VOL_3_3_V;
 	}
 
 	if (ret == 0) {
@@ -1595,7 +1615,10 @@ static int bcm2712_setup(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* device_map() enables direct mapping only when the kernel supports it. */
+	/*
+	 * sdhc_standard_host_init() forces K_MEM_DIRECT_MAP. Map here so device_map()
+	 * selects direct mapping only when configured, then reuse the property helpers.
+	 */
 	DEVICE_MMIO_NAMED_MAP(dev, sdhc_base, K_MEM_CACHE_NONE);
 	sdhc_common_dt_props_init(props, &config->host.common);
 	sdhc_standard_capabilities_init(dev);
@@ -1603,11 +1626,12 @@ static int bcm2712_setup(const struct device *dev)
 	k_event_init(&data->irq_event);
 	sdr50 = config->sdr50 && props->host_caps.sdr50_support != 0U;
 	sdr104 = config->sdr104 && props->host_caps.sdr104_support != 0U;
-	data->uhs_enabled =
-		(sdr50 || sdr104) && !config->no_1_8_v && config->host.common.bus_width == 4U &&
-		props->host_caps.vol_180_support != 0U && props->host_caps.retuning_mode != 3U &&
-		regulator_is_supported_voltage(config->vqmmc, 1800000, 1800000) &&
-		regulator_is_supported_voltage(config->vqmmc, 3300000, 3300000);
+	data->uhs_enabled = config->vqmmc != NULL && (sdr50 || sdr104) && !config->no_1_8_v &&
+			    config->host.common.bus_width == 4U &&
+			    props->host_caps.vol_180_support != 0U &&
+			    props->host_caps.retuning_mode != 3U &&
+			    regulator_is_supported_voltage(config->vqmmc, 1800000, 1800000) &&
+			    regulator_is_supported_voltage(config->vqmmc, 3300000, 3300000);
 
 	if (data->uhs_enabled && config->cfg_size < CFG_MAX_50MHZ_MODE + sizeof(uint32_t)) {
 		return -EINVAL;
@@ -1753,15 +1777,22 @@ static int bcm2712_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->clock) || !device_is_ready(config->vmmc) ||
-	    !device_is_ready(config->vqmmc) || !gpio_is_ready_dt(&config->cd)) {
+	    (config->vqmmc != NULL && !device_is_ready(config->vqmmc)) ||
+	    (!config->non_removable && !gpio_is_ready_dt(&config->cd))) {
 		return -ENODEV;
 	}
-	/* shortcut: retain SD-boot pin setup; add pinctrl for other boot paths. */
-	ret = gpio_pin_configure_dt(&config->cd, GPIO_INPUT);
-	if (ret != 0) {
-		return ret;
+
+	/* Hosts without a pinctrl state retain the boot firmware's pin setup. */
+	if (!config->non_removable) {
+		ret = gpio_pin_configure_dt(&config->cd, GPIO_INPUT);
+
+		if (ret != 0) {
+			return ret;
+		}
 	}
+
 	device_map(&data->cfg_base, config->cfg_addr, config->cfg_size, K_MEM_CACHE_NONE);
+
 	return bcm2712_setup(dev);
 }
 
@@ -1775,26 +1806,27 @@ static int bcm2712_init(const struct device *dev)
 	}
 
 /* clang-format off */
-#define BCM2712_DEFINE(n) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts), (BCM2712_IRQ_CONFIG(n)), ()) \
-	static struct bcm2712_data bcm2712_data_##n; \
-	static const struct bcm2712_config bcm2712_config_##n = { \
-		.host = SDHC_STANDARD_COMMON_CONFIG_DT_INST_INIT(n, NULL), \
-		.irq_config_func = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts), \
-					     (bcm2712_irq_config_##n), (NULL)), \
-		.sdr50 = DT_INST_PROP(n, sd_uhs_sdr50), \
-		.sdr104 = DT_INST_PROP(n, sd_uhs_sdr104), \
-		.no_1_8_v = DT_INST_PROP(n, no_1_8_v), \
-		.clock_rate = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency), \
-		.adma2 = IS_ENABLED(CONFIG_SDHC_BCM2712_DMA) ? &bcm2712_adma2 : NULL, \
-		.cfg_addr = DT_INST_REG_ADDR_BY_NAME(n, cfg), \
-		.cfg_size = DT_INST_REG_SIZE_BY_NAME(n, cfg), \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
-		.vmmc = DEVICE_DT_GET(DT_INST_PHANDLE(n, vmmc_supply)), \
-		.vqmmc = DEVICE_DT_GET(DT_INST_PHANDLE(n, vqmmc_supply)), \
-		.cd = GPIO_DT_SPEC_INST_GET(n, cd_gpios), \
-	}; \
-	DEVICE_DT_INST_DEFINE(n, bcm2712_init, NULL, &bcm2712_data_##n, &bcm2712_config_##n, \
+#define BCM2712_DEFINE(n)                                                                      \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts), (BCM2712_IRQ_CONFIG(n)), ())         \
+	static struct bcm2712_data bcm2712_data_##n;                                           \
+	static const struct bcm2712_config bcm2712_config_##n = {                              \
+		.host = SDHC_STANDARD_COMMON_CONFIG_DT_INST_INIT(n, NULL),                     \
+		.irq_config_func = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts),           \
+					     (bcm2712_irq_config_##n), (NULL)),                \
+		.sdr50 = DT_INST_PROP(n, sd_uhs_sdr50),                                        \
+		.sdr104 = DT_INST_PROP(n, sd_uhs_sdr104),                                      \
+		.no_1_8_v = DT_INST_PROP(n, no_1_8_v),                                         \
+		.non_removable = DT_INST_PROP(n, non_removable),                               \
+		.clock_rate = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),             \
+		.adma2 = IS_ENABLED(CONFIG_SDHC_BCM2712_DMA) ? &bcm2712_adma2 : NULL,          \
+		.cfg_addr = DT_INST_REG_ADDR_BY_NAME(n, cfg),                                  \
+		.cfg_size = DT_INST_REG_SIZE_BY_NAME(n, cfg),                                  \
+		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.vmmc = DEVICE_DT_GET(DT_INST_PHANDLE(n, vmmc_supply)),                        \
+		.vqmmc = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, vqmmc_supply)),              \
+		.cd = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                              \
+	};                                                                                     \
+	DEVICE_DT_INST_DEFINE(n, bcm2712_init, NULL, &bcm2712_data_##n, &bcm2712_config_##n,   \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &bcm2712_api);
 /* clang-format on */
 
