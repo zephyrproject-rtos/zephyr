@@ -39,17 +39,15 @@ struct gpio_stellaris_runtime {
 #define GPIO_RW_MASK_ADDR(base, offset, mask)		 \
 	(GPIO_REG_ADDR(base, offset) | (mask << 2))
 
-enum gpio_regs {
-	GPIO_DATA_OFFSET = 0x000,
-	GPIO_DIR_OFFSET = 0x400,
-	GPIO_DEN_OFFSET = 0x51C,
-	GPIO_IS_OFFSET = 0x404,
-	GPIO_IBE_OFFSET = 0x408,
-	GPIO_IEV_OFFSET = 0x40C,
-	GPIO_IM_OFFSET = 0x410,
-	GPIO_MIS_OFFSET = 0x418,
-	GPIO_ICR_OFFSET = 0x41C,
-};
+#define GPIO_DATA_OFFSET 0x000U
+#define GPIO_DIR_OFFSET  0x400U
+#define GPIO_DEN_OFFSET  0x51CU
+#define GPIO_IS_OFFSET   0x404U
+#define GPIO_IBE_OFFSET  0x408U
+#define GPIO_IEV_OFFSET  0x40CU
+#define GPIO_IM_OFFSET   0x410U
+#define GPIO_MIS_OFFSET  0x418U
+#define GPIO_ICR_OFFSET  0x41CU
 
 static void gpio_stellaris_isr(const struct device *dev)
 {
