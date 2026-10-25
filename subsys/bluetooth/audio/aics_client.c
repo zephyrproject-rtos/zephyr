@@ -602,7 +602,7 @@ static int store_attr_handle_and_subscribe(struct bt_aics_client *client_inst, s
 			atomic_set_bit(client_inst->flags, BT_AICS_CLIENT_FLAG_DESC_WRITABLE);
 		}
 	} else {
-		__ASSERT(false, "Unexpected UUID %s discovered", bt_uuid_str(chrc->uuid));
+		LOG_DBG("Unknown characteristic %s", bt_uuid_str(chrc->uuid));
 	}
 
 	if (sub_params != NULL) {
