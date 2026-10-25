@@ -242,10 +242,11 @@ static uint8_t internal_read_volume_offset_state_cb(struct bt_conn *conn, uint8_
 	}
 
 	if (cb_err) {
+		inst->cp_retried = false;
 		inst->busy = false;
 
 		if (inst->cb && inst->cb->set_offset) {
-			inst->cb->set_offset(&inst->vocs, err);
+			inst->cb->set_offset(&inst->vocs, cb_err);
 		}
 	}
 
