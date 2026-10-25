@@ -21,6 +21,24 @@ int arch_coprocessors_disable(struct k_thread *thread)
 	return -ENOTSUP;
 }
 
+#if defined(CONFIG_FPU_SHARING)
+/* The FPU state lives in the data registers and PSW */
+int arch_float_disable(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+
+	return -ENOTSUP;
+}
+
+int arch_float_enable(struct k_thread *thread, unsigned int options)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_FPU_SHARING */
+
 void z_tricore_reclaim_csa(struct k_thread *thread)
 {
 	uint32_t pcxi = thread->callee_saved.pcxi & 0xFFFFF;
