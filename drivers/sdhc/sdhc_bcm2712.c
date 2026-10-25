@@ -20,18 +20,17 @@
 
 LOG_MODULE_REGISTER(sdhc_bcm2712, CONFIG_SDHC_LOG_LEVEL);
 
-#define SDHC_STATE_CMD_INHIBIT BIT(0)
-#define SDHC_STATE_DAT_INHIBIT BIT(1)
-#define SDHC_STATE_CARD        BIT(16)
+#define SDHC_STATE_CMD_INHIBIT  BIT(0)
+#define SDHC_STATE_DAT_INHIBIT  BIT(1)
 #define SDHC_STATE_WRITE_ENABLE BIT(10)
 #define SDHC_STATE_READ_ENABLE  BIT(11)
-#define SDHC_STATE_DAT0        BIT(20)
+#define SDHC_STATE_DAT0         BIT(20)
 
-#define SDHC_HOST_WIDTH4    BIT(1)
+#define SDHC_HOST_WIDTH4     BIT(1)
 #define SDHC_HOST_HIGH_SPEED BIT(2)
-#define SDHC_HOST_DMA_MASK  GENMASK(4, 3)
-#define SDHC_HOST_WIDTH8    BIT(5)
-#define SDHC_POWER_ON_330   (0x0fU << 8)
+#define SDHC_HOST_DMA_MASK   GENMASK(4, 3)
+#define SDHC_HOST_WIDTH8     BIT(5)
+#define SDHC_POWER_ON_330    (0x0fU << 8)
 
 #define SDHC_CLOCK_INTERNAL BIT(0)
 #define SDHC_CLOCK_STABLE   BIT(1)
@@ -42,32 +41,34 @@ LOG_MODULE_REGISTER(sdhc_bcm2712, CONFIG_SDHC_LOG_LEVEL);
 #define SDHC_RESET_ALL      BIT(24)
 #define SDHC_RESET_CMD_DATA (BIT(25) | BIT(26))
 
-#define SDHC_INT_CMD_DONE   BIT(0)
-#define SDHC_INT_DATA_DONE  BIT(1)
-#define SDHC_INT_WRITE_RDY  BIT(4)
-#define SDHC_INT_READ_RDY   BIT(5)
-#define SDHC_INT_RETUNE     BIT(12)
-#define SDHC_INT_ERROR      BIT(15)
-#define SDHC_ERR_TIMEOUT    (BIT(16) | BIT(20))
-#define SDHC_ERR_CRC        (BIT(17) | BIT(21))
-#define SDHC_ERR_AUTO_CMD   BIT(24)
-#define SDHC_ERR_MASK       GENMASK(31, 16)
-#define SDHC_STATUS_MASK (SDHC_INT_CMD_DONE | SDHC_INT_DATA_DONE | SDHC_INT_WRITE_RDY | \
-			  SDHC_INT_READ_RDY | SDHC_INT_RETUNE | SDHC_INT_ERROR | SDHC_ERR_MASK)
+#define SDHC_INT_CMD_DONE  BIT(0)
+#define SDHC_INT_DATA_DONE BIT(1)
+#define SDHC_INT_WRITE_RDY BIT(4)
+#define SDHC_INT_READ_RDY  BIT(5)
+#define SDHC_INT_RETUNE    BIT(12)
+#define SDHC_INT_ERROR     BIT(15)
+#define SDHC_ERR_TIMEOUT   (BIT(16) | BIT(20))
+#define SDHC_ERR_CRC       (BIT(17) | BIT(21))
+#define SDHC_ERR_AUTO_CMD  BIT(24)
+#define SDHC_ERR_MASK      GENMASK(31, 16)
+/* Normal/error status and enables are accessed together as 32-bit words. */
+#define SDHC_STATUS_MASK                                                                           \
+	(SDHC_INT_CMD_DONE | SDHC_INT_DATA_DONE | SDHC_INT_WRITE_RDY | SDHC_INT_READ_RDY |         \
+	 SDHC_INT_RETUNE | SDHC_INT_ERROR | SDHC_ERR_MASK)
 
-#define SDHC_TRANSFER_COUNT BIT(1)
-#define SDHC_TRANSFER_STOP  BIT(2)
+#define SDHC_TRANSFER_COUNT      BIT(1)
+#define SDHC_TRANSFER_STOP       BIT(2)
 #define SDHC_TRANSFER_AUTO_CMD23 BIT(3)
-#define SDHC_TRANSFER_READ  BIT(4)
-#define SDHC_TRANSFER_MULTI BIT(5)
-#define SDHC_COMMAND_CRC    BIT(3)
-#define SDHC_COMMAND_INDEX  BIT(4)
-#define SDHC_COMMAND_DATA   BIT(5)
-#define SDHC_COMMAND_ABORT  (3U << 6)
+#define SDHC_TRANSFER_READ       BIT(4)
+#define SDHC_TRANSFER_MULTI      BIT(5)
+#define SDHC_COMMAND_CRC         BIT(3)
+#define SDHC_COMMAND_INDEX       BIT(4)
+#define SDHC_COMMAND_DATA        BIT(5)
+#define SDHC_COMMAND_ABORT       (3U << 6)
 
 #define SDHC_HOST_DMA_ADMA2    BIT(4)
 #define SDHC_HOST_DMA_ADMA2_64 GENMASK(4, 3)
-#define SDHC_TRANSFER_DMA_EN  BIT(0)
+#define SDHC_TRANSFER_DMA_EN   BIT(0)
 
 #define SDHC_ADMA2_MAX_LENGTH 65536U
 #define SDHC_ADMA2_ATTR_VALID BIT(0)
@@ -119,25 +120,25 @@ struct sdhc_adma2_data {
 	bool active;
 };
 
-#define CFG_CTRL             0x00U
-#define CFG_CARD_TEST_ENABLE BIT(31)
-#define CFG_CARD_TEST_LEVEL  BIT(30)
-#define CFG_PIN_SELECT       0x44U
-#define CFG_PIN_MASK         GENMASK(1, 0)
-#define CFG_PIN_SD           BIT(1)
-#define CFG_CQ_CAPABILITY    0x4cU
-#define CFG_TIMER_MULTIPLIER (3U << 12)
-#define CFG_MAX_50MHZ_MODE    0x1acU
+#define CFG_CTRL               0x00U
+#define CFG_CARD_TEST_ENABLE   BIT(31)
+#define CFG_CARD_TEST_LEVEL    BIT(30)
+#define CFG_PIN_SELECT         0x44U
+#define CFG_PIN_MASK           GENMASK(1, 0)
+#define CFG_PIN_SD             BIT(1)
+#define CFG_CQ_CAPABILITY      0x4cU
+#define CFG_TIMER_MULTIPLIER   (3U << 12)
+#define CFG_MAX_50MHZ_MODE     0x1acU
 #define CFG_MAX_50MHZ_OVERRIDE BIT(31)
 #define CFG_MAX_50MHZ_ENABLE   BIT(0)
-#define HOST_CTRL2_UHS_MASK   GENMASK(2, 0)
-#define HOST_CTRL2_UHS_SDR25  BIT(0)
-#define HOST_CTRL2_UHS_SDR50  BIT(1)
-#define HOST_CTRL2_UHS_SDR104 GENMASK(1, 0)
-#define HOST_CTRL2_V18        BIT(3)
+#define HOST_CTRL2_UHS_MASK    GENMASK(2, 0)
+#define HOST_CTRL2_UHS_SDR25   BIT(0)
+#define HOST_CTRL2_UHS_SDR50   BIT(1)
+#define HOST_CTRL2_UHS_SDR104  GENMASK(1, 0)
+#define HOST_CTRL2_V18         BIT(3)
 #define HOST_CTRL2_EXEC_TUNING BIT(6)
-#define HOST_CTRL2_TUNED      BIT(7)
-#define HOST_CTRL2_PRESET     BIT(15)
+#define HOST_CTRL2_TUNED       BIT(7)
+#define HOST_CTRL2_PRESET      BIT(15)
 #define SDHC_TUNING_TIMEOUT_MS 150
 #define SDHC_TUNING_ATTEMPTS   40U
 
@@ -169,6 +170,7 @@ struct bcm2712_data {
 	uint32_t adma_error;
 	bool accepting_irq;
 	bool dma_enabled;
+	/* Fatal states require sdhc_hw_reset() and card reinitialization. */
 	bool failed;
 	struct sdhc_adma2_data adma2;
 	mm_reg_t cfg_base;
@@ -211,7 +213,7 @@ static int bcm2712_prepare(const struct device *dev)
 	value &= ~CFG_CARD_TEST_LEVEL;
 	value |= CFG_CARD_TEST_ENABLE;
 	sys_write32(value, data->cfg_base + CFG_CTRL);
-	sys_write32(CFG_TIMER_MULTIPLIER | (rate / 1000000U),
+	sys_write32(CFG_TIMER_MULTIPLIER | MAX(rate / 1000000U, 1U),
 		    data->cfg_base + CFG_CQ_CAPABILITY);
 	return 0;
 }
@@ -309,8 +311,8 @@ static int sync_buffer(void *buffer, size_t len, bool read)
 		return 0;
 	}
 
-	return read ? sys_cache_data_flush_and_invd_range(buffer, len) :
-		      sys_cache_data_flush_range(buffer, len);
+	return read ? sys_cache_data_flush_and_invd_range(buffer, len)
+		    : sys_cache_data_flush_range(buffer, len);
 }
 
 static int invalidate_buffer(void *buffer, size_t len)
@@ -336,12 +338,12 @@ static int map_buffer(const struct device *dev, const struct sdhc_adma2_config *
 }
 
 static int bcm2712_adma2_prepare(const struct device *dev, const struct sdhc_adma2_config *config,
-		       struct sdhc_adma2_data *dma, struct sdhc_data *data, bool read)
+				 struct sdhc_adma2_data *dma, struct sdhc_data *data, bool read)
 {
 	size_t len = (size_t)data->blocks * data->block_size;
 	size_t line = MAX(4U, sys_cache_data_line_size_get());
-	size_t stride = config->dma64 ? sizeof(struct sdhc_adma2_desc64) :
-					     sizeof(struct sdhc_adma2_desc);
+	size_t stride =
+		config->dma64 ? sizeof(struct sdhc_adma2_desc64) : sizeof(struct sdhc_adma2_desc);
 	size_t count = DIV_ROUND_UP(len, SDHC_ADMA2_MAX_LENGTH);
 	void *buffer = data->data;
 	uint64_t address;
@@ -429,8 +431,8 @@ static int bcm2712_adma2_prepare(const struct device *dev, const struct sdhc_adm
 	dma->len = len;
 	dma->read = read;
 	dma->active = true;
-	LOG_DBG("ADMA2 %s: %zu bytes, %s, %zu descriptors, %u-bit", read ? "read" : "write",
-		len, dma->bounced ? "bounce" : "direct", count, config->dma64 ? 64U : 32U);
+	LOG_DBG("ADMA2 %s: %zu bytes, %s, %zu descriptors, %u-bit", read ? "read" : "write", len,
+		dma->bounced ? "bounce" : "direct", count, config->dma64 ? 64U : 32U);
 
 	return 0;
 }
@@ -556,8 +558,8 @@ static void begin_request(const struct device *dev)
 
 	if (config->irq_config_func != NULL) {
 		data->accepting_irq = true;
-		set_irq_mask(dev, SDHC_INT_CMD_DONE | SDHC_INT_DATA_DONE |
-			     SDHC_INT_ERROR | SDHC_ERR_MASK | SDHC_INT_RETUNE);
+		set_irq_mask(dev, SDHC_INT_CMD_DONE | SDHC_INT_DATA_DONE | SDHC_INT_ERROR |
+					  SDHC_ERR_MASK | SDHC_INT_RETUNE);
 	}
 
 	k_spin_unlock(&data->irq_lock, key);
@@ -580,8 +582,8 @@ static void __unused bcm2712_isr(const struct device *dev)
 
 	if (status != 0U) {
 		/* The thread services the FIFO before rearming either ready signal. */
-		set_irq_mask(dev, data->irq_mask &
-			     ~(status & (SDHC_INT_READ_RDY | SDHC_INT_WRITE_RDY)));
+		set_irq_mask(dev,
+			     data->irq_mask & ~(status & (SDHC_INT_READ_RDY | SDHC_INT_WRITE_RDY)));
 		data->irq_status |= status;
 
 		if ((status & SDHC_INT_RETUNE) != 0U) {
@@ -649,12 +651,10 @@ static int bcm2712_reset(const struct device *dev)
 		data->app_cmd = false;
 		atomic_clear(&data->retune_needed);
 		data->retune_deadline = 0;
-		data->failed = ret != 0;
 		select_dma_mode(dev, data->dma_enabled);
-	} else {
-		data->failed = true;
 	}
 
+	data->failed = ret != 0;
 	k_mutex_unlock(&data->lock);
 
 	return ret;
@@ -683,9 +683,9 @@ static int wait_status(const struct device *dev, uint32_t wanted, int64_t deadli
 
 	if (config->irq_config_func != NULL) {
 		int64_t remaining = deadline - k_uptime_get();
-		uint32_t events = k_event_wait_safe(&data->irq_event,
-			wanted | SDHC_INT_ERROR | SDHC_ERR_MASK, false,
-			remaining > 0 ? K_MSEC(remaining) : K_NO_WAIT);
+		uint32_t events =
+			k_event_wait_safe(&data->irq_event, wanted | SDHC_INT_ERROR | SDHC_ERR_MASK,
+					  false, remaining > 0 ? K_MSEC(remaining) : K_NO_WAIT);
 
 		status = read_status(dev);
 
@@ -695,7 +695,7 @@ static int wait_status(const struct device *dev, uint32_t wanted, int64_t deadli
 
 		ret = status_error(status);
 
-		return ret != 0 ? ret : ((events & wanted) != 0U ? 0 : -ETIMEDOUT);
+		return ret != 0 ? ret : (((events | status) & wanted) != 0U ? 0 : -ETIMEDOUT);
 	}
 
 	while (true) {
@@ -827,8 +827,8 @@ static int command_flags(const struct sdhc_command *cmd, bool has_data)
 static bool bcm2712_timing_requires_tuning(const struct bcm2712_data *host)
 {
 	return host->io.timing == SDHC_TIMING_SDR104 ||
-		(host->io.timing == SDHC_TIMING_SDR50 &&
-		 host->host.props.host_caps.sdr50_needs_tuning != 0U);
+	       (host->io.timing == SDHC_TIMING_SDR50 &&
+		host->host.props.host_caps.sdr50_needs_tuning != 0U);
 }
 
 /* Called with the request mutex held; SDHCI consumes the tuning block internally. */
@@ -881,9 +881,8 @@ static int bcm2712_tune(const struct device *dev)
 		sdhc_standard_write32(dev, SDHC_REG_ARGUMENT1, 0U);
 		sdhc_standard_write32(dev, SDHC_REG_TRANSFER_MODE,
 				      ((uint32_t)command_flags(&cmd, true) << 16) |
-				      SDHC_TRANSFER_READ);
-		ret = wait_status(dev, SDHC_INT_READ_RDY, MIN(deadline, k_uptime_get() + 50),
-				  NULL);
+					      SDHC_TRANSFER_READ);
+		ret = wait_status(dev, SDHC_INT_READ_RDY, MIN(deadline, k_uptime_get() + 50), NULL);
 		stop_irq(dev);
 
 		if (ret != 0) {
@@ -970,8 +969,8 @@ static void read_response(const struct device *dev, struct sdhc_command *cmd)
 		value = sdhc_standard_read32(dev, SDHC_REG_RESPONSE_0_1 + 4U * i) << 8;
 
 		if (i > 0U) {
-			value |= sdhc_standard_read32(dev,
-						      SDHC_REG_RESPONSE_0_1 + 4U * (i - 1U)) >> 24;
+			value |= sdhc_standard_read32(dev, SDHC_REG_RESPONSE_0_1 + 4U * (i - 1U)) >>
+				 24;
 		}
 
 		cmd->response[i] = value;
@@ -1061,11 +1060,17 @@ static int pio_transfer(const struct device *dev, struct sdhc_data *data, bool r
 		data->bytes_xfered += data->block_size;
 	}
 
-	return wait_status(dev, SDHC_INT_DATA_DONE, deadline, NULL);
+	ret = wait_status(dev, SDHC_INT_DATA_DONE, deadline, NULL);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	return wait_idle(dev, SDHC_STATE_DAT_INHIBIT, deadline);
 }
 
-static int request_once(const struct device *dev, struct sdhc_command *cmd,
-			struct sdhc_data *data, uint32_t flags)
+static int request_once(const struct device *dev, struct sdhc_command *cmd, struct sdhc_data *data,
+			uint32_t flags)
 {
 #ifdef CONFIG_SDHC_BCM2712_DMA
 	const struct bcm2712_config *config = dev->config;
@@ -1178,7 +1183,7 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd,
 }
 
 static int bcm2712_request(const struct device *dev, struct sdhc_command *cmd,
-			struct sdhc_data *data)
+			   struct sdhc_data *data)
 {
 	struct bcm2712_data *host = dev->data;
 	uint32_t retries = cmd->retries;
@@ -1255,8 +1260,8 @@ static int bcm2712_request(const struct device *dev, struct sdhc_command *cmd,
 			host->failed = true;
 		}
 
-		LOG_DBG("CMD%u failed: %d, status 0x%08x, ADMA error 0x%08x",
-			cmd->opcode, ret, read_status(dev), host->adma_error);
+		LOG_DBG("CMD%u failed: %d, status 0x%08x, ADMA error 0x%08x", cmd->opcode, ret,
+			read_status(dev), host->adma_error);
 		recovery = reset_lines(dev, SDHC_RESET_CMD_DATA);
 		sdhc_standard_write32(dev, SDHC_REG_NORMAL_INT_STAT, SDHC_STATUS_MASK);
 
@@ -1295,8 +1300,8 @@ static int set_clock(const struct device *dev, uint32_t rate)
 	uint32_t divisor;
 	int64_t deadline;
 
-	control &= ~(SDHC_CLOCK_CARD | SDHC_CLOCK_INTERNAL | SDHC_CLOCK_DIV_MASK |
-		     SDHC_TIMEOUT_MASK);
+	control &=
+		~(SDHC_CLOCK_CARD | SDHC_CLOCK_INTERNAL | SDHC_CLOCK_DIV_MASK | SDHC_TIMEOUT_MASK);
 	control |= SDHC_TIMEOUT_MAX;
 	sdhc_standard_write32(dev, SDHC_REG_CLOCK_CTRL, control);
 
@@ -1356,15 +1361,15 @@ static int bcm2712_set_io(const struct device *dev, struct sdhc_io *io)
 		return -ENOTSUP;
 	}
 
-	if (io->clock != 0U && (io->clock < config->host.common.min_bus_freq ||
-			       io->clock > config->host.common.max_bus_freq ||
-			       ((io->timing == SDHC_TIMING_LEGACY ||
-				 io->timing == SDHC_TIMING_SDR12) &&
-				io->clock > SD_CLOCK_25MHZ) ||
-			       ((io->timing == SDHC_TIMING_HS || io->timing == SDHC_TIMING_SDR25) &&
-				io->clock > SD_CLOCK_50MHZ) ||
-			       (io->timing == SDHC_TIMING_SDR50 && io->clock > SD_CLOCK_100MHZ) ||
-			       io->clock > host->host.props.f_max)) {
+	if (io->clock != 0U &&
+	    (io->clock < config->host.common.min_bus_freq ||
+	     io->clock > config->host.common.max_bus_freq ||
+	     ((io->timing == SDHC_TIMING_LEGACY || io->timing == SDHC_TIMING_SDR12) &&
+	      io->clock > SD_CLOCK_25MHZ) ||
+	     ((io->timing == SDHC_TIMING_HS || io->timing == SDHC_TIMING_SDR25) &&
+	      io->clock > SD_CLOCK_50MHZ) ||
+	     (io->timing == SDHC_TIMING_SDR50 && io->clock > SD_CLOCK_100MHZ) ||
+	     io->clock > host->host.props.f_max)) {
 		return -EINVAL;
 	}
 
@@ -1447,8 +1452,8 @@ static int bcm2712_set_io(const struct device *dev, struct sdhc_io *io)
 		    io->bus_width != previous_io.bus_width || io->power_mode == SDHC_POWER_OFF) {
 			uint16_t control2 = sdhc_standard_read16(dev, SDHC_REG_HOST_CTRL2);
 
-			control2 &= ~(HOST_CTRL2_EXEC_TUNING | HOST_CTRL2_TUNED |
-				      HOST_CTRL2_PRESET);
+			control2 &=
+				~(HOST_CTRL2_EXEC_TUNING | HOST_CTRL2_TUNED | HOST_CTRL2_PRESET);
 			sdhc_standard_write16(dev, SDHC_REG_HOST_CTRL2, control2);
 			host->tuned = false;
 			host->retune_deadline = 0;
@@ -1515,9 +1520,9 @@ static int bcm2712_setup(const struct device *dev)
 	k_event_init(&data->irq_event);
 	sdr50 = config->sdr50 && props->host_caps.sdr50_support != 0U;
 	sdr104 = config->sdr104 && props->host_caps.sdr104_support != 0U;
-	data->uhs_enabled = (sdr50 || sdr104) && !config->no_1_8_v &&
-		config->host.common.bus_width == 4U && props->host_caps.vol_180_support != 0U &&
-		props->host_caps.retuning_mode != 3U &&
+	data->uhs_enabled =
+		(sdr50 || sdr104) && !config->no_1_8_v && config->host.common.bus_width == 4U &&
+		props->host_caps.vol_180_support != 0U && props->host_caps.retuning_mode != 3U &&
 		regulator_is_supported_voltage(config->vqmmc, 1800000, 1800000) &&
 		regulator_is_supported_voltage(config->vqmmc, 3300000, 3300000);
 
@@ -1526,9 +1531,11 @@ static int bcm2712_setup(const struct device *dev)
 	}
 
 	props->f_max = MIN(props->f_max, config->clock_rate);
-	props->f_max = MIN(props->f_max, data->uhs_enabled ?
-		(sdr104 ? SD_CLOCK_208MHZ : SD_CLOCK_100MHZ) : SD_CLOCK_50MHZ);
-	data->dma_enabled = IS_ENABLED(CONFIG_SDHC_BCM2712_DMA) && config->adma2 != NULL &&
+	props->f_max =
+		MIN(props->f_max, data->uhs_enabled ? (sdr104 ? SD_CLOCK_208MHZ : SD_CLOCK_100MHZ)
+						    : SD_CLOCK_50MHZ);
+	data->dma_enabled =
+		IS_ENABLED(CONFIG_SDHC_BCM2712_DMA) && config->adma2 != NULL &&
 		config->adma2->map != NULL && props->host_caps.adma_2_support != 0U &&
 		(!config->adma2->dma64 || props->host_caps.address_64_bit_support_v3 != 0U);
 	ret = bcm2712_reset(dev);
@@ -1613,15 +1620,16 @@ static int bcm2712_init(const struct device *dev)
 	return bcm2712_setup(dev);
 }
 
-#define BCM2712_IRQ_CONFIG(n) \
-	static void bcm2712_irq_config_##n(const struct device *dev) \
-	{ \
-		ARG_UNUSED(dev); \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), bcm2712_isr, \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags)); \
-		irq_enable(DT_INST_IRQN(n)); \
+#define BCM2712_IRQ_CONFIG(n)                                                                      \
+	static void bcm2712_irq_config_##n(const struct device *dev)                               \
+	{                                                                                          \
+		ARG_UNUSED(dev);                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), bcm2712_isr,                \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
+/* clang-format off */
 #define BCM2712_DEFINE(n) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts), (BCM2712_IRQ_CONFIG(n)), ()) \
 	static struct bcm2712_data bcm2712_data_##n; \
@@ -1643,5 +1651,6 @@ static int bcm2712_init(const struct device *dev)
 	}; \
 	DEVICE_DT_INST_DEFINE(n, bcm2712_init, NULL, &bcm2712_data_##n, &bcm2712_config_##n, \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &bcm2712_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(BCM2712_DEFINE)
