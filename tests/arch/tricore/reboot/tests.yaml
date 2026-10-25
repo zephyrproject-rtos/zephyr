@@ -1,0 +1,26 @@
+common:
+  tags:
+    - arch
+    - tricore
+  platform_allow:
+    - kit_a2g_tc375_lite/tc375tp/cpu0
+    - kit_a3g_tc4d7_lite/tc4d7xp/cpu0
+  harness: console
+  timeout: 30
+tests:
+  arch.tricore.reboot.warm:
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "reboot: requesting a warm reset"
+        - "reboot: restarted after the warm reset request"
+  arch.tricore.reboot.cold:
+    extra_configs:
+      - CONFIG_TEST_REBOOT_COLD=y
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "reboot: requesting a cold reset"
+        - "reboot: restarted after the cold reset request"
