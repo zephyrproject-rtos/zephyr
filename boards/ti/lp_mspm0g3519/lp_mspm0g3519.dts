@@ -156,3 +156,15 @@
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
 };
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+	ti,clk-range = <6>;	/* ULPCLK 40 MHz is in the 32 to 40 MHz range */
+	ti,clk-divider = <8>;	/* 5 MHz ADC clock */
+	max-result-reg = <12>;
+	pinctrl-0 = <&analog_pa25>;	/* ADC0 channel 2 */
+	pinctrl-names = "default";
+};

@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		/* PA25, ADC0 channel 2 */
+		io-channels = <&adc0 2>;
+	};
+};
+
+&adc0 {
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 32)>;
+		zephyr,resolution = <12>;
+	};
+};

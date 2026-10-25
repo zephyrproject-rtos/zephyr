@@ -84,6 +84,13 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+ADC
+===
+
+``adc0`` is enabled in the board file with the MSPM0 ADC12 clock settings (ULPCLK at 40 MHz,
+divided by 8) and with PA25, ADC0 channel 2, routed to the converter. Applications describe their
+channels in an overlay; see ``samples/drivers/adc/adc_dt/boards/lp_mspm0g3519.overlay``.
+
 Building and Flashing
 *********************
 
