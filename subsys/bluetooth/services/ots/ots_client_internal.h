@@ -16,6 +16,9 @@
 extern "C" {
 #endif
 
+/* TODO: KConfig options */
+#define OTS_CLIENT_INST_COUNT 1
+
 /** @brief Translate OTS OLCP result code to "normal" error
  *
  * Replace the OTS SUCCESS value with the value 0.

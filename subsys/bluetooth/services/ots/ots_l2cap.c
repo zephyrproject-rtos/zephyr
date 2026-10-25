@@ -15,6 +15,7 @@
 
 #include <zephyr/net_buf.h>
 
+#include "ots_client_internal.h"
 #include "ots_l2cap_internal.h"
 
 #include <zephyr/logging/log.h>
@@ -33,13 +34,17 @@ LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_CLIENT_LOG_LEVEL);
  */
 #define BT_GATT_OTS_L2CAP_PSM	0x0025
 
+/* One channel context per OTS instance and per OTS client instance */
+#define OT_CHAN_COUNT (COND_CODE_1(CONFIG_BT_OTS, (CONFIG_BT_OTS_MAX_INST_CNT), (0)) + \
+		       COND_CODE_1(CONFIG_BT_OTS_CLIENT, (OTS_CLIENT_INST_COUNT), (0)))
+
 NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, 1,
 			  BT_L2CAP_SDU_BUF_SIZE(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if (CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU > BT_L2CAP_SDU_RX_MTU)
-NET_BUF_POOL_FIXED_DEFINE(ot_chan_rx_pool, 1, CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU, 8,
-			  NULL);
+/* A channel reassembles one SDU at a time, so a buffer per channel never runs out */
+NET_BUF_POOL_FIXED_DEFINE(ot_chan_rx_pool, OT_CHAN_COUNT, CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU, 8, NULL);
 #endif
 
 /* List of Object Transfer Channels. */
@@ -81,7 +86,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	LOG_DBG("Channel %p allocating buffer", chan);
 
-	return net_buf_alloc(&ot_chan_rx_pool, K_FOREVER);
+	return net_buf_alloc(&ot_chan_rx_pool, K_NO_WAIT);
 }
 #endif
 

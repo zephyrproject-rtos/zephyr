@@ -32,9 +32,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_otc);
 
-/* TODO: KConfig options */
-#define OTS_CLIENT_INST_COUNT     1
-
 #define OTS_CLIENT_MAX_WRITE_SIZE    23
 /* 64-bit value, outside of 48-bit Object ID range */
 #define OTS_CLIENT_UNKNOWN_ID      0x0001000000000000
