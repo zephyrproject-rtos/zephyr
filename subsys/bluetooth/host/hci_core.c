@@ -1177,6 +1177,36 @@ static uint8_t conn_handle_is_disconnected(uint16_t handle)
 	return 0;
 }
 
+static void conn_handle_disconnected_drop(uint16_t handle)
+{
+	handle |= ~BT_ACL_HANDLE_MASK;
+
+	ARRAY_FOR_EACH(disconnected_handles, i) {
+		if (disconnected_handles[i] == handle) {
+			disconnected_handles[i] = 0U;
+			return;
+		}
+	}
+}
+
+/* Whether the connection complete event for the handle waits for its
+ * advertising set terminated event, see bt_dev.cached_conn_complete.
+ */
+static bool conn_complete_is_cached(uint16_t handle)
+{
+#if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
+	ARRAY_FOR_EACH_PTR(bt_dev.cached_conn_complete, cached) {
+		if (cached->valid && sys_le16_to_cpu(cached->evt.handle) == handle) {
+			return true;
+		}
+	}
+#else
+	ARG_UNUSED(handle);
+#endif
+
+	return false;
+}
+
 static void hci_disconn_complete_prio(struct net_buf *buf)
 {
 	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
@@ -1220,6 +1250,14 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
+		/* What the priority handler recorded for the handle is of no use
+		 * any more, unless a connection complete event waits for its
+		 * advertising set.
+		 */
+		if (!conn_complete_is_cached(handle)) {
+			conn_handle_disconnected_drop(handle);
+		}
+
 		LOG_ERR("Unable to look up conn with handle %u", handle);
 		return;
 	}
