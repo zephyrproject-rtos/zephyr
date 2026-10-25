@@ -17,6 +17,8 @@
 #define WDTCON1_DR     BIT(3)
 
 void z_tricore_wdt_boot(void);
+unsigned int z_tricore_cpu_endinit_unlock(void);
+void z_tricore_cpu_endinit_lock(unsigned int key);
 
 static void wdt_disable(mem_addr_t con1)
 {
@@ -37,4 +39,15 @@ void z_tricore_wdt_boot(void)
 		wdt_disable(AURIX_SCU_BASE + AURIX_SCU_WDTSCON0 + WDTCON1_OFFSET);
 		aurix_endinit_safety_lock(key);
 	}
+}
+
+/* Called by the arch cache code around DCON0 and PCON0 writes (CEx protected) */
+unsigned int z_tricore_cpu_endinit_unlock(void)
+{
+	return aurix_endinit_cpu_unlock();
+}
+
+void z_tricore_cpu_endinit_lock(unsigned int key)
+{
+	aurix_endinit_cpu_lock(key);
 }
