@@ -43,3 +43,14 @@ config SDHC_BCM2712_DMA_DESC_COUNT
 	help
 	  Each descriptor covers up to 64 KiB of contiguous memory. Requests
 	  exceeding the table capacity use PIO.
+
+config SDHC_BCM2712_DMA_BUFFER_SIZE
+	int "BCM2712 ADMA2 bounce buffer size"
+	default 4096
+	range 64 65536
+	depends on SDHC_BCM2712_DMA
+	help
+	  Allocate this many bytes per host for DMA transfers that need an
+	  aligned buffer. Round the allocation up to the cache-line alignment.
+	  Transfers exceeding the buffer capacity use PIO when direct DMA
+	  is unsuitable.

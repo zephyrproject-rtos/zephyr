@@ -110,7 +110,8 @@ struct sdhc_adma2_data {
 		struct sdhc_adma2_desc dma32[CONFIG_SDHC_BCM2712_DMA_DESC_COUNT];
 		struct sdhc_adma2_desc64 dma64[CONFIG_SDHC_BCM2712_DMA_DESC_COUNT];
 	} desc __aligned(SDHC_ADMA2_ALIGNMENT);
-	uint8_t bounce[4096] __aligned(SDHC_ADMA2_ALIGNMENT);
+	uint8_t bounce[ROUND_UP(CONFIG_SDHC_BCM2712_DMA_BUFFER_SIZE, SDHC_ADMA2_ALIGNMENT)]
+		__aligned(SDHC_ADMA2_ALIGNMENT);
 #endif
 	void *buffer;
 	size_t len;
@@ -401,6 +402,7 @@ static int bcm2712_adma2_prepare(const struct device *dev, const struct sdhc_adm
 			attr |= SDHC_ADMA2_ATTR_END;
 		}
 
+		/* A zero 16-bit length encodes a full 64 KiB descriptor. */
 		if (config->dma64) {
 			dma->desc.dma64[i].attribute = sys_cpu_to_le16(attr);
 			dma->desc.dma64[i].length = sys_cpu_to_le16((uint16_t)chunk);
@@ -1111,6 +1113,11 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd, stru
 			}
 
 			dma = ret == 0;
+
+			if (!dma) {
+				LOG_DBG("CMD%u uses PIO: ADMA2 unavailable (%u blocks of %u)",
+					cmd->opcode, data->blocks, data->block_size);
+			}
 		}
 
 #endif
