@@ -1,0 +1,8 @@
+common:
+  tags:
+    - arch
+    - tricore
+    - timer
+  arch_allow: tricore
+tests:
+  arch.tricore.timer_stress: {}
