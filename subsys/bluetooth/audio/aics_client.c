@@ -400,6 +400,7 @@ static uint8_t internal_read_state_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (cb_err) {
+		inst->cli.cp_retried = false;
 		inst->cli.busy = false;
 		aics_cp_notify_app(inst, cb_err);
 	}
