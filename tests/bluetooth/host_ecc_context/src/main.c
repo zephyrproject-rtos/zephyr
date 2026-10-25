@@ -18,10 +18,13 @@
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
+#include <psa/crypto.h>
 
+#include "common/long_wq.h"
 #include "host/ecc.h"
 #include "host/hci_core.h"
 
@@ -191,12 +194,45 @@ static DEVICE_API(bt_hci, driver_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
 
+/* The key generations of ecc.c, held in progress or failed on request */
+static struct {
+	struct k_sem entered;
+	struct k_sem release;
+	atomic_t hold;
+	atomic_t fail;
+} keygen;
+
+psa_status_t __real_psa_generate_key(const psa_key_attributes_t *attributes,
+				     mbedtls_svc_key_id_t *key);
+
+psa_status_t __wrap_psa_generate_key(const psa_key_attributes_t *attributes,
+				     mbedtls_svc_key_id_t *key)
+{
+	if (atomic_cas(&keygen.fail, 1, 0)) {
+		return PSA_ERROR_INSUFFICIENT_MEMORY;
+	}
+
+	if (atomic_get(&keygen.hold) != 0) {
+		k_sem_give(&keygen.entered);
+		(void)k_sem_take(&keygen.release, K_FOREVER);
+	}
+
+	return __real_psa_generate_key(attributes, key);
+}
+
+static void keygen_release(void)
+{
+	atomic_clear(&keygen.hold);
+	k_sem_give(&keygen.release);
+}
+
 /* What the ECC callback under test was given, and where it ran */
 static struct {
 	struct k_sem called;
 	unsigned int calls;
 	bool key;
 	bool on_bt_workq;
+	uint8_t pub_key[BT_PUB_KEY_LEN];
 } seen;
 
 static void record_call(const uint8_t *key)
@@ -205,6 +241,15 @@ static void record_call(const uint8_t *key)
 	seen.key = (key != NULL);
 	seen.on_bt_workq = bt_is_work_thread();
 	k_sem_give(&seen.called);
+}
+
+static void record_pub_key(const uint8_t key[BT_PUB_KEY_LEN])
+{
+	if (key != NULL) {
+		(void)memcpy(seen.pub_key, key, BT_PUB_KEY_LEN);
+	}
+
+	record_call(key);
 }
 
 static void noop_handler(struct k_work *work)
@@ -221,6 +266,31 @@ static void drain_bt_workq(void)
 	k_work_init(&work, noop_handler);
 	zassert_equal(bt_work_submit(&work), 1, "Work item not queued");
 	(void)k_work_flush(&work, &sync);
+}
+
+/* The workqueue that ecc.c computes on */
+static int ecc_workq_submit(struct k_work *work)
+{
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		return bt_long_wq_submit(work);
+	}
+
+	return k_work_submit(work);
+}
+
+/* Return once the ECC operations queued so far have completed and their
+ * results have been delivered
+ */
+static void settle(void)
+{
+	struct k_work_sync sync;
+	struct k_work work;
+
+	k_work_init(&work, noop_handler);
+	zassert_equal(ecc_workq_submit(&work), 1, "Work item not queued");
+	(void)k_work_flush(&work, &sync);
+
+	drain_bt_workq();
 }
 
 /* The local public key requested by bt_enable() or by an earlier test */
@@ -246,6 +316,11 @@ static void *setup(void)
 static void before(void *fixture)
 {
 	ARG_UNUSED(fixture);
+
+	k_sem_init(&keygen.entered, 0, 1);
+	k_sem_init(&keygen.release, 0, 1);
+	atomic_clear(&keygen.hold);
+	atomic_clear(&keygen.fail);
 
 	k_sem_init(&seen.called, 0, 1);
 	seen.calls = 0U;
@@ -331,4 +406,52 @@ static ZTEST(host_ecc_context, test_pub_key_delivery_after_disable)
 
 	zassert_ok(bt_enable(NULL));
 	zassert_not_null(wait_for_pub_key(), "No public key after the enable");
+}
+
+/* A generation queued before bt_disable() can still be running when the next
+ * bt_enable() requests a key, which queues it once more. The key published
+ * for that request must stay.
+ */
+static ZTEST(host_ecc_context, test_pub_key_kept_after_queued_again)
+{
+	static struct bt_pub_key_cb cb = { .func = record_pub_key };
+	static struct workq_blocker blocker;
+	int disable_err[2];
+	int enable_err[2];
+	int gen_err;
+
+	k_work_init(&blocker.work, workq_blocker_handler);
+	k_sem_init(&blocker.release, 0, 1);
+	zassert_equal(ecc_workq_submit(&blocker.work), 1, "Work item not queued");
+
+	/* The generation requested by the enable waits behind the blocker,
+	 * and the disable ends its request. Nothing is asserted before the
+	 * releases, which a failed assertion would skip.
+	 */
+	disable_err[0] = bt_disable();
+	enable_err[0] = bt_enable(NULL);
+	disable_err[1] = bt_disable();
+
+	/* A generation that starts is held, and the key is requested again
+	 * meanwhile.
+	 */
+	atomic_set(&keygen.hold, 1);
+	k_sem_give(&blocker.release);
+	k_sleep(K_MSEC(10));
+	enable_err[1] = bt_enable(NULL);
+	gen_err = bt_pub_key_gen(&cb);
+
+	keygen_release();
+	settle();
+
+	zassert_ok(disable_err[0]);
+	zassert_ok(enable_err[0]);
+	zassert_ok(disable_err[1]);
+	zassert_ok(enable_err[1]);
+	zassert_ok(gen_err);
+	zassert_equal(seen.calls, 1U, "Public key callback called %u times", seen.calls);
+	zassert_true(seen.key, "No public key");
+	zassert_not_null(bt_pub_key_get(), "No public key published");
+	zassert_mem_equal(bt_pub_key_get(), seen.pub_key, BT_PUB_KEY_LEN,
+			  "Published public key replaced");
 }

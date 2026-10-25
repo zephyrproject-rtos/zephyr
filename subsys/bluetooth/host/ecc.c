@@ -226,6 +226,16 @@ static void generate_pub_key(struct k_work *work)
 	psa_status_t ret;
 
 	bt_dev_lock();
+
+	if (!atomic_test_bit(flags, PENDING_PUB_KEY) || atomic_test_bit(flags, PUB_KEY_READY)) {
+		/* No request left to answer: queued again by a request made
+		 * while the previous run was in progress, which that run has
+		 * answered.
+		 */
+		bt_dev_unlock();
+		return;
+	}
+
 	disruptions = pub_key_disruptions;
 	bt_dev_unlock();
 

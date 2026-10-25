@@ -8,3 +8,6 @@ project(host_ecc_context)
 
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/bluetooth)
 target_sources(app PRIVATE src/main.c)
+
+# Holds or fails the key generations, see __wrap_psa_generate_key()
+target_link_options(app PUBLIC -Wl,--wrap=psa_generate_key)
