@@ -215,10 +215,14 @@ static void gpio_stellaris_int_setup(uint32_t base, gpio_pin_t pin, enum gpio_in
 
 	if (trig == GPIO_INT_TRIG_BOTH) {
 		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IBE_OFFSET), pin);
-	} else if (trig == GPIO_INT_TRIG_HIGH) {
-		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
 	} else {
-		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
+		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IBE_OFFSET), pin);
+
+		if (trig == GPIO_INT_TRIG_HIGH) {
+			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
+		} else {
+			sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
+		}
 	}
 
 	sys_write32(BIT(pin), GPIO_REG_ADDR(base, GPIO_ICR_OFFSET));
