@@ -198,6 +198,28 @@ static int gpio_stellaris_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
+/* Sets how the pin's interrupt is sensed, then unmasks it */
+static void gpio_stellaris_int_setup(uint32_t base, gpio_pin_t pin, enum gpio_int_mode mode,
+				     enum gpio_int_trig trig)
+{
+	if (mode == GPIO_INT_MODE_EDGE) {
+		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
+	} else {
+		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
+	}
+
+	if (trig == GPIO_INT_TRIG_BOTH) {
+		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IBE_OFFSET), pin);
+	} else if (trig == GPIO_INT_TRIG_HIGH) {
+		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
+	} else {
+		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
+	}
+
+	/* A set GPIOIM bit sends it to the interrupt controller */
+	sys_set_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
+}
+
 static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
 						  gpio_pin_t pin,
 						  enum gpio_int_mode mode,
@@ -212,27 +234,11 @@ static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Check if GPIO port needs interrupt support */
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		/* A clear GPIOIM bit masks the pin's interrupt */
 		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
 	} else {
-		if (mode == GPIO_INT_MODE_EDGE) {
-			sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
-		} else {
-			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
-		}
-
-		if (trig == GPIO_INT_TRIG_BOTH) {
-			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IBE_OFFSET), pin);
-		} else if (trig == GPIO_INT_TRIG_HIGH) {
-			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
-		} else {
-			sys_clear_bit(GPIO_REG_ADDR(base,
-						    GPIO_IEV_OFFSET), pin);
-		}
-		/* A set GPIOIM bit sends it to the interrupt controller */
-		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
+		gpio_stellaris_int_setup(base, pin, mode, trig);
 	}
 
 	return 0;
