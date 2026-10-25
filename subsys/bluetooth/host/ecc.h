@@ -65,7 +65,9 @@ bool bt_pub_key_is_valid(const uint8_t key[BT_PUB_KEY_LEN]);
 
 /*  @brief Generate a new Public Key.
  *
- *  Generate a new ECC Public Key. Provided cb must persists until callback
+ *  Generate a new ECC Public Key, unless there is one: a key is kept until
+ *  bt_pub_key_hci_disrupted(), as pairings and OOB data may be using it, and
+ *  is read with bt_pub_key_get(). Provided cb must persists until callback
  *  is called. Callee adds the callback structure to a linked list. Registering
  *  multiple callbacks requires multiple calls to bt_pub_key_gen() and separate
  *  callback structures. This method cannot be called directly from result
@@ -74,7 +76,9 @@ bool bt_pub_key_is_valid(const uint8_t key[BT_PUB_KEY_LEN]);
  *
  *  @param cb Callback to notify the new key.
  *
- *  @return Zero on success or negative error code otherwise
+ *  @retval 0 Success, @p cb is called with the result.
+ *  @retval -EALREADY @p cb is already registered, or there is a key.
+ *  @retval -EINVAL @p cb is NULL.
  */
 int bt_pub_key_gen(struct bt_pub_key_cb *cb);
 

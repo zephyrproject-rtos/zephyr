@@ -6063,6 +6063,7 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 		err = k_mutex_lock(&pub_key_gen.lock, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
 
+		/* A key published since the check above is kept, and -EALREADY returned */
 		err = bt_pub_key_gen(&pub_key_gen.cb);
 		if (err && err != -EALREADY) {
 			LOG_WRN("Public key re-generation request failed (%d)", err);

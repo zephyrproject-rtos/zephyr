@@ -401,6 +401,14 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 	 */
 	bt_dev_lock();
 
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY)) {
+		/* Kept until bt_pub_key_hci_disrupted(): pairings and OOB data
+		 * may be using it.
+		 */
+		bt_dev_unlock();
+		return -EALREADY;
+	}
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
 		if (cb == new_cb) {
 			bt_dev_unlock();
@@ -409,24 +417,12 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 		}
 	}
 
-	if (atomic_test_bit(flags, PENDING_DHKEY) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY)) {
-		/* Not deferred: the key would be replaced under the pairing
-		 * that the calculation is for.
-		 */
-		bt_dev_unlock();
-		LOG_WRN("Busy performing another ECDH operation");
-		return -EBUSY;
-	}
-
 	sys_slist_prepend(&pub_key_cb_slist, &new_cb->node);
 
 	if (atomic_test_and_set_bit(flags, PENDING_PUB_KEY)) {
 		bt_dev_unlock();
 		return 0;
 	}
-
-	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 
 	/* A DH Key calculation still pending from before bt_disable()
 	 * shares the key storage: dh_key_ready() starts the generation once
