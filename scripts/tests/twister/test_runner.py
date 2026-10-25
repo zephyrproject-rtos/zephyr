@@ -262,6 +262,10 @@ TESTDATA_1_2 = [
      False, False, TwisterStatus.PASS, None, False, False),
     (1, True, 'ERROR: region `FLASH\' overflowed by 123 MB',
      True,  True, TwisterStatus.SKIP, 'FLASH overflow', True, False),
+    (1, True, 'ERROR: region `ITCM\' overflowed by 752 bytes',
+     True,  True, TwisterStatus.SKIP, 'ITCM overflow', True, False),
+    (1, True, 'ERROR: region `DTCM\' overflowed by 2668 bytes',
+     True,  True, TwisterStatus.SKIP, 'DTCM overflow', True, False),
     (1, True, 'ld: region `sram0_0_seg\' overflowed by 90576 bytes',
      True,  True, TwisterStatus.SKIP, 'sram0_0_seg overflow', True, False),
     (1, True, 'Error: Image size (99 B) + trailer (1 B) exceeds requested size',
@@ -276,7 +280,8 @@ TESTDATA_1_2 = [
     ' expected_change_skip, expected_add_missing',
     TESTDATA_1_2,
     ids=['no error, no instance run', 'no error, instance run',
-         'error - region overflow', 'error - sram segment overflow',
+         'error - region overflow', 'error - itcm overflow',
+         'error - dtcm overflow', 'error - sram segment overflow',
          'error - image size exceed', 'error']
 )
 @pytest.mark.parametrize('sys_platform', TESTDATA_1_1)
