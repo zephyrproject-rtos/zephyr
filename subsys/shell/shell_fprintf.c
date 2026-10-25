@@ -51,7 +51,7 @@ void z_shell_cbpprintf_fmt(const struct shell_fprintf *sh_fprintf, void *package
 
 void z_shell_fprintf_buffer_flush(const struct shell_fprintf *sh_fprintf)
 {
-	sh_fprintf->fwrite(sh_fprintf->user_ctx, sh_fprintf->buffer,
+	sh_fprintf->fwrite(sh_fprintf->user_ctx, (const char *)sh_fprintf->buffer,
 			   sh_fprintf->ctrl_blk->buffer_cnt);
 	sh_fprintf->ctrl_blk->buffer_cnt = 0;
 }
