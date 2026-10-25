@@ -15,8 +15,9 @@ config SDHC_BCM2712
 	select REGULATOR
 	help
 	  Enable the BCM2712 SD host controller with PIO fallback, 3.3 V
-	  legacy/HS and optional 1.8 V SDR50 signalling up to 100 MHz. Enable
-	  SDR50 through devicetree on boards with a switchable I/O supply.
+	  legacy/HS and optional 1.8 V SDR50/SDR104 signalling up to 208 MHz.
+	  Enable UHS modes through devicetree on boards with a switchable I/O supply.
+	  SDR104 multi-block transfers require a card that supports CMD23.
 	  The boot firmware must configure the SD pins before starting Zephyr.
 	  Use interrupts when devicetree provides an interrupt specifier;
 	  otherwise poll for completion. Validated with SD memory cards.

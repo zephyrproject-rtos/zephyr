@@ -50,12 +50,14 @@ LOG_MODULE_REGISTER(sdhc_bcm2712, CONFIG_SDHC_LOG_LEVEL);
 #define SDHC_INT_ERROR      BIT(15)
 #define SDHC_ERR_TIMEOUT    (BIT(16) | BIT(20))
 #define SDHC_ERR_CRC        (BIT(17) | BIT(21))
+#define SDHC_ERR_AUTO_CMD   BIT(24)
 #define SDHC_ERR_MASK       GENMASK(31, 16)
 #define SDHC_STATUS_MASK (SDHC_INT_CMD_DONE | SDHC_INT_DATA_DONE | SDHC_INT_WRITE_RDY | \
 			  SDHC_INT_READ_RDY | SDHC_INT_RETUNE | SDHC_INT_ERROR | SDHC_ERR_MASK)
 
 #define SDHC_TRANSFER_COUNT BIT(1)
 #define SDHC_TRANSFER_STOP  BIT(2)
+#define SDHC_TRANSFER_AUTO_CMD23 BIT(3)
 #define SDHC_TRANSFER_READ  BIT(4)
 #define SDHC_TRANSFER_MULTI BIT(5)
 #define SDHC_COMMAND_CRC    BIT(3)
@@ -131,6 +133,7 @@ struct sdhc_adma2_data {
 #define HOST_CTRL2_UHS_MASK   GENMASK(2, 0)
 #define HOST_CTRL2_UHS_SDR25  BIT(0)
 #define HOST_CTRL2_UHS_SDR50  BIT(1)
+#define HOST_CTRL2_UHS_SDR104 GENMASK(1, 0)
 #define HOST_CTRL2_V18        BIT(3)
 #define HOST_CTRL2_EXEC_TUNING BIT(6)
 #define HOST_CTRL2_TUNED      BIT(7)
@@ -145,6 +148,7 @@ struct bcm2712_config {
 	/* R1b quirk: poll DAT0 instead of waiting for Transfer Complete. */
 	bool no_busy_irq;
 	bool sdr50;
+	bool sdr104;
 	bool no_1_8_v;
 	void (*irq_config_func)(const struct device *dev);
 	uintptr_t cfg_addr;
@@ -247,6 +251,8 @@ static void bcm2712_set_timing(const struct device *dev, enum sdhc_timing_mode t
 		control |= HOST_CTRL2_UHS_SDR25;
 	} else if (timing == SDHC_TIMING_SDR50) {
 		control |= HOST_CTRL2_UHS_SDR50;
+	} else if (timing == SDHC_TIMING_SDR104) {
+		control |= HOST_CTRL2_UHS_SDR104;
 	}
 
 	sdhc_standard_write16(dev, SDHC_REG_HOST_CTRL2, control);
@@ -818,6 +824,13 @@ static int command_flags(const struct sdhc_command *cmd, bool has_data)
 	return (int)flags;
 }
 
+static bool bcm2712_timing_requires_tuning(const struct bcm2712_data *host)
+{
+	return host->io.timing == SDHC_TIMING_SDR104 ||
+		(host->io.timing == SDHC_TIMING_SDR50 &&
+		 host->host.props.host_caps.sdr50_needs_tuning != 0U);
+}
+
 /* Called with the request mutex held; SDHCI consumes the tuning block internally. */
 static int bcm2712_tune(const struct device *dev)
 {
@@ -832,8 +845,7 @@ static int bcm2712_tune(const struct device *dev)
 	uint16_t control;
 	int ret = -EIO;
 
-	if (host->io.timing != SDHC_TIMING_SDR50 ||
-	    host->host.props.host_caps.sdr50_needs_tuning == 0U) {
+	if (!bcm2712_timing_requires_tuning(host)) {
 		return 0;
 	}
 
@@ -920,7 +932,7 @@ static int bcm2712_tune(const struct device *dev)
 		host->failed = true;
 	}
 
-	LOG_DBG("SDR50 tuning: result %d, control 0x%04x", ret,
+	LOG_DBG("Tuning timing %u: result %d, control 0x%04x", host->io.timing, ret,
 		sdhc_standard_read16(dev, SDHC_REG_HOST_CTRL2));
 
 	return ret;
@@ -1057,8 +1069,8 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd,
 {
 #ifdef CONFIG_SDHC_BCM2712_DMA
 	const struct bcm2712_config *config = dev->config;
-	struct bcm2712_data *host = dev->data;
 #endif
+	struct bcm2712_data *host = dev->data;
 	int64_t deadline = k_uptime_get() + cmd->timeout_ms;
 	bool busy = (flags & 3U) == 3U;
 	bool dma = false;
@@ -1104,7 +1116,18 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd,
 		select_dma_mode(dev, dma);
 
 		if (data->blocks > 1U) {
-			transfer |= SDHC_TRANSFER_MULTI | SDHC_TRANSFER_STOP;
+			transfer |= SDHC_TRANSFER_MULTI;
+
+			/* SDR104 uses predefined-count transfers; the card must support CMD23. */
+			if (host->io.timing == SDHC_TIMING_SDR104 &&
+			    (cmd->opcode == SD_READ_MULTIPLE_BLOCK ||
+			     cmd->opcode == SD_WRITE_MULTIPLE_BLOCK)) {
+				sdhc_standard_write32(dev, SDHC_REG_SDMA_SYS_ADDR_ARG2,
+						      data->blocks);
+				transfer |= SDHC_TRANSFER_AUTO_CMD23;
+			} else {
+				transfer |= SDHC_TRANSFER_STOP;
+			}
 		}
 
 		sdhc_standard_write32(dev, SDHC_REG_BLOCK_SIZE,
@@ -1190,8 +1213,7 @@ static int bcm2712_request(const struct device *dev, struct sdhc_command *cmd,
 		return -EIO;
 	}
 
-	if (data != NULL && host->io.timing == SDHC_TIMING_SDR50 &&
-	    host->host.props.host_caps.sdr50_needs_tuning != 0U &&
+	if (data != NULL && bcm2712_timing_requires_tuning(host) &&
 	    host->host.props.host_caps.retuning_mode < 2U &&
 	    (uint64_t)data->blocks * data->block_size > 4U * 1024U * 1024U) {
 		k_mutex_unlock(&host->lock);
@@ -1201,8 +1223,7 @@ static int bcm2712_request(const struct device *dev, struct sdhc_command *cmd,
 
 	/* CMD19 must not split CMD55 from its following application command. */
 	if (!host->app_cmd && (data != NULL || cmd->opcode == SD_APP_CMD) &&
-	    host->io.timing == SDHC_TIMING_SDR50 &&
-	    host->host.props.host_caps.sdr50_needs_tuning != 0U) {
+	    bcm2712_timing_requires_tuning(host)) {
 		uint32_t status = sdhc_standard_read32(dev, SDHC_REG_NORMAL_INT_STAT);
 
 		if (!host->tuned || atomic_get(&host->retune_needed) != 0 ||
@@ -1224,6 +1245,14 @@ static int bcm2712_request(const struct device *dev, struct sdhc_command *cmd,
 
 		if (ret == 0) {
 			break;
+		}
+
+		if (host->io.timing == SDHC_TIMING_SDR104 &&
+		    (read_status(dev) & SDHC_ERR_AUTO_CMD) != 0U) {
+			LOG_ERR("Auto CMD23 failed: 0x%04x",
+				sdhc_standard_read16(dev, SDHC_REG_AUTO_CMD_ERR_STAT));
+			/* Reinitialize the card before another predefined-count transfer. */
+			host->failed = true;
 		}
 
 		LOG_DBG("CMD%u failed: %d, status 0x%08x, ADMA error 0x%08x",
@@ -1316,7 +1345,9 @@ static int bcm2712_set_io(const struct device *dev, struct sdhc_io *io)
 	    (io->signal_voltage == SD_VOL_1_8_V && !host->uhs_enabled) ||
 	    (io->timing != SDHC_TIMING_LEGACY && io->timing != SDHC_TIMING_HS &&
 	     io->timing != SDHC_TIMING_SDR12 && io->timing != SDHC_TIMING_SDR25 &&
-	     io->timing != SDHC_TIMING_SDR50) ||
+	     io->timing != SDHC_TIMING_SDR50 && io->timing != SDHC_TIMING_SDR104) ||
+	    (io->timing == SDHC_TIMING_SDR50 && host->host.props.host_caps.sdr50_support == 0U) ||
+	    (io->timing == SDHC_TIMING_SDR104 && host->host.props.host_caps.sdr104_support == 0U) ||
 	    (io->timing >= SDHC_TIMING_SDR12 && io->signal_voltage != SD_VOL_1_8_V) ||
 	    (io->timing == SDHC_TIMING_HS && io->signal_voltage != SD_VOL_3_3_V) ||
 	    (io->timing == SDHC_TIMING_HS && host->host.props.host_caps.high_spd_support == 0U) ||
@@ -1332,6 +1363,7 @@ static int bcm2712_set_io(const struct device *dev, struct sdhc_io *io)
 				io->clock > SD_CLOCK_25MHZ) ||
 			       ((io->timing == SDHC_TIMING_HS || io->timing == SDHC_TIMING_SDR25) &&
 				io->clock > SD_CLOCK_50MHZ) ||
+			       (io->timing == SDHC_TIMING_SDR50 && io->clock > SD_CLOCK_100MHZ) ||
 			       io->clock > host->host.props.f_max)) {
 		return -EINVAL;
 	}
@@ -1398,7 +1430,7 @@ static int bcm2712_set_io(const struct device *dev, struct sdhc_io *io)
 		}
 
 		if (io->timing == SDHC_TIMING_HS || io->timing == SDHC_TIMING_SDR25 ||
-		    io->timing == SDHC_TIMING_SDR50) {
+		    io->timing == SDHC_TIMING_SDR50 || io->timing == SDHC_TIMING_SDR104) {
 			control |= SDHC_HOST_HIGH_SPEED;
 		}
 
@@ -1464,10 +1496,12 @@ static int bcm2712_setup(const struct device *dev)
 	const struct bcm2712_config *config = dev->config;
 	struct bcm2712_data *data = dev->data;
 	struct sdhc_host_props *props = &data->host.props;
+	bool sdr50;
+	bool sdr104;
 	int ret;
 
 	if (config->clock_rate == 0U || config->host.common.min_bus_freq < 400000U ||
-	    config->host.common.max_bus_freq > SD_CLOCK_100MHZ ||
+	    config->host.common.max_bus_freq > SD_CLOCK_208MHZ ||
 	    config->host.common.min_bus_freq > config->host.common.max_bus_freq ||
 	    (config->host.common.bus_width != 1U && config->host.common.bus_width != 4U)) {
 		return -EINVAL;
@@ -1479,9 +1513,10 @@ static int bcm2712_setup(const struct device *dev)
 	sdhc_standard_capabilities_init(dev);
 	k_mutex_init(&data->lock);
 	k_event_init(&data->irq_event);
-	data->uhs_enabled = config->sdr50 && !config->no_1_8_v &&
+	sdr50 = config->sdr50 && props->host_caps.sdr50_support != 0U;
+	sdr104 = config->sdr104 && props->host_caps.sdr104_support != 0U;
+	data->uhs_enabled = (sdr50 || sdr104) && !config->no_1_8_v &&
 		config->host.common.bus_width == 4U && props->host_caps.vol_180_support != 0U &&
-		props->host_caps.sdr50_support != 0U &&
 		props->host_caps.retuning_mode != 3U &&
 		regulator_is_supported_voltage(config->vqmmc, 1800000, 1800000) &&
 		regulator_is_supported_voltage(config->vqmmc, 3300000, 3300000);
@@ -1490,7 +1525,9 @@ static int bcm2712_setup(const struct device *dev)
 		return -EINVAL;
 	}
 
-	props->f_max = MIN(props->f_max, data->uhs_enabled ? SD_CLOCK_100MHZ : SD_CLOCK_50MHZ);
+	props->f_max = MIN(props->f_max, config->clock_rate);
+	props->f_max = MIN(props->f_max, data->uhs_enabled ?
+		(sdr104 ? SD_CLOCK_208MHZ : SD_CLOCK_100MHZ) : SD_CLOCK_50MHZ);
 	data->dma_enabled = IS_ENABLED(CONFIG_SDHC_BCM2712_DMA) && config->adma2 != NULL &&
 		config->adma2->map != NULL && props->host_caps.adma_2_support != 0U &&
 		(!config->adma2->dma64 || props->host_caps.address_64_bit_support_v3 != 0U);
@@ -1522,8 +1559,8 @@ static int bcm2712_setup(const struct device *dev)
 	props->host_caps.address_64_bit_support_v3 =
 		data->dma_enabled && config->adma2->dma64 ? 1U : 0U;
 	props->host_caps.sdio_async_interrupt_support = 0U;
-	props->host_caps.sdr50_support = data->uhs_enabled ? 1U : 0U;
-	props->host_caps.sdr104_support = 0U;
+	props->host_caps.sdr50_support = data->uhs_enabled && sdr50 ? 1U : 0U;
+	props->host_caps.sdr104_support = data->uhs_enabled && sdr104 ? 1U : 0U;
 	props->host_caps.ddr50_support = 0U;
 	props->host_caps.uhs_2_support = 0U;
 	props->host_caps.drv_type_a_support = 0U;
@@ -1593,6 +1630,7 @@ static int bcm2712_init(const struct device *dev)
 		.irq_config_func = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts), \
 					     (bcm2712_irq_config_##n), (NULL)), \
 		.sdr50 = DT_INST_PROP(n, sd_uhs_sdr50), \
+		.sdr104 = DT_INST_PROP(n, sd_uhs_sdr104), \
 		.no_1_8_v = DT_INST_PROP(n, no_1_8_v), \
 		.clock_rate = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency), \
 		.adma2 = IS_ENABLED(CONFIG_SDHC_BCM2712_DMA) ? &bcm2712_adma2 : NULL, \
