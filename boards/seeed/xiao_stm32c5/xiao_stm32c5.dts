@@ -47,16 +47,17 @@
 	};
 
 	/*
-	 * User button on the BOOT0 test pad. The external button connects
-	 * PH2/BOOT0 to GND, so the internal pull-up makes this active-low.
-	 * BOOT0 is still sampled by the MCU during reset; do not hold the
-	 * button while powering on or resetting the board.
+	 * User button on the BOOT0 test pad. An external or the on-board
+	 * button labeled "B" connects PH2/BOOT0 to 3V3, so the external
+	 * pull-down makes this active-high. BOOT0 is still sampled by the
+	 * MCU during reset; do not hold the button while powering on or
+	 * resetting the board.
 	 */
 	buttons {
 		compatible = "gpio-keys";
 
 		boot_button: button_0 {
-			gpios = <&gpioh 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&gpioh 2 GPIO_ACTIVE_HIGH>;
 			label = "BOOT button";
 			zephyr,code = <INPUT_KEY_0>;
 		};
