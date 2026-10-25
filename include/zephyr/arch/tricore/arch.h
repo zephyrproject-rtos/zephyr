@@ -34,6 +34,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
+#include <zephyr/arch/tricore/mpu.h>
 
 #ifdef __cplusplus
 extern "C" {

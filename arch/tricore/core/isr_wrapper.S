@@ -127,6 +127,10 @@ z_tricore_irq_done:
 2:
 	fcall	z_tricore_switch
 
+	/* z_tricore_switch clobbers %a15 across the MPU reconfigure */
+	movh.a	%a15, hi:(_kernel + ___kernel_t_cpus_OFFSET)
+	lea	%a15, [%a15], lo:(_kernel + ___kernel_t_cpus_OFFSET)
+
 	/* Reclaim CSAs if needed */
 	ld.a	%a13, [%a15]+_cpu_offset_to_to_reclaim
 	jz.a	%a13, no_reschedule
