@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM2712 SD host controller. The SD pin multiplexing and pad
+  configuration must be initialized by the boot firmware.
+
+compatible: "brcm,bcm2712-sdhci"
+
+include: sdhc.yaml
+
+properties:
+  bus-width:
+    type: int
+    required: true
+    description: Number of SD data lines connected to the card slot.
+
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    description: SDHCI host registers followed by the Broadcom cfg registers.
+
+  clocks:
+    required: true
+
+  cd-gpios:
+    type: phandle-array
+    required: true
+    description: Card detect GPIO, active when a card is inserted.
+
+  vmmc-supply:
+    type: phandle
+    required: true
+    description: Card power regulator.
+
+  vqmmc-supply:
+    type: phandle
+    required: true
+    description: SD signalling voltage regulator.

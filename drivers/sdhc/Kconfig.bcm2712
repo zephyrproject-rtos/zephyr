@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_BCM2712
+	bool "Broadcom BCM2712 SD host controller"
+	default y
+	depends on DT_HAS_BRCM_BCM2712_SDHCI_ENABLED
+	select SDHC_STANDARD_CORE
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select EVENTS
+	select CLOCK_CONTROL
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK
+	select GPIO
+	select REGULATOR
+	help
+	  Enable the BCM2712 SD host controller with PIO fallback and 3.3 V
+	  signalling and a maximum bus frequency of 50 MHz. The boot firmware
+	  must configure the SD pins before starting Zephyr.
+	  Use interrupts when devicetree provides an interrupt specifier;
+	  otherwise poll for completion. Validated with SD memory cards.
+	  SDIO and eMMC operation is untested.
+
+config SDHC_BCM2712_DMA
+	bool "BCM2712 ADMA2 transfers"
+	default y
+	depends on SDHC_BCM2712
+	select CACHE_MANAGEMENT if DCACHE
+	help
+	  Use v3-compatible 64-bit ADMA2 when the controller advertises support.
+	  Otherwise, or when a buffer is unsuitable for DMA, use PIO.
+
+config SDHC_BCM2712_DMA_DESC_COUNT
+	int "BCM2712 ADMA2 descriptors"
+	default 8
+	range 1 128
+	depends on SDHC_BCM2712_DMA
+	help
+	  Each descriptor covers up to 64 KiB of contiguous memory. Requests
+	  exceeding the table capacity use PIO.
