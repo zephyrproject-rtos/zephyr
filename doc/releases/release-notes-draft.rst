@@ -74,6 +74,11 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* File System
+
+  * :c:func:`fs_getattr` and :c:struct:`fs_attr` to query file and directory attributes. Only
+    the modification time (:c:macro:`FS_ATTR_MTIME`) is available, and only on FAT file systems.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

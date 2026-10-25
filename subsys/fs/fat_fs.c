@@ -14,6 +14,10 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/__assert.h>
+#if defined(CONFIG_FILE_SYSTEM_GETATTR)
+#include <time.h>
+#include <zephyr/sys/timeutil.h>
+#endif
 #include <ff.h>
 #include <diskio.h>
 #include <zfs_diskio.h> /* Zephyr specific FatFS API */
@@ -455,6 +459,50 @@ static int fatfs_statvfs(struct fs_mount_t *mountp,
 	return res;
 }
 
+#if defined(CONFIG_FILE_SYSTEM_GETATTR)
+static int64_t fat_to_mtime(WORD fdate, WORD ftime)
+{
+	/* An entry without a timestamp has a zero date */
+	if (fdate == 0U) {
+		return 0;
+	}
+
+	struct tm tm = {
+		.tm_year = (fdate >> 9) + 80,
+		.tm_mon = ((fdate >> 5) & 0xF) - 1,
+		.tm_mday = fdate & 0x1F,
+		.tm_hour = ftime >> 11,
+		.tm_min = (ftime >> 5) & 0x3F,
+		.tm_sec = (ftime & 0x1F) * 2,
+	};
+
+	return timeutil_timegm64(&tm);
+}
+
+static int fatfs_getattr(struct fs_mount_t *mountp, const char *path, struct fs_attr *attr)
+{
+	FRESULT res;
+	FILINFO fno;
+
+	attr->mask = FS_ATTR_MTIME;
+
+	/* The FAT root directory has no timestamp */
+	if (strlen(path) - mountp->mountp_len <= 1U) {
+		attr->mtime = 0;
+		return 0;
+	}
+
+	res = f_stat(translate_path(path), &fno);
+	if (res != FR_OK) {
+		return translate_error(res);
+	}
+
+	attr->mtime = fat_to_mtime(fno.fdate, fno.ftime);
+
+	return 0;
+}
+#endif /* CONFIG_FILE_SYSTEM_GETATTR */
+
 static int fatfs_mount(struct fs_mount_t *mountp)
 {
 	FRESULT res;
@@ -563,6 +611,9 @@ static const struct fs_file_system_t fatfs_fs = {
 	.mkdir = fatfs_mkdir,
 	.stat = fatfs_stat,
 	.statvfs = fatfs_statvfs,
+#if defined(CONFIG_FILE_SYSTEM_GETATTR)
+	.getattr = fatfs_getattr,
+#endif
 #if defined(CONFIG_FILE_SYSTEM_MKFS) && defined(CONFIG_FS_FATFS_MKFS)
 	.mkfs = fatfs_mkfs,
 #endif

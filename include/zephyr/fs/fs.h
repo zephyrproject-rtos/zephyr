@@ -157,6 +157,18 @@ struct fs_statvfs {
 	unsigned long f_bfree;
 };
 
+/** Modification time is supported */
+#define FS_ATTR_MTIME BIT(0)
+
+/**
+ * @brief Structure to receive file or directory attributes
+ */
+struct fs_attr {
+	/** FS_ATTR_* bits supported by the file system */
+	uint32_t mask;
+	/** Modification time in seconds since the Unix epoch, 0 if unavailable */
+	int64_t mtime;
+};
 
 /**
  * @name fs_open open and creation mode flags
@@ -752,6 +764,22 @@ int fs_unregister(int type, const struct fs_file_system_t *fs);
  * @retval <0 another negative errno code on error.
  */
 int fs_gc(struct fs_mount_t *mp);
+
+/**
+ * @brief File or directory attributes
+ *
+ * Gets the attributes of the file or directory at @p abs_path. Attributes not set in
+ * @ref fs_attr.mask are not supported by the file system and are zero.
+ *
+ * @param abs_path Path to the file or directory
+ * @param attr Pointer to the fs_attr structure to fill
+ *
+ * @retval 0 on success;
+ * @retval -EINVAL when a bad directory or file name is given;
+ * @retval -ENOTSUP when not supported by underlying file system driver;
+ * @retval <0 negative errno code on error.
+ */
+int fs_getattr(const char *abs_path, struct fs_attr *attr);
 
 /**
  * @}

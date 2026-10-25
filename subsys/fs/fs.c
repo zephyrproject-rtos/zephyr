@@ -668,6 +668,40 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	return rc;
 }
 
+#if defined(CONFIG_FILE_SYSTEM_GETATTR)
+int fs_getattr(const char *abs_path, struct fs_attr *attr)
+{
+	struct fs_mount_t *mp;
+	int rc;
+	size_t mp_len;
+
+	if ((abs_path == NULL) || (abs_path[0] != '/') || (attr == NULL)) {
+		LOG_ERR("invalid file or dir name!!");
+		return -EINVAL;
+	}
+
+	rc = fs_get_mnt_point(&mp, abs_path, &mp_len);
+	if (rc < 0) {
+		LOG_ERR("mount point not found!!");
+		return rc;
+	}
+
+	CHECKIF(mp->fs->getattr == NULL) {
+		return -ENOTSUP;
+	}
+
+	memset(attr, 0, sizeof(*attr));
+
+	rc = mp->fs->getattr(mp, abs_path, attr);
+	if (rc < 0) {
+		LOG_ERR("failed to get file or dir attributes (%d)", rc);
+		return rc;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_FILE_SYSTEM_GETATTR */
+
 int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 {
 	struct fs_mount_t *mp;
