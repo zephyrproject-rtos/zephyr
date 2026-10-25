@@ -408,6 +408,44 @@ static ZTEST(host_ecc_context, test_pub_key_delivery_after_disable)
 	zassert_not_null(wait_for_pub_key(), "No public key after the enable");
 }
 
+/* A DH Key calculation still pending when bt_disable() comes does not keep the
+ * next bt_enable() from generating a new public key.
+ */
+static ZTEST(host_ecc_context, test_pub_key_after_disable_during_dh_key)
+{
+	static struct workq_blocker blocker;
+	uint8_t old_key[BT_PUB_KEY_LEN];
+	const uint8_t *key;
+	int disable_err;
+	int enable_err;
+	int dh_err;
+
+	(void)memcpy(old_key, bt_pub_key_get(), sizeof(old_key));
+
+	k_work_init(&blocker.work, workq_blocker_handler);
+	k_sem_init(&blocker.release, 0, 1);
+	zassert_equal(ecc_workq_submit(&blocker.work), 1, "Work item not queued");
+
+	/* The calculation waits behind the blocker across the disable and the
+	 * enable. Nothing is asserted before the release, which a failed
+	 * assertion would skip.
+	 */
+	dh_err = bt_dh_key_gen(old_key, record_call);
+	disable_err = bt_disable();
+	enable_err = bt_enable(NULL);
+
+	k_sem_give(&blocker.release);
+	settle();
+	key = wait_for_pub_key();
+
+	zassert_ok(dh_err);
+	zassert_ok(disable_err);
+	zassert_ok(enable_err);
+	zassert_not_null(key, "No public key after the enable");
+	zassert_true(memcmp(key, old_key, sizeof(old_key)) != 0,
+		     "Public key of the previous enable kept");
+}
+
 /* A generation queued before bt_disable() can still be running when the next
  * bt_enable() requests a key, which queues it once more. The key published
  * for that request must stay.
