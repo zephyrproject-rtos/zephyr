@@ -247,6 +247,13 @@ ZTEST_USER(userspace, test_userspace_write_control)
 	set_fault(K_ERR_CPU_EXCEPTION);
 
 	__asm__ volatile("rsr.ps %0" : "=r" (ps));
+#elif defined(CONFIG_TRICORE)
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	/* MTCR is supervisor-only; PSW is a core CSFR. */
+	cr_write(TRICORE_PSW, 0);
+
+	zassert_unreachable("Write to control register did not fault");
 #else
 #error "Not implemented for this architecture"
 	zassert_unreachable("Write to control register did not fault");
@@ -362,6 +369,11 @@ ZTEST_USER(userspace, test_userspace_disable_mmu_mpu)
 	}
 #endif
 
+#elif defined(CONFIG_TRICORE)
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	/* MTCR is supervisor only */
+	cr_write(TRICORE_DPRE_0, 0xFFFFFFFFu);
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -586,7 +598,7 @@ ZTEST_USER(userspace, test_userspace_read_priv_stack)
 	s[0] = 0;
 	priv_stack_ptr = (char *)&s[0] - size;
 #elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || \
-	defined(CONFIG_ARM64) || defined(CONFIG_XTENSA)
+	defined(CONFIG_ARM64) || defined(CONFIG_XTENSA) || defined(CONFIG_TRICORE)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -626,7 +638,7 @@ ZTEST_USER(userspace, test_userspace_write_priv_stack)
 	s[0] = 0;
 	priv_stack_ptr = (char *)&s[0] - size;
 #elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || \
-	defined(CONFIG_ARM64) || defined(CONFIG_XTENSA)
+	defined(CONFIG_ARM64) || defined(CONFIG_XTENSA) || defined(CONFIG_TRICORE)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -1076,7 +1088,8 @@ ZTEST(userspace_domain, test_userspace_1st_init_and_access_other_memdomain)
 	spawn_user(&default_bool);
 }
 
-#if (defined(CONFIG_ARM) || (defined(CONFIG_GEN_PRIV_STACKS) && defined(CONFIG_RISCV)))
+#if (defined(CONFIG_ARM) || defined(CONFIG_TRICORE) ||                                          \
+	(defined(CONFIG_GEN_PRIV_STACKS) && defined(CONFIG_RISCV)))
 extern uint8_t *z_priv_stack_find(void *obj);
 #endif
 
@@ -1750,6 +1763,8 @@ void *userspace_setup(void)
 
 	hdr = vhdr;
 	priv_stack_ptr = (((char *)&hdr->privilege_stack) + (sizeof(hdr->privilege_stack) - 1));
+#elif defined(CONFIG_TRICORE)
+	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
 #endif
 	k_thread_access_grant(k_current_get(),
 			      &test_thread, &test_stack,
