@@ -409,6 +409,7 @@ static uint8_t internal_read_state_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (cb_err) {
+		atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_CP_RETRIED);
 		atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_BUSY);
 		aics_cp_notify_app(inst, cb_err);
 	}
