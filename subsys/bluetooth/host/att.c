@@ -4142,14 +4142,27 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 	__ASSERT_NO_MSG(conn);
 	__ASSERT_NO_MSG(buf);
 
+	/* Disconnect processing frees the ATT context on the RX workqueue
+	 * without the host lock. Take the host lock before the lookup so that
+	 * L2CAP does not wait for it later, and keep the RX workqueue out with
+	 * the scheduler lock.
+	 */
+	bt_dev_lock();
+	k_sched_lock();
+
 	att = att_get(conn);
 	if (!att) {
+		k_sched_unlock();
+		bt_dev_unlock();
 		net_buf_unref(buf);
 		return -ENOTCONN;
 	}
 
 	k_fifo_put(&att->tx_queue, net_buf_take(&buf));
 	att_send_process(att);
+
+	k_sched_unlock();
+	bt_dev_unlock();
 
 	return 0;
 }
