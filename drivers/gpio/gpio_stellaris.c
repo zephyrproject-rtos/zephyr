@@ -206,6 +206,12 @@ static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
 
+	/* GPIO_INT_MODE_ENABLE_ONLY and GPIO_INT_MODE_DISABLE_ONLY are not handled */
+	if ((mode != GPIO_INT_MODE_DISABLED) && (mode != GPIO_INT_MODE_EDGE) &&
+	    (mode != GPIO_INT_MODE_LEVEL)) {
+		return -ENOTSUP;
+	}
+
 	/* Check if GPIO port needs interrupt support */
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		/* Set the mask to disable the interrupt */
