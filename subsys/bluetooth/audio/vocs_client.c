@@ -241,10 +241,11 @@ static uint8_t internal_read_volume_offset_state_cb(struct bt_conn *conn, uint8_
 	}
 
 	if (cb_err) {
+		atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_CP_RETRIED);
 		atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_BUSY);
 
 		if (inst->cb && inst->cb->set_offset) {
-			inst->cb->set_offset(&inst->vocs, err);
+			inst->cb->set_offset(&inst->vocs, cb_err);
 		}
 	}
 
