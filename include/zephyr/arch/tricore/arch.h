@@ -36,6 +36,12 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/tricore/mpu.h>
 
+#if defined(CONFIG_MPU_STACK_GUARD)
+/* Keep the MPU stack guard inside the stack object */
+#define ARCH_THREAD_STACK_RESERVED ((size_t)Z_TRICORE_STACK_GUARD_SIZE)
+#define ARCH_KERNEL_STACK_RESERVED ((size_t)Z_TRICORE_STACK_GUARD_SIZE)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

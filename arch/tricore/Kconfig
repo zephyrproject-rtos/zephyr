@@ -64,10 +64,12 @@ config TRICORE_MPU
 	select CPU_HAS_MPU
 	select MPU
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	select ARCH_HAS_STACK_PROTECTION
 	select SRAM_REGION_PERMISSIONS
 	help
 	  Enable the TriCore Memory Protection Unit. The MPU enforces per-region
-	  read, write and execute access permissions.
+	  read, write and execute access permissions and provides a stack guard
+	  with HW_STACK_PROTECTION.
 
 if TRICORE_MPU
 
@@ -94,6 +96,19 @@ config TRICORE_MPU_PROTECTION_SETS
 
 endif # TRICORE_MPU
 
+config MPU_STACK_GUARD
+	def_bool y
+	depends on HW_STACK_PROTECTION
+
+config MPU_STACK_GUARD_MIN_SIZE
+	int "Stack Guard area size"
+	depends on MPU_STACK_GUARD
+	default 512
+	help
+	  Hardware stack protection installs a guard area at the bottom of the
+	  stack using the MPU. Accessing the guard area triggers a fault so stack
+	  overflows can be caught.
+
 config CPU_HAS_TRICORE_VIRTUALIZATION
 	bool
 	depends on CPU_TC18
@@ -112,5 +127,17 @@ config GEN_IRQ_VECTOR_TABLE
 config NUM_IRQ_PRIORITIES
 	int
 	default 256
+
+config MAIN_STACK_SIZE
+	default 4096 if TRICORE_MPU
+
+config IDLE_STACK_SIZE
+	default 2048 if TRICORE_MPU
+
+config ISR_STACK_SIZE
+	default 4096 if MPU_STACK_GUARD
+
+config TEST_EXTRA_STACK_SIZE
+	default 1024 if TRICORE_MPU
 
 endmenu

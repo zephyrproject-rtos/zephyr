@@ -94,6 +94,9 @@ static uint32_t dpr_free = ~0U;
 static uint32_t system_dpre;
 static uint32_t system_dpwe;
 static uint32_t system_cpxe;
+#if CONFIG_MPU_STACK_GUARD
+static uint8_t stack_guard_dpr;
+#endif
 
 static int mpu_configure_region(const struct tricore_mpu_region *section)
 {
@@ -137,9 +140,52 @@ void z_tricore_mpu_disable(void)
 	cr_write(TRICORE_CORECON, corecon);
 }
 
+#if CONFIG_MPU_STACK_GUARD
+void z_tricore_mpu_stackguard_disable(struct k_thread *thread)
+{
+	size_t i;
+
+	ARG_UNUSED(thread);
+
+	for (i = 0; i < mpu_config.num_regions; i++) {
+		_set_dpr(i, mpu_config.regions[i].start, mpu_config.regions[i].end);
+	}
+}
+
+void z_tricore_mpu_stackguard_enable(struct k_thread *thread)
+{
+	uint32_t guard_start;
+	uint32_t guard_end;
+	uint32_t i;
+
+	if (thread != NULL) {
+		/* The guard sits right below stack_info.start */
+		guard_end = thread->stack_info.start;
+		guard_start = guard_end - Z_TRICORE_STACK_GUARD_SIZE;
+	} else {
+		/* The ISR stack has its guard at the bottom */
+		guard_start = (uintptr_t)&z_interrupt_stacks[0];
+		guard_end = guard_start + Z_TRICORE_STACK_GUARD_SIZE;
+	}
+
+	for (i = 0; i < mpu_config.num_regions; i++) {
+		const struct tricore_mpu_region *region = &mpu_config.regions[i];
+
+		if (guard_start >= region->end || guard_end <= region->start) {
+			continue;
+		}
+		_set_dpr(i, region->start, guard_start);
+		_set_dpr(stack_guard_dpr, guard_end, region->end);
+	}
+}
+#endif
+
 void z_tricore_mpu_configure_kernel_thread(struct k_thread *thread)
 {
 
+#if CONFIG_MPU_STACK_GUARD
+	z_tricore_mpu_stackguard_enable(thread);
+#endif
 	_set_dpre(thread->arch.prs, system_dpre);
 	_set_dpwe(thread->arch.prs, system_dpwe);
 	_set_cpxe(thread->arch.prs, system_cpxe);
@@ -159,6 +205,15 @@ void z_tricore_mpu_init(void)
 	for (i = 0; i < mpu_config.num_regions; i++) {
 		mpu_configure_region(&mpu_config.regions[i]);
 	}
+
+#if CONFIG_MPU_STACK_GUARD
+	stack_guard_dpr = __builtin_ctz(dpr_free);
+	dpr_free &= ~(1U << stack_guard_dpr);
+	system_dpre |= (1U << stack_guard_dpr);
+	system_dpwe |= (1U << stack_guard_dpr);
+
+	z_tricore_mpu_stackguard_enable(NULL);
+#endif
 
 	{
 		uint32_t dpr_hw_mask = (CONFIG_TRICORE_MPU_DATA_REGIONS >= 32) ?
