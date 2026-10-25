@@ -348,12 +348,43 @@ static ZTEST(host_ecc_context, test_dh_key_delivered_on_bt_workq)
 static ZTEST(host_ecc_context, test_pub_key_delivered_on_bt_workq)
 {
 	static struct bt_pub_key_cb cb = { .func = record_call };
+	int disable_err;
+	int enable_err;
+	int gen_err;
 
-	zassert_ok(bt_pub_key_gen(&cb));
+	/* Registered while the key requested by the enable is generated */
+	disable_err = bt_disable();
+	atomic_set(&keygen.hold, 1);
+	enable_err = bt_enable(NULL);
+	gen_err = bt_pub_key_gen(&cb);
+	keygen_release();
+
+	zassert_ok(disable_err);
+	zassert_ok(enable_err);
+	zassert_ok(gen_err);
 	zassert_ok(k_sem_take(&seen.called, ECC_TIMEOUT), "Public key callback not called");
 
 	zassert_true(seen.key, "No public key");
 	zassert_true(seen.on_bt_workq, "Public key not delivered on the Bluetooth workqueue");
+}
+
+/* A published key stays until bt_disable(): pairings and OOB data may be
+ * using it.
+ */
+static ZTEST(host_ecc_context, test_pub_key_gen_keeps_key)
+{
+	static struct bt_pub_key_cb cb = { .func = record_call };
+	uint8_t key[BT_PUB_KEY_LEN];
+	int gen_err;
+
+	(void)memcpy(key, bt_pub_key_get(), sizeof(key));
+
+	gen_err = bt_pub_key_gen(&cb);
+	settle();
+
+	zassert_equal(gen_err, -EALREADY, "bt_pub_key_gen() returned %d", gen_err);
+	zassert_equal(seen.calls, 0U, "Public key callback called %u times", seen.calls);
+	zassert_mem_equal(bt_pub_key_get(), key, sizeof(key), "Published public key replaced");
 }
 
 struct workq_blocker {
@@ -377,29 +408,38 @@ static ZTEST(host_ecc_context, test_pub_key_delivery_after_disable)
 	static struct bt_pub_key_cb cb = { .func = record_call };
 	static struct workq_blocker blocker;
 	unsigned int calls_while_held;
-	int disable_err;
+	int disable_err[2];
+	int submit_ret;
+	int enable_err;
 	int gen_err;
 
 	k_work_init(&blocker.work, workq_blocker_handler);
 	k_sem_init(&blocker.release, 0, 1);
-	zassert_equal(bt_work_submit(&blocker.work), 1, "Work item not queued");
 
-	/* The key is generated during the sleep and its delivery waits behind
-	 * the blocker. Nothing is asserted before the release, which a failed
-	 * assertion would skip.
+	/* The key requested by the enable is generated during the sleep and
+	 * its delivery waits behind the blocker. Nothing is asserted before
+	 * the releases, which a failed assertion would skip.
 	 */
+	disable_err[0] = bt_disable();
+	atomic_set(&keygen.hold, 1);
+	enable_err = bt_enable(NULL);
 	gen_err = bt_pub_key_gen(&cb);
+	submit_ret = bt_work_submit(&blocker.work);
+	keygen_release();
 	k_sleep(K_MSEC(100));
 	calls_while_held = seen.calls;
-	disable_err = bt_disable();
+	disable_err[1] = bt_disable();
 
 	k_sem_give(&blocker.release);
 	drain_bt_workq();
 
+	zassert_ok(disable_err[0]);
+	zassert_ok(enable_err);
 	zassert_ok(gen_err);
+	zassert_equal(submit_ret, 1, "Work item not queued");
 	zassert_equal(calls_while_held, 0U,
 		      "Public key delivered while the Bluetooth workqueue was held");
-	zassert_ok(disable_err);
+	zassert_ok(disable_err[1]);
 	zassert_equal(seen.calls, 1U, "Public key callback called %u times", seen.calls);
 	zassert_false(seen.key, "Public key callback given a key after the disable");
 	zassert_is_null(bt_pub_key_get(), "Public key published after the disable");
