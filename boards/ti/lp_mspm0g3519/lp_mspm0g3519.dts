@@ -91,6 +91,18 @@
 
 &pinctrl {
 	status = "okay";
+
+	/* The shared MSPM0G1x0x/G3x0x pin file has the wrong CAN-FD function for these pins on the
+	 * MSPM0G351x (5 and 6 are TIMA0.CCP3 and RTC_OUT there); CAN-FD is function 12.
+	 */
+	canfd0_cantx_pa12: canfd0_cantx_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_12)>;
+	};
+
+	canfd0_canrx_pa13: canfd0_canrx_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_12)>;
+		input-enable;
+	};
 };
 
 &gpioa {
