@@ -670,3 +670,40 @@ static ZTEST(disconn_complete, test_not_recorded)
 	expect_next_connection(CONN_HANDLE);
 	expect_next_connection(OTHER_HANDLE);
 }
+
+static void start_adv(void)
+{
+	struct bt_le_ext_adv *adv;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, &adv),
+		   "Creating the advertising set failed");
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Starting the advertising set failed");
+}
+
+/* Bluetooth is disabled while the connection complete event of a peripheral
+ * waits for its advertising set terminated event. The connections after the
+ * next enable do not find that event.
+ */
+static ZTEST(disconn_complete, test_disable_cached_conn_complete)
+{
+	start_adv();
+	conn_complete(OTHER_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	/* Let the Host take the event */
+	k_sleep(K_MSEC(10));
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	zassert_ok(bt_enable(NULL), "Bluetooth init failed");
+	/* The disable freed the connection object of the advertiser */
+	k_sem_reset(&recycled_sem);
+
+	start_adv();
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	adv_set_terminated(CONN_HANDLE);
+	zassert_ok(k_sem_take(&connected_sem, K_SECONDS(1)), "No connected callback");
+	zassert_equal(connected_err, BT_HCI_ERR_SUCCESS, "Connected with 0x%02x", connected_err);
+
+	disconn_complete(CONN_HANDLE, REASON);
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnected callback");
+	expect_recycled(NULL);
+}

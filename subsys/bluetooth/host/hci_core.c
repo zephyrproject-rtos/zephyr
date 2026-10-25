@@ -5226,6 +5226,11 @@ int bt_disable(void)
 		(void)k_work_cancel_sync(&rx_work, &sync);
 	}
 
+#if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
+	/* The advertising set terminated events that these wait for are gone */
+	(void)memset(bt_dev.cached_conn_complete, 0, sizeof(bt_dev.cached_conn_complete));
+#endif
+
 	/* Reset the Controller */
 	if (!drv_quirk_no_reset()) {
 
