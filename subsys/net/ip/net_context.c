@@ -1503,6 +1503,15 @@ int net_context_connect(struct net_context *context,
 		addr6->sin6_port = net_sin6(addr)->sin6_port;
 		addr6->sin6_family = NET_AF_INET6;
 
+		/* Keep the zone only for a link-local or interface-local peer. */
+		if (net_ipv6_is_ll_addr(&addr6->sin6_addr) ||
+		    net_ipv6_is_addr_mcast_link(&addr6->sin6_addr) ||
+		    net_ipv6_is_addr_mcast_iface(&addr6->sin6_addr)) {
+			addr6->sin6_scope_id = net_sin6(addr)->sin6_scope_id;
+		} else {
+			addr6->sin6_scope_id = 0U;
+		}
+
 		if (!net_ipv6_is_addr_unspecified(&addr6->sin6_addr)) {
 			context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 		} else {
