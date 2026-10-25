@@ -23,7 +23,6 @@ LOG_MODULE_REGISTER(sdhc_bcm2712, CONFIG_SDHC_LOG_LEVEL);
 
 #define SDHC_STATE_CMD_INHIBIT  BIT(0)
 #define SDHC_STATE_DAT_INHIBIT  BIT(1)
-#define SDHC_STATE_CARD         BIT(16)
 #define SDHC_STATE_WRITE_ENABLE BIT(10)
 #define SDHC_STATE_READ_ENABLE  BIT(11)
 #define SDHC_STATE_DAT0         BIT(20)
@@ -53,8 +52,10 @@ LOG_MODULE_REGISTER(sdhc_bcm2712, CONFIG_SDHC_LOG_LEVEL);
 #define SDHC_ERR_CRC       (BIT(17) | BIT(21))
 #define SDHC_ERR_AUTO_CMD  BIT(24)
 #define SDHC_ERR_MASK      GENMASK(31, 16)
-#define SDHC_STATUS_MASK (SDHC_INT_CMD_DONE | SDHC_INT_DATA_DONE | SDHC_INT_WRITE_RDY | \
-			  SDHC_INT_READ_RDY | SDHC_INT_RETUNE | SDHC_INT_ERROR | SDHC_ERR_MASK)
+/* Normal/error status and enables are accessed together as 32-bit words. */
+#define SDHC_STATUS_MASK                                                                           \
+	(SDHC_INT_CMD_DONE | SDHC_INT_DATA_DONE | SDHC_INT_WRITE_RDY | SDHC_INT_READ_RDY |         \
+	 SDHC_INT_RETUNE | SDHC_INT_ERROR | SDHC_ERR_MASK)
 
 #define SDHC_TRANSFER_COUNT      BIT(1)
 #define SDHC_TRANSFER_STOP       BIT(2)
@@ -120,27 +121,28 @@ struct sdhc_adma2_data {
 	bool active;
 };
 
-#define CFG_CTRL               0x00U
-#define CFG_CARD_TEST_ENABLE   BIT(31)
-#define CFG_CARD_TEST_LEVEL    BIT(30)
-#define CFG_PIN_SELECT         0x44U
-#define CFG_PIN_MASK           GENMASK(1, 0)
-#define CFG_PIN_SD             BIT(1)
-#define CFG_CQ_CAPABILITY      0x4cU
-#define CFG_TIMER_MULTIPLIER   (3U << 12)
-#define CFG_MAX_50MHZ_MODE     0x1acU
-#define CFG_MAX_50MHZ_OVERRIDE BIT(31)
-#define CFG_MAX_50MHZ_ENABLE   BIT(0)
-#define HOST_CTRL2_UHS_MASK    GENMASK(2, 0)
-#define HOST_CTRL2_UHS_SDR25   BIT(0)
-#define HOST_CTRL2_UHS_SDR50   BIT(1)
-#define HOST_CTRL2_UHS_SDR104  GENMASK(1, 0)
-#define HOST_CTRL2_V18         BIT(3)
-#define HOST_CTRL2_EXEC_TUNING BIT(6)
-#define HOST_CTRL2_TUNED       BIT(7)
-#define HOST_CTRL2_PRESET      BIT(15)
-#define SDHC_TUNING_TIMEOUT_MS 150
-#define SDHC_TUNING_ATTEMPTS   40U
+#define CFG_CTRL                 0x00U
+#define CFG_CARD_TEST_ENABLE     BIT(31)
+#define CFG_CARD_TEST_LEVEL      BIT(30)
+#define CFG_PIN_SELECT           0x44U
+#define CFG_PIN_MASK             GENMASK(1, 0)
+#define CFG_PIN_SD               BIT(1)
+#define CFG_CQ_CAPABILITY        0x4cU
+#define CFG_TIMER_MULTIPLIER     (3U << 12)
+#define CFG_MAX_50MHZ_MODE       0x1acU
+#define CFG_MAX_50MHZ_OVERRIDE   BIT(31)
+#define CFG_MAX_50MHZ_ENABLE     BIT(0)
+#define HOST_CTRL2_UHS_MASK      GENMASK(2, 0)
+#define HOST_CTRL2_UHS_SDR25     BIT(0)
+#define HOST_CTRL2_UHS_SDR50     BIT(1)
+#define HOST_CTRL2_UHS_SDR104    GENMASK(1, 0)
+#define HOST_CTRL2_V18           BIT(3)
+#define HOST_CTRL2_EXEC_TUNING   BIT(6)
+#define HOST_CTRL2_TUNED         BIT(7)
+#define HOST_CTRL2_PRESET        BIT(15)
+#define SDHC_TUNING_TIMEOUT_MS   150
+#define SDHC_TUNING_ATTEMPTS     40U
+#define SDHC_RECOVERY_TIMEOUT_MS 1000
 
 struct bcm2712_config {
 	struct sdhc_standard_host_common_config host;
@@ -168,6 +170,7 @@ struct bcm2712_data {
 	uint32_t adma_error;
 	bool accepting_irq;
 	bool dma_enabled;
+	/* Fatal states require sdhc_hw_reset() and card reinitialization. */
 	bool failed;
 	struct sdhc_adma2_data adma2;
 	mm_reg_t cfg_base;
@@ -175,6 +178,7 @@ struct bcm2712_data {
 	bool uhs_enabled;
 	bool tuned;
 	bool app_cmd;
+	uint16_t selected_rca;
 	atomic_t retune_needed;
 	k_timepoint_t retune_deadline;
 	struct sdhc_io io;
@@ -210,7 +214,8 @@ static int bcm2712_prepare(const struct device *dev)
 	value &= ~CFG_CARD_TEST_LEVEL;
 	value |= CFG_CARD_TEST_ENABLE;
 	sys_write32(value, data->cfg_base + CFG_CTRL);
-	sys_write32(CFG_TIMER_MULTIPLIER | (rate / 1000000U), data->cfg_base + CFG_CQ_CAPABILITY);
+	sys_write32(CFG_TIMER_MULTIPLIER | MAX(rate / 1000000U, 1U),
+		    data->cfg_base + CFG_CQ_CAPABILITY);
 	return 0;
 }
 
@@ -234,6 +239,9 @@ static int bcm2712_power(const struct device *dev, bool on)
 	}
 	if (ret == 0) {
 		data->powered = on;
+		if (!on) {
+			data->selected_rca = 0U;
+		}
 	}
 	return ret;
 }
@@ -649,14 +657,13 @@ static int bcm2712_reset(const struct device *dev)
 		data->io = (struct sdhc_io){0};
 		data->tuned = false;
 		data->app_cmd = false;
+		data->selected_rca = 0U;
 		atomic_clear(&data->retune_needed);
 		data->retune_deadline = sys_timepoint_calc(K_FOREVER);
-		data->failed = ret != 0;
 		select_dma_mode(dev, data->dma_enabled);
-	} else {
-		data->failed = true;
 	}
 
+	data->failed = ret != 0;
 	k_mutex_unlock(&data->lock);
 
 	return ret;
@@ -702,7 +709,7 @@ static int wait_status(const struct device *dev, uint32_t wanted, k_timepoint_t 
 
 		ret = status_error(status);
 
-		return ret != 0 ? ret : ((events & wanted) != 0U ? 0 : -ETIMEDOUT);
+		return ret != 0 ? ret : (((events | status) & wanted) != 0U ? 0 : -ETIMEDOUT);
 	}
 
 	while (true) {
@@ -1042,11 +1049,17 @@ static int pio_transfer(const struct device *dev, struct sdhc_data *data, bool r
 		data->bytes_xfered += data->block_size;
 	}
 
-	return wait_status(dev, SDHC_INT_DATA_DONE, deadline, NULL);
+	ret = wait_status(dev, SDHC_INT_DATA_DONE, deadline, NULL);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	return wait_idle(dev, SDHC_STATE_DAT_INHIBIT, deadline);
 }
 
 static int request_once(const struct device *dev, struct sdhc_command *cmd, struct sdhc_data *data,
-			uint32_t flags)
+			uint32_t flags, bool *submitted)
 {
 #ifdef CONFIG_SDHC_BCM2712_DMA
 	const struct bcm2712_config *config = dev->config;
@@ -1061,6 +1074,8 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd, stru
 	uint32_t command_status;
 	uint32_t busy_status;
 	int ret;
+
+	*submitted = false;
 
 	if ((data != NULL || busy) && cmd->opcode != SD_STOP_TRANSMISSION) {
 		inhibit |= SDHC_STATE_DAT_INHIBIT;
@@ -1119,6 +1134,7 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd, stru
 	sdhc_standard_write32(dev, SDHC_REG_ARGUMENT1, cmd->arg);
 	/* A single write submits the command with its transfer mode. */
 	sdhc_standard_write32(dev, SDHC_REG_TRANSFER_MODE, (flags << 16) | transfer);
+	*submitted = true;
 	ret = wait_status(dev, SDHC_INT_CMD_DONE, deadline, &command_status);
 
 	if (ret != 0) {
@@ -1158,12 +1174,41 @@ static int request_once(const struct device *dev, struct sdhc_command *cmd, stru
 	return 0;
 }
 
+static int bcm2712_send_app_cmd(const struct device *dev, int timeout_ms)
+{
+	struct bcm2712_data *host = dev->data;
+	struct sdhc_command app = {
+		.opcode = SD_APP_CMD,
+		.arg = (uint32_t)host->selected_rca << 16U,
+		.response_type = SD_RSP_TYPE_R1,
+		.timeout_ms = timeout_ms,
+	};
+	bool submitted;
+	int flags = command_flags(&app, false);
+	int ret;
+
+	if (flags < 0) {
+		return flags;
+	}
+
+	ret = request_once(dev, &app, NULL, flags, &submitted);
+	stop_irq(dev);
+
+	if (ret == 0 && (app.response[0] & SD_R1_ERR_FLAGS) != 0U) {
+		LOG_DBG("CMD55 response 0x%08x has error flags", app.response[0]);
+		ret = -EIO;
+	}
+
+	return ret;
+}
+
 static int bcm2712_request(const struct device *dev, struct sdhc_command *cmd,
 			   struct sdhc_data *data)
 {
 	struct bcm2712_data *host = dev->data;
 	uint32_t retries = cmd->retries;
 	int flags = command_flags(cmd, data != NULL);
+	bool app_cmd;
 	int recovery;
 	int ret;
 
@@ -1195,6 +1240,8 @@ static int bcm2712_request(const struct device *dev, struct sdhc_command *cmd,
 		return -EIO;
 	}
 
+	app_cmd = host->app_cmd && cmd->opcode != SD_APP_CMD;
+
 	if (data != NULL && bcm2712_timing_requires_tuning(host) &&
 	    host->host.props.host_caps.retuning_mode < 2U &&
 	    (uint64_t)data->blocks * data->block_size > 4U * 1024U * 1024U) {
@@ -1222,7 +1269,9 @@ static int bcm2712_request(const struct device *dev, struct sdhc_command *cmd,
 	}
 
 	do {
-		ret = request_once(dev, cmd, data, flags);
+		bool submitted;
+
+		ret = request_once(dev, cmd, data, flags, &submitted);
 		stop_irq(dev);
 
 		if (ret == 0) {
@@ -1256,13 +1305,99 @@ static int bcm2712_request(const struct device *dev, struct sdhc_command *cmd,
 		}
 #endif
 
+		if (submitted && data != NULL && data->blocks > 1U &&
+		    (cmd->opcode == SD_READ_MULTIPLE_BLOCK ||
+		     cmd->opcode == SD_WRITE_MULTIPLE_BLOCK)) {
+			struct sdhc_command stop = {
+				.opcode = SD_STOP_TRANSMISSION,
+				.response_type = SD_RSP_TYPE_R1b,
+				.timeout_ms = SDHC_RECOVERY_TIMEOUT_MS,
+			};
+
+			/* Resetting the host does not terminate the card's transfer. */
+			recovery = command_flags(&stop, false);
+			if (recovery >= 0) {
+				recovery = request_once(dev, &stop, NULL, recovery, &submitted);
+				stop_irq(dev);
+			}
+
+			/*
+			 * CMD12 can stop the transfer and still report errors left over
+			 * from the aborted data phase. Confirm the card state with CMD13
+			 * instead of latching the host on the R1 error flags alone.
+			 */
+			if (recovery == 0 && (stop.response[0] & SD_R1_ERR_FLAGS) != 0U) {
+				LOG_DBG("CMD%u stop response 0x%08x has error flags", cmd->opcode,
+					stop.response[0]);
+				recovery = -EIO;
+			}
+
+			if (recovery != 0 && host->selected_rca != 0U) {
+				struct sdhc_command status = {
+					.opcode = SD_SEND_STATUS,
+					.arg = (uint32_t)host->selected_rca << 16U,
+					.response_type = SD_RSP_TYPE_R1,
+					.timeout_ms = SDHC_RECOVERY_TIMEOUT_MS,
+				};
+				int status_flags;
+
+				/* Auto stop may already have returned the card to TRAN. */
+				recovery = reset_lines(dev, SDHC_RESET_CMD_DATA);
+				if (recovery == 0) {
+					status_flags = command_flags(&status, false);
+					if (status_flags >= 0) {
+						recovery = request_once(dev, &status, NULL,
+									status_flags, &submitted);
+						stop_irq(dev);
+					} else {
+						recovery = status_flags;
+					}
+				}
+
+				if (recovery == 0 &&
+				    SD_R1_CURRENT_STATE(status.response[0]) != SDMMC_R1_TRANSFER) {
+					recovery = -EIO;
+				}
+			}
+
+			if (recovery != 0) {
+				LOG_ERR("Failed to stop CMD%u: %d, response 0x%08x", cmd->opcode,
+					recovery, stop.response[0]);
+				host->failed = true;
+				ret = recovery;
+			}
+		}
+
 		/* A data command may already have changed the card state. */
 		if (data != NULL || retries == 0U) {
 			break;
 		}
 
+		if (app_cmd) {
+			/*
+			 * An application command retry needs a fresh CMD55; the failed
+			 * attempt consumed the card's APP_CMD state.
+			 */
+			int app_ret = bcm2712_send_app_cmd(dev, cmd->timeout_ms);
+
+			if (app_ret != 0) {
+				LOG_DBG("CMD55 retry before CMD%u failed: %d", cmd->opcode,
+					app_ret);
+				break;
+			}
+		}
+
 		retries--;
 	} while (true);
+
+	if (ret == 0) {
+		if (cmd->opcode == SD_GO_IDLE_STATE) {
+			host->selected_rca = 0U;
+		} else if (cmd->opcode == SD_SELECT_CARD &&
+			   (cmd->response[0] & SD_R1_ERR_FLAGS) == 0U) {
+			host->selected_rca = (uint16_t)(cmd->arg >> 16U);
+		}
+	}
 
 	host->app_cmd = ret == 0 && cmd->opcode == SD_APP_CMD;
 	k_mutex_unlock(&host->lock);
@@ -1597,15 +1732,16 @@ static int bcm2712_init(const struct device *dev)
 	return bcm2712_setup(dev);
 }
 
-#define BCM2712_IRQ_CONFIG(n) \
-	static void bcm2712_irq_config_##n(const struct device *dev) \
-	{ \
-		ARG_UNUSED(dev); \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), bcm2712_isr, \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags)); \
-		irq_enable(DT_INST_IRQN(n)); \
+#define BCM2712_IRQ_CONFIG(n)                                                                      \
+	static void bcm2712_irq_config_##n(const struct device *dev)                               \
+	{                                                                                          \
+		ARG_UNUSED(dev);                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), bcm2712_isr,                \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
+/* clang-format off */
 #define BCM2712_DEFINE(n) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts), (BCM2712_IRQ_CONFIG(n)), ()) \
 	static struct bcm2712_data bcm2712_data_##n; \
@@ -1627,5 +1763,6 @@ static int bcm2712_init(const struct device *dev)
 	}; \
 	DEVICE_DT_INST_DEFINE(n, bcm2712_init, NULL, &bcm2712_data_##n, &bcm2712_config_##n, \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &bcm2712_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(BCM2712_DEFINE)

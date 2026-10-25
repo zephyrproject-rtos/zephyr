@@ -22,6 +22,9 @@ config SDHC_BCM2712
 	  Use interrupts when devicetree provides an interrupt specifier;
 	  otherwise poll for completion. Validated with SD memory cards.
 	  SDIO and eMMC operation is untested.
+	  Tuning, I/O-transition, Auto CMD23 and controller recovery failures
+	  latch the host until the application calls sdhc_hw_reset() and
+	  reinitializes the card. The SD stack does not reset the host itself.
 
 config SDHC_BCM2712_DMA
 	bool "BCM2712 ADMA2 transfers"
