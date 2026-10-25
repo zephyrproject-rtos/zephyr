@@ -79,6 +79,18 @@ Libraries / Subsystems
     :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
     Devicetree property.
 
+* Libc
+
+  * ``zephyr_write_stdout()`` no longer converts LF to CRLF. Backends that
+    convert on their own, such as the UART and EFI consoles, now receive a
+    single LF and emit one CRLF. With Newlib, ARCMWDT and the Picolibc POSIX
+    ``write()`` path the duplicated carriage return (CR CR LF) is gone;
+    Picolibc's ``printf()`` output is unchanged.
+
+  * ``printf()`` output to backends that pass bytes through, such as RTT, RAM
+    console, semihosting, the IPM console sender, WCH SDI, whisper and the
+    Bluetooth monitor, is now LF-only, matching ``printk()``.
+
 * LoRaWAN
 
   * The native backend now supports the KR920, AS923 and US915 regions
