@@ -1,0 +1,12 @@
+common:
+  tags:
+    - arch
+    - tricore
+  # The CI QEMU does not enforce the MPU
+  platform_allow:
+    - kit_a2g_tc375_lite/tc375tp/cpu0
+    - kit_a3g_tc4d7_lite/tc4d7xp/cpu0
+  filter: CONFIG_MPU_STACK_GUARD
+  ignore_faults: true
+tests:
+  arch.tricore.stack_guard: {}
