@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TRICORE_SOAK_SECONDS
+	int "TriCore soak duration in seconds"
+	default 20
+	help
+	  How long the concurrent soak workload runs before the invariants
+	  (no CSA leak, no fault, no sleep stall) are checked.
+
+source "Kconfig.zephyr"
