@@ -9,6 +9,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
@@ -154,6 +155,7 @@ struct bcm2712_config {
 	bool sdr104;
 	bool no_1_8_v;
 	bool non_removable;
+	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_config_func)(const struct device *dev);
 	uintptr_t cfg_addr;
 	size_t cfg_size;
@@ -1782,6 +1784,14 @@ static int bcm2712_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (config->pinctrl != NULL) {
+		ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	/* Hosts without a pinctrl state retain the boot firmware's pin setup. */
 	if (!config->non_removable) {
 		ret = gpio_pin_configure_dt(&config->cd, GPIO_INPUT);
@@ -1807,6 +1817,7 @@ static int bcm2712_init(const struct device *dev)
 
 /* clang-format off */
 #define BCM2712_DEFINE(n)                                                                      \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0), (PINCTRL_DT_INST_DEFINE(n);), ())     \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts), (BCM2712_IRQ_CONFIG(n)), ())         \
 	static struct bcm2712_data bcm2712_data_##n;                                           \
 	static const struct bcm2712_config bcm2712_config_##n = {                              \
@@ -1817,6 +1828,8 @@ static int bcm2712_init(const struct device *dev)
 		.sdr104 = DT_INST_PROP(n, sd_uhs_sdr104),                                      \
 		.no_1_8_v = DT_INST_PROP(n, no_1_8_v),                                         \
 		.non_removable = DT_INST_PROP(n, non_removable),                               \
+		.pinctrl = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                    \
+				      (PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),            \
 		.clock_rate = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),             \
 		.adma2 = IS_ENABLED(CONFIG_SDHC_BCM2712_DMA) ? &bcm2712_adma2 : NULL,          \
 		.cfg_addr = DT_INST_REG_ADDR_BY_NAME(n, cfg),                                  \

@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Broadcom BCM2712 SD host controller. The SD pin multiplexing and pad
-  configuration must be initialized by the boot firmware.
+  Broadcom BCM2712 SD host controller. Main-bank SDIO pins may be configured
+  through pinctrl. Dedicated EMMC pads used by the SD card slot are not
+  covered by the BCM2712 pinctrl driver and must retain the boot firmware
+  configuration.
 
 compatible: "brcm,bcm2712-sdhci"
 
-include: sdhc.yaml
+include: [sdhc.yaml, pinctrl-device.yaml]
 
 properties:
   bus-width:
