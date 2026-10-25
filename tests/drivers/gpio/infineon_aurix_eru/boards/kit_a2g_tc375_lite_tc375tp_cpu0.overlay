@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* P02.1 (Arduino header) is ERU input channel 2 input B: SCU_E_REQ2(1) */
+&p02 {
+	status = "okay";
+	interrupts = <546 30>;
+	infineon,eru-inputs = <1 2 1 2>;
+};
+
+/ {
+	zephyr,user {
+		eru-gpios = <&p02 1 0>, <&p02 2 0>;
+	};
+};
