@@ -23,6 +23,9 @@ if(CONFIG_FILE_SYSTEM_MKFS)
     src/test_fat_mkfs.c
   )
 endif()
+target_sources_ifdef(CONFIG_FILE_SYSTEM_GETATTR app PRIVATE
+  src/test_fat_attr.c
+)
 target_sources_ifdef(CONFIG_FS_FATFS_REENTRANT app PRIVATE
   src/test_fat_file_reentrant.c
 )
