@@ -1053,6 +1053,17 @@ static void test_main(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
+	/* The volume controller disconnects and connects again */
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
+	if (err != 0) {
+		FAIL("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
 	PASS("VCP volume renderer passed\n");
 }
 
