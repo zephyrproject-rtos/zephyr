@@ -16,6 +16,8 @@
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
+#include "gpio_infineon_aurix_eru.h"
+
 /* Port registers (TC4Dx UM v1.1, 48.4) */
 #define PORT_IN        0x24
 #define PORT_OMR       0x3C
@@ -37,10 +39,14 @@
 struct gpio_aurix_config {
 	struct gpio_driver_config common;
 	mem_addr_t base;
+	const struct gpio_aurix_eru_input *eru;
+	size_t eru_count;
+	void (*irq_config)(void);
 };
 
 struct gpio_aurix_data {
 	struct gpio_driver_data common;
+	sys_slist_t callbacks;
 };
 
 static void gpio_aurix_omr(const struct device *dev, uint32_t omr)
@@ -129,6 +135,44 @@ static int gpio_aurix_port_toggle_bits(const struct device *dev, gpio_port_pins_
 	return 0;
 }
 
+static int gpio_aurix_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					      enum gpio_int_mode mode, enum gpio_int_trig trig)
+{
+	const struct gpio_aurix_config *cfg = dev->config;
+
+	return gpio_aurix_eru_configure(cfg->eru, cfg->eru_count, pin, mode, trig);
+}
+
+static int gpio_aurix_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				      bool set)
+{
+	struct gpio_aurix_data *data = dev->data;
+
+	return gpio_manage_callback(&data->callbacks, callback, set);
+}
+
+static void __maybe_unused gpio_aurix_isr(const void *arg)
+{
+	const struct gpio_aurix_eru_input *in = arg;
+	struct gpio_aurix_data *data = in->dev->data;
+
+	gpio_aurix_eru_isr(in, &data->callbacks);
+}
+
+static int gpio_aurix_init(const struct device *dev)
+{
+	const struct gpio_aurix_config *cfg = dev->config;
+	int ret = gpio_aurix_eru_check(cfg->eru, cfg->eru_count);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	cfg->irq_config();
+
+	return 0;
+}
+
 static DEVICE_API(gpio, gpio_aurix_api) = {
 	.pin_configure = gpio_aurix_pin_configure,
 	.port_get_raw = gpio_aurix_port_get_raw,
@@ -136,16 +180,22 @@ static DEVICE_API(gpio, gpio_aurix_api) = {
 	.port_set_bits_raw = gpio_aurix_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_aurix_port_clear_bits_raw,
 	.port_toggle_bits = gpio_aurix_port_toggle_bits,
+	.pin_interrupt_configure = gpio_aurix_pin_interrupt_configure,
+	.manage_callback = gpio_aurix_manage_callback,
 };
 
 #define GPIO_AURIX_INIT(n)                                                                         \
 	BUILD_ASSERT(DT_INST_PROP(n, ngpios) <= 16, "AURIX ports have at most 16 pins");          \
+	GPIO_AURIX_ERU_DEFINE(n, gpio_aurix_isr)                                                   \
 	static const struct gpio_aurix_config gpio_aurix_cfg_##n = {                               \
 		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n)},                   \
 		.base = (mem_addr_t)DT_INST_REG_ADDR(n),                                           \
+		.eru = gpio_aurix_eru_##n,                                                         \
+		.eru_count = GPIO_AURIX_ERU_COUNT(n),                                              \
+		.irq_config = gpio_aurix_eru_irq_config_##n,                                       \
 	};                                                                                         \
 	static struct gpio_aurix_data gpio_aurix_data_##n;                                         \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &gpio_aurix_data_##n, &gpio_aurix_cfg_##n,            \
+	DEVICE_DT_INST_DEFINE(n, gpio_aurix_init, NULL, &gpio_aurix_data_##n, &gpio_aurix_cfg_##n, \
 			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_aurix_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_AURIX_INIT)
