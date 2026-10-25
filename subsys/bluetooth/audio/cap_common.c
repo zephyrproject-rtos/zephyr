@@ -276,7 +276,7 @@ bool bt_cap_common_stream_in_active_proc(const struct bt_cap_stream *cap_stream)
 
 static void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_cap_common_proc *active_proc_ptr = bt_cap_common_get_active_proc();
+	struct bt_cap_common_proc *active_proc_ptr;
 	struct bt_cap_common_client *client;
 
 	ARG_UNUSED(reason);
@@ -285,6 +285,7 @@ static void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
+	active_proc_ptr = bt_cap_common_get_active_proc();
 	client = bt_cap_common_get_client_by_acl(conn);
 
 	LOG_DBG("conn %p disconnected", conn);
