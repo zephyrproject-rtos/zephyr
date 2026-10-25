@@ -36,6 +36,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/tricore/mpu.h>
 
+#if defined(CONFIG_USERSPACE)
+#include <zephyr/arch/tricore/syscall.h>
+#endif
+
 #if defined(CONFIG_MPU_STACK_GUARD)
 /* Keep the MPU stack guard inside the stack object */
 #define ARCH_THREAD_STACK_RESERVED ((size_t)Z_TRICORE_STACK_GUARD_SIZE)
@@ -57,16 +61,16 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	return key;
 }
 
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
+{
+	return !!(key & BIT(15));
+}
+
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	if (arch_irq_unlocked(key)) {
 		__asm__ volatile("enable" ::: "memory");
 	}
-}
-
-static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
-{
-	return !!(key & BIT(15));
 }
 
 static inline bool arch_cpu_irqs_are_enabled(void)

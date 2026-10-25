@@ -30,6 +30,10 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
+#if defined(CONFIG_USERSPACE)
+	/* Top of the privileged stack used for system calls */
+	uint32_t priv_stack_end;
+#endif
 	/* MPU protection register set (PSW.PRS) of the thread */
 	uint8_t prs;
 };

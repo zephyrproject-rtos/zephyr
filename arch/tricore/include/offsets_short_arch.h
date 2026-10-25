@@ -16,4 +16,7 @@
 
 #define _cpu_offset_to_to_reclaim (___cpu_t_arch_OFFSET + ___cpu_arch_t_to_reclaim_OFFSET)
 
+#define _thread_offset_to_priv_stack_end                                                           \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_end_OFFSET)
+
 #endif
