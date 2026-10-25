@@ -274,6 +274,8 @@ static ZTEST_F(aics_client_test_suite, test_read_status_empty)
 
 static ZTEST_F(aics_client_test_suite, test_mute_counter_retry_state_empty)
 {
+	/* Gain 0, unmuted, manual mode, change counter 4 */
+	const uint8_t state[] = {0x00U, BT_AICS_STATE_UNMUTED, BT_AICS_MODE_MANUAL, 0x04U};
 	struct bt_gatt_write_params *write_params;
 	int err;
 
@@ -296,6 +298,14 @@ static ZTEST_F(aics_client_test_suite, test_mute_counter_retry_state_empty)
 	err = bt_aics_mute(fixture->inst);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 	zassert_equal(bt_gatt_write_fake.call_count, 2U);
+
+	/* The failed retry does not keep the next operation from retrying */
+	write_params = bt_gatt_write_fake.arg1_val;
+	write_params->func(&fixture->conn, BT_AICS_ERR_INVALID_COUNTER, write_params);
+	zassert_equal(bt_gatt_read_fake.call_count, 2U);
+
+	read_rsp(fixture, state, sizeof(state));
+	zassert_equal(bt_gatt_write_fake.call_count, 3U);
 
 	write_params = bt_gatt_write_fake.arg1_val;
 	write_params->func(&fixture->conn, 0U, write_params);
