@@ -8,6 +8,45 @@
 #include <zephyr/sys/math_extras.h>
 #include <inttypes.h>
 
+static void VNAME(u16_add)(void)
+{
+	uint16_t result = 42;
+
+	zassert_false(u16_add_overflow(2, 3, &result));
+	zassert_equal(result, 5);
+
+	zassert_false(u16_add_overflow(0, UINT16_MAX, &result));
+	zassert_equal(result, UINT16_MAX);
+	zassert_true(u16_add_overflow(1, UINT16_MAX, &result));
+	zassert_equal(result, 0);
+
+	zassert_false(u16_add_overflow(UINT16_MAX, 0, &result));
+	zassert_equal(result, UINT16_MAX);
+	zassert_true(u16_add_overflow(UINT16_MAX, 2, &result));
+	zassert_equal(result, 1);
+}
+
+static void VNAME(u16_mul)(void)
+{
+	uint16_t result = 42;
+
+	zassert_false(u16_mul_overflow(2, 3, &result));
+	zassert_equal(result, 6);
+
+	zassert_false(u16_mul_overflow(UINT16_MAX, 1, &result));
+	zassert_equal(result, UINT16_MAX);
+	zassert_true(u16_mul_overflow(UINT16_MAX, 2, &result));
+	zassert_equal(result, (uint16_t)(UINT16_MAX * 2));
+
+	zassert_false(u16_mul_overflow(1, UINT16_MAX, &result));
+	zassert_equal(result, UINT16_MAX);
+	zassert_true(u16_mul_overflow(2, UINT16_MAX, &result));
+	zassert_equal(result, (uint16_t)(UINT16_MAX * 2));
+
+	zassert_true(u16_mul_overflow(UINT16_MAX, UINT16_MAX, &result));
+	zassert_equal(result, 1);
+}
+
 static void VNAME(u32_add)(void)
 {
 	uint32_t result = 42;

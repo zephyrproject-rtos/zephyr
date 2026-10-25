@@ -9,6 +9,14 @@
 #define VNAME(N) run_portable_##N
 #include "tests.inc"
 
+ZTEST(math_extras_portable, test_portable_u16_add) {
+	run_portable_u16_add();
+}
+
+ZTEST(math_extras_portable, test_portable_u16_mul) {
+	run_portable_u16_mul();
+}
+
 ZTEST(math_extras_portable, test_portable_u32_add) {
 	run_portable_u32_add();
 }

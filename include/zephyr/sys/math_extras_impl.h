@@ -120,7 +120,7 @@ static inline bool size_mul_overflow(size_t a, size_t b, size_t *result)
 #else /* !use_builtin(__builtin_mul_overflow) */
 static inline bool u16_mul_overflow(uint16_t a, uint16_t b, uint16_t *result)
 {
-	uint16_t c = a * b;
+	uint16_t c = (uint16_t)((uint32_t)a * (uint32_t)b);
 
 	*result = c;
 
