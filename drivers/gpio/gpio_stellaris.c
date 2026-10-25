@@ -93,13 +93,17 @@ static int gpio_stellaris_configure(const struct device *dev,
 	if ((flags & GPIO_OUTPUT) != 0) {
 		mm_reg_t mask_addr;
 
+		/*
+		 * A level written to GPIODATA while GPIODIR has the pin as an input does not take,
+		 * so GPIODIR is set first.
+		 */
+		sys_set_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET), pin);
 		mask_addr = gpio_stellaris_data_addr(base, BIT(pin));
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			sys_write32(BIT(pin), mask_addr);
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
 			sys_write32(0, mask_addr);
 		}
-		sys_set_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET), pin);
 		/* Pin digital enable */
 		sys_set_bit(GPIO_REG_ADDR(base, GPIO_DEN_OFFSET), pin);
 	} else if ((flags & GPIO_INPUT) != 0) {
