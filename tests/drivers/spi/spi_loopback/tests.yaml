@@ -106,6 +106,7 @@ tests:
       - nucleo_u385rg_q
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
+      - nucleo_u083rc
       - stm32u083c_dk
     integration_platforms:
       - nucleo_g474re
@@ -163,6 +164,7 @@ tests:
       - stm32f3_disco
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
+      - nucleo_u083rc
       - stm32u083c_dk
     integration_platforms:
       - stm32h573i_dk
@@ -189,6 +191,7 @@ tests:
       - stm32f3_disco
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
+      - nucleo_u083rc
       - stm32u083c_dk
     integration_platforms:
       - stm32h573i_dk
@@ -213,6 +216,7 @@ tests:
       - nucleo_wl55jc
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
+      - nucleo_u083rc
       - stm32u083c_dk
     integration_platforms:
       - stm32h573i_dk
