@@ -61,6 +61,8 @@ LOG_MODULE_REGISTER(bt_gatt);
 
 #define SC_TIMEOUT	K_MSEC(10)
 #define DB_HASH_TIMEOUT	K_MSEC(10)
+/* The value of db_hash.hash_generation before the first computation */
+#define DB_HASH_GENERATION_NONE (-1)
 
 static uint16_t last_static_handle;
 
@@ -145,7 +147,6 @@ enum {
 	SC_INDICATE_PENDING, /* SC indicate pending */
 	SC_LOAD,	     /* SC has been loaded from settings */
 
-	DB_HASH_VALID,       /* Database hash needs to be calculated */
 	DB_HASH_LOAD,        /* Database hash loaded from settings. */
 	DB_HASH_LOAD_PROC,   /* DB hash loaded from settings has been processed. */
 
@@ -166,13 +167,28 @@ static struct gatt_sc {
 
 #if defined(CONFIG_BT_GATT_CACHING)
 static struct db_hash {
-	uint8_t hash[16];
+	uint8_t hash[BT_GATT_DB_HASH_SIZE];
 #if defined(CONFIG_BT_SETTINGS)
-	 uint8_t stored_hash[16];
+	uint8_t stored_hash[BT_GATT_DB_HASH_SIZE];
 #endif
+	/* Database generation, incremented on every change */
+	atomic_t db_generation;
+	/* The generation that hash was computed for: hash is valid while this
+	 * equals db_generation.
+	 */
+	atomic_t hash_generation;
+	/* Protects hash and hash_generation together */
+	struct k_spinlock lock;
 	struct k_work_delayable work;
 	struct k_work_sync sync;
-} db_hash;
+} db_hash = {
+	.hash_generation = ATOMIC_INIT(DB_HASH_GENERATION_NONE),
+};
+
+static bool db_hash_is_valid(void)
+{
+	return atomic_get(&db_hash.hash_generation) == atomic_get(&db_hash.db_generation);
+}
 #endif
 
 static struct gatt_sc_cfg *find_sc_cfg(uint8_t id, const bt_addr_le_t *addr)
@@ -404,8 +420,8 @@ static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr
 
 bool bt_gatt_is_db_hash_valid(void)
 {
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
-	return atomic_test_bit(gatt_sc.flags, DB_HASH_VALID);
+#if defined(CONFIG_BT_GATT_CACHING)
+	return db_hash_is_valid();
 #else
 	return false;
 #endif
@@ -609,10 +625,11 @@ static int db_hash_update(struct gen_hash_state *state, uint8_t *data, size_t le
 	return 0;
 }
 
-static int db_hash_finish(struct gen_hash_state *state)
+static int db_hash_finish(struct gen_hash_state *state, uint8_t hash[BT_GATT_DB_HASH_SIZE])
 {
 	size_t mac_length;
-	psa_status_t ret = psa_mac_sign_finish(&(state->operation), db_hash.hash, 16, &mac_length);
+	psa_status_t ret =
+		psa_mac_sign_finish(&(state->operation), hash, BT_GATT_DB_HASH_SIZE, &mac_length);
 
 	psa_destroy_key(state->key);
 
@@ -737,9 +754,16 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 static void db_hash_store(void)
 {
 #if defined(CONFIG_BT_SETTINGS)
+	uint8_t hash[BT_GATT_DB_HASH_SIZE];
+	k_spinlock_key_t key;
 	int err;
 
-	err = bt_settings_store_hash(&db_hash.hash, sizeof(db_hash.hash));
+	/* The current hash, which can be newer than that of the caller */
+	key = k_spin_lock(&db_hash.lock);
+	(void)memcpy(hash, db_hash.hash, sizeof(hash));
+	k_spin_unlock(&db_hash.lock, key);
+
+	err = bt_settings_store_hash(hash, sizeof(hash));
 	if (err) {
 		LOG_ERR("Failed to save Database Hash (err %d)", err);
 	}
@@ -748,19 +772,25 @@ static void db_hash_store(void)
 #endif	/* CONFIG_BT_SETTINGS */
 }
 
-static void db_hash_gen(void)
+/* The database can change while it is walked: the hash is then not
+ * published. Computations can overlap.
+ */
+static int db_hash_gen(void)
 {
+	atomic_val_t walk_generation = atomic_get(&db_hash.db_generation);
 	uint8_t key[16] = {};
 	struct gen_hash_state state;
+	k_spinlock_key_t lock_key;
+	uint8_t hash[BT_GATT_DB_HASH_SIZE];
 
 	if (db_hash_setup(&state, key) != 0) {
-		return;
+		return -EIO;
 	}
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, gen_hash_m, &state);
 
-	if (db_hash_finish(&state) != 0) {
-		return;
+	if (db_hash_finish(&state, hash) != 0) {
+		return -EIO;
 	}
 
 	/**
@@ -770,22 +800,55 @@ static void db_hash_gen(void)
 	 * in little endianness as well. bt_smp_aes_cmac calculates the hash in
 	 * big endianness so we have to swap.
 	 */
-	sys_mem_swap(db_hash.hash, sizeof(db_hash.hash));
+	sys_mem_swap(hash, sizeof(hash));
 
-	LOG_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash), "Hash: ");
+	LOG_HEXDUMP_DBG(hash, sizeof(hash), "Hash: ");
 
-	atomic_set_bit(gatt_sc.flags, DB_HASH_VALID);
+	lock_key = k_spin_lock(&db_hash.lock);
+
+	if (walk_generation == atomic_get(&db_hash.db_generation)) {
+		(void)memcpy(db_hash.hash, hash, sizeof(hash));
+		(void)atomic_set(&db_hash.hash_generation, walk_generation);
+	}
+
+	k_spin_unlock(&db_hash.lock, lock_key);
+
+	return 0;
+}
+
+/* Copy the hash of the database as it is now to hash, or the last one published
+ * if the computation fails, and return whether it had to be computed.
+ */
+static bool db_hash_get(uint8_t hash[BT_GATT_DB_HASH_SIZE])
+{
+	bool computed = false;
+	int err = 0;
+
+	/* Again if the database changed during the computation, and once after
+	 * a failed one, as another computation can have published meanwhile.
+	 */
+	while (true) {
+		k_spinlock_key_t key = k_spin_lock(&db_hash.lock);
+		bool valid = db_hash_is_valid();
+
+		(void)memcpy(hash, db_hash.hash, sizeof(db_hash.hash));
+		k_spin_unlock(&db_hash.lock, key);
+
+		if (valid || err != 0) {
+			return computed;
+		}
+
+		computed = true;
+		err = db_hash_gen();
+	}
 }
 
 static void sc_indicate(uint16_t start, uint16_t end);
 
 static void do_db_hash(void)
 {
-	bool new_hash = !atomic_test_bit(gatt_sc.flags, DB_HASH_VALID);
-
-	if (new_hash) {
-		db_hash_gen();
-	}
+	uint8_t hash[BT_GATT_DB_HASH_SIZE];
+	__maybe_unused bool new_hash = db_hash_get(hash);
 
 #if defined(CONFIG_BT_SETTINGS)
 	bool hash_loaded_from_settings =
@@ -816,15 +879,14 @@ static void do_db_hash(void)
 		atomic_set_bit(gatt_sc.flags, DB_HASH_LOAD_PROC);
 
 		/* Check if hash matches then skip SC update */
-		if (!memcmp(db_hash.stored_hash, db_hash.hash,
-			    sizeof(db_hash.stored_hash))) {
+		if (!memcmp(db_hash.stored_hash, hash, sizeof(db_hash.stored_hash))) {
 			LOG_DBG("Database Hash matches");
 			k_work_cancel_delayable(&gatt_sc.work);
 			atomic_clear_bit(gatt_sc.flags, SC_RANGE_CHANGED);
 			return;
 		}
 
-		LOG_HEXDUMP_DBG(db_hash.hash, sizeof(db_hash.hash), "New Hash: ");
+		LOG_HEXDUMP_DBG(hash, sizeof(hash), "New Hash: ");
 
 		/* GATT database has been modified since last boot, likely due
 		 * to a firmware update or a dynamic service that was not
@@ -855,13 +917,13 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 			    void *buf, uint16_t len, uint16_t offset)
 {
 	struct gatt_cf_cfg *cfg;
+	uint8_t hash[BT_GATT_DB_HASH_SIZE];
 
 	/* Check if db_hash is already pending in which case it shall be
 	 * generated immediately instead of waiting for the work to complete.
 	 */
 	(void)k_work_cancel_delayable_sync(&db_hash.work, &db_hash.sync);
-	if (!atomic_test_bit(gatt_sc.flags, DB_HASH_VALID)) {
-		db_hash_gen();
+	if (db_hash_get(hash)) {
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 			set_all_change_unaware();
 			db_hash_store();
@@ -881,8 +943,7 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 		atomic_set_bit(cfg->flags, CF_DB_HASH_READ);
 	}
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, db_hash.hash,
-				 sizeof(db_hash.hash));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, hash, sizeof(hash));
 }
 
 static void remove_cf_cfg(struct bt_conn *conn)
@@ -1565,7 +1626,7 @@ static void db_changed(void)
 	struct bt_conn *conn;
 	int i;
 
-	atomic_clear_bit(gatt_sc.flags, DB_HASH_VALID);
+	(void)atomic_inc(&db_hash.db_generation);
 
 	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
 		bt_long_wq_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
