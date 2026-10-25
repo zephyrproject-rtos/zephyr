@@ -50,13 +50,13 @@
 	sd_io: regulator-sd-io {
 		compatible = "regulator-gpio";
 		regulator-name = "vdd-sd-io";
-		regulator-min-microvolt = <3300000>;
+		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <3300000>;
 		regulator-init-microvolt = <3300000>;
 		regulator-always-on;
 		startup-delay-us = <5000>;
 		gpios = <&gio_aon 3 GPIO_ACTIVE_HIGH>;
-		states = <3300000 0>;
+		states = <1800000 1>, <3300000 0>;
 	};
 };
 
