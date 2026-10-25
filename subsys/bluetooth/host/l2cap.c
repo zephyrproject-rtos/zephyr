@@ -76,6 +76,23 @@ LOG_MODULE_REGISTER(bt_l2cap, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_RTX_TIMEOUT	K_SECONDS(2)
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+/* Declared ahead: it allocates from disc_pool, whose destroy callback submits it */
+static void disc_work_handler(struct k_work *work);
+static K_WORK_DEFINE(disc_work, disc_work_handler);
+
+static void disc_destroy(struct net_buf *buf)
+{
+	int err;
+
+	net_buf_destroy(buf);
+
+	/* A Disconnection Request may be waiting for the buffer */
+	err = bt_work_submit(&disc_work);
+	if (err < 0) {
+		LOG_ERR("Unable to submit disc_work (err %d)", err);
+	}
+}
+
 /* Dedicated pool for disconnect buffers so they are guaranteed to be send
  * even in case of data congestion due to flooding.
  */
@@ -83,7 +100,7 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 			  BT_L2CAP_BUF_SIZE(
 				sizeof(struct bt_l2cap_sig_hdr) +
 				sizeof(struct bt_l2cap_disconn_req)),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, disc_destroy);
 
 #define ANY_OPCODE 0x100
 #define l2cap_lookup_ident(conn, ident, req_opcode)                                                \
@@ -321,8 +338,11 @@ static void l2cap_rtx_timeout(struct k_work *work)
 	bt_l2cap_chan_remove(conn, &chan->chan);
 	l2cap_chan_del(&chan->chan);
 
-	/* Remove other channels if pending on the same ident */
-	while ((chan = l2cap_remove_ident(conn, chan->ident, chan->pending_req))) {
+	/* Remove other channels if pending on the same ident. Ident 0 marks a
+	 * Disconnection Request that waits for a buffer, not a shared request.
+	 */
+	while (chan->ident != 0U &&
+	       (chan = l2cap_remove_ident(conn, chan->ident, chan->pending_req))) {
 		l2cap_chan_del(&chan->chan);
 	}
 }
@@ -487,16 +507,10 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 					       uint16_t len)
 {
 	struct bt_l2cap_sig_hdr *hdr;
-	struct net_buf_pool *pool = NULL;
 	struct net_buf *buf;
 
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	if (code == BT_L2CAP_DISCONN_REQ) {
-		pool = &disc_pool;
-	}
-#endif
 	/* Don't wait more than the minimum RTX timeout of 2 seconds */
-	buf = bt_l2cap_create_pdu_timeout(pool, 0, L2CAP_RTX_TIMEOUT);
+	buf = bt_l2cap_create_pdu_timeout(NULL, 0, L2CAP_RTX_TIMEOUT);
 	if (!buf) {
 		/* If it was not possible to allocate a buffer within the
 		 * timeout return NULL.
@@ -3359,13 +3373,77 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	return l2cap_le_connect(conn, le_chan, psm);
 }
 
+/* Never waits for a buffer: disc_work_handler() sends a request that found none */
+static int l2cap_disconn_req(struct bt_l2cap_le_chan *le_chan)
+{
+	struct bt_l2cap_disconn_req *req;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct net_buf *buf;
+
+	buf = bt_l2cap_create_pdu_timeout(&disc_pool, 0, K_NO_WAIT);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	le_chan->ident = get_ident();
+	le_chan->pending_req = BT_L2CAP_DISCONN_REQ;
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_DISCONN_REQ;
+	hdr->ident = le_chan->ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*req));
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->dcid = sys_cpu_to_le16(le_chan->tx.cid);
+	req->scid = sys_cpu_to_le16(le_chan->rx.cid);
+
+	l2cap_chan_send_req(&le_chan->chan, buf, L2CAP_DISC_TIMEOUT);
+
+	return 0;
+}
+
+static void disc_req_send_waiting(struct bt_conn *conn, void *data)
+{
+	struct bt_l2cap_chan *chan;
+	bool *no_buf = data;
+
+	if (*no_buf || conn->state != BT_CONN_CONNECTED) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+
+		/* A request that waits for a buffer has no identifier yet */
+		if (!L2CAP_LE_CID_IS_DYN(le_chan->rx.cid) ||
+		    le_chan->state != BT_L2CAP_DISCONNECTING ||
+		    le_chan->pending_req != BT_L2CAP_DISCONN_REQ || le_chan->ident != 0U) {
+			continue;
+		}
+
+		if (l2cap_disconn_req(le_chan) != 0) {
+			*no_buf = true;
+			return;
+		}
+	}
+}
+
+static void disc_work_handler(struct k_work *work)
+{
+	bool no_buf = false;
+
+	ARG_UNUSED(work);
+
+	bt_dev_lock();
+	bt_conn_foreach(BT_CONN_TYPE_LE, disc_req_send_waiting, &no_buf);
+	bt_dev_unlock();
+}
+
 int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 {
 	struct bt_conn *conn = chan->conn;
-	struct net_buf *buf;
-	struct bt_l2cap_disconn_req *req;
 	struct bt_l2cap_le_chan *le_chan;
-	uint8_t ident;
+	int err = 0;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -3379,24 +3457,31 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("chan %p scid 0x%04x dcid 0x%04x", chan, le_chan->rx.cid, le_chan->tx.cid);
 
-	ident = get_ident();
+	/* Held until the state is updated: disc_work_handler() must not miss a
+	 * request that starts to wait, and a concurrent call for the channel
+	 * must not mistake a request being sent for one that waits
+	 */
+	bt_dev_lock();
 
-	buf = l2cap_create_le_sig_pdu(BT_L2CAP_DISCONN_REQ, ident, sizeof(*req));
-	if (!buf) {
-		return -ENOMEM;
+	if (l2cap_disconn_req(le_chan) == 0) {
+		l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
+	} else if (le_chan->state != BT_L2CAP_CONNECTED ||
+		   k_work_delayable_is_pending(&le_chan->rtx_work)) {
+		/* Only a connected channel without a request of its own in
+		 * flight waits: any other keeps that request and its RTX timer
+		 */
+		err = -ENOMEM;
+	} else {
+		LOG_DBG("chan %p waits for a buffer", chan);
+
+		le_chan->ident = 0U;
+		le_chan->pending_req = BT_L2CAP_DISCONN_REQ;
+		l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
 	}
 
-	le_chan->ident = ident;
-	le_chan->pending_req = BT_L2CAP_DISCONN_REQ;
+	bt_dev_unlock();
 
-	req = net_buf_add(buf, sizeof(*req));
-	req->dcid = sys_cpu_to_le16(le_chan->tx.cid);
-	req->scid = sys_cpu_to_le16(le_chan->rx.cid);
-
-	l2cap_chan_send_req(chan, buf, L2CAP_DISC_TIMEOUT);
-	l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
-
-	return 0;
+	return err;
 }
 
 __maybe_unused static bool user_data_not_empty(const struct net_buf *buf)

@@ -1050,14 +1050,20 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
  *  Regarding to input parameter, to get details see reference description
  *  to bt_l2cap_chan_connect() API above.
  *
- *  @note For BR/EDR connections, this function does not wait for a signaling buffer. If signaling
- *  buffers are temporarily unavailable, the disconnection request will be retried asynchronously.
- *  The return value 0 indicates that the disconnection process has been successfully initiated,
- *  not that the disconnection request PDU has been sent.
+ *  @note This function does not wait for a signaling buffer. If signaling buffers are
+ *  temporarily unavailable, the disconnection request will be retried asynchronously, except in
+ *  the case of ``-ENOMEM`` below. The return value 0 indicates that the disconnection process has
+ *  been successfully initiated, not that the disconnection request PDU has been sent.
  *
  *  @param chan Channel object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 Disconnection initiated.
+ *  @retval -ENOTCONN The channel has no connection.
+ *  @retval -EALREADY A BR/EDR channel is already being disconnected.
+ *  @retval -ENOMEM No buffer for the request of an LE channel that is not connected or that waits
+ *                  for the response to a request of its own. The channel is left as it is: a
+ *                  disconnection in progress continues, and otherwise the call can be repeated
+ *                  once the pending request has completed.
  */
 int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
 
