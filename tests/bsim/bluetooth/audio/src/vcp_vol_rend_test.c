@@ -1073,6 +1073,17 @@ static void test_main(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
+	/* The volume controller disconnects and connects again */
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to start advertising set (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
 	PASS("VCP volume renderer passed\n");
 }
 
