@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.console.uart_console_newline:
+    tags:
+      - drivers
+      - console
+      - uart
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "CONSOLE-NEWLINE-PASS"

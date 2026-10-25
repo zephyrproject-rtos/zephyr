@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  lib.c_lib.write_stdout:
+    tags:
+      - libc
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+  lib.c_lib.write_stdout.newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
+    tags:
+      - libc
+      - newlib
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    platform_allow:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
