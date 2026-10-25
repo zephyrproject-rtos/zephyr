@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SDHC_BCM2712
+	bool "Broadcom BCM2712 SD host controller"
+	default y
+	depends on DT_HAS_BRCM_BCM2712_SDHCI_ENABLED
+	select SDHC_STANDARD_CORE
+	select SDHC_SUPPORTS_UHS
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select EVENTS
+	select PINCTRL
+	select GPIO
+	select REGULATOR
+	help
+	  Enable the BCM2712 SD host controller with PIO fallback, 3.3 V
+	  legacy/HS and optional 1.8 V SDR50/SDR104 signalling up to 200 MHz.
+	  Use sd-uhs-modes to select UHS modes on boards with a switchable I/O
+	  supply and 1.8 V signalling enabled.
+	  SDR104 multi-block transfers require a card that supports CMD23.
+	  Configure main-bank SDIO pins through pinctrl. Dedicated EMMC pads used
+	  by the SD card slot must retain the boot firmware configuration.
+	  Use interrupts when devicetree provides an interrupt specifier;
+	  otherwise poll for completion. Support SD memory and SDIO requests.
+	  Requests are limited to 512 bytes per block, including SDIO.
+	  In tuning-required modes with retuning mode below 2, requests larger
+	  than 4 MiB are rejected. Applications must use smaller transfers.
+	  SDIO card interrupts require a devicetree interrupt specifier.
+	  eMMC-specific modes are not implemented.
+	  Power/voltage, clock-stability and controller or card recovery failures
+	  latch the host until the application calls sdhc_hw_reset() and
+	  reinitializes the card. The SD stack does not reset the host itself.
+	  Failed tuning can be retried after successful command/data line recovery.
+
+if SDHC_BCM2712
+
+menuconfig SDHC_BCM2712_DMA
+	bool "BCM2712 ADMA2 transfers"
+	depends on DCACHE
+	default y
+	select CACHE_MANAGEMENT
+	help
+	  Use ADMA2 with a driver-owned bounce buffer when the controller supports
+	  the selected format. Use PIO when ADMA2 is unavailable or the transfer
+	  does not fit the bounce buffer.
+
+if SDHC_BCM2712_DMA
+
+config SDHC_BCM2712_DMA_64BIT
+	bool "64-bit ADMA2 descriptors"
+	default y
+	help
+	  Use the SDHCI v3-compatible 64-bit descriptor format. If the
+	  controller does not report 64-bit system bus support, ADMA2 is
+	  disabled and all transfers use PIO. Disable this option to use 32-bit
+	  descriptors and limit DMA addresses to the lower 4 GiB.
+
+config SDHC_BCM2712_DMA_BUFFER_SIZE
+	int "BCM2712 ADMA2 bounce buffer size"
+	default 4096
+	range 64 65536
+	help
+	  Allocate this many bytes per host for DMA transfers. Round the allocation
+	  up to the cache-line alignment. Transfers exceeding this size use PIO.
+
+endif # SDHC_BCM2712_DMA
+
+endif # SDHC_BCM2712
