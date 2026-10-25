@@ -3404,6 +3404,7 @@ int zsock_getpeername_ctx(struct net_context *ctx, struct net_sockaddr *addr,
 		addr6.sin6_port = net_sin6(&ctx->remote)->sin6_port;
 		memcpy(&addr6.sin6_addr, &net_sin6(&ctx->remote)->sin6_addr,
 		       sizeof(struct net_in6_addr));
+		addr6.sin6_scope_id = net_sin6(&ctx->remote)->sin6_scope_id;
 		newlen = sizeof(struct net_sockaddr_in6);
 
 		memcpy(addr, &addr6, MIN(*addrlen, newlen));
