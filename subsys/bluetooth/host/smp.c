@@ -6045,13 +6045,19 @@ int bt_smp_le_oob_set_tk(struct bt_conn *conn, const uint8_t *tk)
 
 int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 {
+	const uint8_t *pkey;
 	int err;
 
 	if (!le_sc_supported()) {
 		return -ENOTSUP;
 	}
 
-	if (!sc_public_key) {
+	/* The key is taken from ecc.c: sc_public_key is set only when
+	 * bt_smp_pkey_ready() runs, after the publication, and until then
+	 * still points to the key of a previous enable.
+	 */
+	pkey = bt_pub_key_get();
+	if (pkey == NULL) {
 		/* Public key request has not been finished yet, or finished, but generation failed.
 		 * Retrying.
 		 */
@@ -6070,7 +6076,8 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 			return err;
 		}
 
-		if (bt_is_work_thread()) {
+		pkey = bt_pub_key_get();
+		if (pkey == NULL && bt_is_work_thread()) {
 			/* The key is delivered on this thread, so waiting
 			 * for it here could only time out.
 			 */
@@ -6082,28 +6089,31 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 			return -EAGAIN;
 		}
 
-		/* 30 seconds is an arbitrary number. Increase if fails earlier on certain
-		 * platforms.
-		 */
-		err = k_condvar_wait(&pub_key_gen.condvar,
-				     &pub_key_gen.lock,
-				     K_SECONDS(30));
-		if (err != 0) {
-			LOG_WRN("Public key generation timeout");
+		if (pkey == NULL) {
+			/* 30 seconds is an arbitrary number. Increase if fails earlier on certain
+			 * platforms.
+			 */
+			err = k_condvar_wait(&pub_key_gen.condvar, &pub_key_gen.lock,
+					     K_SECONDS(30));
+			if (err != 0) {
+				LOG_WRN("Public key generation timeout");
 
-			__maybe_unused int mutex_err;
+				__maybe_unused int mutex_err;
 
-			mutex_err = k_mutex_unlock(&pub_key_gen.lock);
-			__ASSERT_NO_MSG(mutex_err == 0);
+				mutex_err = k_mutex_unlock(&pub_key_gen.lock);
+				__ASSERT_NO_MSG(mutex_err == 0);
 
-			return err;
+				return err;
+			}
+
+			pkey = bt_pub_key_get();
 		}
 
 		err = k_mutex_unlock(&pub_key_gen.lock);
 		__ASSERT_NO_MSG(err == 0);
 
 		/* Public key has been re-requested but generation failed. */
-		if (!sc_public_key) {
+		if (pkey == NULL) {
 			return -EAGAIN;
 		}
 	}
@@ -6122,8 +6132,7 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 		}
 	}
 
-	err = bt_crypto_f4(sc_public_key, sc_public_key, le_sc_oob->r, 0,
-		     le_sc_oob->c);
+	err = bt_crypto_f4(pkey, pkey, le_sc_oob->r, 0, le_sc_oob->c);
 	if (err) {
 		return err;
 	}

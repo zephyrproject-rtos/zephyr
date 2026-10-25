@@ -455,3 +455,159 @@ static ZTEST(host_ecc_context, test_pub_key_kept_after_queued_again)
 	zassert_mem_equal(bt_pub_key_get(), seen.pub_key, BT_PUB_KEY_LEN,
 			  "Published public key replaced");
 }
+
+/* A public key callback registered after SMP's, so called before it: the key
+ * is published, and SMP has not been told yet.
+ */
+static struct {
+	struct k_sem entered;
+	struct k_sem release;
+	uint8_t key[BT_PUB_KEY_LEN];
+} delivery;
+
+static void hold_delivery(const uint8_t key[BT_PUB_KEY_LEN])
+{
+	if (key != NULL) {
+		(void)memcpy(delivery.key, key, BT_PUB_KEY_LEN);
+	}
+
+	k_sem_give(&delivery.entered);
+	(void)k_sem_take(&delivery.release, K_FOREVER);
+}
+
+#define OOB_THREADS    2
+#define OOB_STACK_SIZE 4096
+
+static K_THREAD_STACK_ARRAY_DEFINE(oob_stacks, OOB_THREADS, OOB_STACK_SIZE);
+static struct k_thread oob_threads[OOB_THREADS];
+
+static struct {
+	struct bt_le_oob oob;
+	int err;
+} oob_results[OOB_THREADS];
+
+static void oob_thread(void *p1, void *p2, void *p3)
+{
+	size_t i = POINTER_TO_UINT(p1);
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	oob_results[i].err = bt_le_oob_get_local(BT_ID_DEFAULT, &oob_results[i].oob);
+}
+
+static void oob_start(size_t i)
+{
+	(void)k_thread_create(&oob_threads[i], oob_stacks[i], K_THREAD_STACK_SIZEOF(oob_stacks[i]),
+			      oob_thread, UINT_TO_POINTER(i), NULL, NULL, K_PRIO_PREEMPT(1), 0,
+			      K_NO_WAIT);
+}
+
+/* OOB data asked for after bt_disable() and bt_enable(), before the new key
+ * is there, waits for it instead of being made with the previous one.
+ */
+static ZTEST(host_ecc_context, test_oob_data_waits_for_new_pub_key)
+{
+	struct bt_le_oob oob;
+	int entered_err;
+	int disable_err;
+	int enable_err;
+	int join_err;
+	int oob_err;
+
+	/* Nothing is asserted before the release, which a failed assertion
+	 * would skip.
+	 */
+	disable_err = bt_disable();
+	atomic_set(&keygen.hold, 1);
+	enable_err = bt_enable(NULL);
+	entered_err = k_sem_take(&keygen.entered, ECC_TIMEOUT);
+	oob_start(0);
+	k_sleep(K_MSEC(10));
+	keygen_release();
+
+	join_err = k_thread_join(&oob_threads[0], ECC_TIMEOUT);
+	settle();
+
+	zassert_ok(disable_err);
+	zassert_ok(enable_err);
+	zassert_ok(entered_err, "No key generation");
+	zassert_ok(join_err);
+	zassert_ok(oob_results[0].err, "OOB data: %d", oob_results[0].err);
+
+	oob_err = bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
+	zassert_ok(oob_err);
+	zassert_mem_equal(oob_results[0].oob.le_sc_data.c, oob.le_sc_data.c,
+			  sizeof(oob.le_sc_data.c), "OOB data made with another public key");
+}
+
+/* OOB data asked for after a new key has been published but before SMP has
+ * been told is made with that key, and the key stays.
+ */
+static ZTEST(host_ecc_context, test_oob_data_while_pub_key_delivered)
+{
+	static struct bt_pub_key_cb cb = { .func = hold_delivery };
+	struct bt_le_oob oob;
+	int entered_err[2];
+	int join_err[OOB_THREADS];
+	int disable_err;
+	int enable_err;
+	int gen_err;
+	int oob_err;
+
+	k_sem_init(&delivery.entered, 0, 1);
+	k_sem_init(&delivery.release, 0, 1);
+
+	/* A failed generation leaves SMP without a key */
+	disable_err = bt_disable();
+	atomic_set(&keygen.fail, 1);
+	enable_err = bt_enable(NULL);
+	settle();
+	zassert_ok(disable_err);
+	zassert_ok(enable_err);
+	zassert_is_null(bt_pub_key_get(), "Public key generated");
+
+	/* The first caller requests a new key and waits for it. Its delivery
+	 * is held after the publication, while the second caller asks.
+	 * Nothing is asserted before the releases, which a failed assertion
+	 * would skip.
+	 */
+	atomic_set(&keygen.hold, 1);
+	oob_start(0);
+	entered_err[0] = k_sem_take(&keygen.entered, ECC_TIMEOUT);
+	gen_err = bt_pub_key_gen(&cb);
+	keygen_release();
+	entered_err[1] = k_sem_take(&delivery.entered, ECC_TIMEOUT);
+
+	oob_start(1);
+	k_sleep(K_MSEC(10));
+	k_sem_give(&delivery.release);
+
+	for (size_t i = 0; i < OOB_THREADS; i++) {
+		join_err[i] = k_thread_join(&oob_threads[i], ECC_TIMEOUT);
+	}
+
+	settle();
+
+	zassert_ok(entered_err[0], "No key generation");
+	zassert_ok(gen_err);
+	zassert_ok(entered_err[1], "Public key not delivered");
+
+	for (size_t i = 0; i < OOB_THREADS; i++) {
+		zassert_ok(join_err[i]);
+		zassert_ok(oob_results[i].err, "OOB data %zu: %d", i, oob_results[i].err);
+	}
+
+	zassert_not_null(bt_pub_key_get(), "No public key published");
+	zassert_mem_equal(bt_pub_key_get(), delivery.key, BT_PUB_KEY_LEN,
+			  "Published public key replaced");
+
+	oob_err = bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
+	zassert_ok(oob_err);
+
+	for (size_t i = 0; i < OOB_THREADS; i++) {
+		zassert_mem_equal(oob_results[i].oob.le_sc_data.c, oob.le_sc_data.c,
+				  sizeof(oob.le_sc_data.c),
+				  "OOB data %zu made with another public key", i);
+	}
+}
