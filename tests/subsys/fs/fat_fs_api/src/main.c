@@ -7,6 +7,7 @@
 
 #include <time.h>
 
+#include <zephyr/sys/clock.h>
 #include "test_fat.h"
 void test_fs_open_flags(void);
 const char *test_fs_open_flags_file_path = FATFS_MNTP "/the_file.txt";
@@ -14,8 +15,12 @@ const char *test_fs_open_flags_file_path = FATFS_MNTP "/the_file.txt";
 /* Time integration for filesystem */
 DWORD get_fattime(void)
 {
-	time_t unix_time = time(NULL);
+	struct timespec ts;
+	time_t unix_time;
 	struct tm *cal;
+
+	sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
+	unix_time = ts.tv_sec;
 
 	/* Convert to calendar time */
 	cal = localtime(&unix_time);
@@ -33,6 +38,9 @@ static void *fat_fs_basic_setup(void)
 	test_fat_file();
 	test_fat_dir();
 	test_fat_fs();
+#ifdef CONFIG_FILE_SYSTEM_GETATTR
+	test_fat_attr();
+#endif /* CONFIG_FILE_SYSTEM_GETATTR */
 	test_fat_rename();
 	test_fat_cve();
 	test_fs_open_flags();
