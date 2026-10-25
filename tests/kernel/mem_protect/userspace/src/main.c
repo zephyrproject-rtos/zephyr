@@ -1506,7 +1506,7 @@ ZTEST_USER(userspace, test_userspace_syscall_context)
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 static void tls_leakage_user_part(void *p1, void *p2, void *p3)
 {
-	char *tls_area = p1;
+	uint8_t *tls_area = p1;
 
 	for (int i = 0; i < sizeof(struct _thread_userspace_local_data); i++) {
 		zassert_false(tls_area[i] == 0xff,
