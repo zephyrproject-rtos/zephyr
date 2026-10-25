@@ -6,6 +6,7 @@ config SDHC_BCM2712
 	default y
 	depends on DT_HAS_BRCM_BCM2712_SDHCI_ENABLED
 	select SDHC_STANDARD_CORE
+	select SDHC_SUPPORTS_UHS
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select EVENTS
 	select CLOCK_CONTROL
@@ -13,9 +14,10 @@ config SDHC_BCM2712
 	select GPIO
 	select REGULATOR
 	help
-	  Enable the BCM2712 SD host controller with PIO fallback and 3.3 V
-	  signalling and a maximum bus frequency of 50 MHz. The boot firmware
-	  must configure the SD pins before starting Zephyr.
+	  Enable the BCM2712 SD host controller with PIO fallback, 3.3 V
+	  legacy/HS and optional 1.8 V SDR50 signalling up to 100 MHz. Enable
+	  SDR50 through devicetree on boards with a switchable I/O supply.
+	  The boot firmware must configure the SD pins before starting Zephyr.
 	  Use interrupts when devicetree provides an interrupt specifier;
 	  otherwise poll for completion. Validated with SD memory cards.
 	  SDIO and eMMC operation is untested.
