@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - bluetooth
+    - bluetooth_audio
+tests:
+  bluetooth.audio.aics_client.test_default:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
