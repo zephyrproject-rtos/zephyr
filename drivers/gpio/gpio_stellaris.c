@@ -62,9 +62,10 @@ static void gpio_stellaris_isr(const struct device *dev)
 	uint32_t base = cfg->base;
 	uint32_t int_stat = sys_read32(GPIO_REG_ADDR(base, GPIO_MIS_OFFSET));
 
-	gpio_fire_callbacks(&context->cb, dev, int_stat);
-
+	/* Cleared first, so a new edge on a pin being handled raises another interrupt */
 	sys_write32(int_stat, GPIO_REG_ADDR(base, GPIO_ICR_OFFSET));
+
+	gpio_fire_callbacks(&context->cb, dev, int_stat);
 }
 
 static int gpio_stellaris_configure(const struct device *dev,
