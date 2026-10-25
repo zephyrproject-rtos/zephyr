@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Ziyou Wang
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The console is routed to an emulated UART so the bytes produced by
+ * console_out() can be inspected from the test. The board UART stays enabled
+ * and is used to report the verdict, which is what twister reads.
+ */
+
+/ {
+	chosen {
+		zephyr,console = &emul_uart;
+	};
+
+	emul_uart: uart-emul0 {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <0>;
+		rx-fifo-size = <256>;
+		tx-fifo-size = <256>;
+	};
+};
