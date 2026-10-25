@@ -284,8 +284,8 @@ static inline void i128_multiply_i64_i64(int64_t a, int64_t b, int128_t *result)
 #else
 static inline void i128_multiply_i64_i64(int64_t a, int64_t b, int128_t *result)
 {
-	uint64_t u_a = (a < 0) ? (uint64_t)-a : (uint64_t)a;
-	uint64_t u_b = (b < 0) ? (uint64_t)-b : (uint64_t)b;
+	uint64_t u_a = (a < 0) ? ((uint64_t)0 - (uint64_t)a) : (uint64_t)a;
+	uint64_t u_b = (b < 0) ? ((uint64_t)0 - (uint64_t)b) : (uint64_t)b;
 	int sign = (a < 0) ^ (b < 0);
 
 	/* Split to 32-bit values */
