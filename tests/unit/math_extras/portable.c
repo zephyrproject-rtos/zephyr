@@ -6,7 +6,7 @@
 
 /* Test the portable version of the math_extras.h functions */
 #define PORTABLE_MISC_MATH_EXTRAS 1
-#define VNAME(N) test_portable_##N
+#define VNAME(N) run_portable_##N
 #include "tests.inc"
 
 ZTEST(math_extras_portable, test_portable_u32_add) {
@@ -47,6 +47,10 @@ ZTEST(math_extras_portable, test_portable_u32_ctz) {
 
 ZTEST(math_extras_portable, test_portable_u64_ctz) {
 	run_portable_u64_ctz();
+}
+
+ZTEST(math_extras_portable, test_portable_i128_mul) {
+	run_portable_i128_mul();
 }
 
 ZTEST_SUITE(math_extras_portable, NULL, NULL, NULL, NULL, NULL);
