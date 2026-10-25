@@ -24,6 +24,7 @@ static const struct arm_mmu_region mmu_regions[] = {
 	/* AIC Interrupt Redirection Register is located in SFR memory region */
 	MMU_REGION_STRONG(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aic)), sfr)
 
+	MMU_REGION_SFR_DEFN(aes)
 	MMU_REGION_SFR_DEFN(aic)
 	MMU_REGION_SFR_DEFN(pmc)
 	MMU_REGION_SFR_DEFN(rtc)
