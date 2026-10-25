@@ -1,0 +1,69 @@
+/*
+ * Copyright (C) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <common/freq.h>
+#include <dt-bindings/sam/sama7g5/sama7g54/sama7g54-pinctrl.h>
+#include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/microchip-sam-gpio.h>
+#include <microchip/sam/sama7/sama7g5/sama7g54.dtsi>
+
+/ {
+	model = "SAMA7G54 Curiosity Pro board";
+	compatible = "microchip,sama7g54-cpro", "microchip,sama7g5", "microchip,sama7";
+
+	chosen {
+		zephyr,sram = &ddram;
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,system-timer = &pit64b0;
+	};
+
+	clocks {
+		main_xtal {
+			clock-frequency = <DT_FREQ_M(24)>;
+		};
+
+		slow_xtal {
+			clock-frequency = <32768>;
+		};
+	};
+
+	/* EM6HF16EBXC: 128-Mbit low-power mobile DRAM‌ */
+	ddram: ddram@60000000 {
+		compatible = "mmio-sram";
+		reg = <0x60000000 DT_SIZE_M(16)>;
+		device_type = "memory";
+	};
+};
+
+&flx3 {
+	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_USART>;
+	status = "okay";
+
+	usart3: serial@200 {
+		current-speed = <115200>;
+		pinctrl-0 = <&pinctrl_flx3_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&pinctrl {
+	pinctrl_flx3_default: flx3_default {
+		group1 {
+			pinmux = <PIN_PD16__FLEXCOM3_IO0>,
+				 <PIN_PD17__FLEXCOM3_IO1>;
+			bias-disable;
+		};
+	};
+};
+
+&pit64b0 {
+	clock-frequency = <DT_FREQ_M(10)>;
+};
