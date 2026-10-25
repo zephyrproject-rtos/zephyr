@@ -39,7 +39,11 @@ elseif(CONFIG_BT_MESH_GATT_PROXY)
   src/test_suspend.c
   src/test_beacon.c
   src/test_provision.c
+  src/test_gatt_srv.c
  )
+
+  add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/common/testlib testlib)
+  target_link_libraries(app PRIVATE testlib)
 
 elseif(CONFIG_BT_CTLR_LOW_LAT)
 
