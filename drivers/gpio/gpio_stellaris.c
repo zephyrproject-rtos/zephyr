@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 #include <soc.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -29,6 +30,7 @@ struct gpio_stellaris_runtime {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 	sys_slist_t cb;
+	struct k_spinlock lock;
 };
 
 #define GPIO_REG_ADDR(base, offset) (base + offset)
@@ -189,12 +191,19 @@ static int gpio_stellaris_port_toggle_bits(const struct device *dev,
 					   uint32_t mask)
 {
 	const struct gpio_stellaris_config *cfg = dev->config;
+	struct gpio_stellaris_runtime *context = dev->data;
 	uint32_t base = cfg->base;
+	k_spinlock_key_t key;
 	uint32_t value;
 
-	value = sys_read32(gpio_stellaris_data_addr(base, GPIO_PORT_PINS_MASK));
-	value ^= mask;
-	sys_write32(value, gpio_stellaris_data_addr(base, GPIO_PORT_PINS_MASK));
+	/*
+	 * Through the masked address, so the other pins of the port are not written, and under
+	 * the lock, so a toggle of the same pins between the read and the write is not lost
+	 */
+	key = k_spin_lock(&context->lock);
+	value = sys_read32(gpio_stellaris_data_addr(base, mask));
+	sys_write32(value ^ mask, gpio_stellaris_data_addr(base, mask));
+	k_spin_unlock(&context->lock, key);
 
 	return 0;
 }
