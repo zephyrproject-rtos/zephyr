@@ -170,11 +170,18 @@ static void write_obj_tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		       struct bt_conn *conn, struct net_buf *buf)
 {
-	const uint32_t offset = cur_inst->rcvd_size;
+	uint32_t offset;
 	bool is_complete = false;
-	const struct bt_ots_obj_metadata *cur_object =
-		&cur_inst->otc_inst->cur_object;
+	const struct bt_ots_obj_metadata *cur_object;
 	int cb_ret;
+
+	if (cur_inst == NULL) {
+		LOG_WRN("Received L2CAP data without a transfer in progress");
+		return 0;
+	}
+
+	offset = cur_inst->rcvd_size;
+	cur_object = &cur_inst->otc_inst->cur_object;
 
 	LOG_DBG("Incoming L2CAP data, context: %p, conn: %p, len: %u, offset: %u", l2cap_ctx,
 		(void *)conn, buf->len, offset);
@@ -506,7 +513,7 @@ int bt_ots_client_register(struct bt_ots_client *otc_inst)
 		}
 
 		LOG_DBG("%u", i);
-		err = bt_gatt_ots_l2cap_register(&otc_insts[i].l2cap_ctx);
+		err = bt_gatt_ots_l2cap_client_register(&otc_insts[i].l2cap_ctx);
 		if (err) {
 			LOG_WRN("Could not register L2CAP context %d", err);
 			return err;

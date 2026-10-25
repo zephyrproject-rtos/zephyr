@@ -48,8 +48,12 @@ NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, OT_CHAN_COUNT,
 NET_BUF_POOL_FIXED_DEFINE(ot_chan_rx_pool, OT_CHAN_COUNT, CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU, 8, NULL);
 #endif
 
-/* List of Object Transfer Channels. */
-static sys_slist_t channels;
+/* Object Transfer Channel contexts, kept apart by role: the acceptor only ever
+ * hands out a server context, and the client side only ever connects a client
+ * context, so a context is never used for the other role.
+ */
+static sys_slist_t server_channels = SYS_SLIST_STATIC_INIT(&server_channels);
+static sys_slist_t client_channels = SYS_SLIST_STATIC_INIT(&client_channels);
 
 static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 {
@@ -194,11 +198,11 @@ static inline void l2cap_chan_init(struct bt_l2cap_le_chan *chan)
 	LOG_DBG("RX MTU set to %u", chan->rx.mtu);
 }
 
-static struct bt_gatt_ots_l2cap *find_free_l2cap_ctx(void)
+static struct bt_gatt_ots_l2cap *find_free_l2cap_ctx(sys_slist_t *channels)
 {
 	struct bt_gatt_ots_l2cap *l2cap_ctx;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&channels, l2cap_ctx, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(channels, l2cap_ctx, node) {
 		if (l2cap_ctx->ot_chan.chan.conn) {
 			continue;
 		}
@@ -216,7 +220,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 
 	LOG_DBG("Incoming conn %p", (void *)conn);
 
-	l2cap_ctx = find_free_l2cap_ctx();
+	l2cap_ctx = find_free_l2cap_ctx(&server_channels);
 	if (l2cap_ctx) {
 		l2cap_chan_init(&l2cap_ctx->ot_chan);
 		memset(&l2cap_ctx->tx, 0, sizeof(l2cap_ctx->tx));
@@ -237,8 +241,6 @@ static struct bt_l2cap_server l2cap_server = {
 static int bt_gatt_ots_l2cap_init(void)
 {
 	int err;
-
-	sys_slist_init(&channels);
 
 	err = bt_l2cap_server_register(&l2cap_server);
 	if (err) {
@@ -287,14 +289,21 @@ int bt_gatt_ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
 int bt_gatt_ots_l2cap_register(struct bt_gatt_ots_l2cap *l2cap_ctx)
 {
-	sys_slist_append(&channels, &l2cap_ctx->node);
+	sys_slist_append(&server_channels, &l2cap_ctx->node);
 
 	return 0;
 }
 
 int bt_gatt_ots_l2cap_unregister(struct bt_gatt_ots_l2cap *l2cap_ctx)
 {
-	sys_slist_find_and_remove(&channels, &l2cap_ctx->node);
+	sys_slist_find_and_remove(&server_channels, &l2cap_ctx->node);
+
+	return 0;
+}
+
+int bt_gatt_ots_l2cap_client_register(struct bt_gatt_ots_l2cap *l2cap_ctx)
+{
+	sys_slist_append(&client_channels, &l2cap_ctx->node);
 
 	return 0;
 }
@@ -318,7 +327,7 @@ int bt_gatt_ots_l2cap_connect(struct bt_conn *conn,
 
 	*l2cap_ctx = NULL;
 
-	ctx = find_free_l2cap_ctx();
+	ctx = find_free_l2cap_ctx(&client_channels);
 	if (!ctx) {
 		return -ENOMEM;
 	}
