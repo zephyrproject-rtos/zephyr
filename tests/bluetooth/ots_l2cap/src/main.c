@@ -770,34 +770,30 @@ static int obj_data_read(struct bt_ots_client *inst, struct bt_conn *link, uint3
 	return BT_OTS_CONTINUE;
 }
 
-/* After an OTS client transfer, the client's channel context is free but keeps
- * the client's receive callback. The acceptor must not hand that context to an
- * incoming channel, where a received SDU would run the client receive path with
- * no transfer in progress.
- */
-static ZTEST(ots_l2cap, test_client_context_not_reused_on_accept)
+/* The OTS client instance, which the first case that uses it registers */
+static struct bt_ots_client *client(void)
 {
 	static struct bt_ots_client otc;
 	static struct bt_ots_client_cb cb = { .obj_data_read = obj_data_read };
+
+	if (otc.cb == NULL) {
+		otc.start_handle = CLIENT_START_HANDLE;
+		otc.end_handle = CLIENT_END_HANDLE;
+		otc.oacp_handle = CLIENT_OACP_HANDLE;
+		otc.cb = &cb;
+		zassert_ok(bt_ots_client_register(&otc));
+	}
+
+	return &otc;
+}
+
+/* The OTS client connects a channel for a procedure. Returns the Host's CID. */
+static uint16_t client_chan_connect(void)
+{
 	struct bt_l2cap_le_conn_req *req;
-	struct bt_l2cap_le_conn_rsp *rsp;
 	struct net_buf *buf;
 	uint16_t host_cid;
-	uint16_t result;
 	uint8_t ident;
-
-	(void)memset(&otc, 0, sizeof(otc));
-	otc.start_handle = CLIENT_START_HANDLE;
-	otc.end_handle = CLIENT_END_HANDLE;
-	otc.oacp_handle = CLIENT_OACP_HANDLE;
-	otc.cur_object.size.cur = 1U;
-	otc.cb = &cb;
-	zassert_ok(bt_ots_client_register(&otc));
-
-	/* Start reading an object: the client connects a channel and marks a
-	 * transfer in progress.
-	 */
-	(void)bt_ots_client_read_object_data(&otc, conn);
 
 	buf = wait_sig(BT_L2CAP_LE_CONN_REQ, &ident);
 	req = net_buf_pull_mem(buf, sizeof(*req));
@@ -805,6 +801,32 @@ static ZTEST(ots_l2cap, test_client_context_not_reused_on_accept)
 	host_cid = sys_le16_to_cpu(req->scid);
 	net_buf_unref(buf);
 	send_conn_rsp(ident, CLIENT_PEER_CID);
+
+	return host_cid;
+}
+
+/* After an OTS client transfer, the client's channel context is free but keeps
+ * the client's receive callback. The acceptor must not hand that context to an
+ * incoming channel, where a received SDU would run the client receive path with
+ * no transfer in progress.
+ */
+static ZTEST(ots_l2cap, test_client_context_not_reused_on_accept)
+{
+	struct bt_ots_client *otc = client();
+	struct bt_l2cap_le_conn_rsp *rsp;
+	struct net_buf *buf;
+	uint16_t host_cid;
+	uint16_t result;
+	uint8_t ident;
+
+	otc->cur_object.size.cur = 1U;
+
+	/* Start reading an object: the client connects a channel and marks a
+	 * transfer in progress.
+	 */
+	(void)bt_ots_client_read_object_data(otc, conn);
+
+	host_cid = client_chan_connect();
 	recv_att_write_rsp();
 
 	/* Close the channel before any object data: the client ends the transfer
@@ -833,5 +855,36 @@ static ZTEST(ots_l2cap, test_client_context_not_reused_on_accept)
 	net_buf_unref(buf);
 
 	zassert_equal(result, BT_L2CAP_LE_ERR_NO_RESOURCES, "accepted with result 0x%04x", result);
+}
+
+/* An OTS client object write that cannot get a buffer for its first SDU ends
+ * with its channel, as the server waits for the object data
+ */
+static ZTEST(ots_l2cap, test_client_write_failed_first_sdu)
+{
+	struct bt_ots_client *otc = client();
+	uint16_t host_cid;
+
+	/* A write from the start of an empty object */
+	otc->cur_object.size.cur = 0U;
+	otc->cur_object.size.alloc = PEER_MTU;
+	zassert_ok(bt_ots_client_write_object_data(otc, conn, ctxs[0].data, PEER_MTU, 0,
+						   BT_OTS_OACP_WRITE_OP_MODE_NONE));
+
+	host_cid = client_chan_connect();
+	/* The ATT Write Request of the OACP command */
+	net_buf_unref(tx(BT_L2CAP_CID_ATT));
+
+	/* The data goes out once the server accepts the command, by when the
+	 * other channels hold both buffers
+	 */
+	take_tx_buffers(PEER_MTU);
+	recv_att_write_rsp();
+
+	/* The Host sends the disconnection once the driver releases the packet */
+	net_buf_drop(&kept);
+	tx_disconn(CLIENT_PEER_CID, host_cid);
+
+	send_waiting_sdu();
 }
 #endif /* CONFIG_BT_OTS_CLIENT */
