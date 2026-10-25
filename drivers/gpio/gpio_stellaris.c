@@ -33,12 +33,6 @@ struct gpio_stellaris_runtime {
 
 #define GPIO_REG_ADDR(base, offset) (base + offset)
 
-#define GPIO_RW_ADDR(base, offset, p)			 \
-	(GPIO_REG_ADDR(base, offset) | (1 << (p + 2)))
-
-#define GPIO_RW_MASK_ADDR(base, offset, mask)		 \
-	(GPIO_REG_ADDR(base, offset) | (mask << 2))
-
 #define GPIO_DATA_OFFSET 0x000U
 #define GPIO_DIR_OFFSET  0x400U
 #define GPIO_DEN_OFFSET  0x51CU
@@ -48,6 +42,18 @@ struct gpio_stellaris_runtime {
 #define GPIO_IM_OFFSET   0x410U
 #define GPIO_MIS_OFFSET  0x418U
 #define GPIO_ICR_OFFSET  0x41CU
+
+/* A port has at most eight pins, GPIODATA bits 7:0 */
+#define GPIO_PORT_PINS_MASK 0xFFU
+
+/*
+ * GPIODATA is address-masked: address bits [9:2] select the pins a read or write touches.
+ * Wider masks from the GPIO API are cut to bits 7:0 to stay inside GPIODATA.
+ */
+static inline mm_reg_t gpio_stellaris_data_addr(uint32_t base, uint32_t pins)
+{
+	return (mm_reg_t)(base + GPIO_DATA_OFFSET + ((pins & GPIO_PORT_PINS_MASK) << 2));
+}
 
 static void gpio_stellaris_isr(const struct device *dev)
 {
@@ -84,7 +90,7 @@ static int gpio_stellaris_configure(const struct device *dev,
 	if ((flags & GPIO_OUTPUT) != 0) {
 		mm_reg_t mask_addr;
 
-		mask_addr = GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, BIT(pin));
+		mask_addr = gpio_stellaris_data_addr(base, BIT(pin));
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			sys_write32(BIT(pin), mask_addr);
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
@@ -118,7 +124,7 @@ static int gpio_stellaris_get_config(const struct device *dev,
 	if (sys_test_bit(GPIO_REG_ADDR(base, GPIO_DEN_OFFSET), pin) == 0) {
 		flags = GPIO_DISCONNECTED;
 	} else if (sys_test_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET), pin)) {
-		mask_addr = GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, BIT(pin));
+		mask_addr = gpio_stellaris_data_addr(base, BIT(pin));
 
 		if (sys_test_bit(mask_addr, pin)) {
 			flags |= GPIO_OUTPUT_HIGH;
@@ -139,7 +145,7 @@ static int gpio_stellaris_port_get_raw(const struct device *dev,
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
 
-	*value = sys_read32(GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, 0xff));
+	*value = sys_read32(gpio_stellaris_data_addr(base, GPIO_PORT_PINS_MASK));
 
 	return 0;
 }
@@ -151,7 +157,7 @@ static int gpio_stellaris_port_set_masked_raw(const struct device *dev,
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
 
-	sys_write32(value, GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, mask));
+	sys_write32(value, gpio_stellaris_data_addr(base, mask));
 
 	return 0;
 }
@@ -162,7 +168,7 @@ static int gpio_stellaris_port_set_bits_raw(const struct device *dev,
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
 
-	sys_write32(mask, GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, mask));
+	sys_write32(mask, gpio_stellaris_data_addr(base, mask));
 
 	return 0;
 }
@@ -173,7 +179,7 @@ static int gpio_stellaris_port_clear_bits_raw(const struct device *dev,
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
 
-	sys_write32(0, GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, mask));
+	sys_write32(0, gpio_stellaris_data_addr(base, mask));
 
 	return 0;
 }
@@ -185,9 +191,9 @@ static int gpio_stellaris_port_toggle_bits(const struct device *dev,
 	uint32_t base = cfg->base;
 	uint32_t value;
 
-	value = sys_read32(GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, 0xff));
+	value = sys_read32(gpio_stellaris_data_addr(base, GPIO_PORT_PINS_MASK));
 	value ^= mask;
-	sys_write32(value, GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, 0xff));
+	sys_write32(value, gpio_stellaris_data_addr(base, GPIO_PORT_PINS_MASK));
 
 	return 0;
 }
