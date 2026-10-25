@@ -133,6 +133,8 @@ static void set_key_attributes(psa_key_attributes_t *attr)
 	psa_set_key_algorithm(attr, PSA_ALG_ECDH);
 }
 
+static void pub_key_work_submit(void);
+
 static void pub_key_ready(void)
 {
 	struct bt_pub_key_cb *cb, *next;
@@ -177,6 +179,7 @@ static void pub_key_ready(void)
 static void dh_key_ready(void)
 {
 	uint8_t dhkey[BT_DH_KEY_LEN];
+	bool pub_key_requested;
 	bt_dh_key_cb_t cb;
 	int err;
 
@@ -197,7 +200,13 @@ static void dh_key_ready(void)
 		sys_memcpy_swap(dhkey, ecc.dhkey_be, sizeof(ecc.dhkey_be));
 	}
 	atomic_clear_bit(flags, PENDING_DHKEY);
+	/* A public key requested during the calculation waited for it */
+	pub_key_requested = atomic_test_bit(flags, PENDING_PUB_KEY);
 	bt_dev_unlock();
+
+	if (pub_key_requested) {
+		pub_key_work_submit();
+	}
 
 	if (cb != NULL) {
 		cb(err != 0 ? NULL : dhkey);
@@ -231,6 +240,14 @@ static void generate_pub_key(struct k_work *work)
 		/* No request left to answer: queued again by a request made
 		 * while the previous run was in progress, which that run has
 		 * answered.
+		 */
+		bt_dev_unlock();
+		return;
+	}
+
+	if (atomic_test_bit(flags, PENDING_DHKEY)) {
+		/* dh_key_ready() starts the generation once the calculation,
+		 * which shares the key storage, has been delivered.
 		 */
 		bt_dev_unlock();
 		return;
@@ -299,6 +316,15 @@ done:
 
 K_WORK_DEFINE(pub_key_work, generate_pub_key);
 
+static void pub_key_work_submit(void)
+{
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		bt_long_wq_submit(&pub_key_work);
+	} else {
+		k_work_submit(&pub_key_work);
+	}
+}
+
 static void generate_dh_key(struct k_work *work)
 {
 	int err;
@@ -357,6 +383,7 @@ K_WORK_DEFINE(dh_key_work, generate_dh_key);
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 {
 	struct bt_pub_key_cb *cb;
+	bool start;
 
 	if (IS_ENABLED(CONFIG_BT_USE_DEBUG_KEYS)) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
@@ -382,7 +409,11 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 		}
 	}
 
-	if (atomic_test_bit(flags, PENDING_DHKEY)) {
+	if (atomic_test_bit(flags, PENDING_DHKEY) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY)) {
+		/* Not deferred: the key would be replaced under the pairing
+		 * that the calculation is for.
+		 */
 		bt_dev_unlock();
 		LOG_WRN("Busy performing another ECDH operation");
 		return -EBUSY;
@@ -397,12 +428,15 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 
+	/* A DH Key calculation still pending from before bt_disable()
+	 * shares the key storage: dh_key_ready() starts the generation once
+	 * the calculation has been delivered.
+	 */
+	start = !atomic_test_bit(flags, PENDING_DHKEY);
 	bt_dev_unlock();
 
-	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
-		bt_long_wq_submit(&pub_key_work);
-	} else {
-		k_work_submit(&pub_key_work);
+	if (start) {
+		pub_key_work_submit();
 	}
 
 	return 0;
@@ -419,6 +453,10 @@ void bt_pub_key_hci_disrupted(void)
 	sys_slist_init(&pub_key_cb_slist);
 	atomic_clear_bit(flags, PENDING_PUB_KEY);
 	atomic_clear_bit(flags, PUB_KEY_READY);
+	/* Dropped here rather than by the HCI Reset, which a driver may skip:
+	 * the next request generates a new key.
+	 */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 	bt_dev_unlock();
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cbs, cb, next, node) {

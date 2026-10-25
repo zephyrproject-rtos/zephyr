@@ -80,7 +80,8 @@ int bt_pub_key_gen(struct bt_pub_key_cb *cb);
 
 /*  @brief Cleanup public key callbacks when HCI is disrupted.
  *
- *  Clear the pub_key_cb_slist and clear the BT_DEV_PUB_KEY_BUSY flag.
+ *  Call the registered callbacks without a key, clear the list and the
+ *  pending state, and drop the key.
  */
 void bt_pub_key_hci_disrupted(void);
 
