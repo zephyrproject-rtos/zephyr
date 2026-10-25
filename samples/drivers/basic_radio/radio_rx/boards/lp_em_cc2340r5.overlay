@@ -4,30 +4,28 @@
  *
  * basic_radio sample overlay for CC23x0-based LaunchPads.
  *
- * The PHY comes the SmartRF Studio export of the
- * "Generic 1 Mbps / 2 Mbps / Coded" PHY in devicetree form. That file holds
- * the complete radio configuration (images, register segments, TX power
- * table) and one operating mode node per mode, which states the mode's
+ * The PHY comes from cc2340r5-radio-phys.dtsi, the list of PHYs certified
+ * on CC2340R5. Each entry names a SmartRF Studio LRF_Config provided by
+ * hal_ti and one operating mode node per mode, which states the mode's
  * modulation, datarate, deviation and frame format.
  *
- * phy0 selects the 1 Mbps mode and sets the runtime values: frequency
- * (within the mode's characterized range), sync word and TX power.
+ * phy0 selects the 1 Mbps mode of the BLE 1 Mbps / 2 Mbps / Coded PHY and
+ * sets the runtime values: frequency (within the mode's characterized
+ * range), sync word and TX power.
  *
- * To use another waveform, export it from SmartRF Studio as a .dtsi, add it
- * to the application's boards/ folder, include it here and point
- * ti,radio-mode at one of its operating mode nodes.
+ * To use another certified PHY, point phy-mode at one of the other
+ * mode labels. For a custom PHY, see ti,cc23x0-radio-phy-config.yaml.
  */
 
-#include <ti/cc23x0/radio_config/2-4-ghz-bluetooth-5-le-1-mbps-2-mbps-coded.dtsi>
+#include <ti/cc2340r5-radio-phys.dtsi>
 
 / {
 	basic_radio0: basic_radio {
-		compatible = "ti,cc23x0-basic-radio";
+		compatible = "basic-radio-base";
 		status = "okay";
 
 		phy0: phy_default {
-			compatible = "ti,cc23x0-basic-radio-phy";
-			ti,radio-mode = <&ti_phy_2_4_ghz_bluetooth_5_le_1_mbps_2_mbps_coded_1_mbps>;
+			phy-mode = <&ti_phy_2_4_ghz_bluetooth_5_le_1_mbps_2_mbps_coded_1_mbps>;
 			frequency-hz = <2450000000>;
 			sync-word = <0x930B51DE>;
 			tx-power-dbm = <5>;

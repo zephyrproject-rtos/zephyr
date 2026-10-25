@@ -2,32 +2,72 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Holds the main parameters every basic_radio backend can set at runtime
-  through basic_radio_config(). Other parameters such as datarate, deviation,
-  CRC, whitening, preamble, frame format is vendor specific and lives in
-  the vendor PHY binding. Vendor bindings use the same property names for
-  the same concepts (for example datarate-bps, modulation, crc-enable) so
-  that overlays can be compared across vendors.
+  basic_radio device. The backend is chosen by the SoC: TI CC23x0 or the
+  Nordic nRF52 RADIO. On nRF52 the node is a child of the SoC radio node and
+  uses its registers and interrupt.
 
-properties:
-  frequency-hz:
-    type: int
-    required: true
-    description: Carrier frequency in Hz.
+  The node holds its PHYs as child nodes. At least one child is required;
+  the first child in DT source order is the boot PHY. The application
+  selects another child at runtime with
+  basic_radio_config(dev, BASIC_RADIO_CONFIG_DT(node)).
 
-  sync-word:
-    type: int
-    required: true
-    description: |
-      Frame sync word, LSB-aligned. Its length on air is set by the PHY
-      (vendor binding).
+  Each child holds the runtime values every backend can set through
+  basic_radio_config(). The waveform (modulation, datarate, deviation, CRC,
+  whitening, frame format) is described by a mode node of a vendor PHY
+  catalog (basic-radio-phy-mode.yaml), selected with phy-mode.
 
-  tx-power-dbm:
-    type: int
-    default: 0
-    description: TX power in dBm.
+  Example:
 
-  max-packet-length:
-    type: int
-    default: 255
-    description: Maximum payload length in bytes.
+    #include <ti/cc2340r5-radio-phys.dtsi>
+
+    / {
+        basic_radio0: basic-radio {
+            compatible = "basic-radio-base";
+            status = "okay";
+
+            phy0: phy-default {
+                phy-mode = <&ti_phy_2_4_ghz_bluetooth_5_le_1_mbps_2_mbps_coded_1_mbps>;
+                frequency-hz = <2450000000>;
+                sync-word = <0x930B51DE>;
+                tx-power-dbm = <5>;
+            };
+        };
+    };
+
+compatible: "basic-radio-base"
+
+include: base.yaml
+
+child-binding:
+  description: One application PHY.
+
+  properties:
+    phy-mode:
+      type: phandle
+      required: true
+      description: |
+        Operating mode node of a vendor PHY catalog. The mode node uses the
+        properties of basic-radio-phy-mode.yaml plus vendor properties that
+        map it to radio settings.
+
+    frequency-hz:
+      type: int
+      required: true
+      description: Carrier frequency in Hz.
+
+    sync-word:
+      type: int
+      required: true
+      description: |
+        Frame sync word, LSB-aligned. Its length on air is set by the PHY
+        (vendor binding).
+
+    tx-power-dbm:
+      type: int
+      default: 0
+      description: TX power in dBm.
+
+    max-packet-length:
+      type: int
+      default: 255
+      description: Maximum payload length in bytes.

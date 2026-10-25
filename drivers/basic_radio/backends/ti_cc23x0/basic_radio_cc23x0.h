@@ -23,8 +23,8 @@
 #define NUM_PAD_BYTES 3
 
 /*
- * One application PHY, built at compile time from a ti,cc23x0-prop-rf-phy
- * child node and the operating mode it references (ti,radio-mode).
+ * One application PHY, built at compile time from a basic-radio-base PHY
+ * child node and the operating mode it references (phy-mode).
  *
  * lrf_config and phy_feature select the waveform. frequency_min/max is the
  * mode's characterized range. frequency_hz, sync_word, tx_power_dbm and

@@ -1,0 +1,84 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI CC23x0 PHY: names the LRF_Config that holds the radio settings and
+  describes its operating modes (basic-radio-phy-mode.yaml). The register
+  data itself is C, exported from SmartRF Studio; this node only carries
+  metadata the driver needs.
+
+  Certified PHYs are listed per SoC, for example in
+  <ti/cc2340r5-radio-phys.dtsi>. Their LRF_Config
+  objects live in hal_ti (source/ti/radio_phys/) and are named
+  LRF_config_<phy>.
+
+  Custom PHY:
+    1. Export the PHY from SmartRF Studio as C and add the .c file to the
+       application (target_sources(app PRIVATE ...)).
+    2. Add a node with this compatible to the application overlay, set
+       ti,lrf-config to the name of the exported LRF_Config (LRF_config by
+       default) and add one child per operating mode.
+    3. Point phy-mode of a basic-radio-base PHY child at a mode.
+
+  Example:
+
+    radio-phys {
+        my_phy: my-phy {
+            compatible = "ti,cc23x0-radio-phy-config";
+            ti,lrf-config = "LRF_config";
+            ti,len-pos = <8>;
+            ti,num-len-bits = <8>;
+
+            my_phy_1_mbps: mode-1-mbps {
+                ti,phy-feature = <0x0000>;
+                modulation = "2-gfsk";
+                datarate-bps = <1000000>;
+                deviation-hz = <250000>;
+                frequency-min-hz = <2400000000>;
+                frequency-max-hz = <2483500000>;
+                crc-enable;
+                variable-length;
+            };
+        };
+    };
+
+  The mode properties must match the C export. The build does not check
+  them against the register data.
+
+compatible: "ti,cc23x0-radio-phy-config"
+
+properties:
+  ti,lrf-config:
+    type: string
+    required: true
+    description: |
+      C identifier of the const LRF_Config for this PHY. The driver declares
+      it extern and links against it.
+
+  ti,len-pos:
+    type: int
+    description: |
+      PBE_GENERIC_RAM.LENCFG.LENPOS of the export: bit position of the
+      length field in the frame header. Required by the generic PBE driver.
+
+  ti,num-len-bits:
+    type: int
+    description: |
+      PBE_GENERIC_RAM.LENCFG.NUMLENBITS of the export: size of the length
+      field in bits. Required by the generic PBE driver.
+
+child-binding:
+  description: |
+    One operating mode. Several modes share the LRF_Config and differ only in
+    the phyFeatures word.
+
+  include: basic-radio-phy-mode.yaml
+
+  properties:
+    ti,phy-feature:
+      type: int
+      required: true
+      description: |
+        phyFeatures word written to the radio commands. Selects which
+        feature-gated register segments are applied. 0 for PHYs without
+        sub-PHYs.

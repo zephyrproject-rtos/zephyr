@@ -62,17 +62,16 @@ enum basic_radio_capability {
 /**
  * @brief Runtime radio configuration.
  *
- * phy selects the PHY child node whose waveform is used. Backends whose
- * waveform is fixed by a characterized PHY (for example TI CC23x0) switch
- * to that node's waveform, reconfiguring the radio if needed.
- * BASIC_RADIO_PHY_CURRENT keeps the active PHY.
+ * phy selects the PHY child node whose waveform is used. The backend
+ * switches to the waveform of that node's phy-mode, reconfiguring the radio
+ * if needed. BASIC_RADIO_PHY_CURRENT keeps the active PHY.
  *
  * frequency, sync_word, max_packet_len and tx_power are the common runtime
  * parameters (basic_radio-base.yaml) and every backend applies them.
  *
- * The remaining fields describe the waveform. Backends with a register-
- * parametric radio apply them; fixed-waveform backends ignore them and use
- * phy instead. Zero / false means "not specified".
+ * The remaining fields describe the waveform of the selected mode
+ * (basic-radio-phy-mode.yaml). Backends take the waveform from phy and do
+ * not apply these fields. Zero / false means "not specified".
  */
 struct basic_radio_config {
 	uint16_t phy;                     /**< BASIC_RADIO_PHY_DT_ID() or BASIC_RADIO_PHY_CURRENT. */
@@ -93,11 +92,12 @@ struct basic_radio_config {
 /**
  * @brief Initializer for struct basic_radio_config from a DT PHY child node.
  *
- * @p phy_node is any vendor PHY node that includes basic-radio-base.yaml. The
- * PHY is selected and the base properties are always read. Waveform properties are read only if
- * the vendor binding defines them, and are zero / false otherwise. The
- * modulation string enum is ordered to match @ref basic_radio_modulation so
- * DT_ENUM_IDX maps directly to the C enum value.
+ * @p phy_node is a PHY child of a basic-radio-base node. The
+ * PHY is selected and the base properties are always read. Waveform
+ * properties are read from the mode node referenced by phy-mode
+ * (basic-radio-phy-mode.yaml) and are zero / false when the mode omits them.
+ * The modulation string enum is ordered to match @ref basic_radio_modulation
+ * so DT_ENUM_IDX maps directly to the C enum value.
  *
  * Typical usage:
  * @code
@@ -111,15 +111,24 @@ struct basic_radio_config {
 	.sync_word        = DT_PROP(phy_node, sync_word),                    \
 	.max_packet_len   = DT_PROP(phy_node, max_packet_length),            \
 	.tx_power         = DT_PROP(phy_node, tx_power_dbm),                 \
-	.datarate         = DT_PROP_OR(phy_node, datarate_bps, 0),           \
-	.deviation        = DT_PROP_OR(phy_node, deviation_hz, 0),           \
-	.sync_word_len    = DT_PROP_OR(phy_node, sync_word_length, 0),       \
-	.preamble_len     = DT_PROP_OR(phy_node, preamble_length, 0),        \
-	.modulation       = DT_ENUM_IDX_OR(phy_node, modulation, 0),         \
-	.crc_enable       = DT_PROP_OR(phy_node, crc_enable, false),         \
-	.whitening_enable = DT_PROP_OR(phy_node, whitening_enable, false),   \
-	.variable_length  = DT_PROP_OR(phy_node, variable_length, false),    \
+	BASIC_RADIO_MODE_DT_INIT(DT_PHANDLE(phy_node, phy_mode))            \
 }
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * Waveform fields of struct basic_radio_config from a mode node.
+ */
+#define BASIC_RADIO_MODE_DT_INIT(mode_node)                              \
+	.datarate         = DT_PROP(mode_node, datarate_bps),                \
+	.deviation        = DT_PROP_OR(mode_node, deviation_hz, 0),          \
+	.sync_word_len    = DT_PROP_OR(mode_node, sync_word_length, 0),      \
+	.preamble_len     = DT_PROP_OR(mode_node, preamble_length, 0),       \
+	.modulation       = DT_ENUM_IDX(mode_node, modulation),              \
+	.crc_enable       = DT_PROP(mode_node, crc_enable),                  \
+	.whitening_enable = DT_PROP(mode_node, whitening_enable),            \
+	.variable_length  = DT_PROP(mode_node, variable_length),
+/** @endcond */
 
 /** @brief Per-packet RX metadata. */
 struct basic_radio_rx_info {

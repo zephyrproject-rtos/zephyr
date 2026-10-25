@@ -8,14 +8,14 @@
  * Wraps the TI Radio Control Layer (RCL) commands behind the
  * Zephyr basic_radio driver API.
  *
- * PHY configuration comes entirely from devicetree. Every
- * ti,cc23x0-radio-config node (a SmartRF Studio export in .dtsi form) 
- * is turned into a const LRF_Config at compile time; each
- * ti,cc23x0-prop-rf-phy child of the radio node selects one operating
- * mode of such a config through ti,radio-mode.
+ * PHY selection comes from devicetree. Each basic-radio-base PHY
+ * child of the radio node selects one operating mode of a
+ * ti,cc23x0-radio-phy-config node through phy-mode. That node names
+ * the LRF_Config (SmartRF Studio C export) the driver links against:
+ * certified PHYs come from hal_ti, custom PHYs from the application.
  */
 
-#define DT_DRV_COMPAT ti_cc23x0_basic_radio
+#define DT_DRV_COMPAT basic_radio_base
 
 #include <errno.h>
 #include <limits.h>
@@ -33,10 +33,8 @@
 #include <ti/drivers/rcl/RCL.h>
 #include <ti/drivers/rcl/LRF.h>
 #include <ti/drivers/rcl/commands/generic.h>
-#include DeviceFamily_constructPath(inc/hw_fcfg.h)
 
 #include "basic_radio_cc23x0.h"
-#include "basic_radio_cc23x0_radio_config.h"
 
 LOG_MODULE_REGISTER(basic_radio_cc23x0, CONFIG_BASIC_RADIO_LOG_LEVEL);
 
@@ -50,19 +48,49 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1, "basic_radio_cc23x0 ba
 
 /*****************************************************************************************************************/
 /*
- * PHY table: one entry per ti,cc23x0-prop-rf-phy child.
+ * PHY table: one entry per basic-radio-base PHY child.
  *
- * Hierarchy: instance → phy child (ti,radio-mode → mode node → radio config)
+ * Hierarchy: instance → phy child (phy-mode → mode node → ti,cc23x0-radio-phy-config)
  *
  * Runtime (child): frequency_hz, sync_word, tx_power_dbm, max_packet_length
  * Caps (mode):     frequency_min_hz, frequency_max_hz, ti,phy-feature
  */
-#define PHY_MODE(child)    DT_PHANDLE(child, ti_radio_mode)
+#define PHY_MODE(child)    DT_PHANDLE(child, phy_mode)
 #define PHY_LRF_CFG(child) DT_PARENT(PHY_MODE(child))
+#define PHY_LRF_SYM(child) DT_STRING_TOKEN(PHY_LRF_CFG(child), ti_lrf_config)
+
+/*
+ * Declare only the LRF_Configs the enabled phy children reference, so
+ * unused PHYs are dropped at link time. Used to generate external declarations 
+ * for configuration structures
+ */
+#define PHY_LRF_EXTERN(child) extern const LRF_Config PHY_LRF_SYM(child);
+
+DT_INST_FOREACH_CHILD_STATUS_OKAY(INST, PHY_LRF_EXTERN)
+
+/*
+ * TODO: check again if needed when hal_ti RCL driver is updated in upstream.
+ * RCL_AdcNoise (used by the entropy driver) opens this config. The HAL
+ * normally provides it with its pre-generated settings, which basic_radio
+ * disables (CONFIG_RCL_RF_SETTING_PREGEN=n). It is not a PHY.
+
+extern const uint32_t LRF_RFE_binary_ble5[];
+
+static const LRF_RegConfigList adc_noise_reg_config_list = {
+    .numEntries = 0,
+};
+
+const LRF_Config LRF_configAdcNoise = {
+    .pbeImage      = NULL,
+    .mceImage      = NULL,
+    .rfeImage      = (const LRF_TOPsmImage *)LRF_RFE_binary_ble5,
+    .regConfigList = &adc_noise_reg_config_list,
+};
+*/
 
 #define CHILD_PHY_INIT(child)                                                                           \
 {                                                                                                       \
-    .lrf_config     = &LRF_SYM(PHY_LRF_CFG(child), config),                 /* compiled LRF_Config */   \
+    .lrf_config     = &PHY_LRF_SYM(child),                                  /* SmartRF LRF_Config */    \
     .dt_id          = BASIC_RADIO_PHY_DT_ID(child),                         /* phy index for API */     \
     .frequency_hz   = DT_PROP(child, frequency_hz),                         /* center frequency */      \
     .sync_word      = DT_PROP(child, sync_word),                            /* sync word */             \
@@ -77,7 +105,7 @@ static const struct phy_profile phy_table[] = {
     DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(INST, CHILD_PHY_INIT, (,))
 };
 
-BUILD_ASSERT(ARRAY_SIZE(phy_table) >= 1, "ti,cc23x0-basic-radio node needs at least one ti,cc23x0-basic-radio-phy child");
+BUILD_ASSERT(ARRAY_SIZE(phy_table) >= 1, "basic-radio-base node needs at least one PHY child");
 
 /*
  * TX header layout comes from the FIRST PHY's PBE_GENERIC_RAM.LENCFG.
@@ -100,7 +128,7 @@ BUILD_ASSERT(ARRAY_SIZE(phy_table) >= 1, "ti,cc23x0-basic-radio node needs at le
 #define PHY_ASSERT_GENERIC_PBE(child)                                              \
     BUILD_ASSERT(DT_NODE_HAS_PROP(PHY_LRF_CFG(child), ti_len_pos) &&               \
                  DT_NODE_HAS_PROP(PHY_LRF_CFG(child), ti_num_len_bits),            \
-                 "ti,radio-mode needs a generic PBE radio config "                 \
+                 "phy-mode needs a generic PBE radio config "                 \
                  "(ti,len-pos and ti,num-len-bits missing)");
 
 DT_INST_FOREACH_CHILD_STATUS_OKAY(INST, PHY_ASSERT_GENERIC_PBE)
@@ -275,7 +303,7 @@ static void tx_callback(RCL_Command *cmd, LRF_Events lrfEvt, RCL_Events rclEvt)
  * cfg->phy selects the waveform (BASIC_RADIO_CONFIG_DT() fills it from the PHY
  * node); BASIC_RADIO_PHY_CURRENT keeps the active one. The runtime parameters
  * are then applied on top. Waveform fields of cfg are ignored: on CC23x0 the
- * waveform is defined by the PHY's ti,radio-mode.
+ * waveform is defined by the PHY's phy-mode.
  */
 static int basic_radio_cc23x0_config_impl(const struct device *dev, const struct basic_radio_config *cfg)
 {
@@ -626,3 +654,4 @@ DEVICE_DT_INST_DEFINE(INST,
                       POST_KERNEL,
                       CONFIG_BASIC_RADIO_INIT_PRIORITY,
                       &basic_radio_cc23x0_api);
+                      
