@@ -75,7 +75,7 @@ TRAP_VECTOR(7, "svlcx\n\t"
 		".type __irq_vector_tc0_" #prio ", @function\n"                                    \
 		"__irq_vector_tc0_" #prio ":\n\t"                                                  \
 		"svlcx\n\t"                                                                        \
-		"j _isr_wrapper\n\t"                                                               \
+		"j z_tricore_prio_isr_" #prio "\n\t"                                               \
 		".size __irq_vector_tc0_" #prio ", . - __irq_vector_tc0_" #prio "\n");
 
 LISTIFY(256, IRQ_VECTOR, ())
