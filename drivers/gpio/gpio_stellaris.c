@@ -203,7 +203,7 @@ static int gpio_stellaris_port_toggle_bits(const struct device *dev,
  * can latch a spurious interrupt, so the pin stays masked until its status is cleared.
  */
 static void gpio_stellaris_int_setup(uint32_t base, gpio_pin_t pin, enum gpio_int_mode mode,
-				     enum gpio_int_trig trig)
+				     uint32_t edges)
 {
 	sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
 
@@ -213,12 +213,12 @@ static void gpio_stellaris_int_setup(uint32_t base, gpio_pin_t pin, enum gpio_in
 		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
 	}
 
-	if (trig == GPIO_INT_TRIG_BOTH) {
+	if (edges == (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) {
 		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IBE_OFFSET), pin);
 	} else {
 		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IBE_OFFSET), pin);
 
-		if (trig == GPIO_INT_TRIG_HIGH) {
+		if (edges == GPIO_INT_HIGH_1) {
 			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
 		} else {
 			sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
@@ -236,6 +236,8 @@ static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
+	/* GPIO_INT_WAKEUP does not change how the pin is sensed */
+	uint32_t edges = (uint32_t)trig & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1);
 
 	/* GPIO_INT_MODE_ENABLE_ONLY and GPIO_INT_MODE_DISABLE_ONLY are not handled */
 	if ((mode != GPIO_INT_MODE_DISABLED) && (mode != GPIO_INT_MODE_EDGE) &&
@@ -247,7 +249,7 @@ static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
 		/* A clear GPIOIM bit masks the pin's interrupt */
 		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
 	} else {
-		gpio_stellaris_int_setup(base, pin, mode, trig);
+		gpio_stellaris_int_setup(base, pin, mode, edges);
 	}
 
 	return 0;
