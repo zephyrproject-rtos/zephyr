@@ -20,6 +20,7 @@ zephyr_library_sources(
     thread.c
     vectors.c
 )
+zephyr_library_sources_ifdef(CONFIG_ARCH_CACHE cache.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x0reset reset.ld)

@@ -18,6 +18,7 @@
 
 #include <kernel_internal.h>
 #include <zephyr/arch/common/init.h>
+#include <zephyr/cache.h>
 #include <zephyr/arch/common/xip.h>
 
 /**
@@ -31,6 +32,10 @@ void z_prep_c(void)
 {
 	arch_bss_zero();
 	arch_data_copy();
+
+#if defined(CONFIG_ARCH_CACHE)
+	arch_cache_init();
+#endif
 
 	z_cstart();
 	CODE_UNREACHABLE;
