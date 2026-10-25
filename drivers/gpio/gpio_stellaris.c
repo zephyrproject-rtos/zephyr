@@ -198,10 +198,15 @@ static int gpio_stellaris_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-/* Sets how the pin's interrupt is sensed, then unmasks it */
+/*
+ * Sets how the pin's interrupt is sensed, then unmasks it. Writing GPIOIS, GPIOIBE or GPIOIEV
+ * can latch a spurious interrupt, so the pin stays masked until its status is cleared.
+ */
 static void gpio_stellaris_int_setup(uint32_t base, gpio_pin_t pin, enum gpio_int_mode mode,
 				     enum gpio_int_trig trig)
 {
+	sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
+
 	if (mode == GPIO_INT_MODE_EDGE) {
 		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
 	} else {
@@ -216,7 +221,7 @@ static void gpio_stellaris_int_setup(uint32_t base, gpio_pin_t pin, enum gpio_in
 		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
 	}
 
-	/* A set GPIOIM bit sends it to the interrupt controller */
+	sys_write32(BIT(pin), GPIO_REG_ADDR(base, GPIO_ICR_OFFSET));
 	sys_set_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
 }
 
