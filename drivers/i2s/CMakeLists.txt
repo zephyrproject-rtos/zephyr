@@ -29,4 +29,12 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE i2s_handlers.c)
 
 if(CONFIG_I2S_NATIVE_SIM)
   target_sources(native_simulator INTERFACE i2s_native_sim_bottom.c)
+
+  if(CONFIG_I2S_NATIVE_SIM_ALSA)
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(ALSA REQUIRED alsa)
+    list(TRANSFORM ALSA_LIBRARIES PREPEND "-l" OUTPUT_VARIABLE ALSA_LIBRARIES_OPTION)
+    target_link_options(native_simulator INTERFACE "${ALSA_LIBRARIES_OPTION}")
+    target_compile_options(native_simulator INTERFACE -DNS_I2S_ALSA)
+  endif()
 endif()
