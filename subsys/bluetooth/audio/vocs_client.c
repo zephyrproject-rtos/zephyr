@@ -716,6 +716,25 @@ static void vocs_client_reset(struct bt_vocs_client *inst)
 	bt_conn_drop(&inst->conn);
 }
 
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(reason);
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
+	ARRAY_FOR_EACH_PTR(insts, inst) {
+		if (inst->conn == conn) {
+			vocs_client_reset(inst);
+		}
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
+
 int bt_vocs_client_free_instance(struct bt_vocs *vocs)
 {
 	ARRAY_FOR_EACH_PTR(insts, inst) {
