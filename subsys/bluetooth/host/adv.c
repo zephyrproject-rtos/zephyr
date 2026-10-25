@@ -1427,8 +1427,9 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		err = adv_start_legacy(adv, param, ad, ad_len, sd, sd_len);
 	}
 
-	if (err) {
+	if (err != 0) {
 		bt_le_adv_delete_legacy();
+		return err;
 	}
 
 #if defined(CONFIG_BT_LIM_ADV)
@@ -1439,7 +1440,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	}
 #endif /* CONFIG_BT_LIM_ADV */
 
-	return err;
+	return 0;
 }
 
 int bt_le_adv_stop(void)
