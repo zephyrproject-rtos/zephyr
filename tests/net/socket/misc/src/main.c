@@ -961,6 +961,461 @@ ZTEST_USER(socket_misc_test_suite, test_ipv6_getsockname_udp)
 	test_getsockname_udp(NET_AF_INET6);
 }
 
+#define LL_PORT 4250
+
+static struct net_in6_addr ll_addr1 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct net_in6_addr ll_addr2 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0x2 } } };
+
+static void ll_addr_add(struct net_if *iface, struct net_in6_addr *addr)
+{
+	struct net_if *found = NULL;
+
+	/* Add the address unless the interface already has it. */
+	if (net_if_ipv6_addr_lookup_by_iface(iface, addr) == NULL) {
+		zassert_not_null(net_if_ipv6_addr_add(iface, addr, NET_ADDR_MANUAL, 0),
+				 "cannot add link-local address");
+	}
+	zassert_not_null(net_if_ipv6_addr_lookup(addr, &found),
+			 "link-local address not found");
+	zassert_equal_ptr(found, iface, "link-local address on another interface");
+}
+
+static void ll_addrs_add(void)
+{
+	ll_addr_add(dummy_data1.iface, &ll_addr1);
+	ll_addr_add(dummy_data2.iface, &ll_addr2);
+}
+
+static void ll_addrs_rm(void)
+{
+	zassert_true(net_if_ipv6_addr_rm(dummy_data1.iface, &ll_addr1),
+		     "cannot remove link-local address");
+	zassert_true(net_if_ipv6_addr_rm(dummy_data2.iface, &ll_addr2),
+		     "cannot remove link-local address");
+}
+
+static uint8_t iface_scope_id(struct net_if *iface)
+{
+	int idx = net_if_get_by_iface(iface);
+
+	zassert_true(idx > 0 && idx <= UINT8_MAX, "invalid interface index %d", idx);
+
+	return (uint8_t)idx;
+}
+
+static void check_peer(int sock, const struct net_in6_addr *addr, uint16_t port,
+		       uint8_t scope_id)
+{
+	struct net_sockaddr_in6 peer;
+	struct net_sockaddr_in6 again;
+	net_socklen_t len;
+	int ret;
+
+	memset(&peer, 0xaa, sizeof(peer));
+	len = sizeof(peer);
+	ret = zsock_getpeername(sock, (struct net_sockaddr *)&peer, &len);
+	zassert_equal(ret, 0, "getpeername failed, %d", errno);
+	zassert_equal(len, sizeof(peer), "wrong address length");
+	zassert_equal(peer.sin6_family, NET_AF_INET6, "wrong family");
+	zassert_equal(peer.sin6_port, port, "wrong port");
+	zassert_mem_equal(&peer.sin6_addr, addr, sizeof(*addr), "wrong address");
+	zassert_equal(peer.sin6_scope_id, scope_id, "wrong scope id %u, expected %u",
+		      peer.sin6_scope_id, scope_id);
+
+	/* A second call returns the same address. */
+	memset(&again, 0x55, sizeof(again));
+	len = sizeof(again);
+	ret = zsock_getpeername(sock, (struct net_sockaddr *)&again, &len);
+	zassert_equal(ret, 0, "getpeername failed, %d", errno);
+	zassert_equal(again.sin6_family, peer.sin6_family, "second call: wrong family");
+	zassert_equal(again.sin6_port, peer.sin6_port, "second call: wrong port");
+	zassert_mem_equal(&again.sin6_addr, &peer.sin6_addr, sizeof(peer.sin6_addr),
+			  "second call: wrong address");
+	zassert_equal(again.sin6_scope_id, peer.sin6_scope_id, "second call: wrong scope id");
+}
+
+/* How the client socket is set up before connect(). */
+enum ll_client {
+	LL_CLIENT_UNBOUND,
+	LL_CLIENT_BOUND_ANY,
+	LL_CLIENT_BOUND_DEVICE,
+};
+
+/* TCP to a link-local address of the given interface: the client sends
+ * through that interface, and both the client and the accepted socket report
+ * the peer with the interface index as the zone.
+ */
+static void check_tcp_ll_peer(const char *dev_name, struct net_if *iface, struct net_in6_addr *addr,
+			      enum ll_client client)
+{
+	uint8_t scope_id = iface_scope_id(iface);
+	struct net_sockaddr_in6 srv_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(LL_PORT),
+		.sin6_addr = *addr,
+		.sin6_scope_id = scope_id,
+	};
+	struct net_sockaddr_in6 any_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = NET_IN6ADDR_ANY_INIT,
+	};
+	struct net_sockaddr_in6 accepted_addr;
+	struct net_ifreq ifreq = { 0 };
+	net_socklen_t len;
+	int sock_s, sock_c, sock_a;
+	int ret;
+
+	sock_s = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(sock_s >= 0, "socket open failed");
+	sock_c = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(sock_c >= 0, "socket open failed");
+
+	ret = zsock_bind(sock_s, (struct net_sockaddr *)&srv_addr, sizeof(srv_addr));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+	ret = zsock_listen(sock_s, 1);
+	zassert_equal(ret, 0, "listen failed, %d", errno);
+
+	if (client == LL_CLIENT_BOUND_ANY) {
+		ret = zsock_bind(sock_c, (struct net_sockaddr *)&any_addr, sizeof(any_addr));
+		zassert_equal(ret, 0, "bind failed, %d", errno);
+	} else if (client == LL_CLIENT_BOUND_DEVICE) {
+		strcpy(ifreq.ifr_name, dev_name);
+		ret = zsock_setsockopt(sock_c, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE, &ifreq,
+				       sizeof(ifreq));
+		zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
+	}
+
+	current_dev = NULL;
+	ret = zsock_connect(sock_c, (struct net_sockaddr *)&srv_addr, sizeof(srv_addr));
+	zassert_equal(ret, 0, "connect failed, %d", errno);
+	zassert_equal_ptr(current_dev, net_if_get_device(iface),
+			  "handshake through the wrong interface");
+
+	check_peer(sock_c, addr, net_htons(LL_PORT), scope_id);
+
+	memset(&accepted_addr, 0xaa, sizeof(accepted_addr));
+	len = sizeof(accepted_addr);
+	sock_a = zsock_accept(sock_s, (struct net_sockaddr *)&accepted_addr, &len);
+	zassert_true(sock_a >= 0, "accept failed, %d", errno);
+	zassert_equal(len, sizeof(accepted_addr), "wrong address length");
+	zassert_true(net_ipv6_is_ll_addr(&accepted_addr.sin6_addr),
+		     "peer is not link-local");
+	zassert_equal(accepted_addr.sin6_scope_id, scope_id,
+		      "accept: wrong scope id %u, expected %u",
+		      accepted_addr.sin6_scope_id, scope_id);
+
+	check_peer(sock_a, &accepted_addr.sin6_addr, accepted_addr.sin6_port, scope_id);
+
+	ret = zsock_close(sock_a);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = zsock_close(sock_c);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = zsock_close(sock_s);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	k_sleep(K_MSEC(2 * CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
+ZTEST(socket_misc_test_suite, test_ipv6_ll_peer_scope_tcp)
+{
+	static const enum ll_client clients[] = {
+		LL_CLIENT_UNBOUND,
+		LL_CLIENT_BOUND_ANY,
+		LL_CLIENT_BOUND_DEVICE,
+	};
+
+	ll_addrs_add();
+
+	ARRAY_FOR_EACH(clients, i) {
+		check_tcp_ll_peer(DEV1_NAME, dummy_data1.iface, &ll_addr1, clients[i]);
+		check_tcp_ll_peer(DEV2_NAME, dummy_data2.iface, &ll_addr2, clients[i]);
+	}
+	zassert_not_equal(iface_scope_id(dummy_data1.iface),
+			  iface_scope_id(dummy_data2.iface),
+			  "interfaces share an index");
+
+	ll_addrs_rm();
+}
+
+static void udp_connect(int sock, const struct net_in6_addr *addr, uint8_t scope_id)
+{
+	struct net_sockaddr_in6 dst = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(LL_PORT),
+		.sin6_addr = *addr,
+		.sin6_scope_id = scope_id,
+	};
+	int ret;
+
+	ret = zsock_connect(sock, (struct net_sockaddr *)&dst, sizeof(dst));
+	zassert_equal(ret, 0, "connect failed, %d", errno);
+}
+
+ZTEST(socket_misc_test_suite, test_ipv6_ll_peer_scope_udp)
+{
+	uint8_t scope_id2 = iface_scope_id(dummy_data2.iface);
+	struct net_sockaddr_in6 srv_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(LL_PORT),
+		.sin6_addr = ll_addr2,
+		.sin6_scope_id = scope_id2,
+	};
+	const struct device *dev2 = net_if_get_device(dummy_data2.iface);
+	char recv_buf[8] = { 0 };
+	int sock_c, sock_s;
+	int ret;
+
+	ll_addrs_add();
+
+	sock_c = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock_c >= 0, "socket open failed");
+
+	/* A zone given for a link-local peer is kept. */
+	udp_connect(sock_c, &ll_addr1, iface_scope_id(dummy_data1.iface));
+	check_peer(sock_c, &ll_addr1, net_htons(LL_PORT), iface_scope_id(dummy_data1.iface));
+
+	/* No zone given: none is reported. */
+	udp_connect(sock_c, &ll_addr1, 0);
+	check_peer(sock_c, &ll_addr1, net_htons(LL_PORT), 0);
+
+	/* A zone given for a global address is not reported. */
+	udp_connect(sock_c, &my_ipv6_addr1, iface_scope_id(dummy_data1.iface));
+	check_peer(sock_c, &my_ipv6_addr1, net_htons(LL_PORT), 0);
+
+	/* A connected socket sends to a link-local peer through the interface
+	 * of the zone.
+	 */
+	sock_s = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock_s >= 0, "socket open failed");
+	ret = zsock_bind(sock_s, (struct net_sockaddr *)&srv_addr, sizeof(srv_addr));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+
+	udp_connect(sock_c, &ll_addr2, scope_id2);
+	check_peer(sock_c, &ll_addr2, net_htons(LL_PORT), scope_id2);
+
+	current_dev = NULL;
+	sys_sem_init(&send_sem, 0, 1);
+	ret = zsock_send(sock_c, "zone", sizeof("zone"), 0);
+	zassert_equal(ret, sizeof("zone"), "send failed, %d", errno);
+	ret = sys_sem_take(&send_sem, K_MSEC(100));
+	zassert_equal(ret, 0, "iface did not receive packet");
+	zassert_equal_ptr(current_dev, dev2, "sent through the wrong interface");
+
+	k_msleep(10);
+	ret = zsock_recv(sock_s, recv_buf, sizeof(recv_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof("zone"), "recv failed, %d", errno);
+	zassert_mem_equal(recv_buf, "zone", sizeof("zone"), "wrong data");
+
+	ret = zsock_close(sock_s);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = zsock_close(sock_c);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	ll_addrs_rm();
+}
+
+/* Interface-local and link-local multicast peers keep the zone, which selects
+ * the interface; wider scopes get none.
+ */
+ZTEST(socket_misc_test_suite, test_ipv6_mcast_peer_scope_udp)
+{
+	static const struct net_in6_addr mcast_iface = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
+							     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	static const struct net_in6_addr mcast_link = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+							    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	static const struct net_in6_addr mcast_site = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
+							    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	uint8_t scope_id2 = iface_scope_id(dummy_data2.iface);
+	const struct device *dev2 = net_if_get_device(dummy_data2.iface);
+	int sock = -1;
+	int ret = 0;
+
+	ll_addrs_add();
+
+	sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket open failed");
+
+	udp_connect(sock, &mcast_iface, scope_id2);
+	check_peer(sock, &mcast_iface, net_htons(LL_PORT), scope_id2);
+
+	udp_connect(sock, &mcast_site, scope_id2);
+	check_peer(sock, &mcast_site, net_htons(LL_PORT), 0);
+
+	udp_connect(sock, &mcast_link, scope_id2);
+	check_peer(sock, &mcast_link, net_htons(LL_PORT), scope_id2);
+
+	current_dev = NULL;
+	sys_sem_init(&send_sem, 0, 1);
+	ret = zsock_send(sock, "zone", sizeof("zone"), 0);
+	zassert_equal(ret, sizeof("zone"), "send failed, %d", errno);
+	ret = sys_sem_take(&send_sem, K_MSEC(100));
+	zassert_equal(ret, 0, "iface did not receive packet");
+	zassert_equal_ptr(current_dev, dev2, "sent through the wrong interface");
+
+	ret = zsock_close(sock);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	ll_addrs_rm();
+}
+
+static void check_connect_fails(int sock, const struct net_in6_addr *addr, uint8_t scope_id,
+				int err)
+{
+	struct net_sockaddr_in6 dst = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(LL_PORT),
+		.sin6_addr = *addr,
+		.sin6_scope_id = scope_id,
+	};
+	int ret = zsock_connect(sock, (struct net_sockaddr *)&dst, sizeof(dst));
+
+	zassert_equal(ret, -1, "connect to zone %u succeeded", scope_id);
+	zassert_equal(errno, err, "connect to zone %u: errno %d, expected %d", scope_id, errno,
+		      err);
+}
+
+static void check_no_peer(int sock)
+{
+	struct net_sockaddr_in6 peer = { 0 };
+	net_socklen_t len = sizeof(peer);
+	int ret = zsock_getpeername(sock, (struct net_sockaddr *)&peer, &len);
+
+	zassert_equal(ret, -1, "getpeername succeeded");
+	zassert_equal(errno, ENOTCONN, "getpeername: errno %d, expected %d", errno, ENOTCONN);
+}
+
+/* connect() fails for a zone that names no interface, or another interface
+ * than the one the socket is bound to, and leaves the socket as it was.
+ */
+ZTEST(socket_misc_test_suite, test_ipv6_ll_peer_scope_errors)
+{
+	static const struct {
+		enum net_sock_type type;
+		enum net_ip_protocol proto;
+	} socks[] = {
+		{ NET_SOCK_STREAM, NET_IPPROTO_TCP },
+		{ NET_SOCK_DGRAM, NET_IPPROTO_UDP },
+	};
+	uint8_t scope_id1 = iface_scope_id(dummy_data1.iface);
+	uint8_t scope_id2 = iface_scope_id(dummy_data2.iface);
+	uint8_t no_scope_id = 1U;
+	struct net_sockaddr_in6 bind_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = ll_addr1,
+		.sin6_scope_id = scope_id1,
+	};
+	struct net_sockaddr_in6 global_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = my_ipv6_addr1,
+	};
+	struct net_ifreq ifreq = { 0 };
+	int sock = -1;
+	int ret = 0;
+
+	while (net_if_get_by_index(no_scope_id) != NULL) {
+		no_scope_id++;
+	}
+
+	ll_addrs_add();
+
+	ARRAY_FOR_EACH(socks, i) {
+		sock = zsock_socket(NET_AF_INET6, socks[i].type, socks[i].proto);
+		zassert_true(sock >= 0, "socket open failed");
+		check_connect_fails(sock, &ll_addr2, no_scope_id, ENODEV);
+		check_no_peer(sock);
+		ret = zsock_close(sock);
+		zassert_equal(ret, 0, "close failed, %d", errno);
+
+		sock = zsock_socket(NET_AF_INET6, socks[i].type, socks[i].proto);
+		zassert_true(sock >= 0, "socket open failed");
+		strcpy(ifreq.ifr_name, DEV1_NAME);
+		ret = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE, &ifreq,
+				       sizeof(ifreq));
+		zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
+		check_connect_fails(sock, &ll_addr2, scope_id2, EINVAL);
+		check_no_peer(sock);
+		ret = zsock_close(sock);
+		zassert_equal(ret, 0, "close failed, %d", errno);
+
+		sock = zsock_socket(NET_AF_INET6, socks[i].type, socks[i].proto);
+		zassert_true(sock >= 0, "socket open failed");
+		ret = zsock_bind(sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
+		zassert_equal(ret, 0, "bind failed, %d", errno);
+		check_connect_fails(sock, &ll_addr2, scope_id2, EINVAL);
+		check_no_peer(sock);
+		ret = zsock_close(sock);
+		zassert_equal(ret, 0, "close failed, %d", errno);
+
+		sock = zsock_socket(NET_AF_INET6, socks[i].type, socks[i].proto);
+		zassert_true(sock >= 0, "socket open failed");
+		ret = zsock_bind(sock, (struct net_sockaddr *)&global_addr, sizeof(global_addr));
+		zassert_equal(ret, 0, "bind failed, %d", errno);
+		check_connect_fails(sock, &ll_addr2, scope_id2, EINVAL);
+		check_no_peer(sock);
+		ret = zsock_close(sock);
+		zassert_equal(ret, 0, "close failed, %d", errno);
+	}
+
+	sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket open failed");
+	udp_connect(sock, &ll_addr1, scope_id1);
+	check_connect_fails(sock, &ll_addr2, no_scope_id, ENODEV);
+	check_peer(sock, &ll_addr1, net_htons(LL_PORT), scope_id1);
+	ret = zsock_close(sock);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	ll_addrs_rm();
+}
+
+/* A global peer gets no zone, also on the accepting side. */
+ZTEST(socket_misc_test_suite, test_ipv6_global_peer_no_scope_tcp)
+{
+	struct net_sockaddr_in6 srv_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(LL_PORT),
+		.sin6_addr = my_ipv6_addr1,
+	};
+	struct net_sockaddr_in6 accepted_addr;
+	net_socklen_t len;
+	int sock_s, sock_c, sock_a;
+	int ret;
+
+	sock_s = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(sock_s >= 0, "socket open failed");
+	sock_c = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(sock_c >= 0, "socket open failed");
+
+	ret = zsock_bind(sock_s, (struct net_sockaddr *)&srv_addr, sizeof(srv_addr));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+	ret = zsock_listen(sock_s, 1);
+	zassert_equal(ret, 0, "listen failed, %d", errno);
+	ret = zsock_connect(sock_c, (struct net_sockaddr *)&srv_addr, sizeof(srv_addr));
+	zassert_equal(ret, 0, "connect failed, %d", errno);
+
+	check_peer(sock_c, &my_ipv6_addr1, net_htons(LL_PORT), 0);
+
+	memset(&accepted_addr, 0xaa, sizeof(accepted_addr));
+	len = sizeof(accepted_addr);
+	sock_a = zsock_accept(sock_s, (struct net_sockaddr *)&accepted_addr, &len);
+	zassert_true(sock_a >= 0, "accept failed, %d", errno);
+	zassert_false(net_ipv6_is_ll_addr(&accepted_addr.sin6_addr), "peer is link-local");
+	zassert_equal(accepted_addr.sin6_scope_id, 0, "accept: scope id %u for a global peer",
+		      accepted_addr.sin6_scope_id);
+
+	check_peer(sock_a, &accepted_addr.sin6_addr, accepted_addr.sin6_port, 0);
+
+	ret = zsock_close(sock_a);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = zsock_close(sock_c);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = zsock_close(sock_s);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	k_sleep(K_MSEC(2 * CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
 static void *setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
