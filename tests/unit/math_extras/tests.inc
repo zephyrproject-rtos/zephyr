@@ -239,4 +239,16 @@ static void VNAME(i128_mul)(void)
 	i128_multiply_i64_i64(10, UINT64_MAX/4, &i128);
 	zassert_equal(i128.high, 2);
 	zassert_equal(i128.low, 0x7ffffffffffffff6);
+
+	i128_multiply_i64_i64(INT64_MIN, 1, &i128);
+	zassert_equal(i128.high, UINT64_MAX);
+	zassert_equal(i128.low, 0x8000000000000000);
+
+	i128_multiply_i64_i64(INT64_MIN, -1, &i128);
+	zassert_equal(i128.high, 0);
+	zassert_equal(i128.low, 0x8000000000000000);
+
+	i128_multiply_i64_i64(INT64_MIN, INT64_MIN, &i128);
+	zassert_equal(i128.high, 0x4000000000000000);
+	zassert_equal(i128.low, 0);
 }
