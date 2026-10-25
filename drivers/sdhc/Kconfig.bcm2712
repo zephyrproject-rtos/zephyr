@@ -11,6 +11,7 @@ config SDHC_BCM2712
 	select EVENTS
 	select CLOCK_CONTROL
 	select CLOCK_CONTROL_FIXED_RATE_CLOCK
+	select PINCTRL
 	select GPIO
 	select REGULATOR
 	help
@@ -18,7 +19,8 @@ config SDHC_BCM2712
 	  legacy/HS and optional 1.8 V SDR50/SDR104 signalling up to 208 MHz.
 	  Enable UHS modes through devicetree on boards with a switchable I/O supply.
 	  SDR104 multi-block transfers require a card that supports CMD23.
-	  The boot firmware must configure the SD pins before starting Zephyr.
+	  Configure main-bank SDIO pins through pinctrl. Dedicated EMMC pads used
+	  by the SD card slot must retain the boot firmware configuration.
 	  Use interrupts when devicetree provides an interrupt specifier;
 	  otherwise poll for completion. Support SD memory and SDIO requests.
 	  Requests are limited to 512 bytes per block, including SDIO.
