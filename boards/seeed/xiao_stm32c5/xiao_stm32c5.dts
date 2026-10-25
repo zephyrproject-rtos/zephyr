@@ -126,6 +126,11 @@
 	status = "okay";
 };
 
+&clk48 {
+	clocks = <&rcc STM32_SRC_HSE CK48_SEL(3)>;
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		ranges;
@@ -283,6 +288,8 @@
 
 /* USB CDC-ACM console (host-facing virtual serial port), via common fragment. */
 zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
