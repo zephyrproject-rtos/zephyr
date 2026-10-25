@@ -3425,6 +3425,21 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				 */
 			}
 
+			/* Report a link-local peer with the index of the
+			 * connection's interface as the zone; conn->dst keeps
+			 * no zone.
+			 */
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			    conn->context->remote.sa_family == NET_AF_INET6 &&
+			    net_ipv6_is_ll_addr(&net_sin6(&conn->context->remote)->sin6_addr)) {
+				int ifindex = net_if_get_by_iface(conn->iface);
+
+				if (ifindex > 0 && ifindex <= UINT8_MAX) {
+					net_sin6(&conn->context->remote)->sin6_scope_id =
+						(uint8_t)ifindex;
+				}
+			}
+
 			accept_cb(conn->context, &conn->context->remote,
 				  net_context_get_family(context) == NET_AF_INET6 ?
 				  sizeof(struct net_sockaddr_in6) : sizeof(struct net_sockaddr_in),
