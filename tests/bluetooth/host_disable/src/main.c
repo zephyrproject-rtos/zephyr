@@ -130,6 +130,11 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, ui
 	rp = cmd_complete(evt, sizeof(*rp), opcode);
 	rp->status = BT_HCI_ERR_SUCCESS;
 	(void)memset(rp->features, 0, sizeof(rp->features));
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC)) {
+		rp->features[BT_LE_FEAT_BIT_EXT_ADV / 8U] |= BIT(BT_LE_FEAT_BIT_EXT_ADV % 8U);
+		rp->features[BT_LE_FEAT_BIT_PER_ADV / 8U] |= BIT(BT_LE_FEAT_BIT_PER_ADV % 8U);
+	}
 }
 
 static void le_read_buffer_size(struct net_buf *buf, struct net_buf **evt, uint8_t len,
@@ -178,6 +183,38 @@ static void long_rsp(struct net_buf *buf, struct net_buf **evt, uint8_t len, uin
 	rp->status = BT_HCI_ERR_SUCCESS;
 }
 
+/* The controller takes a periodic advertising create sync command and then
+ * looks for the advertiser, as it does for the commands that start a
+ * procedure.
+ */
+static void cmd_status_success(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+			       uint16_t opcode)
+{
+	struct bt_hci_evt_cmd_status *status;
+
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	*evt = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
+	evt_create(*evt, BT_HCI_EVT_CMD_STATUS, sizeof(*status));
+	status = net_buf_add(*evt, sizeof(*status));
+	status->status = BT_HCI_ERR_SUCCESS;
+	status->ncmd = 1U;
+	status->opcode = sys_cpu_to_le16(opcode);
+}
+
+/* Whether the controller has been told to scan */
+static bool scan_enabled;
+
+static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+				   uint16_t opcode)
+{
+	const struct bt_hci_cp_le_set_ext_scan_enable *cp = (const void *)buf->data;
+
+	scan_enabled = (cp->enable == BT_HCI_LE_SCAN_ENABLE);
+	generic_success(buf, evt, len, opcode);
+}
+
 static const struct cmd_handler cmds[] = {
 	{
 		TEST_OP_LONG_RSP,
@@ -214,7 +251,30 @@ static const struct cmd_handler cmds[] = {
 		sizeof(struct bt_hci_rp_le_read_supp_states),
 		le_read_supp_states,
 	},
+	{
+		BT_HCI_OP_LE_PER_ADV_CREATE_SYNC,
+		0U,
+		cmd_status_success,
+	},
+	{
+		BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE,
+		GENERIC_RP_SIZE,
+		le_set_ext_scan_enable,
+	},
 };
+
+/* The response of the controller to a command */
+static void cmd_rsp(struct net_buf *cmd, struct net_buf **evt, uint16_t opcode)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(cmds); i++) {
+		if (cmds[i].opcode == opcode) {
+			cmds[i].handler(cmd, evt, cmds[i].len, opcode);
+			return;
+		}
+	}
+
+	generic_success(cmd, evt, GENERIC_RP_SIZE, opcode);
+}
 
 /* What the test looks at: how often the controller has been reset, how often
  * it has been told to disconnect, how many data packets it has been given, and
@@ -252,6 +312,89 @@ static void reset_rsp_handler(struct k_work *work)
 }
 
 static K_WORK_DELAYABLE_DEFINE(reset_rsp_work, reset_rsp_handler);
+
+/* The opcodes of the commands that the controller has been given, the first
+ * ones of them
+ */
+static uint16_t sent_opcodes[64];
+static size_t sent_num;
+
+/* The command that the controller takes long to respond to, if any, how long
+ * it takes, and whether it rejects the command then.
+ */
+static uint16_t slow_opcode;
+static k_timeout_t slow_rsp_delay;
+static uint8_t slow_status;
+
+static void slow_rsp_handler(struct k_work *work)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_evt_cmd_status *status;
+	struct net_buf *evt = NULL;
+
+	ARG_UNUSED(work);
+
+	if (slow_status == BT_HCI_ERR_SUCCESS) {
+		cmd_rsp(NULL, &evt, slow_opcode);
+	} else {
+		evt = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
+		evt_create(evt, BT_HCI_EVT_CMD_STATUS, sizeof(*status));
+		status = net_buf_add(evt, sizeof(*status));
+		status->status = slow_status;
+		status->ncmd = 1U;
+		status->opcode = sys_cpu_to_le16(slow_opcode);
+	}
+
+	bt_hci_recv(dev, evt);
+}
+
+static K_WORK_DELAYABLE_DEFINE(slow_rsp_work, slow_rsp_handler);
+
+/* The command whose arrival at the controller lets a suspended thread run, with
+ * a priority above all the others
+ */
+static uint16_t cmd_resume_opcode;
+static struct k_thread *cmd_resume_thread;
+
+/* The periodic advertising train that the tests sync to */
+#define TEST_SYNC_HANDLE 0x0001U
+
+static const struct bt_le_per_adv_sync_param sync_param = {
+	.addr.type = BT_ADDR_LE_RANDOM,
+	.addr.a.val = {0x01U, 0x02U, 0x03U, 0x04U, 0x05U, 0xc6U},
+	.sid = 1U,
+	.timeout = BT_GAP_PER_ADV_MAX_TIMEOUT,
+};
+
+/* The controller reports the outcome of the periodic advertising sync it was
+ * creating, a sync to the advertising set sid.
+ */
+static void sync_established_sid(uint8_t status, uint8_t sid)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_evt_le_per_adv_sync_established *evt;
+	struct bt_hci_evt_le_meta_event *meta;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta) + sizeof(*evt));
+	meta = net_buf_add(buf, sizeof(*meta));
+	meta->subevent = BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED;
+	evt = net_buf_add(buf, sizeof(*evt));
+	(void)memset(evt, 0, sizeof(*evt));
+	evt->status = status;
+	evt->handle = sys_cpu_to_le16(TEST_SYNC_HANDLE);
+	evt->sid = sid;
+	bt_addr_le_copy(&evt->adv_addr, &sync_param.addr);
+	evt->phy = BT_HCI_LE_PHY_1M;
+	evt->interval = sys_cpu_to_le16(BT_HCI_LE_PER_ADV_INTERVAL_MIN);
+	bt_hci_recv(dev, buf);
+}
+
+static void sync_established(uint8_t status)
+{
+	sync_established_sid(status, sync_param.sid);
+}
 
 /* How long the controller takes to respond to a disconnect command, what it
  * responds with, and the connection that the command was for.
@@ -359,8 +502,36 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 		return;
 	}
 
+	if (sent_num < ARRAY_SIZE(sent_opcodes)) {
+		sent_opcodes[sent_num] = opcode;
+	}
+
+	sent_num++;
+
+	if (opcode == cmd_resume_opcode) {
+		cmd_resume_opcode = 0U;
+		k_thread_priority_set(cmd_resume_thread, K_PRIO_COOP(0));
+		k_thread_resume(cmd_resume_thread);
+	}
+
+	if (opcode == slow_opcode) {
+		(void)k_work_schedule(&slow_rsp_work, slow_rsp_delay);
+		return;
+	}
+
+	if (opcode == BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL) {
+		/* The sync that was being created is reported as not
+		 * established, after the response to the command.
+		 */
+		generic_success(cmd, &evt, GENERIC_RP_SIZE, opcode);
+		bt_hci_recv(dev, evt);
+		sync_established(BT_HCI_ERR_OP_CANCELLED_BY_HOST);
+		return;
+	}
+
 	if (opcode == BT_HCI_OP_RESET) {
 		reset_count++;
+		scan_enabled = false;
 
 		if (!K_TIMEOUT_EQ(reset_rsp_delay, K_NO_WAIT)) {
 			(void)k_work_schedule(&reset_rsp_work, reset_rsp_delay);
@@ -368,15 +539,7 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 		}
 	}
 
-	for (size_t i = 0U; i < ARRAY_SIZE(cmds); i++) {
-		if (cmds[i].opcode == opcode) {
-			cmds[i].handler(cmd, &evt, cmds[i].len, opcode);
-			bt_hci_recv(dev, evt);
-			return;
-		}
-	}
-
-	generic_success(cmd, &evt, GENERIC_RP_SIZE, opcode);
+	cmd_rsp(cmd, &evt, opcode);
 	bt_hci_recv(dev, evt);
 }
 
@@ -452,6 +615,8 @@ static void before(void *fixture)
 	silent = false;
 	data_err = 0;
 	reset_rsp_delay = K_NO_WAIT;
+	slow_opcode = 0U;
+	slow_status = BT_HCI_ERR_SUCCESS;
 	disconnect_rsp_delay = K_NO_WAIT;
 	disconnect_status = BT_HCI_ERR_SUCCESS;
 	if (!bt_is_ready()) {
@@ -460,6 +625,7 @@ static void before(void *fixture)
 
 	reset_count = 0U;
 	disconnect_count = 0U;
+	sent_num = 0U;
 	data_count = 0U;
 	close_count = 0U;
 }
@@ -606,6 +772,598 @@ static ZTEST(bt_disable, test_enable_silent_controller_cb)
 	zassert_ok(bt_enable(NULL), "Bluetooth init after a silent controller failed");
 	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
 }
+
+#if defined(CONFIG_BT_PER_ADV_SYNC)
+/* How many of the commands that the controller has been given had opcode */
+static unsigned int sent_count(uint16_t opcode)
+{
+	unsigned int count = 0U;
+
+	for (size_t i = 0U; i < MIN(sent_num, ARRAY_SIZE(sent_opcodes)); i++) {
+		if (sent_opcodes[i] == opcode) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+static K_SEM_DEFINE(synced_sem, 0, K_SEM_MAX_LIMIT);
+static struct bt_le_per_adv_sync *synced_sync;
+static atomic_t term_count;
+static struct bt_le_per_adv_sync *term_sync;
+static uint8_t term_reason;
+
+/* The terminate sync commands that the controller had been given by the
+ * time of the last term callback
+ */
+static unsigned int term_terminate_count;
+static atomic_t state_changed_count;
+
+/* Whether the synced callback is to wait for synced_release_sem, as one that
+ * issues HCI commands does, and whether it was given
+ */
+static bool synced_blocks;
+static K_SEM_DEFINE(synced_release_sem, 0, 1);
+static bool synced_released;
+
+static void synced_cb(struct bt_le_per_adv_sync *sync, struct bt_le_per_adv_sync_synced_info *info)
+{
+	ARG_UNUSED(info);
+
+	synced_sync = sync;
+	k_sem_give(&synced_sem);
+
+	if (synced_blocks) {
+		synced_blocks = false;
+		synced_released = (k_sem_take(&synced_release_sem, K_SECONDS(1)) == 0);
+	}
+}
+
+static void term_cb(struct bt_le_per_adv_sync *sync,
+		    const struct bt_le_per_adv_sync_term_info *info)
+{
+	term_sync = sync;
+	term_reason = info->reason;
+	term_terminate_count = sent_count(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC);
+	atomic_inc(&term_count);
+}
+
+static void state_changed_cb(struct bt_le_per_adv_sync *sync,
+			     const struct bt_le_per_adv_sync_state_info *info)
+{
+	ARG_UNUSED(sync);
+	ARG_UNUSED(info);
+
+	atomic_inc(&state_changed_count);
+}
+
+static void *per_adv_sync_setup(void)
+{
+	static struct bt_le_per_adv_sync_cb cb = {
+		.synced = synced_cb,
+		.term = term_cb,
+		.state_changed = state_changed_cb,
+	};
+
+	zassert_ok(bt_le_per_adv_sync_cb_register(&cb), "Failed to register the callbacks");
+
+	return NULL;
+}
+
+static void per_adv_sync_before(void *fixture)
+{
+	before(fixture);
+
+	k_sem_reset(&synced_sem);
+	synced_sync = NULL;
+	synced_blocks = false;
+	k_sem_reset(&synced_release_sem);
+	synced_released = false;
+	atomic_clear(&term_count);
+	term_sync = NULL;
+	term_reason = BT_HCI_ERR_SUCCESS;
+	atomic_clear(&state_changed_count);
+}
+
+/* The sync is created, and established once the controller has found the
+ * advertiser.
+ */
+static struct bt_le_per_adv_sync *sync_create_established(void)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	err = bt_le_per_adv_sync_create(&sync_param, &sync);
+	zassert_ok(err, "Creating the sync failed (%d)", err);
+	zassert_true(scan_enabled, "The scanner was not started for the sync");
+
+	sync_established(BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "The sync was not established");
+	zassert_equal_ptr(synced_sync, sync, "Another sync was established");
+	zassert_false(scan_enabled, "The scanner was not stopped once synced");
+
+	return sync;
+}
+
+/* An application thread, which makes a call of the test. It is lower in
+ * priority than the test thread, which is cooperative, and so runs only while
+ * the test thread waits.
+ */
+static K_THREAD_STACK_DEFINE(sync_app_stack,
+			     CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread sync_app_thread;
+static struct bt_le_per_adv_sync *sync_app_sync;
+static int (*sync_app_call)(void);
+static bool sync_app_returned;
+static int sync_app_err;
+
+static void sync_app_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	sync_app_err = sync_app_call();
+	sync_app_returned = true;
+}
+
+static void sync_app_start(int (*call)(void))
+{
+	sync_app_call = call;
+	sync_app_returned = false;
+	sync_app_err = -EINPROGRESS;
+	k_thread_create(&sync_app_thread, sync_app_stack, K_THREAD_STACK_SIZEOF(sync_app_stack),
+			sync_app_entry, NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0,
+			K_NO_WAIT);
+}
+
+static int sync_app_join(void)
+{
+	zassert_ok(k_thread_join(&sync_app_thread, K_SECONDS(1)), "The call did not return");
+
+	return sync_app_err;
+}
+
+/* The application thread of a test that failed is not left running, and
+ * bt_disable() takes the syncs down, so that each test starts without any.
+ */
+static void per_adv_sync_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (sync_app_call != NULL) {
+		if (k_thread_join(&sync_app_thread, K_SECONDS(1)) != 0) {
+			k_thread_abort(&sync_app_thread);
+		}
+
+		sync_app_call = NULL;
+	}
+
+	cmd_resume_opcode = 0U;
+
+	if (bt_is_ready()) {
+		zassert_ok(bt_disable(), "Bluetooth disable failed");
+	}
+}
+
+ZTEST_SUITE(bt_per_adv_sync, NULL, per_adv_sync_setup, per_adv_sync_before, per_adv_sync_after,
+	    NULL);
+
+static int sync_app_create(void)
+{
+	return bt_le_per_adv_sync_create(&sync_param, &sync_app_sync);
+}
+
+static int sync_app_create_release(void)
+{
+	int err = sync_app_create();
+
+	k_sem_give(&synced_release_sem);
+
+	return err;
+}
+
+static int sync_app_delete(void)
+{
+	return bt_le_per_adv_sync_delete(sync_app_sync);
+}
+
+static int sync_app_recv_disable(void)
+{
+	return bt_le_per_adv_sync_recv_disable(sync_app_sync);
+}
+
+/* Bluetooth is disabled and enabled again while the application waits for the
+ * response to a command of the call that it makes, and the call returns only
+ * after a new sync has been created, which has the same sync object.
+ */
+static struct bt_le_per_adv_sync *sync_app_call_across_disable(int (*call)(void), uint16_t opcode)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	slow_opcode = opcode;
+	slow_rsp_delay = K_MSEC(20);
+	sync_app_start(call);
+	k_sleep(K_MSEC(10));
+	zassert_true(k_work_delayable_is_pending(&slow_rsp_work), "The command was not sent");
+
+	/* The reset waits for the response to the command */
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	slow_opcode = 0U;
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+
+	err = bt_le_per_adv_sync_create(&sync_param, &sync);
+	zassert_ok(err, "Creating a sync after bt_enable() failed (%d)", err);
+	zassert_false(sync_app_returned, "The call returned before the sync was created");
+
+	return sync;
+}
+
+/* A sync that is created and established, a sync whose creation is cancelled,
+ * and one created after that.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_create_and_delete)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	sync = sync_create_established();
+
+	zassert_ok(bt_le_per_adv_sync_delete(sync), "Deleting the sync failed");
+	zassert_equal(atomic_get(&term_count), 1, "%ld term callbacks", atomic_get(&term_count));
+	zassert_equal_ptr(term_sync, sync, "Another sync was terminated");
+	zassert_equal(term_reason, BT_HCI_ERR_LOCALHOST_TERM_CONN, "Terminated with 0x%02x",
+		      term_reason);
+
+	err = bt_le_per_adv_sync_create(&sync_param, &sync);
+	zassert_ok(err, "Creating the sync failed (%d)", err);
+	zassert_ok(bt_le_per_adv_sync_delete(sync), "Cancelling the sync failed");
+	k_sleep(K_MSEC(1));
+	zassert_equal(atomic_get(&term_count), 1, "%ld term callbacks", atomic_get(&term_count));
+	zassert_false(scan_enabled, "The scanner was not stopped once cancelled");
+
+	(void)sync_create_established();
+}
+
+/* An application thread creates a sync while bt_disable() waits for the RX
+ * work in flight, a synced callback that issues HCI commands. The sync must not
+ * be left behind to keep the next one from being created after bt_enable().
+ */
+static ZTEST(bt_per_adv_sync, test_sync_create_during_disable)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	err = bt_le_per_adv_sync_create(&sync_param, &sync);
+	zassert_ok(err, "Creating the sync failed (%d)", err);
+
+	synced_blocks = true;
+	sync_established(BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "The sync was not established");
+
+	sync_app_start(sync_app_create_release);
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	zassert_true(synced_released, "The sync was not created during bt_disable()");
+
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	(void)sync_create_established();
+
+	err = sync_app_join();
+	zassert_equal(err, -EAGAIN, "Creating the sync during bt_disable() gave %d", err);
+}
+
+/* bt_disable() takes down the sync that an application thread is creating,
+ * which still waits for the response to the create sync command once a new sync
+ * has been created. It must leave that one alone.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_create_across_disable)
+{
+	struct bt_le_per_adv_sync *sync;
+	int app_err;
+	int err;
+
+	sync = sync_app_call_across_disable(sync_app_create, BT_HCI_OP_LE_PER_ADV_CREATE_SYNC);
+	app_err = sync_app_join();
+
+	/* The new sync is still being created */
+	zassert_true(scan_enabled, "The scanner was stopped");
+	err = bt_le_per_adv_sync_create(&sync_param, &sync_app_sync);
+	zassert_equal(err, -EBUSY, "Creating another sync gave %d", err);
+
+	sync_established(BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "The sync was not established");
+	zassert_equal_ptr(synced_sync, sync, "Another sync was established");
+	zassert_equal(atomic_get(&term_count), 0, "%ld term callbacks", atomic_get(&term_count));
+
+	zassert_equal(app_err, -ECANCELED, "Creating the sync across bt_disable() gave %d",
+		      app_err);
+}
+
+/* An application thread deletes a sync, and bt_disable() comes before the call
+ * returns, after a new sync has been established. It must leave that one alone.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_delete_across_disable)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	sync_app_sync = sync_create_established();
+	sync = sync_app_call_across_disable(sync_app_delete, BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC);
+	zassert_equal_ptr(sync, sync_app_sync, "The new sync has another object");
+
+	sync_established(BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "The sync was not established");
+	zassert_equal_ptr(synced_sync, sync, "Another sync was established");
+
+	err = sync_app_join();
+	zassert_ok(err, "Deleting the sync across bt_disable() failed (%d)", err);
+	zassert_equal(atomic_get(&term_count), 0, "%ld term callbacks", atomic_get(&term_count));
+
+	zassert_ok(bt_le_per_adv_sync_delete(sync), "Deleting the new sync failed");
+	zassert_equal(atomic_get(&term_count), 1, "%ld term callbacks", atomic_get(&term_count));
+	zassert_equal_ptr(term_sync, sync, "Another sync was terminated");
+}
+
+/* As above, with the application thread disabling the reception of reports */
+static ZTEST(bt_per_adv_sync, test_sync_recv_disable_across_disable)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	sync_app_sync = sync_create_established();
+	sync = sync_app_call_across_disable(sync_app_recv_disable,
+					    BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE);
+	zassert_equal_ptr(sync, sync_app_sync, "The new sync has another object");
+
+	sync_established(BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "The sync was not established");
+	zassert_equal_ptr(synced_sync, sync, "Another sync was established");
+
+	err = sync_app_join();
+	zassert_ok(err, "Disabling reception across bt_disable() failed (%d)", err);
+	zassert_equal(atomic_get(&state_changed_count), 0, "%ld state changed callbacks",
+		      atomic_get(&state_changed_count));
+
+	/* The new sync still receives reports */
+	zassert_ok(bt_le_per_adv_sync_recv_disable(sync), "Disabling reception failed");
+	zassert_equal(atomic_get(&state_changed_count), 1, "%ld state changed callbacks",
+		      atomic_get(&state_changed_count));
+}
+
+/* As sync_app_call_across_disable(), with the application thread waiting for a
+ * command buffer, which it gets only once a new sync has been established.
+ */
+static struct bt_le_per_adv_sync *sync_app_call_waiting_for_buffer(int (*call)(void))
+{
+	struct net_buf *bufs[CONFIG_BT_BUF_CMD_TX_COUNT];
+	struct bt_le_per_adv_sync *sync;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(bufs); i++) {
+		bufs[i] = bt_hci_cmd_alloc(K_NO_WAIT);
+		zassert_not_null(bufs[i], "No command buffer");
+	}
+
+	sync_app_start(call);
+	k_sleep(K_MSEC(1));
+
+	/* The first one goes to the waiting application thread */
+	for (size_t i = 0U; i < ARRAY_SIZE(bufs); i++) {
+		net_buf_unref(bufs[i]);
+	}
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	sent_num = 0U;
+
+	sync = sync_create_established();
+	zassert_false(sync_app_returned, "The call returned before the sync was established");
+
+	return sync;
+}
+
+/* As test_sync_delete_across_disable, with the application thread waiting for a
+ * command buffer. It must not have the new sync terminated either.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_delete_waiting_for_buffer)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	sync_app_sync = sync_create_established();
+	sync = sync_app_call_waiting_for_buffer(sync_app_delete);
+	zassert_equal_ptr(sync, sync_app_sync, "The new sync has another object");
+
+	err = sync_app_join();
+	zassert_ok(err, "Deleting the sync across bt_disable() failed (%d)", err);
+	zassert_equal(sent_count(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC), 0U,
+		      "The controller was told to terminate a sync");
+	zassert_equal(atomic_get(&term_count), 0, "%ld term callbacks", atomic_get(&term_count));
+
+	zassert_ok(bt_le_per_adv_sync_delete(sync), "Deleting the new sync failed");
+	zassert_equal(atomic_get(&term_count), 1, "%ld term callbacks", atomic_get(&term_count));
+	zassert_equal_ptr(term_sync, sync, "Another sync was terminated");
+}
+
+/* As test_sync_recv_disable_across_disable, with the application thread waiting
+ * for a command buffer. It must not have the reports of the new sync disabled.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_recv_disable_waiting_for_buffer)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	sync_app_sync = sync_create_established();
+	sync = sync_app_call_waiting_for_buffer(sync_app_recv_disable);
+	zassert_equal_ptr(sync, sync_app_sync, "The new sync has another object");
+
+	err = sync_app_join();
+	zassert_equal(err, -EINVAL, "Disabling reception across bt_disable() gave %d", err);
+	zassert_equal(sent_count(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE), 0U,
+		      "The controller was told to disable reception");
+	zassert_equal(atomic_get(&state_changed_count), 0, "%ld state changed callbacks",
+		      atomic_get(&state_changed_count));
+
+	zassert_ok(bt_le_per_adv_sync_recv_disable(sync), "Disabling reception failed");
+	zassert_equal(atomic_get(&state_changed_count), 1, "%ld state changed callbacks",
+		      atomic_get(&state_changed_count));
+}
+
+/* The controller rejects the create sync command, but only once bt_disable()
+ * has taken down the sync that an application thread is creating, and a new
+ * sync is being created. The new one is left alone.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_create_rejected_across_disable)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	slow_status = BT_HCI_ERR_UNSPECIFIED;
+	sync = sync_app_call_across_disable(sync_app_create, BT_HCI_OP_LE_PER_ADV_CREATE_SYNC);
+
+	err = sync_app_join();
+	zassert_equal(err, -ECANCELED, "Creating the sync across bt_disable() gave %d", err);
+	zassert_true(scan_enabled, "The scanner was stopped");
+
+	sync_established(BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "The sync was not established");
+	zassert_equal_ptr(synced_sync, sync, "Another sync was established");
+}
+
+/* An application thread that creates a sync has a command buffer for starting
+ * the scanner, but does not get to run until it is resumed.
+ */
+static void sync_app_create_held(void)
+{
+	struct net_buf *bufs[CONFIG_BT_BUF_CMD_TX_COUNT];
+
+	for (size_t i = 0U; i < ARRAY_SIZE(bufs); i++) {
+		bufs[i] = bt_hci_cmd_alloc(K_NO_WAIT);
+		zassert_not_null(bufs[i], "No command buffer");
+	}
+
+	sync_app_start(sync_app_create);
+	k_sleep(K_MSEC(1));
+	k_thread_suspend(&sync_app_thread);
+
+	/* The first one goes to the waiting application thread */
+	for (size_t i = 0U; i < ARRAY_SIZE(bufs); i++) {
+		net_buf_unref(bufs[i]);
+	}
+}
+
+/* The application thread runs again only after Bluetooth has been disabled and
+ * enabled again. The scanner it then starts must not be left running.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_create_scanner_across_disable)
+{
+	int err;
+
+	sync_app_create_held();
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	zassert_false(scan_enabled, "The scanner was started too early");
+
+	k_thread_resume(&sync_app_thread);
+
+	err = sync_app_join();
+	zassert_equal(err, -ECANCELED, "Creating the sync across bt_disable() gave %d", err);
+	zassert_false(scan_enabled, "The scanner was left running");
+}
+
+/* As test_sync_create_scanner_across_disable, with the application thread
+ * running again while bt_enable() is still initializing, before Bluetooth is
+ * ready.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_create_scanner_during_enable)
+{
+	int err;
+
+	sync_app_create_held();
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+
+	cmd_resume_thread = &sync_app_thread;
+	cmd_resume_opcode = BT_HCI_OP_READ_LOCAL_VERSION_INFO;
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	zassert_equal(cmd_resume_opcode, 0U, "The application thread was not resumed");
+
+	err = sync_app_join();
+	zassert_equal(err, -ECANCELED, "Creating the sync across bt_disable() gave %d", err);
+	zassert_false(scan_enabled, "The scanner was left running");
+}
+
+/* An application thread deletes a sync whose creation is pending, and waits
+ * for a command buffer while the sync is established. It must not send a
+ * cancel, which would cancel any other sync being created by then, but fail as
+ * a cancel that comes too late does.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_cancel_after_established)
+{
+	struct net_buf *bufs[CONFIG_BT_BUF_CMD_TX_COUNT];
+	int err;
+
+	/* The scanner is then not updated when the sync is deleted */
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Scanning failed to start");
+
+	err = bt_le_per_adv_sync_create(&sync_param, &sync_app_sync);
+	zassert_ok(err, "Creating the sync failed (%d)", err);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(bufs); i++) {
+		bufs[i] = bt_hci_cmd_alloc(K_NO_WAIT);
+		zassert_not_null(bufs[i], "No command buffer");
+	}
+
+	sync_app_start(sync_app_delete);
+	k_sleep(K_MSEC(1));
+
+	sync_established(BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "The sync was not established");
+	zassert_false(sync_app_returned, "The delete returned before the sync was established");
+
+	sent_num = 0U;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(bufs); i++) {
+		net_buf_unref(bufs[i]);
+	}
+
+	err = sync_app_join();
+	zassert_equal(err, -EACCES, "Deleting the established sync gave %d", err);
+	zassert_equal(sent_count(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL), 0U,
+		      "The controller was told to cancel a sync");
+	zassert_equal(atomic_get(&term_count), 0, "%ld term callbacks", atomic_get(&term_count));
+
+	zassert_ok(bt_le_per_adv_sync_delete(sync_app_sync), "Deleting the sync failed");
+	zassert_equal(atomic_get(&term_count), 1, "%ld term callbacks", atomic_get(&term_count));
+	zassert_ok(bt_le_scan_stop(), "Scanning failed to stop");
+}
+
+/* The controller reports a sync to another advertising set than the one asked
+ * for. The Host terminates that sync before it ends the pending one with the
+ * term callback, which can disable and enable Bluetooth, after which the
+ * handle could be another sync's.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_unexpected_terminated_first)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	err = bt_le_per_adv_sync_create(&sync_param, &sync);
+	zassert_ok(err, "Creating the sync failed (%d)", err);
+
+	sent_num = 0U;
+	sync_established_sid(BT_HCI_ERR_SUCCESS, sync_param.sid + 1U);
+	k_sleep(K_MSEC(1));
+
+	zassert_equal(atomic_get(&term_count), 1, "%ld term callbacks", atomic_get(&term_count));
+	zassert_equal_ptr(term_sync, sync, "Another sync was terminated");
+	zassert_equal(term_terminate_count, 1U, "%u terminate commands before the term callback",
+		      term_terminate_count);
+	zassert_false(scan_enabled, "The scanner was not stopped");
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC */
 
 static K_THREAD_STACK_DEFINE(enable_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread enable_thread;

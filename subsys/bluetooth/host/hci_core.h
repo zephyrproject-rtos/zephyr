@@ -305,6 +305,12 @@ struct bt_le_per_adv_sync {
 	 */
 	bool report_truncated;
 
+	/** Changed whenever the object is deleted, so that a call that has
+	 * blocked meanwhile can tell, the object being free or in use again.
+	 * The object's state changes with the host lock held.
+	 */
+	uint32_t gen;
+
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
 
@@ -577,6 +583,14 @@ struct bt_hci_cmd_state_set {
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       struct bt_hci_cmd_state_set *state,
 			       atomic_t *target, int bit, bool val);
+
+/* As bt_hci_cmd_send_sync(), for a command about an object that the Host can
+ * delete or reuse while the caller waits for a command buffer: check is called
+ * with the host lock held right before the command is queued, and the command
+ * is queued only if it returns 0. Its error is returned otherwise.
+ */
+int bt_hci_cmd_send_sync_checked(uint16_t opcode, struct net_buf *buf, struct net_buf **rsp,
+				 int (*check)(const void *data), const void *data);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
 

@@ -22,6 +22,18 @@ tests:
     extra_configs:
       - CONFIG_TEST_SEND_BLOCKS=y
     ignore_faults: true
+  bluetooth.host_disable.per_adv_sync:
+    extra_configs:
+      - CONFIG_BT_OBSERVER=y
+      - CONFIG_BT_EXT_ADV=y
+      - CONFIG_BT_PER_ADV_SYNC=y
+      # A command buffer for bt_disable() and bt_enable() while an
+      # application thread holds one
+      - CONFIG_BT_BUF_CMD_TX_COUNT=2
+      # The buffer sizes of the other scenarios, which
+      # test_command_response_too_long relies on
+      - CONFIG_BT_BUF_CMD_TX_SIZE=65
+      - CONFIG_BT_BUF_EVT_RX_SIZE=68
   bluetooth.host_disable.conn:
     extra_configs:
       - CONFIG_BT_PERIPHERAL=y
