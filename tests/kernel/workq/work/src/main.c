@@ -2560,5 +2560,54 @@ void *workq_setup(void)
 	return NULL;
 }
 
+static struct k_work_q stop_tmo_queue;
+static K_THREAD_STACK_DEFINE(stop_tmo_stack, STACK_SIZE);
+
+/**
+ * @brief Verify the bounded wait and timeout error of k_work_queue_stop().
+ *
+ * @details
+ * Stopping a work queue waits for the queue thread to terminate for at most
+ * the caller-specified timeout. The queue thread runs at a lower, cooperative
+ * priority, so after a drain it has not yet run to observe the stop request:
+ * a zero-wait stop must time out and leave the queue running, after which an
+ * unbounded stop succeeds.
+ *
+ * Test steps:
+ * - Start a queue at a priority below the test thread and drain it with the
+ *   plug option.
+ * - Call k_work_queue_stop() with K_NO_WAIT, before the queue thread can run.
+ * - Call k_work_queue_stop() again with K_FOREVER.
+ *
+ * Expected result:
+ * - The zero-wait stop returns -ETIMEDOUT and the queue is left running.
+ * - The subsequent unbounded stop returns 0 once the queue thread exits.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_stop()
+ * @verifies ZEP-SRS-38-45
+ * @verifies ZEP-SRS-38-53
+ */
+ZTEST(work_1cpu, test_workq_1cpu_queue_stop_timeout)
+{
+	struct k_work_queue_config cfg = {
+		.name = "stoptmo",
+	};
+
+	k_work_queue_init(&stop_tmo_queue);
+	k_work_queue_start(&stop_tmo_queue, stop_tmo_stack, STACK_SIZE, POLICY_PRIORITY, &cfg);
+
+	zassert_true(k_work_queue_drain(&stop_tmo_queue, true) >= 0, "drain failed");
+
+	/* The queue thread is cooperative and lower priority: it cannot have
+	 * observed the stop request yet, so a zero wait must expire.
+	 */
+	zassert_equal(k_work_queue_stop(&stop_tmo_queue, K_NO_WAIT), -ETIMEDOUT,
+		      "zero-wait stop did not time out");
+
+	/* The queue was left running: a second, unbounded stop completes. */
+	zassert_ok(k_work_queue_stop(&stop_tmo_queue, K_FOREVER), "stop failed");
+}
+
 ZTEST_SUITE(work_1cpu, NULL, workq_setup, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
 ZTEST_SUITE(work, NULL, workq_setup, NULL, NULL, NULL);
