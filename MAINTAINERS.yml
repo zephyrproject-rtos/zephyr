@@ -6645,6 +6645,7 @@ TriCore arch:
     - arch/tricore/
     - cmake/compiler/*/target_tricore.cmake
     - cmake/toolchain/tricore/
+    - doc/hardware/arch/tricore.rst
     - include/zephyr/arch/tricore/
   labels:
     - "area: TriCore"
