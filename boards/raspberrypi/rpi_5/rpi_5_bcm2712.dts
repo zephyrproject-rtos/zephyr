@@ -8,6 +8,7 @@
 
 #include <broadcom/bcm2712.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
 #include "rpi_5-pinctrl.dtsi"
 
 / {
@@ -36,6 +37,29 @@
 			label = "ACT";
 		};
 	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Buffer for the VideoCore firmware property interface. One
+		 * MMU page, the minimum device_map() accepts.
+		 */
+		vc_mem: memory@3f800000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0 0x3f800000 0x1000>;
+			zephyr,memory-region = "VC_SHARED_RAM";
+		};
+	};
+
+	rpi_fw: firmware {
+		compatible = "raspberrypi,bcm283x-firmware";
+		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
+		mbox-names = "vc";
+		shared-memory = <&vc_mem>;
+	};
 };
 
 &gio_aon {
@@ -50,5 +74,9 @@
 };
 
 &gpio0_0 {
+	status = "okay";
+};
+
+&mbox0 {
 	status = "okay";
 };
