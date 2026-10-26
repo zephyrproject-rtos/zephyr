@@ -956,7 +956,16 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 	if (cfg &&
 	    CF_ROBUST_CACHING(cfg) &&
 	    !atomic_test_bit(cfg->flags, CF_CHANGE_AWARE)) {
-		atomic_set_bit(cfg->flags, CF_DB_HASH_READ);
+		/* Not if the database changed since the hash was computed, as
+		 * the settings updates above can block: the peer then stays
+		 * change-unaware. A change is counted and the flag cleared
+		 * with the scheduler locked.
+		 */
+		k_sched_lock();
+		if (atomic_get(&db_hash.gen) == gen) {
+			atomic_set_bit(cfg->flags, CF_DB_HASH_READ);
+		}
+		k_sched_unlock();
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, hash, sizeof(hash));
