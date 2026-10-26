@@ -1,0 +1,22 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_STPMIC1
+	bool "STMicroelectronics STPMIC1 PMIC regulator driver"
+	default y
+	depends on DT_HAS_ST_STPMIC1_ENABLED
+	select I2C
+	help
+	  Enable the STMicroelectronics STPMIC1 PMIC regulator driver.
+
+if REGULATOR_STPMIC1
+
+config REGULATOR_STPMIC1_INIT_PRIORITY
+	int "STPMIC1 regulator driver init priority"
+	default 70
+	help
+	  Init priority for the STPMIC1 regulator driver. It cannot be lower
+	  than the I2C init priority (50), which is the default so that the rails
+	  are on before the devices they supply are initialized.
+
+endif
