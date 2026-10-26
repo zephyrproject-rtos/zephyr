@@ -11,6 +11,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
@@ -30,6 +31,8 @@
 #define ASCLIN_FRAMECON    0x18
 #define ASCLIN_DATCON      0x1C
 #define ASCLIN_BRG         0x20
+#define ASCLIN_FLAGS       0x34
+#define ASCLIN_FLAGSSET    0x38
 #define ASCLIN_FLAGSCLEAR  0x3C
 #define ASCLIN_FLAGSENABLE 0x40
 #define ASCLIN_TXDATA      0x44
@@ -42,6 +45,8 @@
 #define ASCLIN_FRAMECON    0x110
 #define ASCLIN_DATCON      0x114
 #define ASCLIN_BRG         0x118
+#define ASCLIN_FLAGS       0x12C
+#define ASCLIN_FLAGSSET    0x130
 #define ASCLIN_FLAGSCLEAR  0x134
 #define ASCLIN_FLAGSENABLE 0x138
 #define ASCLIN_TXDATA      0x140
@@ -71,6 +76,17 @@
 #define CSR_CLKSEL          GENMASK(4, 0)
 #define CSR_CON             BIT(31)
 
+/* Same bit layout in FLAGS, FLAGSSET, FLAGSCLEAR and FLAGSENABLE */
+#define FLAGS_PE  BIT(16)
+#define FLAGS_TC  BIT(17)
+#define FLAGS_FE  BIT(18)
+#define FLAGS_BD  BIT(21)
+#define FLAGS_CE  BIT(25)
+#define FLAGS_RFO BIT(26)
+#define FLAGS_RFL BIT(28)
+#define FLAGS_TFL BIT(31)
+#define FLAGS_ERR (FLAGS_PE | FLAGS_FE | FLAGS_BD | FLAGS_CE | FLAGS_RFO)
+
 /* CSR.CLKSEL value selecting the fast ASCLIN clock (fASCLINF). */
 #define UART_ASCLIN_CLKSEL_OFF 0
 #define UART_ASCLIN_CLKSEL_ON  2
@@ -78,6 +94,10 @@
 struct uart_asclin_data {
 	struct uart_config *uart_cfg;
 	struct k_spinlock lock;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_callback_user_data_t irq_cb;
+	void *irq_cb_data;
+#endif
 };
 
 struct uart_asclin_config {
@@ -89,6 +109,9 @@ struct uart_asclin_config {
 	uint8_t oversampling;
 	uint8_t samplepoint;
 	bool median_filter;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	void (*irq_config_func)(void);
+#endif
 };
 
 static inline uint32_t uart_asclin_rx_fifo_fill_level(mem_addr_t base)
@@ -253,6 +276,194 @@ static void uart_asclin_poll_out(const struct device *dev, unsigned char c)
 	k_spin_unlock(&data->lock, key);
 }
 
+static int uart_asclin_err_check(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+	uint32_t flags = sys_read32(config->base + ASCLIN_FLAGS);
+	int err = 0;
+
+	if ((flags & FLAGS_PE) != 0U) {
+		err |= UART_ERROR_PARITY;
+	}
+	if ((flags & FLAGS_FE) != 0U) {
+		err |= UART_ERROR_FRAMING;
+	}
+	if ((flags & FLAGS_BD) != 0U) {
+		err |= UART_BREAK;
+	}
+	if ((flags & FLAGS_RFO) != 0U) {
+		err |= UART_ERROR_OVERRUN;
+	}
+	if ((flags & FLAGS_CE) != 0U) {
+		err |= UART_ERROR_COLLISION;
+	}
+
+	sys_write32(flags & FLAGS_ERR, config->base + ASCLIN_FLAGSCLEAR);
+
+	return err;
+}
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+static void uart_asclin_flags_enable(const struct device *dev, uint32_t mask, bool enable)
+{
+	const struct uart_asclin_config *config = dev->config;
+	struct uart_asclin_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	uint32_t en = sys_read32(config->base + ASCLIN_FLAGSENABLE);
+
+	sys_write32(enable ? (en | mask) : (en & ~mask), config->base + ASCLIN_FLAGSENABLE);
+	k_spin_unlock(&data->lock, key);
+}
+
+static int uart_asclin_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
+{
+	const struct uart_asclin_config *config = dev->config;
+	int count = 0;
+
+	sys_write32(FLAGS_TC, config->base + ASCLIN_FLAGSCLEAR);
+	while (count < size &&
+	       uart_asclin_tx_fifo_fill_level(config->base) < UART_ASCLIN_FIFO_SIZE) {
+		uart_asclin_tx_fifo_write(config->base, tx_data[count++]);
+	}
+
+	return count;
+}
+
+static int uart_asclin_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
+{
+	const struct uart_asclin_config *config = dev->config;
+	int count = 0;
+
+	while (count < size && uart_asclin_rx_fifo_fill_level(config->base) > 0) {
+		rx_data[count++] = uart_asclin_rx_fifo_read(config->base);
+	}
+
+	return count;
+}
+
+static void uart_asclin_irq_tx_enable(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+
+	uart_asclin_flags_enable(dev, FLAGS_TFL, true);
+	/* Raise TFL by software for the first TX interrupt */
+	sys_write32(FLAGS_TFL, config->base + ASCLIN_FLAGSCLEAR);
+	sys_write32(FLAGS_TFL, config->base + ASCLIN_FLAGSSET);
+}
+
+static void uart_asclin_irq_tx_disable(const struct device *dev)
+{
+	uart_asclin_flags_enable(dev, FLAGS_TFL, false);
+}
+
+static int uart_asclin_irq_tx_ready(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+
+	if ((sys_read32(config->base + ASCLIN_FLAGSENABLE) & FLAGS_TFL) == 0U) {
+		return 0;
+	}
+
+	return UART_ASCLIN_FIFO_SIZE - uart_asclin_tx_fifo_fill_level(config->base);
+}
+
+static int uart_asclin_irq_tx_complete(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+
+	return uart_asclin_tx_fifo_fill_level(config->base) == 0U &&
+	       (sys_read32(config->base + ASCLIN_FLAGS) & FLAGS_TC) != 0U;
+}
+
+static void uart_asclin_irq_rx_enable(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+
+	uart_asclin_flags_enable(dev, FLAGS_RFL, true);
+	if (uart_asclin_rx_fifo_fill_level(config->base) > 0U) {
+		sys_write32(FLAGS_RFL, config->base + ASCLIN_FLAGSCLEAR);
+		sys_write32(FLAGS_RFL, config->base + ASCLIN_FLAGSSET);
+	}
+}
+
+static void uart_asclin_irq_rx_disable(const struct device *dev)
+{
+	uart_asclin_flags_enable(dev, FLAGS_RFL, false);
+}
+
+static int uart_asclin_irq_rx_ready(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+
+	return uart_asclin_rx_fifo_fill_level(config->base) > 0U;
+}
+
+static void uart_asclin_irq_err_enable(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+
+	sys_write32(FLAGS_ERR, config->base + ASCLIN_FLAGSCLEAR);
+	uart_asclin_flags_enable(dev, FLAGS_ERR, true);
+}
+
+static void uart_asclin_irq_err_disable(const struct device *dev)
+{
+	uart_asclin_flags_enable(dev, FLAGS_ERR, false);
+}
+
+static int uart_asclin_irq_is_pending(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+	uint32_t en = sys_read32(config->base + ASCLIN_FLAGSENABLE);
+
+	return ((en & FLAGS_RFL) != 0U && uart_asclin_irq_rx_ready(dev)) ||
+	       ((en & FLAGS_TFL) != 0U && uart_asclin_irq_tx_ready(dev) > 0);
+}
+
+static void uart_asclin_irq_update(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+
+	/* Ack the FIFO level flags, the callback works on the FIFO levels */
+	sys_write32(FLAGS_TFL | FLAGS_RFL, config->base + ASCLIN_FLAGSCLEAR);
+}
+
+static void uart_asclin_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
+					 void *user_data)
+{
+	struct uart_asclin_data *data = dev->data;
+
+	data->irq_cb = cb;
+	data->irq_cb_data = user_data;
+}
+
+static void uart_asclin_isr(const struct device *dev)
+{
+	const struct uart_asclin_config *config = dev->config;
+	struct uart_asclin_data *data = dev->data;
+	uint32_t pending = 0;
+
+	if (data->irq_cb != NULL) {
+		data->irq_cb(dev, data->irq_cb_data);
+	}
+
+	/* A flag requests only when set, so raise it again while data or room is left */
+	if (uart_asclin_irq_rx_ready(dev)) {
+		pending |= FLAGS_RFL;
+	}
+	if (uart_asclin_irq_tx_ready(dev) > 0) {
+		pending |= FLAGS_TFL;
+	}
+	pending &= sys_read32(config->base + ASCLIN_FLAGSENABLE);
+	if (pending != 0U) {
+		sys_write32(pending, config->base + ASCLIN_FLAGSCLEAR);
+		sys_write32(pending, config->base + ASCLIN_FLAGSSET);
+	}
+}
+
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 static int uart_asclin_init(const struct device *dev)
 {
 	const struct uart_asclin_config *cfg = dev->config;
@@ -298,8 +509,15 @@ static int uart_asclin_init(const struct device *dev)
 
 	/* Route the pins once the module drives its idle levels */
 	if (IS_ENABLED(CONFIG_PINCTRL) && cfg->pcfg != NULL) {
-		return pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret != 0) {
+			return ret;
+		}
 	}
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	cfg->irq_config_func();
+#endif
 
 	return 0;
 }
@@ -307,10 +525,47 @@ static int uart_asclin_init(const struct device *dev)
 static DEVICE_API(uart, uart_asclin_driver_api) = {
 	.poll_in = uart_asclin_poll_in,
 	.poll_out = uart_asclin_poll_out,
+	.err_check = uart_asclin_err_check,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill = uart_asclin_fifo_fill,
+	.fifo_read = uart_asclin_fifo_read,
+	.irq_tx_enable = uart_asclin_irq_tx_enable,
+	.irq_tx_disable = uart_asclin_irq_tx_disable,
+	.irq_tx_ready = uart_asclin_irq_tx_ready,
+	.irq_tx_complete = uart_asclin_irq_tx_complete,
+	.irq_rx_enable = uart_asclin_irq_rx_enable,
+	.irq_rx_disable = uart_asclin_irq_rx_disable,
+	.irq_rx_ready = uart_asclin_irq_rx_ready,
+	.irq_err_enable = uart_asclin_irq_err_enable,
+	.irq_err_disable = uart_asclin_irq_err_disable,
+	.irq_is_pending = uart_asclin_irq_is_pending,
+	.irq_update = uart_asclin_irq_update,
+	.irq_callback_set = uart_asclin_irq_callback_set,
+#endif
 };
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#define UART_ASCLIN_IRQ_CONNECT(n, name)                                                           \
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq), DT_INST_IRQ_BY_NAME(n, name, priority),     \
+		    uart_asclin_isr, DEVICE_DT_INST_GET(n), 0);                                    \
+	irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq))
+
+#define UART_ASCLIN_IRQ_CONFIG_FUNC(n)                                                             \
+	static void uart_asclin_irq_config_func_##n(void)                                          \
+	{                                                                                          \
+		UART_ASCLIN_IRQ_CONNECT(n, tx);                                                    \
+		UART_ASCLIN_IRQ_CONNECT(n, rx);                                                    \
+		UART_ASCLIN_IRQ_CONNECT(n, err);                                                   \
+	}
+#define UART_ASCLIN_IRQ_CONFIG_INIT(n) .irq_config_func = uart_asclin_irq_config_func_##n,
+#else
+#define UART_ASCLIN_IRQ_CONFIG_FUNC(n)
+#define UART_ASCLIN_IRQ_CONFIG_INIT(n)
+#endif
 
 #define UART_ASCLIN_DEVICE_INIT(n)                                                                 \
 	IF_ENABLED(DT_INST_PINCTRL_HAS_IDX(n, 0), (PINCTRL_DT_INST_DEFINE(n);))                    \
+	UART_ASCLIN_IRQ_CONFIG_FUNC(n)                                                             \
 	static struct uart_config uart_cfg_##n = {                                                 \
 		.baudrate = DT_INST_PROP_OR(n, current_speed, 115200),                             \
 		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),                    \
@@ -329,7 +584,8 @@ static DEVICE_API(uart, uart_asclin_driver_api) = {
 		.oversampling = DT_INST_PROP_OR(n, oversampling, 16),                              \
 		.samplepoint = DT_INST_PROP_OR(n, samplepoint, 8),                                 \
 		.median_filter = DT_INST_PROP(n, median_filter),                                   \
-		.prescaler = DT_INST_PROP_OR(n, prescaler, 1)};                                    \
+		.prescaler = DT_INST_PROP_OR(n, prescaler, 1),                                     \
+		UART_ASCLIN_IRQ_CONFIG_INIT(n)};                                                   \
 	DEVICE_DT_INST_DEFINE(n, uart_asclin_init, NULL, &uart_asclin_dev_data_##n,                \
 			      &uart_asclin_dev_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &uart_asclin_driver_api);
