@@ -57,6 +57,12 @@ extern "C" {
  * @defgroup atomic_apis Atomic Services APIs
  * @ingroup kernel_apis
  * @{
+ *
+ * @satisfies ZEP-SRS-26-3
+ * @satisfies ZEP-SRS-26-4
+ * @satisfies ZEP-SRS-26-5
+ * @satisfies ZEP-SRS-26-6
+ * @satisfies ZEP-SRS-26-40
  */
 
 /**
@@ -66,6 +72,8 @@ extern "C" {
  * @code atomic_t my_var = ATOMIC_INIT(75); @endcode
  *
  * @param i Value to assign to atomic variable.
+  *
+ * @satisfies ZEP-SRS-26-11
  */
 #define ATOMIC_INIT(i) (i)
 
@@ -77,6 +85,8 @@ extern "C" {
  * @code atomic_ptr_t my_ptr = ATOMIC_PTR_INIT(&data); @endcode
  *
  * @param p Pointer value to assign to atomic pointer variable.
+  *
+ * @satisfies ZEP-SRS-26-34
  */
 #define ATOMIC_PTR_INIT(p) (p)
 
@@ -97,6 +107,8 @@ extern "C" {
  * represent a bitmap with @a num_bits.
  *
  * @param num_bits Number of bits.
+  *
+ * @satisfies ZEP-SRS-26-9
  */
 #define ATOMIC_BITMAP_SIZE(num_bits) (ROUND_UP(num_bits, ATOMIC_BITS) / ATOMIC_BITS)
 
@@ -118,6 +130,8 @@ extern "C" {
  *
  * @param name Name of array of atomic variables.
  * @param num_bits Number of bits needed.
+  *
+ * @satisfies ZEP-SRS-26-10
  */
 #define ATOMIC_DEFINE(name, num_bits) \
 	atomic_t name[ATOMIC_BITMAP_SIZE(num_bits)]
@@ -134,6 +148,9 @@ extern "C" {
  * @param bit Bit number (starting from 0).
  *
  * @return true if the bit was set, false if it wasn't.
+  *
+ * @satisfies ZEP-SRS-26-25
+ * @satisfies ZEP-SRS-26-29
  */
 static inline bool atomic_test_bit(const atomic_t *target, int bit)
 {
@@ -154,6 +171,8 @@ static inline bool atomic_test_bit(const atomic_t *target, int bit)
  * @param bit Bit number (starting from 0).
  *
  * @return false if the bit was already cleared, true if it wasn't.
+  *
+ * @satisfies ZEP-SRS-26-31
  */
 static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
 {
@@ -177,6 +196,8 @@ static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
  * @param bit Bit number (starting from 0).
  *
  * @return true if the bit was already set, false if it wasn't.
+  *
+ * @satisfies ZEP-SRS-26-30
  */
 static inline bool atomic_test_and_set_bit(atomic_t *target, int bit)
 {
@@ -201,6 +222,8 @@ static inline bool atomic_test_and_set_bit(atomic_t *target, int bit)
  * @param val true for 1, false for 0.
  *
  * @return true if the bit was changed, false if it wasn't.
+  *
+ * @satisfies ZEP-SRS-26-28
  */
 static inline bool atomic_test_and_set_bit_to(atomic_t *target, int bit, bool val)
 {
@@ -223,6 +246,8 @@ static inline bool atomic_test_and_set_bit_to(atomic_t *target, int bit, bool va
  *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
+  *
+ * @satisfies ZEP-SRS-26-27
  */
 static inline void atomic_clear_bit(atomic_t *target, int bit)
 {
@@ -241,6 +266,8 @@ static inline void atomic_clear_bit(atomic_t *target, int bit)
  *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
+  *
+ * @satisfies ZEP-SRS-26-26
  */
 static inline void atomic_set_bit(atomic_t *target, int bit)
 {
@@ -260,6 +287,8 @@ static inline void atomic_set_bit(atomic_t *target, int bit)
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  * @param val true for 1, false for 0.
+  *
+ * @satisfies ZEP-SRS-26-28
  */
 static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
 {
@@ -295,6 +324,8 @@ static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
  * @param old_value Original value to compare against.
  * @param new_value New value to store.
  * @return true if @a new_value is written, false otherwise.
+  *
+ * @satisfies ZEP-SRS-26-23
  */
 bool atomic_cas(atomic_t *target, atomic_val_t old_value, atomic_val_t new_value);
 
@@ -312,6 +343,8 @@ bool atomic_cas(atomic_t *target, atomic_val_t old_value, atomic_val_t new_value
  * @param old_value Original value to compare against.
  * @param new_value New value to store.
  * @return true if @a new_value is written, false otherwise.
+  *
+ * @satisfies ZEP-SRS-26-38
  */
 bool atomic_ptr_cas(atomic_ptr_t *target, atomic_ptr_val_t old_value,
 		    atomic_ptr_val_t new_value);
@@ -327,6 +360,8 @@ bool atomic_ptr_cas(atomic_ptr_t *target, atomic_ptr_val_t old_value,
  * @param value Value to add.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-19
  */
 atomic_val_t atomic_add(atomic_t *target, atomic_val_t value);
 
@@ -341,6 +376,8 @@ atomic_val_t atomic_add(atomic_t *target, atomic_val_t value);
  * @param value Value to subtract.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-21
  */
 atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
 
@@ -354,6 +391,8 @@ atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
  * @param target Address of atomic variable.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-20
  */
 atomic_val_t atomic_inc(atomic_t *target);
 
@@ -367,6 +406,8 @@ atomic_val_t atomic_inc(atomic_t *target);
  * @param target Address of atomic variable.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-22
  */
 atomic_val_t atomic_dec(atomic_t *target);
 
@@ -380,6 +421,8 @@ atomic_val_t atomic_dec(atomic_t *target);
  * @param target Address of atomic variable.
  *
  * @return Value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-13
  */
 atomic_val_t atomic_get(const atomic_t *target);
 
@@ -393,6 +436,9 @@ atomic_val_t atomic_get(const atomic_t *target);
  * @param target Address of pointer variable.
  *
  * @return Value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-35
+ * @satisfies ZEP-SRS-26-36
  */
 atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target);
 
@@ -408,6 +454,8 @@ atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target);
  * @param value Value to write to @a target.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-12
  */
 atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
 
@@ -423,6 +471,9 @@ atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
  * @param value Value to write to @a target.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-35
+ * @satisfies ZEP-SRS-26-37
  */
 atomic_ptr_val_t atomic_ptr_set(atomic_ptr_t *target, atomic_ptr_val_t value);
 
@@ -437,6 +488,8 @@ atomic_ptr_val_t atomic_ptr_set(atomic_ptr_t *target, atomic_ptr_val_t value);
  * @param target Address of atomic variable.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-24
  */
 atomic_val_t atomic_clear(atomic_t *target);
 
@@ -451,6 +504,8 @@ atomic_val_t atomic_clear(atomic_t *target);
  * @param target Address of atomic variable.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-39
  */
 atomic_ptr_val_t atomic_ptr_clear(atomic_ptr_t *target);
 
@@ -466,6 +521,9 @@ atomic_ptr_val_t atomic_ptr_clear(atomic_ptr_t *target);
  * @param value Value to OR.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-14
+ * @satisfies ZEP-SRS-26-16
  */
 atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
 
@@ -481,6 +539,9 @@ atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
  * @param value Value to XOR
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-14
+ * @satisfies ZEP-SRS-26-18
  */
 atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value);
 
@@ -496,6 +557,9 @@ atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value);
  * @param value Value to AND.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-14
+ * @satisfies ZEP-SRS-26-15
  */
 atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
 
@@ -511,6 +575,9 @@ atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
  * @param value Value to NAND.
  *
  * @return Previous value of @a target.
+  *
+ * @satisfies ZEP-SRS-26-14
+ * @satisfies ZEP-SRS-26-17
  */
 atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
 

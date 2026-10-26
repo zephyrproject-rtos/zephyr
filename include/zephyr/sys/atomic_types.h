@@ -30,6 +30,8 @@ extern "C" {
  * An atomic variable of this type can be read and modified by threads and ISRs in an
  * uninterruptible manner using the atomic APIs. It is a 32-bit variable on 32-bit machines and a
  * 64-bit variable on 64-bit machines.
+ *
+ * @satisfies ZEP-SRS-26-1
  */
 typedef long atomic_t;
 
@@ -37,6 +39,8 @@ typedef long atomic_t;
  * @brief Value type for atomic integer variables.
  *
  * Used when passing or receiving the value held by an atomic_t variable.
+ *
+ * @satisfies ZEP-SRS-26-2
  */
 typedef atomic_t atomic_val_t;
 
@@ -45,6 +49,8 @@ typedef atomic_t atomic_val_t;
  *
  * An atomic variable of this type stores a pointer value that can be read and modified by threads
  * and ISRs in an uninterruptible manner using the atomic pointer APIs.
+ *
+ * @satisfies ZEP-SRS-26-32
  */
 typedef void *atomic_ptr_t;
 
@@ -52,6 +58,8 @@ typedef void *atomic_ptr_t;
  * @brief Value type for atomic pointer variables.
  *
  * Used when passing or receiving the pointer value held by an atomic_ptr_t variable.
+ *
+ * @satisfies ZEP-SRS-26-33
  */
 typedef atomic_ptr_t atomic_ptr_val_t;
 

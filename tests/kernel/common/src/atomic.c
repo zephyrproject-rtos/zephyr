@@ -68,6 +68,33 @@ atomic_t total_atomic;
  * ATOMIC_DEFINE
  *
  * @verifies ZEP-SRS-19-1
+ * @verifies ZEP-SRS-26-10
+ * @verifies ZEP-SRS-26-11
+ * @verifies ZEP-SRS-26-12
+ * @verifies ZEP-SRS-26-13
+ * @verifies ZEP-SRS-26-14
+ * @verifies ZEP-SRS-26-15
+ * @verifies ZEP-SRS-26-16
+ * @verifies ZEP-SRS-26-17
+ * @verifies ZEP-SRS-26-18
+ * @verifies ZEP-SRS-26-19
+ * @verifies ZEP-SRS-26-20
+ * @verifies ZEP-SRS-26-21
+ * @verifies ZEP-SRS-26-22
+ * @verifies ZEP-SRS-26-23
+ * @verifies ZEP-SRS-26-24
+ * @verifies ZEP-SRS-26-25
+ * @verifies ZEP-SRS-26-26
+ * @verifies ZEP-SRS-26-27
+ * @verifies ZEP-SRS-26-28
+ * @verifies ZEP-SRS-26-29
+ * @verifies ZEP-SRS-26-30
+ * @verifies ZEP-SRS-26-31
+ * @verifies ZEP-SRS-26-35
+ * @verifies ZEP-SRS-26-36
+ * @verifies ZEP-SRS-26-37
+ * @verifies ZEP-SRS-26-38
+ * @verifies ZEP-SRS-26-39
  */
 ZTEST_USER(atomic, test_atomic)
 {
@@ -317,6 +344,8 @@ void atomic_handler(void *p1, void *p2, void *p3)
  *
  * @see atomic_inc()
  * @verifies ZEP-SRS-19-1
+ * @verifies ZEP-SRS-26-4
+ * @verifies ZEP-SRS-26-5
  */
 ZTEST(atomic, test_threads_access_atomic)
 {
@@ -366,6 +395,9 @@ ZTEST(atomic, test_threads_access_atomic)
  *
  * @see atomic_inc()
  * @verifies ZEP-SRS-19-1
+ * @verifies ZEP-SRS-26-2
+ * @verifies ZEP-SRS-26-19
+ * @verifies ZEP-SRS-26-20
  */
 ZTEST(atomic, test_atomic_overflow)
 {
