@@ -193,6 +193,24 @@ static int import_opaque_psk(void)
 }
 #endif /* CONFIG_TLS_CONFIGURATIONS_PSK_FORMAT_OPAQUE */
 
+/* Wait until the interface has been assigned an IPv4 address. */
+static int wait_for_ipv4_addr(void)
+{
+	struct net_if *iface = net_if_get_default();
+	k_timeout_t timeout = K_SECONDS(CONFIG_TEST_IPV4_ADDR_TIMEOUT);
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+
+	while (net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED) == NULL) {
+		if (sys_timepoint_expired(end)) {
+			LOG_ERR("Timeout waiting for an IPv4 address");
+			return -ETIMEDOUT;
+		}
+		k_sleep(K_MSEC(100));
+	}
+
+	return 0;
+}
+
 static int setup_credentials(void)
 {
 	__maybe_unused int err;
@@ -251,6 +269,16 @@ int main(void)
 	LOG_INF(APP_BANNER);
 
 	setup_credentials();
+
+	/* On native_sim target sockets are offloaded to the host PC, so the
+	 * Zephyr TCP/IP stack is not used (i.e. no IPv4 to wait for).
+	 */
+	if (!IS_ENABLED(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)) {
+		ret = wait_for_ipv4_addr();
+		if (ret < 0) {
+			goto exit;
+		}
+	}
 
 	ret = create_socket();
 	if (ret < 0) {

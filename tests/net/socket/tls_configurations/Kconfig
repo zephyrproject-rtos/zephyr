@@ -27,4 +27,13 @@ config TEST_TIMEOUT
 	help
 	  Time that the pytest harness waits for the whole run.
 
+config TEST_IPV4_ADDR_TIMEOUT
+	int "Timeout (in seconds) to wait for an IPv4 address"
+	default 5
+	range 1 TEST_TIMEOUT
+	help
+	  Must be smaller than TEST_TIMEOUT, in order to give time for the TLS
+	  connection to be established after the IPv4 address has been
+	  set up.
+
 source "Kconfig.zephyr"
