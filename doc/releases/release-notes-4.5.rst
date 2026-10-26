@@ -1031,6 +1031,14 @@ New APIs and options
     statically configured time receiver, so it can synchronize through IEEE 802.1AS automotive
     profile bridges that transmit no Announce messages.
 
+* PCIe
+
+  * The PCIe host shell (:kconfig:option:`CONFIG_PCIE_SHELL`) gained diagnostic commands,
+    including configuration space writes, a resource decoder, AER telemetry, link speed
+    retraining and capability tracking, and device power gating.
+  * Support for Type-1 bridge prefetchable/64-bit memory windows and for scanning additional PCIe
+    buses.
+
 * POSIX
 
   * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_NETAPP`, a Zephyr-specific subprofile with the
