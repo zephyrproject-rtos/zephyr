@@ -9,8 +9,8 @@
 &cmp0 {
 	pinctrl-0 = <&cmp0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	positive-mux-input = "IN0";
 	negative-mux-input = "IN1";
+	status = "okay";
 };

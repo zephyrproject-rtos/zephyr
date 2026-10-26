@@ -37,32 +37,32 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20040000 0x00200000>;	/* 2 MB sim-flash backing store */
 		ranges = <0x0 0x20040000 0x00200000>;
-		zephyr,memory-region = "FlashSim";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		zephyr,memory-region = "FlashSim";
+		status = "okay";
 	};
 
 	sram_retained: memory@203ffc00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x203ffc00 0x00000400>;
 		ranges = <0x0 0x203ffc00 0x00000400>;
-		zephyr,memory-region = "RetainedMem";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
 
 		retainedmem {
 			compatible = "zephyr,retained-ram";
-			status = "okay";
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			boot_info0: boot_info@0 {
 				compatible = "zephyr,retention";
-				status = "okay";
 				reg = <0x0 0x100>;
+				status = "okay";
 			};
 		};
 	};
@@ -74,11 +74,11 @@
 
 &flash_sim0 {
 	reg = <0x00000000 0x00200000>;
+	ranges = <0x0 0x0 0x00200000>;
 	erase-block-size = <4096>;
 	write-block-size = <4>;
 	#address-cells = <1>;
 	#size-cells = <1>;
-	ranges = <0x0 0x0 0x00200000>;
 
 	partitions {
 		ranges;
@@ -87,20 +87,20 @@
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00010000 0x00080000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@90000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00090000 0x00080000>;
+			label = "image-1";
 		};
 	};
 };

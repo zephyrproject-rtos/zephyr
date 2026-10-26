@@ -29,7 +29,6 @@
 &acmp0 {
 	pinctrl-0 = <&acmp0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	bias = <0>;
 	hysteresis-mode = "disabled";
@@ -38,4 +37,5 @@
 	input-positive = <ACMP_INPUT_PC5>;
 	input-negative = <ACMP_INPUT_VREFDIV1V25>;
 	vref-divider = <63>;
+	status = "okay";
 };

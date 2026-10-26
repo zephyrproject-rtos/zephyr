@@ -5,8 +5,8 @@
  */
 
 &spi2 {
-	status = "okay";
 	clock-frequency = <2000000>;
+	status = "okay";
 
 	max2221x_mfd: max2221x@0 {
 		compatible = "adi,max2221x";
@@ -16,8 +16,8 @@
 
 		adi_max2221x_pwm: pwm-device {
 			compatible = "adi,max2221x-pwm";
-			status = "okay";
 			#pwm-cells = <3>;
+			status = "okay";
 		};
 	};
 };

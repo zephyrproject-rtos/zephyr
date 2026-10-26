@@ -17,34 +17,34 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 
 		test_spi: spi@33334444 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0>,    /* 0x00 */
 				   <&test_gpio 0 0>;
+			status = "okay";
 
 #include "spi.dtsi"
 		};
 
 		test_i2c: i2c@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			slg47105@0 {
 				compatible = "renesas,slg47105";
@@ -68,8 +68,8 @@
 	sip_smc: smc {
 		compatible = "intel,socfpga-agilex-sip-smc";
 		method = "smc";
-		status = "okay";
 		zephyr,num-clients = <2>;
+		status = "okay";
 	};
 };
 

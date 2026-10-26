@@ -1,58 +1,58 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 &timer120 {
-	status = "okay";
 	prescaler = <7>;
+	status = "okay";
 };
 
 &timer121 {
-	status = "okay";
 	prescaler = <7>;
+	status = "okay";
 };
 
 &timer130 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &timer131 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &timer132 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &timer133 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &timer134 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &timer135 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &timer136 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &timer137 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &rtc130 {
-	status = "okay";
 	ppi-wrap;
+	status = "okay";
 };
 
 &rtc131 {
