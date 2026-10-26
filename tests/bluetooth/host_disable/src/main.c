@@ -167,6 +167,12 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8
 
 BUILD_ASSERT(LONG_RSP_SIZE > CONFIG_BT_BUF_EVT_RX_SIZE);
 
+/* A vendor command that the driver takes a while to send, as one does that has
+ * to wait for the controller to take it.
+ */
+#define TEST_OP_SLOW_SEND BT_OP(BT_OGF_VS, 0x03fe)
+#define SLOW_SEND_TIME    K_MSEC(50)
+
 static void long_rsp(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
 {
 	struct bt_hci_evt_cc_status *rp;
@@ -234,6 +240,12 @@ static bool blocks;
 
 /* What the driver's send() is to return for a data packet */
 static int data_err;
+
+/* Whether the driver's close() was called while it was sending the slow
+ * command, and what the driver gives once it is done sending it.
+ */
+static bool closed_in_send;
+static K_SEM_DEFINE(slow_send_done, 0, 1);
 
 /* How long the controller takes to respond to a reset, as one at the other end
  * of a UART or USB link does.
@@ -411,6 +423,14 @@ static int driver_send(const struct device *dev, struct net_buf *buf)
 		/* The command timeout of the Host is 10 s. */
 		k_sleep(K_SECONDS(15));
 	} else if (!silent) {
+		if (sys_get_le16(buf->data) == TEST_OP_SLOW_SEND) {
+			unsigned int closes = close_count;
+
+			(void)k_sleep(SLOW_SEND_TIME);
+			closed_in_send = (close_count != closes);
+			k_sem_give(&slow_send_done);
+		}
+
 		cmd_handle(dev, buf);
 		silent = stops;
 	}
@@ -545,6 +565,61 @@ static ZTEST(bt_disable, test_enable_disable_cycle)
 	zassert_equal(close_count, 1U, "close() was called %u times", close_count);
 	zassert_false(bt_is_ready(), "Bluetooth is ready after a disable");
 
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
+}
+
+static void disable_entry(void *p1, void *p2, void *p3)
+{
+	int *err = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	*err = bt_disable();
+}
+
+/* A command that the application sends while bt_disable() waits for the reset
+ * is transmitted once the controller has responded to the reset, by a driver
+ * that takes its time in send(). bt_disable() must not close the transport
+ * before send() has returned: the driver could otherwise still be sending the
+ * command during the close, or after the next bt_enable(). The command is
+ * then completed by its response, which comes before the close.
+ */
+static ZTEST(bt_disable, test_close_after_send)
+{
+	static K_THREAD_STACK_DEFINE(disable_stack,
+				     CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+	static struct k_thread disable_thread;
+	int disable_err = -EINPROGRESS;
+	int err;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	k_sem_reset(&slow_send_done);
+	reset_rsp_delay = K_MSEC(20);
+
+	/* Below the priority of the TX processor, so that the TX processor
+	 * takes the command on once the controller has responded to the reset,
+	 * before bt_disable() goes on.
+	 */
+	(void)k_thread_create(&disable_thread, disable_stack, K_THREAD_STACK_SIZEOF(disable_stack),
+			      disable_entry, &disable_err, NULL, NULL, K_PRIO_PREEMPT(1), 0,
+			      K_NO_WAIT);
+
+	(void)k_sleep(K_MSEC(10));
+	err = bt_hci_cmd_send_sync(TEST_OP_SLOW_SEND, NULL, NULL);
+
+	zassert_ok(k_thread_join(&disable_thread, K_SECONDS(1)), "bt_disable() did not return");
+	zassert_ok(k_sem_take(&slow_send_done, K_SECONDS(1)), "The command was not sent");
+	zassert_ok(disable_err, "Bluetooth disable failed (err %d)", disable_err);
+	zassert_equal(close_count, 1U, "close() was called %u times", close_count);
+	zassert_false(closed_in_send, "The transport was closed during a send");
+	zassert_ok(err, "The command failed (err %d)", err);
+
+	reset_rsp_delay = K_NO_WAIT;
 	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
 	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
 }
