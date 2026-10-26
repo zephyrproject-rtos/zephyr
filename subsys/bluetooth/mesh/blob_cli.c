@@ -1391,8 +1391,10 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
 		return -EINVAL;
 	}
 
-	status.block.chunk_count =
-		DIV_ROUND_UP(cli->block.size, chunk_size);
+	/* The client owns the Chunk Size state (MshMBTv1.0 6.2.4), so the received value must not
+	 * be used to size the missing chunks bitfield.
+	 */
+	status.block.chunk_count = cli->block.chunk_count;
 
 	LOG_DBG("status: %u block: %u encoding: %u", status.status,
 		status.block.number, status.missing);
