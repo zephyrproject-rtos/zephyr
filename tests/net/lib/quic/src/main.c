@@ -606,6 +606,24 @@ static size_t count_new_quic_closed_contexts(const struct quic_closed_stats_snap
 	return count;
 }
 
+/* A connection context can close a moment after its socket: the QUIC service
+ * thread drops the last reference of a stream once it has handled the frame
+ * whose data the application read before closing the stream.
+ */
+static size_t wait_new_quic_closed_contexts(struct quic_closed_stats_snapshot *snapshot,
+					    int baseline_id, size_t expected)
+{
+	size_t count = count_new_quic_closed_contexts(snapshot, baseline_id);
+
+	for (size_t i = 0U; i < 100U && count < expected; i++) {
+		k_sleep(K_MSEC(10));
+		copy_quic_closed_context_stats(snapshot);
+		count = count_new_quic_closed_contexts(snapshot, baseline_id);
+	}
+
+	return count;
+}
+
 static const struct quic_closed_context_stats *find_new_quic_closed_context_stats(
 	const struct quic_closed_stats_snapshot *snapshot, int baseline_id, bool is_server,
 	uint16_t local_port, uint16_t remote_port)
@@ -6124,6 +6142,7 @@ ZTEST(net_socket_quic, test_470_connection_statistics_track_traffic)
 	const struct quic_closed_context_stats *closed_client;
 	const struct quic_closed_context_stats *closed_server;
 	int closed_baseline_id;
+	size_t closed_count;
 #endif
 	int ret;
 
@@ -6173,7 +6192,8 @@ ZTEST(net_socket_quic, test_470_connection_statistics_track_traffic)
 	zassert_equal(stats_after.connections_opened - stats_before.connections_opened, 3U,
 		      "Expected listener, client, and accepted server connection opens");
 #if defined(CONFIG_QUIC_STATS_HISTORY)
-	zassert_equal(count_new_quic_closed_contexts(&closed_after, closed_baseline_id), 2U,
+	closed_count = wait_new_quic_closed_contexts(&closed_after, closed_baseline_id, 2U);
+	zassert_equal(closed_count, 2U,
 		      "Expected only client and accepted server contexts in closed stats history");
 
 	closed_client = find_new_quic_closed_context_stats(&closed_after, closed_baseline_id, false,
@@ -7024,6 +7044,13 @@ ZTEST(net_socket_quic, test_491_stream_lookup_keeps_connections_apart)
 	 */
 	link_test_stream(&stream_a, ctx, ep_a, 0);
 	link_test_stream(&stream_b, ctx, ep_b, 0);
+
+	/* The lookup skips streams that are being released */
+	zassert_is_null(quic_find_stream(ctx, ep_a, 0),
+			"Found a stream that is being released");
+
+	atomic_set(&stream_a.refcount, 1);
+	atomic_set(&stream_b.refcount, 1);
 
 	zassert_equal_ptr(quic_find_stream(ctx, ep_a, 0), &stream_a,
 			  "Wrong stream for the first peer");
