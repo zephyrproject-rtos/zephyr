@@ -42,6 +42,17 @@ tests:
     tags:
       - bluetooth
       - gatt
+  bluetooth.gatt.settings:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+      - EXTRA_CONF_FILE="prj_settings.conf"
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - gatt
   bluetooth.gatt.psa_memory_leak:
     filter: CONFIG_BT_GATT_CACHING and CONFIG_MBEDTLS_PSA_CRYPTO_C
     extra_args:

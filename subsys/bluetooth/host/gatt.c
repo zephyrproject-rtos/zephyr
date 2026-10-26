@@ -751,19 +751,26 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 static void db_hash_store(void)
 {
 #if defined(CONFIG_BT_SETTINGS)
-	uint8_t hash[16];
 	k_spinlock_key_t key;
+	atomic_val_t gen;
+	uint8_t hash[16];
 	int err;
 
-	/* The current hash, which can be newer than that of the caller */
-	key = k_spin_lock(&db_hash.lock);
-	memcpy(hash, db_hash.hash, sizeof(hash));
-	k_spin_unlock(&db_hash.lock, key);
+	/* The current hash, which can be newer than that of the caller. Again
+	 * if a newer one is published meanwhile: its store can come first.
+	 */
+	do {
+		key = k_spin_lock(&db_hash.lock);
+		memcpy(hash, db_hash.hash, sizeof(hash));
+		gen = atomic_get(&db_hash.hash_gen);
+		k_spin_unlock(&db_hash.lock, key);
 
-	err = bt_settings_store_hash(hash, sizeof(hash));
-	if (err) {
-		LOG_ERR("Failed to save Database Hash (err %d)", err);
-	}
+		err = bt_settings_store_hash(hash, sizeof(hash));
+		if (err != 0) {
+			LOG_ERR("Failed to save Database Hash (err %d)", err);
+			return;
+		}
+	} while (atomic_get(&db_hash.hash_gen) != gen);
 
 	LOG_DBG("Database Hash stored");
 #endif	/* CONFIG_BT_SETTINGS */
