@@ -11,12 +11,12 @@
 
 	sct2024@0 {
 		compatible = "sct,sct2024";
-		status = "okay";
 
 		reg = <0>;
 		spi-max-frequency = <1000000>;
 		la-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 		oe-gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+		status = "okay";
 
 		led_0 {
 			label = "LED 0";

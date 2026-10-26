@@ -16,8 +16,8 @@
 	partitions {
 		/* Set 6Kb of storage at the end of the 1Mb of flash */
 		storage_partition: partition@fe800 {
-			label = "storage";
 			reg = <0x000fe800 DT_SIZE_K(6)>;
+			label = "storage";
 		};
 	};
 };

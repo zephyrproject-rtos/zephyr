@@ -17,7 +17,6 @@
 	ta0: timing-adapter@48103000 {
 		compatible = "arm,axi-timing-adapter";
 		reg = <0x48103000>;
-		status = "okay";
 
 		version = <0x1117>;
 		maxr = <8>;
@@ -33,12 +32,12 @@
 		perfcnt = <0>;
 		histbin = <0>;
 		histcnt = <0>;
+		status = "okay";
 	};
 
 	ta1: timing-adapter@48103200 {
 		compatible = "arm,axi-timing-adapter";
 		reg = <0x48103200>;
-		status = "okay";
 
 		version = <0x1117>;
 		maxr = <2>;
@@ -54,5 +53,6 @@
 		perfcnt = <0>;
 		histbin = <0>;
 		histcnt = <0>;
+		status = "okay";
 	};
 };

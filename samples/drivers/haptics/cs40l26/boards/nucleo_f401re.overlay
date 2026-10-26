@@ -13,7 +13,6 @@
 };
 
 &i2c1 {
-	status = "okay";
 
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -22,6 +21,7 @@
 	pinctrl-names = "default", "sleep";
 	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	cs40l26_0: cs40l26@40 {
 		compatible = "cirrus,cs40l26";

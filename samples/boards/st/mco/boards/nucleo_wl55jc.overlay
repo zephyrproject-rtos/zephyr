@@ -10,9 +10,9 @@
 };
 
 &mco1 {
-	status = "okay";
 	clocks = <&rcc STM32_SRC_LSE MCO1_SEL(MCO_SEL_LSE)>;
 	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
 	pinctrl-0 = <&rcc_mco_pa8>;
 	pinctrl-names = "default";
+	status = "okay";
 };

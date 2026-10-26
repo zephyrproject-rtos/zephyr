@@ -24,25 +24,25 @@
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 
 	/* Enable LP mode: clocked from LPOSC at 4.096 MHz, MUX channels only */
 	lp-mode;
+	status = "okay";
 
 	/* MUX channel: P15.0 via internal MUX routing.
 	 * Channel ID 8 = MUX channel index 0.
 	 */
 	channel@8 {
 		reg = <8>;
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_0>;
+		mux-buf-bypass;
 		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 250)>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_GPIO0>; /* P15.0 */
-		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_0>;
-		mux-buf-bypass;
 	};
 
 	fifo {
