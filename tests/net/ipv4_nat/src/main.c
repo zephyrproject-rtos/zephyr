@@ -20,6 +20,7 @@
 
 #include "ipv4.h"
 #include "arp.h"
+#include "ipv4_nat_internal.h"
 
 #include <zephyr/ztest.h>
 
@@ -28,6 +29,8 @@
 #include <zephyr/net/net_pkt_filter.h>
 #include <zephyr/net/ipv4_nat.h>
 #include <zephyr/net/net_ip.h>
+
+extern struct net_ip4_table iptables;
 
 uint8_t dummy_mac[] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 
@@ -440,4 +443,12 @@ ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_skip_local_dst)
 	npf_append_ipv4_recv_rule(&npf_default_ok);
 }
 
-ZTEST_SUITE(net_ipv4_nat_test_suite, NULL, NULL, NULL, NULL, NULL);
+/* Start every test without the mappings of the previous ones */
+static void nat_conn_track_clear(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	memset(iptables.table, 0, sizeof(iptables.table));
+}
+
+ZTEST_SUITE(net_ipv4_nat_test_suite, NULL, NULL, nat_conn_track_clear, NULL, NULL);
