@@ -5104,9 +5104,32 @@ failed:
 	return err;
 }
 
+/* Tear down what the Host keeps for the connections. The Controller must no
+ * longer report on them: it owns the packets in flight and reports their
+ * completion, which must find the TX bookkeeping intact, and a disconnection
+ * that finds no connection is recorded for one that is yet to be reported.
+ * What is left is completed by the Host with an error. Nothing here sends HCI
+ * commands.
+ */
+static void disable_conns(void)
+{
+	if (IS_ENABLED(CONFIG_BT_ISO)) {
+		bt_iso_reset();
+	}
+
+#if defined(CONFIG_BT_CONN)
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		bt_pub_key_hci_disrupted();
+	}
+	bt_conn_cleanup_all();
+	disconnected_handles_reset();
+#endif /* CONFIG_BT_CONN */
+}
+
 int bt_disable(void)
 {
 	struct net_buf *buf;
+	bool ctlr_reset = false;
 	bool was_ready;
 	int err;
 
@@ -5196,25 +5219,16 @@ int bt_disable(void)
 		}
 
 		hci_reset_complete();
+		ctlr_reset = true;
 	}
 
-	/* Tear down the connections only after the controller has been reset:
-	 * until then it still owns the packets in flight and reports their
-	 * completion, which must find the TX bookkeeping intact. What is left
-	 * afterwards is completed by the host with an error. Neither the ISO
-	 * nor the connection cleanup sends HCI commands.
+	/* A Controller that has been reset reports nothing more on the
+	 * connections. One that has not been goes on until the transport is
+	 * closed, so the connections are torn down after that.
 	 */
-	if (IS_ENABLED(CONFIG_BT_ISO)) {
-		bt_iso_reset();
+	if (ctlr_reset) {
+		disable_conns();
 	}
-
-#if defined(CONFIG_BT_CONN)
-	if (IS_ENABLED(CONFIG_BT_SMP)) {
-		bt_pub_key_hci_disrupted();
-	}
-	bt_conn_cleanup_all();
-	disconnected_handles_reset();
-#endif /* CONFIG_BT_CONN */
 
 	/* Mark the transport closed before purging the command queue: a
 	 * command queued after this point is taken back by its sender (see
@@ -5226,10 +5240,10 @@ int bt_disable(void)
 	err = bt_hci_close(bt_dev.hci);
 	if (err) {
 		/* The transport is still open, but what has been torn down
-		 * cannot be brought back: the connections are gone, and the
-		 * controller has been reset unless the driver has the
-		 * no-reset quirk. So the stack is left not ready, where all
-		 * that can be done is to try the disable again.
+		 * cannot be brought back, which includes the connections when
+		 * the controller has been reset. So the stack is left not
+		 * ready, where all that can be done is to try the disable
+		 * again.
 		 */
 		atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
@@ -5237,6 +5251,10 @@ int bt_disable(void)
 	}
 
 	hci_cmd_sent_purge();
+
+	if (!ctlr_reset) {
+		disable_conns();
+	}
 
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));

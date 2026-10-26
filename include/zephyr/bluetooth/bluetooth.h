@@ -380,8 +380,9 @@ int bt_enable(bt_ready_cb_t cb);
  * Close and release HCI resources. Result is architecture dependent.
  *
  * If the HCI driver fails to close its transport, the error is returned with
- * Bluetooth left not ready, as the Host has torn down its state, connections
- * included, by then. bt_disable() can be called again.
+ * Bluetooth left not ready, as the Host has torn down its state by then, the
+ * connections too if the Controller has been reset. bt_disable() can be called
+ * again.
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOSYS The HCI driver does not support closing its transport. Bluetooth is
