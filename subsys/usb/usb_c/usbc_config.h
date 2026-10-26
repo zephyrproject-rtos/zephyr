@@ -33,6 +33,12 @@ BUILD_ASSERT(TC_T_DRP_SRC_MS >= TC_T_DRP_PW_MIN_MS && TC_T_DRP_SRC_MS <= TC_T_DR
 	     "DRP Source time out of spec (dcSRC.DRP min * tDRP min … dcSRC.DRP max * tDRP max)");
 BUILD_ASSERT(TC_T_DRP_SNK_MS >= TC_T_DRP_PW_MIN_MS && TC_T_DRP_SNK_MS <= TC_T_DRP_PW_MAX_MS,
 	     "DRP Sink time out of spec (dcSRC.DRP min * tDRP min … dcSRC.DRP max * tDRP max)");
+
+/* tDRPTry with margin for the state machine cycle time (milliseconds) */
+#define TC_T_DRP_TRY_MS 100
+
+BUILD_ASSERT(TC_T_DRP_TRY_MS + CONFIG_USBC_STATE_MACHINE_CYCLE_TIME <= TC_T_DRP_TRY_MAX_MS,
+	     "tDRPTry plus state machine cycle time out of spec");
 #endif /* CONFIG_USBC_CSM_DRP */
 
 #endif /* ZEPHYR_SUBSYS_USBC_CONFIG_H_ */

@@ -143,6 +143,11 @@ static int tc_init(const struct device *dev)
 #ifdef CONFIG_USBC_CSM_DRP
 	usbc_timer_init(&tc->tc_t_drp_toggle, TC_T_DRP_SNK_MS);
 #endif
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+	usbc_timer_init(&tc->tc_t_drp_try, TC_T_DRP_TRY_MS);
+	usbc_timer_init(&tc->tc_t_try_cc_debounce, TC_T_TRY_CC_DEBOUNCE_MIN_MS);
+	usbc_timer_init(&tc->tc_t_drp_try_wait, TC_T_DRP_TRY_WAIT_MAX_MS);
+#endif
 
 	/* Clear the flags */
 	tc->flags = ATOMIC_INIT(0);
@@ -438,6 +443,20 @@ static const struct smf_state tc_states[TC_STATE_COUNT] = {
 		tc_attached_src_run,
 		tc_attached_src_exit,
 		NULL,
+		NULL),
+#endif
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+	[TC_TRY_SNK_STATE] = SMF_CREATE_STATE(
+		tc_try_snk_entry,
+		tc_try_snk_run,
+		tc_try_snk_exit,
+		&tc_states[TC_CC_RD_SUPER_STATE],
+		NULL),
+	[TC_TRY_WAIT_SRC_STATE] = SMF_CREATE_STATE(
+		tc_try_wait_src_entry,
+		tc_try_wait_src_run,
+		tc_try_wait_src_exit,
+		&tc_states[TC_CC_RP_SUPER_STATE],
 		NULL),
 #endif
 	[TC_STARTUP_STATE] = SMF_CREATE_STATE(
