@@ -128,6 +128,59 @@ This has been fixed in main for v4.4.0
 - `PR 102268 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/102268>`_
 
+:cve:`2026-2411`
+----------------
+
+Bluetooth GATT notify/indicate enforces the wrong attribute's permissions, bypassing encryption/authentication requirements on characteristic values
+
+Zephyr's Bluetooth host declares a GATT characteristic as two consecutive attributes: a
+Characteristic Declaration whose permission is hard-coded to ``BT_GATT_PERM_READ``, and
+a Characteristic Value attribute that carries the application-specified security
+permissions (e.g. ``BT_GATT_PERM_READ_ENCRYPT`` / ``READ_AUTHEN`` / ``READ_LESC``). The
+public notify and indicate APIs explicitly accept either attribute, and passing the
+declaration is the documented, common idiom. Before sending each notification or
+indication, the host re-checks link security with ``bt_gatt_check_perm()`` against
+``params->attr`` in ``gatt_notify()``, ``gatt_indicate()``, and
+``gatt_notify_multiple_verify_params()`` (``subsys/bluetooth/host/gatt.c``).
+
+When the application passed the Characteristic Declaration attribute, the host correctly
+redirected the value handle but left ``params->attr`` pointing at the declaration, so
+the security check evaluated the declaration's permissions (no security required)
+instead of the value's. As a result the encryption/authentication/LESC requirement
+configured on the characteristic value was skipped. The Notify-Multiple path
+additionally used a mask that omitted the LE Secure Connections requirement.
+
+A remote peer triggers the disclosure by connecting (optionally without pairing or
+encryption) and writing the Client Characteristic Configuration descriptor to enable
+notifications or indications, causing the server to emit the protected value over a link
+that has not reached the required security level. The impact is information disclosure /
+access-control bypass for characteristic values the application intended to expose only
+over a secured link; exposure depends on the application declaring
+encrypt/authen-required notify/indicate characteristics and on the CCC being writable at
+a lower security tier. There is no memory-safety or availability impact.
+
+The fix adds ``bt_gatt_attr_resolve_value()``, which maps a declaration attribute to the
+following value attribute before the permission check, and switches the Notify-Multiple
+path to the full ``BT_GATT_PERM_READ_ENCRYPT_MASK`` so the LESC requirement is also
+enforced.
+
+- `Zephyr project bug tracker GHSA-4w3r-v9q9-4462
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4w3r-v9q9-4462>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 108371 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108371>`_
+
+- `PR 111535 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111535>`_
+
+- `PR 111536 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111536>`_
+
+- `PR 111620 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111620>`_
+
 :cve:`2026-4179`
 ----------------
 
@@ -336,6 +389,321 @@ This has been fixed in main for v4.4.0
 - `PR 102110 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/102110>`_
 
+:cve:`2026-6682`
+----------------
+
+Integer overflow in FatFs FAT32 volume mount (mount_volume) yields an attacker-controlled file size and out-of-bounds access in Zephyr
+
+Zephyr bundles ChaN's FatFs (via the ``zephyrproject-rtos/fatfs`` west module) as the
+FAT/exFAT filesystem backing ``subsys/fs/fat_fs.c``. In ``mount_volume()``
+(``modules/fs/fatfs/ff.c``), the FAT area size is computed as ``fasize =
+ld_32(BPB_FATSz32); ... fasize *= fs->n_fats;`` — a 32-bit multiply with no overflow
+check.
+
+A crafted FAT32 volume that sets ``BPB_FATSz32 = 0x80000001`` with two FATs makes the
+product wrap (to ``0x00000002``), so the computed data region overlaps the FAT region.
+Because the pre-multiply value is kept in ``fs->fsize``, the later plausibility check
+does not catch the wrap.
+
+An attacker who can get the device to mount such a volume (a malicious SD card or USB
+medium) can place forged directory entries in the overlapped region, causing
+``f_stat()``/directory reads to return attacker-controlled file sizes; application code
+that reads a file using that size as a length then overflows its buffers, giving
+heap- or stack-based memory corruption during ordinary file operations.
+
+This is a core FAT32 code path with no compile-time gate (FAT12/16/32 is always built),
+so a default Zephyr FatFs configuration is affected. Upstream FatFs is unmaintained for
+security purposes (the maintainer did not respond to runZero or JPCERT/CC), so Zephyr
+carries the fix in its vendored copy. Tracked upstream as CVE-2026-6682.
+
+- `Zephyr project bug tracker GHSA-m537-wqw2-2wrj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m537-wqw2-2wrj>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-6683`
+----------------
+
+Divide-by-zero in FatFs exFAT sync (sync_fs) crashes Zephyr on a crafted exFAT volume
+
+Zephyr's bundled FatFs (``zephyrproject-rtos/fatfs``) supports exFAT when
+``CONFIG_FS_FATFS_EXFAT`` is enabled. In ``sync_fs()`` (``modules/fs/fatfs/ff.c``) the
+free-cluster bookkeeping divides by ``(fs->n_fatent - 2)``.
+
+The cluster count is read from the exFAT boot region as ``ncl = ld_32(BPB_NumClusEx)``
+and is validated only against an upper bound (``> MAX_EXFAT``), never a lower bound, so
+a crafted exFAT volume with ``BPB_NumClusEx = 0`` yields ``n_fatent = 2`` and a divisor
+of zero.
+
+Mounting such a volume and performing any write/sync triggers a divide-by-zero (SIGFPE /
+CPU fault), a denial of service.
+
+The defect is present only when exFAT is compiled in, which is not the default Zephyr
+configuration; devices that enable exFAT and mount untrusted removable media are
+exposed. Upstream FatFs is unmaintained for security, so Zephyr carries the fix in its
+vendored copy. Tracked upstream as CVE-2026-6683.
+
+- `Zephyr project bug tracker GHSA-c5j5-mrhx-hjg4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-c5j5-mrhx-hjg4>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-6685`
+----------------
+
+Integer underflow in FatFs dirty-sector cache (f_read/f_write) causes wrong-sector I/O on crafted fragmented media in Zephyr
+
+In FatFs's read/write path (``f_read``/``f_write`` in ``modules/fs/fatfs/ff.c``), the
+dirty-sector cache-refill decision compares ``fp->sect - sect`` against the run length
+``cc`` using unsigned arithmetic. On a fragmented FAT layout where a later cluster maps
+to a lower absolute sector than the currently cached one, the subtraction underflows
+(wraps to a large unsigned value), so the guard that decides whether the cached window
+overlaps the requested range is evaluated incorrectly.
+
+The result is that FatFs flushes or reuses the wrong cached sector, reading or writing
+file data to/from an incorrect on-disk location — cross-file data corruption and
+potential disclosure of unrelated file contents, and a path to out-of-bounds behaviour
+during ordinary file operations.
+
+A crafted volume with a deliberately fragmented cluster chain (attacker-controlled
+removable media) triggers the condition. This is on the default read/write path (no
+exFAT or LFN gating). Upstream FatFs is unmaintained for security, so Zephyr carries the
+fix in its vendored copy. Tracked upstream as CVE-2026-6685.
+
+- `Zephyr project bug tracker GHSA-rg3p-32gq-hqw3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rg3p-32gq-hqw3>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-6686`
+----------------
+
+FatFs f_lseek past end-of-file exposes uninitialized/stale cluster contents (deleted file data) in Zephyr
+
+In FatFs (``f_lseek`` in ``modules/fs/fatfs/ff.c``), seeking a file opened for write to
+an offset beyond its current end extends the cluster chain via ``create_chain()`` but
+does not zero the newly allocated clusters.
+
+FatFs marks the file as larger without initializing the backing sectors, so a subsequent
+read of the grown region returns whatever was previously on the medium in those clusters
+— typically the residual contents of deleted files. On a device where a lower-privileged
+or later actor can read a file that was extended this way, previously deleted or
+unrelated file data is disclosed (CWE-908, use of uninitialized resource). No
+memory-safety corruption occurs; the impact is confidentiality of on-media data.
+
+The bug is on the default write path (no exFAT/LFN gating). Upstream FatFs is
+unmaintained for security, so Zephyr carries the fix in its vendored copy. Tracked
+upstream as CVE-2026-6686.
+
+- `Zephyr project bug tracker GHSA-rjhg-f2h7-rffm
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rjhg-f2h7-rffm>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-6687`
+----------------
+
+Stack buffer overflow in FatFs exFAT volume-label read (f_getlabel) via an unvalidated on-disk length in Zephyr
+
+In FatFs's ``f_getlabel()`` (``modules/fs/fatfs/ff.c``), the exFAT volume-label copy
+loop is bounded by the raw on-disk byte ``dj.dir[XDIR_NumLabel]`` (0–255) rather than
+the spec maximum of 11 characters.
+
+A crafted exFAT volume that sets ``XDIR_NumLabel`` to a large value (e.g. 128) makes the
+loop read label characters past the 32-byte directory entry and write up to that many
+UTF-decoded characters into the caller-supplied ``label[]`` buffer, overflowing a
+typical fixed-size label array (e.g. ``char label[12]``/``label[24]``) on the stack —
+memory corruption with potential control-flow impact.
+
+In Zephyr this is reachable only in downstream applications: ``f_getlabel`` is compiled
+solely with ``CONFIG_FS_FATFS_EXTRA_NATIVE_API=y``, exFAT must be enabled, and no
+in-tree Zephyr code calls it (application code supplies the buffer). It is nonetheless a
+genuine defect in the vendored library, and because upstream FatFs is unmaintained for
+security Zephyr carries the fix (clamp the label length) in its vendored copy so
+opted-in applications are protected. Tracked upstream as CVE-2026-6687.
+
+- `Zephyr project bug tracker GHSA-fxw6-w668-cgfh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fxw6-w668-cgfh>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-6688`
+----------------
+
+Out-of-bounds write in POSIX readdir() when a directory entry name exceeds NAME_MAX
+
+The POSIX ``readdir()`` implementation in ``subsys/portability/posix/options/fs.c``
+copies the name returned by ``fs_readdir()`` from ``struct fs_dirent``
+(``name[MAX_FILE_NAME + 1]``) into the static ``struct dirent``'s ``d_name[NAME_MAX +
+1]`` buffer. The copy length was clamped only to ``MAX_FILE_NAME``, which is up to 255
+for FAT with long file names (``CONFIG_FS_FATFS_MAX_LFN``), LittleFS and ext2. Since
+``include/zephyr/posix/sys/dirent.h`` was reworked in v4.1.0, ``NAME_MAX`` falls back to
+``_POSIX_NAME_MAX`` (14) when the C library does not define it.
+
+In builds using a C library that does not provide ``NAME_MAX`` (for example
+``CONFIG_MINIMAL_LIBC``, or the IAR, ARM Compiler and MWDT libc wrappers), ``d_name`` is
+only 15 bytes. Any directory entry with a name of 15 or more characters makes
+``readdir()`` write up to roughly 240 bytes of filename data past the end of the static
+``pdirent`` object. An attacker who can place a long-named file in a directory that the
+application enumerates can trigger this. Examples include supplying removable media such
+as an SD card or USB drive, writing to the volume through a USB mass-storage interface,
+or using any application path that creates files with client-chosen names. Builds using
+picolibc (the default), newlib or the host libc define ``NAME_MAX`` as 255 and are not
+affected.
+
+The overflow corrupts adjacent static data with attacker-controlled bytes, which can
+crash the system and may allow further memory corruption. The fix bounds the copy by the
+smaller of the source and destination buffers, truncating names longer than ``NAME_MAX``
+as POSIX permits.
+
+- `Zephyr project bug tracker GHSA-pr2x-4r37-9x35
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-pr2x-4r37-9x35>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 113074 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/113074>`_
+
+- `PR 121207 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/121207>`_
+
+- `PR 121206 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/121206>`_
+
+:cve:`2026-7007`
+----------------
+
+Division by zero in Zephyr ext2 superblock parsing allows DoS via crafted filesystem image
+
+The Zephyr ext2 file system validates the on-disk superblock in
+``ext2_verify_disk_superblock()`` (``subsys/fs/ext2/ext2_impl.c``) before completing a
+mount. The validator checked the magic number, block size, revision and feature flags,
+but did not verify that the on-disk fields ``s_blocks_per_group`` and
+``s_inodes_per_group`` are non-zero. Both fields are read directly from the image and
+are later used as divisors during mount-time initialization.
+
+During mount, ``get_ngroups()`` divides and modulos ``s_blocks_count`` by
+``s_blocks_per_group`` (reached via ``ext2_fetch_block_group()`` from
+``ext2_init_fs()``), and ``get_itable_entry()`` divides ``(ino - 1)`` by
+``s_inodes_per_group`` when fetching the root inode (both in
+``subsys/fs/ext2/ext2_diskops.c``). A superblock with either field set to zero therefore
+causes an integer division by zero during the mount sequence.
+
+An attacker who can present a crafted ext2 image to a device that mounts ext2 —
+removable media such as an SD card or a USB mass-storage device — can trigger this. On
+ARMv7-M / ARMv8-M-mainline Cortex-M targets, divide-by-zero trapping is enabled
+(``SCB_CCR_DIV_0_TRP``), so the division raises a UsageFault that Zephyr treats as a
+fatal error, producing a denial of service. The impact is limited to availability; the
+malformed value is consumed only as a divisor.
+
+The fix rejects a zero ``s_blocks_per_group`` or ``s_inodes_per_group`` in the
+superblock validator, returning ``-EINVAL`` so the mount fails before any block-group or
+inode I/O occurs.
+
+- `Zephyr project bug tracker GHSA-wrf2-79mm-cvw5
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wrf2-79mm-cvw5>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107929 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107929>`_
+
+- `PR 113331 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/113331>`_
+
+- `PR 110884 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110884>`_
+
+- `PR 110883 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110883>`_
+
+:cve:`2026-7656`
+----------------
+
+Broken IPv6 Neighbor Discovery input validation allows spoofed RA/NS/NA acceptance in Zephyr net stack
+
+The IPv6 Neighbor Discovery handlers in ``subsys/net/ip/ipv6_nbr.c``
+(``handle_ra_input``, ``handle_ns_input``, ``handle_na_input``) used an incorrect
+boolean expression that combined the RFC 4861 validity checks with the ICMPv6 code check
+using the wrong operator precedence: the form was ``((length/hop/source/target checks)
+&& (icmp_hdr->code != 0))``. Because every legitimate ND message carries ICMPv6 code 0,
+an attacker setting ``code == 0`` (the normal value) caused the entire predicate to
+evaluate false, so the packet was never dropped and all of the other checks were
+silently skipped. The bypassed checks include the mandatory Hop Limit == 255
+verification (which proves an ND packet originated on-link and was not forwarded) and,
+for Router Advertisements, the requirement that the source be a link-local address, as
+well as multicast-target sanity checks. As a result, an adjacent on-link attacker — and,
+because the Hop-Limit-255 guard is bypassed, potentially a remote/off-link attacker
+whose packets would otherwise be rejected — can have forged Router Advertisement,
+Neighbor Solicitation, and Neighbor Advertisement messages accepted. A forged RA lets
+the attacker reconfigure the victim's default router, on-link prefixes (SLAAC), MTU,
+reachable/retransmit timers, and (with ``CONFIG_NET_IPV6_RA_RDNSS``) DNS servers, while
+forged NS/NA enable neighbor-cache poisoning, enabling man-in-the-middle, traffic
+redirection, and denial of service. The flaw is an input-validation/authentication
+weakness rather than a memory-safety issue: the underlying packet-parsing primitives
+(``net_pkt_get_data``, ``net_pkt_read``, ``net_pkt_skip``) are independently bounds-safe
+and the validated ``length`` is the true buffer length, so skipping the length check
+causes no out-of-bounds access. The defect has existed since the logic was introduced in
+2018 and shipped in all releases through v4.4.0; it is fixed by splitting the condition
+so any failing check drops the packet.
+
+- `Zephyr project bug tracker GHSA-cpjw-rvwx-ph9f
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-cpjw-rvwx-ph9f>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107902 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107902>`_
+
+- `PR 108131 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108131>`_
+
+- `PR 108192 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108192>`_
+
+- `PR 108195 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108195>`_
+
+:cve:`2026-8023`
+----------------
+
+Path traversal in Zephyr HTTP server static-filesystem resource handler allows unauthenticated remote arbitrary file read
+
+Zephyr's HTTP server (``subsys/net/lib/http``) provides a static-filesystem resource
+type (``HTTP_RESOURCE_TYPE_STATIC_FS``, available when ``CONFIG_FILE_SYSTEM`` is
+enabled) that serves files from a configured root directory. Before this fix, both the
+HTTP/1 and HTTP/2 front-ends placed the raw, attacker-controlled request path into
+``client->url_buffer`` (assembled in ``on_url()`` for HTTP/1 and copied verbatim from
+the ``:path`` pseudo-header for HTTP/2) without resolving ``.``/``..`` segments. The
+static-FS handler then built the on-disk filename by directly concatenating the
+configured root with that raw URL (``snprintk(fname, ..., "%s%s",
+static_fs_detail->fs_path, client->url_buffer)`` at ``http_server_http1.c:603`` and
+``http_server_http2.c:490``) and opened it with ``fs_open(fname, FS_O_READ)``. Because
+the handler is reached via wildcard/leading-dir (``fnmatch`` ``FNM_LEADING_DIR``) or
+fallback resource matching, a request such as ``GET /<prefix>/../../<file>`` is
+dispatched to the handler and, after the underlying filesystem (e.g. LittleFS/FAT)
+resolves the ``..`` segments, escapes the configured web root, letting an
+unauthenticated remote client read arbitrary readable files on the mounted volume
+(information disclosure). The HTTP server requires no TLS or authentication to reach
+this path. The fix adds ``http_server_remove_dot_segments()``, which canonicalizes the
+path portion of the URL before resource lookup in both protocol handlers, neutralizing
+the traversal. Affects releases v4.0.0 through v4.4.0 for deployments that register a
+static-filesystem resource.
+
+- `Zephyr project bug tracker GHSA-hch3-53g6-jj3h
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hch3-53g6-jj3h>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 108531 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108531>`_
+
+- `PR 111347 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111347>`_
+
+- `PR 111346 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111346>`_
+
 :cve:`2026-8718`
 ----------------
 
@@ -424,6 +792,92 @@ This has been fixed in main for v4.5.0
 
 - `PR 109618 fix for v3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/109618>`_
+
+:cve:`2026-9728`
+----------------
+
+TOCTOU race in mbox_send syscall verifier allows userspace to leak kernel memory
+
+The userspace syscall verifier ``z_vrfy_mbox_send()`` in
+``drivers/mbox/mbox_handlers.c`` validated the nested ``msg->data``/``msg->size`` fields
+by reading them directly out of live userspace memory, and then forwarded the original,
+still-mutable userspace ``struct mbox_msg *`` pointer to ``z_impl_mbox_send()`` and the
+underlying driver. Between the access check and the driver's use of ``msg->data``, the
+validated pointer could be replaced, leaving a time-of-check/time-of-use window.
+
+On a system built with ``CONFIG_USERSPACE``, any unprivileged userspace thread may
+invoke the ``mbox_send()`` system call. A second thread sharing the caller's address
+space can race to overwrite ``msg->data`` with a supervisor (kernel) address after the
+verifier's bounds check has passed but before the driver dereferences it. The driver
+then reads from the attacker-chosen address in supervisor context (for example
+``memcpy(&data32, msg->data, msg->size)`` in the NXP mailbox driver, whose bytes are
+subsequently emitted to the peer mailbox endpoint).
+
+The impact is a userspace-to-supervisor access-control bypass: disclosure of kernel
+memory contents (high confidentiality impact), or, for an invalid/unmapped target
+address, a faulting kernel read causing denial of service. The fix snapshots the entire
+``struct mbox_msg`` into a kernel-stack copy with ``k_usermode_from_copy()`` and
+validates and forwards that immutable copy, closing the race.
+
+- `Zephyr project bug tracker GHSA-47q2-w832-7w67
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-47q2-w832-7w67>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 109946 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109946>`_
+
+- `PR 110657 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110657>`_
+
+- `PR 110656 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110656>`_
+
+- `PR 113308 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/113308>`_
+
+:cve:`2026-9771`
+----------------
+
+Missing device-pointer validation in flash_copy() syscall allows userspace privilege escalation
+
+The ``flash_copy()`` system call is verified by ``z_vrfy_flash_copy()`` in
+``drivers/flash/flash_util.c``. On builds with ``CONFIG_USERSPACE`` enabled, this
+handler is the kernel-side trust boundary for a user-mode caller. Prior to the fix it
+validated only the output buffer (``K_SYSCALL_MEMORY_WRITE``) and passed the two
+``struct device *`` arguments, ``src_dev`` and ``dst_dev``, directly into the
+implementation without any object validation — unlike every sibling flash syscall, which
+guards its device pointer with ``K_SYSCALL_DRIVER_FLASH``.
+
+A user-mode thread fully controls the values of ``src_dev``/``dst_dev`` and the contents
+of its own address space. The implementation ``z_impl_flash_copy()`` dereferences these
+pointers and calls through their driver-API function tables (e.g.
+``api->get_parameters(dst_dev)``, ``flash_read(src_dev, ...)``, ``flash_write(dst_dev,
+...)``). By supplying a pointer to a forged ``struct device`` whose ``api`` table
+contains attacker-chosen function pointers, an unprivileged thread can cause the kernel
+to call arbitrary code in supervisor mode; passing any arbitrary or invalid address
+otherwise yields a kernel crash or out-of-bounds read.
+
+The result is a local privilege escalation out of the userspace sandbox (with kernel
+denial-of-service and information disclosure as lesser outcomes). The fix adds
+``K_SYSCALL_DRIVER_FLASH(src_dev, read)`` and ``K_SYSCALL_DRIVER_FLASH(dst_dev, write)``
+to ``z_vrfy_flash_copy()``, which verify each device is a registered flash-driver kernel
+object the calling thread is permitted to use before any dereference, closing the path
+completely.
+
+- `Zephyr project bug tracker GHSA-68cj-3hg4-5vpm
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-68cj-3hg4-5vpm>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 109962 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109962>`_
+
+- `PR 110874 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110874>`_
+
+- `PR 110873 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110873>`_
 
 :cve:`2026-10593`
 -----------------
@@ -1657,6 +2111,46 @@ This has been fixed in main for v4.5.0
 - `PR 111084 fix for v4.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/111084>`_
 
+:cve:`2026-10666`
+-----------------
+
+Stack buffer overflow in ``net_ipaddr_parse()`` IPv4 address-with-port parsing in ``subsys/net/ip/utils.c``
+
+``parse_ipv4()`` in ``subsys/net/ip/utils.c`` (reached via ``net_ipaddr_parse()`` for
+strings of the form "a.b.c.d:port") copies the port substring into a fixed 17-byte stack
+buffer (``char ipaddr[NET_IPV4_ADDR_LEN + 1]``) using a length of ``str_len - end - 1``,
+where ``str_len`` is the full, unbounded input length and end is only the (<=15-byte)
+offset of the ':' delimiter. Because the destination size is never consulted, a crafted
+address string with a long suffix after the colon (e.g. "1.2.3.4:" followed by hundreds
+of bytes) causes an out-of-bounds stack write whose length and contents are fully
+attacker-controlled (``memcpy`` of the suffix plus a trailing NUL), enabling memory
+corruption and at minimum a denial of service, and potentially control-flow hijack. The
+parser is reached from the standard socket API (``zsock_getaddrinfo`` / literal-address
+resolution), DNS server-string configuration, and the eswifi Wi-Fi co-processor
+DNS-response path, so an application that resolves a network-influenced address string
+is exposed. The bug was introduced when the parser was added (Zephyr v1.9.0) and shipped
+in all releases through v4.4.0. The fix removes the unbounded copy and validates the
+port length before copying into a small dedicated buffer. Note: the equivalent IPv6
+"[addr]:port" path in ``parse_ipv6()`` retains the same unbounded copy at this commit
+and remains a separate, still-reachable instance of the defect.
+
+- `Zephyr project bug tracker GHSA-532c-7g7f-jhmh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-532c-7g7f-jhmh>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 108529 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108529>`_
+
+- `PR 109058 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109058>`_
+
+- `PR 109072 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109072>`_
+
+- `PR 109065 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109065>`_
+
 :cve:`2026-10667`
 -----------------
 
@@ -1917,6 +2411,47 @@ This has been fixed in main for v4.5.0
 
 - `PR 109233 fix for v3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/109233>`_
+
+:cve:`2026-10673`
+-----------------
+
+Out-of-bounds write in ADIN2111/ADIN1110 OA SPI Ethernet RX frame reassembly
+
+The Zephyr ADIN2111/ADIN1110 10BASE-T1S/T1L Ethernet driver
+(``drivers/ethernet/eth_adin2111.c``) reassembles received Ethernet frames in OPEN
+Alliance (OA) SPI mode by copying device-supplied 64-byte data chunks into a fixed
+static buffer ``ctx->buf`` of size ``CONFIG_ETH_ADIN2111_BUFFER_SIZE`` (default 1524
+bytes). In ``eth_adin2111_oa_data_read()``, each valid chunk was ``memcpy``'d into
+``ctx->buf[ctx->scur]`` and the write cursor ``scur`` advanced, with no check that
+``scur`` + len stayed within the buffer. The number of chunks (up to 255, from the
+BUFSTS RCA field) and the per-chunk length are taken entirely from the frame data
+received off the wire; the cursor is only reset on a start-of-frame chunk. An attacker
+on the single-pair Ethernet segment can therefore send a frame whose reassembled size
+exceeds the configured buffer, causing the driver's RX offload thread to write
+attacker-controlled frame bytes past the end of the static buffer into adjacent
+driver/kernel memory (up to roughly 14.8 KB in the worst case). This is a
+remotely/adjacently reachable out-of-bounds write (CWE-787) that can corrupt memory and
+cause denial of service or potentially code execution. The defect was introduced when OA
+SPI support was added (commit 0ca8b0756b1) and shipped in releases v3.7.0 through
+v4.4.0. The fix adds a bounds check that drops the oversized frame and resets the cursor
+before the copy.
+
+- `Zephyr project bug tracker GHSA-hm6v-4jh4-3qc4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hm6v-4jh4-3qc4>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 108200 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108200>`_
+
+- `PR 108900 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108900>`_
+
+- `PR 108901 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108901>`_
+
+- `PR 108899 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108899>`_
 
 :cve:`2026-10674`
 -----------------
@@ -3400,179 +3935,6 @@ This has been fixed in main for v4.5.0
 - `PR 112841 fix for v3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/112841>`_
 
-:cve:`2026-7007`
-----------------
-
-Division by zero in Zephyr ext2 superblock parsing allows DoS via crafted filesystem image
-
-The Zephyr ext2 file system validates the on-disk superblock in
-``ext2_verify_disk_superblock()`` (``subsys/fs/ext2/ext2_impl.c``) before completing a
-mount. The validator checked the magic number, block size, revision and feature flags,
-but did not verify that the on-disk fields ``s_blocks_per_group`` and
-``s_inodes_per_group`` are non-zero. Both fields are read directly from the image and
-are later used as divisors during mount-time initialization.
-
-During mount, ``get_ngroups()`` divides and modulos ``s_blocks_count`` by
-``s_blocks_per_group`` (reached via ``ext2_fetch_block_group()`` from
-``ext2_init_fs()``), and ``get_itable_entry()`` divides ``(ino - 1)`` by
-``s_inodes_per_group`` when fetching the root inode (both in
-``subsys/fs/ext2/ext2_diskops.c``). A superblock with either field set to zero therefore
-causes an integer division by zero during the mount sequence.
-
-An attacker who can present a crafted ext2 image to a device that mounts ext2 —
-removable media such as an SD card or a USB mass-storage device — can trigger this. On
-ARMv7-M / ARMv8-M-mainline Cortex-M targets, divide-by-zero trapping is enabled
-(``SCB_CCR_DIV_0_TRP``), so the division raises a UsageFault that Zephyr treats as a
-fatal error, producing a denial of service. The impact is limited to availability; the
-malformed value is consumed only as a divisor.
-
-The fix rejects a zero ``s_blocks_per_group`` or ``s_inodes_per_group`` in the
-superblock validator, returning ``-EINVAL`` so the mount fails before any block-group or
-inode I/O occurs.
-
-- `Zephyr project bug tracker GHSA-wrf2-79mm-cvw5
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wrf2-79mm-cvw5>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 107929 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/107929>`_
-
-- `PR 113331 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/113331>`_
-
-- `PR 110884 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/110884>`_
-
-- `PR 110883 fix for v3.7
-  <https://github.com/zephyrproject-rtos/zephyr/pull/110883>`_
-
-:cve:`2026-8023`
-----------------
-
-Path traversal in Zephyr HTTP server static-filesystem resource handler allows unauthenticated remote arbitrary file read
-
-Zephyr's HTTP server (``subsys/net/lib/http``) provides a static-filesystem resource
-type (``HTTP_RESOURCE_TYPE_STATIC_FS``, available when ``CONFIG_FILE_SYSTEM`` is
-enabled) that serves files from a configured root directory. Before this fix, both the
-HTTP/1 and HTTP/2 front-ends placed the raw, attacker-controlled request path into
-``client->url_buffer`` (assembled in ``on_url()`` for HTTP/1 and copied verbatim from
-the ``:path`` pseudo-header for HTTP/2) without resolving ``.``/``..`` segments. The
-static-FS handler then built the on-disk filename by directly concatenating the
-configured root with that raw URL (``snprintk(fname, ..., "%s%s",
-static_fs_detail->fs_path, client->url_buffer)`` at ``http_server_http1.c:603`` and
-``http_server_http2.c:490``) and opened it with ``fs_open(fname, FS_O_READ)``. Because
-the handler is reached via wildcard/leading-dir (``fnmatch`` ``FNM_LEADING_DIR``) or
-fallback resource matching, a request such as ``GET /<prefix>/../../<file>`` is
-dispatched to the handler and, after the underlying filesystem (e.g. LittleFS/FAT)
-resolves the ``..`` segments, escapes the configured web root, letting an
-unauthenticated remote client read arbitrary readable files on the mounted volume
-(information disclosure). The HTTP server requires no TLS or authentication to reach
-this path. The fix adds ``http_server_remove_dot_segments()``, which canonicalizes the
-path portion of the URL before resource lookup in both protocol handlers, neutralizing
-the traversal. Affects releases v4.0.0 through v4.4.0 for deployments that register a
-static-filesystem resource.
-
-- `Zephyr project bug tracker GHSA-hch3-53g6-jj3h
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hch3-53g6-jj3h>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 108531 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108531>`_
-
-- `PR 111347 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/111347>`_
-
-- `PR 111346 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/111346>`_
-
-:cve:`2026-9728`
-----------------
-
-TOCTOU race in mbox_send syscall verifier allows userspace to leak kernel memory
-
-The userspace syscall verifier ``z_vrfy_mbox_send()`` in
-``drivers/mbox/mbox_handlers.c`` validated the nested ``msg->data``/``msg->size`` fields
-by reading them directly out of live userspace memory, and then forwarded the original,
-still-mutable userspace ``struct mbox_msg *`` pointer to ``z_impl_mbox_send()`` and the
-underlying driver. Between the access check and the driver's use of ``msg->data``, the
-validated pointer could be replaced, leaving a time-of-check/time-of-use window.
-
-On a system built with ``CONFIG_USERSPACE``, any unprivileged userspace thread may
-invoke the ``mbox_send()`` system call. A second thread sharing the caller's address
-space can race to overwrite ``msg->data`` with a supervisor (kernel) address after the
-verifier's bounds check has passed but before the driver dereferences it. The driver
-then reads from the attacker-chosen address in supervisor context (for example
-``memcpy(&data32, msg->data, msg->size)`` in the NXP mailbox driver, whose bytes are
-subsequently emitted to the peer mailbox endpoint).
-
-The impact is a userspace-to-supervisor access-control bypass: disclosure of kernel
-memory contents (high confidentiality impact), or, for an invalid/unmapped target
-address, a faulting kernel read causing denial of service. The fix snapshots the entire
-``struct mbox_msg`` into a kernel-stack copy with ``k_usermode_from_copy()`` and
-validates and forwards that immutable copy, closing the race.
-
-- `Zephyr project bug tracker GHSA-47q2-w832-7w67
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-47q2-w832-7w67>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 109946 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/109946>`_
-
-- `PR 110657 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/110657>`_
-
-- `PR 110656 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/110656>`_
-
-- `PR 113308 fix for v3.7
-  <https://github.com/zephyrproject-rtos/zephyr/pull/113308>`_
-
-:cve:`2026-9771`
-----------------
-
-Missing device-pointer validation in flash_copy() syscall allows userspace privilege escalation
-
-The ``flash_copy()`` system call is verified by ``z_vrfy_flash_copy()`` in
-``drivers/flash/flash_util.c``. On builds with ``CONFIG_USERSPACE`` enabled, this
-handler is the kernel-side trust boundary for a user-mode caller. Prior to the fix it
-validated only the output buffer (``K_SYSCALL_MEMORY_WRITE``) and passed the two
-``struct device *`` arguments, ``src_dev`` and ``dst_dev``, directly into the
-implementation without any object validation — unlike every sibling flash syscall, which
-guards its device pointer with ``K_SYSCALL_DRIVER_FLASH``.
-
-A user-mode thread fully controls the values of ``src_dev``/``dst_dev`` and the contents
-of its own address space. The implementation ``z_impl_flash_copy()`` dereferences these
-pointers and calls through their driver-API function tables (e.g.
-``api->get_parameters(dst_dev)``, ``flash_read(src_dev, ...)``, ``flash_write(dst_dev,
-...)``). By supplying a pointer to a forged ``struct device`` whose ``api`` table
-contains attacker-chosen function pointers, an unprivileged thread can cause the kernel
-to call arbitrary code in supervisor mode; passing any arbitrary or invalid address
-otherwise yields a kernel crash or out-of-bounds read.
-
-The result is a local privilege escalation out of the userspace sandbox (with kernel
-denial-of-service and information disclosure as lesser outcomes). The fix adds
-``K_SYSCALL_DRIVER_FLASH(src_dev, read)`` and ``K_SYSCALL_DRIVER_FLASH(dst_dev, write)``
-to ``z_vrfy_flash_copy()``, which verify each device is a registered flash-driver kernel
-object the calling thread is permitted to use before any dereference, closing the path
-completely.
-
-- `Zephyr project bug tracker GHSA-68cj-3hg4-5vpm
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-68cj-3hg4-5vpm>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 109962 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/109962>`_
-
-- `PR 110874 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/110874>`_
-
-- `PR 110873 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/110873>`_
-
 :cve:`2026-12363`
 -----------------
 
@@ -3950,134 +4312,6 @@ This has been fixed in main for v4.5.0
 
 - `PR 113041 fix for v3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/113041>`_
-
-:cve:`2026-7656`
-----------------
-
-Broken IPv6 Neighbor Discovery input validation allows spoofed RA/NS/NA acceptance in Zephyr net stack
-
-The IPv6 Neighbor Discovery handlers in ``subsys/net/ip/ipv6_nbr.c``
-(``handle_ra_input``, ``handle_ns_input``, ``handle_na_input``) used an incorrect
-boolean expression that combined the RFC 4861 validity checks with the ICMPv6 code check
-using the wrong operator precedence: the form was ``((length/hop/source/target checks)
-&& (icmp_hdr->code != 0))``. Because every legitimate ND message carries ICMPv6 code 0,
-an attacker setting ``code == 0`` (the normal value) caused the entire predicate to
-evaluate false, so the packet was never dropped and all of the other checks were
-silently skipped. The bypassed checks include the mandatory Hop Limit == 255
-verification (which proves an ND packet originated on-link and was not forwarded) and,
-for Router Advertisements, the requirement that the source be a link-local address, as
-well as multicast-target sanity checks. As a result, an adjacent on-link attacker — and,
-because the Hop-Limit-255 guard is bypassed, potentially a remote/off-link attacker
-whose packets would otherwise be rejected — can have forged Router Advertisement,
-Neighbor Solicitation, and Neighbor Advertisement messages accepted. A forged RA lets
-the attacker reconfigure the victim's default router, on-link prefixes (SLAAC), MTU,
-reachable/retransmit timers, and (with ``CONFIG_NET_IPV6_RA_RDNSS``) DNS servers, while
-forged NS/NA enable neighbor-cache poisoning, enabling man-in-the-middle, traffic
-redirection, and denial of service. The flaw is an input-validation/authentication
-weakness rather than a memory-safety issue: the underlying packet-parsing primitives
-(``net_pkt_get_data``, ``net_pkt_read``, ``net_pkt_skip``) are independently bounds-safe
-and the validated ``length`` is the true buffer length, so skipping the length check
-causes no out-of-bounds access. The defect has existed since the logic was introduced in
-2018 and shipped in all releases through v4.4.0; it is fixed by splitting the condition
-so any failing check drops the packet.
-
-- `Zephyr project bug tracker GHSA-cpjw-rvwx-ph9f
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-cpjw-rvwx-ph9f>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 107902 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/107902>`_
-
-- `PR 108131 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108131>`_
-
-- `PR 108192 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108192>`_
-
-- `PR 108195 fix for v3.7
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108195>`_
-
-:cve:`2026-10666`
------------------
-
-Stack buffer overflow in ``net_ipaddr_parse()`` IPv4 address-with-port parsing in ``subsys/net/ip/utils.c``
-
-``parse_ipv4()`` in ``subsys/net/ip/utils.c`` (reached via ``net_ipaddr_parse()`` for
-strings of the form "a.b.c.d:port") copies the port substring into a fixed 17-byte stack
-buffer (``char ipaddr[NET_IPV4_ADDR_LEN + 1]``) using a length of ``str_len - end - 1``,
-where ``str_len`` is the full, unbounded input length and end is only the (<=15-byte)
-offset of the ':' delimiter. Because the destination size is never consulted, a crafted
-address string with a long suffix after the colon (e.g. "1.2.3.4:" followed by hundreds
-of bytes) causes an out-of-bounds stack write whose length and contents are fully
-attacker-controlled (``memcpy`` of the suffix plus a trailing NUL), enabling memory
-corruption and at minimum a denial of service, and potentially control-flow hijack. The
-parser is reached from the standard socket API (``zsock_getaddrinfo`` / literal-address
-resolution), DNS server-string configuration, and the eswifi Wi-Fi co-processor
-DNS-response path, so an application that resolves a network-influenced address string
-is exposed. The bug was introduced when the parser was added (Zephyr v1.9.0) and shipped
-in all releases through v4.4.0. The fix removes the unbounded copy and validates the
-port length before copying into a small dedicated buffer. Note: the equivalent IPv6
-"[addr]:port" path in ``parse_ipv6()`` retains the same unbounded copy at this commit
-and remains a separate, still-reachable instance of the defect.
-
-- `Zephyr project bug tracker GHSA-532c-7g7f-jhmh
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-532c-7g7f-jhmh>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 108529 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108529>`_
-
-- `PR 109058 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/109058>`_
-
-- `PR 109072 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/109072>`_
-
-- `PR 109065 fix for v3.7
-  <https://github.com/zephyrproject-rtos/zephyr/pull/109065>`_
-
-:cve:`2026-10673`
------------------
-
-Out-of-bounds write in ADIN2111/ADIN1110 OA SPI Ethernet RX frame reassembly
-
-The Zephyr ADIN2111/ADIN1110 10BASE-T1S/T1L Ethernet driver
-(``drivers/ethernet/eth_adin2111.c``) reassembles received Ethernet frames in OPEN
-Alliance (OA) SPI mode by copying device-supplied 64-byte data chunks into a fixed
-static buffer ``ctx->buf`` of size ``CONFIG_ETH_ADIN2111_BUFFER_SIZE`` (default 1524
-bytes). In ``eth_adin2111_oa_data_read()``, each valid chunk was ``memcpy``'d into
-``ctx->buf[ctx->scur]`` and the write cursor ``scur`` advanced, with no check that
-``scur`` + len stayed within the buffer. The number of chunks (up to 255, from the
-BUFSTS RCA field) and the per-chunk length are taken entirely from the frame data
-received off the wire; the cursor is only reset on a start-of-frame chunk. An attacker
-on the single-pair Ethernet segment can therefore send a frame whose reassembled size
-exceeds the configured buffer, causing the driver's RX offload thread to write
-attacker-controlled frame bytes past the end of the static buffer into adjacent
-driver/kernel memory (up to roughly 14.8 KB in the worst case). This is a
-remotely/adjacently reachable out-of-bounds write (CWE-787) that can corrupt memory and
-cause denial of service or potentially code execution. The defect was introduced when OA
-SPI support was added (commit 0ca8b0756b1) and shipped in releases v3.7.0 through
-v4.4.0. The fix adds a bounds check that drops the oversized frame and resets the cursor
-before the copy.
-
-- `Zephyr project bug tracker GHSA-hm6v-4jh4-3qc4
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hm6v-4jh4-3qc4>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 108200 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108200>`_
-
-- `PR 108900 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108900>`_
-
-- `PR 108901 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108901>`_
-
-- `PR 108899 fix for v3.7
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108899>`_
 
 :cve:`2026-12629`
 -----------------
@@ -5430,144 +5664,6 @@ This has been fixed in main for v4.5.0
 - `PR 113705 fix for v4.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/113705>`_
 
-:cve:`2026-6682`
-----------------
-
-Integer overflow in FatFs FAT32 volume mount (mount_volume) yields an attacker-controlled file size and out-of-bounds access in Zephyr
-
-Zephyr bundles ChaN's FatFs (via the ``zephyrproject-rtos/fatfs`` west module) as the
-FAT/exFAT filesystem backing ``subsys/fs/fat_fs.c``. In ``mount_volume()``
-(``modules/fs/fatfs/ff.c``), the FAT area size is computed as ``fasize =
-ld_32(BPB_FATSz32); ... fasize *= fs->n_fats;`` — a 32-bit multiply with no overflow
-check.
-
-A crafted FAT32 volume that sets ``BPB_FATSz32 = 0x80000001`` with two FATs makes the
-product wrap (to ``0x00000002``), so the computed data region overlaps the FAT region.
-Because the pre-multiply value is kept in ``fs->fsize``, the later plausibility check
-does not catch the wrap.
-
-An attacker who can get the device to mount such a volume (a malicious SD card or USB
-medium) can place forged directory entries in the overlapped region, causing
-``f_stat()``/directory reads to return attacker-controlled file sizes; application code
-that reads a file using that size as a length then overflows its buffers, giving
-heap- or stack-based memory corruption during ordinary file operations.
-
-This is a core FAT32 code path with no compile-time gate (FAT12/16/32 is always built),
-so a default Zephyr FatFs configuration is affected. Upstream FatFs is unmaintained for
-security purposes (the maintainer did not respond to runZero or JPCERT/CC), so Zephyr
-carries the fix in its vendored copy. Tracked upstream as CVE-2026-6682.
-
-- `Zephyr project bug tracker GHSA-m537-wqw2-2wrj
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m537-wqw2-2wrj>`_
-
-This has been fixed in main for v4.5.0
-
-:cve:`2026-6683`
-----------------
-
-Divide-by-zero in FatFs exFAT sync (sync_fs) crashes Zephyr on a crafted exFAT volume
-
-Zephyr's bundled FatFs (``zephyrproject-rtos/fatfs``) supports exFAT when
-``CONFIG_FS_FATFS_EXFAT`` is enabled. In ``sync_fs()`` (``modules/fs/fatfs/ff.c``) the
-free-cluster bookkeeping divides by ``(fs->n_fatent - 2)``.
-
-The cluster count is read from the exFAT boot region as ``ncl = ld_32(BPB_NumClusEx)``
-and is validated only against an upper bound (``> MAX_EXFAT``), never a lower bound, so
-a crafted exFAT volume with ``BPB_NumClusEx = 0`` yields ``n_fatent = 2`` and a divisor
-of zero.
-
-Mounting such a volume and performing any write/sync triggers a divide-by-zero (SIGFPE /
-CPU fault), a denial of service.
-
-The defect is present only when exFAT is compiled in, which is not the default Zephyr
-configuration; devices that enable exFAT and mount untrusted removable media are
-exposed. Upstream FatFs is unmaintained for security, so Zephyr carries the fix in its
-vendored copy. Tracked upstream as CVE-2026-6683.
-
-- `Zephyr project bug tracker GHSA-c5j5-mrhx-hjg4
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-c5j5-mrhx-hjg4>`_
-
-This has been fixed in main for v4.5.0
-
-:cve:`2026-6685`
-----------------
-
-Integer underflow in FatFs dirty-sector cache (f_read/f_write) causes wrong-sector I/O on crafted fragmented media in Zephyr
-
-In FatFs's read/write path (``f_read``/``f_write`` in ``modules/fs/fatfs/ff.c``), the
-dirty-sector cache-refill decision compares ``fp->sect - sect`` against the run length
-``cc`` using unsigned arithmetic. On a fragmented FAT layout where a later cluster maps
-to a lower absolute sector than the currently cached one, the subtraction underflows
-(wraps to a large unsigned value), so the guard that decides whether the cached window
-overlaps the requested range is evaluated incorrectly.
-
-The result is that FatFs flushes or reuses the wrong cached sector, reading or writing
-file data to/from an incorrect on-disk location — cross-file data corruption and
-potential disclosure of unrelated file contents, and a path to out-of-bounds behaviour
-during ordinary file operations.
-
-A crafted volume with a deliberately fragmented cluster chain (attacker-controlled
-removable media) triggers the condition. This is on the default read/write path (no
-exFAT or LFN gating). Upstream FatFs is unmaintained for security, so Zephyr carries the
-fix in its vendored copy. Tracked upstream as CVE-2026-6685.
-
-- `Zephyr project bug tracker GHSA-rg3p-32gq-hqw3
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rg3p-32gq-hqw3>`_
-
-This has been fixed in main for v4.5.0
-
-:cve:`2026-6686`
-----------------
-
-FatFs f_lseek past end-of-file exposes uninitialized/stale cluster contents (deleted file data) in Zephyr
-
-In FatFs (``f_lseek`` in ``modules/fs/fatfs/ff.c``), seeking a file opened for write to
-an offset beyond its current end extends the cluster chain via ``create_chain()`` but
-does not zero the newly allocated clusters.
-
-FatFs marks the file as larger without initializing the backing sectors, so a subsequent
-read of the grown region returns whatever was previously on the medium in those clusters
-— typically the residual contents of deleted files. On a device where a lower-privileged
-or later actor can read a file that was extended this way, previously deleted or
-unrelated file data is disclosed (CWE-908, use of uninitialized resource). No
-memory-safety corruption occurs; the impact is confidentiality of on-media data.
-
-The bug is on the default write path (no exFAT/LFN gating). Upstream FatFs is
-unmaintained for security, so Zephyr carries the fix in its vendored copy. Tracked
-upstream as CVE-2026-6686.
-
-- `Zephyr project bug tracker GHSA-rjhg-f2h7-rffm
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rjhg-f2h7-rffm>`_
-
-This has been fixed in main for v4.5.0
-
-:cve:`2026-6687`
-----------------
-
-Stack buffer overflow in FatFs exFAT volume-label read (f_getlabel) via an unvalidated on-disk length in Zephyr
-
-In FatFs's ``f_getlabel()`` (``modules/fs/fatfs/ff.c``), the exFAT volume-label copy
-loop is bounded by the raw on-disk byte ``dj.dir[XDIR_NumLabel]`` (0–255) rather than
-the spec maximum of 11 characters.
-
-A crafted exFAT volume that sets ``XDIR_NumLabel`` to a large value (e.g. 128) makes the
-loop read label characters past the 32-byte directory entry and write up to that many
-UTF-decoded characters into the caller-supplied ``label[]`` buffer, overflowing a
-typical fixed-size label array (e.g. ``char label[12]``/``label[24]``) on the stack —
-memory corruption with potential control-flow impact.
-
-In Zephyr this is reachable only in downstream applications: ``f_getlabel`` is compiled
-solely with ``CONFIG_FS_FATFS_EXTRA_NATIVE_API=y``, exFAT must be enabled, and no
-in-tree Zephyr code calls it (application code supplies the buffer). It is nonetheless a
-genuine defect in the vendored library, and because upstream FatFs is unmaintained for
-security Zephyr carries the fix (clamp the label length) in its vendored copy so
-opted-in applications are protected. Tracked upstream as CVE-2026-6687.
-
-- `Zephyr project bug tracker GHSA-fxw6-w668-cgfh
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fxw6-w668-cgfh>`_
-
-This has been fixed in main for v4.5.0
-
 :cve:`2026-15890`
 -----------------
 
@@ -6503,59 +6599,6 @@ This has been fixed in main for v4.5.0
 
 - `PR 114529 fix for v4.3
   <https://github.com/zephyrproject-rtos/zephyr/pull/114529>`_
-
-:cve:`2026-2411`
-----------------
-
-Bluetooth GATT notify/indicate enforces the wrong attribute's permissions, bypassing encryption/authentication requirements on characteristic values
-
-Zephyr's Bluetooth host declares a GATT characteristic as two consecutive attributes: a
-Characteristic Declaration whose permission is hard-coded to ``BT_GATT_PERM_READ``, and
-a Characteristic Value attribute that carries the application-specified security
-permissions (e.g. ``BT_GATT_PERM_READ_ENCRYPT`` / ``READ_AUTHEN`` / ``READ_LESC``). The
-public notify and indicate APIs explicitly accept either attribute, and passing the
-declaration is the documented, common idiom. Before sending each notification or
-indication, the host re-checks link security with ``bt_gatt_check_perm()`` against
-``params->attr`` in ``gatt_notify()``, ``gatt_indicate()``, and
-``gatt_notify_multiple_verify_params()`` (``subsys/bluetooth/host/gatt.c``).
-
-When the application passed the Characteristic Declaration attribute, the host correctly
-redirected the value handle but left ``params->attr`` pointing at the declaration, so
-the security check evaluated the declaration's permissions (no security required)
-instead of the value's. As a result the encryption/authentication/LESC requirement
-configured on the characteristic value was skipped. The Notify-Multiple path
-additionally used a mask that omitted the LE Secure Connections requirement.
-
-A remote peer triggers the disclosure by connecting (optionally without pairing or
-encryption) and writing the Client Characteristic Configuration descriptor to enable
-notifications or indications, causing the server to emit the protected value over a link
-that has not reached the required security level. The impact is information disclosure /
-access-control bypass for characteristic values the application intended to expose only
-over a secured link; exposure depends on the application declaring
-encrypt/authen-required notify/indicate characteristics and on the CCC being writable at
-a lower security tier. There is no memory-safety or availability impact.
-
-The fix adds ``bt_gatt_attr_resolve_value()``, which maps a declaration attribute to the
-following value attribute before the permission check, and switches the Notify-Multiple
-path to the full ``BT_GATT_PERM_READ_ENCRYPT_MASK`` so the LESC requirement is also
-enforced.
-
-- `Zephyr project bug tracker GHSA-4w3r-v9q9-4462
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4w3r-v9q9-4462>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 108371 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108371>`_
-
-- `PR 111535 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/111535>`_
-
-- `PR 111536 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/111536>`_
-
-- `PR 111620 fix for v3.7
-  <https://github.com/zephyrproject-rtos/zephyr/pull/111620>`_
 
 :cve:`2026-18413`
 -----------------
@@ -9984,49 +10027,6 @@ Under embargo until 2026-11-10
 -----------------
 
 Under embargo until 2026-11-12
-
-:cve:`2026-6688`
-----------------
-
-Out-of-bounds write in POSIX readdir() when a directory entry name exceeds NAME_MAX
-
-The POSIX ``readdir()`` implementation in ``subsys/portability/posix/options/fs.c``
-copies the name returned by ``fs_readdir()`` from ``struct fs_dirent``
-(``name[MAX_FILE_NAME + 1]``) into the static ``struct dirent``'s ``d_name[NAME_MAX +
-1]`` buffer. The copy length was clamped only to ``MAX_FILE_NAME``, which is up to 255
-for FAT with long file names (``CONFIG_FS_FATFS_MAX_LFN``), LittleFS and ext2. Since
-``include/zephyr/posix/sys/dirent.h`` was reworked in v4.1.0, ``NAME_MAX`` falls back to
-``_POSIX_NAME_MAX`` (14) when the C library does not define it.
-
-In builds using a C library that does not provide ``NAME_MAX`` (for example
-``CONFIG_MINIMAL_LIBC``, or the IAR, ARM Compiler and MWDT libc wrappers), ``d_name`` is
-only 15 bytes. Any directory entry with a name of 15 or more characters makes
-``readdir()`` write up to roughly 240 bytes of filename data past the end of the static
-``pdirent`` object. An attacker who can place a long-named file in a directory that the
-application enumerates can trigger this. Examples include supplying removable media such
-as an SD card or USB drive, writing to the volume through a USB mass-storage interface,
-or using any application path that creates files with client-chosen names. Builds using
-picolibc (the default), newlib or the host libc define ``NAME_MAX`` as 255 and are not
-affected.
-
-The overflow corrupts adjacent static data with attacker-controlled bytes, which can
-crash the system and may allow further memory corruption. The fix bounds the copy by the
-smaller of the source and destination buffers, truncating names longer than ``NAME_MAX``
-as POSIX permits.
-
-- `Zephyr project bug tracker GHSA-pr2x-4r37-9x35
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-pr2x-4r37-9x35>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 113074 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/113074>`_
-
-- `PR 121207 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/121207>`_
-
-- `PR 121206 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/121206>`_
 
 :cve:`2026-92241`
 -----------------
