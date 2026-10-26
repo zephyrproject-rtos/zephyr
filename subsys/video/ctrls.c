@@ -161,9 +161,10 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		return -ERANGE;
 	}
 
-	/* No new value */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
-						    : ctrl->val == control->val) {
+	/* No new value, unless the control is executed on each write */
+	if ((ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
+						     : ctrl->val == control->val) &&
+	    (ctrl->flags & VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE) == 0) {
 		return 0;
 	}
 
