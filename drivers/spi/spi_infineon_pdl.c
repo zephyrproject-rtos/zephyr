@@ -22,10 +22,10 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 
 #ifdef CONFIG_SPI_INFINEON_DMA
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/mux.h>
 #endif
 
 #include <cy_scb_spi.h>
-#include <cy_trigmux.h>
 
 #define IFX_SPI_OVERSAMPLE_MIN 4
 #define IFX_SPI_OVERSAMPLE_MAX 16
@@ -86,6 +86,8 @@ struct ifx_cat1_dma_stream {
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
 	struct dma_block_config blk_cfg;
+	const struct device *trig_dev;
+	const struct mux_state *trig_state;
 };
 #endif
 
@@ -670,6 +672,21 @@ static int ifx_cat1_spi_deinit(const struct device *dev)
 }
 #endif /* CONFIG_DEVICE_DEINIT_SUPPORT */
 
+#ifdef CONFIG_SPI_INFINEON_DMA
+static int ifx_cat1_spi_dma_trig_apply(const struct ifx_cat1_dma_stream *stream)
+{
+	if (stream->trig_dev == NULL) {
+		return 0;
+	}
+
+	if (!device_is_ready(stream->trig_dev)) {
+		return -ENODEV;
+	}
+
+	return mux_state_apply(stream->trig_dev, stream->trig_state);
+}
+#endif
+
 static int ifx_cat1_spi_init(const struct device *dev)
 {
 	struct ifx_cat1_spi_data *const data = dev->data;
@@ -699,11 +716,11 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_rx.dma_cfg.user_data = (void *)dev;
 		data->dma_rx.dma_cfg.dma_callback = dma_callback;
 		data->dma_rx.dma_cfg.source_handshake = 0;
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
-				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_rx.dma_channel,
-				   false, TRIGGER_TYPE_LEVEL);
-#endif
+
+		ret = ifx_cat1_spi_dma_trig_apply(&data->dma_rx);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (data->dma_tx.dev_dma != NULL) {
@@ -717,11 +734,11 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_tx.dma_cfg.user_data = (void *)dev;
 		data->dma_tx.dma_cfg.dma_callback = dma_callback;
 		data->dma_tx.dma_cfg.source_handshake = 1;
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
-				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_tx.dma_channel,
-				   false, TRIGGER_TYPE_EDGE);
-#endif
+
+		ret = ifx_cat1_spi_dma_trig_apply(&data->dma_tx);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 #endif
 
@@ -756,7 +773,17 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		.dest_burst_length = 0,                                                            \
 		.block_count = 1,                                                                  \
 		.complete_callback_en = 1,                                                         \
-	},
+	},                                                                                         \
+	.trig_dev = COND_CODE_1(DT_INST_PROP_HAS_NAME(index, mux_states, dir),                     \
+				(DEVICE_DT_GET(DT_INST_PHANDLE_BY_NAME(index, mux_states, dir))),  \
+				(NULL)),                                                           \
+	.trig_state = COND_CODE_1(DT_INST_PROP_HAS_NAME(index, mux_states, dir),                   \
+				  (MUX_STATE_DT_GET_BY_NAME(DT_DRV_INST(index), dir)), (NULL)),
+
+#define SPI_DMA_TRIG_DEFINE(index, dir)                                                            \
+	IF_ENABLED(UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                                    \
+			      DT_INST_PROP_HAS_NAME(index, mux_states, dir)),                      \
+		   (MUX_STATE_DT_SPEC_DEFINE_BY_NAME(DT_DRV_INST(index), dir);))
 
 #define SPI_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)                          \
 	.dma_##dir = {COND_CODE_1(                                                                 \
@@ -764,6 +791,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		(SPI_DMA_CHANNEL_INIT(index, dir, ch_dir, src_data_size, dst_data_size)),          \
 		(NULL))},
 #else
+#define SPI_DMA_TRIG_DEFINE(index, dir)
 #define SPI_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)
 #endif
 
@@ -827,6 +855,8 @@ static int ifx_cat1_spi_init(const struct device *dev)
 	}                                                                                          \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	SPI_DMA_TRIG_DEFINE(n, tx)                                                                 \
+	SPI_DMA_TRIG_DEFINE(n, rx)                                                                 \
                                                                                                    \
 	static struct ifx_cat1_spi_config spi_cat1_config_##n = {                                  \
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \

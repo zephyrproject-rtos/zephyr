@@ -30,6 +30,7 @@ if USE_INFINEON_SPI
 config SPI_INFINEON_DMA
 	bool "Infineon SPI DMA Support"
 	select DMA
+	depends on MUX
 	help
 		Enable DMA during usage of SPI driver.
 
