@@ -22,10 +22,10 @@
 &adc1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 
 	pinctrl-0 = <&adc1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	/* Channel 0 is floating */
 	channel@0 {

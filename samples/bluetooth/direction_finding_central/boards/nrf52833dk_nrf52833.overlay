@@ -5,7 +5,6 @@
  */
 
 &radio {
-	status = "okay";
 	/* This is a number of antennas that are available on antenna matrix
 	 * designed by Nordic. For more information see README.rst.
 	 */
@@ -25,4 +24,5 @@
 	dfegpio1-gpios = <&gpio0 4 0>;
 	dfegpio2-gpios = <&gpio0 28 0>;
 	dfegpio3-gpios = <&gpio0 29 0>;
+	status = "okay";
 };

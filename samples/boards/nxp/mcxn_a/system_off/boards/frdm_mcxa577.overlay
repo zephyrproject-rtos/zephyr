@@ -15,7 +15,7 @@
 };
 
 &lptmr0 {
-	status = "okay";
 	clock-frequency = <16384>;
 	timer-mode-sel = <0>;
+	status = "okay";
 };

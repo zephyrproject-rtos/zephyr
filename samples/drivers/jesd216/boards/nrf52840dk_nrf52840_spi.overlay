@@ -19,11 +19,11 @@
  */
 &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "jedec,spi-nor";
