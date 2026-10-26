@@ -19,6 +19,7 @@
 #define TEST_PARTITION1 DT_NODELABEL(test_p1)
 #define TEST_GPIO_INJECTED DT_NODELABEL(test_gpio_injected)
 #define TEST_NOLABEL DT_PATH(test, i2c_11112222, test_i2c_dev_14)
+#define TEST_NODEV DT_NODELABEL(test_nodev)
 
 static const struct device *devlist;
 static const struct device *devlist_end;
@@ -75,6 +76,13 @@ static const struct device *const comma_devs[] = {
 static const struct device *const comma_inst_devs[] = {
 	DEVICE_DT_INST_GET_COMMA(0)
 	DEVICE_DT_INST_GET_COMMA(1)
+};
+
+static const struct device *const optional_devs[] = {
+	DEVICE_DT_GET_OPTIONAL(TEST_GPIO),
+	DEVICE_DT_GET_OPTIONAL(TEST_NODEV),
+	DEVICE_DT_GET_OPTIONAL(TEST_DEVC),
+	DEVICE_DT_INST_GET_OPTIONAL(0),
 };
 
 #define DEV_HDL(node_id) device_handle_get(DEVICE_DT_GET(node_id))
@@ -297,6 +305,24 @@ ZTEST(devicetree_devices, test_get_or_null)
 
 	dev = DEVICE_DT_GET_OR_NULL(non_existing_node);
 	zassert_is_null(dev);
+}
+
+ZTEST(devicetree_devices, test_get_optional)
+{
+	/* Device object allocated */
+	zassert_equal(optional_devs[0], DEVICE_DT_GET(TEST_GPIO));
+	zassert_true(device_is_ready(optional_devs[0]));
+	/* Status okay, but no device object allocated */
+	zassert_is_null(optional_devs[1]);
+	zassert_false(device_is_ready(optional_devs[1]));
+	/* Status disabled */
+	zassert_is_null(optional_devs[2]);
+	/* Instance variant */
+	zassert_equal(optional_devs[3], DEVICE_DT_INST_GET(0));
+
+	zassert_equal(DEVICE_DT_GET_OPTIONAL(TEST_DEVA), DEVICE_DT_GET(TEST_DEVA));
+	zassert_is_null(DEVICE_DT_GET_OPTIONAL(TEST_NODEV));
+	zassert_is_null(DEVICE_DT_GET_OPTIONAL(non_existing_node));
 }
 
 ZTEST(devicetree_devices, test_supports)
