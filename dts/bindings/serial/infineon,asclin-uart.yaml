@@ -14,6 +14,11 @@ properties:
   reg:
     required: true
 
+  interrupts:
+    description: |
+      Transmit, receive and error service requests, named "tx", "rx" and
+      "err". Required for the interrupt driven API.
+
   clocks:
     required: true
     description: |
