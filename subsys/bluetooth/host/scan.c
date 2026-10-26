@@ -1754,7 +1754,23 @@ static void past_disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	/* The core spec does not explicit state that the mode of a connection handle is cleared on
 	 * disconnect, but let's assume it is.
 	 */
+	bt_dev_lock();
 	conn_past_modes[bt_conn_index(conn)] = BT_HCI_LE_PAST_MODE_NO_SYNC;
+	bt_dev_unlock();
+}
+
+/* Set the mode of a connection unless it has been disconnected, which clears
+ * the mode after the connection state has changed, with the host lock held.
+ */
+static void past_conn_mode_set(const struct bt_conn *conn, uint8_t mode)
+{
+	bt_dev_lock();
+
+	if (conn->state == BT_CONN_CONNECTED) {
+		conn_past_modes[bt_conn_index(conn)] = mode;
+	}
+
+	bt_dev_unlock();
 }
 
 BT_CONN_CB_DEFINE(past_conn_callbacks) = {
@@ -2854,15 +2870,14 @@ int bt_le_per_adv_sync_transfer_subscribe(const struct bt_conn *conn,
 	}
 
 	if (conn) {
-		const uint8_t conn_idx = bt_conn_index(conn);
-		const uint8_t old_mode = conn_past_modes[conn_idx];
+		const uint8_t old_mode = conn_past_modes[bt_conn_index(conn)];
 
-		conn_past_modes[conn_idx] = mode;
+		past_conn_mode_set(conn, mode);
 
 		err = past_param_set(conn, mode, param->skip, param->timeout, cte_type);
 		if (err != 0) {
 			/* Restore old mode */
-			conn_past_modes[conn_idx] = old_mode;
+			past_conn_mode_set(conn, old_mode);
 		}
 	} else {
 		const uint8_t old_mode = default_past_mode;
@@ -2890,15 +2905,14 @@ int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn)
 	}
 
 	if (conn) {
-		const uint8_t conn_idx = bt_conn_index(conn);
-		const uint8_t old_mode = conn_past_modes[conn_idx];
+		const uint8_t old_mode = conn_past_modes[bt_conn_index(conn)];
 
-		conn_past_modes[conn_idx] = BT_HCI_LE_PAST_MODE_NO_SYNC;
+		past_conn_mode_set(conn, BT_HCI_LE_PAST_MODE_NO_SYNC);
 
 		err = past_param_set(conn, BT_HCI_LE_PAST_MODE_NO_SYNC, 0, 0x0a, 0);
 		if (err != 0) {
 			/* Restore old mode */
-			conn_past_modes[conn_idx] = old_mode;
+			past_conn_mode_set(conn, old_mode);
 		}
 	} else {
 		const uint8_t old_mode = default_past_mode;
