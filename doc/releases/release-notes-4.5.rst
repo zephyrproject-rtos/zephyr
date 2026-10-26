@@ -77,7 +77,9 @@ Major enhancements with this release include:
 **Security and SBOM improvements**
   This release improves SBOM generation, hardening checks and cryptographic acceleration:
 
-  - :ref:`SPDX 3.0 SBOMs <west-spdx>`, including the :ref:`Build profile <west-spdx-build-profile>`.
+  - :ref:`SPDX 3 SBOMs <west-spdx>` that record how the image was built (:ref:`Build profile
+    <west-spdx-build-profile>`), the :ref:`prebuilt libraries <west-spdx-blobs>` it links, and
+    :ref:`package identifiers <west-spdx-package-id>` for vulnerability matching.
 
   - A revamped :ref:`hardening tool <hardening>` with CWE references and CI integration.
 
@@ -2742,6 +2744,31 @@ Other notable changes
     are available for CI use; and out-of-tree databases can be layered with
     ``-DHARDENCONFIG_EXTRA_SOURCES=``. The database is validated in CI against the actual Kconfig
     tree so entries can no longer go stale.
+
+* Software bill of materials (``west spdx``)
+
+  * SPDX 3.0 JSON-LD documents, selected with ``--spdx-version 3.0``, alongside the SPDX 2.3
+    default; SPDX 3.1 output is experimental. Element IDs are unique to each build, so the SBOMs of
+    the images of a :ref:`sysbuild` build can be merged into one graph. See
+    :ref:`west-spdx-versions`.
+
+  * SPDX 3 documents carry the :ref:`Build profile <west-spdx-build-profile>`: the toolchain with
+    its versions, the board and architecture, and a sub-build per library with its sources and
+    compile flags.
+
+  * Zephyr and its modules are recorded with a supplier and a purl pinned to the revision that was
+    built, and Zephyr with a CPE built from :zephyr_file:`VERSION`, release candidates included.
+    The sources of each module are linked to its ``modules-deps`` entry. See
+    :ref:`west-spdx-package-id`.
+
+  * Prebuilt libraries linked into the image, such as vendor blobs, are now listed, with the
+    version and download URL their module declares. See :ref:`west-spdx-blobs`.
+
+  * Licenses and copyrights are resolved with the :command:`reuse` tool, so :file:`REUSE.toml` and
+    :file:`.license` files are honored, including for binary files.
+
+  * Files are also hashed with SHA512, and each document records its author and the Zephyr version
+    of the tool that generated it.
 
 * CRC
 
