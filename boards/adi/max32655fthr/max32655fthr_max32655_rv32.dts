@@ -10,8 +10,8 @@
 #include "max32655fthr.dtsi"
 
 / {
-	model = "Analog Devices MAX32655FTHR";
 	compatible = "adi,max32655fthr";
+	model = "Analog Devices MAX32655FTHR";
 
 	chosen {
 		zephyr,console = &feather_serial;

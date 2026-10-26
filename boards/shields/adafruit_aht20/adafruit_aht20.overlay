@@ -14,8 +14,8 @@
 	status = "okay";
 
 	adafruit_aht20: aht20@38 {
-		status = "okay";
 		compatible = "aosong,aht20";
 		reg = <0x38>;
+		status = "okay";
 	};
 };

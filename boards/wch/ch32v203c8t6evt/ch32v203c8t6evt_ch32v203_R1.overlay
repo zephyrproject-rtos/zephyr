@@ -4,9 +4,9 @@
  */
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	w25q16: spi-nor@0 {
 		compatible = "jedec,spi-nor";

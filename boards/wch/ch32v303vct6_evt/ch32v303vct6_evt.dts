@@ -11,8 +11,8 @@
 #include "ch32v303vct6_evt-pinctrl.dtsi"
 
 / {
-	model = "ch32v303vct6_evt";
 	compatible = "wch,ch32v303";
+	model = "ch32v303vct6_evt";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -45,8 +45,8 @@
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

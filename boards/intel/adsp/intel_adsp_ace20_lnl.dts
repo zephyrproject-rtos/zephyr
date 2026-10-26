@@ -9,8 +9,8 @@
 #include <intel/intel_adsp_ace20_lnl.dtsi>
 
 / {
-	model = "intel_adsp_ace20_lnl";
 	compatible = "intel,intel_adsp_ace20_lnl";
+	model = "intel_adsp_ace20_lnl";
 
 	chosen {
 		zephyr,sram = &sram0;

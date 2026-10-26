@@ -9,8 +9,8 @@
 #include <common/mem.h>
 
 / {
-	model = "Firefly ROC-RK3588-PC";
 	compatible = "rockchip,rk3588";
+	model = "Firefly ROC-RK3588-PC";
 
 	chosen {
 		zephyr,console = &uart2;
@@ -20,28 +20,28 @@
 
 	dram: memory@50000000 {
 		compatible = "mmio-sram";
-		device_type = "memory";
 		reg = <0x50000000 DT_SIZE_M(1)>;
+		device_type = "memory";
 	};
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <1500000>;
+	status = "okay";
 };
 
 &uart3 {
-	status = "disabled";
 	current-speed = <115200>;
+	status = "disabled";
 };
 
 &gmac0 {
-	status = "okay";
-	zephyr,random-mac-address;
 	phy-handle = <&rgmii_phy0>;
 	clock-in-out = "output";
 	tx-delay = <0x47>;
 	rx-delay = <0>;
+	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &mdio0 {

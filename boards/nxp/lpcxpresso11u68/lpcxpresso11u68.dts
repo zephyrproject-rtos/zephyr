@@ -13,8 +13,8 @@
 #include "lpcxpresso11u68-pinctrl.dtsi"
 
 / {
-	model = "NXP LPCXPRESSO11U68 board";
 	compatible = "nxp,lpcxpresso11u68", "nxp,lpc";
+	model = "NXP LPCXPRESSO11U68 board";
 
 	chosen {
 		zephyr,sram = &sram0;

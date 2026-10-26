@@ -20,6 +20,6 @@
 };
 
 &arduino_serial {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

@@ -17,12 +17,12 @@
 	status = "okay";
 
 	wnc_m14a2a: wncm14a2a {
-		status = "okay";
 		compatible = "wnc,m14a2a";
 		mdm-boot-mode-sel-gpios = <&arduino_header ARDUINO_HEADER_R3_D1 GPIO_ACTIVE_HIGH>;
 		mdm-power-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_LOW>;
 		mdm-keep-awake-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
 		mdm-reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_HIGH>;
 		mdm-shld-trans-ena-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };

@@ -10,8 +10,8 @@
 #include "frdm_mcxn236.dtsi"
 
 / {
-	model = "NXP FRDM_N236 board";
 	compatible = "nxp,mcxn236", "nxp,mcx";
+	model = "NXP FRDM_N236 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -40,8 +40,8 @@
 		 */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
+			label = "mcuboot";
 		};
 
 		/* For the MCUBoot "upgrade only" method,
@@ -49,20 +49,20 @@
 		 */
 		slot0_partition: partition@14000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(440)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@84000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x0084000 DT_SIZE_K(440)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

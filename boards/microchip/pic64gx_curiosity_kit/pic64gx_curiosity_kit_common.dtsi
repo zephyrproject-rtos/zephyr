@@ -10,8 +10,8 @@
 #include <mem.h>
 
 / {
-	model = "Microchip PIC64GX Curiosity Kit";
 	compatible = "microchip,pic64gx-curiosity-kit", "microchip,pic64gx";
+	model = "Microchip PIC64GX Curiosity Kit";
 
 	aliases {
 		led0 = &led1;

@@ -8,8 +8,8 @@
 #include <nordic/nrf52832_qfaa.dtsi>
 
 / {
-	model = "Holyiot YJ-17095";
 	compatible = "holyiot,yj-17095";
+	model = "Holyiot YJ-17095";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -51,26 +51,26 @@
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x0000c000 0x37000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@43000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00043000 0x37000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@7a000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0007a000 0x00006000>;
+			label = "storage";
 		};
 	};
 };

@@ -13,13 +13,13 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	ls0xx_ls013b7dh03: ls0xx@0 {
 		compatible = "sharp,ls0xx";
-		spi-max-frequency = <2000000>;
 		reg = <0>;
+		spi-max-frequency = <2000000>;
 		width = <128>;
 		height = <128>;
 		extcomin-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_HIGH>;

@@ -10,8 +10,8 @@
 #include "mimxrt1170_evk.dtsi"
 
 / {
-	model = "NXP MIMXRT1170-EVK board";
 	compatible = "nxp,mimxrt1176";
+	model = "NXP MIMXRT1170-EVK board";
 
 	chosen {
 		/*
@@ -31,9 +31,9 @@
 	};
 
 	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(64)>;
 		/* Winbond W9825G6KH-5I */
 		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
 
 	zephyr,user {
@@ -48,8 +48,8 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpi2c1 {

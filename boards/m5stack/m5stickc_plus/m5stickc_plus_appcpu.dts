@@ -13,8 +13,8 @@
 };
 
 / {
-	model = "M5StickC Plus APPCPU";
 	compatible = "espressif,esp32";
+	model = "M5StickC Plus APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

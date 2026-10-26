@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32660EVSYS";
 	compatible = "adi,max32660evsys";
+	model = "Analog Devices MAX32660EVSYS";
 
 	chosen {
 		zephyr,console = &uart1;

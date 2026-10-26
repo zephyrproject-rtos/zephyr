@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_amp_32M.dtsi>
 
 / {
-	model = "Seeed Studio reTerminal E1002 APPCPU";
 	compatible = "seeed,reterminal-e1002";
+	model = "Seeed Studio reTerminal E1002 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

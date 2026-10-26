@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
 
 / {
-	model = "Analog Devices MAX32651EVKIT";
 	compatible = "adi,max32651evkit";
+	model = "Analog Devices MAX32651EVKIT";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -118,9 +118,9 @@
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spi2_mosi_p2_4 &spi2_miso_p2_3 &spi2_sck_p2_2 &spi2_ss0_p2_5>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt0 {

@@ -10,8 +10,8 @@
 #include <st/f1/stm32f103r(8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "STM32 Debug Probe";
 	compatible = "stm32,debug-probe";
+	model = "STM32 Debug Probe";
 
 	chosen {
 		zephyr,console = &usart2;

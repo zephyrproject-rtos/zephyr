@@ -9,8 +9,8 @@
 #include <common/mem.h>
 
 / {
-	model = "Radxa ROCK 5B+";
 	compatible = "radxa,rock-5b-plus", "rockchip,rk3588";
+	model = "Radxa ROCK 5B+";
 
 	chosen {
 		zephyr,console = &uart2;
@@ -20,12 +20,12 @@
 
 	dram: memory@10000000 {
 		compatible = "mmio-sram";
-		device_type = "memory";
 		reg = <0x10000000 DT_SIZE_M(128)>;
+		device_type = "memory";
 	};
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <1500000>;
+	status = "okay";
 };

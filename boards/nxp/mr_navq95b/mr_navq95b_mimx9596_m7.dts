@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/sensor/icm45686.h>
 
 / {
-	model = "NXP MR-NavQ95B";
 	compatible = "nxp,navq95";
+	model = "NXP MR-NavQ95B";
 
 	chosen {
 		/* TCM */
@@ -28,17 +28,16 @@
 };
 
 &gpio2 {
-	status = "okay";
 	irq-output-select = <1>;
+	status = "okay";
 };
 
 &gpio5 {
-	status = "okay";
 	irq-output-select = <1>;
+	status = "okay";
 };
 
 &flexspi {
-	status = "okay";
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	ahb-bufferable;
@@ -46,28 +45,29 @@
 	rx-clock-source = <1>;
 	pinctrl-0 = <&flexspi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
+		reg = <0>;
+		ranges = <0x0 0x28000000 DT_SIZE_M(64)>;
 		/* MX25UM51345G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64*8)>;
-		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(120)>;
-		status = "okay";
 		jedec-id = [c2 81 3a];
 		cs-interval = <2>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x28000000 DT_SIZE_M(64)>;
+		status = "okay";
 
 		mx25um51345g: mx25um51345g@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
-			erase-block-size = <DT_SIZE_K(4)>;
-			write-block-size = <2>;
 
 			ranges;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <2>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -82,26 +82,26 @@
 				 */
 				boot_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
+					label = "mcuboot";
 				};
 
 				slot0_partition: partition@20000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(7)>;
+					label = "image-0";
 				};
 
 				slot1_partition: partition@720000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-1";
 					reg = <0x00720000 DT_SIZE_M(7)>;
+					label = "image-1";
 				};
 
 				storage_partition: partition@e20000 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage";
 					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+					label = "storage";
 				};
 			};
 		};
@@ -170,30 +170,30 @@
 };
 
 &lpi2c6 {
-	status = "okay";
 	pinctrl-0 = <&lpi2c6_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart5 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart5_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i3c1 {
 	pinctrl-0 = <&i3c1_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	i2c-scl-hz = <400000>;
+	status = "okay";
 
 	bmp581: bmp581@460000000000000050 {
 		compatible = "bosch,bmp581";
@@ -219,21 +219,21 @@
 };
 
 &tpm3 {
-	status = "okay";
 	pinctrl-0 = <&tpm3_pwm1_pwm2_pwm3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tpm4 {
-	status = "okay";
 	pinctrl-0 = <&tpm4_pwm4_pwm5>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tpm5 {
-	status = "okay";
 	pinctrl-0 = <&tpm5_pwm6_pwm7>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tstmr2 {

@@ -48,10 +48,10 @@
 };
 
 &lpspi4 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi4_ieee802154>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	hdlc_rcp_spi: hdlc_rcp_if_spi@0 {
 		compatible = "spi,hdlc-rcp-if";

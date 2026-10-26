@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Microchip M2S010 MKR Kit";
 	compatible = "microchip,m2s010-mkr-kit";
+	model = "Microchip M2S010 MKR Kit";
 
 	chosen {
 		zephyr,console = &uart0;

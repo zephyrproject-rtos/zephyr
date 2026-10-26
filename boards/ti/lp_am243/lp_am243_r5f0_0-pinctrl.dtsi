@@ -7,6 +7,9 @@
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 
 &main_pinctrl {
+
+	status = "okay";
+
 	uart0_rx_default: uart0_rx_default {
 		pinmux = <K3_PINMUX(0x0230, PIN_INPUT, MUX_MODE_0)>;
 	};
@@ -30,6 +33,4 @@
 	led3_output: led3_output { // GPIO1 38
 		pinmux = <K3_PINMUX(0x01F8, PIN_OUTPUT, MUX_MODE_7)>;
 	};
-
-	status = "okay";
 };

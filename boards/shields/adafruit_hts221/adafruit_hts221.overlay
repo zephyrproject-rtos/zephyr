@@ -14,8 +14,8 @@
 	status = "okay";
 
 	adafruit_hts221: hts221@5f {
-		status = "okay";
 		compatible = "st,hts221";
 		reg = <0x5f>;
+		status = "okay";
 	};
 };

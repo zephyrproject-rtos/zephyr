@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "Espressif ESP32-DevkitC APPCPU";
 	compatible = "espressif,esp32";
+	model = "Espressif ESP32-DevkitC APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

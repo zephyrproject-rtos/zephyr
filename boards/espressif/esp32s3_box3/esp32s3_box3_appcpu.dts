@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	model = "Espressif ESP32S3-BOX-3 APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "Espressif ESP32S3-BOX-3 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -24,9 +24,9 @@
 
 &flash0 {
 	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
 	#address-cells = <1>;
 	#size-cells = <1>;
-	ranges = <0x0 0x0 DT_SIZE_M(16)>;
 };
 
 &psram0 {

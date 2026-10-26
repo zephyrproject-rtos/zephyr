@@ -8,6 +8,6 @@
 #include "xiao_ble_common.dtsi"
 
 / {
-	model = "Seeed XIAO BLE";
 	compatible = "seeed,xiao-ble";
+	model = "Seeed XIAO BLE";
 };

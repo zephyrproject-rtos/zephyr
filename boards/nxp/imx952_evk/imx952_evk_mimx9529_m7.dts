@@ -11,8 +11,8 @@
 #include <dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
-	model = "NXP i.MX952 EVK board";
 	compatible = "nxp,imx952_evk";
+	model = "NXP i.MX952 EVK board";
 
 	chosen {
 		/* TCM */
@@ -25,10 +25,10 @@
 };
 
 &lpuart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sar_adc {

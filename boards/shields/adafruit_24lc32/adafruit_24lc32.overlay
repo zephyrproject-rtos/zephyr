@@ -14,12 +14,12 @@
 	status = "okay";
 
 	eeprom_adafruit_24lc32: eeprom@50 {
-		status = "okay";
 		compatible = "atmel,at24lc32", "atmel,at24";
 		reg = <0x50>;
 		size = <DT_SIZE_K(4)>;
 		pagesize = <8>;
 		address-width = <16>;
 		timeout = <5>;
+		status = "okay";
 	};
 };

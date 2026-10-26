@@ -5,8 +5,8 @@
  */
 
 / {
-	model = "STM32 Minimum Development Board (Blue)";
 	compatible = "stm32_min_dev_blue", "st,stm32f103c8";
+	model = "STM32 Minimum Development Board (Blue)";
 
 	leds {
 		led: led {

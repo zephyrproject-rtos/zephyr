@@ -11,8 +11,8 @@
 #include "xg26_rb4120a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs EFR32xG26 2.4 GHz +10 dBm Radio Board (xG26-RB4120A, BRD4120A)";
 	compatible = "silabs,xg26_rb4120a", "silabs,efr32mg26";
+	model = "Silicon Labs EFR32xG26 2.4 GHz +10 dBm Radio Board (xG26-RB4120A, BRD4120A)";
 
 	aliases {
 		spi-flash0 = &mx25r80;
@@ -77,10 +77,10 @@
 		dpd-wakeup-sequence = <30000 20 35000>;
 		has-dpd;
 		jedec-id = [c2 28 14];
-		mxicy,mx25r-power-mode = "low-power";
 		size = <0x800000>;
 		spi-max-frequency = <DT_FREQ_M(33)>;
 		t-enter-dpd = <0>;
+		mxicy,mx25r-power-mode = "low-power";
 		zephyr,pm-device-runtime-auto;
 	};
 };

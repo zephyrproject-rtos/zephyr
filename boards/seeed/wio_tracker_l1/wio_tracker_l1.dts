@@ -12,8 +12,8 @@
 #include "wio_tracker_l1-pinctrl.dtsi"
 
 / {
-	model = "Seeed Wio Tracker L1";
 	compatible = "seeed,wio-tracker-l1";
+	model = "Seeed Wio Tracker L1";
 
 	chosen {
 		zephyr,display = &oled;
@@ -120,10 +120,10 @@
 };
 
 &adc {
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@7 {
 		reg = <7>;
@@ -138,10 +138,10 @@
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	oled: sh1106@3d {
 		compatible = "sinowealth,sh1106";
@@ -160,19 +160,19 @@
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <9600>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	gnss: gnss-nmea-generic {
 		compatible = "gnss-nmea-generic";
@@ -181,20 +181,20 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lora: lora@0 {
 		compatible = "semtech,sx1262";
@@ -211,10 +211,10 @@
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	p25q16h: p25q16h@0 {
 		compatible = "nordic,qspi-nor";

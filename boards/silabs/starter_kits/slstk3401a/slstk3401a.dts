@@ -9,6 +9,6 @@
 #include "slstk3401a-common.dtsi"
 
 / {
-	model = "Silicon Labs EFM32PG SLSTK3401A board";
 	compatible = "silabs,slstk3401a", "silabs,efm32pg1b";
+	model = "Silicon Labs EFM32PG SLSTK3401A board";
 };
