@@ -51,39 +51,7 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
-	id: device_id@80a00c {
-		compatible = "atmel,sam0-id";
-		reg = <0x0080a00c 0x4>,
-		      <0x0080a040 0x4>,
-		      <0x0080a044 0x4>,
-		      <0x0080a048 0x4>;
-	};
-
 	soc {
-		nvmctrl: nvmctrl@41004000 {
-			compatible = "atmel,sam0-nvmctrl";
-			reg = <0x41004000 0x22>;
-			ranges;
-			interrupts = <6 0>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			lock-regions = <16>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				ranges;
-
-				write-block-size = <4>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-		};
-
 		mclk: mclk@40000800 {
 			compatible = "atmel,sam0-mclk";
 			reg = <0x40000800 0x400>;
@@ -106,6 +74,26 @@
 			#atmel,assigned-clock-cells = <1>;
 		};
 
+		wdog: watchdog@40002000 {
+			compatible = "atmel,sam0-watchdog";
+			reg = <0x40002000 9>;
+			interrupts = <1 0>;
+		};
+
+		rtc: rtc@40002400 {
+			compatible = "atmel,sam0-rtc";
+			reg = <0x40002400 0x24>;
+			interrupts = <2 0>;
+			clocks = <&osc32kctrl>, <&mclk 0x14 9>;
+			clock-names = "OSC32KCTRL", "MCLK";
+
+			alarms-count = <1>;
+			cal-constant = <(4096 * 240)>;
+			atmel,assigned-clocks = <&osc32kctrl 0>;
+			atmel,assigned-clock-names = "OSC32KCTRL";
+			status = "disabled";
+		};
+
 		eic: eic@40002800 {
 			compatible = "atmel,sam0-eic";
 			reg = <0x40002800 0x1c>;
@@ -117,10 +105,62 @@
 			reg = <0x41000000 0x80>;
 		};
 
-		wdog: watchdog@40002000 {
-			compatible = "atmel,sam0-watchdog";
-			reg = <0x40002000 9>;
-			interrupts = <1 0>;
+		pinctrl: pinctrl@41000000 {
+			compatible = "atmel,sam0-pinctrl";
+			ranges = <0x41000000 0x41000000 0x180>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			porta: gpio@41000000 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41000000 0x80>;
+				#gpio-cells = <2>;
+
+				gpio-controller;
+
+				#atmel,pin-cells = <2>;
+			};
+
+			portb: gpio@41000080 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41000080 0x80>;
+				#gpio-cells = <2>;
+
+				gpio-controller;
+
+				#atmel,pin-cells = <2>;
+			};
+
+			portc: gpio@41000100 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41000100 0x80>;
+				#gpio-cells = <2>;
+
+				gpio-controller;
+
+				#atmel,pin-cells = <2>;
+			};
+		};
+
+		nvmctrl: nvmctrl@41004000 {
+			compatible = "atmel,sam0-nvmctrl";
+			reg = <0x41004000 0x22>;
+			ranges;
+			interrupts = <6 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			lock-regions = <16>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				ranges;
+
+				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
 		dmac: dmac@41006000 {
@@ -129,22 +169,6 @@
 			interrupts = <7 0>;
 
 			#dma-cells = <2>;
-			status = "disabled";
-		};
-
-		adc0: adc@42004400 {
-			compatible = "atmel,sam0-adc";
-			reg = <0x42004400 0x30>;
-			interrupts = <25 0>;
-			interrupt-names = "resrdy";
-			clocks = <&gclk 33>, <&mclk 0x1c 17>;
-			clock-names = "GCLK", "MCLK";
-
-			#io-channel-cells = <1>;
-
-			prescaler = <4>;
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -234,57 +258,33 @@
 			status = "disabled";
 		};
 
-		pinctrl: pinctrl@41000000 {
-			compatible = "atmel,sam0-pinctrl";
-			ranges = <0x41000000 0x41000000 0x180>;
+		adc0: adc@42004400 {
+			compatible = "atmel,sam0-adc";
+			reg = <0x42004400 0x30>;
+			interrupts = <25 0>;
+			interrupt-names = "resrdy";
+			clocks = <&gclk 33>, <&mclk 0x1c 17>;
+			clock-names = "GCLK", "MCLK";
 
-			#address-cells = <1>;
-			#size-cells = <1>;
+			#io-channel-cells = <1>;
 
-			porta: gpio@41000000 {
-				compatible = "atmel,sam0-gpio";
-				reg = <0x41000000 0x80>;
-				#gpio-cells = <2>;
-
-				gpio-controller;
-
-				#atmel,pin-cells = <2>;
-			};
-
-			portb: gpio@41000080 {
-				compatible = "atmel,sam0-gpio";
-				reg = <0x41000080 0x80>;
-				#gpio-cells = <2>;
-
-				gpio-controller;
-
-				#atmel,pin-cells = <2>;
-			};
-
-			portc: gpio@41000100 {
-				compatible = "atmel,sam0-gpio";
-				reg = <0x41000100 0x80>;
-				#gpio-cells = <2>;
-
-				gpio-controller;
-
-				#atmel,pin-cells = <2>;
-			};
-		};
-
-		rtc: rtc@40002400 {
-			compatible = "atmel,sam0-rtc";
-			reg = <0x40002400 0x24>;
-			interrupts = <2 0>;
-			clocks = <&osc32kctrl>, <&mclk 0x14 9>;
-			clock-names = "OSC32KCTRL", "MCLK";
-
-			alarms-count = <1>;
-			cal-constant = <(4096 * 240)>;
-			atmel,assigned-clocks = <&osc32kctrl 0>;
-			atmel,assigned-clock-names = "OSC32KCTRL";
+			prescaler = <4>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
+	};
+
+	id: device_id@80a00c {
+		compatible = "atmel,sam0-id";
+		reg = <0x0080a00c 0x4>,
+		      <0x0080a040 0x4>,
+		      <0x0080a044 0x4>,
+		      <0x0080a048 0x4>;
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
 	};
 };
 

@@ -38,6 +38,19 @@
 	};
 
 	soc {
+		rst: reset-controller@40000000 {
+			compatible = "nuvoton,numaker-rst";
+			reg = <0x40000000 0x20>;
+			#reset-cells = <1>;
+		};
+
+		pinctrl: pin-controller@40000030 {
+			compatible = "nuvoton,numaker-pinctrl";
+			reg = <0x40000030 0x40
+			       0x40000070 0x08>;
+			reg-names = "mfp", "mfos";
+		};
+
 		scc: system-clock-controller@40000200 {
 			compatible = "nuvoton,numaker-scc";
 			reg = <0x40000200 0x100>;
@@ -51,112 +64,6 @@
 				compatible = "nuvoton,numaker-pcc";
 				#clock-cells = <3>;
 			};
-		};
-
-		rst: reset-controller@40000000 {
-			compatible = "nuvoton,numaker-rst";
-			reg = <0x40000000 0x20>;
-			#reset-cells = <1>;
-		};
-
-		fmc: flash-controller@4000c000 {
-			compatible = "nuvoton,numaker-fmc";
-			reg = <0x4000c000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				erase-block-size = <512>;
-				write-block-size = <4>;
-			};
-		};
-
-		uart0: serial@40070000 {
-			compatible = "nuvoton,numaker-uart";
-			reg = <0x40070000 0x1000>;
-			interrupts = <12 0>;
-			resets = <&rst NUMAKER_UART0_RST>;
-			clocks = <&pcc NUMAKER_UART0_MODULE NUMAKER_CLK_CLKSEL1_UART0SEL_HIRC
-				  NUMAKER_CLK_CLKDIV0_UART0(1)>;
-			status = "disabled";
-		};
-
-		uart1: serial@40071000 {
-			compatible = "nuvoton,numaker-uart";
-			reg = <0x40071000 0x1000>;
-			interrupts = <13 0>;
-			resets = <&rst NUMAKER_UART1_RST>;
-			clocks = <&pcc NUMAKER_UART1_MODULE NUMAKER_CLK_CLKSEL1_UART1SEL_HIRC
-				  NUMAKER_CLK_CLKDIV0_UART1(1)>;
-			status = "disabled";
-		};
-
-		uart2: serial@40072000 {
-			compatible = "nuvoton,numaker-uart";
-			reg = <0x40072000 0x1000>;
-			interrupts = <12 0>;
-			resets = <&rst NUMAKER_UART2_RST>;
-			clocks = <&pcc NUMAKER_UART2_MODULE NUMAKER_CLK_CLKSEL3_UART2SEL_HIRC
-				  NUMAKER_CLK_CLKDIV4_UART2(1)>;
-			status = "disabled";
-		};
-
-		uart3: serial@40073000 {
-			compatible = "nuvoton,numaker-uart";
-			reg = <0x40073000 0x1000>;
-			interrupts = <13 0>;
-			resets = <&rst NUMAKER_UART3_RST>;
-			clocks = <&pcc NUMAKER_UART3_MODULE NUMAKER_CLK_CLKSEL3_UART3SEL_HIRC
-				  NUMAKER_CLK_CLKDIV4_UART3(1)>;
-			status = "disabled";
-		};
-
-		uart4: serial@40074000 {
-			compatible = "nuvoton,numaker-uart";
-			reg = <0x40074000 0x1000>;
-			interrupts = <27 0>;
-			resets = <&rst NUMAKER_UART4_RST>;
-			clocks = <&pcc NUMAKER_UART4_MODULE NUMAKER_CLK_CLKSEL3_UART4SEL_HIRC
-				  NUMAKER_CLK_CLKDIV4_UART4(1)>;
-			status = "disabled";
-		};
-
-		uart5: serial@40075000 {
-			compatible = "nuvoton,numaker-uart";
-			reg = <0x40075000 0x1000>;
-			interrupts = <17 0>;
-			resets = <&rst NUMAKER_UART5_RST>;
-			clocks = <&pcc NUMAKER_UART5_MODULE NUMAKER_CLK_CLKSEL3_UART5SEL_HIRC
-				  NUMAKER_CLK_CLKDIV4_UART5(1)>;
-			status = "disabled";
-		};
-
-		uart6: serial@40076000 {
-			compatible = "nuvoton,numaker-uart";
-			reg = <0x40076000 0x1000>;
-			interrupts = <27 0>;
-			resets = <&rst NUMAKER_UART6_RST>;
-			clocks = <&pcc NUMAKER_UART6_MODULE NUMAKER_CLK_CLKSEL3_UART6SEL_HIRC
-				  NUMAKER_CLK_CLKDIV4_UART6(1)>;
-			status = "disabled";
-		};
-
-		uart7: serial@40077000 {
-			compatible = "nuvoton,numaker-uart";
-			reg = <0x40077000 0x1000>;
-			interrupts = <17 0>;
-			resets = <&rst NUMAKER_UART7_RST>;
-			clocks = <&pcc NUMAKER_UART7_MODULE NUMAKER_CLK_CLKSEL3_UART7SEL_HIRC
-				  NUMAKER_CLK_CLKDIV4_UART7(1)>;
-			status = "disabled";
-		};
-
-		pinctrl: pin-controller@40000030 {
-			compatible = "nuvoton,numaker-pinctrl";
-			reg = <0x40000030 0x40
-			       0x40000070 0x08>;
-			reg-names = "mfp", "mfos";
 		};
 
 		gpioa: gpio@40004000 {
@@ -239,6 +146,19 @@
 			status = "disabled";
 		};
 
+		fmc: flash-controller@4000c000 {
+			compatible = "nuvoton,numaker-fmc";
+			reg = <0x4000c000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <512>;
+				write-block-size = <4>;
+			};
+		};
+
 		wwdt: watchdog@40040100 {
 			compatible = "nuvoton,numaker-wwdt";
 			reg = <0x40040100 0x10>;
@@ -256,6 +176,28 @@
 			alarms-count = <1>;
 		};
 
+		pwm0: pwm@40058000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x40058000 0x37c>;
+			interrupts = <6 0>;
+			resets = <&rst NUMAKER_PWM0_RST>;
+			prescaler = <19>;
+			clocks = <&pcc NUMAKER_PWM0_MODULE NUMAKER_CLK_CLKSEL2_PWM0SEL_PCLK0 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@40059000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x40059000 0x37c>;
+			interrupts = <7 0>;
+			resets = <&rst NUMAKER_PWM1_RST>;
+			prescaler = <19>;
+			clocks = <&pcc NUMAKER_PWM1_MODULE NUMAKER_CLK_CLKSEL2_PWM1SEL_PCLK1 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
 		spi0: spi@40061000 {
 			compatible = "nuvoton,numaker-spi";
 			reg = <0x40061000 0x1000>;
@@ -264,6 +206,86 @@
 			clocks = <&pcc NUMAKER_SPI0_MODULE NUMAKER_CLK_CLKSEL2_SPI0SEL_HIRC 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uart0: serial@40070000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40070000 0x1000>;
+			interrupts = <12 0>;
+			resets = <&rst NUMAKER_UART0_RST>;
+			clocks = <&pcc NUMAKER_UART0_MODULE NUMAKER_CLK_CLKSEL1_UART0SEL_HIRC
+				  NUMAKER_CLK_CLKDIV0_UART0(1)>;
+			status = "disabled";
+		};
+
+		uart1: serial@40071000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40071000 0x1000>;
+			interrupts = <13 0>;
+			resets = <&rst NUMAKER_UART1_RST>;
+			clocks = <&pcc NUMAKER_UART1_MODULE NUMAKER_CLK_CLKSEL1_UART1SEL_HIRC
+				  NUMAKER_CLK_CLKDIV0_UART1(1)>;
+			status = "disabled";
+		};
+
+		uart2: serial@40072000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40072000 0x1000>;
+			interrupts = <12 0>;
+			resets = <&rst NUMAKER_UART2_RST>;
+			clocks = <&pcc NUMAKER_UART2_MODULE NUMAKER_CLK_CLKSEL3_UART2SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART2(1)>;
+			status = "disabled";
+		};
+
+		uart3: serial@40073000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40073000 0x1000>;
+			interrupts = <13 0>;
+			resets = <&rst NUMAKER_UART3_RST>;
+			clocks = <&pcc NUMAKER_UART3_MODULE NUMAKER_CLK_CLKSEL3_UART3SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART3(1)>;
+			status = "disabled";
+		};
+
+		uart4: serial@40074000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40074000 0x1000>;
+			interrupts = <27 0>;
+			resets = <&rst NUMAKER_UART4_RST>;
+			clocks = <&pcc NUMAKER_UART4_MODULE NUMAKER_CLK_CLKSEL3_UART4SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART4(1)>;
+			status = "disabled";
+		};
+
+		uart5: serial@40075000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40075000 0x1000>;
+			interrupts = <17 0>;
+			resets = <&rst NUMAKER_UART5_RST>;
+			clocks = <&pcc NUMAKER_UART5_MODULE NUMAKER_CLK_CLKSEL3_UART5SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART5(1)>;
+			status = "disabled";
+		};
+
+		uart6: serial@40076000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40076000 0x1000>;
+			interrupts = <27 0>;
+			resets = <&rst NUMAKER_UART6_RST>;
+			clocks = <&pcc NUMAKER_UART6_MODULE NUMAKER_CLK_CLKSEL3_UART6SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART6(1)>;
+			status = "disabled";
+		};
+
+		uart7: serial@40077000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40077000 0x1000>;
+			interrupts = <17 0>;
+			resets = <&rst NUMAKER_UART7_RST>;
+			clocks = <&pcc NUMAKER_UART7_MODULE NUMAKER_CLK_CLKSEL3_UART7SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART7(1)>;
 			status = "disabled";
 		};
 
@@ -286,28 +308,6 @@
 			clocks = <&pcc NUMAKER_USCI1_MODULE 0 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		pwm0: pwm@40058000 {
-			compatible = "nuvoton,numaker-pwm";
-			reg = <0x40058000 0x37c>;
-			interrupts = <6 0>;
-			resets = <&rst NUMAKER_PWM0_RST>;
-			prescaler = <19>;
-			clocks = <&pcc NUMAKER_PWM0_MODULE NUMAKER_CLK_CLKSEL2_PWM0SEL_PCLK0 0>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		pwm1: pwm@40059000 {
-			compatible = "nuvoton,numaker-pwm";
-			reg = <0x40059000 0x37c>;
-			interrupts = <7 0>;
-			resets = <&rst NUMAKER_PWM1_RST>;
-			prescaler = <19>;
-			clocks = <&pcc NUMAKER_PWM1_MODULE NUMAKER_CLK_CLKSEL2_PWM1SEL_PCLK1 0>;
-			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};

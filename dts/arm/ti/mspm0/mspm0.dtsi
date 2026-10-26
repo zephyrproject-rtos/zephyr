@@ -156,20 +156,16 @@
 			compatible = "mmio-sram";
 		};
 
-		flashctl: flash-controller@400cd000 {
-			compatible = "ti,mspm0-flash-controller";
-			reg = <0x400cd000 0x2000>;
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				erase-block-size = <1024>;
-				write-block-size = <8>;
-			};
+		vref0: vref@40030000 {
+			compatible = "ti,mspm0-vref";
+			reg = <0x40030000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_BUSCLK>;
+			off-on-delay-us = <200>;
+			regulator-uv = <1400000>;
+			ti,clk-div = <0x1>;
+			ti,sample-cycles = <10>;
+			ti,hold-cycles = <40>;
+			status = "disabled";
 		};
 
 		wdt0: wdt0@40080000 {
@@ -186,23 +182,6 @@
 			interrupts = <30 0>;
 			alarms-count = <2>;
 			status = "disabled";
-		};
-
-		vref0: vref@40030000 {
-			compatible = "ti,mspm0-vref";
-			reg = <0x40030000 0x2000>;
-			clocks = <&ckm MSPM0_CLOCK_BUSCLK>;
-			off-on-delay-us = <200>;
-			regulator-uv = <1400000>;
-			ti,clk-div = <0x1>;
-			ti,sample-cycles = <10>;
-			ti,hold-cycles = <40>;
-			status = "disabled";
-		};
-
-		pinctrl: pin-controller@40428000 {
-			compatible = "ti,mspm0-pinctrl";
-			reg = <0x40428000 0x400>;
 		};
 
 		gpioa: gpio@400a0000 {
@@ -223,6 +202,22 @@
 			status = "disabled";
 		};
 
+		flashctl: flash-controller@400cd000 {
+			compatible = "ti,mspm0-flash-controller";
+			reg = <0x400cd000 0x2000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				erase-block-size = <1024>;
+				write-block-size = <8>;
+			};
+		};
+
 		uart0: uart@40108000 {
 			compatible = "ti,mspm0-uart";
 			reg = <0x40108000 0x2000>;
@@ -233,10 +228,9 @@
 			status = "disabled";
 		};
 
-		spi0: spi@40468000 {
-			compatible = "ti,mspm0-spi";
-			reg = <0x40468000 0x2000>;
-			status = "disabled";
+		pinctrl: pin-controller@40428000 {
+			compatible = "ti,mspm0-pinctrl";
+			reg = <0x40428000 0x400>;
 		};
 
 		dma: dma@4042a000 {
@@ -245,6 +239,12 @@
 			interrupts = <31 0>;
 			#dma-cells = <2>;
 			dma-channels = <7>;
+			status = "disabled";
+		};
+
+		spi0: spi@40468000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x40468000 0x2000>;
 			status = "disabled";
 		};
 	};

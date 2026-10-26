@@ -26,11 +26,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-		reg = <0x20000000 (32 * 1024)>;
-	};
-
 	sysclk: system-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <80000000>;
@@ -38,29 +33,6 @@
 	};
 
 	soc {
-		pinctrl: pin-controller@400fe000 {
-			compatible = "ti,tiva-c-pinctrl";
-			reg = <0x400fe000 0x1000>;
-		};
-
-		flash-controller@400fd000 {
-			compatible = "ti,stellaris-flash-controller";
-			reg = <0x400fd000 0x1000>;
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				reg = <0x00000000 (256 * 1024)>;
-				ranges = <0x0 0x0 (256 * 1024)>;
-				erase-block-size = <1024>;
-				write-block-size = <4>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-		};
-
 		uart0: uart@4000c000 {
 			compatible = "ti,tiva-c-uart";
 			reg = <0x4000c000 0x1000>;
@@ -132,6 +104,34 @@
 			peripheral-id = <7>;
 			status = "disabled";
 		};
+
+		flash-controller@400fd000 {
+			compatible = "ti,stellaris-flash-controller";
+			reg = <0x400fd000 0x1000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 (256 * 1024)>;
+				ranges = <0x0 0x0 (256 * 1024)>;
+				erase-block-size = <1024>;
+				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		pinctrl: pin-controller@400fe000 {
+			compatible = "ti,tiva-c-pinctrl";
+			reg = <0x400fe000 0x1000>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 (32 * 1024)>;
 	};
 };
 

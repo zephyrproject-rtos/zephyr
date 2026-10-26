@@ -8,16 +8,16 @@
 #include "npcx/npcx7.dtsi"
 
 / {
+	soc-id {
+		device-id = <0x20>;
+	};
+
 	flash0: flash@10070000 {
 		/*
 		 * Reallocate the last 64 KB of code RAM for use as data RAM
 		 * because the internal flash size is 512 KB.
 		 */
 		reg = <0x10070000 DT_SIZE_K(256)>;
-	};
-
-	flash1: flash@64000000 {
-		reg = <0x64000000 DT_SIZE_K(512)>;
 	};
 
 	sram0: memory@200b0000 {
@@ -31,8 +31,8 @@
 		reg = <0x200cf800 DT_SIZE_K(2)>;
 	};
 
-	soc-id {
-		device-id = <0x20>;
+	flash1: flash@64000000 {
+		reg = <0x64000000 DT_SIZE_K(512)>;
 	};
 };
 

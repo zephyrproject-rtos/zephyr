@@ -49,6 +49,61 @@
 #include "nrf91_peripherals.dtsi"
 		};
 
+		ficr: ficr@ff0000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0xff0000 0x1000>;
+			#nordic,ficr-cells = <1>;
+			status = "okay";
+		};
+
+		uicr: uicr@ff8000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0xff8000 0x1000>;
+			ranges = <0x0 0xff8000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			bl_storage: uicr@108 {
+				reg = <0x108 0x280>;
+			};
+		};
+
+		/* Additional Non-Secure GPIOTE instance */
+		gpiote1: gpiote@40031000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x40031000 0x1000>;
+			interrupts = <49 5>;
+			instance = <1>;
+			status = "disabled";
+		};
+
+		spu: spu@50003000 {
+			compatible = "nordic,nrf-spu";
+			reg = <0x50003000 0x1000>;
+			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		ctrlap: ctrlap@50006000 {
+			compatible = "nordic,nrf-ctrlapperi";
+			reg = <0x50006000 0x1000>;
+			status = "okay";
+		};
+
+		/*
+		 * GPIOTE0 is always accessible as a secure peripheral,
+		 * so we give it the 'gpiote' label for use when building
+		 * code for this target.
+		 */
+		gpiote: gpiote0: gpiote@5000d000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x5000d000 0x1000>;
+			interrupts = <13 5>;
+			instance = <0>;
+			status = "disabled";
+		};
+
 		flash_controller: flash-controller@50039000 {
 			compatible = "nordic,nrf91-flash-controller";
 			reg = <0x50039000 0x1000>;
@@ -76,61 +131,6 @@
 			reg-names = "wrapper", "core";
 			interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-		};
-
-		ctrlap: ctrlap@50006000 {
-			compatible = "nordic,nrf-ctrlapperi";
-			reg = <0x50006000 0x1000>;
-			status = "okay";
-		};
-
-		/*
-		 * GPIOTE0 is always accessible as a secure peripheral,
-		 * so we give it the 'gpiote' label for use when building
-		 * code for this target.
-		 */
-		gpiote: gpiote0: gpiote@5000d000 {
-			compatible = "nordic,nrf-gpiote";
-			reg = <0x5000d000 0x1000>;
-			interrupts = <13 5>;
-			instance = <0>;
-			status = "disabled";
-		};
-
-		/* Additional Non-Secure GPIOTE instance */
-		gpiote1: gpiote@40031000 {
-			compatible = "nordic,nrf-gpiote";
-			reg = <0x40031000 0x1000>;
-			interrupts = <49 5>;
-			instance = <1>;
-			status = "disabled";
-		};
-
-		spu: spu@50003000 {
-			compatible = "nordic,nrf-spu";
-			reg = <0x50003000 0x1000>;
-			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-		};
-
-		ficr: ficr@ff0000 {
-			compatible = "nordic,nrf-ficr";
-			reg = <0xff0000 0x1000>;
-			#nordic,ficr-cells = <1>;
-			status = "okay";
-		};
-
-		uicr: uicr@ff8000 {
-			compatible = "nordic,nrf-uicr";
-			reg = <0xff8000 0x1000>;
-			ranges = <0x0 0xff8000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "okay";
-
-			bl_storage: uicr@108 {
-				reg = <0x108 0x280>;
-			};
 		};
 	};
 };

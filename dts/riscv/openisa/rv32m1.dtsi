@@ -38,16 +38,6 @@
 		};
 	};
 
-	m4_dtcm: memory@20000000 {
-		compatible = "mmio-sram";
-		reg = <0x20000000 0x30000>;
-	};
-
-	m0_tcm: memory@9000000 {
-		compatible = "mmio-sram";
-		reg = <0x09000000 0x20000>;
-	};
-
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "openisa,rv32m1-pinctrl";
@@ -60,32 +50,173 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		bt_hci_controller: bt_hci_controller {
+			compatible = "zephyr,bt-hci-ll-sw-split";
+			status = "disabled";
+		};
+
+		ftfe: flash-controller@40023000 {
+			compatible = "openisa,rv32m1-ftfe";
+			reg = <0x40023000 0x18>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			m4_flash: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 0x100000>;
+				erase-block-size = <4096>;
+				write-block-size = <8>;
+			};
+
+			m0_flash: flash@1000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x01000000 0x40000>;
+				erase-block-size = <4096>;
+				write-block-size = <8>;
+			};
+		};
+
 		pcc0: clock-controller@4002b000 {
 			compatible = "openisa,rv32m1-pcc";
 			reg = <0x4002b000 0x1000>;
 			#clock-cells = <1>;
 		};
 
-		pcc1: clock-controller@41027000 {
-			compatible = "openisa,rv32m1-pcc";
-			reg = <0x41027000 0x1000>;
-			#clock-cells = <1>;
+		lptmr0: timer@40032000 {
+			compatible = "openisa,rv32m1-lptmr";
+			reg = <0x40032000 0x10>;
 		};
 
-		event0: interrupt-controller@e0041000 {
-			compatible = "openisa,rv32m1-event-unit";
-			reg = <0xe0041000 0x88>;
-			#address-cells = <0>;
-			#interrupt-cells = <1>;
-			interrupt-controller;
+		lptmr1: timer@40033000 {
+			compatible = "openisa,rv32m1-lptmr";
+			reg = <0x40033000 0x10>;
 		};
 
-		event1: interrupt-controller@4101f000 {
-			compatible = "openisa,rv32m1-event-unit";
-			reg = <0x4101f000 0x88>;
-			#address-cells = <0>;
-			#interrupt-cells = <1>;
-			interrupt-controller;
+		tpm0: pwm@40035000 {
+			compatible = "openisa,rv32m1-tpm";
+			reg = <0x40035000 0x88>;
+			clocks = <&pcc0 0xd4>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tpm1: pwm@40036000 {
+			compatible = "openisa,rv32m1-tpm";
+			reg = <0x40036000 0x88>;
+			clocks = <&pcc0 0xd8>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tpm2: pwm@40037000 {
+			compatible = "openisa,rv32m1-tpm";
+			reg = <0x40037000 0x88>;
+			clocks = <&pcc0 0xdc>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		lpi2c0: lpi2c@4003a000 {
+			compatible = "openisa,rv32m1-lpi2c";
+			reg = <0x4003a000 0x1000>;
+			clocks = <&pcc0 0xe8>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpi2c1: lpi2c@4003b000 {
+			compatible = "openisa,rv32m1-lpi2c";
+			reg = <0x4003b000 0x1000>;
+			clocks = <&pcc0 0xec>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpi2c2: lpi2c@4003c000 {
+			compatible = "openisa,rv32m1-lpi2c";
+			reg = <0x4003c000 0x1000>;
+			clocks = <&pcc0 0xf0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi0: spi@4003f000 {
+			compatible = "openisa,rv32m1-lpspi";
+			reg = <0x4003f000 0x78>;
+			clocks = <&pcc0 0xfc>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi1: spi@40040000 {
+			compatible = "openisa,rv32m1-lpspi";
+			reg = <0x40040000 0x78>;
+			clocks = <&pcc0 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi2: spi@40041000 {
+			compatible = "openisa,rv32m1-lpspi";
+			reg = <0x40041000 0x78>;
+			clocks = <&pcc0 0x104>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpuart0: lpuart@40042000 {
+			compatible = "openisa,rv32m1-lpuart";
+			reg = <0x40042000 0x1000>;
+			clocks = <&pcc0 0x108>;
+			status = "disabled";
+		};
+
+		lpuart1: lpuart@40043000 {
+			compatible = "openisa,rv32m1-lpuart";
+			reg = <0x40043000 0x1000>;
+			clocks = <&pcc0 0x10c>;
+			status = "disabled";
+		};
+
+		lpuart2: lpuart@40044000 {
+			compatible = "openisa,rv32m1-lpuart";
+			reg = <0x40044000 0x1000>;
+			clocks = <&pcc0 0x110>;
+			status = "disabled";
+		};
+
+		porta: pinmux@40046000 {
+			compatible = "openisa,rv32m1-pinmux";
+			reg = <0x40046000 0xd0>;
+			clocks = <&pcc0 0x118>;
+		};
+
+		portb: pinmux@40047000 {
+			compatible = "openisa,rv32m1-pinmux";
+			reg = <0x40047000 0xd0>;
+			clocks = <&pcc0 0x11c>;
+		};
+
+		portc: pinmux@40048000 {
+			compatible = "openisa,rv32m1-pinmux";
+			reg = <0x40048000 0xd0>;
+			clocks = <&pcc0 0x120>;
+		};
+
+		portd: pinmux@40049000 {
+			compatible = "openisa,rv32m1-pinmux";
+			reg = <0x40049000 0xd0>;
+			clocks = <&pcc0 0x124>;
 		};
 
 		intmux0: intmux@4004f000 {
@@ -179,6 +310,23 @@
 			};
 		};
 
+		gpioe: gpio@4100f000 {
+			compatible = "openisa,rv32m1-gpio";
+			reg = <0x4100f000 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			clocks = <&pcc1 0x3c>;
+			openisa,rv32m1-port = <&porte>;
+		};
+
+		event1: interrupt-controller@4101f000 {
+			compatible = "openisa,rv32m1-event-unit";
+			reg = <0x4101f000 0x88>;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+			interrupt-controller;
+		};
+
 		intmux1: intmux@41022000 {
 			compatible = "openisa,rv32m1-intmux";
 			reg = <0x41022000 0x200>;
@@ -270,14 +418,17 @@
 			};
 		};
 
-		lptmr0: timer@40032000 {
-			compatible = "openisa,rv32m1-lptmr";
-			reg = <0x40032000 0x10>;
+		pcc1: clock-controller@41027000 {
+			compatible = "openisa,rv32m1-pcc";
+			reg = <0x41027000 0x1000>;
+			#clock-cells = <1>;
 		};
 
-		lptmr1: timer@40033000 {
-			compatible = "openisa,rv32m1-lptmr";
-			reg = <0x40033000 0x10>;
+		trng: random@41029000 {
+			compatible = "openisa,rv32m1-trng";
+			reg = <0x41029000 0x1000>;
+			interrupts = <13 0>;
+			status = "okay";
 		};
 
 		lptmr2: timer@4102b000 {
@@ -285,28 +436,45 @@
 			reg = <0x4102b000 0x10>;
 		};
 
-		porta: pinmux@40046000 {
-			compatible = "openisa,rv32m1-pinmux";
-			reg = <0x40046000 0xd0>;
-			clocks = <&pcc0 0x118>;
+		tpm3: pwm@4102d000 {
+			compatible = "openisa,rv32m1-tpm";
+			reg = <0x4102d000 0x88>;
+			clocks = <&pcc1 0xb4>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
-		portb: pinmux@40047000 {
-			compatible = "openisa,rv32m1-pinmux";
-			reg = <0x40047000 0xd0>;
-			clocks = <&pcc0 0x11c>;
+		lpi2c3: lpi2c@4102e000 {
+			compatible = "openisa,rv32m1-lpi2c";
+			reg = <0x4102e000 0x1000>;
+			clocks = <&pcc1 0xb8>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
-		portc: pinmux@40048000 {
-			compatible = "openisa,rv32m1-pinmux";
-			reg = <0x40048000 0xd0>;
-			clocks = <&pcc0 0x120>;
+		generic_fsk: generic_fsk@41033000 {
+			compatible = "openisa,rv32m1-genfsk";
+			reg = <0x41033000 0x90>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
-		portd: pinmux@40049000 {
-			compatible = "openisa,rv32m1-pinmux";
-			reg = <0x40049000 0xd0>;
-			clocks = <&pcc0 0x124>;
+		lpspi3: spi@41035000 {
+			compatible = "openisa,rv32m1-lpspi";
+			reg = <0x41035000 0x78>;
+			clocks = <&pcc1 0xd4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpuart3: lpuart@41036000 {
+			compatible = "openisa,rv32m1-lpuart";
+			reg = <0x41036000 0x1000>;
+			clocks = <&pcc0 0xd8>;
+			status = "disabled";
 		};
 
 		porte: pinmux@41037000 {
@@ -347,190 +515,22 @@
 			openisa,rv32m1-port = <&portd>;
 		};
 
-		gpioe: gpio@4100f000 {
-			compatible = "openisa,rv32m1-gpio";
-			reg = <0x4100f000 0x40>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			clocks = <&pcc1 0x3c>;
-			openisa,rv32m1-port = <&porte>;
+		event0: interrupt-controller@e0041000 {
+			compatible = "openisa,rv32m1-event-unit";
+			reg = <0xe0041000 0x88>;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+			interrupt-controller;
 		};
+	};
 
-		lpuart0: lpuart@40042000 {
-			compatible = "openisa,rv32m1-lpuart";
-			reg = <0x40042000 0x1000>;
-			clocks = <&pcc0 0x108>;
-			status = "disabled";
-		};
+	m0_tcm: memory@9000000 {
+		compatible = "mmio-sram";
+		reg = <0x09000000 0x20000>;
+	};
 
-		lpuart1: lpuart@40043000 {
-			compatible = "openisa,rv32m1-lpuart";
-			reg = <0x40043000 0x1000>;
-			clocks = <&pcc0 0x10c>;
-			status = "disabled";
-		};
-
-		lpuart2: lpuart@40044000 {
-			compatible = "openisa,rv32m1-lpuart";
-			reg = <0x40044000 0x1000>;
-			clocks = <&pcc0 0x110>;
-			status = "disabled";
-		};
-
-		lpuart3: lpuart@41036000 {
-			compatible = "openisa,rv32m1-lpuart";
-			reg = <0x41036000 0x1000>;
-			clocks = <&pcc0 0xd8>;
-			status = "disabled";
-		};
-
-		lpi2c0: lpi2c@4003a000 {
-			compatible = "openisa,rv32m1-lpi2c";
-			reg = <0x4003a000 0x1000>;
-			clocks = <&pcc0 0xe8>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		lpi2c1: lpi2c@4003b000 {
-			compatible = "openisa,rv32m1-lpi2c";
-			reg = <0x4003b000 0x1000>;
-			clocks = <&pcc0 0xec>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		lpi2c2: lpi2c@4003c000 {
-			compatible = "openisa,rv32m1-lpi2c";
-			reg = <0x4003c000 0x1000>;
-			clocks = <&pcc0 0xf0>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		lpi2c3: lpi2c@4102e000 {
-			compatible = "openisa,rv32m1-lpi2c";
-			reg = <0x4102e000 0x1000>;
-			clocks = <&pcc1 0xb8>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		lpspi0: spi@4003f000 {
-			compatible = "openisa,rv32m1-lpspi";
-			reg = <0x4003f000 0x78>;
-			clocks = <&pcc0 0xfc>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		lpspi1: spi@40040000 {
-			compatible = "openisa,rv32m1-lpspi";
-			reg = <0x40040000 0x78>;
-			clocks = <&pcc0 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		lpspi2: spi@40041000 {
-			compatible = "openisa,rv32m1-lpspi";
-			reg = <0x40041000 0x78>;
-			clocks = <&pcc0 0x104>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		lpspi3: spi@41035000 {
-			compatible = "openisa,rv32m1-lpspi";
-			reg = <0x41035000 0x78>;
-			clocks = <&pcc1 0xd4>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		generic_fsk: generic_fsk@41033000 {
-			compatible = "openisa,rv32m1-genfsk";
-			reg = <0x41033000 0x90>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-		};
-
-		tpm0: pwm@40035000 {
-			compatible = "openisa,rv32m1-tpm";
-			reg = <0x40035000 0x88>;
-			clocks = <&pcc0 0xd4>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm1: pwm@40036000 {
-			compatible = "openisa,rv32m1-tpm";
-			reg = <0x40036000 0x88>;
-			clocks = <&pcc0 0xd8>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm2: pwm@40037000 {
-			compatible = "openisa,rv32m1-tpm";
-			reg = <0x40037000 0x88>;
-			clocks = <&pcc0 0xdc>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		trng: random@41029000 {
-			compatible = "openisa,rv32m1-trng";
-			reg = <0x41029000 0x1000>;
-			interrupts = <13 0>;
-			status = "okay";
-		};
-
-		tpm3: pwm@4102d000 {
-			compatible = "openisa,rv32m1-tpm";
-			reg = <0x4102d000 0x88>;
-			clocks = <&pcc1 0xb4>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		ftfe: flash-controller@40023000 {
-			compatible = "openisa,rv32m1-ftfe";
-			reg = <0x40023000 0x18>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			m4_flash: flash@0 {
-				compatible = "soc-nv-flash";
-				reg = <0 0x100000>;
-				erase-block-size = <4096>;
-				write-block-size = <8>;
-			};
-
-			m0_flash: flash@1000000 {
-				compatible = "soc-nv-flash";
-				reg = <0x01000000 0x40000>;
-				erase-block-size = <4096>;
-				write-block-size = <8>;
-			};
-		};
-
-		bt_hci_controller: bt_hci_controller {
-			compatible = "zephyr,bt-hci-ll-sw-split";
-			status = "disabled";
-		};
+	m4_dtcm: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0x30000>;
 	};
 };

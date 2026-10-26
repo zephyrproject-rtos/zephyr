@@ -18,45 +18,6 @@
 			reg = <0x00f01600 0x100>;
 		};
 
-		gpioksi: gpiokscan@f01d07 {
-			compatible = "ite,it8xxx2-gpiokscan";
-			reg = <0x00f01d07 1
-			       0x00f01d06 1
-			       0x00f01d08 1
-			       0x00f01d09 1
-			       0x00f01d26 1>;
-			reg-names = "goen", "gctrl", "gdat", "gdmr", "gpod";
-			ngpios = <8>;
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		gpioksoh: gpiokscan@f01d0b {
-			compatible = "ite,it8xxx2-gpiokscan";
-			reg = <0x00f01d0b 1
-			       0x00f01d0a 1
-			       0x00f01d01 1
-			       0x00f01d0c 1
-			       0x00f01d27 1>;
-			reg-names = "goen", "gctrl", "gdat", "gdmr", "gpod";
-			ngpios = <8>;
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		gpioksol: gpiokscan@f01d0e {
-			compatible = "ite,it8xxx2-gpiokscan";
-			reg = <0x00f01d0e 1
-			       0x00f01d0d 1
-			       0x00f01d00 1
-			       0x00f01d0f 1
-			       0x00f01d28 1>;
-			reg-names = "goen", "gctrl", "gdat", "gdmr", "gpod";
-			ngpios = <8>;
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
 		pinctrla: pinctrl@f01610 {
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01610 8     /* GPCR */
@@ -321,129 +282,6 @@
 			gpio-group;
 		};
 
-		pinctrlksi: pinctrl@f01d06 {
-			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01d06 1   /* KSIGCTRL */
-			       0x00f01d05 1>; /* KSICTRL */
-			pp-od-mask = <NO_FUNC>;
-			pullup-mask = <BIT(2)>;
-			#pinmux-cells = <2>;
-		};
-
-		pinctrlksoh: pinctrl@f01d0a {
-			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01d0a 1   /* KSOHGCTRL */
-			       0x00f01d02 1>; /* KSOCTRL */
-			pp-od-mask = <BIT(0)>;
-			pullup-mask = <BIT(2)>;
-			#pinmux-cells = <2>;
-		};
-
-		pinctrlksol: pinctrl@f01d0d {
-			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01d0d 1   /* KSOLGCTRL */
-			       0x00f01d02 1>; /* KSOCTRL */
-			pp-od-mask = <BIT(0)>;
-			pullup-mask = <BIT(2)>;
-			#pinmux-cells = <2>;
-		};
-
-		i2c0: i2c@f01c40 {
-			compatible = "ite,it8xxx2-i2c";
-			reg = <0x00f01c40 0x0040   /* Base address */
-			       0x00f01c0d 0x0001>; /* MSTFCTRL1 */
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <IT8XXX2_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			port-num = <SMB_CHANNEL_A>;
-			channel-switch-sel = <I2C_CHA_LOCATE>;
-			scl-gpios = <&gpiob 3 0>;
-			sda-gpios = <&gpiob 4 0>;
-			clock-gate-offset = <CGC_OFFSET_SMBA>;
-			fifo-enable;   /* FIFO1 */
-			status = "disabled";
-		};
-
-		i2c1: i2c@f01c80 {
-			compatible = "ite,it8xxx2-i2c";
-			reg = <0x00f01c80 0x0040   /* Base address */
-			       0x00f01c0f 0x0001>; /* MSTFCTRL2 */
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <IT8XXX2_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			port-num = <SMB_CHANNEL_B>;
-			channel-switch-sel = <I2C_CHB_LOCATE>;
-			scl-gpios = <&gpioc 1 0>;
-			sda-gpios = <&gpioc 2 0>;
-			clock-gate-offset = <CGC_OFFSET_SMBB>;
-			fifo-enable;   /* FIFO2 */
-			status = "disabled";
-		};
-
-		i2c2: i2c@f01cc0 {
-			compatible = "ite,it8xxx2-i2c";
-			reg = <0x00f01cc0 0x0040   /* Base address */
-			       0x00f01c0f 0x0001>; /* MSTFCTRL2 */
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <IT8XXX2_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			port-num = <SMB_CHANNEL_C>;
-			channel-switch-sel = <I2C_CHC_LOCATE>;
-			scl-gpios = <&gpiof 6 0>;
-			sda-gpios = <&gpiof 7 0>;
-			clock-gate-offset = <CGC_OFFSET_SMBC>;
-			status = "disabled";
-			/delete-property/ fifo-enable;   /* FIFO2 */
-		};
-
-		i2c3: i2c@f03680 {
-			compatible = "ite,enhance-i2c";
-			reg = <0x00f03680 0x0080>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <IT8XXX2_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			port-num = <I2C_CHANNEL_D>;
-			channel-switch-sel = <I2C_CHD_LOCATE>;
-			scl-gpios = <&gpioh 1 0>;
-			sda-gpios = <&gpioh 2 0>;
-			clock-gate-offset = <CGC_OFFSET_SMBD>;
-			status = "disabled";
-		};
-
-		i2c4: i2c@f03500 {
-			compatible = "ite,enhance-i2c";
-			reg = <0x00f03500 0x0080>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <IT8XXX2_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			port-num = <I2C_CHANNEL_E>;
-			channel-switch-sel = <I2C_CHE_LOCATE>;
-			scl-gpios = <&gpioe 0 0>;
-			sda-gpios = <&gpioe 7 0>;
-			clock-gate-offset = <CGC_OFFSET_SMBE>;
-			status = "disabled";
-		};
-
-		i2c5: i2c@f03580 {
-			compatible = "ite,enhance-i2c";
-			reg = <0x00f03580 0x0080>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <IT8XXX2_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			port-num = <I2C_CHANNEL_F>;
-			channel-switch-sel = <I2C_CHF_LOCATE>;
-			scl-gpios = <&gpioa 4 0>;
-			sda-gpios = <&gpioa 5 0>;
-			clock-gate-offset = <CGC_OFFSET_SMBF>;
-			status = "disabled";
-		};
-
 		wuc1: wakeup-controller@f01b00 {
 			compatible = "ite,it8xxx2-wuc";
 			reg = <0x00f01b00 1   /* WUEMR1 */
@@ -604,12 +442,121 @@
 			#wuc-cells = <1>;
 		};
 
-		intc: interrupt-controller@f03f00 {
-			compatible = "ite,it8xxx2-intc";
-			reg = <0x00f03f00 0x0100>;
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
+		i2c0: i2c@f01c40 {
+			compatible = "ite,it8xxx2-i2c";
+			reg = <0x00f01c40 0x0040   /* Base address */
+			       0x00f01c0d 0x0001>; /* MSTFCTRL1 */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <IT8XXX2_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_A>;
+			channel-switch-sel = <I2C_CHA_LOCATE>;
+			scl-gpios = <&gpiob 3 0>;
+			sda-gpios = <&gpiob 4 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBA>;
+			fifo-enable;   /* FIFO1 */
+			status = "disabled";
+		};
+
+		i2c1: i2c@f01c80 {
+			compatible = "ite,it8xxx2-i2c";
+			reg = <0x00f01c80 0x0040   /* Base address */
+			       0x00f01c0f 0x0001>; /* MSTFCTRL2 */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <IT8XXX2_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_B>;
+			channel-switch-sel = <I2C_CHB_LOCATE>;
+			scl-gpios = <&gpioc 1 0>;
+			sda-gpios = <&gpioc 2 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBB>;
+			fifo-enable;   /* FIFO2 */
+			status = "disabled";
+		};
+
+		i2c2: i2c@f01cc0 {
+			compatible = "ite,it8xxx2-i2c";
+			reg = <0x00f01cc0 0x0040   /* Base address */
+			       0x00f01c0f 0x0001>; /* MSTFCTRL2 */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <IT8XXX2_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_C>;
+			channel-switch-sel = <I2C_CHC_LOCATE>;
+			scl-gpios = <&gpiof 6 0>;
+			sda-gpios = <&gpiof 7 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBC>;
+			status = "disabled";
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		pinctrlksi: pinctrl@f01d06 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d06 1   /* KSIGCTRL */
+			       0x00f01d05 1>; /* KSICTRL */
+			pp-od-mask = <NO_FUNC>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		gpioksi: gpiokscan@f01d07 {
+			compatible = "ite,it8xxx2-gpiokscan";
+			reg = <0x00f01d07 1
+			       0x00f01d06 1
+			       0x00f01d08 1
+			       0x00f01d09 1
+			       0x00f01d26 1>;
+			reg-names = "goen", "gctrl", "gdat", "gdmr", "gpod";
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		pinctrlksoh: pinctrl@f01d0a {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d0a 1   /* KSOHGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		gpioksoh: gpiokscan@f01d0b {
+			compatible = "ite,it8xxx2-gpiokscan";
+			reg = <0x00f01d0b 1
+			       0x00f01d0a 1
+			       0x00f01d01 1
+			       0x00f01d0c 1
+			       0x00f01d27 1>;
+			reg-names = "goen", "gctrl", "gdat", "gdmr", "gpod";
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		pinctrlksol: pinctrl@f01d0d {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d0d 1   /* KSOLGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		gpioksol: gpiokscan@f01d0e {
+			compatible = "ite,it8xxx2-gpiokscan";
+			reg = <0x00f01d0e 1
+			       0x00f01d0d 1
+			       0x00f01d00 1
+			       0x00f01d0f 1
+			       0x00f01d28 1>;
+			reg-names = "goen", "gctrl", "gdat", "gdmr", "gpod";
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		twd0: watchdog@f01f00 {
@@ -634,6 +581,59 @@
 			interrupt-parent = <&intc>;
 			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
 			status = "disabled";
+		};
+
+		i2c4: i2c@f03500 {
+			compatible = "ite,enhance-i2c";
+			reg = <0x00f03500 0x0080>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <IT8XXX2_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <I2C_CHANNEL_E>;
+			channel-switch-sel = <I2C_CHE_LOCATE>;
+			scl-gpios = <&gpioe 0 0>;
+			sda-gpios = <&gpioe 7 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBE>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@f03580 {
+			compatible = "ite,enhance-i2c";
+			reg = <0x00f03580 0x0080>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <IT8XXX2_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <I2C_CHANNEL_F>;
+			channel-switch-sel = <I2C_CHF_LOCATE>;
+			scl-gpios = <&gpioa 4 0>;
+			sda-gpios = <&gpioa 5 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBF>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@f03680 {
+			compatible = "ite,enhance-i2c";
+			reg = <0x00f03680 0x0080>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <IT8XXX2_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <I2C_CHANNEL_D>;
+			channel-switch-sel = <I2C_CHD_LOCATE>;
+			scl-gpios = <&gpioh 1 0>;
+			sda-gpios = <&gpioh 2 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBD>;
+			status = "disabled";
+		};
+
+		intc: interrupt-controller@f03f00 {
+			compatible = "ite,it8xxx2-intc";
+			reg = <0x00f03f00 0x0100>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
 		};
 	};
 };

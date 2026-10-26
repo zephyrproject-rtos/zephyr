@@ -120,6 +120,21 @@
 			status = "disabled";
 		};
 
+		can0: can@40064000 {
+			compatible = "adi,max32-can";
+			reg = <0x40064000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 11>;
+			interrupts = <107 0>;
+			status = "disabled";
+		};
+
+		rtc_counter: rtc_counter@40106000 {
+			compatible = "adi,max32-rtc-counter";
+			reg = <0x40106000 0x400>;
+			interrupts = <3 0>;
+			status = "disabled";
+		};
+
 		lptimer0: timer@40113000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40113000 0x2000>;
@@ -133,21 +148,6 @@
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
-		};
-
-		rtc_counter: rtc_counter@40106000 {
-			compatible = "adi,max32-rtc-counter";
-			reg = <0x40106000 0x400>;
-			interrupts = <3 0>;
-			status = "disabled";
-		};
-
-		can0: can@40064000 {
-			compatible = "adi,max32-can";
-			reg = <0x40064000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 11>;
-			interrupts = <107 0>;
-			status = "disabled";
 		};
 	};
 };

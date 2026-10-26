@@ -9,15 +9,6 @@
 #include "mec5.dtsi"
 
 / {
-	flash0: flash@c0000 {
-		reg = <0x000c0000 0x58000>;
-	};
-
-	sram0: memory@118000 {
-		compatible = "mmio-sram";
-		reg = <0x00118000 0xf800>;
-	};
-
 	soc {
 #include "mec5/mec5_dma_chan20.dtsi"
 #include "mec5/mec5_eeprom_8kb.dtsi"
@@ -51,5 +42,14 @@
 			current-speed = <115200>;
 			status = "disabled";
 		};
+	};
+
+	flash0: flash@c0000 {
+		reg = <0x000c0000 0x58000>;
+	};
+
+	sram0: memory@118000 {
+		compatible = "mmio-sram";
+		reg = <0x00118000 0xf800>;
 	};
 };
