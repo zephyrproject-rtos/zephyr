@@ -640,6 +640,7 @@
 		reg = <0x9f000 0x1000>;
 		interrupts = <31 0>;
 		clocks = <&syscon MCUX_LPUART0_CLK>;
+		power-domains = <&core_domain>;
 		/* DMA channels 0 and 1, muxed to LPUART RX and TX */
 		dmas = <&edma0 0 21>, <&edma0 1 22>;
 		status = "disabled";
@@ -650,6 +651,7 @@
 		reg = <0xa0000 0x1000>;
 		interrupts = <32 0>;
 		clocks = <&syscon MCUX_LPUART1_CLK>;
+		power-domains = <&core_domain>;
 		/* DMA channels 2 and 3, muxed to LPUART RX and TX */
 		dmas = <&edma0 2 23>, <&edma0 3 24>;
 		dma-names = "rx", "tx";
@@ -661,6 +663,7 @@
 		reg = <0xa1000 0x1000>;
 		interrupts = <33 0>;
 		clocks = <&syscon MCUX_LPUART2_CLK>;
+		power-domains = <&core_domain>;
 		/* DMA channels 4 and 5, muxed to LPUART RX and TX */
 		dmas = <&edma0 4 25>, <&edma0 5 26>;
 		dma-names = "rx", "tx";
@@ -672,6 +675,7 @@
 		reg = <0xa2000 0x1000>;
 		interrupts = <34 0>;
 		clocks = <&syscon MCUX_LPUART3_CLK>;
+		power-domains = <&core_domain>;
 		/* DMA channels 6 and 7, muxed to LPUART RX and TX */
 		dmas = <&edma0 6 27>, <&edma0 7 28>;
 		dma-names = "rx", "tx";
@@ -683,6 +687,7 @@
 		reg = <0xa3000 0x1000>;
 		interrupts = <35 0>;
 		clocks = <&syscon MCUX_LPUART4_CLK>;
+		power-domains = <&core_domain>;
 		/* DMA channels 8 and 9, muxed to LPUART RX and TX */
 		dmas = <&edma0 8 29>, <&edma0 9 30>;
 		dma-names = "rx", "tx";
@@ -911,6 +916,7 @@
 		reg = <0xda000 0x1000>;
 		interrupts = <95 0>;
 		clocks = <&syscon MCUX_LPUART5_CLK>;
+		power-domains = <&core_domain>;
 		/* DMA channels 10 and 11, muxed to LPUART RX and TX */
 		dmas = <&edma0 10 102>, <&edma0 11 103>;
 		dma-names = "rx", "tx";
