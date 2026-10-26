@@ -427,7 +427,11 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			if (err != 0 && err != -EALREADY) {
 				LOG_WRN("Could not subscribe to handle %u", sub_params->ccc_handle);
 
-				inst->cb->discover(&inst->vocs, err);
+				inst->busy = false;
+
+				if (inst->cb && inst->cb->discover) {
+					inst->cb->discover(&inst->vocs, err);
+				}
 
 				return BT_GATT_ITER_STOP;
 			}
