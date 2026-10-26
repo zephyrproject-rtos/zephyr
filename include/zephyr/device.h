@@ -58,6 +58,16 @@ extern "C" {
 #define Z_DEVICE_IS_MUTABLE(node_id)                                                               \
 	COND_CODE_1(IS_ENABLED(CONFIG_DEVICE_MUTABLE), (DT_PROP(node_id, zephyr_mutable)), (0))
 
+/**
+ * @brief Name of the weak alias of the device object for @p node_id
+ *
+ * The alias is declared weak for every status "okay" node and defined by
+ * DEVICE_DT_DEFINE(), so a reference to it resolves to the device object or to
+ * NULL at link time. The name must not start with `__device_`, which the build
+ * scripts use to find device objects in the ELF file.
+ */
+#define Z_DEVICE_DT_WEAK_NAME_GET(node_id) _CONCAT(__weak_device_, Z_DEVICE_DT_DEV_ID(node_id))
+
 /** @endcond */
 
 /**
@@ -412,6 +422,41 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_GET_OR_NULL(node_id)                                         \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id),                          \
 		    (DEVICE_DT_GET(node_id)), (NULL))
+
+/**
+ * @brief Get a @ref device reference from a devicetree node identifier, or
+ * `NULL` if no device object was allocated for it.
+ *
+ * If the node has status `okay` and a driver allocated a device object for it
+ * with DEVICE_DT_DEFINE() or a related macro, this is equivalent to
+ * `DEVICE_DT_GET(node_id)`. Otherwise, it is `NULL`.
+ *
+ * Unlike DEVICE_DT_GET() and DEVICE_DT_GET_OR_NULL(), this does not fail at
+ * link time when the node is enabled but its driver is not compiled in. The
+ * value is resolved by the linker, so it can be used in static initializers.
+ *
+ * The result must be checked before use, e.g. with device_is_ready(), which
+ * accepts `NULL`.
+ *
+ * @param node_id A devicetree node identifier
+ *
+ * @return A pointer to the device object created for that node, or `NULL`
+ */
+#define DEVICE_DT_GET_OPTIONAL(node_id)                                        \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id),                          \
+		    (&Z_DEVICE_DT_WEAK_NAME_GET(node_id)), (NULL))
+
+/**
+ * @brief Like @ref DEVICE_DT_GET_OPTIONAL, for an instance of a
+ * `DT_DRV_COMPAT` compatible.
+ *
+ * This is equivalent to `DEVICE_DT_GET_OPTIONAL(DT_DRV_INST(inst))`.
+ *
+ * @param inst `DT_DRV_COMPAT` instance number
+ *
+ * @return A pointer to the device object created for that instance, or `NULL`
+ */
+#define DEVICE_DT_INST_GET_OPTIONAL(inst) DEVICE_DT_GET_OPTIONAL(DT_DRV_INST(inst))
 
 /**
  * @brief Get a @ref device reference from a devicetree phandles by idx.
@@ -1377,6 +1422,21 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param state Reference to device state.
  * @param ... Optional dependencies, manually specified.
  */
+/**
+ * @brief Define the weak alias of a device object.
+ *
+ * The alias is declared weak for every status "okay" node by
+ * Z_MAYBE_DEVICE_DECLARE_INTERNAL(), so references to it through
+ * DEVICE_DT_GET_OPTIONAL() resolve to NULL when no device object is defined.
+ *
+ * @param node_id Devicetree node id for the device.
+ * @param dev_id Device identifier.
+ */
+#define Z_DEVICE_DT_WEAK_ALIAS_DEFINE(node_id, dev_id)                                             \
+	extern IF_DISABLED(Z_DEVICE_IS_MUTABLE(node_id), (const)) struct device                    \
+		Z_DEVICE_DT_WEAK_NAME_GET(node_id)                                                 \
+		__weak __attribute__((__alias__(STRINGIFY(DEVICE_NAME_GET(dev_id)))))
+
 #define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, deinit_fn, flags, pm,   \
 			data, config, level, prio, api, state, ...)             \
 	Z_DEVICE_NAME_CHECK(name);                                              \
@@ -1394,6 +1454,9 @@ device_get_dt_nodelabels(const struct device *dev)
                                                                                 \
 	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, level, prio);               \
                                                                                 \
+	IF_ENABLED(DT_NODE_EXISTS(node_id),                                     \
+		   (Z_DEVICE_DT_WEAK_ALIAS_DEFINE(node_id, dev_id);))           \
+                                                                                \
 	IF_ENABLED(CONFIG_LLEXT,                                                \
 		   (IF_ENABLED(DT_NODE_EXISTS(node_id),                         \
 				(Z_DEVICE_EXPORT(node_id);))))
@@ -1407,10 +1470,16 @@ device_get_dt_nodelabels(const struct device *dev)
  * This is only "maybe" a device because some nodes have status "okay", but
  * don't have a corresponding @ref device allocated. There's no way to figure
  * that out until after we've built the zephyr image, though.
+ *
+ * The weak alias used by DEVICE_DT_GET_OPTIONAL() is declared alongside, so
+ * that references to it resolve to NULL when the device is not allocated.
  */
 #define Z_MAYBE_DEVICE_DECLARE_INTERNAL(node_id)                                                   \
 	extern IF_DISABLED(Z_DEVICE_IS_MUTABLE(node_id), (const))                                  \
-		struct device DEVICE_DT_NAME_GET(node_id);
+		struct device DEVICE_DT_NAME_GET(node_id);                                         \
+	extern IF_DISABLED(Z_DEVICE_IS_MUTABLE(node_id), (const))                                  \
+		struct device Z_DEVICE_DT_WEAK_NAME_GET(node_id)                                   \
+		__weak;
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
 

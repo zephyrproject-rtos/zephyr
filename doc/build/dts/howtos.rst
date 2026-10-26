@@ -113,9 +113,10 @@ device is to use :c:macro:`DEVICE_DT_GET`:
    }
 
 There are variants of :c:macro:`DEVICE_DT_GET` such as
-:c:macro:`DEVICE_DT_GET_OR_NULL`, :c:macro:`DEVICE_DT_GET_ONE` or
-:c:macro:`DEVICE_DT_GET_ANY`. This idiom fetches the device pointer at
-build-time, which means there is no runtime penalty. This method is useful if
+:c:macro:`DEVICE_DT_GET_OR_NULL`, :c:macro:`DEVICE_DT_GET_OPTIONAL`,
+:c:macro:`DEVICE_DT_GET_ONE` or :c:macro:`DEVICE_DT_GET_ANY`. This idiom
+fetches the device pointer at build-time, which means there is no runtime
+penalty. This method is useful if
 you want to store the device pointer as configuration data. But because the
 device may not be initialized, or may have failed to initialize, you must verify
 that the device is ready to be used before passing it to any API functions.

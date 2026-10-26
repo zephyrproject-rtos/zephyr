@@ -35,6 +35,7 @@ from devicetree import edtlib  # noqa: F401
 # Prefix used for "struct device" reference initialized based on devicetree
 # entries with a known ordinal.
 _DEVICE_ORD_PREFIX = "__device_dts_ord_"
+_DEVICE_WEAK_ALIAS_PREFIX = "__weak_device_dts_ord_"
 
 # Defined init level in order of priority.
 _DEVICE_INIT_LEVELS = ["EARLY", "PRE_KERNEL_1", "PRE_KERNEL_2", "POST_KERNEL", "APPLICATION", "SMP"]
@@ -131,6 +132,9 @@ class ZephyrInitLevels:
                     sym.name
                     and sym.entry.st_size > 0
                     and sym.entry.st_info.type in ["STT_OBJECT", "STT_FUNC"]
+                    # The weak alias of a device object shares the address of
+                    # the device object, which is the one to list for it.
+                    and not sym.name.startswith(_DEVICE_WEAK_ALIAS_PREFIX)
                 ):
                     self._objects[sym.entry.st_value] = (
                         sym.name,
