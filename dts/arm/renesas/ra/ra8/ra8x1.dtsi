@@ -735,8 +735,8 @@
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40221000 0x100>;
-			interrupts = <83 1>, <84 1>;
-			interrupt-names = "agti", "agtcmai";
+			interrupts = <83 1>, <84 1>, <82 1>;
+			interrupt-names = "agti", "agtcmai", "agtcmbi";
 			renesas,count-source = "AGT_CLOCK_LOCO";
 			renesas,prescaler = <0>;
 			renesas,resolution = <16>;
@@ -752,8 +752,8 @@
 			compatible = "renesas,ra-agt";
 			channel = <1>;
 			reg = <0x40221100 0x100>;
-			interrupts = <85 1>, <86 1>;
-			interrupt-names = "agti", "agtcmai";
+			interrupts = <85 1>, <86 1>, <87 1>;
+			interrupt-names = "agti", "agtcmai", "agtcmbi";
 			renesas,count-source = "AGT_CLOCK_LOCO";
 			renesas,prescaler = <0>;
 			renesas,resolution = <16>;
