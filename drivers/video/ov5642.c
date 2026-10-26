@@ -758,100 +758,10 @@ static DEVICE_API(video, ov5642_driver_api) = {
 
 static int ov5642_init_controls(const struct device *dev)
 {
-	int ret;
 	struct ov5642_data *drv_data = dev->data;
-	struct ov5642_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 1,
-			      .step = 1,
-			      .def = 0
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 1,
-			      .step = 1,
-			      .def = 0
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_menu_ctrl(&ctrls->ae, dev, VIDEO_CID_EXPOSURE_AUTO,
-				   VIDEO_EXPOSURE_AUTO, NULL);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->awb, dev, VIDEO_CID_AUTO_WHITE_BALANCE,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 1,
-			      .step = 1,
-			      .def = 1
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->auto_gain, dev, VIDEO_CID_AUTOGAIN,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 1,
-			      .step = 1,
-			      .def = 1
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
-			      (struct video_ctrl_range){
-			      .min = -15,
-			      .max = 15,
-			      .step = 1,
-			      .def = 0
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 255,
-			      .step = 1,
-			      .def = 0
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->saturation, dev, VIDEO_CID_SATURATION,
-			      (struct video_ctrl_range){
-			      .min = 0,
-			      .max = 255,
-			      .step = 1,
-			      .def = 64
-			      });
-	if (ret < 0) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->hue, dev, VIDEO_CID_HUE,
-			       (struct video_ctrl_range){
-			       .min = 0,
-			       .max = 359,
-			       .step = 1,
-			       .def = 0
-			       });
+	return video_register_ctrls((struct video_ctrl *)&drv_data->ctrls,
+				    sizeof(drv_data->ctrls) / sizeof(struct video_ctrl), dev);
 }
 
 static int ov5642_init(const struct device *dev)
@@ -937,7 +847,23 @@ static int ov5642_init(const struct device *dev)
 #endif
 
 #define OV5642_INIT(n)								\
-	static struct ov5642_data ov5642_data_##n;				\
+	static struct ov5642_data ov5642_data_##n = {						\
+		.ctrls = {									\
+			.auto_gain = {.id = VIDEO_CID_AUTOGAIN, .range = {.def = 1}},		\
+			.brightness = {.id = VIDEO_CID_BRIGHTNESS,				\
+				       .range = {.min = -15, .max = 15, .step = 1}},		\
+			.contrast = {.id = VIDEO_CID_CONTRAST,					\
+				     .range = {.max = 255, .step = 1}},				\
+			.hue = {.id = VIDEO_CID_HUE, .range = {.max = 359, .step = 1}},		\
+			.saturation = {.id = VIDEO_CID_SATURATION,				\
+				       .range = {.max = 255, .step = 1, .def = 64}},		\
+			.hflip = {.id = VIDEO_CID_HFLIP},					\
+			.vflip = {.id = VIDEO_CID_VFLIP},					\
+			.ae = {.id = VIDEO_CID_EXPOSURE_AUTO,					\
+			       .range = {.def = VIDEO_EXPOSURE_AUTO}},				\
+			.awb = {.id = VIDEO_CID_AUTO_WHITE_BALANCE, .range = {.def = 1}},	\
+		},										\
+	};											\
 										\
 	static const struct ov5642_config ov5642_cfg_##n = {			\
 		.i2c = I2C_DT_SPEC_INST_GET(n),					\

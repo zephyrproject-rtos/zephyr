@@ -341,9 +341,7 @@ static int emul_imager_init_controls(const struct device *dev)
 {
 	struct emul_imager_data *drv_data = dev->data;
 
-	return video_init_ctrl(
-		&drv_data->ctrls.custom, dev, EMUL_IMAGER_CID_CUSTOM,
-		(struct video_ctrl_range){.min = 0, .max = 255, .step = 1, .def = 128});
+	return video_register_ctrl(&drv_data->ctrls.custom, dev);
 }
 
 int emul_imager_init(const struct device *dev)
@@ -384,7 +382,10 @@ int emul_imager_init(const struct device *dev)
 }
 
 #define EMUL_IMAGER_DEFINE(inst)                                                                   \
-	static struct emul_imager_data emul_imager_data_##inst;                                    \
+	static struct emul_imager_data emul_imager_data_##inst = {                                 \
+		.ctrls.custom = {.id = EMUL_IMAGER_CID_CUSTOM,                                     \
+				 .range = {.max = 255, .step = 1, .def = 128}},                    \
+	};                                                                                         \
                                                                                                    \
 	static const struct emul_imager_config emul_imager_cfg_##inst = {                          \
 		.i2c = /* I2C_DT_SPEC_INST_GET(inst) */ {0},                                       \

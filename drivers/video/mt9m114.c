@@ -511,18 +511,10 @@ static DEVICE_API(video, mt9m114_driver_api) = {
 
 static int mt9m114_init_controls(const struct device *dev)
 {
-	int ret;
 	struct mt9m114_data *drv_data = dev->data;
-	struct mt9m114_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls((struct video_ctrl *)&drv_data->ctrls,
+				    sizeof(drv_data->ctrls) / sizeof(struct video_ctrl), dev);
 }
 
 static int mt9m114_init(const struct device *dev)
@@ -579,7 +571,9 @@ static int mt9m114_init(const struct device *dev)
 }
 
 #define MT9M114_INIT(n)                                                                            \
-	static struct mt9m114_data mt9m114_data_##n;                                               \
+	static struct mt9m114_data mt9m114_data_##n = {                                            \
+		.ctrls = {.hflip = {.id = VIDEO_CID_HFLIP}, .vflip = {.id = VIDEO_CID_VFLIP}},     \
+	};                                                                                         \
                                                                                                    \
 	static const struct mt9m114_config mt9m114_cfg_##n = {                                     \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \

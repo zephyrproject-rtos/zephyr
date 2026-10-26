@@ -575,12 +575,11 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 static int video_stm32_dcmi_init_controls(const struct device *dev)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-	struct video_stm32_dcmi_ctrls *ctrls = &data->ctrls;
 	const struct video_stm32_dcmi_config *config = dev->config;
 
-	return video_init_ctrl(&ctrls->snapshot, dev, VIDEO_CID_ST_SNAPSHOT_MODE,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1,
-							 .def = config->snapshot_mode});
+	data->ctrls.snapshot.range.def = config->snapshot_mode;
+
+	return video_register_ctrl(&data->ctrls.snapshot, dev);
 }
 
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)
@@ -630,6 +629,7 @@ PINCTRL_DT_INST_DEFINE(0);
 	},
 
 static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
+	.ctrls.snapshot = {.id = VIDEO_CID_ST_SNAPSHOT_MODE, .range = {.max = 1, .step = 1}},
 	.hdcmi = {
 		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
 		.Init = {
