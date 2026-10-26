@@ -1,0 +1,70 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* tc@40003800 */
+&tc0 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <32>;
+	prescaler = <1>;
+	status = "okay";
+};
+
+/* tc@40003c00 */
+&tc1 {
+	status = "disabled";
+};
+
+/* tcc@41018000 */
+&tcc1 {
+	status = "disabled";
+};
+
+/* tc@4101a000 */
+&tc2 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <32>;
+	prescaler = <1>;
+	status = "okay";
+};
+
+/* tc@4101c000 */
+&tc3 {
+	status = "disabled";
+};
+
+/* tc@42001400 */
+&tc4 {
+	compatible = "microchip,tc-g1-counter";
+	clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC4>,
+		 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC4>,
+		 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC5>;
+	clock-names = "mclk", "gclk", "client_mclk";
+	max-bit-width = <32>;
+	prescaler = <1>;
+	status = "okay";
+};
+
+/* tc@42001800 */
+&tc5 {
+	status = "disabled";
+};
+
+/* tc@43001400 */
+&tc6 {
+	compatible = "microchip,tc-g1-counter";
+	clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TC6>,
+		 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC6>,
+		 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TC7>;
+	clock-names = "mclk", "gclk", "client_mclk";
+	max-bit-width = <32>;
+	prescaler = <1>;
+	status = "okay";
+};
+
+/* tc@43001800 */
+&tc7 {
+	status = "disabled";
+};
