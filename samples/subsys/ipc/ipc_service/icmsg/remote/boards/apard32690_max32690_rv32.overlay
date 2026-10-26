@@ -12,6 +12,18 @@
 		zephyr,sram = &sram8_low;
 	};
 
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			dcache-alignment = <32>;
+			tx-region = <&sram8_tx>;
+			rx-region = <&sram8_rx>;
+			mboxes = <&mbox 0 &mbox 0>;
+			mbox-names = "tx", "rx";
+			status = "okay";
+		};
+	};
+
 	sram8_low: memory@20100000 {
 		compatible = "mmio-sram";
 		reg = <0x20100000 DT_SIZE_K(64)>;
@@ -28,18 +40,6 @@
 	sram8_rx: memory@20118000 {
 		compatible = "mmio-sram";
 		reg = <0x20118000 DT_SIZE_K(32)>;
-	};
-
-	ipc {
-		ipc0: ipc0 {
-			compatible = "zephyr,ipc-icmsg";
-			dcache-alignment = <32>;
-			tx-region = <&sram8_tx>;
-			rx-region = <&sram8_rx>;
-			mboxes = <&mbox 0 &mbox 0>;
-			mbox-names = "tx", "rx";
-			status = "okay";
-		};
 	};
 };
 
