@@ -141,6 +141,11 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* USB Type-C
+
+  * Dual-role ports can prefer the Sink role through the Try.SNK and TryWait.SRC states
+    (:kconfig:option:`CONFIG_USBC_CSM_DRP_TRY_SNK`).
+
 * Utilities
 
   * :c:func:`utf8_is_valid` checks a given number of bytes for well-formed UTF-8
