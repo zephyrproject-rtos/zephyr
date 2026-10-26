@@ -251,7 +251,7 @@ smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
 	k_work_submit_to_queue(&smp_work_queue, &smpt->work);
 }
 
-#ifdef CONFIG_SMP_CLIENT
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
 struct k_work_q *smp_get_wq(void)
 {
 	return &smp_work_queue;

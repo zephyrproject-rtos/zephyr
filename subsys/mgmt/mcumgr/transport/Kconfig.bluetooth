@@ -17,12 +17,6 @@ menuconfig MCUMGR_TRANSPORT_BT
 
 if MCUMGR_TRANSPORT_BT
 
-config MCUMGR_TRANSPORT_BT_CLIENT
-	bool "Bluetooth MCUmgr SMP client transport"
-	depends on BT_CENTRAL && BT_GATT_CLIENT && MCUMGR_GRP_TRANSPORT
-	help
-	  Enables connecting to and issuing commands to a remote Bluetooth MCUmgr server.
-
 config MCUMGR_TRANSPORT_BT_REASSEMBLY
 	bool "Reassemble packets in Bluetooth SMP transport"
 	select MCUMGR_TRANSPORT_REASSEMBLY
@@ -117,3 +111,39 @@ config MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
 	  will be statically defined and registered.
 
 endif # MCUMGR_TRANSPORT_BT
+
+menuconfig MCUMGR_TRANSPORT_BT_CLIENT
+	bool "Bluetooth MCUmgr SMP client transport"
+	depends on BT_CENTRAL && BT_GATT_CLIENT && MCUMGR_GRP_TRANSPORT
+	select MCUMGR_TRANSPORT_REASSEMBLY
+	help
+	  Enables connecting to and issuing commands to a remote Bluetooth MCUmgr server, as the
+	  GATT client of its SMP service. This is the outgoing side of transport management
+	  bridges over Bluetooth, which serves one bridge at a time. With MCUMGR_TRANSPORT_BT,
+	  connections to the SMP service of this device can be the incoming side of a bridge.
+
+	  Packets are written in ATT_MTU-3 byte fragments, so enable BT_GATT_AUTO_UPDATE_MTU
+	  or call bt_gatt_exchange_mtu(), or every fragment is limited to 20 bytes.
+
+if MCUMGR_TRANSPORT_BT_CLIENT
+
+config MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS
+	int "Bluetooth SMP client transmit credits"
+	range 1 255
+	default 2 if BT_ATT_TX_COUNT > 1
+	default 1
+	help
+	  Number of fragments, each an ATT Write Without Response, that the transport may have
+	  in flight at once. Must not exceed BT_ATT_TX_COUNT, which a build assertion checks.
+	  The default is 2, or 1 when BT_ATT_TX_COUNT is 1.
+
+config MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDIT_TIMEOUT
+	int "Bluetooth SMP client transmit credit timeout in milliseconds"
+	range 1 10000
+	default 500
+	help
+	  How long the first fragment of a packet waits for a transmit credit before the
+	  packet is dropped. The wait blocks the MCUmgr work queue. Once its first fragment has
+	  been written, a packet waits for credits until the link is lost.
+
+endif # MCUMGR_TRANSPORT_BT_CLIENT
