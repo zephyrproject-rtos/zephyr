@@ -116,16 +116,15 @@ static int get_bytes_count_for_hex(char *arg)
 	return MIN(MAX_BYTES_FOR_REGISTER_INDEX, length);
 }
 
-static struct i3c_device_desc *get_i3c_list_desc_from_dev_name(const struct device *dev,
-							       const char *tdev_name)
+static struct i3c_device_desc *get_i3c_list_desc_from_dev(const struct device *dev,
+							  const struct device *tdev)
 {
 	struct i3c_driver_config *config;
 	uint8_t i;
 
 	config = (struct i3c_driver_config *)dev->config;
 	for (i = 0; i < config->dev_list.num_i3c; i++) {
-		if (strcmp(config->dev_list.i3c[i].dev->name, tdev_name) == 0) {
-			/* only look for a device with the same name */
+		if (config->dev_list.i3c[i].dev == tdev) {
 			return &config->dev_list.i3c[i];
 		}
 	}
@@ -133,14 +132,13 @@ static struct i3c_device_desc *get_i3c_list_desc_from_dev_name(const struct devi
 	return NULL;
 }
 
-static struct i3c_device_desc *get_i3c_attached_desc_from_dev_name(const struct device *dev,
-								   const char *tdev_name)
+static struct i3c_device_desc *get_i3c_attached_desc_from_dev(const struct device *dev,
+							      const struct device *tdev)
 {
 	struct i3c_device_desc *i3c_desc;
 
 	I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {
-		/* only look for a device with the same name */
-		if (strcmp(i3c_desc->dev->name, tdev_name) == 0) {
+		if (i3c_desc->dev == tdev) {
 			return i3c_desc;
 		}
 	}
@@ -161,7 +159,7 @@ static int i3c_parse_args(const struct shell *sh, char **argv, const struct devi
 		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
 		return -ENODEV;
 	}
-	*desc = get_i3c_attached_desc_from_dev_name(*dev, (*tdev)->name);
+	*desc = get_i3c_attached_desc_from_dev(*dev, *tdev);
 	if (!*desc) {
 		shell_error(sh, "I3C: Device %s not attached to bus.", (*tdev)->name);
 		return -ENODEV;
@@ -207,7 +205,6 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_driver_data *data;
 	struct i3c_device_desc *desc;
 	struct i3c_i2c_device_desc *i2c_desc;
-	bool found = false;
 
 	dev = shell_device_get_binding(argv[ARGV_DEV]);
 
@@ -223,23 +220,12 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 			shell_error(sh, "I3C: Target Device driver %s not found.", argv[ARGV_TDEV]);
 			return -ENODEV;
 		}
-		if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
-			I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
-				/* only look for a device with the same name */
-				if (strcmp(desc->dev->name, tdev->name) == 0) {
-					print_i3c_device_info(sh, desc);
-					found = true;
-					break;
-				}
-			}
-		} else {
-			shell_print(sh, "I3C: No devices found.");
-			return -ENODEV;
-		}
-		if (found == false) {
+		desc = get_i3c_attached_desc_from_dev(dev, tdev);
+		if (desc == NULL) {
 			shell_error(sh, "I3C: Target device not found.");
 			return -ENODEV;
 		}
+		print_i3c_device_info(sh, desc);
 	} else if (argc == 2) {
 		/* This gets all "currently attached" I3C and I2C devices */
 		if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
@@ -387,7 +373,7 @@ static int i3c_write_from_buffer(const struct shell *sh, char *s_dev_name, char 
 		shell_error(sh, "I3C: Device driver %s not found.", s_tdev_name);
 		return -ENODEV;
 	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	desc = get_i3c_attached_desc_from_dev(dev, tdev);
 	if (!desc) {
 		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
 		return -ENODEV;
@@ -452,7 +438,7 @@ static int i3c_read_to_buffer(const struct shell *sh, char *s_dev_name, char *s_
 		shell_error(sh, "I3C: Device driver %s not found.", s_tdev_name);
 		return -ENODEV;
 	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	desc = get_i3c_attached_desc_from_dev(dev, tdev);
 	if (!desc) {
 		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
 		return -ENODEV;
@@ -1704,7 +1690,7 @@ static int cmd_i3c_attach(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
 		return -ENODEV;
 	}
-	desc = get_i3c_list_desc_from_dev_name(dev, tdev->name);
+	desc = get_i3c_list_desc_from_dev(dev, tdev);
 	if (!desc) {
 		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
 		return -ENODEV;
