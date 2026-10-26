@@ -736,7 +736,7 @@ static int cmd_hid_sdp_discover(const struct shell *sh, size_t argc, char *argv[
 		return -EBUSY;
 	}
 
-	hid_discov[index].params = discov_hid_template;
+	memcpy(&hid_discov[index].params, &discov_hid_template, sizeof(hid_discov[index].params));
 	hid_discov[index].pending = true;
 
 	err = bt_sdp_discover(default_conn, &hid_discov[index].params);
