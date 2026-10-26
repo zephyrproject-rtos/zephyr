@@ -12,6 +12,7 @@ compatible: "infineon,uart"
 include:
   - name: uart-controller.yaml
   - name: pinctrl-device.yaml
+  - name: mux-consumer.yaml
   - name: "infineon,scb.yaml"
   - name: "infineon,system-interrupts.yaml"
 
