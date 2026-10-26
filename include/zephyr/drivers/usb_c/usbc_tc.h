@@ -24,6 +24,7 @@
  * @{
  */
 
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -135,6 +136,11 @@ extern "C" {
  */
 #define TC_T_DRP_TRY_MAX_MS 150
 
+#define TC_T_DRP_TRY_MS 100
+
+BUILD_ASSERT(TC_T_DRP_TRY_MS >= TC_T_DRP_TRY_MIN_MS && TC_T_DRP_TRY_MS <= TC_T_DRP_TRY_MAX_MS,
+	     "tDRPTry out of spec (min … max)");
+
 /**
  * @brief Minimum wait time associated with the Try.SNK state.
  *	  See Table 4-30 DRP Timing Parameters
@@ -212,6 +218,12 @@ extern "C" {
  *	  See Table 4-31 CC Timing
  */
 #define TC_T_TRY_CC_DEBOUNCE_MAX_MS 20
+
+#define TC_T_TRY_CC_DEBOUNCE_MS 15
+
+BUILD_ASSERT(TC_T_TRY_CC_DEBOUNCE_MS >= TC_T_TRY_CC_DEBOUNCE_MIN_MS &&
+	     TC_T_TRY_CC_DEBOUNCE_MS <= TC_T_TRY_CC_DEBOUNCE_MAX_MS,
+	     "Try CC debounce time out of spec (min … max)");
 
 /**
  * @brief Minimum time a self-powered port shall remain in the ErrorRecovery state.

@@ -37,5 +37,9 @@ void tc_attached_src_exit(void *obj);
 /**
  * @brief Super State to set RP
  */
+void tc_try_wait_src_entry(void *obj);
+enum smf_state_result tc_try_wait_src_run(void *obj);
+void tc_try_wait_src_exit(void *obj);
+
 void tc_cc_rp_entry(void *obj);
 #endif /* ZEPHYR_SUBSYS_USBC_TC_SRC_STATES_INTERNAL_H_ */

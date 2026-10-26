@@ -30,6 +30,10 @@ void tc_attached_snk_exit(void *obj);
 /**
  * @brief Super state that applies Rd
  */
+void tc_try_snk_entry(void *obj);
+enum smf_state_result tc_try_snk_run(void *obj);
+void tc_try_snk_exit(void *obj);
+
 void tc_cc_rd_entry(void *obj);
 
 #endif /* ZEPHYR_SUBSYS_USBC_TC_SNK_STATES_H_ */
