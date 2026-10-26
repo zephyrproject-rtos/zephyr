@@ -2,6 +2,8 @@
  * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * @satisfies ZEP-SRS-28-7
  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_TIME_UNITS_H_
