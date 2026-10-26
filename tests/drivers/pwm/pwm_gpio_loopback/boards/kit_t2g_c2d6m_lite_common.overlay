@@ -1,0 +1,57 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	zephyr,user {
+		pwms = <&pwm0_36 0 PWM_MSEC(5) PWM_POLARITY_NORMAL>,
+		       <&pwm2_11 0 PWM_MSEC(5) PWM_POLARITY_NORMAL>;
+		gpios = <&gpio_prt9 2 GPIO_ACTIVE_HIGH>,
+			<&gpio_prt9 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&clk_peri0 {
+	status = "okay";
+};
+
+&gpio_prt9 {
+	status = "okay";
+};
+
+&peri0_group0_16bit_0 {
+	status = "okay";
+};
+
+&tcpwm0_36 {
+	clock-frequency = <1000000>;
+	status = "okay";
+};
+
+&pwm0_36 {
+	clocks = <&peri0_group0_16bit_0>;
+	pinctrl-0 = <&p9_3_pwm0_36>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&peri0_group0_16bit_1 {
+	status = "okay";
+};
+
+&tcpwm2_11 {
+	clock-frequency = <1000000>;
+	status = "okay";
+};
+
+&pwm2_11 {
+	clocks = <&peri0_group0_16bit_1>;
+	pinctrl-0 = <&p15_5_pwm2_11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
