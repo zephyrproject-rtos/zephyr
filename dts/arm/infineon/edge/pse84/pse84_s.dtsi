@@ -6,6 +6,7 @@
  */
 
 #include <mem.h>
+#include <zephyr/dt-bindings/mux/infineon-trigmux-pse84.h>
 
 / {
 	sram0: sram0@34000000 {
@@ -55,6 +56,22 @@
 	};
 
 	soc {
+		trigmux0: mux-controller@52008000 {
+			compatible = "infineon,trigmux";
+			reg = <0x52008000 0x8000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
+		trigmux1: mux-controller@54008000 {
+			compatible = "infineon,trigmux";
+			reg = <0x54008000 0x8000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@52800000 {
 			compatible = "infineon,pinctrl";
 			reg = <0x52800000 0x20000>;
