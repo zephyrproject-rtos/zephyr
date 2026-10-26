@@ -70,6 +70,7 @@ static void uart_rx_interrupt_service(const struct device *dev, uint8_t *receive
 				      int *rx_byte_offset)
 {
 	int rx_data_length = 0;
+
 	do {
 		rx_data_length = uart_fifo_read(dev, receive_buffer_pointer + *rx_byte_offset,
 						TEST_BUFFER_LEN);
@@ -83,11 +84,7 @@ static void uart_rx_interrupt_service(const struct device *dev, uint8_t *receive
 static void interrupt_driven_uart_callback_main_uart(const struct device *dev, void *user_data)
 {
 	int err;
-#ifdef CONFIG_SOC_CC3551E
-	static int tx_byte_offset = 1;
-#else
 	static int tx_byte_offset;
-#endif /* CONFIG_SOC_CC3551E */
 	static int rx_byte_offset;
 
 	uart_irq_update(dev);
@@ -220,12 +217,9 @@ ZTEST(uart_elementary, test_uart_basic_transmission)
 	uart_irq_err_enable(uart_dev);
 	uart_irq_rx_enable(uart_dev);
 	uart_irq_tx_enable(uart_dev);
-#ifdef CONFIG_SOC_CC3551E
-	/* Initialize transmission by filling TX FIFO with the first byte of the pattern */
-	uart_fifo_fill(uart_dev, test_pattern, 1);
-#endif /* CONFIG_SOC_CC3551E */
-	/* wait for the transmission to finish (no polling is intentional) */
-	k_sleep(K_USEC(1000 * SLEEP_TIME_US));
+
+	/* wait for the tramission to finish (no polling is intentional) */
+	k_sleep(K_USEC(100 * SLEEP_TIME_US));
 
 	uart_irq_tx_disable(uart_dev);
 	uart_irq_rx_disable(uart_dev);
