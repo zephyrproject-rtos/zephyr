@@ -80,6 +80,8 @@ volatile long long_one = 1L;
  */
 /**
  * @brief Test c library limits
+ *
+ * @verifies ZEP-SRS-18-8
  */
 ZTEST(libc_common, test_limits)
 {
@@ -93,6 +95,8 @@ static ssize_t foobar(void)
 
 /**
  * @brief Test C library ssize_t
+ *
+ * @verifies ZEP-SRS-18-8
  */
 ZTEST(libc_common, test_ssize_t)
 {
@@ -102,6 +106,8 @@ ZTEST(libc_common, test_ssize_t)
 /**
  * @brief Test boolean types and values library
  *
+ *
+ * @verifies ZEP-SRS-18-3
  */
 ZTEST(libc_common, test_stdbool)
 {
@@ -142,6 +148,8 @@ volatile uint32_t unsigned_int = 0xffffff00;
 /**
  * @brief Test integer types library
  *
+ *
+ * @verifies ZEP-SRS-18-8
  */
 ZTEST(libc_common, test_stdint)
 {
@@ -174,6 +182,8 @@ char buffer[BUFSIZE];
 /**
  * @brief Test string memset
  *
+ *
+ * @verifies ZEP-SRS-18-6
  */
 ZTEST(libc_common, test_memset)
 {
@@ -195,6 +205,8 @@ ZTEST(libc_common, test_memset)
  *
  * @see strlen(), strnlen().
  *
+ *
+ * @verifies ZEP-SRS-18-5
  */
 ZTEST(libc_common, test_strlen)
 {
@@ -211,6 +223,8 @@ ZTEST(libc_common, test_strlen)
  *
  * @see strcmp(), strncasecmp().
  *
+ *
+ * @verifies ZEP-SRS-18-5
  */
 ZTEST(libc_common, test_strcmp)
 {
@@ -232,6 +246,8 @@ ZTEST(libc_common, test_strcmp)
  * @brief Test string N compare function
  *
  * @see strncmp().
+ *
+ * @verifies ZEP-SRS-18-5
  */
 ZTEST(libc_common, test_strncmp)
 {
@@ -259,6 +275,8 @@ ZTEST(libc_common, test_strncmp)
  * @brief Test string copy function
  *
  * @see strcpy().
+ *
+ * @verifies ZEP-SRS-18-5
  */
 ZTEST(libc_common, test_strcpy)
 {
@@ -273,6 +291,8 @@ ZTEST(libc_common, test_strcpy)
  * @brief Test string N copy function
  *
  * @see strncpy().
+ *
+ * @verifies ZEP-SRS-18-5
  */
 ZTEST(libc_common, test_strncpy)
 {
@@ -292,6 +312,8 @@ ZTEST(libc_common, test_strncpy)
  * @brief Test string scanning function
  *
  * @see strchr().
+ *
+ * @verifies ZEP-SRS-18-5
  */
 ZTEST(libc_common, test_strchr)
 {
@@ -316,6 +338,8 @@ ZTEST(libc_common, test_strchr)
  * @brief Test string prefix match functions
  *
  * @see strspn(),strcspn().
+ *
+ * @verifies ZEP-SRS-18-5
  */
 ZTEST(libc_common, test_strxspn)
 {
@@ -340,6 +364,8 @@ ZTEST(libc_common, test_strxspn)
  * @brief Test memory comparison function
  *
  * @see memcmp()
+ *
+ * @verifies ZEP-SRS-18-6
  */
 ZTEST(libc_common, test_memcmp)
 {
@@ -525,6 +551,8 @@ ZTEST(libc_common, test_checktype)
  * @brief Test memchr function
  *
  * @see memchr().
+ *
+ * @verifies ZEP-SRS-18-6
  */
 ZTEST(libc_common, test_memchr)
 {
@@ -544,6 +572,8 @@ ZTEST(libc_common, test_memchr)
  * @brief Test memcpy operation
  *
  * @see memcpy().
+ *
+ * @verifies ZEP-SRS-18-6
  */
 ZTEST(libc_common, test_memcpy)
 {
@@ -594,6 +624,8 @@ ZTEST(libc_common, test_memcpy)
  * @brief Test memmove operation
  *
  * @see memmove().
+ *
+ * @verifies ZEP-SRS-18-6
  */
 ZTEST(libc_common, test_memmove)
 {
@@ -620,6 +652,8 @@ ZTEST(libc_common, test_memmove)
  *
  * @see strcat(), strcspn(), strncat().
  *
+ *
+ * @verifies ZEP-SRS-18-5
  */
 ZTEST(libc_common, test_str_operate)
 {

@@ -2,6 +2,8 @@
  * Copyright (c) 2021 Golioth, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * @verifies ZEP-SRS-18-4
  */
 
 #include <zephyr/ztest.h>
@@ -17,7 +19,9 @@ ZTEST(libc_time, test_time_passing)
 	time_initial_unaligned = time(NULL);
 	zassert_true(time_initial_unaligned >= 0, "Fail to get time");
 
-	/* Wait until time() will return new value, which should be aligned */
+	/* Wait until time() will return new value, which should be aligned *
+ * @verifies ZEP-SRS-18-4
+ */
 	for (i = 0; i < 100; i++) {
 		k_sleep(K_MSEC(10));
 
