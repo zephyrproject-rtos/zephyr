@@ -16,6 +16,18 @@
 #include "usbc_stack.h"
 #include "usbc_config.h"
 
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+/*
+ * Not in the spec: bounds the wait for VBUS in Try.SNK. A DRP partner ends its
+ * Sink part of the toggle (tDRP * dcSRC.DRP max), debounces our Rd (tCCDebounce)
+ * and turns on VBUS (tVBUSON). The margin covers timer error.
+ */
+#define TC_T_TRY_SNK_VBUS_MARGIN_MS 30
+#define TC_T_TRY_SNK_VBUS_MS                                                                       \
+	(TC_T_DRP_PW_MAX_MS + TC_T_CC_DEBOUNCE_MAX_MS + TC_T_VBUS_ON_MAX_MS +                      \
+	 TC_T_TRY_SNK_VBUS_MARGIN_MS)
+#endif
+
 enum tc_flags {
 	/**
 	 * Flag to track Rp resistor change when the sink attached
@@ -41,6 +53,12 @@ enum tc_state_t {
 	TC_ATTACH_WAIT_SNK_STATE,
 	/** Attached Sink State */
 	TC_ATTACHED_SNK_STATE,
+#endif
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+	/** Try Sink State */
+	TC_TRY_SNK_STATE,
+	/** Try Wait Source State */
+	TC_TRY_WAIT_SRC_STATE,
 #endif
 #ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/** Super state that applies Rp to the CC lines */
@@ -109,6 +127,14 @@ struct tc_sm_t {
 	uint32_t drp_snk_window_ms;
 	/** PRNG state for toggle jitter */
 	uint32_t drp_rng_state;
+#endif
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+	/** tDRPTry timer */
+	struct usbc_timer_t tc_t_drp_try;
+	/** tTryCCDebounce timer */
+	struct usbc_timer_t tc_t_try_cc_debounce;
+	/** Try.SNK VBUS timeout timer */
+	struct usbc_timer_t tc_t_try_snk_vbus;
 #endif
 };
 #ifdef CONFIG_USBC_CSM_DRP
