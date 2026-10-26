@@ -1644,6 +1644,14 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghd
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 			res = zsock_wait_data(ctx, &timeout);
 			if (res < 0) {
+				/* Return the data already received in this
+				 * call (with MSG_WAITALL) instead of the
+				 * timeout or error.
+				 */
+				if (recv_len > 0) {
+					break;
+				}
+
 				return res;
 			}
 		}
