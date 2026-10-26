@@ -372,14 +372,20 @@ static const struct bt_le_per_adv_sync_param sync_param = {
 static void sync_established_sid(uint8_t status, uint8_t sid)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	const uint8_t subevent = BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED_V2;
+	struct bt_hci_evt_le_per_adv_sync_established_v2 *evt;
+#else
+	const uint8_t subevent = BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED;
 	struct bt_hci_evt_le_per_adv_sync_established *evt;
+#endif
 	struct bt_hci_evt_le_meta_event *meta;
 	struct net_buf *buf;
 
 	buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
 	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta) + sizeof(*evt));
 	meta = net_buf_add(buf, sizeof(*meta));
-	meta->subevent = BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED;
+	meta->subevent = subevent;
 	evt = net_buf_add(buf, sizeof(*evt));
 	(void)memset(evt, 0, sizeof(*evt));
 	evt->status = status;
@@ -974,6 +980,19 @@ static int sync_app_recv_disable(void)
 	return bt_le_per_adv_sync_recv_disable(sync_app_sync);
 }
 
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+static int sync_app_subevent(void)
+{
+	uint8_t subevent = 0U;
+	struct bt_le_per_adv_sync_subevent_params params = {
+		.num_subevents = 1U,
+		.subevents = &subevent,
+	};
+
+	return bt_le_per_adv_sync_subevent(sync_app_sync, &params);
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
+
 /* Bluetooth is disabled and enabled again while the application waits for the
  * response to a command of the call that it makes, and the call returns only
  * after a new sync has been created, which has the same sync object.
@@ -1363,6 +1382,28 @@ static ZTEST(bt_per_adv_sync, test_sync_unexpected_terminated_first)
 		      term_terminate_count);
 	zassert_false(scan_enabled, "The scanner was not stopped");
 }
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+/* As test_sync_delete_waiting_for_buffer, with the application thread choosing
+ * the subevents to synchronize with. It must not do so for the new sync.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_subevent_waiting_for_buffer)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	sync_app_sync = sync_create_established();
+	sync = sync_app_call_waiting_for_buffer(sync_app_subevent);
+	zassert_equal_ptr(sync, sync_app_sync, "The new sync has another object");
+
+	err = sync_app_join();
+	zassert_equal(err, -EINVAL, "Choosing subevents across bt_disable() gave %d", err);
+	zassert_equal(sent_count(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT), 0U,
+		      "The controller was told to choose subevents");
+
+	zassert_ok(sync_app_subevent(), "Choosing subevents of the new sync failed");
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
 static K_THREAD_STACK_DEFINE(enable_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);

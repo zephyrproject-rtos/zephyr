@@ -329,6 +329,23 @@ struct bt_le_per_adv_sync {
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 };
 
+/* A command about a periodic advertising sync, sent with
+ * bt_hci_cmd_send_sync_checked() and bt_per_adv_sync_cmd_check(): it is
+ * queued only if the sync object is still the sync of generation gen, which
+ * the call read when it started (bt_per_adv_sync_gen_get()). The handle of the
+ * sync is then written to handle, unless that is NULL.
+ */
+struct bt_per_adv_sync_cmd {
+	const struct bt_le_per_adv_sync *sync;
+	uint8_t *handle;
+	uint32_t gen;
+};
+
+int bt_per_adv_sync_cmd_check(const void *data);
+
+/* The generation of an established sync, -EINVAL if it is not established */
+int bt_per_adv_sync_gen_get(const struct bt_le_per_adv_sync *sync, uint32_t *gen);
+
 struct bt_dev_le {
 	/* LE features */
 	uint8_t features[BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE];

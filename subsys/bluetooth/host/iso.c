@@ -3349,9 +3349,13 @@ void hci_le_big_sync_lost(struct net_buf *buf)
 	big_disconnect(big, evt->reason);
 }
 
-static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct bt_iso_big *big,
-				  const struct bt_iso_big_sync_param *param)
+static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, uint32_t sync_gen,
+				  struct bt_iso_big *big, const struct bt_iso_big_sync_param *param)
 {
+	struct bt_per_adv_sync_cmd check = {
+		.sync = sync,
+		.gen = sync_gen,
+	};
 	struct bt_hci_cp_le_big_create_sync *req;
 	struct bt_hci_cmd_state_set state;
 	struct net_buf *buf;
@@ -3365,7 +3369,7 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct 
 
 	req = net_buf_add(buf, sizeof(*req) + big->num_bis);
 	req->big_handle = big->handle;
-	req->sync_handle = sys_cpu_to_le16(sync->handle);
+	check.handle = (uint8_t *)&req->sync_handle;
 	req->encryption = param->encryption;
 	if (req->encryption) {
 		memcpy(req->bcode, param->bcode, sizeof(req->bcode));
@@ -3393,7 +3397,8 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct 
 	}
 
 	bt_hci_cmd_state_set_init(buf, &state, big->flags, BT_BIG_SYNCING, true);
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_BIG_CREATE_SYNC, buf, NULL);
+	err = bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_BIG_CREATE_SYNC, buf, NULL,
+					   bt_per_adv_sync_cmd_check, &check);
 
 	return err;
 }
@@ -3406,6 +3411,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 	struct bt_iso_chan *bis;
 	struct bt_iso_big *big;
 	uint32_t bitfield_copy;
+	uint32_t sync_gen;
 
 	if (sync == NULL) {
 		LOG_DBG("sync is NULL");
@@ -3422,7 +3428,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		return -EINVAL;
 	}
 
-	if (!atomic_test_bit(sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
+	if (bt_per_adv_sync_gen_get(sync, &sync_gen) != 0) {
 		LOG_DBG("PA sync not synced");
 		return -EINVAL;
 	}
@@ -3508,7 +3514,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 
 	big->num_bis = param->num_bis;
 
-	err = hci_le_big_create_sync(sync, big, param);
+	err = hci_le_big_create_sync(sync, sync_gen, big, param);
 	if (err) {
 		LOG_DBG("Could not create BIG sync %d", err);
 		cleanup_big(big);

@@ -1329,20 +1329,9 @@ static int per_adv_sync_terminate(uint16_t handle)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, buf, NULL);
 }
 
-/* A command about a sync object, queued only if the object is still the sync
- * of generation gen, which the call read when it started. The handle of the
- * sync is then written to handle, unless that is NULL.
- */
-struct per_adv_sync_cmd {
-	const struct bt_le_per_adv_sync *sync;
-	uint8_t *handle;
-	uint32_t gen;
-};
-
-/* The check of bt_hci_cmd_send_sync_checked() */
-static int per_adv_sync_cmd_check(const void *data)
+int bt_per_adv_sync_cmd_check(const void *data)
 {
-	const struct per_adv_sync_cmd *cmd = data;
+	const struct bt_per_adv_sync_cmd *cmd = data;
 
 	if (cmd->sync->gen != cmd->gen) {
 		return -EINVAL;
@@ -1353,6 +1342,23 @@ static int per_adv_sync_cmd_check(const void *data)
 	}
 
 	return 0;
+}
+
+int bt_per_adv_sync_gen_get(const struct bt_le_per_adv_sync *sync, uint32_t *gen)
+{
+	int err = 0;
+
+	bt_dev_lock();
+
+	if (atomic_test_bit(sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
+		*gen = sync->gen;
+	} else {
+		err = -EINVAL;
+	}
+
+	bt_dev_unlock();
+
+	return err;
 }
 
 /* Whether the sync object has been deleted since its generation gen was read */
@@ -1605,7 +1611,9 @@ int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 				struct bt_le_per_adv_sync_subevent_params *params)
 {
 	struct bt_hci_cp_le_set_pawr_sync_subevent *cp;
+	struct bt_per_adv_sync_cmd check;
 	struct net_buf *buf;
+	int err;
 
 	if (!IS_ARRAY_ELEMENT(per_adv_sync_pool, per_adv_sync)) {
 		LOG_DBG("Invalid per_adv_sync pointer %p", per_adv_sync);
@@ -1616,6 +1624,11 @@ int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 		return -EINVAL;
 	}
 
+	err = bt_per_adv_sync_gen_get(per_adv_sync, &check.gen);
+	if (err != 0) {
+		return err;
+	}
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
@@ -1623,12 +1636,15 @@ int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
-	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->periodic_adv_properties = sys_cpu_to_le16(params->properties);
 	cp->num_subevents = params->num_subevents;
 	net_buf_add_mem(buf, params->subevents, cp->num_subevents);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT, buf, NULL);
+	check.sync = per_adv_sync;
+	check.handle = (uint8_t *)&cp->sync_handle;
+
+	return bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT, buf, NULL,
+					    bt_per_adv_sync_cmd_check, &check);
 }
 
 int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
@@ -1636,11 +1652,18 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 				    const struct net_buf_simple *data)
 {
 	struct bt_hci_cp_le_set_pawr_response_data *cp;
+	struct bt_per_adv_sync_cmd check;
 	struct net_buf *buf;
+	int err;
 
 	if (!IS_ARRAY_ELEMENT(per_adv_sync_pool, per_adv_sync)) {
 		LOG_DBG("Invalid per_adv_sync pointer %p", per_adv_sync);
 		return -EINVAL;
+	}
+
+	err = bt_per_adv_sync_gen_get(per_adv_sync, &check.gen);
+	if (err != 0) {
+		return err;
 	}
 
 	if (per_adv_sync->num_subevents == 0) {
@@ -1666,7 +1689,6 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
-	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->request_event = sys_cpu_to_le16(param->request_event);
 	cp->request_subevent = param->request_subevent;
 	cp->response_subevent = param->response_subevent;
@@ -1675,7 +1697,11 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 
 	net_buf_add_mem(buf, data->data, cp->response_data_length);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA, buf, NULL);
+	check.sync = per_adv_sync;
+	check.handle = (uint8_t *)&cp->sync_handle;
+
+	return bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA, buf, NULL,
+					    bt_per_adv_sync_cmd_check, &check);
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
@@ -2270,7 +2296,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	struct bt_hci_cp_le_per_adv_create_sync *cp;
 	struct net_buf *buf;
 	struct bt_le_per_adv_sync *per_adv_sync;
-	struct per_adv_sync_cmd check;
+	struct bt_per_adv_sync_cmd check;
 	uint32_t gen;
 	int err;
 
@@ -2392,7 +2418,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	check.gen = gen;
 
 	err = bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC, buf, NULL,
-					   per_adv_sync_cmd_check, &check);
+					   bt_per_adv_sync_cmd_check, &check);
 	if (err != 0) {
 		goto fail;
 	}
@@ -2434,10 +2460,10 @@ fail:
 /* The check of a cancel, which cancels whichever sync is pending */
 static int per_adv_sync_cancel_check(const void *data)
 {
-	const struct per_adv_sync_cmd *cmd = data;
+	const struct bt_per_adv_sync_cmd *cmd = data;
 	int err;
 
-	err = per_adv_sync_cmd_check(data);
+	err = bt_per_adv_sync_cmd_check(data);
 	if (err != 0) {
 		return err;
 	}
@@ -2454,7 +2480,7 @@ static int per_adv_sync_cancel_check(const void *data)
 
 static int bt_le_per_adv_sync_create_cancel(struct bt_le_per_adv_sync *per_adv_sync, uint32_t gen)
 {
-	const struct per_adv_sync_cmd check = {
+	const struct bt_per_adv_sync_cmd check = {
 		.sync = per_adv_sync,
 		.gen = gen,
 	};
@@ -2486,7 +2512,7 @@ static int bt_le_per_adv_sync_create_cancel(struct bt_le_per_adv_sync *per_adv_s
 int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 {
 	struct bt_hci_cp_le_per_adv_terminate_sync *cp;
-	struct per_adv_sync_cmd check;
+	struct bt_per_adv_sync_cmd check;
 	struct net_buf *buf;
 	uint32_t gen;
 	int err;
@@ -2520,7 +2546,7 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 		check.gen = gen;
 
 		err = bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, buf, NULL,
-						   per_adv_sync_cmd_check, &check);
+						   bt_per_adv_sync_cmd_check, &check);
 		if (err != 0) {
 			/* Unless terminated meanwhile */
 			return per_adv_sync_deleted(per_adv_sync, gen) ? 0 : err;
@@ -2578,7 +2604,7 @@ static int bt_le_set_per_adv_recv_enable(struct bt_le_per_adv_sync *per_adv_sync
 	struct bt_le_per_adv_sync_state_info info;
 	struct net_buf *buf;
 	struct bt_hci_cmd_state_set state;
-	struct per_adv_sync_cmd check;
+	struct bt_per_adv_sync_cmd check;
 	uint32_t gen;
 	int err;
 
@@ -2631,7 +2657,7 @@ static int bt_le_set_per_adv_recv_enable(struct bt_le_per_adv_sync *per_adv_sync
 
 	/* -EINVAL if the sync has ended meanwhile */
 	err = bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE, buf, NULL,
-					   per_adv_sync_cmd_check, &check);
+					   bt_per_adv_sync_cmd_check, &check);
 	if (err) {
 		return err;
 	}
@@ -2672,7 +2698,9 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 				const struct bt_conn *conn, uint16_t service_data)
 {
 	struct bt_hci_cp_le_per_adv_sync_transfer *cp;
+	struct bt_per_adv_sync_cmd check;
 	struct net_buf *buf;
+	int err;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -2685,6 +2713,11 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 		return -EINVAL;
 	}
 
+	err = bt_per_adv_sync_gen_get(per_adv_sync, &check.gen);
+	if (err != 0) {
+		return err;
+	}
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
@@ -2694,10 +2727,13 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 	(void)memset(cp, 0, sizeof(*cp));
 
 	cp->conn_handle = sys_cpu_to_le16(conn->handle);
-	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->service_data = sys_cpu_to_le16(service_data);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf, NULL);
+	check.sync = per_adv_sync;
+	check.handle = (uint8_t *)&cp->sync_handle;
+
+	return bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf, NULL,
+					    bt_per_adv_sync_cmd_check, &check);
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 

@@ -1832,6 +1832,10 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
+	/* Read before anything that can wait, logging included, after which
+	 * the sync object could be another sync's
+	 */
+	__maybe_unused const uint8_t sync_phy = sync->phy;
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 
@@ -1875,8 +1879,8 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	/* The connection is always initiated on the same phy as the PAwR advertiser */
-	conn->le.phy.tx_phy = sync->phy;
-	conn->le.phy.rx_phy = sync->phy;
+	conn->le.phy.tx_phy = sync_phy;
+	conn->le.phy.rx_phy = sync_phy;
 #endif
 
 	bt_addr_le_copy(&conn->le.init_addr, &peer_addr);

@@ -257,10 +257,10 @@ static bool valid_cl_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param 
 	return true;
 }
 
-static int
-prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_le_per_adv_sync *sync,
-				    const struct bt_df_per_adv_sync_cte_rx_param *params,
-				    bool enable)
+static int prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf,
+					       struct bt_per_adv_sync_cmd *check,
+					       const struct bt_df_per_adv_sync_cte_rx_param *params,
+					       bool enable)
 {
 	struct bt_hci_cp_le_set_cl_cte_sampling_enable *cp;
 	uint8_t switch_pattern_len;
@@ -282,7 +282,7 @@ prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_le_per_adv_s
 	cp = net_buf_add(*buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
-	cp->sync_handle = sys_cpu_to_le16(sync->handle);
+	check->handle = (uint8_t *)&cp->sync_handle;
 	cp->sampling_enable = enable ? 1 : 0;
 
 	if (enable) {
@@ -312,10 +312,14 @@ prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_le_per_adv_s
 	return 0;
 }
 
-static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enable,
+static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, uint32_t gen, bool enable,
 				       const struct bt_df_per_adv_sync_cte_rx_param *params)
 {
 	struct bt_hci_rp_le_set_cl_cte_sampling_enable *rp;
+	struct bt_per_adv_sync_cmd check = {
+		.sync = sync,
+		.gen = gen,
+	};
 	struct bt_hci_cmd_state_set state;
 	struct net_buf *buf, *rsp;
 	int err;
@@ -326,24 +330,33 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 		}
 	}
 
-	err = prepare_cl_cte_rx_enable_cmd_params(&buf, sync, params, enable);
+	err = prepare_cl_cte_rx_enable_cmd_params(&buf, &check, params, enable);
 	if (err) {
 		return err;
 	}
 
 	bt_hci_cmd_state_set_init(buf, &state, sync->flags, BT_PER_ADV_SYNC_CTE_ENABLED, enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE, buf, &rsp);
+	err = bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE, buf, &rsp,
+					   bt_per_adv_sync_cmd_check, &check);
 	if (err) {
 		return err;
 	}
 
 	rp = (void *)rsp->data;
-	if (sync->handle != sys_le16_to_cpu(rp->sync_handle)) {
-		err = -EIO;
-	} else {
-		sync->cte_types = (enable ? params->cte_types : 0);
+
+	bt_dev_lock();
+
+	/* Unless the sync has ended meanwhile */
+	if (sync->gen == gen) {
+		if (sync->handle != sys_le16_to_cpu(rp->sync_handle)) {
+			err = -EIO;
+		} else {
+			sync->cte_types = (enable ? params->cte_types : 0);
+		}
 	}
+
+	bt_dev_unlock();
 
 	net_buf_unref(rsp);
 
@@ -994,12 +1007,16 @@ static int
 bt_df_set_per_adv_sync_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enable,
 				     const struct bt_df_per_adv_sync_cte_rx_param *params)
 {
+	uint32_t gen;
+	int err;
+
 	if (!BT_FEAT_LE_CONNECTIONLESS_CTE_RX(bt_dev.le.features)) {
 		return -ENOTSUP;
 	}
 
-	if (!atomic_test_bit(sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
-		return -EINVAL;
+	err = bt_per_adv_sync_gen_get(sync, &gen);
+	if (err != 0) {
+		return err;
 	}
 
 	if (!enable &&
@@ -1007,7 +1024,7 @@ bt_df_set_per_adv_sync_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enabl
 		return -EALREADY;
 	}
 
-	return hci_df_set_cl_cte_rx_enable(sync, enable, params);
+	return hci_df_set_cl_cte_rx_enable(sync, gen, enable, params);
 }
 
 int bt_df_per_adv_sync_cte_rx_enable(struct bt_le_per_adv_sync *sync,
