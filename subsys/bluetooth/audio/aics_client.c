@@ -641,6 +641,8 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			if (err != 0 && err != -EALREADY) {
 				LOG_ERR("Failed to subscribe: %d", err);
 
+				inst->cli.busy = false;
+
 				if (inst->cli.cb && inst->cli.cb->discover) {
 					inst->cli.cb->discover(inst, err);
 				}
