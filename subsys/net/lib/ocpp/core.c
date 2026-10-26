@@ -233,7 +233,9 @@ int ocpp_authorize(ocpp_session_handle_t hndl, char *idtag,
 
 	*status = sh->resp_status;
 	if (sh->resp_status == OCPP_AUTH_ACCEPTED) {
+		k_mutex_lock(&ctx->ilock, K_FOREVER);
 		sh->is_active = true;
+		k_mutex_unlock(&ctx->ilock);
 	}
 
 	return 0;
@@ -320,7 +322,9 @@ int ocpp_start_transaction(ocpp_session_handle_t hndl,
 	}
 
 	if (sh->resp_status != OCPP_AUTH_ACCEPTED) {
+		k_mutex_lock(&ctx->ilock, K_FOREVER);
 		sh->is_active = false;
+		k_mutex_unlock(&ctx->ilock);
 		ret = -EACCES;
 	} else {
 		union ocpp_keyval *keyval;
@@ -362,7 +366,9 @@ int ocpp_stop_transaction(ocpp_session_handle_t hndl,
 		return -EAGAIN;
 	}
 
+	k_mutex_lock(&ctx->ilock, K_FOREVER);
 	sh->is_active = false;
+	k_mutex_unlock(&ctx->ilock);
 	do {
 		ref = atomic_get(&ctx->mtr_timer_ref_cnt);
 		if (ref == 0) {
