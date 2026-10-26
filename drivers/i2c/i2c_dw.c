@@ -841,6 +841,89 @@ bool i2c_dw_is_busy(const struct device *dev)
 	return false;
 }
 
+static int i2c_dw_atomic_write_read(const struct device *dev, struct i2c_msg *write_msg,
+				    struct i2c_msg *read_msg)
+{
+	const struct i2c_dw_rom_config *const rom = dev->config;
+	struct i2c_dw_dev_config *const dw = dev->data;
+	union ic_comp_param_1_register ic_comp_param_1;
+	uint32_t reg_base = get_regs(dev);
+	uint32_t cmd;
+	int tx_buffer_depth;
+	int ret = 0;
+
+	ic_comp_param_1.raw = read_comp_param_1(reg_base);
+	tx_buffer_depth = ic_comp_param_1.bits.tx_buffer_depth + 1;
+
+	if (1 + read_msg->len > tx_buffer_depth) {
+		return -ENOTSUP;
+	}
+
+	if (read_txflr(reg_base) > 0) {
+		return -EBUSY;
+	}
+
+	dw->xfr_buf = read_msg->buf;
+	dw->xfr_len = read_msg->len;
+	dw->rx_pending = read_msg->len;
+	dw->request_bytes = 0U;
+	dw->state = I2C_DW_CMD_RECV;
+	dw->xfr_flags = read_msg->flags;
+
+	set_bit_enable_block(reg_base);
+
+	cmd = write_msg->buf[0];
+	if (write_msg->flags & I2C_MSG_RESTART) {
+		cmd |= IC_DATA_CMD_RESTART;
+	}
+	write_cmd_data(cmd, reg_base);
+
+	for (size_t i = 0U; i < read_msg->len; i++) {
+		cmd = IC_DATA_CMD_CMD;
+		if (i == 0U) {
+			cmd |= IC_DATA_CMD_RESTART;
+		}
+		if (i == (read_msg->len - 1U)) {
+			if (read_msg->flags & I2C_MSG_STOP) {
+				cmd |= IC_DATA_CMD_STOP;
+			}
+		}
+		write_cmd_data(cmd, reg_base);
+	}
+
+	(void)read_clr_tx_abrt(reg_base);
+
+	write_intr_mask((DW_ENABLE_TX_INT_I2C_MASTER | DW_ENABLE_RX_INT_I2C_MASTER), reg_base);
+
+	clear_bit_enable_block(reg_base);
+
+	ret = k_sem_take(&dw->device_sync_sem, rom->transfer_timeout);
+
+	write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
+
+	if (ret != 0) {
+		if (test_bit_con_master_mode(reg_base)) {
+			set_bit_enable_abort(reg_base);
+			(void)k_sem_take(&dw->device_sync_sem, K_MSEC(1));
+		}
+		(void)read_clr_intr(reg_base);
+		ret = -ETIMEDOUT;
+		k_sem_reset(&dw->device_sync_sem);
+	} else if (dw->state & I2C_DW_CMD_ERROR) {
+		ret = -EIO;
+	} else if (dw->xfr_len > 0) {
+		ret = -EIO;
+	} else if (dw->state & I2C_DW_ERR_MASK) {
+		if (dw->state & (I2C_DW_SDA_STUCK | I2C_DW_SCL_STUCK)) {
+			ret = -ETIME;
+		} else if (dw->state & (I2C_DW_NACK | I2C_DW_CMD_ERROR)) {
+			ret = -EIO;
+		}
+	}
+
+	return ret;
+}
+
 static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t target_address)
 {
@@ -923,6 +1006,22 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	 * can handle everything
 	 */
 	pm_device_busy_set(dev);
+
+	/*
+	 * If we detect a write-read transaction (within certain limits, like
+	 * 1 byte to write and up to 8 bytes to read), we execute it atomically.
+	 * This pre-fills the TX FIFO with both write and read commands so that
+	 * the hardware executes them back-to-back with a repeated start without
+	 * CPU intervention, preventing preemption/latency between the phases.
+	 * Otherwise, we fall back to the regular interrupt-driven path.
+	 */
+	if (num_msgs == 2U && (msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE &&
+	    (msgs[1].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ && msgs[0].len == 1U &&
+	    msgs[1].len <= 8U) {
+		ret = i2c_dw_atomic_write_read(dev, &msgs[0], &msgs[1]);
+		pm_device_busy_clear(dev);
+		goto error;
+	}
 
 	/* Process all the messages */
 	while (msg_left > 0) {
