@@ -320,11 +320,16 @@ static uint16_t sent_opcodes[64];
 static size_t sent_num;
 
 /* The command that the controller takes long to respond to, if any, how long
- * it takes, and whether it rejects the command then.
+ * it takes, whether it rejects the command then, and whether it reports the
+ * periodic advertising sync as established right after the response.
  */
 static uint16_t slow_opcode;
 static k_timeout_t slow_rsp_delay;
 static uint8_t slow_status;
+static bool slow_established;
+static uint8_t slow_established_status;
+
+static void sync_established(uint8_t status);
 
 static void slow_rsp_handler(struct k_work *work)
 {
@@ -346,6 +351,10 @@ static void slow_rsp_handler(struct k_work *work)
 	}
 
 	bt_hci_recv(dev, evt);
+
+	if (slow_established) {
+		sync_established(slow_established_status);
+	}
 }
 
 static K_WORK_DELAYABLE_DEFINE(slow_rsp_work, slow_rsp_handler);
@@ -623,6 +632,8 @@ static void before(void *fixture)
 	reset_rsp_delay = K_NO_WAIT;
 	slow_opcode = 0U;
 	slow_status = BT_HCI_ERR_SUCCESS;
+	slow_established = false;
+	slow_established_status = BT_HCI_ERR_SUCCESS;
 	disconnect_rsp_delay = K_NO_WAIT;
 	disconnect_status = BT_HCI_ERR_SUCCESS;
 	if (!bt_is_ready()) {
@@ -796,6 +807,12 @@ static unsigned int sent_count(uint16_t opcode)
 
 static K_SEM_DEFINE(synced_sem, 0, K_SEM_MAX_LIMIT);
 static struct bt_le_per_adv_sync *synced_sync;
+
+/* The sync object that the application thread has been given, and what that
+ * was by the time of the last synced callback
+ */
+static struct bt_le_per_adv_sync *sync_app_sync;
+static struct bt_le_per_adv_sync *synced_app_sync;
 static atomic_t term_count;
 static struct bt_le_per_adv_sync *term_sync;
 static uint8_t term_reason;
@@ -805,6 +822,11 @@ static uint8_t term_reason;
  */
 static unsigned int term_terminate_count;
 static atomic_t state_changed_count;
+
+/* Whether the term callback is to create a new sync, and how that went */
+static bool term_recreates;
+static K_SEM_DEFINE(term_recreated_sem, 0, 1);
+static int term_recreate_err;
 
 /* Whether the synced callback is to wait for synced_release_sem, as one that
  * issues HCI commands does, and whether it was given
@@ -818,6 +840,7 @@ static void synced_cb(struct bt_le_per_adv_sync *sync, struct bt_le_per_adv_sync
 	ARG_UNUSED(info);
 
 	synced_sync = sync;
+	synced_app_sync = sync_app_sync;
 	k_sem_give(&synced_sem);
 
 	if (synced_blocks) {
@@ -833,6 +856,14 @@ static void term_cb(struct bt_le_per_adv_sync *sync,
 	term_reason = info->reason;
 	term_terminate_count = sent_count(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC);
 	atomic_inc(&term_count);
+
+	if (term_recreates) {
+		term_recreates = false;
+		slow_opcode = 0U;
+		slow_established = false;
+		term_recreate_err = bt_le_per_adv_sync_create(&sync_param, &sync_app_sync);
+		k_sem_give(&term_recreated_sem);
+	}
 }
 
 static void state_changed_cb(struct bt_le_per_adv_sync *sync,
@@ -863,6 +894,8 @@ static void per_adv_sync_before(void *fixture)
 
 	k_sem_reset(&synced_sem);
 	synced_sync = NULL;
+	sync_app_sync = NULL;
+	synced_app_sync = NULL;
 	synced_blocks = false;
 	k_sem_reset(&synced_release_sem);
 	synced_released = false;
@@ -870,6 +903,8 @@ static void per_adv_sync_before(void *fixture)
 	term_sync = NULL;
 	term_reason = BT_HCI_ERR_SUCCESS;
 	atomic_clear(&state_changed_count);
+	term_recreates = false;
+	k_sem_reset(&term_recreated_sem);
 }
 
 /* The sync is created, and established once the controller has found the
@@ -899,7 +934,6 @@ static struct bt_le_per_adv_sync *sync_create_established(void)
 static K_THREAD_STACK_DEFINE(sync_app_stack,
 			     CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread sync_app_thread;
-static struct bt_le_per_adv_sync *sync_app_sync;
 static int (*sync_app_call)(void);
 static bool sync_app_returned;
 static int sync_app_err;
@@ -1381,6 +1415,80 @@ static ZTEST(bt_per_adv_sync, test_sync_unexpected_terminated_first)
 	zassert_equal(term_terminate_count, 1U, "%u terminate commands before the term callback",
 		      term_terminate_count);
 	zassert_false(scan_enabled, "The scanner was not stopped");
+}
+
+/* A create that the controller rejects leaves the variable for the sync as it
+ * was, here with a sync that is established and must still be found there.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_create_rejected_keeps_sync)
+{
+	struct bt_le_per_adv_sync *sync;
+	int err;
+
+	sync = sync_create_established();
+	sync_app_sync = sync;
+
+	slow_opcode = BT_HCI_OP_LE_PER_ADV_CREATE_SYNC;
+	slow_rsp_delay = K_MSEC(1);
+	slow_status = BT_HCI_ERR_CMD_DISALLOWED;
+	err = bt_le_per_adv_sync_create(&sync_param, &sync_app_sync);
+	zassert_equal(err, -EACCES, "Creating another sync gave %d", err);
+	zassert_equal_ptr(sync_app_sync, sync, "The variable was changed");
+
+	zassert_ok(bt_le_per_adv_sync_delete(sync_app_sync), "Deleting the sync failed");
+	zassert_equal(atomic_get(&term_count), 1, "%ld term callbacks", atomic_get(&term_count));
+	zassert_equal_ptr(term_sync, sync, "Another sync was terminated");
+}
+
+/* The controller reports the sync as established right after its response to
+ * the create sync command, before the application thread that creates the sync
+ * has returned. The synced callback must find the sync where that call stores
+ * it, as the applications look for it there.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_established_before_create_returns)
+{
+	int err;
+
+	slow_opcode = BT_HCI_OP_LE_PER_ADV_CREATE_SYNC;
+	slow_rsp_delay = K_MSEC(10);
+	slow_established = true;
+	sync_app_start(sync_app_create);
+
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "The sync was not established");
+	zassert_false(sync_app_returned, "Creating the sync returned before it was established");
+	zassert_not_null(synced_sync, "No sync was established");
+	zassert_equal_ptr(synced_app_sync, synced_sync, "The sync was not stored yet");
+
+	err = sync_app_join();
+	zassert_ok(err, "Creating the sync failed (%d)", err);
+	zassert_equal_ptr(sync_app_sync, synced_sync, "Another sync was created");
+}
+
+/* The sync fails to be established before the application thread that creates
+ * it has returned, and the term callback creates a new one, which gets the same
+ * object, in the same variable. The call that failed must not take it away.
+ */
+static ZTEST(bt_per_adv_sync, test_sync_recreated_in_term_callback)
+{
+	int err;
+
+	slow_opcode = BT_HCI_OP_LE_PER_ADV_CREATE_SYNC;
+	slow_rsp_delay = K_MSEC(10);
+	slow_established = true;
+	slow_established_status = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+	term_recreates = true;
+	sync_app_start(sync_app_create);
+
+	zassert_ok(k_sem_take(&term_recreated_sem, K_SECONDS(1)), "No sync was created again");
+	zassert_ok(term_recreate_err, "Creating the sync again failed (%d)", term_recreate_err);
+
+	err = sync_app_join();
+	zassert_equal(err, -ECANCELED, "Creating the sync that failed gave %d", err);
+	zassert_equal_ptr(sync_app_sync, term_sync, "The new sync was lost");
+
+	sync_established(BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "The sync was not established");
+	zassert_equal_ptr(synced_sync, sync_app_sync, "Another sync was established");
 }
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
