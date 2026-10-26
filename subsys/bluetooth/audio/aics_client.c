@@ -667,6 +667,8 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 
 	err = store_attr_handle_and_subscribe(client_inst, conn, chrc);
 	if (err != 0) {
+		atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_BUSY);
+
 		if (client_inst->cb && client_inst->cb->discover) {
 			client_inst->cb->discover(inst, err);
 		}
