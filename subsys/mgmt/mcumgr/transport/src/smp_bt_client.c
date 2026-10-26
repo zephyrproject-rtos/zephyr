@@ -10,10 +10,11 @@
 /** @file
  * @brief Bluetooth client transport for the MCUmgr SMP protocol.
  *
- * Discovers the SMP service of a peer, subscribes to its notifications, writes SMP requests
- * as ATT_MTU-3 sized writes without response and passes the responses the peer notifies
- * through the reassembly context to the SMP core. The transport serves one target at a time,
- * as the outgoing side of a transport management bridge.
+ * Discovers the SMP service of a peer, subscribes to its notifications, sends SMP requests
+ * as writes without response of up to ATT_MTU - 3 bytes each and passes the responses the
+ * peer notifies through the reassembly context to the SMP core. The transport serves one
+ * target at a time: for the SMP client or, when built with MCUMGR_GRP_TRANSPORT, as the
+ * outgoing side of a transport management bridge.
  */
 
 #include <errno.h>
@@ -67,6 +68,11 @@ LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 #define SMP_BT_CLIENT_BRIDGE_TIMEOUT K_SECONDS(30)
 #endif
 
+/* The SMP client and transport management bridges are never built together, so the owner of
+ * a target is known at build time.
+ */
+#define SMP_BT_CLIENT_BRIDGE IS_ENABLED(CONFIG_MCUMGR_GRP_TRANSPORT)
+
 enum smp_bt_client_link_state {
 	SMP_BT_CLIENT_IDLE = 0,
 	SMP_BT_CLIENT_ATTACHING,
@@ -83,8 +89,8 @@ static atomic_t smp_bt_client_state = ATOMIC_INIT(SMP_BT_CLIENT_IDLE);
  */
 static atomic_t smp_bt_client_generation = ATOMIC_INIT(0);
 
-/* Guards the claims of the transport and the target, whose value handle is always read
- * together with it.
+/* Guards claims of the transport and the target below, together with the value handle of
+ * the target, which are only accessed under it.
  */
 static struct k_spinlock smp_bt_client_lock;
 static struct bt_conn *smp_bt_client_target;
@@ -102,11 +108,27 @@ struct smp_bt_client_link {
 	uint32_t generation;
 };
 
-/* Handshake between the Bluetooth callbacks and a waiting bridge connect */
+/* Serializes attach and detach. Detach sets the cancel flag and wakes a pending attach,
+ * then waits for it to unwind before tearing down.
+ */
+static K_MUTEX_DEFINE(smp_bt_client_api_lock);
+static atomic_t smp_bt_client_cancel = ATOMIC_INIT(0);
+
+/* Handshake between the Bluetooth callbacks and a waiting attach or bridge connect. The
+ * result carries the generation of the claim it is for.
+ */
 static K_SEM_DEFINE(smp_bt_client_attach_sem, 0, 1);
 static int smp_bt_client_attach_result;
 static const char *smp_bt_client_attach_reason;
+static uint32_t smp_bt_client_attach_gen;
 static atomic_t smp_bt_client_subscribing = ATOMIC_INIT(0);
+
+/* Generation of the claim whose discovery and subscription the Bluetooth callbacks report on,
+ * set when the discovery starts. Until the terminal callback of a discovery the host uses its
+ * parameters and may run more of its callbacks, so no claim succeeds while one is in flight.
+ */
+static uint32_t smp_bt_client_setup_gen;
+static atomic_t smp_bt_client_discovering = ATOMIC_INIT(0);
 
 /* Written only by the discovery callbacks */
 static uint16_t smp_bt_client_svc_end_handle;
@@ -136,8 +158,19 @@ static atomic_ptr_t smp_bt_client_unsub_conn = ATOMIC_PTR_INIT(NULL);
 BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS <= CONFIG_BT_ATT_TX_COUNT,
 	     "MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS must not exceed BT_ATT_TX_COUNT");
 
+/* A request of the SMP client carries the generation of the target it was first sent to */
+BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE >= sizeof(uint32_t),
+	     "MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE too small for the Bluetooth client");
+
 static K_SEM_DEFINE(smp_bt_client_tx_sem, CONFIG_MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS,
 		    CONFIG_MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS);
+
+/* Credits held by the writes in flight on each link, by bt_conn_index(). The host does not
+ * complete the writes of a link that drops, so its disconnection returns what it holds,
+ * whether or not it is still the target. A link that stays up returns them as its writes
+ * complete.
+ */
+static atomic_t smp_bt_client_tx_held[CONFIG_BT_MAX_CONN];
 
 /* The reassembly context has no locking of its own, and is used from the notify callback
  * and from teardown on other threads. Also guards smp_bt_client_rx_discard.
@@ -154,20 +187,28 @@ static bool smp_bt_client_conn_up(struct bt_conn *conn)
 	return bt_conn_get_info(conn, &info) == 0 && info.state == BT_CONN_STATE_CONNECTED;
 }
 
-static void smp_bt_client_tx_credits_replenish(void)
+/* Returns a credit that @p conn holds, unless the disconnection of @p conn has returned it */
+static void smp_bt_client_tx_credit_return(const struct bt_conn *conn)
 {
-	/* k_sem_give() saturates at the limit */
-	for (uint32_t i = 0U; i < CONFIG_MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS; i++) {
-		k_sem_give(&smp_bt_client_tx_sem);
-	}
+	atomic_t *held = &smp_bt_client_tx_held[bt_conn_index(conn)];
+	atomic_val_t count;
+
+	do {
+		count = atomic_get(held);
+
+		if (count == 0) {
+			return;
+		}
+	} while (!atomic_cas(held, count, count - 1));
+
+	k_sem_give(&smp_bt_client_tx_sem);
 }
 
 static void smp_bt_client_tx_done(struct bt_conn *conn, void *user_data)
 {
-	ARG_UNUSED(conn);
 	ARG_UNUSED(user_data);
 
-	k_sem_give(&smp_bt_client_tx_sem);
+	smp_bt_client_tx_credit_return(conn);
 }
 
 /* Latches the target for a packet */
@@ -243,9 +284,10 @@ static void smp_bt_client_unsubscribe(struct bt_conn *conn)
 }
 
 /*
- * Claims the transport for a bridge connect. Fails while a target is attached or is still
- * being torn down, while the host holds the subscription of a previous target and while the
- * link of the previous bridge has not ended.
+ * Claims the transport for an attach of the SMP client or a bridge connect. Fails while a
+ * target is attached or is still being torn down, while the host holds the subscription of a
+ * previous target or runs its discovery, while a detach is in progress and while the link of
+ * the previous bridge has not ended.
  */
 static int smp_bt_client_claim(uint32_t *generation)
 {
@@ -253,17 +295,27 @@ static int smp_bt_client_claim(uint32_t *generation)
 	int rc = -EBUSY;
 	k_spinlock_key_t key = k_spin_lock(&smp_bt_client_lock);
 
-	if (atomic_get(&smp_bt_client_state) != SMP_BT_CLIENT_IDLE ||
-	    smp_bt_client_target != NULL) {
+	if (atomic_get(&smp_bt_client_cancel) != 0) {
+		rc = -ECANCELED;
+	} else if (atomic_get(&smp_bt_client_state) != SMP_BT_CLIENT_IDLE ||
+		   smp_bt_client_target != NULL) {
 		/* Busy */
 	} else if (smp_bt_client_orphan != NULL) {
 		/* Busy */
+	} else if (atomic_get(&smp_bt_client_discovering) != 0) {
+		/* Busy: a discovery outlived the claim it was started for */
 	} else if (atomic_get(&smp_bt_client_sub_linked) != 0 ||
 		   atomic_ptr_get(&smp_bt_client_unsub_conn) != NULL) {
 		held = true;
 	} else {
 		atomic_set(&smp_bt_client_state, SMP_BT_CLIENT_ATTACHING);
 		*generation = (uint32_t)atomic_inc(&smp_bt_client_generation) + 1U;
+
+		if (*generation == 0U) {
+			/* Zero marks a request of the SMP client that was never sent */
+			*generation = (uint32_t)atomic_inc(&smp_bt_client_generation) + 1U;
+		}
+
 		rc = 0;
 	}
 
@@ -271,11 +323,6 @@ static int smp_bt_client_claim(uint32_t *generation)
 
 	if (held) {
 		LOG_WRN("SMP client subscription still held by the host");
-	}
-
-	if (rc == 0) {
-		/* Credits the previous link never returned died with it */
-		smp_bt_client_tx_credits_replenish();
 	}
 
 	return rc;
@@ -354,8 +401,10 @@ static void smp_bt_client_bridge_hangup(struct bt_conn *conn)
 
 /*
  * Tears down the target of the claim made under @p generation, unless that has already been
- * done, and disconnects its link. Does not block on the Bluetooth host, so it is safe on any
- * thread.
+ * done. A link of the SMP client is unsubscribed and stays up. A link that a bridge created
+ * is disconnected, which also ends its volatile subscription. Waits on the Bluetooth host
+ * only while the link is up: for an ATT buffer for the CCC write of the unsubscribe, or for
+ * the controller to take the disconnection.
  *
  * Returns the state the target was in, or SMP_BT_CLIENT_IDLE if it was not torn down here.
  */
@@ -388,7 +437,7 @@ static enum smp_bt_client_link_state smp_bt_client_release(uint32_t generation)
 		smp_bt_client_target = NULL;
 		smp_bt_client_tx_handle = 0U;
 
-		if (conn != NULL) {
+		if (SMP_BT_CLIENT_BRIDGE && conn != NULL) {
 			/* A bridge claims only while there is no orphan */
 			__ASSERT_NO_MSG(smp_bt_client_orphan == NULL);
 			smp_bt_client_orphan = conn;
@@ -402,8 +451,12 @@ static enum smp_bt_client_link_state smp_bt_client_release(uint32_t generation)
 		return state;
 	}
 
-	smp_bt_client_unsubscribe(conn);
-	smp_bt_client_bridge_hangup(conn);
+	if (SMP_BT_CLIENT_BRIDGE) {
+		/* Until the link ends, the host holds the subscription and no claim succeeds */
+		smp_bt_client_bridge_hangup(conn);
+	} else {
+		smp_bt_client_unsubscribe(conn);
+	}
 
 	bt_conn_unref(conn);
 
@@ -430,6 +483,9 @@ static bool smp_bt_client_tx_credit_take(const struct smp_bt_client_link *link, 
 		}
 	}
 
+	/* Held by the link before its state is checked, so that its disconnection returns it */
+	atomic_inc(&smp_bt_client_tx_held[bt_conn_index(link->conn)]);
+
 	return true;
 }
 
@@ -454,7 +510,7 @@ static int smp_bt_client_tx_frags(const struct smp_bt_client_link *link, struct 
 		}
 
 		if (!smp_bt_client_link_current(link)) {
-			k_sem_give(&smp_bt_client_tx_sem);
+			smp_bt_client_tx_credit_return(link->conn);
 			return MGMT_ERR_ENOENT;
 		}
 
@@ -463,7 +519,7 @@ static int smp_bt_client_tx_frags(const struct smp_bt_client_link *link, struct 
 							smp_bt_client_tx_done, NULL);
 		if (err != 0) {
 			/* No completion callback for a write the host did not accept */
-			k_sem_give(&smp_bt_client_tx_sem);
+			smp_bt_client_tx_credit_return(link->conn);
 			LOG_WRN("SMP client fragment write failed (err %d, %u of %u bytes sent)",
 				err, off, nb->len);
 
@@ -476,8 +532,28 @@ static int smp_bt_client_tx_frags(const struct smp_bt_client_link *link, struct 
 	return MGMT_ERR_EOK;
 }
 
-/* The SMP layer may keep its own reference to @p nb, so the buffer is only read here, and
- * exactly one reference is released on every path.
+/*
+ * The SMP client sends a retry of a request in the same buffer. A request is bound to the
+ * target it is first sent to, so that a retry is never sent to a later one. Returns true if
+ * @p nb may be sent to the target of @p link.
+ */
+static bool smp_bt_client_req_bind(struct net_buf *nb, const struct smp_bt_client_link *link)
+{
+	uint32_t bound;
+
+	memcpy(&bound, net_buf_user_data(nb), sizeof(bound));
+
+	if (bound == 0U) {
+		bound = link->generation;
+		memcpy(net_buf_user_data(nb), &bound, sizeof(bound));
+	}
+
+	return bound == link->generation;
+}
+
+/* The SMP layer may keep its own reference to @p nb, so its data is not modified here (only
+ * its user data, by smp_bt_client_req_bind()), and exactly one reference is released on
+ * every path.
  */
 static int smp_bt_client_send(struct net_buf *nb, int no_link_rc)
 {
@@ -485,7 +561,10 @@ static int smp_bt_client_send(struct net_buf *nb, int no_link_rc)
 	int rc = no_link_rc;
 
 	if (smp_bt_client_link_claim(&link)) {
-		rc = smp_bt_client_tx_frags(&link, nb);
+		if (SMP_BT_CLIENT_BRIDGE || smp_bt_client_req_bind(nb, &link)) {
+			rc = smp_bt_client_tx_frags(&link, nb);
+		}
+
 		bt_conn_unref(link.conn);
 	}
 
@@ -494,12 +573,24 @@ static int smp_bt_client_send(struct net_buf *nb, int no_link_rc)
 	return rc;
 }
 
-/* Packets of the SMP client have no target: the transport only carries bridge traffic */
 static int smp_bt_client_tx_pkt(struct net_buf *nb)
 {
-	smp_packet_free(nb);
+	if (SMP_BT_CLIENT_BRIDGE) {
+		/* Only the SMP client sends through the output of the transport */
+		smp_packet_free(nb);
+		return MGMT_ERR_ENOENT;
+	}
 
-	return MGMT_ERR_ENOENT;
+	return smp_bt_client_send(nb, MGMT_ERR_ENOENT);
+}
+
+static void smp_bt_client_ud_init(struct net_buf *nb, void *priv)
+{
+	const uint32_t unbound = 0U;
+
+	ARG_UNUSED(priv);
+
+	memcpy(net_buf_user_data(nb), &unbound, sizeof(unbound));
 }
 
 /* Skips the rest of the packet whose first fragment is @p data, by the length in its header */
@@ -583,7 +674,9 @@ unlock:
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void smp_bt_client_attach_signal(struct bt_conn *conn, int result, const char *reason)
+/* Gives the verdict on the claim made under @p generation to its waiting attach or connect */
+static void smp_bt_client_attach_signal(struct bt_conn *conn, uint32_t generation, int result,
+					const char *reason)
 {
 	if (result != 0 && !smp_bt_client_conn_up(conn)) {
 		result = -ENOTCONN;
@@ -592,13 +685,23 @@ static void smp_bt_client_attach_signal(struct bt_conn *conn, int result, const 
 
 	smp_bt_client_attach_result = result;
 	smp_bt_client_attach_reason = reason;
+	smp_bt_client_attach_gen = generation;
 	k_sem_give(&smp_bt_client_attach_sem);
+}
+
+/* Ends a discovery from its last callback, after which the host no longer uses it */
+static void smp_bt_client_discover_end(struct bt_conn *conn, int result, const char *reason)
+{
+	const uint32_t generation = smp_bt_client_setup_gen;
+
+	atomic_clear(&smp_bt_client_discovering);
+	smp_bt_client_attach_signal(conn, generation, result, reason);
 }
 
 static void smp_bt_client_subscribe_cb(struct bt_conn *conn, uint8_t err,
 				       struct bt_gatt_subscribe_params *params)
 {
-	/* Only the response to the enabling write of a waiting connect is a verdict; the
+	/* Only the response to the enabling write of a waiting claim is a verdict; the
 	 * response to an unsubscribe's disabling write is not.
 	 */
 	if (params->value != BT_GATT_CCC_NOTIFY) {
@@ -616,7 +719,7 @@ static void smp_bt_client_subscribe_cb(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 
-	smp_bt_client_attach_signal(conn, (err == 0U) ? 0 : -EIO,
+	smp_bt_client_attach_signal(conn, smp_bt_client_setup_gen, (err == 0U) ? 0 : -EIO,
 				    (err == 0U) ? NULL : "subscription rejected by the peer");
 }
 
@@ -626,7 +729,7 @@ static uint8_t smp_bt_client_ccc_cb(struct bt_conn *conn, const struct bt_gatt_a
 	ARG_UNUSED(params);
 
 	if (attr == NULL) {
-		smp_bt_client_attach_signal(conn, -ENOTSUP, "SMP characteristic has no CCC");
+		smp_bt_client_discover_end(conn, -ENOTSUP, "SMP characteristic has no CCC");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -635,12 +738,12 @@ static uint8_t smp_bt_client_ccc_cb(struct bt_conn *conn, const struct bt_gatt_a
 	 */
 	if (attr->handle <= smp_bt_client_value_handle ||
 	    attr->handle > smp_bt_client_svc_end_handle) {
-		smp_bt_client_attach_signal(conn, -ENOTSUP, "CCC handle outside the service");
+		smp_bt_client_discover_end(conn, -ENOTSUP, "CCC handle outside the service");
 		return BT_GATT_ITER_STOP;
 	}
 
 	smp_bt_client_ccc_handle = attr->handle;
-	smp_bt_client_attach_signal(conn, 0, NULL);
+	smp_bt_client_discover_end(conn, 0, NULL);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -654,15 +757,15 @@ static uint8_t smp_bt_client_chrc_cb(struct bt_conn *conn, const struct bt_gatt_
 	int err;
 
 	if (attr == NULL) {
-		smp_bt_client_attach_signal(conn, -ENOTSUP, "no SMP characteristic");
+		smp_bt_client_discover_end(conn, -ENOTSUP, "no SMP characteristic");
 		return BT_GATT_ITER_STOP;
 	}
 
 	chrc = attr->user_data;
 
 	if ((chrc->properties & required) != required) {
-		smp_bt_client_attach_signal(conn, -ENOTSUP,
-					    "SMP characteristic cannot notify and write");
+		smp_bt_client_discover_end(conn, -ENOTSUP,
+					   "SMP characteristic cannot notify and write");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -670,7 +773,7 @@ static uint8_t smp_bt_client_chrc_cb(struct bt_conn *conn, const struct bt_gatt_
 
 	if (smp_bt_client_value_handle == 0U ||
 	    smp_bt_client_value_handle >= smp_bt_client_svc_end_handle) {
-		smp_bt_client_attach_signal(conn, -ENOTSUP, "no room for a CCC in the service");
+		smp_bt_client_discover_end(conn, -ENOTSUP, "no room for a CCC in the service");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -686,7 +789,7 @@ static uint8_t smp_bt_client_chrc_cb(struct bt_conn *conn, const struct bt_gatt_
 	err = bt_gatt_discover(conn, params);
 	if (err != 0) {
 		/* No terminal callback follows a request the host did not queue */
-		smp_bt_client_attach_signal(conn, err, "CCC discovery not started");
+		smp_bt_client_discover_end(conn, err, "CCC discovery not started");
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -700,7 +803,7 @@ static uint8_t smp_bt_client_svc_cb(struct bt_conn *conn, const struct bt_gatt_a
 	int err;
 
 	if (attr == NULL) {
-		smp_bt_client_attach_signal(conn, -ENOTSUP, "no SMP service");
+		smp_bt_client_discover_end(conn, -ENOTSUP, "no SMP service");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -708,7 +811,7 @@ static uint8_t smp_bt_client_svc_cb(struct bt_conn *conn, const struct bt_gatt_a
 	smp_bt_client_svc_end_handle = svc->end_handle;
 
 	if (attr->handle >= smp_bt_client_svc_end_handle) {
-		smp_bt_client_attach_signal(conn, -ENOTSUP, "empty SMP service");
+		smp_bt_client_discover_end(conn, -ENOTSUP, "empty SMP service");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -720,7 +823,7 @@ static uint8_t smp_bt_client_svc_cb(struct bt_conn *conn, const struct bt_gatt_a
 
 	err = bt_gatt_discover(conn, params);
 	if (err != 0) {
-		smp_bt_client_attach_signal(conn, err, "characteristic discovery not started");
+		smp_bt_client_discover_end(conn, err, "characteristic discovery not started");
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -733,17 +836,10 @@ static uint8_t smp_bt_client_svc_cb(struct bt_conn *conn, const struct bt_gatt_a
  */
 static void smp_bt_client_bridge_lost(struct k_work *work)
 {
-	bool bridged;
-	k_spinlock_key_t key;
-
 	ARG_UNUSED(work);
 
 	/* A new bridge on this transport means that the lost one is gone */
-	key = k_spin_lock(&smp_bt_client_lock);
-	bridged = atomic_get(&smp_bt_client_state) != SMP_BT_CLIENT_IDLE;
-	k_spin_unlock(&smp_bt_client_lock, key);
-
-	if (!bridged) {
+	if (atomic_get(&smp_bt_client_state) == SMP_BT_CLIENT_IDLE) {
 		(void)transport_mgmt_disconnect_transport(&smp_bt_client_transport, false, true);
 	}
 }
@@ -793,10 +889,21 @@ static void smp_bt_client_connected(struct bt_conn *conn, uint8_t err)
 static void smp_bt_client_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	enum smp_bt_client_link_state state;
+	atomic_val_t held;
 	uint32_t generation;
 	k_spinlock_key_t key;
 
 	ARG_UNUSED(reason);
+
+	/* The host does not complete the writes of a dropped link, so return their credits,
+	 * which also releases a transmit blocked on one.
+	 */
+	held = atomic_set(&smp_bt_client_tx_held[bt_conn_index(conn)], 0);
+
+	while (held > 0) {
+		k_sem_give(&smp_bt_client_tx_sem);
+		held--;
+	}
 
 	smp_bt_client_orphan_release(conn);
 	/* A disabling CCC write still in flight on the link has failed. The host reports that
@@ -822,14 +929,7 @@ static void smp_bt_client_disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	/* The host does not complete writes on a dropped link, so return their credits
-	 * to release a transmit blocked on one.
-	 */
-	smp_bt_client_tx_credits_replenish();
-
-	smp_bt_client_attach_result = -ENOTCONN;
-	smp_bt_client_attach_reason = NULL;
-	k_sem_give(&smp_bt_client_attach_sem);
+	smp_bt_client_attach_signal(conn, generation, -ENOTCONN, NULL);
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	if (state == SMP_BT_CLIENT_READY) {
@@ -845,11 +945,27 @@ BT_CONN_CB_DEFINE(smp_bt_client_conn_callbacks) = {
 	.disconnected = smp_bt_client_disconnected,
 };
 
-static int smp_bt_client_attach_wait(k_timepoint_t deadline)
+/* Waits for the verdict on the claim made under @p generation */
+static int smp_bt_client_attach_wait(uint32_t generation, k_timepoint_t deadline)
 {
-	if (k_sem_take(&smp_bt_client_attach_sem, sys_timepoint_timeout(deadline)) != 0) {
-		return -ETIMEDOUT;
-	}
+	do {
+		if (atomic_get(&smp_bt_client_cancel) != 0) {
+			return -ECANCELED;
+		}
+
+		if (k_sem_take(&smp_bt_client_attach_sem, sys_timepoint_timeout(deadline)) != 0) {
+			return -ETIMEDOUT;
+		}
+
+		if (atomic_get(&smp_bt_client_cancel) != 0) {
+			return -ECANCELED;
+		}
+
+		/* A verdict on an earlier claim, from a disconnect of its target or from the end
+		 * of a discovery that outlived it, can come after the next claim has started
+		 * waiting.
+		 */
+	} while (smp_bt_client_attach_gen != generation);
 
 	if (smp_bt_client_attach_reason != NULL) {
 		LOG_ERR("SMP client attach failed: %s (%d)", smp_bt_client_attach_reason,
@@ -859,7 +975,7 @@ static int smp_bt_client_attach_wait(k_timepoint_t deadline)
 	return smp_bt_client_attach_result;
 }
 
-static int smp_bt_client_discover(struct bt_conn *conn, k_timepoint_t deadline)
+static int smp_bt_client_discover(struct bt_conn *conn, uint32_t generation, k_timepoint_t deadline)
 {
 	static const struct bt_uuid_128 svc_uuid = BT_UUID_INIT_128(SMP_BT_SVC_UUID_VAL);
 	/* Used by the host until the terminal callback */
@@ -878,16 +994,23 @@ static int smp_bt_client_discover(struct bt_conn *conn, k_timepoint_t deadline)
 
 	k_sem_reset(&smp_bt_client_attach_sem);
 
+	/* Set before the call, which may already run the terminal callback */
+	smp_bt_client_setup_gen = generation;
+	atomic_set(&smp_bt_client_discovering, 1);
+
 	rc = bt_gatt_discover(conn, &params);
 	if (rc != 0) {
+		atomic_clear(&smp_bt_client_discovering);
 		LOG_ERR("SMP service discovery not started (err %d)", rc);
 		return rc;
 	}
 
-	rc = smp_bt_client_attach_wait(deadline);
-	if (rc == -ETIMEDOUT) {
-		/* Runs the terminal callback, after which the host no longer uses the
-		 * discovery parameters.
+	rc = smp_bt_client_attach_wait(generation, deadline);
+	if (rc != 0) {
+		/* Runs the terminal callback of a discovery still in progress, after which the
+		 * host no longer uses the parameters. Does nothing once the discovery has ended,
+		 * nor while one of its callbacks runs on another CPU, after which the discovery
+		 * goes on until it ends.
 		 */
 		bt_gatt_cancel(conn, &params);
 	}
@@ -895,7 +1018,8 @@ static int smp_bt_client_discover(struct bt_conn *conn, k_timepoint_t deadline)
 	return rc;
 }
 
-static int smp_bt_client_subscribe(struct bt_conn *conn, k_timepoint_t deadline)
+static int smp_bt_client_subscribe(struct bt_conn *conn, uint32_t generation,
+				   k_timepoint_t deadline)
 {
 	int rc;
 
@@ -923,7 +1047,7 @@ static int smp_bt_client_subscribe(struct bt_conn *conn, k_timepoint_t deadline)
 		 * queued a CCC write, and the subscribe callback reports its result, which may
 		 * already have come.
 		 */
-		rc = smp_bt_client_attach_wait(deadline);
+		rc = smp_bt_client_attach_wait(generation, deadline);
 	}
 
 	atomic_clear(&smp_bt_client_subscribing);
@@ -939,12 +1063,12 @@ static int smp_bt_client_attach_link(struct bt_conn *conn, uint32_t generation,
 	k_spinlock_key_t key;
 	int rc;
 
-	rc = smp_bt_client_discover(conn, deadline);
+	rc = smp_bt_client_discover(conn, generation, deadline);
 	if (rc != 0) {
 		return rc;
 	}
 
-	rc = smp_bt_client_subscribe(conn, deadline);
+	rc = smp_bt_client_subscribe(conn, generation, deadline);
 	if (rc != 0) {
 		return rc;
 	}
@@ -970,6 +1094,62 @@ static int smp_bt_client_attach_link(struct bt_conn *conn, uint32_t generation,
 		smp_bt_client_value_handle, bt_gatt_get_mtu(conn));
 
 	return 0;
+}
+
+int smp_client_bt_attach(struct bt_conn *conn, k_timeout_t timeout)
+{
+	const k_timepoint_t deadline = sys_timepoint_calc(timeout);
+	uint32_t generation;
+	int rc;
+
+	if (SMP_BT_CLIENT_BRIDGE) {
+		return -ENOSYS;
+	}
+
+	if (conn == NULL) {
+		return -EINVAL;
+	}
+
+	if (k_mutex_lock(&smp_bt_client_api_lock, K_NO_WAIT) != 0) {
+		return -EBUSY;
+	}
+
+	rc = smp_bt_client_claim(&generation);
+	if (rc == 0) {
+		smp_bt_client_target_set(conn);
+
+		rc = smp_bt_client_attach_link(conn, generation, deadline);
+		if (rc != 0) {
+			(void)smp_bt_client_release(generation);
+		}
+	}
+
+	k_mutex_unlock(&smp_bt_client_api_lock);
+
+	return rc;
+}
+
+void smp_client_bt_detach(void)
+{
+	if (SMP_BT_CLIENT_BRIDGE) {
+		return;
+	}
+
+	/* Cancels an attach in progress */
+	atomic_set(&smp_bt_client_cancel, 1);
+	k_sem_give(&smp_bt_client_attach_sem);
+
+	(void)k_mutex_lock(&smp_bt_client_api_lock, K_FOREVER);
+
+	(void)smp_bt_client_release((uint32_t)atomic_get(&smp_bt_client_generation));
+
+	atomic_clear(&smp_bt_client_cancel);
+	k_mutex_unlock(&smp_bt_client_api_lock);
+}
+
+bool smp_client_bt_is_attached(void)
+{
+	return !SMP_BT_CLIENT_BRIDGE && atomic_get(&smp_bt_client_state) == SMP_BT_CLIENT_READY;
 }
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
@@ -1232,6 +1412,7 @@ static void smp_bt_client_setup(void)
 	int rc;
 
 	smp_bt_client_transport.functions.output = smp_bt_client_tx_pkt;
+	smp_bt_client_transport.functions.ud_init = smp_bt_client_ud_init;
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	smp_bt_client_transport.functions.bridge_connect = smp_bt_client_bridge_connect;
