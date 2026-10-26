@@ -127,6 +127,8 @@ struct video_ctrl {
 		/** Used for integer menu control types */
 		const int64_t *int_menu;
 	};
+	/** Name of the control, only needed for private controls */
+	const char *name;
 	/** Current value of this control, set to the default value at registration */
 	union {
 		/** Used for 32-bit control types */
