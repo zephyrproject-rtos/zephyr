@@ -21,4 +21,11 @@ config TEST_SEND_BLOCKS
 	  the command timeout of the Host. The Host asserts in that test, so no
 	  other test can run after it.
 
+config TEST_PAST
+	bool "Run only the tests of periodic advertising sync transfer"
+	help
+	  Run only the tests of periodic advertising sync transfer, which need
+	  a connection. The test controller then does not support extended
+	  advertising, so that the connection is made as in the other tests.
+
 source "Kconfig.zephyr"

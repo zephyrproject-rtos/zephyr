@@ -46,6 +46,19 @@ tests:
       - CONFIG_BT_BUF_CMD_TX_COUNT=2
       - CONFIG_BT_BUF_CMD_TX_SIZE=65
       - CONFIG_BT_BUF_EVT_RX_SIZE=68
+  bluetooth.host_disable.past:
+    extra_configs:
+      - CONFIG_BT_PERIPHERAL=y
+      - CONFIG_BT_GATT_CLIENT=y
+      - CONFIG_BT_OBSERVER=y
+      - CONFIG_BT_EXT_ADV=y
+      - CONFIG_BT_PER_ADV_SYNC=y
+      - CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER=y
+      # The controller does not support extended advertising then
+      - CONFIG_BT_EXT_ADV_LEGACY_SUPPORT=y
+      - CONFIG_TEST_PAST=y
+      - CONFIG_BT_BUF_CMD_TX_SIZE=65
+      - CONFIG_BT_BUF_EVT_RX_SIZE=68
   bluetooth.host_disable.conn:
     extra_configs:
       - CONFIG_BT_PERIPHERAL=y
