@@ -1995,7 +1995,7 @@ ZTEST(net_socket_tcp, test_v4_msg_waitall)
 			      test_msg_waitall_tx_work_handler);
 	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
 
-	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf) - 1, ZSOCK_MSG_WAITALL);
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL);
 	if (ret < 0) {
 		LOG_ERR("receive return val %i", ret);
 	}
@@ -2072,7 +2072,7 @@ ZTEST(net_socket_tcp, test_v6_msg_waitall)
 			      test_msg_waitall_tx_work_handler);
 	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
 
-	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf) - 1, ZSOCK_MSG_WAITALL);
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL);
 	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
 			  "Invalid data received");
