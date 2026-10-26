@@ -495,6 +495,12 @@ struct bt_dev {
 
 extern struct bt_dev bt_dev;
 
+/* Assert that the current thread holds the host lock. k_mutex resets the
+ * owner on the final unlock, so the owner check alone is exact.
+ */
+#define BT_DEV_LOCK_ASSERT()                                                                       \
+	__ASSERT(bt_dev.lock.owner == k_current_get(), "host lock not held by %p", k_current_get())
+
 /* Lock/unlock the host lock. k_mutex is recursive, so nested lock/unlock
  * pairs on the same thread are legal (needed e.g. for the
  * bt_att_req_send() -> bt_att_chan_req_send() nesting).
@@ -508,17 +514,16 @@ static inline void bt_dev_lock(void)
 
 static inline void bt_dev_unlock(void)
 {
-	__maybe_unused int err = k_mutex_unlock(&bt_dev.lock);
+	__maybe_unused int err;
+
+	/* k_mutex_unlock() skips its owner check with CONFIG_NO_RUNTIME_CHECKS */
+	BT_DEV_LOCK_ASSERT();
+
+	err = k_mutex_unlock(&bt_dev.lock);
 
 	__ASSERT(err == 0, "failed to unlock the host lock (err %d)", err);
 }
 
-/* Assert that the current thread holds the host lock. k_mutex resets the
- * owner on the final unlock, so the owner check alone is exact.
- */
-#define BT_DEV_LOCK_ASSERT()						\
-	__ASSERT(bt_dev.lock.owner == k_current_get(),			\
-		 "host lock not held by %p", k_current_get())
 extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
