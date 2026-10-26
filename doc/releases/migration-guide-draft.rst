@@ -68,6 +68,28 @@ Bluetooth Classic
   :c:func:`bt_l2cap_br_echo_rsp`. The stack answers a received ECHO request with an ECHO response
   without data, unless a registered ``req`` callback handles it.
 
+Bluetooth Host
+==============
+
+* The deprecated ``CONFIG_BT_SIGNING`` Kconfig option has been removed, together with the data
+  signing (LE security mode 2) that it enabled. It has been deprecated since Zephyr 4.4, and the
+  Bluetooth Core Specification v6.3 no longer defines the feature. Use LE security mode 1
+  (encryption) instead.
+
+  * :c:func:`bt_gatt_write_without_response` and :c:func:`bt_gatt_write_without_response_cb` now
+    fail with ``-ENOTSUP`` when the ``sign`` parameter is ``true`` on a connection that is not
+    encrypted. On an encrypted connection the parameter has no effect, as before.
+  * The Host neither distributes nor accepts a CSRK during pairing, and ignores received Signed
+    Write Commands.
+  * Bonds stored by a build with ``CONFIG_BT_SIGNING`` enabled do not match the storage layout
+    any more. They are deleted from persistent storage when loaded, and the peers have to pair
+    again.
+  * The ``gatt signed-write`` shell command has been removed.
+
+* The deprecated ``BT_GATT_CHRC_AUTH`` macro has been removed together with data signing. Remove it
+  from characteristic declarations, since the Host no longer handles Signed Write Commands. Code
+  that decodes the properties of a peer's characteristic can test the value ``0x40`` instead.
+
 Networking
 **********
 
