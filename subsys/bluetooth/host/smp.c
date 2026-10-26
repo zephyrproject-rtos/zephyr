@@ -4965,7 +4965,7 @@ static void bt_smp_pkey_ready(const uint8_t *pkey)
 		struct bt_smp *smp = &bt_smp_pool[i];
 		uint8_t err;
 
-		if (!atomic_test_bit(smp->flags, SMP_FLAG_PKEY_SEND)) {
+		if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_PKEY_SEND)) {
 			continue;
 		}
 
@@ -6312,8 +6312,14 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 			return legacy_send_pairing_confirm(smp);
 		}
 
-		if (!sc_public_key) {
-			atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
+		/* This runs in the application's thread, and the key may be
+		 * delivered at any point here: the flag is set first, and
+		 * whichever of this and bt_smp_pkey_ready() clears it sends
+		 * the key.
+		 */
+		atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
+		if (sc_public_key == NULL ||
+		    !atomic_test_and_clear_bit(smp->flags, SMP_FLAG_PKEY_SEND)) {
 			return 0;
 		}
 
