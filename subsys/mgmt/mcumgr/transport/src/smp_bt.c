@@ -914,19 +914,22 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	 * callback will not be called and this is needed to prevent a deadlock.
 	 */
 	if (cpd != NULL) {
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
+		/* Copy of the state for use after the semaphore has been given, see below */
+		uint8_t state = cpd->state;
+#endif
+
 		/* Clear cpd. */
 		cpd->id = 0;
 		cpd->conn = NULL;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
-		if ((cpd->state & OUTGOING_CONNECTION) != 0) {
-			if ((cpd->state & CONNECTED) == 0) {
+		if ((state & OUTGOING_CONNECTION) != 0) {
+			if ((state & CONNECTED) == 0) {
 				return;
 			}
 
 			bt_conn_drop(&conn);
-
-			(void)transport_mgmt_disconnect_transport(&smp_bt_transport, false, true);
 		} else {
 #endif
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
@@ -936,11 +939,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
-			if ((cpd->state & INCOMING_CONNECTION) != 0) {
+			if ((state & INCOMING_CONNECTION) != 0) {
 				incoming_bridge_data.conn = NULL;
 				incoming_bridge_data.id = 0;
-				(void)transport_mgmt_disconnect_transport(&smp_bt_transport, true,
-									  false);
 			}
 		}
 #endif
@@ -951,6 +952,18 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 #endif
 
 		k_sem_give(&cpd->smp_notify_sem);
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
+		/* The semaphore must be given before taking the transport_mgmt lock: a bridge
+		 * connect or bridge output may be waiting on it while holding that lock. The
+		 * woken thread may clean up and reuse cpd, so it must not be accessed here.
+		 */
+		if ((state & OUTGOING_CONNECTION) != 0) {
+			(void)transport_mgmt_disconnect_transport(&smp_bt_transport, false, true);
+		} else if ((state & INCOMING_CONNECTION) != 0) {
+			(void)transport_mgmt_disconnect_transport(&smp_bt_transport, true, false);
+		}
+#endif
 	} else {
 		LOG_ERR("NULL cpd object for connection %p", (void *)conn);
 	}
