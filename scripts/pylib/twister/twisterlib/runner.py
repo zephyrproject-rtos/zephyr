@@ -2160,6 +2160,15 @@ class TwisterRunner:
                         self.results,
                         decrement=True
                     )
+                    # Testcase results from the failed attempt must not survive
+                    # into the retry: cases that do not report on the retry
+                    # (for example ones not built into the image) would keep a
+                    # stale "blocked" or "failed" status inside a passing suite.
+                    for case in instance.testcases:
+                        case.status = TwisterStatus.NONE
+                        case.reason = None
+                        case.duration = 0
+                        case.output = ""
 
                 # Check if cmake package_helper script can be run in advance.
                 instance.filter_stages = []
