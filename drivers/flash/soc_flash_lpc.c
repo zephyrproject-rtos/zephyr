@@ -75,6 +75,19 @@ static int flashiap_to_errno(status_t status)
 	}
 }
 
+static bool range_is_valid(off_t offset, size_t len)
+{
+	const size_t flash_size = DT_REG_SIZE(SOC_NV_FLASH_NODE);
+
+	return (offset >= 0) && (len <= flash_size) && ((size_t)offset <= (flash_size - len));
+}
+
+static bool range_is_page_aligned(off_t offset, size_t len)
+{
+	return IS_ALIGNED(offset, FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES) &&
+	       IS_ALIGNED(len, FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES);
+}
+
 static status_t erase_part(uint32_t start, uint32_t end, uint32_t sector_size)
 {
 	bool whole_sectors = IS_ALIGNED(start, sector_size) && IS_ALIGNED(end, sector_size);
@@ -99,19 +112,13 @@ static status_t erase_part(uint32_t start, uint32_t end, uint32_t sector_size)
 static int flash_lpc_erase(const struct device *dev, off_t offset, size_t len)
 {
 	struct flash_priv *priv = dev->data;
-	const size_t flash_size = DT_REG_SIZE(SOC_NV_FLASH_NODE);
 	uint32_t start;
 	uint32_t end;
 	uint32_t head_end;
 	uint32_t tail_start;
 	status_t rc = kStatus_FLASHIAP_Success;
 
-	if ((offset < 0) || (len > flash_size) || ((size_t)offset > (flash_size - len))) {
-		return -EINVAL;
-	}
-
-	if (!IS_ALIGNED(offset, FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES) ||
-	    !IS_ALIGNED(len, FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES)) {
+	if (!range_is_valid(offset, len) || !range_is_page_aligned(offset, len)) {
 		return -EINVAL;
 	}
 
@@ -145,6 +152,10 @@ static int flash_lpc_read(const struct device *dev, off_t offset,
 	struct flash_priv *priv = dev->data;
 	uint32_t addr;
 
+	if (!range_is_valid(offset, len)) {
+		return -EINVAL;
+	}
+
 	addr = offset + priv->pflash_block_base;
 
 	memcpy(data, (void *) addr, len);
@@ -159,6 +170,10 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 	uint32_t addr;
 	status_t rc;
 	unsigned int key;
+
+	if (!range_is_valid(offset, len) || !range_is_page_aligned(offset, len)) {
+		return -EINVAL;
+	}
 
 	if (k_sem_take(&priv->write_lock, K_FOREVER)) {
 		return -EACCES;
