@@ -352,6 +352,8 @@ static inline bool log_backend_is_active(
  * @retval -ENOTSUP If the backend does not support changing format types.
  * @retval -EINVAL If the input is invalid.
  * @retval 0 for success.
+ *
+ * @satisfies ZEP-SRS-11-17
  */
 static inline int log_backend_format_set(const struct log_backend *backend, uint32_t log_type)
 {

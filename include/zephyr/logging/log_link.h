@@ -28,6 +28,10 @@ extern "C" {
  * @ingroup logger
  * @brief Interface for log links bringing in messages from remote domains.
  * @{
+ *
+ * @satisfies ZEP-SRS-11-24
+ * @satisfies ZEP-SRS-11-26
+ * @satisfies ZEP-SRS-11-29
  */
 
 struct log_link;

@@ -148,6 +148,10 @@ typedef void (*log_format_func_t)(const struct log_output *output,
 
 /**
  * @brief Declaration of the get routine for function pointer table format_table.
+ *
+ * @satisfies ZEP-SRS-11-3
+ * @satisfies ZEP-SRS-11-16
+ * @satisfies ZEP-SRS-11-18
  */
 log_format_func_t log_format_func_t_get(uint32_t log_type);
 
