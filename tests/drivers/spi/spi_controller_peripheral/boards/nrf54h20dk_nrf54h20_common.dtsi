@@ -53,19 +53,19 @@
 };
 
 &gpiote130 {
-	status = "okay";
 	owned-channels = <7>;
+	status = "okay";
 };
 
 &spi130 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&spi130_default_alt>;
 	pinctrl-1 = <&spi130_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -76,11 +76,11 @@
 
 dut_spis: &spi131 {
 	compatible = "nordic,nrf-spis";
-	status = "okay";
 	def-char = <0x00>;
 	pinctrl-0 = <&spis131_default_alt>;
 	pinctrl-1 = <&spis131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 	/delete-property/ rx-delay-supported;
 	/delete-property/ rx-delay;
 	zephyr,pm-device-runtime-auto;

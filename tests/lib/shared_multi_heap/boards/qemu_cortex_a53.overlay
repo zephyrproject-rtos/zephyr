@@ -23,17 +23,17 @@
 			zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL_NC>;
 		};
 
-		res_no_mpu: memory@45000000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x0 0x45000000 0x0 0x1000>;
-			zephyr,memory-region = "RES_NO_MPU";
-		};
-
 		res2: memory@44000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x0 0x44000000 0x0 0x3000>;
 			zephyr,memory-region = "RES2";
 			zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL>;
+		};
+
+		res_no_mpu: memory@45000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 0x45000000 0x0 0x1000>;
+			zephyr,memory-region = "RES_NO_MPU";
 		};
 	};
 };

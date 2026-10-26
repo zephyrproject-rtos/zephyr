@@ -5,6 +5,11 @@
  */
 
 &lpspi1 {
+
+	transfer-delay = <100>;
+	sck-pcs-delay = <200>;
+	pcs-sck-delay = <200>;
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
@@ -21,8 +26,4 @@
 		spi-cs-setup-delay-ns = <100>;
 		spi-cs-hold-delay-ns = <100>;
 	};
-
-	transfer-delay = <100>;
-	sck-pcs-delay = <200>;
-	pcs-sck-delay = <200>;
 };

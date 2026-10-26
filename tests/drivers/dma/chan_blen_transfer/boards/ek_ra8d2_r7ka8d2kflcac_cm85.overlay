@@ -5,7 +5,7 @@
  */
 
 tst_dma0: &dma0 {
-	status = "okay";
 	interrupts = <95 1>, <94 1>;
 	interrupt-names = "ch0", "ch1";
+	status = "okay";
 };

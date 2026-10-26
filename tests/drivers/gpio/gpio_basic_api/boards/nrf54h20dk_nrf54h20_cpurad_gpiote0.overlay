@@ -17,12 +17,12 @@
 };
 
 &gpio1 {
-	status = "okay";
 	gpiote-instance = <&gpiote0>;
+	status = "okay";
 };
 
 &gpiote0 {
-	status = "okay";
 	pinctrl-0 = <&gpiote0_default_alt>;
 	pinctrl-names = "default";
+	status = "okay";
 };

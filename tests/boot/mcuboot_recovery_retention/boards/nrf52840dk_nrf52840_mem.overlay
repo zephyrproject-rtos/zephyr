@@ -1,6 +1,11 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 / {
+	chosen {
+		zephyr,boot-mode = &boot_mode0;
+		zephyr,uart-mcumgr = &uart1;
+	};
+
 	sram@2003fc00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2003fc00 DT_SIZE_K(1)>;
@@ -21,11 +26,6 @@
 				status = "okay";
 			};
 		};
-	};
-
-	chosen {
-		zephyr,boot-mode = &boot_mode0;
-		zephyr,uart-mcumgr = &uart1;
 	};
 };
 

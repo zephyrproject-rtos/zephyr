@@ -10,20 +10,20 @@
 	partitions {
 		large_partition: partition@3400000 {
 			compatible = "zephyr,mapped-partition";
-			label = "large";
 			reg = <0x03400000 DT_SIZE_M(4)>;
+			label = "large";
 		};
 
 		medium_partition: partition@3800000 {
 			compatible = "zephyr,mapped-partition";
-			label = "medium";
 			reg = <0x03800000 DT_SIZE_M(4)>;
+			label = "medium";
 		};
 
 		small_partition: partition@3c00000 {
 			compatible = "zephyr,mapped-partition";
-			label = "small";
 			reg = <0x03c00000 DT_SIZE_M(4)>;
+			label = "small";
 		};
 	};
 };

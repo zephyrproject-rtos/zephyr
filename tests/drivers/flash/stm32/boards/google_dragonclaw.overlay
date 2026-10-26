@@ -12,8 +12,8 @@
 
 		/* Reserve last 4KiB of flash for storage_partition. */
 		storage_partition: partition@ff000 {
-			label = "storage";
 			reg = <0x000ff000 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };

@@ -23,9 +23,9 @@
 
 &ctimer0 {
 	compatible = "nxp,ctimer-pwm";
-	status = "okay";
 	pinctrl-0 = <&ctimer0_default>;
 	pinctrl-names = "default";
 	#pwm-cells = <3>;
 	prescaler = <1>;
+	status = "okay";
 };

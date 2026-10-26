@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 &emmc2 {
+
+	status = "okay";
+
 	disk {
 		status = "okay";
 	};
-
-	status = "okay";
 };

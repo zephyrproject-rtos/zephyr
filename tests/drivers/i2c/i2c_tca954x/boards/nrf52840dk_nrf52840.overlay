@@ -10,9 +10,9 @@
 	mux: tca9546a@77 {
 		compatible = "ti,tca9546a";
 		reg = <0x77>;
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "okay";
 
 		ch0: mux_i2c@0 {
 			reg = <0>;

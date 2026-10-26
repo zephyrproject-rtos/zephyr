@@ -28,11 +28,6 @@
 		/delete-property/ zephyr,code-partition;
 	};
 
-	sram0: memory@20240000 {
-		compatible = "mmio-sram";
-		reg = <0x20240000 0x001bf000>;
-	};
-
 	flash_sim_region: memory@20040000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20040000 0x00200000>;	/* 2 MB sim-flash backing store */
@@ -41,6 +36,11 @@
 		#size-cells = <1>;
 		zephyr,memory-region = "FlashSim";
 		status = "okay";
+	};
+
+	sram0: memory@20240000 {
+		compatible = "mmio-sram";
+		reg = <0x20240000 0x001bf000>;
 	};
 
 	sram_retained: memory@203ffc00 {

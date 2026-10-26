@@ -40,21 +40,21 @@
 };
 
 &ftm0 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	clock-source = "external";
 	prescaler = <32>;
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ftm3 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	clock-source = "external";
 	prescaler = <128>;
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

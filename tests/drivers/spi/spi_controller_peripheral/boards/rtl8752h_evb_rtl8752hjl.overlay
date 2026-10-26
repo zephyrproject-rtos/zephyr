@@ -5,10 +5,10 @@
  */
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioa 23 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -18,9 +18,9 @@
 };
 
 dut_spis: &spi0_slave {
-	status = "okay";
 	pinctrl-0 = <&spi0_slave_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpioa {

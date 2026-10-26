@@ -8,6 +8,9 @@
 #include <freq.h>
 
 &main_pinctrl {
+
+	status = "okay";
+
 	spi0_cs1: spi0_cs1_default {
 		pinmux = <K3_PINMUX(0x20c, PIN_OUTPUT_PULLUP, MUX_MODE_0)>;
 	};
@@ -23,14 +26,14 @@
 	spi0_d1: spi0_d1_default {
 		pinmux = <K3_PINMUX(0x218, PIN_OUTPUT, MUX_MODE_0)>;
 	};
-
-	status = "okay";
 };
 
 /* CS1 is used so it's observable with a logic analyzer */
 &main_mcspi0 {
 	pinctrl-0 = <&spi0_clk &spi0_cs1 &spi0_d0 &spi0_d1>;
 	pinctrl-names = "default";
+
+	status = "okay";
 
 	slow@1 {
 		compatible = "test-spi-loopback-slow";
@@ -43,6 +46,4 @@
 		reg = <1>;
 		spi-max-frequency = <DT_FREQ_M(50)>;
 	};
-
-	status = "okay";
 };

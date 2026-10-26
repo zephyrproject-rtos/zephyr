@@ -43,10 +43,10 @@
 	dma-enabled;
 	pinctrl-0 = <&spim3_loopback>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	dmas = <&dma 0>, <&dma 1>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 &dma {

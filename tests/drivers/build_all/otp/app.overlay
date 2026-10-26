@@ -17,12 +17,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_axi_sysid: axi-sysid@deadbeef {
-			compatible = "adi,axi-sysid";
-			reg = <0xdeadbeef 0x1000>;
-			status = "okay";
-		};
-
 		test_i2c: i2c@11112222 {
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
@@ -32,6 +26,12 @@
 			status = "okay";
 
 #include "i2c.dtsi"
+		};
+
+		test_axi_sysid: axi-sysid@deadbeef {
+			compatible = "adi,axi-sysid";
+			reg = <0xdeadbeef 0x1000>;
+			status = "okay";
 		};
 	};
 };

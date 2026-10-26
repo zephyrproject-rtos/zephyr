@@ -16,10 +16,10 @@
 		     &p12_3_tdm_i2s0_tx_fsync &p21_1_tdm_i2s0_tx_sd>;
 	pinctrl-names = "default";
 	clocks = <&peri1_group1_16_5bit_0>;
-	status = "okay";
 
 	dmas = <&dma0 0>, <&dma0 1>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &dma0 {
@@ -27,14 +27,14 @@
 };
 
 &clk_hf7 {
-	status = "okay";
 	source-path = <IFX_CLK_HF_IN_CLKPATH3>;
+	status = "okay";
 };
 
 &peri1_group1_16_5bit_0 {
-	status = "okay";
 	clock-div = <4>;
 	div-frac-value = <28>;
+	status = "okay";
 };
 
 &gpio_prt12 {
