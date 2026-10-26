@@ -501,6 +501,14 @@ static inline int tcpc_is_cc_only_one_rd(enum tc_cc_voltage_state cc1, enum tc_c
 }
 
 /**
+ * @brief Returns true if the port partner is presenting Rp on only one CC line
+ */
+static inline int tcpc_is_cc_only_one_rp(enum tc_cc_voltage_state cc1, enum tc_cc_voltage_state cc2)
+{
+	return tcpc_is_cc_rp(cc1) != tcpc_is_cc_rp(cc2);
+}
+
+/**
  * @brief Initializes the TCPC
  *
  * @param dev Runtime device structure

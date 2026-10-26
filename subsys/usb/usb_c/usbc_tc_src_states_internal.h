@@ -35,6 +35,13 @@ enum smf_state_result tc_attached_src_run(void *obj);
 void tc_attached_src_exit(void *obj);
 
 /**
+ * @brief TryWait.SRC
+ */
+void tc_try_wait_src_entry(void *obj);
+enum smf_state_result tc_try_wait_src_run(void *obj);
+void tc_try_wait_src_exit(void *obj);
+
+/**
  * @brief Super State to set RP
  */
 void tc_cc_rp_entry(void *obj);
