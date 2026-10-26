@@ -1066,6 +1066,13 @@ New APIs and options
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_IS_CONFIGURABLE`
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE_IS_CONFIGURABLE`
 
+* Serial
+
+  * The Realtek Bee UART driver now supports the :ref:`asynchronous UART API <uart_async_api>` on
+    RTL87x2G and RTL8752H SoCs.
+  * The NXP i.MX UART driver now supports runtime configuration with
+    :c:func:`uart_configure` when :kconfig:option:`CONFIG_UART_USE_RUNTIME_CONFIGURE` is enabled.
+  * The Nordic nrfx UARTE driver now supports 5- to 9-bit frames on nRF54x devices.
 
 * Timer
 
