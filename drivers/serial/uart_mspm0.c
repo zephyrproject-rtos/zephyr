@@ -256,10 +256,8 @@ struct uart_mspm0_data {
 	uint32_t current_speed;
 	/* UART line configuration - raw register field values */
 	struct uart_mspm0_line_config uart_config;
-#ifdef CONFIG_PM_DEVICE
 	/* Maximum time needed to transmit one frame. */
 	uint32_t frame_time_us;
-#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Callback function pointer */
 	uart_irq_callback_user_data_t cb;
@@ -387,6 +385,32 @@ static int uart_mspm0_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
+static uint32_t uart_mspm0_frame_time_us(const struct uart_mspm0_data *data)
+{
+	uint32_t bits;
+
+	bits = 1U; /* Start bit */
+	bits += FIELD_GET(UART_LCRH_WLEN_MASK, data->uart_config.word_length) + 5U;
+	bits += (data->uart_config.parity & UART_LCRH_PEN_MASK) != 0U;
+	bits += (data->uart_config.stop_bits & UART_LCRH_STP2_MASK) != 0U ? 2U : 1U;
+
+	return DIV_ROUND_UP(bits * USEC_PER_SEC, data->current_speed) + 10U;
+}
+
+static void uart_mspm0_wait_tx_idle(const struct device *dev)
+{
+	const struct uart_mspm0_config *config = dev->config;
+	const struct uart_mspm0_data *data = dev->data;
+
+	/* Wait until all queued data has moved out of the TX FIFO. */
+	while ((config->regs->stat & config->stat_txfe_mask) == 0U) {
+	}
+
+	/* BUSY also covers RX activity, so keep this wait bounded. */
+	(void)WAIT_FOR((config->regs->stat & UART_STAT_BUSY_MASK) == 0U, data->frame_time_us,
+		       k_busy_wait(1));
+}
+
 static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_mspm0_config *config = dev->config;
@@ -411,7 +435,7 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 		while ((regs->stat & config->stat_txff_mask) != 0U) {
 		}
 		regs->txdata = (uint32_t)c;
-		goto out;
+		goto wait_tx_idle;
 	}
 
 	/* Wait until TX FIFO has space, then write atomically.
@@ -431,25 +455,14 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 		irq_unlock(key);
 	} while (true);
 
+wait_tx_idle:
+	uart_mspm0_wait_tx_idle(dev);
 out:
 	pm_policy_device_power_lock_put(dev);
 	(void)pm_device_runtime_put(dev);
 }
 
 #if defined(CONFIG_PM_DEVICE)
-
-static uint32_t uart_mspm0_frame_time_us(const struct uart_mspm0_data *data)
-{
-	uint32_t bits;
-
-	bits = 1U; /* Start bit */
-	bits += FIELD_GET(UART_LCRH_WLEN_MASK, data->uart_config.word_length) + 5U;
-	bits += (data->uart_config.parity & UART_LCRH_PEN_MASK) != 0U;
-	bits += (data->uart_config.stop_bits & UART_LCRH_STP2_MASK) != 0U ? 2U : 1U;
-
-	return DIV_ROUND_UP(bits * USEC_PER_SEC, data->current_speed) + 10U;
-}
-
 static int uart_mspm0_suspend_hw(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
@@ -469,7 +482,6 @@ static int uart_mspm0_suspend_hw(const struct device *dev)
 
 static int uart_mspm_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	const struct uart_mspm0_data *data = dev->data;
 	int err;
 	const struct uart_mspm0_config *config = dev->config;
 
@@ -493,15 +505,7 @@ static int uart_mspm_pm_action(const struct device *dev, enum pm_device_action a
 
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		/* Wait until all queued data has moved out of the TX FIFO. */
-		while ((config->regs->stat & config->stat_txfe_mask) == 0U) {
-		}
-
-		/* Wait until frame is fully transmitted and the TX line is idle.
-		 * BUSY flag is also for RX so don't wait indefinitely for it.
-		 */
-		(void)WAIT_FOR((config->regs->stat & UART_STAT_BUSY_MASK) == 0U,
-			       data->frame_time_us, k_busy_wait(1));
+		uart_mspm0_wait_tx_idle(dev);
 
 		err = uart_mspm0_suspend_hw(dev);
 		if (err < 0) {
@@ -552,10 +556,7 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 
 	/* Configure baud rate */
 	uart_mspm0_configure_baudrate(config->regs, uart_clk, data->current_speed);
-
-#ifdef CONFIG_PM_DEVICE
 	data->frame_time_us = uart_mspm0_frame_time_us(data);
-#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Restore FIFO interrupt level select thresholds. These are also wiped
