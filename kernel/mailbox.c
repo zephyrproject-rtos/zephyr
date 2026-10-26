@@ -91,7 +91,7 @@ void k_mbox_init(struct k_mbox *mbox)
 	mbox->lock = (struct k_spinlock) {};
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
-	k_obj_core_init_and_link(K_OBJ_CORE(mbox), &obj_type_mailbox);
+	z_obj_core_init_unlinked(K_OBJ_CORE(mbox), &obj_type_mailbox);
 #endif /* CONFIG_OBJ_CORE_MAILBOX */
 
 	SYS_PORT_TRACING_OBJ_INIT(k_mbox, mbox);

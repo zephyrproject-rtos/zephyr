@@ -131,7 +131,7 @@ void k_timer_init(struct k_timer *timer,
 	k_object_init(timer);
 
 #ifdef CONFIG_OBJ_CORE_TIMER
-	k_obj_core_init_and_link(K_OBJ_CORE(timer), &obj_type_timer);
+	z_obj_core_init_unlinked(K_OBJ_CORE(timer), &obj_type_timer);
 #endif /* CONFIG_OBJ_CORE_TIMER */
 }
 

@@ -62,7 +62,7 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 	k_object_init(mutex);
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
-	k_obj_core_init_and_link(K_OBJ_CORE(mutex), &obj_type_mutex);
+	z_obj_core_init_unlinked(K_OBJ_CORE(mutex), &obj_type_mutex);
 #endif /* CONFIG_OBJ_CORE_MUTEX */
 
 	SYS_PORT_TRACING_OBJ_INIT(k_mutex, mutex, 0);

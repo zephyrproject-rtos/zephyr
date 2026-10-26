@@ -56,7 +56,7 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	k_object_init(pipe);
 
 #ifdef CONFIG_OBJ_CORE_PIPE
-	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+	z_obj_core_init_unlinked(K_OBJ_CORE(pipe), &obj_type_pipe);
 #endif /* CONFIG_OBJ_CORE_PIPE */
 }
 
