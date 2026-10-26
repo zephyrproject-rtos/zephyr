@@ -1096,6 +1096,13 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_USBC_LOG_PD_MSG_NAMES`
 
+* Userspace
+
+  * :c:macro:`K_SYSCALL_OBJ_STATIC` to validate kernel objects that a system call handler retains
+    beyond the call, rejecting dynamically allocated ones.
+  * ``k_futex`` is no longer a kernel object: any address accessible to user mode can be
+    used as a futex.
+
 * Utilities
 
   * :c:macro:`ARGS_UNUSED` to mark multiple arguments as unused.
