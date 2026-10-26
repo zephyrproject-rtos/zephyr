@@ -502,13 +502,6 @@ config BT_PASSKEY_KEYPRESS
 	  Enable support for receiving and sending Keypress Notifications during
 	  Passkey Entry during pairing.
 
-config BT_SIGNING
-	bool "Data signing support [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This option enables data signing which is used for transferring
-	  authenticated data in an unencrypted connection.
-
 config BT_SMP_APP_PAIRING_ACCEPT
 	bool "Accept or reject pairing initiative"
 	help
@@ -574,8 +567,8 @@ config BT_SMP_DERIVE_LTK
 	  Derivation (Core Specification 6.3, Vol 3, Part H, Section 2.4.2.5).
 
 	  Disabling this refuses that procedure as a whole rather than only the
-	  LTK: the IRK, the identity address and the CSRK are not distributed
-	  over BR/EDR either, so RPAs from a peer bonded only over BR/EDR can
+	  LTK: the IRK and the identity address are not distributed over BR/EDR
+	  either, so RPAs from a peer bonded only over BR/EDR can
 	  no longer be resolved. That is intended, because the identity
 	  information on its own already creates an LE bond entry. The BR/EDR
 	  Security Manager fixed channel is also left out of the L2CAP

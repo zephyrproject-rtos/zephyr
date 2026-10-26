@@ -60,12 +60,6 @@ LOG_MODULE_REGISTER(bt_smp);
  */
 #define SMP_PASSKEY_ROUNDS 20U
 
-#if defined(CONFIG_BT_SIGNING)
-#define SIGN_DIST BT_SMP_DIST_SIGN
-#else
-#define SIGN_DIST 0
-#endif
-
 #if defined(CONFIG_BT_PRIVACY)
 #define ID_DIST BT_SMP_DIST_ID_KEY
 #else
@@ -78,9 +72,8 @@ LOG_MODULE_REGISTER(bt_smp);
 #define LINK_DIST 0
 #endif
 
-#define RECV_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | SIGN_DIST |\
-		   LINK_DIST)
-#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | ID_DIST | SIGN_DIST | LINK_DIST)
+#define RECV_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | LINK_DIST)
+#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | ID_DIST | LINK_DIST)
 
 #define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_ENC_KEY))
 #define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_ENC_KEY))
@@ -700,8 +693,7 @@ static bool update_debug_keys_check(struct bt_smp *smp)
 }
 #endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
-#if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_SIGNING) || \
-	!defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
+#if defined(CONFIG_BT_PRIVACY) || !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 /* For TX callbacks */
 static void smp_pairing_complete(struct bt_smp *smp, uint8_t status);
 #if defined(CONFIG_BT_CLASSIC)
@@ -756,15 +748,6 @@ static void smp_id_sent(struct bt_conn *conn, void *user_data, int err)
 	}
 }
 #endif /* CONFIG_BT_PRIVACY */
-
-#if defined(CONFIG_BT_SIGNING)
-static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
-{
-	if (!err) {
-		smp_check_complete(conn, BT_SMP_DIST_SIGN);
-	}
-}
-#endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_CLASSIC)
 static bool ltk_derive_link_key_allowed(struct bt_smp *smp)
@@ -1234,38 +1217,6 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		smp_br_send(smp, buf, smp_id_sent);
 	}
 #endif /* CONFIG_BT_PRIVACY */
-
-#if defined(CONFIG_BT_SIGNING)
-	if ((smp->local_dist & BT_SMP_DIST_SIGN) &&
-	    ((smp->local_distributed & BT_SMP_DIST_SIGN) == 0)) {
-		struct bt_smp_signing_info *info;
-		struct net_buf *buf;
-
-		smp->local_distributed |= BT_SMP_DIST_SIGN;
-
-		buf = smp_br_create_pdu(smp, BT_SMP_CMD_SIGNING_INFO,
-					sizeof(*info));
-		if (!buf) {
-			LOG_ERR("Unable to allocate Signing Info buffer");
-			return;
-		}
-
-		info = net_buf_add(buf, sizeof(*info));
-
-		if (bt_rand(info->csrk, sizeof(info->csrk))) {
-			LOG_ERR("Unable to get random bytes");
-			return;
-		}
-
-		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
-			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
-			memcpy(keys->local_csrk.val, info->csrk, 16);
-			keys->local_csrk.cnt = 0U;
-		}
-
-		smp_br_send(smp, buf, smp_sign_info_sent);
-	}
-#endif /* CONFIG_BT_SIGNING */
 }
 
 static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
@@ -1406,8 +1357,6 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
-	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	/* if all keys were distributed, pairing is done */
@@ -1449,8 +1398,6 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
-	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	/*
@@ -1571,10 +1518,6 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
 
-	if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
-	}
-
 	/* Check the BLE connections that has RPA matched with this IRK */
 	keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &addr);
 	if (keys) {
@@ -1600,50 +1543,6 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 	return 0;
 }
 
-#if defined(CONFIG_BT_SIGNING)
-static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
-{
-	struct bt_smp_signing_info *req = (void *)buf->data;
-	struct bt_conn *conn = smp->chan.chan.conn;
-	struct bt_keys *keys;
-	bt_addr_le_t addr;
-
-	LOG_DBG("");
-
-	/*
-	 * For dualmode devices LE address is same as BR/EDR address and is of
-	 * public type.
-	 */
-	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
-
-	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, conn->id, &addr);
-	if (!keys) {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	memcpy(keys->remote_csrk.val, req->csrk, sizeof(keys->remote_csrk.val));
-
-	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
-
-	if (conn->role == BT_CONN_ROLE_CENTRAL && !smp->remote_dist) {
-		smp_br_distribute_keys(smp);
-	}
-
-	/* if all keys were distributed, pairing is done */
-	if (!smp->local_dist && !smp->remote_dist) {
-		smp_pairing_br_complete(smp, 0);
-	}
-
-	return 0;
-}
-#else
-static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
-{
-	return BT_SMP_ERR_CMD_NOTSUPP;
-}
-#endif /* CONFIG_BT_SIGNING */
-
 static const struct {
 	uint8_t  (*func)(struct bt_smp_br *smp, struct net_buf *buf);
 	uint8_t  expect_len;
@@ -1658,7 +1557,7 @@ static const struct {
 	{ }, /* central ident not used over BR/EDR */
 	{ smp_br_ident_info,       sizeof(struct bt_smp_ident_info) },
 	{ smp_br_ident_addr_info,  sizeof(struct bt_smp_ident_addr_info) },
-	{ smp_br_signing_info,     sizeof(struct bt_smp_signing_info) },
+	{ }, /* signing info, removed in Core Spec 6.3 */
 	/* security request not used over BR/EDR */
 	/* public key not used over BR/EDR */
 	/* DHKey check not used over BR/EDR */
@@ -2348,34 +2247,6 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 	}
 #endif /* CONFIG_BT_PRIVACY */
 
-#if defined(CONFIG_BT_SIGNING)
-	if (smp->local_dist & BT_SMP_DIST_SIGN) {
-		struct bt_smp_signing_info *info;
-		struct net_buf *buf;
-
-		buf = smp_create_pdu(smp, BT_SMP_CMD_SIGNING_INFO,
-				     sizeof(*info));
-		if (!buf) {
-			LOG_ERR("Unable to allocate Signing Info buffer");
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		info = net_buf_add(buf, sizeof(*info));
-
-		if (bt_rand(info->csrk, sizeof(info->csrk))) {
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
-			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
-			memcpy(keys->local_csrk.val, info->csrk, 16);
-			keys->local_csrk.cnt = 0U;
-		}
-
-		smp_send(smp, buf, smp_sign_info_sent, NULL);
-	}
-#endif /* CONFIG_BT_SIGNING */
-
 	return 0;
 }
 
@@ -2677,9 +2548,6 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 			} else if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 				atomic_set_bit(smp->allowed_cmds,
 					       BT_SMP_CMD_IDENT_INFO);
-			} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-				atomic_set_bit(smp->allowed_cmds,
-					       BT_SMP_CMD_SIGNING_INFO);
 			}
 		}
 
@@ -2806,8 +2674,6 @@ static uint8_t smp_central_ident(struct bt_smp *smp, struct net_buf *buf)
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
-	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -4286,10 +4152,6 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		}
 	}
 
-	if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
-	}
-
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_HCI_ROLE_CENTRAL && !smp->remote_dist) {
 		err = bt_smp_distribute_keys(smp);
@@ -4305,53 +4167,6 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 }
-
-#if defined(CONFIG_BT_SIGNING)
-static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
-{
-	struct bt_conn *conn = smp->chan.chan.conn;
-	uint8_t err;
-
-	LOG_DBG("");
-
-	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
-		struct bt_smp_signing_info *req = (void *)buf->data;
-		struct bt_keys *keys;
-
-		keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, conn->id,
-					&conn->le.dst);
-		if (!keys) {
-			LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		memcpy(keys->remote_csrk.val, req->csrk,
-		       sizeof(keys->remote_csrk.val));
-	}
-
-	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
-
-	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    conn->role == BT_HCI_ROLE_CENTRAL && !smp->remote_dist) {
-		err = bt_smp_distribute_keys(smp);
-		if (err) {
-			return err;
-		}
-	}
-
-	/* if all keys were distributed, pairing is done */
-	if (!smp->local_dist && !smp->remote_dist) {
-		smp_pairing_complete(smp, 0);
-	}
-
-	return 0;
-}
-#else
-static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
-{
-	return BT_SMP_ERR_CMD_NOTSUPP;
-}
-#endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_CENTRAL)
 static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
@@ -4752,9 +4567,6 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 			if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 				atomic_set_bit(smp->allowed_cmds,
 					       BT_SMP_CMD_IDENT_INFO);
-			} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-				atomic_set_bit(smp->allowed_cmds,
-					       BT_SMP_CMD_SIGNING_INFO);
 			}
 		}
 
@@ -4845,7 +4657,7 @@ static const struct {
 	{ smp_central_ident,       sizeof(struct bt_smp_central_ident) },
 	{ smp_ident_info,          sizeof(struct bt_smp_ident_info) },
 	{ smp_ident_addr_info,     sizeof(struct bt_smp_ident_addr_info) },
-	{ smp_signing_info,        sizeof(struct bt_smp_signing_info) },
+	{ }, /* signing info, removed in Core Spec 6.3 */
 	{ smp_security_request,    sizeof(struct bt_smp_security_request) },
 	{ smp_public_key,          sizeof(struct bt_smp_public_key) },
 	{ smp_dhkey_check,         sizeof(struct bt_smp_dhkey_check) },
@@ -5097,8 +4909,6 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_ENCRYPT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
-	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	/* This is the last point that is common for all code paths in the
@@ -5157,202 +4967,6 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 		smp_pairing_complete(smp, 0);
 	}
 }
-
-#if defined(CONFIG_BT_SIGNING) || defined(CONFIG_BT_SMP_SELFTEST)
-/* Sign message using msg as a buffer, len is a size of the message,
- * msg buffer contains message itself, 32 bit count and signature,
- * so total buffer size is len + 4 + 8 octets.
- * API is Little Endian to make it suitable for Bluetooth.
- */
-static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
-{
-	uint8_t *m = msg;
-	uint32_t cnt = UNALIGNED_GET((uint32_t *)&msg[len]);
-	uint8_t *sig = msg + len;
-	uint8_t key_s[16], tmp[16];
-	int err;
-
-	LOG_DBG("Signing msg %s len %u key %s", bt_hex(msg, len), len, bt_hex(key, 16));
-
-	sys_mem_swap(m, len + sizeof(cnt));
-	sys_memcpy_swap(key_s, key, 16);
-
-	err = bt_crypto_aes_cmac(key_s, m, len + sizeof(cnt), tmp);
-	if (err) {
-		LOG_ERR("Data signing failed");
-		return err;
-	}
-
-	sys_mem_swap(tmp, sizeof(tmp));
-	memcpy(tmp + 4, &cnt, sizeof(cnt));
-
-	/* Swap original message back */
-	sys_mem_swap(m, len + sizeof(cnt));
-
-	memcpy(sig, tmp + 4, 12);
-
-	LOG_DBG("sig %s", bt_hex(sig, 12));
-
-	return 0;
-}
-#endif
-
-#if defined(CONFIG_BT_SIGNING)
-int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
-{
-	struct bt_keys *keys;
-	uint8_t sig[12];
-	uint32_t cnt;
-	int err;
-
-	/* Store signature incl. count */
-	memcpy(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig));
-
-	keys = bt_keys_find(BT_KEYS_REMOTE_CSRK, conn->id, &conn->le.dst);
-	if (!keys) {
-		LOG_ERR("Unable to find Remote CSRK for %s", bt_addr_le_str(&conn->le.dst));
-		return -ENOENT;
-	}
-
-	cnt = sys_get_le32(sig);
-
-	/* The Signing Algorithm is performed with the received counter
-	 * value, and replay protection is done by rejecting counter values
-	 * that have already been used (Core Spec v6.2, Vol 3, Part C,
-	 * Section 10.4.2, the last version to specify data signing before
-	 * its removal in v6.3). Values greater than the expected next one
-	 * are accepted, since the peer may consume counter values for
-	 * signed PDUs that never end up being received, e.g. when it
-	 * retries a failed send with a fresh signature or disconnects with
-	 * signed PDUs still queued.
-	 */
-	if (cnt < keys->remote_csrk.cnt) {
-		LOG_WRN("Rejecting already used sign counter %u from %s", cnt,
-			bt_conn_dst_str(conn));
-		return -EBADMSG;
-	}
-
-	/* Fail closed when the received counter is the final possible
-	 * value: accepting it would wrap the next expected value around
-	 * to zero, re-opening the replay window for every previously used
-	 * counter value. The counter space of the CSRK is then exhausted,
-	 * and signing can only resume once a new pairing distributes a
-	 * fresh CSRK.
-	 */
-	if (cnt == UINT32_MAX) {
-		LOG_WRN("Sign counter of remote CSRK for %s exhausted",
-			bt_conn_dst_str(conn));
-		return -EOVERFLOW;
-	}
-
-	LOG_DBG("Sign data len %zu key %s count %u", buf->len - sizeof(sig),
-		bt_hex(keys->remote_csrk.val, 16), cnt);
-
-	err = smp_sign_buf(keys->remote_csrk.val, buf->data,
-			   buf->len - sizeof(sig));
-	if (err) {
-		LOG_ERR("Unable to create signature for %s", bt_addr_le_str(&conn->le.dst));
-		return -EIO;
-	}
-
-	if (memcmp(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig))) {
-		LOG_ERR("Unable to verify signature for %s", bt_addr_le_str(&conn->le.dst));
-		return -EBADMSG;
-	}
-
-	keys->remote_csrk.cnt = cnt + 1U;
-
-	/* The sign counter is bound to the lifetime of the CSRK, not to a
-	 * single power cycle. Without persisting each accepted value, a
-	 * reboot would restore the counter stored at pairing time, making
-	 * previously captured Signed Write Commands verify (replay) again.
-	 *
-	 * Fail closed if the new value cannot be persisted, so that no
-	 * command gets executed unless it is also protected from replay.
-	 * The incremented in-memory value is kept, since the peer has
-	 * already consumed this counter value and expects the next one.
-	 */
-	err = bt_keys_store(keys);
-	if (err != 0) {
-		LOG_ERR("Unable to store updated sign counter for %s",
-			bt_conn_dst_str(conn));
-		return err;
-	}
-
-	return 0;
-}
-
-int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
-{
-	struct bt_keys *keys;
-	uint32_t cnt;
-	int err;
-
-	keys = bt_keys_find(BT_KEYS_LOCAL_CSRK, conn->id, &conn->le.dst);
-	if (!keys) {
-		LOG_ERR("Unable to find local CSRK for %s", bt_addr_le_str(&conn->le.dst));
-		return -ENOENT;
-	}
-
-	/* Fail closed when the counter space is exhausted, instead of
-	 * wrapping around and reusing counter values, which the peer
-	 * would reject as replays. The final possible value is never used
-	 * for signing, since a receiver cannot accept it without its own
-	 * next expected value wrapping (see bt_smp_sign_verify()). A new
-	 * pairing needs to distribute a fresh CSRK to resume signing.
-	 */
-	if (keys->local_csrk.cnt == UINT32_MAX) {
-		LOG_ERR("Sign counter of local CSRK for %s exhausted",
-			bt_conn_dst_str(conn));
-		return -EOVERFLOW;
-	}
-
-	/* Reserve space for data signature */
-	net_buf_add(buf, 12);
-
-	/* Copy signing count */
-	cnt = sys_cpu_to_le32(keys->local_csrk.cnt);
-	memcpy(net_buf_tail(buf) - 12, &cnt, sizeof(cnt));
-
-	LOG_DBG("Sign data len %u key %s count %u", buf->len, bt_hex(keys->local_csrk.val, 16),
-		keys->local_csrk.cnt);
-
-	err = smp_sign_buf(keys->local_csrk.val, buf->data, buf->len - 12);
-	if (err) {
-		LOG_ERR("Unable to create signature for %s", bt_addr_le_str(&conn->le.dst));
-		return -EIO;
-	}
-
-	keys->local_csrk.cnt++;
-
-	/* Persist the new counter value so that a reboot does not lead to
-	 * reuse of an already used value, which the peer would reject.
-	 *
-	 * On failure the increment is reverted: the PDU is not sent in
-	 * that case, so the counter value has not been consumed and must
-	 * be used for the next attempt to stay in sync with the peer.
-	 */
-	err = bt_keys_store(keys);
-	if (err != 0) {
-		LOG_ERR("Unable to store updated sign counter for %s",
-			bt_conn_dst_str(conn));
-		keys->local_csrk.cnt--;
-		return err;
-	}
-
-	return 0;
-}
-#else
-int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
-{
-	return -ENOTSUP;
-}
-
-int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
-{
-	return -ENOTSUP;
-}
-#endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_SMP_SELFTEST)
 /* Test vectors are taken from RFC 4493
@@ -5429,94 +5043,6 @@ static int smp_aes_cmac_test(void)
 	}
 
 	err = aes_test("Test aes-cmac64", key, M, 64, mac4);
-	if (err) {
-		return err;
-	}
-
-	return 0;
-}
-
-static int sign_test(const char *prefix, const uint8_t *sign_key, const uint8_t *m,
-		     uint16_t len, const uint8_t *sig)
-{
-	uint8_t msg[len + sizeof(uint32_t) + 8];
-	uint8_t orig[len + sizeof(uint32_t) + 8];
-	uint8_t *out = msg + len;
-	int err;
-
-	LOG_DBG("%s: Sign message with len %u", prefix, len);
-
-	(void)memset(msg, 0, sizeof(msg));
-	memcpy(msg, m, len);
-	(void)memset(msg + len, 0, sizeof(uint32_t));
-
-	memcpy(orig, msg, sizeof(msg));
-
-	err = smp_sign_buf(sign_key, msg, len);
-	if (err) {
-		return err;
-	}
-
-	/* Check original message */
-	if (!memcmp(msg, orig, len + sizeof(uint32_t))) {
-		LOG_DBG("%s: Original message intact", prefix);
-	} else {
-		LOG_ERR("%s: Original message modified", prefix);
-		LOG_DBG("%s: orig %s", prefix, bt_hex(orig, sizeof(orig)));
-		LOG_DBG("%s: msg %s", prefix, bt_hex(msg, sizeof(msg)));
-		return -1;
-	}
-
-	if (!memcmp(out, sig, 12)) {
-		LOG_DBG("%s: Success", prefix);
-	} else {
-		LOG_ERR("%s: Failed", prefix);
-		return -1;
-	}
-
-	return 0;
-}
-
-static int smp_sign_test(void)
-{
-	const uint8_t sig1[] = {
-		0x00, 0x00, 0x00, 0x00, 0xb3, 0xa8, 0x59, 0x41,
-		0x27, 0xeb, 0xc2, 0xc0
-	};
-	const uint8_t sig2[] = {
-		0x00, 0x00, 0x00, 0x00, 0x27, 0x39, 0x74, 0xf4,
-		0x39, 0x2a, 0x23, 0x2a
-	};
-	const uint8_t sig3[] = {
-		0x00, 0x00, 0x00, 0x00, 0xb7, 0xca, 0x94, 0xab,
-		0x87, 0xc7, 0x82, 0x18
-	};
-	const uint8_t sig4[] = {
-		0x00, 0x00, 0x00, 0x00, 0x44, 0xe1, 0xe6, 0xce,
-		0x1d, 0xf5, 0x13, 0x68
-	};
-	uint8_t key_s[16];
-	int err;
-
-	/* Use the same key as aes-cmac but swap bytes */
-	sys_memcpy_swap(key_s, key, 16);
-
-	err = sign_test("Test sign0", key_s, M, 0, sig1);
-	if (err) {
-		return err;
-	}
-
-	err = sign_test("Test sign16", key_s, M, 16, sig2);
-	if (err) {
-		return err;
-	}
-
-	err = sign_test("Test sign40", key_s, M, 40, sig3);
-	if (err) {
-		return err;
-	}
-
-	err = sign_test("Test sign64", key_s, M, 64, sig4);
 	if (err) {
 		return err;
 	}
@@ -5730,12 +5256,6 @@ static int smp_self_test(void)
 	err = smp_aes_cmac_test();
 	if (err) {
 		LOG_ERR("SMP AES-CMAC self tests failed");
-		return err;
-	}
-
-	err = smp_sign_test();
-	if (err) {
-		LOG_ERR("SMP signing self tests failed");
 		return err;
 	}
 

@@ -52,8 +52,7 @@ BUILD_ASSERT(STORAGE_CFG_VERSION >= STORAGE_CFG_VERSION_MIN, "STORAGE_CFG_VERSIO
 BUILD_ASSERT(STORAGE_CFG_VERSION <= UINT8_MAX, "STORAGE_CFG_VERSION is too large");
 /* Configuration flags for storage. Based on the bt_keys_cfg_flags enum. */
 #define STORAGE_CFG_FLAGS                                                                          \
-	((IS_ENABLED(CONFIG_BT_SIGNING) ? BT_KEYS_CFG_SIGNING : 0) |                               \
-	 (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) ? BT_KEYS_CFG_SC_PAIR_ONLY : 0) |                 \
+	((IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) ? BT_KEYS_CFG_SC_PAIR_ONLY : 0) |                 \
 	 (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) ? BT_KEYS_CFG_OVERWRITE_OLDEST : 0))
 BUILD_ASSERT(STORAGE_CFG_FLAGS < BIT(24), "STORAGE_CFG_FLAGS is too large");
 
@@ -486,11 +485,11 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 			return -EINVAL;
 		}
-	} else if (!IS_ENABLED(CONFIG_BT_SIGNING) && IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
+	} else if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
 		   (uint8_t)val[0] < (uint8_t)STORAGE_CFG_VERSION_MIN) {
 		/* Migrate `bt_keys` stored with extra data to the new format in the most common
-		 * scenario where both legacy pairing and signing support are disabled. This allows
-		 * to still properly load and use the keys after firmware upgrade.
+		 * scenario where legacy pairing support is disabled. This allows to still properly
+		 * load and use the keys after firmware upgrade.
 		 */
 		size_t load_size = BT_KEYS_STORAGE_LEN_COMPAT;
 

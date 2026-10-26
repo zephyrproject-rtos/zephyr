@@ -5276,12 +5276,11 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 #endif
 
 	if (sign) {
-		buf = bt_att_create_pdu(conn, BT_ATT_OP_SIGNED_WRITE_CMD,
-					sizeof(*cmd) + length + 12);
-	} else {
-		buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_CMD,
-					sizeof(*cmd) + length);
+		/* Data signing was removed in Core Specification 6.3 */
+		return -ENOTSUP;
 	}
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_CMD, sizeof(*cmd) + length);
 	if (!buf) {
 		return -ENOMEM;
 	}

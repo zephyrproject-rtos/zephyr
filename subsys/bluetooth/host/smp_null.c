@@ -33,16 +33,6 @@ LOG_MODULE_REGISTER(bt_smp);
 
 static struct bt_l2cap_le_chan bt_smp_pool[CONFIG_BT_MAX_CONN];
 
-int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
-{
-	return -ENOTSUP;
-}
-
-int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
-{
-	return -ENOTSUP;
-}
-
 static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *req_buf)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
