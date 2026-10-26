@@ -9,14 +9,6 @@
 
 / {
 	soc {
-		faci: faci@407e0000 {
-			compatible = "renesas,ra-faci";
-			reg = <0x407e0000 0x10000>;
-			ranges;
-			interrupts = <49 1>, <50 1>;
-			interrupt-names = "frdyi", "fiferr";
-		};
-
 		code_flash_ctrl: code-flash-ctrl {
 			compatible = "renesas,ra-flash-hp-controller";
 			ranges;
@@ -53,6 +45,14 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+		};
+
+		faci: faci@407e0000 {
+			compatible = "renesas,ra-faci";
+			reg = <0x407e0000 0x10000>;
+			ranges;
+			interrupts = <49 1>, <50 1>;
+			interrupt-names = "frdyi", "fiferr";
 		};
 	};
 };

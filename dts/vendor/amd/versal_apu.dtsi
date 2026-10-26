@@ -9,18 +9,6 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 
-		/*
-		 * OCM (On-Chip Memory) is used by TF-A (Trusted Firmware-A) by default.
-		 * Enable this node only if TF-A is not using this memory region or if
-		 * explicit coordination is established between TF-A and Zephyr.
-		 */
-		ocm: memory@fffc0000 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0 0xfffc0000 0x0 DT_SIZE_K(256)>;
-			zephyr,memory-region = "OCM";
-			status = "disabled";
-		};
-
 		uart0: uart@ff000000 {
 			compatible = "arm,sbsa-uart";
 			reg = <0x0 0xff000000 0x0 DT_SIZE_K(64)>;
@@ -34,6 +22,18 @@
 			reg = <0x0 0xff010000 0x0 DT_SIZE_K(64)>;
 			interrupt-names = "irq_1";
 			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		/*
+		 * OCM (On-Chip Memory) is used by TF-A (Trusted Firmware-A) by default.
+		 * Enable this node only if TF-A is not using this memory region or if
+		 * explicit coordination is established between TF-A and Zephyr.
+		 */
+		ocm: memory@fffc0000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0 0xfffc0000 0x0 DT_SIZE_K(256)>;
+			zephyr,memory-region = "OCM";
 			status = "disabled";
 		};
 	};

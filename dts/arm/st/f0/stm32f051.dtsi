@@ -10,6 +10,34 @@
 	soc {
 		compatible = "st,stm32f051", "st,stm32f0", "simple-bus";
 
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1, 4)>;
+			interrupts = <17 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <26 0>;
+			st,spi-data-width = "full-4-to-16-bit";
+			status = "disabled";
+		};
+
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
@@ -31,32 +59,12 @@
 			status = "disabled";
 		};
 
-		spi2: spi@40003800 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
-			reg = <0x40003800 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <26 0>;
-			st,spi-data-width = "full-4-to-16-bit";
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
+			#io-channel-cells = <1>;
 			status = "disabled";
-		};
-
-		timers6: timers@40001000 {
-			compatible = "st,stm32-timers";
-			reg = <0x40001000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
-				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1, 4)>;
-			interrupts = <17 0>;
-			interrupt-names = "global";
-			st,prescaler = <0>;
-			status = "disabled";
-
-			counter {
-				compatible = "st,stm32-counter";
-				status = "disabled";
-			};
 		};
 
 		timers15: timers@40014000 {
@@ -80,14 +88,6 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
-		};
-
-		dac1: dac@40007400 {
-			compatible = "st,stm32-dac";
-			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-			#io-channel-cells = <1>;
-			status = "disabled";
 		};
 	};
 

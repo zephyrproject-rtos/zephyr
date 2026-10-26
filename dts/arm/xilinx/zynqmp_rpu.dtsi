@@ -22,6 +22,16 @@
 
 		interrupt-parent = <&gic>;
 
+		gic: interrupt-controller@f9000000 {
+			compatible = "arm,gic-v1", "arm,gic";
+			reg = <0xf9000000 0x1000>,
+			      <0xf9001000 0x1000>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+
 		rpu0_ipi: zynqmp-ipi@ff310000 {
 			compatible = "xlnx,zynqmp-ipi-mailbox";
 
@@ -34,18 +44,6 @@
 			local-ipi-id = <1>;
 			status = "disabled";
 
-			rpu0_apu_mailbox: mailbox@ff990080 {
-				reg = <0xff990080 0x20>,
-				      <0xff9900a0 0x20>,
-				      <0xff990400 0x20>,
-				      <0xff990420 0x20>;
-				remote-ipi-id = <0>;
-				reg-names = "local_request_region",
-					    "local_response_region",
-					    "remote_request_region",
-					    "remote_response_region";
-			};
-
 			rpu0_rpu1_mailbox: mailbox@ff990040 {
 				reg = <0xff990040 0x20>,
 				      <0xff990060 0x20>,
@@ -53,6 +51,18 @@
 				      <0xff990220 0x20>;
 				remote-ipi-id = <2>;
 
+				reg-names = "local_request_region",
+					    "local_response_region",
+					    "remote_request_region",
+					    "remote_response_region";
+			};
+
+			rpu0_apu_mailbox: mailbox@ff990080 {
+				reg = <0xff990080 0x20>,
+				      <0xff9900a0 0x20>,
+				      <0xff990400 0x20>,
+				      <0xff990420 0x20>;
+				remote-ipi-id = <0>;
 				reg-names = "local_request_region",
 					    "local_response_region",
 					    "remote_request_region",
@@ -73,18 +83,6 @@
 				      IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 
-			rpu1_apu_mailbox: mailbox@ff990280 {
-				reg = <0xff990280 0x20>,
-				      <0xff9902a0 0x20>,
-				      <0xff990440 0x20>,
-				      <0xff990460 0x20>;
-				remote-ipi-id = <0>;
-				reg-names = "local_request_region",
-					    "local_response_region",
-					    "remote_request_region",
-					    "remote_response_region";
-			};
-
 			rpu1_rpu0_mailbox: mailbox@ff990200 {
 				reg = <0xff990200 0x20>,
 				      <0xff990220 0x20>,
@@ -96,16 +94,18 @@
 					    "remote_request_region",
 					    "remote_response_region";
 			};
-		};
 
-		gic: interrupt-controller@f9000000 {
-			compatible = "arm,gic-v1", "arm,gic";
-			reg = <0xf9000000 0x1000>,
-			      <0xf9001000 0x1000>;
-			interrupt-controller;
-			#address-cells = <0>;
-			#interrupt-cells = <4>;
-			status = "okay";
+			rpu1_apu_mailbox: mailbox@ff990280 {
+				reg = <0xff990280 0x20>,
+				      <0xff9902a0 0x20>,
+				      <0xff990440 0x20>,
+				      <0xff990460 0x20>;
+				remote-ipi-id = <0>;
+				reg-names = "local_request_region",
+					    "local_response_region",
+					    "remote_request_region",
+					    "remote_response_region";
+			};
 		};
 	};
 };

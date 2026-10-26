@@ -416,6 +416,12 @@
 				phy = <&usbhs_phy>;
 				status = "disabled";
 
+				usbhs_bc12: usbhs_bc12 {
+					compatible = "nordic,nrf-usbhs-bc12";
+					charging-mode = "BC12_TYPE_NONE";
+					status = "disabled";
+				};
+
 				usbhs: usbhs@20000 {
 					compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
 					reg = <0x20000 0x1a000>;
@@ -430,12 +436,6 @@
 					g-np-tx-fifo-size = <32>;
 					g-tx-fifo-size = <512 256 256 256 256 256 256
 							  128 32 32 16 16 16 16 16>;
-					status = "disabled";
-				};
-
-				usbhs_bc12: usbhs_bc12 {
-					compatible = "nordic,nrf-usbhs-bc12";
-					charging-mode = "BC12_TYPE_NONE";
 					status = "disabled";
 				};
 			};

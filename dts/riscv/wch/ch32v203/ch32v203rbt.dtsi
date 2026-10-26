@@ -8,6 +8,17 @@
 
 / {
 	soc {
+		spi2: spi@40003800 {
+			compatible = "wch,spi";
+			reg = <0x40003800 0x24>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_SPI2>;
+			interrupt-parent = <&pfic>;
+			interrupts = <52>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		usart2: uart@40004400 {
 			compatible = "wch,usart";
 			reg = <0x40004400 0x20>;
@@ -35,17 +46,6 @@
 			resets = <&rctl CH32_RESET(APB1, 19)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <68>;
-			status = "disabled";
-		};
-
-		spi2: spi@40003800 {
-			compatible = "wch,spi";
-			reg = <0x40003800 0x24>;
-			clocks = <&rcc CH32V20X_V30X_CLOCK_SPI2>;
-			interrupt-parent = <&pfic>;
-			interrupts = <52>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			status = "disabled";
 		};
 

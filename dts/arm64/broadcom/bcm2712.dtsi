@@ -43,21 +43,6 @@
 			device_type = "memory";
 		};
 
-		gic: interrupt-controller@107fff9000 {
-			compatible = "arm,gic-v2", "arm,gic";
-			reg = <0x10 0x7fff9000 0x1000>,
-			      <0x10 0x7fffa000 0x2000>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
-		};
-
-		rng: rng@107d208000 {
-			compatible = "brcm,iproc-rng200";
-			reg = <0x10 0x7d208000 0x28>;
-			status = "okay";
-		};
-
 		mbox0: mbox@107c013880 {
 			compatible = "brcm,bcm2711-mbox";
 			reg = <0x10 0x7c013880 0x40>;
@@ -66,6 +51,28 @@
 			interrupt-parent = <&gic>;
 			#mbox-cells = <1>;
 			status = "disabled";
+		};
+
+		uart10: serial@107d001000 {
+			compatible = "arm,pl011";
+			reg = <0x10 0x7d001000 0x200>;
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_121";
+			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+		rng: rng@107d208000 {
+			compatible = "brcm,iproc-rng200";
+			reg = <0x10 0x7d208000 0x28>;
+			status = "okay";
+		};
+
+		pinctrl: pinctrl@107d504100 {
+			compatible = "brcm,bcm2712-pinctrl";
+			reg = <0x10 0x7d504100 0x200>;
+			status = "okay";
 		};
 
 		gpio2@107d517c00 {
@@ -85,19 +92,12 @@
 			};
 		};
 
-		uart10: serial@107d001000 {
-			compatible = "arm,pl011";
-			reg = <0x10 0x7d001000 0x200>;
-			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_121";
-			clocks = <&clk_uart>;
-			status = "disabled";
-		};
-
-		pinctrl: pinctrl@107d504100 {
-			compatible = "brcm,bcm2712-pinctrl";
-			reg = <0x10 0x7d504100 0x200>;
+		gic: interrupt-controller@107fff9000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0x10 0x7fff9000 0x1000>,
+			      <0x10 0x7fffa000 0x2000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
 			status = "okay";
 		};
 	};
@@ -151,43 +151,6 @@
 					#clock-cells = <0>;
 				};
 
-				rp1_pinctrl: pinctrl@1f000d0000 {
-					compatible = "raspberrypi,rp1-pinctrl";
-					reg = <0x1f 0xd0000 0x128>,
-					      <0x1f 0xf0004 0x70>;
-					reg-names = "gpio", "pads";
-					#address-cells = <1>;
-					#size-cells = <0>;
-					status = "okay";
-
-					gpio0_0: gpio@0 {
-						compatible = "raspberrypi,rp1-gpio";
-						reg = <0x0 0x10000 0x20000>;
-						#gpio-cells = <2>;
-						gpio-controller;
-						ngpios = <28>;
-						status = "disabled";
-					};
-
-					gpio0_1: gpio@4000 {
-						compatible = "raspberrypi,rp1-gpio";
-						reg = <0x4000 0x14000 0x24000>;
-						#gpio-cells = <2>;
-						gpio-controller;
-						ngpios = <6>;
-						status = "disabled";
-					};
-
-					gpio0_2: gpio@8000 {
-						compatible = "raspberrypi,rp1-gpio";
-						reg = <0x8000 0x18000 0x28000>;
-						#gpio-cells = <2>;
-						gpio-controller;
-						ngpios = <20>;
-						status = "disabled";
-					};
-				};
-
 				rp1_uart0: serial@1f00030000 {
 					compatible = "arm,pl011";
 					reg = <0x1f 0x30000 0x100>;
@@ -226,6 +189,43 @@
 					clocks = <&rp1_uartclk>;
 					clock-names = "uartclk";
 					status = "disabled";
+				};
+
+				rp1_pinctrl: pinctrl@1f000d0000 {
+					compatible = "raspberrypi,rp1-pinctrl";
+					reg = <0x1f 0xd0000 0x128>,
+					      <0x1f 0xf0004 0x70>;
+					reg-names = "gpio", "pads";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					status = "okay";
+
+					gpio0_0: gpio@0 {
+						compatible = "raspberrypi,rp1-gpio";
+						reg = <0x0 0x10000 0x20000>;
+						#gpio-cells = <2>;
+						gpio-controller;
+						ngpios = <28>;
+						status = "disabled";
+					};
+
+					gpio0_1: gpio@4000 {
+						compatible = "raspberrypi,rp1-gpio";
+						reg = <0x4000 0x14000 0x24000>;
+						#gpio-cells = <2>;
+						gpio-controller;
+						ngpios = <6>;
+						status = "disabled";
+					};
+
+					gpio0_2: gpio@8000 {
+						compatible = "raspberrypi,rp1-gpio";
+						reg = <0x8000 0x18000 0x28000>;
+						#gpio-cells = <2>;
+						gpio-controller;
+						ngpios = <20>;
+						status = "disabled";
+					};
 				};
 			};
 		};

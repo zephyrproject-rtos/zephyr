@@ -264,17 +264,6 @@
 			status = "disabled";
 		};
 
-		i2c0: i2c@4000a300 {
-			compatible = "bflb,i2c";
-			reg = <0x4000a300 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			interrupts = <48 0>;
-			interrupt-parent = <&clic>;
-			status = "disabled";
-		};
-
 		spi0: spi@4000a200 {
 			compatible = "bflb,spi";
 			reg = <0x4000a200 0x100>;
@@ -282,6 +271,17 @@
 			#size-cells = <0>;
 
 			interrupts = <43 0>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@4000a300 {
+			compatible = "bflb,i2c";
+			reg = <0x4000a300 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			interrupts = <48 0>;
 			interrupt-parent = <&clic>;
 			status = "disabled";
 		};
@@ -376,14 +376,6 @@
 			};
 		};
 
-		usb0: usb@4000d800 {
-			compatible = "bflb,udc-1";
-			reg = <0x4000d800 0x200>;
-			interrupts = <37 0>;
-			interrupt-parent = <&clic>;
-			status = "disabled";
-		};
-
 		dma0: dma@4000c000 {
 			compatible = "bflb,dma";
 			reg = <0x4000c000 0x1000>;
@@ -392,6 +384,14 @@
 
 			interrupts = <31 0>;
 			interrupt-parent = <&clic>;
+		};
+
+		usb0: usb@4000d800 {
+			compatible = "bflb,udc-1";
+			reg = <0x4000d800 0x200>;
+			interrupts = <37 0>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		powerctrl: power-controller@4000f000 {

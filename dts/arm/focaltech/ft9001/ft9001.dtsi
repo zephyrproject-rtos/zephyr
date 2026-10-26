@@ -32,15 +32,15 @@
 	};
 
 	soc {
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(224)>;
-		};
-
 		sramd0: memory@1fff8000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x1fff8000 DT_SIZE_K(32)>;
 			zephyr,memory-region = "DTCM";
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(224)>;
 		};
 
 		pinctrl: pin-controller@40000000 {
@@ -54,19 +54,6 @@
 			compatible = "focaltech,ft9001-ccm";
 			reg = <0x40001000 0x1000>;
 			status = "disabled";
-		};
-
-		cpm: cpm@40004000 {
-			compatible = "focaltech,ft9001-cpm";
-			reg = <0x40004000 0x1000>;
-			#clock-cells = <1>;
-			status = "okay";
-
-			rctl: reset-controller {
-				compatible = "focaltech,ft9001-cpm-rctl";
-				#reset-cells = <1>;
-				status = "okay";
-			};
 		};
 
 		flash_ctrl: flash-controller@40003000 {
@@ -87,21 +74,42 @@
 			};
 		};
 
+		cpm: cpm@40004000 {
+			compatible = "focaltech,ft9001-cpm";
+			reg = <0x40004000 0x1000>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "focaltech,ft9001-cpm-rctl";
+				#reset-cells = <1>;
+				status = "okay";
+			};
+		};
+
+		wdt0: watchdog@40005000 {
+			compatible = "focaltech,ft9001-wdt";
+			reg = <0x40005000 0x1000>;
+			clocks = <&cpm FOCALTECH_CLOCK_WDT>;
+			resets = <&rctl FOCALTECH_RESET_WDT>;
+			status = "disabled";
+		};
+
+		tc0: timer@40006000 {
+			compatible = "focaltech,ft9001-timer";
+			reg = <0x40006000 0x1000>;
+			interrupts = <2 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_TC>;
+			resets = <&rctl FOCALTECH_RESET_TC>;
+			status = "disabled";
+		};
+
 		usart2: usart@40014000 {
 			compatible = "focaltech,ft9001-usart";
 			reg = <0x40014000 0x1000>;
 			interrupts = <33 0>;
 			clocks = <&cpm FOCALTECH_CLOCK_SCI2>;
 			resets = <&rctl FOCALTECH_RESET_SCI2>;
-			status = "disabled";
-		};
-
-		usart3: usart@4001d000 {
-			compatible = "focaltech,ft9001-usart";
-			reg = <0x4001d000 0x1000>;
-			interrupts = <61 0>;
-			clocks = <&cpm FOCALTECH_CLOCK_SCI3>;
-			resets = <&rctl FOCALTECH_RESET_SCI3>;
 			status = "disabled";
 		};
 
@@ -143,6 +151,15 @@
 			mask = <0x20>;
 			ngpios = <8>;
 			status = "okay";
+		};
+
+		usart3: usart@4001d000 {
+			compatible = "focaltech,ft9001-usart";
+			reg = <0x4001d000 0x1000>;
+			interrupts = <61 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_SCI3>;
+			resets = <&rctl FOCALTECH_RESET_SCI3>;
+			status = "disabled";
 		};
 
 		eport2: eport@40024000 {
@@ -263,23 +280,6 @@
 			mask = <0x3c>;
 			ngpios = <8>;
 			status = "okay";
-		};
-
-		wdt0: watchdog@40005000 {
-			compatible = "focaltech,ft9001-wdt";
-			reg = <0x40005000 0x1000>;
-			clocks = <&cpm FOCALTECH_CLOCK_WDT>;
-			resets = <&rctl FOCALTECH_RESET_WDT>;
-			status = "disabled";
-		};
-
-		tc0: timer@40006000 {
-			compatible = "focaltech,ft9001-timer";
-			reg = <0x40006000 0x1000>;
-			interrupts = <2 0>;
-			clocks = <&cpm FOCALTECH_CLOCK_TC>;
-			resets = <&rctl FOCALTECH_RESET_TC>;
-			status = "disabled";
 		};
 	};
 };

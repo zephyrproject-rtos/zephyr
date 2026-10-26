@@ -32,13 +32,6 @@
 		zephyr,memory-region = "ATCM";
 	};
 
-	btcm: memory@41010000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x41010000 DT_SIZE_K(32)>;
-		device_type = "memory";
-		zephyr,memory-region = "BTCM";
-	};
-
 	vim: interrupt-controller@ff80000 {
 		compatible = "ti,vim";
 		reg = <0x0ff80000 0x2800>;
@@ -57,5 +50,12 @@
 		interrupt-parent = <&vim>;
 		#mbox-cells = <1>;
 		status = "disabled";
+	};
+
+	btcm: memory@41010000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x41010000 DT_SIZE_K(32)>;
+		device_type = "memory";
+		zephyr,memory-region = "BTCM";
 	};
 };

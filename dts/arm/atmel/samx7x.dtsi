@@ -43,10 +43,6 @@
 		};
 	};
 
-	sram0: memory@20400000 {
-		compatible = "mmio-sram";
-	};
-
 	soc {
 		hsmci: hsmci@40000000 {
 			compatible = "atmel,sam-hsmci";
@@ -489,6 +485,10 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 46>;
 			status = "disabled";
 		};
+	};
+
+	sram0: memory@20400000 {
+		compatible = "mmio-sram";
 	};
 };
 

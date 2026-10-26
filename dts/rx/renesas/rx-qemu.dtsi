@@ -29,34 +29,6 @@
 		};
 	}; /* cpus */
 
-	icu: interrupt-controller@87000 {
-		compatible = "renesas,rx-icu";
-		reg = <0x0087000 0xff>,
-		      <0x0087200 0x1f>,
-		      <0x0087300 0xff>,
-		      <0x00872f0 0x02>,
-		      <0x0087500 0x0f>,
-		      <0x0087510 0x01>,
-		      <0x0087514 0x01>,
-		      <0x0087580 0x01>,
-		      <0x0087581 0x01>,
-		      <0x0087582 0x01>;
-		#interrupt-cells = <2>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		interrupt-controller;
-		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0", "NMISR",
-			    "NMIER", "NMICLR";
-
-		swint1: swint1@872e0 {
-			compatible = "renesas,rx-swint";
-			reg = <0x000872e0 0x01>;
-			interrupts = <27 14>;
-			interrupt-parent = <&icu>;
-			status = "okay";
-		};
-	};
-
 	clocks: clocks {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -159,31 +131,6 @@
 			device_type = "memory";
 		};
 
-		flash-controller@7e0000 {
-			reg = <0x007e0000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			code_flash: flash@fff80000 {
-				compatible = "soc-nv-flash";
-				reg = <0xfff80000 DT_SIZE_K(512)>;
-			};
-		};
-
-		sci0: sci0@88240 {
-			compatible = "renesas,rx-sci";
-			reg = <0x88240 0x08>;
-			interrupts = <215 1>, <216 1>, <217 1>, <214 1>;
-			interrupt-names = "rxi", "txi", "tei", "eri";
-			channel = <0>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-qemu";
-				status = "disabled";
-			};
-		};
-
 		cmt: timer@88000 {
 			compatible = "renesas,rx-timer-cmt-start-control";
 			reg = <0x00088000 0x02>;
@@ -216,6 +163,59 @@
 				interrupt-names = "cmi";
 				status = "okay";
 			};
+		};
+
+		sci0: sci0@88240 {
+			compatible = "renesas,rx-sci";
+			reg = <0x88240 0x08>;
+			interrupts = <215 1>, <216 1>, <217 1>, <214 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			channel = <0>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-qemu";
+				status = "disabled";
+			};
+		};
+
+		flash-controller@7e0000 {
+			reg = <0x007e0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			code_flash: flash@fff80000 {
+				compatible = "soc-nv-flash";
+				reg = <0xfff80000 DT_SIZE_K(512)>;
+			};
+		};
+	};
+
+	icu: interrupt-controller@87000 {
+		compatible = "renesas,rx-icu";
+		reg = <0x0087000 0xff>,
+		      <0x0087200 0x1f>,
+		      <0x0087300 0xff>,
+		      <0x00872f0 0x02>,
+		      <0x0087500 0x0f>,
+		      <0x0087510 0x01>,
+		      <0x0087514 0x01>,
+		      <0x0087580 0x01>,
+		      <0x0087581 0x01>,
+		      <0x0087582 0x01>;
+		#interrupt-cells = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-controller;
+		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0", "NMISR",
+			    "NMIER", "NMICLR";
+
+		swint1: swint1@872e0 {
+			compatible = "renesas,rx-swint";
+			reg = <0x000872e0 0x01>;
+			interrupts = <27 14>;
+			interrupt-parent = <&icu>;
+			status = "okay";
 		};
 	};
 };

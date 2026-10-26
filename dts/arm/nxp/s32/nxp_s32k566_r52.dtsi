@@ -39,29 +39,12 @@
 	soc {
 		interrupt-parent = <&gic>;
 
-		gic: interrupt-controller@43000000 {
-			compatible = "arm,gic-v3", "arm,gic";
-			reg = <0x43000000 0x10000>,
-			      <0x43100000 0x40000>;
-			#address-cells = <0>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
-		};
-
-		stm0: stm@410a4000 {
-			compatible = "nxp,s32-sys-timer";
-			reg = <0x410a4000 0x4000>;
-			interrupts = <GIC_SPI 283 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_STM0_IPG_CLK>;
-			status = "disabled";
-		};
-
-		stm1: stm@41154000 {
-			compatible = "nxp,s32-sys-timer";
-			reg = <0x41154000 0x4000>;
-			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_STM1_IPG_CLK>;
+		swt0: watchdog@4105c000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x4105c000 0x4000>;
+			interrupts = <GIC_SPI 265 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SWT0_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
 			status = "disabled";
 		};
 
@@ -103,6 +86,23 @@
 			};
 		};
 
+		stm0: stm@410a4000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x410a4000 0x4000>;
+			interrupts = <GIC_SPI 283 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_STM0_IPG_CLK>;
+			status = "disabled";
+		};
+
+		swt1: watchdog@4113c000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x4113c000 0x4000>;
+			interrupts = <GIC_SPI 266 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SWT1_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
 		pit1: pit@41150000 {
 			compatible = "nxp,pit";
 			reg = <0x41150000 0x4000>;
@@ -141,22 +141,22 @@
 			};
 		};
 
-		swt0: watchdog@4105c000 {
-			compatible = "nxp,s32-swt";
-			reg = <0x4105c000 0x4000>;
-			interrupts = <GIC_SPI 265 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SWT0_IPG_COUNTER_CLK>;
-			service-mode = "fixed";
+		stm1: stm@41154000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x41154000 0x4000>;
+			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_STM1_IPG_CLK>;
 			status = "disabled";
 		};
 
-		swt1: watchdog@4113c000 {
-			compatible = "nxp,s32-swt";
-			reg = <0x4113c000 0x4000>;
-			interrupts = <GIC_SPI 266 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SWT1_IPG_COUNTER_CLK>;
-			service-mode = "fixed";
-			status = "disabled";
+		gic: interrupt-controller@43000000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0x43000000 0x10000>,
+			      <0x43100000 0x40000>;
+			#address-cells = <0>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
 		};
 	};
 };

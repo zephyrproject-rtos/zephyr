@@ -43,12 +43,12 @@
 		};
 	};
 
-	flash0: flash@c0000 {
-		reg = <0x000c0000 0x58000>;
+	soc {
+#include "mec172x_common.dtsi"
 	};
 
-	flash1: flash@60000000 {
-		reg = <0x60000000 0x80000>;
+	flash0: flash@c0000 {
+		reg = <0x000c0000 0x58000>;
 	};
 
 	sram0: memory@118000 {
@@ -56,8 +56,8 @@
 		reg = <0x00118000 0x10000>;
 	};
 
-	soc {
-#include "mec172x_common.dtsi"
+	flash1: flash@60000000 {
+		reg = <0x60000000 0x80000>;
 	};
 };
 

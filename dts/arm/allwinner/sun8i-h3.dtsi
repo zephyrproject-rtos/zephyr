@@ -59,16 +59,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		gic: interrupt-controller@1c81000 {
-			compatible = "arm,gic-400", "arm,gic-v2", "arm,gic";
-			reg = <0x01c81000 0x1000>,
-			      <0x01c82000 0x2000>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			#address-cells = <0>;
-			status = "okay";
-		};
-
 		uart0: uart@1c28000 {
 			compatible = "ns16550", "snps,dw-apb-uart";
 			reg = <0x01c28000 0x400>;
@@ -107,6 +97,16 @@
 				      IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <DT_FREQ_M(24)>;
 			status = "disabled";
+		};
+
+		gic: interrupt-controller@1c81000 {
+			compatible = "arm,gic-400", "arm,gic-v2", "arm,gic";
+			reg = <0x01c81000 0x1000>,
+			      <0x01c82000 0x2000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			#address-cells = <0>;
+			status = "okay";
 		};
 	};
 };

@@ -12,6 +12,10 @@
 };
 
 / {
+	flash_cbus: flash_bus_alias@8000000 {
+		reg = <0x08000000 DT_SIZE_M(2)>;  /* CBUS address */
+	};
+
 	qspi_flash: qspi_flash@40890000 {
 		compatible = "infineon,qspi-flash";
 		reg = <0x40890000 0x30000>;
@@ -23,10 +27,6 @@
 	/* Flash aliased address path */
 	flash_sahb: flash_bus_alias@60000000 {
 		reg = <0x60000000 DT_SIZE_M(2)>;  /* SAHB address */
-	};
-
-	flash_cbus: flash_bus_alias@8000000 {
-		reg = <0x08000000 DT_SIZE_M(2)>;  /* CBUS address */
 	};
 };
 

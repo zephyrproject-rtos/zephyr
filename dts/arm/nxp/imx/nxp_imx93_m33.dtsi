@@ -43,6 +43,84 @@
 			reg = <0x20000000 DT_SIZE_K(124)>;
 		};
 
+		tstmr2: timer@42480000 {
+			compatible = "nxp,tstmr";
+			reg = <0x42480000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
+		lpit2: timer@424c0000 {
+			compatible = "nxp,lpit";
+			reg = <0x424c0000 0x1000>;
+			interrupts = <64 0>;
+			clocks = <&ccm IMX_CCM_LPIT2_CLK 0x0 0>;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			lpit2_channel0: lpit-channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+			};
+
+			lpit2_channel1: lpit-channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+			};
+
+			lpit2_channel2: lpit-channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+			};
+
+			lpit2_channel3: lpit-channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+			};
+		};
+
+		tpm3: pwm@424e0000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x424e0000 0x88>;
+			interrupts = <75 0>;
+			clocks = <&ccm IMX_CCM_TPM3_CLK 0x3d 0>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tpm4: pwm@424f0000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x424f0000 0x88>;
+			interrupts = <76 0>;
+			clocks = <&ccm IMX_CCM_TPM4_CLK 0x3e 0>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tpm5: pwm@42500000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x42500000 0x88>;
+			interrupts = <77 0>;
+			clocks = <&ccm IMX_CCM_TPM5_CLK 0x3f 0>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tpm6: pwm@42510000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x42510000 0x88>;
+			interrupts = <78 0>;
+			clocks = <&ccm IMX_CCM_TPM6_CLK 0x40 0>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
 		lpi2c3: i2c@42530000 {
 			compatible = "nxp,lpi2c";
 			reg = <0x42530000 0x4000>;
@@ -62,6 +140,30 @@
 			#size-cells = <0>;
 			interrupts = <63 0>;
 			clocks = <&ccm IMX_CCM_LPI2C4_CLK 0x80 24>;
+			status = "disabled";
+		};
+
+		lpspi3: spi@42550000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42550000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <65 0>;
+			clocks = <&ccm IMX_CCM_LPSPI3_CLK 0x6c 4>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		lpspi4: spi@42560000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42560000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <66 0>;
+			clocks = <&ccm IMX_CCM_LPSPI4_CLK 0x6c 6>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -106,30 +208,6 @@
 			#size-cells = <0>;
 			interrupts = <198 0>;
 			clocks = <&ccm IMX_CCM_LPI2C8_CLK 0x80 24>;
-			status = "disabled";
-		};
-
-		lpspi3: spi@42550000 {
-			compatible = "nxp,lpspi";
-			reg = <0x42550000 0x4000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <65 0>;
-			clocks = <&ccm IMX_CCM_LPSPI3_CLK 0x6c 4>;
-			tx-fifo-size = <8>;
-			rx-fifo-size = <8>;
-			status = "disabled";
-		};
-
-		lpspi4: spi@42560000 {
-			compatible = "nxp,lpspi";
-			reg = <0x42560000 0x4000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <66 0>;
-			clocks = <&ccm IMX_CCM_LPSPI4_CLK 0x6c 6>;
-			tx-fifo-size = <8>;
-			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -181,11 +259,93 @@
 			status = "disabled";
 		};
 
+		gpio2: gpio@43810000 {
+			compatible = "nxp,imx-rgpio";
+			reg = <0x43810000 DT_SIZE_K(64)>;
+			interrupts = <57 0>, <58 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio3: gpio@43820000 {
+			compatible = "nxp,imx-rgpio";
+			reg = <0x43820000 DT_SIZE_K(64)>;
+			interrupts = <59 0>, <60 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio4: gpio@43830000 {
+			compatible = "nxp,imx-rgpio";
+			reg = <0x43830000 DT_SIZE_K(64)>;
+			interrupts = <189 0>, <190 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
 		mu1: mailbox@44220000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x44220000 DT_SIZE_K(4)>;
 			interrupts = <21 0>;
 			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		tstmr1: timer@442c0000 {
+			compatible = "nxp,tstmr";
+			reg = <0x442c0000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
+		lpit1: timer@442f0000 {
+			compatible = "nxp,lpit";
+			reg = <0x442f0000 0x1000>;
+			interrupts = <15 0>;
+			clocks = <&ccm IMX_CCM_LPIT1_CLK 0x0 0>;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			lpit1_channel0: lpit-channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+			};
+
+			lpit1_channel1: lpit-channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+			};
+
+			lpit1_channel2: lpit-channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+			};
+
+			lpit1_channel3: lpit-channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+			};
+		};
+
+		tpm1: pwm@44310000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x44310000 0x88>;
+			interrupts = <36 0>;
+			clocks = <&ccm IMX_CCM_TPM1_CLK 0x3b 0>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tpm2: pwm@44320000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x44320000 0x88>;
+			interrupts = <37 0>;
+			clocks = <&ccm IMX_CCM_TPM2_CLK 0x3c 0>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
@@ -235,79 +395,11 @@
 			status = "disabled";
 		};
 
-		lpit1: timer@442f0000 {
-			compatible = "nxp,lpit";
-			reg = <0x442f0000 0x1000>;
-			interrupts = <15 0>;
-			clocks = <&ccm IMX_CCM_LPIT1_CLK 0x0 0>;
-			max-load-value = <0xffffffff>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-
-			lpit1_channel0: lpit-channel@0 {
-				compatible = "nxp,lpit-channel";
-				reg = <0>;
-			};
-
-			lpit1_channel1: lpit-channel@1 {
-				compatible = "nxp,lpit-channel";
-				reg = <1>;
-			};
-
-			lpit1_channel2: lpit-channel@2 {
-				compatible = "nxp,lpit-channel";
-				reg = <2>;
-			};
-
-			lpit1_channel3: lpit-channel@3 {
-				compatible = "nxp,lpit-channel";
-				reg = <3>;
-			};
-		};
-
-		lpit2: timer@424c0000 {
-			compatible = "nxp,lpit";
-			reg = <0x424c0000 0x1000>;
-			interrupts = <64 0>;
-			clocks = <&ccm IMX_CCM_LPIT2_CLK 0x0 0>;
-			max-load-value = <0xffffffff>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-
-			lpit2_channel0: lpit-channel@0 {
-				compatible = "nxp,lpit-channel";
-				reg = <0>;
-			};
-
-			lpit2_channel1: lpit-channel@1 {
-				compatible = "nxp,lpit-channel";
-				reg = <1>;
-			};
-
-			lpit2_channel2: lpit-channel@2 {
-				compatible = "nxp,lpit-channel";
-				reg = <2>;
-			};
-
-			lpit2_channel3: lpit-channel@3 {
-				compatible = "nxp,lpit-channel";
-				reg = <3>;
-			};
-		};
-
-		tstmr1: timer@442c0000 {
-			compatible = "nxp,tstmr";
-			reg = <0x442c0000 0x8>;
-			clock-frequency = <DT_FREQ_M(24)>;
-			status = "disabled";
-		};
-
-		tstmr2: timer@42480000 {
-			compatible = "nxp,tstmr";
-			reg = <0x42480000 0x8>;
-			clock-frequency = <DT_FREQ_M(24)>;
+		lpuart2: serial@44390000 {
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
+			reg = <0x44390000 DT_SIZE_K(64)>;
+			interrupts = <20 3>;
+			clocks = <&ccm IMX_CCM_LPUART2_CLK 0x6c 24>;
 			status = "disabled";
 		};
 
@@ -328,6 +420,21 @@
 			#clock-cells = <3>;
 		};
 
+		video_pll: videopll@44481400 {
+			compatible = "nxp,imx93-video-pll";
+			reg = <0x44481400 0x1000>;
+			status = "disabled";
+		};
+
+		sar_adc1: adc@44530000 {
+			compatible = "nxp,sar-adc";
+			reg = <0x44530000 DT_SIZE_K(64)>;
+			interrupts = <219 0>;
+			#io-channel-cells = <1>;
+			clocks = <&ccm IMX_CCM_SAR_ADC1_CLK 0x0 0>;
+			status = "disabled";
+		};
+
 		gpio1: gpio@47400000 {
 			compatible = "nxp,imx-rgpio";
 			reg = <0x47400000 DT_SIZE_K(64)>;
@@ -336,47 +443,9 @@
 			#gpio-cells = <2>;
 		};
 
-		gpio2: gpio@43810000 {
-			compatible = "nxp,imx-rgpio";
-			reg = <0x43810000 DT_SIZE_K(64)>;
-			interrupts = <57 0>, <58 0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		gpio3: gpio@43820000 {
-			compatible = "nxp,imx-rgpio";
-			reg = <0x43820000 DT_SIZE_K(64)>;
-			interrupts = <59 0>, <60 0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		gpio4: gpio@43830000 {
-			compatible = "nxp,imx-rgpio";
-			reg = <0x43830000 DT_SIZE_K(64)>;
-			interrupts = <189 0>, <190 0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		lpuart2: serial@44390000 {
-			compatible = "nxp,imx-lpuart", "nxp,lpuart";
-			reg = <0x44390000 DT_SIZE_K(64)>;
-			interrupts = <20 3>;
-			clocks = <&ccm IMX_CCM_LPUART2_CLK 0x6c 24>;
-			status = "disabled";
-		};
-
-		lcdif: display-controller@4ae30000 {
-			compatible = "nxp,imx-lcdifv3";
-			reg = <0x4ae30000 0x10000>;
-			media-axi-clk-rate = <400000000>;
-			media-apb-clk-rate = <133333334>;
-			interrupts = <176 0>;
-			clocks = <&ccm IMX_CCM_MEDIA_DISP_PIX_CLK 0 0>,
-				 <&ccm IMX_CCM_MEDIA_AXI_CLK 0 0>,
-				 <&ccm IMX_CCM_MEDIA_APB_CLK 0 0>;
+		media_blk_ctrl: mediamix@4ac10000 {
+			compatible = "nxp,imx93-mediamix";
+			reg = <0x4ac10000 0x1000>;
 			status = "disabled";
 		};
 
@@ -391,84 +460,15 @@
 			status = "disabled";
 		};
 
-		media_blk_ctrl: mediamix@4ac10000 {
-			compatible = "nxp,imx93-mediamix";
-			reg = <0x4ac10000 0x1000>;
-			status = "disabled";
-		};
-
-		tpm1: pwm@44310000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x44310000 0x88>;
-			interrupts = <36 0>;
-			clocks = <&ccm IMX_CCM_TPM1_CLK 0x3b 0>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm2: pwm@44320000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x44320000 0x88>;
-			interrupts = <37 0>;
-			clocks = <&ccm IMX_CCM_TPM2_CLK 0x3c 0>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm3: pwm@424e0000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x424e0000 0x88>;
-			interrupts = <75 0>;
-			clocks = <&ccm IMX_CCM_TPM3_CLK 0x3d 0>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm4: pwm@424f0000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x424f0000 0x88>;
-			interrupts = <76 0>;
-			clocks = <&ccm IMX_CCM_TPM4_CLK 0x3e 0>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm5: pwm@42500000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x42500000 0x88>;
-			interrupts = <77 0>;
-			clocks = <&ccm IMX_CCM_TPM5_CLK 0x3f 0>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm6: pwm@42510000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x42510000 0x88>;
-			interrupts = <78 0>;
-			clocks = <&ccm IMX_CCM_TPM6_CLK 0x40 0>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		sar_adc1: adc@44530000 {
-			compatible = "nxp,sar-adc";
-			reg = <0x44530000 DT_SIZE_K(64)>;
-			interrupts = <219 0>;
-			#io-channel-cells = <1>;
-			clocks = <&ccm IMX_CCM_SAR_ADC1_CLK 0x0 0>;
-			status = "disabled";
-		};
-
-		video_pll: videopll@44481400 {
-			compatible = "nxp,imx93-video-pll";
-			reg = <0x44481400 0x1000>;
+		lcdif: display-controller@4ae30000 {
+			compatible = "nxp,imx-lcdifv3";
+			reg = <0x4ae30000 0x10000>;
+			media-axi-clk-rate = <400000000>;
+			media-apb-clk-rate = <133333334>;
+			interrupts = <176 0>;
+			clocks = <&ccm IMX_CCM_MEDIA_DISP_PIX_CLK 0 0>,
+				 <&ccm IMX_CCM_MEDIA_AXI_CLK 0 0>,
+				 <&ccm IMX_CCM_MEDIA_APB_CLK 0 0>;
 			status = "disabled";
 		};
 	};
