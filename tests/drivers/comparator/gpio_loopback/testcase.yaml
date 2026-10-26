@@ -76,3 +76,8 @@ tests:
   drivers.comparator.gpio_loopback.ite:
     platform_allow:
       - it51xxx_evb/it51526aw
+  drivers.comparator.gpio_loopback.ti_mspm0:
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
