@@ -6,26 +6,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file test_counter.c
- * @brief Zephyr Counter Driver Basic API Test Suite
- */
-
 #include <zephyr/drivers/counter.h>
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
-/* Semaphores and counters for callback synchronization */
 static struct k_sem top_cnt_sem;
 static volatile uint32_t top_cnt;
 static struct k_sem alarm_cnt_sem;
 static volatile uint32_t alarm_cnt;
+
 static void top_handler(const struct device *dev, void *user_data);
 
-/* Global test state */
 void *exp_user_data = (void *)199;
+
 struct counter_alarm_cfg cntr_alarm_cfg;
 struct counter_alarm_cfg cntr_alarm_cfg2;
 
@@ -41,7 +36,6 @@ struct counter_alarm_cfg cntr_alarm_cfg2;
 #define DEVS_FOR_DT_COMPAT(compat) \
 	DT_FOREACH_STATUS_OKAY(compat, DEVICE_DT_GET_AND_COMMA)
 
-/* Array of all enabled counter devices to test */
 static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_NRF_TIMER
 	DEVS_FOR_DT_COMPAT(nordic_nrf_timer)
@@ -208,21 +202,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MSPM0_TIMER
 	DEVS_FOR_DT_COMPAT(ti_mspm0_timer_counter)
 #endif
-#ifdef CONFIG_COUNTER_CC23X0_RTC
-	DEVS_FOR_DT_COMPAT(ti_cc23x0_rtc)
-#endif
-#ifdef CONFIG_COUNTER_CC23X0_LGPT
-	DEVS_FOR_DT_COMPAT(ti_cc23x0_lgpt)
-#endif
-#ifdef CONFIG_COUNTER_CC27XX_LGPT
-	DEVS_FOR_DT_COMPAT(ti_cc27xx_lgpt)
-#endif
-#ifdef CONFIG_COUNTER_CC35XX_LGPT
 	DEVS_FOR_DT_COMPAT(ti_cc35xx_lgpt)
-#endif
 };
 
-/* RTC-based devices need longer test periods */
 static const struct device *const period_devs[] = {
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	DEVS_FOR_DT_COMPAT(nxp_rtc)
@@ -253,15 +235,16 @@ static inline uint32_t get_counter_period_us(const struct device *dev)
 {
 	for (int i = 0; i < ARRAY_SIZE(period_devs); i++) {
 		if (period_devs[i] == dev) {
-			return (USEC_PER_SEC * 2U); /* 2 seconds for RTC */
+			return (USEC_PER_SEC * 2U);
 		}
 	}
 
-	/* Default: 20ms period for fast counters (non-RTC) */
+	/* if more counter drivers exist other than RTC,
+	 * the test value set to 20000 by default
+	 */
 	return 20000;
 }
 
-/* Reset test state before each device test */
 static void counter_setup_instance(const struct device *dev)
 {
 	k_sem_reset(&alarm_cnt_sem);
@@ -271,7 +254,6 @@ static void counter_setup_instance(const struct device *dev)
 	}
 }
 
-/* Restore device to default state after each device test */
 static void counter_tear_down_instance(const struct device *dev)
 {
 	int err;
@@ -297,26 +279,24 @@ static void test_all_instances(counter_test_func_t func, counter_capability_func
 	int devices_skipped = 0;
 
 	zassert_true(ARRAY_SIZE(devices) > 0, "No device found");
-
 	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
 		counter_setup_instance(devices[i]);
 		if ((capability_check == NULL) || capability_check(devices[i])) {
 			TC_PRINT("Testing %s\n", devices[i]->name);
 			func(devices[i]);
 		} else {
+			TC_PRINT("Skipped for %s\n", devices[i]->name);
 			devices_skipped++;
 		}
-
 		counter_tear_down_instance(devices[i]);
+		/* Allow logs to be printed. */
 		k_sleep(K_MSEC(100));
 	}
-
 	if (devices_skipped == ARRAY_SIZE(devices)) {
 		ztest_test_skip();
 	}
 }
 
-/* Capability check: verifies device supports modifying top value */
 static bool set_top_value_capable(const struct device *dev)
 {
 	struct counter_top_cfg cfg = {.ticks = counter_get_top_value(dev) - 1};
@@ -341,6 +321,7 @@ static void top_handler(const struct device *dev, void *user_data)
 	zassert_true(user_data == exp_user_data, "%s: Unexpected callback", dev->name);
 	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
 		top_cnt++;
+
 		return;
 	}
 
@@ -362,7 +343,6 @@ static void test_set_top_value_with_alarm_instance(const struct device *dev)
 
 	counter_period_us = get_counter_period_us(dev);
 	top_cfg.ticks = counter_us_to_ticks(dev, counter_period_us);
-
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Counter failed to start", dev->name);
 
@@ -443,12 +423,10 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id, uint32_t co
 	uint32_t top;
 	uint32_t diff;
 
-	LOG_DBG("%s: %s ch%d, counter=%u", dev->name, __func__, chan_id, counter);
 	err = counter_get_value(dev, &now);
 	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev->name, err);
 
 	top = counter_get_top_value(dev);
-
 	if (counter_is_counting_up(dev)) {
 		diff = (now < counter) ? (now + top - counter) : (now - counter);
 	} else {
@@ -638,10 +616,10 @@ static void *clbk_data[10];
 static void alarm_handler2(const struct device *dev, uint8_t chan_id, uint32_t counter,
 			   void *user_data)
 {
-	LOG_DBG("%s: %s ch%d, counter=%u", dev->name, __func__, chan_id, counter);
 	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
 		clbk_data[alarm_cnt] = user_data;
 		alarm_cnt++;
+
 		return;
 	}
 
@@ -762,7 +740,6 @@ static void test_all_channels_instance(const struct device *dev)
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Counter failed to start", dev->name);
 
-	/* Discover valid channels by trying to set alarms on channels 0-9 */
 	for (int i = 0; i < n; i++) {
 		err = counter_set_channel_alarm(dev, i, &alarm_cfgs);
 		if ((err == 0) && !limit_reached) {
@@ -969,7 +946,6 @@ static void test_late_alarm_error_instance(const struct device *dev)
 		      err);
 }
 
-/* Capability check: verifies device supports late alarm detection via guard period */
 static bool late_detection_capable(const struct device *dev)
 {
 	uint32_t guard = counter_get_guard_period(dev, COUNTER_GUARD_PERIOD_LATE_TO_SET);
@@ -1134,9 +1110,10 @@ static void test_cancelled_alarm_does_not_expire_instance(const struct device *d
 	}
 }
 
-/* Checks if device supports reliable alarm cancellation without spurious triggers */
 static bool reliable_cancel_capable(const struct device *dev)
 {
+	/* Test performed only for NRF_RTC instances. Other probably will fail.
+	 */
 #if defined(CONFIG_COUNTER_NRF_RTC) || defined(CONFIG_COUNTER_NRF_TIMER)
 	return true;
 #endif
@@ -1200,11 +1177,6 @@ static bool reliable_cancel_capable(const struct device *dev)
 		return true;
 	}
 #endif
-#ifdef CONFIG_COUNTER_CC23X0_LGPT
-	if (single_channel_alarm_capable(dev)) {
-		return true;
-	}
-#endif
 	return false;
 }
 
@@ -1217,9 +1189,10 @@ static void *counter_setup(void)
 {
 	int i;
 
-	LOG_DBG("Counter test setup: %d devices to test", (int)ARRAY_SIZE(devices));
-
-	/* Allow clocks to stabilize */
+	/* Give required clocks some time to stabilize. In particular, nRF SoCs
+	 * need such delay for the Xtal LF clock source to start and for this
+	 * test to use the correct timing.
+	 */
 	k_busy_wait(USEC_PER_MSEC * 300);
 
 	k_sem_init(&top_cnt_sem, 0, UINT_MAX);
@@ -1232,11 +1205,13 @@ static void *counter_setup(void)
 		zassert_true(device_is_ready(devices[i]), "Device %s is not ready",
 			     devices[i]->name);
 		k_object_access_grant(devices[i], k_current_get());
-		LOG_DBG("Device ready: %s", devices[i]->name);
 	}
 
 	return NULL;
 }
 
+/* Uses callbacks, run in supervisor mode */
 ZTEST_SUITE(counter_basic, NULL, counter_setup, NULL, NULL, NULL);
+
+/* No callbacks, run in usermode */
 ZTEST_SUITE(counter_no_callback, NULL, counter_setup, NULL, NULL, NULL);
