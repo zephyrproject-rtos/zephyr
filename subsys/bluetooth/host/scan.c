@@ -1421,6 +1421,17 @@ static void per_adv_sync_scan_update(void)
 	}
 }
 
+/* Give the call that creates the sync the object, unless it has it already */
+static void per_adv_sync_out_store(struct bt_le_per_adv_sync *per_adv_sync)
+{
+	BT_DEV_LOCK_ASSERT();
+
+	if (per_adv_sync->out_sync != NULL) {
+		*per_adv_sync->out_sync = per_adv_sync;
+		per_adv_sync->out_sync = NULL;
+	}
+}
+
 static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 {
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
@@ -1583,6 +1594,9 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 
 	sync_info.recv_enabled =
 		!atomic_test_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED);
+
+	/* The callbacks may look for it there before the create call returns */
+	per_adv_sync_out_store(pending_per_adv_sync);
 
 	bt_dev_unlock();
 
@@ -2349,6 +2363,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING);
 	gen = per_adv_sync->gen;
+	per_adv_sync->out_sync = out_sync;
 
 	/* Syncing requires that scan is enabled. If the caller doesn't enable
 	 * scan first, we enable it here, and disable it once the sync has been
@@ -2433,7 +2448,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		return -ECANCELED;
 	}
 
-	*out_sync = per_adv_sync;
+	per_adv_sync_out_store(per_adv_sync);
 
 	bt_dev_unlock();
 

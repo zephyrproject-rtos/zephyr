@@ -311,6 +311,9 @@ struct bt_le_per_adv_sync {
 	 */
 	uint32_t gen;
 
+	/** Where the call that creates the sync wants the object, until it is there */
+	struct bt_le_per_adv_sync **out_sync;
+
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
 
