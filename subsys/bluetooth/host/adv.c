@@ -209,6 +209,8 @@ static struct bt_le_ext_adv *adv_new(void)
 		return NULL;
 	}
 
+	/* A timeout armed after the previous advertising ended can still be scheduled */
+	bt_le_lim_adv_cancel_timeout(adv);
 	(void)memset(adv, 0, sizeof(*adv));
 	atomic_set_bit(adv_pool[i].flags, BT_ADV_CREATED);
 	adv->handle = i;
@@ -1077,6 +1079,11 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 			return err;
 		}
 	}
+
+	/* Advertising that ended can have left its timeout scheduled. Cancelled only here, as a
+	 * start that fails earlier leaves advertising paused for an address update as it was.
+	 */
+	bt_le_lim_adv_cancel_timeout(adv);
 
 	err = bt_le_adv_set_enable(adv, true);
 	if (err) {
