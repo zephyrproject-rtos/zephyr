@@ -220,13 +220,14 @@ struct video_reg hm01b0_default_regs[] = {
 	{HM01B0_REG8(0x0104),		0x01},
 };
 
-struct hm01b0_ctrls {
-	struct video_ctrl hflip;
-	struct video_ctrl vflip;
+enum hm01b0_ctrl_idx {
+	HM01B0_CTRL_HFLIP,
+	HM01B0_CTRL_VFLIP,
+	HM01B0_CTRL_COUNT,
 };
 
 struct hm01b0_data {
-	struct hm01b0_ctrls ctrls;
+	struct video_ctrl ctrls[HM01B0_CTRL_COUNT];
 	struct video_format fmt;
 };
 
@@ -489,25 +490,16 @@ int hm01b0_enum_frmival(const struct device *dev, struct video_frmival_enum *fie
 
 static int hm01b0_init_controls(const struct device *dev)
 {
-	int ret;
 	struct hm01b0_data *drv_data = dev->data;
-	struct hm01b0_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls(drv_data->ctrls, ARRAY_SIZE(drv_data->ctrls), dev);
 }
 
 static int hm01b0_set_ctrl(const struct device *dev, uint32_t id)
 {
 	const struct hm01b0_config *config = dev->config;
 	struct hm01b0_data *drv_data = dev->data;
-	struct hm01b0_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 	int ret;
 
 	switch (id) {
@@ -515,7 +507,7 @@ static int hm01b0_set_ctrl(const struct device *dev, uint32_t id)
 		ret = video_modify_cci_reg(&config->i2c, HM01B0_CCI_IMG_ORIENTATION,
 					   HM01B0_ORIENTATION_HMIRROR,
 					   FIELD_PREP(HM01B0_ORIENTATION_HMIRROR,
-						      ctrls->hflip.val));
+						      ctrls[HM01B0_CTRL_HFLIP].val));
 		if (ret < 0) {
 			return ret;
 		}
@@ -524,7 +516,7 @@ static int hm01b0_set_ctrl(const struct device *dev, uint32_t id)
 		ret = video_modify_cci_reg(&config->i2c, HM01B0_CCI_IMG_ORIENTATION,
 					   HM01B0_ORIENTATION_VMIRROR,
 					   FIELD_PREP(HM01B0_ORIENTATION_VMIRROR,
-						      ctrls->vflip.val));
+						      ctrls[HM01B0_CTRL_VFLIP].val));
 		if (ret < 0) {
 			return ret;
 		}
@@ -610,7 +602,12 @@ static int hm01b0_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                              \
 		.ctrl_val = HM01B0_CTRL_VAL(DT_INST_PROP(inst, data_bits))                      \
 	};                                                                                      \
-	struct hm01b0_data hm01b0_data_##inst;                                                  \
+	struct hm01b0_data hm01b0_data_##inst = {                                                  \
+		.ctrls = {                                                                         \
+			[HM01B0_CTRL_HFLIP] = {.id = VIDEO_CID_HFLIP},                             \
+			[HM01B0_CTRL_VFLIP] = {.id = VIDEO_CID_VFLIP},                             \
+		},                                                                                 \
+	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &hm01b0_init, NULL, &hm01b0_data_##inst,                    \
 			      &hm01b0_config_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   \
 			      &hm01b0_driver_api);                                              \

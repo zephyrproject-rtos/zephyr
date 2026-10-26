@@ -208,33 +208,34 @@ struct arducam_mega_config {
 	struct spi_dt_spec bus;
 };
 
-struct arducam_mega_ctrls {
-	struct video_ctrl reset;
-	struct video_ctrl brightness;
-	struct video_ctrl contrast;
-	struct video_ctrl saturation;
-	struct video_ctrl ev;
-	struct video_ctrl whitebal;
-	struct video_ctrl colorfx;
-	struct video_ctrl quality;
-	struct video_ctrl lowpower;
-	struct video_ctrl whitebalauto;
-	struct video_ctrl sharpness;
-	struct {
-		struct video_ctrl exp_auto;
-		struct video_ctrl exposure;
-	};
-	struct {
-		struct video_ctrl gain;
-		struct video_ctrl gain_auto;
-	};
-	struct video_ctrl focus_auto;
+enum arducam_mega_ctrl_idx {
+	MEGA_CTRL_RESET,
+	MEGA_CTRL_BRIGHTNESS,
+	MEGA_CTRL_CONTRAST,
+	MEGA_CTRL_SATURATION,
+	MEGA_CTRL_EV,
+	MEGA_CTRL_WHITEBAL,
+	MEGA_CTRL_QUALITY,
+	MEGA_CTRL_LOWPOWER,
+	MEGA_CTRL_WHITEBALAUTO,
+	MEGA_CTRL_EXP_AUTO,
+	MEGA_CTRL_EXPOSURE,
+	MEGA_CTRL_GAIN,
+	MEGA_CTRL_GAIN_AUTO,
 	/* Read only registers */
-	struct video_ctrl linkfreq;
+	MEGA_CTRL_LINKFREQ,
+	/* Optional controls, registered depending on the sensor features */
+	MEGA_CTRL_COLORFX,
+	MEGA_CTRL_SHARPNESS,
+	MEGA_CTRL_FOCUS_AUTO,
+	MEGA_CTRL_COUNT,
 };
 
+/* The mandatory controls are the ones before the first optional control */
+#define MEGA_CTRL_MANDATORY_COUNT MEGA_CTRL_COLORFX
+
 struct arducam_mega_data {
-	struct arducam_mega_ctrls ctrls;
+	struct video_ctrl ctrls[MEGA_CTRL_COUNT];
 	struct video_format fmt;
 
 	const struct device *dev;
@@ -1080,41 +1081,42 @@ static int arducam_mega_get_caps(const struct device *dev, struct video_caps *ca
 static int arducam_mega_set_ctrl(const struct device *dev, uint32_t id)
 {
 	struct arducam_mega_data *drv_data = dev->data;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 	int ret = 0;
 
 	switch (id) {
 	case VIDEO_CID_EXPOSURE_AUTO:
-		return arducam_mega_set_exposure_enable(dev, drv_data->ctrls.exp_auto.val);
+		return arducam_mega_set_exposure_enable(dev, ctrls[MEGA_CTRL_EXP_AUTO].val);
 	case VIDEO_CID_EXPOSURE:
-		return arducam_mega_set_exposure(dev, drv_data->ctrls.exposure.val);
+		return arducam_mega_set_exposure(dev, ctrls[MEGA_CTRL_EXPOSURE].val);
 	case VIDEO_CID_AUTOGAIN:
-		return arducam_mega_set_gain_enable(dev, drv_data->ctrls.gain_auto.val);
+		return arducam_mega_set_gain_enable(dev, ctrls[MEGA_CTRL_GAIN_AUTO].val);
 	case VIDEO_CID_GAIN:
-		return arducam_mega_set_gain(dev, drv_data->ctrls.gain.val);
+		return arducam_mega_set_gain(dev, ctrls[MEGA_CTRL_GAIN].val);
 	case VIDEO_CID_BRIGHTNESS:
-		return arducam_mega_set_brightness(dev, drv_data->ctrls.brightness.val);
+		return arducam_mega_set_brightness(dev, ctrls[MEGA_CTRL_BRIGHTNESS].val);
 	case VIDEO_CID_SATURATION:
-		return arducam_mega_set_saturation(dev, drv_data->ctrls.saturation.val);
+		return arducam_mega_set_saturation(dev, ctrls[MEGA_CTRL_SATURATION].val);
 	case VIDEO_CID_AUTO_WHITE_BALANCE:
-		return arducam_mega_set_white_bal_enable(dev, drv_data->ctrls.whitebalauto.val);
+		return arducam_mega_set_white_bal_enable(dev, ctrls[MEGA_CTRL_WHITEBALAUTO].val);
 	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
-		return arducam_mega_set_white_bal(dev, drv_data->ctrls.whitebal.val);
+		return arducam_mega_set_white_bal(dev, ctrls[MEGA_CTRL_WHITEBAL].val);
 	case VIDEO_CID_CONTRAST:
-		return arducam_mega_set_contrast(dev, drv_data->ctrls.contrast.val);
+		return arducam_mega_set_contrast(dev, ctrls[MEGA_CTRL_CONTRAST].val);
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
-		return arducam_mega_set_jpeg_quality(dev, drv_data->ctrls.quality.val);
+		return arducam_mega_set_jpeg_quality(dev, ctrls[MEGA_CTRL_QUALITY].val);
 	case VIDEO_CID_AUTO_EXPOSURE_BIAS:
-		return arducam_mega_set_ev(dev, drv_data->ctrls.ev.val);
+		return arducam_mega_set_ev(dev, ctrls[MEGA_CTRL_EV].val);
 	case VIDEO_CID_SHARPNESS:
-		return arducam_mega_set_sharpness(dev, drv_data->ctrls.sharpness.val);
+		return arducam_mega_set_sharpness(dev, ctrls[MEGA_CTRL_SHARPNESS].val);
 	case VIDEO_CID_FOCUS_AUTO:
-		return arducam_mega_set_auto_focus(dev, drv_data->ctrls.focus_auto.val);
+		return arducam_mega_set_auto_focus(dev, ctrls[MEGA_CTRL_FOCUS_AUTO].val);
 	case VIDEO_CID_COLORFX:
-		return arducam_mega_set_special_effects(dev, drv_data->ctrls.colorfx.val);
+		return arducam_mega_set_special_effects(dev, ctrls[MEGA_CTRL_COLORFX].val);
 	case VIDEO_CID_ARDUCAM_LOWPOWER:
-		return arducam_mega_set_lowpower_enable(dev, drv_data->ctrls.lowpower.val);
+		return arducam_mega_set_lowpower_enable(dev, ctrls[MEGA_CTRL_LOWPOWER].val);
 	case VIDEO_CID_ARDUCAM_RESET: {
-		drv_data->ctrls.reset.val = 0;
+		ctrls[MEGA_CTRL_RESET].val = 0;
 		ret = arducam_mega_soft_reset(dev);
 		if (ret < 0) {
 			return ret;
@@ -1148,111 +1150,35 @@ const int64_t arducam_mega_link_frequency[] = {
 
 static int arducam_mega_init_controls(const struct device *dev)
 {
-	int ret = 0;
 	struct arducam_mega_data *drv_data = dev->data;
-	struct arducam_mega_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
+	int ret;
 
-	ret = video_init_ctrl(&ctrls->reset, dev, VIDEO_CID_ARDUCAM_RESET,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	ret = video_register_ctrls(ctrls, MEGA_CTRL_MANDATORY_COUNT, dev);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
-			      (struct video_ctrl_range){.min = 0, .max = 8, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST,
-			      (struct video_ctrl_range){.min = 0, .max = 6, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(&ctrls->saturation, dev, VIDEO_CID_SATURATION,
-			      (struct video_ctrl_range){.min = 0, .max = 6, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(&ctrls->ev, dev, VIDEO_CID_AUTO_EXPOSURE_BIAS,
-			      (struct video_ctrl_range){.min = 0, .max = 6, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(&ctrls->whitebal, dev, VIDEO_CID_WHITE_BALANCE_TEMPERATURE,
-			      (struct video_ctrl_range){.min = 0, .max = 4, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
+
 	if (drv_data->features & MEGA_HAS_COLORFX) {
-		ret = video_init_ctrl(
-			&ctrls->colorfx, dev, VIDEO_CID_COLORFX,
-			(struct video_ctrl_range){.min = 0, .max = 14, .step = 1, .def = 0});
+		ret = video_register_ctrl(&ctrls[MEGA_CTRL_COLORFX], dev);
 		if (ret < 0) {
 			return ret;
 		}
 	}
-	ret = video_init_ctrl(&ctrls->exp_auto, dev, VIDEO_CID_EXPOSURE_AUTO,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(&ctrls->gain_auto, dev, VIDEO_CID_AUTOGAIN,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(&ctrls->whitebalauto, dev, VIDEO_CID_AUTO_WHITE_BALANCE,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
+
 	if (drv_data->features & MEGA_HAS_SHARPNESS) {
-		ret = video_init_ctrl(
-			&ctrls->sharpness, dev, VIDEO_CID_SHARPNESS,
-			(struct video_ctrl_range){.min = 0, .max = 8, .step = 1, .def = 0});
+		ret = video_register_ctrl(&ctrls[MEGA_CTRL_SHARPNESS], dev);
 		if (ret < 0) {
 			return ret;
 		}
 	}
-	ret = video_init_ctrl(
-		&ctrls->gain, dev, VIDEO_CID_GAIN,
-		(struct video_ctrl_range){.min = 0, .max = 1023, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(
-		&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
-		(struct video_ctrl_range){.min = 0, .max = 30000, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(
-		&ctrls->quality, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY,
-		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(
-		&ctrls->lowpower, dev, VIDEO_CID_ARDUCAM_LOWPOWER,
-		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
+
 	if (drv_data->features & MEGA_HAS_FOCUS) {
-		ret = video_init_ctrl(
-			&ctrls->focus_auto, dev, VIDEO_CID_FOCUS_AUTO,
-			(struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+		ret = video_register_ctrl(&ctrls[MEGA_CTRL_FOCUS_AUTO], dev);
 		if (ret < 0) {
 			return ret;
 		}
 	}
-	/* Read only controls */
-	ret = video_init_int_menu_ctrl(
-		&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ, ARDUCAM_MEGA_640_480_LINK_FREQ_ID,
-		arducam_mega_link_frequency, ARRAY_SIZE(arducam_mega_link_frequency));
-	if (ret < 0) {
-		return ret;
-	}
-	ctrls->linkfreq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 
 	return 0;
 }
@@ -1354,7 +1280,40 @@ static int arducam_mega_init(const struct device *dev)
 			SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_LOCK_ON),\
 	};                                                                                         \
                                                                                                    \
-	static struct arducam_mega_data arducam_mega_data_##inst;                                  \
+	static struct arducam_mega_data arducam_mega_data_##inst = {                               \
+		.ctrls = {                                                                         \
+			[MEGA_CTRL_RESET] = {.id = VIDEO_CID_ARDUCAM_RESET,                        \
+				.range = {.max = 1}},                                              \
+			[MEGA_CTRL_BRIGHTNESS] = {.id = VIDEO_CID_BRIGHTNESS,                      \
+				.range = {.max = 8}},                                              \
+			[MEGA_CTRL_CONTRAST] = {.id = VIDEO_CID_CONTRAST, .range = {.max = 6}},    \
+			[MEGA_CTRL_SATURATION] = {.id = VIDEO_CID_SATURATION,                      \
+				.range = {.max = 6}},                                              \
+			[MEGA_CTRL_EV] = {.id = VIDEO_CID_AUTO_EXPOSURE_BIAS,                      \
+				.range = {.max = 6}},                                              \
+			[MEGA_CTRL_WHITEBAL] = {.id = VIDEO_CID_WHITE_BALANCE_TEMPERATURE,         \
+				.range = {.max = 4}},                                              \
+			[MEGA_CTRL_QUALITY] = {.id = VIDEO_CID_JPEG_COMPRESSION_QUALITY,           \
+				.range = {.max = 65535}},                                          \
+			[MEGA_CTRL_LOWPOWER] = {.id = VIDEO_CID_ARDUCAM_LOWPOWER,                  \
+				.range = {.max = 65535}},                                          \
+			[MEGA_CTRL_WHITEBALAUTO] = {.id = VIDEO_CID_AUTO_WHITE_BALANCE},           \
+			[MEGA_CTRL_EXP_AUTO] = {.id = VIDEO_CID_EXPOSURE_AUTO,                     \
+				.range = {.max = 1}},                                              \
+			[MEGA_CTRL_EXPOSURE] = {.id = VIDEO_CID_EXPOSURE,                          \
+				.range = {.max = 30000}},                                          \
+			[MEGA_CTRL_GAIN] = {.id = VIDEO_CID_GAIN, .range = {.max = 1023}},         \
+			[MEGA_CTRL_GAIN_AUTO] = {.id = VIDEO_CID_AUTOGAIN},                        \
+			[MEGA_CTRL_LINKFREQ] = {.id = VIDEO_CID_LINK_FREQ,                         \
+				.flags = VIDEO_CTRL_FLAG_READ_ONLY,                                \
+				.range = {.max = ARRAY_SIZE(arducam_mega_link_frequency) - 1,      \
+					  .def = ARDUCAM_MEGA_640_480_LINK_FREQ_ID},               \
+				.int_menu = arducam_mega_link_frequency},                          \
+			[MEGA_CTRL_COLORFX] = {.id = VIDEO_CID_COLORFX, .range = {.max = 14}},     \
+			[MEGA_CTRL_SHARPNESS] = {.id = VIDEO_CID_SHARPNESS, .range = {.max = 8}},  \
+			[MEGA_CTRL_FOCUS_AUTO] = {.id = VIDEO_CID_FOCUS_AUTO},                     \
+		},                                                                                 \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &arducam_mega_init, NULL, &arducam_mega_data_##inst,           \
 			      &arducam_mega_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   \
