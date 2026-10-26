@@ -64,7 +64,8 @@ static void aics_client_discover(struct aics_client_test_suite_fixture *fixture)
 		BT_GATT_CHRC_INIT(BT_UUID_AICS_INPUT_STATUS, 0x000AU,
 				  BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
 		BT_GATT_CHRC_INIT(BT_UUID_AICS_CONTROL, 0x000DU, BT_GATT_CHRC_WRITE),
-		BT_GATT_CHRC_INIT(BT_UUID_AICS_DESCRIPTION, 0x000FU, BT_GATT_CHRC_READ),
+		BT_GATT_CHRC_INIT(BT_UUID_AICS_DESCRIPTION, 0x000FU,
+				  BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE_WITHOUT_RESP),
 		/* Not an AICS characteristic, so the client ignores it */
 		BT_GATT_CHRC_INIT(BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678,
 									 0x1234, 0x56789abcdef0)),
@@ -311,4 +312,22 @@ static ZTEST_F(aics_client_test_suite, test_mute_counter_retry_state_empty)
 	write_params->func(&fixture->conn, 0U, write_params);
 	zassert_equal(mute_cb_fake.call_count, 2U);
 	zassert_equal(mute_cb_fake.arg1_val, 0, "Unexpected err %d", mute_cb_fake.arg1_val);
+}
+
+static ZTEST_F(aics_client_test_suite, test_description_set)
+{
+	/* Gain -5, muted, manual mode, change counter 3 */
+	const uint8_t value[] = {0xFBU, BT_AICS_STATE_MUTED, BT_AICS_MODE_MANUAL, 0x03U};
+	int err;
+
+	err = bt_aics_description_set(fixture->inst, "Mic");
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+	zassert_equal(bt_gatt_write_without_response_cb_fake.call_count, 1U);
+
+	/* The write has no completion, so it does not leave the instance busy */
+	err = bt_aics_state_get(fixture->inst);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	read_rsp(fixture, value, sizeof(value));
+	expect_state(0, -5, BT_AICS_STATE_MUTED, BT_AICS_MODE_MANUAL);
 }
