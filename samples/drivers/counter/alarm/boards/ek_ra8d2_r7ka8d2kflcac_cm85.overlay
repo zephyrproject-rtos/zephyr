@@ -5,8 +5,8 @@
  */
 
 &agt0 {
-	interrupts = <95 1>, <94 1>;
-	interrupt-names = "agti", "agtcmai";
+	interrupts = <95 1>, <94 1>, <93 1>;
+	interrupt-names = "agti", "agtcmai", "agtcmbi";
 	renesas,prescaler = <4>;
 	status = "okay";
 
