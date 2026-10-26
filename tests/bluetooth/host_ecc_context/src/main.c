@@ -11,8 +11,10 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/bluetooth.h>
@@ -27,6 +29,7 @@
 #include "common/long_wq.h"
 #include "host/ecc.h"
 #include "host/hci_core.h"
+#include "host/smp.h"
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
@@ -129,6 +132,9 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 	opcode = sys_le16_to_cpu(hdr->opcode);
 
 	switch (opcode) {
+	case BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS:
+		/* Has no response */
+		return;
 	case BT_HCI_OP_READ_LOCAL_FEATURES:
 		read_local_features(&evt, opcode);
 		break;
@@ -152,6 +158,81 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 	bt_hci_recv(dev, evt);
 }
 
+/* The SMP PDUs the host sent, by code, the last public key among them, and
+ * the ACL packets it has not been told about yet
+ */
+static struct {
+	struct k_sem sent;
+	atomic_t codes;
+	uint8_t pkey[BT_PUB_KEY_LEN];
+	uint8_t pdu[80];
+	size_t len;
+	atomic_t unreported;
+	uint16_t handle;
+} smp_tx;
+
+static void completed_handler(struct k_work *work)
+{
+	struct bt_hci_evt_num_completed_packets *ev;
+	struct bt_hci_handle_count *hc;
+	struct net_buf *evt;
+	atomic_val_t count;
+
+	ARG_UNUSED(work);
+
+	count = atomic_clear(&smp_tx.unreported);
+	if (count == 0) {
+		return;
+	}
+
+	evt = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS, false, K_FOREVER);
+	evt_create(evt, BT_HCI_EVT_NUM_COMPLETED_PACKETS, sizeof(*ev) + sizeof(*hc));
+	ev = net_buf_add(evt, sizeof(*ev));
+	ev->num_handles = 1U;
+	hc = net_buf_add(evt, sizeof(*hc));
+	hc->handle = sys_cpu_to_le16(smp_tx.handle);
+	hc->count = sys_cpu_to_le16((uint16_t)count);
+
+	bt_hci_recv(DEVICE_DT_GET(DT_DRV_INST(0)), evt);
+}
+
+static K_WORK_DEFINE(completed_work, completed_handler);
+
+static void acl_handle(struct net_buf *acl)
+{
+	struct bt_hci_acl_hdr *hdr;
+	uint16_t handle;
+
+	hdr = net_buf_pull_mem(acl, sizeof(*hdr));
+	handle = sys_le16_to_cpu(hdr->handle);
+
+	/* Reassemble the L2CAP PDU, which the 27-octet buffers fragment */
+	if (bt_acl_flags_pb(bt_acl_flags(handle)) == BT_ACL_START_NO_FLUSH) {
+		smp_tx.len = 0U;
+	}
+
+	if (smp_tx.len + acl->len <= sizeof(smp_tx.pdu)) {
+		(void)memcpy(&smp_tx.pdu[smp_tx.len], acl->data, acl->len);
+		smp_tx.len += acl->len;
+	}
+
+	if (smp_tx.len > 4U && smp_tx.len == 4U + sys_get_le16(&smp_tx.pdu[0]) &&
+	    sys_get_le16(&smp_tx.pdu[2]) == BT_L2CAP_CID_SMP) {
+		uint8_t code = smp_tx.pdu[4];
+
+		if (code == BT_SMP_CMD_PUBLIC_KEY && smp_tx.len == 5U + BT_PUB_KEY_LEN) {
+			(void)memcpy(smp_tx.pkey, &smp_tx.pdu[5], BT_PUB_KEY_LEN);
+		}
+
+		atomic_set_bit(&smp_tx.codes, code);
+		k_sem_give(&smp_tx.sent);
+	}
+
+	smp_tx.handle = bt_acl_handle(handle);
+	(void)atomic_inc(&smp_tx.unreported);
+	(void)k_work_submit(&completed_work);
+}
+
 static int driver_open(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -172,6 +253,8 @@ static int driver_send(const struct device *dev, struct net_buf *buf)
 
 	if (type == BT_HCI_H4_CMD) {
 		cmd_handle(dev, buf);
+	} else if (type == BT_HCI_H4_ACL) {
+		acl_handle(buf);
 	}
 
 	net_buf_unref(buf);
@@ -688,4 +771,307 @@ static ZTEST(host_ecc_context, test_oob_data_while_pub_key_delivered)
 				  sizeof(oob.le_sc_data.c),
 				  "OOB data %zu made with another public key", i);
 	}
+}
+
+/* bt_pub_key_get() as called by the host: when armed and there is no key, the
+ * key is generated and delivered before the caller gets the NULL it read.
+ */
+static atomic_t delivery_after_get;
+
+const uint8_t *__real_bt_pub_key_get(void);
+
+const uint8_t *__wrap_bt_pub_key_get(void)
+{
+	const uint8_t *key = __real_bt_pub_key_get();
+
+	if (key == NULL && atomic_cas(&delivery_after_get, 1, 0)) {
+		keygen_release();
+		k_sleep(K_MSEC(10));
+	}
+
+	return key;
+}
+
+#define CONN_HANDLE 0x0001
+
+static struct bt_conn *test_conn;
+static K_SEM_DEFINE(connected_sem, 0, 1);
+static K_SEM_DEFINE(disconnected_sem, 0, 1);
+
+static void connected_cb(struct bt_conn *conn, uint8_t err)
+{
+	if (err == 0U) {
+		test_conn = bt_conn_ref(conn);
+	}
+
+	k_sem_give(&connected_sem);
+}
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(reason);
+
+	k_sem_give(&disconnected_sem);
+}
+
+BT_CONN_CB_DEFINE(test_conn_cb) = {
+	.connected = connected_cb,
+	.disconnected = disconnected_cb,
+};
+
+static void inject_conn_complete(void)
+{
+	struct net_buf *buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
+	struct bt_hci_evt_le_meta_event *mev;
+	struct bt_hci_evt_le_conn_complete *cc;
+
+	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*mev) + sizeof(*cc));
+	mev = net_buf_add(buf, sizeof(*mev));
+	cc = net_buf_add(buf, sizeof(*cc));
+
+	mev->subevent = BT_HCI_EVT_LE_CONN_COMPLETE;
+	cc->status = BT_HCI_ERR_SUCCESS;
+	cc->handle = sys_cpu_to_le16(CONN_HANDLE);
+	cc->role = BT_HCI_ROLE_PERIPHERAL;
+	cc->peer_addr = (bt_addr_le_t){
+		.type = BT_ADDR_LE_PUBLIC,
+		.a = { .val = { 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6 } },
+	};
+	cc->interval = sys_cpu_to_le16(24U);
+	cc->latency = 0U;
+	cc->supv_timeout = sys_cpu_to_le16(400U);
+	cc->clock_accuracy = 0U;
+
+	bt_hci_recv(DEVICE_DT_GET(DT_DRV_INST(0)), buf);
+}
+
+static void inject_disconn_complete(void)
+{
+	struct net_buf *buf = bt_buf_get_evt(BT_HCI_EVT_DISCONN_COMPLETE, false, K_FOREVER);
+	struct bt_hci_evt_disconn_complete *dc;
+
+	evt_create(buf, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(*dc));
+	dc = net_buf_add(buf, sizeof(*dc));
+	dc->status = BT_HCI_ERR_SUCCESS;
+	dc->handle = sys_cpu_to_le16(CONN_HANDLE);
+	dc->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+
+	bt_hci_recv(DEVICE_DT_GET(DT_DRV_INST(0)), buf);
+}
+
+/* An SMP PDU from the central */
+static void inject_smp(uint8_t code, const void *data, uint16_t len)
+{
+	struct net_buf *buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	struct bt_hci_acl_hdr *hdr;
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(CONN_HANDLE, BT_ACL_START));
+	hdr->len = sys_cpu_to_le16(4U + 1U + len);
+	net_buf_add_le16(buf, 1U + len);
+	net_buf_add_le16(buf, BT_L2CAP_CID_SMP);
+	net_buf_add_u8(buf, code);
+	(void)net_buf_add_mem(buf, data, len);
+
+	bt_hci_recv(DEVICE_DT_GET(DT_DRV_INST(0)), buf);
+}
+
+/* Waits for the host to send an SMP PDU with the given code */
+static bool smp_sent(uint8_t code)
+{
+	for (int i = 0; i < 10 && !atomic_test_bit(&smp_tx.codes, code); i++) {
+		(void)k_sem_take(&smp_tx.sent, K_MSEC(10));
+	}
+
+	return atomic_test_bit(&smp_tx.codes, code);
+}
+
+/* The Core Specification debug public key, X and Y little-endian, as the
+ * central's key
+ */
+static const uint8_t central_pkey[BT_PUB_KEY_LEN] = {
+	0xe6, 0x9d, 0x35, 0x0e, 0x48, 0x01, 0x03, 0xcc,
+	0xdb, 0xfd, 0xf4, 0xac, 0x11, 0x91, 0xf4, 0xef,
+	0xb9, 0xa5, 0xf9, 0xe9, 0xa7, 0x83, 0x2c, 0x5e,
+	0x2c, 0xbe, 0x97, 0xf2, 0xd2, 0x03, 0xb0, 0x20,
+	0x8b, 0xd2, 0x89, 0x15, 0xd0, 0x8e, 0x1c, 0x74,
+	0x24, 0x30, 0xed, 0x8f, 0xc2, 0x45, 0x63, 0x76,
+	0x5c, 0x15, 0x52, 0x5a, 0xbf, 0x9a, 0x32, 0x63,
+	0x6d, 0xeb, 0x2a, 0x65, 0x49, 0x9c, 0x80, 0xdc,
+};
+
+/* LE Secure Connections Just Works, no bonding */
+static const struct bt_smp_pairing pairing_req = {
+	.io_capability = BT_SMP_IO_NO_INPUT_OUTPUT,
+	.oob_flag = BT_SMP_OOB_NOT_PRESENT,
+	.auth_req = BT_SMP_AUTH_SC,
+	.max_key_size = BT_SMP_MAX_ENC_KEY_SIZE,
+};
+
+struct pairing_errs {
+	int disable;
+	int enable;
+	int adv;
+	int sec;
+};
+
+static void pairing_reset(void)
+{
+	k_sem_init(&smp_tx.sent, 0, K_SEM_MAX_LIMIT);
+	atomic_clear(&smp_tx.codes);
+	(void)memset(smp_tx.pkey, 0, sizeof(smp_tx.pkey));
+	smp_tx.len = 0U;
+	test_conn = NULL;
+}
+
+/* Gets connected as peripheral and starts the security procedure, delivering
+ * the key while it starts if asked
+ */
+static void pairing_connect(struct pairing_errs *errs, bool deliver_during_start)
+{
+	errs->adv = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, NULL, 0);
+	inject_conn_complete();
+	(void)k_sem_take(&connected_sem, ECC_TIMEOUT);
+
+	atomic_set(&delivery_after_get, deliver_during_start ? 1 : 0);
+	errs->sec =
+		(test_conn != NULL) ? bt_conn_set_security(test_conn, BT_SECURITY_L2) : -ENOTCONN;
+	atomic_clear(&delivery_after_get);
+}
+
+/* Re-enables with the key generation held, then connects */
+static void pairing_start(struct pairing_errs *errs, bool deliver_during_start)
+{
+	pairing_reset();
+
+	errs->disable = bt_disable();
+	atomic_set(&keygen.hold, 1);
+	errs->enable = bt_enable(NULL);
+	pairing_connect(errs, deliver_during_start);
+}
+
+static void pairing_end(void)
+{
+	settle();
+
+	if (test_conn != NULL) {
+		(void)bt_conn_disconnect(test_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		inject_disconn_complete();
+		(void)k_sem_take(&disconnected_sem, ECC_TIMEOUT);
+		bt_conn_unref(test_conn);
+		test_conn = NULL;
+	}
+}
+
+static void pairing_assert_started(const struct pairing_errs *errs)
+{
+	zassert_ok(errs->disable);
+	zassert_ok(errs->enable);
+	zassert_ok(errs->adv);
+	zassert_ok(errs->sec);
+	zassert_true(atomic_test_bit(&smp_tx.codes, BT_SMP_CMD_SECURITY_REQUEST),
+		     "No Security Request sent");
+}
+
+/* A pairing started while the key of an enable is generated sends the key once
+ * it is there, also when the key arrives while the pairing is being started.
+ * Nothing is asserted before the end of the pairing, which a failed assertion
+ * would skip.
+ */
+static ZTEST(host_ecc_context, test_pairing_started_during_pub_key_delivery)
+{
+	struct pairing_errs errs;
+	const uint8_t *key;
+	bool rsp_sent;
+	bool pkey_sent;
+
+	pairing_start(&errs, true);
+	keygen_release();
+	settle();
+
+	inject_smp(BT_SMP_CMD_PAIRING_REQ, &pairing_req, sizeof(pairing_req));
+	rsp_sent = smp_sent(BT_SMP_CMD_PAIRING_RSP);
+	inject_smp(BT_SMP_CMD_PUBLIC_KEY, central_pkey, sizeof(central_pkey));
+	pkey_sent = smp_sent(BT_SMP_CMD_PUBLIC_KEY);
+
+	pairing_end();
+	key = bt_pub_key_get();
+
+	pairing_assert_started(&errs);
+	zassert_true(rsp_sent, "No Pairing Response sent");
+	zassert_true(pkey_sent, "Public key not sent");
+	zassert_not_null(key, "No public key published");
+	zassert_mem_equal(smp_tx.pkey, key, BT_PUB_KEY_LEN, "Another public key sent");
+}
+
+/* A pairing that reaches the public key exchange before the key of a re-enable
+ * is there waits for that key instead of sending the previous one.
+ */
+static ZTEST(host_ecc_context, test_pairing_waits_for_pub_key_of_enable)
+{
+	struct pairing_errs errs;
+	const uint8_t *key;
+	bool pkey_sent;
+
+	/* With the generation on the system workqueue, holding it also holds
+	 * the link, and the key is there before the public key exchange.
+	 */
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_LONG_WQ);
+
+	pairing_start(&errs, false);
+
+	inject_smp(BT_SMP_CMD_PAIRING_REQ, &pairing_req, sizeof(pairing_req));
+	inject_smp(BT_SMP_CMD_PUBLIC_KEY, central_pkey, sizeof(central_pkey));
+	k_sleep(K_MSEC(10));
+
+	keygen_release();
+	settle();
+	pkey_sent = smp_sent(BT_SMP_CMD_PUBLIC_KEY);
+
+	pairing_end();
+	key = bt_pub_key_get();
+
+	pairing_assert_started(&errs);
+	zassert_true(atomic_test_bit(&smp_tx.codes, BT_SMP_CMD_PAIRING_RSP),
+		     "No Pairing Response sent");
+	zassert_true(pkey_sent, "Public key not sent");
+	zassert_not_null(key, "No public key published");
+	zassert_mem_equal(smp_tx.pkey, key, BT_PUB_KEY_LEN, "Another public key sent");
+	zassert_false(atomic_test_bit(&smp_tx.codes, BT_SMP_CMD_PAIRING_FAIL), "Pairing failed");
+}
+
+/* A key generated after bt_disable(), by a request that crossed it, is kept by
+ * the next bt_enable() with the no-reset quirk, without a callback to SMP. A
+ * pairing uses that key instead of waiting for another one.
+ */
+static ZTEST(host_ecc_context, test_pairing_with_pub_key_from_before_enable)
+{
+	static struct bt_pub_key_cb cb = { .func = record_pub_key };
+	struct pairing_errs errs;
+	const uint8_t *key;
+	bool pkey_sent;
+	int gen_err;
+
+	pairing_reset();
+
+	errs.disable = bt_disable();
+	gen_err = bt_pub_key_gen(&cb);
+	settle();
+	errs.enable = bt_enable(NULL);
+	pairing_connect(&errs, false);
+
+	inject_smp(BT_SMP_CMD_PAIRING_REQ, &pairing_req, sizeof(pairing_req));
+	inject_smp(BT_SMP_CMD_PUBLIC_KEY, central_pkey, sizeof(central_pkey));
+	pkey_sent = smp_sent(BT_SMP_CMD_PUBLIC_KEY);
+
+	pairing_end();
+	key = bt_pub_key_get();
+
+	zassert_ok(gen_err);
+	zassert_true(seen.key, "No key generated after the disable");
+	pairing_assert_started(&errs);
+	zassert_true(pkey_sent, "Public key not sent");
+	zassert_not_null(key, "No public key published");
+	zassert_mem_equal(smp_tx.pkey, key, BT_PUB_KEY_LEN, "Another public key sent");
 }

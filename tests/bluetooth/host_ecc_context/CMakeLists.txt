@@ -11,3 +11,5 @@ target_sources(app PRIVATE src/main.c)
 
 # Holds or fails the key generations, see __wrap_psa_generate_key()
 target_link_options(app PUBLIC -Wl,--wrap=psa_generate_key)
+# Delivers the key between the read and its use, see __wrap_bt_pub_key_get()
+target_link_options(app PUBLIC -Wl,--wrap=bt_pub_key_get)
