@@ -796,6 +796,12 @@ New APIs and options
     The legacy ``__ASSERT()`` family continues to work largely unchanged as a thin compatibility
     layer over the ZASSERT ``DEFAULT`` module.
 
+* Demand Paging
+
+  * :kconfig:option:`CONFIG_EVICTION_LRU` is now supported on x86, where it is the default
+    eviction algorithm.
+  * Demand paging files have been moved to ``subsys/mem_mgmt/demand_paging``.
+
 * Devicetree
 
   * :c:macro:`DT_IRQN_BY_NAME`
