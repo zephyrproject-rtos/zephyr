@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -34,7 +35,8 @@ NET_BUF_POOL_FIXED_DEFINE(unsendable_pool, 3, BT_L2CAP_BR_ECHO_REQ_RESERVE + siz
 			  NULL);
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 4, BT_L2CAP_BR_ECHO_REQ_RESERVE + sizeof(ECHO_DATA),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-NET_BUF_POOL_FIXED_DEFINE(rx_pool, 1, 32, 0, NULL);
+/* Two, as the stack keeps a received PDU it cannot process yet */
+NET_BUF_POOL_FIXED_DEFINE(rx_pool, 2, 32, 0, NULL);
 
 static struct bt_conn *conn;
 /* Identifier of the Information Request sent on connection, left unanswered */
@@ -96,7 +98,7 @@ static uint8_t send_echo_req(void)
 	return buf->data[L2CAP_HDR_SIZE + 1U];
 }
 
-static void recv_sig(uint8_t code, uint8_t ident, const void *data, uint16_t len)
+static struct net_buf *sig_pdu(uint8_t code, uint8_t ident, const void *data, uint16_t len)
 {
 	struct net_buf *buf;
 
@@ -110,7 +112,12 @@ static void recv_sig(uint8_t code, uint8_t ident, const void *data, uint16_t len
 	net_buf_add_le16(buf, len);
 	net_buf_add_mem(buf, data, len);
 
-	bt_l2cap_br_recv(conn, buf);
+	return buf;
+}
+
+static void recv_sig(uint8_t code, uint8_t ident, const void *data, uint16_t len)
+{
+	bt_l2cap_br_recv(conn, sig_pdu(code, ident, data, len));
 }
 
 static void recv_echo_rsp(uint8_t ident)
@@ -150,15 +157,39 @@ static void before(void *fixture)
 }
 
 /* Release the PDUs queued for sending, as there is no controller */
-static void after(void *fixture)
+static void release_tx_queue(void)
 {
 	sys_snode_t *node;
-
-	ARG_UNUSED(fixture);
 
 	while ((node = sys_slist_get(&sig_chan()->_pdu_tx_queue)) != NULL) {
 		net_buf_unref(CONTAINER_OF(node, struct net_buf, node));
 	}
+}
+
+static void after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	release_tx_queue();
+}
+
+/* The last PDU queued for sending on the signaling channel, if any */
+static struct net_buf *sig_tx_tail(void)
+{
+	sys_snode_t *node;
+
+	node = sys_slist_peek_tail(&sig_chan()->_pdu_tx_queue);
+
+	return (node != NULL) ? CONTAINER_OF(node, struct net_buf, node) : NULL;
+}
+
+static void check_echo_rsp_without_data(const struct net_buf *rsp, uint8_t ident)
+{
+	zassert_not_null(rsp, "no Echo Response sent");
+	zassert_equal(rsp->len, L2CAP_HDR_SIZE + SIG_HDR_SIZE);
+	zassert_equal(rsp->data[L2CAP_HDR_SIZE], ECHO_RSP);
+	zassert_equal(rsp->data[L2CAP_HDR_SIZE + 1U], ident);
+	zassert_equal(sys_get_le16(&rsp->data[L2CAP_HDR_SIZE + 2U]), 0U);
 }
 
 ZTEST_SUITE(l2cap_br_echo, NULL, setup, before, after, NULL);
@@ -265,4 +296,50 @@ ZTEST(l2cap_br_echo, test_echo_req_rejected)
 
 	recv_echo_rsp(send_echo_req());
 	zassert_equal(echo_rsp_count, 1U);
+}
+
+/* Without a req callback, the stack answers an Echo Request */
+ZTEST(l2cap_br_echo, test_echo_req_answered_by_stack)
+{
+	recv_sig(ECHO_REQ, 0x42U, ECHO_DATA, strlen(ECHO_DATA));
+
+	check_echo_rsp_without_data(sig_tx_tail(), 0x42U);
+}
+
+/* An Echo Request received while out of TX buffers is kept, to be answered later */
+ZTEST(l2cap_br_echo, test_echo_req_kept_without_buf)
+{
+	struct net_buf *prev = NULL;
+	struct net_buf *tail;
+	struct net_buf *req;
+	uint8_t ident;
+	bool kept;
+
+	/* Without a controller every response stays queued, until no buffer is left */
+	for (ident = 1U; ident < UINT8_MAX; ident++) {
+		req = net_buf_ref(sig_pdu(ECHO_REQ, ident, ECHO_DATA, strlen(ECHO_DATA)));
+		bt_l2cap_br_recv(conn, req);
+		kept = (req->ref > 1U);
+		net_buf_unref(req);
+
+		tail = sig_tx_tail();
+		if (tail == prev) {
+			break;
+		}
+
+		zassert_false(kept);
+		check_echo_rsp_without_data(tail, ident);
+		prev = tail;
+	}
+
+	zassert_true(ident < UINT8_MAX, "TX buffers not exhausted");
+	/* Kept for the retry work, which needs the Bluetooth workqueue not run here */
+	zassert_true(kept, "Echo Request dropped");
+
+	/* Drop the kept request with the signaling channel */
+	release_tx_queue();
+	bt_l2cap_br_disconnected(conn);
+	bt_l2cap_br_connected(conn);
+	info_ident = sig_chan()->ident;
+	zassert_not_equal(info_ident, 0U, "no Information Request outstanding");
 }
