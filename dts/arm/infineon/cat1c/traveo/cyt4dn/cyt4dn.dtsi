@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_cyt4dnxx.h>
+#include <zephyr/dt-bindings/mux/infineon-trigmux-cyt4dn.h>
 
 / {
 	cpus {
@@ -56,6 +57,14 @@
 	};
 
 	soc {
+		trigmux: mux-controller@40008000 {
+			compatible = "infineon,trigmux";
+			reg = <0x40008000 0x8000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
 		cpuss_intc: interrupt-controller@40200000 {
 			compatible = "infineon,sysintc";
 			reg = <0x40200000 0x10000>;
