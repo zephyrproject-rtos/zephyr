@@ -139,7 +139,9 @@ ZTEST(libc_common, test_sqrtf)
 		}
 	}
 	zassert_true(max_error < 0x03, "huge errors in sqrt implementation");
-	/* print the max error */
+	/* print the max error *
+ * @verifies ZEP-SRS-18-2
+ */
 	TC_PRINT("test_sqrtf max error %d counts\n", max_error);
 }
 

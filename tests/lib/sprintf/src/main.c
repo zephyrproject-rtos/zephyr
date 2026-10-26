@@ -97,6 +97,8 @@ static int WriteFrmtd_vf(FILE *stream, char *format, ...)
  *
  * @brief Test sprintf with doubles
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 
 #ifdef CONFIG_STDOUT_CONSOLE
@@ -414,6 +416,8 @@ int tvsnprintf(char *s, size_t len, const char *format, ...)
  * vsnprintf().  Instead of calling vsnprintf() directly, it invokes the wrapper
  * routine tvsnprintf().
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 
 ZTEST(sprintf, test_vsnprintf)
@@ -469,6 +473,8 @@ int tvsprintf(char *s, const char *format, ...)
  * sprintfTest().  Instead it tries to limit it to functionality specific to
  * vsprintf().
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 
 ZTEST(sprintf, test_vsprintf)
@@ -495,6 +501,8 @@ ZTEST(sprintf, test_vsprintf)
  * sprintfTest().  Instead it tries to limit it to functionality specific to
  * snprintf().
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 
 ZTEST(sprintf, test_snprintf)
@@ -539,6 +547,8 @@ ZTEST(sprintf, test_snprintf)
  *
  * @brief Test the sprintf() routine with miscellaneous specifiers
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 
 ZTEST(sprintf, test_sprintf_misc)
@@ -607,6 +617,8 @@ ZTEST(sprintf, test_sprintf_misc)
  *
  * @brief Test the sprintf() routine with integers
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 ZTEST(sprintf, test_sprintf_integer)
 {
@@ -729,6 +741,8 @@ ZTEST(sprintf, test_sprintf_integer)
  *
  * @brief Test sprintf with strings
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 
 ZTEST(sprintf, test_sprintf_string)
@@ -760,6 +774,8 @@ ZTEST(sprintf, test_sprintf_string)
  *
  * @see printf().
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 ZTEST(sprintf, test_print)
 {
@@ -778,6 +794,8 @@ ZTEST(sprintf, test_print)
  *
  * @see fprintf().
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 ZTEST(sprintf, test_fprintf)
 {
@@ -796,6 +814,8 @@ ZTEST(sprintf, test_fprintf)
  *
  * @brief Test vfprintf function
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 
 ZTEST(sprintf, test_vfprintf)
@@ -823,6 +843,8 @@ ZTEST(sprintf, test_vfprintf)
  *
  * @brief Test vprintf function
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 
 static int WriteFrmtd_v(char *format, ...)
@@ -862,6 +884,8 @@ ZTEST(sprintf, test_vprintf)
  * @brief Test put function
  *
  * @see fputs(), puts(), fputc(), putc().
+ *
+ * @verifies ZEP-SRS-18-1
  */
 ZTEST(sprintf, test_put)
 {
@@ -893,6 +917,8 @@ ZTEST(sprintf, test_put)
  *
  * @brief Test fwrite function
  *
+ *
+ * @verifies ZEP-SRS-18-1
  */
 ZTEST(sprintf, test_fwrite)
 {

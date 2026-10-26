@@ -30,6 +30,8 @@ ZTEST_SUITE(libc_stdio, NULL, NULL, NULL, NULL, NULL);
  * @brief Test for remove API
  *
  * @details Test deletes a file through remove API.
+ *
+ * @verifies ZEP-SRS-18-7
  */
 ZTEST(libc_stdio, test_remove)
 {
