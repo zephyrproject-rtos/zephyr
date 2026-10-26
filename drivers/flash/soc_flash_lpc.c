@@ -55,6 +55,26 @@ static inline void prepare_erase_write(off_t offset, size_t len,
 	FLASHIAP_PrepareSectorForWrite(start, stop);
 }
 
+static int flashiap_to_errno(status_t status)
+{
+	switch (status) {
+	case kStatus_FLASHIAP_Success:
+		return 0;
+	case kStatus_FLASHIAP_Busy:
+		return -EBUSY;
+	case kStatus_FLASHIAP_NotPrepared:
+		return -EACCES;
+	case kStatus_FLASHIAP_SectorNotblank:
+		return -ENOTEMPTY;
+	case kStatus_FLASHIAP_CompareError:
+	case kStatus_FLASHIAP_NoPower:
+	case kStatus_FLASHIAP_NoClock:
+		return -EIO;
+	default:
+		return -EINVAL;
+	}
+}
+
 static status_t erase_part(uint32_t start, uint32_t end, uint32_t sector_size)
 {
 	bool whole_sectors = IS_ALIGNED(start, sector_size) && IS_ALIGNED(end, sector_size);
@@ -116,7 +136,7 @@ static int flash_lpc_erase(const struct device *dev, off_t offset, size_t len)
 
 	k_sem_give(&priv->write_lock);
 
-	return (rc == kStatus_FLASHIAP_Success) ? 0 : -EINVAL;
+	return flashiap_to_errno(rc);
 }
 
 static int flash_lpc_read(const struct device *dev, off_t offset,
@@ -154,7 +174,7 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 
 	k_sem_give(&priv->write_lock);
 
-	return (rc == kStatus_FLASHIAP_Success) ? 0 : -EINVAL;
+	return flashiap_to_errno(rc);
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
