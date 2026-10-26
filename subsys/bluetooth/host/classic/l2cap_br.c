@@ -5515,16 +5515,53 @@ static void l2cap_br_reject_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct
 	} while (chan != NULL);
 }
 
+static bool l2cap_br_echo_req_cb_registered(void)
+{
+	struct bt_l2cap_br_echo_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
+		if (callback->req != NULL) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Answer an Echo Request with an Echo Response without data */
+static void l2cap_br_send_echo_rsp(struct bt_l2cap_br *l2cap, uint8_t ident)
+{
+	struct bt_l2cap_sig_hdr *hdr;
+	struct net_buf *buf;
+
+	buf = l2cap_br_get_allocated_buf(l2cap);
+	__ASSERT(buf != NULL, "No buffers to send echo rsp");
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_ECHO_RSP;
+	hdr->ident = ident;
+	hdr->len = 0U;
+
+	l2cap_send(l2cap->chan.chan.conn, BT_L2CAP_CID_BR_SIG, buf);
+}
+
 static void l2cap_br_echo_req(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_br_echo_cb *callback;
 	struct net_buf_simple_state state;
 
+	if (!l2cap_br_echo_req_cb_registered()) {
+		/* An Echo Request is always to be answered */
+		l2cap_br_send_echo_rsp(l2cap, ident);
+		return;
+	}
+
 	net_buf_simple_save(&buf->b, &state);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
 		if (callback->req) {
+			/* The callback is to answer with bt_l2cap_br_echo_rsp() */
 			callback->req(conn, ident, buf);
 			/* The next callback gets the data whatever this one pulled */
 			net_buf_simple_restore(&buf->b, &state);
@@ -5629,11 +5666,13 @@ static bool l2cap_br_is_tx_buf_required(const struct bt_l2cap_sig_hdr *hdr)
 	case BT_L2CAP_CONF_REQ:
 	default:
 		return true;
+	case BT_L2CAP_ECHO_REQ:
+		/* The stack answers it unless a req callback is to */
+		return !l2cap_br_echo_req_cb_registered();
 	case BT_L2CAP_CONF_RSP:
 	case BT_L2CAP_DISCONN_RSP:
 	case BT_L2CAP_CONN_RSP:
 	case BT_L2CAP_CMD_REJECT:
-	case BT_L2CAP_ECHO_REQ:
 	case BT_L2CAP_ECHO_RSP:
 		return false;
 	}
