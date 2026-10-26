@@ -532,6 +532,7 @@ static const bt_addr_le_t migration_peers[] = {
 	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x60, 0x61, 0x62, 0x63, 0x64, 0x65}},
 	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x70, 0x71, 0x72, 0x73, 0x74, 0x75}},
 	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x80, 0x81, 0x82, 0x83, 0x84, 0x85}},
+	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x90, 0x91, 0x92, 0x93, 0x94, 0x95}},
 };
 
 /* Must match the host's STORAGE_CFG_VERSION. If the host bumps it, this
@@ -547,9 +548,6 @@ static void migration_blob_init(struct bt_keys *keys, const bt_addr_le_t *addr, 
 	/* cfg_flags must match the host's STORAGE_CFG_FLAGS, which is derived
 	 * from the same Kconfig options.
 	 */
-	if (IS_ENABLED(CONFIG_BT_SIGNING)) {
-		cfg_flags |= BT_KEYS_CFG_SIGNING;
-	}
 	if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY)) {
 		cfg_flags |= BT_KEYS_CFG_SC_PAIR_ONLY;
 	}
@@ -696,7 +694,7 @@ static ZTEST(bt_keys_settings, test_load_rejects_cfg_flags_mismatch)
 	char name[BT_SETTINGS_KEY_MAX];
 
 	migration_blob_init(&stored, &migration_peers[4], BT_KEYS_IRK, 0);
-	stored.cfg_flags[0] ^= BT_KEYS_CFG_SIGNING;
+	stored.cfg_flags[0] ^= BT_KEYS_CFG_SC_PAIR_ONLY;
 
 	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[4], NULL));
 	zassert_ok(settings_save_one(name, stored.storage_start, BT_KEYS_STORAGE_LEN));
@@ -704,6 +702,29 @@ static ZTEST(bt_keys_settings, test_load_rejects_cfg_flags_mismatch)
 
 	zassert_is_null(bt_keys_find_addr(BT_ID_DEFAULT, &migration_peers[4]),
 			"cfg flags mismatch must be rejected");
+}
+
+/* Keys stored by a build with the removed data signing support carry
+ * cfg_flags BIT(0) and two CSRKs (16-octet key and 32-bit counter each), so
+ * they are longer than the current layout. Rejected.
+ */
+static ZTEST(bt_keys_settings, test_load_rejects_signing_keys)
+{
+	uint8_t stored_signing[BT_KEYS_STORAGE_LEN + 2U * (16U + sizeof(uint32_t))];
+	struct bt_keys stored;
+	char name[BT_SETTINGS_KEY_MAX];
+
+	migration_blob_init(&stored, &migration_peers[7], BT_KEYS_IRK, 0);
+	stored.cfg_flags[0] |= BIT(0);
+	(void)memset(stored_signing, 0, sizeof(stored_signing));
+	(void)memcpy(stored_signing, stored.storage_start, BT_KEYS_STORAGE_LEN);
+
+	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[7], NULL));
+	zassert_ok(settings_save_one(name, stored_signing, sizeof(stored_signing)));
+	zassert_ok(settings_load_subtree(name));
+
+	zassert_is_null(bt_keys_find_addr(BT_ID_DEFAULT, &migration_peers[7]),
+			"Keys stored with data signing must be rejected");
 }
 
 /* A cfg_version other than the current one: rejected. */
