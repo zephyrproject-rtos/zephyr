@@ -1107,6 +1107,15 @@ New APIs and options
 
   * :c:macro:`ARGS_UNUSED` to mark multiple arguments as unused.
 
+* Xtensa
+
+  * :kconfig:option:`CONFIG_XTENSA_FATAL_BREADCRUMB` and the weak ``xtensa_fatal_breadcrumb()``
+    and ``xtensa_triple_fault_breadcrumb()`` hooks, which let a SoC record fatal exception and
+    triple fault state for diagnosis by a host.
+  * MMU address space IDs (ASIDs) are now recycled when memory domains are destroyed, so
+    applications that frequently create short-lived memory domains no longer exhaust the ASID
+    space.
+
 * Zbus
 
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION`
