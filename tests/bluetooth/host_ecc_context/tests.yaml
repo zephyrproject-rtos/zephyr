@@ -18,3 +18,7 @@ tests:
   bluetooth.host_ecc_context.no_long_wq:
     extra_configs:
       - CONFIG_BT_LONG_WQ=n
+  bluetooth.host_ecc_context.legacy_pairing:
+    extra_configs:
+      - CONFIG_BT_SMP_SC_PAIR_ONLY=n
+      - CONFIG_TEST_ATOMIC_OPERATIONS_C=y

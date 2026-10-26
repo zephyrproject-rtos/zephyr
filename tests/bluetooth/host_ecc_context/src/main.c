@@ -820,7 +820,12 @@ BT_CONN_CB_DEFINE(test_conn_cb) = {
 	.disconnected = disconnected_cb,
 };
 
-static void inject_conn_complete(void)
+static const bt_addr_le_t peer_addr = {
+	.type = BT_ADDR_LE_PUBLIC,
+	.a = { .val = { 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6 } },
+};
+
+static void inject_conn_complete(uint8_t role)
 {
 	struct net_buf *buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
 	struct bt_hci_evt_le_meta_event *mev;
@@ -833,11 +838,8 @@ static void inject_conn_complete(void)
 	mev->subevent = BT_HCI_EVT_LE_CONN_COMPLETE;
 	cc->status = BT_HCI_ERR_SUCCESS;
 	cc->handle = sys_cpu_to_le16(CONN_HANDLE);
-	cc->role = BT_HCI_ROLE_PERIPHERAL;
-	cc->peer_addr = (bt_addr_le_t){
-		.type = BT_ADDR_LE_PUBLIC,
-		.a = { .val = { 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6 } },
-	};
+	cc->role = role;
+	bt_addr_le_copy(&cc->peer_addr, &peer_addr);
 	cc->interval = sys_cpu_to_le16(24U);
 	cc->latency = 0U;
 	cc->supv_timeout = sys_cpu_to_le16(400U);
@@ -931,7 +933,7 @@ static void pairing_reset(void)
 static void pairing_connect(struct pairing_errs *errs, bool deliver_during_start)
 {
 	errs->adv = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, NULL, 0);
-	inject_conn_complete();
+	inject_conn_complete(BT_HCI_ROLE_PERIPHERAL);
 	(void)k_sem_take(&connected_sem, ECC_TIMEOUT);
 
 	atomic_set(&delivery_after_get, deliver_during_start ? 1 : 0);
@@ -1071,6 +1073,115 @@ static ZTEST(host_ecc_context, test_pairing_with_pub_key_from_before_enable)
 	zassert_ok(gen_err);
 	zassert_true(seen.key, "No key generated after the disable");
 	pairing_assert_started(&errs);
+	zassert_true(pkey_sent, "Public key not sent");
+	zassert_not_null(key, "No public key published");
+	zassert_mem_equal(smp_tx.pkey, key, BT_PUB_KEY_LEN, "Another public key sent");
+}
+
+/* z_impl_atomic_or() as called by the host: when armed for a thread, the key
+ * is generated and delivered just before the next atomic OR of that thread.
+ */
+static struct {
+	atomic_t armed;
+	k_tid_t thread;
+} delivery_before_or;
+
+#if defined(CONFIG_TEST_ATOMIC_OPERATIONS_C)
+atomic_val_t __real_z_impl_atomic_or(atomic_t *target, atomic_val_t value);
+
+atomic_val_t __wrap_z_impl_atomic_or(atomic_t *target, atomic_val_t value)
+{
+	if (delivery_before_or.thread == k_current_get() &&
+	    atomic_cas(&delivery_before_or.armed, 1, 0)) {
+		keygen_release();
+		k_sleep(K_MSEC(10));
+	}
+
+	return __real_z_impl_atomic_or(target, value);
+}
+#endif /* CONFIG_TEST_ATOMIC_OPERATIONS_C */
+
+static K_SEM_DEFINE(pairing_confirm_sem, 0, 1);
+
+static void pairing_confirm_cb(struct bt_conn *conn)
+{
+	ARG_UNUSED(conn);
+
+	k_sem_give(&pairing_confirm_sem);
+}
+
+static void auth_cancel_cb(struct bt_conn *conn)
+{
+	ARG_UNUSED(conn);
+}
+
+/* As central, a Just Works pairing that the peripheral requested and that the
+ * application confirms while the key of an enable is generated sends the key
+ * once it is there, also when the key arrives during the confirmation. The
+ * confirmation exists only with legacy pairing enabled.
+ */
+static ZTEST(host_ecc_context, test_pairing_confirm_during_pub_key_delivery)
+{
+	static const struct bt_conn_auth_cb auth_cb = {
+		.pairing_confirm = pairing_confirm_cb,
+		.cancel = auth_cancel_cb,
+	};
+	static const struct bt_smp_security_request sec_req = {
+		.auth_req = BT_SMP_AUTH_SC,
+	};
+	struct bt_conn *conn = NULL;
+	const uint8_t *key;
+	int confirm_requested;
+	int confirm_err;
+	int disable_err;
+	int enable_err;
+	int auth_err;
+	int conn_err;
+	bool pkey_sent;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_SMP_SC_PAIR_ONLY);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TEST_ATOMIC_OPERATIONS_C);
+
+	pairing_reset();
+	k_sem_reset(&pairing_confirm_sem);
+
+	/* Nothing is asserted before the end of the pairing, which a failed
+	 * assertion would skip.
+	 */
+	disable_err = bt_disable();
+	atomic_set(&keygen.hold, 1);
+	enable_err = bt_enable(NULL);
+	auth_err = bt_conn_auth_cb_register(&auth_cb);
+	conn_err = bt_conn_le_create(&peer_addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
+				     &conn);
+	if (conn_err == 0) {
+		inject_conn_complete(BT_HCI_ROLE_CENTRAL);
+		(void)k_sem_take(&connected_sem, ECC_TIMEOUT);
+		bt_conn_unref(conn);
+	}
+
+	inject_smp(BT_SMP_CMD_SECURITY_REQUEST, &sec_req, sizeof(sec_req));
+	inject_smp(BT_SMP_CMD_PAIRING_RSP, &pairing_req, sizeof(pairing_req));
+	confirm_requested = k_sem_take(&pairing_confirm_sem, ECC_TIMEOUT);
+
+	delivery_before_or.thread = k_current_get();
+	atomic_set(&delivery_before_or.armed, 1);
+	confirm_err = (test_conn != NULL) ? bt_conn_auth_pairing_confirm(test_conn) : -ENOTCONN;
+	atomic_clear(&delivery_before_or.armed);
+	keygen_release();
+	settle();
+	pkey_sent = smp_sent(BT_SMP_CMD_PUBLIC_KEY);
+
+	pairing_end();
+	(void)bt_conn_auth_cb_register(NULL);
+	key = bt_pub_key_get();
+
+	zassert_ok(disable_err);
+	zassert_ok(enable_err);
+	zassert_ok(auth_err);
+	zassert_ok(conn_err);
+	zassert_ok(confirm_requested, "Pairing confirmation not requested");
+	zassert_ok(confirm_err);
 	zassert_true(pkey_sent, "Public key not sent");
 	zassert_not_null(key, "No public key published");
 	zassert_mem_equal(smp_tx.pkey, key, BT_PUB_KEY_LEN, "Another public key sent");
