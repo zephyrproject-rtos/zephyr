@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/keymap.h>
 
 / {
-	model = "SteelSeries Apex Pro Mini board";
 	compatible = "steelseries,apex_pro_mini", "st,stm32l412";
+	model = "SteelSeries Apex Pro Mini board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -36,7 +36,6 @@
 
 	kbd: kbd-matrix {
 		compatible = "gpio-kbd-matrix";
-		status = "okay";
 		idle-mode = "poll";
 		settle-time-us = <110>;
 		no-ghostkey-check;
@@ -60,6 +59,7 @@
 			    <&gpioc 1 GPIO_ACTIVE_HIGH>,
 			    <&gpioc 2 GPIO_ACTIVE_HIGH>,
 			    <&gpioc 3 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 
 		keymap {
 			compatible = "input-keymap";
@@ -194,9 +194,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -213,8 +213,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(16384)>;
+			label = "storage";
 		};
 	};
 };
@@ -224,9 +224,9 @@
 };
 
 zephyr_udc0: &usb {
-	status = "okay";
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12 &usb_noe_pa13>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 #include <../boards/common/usb/cdc_acm_serial.dtsi>

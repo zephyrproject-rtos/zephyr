@@ -9,8 +9,8 @@
 #include "../common/efr32-series1-common.dtsi"
 
 / {
-	model = "Silicon Labs BRD4104A (Blue Gecko 13 Radio Board)";
 	compatible = "silabs,slwrb4104a", "silabs,efr32bg13p";
+	model = "Silicon Labs BRD4104A (Blue Gecko 13 Radio Board)";
 };
 
 &cpu0 {

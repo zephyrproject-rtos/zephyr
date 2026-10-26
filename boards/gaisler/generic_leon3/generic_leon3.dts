@@ -9,8 +9,8 @@
 #include <gaisler/leon3soc.dtsi>
 
 / {
-	model = "Generic LEON3 system";
 	compatible = "gaisler,generic-leon3";
+	model = "Generic LEON3 system";
 
 	cpus {
 		timebase-frequency = <DT_FREQ_M(50)>;

@@ -8,8 +8,8 @@
 #include <rockchip/rk3588s.dtsi>
 
 / {
-	model = "Khadas Edge2";
 	compatible = "khadas,edge2";
+	model = "Khadas Edge2";
 
 	chosen {
 		zephyr,sram = &sram0;

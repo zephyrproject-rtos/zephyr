@@ -12,8 +12,8 @@
 #include "mt8390_genio_700_evk-pinctrl.dtsi"
 
 / {
-	model = "MediaTek Genio 700 EVK";
 	compatible = "mediatek,mt8390-genio-700-evk";
+	model = "MediaTek Genio 700 EVK";
 
 	chosen {
 		zephyr,console = &uart1;

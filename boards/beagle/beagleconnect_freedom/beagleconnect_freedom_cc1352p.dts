@@ -18,15 +18,15 @@
 		/* Allocate 40 KiB for mcuboot */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(40)>;
+			label = "mcuboot";
 		};
 
 		/* Allocate 304 KiB for application */
 		slot0_partition: partition@a000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x0000a000 DT_SIZE_K(304)>;
+			label = "image-0";
 		};
 
 		/* (avoid touching CCFG) */
@@ -41,19 +41,19 @@
 
 		/* Allocate 304 KiB for application */
 		slot1_partition: partition@0 {
-			label = "image-1";
 			reg = <0x00000000 DT_SIZE_K(304)>;
+			label = "image-1";
 		};
 
 		/* Allocate 16 KiB scratch for image swap */
 		scratch_partition: partition@4c000 {
-			label = "image-scratch";
 			reg = <0x0004c000 DT_SIZE_K(16)>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@50000 {
-			label = "storage";
 			reg = <0x00050000 DT_SIZE_K(1728)>;
+			label = "storage";
 		};
 	};
 };

@@ -15,8 +15,8 @@
 };
 
 &mikrobus_spi {
-	status = "okay";
 	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	tcan4x5x_mikroe_can_fd_6_click: can@0 {
 		compatible = "ti,tcan4x5x";

@@ -10,8 +10,8 @@
 #include "imx943_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX943 A55";
 	compatible = "fsl,mimx943";
+	model = "NXP i.MX943 A55";
 
 	aliases {
 		watchdog0 = &wdog4;
@@ -54,10 +54,10 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &emdio {
@@ -131,20 +131,20 @@
 };
 
 &switch_port0 {
-	zephyr,random-mac-address;
 	pinctrl-0 = <&eth0_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy0>;
 	phy-connection-type = "mii";
+	zephyr,random-mac-address;
 	status = "disabled";
 };
 
 &switch_port1 {
-	zephyr,random-mac-address;
 	pinctrl-0 = <&eth1_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy1>;
 	phy-connection-type = "mii";
+	zephyr,random-mac-address;
 	status = "disabled";
 };
 
@@ -167,9 +167,9 @@
 	pca9544a_i2c6: i2c-mux@77 {
 		compatible = "nxp,pca9544a", "ti,tca9544a";
 		reg = <0x77>;
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "okay";
 
 		mux_i2c@1 {
 			reg = <1>;

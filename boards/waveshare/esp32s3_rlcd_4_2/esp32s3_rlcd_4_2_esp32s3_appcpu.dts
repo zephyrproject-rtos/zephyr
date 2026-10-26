@@ -8,8 +8,8 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	model = "ESP32-S3-RLCD-4.2 APPCPU";
 	compatible = "waveshare,esp32-s3-rlcd-4.2";
+	model = "ESP32-S3-RLCD-4.2 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

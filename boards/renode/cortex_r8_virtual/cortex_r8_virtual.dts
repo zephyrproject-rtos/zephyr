@@ -9,8 +9,8 @@
 #include <cortex_r8_virt.dtsi>
 
 / {
-	model = "Cortex-R8 Virtual target";
 	compatible = "renode,cortex-r8-virtual";
+	model = "Cortex-R8 Virtual target";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -21,7 +21,7 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <99999901>;
+	status = "okay";
 };

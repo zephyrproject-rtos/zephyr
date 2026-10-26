@@ -8,8 +8,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Sparkfun nRF9160 Thing Plus";
 	compatible = "sparkfun,thing-plus-nrf9160";
+	model = "Sparkfun nRF9160 Thing Plus";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -106,11 +106,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart1 {
@@ -128,11 +128,11 @@
 
 zephyr_i2c: &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	pcf85063a@51 {
 		compatible = "nxp,pcf85063a";
@@ -147,19 +147,19 @@ zephyr_i2c: &i2c1 {
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	w25q32jv: w25q32jv@0 {
 		compatible = "jedec,spi-nor";

@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX78000FTHR";
 	compatible = "adi,max78000fthr";
+	model = "Analog Devices MAX78000FTHR";
 
 	soc {
 		/*
@@ -114,15 +114,15 @@ feather_serial: &uart3 {
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 feather_i2c: &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_scl_p0_16 &i2c1_sda_p0_17>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &w1 {
@@ -132,32 +132,32 @@ feather_i2c: &i2c1 {
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		m4_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-m4";
 			reg = <0x0 DT_SIZE_K(256)>;
+			label = "image-m4";
 		};
 
 		m4_storage_partition: partition@40000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage-m4";
 			reg = <0x40000 DT_SIZE_K(64)>;
+			label = "storage-m4";
 		};
 
 		rv32_partition: partition@50000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-rv32";
 			reg = <0x50000 DT_SIZE_K(128)>;
+			label = "image-rv32";
 		};
 
 		rv32_storage_partition: partition@70000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage-rv32";
 			reg = <0x70000 DT_SIZE_K(64)>;
+			label = "storage-rv32";
 		};
 	};
 };

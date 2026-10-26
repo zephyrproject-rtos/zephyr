@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "raytac_mdbt50q_cx_40_dongle_nrf52840";
 	compatible = "raytac,raytac-mdbt50q-cx-40-dongle-nrf52840";
+	model = "raytac_mdbt50q_cx_40_dongle_nrf52840";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -101,18 +101,18 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {

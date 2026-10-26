@@ -32,21 +32,21 @@
 		};
 
 		led2_red: led2_red {
-			status = "disabled";
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			label = "LED 2 red";
+			status = "disabled";
 		};
 
 		led2_green: led2_green {
-			status = "disabled";
 			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 			label = "LED 2 green";
+			status = "disabled";
 		};
 
 		led2_blue: led2_blue {
-			status = "disabled";
 			gpios = <&gpio2 7 GPIO_ACTIVE_LOW>;
 			label = "LED 2 blue";
+			status = "disabled";
 		};
 	};
 
@@ -63,7 +63,6 @@
 	};
 
 	rgb_led_2: rgb_led_2 {
-		status = "disabled";
 		compatible = "leds-group-multicolor";
 
 		leds = <&led2_red>,
@@ -73,6 +72,7 @@
 		color-mapping = <LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
 				<LED_COLOR_ID_BLUE>;
+		status = "disabled";
 	};
 
 	buttons {
@@ -85,10 +85,10 @@
 		};
 
 		button1: button1 {
-			status = "disabled";
 			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
 			zephyr,code = <INPUT_KEY_1>;
+			status = "disabled";
 		};
 	};
 
@@ -137,19 +137,19 @@
 	pinctrl-0 = <&i2c21_default>;
 	pinctrl-1 = <&i2c21_sleep>;
 	pinctrl-names = "default", "sleep";
-	zephyr,concat-buf-size = <256>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	zephyr,concat-buf-size = <256>;
 
 	bme688: bme688@76 {
-		status = "disabled";
 		compatible = "bosch,bme680";
 		reg = <0x76>;
+		status = "disabled";
 	};
 
 	adxl367: adxl367@1d {
-		status = "disabled";
 		compatible = "adi,adxl367";
 		reg = <0x1d>;
+		status = "disabled";
 	};
 };
 
@@ -161,11 +161,11 @@
 	cs-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 
 	bmi270: bmi270@0 {
-		status = "disabled";
 		compatible = "bosch,bmi270";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(8)>;
 		irq-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
 	};
 };
 

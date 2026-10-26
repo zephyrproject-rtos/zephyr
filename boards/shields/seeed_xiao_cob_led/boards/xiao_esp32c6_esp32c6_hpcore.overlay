@@ -7,23 +7,23 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 &seeed_xiao_cob_led_pwm_led_0 {
-	status = "okay";
 	pwms = <&ledc0 0 PWM_HZ(250) PWM_POLARITY_INVERTED>;
+	status = "okay";
 };
 
 &seeed_xiao_cob_led_pwm_led_1 {
-	status = "okay";
 	pwms = <&ledc0 1 PWM_HZ(250) PWM_POLARITY_INVERTED>;
+	status = "okay";
 };
 
 &seeed_xiao_cob_led_pwm_led_2 {
-	status = "okay";
 	pwms = <&ledc0 2 PWM_HZ(250) PWM_POLARITY_INVERTED>;
+	status = "okay";
 };
 
 &seeed_xiao_cob_led_pwm_led_3 {
-	status = "okay";
 	pwms = <&ledc0 3 PWM_HZ(250) PWM_POLARITY_INVERTED>;
+	status = "okay";
 };
 
 &pinctrl {
@@ -41,9 +41,9 @@
 &ledc0 {
 	pinctrl-0 = <&cob_ledc0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel0@0 {
 		reg = <0x0>;

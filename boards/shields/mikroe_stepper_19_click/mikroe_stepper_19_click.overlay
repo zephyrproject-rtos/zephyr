@@ -13,7 +13,6 @@
 	status = "okay";
 
 	pca9538a_mikroe_stepper_19_click: pca9538a@70 {
-		status = "okay";
 		compatible = "nxp,pca9538";
 
 		reg = <0x70>;
@@ -31,12 +30,12 @@
 				  "TOFF",
 				  "STP",
 				  "DIR";
+		status = "okay";
 	};
 };
 
 / {
 	drv8424_mikroe_stepper_19_click: drv8424 {
-		status = "okay";
 		compatible = "ti,drv84xx";
 
 		dir-gpios = <&mikrobus_header 0 0>;
@@ -46,5 +45,6 @@
 		fault-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
 		m0-gpios = <&pca9538a_mikroe_stepper_19_click 0 0>;
 		m1-gpios = <&pca9538a_mikroe_stepper_19_click 1 0>;
+		status = "okay";
 	};
 };

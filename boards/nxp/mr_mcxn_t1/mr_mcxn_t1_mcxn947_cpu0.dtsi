@@ -100,7 +100,6 @@
 
 	flexio_spi0: flexio_spi0 {
 		compatible = "nxp,flexio-spi";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		sdo-pin = <0>;
@@ -108,6 +107,7 @@
 		sck-pin = <1>;
 		pinctrl-0 = <&pinmux_flexio_spi0>;
 		pinctrl-names = "default";
+		status = "okay";
 
 		led_strip: apa102@0 {
 			compatible = "apa,apa102";
@@ -150,15 +150,15 @@
 };
 
 zephyr_udc0: &usb1 {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 &usbphy1 {
-	status = "okay";
 	tx-d-cal = <4>;
 	tx-cal-45-dp-ohms = <7>;
 	tx-cal-45-dm-ohms = <7>;
+	status = "okay";
 };
 
 &rtc {

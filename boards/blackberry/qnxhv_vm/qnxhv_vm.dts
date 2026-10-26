@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	model = "QNX Hypervisor Virtual Machine";
 	compatible = "blackberry,qnxhv_vm";
+	model = "QNX Hypervisor Virtual Machine";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -26,10 +26,10 @@
 		#size-cells = <0x00>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,armv8";
-			enable-method = "psci";
 			reg = <0x00>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 	};
 

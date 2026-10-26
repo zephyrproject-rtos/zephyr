@@ -10,8 +10,8 @@
 #include "beagleplay_am6254_m4-pinctrl.dtsi"
 
 / {
-	model = "BeagleBoard.org BeaglePlay";
 	compatible = "beagle,beagleplay_m4";
+	model = "BeagleBoard.org BeaglePlay";
 
 	chosen {
 		/* Split and place TEXT and DATA in I-RAM and D-RAM respectively. `sram_icode`
@@ -31,8 +31,8 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <400000000>;
+			status = "okay";
 		};
 	};
 

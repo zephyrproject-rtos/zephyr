@@ -11,8 +11,8 @@
 #include "sparrowhawk_rcar_v4h_r8a779g0_a76-pinctrl.dtsi"
 
 / {
-	model = "Retronix Sparrow Hawk on R-Car V4H";
 	compatible = "retronix,sparrowhawk-v4h-ca76";
+	model = "Retronix Sparrow Hawk on R-Car V4H";
 
 	chosen {
 		zephyr,sram = &ram;
@@ -21,8 +21,8 @@
 	};
 
 	ram: memory@40000000 {
-		device_type = "memory";
 		reg = <0x0 0x40000000 0x0 DT_SIZE_G(2)>;
+		device_type = "memory";
 	};
 };
 

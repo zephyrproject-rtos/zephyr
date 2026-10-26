@@ -16,8 +16,8 @@
 #include "pr2-pinctrl.dtsi"
 
 / {
-	model = "Core Devices Pebble Round 2";
 	compatible = "coredevices,pr2";
+	model = "Core Devices Pebble Round 2";
 
 	chosen {
 		zephyr,flash = &gd25q256e;
@@ -83,24 +83,24 @@
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c3 {
-	status = "okay";
 	pinctrl-0 = <&i2c3_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	npm1300: pmic@6b {
 		compatible = "nordic,npm1300";
@@ -165,26 +165,26 @@
 
 		gd25q256e_flash: gd25q256e@12000000 {
 			compatible = "soc-nv-flash";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x12000000 DT_SIZE_M(32)>;
 			ranges = <0x0 0x12000000 DT_SIZE_M(32)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				ptable: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "ptable";
 					reg = <0x0 DT_SIZE_K(64)>;
+					label = "ptable";
 				};
 
 				code: partition@10000 {
 					compatible = "zephyr,mapped-partition";
-					label = "code";
 					reg = <0x10000 DT_SIZE_K(32704)>;
+					label = "code";
 				};
 			};
 		};
@@ -196,23 +196,23 @@
 };
 
 &rcc_clk {
-	status = "okay";
 
 	sifli,hdiv = <1>;
 	sifli,pdiv1 = <1>;
 	sifli,pdiv2 = <6>;
+	status = "okay";
 
 	dll1 {
-		status = "okay";
 		clock-frequency = <DT_FREQ_M(240)>;
+		status = "okay";
 	};
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <1000000>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt {

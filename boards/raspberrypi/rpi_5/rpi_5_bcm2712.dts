@@ -43,10 +43,10 @@
 };
 
 &uart10 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart10_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0_0 {

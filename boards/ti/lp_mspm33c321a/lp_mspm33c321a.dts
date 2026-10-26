@@ -8,8 +8,8 @@
 #include <ti/mspm33c/mspm33c321a.dtsi>
 
 / {
-	model = "TI LP_MSPM33C321A/MSPM33C321A";
 	compatible = "ti,lp-mspm33c321a";
+	model = "TI LP_MSPM33C321A/MSPM33C321A";
 
 	chosen {
 		zephyr,sram = &sram0;

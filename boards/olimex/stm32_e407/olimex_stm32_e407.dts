@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Olimex STM32-E407 board";
 	compatible = "olimex,stm32-e407";
+	model = "Olimex STM32-E407 board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -117,7 +117,6 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -129,12 +128,13 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";

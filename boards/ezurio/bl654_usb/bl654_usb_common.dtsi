@@ -11,8 +11,8 @@
 #include "bl654_usb-pinctrl.dtsi"
 
 / {
-	model = "Ezurio BL654 USB";
 	compatible = "ezurio,bl654-usb-nrf52840";
+	model = "Ezurio BL654 USB";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -72,10 +72,10 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {

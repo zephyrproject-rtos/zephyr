@@ -47,11 +47,11 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart2 {
@@ -69,12 +69,12 @@
 };
 
 &lpi2c5 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c5>;
 	pinctrl-names = "default";
 	scl-gpios = <&gpio12 5 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpio12 4 GPIO_ACTIVE_HIGH>;
 	recover-bus-on-init;
+	status = "okay";
 
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -91,38 +91,38 @@
 };
 
 &flexspi {
-	status = "okay";
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	status = "okay";
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
+		ranges = <0x0 0x30000000 DT_SIZE_M(16)>;
+		size = <DT_SIZE_M(16*8)>;
 		spi-max-frequency = <DT_FREQ_M(104)>;
-		status = "okay";
 		jedec-id = [9d 70 18];
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x30000000 DT_SIZE_M(16)>;
+		status = "okay";
 
 		is25wp128: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(16)>;
+			ranges;
 			erase-block-size = <4096>;
 			write-block-size = <1>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				/*
 				 * Partition sizes must be aligned
@@ -130,26 +130,26 @@
 				 */
 				boot_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
+					label = "mcuboot";
 				};
 
 				slot0_partition: partition@20000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(7)>;
+					label = "image-0";
 				};
 
 				slot1_partition: partition@720000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-1";
 					reg = <0x00720000 DT_SIZE_M(7)>;
+					label = "image-1";
 				};
 
 				storage_partition: partition@e20000 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage";
 					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+					label = "storage";
 				};
 			};
 		};
@@ -157,43 +157,43 @@
 };
 
 &flexpwm1_pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &enet {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &enet_mac {
-	status = "okay";
 	phy-handle = <&phy>;
 	phy-connection-type = "rmii";
 	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &enet_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
-		status = "okay";
 		reset-gpios = <&gpio12 12 GPIO_ACTIVE_LOW>;
 		int-gpios = <&gpio9 11 GPIO_ACTIVE_HIGH>;
 		microchip,interface-type = "rmii";
+		status = "okay";
 	};
 };
 
 &enet_ptp_clock {
-	status = "okay";
 	pinctrl-0 = <&pinmux_ptp>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &csi {

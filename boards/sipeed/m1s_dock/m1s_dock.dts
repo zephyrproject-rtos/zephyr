@@ -56,10 +56,10 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &sdhc0 {
