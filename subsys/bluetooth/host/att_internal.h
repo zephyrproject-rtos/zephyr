@@ -243,10 +243,6 @@ struct bt_att_indicate {
 /* Handle Value Confirm */
 #define BT_ATT_OP_CONFIRM			0x1e
 
-struct bt_att_signature {
-	uint8_t  value[12];
-} __packed;
-
 #define BT_ATT_OP_READ_MULT_VL_REQ		0x20
 struct bt_att_read_mult_vl_req {
 	FLEXIBLE_ARRAY_DECLARE(uint16_t, handles);
@@ -274,12 +270,8 @@ struct bt_att_write_cmd {
 	uint8_t  value[];
 } __packed;
 
-/* Signed Write Command */
+/* Signed Write Command, removed with data signing in Core Specification 6.3 */
 #define BT_ATT_OP_SIGNED_WRITE_CMD		0xd2
-struct bt_att_signed_write_cmd {
-	uint16_t handle;
-	uint8_t  value[];
-} __packed;
 
 typedef void (*bt_att_func_t)(struct bt_conn *conn, int err,
 			      const void *pdu, uint16_t length,

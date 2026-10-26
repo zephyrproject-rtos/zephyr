@@ -541,7 +541,6 @@ static int cmd_write_without_rsp(const struct shell *sh,
 	uint16_t repeat;
 	int err;
 	uint16_t len;
-	bool sign;
 	bt_gatt_complete_func_t func = NULL;
 
 	if (!default_conn) {
@@ -549,12 +548,9 @@ static int cmd_write_without_rsp(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	sign = !strcmp(argv[0], "signed-write");
-	if (!sign) {
-		if (!strcmp(argv[0], "write-without-response-cb")) {
-			func = write_without_rsp_cb;
-			reset_write_stats();
-		}
+	if (strcmp(argv[0], "write-without-response-cb") == 0) {
+		func = write_without_rsp_cb;
+		reset_write_stats();
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
@@ -584,9 +580,8 @@ static int cmd_write_without_rsp(const struct shell *sh,
 
 	while (repeat--) {
 		err = bt_gatt_write_without_response_cb(default_conn, handle,
-							gatt_write_without_rsp_buf, len,
-							sign, func,
-							UINT_TO_POINTER(len));
+							gatt_write_without_rsp_buf, len, false,
+							func, UINT_TO_POINTER(len));
 		if (err) {
 			break;
 		}
@@ -1419,8 +1414,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 		      cmd_read_uuid, 2, 2),
 	SHELL_CMD_ARG(read-multiple, NULL, "<handle 1> <handle 2> ...",
 		      cmd_mread, 2, -1),
-	SHELL_CMD_ARG(signed-write, NULL, "<handle> <data> [length] [repeat]",
-		      cmd_write_without_rsp, 3, 2),
 	SHELL_CMD_ARG(subscribe, NULL, "<CCC handle> <value handle> [ind]",
 		      cmd_subscribe, 3, 1),
 	SHELL_CMD_ARG(resubscribe, NULL, HELP_ADDR_LE" <CCC handle> "
