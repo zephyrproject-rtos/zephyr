@@ -21,4 +21,10 @@ config SERVER_ADDR
 	string "Server address"
 	default "127.0.0.1" # For native_sim target
 
+config TEST_TIMEOUT
+	int "Timeout (in seconds) for the test to complete"
+	default 10
+	help
+	  Time that the pytest harness waits for the whole run.
+
 source "Kconfig.zephyr"
