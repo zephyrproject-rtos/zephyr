@@ -501,8 +501,6 @@ static int check_frame(struct cdc_ncm_eth_data *data, struct net_buf *const buf)
 	return 0;
 }
 
-#define NET_PKT_ALLOC_TIMEOUT 100 /* ms */
-
 static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 			      struct net_buf *const buf, const int err)
 {
@@ -534,7 +532,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 	/* Temporary source pkt we use to copy one Ethernet frame from
 	 * the list of USB net_buf's.
 	 */
-	src = net_pkt_alloc(K_MSEC(NET_PKT_ALLOC_TIMEOUT));
+	src = net_pkt_rx_alloc(K_NO_WAIT);
 	if (src == NULL) {
 		LOG_ERR("src packet alloc fail");
 		goto restart_out_transfer;
@@ -571,7 +569,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 			break;
 		}
 
-		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
+		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No memory for net_pkt");
 			goto unref_packet;
