@@ -52,14 +52,34 @@ To encode a C structure into a JSON string, use :c:func:`json_obj_encode_buf`.
 Decoding
 ========
 
+Descriptor-based decoding functions parse the JSON text in the provided
+buffer. The buffer only needs to be writable when the parser modifies it:
+
+* Numeric conversion temporarily replaces the character following the number
+  with NUL and restores it afterwards.
+* Decoding a ``JSON_TOK_STRING`` value permanently replaces its closing quote
+  with NUL.
+* ``JSON_TOK_ENCODED_OBJ``, decoded only by :c:func:`json_mixed_arr_parse`,
+  permanently replaces the closing quote of a string value, or the character
+  following an object or array value, with NUL.
+
+If none of these operations applies, for example when the descriptors only use
+``JSON_TOK_STRING_BUF``, ``JSON_TOK_OPAQUE``, booleans, or nested objects and
+arrays made only of those types, the input can be stored in read-only memory.
+
+Values returned for ``JSON_TOK_STRING`` and ``JSON_TOK_ENCODED_OBJ`` point into
+the input buffer. Copy them if they must remain valid after the input buffer is
+released, reused, or modified. ``JSON_TOK_STRING_BUF`` instead copies and
+unescapes a string into a caller-provided array.
+
 To decode a JSON string into a C structure, use :c:func:`json_obj_parse`.
 
 .. code-block:: c
 
    void decode_example(void)
    {
-       struct foo data;
-       const char *json_text = "{\"bar\": 42, \"baz\": \"hello\"}";
+       struct foo data = {0};
+       char json_text[] = "{\"bar\": 42, \"baz\": \"hello\"}";
        int ret;
 
        ret = json_obj_parse(json_text, strlen(json_text),
