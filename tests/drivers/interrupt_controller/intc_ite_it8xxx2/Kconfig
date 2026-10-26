@@ -1,0 +1,22 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config NUM_IRQS
+	int
+	default 186
+
+config HAS_ITE_INTC
+	bool
+	default y
+
+config TEST_IT8XXX2_INTC_V1
+	bool "Test IT8XXX2 V1 interrupt controller"
+	help
+	  Select the IT8XXX2 V1 interrupt controller driver for unit testing.
+
+config TEST_IT8XXX2_INTC_V2
+	bool "Test IT8XXX2 V2 interrupt controller"
+	help
+	  Select the IT8XXX2 V2 interrupt controller driver for unit testing.
