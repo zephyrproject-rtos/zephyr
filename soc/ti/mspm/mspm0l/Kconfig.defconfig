@@ -12,4 +12,11 @@ config NUM_IRQS
 config MSPM0_I2C_FIFO_DEPTH
 	default 4 if SOC_MSPM0L1117
 
+if SHARED_INTERRUPTS
+
+configdefault SHARED_IRQ_MAX_NUM_CLIENTS
+	default $(dt_max_shared_irqs)
+
+endif # SHARED_INTERRUPTS
+
 endif # SOC_SERIES_MSPM0L
