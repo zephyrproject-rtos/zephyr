@@ -246,54 +246,6 @@ int video_register_ctrls(struct video_ctrl *ctrls, size_t num, const struct devi
 	return 0;
 }
 
-int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-		    struct video_ctrl_range range)
-{
-	if (ctrl == NULL) {
-		return -EINVAL;
-	}
-
-	ctrl->id = id;
-	ctrl->type = 0;
-	ctrl->flags = 0;
-	ctrl->range = range;
-	ctrl->menu = NULL;
-
-	return video_register_ctrl(ctrl, dev);
-}
-
-int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			 uint8_t def, const char *const menu[])
-{
-	if (ctrl == NULL) {
-		return -EINVAL;
-	}
-
-	ctrl->id = id;
-	ctrl->type = VIDEO_CTRL_TYPE_MENU;
-	ctrl->flags = 0;
-	ctrl->range = (struct video_ctrl_range){.def = def};
-	ctrl->menu = menu;
-
-	return video_register_ctrl(ctrl, dev);
-}
-
-int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			     uint8_t def, const int64_t menu[], size_t menu_len)
-{
-	if (ctrl == NULL || menu == NULL || menu_len == 0) {
-		return -EINVAL;
-	}
-
-	ctrl->id = id;
-	ctrl->type = VIDEO_CTRL_TYPE_INTEGER_MENU;
-	ctrl->flags = 0;
-	ctrl->range = (struct video_ctrl_range){.max = menu_len - 1, .def = def};
-	ctrl->int_menu = menu;
-
-	return video_register_ctrl(ctrl, dev);
-}
-
 static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size_w,
 				uint8_t *buf_r, size_t size_r)
 {

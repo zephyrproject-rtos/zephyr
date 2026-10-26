@@ -74,51 +74,6 @@ int video_register_ctrl(struct video_ctrl *ctrl, const struct device *dev);
 int video_register_ctrls(struct video_ctrl *ctrls, size_t num, const struct device *dev);
 
 /**
- * @brief Initialize an integer control
- *
- * @param ctrl Video control to initialize
- * @param dev Device to which associate this control
- * @param id Control ID to initialize
- * @param range Value range of the control
- *
- * @retval 0 on success
- * @return Negative error code on failure
- */
-int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-		    struct video_ctrl_range range);
-
-/**
- * @brief Initialize a menu control
- *
- * @param ctrl Video control to initialize
- * @param dev Device to which associate this control
- * @param id Control ID to initialize
- * @param def Default index in @p menu
- * @param menu Array of strings in which the control value is the index, NULL terminated
- *
- * @retval 0 on success
- * @return Negative error code on failure
- */
-int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			 uint8_t def, const char *const menu[]);
-
-/**
- * @brief Initialize an integer menu control
- *
- * @param ctrl Video control to initialize
- * @param dev Device to which associate this control
- * @param id Control ID to initialize
- * @param def Default index in @p menu
- * @param menu Array of integers in which the control value is the index
- * @param menu_len Number of elements in @p menu
- *
- * @retval 0 on success
- * @return Negative error code on failure
- */
-int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			     uint8_t def, const int64_t menu[], size_t menu_len);
-
-/**
  * @brief Cluster related video controls together
  *
  * @param ctrls Pointer to the first video control
