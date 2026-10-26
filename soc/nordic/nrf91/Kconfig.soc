@@ -9,12 +9,6 @@ config SOC_SERIES_NRF91
 	help
 	  Enable support for NRF91 MCU series
 
-config SOC_SERIES_NRF91X
-	bool
-	select SOC_SERIES_NRF91
-	help
-	  Deprecated Kconfig, use SOC_SERIES_NRF91 instead
-
 config SOC_SERIES
 	default "nrf91" if SOC_SERIES_NRF91
 
