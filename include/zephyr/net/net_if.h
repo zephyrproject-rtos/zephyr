@@ -961,8 +961,6 @@ static inline void net_if_flag_set(struct net_if *iface,
 		return;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	atomic_set_bit(iface->if_dev->flags, value);
 }
 
@@ -981,8 +979,6 @@ static inline bool net_if_flag_test_and_set(struct net_if *iface,
 		return false;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	return atomic_test_and_set_bit(iface->if_dev->flags, value);
 }
 
@@ -998,8 +994,6 @@ static inline void net_if_flag_clear(struct net_if *iface,
 	if (iface == NULL) {
 		return;
 	}
-
-	NET_ASSERT(iface->if_dev != NULL);
 
 	atomic_clear_bit(iface->if_dev->flags, value);
 }
@@ -1019,8 +1013,6 @@ static inline bool net_if_flag_test_and_clear(struct net_if *iface,
 		return false;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	return atomic_test_and_clear_bit(iface->if_dev->flags, value);
 }
 
@@ -1039,8 +1031,6 @@ static inline bool net_if_flag_is_set(struct net_if *iface,
 		return false;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	return atomic_test_bit(iface->if_dev->flags, value);
 }
 
@@ -1058,8 +1048,6 @@ static inline enum net_if_oper_state net_if_oper_state_set(
 	if (iface == NULL) {
 		return NET_IF_OPER_UNKNOWN;
 	}
-
-	NET_ASSERT(iface->if_dev != NULL);
 
 	if (oper_state <= NET_IF_OPER_UP) {
 		iface->if_dev->oper_state = oper_state;
@@ -1087,8 +1075,6 @@ static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
 		return NET_IF_OPER_UNKNOWN;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	return iface->if_dev->oper_state;
 }
 
@@ -1110,8 +1096,6 @@ static inline int net_if_oper_state_change_time(struct net_if *iface,
 	if (iface == NULL || change_time == NULL) {
 		return -EINVAL;
 	}
-
-	NET_ASSERT(iface->if_dev != NULL);
 
 	net_if_lock(iface);
 
@@ -1164,8 +1148,6 @@ static inline const struct net_l2 *net_if_l2(struct net_if *iface)
 		return NULL;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	return iface->if_dev->l2;
 }
 
@@ -1192,8 +1174,6 @@ static inline void *net_if_l2_data(struct net_if *iface)
 		return NULL;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	return iface->if_dev->l2_data;
 }
 
@@ -1209,8 +1189,6 @@ static inline const struct device *net_if_get_device(struct net_if *iface)
 	if (iface == NULL) {
 		return NULL;
 	}
-
-	NET_ASSERT(iface->if_dev != NULL);
 
 	return iface->if_dev->dev;
 }
@@ -1248,7 +1226,6 @@ static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 {
 #if defined(CONFIG_NET_OFFLOAD)
-	__ASSERT_NO_MSG(iface == NULL || iface->if_dev != NULL);
 	return (iface != NULL && iface->if_dev->offload != NULL);
 #else
 	ARG_UNUSED(iface);
@@ -1280,8 +1257,6 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 		return NULL;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	return iface->if_dev->offload;
 #else
 	ARG_UNUSED(iface);
@@ -1303,8 +1278,6 @@ static inline void net_if_offload_set(struct net_if *iface, struct net_offload *
 		return;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	iface->if_dev->offload = offload;
 #else
 	ARG_UNUSED(iface);
@@ -1325,8 +1298,6 @@ static inline bool net_if_is_socket_offloaded(struct net_if *iface)
 	if (iface == NULL) {
 		return false;
 	}
-
-	NET_ASSERT(iface->if_dev != NULL);
 
 	return (iface->if_dev->socket_offload != NULL);
 #else
@@ -1350,8 +1321,6 @@ static inline void net_if_socket_offload_set(
 		return;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	iface->if_dev->socket_offload = socket_offload;
 #else
 	ARG_UNUSED(iface);
@@ -1373,8 +1342,6 @@ static inline net_socket_create_t net_if_socket_offload(struct net_if *iface)
 		return NULL;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	return iface->if_dev->socket_offload;
 #else
 	ARG_UNUSED(iface);
@@ -1395,8 +1362,6 @@ static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
 	if (iface == NULL) {
 		return NULL;
 	}
-
-	NET_ASSERT(iface->if_dev != NULL);
 
 	return &iface->if_dev->link_addr;
 }
@@ -1612,8 +1577,6 @@ static inline uint16_t net_if_get_mtu(struct net_if *iface)
 		return 0U;
 	}
 
-	NET_ASSERT(iface->if_dev != NULL);
-
 	return iface->if_dev->mtu;
 }
 
@@ -1629,8 +1592,6 @@ static inline void net_if_set_mtu(struct net_if *iface,
 	if (iface == NULL) {
 		return;
 	}
-
-	NET_ASSERT(iface->if_dev != NULL);
 
 	iface->if_dev->mtu = mtu;
 }
