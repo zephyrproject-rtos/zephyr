@@ -38,6 +38,9 @@
 	 */
 	SECTION_PROLOGUE(.text.z_shared_isr,,)
 	{
+#ifdef CONFIG_XTENSA
+		KEEP(*(.literal.z_shared_isr*))
+#endif
 		KEEP(*(.text.z_shared_isr*))
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
