@@ -2001,106 +2001,88 @@ static bool ct_supports_control(struct uvc_host_data *const host_data,
 	return (controls & bmcontrol_bit) != 0;
 }
 
+/* Storage of the video control matching a CID */
+static struct video_ctrl *get_control_by_cid(struct uvc_ctrls *ctrls, uint32_t cid)
+{
+	switch (cid) {
+	/* Processing Unit Controls */
+	case VIDEO_CID_BRIGHTNESS:
+		return &ctrls->brightness;
+	case VIDEO_CID_CONTRAST:
+		return &ctrls->contrast;
+	case VIDEO_CID_HUE:
+		return &ctrls->hue;
+	case VIDEO_CID_SATURATION:
+		return &ctrls->saturation;
+	case VIDEO_CID_SHARPNESS:
+		return &ctrls->sharpness;
+	case VIDEO_CID_GAMMA:
+		return &ctrls->gamma;
+	case VIDEO_CID_GAIN:
+		return &ctrls->gain;
+	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
+		return &ctrls->white_balance_temperature;
+	case VIDEO_CID_AUTO_WHITE_BALANCE:
+		return &ctrls->auto_white_balance;
+	case VIDEO_CID_BACKLIGHT_COMPENSATION:
+		return &ctrls->backlight_compensation;
+	case VIDEO_CID_POWER_LINE_FREQUENCY:
+		return &ctrls->light_freq;
+	/* Camera Terminal Controls */
+	case VIDEO_CID_EXPOSURE_AUTO:
+		return &ctrls->auto_exposure;
+	case VIDEO_CID_EXPOSURE:
+		return &ctrls->exposure;
+	case VIDEO_CID_EXPOSURE_ABSOLUTE:
+		return &ctrls->exposure_absolute;
+	case VIDEO_CID_FOCUS_AUTO:
+		return &ctrls->auto_focus;
+	case VIDEO_CID_FOCUS_ABSOLUTE:
+		return &ctrls->focus_absolute;
+	case VIDEO_CID_ZOOM_ABSOLUTE:
+		return &ctrls->zoom_absolute;
+	case VIDEO_CID_ZOOM_RELATIVE:
+		return &ctrls->zoom_relative;
+	case VIDEO_CID_TEST_PATTERN:
+		return &ctrls->test_pattern;
+	default:
+		return NULL;
+	}
+}
+
 /* Initialize individual control based on CID */
 static int init_control_by_cid(const struct device *dev, uint32_t cid,
 			       const struct video_ctrl_range *range)
 {
 	struct uvc_host_data *const host_data = dev->data;
-	struct uvc_ctrls *ctrls = &host_data->ctrls;
-	int ret = -ENOTSUP;
+	struct video_ctrl *ctrl = get_control_by_cid(&host_data->ctrls, cid);
+	int ret;
 
-	switch (cid) {
-	/* Processing Unit Controls */
-	case VIDEO_CID_BRIGHTNESS:
-		ret = video_init_ctrl(&ctrls->brightness, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_CONTRAST:
-		ret = video_init_ctrl(&ctrls->contrast, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_HUE:
-		ret = video_init_ctrl(&ctrls->hue, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_SATURATION:
-		ret = video_init_ctrl(&ctrls->saturation, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_SHARPNESS:
-		ret = video_init_ctrl(&ctrls->sharpness, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_GAMMA:
-		ret = video_init_ctrl(&ctrls->gamma, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_GAIN:
-		ret = video_init_ctrl(&ctrls->gain, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
-		ret = video_init_ctrl(&ctrls->white_balance_temperature, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_AUTO_WHITE_BALANCE:
-		ret = video_init_ctrl(&ctrls->auto_white_balance, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_BACKLIGHT_COMPENSATION:
-		ret = video_init_ctrl(&ctrls->backlight_compensation, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_POWER_LINE_FREQUENCY:
-		ret = video_init_menu_ctrl(&ctrls->light_freq, dev, cid,
-					   VIDEO_CID_POWER_LINE_FREQUENCY_AUTO, NULL);
-		break;
-
-	/* Camera Terminal Controls */
-	case VIDEO_CID_EXPOSURE_AUTO:
-		ret = video_init_ctrl(&ctrls->auto_exposure, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_EXPOSURE:
-		ret = video_init_ctrl(&ctrls->exposure, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_EXPOSURE_ABSOLUTE:
-		ret = video_init_ctrl(&ctrls->exposure_absolute, dev, cid, *range);
-		if (ret != 0) {
-			break;
-		}
-
-		video_auto_cluster_ctrl(&ctrls->auto_exposure, 2, true);
-		LOG_DBG("Created auto-exposure cluster");
-		break;
-
-	case VIDEO_CID_FOCUS_AUTO:
-		ret = video_init_ctrl(&ctrls->auto_focus, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_FOCUS_ABSOLUTE:
-		ret = video_init_ctrl(&ctrls->focus_absolute, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_ZOOM_ABSOLUTE:
-		ret = video_init_ctrl(&ctrls->zoom_absolute, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_ZOOM_RELATIVE:
-		ret = video_init_ctrl(&ctrls->zoom_relative, dev, cid, *range);
-		break;
-
-	case VIDEO_CID_TEST_PATTERN:
-		ret = video_init_ctrl(&ctrls->test_pattern, dev, cid, *range);
-		break;
-
-	default:
+	if (ctrl == NULL) {
 		LOG_DBG("Control CID 0x%08x not implemented", cid);
-		break;
+		return -ENOTSUP;
 	}
 
-	return ret;
+	ctrl->id = cid;
+
+	if (cid == VIDEO_CID_POWER_LINE_FREQUENCY) {
+		/* Standard menu indexes, the device range does not apply */
+		ctrl->range = (struct video_ctrl_range){.def = VIDEO_CID_POWER_LINE_FREQUENCY_AUTO};
+	} else {
+		ctrl->range = *range;
+	}
+
+	ret = video_register_ctrl(ctrl, dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (cid == VIDEO_CID_EXPOSURE_ABSOLUTE) {
+		video_auto_cluster_ctrl(&host_data->ctrls.auto_exposure, 2, true);
+		LOG_DBG("Created auto-exposure cluster");
+	}
+
+	return 0;
 }
 
 /* Extract control bitmap from bmControls array */
