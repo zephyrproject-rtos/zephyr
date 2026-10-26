@@ -174,6 +174,25 @@ struct bt_dev bt_dev = {
 	.lock = Z_MUTEX_INITIALIZER(bt_dev.lock),
 };
 
+void bt_dev_lock(void)
+{
+	__maybe_unused int err = k_mutex_lock(&bt_dev.lock, K_FOREVER);
+
+	__ASSERT(err == 0, "failed to lock the host lock (err %d)", err);
+}
+
+void bt_dev_unlock(void)
+{
+	__maybe_unused int err;
+
+	/* k_mutex_unlock() skips its owner check with CONFIG_NO_RUNTIME_CHECKS */
+	BT_DEV_LOCK_ASSERT();
+
+	err = k_mutex_unlock(&bt_dev.lock);
+
+	__ASSERT(err == 0, "failed to unlock the host lock (err %d)", err);
+}
+
 static bt_ready_cb_t ready_cb;
 
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)

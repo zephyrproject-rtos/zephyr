@@ -541,24 +541,9 @@ static inline bool bt_dev_cmd_supported(enum bt_dev_cmd cmd)
  * pairs on the same thread are legal (needed e.g. for the
  * bt_att_req_send() -> bt_att_chan_req_send() nesting).
  */
-static inline void bt_dev_lock(void)
-{
-	__maybe_unused int err = k_mutex_lock(&bt_dev.lock, K_FOREVER);
+void bt_dev_lock(void);
 
-	__ASSERT(err == 0, "failed to lock the host lock (err %d)", err);
-}
-
-static inline void bt_dev_unlock(void)
-{
-	__maybe_unused int err;
-
-	/* k_mutex_unlock() skips its owner check with CONFIG_NO_RUNTIME_CHECKS */
-	BT_DEV_LOCK_ASSERT();
-
-	err = k_mutex_unlock(&bt_dev.lock);
-
-	__ASSERT(err == 0, "failed to unlock the host lock (err %d)", err);
-}
+void bt_dev_unlock(void);
 
 extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
