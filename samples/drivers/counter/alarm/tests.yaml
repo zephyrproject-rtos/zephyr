@@ -64,6 +64,8 @@ tests:
       - mec172xevb_assy6906
       - mec15xxevb_assy6853
       - mec_assy6941/mec1753_qsz
+      - kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_0
+      - kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_1
     integration_platforms:
       - nucleo_f746zg
   sample.drivers.counter.alarm.stm32_rtc:
