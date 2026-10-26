@@ -226,6 +226,9 @@ ADI Platforms:
     - boards/shields/ad_apardpfw_sl/
     - boards/shields/adi_lsmspg/
     - boards/shields/eval*ardz/
+    - boards/shields/mikroe_accel_click/
+    - boards/shields/mikroe_accel22_click/
+    - boards/shields/mikroe_adac_click/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
     - drivers/*/*max*/
