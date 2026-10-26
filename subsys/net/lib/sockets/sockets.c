@@ -1789,8 +1789,12 @@ again:
 			res = zsock_recv_stream_immediate(ctx, &buf, &available_len, flags);
 			recv_len += res;
 
-			if (res == 0 && recv_len == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-				return -EAGAIN;
+			if (res == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+				if (recv_len == 0) {
+					return -EAGAIN;
+				}
+
+				break;
 			}
 
 			msg->msg_iov[iovec].iov_len += res;
@@ -1822,10 +1826,12 @@ again:
 			res = zsock_recv_stream_immediate(ctx, &buf, &max_len, flags);
 			recv_len += res;
 
-			if (res == 0) {
-				if (recv_len == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			if (res == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+				if (recv_len == 0) {
 					return -EAGAIN;
 				}
+
+				break;
 			}
 		}
 
