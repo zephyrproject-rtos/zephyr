@@ -515,11 +515,23 @@ ZTEST(net_socket_tls, test_v4_msg_waitall)
 			      test_msg_waitall_tx_work_handler);
 	test_work_reschedule(&test_data.tx_work, K_MSEC(10));
 
-	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf) - 1, ZSOCK_MSG_WAITALL);
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL);
 	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
 			  "Invalid data received");
 	test_work_wait(&test_data.tx_work);
+
+	/* MSG_WAITALL + MSG_DONTWAIT - make sure recv returns the data that is
+	 * already queued
+	 */
+	memset(rx_buf, 0, sizeof(rx_buf));
+	test_send(c_sock, TEST_STR_SMALL, sizeof(rx_buf) - 1, 0);
+	k_msleep(100);
+
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL | ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
+			  "Invalid data received");
 
 	test_sockets_close();
 
@@ -573,11 +585,23 @@ ZTEST(net_socket_tls, test_v6_msg_waitall)
 			      test_msg_waitall_tx_work_handler);
 	test_work_reschedule(&test_data.tx_work, K_MSEC(10));
 
-	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf) - 1, ZSOCK_MSG_WAITALL);
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL);
 	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
 			  "Invalid data received");
 	test_work_wait(&test_data.tx_work);
+
+	/* MSG_WAITALL + MSG_DONTWAIT - make sure recv returns the data that is
+	 * already queued
+	 */
+	memset(rx_buf, 0, sizeof(rx_buf));
+	test_send(c_sock, TEST_STR_SMALL, sizeof(rx_buf) - 1, 0);
+	k_msleep(100);
+
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL | ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
+			  "Invalid data received");
 
 	test_sockets_close();
 

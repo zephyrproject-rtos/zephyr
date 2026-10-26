@@ -3800,6 +3800,13 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 			}
 
 err:
+			/* Return the data already received in this call
+			 * (with MSG_WAITALL) when no more can be waited for.
+			 */
+			if (ret == -EAGAIN && recv_len > 0) {
+				break;
+			}
+
 			errno = -ret;
 			return -1;
 		}
