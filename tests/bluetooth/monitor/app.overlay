@@ -20,7 +20,7 @@
 	 */
 	bt_mon_uart: bt_mon_uart {
 		compatible = "vnd,serial";
-		status = "okay";
 		buffer-size = <64>;
+		status = "okay";
 	};
 };

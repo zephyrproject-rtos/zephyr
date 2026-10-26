@@ -10,36 +10,36 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 
 		test_i2c: i2c@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			test_serlcd: serlcd@0 {
 				compatible = "sparkfun,serlcd";
 				reg = <0x0>;
-				status = "okay";
 				columns = <16>;
 				rows = <2>;
 				command-delay-ms = <10>;
 				special-command-delay-ms = <50>;
+				status = "okay";
 			};
 
 			test_jhd1313: jhd1313@0 {
 				compatible = "jhd,jhd1313";
 				reg = <0x1>;
-				status = "okay";
 				columns = <16>;
 				rows = <2>;
+				status = "okay";
 			};
 		};
 	};

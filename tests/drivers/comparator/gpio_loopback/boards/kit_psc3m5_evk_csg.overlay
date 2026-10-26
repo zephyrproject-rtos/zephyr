@@ -32,12 +32,12 @@
 };
 
 &dac3 {
-	status = "okay";
 	initial-value = <512>;
+	status = "okay";
 };
 
 &comp3 {
-	status = "okay";
 	positive-input = "ain-pa";
 	negative-input = "dac";
+	status = "okay";
 };

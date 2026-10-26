@@ -11,12 +11,12 @@
 	status = "okay";
 
 	counter0_0 {
-		status = "okay";
 		clocks = <&peri0_group4_16bit_0>;
+		status = "okay";
 	};
 };
 
 &peri0_group4_16bit_0 {
-	status = "okay";
 	clock-div = <9600>;
+	status = "okay";
 };

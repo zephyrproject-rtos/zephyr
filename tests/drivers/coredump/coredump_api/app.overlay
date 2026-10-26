@@ -14,7 +14,7 @@
 	coredump_devicecb: coredump-device-cb {
 		compatible = "zephyr,coredump";
 		coredump-type = "COREDUMP_TYPE_CALLBACK";
-		status = "okay";
 		memory-regions = <0x0 0x4>;
+		status = "okay";
 	};
 };

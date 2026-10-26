@@ -17,10 +17,10 @@
 };
 
 &acmp1 {
-	status = "okay";
 	pinctrl-0 = <&acmp1_default>;
 	pinctrl-names = "default";
 
 	positive-mux-input = "IN1";
 	negative-mux-input = "IN2";
+	status = "okay";
 };

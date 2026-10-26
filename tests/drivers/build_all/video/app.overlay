@@ -29,19 +29,19 @@
 
 		test_gpio: gpio@10001000 {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0x10001000 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 
 		test_i2c: i2c@10002000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x10002000 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			test_i2c_mt9m114: mt9m114@0 {
 				compatible = "aptina,mt9m114";
@@ -148,8 +148,8 @@
 			test_i2c_hm01b0: hm01b0@b {
 				compatible = "himax,hm01b0";
 				reg = <0xb>;
-				status = "okay";
 				data-bits = <0x4>;
+				status = "okay";
 
 				port {
 					hm01b0_ep_out: endpoint {
@@ -161,9 +161,9 @@
 			test_i2c_hm0360: hm0360@c {
 				compatible = "himax,hm0360";
 				reg = <0xc>;
-				status = "okay";
 				reset-gpios = <&test_gpio 0 0>;
 				pwdn-gpios = <&test_gpio 1 0>;
+				status = "okay";
 
 				port {
 					hm0360_ep_out: endpoint {

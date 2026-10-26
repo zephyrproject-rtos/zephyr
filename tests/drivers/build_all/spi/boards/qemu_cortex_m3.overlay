@@ -7,9 +7,9 @@
 / {
 	spi0: spi@88888888 {
 		compatible = "cdns,spi";
+		reg = <0x88888888 0x400>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x88888888 0x400>;
 		interrupt-parent = <&nvic>;
 		interrupts = <4 1>;
 		fifo-width = <8>;

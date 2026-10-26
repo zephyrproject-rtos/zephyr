@@ -10,8 +10,8 @@
  */
 
 &clk_hsi {
-	status = "okay";
 	hsi-div = <1>;
+	status = "okay";
 };
 
 &perck {

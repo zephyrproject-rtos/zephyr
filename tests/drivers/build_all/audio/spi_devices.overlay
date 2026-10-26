@@ -9,17 +9,17 @@
 		#size-cells = <1>;
 
 		test_spi: spi@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x11112222 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "okay";
 
 			test_spi_pcm1681: pcm1681@0 {
 				compatible = "ti,pcm1681";
-				status = "okay";
 				reg = <0x0>;
 				spi-max-frequency = <100000>;
+				status = "okay";
 			};
 
 			test_spi_tlv320aic26: tlv320aic26@1 {
