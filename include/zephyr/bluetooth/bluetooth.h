@@ -379,6 +379,11 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * Close and release HCI resources. Result is architecture dependent.
  *
+ * A Controller that cannot be reset does not fail the call: the transport is
+ * closed all the same, and bt_enable() resets the Controller again. Until then
+ * the Controller may go on with what it was doing, unless the HCI driver stops
+ * it when it closes the transport.
+ *
  * If the HCI driver fails to close its transport, the error is returned with
  * Bluetooth left not ready, as the Host has torn down its state by then, the
  * connections too if the Controller has been reset. bt_disable() can be called

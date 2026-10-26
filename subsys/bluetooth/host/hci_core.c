@@ -5130,7 +5130,6 @@ int bt_disable(void)
 {
 	struct net_buf *buf;
 	bool ctlr_reset = false;
-	bool was_ready;
 	int err;
 
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLING)) {
@@ -5155,9 +5154,9 @@ int bt_disable(void)
 		return -ENOSYS;
 	}
 
-	/* Clear BT_DEV_READY before disabling HCI link. It is not set if
-	 * bt_enable() failed after opening the transport, in which case a
-	 * failed disable must not set it either.
+	/* Clear BT_DEV_READY before disabling HCI link. A failed disable
+	 * does not set it again: from here on, the Host tears down state that
+	 * cannot be brought back.
 	 *
 	 * The TX processor holds the host lock for a whole pass, so with the
 	 * lock held here no pass is under way in another thread when the
@@ -5165,7 +5164,7 @@ int bt_disable(void)
 	 * later one holds back what is queued for the connections.
 	 */
 	bt_dev_lock();
-	was_ready = atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
 	bt_dev_unlock();
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -5203,23 +5202,19 @@ int bt_disable(void)
 		(void)k_work_cancel_sync(&rx_work, &sync);
 	}
 
-	/* Reset the Controller */
+	/* Reset the Controller. When that fails, go on as with a driver that
+	 * has the no-reset quirk: what has been torn down so far cannot be
+	 * brought back, and closing the transport is what lets bt_enable()
+	 * try again, which resets the Controller first.
+	 */
 	if (!drv_quirk_no_reset()) {
-
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-		if (err) {
-			LOG_ERR("Failed to reset BLE controller");
-			if (was_ready) {
-				atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-				/* Resume sending the data that was held back */
-				bt_tx_irq_raise();
-			}
-			atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
-			return err;
+		if (err == 0) {
+			hci_reset_complete();
+			ctlr_reset = true;
+		} else {
+			LOG_ERR("Failed to reset the Controller (err %d)", err);
 		}
-
-		hci_reset_complete();
-		ctlr_reset = true;
 	}
 
 	/* A Controller that has been reset reports nothing more on the
