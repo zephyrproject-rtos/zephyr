@@ -955,6 +955,29 @@ static void modem_cellular_begin_shutdown(struct modem_cellular_data *data)
 	modem_cellular_begin_power_off_pulse(data);
 }
 
+static uint32_t modem_cellular_baudrate_update(struct modem_cellular_data *data,
+						uint32_t desired_baudrate)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+	struct uart_config cfg = {0};
+	uint32_t original_baudrate;
+	int ret;
+
+	ret = uart_config_get(config->uart, &cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to get UART configuration (%d)", ret);
+		return 0;
+	}
+	original_baudrate = cfg.baudrate;
+	cfg.baudrate = desired_baudrate;
+	ret = uart_configure(config->uart, &cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to set new baudrate (%d)", ret);
+		return 0;
+	}
+	return original_baudrate;
+}
+
 static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 {
 	const struct modem_cellular_config *config = data->dev->config;
@@ -1034,6 +1057,13 @@ static int modem_cellular_on_idle_state_leave(struct modem_cellular_data *data)
 
 	k_sem_take(&data->suspended_sem, K_NO_WAIT);
 
+	/* Revert to original baudrate if we have changed it. Boots that skip the power-on
+	 * and reset pulses would otherwise reach the baudrate script at the new speed.
+	 */
+	if (data->original_baudrate != 0U) {
+		modem_cellular_baudrate_update(data, data->original_baudrate);
+	}
+
 	if (modem_cellular_gpio_is_enabled(&config->reset_gpio) && config->hold_reset_on_suspend) {
 		gpio_pin_set_dt(&config->reset_gpio, 0);
 	}
@@ -1043,29 +1073,6 @@ static int modem_cellular_on_idle_state_leave(struct modem_cellular_data *data)
 	}
 
 	return 0;
-}
-
-static uint32_t modem_cellular_baudrate_update(struct modem_cellular_data *data,
-						uint32_t desired_baudrate)
-{
-	const struct modem_cellular_config *config = data->dev->config;
-	struct uart_config cfg = {0};
-	uint32_t original_baudrate;
-	int ret;
-
-	ret = uart_config_get(config->uart, &cfg);
-	if (ret < 0) {
-		LOG_ERR("Failed to get UART configuration (%d)", ret);
-		return 0;
-	}
-	original_baudrate = cfg.baudrate;
-	cfg.baudrate = desired_baudrate;
-	ret = uart_configure(config->uart, &cfg);
-	if (ret < 0) {
-		LOG_ERR("Failed to set new baudrate (%d)", ret);
-		return 0;
-	}
-	return original_baudrate;
 }
 
 static int modem_cellular_on_reset_pulse_state_enter(struct modem_cellular_data *data)
