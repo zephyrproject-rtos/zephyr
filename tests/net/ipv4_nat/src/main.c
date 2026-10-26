@@ -443,6 +443,111 @@ ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_skip_local_dst)
 	npf_append_ipv4_recv_rule(&npf_default_ok);
 }
 
+/* Run a UDP packet through the NAT filter and return its source and
+ * destination after translation, ports in host byte order.
+ */
+static void nat_udp(struct net_if *iface,
+		    struct net_in_addr *src, uint16_t src_port,
+		    struct net_in_addr *dst, uint16_t dst_port,
+		    struct net_in_addr *out_src, uint16_t *out_src_port,
+		    struct net_in_addr *out_dst, uint16_t *out_dst_port)
+{
+	struct net_pkt *pkt = build_test_udp_pkt(src, dst, src_port, dst_port, iface);
+	struct net_ipv4_hdr *ip_hdr;
+	struct net_udp_hdr *udp_hdr;
+
+	zassert_true(net_pkt_filter_ip_recv_ok(pkt), "NAT did not match the packet");
+
+	ip_hdr = NET_IPV4_HDR(pkt);
+	udp_hdr = (struct net_udp_hdr *)((uint8_t *)ip_hdr + sizeof(struct net_ipv4_hdr));
+
+	net_ipv4_addr_copy_raw(out_src->s4_addr, ip_hdr->src);
+	net_ipv4_addr_copy_raw(out_dst->s4_addr, ip_hdr->dst);
+	*out_src_port = net_ntohs(udp_hdr->src_port);
+	*out_dst_port = net_ntohs(udp_hdr->dst_port);
+
+	net_pkt_unref(pkt);
+}
+
+/* Two clients using the same source port towards the same server must get
+ * distinct external ports, and replies must reach the right client.
+ */
+ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_same_source_port)
+{
+	struct net_in_addr addr_a = { { { 192, 168, 1, 1 } } };
+	struct net_in_addr addr_b = { { { 192, 168, 2, 1 } } };
+	struct net_in_addr client1 = { { { 192, 168, 1, 6 } } };
+	struct net_in_addr client2 = { { { 192, 168, 1, 7 } } };
+	struct net_in_addr server1 = { { { 192, 168, 2, 6 } } };
+	struct net_in_addr server2 = { { { 192, 168, 2, 7 } } };
+	struct net_iptable_rule_params rule = {0};
+	uint8_t mask[4] = { 255, 255, 255, 0 };
+	struct net_in_addr src;
+	struct net_in_addr dst;
+	uint16_t src_port;
+	uint16_t dst_port;
+	uint16_t ext_port;
+	uint16_t ext_port_low;
+	int rule_idx;
+
+	npf_remove_ipv4_recv_rule(&npf_default_ok);
+	npf_append_ipv4_recv_rule(&npf_default_drop);
+
+	zassert_not_null(net_if_ipv4_addr_add(dummy_iface_a, &addr_a, NET_ADDR_MANUAL, 0),
+			 "Failed to add IPv4 addr to dummy_iface_a");
+	zassert_not_null(net_if_ipv4_addr_add(dummy_iface_b, &addr_b, NET_ADDR_MANUAL, 0),
+			 "Failed to add IPv4 addr to dummy_iface_b");
+
+	rule.input_iface_idx = net_if_get_by_iface(dummy_iface_a);
+	rule.output_iface_idx = net_if_get_by_iface(dummy_iface_b);
+	memcpy(rule.src, client1.s4_addr, 4);
+	memcpy(rule.src_mask, mask, 4);
+	rule.proto = NET_IPPROTO_UDP;
+	rule.priority = 5;
+
+	rule_idx = net_ipv4_table_rule_add(&rule);
+	zassert_true(rule_idx >= 0, "Could not add NAT table rule");
+
+	/* The first mapping keeps the client's port */
+	nat_udp(dummy_iface_a, &client1, 2000, &server1, 53, &src, &src_port, &dst, &dst_port);
+	zexpect_true(net_ipv4_addr_cmp(&src, &addr_b), "Source was not translated");
+	zexpect_equal(src_port, 2000U, "Free source port was not preserved");
+
+	/* The second one must not share it */
+	nat_udp(dummy_iface_a, &client2, 2000, &server1, 53, &src, &ext_port, &dst, &dst_port);
+	zexpect_true(net_ipv4_addr_cmp(&src, &addr_b), "Source was not translated");
+	zexpect_not_equal(ext_port, 2000U, "Two clients share one external port");
+	zexpect_true(ext_port >= 1024U, "External port left the 1024-65535 range");
+	zexpect_equal(ext_port % 2U, 0U, "External port parity was not preserved");
+
+	nat_udp(dummy_iface_b, &server1, 53, &addr_b, 2000, &src, &src_port, &dst, &dst_port);
+	zexpect_true(net_ipv4_addr_cmp(&dst, &client1), "Reply did not reach the first client");
+	zexpect_equal(dst_port, 2000U, "Reply port to the first client was wrong");
+
+	nat_udp(dummy_iface_b, &server1, 53, &addr_b, ext_port, &src, &src_port, &dst, &dst_port);
+	zexpect_true(net_ipv4_addr_cmp(&dst, &client2), "Reply did not reach the second client");
+	zexpect_equal(dst_port, 2000U, "Reply port to the second client was not restored");
+
+	/* The mapping is endpoint independent: a new server sees the same port */
+	nat_udp(dummy_iface_a, &client2, 2000, &server2, 53, &src, &src_port, &dst, &dst_port);
+	zexpect_equal(src_port, ext_port, "Second server got a different external port");
+
+	/* Well-known source ports stay in the well-known range */
+	nat_udp(dummy_iface_a, &client1, 701, &server1, 53, &src, &src_port, &dst, &dst_port);
+	zexpect_equal(src_port, 701U, "Free source port was not preserved");
+	nat_udp(dummy_iface_a, &client2, 701, &server1, 53, &src, &ext_port_low, &dst, &dst_port);
+	zexpect_not_equal(ext_port_low, 701U, "Two clients share one external port");
+	zexpect_true(ext_port_low > 0U && ext_port_low < 1024U,
+		     "External port left the 1-1023 range");
+	zexpect_equal(ext_port_low % 2U, 1U, "External port parity was not preserved");
+
+	net_ipv4_table_rule_del(rule_idx);
+	(void)net_if_ipv4_addr_rm(dummy_iface_a, &addr_a);
+	(void)net_if_ipv4_addr_rm(dummy_iface_b, &addr_b);
+	npf_remove_ipv4_recv_rule(&npf_default_drop);
+	npf_append_ipv4_recv_rule(&npf_default_ok);
+}
+
 /* Start every test without the mappings of the previous ones */
 static void nat_conn_track_clear(void *fixture)
 {
