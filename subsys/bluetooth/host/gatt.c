@@ -813,10 +813,10 @@ static int db_hash_gen(void)
 	return 0;
 }
 
-/* Copy the hash of the database as it is now to hash, and return whether it
- * had to be computed.
+/* Copy the hash of the database as it is now to hash, and its count of
+ * changes to gen, and return whether it had to be computed.
  */
-static bool db_hash_get(uint8_t hash[16])
+static bool db_hash_get(uint8_t hash[16], atomic_val_t *gen)
 {
 	bool computed = false;
 	k_spinlock_key_t key;
@@ -827,6 +827,7 @@ static bool db_hash_get(uint8_t hash[16])
 		key = k_spin_lock(&db_hash.lock);
 		valid = db_hash_is_valid();
 		memcpy(hash, db_hash.hash, sizeof(db_hash.hash));
+		*gen = atomic_get(&db_hash.hash_gen);
 		k_spin_unlock(&db_hash.lock, key);
 
 		if (valid) {
@@ -844,7 +845,8 @@ static void sc_indicate(uint16_t start, uint16_t end);
 static void do_db_hash(void)
 {
 	uint8_t hash[16];
-	__maybe_unused bool new_hash = db_hash_get(hash);
+	atomic_val_t gen;
+	__maybe_unused bool new_hash = db_hash_get(hash, &gen);
 
 #if defined(CONFIG_BT_SETTINGS)
 	bool hash_loaded_from_settings =
@@ -877,8 +879,18 @@ static void do_db_hash(void)
 		/* Check if hash matches then skip SC update */
 		if (!memcmp(db_hash.stored_hash, hash, sizeof(db_hash.stored_hash))) {
 			LOG_DBG("Database Hash matches");
-			k_work_cancel_delayable(&gatt_sc.work);
-			atomic_clear_bit(gatt_sc.flags, SC_RANGE_CHANGED);
+
+			/* Unless the database changed since: the range of that
+			 * change is to be indicated. Registrations set the range
+			 * and count the change with the scheduler locked.
+			 */
+			k_sched_lock();
+			if (atomic_get(&db_hash.gen) == gen) {
+				(void)k_work_cancel_delayable(&gatt_sc.work);
+				atomic_clear_bit(gatt_sc.flags, SC_RANGE_CHANGED);
+			}
+			k_sched_unlock();
+
 			return;
 		}
 
@@ -914,12 +926,13 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 {
 	struct gatt_cf_cfg *cfg;
 	uint8_t hash[16];
+	atomic_val_t gen;
 
 	/* Check if db_hash is already pending in which case it shall be
 	 * generated immediately instead of waiting for the work to complete.
 	 */
 	(void)k_work_cancel_delayable_sync(&db_hash.work, &db_hash.sync);
-	if (db_hash_get(hash)) {
+	if (db_hash_get(hash, &gen)) {
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 			set_all_change_unaware();
 			db_hash_store();
