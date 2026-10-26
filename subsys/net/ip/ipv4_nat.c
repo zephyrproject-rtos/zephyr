@@ -243,6 +243,12 @@ static inline bool conn_track_is_expired(struct net_nat4_entry *entry)
 	return sys_timepoint_expired(entry->end);
 }
 
+static inline bool conn_track_addr_valid(struct net_nat4_entry *entry)
+{
+	return net_if_ipv4_addr_lookup_by_iface_raw(entry->iface[NET_NAT_DIR_REPLY],
+						    entry->tuple[NET_NAT_DIR_REPLY].dst) != NULL;
+}
+
 static int conn_track_match(struct net_pkt *pkt,
 			    struct net_ipv4_hdr *iphdr,
 			    void *l4hdr,
@@ -257,6 +263,12 @@ static int conn_track_match(struct net_pkt *pkt,
 
 		if (conn_track_match_origin(pkt, iphdr,
 		    l4hdr, &iptables.table[i])) {
+			if (!conn_track_addr_valid(&iptables.table[i])) {
+				NET_DBG("conn track %d external address removed", i);
+				conn_track_free(&iptables.table[i]);
+				return NET_NAT_DIR_NUM;
+			}
+
 			NET_DBG("find IN conn track %d", i);
 			conn_track_refresh(&iptables.table[i],
 					   iptables.table[i].state == CONN_TRACK_ESTABLISHED ?
@@ -268,6 +280,12 @@ static int conn_track_match(struct net_pkt *pkt,
 
 		if (conn_track_match_reply(pkt, iphdr,
 		    l4hdr, &iptables.table[i].tuple[NET_NAT_DIR_REPLY])) {
+			if (!conn_track_addr_valid(&iptables.table[i])) {
+				NET_DBG("conn track %d external address removed", i);
+				conn_track_free(&iptables.table[i]);
+				return NET_NAT_DIR_NUM;
+			}
+
 			NET_DBG("find OUT conn track %d", i);
 			conn_track_confirm(&iptables.table[i]);
 			*entry = &iptables.table[i];
