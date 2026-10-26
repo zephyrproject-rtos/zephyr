@@ -33,6 +33,8 @@ struct flash_priv {
 	struct k_sem write_lock;
 	uint32_t pflash_block_base;
 	uint32_t sector_size;
+	/* The IAP reads its source while the flash is inaccessible, so it must be in RAM. */
+	uint32_t page_buf[FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES / sizeof(uint32_t)];
 };
 
 static const struct flash_parameters flash_lpc_parameters = {
@@ -167,8 +169,8 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
 	struct flash_priv *priv = dev->data;
-	uint32_t addr;
-	status_t rc;
+	const uint8_t *src = data;
+	status_t rc = kStatus_FLASHIAP_Success;
 	unsigned int key;
 
 	if (!range_is_valid(offset, len) || !range_is_page_aligned(offset, len)) {
@@ -179,13 +181,17 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 		return -EACCES;
 	}
 
-	addr = offset + priv->pflash_block_base;
+	for (size_t done = 0; (done < len) && (rc == kStatus_FLASHIAP_Success);
+	     done += sizeof(priv->page_buf)) {
+		memcpy(priv->page_buf, &src[done], sizeof(priv->page_buf));
 
-	key = irq_lock();
-	prepare_erase_write(offset, len, priv->sector_size);
-	rc = FLASHIAP_CopyRamToFlash(addr, (uint32_t *) data, len,
-				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
-	irq_unlock(key);
+		key = irq_lock();
+		prepare_erase_write(offset + done, sizeof(priv->page_buf), priv->sector_size);
+		rc = FLASHIAP_CopyRamToFlash(priv->pflash_block_base + offset + done,
+					     priv->page_buf, sizeof(priv->page_buf),
+					     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+		irq_unlock(key);
+	}
 
 	k_sem_give(&priv->write_lock);
 
