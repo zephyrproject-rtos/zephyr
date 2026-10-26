@@ -26,13 +26,14 @@ struct hm0360_config {
 #endif
 };
 
-struct hm0360_ctrls {
-	struct video_ctrl hflip;
-	struct video_ctrl vflip;
+enum hm0360_ctrl_idx {
+	HM0360_CTRL_HFLIP,
+	HM0360_CTRL_VFLIP,
+	HM0360_CTRL_COUNT,
 };
 
 struct hm0360_data {
-	struct hm0360_ctrls ctrls;
+	struct video_ctrl ctrls[HM0360_CTRL_COUNT];
 	struct video_format fmt;
 	uint16_t cur_frmrate;
 };
@@ -705,18 +706,9 @@ static int hm0360_get_frmival(const struct device *dev, struct video_frmival *fr
 
 static int hm0360_init_controls(const struct device *dev)
 {
-	int ret;
 	struct hm0360_data *drv_data = dev->data;
-	struct hm0360_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls(drv_data->ctrls, ARRAY_SIZE(drv_data->ctrls), dev);
 }
 
 static int hm0360_init(const struct device *dev)
@@ -836,7 +828,7 @@ static int hm0360_set_ctrl(const struct device *dev, uint32_t id)
 {
 	const struct hm0360_config *config = dev->config;
 	struct hm0360_data *drv_data = dev->data;
-	struct hm0360_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 
 	int ret;
 
@@ -844,7 +836,8 @@ static int hm0360_set_ctrl(const struct device *dev, uint32_t id)
 	case VIDEO_CID_HFLIP:
 		ret = video_modify_cci_reg(&config->bus, HM0360_CCI_ORIENTATION,
 					HM0360_ORIENTATION_HMIRROR,
-					FIELD_PREP(HM0360_ORIENTATION_HMIRROR, ctrls->hflip.val));
+					FIELD_PREP(HM0360_ORIENTATION_HMIRROR,
+						   ctrls[HM0360_CTRL_HFLIP].val));
 		if (ret < 0) {
 			return ret;
 		}
@@ -852,7 +845,8 @@ static int hm0360_set_ctrl(const struct device *dev, uint32_t id)
 	case VIDEO_CID_VFLIP:
 		ret = video_modify_cci_reg(&config->bus, HM0360_CCI_ORIENTATION,
 					HM0360_ORIENTATION_VMIRROR,
-					FIELD_PREP(HM0360_ORIENTATION_VMIRROR, ctrls->vflip.val));
+					FIELD_PREP(HM0360_ORIENTATION_VMIRROR,
+						   ctrls[HM0360_CTRL_VFLIP].val));
 		if (ret < 0) {
 			return ret;
 		}
@@ -892,7 +886,12 @@ static DEVICE_API(video, hm0360_api) = {
 	const struct hm0360_config hm0360_config_##inst = {.bus = I2C_DT_SPEC_INST_GET(inst),      \
 							   HM0360_RESET_GPIO(inst)                 \
 								   HM0360_PWDN_GPIO(inst)};        \
-	struct hm0360_data hm0360_data_##inst;                                                     \
+	struct hm0360_data hm0360_data_##inst = {                                                  \
+		.ctrls = {                                                                         \
+			[HM0360_CTRL_HFLIP] = {.id = VIDEO_CID_HFLIP},                             \
+			[HM0360_CTRL_VFLIP] = {.id = VIDEO_CID_VFLIP},                             \
+		},                                                                                 \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, hm0360_init, NULL, &hm0360_data_##inst, &hm0360_config_##inst, \
 			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &hm0360_api);               \

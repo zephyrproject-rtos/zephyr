@@ -36,9 +36,10 @@ LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 #define DEFAULT_FRAME_WIDTH  320
 #define DEFAULT_FRAME_HEIGHT 160
 
-struct sw_ctrls {
-	struct video_ctrl hflip;
-	struct video_ctrl test_pattern;
+enum sw_ctrl_idx {
+	SW_CTRL_HFLIP,
+	SW_CTRL_TEST_PATTERN,
+	SW_CTRL_COUNT,
 };
 
 /* Static JPEG frame buffers. 2 320x160 color-bar pattern frames, h-flipped. */
@@ -74,7 +75,7 @@ static const uint8_t h264_start_code_4[] = {0x00, 0x00, 0x00, 0x01};
 
 struct video_sw_generator_data {
 	const struct device *dev;
-	struct sw_ctrls ctrls;
+	struct video_ctrl ctrls[SW_CTRL_COUNT];
 	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
@@ -540,7 +541,7 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	struct video_sw_generator_data *data = dev->data;
 	struct video_format *fmt = &data->fmt;
 	size_t pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
-	bool hflip = data->ctrls.hflip.val;
+	bool hflip = data->ctrls[SW_CTRL_HFLIP].val;
 	uint16_t lines = 0;
 
 #ifdef CONFIG_VIDEO_SW_GENERATOR_H264
@@ -792,16 +793,8 @@ static DEVICE_API(video, video_sw_generator_driver_api) = {
 static int video_sw_generator_init_controls(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
-	int ret;
 
-	ret = video_init_menu_ctrl(&data->ctrls.test_pattern, dev, VIDEO_CID_TEST_PATTERN,
-				   0, test_pattern_menu);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return video_init_ctrl(&data->ctrls.hflip, dev, VIDEO_CID_HFLIP,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls(data->ctrls, ARRAY_SIZE(data->ctrls), dev);
 }
 
 static int video_sw_generator_init(const struct device *dev)
@@ -824,6 +817,11 @@ static int video_sw_generator_init(const struct device *dev)
 		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
 		.fmt.size = DEFAULT_FRAME_WIDTH * 2 * DEFAULT_FRAME_HEIGHT,                        \
 		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
+		.ctrls = {                                                                         \
+			[SW_CTRL_HFLIP] = {.id = VIDEO_CID_HFLIP},                                 \
+			[SW_CTRL_TEST_PATTERN] = {.id = VIDEO_CID_TEST_PATTERN,                    \
+				.menu = test_pattern_menu},                                        \
+		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &video_sw_generator_init, NULL, &video_sw_generator_data_##n,     \

@@ -759,14 +759,15 @@ struct gc2145_config {
 	int bus_type;
 };
 
-struct gc2145_ctrls {
-	struct video_ctrl hflip;
-	struct video_ctrl vflip;
-	struct video_ctrl linkfreq;
+enum gc2145_ctrl_idx {
+	GC2145_CTRL_HFLIP,
+	GC2145_CTRL_VFLIP,
+	GC2145_CTRL_LINKFREQ,
+	GC2145_CTRL_COUNT,
 };
 
 struct gc2145_data {
-	struct gc2145_ctrls ctrls;
+	struct video_ctrl ctrls[GC2145_CTRL_COUNT];
 	struct video_format fmt;
 	struct video_rect crop;
 	uint16_t format_width;
@@ -1076,7 +1077,7 @@ static int gc2145_config_csi(const struct device *dev, uint32_t pixelformat,
 {
 	const struct gc2145_config *cfg = dev->config;
 	struct gc2145_data *drv_data = dev->data;
-	struct gc2145_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *ctrls = drv_data->ctrls;
 	uint16_t fifo_full_level = width == 1600 ? 0x0001 : 0x0190;
 	uint16_t lwc = width * video_bits_per_pixel(pixelformat) / BITS_PER_BYTE;
 	uint8_t csi_dt;
@@ -1096,9 +1097,9 @@ static int gc2145_config_csi(const struct device *dev, uint32_t pixelformat,
 
 	/* Only VGA & UXGA work (currently) in CSI */
 	if (width == RESOLUTION_VGA_W && height == RESOLUTION_VGA_H) {
-		ctrls->linkfreq.val = GC2145_640_480_LINK_FREQ_ID;
+		ctrls[GC2145_CTRL_LINKFREQ].val = GC2145_640_480_LINK_FREQ_ID;
 	} else if (width == RESOLUTION_UXGA_W && height == RESOLUTION_UXGA_H) {
-		ctrls->linkfreq.val = GC2145_1600_1200_LINK_FREQ_ID;
+		ctrls[GC2145_CTRL_LINKFREQ].val = GC2145_1600_1200_LINK_FREQ_ID;
 	} else {
 		LOG_ERR("Unsupported resolution 320x240 for CSI");
 		return -EINVAL;
@@ -1245,12 +1246,12 @@ static int gc2145_set_ctrl(const struct device *dev, uint32_t id)
 	case VIDEO_CID_HFLIP:
 		/* Set the horizontal mirror state */
 		return video_modify_cci_reg(&cfg->i2c, GC2145_REG_AMODE1, GC2145_REG_AMODE1_MIRROR,
-					    drv_data->ctrls.hflip.val ?
+					    drv_data->ctrls[GC2145_CTRL_HFLIP].val ?
 					    GC2145_REG_AMODE1_MIRROR : 0);
 	case VIDEO_CID_VFLIP:
 		/* Set the vertical flip state */
 		return video_modify_cci_reg(&cfg->i2c, GC2145_REG_AMODE1, GC2145_REG_AMODE1_UPDOWN,
-					    drv_data->ctrls.vflip.val ?
+					    drv_data->ctrls[GC2145_CTRL_VFLIP].val ?
 					    GC2145_REG_AMODE1_UPDOWN : 0);
 	default:
 		return -ENOTSUP;
@@ -1308,32 +1309,9 @@ static DEVICE_API(video, gc2145_driver_api) = {
 
 static int gc2145_init_controls(const struct device *dev)
 {
-	int ret;
 	struct gc2145_data *drv_data = dev->data;
-	struct gc2145_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_int_menu_ctrl(&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ,
-				       GC2145_640_480_LINK_FREQ_ID, gc2145_link_frequency,
-				       ARRAY_SIZE(gc2145_link_frequency));
-	if (ret < 0) {
-		return ret;
-	}
-
-	ctrls->linkfreq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-
-	return 0;
+	return video_register_ctrls(drv_data->ctrls, ARRAY_SIZE(drv_data->ctrls), dev);
 }
 
 static int gc2145_init(const struct device *dev)
@@ -1421,7 +1399,19 @@ static int gc2145_init(const struct device *dev)
 #endif
 
 #define GC2145_INIT(n)										\
-	static struct gc2145_data gc2145_data_##n;						\
+	static struct gc2145_data gc2145_data_##n = {						\
+		.ctrls = {									\
+			[GC2145_CTRL_HFLIP] = {.id = VIDEO_CID_HFLIP},				\
+			[GC2145_CTRL_VFLIP] = {.id = VIDEO_CID_VFLIP},				\
+			[GC2145_CTRL_LINKFREQ] = {						\
+				.id = VIDEO_CID_LINK_FREQ,					\
+				.flags = VIDEO_CTRL_FLAG_READ_ONLY,				\
+				.range = {.max = ARRAY_SIZE(gc2145_link_frequency) - 1,		\
+					  .def = GC2145_640_480_LINK_FREQ_ID},			\
+				.int_menu = gc2145_link_frequency,				\
+			},									\
+		},										\
+	};											\
 	static const struct gc2145_config gc2145_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
 		GC2145_GET_PWDN_GPIO(n)								\
