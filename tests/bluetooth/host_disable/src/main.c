@@ -131,9 +131,19 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, ui
 	rp->status = BT_HCI_ERR_SUCCESS;
 	(void)memset(rp->features, 0, sizeof(rp->features));
 
-	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC)) {
+	/* Not with the tests of periodic advertising sync transfer, so that
+	 * their connection is made as in the other tests
+	 */
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC) && !IS_ENABLED(CONFIG_TEST_PAST)) {
 		rp->features[BT_LE_FEAT_BIT_EXT_ADV / 8U] |= BIT(BT_LE_FEAT_BIT_EXT_ADV % 8U);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC)) {
 		rp->features[BT_LE_FEAT_BIT_PER_ADV / 8U] |= BIT(BT_LE_FEAT_BIT_PER_ADV % 8U);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)) {
+		rp->features[BT_LE_FEAT_BIT_PAST_RECV / 8U] |= BIT(BT_LE_FEAT_BIT_PAST_RECV % 8U);
 	}
 }
 
@@ -614,18 +624,9 @@ static DEVICE_API(bt_hci, driver_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
 
-static void before(void *fixture)
+/* Reset what the test looks at, and enable Bluetooth */
+static void test_reset(void)
 {
-	ARG_UNUSED(fixture);
-
-	/* The Host asserts in the tests where the controller stops or the
-	 * driver blocks, which leaves it in the middle of bt_enable(), so each
-	 * of those tests runs alone.
-	 */
-	if (IS_ENABLED(CONFIG_TEST_CTLR_STOPS) || IS_ENABLED(CONFIG_TEST_SEND_BLOCKS)) {
-		ztest_test_skip();
-	}
-
 	close_err = 0;
 	silent = false;
 	data_err = 0;
@@ -645,6 +646,24 @@ static void before(void *fixture)
 	sent_num = 0U;
 	data_count = 0U;
 	close_count = 0U;
+}
+
+static void before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	/* The Host asserts in the tests where the controller stops or the
+	 * driver blocks, which leaves it in the middle of bt_enable(), so each
+	 * of those tests runs alone. So do the tests of periodic advertising
+	 * sync transfer, for which the controller does not support extended
+	 * advertising.
+	 */
+	if (IS_ENABLED(CONFIG_TEST_CTLR_STOPS) || IS_ENABLED(CONFIG_TEST_SEND_BLOCKS) ||
+	    IS_ENABLED(CONFIG_TEST_PAST)) {
+		ztest_test_skip();
+	}
+
+	test_reset();
 }
 
 ZTEST_SUITE(bt_disable, NULL, NULL, before, NULL, NULL);
@@ -813,6 +832,9 @@ static struct bt_le_per_adv_sync *synced_sync;
  */
 static struct bt_le_per_adv_sync *sync_app_sync;
 static struct bt_le_per_adv_sync *synced_app_sync;
+
+/* Whether the last sync was established with reports enabled */
+static bool synced_recv_enabled;
 static atomic_t term_count;
 static struct bt_le_per_adv_sync *term_sync;
 static uint8_t term_reason;
@@ -837,9 +859,8 @@ static bool synced_released;
 
 static void synced_cb(struct bt_le_per_adv_sync *sync, struct bt_le_per_adv_sync_synced_info *info)
 {
-	ARG_UNUSED(info);
-
 	synced_sync = sync;
+	synced_recv_enabled = info->recv_enabled;
 	synced_app_sync = sync_app_sync;
 	k_sem_give(&synced_sem);
 
@@ -883,15 +904,17 @@ static void *per_adv_sync_setup(void)
 		.state_changed = state_changed_cb,
 	};
 
-	zassert_ok(bt_le_per_adv_sync_cb_register(&cb), "Failed to register the callbacks");
+	int err;
+
+	/* The suites share them */
+	err = bt_le_per_adv_sync_cb_register(&cb);
+	zassert_true(err == 0 || err == -EEXIST, "Failed to register the callbacks (%d)", err);
 
 	return NULL;
 }
 
-static void per_adv_sync_before(void *fixture)
+static void per_adv_sync_reset(void)
 {
-	before(fixture);
-
 	k_sem_reset(&synced_sem);
 	synced_sync = NULL;
 	sync_app_sync = NULL;
@@ -905,6 +928,12 @@ static void per_adv_sync_before(void *fixture)
 	atomic_clear(&state_changed_count);
 	term_recreates = false;
 	k_sem_reset(&term_recreated_sem);
+}
+
+static void per_adv_sync_before(void *fixture)
+{
+	before(fixture);
+	per_adv_sync_reset();
 }
 
 /* The sync is created, and established once the controller has found the
@@ -1787,6 +1816,114 @@ static ZTEST(bt_disable, test_command_in_flight_at_close)
 	bt_conn_unref(test_conn);
 	test_conn = NULL;
 }
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
+/* The peer transfers the periodic advertising sync over the connection */
+static void past_received(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_evt_le_past_received *evt;
+	struct bt_hci_evt_le_meta_event *meta;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta) + sizeof(*evt));
+	meta = net_buf_add(buf, sizeof(*meta));
+	meta->subevent = BT_HCI_EVT_LE_PAST_RECEIVED;
+	evt = net_buf_add(buf, sizeof(*evt));
+	(void)memset(evt, 0, sizeof(*evt));
+	evt->status = BT_HCI_ERR_SUCCESS;
+	evt->conn_handle = sys_cpu_to_le16(TEST_CONN_HANDLE);
+	evt->sync_handle = sys_cpu_to_le16(TEST_SYNC_HANDLE);
+	evt->adv_sid = sync_param.sid;
+	bt_addr_le_copy(&evt->addr, &sync_param.addr);
+	evt->phy = BT_HCI_LE_PHY_1M;
+	evt->interval = sys_cpu_to_le16(BT_HCI_LE_PER_ADV_INTERVAL_MIN);
+	bt_hci_recv(dev, buf);
+}
+
+/* The peer disconnects */
+static void peer_disconnects(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_evt_disconn_complete *evt;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_DISCONN_COMPLETE, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(*evt));
+	evt = net_buf_add(buf, sizeof(*evt));
+	evt->status = BT_HCI_ERR_SUCCESS;
+	evt->handle = sys_cpu_to_le16(TEST_CONN_HANDLE);
+	evt->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+	bt_hci_recv(dev, buf);
+}
+
+static const struct bt_le_per_adv_sync_transfer_param past_reports = {
+	.timeout = BT_GAP_PER_ADV_MAX_TIMEOUT,
+};
+
+static const struct bt_le_per_adv_sync_transfer_param past_no_reports = {
+	.timeout = BT_GAP_PER_ADV_MAX_TIMEOUT,
+	.options = BT_LE_PER_ADV_SYNC_TRANSFER_OPT_REPORTING_INITIALLY_DISABLED,
+};
+
+static int sync_app_past_no_reports(void)
+{
+	return bt_le_per_adv_sync_transfer_subscribe(test_conn, &past_no_reports);
+}
+
+/* An application thread changes how syncs transferred over a connection are
+ * received, and the connection is gone by the time the controller rejects the
+ * command. The mode that the connection had must not be restored then: the
+ * next connection, which has the same connection object, would have it.
+ */
+static void past_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	test_reset();
+	per_adv_sync_reset();
+}
+
+ZTEST_SUITE(bt_past, NULL, per_adv_sync_setup, past_before, per_adv_sync_after, NULL);
+
+static ZTEST(bt_past, test_past_mode_after_disconnection)
+{
+	int err;
+
+	k_sem_reset(&disconnected_sem);
+	connect_as_peripheral();
+	zassert_ok(bt_le_per_adv_sync_transfer_subscribe(test_conn, &past_reports),
+		   "Subscribing the connection failed");
+	zassert_ok(bt_le_per_adv_sync_transfer_subscribe(NULL, &past_no_reports),
+		   "Subscribing by default failed");
+
+	slow_opcode = BT_HCI_OP_LE_PAST_PARAM;
+	slow_rsp_delay = K_MSEC(20);
+	slow_status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+	sync_app_start(sync_app_past_no_reports);
+	k_sleep(K_MSEC(10));
+
+	peer_disconnects();
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnection");
+
+	err = sync_app_join();
+	zassert_equal(err, -EIO, "Subscribing the connection gave %d", err);
+
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+
+	/* The next connection gets syncs with the default mode */
+	slow_opcode = 0U;
+	connect_as_peripheral();
+	past_received();
+	zassert_ok(k_sem_take(&synced_sem, K_SECONDS(1)), "No sync was transferred");
+	zassert_false(synced_recv_enabled, "Reports are enabled for the transferred sync");
+
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 
 ZTEST_SUITE(bt_conn_tx, NULL, NULL, before, NULL, NULL);
 
