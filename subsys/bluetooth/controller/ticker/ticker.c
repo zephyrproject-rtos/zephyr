@@ -3282,16 +3282,22 @@ void ticker_job(void *param)
 	/* Get current ticks, used in managing updates and expired tickers */
 	ticks_now = cntr_cnt_get();
 
-#if defined(CONFIG_BT_TICKER_CNTR_FREE_RUNNING)
 	if (ticker_id_old_head == TICKER_NULL) {
-		/* No tickers active, synchronize to the free running counter so
-		 * that any new ticker started can have its ticks_to_expire
-		 * relative to current free running counter value.
+		/* No tickers active, synchronize to the counter so that any new
+		 * ticker started can have its ticks_to_expire relative to
+		 * current counter value.
 		 *
 		 * Both current tick (new value) and previous tick (previously
 		 * stored when all tickers stopped) is assigned to ticks_now.
 		 * All new tickers are started from this synchronized value as
 		 * the anchor/reference value.
+		 *
+		 * When the counter is not free running, it is stopped while no
+		 * tickers are active, but another user of the counter can
+		 * advance it meanwhile: Direct Test Mode starts and stops it for
+		 * the duration of a test. Without this synchronization the first
+		 * ticker started afterwards would expire late by the time the
+		 * counter ran.
 		 *
 		 * Note, this if clause is an overhead wherein the check is
 		 * performed for every ticker_job() iteration!
@@ -3299,7 +3305,6 @@ void ticker_job(void *param)
 		instance->ticks_current = ticks_now;
 		ticks_previous = ticks_now;
 	}
-#endif /* !CONFIG_BT_TICKER_CNTR_FREE_RUNNING */
 
 	/* Manage user operations (updates and deletions) in ticker list */
 	pending = ticker_job_list_manage(instance, ticks_now, ticks_elapsed,
