@@ -21,13 +21,6 @@
 		zephyr,dtcm = &ccm0;
 	};
 
-	sdram2: sdram@d0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xd0000000 DT_SIZE_M(8)>;
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM2";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -148,6 +141,13 @@
 		sw6 = &interior_light_switch_off;
 		sw7 = &cap_button0;
 		sw8 = &cap_button1;
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xd0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM2";
 	};
 };
 

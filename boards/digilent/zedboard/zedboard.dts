@@ -47,18 +47,6 @@
 		};
 	};
 
-	/*
-	 * 512 MB DDR3. Reserve the low 1 MB so Zephyr does not overlap memory
-	 * still in use by U-Boot (relocated code/heap and leftover GEM DMA
-	 * descriptors); loading Zephyr at 0x0 was observed to corrupt GEM DMA
-	 * when booting via U-Boot. The vector table at 0x0 lives within this
-	 * reserved region. 1 MB is a conservative margin, not a hard minimum.
-	 */
-	sram0: memory@100000 {
-		compatible = "mmio-sram";
-		reg = <0x00100000 DT_SIZE_M(511)>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -82,6 +70,18 @@
 			label = "PB2";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	/*
+	 * 512 MB DDR3. Reserve the low 1 MB so Zephyr does not overlap memory
+	 * still in use by U-Boot (relocated code/heap and leftover GEM DMA
+	 * descriptors); loading Zephyr at 0x0 was observed to corrupt GEM DMA
+	 * when booting via U-Boot. The vector table at 0x0 lives within this
+	 * reserved region. 1 MB is a conservative margin, not a hard minimum.
+	 */
+	sram0: memory@100000 {
+		compatible = "mmio-sram";
+		reg = <0x00100000 DT_SIZE_M(511)>;
 	};
 };
 

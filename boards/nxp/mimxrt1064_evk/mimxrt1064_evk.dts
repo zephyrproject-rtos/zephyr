@@ -40,12 +40,6 @@
 		zephyr,touch = &ft5336;
 	};
 
-	sdram0: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(32)>;
-		/* Micron MT48LC16M16A2B4-6AIT:G */
-		device_type = "memory";
-	};
-
 	/*
 	 * This node describes the GPIO pins of the parallel FPC interface,
 	 * This interface is standard to several NXP EVKs, and is used with
@@ -128,6 +122,12 @@
 			   <ARDUINO_HEADER_R3_D14 0 &gpio1 17 0>,
 			   <ARDUINO_HEADER_R3_D15 0 &gpio1 16 0>;
 	};
+
+	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(32)>;
+		/* Micron MT48LC16M16A2B4-6AIT:G */
+		device_type = "memory";
+	};
 };
 
 nxp_touch_i2c: &lpi2c1 {};
@@ -145,12 +145,6 @@ nxp_parallel_i2c: &lpi2c1 {};
 	pinctrl-names = "default";
 	status = "okay";
 
-	ft5336: ft5336@38 {
-		compatible = "focaltech,ft5336";
-		reg = <0x38>;
-		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
-	};
-
 	audio_codec: wm8960@1a {
 		compatible = "wolfson,wm8960";
 		reg = <0x1a>;
@@ -162,6 +156,12 @@ nxp_parallel_i2c: &lpi2c1 {};
 		left-input = "WM8960_IN_MIC_DE_13";
 		right-input = "WM8960_IN_MIC_DE_12";
 		status = "okay";
+	};
+
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };
 

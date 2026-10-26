@@ -30,14 +30,6 @@
 		dmic0 = &dmic_dev;
 	};
 
-	sdram1: sdram@c0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xc0000000 DT_SIZE_M(16)>;
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
 	otghs_ulpi_phy: otghs_ulpis_phy {
 		compatible = "usb-ulpi-phy";
 		#phy-cells = <0>;
@@ -98,6 +90,14 @@
 		reg = <0x90000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "QSPI_AVAIL";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xc0000000 DT_SIZE_M(16)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 

@@ -121,9 +121,10 @@
 		reg = <0x1e>;
 	};
 
-	hts221@5f {
-		compatible = "st,hts221";
-		reg = <0x5f>;
+	vl53l0x@29 {
+		compatible = "st,vl53l0x";
+		reg = <0x29>;
+		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
 	};
 
 	lps22hb-press@5d {
@@ -131,16 +132,15 @@
 		reg = <0x5d>;
 	};
 
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+	};
+
 	lsm6dsl: lsm6dsl@6a {
 		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
 		irq-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
-	};
-
-	vl53l0x@29 {
-		compatible = "st,vl53l0x";
-		reg = <0x29>;
-		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
 	};
 };
 

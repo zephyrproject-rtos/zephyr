@@ -225,9 +225,9 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	si7021: si7021@40 {
-		compatible = "silabs,si7006";
-		reg = <0x40>;
+	veml6035: veml6035@29 {
+		compatible = "vishay,veml7700";
+		reg = <0x29>;
 		vin-supply = <&sensor_enable>;
 	};
 
@@ -237,9 +237,9 @@
 		vin-supply = <&sensor_enable>;
 	};
 
-	veml6035: veml6035@29 {
-		compatible = "vishay,veml7700";
-		reg = <0x29>;
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
 		vin-supply = <&sensor_enable>;
 	};
 };

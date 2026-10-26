@@ -21,11 +21,6 @@
 };
 
 &i2c0 {
-	bmi270: bmi270@69 {
-		compatible = "bosch,bmi270";
-		reg = <0x69>;
-	};
-
 	bmm150: bmm150@10 {
 		compatible = "bosch,bmm150";
 		reg = <0x10>;
@@ -36,6 +31,11 @@
 		compatible = "liteon,ltr553";
 		reg = <0x23>;
 		status = "okay";
+	};
+
+	bmi270: bmi270@69 {
+		compatible = "bosch,bmi270";
+		reg = <0x69>;
 	};
 };
 

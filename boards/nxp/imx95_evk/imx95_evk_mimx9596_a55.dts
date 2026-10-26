@@ -47,10 +47,6 @@
 		};
 	};
 
-	dram: memory@d0000000 {
-		reg = <0xd0000000 DT_SIZE_M(10)>;
-	};
-
 	can_phy2: can-phy2 {
 		compatible = "nxp,tja1463", "can-transceiver-gpio";
 		enable-gpios = <&gpio_exp0 4 GPIO_ACTIVE_HIGH>;
@@ -58,6 +54,10 @@
 		max-bitrate = <8000000>;
 		#phy-cells = <0>;
 		status = "okay";
+	};
+
+	dram: memory@d0000000 {
+		reg = <0xd0000000 DT_SIZE_M(10)>;
 	};
 };
 

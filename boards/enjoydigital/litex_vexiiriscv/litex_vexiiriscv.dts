@@ -29,12 +29,6 @@
 		watchdog0 = &wdt0;
 	};
 
-	ram0: memory@40000000 {
-		compatible = "mmio-sram";
-		reg = <0x40000000 DT_SIZE_G(1)>;
-		device_type = "memory";
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -75,33 +69,6 @@
 			status = "okay";
 		};
 
-		mtimer: timer@f001bff8 {
-			compatible = "riscv,machine-timer";
-			reg = <0xf001bff8 0x8 0xf0014000 0x8>;
-			interrupts-extended = <&L0 7>;
-			reg-names = "mtime", "mtimecmp";
-			status = "okay";
-		};
-
-		lintc0: clint@f0010000 {
-			compatible = "riscv,clint0";
-			reg = <0xf0010000 0x10000>;
-			interrupts-extended = <&L0 3 &L0 7>;
-			reg-names = "control";
-		};
-
-		intc0: interrupt-controller@f0c00000 {
-			compatible = "sifive,plic-1.0.0";
-			reg = <0xf0c00000 0x400000>;
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			interrupts-extended = <&L0 11 &L0 9>;
-			riscv,ndev = <32>;
-			riscv,max-priority = <7>;
-			status = "okay";
-		};
-
 		uart0: serial@f0000800 {
 			compatible = "litex,uart";
 			reg = <0xf0000800 0x4>,
@@ -124,6 +91,25 @@
 				    "rxfull";
 			rx-fifo-rx-we;
 			current-speed = <115200>;
+			status = "okay";
+		};
+
+		wdt0: watchdog@f0001000 {
+			compatible = "litex,watchdog";
+			reg = <0xf0001000 0x4>,
+			      <0xf0001004 0x4>,
+			      <0xf0001008 0x4>,
+			      <0xf000100c 0x4>,
+			      <0xf0001010 0x4>,
+			      <0xf0001014 0x4>;
+			interrupt-parent = <&intc0>;
+			reg-names = "control",
+				    "cycles",
+				    "remaining",
+				    "ev_status",
+				    "ev_pending",
+				    "ev_enable";
+			interrupts = <2 15>;
 			status = "okay";
 		};
 
@@ -183,51 +169,6 @@
 			phy-handle = <&phy0>;
 			local-mac-address = [10 e2 d5 00 00 02];
 			status = "okay";
-		};
-
-		spi0: spi@f0007800 {
-			compatible = "litex,spi-litespi";
-			reg = <0xf0007800 0x4>,
-			      <0xf0007804 0x4>,
-			      <0xf0007808 0x4>,
-			      <0xf000780c 0x4>,
-			      <0xf0007810 0x4>,
-			      <0xf0007814 0x4>,
-			      <0xf0007818 0x4>,
-			      <0xf000781c 0x4>,
-			      <0xf0007820 0x4>,
-			      <0xf0007824 0x4>,
-			      <0xf0007828 0x4>,
-			      <0xf000782c 0x4>,
-			      <0x20000000 0x4000000>;
-			interrupt-parent = <&intc0>;
-			reg-names = "phy_clk_divisor",
-				    "phy_mode",
-				    "mmap_clk_divisor",
-				    "mmap_dummy_bits",
-				    "master_cs",
-				    "master_phyconfig",
-				    "master_rxtx",
-				    "master_status",
-				    "master_clk_divisor",
-				    "master_ev_status",
-				    "master_ev_pending",
-				    "master_ev_enable",
-				    "flash_mmap";
-			clock-frequency = <50000000>;
-			interrupts = <6 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "okay";
-
-			spiflash0: flash@0 {
-				compatible = "jedec,spi-nor";
-				reg = <0>;
-				spi-max-frequency = <DT_FREQ_M(100)>;
-				use-4b-addr-opcodes;
-				use-fast-read;
-				status = "okay";
-			};
 		};
 
 		sdhc0: sdhc@f0005000 {
@@ -377,23 +318,82 @@
 			};
 		};
 
-		wdt0: watchdog@f0001000 {
-			compatible = "litex,watchdog";
-			reg = <0xf0001000 0x4>,
-			      <0xf0001004 0x4>,
-			      <0xf0001008 0x4>,
-			      <0xf000100c 0x4>,
-			      <0xf0001010 0x4>,
-			      <0xf0001014 0x4>;
+		spi0: spi@f0007800 {
+			compatible = "litex,spi-litespi";
+			reg = <0xf0007800 0x4>,
+			      <0xf0007804 0x4>,
+			      <0xf0007808 0x4>,
+			      <0xf000780c 0x4>,
+			      <0xf0007810 0x4>,
+			      <0xf0007814 0x4>,
+			      <0xf0007818 0x4>,
+			      <0xf000781c 0x4>,
+			      <0xf0007820 0x4>,
+			      <0xf0007824 0x4>,
+			      <0xf0007828 0x4>,
+			      <0xf000782c 0x4>,
+			      <0x20000000 0x4000000>;
 			interrupt-parent = <&intc0>;
-			reg-names = "control",
-				    "cycles",
-				    "remaining",
-				    "ev_status",
-				    "ev_pending",
-				    "ev_enable";
-			interrupts = <2 15>;
+			reg-names = "phy_clk_divisor",
+				    "phy_mode",
+				    "mmap_clk_divisor",
+				    "mmap_dummy_bits",
+				    "master_cs",
+				    "master_phyconfig",
+				    "master_rxtx",
+				    "master_status",
+				    "master_clk_divisor",
+				    "master_ev_status",
+				    "master_ev_pending",
+				    "master_ev_enable",
+				    "flash_mmap";
+			clock-frequency = <50000000>;
+			interrupts = <6 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			spiflash0: flash@0 {
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <DT_FREQ_M(100)>;
+				use-4b-addr-opcodes;
+				use-fast-read;
+				status = "okay";
+			};
+		};
+
+		lintc0: clint@f0010000 {
+			compatible = "riscv,clint0";
+			reg = <0xf0010000 0x10000>;
+			interrupts-extended = <&L0 3 &L0 7>;
+			reg-names = "control";
+		};
+
+		mtimer: timer@f001bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0xf001bff8 0x8 0xf0014000 0x8>;
+			interrupts-extended = <&L0 7>;
+			reg-names = "mtime", "mtimecmp";
 			status = "okay";
 		};
+
+		intc0: interrupt-controller@f0c00000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0xf0c00000 0x400000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&L0 11 &L0 9>;
+			riscv,ndev = <32>;
+			riscv,max-priority = <7>;
+			status = "okay";
+		};
+	};
+
+	ram0: memory@40000000 {
+		compatible = "mmio-sram";
+		reg = <0x40000000 DT_SIZE_G(1)>;
+		device_type = "memory";
 	};
 };

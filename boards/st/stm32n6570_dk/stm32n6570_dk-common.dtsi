@@ -40,19 +40,6 @@
 		volt-sensor1 = &vddcore;
 	};
 
-	psram: memory@90000000 {
-		compatible = "zephyr,memory-region";
-		/*
-		 * Prevent access to the last 32bytes of the memory-mapped device
-		 * Issue described in the STM32N6xxxx errata sheet ES0620 Rev 1:
-		 * 2.4.5 Deadlock or data corruption when DQS is enabled and the
-		 * wrap request includes the last address of the memory
-		 */
-		reg = <0x90000000 (DT_SIZE_M(32) - 32)>;
-		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
 	leds: leds {
 		compatible = "gpio-leds";
 
@@ -89,6 +76,19 @@
 			   <14 0 &gpioq 1 0>,
 			   <15 0 &gpioq 2 0>;
 	};
+
+	psram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		/*
+		 * Prevent access to the last 32bytes of the memory-mapped device
+		 * Issue described in the STM32N6xxxx errata sheet ES0620 Rev 1:
+		 * 2.4.5 Deadlock or data corruption when DQS is enabled and the
+		 * wrap request includes the last address of the memory
+		 */
+		reg = <0x90000000 (DT_SIZE_M(32) - 32)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
 };
 
 &gpioc {
@@ -119,13 +119,6 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
-	gt911: gt911@5d {
-		compatible = "goodix,gt911";
-		reg = <0x5d>;
-		reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpioq 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
-	};
-
 	audio_codec: wm8904@1a {
 		compatible = "wolfson,wm8904";
 		reg = <0x1a>;
@@ -133,6 +126,13 @@
 
 		wolfson,mic-bias-voltage = "avdd-9-10";
 		status = "okay";
+	};
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpioq 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };
 
