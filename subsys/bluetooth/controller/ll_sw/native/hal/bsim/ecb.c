@@ -118,14 +118,16 @@ static void aes128_encrypt(const uint8_t key[16], const uint8_t in[16],
 	(void)memcpy(out, s, sizeof(s));
 }
 
-void ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,
-		    uint8_t * const cipher_text_be)
+int ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,
+		   uint8_t * const cipher_text_be)
 {
 	aes128_encrypt(key_be, clear_text_be, cipher_text_be);
+
+	return 0;
 }
 
-void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
-		 uint8_t * const cipher_text_le, uint8_t * const cipher_text_be)
+int ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
+		uint8_t * const cipher_text_le, uint8_t * const cipher_text_be)
 {
 	uint8_t key[16];
 	uint8_t clear_text[16];
@@ -143,6 +145,8 @@ void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le
 	if (cipher_text_be != NULL) {
 		(void)memcpy(cipher_text_be, cipher_text, sizeof(cipher_text));
 	}
+
+	return 0;
 }
 
 void ecb_encrypt_nonblocking(struct ecb *e)
