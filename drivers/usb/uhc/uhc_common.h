@@ -29,6 +29,18 @@ static inline void *uhc_get_private(const struct device *dev)
 }
 
 /**
+ * @brief Initialize UHC common data
+ *
+ * UHC drivers using the common helpers must call this function during
+ * driver initialization.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_common_init(const struct device *dev);
+
+/**
  * @brief Locking function for the drivers.
  *
  * @param[in] dev     Pointer to device struct of the driver instance

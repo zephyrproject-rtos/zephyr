@@ -18,6 +18,13 @@ USB_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
 			CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE,
 			0, NULL);
 
+int uhc_common_init(const struct device *dev)
+{
+	struct uhc_data *data = dev->data;
+
+	return k_mutex_init(&data->mutex);
+}
+
 int uhc_submit_event(const struct device *dev,
 		     const enum uhc_event_type type,
 		     const int status)
