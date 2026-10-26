@@ -15,6 +15,16 @@
 #include <zephyr/kernel_structs.h>
 
 /**
+ * @brief Return the ID of the current CPU.
+ *
+ * @return Always 0: a single hardware thread runs the image.
+ */
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+	return 0;
+}
+
+/**
  * @brief Return the number of CPUs.
  *
  * @return Number of CPUs on the system.

@@ -37,6 +37,13 @@ static ALWAYS_INLINE uint32_t arch_proc_id(void)
 	return arch_curr_cpu()->id;
 }
 
+#else /* CONFIG_X86_64 */
+
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+	return 0;
+}
+
 #endif /* CONFIG_X86_64 */
 
 static ALWAYS_INLINE unsigned int arch_num_cpus(void)
