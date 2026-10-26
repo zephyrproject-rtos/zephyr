@@ -7582,6 +7582,8 @@ void net_if_init(void)
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 
+		NET_ASSERT(iface->if_dev != NULL);
+
 		init_iface(iface);
 
 #if defined(CONFIG_NET_INTERFACE_NAME)
