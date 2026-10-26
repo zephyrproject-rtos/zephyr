@@ -1094,8 +1094,6 @@ int bt_aics_client_description_get(struct bt_aics *inst)
 int bt_aics_client_description_set(struct bt_aics *inst,
 				   const char *description)
 {
-	int err;
-
 	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
@@ -1117,17 +1115,13 @@ int bt_aics_client_description_set(struct bt_aics *inst,
 	} else if (!atomic_test_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_DESC_WRITABLE)) {
 		LOG_DBG("Description is not writable on peer service instance");
 		return -EPERM;
-	} else if (atomic_test_and_set_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_BUSY)) {
+	} else if (atomic_test_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_BUSY)) {
 		return -EBUSY;
 	}
 
-	err = bt_gatt_write_without_response(inst->cli.conn, inst->cli.desc_handle, description,
-					     strlen(description), false);
-	if (err != 0) {
-		atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_BUSY);
-	}
-
-	return err;
+	/* A write without response has no completion to clear the busy flag in */
+	return bt_gatt_write_without_response(inst->cli.conn, inst->cli.desc_handle, description,
+					      strlen(description), false);
 }
 
 void bt_aics_client_cb_register(struct bt_aics *inst, struct bt_aics_cb *cb)
