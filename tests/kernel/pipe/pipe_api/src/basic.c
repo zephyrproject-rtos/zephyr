@@ -386,3 +386,76 @@ ZTEST(k_pipe_basic, test_pipe_len_above_int_max)
 /**
  * @}
  */
+
+K_PIPE_DEFINE(timeout_pipe, 16, 4);
+
+/**
+ * @brief Verify a timed write on a full pipe fails with -EAGAIN.
+ *
+ * @details
+ * When no data can be written within the specified maximum time, the write
+ * must return an error indicating that no data was written. Fill the pipe,
+ * then write with a finite timeout: the call must block for at least the
+ * timeout and return -EAGAIN without storing anything.
+ *
+ * Test steps:
+ * - Fill the pipe to capacity with a no-wait write.
+ * - Write one more byte with a 100 ms timeout, measuring the elapsed time.
+ *
+ * Expected result:
+ * - The timed write returns -EAGAIN after at least 100 ms.
+ *
+ * @see k_pipe_write()
+ * @verifies ZEP-SRS-32-11
+ */
+ZTEST(k_pipe_basic, test_pipe_write_timeout)
+{
+	uint8_t buffer[16];
+	int64_t start;
+	int rc;
+
+	mkrandom(buffer, sizeof(buffer));
+
+	zassert_equal(k_pipe_write(&timeout_pipe, buffer, sizeof(buffer), K_NO_WAIT),
+		      (int)sizeof(buffer), "could not fill the pipe");
+
+	start = k_uptime_get();
+	rc = k_pipe_write(&timeout_pipe, buffer, 1, K_MSEC(100));
+	zassert_equal(rc, -EAGAIN, "timed write on a full pipe returned %d", rc);
+	zassert_true(k_uptime_get() - start >= 100,
+		     "timed write returned before the timeout elapsed");
+
+	k_pipe_reset(&timeout_pipe);
+}
+
+/**
+ * @brief Verify a timed read on an empty pipe fails with -EAGAIN.
+ *
+ * @details
+ * When no data becomes available within the specified maximum time, the read
+ * must return an error indicating that no data was read. Read from an empty
+ * pipe with a finite timeout: the call must block for at least the timeout
+ * and return -EAGAIN.
+ *
+ * Test steps:
+ * - Read one byte from the empty pipe with a 100 ms timeout, measuring the
+ *   elapsed time.
+ *
+ * Expected result:
+ * - The timed read returns -EAGAIN after at least 100 ms.
+ *
+ * @see k_pipe_read()
+ * @verifies ZEP-SRS-32-12
+ */
+ZTEST(k_pipe_basic, test_pipe_read_timeout)
+{
+	uint8_t data;
+	int64_t start;
+	int rc;
+
+	start = k_uptime_get();
+	rc = k_pipe_read(&timeout_pipe, &data, 1, K_MSEC(100));
+	zassert_equal(rc, -EAGAIN, "timed read on an empty pipe returned %d", rc);
+	zassert_true(k_uptime_get() - start >= 100,
+		     "timed read returned before the timeout elapsed");
+}
