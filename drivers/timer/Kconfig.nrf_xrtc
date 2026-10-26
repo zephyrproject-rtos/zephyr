@@ -10,6 +10,7 @@ choice
 
 config SYSTEM_CLOCK_NO_WAIT
 	bool "No wait"
+	depends on NRF_RTC_TIMER
 	help
 	  System clock source is initiated but does not wait for clock readiness.
 	  When this option is picked, system clock may not be ready when code relying
