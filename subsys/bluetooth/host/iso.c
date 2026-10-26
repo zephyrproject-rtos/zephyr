@@ -3384,6 +3384,7 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, uint32_
 		if (param->bis_bitfield & BT_ISO_BIS_INDEX_BIT(i)) {
 			if (bit_idx == big->num_bis) {
 				LOG_DBG("BIG cannot contain %u BISes", bit_idx + 1);
+				net_buf_unref(buf);
 				return -EINVAL;
 			}
 			req->bis[bit_idx++] = i;
@@ -3393,6 +3394,7 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, uint32_
 	if (bit_idx != big->num_bis) {
 		LOG_DBG("Number of bits in bis_bitfield (%u) doesn't match num_bis (%u)", bit_idx,
 			big->num_bis);
+		net_buf_unref(buf);
 		return -EINVAL;
 	}
 
@@ -3493,6 +3495,13 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 	bis_channels = param->bis_channels;
 	for (uint8_t i = 0; i < param->num_bis; i++) {
 		const uint8_t bis_number = find_lsb_set(bitfield_copy);
+
+		if (bis_number == 0U) {
+			LOG_DBG("BIS bitfield has fewer than %u BISes", param->num_bis);
+			cleanup_big(big);
+
+			return -EINVAL;
+		}
 
 		/* pop the least significant bit from the bitfield */
 		bitfield_copy &= ~BIT(bis_number - 1U);
