@@ -49,12 +49,16 @@ static inline bool any_cpu_announcing(void)
 }
 
 /* Timeout whose handler is currently being dispatched, or NULL when no
- * handler is in flight. The announcing CPU sets the pointer before
- * calling the handler and clears it afterwards; any aborter may set the
- * low "superseded" bit (struct _timeout is pointer-aligned so bit 0 is
- * free). Accessors below mask the bit.
+ * handler is in flight. The announcing CPU sets the pointer before calling
+ * the handler and clears it afterwards. An aborter may set the low
+ * "superseded" bit until the handler claims the dispatch; struct _timeout is
+ * pointer-aligned so bit 0 is free. Accessors below mask the bit.
  */
 static struct _timeout *inflight_timeout;
+/* True once either the handler or an aborter owns completion of the current
+ * dispatch.
+ */
+static bool inflight_claimed;
 
 #define INFLIGHT_SUPERSEDED_BIT 1UL
 
@@ -257,11 +261,11 @@ int z_try_abort_timeout(struct _timeout *to)
 			ret = -EAGAIN;
 		}
 
-		/* Record that the in-flight timeout has been aborted, so a
-		 * handler that checks (z_timeout_inflight_superseded) can
-		 * tell its dispatch was overtaken.
+		/* Record that an unclaimed in-flight timeout has been aborted, so
+		 * its handler can tell that the dispatch was overtaken. Once the
+		 * handler claims the dispatch, its side effects have won the race.
 		 */
-		if (inflight_ptr() == to) {
+		if (inflight_ptr() == to && !inflight_claimed) {
 			inflight_mark_superseded();
 		}
 	}
@@ -271,6 +275,39 @@ int z_try_abort_timeout(struct _timeout *to)
 	}
 
 	return ret;
+}
+
+bool z_timeout_inflight_claim(const struct _timeout *to)
+{
+	bool claimed = true;
+
+	K_SPINLOCK(&timeout_lock) {
+		if (inflight_ptr() == to) {
+			claimed = inflight_timeout !=
+				  (struct _timeout *)((uintptr_t)to | INFLIGHT_SUPERSEDED_BIT);
+			if (claimed) {
+				inflight_claimed = true;
+			}
+		}
+	}
+
+	return claimed;
+}
+
+bool z_timeout_inflight_abort_claim(const struct _timeout *to)
+{
+	bool claimed = false;
+
+	K_SPINLOCK(&timeout_lock) {
+		if (!inflight_claimed &&
+		    inflight_timeout ==
+			    (struct _timeout *)((uintptr_t)to | INFLIGHT_SUPERSEDED_BIT)) {
+			inflight_claimed = true;
+			claimed = true;
+		}
+	}
+
+	return claimed;
 }
 
 bool z_timeout_inflight_superseded(const struct _timeout *to)
@@ -396,11 +433,13 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 			_timeout_func_t handler = t->fn;
 
 			inflight_timeout = t;
+			inflight_claimed = false;
 
 			k_spin_unlock(&timeout_lock, key);
 			handler(t);
 			key = k_spin_lock(&timeout_lock);
 			inflight_timeout = NULL;
+			inflight_claimed = false;
 		}
 	}
 #endif /* _TIMEOUT_BACKEND_OWNS_ANNOUNCE */
