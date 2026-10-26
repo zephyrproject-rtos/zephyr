@@ -43,6 +43,9 @@ extern "C" {
  * different modules of an application are interested in tracking the ECHO request/response
  * signaling packets. If a callback is not of interest for an instance, it may be set to NULL and
  * will as a consequence not be used for that instance.
+ *
+ * If no registered instance has a @ref bt_l2cap_br_echo_cb.req callback, the stack answers a
+ * received ECHO request itself with an ECHO response without data.
  */
 struct bt_l2cap_br_echo_cb {
 	/**
