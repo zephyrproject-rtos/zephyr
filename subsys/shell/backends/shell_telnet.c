@@ -55,8 +55,13 @@ static void telnet_end_client_connection(void)
 	sh_telnet->fds[SOCK_ID_CLIENT].fd = -1;
 	sh_telnet->output_lock = false;
 
-	k_work_cancel_delayable_sync(&sh_telnet->send_work,
-				     &sh_telnet->work_sync);
+	/* The send work ends the connection itself when its send fails */
+	if (k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
+		(void)k_work_cancel_delayable(&sh_telnet->send_work);
+	} else {
+		k_work_cancel_delayable_sync(&sh_telnet->send_work,
+					     &sh_telnet->work_sync);
+	}
 
 	ret = net_socket_service_register(&telnet_server, sh_telnet->fds,
 					  ARRAY_SIZE(sh_telnet->fds), NULL);
