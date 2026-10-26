@@ -75,7 +75,7 @@ def openssl_server(server_type, port):
     logger.info("Kill server")
     openssl.kill()
 
-def test_app_vs_openssl(dut: DeviceAdapter, openssl_server):
+def test_app_vs_openssl(dut: DeviceAdapter, openssl_server, test_timeout):
     logger.info("Launch Zephyr application")
     dut.launch()
-    dut.readlines_until(regex="Test PASSED", timeout=3.0)
+    dut.readlines_until(regex="Test PASSED", timeout=test_timeout)

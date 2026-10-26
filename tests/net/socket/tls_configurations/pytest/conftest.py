@@ -27,3 +27,8 @@ def app_config(device_object: DeviceAdapter, config_reader):
 @pytest.fixture()
 def port(app_config):
     return app_config.read_int('CONFIG_SERVER_PORT')
+
+
+@pytest.fixture()
+def test_timeout(app_config):
+    return app_config.read_int('CONFIG_TEST_TIMEOUT')
