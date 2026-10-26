@@ -7091,6 +7091,9 @@ ZTEST(net_socket_quic, test_492_stop_sending_replies_are_capped)
 	ARRAY_FOR_EACH(test_streams, i) {
 		link_test_stream(&test_streams[i], ctx, ep, 4 * i);
 
+		/* The lookup skips streams that are being released */
+		atomic_set(&test_streams[i].refcount, 1);
+
 		payload[pos++] = QUIC_FRAME_TYPE_STOP_SENDING;
 		payload[pos++] = (uint8_t)(4 * i); /* Stream ID */
 		payload[pos++] = 0x00;             /* Error code */
