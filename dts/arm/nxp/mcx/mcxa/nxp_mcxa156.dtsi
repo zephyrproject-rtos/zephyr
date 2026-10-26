@@ -584,6 +584,7 @@
 			reg = <0x400ad000 0x1000>;
 			interrupts = <57 0>;
 			resets = <&reset NXP_SYSCON_RESET(1, 0)>;
+			handoff-power-states = <&deepsleep &powerdown &deeppowerdown>;
 			status = "disabled";
 		};
 
