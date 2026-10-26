@@ -78,6 +78,8 @@ struct video_device *video_find_vdev(const struct device *dev);
 #define VIDEO_CTRL_FLAG_INACTIVE   BIT(3)
 /** Control that affects other controls, e.g. the primary control of a cluster */
 #define VIDEO_CTRL_FLAG_UPDATE     BIT(4)
+/** Control executed on each write: the driver is called even if the value does not change */
+#define VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE BIT(5)
 
 /**
  * @brief Type of video control

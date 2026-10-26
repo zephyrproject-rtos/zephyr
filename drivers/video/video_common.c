@@ -131,6 +131,15 @@ static inline void set_type_flag(struct video_ctrl *ctrl)
 	case VIDEO_CID_LINK_FREQ:
 		ctrl->type = VIDEO_CTRL_TYPE_INTEGER_MENU;
 		break;
+	case VIDEO_CID_PAN_RELATIVE:
+	case VIDEO_CID_TILT_RELATIVE:
+	case VIDEO_CID_FOCUS_RELATIVE:
+	case VIDEO_CID_IRIS_RELATIVE:
+	case VIDEO_CID_ZOOM_RELATIVE:
+		/* A relative move is an action, repeating it with the same value makes sense */
+		ctrl->type = VIDEO_CTRL_TYPE_INTEGER;
+		ctrl->flags |= VIDEO_CTRL_FLAG_WRITE_ONLY | VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE;
+		break;
 	default:
 		if (ctrl->id < VIDEO_CID_PRIVATE_BASE || ctrl->type == 0) {
 			ctrl->type = VIDEO_CTRL_TYPE_INTEGER;
