@@ -11,8 +11,8 @@
 #include <skeleton.dtsi>
 
 / {
-	model = "QEMU AURIX TC39x";
 	compatible = "infineon,qemu-tc39x";
+	model = "QEMU AURIX TC39x";
 
 	cpus {
 		#address-cells = <1>;
@@ -54,11 +54,11 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		interrupt-parent = <&ir>;
-		compatible = "simple-bus";
-		ranges;
 
 		asclin0: asclin@f0000600 {
 			compatible = "infineon,asclin-uart";

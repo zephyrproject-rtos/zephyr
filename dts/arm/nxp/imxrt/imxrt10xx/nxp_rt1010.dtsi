@@ -111,8 +111,8 @@
 			#size-cells = <0>;
 			ahb-bufferable;
 			ahb-cacheable;
-			status = "disabled";
 			clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0x0>;
+			status = "disabled";
 		};
 
 		/* Remove SEMC, it doesn't exist on RT1010 */
@@ -139,10 +139,10 @@
 
 		lpi2c1: i2c@401a4000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x401a4000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x401a4000 0x4000>;
 			interrupts = <28 0>;
 			clocks = <&ccm IMX_CCM_LPI2C_CLK 0x70 6>;
 			status = "disabled";
@@ -150,10 +150,10 @@
 
 		lpi2c2: i2c@401a8000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x401a8000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x401a8000 0x4000>;
 			interrupts = <29 0>;
 			clocks = <&ccm IMX_CCM_LPI2C_CLK 0x70 8>;
 			status = "disabled";
@@ -174,24 +174,24 @@
 			compatible = "nxp,lpspi";
 			reg = <0x40194000 0x4000>;
 			interrupts = <32 3>;
-			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		lpspi2: spi@40198000 {
 			compatible = "nxp,lpspi";
 			reg = <0x40198000 0x4000>;
 			interrupts = <33 3>;
-			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		/* Remove LPUART5-8, they don't exist on RT1010 */
@@ -299,10 +299,10 @@
 
 		sai1: sai@401e0000 {
 			compatible = "nxp,mcux-i2s";
+			reg = <0x401e0000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			#pinmux-cells = <2>;
-			reg = <0x401e0000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI1_CLK 0x7c 18>;
 			/* Source clock from Audio PLL */
 			clock-mux = <2>;
@@ -339,10 +339,10 @@
 
 		sai3: sai@401e8000 {
 			compatible = "nxp,mcux-i2s";
+			reg = <0x401e8000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			#pinmux-cells = <2>;
-			reg = <0x401e8000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI3_CLK 0x7c 22>;
 			/* Source clock from Audio PLL */
 			clock-mux = <2>;

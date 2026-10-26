@@ -7,14 +7,14 @@
 
 / {
 	apb2clk: apb2clk {
-		#clock-cells = <0>;
 		compatible = "fixed-clock";
+		#clock-cells = <0>;
 		clock-frequency = <125000000>;
 	};
 
 	uartclk: uartclk {
-		#clock-cells = <0>;
 		compatible = "fixed-clock";
+		#clock-cells = <0>;
 		clock-frequency = <100000000>;
 	};
 };

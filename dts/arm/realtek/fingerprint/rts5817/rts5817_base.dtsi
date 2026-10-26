@@ -22,9 +22,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(240)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -37,9 +37,9 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
 
 		dlink_ldo: dlink_ldo@401e1000 {
 			compatible = "syscon";

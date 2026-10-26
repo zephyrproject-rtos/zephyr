@@ -16,9 +16,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m3";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -38,16 +38,16 @@
 		flash: flash-controller@60080000 {
 			compatible = "microchip,smartfusion2-flash-controller";
 			reg = <0x60080000 0x40000>;
+			ranges = <0x0 0x0 0x40000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x0 0x40000>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0x0 0x40000>;
+				ranges = <0x0 0x0 0x40000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 0x40000>;
 			};
 		};
 

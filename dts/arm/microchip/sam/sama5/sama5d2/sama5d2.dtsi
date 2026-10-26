@@ -11,17 +11,17 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	model = "Microchip SAMA5D2 family SoC";
 	compatible = "microchip,sama5d2";
+	model = "Microchip SAMA5D2 family SoC";
 
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a5";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 

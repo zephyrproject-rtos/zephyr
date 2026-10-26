@@ -17,31 +17,31 @@
 
 	clocks {
 		clk_hse: clk-hse {
-			#clock-cells = <0>;
 			compatible = "wch,ch32v00x-hse-clock";
+			#clock-cells = <0>;
 			/* HSE crystal frequency is board-specific; set it in the board DTS. */
 			status = "disabled";
 		};
 
 		clk_hsi: clk-hsi {
-			#clock-cells = <0>;
 			compatible = "wch,ch32v00x-hsi-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(25)>;
 			status = "disabled";
 		};
 
 		pll: pll {
-			#clock-cells = <0>;
 			compatible = "wch,ch32h41x-pll-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		flash: flash-controller@40022000 {
 			compatible = "wch,ch32v20x_30x-flash-controller";

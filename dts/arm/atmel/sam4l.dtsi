@@ -25,9 +25,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -66,69 +66,69 @@
 		flashcalw: flash-controller@400a0000 {
 			compatible = "atmel,sam4l-flashcalw-controller";
 			reg = <0x400a0000 0x400>;
+			ranges;
 			interrupts = <0 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-
-				write-block-size = <8>;
-				erase-block-size = <512>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				ranges;
-			};
 
 			/*
 			 * No driver implemented yet, keeped it disabled
 			 */
 			status = "disabled";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				ranges;
+
+				write-block-size = <8>;
+				erase-block-size = <512>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
 		twim0: twim@40018000 {
 			compatible = "atmel,sam-i2c-twim";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40018000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <61 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 4>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		twim1: twim@4001c000 {
 			compatible = "atmel,sam-i2c-twim";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x4001c000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <63 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		twim2: twim@40078000 {
 			compatible = "atmel,sam-i2c-twim";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40078000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <77 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 21>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		twim3: twim@4007c000 {
 			compatible = "atmel,sam-i2c-twim";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x4007c000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <78 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi0: spi@40008000 {
@@ -136,9 +136,9 @@
 			reg = <0x40008000 0x4000>;
 			interrupts = <54 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		usart0: usart@40024000 {
@@ -186,9 +186,9 @@
 
 		pinctrl: pinctrl@400e1000 {
 			compatible = "atmel,sam-pinctrl";
+			ranges = <0x400e1000 0x400e1000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x400e1000 0x400e1000 0x800>;
 
 			gpioa: gpio@400e1000 {
 				compatible = "atmel,sam4l-gpio";

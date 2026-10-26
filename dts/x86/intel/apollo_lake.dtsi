@@ -15,23 +15,23 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "intel,apollo-lake", "intel,x86_64";
-			d-cache-line-size = <64>;
 			reg = <0>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 	};
 
 	dram0: memory@0 {
-		device_type = "memory";
 		reg = <0x0 DT_DRAM_SIZE>;
+		device_type = "memory";
 	};
 
 	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
-		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
 	};
 
@@ -44,11 +44,11 @@
 	};
 
 	pcie0: pcie0 {
+		compatible = "pcie-controller";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "pcie-controller";
 		acpi-hid = "PNP0A08";
-		ranges;
 
 		uart0: uart0 {
 			compatible = "ns16550";
@@ -60,8 +60,8 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
-			status = "okay";
 			current-speed = <115200>;
+			status = "okay";
 		};
 
 		uart1: uart1 {
@@ -74,9 +74,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "okay";
-			current-speed = <115200>;
 		};
 
 		uart2: uart2 {
@@ -89,9 +89,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "okay";
-			current-speed = <115200>;
 		};
 
 		uart3: uart3 {
@@ -104,9 +104,9 @@
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 
 			status = "okay";
-			current-speed = <115200>;
 		};
 
 		i2c0: i2c0 {
@@ -215,10 +215,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		vtd: vtd@fed65000 {
 			compatible = "intel,vt-d";
@@ -391,6 +391,8 @@
 			compatible = "motorola,mc146818-mfd";
 			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
 
+			status = "okay";
+
 			rtc: counter: rtc {
 				compatible = "motorola,mc146818";
 				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
@@ -399,8 +401,6 @@
 
 				status = "okay";
 			};
-
-			status = "okay";
 		};
 	};
 

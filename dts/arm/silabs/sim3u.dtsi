@@ -19,9 +19,9 @@
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m3";
+			reg = <0>;
 			device_type = "cpu";
 			clock-frequency = <20000000>;
-			reg = <0>;
 		};
 	};
 
@@ -40,8 +40,8 @@
 
 		pll0: pll0@4003b000 {
 			compatible = "silabs,si32-pll";
-			#clock-cells = <0>;
 			reg = <0x4003b000>;
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 
@@ -118,33 +118,33 @@
 
 		gpio0: gpio@4002a0a0 {
 			compatible = "silabs,si32-gpio";
+			reg = <0x4002a0a0 0xa0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x4002a0a0 0xa0>;
 			ngpios = <16>;
 		};
 
 		gpio1: gpio@4002a140 {
 			compatible = "silabs,si32-gpio";
+			reg = <0x4002a140 0xa0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x4002a140 0xa0>;
 			ngpios = <16>;
 		};
 
 		gpio2: gpio@4002a1e0 {
 			compatible = "silabs,si32-gpio";
+			reg = <0x4002a1e0 0xc0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x4002a1e0 0xc0>;
 			ngpios = <16>;
 		};
 
 		gpio3: gpio@4002a320 {
 			compatible = "silabs,si32-gpio";
+			reg = <0x4002a320 0xa0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x4002a320 0xa0>;
 			ngpios = <16>;
 		};
 	};

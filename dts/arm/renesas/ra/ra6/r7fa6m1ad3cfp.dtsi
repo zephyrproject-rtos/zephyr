@@ -21,8 +21,8 @@
 
 		code_flash_ctrl: code-flash-ctrl {
 			compatible = "renesas,ra-flash-hp-controller";
-			command-interface = <&faci>;
 			ranges;
+			command-interface = <&faci>;
 			programming-enable;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -40,8 +40,8 @@
 
 		data_flash_ctrl: data-flash-ctrl {
 			compatible = "renesas,ra-flash-hp-controller";
-			command-interface = <&faci>;
 			ranges;
+			command-interface = <&faci>;
 			programming-enable;
 			erase-value-undefined;
 			#address-cells = <1>;
@@ -91,8 +91,8 @@
 
 		option_setting_osis: option-setting-osis@100a150 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			reg = <0x0100a150 0x10>;
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			status = "okay";
 		};
 	};

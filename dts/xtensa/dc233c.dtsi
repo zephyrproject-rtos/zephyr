@@ -12,9 +12,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx3";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -23,9 +23,9 @@
 	 * fewer L2 page table entries are needed when MMU is enabled.
 	 */
 	sram0: memory@0 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x00000000 0x01000000>;
+		device_type = "memory";
 	};
 
 	/*
@@ -33,15 +33,15 @@
 	 * fewer L2 page table entries are needed when MMU is enabled.
 	 */
 	rom0: memory@fe000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0xfe000000 0x00004000>;
+		device_type = "memory";
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 };

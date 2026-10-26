@@ -34,8 +34,8 @@
 	reg = <0x40008000 0x2400>;
 
 	gpio2: gpio@40080400 {
-		reg = <0x40080400 0x200>;
 		compatible = "adi,max32-gpio";
+		reg = <0x40080400 0x200>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		interrupts = <26 0>;
@@ -44,8 +44,8 @@
 	};
 
 	gpio3: gpio@40080600 {
-		reg = <0x40080600 0x200>;
 		compatible = "adi,max32-gpio";
+		reg = <0x40080600 0x200>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		interrupts = <54 0>;
@@ -91,8 +91,8 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
 			dma-channels = <4>;
-			status = "disabled";
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		wdt1: watchdog@40080800 {
@@ -118,10 +118,10 @@
 			compatible = "adi,max32-timer";
 			reg = <0x40080c00 0x400>;
 			interrupts = <9 0>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>, <&clk_lptmr0>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-counter";
@@ -133,10 +133,10 @@
 			compatible = "adi,max32-timer";
 			reg = <0x40081000 0x400>;
 			interrupts = <10 0>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>, <&clk_lptmr1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-counter";
@@ -156,8 +156,8 @@
 			compatible = "adi,max32-timer";
 			reg = <0x40006400 0x400>;
 			interrupts = <53 0>;
-			status = "disabled";
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-wut";

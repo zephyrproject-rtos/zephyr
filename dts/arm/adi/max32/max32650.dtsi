@@ -33,8 +33,8 @@
 	reg = <0x40008000 0x4000>;
 
 	gpio2: gpio@4000a000 {
-		reg = <0x4000a000 0x1000>;
 		compatible = "adi,max32-gpio";
+		reg = <0x4000a000 0x1000>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		interrupts = <26 0>;
@@ -43,8 +43,8 @@
 	};
 
 	gpio3: gpio@4000b000 {
-		reg = <0x4000b000 0x1000>;
 		compatible = "adi,max32-gpio";
+		reg = <0x4000b000 0x1000>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		interrupts = <58 0>;
@@ -102,10 +102,10 @@
 			compatible = "adi,max32-timer";
 			reg = <0x40014000 0x1000>;
 			interrupts = <9 0>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 19>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-counter";
@@ -114,8 +114,8 @@
 
 			pwm {
 				compatible = "adi,max32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -123,10 +123,10 @@
 			compatible = "adi,max32-timer";
 			reg = <0x40015000 0x1000>;
 			interrupts = <10 0>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 20>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+			status = "disabled";
 
 			counter {
 				compatible = "adi,max32-counter";
@@ -135,8 +135,8 @@
 
 			pwm {
 				compatible = "adi,max32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -203,8 +203,8 @@
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>,
 				     <72 0>, <73 0>, <74 0>, <75 0>, <76 0>, <77 0>, <78 0>, <79 0>;
 			dma-channels = <16>;
-			status = "disabled";
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		usbhs: usbhs@400b1000 {

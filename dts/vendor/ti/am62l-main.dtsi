@@ -321,12 +321,12 @@
 	main_adc0: adc@28001000 {
 		compatible = "ti,am335x-adc";
 		reg = <0x28001000 DT_SIZE_K(1)>;
-		status = "disabled";
 		power-domains = <&main_adc0_pd>;
 		clocks = <&scmi_clk 4>;
 		#io-channel-cells = <1>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	main_timer0: timer@2400000 {
@@ -372,10 +372,10 @@
 		power-domains = <&main_mmcsd0_pd>;
 		max-bus-freq = <DT_FREQ_M(200)>;
 		min-bus-freq = <DT_FREQ_M(0)>;
+		mmc-hs200-1_8v;
 		ti,is-embedded;
 		ti,driver-strength-ohm = <50>;
 		ti,clkbuf-sel = <0x7>;
-		mmc-hs200-1_8v;
 		ti,otap-del-sel-sdr12 = <0xf>;
 		ti,otap-del-sel-sdr25 = <0xf>;
 		ti,otap-del-sel-ddr50 = <0x15>;

@@ -22,19 +22,19 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "openisa,ri5cy", "riscv";
+			reg = <0>;
+			device_type = "cpu";
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei";
-			reg = <0>;
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "openisa,zero-ri5cy", "riscv";
+			reg = <1>;
+			device_type = "cpu";
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei";
-			reg = <1>;
 		};
 	};
 
@@ -55,10 +55,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		pcc0: clock-controller@4002b000 {
 			compatible = "openisa,rv32m1-pcc";
@@ -74,107 +74,107 @@
 
 		event0: interrupt-controller@e0041000 {
 			compatible = "openisa,rv32m1-event-unit";
+			reg = <0xe0041000 0x88>;
 			#address-cells = <0>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
-			reg = <0xe0041000 0x88>;
 		};
 
 		event1: interrupt-controller@4101f000 {
 			compatible = "openisa,rv32m1-event-unit";
+			reg = <0x4101f000 0x88>;
 			#address-cells = <0>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
-			reg = <0x4101f000 0x88>;
 		};
 
 		intmux0: intmux@4004f000 {
 			compatible = "openisa,rv32m1-intmux";
 			reg = <0x4004f000 0x200>;
-			clocks = <&pcc0 0x13c>;
-			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <1>;
 
 			ranges = <0x0 0x4004f000 0x200>;
+			clocks = <&pcc0 0x13c>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
 
 			intmux0_ch0: interrupt-controller@0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x0 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH0_IRQ>;
-				reg = <0x0 0x40>;
 				status = "disabled";
 			};
 
 			intmux0_ch1: interrupt-controller@40 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x40 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH1_IRQ>;
-				reg = <0x40 0x40>;
 				status = "disabled";
 			};
 
 			intmux0_ch2: interrupt-controller@80 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x80 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH2_IRQ>;
-				reg = <0x80 0x40>;
 				status = "disabled";
 			};
 
 			intmux0_ch3: interrupt-controller@c0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0xc0 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH3_IRQ>;
-				reg = <0xc0 0x40>;
 				status = "disabled";
 			};
 
 			intmux0_ch4: interrupt-controller@100 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x100 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH4_IRQ>;
-				reg = <0x100 0x40>;
 				status = "disabled";
 			};
 
 			intmux0_ch5: interrupt-controller@140 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x140 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH5_IRQ>;
-				reg = <0x140 0x40>;
 				status = "disabled";
 			};
 
 			intmux0_ch6: interrupt-controller@180 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x180 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH6_IRQ>;
-				reg = <0x180 0x40>;
 				status = "disabled";
 			};
 
 			intmux0_ch7: interrupt-controller@1c0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x1c0 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH7_IRQ>;
-				reg = <0x1c0 0x40>;
 				status = "disabled";
 			};
 		};
@@ -182,90 +182,90 @@
 		intmux1: intmux@41022000 {
 			compatible = "openisa,rv32m1-intmux";
 			reg = <0x41022000 0x200>;
-			clocks = <&pcc1 0x88>;
-			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <1>;
 
 			ranges = <0x0 0x41022000 0x200>;
+			clocks = <&pcc1 0x88>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
 
 			intmux1_ch0: interrupt-controller@0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x0 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH0_IRQ>;
-				reg = <0x0 0x40>;
 				status = "disabled";
 			};
 
 			intmux1_ch1: interrupt-controller@40 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x40 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH1_IRQ>;
-				reg = <0x40 0x40>;
 				status = "disabled";
 			};
 
 			intmux1_ch2: interrupt-controller@80 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x80 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH2_IRQ>;
-				reg = <0x80 0x40>;
 				status = "disabled";
 			};
 
 			intmux1_ch3: interrupt-controller@c0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0xc0 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH3_IRQ>;
-				reg = <0xc0 0x40>;
 				status = "disabled";
 			};
 
 			intmux1_ch4: interrupt-controller@100 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x100 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH4_IRQ>;
-				reg = <0x100 0x40>;
 				status = "disabled";
 			};
 
 			intmux1_ch5: interrupt-controller@140 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x140 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH5_IRQ>;
-				reg = <0x140 0x40>;
 				status = "disabled";
 			};
 
 			intmux1_ch6: interrupt-controller@180 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x180 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH6_IRQ>;
-				reg = <0x180 0x40>;
 				status = "disabled";
 			};
 
 			intmux1_ch7: interrupt-controller@1c0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				reg = <0x1c0 0x40>;
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH7_IRQ>;
-				reg = <0x1c0 0x40>;
 				status = "disabled";
 			};
 		};
@@ -427,37 +427,37 @@
 		lpspi0: spi@4003f000 {
 			compatible = "openisa,rv32m1-lpspi";
 			reg = <0x4003f000 0x78>;
-			status = "disabled";
 			clocks = <&pcc0 0xfc>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		lpspi1: spi@40040000 {
 			compatible = "openisa,rv32m1-lpspi";
 			reg = <0x40040000 0x78>;
-			status = "disabled";
 			clocks = <&pcc0 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		lpspi2: spi@40041000 {
 			compatible = "openisa,rv32m1-lpspi";
 			reg = <0x40041000 0x78>;
-			status = "disabled";
 			clocks = <&pcc0 0x104>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		lpspi3: spi@41035000 {
 			compatible = "openisa,rv32m1-lpspi";
 			reg = <0x41035000 0x78>;
-			status = "disabled";
 			clocks = <&pcc1 0xd4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		generic_fsk: generic_fsk@41033000 {
@@ -471,39 +471,39 @@
 			compatible = "openisa,rv32m1-tpm";
 			reg = <0x40035000 0x88>;
 			clocks = <&pcc0 0xd4>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		tpm1: pwm@40036000 {
 			compatible = "openisa,rv32m1-tpm";
 			reg = <0x40036000 0x88>;
 			clocks = <&pcc0 0xd8>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		tpm2: pwm@40037000 {
 			compatible = "openisa,rv32m1-tpm";
 			reg = <0x40037000 0x88>;
 			clocks = <&pcc0 0xdc>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		trng: random@41029000 {
 			compatible = "openisa,rv32m1-trng";
 			reg = <0x41029000 0x1000>;
-			status = "okay";
 			interrupts = <13 0>;
+			status = "okay";
 		};
 
 		tpm3: pwm@4102d000 {
 			compatible = "openisa,rv32m1-tpm";
 			reg = <0x4102d000 0x88>;
 			clocks = <&pcc1 0xb4>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		ftfe: flash-controller@40023000 {

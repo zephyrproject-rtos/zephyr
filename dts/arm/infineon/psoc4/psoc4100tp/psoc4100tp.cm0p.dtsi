@@ -13,9 +13,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <48000000>;
 			cpu-power-states = <&sleep &deepsleep>;
 		};
@@ -52,9 +52,9 @@
 
 	soc {
 		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* Pinctrl node for Infineon PSOC4 SoC */
 		pinctrl0: pinctrl@40310000 {

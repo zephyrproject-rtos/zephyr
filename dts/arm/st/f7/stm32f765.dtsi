@@ -31,27 +31,27 @@
 
 			gpioj: gpio@40022400 {
 				compatible = "st,stm32-gpio";
+				reg = <0x40022400 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40022400 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 9)>;
 			};
 
 			gpiok: gpio@40022800 {
 				compatible = "st,stm32-gpio";
+				reg = <0x40022800 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40022800 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 10)>;
 			};
 		};
 
 		i2c4: i2c@40006000 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40006000 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40006000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 24)>;
 			interrupts = <95 0>, <96 0>;
 			interrupt-names = "event", "error";
@@ -60,9 +60,9 @@
 
 		spi6: spi@40015400 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40015400 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40015400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
 			interrupts = <86 0>;
 			st,spi-data-width = "full-4-to-16-bit";
