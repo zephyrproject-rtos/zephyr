@@ -68,13 +68,15 @@ LOG_MODULE_REGISTER(uart_ifx, CONFIG_UART_LOG_LEVEL);
 
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
-#include <cy_trigmux.h>
+#include <zephyr/drivers/mux.h>
 
 struct ifx_cat1_dma_stream_rx {
 	const struct device *dma_dev;
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
 	struct dma_block_config blk_cfg;
+	const struct device *trig_dev;
+	const struct mux_state *trig_state;
 	uint8_t *buf;
 	size_t buf_len;
 	size_t offset;
@@ -89,6 +91,8 @@ struct ifx_cat1_dma_stream_tx {
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
 	struct dma_block_config blk_cfg;
+	const struct device *trig_dev;
+	const struct mux_state *trig_state;
 	const uint8_t *buf;
 	size_t buf_len;
 	size_t dma_transmitted_bytes;
@@ -1597,42 +1601,43 @@ int32_t ifx_cat1_uart_get_hw_block_num(CySCB_Type *reg_addr)
 }
 
 #ifdef CONFIG_UART_ASYNC_API
-/* Route the SCB DMA triggers; must be redone after power loss. */
-static void ifx_cat1_uart_dma_trigmux_connect(const struct device *dev)
+static int ifx_cat1_uart_dma_trig_apply(const struct device *trig_dev,
+					const struct mux_state *trig_state)
 {
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE) || defined(COMPONENT_CAT1B)
+	if (trig_dev == NULL) {
+		return 0;
+	}
+
+	if (!device_is_ready(trig_dev)) {
+		return -ENODEV;
+	}
+
+	return mux_state_apply(trig_dev, trig_state);
+}
+
+/* Route the SCB DMA triggers; must be redone after power loss. */
+static int ifx_cat1_uart_dma_trigmux_connect(const struct device *dev)
+{
 	struct ifx_cat1_uart_data *const data = dev->data;
 	const struct ifx_cat1_dma_stream_rx *const dma_rx = &data->async.dma_rx;
 	const struct ifx_cat1_dma_stream_tx *const dma_tx = &data->async.dma_tx;
+	int ret;
 
 	if (dma_rx->dma_dev != NULL) {
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-		Cy_TrigMux_Connect(
-			PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->hw_resource.block_num,
-			PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_rx->dma_channel, false,
-			TRIGGER_TYPE_LEVEL);
-#else
-		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_RX0 + (3 * data->hw_resource.block_num),
-				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_rx->dma_channel,
-				   false, TRIGGER_TYPE_LEVEL);
-#endif
+		ret = ifx_cat1_uart_dma_trig_apply(dma_rx->trig_dev, dma_rx->trig_state);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (dma_tx->dma_dev != NULL) {
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-		Cy_TrigMux_Connect(
-			PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->hw_resource.block_num,
-			PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_tx->dma_channel, false,
-			TRIGGER_TYPE_EDGE);
-#else
-		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_TX0 + (3 * data->hw_resource.block_num),
-				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_tx->dma_channel,
-				   false, TRIGGER_TYPE_EDGE);
-#endif
+		ret = ifx_cat1_uart_dma_trig_apply(dma_tx->trig_dev, dma_tx->trig_state);
+		if (ret < 0) {
+			return ret;
+		}
 	}
-#else
-	ARG_UNUSED(dev);
-#endif
+
+	return 0;
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
@@ -1728,7 +1733,10 @@ static int ifx_cat1_uart_init(const struct device *dev)
 		dma_tx->dma_cfg.source_handshake = 1;
 	}
 
-	ifx_cat1_uart_dma_trigmux_connect(dev);
+	ret = ifx_cat1_uart_dma_trigmux_connect(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	k_work_init_delayable(&dma_tx->timeout_work, ifx_cat1_uart_async_tx_timeout);
 	k_work_init_delayable(&dma_rx->timeout_work, ifx_cat1_uart_async_rx_timeout);
@@ -1809,7 +1817,10 @@ static int ifx_cat1_uart_pm_action(const struct device *dev, enum pm_device_acti
 
 #ifdef CONFIG_UART_ASYNC_API
 		/* DMA trigger routing is lost with power; reconnect it. */
-		ifx_cat1_uart_dma_trigmux_connect(dev);
+		ret = ifx_cat1_uart_dma_trigmux_connect(dev);
+		if (ret < 0) {
+			return ret;
+		}
 #endif
 
 		irq_enable(config->irq_num);
@@ -1880,7 +1891,17 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.dest_burst_length = 0,                                                            \
 		.block_count = 1,                                                                  \
 		.complete_callback_en = 0,                                                         \
-	},
+	},                                                                                         \
+	.trig_dev = COND_CODE_1(DT_INST_PROP_HAS_NAME(index, mux_states, dir),                     \
+				(DEVICE_DT_GET(DT_INST_PHANDLE_BY_NAME(index, mux_states, dir))),  \
+				(NULL)),                                                           \
+	.trig_state = COND_CODE_1(DT_INST_PROP_HAS_NAME(index, mux_states, dir),                   \
+				  (MUX_STATE_DT_GET_BY_NAME(DT_DRV_INST(index), dir)), (NULL)),
+
+#define UART_DMA_TRIG_DEFINE(index, dir)                                                           \
+	IF_ENABLED(UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                                     \
+			      DT_INST_PROP_HAS_NAME(index, mux_states, dir)),                      \
+		   (MUX_STATE_DT_SPEC_DEFINE_BY_NAME(DT_DRV_INST(index), dir);))
 
 #define UART_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)                         \
 	.async.dma_##dir = {COND_CODE_1(                                                           \
@@ -1889,6 +1910,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		(NULL))},
 
 #else
+#define UART_DMA_TRIG_DEFINE(index, dir)
 #define UART_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)
 #endif /* CONFIG_UART_ASYNC_API */
 
@@ -1958,6 +1980,8 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 
 #define INFINEON_CAT1_UART_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	UART_DMA_TRIG_DEFINE(n, tx)                                                                \
+	UART_DMA_TRIG_DEFINE(n, rx)                                                                \
 	INTERRUPT_DRIVEN_UART_INIT(n)                                                              \
 	static struct ifx_cat1_uart_data ifx_cat1_uart##n##_data = {                               \
 		UART_PERI_CLOCK_INIT(n) UART_DMA_CHANNEL(n, tx, MEMORY_TO_PERIPHERAL, 1, 1)        \
