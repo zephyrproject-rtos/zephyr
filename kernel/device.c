@@ -196,19 +196,6 @@ size_t z_device_get_all_static(struct device const **devices)
 	return cnt;
 }
 
-bool z_impl_device_is_ready(const struct device *dev)
-{
-	/*
-	 * if an invalid device pointer is passed as argument, this call
-	 * reports the `device` as not ready for usage.
-	 */
-	if (dev == NULL) {
-		return false;
-	}
-
-	return dev->state->initialized;
-}
-
 int z_impl_device_deinit(const struct device *dev)
 {
 #ifdef CONFIG_DEVICE_DEINIT_SUPPORT
