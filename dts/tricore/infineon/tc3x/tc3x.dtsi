@@ -41,6 +41,8 @@
 			compatible = "infineon,asclin-uart";
 			reg = <0xf0000600 0x100>;
 			clocks = <&ccu AURIX_CCU_ASCLINF>;
+			interrupts = <20 2>, <21 3>, <22 4>;
+			interrupt-names = "tx", "rx", "err";
 			status = "disabled";
 		};
 
