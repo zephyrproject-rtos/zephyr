@@ -1773,6 +1773,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             ":!/doc/security/vulnerabilities.rst",
             ":!/doc/security/vulnerabilities",
             cwd=GIT_TOP,
+            ignore_non_zero=True,
         )
 
         self_folder = Path(__file__).resolve().parent
