@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_BCM283X
+	bool "Broadcom BCM283x firmware hwinfo driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_BCM283X_FIRMWARE_ENABLED
+	depends on RASPBERRYPI_FIRMWARE
+	select HWINFO_HAS_DRIVER
+	help
+	  Read the board serial number and MAC address through the Broadcom
+	  VideoCore firmware interface and expose them as the hwinfo device ID
+	  and EUI-64.
