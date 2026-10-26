@@ -178,8 +178,8 @@
 
 		psram: memory@32000000 {
 			compatible = "zephyr,memory-region";
-			device_type = "memory";
 			reg = <0x32000000 DT_SIZE_K(32768)>;
+			device_type = "memory";
 			zephyr,memory-region = "PSRAM";
 			status = "disabled";
 		};
@@ -218,28 +218,28 @@
 
 			gpio0: gpio@50020a00 {
 				compatible = "renesas,smartbond-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				port = <0>;
-				ngpios = <32>;
 				reg = <0x50020a00 20
 				       0x50020a18 128
 				       0x50000070 12
 				       0x50000114 36>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				port = <0>;
+				ngpios = <32>;
 				reg-names = "data", "mode", "latch", "wkup";
 				interrupts = <38 0>;
 			};
 
 			gpio1: gpio@50020a04 {
 				compatible = "renesas,smartbond-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				port = <1>;
-				ngpios = <23>;
 				reg = <0x50020a04 20
 				       0x50020a98 92
 				       0x5000007c 12
 				       0x50000118 36>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				port = <1>;
+				ngpios = <23>;
 				reg-names = "data", "mode", "latch", "wkup";
 				interrupts = <39 0>;
 			};
@@ -325,8 +325,8 @@
 			compatible = "renesas,smartbond-adc";
 			reg = <0x50030900 0x1c>;
 			interrupts = <27 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		sdadc: sdadc@50020800 {
@@ -334,8 +334,8 @@
 			reg = <0x50020800 0x1c>;
 			interrupts = <28 0>;
 			clock-freq = <2>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		crypto: crypto@30040000 {
@@ -354,9 +354,9 @@
 
 		i2c: i2c@50020600 {
 			compatible = "renesas,smartbond-i2c";
+			reg = <0x50020600 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x50020600 0x100>;
 			periph-clock-config = <0x0200>;
 			interrupts = <8 0>;
 			status = "disabled";
@@ -364,9 +364,9 @@
 
 		i2c2: i2c@50020700 {
 			compatible = "renesas,smartbond-i2c";
+			reg = <0x50020700 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x50020700 0x100>;
 			periph-clock-config = <0x0800>;
 			interrupts = <9 0>;
 			status = "disabled";
@@ -381,9 +381,9 @@
 
 		spi: spi@50020300 {
 			compatible = "renesas,smartbond-spi";
+			reg = <0x50020300 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x50020300 0x100>;
 			periph-clock-config = <0x20>;
 			interrupts = <10 0>;
 			status = "disabled";
@@ -391,9 +391,9 @@
 
 		spi2: spi@50020400 {
 			compatible = "renesas,smartbond-spi";
+			reg = <0x50020400 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x50020400 0x100>;
 			periph-clock-config = <0x80>;
 			interrupts = <11 0>;
 			status = "disabled";
@@ -418,10 +418,10 @@
 			compatible = "renesas,smartbond-dma";
 			reg = <0x50040800 0x110>;
 			interrupts = <1 0>;
-			status = "okay";
 			dma-channels = <8>;
 			block-count = <1>;
 			#dma-cells = <2>;
+			status = "okay";
 		};
 
 		memc: qspic2@34000000 {

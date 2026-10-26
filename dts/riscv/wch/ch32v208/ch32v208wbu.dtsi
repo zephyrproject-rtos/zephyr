@@ -34,9 +34,9 @@
 			clocks = <&rcc CH32V20X_V30X_CLOCK_SPI2>;
 			interrupt-parent = <&pfic>;
 			interrupts = <52>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		i2c2: i2c@40005800 {
@@ -45,9 +45,9 @@
 			clocks = <&rcc CH32V20X_V30X_CLOCK_I2C2>;
 			interrupt-parent = <&pfic>;
 			interrupts = <49>, <50>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 	};
 };

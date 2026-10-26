@@ -44,8 +44,8 @@
 	reg = <0x40008000 0x2200>;
 
 	gpio2: gpio@40080400 {
-		reg = <0x40080400 0x200>;
 		compatible = "adi,max32-gpio";
+		reg = <0x40080400 0x200>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		interrupts = <26 0>;
@@ -54,8 +54,8 @@
 	};
 
 	gpio3: gpio@40080600 {
-		reg = <0x40080600 0x200>; // Address and size are dummy.
 		compatible = "adi,max32-gpio";
+		reg = <0x40080600 0x200>; // Address and size are dummy.
 		gpio-controller;
 		#gpio-cells = <2>;
 		interrupts = <54 0>;
@@ -99,8 +99,8 @@
 			reg = <0x40028000 0x1000>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
 			dma-channels = <4>;
-			status = "disabled";
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		w1: w1@4003d000 {
@@ -121,17 +121,17 @@
 		lptimer0: timer@40080c00 {
 			compatible = "adi,max32-timer";
 			reg = <0x40080c00 0x400>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>, <&clk_lptmr0>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+			status = "disabled";
 
 			pwm {
 				compatible = "adi,max32-pwm";
-				status = "disabled";
 				pinctrl-0 = <&lptmr0b_ioa_p2_4>;
 				pinctrl-names = "default";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -143,17 +143,17 @@
 		lptimer1: timer@40081000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40081000 0x400>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>, <&clk_lptmr1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+			status = "disabled";
 
 			pwm {
 				compatible = "adi,max32-pwm";
-				status = "disabled";
 				pinctrl-0 = <&lptmr1b_ioa_p2_5>;
 				pinctrl-names = "default";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {

@@ -29,9 +29,9 @@
 	};
 
 	soc {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		iap: flash-controller@40040000 {
 			compatible = "nxp,iap-fmc84x";

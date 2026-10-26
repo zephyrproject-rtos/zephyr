@@ -16,15 +16,15 @@
 
 		cpu@0 {
 			compatible = "intel,raptor-lake", "intel,x86_64";
+			reg = <0>;
 			device_type = "cpu";
 			d-cache-line-size = <64>;
-			reg = <0>;
 		};
 	};
 
 	dram0: memory@0 {
-		device_type = "memory";
 		reg = <0x0 DT_DRAM_SIZE>;
+		device_type = "memory";
 	};
 
 	intc: ioapic@fec00000 {
@@ -44,10 +44,10 @@
 
 	pcie0: pcie0 {
 		compatible = "pcie-controller";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		acpi-hid = "PNP0A08";
-		ranges;
 
 		smbus0: smbus0 {
 			compatible = "intel,pch-smbus";
@@ -93,13 +93,13 @@
 			#size-cells = <0>;
 			vendor-id = <0x8086>;
 			device-id = <0x51aa>;
-			pw,cs-mode = <0>;
-			pw,cs-output = <0>;
-			pw,fifo-depth = <64>;
 			cs-gpios = <&gpio_4_e 10 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
 
 			status = "okay";
 		};
@@ -110,13 +110,13 @@
 			#size-cells = <0>;
 			vendor-id = <0x8086>;
 			device-id = <0x51ab>;
-			pw,cs-mode = <0>;
-			pw,cs-output = <0>;
-			pw,fifo-depth = <64>;
 			cs-gpios = <&gpio_4_f 16 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
 
 			status = "disabled";
 		};
@@ -127,13 +127,13 @@
 			#size-cells = <0>;
 			vendor-id = <0x8086>;
 			device-id = <0x51fb>;
-			pw,cs-mode = <0>;
-			pw,cs-output = <0>;
-			pw,fifo-depth = <64>;
 			cs-gpios = <&gpio_1_d 9 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
 
 			status = "disabled";
 		};
@@ -245,9 +245,9 @@
 
 	soc {
 		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		gpio_0_b: gpio@fd6e0700 {
 			compatible = "intel,gpio";
@@ -438,6 +438,8 @@
 			compatible = "motorola,mc146818-mfd";
 			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
 
+			status = "okay";
+
 			rtc: counter: rtc {
 				compatible = "motorola,mc146818";
 				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
@@ -452,8 +454,6 @@
 				size = <241>;
 				status = "okay";
 			};
-
-			status = "okay";
 		};
 
 		hpet: hpet@fed00000 {

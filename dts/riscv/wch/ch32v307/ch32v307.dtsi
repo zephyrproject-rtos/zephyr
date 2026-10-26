@@ -10,8 +10,8 @@
 / {
 	soc {
 		eth: mac: ethernet@40028000 {
-			reg = <0x40028000 0x2000>;
 			compatible = "wch,ethernet", "snps,dwmac";
+			reg = <0x40028000 0x2000>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_ETHMAC>,
 				 <&rcc CH32V20X_V30X_CLOCK_ETHMACTX>,
 				 <&rcc CH32V20X_V30X_CLOCK_ETHMACRX>;
@@ -119,9 +119,9 @@
 			clocks = <&rcc CH32V20X_V30X_CLOCK_SPI2>;
 			interrupt-parent = <&pfic>;
 			interrupts = <52>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi3: spi@4003c00 {
@@ -130,9 +130,9 @@
 			clocks = <&rcc CH32V20X_V30X_CLOCK_SPI3>;
 			interrupt-parent = <&pfic>;
 			interrupts = <67>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		i2c2: i2c@40005800 {
@@ -141,9 +141,9 @@
 			clocks = <&rcc CH32V20X_V30X_CLOCK_I2C2>;
 			interrupt-parent = <&pfic>;
 			interrupts = <49>, <50>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 	};
 };

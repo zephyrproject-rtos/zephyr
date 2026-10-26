@@ -22,9 +22,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 			cpu-power-states = <&idle &suspend_to_ram>;
 		};
 
@@ -62,7 +62,6 @@
 };
 
 &spi0 {
-	status = "okay";
 	clock-frequency = <12000000>;
 	lines = <2>;
 	chip-select = <0>;
@@ -72,15 +71,16 @@
 		     &gpspi_io1_gpio075
 		     &gpspi_wp_n_gpio076>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	int_flash: sst25pf040@0 {
 		compatible = "jedec,spi-nor";
+		reg = <0>;
 		/* 4 Mbit Flash */
 		size = <DT_SIZE_M(4)>;
-		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(40)>;
-		status = "okay";
 		jedec-id = [62 06 13];
+		status = "okay";
 	};
 };
 

@@ -21,8 +21,8 @@
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-a7";
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -44,12 +44,12 @@
 
 		gic: interrupt-controller@ff1f1000 {
 			compatible = "arm,gic-400", "arm,gic-v2", "arm,gic";
-			status = "okay";
 			reg = <0xff1f1000 0x1000>,
 			      <0xff1f2000 0x2000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			#address-cells = <0>;
+			status = "okay";
 		};
 
 		uart0: uart@ff4a0000 {

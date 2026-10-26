@@ -249,9 +249,9 @@
 
 		spi1: spi@50095000 {
 			compatible = "sifli,sf32lb-spi";
+			reg = <0x50095000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x50095000 0x1000>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_SPI1>;
 			interrupts = <60 0>;
 			status = "disabled";
@@ -259,9 +259,9 @@
 
 		spi2: spi@50096000 {
 			compatible = "sifli,sf32lb-spi";
+			reg = <0x50096000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x50096000 0x1000>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_SPI2>;
 			interrupts = <75 0>;
 			status = "disabled";
@@ -361,8 +361,8 @@
 			reg = <0x50087000 0x1000>;
 			interrupts = <65 0>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_GPADC>;
-			sifli,cfg = <&cfg>;
 			#io-channel-cells = <1>;
+			sifli,cfg = <&cfg>;
 			status = "disabled";
 		};
 
@@ -419,8 +419,8 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			interrupts = <49 0>;
-			sifli,cfg = <&cfg>;
 			alarms-count = <1>;
+			sifli,cfg = <&cfg>;
 			status = "disabled";
 
 			backup-registers@30 {

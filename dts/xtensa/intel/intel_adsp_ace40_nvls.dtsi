@@ -8,8 +8,8 @@
 
 / {
 	sram0: memory@a0020000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0xa0020000 DT_SIZE_K(2048)>;
+		device_type = "memory";
 	};
 };

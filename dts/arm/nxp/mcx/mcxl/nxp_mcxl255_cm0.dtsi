@@ -13,9 +13,9 @@
 		#size-cells = <0>;
 
 		cpu1: cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <1>;
+			device_type = "cpu";
 		};
 	};
 
@@ -25,9 +25,9 @@
 		};
 
 		aon_peripheral: aon_peripheral@a0000000 {
+			ranges = <0x0 0xa0000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xa0000000 0x10000000>;
 		};
 	};
 

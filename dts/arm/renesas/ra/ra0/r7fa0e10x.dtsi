@@ -19,8 +19,8 @@
 
 		code_flash_ctrl: code-flash-ctrl {
 			compatible = "renesas,ra-flash-lp-controller";
-			command-interface = <&fcb>;
 			ranges;
+			command-interface = <&fcb>;
 			programming-enable;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -36,8 +36,8 @@
 
 		data_flash_ctrl: data-flash-ctrl {
 			compatible = "renesas,ra-flash-lp-controller";
-			command-interface = <&fcb>;
 			ranges;
+			command-interface = <&fcb>;
 			programming-enable;
 			#address-cells = <1>;
 			#size-cells = <1>;
