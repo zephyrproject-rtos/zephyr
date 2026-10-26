@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Jeff Welder
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dt-util.h>
+
+/* The image to upload is on a littlefs partition of the external flash */
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lfs1";
+			partition = <&lfs1_part>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+};
+
+/* Disabled in the board devicetree */
+&mx25r64 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		lfs1_part: partition@0 {
+			reg = <0x00000000 DT_SIZE_M(1)>;
+		};
+	};
+};
