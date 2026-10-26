@@ -46,15 +46,15 @@ static const struct flash_parameters flash_lpc_parameters = {
 	.erase_value = 0xff,
 };
 
-static inline void prepare_erase_write(off_t offset, size_t len,
-						uint32_t sector_size)
+static inline status_t prepare_erase_write(off_t offset, size_t len, uint32_t sector_size)
 {
 	uint32_t start;
 	uint32_t stop;
 
 	start = offset / sector_size;
 	stop = (offset+len-1) / sector_size;
-	FLASHIAP_PrepareSectorForWrite(start, stop);
+
+	return FLASHIAP_PrepareSectorForWrite(start, stop);
 }
 
 static int flashiap_to_errno(status_t status)
@@ -98,13 +98,15 @@ static status_t erase_part(uint32_t start, uint32_t end, uint32_t sector_size)
 	status_t rc;
 
 	key = irq_lock();
-	prepare_erase_write(start, end - start, sector_size);
-	if (whole_sectors) {
-		rc = FLASHIAP_EraseSector(start / unit, (end - 1) / unit,
-					  CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
-	} else {
-		rc = FLASHIAP_ErasePage(start / unit, (end - 1) / unit,
-					CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	rc = prepare_erase_write(start, end - start, sector_size);
+	if (rc == kStatus_FLASHIAP_Success) {
+		if (whole_sectors) {
+			rc = FLASHIAP_EraseSector(start / unit, (end - 1) / unit,
+						  CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+		} else {
+			rc = FLASHIAP_ErasePage(start / unit, (end - 1) / unit,
+						CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+		}
 	}
 	irq_unlock(key);
 
@@ -186,10 +188,12 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 		memcpy(priv->page_buf, &src[done], sizeof(priv->page_buf));
 
 		key = irq_lock();
-		prepare_erase_write(offset + done, sizeof(priv->page_buf), priv->sector_size);
-		rc = FLASHIAP_CopyRamToFlash(priv->pflash_block_base + offset + done,
-					     priv->page_buf, sizeof(priv->page_buf),
-					     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+		rc = prepare_erase_write(offset + done, sizeof(priv->page_buf), priv->sector_size);
+		if (rc == kStatus_FLASHIAP_Success) {
+			rc = FLASHIAP_CopyRamToFlash(priv->pflash_block_base + offset + done,
+						     priv->page_buf, sizeof(priv->page_buf),
+						     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+		}
 		irq_unlock(key);
 	}
 
