@@ -5212,9 +5212,18 @@ int bt_disable(void)
 	/* Mark the transport closed before purging the command queue: a
 	 * command queued after this point is taken back by its sender (see
 	 * bt_hci_cmd_send()), so nothing is left behind for the next enable.
+	 *
+	 * The TX processor holds the host lock from taking a command off the
+	 * queue until the driver's send() has returned. With the lock held
+	 * here, none of its passes is sending a command when the transport is
+	 * closed, and every later one finds the transport closed. Without it,
+	 * a command could reach the driver during the close, or after the
+	 * next bt_enable() has opened the transport again.
 	 */
+	bt_dev_lock();
 	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
 	hci_cmd_queue_purge();
+	bt_dev_unlock();
 
 	err = bt_hci_close(bt_dev.hci);
 	if (err) {
