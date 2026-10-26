@@ -11,7 +11,38 @@
 #include <zephyr/offsets.h>
 
 #define ARCH_HDR_VER			1
-#define XTENSA_BLOCK_HDR_VER		2
+#define XTENSA_BLOCK_HDR_VER		3
+
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+/* Slot order matches EXTRA_REGISTERS in scripts/coredump/gdbstubs/arch/xtensa.py. */
+enum xtensa_extra_register {
+	XTENSA_EXTRA_WINDOWBASE,
+	XTENSA_EXTRA_WINDOWSTART,
+	XTENSA_EXTRA_THREADPTR,
+	XTENSA_EXTRA_EPC1,
+	XTENSA_EXTRA_EPC2,
+	XTENSA_EXTRA_EPC3,
+	XTENSA_EXTRA_EPC4,
+	XTENSA_EXTRA_EPC5,
+	XTENSA_EXTRA_EPC6,
+	XTENSA_EXTRA_EPC7,
+	XTENSA_EXTRA_DEPC,
+	XTENSA_EXTRA_EPS2,
+	XTENSA_EXTRA_EPS3,
+	XTENSA_EXTRA_EPS4,
+	XTENSA_EXTRA_EPS5,
+	XTENSA_EXTRA_EPS6,
+	XTENSA_EXTRA_EPS7,
+	XTENSA_EXTRA_EXCSAVE1,
+	XTENSA_EXTRA_REGISTER_COUNT,
+};
+
+#if XCHAL_HAVE_NMI
+#define XTENSA_MAX_INTLEVEL XCHAL_NMILEVEL
+#else
+#define XTENSA_MAX_INTLEVEL XCHAL_NUM_INTLEVELS
+#endif
+#endif
 
 enum xtensa_soc_code {
 	XTENSA_SOC_UNKNOWN = 0,
@@ -43,6 +74,9 @@ struct xtensa_arch_block {
 	uint16_t	version;
 
 	uint8_t		toolchain;
+
+	/* Captured extra registers, packed in bit order after the base registers. */
+	uint32_t	extra_valid;
 
 	struct {
 		/* Minimum set shown by GDB 'info registers',
@@ -84,6 +118,9 @@ struct xtensa_arch_block {
 		uint32_t	lcount;
 #endif
 	} r;
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	uint32_t extra[XTENSA_EXTRA_REGISTER_COUNT];
+#endif
 } __packed;
 
 /*
@@ -187,9 +224,69 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	arch_blk.r.lcount = bsa->lcount;
 	#endif
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#define SAVE_EXTRA_REGISTER(reg) \
+	do { \
+		arch_blk.extra[XTENSA_EXTRA_##reg] = XTENSA_RSR(#reg); \
+		arch_blk.extra_valid |= BIT(XTENSA_EXTRA_##reg); \
+	} while (false)
+
+#if XCHAL_HAVE_WINDOWED
+	SAVE_EXTRA_REGISTER(WINDOWBASE);
+	SAVE_EXTRA_REGISTER(WINDOWSTART);
+#endif
+#if XCHAL_HAVE_THREADPTR && (defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
+	arch_blk.extra[XTENSA_EXTRA_THREADPTR] = bsa->threadptr;
+	arch_blk.extra_valid |= BIT(XTENSA_EXTRA_THREADPTR);
+#endif
+#if XCHAL_HAVE_EXCEPTIONS
+	SAVE_EXTRA_REGISTER(EPC1);
+	SAVE_EXTRA_REGISTER(EXCSAVE1);
+#endif
+#if XCHAL_HAVE_DEBUG
+	SAVE_EXTRA_REGISTER(DEPC);
+#endif
+#if XTENSA_MAX_INTLEVEL >= 2
+	SAVE_EXTRA_REGISTER(EPC2);
+	SAVE_EXTRA_REGISTER(EPS2);
+#endif
+#if XTENSA_MAX_INTLEVEL >= 3
+	SAVE_EXTRA_REGISTER(EPC3);
+	SAVE_EXTRA_REGISTER(EPS3);
+#endif
+#if XTENSA_MAX_INTLEVEL >= 4
+	SAVE_EXTRA_REGISTER(EPC4);
+	SAVE_EXTRA_REGISTER(EPS4);
+#endif
+#if XTENSA_MAX_INTLEVEL >= 5
+	SAVE_EXTRA_REGISTER(EPC5);
+	SAVE_EXTRA_REGISTER(EPS5);
+#endif
+#if XTENSA_MAX_INTLEVEL >= 6
+	SAVE_EXTRA_REGISTER(EPC6);
+	SAVE_EXTRA_REGISTER(EPS6);
+#endif
+#if XTENSA_MAX_INTLEVEL >= 7
+	SAVE_EXTRA_REGISTER(EPC7);
+	SAVE_EXTRA_REGISTER(EPS7);
+#endif
+
+#undef SAVE_EXTRA_REGISTER
+
+	size_t packed_count = 0;
+
+	for (size_t index = 0; index < XTENSA_EXTRA_REGISTER_COUNT; index++) {
+		if ((arch_blk.extra_valid & BIT(index)) != 0U) {
+			arch_blk.extra[packed_count++] = arch_blk.extra[index];
+		}
+	}
+	hdr.num_bytes = offsetof(struct xtensa_arch_block, extra) +
+			packed_count * sizeof(arch_blk.extra[0]);
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
 	/* Send for output */
 	coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));
-	coredump_buffer_output((uint8_t *)&arch_blk, sizeof(arch_blk));
+	coredump_buffer_output((uint8_t *)&arch_blk, hdr.num_bytes);
 }
 
 uint16_t arch_coredump_tgt_code_get(void)

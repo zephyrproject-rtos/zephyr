@@ -9,6 +9,7 @@ tests:
       - posix
     integration_platforms:
       - qemu_x86
+      - qemu_xtensa/dc233c
     harness: console
     harness_config:
       type: multi_line
@@ -49,5 +50,24 @@ tests:
         - "E: #CD:4([dD])([0-9a-fA-F]+)"
         - "E: #CD:4([dD])([0-9a-fA-F]+)"
         - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:END#"
+        - "k_sys_fatal_error_handler"
+  debug.coredump.logging_backend.xtensa_extra_info:
+    tags: coredump
+    ignore_faults: true
+    ignore_qemu_crash: true
+    platform_allow: qemu_xtensa/dc233c
+    integration_platforms:
+      - qemu_xtensa/dc233c
+    extra_configs:
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Coredump: (.*)"
+        - "E: #CD:BEGIN#"
+        - "E: #CD:410100[0-9a-fA-F]{4}"
+        - "E: #CD:060300[0-9a-fA-F]{10}"
         - "E: #CD:END#"
         - "k_sys_fatal_error_handler"
