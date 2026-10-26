@@ -1527,8 +1527,11 @@ static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_le_encrypt *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_encrypt *rp;
 	uint8_t enc_data[16];
+	int err;
 
-	ecb_encrypt(cmd->key, cmd->plaintext, enc_data, NULL);
+	/* A thread: the AES block is waited for, never -EAGAIN */
+	err = ecb_encrypt(cmd->key, cmd->plaintext, enc_data, NULL);
+	LL_ASSERT_DBG(err != -EAGAIN);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
