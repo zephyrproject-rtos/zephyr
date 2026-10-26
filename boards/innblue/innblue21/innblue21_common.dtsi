@@ -127,10 +127,9 @@
 		irq-gpios = <&gpio0 0 0>, <&gpio0 1 0>;
 	};
 
-	hts221@5f {
-		compatible = "st,hts221";
-		reg = <0x5f>;
-		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+	ccs811: ccs811@5a {
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
 	};
 
 	lps22hb-press@5c {
@@ -138,9 +137,10 @@
 		reg = <0x5c>;
 	};
 
-	ccs811: ccs811@5a {
-		compatible = "ams,ccs811";
-		reg = <0x5a>;
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 	};
 
 	bme680@76 {

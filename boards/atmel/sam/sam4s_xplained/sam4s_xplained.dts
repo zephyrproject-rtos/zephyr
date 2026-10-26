@@ -30,20 +30,6 @@
 		zephyr,flash = &flash0;
 	};
 
-	sram1: sram@60000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x60000000 DT_SIZE_K(512)>;
-		device_type = "memory";
-		zephyr,memory-region = "SRAM1";
-	};
-
-	sram2: sram@61000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x61000000 DT_SIZE_K(512)>;
-		device_type = "memory";
-		zephyr,memory-region = "SRAM2";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -150,6 +136,20 @@
 					     /* GND              */
 					     /* +3.3V            */
 		/* dts-format on */
+	};
+
+	sram1: sram@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x60000000 DT_SIZE_K(512)>;
+		device_type = "memory";
+		zephyr,memory-region = "SRAM1";
+	};
+
+	sram2: sram@61000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x61000000 DT_SIZE_K(512)>;
+		device_type = "memory";
+		zephyr,memory-region = "SRAM2";
 	};
 };
 

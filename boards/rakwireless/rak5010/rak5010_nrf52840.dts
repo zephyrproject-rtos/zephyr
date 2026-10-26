@@ -89,16 +89,16 @@
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
-	opt3001@44 {
-		compatible = "ti,opt3001";
-		reg = <0x44>;
-	};
-
 	/* ST Microelectronics LIS3DH motion sensor */
 	lis3dh: lis3dh@19 {
 		compatible = "st,lis3dh", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 16 0>;
+	};
+
+	opt3001@44 {
+		compatible = "ti,opt3001";
+		reg = <0x44>;
 	};
 
 	/* ST Microelectronics LPS22HB pressure sensor */

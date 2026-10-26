@@ -46,13 +46,6 @@
 		reg = <SSRAM_BASE_ADDR 0x200000>;
 	};
 
-	sram_no_cache: memory@20280000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x20280000 0x100000>;
-		zephyr,memory-region = "SRAM_NO_CACHE";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -99,6 +92,13 @@
 			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED";
 		};
+	};
+
+	sram_no_cache: memory@20280000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20280000 0x100000>;
+		zephyr,memory-region = "SRAM_NO_CACHE";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 };
 

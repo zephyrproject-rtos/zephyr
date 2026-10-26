@@ -16,13 +16,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		sram_cbus: sram_cbus@4000000 {
+			reg = <SRAM0_CBUS_BASE SRAM0_SIZE>;  /* CBUS address */
+		};
+
 		/* SRAM aliased address path */
 		sram_sahb: sram_sahb@20000000 {
 			reg = <SRAM0_SAHB_BASE SRAM0_SIZE>;  /* SAHB address */
-		};
-
-		sram_cbus: sram_cbus@4000000 {
-			reg = <SRAM0_CBUS_BASE SRAM0_SIZE>;  /* CBUS address */
 		};
 	};
 
@@ -37,13 +37,13 @@
 		#size-cells = <1>;
 		zephyr,memory-region = "BOOTSTRAP_RAM";
 
+		sram_bootstrap_cbus: sram_bootstrap_cbus@403c000 {
+			reg = <BOOTSTRAP_CBUS_BASE BOOTSTRAP_SIZE>;  /* CBUS address */
+		};
+
 		/* SRAM aliased address path */
 		sram_bootstrap_sahb: sram_bootstrap_sahb@2003c000 {
 			reg = <BOOTSTRAP_SAHB_BASE BOOTSTRAP_SIZE>;  /* SAHB address */
-		};
-
-		sram_bootstrap_cbus: sram_bootstrap_cbus@403c000 {
-			reg = <BOOTSTRAP_CBUS_BASE BOOTSTRAP_SIZE>;  /* CBUS address */
 		};
 	};
 };

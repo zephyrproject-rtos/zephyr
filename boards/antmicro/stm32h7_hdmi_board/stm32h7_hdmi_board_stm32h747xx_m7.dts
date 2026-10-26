@@ -33,19 +33,19 @@
 		sw0 = &user_btn;
 	};
 
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_G(2)>; /* 2 Gbits */
+		zephyr,memory-region = "EXTMEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+	};
+
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
 		device_type = "memory";
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
-	ext_memory: memory@90000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_G(2)>; /* 2 Gbits */
-		zephyr,memory-region = "EXTMEM";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
 };
 

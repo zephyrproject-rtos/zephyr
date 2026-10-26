@@ -26,9 +26,10 @@
 };
 
 &i2c1 {
-	hts221: hts221@5f {
-		compatible = "st,hts221";
-		reg = <0x5f>;
+	apds9960: apds9960@39 {
+		compatible = "avago,apds9960";
+		reg = <0x39>;
+		int-gpios = <&gpio0 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 
@@ -38,10 +39,9 @@
 		status = "okay";
 	};
 
-	apds9960: apds9960@39 {
-		compatible = "avago,apds9960";
-		reg = <0x39>;
-		int-gpios = <&gpio0 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	hts221: hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
 		status = "okay";
 	};
 };

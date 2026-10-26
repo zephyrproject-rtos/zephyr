@@ -56,9 +56,9 @@
 		status = "okay";
 	};
 
-	phy1: phy@5 {
-		compatible = "realtek,rtl8211f";
-		reg = <0x5>;
+	phy4: phy@3 {
+		compatible = "ethernet-phy";
+		reg = <0x3>;
 		status = "okay";
 	};
 
@@ -68,15 +68,15 @@
 		status = "okay";
 	};
 
-	phy3: phy@7 {
+	phy1: phy@5 {
 		compatible = "realtek,rtl8211f";
-		reg = <0x7>;
+		reg = <0x5>;
 		status = "okay";
 	};
 
-	phy4: phy@3 {
-		compatible = "ethernet-phy";
-		reg = <0x3>;
+	phy3: phy@7 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x7>;
 		status = "okay";
 	};
 };

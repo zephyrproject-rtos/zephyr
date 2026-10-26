@@ -120,17 +120,17 @@
 	pinctrl-names = "default";
 	status = "okay";
 
+	/* ATECC608A Crypto */
+	atecc608a: atecc608a@60 {
+		compatible = "microchip,atecc608";
+		reg = <0x60>;
+	};
+
 	/* LSM6DSOX IMU */
 	lsm6dsox: lsm6dsox@6a {
 		compatible = "st,lsm6dso";
 		reg = <0x6a>;
 		irq-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
-	};
-
-	/* ATECC608A Crypto */
-	atecc608a: atecc608a@60 {
-		compatible = "microchip,atecc608";
-		reg = <0x60>;
 	};
 };
 
