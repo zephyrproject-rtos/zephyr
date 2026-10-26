@@ -7060,6 +7060,7 @@ void bt_l2cap_br_init(void)
 	}
 }
 
+#if defined(CONFIG_BT_TESTING)
 int bt_l2cap_br_echo_cb_register(struct bt_l2cap_br_echo_cb *cb)
 {
 	if (cb == NULL) {
@@ -7211,6 +7212,7 @@ int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_bu
 
 	return err;
 }
+#endif /* CONFIG_BT_TESTING */
 
 #if defined(CONFIG_BT_L2CAP_CONNLESS)
 
