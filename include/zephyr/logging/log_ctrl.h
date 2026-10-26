@@ -76,6 +76,8 @@ void log_thread_trigger(void);
  * @note Function has asserts and has no effect when CONFIG_LOG_PROCESS_THREAD is set.
  *
  * @param process_tid Process thread id. Used to wake up the thread.
+ *
+ * @satisfies ZEP-SRS-11-1
  */
 void log_thread_set(k_tid_t process_tid);
 
@@ -86,6 +88,9 @@ void log_thread_set(k_tid_t process_tid);
  * @param freq			Timestamping frequency.
  *
  * @return 0 on success or error.
+ *
+ * @satisfies ZEP-SRS-11-14
+ * @satisfies ZEP-SRS-11-15
  */
 int log_set_timestamp_func(log_timestamp_get_t timestamp_getter,
 			   uint32_t freq);
@@ -99,6 +104,8 @@ int log_set_timestamp_func(log_timestamp_get_t timestamp_getter,
  *          Backends must switch to blocking mode or halt. All pending logs
  *          are flushed after switching to panic mode. In panic mode, all log
  *          messages must be processed in the context of the call.
+ *
+ * @satisfies ZEP-SRS-11-27
  */
 __syscall void log_panic(void);
 
@@ -112,6 +119,8 @@ __syscall bool log_process(void);
 
 /**
  * @brief Process all pending log messages
+ *
+ * @satisfies ZEP-SRS-11-13
  */
 #ifdef CONFIG_LOG_MODE_DEFERRED
 void log_flush(void);
@@ -133,6 +142,8 @@ __syscall uint32_t log_buffered_cnt(void);
  * @param domain_id Domain ID.
  *
  * @return Number of sources.
+ *
+ * @satisfies ZEP-SRS-11-25
  */
 uint32_t log_src_cnt_get(uint32_t domain_id);
 
@@ -197,6 +208,9 @@ uint32_t log_filter_get(struct log_backend const *const backend,
  *
  * @return Actual level set which may be limited by compiled level. If filter
  *	   was set for all backends then maximal level that was set is returned.
+ *
+ * @satisfies ZEP-SRS-11-4
+ * @satisfies ZEP-SRS-11-10
  */
 __syscall uint32_t log_filter_set(struct log_backend const *const backend,
 				  uint32_t domain_id, int16_t source_id,
@@ -229,6 +243,9 @@ __syscall uint32_t log_frontend_filter_set(int16_t source_id, uint32_t level);
  * @param backend	Backend instance.
  * @param ctx		User context.
  * @param level		Severity level.
+ *
+ * @satisfies ZEP-SRS-11-5
+ * @satisfies ZEP-SRS-11-21
  */
 void log_backend_enable(struct log_backend const *const backend,
 			void *ctx,

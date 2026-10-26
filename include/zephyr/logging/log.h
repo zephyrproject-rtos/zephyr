@@ -46,6 +46,14 @@ extern "C" {
  * @defgroup log_api Logging API
  * @ingroup logger
  * @{
+ *
+ * @satisfies ZEP-SRS-11-2
+ * @satisfies ZEP-SRS-11-6
+ * @satisfies ZEP-SRS-11-8
+ * @satisfies ZEP-SRS-11-19
+ * @satisfies ZEP-SRS-11-22
+ * @satisfies ZEP-SRS-11-23
+ * @satisfies ZEP-SRS-11-28
  */
 
 /**
@@ -61,6 +69,8 @@ extern "C" {
  *
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
+ *
+ * @satisfies ZEP-SRS-11-7
  */
 #define LOG_ERR(...) Z_LOG(LOG_LEVEL_ERR, __VA_ARGS__)
 
@@ -596,6 +606,8 @@ extern "C" {
  * @param _data   Pointer to the data to be logged.
  * @param _length Length of data (in bytes).
  * @param _str    Persistent, raw string.
+ *
+ * @satisfies ZEP-SRS-11-12
  */
 #define LOG_HEXDUMP_ERR(_data, _length, _str) Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, (_str))
 
@@ -841,6 +853,9 @@ extern struct k_mem_partition k_log_partition;
  *       it is not defined and CONFIG_LOG_DEFAULT_LEVEL is non-zero.
  *       In other cases, this macro has no effect.
  * @see LOG_MODULE_DECLARE
+ *
+ * @satisfies ZEP-SRS-11-9
+ * @satisfies ZEP-SRS-11-11
  */
 #define LOG_MODULE_REGISTER(...)                                                                   \
 	Z_LOG_MODULE_DECLARE_EXTERN(__VA_ARGS__);                                                  \
