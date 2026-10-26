@@ -12,6 +12,7 @@ target_sources(app PRIVATE
   src/bs_bt_utils.c
   src/central.c
   src/main.c
+  src/overwrite_oldest.c
   src/peripheral.c
 )
 

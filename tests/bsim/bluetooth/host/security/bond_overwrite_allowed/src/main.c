@@ -9,6 +9,8 @@
 
 void central(void);
 void peripheral(void);
+void central_overwrite_oldest(void);
+void peripheral_overwrite_oldest(void);
 
 static const struct bst_test_instance test_to_add[] = {
 	{
@@ -18,6 +20,14 @@ static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "peripheral",
 		.test_main_f = peripheral,
+	},
+	{
+		.test_id = "central_overwrite_oldest",
+		.test_main_f = central_overwrite_oldest,
+	},
+	{
+		.test_id = "peripheral_overwrite_oldest",
+		.test_main_f = peripheral_overwrite_oldest,
 	},
 	BSTEST_END_MARKER,
 };
