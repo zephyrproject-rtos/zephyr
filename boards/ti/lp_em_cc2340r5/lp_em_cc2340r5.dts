@@ -39,7 +39,6 @@
 		pwm-led1 = &pwm_red;
 		mcuboot-led0 = &led1;
 		mcuboot-button0 = &btn1;
-		rtc = &rtc0;
 	};
 
 	leds {
@@ -232,12 +231,4 @@
 		     &i2c0_sda_default>;
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
-};
-
-&rtc0 {
-	status = "okay";
-};
-
-&rng {
-	status = "okay";
 };
