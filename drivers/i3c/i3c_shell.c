@@ -40,7 +40,7 @@ struct i3c_ctrl {
                                                                                                    \
 	static void node_id##cmd_i3c_attached_get(size_t idx, struct shell_static_entry *entry)    \
 	{                                                                                          \
-		const struct device *dev = device_get_binding(DEVICE_DT_NAME(node_id));           \
+		const struct device *dev = DEVICE_DT_GET_OPTIONAL(node_id);                        \
 		struct i3c_device_desc *i3c_desc;                                                  \
 		size_t cnt = 0;                                                                    \
                                                                                                    \
@@ -49,7 +49,7 @@ struct i3c_ctrl {
 		entry->subcmd = NULL;                                                              \
 		entry->help = NULL;                                                                \
                                                                                                    \
-		if (dev == NULL || !DEVICE_API_IS(i3c, dev)) {                                     \
+		if (!device_is_ready(dev) || !DEVICE_API_IS(i3c, dev)) {                           \
 			return;                                                                    \
 		}                                                                                  \
                                                                                                    \
@@ -69,7 +69,7 @@ struct i3c_ctrl {
                                                                                                    \
 	static void node_id##cmd_i3c_list_get(size_t idx, struct shell_static_entry *entry)        \
 	{                                                                                          \
-		const struct device *dev = device_get_binding(DEVICE_DT_NAME(node_id));           \
+		const struct device *dev = DEVICE_DT_GET_OPTIONAL(node_id);                        \
 		struct i3c_driver_config *config;                                                  \
                                                                                                    \
 		entry->syntax = NULL;                                                              \
@@ -77,7 +77,7 @@ struct i3c_ctrl {
 		entry->subcmd = NULL;                                                              \
 		entry->help = NULL;                                                                \
                                                                                                    \
-		if (dev == NULL || !DEVICE_API_IS(i3c, dev)) {                                     \
+		if (!device_is_ready(dev) || !DEVICE_API_IS(i3c, dev)) {                           \
 			return;                                                                    \
 		}                                                                                  \
                                                                                                    \
