@@ -295,6 +295,9 @@ static bool bondable = IS_ENABLED(CONFIG_BT_BONDABLE);
 static bool sc_oobd_present;
 static bool legacy_oobd_present;
 static bool sc_supported;
+/* Set by bt_smp_pkey_ready() and, never to NULL, by smp_init(); cleared by
+ * bt_smp_init()
+ */
 static const uint8_t *sc_public_key;
 
 static void bt_smp_pkey_ready(const uint8_t *pkey);
@@ -2896,7 +2899,15 @@ static int smp_init(struct bt_smp *smp)
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
-	sc_public_key = bt_pub_key_get();
+	/* Takes a key that bt_smp_pkey_ready() has not been given, such as
+	 * one generated after bt_disable(), but never NULL: the key may have
+	 * been delivered since it was read.
+	 */
+	const uint8_t *pkey = bt_pub_key_get();
+
+	if (pkey != NULL) {
+		sc_public_key = pkey;
+	}
 #endif
 
 	return 0;
@@ -6530,6 +6541,10 @@ int bt_smp_init(void)
 	LOG_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
 
 	if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		/* The key of a previous bt_enable() is regenerated: until the
+		 * new one is there, it is not to be used.
+		 */
+		sc_public_key = NULL;
 		bt_pub_key_gen(&pub_key_gen.cb);
 	}
 
