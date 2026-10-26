@@ -183,7 +183,8 @@ static void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
  * - The value is unchanged: the waiter blocked and never woke.
  *
  * @see k_futex_wait()
- * @verifies ZEP-SRS-37-1
+ * @verifies ZEP-SRS-37-4
+ * @verifies ZEP-SRS-37-6
  */
 ZTEST(futex, test_futex_wait_forever)
 {
@@ -223,7 +224,8 @@ ZTEST(futex, test_futex_wait_forever)
  * - The waiter timed out and ran its post-wait code, so the value is zero.
  *
  * @see k_futex_wait()
- * @verifies ZEP-SRS-37-1
+ * @verifies ZEP-SRS-37-4
+ * @verifies ZEP-SRS-37-6
  */
 ZTEST(futex, test_futex_wait_timeout)
 {
@@ -261,7 +263,7 @@ ZTEST(futex, test_futex_wait_timeout)
  * - The waiter returned immediately with -ETIMEDOUT and ran on.
  *
  * @see k_futex_wait()
- * @verifies ZEP-SRS-37-1
+ * @verifies ZEP-SRS-37-6
  */
 ZTEST(futex, test_futex_wait_nowait)
 {
@@ -302,8 +304,8 @@ ZTEST(futex, test_futex_wait_nowait)
  *
  * @see k_futex_wake()
  * @see k_futex_wait()
- * @verifies ZEP-SRS-37-1
  * @verifies ZEP-SRS-37-2
+ * @verifies ZEP-SRS-37-4
  */
 ZTEST(futex, test_futex_wait_forever_wake)
 {
@@ -357,8 +359,8 @@ ZTEST(futex, test_futex_wait_forever_wake)
  *
  * @see k_futex_wake()
  * @see k_futex_wait()
- * @verifies ZEP-SRS-37-1
  * @verifies ZEP-SRS-37-2
+ * @verifies ZEP-SRS-37-4
  */
 ZTEST(futex, test_futex_wait_timeout_wake)
 {
@@ -648,8 +650,8 @@ ZTEST(futex, test_futex_multiple_threads_wait_wake_one_priority)
  *
  * @see k_futex_wake()
  * @see k_futex_wait()
- * @verifies ZEP-SRS-37-1
  * @verifies ZEP-SRS-37-2
+ * @verifies ZEP-SRS-37-4
  */
 ZTEST(futex, test_futex_independent_wait_wake)
 {
@@ -716,7 +718,9 @@ ZTEST_USER(futex, test_user_futex_any_address)
  *
  * @see k_futex_wait()
  * @see k_futex_wake()
+ * @verifies ZEP-SRS-37-1
  * @verifies ZEP-SRS-37-3
+ * @verifies ZEP-SRS-37-5
  */
 ZTEST_USER(futex, test_futex_bad_inputs)
 {
