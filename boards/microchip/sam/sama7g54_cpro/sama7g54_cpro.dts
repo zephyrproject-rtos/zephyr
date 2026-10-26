@@ -11,11 +11,17 @@
 #include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/microchip-sam-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <microchip/sam/sama7/sama7g5/sama7g54.dtsi>
 
 / {
-	model = "SAMA7G54 Curiosity Pro board";
 	compatible = "microchip,sama7g54-cpro", "microchip,sama7g5", "microchip,sama7";
+	model = "SAMA7G54 Curiosity Pro board";
+
+	aliases {
+		led0 = &led_green;
+		sw0 = &button_user;
+	};
 
 	chosen {
 		zephyr,sram = &ddram;
@@ -31,6 +37,37 @@
 
 		slow_xtal {
 			clock-frequency = <32768>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		status = "okay";
+
+		button_user: button_0 {
+			label = "PB_USER";
+			gpios = <&piod 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led_red: red {
+			label = "red";
+			gpios = <&piod 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_green: green {
+			label = "green";
+			gpios = <&piod 14 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_blue: blue {
+			label = "blue";
+			gpios = <&piob 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
