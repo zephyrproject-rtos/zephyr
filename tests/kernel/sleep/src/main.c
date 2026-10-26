@@ -405,6 +405,73 @@ ZTEST(sleep, test_sleep_wakeup_returns_remaining)
 		     "requested 10000", wakeup_remaining);
 }
 
+static volatile int32_t usleep_wakeup_remaining;
+
+static void early_wake_usleep_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* Sleep for a long duration in microseconds; the main thread wakes us
+	 * well before it elapses. Capture the remaining time, in microseconds,
+	 * reported by k_usleep().
+	 */
+	usleep_wakeup_remaining = k_usleep(10 * USEC_PER_SEC);
+	k_sem_give(&test_thread_sem);
+}
+
+/**
+ * @brief Verify k_usleep() reports the remaining microseconds when woken early
+ *
+ * @details Put a thread to sleep for a long, finite duration expressed in
+ * microseconds and wake it with k_wakeup() before that duration elapses.
+ * k_usleep() must return the amount of time that was still remaining,
+ * expressed in microseconds, which is non-zero and does not exceed the
+ * requested duration.
+ *
+ * Test steps:
+ * - Start a thread that sleeps for 10 seconds via k_usleep() and stores the
+ *   return value.
+ * - Let a fraction of the sleep elapse, then wake the thread with k_wakeup().
+ *
+ * Expected result:
+ * - k_usleep() returns a value greater than zero and less than the requested
+ *   10000000 us, i.e. it reports the time that was still remaining in
+ *   microseconds.
+ *
+ * @see k_usleep()
+ * @see k_wakeup()
+ * @verifies ZEP-SRS-28-15
+ */
+ZTEST(sleep, test_usleep_wakeup_returns_remaining)
+{
+	test_objects_init();
+	usleep_wakeup_remaining = 0;
+
+	test_thread_id = k_thread_create(&test_thread_data,
+					 test_thread_stack,
+					 THREAD_STACK,
+					 early_wake_usleep_entry,
+					 0, 0, NULL, TEST_THREAD_PRIORITY,
+					 0, K_NO_WAIT);
+
+	/* Allow early_wake_usleep_entry to start. */
+	k_yield();
+
+	/* Let part of the sleep elapse, then wake it well before 10 seconds. */
+	k_msleep(100);
+	k_wakeup(test_thread_id);
+	k_sem_take(&test_thread_sem, K_FOREVER);
+
+	zassert_true(usleep_wakeup_remaining > 0,
+		     "k_usleep() reported %d us remaining; expected > 0",
+		     usleep_wakeup_remaining);
+	zassert_true(usleep_wakeup_remaining < 10 * USEC_PER_SEC,
+		     "k_usleep() reported %d us remaining; expected less than "
+		     "the requested 10000000", usleep_wakeup_remaining);
+}
+
 /*test case main entry*/
 static void *sleep_setup(void)
 {
