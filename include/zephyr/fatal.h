@@ -66,9 +66,10 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason);
  *            state when the error occurred. May in some cases be NULL.
  *
  * @satisfies ZEP-SRS-16-2
- * @satisfies ZEP-SRS-16-3
  * @satisfies ZEP-SRS-16-4
  * @satisfies ZEP-SRS-16-7
+ * @satisfies ZEP-SRS-16-8
+ * @satisfies ZEP-SRS-16-9
  */
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf);
 
@@ -87,8 +88,12 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf);
  *            state when the error occurred. May in some cases be NULL.
  *
  * @satisfies ZEP-SRS-16-1
+ * @satisfies ZEP-SRS-16-3
  * @satisfies ZEP-SRS-16-7
- * @satisfies ZEP-SRS-16-8
+ * @satisfies ZEP-SRS-16-10
+ * @satisfies ZEP-SRS-16-11
+ * @satisfies ZEP-SRS-16-12
+ * @satisfies ZEP-SRS-16-13
  * @satisfies ZEP-SRS-8-11
  */
 void z_fatal_error(unsigned int reason, const struct arch_esf *esf);
