@@ -21,6 +21,15 @@ dut: &scb4 {
 
 	dmas = <&dma0 0>, <&dma0 1>;
 	dma-names = "tx", "rx";
+	mux-states = <&trigmux PSC3_TRIG_OUT_MUX_0_PDMA0_TR_IN0 IFX_TRIGMUX_EDGE
+		      PSC3_TRIG_IN_MUX_0_SCB_TX4>,
+		     <&trigmux PSC3_TRIG_OUT_MUX_0_PDMA0_TR_IN1 IFX_TRIGMUX_LEVEL
+		      PSC3_TRIG_IN_MUX_0_SCB_RX4>;
+	mux-state-names = "tx", "rx";
+};
+
+&trigmux {
+	status = "okay";
 };
 
 &p4_3_scb4_uart_tx {
