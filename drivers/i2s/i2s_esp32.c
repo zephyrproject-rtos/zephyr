@@ -200,6 +200,33 @@ static int i2s_esp32_tx_stop_transfer(const struct device *dev);
 #endif
 static int i2s_esp32_stop_transfer(const struct device *dev, enum i2s_dir dir);
 
+/*
+ * TX supplies the clocks shared by both directions. Stop it only after the
+ * last active stream has stopped, so an RX transfer can finish its final
+ * block in full-duplex mode.
+ */
+static void IRAM_ATTR i2s_esp32_stop_if_idle(const struct device *dev)
+{
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (dev_cfg->rx.data != NULL && dev_cfg->rx.data->transferring) {
+		return;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+#if I2S_ESP32_IS_DIR_EN(tx)
+	const struct i2s_esp32_data *dev_data = dev->data;
+
+	if (dev_cfg->tx.data != NULL && dev_cfg->tx.data->transferring) {
+		return;
+	}
+
+	if (dev_data->active_dir == I2S_DIR_TX || dev_data->active_dir == I2S_DIR_BOTH) {
+		i2s_hal_tx_stop(&dev_cfg->hal);
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+}
+
 #if !SOC_GDMA_SUPPORTED
 /*
  * ahbm_fifo_rst and ahbm_rst reset the shared legacy DMA AHB master and its
@@ -501,6 +528,7 @@ static int IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 #else
 	i2s_esp32_legacy_dma_quiesce(dev);
 #endif /* SOC_GDMA_SUPPORTED */
+	i2s_esp32_stop_if_idle(dev);
 
 	return err;
 }
@@ -873,6 +901,7 @@ static int IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 #else
 	i2s_esp32_legacy_dma_quiesce(dev);
 #endif /* SOC_GDMA_SUPPORTED */
+	i2s_esp32_stop_if_idle(dev);
 
 	return err;
 }
