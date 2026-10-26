@@ -63,6 +63,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Device model
+
+  * :c:macro:`DEVICE_DT_GET_OPTIONAL` and :c:macro:`DEVICE_DT_INST_GET_OPTIONAL`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
