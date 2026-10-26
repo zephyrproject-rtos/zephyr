@@ -88,7 +88,7 @@ void z_impl_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size
 	sys_dlist_init(&pipe->poll_events);
 #endif /* CONFIG_POLL */
 #ifdef CONFIG_OBJ_CORE_PIPE
-	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+	z_obj_core_init_unlinked(K_OBJ_CORE(pipe), &obj_type_pipe);
 #endif /* CONFIG_OBJ_CORE_PIPE */
 	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe, buffer, buffer_size);
 }

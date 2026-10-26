@@ -190,7 +190,7 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	}
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
-	k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
+	z_obj_core_init_unlinked(K_OBJ_CORE(slab), &obj_type_mem_slab);
 #endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 	k_obj_core_stats_register(K_OBJ_CORE(slab), &slab->info,

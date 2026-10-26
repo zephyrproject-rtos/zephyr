@@ -37,7 +37,7 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 	k_object_init(stack);
 
 #ifdef CONFIG_OBJ_CORE_STACK
-	k_obj_core_init_and_link(K_OBJ_CORE(stack), &obj_type_stack);
+	z_obj_core_init_unlinked(K_OBJ_CORE(stack), &obj_type_stack);
 #endif /* CONFIG_OBJ_CORE_STACK */
 }
 

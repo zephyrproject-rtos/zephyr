@@ -2737,8 +2737,7 @@ struct k_fifo {
 	({                                                   \
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, init, fifo); \
 	k_queue_init(&(fifo)->_queue);                       \
-	K_OBJ_CORE_INIT(K_OBJ_CORE(fifo), _obj_type_fifo);   \
-	K_OBJ_CORE_LINK(K_OBJ_CORE(fifo));                   \
+	K_OBJ_CORE_INIT_UNLINKED(K_OBJ_CORE(fifo), _obj_type_fifo); \
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, init, fifo);  \
 	})
 
@@ -2979,8 +2978,7 @@ struct k_lifo {
 	({                                                   \
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, init, lifo); \
 	k_queue_init(&(lifo)->_queue);                       \
-	K_OBJ_CORE_INIT(K_OBJ_CORE(lifo), _obj_type_lifo);   \
-	K_OBJ_CORE_LINK(K_OBJ_CORE(lifo));                   \
+	K_OBJ_CORE_INIT_UNLINKED(K_OBJ_CORE(lifo), _obj_type_lifo); \
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, init, lifo);  \
 	})
 
