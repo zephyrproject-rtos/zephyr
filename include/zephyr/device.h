@@ -905,6 +905,19 @@ size_t z_device_get_all_static(const struct device **devices);
  */
 __syscall bool device_is_ready(const struct device *dev);
 
+static inline bool z_impl_device_is_ready(const struct device *dev)
+{
+	/*
+	 * if an invalid device pointer is passed as argument, this call
+	 * reports the `device` as not ready for usage.
+	 */
+	if (dev == NULL) {
+		return false;
+	}
+
+	return dev->state->initialized;
+}
+
 /**
  * @brief Writes a "device not ready" warning message to the log.
  *
