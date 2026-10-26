@@ -99,6 +99,8 @@ enum video_ctrl_type {
 	VIDEO_CTRL_TYPE_STRING = 5,
 	/** Menu integer type, standard or driver-defined menu */
 	VIDEO_CTRL_TYPE_INTEGER_MENU = 6,
+	/** Button type, triggers an action when written and holds no value */
+	VIDEO_CTRL_TYPE_BUTTON = 7,
 };
 
 /**

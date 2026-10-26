@@ -146,6 +146,10 @@ static inline void set_type_flag(struct video_ctrl *ctrl)
 		}
 		break;
 	}
+
+	if (ctrl->type == VIDEO_CTRL_TYPE_BUTTON) {
+		ctrl->flags |= VIDEO_CTRL_FLAG_WRITE_ONLY | VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE;
+	}
 }
 
 /* The index range of a menu is fixed, its entries come from the driver or the standard menus */
@@ -199,6 +203,9 @@ int video_register_ctrl(struct video_ctrl *ctrl, const struct device *dev)
 		ctrl->range.min = 0;
 		ctrl->range.max = 1;
 		ctrl->range.step = 1;
+		break;
+	case VIDEO_CTRL_TYPE_BUTTON:
+		ctrl->range = (struct video_ctrl_range){0};
 		break;
 	case VIDEO_CTRL_TYPE_MENU:
 	case VIDEO_CTRL_TYPE_INTEGER_MENU:
