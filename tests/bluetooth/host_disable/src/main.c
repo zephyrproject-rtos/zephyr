@@ -247,6 +247,9 @@ static int data_err;
 static bool closed_in_send;
 static K_SEM_DEFINE(slow_send_done, 0, 1);
 
+/* Given for every data packet that the driver's send() is handed */
+static K_SEM_DEFINE(data_sem, 0, K_SEM_MAX_LIMIT);
+
 /* How long the controller takes to respond to a reset, as one at the other end
  * of a UART or USB link does.
  */
@@ -414,6 +417,7 @@ static int driver_send(const struct device *dev, struct net_buf *buf)
 
 	if (type != BT_HCI_H4_CMD) {
 		data_count++;
+		k_sem_give(&data_sem);
 
 		if (data_err != 0) {
 			/* The buffer stays with the caller */
@@ -481,6 +485,7 @@ static void before(void *fixture)
 	reset_count = 0U;
 	disconnect_count = 0U;
 	data_count = 0U;
+	k_sem_reset(&data_sem);
 	close_count = 0U;
 }
 
@@ -1038,6 +1043,33 @@ static ZTEST(bt_conn_tx, test_data_send_failure_disconnect_rejected)
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
 	bt_conn_unref(test_conn);
 	test_conn = NULL;
+}
+
+/* Data signing has been removed: a Write Without Response that asks for it on
+ * a connection that is not encrypted fails, and what is sent after it still
+ * goes out.
+ */
+static ZTEST(bt_conn_tx, test_write_without_response_signed)
+{
+	const uint8_t value = 0U;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+
+	zassert_equal(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), true),
+		      -ENOTSUP, "Signing was not refused");
+	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
+		   "Failed to queue the write");
+
+	/* The TX processor sends it once this thread waits: the timeout only bounds a failure */
+	zassert_ok(k_sem_take(&data_sem, K_SECONDS(1)), "The write was not sent");
+	zassert_equal(data_count, 1U, "The driver was given %u data packets", data_count);
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_drop(&test_conn);
 }
 
 /* A dynamic LE L2CAP channel ID that no channel has: the Host drops what the
