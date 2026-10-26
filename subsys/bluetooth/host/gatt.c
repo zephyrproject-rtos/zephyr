@@ -3754,14 +3754,21 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 			return false;
 		}
 
+		/* Each lookup is a walk of its own, and another thread can
+		 * unregister the service in between
+		 */
 		attr = bt_gatt_attr_next(attr);
-		__ASSERT(attr, "No more attributes\n");
+		if (attr == NULL) {
+			return false;
+		}
 	}
 
 	/* Check if attribute is a characteristic value */
 	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) != 0) {
 		attr = bt_gatt_attr_next(attr);
-		__ASSERT(attr, "No more attributes\n");
+		if (attr == NULL) {
+			return false;
+		}
 	}
 
 	/* Find the CCC Descriptor */

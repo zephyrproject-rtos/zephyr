@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 
+#include "conn_internal.h"
 #include "gatt_internal.h"
 
 /* Custom Service Variables */
@@ -576,6 +577,44 @@ static ZTEST(test_gatt, test_gatt_foreach_unregister_self)
 	walk_and_unregister(WALK_UNREGISTER_SELF);
 }
 
+static const struct bt_uuid_128 unreg_uuid = BT_UUID_INIT_128(
+	0xf8, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+static const struct bt_uuid_128 unreg_chrc_uuid = BT_UUID_INIT_128(
+	0xf9, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static struct bt_gatt_attr unreg_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&unreg_uuid),
+	BT_GATT_CHARACTERISTIC(&unreg_chrc_uuid.uuid, BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE, NULL,
+			       NULL, NULL),
+	BT_GATT_CCC(NULL, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+};
+
+static struct bt_gatt_service unreg_svc = BT_GATT_SERVICE(unreg_attrs);
+
+/* Another thread can unregister the service while bt_gatt_is_subscribed()
+ * looks for the CCC. With handles set by the application, which unregistration
+ * keeps, it then finds no attribute after the characteristic declaration.
+ */
+static ZTEST(test_gatt, test_gatt_is_subscribed_unregistered)
+{
+	static struct bt_conn conn = {
+		.state = BT_CONN_CONNECTED,
+	};
+
+	/* After the handles of all other services */
+	for (size_t i = 0; i < ARRAY_SIZE(unreg_attrs); i++) {
+		unreg_attrs[i].handle = (uint16_t)(0xfff0U + i);
+	}
+
+	zassert_ok(bt_gatt_service_register(&unreg_svc), "Service registration failed");
+	zassert_ok(bt_gatt_service_unregister(&unreg_svc), "Service unregister failed");
+
+	zassert_false(bt_gatt_is_subscribed(&conn, &unreg_attrs[1], BT_GATT_CCC_NOTIFY),
+		      "Subscribed to a characteristic of an unregistered service");
+}
+
 /* A test that fails can leave its threads running and its services registered:
  * clean up, so that the next test starts from the same state
  */
@@ -601,6 +640,10 @@ static void test_gatt_after(void *fixture)
 
 	if (bt_gatt_service_is_registered(&walk_b_svc)) {
 		(void)bt_gatt_service_unregister(&walk_b_svc);
+	}
+
+	if (bt_gatt_service_is_registered(&unreg_svc)) {
+		(void)bt_gatt_service_unregister(&unreg_svc);
 	}
 }
 
