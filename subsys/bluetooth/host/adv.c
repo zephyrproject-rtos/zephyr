@@ -1682,6 +1682,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 	err = bt_le_adv_set_enable_ext(adv, true, param);
 	if (err) {
 		LOG_ERR("Failed to start advertiser");
+		atomic_clear_bit(adv->flags, BT_ADV_LIMITED);
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
