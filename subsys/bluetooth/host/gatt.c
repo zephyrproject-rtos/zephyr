@@ -6740,6 +6740,14 @@ static int db_hash_set(const char *name, size_t len_rd,
 
 static int db_hash_commit(void)
 {
+	/* Before GATT is initialized the database walk does not see the static
+	 * services yet. The "bt/" settings are loaded again after bt_enable(),
+	 * see commit_settings().
+	 */
+	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
+		return 0;
+	}
+
 	atomic_set_bit(gatt_sc.flags, DB_HASH_LOAD);
 
 	/* Calculate the hash and compare it against the value loaded from
