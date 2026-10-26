@@ -29,6 +29,7 @@ tests:
       - CONFIG_BT_PER_ADV_SYNC=y
       # A second sync next to an established one
       - CONFIG_BT_PER_ADV_SYNC_MAX=2
+      - CONFIG_BT_ISO_SYNC_RECEIVER=y
       # A command buffer for bt_disable() and bt_enable() while an
       # application thread holds one
       - CONFIG_BT_BUF_CMD_TX_COUNT=2
