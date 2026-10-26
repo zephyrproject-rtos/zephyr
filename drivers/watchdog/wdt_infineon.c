@@ -230,7 +230,11 @@ struct ifx_cat1_wdt_data {
 static struct ifx_cat1_wdt_data wdt_data;
 
 #if !defined(CY_IP_S8SRSSLT)
-#define IFX_DETERMINE_MATCH_BITS(bits)      ((IFX_WDT_MAX_IGNORE_BITS) - (bits))
+/* The match-bit position counts from the top bit of the WDT counter (WDT_MAX_IGNORE_BITS =
+ * SRSS_NUM_WDT_A_BITS - 1), as in cyhal_wdt, not from IFX_WDT_MAX_IGNORE_BITS, which only
+ * bounds the ignore_bits table index.
+ */
+#define IFX_DETERMINE_MATCH_BITS(bits)      ((WDT_MAX_IGNORE_BITS) - (bits))
 #define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2UL << IFX_DETERMINE_MATCH_BITS(bits))
 #endif
 
