@@ -208,6 +208,18 @@ static bool forwarded_frame_sent(void)
 	return false;
 }
 
+/* Replace the uplink address in place, as a reconnect with a new lease does. */
+static void replace_uplink_addr(struct net_in_addr *addr, uint8_t last_octet,
+				const struct net_in_addr *netmask)
+{
+	zassert_true(net_if_ipv4_addr_rm(dummy_iface_b, addr), "Cannot remove uplink address");
+	addr->s4_addr[3] = last_octet;
+	zassert_not_null(net_if_ipv4_addr_add(dummy_iface_b, addr, NET_ADDR_MANUAL, 0),
+			 "Cannot replace uplink address");
+	zassert_true(net_if_ipv4_set_netmask_by_addr(dummy_iface_b, addr, netmask),
+		     "Cannot set replacement address netmask");
+}
+
 /* Client on dummy_iface_a reaches a server on dummy_iface_b through
  * net_ipv4_input(): the request is SNATed and forwarded out b, the
  * reply is DNATed and forwarded out a, each with the TTL decremented
@@ -217,6 +229,7 @@ ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_forward_through_input)
 {
 	struct net_in_addr addr_a = { { { 192, 168, 1, 1 } } };
 	struct net_in_addr addr_b = { { { 192, 168, 2, 1 } } };
+	struct net_in_addr old_addr_b;
 	struct net_in_addr netmask = { { { 255, 255, 255, 0 } } };
 	struct net_in_addr client_addr = { { { 192, 168, 1, 4 } } };
 	struct net_in_addr server_addr = { { { 192, 168, 2, 4 } } };
@@ -274,6 +287,47 @@ ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_forward_through_input)
 	zassert_true(net_ipv4_addr_cmp(&sent_ipv4_dst, &client_addr),
 		     "Reply destination was not translated");
 	zassert_equal(sent_ipv4_ttl, 63U, "Reply TTL should be decremented once");
+
+	/* Reconnecting a dynamic uplink must not keep translating to its old address. */
+	old_addr_b = addr_b;
+	replace_uplink_addr(&addr_b, 3, &netmask);
+
+	recv_udp_frame(dummy_iface_b, &server_addr, &old_addr_b, 4321, 1234, 64U);
+	zassert_false(forwarded_frame_sent(),
+		      "Reply to removed uplink address was forwarded");
+
+	recv_udp_frame(dummy_iface_a, &client_addr, &server_addr, 1234, 4321, 64U);
+	zassert_true(forwarded_frame_sent(), "Request after reconnect was not forwarded");
+	zassert_equal_ptr(sent_iface, dummy_iface_b, "Wrong reconnected uplink");
+	zassert_true(net_ipv4_addr_cmp(&sent_ipv4_src, &addr_b),
+		     "Existing flow still uses the old uplink address");
+
+	recv_udp_frame(dummy_iface_b, &server_addr, &addr_b, 4321, 1234, 64U);
+	zassert_true(forwarded_frame_sent(), "Reply after reconnect was not forwarded");
+	zassert_equal_ptr(sent_iface, dummy_iface_a, "Wrong reply interface after reconnect");
+	zassert_true(net_ipv4_addr_cmp(&sent_ipv4_dst, &client_addr),
+		     "Reply after reconnect was not translated to the client");
+
+	/* A request arriving first must replace the mapping with the new address. */
+	old_addr_b = addr_b;
+	replace_uplink_addr(&addr_b, 5, &netmask);
+
+	recv_udp_frame(dummy_iface_a, &client_addr, &server_addr, 1234, 4321, 64U);
+	zassert_true(forwarded_frame_sent(), "Request after second reconnect was not forwarded");
+	zassert_equal_ptr(sent_iface, dummy_iface_b, "Wrong uplink after second reconnect");
+	zassert_true(net_ipv4_addr_cmp(&sent_ipv4_src, &addr_b),
+		     "Request still uses the removed uplink address");
+
+	recv_udp_frame(dummy_iface_b, &server_addr, &old_addr_b, 4321, 1234, 64U);
+	zassert_false(forwarded_frame_sent(),
+		      "Reply to removed uplink address was forwarded after a new request");
+
+	recv_udp_frame(dummy_iface_b, &server_addr, &addr_b, 4321, 1234, 64U);
+	zassert_true(forwarded_frame_sent(), "Reply after second reconnect was not forwarded");
+	zassert_equal_ptr(sent_iface, dummy_iface_a,
+			  "Wrong reply interface after second reconnect");
+	zassert_true(net_ipv4_addr_cmp(&sent_ipv4_dst, &client_addr),
+		     "Reply after second reconnect was not translated to the client");
 
 	net_ipv4_table_rule_del(rule_idx);
 	net_arp_clear_cache(dummy_iface_a);
