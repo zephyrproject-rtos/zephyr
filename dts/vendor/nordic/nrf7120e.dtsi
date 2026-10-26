@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf7120_7120e_enga.dtsi"
+#include "nrf7120_7120e.dtsi"
 
 &global_peripherals {
 	axon: axon@56000 {
