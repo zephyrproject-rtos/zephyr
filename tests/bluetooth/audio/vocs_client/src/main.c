@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -194,4 +195,38 @@ static ZTEST_F(vocs_client_test_suite, test_set_offset_counter_retry_state_short
 	zassert_equal(set_offset_cb_fake.call_count, 1U);
 	zassert_equal(set_offset_cb_fake.arg1_val, BT_ATT_ERR_UNLIKELY, "Unexpected err %d",
 		      set_offset_cb_fake.arg1_val);
+}
+
+static ZTEST_F(vocs_client_test_suite, test_discover_subscribe_fail)
+{
+	struct bt_gatt_chrc chrc = BT_GATT_CHRC_INIT(BT_UUID_VOCS_STATE, 0x0003U,
+						     BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY);
+	const struct bt_gatt_attr attr = {
+		.uuid = BT_UUID_GATT_CHRC,
+		.handle = 0x0002U,
+		.user_data = &chrc,
+	};
+	const struct bt_vocs_discover_param param = {
+		.start_handle = 0x0001U,
+		.end_handle = 0x000AU,
+	};
+	struct bt_gatt_discover_params *params;
+	int err;
+
+	err = bt_vocs_discover(&fixture->conn, fixture->inst, &param);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+	zassert_equal(bt_gatt_discover_fake.call_count, 2U);
+
+	params = bt_gatt_discover_fake.arg1_val;
+	bt_gatt_subscribe_fake.return_val = -ENOMEM;
+
+	zassert_equal(params->func(&fixture->conn, &attr, params), BT_GATT_ITER_STOP);
+	zassert_equal(discover_cb_fake.call_count, 2U);
+	zassert_equal(discover_cb_fake.arg1_val, -ENOMEM);
+
+	/* The failed discovery does not leave the instance busy */
+	RESET_FAKE(bt_gatt_discover);
+	RESET_FAKE(bt_gatt_subscribe);
+	RESET_FAKE(discover_cb);
+	vocs_client_discover(fixture);
 }
