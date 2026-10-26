@@ -705,18 +705,10 @@ static int hm0360_get_frmival(const struct device *dev, struct video_frmival *fr
 
 static int hm0360_init_controls(const struct device *dev)
 {
-	int ret;
 	struct hm0360_data *drv_data = dev->data;
-	struct hm0360_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls((struct video_ctrl *)&drv_data->ctrls,
+				    sizeof(drv_data->ctrls) / sizeof(struct video_ctrl), dev);
 }
 
 static int hm0360_init(const struct device *dev)
@@ -892,7 +884,9 @@ static DEVICE_API(video, hm0360_api) = {
 	const struct hm0360_config hm0360_config_##inst = {.bus = I2C_DT_SPEC_INST_GET(inst),      \
 							   HM0360_RESET_GPIO(inst)                 \
 								   HM0360_PWDN_GPIO(inst)};        \
-	struct hm0360_data hm0360_data_##inst;                                                     \
+	struct hm0360_data hm0360_data_##inst = {                                                  \
+		.ctrls = {.hflip = {.id = VIDEO_CID_HFLIP}, .vflip = {.id = VIDEO_CID_VFLIP}},     \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, hm0360_init, NULL, &hm0360_data_##inst, &hm0360_config_##inst, \
 			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &hm0360_api);               \
