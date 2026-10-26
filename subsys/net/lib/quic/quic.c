@@ -3359,6 +3359,48 @@ static int quic_stream_unref(struct quic_stream *stream)
 	return 0;
 }
 
+/* The streams whose last reference was dropped where they cannot be released */
+static K_FIFO_DEFINE(quic_stream_release_q);
+
+static void quic_stream_release_work_handler(struct k_work *work)
+{
+	struct quic_stream *stream;
+
+	ARG_UNUSED(work);
+
+	stream = k_fifo_get(&quic_stream_release_q, K_NO_WAIT);
+	while (stream != NULL) {
+		(void)quic_stream_unref(stream);
+		stream = k_fifo_get(&quic_stream_release_q, K_NO_WAIT);
+	}
+}
+
+ZTESTABLE_STATIC K_WORK_DEFINE(quic_stream_release_work, quic_stream_release_work_handler);
+
+/*
+ * Drop a reference while holding ep->recovery.lock. The release of a stream
+ * can send MAX_STREAMS, which takes ep->send_lock, and a sender holds that
+ * lock while it records the packet under ep->recovery.lock. The last
+ * reference is therefore dropped from the QUIC recovery work queue, which
+ * has the stack of the QUIC service thread. A stream with
+ * one reference is on no accept queue, as the queue holds a reference of its
+ * own, so its fifo word is free.
+ */
+ZTESTABLE_STATIC void quic_stream_unref_deferred(struct quic_stream *stream)
+{
+	atomic_val_t ref;
+
+	do {
+		ref = atomic_get(&stream->refcount);
+		if (ref == 1) {
+			k_fifo_put(&quic_stream_release_q, stream);
+			(void)k_work_submit_to_queue(&quic_recovery_work_q,
+						     &quic_stream_release_work);
+			return;
+		}
+	} while (!atomic_cas(&stream->refcount, ref, ref - 1));
+}
+
 static bool quic_endpoint_is_used(struct quic_endpoint *ep)
 {
 	return !!atomic_get(&ep->refcount);
@@ -4503,7 +4545,14 @@ static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
 {
 	struct quic_stream *stream = quic_find_stream_by_id(ep, stream_id);
 
+	if (stream == NULL) {
+		return;
+	}
+
 	quic_stream_advance_tx_acked_for_stream(stream, acked_start, acked_end);
+
+	/* Called under ep->recovery.lock */
+	quic_stream_unref_deferred(stream);
 }
 
 /*
@@ -4700,6 +4749,7 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	if (lost->stream_data_len > sizeof(quic_retransmit_payload)) {
 		NET_WARN("[EP:%p/%d] Lost frame too large to retransmit (%u)",
 			 ep, quic_get_by_ep(ep), lost->stream_data_len);
+		quic_stream_unref(stream);
 		return;
 	}
 
@@ -4712,6 +4762,7 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	if (lost->stream_offset < tx->base_offset) {
 		k_mutex_unlock(&stream->tx_lock);
 		k_mutex_unlock(&quic_retransmit_lock);
+		quic_stream_unref(stream);
 		return; /* already ACKed */
 	}
 
@@ -4719,6 +4770,7 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	if (buf_off + lost->stream_data_len > tx->len) {
 		k_mutex_unlock(&stream->tx_lock);
 		k_mutex_unlock(&quic_retransmit_lock);
+		quic_stream_unref(stream);
 		NET_WARN("[EP:%p/%d] Lost frame not in TX buffer",
 			 ep, quic_get_by_ep(ep));
 		return;
@@ -4728,6 +4780,9 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	memcpy(quic_retransmit_payload, &tx->data[buf_off], payload_len);
 
 	k_mutex_unlock(&stream->tx_lock);
+
+	/* The rest only needs the copy of the payload */
+	quic_stream_unref(stream);
 
 	/* Build STREAM frame header into the small stack buffer */
 	frame_type = QUIC_FRAME_TYPE_STREAM_BASE | 0x04 | 0x02;
@@ -6646,6 +6701,7 @@ ZTESTABLE_STATIC int quic_mark_rejected_early_data(struct quic_endpoint *ep)
 		stream = quic_find_stream_by_id(ep, info->stream_id);
 		if (stream != NULL) {
 			stream->replay_fin_pending = true;
+			quic_stream_unref_deferred(stream);
 		}
 	}
 
@@ -7860,7 +7916,9 @@ ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
 	return found;
 }
 
-/* Find stream by ID using only endpoint (searches all contexts) */
+/* Find stream by ID using only endpoint (searches all contexts). The stream is
+ * returned with a reference, as quic_find_stream() does.
+ */
 static struct quic_stream *quic_find_stream_by_id(struct quic_endpoint *ep,
 						  uint64_t stream_id)
 {
@@ -7877,7 +7935,8 @@ static struct quic_stream *quic_find_stream_by_id(struct quic_endpoint *ep,
 		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
-			if (stream->id == stream_id && stream->ep == ep) {
+			if (stream->id == stream_id && stream->ep == ep &&
+			    quic_stream_ref_if_used(stream)) {
 				found = stream;
 				goto out;
 			}
