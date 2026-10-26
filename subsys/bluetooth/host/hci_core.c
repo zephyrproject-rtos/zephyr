@@ -2771,6 +2771,13 @@ static void hci_reset_complete(void)
 	bt_br_discovery_reset();
 #endif /* CONFIG_BT_CLASSIC */
 
+#if defined(CONFIG_BT_CONN)
+	/* A disconnection that the Controller reported before the reset ended
+	 * a connection of its own, not one that is yet to be reported.
+	 */
+	disconnected_handles_reset();
+#endif /* CONFIG_BT_CONN */
+
 	flags = (atomic_get(bt_dev.flags) & BT_DEV_PERSISTENT_FLAGS);
 	atomic_set(bt_dev.flags, flags);
 }

@@ -254,14 +254,31 @@ static void reset_rsp_handler(struct k_work *work)
 static K_WORK_DELAYABLE_DEFINE(reset_rsp_work, reset_rsp_handler);
 
 /* How long the controller takes to respond to a disconnect command, what it
- * responds with, and the connection that the command was for.
+ * responds with, and the connection that the command was for. The controller
+ * can also report that connection as disconnected when the transport is opened,
+ * as one that open() does not reset does for a connection of before.
  */
 static k_timeout_t disconnect_rsp_delay;
 static uint8_t disconnect_status;
 static uint16_t disconnect_handle;
+static bool disconnect_at_open;
 
 /* Whether the transport was still open when the disconnect command arrived */
 static bool disconnect_before_close;
+
+static void disconn_complete_recv(const struct device *dev)
+{
+	struct bt_hci_evt_disconn_complete *complete;
+	struct net_buf *evt;
+
+	evt = bt_buf_get_evt(BT_HCI_EVT_DISCONN_COMPLETE, false, K_FOREVER);
+	evt_create(evt, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(*complete));
+	complete = net_buf_add(evt, sizeof(*complete));
+	complete->status = BT_HCI_ERR_SUCCESS;
+	complete->handle = disconnect_handle;
+	complete->reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+	bt_hci_recv(dev, evt);
+}
 
 /* The controller accepts the command and the connection is gone, unless it is
  * to reject the command.
@@ -269,7 +286,6 @@ static bool disconnect_before_close;
 static void disconnect_rsp_handler(struct k_work *work)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct bt_hci_evt_disconn_complete *complete;
 	struct bt_hci_evt_cmd_status *status;
 	struct net_buf *evt;
 
@@ -287,13 +303,7 @@ static void disconnect_rsp_handler(struct k_work *work)
 		return;
 	}
 
-	evt = bt_buf_get_evt(BT_HCI_EVT_DISCONN_COMPLETE, false, K_FOREVER);
-	evt_create(evt, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(*complete));
-	complete = net_buf_add(evt, sizeof(*complete));
-	complete->status = BT_HCI_ERR_SUCCESS;
-	complete->handle = disconnect_handle;
-	complete->reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
-	bt_hci_recv(dev, evt);
+	disconn_complete_recv(dev);
 }
 
 static K_WORK_DELAYABLE_DEFINE(disconnect_rsp_work, disconnect_rsp_handler);
@@ -382,7 +392,9 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 
 static int driver_open(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	if (disconnect_at_open) {
+		disconn_complete_recv(dev);
+	}
 
 	return 0;
 }
@@ -454,6 +466,7 @@ static void before(void *fixture)
 	reset_rsp_delay = K_NO_WAIT;
 	disconnect_rsp_delay = K_NO_WAIT;
 	disconnect_status = BT_HCI_ERR_SUCCESS;
+	disconnect_at_open = false;
 	if (!bt_is_ready()) {
 		zassert_ok(bt_enable(NULL), "Bluetooth init failed");
 	}
@@ -875,6 +888,36 @@ static ZTEST(bt_disable, test_command_in_flight_at_close)
 	disconnect_rsp_delay = K_NO_WAIT;
 	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
 	connect_as_peripheral();
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
+
+/* A controller that open() does not reset can report the disconnection of a
+ * connection of before until it is reset. That must not be taken for the next
+ * connection that gets the same handle.
+ */
+static ZTEST(bt_disable, test_disconnection_at_open)
+{
+	struct bt_conn_info info;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+
+	disconnect_handle = sys_cpu_to_le16(TEST_CONN_HANDLE);
+	disconnect_at_open = true;
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	disconnect_at_open = false;
+
+	connect_as_peripheral();
+
+	zassert_ok(bt_conn_get_info(test_conn, &info), "No connection info");
+	zassert_equal(info.state, BT_CONN_STATE_CONNECTED, "The connection is in state %u",
+		      info.state);
 
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
 	bt_conn_unref(test_conn);
