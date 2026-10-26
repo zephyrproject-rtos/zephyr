@@ -6,16 +6,15 @@
  */
 
 &dma0 {
+	compatible = "infineon,dma";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	compatible = "infineon,dma";
 
 	status = "okay";
 };
 
 dut: &scb1 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	dmas = <&dma0 6>, <&dma0 7>;
@@ -23,6 +22,7 @@ dut: &scb1 {
 
 	pinctrl-0 = <&p1_3_scb1_uart_tx &p1_2_scb1_uart_rx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &p1_3_scb1_uart_tx {

@@ -1,13 +1,6 @@
 #include <mem.h>
 
 / {
-	sram_203F0000: sram@203f0000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x203f0000 0x10000>;
-		zephyr,memory-region = "FlashSim";
-		status = "okay";
-	};
-
 	sim_flash_controller: sim_flash_controller {
 		compatible = "zephyr,sim-flash";
 
@@ -23,5 +16,12 @@
 			erase-block-size = <1024>;
 			write-block-size = <4>;
 		};
+	};
+
+	sram_203F0000: sram@203f0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x203f0000 0x10000>;
+		zephyr,memory-region = "FlashSim";
+		status = "okay";
 	};
 };

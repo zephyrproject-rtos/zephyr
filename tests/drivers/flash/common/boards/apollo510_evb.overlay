@@ -12,8 +12,8 @@
 		/* 128 KB storage area (64 x 2 KB erase pages) */
 		storage_partition: partition@f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0xf0000 DT_SIZE_K(128)>;
+			label = "storage";
 		};
 	};
 };

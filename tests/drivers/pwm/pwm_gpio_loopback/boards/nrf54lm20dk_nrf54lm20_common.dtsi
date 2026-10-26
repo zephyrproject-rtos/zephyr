@@ -29,8 +29,8 @@
 };
 
 &pwm20 {
-	status = "okay";
 	pinctrl-0 = <&pwm20_alt>;
 	pinctrl-1 = <&pwm20_alt_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

@@ -11,7 +11,7 @@
 
 	euart0: uart-emul {
 		compatible = "zephyr,uart-emul";
-		status = "okay";
 		current-speed = <115200>;
+		status = "okay";
 	};
 };

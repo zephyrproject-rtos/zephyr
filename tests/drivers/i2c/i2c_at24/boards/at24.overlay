@@ -22,9 +22,9 @@
 };
 
 &i2c0 {
-	status = "okay";
 	/* Set this to the bus speed the board wiring and EEPROM support. */
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	eeprom0: eeprom@50 {
 		compatible = "atmel,at24";

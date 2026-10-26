@@ -9,17 +9,17 @@
  * - I3C1_SDA (PC1) <-> I3C2_SDA (PB14)
  */
 &i3c1 {
-	zephyr,deferred-init;
 	pinctrl-0 = <&i3c1_scl_pb2 &i3c1_sda_pc1>;
 	pinctrl-names = "default";
-	status = "okay";
 	i3c-scl-hz = <1000000>;
 	i2c-scl-hz = <400000>;
+	zephyr,deferred-init;
+	status = "okay";
 
 	mctp_endpoint0: mctp_endpoint0@20813818000 {
-		zephyr,deferred-init;
 		compatible = "zephyr,mctp-i3c-endpoint";
 		reg = <0x0000 0x0208 0x13818000>;
+		zephyr,deferred-init;
 		status = "okay";
 	};
 };
@@ -27,9 +27,9 @@
 &i3c2 {
 	pinctrl-0 = <&i3c2_scl_pb10 &i3c2_sda_pb14>;
 	pinctrl-names = "default";
-	status = "okay";
 	target-mode;
 	mipi-instance = <0x8>;
+	status = "okay";
 };
 
 / {

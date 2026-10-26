@@ -51,21 +51,21 @@
 };
 
 &uart131 {
-	status = "okay";
 	memory-regions = <&cpuapp_dma_region>;
 	pinctrl-0 = <&uart131_default_alt>;
 	pinctrl-1 = <&uart131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	hw-flow-control;
+	status = "okay";
 };
 
 dut: &uart120 {
-	status = "okay";
 	memory-regions = <&dma_fast_region>;
 	pinctrl-0 = <&uart120_default_alt>;
 	pinctrl-1 = <&uart120_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
+	status = "okay";
 	/delete-property/ hw-flow-control;
 };

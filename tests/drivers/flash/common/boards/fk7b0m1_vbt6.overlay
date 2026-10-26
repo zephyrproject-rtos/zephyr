@@ -13,8 +13,8 @@
 
 		/* Set last blocks of the code flash as storage partition */
 		storage_partition: partition@1e0000 {
-			label = "storage";
 			reg = <0x1e000 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

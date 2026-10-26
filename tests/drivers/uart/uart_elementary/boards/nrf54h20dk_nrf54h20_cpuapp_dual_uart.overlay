@@ -24,13 +24,13 @@
 };
 
 dut: &uart135 {
-	status = "okay";
 	memory-regions = <&cpuapp_dma_region>;
 	pinctrl-0 = <&uart135_default_alt>;
 	pinctrl-1 = <&uart135_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
 &pinctrl {
@@ -55,11 +55,11 @@ dut: &uart135 {
 };
 
 dut_aux: &uart137 {
-	status = "okay";
 	memory-regions = <&cpuapp_dma_region>;
 	pinctrl-0 = <&uart137_default_alt>;
 	pinctrl-1 = <&uart137_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 };

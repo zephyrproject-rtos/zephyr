@@ -19,12 +19,12 @@
 };
 
 &lpspi3 {
-	status = "okay";
 	pinctrl-0 = <&lpspi3_default>;
 	pinctrl-names = "default";
 	pcs-sck-delay = <1000>;
 	sck-pcs-delay = <1000>;
 	transfer-delay = <1000>;
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

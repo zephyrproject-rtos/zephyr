@@ -49,9 +49,9 @@
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spim2_loopback>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -61,8 +61,8 @@
 };
 
 dut_spis: &spi3 {
-	status = "okay";
 	dma-enabled;
 	pinctrl-0 = <&spis3_loopback>;
 	pinctrl-names = "default";
+	status = "okay";
 };

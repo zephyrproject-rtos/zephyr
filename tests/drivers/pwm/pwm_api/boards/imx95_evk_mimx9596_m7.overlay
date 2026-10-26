@@ -19,10 +19,10 @@
 
 	flexio1_pwm: flexio1_pwm {
 		compatible = "nxp,flexio-pwm";
-		status = "okay";
 		#pwm-cells = <3>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&flexio1_io2_default>;
+		status = "okay";
 
 		pwm_0 {
 			pin-id = <2>;

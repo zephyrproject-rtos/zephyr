@@ -5,6 +5,6 @@
  */
 
 small_partition: &slot1_partition {
-	label = "small";
 	reg = <0xc2000 0x10000>;
+	label = "small";
 };
