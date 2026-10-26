@@ -237,6 +237,10 @@ The DRP toggle behavior can be configured via Kconfig:
 - :kconfig:option:`CONFIG_USBC_DRP_PERIOD_MS`: Toggle period (50-100ms, default 75ms)
 - :kconfig:option:`CONFIG_USBC_DRP_DUTY_CYCLE`: Percentage of time as Source (30-70%, default 50%)
 
+A preferred sink role can be configured via Kconfig:
+
+- :kconfig:option:`CONFIG_USBC_CSM_DRP_TRY_SNK`: Enable preferred Sink role (Try.SNK) for DRP devices.
+
 See :zephyr:code-sample:`usb-c-drp` for a complete example.
 
 API reference
