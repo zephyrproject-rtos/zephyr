@@ -36,6 +36,44 @@
 	}
 
 /**
+ * @brief Register a video control with its device
+ *
+ * The driver fills the control fields before calling this function. @c id is mandatory, as well
+ * as the value @c range of integer controls. The @c type and @c flags of standard controls are
+ * derived from @c id. Private controls (from @c VIDEO_CID_PRIVATE_BASE) keep the @c type set by
+ * the driver, @ref VIDEO_CTRL_TYPE_INTEGER by default. The range of a boolean control is fixed
+ * to 0..1 and that of a menu control starts at 0 with a step of 1. A menu control whose @c max
+ * is left at 0 is sized from its NULL-terminated @c menu, taken from the standard menus of its
+ * @c id when @c menu is NULL. A menu control sized by the driver may have no @c menu. An integer
+ * menu control requires @c int_menu and @c max.
+ *
+ * The control is linked in a list, so it must stay in memory for the lifetime of the device.
+ *
+ * @param ctrl Video control to register, with its fields set by the driver
+ * @param dev Device to which this control is associated
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if a parameter or a mandatory field is invalid
+ * @retval -ERANGE if the value range is inconsistent with the control type
+ */
+int video_register_ctrl(struct video_ctrl *ctrl, const struct device *dev);
+
+/**
+ * @brief Register several contiguous video controls with their device
+ *
+ * Calls video_register_ctrl() on each control of an array, or of a structure holding only
+ * @ref video_ctrl members.
+ *
+ * @param ctrls Pointer to the first video control
+ * @param num Number of video controls to register
+ * @param dev Device to which these controls are associated
+ *
+ * @retval 0 on success
+ * @return Negative error code of the first failed registration
+ */
+int video_register_ctrls(struct video_ctrl *ctrls, size_t num, const struct device *dev);
+
+/**
  * @brief Initialize an integer control
  *
  * @param ctrl Video control to initialize
