@@ -4482,8 +4482,7 @@ NXP Platform Ethernet:
     - drivers/ethernet/dsa/dsa_tag_netc.*
     - drivers/ethernet/phy/*tja*
     - dts/bindings/ethernet/nxp,*
-    - dts/bindings/ethernet/mdio/nxp,*
-    - dts/bindings/ethernet/phy/nxp,*
+    - dts/bindings/ethernet/*/nxp,*
     - dts/bindings/dsa/nxp,*
     - include/zephyr/dt-bindings/ethernet/nxp_*
     - include/zephyr/drivers/ethernet/eth_nxp_*
