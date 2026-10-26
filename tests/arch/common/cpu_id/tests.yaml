@@ -1,0 +1,24 @@
+common:
+  tags:
+    - arch
+tests:
+  arch.common.cpu_id:
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+      - qemu_cortex_a53/qemu_cortex_a53
+  arch.common.cpu_id.smp:
+    # depends_on is evaluated before the platform key is claimed, so a
+    # uniprocessor board cannot take an architecture's slot away from
+    # its SMP platforms; the Kconfig filter then confirms the build.
+    depends_on: smp
+    filter: CONFIG_SMP and CONFIG_MP_MAX_NUM_CPUS > 1
+    tags:
+      - smp
+    extra_configs:
+      - CONFIG_SCHED_SIMPLE=y
+      - CONFIG_SCHED_CPU_MASK=y
+    integration_platforms:
+      - qemu_x86_64
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
