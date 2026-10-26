@@ -84,6 +84,10 @@ static void stm32wba_802154_transmit_done(
 static void stm32wba_802154_cca_done(uint8_t error);
 static void stm32wba_802154_energy_scan_done(int8_t ed_result);
 
+#if defined(CONFIG_BT_STM32WBA)
+extern int bt_ble_ctlr_init(void);
+#endif
+
 static const struct device *stm32wba_802154_get_device(void)
 {
 	LOG_DBG("Getting device instance");
@@ -790,21 +794,6 @@ static int stm32wba_802154_driver_init(const struct device *dev)
 	k_fifo_init(&stm32wba_802154_data.rx_fifo);
 	k_sem_init(&stm32wba_802154_data.tx_wait, 0, 1);
 	k_sem_init(&stm32wba_802154_data.cca_wait, 0, 1);
-#if defined(CONFIG_NET_L2_OPENTHREAD)
-	st_802154_ral_set_config_lib_params(1, 0, 0);
-#else
-	st_802154_ral_set_config_lib_params(0, 1, 0);
-#endif /* CONFIG_NET_L2_OPENTHREAD */
-	st_802154_ral_init();
-	st_802154_ral_promiscuous_set(false);
-#if !defined(CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA) && !defined(CONFIG_NET_L2_OPENTHREAD)
-	stm32wba_802154_data.rx_on_when_idle = true;
-#else
-	stm32wba_802154_data.rx_on_when_idle = false;
-#endif /* CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA && CONFIG_NET_L2_OPENTHREAD */
-	st_802154_ral_set_continuous_reception(stm32wba_802154_data.rx_on_when_idle);
-
-	stm32wba_802154_data.channel = 0;
 
 	k_thread_create(&stm32wba_802154_data.rx_thread, stm32wba_802154_data.rx_stack,
 			CONFIG_IEEE802154_STM32WBA_RX_STACK_SIZE,
@@ -830,7 +819,27 @@ static void stm32wba_802154_iface_init(struct net_if *iface)
 	};
 
 	link_layer_register_isr();
+#if defined(CONFIG_BT_STM32WBA)
+	if (bt_ble_ctlr_init() != 0) {
+		return;
+	}
+#endif
 
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+	st_802154_ral_set_config_lib_params(1, 0, 0);
+#else
+	st_802154_ral_set_config_lib_params(0, 1, 0);
+#endif /* CONFIG_NET_L2_OPENTHREAD */
+	st_802154_ral_init();
+	st_802154_ral_promiscuous_set(false);
+#if !defined(CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA) && !defined(CONFIG_NET_L2_OPENTHREAD)
+	stm32wba_802154_data.rx_on_when_idle = true;
+#else
+	stm32wba_802154_data.rx_on_when_idle = false;
+#endif /* CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA && CONFIG_NET_L2_OPENTHREAD */
+	st_802154_ral_set_continuous_reception(stm32wba_802154_data.rx_on_when_idle);
+
+	stm32wba_802154_data.channel = 0;
 #if !defined(CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA)
 	ll_sys_thread_init();
 	/* Intentionally discard the return values */

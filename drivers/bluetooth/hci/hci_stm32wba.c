@@ -74,6 +74,7 @@ struct aci_reset {
 #define BT_HCI_STATE_CLOSED                   2
 
 static uint8_t bt_hci_state = BT_HCI_STATE_DEINIT;
+static bool ble_ctrl_initialized;
 extern uint8_t ll_state_busy;
 
 static uint32_t ll_buffer[DIVC(BLE_LL_BUF_SIZE, 4)];
@@ -421,22 +422,25 @@ static void stm32wba_set_stack_options(BleStack_init_t *init_params_p)
 
 }
 
-static int bt_ble_ctlr_init(void)
+int bt_ble_ctlr_init(void)
 {
-	BleStack_init_t init_params_p = {0};
+	if (!ble_ctrl_initialized) {
+		BleStack_init_t init_params_p = {0};
 
-	/*
-	 * Set BLE Options, Options_extension, max_adv_set_nbr,
-	 * max_adv_data_len and MaxAddEattBearers according zephyr KConfig
-	 */
-	stm32wba_set_stack_options(&init_params_p);
+		/*
+		 * Set BLE Options, Options_extension, max_adv_set_nbr,
+		 * max_adv_data_len and MaxAddEattBearers according zephyr KConfig
+		 */
+		stm32wba_set_stack_options(&init_params_p);
 
-	init_params_p.ll_sm_num               = CFG_BLE_NUM_STATE_MACHINES;
-	init_params_p.ll_buffer               = (uint8_t *)ll_buffer;
-	init_params_p.ll_buffer_size          = BLE_LL_BUF_SIZE;
+		init_params_p.ll_sm_num               = CFG_BLE_NUM_STATE_MACHINES;
+		init_params_p.ll_buffer               = (uint8_t *)ll_buffer;
+		init_params_p.ll_buffer_size          = BLE_LL_BUF_SIZE;
 
-	if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
-		return -EIO;
+		if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
+			return -EIO;
+		}
+		ble_ctrl_initialized = true;
 	}
 
 	return 0;
