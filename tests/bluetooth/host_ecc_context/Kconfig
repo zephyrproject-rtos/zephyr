@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_ATOMIC_OPERATIONS_C
+	bool "Use the atomic operations implemented in C"
+	select ATOMIC_OPERATIONS_C
+	help
+	  Use the atomic operations implemented in C, which zephyr/sys/atomic.h
+	  prefers to the compiler builtins: they are functions of their own,
+	  which a test can wrap to run something just before an atomic
+	  operation of the Host.
+
+source "Kconfig.zephyr"
