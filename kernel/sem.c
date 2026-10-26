@@ -66,7 +66,7 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	k_object_init(sem);
 
 #ifdef CONFIG_OBJ_CORE_SEM
-	k_obj_core_init_and_link(K_OBJ_CORE(sem), &obj_type_sem);
+	z_obj_core_init_unlinked(K_OBJ_CORE(sem), &obj_type_sem);
 #endif /* CONFIG_OBJ_CORE_SEM */
 
 	return 0;
