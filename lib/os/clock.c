@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/div64.h>
 #include <zephyr/sys/timeutil.h>
 #include <zephyr/toolchain.h>
 
@@ -40,8 +41,8 @@ static bool is_valid_clock_id(int clock_id)
 
 static void timespec_from_ticks(uint64_t ticks, struct timespec *ts)
 {
-	uint64_t elapsed_secs = ticks / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	uint64_t nremainder = ticks % CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	uint64_t elapsed_secs = sys_div64_u32_const(ticks, CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	uint64_t nremainder = sys_mod64_u32_const(ticks, CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 
 	*ts = (struct timespec){
 		.tv_sec = (time_t)elapsed_secs,
@@ -184,8 +185,8 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 	    unlikely(rqtp->tv_sec >= (time_t)(UINT64_MAX / NSEC_PER_SEC))) {
 		uint64_t ns = (uint64_t)k_sleep(K_SECONDS(duration.tv_sec - 1)) * NSEC_PER_MSEC;
 		struct timespec rem = {
-			.tv_sec = (time_t)(ns / NSEC_PER_SEC),
-			.tv_nsec = ns % NSEC_PER_SEC,
+			.tv_sec = (time_t)sys_div64_u32_const(ns, NSEC_PER_SEC),
+			.tv_nsec = sys_mod64_u32_const(ns, NSEC_PER_SEC),
 		};
 
 		duration.tv_sec = 1;
