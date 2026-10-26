@@ -1196,6 +1196,15 @@ static inline uint8_t get_llao_len(struct net_if *iface)
 	return ROUND_UP(total_len, 8U);
 }
 
+/* A router must set the Router (R) flag in its Neighbor Advertisements
+ * (RFC 4861 4.4/7.2.4). Return the flag when IPv6 forwarding is enabled,
+ * otherwise 0 so host builds keep sending NAs with R=0.
+ */
+static inline uint8_t na_router_flag(void)
+{
+	return IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) ? NET_ICMPV6_NA_FLAG_ROUTER : 0U;
+}
+
 static inline bool set_llao(struct net_pkt *pkt,
 			    struct net_linkaddr *lladdr,
 			    uint8_t llao_len, uint8_t type)
@@ -1666,6 +1675,8 @@ nexthop_found:
 	}
 
 send_na:
+	flags |= na_router_flag();
+
 	if (src_lladdr.len > 0) {
 		if (!net_ipv6_nbr_add(net_pkt_iface(pkt),
 				      &ns_src, &src_lladdr, false,
@@ -3591,7 +3602,8 @@ static void send_unsolicited_na(struct net_if *iface, const struct net_in6_addr 
 	 * all-nodes multicast address, target set to our own address and the
 	 * Override flag set so neighbors replace a stale link-layer address.
 	 */
-	ret = net_ipv6_send_na(iface, addr, &dst, addr, NET_ICMPV6_NA_FLAG_OVERRIDE);
+	ret = net_ipv6_send_na(iface, addr, &dst, addr,
+			    NET_ICMPV6_NA_FLAG_OVERRIDE | na_router_flag());
 	if (ret < 0) {
 		NET_DBG("Cannot send unsolicited NA for %s on iface %d (%d)",
 			net_sprint_ipv6_addr(addr), net_if_get_by_iface(iface), ret);
