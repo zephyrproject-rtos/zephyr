@@ -58,7 +58,7 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 #endif	/* CONFIG_POLL */
 
 #ifdef CONFIG_OBJ_CORE_MSGQ
-	k_obj_core_init_and_link(K_OBJ_CORE(msgq), &obj_type_msgq);
+	z_obj_core_init_unlinked(K_OBJ_CORE(msgq), &obj_type_msgq);
 #endif /* CONFIG_OBJ_CORE_MSGQ */
 
 	SYS_PORT_TRACING_OBJ_INIT(k_msgq, msgq);

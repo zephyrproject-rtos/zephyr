@@ -65,7 +65,7 @@ void z_impl_k_event_init(struct k_event *event)
 	k_object_init(event);
 
 #ifdef CONFIG_OBJ_CORE_EVENT
-	k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
+	z_obj_core_init_unlinked(K_OBJ_CORE(event), &obj_type_event);
 #endif /* CONFIG_OBJ_CORE_EVENT */
 }
 

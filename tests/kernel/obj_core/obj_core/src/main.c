@@ -108,19 +108,25 @@ static void common_obj_core_test(uint32_t type_id, const char *str,
 			      "static %s not found with unlocked walk\n", str);
 	}
 
-	/* Search for dynamically initialized object */
+	/*
+	 * Search for dynamically initialized object. Only threads, which
+	 * unlink on abort, are listed. Other objects initialized at run time
+	 * have no end of life and are never linked.
+	 */
 
 	if (dyn_obj_core != NULL) {
+		int expected = (type_id == K_OBJ_TYPE_THREAD_ID) ? 1 : 0;
+
 		walk_data.obj_core = dyn_obj_core;
 		status = k_obj_type_walk_locked(obj_type, obj_core_find_op,
 						&walk_data);
-		zassert_equal(status, 1,
-			      "dynamic %s not found with locked walk\n", str);
+		zassert_equal(status, expected,
+			      "dynamic %s: unexpected locked walk result\n", str);
 
 		status = k_obj_type_walk_unlocked(obj_type, obj_core_find_op,
 						  &walk_data);
-		zassert_equal(status, 1,
-			      "dynamic %s not found with unlocked walk\n", str);
+		zassert_equal(status, expected,
+			      "dynamic %s: unexpected unlocked walk result\n", str);
 	}
 }
 
