@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(i3c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 #define MAX_I3C_BYTES 16
 
 struct i3c_ctrl {
-	const char *name;
+	const struct device *dev;
 #ifdef CONFIG_I3C_CONTROLLER
 	const union shell_cmd_entry *i3c_attached_dev_subcmd;
 	const union shell_cmd_entry *i3c_list_dev_subcmd;
@@ -95,7 +95,7 @@ I3C_FOREACH_STATUS_OKAY(I3C_CTRL_FN)
 #endif /* CONFIG_I3C_CONTROLLER */
 #define I3C_CTRL_LIST_ENTRY(node_id)                                                               \
 	{                                                                                          \
-		.name = DEVICE_DT_NAME(node_id),                                                   \
+		.dev = DEVICE_DT_GET_OPTIONAL(node_id),                                            \
 		IF_ENABLED(CONFIG_I3C_CONTROLLER,                                                  \
 			   (.i3c_attached_dev_subcmd = &node_id##sub_i3c_attached,                 \
 			    .i3c_list_dev_subcmd = &node_id##sub_i3c_list,))                       \
@@ -104,6 +104,22 @@ I3C_FOREACH_STATUS_OKAY(I3C_CTRL_FN)
 const struct i3c_ctrl i3c_list[] = {
 	I3C_FOREACH_STATUS_OKAY(I3C_CTRL_LIST_ENTRY)
 };
+
+/* Get the idx-th controller that has a device object. */
+static const struct i3c_ctrl *i3c_ctrl_get(size_t idx)
+{
+	ARRAY_FOR_EACH_PTR(i3c_list, ctrl) {
+		if (ctrl->dev == NULL) {
+			continue;
+		}
+		if (idx == 0) {
+			return ctrl;
+		}
+		idx--;
+	}
+
+	return NULL;
+}
 #ifdef CONFIG_I3C_CONTROLLER
 static int get_bytes_count_for_hex(char *arg)
 {
@@ -2114,13 +2130,16 @@ static int cmd_i3c_ibi_disable(const struct shell *sh, size_t argc, char **argv)
 #ifdef CONFIG_I3C_CONTROLLER
 static void i3c_device_list_target_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	if (idx < ARRAY_SIZE(i3c_list)) {
-		entry->syntax = i3c_list[idx].name;
-		entry->handler = NULL;
-		entry->help = NULL;
-		entry->subcmd = i3c_list[idx].i3c_list_dev_subcmd;
-	} else {
-		entry->syntax = NULL;
+	const struct i3c_ctrl *ctrl = i3c_ctrl_get(idx);
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	if (ctrl != NULL) {
+		entry->syntax = ctrl->dev->name;
+		entry->subcmd = ctrl->i3c_list_dev_subcmd;
 	}
 }
 
@@ -2128,13 +2147,16 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_i3c_device_list_name, i3c_device_list_target_name_
 
 static void i3c_device_attached_target_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	if (idx < ARRAY_SIZE(i3c_list)) {
-		entry->syntax = i3c_list[idx].name;
-		entry->handler = NULL;
-		entry->help = NULL;
-		entry->subcmd = i3c_list[idx].i3c_attached_dev_subcmd;
-	} else {
-		entry->syntax = NULL;
+	const struct i3c_ctrl *ctrl = i3c_ctrl_get(idx);
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	if (ctrl != NULL) {
+		entry->syntax = ctrl->dev->name;
+		entry->subcmd = ctrl->i3c_attached_dev_subcmd;
 	}
 }
 
@@ -2143,13 +2165,15 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_i3c_device_attached_name, i3c_device_attached_targ
 
 static void i3c_device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	if (idx < ARRAY_SIZE(i3c_list)) {
-		entry->syntax = i3c_list[idx].name;
-		entry->handler = NULL;
-		entry->help = NULL;
-		entry->subcmd = NULL;
-	} else {
-		entry->syntax = NULL;
+	const struct i3c_ctrl *ctrl = i3c_ctrl_get(idx);
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	if (ctrl != NULL) {
+		entry->syntax = ctrl->dev->name;
 	}
 }
 
