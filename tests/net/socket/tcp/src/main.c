@@ -2004,6 +2004,18 @@ ZTEST(net_socket_tcp, test_v4_msg_waitall)
 			  "Invalid data received");
 	k_work_cancel_delayable(&test_data.tx_work);
 
+	/* MSG_WAITALL + MSG_DONTWAIT - make sure recv returns the data that is
+	 * already queued
+	 */
+	memset(rx_buf, 0, sizeof(rx_buf));
+	test_send(c_sock, TEST_STR_SMALL, sizeof(rx_buf) - 1, 0);
+	k_msleep(THREAD_SLEEP);
+
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL | ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
+			  "Invalid data received");
+
 	test_close(new_sock);
 	test_close(s_sock);
 	test_close(c_sock);
@@ -2077,6 +2089,18 @@ ZTEST(net_socket_tcp, test_v6_msg_waitall)
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
 			  "Invalid data received");
 	k_work_cancel_delayable(&test_data.tx_work);
+
+	/* MSG_WAITALL + MSG_DONTWAIT - make sure recv returns the data that is
+	 * already queued
+	 */
+	memset(rx_buf, 0, sizeof(rx_buf));
+	test_send(c_sock, TEST_STR_SMALL, sizeof(rx_buf) - 1, 0);
+	k_msleep(THREAD_SLEEP);
+
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL | ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
+			  "Invalid data received");
 
 	test_close(new_sock);
 	test_close(s_sock);
