@@ -145,6 +145,86 @@ static bool conn_track_match_origin(struct net_pkt *pkt,
 	return false;
 }
 
+/* Internal and external port of a TCP or UDP mapping, in network byte order */
+static uint16_t conn_track_int_port(const struct net_nat4_entry *entry)
+{
+	const struct net_conn_tuple *in = &entry->tuple[NET_NAT_DIR_ORIGIN];
+
+	return in->proto == NET_IPPROTO_TCP ? in->tcp.src_port : in->udp.src_port;
+}
+
+static uint16_t conn_track_ext_port(const struct net_nat4_entry *entry)
+{
+	const struct net_conn_tuple *out = &entry->tuple[NET_NAT_DIR_REPLY];
+
+	return out->proto == NET_IPPROTO_TCP ? out->tcp.dst_port : out->udp.dst_port;
+}
+
+/* Check whether an active mapping uses ext_port on the external address of
+ * entry for the same protocol.
+ */
+static bool conn_track_port_in_use(const struct net_nat4_entry *entry, uint16_t ext_port)
+{
+	const struct net_conn_tuple *out = &entry->tuple[NET_NAT_DIR_REPLY];
+	int i;
+
+	for (i = 0; i < CONFIG_NET_IPV4_CONN_TRACK_MAX_NUM; i++) {
+		const struct net_nat4_entry *other = &iptables.table[i];
+
+		if (other->state != CONN_TRACK_UNUSED &&
+		    other->tuple[NET_NAT_DIR_REPLY].proto == out->proto &&
+		    net_ipv4_addr_cmp_raw(other->tuple[NET_NAT_DIR_REPLY].dst, out->dst) &&
+		    conn_track_ext_port(other) == ext_port) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Choose the external port of a new TCP or UDP mapping, in network byte
+ * order. An internal address and port that already has a mapping keeps its
+ * external port for every destination (endpoint-independent mapping,
+ * RFC 4787 REQ-1, RFC 5382 REQ-1). Otherwise the internal port is used when
+ * it is free, and on a collision the next free port of the same range
+ * (1-1023 or 1024-65535) and parity, so that two internal endpoints never
+ * share an external port (RFC 4787 REQ-3 and REQ-4, RFC 5382 REQ-7).
+ */
+static bool conn_track_alloc_port(const struct net_nat4_entry *entry, uint16_t *ext_port)
+{
+	const struct net_conn_tuple *in = &entry->tuple[NET_NAT_DIR_ORIGIN];
+	const struct net_conn_tuple *out = &entry->tuple[NET_NAT_DIR_REPLY];
+	uint16_t int_port = net_ntohs(conn_track_int_port(entry));
+	uint32_t first = int_port < 1024U ? 0U : 1024U;
+	uint32_t span = int_port < 1024U ? 1024U : 65536U - 1024U;
+	uint32_t step;
+	int i;
+
+	for (i = 0; i < CONFIG_NET_IPV4_CONN_TRACK_MAX_NUM; i++) {
+		const struct net_nat4_entry *other = &iptables.table[i];
+
+		if (other->state != CONN_TRACK_UNUSED &&
+		    other->tuple[NET_NAT_DIR_ORIGIN].proto == in->proto &&
+		    net_ipv4_addr_cmp_raw(other->tuple[NET_NAT_DIR_ORIGIN].src, in->src) &&
+		    conn_track_int_port(other) == conn_track_int_port(entry) &&
+		    net_ipv4_addr_cmp_raw(other->tuple[NET_NAT_DIR_REPLY].dst, out->dst)) {
+			*ext_port = conn_track_ext_port(other);
+			return true;
+		}
+	}
+
+	for (step = 0U; step < span; step += 2U) {
+		uint16_t port = (uint16_t)(first + (int_port - first + step) % span);
+
+		if (port != 0U && !conn_track_port_in_use(entry, net_htons(port))) {
+			*ext_port = net_htons(port);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool conn_track_new(struct net_pkt *pkt,
 			   struct net_ipv4_hdr *iphdr,
 			   void *l4hdr,
@@ -199,6 +279,21 @@ static bool conn_track_new(struct net_pkt *pkt,
 	net_ipv4_addr_copy_raw(in->dst, iphdr->dst);
 	net_ipv4_addr_copy_raw(out->src, iphdr->dst);
 	net_ipv4_addr_copy_raw(out->dst, ifaddr->address.in_addr.s4_addr);
+
+	if (in->proto == NET_IPPROTO_TCP || in->proto == NET_IPPROTO_UDP) {
+		uint16_t ext_port;
+
+		if (!conn_track_alloc_port(entry, &ext_port)) {
+			NET_DBG("No free external port");
+			return false;
+		}
+
+		if (in->proto == NET_IPPROTO_TCP) {
+			out->tcp.dst_port = ext_port;
+		} else {
+			out->udp.dst_port = ext_port;
+		}
+	}
 
 	entry->state = CONN_TRACK_WAITING;
 	return true;
