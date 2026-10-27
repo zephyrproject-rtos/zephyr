@@ -33,7 +33,6 @@ these references:
 
 - `MCX E24x Series Microcontrollers Website`_
 - `FRDM-MCXE247 Website`_
-- `FRDM-MCXE247 Quick Reference Guide`_
 - `FRDM-MCXE247 Getting Started`_
 
 Supported Features
@@ -207,9 +206,6 @@ exercise the flash with the MSPI flash sample
 
 .. _FRDM-MCXE247 Website:
    https://www.nxp.com/design/design-center/development-boards-and-designs/FRDM-MCXE247
-
-.. _FRDM-MCXE247 Quick Reference Guide:
-   https://www.nxp.com/docs/en/quick-reference-guide/MCXE247QSG.pdf
 
 .. _FRDM-MCXE247 Getting Started:
    https://www.nxp.com/document/guide/getting-started-with-the-frdm-mcxe247-board:GS-FRDM-MCXE247
