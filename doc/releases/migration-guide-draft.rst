@@ -62,6 +62,15 @@ Ethernet
   the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
   must select it as well. (:github:`120871`)
 
+MFD
+===
+
+* nPM2100 event callbacks now use :c:struct:`mfd_npm2100_event_callback` instead of
+  :c:struct:`gpio_callback`. Set its ``handler`` and ``event_mask`` fields directly instead of
+  calling ``gpio_init_callback()``. The handler takes a pointer to the new callback structure
+  and an ``npm2100_event_t`` event mask; existing ``BIT(NPM2100_EVENT_*)`` masks are unchanged.
+  (:github:`120768`)
+
 OPAMP
 =====
 
