@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(tls_configuration_sample, LOG_LEVEL_INF);
 #include <psa/crypto.h>
 #endif
 
-#if defined(CONFIG_NET_TEST)
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE)
 #include <mbedtls/ssl.h>
 
 int ztls_get_cached_session(int fd, mbedtls_ssl_session *session);
@@ -64,9 +64,9 @@ static struct zsock_pollfd fds[1];
 #define TEST_STRING "hello world\n"
 static uint8_t test_buf[sizeof(TEST_STRING)];
 
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE)
 static int check_cached_ticket(void)
 {
-#if defined(CONFIG_NET_TEST)
 	mbedtls_ssl_session session;
 	int ret;
 
@@ -78,10 +78,8 @@ static int check_cached_ticket(void)
 
 	mbedtls_ssl_session_free(&session);
 	return ret;
-#else
-	return 0;
-#endif
 }
+#endif /* CONFIG_NET_SOCKETS_TEST_SESSION_CACHE */
 
 static int wait_for_event(void)
 {
@@ -139,7 +137,7 @@ static int create_socket(void)
 	}
 #endif
 
-#if defined(CONFIG_NET_TEST)
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE)
 	int session_cache = ZSOCK_TLS_SESSION_CACHE_ENABLED;
 
 	ret = zsock_setsockopt(socket_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SESSION_CACHE,
@@ -302,11 +300,13 @@ int main(void)
 		LOG_DBG("Received: %s", test_buf);
 	}
 
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE)
 	ret = check_cached_ticket();
 	if (ret < 0) {
 		LOG_ERR("TLS session ticket was not cached (%d)", ret);
 		goto exit;
 	}
+#endif /* CONFIG_NET_SOCKETS_TEST_SESSION_CACHE */
 
 	ret = memcmp(TEST_STRING, test_buf, data_len);
 	if (ret != 0) {

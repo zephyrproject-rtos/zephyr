@@ -319,6 +319,13 @@ config NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
 	  is available to use. It allows to register a certificate verification
 	  callback, which is called by the TLS backend during the TLS handshake.
 
+config NET_SOCKETS_TEST_SESSION_CACHE
+	bool "Provide access to test functions for session cache management"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Expose ztls_get_cached_session() so that tests can inspect the TLS
+	  session cache. This is meant for testing only.
+
 config NET_SOCKETS_OFFLOAD
 	bool "Offload Socket APIs"
 	help
