@@ -324,7 +324,7 @@ static int getopt_internal(struct sys_getopt_state *state, int nargc, char *cons
 			   const char *options, const struct sys_getopt_option *long_options,
 			   int *idx, int flags)
 {
-	char *oli; /* option letter list index */
+	const char *oli; /* option letter list index */
 	int optchar, short_too;
 
 	if (options == NULL) {
