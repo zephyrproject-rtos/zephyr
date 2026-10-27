@@ -27,11 +27,6 @@ LOG_MODULE_REGISTER(silabs_sleeptimer_timer);
 /* Ensure interrupt names don't expand to register interface struct pointers */
 #undef RTCC
 
-/* With CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME, this global variable holds the clock frequency,
- * and must be written by the driver at init.
- */
-extern unsigned int z_clock_hw_cycles_per_sec;
-
 /* Global timer state */
 struct sleeptimer_timer_data {
 	uint32_t cyc_per_tick;      /* Number of hw_cycles per 1 kernel tick */
@@ -126,12 +121,12 @@ static int sleeptimer_init(void)
 
 	sl_sleeptimer_init();
 
-	z_clock_hw_cycles_per_sec = sl_sleeptimer_get_timer_frequency();
+	z_sys_clock_hw_cycles_per_sec_set(sl_sleeptimer_get_timer_frequency());
 
 	BUILD_ASSERT(CONFIG_SYS_CLOCK_TICKS_PER_SEC > 0,
 		     "Invalid CONFIG_SYS_CLOCK_TICKS_PER_SEC value");
 
-	timer->cyc_per_tick = z_clock_hw_cycles_per_sec / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	timer->cyc_per_tick = sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	timer->max_timeout_ticks = MAX_TIMEOUT_CYC / timer->cyc_per_tick;
 	timer->initialized = true;
