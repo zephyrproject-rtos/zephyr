@@ -175,6 +175,51 @@ due to the extra dependencies and due to the non-local nature of ``select``,
 which hides ways in which a symbol might get enabled.
 
 
+.. _kconfig_select_loops:
+
+Dependency loops through ``select``
+===================================
+
+A symbol must not depend on itself, directly or through other symbols. Zephyr's
+Kconfig implementation makes an exception for loops that go through a
+``select`` or ``imply``. This lets a driver select the bus it uses, even if a
+driver for that bus selects the subsystem of the first driver:
+
+.. code-block:: kconfig
+
+   if GPIO
+
+   config GPIO_EXPANDER
+      bool "SPI GPIO expander driver"
+      default y
+      depends on DT_HAS_VND_EXPANDER_ENABLED
+      select SPI
+
+   endif
+
+   ...
+
+   if SPI
+
+   config SPI_CONTROLLER
+      bool "SPI controller driver"
+      default y
+      depends on DT_HAS_VND_SPI_ENABLED
+      select GPIO
+
+   endif
+
+The symbols in such a loop get the smallest values that satisfy all
+definitions. A symbol in the loop is ``n`` unless something outside the loop,
+such as a user value or a default, makes it ``y``. In the example above,
+``GPIO`` and ``SPI`` stay ``n`` unless one of them is enabled, and enabling
+either one enables all four symbols.
+
+The symbols in a loop must be non-choice ``bool`` symbols, and must not appear
+negated (``!FOO``) or in comparisons (``FOO = y``) in each other's definitions.
+Loops without a ``select`` or ``imply`` are still errors.
+
+
 Alternatives to ``select``
 ==========================
 
