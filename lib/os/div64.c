@@ -27,6 +27,17 @@ uint64_t z_div64_u32_recip(uint64_t n, uint64_t m, uint32_t flags)
 	return div64_shr(n, flags & Z_DIV64_SHIFT_MASK);
 }
 
+uint64_t z_div64_shared_div(uint64_t n, const struct sys_div64_recip *r)
+{
+	return z_div64_u32_recip(n, r->m, r->flags);
+}
+
+#define DEFINE_SHARED(name, v)                                                                     \
+	const struct sys_div64_recip z_div64_recip_##name =                                        \
+		SYS_DIV64_RECIP_INIT(((v) != 0U) ? (v) : 1U);
+
+Z_DIV64_SHARED_LIST(DEFINE_SHARED)
+
 /* The derivation of Z_DIV64_M() and Z_DIV64_FLAGS(), for a run-time divisor. */
 void sys_div64_recip_init(struct sys_div64_recip *r, uint32_t d)
 {

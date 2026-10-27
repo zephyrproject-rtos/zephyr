@@ -177,6 +177,21 @@ ZTEST(div64, test_recip_static)
 	}
 }
 
+#if !defined(CONFIG_64BIT)
+/* The shared reciprocals divide by their value. */
+#define CHECK_SHARED(name, v)                                                                      \
+	if ((v) > 1U) {                                                                            \
+		check_recip(&z_div64_recip_##name, (v), RANDOM_DIVIDENDS, &s);                     \
+	}
+
+ZTEST(div64, test_shared)
+{
+	uint64_t s = 0x5851f42d4c957f2dULL;
+
+	Z_DIV64_SHARED_LIST(CHECK_SHARED)
+}
+#endif
+
 ZTEST(div64, test_recip_runtime)
 {
 	uint64_t s = 0x9e3779b97f4a7c15ULL;

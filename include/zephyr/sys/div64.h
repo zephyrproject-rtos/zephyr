@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_SYS_DIV64_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include <zephyr/toolchain.h>
@@ -118,6 +119,64 @@ static ALWAYS_INLINE uint64_t z_div64_mulhi(uint64_t n, uint64_t m, bool bias, b
 /* n / d from the m and flags of a reciprocal of d. */
 __attribute_const__ uint64_t z_div64_u32_recip(uint64_t n, uint64_t m, uint32_t flags);
 
+struct sys_div64_recip;
+
+/* n / d from a shared reciprocal of d. Those never change, so the result
+ * depends only on the arguments.
+ */
+__attribute_const__ uint64_t z_div64_shared_div(uint64_t n, const struct sys_div64_recip *r);
+
+#if defined(CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define Z_DIV64_TICKS ((uint32_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#else
+#define Z_DIV64_TICKS 0U
+#endif
+
+#if defined(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) &&                                                 \
+	!defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#define Z_DIV64_CYCLES ((uint32_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
+#else
+#define Z_DIV64_CYCLES 0U
+#endif
+
+/* a / b, or 0 when b is 0 */
+#define Z_DIV64_RATIO(a, b) (((b) != 0U) ? ((uint32_t)(a) / (((b) != 0U) ? (b) : 1U)) : 0U)
+
+/* Common divisors: the time units, the tick and cycle rates, and the ratios
+ * between them that time conversions divide by. An entry below 2 is unused.
+ */
+#define Z_DIV64_SHARED_LIST(X)                                                                     \
+	X(1000, 1000U)                                                                             \
+	X(1000000, 1000000U)                                                                       \
+	X(1000000000, 1000000000U)                                                                 \
+	X(ticks, Z_DIV64_TICKS)                                                                    \
+	X(cycles, Z_DIV64_CYCLES)                                                                  \
+	X(ms_per_tick, Z_DIV64_RATIO(1000U, Z_DIV64_TICKS))                                        \
+	X(us_per_tick, Z_DIV64_RATIO(1000000U, Z_DIV64_TICKS))                                     \
+	X(ns_per_tick, Z_DIV64_RATIO(1000000000U, Z_DIV64_TICKS))                                  \
+	X(ticks_per_ms, Z_DIV64_RATIO(Z_DIV64_TICKS, 1000U))                                       \
+	X(cycles_per_ms, Z_DIV64_RATIO(Z_DIV64_CYCLES, 1000U))                                     \
+	X(cycles_per_us, Z_DIV64_RATIO(Z_DIV64_CYCLES, 1000000U))                                  \
+	X(cycles_per_tick, Z_DIV64_RATIO(Z_DIV64_CYCLES, Z_DIV64_TICKS))                           \
+	X(ns_per_cycle, Z_DIV64_RATIO(1000000000U, Z_DIV64_CYCLES))
+
+#define Z_DIV64_SHARED_DECLARE(name, v) extern const struct sys_div64_recip z_div64_recip_##name;
+Z_DIV64_SHARED_LIST(Z_DIV64_SHARED_DECLARE)
+
+#define Z_DIV64_SHARED_MATCH(name, v)                                                              \
+	if (((v) > 1U) && (d == (v))) {                                                            \
+		return &z_div64_recip_##name;                                                      \
+	}
+
+/* The shared reciprocal of d, or NULL. A call passes a pointer to it instead
+ * of loading m and flags.
+ */
+static ALWAYS_INLINE const struct sys_div64_recip *z_div64_shared(uint64_t d)
+{
+	Z_DIV64_SHARED_LIST(Z_DIV64_SHARED_MATCH)
+	return NULL;
+}
+
 /* n / d for a constant d. The derivation folds away once inlined. A
  * non-constant d, or a build without the optimizer, divides plainly.
  */
@@ -136,6 +195,8 @@ static ALWAYS_INLINE uint64_t z_div64_u32_const(uint64_t n, uint64_t d, bool inl
 	if (inl) {
 		q = z_div64_mulhi(n, Z_DIV64_M(d), Z_DIV64_BIAS(d), Z_DIV64_NO_OVF(d)) >>
 		    Z_DIV64_SHIFT(d);
+	} else if (z_div64_shared(d) != NULL) {
+		q = z_div64_shared_div(n, z_div64_shared(d));
 	} else {
 		q = z_div64_u32_recip(n, Z_DIV64_M(d), Z_DIV64_FLAGS(d));
 	}
