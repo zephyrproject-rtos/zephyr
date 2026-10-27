@@ -268,7 +268,7 @@ static DEVICE_API(gpio, gpio_ch5xx_driver_api) = {
 #define GPIO_CH5XX_INIT(idx)                                                                       \
 	static const struct gpio_ch5xx_config gpio_ch5xx_##idx##_config = {                        \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
-		.regs = (GPIO_TypeDef *)DT_INST_REG_ADDR(idx),                                     \
+		.regs = (GPIO_TypeDef *)DT_REG_ADDR(DT_PARENT(DT_DRV_INST(idx))),                  \
 		.port = DT_INST_ENUM_IDX(idx, port),                                               \
 	};                                                                                         \
 	static struct gpio_ch5xx_data gpio_ch5xx_##idx##_data;                                     \

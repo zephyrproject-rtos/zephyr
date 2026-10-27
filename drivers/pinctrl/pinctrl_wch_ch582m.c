@@ -13,6 +13,8 @@
 
 #include <hal_ch32fun.h>
 
+static GPIO_TypeDef *const wch_gpio_regs = (GPIO_TypeDef *)DT_REG_ADDR(DT_NODELABEL(gpios));
+
 static void pinctrl_wch_ch582m_gpio_init(const pinctrl_soc_pin_t *pin)
 {
 	uint8_t gpio_pin = FIELD_GET(CH582M_PINCTRL_PIN_MASK, pin->config);
@@ -21,62 +23,63 @@ static void pinctrl_wch_ch582m_gpio_init(const pinctrl_soc_pin_t *pin)
 
 	if (port == CH582M_PINCTRL_PORT_B) {
 		if (pin->drive_push_pull || pin->output_high || pin->output_low) {
-			R32_PB_DIR |= gpio_pin_mask;
+			wch_gpio_regs->PB_DIR |= gpio_pin_mask;
 			if (pin->drive_push_pull && pin->push_pull_high_capacity) {
-				R32_PB_PD_DRV |= gpio_pin_mask;
+				wch_gpio_regs->PB_PD_DRV |= gpio_pin_mask;
 			} else {
-				R32_PB_PD_DRV &= ~gpio_pin_mask;
+				wch_gpio_regs->PB_PD_DRV &= ~gpio_pin_mask;
 			}
 
 			if (pin->output_high) {
-				R32_PB_SET = gpio_pin_mask;
+				wch_gpio_regs->PB_SET = gpio_pin_mask;
 			} else if (pin->output_low) {
-				R32_PB_CLR = gpio_pin_mask;
+				wch_gpio_regs->PB_CLR = gpio_pin_mask;
 			} else {
 				/* No output level specified */
 			}
 		} else {
-			R32_PB_DIR &= ~gpio_pin_mask;
+			wch_gpio_regs->PB_DIR &= ~gpio_pin_mask;
 			if (pin->bias_pull_up) {
-				R32_PB_PD_DRV &= ~gpio_pin_mask;
-				R32_PB_PU |= gpio_pin_mask;
+				wch_gpio_regs->PB_PD_DRV &= ~gpio_pin_mask;
+				wch_gpio_regs->PB_PU |= gpio_pin_mask;
 			} else if (pin->bias_pull_down) {
-				R32_PB_PD_DRV |= gpio_pin_mask;
-				R32_PB_PU &= ~gpio_pin_mask;
+				wch_gpio_regs->PB_PD_DRV |= gpio_pin_mask;
+				wch_gpio_regs->PB_PU &= ~gpio_pin_mask;
 			} else {
 				/* bias-high-impedance */
-				R32_PB_PD_DRV &= ~gpio_pin_mask;
-				R32_PB_PU &= ~gpio_pin_mask;
+				wch_gpio_regs->PB_PD_DRV &= ~gpio_pin_mask;
+				wch_gpio_regs->PB_PU &= ~gpio_pin_mask;
 			}
 		}
 	} else {
 		if (pin->drive_push_pull || pin->output_high || pin->output_low) {
-			R32_PA_DIR |= gpio_pin_mask;
+			wch_gpio_regs->PA_DIR |= gpio_pin_mask;
 			if (pin->drive_push_pull && pin->push_pull_high_capacity) {
-				R32_PA_PD_DRV |= gpio_pin_mask;
+				wch_gpio_regs->PA_PD_DRV |= gpio_pin_mask;
 			} else {
-				R32_PA_PD_DRV &= ~gpio_pin_mask;
+				wch_gpio_regs->PA_PD_DRV &= ~gpio_pin_mask;
 			}
 
 			if (pin->output_high) {
-				R32_PA_SET = gpio_pin_mask;
+				wch_gpio_regs->PA_SET = gpio_pin_mask;
 			} else if (pin->output_low) {
-				R32_PA_CLR = gpio_pin_mask;
+				wch_gpio_regs->PA_CLR = gpio_pin_mask;
 			} else {
 				/* No output level specified */
 			}
 		} else {
-			R32_PA_DIR &= ~gpio_pin_mask;
+			wch_gpio_regs->PA_DIR &= ~gpio_pin_mask;
+
 			if (pin->bias_pull_up) {
-				R32_PA_PD_DRV &= ~gpio_pin_mask;
-				R32_PA_PU |= gpio_pin_mask;
+				wch_gpio_regs->PA_PD_DRV &= ~gpio_pin_mask;
+				wch_gpio_regs->PA_PU |= gpio_pin_mask;
 			} else if (pin->bias_pull_down) {
-				R32_PA_PD_DRV |= gpio_pin_mask;
-				R32_PA_PU &= ~gpio_pin_mask;
+				wch_gpio_regs->PA_PD_DRV |= gpio_pin_mask;
+				wch_gpio_regs->PA_PU &= ~gpio_pin_mask;
 			} else {
 				/* bias-high-impedance */
-				R32_PA_PD_DRV &= ~gpio_pin_mask;
-				R32_PA_PU &= ~gpio_pin_mask;
+				wch_gpio_regs->PA_PD_DRV &= ~gpio_pin_mask;
+				wch_gpio_regs->PA_PU &= ~gpio_pin_mask;
 			}
 		}
 	}

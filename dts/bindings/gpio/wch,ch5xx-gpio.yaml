@@ -10,6 +10,9 @@ include: [gpio-controller.yaml, base.yaml]
 properties:
   reg:
     required: true
+    description: |
+      Port index within the parent GPIO register block: 0 for port A, 1 for port B.
+      The parent node holds the register block address.
 
   "#gpio-cells":
     const: 2
