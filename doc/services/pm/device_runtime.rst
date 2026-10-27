@@ -10,7 +10,7 @@ The device runtime power management (PM) framework is an active power management
 mechanism which reduces the overall system power consumption by suspending the
 devices which are idle or not used independently of the system state. It can be
 enabled by setting :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`. In this model the device
-driver is responsible to indicate when it needs the device and when it does not.
+driver is responsible for indicating when it needs the device and when it does not.
 This information is used to determine when to suspend or resume a device based
 on usage count.
 
@@ -31,7 +31,7 @@ power management automatically attempts to request and release the dependent dom
 in response to :c:func:`pm_device_runtime_get` and :c:func:`pm_device_runtime_put`
 calls on the child device.
 
-For the previous to automatically control the power domain state, device runtime PM must be enabled
+For the power domain state to be controlled automatically, device runtime PM must be enabled
 on the power domain device. To enable device runtime PM globally, enable
 :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`. To enable device runtime PM only for
 select devices, set the ``zephyr,pm-device-runtime-auto`` devicetree property, or use
@@ -69,8 +69,8 @@ Design principles
 *****************
 
 When runtime PM is enabled on a device it will no longer be resumed or suspended
-during system power transitions. Instead, the device is fully responsible to
-indicate when it needs a device and when it does not. The device runtime PM API
+during system power transitions. Instead, the device driver is fully responsible
+for indicating when the device is needed and when it is not. The device runtime PM API
 uses reference counting to keep track of device's usage. This allows the API to
 determine when a device needs to be resumed or suspended. The API uses the *get*
 and *put* terminology to indicate when a device is needed or not, respectively.
@@ -95,7 +95,7 @@ indicate it *needs* the device to be active or operational. This function will
 increase device usage count and resume the device if necessary. Similarly, the
 :c:func:`pm_device_runtime_put` function can be used to indicate that the device
 is no longer needed. This function will decrease the device usage count and
-suspend the device if necessary. It is worth to note that in both cases, the
+suspend the device if necessary. Note that in both cases the
 operation is carried out synchronously. The sequence diagram shown below
 illustrates how a device can use this API and the expected sequence of events.
 
@@ -138,7 +138,7 @@ memory usage and system complexity.
 Implementation guidelines
 *************************
 
-In a first place, a device driver needs to implement the PM action callback used
+First, a device driver needs to implement the PM action callback used
 by the PM subsystem to suspend or resume devices.
 
 .. code-block:: c

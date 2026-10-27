@@ -4,11 +4,11 @@ Device Power Management
 Introduction
 ************
 
-Device Power Management in Zephyr is a feature which presents mechanisms
-to coherently affect the control of power management actions to be taken
-by device drivers. This control is based on unambiguous expectations
-which could be set by any component of the system, and on power-related
-dependencies that devices may have on each other.
+Device power management in Zephyr provides the mechanisms used to control
+the power state of individual devices. Any component of the system
+(drivers, subsystems, applications) can influence when a device is
+suspended or resumed, and power-related dependencies between devices are
+taken into account.
 
 Zephyr supports two methods of device power management:
 
@@ -156,7 +156,7 @@ The power management subsystem defines device states in
 :c:enum:`pm_device_state`. This method is used to track power states of
 a particular device. It is important to emphasize that, although the
 state is tracked by the subsystem, it is the responsibility of each device driver
-to handle device actions(:c:enum:`pm_device_action`) which change device state.
+to handle device actions (:c:enum:`pm_device_action`) which change device state.
 
 Device drivers implement the :c:func:`pm_device_action_cb_t` hook internally
 which receives the :c:enum:`pm_device_action` for the device driver to handle.
@@ -308,7 +308,7 @@ for brevity, in real drivers they must be handled.
             * are releasing the bus and the enable pin.
             *
             * The device driver would keep the bus ACTIVE while the device is
-            * ACTIVE in cases of high throughput or unsolicitet data on the
+            * ACTIVE in cases of high throughput or unsolicited data on the
             * bus, to avoid inefficient RESUME/SUSPEND cycles of the bus
             * for every transaction, and allowing reception of unsolicited
             * data on buses like UART.
@@ -318,7 +318,7 @@ for brevity, in real drivers they must be handled.
 
            /*
             * Note that the interrupt pin's port is kept resumed as it
-            * it needs to service the GPIO interrupt we enabled.
+            * needs to service the GPIO interrupt we enabled.
             */
 
            return 0;
@@ -508,7 +508,7 @@ Device Model with Partial Device Power Management Support
 *********************************************************
 
 If :kconfig:option:`CONFIG_PM_DEVICE` is not enabled, the device
-power state is tied to the devices initialization state.
+power state is tied to the device's initialization state.
 
 Once a device is initialized, the device driver PM action hook is
 used to move the device to the expected initial state through calling
@@ -587,8 +587,8 @@ longer doing an operation and can be suspended, it should call
 
 .. _pm-device-constraint:
 
-Device Power Management X System Power Management
-*************************************************
+Device Power Management and System Power Management
+***************************************************
 
 When managing power in embedded systems, it's crucial to understand
 the interplay between device power state and the overall system power
@@ -598,12 +598,14 @@ supply power to peripheral devices, leading to problems if the device
 is in the middle of an operation. Proper coordination is essential to
 maintain system stability and data integrity.
 
-To avoid this sort of problem, devices must :ref:`get and release lock <pm-policy-power-states>`
-power states that cause power loss during an operation.
+To avoid this sort of problem, devices must :ref:`lock <pm-policy-power-states>`
+the power states that would cause them to lose power while an operation is in
+progress, and release the lock once the operation is done.
 
 Zephyr provides a mechanism for devices to declare which power states cause power
-loss and an API that automatically get and put lock on them. This feature is
-enabled setting :kconfig:option:`CONFIG_PM_POLICY_DEVICE_CONSTRAINTS` to ``y``.
+loss and an API that automatically gets and puts the corresponding locks. This
+feature is enabled by setting :kconfig:option:`CONFIG_PM_POLICY_DEVICE_CONSTRAINTS`
+to ``y``.
 
 Once this feature is enabled, devices must declare in devicetree which
 states cause power loss. In the following example, device ``test_dev``
@@ -646,8 +648,8 @@ says that power states ``state1`` and ``state2`` cause power loss.
             zephyr,disabling-power-states = <&state1 &state2>;
     };
 
-After that devices can lock these state calling
-:c:func:`pm_policy_device_power_lock_get` and release with
+Devices can then lock these states by calling
+:c:func:`pm_policy_device_power_lock_get` and release the lock with
 :c:func:`pm_policy_device_power_lock_put`. For example:
 
 .. code-block:: C
@@ -691,9 +693,9 @@ When a device has such capability, applications can enable or disable
 this feature on a device dynamically using
 :c:func:`pm_device_wakeup_enable`.
 
-This property can be set on device declaring the property ``wakeup-source`` in
-the device node in devicetree. For example, this devicetree fragment sets the
-``gpio0`` device as a "wakeup" source:
+A device is declared as wakeup capable by setting the ``wakeup-source``
+property in its devicetree node. For example, this devicetree fragment sets
+the ``gpio0`` device as a "wakeup" source:
 
 .. code-block:: devicetree
 
@@ -710,14 +712,14 @@ the device node in devicetree. For example, this devicetree fragment sets the
 
 By default, "wakeup" capable devices do not have this functionality enabled
 during the device initialization. Applications can enable this functionality
-later calling :c:func:`pm_device_wakeup_enable`.
+later by calling :c:func:`pm_device_wakeup_enable`.
 
 .. note::
 
    This property is **only** used by the system power management to identify
    devices that should not be suspended.
-   It is responsibility of driver or the application to do any additional
-   configuration required by the device to support it.
+   It is the responsibility of the driver or the application to do any
+   additional configuration required by the device to support it.
 
 Examples
 ********
