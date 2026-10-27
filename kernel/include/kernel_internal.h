@@ -137,6 +137,28 @@ z_thread_return_value_set_with_data(struct k_thread *thread,
 extern void smp_timer_init(void);
 #endif /* CONFIG_SMP && CONFIG_SYS_CLOCK_EXISTS */
 
+#ifdef CONFIG_SMP
+/**
+ * @brief Park the other CPUs before halting on a fatal error
+ *
+ * Only one CPU halts the system: a CPU that calls this while another CPU is
+ * halting parks for good. The other CPUs are parked through the scheduler IPI;
+ * a CPU that keeps interrupts locked is given up on after a timeout.
+ */
+void z_fatal_pause_cpus(void);
+
+/**
+ * @brief Park this CPU while another CPU halts the system
+ *
+ * Called from the scheduler IPI handler.
+ */
+void z_fatal_ipi(void);
+#else
+static inline void z_fatal_pause_cpus(void)
+{
+}
+#endif /* CONFIG_SMP */
+
 extern void z_early_rand_get(uint8_t *buf, size_t length);
 
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
