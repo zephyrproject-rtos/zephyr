@@ -78,4 +78,4 @@ tests:
       type: one_line
       regex:
         - "Number of devices found on bus: .*"
-      fixture: zepyhr_i2c_ds2484
+      fixture: w1_scanner_adafruit_ds2484
