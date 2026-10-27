@@ -54,6 +54,14 @@ properties:
     type: int
     description: fASCLINF = fsource2 / asclinf-div.
 
+  mcan-div:
+    type: int
+    description: fMCAN = fsource1 / mcan-div.
+
+  mcanh-div:
+    type: int
+    description: fMCANH = fsource0 / mcanh-div.
+
 clock-cells:
   - id
 

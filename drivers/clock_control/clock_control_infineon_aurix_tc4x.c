@@ -28,10 +28,13 @@
 #define SYSPLLSTAT 0x30C
 #define PERPLLCON0 0x380
 #define PERPLLCON1 0x384
+#define PERPLLCON2 0x388
 #define PERPLLSTAT 0x38C
 #define CCUCON     0x400
 #define CCUSTAT    0x404
 #define SYSCCUCON0 0x410
+#define SYSCCUCON1 0x414
+#define PERCCUCON0 0x420
 #define PERCCUCON1 0x424
 
 #define OSCCON_MODE  GENMASK(10, 8)
@@ -79,6 +82,10 @@
 #define PREDIV24_2_0 1
 #define PREDIV3_2_0  0xA
 
+#define PERPLLCON2_CLKSELSRC1 GENMASK(17, 16)
+
+#define CLKSELSRC1_SRC1 1
+
 #define PLLSTAT_PWRSTAT BIT(0)
 #define PLLSTAT_PLLLOCK BIT(1)
 #define PLLSTAT_READY   (PLLSTAT_PWRSTAT | PLLSTAT_PLLLOCK)
@@ -104,6 +111,15 @@
 #define SYSCCUCON0_STMDIV GENMASK(27, 24)
 #define SYSCCUCON0_LPDIV  BIT(28)
 #define SYSCCUCON0_UP     BIT(30)
+
+#define SYSCCUCON1_MCANHDIV GENMASK(19, 16)
+
+#define PERCCUCON0_MCANDIV    GENMASK(3, 0)
+#define PERCCUCON0_CLKSELMCAN GENMASK(5, 4)
+
+#define CLKSELMCAN_OFF   0
+#define CLKSELMCAN_MCANI 1
+#define CLKSELMCAN_OSC   2
 
 #define PERCCUCON1_ASCLINFDIV GENMASK(3, 0)
 
@@ -143,6 +159,8 @@
 
 #define DT_FPLL0    ((uint64_t)FOSC_HZ * SYS_N / (SYS_P * SYS_K2))
 #define DT_FSOURCE0 (SYS_PLL_USED ? DT_FPLL0 : AURIX_CCU_FBACK_HZ)
+#define DT_FSOURCE1                                                                                \
+	(PER_PLL_USED ? (uint64_t)FOSC_HZ * PER_N / (PER_P * PER_K2) : AURIX_CCU_FBACK_HZ)
 
 #define HAS_DIVS(a, b)  (DT_INST_NODE_HAS_PROP(0, a) && DT_INST_NODE_HAS_PROP(0, b))
 #define DIV_RATIO(a, b) (AURIX_CCU_DT_DIV(a) / AURIX_CCU_DT_DIV(b))
@@ -158,6 +176,8 @@ AURIX_CCU_CHECK_DIV(tpb_div);
 /* Also keeps CPBDIV != 0, which can cause a bus error (CCU_TC.026) */
 AURIX_CCU_CHECK_DIV(cpb_div);
 AURIX_CCU_CHECK_DIV(asclinf_div);
+AURIX_CCU_CHECK_DIV(mcan_div);
+AURIX_CCU_CHECK_DIV(mcanh_div);
 
 BUILD_ASSERT(!(SYS_PLL_USED || PER_PLL_USED) || HAS_OSC, "PLLs need the oscillator in clocks");
 BUILD_ASSERT(!SYS_PLL_USED ||
@@ -189,6 +209,10 @@ BUILD_ASSERT(!HAS_DIVS(spb_div, tpb_div) ||
 		     AURIX_CCU_DT_DIV(spb_div) >= 2 * AURIX_CCU_DT_DIV(tpb_div),
 	     "fTPB:fSPB must be at least 2");
 BUILD_ASSERT(!HAS_DIVS(cpb_div, sri_div) || DIV_INT(cpb_div, sri_div), "fSRI:fCPB not integer");
+BUILD_ASSERT(!HAS_DIVS(mcan_div, mcanh_div) ||
+		     DT_FSOURCE0 * 100 / AURIX_CCU_DT_DIV(mcanh_div) >=
+			     DT_FSOURCE1 * 101 / AURIX_CCU_DT_DIV(mcan_div),
+	     "fMCANH:fMCAN must be at least 1.01");
 
 #ifdef CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 /* The kernel timer rate is a build-time constant */
@@ -326,6 +350,26 @@ static uint32_t fsource2(void)
 
 	return pll_out(pll_dco(ccu_read(PERPLLCON0)), FIELD_GET(PLLCON1_K3DIV, con1) + 1,
 		       prediv3_tenths(FIELD_GET(PLLCON1_K3PREDIV, con1)));
+}
+
+static uint32_t fsource1(void)
+{
+	uint32_t con1 = ccu_read(PERPLLCON1);
+
+	if (FIELD_GET(PERPLLCON2_CLKSELSRC1, ccu_read(PERPLLCON2)) != CLKSELSRC1_SRC1) {
+		return 0;
+	}
+
+	if ((ccu_read(CCUSTAT) & CCUSTAT_CLKSELP) != 0U) {
+		return AURIX_CCU_FBACK_HZ;
+	}
+
+	if ((ccu_read(PERPLLSTAT) & PLLSTAT_PWRSTAT) == 0U) {
+		return 0;
+	}
+
+	return pll_out(pll_dco(ccu_read(PERPLLCON0)), FIELD_GET(PLLCON1_K2DIV, con1) + 1,
+		       prediv24_tenths(FIELD_GET(PLLCON1_K2PREDIV, con1)));
 }
 
 /* Upper bound of the current STM frequency, for busy waits */
@@ -528,11 +572,38 @@ static uint32_t div_field(uint32_t reg, uint32_t mask, uint32_t divider)
 	return (divider != 0U) ? AURIX_CCU_FIELD_SET(reg, mask, divider) : reg;
 }
 
+static int mcan_init(void)
+{
+	uint32_t per0 = ccu_read(PERCCUCON0);
+	uint32_t val;
+	int ret = 0;
+
+	if (!DT_INST_NODE_HAS_PROP(0, mcan_div)) {
+		return 0;
+	}
+
+	val = AURIX_CCU_FIELD_SET(per0, PERCCUCON0_MCANDIV, DT_INST_PROP_OR(0, mcan_div, 0));
+	val = AURIX_CCU_FIELD_SET(val, PERCCUCON0_CLKSELMCAN, CLKSELMCAN_MCANI);
+	if (val == per0) {
+		return 0;
+	}
+
+	/* A change between two fMCAN sources goes through CLKSELMCAN = 0 */
+	if (FIELD_GET(PERCCUCON0_CLKSELMCAN, per0) != CLKSELMCAN_OFF &&
+	    FIELD_GET(PERCCUCON0_CLKSELMCAN, per0) != CLKSELMCAN_MCANI) {
+		ret = ccu_locked_write(PERCCUCON0, AURIX_CCU_FIELD_SET(per0, PERCCUCON0_CLKSELMCAN,
+								       CLKSELMCAN_OFF));
+	}
+
+	return (ret == 0) ? ccu_locked_write(PERCCUCON0, val) : ret;
+}
+
 static int dividers_init(void)
 {
 	uint32_t sys0 = ccu_read(SYSCCUCON0) & ~SYSCCUCON0_LPDIV;
+	uint32_t sys1 = ccu_read(SYSCCUCON1);
 	uint32_t per1 = ccu_read(PERCCUCON1);
-	int ret;
+	int ret = 0;
 
 	sys0 = div_field(sys0, SYSCCUCON0_SPBDIV, DT_INST_PROP_OR(0, spb_div, 0));
 	sys0 = div_field(sys0, SYSCCUCON0_CPBDIV, DT_INST_PROP_OR(0, cpb_div, 0));
@@ -540,15 +611,22 @@ static int dividers_init(void)
 	sys0 = div_field(sys0, SYSCCUCON0_SRIDIV, DT_INST_PROP_OR(0, sri_div, 0));
 	sys0 = div_field(sys0, SYSCCUCON0_FSIDIV, DT_INST_PROP_OR(0, fsi_div, 0));
 	sys0 = div_field(sys0, SYSCCUCON0_STMDIV, DT_INST_PROP_OR(0, stm_div, 0));
+	sys1 = div_field(sys1, SYSCCUCON1_MCANHDIV, DT_INST_PROP_OR(0, mcanh_div, 0));
 	per1 = div_field(per1, PERCCUCON1_ASCLINFDIV, DT_INST_PROP_OR(0, asclinf_div, 0));
 
+	if (sys1 != ccu_read(SYSCCUCON1)) {
+		ret = ccu_locked_write(SYSCCUCON1, sys1);
+	}
+
 	/* UP transfers SYSCCUCON0 and SYSCCUCON1 */
-	ret = ccu_locked_write(SYSCCUCON0, sys0 | SYSCCUCON0_UP);
+	if (ret == 0) {
+		ret = ccu_locked_write(SYSCCUCON0, sys0 | SYSCCUCON0_UP);
+	}
 	if (ret == 0 && per1 != ccu_read(PERCCUCON1)) {
 		ret = ccu_locked_write(PERCCUCON1, per1);
 	}
 
-	return ret;
+	return (ret == 0) ? mcan_init() : ret;
 }
 
 /* Ramp fsource0 up to ramp-upper-mhz, then switch it to fPLL0 */
@@ -637,6 +715,13 @@ static uint32_t domain_div(uint32_t id)
 		return FIELD_GET(SYSCCUCON0_STMDIV, sys0);
 	case AURIX_CCU_ASCLINF:
 		return FIELD_GET(PERCCUCON1_ASCLINFDIV, ccu_read(PERCCUCON1));
+	case AURIX_CCU_MCAN:
+		if (FIELD_GET(PERCCUCON0_CLKSELMCAN, ccu_read(PERCCUCON0)) != CLKSELMCAN_MCANI) {
+			return 0;
+		}
+		return FIELD_GET(PERCCUCON0_MCANDIV, ccu_read(PERCCUCON0));
+	case AURIX_CCU_MCANH:
+		return FIELD_GET(SYSCCUCON1_MCANHDIV, ccu_read(SYSCCUCON1));
 	default:
 		return UINT32_MAX;
 	}
@@ -656,8 +741,12 @@ static int ccu_tc4x_get_rate(const struct device *dev, clock_control_subsys_t sy
 
 	if (divider == 0U) {
 		*rate = 0;
+	} else if (id == AURIX_CCU_ASCLINF) {
+		*rate = fsource2() / divider;
+	} else if (id == AURIX_CCU_MCAN) {
+		*rate = fsource1() / divider;
 	} else {
-		*rate = ((id == AURIX_CCU_ASCLINF) ? fsource2() : fsource0(false)) / divider;
+		*rate = fsource0(false) / divider;
 	}
 
 	return 0;

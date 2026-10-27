@@ -32,6 +32,7 @@
 #define CCUCON0    0x30
 #define CCUCON1    0x34
 #define CCUCON2    0x40
+#define CCUCON5    0x4C
 
 #define OSCCON_PLLLV  BIT(1)
 #define OSCCON_OSCRES BIT(2)
@@ -72,8 +73,14 @@
 #define CLKSEL_BACK 0
 #define CLKSEL_PLL  1
 
+#define CCUCON1_MCANDIV    GENMASK(3, 0)
+#define CCUCON1_CLKSELMCAN GENMASK(5, 4)
 #define CCUCON1_PLL1DIVDIS BIT(7)
 #define CCUCON2_ASCLINFDIV GENMASK(3, 0)
+#define CCUCON5_MCANHDIV   GENMASK(7, 4)
+
+#define CLKSELMCAN_OFF   0
+#define CLKSELMCAN_MCANI 1
 
 #define CORE_ID_MASK GENMASK(2, 0)
 
@@ -118,6 +125,8 @@ AURIX_CCU_CHECK_DIV(sri_div);
 AURIX_CCU_CHECK_DIV(spb_div);
 AURIX_CCU_CHECK_DIV(stm_div);
 AURIX_CCU_CHECK_DIV(asclinf_div);
+AURIX_CCU_CHECK_DIV(mcan_div);
+AURIX_CCU_CHECK_DIV(mcanh_div);
 BUILD_ASSERT(AURIX_CCU_DT_DIV(spb_div) >= 2, "SPBDIV 1 is reserved");
 BUILD_ASSERT(IN_RANGE(AURIX_CCU_DT_DIV(fsi_div), 1, 3), "fsi-div must be 1 to 3");
 
@@ -210,6 +219,20 @@ static uint32_t fsource2(void)
 
 	return (uint32_t)((uint64_t)pll_dco(con0) * 10 /
 			  (k3 * (((con0 & PLLCON0_DIVBY) != 0U) ? 20U : 16U)));
+}
+
+static uint32_t fsource1(void)
+{
+	uint32_t fpll1;
+
+	if (!on_pll()) {
+		return AURIX_CCU_FBACK_HZ;
+	}
+
+	fpll1 = pll_dco(scu_read(PERPLLCON0)) /
+		(FIELD_GET(PLLCON1_K2DIV, scu_read(PERPLLCON1)) + 1);
+
+	return ((scu_read(CCUCON1) & CCUCON1_PLL1DIVDIS) != 0U) ? fpll1 : fpll1 / 2;
 }
 
 /* Upper bound of the current STM frequency, for busy waits */
@@ -333,19 +356,38 @@ static int dividers_init(void)
 	uint32_t con0 = scu_read(CCUCON0);
 	uint32_t con1 = scu_read(CCUCON1);
 	uint32_t con2 = scu_read(CCUCON2);
+	uint32_t con5 = scu_read(CCUCON5);
 	int ret = 0;
 
 	if (PLL_USED) {
 		/* fsource1 = fPLL1 / 2 for K2DIV 0 or 1, else fPLL1 (TC3xx UM hint) */
 		con1 = (PER_K2 <= 2) ? (con1 & ~CCUCON1_PLL1DIVDIS) : (con1 | CCUCON1_PLL1DIVDIS);
-		if (con1 != scu_read(CCUCON1)) {
-			ret = ccucon_write(CCUCON1, con1);
+	}
+
+	if (DT_INST_NODE_HAS_PROP(0, mcan_div)) {
+		uint32_t sel = FIELD_GET(CCUCON1_CLKSELMCAN, con1);
+
+		/* A change between two fMCAN sources goes through CLKSELMCAN = 0 */
+		if (sel != CLKSELMCAN_OFF && sel != CLKSELMCAN_MCANI) {
+			ret = ccucon_write(CCUCON1, AURIX_CCU_FIELD_SET(con1, CCUCON1_CLKSELMCAN,
+									CLKSELMCAN_OFF));
 		}
+		con1 = AURIX_CCU_FIELD_SET(con1, CCUCON1_MCANDIV, DT_INST_PROP_OR(0, mcan_div, 0));
+		con1 = AURIX_CCU_FIELD_SET(con1, CCUCON1_CLKSELMCAN, CLKSELMCAN_MCANI);
+	}
+
+	if (ret == 0 && con1 != scu_read(CCUCON1)) {
+		ret = ccucon_write(CCUCON1, con1);
 	}
 
 	con2 = div_field(con2, CCUCON2_ASCLINFDIV, DT_INST_PROP_OR(0, asclinf_div, 0));
 	if (ret == 0 && con2 != scu_read(CCUCON2)) {
 		ret = ccucon_write(CCUCON2, con2);
+	}
+
+	con5 = div_field(con5, CCUCON5_MCANHDIV, DT_INST_PROP_OR(0, mcanh_div, 0));
+	if (ret == 0 && con5 != scu_read(CCUCON5)) {
+		ret = ccucon_write(CCUCON5, con5);
 	}
 
 	con0 = AURIX_CCU_FIELD_SET(con0, CCUCON0_LPDIV, 0);
@@ -427,6 +469,13 @@ static uint32_t domain_div(uint32_t id)
 		return FIELD_GET(CCUCON0_STMDIV, con0);
 	case AURIX_CCU_ASCLINF:
 		return FIELD_GET(CCUCON2_ASCLINFDIV, scu_read(CCUCON2));
+	case AURIX_CCU_MCAN:
+		if (FIELD_GET(CCUCON1_CLKSELMCAN, scu_read(CCUCON1)) != CLKSELMCAN_MCANI) {
+			return 0;
+		}
+		return FIELD_GET(CCUCON1_MCANDIV, scu_read(CCUCON1));
+	case AURIX_CCU_MCANH:
+		return FIELD_GET(CCUCON5_MCANHDIV, scu_read(CCUCON5));
 	default:
 		return UINT32_MAX;
 	}
@@ -446,8 +495,12 @@ static int ccu_tc3x_get_rate(const struct device *dev, clock_control_subsys_t sy
 
 	if (divider == 0U) {
 		*rate = 0;
+	} else if (id == AURIX_CCU_ASCLINF) {
+		*rate = fsource2() / divider;
+	} else if (id == AURIX_CCU_MCAN) {
+		*rate = fsource1() / divider;
 	} else {
-		*rate = ((id == AURIX_CCU_ASCLINF) ? fsource2() : fsource0()) / divider;
+		*rate = fsource0() / divider;
 	}
 
 	return 0;

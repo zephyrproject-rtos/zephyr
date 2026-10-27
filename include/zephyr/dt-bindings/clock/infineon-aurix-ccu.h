@@ -24,6 +24,8 @@
 #define AURIX_CCU_FSI     2 /**< Flash interface, fFSI */
 #define AURIX_CCU_STM     3 /**< System timer, fSTM */
 #define AURIX_CCU_ASCLINF 4 /**< ASCLIN fast clock, fASCLINF */
+#define AURIX_CCU_MCAN    5 /**< MCMCAN CAN clock, fMCAN */
+#define AURIX_CCU_MCANH   6 /**< MCMCAN host clock, fMCANH */
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_INFINEON_AURIX_CCU_H_ */
