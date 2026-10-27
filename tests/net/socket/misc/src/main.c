@@ -1419,6 +1419,12 @@ ZTEST(socket_misc_test_suite, test_ipv6_global_peer_no_scope_tcp)
 static void *setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
+
+	/* dummy_send() gives the semaphore for every packet, also in tests
+	 * that never take it.
+	 */
+	sys_sem_init(&send_sem, 0, 1);
+
 	return NULL;
 }
 
