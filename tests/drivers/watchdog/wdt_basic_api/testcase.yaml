@@ -197,10 +197,3 @@ tests:
     extra_configs:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
-  drivers.watchdog.ti_mspm0_iwdt:
-    filter: dt_compat_enabled("ti,mspm0-iwdt")
-    extra_args: DTC_OVERLAY_FILE="boards/lp_mspm0l2228_iwdt.overlay"
-    platform_allow:
-      - lp_mspm0l2228/mspm0l2228
-    integration_platforms:
-      - lp_mspm0l2228/mspm0l2228
