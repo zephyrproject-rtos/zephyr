@@ -20,26 +20,32 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			gpioa: gpio@0 {
-				compatible = "wch,ch5xx-gpio";
+			gpios: gpio@40001090 {
 				reg = <0x40001090 0x4c>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <16>;
-				interrupt-parent = <&pfic>;
-				interrupts = <17>;
-				port = "port-a";
-			};
+				#address-cells = <1>;
+				#size-cells = <0>;
 
-			gpiob: gpio@1 {
-				compatible = "wch,ch5xx-gpio";
-				reg = <0x40001090 0x4c>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <24>;
-				interrupt-parent = <&pfic>;
-				interrupts = <18>;
-				port = "port-b";
+				gpioa: gpio@0 {
+					compatible = "wch,ch5xx-gpio";
+					reg = <0>;
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <16>;
+					interrupt-parent = <&pfic>;
+					interrupts = <17>;
+					port = "port-a";
+				};
+
+				gpiob: gpio@1 {
+					compatible = "wch,ch5xx-gpio";
+					reg = <1>;
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <24>;
+					interrupt-parent = <&pfic>;
+					interrupts = <18>;
+					port = "port-b";
+				};
 			};
 		};
 
