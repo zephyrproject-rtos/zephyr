@@ -349,6 +349,23 @@ struct sys_div64_recip {
 	}
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
+/* *dst = *src, field by field. GCC may make a struct assignment a memcpy()
+ * call at -Os, which picolibc may do one byte at a time.
+ */
+static ALWAYS_INLINE void z_div64_recip_copy(struct sys_div64_recip *dst,
+					     const struct sys_div64_recip *src)
+{
+	dst->div = src->div;
+#if !defined(Z_DIV64_PLAIN_RECIP)
+	dst->flags = src->flags;
+	dst->m = src->m;
+#endif
+}
+
+/** @endcond */
+
 #if defined(Z_DIV64_PLAIN_RECIP) || defined(__DOXYGEN__)
 
 /**
