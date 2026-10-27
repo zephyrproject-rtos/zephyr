@@ -104,13 +104,20 @@ struct spi_nand_data {
 LOG_MODULE_REGISTER(spi_nand, CONFIG_FLASH_LOG_LEVEL);
 
 /* Everything necessary to acquire owning access to the device. */
-static void acquire_device(const struct device *dev)
+static int acquire_device(const struct device *dev)
 {
 	const struct spi_nand_config *config = dev->config;
 	struct spi_nand_data *const data = dev->data;
+	int ret;
 
 	k_sem_take(&data->sem, K_FOREVER);
-	(void)pm_device_runtime_get(config->spi.bus);
+	ret = pm_device_runtime_get(config->spi.bus);
+	if (ret != 0) {
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(config->spi.bus, ret);
+		k_sem_give(&data->sem);
+	}
+
+	return ret;
 }
 
 /* Everything necessary to release access to the device. */
@@ -423,7 +430,7 @@ static int spi_nand_read(const struct device *dev, off_t addr, void *dest, size_
 	uint16_t page_offset;
 	uint16_t bytes_to_end;
 	uint16_t bytes_to_read;
-	int ret = 0;
+	int ret;
 
 	if (size == 0) {
 		/* No work to do */
@@ -435,7 +442,10 @@ static int spi_nand_read(const struct device *dev, off_t addr, void *dest, size_
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	while (size > 0) {
 		page_address = addr >> config->addr_page_shift;
@@ -481,7 +491,7 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 						    : 0;
 	uint32_t page_address;
 	uint8_t status;
-	int ret = 0;
+	int ret;
 
 	if (size == 0) {
 		/* No work to do */
@@ -501,7 +511,10 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	while (size > 0) {
 		/* Enable write operation */
@@ -557,7 +570,7 @@ static int spi_nand_erase(const struct device *dev, off_t addr, size_t size)
 	const struct spi_nand_config *config = dev->config;
 	uint32_t page_address;
 	uint8_t status;
-	int ret = 0;
+	int ret;
 
 	if (size == 0) {
 		/* No work to do */
@@ -577,7 +590,10 @@ static int spi_nand_erase(const struct device *dev, off_t addr, size_t size)
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	while (size > 0) {
 		/* Enable write (erase) operation */
@@ -830,7 +846,10 @@ static int spi_nand_ex_op(const struct device *dev, uint16_t code, const uintptr
 {
 	int ret;
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	switch (code) {
 	case FLASH_EX_OP_RESET:
@@ -1008,7 +1027,10 @@ static int spi_nand_configure(const struct device *dev)
 		return -ENODEV;
 	}
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	/* Soft RESET chip and wait until ready again */
 	ret = spi_nand_reset(dev);
