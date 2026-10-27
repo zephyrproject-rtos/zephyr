@@ -544,6 +544,13 @@
 				};
 			};
 
+			reset: reset@10e000 {
+				compatible = "nordic,nrf-reset";
+				reset-reason-available;
+				reg = <0x10e000 0x1000>;
+				status = "disabled";
+			};
+
 			comp: comparator@106000 {
 				/*
 				 * Use compatible "nordic,nrf-comp" to configure as COMP

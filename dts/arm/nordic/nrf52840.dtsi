@@ -90,6 +90,7 @@
 
 		power: power@40000000 {
 			compatible = "nordic,nrf-power";
+			reset-reason-available;
 			reg = <0x40000000 0x1000>;
 			interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";

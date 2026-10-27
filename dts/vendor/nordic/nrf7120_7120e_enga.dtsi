@@ -1111,6 +1111,13 @@
 				};
 			};
 
+			reset: reset@10e000 {
+				compatible = "nordic,nrf-reset";
+				reset-reason-available;
+				reg = <0x10e000 0x1000>;
+				status = "disabled";
+			};
+
 			vregusb: regulator@121000 {
 				compatible = "nordic,vregusb-regulator";
 				reg = <0x121000 0x1000>;

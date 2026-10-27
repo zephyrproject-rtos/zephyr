@@ -116,6 +116,7 @@ power: power@5000 {
 
 reset: reset-controller@5000 {
 	compatible = "nordic,nrf-reset";
+	reset-reason-available;
 	reg = <0x5000 0x1000>;
 	status = "okay";
 };

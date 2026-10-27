@@ -916,6 +916,13 @@
 				};
 			};
 
+			reset: reset@10e000 {
+				compatible = "nordic,nrf-reset";
+				reset-reason-available;
+				reg = <0x10e000 0x1000>;
+				status = "disabled";
+			};
+
 			regulators: regulator@120000 {
 				compatible = "nordic,nrf54l-regulators";
 				reg = <0x120000 0x2000>;
