@@ -1,0 +1,20 @@
+description: DFRobot SEN0193 Capacitive Soil Moisture Sensor
+
+compatible: "dfrobot,sen0193"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: ADC channel connected to the sensor's AOUT pin.
+
+  air-voltage-mv:
+    type: int
+    required: true
+    description: Raw ADC reading (mV) when the sensor is dry in the air.
+
+  water-voltage-mv:
+    type: int
+    required: true
+    description: Raw ADC reading (mV) when the sensor is submerged to the line.
