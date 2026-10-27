@@ -23,7 +23,7 @@ extern "C" {
  * @brief Bluetooth device address definitions and utilities.
  * @defgroup bt_addr Device Address
  * @since 1.0
- * @version 1.0.0
+ * @version 1.0.1
  * @ingroup bluetooth
  * @{
  */
@@ -309,11 +309,16 @@ struct bt_addr_le_tmp_str bt_addr_le_tmp_str(const bt_addr_le_t *addr);
  *
  * @param _addr Pointer to the Bluetooth address (bt_addr_t)
  *
- * @return A string pointer which is only valid until the end of the full expression.
+ * @return A string pointer which is only valid until the end of the enclosing block
+ *         in C, and until the end of the full expression in C++.
  *         In practice this means that this is primarily useful as an input parameter
  *         to printk/printf or logging calls.
  */
+#if defined(__cplusplus)
 #define bt_addr_str(_addr) bt_addr_tmp_str(_addr).str
+#else
+#define bt_addr_str(_addr) (((struct bt_addr_tmp_str[]){ bt_addr_tmp_str(_addr) })[0].str)
+#endif
 
 /**
  * @brief Convert a Bluetooth LE address to a string
@@ -321,11 +326,16 @@ struct bt_addr_le_tmp_str bt_addr_le_tmp_str(const bt_addr_le_t *addr);
  *
  * @param _addr Pointer to the Bluetooth LE address (bt_addr_le_t)
  *
- * @return A string pointer which is only valid until the end of the full expression.
+ * @return A string pointer which is only valid until the end of the enclosing block
+ *         in C, and until the end of the full expression in C++.
  *         In practice this means that this is primarily useful as an input parameter
  *         to printk/printf or logging calls.
  */
+#if defined(__cplusplus)
 #define bt_addr_le_str(_addr) bt_addr_le_tmp_str(_addr).str
+#else
+#define bt_addr_le_str(_addr) (((struct bt_addr_le_tmp_str[]){ bt_addr_le_tmp_str(_addr) })[0].str)
+#endif
 
 /** @brief Convert Bluetooth address from string to binary.
  *
