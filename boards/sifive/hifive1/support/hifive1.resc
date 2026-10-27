@@ -8,7 +8,7 @@ set platform
 using "platforms/cpus/sifive-fe310.repl"
 
 clint:
-    frequency: 16000000
+    frequency: 32768
 """
 
 using sysbus
