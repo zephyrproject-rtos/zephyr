@@ -289,8 +289,8 @@
 #endif
 
 #ifdef CONFIG_SOC_NRF7120_CPUAPP
-#ifndef NRF7120_ENGA_XXAA
-#define NRF7120_ENGA_XXAA 1
+#ifndef NRF7120_XXAA
+#define NRF7120_XXAA 1
 #endif
 #ifndef NRF_APPLICATION
 #define NRF_APPLICATION 1
@@ -301,8 +301,8 @@
 #endif
 
 #ifdef CONFIG_SOC_NRF7120_CPUFLPR
-#ifndef NRF7120_ENGA_XXAA
-#define NRF7120_ENGA_XXAA 1
+#ifndef NRF7120_XXAA
+#define NRF7120_XXAA 1
 #endif
 #ifndef NRF_FLPR
 #define NRF_FLPR 1
@@ -316,8 +316,8 @@
 #endif
 
 #ifdef CONFIG_SOC_NRF7120E_CPUAPP
-#ifndef NRF7120E_ENGA_XXAA
-#define NRF7120E_ENGA_XXAA 1
+#ifndef NRF7120E_XXAA
+#define NRF7120E_XXAA 1
 #endif
 #ifndef NRF_APPLICATION
 #define NRF_APPLICATION 1
@@ -328,8 +328,8 @@
 #endif
 
 #ifdef CONFIG_SOC_NRF7120E_CPUFLPR
-#ifndef NRF7120E_ENGA_XXAA
-#define NRF7120E_ENGA_XXAA 1
+#ifndef NRF7120E_XXAA
+#define NRF7120E_XXAA 1
 #endif
 #ifndef NRF_FLPR
 #define NRF_FLPR 1
