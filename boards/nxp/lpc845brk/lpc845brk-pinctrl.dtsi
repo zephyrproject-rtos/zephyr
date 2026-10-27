@@ -41,6 +41,14 @@
 		};
 	};
 
+	spi0_default: spi0_default {
+		group0 {
+			pinmux = <LPC84X_PINMUX_M(LPC84X_SWM_SPI0_SCK, P0_16)>,
+				<LPC84X_PINMUX_M(LPC84X_SWM_SPI0_MOSI, P0_17)>,
+				<LPC84X_PINMUX_M(LPC84X_SWM_SPI0_MISO, P0_18)>;
+		};
+	};
+
 	uart0_default: uart0_default {
 		group0 {
 			pinmux = <LPC84X_PINMUX_M(LPC84X_SWM_USART0_TXD, P0_25)>,

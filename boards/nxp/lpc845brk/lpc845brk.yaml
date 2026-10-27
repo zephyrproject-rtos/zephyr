@@ -9,4 +9,5 @@ toolchain:
 supported:
   - uart
   - gpio
+  - spi
 vendor: nxp
