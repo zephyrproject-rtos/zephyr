@@ -7336,6 +7336,7 @@ West:
     - thaoluonguw
     - binhnguyen2434
     - nhutnguyenkc
+    - khoa-nguyen-18
   files:
     - modules/Kconfig.renesas
   labels:
