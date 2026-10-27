@@ -28,6 +28,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <32768>;
 
 		cpu: cpu@0 {
 			compatible = "sifive,e31", "riscv";

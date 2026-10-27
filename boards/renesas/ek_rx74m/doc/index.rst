@@ -142,7 +142,7 @@ References
    https://www.renesas.com/en/products/rx74m
 
 .. _EK-RX74M - User's Manual:
-   https://www.renesas.com/en/document/mat/ek-rx74m-v1-users-manual
+   https://www.renesas.com/en/document/mat/ek-rx74m-v1-evaluation-kit-manual
 
 .. _RX74M Group User's Manual Hardware:
-   https://www.renesas.com/en/document/mah/rx74m-group-users-manual-hardware
+   https://www.renesas.com/en/document/mah/rx74m-group-hardware-manual

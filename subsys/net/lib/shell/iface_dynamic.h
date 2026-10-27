@@ -9,6 +9,9 @@
  * This is be used by multiple commands.
  */
 
+#ifndef ZEPHYR_SUBSYS_NET_LIB_SHELL_IFACE_DYNAMIC_H_
+#define ZEPHYR_SUBSYS_NET_LIB_SHELL_IFACE_DYNAMIC_H_
+
 #define MAX_IFACE_HELP_STR_LEN sizeof("longbearername (0xabcd0123)")
 #define MAX_IFACE_STR_LEN sizeof("xxx")
 
@@ -85,3 +88,5 @@ static void iface_index_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = &iface_index;
 	entry->syntax = set_iface_index_buffer(idx);
 }
+
+#endif /* ZEPHYR_SUBSYS_NET_LIB_SHELL_IFACE_DYNAMIC_H_ */

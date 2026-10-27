@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_ipv4_acd, CONFIG_NET_IPV4_ACD_LOG_LEVEL);
 #include "net_private.h"
 #include "../l2/ethernet/arp.h"
 
-static K_MUTEX_DEFINE(lock);
+static K_MUTEX_DEFINE(ipv4_acd_lock);
 
 static void ipv4_acd_timeout(struct k_work *work);
 
@@ -227,7 +227,7 @@ static void ipv4_acd_timeout(struct k_work *work)
 
 	ARG_UNUSED(work);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&ipv4_acd_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&active_acd_timers, current, next) {
 		struct net_if_addr *ifaddr =
@@ -240,7 +240,7 @@ static void ipv4_acd_timeout(struct k_work *work)
 
 	acd_timer_reschedule();
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&ipv4_acd_lock);
 }
 
 static void acd_start_timer(struct net_if *iface, struct net_if_addr *ifaddr)
@@ -292,7 +292,7 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 
 	arp_hdr = NET_ARP_HDR(pkt);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&ipv4_acd_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&active_acd_timers, current, next) {
 		struct net_if_addr *ifaddr =
@@ -330,13 +330,13 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 
 			net_if_ipv4_acd_failed(addr_iface, ifaddr);
 
-			k_mutex_unlock(&lock);
+			k_mutex_unlock(&ipv4_acd_lock);
 
 			return NET_DROP;
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&ipv4_acd_lock);
 
 	ipv4 = iface->config.ip.ipv4;
 	if (ipv4 == NULL) {
@@ -403,7 +403,7 @@ int net_ipv4_acd_start(struct net_if *iface, struct net_if_addr *ifaddr)
 		return 0;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&ipv4_acd_lock, K_FOREVER);
 
 	ifaddr->ifindex = net_if_get_by_iface(iface);
 	ifaddr->acd_state = IPV4_ACD_PROBE;
@@ -411,7 +411,7 @@ int net_ipv4_acd_start(struct net_if *iface, struct net_if_addr *ifaddr)
 
 	acd_start_timer(iface, ifaddr);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&ipv4_acd_lock);
 
 	return 0;
 }
@@ -426,10 +426,10 @@ void net_ipv4_acd_cancel(struct net_if *iface, struct net_if_addr *ifaddr)
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&ipv4_acd_lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&active_acd_timers, &ifaddr->acd_node);
 	acd_timer_reschedule();
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&ipv4_acd_lock);
 }

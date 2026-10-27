@@ -12,7 +12,7 @@
 #endif
 
 #define PRCR_KEY (0xA500)
-#if !CONFIG_SOC_SERIES_RX74M
+#if !CONFIG_SOC_SERIES_RX74M && !CONFIG_SOC_SERIES_RX74N
 #define SYSTEM_PRCR (*(volatile uint16_t *)0x000803FE)
 #else
 #define SYSTEM_PRCR (*(volatile uint16_t *)0x870193FA)

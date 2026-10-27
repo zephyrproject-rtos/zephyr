@@ -83,6 +83,12 @@ static struct k_sem wait_data2;
 static uint16_t current_dns_id;
 static struct dns_addrinfo addrinfo;
 static uint8_t send_count;
+/* Set by check_query_route() so that only its queries are recorded */
+static bool record_queries;
+static uint16_t last_query_dst_port;
+static bool last_query_mcast;
+static uint8_t last_query_msg[128];
+static size_t last_query_msg_len;
 static uint8_t success_send_count;
 static bool auto_response = true;
 
@@ -294,8 +300,36 @@ static void cname_build_answer(struct net_pkt *pkt)
 	net_ipv4_addr_copy_raw((uint8_t *)&cname_to, NET_IPV4_HDR(pkt)->src);
 }
 
+/* Copy the DNS message of the query in pkt to last_query_msg. Not inlined, so
+ * that its locals do not grow the frame of sender_iface(), which also runs on
+ * the small system work queue stack.
+ */
+static __noinline void capture_query_msg(struct net_pkt *pkt)
+{
+	size_t hdr_len = net_pkt_family(pkt) == NET_AF_INET ? NET_IPV4UDPH_LEN : NET_IPV6UDPH_LEN;
+	size_t len = net_pkt_get_len(pkt) - hdr_len;
+	bool overwrite = net_pkt_is_being_overwritten(pkt);
+	struct net_pkt_cursor backup;
+
+	last_query_msg_len = 0U;
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_cursor_init(pkt);
+
+	if (len <= sizeof(last_query_msg) && net_pkt_skip(pkt, hdr_len) == 0 &&
+	    net_pkt_read(pkt, last_query_msg, len) == 0) {
+		last_query_msg_len = len;
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
+}
+
 static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 {
+	struct net_udp_hdr *query_udp;
+
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
 		return -ENODATA;
@@ -306,6 +340,24 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	send_count++;
+
+	/* Queries are also sent from the system work queue, whose stack is
+	 * small, so record them only for the tests that look at them.
+	 */
+	if (record_queries) {
+		query_udp = net_udp_get_hdr(pkt, NULL);
+		if (query_udp != NULL) {
+			last_query_dst_port = net_ntohs(query_udp->dst_port);
+		}
+
+		if (net_pkt_family(pkt) == NET_AF_INET) {
+			last_query_mcast = net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst);
+		} else {
+			last_query_mcast = net_ipv6_is_addr_mcast_raw(NET_IPV6_HDR(pkt)->dst);
+		}
+
+		capture_query_msg(pkt);
+	}
 
 	if (cname_test && net_pkt_family(pkt) == NET_AF_INET) {
 		struct net_udp_hdr *udp = net_udp_get_hdr(pkt, NULL);
@@ -3129,6 +3181,107 @@ ZTEST(dns_resolve, test_dns_poll_slot_free_for_new_server)
 	check_no_duplicate_poll_slots(&test_ctx, "after reconfigure");
 
 	(void)dns_resolve_close(&test_ctx);
+}
+
+struct query_capture {
+	uint8_t msg[sizeof(last_query_msg)];
+	size_t len;
+	uint16_t hash;
+};
+
+/* Start a query for name, check that it went to the multicast group on
+ * expected_port, store the message sent and the hash the resolver matches
+ * replies against, then cancel the query
+ */
+static void check_query_route(const char *name, uint16_t expected_port,
+			      struct query_capture *capture)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int64_t end = k_uptime_get() + DNS_TIMEOUT;
+	uint16_t dns_id;
+	int slot;
+	int ret;
+
+	timeout_query = true;
+	send_count = 0U;
+	last_query_dst_port = 0U;
+	last_query_mcast = false;
+	last_query_msg_len = 0U;
+	record_queries = true;
+
+	ret = dns_get_addr_info(name, DNS_QUERY_TYPE_A, &dns_id, dns_result_cb_timeout,
+				INT_TO_POINTER(DNS_EAI_CANCELED), DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create query for %s (%d)", name, ret);
+
+	while (send_count == 0U && k_uptime_get() < end) {
+		k_msleep(THREAD_SLEEP);
+	}
+
+	record_queries = false;
+
+	zexpect_equal(last_query_dst_port, expected_port, "%s was sent to port %u, expected %u",
+		      name, last_query_dst_port, expected_port);
+	zexpect_true(last_query_mcast, "%s was sent to a unicast server", name);
+	zexpect_true(last_query_msg_len > DNS_MSG_HEADER_SIZE, "No query captured for %s", name);
+
+	if (expected_port == 5353U) {
+		/* RFC 6762 ch. 18.1 */
+		zexpect_equal(dns_id, 0U, "mDNS query for %s has id %u", name, dns_id);
+	}
+
+	/* The id is random for LLMNR, so it is left out of the comparison */
+	memcpy(capture->msg, last_query_msg, last_query_msg_len);
+	capture->len = last_query_msg_len;
+	capture->msg[0] = 0U;
+	capture->msg[1] = 0U;
+
+	slot = get_slot_by_id(ctx, dns_id);
+	zassert_true(slot >= 0, "No pending query for %s", name);
+	capture->hash = ctx->queries[slot].query_hash;
+
+	ret = dns_cancel_addr_info(dns_id);
+	zassert_equal(ret, 0, "Cannot cancel query for %s", name);
+	zassert_equal(k_sem_take(&wait_data, WAIT_TIME), 0, "No callback for %s", name);
+
+	verify_cancelled();
+}
+
+/* The absolute and relative forms of a name are the same name, so their
+ * queries must be identical on the wire and match the same replies.
+ */
+static void check_same_query(const struct query_capture *relative,
+			     const struct query_capture *absolute)
+{
+	zexpect_equal(absolute->len, relative->len, "Absolute query is %zu bytes, relative %zu",
+		      absolute->len, relative->len);
+	zexpect_mem_equal(absolute->msg, relative->msg, MIN(absolute->len, relative->len),
+			  "Absolute and relative queries differ");
+	zexpect_equal(absolute->hash, relative->hash, "Query hashes differ: 0x%04x and 0x%04x",
+		      absolute->hash, relative->hash);
+}
+
+ZTEST(dns_resolve, test_dns_query_mdns_absolute_name)
+{
+	static struct query_capture relative, absolute;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESOLVER);
+
+	/* RFC 6762 ch. 3: a query for a name ending with ".local." goes to mDNS */
+	check_query_route(NAME_MDNS, 5353U, &relative);
+	check_query_route(NAME_MDNS ".", 5353U, &absolute);
+	check_same_query(&relative, &absolute);
+}
+
+ZTEST(dns_resolve, test_dns_query_llmnr_absolute_name)
+{
+	static struct query_capture relative, absolute;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_LLMNR_RESOLVER);
+
+	/* RFC 4795 ch. 3: LLMNR is used for single-label names */
+	check_query_route(NAME_LLMNR, 5355U, &relative);
+	check_query_route(NAME_LLMNR ".", 5355U, &absolute);
+	check_same_query(&relative, &absolute);
 }
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);

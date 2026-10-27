@@ -507,7 +507,7 @@ static int test_wdt_no_callback_2(void)
 }
 #endif
 
-#if TEST_WDT_BAD_MAX_WINDOW
+#if WDT_TEST_BAD_MAX_WINDOW
 static int test_wdt_bad_window_max(void)
 {
 	int err;
@@ -643,7 +643,7 @@ ZTEST(wdt_basic_test_suite, test_wdt)
 #endif
 	}
 	if (m_testcase_index == 5U) {
-#if TEST_WDT_BAD_MAX_WINDOW
+#if WDT_TEST_BAD_MAX_WINDOW
 		zassert_true(test_wdt_bad_window_max() == TC_PASS);
 #endif
 		m_testcase_index++;

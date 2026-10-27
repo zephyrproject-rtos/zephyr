@@ -213,6 +213,10 @@ config QUIC_MAX_ENDPOINTS
 	  Typically one endpoint / remote server. But if remote
 	  server has more than one UDP port, then each one is
 	  a separate endpoint.
+	  Every endpoint keeps its packet protection keys in PSA key
+	  slots, so CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT must be large
+	  enough for the endpoints in use. See the QUIC documentation
+	  for the numbers.
 
 config QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT
 	bool "Enforce server anti-amplification limit"

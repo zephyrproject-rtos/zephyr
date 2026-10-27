@@ -458,7 +458,8 @@ int main(void)
 
 		/* Capture loop */
 		i = 0;
-		vbuf->type = type;
+		/* The flush loop of the previous connection leaves vbuf NULL */
+		vbuf = &(struct video_buffer){.type = type};
 		do {
 			ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
 			if (ret) {

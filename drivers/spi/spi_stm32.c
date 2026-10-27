@@ -2116,6 +2116,10 @@ static int transceive(const struct device *dev,
 
 	spi_stm32_pm_policy_state_lock_get(dev);
 
+	/* Make sure DXP and EOT interrupts are disabled before starting the transfer */
+	ll_disable_int_dxp(spi);
+	ll_disable_int_eot(spi);
+
 #ifdef CONFIG_SPI_RTIO
 	ret = spi_rtio_transceive(data->rtio_ctx, config, tx_bufs, rx_bufs);
 #else /* CONFIG_SPI_RTIO */

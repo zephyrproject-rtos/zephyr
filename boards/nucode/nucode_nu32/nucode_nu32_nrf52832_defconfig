@@ -3,9 +3,6 @@
 # Enable MPU
 CONFIG_ARM_MPU=y
 
-# Use the internal low-frequency RC oscillator by default.
-CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
-
 # Enable GPIO
 CONFIG_GPIO=y
 

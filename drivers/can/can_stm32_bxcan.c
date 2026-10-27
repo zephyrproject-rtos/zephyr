@@ -247,7 +247,7 @@ static inline void can_stm32_tx_isr_handler(const struct device *dev)
 					  bus_off ? -ENETUNREACH :
 						    -EIO;
 		/* clear the request. */
-		can->TSR |= CAN_TSR_RQCP0;
+		can->TSR = CAN_TSR_RQCP0;
 		can_stm32_signal_tx_complete(dev, &data->mb0, status);
 	}
 
@@ -258,7 +258,7 @@ static inline void can_stm32_tx_isr_handler(const struct device *dev)
 			 bus_off                  ? -ENETUNREACH :
 						    -EIO;
 		/* clear the request. */
-		can->TSR |= CAN_TSR_RQCP1;
+		can->TSR = CAN_TSR_RQCP1;
 		can_stm32_signal_tx_complete(dev, &data->mb1, status);
 	}
 
@@ -269,7 +269,7 @@ static inline void can_stm32_tx_isr_handler(const struct device *dev)
 			 bus_off                  ? -ENETUNREACH :
 						    -EIO;
 		/* clear the request. */
-		can->TSR |= CAN_TSR_RQCP2;
+		can->TSR = CAN_TSR_RQCP2;
 		can_stm32_signal_tx_complete(dev, &data->mb2, status);
 	}
 

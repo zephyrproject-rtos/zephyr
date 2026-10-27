@@ -336,7 +336,7 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 		return 0;
 	}
 
-	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_MAX_BACKENDS);
+	__ASSERT_NO_MSG(log_backend_count_get() <= LOG_FILTERS_MAX_BACKENDS);
 
 	if (atomic_inc(&initialized) != 0) {
 		return 0;

@@ -463,10 +463,19 @@ ZTEST(obj_core, test_obj_core_stack_storage)
 	}
 	skipped = type->skipped;
 
-	k_work_init(&work, work_handler);
-	k_work_submit(&work);
-	k_work_flush(&work, &sync);
-	zassert_equal(type->skipped, skipped + 1);
+	if (!IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		/* If CONFIG_KERNEL_COHERENCE is enabled, kernel requires
+		 * kernel objects to be in coherent memory due to
+		 * sys_cache_is_mem_coherent() check. Stack memory is not
+		 * considered coherent memory so k_work_flush() will
+		 * fail. So skip this part of test if stack is not in
+		 * coherent memory.
+		 */
+		k_work_init(&work, work_handler);
+		k_work_submit(&work);
+		k_work_flush(&work, &sync);
+		zassert_equal(type->skipped, skipped + 1);
+	}
 
 	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
 }

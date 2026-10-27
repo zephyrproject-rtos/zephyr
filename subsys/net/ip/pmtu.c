@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(net_pmtu, CONFIG_NET_PMTU_LOG_LEVEL);
 
 static struct net_pmtu_entry pmtu_entries[NET_PMTU_MAX_ENTRIES];
 
-static K_MUTEX_DEFINE(lock);
+static K_MUTEX_DEFINE(pmtu_lock);
 
 static bool dplpmtud_enabled_for_family(net_sa_family_t family)
 {
@@ -92,7 +92,7 @@ static struct net_pmtu_entry *get_pmtu_entry(const struct net_sockaddr *dst)
 	struct net_pmtu_entry *entry = NULL;
 	int i;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&pmtu_lock, K_FOREVER);
 
 	for (i = 0; i < ARRAY_SIZE(pmtu_entries); i++) {
 		switch (dst->sa_family) {
@@ -122,7 +122,7 @@ static struct net_pmtu_entry *get_pmtu_entry(const struct net_sockaddr *dst)
 	}
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&pmtu_lock);
 
 	return entry;
 }
@@ -133,7 +133,7 @@ static struct net_pmtu_entry *get_free_pmtu_entry(void)
 	uint32_t oldest = 0U;
 	int i;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&pmtu_lock, K_FOREVER);
 
 	for (i = 0; i < ARRAY_SIZE(pmtu_entries); i++) {
 		if (!pmtu_entries[i].in_use) {
@@ -151,7 +151,7 @@ static struct net_pmtu_entry *get_free_pmtu_entry(void)
 	}
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&pmtu_lock);
 
 	return entry;
 }
@@ -239,7 +239,7 @@ static struct net_pmtu_entry *add_entry(const struct net_sockaddr *dst, bool *ol
 		return NULL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&pmtu_lock, K_FOREVER);
 
 	switch (dst->sa_family) {
 	case NET_AF_INET:
@@ -267,13 +267,13 @@ static struct net_pmtu_entry *add_entry(const struct net_sockaddr *dst, bool *ol
 		goto unlock_fail;
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&pmtu_lock);
 	return entry;
 
 unlock_fail:
 	*old_entry = false;
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&pmtu_lock);
 	return NULL;
 }
 
@@ -340,25 +340,25 @@ int net_pmtu_foreach(net_pmtu_cb_t cb, void *user_data)
 {
 	int ret = 0;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&pmtu_lock, K_FOREVER);
 
 	ARRAY_FOR_EACH(pmtu_entries, i) {
 		ret++;
 		cb(&pmtu_entries[i], user_data);
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&pmtu_lock);
 
 	return ret;
 }
 
 void net_pmtu_init(void)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&pmtu_lock, K_FOREVER);
 
 	ARRAY_FOR_EACH(pmtu_entries, i) {
 		pmtu_entries[i].in_use = false;
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&pmtu_lock);
 }

@@ -93,7 +93,7 @@ int consumer_loop(struct rtio *consumer, struct rtio_iodev *producer)
 	/* Our read submission and completion pair */
 	struct rtio_sqe read_sqe;
 	struct rtio_cqe read_cqe;
-	struct rtio_sqe *read_sqe_handle;
+	rtio_sqe_handle_t read_sqe_handle;
 
 	/* Helper that sets up the submission to be a read request, reading *directly*
 	 * into the given buffer pointer without copying

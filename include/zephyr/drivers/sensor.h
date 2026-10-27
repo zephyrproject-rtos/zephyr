@@ -805,10 +805,10 @@ struct sensor_read_config {
  *     {SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_NOP});
  *
  * int main(void) {
- *   struct rtio_sqe *handle;
+ *   rtio_sqe_handle_t handle;
  *   sensor_stream(&imu_stream, &rtio, NULL, &handle);
  *   k_msleep(1000);
- *   rtio_sqe_cancel(handle);
+ *   rtio_sqe_cancel(&rtio, handle);
  * }
  * @endcode
  */
@@ -1106,7 +1106,7 @@ static inline int z_impl_sensor_reconfigure_read_iodev(const struct rtio_iodev *
 }
 
 static inline int sensor_stream(const struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
-				struct rtio_sqe **handle)
+				rtio_sqe_handle_t *handle)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {
 		struct rtio_sqe sqe;
@@ -1120,7 +1120,7 @@ static inline int sensor_stream(const struct rtio_iodev *iodev, struct rtio *ctx
 			return -ENOMEM;
 		}
 		if (handle != NULL) {
-			*handle = sqe;
+			*handle = rtio_sqe_handle(ctx, sqe);
 		}
 		rtio_sqe_prep_read_multishot(sqe, iodev, RTIO_PRIO_NORM, userdata);
 	}
@@ -1694,7 +1694,7 @@ static inline int sensor_value_from_micro(struct sensor_value *val, int64_t micr
  * @param out Resulting sum.
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_value_add(struct sensor_value *inp1, struct sensor_value *inp2,
+static inline int sensor_value_add(const struct sensor_value *inp1, const struct sensor_value *inp2,
 				   struct sensor_value *out)
 {
 	int64_t val1 = (int64_t)inp1->val1 + (int64_t)inp2->val1;
@@ -1726,8 +1726,8 @@ static inline int sensor_value_add(struct sensor_value *inp1, struct sensor_valu
  * @param out Resulting difference.
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_value_subtract(struct sensor_value *inp1, struct sensor_value *inp2,
-					struct sensor_value *out)
+static inline int sensor_value_subtract(const struct sensor_value *inp1,
+					const struct sensor_value *inp2, struct sensor_value *out)
 {
 	int64_t val1 = (int64_t)inp1->val1 - (int64_t)inp2->val1;
 	int32_t val2 = inp1->val2 - inp2->val2;
@@ -1758,8 +1758,8 @@ static inline int sensor_value_subtract(struct sensor_value *inp1, struct sensor
  * @param out Resulting product.
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_value_multiply(struct sensor_value *inp1, struct sensor_value *inp2,
-					struct sensor_value *out)
+static inline int sensor_value_multiply(const struct sensor_value *inp1,
+					const struct sensor_value *inp2, struct sensor_value *out)
 {
 	int64_t val1 = (int64_t)inp1->val1 * inp2->val1;
 	int64_t val2 = (int64_t)inp1->val1 * inp2->val2 + (int64_t)inp1->val2 * inp2->val1 +
@@ -1786,7 +1786,7 @@ static inline int sensor_value_multiply(struct sensor_value *inp1, struct sensor
  * @param out Scaled output.
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_value_scale(struct sensor_value *inp, int32_t scalar,
+static inline int sensor_value_scale(const struct sensor_value *inp, int32_t scalar,
 				     struct sensor_value *out)
 {
 	int64_t val1 = (int64_t)inp->val1 * scalar;
@@ -1804,10 +1804,6 @@ static inline int sensor_value_scale(struct sensor_value *inp, int32_t scalar,
 
 	return 0;
 }
-
-/**
- * @}
- */
 
 /**
  * @brief Get the decoder name for the current driver
@@ -1844,6 +1840,10 @@ static inline int sensor_value_scale(struct sensor_value *inp, int32_t scalar,
 #define SENSOR_DECODER_API_DT_DEFINE()                                                             \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT), (), (static))                        \
 	const STRUCT_SECTION_ITERABLE(sensor_decoder_api, SENSOR_DECODER_NAME())
+
+/**
+ * @}
+ */
 
 #define Z_MAYBE_SENSOR_DECODER_DECLARE_INTERNAL_IDX(node_id, prop, idx)                            \
 	extern const struct sensor_decoder_api UTIL_CAT(                                           \

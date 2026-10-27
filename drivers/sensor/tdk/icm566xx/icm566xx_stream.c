@@ -190,7 +190,7 @@ static void icm566xx_event_handler(const struct device *dev)
 	int err;
 
 	if (!data->stream.iodev_sqe ||
-	    FIELD_GET(RTIO_SQE_CANCELED, data->stream.iodev_sqe->sqe.flags)) {
+	    rtio_iodev_sqe_is_canceled(data->stream.iodev_sqe)) {
 		LOG_WRN("Callback triggered with no streaming submission - Disabling interrupts");
 		(void)atomic_set(&data->stream.state, ICM566XX_STREAM_OFF);
 		(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);

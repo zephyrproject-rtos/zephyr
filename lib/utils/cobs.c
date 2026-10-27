@@ -12,49 +12,84 @@
 
 #if defined(CONFIG_NET_BUF)
 
+struct cobs_net_buf_ctx {
+	struct net_buf *buf;
+	bool frame_end;
+};
+
 static int cobs_net_buf_cb(const uint8_t *buf, size_t len, void *user_data)
 {
-	struct net_buf *dst = user_data;
+	struct cobs_net_buf_ctx *ctx = user_data;
 
-	if (net_buf_tailroom(dst) < len) {
+	if (buf == NULL) {
+		/* Stop decoding after the first frame */
+		ctx->frame_end = true;
+		return 1;
+	}
+
+	if (net_buf_tailroom(ctx->buf) < len) {
 		return -ENOMEM;
 	}
 
-	(void)net_buf_add_mem(dst, buf, len);
+	(void)net_buf_add_mem(ctx->buf, buf, len);
 
 	return 0;
 }
 
 int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags)
 {
+	struct cobs_net_buf_ctx ctx = {.buf = dst};
 	struct cobs_encoder enc;
-	size_t len = src->len;
+	size_t dst_len = dst->len;
 	int ret;
 
-	(void)cobs_encoder_init(&enc, cobs_net_buf_cb, dst, flags);
+	(void)cobs_encoder_init(&enc, cobs_net_buf_cb, &ctx, flags);
 
-	ret = cobs_encoder_write(&enc, net_buf_pull_mem(src, len), len);
+	ret = cobs_encoder_write(&enc, src->data, src->len);
+	if (ret >= 0) {
+		ret = cobs_encoder_close(&enc);
+	}
+
 	if (ret < 0) {
+		/* Leave both buffers as they were */
+		(void)net_buf_remove_mem(dst, dst->len - dst_len);
 		return ret;
 	}
 
-	return cobs_encoder_close(&enc);
+	(void)net_buf_pull(src, src->len);
+
+	return 0;
 }
 
 int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags)
 {
+	struct cobs_net_buf_ctx ctx = {.buf = dst};
 	struct cobs_decoder dec;
-	size_t len = src->len;
+	size_t dst_len = dst->len;
+	int used;
 	int ret;
 
-	(void)cobs_decoder_init(&dec, cobs_net_buf_cb, dst, flags);
+	(void)cobs_decoder_init(&dec, cobs_net_buf_cb, &ctx, flags);
 
-	ret = cobs_decoder_write(&dec, net_buf_pull_mem(src, len), len);
+	used = cobs_decoder_write(&dec, src->data, src->len);
+	if (used < 0) {
+		ret = used;
+	} else if ((flags & COBS_FLAG_TRAILING_DELIMITER) != 0U) {
+		/* The frame must be complete, the decoder is not closed */
+		ret = ctx.frame_end ? 0 : -EAGAIN;
+	} else {
+		ret = cobs_decoder_close(&dec);
+	}
+
 	if (ret < 0) {
+		/* Leave both buffers as they were */
+		(void)net_buf_remove_mem(dst, dst->len - dst_len);
 		return ret;
 	}
 
-	return cobs_decoder_close(&dec);
+	(void)net_buf_pull(src, used);
+
+	return 0;
 }
 
 #endif /* defined(CONFIG_NET_BUF) */
@@ -154,7 +189,7 @@ int cobs_encoder_write(struct cobs_encoder *enc, const uint8_t *buf, size_t len)
 
 static inline void cobs_decoder_reset(struct cobs_decoder *dec)
 {
-	dec->code = 0xff;
+	dec->code = 0U;
 	dec->code_index = 0;
 }
 
@@ -186,7 +221,14 @@ int cobs_decoder_close(struct cobs_decoder *dec)
 
 	__ASSERT_NO_MSG(dec != NULL);
 
-	ret = cobs_decoder_needs_more_data(dec) ? -EINVAL : 0;
+	if ((dec->flags & COBS_FLAG_TRAILING_DELIMITER) != 0U) {
+		/* Every frame must be terminated by a delimiter */
+		ret = dec->code != 0U ? -EINVAL : 0;
+	} else {
+		/* The stream is a single frame of at least one complete group */
+		ret = (dec->code == 0U || cobs_decoder_needs_more_data(dec)) ? -EINVAL : 0;
+	}
+
 	cobs_decoder_reset(dec);
 
 	return ret;
@@ -194,11 +236,13 @@ int cobs_decoder_close(struct cobs_decoder *dec)
 
 int cobs_decoder_write(struct cobs_decoder *dec, const uint8_t *buf, size_t len)
 {
-	uint8_t sentinel = COBS_FLAG_CUSTOM_DELIMITER(dec->flags);
+	uint8_t sentinel;
 	int ret;
 
 	__ASSERT_NO_MSG(dec != NULL);
 	__ASSERT_NO_MSG(len <= INT_MAX);
+
+	sentinel = COBS_FLAG_CUSTOM_DELIMITER(dec->flags);
 
 	for (size_t i = 0; i < len; ++i) {
 		uint8_t data = buf[i] ^ sentinel;
@@ -211,6 +255,11 @@ int cobs_decoder_write(struct cobs_decoder *dec, const uint8_t *buf, size_t len)
 				return -EINVAL;
 			}
 
+			if (dec->code == 0U) {
+				/* No frame started, ignore consecutive delimiters */
+				continue;
+			}
+
 			/* Notify frame delimiter was seen */
 			ret = dec->cb(NULL, 0, dec->cb_user_data);
 			if (ret < 0) {
@@ -220,6 +269,12 @@ int cobs_decoder_write(struct cobs_decoder *dec, const uint8_t *buf, size_t len)
 
 			/* Reset state */
 			cobs_decoder_reset(dec);
+
+			if (ret > 0) {
+				/* Callback requested to stop at the frame end */
+				return i + 1;
+			}
+
 			continue;
 		}
 
@@ -236,7 +291,7 @@ int cobs_decoder_write(struct cobs_decoder *dec, const uint8_t *buf, size_t len)
 
 		dec->code_index = data;
 
-		if (dec->code != 0xff) {
+		if (dec->code != 0U && dec->code != 0xff) {
 			/* Group finished, output zero byte */
 			data = 0x00;
 

@@ -17,7 +17,7 @@ jobs:
       issues: write        # to comment on stale issues
 
     steps:
-    - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11.0.0
+    - uses: actions/stale@3467b6485bf80d2be20f30ec1a3d2d2aea0330e9 # main
       with:
         stale-pr-message: 'This pull request has been marked as stale because it has been open (more
           than) 30 days with no activity. Remove the stale label or add a comment saying that you
@@ -33,5 +33,6 @@ jobs:
         stale-issue-label: 'Stale'
         stale-pr-label: 'Stale'
         exempt-pr-labels: 'Blocked,In progress'
-        exempt-issue-labels: 'In progress,Enhancement,Feature,Feature Request,RFC,Meta,Process,Coverity'
+        exempt-issue-labels: 'In progress,Meta,Process,Coverity'
+        exempt-issue-types: 'Enhancement,RFC,Feature Request,Task'
         operations-per-run: 400

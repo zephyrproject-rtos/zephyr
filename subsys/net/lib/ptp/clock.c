@@ -39,9 +39,22 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 /*
  * Servo acquisition policy:
  * - offsets above the step threshold are corrected by setting the clock;
+ * - while unlocked, offsets above 100 ms are also corrected by setting the
+ *   clock, because the PI output for them typically exceeds the PHC driver's
+ *   rate range;
  * - three consecutive samples within 10 ms mark the frequency servo as locked;
  * - while locked, offsets above 100 ms are rejected, and two consecutive
- *   outliers reset the servo. The next sample starts acquisition again.
+ *   outliers reset the servo. A persistent offset is then stepped by the next
+ *   sample.
+ *
+ * The 100 ms bound is an acquisition fast path, not the usable rate range of
+ * the PHC, which depends on the PI gains and the clock driver. Even below
+ * 100 ms, an unlocked servo steps if the PI output is unrepresentable or the
+ * driver rejects the rate with -EINVAL, -ERANGE or -ENOTSUP. Other errors
+ * reset the servo without stepping; locked rate failures also only reset.
+ * The PTP driver API does not specify range-error codes: -EINVAL is used by
+ * existing range-checking drivers, but a driver reporting range rejection as
+ * a generic error will retain the reset/reacquisition behavior.
  *
  * Lock is based on samples rather than elapsed time, so acquisition time follows
  * the configured Sync interval. These thresholds protect the PI controller from
@@ -670,15 +683,15 @@ static __noinline void clock_log_ingress_fallback(uint64_t ingress,
 			  (uint32_t)(current_time % NSEC_PER_SEC), ingress_phc_delta);
 }
 
-static __noinline void clock_step(const struct precision_clock *precision_clk,
-				  precision_time_t sampled_time, int64_t offset, int64_t delay,
-				  uint64_t phc_now_ns)
+static __noinline int clock_step(const struct precision_clock *precision_clk,
+				 precision_time_t sampled_time, int64_t offset, int64_t delay,
+				 uint64_t phc_now_ns)
 {
 	precision_time_t current_time;
 	precision_time_t target_time;
 	int ret;
 
-	LOG_WRN_RATELIMIT("Clock offset exceeds 1 second (t1=%" PRIu64 ".%09u t2=%" PRIu64
+	LOG_WRN_RATELIMIT("Clock offset exceeds servo range (t1=%" PRIu64 ".%09u t2=%" PRIu64
 			  ".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64
 			  ".%09u |t2-phc|=%" PRIu64 "ns)",
 			  ptp_clk.timestamp.t1 / NSEC_PER_SEC,
@@ -692,19 +705,19 @@ static __noinline void clock_step(const struct precision_clock *precision_clk,
 	ret = precision_clock_read(precision_clk, &current_time);
 	if (ret < 0) {
 		LOG_WRN_RATELIMIT("Failed to read PHC time for clock step (err %d)", ret);
-		return;
+		return ret;
 	}
 
 	ret = precision_time_sub(current_time, offset, &target_time);
 	if (ret < 0) {
 		LOG_WRN_RATELIMIT("Failed to calculate PHC time for clock step (err %d)", ret);
-		return;
+		return ret;
 	}
 
 	ret = precision_clock_set(precision_clk, target_time);
 	if (ret < 0) {
 		LOG_WRN_RATELIMIT("Failed to set PHC time (err %d)", ret);
-		return;
+		return ret;
 	}
 
 	/* A hard step invalidates the timestamps used by the E2E delay path and
@@ -716,10 +729,19 @@ static __noinline void clock_step(const struct precision_clock *precision_clk,
 
 	LOG_WRN("Set clock time: %" PRIu64 ".%09u", (uint64_t)(target_time / NSEC_PER_SEC),
 		(uint32_t)(target_time % NSEC_PER_SEC));
+
+	return 0;
 }
 
-static __noinline void clock_adjust_rate(const struct precision_clock *precision_clk,
-					 int64_t offset)
+/* Apply a PI frequency correction for offset.
+ *
+ * Returns 0 if a rate adjustment was applied, or if the offset was handled by
+ * the locked-outlier policy. Returns a negative errno if the requested rate
+ * could not be applied. The PI integral has already been updated on failure;
+ * the caller must step or reset the servo before using another sample.
+ */
+static __noinline int clock_adjust_rate(const struct precision_clock *precision_clk,
+					int64_t offset)
 {
 	double ppb;
 	int64_t scaled_ppm;
@@ -736,7 +758,7 @@ static __noinline void clock_adjust_rate(const struct precision_clock *precision
 		if (ptp_clk.sync_servo_outlier_samples >= SYNC_SERVO_OUTLIER_SAMPLES) {
 			clock_servo_reset();
 		}
-		return;
+		return 0;
 	}
 
 	ptp_clk.sync_servo_outlier_samples = 0;
@@ -744,22 +766,20 @@ static __noinline void clock_adjust_rate(const struct precision_clock *precision
 	ppb = precision_pi_update(&ptp_clk.pi, -offset);
 	ret = precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm);
 	if (ret < 0) {
-		LOG_WRN_RATELIMIT("PTP PI output is out of range (ppb=%f), resetting servo",
-				  ppb);
-		clock_servo_reset();
-		return;
+		LOG_WRN_RATELIMIT("PTP PI output is out of range (ppb=%f)", ppb);
+		return ret;
 	}
 
 	ret = precision_clock_adjust_rate(precision_clk, scaled_ppm);
 	if (ret < 0) {
-		LOG_WRN_RATELIMIT("Failed to adjust PHC rate for offset %lldns (ppb=%f err %d), "
-				  "resetting servo",
+		LOG_WRN_RATELIMIT("Failed to adjust PHC rate for offset %lldns (ppb=%f err %d)",
 				  offset, ppb, ret);
-		clock_servo_reset();
-		return;
+		return ret;
 	}
 
 	clock_servo_update_lock(offset);
+
+	return 0;
 }
 
 static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
@@ -800,14 +820,31 @@ static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 
 	offset = (int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1) - delay;
 
-	/* If diff is too big, ptp_clk needs to be set first. */
-	if (offset > SYNC_SERVO_STEP_THRESHOLD_NS ||
-	    offset < -SYNC_SERVO_STEP_THRESHOLD_NS) {
+	/* If diff is too big for the frequency servo, ptp_clk needs to be set first. */
+	if (offset > SYNC_SERVO_STEP_THRESHOLD_NS || offset < -SYNC_SERVO_STEP_THRESHOLD_NS ||
+	    (!ptp_clk.sync_servo_locked &&
+	     (offset > SYNC_SERVO_OUTLIER_NS || offset < -SYNC_SERVO_OUTLIER_NS))) {
 		clock_step(precision_clk, current_time, offset, delay, phc_now_ns);
 		return;
 	}
 
-	clock_adjust_rate(precision_clk, offset);
+	ret = clock_adjust_rate(precision_clk, offset);
+	if (ret >= 0) {
+		return;
+	}
+
+	if (ptp_clk.sync_servo_locked || (ret != -EINVAL && ret != -ERANGE && ret != -ENOTSUP)) {
+		clock_servo_reset();
+		return;
+	}
+
+	/* Only range/unsupported errors justify a step during acquisition.
+	 * Hardware failures may affect rate adjustment without affecting set().
+	 */
+	ret = clock_step(precision_clk, current_time, offset, delay, phc_now_ns);
+	if (ret < 0) {
+		clock_servo_reset();
+	}
 }
 
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid)

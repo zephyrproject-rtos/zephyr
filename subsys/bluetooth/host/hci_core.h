@@ -524,6 +524,9 @@ int bt_work_submit(struct k_work *work);
 int bt_work_schedule(struct k_work_delayable *work, k_timeout_t delay);
 int bt_work_reschedule(struct k_work_delayable *work, k_timeout_t delay);
 
+/* Check whether it is executing in the `bt_workq` thread context. */
+bool bt_is_work_thread(void);
+
 /* Data type to store state related with command to be updated
  * when command completes successfully.
  */
@@ -659,5 +662,12 @@ int bt_hci_le_read_remote_features(struct bt_conn *conn);
 int bt_hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time);
 
 bool bt_drv_quirk_no_auto_dle(void);
+
+static inline bool bt_drv_quirk_no_adv_term_on_dir_timeout(void)
+{
+	/* A build-time constant, so the code it guards is left out of builds without the quirk */
+	return DT_ENUM_HAS_VALUE(DT_CHOSEN(zephyr_bt_hci), bt_hci_quirks,
+				 no_adv_term_on_dir_timeout);
+}
 
 void bt_tx_irq_raise(void);

@@ -33,8 +33,10 @@ static struct net_dhcpv4_option_callback dhcp_cb;
 static void ipv4_event(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 		       struct net_if *iface)
 {
+	struct net_if_config *cfg = net_if_get_config(iface);
+
 	if ((mgmt_event != NET_EVENT_IPV4_ADDR_ADD) ||
-	    (iface->config.ip.ipv4->unicast[0].ipv4.addr_type != NET_ADDR_DHCP)) {
+	    (cfg->ip.ipv4->unicast[0].ipv4.addr_type != NET_ADDR_DHCP)) {
 		return;
 	}
 
@@ -42,15 +44,15 @@ static void ipv4_event(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 
 	LOG_INF("Address[%d]: %s", net_if_get_by_iface(iface),
 		net_addr_ntop(NET_AF_INET,
-			      &iface->config.ip.ipv4->unicast[0].ipv4.address.in_addr, buf,
+			      &cfg->ip.ipv4->unicast[0].ipv4.address.in_addr, buf,
 			      sizeof(buf)));
 	LOG_INF("Subnet[%d]: %s", net_if_get_by_iface(iface),
-		net_addr_ntop(NET_AF_INET, &iface->config.ip.ipv4->unicast[0].netmask, buf,
+		net_addr_ntop(NET_AF_INET, &cfg->ip.ipv4->unicast[0].netmask, buf,
 			      sizeof(buf)));
 	LOG_INF("Router[%d]: %s", net_if_get_by_iface(iface),
-		net_addr_ntop(NET_AF_INET, &iface->config.ip.ipv4->gw, buf, sizeof(buf)));
+		net_addr_ntop(NET_AF_INET, &cfg->ip.ipv4->gw, buf, sizeof(buf)));
 	LOG_INF("Lease time[%d]: %u seconds", net_if_get_by_iface(iface),
-		iface->config.dhcpv4.lease_time);
+		cfg->dhcpv4.lease_time);
 
 	/* release processing of IPV4 event by test case */
 	k_sem_give(&net_event);

@@ -431,11 +431,16 @@ static void before(void *arg)
 #define MAX_WAIT_COUNT 3
 #define WAIT_DELAY_MS 100
 
+static void multi_server_cleanup(void);
+
 static void after(void *arg)
 {
 	struct test_config *cfg = arg;
 	int loop = MAX_WAIT_COUNT;
 	bool fail;
+
+	/* A test that failed half way did not get to stop its server */
+	multi_server_cleanup();
 
 	/* Wait a few iterations to allow any pending cleanup to complete */
 	while (loop-- > 0) {
@@ -3356,6 +3361,362 @@ static const uint8_t too_short_initial_msg[] =
 "\xc8\x52\xd0\x4e\x5c\x37\xb8\xd8\x89\xfe\xae\x70\xe4\x52\x54\x53"
 "\x5e\x6f\x97\x98\x9f\x0d\xa0\xf0\xf6\x6a\xb0\x68\x78\x11\xa4\xc2";
 
+#define MULTI_CONN_COUNT 2
+#define MULTI_SERVER_ADDR_STR "127.0.0.1:54330"
+#define MULTI_CLIENT_ADDR_FMT "127.0.0.1:%d"
+#define MULTI_CLIENT_BASE_PORT 19930
+
+/* A lost handshake packet is only recovered after one probe timeout, which
+ * is about one second. A handshake over loopback must stay well below that.
+ * This is only checked where the test runs at the speed of the host: on an
+ * emulated target the handshake computations alone can take longer.
+ */
+#define MULTI_HANDSHAKE_MAX_MS 500
+
+struct multi_server {
+	int sock;
+	int conn[MULTI_CONN_COUNT];
+	int stream[MULTI_CONN_COUNT];
+	int conn_count;
+	int error;
+	struct k_sem started;
+	volatile bool done;
+};
+
+static void multi_server_echo(struct multi_server *srv, int stream)
+{
+	static uint8_t buf[SMALL_BUF_SIZE];
+
+	while (true) {
+		ssize_t len = zsock_recv(stream, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+
+		if (len <= 0) {
+			if (len < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+				srv->error = -errno;
+			}
+
+			return;
+		}
+
+		len = quic_test_send_all(stream, buf, len);
+		if (len < 0) {
+			srv->error = len;
+			return;
+		}
+	}
+}
+
+/* Accept connections and one stream on each, and echo what the streams
+ * receive, until told to stop.
+ */
+static void multi_server_thread(void *p1, void *p2, void *p3)
+{
+	struct multi_server *srv = p1;
+	struct zsock_pollfd fds[1 + 2 * MULTI_CONN_COUNT];
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_give(&srv->started);
+
+	while (!srv->done && srv->error == 0) {
+		int ret;
+
+		fds[0].fd = srv->sock;
+
+		for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+			/* A connection is only polled until its stream arrives */
+			fds[1 + i].fd = srv->stream[i] < 0 ? srv->conn[i] : -1;
+			fds[1 + MULTI_CONN_COUNT + i].fd = srv->stream[i];
+		}
+
+		for (int i = 0; i < ARRAY_SIZE(fds); i++) {
+			fds[i].events = ZSOCK_POLLIN;
+			fds[i].revents = 0;
+		}
+
+		ret = zsock_poll(fds, ARRAY_SIZE(fds), HELPER_POLL_TIMEOUT_MS);
+		if (ret < 0) {
+			srv->error = -errno;
+			break;
+		}
+
+		if ((fds[0].revents & ZSOCK_POLLIN) != 0 && srv->conn_count < MULTI_CONN_COUNT) {
+			ret = zsock_accept(srv->sock, NULL, NULL);
+			if (ret < 0) {
+				srv->error = -errno;
+				break;
+			}
+
+			srv->conn[srv->conn_count++] = ret;
+		}
+
+		for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+			if ((fds[1 + i].revents & ZSOCK_POLLIN) != 0) {
+				ret = zsock_accept(srv->conn[i], NULL, NULL);
+				if (ret < 0) {
+					srv->error = -errno;
+					break;
+				}
+
+				srv->stream[i] = ret;
+			}
+
+			if (srv->stream[i] >= 0) {
+				multi_server_echo(srv, srv->stream[i]);
+			}
+		}
+	}
+}
+
+static void multi_client_echo(int stream, uint8_t value)
+{
+	struct zsock_pollfd pfd = {
+		.fd = stream,
+		.events = ZSOCK_POLLIN,
+	};
+	uint8_t reply = 0;
+	int ret;
+
+	ret = quic_test_send_all(stream, &value, sizeof(value));
+	zassert_ok(ret, "Failed to send on stream %d (%d)", stream, ret);
+
+	ret = zsock_poll(&pfd, 1, 5 * POLL_TIMEOUT_MS);
+	zassert_true(ret > 0, "No echo on stream %d (%d)", stream, ret);
+
+	ret = zsock_recv(stream, &reply, sizeof(reply), 0);
+	zassert_equal(ret, sizeof(reply), "Failed to recv on stream %d (%d)", stream, -errno);
+	zassert_equal(reply, value, "Wrong echo on stream %d", stream);
+}
+
+static K_THREAD_STACK_DEFINE(multi_server_stack, 2048);
+static struct k_thread multi_server_thread_data;
+static struct multi_server multi_srv;
+static bool multi_server_active;
+static bool multi_server_thread_started;
+static struct net_sockaddr_storage multi_server_addr;
+static int multi_client_sock[MULTI_CONN_COUNT];
+static int multi_client_stream[MULTI_CONN_COUNT];
+
+static const char * const multi_alpn_list[] = {
+	"test-quic",
+	NULL
+};
+
+static void multi_server_start(void)
+{
+	sec_tag_t server_sec_tags[] = {
+		SERVER_CERTIFICATE_TAG,
+	};
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set loopback packet drop ratio (%d)", ret);
+
+	ret = net_ipaddr_parse(MULTI_SERVER_ADDR_STR, strlen(MULTI_SERVER_ADDR_STR),
+			       (struct net_sockaddr *)&multi_server_addr);
+	zassert_true(ret, "Failed to parse server IP address");
+
+	memset(&multi_srv, 0, sizeof(multi_srv));
+	k_sem_init(&multi_srv.started, 0, 1);
+
+	multi_srv.sock = -1;
+
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		multi_srv.conn[i] = -1;
+		multi_srv.stream[i] = -1;
+		multi_client_sock[i] = -1;
+		multi_client_stream[i] = -1;
+	}
+
+	/* From here on the after hook cleans up whatever a failing test
+	 * leaves behind.
+	 */
+	multi_server_active = true;
+
+	prepare_quic_socket(&multi_srv.sock, NULL,
+			    (const struct net_sockaddr *)&multi_server_addr);
+	setup_quic_certs(multi_srv.sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
+	setup_alpn(multi_srv.sock, multi_alpn_list, ARRAY_SIZE(multi_alpn_list));
+
+	(void)k_thread_create(&multi_server_thread_data, multi_server_stack,
+			      K_THREAD_STACK_SIZEOF(multi_server_stack),
+			      multi_server_thread, &multi_srv, NULL, NULL,
+			      K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	multi_server_thread_started = true;
+
+	ret = k_sem_take(&multi_srv.started, K_FOREVER);
+	zassert_ok(ret, "Failed to take semaphore (%d)", ret);
+}
+
+/* Open client connection idx with one stream and check that data flows */
+static void multi_client_connect(int idx)
+{
+	sec_tag_t client_sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	struct net_sockaddr_storage client_addr;
+	char client_str[sizeof("127.0.0.1:65535")];
+	int ret;
+
+	snprintk(client_str, sizeof(client_str), MULTI_CLIENT_ADDR_FMT,
+		 MULTI_CLIENT_BASE_PORT + idx);
+	ret = net_ipaddr_parse(client_str, strlen(client_str),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address %s", client_str);
+
+	prepare_quic_socket(&multi_client_sock[idx],
+			    (const struct net_sockaddr *)&multi_server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+	setup_quic_certs(multi_client_sock[idx], client_sec_tags, ARRAY_SIZE(client_sec_tags));
+	setup_alpn(multi_client_sock[idx], multi_alpn_list, ARRAY_SIZE(multi_alpn_list));
+
+	multi_client_stream[idx] = quic_stream_open(multi_client_sock[idx], QUIC_STREAM_CLIENT,
+						    QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(multi_client_stream[idx] >= 0,
+		     "Failed to open stream on connection %d (%d)",
+		     idx, multi_client_stream[idx]);
+
+	multi_client_echo(multi_client_stream[idx], 0xa0 + idx);
+}
+
+static void multi_close_fd(int *fd)
+{
+	if (*fd >= 0) {
+		(void)zsock_close(*fd);
+		*fd = -1;
+	}
+}
+
+/* Stop the server thread and close every socket that is still open. This
+ * does not assert, so that it can also run after a test has failed.
+ */
+static void multi_server_cleanup(void)
+{
+	if (!multi_server_active) {
+		return;
+	}
+
+	if (multi_server_thread_started) {
+		multi_srv.done = true;
+		(void)k_thread_join(&multi_server_thread_data, K_MSEC(500));
+		multi_server_thread_started = false;
+	}
+
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		multi_close_fd(&multi_client_stream[i]);
+		multi_close_fd(&multi_srv.stream[i]);
+		multi_close_fd(&multi_srv.conn[i]);
+		multi_close_fd(&multi_client_sock[i]);
+	}
+
+	multi_close_fd(&multi_srv.sock);
+
+	multi_server_active = false;
+}
+
+static void multi_server_stop(int expected_conn_count)
+{
+	int ret;
+
+	multi_srv.done = true;
+	ret = k_thread_join(&multi_server_thread_data, K_MSEC(500));
+	multi_server_thread_started = false;
+	zassert_ok(ret, "Cannot join thread (%d)", ret);
+	zassert_ok(multi_srv.error, "Server thread reported error (%d)", multi_srv.error);
+	zassert_equal(multi_srv.conn_count, expected_conn_count,
+		      "Server accepted %d connections", multi_srv.conn_count);
+
+	for (int i = 0; i < expected_conn_count; i++) {
+		ret = quic_stream_close(multi_client_stream[i]);
+		multi_client_stream[i] = -1;
+		zassert_ok(ret, "Failed to close client stream %d (%d)", i, ret);
+
+		ret = quic_stream_close(multi_srv.stream[i]);
+		multi_srv.stream[i] = -1;
+		zassert_ok(ret, "Failed to close server stream %d (%d)", i, ret);
+
+		ret = quic_connection_close(multi_srv.conn[i]);
+		multi_srv.conn[i] = -1;
+		zassert_ok(ret, "Failed to close server connection %d (%d)", i, ret);
+
+		ret = quic_connection_close(multi_client_sock[i]);
+		multi_client_sock[i] = -1;
+		zassert_ok(ret, "Failed to close client connection %d (%d)", i, ret);
+	}
+
+	ret = quic_connection_close(multi_srv.sock);
+	multi_srv.sock = -1;
+	zassert_ok(ret, "Failed to close server socket (%d)", ret);
+
+	multi_server_active = false;
+}
+
+ZTEST(net_socket_quic, test_316_quic_ipv4_concurrent_connections)
+{
+	multi_server_start();
+
+	/* Open the connections one after the other and keep them all open,
+	 * so every handshake but the first runs next to a live connection.
+	 */
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		int64_t start = k_uptime_get();
+		int64_t took;
+
+		multi_client_connect(i);
+
+		took = k_uptime_delta(&start);
+		if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
+			zassert_true(took < MULTI_HANDSHAKE_MAX_MS,
+				     "Connection %d took %lld ms to become usable", i, took);
+		}
+	}
+
+	/* Every connection is still usable after the later ones were set up */
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		multi_client_echo(multi_client_stream[i], 0xb0 + i);
+	}
+
+	multi_server_stop(MULTI_CONN_COUNT);
+}
+
+/* The longest idle timeout this test is willing to sit through */
+#define IDLE_TEST_MAX_TIMEOUT_MS 2000
+
+ZTEST(net_socket_quic, test_317_quic_ipv4_traffic_keeps_connection_alive)
+{
+	int64_t end;
+
+	if (CONFIG_QUIC_MAX_IDLE_TIMEOUT == 0 ||
+	    CONFIG_QUIC_MAX_IDLE_TIMEOUT > IDLE_TEST_MAX_TIMEOUT_MS) {
+		ztest_test_skip();
+	}
+
+	multi_server_start();
+
+	/* Use more than one connection: the server side endpoints share one
+	 * UDP socket, and each of them must track its own traffic.
+	 */
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		multi_client_connect(i);
+	}
+
+	/* Keep both directions busy for well over the idle timeout. Neither
+	 * end may consider a connection idle.
+	 */
+	end = k_uptime_get() + 2 * CONFIG_QUIC_MAX_IDLE_TIMEOUT;
+
+	while (k_uptime_get() < end) {
+		k_msleep(CONFIG_QUIC_MAX_IDLE_TIMEOUT / 5);
+
+		for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+			multi_client_echo(multi_client_stream[i], 0xc0 + i);
+		}
+	}
+
+	multi_server_stop(MULTI_CONN_COUNT);
+}
+
 ZTEST(net_socket_quic, test_320_quic_initial_too_short)
 {
 	/* Make sure that if we receive an Initial packet that is too short to contain the
@@ -3433,6 +3794,100 @@ ZTEST(net_socket_quic, test_320_quic_initial_too_short)
 	copy_quic_global_stats(&stats_after);
 	zassert_equal(stats_after.packets_rx - stats_before.packets_rx, 1U,
 		      "Malformed Initial must still count as one received packet");
+
+	ret = zsock_close(client_sock);
+	zassert_ok(ret, "Cannot close client socket %d (%d)", client_sock, -errno);
+
+	ret = quic_connection_close(server_sock);
+	zassert_ok(ret, "Cannot close server socket %d (%d)", server_sock, -errno);
+}
+
+/* Long header packets of a valid version for a connection nobody knows.
+ * Both are far below the 1200 bytes an Initial datagram needs and carry
+ * no address validation token.
+ */
+#define UNKNOWN_CONN_LONG_HEADER(first_byte)				\
+	{								\
+		first_byte,                   /* Long header, type */	\
+		0x00, 0x00, 0x00, 0x01,       /* QUIC version 1 */	\
+		0x08, 0xa1, 0xa2, 0xa3, 0xa4, /* DCID len=8, DCID */	\
+		0xa5, 0xa6, 0xa7, 0xa8,					\
+		0x08, 0xb1, 0xb2, 0xb3, 0xb4, /* SCID len=8, SCID */	\
+		0xb5, 0xb6, 0xb7, 0xb8,					\
+		0x18,                         /* Length = 24 */		\
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,		\
+		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,		\
+		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,		\
+	}
+
+static const uint8_t unknown_conn_handshake_msg[] = UNKNOWN_CONN_LONG_HEADER(0xe0);
+static const uint8_t unknown_conn_0rtt_msg[] = UNKNOWN_CONN_LONG_HEADER(0xd0);
+
+ZTEST(net_socket_quic, test_325_quic_only_initial_starts_a_connection)
+{
+	static const struct {
+		const uint8_t *msg;
+		size_t len;
+		const char *name;
+	} packets[] = {
+		{ unknown_conn_handshake_msg, sizeof(unknown_conn_handshake_msg), "Handshake" },
+		{ unknown_conn_0rtt_msg, sizeof(unknown_conn_0rtt_msg), "0-RTT" },
+	};
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	struct quic_context *server_ctx;
+	int server_sock;
+	int client_sock;
+	int ret;
+
+	ret = net_ipaddr_parse("127.0.0.1:54360", strlen("127.0.0.1:54360"),
+			       (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server IP address");
+
+	ret = net_ipaddr_parse("127.0.0.1:19960", strlen("127.0.0.1:19960"),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address");
+
+	prepare_quic_socket(&server_sock, NULL, (const struct net_sockaddr *)&server_addr);
+
+	client_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(client_sock >= 0, "Could not create client socket (%d)", -errno);
+
+	ret = zsock_bind(client_sock, (const struct net_sockaddr *)&client_addr,
+			 sizeof(client_addr));
+	zassert_ok(ret, "Could not bind client socket (%d)", -errno);
+
+	server_ctx = quic_get_context(server_sock);
+	zassert_not_null(server_ctx, "Could not get server QUIC context");
+	assert_quic_stats_zero(&server_ctx->stats, "listener");
+
+	ARRAY_FOR_EACH(packets, i) {
+		uint32_t expected = i + 1;
+
+		ret = zsock_sendto(client_sock, packets[i].msg, packets[i].len, 0,
+				   (const struct net_sockaddr *)&server_addr,
+				   sizeof(server_addr));
+		zassert_equal(ret, packets[i].len, "Failed to send the %s packet (%d)",
+			      packets[i].name, -errno);
+
+		/* Let the socket service forward the packet to the QUIC server */
+		for (int j = 0; j < 10 && server_ctx->stats.drop_rx < expected; j++) {
+			k_msleep(10);
+		}
+
+		/* The listener itself turns the packet away. Nothing is set up
+		 * for a connection that did not start with an Initial packet.
+		 */
+		zassert_equal(server_ctx->stats.peer_not_found, expected,
+			      "%s packet for an unknown connection was not turned away (%u)",
+			      packets[i].name, server_ctx->stats.peer_not_found);
+		zassert_equal(server_ctx->stats.drop_rx, expected,
+			      "%s packet for an unknown connection was not dropped (%u)",
+			      packets[i].name, server_ctx->stats.drop_rx);
+	}
+
+	zassert_equal(server_ctx->stats.handshake_init_rx, 0,
+		      "No handshake may be counted as started");
 
 	ret = zsock_close(client_sock);
 	zassert_ok(ret, "Cannot close client socket %d (%d)", client_sock, -errno);
@@ -6424,6 +6879,341 @@ ZTEST(net_socket_quic, test_486_replies_per_payload_are_capped)
 		      CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD, quic_test_reply_budget_spent);
 	zassert_true(sizeof(payload) / 2 > CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
 		     "Test payload must carry more frames than the budget allows");
+}
+
+ZTEST(net_socket_quic, test_498_nothing_is_sent_at_a_discarded_level)
+{
+	static const uint8_t ping[] = { QUIC_FRAME_TYPE_PING };
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	int ret;
+
+	/* Without keys a send fails, in the way the callers rely on: the
+	 * Initial level reports an error, the Handshake level asks to be
+	 * tried again once its keys are there.
+	 */
+	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_INITIAL, ping, sizeof(ping));
+	zassert_equal(ret, -EINVAL, "Unexpected result without Initial keys (%d)", ret);
+
+	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_HANDSHAKE, ping, sizeof(ping));
+	zassert_equal(ret, -EAGAIN, "Unexpected result without Handshake keys (%d)", ret);
+
+	/* Once the keys of a level are discarded there is nothing to wait
+	 * for and nothing wrong either: the send is dropped quietly.
+	 */
+	quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_INITIAL);
+	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_INITIAL, ping, sizeof(ping));
+	zassert_ok(ret, "Send at the discarded Initial level was not ignored (%d)", ret);
+
+	quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_HANDSHAKE);
+	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_HANDSHAKE, ping, sizeof(ping));
+	zassert_ok(ret, "Send at the discarded Handshake level was not ignored (%d)", ret);
+
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+}
+
+static int packets_in_flight(struct quic_endpoint *ep)
+{
+	int count = 0;
+
+	ARRAY_FOR_EACH(ep->recovery.sent_pkts, space) {
+		for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+			if (ep->recovery.sent_pkts[space][i].in_flight) {
+				count++;
+			}
+		}
+	}
+
+	return count;
+}
+
+ZTEST(net_socket_quic, test_499_recovery_state_goes_with_the_keys)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+
+	/* Two Initial packets, one Handshake packet and one 1-RTT packet
+	 * are in flight.
+	 */
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_INITIAL, 0, 1200, true, false, 0);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_INITIAL, 1, 1200, true, false, 0);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_HANDSHAKE, 0, 300, true, false, 0);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, 0, 100, true, false, 0);
+
+	zassert_equal(ep->recovery.bytes_in_flight, 2800, "Unexpected bytes in flight %" PRIu64,
+		      ep->recovery.bytes_in_flight);
+	zassert_equal(packets_in_flight(ep), 4, "Unexpected packets in flight");
+
+	/* Packets sent with discarded keys can never be acknowledged, so
+	 * they must not be counted or tracked any longer.
+	 */
+	quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_INITIAL);
+
+	zassert_true(ep->crypto.initial.discarded, "Initial keys were not discarded");
+	zassert_false(ep->crypto.handshake.discarded, "Handshake keys were discarded too");
+	zassert_equal(ep->recovery.bytes_in_flight, 400,
+		      "Initial packets still count as in flight (%" PRIu64 ")",
+		      ep->recovery.bytes_in_flight);
+	zassert_equal(packets_in_flight(ep), 2, "Initial packets are still tracked");
+
+	quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_HANDSHAKE);
+
+	zassert_true(ep->crypto.handshake.discarded, "Handshake keys were not discarded");
+	zassert_equal(ep->recovery.bytes_in_flight, 100,
+		      "Handshake packets still count as in flight (%" PRIu64 ")",
+		      ep->recovery.bytes_in_flight);
+	zassert_equal(packets_in_flight(ep), 1, "Handshake packets are still tracked");
+
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+}
+
+/* Put a bare stream on the stream list of a context, as a stream that a
+ * peer opened on the given endpoint.
+ */
+static void link_test_stream(struct quic_stream *stream, struct quic_context *ctx,
+			     struct quic_endpoint *ep, uint64_t stream_id)
+{
+	memset(stream, 0, sizeof(*stream));
+
+	stream->id = stream_id;
+	stream->ep = ep;
+	stream->conn = ctx;
+
+	k_mutex_init(&stream->cond.data_available);
+	k_condvar_init(&stream->cond.recv);
+	k_poll_signal_init(&stream->recv.signal);
+
+	sys_slist_append(&ctx->streams, &stream->node);
+}
+
+static void unlink_test_stream(struct quic_stream *stream, struct quic_context *ctx)
+{
+	(void)sys_slist_find_and_remove(&ctx->streams, &stream->node);
+}
+
+/* Open a listening QUIC socket to get a context to hang test streams on */
+static struct quic_context *open_test_listener(int *sock, const char *addr_str)
+{
+	struct net_sockaddr_storage addr;
+	struct quic_context *ctx;
+	int ret;
+
+	ret = net_ipaddr_parse(addr_str, strlen(addr_str), (struct net_sockaddr *)&addr);
+	zassert_true(ret, "Failed to parse address %s", addr_str);
+
+	prepare_quic_socket(sock, NULL, (const struct net_sockaddr *)&addr);
+
+	ctx = quic_get_context(*sock);
+	zassert_not_null(ctx, "Could not get QUIC context");
+
+	return ctx;
+}
+
+ZTEST(net_socket_quic, test_491_stream_lookup_keeps_connections_apart)
+{
+	static struct quic_stream stream_a;
+	static struct quic_stream stream_b;
+	struct quic_endpoint *ep_a = reset_test_ep(&test_ep_a);
+	struct quic_endpoint *ep_b = reset_test_ep(&test_ep_b);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54350");
+
+	/* Two peers whose connections are not accepted yet both opened
+	 * stream 0, so both streams sit in the listening context.
+	 */
+	link_test_stream(&stream_a, ctx, ep_a, 0);
+	link_test_stream(&stream_b, ctx, ep_b, 0);
+
+	zassert_equal_ptr(quic_find_stream(ctx, ep_a, 0), &stream_a,
+			  "Wrong stream for the first peer");
+	zassert_equal_ptr(quic_find_stream(ctx, ep_b, 0), &stream_b,
+			  "Wrong stream for the second peer");
+
+	/* A peer that has no such stream must not find someone else's */
+	unlink_test_stream(&stream_b, ctx);
+	zassert_is_null(quic_find_stream(ctx, ep_b, 0),
+			"Found the stream of another peer");
+
+	unlink_test_stream(&stream_a, ctx);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+/* More streams than one payload may be answered for. Their IDs stay below
+ * 64 so that each fits a one byte varint.
+ */
+#define STOP_SENDING_TEST_STREAMS (CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD + 4)
+BUILD_ASSERT(STOP_SENDING_TEST_STREAMS <= 16, "Stream IDs need more than one byte");
+
+ZTEST(net_socket_quic, test_492_stop_sending_replies_are_capped)
+{
+	static struct quic_stream test_streams[STOP_SENDING_TEST_STREAMS];
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t payload[3 * STOP_SENDING_TEST_STREAMS];
+	struct quic_context *ctx;
+	bool ack_only = false;
+	size_t pos = 0;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54351");
+
+	/* One STOP_SENDING frame for each of the streams */
+	ARRAY_FOR_EACH(test_streams, i) {
+		link_test_stream(&test_streams[i], ctx, ep, 4 * i);
+
+		payload[pos++] = QUIC_FRAME_TYPE_STOP_SENDING;
+		payload[pos++] = (uint8_t)(4 * i); /* Stream ID */
+		payload[pos++] = 0x00;             /* Error code */
+	}
+
+	quic_test_reply_budget_spent = 0;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, pos, pos, &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	/* Each of the streams has to be reset by the one payload that asked
+	 * for it. The peer does not repeat a frame that was acknowledged,
+	 * so none may be left for later. These first replies are bounded by
+	 * the number of streams and do not use the reply budget.
+	 */
+	ARRAY_FOR_EACH(test_streams, i) {
+		zassert_true(test_streams[i].tx_reset, "Stream %zu was not reset", i);
+	}
+
+	zassert_equal(quic_test_reply_budget_spent, 0,
+		      "First replies must not use the reply budget, used %u",
+		      quic_test_reply_budget_spent);
+
+	/* A peer that repeats the frames for streams that are reset already
+	 * is answered again, but only as far as the reply budget goes.
+	 */
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, pos, pos, &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	zassert_equal(quic_test_reply_budget_spent, CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		      "Expected repeated replies to stop at %d, got %u",
+		      CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD, quic_test_reply_budget_spent);
+
+	ARRAY_FOR_EACH(test_streams, i) {
+		unlink_test_stream(&test_streams[i], ctx);
+	}
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+/* Hand a payload with one STOP_SENDING frame to the frame parser, with the
+ * endpoint attached to a listening context so that the parser can find the
+ * connection the stream would belong to.
+ */
+static int stop_sending_for_stream(struct quic_endpoint *ep, struct quic_context *ctx,
+				   uint8_t stream_id)
+{
+	const uint8_t payload[] = {
+		QUIC_FRAME_TYPE_STOP_SENDING,
+		stream_id,
+		0x00, /* Error code */
+	};
+	bool ack_only = false;
+	int ret;
+
+	/* The parser drops a reference when it gives up on the connection */
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload), sizeof(payload),
+					 &ack_only);
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+ZTEST(net_socket_quic, test_493_stop_sending_for_receive_only_stream)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54352");
+
+	/* As a server, stream 2 is a unidirectional stream of the client:
+	 * we only receive on it, so we cannot be asked to stop sending.
+	 */
+	ep->is_server = true;
+	ret = stop_sending_for_stream(ep, ctx, 2);
+	zassert_equal(ret, -EPROTO,
+		      "STOP_SENDING for a receive-only stream must close the connection (%d)",
+		      ret);
+
+	/* The same for a client and a unidirectional stream of the server */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = false;
+	ret = stop_sending_for_stream(ep, ctx, 3);
+	zassert_equal(ret, -EPROTO,
+		      "STOP_SENDING for a receive-only stream must close the connection (%d)",
+		      ret);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54353");
+
+	/* As a server, streams 1 and 3 would be the first ones of our own.
+	 * None has been opened on this connection.
+	 */
+	ep->is_server = true;
+	zassert_equal(ctx->stream_id_counter, 0, "Unexpected streams on a new context");
+
+	ret = stop_sending_for_stream(ep, ctx, 1);
+	zassert_equal(ret, -EPROTO,
+		      "STOP_SENDING for a bidirectional stream that was never opened "
+		      "must close the connection (%d)", ret);
+
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = true;
+	ret = stop_sending_for_stream(ep, ctx, 3);
+	zassert_equal(ret, -EPROTO,
+		      "STOP_SENDING for a unidirectional stream that was never opened "
+		      "must close the connection (%d)", ret);
+
+	/* Once a stream was opened, a frame for it is not an error even when
+	 * the stream is gone again: it can be late for a stream that is
+	 * closed already.
+	 */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = true;
+	ctx->stream_id_counter = 1;
+	ret = stop_sending_for_stream(ep, ctx, 1);
+	zassert_true(ret >= 0, "STOP_SENDING for a closed stream must be ignored (%d)", ret);
+	ctx->stream_id_counter = 0;
+
+	/* A stream of the peer that we do not know is not ours to judge
+	 * here either.
+	 */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = true;
+	ret = stop_sending_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STOP_SENDING for an unknown peer stream must be ignored (%d)",
+		     ret);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)

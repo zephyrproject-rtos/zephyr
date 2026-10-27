@@ -547,7 +547,7 @@ BUILD_ASSERT(CONFIG_NET_BUF_RX_COUNT > GENET_BUF_RX_COUNT,
 #define BCMGENET_INIT(n)                                                                           \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, bcmgenet_init, NULL, &bcmgenet_##n##_data,                \
 				      &bcmgenet_##n##_cfg, CONFIG_ETH_INIT_PRIORITY,               \
-				      &bcmgenet_api, GENET_MAX_FRAME_LEN)
+				      &bcmgenet_api, NET_ETH_MTU)
 
 #define BCMGENET_INSTANTIATE(inst)                                                                 \
 	BCMGENET_DEV_CFG(inst);                                                                    \

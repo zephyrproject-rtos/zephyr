@@ -99,7 +99,7 @@ static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 	int rc;
 
 	if (drv_data->streaming_sqe == NULL ||
-	    FIELD_GET(RTIO_SQE_CANCELED, drv_data->streaming_sqe->sqe.flags)) {
+	    rtio_iodev_sqe_is_canceled(drv_data->streaming_sqe)) {
 		LOG_ERR("%p Complete CB triggered with NULL handle. Disabling Interrupt", dev);
 		(void)gpio_pin_interrupt_configure_dt(&dev_cfg->gpio_int1, GPIO_INT_DISABLE);
 		(void)atomic_set(&drv_data->state, ICM4268X_STREAM_OFF);
@@ -198,7 +198,7 @@ void icm4268x_fifo_event(const struct device *dev)
 	int rc;
 
 	if (drv_data->streaming_sqe == NULL ||
-	    FIELD_GET(RTIO_SQE_CANCELED, drv_data->streaming_sqe->sqe.flags)) {
+	    rtio_iodev_sqe_is_canceled(drv_data->streaming_sqe)) {
 		LOG_ERR("%p FIFO event triggered with no stream submisssion. Disabling IRQ", dev);
 		(void)gpio_pin_interrupt_configure_dt(&dev_cfg->gpio_int1, GPIO_INT_DISABLE);
 		(void)atomic_set(&drv_data->state, ICM4268X_STREAM_OFF);

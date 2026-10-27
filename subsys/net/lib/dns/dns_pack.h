@@ -351,7 +351,9 @@ static inline int dns_unpack_srv_port(const uint8_t *srv)
  * @param domain_name Something like www.example.com
  * @retval 0 on success
  * @retval -ENOMEM if there is no enough space to store the resultant QNAME
- * @retval -EINVAL if an invalid parameter was passed as an argument
+ * @retval -EINVAL if an invalid parameter was passed as an argument, or if
+ *         the name has an empty label other than the root, a label longer
+ *         than 63 octets or packs to more than 255 octets
  */
 int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 		       const char *domain_name);

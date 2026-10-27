@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for extended sensor API of MTCH9010 sensor
+ * @ingroup mtch9010_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_MTCH9010_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_MTCH9010_H_
 
@@ -15,24 +21,34 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 
+/**
+ * @addtogroup mtch9010_interface
+ * @{
+ */
+
+/** Maximum measurement result */
 #define MTCH9010_MAX_RESULT 65535
+/** Minimum measurement result */
 #define MTCH9010_MIN_RESULT 0
 
+/** @brief Custom sensor channels for MTCH9010 */
 enum sensor_channel_mtch9010 {
-	/* Polls the state of the OUT line */
+	/** State of the OUT line */
 	SENSOR_CHAN_MTCH9010_OUT_STATE = SENSOR_CHAN_PRIV_START,
-	/* Calculates if the OUT line would be asserted based on previous result */
+	/** Whether the OUT line would be asserted for the last result */
 	SENSOR_CHAN_MTCH9010_SW_OUT_STATE,
-	/* Returns the reference value set for the sensor */
+	/** Reference value set for the sensor */
 	SENSOR_CHAN_MTCH9010_REFERENCE_VALUE,
-	/* Returns the threshold value set for the sensor */
+	/** Threshold value set for the sensor */
 	SENSOR_CHAN_MTCH9010_THRESHOLD_VALUE,
-	/* Returns the last measured result */
+	/** Last measured result */
 	SENSOR_CHAN_MTCH9010_MEAS_RESULT,
-	/* Returns the last measured result */
+	/** Last measured delta from the reference value */
 	SENSOR_CHAN_MTCH9010_MEAS_DELTA,
-	/* Returns true if the heartbeat is an error state */
+	/** Whether the heartbeat signals an error state */
 	SENSOR_CHAN_MTCH9010_HEARTBEAT_ERROR_STATE
 };
+
+/** @} */
 
 #endif

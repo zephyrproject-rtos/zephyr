@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(net_icmp, ICMP_LOG_LEVEL);
 #include "ipv6.h"
 #include "net_stats.h"
 
-static K_MUTEX_DEFINE(lock);
+static K_MUTEX_DEFINE(icmp_lock);
 static sys_slist_t handlers = SYS_SLIST_STATIC_INIT(&handlers);
 
 #if defined(CONFIG_NET_OFFLOADING_SUPPORT)
@@ -70,11 +70,11 @@ int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t family, uint8_t type,
 	ctx->type = type;
 	ctx->code = code;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&icmp_lock, K_FOREVER);
 
 	sys_slist_prepend(&handlers, &ctx->node);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&icmp_lock);
 
 	return 0;
 }
@@ -88,7 +88,7 @@ static void set_offload_handler(struct net_if *iface,
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&icmp_lock, K_FOREVER);
 
 #if defined(CONFIG_NET_OFFLOADING_SUPPORT)
 	SYS_SLIST_FOR_EACH_CONTAINER(&offload_handlers, offload, node) {
@@ -101,7 +101,7 @@ static void set_offload_handler(struct net_if *iface,
 	ARG_UNUSED(offload);
 #endif
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&icmp_lock);
 }
 
 int net_icmp_cleanup_ctx(struct net_icmp_ctx *ctx)
@@ -110,11 +110,11 @@ int net_icmp_cleanup_ctx(struct net_icmp_ctx *ctx)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&icmp_lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&handlers, &ctx->node);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&icmp_lock);
 
 	set_offload_handler(ctx->iface, NULL);
 
@@ -422,7 +422,7 @@ static int get_offloaded_ping_handler(struct net_if *iface,
 
 	ret = -ENOENT;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&icmp_lock, K_FOREVER);
 
 #if defined(CONFIG_NET_OFFLOADING_SUPPORT)
 	SYS_SLIST_FOR_EACH_CONTAINER(&offload_handlers, offload, node) {
@@ -436,7 +436,7 @@ static int get_offloaded_ping_handler(struct net_if *iface,
 	ARG_UNUSED(offload);
 #endif
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&icmp_lock);
 
 	return ret;
 }
@@ -539,7 +539,7 @@ static enum net_verdict icmp_call_handlers(struct net_pkt *pkt,
 	struct net_icmp_ctx *ctx;
 	enum net_verdict ret = NET_DROP;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&icmp_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, ctx, node) {
 		if (ip_hdr->family != ctx->family) {
@@ -568,7 +568,7 @@ static enum net_verdict icmp_call_handlers(struct net_pkt *pkt,
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&icmp_lock);
 
 	return ret;
 }
@@ -619,13 +619,13 @@ int net_icmp_register_offload_ping(struct net_icmp_offload *ctx,
 	ctx->ping_handler = ping_handler;
 	ctx->iface = iface;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&icmp_lock, K_FOREVER);
 
 #if defined(CONFIG_NET_OFFLOADING_SUPPORT)
 	sys_slist_prepend(&offload_handlers, &ctx->node);
 #endif
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&icmp_lock);
 
 	return 0;
 }
@@ -640,13 +640,13 @@ int net_icmp_unregister_offload_ping(struct net_icmp_offload *ctx)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&icmp_lock, K_FOREVER);
 
 #if defined(CONFIG_NET_OFFLOADING_SUPPORT)
 	sys_slist_find_and_remove(&offload_handlers, &ctx->node);
 #endif
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&icmp_lock);
 
 	memset(ctx, 0, sizeof(struct net_icmp_offload));
 

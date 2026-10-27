@@ -251,7 +251,7 @@ int main(void)
 	for (;;) {
 		/* Wait for Latmus to connect */
 		client = net_latmon_connect(socket,
-					    &iface->config.dhcpv4.requested_ip);
+					    &net_if_get_config(iface)->dhcpv4.requested_ip);
 		if (client < 0) {
 			if (client == -EAGAIN) {
 				continue;

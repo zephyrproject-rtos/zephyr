@@ -159,7 +159,6 @@
 &adc12_common {
 	st,adc-prescaler = <4>;
 	st,adc-clock-source = "SYNC";
-	status = "okay";
 };
 
 &adc2 {
@@ -167,6 +166,7 @@
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@c {
 		reg = <12>;

@@ -1577,6 +1577,14 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 			sys_cache_data_invd_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 		}
 
+		if (is_pte_illegal(l1_table[l1_pos])) {
+			/* No L2 table, so nothing is mapped here. This happens when
+			 * the memory has been unmapped (and the emptied L2 table
+			 * released) before a partition covering it is removed.
+			 */
+			continue;
+		}
+
 #ifdef CONFIG_USERSPACE
 		if (!dup_l2_table_if_needed(l1_table, l1_pos, RESTORE)) {
 			/* There is no way to report the failure back to the caller,

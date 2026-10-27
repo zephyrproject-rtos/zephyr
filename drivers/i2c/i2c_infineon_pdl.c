@@ -1319,6 +1319,15 @@ static int ifx_cat1_i2c_recover_bus(const struct device *dev)
 
 	k_sem_take(&data->operation_sem, K_FOREVER);
 
+	/*
+	 * An enabled SCB counts the bus as busy from SCL going low until it
+	 * detects a STOP (I2C_STATUS.BUS_BUSY).  With the pins muxed to GPIO
+	 * it can miss the STOP that ends recovery, stay busy, and time out
+	 * every later transfer.  Disabling it for the duration clears
+	 * BUS_BUSY and the PDL's master status.
+	 */
+	Cy_SCB_I2C_Disable(config->base, &data->context);
+
 	/* Set up the scl and sda pins for the i2c bus */
 	error = gpio_pin_configure_dt(&config->scl, GPIO_INPUT | GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (error != 0) {
@@ -1357,6 +1366,9 @@ restore:
 	/* Restore to a default state.*/
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
+	/* Re-enable only once the pins belong to the SCB again. */
+	ifx_cat1_i2c_enable(config, data);
+
 	k_sem_give(&data->operation_sem);
 
 	return error;
@@ -1373,6 +1385,9 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 #ifdef CONFIG_I2C_INFINEON_BUS_RECOVERY
 	.recover_bus = ifx_cat1_i2c_recover_bus,
 #endif /* CONFIG_I2C_INFINEON_BUS_RECOVERY */
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif /* CONFIG_I2C_RTIO */
 };
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)

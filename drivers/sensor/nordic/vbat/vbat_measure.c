@@ -18,6 +18,8 @@ struct vbat_config {
 	struct adc_dt_spec adc;
 	int32_t min_threshold_mv;
 	bool invert_voltage;
+	uint32_t divider_numerator;
+	uint32_t divider_denominator;
 };
 
 struct vbat_data {
@@ -67,7 +69,10 @@ static int vbat_channel_get(const struct device *dev, enum sensor_channel chan,
 		val_mv = -val_mv;
 	}
 
-	LOG_DBG("raw %" PRIu16 ", %" PRIi32 " uV", data->raw, val_mv);
+	val_mv = (int32_t)DIV_ROUND_CLOSEST((int64_t)val_mv * cfg->divider_numerator,
+					    cfg->divider_denominator);
+
+	LOG_DBG("raw %" PRIi16 ", %" PRIi32 " mV", data->raw, val_mv);
 	return sensor_value_from_milli(val, val_mv);
 }
 
@@ -107,10 +112,16 @@ static int vbat_init(const struct device *dev)
 }
 
 #define NRF_VBAT_INIT(inst)                                                                        \
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, divider_ratio) == 2,                                   \
+		     "divider-ratio must contain a numerator and denominator");                    \
+	BUILD_ASSERT(DT_INST_PROP_BY_IDX(inst, divider_ratio, 1) != 0,                             \
+		     "divider-ratio denominator must not be zero");                                \
 	static struct vbat_data vbat_data_##inst;                                                  \
 	static const struct vbat_config vbat_cfg_##inst = {                                        \
 		.adc = ADC_DT_SPEC_INST_GET(inst),                                                 \
 		.invert_voltage = DT_INST_PROP_OR(inst, invert_voltage, false),                    \
+		.divider_numerator = DT_INST_PROP_BY_IDX(inst, divider_ratio, 0),                  \
+		.divider_denominator = DT_INST_PROP_BY_IDX(inst, divider_ratio, 1),                \
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, vbat_init, NULL, &vbat_data_##inst, &vbat_cfg_##inst,   \

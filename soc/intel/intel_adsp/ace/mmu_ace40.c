@@ -226,7 +226,7 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	MEM_MAP_SYM_REGION(
 		__cold_start,
 		__cold_end,
-		XTENSA_MMU_PERM_X,
+		XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
 		"imr cold"
 	)
 

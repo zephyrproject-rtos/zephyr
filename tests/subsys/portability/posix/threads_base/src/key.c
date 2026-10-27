@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <limits.h>
 #include <pthread.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
@@ -180,6 +182,157 @@ ZTEST(key, test_thread_specific_data_deallocation)
 
 	zassert_equal(alloc_count_t0, alloc_count_t1,
 		"failed to deallocate thread specific data");
+}
+
+static struct k_sem sem_worker_ready;
+static struct k_sem sem_key_deleted;
+static bool dtor_executed;
+
+static void dtor_active_thread(void *arg)
+{
+	ARG_UNUSED(arg);
+	dtor_executed = true;
+}
+
+static void *key_delete_worker(void *arg)
+{
+	pthread_key_t *key = arg;
+	int val = 0x1234;
+
+	zassert_ok(pthread_setspecific(*key, &val),
+		   "failed to set thread-specific data");
+
+	/* Signal that data has been bound to the key */
+	k_sem_give(&sem_worker_ready);
+
+	/* Wait until key deletion completes before exiting */
+	k_sem_take(&sem_key_deleted, K_FOREVER);
+
+	return NULL;
+}
+
+/**
+ * @brief Verify pthread_key_delete() on key bound to active thread.
+ *
+ * Verifies that deleting a key while a thread holds thread-specific data
+ * unlinks the key from the thread's internal list, suppresses destructor
+ * invocation at thread exit per IEEE 1003.1, and does not cause double-free
+ * or memory corruption.
+ */
+ZTEST(key, test_key_delete_active_thread)
+{
+	pthread_t thread;
+	pthread_key_t key;
+
+	dtor_executed = false;
+	k_sem_init(&sem_worker_ready, 0, 1);
+	k_sem_init(&sem_key_deleted, 0, 1);
+
+	zassert_ok(pthread_key_create(&key, dtor_active_thread),
+		   "failed to create key");
+
+	zassert_ok(pthread_create(&thread, NULL, key_delete_worker, &key),
+		   "failed to create worker thread");
+
+	/* Wait deterministically for worker thread to bind data */
+	k_sem_take(&sem_worker_ready, K_FOREVER);
+
+	/* Delete key while worker thread is still alive and blocked */
+	zassert_ok(pthread_key_delete(key), "failed to delete key");
+
+	/* Release worker thread to exit and finalize */
+	k_sem_give(&sem_key_deleted);
+
+	/* Wait for worker thread to exit and finalize */
+	zassert_ok(pthread_join(thread, NULL), "failed to join worker thread");
+
+	/* Per IEEE 1003.1, destructor must not be called for deleted keys */
+	zassert_false(dtor_executed, "destructor was executed for deleted key");
+}
+
+#ifndef PTHREAD_DESTRUCTOR_ITERATIONS
+#define PTHREAD_DESTRUCTOR_ITERATIONS _POSIX_THREAD_DESTRUCTOR_ITERATIONS
+#endif
+
+#define N_DTOR_KEY (PTHREAD_DESTRUCTOR_ITERATIONS + 2)
+
+static pthread_key_t dtor_keys[N_DTOR_KEY];
+static atomic_t dtor_calls;
+
+static void dtor_count(void *arg)
+{
+	ARG_UNUSED(arg);
+	atomic_inc(&dtor_calls);
+}
+
+static void *set_all_dtor_keys(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	for (size_t i = 0; i < N_DTOR_KEY; i++) {
+		zassert_ok(pthread_setspecific(dtor_keys[i], &dtor_keys[i]));
+	}
+
+	return NULL;
+}
+
+/**
+ * @brief Verify every key's destructor runs when a thread holds more keys than
+ * PTHREAD_DESTRUCTOR_ITERATIONS.
+ */
+ZTEST(key, test_destructor_called_for_every_key)
+{
+	pthread_t thread;
+
+	atomic_set(&dtor_calls, 0);
+	for (size_t i = 0; i < N_DTOR_KEY; i++) {
+		zassert_ok(pthread_key_create(&dtor_keys[i], dtor_count));
+	}
+
+	zassert_ok(pthread_create(&thread, NULL, set_all_dtor_keys, NULL));
+	zassert_ok(pthread_join(thread, NULL));
+
+	zassert_equal(atomic_get(&dtor_calls), N_DTOR_KEY);
+
+	for (size_t i = 0; i < N_DTOR_KEY; i++) {
+		zassert_ok(pthread_key_delete(dtor_keys[i]));
+	}
+}
+
+static pthread_key_t resetting_key;
+
+static void dtor_resetting(void *arg)
+{
+	atomic_inc(&dtor_calls);
+	(void)pthread_setspecific(resetting_key, arg);
+}
+
+static void *set_resetting_key(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	zassert_ok(pthread_setspecific(resetting_key, &resetting_key));
+
+	return NULL;
+}
+
+/**
+ * @brief Verify a destructor that keeps setting a value stops after
+ * PTHREAD_DESTRUCTOR_ITERATIONS passes.
+ */
+ZTEST(key, test_destructor_iterations_bounded)
+{
+	pthread_t thread;
+
+	atomic_set(&dtor_calls, 0);
+	zassert_ok(pthread_key_create(&resetting_key, dtor_resetting));
+
+	zassert_ok(pthread_create(&thread, NULL, set_resetting_key, NULL));
+	zassert_ok(pthread_join(thread, NULL));
+
+	zassert_equal(atomic_get(&dtor_calls), PTHREAD_DESTRUCTOR_ITERATIONS);
+
+	zassert_ok(pthread_key_delete(resetting_key));
 }
 
 static void before(void *arg)

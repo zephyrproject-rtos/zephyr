@@ -568,6 +568,26 @@ ZTEST(llext, test_pre_located)
 }
 #endif
 
+#if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA)
+static LLEXT_CONST uint8_t reloc_offset_oob_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "reloc_offset_oob.inc"
+};
+
+ZTEST(llext, test_reloc_offset_oob)
+{
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(reloc_offset_oob_ext, sizeof(reloc_offset_oob_ext));
+	struct llext_loader *loader = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+	int res;
+
+	res = llext_load(loader, "reloc_offset_oob", &ext, &ldr_parm);
+	zassert_equal(res, -ENOEXEC, "load should fail with -ENOEXEC, got %d", res);
+	zassert_is_null(ext, "ext should be NULL after a failed load");
+}
+#endif
+
 #if defined(CONFIG_LLEXT_STORAGE_WRITABLE)
 static LLEXT_CONST uint8_t find_section_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "find_section.inc"

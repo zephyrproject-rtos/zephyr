@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -465,8 +465,8 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
-	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToWake);
-	CLOCK_AttachClk(kXTAL32K2_to_EWM0);
+	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToWake);
+	CLOCK_AttachClk(kCLK_16K2_to_EWM0);
 	CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif
 

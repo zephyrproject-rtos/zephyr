@@ -242,7 +242,8 @@ static void adv_rpa_expired(struct bt_le_ext_adv *adv, void *data)
 		}
 		bool *rpa_invalid_set_ptr = data;
 
-		if (!rpa_invalid) {
+		/* NULL when limited advertising ends, which rotates no shared RPA */
+		if (!rpa_invalid && rpa_invalid_set_ptr != NULL) {
 			rpa_invalid_set_ptr[adv->id] = false;
 		}
 	} else {
@@ -653,9 +654,14 @@ static void le_update_private_addr(void)
 
 	/* If both advertiser and scanner is running then the advertiser
 	 * ID must be BT_ID_DEFAULT, this will update the RPA address
-	 * for both roles.
+	 * for both roles. An advertiser using an NRPA gets a new NRPA,
+	 * which a running scanner then shares.
 	 */
-	err = bt_id_set_private_addr(id);
+	if (adv_enabled && (adv->options & BT_LE_ADV_OPT_USE_NRPA) != 0U) {
+		err = bt_id_set_adv_private_addr(adv, adv->options);
+	} else {
+		err = bt_id_set_private_addr(id);
+	}
 	if (err) {
 		LOG_WRN("Failed to update RPA address (%d)", err);
 		return;
@@ -1481,6 +1487,28 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 	return new_id;
 }
 
+static void id_conn_disconnect(struct bt_conn *conn, void *data)
+{
+	const uint8_t *id = data;
+	int err;
+
+	if (conn->id != *id) {
+		return;
+	}
+
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0 && err != -ENOTCONN) {
+		LOG_WRN("Failed to disconnect %p (err %d)", conn, err);
+	}
+}
+
+static void id_disconnect_conns(uint8_t id)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		bt_conn_foreach(BT_CONN_TYPE_LE, id_conn_disconnect, &id);
+	}
+}
+
 int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
 	int err;
@@ -1525,6 +1553,8 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 		}
 	}
 
+	id_disconnect_conns(id);
+
 	err = id_create(id, addr, irk);
 	if (err) {
 		return err;
@@ -1563,6 +1593,8 @@ int bt_id_delete(uint8_t id)
 			return err;
 		}
 	}
+
+	id_disconnect_conns(id);
 
 #if defined(CONFIG_BT_PRIVACY)
 	(void)memset(bt_dev.irk[id], 0, 16);
@@ -1883,6 +1915,25 @@ int bt_setup_random_id_addr(void)
 	return bt_id_create(NULL, NULL);
 }
 
+/* The scanner and the initiator share the random address with a legacy
+ * advertiser, which can hold an NRPA there.
+ */
+static bool is_legacy_adv_using_nrpa(void)
+{
+	struct bt_le_ext_adv *adv;
+
+	if (!IS_ENABLED(CONFIG_BT_BROADCASTER) ||
+	    (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	     BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+		return false;
+	}
+
+	adv = bt_le_adv_lookup_legacy();
+
+	return adv != NULL && atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
+	       (adv->options & BT_LE_ADV_OPT_USE_NRPA) != 0U;
+}
+
 #if defined(CONFIG_BT_CENTRAL)
 static inline bool rpa_timeout_valid_check(void)
 {
@@ -1905,6 +1956,13 @@ int bt_id_set_create_conn_own_addr(bool use_filter, uint8_t *own_addr_type)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		if (is_legacy_adv_using_nrpa()) {
+			/* The initiator must use an RPA, but the shared random
+			 * address holds the advertiser's NRPA.
+			 */
+			return -EINVAL;
+		}
+
 		if (use_filter || rpa_timeout_valid_check()) {
 			err = bt_id_set_private_addr(BT_ID_DEFAULT);
 			if (err) {
@@ -1945,6 +2003,18 @@ int bt_id_set_create_conn_own_addr(bool use_filter, uint8_t *own_addr_type)
 	}
 
 	return 0;
+}
+
+bool bt_id_conn_random_addr_check(void)
+{
+	/* The initiator must use an RPA, but the shared random address holds
+	 * the advertiser's NRPA.
+	 */
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) && is_legacy_adv_using_nrpa()) {
+		return false;
+	}
+
+	return bt_id_scan_random_addr_check();
 }
 #endif /* defined(CONFIG_BT_CENTRAL) */
 
@@ -1997,6 +2067,14 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		if (is_legacy_adv_using_nrpa()) {
+			/* Scan with the advertiser's NRPA, the random address
+			 * cannot change while the advertiser is enabled.
+			 */
+			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+
+			return 0;
+		}
 
 		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 			*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
@@ -2304,6 +2382,13 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 			/* Cannot set a new RPA address while advertising with
 			 * random static identity address for a different
 			 * identity.
+			 */
+			return -EINVAL;
+		}
+
+		if (is_legacy_adv_using_nrpa()) {
+			/* Cannot set a new RPA address while advertising with
+			 * an NRPA.
 			 */
 			return -EINVAL;
 		}

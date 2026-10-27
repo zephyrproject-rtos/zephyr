@@ -1259,12 +1259,21 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 #else  /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
 		if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
 			bt_hci_le_per_adv_report_recv(per_adv_sync, &buf->b, &info);
-		} else {
+		} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+			/* Without a reassembly buffer, a report in fragments is dropped */
 			per_adv_sync->report_truncated = true;
+		} else {
+			/* A report with Incomplete data is dropped */
 		}
 #endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
-	} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+	} else if ((evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) ||
+		   (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE)) {
+		/* The last fragment of the dropped report. The Controller ends a
+		 * report it failed to receive in full with the Incomplete status.
+		 */
 		per_adv_sync->report_truncated = false;
+	} else {
+		/* More fragments of the dropped report follow */
 	}
 }
 

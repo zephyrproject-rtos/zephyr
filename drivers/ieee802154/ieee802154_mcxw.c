@@ -1280,6 +1280,7 @@ static int mcxw_cca(const struct device *dev)
 static int mcxw_set_channel(const struct device *dev, uint16_t channel)
 {
 	struct mcxw_context *mcxw_radio = dev->data;
+	int ret = 0;
 
 	LOG_DBG("Set channel: %u -> %u", mcxw_radio->channel, channel);
 
@@ -1295,7 +1296,18 @@ static int mcxw_set_channel(const struct device *dev, uint16_t channel)
 	/* Permanent change, restart RX if radio is active */
 	bool restart_rx = (mcxw_radio->state == RADIO_STATE_RECEIVE);
 
-	return rf_change_channel(channel, false, restart_rx);
+	ret = rf_change_channel(channel, false, restart_rx);
+
+	if (ret == 0 && !restart_rx && mcxw_ctx.csl_period == 0U) {
+		macToPlmeMessage_t msg;
+
+		msg.msgType = gPlmeSetReq_c;
+		msg.msgData.setReq.PibAttribute = gPhyPibRxOnWhenIdle;
+		msg.msgData.setReq.PibAttributeValue = (uint64_t)rx_on_when_idle;
+		(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
+	}
+
+	return ret;
 }
 
 static net_time_t mcxw_get_time_ns(const struct device *dev)

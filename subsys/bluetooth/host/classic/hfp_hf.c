@@ -272,6 +272,8 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	ret = vsnprintk(buf->data, (net_buf_tailroom(buf) - 1), format, vargs);
 	if (ret < 0) {
 		LOG_ERR("Unable to format variable arguments");
+		va_end(vargs);
+		net_buf_unref(buf);
 		return ret;
 	}
 	va_end(vargs);

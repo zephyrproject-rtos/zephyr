@@ -131,6 +131,15 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 		buf = net_buf_alloc(&evt_pool, timeout);
 	} else {
 		buf = net_buf_alloc(&acl_in_pool, timeout);
+		if (buf != NULL) {
+			struct bt_conn_rx *rx = net_buf_user_data(buf);
+
+			/* Dropped before hci_acl() has looked up its connection,
+			 * the packet is not to be reported for connection 0,
+			 * which the zeroed user data would name.
+			 */
+			rx->index = BT_CONN_INDEX_INVALID;
+		}
 	}
 #else
 	buf = net_buf_alloc(&hci_rx_pool, timeout);

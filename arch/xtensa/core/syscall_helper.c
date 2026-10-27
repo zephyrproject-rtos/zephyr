@@ -156,6 +156,7 @@ bool xtensa_is_user_context(void)
 
 	return ret != 0;
 }
+EXPORT_SYMBOL(xtensa_is_user_context);
 #endif /* XCHAL_HAVE_THREADPTR */
 
 size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)

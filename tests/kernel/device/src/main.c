@@ -29,6 +29,7 @@
 #define FAKEDEFERDRIVER0	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e7000000))
 #define FAKEDEFERDRIVER1	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e8000000))
 #define FAKEDEFERDRIVER2        DEVICE_DT_GET(DT_PATH(fakedeferdriver_f9000000))
+#define FAKEDEFERDRIVER3        DEVICE_DT_GET(DT_PATH(fakedeferdriver_fa000000))
 
 #define FAKEDRIVER0_NODEID    DT_PATH(fakedriver_e0000000)
 #define FAKEDRIVER0_NODELABEL "fake_driver_label"
@@ -53,6 +54,14 @@ static int fakedeferdriver_init(const struct device *dev);
 
 DEVICE_DT_DEFINE(DT_INST(2, fakedeferdriver), fakedeferdriver_init, NULL, NULL, NULL, POST_KERNEL,
 		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+/* fake device whose initialization fails once and succeeds afterwards */
+static int fakedeferdriver_retry_init(const struct device *dev);
+static int fakedeferdriver_retry_deinit(const struct device *dev);
+
+DEVICE_DT_DEINIT_DEFINE(DT_PATH(fakedeferdriver_fa000000), fakedeferdriver_retry_init,
+			fakedeferdriver_retry_deinit, NULL, NULL, NULL, POST_KERNEL,
+			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 /** @endcond */
 
 /**
@@ -454,8 +463,12 @@ ZTEST(device, test_deferred_init)
 	zassert_true(device_is_ready(FAKEDEFERDRIVER0));
 }
 
+static unsigned int fakedeferdriver_init_calls;
+
 static int fakedeferdriver_init(const struct device *dev)
 {
+	fakedeferdriver_init_calls++;
+
 	return -EIO;
 }
 
@@ -465,9 +478,11 @@ static int fakedeferdriver_init(const struct device *dev)
  * @details Verify device_init error cases and expected device states
  *
  * - case -errno: if the device initialization fails
- * - case -EALREADY: if the device is already initialized.
+ * - the device stays uninitialized: device_deinit() refuses it and
+ *   device_init() runs the initialization function again.
  *
  * @see device_init
+ * @see device_deinit
  * @ingroup kernel_device_tests
  */
 ZTEST(device, test_deferred_init_failure)
@@ -478,12 +493,84 @@ ZTEST(device, test_deferred_init_failure)
 	zassert_false(device_is_ready(dev));
 	ret = device_init(dev);
 	zassert_equal(ret, -EIO);
+	zassert_equal(fakedeferdriver_init_calls, 1);
+	zassert_false(device_is_ready(dev));
+	zassert_false(dev->state->initialized);
+	zassert_equal(dev->state->init_res, EIO);
+
+	ret = device_deinit(dev);
+	zassert_equal(ret, -EPERM);
+
+	ret = device_init(dev);
+	zassert_equal(ret, -EIO);
+	zassert_equal(fakedeferdriver_init_calls, 2);
 	zassert_false(device_is_ready(dev));
 	zassert_equal(dev->state->init_res, EIO);
+}
+
+static bool fakedeferdriver_retry_fail = true;
+static unsigned int fakedeferdriver_retry_deinit_calls;
+
+static int fakedeferdriver_retry_init(const struct device *dev)
+{
+	if (fakedeferdriver_retry_fail) {
+		fakedeferdriver_retry_fail = false;
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int fakedeferdriver_retry_deinit(const struct device *dev)
+{
+	fakedeferdriver_retry_deinit_calls++;
+
+	return 0;
+}
+
+/**
+ * @brief Test initialization retry after a failure
+ *
+ * @details Verify that a device whose initialization failed can be
+ * initialized again, that the recorded error is cleared once it succeeds,
+ * and that it can then go through a de-initialization cycle.
+ *
+ * @see device_init
+ * @see device_deinit
+ * @see device_is_ready
+ * @ingroup kernel_device_tests
+ */
+ZTEST(device, test_deferred_init_retry)
+{
+	int ret;
+	const struct device *dev = FAKEDEFERDRIVER3;
+
+	ret = device_init(dev);
+	zassert_equal(ret, -ENODEV);
+	zassert_false(device_is_ready(dev));
+	zassert_equal(dev->state->init_res, ENODEV);
+
+	/* nothing to release after a failed initialization */
+	ret = device_deinit(dev);
+	zassert_equal(ret, -EPERM);
+	zassert_equal(fakedeferdriver_retry_deinit_calls, 0);
+
+	ret = device_init(dev);
+	zassert_equal(ret, 0);
+	zassert_true(device_is_ready(dev));
+	zassert_equal(dev->state->init_res, 0);
 
 	ret = device_init(dev);
 	zassert_equal(ret, -EALREADY);
-	zassert_equal(dev->state->init_res, EIO);
+
+	ret = device_deinit(dev);
+	zassert_equal(ret, 0);
+	zassert_equal(fakedeferdriver_retry_deinit_calls, 1);
+	zassert_false(device_is_ready(dev));
+
+	ret = device_init(dev);
+	zassert_equal(ret, 0);
+	zassert_true(device_is_ready(dev));
 }
 
 ZTEST(device, test_device_api)
@@ -606,6 +693,20 @@ ZTEST_USER(device, test_deferred_init_user)
 	zassert_true(ret == 0);
 
 	zassert_true(device_is_ready(FAKEDEFERDRIVER1));
+}
+
+/**
+ * @brief Test device_is_ready() with a NULL pointer from user mode
+ *
+ * @details Verify that device_is_ready(NULL) returns false from a user
+ * thread instead of faulting in the syscall verifier.
+ *
+ * @see device_is_ready
+ * @ingroup kernel_device_tests
+ */
+ZTEST_USER(device, test_device_is_ready_null_user)
+{
+	zassert_false(device_is_ready(NULL));
 }
 
 ZTEST(device, test_deinit_not_supported)

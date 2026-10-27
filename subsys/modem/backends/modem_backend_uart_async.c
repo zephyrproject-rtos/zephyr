@@ -66,7 +66,8 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 
 	case UART_TX_ABORTED:
 		if (modem_backend_uart_async_is_open(backend)) {
-			LOG_WRN("Transmit aborted (%zu sent)", evt->data.tx.len);
+			LOG_WRN("%s: Transmit aborted (%zu sent)", backend->uart->name,
+				evt->data.tx.len);
 		}
 		atomic_clear_bit(&backend->async.common.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMITTING_BIT);
@@ -91,7 +92,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 			break;
 		}
 
-		LOG_WRN("No receive buffer available");
+		LOG_WRN("%s: No receive buffer available", backend->uart->name);
 		break;
 
 	case UART_RX_BUF_RELEASED:
@@ -109,7 +110,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 			break;
 		}
 
-		LOG_WRN("Unknown receive buffer released");
+		LOG_WRN("%s: Unknown receive buffer released", backend->uart->name);
 		break;
 
 	case UART_RX_RDY:
@@ -124,7 +125,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 			ring_buf_reset(&backend->async.receive_rb);
 			k_spin_unlock(&backend->async.receive_rb_lock, key);
 
-			LOG_WRN("Receive buffer overrun (dropped %u + %u)",
+			LOG_WRN("%s: Receive buffer overrun (dropped %u + %u)", backend->uart->name,
 				buf_size - received, (unsigned int)evt->data.rx.len);
 			break;
 		}
@@ -139,7 +140,8 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 		break;
 
 	case UART_RX_STOPPED:
-		LOG_WRN("Receive stopped for reasons: %u", (uint8_t)evt->data.rx_stop.reason);
+		LOG_WRN("%s: Receive stopped for reasons: %u", backend->uart->name,
+			(uint8_t)evt->data.rx_stop.reason);
 		break;
 
 	default:
@@ -250,7 +252,8 @@ static int modem_backend_uart_async_transmit_chain(void *data,
 #endif
 
 	if (ret != 0) {
-		LOG_ERR("Failed to %s %u bytes. (%d)", "start async transmit for", offset, ret);
+		LOG_ERR("%s: Failed to %s %u bytes. (%d)", backend->uart->name,
+			"start async transmit for", offset, ret);
 		return ret;
 	}
 

@@ -31,3 +31,8 @@ tests:
       - mr_navq95b/mimx9596/m7
       - mr_navq95b/mimx9596/m7/flash
       - mr_navq95b/mimx9596/m7/ddr
+      # Exclude devices that use CONFIG_DEVICE_DEPS as this is not a real driver, does not have
+      # dependencies and causes a linker warning which fails in CI
+      - nrf93m1dk@0.4.0/nrf54l15/cpuapp/ns
+      - nrf93m1dk@0.4.0/nrf54l15/cpuapp
+      - quill_nrf52840_mesh/nrf52840

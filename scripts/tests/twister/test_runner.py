@@ -262,6 +262,8 @@ TESTDATA_1_2 = [
      False, False, TwisterStatus.PASS, None, False, False),
     (1, True, 'ERROR: region `FLASH\' overflowed by 123 MB',
      True,  True, TwisterStatus.SKIP, 'FLASH overflow', True, False),
+    (1, True, 'ld: region `sram0_0_seg\' overflowed by 90576 bytes',
+     True,  True, TwisterStatus.SKIP, 'sram0_0_seg overflow', True, False),
     (1, True, 'Error: Image size (99 B) + trailer (1 B) exceeds requested size',
      True, True, TwisterStatus.SKIP, 'imgtool overflow', True, False),
     (1, True, 'mock.ANY',
@@ -274,7 +276,8 @@ TESTDATA_1_2 = [
     ' expected_change_skip, expected_add_missing',
     TESTDATA_1_2,
     ids=['no error, no instance run', 'no error, instance run',
-         'error - region overflow', 'error - image size exceed', 'error']
+         'error - region overflow', 'error - sram segment overflow',
+         'error - image size exceed', 'error']
 )
 @pytest.mark.parametrize('sys_platform', TESTDATA_1_1)
 def test_cmake_run_build(
@@ -3009,6 +3012,7 @@ def test_twisterrunner_run(
         return None
 
     instances = {'dummy instance': mock.Mock(metrics={'k': 'v'})}
+    instances['dummy instance'].testsuite.extra_args = ['platform:native_sim:MAKE=/opt/make']
     suites = [mock.Mock()]
     env_mock = mock.Mock()
 
@@ -3018,6 +3022,7 @@ def test_twisterrunner_run(
     tr.options.retry_build_errors = True
     tr.options.jobs = None
     tr.options.build_only = None
+    tr.options.extra_args = ['USE_CCACHE=0']
     for k, v in options.items():
         setattr(tr.options, k, v)
     tr.update_counting_before_pipeline = mock.Mock()
@@ -3028,6 +3033,7 @@ def test_twisterrunner_run(
     gnumakejobserver_mock().name='GNUMakeJobServer'
     jobclient_mock = mock.Mock()
     jobclient_mock().name='JobClient'
+    fifo_supported_mock = mock.Mock(return_value=True)
 
     processing_queue = deque()
     processing_ready = {}
@@ -3059,6 +3065,7 @@ def test_twisterrunner_run(
                     mock_client_from_environ), \
          mock.patch('twisterlib.runner.GNUMakeJobServer',
                     gnumakejobserver_mock), \
+         mock.patch('twisterlib.runner.fifo_supported', fifo_supported_mock), \
          mock.patch('twisterlib.runner.JobClient', jobclient_mock), \
          mock.patch('multiprocessing.cpu_count', return_value=8), \
          mock.patch('sys.platform', platform), \
@@ -3067,6 +3074,13 @@ def test_twisterrunner_run(
         tr.run()
 
     assert f'JOBS: {expected_jobs}' in caplog.text
+
+    if expected_jobserver == 'GNUMakeJobServer':
+        fifo_supported_mock.assert_called_once_with(
+            env_mock.generator_cmd,
+            ['USE_CCACHE=0', 'platform:native_sim:MAKE=/opt/make'],
+        )
+        gnumakejobserver_mock.assert_called_with(expected_jobs, fifo=True)
 
     assert tr.jobserver.name == expected_jobserver
 

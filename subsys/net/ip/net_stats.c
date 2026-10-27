@@ -276,14 +276,14 @@ void net_print_statistics_iface(struct net_if *iface)
 	stats(iface);
 }
 
-static void iface_cb(struct net_if *iface, void *user_data)
+static void print_iface_cb(struct net_if *iface, void *user_data)
 {
 	net_print_statistics_iface(iface);
 }
 
 void net_print_statistics_all(void)
 {
-	net_if_foreach(iface_cb, NULL);
+	net_if_foreach(print_iface_cb, NULL);
 }
 
 void net_print_statistics(void)

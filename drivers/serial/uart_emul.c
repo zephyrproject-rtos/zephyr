@@ -413,11 +413,11 @@ static void uart_emul_async_rx_timeout_handler(struct k_work *_work)
 	struct uart_emul_data *data = CONTAINER_OF(work, struct uart_emul_data, rx_timeout_work);
 	const struct device *dev = data->dev;
 
-	uint8_t *rx_buf;
-	size_t rx_buf_len;
-	size_t rx_buf_offset;
-	size_t rx_buf_data_len;
-	bool rx_en;
+	uint8_t *rx_buf = NULL;
+	size_t rx_buf_len = 0;
+	size_t rx_buf_offset = 0;
+	size_t rx_buf_data_len = 0;
+	bool rx_en = false;
 	bool rx_buf_released = false;
 	bool rx_stopped = false;
 
@@ -582,7 +582,7 @@ static void uart_emul_async_tx_handler(struct k_work *work)
 	const struct device *dev = data->dev;
 	const struct uart_emul_config *config = dev->config;
 
-	uint32_t written;
+	uint32_t written = 0;
 
 	const uint8_t *tx_buf = NULL;
 	size_t tx_buf_len = 0;
@@ -818,7 +818,7 @@ static int uart_emul_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 {
 	struct uart_emul_data *data = dev->data;
 	int ret = 0;
-	bool rx_stopping;
+	bool rx_stopping = false;
 
 	K_SPINLOCK(&data->rx_lock) {
 		rx_stopping = data->rx_stopping;

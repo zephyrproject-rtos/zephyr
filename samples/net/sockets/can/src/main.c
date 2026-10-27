@@ -188,9 +188,8 @@ static int setup_socket(void)
 
 	fd = socket(AF_CAN, SOCK_RAW, CAN_RAW);
 	if (fd < 0) {
-		ret = -errno;
-		LOG_ERR("Cannot create %s CAN socket (%d)", "1st", ret);
-		return ret;
+		LOG_ERR("Cannot create %s CAN socket (%d)", "1st", -errno);
+		return fd;
 	}
 
 	can_addr.can_ifindex = net_if_get_by_iface(iface);
@@ -198,16 +197,14 @@ static int setup_socket(void)
 
 	ret = bind(fd, (struct sockaddr *)&can_addr, sizeof(can_addr));
 	if (ret < 0) {
-		ret = -errno;
-		LOG_ERR("Cannot bind %s CAN socket (%d)", "1st", ret);
+		LOG_ERR("Cannot bind %s CAN socket (%d)", "1st", -errno);
 		goto cleanup;
 	}
 
 	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &sock_filter,
 			 sizeof(sock_filter));
 	if (ret < 0) {
-		ret = -errno;
-		LOG_ERR("Cannot set CAN sockopt (%d)", ret);
+		LOG_ERR("Cannot set CAN sockopt (%d)", -errno);
 		goto cleanup;
 	}
 

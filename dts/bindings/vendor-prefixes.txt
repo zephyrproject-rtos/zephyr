@@ -543,6 +543,7 @@ openthread	OpenThread.io
 option	Option NV
 oranth	Shenzhen Oranth Technology Co., Ltd.
 orcl	Oracle Corporation
+orientdisplay	Orient Display
 orisetech	Orise Technology
 ortustech	Ortus Technology Co., Ltd.
 osddisplays	OSD Displays

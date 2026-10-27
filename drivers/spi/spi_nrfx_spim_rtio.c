@@ -127,10 +127,11 @@ static void iodev_end_txn(const struct device *dev, int result)
 	struct spi_dt_spec *spi_spec = sqe->iodev->data;
 	struct spi_config *spi_cfg = &spi_spec->config;
 
+	if ((spi_cfg->operation & SPI_HOLD_ON_CS) == 0) {
+		spi_nrfx_spim_common_cs_clear(dev, spi_cfg);
+	}
+
 	if (spi_rtio_complete(spi_rtio_ctx, result) == false) {
-		if ((spi_cfg->operation & SPI_HOLD_ON_CS) == 0) {
-			spi_nrfx_spim_common_cs_clear(dev, spi_cfg);
-		}
 		pm_device_runtime_put(dev);
 		return;
 	}

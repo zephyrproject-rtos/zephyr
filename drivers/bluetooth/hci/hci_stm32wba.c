@@ -454,6 +454,10 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	__HAL_RCC_RADIO_CLK_DISABLE();
 
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
+
+	if (IS_ENABLED(CONFIG_FLASH)) {
+		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_ENABLE);
+	}
 #endif
 
 	return 0;
@@ -602,12 +606,12 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 	case PM_DEVICE_ACTION_RESUME:
 		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
 #if defined(CONFIG_PM_S2RAM)
-		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_ENABLED) {
-			if (standby_entered) {
-				/* Restore NVIC configuration for radio */
-				link_layer_register_isr();
-				ll_sys_dp_slp_exit();
-			}
+		if (standby_entered) {
+			/* Restore NVIC configuration for radio */
+			link_layer_register_isr();
+		}
+		if (ll_sys_dp_slp_exit() != LL_SYS_OK) {
+			LOG_ERR("Failed to exit low-power sleep mode");
 		}
 #endif /* CONFIG_PM_S2RAM */
 		LINKLAYER_PLAT_NotifyWFIExit();

@@ -1267,7 +1267,13 @@ int bt_pbap_pse_register(struct bt_pbap_pse *pbap_pse, struct bt_pbap_pse_cb *cb
 
 	err = bt_obex_server_register(&pbap_pse->_server, pbap_uuid);
 	if (err != 0) {
+		int sdp_err;
+
 		LOG_ERR("Fail to register obex server %d", err);
+		sdp_err = bt_sdp_unregister_service(&pbap_pse_rec);
+		if (sdp_err != 0) {
+			LOG_ERR("Failed to unregister PSE SDP record: %d", sdp_err);
+		}
 		return err;
 	}
 

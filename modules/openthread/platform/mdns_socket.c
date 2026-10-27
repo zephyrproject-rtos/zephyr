@@ -58,6 +58,10 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(mdns_udp_service, mdns_receive_handler, MA
 
 otError mdns_plat_socket_init(otInstance *ot_instance, uint32_t ail_iface_idx)
 {
+	ARRAY_FOR_EACH(sockfd_udp, idx) {
+		sockfd_udp[idx].fd = -1;
+	}
+
 	ot_instance_ptr = ot_instance;
 	ail_iface_index = ail_iface_idx;
 
@@ -484,7 +488,7 @@ void mdns_plat_monitor_interface(struct net_if *ail_iface)
 
 	otPlatMdnsHandleHostAddressRemoveAll(ot_instance_ptr, ail_iface_index);
 
-	ipv6 = ail_iface->config.ip.ipv6;
+	ipv6 = net_if_get_config(ail_iface)->ip.ipv6;
 	ARRAY_FOR_EACH(ipv6->unicast, idx) {
 		unicast = &ipv6->unicast[idx];
 
@@ -502,7 +506,7 @@ void mdns_plat_monitor_interface(struct net_if *ail_iface)
 		struct net_if_ipv4 *ipv4 = NULL;
 		otIp4Address ip4_addr = {0};
 
-		ipv4 = ail_iface->config.ip.ipv4;
+		ipv4 = net_if_get_config(ail_iface)->ip.ipv4;
 		ARRAY_FOR_EACH(ipv4->unicast, idx) {
 			unicast = &ipv4->unicast[idx].ipv4;
 

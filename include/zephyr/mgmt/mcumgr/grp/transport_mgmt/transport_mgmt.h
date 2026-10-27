@@ -232,6 +232,13 @@ enum transport_mgmt_ret_code_t {
 
 	/** A bridge connection attempt has failed. */
 	TRANSPORT_MGMT_ERR_CONNECT_FAILED,
+
+	/**
+	 * A bridge connection attempt was successful but a fatal error was encountered
+	 * during/after the connection was established. This might indicate that the underlying
+	 * transport has a problem and is unusable.
+	 */
+	TRANSPORT_MGMT_ERR_CONNECTION_ESTABLISHMENT_FATAL_ERROR,
 };
 
 /** Config types */

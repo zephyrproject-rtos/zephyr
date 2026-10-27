@@ -824,6 +824,56 @@ ZTEST(ip_addr_fn, test_ipv4_addresses)
 	zassert_true(ret, "IPv4 address 3 is not broadcast address");
 }
 
+ZTEST(ip_addr_fn, test_ipv4_bcast_short_prefix)
+{
+	struct net_in_addr addr4 = { { { 10, 0, 0, 255 } } };
+	struct net_in_addr addr4b = { { { 10, 0, 0, 17 } } };
+	struct net_in_addr bcast_addr = { { { 255, 255, 255, 255 } } };
+	struct net_in_addr netmask_24 = { { { 255, 255, 255, 0 } } };
+	struct net_in_addr netmask_31 = { { { 255, 255, 255, 254 } } };
+	struct net_in_addr netmask_32 = { { { 255, 255, 255, 255 } } };
+	struct net_if *iface = default_iface;
+	struct net_if_addr *ifaddr;
+	bool ret;
+
+	ifaddr = net_if_ipv4_addr_add(iface, &addr4, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "IPv4 interface address add failed");
+
+	ret = net_if_ipv4_set_netmask_by_addr(iface, &addr4, &netmask_24);
+	zassert_true(ret, "IPv4 netmask set failed");
+
+	ret = net_ipv4_is_addr_bcast(iface, &addr4);
+	zassert_true(ret, "IPv4 /24 subnet broadcast address not detected");
+
+	/* A /31 or /32 prefix has no broadcast address (RFC 3021) */
+	ret = net_if_ipv4_set_netmask_by_addr(iface, &addr4, &netmask_31);
+	zassert_true(ret, "IPv4 netmask set failed");
+
+	ret = net_ipv4_is_addr_bcast(iface, &addr4);
+	zassert_false(ret, "IPv4 /31 address is broadcast address");
+
+	ret = net_if_ipv4_set_netmask_by_addr(iface, &addr4, &netmask_32);
+	zassert_true(ret, "IPv4 netmask set failed");
+
+	ret = net_ipv4_is_addr_bcast(iface, &addr4);
+	zassert_false(ret, "IPv4 /32 address is broadcast address");
+
+	ret = net_ipv4_is_addr_bcast(NULL, &addr4);
+	zassert_false(ret, "IPv4 /32 address is broadcast address");
+
+	ifaddr = net_if_ipv4_addr_add(iface, &addr4b, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "IPv4 interface address add failed");
+
+	ret = net_if_ipv4_set_netmask_by_addr(iface, &addr4b, &netmask_32);
+	zassert_true(ret, "IPv4 netmask set failed");
+
+	ret = net_ipv4_is_addr_bcast(iface, &addr4b);
+	zassert_false(ret, "IPv4 /32 address is broadcast address");
+
+	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr);
+	zassert_true(ret, "IPv4 limited broadcast address not detected");
+}
+
 ZTEST(ip_addr_fn, test_ipv6_mesh_addresses)
 {
 	struct net_if_addr *ifaddr;

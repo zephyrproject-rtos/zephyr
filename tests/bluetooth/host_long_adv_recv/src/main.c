@@ -235,6 +235,8 @@ static const struct cmd_handler cmds[] = {
 	{ BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, sizeof(struct bt_hci_evt_cc_status), generic_success },
 	{ BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, sizeof(struct bt_hci_evt_cc_status), generic_success },
 	{ BT_HCI_OP_LE_PER_ADV_CREATE_SYNC, 0, generic_status },
+	{ BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, sizeof(struct bt_hci_evt_cc_status),
+	  generic_success },
 	{ BT_HCI_OP_RESET, sizeof(struct bt_hci_evt_cc_status), generic_success },
 };
 
@@ -436,7 +438,8 @@ static void per_adv_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 static void per_adv_sync_term_cb(struct bt_le_per_adv_sync *sync,
 				 const struct bt_le_per_adv_sync_term_info *info)
 {
-	zassert_unreachable("Sync should not be terminated");
+	zassert_equal(info->reason, BT_HCI_ERR_LOCALHOST_TERM_CONN,
+		      "Sync should only be deleted by the test (reason 0x%02x)", info->reason);
 }
 
 static void per_adv_sync_recv_cb(struct bt_le_per_adv_sync *sync,
@@ -467,12 +470,40 @@ static void generate_sequence(uint8_t *dest, uint16_t len, uint8_t range_start, 
 
 static void *suite_setup(void)
 {
+	static struct bt_le_per_adv_sync_cb sync_callbacks = {
+		.synced = per_adv_sync_synced_cb,
+		.term = per_adv_sync_term_cb,
+		.recv = per_adv_sync_recv_cb,
+	};
+	int err;
+
 	zassert_true((bt_enable(NULL) == 0), "bt_enable failed");
+
+	err = bt_le_per_adv_sync_cb_register(&sync_callbacks);
+	zassert_equal(err, 0, "bt_le_per_adv_sync_cb_register failed (err %d)", err);
 
 	return NULL;
 }
 
-ZTEST_SUITE(long_adv_rx_tests, NULL, suite_setup, NULL, NULL, NULL);
+static struct bt_le_per_adv_sync *per_adv_sync;
+
+/* Runs after failed tests too, so that the next test gets a fresh sync */
+static void test_after(void *fixture)
+{
+	int err;
+
+	ARG_UNUSED(fixture);
+
+	if (per_adv_sync == NULL) {
+		return;
+	}
+
+	err = bt_le_per_adv_sync_delete(per_adv_sync);
+	per_adv_sync = NULL;
+	zassert_equal(err, 0, "bt_le_per_adv_sync_delete failed (err %d)", err);
+}
+
+ZTEST_SUITE(long_adv_rx_tests, NULL, suite_setup, NULL, test_after, NULL);
 
 ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 {
@@ -606,38 +637,43 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 	zassert_equal(1, get_expected_report_fake.call_count);
 }
 
-ZTEST(long_adv_rx_tests, test_host_per_adv_report_bad_len)
+static void per_adv_sync_establish(void)
 {
-	static struct bt_le_per_adv_sync_cb sync_callbacks = {
-		.synced = per_adv_sync_synced_cb,
-		.term = per_adv_sync_term_cb,
-		.recv = per_adv_sync_recv_cb,
-	};
 	struct bt_le_per_adv_sync_param param = {
 		.sid = 1,
 		.timeout = BT_GAP_PER_ADV_MIN_TIMEOUT,
 	};
-	struct bt_le_per_adv_sync *sync;
-	struct test_adv_report report = { .length = 20 };
-	uint8_t fragment[10];
 	int err;
 
-	RESET_FAKE(get_expected_report);
-	FFF_RESET_HISTORY();
-
 	bt_addr_le_create_static(&param.addr);
-	generate_sequence(fragment, sizeof(fragment), 'A', 'Z');
-	generate_sequence(report.data, report.length, 'a', 'z');
 
-	err = bt_le_per_adv_sync_cb_register(&sync_callbacks);
-	zassert_equal(err, 0, "bt_le_per_adv_sync_cb_register failed (err %d)", err);
-
-	err = bt_le_per_adv_sync_create(&param, &sync);
+	err = bt_le_per_adv_sync_create(&param, &per_adv_sync);
 	zassert_equal(err, 0, "bt_le_per_adv_sync_create failed (err %d)", err);
 
 	send_per_adv_sync_established(&param.addr, param.sid);
 	err = k_sem_take(&per_adv_synced_sem, K_SECONDS(1));
 	zassert_equal(err, 0, "Sync not established (err %d)", err);
+}
+
+ZTEST(long_adv_rx_tests, test_host_per_adv_report_bad_len)
+{
+	struct test_adv_report report = { .length = 20 };
+	uint8_t fragment[10];
+
+	/* Without a reassembly buffer, the Host drops every report in fragments
+	 * and checks no fragment lengths
+	 */
+	if (CONFIG_BT_PER_ADV_SYNC_BUF_SIZE == 0) {
+		ztest_test_skip();
+	}
+
+	per_adv_sync_establish();
+
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
+
+	generate_sequence(fragment, sizeof(fragment), 'A', 'Z');
+	generate_sequence(report.data, report.length, 'a', 'z');
 
 	/* A partial fragment claiming more data than the event carries. The report is
 	 * discarded up to and including the next complete fragment, and the one after
@@ -664,6 +700,53 @@ ZTEST(long_adv_rx_tests, test_host_per_adv_report_bad_len)
 			    4 * sizeof(fragment));
 	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, report.data, report.length,
 			    report.length);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, report.data, report.length,
+			    report.length);
+	zassert_equal(1, get_expected_report_fake.call_count);
+}
+
+static ZTEST(long_adv_rx_tests, test_host_per_adv_report_incomplete)
+{
+	struct test_adv_report report = { .length = 20 };
+	uint8_t fragment[10];
+
+	per_adv_sync_establish();
+
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
+
+	generate_sequence(fragment, sizeof(fragment), 'A', 'Z');
+	generate_sequence(report.data, report.length, 'a', 'z');
+
+	/* A report that the Controller failed to receive in full ends with the
+	 * Incomplete data status. It is dropped, and the next report is delivered.
+	 */
+	SET_RETURN_SEQ(get_expected_report, &report, 1);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL, fragment, sizeof(fragment),
+			    sizeof(fragment));
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE, fragment, 0U, 0U);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, report.data, report.length,
+			    report.length);
+	zassert_equal(1, get_expected_report_fake.call_count);
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
+
+	/* Same with the Incomplete report as the only one of its report */
+	SET_RETURN_SEQ(get_expected_report, &report, 1);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE, fragment, 0U, 0U);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, report.data, report.length,
+			    report.length);
+	zassert_equal(1, get_expected_report_fake.call_count);
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
+
+	/* Same with a report that the Host already drops, here for a fragment
+	 * claiming more data than the event carries
+	 */
+	SET_RETURN_SEQ(get_expected_report, &report, 1);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL, fragment, sizeof(fragment),
+			    4 * sizeof(fragment));
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE, fragment, 0U, 0U);
 	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, report.data, report.length,
 			    report.length);
 	zassert_equal(1, get_expected_report_fake.call_count);

@@ -51,11 +51,11 @@
 &pll3 {
 	status = "okay";
 	clocks = <&clk_hse>;
-	div-m = <16>;
+	div-m = <8>;
 	mul-n = <110>;
-	div-p = <2>;
-	div-q = <2>;
-	div-r = <4>; /* 27.5 MHz */
+	div-p = <4>;
+	div-q = <4>;
+	div-r = <8>; /* 27.5 MHz */
 };
 
 &zephyr_mipi_dsi {

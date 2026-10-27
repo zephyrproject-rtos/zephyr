@@ -397,17 +397,22 @@ static void gpio_ite_isr(const void *arg)
 			 */
 			gpio_fire_callbacks(&data->callbacks, dev, BIT(pin));
 
+			if (((data->level_isr_high | data->level_isr_low) & BIT(pin)) &&
+			    irq_is_enabled(irq)) {
+				k_work_submit(&data->interrupt_worker);
+			}
+
 			break;
 		}
 	}
-	/* Reschedule worker */
-	k_work_submit(&data->interrupt_worker);
 }
 
 static void gpio_ite_interrupt_worker(struct k_work *work)
 {
 	struct gpio_ite_data * const data = CONTAINER_OF(
 		work, struct gpio_ite_data, interrupt_worker);
+	const struct gpio_ite_cfg *gpio_config = data->instance->config;
+	uint8_t num_pins = gpio_config->num_pins;
 	gpio_port_value_t value;
 	gpio_port_value_t triggered_int;
 
@@ -417,6 +422,15 @@ static void gpio_ite_interrupt_worker(struct k_work *work)
 
 	triggered_int = (value & data->level_isr_high) | (~value & data->level_isr_low);
 	k_spin_unlock(&data->lock, key);
+
+	if (triggered_int != 0) {
+		for (uint8_t pin = 0; pin < num_pins; pin++) {
+			if ((triggered_int & BIT(pin)) &&
+			    !irq_is_enabled(gpio_config->gpio_irq[pin])) {
+				triggered_int &= ~BIT(pin);
+			}
+		}
+	}
 
 	if (triggered_int != 0) {
 		gpio_fire_callbacks(&data->callbacks, data->instance,
@@ -442,11 +456,21 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 		/* Disable GPIO interrupt */
 		irq_disable(gpio_irq);
+		if (mode == GPIO_INT_MODE_DISABLED) {
+			k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+			data->level_isr_low &= ~BIT(pin);
+			data->level_isr_high &= ~BIT(pin);
+			k_spin_unlock(&data->lock, key);
+		}
 		return 0;
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
 		/* Only enable GPIO interrupt */
 		irq_enable(gpio_irq);
+		if ((data->level_isr_high | data->level_isr_low) & BIT(pin)) {
+			k_work_submit(&data->interrupt_worker);
+		}
 		return 0;
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 	}
@@ -499,7 +523,9 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	/* Enable GPIO interrupt */
 	irq_connect_dynamic(gpio_irq, 0, gpio_ite_isr, dev, 0);
 	irq_enable(gpio_irq);
-	k_work_submit(&data->interrupt_worker);
+	if (mode == GPIO_INT_MODE_LEVEL) {
+		k_work_submit(&data->interrupt_worker);
+	}
 
 	return 0;
 }

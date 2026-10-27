@@ -177,7 +177,7 @@ static int uart_bt_fifo_fill(const struct device *dev, const uint8_t *tx_data, i
 
 	if (atomic_get(&dev_data->bt.enabled) == 0) {
 		if (wrote < len) {
-			LOG_WRN_ONCE("Ring buffer full, discard %zu bytes", len - wrote);
+			LOG_WRN_RATELIMIT("Ring buffer full, discard %zu bytes", len - wrote);
 		}
 
 		if (dev_data->uart.tx_irq_ena) {

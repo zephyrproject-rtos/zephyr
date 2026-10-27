@@ -111,6 +111,9 @@ struct esp32_wifi_runtime {
 	struct k_sem tx_done_sem;
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 	struct wifi_enterprise_creds_params enterprise_creds;
+	bool enterprise_enabled;
+	uint8_t *key_passwd;
+	uint8_t key_passwd_len;
 #endif
 #if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
 	/* Only takes effect on the next connect; kept so cfg_11k can read back. */
@@ -934,6 +937,8 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 }
 
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
+static K_MUTEX_DEFINE(esp32_wifi_enterprise_lock);
+
 static bool esp32_wifi_is_enterprise_security(enum wifi_security_type security)
 {
 	switch (security) {
@@ -976,6 +981,23 @@ static void esp32_wifi_free_cred(uint8_t *cred, uint32_t cred_len)
 		mbedtls_platform_zeroize(cred, cred_len);
 		k_free(cred);
 	}
+}
+
+static int esp32_wifi_disable_enterprise(struct esp32_wifi_runtime *data)
+{
+	esp_err_t err = esp_wifi_sta_enterprise_disable();
+
+	if (err != ESP_OK) {
+		return esp32_wifi_enterprise_err("Disable Enterprise authentication", err);
+	}
+
+	data->enterprise_enabled = false;
+
+	esp32_wifi_free_cred(data->key_passwd, data->key_passwd_len);
+	data->key_passwd = NULL;
+	data->key_passwd_len = 0;
+
+	return 0;
 }
 
 static void esp32_wifi_clear_enterprise_creds(struct esp32_wifi_runtime *data)
@@ -1033,12 +1055,21 @@ static int esp32_wifi_configure_enterprise_certs(struct esp32_wifi_runtime *data
 	if ((method == ESP_EAP_TYPE_TLS ||
 	     params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) &&
 	    data->enterprise_creds.client_cert && data->enterprise_creds.client_key) {
-		err = esp_eap_client_set_certificate_and_key(data->enterprise_creds.client_cert,
-					data->enterprise_creds.client_cert_len,
-					data->enterprise_creds.client_key,
-					data->enterprise_creds.client_key_len,
-					params->key_passwd,
-					params->key_passwd_length);
+		if (params->key_passwd != NULL && params->key_passwd_length > 0) {
+			data->key_passwd = k_malloc(params->key_passwd_length + 1U);
+			if (data->key_passwd == NULL) {
+				return -ENOMEM;
+			}
+
+			memcpy(data->key_passwd, params->key_passwd, params->key_passwd_length);
+			data->key_passwd[params->key_passwd_length] = '\0';
+			data->key_passwd_len = params->key_passwd_length;
+		}
+
+		err = esp_eap_client_set_certificate_and_key(
+			data->enterprise_creds.client_cert, data->enterprise_creds.client_cert_len,
+			data->enterprise_creds.client_key, data->enterprise_creds.client_key_len,
+			data->key_passwd, data->key_passwd_len);
 		if (err != ESP_OK) {
 			return esp32_wifi_enterprise_err("Set Enterprise client certificate", err);
 		}
@@ -1158,10 +1189,12 @@ static int esp32_wifi_configure_enterprise(struct esp32_wifi_runtime *data,
 		return -EINVAL;
 	}
 
-	err = esp_wifi_sta_enterprise_disable();
-	if (err != ESP_OK) {
-		return esp32_wifi_enterprise_err("Disable Enterprise authentication", err);
+	err = esp32_wifi_disable_enterprise(data);
+	if (err) {
+		return err;
 	}
+
+	data->enterprise_enabled = true;
 
 	err = esp32_wifi_configure_enterprise_certs(data, params, method);
 	if (err) {
@@ -1211,6 +1244,22 @@ static int esp32_wifi_enterprise_creds(const struct device *dev,
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&esp32_wifi_enterprise_lock, K_FOREVER);
+
+	if (data->enterprise_enabled) {
+		if (data->state == ESP32_STA_CONNECTING || data->state == ESP32_STA_CONNECTED ||
+		    data->state == ESP32_STA_ROAMING) {
+			LOG_ERR("Enterprise connection in use, disconnect first");
+			ret = -EBUSY;
+			goto out;
+		}
+
+		ret = esp32_wifi_disable_enterprise(data);
+		if (ret) {
+			goto out;
+		}
+	}
+
 	esp32_wifi_clear_enterprise_creds(data);
 
 	ret = esp32_wifi_copy_enterprise_cred(&data->enterprise_creds.ca_cert,
@@ -1234,10 +1283,12 @@ static int esp32_wifi_enterprise_creds(const struct device *dev,
 		goto cleanup;
 	}
 
-	return 0;
+	goto out;
 
 cleanup:
 	esp32_wifi_clear_enterprise_creds(data);
+out:
+	k_mutex_unlock(&esp32_wifi_enterprise_lock);
 	return ret;
 }
 #endif /* CONFIG_ESP32_WIFI_ENTERPRISE */
@@ -1592,11 +1643,12 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 	if (!esp32_wifi_is_enterprise_security(params->security)) {
-		ret = esp_wifi_sta_enterprise_disable();
-		if (ret != ESP_OK) {
-			LOG_ERR("Failed to disable Enterprise authentication (%d)", ret);
+		k_mutex_lock(&esp32_wifi_enterprise_lock, K_FOREVER);
+		ret = esp32_wifi_disable_enterprise(data);
+		k_mutex_unlock(&esp32_wifi_enterprise_lock);
+		if (ret) {
 			data->state = ESP32_STA_STARTED;
-			return -EIO;
+			return ret;
 		}
 	}
 #endif
@@ -1670,7 +1722,9 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 	case WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2:
 	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
+		k_mutex_lock(&esp32_wifi_enterprise_lock, K_FOREVER);
 		ret = esp32_wifi_configure_enterprise(data, params, &wifi_config);
+		k_mutex_unlock(&esp32_wifi_enterprise_lock);
 		if (ret) {
 			data->state = ESP32_STA_STARTED;
 			return ret;

@@ -66,6 +66,7 @@
 #include "ll_sw/ull_internal.h"
 
 #include "ll_sw/ull_adv_internal.h"
+#include "ll_sw/ull_scan_internal.h"
 #include "ll_sw/ull_sync_internal.h"
 #include "ll_sw/ull_conn_internal.h"
 #include "ll_sw/ull_sync_iso_internal.h"
@@ -879,8 +880,12 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[27] |= BIT(0) | BIT(1);
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
-	/* LE Encrypt, LE Rand */
-	rp->commands[27] |= BIT(6) | BIT(7);
+#if defined(CONFIG_BT_CTLR_CRYPTO)
+	/* LE Encrypt */
+	rp->commands[27] |= BIT(6);
+#endif /* CONFIG_BT_CTLR_CRYPTO */
+	/* LE Rand */
+	rp->commands[27] |= BIT(7);
 	/* LE Read Supported States */
 	rp->commands[28] |= BIT(3);
 
@@ -6964,6 +6969,11 @@ static uint8_t ext_adv_data_get(const struct node_rx_pdu *node_rx_data,
 		goto no_ext_hdr;
 	}
 
+	/* The fields of an incomplete extended header can lie beyond the PDU */
+	if (!ull_scan_aux_ext_hdr_is_complete(adv)) {
+		return 0U;
+	}
+
 	ptr = h->data;
 
 	if (h->adv_addr) {
@@ -7290,6 +7300,14 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
 
 			goto no_ext_hdr;
+		}
+
+		/* The fields of an incomplete extended header can lie beyond
+		 * the PDU: nothing of this event is reported.
+		 */
+		if (!ull_scan_aux_ext_hdr_is_complete(adv)) {
+			node_rx_extra_list_release(node_rx->rx_ftr.extra);
+			return;
 		}
 
 		ptr = h->data;
@@ -7833,9 +7851,20 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 
 	data_len_total = ftr->aux_data_len;
 
+	/* A PDU with an incomplete extended header ends the report as a failed
+	 * chain reception does, as it can follow a partial report of its chain.
+	 */
 	if ((le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) &&
-	    (ftr->aux_failed || data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
+	    (ftr->aux_failed || data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX ||
+	     !ull_scan_aux_ext_hdr_is_complete(adv))) {
 		struct bt_hci_evt_le_per_advertising_report *sep;
+
+		/* Not even the end of a report is sent while reporting is
+		 * disabled
+		 */
+		if (sync->rx_enable == 0U) {
+			return;
+		}
 
 		sep = meta_evt(buf,
 			       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
@@ -7866,6 +7895,11 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
 
 		goto no_ext_hdr;
+	}
+
+	/* The fields of an incomplete extended header can lie beyond the PDU */
+	if (!ull_scan_aux_ext_hdr_is_complete(adv)) {
+		return;
 	}
 
 	ptr = h->data;

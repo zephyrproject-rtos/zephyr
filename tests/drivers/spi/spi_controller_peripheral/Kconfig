@@ -13,6 +13,7 @@ config TESTED_SPI_MODE
 
 config TEST_INCORRECT_SCK_STATE
 	bool "Incorrect SCK state"
+	select PM_DEVICE
 	help
 	  Setting this option will set SCK to the opposite state than CPOL just before transceive.
 

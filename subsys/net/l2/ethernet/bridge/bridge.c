@@ -556,7 +556,11 @@ static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 	struct eth_bridge_iface_context *ctx;
 	struct net_if *orig_iface;
 	struct net_pkt *send_pkt;
+	uint32_t fwd_ports = 0U;
 	int fwd_iface_num = 0;
+
+	BUILD_ASSERT(NET_ETHERNET_BRIDGE_ETH_INTERFACE_COUNT <= 32,
+		     "The port mask holds at most 32 ports");
 
 	NET_ASSERT(dev != NULL);
 
@@ -577,25 +581,31 @@ static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 
 	orig_iface = net_pkt_orig_iface(pkt);
 
-	/* Get interface number to forward */
+	/* Pick the ports to forward to once, so that a port going down
+	 * meanwhile cannot make the count below wrong.
+	 */
 	ARRAY_FOR_EACH(ctx->eth_iface, i) {
 		if (ctx->eth_iface[i] != NULL && ctx->eth_iface[i] != orig_iface) {
 			/* Skip it if not up */
 			if (!net_if_flag_is_set(ctx->eth_iface[i], NET_IF_UP)) {
 				continue;
 			}
+
+			fwd_ports |= BIT(i);
 			fwd_iface_num++;
 		}
 	}
 
+	if (fwd_iface_num == 0) {
+		NET_DBG("DROP: no port to forward to");
+		net_pkt_unref(pkt);
+		unlock_bridge(ctx);
+		return NET_OK;
+	}
+
 	/* Forward pkt to other interfaces */
 	ARRAY_FOR_EACH(ctx->eth_iface, i) {
-		if (ctx->eth_iface[i] != NULL && ctx->eth_iface[i] != orig_iface) {
-			/* Skip it if not up */
-			if (!net_if_flag_is_set(ctx->eth_iface[i], NET_IF_UP)) {
-				continue;
-			}
-
+		if ((fwd_ports & BIT(i)) != 0U) {
 			/* Clone the packet if we have more than two interfaces in the bridge
 			 * because the first send might mess the data part of the message.
 			 */
@@ -617,8 +627,10 @@ static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 		}
 	}
 
-	/* Free pkt if cloned pkt is used to send */
-	if (send_pkt != pkt) {
+	/* With more than one port only clones are sent, also when a clone
+	 * failed, so the original is ours to free.
+	 */
+	if (fwd_iface_num > 1) {
 		net_pkt_unref(pkt);
 	}
 

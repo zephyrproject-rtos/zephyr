@@ -95,7 +95,7 @@ static void bmp581_event_handler(const struct device *dev)
 	uint32_t buf_len = 0;
 	int err;
 
-	CHECKIF(!data->stream.iodev_sqe || FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags)) {
+	CHECKIF(!data->stream.iodev_sqe || rtio_iodev_sqe_is_canceled(iodev_sqe)) {
 
 		uint8_t val = 0;
 

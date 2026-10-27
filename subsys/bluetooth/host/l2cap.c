@@ -470,6 +470,7 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
+		bt_l2cap_chan_remove(conn, chan);
 		l2cap_chan_del(chan);
 	}
 }
@@ -996,6 +997,11 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		 */
 		LOG_DBG("no credits for new K-frame on %p", lechan);
 		lower_data_ready(lechan);
+
+		/* Another channel of this connection may have data to send:
+		 * re-trigger the TX processor to pull from it.
+		 */
+		bt_tx_irq_raise();
 		return NULL;
 	}
 

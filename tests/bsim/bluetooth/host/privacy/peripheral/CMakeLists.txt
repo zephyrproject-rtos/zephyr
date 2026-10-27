@@ -20,6 +20,7 @@ target_sources(app PRIVATE
   src/main_rpa_expired.c
   src/dut_rpa_rotation.c
   src/dut_rpa_expired.c
+  src/dut_rpa_expired_limited.c
 )
 
 zephyr_include_directories(

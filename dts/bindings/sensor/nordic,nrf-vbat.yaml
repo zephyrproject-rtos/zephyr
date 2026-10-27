@@ -22,3 +22,12 @@ properties:
     description: |
       If true, the voltage value is inverted
       i.e. for use when positive pin used for ground.
+
+  divider-ratio:
+    type: array
+    default: [1, 1]
+    description: |
+      Ratio between the VBAT voltage and the voltage presented to the SAADC,
+      expressed as two cells containing the numerator and denominator. For
+      example, <11 2> represents a ratio of 5.5.
+      The default value is set to <1 1> for input voltages that have not been divided.

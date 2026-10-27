@@ -50,7 +50,7 @@ static int print_accels_stream(const struct device *dev, struct rtio_iodev *iode
 	struct rtio_cqe *cqe;
 	uint8_t *buf;
 	uint32_t buf_len;
-	struct rtio_sqe *handles[NUM_SENSORS];
+	rtio_sqe_handle_t handles[NUM_SENSORS];
 
 	/* Start the streams */
 	for (int i = 0; i < NUM_SENSORS; i++) {

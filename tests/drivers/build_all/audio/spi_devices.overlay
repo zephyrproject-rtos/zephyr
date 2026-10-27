@@ -29,6 +29,20 @@
 				mclk-frequency = <12000000>;
 				status = "okay";
 			};
+
+			test_spi_cs35l56: cs35l56@2 {
+				compatible = "cirrus,cs35l56";
+				reg = <0x2>;
+				spi-max-frequency = <10000000>;
+				status = "okay";
+			};
+
+			test_spi_cs35l57: cs35l57@3 {
+				compatible = "cirrus,cs35l57";
+				reg = <0x3>;
+				spi-max-frequency = <10000000>;
+				status = "okay";
+			};
 		};
 	};
 };

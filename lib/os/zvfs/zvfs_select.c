@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/timeutil.h>
 #include <zephyr/net/socket.h>
 
 /* Get size, in elements, of an array within a struct. */
@@ -140,8 +141,7 @@ int z_impl_zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 	if (timeout == NULL) {
 		poll_timeout = K_FOREVER;
 	} else {
-		poll_timeout =
-			K_USEC(timeout->tv_sec * USEC_PER_SEC + timeout->tv_nsec / NSEC_PER_USEC);
+		poll_timeout = timespec_to_timeout(timeout, NULL);
 	}
 
 	res = zvfs_poll_internal(pfds, num_pfds, poll_timeout);

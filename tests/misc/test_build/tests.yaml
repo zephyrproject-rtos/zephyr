@@ -50,5 +50,6 @@ tests:
     build_only: true
     platform_allow:
       - qemu_cortex_m3
+      - nucleo_u575zi_q
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT=y

@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/llext/fs_loader.h>
+#include <zephyr/arch/common/instr_mem.h>
 #include <zephyr/sys/util.h>
 #include <string.h>
 
@@ -34,10 +35,29 @@ int llext_fs_read(struct llext_loader *l, void *buf, size_t len)
 	int ret = 0;
 	struct llext_fs_loader *fs_l = CONTAINER_OF(l, struct llext_fs_loader, loader);
 
-	if (fs_l->is_open) {
-		ret = fs_read(&fs_l->file, buf, len);
+	if (!fs_l->is_open) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM) &&
+	    arch_is_instr_mem(buf, len)) {
+		uint8_t __aligned(sizeof(uintptr_t)) tmp[64];
+		size_t remaining = len;
+		size_t chunk;
+
+		while (remaining > 0) {
+			chunk = MIN(remaining, sizeof(tmp));
+			if (fs_read(&fs_l->file, tmp, chunk) != chunk) {
+				ret = -EINVAL;
+				break;
+			}
+
+			arch_memcpy_to_instr((uint8_t *)buf + ret, tmp, chunk);
+			remaining -= chunk;
+			ret += chunk;
+		}
 	} else {
-		ret = -EINVAL;
+		ret = fs_read(&fs_l->file, buf, len);
 	}
 
 	return ret == len ? 0 : -EINVAL;

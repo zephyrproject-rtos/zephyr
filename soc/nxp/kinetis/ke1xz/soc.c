@@ -94,6 +94,28 @@ static const scg_sosc_config_t scg_sosc_config = {
 	.workMode = DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_mode)};
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(sosc_clk))
+/*
+ * Trim (closed-loop lock) the LPFLL against the system oscillator crystal
+ * whenever the SOSC is available. A free-running LPFLL is an internal reference
+ * with a few-percent tolerance; on boards that time a crystal-accurate signal
+ * with a clock derived from it (e.g. the bus clock that feeds the PWT capture
+ * timer) that tolerance shows up directly as measurement error. Locking the
+ * LPFLL to the crystal makes it, and everything derived from it, as accurate as
+ * the crystal. The trim engine wants its reference predivided to 2 MHz:
+ * trimDiv = (SOSC frequency / 2 MHz) - 1.
+ */
+BUILD_ASSERT(DT_PROP(SCG_CLOCK_NODE(sosc_clk), clock_frequency) % MHZ(2) == 0,
+	     "SOSC frequency must be an integer multiple of 2 MHz for LPFLL trim");
+
+static const scg_lpfll_trim_config_t scg_lpfll_trim_config = {
+	.trimMode = kSCG_LpFllTrimUpdate,
+	.lockMode = kSCG_LpFllLock1Lsb,
+	.trimSrc = kSCG_LpFllTrimSrcSysOsc,
+	.trimDiv = DT_PROP(SCG_CLOCK_NODE(sosc_clk), clock_frequency) / MHZ(2) - 1,
+};
+#endif /* SOSC enabled */
+
 static const scg_lpfll_config_t scg_lpfll_config = {
 	.enableMode = kSCG_LpFllEnable,
 	.div2 = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(flldiv2_clk)),
@@ -106,7 +128,11 @@ static const scg_lpfll_config_t scg_lpfll_config = {
 #else
 #error Invalid SCG FLL clock frequency
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(sosc_clk))
+	.trimConfig = &scg_lpfll_trim_config,
+#else
 	.trimConfig = NULL,
+#endif
 };
 
 static void CLOCK_CONFIG_FircSafeConfig(const scg_firc_config_t *fircConfig)

@@ -5,15 +5,20 @@
  */
 
 /**
- * @file max30009.h
+ * @file
  * @brief Header file for extended sensor API of MAX30009 sensor
- *
+ * @ingroup max30009_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_MAX30009_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_MAX30009_H_
 
 #include <zephyr/drivers/sensor.h>
+
+/**
+ * @addtogroup max30009_interface
+ * @{
+ */
 
 /**
  * @brief MAX30009-specific sensor channels
@@ -95,4 +100,7 @@ enum sensor_attribute_max30009 {
 	/** Enable BioZ bandgap bias (BIOZ_BG_EN) */
 	SENSOR_ATTR_MAX30009_BG_EN,
 };
+
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_MAX30009_H_ */

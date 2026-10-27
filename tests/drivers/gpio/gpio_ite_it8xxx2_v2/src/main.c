@@ -266,6 +266,24 @@ ZTEST(gpio_ite_it8xxx2_v2, test_interrupt_level_active)
 	posix_sw_set_pending_IRQ(TEST_IRQ);
 	k_sleep(K_MSEC(100));
 	zexpect_equal(callback_called, 5, "callback_called=%d", callback_called);
+
+	/*
+	 * Test DISABLE_ONLY stops worker callbacks while pin is active, and
+	 * ENABLE_ONLY resumes.
+	 */
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN,
+						GPIO_INT_DISABLE | GPIO_INT_ENABLE_DISABLE_ONLY));
+	callback_called = 0;
+	registers.gpdmr = BIT(TEST_PIN);
+	k_sleep(K_MSEC(100));
+	zexpect_equal(callback_called, 0, "callback_called=%d", callback_called);
+
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN,
+						GPIO_INT_ENABLE | GPIO_INT_ENABLE_DISABLE_ONLY));
+	k_sleep(K_MSEC(100));
+	zexpect_equal(callback_called, 5, "callback_called=%d", callback_called);
+
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN, GPIO_INT_DISABLE));
 }
 
 /* Tests both the inactive level case and the interrupt already firing at configure case. */
@@ -295,6 +313,7 @@ ZTEST(gpio_ite_it8xxx2_v2, test_interrupt_level_inactive)
 	posix_sw_set_pending_IRQ(TEST_IRQ);
 	k_sleep(K_MSEC(100));
 	zexpect_equal(callback_called, 5, "callback_called=%d", callback_called);
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN, GPIO_INT_DISABLE));
 }
 
 ZTEST(gpio_ite_it8xxx2_v2, test_set_active_high)

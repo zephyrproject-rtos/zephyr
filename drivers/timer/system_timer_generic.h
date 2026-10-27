@@ -287,9 +287,32 @@ typedef uint64_t timer_core_cycles_t;
  * counter can resolve. A deadline beyond this is walked to over several arms,
  * each announcing nothing until the last.
  */
+#define TIMER_CORE_HW_MAX_ARM_CYCLES                                                               \
+	MIN((uint64_t)TIMER_CORE_COUNTER_SAFE_SPAN, (uint64_t)TIMER_CORE_ALARM_MAX_CYCLES)
+
+/*
+ * QEMU's icount mode without sleep advances the virtual clock straight to the
+ * next armed deadline whenever the guest idles, and its timer models have no
+ * unarmed state: any comparator value is a deadline. With nothing pending the
+ * kernel asks for SYS_CLOCK_MAX_WAIT ticks, 248 days at 100 Hz, and a few
+ * hundred such idle periods saturate QEMU's signed 64-bit nanosecond clock,
+ * after which no timer fires again. Bound one arm to a second of the counter
+ * there: an idle guest then costs one wakeup per virtual second, and the clock
+ * takes days of wall time to saturate instead of milliseconds. With icount off
+ * or sleeping, virtual time advances on its own and that wakeup buys nothing,
+ * so the hardware reach stands.
+ *
+ * This is emulator policy, not a hardware limit, which is why it lives here
+ * rather than in TIMER_CORE_ALARM_MAX_CYCLES: folded in below, a driver's own
+ * smaller arming range still wins.
+ */
+#if defined(CONFIG_QEMU_ICOUNT) && !defined(CONFIG_QEMU_ICOUNT_SLEEP)
 #define TIMER_CORE_MAX_ARM_CYCLES                                                                  \
-	((timer_core_cycles_t)MIN((uint64_t)TIMER_CORE_COUNTER_SAFE_SPAN,                          \
-				  (uint64_t)TIMER_CORE_ALARM_MAX_CYCLES))
+	((timer_core_cycles_t)MIN(TIMER_CORE_HW_MAX_ARM_CYCLES,                                    \
+				  (uint64_t)TIMER_CORE_CYCLES_PER_SEC))
+#else
+#define TIMER_CORE_MAX_ARM_CYCLES ((timer_core_cycles_t)TIMER_CORE_HW_MAX_ARM_CYCLES)
+#endif
 
 /*
  * Announce baseline, private to this translation unit.

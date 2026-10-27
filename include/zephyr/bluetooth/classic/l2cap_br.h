@@ -53,7 +53,7 @@ struct bt_l2cap_br_echo_cb {
 	 *
 	 * @param conn The ACL connection object.
 	 * @param identifier The identifier of the ECHO request.
-	 * @param buf Received ECHO data.
+	 * @param buf Received ECHO data, valid until the callback returns.
 	 */
 	void (*req)(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf);
 
@@ -63,7 +63,7 @@ struct bt_l2cap_br_echo_cb {
 	 * This callback notifies the application of a ECHO response has been received.
 	 *
 	 * @param conn The ACL connection object.
-	 * @param buf Received ECHO data.
+	 * @param buf Received ECHO data, valid until the callback returns.
 	 */
 	void (*rsp)(struct bt_conn *conn, struct net_buf *buf);
 
@@ -110,7 +110,8 @@ int bt_l2cap_br_echo_cb_unregister(struct bt_l2cap_br_echo_cb *cb);
  * @brief Send ECHO data through ECHO request
  *
  * Send ECHO data through ECHO request. The application is required to have reserved
- * @ref BT_L2CAP_BR_ECHO_REQ_RESERVE bytes in the buffer before sending.
+ * @ref BT_L2CAP_BR_ECHO_REQ_RESERVE bytes in the buffer before sending. On error, the
+ * application still owns @p buf and gets it back unchanged.
  *
  * @param conn The ACL connection object.
  * @param buf Sending ECHO data.
@@ -123,7 +124,8 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf);
  * @brief Send ECHO data through ECHO response
  *
  * Send ECHO data through ECHO response. The application is required to have reserved
- * @ref BT_L2CAP_BR_ECHO_RSP_RESERVE bytes in the buffer before sending.
+ * @ref BT_L2CAP_BR_ECHO_RSP_RESERVE bytes in the buffer before sending. On error, the
+ * application still owns @p buf and gets it back unchanged.
  *
  * @param conn The ACL connection object.
  * @param identifier The identifier of the ECHO request.
@@ -173,7 +175,7 @@ struct bt_l2cap_br_connless_cb {
 	 *
 	 * @param conn The ACL connection object.
 	 * @param psm Protocol/Service Multiplexer.
-	 * @param buf Received connectionless channel data.
+	 * @param buf Received connectionless channel data, valid until the callback returns.
 	 */
 	void (*recv)(struct bt_conn *conn, uint16_t psm, struct net_buf *buf);
 

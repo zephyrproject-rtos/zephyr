@@ -41,17 +41,40 @@ int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 
 	/* traverse the domain name str, including the null-terminator :) */
 	for (i = 0U; i < dn_size + 1; i++) {
+		if (lb_index >= DNS_NAME_MAX_SIZE) {
+			/* RFC 1035 ch. 3.1: a name is at most 255 octets */
+			return -EINVAL;
+		}
+
 		if (lb_index >= size) {
 			return -ENOMEM;
 		}
 
 		switch (domain_name[i]) {
 		default:
+			if (lb_size >= DNS_LABEL_MAX_SIZE) {
+				/* RFC 1035 ch. 3.1: a label is at most 63 octets */
+				return -EINVAL;
+			}
+
 			buf[lb_index] = domain_name[i];
 			lb_size += 1U;
 			break;
 		case '.':
+			if (lb_size == 0U && dn_size != 1U) {
+				/* Only the root, ".", has an empty label */
+				return -EINVAL;
+			}
+
 			buf[lb_start] = lb_size;
+			if (i == (dn_size - 1U)) {
+				/* A trailing dot explicitly represents the root label. */
+				if (lb_size > 0U) {
+					buf[lb_index++] = 0U;
+				}
+				*len = lb_index;
+				return 0;
+			}
 			lb_size = 0U;
 			lb_start = lb_index;
 			break;

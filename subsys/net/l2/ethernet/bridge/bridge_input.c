@@ -40,6 +40,11 @@ static void eth_bridge_fdb_forward_handler(struct eth_bridge_fdb_entry *entry, v
 
 	data->match = true;
 
+	/* The destination is on the segment the frame came from: filter it */
+	if (entry->iface == orig_iface) {
+		return;
+	}
+
 	/* Forward per FDB entry */
 	if (!net_if_flag_is_set(entry->iface, NET_IF_UP)) {
 		return;
@@ -116,6 +121,9 @@ static enum net_verdict eth_bridge_handle_locally(struct net_if *bridge, struct 
 	return l2->recv(bridge, pkt);
 }
 
+/* The reserved addresses 01-80-C2-00-00-00 to 01-80-C2-00-00-0F, which a
+ * MAC Bridge never forwards (IEEE Std 802.1Q-2014 8.6.3, Table 8-1)
+ */
 static inline bool is_link_local_addr(struct net_eth_addr *addr)
 {
 	if (addr->addr[0] == 0x01 &&
@@ -123,7 +131,7 @@ static inline bool is_link_local_addr(struct net_eth_addr *addr)
 	    addr->addr[2] == 0xc2 &&
 	    addr->addr[3] == 0x00 &&
 	    addr->addr[4] == 0x00 &&
-	    (addr->addr[5] & 0x0f) == 0x00) {
+	    (addr->addr[5] & 0xf0) == 0x00) {
 		return true;
 	}
 
@@ -144,6 +152,15 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 
 	bridge_addr = (struct net_eth_addr *)bridge_lladdr->addr;
 
+	/* A frame to a reserved address is for a protocol of the port it was
+	 * received on, such as gPTP, LLDP or 802.1X, and is never forwarded,
+	 * whatever the FDB has for the address.
+	 */
+	if (is_link_local_addr(dst_addr)) {
+		NET_DBG("Link-local frame handled by iface %d", net_if_get_by_iface(iface));
+		return NET_CONTINUE;
+	}
+
 	/* Lookup FDB table to forward */
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
 	if (eth_bridge_fdb_forward(bridge, iface, pkt)) {
@@ -152,12 +169,6 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 			return NET_DROP;
 	}
 #endif
-
-	/* Drop all link-local packets for now. */
-	if (is_link_local_addr(dst_addr)) {
-		NET_DBG("DROP: lladdr");
-		return NET_DROP;
-	}
 
 	/* gPTP frame should be handled by original interface via gPTP bridge stack */
 	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {

@@ -18,11 +18,19 @@
 	};
 };
 
+&adc12_common {
+	status = "okay";
+};
+
 &adc1 {
 	status = "okay";
 };
 
 &adc2 {
+	status = "okay";
+};
+
+&adc3_common {
 	status = "okay";
 };
 

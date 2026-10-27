@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		/* The STM32L1 RTC companion has a one-second tick. */
+		sleep-durations-ms = <50 250 2000 3000>;
+	};
+};

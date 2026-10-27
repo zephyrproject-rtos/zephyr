@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: b16851b3c20e6fad3d2da42ec24a3e82d0b8b444
+      revision: cc81db00233af6020f2fea9fbb0d0098fb3d0d86
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 2191db4d7723737ffd3d59d01b50f7595dac2944
+      revision: eae914ed1ad0b54af28191d13da9b8e98fb5cb2b
       path: modules/hal/infineon
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 2687bc9b2737e50fd1d0147233722aba86ba1ec9
+      revision: 0c0beea010e78899c8ffbfd995cbfe50d3e6595e
       groups:
         - hal
     - name: hal_rpi_pico
@@ -249,7 +249,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: ca5f98ea5588fd6aefcb03cb6ea9898ed90ecf15
+      revision: 3402d10d7bbe0f323e018a4142b7ab7d45f9308b
       path: modules/hal/silabs
       groups:
         - hal
@@ -330,7 +330,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: bfbc2eff1ab2f8d290b915036ecdaafdbc620e0f
+      revision: 725d63c9d5bc1bb572d802e7a768daf504186daf
       path: bootloader/mcuboot
       groups:
         - bootloader

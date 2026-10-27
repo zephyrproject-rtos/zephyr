@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include "../psoc6_02/psoc6_02.100-wlcsp.dtsi"
+
+&flash0 {
+	reg = <0x10000000 0x1d0000>;
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

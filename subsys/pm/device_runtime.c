@@ -261,6 +261,10 @@ static int get_sync_locked(const struct device *dev)
 
 		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_RESUME);
 		if (ret < 0) {
+			if ((pm->base.flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) != 0) {
+				(void)pm_device_runtime_put(PM_DOMAIN(&pm->base));
+				pm->base.flags &= ~BIT(PM_DEVICE_FLAG_PD_CLAIMED);
+			}
 			return ret;
 		}
 		pm->base.state = PM_DEVICE_STATE_ACTIVE;

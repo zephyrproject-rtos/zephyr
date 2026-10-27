@@ -15,6 +15,8 @@
 #ifndef ZEPHYR_INCLUDE_RTIO_IODEV_H_
 #define ZEPHYR_INCLUDE_RTIO_IODEV_H_
 
+#include <zephyr/rtio/sqe.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,6 +27,8 @@ extern "C" {
  */
 
 /** @cond ignore */
+struct rtio;
+struct rtio_iodev;
 struct rtio_iodev_sqe;
 /** @endcond */
 
@@ -41,6 +45,36 @@ struct rtio_iodev_api {
 	 * @param iodev_sqe Submission queue entry
 	 */
 	void (*submit)(struct rtio_iodev_sqe *iodev_sqe);
+
+	/**
+	 * @brief Attempt to actively cancel a previously submitted entry
+	 *
+	 * Optional. When non-NULL, this is invoked when the submission @p handle
+	 * names is being canceled, giving the iodev a chance to abort work it still
+	 * owns (e.g. remove a not-yet-started entry from an internal queue, or stop
+	 * an in-flight transfer). If the iodev still owned the entry and removed it,
+	 * the iodev is responsible for completing it (typically
+	 * rtio_iodev_sqe_err() with -ECANCELED). If the entry is not (or no longer)
+	 * owned by the iodev, this must be a no-op.
+	 *
+	 * The submission is passed as a handle rather than a pointer because it is
+	 * not owned by the caller: the entry may complete and its pool slot be
+	 * recycled at any point before this runs. An implementation serializes its
+	 * own completion paths with a lock and resolves the handle with
+	 * rtio_iodev_sqe_from_handle() while holding it, which both rejects a slot
+	 * that has since been recycled (returning NULL) and keeps the entry from
+	 * being completed underneath the hook.
+	 *
+	 * A NULL hook means cancellation is best-effort: the canceled status
+	 * (see rtio_iodev_sqe_is_canceled()) still stops chain continuation and
+	 * re-queueing, but an entry already queued or in flight runs to its
+	 * natural completion.
+	 *
+	 * @param iodev  The iodev the submission was dispatched to
+	 * @param r      RTIO context that owns the submission
+	 * @param handle Handle of the submission being canceled
+	 */
+	void (*cancel)(const struct rtio_iodev *iodev, struct rtio *r, rtio_sqe_handle_t handle);
 };
 
 /**

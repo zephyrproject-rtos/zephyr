@@ -61,7 +61,7 @@ static void print_stream(void *p1, void *p2, void *p3)
 	struct rtio_cqe *cqe;
 	uint8_t *buf;
 	uint32_t buf_len;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 	uint8_t accel_buf[128] = { 0 };
 	uint8_t gyro_buf[128] = { 0 };
 	uint8_t temp_buf[64] = { 0 };

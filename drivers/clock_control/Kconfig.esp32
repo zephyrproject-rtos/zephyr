@@ -21,6 +21,7 @@ choice CLOCK_CONTROL_ESP32_RTC_CLK_SRC
 	default CLOCK_CONTROL_ESP32_RTC_CLK_SRC_EXT_CRYS if \
 		$(ESP32_SLOW_CLK_SRC) = 1 && !SOC_SERIES_ESP32C2
 	default CLOCK_CONTROL_ESP32_RTC_CLK_SRC_EXT_OSC if $(ESP32_SLOW_CLK_SRC) = 1 && SOC_SERIES_ESP32C2
+	default CLOCK_CONTROL_ESP32_RTC_CLK_SRC_EXT_OSC if $(ESP32_SLOW_CLK_SRC) = 9
 	default CLOCK_CONTROL_ESP32_RTC_CLK_SRC_INT_8MD256 if $(ESP32_SLOW_CLK_SRC) = 2 && \
 		!SOC_SERIES_ESP32C6 && !SOC_SERIES_ESP32H2 && !SOC_SERIES_ESP32C5 && \
 		!SOC_SERIES_ESP32C61 && !SOC_SERIES_ESP32P4
@@ -93,9 +94,7 @@ config CLOCK_CONTROL_ESP32_RTC_CLK_CAL_CYCLES
 
 config CLOCK_CONTROL_ESP32_RTC_XTAL_CAL_RETRY
 	int "Number of attempts to repeat 32k XTAL calibration"
-	default 3 if SOC_SERIES_ESP32S2
-	default 1
-	depends on CLOCK_CONTROL_ESP32_RTC_CLK_SRC_EXT_CRYS
+	default 3
 	help
 	  Number of attempts to repeat 32k XTAL calibration before giving
 	  up and switching to the internal RC. Increase this option if the

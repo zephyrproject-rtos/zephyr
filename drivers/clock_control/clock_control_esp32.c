@@ -129,7 +129,7 @@ static int clock_control_esp32_configure(const struct device *dev, clock_control
 		esp32_select_rtc_fast_clk(new_cfg->rtc.rtc_fast_clock_src);
 		break;
 	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW:
-		ret = esp32_select_rtc_slow_clk(new_cfg->rtc.rtc_slow_clock_src);
+		ret = esp32_select_rtc_slow_clk(new_cfg->rtc.rtc_slow_clock_src, false);
 		break;
 	case ESP32_CLOCK_CONTROL_SUBSYS_CPU:
 		/* Normalize frequency */
@@ -164,7 +164,7 @@ static int clock_control_esp32_init(const struct device *dev)
 
 	esp32_select_rtc_fast_clk(cfg->rtc.rtc_fast_clock_src);
 
-	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src);
+	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src, true);
 	if (ret) {
 		LOG_ERR("Failed to configure RTC clock");
 		return ret;

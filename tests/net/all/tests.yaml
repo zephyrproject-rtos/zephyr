@@ -14,6 +14,10 @@ tests:
     platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.build.mgmt_direct:
+    platform_allow: qemu_x86
+    extra_configs:
+      - CONFIG_NET_MGMT_EVENT_DIRECT=y
   net.build.no_compat_namespacing:
     platform_allow: qemu_x86
     extra_configs:

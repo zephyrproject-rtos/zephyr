@@ -157,11 +157,15 @@ static int ieee802154_scan(uint64_t mgmt_request, struct net_if *iface,
 	k_sem_give(&ctx->ctx_lock);
 	ieee802154_radio_filter_pan_id(iface, IEEE802154_BROADCAST_PAN_ID);
 
-	if (ieee802154_radio_start(iface)) {
+	/* The radio is already started when the interface is up */
+	ret = ieee802154_radio_start(iface);
+	if (ret != 0 && ret != -EALREADY) {
 		NET_ERR("Scan request failed: could not start device");
 		ret = -EIO;
 		goto out;
 	}
+
+	ret = 0;
 
 	if (ieee802154_radio_attr_get(iface, IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES,
 				      &attr_value)) {

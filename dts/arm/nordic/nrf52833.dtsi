@@ -249,6 +249,8 @@
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";
 			reg = <0x40007000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			interrupts = <7 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			#io-channel-cells = <1>;

@@ -18,6 +18,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,system-timer = &lptim1;
 	};
 };
 
@@ -30,6 +31,10 @@
 	status = "okay";
 	hsi-div = <1>;
 	clock-frequency = <DT_FREQ_M(64)>;
+};
+
+&clk_hsi48 {
+	status = "okay";
 };
 
 &rcc {
@@ -45,6 +50,12 @@
 
 &pwr {
 	power-supply = "ldo";
+};
+
+&rng {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(AHB2, 6)>,
+		 <&rcc STM32_SRC_HSI48 RNG_SEL(0)>;
 };
 
 /* USART1: Servo UART (console) */
@@ -79,4 +90,11 @@
 	backup_regs {
 		status = "okay";
 	};
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 9)>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(4)>;
+	st,prescaler = <1>;
+	status = "okay";
 };

@@ -18,17 +18,6 @@
 #include <soc/lldesc.h>
 #endif
 
-#define SPI_MASTER_FREQ_8M      (APB_CLK_FREQ/10)
-#define SPI_MASTER_FREQ_9M      (APB_CLK_FREQ/9)    /* 8.89MHz */
-#define SPI_MASTER_FREQ_10M     (APB_CLK_FREQ/8)    /* 10MHz */
-#define SPI_MASTER_FREQ_11M     (APB_CLK_FREQ/7)    /* 11.43MHz */
-#define SPI_MASTER_FREQ_13M     (APB_CLK_FREQ/6)    /* 13.33MHz */
-#define SPI_MASTER_FREQ_16M     (APB_CLK_FREQ/5)    /* 16MHz */
-#define SPI_MASTER_FREQ_20M     (APB_CLK_FREQ/4)    /* 20MHz */
-#define SPI_MASTER_FREQ_26M     (APB_CLK_FREQ/3)    /* 26.67MHz */
-#define SPI_MASTER_FREQ_40M     (APB_CLK_FREQ/2)    /* 40MHz */
-#define SPI_MASTER_FREQ_80M     (APB_CLK_FREQ/1)    /* 80MHz */
-
 struct spi_esp32_config {
 	spi_dev_t *spi;
 	const struct device *clock_dev;

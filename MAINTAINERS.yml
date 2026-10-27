@@ -591,6 +591,7 @@ Binary Descriptors:
     - include/zephyr/bindesc.h
     - samples/subsys/bindesc/
     - scripts/west_commands/bindesc.py
+    - scripts/west_commands/tests/test_bindesc.py
     - tests/subsys/bindesc/
   labels:
     - "area: Binary Descriptors"
@@ -630,6 +631,7 @@ Bluetooth Audio:
     - jthm-ot
     - alexsven
     - koffes
+    - ciascai
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -753,7 +755,7 @@ Bluetooth Host:
     - sjanc
     - Thalley
     - cvinayak
-    - HaavardRei
+    - KyraLengfeld
     - alxelax
     - lylezhu2012
   files:
@@ -849,9 +851,7 @@ Bluetooth Mesh:
     - PavelVPV
     - LingaoM
     - akredalen
-    - HaavardRei
     - omkar3141
-    - KyraLengfeld
     - ludvigsj
   files:
     - doc/services/connectivity/bluetooth/api/mesh/
@@ -1368,10 +1368,9 @@ Demand Paging:
 Device Driver Model:
   status: maintained
   maintainers:
-    - tbursztyka
+    - nashif
   collaborators:
     - dcpleung
-    - nashif
     - edersondisouza
   files:
     - include/zephyr/device.h
@@ -2882,11 +2881,10 @@ Documentation Infrastructure:
     - sample.drivers.smbus
 
 "Drivers: SPI":
-  status: maintained
-  maintainers:
-    - tbursztyka
+  status: odd fixes
   collaborators:
     - teburd
+    - maass-hamburg
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
@@ -5873,6 +5871,7 @@ SPDX Tooling:
     - pdgendt
   files:
     - scripts/pylib/zspdx/
+    - scripts/tests/zspdx/
     - scripts/west_commands/spdx.py
     - tests/application_development/software_bill_of_materials/
   labels:

@@ -54,6 +54,14 @@ config SPI_RTIO_FALLBACK_MSGS
 		an issue where you are using RTIO, your driver does not implement submit natively,
 		and get an error relating to not enough spi msgs this is the Kconfig to manipulate.
 
+config SPI_RTIO_SCRATCH_BUF_SIZE
+	int "Size in bytes of the SPI RTIO discard scratch buffer"
+	default 32
+	range 4 1024
+	help
+	  Size in bytes of the internal scratch buffer used to bit-bucket received data
+	  when discarding incoming bytes (rx_buf == NULL) or clocking dummy bytes under RTIO.
+
 endif # SPI_RTIO
 
 config SPI_PERIPHERAL
