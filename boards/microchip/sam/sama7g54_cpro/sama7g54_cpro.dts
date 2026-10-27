@@ -20,12 +20,14 @@
 
 	aliases {
 		led0 = &led_green;
+		rtc = &rtc;
 		sw0 = &button_user;
 	};
 
 	chosen {
 		zephyr,sram = &ddram;
 		zephyr,console = &usart3;
+		zephyr,entropy = &trng;
 		zephyr,shell-uart = &usart3;
 		zephyr,system-timer = &pit64b0;
 	};
@@ -79,6 +81,10 @@
 	};
 };
 
+&aes {
+	status = "okay";
+};
+
 &flx3 {
 	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_USART>;
 	status = "okay";
@@ -103,4 +109,16 @@
 
 &pit64b0 {
 	clock-frequency = <DT_FREQ_M(10)>;
+};
+
+&rtc {
+	status = "okay";
+};
+
+&sha {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
 };
