@@ -4773,6 +4773,7 @@ Networking:
     - jukkar
   collaborators:
     - pdgendt
+    - maass-hamburg
   files:
     - .github/workflows/net-perf*
     - scripts/net/
