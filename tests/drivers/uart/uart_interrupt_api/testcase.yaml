@@ -20,6 +20,43 @@ tests:
       - lp_mspm0g3519
       - lp_mspm0l2228
       - lp_mspm33c321a
+  drivers.uart.interrupt_api.lp_mspm.pm:
+    tags:
+      - pm_runtime
+      - uart
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    harness: ztest
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="../uart_mix_fifo_poll/boards/${BOARD}.overlay"
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+  drivers.uart.interrupt_api.lp_mspm.pm.policy:
+    tags:
+      - pm_runtime
+      - pm_policy
+      - uart
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    harness: ztest
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="../uart_mix_fifo_poll/boards/${BOARD}.overlay;pm_policy.overlay"
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+      - CONFIG_TICKLESS_KERNEL=y
+      - CONFIG_COUNTER=y
+      - CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER=y
+      - CONFIG_PM_PREWAKEUP_CONV_MODE_CEIL=y
   drivers.uart.interrupt_api.lp_am13e230:
     tags:
       - uart
