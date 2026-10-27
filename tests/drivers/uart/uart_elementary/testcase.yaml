@@ -125,6 +125,8 @@ tests:
       - CONFIG_SOC_NRF_FORCE_CONSTLAT=y
   drivers.uart.uart_elementary.lp_mspm:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    harness_config:
+      fixture: uart_loopback_rts_cts
     platform_allow:
       - lp_mspm0g3507
       - lp_mspm0g3519
@@ -135,6 +137,19 @@ tests:
       - lp_mspm0g3519
       - lp_mspm0l2228
       - lp_mspm33c321a
+  drivers.uart.uart_elementary.lp_mspm.pm:
+    tags:
+      - pm_runtime
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    harness_config:
+      fixture: uart_loopback_rts_cts
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
   drivers.uart.uart_elementary.lp_am13e230:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
