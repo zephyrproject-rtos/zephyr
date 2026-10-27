@@ -236,9 +236,9 @@ static int icm40627_sensor_init(const struct device *dev)
 	/* wait for soft reset to take effect */
 	k_msleep(SOFT_RESET_TIME_MS);
 
-	/* always use internal RC oscillator */
-	res = cfg->bus_io->write(&cfg->bus, REG_INTF_CONFIG1,
-				 (uint8_t)FIELD_PREP(MASK_CLKSEL, BIT_CLKSEL_INT_RC));
+	/* always use internal RC oscillator, keep the reserved bits at their reset value */
+	res = cfg->bus_io->update(&cfg->bus, REG_INTF_CONFIG1, (uint8_t)MASK_CLKSEL,
+				  (uint8_t)FIELD_PREP(MASK_CLKSEL, BIT_CLKSEL_INT_RC));
 
 	if (res) {
 		LOG_ERR("write REG_INTF_CONFIG1 failed");
