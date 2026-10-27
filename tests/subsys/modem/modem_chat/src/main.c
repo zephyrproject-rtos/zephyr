@@ -379,6 +379,18 @@ static void test_modem_chat_after(void *f)
 static uint8_t buffer[4096];
 
 /*************************************************************************************************/
+/*                                      Sync script runner                                       */
+/*************************************************************************************************/
+static K_THREAD_STACK_DEFINE(sync_runner_stack, 2048);
+static struct k_thread sync_runner_thread;
+static int sync_runner_ret;
+
+static void sync_runner_handler(void *unused1, void *unused2, void *unused3)
+{
+	sync_runner_ret = modem_chat_run_script(&cmd, &script);
+}
+
+/*************************************************************************************************/
 /*                                           Tests                                               */
 /*************************************************************************************************/
 ZTEST(modem_chat, test_script_no_error)
@@ -675,6 +687,27 @@ ZTEST(modem_chat, test_release_cancels_work_items)
 	k_work_cancel_delayable_sync(&cmd.script_timeout_work, &sync);
 	k_work_cancel_delayable_sync(&cmd.script_send_timeout_work, &sync);
 	zassert_ok(modem_chat_attach(&cmd, mock_pipe), "Failed to reattach modem chat");
+}
+
+ZTEST(modem_chat, test_release_unblocks_sync_script)
+{
+	int join_ret;
+
+	k_thread_create(&sync_runner_thread, sync_runner_stack,
+			K_THREAD_STACK_SIZEOF(sync_runner_stack), sync_runner_handler, NULL, NULL,
+			NULL, K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1), 0, K_NO_WAIT);
+	k_msleep(100);
+	zassert_true(modem_chat_is_running(&cmd), "Sync script is not running");
+
+	modem_chat_release(&cmd);
+	join_ret = k_thread_join(&sync_runner_thread, K_MSEC(100));
+
+	/* Keep the test suite safe when the waiter stays blocked */
+	k_thread_abort(&sync_runner_thread);
+	zassert_ok(modem_chat_attach(&cmd, mock_pipe), "Failed to reattach modem chat");
+
+	zassert_ok(join_ret, "Release did not unblock the sync script");
+	zassert_equal(sync_runner_ret, -EAGAIN, "Released sync script should return -EAGAIN");
 }
 
 ZTEST(modem_chat, test_script_with_partial_matches)
