@@ -11,8 +11,47 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_cortex_a53
+      - qemu_x86
       - qemu_x86_64
     integration_platforms:
       - qemu_cortex_m3
       - qemu_cortex_a53
+      - qemu_x86
       - qemu_x86_64
+  kernel.timer.sys_clock_hw_cycles_update.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_TEST_USERSPACE=y
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_riscv32
+    integration_platforms:
+      - qemu_x86
+      - qemu_riscv32
+  kernel.timer.sys_clock_hw_cycles_update.read_at_runtime:
+    filter: CONFIG_HPET_TIMER
+    extra_configs:
+      - CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME=y
+      - CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE=n
+      - CONFIG_USERSPACE=y
+      - CONFIG_TEST_USERSPACE=y
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+  kernel.timer.sys_clock_hw_cycles_update.smp:
+    platform_allow:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+  kernel.timer.sys_clock_hw_cycles_update.speed:
+    extra_configs:
+      - CONFIG_SPEED_OPTIMIZATIONS=y
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_riscv32
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_riscv32
