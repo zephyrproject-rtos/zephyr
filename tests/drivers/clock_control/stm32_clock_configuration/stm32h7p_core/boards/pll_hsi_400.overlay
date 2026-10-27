@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_hsi {
+	hsi-div = <1>;
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hsi>;
+	div-m = <16>;
+	mul-n = <100>;
+	div-p = <1>;
+	div-q = <5>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(400)>;
+	cpre = <1>;
+	bmpre = <2>;
+	ppre1 = <2>;
+	ppre2 = <2>;
+	ppre4 = <2>;
+};
