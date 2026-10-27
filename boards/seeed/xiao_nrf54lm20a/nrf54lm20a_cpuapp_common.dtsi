@@ -8,7 +8,6 @@
 
 #include <nordic/nrf54lm20a_cpuapp.dtsi>
 #include "xiao_nrf54lm20a_nrf54lm20a-common.dtsi"
-#include <vendor/nordic/nrf54lm20a_cpuapp_partition.dtsi>
 
 / {
 	chosen {

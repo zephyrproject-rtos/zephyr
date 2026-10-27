@@ -4,6 +4,9 @@ board:
   vendor: seeed
   socs:
   - name: nrf54lm20a
+    variants:
+    - name: ns
+      cpucluster: cpuapp
 runners:
   run_once:
     '--recover':
@@ -14,6 +17,7 @@ runners:
       groups:
       - boards:
         - xiao_nrf54lm20a/nrf54lm20a/cpuapp
+        - xiao_nrf54lm20a/nrf54lm20a/cpuapp/ns
         - xiao_nrf54lm20a/nrf54lm20a/cpuflpr
     '--erase':
     - runners:
@@ -25,6 +29,7 @@ runners:
       groups:
       - boards:
         - xiao_nrf54lm20a/nrf54lm20a/cpuapp
+        - xiao_nrf54lm20a/nrf54lm20a/cpuapp/ns
         - xiao_nrf54lm20a/nrf54lm20a/cpuflpr
     '--reset':
     - runners:
@@ -35,4 +40,5 @@ runners:
       groups:
       - boards:
         - xiao_nrf54lm20a/nrf54lm20a/cpuapp
+        - xiao_nrf54lm20a/nrf54lm20a/cpuapp/ns
         - xiao_nrf54lm20a/nrf54lm20a/cpuflpr
