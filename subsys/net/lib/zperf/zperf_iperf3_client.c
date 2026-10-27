@@ -319,31 +319,13 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 	return 0;
 }
 
-/* Send a whole block, reporting how much of it went out if that fails */
-static int send_block(int sock, const uint8_t *buf, size_t len, size_t *sent)
-{
-	*sent = 0;
-
-	while (*sent < len) {
-		ssize_t ret = zsock_send(sock, buf + *sent, len - *sent, 0);
-
-		if (ret < 0) {
-			return -errno;
-		}
-
-		*sent += (size_t)ret;
-	}
-
-	return 0;
-}
-
 static int send_tcp(int sock, const struct zperf_upload_params *param, uint32_t packet_size,
 		    struct send_stats *stats, const struct periodic_report *periodic)
 {
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(param->duration_ms));
 	struct zperf_results report = { 0 };
 	uint64_t data_offset = 0U;
-	uint32_t alloc_errors = 0U;
+	uint32_t send_retries = 0U;
 	int64_t report_start;
 	int64_t start_time;
 	int64_t now;
@@ -361,19 +343,17 @@ static int send_tcp(int sock, const struct zperf_upload_params *param, uint32_t 
 			return ret;
 		}
 
-		ret = send_block(sock, sample_packet, packet_size, &sent);
+		ret = zperf_tcp_send_all(sock, sample_packet, packet_size, end, &sent,
+					 &send_retries);
 
 		/* The server counts every byte, those of a failed block too */
 		stats->bytes += sent;
 		report.total_len += sent;
 
-		if (ret == -ENOMEM) {
-			/* Running out of buffers is expected when their
-			 * counts are not tuned for the test
-			 */
+		if (ret < 0 && zperf_tcp_send_err_is_transient(-ret)) {
+			/* The test ran out of time while the socket was stalled */
 			stats->errors++;
 			report.nb_packets_errors++;
-			alloc_errors++;
 		} else if (ret < 0) {
 			NET_ERR("Failed to send the packet (%d)", ret);
 			stats->errors++;
@@ -418,10 +398,11 @@ static int send_tcp(int sock, const struct zperf_upload_params *param, uint32_t 
 	stats->packet_size = packet_size;
 	stats->duration_us = k_ticks_to_us_ceil64(k_uptime_ticks() - start_time);
 
-	if (alloc_errors > 0U) {
-		NET_WARN("There were %u network buffer allocation errors during send. "
-			 "Consider increasing CONFIG_NET_BUF_TX_COUNT and CONFIG_NET_PKT_TX_COUNT.",
-			 alloc_errors);
+	if (send_retries > 0U) {
+		NET_WARN("Send was retried %u times due to a full TCP send window or "
+			 "lack of buffers. If unexpected, consider increasing "
+			 "CONFIG_NET_BUF_TX_COUNT and CONFIG_NET_PKT_TX_COUNT.",
+			 send_retries);
 	}
 
 	return 0;

@@ -478,33 +478,20 @@ static char tcp_sample_packet[PACKET_SIZE_MAX];
 static struct zperf_async_upload_context tcp_async_upload_ctx;
 #endif /* !CONFIG_ZPERF_SESSION_PER_THREAD */
 
-static ssize_t sendall(int sock, const void *buf, size_t len)
-{
-	while (len) {
-		ssize_t out_len = zsock_send(sock, buf, len, 0);
-
-		if (out_len < 0) {
-			return out_len;
-		}
-
-		buf = (const char *)buf + out_len;
-		len -= out_len;
-	}
-
-	return 0;
-}
-
-static int tcp_upload(int sock,
-		      unsigned int duration_in_ms,
-		      const struct zperf_upload_params *param,
-		      struct zperf_results *results,
+/* @p send_end is the end of the whole test: in periodic mode @p duration_in_ms
+ * only covers one round, and a stalled block must not be cut off at a round
+ * boundary.
+ */
+static int tcp_upload(int sock, unsigned int duration_in_ms, k_timepoint_t send_end,
+		      const struct zperf_upload_params *param, struct zperf_results *results,
 		      uint64_t *data_offset)
 {
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(duration_in_ms));
 	int64_t start_time, end_time;
 	uint32_t nb_packets = 0U, nb_errors = 0U;
 	uint32_t packet_size = param->packet_size;
-	uint32_t alloc_errors = 0U;
+	uint32_t send_retries = 0U;
+	size_t sent;
 	int ret = 0;
 
 	if (packet_size > PACKET_SIZE_MAX) {
@@ -537,18 +524,13 @@ static int tcp_upload(int sock,
 		*data_offset += packet_size;
 
 		/* Send the packet */
-		ret = sendall(sock, tcp_sample_packet, packet_size);
+		ret = zperf_tcp_send_all(sock, tcp_sample_packet, packet_size, send_end, &sent,
+					 &send_retries);
 		if (ret < 0) {
-			ret = -errno;
 			nb_errors++;
 
-			if (ret == -ENOMEM) {
-				/* Ignore memory errors as we just run out of
-				 * buffers which is kind of expected if the
-				 * buffer count is not optimized for the test
-				 * and device.
-				 */
-				alloc_errors++;
+			if (zperf_tcp_send_err_is_transient(-ret)) {
+				/* The test ran out of time while the socket was stalled */
 				ret = 0;
 			} else {
 				NET_ERR("Failed to send the packet (%d)", -ret);
@@ -576,13 +558,11 @@ static int tcp_upload(int sock,
 	results->nb_packets_errors = nb_errors;
 	results->total_len = (uint64_t)nb_packets * packet_size;
 
-	if (alloc_errors > 0) {
-		NET_WARN("There was %u network buffer allocation "
-			 "errors during send.\nConsider increasing the "
-			 "value of CONFIG_NET_BUF_TX_COUNT and\n"
-			 "optionally CONFIG_NET_PKT_TX_COUNT Kconfig "
-			 "options.",
-			 alloc_errors);
+	if (send_retries > 0U) {
+		NET_WARN("Send was retried %u times due to a full TCP send window or "
+			 "lack of buffers. If unexpected, consider increasing "
+			 "CONFIG_NET_BUF_TX_COUNT and CONFIG_NET_PKT_TX_COUNT.",
+			 send_retries);
 	}
 
 	if (ret < 0) {
@@ -607,7 +587,8 @@ int zperf_iperf2_tcp_upload(const struct zperf_upload_params *param,
 		return sock;
 	}
 
-	ret = tcp_upload(sock, param->duration_ms, param, result, &data_offset);
+	ret = tcp_upload(sock, param->duration_ms, sys_timepoint_calc(K_MSEC(param->duration_ms)),
+			 param, result, &data_offset);
 
 	zsock_close(sock);
 
@@ -649,6 +630,7 @@ static void tcp_upload_async_work(struct k_work *work)
 	int ret;
 	struct zperf_upload_params param = upload_ctx->param;
 	uint64_t data_offset = 0;
+	k_timepoint_t send_end;
 	int sock;
 
 	upload_ctx->callback(ZPERF_SESSION_STARTED, NULL,
@@ -663,6 +645,8 @@ static void tcp_upload_async_work(struct k_work *work)
 				     upload_ctx->user_data);
 		return;
 	}
+
+	send_end = sys_timepoint_calc(K_MSEC(param.duration_ms));
 
 	if (param.options.report_interval_ms > 0) {
 		uint32_t report_interval = param.options.report_interval_ms;
@@ -684,8 +668,8 @@ static void tcp_upload_async_work(struct k_work *work)
 			} else {
 				round_duration = report_interval;
 			}
-			ret = tcp_upload(sock, round_duration, &param, &periodic_result,
-				&data_offset);
+			ret = tcp_upload(sock, round_duration, send_end, &param, &periodic_result,
+					 &data_offset);
 			if (ret < 0) {
 				upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 						     upload_ctx->user_data);
@@ -702,7 +686,7 @@ static void tcp_upload_async_work(struct k_work *work)
 		result->packet_size = periodic_result.packet_size;
 
 	} else {
-		ret = tcp_upload(sock, param.duration_ms, &param, result, &data_offset);
+		ret = tcp_upload(sock, param.duration_ms, send_end, &param, result, &data_offset);
 		if (ret < 0) {
 			upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 					     upload_ctx->user_data);

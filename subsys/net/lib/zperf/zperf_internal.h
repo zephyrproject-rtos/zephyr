@@ -7,6 +7,7 @@
 #define __ZPERF_INTERNAL_H
 
 #include <limits.h>
+#include <stdbool.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/zperf.h>
 #include <zephyr/shell/shell.h>
@@ -143,6 +144,33 @@ int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
 			      int priority, int tcp_nodelay, int proto, const char *if_name);
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
+
+/**
+ * @brief Check if a TCP send error only means the socket is stalled.
+ *
+ * @param err Positive errno value from a failed send.
+ *
+ * @return true if the connection is still usable and the send can be retried.
+ */
+bool zperf_tcp_send_err_is_transient(int err);
+
+/**
+ * @brief Send a whole block on a TCP socket, retrying while it is stalled.
+ *
+ * Errors for which zperf_tcp_send_err_is_transient() is true are retried
+ * until @p end, any other error is returned at once.
+ *
+ * @param sock Connected TCP socket.
+ * @param buf Data to send.
+ * @param len Length of @p buf.
+ * @param end Stop retrying once this point in time has passed.
+ * @param sent Number of bytes queued, valid on error too.
+ * @param retries Incremented for every retried send.
+ *
+ * @return 0 if the whole block was queued, negative errno otherwise.
+ */
+int zperf_tcp_send_all(int sock, const void *buf, size_t len, k_timepoint_t end, size_t *sent,
+		       uint32_t *retries);
 
 void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work);
 

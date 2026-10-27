@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
@@ -21,6 +23,8 @@ LOG_MODULE_REGISTER(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include "net_private.h"
 
 #include "ipv6.h" /* to get infinite lifetime */
+
+#define ZPERF_TCP_SEND_RETRY_DELAY_MS 10
 
 static struct net_sockaddr_in6 ipv6_addr_my = {
 	.sin6_family = NET_AF_INET6,
@@ -294,6 +298,44 @@ uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps)
 
 	return (uint32_t)(((uint64_t)packet_size * 8U * USEC_PER_SEC) /
 			  ((uint64_t)rate_in_kbps * 1024U));
+}
+
+bool zperf_tcp_send_err_is_transient(int err)
+{
+	/* The socket layer reports a send window that stayed full for
+	 * CONFIG_NET_SOCKET_MAX_SEND_WAIT as ENOBUFS and buffers that stayed
+	 * exhausted as ENOMEM. A dead connection is reported by TCP itself
+	 * with a different error, so these are safe to retry.
+	 */
+	return err == ENOBUFS || err == ENOMEM || err == EAGAIN;
+}
+
+int zperf_tcp_send_all(int sock, const void *buf, size_t len, k_timepoint_t end, size_t *sent,
+		       uint32_t *retries)
+{
+	*sent = 0;
+
+	while (*sent < len) {
+		ssize_t ret = zsock_send(sock, (const uint8_t *)buf + *sent, len - *sent, 0);
+
+		if (ret < 0) {
+			int err = errno;
+
+			if (!zperf_tcp_send_err_is_transient(err) || sys_timepoint_expired(end)) {
+				return -err;
+			}
+
+			(*retries)++;
+
+			/* EAGAIN returns at once on a non-blocking socket */
+			k_sleep(K_MSEC(ZPERF_TCP_SEND_RETRY_DELAY_MS));
+			continue;
+		}
+
+		*sent += (size_t)ret;
+	}
+
+	return 0;
 }
 
 void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work)
