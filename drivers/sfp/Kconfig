@@ -49,4 +49,33 @@ config SFP_SHELL
 	  Enable a shell module providing "sfp info" and "sfp ddm" commands to
 	  inspect SFP modules.
 
+config SFP_CMIS
+	bool "CMIS (QSFP-DD/OSFP) I2C module driver"
+	default y
+	depends on DT_HAS_SFF_CMIS_ENABLED
+	select I2C
+	select CMIS
+	help
+	  Enable the I2C driver for CMIS managed pluggable modules such as
+	  QSFP-DD, OSFP, SFP-DD and DSFP. It reads Page 00h (the module-level
+	  monitors and administrative information) and decodes it through the
+	  CMIS library.
+
+config EMUL_CMIS
+	bool "Emulate a CMIS (QSFP-DD/OSFP) module"
+	default y
+	depends on EMUL
+	depends on SFP_CMIS
+	help
+	  Provide an emulator that serves a canned CMIS Page 00h image over the
+	  I2C emulation bus, so the driver can be exercised without hardware.
+
+config SFP_CMIS_SHELL
+	bool "CMIS module shell"
+	depends on SFP_CMIS
+	depends on SHELL
+	help
+	  Enable a shell module providing "cmis info" and "cmis mon" commands to
+	  inspect CMIS modules.
+
 endif # SFP

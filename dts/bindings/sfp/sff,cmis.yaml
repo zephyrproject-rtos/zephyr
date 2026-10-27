@@ -1,0 +1,15 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  CMIS managed pluggable transceiver (QSFP-DD, OSFP, SFP-DD, DSFP).
+
+  CMIS modules expose a single I2C address, 0x50 for a standard module, and a
+  paged memory model: a 128-byte Lower Memory that is always accessible and
+  128-byte upper pages selected through the page-select register. The driver
+  reads Page 00h, which holds the module-level monitors and the administrative
+  information.
+
+compatible: "sff,cmis"
+
+include: i2c-device.yaml
