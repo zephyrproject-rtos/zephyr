@@ -16,6 +16,7 @@ common:
     - nrf54lm20bsim/nrf54lm20a/cpuapp
     - nrf7120dk/nrf7120/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
+    - lp_mspm0g3507
     - lp_mspm0g3519
     - lp_mspm0l2228
   harness_config:
@@ -47,6 +48,7 @@ tests:
       - nrf54lm20bsim/nrf54lm20a/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - lp_mspm0g3507
       - lp_mspm0g3519
       - lp_mspm0l2228
 
@@ -90,6 +92,7 @@ tests:
       - CONFIG_UART_0_ASYNC=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
     platform_exclude:
+      - lp_mspm0g3507
       - lp_mspm0g3519
       - lp_mspm0l2228
 
@@ -106,5 +109,6 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - lp_mspm0g3507
       - lp_mspm0g3519
       - lp_mspm0l2228
