@@ -355,10 +355,12 @@ static int ifx_dmic_configure(const struct device *dev, struct dmic_cfg *cfg)
 		ifx_dmic_cic_decim_factor(data->pdm_pcm_ch_cfg[pdm_ch_n0].cic_decim_code) *
 		ifx_dmic_fir1_decim_factor(data->pdm_pcm_ch_cfg[pdm_ch_n0].fir1_decim_code);
 
-	/* clkDiv is the register field and represents a divider value of clkDiv + 1 */
-	uint16_t clock_div =
-		(uint16_t)(((float)peri_freq / ((float)stream->pcm_rate * (float)oversampling)) -
-			   0.5f);
+	/* clkDiv is the register field and represents a divider value of clkDiv + 1.
+	 * Equivalent to round-to-nearest of peri_freq / (pcm_rate * oversampling) using
+	 * integer-only arithmetic, avoiding float math (and FPU use) in driver code.
+	 */
+	uint64_t denom = (uint64_t)stream->pcm_rate * oversampling;
+	uint16_t clock_div = (uint16_t)(((2ULL * peri_freq) - denom) / (2ULL * denom));
 
 	/* validate clkDiv range (min = 3, max = 255) - should be set to an odd value */
 	if ((clock_div < 3) || (clock_div > 255)) {
