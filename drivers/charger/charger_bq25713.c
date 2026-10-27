@@ -73,8 +73,8 @@ LOG_MODULE_REGISTER(ti_bq25713, CONFIG_CHARGER_LOG_LEVEL);
 
 /* Manufacture ID */
 #define BQ25713_REG_ID_LOW       0x2E
-#define BQ25713_REG_ID_PN_25713  0x4088
-#define BQ25713_REG_ID_PN_25713B 0x408A
+#define BQ25713_REG_ID_PN_25713  0x8840
+#define BQ25713_REG_ID_PN_25713B 0x8A40
 
 #define BQ25713_FACTOR_U_TO_M 1000
 
@@ -140,7 +140,7 @@ static inline int bq25713_read16(const struct device *dev, uint8_t reg, uint16_t
 		return ret;
 	}
 
-	*value = sys_get_be16(i2c_data);
+	*value = sys_get_le16(i2c_data);
 
 	return 0;
 }
