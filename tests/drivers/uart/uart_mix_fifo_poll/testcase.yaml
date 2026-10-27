@@ -86,6 +86,20 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
 
+  drivers.uart.uart_mix_poll.lp_mspm0.pm:
+    tags:
+      - pm_runtime
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+
   drivers.uart.uart_mix_poll_fifo.lp_mspm0:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
@@ -98,6 +112,20 @@ tests:
       - lp_mspm0l2228
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
+
+  drivers.uart.uart_mix_poll_fifo.lp_mspm0.pm:
+    tags:
+      - pm_runtime
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
 
   drivers.uart.uart_mix_poll_async_api_with_ppi:
     extra_configs:
