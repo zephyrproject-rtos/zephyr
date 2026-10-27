@@ -69,6 +69,26 @@
 			status = "disabled";
 		};
 
+		spi0: spi@40058000 {
+			compatible = "nxp,lpc84x-spi";
+			reg = <0x40058000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_SPI0>;
+			interrupts = <0 2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@4005c000 {
+			compatible = "nxp,lpc84x-spi";
+			reg = <0x4005c000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_SPI1>;
+			interrupts = <1 2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		uart0: uart@40064000 {
 			compatible = "nxp,lpc84x-uart";
 			reg = <0x40064000 0x4000>;
