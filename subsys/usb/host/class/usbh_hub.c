@@ -11,6 +11,7 @@
 #include <zephyr/usb/usbh.h>
 #include <zephyr/sys/byteorder.h>
 #include "usbh_class.h"
+#include "usbh_internal.h"
 #include "usbh_device.h"
 #include "usbh_desc.h"
 #include "usbh_ch9.h"
