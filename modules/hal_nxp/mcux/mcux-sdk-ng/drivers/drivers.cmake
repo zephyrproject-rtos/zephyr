@@ -101,6 +101,7 @@ set_variable_ifdef(CONFIG_COUNTER_MCUX_QTMR     CONFIG_MCUX_COMPONENT_driver.qtm
 set_variable_ifdef(CONFIG_PWM_MCUX_QTMR         CONFIG_MCUX_COMPONENT_driver.qtmr_1)
 set_variable_ifdef(CONFIG_SPI_MCUX_DSPI         CONFIG_MCUX_COMPONENT_driver.dspi)
 set_variable_ifdef(CONFIG_SPI_MCUX_ECSPI        CONFIG_MCUX_COMPONENT_driver.ecspi)
+set_variable_ifdef(CONFIG_SPI_LPC84X           CONFIG_MCUX_COMPONENT_driver.lpc_minispi)
 set_variable_ifdef(CONFIG_MCUX_FLEXIO               CONFIG_MCUX_COMPONENT_driver.flexio)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_FLEXIO   CONFIG_MCUX_COMPONENT_driver.flexio)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_FLEXIO   CONFIG_MCUX_COMPONENT_driver.flexio_camera)
