@@ -15,7 +15,7 @@
  * @brief Connection management
  * @defgroup bt_conn Connection management
  * @since 1.0
- * @version 1.0.1
+ * @version 1.0.2
  * @ingroup bluetooth
  * @{
  */
@@ -1460,11 +1460,16 @@ struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn);
  *
  * @param _conn Pointer to the connection object.
  *
- * @return A string pointer which is only valid until the end of the full expression.
+ * @return A string pointer which is only valid until the end of the enclosing block
+ *         in C, and until the end of the full expression in C++.
  *         In practice this means that this is primarily useful as an input parameter
  *         to printk/printf or logging calls.
  */
+#if defined(__cplusplus)
 #define bt_conn_dst_str(_conn) bt_conn_dst_tmp_str(_conn).str
+#else
+#define bt_conn_dst_str(_conn) (((struct bt_conn_tmp_str[]){ bt_conn_dst_tmp_str(_conn) })[0].str)
+#endif
 
 /** @brief Function to determine the type of a connection
  *
