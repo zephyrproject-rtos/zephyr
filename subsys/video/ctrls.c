@@ -330,6 +330,38 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 	case VIDEO_CID_CAMERA_SENSOR_ROTATION:
 		return "Camera Sensor Rotation";
 
+	/* Codec controls */
+	case VIDEO_CID_CODEC_GOP_SIZE:
+		return "Video GOP Size";
+	case VIDEO_CID_CODEC_BITRATE_MODE:
+		return "Video Bitrate Mode";
+	case VIDEO_CID_CODEC_BITRATE:
+		return "Video Bitrate";
+	case VIDEO_CID_CODEC_FRAME_RC_ENABLE:
+		return "Frame Level Rate Control Enable";
+	case VIDEO_CID_CODEC_HEADER_MODE:
+		return "Sequence Header Mode";
+	case VIDEO_CID_CODEC_MB_RC_ENABLE:
+		return "MB Level Rate Control Enable";
+	case VIDEO_CID_CODEC_FORCE_KEY_FRAME:
+		return "Force Key Frame";
+	case VIDEO_CID_H264_I_FRAME_QP:
+		return "H264 I-Frame QP Value";
+	case VIDEO_CID_H264_P_FRAME_QP:
+		return "H264 P-Frame QP Value";
+	case VIDEO_CID_H264_MIN_QP:
+		return "H264 Minimum QP Value";
+	case VIDEO_CID_H264_MAX_QP:
+		return "H264 Maximum QP Value";
+	case VIDEO_CID_H264_LEVEL:
+		return "H264 Level";
+	case VIDEO_CID_H264_PROFILE:
+		return "H264 Profile";
+	case VIDEO_CID_CODEC_PREPEND_SPSPPS_TO_IDR:
+		return "Prepend SPS and PPS to IDR";
+	case VIDEO_CID_CODEC_CONSTANT_QUALITY:
+		return "Constant Quality";
+
 	/* JPEG encoder controls */
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
 		return "Compression Quality";

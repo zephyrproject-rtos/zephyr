@@ -54,6 +54,42 @@ static const char *const *video_get_std_menu_ctrl(uint32_t id)
 		"External",
 		NULL,
 	};
+	static char const *const codec_bitrate_mode[] = {
+		"Variable Bitrate",
+		"Constant Bitrate",
+		"Constant Quality",
+		NULL,
+	};
+	static char const *const codec_header_mode[] = {
+		"Separate Buffer",
+		"Joined With 1st Frame",
+		NULL,
+	};
+	static char const *const h264_level[] = {
+		"1", "1b",  "1.1", "1.2", "1.3", "2",   "2.1", "2.2", "3",   "3.1", "3.2",
+		"4", "4.1", "4.2", "5",   "5.1", "5.2", "6.0", "6.1", "6.2", NULL,
+	};
+	static char const *const h264_profile[] = {
+		"Baseline",
+		"Constrained Baseline",
+		"Main",
+		"Extended",
+		"High",
+		"High 10",
+		"High 422",
+		"High 444 Predictive",
+		"High 10 Intra",
+		"High 422 Intra",
+		"High 444 Intra",
+		"CAVLC 444 Intra",
+		"Scalable Baseline",
+		"Scalable High",
+		"Scalable High Intra",
+		"Stereo High",
+		"Multiview High",
+		"Constrained High",
+		NULL,
+	};
 
 	switch (id) {
 	/* User control menus */
@@ -67,6 +103,16 @@ static const char *const *video_get_std_menu_ctrl(uint32_t id)
 		return colorfx;
 	case VIDEO_CID_CAMERA_ORIENTATION:
 		return camera_orientation;
+
+	/* Codec control menus */
+	case VIDEO_CID_CODEC_BITRATE_MODE:
+		return codec_bitrate_mode;
+	case VIDEO_CID_CODEC_HEADER_MODE:
+		return codec_header_mode;
+	case VIDEO_CID_H264_LEVEL:
+		return h264_level;
+	case VIDEO_CID_H264_PROFILE:
+		return h264_profile;
 	default:
 		return NULL;
 	}
@@ -118,6 +164,9 @@ static inline void set_type_flag(struct video_ctrl *ctrl)
 	case VIDEO_CID_EXPOSURE_AUTO_PRIORITY:
 	case VIDEO_CID_FOCUS_AUTO:
 	case VIDEO_CID_WIDE_DYNAMIC_RANGE:
+	case VIDEO_CID_CODEC_FRAME_RC_ENABLE:
+	case VIDEO_CID_CODEC_MB_RC_ENABLE:
+	case VIDEO_CID_CODEC_PREPEND_SPSPPS_TO_IDR:
 		ctrl->type = VIDEO_CTRL_TYPE_BOOLEAN;
 		break;
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
@@ -125,7 +174,14 @@ static inline void set_type_flag(struct video_ctrl *ctrl)
 	case VIDEO_CID_COLORFX:
 	case VIDEO_CID_TEST_PATTERN:
 	case VIDEO_CID_CAMERA_ORIENTATION:
+	case VIDEO_CID_CODEC_BITRATE_MODE:
+	case VIDEO_CID_CODEC_HEADER_MODE:
+	case VIDEO_CID_H264_LEVEL:
+	case VIDEO_CID_H264_PROFILE:
 		ctrl->type = VIDEO_CTRL_TYPE_MENU;
+		break;
+	case VIDEO_CID_CODEC_FORCE_KEY_FRAME:
+		ctrl->type = VIDEO_CTRL_TYPE_BUTTON;
 		break;
 	case VIDEO_CID_PIXEL_RATE:
 		ctrl->type = VIDEO_CTRL_TYPE_INTEGER64;

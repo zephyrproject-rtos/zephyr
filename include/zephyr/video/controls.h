@@ -181,6 +181,166 @@ enum video_colorfx {
  */
 #define VIDEO_CID_CODEC_CLASS_BASE 0x00990900
 
+/*
+ * The numeric IDs and menu values of the codec controls are identical to Linux. Unlike the
+ * other classes, the names drop the legacy MPEG_VIDEO_ infix of the Linux names: generic
+ * encoder controls use VIDEO_CID_CODEC_ and H.264 controls VIDEO_CID_H264_.
+ */
+
+/**
+ * Distance between IDR frames. 0 means that only the first frame is an IDR frame.
+ * Same ID as V4L2_CID_MPEG_VIDEO_GOP_SIZE.
+ */
+#define VIDEO_CID_CODEC_GOP_SIZE (VIDEO_CID_CODEC_CLASS_BASE + 203)
+
+/**
+ * Rate control mode, see @ref video_codec_bitrate_mode.
+ * Same ID and values as V4L2_CID_MPEG_VIDEO_BITRATE_MODE.
+ */
+#define VIDEO_CID_CODEC_BITRATE_MODE (VIDEO_CID_CODEC_CLASS_BASE + 206)
+
+/** Rate control modes */
+enum video_codec_bitrate_mode {
+	/** Variable bitrate */
+	VIDEO_CODEC_BITRATE_MODE_VBR = 0,
+	/** Constant bitrate */
+	VIDEO_CODEC_BITRATE_MODE_CBR = 1,
+	/** Constant quality, see @ref VIDEO_CID_CODEC_CONSTANT_QUALITY */
+	VIDEO_CODEC_BITRATE_MODE_CQ = 2,
+};
+
+/**
+ * Target bitrate in bits per second.
+ * Same ID as V4L2_CID_MPEG_VIDEO_BITRATE.
+ */
+#define VIDEO_CID_CODEC_BITRATE (VIDEO_CID_CODEC_CLASS_BASE + 207)
+
+/**
+ * Enables frame-level rate control. When disabled, frames use the I and P frame QP controls.
+ * Same ID as V4L2_CID_MPEG_VIDEO_FRAME_RC_ENABLE.
+ */
+#define VIDEO_CID_CODEC_FRAME_RC_ENABLE (VIDEO_CID_CODEC_CLASS_BASE + 215)
+
+/**
+ * Where the stream header (SPS and PPS) goes, see @ref video_codec_header_mode.
+ * Same ID and values as V4L2_CID_MPEG_VIDEO_HEADER_MODE.
+ */
+#define VIDEO_CID_CODEC_HEADER_MODE (VIDEO_CID_CODEC_CLASS_BASE + 216)
+
+/** Stream header modes */
+enum video_codec_header_mode {
+	/** The stream header is returned alone in the first output buffer */
+	VIDEO_CODEC_HEADER_MODE_SEPARATE = 0,
+	/** The stream header is prepended to the first encoded frame */
+	VIDEO_CODEC_HEADER_MODE_JOINED_WITH_1ST_FRAME = 1,
+};
+
+/**
+ * Enables macroblock-level rate control.
+ * Same ID as V4L2_CID_MPEG_VIDEO_MB_RC_ENABLE.
+ */
+#define VIDEO_CID_CODEC_MB_RC_ENABLE (VIDEO_CID_CODEC_CLASS_BASE + 218)
+
+/**
+ * Button: the next encoded frame is a key (IDR) frame.
+ * Same ID as V4L2_CID_MPEG_VIDEO_FORCE_KEY_FRAME.
+ */
+#define VIDEO_CID_CODEC_FORCE_KEY_FRAME (VIDEO_CID_CODEC_CLASS_BASE + 229)
+
+/**
+ * QP of I frames when frame-level rate control is disabled, 0 to 51.
+ * Same ID as V4L2_CID_MPEG_VIDEO_H264_I_FRAME_QP.
+ */
+#define VIDEO_CID_H264_I_FRAME_QP (VIDEO_CID_CODEC_CLASS_BASE + 350)
+
+/**
+ * QP of P frames when frame-level rate control is disabled, 0 to 51.
+ * Same ID as V4L2_CID_MPEG_VIDEO_H264_P_FRAME_QP.
+ */
+#define VIDEO_CID_H264_P_FRAME_QP (VIDEO_CID_CODEC_CLASS_BASE + 351)
+
+/**
+ * Minimum QP chosen by rate control, 0 to 51.
+ * Same ID as V4L2_CID_MPEG_VIDEO_H264_MIN_QP.
+ */
+#define VIDEO_CID_H264_MIN_QP (VIDEO_CID_CODEC_CLASS_BASE + 353)
+
+/**
+ * Maximum QP chosen by rate control, 0 to 51.
+ * Same ID as V4L2_CID_MPEG_VIDEO_H264_MAX_QP.
+ */
+#define VIDEO_CID_H264_MAX_QP (VIDEO_CID_CODEC_CLASS_BASE + 354)
+
+/**
+ * H.264 level, see @ref video_h264_level.
+ * Same ID and values as V4L2_CID_MPEG_VIDEO_H264_LEVEL.
+ */
+#define VIDEO_CID_H264_LEVEL (VIDEO_CID_CODEC_CLASS_BASE + 359)
+
+/** H.264 levels */
+enum video_h264_level {
+	VIDEO_H264_LEVEL_1_0 = 0,  /**< Level 1.0 */
+	VIDEO_H264_LEVEL_1B = 1,   /**< Level 1b */
+	VIDEO_H264_LEVEL_1_1 = 2,  /**< Level 1.1 */
+	VIDEO_H264_LEVEL_1_2 = 3,  /**< Level 1.2 */
+	VIDEO_H264_LEVEL_1_3 = 4,  /**< Level 1.3 */
+	VIDEO_H264_LEVEL_2_0 = 5,  /**< Level 2.0 */
+	VIDEO_H264_LEVEL_2_1 = 6,  /**< Level 2.1 */
+	VIDEO_H264_LEVEL_2_2 = 7,  /**< Level 2.2 */
+	VIDEO_H264_LEVEL_3_0 = 8,  /**< Level 3.0 */
+	VIDEO_H264_LEVEL_3_1 = 9,  /**< Level 3.1 */
+	VIDEO_H264_LEVEL_3_2 = 10, /**< Level 3.2 */
+	VIDEO_H264_LEVEL_4_0 = 11, /**< Level 4.0 */
+	VIDEO_H264_LEVEL_4_1 = 12, /**< Level 4.1 */
+	VIDEO_H264_LEVEL_4_2 = 13, /**< Level 4.2 */
+	VIDEO_H264_LEVEL_5_0 = 14, /**< Level 5.0 */
+	VIDEO_H264_LEVEL_5_1 = 15, /**< Level 5.1 */
+	VIDEO_H264_LEVEL_5_2 = 16, /**< Level 5.2 */
+	VIDEO_H264_LEVEL_6_0 = 17, /**< Level 6.0 */
+	VIDEO_H264_LEVEL_6_1 = 18, /**< Level 6.1 */
+	VIDEO_H264_LEVEL_6_2 = 19, /**< Level 6.2 */
+};
+
+/**
+ * H.264 profile, see @ref video_h264_profile.
+ * Same ID and values as V4L2_CID_MPEG_VIDEO_H264_PROFILE.
+ */
+#define VIDEO_CID_H264_PROFILE (VIDEO_CID_CODEC_CLASS_BASE + 363)
+
+/** H.264 profiles */
+enum video_h264_profile {
+	VIDEO_H264_PROFILE_BASELINE = 0,             /**< Baseline profile */
+	VIDEO_H264_PROFILE_CONSTRAINED_BASELINE = 1, /**< Constrained Baseline profile */
+	VIDEO_H264_PROFILE_MAIN = 2,                 /**< Main profile */
+	VIDEO_H264_PROFILE_EXTENDED = 3,             /**< Extended profile */
+	VIDEO_H264_PROFILE_HIGH = 4,                 /**< High profile */
+	VIDEO_H264_PROFILE_HIGH_10 = 5,              /**< High 10 profile */
+	VIDEO_H264_PROFILE_HIGH_422 = 6,             /**< High 4:2:2 profile */
+	VIDEO_H264_PROFILE_HIGH_444_PREDICTIVE = 7,  /**< High 4:4:4 Predictive profile */
+	VIDEO_H264_PROFILE_HIGH_10_INTRA = 8,        /**< High 10 Intra profile */
+	VIDEO_H264_PROFILE_HIGH_422_INTRA = 9,       /**< High 4:2:2 Intra profile */
+	VIDEO_H264_PROFILE_HIGH_444_INTRA = 10,      /**< High 4:4:4 Intra profile */
+	VIDEO_H264_PROFILE_CAVLC_444_INTRA = 11,     /**< CAVLC 4:4:4 Intra profile */
+	VIDEO_H264_PROFILE_SCALABLE_BASELINE = 12,   /**< Scalable Baseline profile */
+	VIDEO_H264_PROFILE_SCALABLE_HIGH = 13,       /**< Scalable High profile */
+	VIDEO_H264_PROFILE_SCALABLE_HIGH_INTRA = 14, /**< Scalable High Intra profile */
+	VIDEO_H264_PROFILE_STEREO_HIGH = 15,         /**< Stereo High profile */
+	VIDEO_H264_PROFILE_MULTIVIEW_HIGH = 16,      /**< Multiview High profile */
+	VIDEO_H264_PROFILE_CONSTRAINED_HIGH = 17,    /**< Constrained High profile */
+};
+
+/**
+ * Repeats the SPS and PPS before every IDR frame.
+ * Same ID as V4L2_CID_MPEG_VIDEO_PREPEND_SPSPPS_TO_IDR.
+ */
+#define VIDEO_CID_CODEC_PREPEND_SPSPPS_TO_IDR (VIDEO_CID_CODEC_CLASS_BASE + 644)
+
+/**
+ * Target quality in @ref VIDEO_CODEC_BITRATE_MODE_CQ mode, 0 (lowest) to 100 (highest).
+ * Same ID as V4L2_CID_MPEG_VIDEO_CONSTANT_QUALITY.
+ */
+#define VIDEO_CID_CODEC_CONSTANT_QUALITY (VIDEO_CID_CODEC_CLASS_BASE + 645)
+
 /**
  * @}
  */
