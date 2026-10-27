@@ -4,6 +4,10 @@
 
 if SOC_SERIES_FE300
 
+# mtime runs from the 32768 Hz lfclk, so the tick rate must divide it evenly
+config SYS_CLOCK_TICKS_PER_SEC
+	default 16384
+
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
