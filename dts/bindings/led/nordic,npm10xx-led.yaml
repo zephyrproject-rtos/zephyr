@@ -77,6 +77,13 @@ child-binding:
         - 10
       description: LED drive strength in mA.
 
+    init-brightness:
+      type: int
+      default: 0
+      min: 0
+      max: 100
+      description: Initial LED brightness in percent. Useful for automatic LEDs.
+
 examples:
   - |
     npm1012: pmic@6a {

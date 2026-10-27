@@ -66,6 +66,7 @@ struct led_npm10xx_node {
 	struct led_info info;
 	enum led_npm10xx_mode mode;
 	uint8_t current;
+	uint8_t brightness;
 };
 
 struct led_npm10xx_config {
@@ -252,6 +253,15 @@ static int led_npm10xx_init(const struct device *dev)
 		if (ret < 0) {
 			return ret;
 		}
+
+		if (config->leds[i].brightness > 0U) {
+			ret = led_npm10xx_set_brightness(dev, i, config->leds[i].brightness);
+			if (ret < 0) {
+				LOG_ERR("Failed to apply init brightness for LED%u",
+				config->leds[i].info.index);
+				return ret;
+			}
+		}
 	}
 
 	cfg |= FIELD_PREP(LEDDRV_CONFIG_RGB, config->phase_shift) |
@@ -277,6 +287,7 @@ static DEVICE_API(led, led_npm10xx_api) = {
 			},                                                                         \
 		.mode = DT_ENUM_IDX(led_node, led_mode),                                           \
 		.current = DT_ENUM_IDX(led_node, drive_current_ma),                                \
+		.brightness = DT_PROP(led_node, init_brightness),                                  \
 	},
 
 #define LED_NPM10XX_DEFINE(n)                                                                      \
