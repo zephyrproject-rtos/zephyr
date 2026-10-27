@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/div64.h>
 #include <kernel_arch_interface.h>
 
 #if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
@@ -17,12 +18,10 @@
  */
 static inline uint32_t busy_wait_us_to_cyc_ceil32(uint32_t usec, uint32_t hz)
 {
-	/* microseconds per second */
-	const uint64_t denom = 1000000ULL;
 	uint64_t num = (uint64_t)usec * (uint64_t)hz;
 
 	/* Round up to avoid returning early. */
-	return (uint32_t)((num + denom - 1U) / denom);
+	return (uint32_t)sys_div64_u32_const(num + (USEC_PER_SEC - 1U), USEC_PER_SEC);
 }
 #endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
 
@@ -44,27 +43,27 @@ void z_impl_k_busy_wait(uint32_t usec_to_wait)
 	 * Sample frequency and cycle count consistently, and adjust if the
 	 * frequency changes.
 	 */
-	uint32_t hz;
+	struct sys_div64_recip r;
 	uint32_t start_cycles;
 
 	/* Get a consistent sample of the current frequency and cycle count. */
 	for (;;) {
-		uint32_t hz1 = sys_clock_hw_cycles_per_sec();
+		(void)z_sys_clock_cyc_recip_get(&r);
+
 		uint32_t current_cycles = k_cycle_get_32();
 		uint32_t hz2 = sys_clock_hw_cycles_per_sec();
 
-		if (hz1 != hz2) {
+		if (r.div != hz2) {
 			/* Frequency changed while sampling; retry. */
 			continue;
 		}
 
-		hz = hz1;
 		start_cycles = current_cycles;
 
 		break;
 	}
 
-	uint32_t cycles_to_wait = busy_wait_us_to_cyc_ceil32(usec_to_wait, hz);
+	uint32_t cycles_to_wait = busy_wait_us_to_cyc_ceil32(usec_to_wait, r.div);
 	uint32_t last_cycles = start_cycles;
 
 	/* Now busy wait, adjusting if the frequency changes. */
@@ -78,17 +77,25 @@ void z_impl_k_busy_wait(uint32_t usec_to_wait)
 			continue;
 		}
 
-		if (hz1 != hz) {
+		if (hz1 != r.div) {
 			/* The counter keeps counting across a frequency change. The
-			 * cycles up to last_cycles were counted at hz. Those since
-			 * then were counted at hz or hz1, so they are not counted.
-			 * The cycles left to wait are converted to hz1, rounded up.
+			 * cycles up to last_cycles were counted at r.div. Those since
+			 * then were counted at either frequency, so they are not
+			 * counted. The cycles left to wait are converted to hz1,
+			 * rounded up.
 			 */
 			uint64_t left = cycles_to_wait - (last_cycles - start_cycles);
+			struct sys_div64_recip new_r;
 
-			cycles_to_wait = (uint32_t)(((left * hz1) + hz - 1U) / hz);
+			(void)z_sys_clock_cyc_recip_get(&new_r);
+			if (new_r.div != hz1) {
+				/* Frequency changed again since current_cycles; retry. */
+				continue;
+			}
+			cycles_to_wait =
+				(uint32_t)sys_div64_recip_div((left * hz1) + r.div - 1U, &r);
+			z_div64_recip_copy(&r, &new_r);
 			start_cycles = current_cycles;
-			hz = hz1;
 		}
 
 		/* This handles the rollover on an unsigned 32-bit value. */
