@@ -52,12 +52,29 @@ void z_thread_abort(struct k_thread *thread);
 /* Queue the restart of a thread hitting a fatal error, before it is aborted */
 void z_thread_restart_queue(struct k_thread *thread);
 
+/* Whether a dead thread waiting for its restart, or with userspace a thread
+ * created again by a restart, uses the stack. If none does, run
+ * k_thread_foreach(user_cb, user_data) while no thread can start or stop
+ * waiting for its restart, so a thread using the stack is found by one of
+ * the two.
+ */
+bool z_thread_restart_stack_foreach(k_thread_stack_t *stack, k_thread_user_cb_t user_cb,
+				    void *user_data);
 #else
 static inline void z_thread_restart_queue(struct k_thread *thread)
 {
 	ARG_UNUSED(thread);
 }
 
+static inline bool z_thread_restart_stack_foreach(k_thread_stack_t *stack,
+						  k_thread_user_cb_t user_cb, void *user_data)
+{
+	ARG_UNUSED(stack);
+
+	k_thread_foreach(user_cb, user_data);
+
+	return false;
+}
 #endif /* CONFIG_THREAD_RESTARTABLE */
 
 static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t delay)

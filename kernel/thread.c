@@ -1400,6 +1400,44 @@ void z_thread_restart_queue(struct k_thread *thread)
 	}
 }
 
+bool z_thread_restart_stack_foreach(k_thread_stack_t *stack, k_thread_user_cb_t user_cb,
+				    void *user_data)
+{
+	/* Faulting threads queue their restart under restart_lock before they
+	 * leave the thread list, and restarted threads join it under the lock
+	 */
+	k_spinlock_key_t key = k_spin_lock(&restart_lock);
+	struct k_thread *thread;
+	bool used = false;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&restart_list, thread, restart.node) {
+		if (thread->restart.stack == stack) {
+			used = true;
+			break;
+		}
+	}
+
+#ifdef CONFIG_USERSPACE
+	/* The system workqueue may have created a thread again on the stack
+	 * since a caller checked it uninitialized. A stack object is
+	 * initialized while a thread uses it.
+	 */
+	if (!used) {
+		struct k_object *ko = k_object_find(stack);
+
+		used = (ko != NULL) && ((ko->flags & K_OBJ_FLAG_INITIALIZED) != 0U);
+	}
+#endif /* CONFIG_USERSPACE */
+
+	if (!used) {
+		k_thread_foreach(user_cb, user_data);
+	}
+
+	k_spin_unlock(&restart_lock, key);
+
+	return used;
+}
+
 int k_thread_restart_limit_set(k_tid_t thread, uint16_t max_restarts)
 {
 	bool dynamic = (max_restarts != 0U) &&

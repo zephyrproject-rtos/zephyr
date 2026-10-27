@@ -966,8 +966,9 @@ __syscall void k_thread_abort(k_tid_t thread);
  *
  * Between its abort and its restart, the thread is dead: k_thread_join()
  * returns, while k_thread_abort() and k_thread_create() on the thread object
- * cancel the restart. Abort the thread before reclaiming its stack or thread
- * object.
+ * cancel the restart. k_thread_stack_free() of its stack returns -EBUSY.
+ * Abort the thread before reclaiming its stack or thread object, or creating
+ * another thread on it: k_thread_join() returning does not cancel the restart.
  *
  * This routine may be called from ISRs, but not from a k_thread_foreach() or
  * k_thread_foreach_filter_by_cpu() callback, which holds the lock of the

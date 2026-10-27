@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
+#include <kthread.h>
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/bitarray.h>
@@ -25,6 +26,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 struct dyn_cb_data {
 	k_tid_t tid;
 	k_thread_stack_t *stack;
+	bool busy;
 };
 
 static K_THREAD_STACK_ARRAY_DEFINE(dynamic_stack, CONFIG_DYNAMIC_THREAD_POOL_SIZE,
@@ -117,6 +119,13 @@ static void dyn_cb(const struct k_thread *thread, void *user_data)
 		__ASSERT(data->tid == NULL, "stack %p is associated with more than one thread!",
 			 (void *)thread->stack_info.start);
 		data->tid = (k_tid_t)thread;
+		/* Decided while no thread can queue a restart, see
+		 * z_thread_restart_stack_foreach(): a dead thread found here is
+		 * not restarted on the stack. Like any aborted thread, it may
+		 * still run on it until its CPU has switched away from it,
+		 * which k_thread_join() waits for.
+		 */
+		data->busy = !z_is_thread_state_set(thread, _THREAD_DUMMY | _THREAD_DEAD);
 	}
 }
 
@@ -124,14 +133,17 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 {
 	struct dyn_cb_data data = {.stack = stack};
 
-	/* Get a possible tid associated with stack */
-	k_thread_foreach(dyn_cb, &data);
+	/* Get a possible tid associated with stack, or a dead thread that runs
+	 * on the stack again once restarted
+	 */
+	if (z_thread_restart_stack_foreach(stack, dyn_cb, &data)) {
+		LOG_ERR("stack %p is in use by a thread restart!", stack);
+		return -EBUSY;
+	}
 
-	if (data.tid != NULL) {
-		if (!z_is_thread_state_set(data.tid, _THREAD_DUMMY | _THREAD_DEAD)) {
-			LOG_ERR("tid %p is in use!", data.tid);
-			return -EBUSY;
-		}
+	if (data.busy) {
+		LOG_ERR("tid %p is in use!", data.tid);
+		return -EBUSY;
 	}
 
 	if (CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
