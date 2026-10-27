@@ -4,12 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * Requires external hardware connection:
+ * This test reads ADC channel 3 (DIO22, Boosterpack pin 6) and
+ * expects it to be driven to 3.3V (reference-mv).
+ * Connect DIO22 (BP.6) to 3.3V supply.
+ *
+ */
+
 #include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	zephyr,user {
 		io-channels = <&adc0 3>;
-		reference_mv = <3300>;
+		reference-mv = <3300>;
+		expected-accuracy = <32>;
 	};
 };
 

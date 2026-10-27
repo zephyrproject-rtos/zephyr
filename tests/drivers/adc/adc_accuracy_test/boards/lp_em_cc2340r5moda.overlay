@@ -4,13 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * Requires external hardware connection:
+ * This test reads ADC channel 10 (DIO21, jumper P2 pin 2) and
+ * expects it to be driven to 3.3V (reference-mv).
+ * Connect DIO21 (jumper P2 pin 2) to 3.3V supply.
+ *
+ */
+
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pinctrl/cc23x0-pinctrl.h>
 
 / {
 	zephyr,user {
 		io-channels = <&adc0 10>;
-		reference_mv = <3300>;
+		reference-mv = <3300>;
+		expected-accuracy = <32>;
 	};
 };
 
