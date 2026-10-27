@@ -105,6 +105,23 @@
 			};
 		};
 
+		sai2: dai@30c20000 {
+			compatible = "nxp,dai-sai";
+			reg = <0x30c20000 DT_SIZE_K(64)>;
+
+			mclk-is-output;
+			clocks = <&mclk1>;
+			clock-names = "mclk1";
+
+			interrupt-parent = <&master2>;
+			interrupts = <0 0>;
+			dai-index = <2>;
+			/* DMA event source, peripheral type */
+			dmas = <&sdma3 3 5>, <&sdma3 2 5>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
 		sai3: dai@30c30000 {
 			compatible = "nxp,dai-sai";
 			reg = <0x30c30000 DT_SIZE_K(64)>;
