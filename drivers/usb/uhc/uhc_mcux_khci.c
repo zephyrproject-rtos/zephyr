@@ -245,6 +245,8 @@ static DEVICE_API(uhc, mcux_uhc_api) = {
 
 	.ep_enqueue = uhc_mcux_enqueue,
 	.ep_dequeue = uhc_mcux_dequeue,
+	.root_hub_control = uhc_mcux_root_hub_control,
+	.root_hub_status = uhc_mcux_root_hub_status,
 };
 
 static const usb_host_controller_interface_t uhc_mcux_if = {
