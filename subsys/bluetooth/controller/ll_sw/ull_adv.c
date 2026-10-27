@@ -1039,6 +1039,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->nesn = 0;
 		conn_lll->empty = 0;
 
+		conn_lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
+		conn_lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
+		conn_lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
+		conn_lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
+
 #if defined(CONFIG_BT_CTLR_PHY)
 		if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
