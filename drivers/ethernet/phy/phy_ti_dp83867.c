@@ -712,8 +712,9 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
-
-	return ret;
+	if (ret < 0) {
+		return ret;
+	}
 
 skip_int_gpio:
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
