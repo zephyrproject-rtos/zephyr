@@ -161,6 +161,10 @@ static hal_xspi_regular_cmd_t mspi_stm32_xspi_prepare_cmd(uint8_t cfg_mode, uint
 		((cfg_rate == MSPI_DATA_RATE_DUAL) || (cfg_rate == MSPI_DATA_RATE_S_D_D)) ?
 		HAL_XSPI_DQS_ENABLED : HAL_XSPI_DQS_DISABLED;
 
+#ifdef CONFIG_MSPI_STM32_XSPI_SELECT_IO_7_4
+	cmd_tmp.io_select = HAL_XSPI_IO_7_4;
+#endif
+
 	switch (cfg_mode) {
 	case MSPI_IO_MODE_HEX_8_8_16:
 		/* No 16-line data phase on this XSPI generation: use 8 lines,
@@ -528,6 +532,10 @@ static XSPI_RegularCmdTypeDef mspi_stm32_xspi_prepare_cmd(uint8_t cfg_mode, uint
 	cmd_tmp.DQSMode =
 		((cfg_rate == MSPI_DATA_RATE_DUAL) || (cfg_rate == MSPI_DATA_RATE_S_D_D)) ?
 		HAL_XSPI_DQS_ENABLE : HAL_XSPI_DQS_DISABLE;
+
+#ifdef CONFIG_MSPI_STM32_XSPI_SELECT_IO_7_4
+	cmd_tmp.IOSelect = HAL_XSPI_SELECT_IO_7_4;
+#endif
 
 #ifdef XSPI_CCR_SIOO
 	cmd_tmp.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD;
