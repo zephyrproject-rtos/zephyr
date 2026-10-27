@@ -107,3 +107,9 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Build system
+
+  * Kconfig dependency loops that go through a ``select`` or ``imply`` are no longer errors. A
+    driver can now select the bus it uses even if a driver for that bus selects the subsystem of
+    the first driver. See :ref:`kconfig_select_loops` for the rules.
