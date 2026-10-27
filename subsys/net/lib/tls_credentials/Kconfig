@@ -99,6 +99,26 @@ config TLS_CREDENTIALS_KEYGEN_SECP384R1
 	select PSA_WANT_ECC_SECP_R1_384
 	select PSA_WANT_ALG_SHA_384
 
+choice TLS_CREDENTIALS_KEYGEN_KEY_STORE
+	prompt "Key store"
+	default TLS_CREDENTIALS_KEYGEN_KEY_STORE_DEFAULT
+	help
+	  Select where the generated keys are stored and which PSA key IDs they get.
+
+config TLS_CREDENTIALS_KEYGEN_KEY_STORE_DEFAULT
+	bool "Default PSA key location"
+	help
+	  Store the keys as persistent keys in the default PSA key location. The key IDs come from
+	  the range that zephyr/psa/key_ids.h reserves for the key generation.
+
+config TLS_CREDENTIALS_KEYGEN_KEY_STORE_CUSTOM
+	bool "Custom key store"
+	help
+	  The application or the vendor implements the key store, for example to store the keys
+	  in a hardware key location. See zephyr/net/tls_credentials_keygen_store.h.
+
+endchoice
+
 endif # TLS_CREDENTIALS_KEYGEN
 
 source "subsys/net/lib/tls_credentials/Kconfig.shell"

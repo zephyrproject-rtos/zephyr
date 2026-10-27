@@ -14,3 +14,6 @@ tests:
   net.tls_credentials.keygen.no_shell_commands:
     extra_configs:
       - CONFIG_TLS_CREDENTIALS_SHELL_KEYGEN=n
+  net.tls_credentials.keygen.custom_store:
+    extra_configs:
+      - CONFIG_TLS_CREDENTIALS_KEYGEN_KEY_STORE_CUSTOM=y
