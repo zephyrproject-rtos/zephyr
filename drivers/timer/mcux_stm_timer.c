@@ -29,8 +29,6 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(STM_NODE, nxp_stm),
 #define STM_PRESCALER DT_PROP(STM_NODE, prescaler)
 #define STM_CHANNEL kSTM_Channel_0
 
-extern unsigned int z_clock_hw_cycles_per_sec;
-
 static uint32_t cycles_per_tick;
 static uint32_t cycles_max;
 static uint32_t last_count;
@@ -156,7 +154,7 @@ static int sys_clock_driver_init(void)
 		return -EINVAL;
 	}
 
-	z_clock_hw_cycles_per_sec = timer_freq;
+	z_sys_clock_hw_cycles_per_sec_set(timer_freq);
 	cycles_per_tick = timer_freq / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 	cycles_max = (INT32_MAX / cycles_per_tick) * cycles_per_tick;
 

@@ -51,11 +51,6 @@ LOG_MODULE_REGISTER(gecko_burtc_timer);
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ;
 #endif
 
-/* With CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME, that's where we
- * should write hw_cycles timer clock frequency upon init
- */
-extern unsigned int z_clock_hw_cycles_per_sec;
-
 /* Number of hw_cycles clocks per 1 kernel tick */
 static uint32_t g_cyc_per_tick;
 
@@ -189,7 +184,7 @@ static int burtc_init(void)
 
 	/* Calculate timing constants and init BURTC */
 	hw_clock_freq = CMU_ClockFreqGet(cmuClock_BURTC);
-	z_clock_hw_cycles_per_sec = hw_clock_freq;
+	z_sys_clock_hw_cycles_per_sec_set(hw_clock_freq);
 
 	BUILD_ASSERT(CONFIG_SYS_CLOCK_TICKS_PER_SEC > 0,
 			"Invalid CONFIG_SYS_CLOCK_TICKS_PER_SEC value");

@@ -352,8 +352,7 @@ ARCH_ISR_DIAG_ON
 #if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
 void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 {
-	extern unsigned int z_clock_hw_cycles_per_sec;
-	uint32_t old_hz = (uint32_t)z_clock_hw_cycles_per_sec;
+	uint32_t old_hz = sys_clock_hw_cycles_per_sec();
 
 	if ((old_hz == 0U) || (new_hz == 0U) || (old_hz == new_hz)) {
 		return;
@@ -362,7 +361,7 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 	k_spinlock_key_t key = sys_clock_lock();
 
 	/* Publish the new frequency. */
-	z_clock_hw_cycles_per_sec = new_hz;
+	z_sys_clock_hw_cycles_per_sec_set(new_hz);
 
 	/* The floor is a wall-clock budget, so re-derive it at the new rate. */
 	min_delay = systick_min_delay();
