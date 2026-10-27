@@ -10,7 +10,10 @@ The architecture and SoC independence is achieved by separating the core PM
 infrastructure from implementations of the SoC specific components.
 Thus a coherent abstraction is presented to the rest of the OS and the application layer.
 
-The power management features are classified into the following categories.
+The power management features are classified into the following categories:
 
-* System Power Management
-* Device Power Management
+* :ref:`System Power Management <pm-system>`: manages the power state of the
+  CPU or SoC as a whole, entering a low-power state when the system is idle.
+* :doc:`Device Power Management <device>`: manages the power state of
+  individual devices, either at runtime based on device usage or together
+  with the system power state.
