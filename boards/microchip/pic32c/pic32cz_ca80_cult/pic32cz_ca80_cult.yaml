@@ -21,6 +21,7 @@ supported:
   - pinctrl
   - reset
   - rtc
+  - sdhc
   - spi
   - uart
   - watchdog
