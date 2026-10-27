@@ -996,6 +996,9 @@ ZTEST_USER(timer_api, test_timeout_abs)
 
 ZTEST_USER(timer_api, test_sleep_abs)
 {
+#ifndef CONFIG_TIMEOUT_64BIT
+	ztest_test_skip();
+#else
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		/* k_sleep is not supported when multithreading is off. */
 		return;
@@ -1047,7 +1050,7 @@ ZTEST_USER(timer_api, test_sleep_abs)
 	zassert_true(late >= 0 && late <= slop,
 		     "expected wakeup at %lld, got %lld (late %lld)",
 		     start + sleep_ticks, end, late);
-
+#endif
 }
 
 static struct k_timer isr_ctx_timer;
