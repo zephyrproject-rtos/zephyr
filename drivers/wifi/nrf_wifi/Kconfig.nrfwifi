@@ -754,6 +754,14 @@ config NRF_WIFI_AP_DEAD_DETECT_TIMEOUT
 		The number of seconds after which the AP is declared dead if no beacons
 		are received from the AP. This is used to detect AP silently going down, for example, due to power off.
 
+config WIFI_NRF70_VHT_HT_FALLBACK
+	bool "Allow fallback from VHT to HT on 802.11ac access points"
+	default y
+	help
+	  On 802.11ac 80 MHz access points, allow the link to fall back from
+	  VHT to HT when needed. Clear this option to keep VHT mode. Applies
+	  only to 802.11ac 80 MHz links; other modes are unaffected.
+
 config NRF_WIFI_RPU_RECOVERY
 	bool "RPU recovery mechanism"
 	# Relies on power-save mode, so, LPM is needed
