@@ -14,6 +14,13 @@ LOG_MODULE_REGISTER(sys_clock_hw_cycles, CONFIG_KERNEL_LOG_LEVEL);
 
 unsigned int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
+void z_sys_clock_hw_cycles_per_sec_set(uint32_t hz)
+{
+	__ASSERT(hz != 0U, "zero system timer frequency");
+
+	z_clock_hw_cycles_per_sec = hz;
+}
+
 #if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
 /*
  * Weak default: only publish the new frequency value.
@@ -32,7 +39,7 @@ void __weak z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 		return;
 	}
 
-	z_clock_hw_cycles_per_sec = new_hz;
+	z_sys_clock_hw_cycles_per_sec_set(new_hz);
 
 	LOG_WRN("system timer frequency updated at runtime (%u -> %u Hz) "
 		"without a %s() override",
