@@ -40,4 +40,13 @@ config DMA_AMD_ACP_ATTR_MAX_BLOCK_COUNT
 	help
 	  Maximum number of blocks per DMA transfer.
 
+config AMD_ACP_HOST_DMA_PROBE
+	bool "ACP host DMA probe extraction"
+	depends on SOC_ACP_7_X
+	help
+	  Enable the SOF probe extraction path on ACP host DMA. The driver
+	  records the probe channel, copies the requested extractor data,
+	  and writes ACP_FUTURE_REG_ACLK_2 so the host compressor can update
+	  the stream position.
+
 endif # DMA_AMD_ACP_HOST

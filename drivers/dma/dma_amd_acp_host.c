@@ -33,6 +33,10 @@
 
 /* used for driver binding */
 #define DT_DRV_COMPAT amd_acp_host_dma
+#ifdef CONFIG_AMD_ACP_HOST_DMA_PROBE
+static uint32_t probe_pos_update;
+static uint32_t probe_pos;
+#endif
 static uint32_t *host_read_ptr;
 static uint32_t *host_wr_ptr;
 
@@ -261,12 +265,27 @@ static bool acp_host_dma_chan_filter(const struct device *dev, int channel, void
 
 	if (channel == req_chan) {
 		struct acp_dma_dev_data *const dev_data = dev->data;
-		struct acp_dma_chan_data chan = dev_data->chan_data[channel];
-		struct acp_dma_ptr_data *ptr_data = &chan.ptr_data;
+		struct acp_dma_chan_data *chan = &dev_data->chan_data[channel];
+		struct acp_dma_ptr_data *ptr_data = &chan->ptr_data;
 
 		ptr_data->rd_size = 0;
 		ptr_data->wr_size = 0;
 		ptr_data->size = 0;
+#ifdef CONFIG_AMD_ACP_HOST_DMA_PROBE
+		uint32_t probe_ch = 0xFF;
+		struct acp_host_probe_data *probe_data = dev_data->probe_ctx;
+
+		if (probe_data) {
+			probe_ch = probe_data->channel;
+		}
+		ptr_data->probe_channel = probe_ch;
+		if (probe_ch == (uint32_t)channel) {
+			probe_pos_update = 0;
+			probe_pos = 0;
+			io_reg_write(PU_REGISTER_BASE + ACP_FUTURE_REG_ACLK_2,
+				     PROBE_UPDATE_POS_MASK);
+		}
+#endif
 		return true;
 	}
 	return false;
@@ -512,22 +531,36 @@ static int acp_host_dma_reload(const struct device *dev, uint32_t channel, uint3
 		ptr_data->wr_size %= ptr_data->size;
 		ptr_data->wr_ptr = ptr_data->base + ptr_data->wr_size;
 	} else if (chan->direction == MEMORY_TO_HOST) {
-		cap_size = (uint32_t)((uint32_t)(ptr_data->base + ptr_data->size) &
-				      ACP_SYST_MEM_ADDR_MASK);
-		cap_host_rdptr = (uint32_t)((uint32_t)ptr_data->rd_ptr & ACP_SYST_MEM_ADDR_MASK);
-		cap_host_wrptr = (uint32_t)((uint32_t)host_wr_ptr & ACP_SYST_MEM_ADDR_MASK);
-		if (cap_host_rdptr != cap_host_wrptr) {
-			cap_avail = (int32_t)(cap_host_wrptr - cap_host_rdptr) > 0
-					    ? (cap_host_wrptr - cap_host_rdptr)
-					    : (cap_size - cap_host_rdptr) +
-						      (cap_host_wrptr -
-						       (ptr_data->base & ACP_SYST_MEM_ADDR_MASK));
-			cap_free = ptr_data->size - cap_avail;
+#ifdef CONFIG_AMD_ACP_HOST_DMA_PROBE
+		if (chan->ptr_data.probe_channel == channel) {
+			/* The caller already computed the available extractor bytes. */
+			bytes = (size_t)ALIGN_DOWN(bytes, 128);
+			if (!bytes) {
+				return 0;
+			}
 		} else {
-			cap_avail = ptr_data->size;
+#endif
+			cap_size = (uint32_t)((uint32_t)(ptr_data->base + ptr_data->size) &
+					      ACP_SYST_MEM_ADDR_MASK);
+			cap_host_rdptr =
+				(uint32_t)((uint32_t)ptr_data->rd_ptr & ACP_SYST_MEM_ADDR_MASK);
+			cap_host_wrptr = (uint32_t)((uint32_t)host_wr_ptr & ACP_SYST_MEM_ADDR_MASK);
+			if (cap_host_rdptr != cap_host_wrptr) {
+				cap_avail = (int32_t)(cap_host_wrptr - cap_host_rdptr) > 0
+						    ? (cap_host_wrptr - cap_host_rdptr)
+						    : (cap_size - cap_host_rdptr) +
+							      (cap_host_wrptr -
+							       (ptr_data->base &
+								 ACP_SYST_MEM_ADDR_MASK));
+				cap_free = ptr_data->size - cap_avail;
+			} else {
+				cap_avail = ptr_data->size;
+			}
+			bytes = (size_t)ALIGN_DOWN(cap_avail, 128);
+			bytes = MIN(bytes, ptr_data->size >> 1);
+#ifdef CONFIG_AMD_ACP_HOST_DMA_PROBE
 		}
-		bytes = (size_t)ALIGN_DOWN(cap_avail, 128);
-		bytes = MIN(bytes, ptr_data->size >> 1);
+#endif
 		head = bytes;
 		ptr_data->wr_ptr = ACP_SYST_MEM_WINDOW + ptr_data->phy_off + ptr_data->wr_size;
 		ptr_data->rd_ptr = ptr_data->base + ptr_data->rd_size;
@@ -585,6 +618,23 @@ static int acp_host_dma_reload(const struct device *dev, uint32_t channel, uint3
 		ch_sts = (acp_dma_ch_sts_t)io_reg_read(PU_REGISTER_BASE + ACP_DMA_CH_STS);
 	}
 	acp_host_dma_stop(dev, channel);
+
+#ifdef CONFIG_AMD_ACP_HOST_DMA_PROBE
+	/*
+	 * Host compr position is not PCM IRQ; the kernel reads
+	 * ACP_FUTURE_REG_ACLK_2 (bit 31 = update, 30:0 = bytes).
+	 */
+	if (ptr_data->probe_channel == channel) {
+		probe_pos_update += bytes;
+		probe_pos += bytes;
+		if (probe_pos >= PROBE_BUFFER_WATERMARK) {
+			io_reg_write(PU_REGISTER_BASE + ACP_FUTURE_REG_ACLK_2,
+				     PROBE_UPDATE_POS_MASK | probe_pos_update);
+			acp_dsp_to_host_intr_trig();
+			probe_pos = 0;
+		}
+	}
+#endif
 
 	return 0;
 }
