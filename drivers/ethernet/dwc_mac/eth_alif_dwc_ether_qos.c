@@ -114,8 +114,12 @@ int dwmac_platform_init(const struct device *dev)
 	struct dwmac_priv *p = dev->data;
 	int ret;
 
+#ifdef CONFIG_MMU
+	dwmac_map_descriptors(dev, dwmac_rx_descs, NB_RX_DESCS, dwmac_tx_descs, NB_TX_DESCS);
+#else
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
+#endif
 
 	/* basic configuration for this platform */
 	DWMAC_REG_WRITE(MAC_CONF, MAC_CONF_PS | MAC_CONF_FES | MAC_CONF_DM);
