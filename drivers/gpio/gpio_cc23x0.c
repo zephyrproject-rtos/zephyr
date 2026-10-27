@@ -129,11 +129,6 @@ static int gpio_cc23x0_get_config(const struct device *port, gpio_pin_t pin, gpi
 		if (config & IOC_IOC0_EDGEDET_EDGE_NEG) {
 			out_flag |= GPIO_INT_EDGE_FALLING;
 		}
-	} else {
-		/* This is the default value. If not explicitly set,
-		 * the returned config will not be symmetric
-		 */
-		out_flag |= GPIO_INT_DISABLE;
 	}
 
 	/* GPIO pin drive flags */
