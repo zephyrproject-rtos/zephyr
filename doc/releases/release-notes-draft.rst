@@ -299,3 +299,10 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
+
+* Twister
+
+  * Test scenarios may only request fixtures described in the new
+    :ref:`fixture registry <twister_fixture_registry>` (``tests/fixtures/<name>.yaml``); an
+    unregistered fixture is a load error. Out-of-tree test suites register their fixtures with
+    ``--fixture-registry``.

@@ -109,6 +109,7 @@ extensions = [
     "zephyr.gh_utils",
     "zephyr.licensing",
     "zephyr.manifest_projects_table",
+    "zephyr.twister_fixtures",
     "notfound.extension",
     "sphinx_copybutton",
     "sphinx_togglebutton",
@@ -396,6 +397,10 @@ gh_link_exclude = [
     "build/dts/api/bindings.*",
     "build/dts/api/compatibles.*",
 ]
+
+# -- Options for zephyr.twister_fixtures ----------------------------------
+
+twister_fixtures_registry = str(ZEPHYR_BASE / "tests" / "fixtures")
 
 # -- Options for zephyr.kconfig -------------------------------------------
 
