@@ -718,8 +718,9 @@ harness_config: <harness configuration options>
         and identify setups that fulfill this dependency. It depends on
         specific test setup and board selection logic to pick the particular
         board(s) out of multiple boards that fulfill the dependency in an
-        automation setup based on ``fixture`` keyword. Some sample fixture names
-        are i2c_hts221, i2c_bme280, i2c_FRAM, ble_fw and gpio_loop.
+        automation setup based on ``fixture`` keyword. Every fixture name must
+        be listed in the :ref:`fixture registry <twister_fixture_registry>`;
+        twister refuses to load a scenario that requests an unregistered one.
 
     ztest_suite_repeat: <int> (default 1)
         This parameter specifies the number of times the entire test suite should be repeated.
@@ -1693,6 +1694,48 @@ current twister command can run those test scenarios which request the same fixt
 Some fixtures allow for configuration strings to be appended, separated from the
 fixture name by a ``:``. Only the fixture name is matched against the fixtures
 requested by test scenarios.
+
+.. _twister_fixture_registry:
+
+Fixture registry
+----------------
+
+A fixture name is only useful when the people wiring up boards know what it
+stands for. Every fixture a test scenario may request is therefore described in
+the fixture registry, the directory :zephyr_file:`tests/fixtures`, by a file
+``<fixture name>.yaml``. Twister loads the registry together with the test
+configurations and reports an error for any scenario whose
+``harness_config: fixture`` or ``required_devices`` entries name a fixture that
+is not registered.
+
+To add a fixture, add its file to the registry in the same change that adds the
+first scenario using it. For example, ``tests/fixtures/gpio_loopback.yaml``:
+
+.. code-block:: yaml
+
+    description: >-
+      Two GPIO pins of the board wired together. The pins are given by the
+      test's board overlay or by the test's README.
+
+The file name is the fixture name, made of lowercase letters, digits and
+underscores. ``description`` is required and says what must be present on the
+board side: which pins are shorted, which device sits on which bus or
+connector, which shield is mounted, or what the host must provide. ``notes``
+records caveats, such as a name kept for compatibility with existing hardware
+maps, and ``references`` lists related documentation, as reStructuredText
+roles (``:zephyr_file:``, ``:ref:``) or URLs. Before adding a new name, check
+whether an existing fixture already describes the same setup and reuse it, so
+that one hardware map entry serves all tests needing that setup.
+
+Test suites outside the Zephyr tree describe their own fixtures in a directory
+of the same layout and pass it to twister with ``--fixture-registry``, which may
+be repeated. A name must not be registered twice across the loaded directories.
+Twister also warns about hardware map fixtures that no registry lists, which
+catches typos in the hardware map.
+
+The registered fixtures are:
+
+.. twister-fixtures-table::
 
 Notes
 -----
