@@ -1246,6 +1246,11 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		goto error;
 	}
 
+	/* A new socket is a new endpoint; requests handled on the old one
+	 * cannot be retransmitted to it.
+	 */
+	lwm2m_engine_dedup_clear(client_ctx);
+
 	LOG_INF("Connected, sock id %d", client_ctx->sock_fd);
 	return 0;
 error:
