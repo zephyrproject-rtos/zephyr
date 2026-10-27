@@ -36,4 +36,10 @@ config TEST_IPV4_ADDR_TIMEOUT
 	  connection to be established after the IPv4 address has been
 	  set up.
 
+if USB_DEVICE_STACK_NEXT
+
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+endif
+
 source "Kconfig.zephyr"
