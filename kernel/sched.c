@@ -37,9 +37,15 @@ extern struct k_thread *pending_current;
 struct k_spinlock _sched_spinlock;  /* The scheduler's spinlock */
 
 /* Storage to "complete" the context switch from an invalid/incomplete thread
- * context (ex: exiting an ISR that aborted _current), one per CPU
+ * context (ex: exiting an ISR that aborted _current), one per CPU. Restarting
+ * a thread reads the switch handle of the dummy thread of another CPU, so it
+ * must then be coherent.
  */
+#ifdef CONFIG_THREAD_RESTARTABLE
+struct k_thread _thread_dummy[CONFIG_MP_MAX_NUM_CPUS];
+#else
 __incoherent struct k_thread _thread_dummy[CONFIG_MP_MAX_NUM_CPUS];
+#endif /* CONFIG_THREAD_RESTARTABLE */
 
 static ALWAYS_INLINE void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_key_t *key);

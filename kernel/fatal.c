@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 
 #include <kernel_internal.h>
+#include <kthread.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/exception.h>
@@ -88,6 +89,23 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason)
 	arch_system_halt(reason);
 }
 /* LCOV_EXCL_STOP */
+
+/* Whether the error may restart the thread instead of aborting it. Without
+ * nested exception detection, an error raised in an ISR restarts the
+ * interrupted thread, as it aborts it otherwise.
+ */
+static bool restart_allowed(unsigned int reason, const struct arch_esf *esf)
+{
+#if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
+	if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
+		return false;
+	}
+#else
+	ARG_UNUSED(esf);
+#endif /* CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
+
+	return (reason != K_ERR_KERNEL_PANIC) && (reason != K_ERR_SPURIOUS_IRQ);
+}
 
 void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 {
@@ -201,6 +219,16 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	arch_irq_unlock(key);
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_thread_abort(thread);
+		if (IS_ENABLED(CONFIG_THREAD_RESTARTABLE) && restart_allowed(reason, esf)) {
+			/* The system workqueue must not run on this CPU before
+			 * the thread is dead.
+			 */
+			key = arch_irq_lock();
+			z_thread_restart_queue(thread);
+			k_thread_abort(thread);
+			arch_irq_unlock(key);
+		} else {
+			k_thread_abort(thread);
+		}
 	}
 }

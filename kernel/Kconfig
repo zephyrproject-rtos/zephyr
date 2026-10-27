@@ -204,6 +204,48 @@ config THREAD_CUSTOM_DATA
 	  This option allows each thread to store 32 bits of custom data,
 	  which can be accessed using the k_thread_custom_data_xxx() APIs.
 
+config THREAD_RESTARTABLE
+	bool "Restart threads terminated by a fatal error [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on MULTITHREADING
+	depends on !HW_SHADOW_STACK
+	help
+	  Instead of leaving a supervisor thread dead after it hits a fatal
+	  error, create it again with the entry point, arguments, stack,
+	  priority and options it was created with. Threads opt in with
+	  K_RESTARTABLE or k_thread_restart_limit_set(); each thread is
+	  restarted at most a configurable number of times.
+
+	  Restarts only happen when k_sys_fatal_error_handler() returns.
+	  The faulting thread is aborted as usual, then the system
+	  workqueue creates it again on the same thread object. Interrupts
+	  stay locked on the CPU of the workqueue meanwhile, which takes
+	  longer with CONFIG_INIT_STACKS, and other CPUs creating or aborting
+	  a thread, freeing a thread stack or handling a fatal error of an
+	  armed thread wait for it with interrupts locked. Mutexes held by
+	  the thread are not released.
+
+	  This grows struct k_thread by the saved creation parameters.
+
+config THREAD_RESTART_LIMIT_MAX
+	int "Maximum restart limit of a thread"
+	range 1 255
+	default 10
+	depends on THREAD_RESTARTABLE
+	help
+	  Highest restart limit k_thread_restart_limit_set() accepts. It
+	  bounds how often a thread that keeps faulting is restarted before
+	  a further fatal error aborts it.
+
+config THREAD_RESTART_LIMIT_DEFAULT
+	int "Default restart limit of K_RESTARTABLE threads"
+	range 1 THREAD_RESTART_LIMIT_MAX
+	default 3
+	depends on THREAD_RESTARTABLE
+	help
+	  Number of restarts a thread created with K_RESTARTABLE gets before
+	  a further fatal error aborts it.
+
 config DYNAMIC_THREAD
 	bool "Support for dynamic threads [EXPERIMENTAL]"
 	select EXPERIMENTAL

@@ -48,6 +48,18 @@ void z_thread_monitor_exit(struct k_thread *thread);
 
 void z_thread_abort(struct k_thread *thread);
 
+#ifdef CONFIG_THREAD_RESTARTABLE
+/* Queue the restart of a thread hitting a fatal error, before it is aborted */
+void z_thread_restart_queue(struct k_thread *thread);
+
+#else
+static inline void z_thread_restart_queue(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+#endif /* CONFIG_THREAD_RESTARTABLE */
+
 static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t delay)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS

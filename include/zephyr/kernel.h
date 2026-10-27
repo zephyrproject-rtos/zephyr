@@ -373,6 +373,24 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 #define K_CALLBACK_STATE (BIT(4))
 
 /**
+ * @brief Restart the thread after a fatal error
+ *
+ * @details
+ * Indicates that the thread is created again from its entry point after it
+ * is aborted for a fatal error, up to
+ * @kconfig{CONFIG_THREAD_RESTART_LIMIT_DEFAULT} times. See
+ * k_thread_restart_limit_set() for the conditions of a restart.
+ *
+ * Ignored for K_USER threads and for threads whose thread object or stack is
+ * a dynamically allocated kernel object, and a thread entering user mode is
+ * no longer restarted. Combining it with K_ESSENTIAL is a programming error:
+ * this fails an assertion if assertions are enabled and the thread is created
+ * without restarts.
+ * No effect if @kconfig{CONFIG_THREAD_RESTARTABLE} is not enabled.
+ */
+#define K_RESTARTABLE (BIT(5))
+
+/**
  * @cond INTERNAL_HIDDEN
  */
 #define K_DSP_IDX 13
@@ -907,6 +925,86 @@ static inline bool k_thread_is_user_thread(const struct k_thread *thread)
  * @param thread ID of thread to abort.
  */
 __syscall void k_thread_abort(k_tid_t thread);
+
+/**
+ * @defgroup thread_restart_apis Thread Restart APIs
+ * @ingroup thread_apis
+ * @since 4.6
+ * @version 0.1.0
+ * @{
+ */
+
+/**
+ * @brief Set how often a thread is restarted after a fatal error.
+ *
+ * A non-zero @a max_restarts arms the thread: when it hits a fatal error and
+ * k_sys_fatal_error_handler() returns, the thread is aborted as usual and the
+ * system workqueue then creates it again on the same thread object, with the
+ * entry point, arguments, stack, priority and options it was created with,
+ * until it has been restarted @a max_restarts times. Zero disarms the thread.
+ * The restart count is reset to zero in both cases. @a max_restarts cannot
+ * exceed @kconfig{CONFIG_THREAD_RESTART_LIMIT_MAX}.
+ *
+ * K_ERR_KERNEL_PANIC and K_ERR_SPURIOUS_IRQ never restart a thread, nor does
+ * an error that the architecture detects as raised in a nested exception or
+ * interrupt; any other error raised in an ISR restarts the interrupted thread
+ * where the abort policy would abort it. Errors in the system workqueue
+ * thread, which performs the restarts, are never restarted, and neither is a
+ * thread while the system workqueue is plugged, draining or stopped; such a
+ * rejected restart does not count against the limit. Threads running a work
+ * queue started with k_work_queue_start() must not be armed.
+ *
+ * The restarted thread is a newly created thread, except that it keeps its
+ * name, CPU mask, memory domain and resource pool. Its only kernel object
+ * permission is on itself, even when created with K_INHERIT_PERMS. Mutexes it
+ * held when it hit the fatal error stay locked by it. It gets the same entry
+ * arguments again: the abort frees dynamically allocated kernel objects the
+ * thread held the last permission on, so such objects it uses must stay
+ * referenced by a trusted thread, as a user thread could release them.
+ * Custom data is reset, so threads of a layer keeping per-thread state in it,
+ * such as CMSIS-RTOS v1, must not be armed.
+ *
+ * Between its abort and its restart, the thread is dead: k_thread_join()
+ * returns, while k_thread_abort() and k_thread_create() on the thread object
+ * cancel the restart. Abort the thread before reclaiming its stack or thread
+ * object.
+ *
+ * This routine may be called from ISRs, but not from a k_thread_foreach() or
+ * k_thread_foreach_filter_by_cpu() callback, which holds the lock of the
+ * thread list; use the unlocked variants there.
+ *
+ * @kconfig_dep{CONFIG_THREAD_RESTARTABLE}
+ *
+ * @param thread ID of thread to configure.
+ * @param max_restarts Number of restarts allowed, 0 to disarm.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @a max_restarts exceeds @kconfig{CONFIG_THREAD_RESTART_LIMIT_MAX}
+ *                 or thread is or was created essential
+ * @retval -ENOTSUP Thread runs in user mode, or thread object or stack is a
+ *                  dynamically allocated kernel object and @a max_restarts is not zero
+ */
+int k_thread_restart_limit_set(k_tid_t thread, uint16_t max_restarts);
+
+/**
+ * @brief Get the number of restarts of a thread.
+ *
+ * Counts the restarts started since the thread was created or since the last
+ * call to k_thread_restart_limit_set().
+ *
+ * This routine may be called from ISRs, but not from a k_thread_foreach() or
+ * k_thread_foreach_filter_by_cpu() callback, which holds the lock of the
+ * thread list; use the unlocked variants there.
+ *
+ * @kconfig_dep{CONFIG_THREAD_RESTARTABLE}
+ *
+ * @param thread ID of thread to query.
+ *
+ * @return Number of restarts, 0 if the thread was never armed.
+ */
+uint16_t k_thread_restart_count_get(k_tid_t thread);
+
+/** @} */
 
 k_ticks_t z_timeout_expires(const struct _timeout *timeout);
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
