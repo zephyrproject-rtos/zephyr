@@ -468,7 +468,7 @@ __weak void clock_init(void)
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet1g))
 	rootCfg.mux = kCLOCK_ENET2_ClockRoot_MuxSysPll1Div2;
-#if DT_ENUM_HAS_VALUE(DT_CHILD(DT_NODELABEL(enet1g), ethernet), phy_connection_type, rgmii)
+#if DT_ENUM_HAS_VALUE(DT_NODELABEL(enet1g), phy_connection_type, rgmii)
 	/* 125 MHz ENET1G clock */
 	rootCfg.div = 4;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet2, &rootCfg);

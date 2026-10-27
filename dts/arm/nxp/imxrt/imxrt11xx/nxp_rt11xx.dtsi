@@ -941,16 +941,9 @@
 			compatible = "nxp,enet";
 			reg = <0x40420000 0x628>;
 			clocks = <&ccm IMX_CCM_ENET1G_CLK 0 0>;
+			interrupts = <141 0>;
+			interrupt-names = "COMMON";
 			status = "disabled";
-
-			enet1g_mac: ethernet {
-				compatible = "nxp,enet-mac";
-				interrupts = <141 0>;
-				interrupt-names = "COMMON";
-				ptp-clock = <&enet1g_ptp_clock>;
-				nxp,mdio = <&enet1g_mdio>;
-				status = "disabled";
-			};
 
 			enet1g_mdio: mdio {
 				compatible = "nxp,enet-mdio";
@@ -971,15 +964,9 @@
 			compatible = "nxp,enet";
 			reg = <0x40424000 0x628>;
 			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
-
-			enet_mac: ethernet {
-				compatible = "nxp,enet-mac";
-				interrupts = <137 0>;
-				interrupt-names = "COMMON";
-				ptp-clock = <&enet_ptp_clock>;
-				nxp,mdio = <&enet_mdio>;
-				status = "disabled";
-			};
+			interrupts = <137 0>;
+			interrupt-names = "COMMON";
+			status = "disabled";
 
 			enet_mdio: mdio {
 				compatible = "nxp,enet-mdio";

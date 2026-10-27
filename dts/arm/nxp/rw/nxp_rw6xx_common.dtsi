@@ -662,20 +662,14 @@
 		reg-names = "reg_base", "ahb";
 	};
 
-	enet: enet@138000 {
+	enet: ethernet@138000 {
 		compatible = "nxp,enet";
 		reg = <0x138000 0x700>;
 		clocks = <&clkctl1 MCUX_ENET_CLK>;
-
-		enet_mac: ethernet {
-			compatible = "nxp,enet-mac";
-			interrupts = <115 0>;
-			interrupt-names = "COMMON";
-			ptp-clock = <&enet_ptp_clock>;
-			power-domains = <&peripheral_domain>;
-			nxp,mdio = <&enet_mdio>;
-			status = "disabled";
-		};
+		interrupts = <115 0>;
+		interrupt-names = "COMMON";
+		power-domains = <&peripheral_domain>;
+		status = "disabled";
 
 		enet_mdio: mdio {
 			compatible = "nxp,enet-mdio";

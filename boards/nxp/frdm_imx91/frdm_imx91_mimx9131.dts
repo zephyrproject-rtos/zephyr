@@ -117,10 +117,6 @@
 &enet {
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&enet_mac {
 	phy-handle = <&phy>;
 	phy-connection-type = "rgmii";
 	zephyr,random-mac-address;

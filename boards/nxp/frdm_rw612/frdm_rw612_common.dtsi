@@ -279,10 +279,6 @@ mikrobus_serial: &flexcomm0 {};
 &enet {
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&enet_mac {
 	phy-handle = <&phy>;
 	phy-connection-type = "rmii";
 	nxp,unique-mac;

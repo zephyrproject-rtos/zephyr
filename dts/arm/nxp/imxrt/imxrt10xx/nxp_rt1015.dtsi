@@ -57,7 +57,7 @@
 		/* RT1015 has only one flexSPI controller */
 		/delete-node/ spi@402a4000;
 		/* Remove Ethernet, it doesn't exist on RT1015 */
-		/delete-node/ enet@402d8000;
+		/delete-node/ ethernet@402d8000;
 	};
 };
 
