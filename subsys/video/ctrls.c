@@ -402,7 +402,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 {
 	const char *type = NULL;
 	char buf[11];
-	int ret;
+	int ret = 0;
 
 	if (cq == NULL || cq->dev == NULL) {
 		LOG_ERR("%s - Invalid parameter given", __func__);
@@ -437,13 +437,17 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	}
 	snprintf(buf, sizeof(buf), "(%s)", type);
 
-	/* Get current value of the control */
+	/* Get current value of the control, if readable */
 	struct video_control vc = {.id = cq->id};
 
-	ret = video_get_ctrl(cq->dev, &vc);
+	if ((cq->flags & VIDEO_CTRL_FLAG_WRITE_ONLY) == 0) {
+		ret = video_get_ctrl(cq->dev, &vc);
+	}
 
 	/* Print the control information */
-	if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {
+	if (cq->type == VIDEO_CTRL_TYPE_BUTTON) {
+		LOG_INF("%32s 0x%08x %-10s (flags=0x%02x)", cq->name, cq->id, buf, cq->flags);
+	} else if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {
 		LOG_INF("%32s 0x%08x %-10s (flags=0x%02x) : min=%lld max=%lld step=%lld "
 			"default=%lld value=%lld ",
 			cq->name, cq->id, buf, cq->flags, cq->range.min64, cq->range.max64,
