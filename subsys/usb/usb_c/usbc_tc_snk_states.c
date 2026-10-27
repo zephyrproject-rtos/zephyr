@@ -201,14 +201,9 @@ enum smf_state_result tc_attach_wait_snk_run(void *obj)
 
 	if (vbus_present) {
 		tc_set_state(dev, TC_ATTACHED_SNK_STATE);
+		/* Run Attached.SNK entry and first iteration without waiting a cycle */
+		usbc_bypass_next_sleep(tc->dev);
 	}
-
-	/*
-	 * In case of no VBUS present, this call prevents going into the sleep and allows for
-	 * faster VBUS detection. In case of VBUS present, allows for immediate execution of logic
-	 * from new state.
-	 */
-	usbc_bypass_next_sleep(tc->dev);
 	return SMF_EVENT_PROPAGATE;
 }
 
