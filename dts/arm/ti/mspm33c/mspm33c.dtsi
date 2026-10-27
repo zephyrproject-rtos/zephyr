@@ -743,6 +743,7 @@
 			reg = <0x40684000 DT_SIZE_K(8)>;
 			compatible = "ti,unicomm";
 			interrupts = <28 0>;
+			unicomm-fixed-mode;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "disabled";
@@ -755,6 +756,7 @@
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				unicomm-advanced-i2c;
 				status = "disabled";
 			};
 		};
