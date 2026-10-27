@@ -38,7 +38,6 @@ static void ostm_irq_handler(timer_callback_args_t *arg);
 void gtm_int_isr(IRQn_Type const irq);
 
 const struct device *g_os_timer_dev = DEVICE_DT_INST_GET(0);
-extern unsigned int z_clock_hw_cycles_per_sec;
 
 struct rz_os_timer_config {
 	const timer_api_t *fsp_api;
@@ -167,7 +166,7 @@ static int sys_clock_driver_init(void)
 
 	data->last_tick = 0;
 	data->last_cycle = 0;
-	z_clock_hw_cycles_per_sec = R_FSP_SystemClockHzGet(FSP_PRIV_CLOCK_P0CLK);
+	z_sys_clock_hw_cycles_per_sec_set(R_FSP_SystemClockHzGet(FSP_PRIV_CLOCK_P0CLK));
 	cyc_per_tick = sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 	data->fsp_cfg->period_counts = CYC_PER_TICK;
 	ret = config->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
