@@ -5877,6 +5877,30 @@ fail:
 	return ret;
 }
 
+#if defined(CONFIG_NET_TEST)
+/* Let tests drop a reference to a context that no socket stands for */
+void quic_test_context_unref(struct quic_context *ctx)
+{
+	(void)quic_context_unref(ctx);
+}
+
+/* Let tests drop the last reference of a stream */
+void quic_test_stream_unref(struct quic_stream *stream)
+{
+	(void)quic_stream_unref(stream);
+}
+
+/* Let tests hold off the accept hand-over and stream release */
+void quic_test_streams_lock(bool lock)
+{
+	if (lock) {
+		k_mutex_lock(&streams_lock, K_FOREVER);
+	} else {
+		k_mutex_unlock(&streams_lock);
+	}
+}
+#endif /* CONFIG_NET_TEST */
+
 static struct quic_context *quic_context_init(struct quic_context *ctx)
 {
 	k_fifo_init(&ctx->pending.accept_q);
@@ -7008,7 +7032,7 @@ ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
  * Creates a new quic_context for the connection, migrates the endpoint
  * into it, and enqueues it in the listening context's pending.accept_q.
  */
-static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
+ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 {
 	struct quic_context *listen_ctx;
 	struct quic_context *child_ctx;
