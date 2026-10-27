@@ -351,7 +351,7 @@ for brevity, in real drivers they must be handled.
             * released the enable pin's port.
             */
 
-            return 0;
+           return 0;
    }
 
    static int dummy_driver_pm_turn_on(const struct device *dev)
