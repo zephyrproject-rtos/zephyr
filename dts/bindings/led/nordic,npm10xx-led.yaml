@@ -10,7 +10,7 @@ description: |
   must be avoided.
 
   Every LED can be controlled either by the host SoC or automatically. When an automatic mode is
-  used, the SW is allowed to control only the brightness of this LED (except for the "error" mode).
+  used, the SW is allowed to control only the brightness of this LED.
 
   HW limitation: the on/off delays passed to the API function `led_blink` are shared between all
   LED instances, i.e. blinking different LEDs with different delays is not supported.
@@ -66,7 +66,7 @@ child-binding:
         LED operation mode. Available options are as follows:
           host: LED is controlled through LED device driver APIs, on/off, blink, brightness.
           charge: LED indicates charging. Brightness control available.
-          error: LED indicates charging errors. No controls available.
+          error: LED indicates charging errors. Brightness control available.
           vbus-good: LED indicates VBUS GOOD status. Brightness control available.
 
     drive-current-ma:

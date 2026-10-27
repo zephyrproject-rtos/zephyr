@@ -191,11 +191,6 @@ static int led_npm10xx_set_brightness(const struct device *dev, uint32_t led, ui
 		return -EINVAL;
 	}
 
-	if (config->leds[led].mode == MODE_ERROR) {
-		LOG_ERR("LED mode \"error\" has no brightness control");
-		return -EINVAL;
-	}
-
 	if (config->leds[led].mode == MODE_HOST && data->led_state[led] != LED_BLINK &&
 	    (value == 0 || (value == LED_BRIGHTNESS_MAX && !config->phase_shift))) {
 		return led_npm10xx_on_off(dev, led, value == LED_BRIGHTNESS_MAX);
