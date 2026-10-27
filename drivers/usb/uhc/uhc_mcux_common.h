@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_UHC_MCUX_COMMON_H
 #define ZEPHYR_INCLUDE_UHC_MCUX_COMMON_H
 
+#include <zephyr/usb/class/usb_hub.h>
+
 struct uhc_mcux_data {
 	const struct device *dev;
 	const usb_host_controller_interface_t *mcux_if;
@@ -16,6 +18,9 @@ struct uhc_mcux_data {
 	usb_host_instance_t mcux_host;
 	struct k_thread drv_stack_data;
 	uint8_t controller_id; /* MCUX hal controller id, 0xFF is invalid value */
+	/* Root hub status and change bits, the HAL has no port status registers */
+	struct usb_hub_status hub_status;
+	struct usb_hub_port_status port_status;
 };
 
 struct uhc_mcux_config {
@@ -57,6 +62,12 @@ int uhc_mcux_bus_suspend(const struct device *dev);
 int uhc_mcux_bus_resume(const struct device *dev);
 
 int uhc_mcux_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
+
+int uhc_mcux_root_hub_control(const struct device *dev,
+			      const struct usb_setup_packet *const setup,
+			      struct net_buf *const buf);
+
+int uhc_mcux_root_hub_status(const struct device *dev, struct net_buf *const buf);
 
 /* Initialize endpoint for MCUX HAL driver */
 usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev,
