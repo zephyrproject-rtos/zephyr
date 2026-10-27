@@ -302,6 +302,13 @@ int send_window_update_frame(struct http_client_ctx *client,
 		stream_id = 0;
 	}
 
+	/* Nothing consumed, nothing to grant: a zero increment is a protocol
+	 * error for the peer (RFC 9113, Section 6.9).
+	 */
+	if (window_update == 0) {
+		return 0;
+	}
+
 	encode_frame_header(window_update_frame, sizeof(uint32_t),
 			    HTTP2_WINDOW_UPDATE_FRAME,
 			    0, stream_id);
