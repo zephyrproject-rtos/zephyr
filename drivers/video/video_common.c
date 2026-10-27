@@ -44,12 +44,15 @@ static const char *const *video_get_std_menu_ctrl(uint32_t id)
 		"Auto Mode", "Manual Mode", "Shutter Priority Mode", "Aperture Priority Mode", NULL,
 	};
 	static char const *const colorfx[] = {
-		"None", "Black & White", "Sepia", "Negative", "Emboss", "Sketch", "Sky Blue",
-		"Grass Green", "Skin Whiten", "Vivid", "Aqua", "Art Freeze", "Silhouette",
-		"Solarization", "Antique", "Set Cb/Cr", NULL,
+		"None",       "Black & White", "Sepia",       "Negative",  "Emboss", "Sketch",
+		"Sky Blue",   "Grass Green",   "Skin Whiten", "Vivid",     "Aqua",   "Art Freeze",
+		"Silhouette", "Solarization",  "Antique",     "Set Cb/Cr", NULL,
 	};
 	static char const *const camera_orientation[] = {
-		"Front", "Back", "External", NULL,
+		"Front",
+		"Back",
+		"External",
+		NULL,
 	};
 
 	switch (id) {
@@ -162,16 +165,24 @@ static int set_menu(struct video_ctrl *ctrl)
 		return ctrl->int_menu == NULL ? -EINVAL : 0;
 	}
 
+	if (ctrl->menu == NULL) {
+		ctrl->menu = video_get_std_menu_ctrl(ctrl->id);
+	}
+
 	/* A menu sized by the driver may stay unnamed, otherwise its entries give the size */
 	if (ctrl->range.max != 0) {
+		if (ctrl->menu != NULL) {
+			for (int32_t i = 0; i <= ctrl->range.max; i++) {
+				if (ctrl->menu[i] == NULL) {
+					return -ERANGE;
+				}
+			}
+		}
 		return 0;
 	}
 
-	if (ctrl->menu == NULL) {
-		ctrl->menu = video_get_std_menu_ctrl(ctrl->id);
-		if (ctrl->menu == NULL) {
-			return -EINVAL;
-		}
+	if (ctrl->menu == NULL || ctrl->menu[0] == NULL) {
+		return -EINVAL;
 	}
 
 	while (ctrl->menu[ctrl->range.max + 1] != NULL) {
