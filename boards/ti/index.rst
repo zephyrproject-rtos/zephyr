@@ -7,4 +7,4 @@ Texas Instruments
    :maxdepth: 1
    :glob:
 
-   **/*
+   */**/index
