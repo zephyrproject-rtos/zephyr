@@ -1423,6 +1423,39 @@ int net_context_create_ipv6_new(struct net_context *context,
 }
 #endif /* CONFIG_NET_IPV6 */
 
+/* Get the interface the zone of a link-local or interface-local IPv6 peer
+ * names, NULL for other peers and for zone 0. Fails with -ENODEV if no
+ * interface has that index, and with -EINVAL if the socket is bound to another
+ * interface or to an address of another interface.
+ */
+static int get_zone_iface(struct net_context *context, const struct net_sockaddr_in6 *peer,
+			  struct net_if **iface)
+{
+	bool scoped = net_ipv6_is_ll_addr(&peer->sin6_addr) ||
+		      net_ipv6_is_addr_mcast_link(&peer->sin6_addr) ||
+		      net_ipv6_is_addr_mcast_iface(&peer->sin6_addr);
+
+	*iface = NULL;
+
+	if (!scoped || peer->sin6_scope_id == 0U) {
+		return 0;
+	}
+
+	*iface = net_if_get_by_index(peer->sin6_scope_id);
+	if (*iface == NULL) {
+		return -ENODEV;
+	}
+
+	if ((net_context_is_bound_to_iface(context) ||
+	     (net_context_is_local_addr_set(context) &&
+	      !net_ipv6_is_addr_unspecified(&net_sin6(&context->local)->sin6_addr))) &&
+	    net_context_get_iface(context) != *iface) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int net_context_connect(struct net_context *context,
 			const struct net_sockaddr *addr,
 			net_socklen_t addrlen,
@@ -1485,6 +1518,7 @@ int net_context_connect(struct net_context *context,
 	    net_context_get_family(context) == NET_AF_INET6) {
 		struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)
 							&context->remote;
+		struct net_if *zone_iface = NULL;
 
 		if (addrlen < sizeof(struct net_sockaddr_in6)) {
 			ret = -EINVAL;
@@ -1497,16 +1531,18 @@ int net_context_connect(struct net_context *context,
 			goto unlock;
 		}
 
+		ret = get_zone_iface(context, net_sin6(addr), &zone_iface);
+		if (ret < 0) {
+			goto unlock;
+		}
+
 		memcpy(&addr6->sin6_addr, &net_sin6(addr)->sin6_addr,
 		       sizeof(struct net_in6_addr));
 
 		addr6->sin6_port = net_sin6(addr)->sin6_port;
 		addr6->sin6_family = NET_AF_INET6;
 
-		/* Keep the zone only for a link-local or interface-local peer. */
-		if (net_ipv6_is_ll_addr(&addr6->sin6_addr) ||
-		    net_ipv6_is_addr_mcast_link(&addr6->sin6_addr) ||
-		    net_ipv6_is_addr_mcast_iface(&addr6->sin6_addr)) {
+		if (zone_iface != NULL) {
 			addr6->sin6_scope_id = net_sin6(addr)->sin6_scope_id;
 		} else {
 			addr6->sin6_scope_id = 0U;
@@ -1529,6 +1565,11 @@ int net_context_connect(struct net_context *context,
 		ret = bind_default(context);
 		if (ret) {
 			goto unlock;
+		}
+
+		/* Replace the interface chosen at bind time with the one of the zone. */
+		if (zone_iface != NULL) {
+			net_context_set_iface(context, zone_iface);
 		}
 
 		net_sin6(&context->local)->sin6_family = NET_AF_INET6;
