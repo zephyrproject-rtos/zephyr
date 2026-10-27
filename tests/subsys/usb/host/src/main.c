@@ -21,6 +21,9 @@
 
 LOG_MODULE_REGISTER(usbh_test, LOG_LEVEL_INF);
 
+/* The root hub has address 1, the first device connected to it gets 2 */
+#define TEST_DEV_ADDR 2U
+
 static const struct usbh_class_filter filter_rules_vid_pid[] = {
 	{
 		.vid = FOO_TEST_VID,
@@ -158,7 +161,7 @@ ZTEST(usbh_test, test_get_next_desc)
 	const struct usb_device *udev;
 	const struct usb_desc_header *desc;
 
-	udev = usbh_device_get_any(uhs_ctx);
+	udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev);
 
 	desc = udev->cfg_desc;
@@ -221,7 +224,7 @@ ZTEST(usbh_test, test_get_types)
 	struct usb_device *udev;
 	int err;
 
-	udev = usbh_device_get_any(uhs_ctx);
+	udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev);
 
 	/* if0 */
@@ -251,7 +254,7 @@ ZTEST(usbh_test, test_get_next_function)
 	const struct usb_device *udev;
 	const struct usb_desc_header *desc;
 
-	udev = usbh_device_get_any(uhs_ctx);
+	udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev);
 
 	desc = udev->cfg_desc;
