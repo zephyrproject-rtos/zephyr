@@ -10,6 +10,7 @@ properties:
       Human readable string describing the LED. It can be used by an
       application to identify this LED or to retrieve its number/index
       (i.e. child node number) on the parent device.
+
   color-mapping:
     type: array
     description: |
@@ -23,3 +24,23 @@ properties:
               <LED_COLOR_ID_RED>,
               <LED_COLOR_ID_GREEN>,
               <LED_COLOR_ID_BLUE>;
+
+  default-state:
+    type: string
+    enum:
+      - "on"
+      - "off"
+      - "keep"
+    default: "off"
+    description: |
+      The initial state of the LED. The "keep" setting will keep the LED at whatever its current
+      state is. If not set then the LED will be "off".
+
+  default-brightness:
+    type: int
+    min: 0
+    max: 100
+    default: 100
+    description: |
+      Brightness to be set if LED's default state is on. Used only during initialization.
+      If omitted, brightness defaults to the maximum value.
