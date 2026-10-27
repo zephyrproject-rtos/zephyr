@@ -12,8 +12,8 @@ generic fashion. Application code that is using device A does not need to know
 that device B is on the same power domain and should also be configured into a
 low power state.
 
-Power domains are optional on Zephyr, to enable this feature the
-option :kconfig:option:`CONFIG_PM_DEVICE_POWER_DOMAIN` has to be set.
+Power domains are optional in Zephyr. To enable this feature, set the
+:kconfig:option:`CONFIG_PM_DEVICE_POWER_DOMAIN` option.
 
 When a power domain turns itself on or off, it is the responsibility of the
 power domain to notify all devices using it through their power management
@@ -74,8 +74,8 @@ completely turned off when not in use.
 Implementation guidelines
 *************************
 
-In a first place, a device that acts as a power domain needs to
-declare compatible with ``power-domain``. Taking
+First, a device that acts as a power domain needs to declare the
+``power-domain`` compatible. Taking
 :ref:`pm-domain-work-flow` as example, the following code defines a
 domain called ``gpio_domain``.
 
@@ -122,9 +122,9 @@ PM subsystem to turn devices on and off.
         return 0;
     }
 
-Devices belonging to this device can be declared referring it in the
-``power-domain`` node's property. The example below declares devices
-``gpio0`` and ``gpio1`` belonging to domain ``gpio_domain```.
+Devices belonging to this domain are declared by referring to it in
+their ``power-domains`` property. The example below declares devices
+``gpio0`` and ``gpio1`` as belonging to domain ``gpio_domain``.
 
 .. code-block:: devicetree
 
@@ -176,8 +176,9 @@ They can safely be ignored though.
 
 .. note::
 
-   It is responsibility of driver or the application to set the domain as
-   "wakeup" source if a device depending on it is used as "wakeup" source.
+   It is the responsibility of the driver or the application to set the
+   domain as a "wakeup" source if a device depending on it is used as a
+   "wakeup" source.
 
 Examples
 ********
