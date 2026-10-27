@@ -37,3 +37,58 @@
 		status = "disabled";
 	};
 };
+
+/ {
+	soc {
+		mcmcan0: can@f4710000 {
+			compatible = "infineon,aurix-mcmcan";
+			reg = <0xf4710000 0x10000>;
+			clocks = <&ccu AURIX_CCU_MCAN>, <&ccu AURIX_CCU_MCANH>;
+			clock-names = "mcan", "mcanh";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			can00: can@f4710200 {
+				compatible = "infineon,aurix-mcmcan-node";
+				reg = <0xf4710200 0x200>, <0xf4700000 0x10000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <788 10>, <789 11>;
+				interrupt-names = "line0", "line1";
+				bosch,mram-cfg = <0x0 32 32 32 32 0 16 16>;
+				status = "disabled";
+			};
+
+			can01: can@f4710600 {
+				compatible = "infineon,aurix-mcmcan-node";
+				reg = <0xf4710600 0x200>, <0xf4700000 0x10000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <790 12>, <791 13>;
+				interrupt-names = "line0", "line1";
+				bosch,mram-cfg = <0x2000 32 32 32 32 0 16 16>;
+				status = "disabled";
+			};
+
+			can02: can@f4710a00 {
+				compatible = "infineon,aurix-mcmcan-node";
+				reg = <0xf4710a00 0x200>, <0xf4700000 0x10000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <792 14>, <793 15>;
+				interrupt-names = "line0", "line1";
+				bosch,mram-cfg = <0x4000 32 32 32 32 0 16 16>;
+				status = "disabled";
+			};
+
+			can03: can@f4710e00 {
+				compatible = "infineon,aurix-mcmcan-node";
+				reg = <0xf4710e00 0x200>, <0xf4700000 0x10000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <794 16>, <795 17>;
+				interrupt-names = "line0", "line1";
+				bosch,mram-cfg = <0x6000 32 32 32 32 0 16 16>;
+				status = "disabled";
+			};
+		};
+	};
+};
