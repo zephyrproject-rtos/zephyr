@@ -108,6 +108,14 @@ LOG_MODULE_REGISTER(spi_ti_unicomm, CONFIG_SPI_LOG_LEVEL);
 	(UNICOMMSPI_INT_RX_MASK | UNICOMMSPI_INT_RXFULL_MASK | UNICOMMSPI_INT_TX_MASK |            \
 	 UNICOMMSPI_INT_IDLE_MASK)
 
+/*
+ * INTCTL register: writing INTEVAL=1 forces the CPU_INT line to be
+ * re-evaluated after IMASK is updated. Without this, the NVIC IRQ does
+ * not assert even though IMASK is set and the hardware event has occurred.
+ */
+#define UNICOMM_SPI_INTCTL        0x0E4
+#define UNICOMMSPI_INTCTL_INTEVAL BIT(0)
+
 /* IFLS register bits for FIFO threshold selection */
 #define UNICOMMSPI_IFLS_TXIFLSEL_MASK GENMASK(2, 0)
 #define UNICOMMSPI_IFLS_TXCLR_MASK    BIT(3)
@@ -655,6 +663,13 @@ static int spi_ti_unicomm_transceive_call(const struct device *dev, const struct
 		sys_write32(0xFFFFFFFFU, base + UNICOMM_SPI_ICLR);
 
 		sys_write32(UNICOMMSPI_TRANSFER_IMASK, base + UNICOMM_SPI_IMASK);
+
+		/*
+		 * Re-evaluate the CPU_INT line after updating IMASK.
+		 * Without this the NVIC IRQ does not assert even though IMASK
+		 * is set. INTEVAL is write-only; a read always returns 0.
+		 */
+		sys_write32(UNICOMMSPI_INTCTL_INTEVAL, base + UNICOMM_SPI_INTCTL);
 	} else {
 		/*
 		 * Peripheral mode: pre-load the TX FIFO with every byte the
@@ -680,6 +695,9 @@ static int spi_ti_unicomm_transceive_call(const struct device *dev, const struct
 		 * the transfer when the controller deasserts CS.
 		 */
 		sys_write32(UNICOMMSPI_PERIPHERAL_IMASK, base + UNICOMM_SPI_IMASK);
+
+		/* Set INTEVAL to re-evaluate CPU_INT line. */
+		sys_write32(UNICOMMSPI_INTCTL_INTEVAL, base + UNICOMM_SPI_INTCTL);
 	}
 
 	ret = spi_context_wait_for_completion(ctx);
