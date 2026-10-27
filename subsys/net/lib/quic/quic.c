@@ -3450,7 +3450,7 @@ static bool quic_endpoint_ref_unless_zero(struct quic_endpoint *ep)
 }
 
 /* Notify all streams associated with this endpoint that the connection is closed */
-static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 {
 	int i;
 
