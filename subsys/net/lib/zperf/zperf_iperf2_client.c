@@ -539,21 +539,19 @@ static int tcp_upload(int sock,
 		/* Send the packet */
 		ret = sendall(sock, tcp_sample_packet, packet_size);
 		if (ret < 0) {
-			if (nb_errors == 0 && ret != -ENOMEM) {
-				NET_ERR("Failed to send the packet (%d)", errno);
-			}
-
+			ret = -errno;
 			nb_errors++;
 
-			if (errno == -ENOMEM) {
+			if (ret == -ENOMEM) {
 				/* Ignore memory errors as we just run out of
 				 * buffers which is kind of expected if the
 				 * buffer count is not optimized for the test
 				 * and device.
 				 */
 				alloc_errors++;
+				ret = 0;
 			} else {
-				ret = -errno;
+				NET_ERR("Failed to send the packet (%d)", -ret);
 				break;
 			}
 		} else {
