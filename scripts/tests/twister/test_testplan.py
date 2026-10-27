@@ -804,6 +804,7 @@ def test_testplan_discover(
     testplan.report_duplicates = mock.Mock()
     testplan.test_config = mock.Mock()
     testplan.add_configurations = mock.Mock()
+    testplan.check_hardware_map_fixtures = mock.Mock()
 
     with pytest.raises(exception) if exception else nullcontext():
         testplan.discover()
@@ -1530,7 +1531,7 @@ tests:
 
     env = mock_twister_env()
     env.test_roots=[tmp_test_root_dir]
-    env.options=mock.Mock(detailed_test_id=detailed_id)
+    env.options=mock.Mock(detailed_test_id=detailed_id, fixture_registry=[])
     env.alt_config_root=[tmp_alt_test_root_dir] if use_alt_root else []
 
     testplan = TestPlan(env=env)
@@ -1624,7 +1625,7 @@ def test_testplan_add_testsuites_for_required_applications(tmp_path, monkeypatch
     test_app.write_text(test_app_yaml)
 
     env = mock.Mock(modules=[], test_roots=[test_root], alt_config_root=[])
-    env.options = mock.Mock()
+    env.options = mock.Mock(fixture_registry=[])
 
     testplan = TestPlan(env=env)
 
