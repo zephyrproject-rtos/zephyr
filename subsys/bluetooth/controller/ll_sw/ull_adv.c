@@ -1098,6 +1098,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->event_counter = 0U;
 		conn->connect_expire = CONN_ESTAB_COUNTDOWN;
 		conn->supervision_expire = 0;
+		conn->periph.drift_skip = 0U;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		conn->apto_expire = 0U;
