@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  timeout: 5
+  tags: clock_control
+
+tests:
+  drivers.clock.stm32_clock_configuration.h7p_core.sysclk_hsi_64:
+    extra_args: DTC_OVERLAY_FILE="clear_clocks.overlay;hsi_64.overlay"
+    platform_allow: nucleo_h7p5ii
+    integration_platforms:
+      - nucleo_h7p5ii
+  drivers.clock.stm32_clock_configuration.h7p_core.sysclk_pll_hsi_520:
+    extra_args: DTC_OVERLAY_FILE="clear_clocks.overlay;pll_hsi_520.overlay"
+    platform_allow: nucleo_h7p5ii
+    integration_platforms:
+      - nucleo_h7p5ii
