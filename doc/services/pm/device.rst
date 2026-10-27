@@ -238,7 +238,7 @@ for brevity, in real drivers they must be handled.
            const struct gpio_dt_spec enable_pin;
    };
 
-   static void dummy_driver_int_pin_handler(const struct device *dev,
+   static void dummy_driver_int_pin_handler(const struct device *port,
                                             struct gpio_callback *cb,
                                             uint32_t pins)
    {
@@ -260,14 +260,14 @@ for brevity, in real drivers they must be handled.
 
            /* Disable and remove interrupt pin interrupt */
            (void)gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLED);
-           (void)gpio_remove_callback(config->int_pin.port, &data->int_pin_callback);
+           (void)gpio_remove_callback(config->int_gpio.port, &dev_data->int_pin_callback);
 
            /* Disable the device. In this case, we use the enable pin */
            (void)gpio_pin_set_dt(&config->enable_pin, 0);
 
            /* Release devices currently not needed by device */
            (void)pm_device_runtime_put(config->enable_pin.port);
-           (void)pm_device_runtime_put(config->int_pin.port);
+           (void)pm_device_runtime_put(config->int_gpio.port);
 
            /*
             * Note that we now have suspended the device and released all the
@@ -286,7 +286,7 @@ for brevity, in real drivers they must be handled.
 
            /* Request devices needed by device */
            (void)pm_device_runtime_get(config->enable_pin.port);
-           (void)pm_device_runtime_get(config->int_pin.port);
+           (void)pm_device_runtime_get(config->int_gpio.port);
            (void)pm_device_runtime_get(config->bus);
 
            /* Enable the device. In this case, we use the enable pin */
@@ -300,7 +300,7 @@ for brevity, in real drivers they must be handled.
            /* ... */
 
            /* Add and enable interrupt pin interrupt */
-           (void)gpio_add_callback(config->int_pin.port, &data->int_pin_callback);
+           (void)gpio_add_callback(config->int_gpio.port, &dev_data->int_pin_callback);
            (void)gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
            /*
@@ -419,7 +419,7 @@ for brevity, in real drivers they must be handled.
             * If CONFIG_PM_DEVICE=n, this also ensures the devices are ACTIVE.
             */
            if (!device_is_ready(dev_config->bus) ||
-               !gpio_is_ready_dt(&dev_config->int_pin) ||
+               !gpio_is_ready_dt(&dev_config->int_gpio) ||
                !gpio_is_ready_dt(&dev_config->enable_pin)) {
                    return -ENODEV;
            }
@@ -427,21 +427,21 @@ for brevity, in real drivers they must be handled.
            /* We then initialize the device driver data structure */
            gpio_init_callback(&dev_data->int_pin_callback,
                               dummy_driver_int_pin_handler,
-                              BIT(dev_config->int_pin.pin));
+                              BIT(dev_config->int_gpio.pin));
 
            dev_data->dev = dev;
 
-          /*
-           * This call must be the last call of the device init function.
-           * It will initialize the device's PM_DEVICE context and use the
-           * dummy_driver_pm_action callback to initialize the device into
-           * the appropriate state.
+           /*
+            * This call must be the last call of the device init function.
+            * It will initialize the device's PM_DEVICE context and use the
+            * dummy_driver_pm_action callback to initialize the device into
+            * the appropriate state.
             *
-            * On success, :c:func:`pm_device_driver_init` returns 0.
-            * If the callback fails (for example on ``PM_DEVICE_ACTION_RESUME``),
-            * the error is propagated and the device is not marked ``ACTIVE``.
-           */
-          return pm_device_driver_init(dev, dummy_driver_pm_action);
+            * On success, pm_device_driver_init() returns 0. If the callback
+            * fails (for example on PM_DEVICE_ACTION_RESUME), the error is
+            * propagated and the device is not marked ACTIVE.
+            */
+           return pm_device_driver_init(dev, dummy_driver_pm_action);
    }
 
    #ifdef CONFIG_DEVICE_DEINIT_SUPPORT
@@ -482,9 +482,9 @@ for brevity, in real drivers they must be handled.
 
    static struct dummy_driver_data data0;
 
-   static struct dummy_driver_config config0 = {
+   static const struct dummy_driver_config config0 = {
            .bus = DEVICE_DT_GET(DT_INST_PARENT(0)),
-           .int_pin = GPIO_DT_SPEC_INST_GET(0, int_gpios),
+           .int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
            .enable_pin = GPIO_DT_SPEC_INST_GET(0, enable_gpios),
    };
 
