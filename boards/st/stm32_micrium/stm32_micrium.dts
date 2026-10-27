@@ -147,7 +147,9 @@
 		     &eth_rxd0_remap1_pd9
 		     &eth_rxd1_remap1_pd10
 		     &eth_rxd2_remap1_pd11
-		     &eth_rxd3_remap1_pd12>;
+		     &eth_rxd3_remap1_pd12
+		     &eth_mdio_pa2
+		     &eth_mdc_pc1>;
 	pinctrl-names = "default";
 	phy-connection-type = "mii";
 	phy-handle = <&eth_phy>;
@@ -155,8 +157,6 @@
 };
 
 &mdio {
-	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
-	pinctrl-names = "default";
 	status = "okay";
 
 	eth_phy: ethernet-phy@1 {
