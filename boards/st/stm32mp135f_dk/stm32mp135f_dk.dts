@@ -318,7 +318,9 @@ csi_interface: &dcmipp {
 		     &eth1_ref_clk_pa1
 		     &eth1_rxd0_pc4
 		     &eth1_rxd1_pc5
-		     &eth1_crs_dv_pc1>;
+		     &eth1_crs_dv_pc1
+		     &eth1_mdio_pa2
+		     &eth1_mdc_pg2>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy0>;
@@ -334,8 +336,6 @@ csi_interface: &dcmipp {
 };
 
 &mdio0 {
-	pinctrl-0 = <&eth1_mdio_pa2 &eth1_mdc_pg2>;
-	pinctrl-names = "default";
 	status = "okay";
 
 	eth_phy0: ethernet-phy@0 {
@@ -361,7 +361,9 @@ csi_interface: &dcmipp {
 		     &eth2_clk_pg8
 		     &eth2_rxd0_pf4
 		     &eth2_rxd1_pe2
-		     &eth2_crs_dv_pa12>;
+		     &eth2_crs_dv_pa12
+		     &eth2_mdio_pb2
+		     &eth2_mdc_pg5>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy1>;
@@ -378,8 +380,6 @@ csi_interface: &dcmipp {
 };
 
 &mdio1 {
-	pinctrl-0 = <&eth2_mdio_pb2 &eth2_mdc_pg5>;
-	pinctrl-names = "default";
 	status = "okay";
 
 	eth_phy1: ethernet-phy@0 {
