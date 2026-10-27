@@ -1345,6 +1345,16 @@ ZTEST(mem_protect_kobj, test_kobj_create_out_of_memory)
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
 
 #define MAX_THREAD_BITS (CONFIG_MAX_THREAD_BYTES * BITS_PER_BYTE)
+
+/**
+ * Used in test_thread_alloc_out_of_idx test to store dynamic thread objects.
+ *
+ * Depending on the size of the thread struct, it is possible for the default thread
+ * heap to run out of space. So we use a dedicated heap so that it has room for one
+ * dynamic thread object per thread index, including the bookkeeping of the dynamic
+ * object and of the heap itself.
+ */
+K_HEAP_DEFINE(thread_idx_heap, MAX_THREAD_BITS * (sizeof(struct k_thread) + 128));
 #endif
 
 /* @brief Test alloc thread object until out of idex
@@ -1362,6 +1372,11 @@ ZTEST(mem_protect_kobj, test_thread_alloc_out_of_idx)
 	struct k_thread *thread[MAX_THREAD_BITS];
 	struct k_thread *fail_thread;
 	int cur_max = 0;
+
+	/* Use local heap to avoid overflowing the default heap when allocating
+	 * thread objects below.
+	 */
+	k_thread_heap_assign(k_current_get(), &thread_idx_heap);
 
 	for (int i = 0; i < MAX_THREAD_BITS; i++) {
 
