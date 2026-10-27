@@ -31,6 +31,13 @@ Serial Port
 The console is ASCLIN0 on P14.0 (TX) and P14.1 (RX), connected to the virtual
 COM port of the on-board debugger, at 115200 baud.
 
+CAN
+===
+
+MCMCAN0 node 1 is on P01.3 (TX) and P01.4 (RX), connected to the on-board
+TLE9371 transceiver, with the standby input on P03.5. It runs at 500 kbit/s
+from an 80 MHz CAN clock.
+
 Programming and Debugging
 *************************
 

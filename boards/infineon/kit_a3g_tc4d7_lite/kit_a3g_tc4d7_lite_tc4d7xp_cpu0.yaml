@@ -16,6 +16,7 @@ env:
 ram: 240
 flash: 4096
 supported:
+  - can
   - gpio
   - uart
 vendor: infineon
