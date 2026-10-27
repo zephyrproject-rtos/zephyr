@@ -273,6 +273,9 @@ int dwmac_bus_init(const struct device *dev);
 int dwmac_platform_init(const struct device *dev);
 void dwmac_setup_multicast_filter(const struct device *dev, const struct ethernet_filter *filter);
 void dwmac_isr(const struct device *ddev);
+void dwmac_map_descriptors(const struct device *dev, struct dwmac_dma_desc *rx_desc,
+			  int rx_desc_count, struct dwmac_dma_desc *tx_desc,
+			  int tx_desc_count);
 /*
  * Called by the QoS core whenever the PHY reports a link at a new speed, after
  * MAC_CONF has been updated. Platforms feeding the MAC from a speed-dependent

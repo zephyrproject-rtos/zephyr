@@ -162,6 +162,7 @@ config ETH_DWMAC_MMU
 	depends on CPU_HAS_MMU
 	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
 	select ETH_DWC_ETHER_QOS_CORE
+	select ETH_DWMAC_MMU_UTILS
 	default y
 	help
 	  This enables the Synopsys DesignWare MAC driver on MMU based
@@ -174,6 +175,13 @@ config ETH_DWC_ETHER_1000_CORE_EDFE
 	default y if PTP_CLOCK_DWC_MAC
 	help
 	  Increases the descriptor size to 32 bytes.
+
+config ETH_DWMAC_MMU_UTILS
+	bool
+	depends on MMU
+	help
+	  Enable utility functions for Synopsys DesignWare MAC driver on
+	  MMU based platforms.
 
 if ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
