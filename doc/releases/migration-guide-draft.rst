@@ -54,6 +54,15 @@ Ethernet
   the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
   must select it as well. (:github:`120871`)
 
+* The NXP ENET Ethernet controller (:dtcompatible:`nxp,enet`) devicetree structure has been
+  flattened to match other similar controllers. The interrupts, ``phy-handle``,
+  ``phy-connection-type`` and MAC address properties now live directly on the ``nxp,enet`` node,
+  and the ``mdio`` (:dtcompatible:`nxp,enet-mdio`) and ``ptp_clock``
+  (:dtcompatible:`nxp,enet-ptp-clock`) nodes are its children. The ``nxp,enet-mac`` compatible,
+  its ``enet_mac`` node and the ``nxp,mdio`` property have been removed.
+  Out-of-tree boards using this controller must move the properties from the old ``enet_mac``
+  node up to the ``enet`` node.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
