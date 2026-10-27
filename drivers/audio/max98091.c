@@ -319,8 +319,9 @@ static int max98091_init(const struct device *dev)
 	}
 
 	max98091_read_reg(dev, M98091_REG_REVISION_ID, &device_id);
-	if (device_id >= M98091_REVA && (device_id <= M98091_REVA + 0x0f)) {
-		LOG_INF("MAX98091 Device ID: 0x%02X", device_id);
+	if ((device_id >= M98090_REVA && device_id <= M98090_REVA + 0x0f) ||
+	    (device_id >= M98091_REVA && device_id <= M98091_REVA + 0x0f)) {
+		LOG_INF("MAX98090/91 Device ID: 0x%02X", device_id);
 		return 0;
 	}
 

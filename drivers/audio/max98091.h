@@ -208,6 +208,7 @@
 #define M98091_SHDNN_MASK		BIT(7)
 
 #define M98091_DEFAULT_VOLUME		0x2A
+#define M98090_REVA			0x40
 #define M98091_REVA			0x50
 
 #endif
