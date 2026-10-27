@@ -81,10 +81,10 @@ domain called ``gpio_domain``.
 
 .. code-block:: devicetree
 
-	gpio_domain: gpio_domain@4 {
-		compatible = "power-domain";
-		...
-	};
+        gpio_domain: gpio_domain@4 {
+                compatible = "power-domain";
+                ...
+        };
 
 A power domain needs to implement the PM action callback used by the
 PM subsystem to turn devices on and off.
