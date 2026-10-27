@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A point-to-point IP link between the DUT and the twister host, with the host at 192.0.2.1 and
+  the board at 192.0.2.2, over which the test reaches an OpenSSL server started by the pytest
+  code on the host. The link is PPP over a serial port or Ethernet over USB (CDC NCM), depending
+  on the board; the test's README describes the host setup.

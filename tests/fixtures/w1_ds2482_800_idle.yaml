@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Maxim DS2482-800 I2C to 1-Wire bridge at address 0x18 on the Arduino I2C header, channel 0
+  used, with no 1-Wire devices on the bus; the tests expect no presence pulse.

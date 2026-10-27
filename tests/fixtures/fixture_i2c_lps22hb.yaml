@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An ST LPS22HB pressure and temperature sensor on I2C, such as the one built into
+  disco_l475_iot1.

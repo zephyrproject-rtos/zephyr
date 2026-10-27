@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  Lets display tests run instead of only building. On native_sim the host must be able to open
+  an SDL window; on hardware the display named by the scenario is attached, such as an Adafruit
+  2.8 inch TFT Touch Shield v2 on mimxrt685_evk or the RA GLCDC panel shields on ek_ra8d1 and
+  aik_ra8d1.
+notes: >-
+  On native_sim this stands for a graphical host session rather than DUT hardware.
+  fixture_display covers attached display hardware.

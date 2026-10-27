@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A MikroElektronika Flash 8 Click (GigaDevice GD5F2GQ5 2 Gbit SPI NAND) in the mikroBUS socket
+  of a frdm_mcxn947 or ek_ra8m1 (SHIELD=mikroe_flash_8_click). The test writes the storage
+  partition at the start of the NAND.

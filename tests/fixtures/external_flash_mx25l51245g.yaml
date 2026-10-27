@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Macronix MX25L51245G QSPI NOR (512 Mbit, 4-byte addressing) replacing the onboard MX25R64 of
+  an nrf52840dk: SCK P0.30, IO0 P0.29, IO1 P0.28, IO2 P0.04, IO3 P0.03, CSN P0.31.

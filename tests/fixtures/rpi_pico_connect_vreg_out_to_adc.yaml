@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Raspberry Pi Pico with the RP2040 VREG_OUT wired to ADC channel 0 so the programmed core
+  voltage can be measured. VREG_OUT is not on a header; a wire is soldered to the trace as
+  described in the test's board overlay.

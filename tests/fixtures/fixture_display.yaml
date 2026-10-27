@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The display the scenario is built for is attached and working: the board's built-in display or
+  the display shield passed with SHIELD= in the scenario's extra_args.
+notes: >-
+  Scenarios using the display_capture harness request fixture_display_capture instead.

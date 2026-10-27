@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Maxim MAX17262 fuel gauge at address 0x36 on the Arduino I2C header of an nrf52840dk, with a
+  single-cell battery attached.

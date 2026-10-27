@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The display the scenario is built for is attached, and a UVC camera on the twister host is
+  aimed at it inside a light-blocking enclosure, as the display_capture harness requires. The
+  scenarios also need DISPLAY_TEST_DIR and reference fingerprints.
+references:
+  - :ref:`twister_display_capture_harness`

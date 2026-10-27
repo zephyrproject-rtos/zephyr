@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A SEGGER J-Link Pro, or another trace-capable J-Link, connected to the trace port of the
+  nrf54h20dk so Coresight STM logs routed to the TPIU can be decoded on the host with nrfutil
+  trace.

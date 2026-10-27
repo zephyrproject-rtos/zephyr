@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A BME280 on SPI provided by the mikroe_weather_click_spi shield (MikroE Weather Click in SPI
+  mode) on lpcxpresso55s16.

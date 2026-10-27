@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An accelerometer aliased as accel0 whose interrupt lines are wired to GPIOs so data-ready
+  triggers fire: FXOS8700 INT1/INT2 on gpioa 14/17 of twr_ke18f, FXLS8974 on gpioe 14/11 of
+  frdm_mcxe247 and gpio1 11/12 of mimxrt1040_evk, or the mikroe_lsm6dsl_click shield on
+  mikroe_clicker_ra4m1.

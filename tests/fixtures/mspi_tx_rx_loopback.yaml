@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On nrf7120dk, MSPI00 (controller) wired to MSPI01 (peripheral): SCK P2.1-P2.6, CSN P2.5-P2.11,
+  DQ0 P2.0-P2.7, DQ1 P2.2-P2.8, DQ2 P2.3-P2.9, DQ3 P2.4-P2.10.
