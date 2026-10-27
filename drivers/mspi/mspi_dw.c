@@ -1844,6 +1844,8 @@ static int _api_xip_config(const struct device *dev,
 	int rc;
 
 	if (!cfg->enable) {
+		bool was_enabled = (dev_data->xip_enabled & BIT(dev_id->dev_idx)) != 0;
+
 		rc = vendor_specific_xip_disable(dev, dev_id, cfg);
 		if (rc < 0) {
 			return rc;
@@ -1855,7 +1857,8 @@ static int _api_xip_config(const struct device *dev,
 
 		dev_data->xip_enabled &= ~BIT(dev_id->dev_idx);
 
-		if (!dev_data->xip_enabled) {
+		/* Only release the usage count if this disabled the last XIP device. */
+		if (was_enabled && !dev_data->xip_enabled) {
 			write_ssienr(dev, 0);
 
 			/* Since XIP is disabled, it is okay for the controller
@@ -2057,9 +2060,9 @@ static int dev_pm_action_cb(const struct device *dev,
 		}
 #endif
 		if (rc >= 0) {
-		dev_data->suspended = true;
+			dev_data->suspended = true;
 
-		vendor_specific_suspend(dev);
+			vendor_specific_suspend(dev);
 		}
 
 #if defined(CONFIG_MULTITHREADING)
