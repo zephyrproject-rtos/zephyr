@@ -12,13 +12,13 @@
 
 LOG_MODULE_REGISTER(sys_clock_hw_cycles, CONFIG_KERNEL_LOG_LEVEL);
 
-unsigned int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+unsigned int z_sys_clock_hw_cycles_hz = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 void z_sys_clock_hw_cycles_per_sec_set(uint32_t hz)
 {
 	__ASSERT(hz != 0U, "zero system timer frequency");
 
-	z_clock_hw_cycles_per_sec = hz;
+	z_sys_clock_hw_cycles_hz = hz;
 }
 
 #if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)

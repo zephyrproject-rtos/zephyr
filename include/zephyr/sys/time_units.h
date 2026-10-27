@@ -58,10 +58,24 @@ extern "C" {
  */
 __syscall unsigned int sys_clock_hw_cycles_per_sec_runtime_get(void);
 
+/** @cond INTERNAL_HIDDEN */
+
+static inline unsigned int z_sys_clock_hw_cycles_per_sec_get(void)
+{
+	extern unsigned int z_sys_clock_hw_cycles_hz;
+
+	return z_sys_clock_hw_cycles_hz;
+}
+
+/* The system timer frequency, read only. z_sys_clock_hw_cycles_per_sec_set()
+ * changes it.
+ */
+#define z_clock_hw_cycles_per_sec z_sys_clock_hw_cycles_per_sec_get()
+
+/** @endcond */
+
 static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 {
-	extern unsigned int z_clock_hw_cycles_per_sec;
-
 	return z_clock_hw_cycles_per_sec;
 }
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
