@@ -33,6 +33,8 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         tools_dir=None,
         port=None,
         tool_opt=None,
+        bl32_bin=None,
+        bl32_base=None,
     ):
         super().__init__(cfg)
 
@@ -49,6 +51,8 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         if tool_opt is not None:
             for opts in [shlex.split(opt) for opt in tool_opt]:
                 self.tool_opt += opts
+        self.bl32_bin = bl32_bin
+        self.bl32_base = bl32_base
 
     @classmethod
     def name(cls):
@@ -79,6 +83,15 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
             help='SE-UART serial port, e.g. /dev/ttyACM0; saved to the SETOOLS ISP '
             'configuration, so it can be omitted on later runs',
         )
+        parser.add_argument(
+            '--bl32-bin', type=Path, help='specifies the BL32 binary needed to boot the APSS core'
+        )
+        parser.add_argument(
+            '--bl32-base',
+            type=lambda x: int(x, 0),
+            help='specifies the base address of the BL32 binary',
+            default=cls.mram_base_addr + 0x2000,
+        )
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -88,6 +101,8 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
             tools_dir=args.tools_dir,
             port=args.port,
             tool_opt=args.tool_opt,
+            bl32_bin=args.bl32_bin,
+            bl32_base=args.bl32_base,
         )
 
     def flash(self, **kwargs):
@@ -107,14 +122,21 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         if self.build_conf.getboolean('CONFIG_SOC_FAMILY_ENSEMBLE_RTSS_HP'):
             self.logger.info("..build for HighPerformance Core")
             toc_entry = "HP_APP"
-        else:
+        elif self.build_conf.getboolean('CONFIG_SOC_FAMILY_ENSEMBLE_RTSS_HE'):
             self.logger.info("..build for HighEfficency Core")
             toc_entry = "HE_APP"
+        elif self.build_conf.getboolean('CONFIG_SOC_FAMILY_ENSEMBLE_APSS'):
+            self.logger.info("..build for APSS Core")
+            toc_entry = "A32_APP"
+        else:
+            raise ValueError("Unknown build core")
 
         shutil.copy(self.cfg.bin_file, self.tools_dir / self.images_dir / 'zephyr.bin')
+        if self.bl32_bin:
+            shutil.copy(self.bl32_bin, self.tools_dir / self.images_dir / 'bl32.bin')
 
         # Prepare json to create AToC.
-        self.prepare_json(toc_entry, fls_addr, fls_size)
+        self.prepare_json(toc_entry, fls_addr, fls_size, self.bl32_bin, self.bl32_base)
 
         # Generate ToC. The SE tools resolve their files relative to the
         # working directory.
@@ -174,7 +196,7 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
                 "re-run tools-config in the Alif SE tools directory"
             )
 
-    def prepare_json(self, toc_entry, fls_addr, fls_size):
+    def prepare_json(self, toc_entry, fls_addr, fls_size, bl32_bin, bl32_base):
         """Prepare JSON for ToC generation."""
         cfg_ip_path = self.tools_dir / self.cfg_ip_file
         cfg_op_path = self.tools_dir / self.cfg_op_file
@@ -193,6 +215,21 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
 
         else:
             raise NotImplementedError(f'Unsupported address base 0x{fls_addr:x} to write')
+
+        if toc_entry == "A32_APP":
+            # TF-A binary also required for APSS core, error if not provided
+            if not bl32_bin or not bl32_bin.is_file():
+                raise ValueError("BL32 binary is required for APSS core, supply with --bl32-bin")
+            json_data["BOOTLOAD"] = {
+                "binary": "bl32.bin",
+                "version": "1.0",
+                "mramAddress": hex(bl32_base),
+                "signed": True,
+                "cpu_id": "A32_0",
+                "flags": ["boot"],
+            }
+            # Remove load flag for APSS core
+            cpu_node.pop('flags', None)
 
         cfg_op_path.write_text(json.dumps(json_data, indent=4), encoding="utf-8")
 
