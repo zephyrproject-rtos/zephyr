@@ -2079,15 +2079,25 @@ static int uart_stm32_async_tx_abort(const struct device *dev)
 	}
 
 	(void)k_work_cancel_delayable(&data->dma_tx.timeout_work);
+
+	/*
+	 * Halt the DMA before reading the remaining length. Otherwise, data moved to the
+	 * USART between reading the length and stopping the DMA is sent but not reported.
+	 */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
+	dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+#else
+	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+#endif
+
 	if (!dma_get_status(data->dma_tx.dma_dev,
 				data->dma_tx.dma_channel, &stat)) {
 		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
-	dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
-#endif
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+#endif
 	async_evt_tx_abort(data);
 
 	return 0;
