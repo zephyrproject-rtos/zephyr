@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Emulated CMIS pluggable module for tests and samples.
+
+  Place the node on a zephyr,i2c-emul-controller at reg 0x50 and point an
+  sff,cmis cage at the same bus.
+
+compatible: "zephyr,cmis-module-emul"
+
+include: i2c-device.yaml
