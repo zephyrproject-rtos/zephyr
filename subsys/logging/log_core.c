@@ -122,6 +122,10 @@ static atomic_t unordered_cnt;
 static uint64_t last_failure_report;
 static struct k_spinlock process_lock;
 static atomic_t process_lock_owner_cpu = ATOMIC_INIT(LOG_NO_CPU_OWNER);
+/* CPU with a message claimed in log_process() */
+static atomic_t process_owner_cpu = ATOMIC_INIT(LOG_NO_CPU_OWNER);
+/* CPU flushing the queue in log_panic(), while the others must not claim */
+static atomic_t panic_cpu = ATOMIC_INIT(LOG_NO_CPU_OWNER);
 
 static STRUCT_SECTION_ITERABLE(log_msg_ptr, log_msg_ptr);
 static STRUCT_SECTION_ITERABLE_ALTERNATE(log_mpsc_pbuf, mpsc_pbuf_buffer, log_buffer);
@@ -442,8 +446,20 @@ int log_set_timestamp_func(log_timestamp_get_t timestamp_getter, uint32_t freq)
 	return 0;
 }
 
+static inline int log_curr_cpu(void)
+{
+#ifdef CONFIG_SMP
+	return arch_curr_cpu()->id;
+#else
+	return 0;
+#endif
+}
+
 void z_impl_log_panic(void)
 {
+	int cpu = log_curr_cpu();
+	unsigned int key;
+
 	if (panic_mode) {
 		return;
 	}
@@ -452,6 +468,31 @@ void z_impl_log_panic(void)
 	 * Forcing initialization of the logger and auto-starting backends.
 	 */
 	(void)z_log_init(true, false);
+
+	if (!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
+		/* A message claimed on this CPU is never finished */
+		(void)atomic_cas(&process_owner_cpu, cpu, LOG_NO_CPU_OWNER);
+
+		/* arch_spin_relax() is for use with interrupts locked */
+		key = arch_irq_lock();
+		if (!atomic_cas(&panic_cpu, LOG_NO_CPU_OWNER, cpu)) {
+			/* Another CPU is flushing: it prints this CPU's messages too */
+			while (atomic_get(&panic_cpu) != LOG_NO_CPU_OWNER) {
+				arch_spin_relax();
+			}
+			arch_irq_unlock(key);
+			return;
+		}
+
+		/*
+		 * log_process() no longer claims on the other CPUs; a message
+		 * claimed on another CPU is given the time to be finished.
+		 */
+		while (atomic_get(&process_owner_cpu) != LOG_NO_CPU_OWNER) {
+			arch_spin_relax();
+		}
+		arch_irq_unlock(key);
+	}
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_panic();
@@ -474,6 +515,7 @@ void z_impl_log_panic(void)
 
 out:
 	panic_mode = true;
+	atomic_set(&panic_cpu, LOG_NO_CPU_OWNER);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -572,8 +614,22 @@ bool z_impl_log_process(void)
 
 	k_timeout_t backoff = K_NO_WAIT;
 	union log_msg_generic *msg;
+	int cpu = log_curr_cpu();
+	atomic_val_t flusher;
 
 	if (atomic_get(&backend_attached) == 0) {
+		return false;
+	}
+
+	/*
+	 * A CPU flushing the queue on a fatal error prints alone. The owner is
+	 * taken before the flag is read and log_panic() raises the flag before
+	 * it reads the owner, so one of the two sees the other.
+	 */
+	atomic_set(&process_owner_cpu, cpu);
+	flusher = atomic_get(&panic_cpu);
+	if ((flusher != LOG_NO_CPU_OWNER) && (flusher != cpu)) {
+		atomic_set(&process_owner_cpu, LOG_NO_CPU_OWNER);
 		return false;
 	}
 
@@ -583,7 +639,11 @@ bool z_impl_log_process(void)
 		msg_process(msg);
 		z_log_msg_free(msg);
 		atomic_dec(&buffered_cnt);
-	} else if (CONFIG_LOG_PROCESSING_LATENCY_US > 0 && !K_TIMEOUT_EQ(backoff, K_NO_WAIT)) {
+	}
+	atomic_set(&process_owner_cpu, LOG_NO_CPU_OWNER);
+
+	if (msg == NULL && CONFIG_LOG_PROCESSING_LATENCY_US > 0 &&
+	    !K_TIMEOUT_EQ(backoff, K_NO_WAIT)) {
 		/* If backoff is requested, it means that there are pending
 		 * messages but they are too new and processing shall back off
 		 * to allow arrival of newer messages from remote domains.
