@@ -86,6 +86,7 @@ GRTAGS
 GTAGS
 TAGS
 tags
+compile_commands.json
 
 .idea
 
