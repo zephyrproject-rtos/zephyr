@@ -44,6 +44,15 @@
 		ngpios = <16>;
 		status = "disabled";
 	};
+
+	p20: gpio@f003b400 {
+		compatible = "infineon,aurix-tc3x-gpio", "infineon,aurix-gpio";
+		reg = <0xf003b400 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <15>;
+		status = "disabled";
+	};
 };
 
 / {
