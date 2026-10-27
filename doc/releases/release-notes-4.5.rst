@@ -51,12 +51,16 @@ Major enhancements with this release include:
 
   - :ref:`QUIC <quic_transport_interface>` and :ref:`HTTP/3 <http_server_interface>` support.
 
+  - :ref:`RTP <rtp_interface>` (:rfc:`3550`) stack for sending and receiving media streams over
+    UDP.
+
   - :zephyr:code-sample:`SSH server and client <ssh-server-client>`, including a shell backend.
 
   - :ref:`Model Context Protocol (MCP) server <mcp_server_interface>` to let AI agents use tools
     exposed by a device.
 
-  - Gateway features: IPv4 forwarding, NAT and :ref:`DHCPv6 <dhcpv6_interface>` prefix delegation.
+  - Gateway features: IPv4 forwarding, NAT, IPv6 router role and :ref:`DHCPv6 <dhcpv6_interface>`
+    prefix delegation.
 
 **New driver classes**
   Zephyr 4.5 adds several new driver APIs:
