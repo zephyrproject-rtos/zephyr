@@ -16,6 +16,10 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/video/video.h>
+
+#include "video_common.h"
 #if defined(CONFIG_VIDEO_STM32_VENC_SMH_ALLOC)
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
@@ -35,6 +39,8 @@ LOG_MODULE_REGISTER(stm32_venc, CONFIG_VIDEO_LOG_LEVEL);
 #define VENC_DEFAULT_IN_FMT              VIDEO_PIX_FMT_NV12
 #define VENC_DEFAULT_OUT_FMT             VIDEO_PIX_FMT_H264
 #define VENC_DEFAULT_FRAMERATE           30
+#define VENC_DEFAULT_GOP_SIZE            30
+#define VENC_MAX_FRAMERATE               BIT_MASK(20)
 #define VENC_DEFAULT_LEVEL               H264ENC_LEVEL_4
 #define VENC_DEFAULT_QP                  25
 #define VENC_ESTIMATED_COMPRESSION_RATIO 10
@@ -100,6 +106,7 @@ struct stm32_venc_data {
 	struct k_mutex lock;
 	struct video_format in_fmt;
 	struct video_format out_fmt;
+	struct video_frmival frmival;
 	struct k_fifo in_fifo_in;
 	struct k_fifo in_fifo_out;
 	struct k_fifo out_fifo_in;
@@ -107,6 +114,7 @@ struct stm32_venc_data {
 	struct video_buffer *vbuf;
 	H264EncInst encoder;
 	uint32_t frame_nb;
+	bool streaming;
 	bool resync;
 };
 
@@ -461,8 +469,8 @@ static int encoder_prepare(struct stm32_venc_data *data)
 	/* set config to 1 reference frame */
 	cfg.refFrameAmount = 1;
 	/* frame rate */
-	cfg.frameRateDenom = 1;
-	cfg.frameRateNum = VENC_DEFAULT_FRAMERATE;
+	cfg.frameRateDenom = data->frmival.numerator;
+	cfg.frameRateNum = data->frmival.denominator;
 	/* image resolution */
 	cfg.width = data->out_fmt.width;
 	cfg.height = data->out_fmt.height;
@@ -605,8 +613,10 @@ static int encode_frame(struct stm32_venc_data *data)
 		goto out;
 	}
 
-	/* one key frame every VENC_DEFAULT_FRAMERATE frames */
-	if ((data->frame_nb % VENC_DEFAULT_FRAMERATE) == 0 || data->resync) {
+	enc_in.timeIncrement = (data->frame_nb == 0) ? 0 : data->frmival.numerator;
+
+	/* one key frame every VENC_DEFAULT_GOP_SIZE frames */
+	if ((data->frame_nb % VENC_DEFAULT_GOP_SIZE) == 0 || data->resync) {
 		/* if frame is the first or resync needed: set as intra coded */
 		enc_in.codingType = H264ENC_INTRA_FRAME;
 		data->resync = false;
@@ -615,7 +625,6 @@ static int encode_frame(struct stm32_venc_data *data)
 			inst->irq_fuse_cnt);
 	} else {
 		/* if there was a frame previously, set as predicted */
-		enc_in.timeIncrement = 1;
 		enc_in.codingType = H264ENC_PREDICTED_FRAME;
 	}
 
@@ -689,12 +698,17 @@ static int stm32_venc_set_stream(const struct device *dev, bool enable, enum vid
 
 	ARG_UNUSED(type);
 
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	data->streaming = enable;
 	if (!enable) {
 		/* Stop VENC */
 		encoder_end(data);
 		LOG_DBG("frames=%d irq=%d fuse=%d", data->frame_nb, inst->irq_cnt,
 			inst->irq_fuse_cnt);
 	}
+
+	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -809,6 +823,86 @@ static int stm32_venc_get_caps(const struct device *dev, struct video_caps *caps
 	return 0;
 }
 
+static int stm32_venc_set_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	struct stm32_venc_data *data = dev->data;
+	uint32_t num, den, gcd;
+
+	if (frmival->numerator == 0 || frmival->denominator == 0) {
+		return -EINVAL;
+	}
+
+	gcd = sys_gcd(frmival->numerator, frmival->denominator);
+	num = frmival->numerator / gcd;
+	den = frmival->denominator / gcd;
+
+	if (num > den && !(num == 1001 && den == 1000)) {
+		num = 1;
+		den = 1;
+	} else if (den > VENC_MAX_FRAMERATE) {
+		num = MAX(1U, (uint32_t)DIV_ROUND_CLOSEST((uint64_t)num * VENC_MAX_FRAMERATE, den));
+		den = VENC_MAX_FRAMERATE;
+		gcd = sys_gcd(num, den);
+		num /= gcd;
+		den /= gcd;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	if (data->streaming) {
+		k_mutex_unlock(&data->lock);
+		return -EBUSY;
+	}
+
+	frmival->numerator = num;
+	frmival->denominator = den;
+	data->frmival = *frmival;
+	k_mutex_unlock(&data->lock);
+
+	return 0;
+}
+
+static int stm32_venc_get_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	struct stm32_venc_data *data = dev->data;
+
+	*frmival = data->frmival;
+
+	return 0;
+}
+
+static int stm32_venc_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
+{
+	const struct video_format_cap *caps;
+	size_t idx;
+	int ret;
+
+	ARG_UNUSED(dev);
+
+	if (fie->format == NULL) {
+		return -EINVAL;
+	}
+
+	if (fie->index >= 1) {
+		return -ERANGE;
+	}
+
+	caps = (fie->format->type == VIDEO_BUF_TYPE_INPUT) ? in_fmts : out_fmts;
+	ret = video_format_caps_index(caps, fie->format, &idx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	fie->type = VIDEO_FRMIVAL_TYPE_STEPWISE;
+	fie->stepwise.min.numerator = 1;
+	fie->stepwise.min.denominator = VENC_MAX_FRAMERATE;
+	fie->stepwise.max.numerator = 1;
+	fie->stepwise.max.denominator = 1;
+	fie->stepwise.step.numerator = 1;
+	fie->stepwise.step.denominator = VENC_MAX_FRAMERATE;
+
+	return 0;
+}
+
 static DEVICE_API(video, stm32_venc_driver_api) = {
 	.set_format = stm32_venc_set_fmt,
 	.get_format = stm32_venc_get_fmt,
@@ -816,6 +910,9 @@ static DEVICE_API(video, stm32_venc_driver_api) = {
 	.enqueue = stm32_venc_enqueue,
 	.dequeue = stm32_venc_dequeue,
 	.get_caps = stm32_venc_get_caps,
+	.set_frmival = stm32_venc_set_frmival,
+	.get_frmival = stm32_venc_get_frmival,
+	.enum_frmival = stm32_venc_enum_frmival,
 };
 
 static void stm32_venc_irq_config_func(const struct device *dev)
@@ -884,6 +981,10 @@ static int stm32_venc_init(const struct device *dev)
 	data->out_fmt.height = VENC_DEFAULT_HEIGHT;
 	data->out_fmt.pixelformat = VENC_DEFAULT_OUT_FMT;
 
+	/* default frame interval */
+	data->frmival.numerator = 1;
+	data->frmival.denominator = VENC_DEFAULT_FRAMERATE;
+
 	/* store config for register accesses */
 	ewl_instance.config = config;
 
@@ -894,3 +995,5 @@ static int stm32_venc_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &stm32_venc_init, NULL, &stm32_venc_data_0, &stm32_venc_config_0,
 		      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &stm32_venc_driver_api);
+
+VIDEO_DEVICE_DEFINE(stm32_venc_0, DEVICE_DT_INST_GET(0), NULL);
