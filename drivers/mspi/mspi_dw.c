@@ -2022,6 +2022,9 @@ static int dev_pm_action_cb(const struct device *dev,
 #endif
 		vendor_specific_resume(dev);
 
+		/* Make sure controller is disabled. */
+		write_ssienr(dev, 0);
+
 		dev_data->suspended = false;
 
 		return 0;
@@ -2124,15 +2127,7 @@ static int dev_init(const struct device *dev)
 	}
 #endif
 
-	rc = pm_device_driver_init(dev, dev_pm_action_cb);
-	if (rc < 0) {
-		return rc;
-	}
-
-	/* Make sure controller is disabled. */
-	write_ssienr(dev, 0);
-
-	return 0;
+	return pm_device_driver_init(dev, dev_pm_action_cb);
 }
 
 static DEVICE_API(mspi, drv_api) = {
