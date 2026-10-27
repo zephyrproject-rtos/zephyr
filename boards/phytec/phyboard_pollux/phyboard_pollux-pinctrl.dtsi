@@ -84,4 +84,17 @@
 			input-enable;
 		};
 	};
+
+	sai2_default: sai2_default {
+		group0 {
+			pinmux = <&iomuxc_sai2_mclk_sai_mclk_sai2_mclk>,
+				 <&iomuxc_sai2_rxd0_sai_rx_data_sai2_rx_data0>,
+				 <&iomuxc_sai2_rxfs_sai_rx_sync_sai2_rx_sync>,
+				 <&iomuxc_sai2_txc_sai_tx_bclk_sai2_tx_bclk>,
+				 <&iomuxc_sai2_txd0_sai_tx_data_sai2_tx_data0>;
+			input-schmitt-enable;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+	};
 };
