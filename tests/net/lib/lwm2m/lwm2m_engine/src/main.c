@@ -110,6 +110,8 @@ ZTEST(lwm2m_engine, test_start_stop)
 
 	ret = lwm2m_engine_start(&ctx);
 	zassert_equal(ret, 0);
+	zassert_equal(lwm2m_engine_dedup_clear_fake.call_count, 1,
+		      "Request cache not cleared on socket start");
 
 	struct lwm2m_ctx **eng_ctx = lwm2m_sock_ctx();
 	int nfds = lwm2m_sock_nfds();
@@ -205,6 +207,8 @@ ZTEST(lwm2m_engine, test_connect_fail)
 	z_impl_zsock_connect_fake.return_val = -1;
 	ret = lwm2m_engine_start(&ctx);
 	zassert_equal(ret, -ENETDOWN);
+	zassert_equal(lwm2m_engine_dedup_clear_fake.call_count, 0,
+		      "Request cache cleared without a connected socket");
 	lwm2m_engine_stop(&ctx);
 }
 

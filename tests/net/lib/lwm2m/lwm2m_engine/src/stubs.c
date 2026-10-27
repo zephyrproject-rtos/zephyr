@@ -29,6 +29,7 @@ DEFINE_FAKE_VOID_FUNC(lwm2m_udp_receive, struct lwm2m_ctx *, uint8_t *, uint16_t
 		      struct net_sockaddr *);
 DEFINE_FAKE_VALUE_FUNC(bool, lwm2m_rd_client_is_registred, struct lwm2m_ctx *);
 DEFINE_FAKE_VOID_FUNC(lwm2m_engine_context_close, struct lwm2m_ctx *);
+DEFINE_FAKE_VOID_FUNC(lwm2m_engine_dedup_clear, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_res_buf, const struct lwm2m_obj_path *, void **, uint16_t *,
 		       uint16_t *, uint8_t *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_parse_peerinfo, char *, struct lwm2m_ctx *, bool);

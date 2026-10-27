@@ -340,6 +340,27 @@ config LWM2M_ENGINE_MAX_REPLIES
 	help
 	  Set the maximum reply objects for the LwM2M library client
 
+config LWM2M_COAP_DEDUP_CACHE_SIZE
+	int "Number of cached CoAP request exchanges"
+	default 8
+	range 0 $(UINT8_MAX)
+	help
+	  Number of handled Confirmable requests remembered per context so
+	  that a retransmitted request is answered with the same response
+	  instead of being processed again (RFC 7252 section 4.5). Each
+	  entry holds the message ID and a short response. The size should
+	  cover the number of requests the server sends concurrently. Set
+	  to 0 to disable deduplication.
+
+config LWM2M_COAP_DEDUP_LIFETIME
+	int "Lifetime of a cached CoAP request exchange (seconds)"
+	default 247
+	range 1 3600
+	depends on LWM2M_COAP_DEDUP_CACHE_SIZE > 0
+	help
+	  Time after which a cached request is forgotten. The default is
+	  EXCHANGE_LIFETIME from RFC 7252 section 4.8.2.
+
 config LWM2M_ENGINE_MAX_OBSERVER
 	int "Maximum # of observable LwM2M resources"
 	default 10
