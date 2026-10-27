@@ -14,25 +14,30 @@ description: |
     #include <zephyr/dt-bindings/pinctrl/infineon-aurix-pinctrl.h>
 
     &pinctrl {
-      asclin0_tx_p14_0: asclin0_tx_p14_0 {
+      asclin0_atx_p14_0: asclin0_atx_p14_0 {
         pinmux = <AURIX_PINMUX(14, 0, 2)>;
         output-enable;
       };
 
-      asclin0_rx_p14_1: asclin0_rx_p14_1 {
+      asclin0_arxa_p14_1: asclin0_arxa_p14_1 {
         pinmux = <AURIX_PINMUX(14, 1, 0)>;
       };
     };
 
     &asclin0 {
-      pinctrl-0 = <&asclin0_tx_p14_0 &asclin0_rx_p14_1>;
+      pinctrl-0 = <&asclin0_atx_p14_0 &asclin0_arxa_p14_1>;
       pinctrl-names = "default";
     };
 
   A pin with output-enable drives the alternate output function of its
   pinmux cell (0 selects GPIO); push-pull unless drive-open-drain is set.
-  Any other pin is an input, tri-state unless a bias property is set. The
-  peripheral selects which input pin it uses.
+  Any other pin is an input, tri-state unless a bias property is set; the
+  function field then holds the input select of the peripheral for that pin
+  (0 = A to 7 = H), which the peripheral driver programs.
+
+  The SoC pinctrl dtsi files are generated from the data sheet port tables by
+  soc/infineon/aurix/tools/gen_pinctrl.py; the node names follow the data
+  sheet symbols.
 
 compatible: "infineon,aurix-pinctrl"
 
