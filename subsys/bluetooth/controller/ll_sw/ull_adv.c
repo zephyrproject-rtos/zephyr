@@ -1148,6 +1148,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 		/* Re-initialize the Tx Q */
 		ull_tx_q_init(&conn->tx_q);
 
+		conn_lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
+		conn_lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
+		conn_lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
+		conn_lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
+
 		/* NOTE: using same link as supplied for terminate ind */
 		adv->link_cc_free = link;
 		adv->node_rx_cc_free = node_rx;
