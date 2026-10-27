@@ -23,8 +23,10 @@ tests:
       filter: CONFIG_NET_L2_PPP or CONFIG_NET_L2_ETHERNET
       platform_allow:
         - nrf54l15dk/nrf54l15/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuapp
       integration_platforms:
         - nrf54l15dk/nrf54l15/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuapp
     extra_configs:
       - CONFIG_MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_256_CBC_SHA384=y
       - CONFIG_SERVER_PORT=4008
