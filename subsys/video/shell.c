@@ -708,9 +708,9 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 	struct video_control ctrl;
 	char menu_name[CONFIG_VIDEO_SHELL_CTRL_NAME_SIZE];
 	char *arg_ctrl = argv[0];
-	char *arg_value = argv[1];
+	char *arg_value = argc > 1 ? argv[1] : NULL;
 	char *end_value;
-	size_t i;
+	int32_t i;
 	int ret;
 
 	ret = video_shell_get_ctrl_by_name(&cq, arg_ctrl);
@@ -719,17 +719,27 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 		return ret;
 	}
 
+	if (cq.type != VIDEO_CTRL_TYPE_BUTTON && arg_value == NULL) {
+		shell_error(sh, "Missing control value");
+		return -EINVAL;
+	}
+
 	ctrl.id = cq.id;
 
 	switch (cq.type) {
 	case VIDEO_CTRL_TYPE_MENU:
-		for (i = 0; cq.menu[i] != NULL; i++) {
+		if (cq.menu == NULL) {
+			shell_error(sh, "Video control '%s' has no menu names", arg_ctrl);
+			return -ENOTSUP;
+		}
+		for (i = 0; i <= cq.range.max && cq.menu[i] != NULL; i++) {
 			video_shell_convert_ctrl_name(cq.menu[i], menu_name, sizeof(menu_name));
 			if (strcmp(menu_name, arg_value) == 0) {
-				ctrl.val64 = i;
+				ctrl.val = i;
+				break;
 			}
 		}
-		if (cq.menu[i] != NULL) {
+		if (i > cq.range.max || cq.menu[i] == NULL) {
 			shell_error(sh, "Video control value '%s' is not present in the menu",
 				    arg_value);
 			return -EINVAL;
@@ -755,13 +765,21 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 			return -EINVAL;
 		}
 		break;
+	case VIDEO_CTRL_TYPE_BUTTON:
+		ctrl.val = 0;
+		break;
 	default:
 		CODE_UNREACHABLE;
 	}
 
-	shell_print(sh, "Setting control '%s' (0x%08x) to value '%s' (%lld)",
-		    arg_ctrl, ctrl.id, arg_value,
-		    (long long)(cq.type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl.val64 : ctrl.val));
+	if (cq.type == VIDEO_CTRL_TYPE_BUTTON) {
+		shell_print(sh, "Triggering control '%s' (0x%08x)", arg_ctrl, ctrl.id);
+	} else {
+		shell_print(
+			sh, "Setting control '%s' (0x%08x) to value '%s' (%lld)", arg_ctrl, ctrl.id,
+			arg_value,
+			(long long)(cq.type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl.val64 : ctrl.val));
+	}
 
 	ret = video_set_ctrl(dev, &ctrl);
 	if (ret < 0) {
@@ -804,6 +822,7 @@ static int cmd_video_ctrl(const struct shell *sh, size_t argc, char **argv)
 	switch (argc) {
 	case 2:
 		return video_shell_print_ctrls(sh, dev);
+	case 3:
 	case 4:
 		return video_shell_set_ctrl(sh, dev, argc - 2, &argv[2]);
 	default:
@@ -849,21 +868,20 @@ static void complete_video_ctrl_menu_name(size_t idx, struct shell_static_entry 
 	/* Check which control name was selected */
 
 	ret = video_shell_get_ctrl_by_num(&cq, ctrln);
-	if (ret < 0) {
+	if (ret < 0 || cq.menu == NULL) {
 		return;
 	}
 
 	/* Then complete the menu value */
 
-	for (size_t i = 0; cq.menu[i] != NULL; i++) {
-		if (i == idx) {
+	for (int32_t i = 0; i <= cq.range.max && cq.menu[i] != NULL; i++) {
+		if ((size_t)i == idx) {
 			video_shell_convert_ctrl_name(cq.menu[i], video_shell_menu_name,
 						      sizeof(video_shell_menu_name));
 			entry->syntax = video_shell_menu_name;
 			break;
 		}
 	}
-
 }
 LISTIFY(20, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_ctrl_menu_name);
 
@@ -1298,38 +1316,38 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_video_selection_dev, complete_video_selection_dev)
 
 /* Video shell commands declaration */
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_video_cmds,
 	SHELL_CMD_ARG(tree, &dsub_video_dev,
-		SHELL_HELP("Show the device topology following the source endpoints",
-			   "<device>"),
-		cmd_video_tree, 2, 0),
+		      SHELL_HELP("Show the device topology following the source endpoints",
+				 "<device>"),
+		      cmd_video_tree, 2, 0),
 	SHELL_CMD_ARG(start, &dsub_video_dev,
-		SHELL_HELP("Start a video device and its sources", "<device>"),
-		cmd_video_start, 2, 0),
+		      SHELL_HELP("Start a video device and its sources", "<device>"),
+		      cmd_video_start, 2, 0),
 	SHELL_CMD_ARG(stop, &dsub_video_dev,
-		SHELL_HELP("Stop a video device and its sources", "<device>"),
-		cmd_video_stop, 2, 0),
+		      SHELL_HELP("Stop a video device and its sources", "<device>"), cmd_video_stop,
+		      2, 0),
 	SHELL_CMD_ARG(capture, &dsub_video_dev,
-		SHELL_HELP("Capture a given number of buffers from a device",
-			   "<device> <num-buffers>"),
-		cmd_video_capture, 3, 0),
+		      SHELL_HELP("Capture a given number of buffers from a device",
+				 "<device> <num-buffers>"),
+		      cmd_video_capture, 3, 0),
 	SHELL_CMD_ARG(format, &dsub_video_format_dev,
-		SHELL_HELP("Query or set the video format of a device",
-			   "<device> <dir> [<fourcc> <width>x<height>]"),
-		cmd_video_format, 3, 2),
+		      SHELL_HELP("Query or set the video format of a device",
+				 "<device> <dir> [<fourcc> <width>x<height>]"),
+		      cmd_video_format, 3, 2),
 	SHELL_CMD_ARG(frmival, &dsub_video_frmival_dev,
-		SHELL_HELP("Query or set the video frame rate/interval of a device",
-			   "<device> [<n>fps|<n>ms|<n>us]"),
-		cmd_video_frmival, 2, 1),
+		      SHELL_HELP("Query or set the video frame rate/interval of a device",
+				 "<device> [<n>fps|<n>ms|<n>us]"),
+		      cmd_video_frmival, 2, 1),
 	SHELL_CMD_ARG(ctrl, &dsub_video_ctrl_dev,
-		SHELL_HELP("Query or set video controls of a device",
-			   "<device> [<ctrl> <value>]"),
-		cmd_video_ctrl, 2, 2),
+		      SHELL_HELP("Query or set video controls of a device",
+				 "<device> [<ctrl> [<value>]]"),
+		      cmd_video_ctrl, 2, 2),
 	SHELL_CMD_ARG(selection, &dsub_video_selection_dev,
-		SHELL_HELP("Query or set the video selection of a device",
-			   "<device> <dir> <target> [<left> <top> <width>x<height>]"),
-		cmd_video_selection, 4, 3),
-	SHELL_SUBCMD_SET_END
-);
+		      SHELL_HELP("Query or set the video selection of a device",
+				 "<device> <dir> <target> [<left> <top> <width>x<height>]"),
+		      cmd_video_selection, 4, 3),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(video, &sub_video_cmds, "Video driver commands", NULL);
