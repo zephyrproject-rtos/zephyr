@@ -4,15 +4,17 @@
  *
  * lp_mspm0l2228 has two watchdog peripherals: WWDT (window watchdog,
  * wdt_mspm0.c) and IWDT (independent watchdog, wdt_mspm0_iwdt.c). This
- * overlay selects IWDT as watchdog0 for this sample.
+ * overlay selects the WWDT as watchdog0 for this sample: once armed the
+ * IWDT keeps running across debug resets and keeps resetting the board
+ * until VBAT is power-cycled, which breaks every later test on that board.
  */
 
 / {
 	aliases {
-		watchdog0 = &iwdt;
+		watchdog0 = &wdt0;
 	};
 };
 
-&iwdt {
+&wdt0 {
 	status = "okay";
 };

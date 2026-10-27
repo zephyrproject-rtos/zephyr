@@ -1,14 +1,18 @@
 /*
  * Copyright (c) 2026 Texas Instruments Inc.
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Use the WWDT as watchdog0, not the IWDT. Once armed the IWDT keeps
+ * running across debug resets and keeps resetting the board until VBAT
+ * is power-cycled, which breaks every later test on the same board.
  */
 
 / {
 	aliases {
-		watchdog0 = &iwdt;
+		watchdog0 = &wdt0;
 	};
 };
 
-&iwdt {
+&wdt0 {
 	status = "okay";
 };
