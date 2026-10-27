@@ -1,7 +1,4 @@
-.. _lp_em_cc2340r5moda:
-
-TI CC2340R5 Module LaunchPad
-############################
+.. zephyr:board:: lp_em_cc2340r5moda
 
 Overview
 ********

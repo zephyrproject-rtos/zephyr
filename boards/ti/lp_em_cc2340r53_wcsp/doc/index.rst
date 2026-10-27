@@ -1,7 +1,4 @@
-.. _lp_em_cc2340r53_wcsp:
-
-TI CC2340R53 WCSP Launchpad
-###########################
+.. zephyr:board:: lp_em_cc2340r53_wcsp
 
 Overview
 ********

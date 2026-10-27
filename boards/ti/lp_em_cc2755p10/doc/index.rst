@@ -1,7 +1,4 @@
-.. _lp_em_cc2755p10:
-
-TI CC2755P10 Launchpad
-#########################
+.. zephyr:board:: lp_em_cc2755p10
 
 Overview
 ********
@@ -10,12 +7,6 @@ The Texas Instruments CC2755P10 LaunchPad™ (LP_EM_CC2755P10) is a
 development kit for the SimpleLink™ multi-Standard CC2755P10 wireless MCU.
 
 See the `TI CC2755P10 LaunchPad Product Page`_ for details.
-
-.. figure:: img/lp_em_cc2755p10.jpg
-   :align: center
-   :alt: TI CC2755P10 Launchpad
-
-   Texas Instruments CC2755P10 LaunchPad™
 
 Hardware
 ********

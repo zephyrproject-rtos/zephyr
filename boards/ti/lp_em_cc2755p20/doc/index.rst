@@ -1,7 +1,4 @@
-.. _lp_em_cc2755p20:
-
-TI CC2755P20 Launchpad
-#########################
+.. zephyr:board:: lp_em_cc2755p20
 
 Overview
 ********

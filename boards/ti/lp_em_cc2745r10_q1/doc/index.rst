@@ -1,7 +1,4 @@
-.. _lp_em_cc2745r10_q1:
-
-TI CC2745R10_Q1 Launchpad
-#########################
+.. zephyr:board:: lp_em_cc2745r10_q1
 
 Overview
 ********
@@ -10,12 +7,6 @@ The Texas Instruments CC2745R10_Q1 LaunchPad™ (LP_EM_CC2745R10_Q1) is a
 development kit for the SimpleLink™ multi-Standard CC2745R10_Q1 wireless MCU.
 
 See the `TI CC2745R10_Q1 LaunchPad Product Page`_ for details.
-
-.. figure:: img/lp_em_cc2745r10_q1.jpg
-   :align: center
-   :alt: TI CC2745R10_Q1 Launchpad
-
-   Texas Instruments Cc2745r10_q1 LaunchPad™
 
 Hardware
 ********

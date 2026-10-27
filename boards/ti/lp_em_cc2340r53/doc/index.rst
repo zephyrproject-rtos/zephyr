@@ -1,7 +1,4 @@
-.. _lp_em_cc2340r53:
-
-TI CC2340R53 Launchpad
-######################
+.. zephyr:board:: lp_em_cc2340r53
 
 Overview
 ********
@@ -10,12 +7,6 @@ The Texas Instruments CC2340R53 LaunchPad™ (LP_EM_CC2340R53) is a
 development kit for the SimpleLink™ multi-Standard CC2340R53 wireless MCU.
 
 See the `TI CC2340R53 LaunchPad Product Page`_ for details.
-
-.. figure:: img/lp_em_cc2340r53.jpg
-   :align: center
-   :alt: TI CC2340R53 Launchpad
-
-   Texas Instruments CC2340R53 LaunchPad™
 
 Hardware
 ********
