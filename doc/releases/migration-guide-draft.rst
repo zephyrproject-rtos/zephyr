@@ -132,6 +132,15 @@ Ethernet
   ``reset-deassertion-timeout-ms`` with ``reset-deassert-us``, multiplying its value by 1000 as
   it is now in microseconds. (:github:`124061`)
 
+MFD
+===
+
+* nPM2100 event callbacks now use :c:struct:`mfd_npm2100_event_callback` instead of
+  :c:struct:`gpio_callback`. Set its ``handler`` and ``event_mask`` fields directly instead of
+  calling ``gpio_init_callback()``. The handler takes a pointer to the new callback structure
+  and an ``npm2100_event_t`` event mask; existing ``BIT(NPM2100_EVENT_*)`` masks are unchanged.
+  (:github:`120768`)
+
 OPAMP
 =====
 
