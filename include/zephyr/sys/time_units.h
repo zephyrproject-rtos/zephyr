@@ -60,12 +60,21 @@ __syscall unsigned int sys_clock_hw_cycles_per_sec_runtime_get(void);
 
 /** @cond INTERNAL_HIDDEN */
 
+/* z_sys_clock_cyc_recip holds the reciprocal of the system timer frequency,
+ * with the frequency in .div. z_sys_clock_hw_cycles_per_sec_set() updates
+ * it under a spinlock. Readers of more than .div take the same lock.
+ */
+extern struct sys_div64_recip z_sys_clock_cyc_recip;
+
 static inline unsigned int z_sys_clock_hw_cycles_per_sec_get(void)
 {
-	extern unsigned int z_sys_clock_hw_cycles_hz;
-
-	return z_sys_clock_hw_cycles_hz;
+	return z_sys_clock_cyc_recip.div;
 }
+
+/* The reciprocal of the system timer frequency, coherent with itself,
+ * copied to buf. For time conversions on 32-bit targets.
+ */
+__syscall const struct sys_div64_recip *z_sys_clock_cyc_recip_get(struct sys_div64_recip *buf);
 
 /* The system timer frequency, read only. z_sys_clock_hw_cycles_per_sec_set()
  * changes it.
