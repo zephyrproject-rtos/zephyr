@@ -7,7 +7,8 @@
 menuconfig GPIO_MAX14906
 	bool "MAX14906 GPIO driver"
 	default y
-	depends on DT_HAS_ADI_MAX14906_GPIO_ENABLED && SPI
+	depends on DT_HAS_ADI_MAX14906_GPIO_ENABLED
+	select SPI
 	help
 	  Enable MAX14906 quad industrial digital
 	  input/output with diagnostics

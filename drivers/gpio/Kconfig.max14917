@@ -6,8 +6,9 @@
 menuconfig GPIO_MAX14917
 	bool "MAX14917 GPIO driver"
 	default y
+	depends on DT_HAS_ADI_MAX14917_GPIO_ENABLED
 	select CRC
-	depends on DT_HAS_ADI_MAX14917_GPIO_ENABLED && SPI
+	select SPI
 	help
 	  Enable MAX14917 octal industrial digital
 	  output with diagnostics

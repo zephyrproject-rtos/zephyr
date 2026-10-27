@@ -7,7 +7,7 @@ menuconfig GPIO_PCAL9722
 	bool "PCAL9722 SPI GPIO chip"
 	default y
 	depends on DT_HAS_NXP_PCAL9722_ENABLED
-	depends on SPI
+	select SPI
 	help
 	  Enable driver for PCAL9722 SPI GPIO chip.
 
