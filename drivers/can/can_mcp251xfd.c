@@ -13,6 +13,7 @@
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 
@@ -1041,6 +1042,13 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 
 	while (1) {
 		k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
+		/* without a clock in Sleep mode the flags cannot be cleared */
+		if (dev_data->sleeping) {
+			k_mutex_unlock(&dev_data->mutex);
+			break;
+		}
+
 		reg_int_hw = mcp251xfd_read_crc(dev, MCP251XFD_REG_INT, sizeof(*reg_int_hw));
 
 		if (!reg_int_hw) {
@@ -1148,12 +1156,19 @@ static void mcp251xfd_int_thread(const struct device *dev)
 		k_sem_take(&dev_data->int_sem, K_FOREVER);
 		mcp251xfd_handle_interrupts(dev);
 
-		/* Re-enable pin interrupts */
-		ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_LEVEL_ACTIVE);
-		if (ret < 0) {
-			LOG_ERR("Couldn't enable pin interrupt [%d]", ret);
-			k_oops();
+		/* Re-enable pin interrupts, unless the controller went to Sleep meanwhile:
+		 * then they are re-enabled on resume.
+		 */
+		k_mutex_lock(&dev_data->mutex, K_FOREVER);
+		if (!dev_data->sleeping) {
+			ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt,
+							      GPIO_INT_LEVEL_ACTIVE);
+			if (ret < 0) {
+				LOG_ERR("Couldn't enable pin interrupt [%d]", ret);
+				k_oops();
+			}
 		}
+		k_mutex_unlock(&dev_data->mutex);
 	}
 }
 
@@ -1199,6 +1214,11 @@ static int mcp251xfd_start(const struct device *dev)
 		return -EALREADY;
 	}
 
+	if (dev_data->sleeping) {
+		LOG_ERR("Device is suspended");
+		return -EIO;
+	}
+
 	/* in case of a race between mcp251xfd_send() and mcp251xfd_stop() */
 	mcp251xfd_reset_tx_fifos(dev, -ENETDOWN);
 
@@ -1223,6 +1243,7 @@ static int mcp251xfd_start(const struct device *dev)
 		}
 	} else {
 		dev_data->common.started = true;
+		pm_device_busy_set(dev);
 	}
 
 	k_mutex_unlock(&dev_data->mutex);
@@ -1272,6 +1293,7 @@ static int mcp251xfd_stop(const struct device *dev)
 	}
 
 	dev_data->common.started = false;
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&dev_data->mutex);
 
 	if (dev_cfg->common.phy != NULL) {
@@ -1726,6 +1748,184 @@ static int mcp251xfd_init(const struct device *dev)
 	return ret;
 }
 
+#ifdef CONFIG_PM_DEVICE
+/* Called with the mutex held */
+static int mcp251xfd_wake(const struct device *dev)
+{
+	const struct mcp251xfd_config *dev_cfg = dev->config;
+	struct mcp251xfd_data *dev_data = dev->data;
+	uint8_t mode;
+	int ret;
+
+	/* until the PLL has locked, SCK is limited as in mcp251xfd_init() */
+	if (dev_cfg->pll_enable) {
+		dev_data->spi_cfg = &dev_data->spi_cfg_init;
+	}
+
+	/* writing OSC with OSCDIS cleared wakes the controller up into Configuration mode */
+	ret = mcp251xfd_init_osc_reg(dev);
+
+	dev_data->spi_cfg = &dev_cfg->bus.config;
+
+	if (ret < 0) {
+		LOG_ERR("Failed to wake up the device [%d]", ret);
+		return ret;
+	}
+
+	ret = mcp251xfd_get_mode_internal(dev, &mode);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (mode != MCP251XFD_REG_CON_MODE_CONFIG) {
+		LOG_ERR("Device woke up in mode %d", mode);
+		return -EIO;
+	}
+
+	dev_data->current_mcp251xfd_mode = MCP251XFD_REG_CON_MODE_CONFIG;
+	dev_data->sleeping = false;
+
+	/* flags raised while sleeping are handled now */
+	ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_LEVEL_ACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Couldn't enable pin interrupt [%d]", ret);
+	}
+
+	return ret;
+}
+
+/* Writes REQOP without waiting for the mode change, called with the mutex held */
+static int mcp251xfd_request_mode(const struct device *dev, uint8_t mode)
+{
+	uint32_t *reg;
+	uint32_t reg_con;
+
+	reg = mcp251xfd_read_crc(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
+	if (!reg) {
+		return -EIO;
+	}
+
+	reg_con = sys_le32_to_cpu(*reg);
+	reg_con &= ~MCP251XFD_REG_CON_REQOP_MASK;
+	reg_con |= FIELD_PREP(MCP251XFD_REG_CON_REQOP_MASK, mode);
+
+	*reg = sys_cpu_to_le32(reg_con);
+
+	return mcp251xfd_write(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
+}
+
+/* Called with the mutex held */
+static int mcp251xfd_sleep(const struct device *dev)
+{
+	const struct mcp251xfd_config *dev_cfg = dev->config;
+	struct mcp251xfd_data *dev_data = dev->data;
+	uint16_t *reg_int_hw;
+	uint16_t reg_int;
+	int ret;
+
+	/*
+	 * Interrupt flags cannot be cleared without a clock, so the INT pin
+	 * interrupt stays disabled until wake up.
+	 */
+	dev_data->sleeping = true;
+
+	ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_DISABLE);
+	if (ret < 0) {
+		goto err;
+	}
+
+	/*
+	 * can_stop() leaves MODIF set until the interrupt thread runs. With the
+	 * flag pending, the Sleep request stays in REQOP and OSCDIS never gets
+	 * set (seen on MCP2518FD, not documented), so the flags the interrupt
+	 * handler would clear are cleared here.
+	 */
+	reg_int_hw = mcp251xfd_read_crc(dev, MCP251XFD_REG_INT, sizeof(*reg_int_hw));
+	if (!reg_int_hw) {
+		ret = -EIO;
+		goto err;
+	}
+
+	reg_int = sys_le16_to_cpu(*reg_int_hw);
+	if (reg_int & MCP251XFD_REG_INT_IF_CLEARABLE_MASK) {
+		*reg_int_hw = sys_cpu_to_le16(reg_int & ~MCP251XFD_REG_INT_IF_CLEARABLE_MASK);
+
+		ret = mcp251xfd_write(dev, MCP251XFD_REG_INT, sizeof(*reg_int_hw));
+		if (ret < 0) {
+			goto err;
+		}
+	}
+
+	ret = mcp251xfd_request_mode(dev, MCP251XFD_REG_CON_MODE_SLEEP);
+	if (ret < 0) {
+		goto err;
+	}
+
+	/* in Sleep mode OPMOD reads as Configuration mode, OSCDIS is the handshake */
+	ret = mcp251xfd_reg_check_value_wtimeout(
+		dev, MCP251XFD_REG_OSC, MCP251XFD_REG_OSC_OSCDIS, MCP251XFD_REG_OSC_OSCDIS,
+		MCP251XFD_MODE_CHANGE_TIMEOUT_USEC, MCP251XFD_MODE_CHANGE_RETRIES, true);
+	if (ret < 0) {
+		goto err;
+	}
+
+	dev_data->current_mcp251xfd_mode = MCP251XFD_REG_CON_MODE_SLEEP;
+
+	return 0;
+
+err:
+	LOG_ERR("Failed to enter Sleep mode [%d]", ret);
+
+	/*
+	 * Withdraw a pending Sleep request, otherwise the controller may enter
+	 * Sleep mode later on its own. mcp251xfd_set_mode_internal() does not
+	 * rewrite REQOP, since OPMOD already reads as Configuration mode.
+	 */
+	(void)mcp251xfd_request_mode(dev, MCP251XFD_REG_CON_MODE_CONFIG);
+	(void)mcp251xfd_wake(dev);
+
+	return ret;
+}
+
+/*
+ * Suspend puts the stopped controller into Sleep mode (not Low Power Mode):
+ * the clock stops, registers and RAM are retained, so the timing and the RX
+ * filters survive. Frames left in the RX FIFO do not: can_stop() puts the
+ * controller into Configuration mode, where the FIFOs are held in reset
+ * (FRESET), so stale frames are not delivered after resume. With
+ * xstby-enable the controller drives XSTBY high in Sleep mode, putting the
+ * transceiver into standby. Resume wakes the controller up into
+ * Configuration mode, ready for can_start().
+ */
+static int mcp251xfd_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct mcp251xfd_data *dev_data = dev->data;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
+		if (dev_data->common.started) {
+			LOG_DBG("Cannot suspend while started");
+			ret = -EBUSY;
+		} else {
+			ret = mcp251xfd_sleep(dev);
+		}
+
+		k_mutex_unlock(&dev_data->mutex);
+		return ret;
+	case PM_DEVICE_ACTION_RESUME:
+		k_mutex_lock(&dev_data->mutex, K_FOREVER);
+		ret = mcp251xfd_wake(dev);
+		k_mutex_unlock(&dev_data->mutex);
+		return ret;
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(can, mcp251xfd_api_funcs) = {
 	.get_capabilities = mcp251xfd_get_capabilities,
 	.set_mode = mcp251xfd_set_mode,
@@ -1812,8 +2012,10 @@ static DEVICE_API(can, mcp251xfd_api_funcs) = {
 		MCP251XFD_SET_CLOCK(inst)                                                          \
 	};                                                                                         \
                                                                                                    \
-	CAN_DEVICE_DT_INST_DEFINE(inst, mcp251xfd_init, NULL, &mcp251xfd_data_##inst,             \
-				  &mcp251xfd_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, \
-				  &mcp251xfd_api_funcs);
+	PM_DEVICE_DT_INST_DEFINE(inst, mcp251xfd_pm_action);                                       \
+                                                                                                   \
+	CAN_DEVICE_DT_INST_DEFINE(inst, mcp251xfd_init, PM_DEVICE_DT_INST_GET(inst),               \
+				  &mcp251xfd_data_##inst, &mcp251xfd_config_##inst, POST_KERNEL,   \
+				  CONFIG_CAN_INIT_PRIORITY, &mcp251xfd_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP251XFD_INIT)
