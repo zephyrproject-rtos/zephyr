@@ -81,10 +81,10 @@ When using this method, device power management is mostly done inside
 If a decision to enter a CPU lower power state is made, the power management
 subsystem will check if the selected low power state triggers device power
 management and then suspend devices before changing state. The subsystem takes
-care of suspending devices following their initialization order, ensuring that
-possible dependencies between them are satisfied. As soon as the CPU wakes up
-from a sleep state, devices are resumed in the opposite order that they were
-suspended.
+care of suspending devices in the reverse of their initialization order,
+ensuring that possible dependencies between them are satisfied. As soon as the
+CPU wakes up from a sleep state, devices are resumed in the opposite order that
+they were suspended.
 
 The decision about suspending devices when entering a low power state is done based on the
 state and if it has set the property ``zephyr,pm-device-disabled``. Here is
