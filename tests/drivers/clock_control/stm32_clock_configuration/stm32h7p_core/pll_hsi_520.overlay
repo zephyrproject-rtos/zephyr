@@ -1,0 +1,46 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_hsi {
+	hsi-div = <1>;
+	status = "okay";
+};
+
+&perck {
+	clocks = <&rcc STM32_SRC_HSI CKPER_SEL(0)>;
+	status = "okay";
+};
+
+&pll {
+	/*
+	 * f(hsi_ck)    =  64 MHz
+	 * f(vco1_ck)   = 520 MHz: (64 / 16) * 130
+	 * f(pll1_p_ck) = 520 MHz: (520 / 1)
+	 * f(pll1_q_ck) =  65 MHz: (520 / 8)
+	 * pll1_s_ck is not used
+	 */
+	clocks = <&clk_hsi>;
+	div-m = <16>;
+	mul-n = <130>;
+	div-p = <1>;
+	div-q = <8>;
+	status = "okay";
+};
+
+&rcc {
+	/*
+	 * Select pll1_p_ck as system clock (sys_ck).
+	 * BMPRE is set to 2 to satisfy Fbus <= Fbusmax = 260 MHz.
+	 * PPRE1/PPRE4 are set to 2 to satisfy Fbus <= Fbusmax/2.
+	 */
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(520)>;
+	cpre = <1>;
+	bmpre = <2>;
+	ppre1 = <2>;
+	ppre2 = <1>;
+	ppre4 = <2>;
+};
