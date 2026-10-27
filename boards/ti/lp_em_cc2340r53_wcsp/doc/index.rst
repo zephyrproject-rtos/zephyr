@@ -6,7 +6,7 @@ TI CC2340R53 WCSP Launchpad
 Overview
 ********
 
-The Texas Instruments CC2340R53 WCSP LaunchPad |trade| (LP_EM_CC2340R53_WCSP) is a
+The Texas Instruments CC2340R53 WCSP LaunchPad™ (LP_EM_CC2340R53_WCSP) is a
 development kit featuring the CC2340R53 WCSP (Wafer-Level Chip Scale Package)
 mounted on an LP_EM_CC2340R5 base board.
 
@@ -15,13 +15,13 @@ See the `TI CC2340R53 LaunchPad Product Page`_ for details.
 Hardware
 ********
 
-The CC2340R53 WCSP LaunchPad |trade| development kit features the CC2340R53 wireless MCU
+The CC2340R53 WCSP LaunchPad™ development kit features the CC2340R53 wireless MCU
 in the YBG package variant. The board is equipped with two LEDs, two push buttons
 and BoosterPack connectors for expansion.
 
-The CC2340R53 wireless MCU has a 48 MHz Arm |reg| Cortex |reg|-M0+ SoC and an
-integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth
-|reg| Low Energy and IEEE |reg| 802.15.4.
+The CC2340R53 wireless MCU has a 48 MHz Arm® Cortex®-M0+ SoC and an
+integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth®
+Low Energy and IEEE® 802.15.4.
 
 See the `TI CC2340R53 Product Page`_ for additional details.
 

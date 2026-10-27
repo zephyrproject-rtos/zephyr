@@ -6,8 +6,8 @@ TI CC2745R10_Q1 Launchpad
 Overview
 ********
 
-The Texas Instruments CC2745R10_Q1 LaunchPad |trade| (LP_EM_CC2745R10_Q1) is a
-development kit for the SimpleLink |trade| multi-Standard CC2745R10_Q1 wireless MCU.
+The Texas Instruments CC2745R10_Q1 LaunchPad™ (LP_EM_CC2745R10_Q1) is a
+development kit for the SimpleLink™ multi-Standard CC2745R10_Q1 wireless MCU.
 
 See the `TI CC2745R10_Q1 LaunchPad Product Page`_ for details.
 
@@ -15,12 +15,12 @@ See the `TI CC2745R10_Q1 LaunchPad Product Page`_ for details.
    :align: center
    :alt: TI CC2745R10_Q1 Launchpad
 
-   Texas Instruments Cc2745r10_q1 LaunchPad |trade|
+   Texas Instruments Cc2745r10_q1 LaunchPad™
 
 Hardware
 ********
 
-The CC2745R10_Q1 LaunchPad |trade| development kit features the CC2745R10_Q1 wireless MCU.
+The CC2745R10_Q1 LaunchPad™ development kit features the CC2745R10_Q1 wireless MCU.
 The board is equipped with two LEDs, two push buttons and BoosterPack connectors
 for expansion.
 
@@ -32,9 +32,9 @@ The board also supports the CC2755R10 device, and is available in two configurat
 - The ``lp_em_cc2745r10_q1/cc2755r10`` configuration should be used if a CC2755R10 device
   is mounted on the board instead.
 
-The CC2745R10_Q1 wireless MCU has a 96 MHz Arm |reg| Cortex |reg|-M33 SoC and an
-integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth
-|reg| Low Energy and IEEE |reg| 802.15.4.
+The CC2745R10_Q1 wireless MCU has a 96 MHz Arm® Cortex®-M33 SoC and an
+integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth®
+Low Energy and IEEE® 802.15.4.
 
 The CC2755R10 wireless MCU supports additional protocols such as Matter, Thread, and Zigbee
 

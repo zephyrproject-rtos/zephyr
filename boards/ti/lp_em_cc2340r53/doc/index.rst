@@ -6,8 +6,8 @@ TI CC2340R53 Launchpad
 Overview
 ********
 
-The Texas Instruments CC2340R53 LaunchPad |trade| (LP_EM_CC2340R53) is a
-development kit for the SimpleLink |trade| multi-Standard CC2340R53 wireless MCU.
+The Texas Instruments CC2340R53 LaunchPad™ (LP_EM_CC2340R53) is a
+development kit for the SimpleLink™ multi-Standard CC2340R53 wireless MCU.
 
 See the `TI CC2340R53 LaunchPad Product Page`_ for details.
 
@@ -15,18 +15,18 @@ See the `TI CC2340R53 LaunchPad Product Page`_ for details.
    :align: center
    :alt: TI CC2340R53 Launchpad
 
-   Texas Instruments CC2340R53 LaunchPad |trade|
+   Texas Instruments CC2340R53 LaunchPad™
 
 Hardware
 ********
 
-The CC2340R53 LaunchPad |trade| development kit features the CC2340R53 wireless MCU.
+The CC2340R53 LaunchPad™ development kit features the CC2340R53 wireless MCU.
 The board is equipped with two LEDs, two push buttons and BoosterPack connectors
 for expansion.
 
-The CC2340R53 wireless MCU has a 48 MHz Arm |reg| Cortex |reg|-M0+ SoC and an
-integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth
-|reg| Low Energy and IEEE |reg| 802.15.4.
+The CC2340R53 wireless MCU has a 48 MHz Arm® Cortex®-M0+ SoC and an
+integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth®
+Low Energy and IEEE® 802.15.4.
 
 See the `TI CC2340R53 Product Page`_ for additional details.
 

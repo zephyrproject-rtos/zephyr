@@ -6,20 +6,20 @@ TI CC2340R5 Module LaunchPad
 Overview
 ********
 
-The Texas Instruments CC2340R5 Module LaunchPad |trade| (LP_EM_CC2340R5MODA) is a
-development kit for the SimpleLink |trade| CC2340R5 wireless module (MODA package).
+The Texas Instruments CC2340R5 Module LaunchPad™ (LP_EM_CC2340R5MODA) is a
+development kit for the SimpleLink™ CC2340R5 wireless module (MODA package).
 
 Hardware
 ********
 
-The CC2340R5 Module LaunchPad |trade| development kit features the CC2340R5MODA
+The CC2340R5 Module LaunchPad™ development kit features the CC2340R5MODA
 wireless module. The board is equipped with two LEDs, two push buttons and
 BoosterPack connectors for expansion. Note that due to the module package, many
 BoosterPack pins are not connected.
 
-The CC2340R5 wireless MCU has a 48 MHz Arm |reg| Cortex |reg|-M0+ SoC and an
-integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth
-|reg| Low Energy and IEEE |reg| 802.15.4.
+The CC2340R5 wireless MCU has a 48 MHz Arm® Cortex®-M0+ SoC and an
+integrated 2.4 GHz transceiver supporting multiple protocols including Bluetooth®
+Low Energy and IEEE® 802.15.4.
 
 Supported Features
 ==================
