@@ -962,24 +962,15 @@ static inline USART_Stopbits_TypeDef uart_silabs_cfg2ll_stopbits(
 }
 
 static inline USART_Databits_TypeDef uart_silabs_cfg2ll_databits(
-	enum uart_config_data_bits db, enum uart_config_parity p)
+	enum uart_config_data_bits db)
 {
 	switch (db) {
 	case UART_CFG_DATA_BITS_7:
-		if (p == UART_CFG_PARITY_NONE) {
-			return usartDatabits7;
-		} else {
-			return usartDatabits8;
-		}
+		return usartDatabits7;
 	case UART_CFG_DATA_BITS_9:
 		return usartDatabits9;
 	case UART_CFG_DATA_BITS_8:
 	default:
-		if (p == UART_CFG_PARITY_NONE) {
-			return usartDatabits8;
-		} else {
-			return usartDatabits9;
-		}
 		return usartDatabits8;
 	}
 }
@@ -1003,8 +994,7 @@ static void uart_silabs_configure_peripheral(const struct device *dev, bool enab
 	usartInit.baudrate = data->uart_cfg->baudrate;
 	usartInit.parity = uart_silabs_cfg2ll_parity(data->uart_cfg->parity);
 	usartInit.stopbits = uart_silabs_cfg2ll_stopbits(data->uart_cfg->stop_bits);
-	usartInit.databits = uart_silabs_cfg2ll_databits(data->uart_cfg->data_bits,
-							 data->uart_cfg->parity);
+	usartInit.databits = uart_silabs_cfg2ll_databits(data->uart_cfg->data_bits);
 	usartInit.hwFlowControl = uart_silabs_cfg2ll_hwctrl(data->uart_cfg->flow_ctrl);
 	usartInit.enable = enable ? usartEnable : usartDisable;
 
