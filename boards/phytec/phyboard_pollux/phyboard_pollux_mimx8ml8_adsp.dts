@@ -1,0 +1,33 @@
+/*
+ * SPDX-FileCopyrightText: 2026 PHYTEC Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8m.dtsi>
+#include "phyboard_pollux-pinctrl.dtsi"
+
+/ {
+	compatible = "phytec,phyboard-pollux";
+	model = "phyBOARD-Pollux i.MX8MP Audio DSP";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+};
+
+&sai2 {
+	pinctrl-0 = <&sai2_default>;
+	pinctrl-names = "default";
+};
+
+&uart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
