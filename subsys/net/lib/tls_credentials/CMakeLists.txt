@@ -15,6 +15,9 @@ zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE
 zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_KEYGEN
   tls_credentials_keygen.c
 )
+zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_KEYGEN_KEY_STORE_DEFAULT
+  tls_credentials_keygen_store.c
+)
 zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_SHELL
   tls_credentials_shell.c
 )
