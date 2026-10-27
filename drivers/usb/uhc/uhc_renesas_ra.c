@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/usb/class/usb_hub.h>
 #include <r_usb_host.h>
 
 #include "uhc_common.h"
@@ -20,8 +21,6 @@ LOG_MODULE_REGISTER(uhc_renesas_ra, CONFIG_UHC_DRIVER_LOG_LEVEL);
 enum uhc_renesas_ra_event_type {
 	/* Shim driver event to trigger next transfer */
 	UHC_RENESAS_RA_EVT_XFER,
-	/* Device speed check, typically performed after a RESET signal is issued */
-	UHC_RENESAS_RA_EVT_POLL_PORT_SPEED,
 	/* Submit a xfer after complete */
 	UHC_RENESAS_RA_EVT_XFER_SUBMIT,
 	/* Cancel a queued/in-flight xfer on the given endpoint */
@@ -65,6 +64,9 @@ struct uhc_renesas_ra_data {
 	struct uhc_renesas_ra_pipe dcp;
 	struct uhc_renesas_ra_pipe pipe[10];
 	struct uhc_renesas_ra_endpoint ep[10][16][2];
+	/* Root hub status and change bits, the controller has no hub registers */
+	struct usb_hub_status hub_status;
+	struct usb_hub_port_status port_status;
 };
 
 struct uhc_renesas_ra_config {
@@ -91,16 +93,6 @@ static int uhc_renesas_ra_xfer_request(const struct device *dev, uint8_t dev_add
 	};
 
 	return k_msgq_put(&priv->msgq, &event, K_NO_WAIT);
-}
-
-static int uhc_renesas_ra_event_poll_port_speed(const struct device *dev)
-{
-	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
-	struct uhc_renesas_ra_evt evt = {
-		.type = UHC_RENESAS_RA_EVT_POLL_PORT_SPEED,
-	};
-
-	return k_msgq_put(&priv->msgq, &evt, K_NO_WAIT);
 }
 
 static int uhc_renesas_ra_lock(const struct device *dev)
@@ -314,7 +306,8 @@ static bool is_configured_udev(const struct device *dev, uint8_t device_addr)
  * hub leading towards udev. The controller performs split transactions against this
  * hub, which is not necessarily udev's immediate parent when one or more full-speed
  * hubs sit in between. hub_addr is left at 0 (root port) when udev has no high-speed
- * hub ancestor.
+ * hub ancestor. The root hub is emulated and not known to the controller, so it is
+ * never reported.
  */
 static void get_hs_hub_addr_port(struct usb_device *udev, uint8_t *hub_addr, uint8_t *hub_port)
 {
@@ -323,7 +316,7 @@ static void get_hs_hub_addr_port(struct usb_device *udev, uint8_t *hub_addr, uin
 	*hub_addr = 0;
 	*hub_port = 0;
 
-	while (node->hub != NULL) {
+	while (node->hub != NULL && node->hub->hub != NULL) {
 		if (node->hub->speed == USB_SPEED_SPEED_HS) {
 			*hub_addr = node->hub->addr;
 			*hub_port = node->hub_port;
@@ -497,37 +490,24 @@ static int uhc_renesas_ra_ep_dequeue(const struct device *dev, struct uhc_transf
 	return 0;
 }
 
-static int uhc_renesas_ra_poll_port_speed(const struct device *dev)
+static int uhc_renesas_ra_poll_port_speed(const struct device *dev, usb_speed_t *speed)
 {
 	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
-	usb_speed_t speed = USB_SPEED_INVALID;
 	fsp_err_t err;
+
+	*speed = USB_SPEED_INVALID;
 
 	for (size_t i = 0; i < CONFIG_UHC_RENESAS_RA_OSC_WAIT_RETRIES; i++) {
 		k_msleep(20);
 
-		err = R_USBH_GetDeviceSpeed(&priv->uhc_ctrl, &speed);
+		err = R_USBH_GetDeviceSpeed(&priv->uhc_ctrl, speed);
 		if (err != FSP_SUCCESS) {
 			return -EIO;
 		}
 
-		if (speed != USB_SPEED_INVALID) {
+		if (*speed != USB_SPEED_INVALID) {
 			break;
 		}
-	}
-
-	switch (speed) {
-	case USB_SPEED_LS:
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_LS, 0);
-		break;
-	case USB_SPEED_FS:
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
-		break;
-	case USB_SPEED_HS:
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_HS, 0);
-		break;
-	default:
-		return -EINVAL;
 	}
 
 	return 0;
@@ -663,9 +643,13 @@ static int uhc_renesas_ra_release_devices(const struct device *dev)
 static void uhc_renesas_ra_device_attach(const struct device *dev, usbh_event_t *event)
 {
 	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
-	fsp_err_t err;
 
-	if (event->attach.speed == USB_SPEED_INVALID) {
+	switch (event->attach.speed) {
+	case USB_SPEED_LS:
+	case USB_SPEED_FS:
+	case USB_SPEED_HS:
+		break;
+	default:
 		LOG_WRN("Spurious attach event");
 		return;
 	}
@@ -673,25 +657,21 @@ static void uhc_renesas_ra_device_attach(const struct device *dev, usbh_event_t 
 	/* Drop what was queued for the previous device after it went away */
 	(void)uhc_renesas_ra_release_devices(dev);
 
-	/*
-	 * A high-speed device only switches to high speed during the reset, so
-	 * report the device once the reset has settled its speed.
-	 */
-	err = R_USBH_PortReset(&priv->uhc_ctrl);
-	if (err != FSP_SUCCESS) {
-		return;
-	}
-
-	uhc_renesas_ra_event_poll_port_speed(dev);
+	priv->port_status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_CONNECTION;
+	priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
 }
 
 static void uhc_renesas_ra_device_detach(const struct device *dev, usbh_event_t *hal_evt)
 {
+	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+
 	if (uhc_renesas_ra_release_devices(dev) != 0) {
 		return;
 	}
 
-	uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
+	priv->port_status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+	priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
 }
 
 static void uhc_renesas_ra_thread(void *p1, void *p2, void *p3)
@@ -717,12 +697,6 @@ static void uhc_renesas_ra_thread(void *p1, void *p2, void *p3)
 			ret = uhc_renesas_ra_schedule_xfer(dev, event.dev_addr, event.ep);
 			if (unlikely(ret)) {
 				LOG_WRN("Failed to schedule xfer");
-			}
-			break;
-		case UHC_RENESAS_RA_EVT_POLL_PORT_SPEED:
-			ret = uhc_renesas_ra_poll_port_speed(dev);
-			if (unlikely(ret)) {
-				LOG_WRN("Poll device speed failed with error %d", ret);
 			}
 			break;
 		case UHC_RENESAS_RA_EVT_XFER_SUBMIT:
@@ -804,6 +778,298 @@ static int uhc_renesas_ra_bus_resume(const struct device *dev)
 	return 0;
 }
 
+/*
+ * Hub Descriptor. The controller has a single physical port, no TT and no
+ * over-current reporting.
+ * D1:D0 Logical Power Switching Mode, Individual port power switching
+ * D4:D3 Over-current Protection Mode, No over-current protection
+ */
+#define UHC_RENESAS_RA_HUB_CHARACTERISTICS (BIT(0) | BIT(4))
+
+struct uhc_renesas_ra_hub_desc {
+	struct usb_hub_descriptor hub;
+	uint8_t DeviceRemovable[DIV_ROUND_UP(1 + 1, 8)];
+	uint8_t PortPwrCtrlMask[DIV_ROUND_UP(1 + 1, 8)];
+} __packed;
+
+/* USB 2.0 11.23.2.1: PortPwrCtrlMask should have all bits set to 1B. */
+static const struct uhc_renesas_ra_hub_desc uhc_renesas_ra_hub_desc = {
+	.hub = {
+		.bDescLength = sizeof(struct uhc_renesas_ra_hub_desc),
+		.bDescriptorType = USB_HUB_DESCRIPTOR_TYPE,
+		.bNbrPorts = 1,
+		.wHubCharacteristics = sys_cpu_to_le16(UHC_RENESAS_RA_HUB_CHARACTERISTICS),
+	},
+	.PortPwrCtrlMask = {0xFF},
+};
+
+static int hub_sreq_get_desc(const struct device *dev,
+			     const struct usb_setup_packet *const setup,
+			     struct net_buf *const buf)
+{
+	size_t len;
+
+	ARG_UNUSED(dev);
+
+	len = MIN(sizeof(uhc_renesas_ra_hub_desc), setup->wLength);
+	net_buf_add_mem(buf, &uhc_renesas_ra_hub_desc, len);
+
+	return 0;
+}
+
+static int hub_hcreq_get_status(const struct device *dev,
+				const struct usb_setup_packet *const setup,
+				struct net_buf *const buf)
+{
+	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+	const void *data;
+	size_t len;
+
+	switch (setup->RequestType.recipient) {
+	case USB_REQTYPE_RECIPIENT_DEVICE:
+		data = &priv->hub_status;
+		len = sizeof(priv->hub_status);
+		break;
+	case USB_REQTYPE_RECIPIENT_OTHER:
+		if (setup->wIndex != 1) {
+			return -EPIPE;
+		}
+
+		data = &priv->port_status;
+		len = sizeof(priv->port_status);
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	net_buf_add_mem(buf, data, MIN(len, setup->wLength));
+
+	return 0;
+}
+
+static int hub_dev_set_feature(const struct device *dev,
+			       const struct usb_setup_packet *const setup)
+{
+	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+
+	/* USB 2.0 Table 11-17: C_HUB_x selector value is its bit number in wHubChange. */
+	if (setup->wValue > USB_HCFS_C_HUB_OVER_CURRENT) {
+		return -EPIPE;
+	}
+
+	priv->hub_status.wHubChange |= BIT(setup->wValue);
+
+	return 0;
+}
+
+static int hub_dev_clear_feature(const struct device *dev,
+				 const struct usb_setup_packet *const setup)
+{
+	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+
+	if (setup->wValue > USB_HCFS_C_HUB_OVER_CURRENT) {
+		return -EPIPE;
+	}
+
+	priv->hub_status.wHubChange &= ~BIT(setup->wValue);
+
+	return 0;
+}
+
+static int hub_port_reset(const struct device *dev)
+{
+	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+	usb_speed_t speed = USB_SPEED_INVALID;
+	fsp_err_t err;
+	int ret;
+
+	if ((priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION) == 0U) {
+		return 0;
+	}
+
+	priv->port_status.wPortStatus &= (USB_HUB_PORT_STATUS_POWER |
+					  USB_HUB_PORT_STATUS_CONNECTION);
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_RESET;
+
+	err = R_USBH_PortReset(&priv->uhc_ctrl);
+	if (err != FSP_SUCCESS) {
+		ret = -EIO;
+	} else {
+		ret = uhc_renesas_ra_poll_port_speed(dev, &speed);
+	}
+
+	priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_RESET;
+	if (ret != 0) {
+		return ret;
+	}
+
+	switch (speed) {
+	case USB_SPEED_HS:
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_HIGH_SPEED;
+		break;
+	case USB_SPEED_LS:
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_LOW_SPEED;
+		break;
+	case USB_SPEED_FS:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_ENABLE;
+	priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_RESET;
+
+	return 0;
+}
+
+static int hub_port_set_feature(const struct device *dev,
+				const struct usb_setup_packet *const setup)
+{
+	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		/* The driver has no VBUS switch. VBUS is always supplied. */
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_RESET:
+		return hub_port_reset(dev);
+	case USB_HCFS_PORT_SUSPEND:
+		if ((priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_ENABLE) != 0U) {
+			if (R_USBH_BusSuspend(&priv->uhc_ctrl) != FSP_SUCCESS) {
+				return -EIO;
+			}
+
+			priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_SUSPEND;
+		}
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int hub_port_clear_feature(const struct device *dev,
+				  const struct usb_setup_packet *const setup)
+{
+	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+	uint16_t c_bit;
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		/* The driver has no VBUS switch. VBUS stays supplied. */
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_ENABLE:
+		/* The controller cannot disable its port. */
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_ENABLE;
+		break;
+	case USB_HCFS_PORT_SUSPEND:
+		/* USB 2.0 11.24.2.13: if the port is not suspended, treat this as a no-op. */
+		if ((priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_SUSPEND) != 0U) {
+			if (R_USBH_BusResume(&priv->uhc_ctrl) != FSP_SUCCESS) {
+				return -EIO;
+			}
+
+			priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
+			priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_SUSPEND;
+		}
+		break;
+	case USB_HCFS_C_PORT_CONNECTION:
+	case USB_HCFS_C_PORT_ENABLE:
+	case USB_HCFS_C_PORT_SUSPEND:
+	case USB_HCFS_C_PORT_OVER_CURRENT:
+	case USB_HCFS_C_PORT_RESET:
+		/* USB 2.0 Table 11-17: C_PORT_x selector value is 16 plus its bit number. */
+		c_bit = BIT(setup->wValue - USB_HCFS_C_PORT_CONNECTION);
+		priv->port_status.wPortChange &= ~c_bit;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int uhc_renesas_ra_root_hub_control(const struct device *dev,
+					   const struct usb_setup_packet *const setup,
+					   struct net_buf *const buf)
+{
+	int ret;
+
+	switch (setup->bRequest) {
+	case USB_SREQ_GET_DESCRIPTOR:
+		ret = hub_sreq_get_desc(dev, setup, buf);
+		break;
+	case USB_HCREQ_GET_STATUS:
+		ret = hub_hcreq_get_status(dev, setup, buf);
+		break;
+	case USB_HCREQ_SET_FEATURE:
+		if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE) {
+			ret = hub_dev_set_feature(dev, setup);
+		} else {
+			ret = hub_port_set_feature(dev, setup);
+		}
+		break;
+	case USB_HCREQ_CLEAR_FEATURE:
+		if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE) {
+			ret = hub_dev_clear_feature(dev, setup);
+		} else {
+			ret = hub_port_clear_feature(dev, setup);
+		}
+		break;
+	case USB_HCREQ_CLEAR_TT_BUFFER:
+	case USB_HCREQ_RESET_TT:
+	case USB_HCREQ_GET_TT_STATE:
+	case USB_HCREQ_STOP_TT:
+		/* The root port is not connected through a TT. */
+		ret = -EPIPE;
+		break;
+	default:
+		LOG_ERR("root hub: unsupported request 0x%02x", setup->bRequest);
+		ret = -EPIPE;
+		break;
+	}
+
+	return ret;
+}
+
+/*
+ * Hub and Port Status Change Bitmap, USB 2.0 11.12.4: bit 0 is the hub's
+ * own change, bit 1 is the single port's change.
+ */
+static int uhc_renesas_ra_root_hub_status(const struct device *dev, struct net_buf *const buf)
+{
+	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+	uint8_t bitmap[DIV_ROUND_UP(1 + 1, 8)] = {0};
+	bool changed = false;
+
+	if (priv->hub_status.wHubChange != 0U) {
+		bitmap[0] |= BIT(0);
+		changed = true;
+	}
+
+	if (priv->port_status.wPortChange != 0U) {
+		bitmap[0] |= BIT(1);
+		changed = true;
+	}
+
+	if (changed) {
+		net_buf_add_mem(buf, bitmap, MIN(sizeof(bitmap), net_buf_tailroom(buf)));
+	}
+
+	return 0;
+}
+
 static int uhc_renesas_ra_init(const struct device *dev)
 {
 	const struct uhc_renesas_ra_config *config = dev->config;
@@ -858,6 +1124,8 @@ static int uhc_renesas_ra_enable(const struct device *dev)
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
+
+	priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_POWER;
 
 	return 0;
 }
@@ -914,6 +1182,8 @@ static DEVICE_API(uhc, uhc_renesas_ra_api) = {
 	.bus_resume = uhc_renesas_ra_bus_resume,
 	.ep_enqueue = uhc_renesas_ra_ep_enqueue,
 	.ep_dequeue = uhc_renesas_ra_ep_dequeue,
+	.root_hub_control = uhc_renesas_ra_root_hub_control,
+	.root_hub_status = uhc_renesas_ra_root_hub_status,
 };
 
 static void uhc_renesas_ra_event_xfer_complete(const struct device *dev, usbh_event_t *hal_evt)
