@@ -24,17 +24,40 @@ tests:
       - rpi_pico2/rp2350a/m33/w/mcuboot
       - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
   drivers.adc.pm:
+    tags:
+      - pm_runtime
     platform_allow:
+      - lp_mspm0g3507/mspm0g3507
       - lp_mspm0g3519/mspm0g3519
       - lp_mspm0l2228/mspm0l2228
     extra_args:
+      - platform:lp_mspm0g3507/mspm0g3507:DTC_OVERLAY_FILE="boards/lp_mspm0g3507.overlay;boards/lp_mspm0g3507_pm_runtime.overlay"
       - platform:lp_mspm0g3519/mspm0g3519:DTC_OVERLAY_FILE="boards/lp_mspm0g3519.overlay;boards/lp_mspm0g3519_pm_runtime.overlay"
       - platform:lp_mspm0l2228/mspm0l2228:DTC_OVERLAY_FILE="boards/lp_mspm0l2228.overlay;boards/lp_mspm0l2228_pm_runtime.overlay"
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+  drivers.adc.pm.policy:
+    tags:
+      - pm_runtime
+      - pm_policy
+    platform_allow:
+      - lp_mspm0g3507/mspm0g3507
+      - lp_mspm0g3519/mspm0g3519
+      - lp_mspm0l2228/mspm0l2228
+    extra_args:
+      - platform:lp_mspm0g3507/mspm0g3507:DTC_OVERLAY_FILE="boards/lp_mspm0g3507.overlay;boards/lp_mspm0g3507_pm_runtime.overlay;pm_policy.overlay"
+      - platform:lp_mspm0g3519/mspm0g3519:DTC_OVERLAY_FILE="boards/lp_mspm0g3519.overlay;boards/lp_mspm0g3519_pm_runtime.overlay;pm_policy.overlay"
+      - platform:lp_mspm0l2228/mspm0l2228:DTC_OVERLAY_FILE="boards/lp_mspm0l2228.overlay;boards/lp_mspm0l2228_pm_runtime.overlay;pm_policy.overlay"
     extra_configs:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
       - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+      - CONFIG_TICKLESS_KERNEL=y
+      - CONFIG_COUNTER=y
+      - CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER=y
+      - CONFIG_PM_PREWAKEUP_CONV_MODE_CEIL=y
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
@@ -142,6 +165,42 @@ tests:
   drivers.adc.dma_mspm0:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-mspm0.conf"
+    depends_on:
+      - dma
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+  drivers.adc.dma_mspm0.pm:
+    tags:
+      - pm_runtime
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-dma-mspm0.conf"
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+    depends_on:
+      - dma
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+  drivers.adc.dma_mspm0.pm.policy:
+    tags:
+      - pm_runtime
+      - pm_policy
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-dma-mspm0.conf"
+      - EXTRA_DTC_OVERLAY_FILE="pm_policy.overlay"
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+      - CONFIG_TICKLESS_KERNEL=y
+      - CONFIG_COUNTER=y
+      - CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER=y
+      - CONFIG_PM_PREWAKEUP_CONV_MODE_CEIL=y
     depends_on:
       - dma
     platform_allow:
