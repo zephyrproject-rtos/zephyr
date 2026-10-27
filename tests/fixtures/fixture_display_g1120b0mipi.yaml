@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An NXP G1120B0MIPI shield (1.2 inch 390x390 round AMOLED, 1-lane MIPI DSI) on the 40-pin MIPI
+  FPC connector of mimxrt595_evk or mimxrt700_evk, with the display_capture camera setup.

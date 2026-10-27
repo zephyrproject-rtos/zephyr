@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An ST Nucleo or Discovery board with the ST-LINK MCO solder bridge closed, so the ST-LINK 8
+  MHz MCO output reaches the target as HSE in bypass mode.

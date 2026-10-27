@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On NXP FRDM-KE1xZ boards, a jumper between an output and an input pin driven through the FGPIO
+  fast-bus controller: J1-16 (PTA14) to J1-14 (PTA17) on frdm_ke17z, J1-2 (PTC8) to J1-4 (PTC9)
+  on frdm_ke15z.

@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A TI TMP116, TMP117 or TMP119 breakout at address 0x4b on i2c1 of a nucleo_f401re, powered
+  from 3V3: SDA on CN5 D14, SCL on CN5 D15.
+notes: >-
+  Formerly fixture_i2c_tmp116.

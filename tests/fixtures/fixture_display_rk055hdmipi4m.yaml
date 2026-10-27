@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Rocktech 5.5 inch 720x1280 MIPI DSI panel with capacitive touch on the 40-pin MIPI FPC
+  connector of mimxrt1170_evk or mimxrt595_evk; the scenario builds with the rk055hdmipi4ma0
+  shield.
+notes: >-
+  The name refers to the older rk055hdmipi4m panel; the scenario uses the rk055hdmipi4ma0
+  replacement.

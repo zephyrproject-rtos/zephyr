@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The Arduino serial UART as 1-Wire master (zephyr,w1-serial) on an nrf52840dk or nucleo_g0b1re:
+  an open-drain bus with pull-up, TX and RX joined, and any number of 1-Wire devices on it.

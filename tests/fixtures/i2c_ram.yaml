@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An external I2C RAM or FRAM such as a Fujitsu MB85 at 7-bit address 0x51 on the bus named by
+  the i2c-ram alias (the Arduino I2C header on nrf52840dk and mimxrt1010_evk); it is written and
+  read back.

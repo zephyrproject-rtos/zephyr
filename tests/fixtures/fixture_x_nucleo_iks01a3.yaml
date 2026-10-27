@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An ST X-NUCLEO-IKS01A3 shield on the Arduino header of an nrf52dk/nrf52832; the test uses its
+  LIS2DW12 accelerometer (I2C address 0x19) with the interrupt on Arduino A3.

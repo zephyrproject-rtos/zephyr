@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A humidity and temperature sensor aliased as dht0 on I2C: a Renesas HS300x at 0x44 on i2c1 of
+  nucleo_f401re, or an AHT20, SHT4x, SHTC3 or HTS221 shield on the rp2040 Feather and QT Py
+  boards.
+notes: >-
+  Despite the name the rp2040 scenarios cover other I2C humidity sensors than the HS300x.

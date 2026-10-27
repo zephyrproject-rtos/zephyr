@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A DAC output pin wired to an ADC input pin so that a value written to the DAC can be read
+  back; the board overlay gives the pins (pic32cm_jh01_cpro: PA02 to PA04). Scenarios that route
+  the DAC to the ADC inside the chip need no wire.

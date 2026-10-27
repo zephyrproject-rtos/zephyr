@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A DS18B20 on a 1-Wire bus driven directly by the Arduino serial UART in open-drain mode as the
+  sample's board overlays configure it (nrf52840dk: RX P1.01 and TX P1.02 joined; nucleo_g0b1re:
+  USART1 TX PC4 open-drain), with an external pull-up on the bus.

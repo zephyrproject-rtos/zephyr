@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An AT24-compatible I2C EEPROM described by an atmel,at24 node and the eeprom-0 alias (the in-
+  tree overlay: address 0x50 on i2c0), used as a target for the I2C controller tests; the EEPROM
+  driver itself is disabled.

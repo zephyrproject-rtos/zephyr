@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On nrf54l15dk, the spi21 controller on port 2 pins wired to the spi22 peripheral on port 1
+  pins: SCK P2.06-P1.11, MOSI P2.08-P1.12, MISO P2.09-P1.13 and the CS GPIO P2.10 to CSN P1.14,
+  to exercise pins across power domains.

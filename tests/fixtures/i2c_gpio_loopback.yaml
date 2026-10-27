@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  Two I2C controllers wired together (SCL to SCL, SDA to SDA) plus a pair of GPIOs wired
+  together, for MCTP over I2C with a GPIO request line. On npcx4m8f_evb: I2C0 to I2C2 and GPIO44
+  to GPIO43.

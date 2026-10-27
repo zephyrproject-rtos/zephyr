@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The USB device port of the DUT connected to the twister host, which reads the console from the
+  resulting CDC ACM serial port instead of the debug UART.

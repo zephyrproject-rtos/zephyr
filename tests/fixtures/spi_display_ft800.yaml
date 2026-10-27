@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An FTDI VM800C board (FT800 EVE graphics controller with display) on the Arduino SPI header of
+  an nrf52840dk (SHIELD=ftdi_vm800c).

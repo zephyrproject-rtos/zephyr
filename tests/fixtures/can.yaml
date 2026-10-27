@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The zephyr,canbus controller of the DUT on a terminated CAN bus together with a python-can
+  supported CAN adapter of the twister host; the test exchanges frames over that adapter at 125
+  kbit/s (classic) and 1 Mbit/s (FD data phase). On native_sim a host vcan interface replaces
+  the adapter.
+notes: >-
+  A python-can configuration context may follow the name after a colon, for example can:can0 or
+  can:zcan0.

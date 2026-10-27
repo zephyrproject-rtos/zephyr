@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A P3T1755 temperature sensor on an I3C bus aliased as ambient-temp0: built in on frdm_mcxn947,
+  frdm_mcxa153 and frdm_mcxa577, or the p3t1755dp_ard_i3c shield on other NXP boards.

@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Seeed Studio Round Display for XIAO (39 mm round touch display) plugged onto a XIAO-format
+  board such as xiao_ble or xiao_esp32s3.

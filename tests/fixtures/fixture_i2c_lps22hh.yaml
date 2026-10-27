@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An ST LPS22HH pressure and temperature sensor on I2C, for example on the X-NUCLEO-IKS01A3
+  shield of an nrf52dk; the hardware map entry has to supply the shield.
+notes: >-
+  Overlaps with fixture_x_nucleo_iks01a3.

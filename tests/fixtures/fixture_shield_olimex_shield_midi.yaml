@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An Olimex SHIELD-MIDI (MIDI IN, OUT and THRU DIN-5 connectors) on the Arduino header of a
+  nucleo_f429zi, driven by the midi_serial UART at 31.25 kbaud, plus Ethernet so a Network MIDI
+  2.0 client can reach the board.

@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Bluetooth HCI controller attached to the twister host, usually a USB dongle in radio range
+  of the DUT, which the pytest code drives as the peer device. The Bluetooth Classic tests need
+  BR/EDR support and take a Bumble transport after the colon (usb_hci:usb:0); the mcumgr BLE
+  test takes a host HCI device name (usb_hci:hci1).

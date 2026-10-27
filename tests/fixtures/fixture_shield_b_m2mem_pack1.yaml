@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An ST B-M2MEM-PACK1 memory module (serial NOR flash plus I2C ID EEPROM) fitted in the M.2 Key
+  A slot of nucleo_u3c5zi_q or nucleo_c5a3zg, of the variant matching the scenario's SHIELD.
+notes: >-
+  The scenarios each need a different module variant under the same fixture name.

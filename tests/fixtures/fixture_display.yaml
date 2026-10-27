@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The display the scenario is built for is attached and working: the board's built-in display or
+  the display shield passed with SHIELD= in the scenario's extra_args. The display_capture
+  scenarios also need the capture setup: a UVC camera on the host aimed at the screen inside a
+  light-blocking enclosure.
+references:
+  - :ref:`twister_display_capture_harness`

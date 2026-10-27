@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A MikroElektronika LIN Click (TLE7259-3GE transceiver) wired to an ek_ra8m1: P609 to RXD, P610
+  to TXD, P601 to EN, P602 to WK, 3V3 and GND, with a 10 kOhm pull-up on P609. Its LIN bus goes
+  to an NCV7430 RGB LED controller board or to a second board running the ncv7430_responder
+  sample, with LIN and GND tied together.

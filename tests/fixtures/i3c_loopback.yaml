@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The SCL and SDA lines of two I3C controllers of the DUT wired together, one in controller and
+  one in target mode, for MCTP over I3C. nucleo_u385rg_q: PB2-PB10 (SCL) and PC1-PB14 (SDA);
+  npcx4m8f_evb: I3C1 to I3C2.

@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An Awinic AW9523B GPIO expander board on the Arduino header: arduino_i2c address 0x58, reset
+  on D13, interrupt on D12. Expander pins P1_0 and P1_1 are wired together for the GPIO API
+  test; P1_0 drives an LED for the 1-pin test.
