@@ -15,8 +15,20 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/zassert.h>
 
 #define BT_AUDIO_NOTIFY_RETRY_DELAY_US ((CONFIG_BT_AUDIO_NOTIFY_RETRY_DELAY) * 1250U)
+
+#define BT_AUDIO_LOCK_ASSERT(_mutex)                                                        \
+	ZASSERT((_mutex)->owner == k_current_get(), "Audio lock %p not held by %p", (_mutex), \
+		k_current_get())
+
+/** Lock an LE Audio mutex, waiting indefinitely. */
+void bt_audio_mutex_lock_forever(struct k_mutex *mutex);
+
+/** Unlock an LE Audio mutex held by the current thread. */
+void bt_audio_mutex_unlock(struct k_mutex *mutex);
 
 /** @brief LE Audio Attribute User Data. */
 struct bt_audio_attr_user_data {
