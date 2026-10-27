@@ -582,6 +582,28 @@ static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 	}
 #endif
 #endif /* defined(CONFIG_COUNTER_NXP_MRT) */
+
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXN) || \
+	defined(CONFIG_SOC_FAMILY_MCXL) || defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	if ((uint32_t)sub_system == MCUX_FREQME_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+		CLOCK_DisableClock(kCLOCK_GateFREQME);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+		CLOCK_DisableClock(kCLOCK_Freqme);
+#else /* CONFIG_SOC_SERIES_IMXRT7XX */
+		CLOCK_DisableClock(kCLOCK_Freqme0);
+#endif
+	}
+#endif
+
+#if defined(CONFIG_SOC_SERIES_IMXRT6XX) || \
+	defined(CONFIG_SOC_SERIES_IMXRT5XX) || \
+	defined(CONFIG_SOC_SERIES_RW6XX)
+	if ((uint32_t)sub_system == MCUX_FREQME_CLK) {
+		CLOCK_DisableClock(kCLOCK_Freqme);
+	}
+#endif
+
 #if defined(CONFIG_EQDC_MCUX)
 	if ((uint32_t)sub_system == MCUX_EQDC_CLK ||
 	    (uint32_t)sub_system == MCUX_EQDC0_CLK) {
