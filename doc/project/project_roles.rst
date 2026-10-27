@@ -154,6 +154,32 @@ in addition to those listed for Contributors and Collaborators:
 Maintainer approval of pull requests are counted toward the minimum
 required approvals needed to merge a PR. Other criteria for merging may apply.
 
+.. _subsystem_and_implementation_maintainers:
+
+Subsystem, Implementation, and Platform Maintainer Roles
+--------------------------------------------------------
+
+In modular areas, such as driver classes and subsystems with multiple hardware or
+software backends, maintenance responsibilities are divided between **Subsystem
+Maintainers**, **Implementation Maintainers**, and **Platform Maintainers**:
+
+* **Subsystem Maintainers** are responsible for the generic API contract, architectural
+  integrity, shared subsystem infrastructure, common Devicetree and Kconfig conventions,
+  and hardware-agnostic test suites. They review new implementation contributions for
+  architectural fitness and API contract compliance. Where an implementation lacks an
+  assigned Implementation Maintainer, the Subsystem Maintainer serves as the fallback
+  maintainer.
+* **Implementation Maintainers** are responsible for specific driver or backend
+  implementations, their validation, and defect resolution. Day-to-day maintenance and
+  pull request assignment for established implementations are delegated to them. When
+  subsystem APIs evolve, Implementation Maintainers are responsible for reviewing and
+  validating changes to their implementations, while the contributor proposing an API
+  change remains responsible for updating in-tree implementations.
+* **Platform Maintainers** are responsible for target board definitions, SoC
+  support, and platform-level hardware enablement and configurations. When an implementation
+  is part of a platform-specific codebase and does not have an independent Implementation
+  Maintainer, the Platform Maintainer typically fulfills that role.
+
 
 Teams and Supporting Activities
 ###############################
@@ -358,9 +384,11 @@ Boards (including related samples and tests) and SoCs (including DTS definitions
   drivers.
 
 Drivers / Backends
-  The area of the API level shall have a maintainer and specific driver
-  implementations or backends shall also be covered through a platform area covering
-  the driver implementation. The driver area or the subsystem maintainers are
-  assigned in case of changes to driver instances or backends.
+  The API level shall have an assigned Subsystem Maintainer, and specific driver
+  implementations or backends can be covered with an assigned Implementation Maintainer
+  (which may be designated directly or covered under a platform area). Pull requests
+  modifying only implementation files are assigned to the Implementation Maintainer, while
+  Subsystem Maintainers ensure API contract compliance.
+  See :ref:`subsystem_and_implementation_maintainers`.
 
 .. _Zephyr Contributor Badge form: https://forms.gle/oCw9iAPLhUsHTapc8
