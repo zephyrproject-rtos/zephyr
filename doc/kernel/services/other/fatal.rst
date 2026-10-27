@@ -119,8 +119,9 @@ halts the system with :c:func:`k_fatal_halt()`.
 
 Applications are free to implement their own error handling policy by
 overriding the implementation of :c:func:`k_sys_fatal_error_handler()`.
-If the implementation returns, the faulting thread will be aborted and
-the system will otherwise continue to function. See the documentation for
+If the implementation returns, the faulting thread will be aborted, then
+restarted if it is armed for it (see :ref:`thread_restart`), and the system
+will otherwise continue to function. See the documentation for
 this function for additional details and constraints.
 
 API Reference
