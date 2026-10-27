@@ -417,6 +417,8 @@ The device certificate is issued by a certificate authority for the CSR and inst
 security tag as :c:enumerator:`TLS_CREDENTIAL_PUBLIC_CERTIFICATE`.
 The public key is exported as a SubjectPublicKeyInfo structure, so it can be compared with the
 SubjectPublicKeyInfo of the certificate.
+The :zephyr:code-sample:`tls-keygen` sample shows the full flow, from the key generation to a
+TLS connection with the new certificate.
 
 Note the following limitations:
 
