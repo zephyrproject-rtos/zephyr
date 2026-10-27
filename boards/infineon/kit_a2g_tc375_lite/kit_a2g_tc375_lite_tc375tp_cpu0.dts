@@ -23,6 +23,7 @@
 		zephyr,console = &asclin0;
 		zephyr,shell-uart = &asclin0;
 		zephyr,code-partition = &code_partition;
+		zephyr,canbus = &can00;
 	};
 
 	aliases {
@@ -55,6 +56,13 @@
 		};
 	};
 
+	can_phy0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&p20 6 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
 	clocks {
 		/* 20 MHz crystal */
 		fosc: fosc {
@@ -66,9 +74,9 @@
 };
 
 /*
- * fPLL0 = 20 MHz * 30 / 2 = 300 MHz: fSRI 300 MHz, fSPB, fFSI and fSTM
- * 100 MHz. Peripheral PLL fDCO 640 MHz: fPLL2 = 640 MHz / 1.6 / 2 =
- * 200 MHz = fASCLINF.
+ * fPLL0 = 20 MHz * 30 / 2 = 300 MHz: fSRI 300 MHz, fSPB, fFSI, fSTM and
+ * fMCANH 100 MHz. Peripheral PLL fDCO 640 MHz: fPLL2 = 640 MHz / 1.6 / 2 =
+ * 200 MHz = fASCLINF, fsource1 = fPLL1 / 2 = 160 MHz, fMCAN 80 MHz.
  */
 &ccu {
 	clocks = <&fosc>;
@@ -77,6 +85,8 @@
 	fsi-div = <3>;
 	stm-div = <3>;
 	asclinf-div = <1>;
+	mcan-div = <2>;
+	mcanh-div = <3>;
 
 	sys-pll {
 		p-div = <1>;
@@ -105,6 +115,22 @@
 };
 
 &p00 {
+	status = "okay";
+};
+
+&p20 {
+	status = "okay";
+};
+
+&mcmcan0 {
+	status = "okay";
+};
+
+&can00 {
+	pinctrl-0 = <&can00_txd_p20_8 &can00_rxdb_p20_7>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
+	bitrate = <500000>;
 	status = "okay";
 };
 
