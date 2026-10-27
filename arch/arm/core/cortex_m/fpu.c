@@ -21,6 +21,8 @@ void z_arm_save_fp_context(struct fpu_ctx_full *buffer)
 
 	uint32_t CONTROL = __get_CONTROL();
 
+	buffer->ctx_saved = false;
+
 	if (CONTROL & CONTROL_FPCA_Msk) {
 		/* Store caller-saved and callee-saved FP registers. */
 		__asm__ volatile("vstmia %0, {s0-s15}\n"
