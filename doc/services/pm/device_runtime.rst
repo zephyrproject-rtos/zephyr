@@ -81,11 +81,12 @@ until the last sensor has finished using it.
 .. note::
 
     As of today, the device runtime power management API does not manage device
-    dependencies. This effectively means that, if a device depends on other
-    devices to operate (e.g. a sensor may depend on a bus device), the bus will
-    be resumed and suspended on every transaction. In general, it is more
-    efficient to keep parent devices active when their children are used, since
-    the children may perform multiple transactions in a short period of time.
+    dependencies other than power domains. This effectively means that, if a
+    device depends on other devices to operate (e.g. a sensor may depend on a
+    bus device), the bus will be resumed and suspended on every transaction.
+    In general, it is more efficient to keep parent devices active when their
+    children are used, since the children may perform multiple transactions
+    in a short period of time.
     Until this feature is added, devices can manually *get* or *put* their
     dependencies.
 
@@ -112,17 +113,17 @@ slow bus. For this reason the device drivers can also make use of the
 the suspend operation, again, if device is no longer used.
 
 
-By default, runtime PM operations are offloaded to the system work queue.
-However, device drivers must not perform any blocking operations during suspend, as
-this can stall the system work queue and negatively impact system responsiveness.
+By default, asynchronous runtime PM operations are offloaded to the system work
+queue. In this configuration, device drivers must not perform any blocking
+operations during suspend, as this can stall the system work queue and
+negatively impact system responsiveness.
 
-To address this, applications can configure runtime PM to use a dedicated work queue
-by enabling :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`.
-
-If blocking behavior is required—for example, when accessing a slow peripheral
-or waiting for a bus transaction—the PM subsystem work queue must be used instead.
-Drivers that require this behavior can explicitly request it by enabling
-:kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`.
+If blocking behavior is required, for example when accessing a slow peripheral
+or waiting for a bus transaction, a dedicated work queue must be used instead.
+Applications can select the dedicated work queue by enabling
+:kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`. Drivers that
+require it can select :kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`,
+which makes the dedicated work queue the default choice.
 
 For targets with constrained resources that do not need asynchronous
 operations, this functionality can be disabled altogether by
