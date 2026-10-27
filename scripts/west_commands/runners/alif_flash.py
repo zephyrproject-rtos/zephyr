@@ -44,7 +44,9 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
                  com_port=None,
                  toc_create=None,
                  toc_write=None,
-                 tool_opt=None):
+                 tool_opt=None,
+                 bl32_bin=None,
+                 bl32_base=None):
 
         super().__init__(cfg)
 
@@ -77,6 +79,8 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         self.commander = commander or default_jlink_exe
         self.loader = loader
         self.tool_opt = tool_opt or []
+        self.bl32_bin = bl32_bin
+        self.bl32_base = bl32_base
 
     @classmethod
     def name(cls):
@@ -121,6 +125,12 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--commander', default=default_jlink_exe,
                             help=f'''J-Link Commander, default is
                             {default_jlink_exe}''')
+        parser.add_argument('--bl32-bin',
+                            help='specifies the BL32 binary needed to boot the APSS core',
+                            default='')
+        parser.add_argument('--bl32-base',
+                            help='specifies the base address of the BL32 binary',
+                            default=cls.mram_base_addr + 0x2000)
 
         parser.set_defaults(reset=True)
 
@@ -145,6 +155,8 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
             toc_create=getattr(args, "toc_create", None),
             toc_write=getattr(args, "toc_write", None),
             tool_opt=getattr(args, "tool_opt", None),
+            bl32_bin=getattr(args, "bl32_bin", None),
+            bl32_base=getattr(args, "bl32_base", None),
         )
 
     def flash(self, **kwargs):
@@ -162,14 +174,25 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         if self.build_conf.getboolean('CONFIG_SOC_FAMILY_ENSEMBLE_RTSS_HP'):
             self.logger.info("..build for HighPerformance Core")
             build_core = "hp"
-        else:
+        elif self.build_conf.getboolean('CONFIG_SOC_FAMILY_ENSEMBLE_RTSS_HE'):
             self.logger.info("..build for HighEfficency Core")
             build_core = "he"
+        elif self.build_conf.getboolean('CONFIG_SOC_FAMILY_ENSEMBLE_APSS'):
+            self.logger.info("..build for APSS Core")
+            build_core = "apss"
+        else:
+            self.logger.error("Unknown build core")
+            raise RuntimeError("Unknown build core")
 
         shutil.copy(
             os.path.join(self.cfg.build_dir, 'zephyr', 'zephyr.bin'),
             os.path.join(self.exe_dir, 'build/images/')
         )
+        if self.bl32_bin:
+            shutil.copy(
+                self.bl32_bin,
+                os.path.join(self.exe_dir, 'build/images/bl32.bin')
+            )
 
         # change dir just for the JSON and TOC
         old_cwd = os.getcwd()
@@ -178,7 +201,8 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
             self.logger.info("Changed working directory to %s", self.exe_dir)
 
             # Prepare json to create AToC.
-            self.prepare_json(self.logger, build_core, fls_addr, fls_size)
+            self.prepare_json(self.logger, build_core, fls_addr, fls_size,
+                            self.bl32_bin, self.bl32_base)
 
             # Generate ToC.
             self.check_call(['./' + self.gen_toc, '-f',
@@ -321,7 +345,7 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         return addr.value
 
     @classmethod
-    def prepare_json(cls, logger, build_core, fls_addr, fls_size):
+    def prepare_json(cls, logger, build_core, fls_addr, fls_size, bl32_bin, bl32_base):
         """Prepare JSON for ToC generation."""
         cfg_ip_path = os.path.join(cls.exe_dir, cls.cfg_ip_file.lstrip('/'))
         cfg_op_path = os.path.join(cls.exe_dir, cls.cfg_op_file.lstrip('/'))
@@ -335,8 +359,12 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
 
         if build_core == "hp":
             cpu_node = json_data["HP_APP"]
-        else:
+        elif build_core == "he":
             cpu_node = json_data["HE_APP"]
+        elif build_core == "apss":
+            cpu_node = json_data["A32_APP"]
+        else:
+            raise RuntimeError(f"Unknown build core: {build_core}")
 
         # update binary name
         cpu_node["binary"] = "zephyr.bin"
@@ -358,6 +386,22 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
 
         else:
             raise NotImplementedError(f'Unsupported address base 0x{fls_addr:x} to write')
+
+        if build_core == "apss":
+            # TF-M binary also required for APSS core, error if not provided
+            if not bl32_bin or not os.path.isfile(bl32_bin):
+                logger.error("No BL32 binary provided")
+                raise RuntimeError("BL32 binary is required for APSS core, supply with --bl32-bin")
+            json_data["BOOTLOAD"] = {
+                "binary": "bl32.bin",
+                "version": "1.0",
+                "mramAddress": hex(bl32_base),
+                "signed": True,
+                "cpu_id": "A32_0",
+                "flags": ["boot"],
+            }
+            # Remove load flag for APSS core
+            json_data["A32_APP"].pop('flags', None)
 
         try:
             with open(cfg_op_path, 'w', encoding="utf-8") as file:
