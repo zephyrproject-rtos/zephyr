@@ -101,7 +101,7 @@
 /* USB virtual COM port of the on-board debugger */
 &asclin0 {
 	current-speed = <115200>;
-	pinctrl-0 = <&asclin0_tx_p14_0 &asclin0_rx_p14_1>;
+	pinctrl-0 = <&asclin0_atx_p14_0 &asclin0_arxa_p14_1>;
 	pinctrl-names = "default";
 	status = "okay";
 };
