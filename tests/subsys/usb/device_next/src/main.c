@@ -37,6 +37,9 @@ USBD_DEVICE_DEFINE(test_usbd,
 
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
+/* The root hub has address 1, the first device connected to it gets 2 */
+#define TEST_DEV_ADDR 2U
+
 static int test_cmp_string_desc(struct net_buf *const buf, const int idx)
 {
 	static struct usbd_desc_node *desc_nd;
@@ -83,7 +86,7 @@ ZTEST(device_next, test_get_desc_string)
 	struct net_buf *buf;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	buf = usbh_xfer_buf_alloc(udev, UINT8_MAX);
@@ -128,7 +131,7 @@ ZTEST(device_next, test_vendor_control_in)
 		return;
 	}
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	buf = usbh_xfer_buf_alloc(udev, wLength);
@@ -186,7 +189,7 @@ ZTEST(device_next, test_vendor_control_out)
 		return;
 	}
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	buf = usbh_xfer_buf_alloc(udev, wLength);
@@ -255,7 +258,7 @@ ZTEST(device_next, test_control_nodata)
 		return;
 	}
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -298,7 +301,7 @@ ZTEST(device_next, test_get_configuration)
 	uint8_t cfg = 0;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -333,7 +336,7 @@ ZTEST(device_next, test_set_interface)
 	struct usb_device *udev;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
