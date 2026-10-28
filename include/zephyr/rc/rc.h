@@ -234,6 +234,24 @@ static inline int rc_stream(const struct rtio_iodev *iodev, struct rtio *ctx, vo
 	return rtio_submit(ctx, 0);
 }
 
+/**
+ * @brief Wait for the next event of an rc device.
+ *
+ * Not callable from an ISR or the rc work queues.
+ *
+ * @param dev rc device.
+ * @param evt Filled with the event.
+ * @param timeout Time to wait for an event.
+ *
+ * @retval 0 Success.
+ * @retval -EAGAIN No event within @p timeout.
+ * @retval -ENOMEM CONFIG_RC_RECEIVE_SYNC_MAX callers already waiting, counted
+ *         over all rc devices.
+ * @retval -ENODEV Device not ready.
+ * @retval -EDEADLK Called from the rc receive work queue.
+ */
+int rc_receive_sync(const struct device *dev, struct rc_event *evt, k_timeout_t timeout);
+
 /** @} */
 
 #ifdef __cplusplus

@@ -48,6 +48,15 @@ config RC_RX_WORKQ_PRIORITY
 	  Preemptible priority of the work queue that decodes raw words of
 	  all rc devices.
 
+config RC_RECEIVE_SYNC_MAX
+	int "Maximum concurrent rc_receive_sync() calls"
+	default 2
+	range 1 64
+	help
+	  Number of threads that can wait in rc_receive_sync() at the same
+	  time. One global limit shared by all rc devices. Sizes the
+	  rc-owned RTIO context used by the call.
+
 module = RC
 module-str = rc
 source "subsys/logging/Kconfig.template.log_config"

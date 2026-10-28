@@ -65,6 +65,8 @@ static void rc_done_work_handler(struct k_work *work)
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		iodev_sqe = next;
 	}
+
+	rc_sync_dispatch();
 }
 
 static K_WORK_DEFINE(rc_done_work, rc_done_work_handler);
@@ -194,4 +196,6 @@ void rc_event_report(const struct device *dev, const struct rc_event *evt)
 
 		iodev_sqe = next;
 	}
+
+	rc_sync_dispatch();
 }
