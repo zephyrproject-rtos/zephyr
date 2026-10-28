@@ -171,6 +171,7 @@ static void mcux_lcdifv3_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = mcux_lcdifv3_supported_fmts;
 	capabilities->current_pixel_format = dev_data->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->screen_info = SCREEN_INFO_WRITE_HOLDS_BUFFER;
 }
 
 static int mcux_lcdifv3_set_pixel_format(const struct device *dev,

@@ -151,6 +151,7 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = (PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888);
 #endif
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->screen_info = SCREEN_INFO_WRITE_HOLDS_BUFFER;
 
 	switch (data->fb_config.format) {
 	case kLCDIF_PixelFormatRGB565:
