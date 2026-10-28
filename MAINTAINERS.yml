@@ -1498,6 +1498,7 @@ Division by Reciprocal:
   maintainers:
     - npitre
   files:
+    - doc/kernel/div64.rst
     - include/zephyr/sys/div64.h
     - lib/os/div64.c
     - tests/lib/div64/

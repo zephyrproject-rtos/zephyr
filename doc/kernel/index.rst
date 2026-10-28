@@ -16,6 +16,7 @@ Kernel
    timeutil.rst
    precision_timing.rst
    util/index.rst
+   div64.rst
    iterable_sections/index.rst
    code-relocation.rst
    cleanup.rst
