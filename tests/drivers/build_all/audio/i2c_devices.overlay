@@ -104,6 +104,12 @@
 				vdd-amp-supply = <&test_regulator>;
 				status = "okay";
 			};
+
+			test_i2c_tas2560: tas2560@4c {
+				compatible = "ti,tas2560";
+				reg = <0x4c>;
+				status = "okay";
+			};
 		};
 
 		test_gpio: gpio@deadbeef {
