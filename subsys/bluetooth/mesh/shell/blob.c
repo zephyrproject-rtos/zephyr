@@ -10,6 +10,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/shell.h>
+#include <zephyr/sys/bitmap.h>
 
 #include "common/bt_shell_private.h"
 #include "utils.h"
@@ -127,7 +128,7 @@ static void blob_cli_end(struct bt_mesh_blob_cli *cli,
 static uint8_t get_progress(const struct bt_mesh_blob_xfer_info *info)
 {
 	uint32_t total_blocks;
-	uint32_t blocks_not_rxed = 0;
+	uint32_t blocks_not_rxed;
 
 	if (info->missing_blocks == NULL) {
 		return 0;
@@ -140,11 +141,7 @@ static uint8_t get_progress(const struct bt_mesh_blob_xfer_info *info)
 		return 0;
 	}
 
-	for (uint32_t i = 0; i < total_blocks; i++) {
-		if ((info->missing_blocks[i / 8] & BIT(i % 8)) != 0U) {
-			blocks_not_rxed++;
-		}
-	}
+	blocks_not_rxed = sys_bitmap_count_set(info->missing_blocks, total_blocks);
 
 	/* 100 times the block count does not fit in 32 bits. */
 	return (100ULL * (total_blocks - blocks_not_rxed)) / total_blocks;
