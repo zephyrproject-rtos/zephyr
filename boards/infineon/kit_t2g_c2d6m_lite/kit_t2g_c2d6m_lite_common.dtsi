@@ -88,6 +88,22 @@ uart9: &scb9 {
 	pinctrl-names = "default";
 };
 
+/* SPI on the Raspberry Pi header X800 and the mikroBUS header X812 */
+spi0: &scb0 {
+	compatible = "infineon,scb-spi";
+	clocks = <&peri0_group1_16bit_3>;
+	pinctrl-0 = <&p11_3_scb0_spi_mosi &p11_0_scb0_spi_miso &p11_2_scb0_spi_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt11 1 GPIO_ACTIVE_LOW>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+/* MISO floats while no peripheral is selected */
+&p11_0_scb0_spi_miso {
+	bias-pull-up;
+};
+
 &gpio_prt7 {
 	status = "okay";
 };
@@ -193,5 +209,9 @@ uart9: &scb9 {
 };
 
 &peri0_group1_8bit_1 {
+	status = "okay";
+};
+
+&peri0_group1_16bit_3 {
 	status = "okay";
 };
