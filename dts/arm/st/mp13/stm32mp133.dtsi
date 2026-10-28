@@ -10,6 +10,33 @@
 	soc {
 		compatible = "st,stm32mp133", "st,stm32mp13", "simple-bus";
 
+		adc1_common: adc@48003000 {
+			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x48003000 0x400>;
+			ranges;
+			clocks = <&rcc STM32_CLOCK(AHB2, 5)>,
+				 <&rcc STM32_SRC_PLL4_R ADC1_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
+			st,adc-clock-source = "ASYNC";
+			st,adc-resolutions = <12 10 8 6>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "minimal";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-deep-powerdown;
+			st,adc-has-differential-support;
+			status = "disabled";
+
+			adc1: adc@48003000 {
+				reg = <0x48003000 0x100>;
+				interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
+		};
+
 		eth1: mac1: ethernet@5800e000 {
 			compatible = "st,stm32mp13-ethernet", "st,stm32h7-ethernet",
 				     "st,stm32-ethernet", "snps,dwmac";
