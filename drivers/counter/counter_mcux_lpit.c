@@ -39,6 +39,7 @@ struct mcux_lpit_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_cfg;
 	/* Point to array of channels data for this LPIT instance */
 	struct mcux_lpit_channel_data *const *data;
 	/* Point to array of channel devices for this LPIT instance */
@@ -188,6 +189,14 @@ static int mcux_lpit_init(const struct device *dev)
 		}
 	}
 
+	if (config->clock_cfg != NULL) {
+		ret = clock_control_configure(config->clock_dev, config->clock_cfg, NULL);
+		if (ret != 0) {
+			LOG_ERR("Failed to configure clock source: %d", ret);
+			return ret;
+		}
+	}
+
 #if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret != 0) {
@@ -318,6 +327,9 @@ static DEVICE_API(counter, mcux_lpit_driver_api) = {
 								nxp_lpit_channel),                 \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.clock_cfg = (clock_control_subsys_t)COND_CODE_1(                                  \
+			DT_INST_CLOCKS_HAS_NAME(n, source),                                        \
+			(DT_INST_CLOCKS_CELL_BY_NAME(n, source, name)), (0U)),                     \
 		.data = mcux_lpit_##n##_channel_datas,                                             \
 		.channels = mcux_lpit_##n##_channels,                                              \
 	};                                                                                         \
