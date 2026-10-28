@@ -181,6 +181,34 @@ Use this instead:
          - "medium"
          - "high"
 
+Use booleans for two-state properties
+=====================================
+
+If a property only has two possible states, such as a feature being enabled or
+disabled, use a ``boolean`` property instead of an ``int`` or ``string``
+property with two values. The property name describes the non-default state,
+which is selected by adding the property to the node.
+
+Example of what **not** to do:
+
+.. code-block:: yaml
+
+   properties:
+     clock-polarity:
+       type: string
+       enum:
+         - "normal"
+         - "inverted"
+
+Use this instead:
+
+.. code-block:: yaml
+
+   properties:
+     clock-inverted:
+       type: boolean
+       description: The clock signal is inverted.
+
 Rules for vendor prefixes
 *************************
 
