@@ -3571,14 +3571,18 @@ Infineon AURIX Platforms:
     - parthitce
     - ssekar15
   files:
-    - soc/qemu/tricore/
+    - soc/infineon/aurix/
+    - boards/infineon/kit_a2g_tc375_lite/
+    - boards/infineon/kit_a3g_tc4d7_lite/
     - boards/qemu/tricore/
     - drivers/*/*aurix*
     - include/zephyr/drivers/*/*aurix*
+    - include/zephyr/dt-bindings/*/infineon-aurix*
     - dts/bindings/*/infineon,asclin*
     - dts/bindings/*/infineon,aurix*
     - dts/bindings/*/infineon,tc*
     - dts/tricore/
+    - tests/drivers/*/infineon_aurix*/
   labels:
     - "platform: Infineon AURIX"
   description: >-
