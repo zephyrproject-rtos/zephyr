@@ -31,6 +31,16 @@
 #endif
 
 #ifdef __cplusplus
+extern "C++" {
+template <typename E, typename V> struct z_log_arg_capture {
+	typedef V type;
+};
+
+template <typename T, size_t N, typename V> struct z_log_arg_capture<T(&&)[N], V> {
+	typedef T(&&type)[N];
+};
+}
+
 extern "C" {
 #endif
 
@@ -582,9 +592,19 @@ do { \
  */
 #define Z_LOG_LOCAL_ARG_NAME(idx, arg) COND_CODE_0(idx, (arg), (_v##idx))
 
-/* Create local variable from input variable (expect for the first (fmt) argument). */
+/* Create local variable from input variable (expect for the first (fmt) argument).
+ * In C++, an array member of a temporary, e.g. f().str, is bound by reference so
+ * that the temporary stays alive until the message is created.
+ */
+#if defined(__cplusplus)
+#define Z_LOG_LOCAL_ARG_CREATE(idx, arg) \
+	COND_CODE_0(idx, (), \
+		(typename z_log_arg_capture<decltype((arg)), decltype(Z_ARGIFY(arg))>::type \
+		 Z_LOG_LOCAL_ARG_NAME(idx, arg) = (arg)))
+#else
 #define Z_LOG_LOCAL_ARG_CREATE(idx, arg) \
 	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = Z_ARGIFY(arg)))
+#endif
 
 /* First level of processing creates stack variables to be passed for further processing.
  * This is done to prevent multiple evaluations of input arguments (in case argument
