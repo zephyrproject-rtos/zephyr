@@ -40,6 +40,14 @@
 			status = "okay";
 		};
 
+		/* ilo */
+		clk_ilo: clk_ilo {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
 		/* wco */
 		clk_wco: clk_wco {
 			#clock-cells = <0>;

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon PSOC 4 match watchdog timer
+
+description: |
+  Basic watchdog timer of PSOC 4 devices with the S8SRSSLT system resources
+  block. The 16-bit counter cannot be stopped; a disable key turns off the
+  watchdog reset.
+
+compatible: "infineon,match-wdt-srsslt"
+
+include: infineon,match-wdt-common.yaml

@@ -12,3 +12,14 @@ config WDT_INFINEON_CAT1
 	select USE_INFINEON_WDT
 	help
 	  Enable Watchdog driver for Infineon CAT1 devices.
+
+config WDT_INFINEON_MATCH
+	bool "Infineon match watchdog driver"
+	default y
+	depends on DT_HAS_INFINEON_MATCH_WDT_ENABLED || \
+		DT_HAS_INFINEON_MATCH_WDT_SRSS_V1_ENABLED || \
+		DT_HAS_INFINEON_MATCH_WDT_SRSSLT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable the native driver for the match watchdog of Infineon PSOC 4,
+	  PSOC 6, CAT1B and PSOC Edge devices.

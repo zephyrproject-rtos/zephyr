@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties of the Infineon match watchdog timer. A free-running
+  counter raises the match flag each time its compared low bits equal the
+  match value. Clearing the flag services the watchdog, and the third match
+  without a service resets the device.
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    description: |
+      "wdt" is the block that holds the counter and match registers. "intr"
+      is the system resources interrupt block that holds the match flag.
+
+  clocks:
+    required: true
+    description: Watchdog counter clock.

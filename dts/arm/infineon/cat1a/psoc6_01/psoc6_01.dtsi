@@ -338,9 +338,11 @@
 		};
 
 		watchdog0: watchdog@40260180 {
-			compatible = "infineon,watchdog";
-			reg = <0x40260180 0xc>;
+			compatible = "infineon,match-wdt-srss-v1";
+			reg = <0x40260180 0xc>, <0x40260700 0x10>;
+			reg-names = "wdt", "intr";
 			interrupts = <22 6>;
+			clocks = <&clk_ilo>;
 			status = "disabled";
 		};
 
