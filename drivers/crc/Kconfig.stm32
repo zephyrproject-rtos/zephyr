@@ -6,6 +6,17 @@ config CRC_STM32
 	help
 	  STM32 CRC driver
 
+config CRC_STM32_V1
+	bool "STM32 CRC driver v1"
+	default y
+	depends on DT_HAS_ST_STM32_CRC_V1_ENABLED
+	select CRC_STM32
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	select CRC_DRIVER_HAS_CRC32_MPEG2
+	select CRC_DRIVER_NEEDS_WORDS
+	help
+	  Enables STM32 family CRC driver.
+
 config CRC_STM32_V2
 	bool "STM32 CRC driver v2"
 	default y
