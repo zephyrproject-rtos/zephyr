@@ -542,7 +542,7 @@ static int clock_control_esp32_get_rate(const struct device *dev, clock_control_
 	return 0;
 }
 
-static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
+static int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 {
 #if !defined(CONFIG_SOC_SERIES_ESP32C6)
 	soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk & RTC_CNTL_ANA_CLK_RTC_SEL_V;
@@ -554,6 +554,7 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 	 * before giving up and switching to the internal RC
 	 */
 	int retry_32k_xtal = 3;
+	bool revoke_32k = false;
 
 	do {
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
@@ -596,8 +597,13 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 					if (retry_32k_xtal-- > 0) {
 						continue;
 					}
-					LOG_ERR("32 kHz XTAL not found");
-					return -ENODEV;
+					if (!fallback) {
+						LOG_ERR("32 kHz clock not found");
+						return -ENODEV;
+					}
+					LOG_WRN("32 kHz clock not found, switching to internal RC");
+					rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+					revoke_32k = true;
 				}
 			}
 #if defined(CONFIG_SOC_SERIES_ESP32C6)
@@ -610,6 +616,18 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 		}
 #endif
 		rtc_clk_slow_src_set(rtc_slow_clk_src);
+
+		if (revoke_32k) {
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+			rtc_clk_32k_disable_external();
+#elif defined(CONFIG_SOC_SERIES_ESP32C6)
+			rtc_clk_32k_enable(false);
+#else
+			rtc_clk_32k_enable(false);
+			rtc_clk_32k_disable_external();
+#endif
+			revoke_32k = false;
+		}
 
 		if (CONFIG_RTC_CLK_CAL_CYCLES > 0) {
 			cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, CONFIG_RTC_CLK_CAL_CYCLES);
@@ -743,7 +761,7 @@ static int clock_control_esp32_configure(const struct device *dev, clock_control
 		rtc_clk_fast_src_set(new_cfg->rtc.rtc_fast_clock_src);
 		break;
 	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW:
-		ret = esp32_select_rtc_slow_clk(new_cfg->rtc.rtc_slow_clock_src);
+		ret = esp32_select_rtc_slow_clk(new_cfg->rtc.rtc_slow_clock_src, false);
 		break;
 	case ESP32_CLOCK_CONTROL_SUBSYS_CPU:
 		/* Normalize frequency */
@@ -800,7 +818,7 @@ static int clock_control_esp32_init(const struct device *dev)
 #if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
 	rtc_clk_fast_src_set(cfg->rtc.rtc_fast_clock_src);
 
-	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src);
+	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src, true);
 	if (ret) {
 		LOG_ERR("Failed to configure RTC clock");
 		return ret;
