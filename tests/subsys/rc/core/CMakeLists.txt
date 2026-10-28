@@ -13,6 +13,7 @@ target_sources(app PRIVATE
   src/protocol.c
   src/raw.c
   src/rawio.c
+  src/send.c
   src/sync.c
   src/tx.c
 )

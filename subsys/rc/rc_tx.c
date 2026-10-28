@@ -13,8 +13,10 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/rc/rc.h>
+#include <zephyr/rc/rc_protocol.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/mpsc_lockfree.h>
 
 #include "rc_internal.h"
@@ -35,6 +37,8 @@ static K_MUTEX_DEFINE(rc_send_lock);
 struct rc_send_wait {
 	struct k_sem done;
 	int result;
+	/* Set on timeout: stop at the next frame */
+	atomic_t stop;
 };
 
 /* Used only by the transmit work queue */
@@ -77,7 +81,8 @@ static size_t rc_tx_max_words(const struct device *dev)
 	return ARRAY_SIZE(rc_tx_words);
 }
 
-static int rc_tx_check(const struct device *dev, const uint32_t *words, size_t count)
+static int rc_tx_check(const struct device *dev, const uint32_t *words, size_t count,
+		       uint32_t *total_us)
 {
 	uint32_t total = 0U;
 
@@ -100,17 +105,208 @@ static int rc_tx_check(const struct device *dev, const uint32_t *words, size_t c
 		total += us;
 	}
 
+	*total_us = total;
+
 	return 0;
+}
+
+static const struct rc_protocol *rc_tx_encoder(uint16_t proto)
+{
+	STRUCT_SECTION_FOREACH(rc_protocol, p) {
+		if ((p->encode != NULL) && (proto >= p->proto_first) && (proto <= p->proto_last)) {
+			return p;
+		}
+	}
+
+	return NULL;
+}
+
+static int rc_tx_carrier(const struct device *dev, uint32_t hz)
+{
+	const struct rc_driver_api *api = DEVICE_API_GET(rc, dev);
+
+	if ((api->set_carrier == NULL) || (rc_data(dev)->caps.carrier_max_hz == 0U)) {
+		return 0;
+	}
+
+	return api->set_carrier(dev, hz, rc_data(dev)->tx_duty_pct);
+}
+
+static int rc_tx_raw(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct rc_driver_api *api = DEVICE_API_GET(rc, dev);
+	const uint8_t *buf = iodev_sqe->sqe.tx.buf;
+	size_t count = iodev_sqe->sqe.tx.buf_len / sizeof(uint32_t);
+	uint32_t us;
+	int ret;
+
+	if ((iodev_sqe->sqe.tx.buf_len % sizeof(uint32_t)) != 0U) {
+		return -EINVAL;
+	}
+
+	/* rc_tx_check() rejects more words than were copied */
+	memcpy(rc_tx_words, buf, MIN(count, ARRAY_SIZE(rc_tx_words)) * sizeof(uint32_t));
+
+	ret = rc_tx_check(dev, rc_tx_words, count, &us);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* A scancode transmission may have left its protocol carrier */
+	ret = rc_tx_carrier(dev, rc_data(dev)->tx_carrier_hz);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return api->tx(dev, rc_tx_words, count);
+}
+
+static bool rc_tx_stopped(struct rtio_iodev_sqe *iodev_sqe)
+{
+	if (rtio_iodev_sqe_is_canceled(iodev_sqe)) {
+		return true;
+	}
+
+	if (iodev_sqe->r == &rc_send_rtio) {
+		struct rc_send_wait *wait = iodev_sqe->sqe.userdata;
+
+		return atomic_get(&wait->stop) != 0;
+	}
+
+	return false;
+}
+
+static int rc_tx_encode(const struct device *dev, const struct rc_protocol *p,
+			const struct rc_tx_req *req, bool repeat, uint16_t flags, uint32_t *words,
+			size_t max, size_t *count, uint32_t *us)
+{
+	int ret;
+
+	if (repeat) {
+		ret = p->encode_repeat(req->proto, req->scancode, flags, words, max);
+	} else {
+		ret = p->encode(req->proto, req->scancode, flags, words, max);
+	}
+	if (ret < 0) {
+		return ret;
+	}
+
+	*count = (size_t)ret;
+	if (*count > max) {
+		return -EINVAL;
+	}
+
+	return rc_tx_check(dev, words, *count, us);
+}
+
+static uint32_t rc_tx_spacing_us(const struct rc_protocol *p, uint32_t us)
+{
+	return MAX((uint32_t)p->tx_period_ms * USEC_PER_MSEC, us + p->min_timeout_us);
+}
+
+static int rc_tx_scancode(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct rc_driver_api *api = DEVICE_API_GET(rc, dev);
+	struct rc_dev_data *data = rc_data(dev);
+	size_t max = rc_tx_max_words(dev);
+	const struct rc_protocol *p;
+	struct rc_tx_req req;
+	bool repeat_code;
+	uint32_t frame_us;
+	uint32_t repeat_us;
+	uint64_t total_us;
+	uint16_t flags;
+	size_t count;
+	int ret;
+
+	if (iodev_sqe->sqe.tx.buf_len != sizeof(req)) {
+		return -EINVAL;
+	}
+
+	memcpy(&req, iodev_sqe->sqe.tx.buf, sizeof(req));
+
+	p = rc_tx_encoder(req.proto);
+	if (p == NULL) {
+		return -ENOTSUP;
+	}
+
+	if ((req.repeats > 0U) && (p->tx_period_ms == 0U)) {
+		return -EINVAL;
+	}
+
+	if ((p->carrier_hz != 0U) && (data->caps.carrier_max_hz != 0U) &&
+	    ((p->carrier_hz < data->caps.carrier_min_hz) ||
+	     (p->carrier_hz > data->caps.carrier_max_hz))) {
+		return -ENOTSUP;
+	}
+
+	/* Committed once the request is sent */
+	flags = !data->tx_toggle ? RC_EVENT_FLAG_TOGGLE : 0U;
+	repeat_code = (req.repeats > 0U) && (p->encode_repeat != NULL);
+
+	if (repeat_code) {
+		ret = rc_tx_encode(dev, p, &req, true, flags, rc_tx_words, max, &count, &repeat_us);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	ret = rc_tx_encode(dev, p, &req, false, flags, rc_tx_words, max, &count, &frame_us);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (!repeat_code) {
+		repeat_us = frame_us;
+	}
+
+	total_us = frame_us;
+	if (req.repeats > 0U) {
+		total_us = (uint64_t)rc_tx_spacing_us(p, frame_us) +
+			   ((uint64_t)req.repeats - 1U) * rc_tx_spacing_us(p, repeat_us) +
+			   repeat_us;
+	}
+	if (total_us > ((uint64_t)CONFIG_RC_TX_MAX_DURATION_MS * USEC_PER_MSEC)) {
+		return -E2BIG;
+	}
+
+	ret = rc_tx_carrier(dev, (p->carrier_hz != 0U) ? p->carrier_hz : data->tx_carrier_hz);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->tx_toggle = !data->tx_toggle;
+
+	for (uint32_t i = 0U;; i++) {
+		k_timepoint_t next;
+
+		if (rc_tx_stopped(iodev_sqe)) {
+			return -ECANCELED;
+		}
+
+		next = sys_timepoint_calc(
+			K_USEC(rc_tx_spacing_us(p, (i == 0U) ? frame_us : repeat_us)));
+		ret = api->tx(dev, rc_tx_words, count);
+		if ((ret != 0) || (i == req.repeats)) {
+			return ret;
+		}
+
+		/* The buffer keeps the full frame when there is no repeat code */
+		if ((i == 0U) && repeat_code) {
+			ret = rc_tx_encode(dev, p, &req, true, flags, rc_tx_words, max, &count,
+					   &repeat_us);
+			if (ret != 0) {
+				return ret;
+			}
+		}
+
+		k_sleep(sys_timepoint_timeout(next));
+	}
 }
 
 static int rc_tx_one(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct device *dev = rc_tx_dev(iodev_sqe);
-	const struct rc_driver_api *api = DEVICE_API_GET(rc, dev);
-	struct rc_dev_data *data = rc_data(dev);
-	const uint8_t *buf = iodev_sqe->sqe.tx.buf;
-	size_t count = iodev_sqe->sqe.tx.buf_len / sizeof(uint32_t);
-	int ret;
 
 	if (rtio_iodev_sqe_is_canceled(iodev_sqe)) {
 		return -ECANCELED;
@@ -120,26 +316,11 @@ static int rc_tx_one(struct rtio_iodev_sqe *iodev_sqe)
 		return -ENOTSUP;
 	}
 
-	if ((iodev_sqe->sqe.tx.buf_len % sizeof(uint32_t)) != 0U) {
-		return -EINVAL;
+	if ((iodev_sqe->sqe.iodev_flags & RC_IODEV_TX_SCANCODE) != 0U) {
+		return rc_tx_scancode(dev, iodev_sqe);
 	}
 
-	/* rc_tx_check() rejects more words than were copied */
-	memcpy(rc_tx_words, buf, MIN(count, ARRAY_SIZE(rc_tx_words)) * sizeof(uint32_t));
-
-	ret = rc_tx_check(dev, rc_tx_words, count);
-	if (ret != 0) {
-		return ret;
-	}
-
-	if (api->set_carrier != NULL) {
-		ret = api->set_carrier(dev, data->tx_carrier_hz, data->tx_duty_pct);
-		if (ret != 0) {
-			return ret;
-		}
-	}
-
-	return api->tx(dev, rc_tx_words, count);
+	return rc_tx_raw(dev, iodev_sqe);
 }
 
 static void rc_send_dispatch(void)
@@ -309,20 +490,8 @@ int rc_set_tx_carrier(const struct device *dev, uint32_t hz, uint8_t duty_pct)
 	return 0;
 }
 
-int rc_send_raw_sync(const struct device *dev, const uint32_t *words, size_t count,
-		     k_timeout_t timeout)
+static int rc_send_check(const struct device *dev)
 {
-	struct rc_iodev_config config = {.dev = dev};
-	/* On the stack: every path below waits for the write */
-	const struct rtio_iodev iodev = {
-		.api = &rc_tx_iodev_api,
-		.data = &config,
-	};
-	struct rc_send_wait wait;
-	rtio_sqe_handle_t handle;
-	struct rtio_sqe *sqe;
-	int ret;
-
 	if (!device_is_ready(dev)) {
 		return -ENODEV;
 	}
@@ -335,12 +504,24 @@ int rc_send_raw_sync(const struct device *dev, const uint32_t *words, size_t cou
 		return -ENOTSUP;
 	}
 
-	ret = rc_tx_check(dev, words, count);
-	if (ret != 0) {
-		return ret;
-	}
+	return 0;
+}
+
+static int rc_send_wait(const struct device *dev, const uint8_t *buf, uint32_t len,
+			uint32_t iodev_flags, k_timeout_t timeout)
+{
+	struct rc_iodev_config config = {.dev = dev};
+	/* On the stack: every path below waits for the write */
+	const struct rtio_iodev iodev = {
+		.api = &rc_tx_iodev_api,
+		.data = &config,
+	};
+	struct rc_send_wait wait;
+	rtio_sqe_handle_t handle;
+	struct rtio_sqe *sqe;
 
 	k_sem_init(&wait.done, 0, 1);
+	atomic_clear(&wait.stop);
 
 	(void)k_mutex_lock(&rc_send_lock, K_FOREVER);
 	sqe = rtio_sqe_acquire(&rc_send_rtio);
@@ -348,8 +529,8 @@ int rc_send_raw_sync(const struct device *dev, const uint32_t *words, size_t cou
 		(void)k_mutex_unlock(&rc_send_lock);
 		return -ENOMEM;
 	}
-	rtio_sqe_prep_write(sqe, &iodev, RTIO_PRIO_NORM, (const uint8_t *)words,
-			    count * sizeof(uint32_t), &wait);
+	rtio_sqe_prep_write(sqe, &iodev, RTIO_PRIO_NORM, buf, len, &wait);
+	sqe->iodev_flags = iodev_flags;
 	handle = rtio_sqe_handle(&rc_send_rtio, sqe);
 	(void)rtio_submit(&rc_send_rtio, 0);
 	(void)k_mutex_unlock(&rc_send_lock);
@@ -359,7 +540,7 @@ int rc_send_raw_sync(const struct device *dev, const uint32_t *words, size_t cou
 		k_spinlock_key_t key;
 		bool unlinked = false;
 
-		/* Unlink a write still queued; one being sent completes as usual */
+		/* Unlink a write still queued; one being sent stops at the next frame */
 		key = k_spin_lock(&rc_tx_lock);
 		mine = rtio_iodev_sqe_from_handle(&rc_send_rtio, handle);
 		if (mine != NULL) {
@@ -369,11 +550,46 @@ int rc_send_raw_sync(const struct device *dev, const uint32_t *words, size_t cou
 
 		if (unlinked) {
 			rc_sqe_done(mine);
+		} else {
+			atomic_set(&wait.stop, 1);
 		}
 		(void)k_sem_take(&wait.done, K_FOREVER);
 	}
 
 	return (wait.result == -ECANCELED) ? -EAGAIN : wait.result;
+}
+
+int rc_send_raw_sync(const struct device *dev, const uint32_t *words, size_t count,
+		     k_timeout_t timeout)
+{
+	int ret = rc_send_check(dev);
+	uint32_t us;
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = rc_tx_check(dev, words, count, &us);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return rc_send_wait(dev, (const uint8_t *)words, count * sizeof(uint32_t), 0U, timeout);
+}
+
+int rc_send_sync(const struct device *dev, const struct rc_tx_req *req, k_timeout_t timeout)
+{
+	int ret = rc_send_check(dev);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (rc_tx_encoder(req->proto) == NULL) {
+		return -ENOTSUP;
+	}
+
+	return rc_send_wait(dev, (const uint8_t *)req, sizeof(*req), RC_IODEV_TX_SCANCODE, timeout);
 }
 
 static int rc_tx_wq_init(void)

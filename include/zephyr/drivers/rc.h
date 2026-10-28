@@ -108,6 +108,7 @@ struct rc_dev_data {
 #ifdef CONFIG_RC_TX
 	uint32_t tx_carrier_hz;
 	uint8_t tx_duty_pct;
+	bool tx_toggle;
 #endif
 	struct rc_event key;
 	const struct rc_protocol *key_decoder;
