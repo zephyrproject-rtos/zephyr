@@ -14,21 +14,15 @@
 	};
 };
 
-uart2: &scb2 {
+/*
+ * SCB2 is the only SCB on the Arduino SPI pins (port 10), so the console uses
+ * SCB1, which also drives the KitProg3 USB-UART pins P0.4 and P0.5.
+ */
+uart1: &scb1 {
 	compatible = "infineon,uart";
 	current-speed = <115200>;
 	clocks = <&peri_clk_div1>;
-	pinctrl-0 = <&p0_5_scb2_uart_tx &p0_4_scb2_uart_rx>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-spi1: &scb1 {
-	compatible = "infineon,spi";
-	#address-cells = <1>;
-	#size-cells = <0>;
-	clocks = <&peri_clk_div2>;
-	pinctrl-0 = <&p2_0_scb1_spi_m_mosi &p2_1_scb1_spi_m_miso &p2_2_scb1_spi_m_clk>;
+	pinctrl-0 = <&p0_5_scb1_uart_tx &p0_4_scb1_uart_rx>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -93,3 +87,5 @@ i2c0: &scb0 {
 &watchdog0 {
 	status = "okay";
 };
+
+#include "arduino_r3_connector.dtsi"
