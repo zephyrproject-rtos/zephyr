@@ -7,8 +7,8 @@
 
 .. _migration_4.5:
 
-Migration guide to Zephyr v4.5.0 (Working Draft)
-################################################
+Migration guide to Zephyr v4.5.0
+################################
 
 This document describes the changes required when migrating your application from Zephyr v4.4.0 to
 Zephyr v4.5.0.
