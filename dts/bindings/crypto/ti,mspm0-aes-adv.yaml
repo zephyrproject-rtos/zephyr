@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments MSP Advanced Encryption Standard Advanced (AESADV) Engine
+  This peripheral provides AES-128 and AES-256 encryption and decryption.
+
+compatible: "ti,mspm0-aes-adv"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
