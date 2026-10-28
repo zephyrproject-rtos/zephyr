@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon TDM I2S
+
+description: |
+  One TDM structure (TDMx_TDM_STRUCTy, a transmitter and receiver pair) of
+  the Infineon TDM/I2S interface, used in I2S mode. Data is moved between
+  memory and the TX/RX FIFOs by DMA channels started from the FIFO trigger
+  interrupts.
+
+  The interface clock is the clk_hf node in "clocks". The driver selects the
+  matching CLK_IF_SRSS input from its index: on CYT4DN clk_hf5, clk_hf6 and
+  clk_hf7 feed CLK_IF_SRSS0, 1 and 2.
+
+  Example:
+
+    i2s0: tdm@40818000 {
+      compatible = "infineon,tdm-i2s";
+      reg = <0x40818000 0x200>;
+      interrupt-parent = <&intmux_ch3>;
+      interrupts = <753 0>, <752 0>;
+      interrupt-names = "rx", "tx";
+      clocks = <&clk_hf5>;
+      dmas = <&dma0 0>, <&dma0 1>;
+      dma-names = "tx", "rx";
+      pinctrl-0 = <&p15_6_tdm_i2s0_tx_mck &p15_7_tdm_i2s0_tx_sck
+                   &p16_0_tdm_i2s0_tx_fsync &p16_1_tdm_i2s0_tx_sd>;
+      pinctrl-names = "default";
+    };
+
+compatible: "infineon,tdm-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Must be "rx" and "tx".
+
+  clocks:
+    required: true
+    description: |
+      clk_hf node feeding the interface clock (CLK_IF_SRSS input).
+
+  dmas:
+    required: true
+
+  dma-names:
+    required: true
+    description: |
+      Must be "tx" and "rx".
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
