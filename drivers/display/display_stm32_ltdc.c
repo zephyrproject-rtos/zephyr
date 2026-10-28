@@ -119,9 +119,9 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 	}
 
 	if (current_line_number == 0) {
-		/* VSync event occurs at the beginning of the frame, line number = 0 */
-
-		/* Set next interrupt in case the user has programmed a line event */
+		/* VSync event occurs at the beginning of the frame, line number = 0.
+		 * Set next interrupt in case the user has programmed a line event
+		 */
 		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
 
 		k_sem_take(&data->cb_sem, K_NO_WAIT);
@@ -130,6 +130,14 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 			(data->cb.event_mask & DISPLAY_EVENT_VSYNC)) {
 			event_handled = data->cb.cb_fn(data->cb.dev,
 				DISPLAY_EVENT_VSYNC, &event_data, data->cb.user_data);
+		}
+
+		/* Grab latest line IRQ number if changed in callback */
+		uint32_t current_int_line = data->hltdc.Instance->LIPCR;
+
+		if (data->cb.user_line_number != current_int_line) {
+			data->cb.user_line_number = current_int_line;
+			HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
 		}
 
 		k_sem_give(&data->cb_sem);
@@ -176,6 +184,9 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 			} else {
 				HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
 			}
+		} else {
+			/* If we haven't changed the IRQ line set it back to 0 for frame refresh */
+			HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
 		}
 	}
 
@@ -549,12 +560,6 @@ static int stm32_ltdc_display_register_event_cb(const struct device *dev, displa
 		return -ENOSYS;
 	}
 
-	/* VSync can only be detected by LTDC line interrupt,
-	 * so the line event is programmed accordingly
-	 */
-	if (event_mask & DISPLAY_EVENT_VSYNC) {
-		HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
-	}
 
 	*out_reg_handle = 1U;
 
@@ -576,8 +581,20 @@ static int stm32_ltdc_display_register_event_cb(const struct device *dev, displa
 		data->cb.user_line_number = 0;
 	}
 
-	if (data->cb.user_line_number > (data->hltdc.Instance->CPSR & 0xFFFF)) {
-		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
+	if ((event_mask & DISPLAY_EVENT_LINE_INT) != 0) {
+		uint32_t irq_line = data->cb.user_line_number;
+		/* If you've passed the user's line interrupt line
+		 * set the line interrupt to VSYNC
+		 */
+		if ((data->hltdc.Instance->CPSR & 0xFFFF) >= data->cb.user_line_number) {
+			irq_line = 0;
+		}
+		HAL_LTDC_ProgramLineEvent(&data->hltdc, irq_line);
+	} else if ((event_mask & DISPLAY_EVENT_VSYNC) != 0) {
+		/* VSync can only be detected by LTDC line interrupt,
+		 * so the line event is programmed accordingly
+		 */
+		HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
 	}
 
 	return 0;
