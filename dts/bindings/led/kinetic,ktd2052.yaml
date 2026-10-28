@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 sevenlab engineering GmbH
+
+description: |
+  Kinetic KTD2052 RGB LED driver: a 4 x RGB LED current sink controlled over I2C.
+
+  The KTD2052 drives four RGB modules, each with three channels in the order red, green,
+  blue. Child nodes are optional. Without them, LEDs 0 to 3 of the LED API are modules 0 to 3.
+  With them, LED n of the LED API is the n-th child node, its index selects the module, and
+  the child describes the LED for led_get_info().
+
+compatible: "kinetic,ktd2052"
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+child-binding:
+  properties:
+    label:
+      required: true
+
+    index:
+      required: true
+      description: RGB module of the KTD2052 that this LED is wired to, 0 to 3.
+
+    color-mapping:
+      required: true
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/led/led.h>
+
+    ktd2052@74 {
+      compatible = "kinetic,ktd2052";
+      reg = <0x74>;
+
+      led_0 {
+        label = "RGB LED 0";
+        index = <0>;
+        color-mapping = <LED_COLOR_ID_RED>,
+                        <LED_COLOR_ID_GREEN>,
+                        <LED_COLOR_ID_BLUE>;
+      };
+    };

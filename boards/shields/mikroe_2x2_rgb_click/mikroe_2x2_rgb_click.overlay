@@ -1,0 +1,47 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2026 sevenlab engineering GmbH
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&mikrobus_i2c {
+	status = "okay";
+
+	mikroe_2x2_rgb_click: ktd2052@74 {
+		compatible = "kinetic,ktd2052";
+		reg = <0x74>;
+
+		led_0 {
+			label = "RGB LED 0";
+			index = <0>;
+			color-mapping = <LED_COLOR_ID_RED>,
+					<LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_BLUE>;
+		};
+
+		led_1 {
+			label = "RGB LED 1";
+			index = <1>;
+			color-mapping = <LED_COLOR_ID_RED>,
+					<LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_BLUE>;
+		};
+
+		led_2 {
+			label = "RGB LED 2";
+			index = <2>;
+			color-mapping = <LED_COLOR_ID_RED>,
+					<LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_BLUE>;
+		};
+
+		led_3 {
+			label = "RGB LED 3";
+			index = <3>;
+			color-mapping = <LED_COLOR_ID_RED>,
+					<LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_BLUE>;
+		};
+	};
+};
