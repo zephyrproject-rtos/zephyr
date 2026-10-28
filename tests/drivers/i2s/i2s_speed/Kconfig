@@ -45,6 +45,18 @@ config I2S_TEST_ALLOW_VARIABLE_OFFSET
 	  timing variations in the hardware, enable this option to
 	  always recalculate the offset.
 
+config I2S_TEST_FORMAT_PCM_SHORT
+	bool "Run all test cases also in the PCM short frame format"
+	help
+	  After the I2S format, run all test cases again with the PCM short
+	  frame format and one channel.
+
+config I2S_TEST_FORMAT_PCM_LONG
+	bool "Run all test cases also in the PCM long frame format"
+	help
+	  After the I2S format, run all test cases again with the PCM long
+	  frame format and one channel.
+
 config I2S_TEST_USE_32_SAMPLES_PER_BLOCK
 	bool "Use 32 samples per block"
 	help

@@ -52,6 +52,9 @@ static int16_t data_r[SAMPLE_NO] = {
 #endif
 };
 
+/* A block holds data_l and data_r interleaved: one word of each per frame with
+ * two channels, consecutive words with one channel.
+ */
 #define BLOCK_SIZE (2 * sizeof(data_l))
 
 #ifdef CONFIG_NOCACHE_MEMORY
@@ -77,6 +80,24 @@ char MEM_SLAB_CACHE_ATTR __aligned(WB_UP(32))
 STRUCT_SECTION_ITERABLE(k_mem_slab, tx_0_mem_slab) =
 	Z_MEM_SLAB_INITIALIZER(tx_0_mem_slab, _k_mem_slab_buf_tx_0_mem_slab,
 				WB_UP(BLOCK_SIZE), NUM_BLOCKS);
+
+struct i2s_test_frame {
+	const char *name;
+	uint32_t format;
+	uint8_t channels;
+};
+
+static const struct i2s_test_frame frames[] = {
+	{"I2S", I2S_FMT_DATA_FORMAT_I2S, 2U},
+#ifdef CONFIG_I2S_TEST_FORMAT_PCM_SHORT
+	{"PCM short frame", I2S_FMT_DATA_FORMAT_PCM_SHORT, 1U},
+#endif
+#ifdef CONFIG_I2S_TEST_FORMAT_PCM_LONG
+	{"PCM long frame", I2S_FMT_DATA_FORMAT_PCM_LONG, 1U},
+#endif
+};
+
+static ZTEST_DMEM const struct i2s_test_frame *test_frame = &frames[0];
 
 static const struct device *dev_i2s_rx;
 static const struct device *dev_i2s_tx;
@@ -146,8 +167,8 @@ static int configure_stream(const struct device *dev_i2s, enum i2s_dir dir, uint
 	struct i2s_config i2s_cfg = {0};
 
 	i2s_cfg.word_size = 16U;
-	i2s_cfg.channels = 2U;
-	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
+	i2s_cfg.channels = test_frame->channels;
+	i2s_cfg.format = test_frame->format;
 	i2s_cfg.frame_clk_freq = frame_clk_freq;
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.timeout = TIMEOUT;
@@ -758,6 +779,37 @@ static void *test_i2s_speed_rxtx_configure(void)
 	return 0;
 }
 
+static void print_frame_format(void *fixture)
+{
+	ARG_UNUSED(fixture);
 
-ZTEST_SUITE(drivers_i2s_speed, NULL, test_i2s_speed_configure, NULL, NULL, NULL);
-ZTEST_SUITE(drivers_i2s_speed_both_rxtx, NULL, test_i2s_speed_rxtx_configure, NULL, NULL, NULL);
+	TC_PRINT("Frame format: %s, %u channel(s)\n", test_frame->name, test_frame->channels);
+}
+
+ZTEST_SUITE(drivers_i2s_speed, NULL, test_i2s_speed_configure, print_frame_format, NULL, NULL);
+ZTEST_SUITE(drivers_i2s_speed_both_rxtx, NULL, test_i2s_speed_rxtx_configure, print_frame_format,
+	    NULL, NULL);
+
+static void slab_reset(struct k_mem_slab *slab)
+{
+	(void)k_mem_slab_init(slab, slab->buffer, slab->info.block_size, slab->info.num_blocks);
+}
+
+void test_main(void)
+{
+	ARRAY_FOR_EACH(frames, i) {
+		test_frame = &frames[i];
+		ztest_run_all(NULL, false, 1, 1);
+
+		/* Start the next format with idle streams and all blocks free. A
+		 * block that a stream held when its clock stopped does not return.
+		 */
+		k_sleep(K_MSEC(200));
+		(void)i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_DROP);
+		(void)i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_DROP);
+		slab_reset(&tx_0_mem_slab);
+		slab_reset(&rx_0_mem_slab);
+	}
+
+	ztest_verify_all_test_suites_ran();
+}
