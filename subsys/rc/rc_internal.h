@@ -33,6 +33,10 @@ uint32_t rc_protocol_min_timeout_us(const struct device *dev);
 
 int rc_rx_timeout_update(const struct device *dev);
 
+int rc_rx_submit(struct k_work *work);
+
+void rc_event_report(const struct device *dev, const struct rc_event *evt);
+
 void rc_raw_init(const struct device *dev, bool core_timeout);
 
 #endif /* ZEPHYR_SUBSYS_RC_RC_INTERNAL_H_ */

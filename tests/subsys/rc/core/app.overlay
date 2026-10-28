@@ -35,4 +35,10 @@
 		hw-rx-timeout;
 		status = "okay";
 	};
+
+	rc_loopback5: rc-loopback-5 {
+		compatible = "zephyr,rc-loopback";
+		protocols = <0x1fa>;
+		status = "okay";
+	};
 };

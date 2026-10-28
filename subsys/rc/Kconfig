@@ -3,6 +3,8 @@
 
 menuconfig RC
 	bool "Remote control (IR) support"
+	select RTIO
+	select RTIO_SYS_MEM_BLOCKS
 	help
 	  Enable the remote control subsystem: raw pulse and space capture,
 	  protocol decoding and encoding, and transmission for infrared

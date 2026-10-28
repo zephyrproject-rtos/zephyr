@@ -21,6 +21,11 @@ BUILD_ASSERT(CONFIG_RC_INIT_PRIORITY > CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 static K_THREAD_STACK_DEFINE(rc_rx_stack, CONFIG_RC_RX_WORKQ_STACK_SIZE);
 static struct k_work_q rc_rx_wq;
 
+int rc_rx_submit(struct k_work *work)
+{
+	return k_work_submit_to_queue(&rc_rx_wq, work);
+}
+
 static uint64_t rc_cycles(void)
 {
 	if (IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {

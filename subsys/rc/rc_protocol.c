@@ -5,6 +5,7 @@
 
 #include <errno.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/rc/rc.h>
 #include <zephyr/rc/rc_protocol.h>
@@ -173,8 +174,16 @@ void rc_protocol_decode(const struct device *dev, uint32_t word)
 				rc_protocol_reset(p, dev, idx);
 			}
 			if (p->decode(rc_protocol_state(dev, idx), word, &res) == 1) {
+				struct rc_event evt = {
+					.timestamp_ns = k_ticks_to_ns_floor64(k_uptime_ticks()),
+					.flags = res.flags,
+					.proto = res.proto,
+					.scancode = res.scancode,
+				};
+
 				LOG_DBG("%s: %s proto %u scancode 0x%08x flags 0x%x", dev->name,
 					p->name, res.proto, res.scancode, res.flags);
+				rc_event_report(dev, &evt);
 			}
 		}
 		idx++;

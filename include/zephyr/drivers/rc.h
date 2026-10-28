@@ -21,6 +21,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/rc/rc.h>
 #include <zephyr/rc/rc_protocol.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/spsc_lockfree.h>
 #include <zephyr/sys/util.h>
@@ -101,6 +102,9 @@ struct rc_dev_data {
 	atomic_t rx_timeout_us;
 	struct k_work rx_work;
 	struct k_work_delayable timeout_work;
+	struct k_spinlock evt_lock;
+	struct rtio_iodev_sqe *evt_head;
+	struct rtio_iodev_sqe *evt_tail;
 	/** @endcond */
 };
 
