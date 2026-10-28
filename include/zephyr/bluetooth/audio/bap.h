@@ -233,101 +233,105 @@ enum {
 	BT_BAP_QOS_CFG(_interval, BT_BAP_QOS_CFG_FRAMING_FRAMED, BT_BAP_QOS_CFG_2M, _sdu, _rtn,    \
 		       _latency, _pd)
 
-/** @brief QoS configuration structure. */
+/** @brief QoS configuration structure.
+ *
+ * The values are copied when used, so modifying this structure afterwards has no effect
+ * by itself.
+ *
+ * - Unicast: the values are copied by bt_bap_unicast_group_create(), and
+ *   bt_bap_stream_qos() sends the values stored in the group. To update them, call
+ *   bt_bap_unicast_group_reconfig() (only before any CIS of the group has been connected)
+ *   and then bt_bap_stream_qos() again.
+ * - Broadcast source: the values are copied by bt_bap_broadcast_source_create(). To update
+ *   them, call bt_bap_broadcast_source_reconfig() while the broadcast source is stopped.
+ * - Broadcast sink: the values are set from the BASE and BIGInfo of the synced broadcast
+ *   and cannot be modified.
+ */
 struct bt_bap_qos_cfg {
 	/**
 	 * @brief Presentation Delay in microseconds
-	 *
-	 * This value can be changed up and until bt_bap_stream_qos() has been called.
-	 * Once a stream has been QoS configured, modifying this field does not modify the value.
-	 * It is however possible to modify this field and call bt_bap_stream_qos() again to update
-	 * the value, assuming that the stream is in the correct state.
 	 *
 	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
 	 */
 	uint32_t pd;
 
 	/**
-	 * @brief Connected Isochronous Group (CIG) parameters
+	 * @brief QoS Framing
 	 *
-	 * The fields in this struct affect the value sent to the controller via HCI
-	 * when creating the CIG. Once the group has been created with
-	 * bt_bap_unicast_group_create(), modifying these fields will not affect the group.
+	 * Allowed values are @ref BT_BAP_QOS_CFG_FRAMING_UNFRAMED and
+	 * @ref BT_BAP_QOS_CFG_FRAMING_FRAMED.
 	 */
-	struct {
-		/** QoS Framing */
-		enum bt_bap_qos_cfg_framing framing;
+	enum bt_bap_qos_cfg_framing framing;
 
-		/**
-		 * @brief PHY
-		 *
-		 * Allowed values are @ref BT_BAP_QOS_CFG_1M, @ref BT_BAP_QOS_CFG_2M and
-		 * @ref BT_BAP_QOS_CFG_CODED.
-		 */
-		uint8_t phy;
+	/**
+	 * @brief PHY
+	 *
+	 * Allowed values are @ref BT_BAP_QOS_CFG_1M, @ref BT_BAP_QOS_CFG_2M and
+	 * @ref BT_BAP_QOS_CFG_CODED.
+	 */
+	uint8_t phy;
 
-		/**
-		 * @brief Maximum SDU size
-		 *
-		 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
-		 */
-		uint16_t sdu;
+	/**
+	 * @brief SDU Interval
+	 *
+	 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX
+	 */
+	uint32_t interval;
+
+	/**
+	 * @brief Maximum SDU size
+	 *
+	 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
+	 */
+	uint16_t sdu;
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST) ||                   \
 	defined(__DOXYGEN__)
-		/**
-		 * @brief Maximum Transport Latency
-		 *
-		 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
-		 */
-		uint16_t latency;
-		/**
-		 * @brief Retransmission Number
-		 *
-		 * This a recommendation to the controller, and the actual retransmission number
-		 * may be different than this.
-		 */
-		uint8_t rtn;
+	/**
+	 * @brief Maximum Transport Latency
+	 *
+	 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
+	 */
+	uint16_t latency;
+	/**
+	 * @brief Retransmission Number
+	 *
+	 * This a recommendation to the controller, and the actual retransmission number
+	 * may be different than this.
+	 */
+	uint8_t rtn;
 #endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 
-		/**
-		 * @brief SDU Interval
-		 *
-		 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX
-		 */
-		uint32_t interval;
-
 #if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
-		/**
-		 * @brief Maximum PDU size
-		 *
-		 * Maximum size, in octets, of the payload from link layer to link layer.
-		 *
-		 *  Value range @ref BT_ISO_CONNECTED_PDU_MIN to @ref BT_ISO_PDU_MAX for
-		 *  connected ISO.
-		 *
-		 *  Value range @ref BT_ISO_BROADCAST_PDU_MIN to @ref BT_ISO_PDU_MAX for
-		 *  broadcast ISO.
-		 */
-		uint16_t max_pdu;
+	/**
+	 * @brief Maximum PDU size
+	 *
+	 * Maximum size, in octets, of the payload from link layer to link layer.
+	 *
+	 *  Value range @ref BT_ISO_CONNECTED_PDU_MIN to @ref BT_ISO_PDU_MAX for
+	 *  connected ISO.
+	 *
+	 *  Value range @ref BT_ISO_BROADCAST_PDU_MIN to @ref BT_ISO_PDU_MAX for
+	 *  broadcast ISO.
+	 */
+	uint16_t max_pdu;
 
-		/**
-		 * @brief Burst number
-		 *
-		 * Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
-		 */
-		uint8_t burst_number;
+	/**
+	 * @brief Burst number
+	 *
+	 * Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
+	 */
+	uint8_t burst_number;
 
-		/**
-		 * @brief Number of subevents
-		 *
-		 * Maximum number of subevents in each CIS or BIS event.
-		 *
-		 * Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
-		 */
-		uint8_t num_subevents;
+	/**
+	 * @brief Number of subevents
+	 *
+	 * Maximum number of subevents in each CIS or BIS event.
+	 *
+	 * Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
+	 */
+	uint8_t num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
-	};
 };
 
 /** Periodic advertising state reported by the Scan Delegator */
