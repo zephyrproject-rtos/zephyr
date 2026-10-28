@@ -22,10 +22,27 @@
 		};
 	};
 
+	mm_uart0_default: mm_uart0_default {
+		group1 {
+			pinmux = <GPIO17_MM_UART_RX>,
+				 <GPIO16_MM_UART_TX>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	mm_uart0_sleep: mm_uart0_sleep {
+		group1 {
+			pinmux = <GPIO17_MM_UART_RX>,
+				 <GPIO16_MM_UART_TX>;
+			bias-high-impedance;
+		};
+	};
+
 	uart1_default: uart1_default {
 		group1 {
-			pinmux = <GPIO17_UART1_RX>,
-				 <GPIO16_UART1_TX>;
+			pinmux = <GPIO31_UART1_RX>,
+				 <GPIO30_UART1_TX>;
 			bias-pull-up;
 			input-schmitt-enable;
 		};
@@ -33,8 +50,8 @@
 
 	uart1_sleep: uart1_sleep {
 		group1 {
-			pinmux = <GPIO17_UART1_RX>,
-				 <GPIO16_UART1_TX>;
+			pinmux = <GPIO31_UART1_RX>,
+				 <GPIO30_UART1_TX>;
 			bias-high-impedance;
 		};
 	};

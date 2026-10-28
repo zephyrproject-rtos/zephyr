@@ -18,6 +18,11 @@ LOG_MODULE_REGISTER(efuse_bflb, CONFIG_OTP_LOG_LEVEL);
 #include <extra_defines.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
+/* Don't reload OTP into the HW buffer when starting secondary CPUs */
+#if defined(CONFIG_SOC_SERIES_BL808_D0) || defined(CONFIG_SOC_SERIES_BL808_LP)
+#define SKIP_READ
+#endif
+
 struct efuse_bflb_data {
 	uint8_t cache[DT_INST_PROP(0, size)];
 	bool cached;
@@ -27,6 +32,8 @@ struct efuse_bflb_config {
 	uintptr_t addr;
 	size_t size;
 };
+
+#ifndef SKIP_READ
 
 static void efuse_bflb_clock_delay_32M_ms(uint32_t ms)
 {
@@ -50,7 +57,7 @@ static uint32_t efuse_bflb_is_pds_busy(const struct device *dev)
 	return 0;
 }
 
-/* /!\ only use when running on 32Mhz Oscillator Clock
+/* /!\ only use when running on 32Mhz Oscillator Clock on E24 SoCs
  * (system_set_root_clock(0);
  * system_set_root_clock_dividers(0, 0);
  * sys_write32(32 * 1000 * 1000, CORECLOCKREGISTER);)
@@ -159,13 +166,16 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 	sys_write32(tmp, config->addr + EF_CTRL_EF_IF_CTRL_0_OFFSET);
 }
 
+#endif
+
 static void efuse_bflb_cache(const struct device *dev)
 {
 	struct efuse_bflb_data *data = dev->data;
 	const struct efuse_bflb_config *config = dev->config;
 	uint32_t tmp;
-	uint8_t old_clock_root;
+#ifndef SKIP_READ
 	uint32_t key;
+	uint8_t old_clock_root;
 
 	key = irq_lock();
 
@@ -175,6 +185,7 @@ static void efuse_bflb_cache(const struct device *dev)
 	clock_bflb_settle();
 
 	efuse_bflb_efuse_read(dev);
+#endif
 	/* reads *must* be 32-bits aligned AND does not work with the method memcpy uses */
 	for (int i = 0; i < config->size / sizeof(uint32_t); i++) {
 		tmp = sys_read32(config->addr + i * 4);
@@ -184,11 +195,13 @@ static void efuse_bflb_cache(const struct device *dev)
 		data->cache[i * sizeof(uint32_t) + 0] = (tmp & 0x000000FFU);
 	}
 
+#ifndef SKIP_READ
 	clock_bflb_set_root_clock(old_clock_root);
 	clock_bflb_settle();
-	data->cached = true;
 
 	irq_unlock(key);
+#endif
+	data->cached = true;
 }
 
 static int efuse_bflb_read(const struct device *dev, off_t offset, void *out, size_t len)

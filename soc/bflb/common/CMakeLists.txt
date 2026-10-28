@@ -18,14 +18,18 @@ if(CONFIG_SOC_SERIES_BL61X OR CONFIG_SOC_SERIES_BL808 OR CONFIG_SOC_SERIES_BL616
   zephyr_include_directories(thead)
   zephyr_sources(
     thead/sf_offset.S
+    thead/thead_csr.c
   )
 endif()
 
 # Add offset change as the very first code in ROM
 zephyr_linker_sources(ROM_START SORT_KEY "0x0bflb" sf_offset.ld)
 
-zephyr_sources(
+zephyr_sources_ifdef(CONFIG_DT_HAS_BFLB_POWER_CONTROLLER_ENABLED
   power.c
+)
+
+zephyr_sources(
   checks.c
 )
 

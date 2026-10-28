@@ -1,12 +1,13 @@
 /*
- * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
+
+#ifdef CONFIG_DCACHE
 
 int arch_dcache_invd_all(void)
 {
@@ -16,6 +17,8 @@ int arch_dcache_invd_all(void)
 		"th.dcache.iall\n"
 		"fence\n"
 		"fence.i\n"
+		"th.sync.i\n"
+		::: "memory"
 	);
 
 	return 0;
@@ -27,6 +30,7 @@ static void arch_cache_invalidate_dcache_line(uintptr_t address)
 		"th.dcache.ipa %0\n"
 		:
 		: "r"(address)
+		: "memory"
 	);
 }
 
@@ -37,6 +41,7 @@ int arch_dcache_invd_range(void *addr_in, size_t size)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
+		::: "memory"
 	);
 	for (uintptr_t i = addr; i < ROUND_UP(addr + size, CONFIG_DCACHE_LINE_SIZE);
 	     i += CONFIG_DCACHE_LINE_SIZE) {
@@ -45,48 +50,8 @@ int arch_dcache_invd_range(void *addr_in, size_t size)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
-	);
-
-	return 0;
-}
-
-int arch_icache_invd_all(void)
-{
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
-		"th.icache.iall\n"
-		"fence\n"
-		"fence.i\n"
-	);
-
-	return 0;
-}
-
-static void arch_cache_invalidate_icache_line(uintptr_t address)
-{
-	__asm__ volatile (
-		"th.icache.ipa %0\n"
-		:
-		: "r"(address)
-	);
-}
-
-int arch_icache_invd_range(void *addr_in, size_t size)
-{
-	uintptr_t addr = (uintptr_t)addr_in;
-
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
-	);
-	for (uintptr_t i = addr; i < ROUND_UP(addr + size, CONFIG_ICACHE_LINE_SIZE);
-	     i += CONFIG_ICACHE_LINE_SIZE) {
-		arch_cache_invalidate_icache_line(i);
-	}
-	__asm__ volatile (
-		"fence\n"
-		"fence.i\n"
+		"th.sync.i\n"
+		::: "memory"
 	);
 
 	return 0;
@@ -100,6 +65,8 @@ int arch_dcache_flush_all(void)
 		"th.dcache.call\n"
 		"fence\n"
 		"fence.i\n"
+		"th.sync.i\n"
+		::: "memory"
 	);
 
 	return 0;
@@ -111,6 +78,7 @@ static void arch_cache_clean_dcache_line(uintptr_t address)
 		"th.dcache.cpa %0\n"
 		:
 		: "r"(address)
+		: "memory"
 	);
 }
 
@@ -121,6 +89,7 @@ int arch_dcache_flush_range(void *addr_in, size_t size)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
+		::: "memory"
 	);
 	for (uintptr_t i = addr; i < ROUND_UP(addr + size, CONFIG_DCACHE_LINE_SIZE);
 	     i += CONFIG_DCACHE_LINE_SIZE) {
@@ -129,6 +98,8 @@ int arch_dcache_flush_range(void *addr_in, size_t size)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
+		"th.sync.i\n"
+		::: "memory"
 	);
 
 	return 0;
@@ -142,6 +113,8 @@ int arch_dcache_flush_and_invd_all(void)
 		"th.dcache.ciall\n"
 		"fence\n"
 		"fence.i\n"
+		"th.sync.i\n"
+		::: "memory"
 	);
 
 	return 0;
@@ -153,6 +126,7 @@ static void arch_cache_clean_invalidate_dcache_line(uintptr_t address)
 		"th.dcache.cipa %0\n"
 		:
 		: "r"(address)
+		: "memory"
 	);
 }
 
@@ -163,6 +137,7 @@ int arch_dcache_flush_and_invd_range(void *addr_in, size_t size)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
+		::: "memory"
 	);
 	for (uintptr_t i = addr; i < ROUND_UP(addr + size, CONFIG_DCACHE_LINE_SIZE);
 	     i += CONFIG_DCACHE_LINE_SIZE) {
@@ -171,6 +146,60 @@ int arch_dcache_flush_and_invd_range(void *addr_in, size_t size)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
+		"th.sync.i\n"
+		::: "memory"
+	);
+
+	return 0;
+}
+
+#endif /* CONFIG_DCACHE */
+
+#ifdef CONFIG_ICACHE
+
+int arch_icache_invd_all(void)
+{
+	__asm__ volatile (
+		"fence\n"
+		"fence.i\n"
+		"th.icache.iall\n"
+		"fence\n"
+		"fence.i\n"
+		"th.sync.i\n"
+		::: "memory"
+	);
+
+	return 0;
+}
+
+static void arch_cache_invalidate_icache_line(uintptr_t address)
+{
+	__asm__ volatile (
+		"th.icache.ipa %0\n"
+		:
+		: "r"(address)
+		: "memory"
+	);
+}
+
+int arch_icache_invd_range(void *addr_in, size_t size)
+{
+	uintptr_t addr = (uintptr_t)addr_in;
+
+	__asm__ volatile (
+		"fence\n"
+		"fence.i\n"
+		::: "memory"
+	);
+	for (uintptr_t i = addr; i < ROUND_UP(addr + size, CONFIG_ICACHE_LINE_SIZE);
+	     i += CONFIG_ICACHE_LINE_SIZE) {
+		arch_cache_invalidate_icache_line(i);
+	}
+	__asm__ volatile (
+		"fence\n"
+		"fence.i\n"
+		"th.sync.i\n"
+		::: "memory"
 	);
 
 	return 0;
@@ -201,3 +230,5 @@ int arch_icache_flush_and_invd_range(void *addr, size_t size)
 
 	return -ENOTSUP;
 }
+
+#endif /* CONFIG_ICACHE */
