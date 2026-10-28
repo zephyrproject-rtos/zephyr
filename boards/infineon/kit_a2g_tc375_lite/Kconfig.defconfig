@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_KIT_A2G_TC375_LITE
+
+# fSTM = fPLL0 300 MHz / 3, see the ccu node
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 100000000
+
+endif

@@ -18,8 +18,12 @@
 GEN_OFFSET_SYM(_callee_saved_t, pcxi);
 GEN_OFFSET_SYM(_thread_base_t, thread_state);
 GEN_OFFSET_SYM(_cpu_arch_t, to_reclaim);
+#if defined(CONFIG_USERSPACE)
+GEN_OFFSET_SYM(_thread_arch_t, priv_stack_end);
+#endif
 
 /* CSA offsets */
+GEN_OFFSET_SYM(z_tricore_lower_context_t, d2);
 GEN_OFFSET_SYM(z_tricore_lower_context_t, a4);
 GEN_OFFSET_SYM(z_tricore_lower_context_t, a5);
 GEN_OFFSET_SYM(z_tricore_lower_context_t, a6);

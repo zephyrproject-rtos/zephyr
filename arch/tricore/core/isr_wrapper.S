@@ -24,6 +24,9 @@ GTEXT(z_tricore_switch)
 GTEXT(sys_trace_isr_enter)
 GTEXT(sys_trace_isr_exit)
 #endif
+#if CONFIG_MPU_STACK_GUARD
+GTEXT(z_tricore_mpu_stackguard_enable)
+#endif
 
 /**
  *
@@ -43,6 +46,16 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	ld.w %d15, [%a15]+___cpu_t_nested_OFFSET
 	addi %d15, %d15, 1
 	st.w [%a15]+___cpu_t_nested_OFFSET, %d15
+
+#if CONFIG_MPU_STACK_GUARD
+	/* On outer ISR entry install the ISR-stack guard */
+	jne %d15, 1, _isr_skip_guard_enter
+	mov.a %a4, 0
+	call z_tricore_mpu_stackguard_enable
+	movh.a  %a15, hi:(_kernel + ___kernel_t_cpus_OFFSET)
+	lea     %a15, [%a15], lo:(_kernel + ___kernel_t_cpus_OFFSET)
+_isr_skip_guard_enter:
+#endif
 
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_enter
@@ -127,6 +140,10 @@ z_tricore_irq_done:
 2:
 	fcall	z_tricore_switch
 
+	/* z_tricore_switch clobbers %a15 across the MPU reconfigure */
+	movh.a	%a15, hi:(_kernel + ___kernel_t_cpus_OFFSET)
+	lea	%a15, [%a15], lo:(_kernel + ___kernel_t_cpus_OFFSET)
+
 	/* Reclaim CSAs if needed */
 	ld.a	%a13, [%a15]+_cpu_offset_to_to_reclaim
 	jz.a	%a13, no_reschedule
@@ -138,6 +155,14 @@ z_tricore_irq_done:
 #endif
 
 no_reschedule:
+#if CONFIG_MPU_STACK_GUARD
+	/* When returning to thread context restore the thread stack guard */
+	ld.w %d15, [%a15]+___cpu_t_nested_OFFSET
+	jnz %d15, _isr_skip_guard_exit
+	ld.a %a4, [%a15]+___cpu_t_current_OFFSET
+	call z_tricore_mpu_stackguard_enable
+_isr_skip_guard_exit:
+#endif
 	/* Return from interrupt */
 	rslcx
 	rfe

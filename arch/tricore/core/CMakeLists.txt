@@ -20,6 +20,11 @@ zephyr_library_sources(
     thread.c
     vectors.c
 )
+zephyr_library_sources_ifdef(CONFIG_TRICORE_MPU mpu.c)
+if(CONFIG_TRICORE_MPU AND NOT CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
+  zephyr_library_sources(mpu_regions.c)
+endif()
+zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x0reset reset.ld)

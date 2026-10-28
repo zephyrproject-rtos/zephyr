@@ -1,0 +1,122 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <infineon/tc3x/tc375tp.dtsi>
+#include <infineon/tc3x/tc375tp-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Infineon AURIX TC375 lite kit";
+	compatible = "infineon,kit-a2g-tc375-lite";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &dsram0;
+		zephyr,console = &asclin0;
+		zephyr,shell-uart = &asclin0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&p00 5 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led1: led_1 {
+			gpios = <&p00 6 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&p00 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	clocks {
+		/* 20 MHz crystal */
+		fosc: fosc {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(20)>;
+			#clock-cells = <0>;
+		};
+	};
+};
+
+/*
+ * fPLL0 = 20 MHz * 30 / 2 = 300 MHz: fSRI 300 MHz, fSPB, fFSI and fSTM
+ * 100 MHz. Peripheral PLL fDCO 640 MHz: fPLL2 = 640 MHz / 1.6 / 2 =
+ * 200 MHz = fASCLINF.
+ */
+&ccu {
+	clocks = <&fosc>;
+	sri-div = <1>;
+	spb-div = <3>;
+	fsi-div = <3>;
+	stm-div = <3>;
+	asclinf-div = <1>;
+
+	sys-pll {
+		p-div = <1>;
+		n-div = <30>;
+		k2-div = <2>;
+	};
+
+	per-pll {
+		p-div = <1>;
+		n-div = <32>;
+		k2-div = <2>;
+		k3-div = <2>;
+	};
+};
+
+/* USB virtual COM port of the on-board debugger */
+&asclin0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&asclin0_tx_p14_0 &asclin0_rx_p14_1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&stm0 {
+	status = "okay";
+};
+
+&p00 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_M(3)>;
+		};
+	};
+};
