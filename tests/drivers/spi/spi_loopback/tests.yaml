@@ -548,3 +548,48 @@ tests:
       - CONFIG_PM_DEVICE_RUNTIME=y
       - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
       - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE=300
+  drivers.spi.loopback.pm:
+    extra_args:
+      - platform:esp32_devkitc/esp32/procpu:SNIPPET="espressif-pm"
+      - platform:esp8684_devkitm:SNIPPET="espressif-pm"
+      - platform:esp32c3_devkitc:SNIPPET="espressif-pm"
+      - platform:esp32c5_devkitc/esp32c5/hpcore:SNIPPET="espressif-pm"
+      - platform:esp32c6_devkitc/esp32c6/hpcore:SNIPPET="espressif-pm"
+      - platform:esp32h2_devkitm:SNIPPET="espressif-pm"
+      - platform:esp32s2_devkitc:SNIPPET="espressif-pm"
+      - platform:esp32s3_devkitc/esp32s3/procpu:SNIPPET="espressif-pm"
+      - platform:esp32p4_function_ev_board/esp32p4/hpcore:SNIPPET="espressif-pm"
+      - platform:esp32p4x_function_ev_board/esp32p4/hpcore:SNIPPET="espressif-pm"
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp8684_devkitm
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_configs:
+      - CONFIG_SPI_LOOPBACK_PM=y
+  drivers.spi.loopback.pm.esp.periph_pd:
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_configs:
+      - CONFIG_SPI_LOOPBACK_PM=y
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
+  drivers.spi.loopback.pm.esp.periph_pd.noflash:
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32p4_function_ev_board/esp32p4/hpcore
+    extra_configs:
+      - CONFIG_SPI_LOOPBACK_PM=y
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
