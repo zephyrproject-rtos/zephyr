@@ -17,6 +17,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/rc/rc-proto.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
@@ -51,7 +52,7 @@ struct rc_caps;
 
 /** @brief Decoded remote control event. */
 struct rc_event {
-	/** Uptime at end of frame in ns, kernel tick resolution */
+	/** Uptime in ns when the frame was decoded */
 	uint64_t timestamp_ns;
 	/** RC_EVENT_FLAG_* bits */
 	uint16_t flags;
@@ -174,6 +175,64 @@ int rc_protocol_disable(const struct device *dev, uint16_t proto);
  * @retval -ENOTSUP No decoder for @p proto is built.
  */
 int rc_protocol_is_enabled(const struct device *dev, uint16_t proto);
+
+/** @cond INTERNAL_HIDDEN */
+struct rc_iodev_config {
+	const struct device *dev;
+};
+
+extern const struct rtio_iodev_api rc_event_iodev_api;
+/** @endcond */
+
+/**
+ * @brief Define an RTIO iodev streaming the events of an rc device.
+ *
+ * @param name Name of the iodev.
+ * @param node_id Devicetree node identifier of the rc device.
+ */
+#define RC_DT_EVENT_IODEV(name, node_id)                                                           \
+	static struct rc_iodev_config _CONCAT(name, _config) = {                                   \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+	};                                                                                         \
+	RTIO_IODEV_DEFINE(name, &rc_event_iodev_api, &_CONCAT(name, _config))
+
+/**
+ * @brief Start streaming events into an RTIO context.
+ *
+ * @param iodev Iodev defined with RC_DT_EVENT_IODEV().
+ * @param ctx RTIO context with a memory pool.
+ * @param userdata Userdata of the completions.
+ * @param handle Filled with the submission handle, may be NULL.
+ *
+ * @retval 0 Success.
+ * @retval -ENOMEM No free submission in @p ctx.
+ */
+static inline int rc_stream(const struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
+			    rtio_sqe_handle_t *handle)
+{
+	if (IS_ENABLED(CONFIG_USERSPACE)) {
+		struct rtio_sqe sqe;
+		int ret;
+
+		rtio_sqe_prep_read_multishot(&sqe, iodev, RTIO_PRIO_NORM, userdata);
+		ret = rtio_sqe_copy_in_get_handles(ctx, &sqe, handle, 1);
+		if (ret != 0) {
+			return ret;
+		}
+	} else {
+		struct rtio_sqe *sqe = rtio_sqe_acquire(ctx);
+
+		if (sqe == NULL) {
+			return -ENOMEM;
+		}
+		if (handle != NULL) {
+			*handle = rtio_sqe_handle(ctx, sqe);
+		}
+		rtio_sqe_prep_read_multishot(sqe, iodev, RTIO_PRIO_NORM, userdata);
+	}
+
+	return rtio_submit(ctx, 0);
+}
 
 /** @} */
 
