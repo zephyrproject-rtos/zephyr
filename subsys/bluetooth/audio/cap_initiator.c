@@ -1060,6 +1060,7 @@ static void cap_to_bap_unicast_group_param(const struct bt_cap_unicast_group_par
 {
 	bap_params->group_param.params_count = param->params_count;
 	bap_params->group_param.packing = param->packing;
+	bap_params->group_param.sca = param->sca;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	bap_params->group_param.c_to_p_ft = param->c_to_p_ft;
 	bap_params->group_param.p_to_c_ft = param->p_to_c_ft;

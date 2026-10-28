@@ -2288,7 +2288,7 @@ static void bt_bap_qos_cfg_to_cig_param(struct bt_iso_cig_param *cig_param,
 	cig_param->c_to_p_latency = group->cig_param.c_to_p_latency;
 	cig_param->p_to_c_latency = group->cig_param.p_to_c_latency;
 	cig_param->packing = group->cig_param.packing;
-	cig_param->sca = BT_GAP_SCA_UNKNOWN;
+	cig_param->sca = group->cig_param.sca;
 
 	IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
 		cig_param->c_to_p_ft = group->cig_param.c_to_p_ft;
@@ -3018,6 +3018,7 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 		stream_param = &param->params[i];
 
 		unicast_group->cig_param.packing = param->packing;
+		unicast_group->cig_param.sca = param->sca;
 		IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
 			unicast_group->cig_param.c_to_p_ft = param->c_to_p_ft;
 			unicast_group->cig_param.p_to_c_ft = param->p_to_c_ft;
@@ -3098,6 +3099,7 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 		struct bt_bap_unicast_group_stream_param *tx_param = stream_param->tx_param;
 
 		unicast_group->cig_param.packing = param->packing;
+		unicast_group->cig_param.sca = param->sca;
 		IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
 			unicast_group->cig_param.c_to_p_ft = param->c_to_p_ft;
 			unicast_group->cig_param.p_to_c_ft = param->p_to_c_ft;
@@ -3328,6 +3330,7 @@ int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_gro
 		info->framing = BT_BAP_QOS_CFG_FRAMING_UNFRAMED;
 	}
 	info->packing = unicast_group->cig_param.packing;
+	info->sca = unicast_group->cig_param.sca;
 	info->has_been_connected = unicast_group->has_been_connected;
 	IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
 		info->c_to_p_ft = unicast_group->cig_param.c_to_p_ft;

@@ -1450,6 +1450,15 @@ struct bt_bap_unicast_group_param {
 	 */
 	uint8_t packing;
 
+	/**
+	 * @brief Worst-case Sleep Clock Accuracy.
+	 *
+	 * Shall be worst case sleep clock accuracy of all the peripherals.
+	 * For possible values, see @ref bt_gap_sca.
+	 * If unknown for the peripherals, this should be set to @ref BT_GAP_SCA_UNKNOWN.
+	 */
+	uint8_t sca;
+
 #if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/**
 	 * @brief Central to Peripheral flush timeout
@@ -1634,6 +1643,13 @@ struct bt_bap_unicast_group_info {
 	 * @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
 	 */
 	uint8_t packing;
+
+	/**
+	 * @brief Worst-case Sleep Clock Accuracy of the group
+	 *
+	 * For possible values, see @ref bt_gap_sca.
+	 */
+	uint8_t sca;
 
 	/**
 	 * @brief Whether any stream in the group has been connected

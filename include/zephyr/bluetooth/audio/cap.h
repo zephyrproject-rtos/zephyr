@@ -427,6 +427,15 @@ struct bt_cap_unicast_group_param {
 	 */
 	uint8_t packing;
 
+	/**
+	 * @brief Worst-case Sleep Clock Accuracy of the peripherals.
+	 *
+	 * Shall be worst-case sleep clock accuracy of all the peripherals.
+	 * For possible values, see @ref bt_gap_sca. If unknown, set to
+	 * @ref BT_GAP_SCA_UNKNOWN.
+	 */
+	uint8_t sca;
+
 #if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/**
 	 * @brief Central to Peripheral flush timeout
