@@ -7,3 +7,14 @@ tests:
       - net
     integration_platforms:
       - native_sim
+  net.lwm2m.block_transfer.custom_section:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - lwm2m
+      - net
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_LWM2M_COAP_ENCODE_BUFFER_SECTION_NAME="lwm2m_encode_buffer"
