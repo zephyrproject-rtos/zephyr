@@ -357,6 +357,16 @@ ZTEST(libc_common, test_memcmp)
 	zassert_true((ret != 0), "memcmp 2 block of memory failed");
 }
 
+ZTEST(libc_common, test_memcmp_unsigned_bytes)
+{
+	int (*volatile compare)(const void *, const void *, size_t) = memcmp;
+	const unsigned char low[] = {0x00};
+	const unsigned char high[] = {0x80};
+
+	zassert_true(compare(high, low, sizeof(high)) > 0);
+	zassert_true(compare(low, high, sizeof(low)) < 0);
+}
+
 /**
  *
  * @brief Test binary search function
