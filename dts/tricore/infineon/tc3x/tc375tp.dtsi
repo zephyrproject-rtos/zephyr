@@ -1,0 +1,111 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/tc3x/tc3x.dtsi>
+
+/ {
+	/* Data scratch-pad RAM of CPU0 */
+	dsram0: memory@70000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x70000000 DT_SIZE_K(240)>;
+		zephyr,memory-region = "DSRAM0";
+	};
+};
+
+&flashctrl {
+	flash0: flash@80000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80000000 DT_SIZE_M(3)>;
+		ranges = <0x0 0x80000000 DT_SIZE_M(3)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	flash1: flash@80300000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80300000 DT_SIZE_M(3)>;
+		ranges = <0x0 0x80300000 DT_SIZE_M(3)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};
+
+&pinctrl {
+	p00: gpio@f003a000 {
+		compatible = "infineon,aurix-tc3x-gpio", "infineon,aurix-gpio";
+		reg = <0xf003a000 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		status = "disabled";
+	};
+
+	p20: gpio@f003b400 {
+		compatible = "infineon,aurix-tc3x-gpio", "infineon,aurix-gpio";
+		reg = <0xf003b400 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <15>;
+		status = "disabled";
+	};
+};
+
+/ {
+	soc {
+		mcmcan0: can@f0208000 {
+			compatible = "infineon,aurix-mcmcan";
+			reg = <0xf0208000 0x1000>;
+			clocks = <&ccu AURIX_CCU_MCAN>, <&ccu AURIX_CCU_MCANH>;
+			clock-names = "mcan", "mcanh";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			can00: can@f0208200 {
+				compatible = "infineon,aurix-mcmcan-node";
+				reg = <0xf0208200 0x200>, <0xf0200000 0x8000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <364 10>, <365 11>;
+				interrupt-names = "line0", "line1";
+				bosch,mram-cfg = <0x0 32 32 32 32 0 16 16>;
+				status = "disabled";
+			};
+
+			can01: can@f0208600 {
+				compatible = "infineon,aurix-mcmcan-node";
+				reg = <0xf0208600 0x200>, <0xf0200000 0x8000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <366 12>, <367 13>;
+				interrupt-names = "line0", "line1";
+				bosch,mram-cfg = <0x2000 32 32 32 32 0 16 16>;
+				status = "disabled";
+			};
+
+			can02: can@f0208a00 {
+				compatible = "infineon,aurix-mcmcan-node";
+				reg = <0xf0208a00 0x200>, <0xf0200000 0x8000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <368 14>, <369 15>;
+				interrupt-names = "line0", "line1";
+				bosch,mram-cfg = <0x4000 32 32 32 32 0 16 16>;
+				status = "disabled";
+			};
+
+			can03: can@f0208e00 {
+				compatible = "infineon,aurix-mcmcan-node";
+				reg = <0xf0208e00 0x200>, <0xf0200000 0x8000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <370 16>, <371 17>;
+				interrupt-names = "line0", "line1";
+				bosch,mram-cfg = <0x6000 32 32 32 32 0 16 16>;
+				status = "disabled";
+			};
+		};
+	};
+};

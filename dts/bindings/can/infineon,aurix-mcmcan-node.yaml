@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AURIX MCMCAN node, a Bosch M_CAN controller and a child of
+  infineon,aurix-mcmcan. The pinctrl-0 pin without output-enable is the
+  receive pin.
+
+compatible: "infineon,aurix-mcmcan-node"
+
+include: ["bosch,m_can-base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    description: Must be "m_can" and "message_ram".
+
+  interrupts:
+    required: true
+    description: Service requests of the "line0" and "line1" interrupt lines.
+
+  interrupt-names:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

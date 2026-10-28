@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AURIX MCMCAN module, with up to four infineon,aurix-mcmcan-node
+  child nodes sharing one message RAM.
+
+compatible: "infineon,aurix-mcmcan"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: fMCAN (CAN clock) and fMCANH (host clock).
+
+  clock-names:
+    required: true
+    description: Must be "mcan" and "mcanh".

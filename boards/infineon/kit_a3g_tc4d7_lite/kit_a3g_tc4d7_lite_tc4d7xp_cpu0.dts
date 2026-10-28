@@ -1,0 +1,151 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <infineon/tc4x/tc4d7xp.dtsi>
+#include <infineon/tc4x/tc4d7xp-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Infineon AURIX TC4D7 lite kit";
+	compatible = "infineon,kit-a3g-tc4d7-lite";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &dsram0;
+		zephyr,console = &asclin0;
+		zephyr,shell-uart = &asclin0;
+		zephyr,code-partition = &code_partition;
+		zephyr,canbus = &can01;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&p03 9 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led1: led_1 {
+			gpios = <&p03 10 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&p03 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&p03 5 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
+	clocks {
+		/* 25 MHz crystal */
+		fosc: fosc {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(25)>;
+			#clock-cells = <0>;
+		};
+	};
+};
+
+/*
+ * fPLL0 = 25 MHz * 20 = 500 MHz, reached through the ramp oscillator at
+ * 400 MHz: fSRI and fSTM 500 MHz, fTPB 250 MHz, fSPB, fCPB and fFSI
+ * 100 MHz, fMCANH 100 MHz. Peripheral PLL fDCO 800 MHz: fPLL1 160 MHz,
+ * fMCAN 80 MHz, fPLL2 = 800 MHz / (2.0 * 2) = 200 MHz = fASCLINF, fPLL3
+ * 400 MHz.
+ */
+&ccu {
+	clocks = <&fosc>;
+	ramp-upper-mhz = <400>;
+	sri-div = <1>;
+	spb-div = <5>;
+	cpb-div = <5>;
+	tpb-div = <2>;
+	fsi-div = <5>;
+	stm-div = <1>;
+	asclinf-div = <1>;
+	mcan-div = <2>;
+	mcanh-div = <5>;
+
+	sys-pll {
+		p-div = <1>;
+		n-div = <20>;
+		k2-div = <1>;
+	};
+
+	per-pll {
+		p-div = <1>;
+		n-div = <32>;
+		k2-div = <5>;
+		k3-div = <2>;
+		k3-prediv = <20>;
+		k4-div = <2>;
+	};
+};
+
+/* USB virtual COM port of the on-board debugger */
+&asclin0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&asclin0_atx_p14_0 &asclin0_arxa_p14_1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&stm0 {
+	status = "okay";
+};
+
+&p03 {
+	status = "okay";
+};
+
+&mcmcan0 {
+	status = "okay";
+};
+
+&can01 {
+	pinctrl-0 = <&can01_txd_p1_3 &can01_rxdc_p1_4>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
+	bitrate = <500000>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_M(4)>;
+		};
+	};
+};

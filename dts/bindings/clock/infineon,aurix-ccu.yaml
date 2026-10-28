@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AURIX clock control unit.
+
+  The node holds the register-level clock configuration: the PLL dividers in
+  the sys-pll and per-pll child nodes and the dividers of the clock domains.
+  All frequencies are derived from them and from the input clocks. A PLL is
+  used only if its child node is present; otherwise the domains it would
+  feed run from the 100 MHz back-up clock. Divider properties that are
+  absent leave the related register field at its current value.
+
+  Consumers reference a clock domain by the identifiers in
+  include/zephyr/dt-bindings/clock/infineon-aurix-ccu.h, for example
+  clocks = <&ccu AURIX_CCU_ASCLINF>.
+
+compatible: "infineon,aurix-ccu"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+  clocks:
+    description: |
+      Crystal oscillator input (fOSC), a fixed-clock node. Required when a
+      PLL is used.
+
+  sri-div:
+    type: int
+    description: fSRI = fsource0 / sri-div.
+
+  spb-div:
+    type: int
+    description: fSPB = fsource0 / spb-div.
+
+  fsi-div:
+    type: int
+    description: FSI divider field value.
+
+  stm-div:
+    type: int
+    description: fSTM = fsource0 / stm-div.
+
+  asclinf-div:
+    type: int
+    description: fASCLINF = fsource2 / asclinf-div.
+
+  mcan-div:
+    type: int
+    description: fMCAN = fsource1 / mcan-div.
+
+  mcanh-div:
+    type: int
+    description: fMCANH = fsource0 / mcanh-div.
+
+clock-cells:
+  - id
+
+child-binding:
+  description: |
+    PLL configuration, in a child node named sys-pll (system PLL) or per-pll
+    (peripheral PLL).
+
+  properties:
+    p-div:
+      type: int
+      required: true
+      description: P divider.
+
+    n-div:
+      type: int
+      required: true
+      description: N multiplier.
+
+    k2-div:
+      type: int
+      required: true
+      description: K2 divider.
+
+    k3-div:
+      type: int
+      description: K3 divider (peripheral PLL).
