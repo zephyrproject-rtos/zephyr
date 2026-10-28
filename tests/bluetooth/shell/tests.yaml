@@ -165,6 +165,10 @@ tests:
     <<: *audio_shell_config
     extra_configs:
       - CONFIG_BT_TESTING=n
+  bluetooth.audio.shell.no_iso_test_params:
+    <<: *audio_shell_config
+    extra_args:
+      - CONFIG_BT_ISO_TEST_PARAMS=n
   bluetooth.audio.shell.no_logs:
     <<: *audio_shell_config
     extra_configs:

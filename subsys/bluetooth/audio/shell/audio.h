@@ -89,6 +89,27 @@ struct named_lc3_preset {
 	struct bt_bap_lc3_preset preset;
 };
 
+/* Unicast group (CIG) parameters shared by all unicast streams */
+struct unicast_group_cfg {
+	uint8_t packing;
+	uint8_t sca;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	uint16_t iso_interval;
+	uint8_t c_to_p_ft;
+	uint8_t p_to_c_ft;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+};
+
+/* Broadcast group (BIG) parameters shared by all broadcast streams */
+struct broadcast_group_cfg {
+	uint8_t packing;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	uint16_t iso_interval;
+	uint8_t irc;
+	uint8_t pto;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+};
+
 struct shell_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
@@ -265,6 +286,9 @@ extern struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_A
 extern struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 extern struct named_lc3_preset default_sink_preset;
 extern struct named_lc3_preset default_source_preset;
+extern struct unicast_group_cfg default_unicast_group_cfg;
+
+int unicast_group_cfg_get(struct unicast_group_cfg *cfg);
 
 int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param);
 
@@ -279,6 +303,8 @@ extern struct bt_cap_unicast_group_stream_pair_param
 	cap_initiator_unicast_group_pair_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
 extern struct bt_cap_unicast_audio_start_param cap_initiator_unicast_audio_start_param;
 extern struct bt_cap_unicast_group_param cap_initiator_unicast_group_param;
+
+int cap_unicast_group_cfg_apply(struct bt_cap_unicast_group_param *param);
 #endif /* CONFIG_BT_CAP_INITIATOR */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
@@ -912,6 +938,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 extern struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 extern struct broadcast_source default_source;
 extern struct named_lc3_preset default_broadcast_source_preset;
+extern struct broadcast_group_cfg default_broadcast_group_cfg;
 
 #if defined(CONFIG_BT_CAP_INITIATOR)
 #define MAX_CAP_BROADCAST_STREAMS                                                                  \
