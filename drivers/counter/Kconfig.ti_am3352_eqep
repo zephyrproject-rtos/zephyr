@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_TI_AM3352_EQEP
+	bool "Whether to enable TI EQEP counter driver"
+	default y
+	depends on DT_HAS_TI_AM3352_EQEP_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enables the TI EQEP counter driver.
+
+if COUNTER_TI_AM3352_EQEP
+config COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+	bool "TI EQEP AM13E variant (QEPSRCSEL, Input X-BAR, PWREN)"
+	depends on SOC_SERIES_AM13E
+	default y
+	select MUX
+	select SYSCON
+	help
+	  Enable AM13E EQEP support: QEPSRCSEL, mux-states X-BAR routing,
+	  and SYSCTL PWREN via ti,pwren.
+endif
