@@ -237,4 +237,9 @@ endchoice
 config ARCH_HAS_LLEXT_VENEERS
 	bool
 
+config CPU_HAS_TCM_ECC
+	def_bool DT_HAS_ARM_ITCM_ECC_ENABLED || DT_HAS_ARM_DTCM_ECC_ENABLED
+	help
+	  This option is enabled when the CPU embeds an ECC-protected TCM area.
+
 endmenu

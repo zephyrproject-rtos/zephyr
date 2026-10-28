@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cortex-M ITCM (Instruction Tightly Coupled Memory) with ECC
+
+compatible: "arm,itcm-ecc"
+
+include: arm,itcm.yaml
