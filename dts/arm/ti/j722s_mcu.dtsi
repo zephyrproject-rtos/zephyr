@@ -7,11 +7,43 @@
 
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	mcu_padcfg0: syscon@4080000 {
+		compatible = "ti,control-module";
+		reg = <0x04080000 DT_SIZE_K(32)>;
+		ranges = <0x00 0x04080000 DT_SIZE_K(32)>;
+		ti,unlock-offsets = <0x1008 0x5008>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mcu_pinctrl: pinctrl@4000 {
+			compatible = "ti,k3-pinctrl";
+			reg = <0x4000 0x88>;
+			status = "okay";
+		};
+	};
+
+	mcu_gpio_intr: interrupt-controller@4210000 {
+		compatible = "ti,sci-intr";
+		reg = <0x4210000 0x200>;
+		ti,intr-trigger-type = <1>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		ti,sci = <&dmsc>;
+		ti,sci-dev-id = <5>;
+		/* R5-specific ti,interrupt-ranges set in main_r5 / mcu_r5 dtsi */
+		ti,interrupt-ranges = <4 104 4>;
+		interrupt-parent = <&vim>;
+		status = "disabled";
+	};
 
 	mcu_gpio0: gpio@4201010 {
 		compatible = "ti,davinci-gpio";
@@ -19,6 +51,18 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <24>;
+		status = "disabled";
+	};
+
+	mcu_i2c0: i2c@4900000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x04900000 0x100>;
+		interrupts = <0 197 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		clocks = <&k3_clks 106 2>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		status = "disabled";
 	};
 
@@ -36,6 +80,17 @@
 		compatible = "ti,j7-rti-wdt";
 		reg = <0x04880000 0x100>;
 		clock-frequency = <DT_FREQ_M(25)>;
+		status = "disabled";
+	};
+
+	mcu_spi0: spi@4b00000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x04b00000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		ti,d1-miso-d0-mosi;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		status = "disabled";
 	};
 };

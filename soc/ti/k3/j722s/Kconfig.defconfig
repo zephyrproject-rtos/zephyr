@@ -8,7 +8,58 @@ config KERNEL_ENTRY
 	default "_vector_table" if SOC_SERIES_J722S_R5
 
 config NUM_IRQS
+	default 2048 if SOC_SERIES_J722S_R5 && TI_SCI_INTR && DT_HAS_TI_SCI_INTR_OUT_ENABLED
 	default 512 if SOC_SERIES_J722S_R5
+
+if SOC_SERIES_J722S_R5 && TI_SCI_INTR && DT_HAS_TI_SCI_INTR_OUT_ENABLED
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 192
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 512
+
+# MAIN GPIOMUX IR outs 16..19,20..21,32..33 -> VIM 104..107,56..57,58..59
+config 2ND_LVL_INTR_00_OFFSET
+	default 104
+
+config 2ND_LVL_INTR_01_OFFSET
+	default 105
+
+config 2ND_LVL_INTR_02_OFFSET
+	default 106
+
+config 2ND_LVL_INTR_03_OFFSET
+	default 107
+
+config 2ND_LVL_INTR_04_OFFSET
+	default 56
+
+config 2ND_LVL_INTR_05_OFFSET
+	default 57
+
+config 2ND_LVL_INTR_06_OFFSET
+	default 58
+
+config 2ND_LVL_INTR_07_OFFSET
+	default 59
+
+endif # SOC_SERIES_J722S_R5 && TI_SCI_INTR && DT_HAS_TI_SCI_INTR_OUT_ENABLED
 
 configdefault UART_NS16550_TI_K3
 	default y if SOC_SERIES_J722S_R5
