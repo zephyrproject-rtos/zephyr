@@ -19,4 +19,10 @@ static inline struct rc_dev_data *rc_data(const struct device *dev)
 
 int rc_protocol_init(const struct device *dev, const uint16_t *protocols, size_t num_protocols);
 
+void rc_protocol_reset_all(const struct device *dev);
+
+void rc_protocol_decode(const struct device *dev, uint32_t word);
+
+void rc_raw_init(const struct device *dev);
+
 #endif /* ZEPHYR_SUBSYS_RC_RC_INTERNAL_H_ */

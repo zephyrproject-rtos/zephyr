@@ -5,6 +5,8 @@
 
 #define DT_DRV_COMPAT zephyr_rc_loopback
 
+#include <errno.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/rc.h>
 #include <zephyr/drivers/rc/rc_loopback.h>
@@ -41,6 +43,23 @@ bool rc_loopback_rx_is_enabled(const struct device *dev)
 	struct rc_loopback_data *data = dev->data;
 
 	return atomic_get(&data->rx_enabled) != 0;
+}
+
+int rc_loopback_inject(const struct device *dev, const uint32_t *words, size_t count)
+{
+	if (!rc_loopback_rx_is_enabled(dev)) {
+		return -EAGAIN;
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		int ret = rc_raw_store(dev, words[i]);
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
 }
 
 static DEVICE_API(rc, rc_loopback_api) = {
