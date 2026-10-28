@@ -54,6 +54,10 @@ if(CONFIG_VIRTIO_MMIO)
   qemu_append_flags(-global virtio-mmio.force-legacy=false)
 endif()
 
+if(CONFIG_UHC_OHCI_PCI)
+  qemu_append_flags(-device pci-ohci,${QEMU_PCI_OHCI_FLAGS})
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/qemu/console.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/qemu/display.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/qemu/icount.cmake)
