@@ -356,6 +356,12 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	}
 
 	if (state == STATE_IDLE) {
+		if (offset != 0) {
+			/* A late block of a download that was already given up */
+			LOG_DBG("Push block at offset %zu without a start", offset);
+			return -EFAULT;
+		}
+
 		lwm2m_registry_lock();
 		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
 		push_active[obj_inst_id] = true;
