@@ -5,7 +5,7 @@
 
 config SOC_SERIES_POLARFIRE
 	bool
-	select SOC_FAMILY_MICROCHIP_MIV
+	select SOC_FAMILY_MICROCHIP_POLARFIRE
 	help
 	  Microchip RV64 implementation
 
