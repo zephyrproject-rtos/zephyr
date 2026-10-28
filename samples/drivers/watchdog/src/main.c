@@ -58,6 +58,12 @@
 #define WDT_OPT            0
 #elif DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
 #define WDT_MAX_WINDOW 500U
+#elif DT_HAS_COMPAT_STATUS_OKAY(infineon_match_wdt) ||                                             \
+	DT_HAS_COMPAT_STATUS_OKAY(infineon_match_wdt_srss_v1) ||                                   \
+	DT_HAS_COMPAT_STATUS_OKAY(infineon_match_wdt_srsslt)
+/* The match interrupt does not come right before the reset, and the counter cannot pause */
+#define WDT_ALLOW_CALLBACK 0
+#define WDT_OPT            0
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gswdt)
 #if !defined(CONFIG_NRFS_GSWDT_SERVICE_ENABLED)
