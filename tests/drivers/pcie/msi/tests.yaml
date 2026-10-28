@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  tags:
+    - drivers
+    - pcie
+tests:
+  drivers.pcie.msi.legacy:
+    extra_args: TEST_MSI_64BIT_PROVIDER=OFF
+  drivers.pcie.msi.address64:
+    extra_args: TEST_MSI_64BIT_PROVIDER=ON
