@@ -430,12 +430,39 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	return ret;
 }
 
+/* The engine records the length of whatever it last wrote, including a write
+ * that was diverted below; report the stored URI as it is instead.
+ */
+static void *package_uri_read_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
+				 size_t *data_len)
+{
+	*data_len = strlen(package_uri[obj_inst_id]) + 1;
+	return package_uri[obj_inst_id];
+}
+
+/* Outside Idle a Package URI write is refused or only resets the state machine,
+ * so it must not replace the stored URI: divert it to a scratch buffer.
+ */
+static void *package_uri_pre_write_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
+				      size_t *data_len)
+{
+	static char scratch[LWM2M_PACKAGE_URI_LEN];
+
+	if (lwm2m_firmware_get_update_state_inst(obj_inst_id) == STATE_IDLE) {
+		*data_len = sizeof(package_uri[obj_inst_id]);
+		return package_uri[obj_inst_id];
+	}
+
+	*data_len = sizeof(scratch);
+	return scratch;
+}
+
 static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 				uint16_t res_inst_id, uint8_t *data,
 				uint16_t data_len, bool last_block,
 				size_t total_size, size_t offset)
 {
-	LOG_DBG("PACKAGE_URI WRITE: %s", package_uri[obj_inst_id]);
+	LOG_DBG("PACKAGE_URI WRITE: %s", (char *)data);
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	uint8_t state;
@@ -470,13 +497,19 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 			download_cancel(obj_inst_id, RESULT_DEFAULT);
 		}
 
+		/* The write may have been diverted; the resource reads as empty either way */
+		package_uri[obj_inst_id][0] = '\0';
+
 		return 0;
 	}
 
-	if (state == STATE_IDLE) {
-		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
-		lwm2m_firmware_start_transfer(obj_inst_id, package_uri[obj_inst_id]);
+	if (state != STATE_IDLE) {
+		LOG_DBG("Cannot start download: state = %d", state);
+		return -EPERM;
 	}
+
+	lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
+	lwm2m_firmware_start_transfer(obj_inst_id, package_uri[obj_inst_id]);
 
 	return 0;
 #else
@@ -605,8 +638,9 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_OPT(FIRMWARE_PACKAGE_ID, res[index], i, res_inst[index], j, 1,
 			 false, true, NULL, NULL, NULL, package_write_cb, NULL);
 	INIT_OBJ_RES_LEN(FIRMWARE_PACKAGE_URI_ID, res[index], i, res_inst[index], j, 1,
-		     false, true, package_uri[index], LWM2M_PACKAGE_URI_LEN, 0, NULL, NULL, NULL,
-		     package_uri_write_cb, NULL);
+		     false, true, package_uri[index], LWM2M_PACKAGE_URI_LEN, 0,
+		     package_uri_read_cb, package_uri_pre_write_cb, NULL, package_uri_write_cb,
+		     NULL);
 	INIT_OBJ_RES_EXECUTE(FIRMWARE_UPDATE_ID, res[index], i, firmware_update_cb);
 	INIT_OBJ_RES_DATA(FIRMWARE_STATE_ID, res[index], i, res_inst[index], j,
 			  &(update_state[index]), sizeof(update_state[index]));
