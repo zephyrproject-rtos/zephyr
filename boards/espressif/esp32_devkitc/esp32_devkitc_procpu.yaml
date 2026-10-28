@@ -16,6 +16,7 @@ supported:
   - nvs
   - pwm
   - spi
+  - can
   - counter
   - entropy
   - input

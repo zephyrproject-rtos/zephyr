@@ -13,6 +13,7 @@ supported:
   - dma
   - pwm
   - spi
+  - can
   - counter
   - entropy
   - i2c

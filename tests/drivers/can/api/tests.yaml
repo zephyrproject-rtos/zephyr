@@ -20,11 +20,15 @@ tests:
     extra_configs:
       - CONFIG_CAN_ACCEPT_RTR=y
   drivers.can.api.twai:
-    extra_args: DTC_OVERLAY_FILE=twai-enable.overlay
     platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
       - xiao_esp32s3/esp32s3/procpu
+      - esp32c3_devkitc
+      - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
   drivers.can.api.twaifd:
     extra_args: DTC_OVERLAY_FILE=twaifd-enable.overlay
     platform_allow:

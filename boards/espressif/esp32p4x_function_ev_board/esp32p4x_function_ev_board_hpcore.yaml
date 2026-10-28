@@ -6,6 +6,7 @@ arch: riscv
 toolchain:
   - zephyr
 supported:
+  - can
   - counter
   - display
   - dma
