@@ -21,6 +21,7 @@
 #define NRF_SAADC_AIN11 11
 #define NRF_SAADC_AIN12 12
 #define NRF_SAADC_AIN13 13
+#define NRF_SAADC_AIN14 14
 
 /**
  * @brief Short ADC negative input to ground
