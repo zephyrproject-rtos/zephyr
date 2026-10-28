@@ -485,6 +485,12 @@ static inline bool timespec_negate(struct timespec *ts)
 {
 	__ASSERT_NO_MSG((ts != NULL) && timespec_is_valid(ts));
 
+	if ((ts->tv_sec == SYS_TIME_T_MIN) && (ts->tv_nsec > 0)) {
+		ts->tv_sec = SYS_TIME_T_MAX;
+		ts->tv_nsec = (long)NSEC_PER_SEC - ts->tv_nsec;
+		return true;
+	}
+
 #if defined(CONFIG_SPEED_OPTIMIZATIONS) && HAS_BUILTIN(__builtin_sub_overflow)
 
 	return !__builtin_sub_overflow(0LL, ts->tv_sec, &ts->tv_sec) &&
