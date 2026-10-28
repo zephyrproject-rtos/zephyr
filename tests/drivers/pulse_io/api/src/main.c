@@ -25,6 +25,7 @@ ZTEST(pulse_io_api, test_capabilities)
 	zassert_equal(caps.num_channels, 4);
 	zassert_equal(caps.tx_channel_mask, BIT_MASK(4));
 	zassert_equal(caps.rx_channel_mask, BIT_MASK(4));
+	zassert_true(caps.tx_sync_multi_channel);
 }
 
 ZTEST(pulse_io_api, test_channel_lifecycle)
@@ -89,6 +90,65 @@ ZTEST(pulse_io_api, test_transmit_receive_roundtrip)
 
 	zassert_ok(pulse_io_stop(dev, ch));
 	zassert_ok(pulse_io_channel_release(dev, ch));
+}
+
+ZTEST(pulse_io_api, test_transmit_multi)
+{
+	struct pulse_io_channel *ch[2];
+	struct pulse_io_channel *unconfigured;
+	struct pulse_io_config cfg = {
+		.mode = PULSE_IO_MODE_SYMBOL,
+		.dir = PULSE_IO_DIR_TX,
+		.resolution_hz = 1000000,
+	};
+	struct pulse_symbol tx0[] = {
+		{.duration = 100, .level = 1},
+		{.duration = 200, .level = 0},
+	};
+	struct pulse_symbol tx1[] = {
+		{.duration = 300, .level = 1},
+		{.duration = 400, .level = 0},
+		{.duration = 500, .level = 1},
+	};
+	const struct pulse_io_tx_req reqs[] = {
+		{.symbols = tx0, .count = ARRAY_SIZE(tx0)},
+		{.symbols = tx1, .count = ARRAY_SIZE(tx1)},
+	};
+	struct pulse_symbol rx[8];
+	struct pulse_io_rx_req rxr = {.symbols = rx, .capacity = ARRAY_SIZE(rx)};
+	size_t count = 0;
+
+	zassert_ok(pulse_io_channel_get(dev, 0, &ch[0]));
+	zassert_ok(pulse_io_channel_get(dev, 1, &ch[1]));
+	zassert_ok(pulse_io_channel_get(dev, 3, &unconfigured));
+	zassert_ok(pulse_io_channel_configure(dev, ch[0], &cfg));
+	zassert_ok(pulse_io_channel_configure(dev, ch[1], &cfg));
+
+	/* Each channel transmits the request of its index */
+	zassert_ok(pulse_io_transmit_multi_sync(dev, ch, reqs, ARRAY_SIZE(ch), K_MSEC(10)));
+
+	zassert_ok(pulse_io_receive_sync(dev, ch[0], &rxr, &count, K_MSEC(10)));
+	zassert_equal(count, ARRAY_SIZE(tx0), "wrong symbol count on channel 0");
+	zassert_equal(rx[1].duration, 200);
+	zassert_ok(pulse_io_receive_sync(dev, ch[1], &rxr, &count, K_MSEC(10)));
+	zassert_equal(count, ARRAY_SIZE(tx1), "wrong symbol count on channel 1");
+	zassert_equal(rx[2].duration, 500);
+
+	/* Repeated and unconfigured channels, and a channel count out of range */
+	struct pulse_io_channel *repeated[] = {ch[0], ch[0]};
+	struct pulse_io_channel *with_unconfigured[] = {ch[0], unconfigured};
+
+	zassert_equal(pulse_io_transmit_multi_sync(dev, repeated, reqs, 2, K_MSEC(10)), -EINVAL);
+	zassert_equal(pulse_io_transmit_multi_sync(dev, with_unconfigured, reqs, 2, K_MSEC(10)),
+		      -EINVAL);
+	zassert_equal(pulse_io_transmit_multi_sync(dev, ch, reqs, 0, K_MSEC(10)), -EINVAL);
+	zassert_equal(pulse_io_transmit_multi_sync(dev, ch, reqs, PULSE_IO_TX_MULTI_MAX + 1,
+						   K_MSEC(10)),
+		      -EINVAL);
+
+	zassert_ok(pulse_io_channel_release(dev, unconfigured));
+	zassert_ok(pulse_io_channel_release(dev, ch[1]));
+	zassert_ok(pulse_io_channel_release(dev, ch[0]));
 }
 
 /* Bit template shared by the codec tests: zero = short high, one = long. */
