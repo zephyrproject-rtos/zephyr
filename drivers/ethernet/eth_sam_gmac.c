@@ -47,6 +47,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/ethernet/phy_connection_type.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
 #include "eth_sam_gmac_priv.h"
@@ -143,14 +144,11 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 
 /* if GMAC_UR_MIM_RGMII (new for sama7g5) is defined, the media interface mode
  * supported are: mii, rmii and rgmii. Otherwise mii and rmii are supported.
- * The enum indexes for mii, rmii, gmii, rgmii are 0 ~ 3. As the enum index for
- * rgmii is 3, here defines SAM_GMAC_PHY_CONNECTION_TYPE_MAX to 3 when RGMII is
- * supported.
  */
 #ifndef GMAC_UR_MIM_RGMII
-#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 1
+#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX ETHERNET_PHY_CONN_TYPE_RMII
 #else
-#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 3
+#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX ETHERNET_PHY_CONN_TYPE_RGMII
 #endif
 
 /* RX descriptors list */
@@ -1001,7 +999,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct device *d
 
 	/* Default (RMII) is defined at atmel,gmac-common.yaml file */
 	switch (cfg->phy_conn_type) {
-	case 0: /* mii */
+	case ETHERNET_PHY_CONN_TYPE_MII:
 #if defined(GMAC_UR_MIM_MII)
 		gmac->GMAC_UR = GMAC_UR_MIM_MII;
 #if defined(GMAC_NCR_MIIONRGMII_Msk)
@@ -1013,7 +1011,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct device *d
 		gmac->GMAC_UR = 0x1;
 #endif
 		break;
-	case 1: /* rmii */
+	case ETHERNET_PHY_CONN_TYPE_RMII:
 #if defined(GMAC_UR_MIM_RMII)
 		gmac->GMAC_UR = GMAC_UR_MIM_RMII;
 #elif defined(GMAC_UR_RMII_Msk)
@@ -1023,7 +1021,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct device *d
 #endif
 		break;
 #ifdef GMAC_UR_MIM_RGMII
-	case 3: /* rgmii */
+	case ETHERNET_PHY_CONN_TYPE_RGMII:
 		gmac->GMAC_UR = GMAC_UR_MIM_RGMII;
 		break;
 #endif
