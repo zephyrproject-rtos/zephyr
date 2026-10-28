@@ -180,7 +180,9 @@ static inline int uaol_get_capabilities(const struct device *dev, struct uaol_ca
  *
  * @return 0 on success, all other values should be treated as error.
  */
-static inline int uaol_adjust_rate(const struct device *dev, int stream, bool increase)
+__syscall int uaol_adjust_rate(const struct device *dev, int stream, bool increase);
+
+static inline int z_impl_uaol_adjust_rate(const struct device *dev, int stream, bool increase)
 {
 	return DEVICE_API_GET(uaol, dev)->adjust_rate(dev, stream, increase);
 }
@@ -196,8 +198,11 @@ static inline int uaol_adjust_rate(const struct device *dev, int stream, bool in
  *
  * @return the frequency in Hz on success, a negative error code otherwise.
  */
-static inline int uaol_interpret_feedback_value(const struct device *dev, int stream,
-						 uint32_t feedback_value)
+__syscall int uaol_interpret_feedback_value(const struct device *dev, int stream,
+					    uint32_t feedback_value);
+
+static inline int z_impl_uaol_interpret_feedback_value(const struct device *dev, int stream,
+						       uint32_t feedback_value)
 {
 	return DEVICE_API_GET(uaol, dev)->interpret_feedback_value(dev, stream, feedback_value);
 }
@@ -213,5 +218,7 @@ static inline int uaol_interpret_feedback_value(const struct device *dev, int st
  * @return the HDA link stream ID on success, otherwise -1.
  */
 int uaol_get_mapped_hda_link_stream_id(const struct device *dev, int uaol_stream_id);
+
+#include <zephyr/syscalls/uaol.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_UAOL_H_ */

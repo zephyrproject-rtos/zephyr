@@ -174,6 +174,20 @@ struct xhci_hh_timestamp_msg {
 
 static struct k_spinlock lock;
 
+/* The stream ID is used to compute register addresses, so it better be validated */
+static bool uaol_intel_adsp_is_stream_valid(const struct uaol_intel_adsp_data *dp, int stream)
+{
+	size_t i;
+
+	for (i = 0; i < dp->stream_map_length; i++) {
+		if (dp->stream_map[i].uaol_stream_id == stream) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool uaol_intel_adsp_power_steady(const struct device *dev)
 {
 	struct uaol_intel_adsp_data *dp = dev->data;
@@ -931,6 +945,11 @@ static int uaol_intel_adsp_adjust_rate(const struct device *dev, int stream, boo
 	union UAOLxPCMSyRA pcms_ra;
 	k_spinlock_key_t key;
 	int ret = 0;
+
+	/* stream may come from user space via a syscall and is used as a register offset */
+	if (!uaol_intel_adsp_is_stream_valid(dp, stream)) {
+		return -EINVAL;
+	}
 
 	key = k_spin_lock(&lock);
 
