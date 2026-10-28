@@ -97,7 +97,7 @@ int rc_protocol_init(const struct device *dev, const uint16_t *protocols, size_t
 	return 0;
 }
 
-int rc_protocol_enable(const struct device *dev, uint16_t proto)
+int z_impl_rc_protocol_enable(const struct device *dev, uint16_t proto)
 {
 	struct rc_dev_data *data = rc_data(dev);
 	int idx = rc_protocol_index(proto);
@@ -116,7 +116,7 @@ int rc_protocol_enable(const struct device *dev, uint16_t proto)
 	return 0;
 }
 
-int rc_protocol_disable(const struct device *dev, uint16_t proto)
+int z_impl_rc_protocol_disable(const struct device *dev, uint16_t proto)
 {
 	int idx = rc_protocol_index(proto);
 
@@ -131,7 +131,7 @@ int rc_protocol_disable(const struct device *dev, uint16_t proto)
 	return 0;
 }
 
-int rc_protocol_is_enabled(const struct device *dev, uint16_t proto)
+int z_impl_rc_protocol_is_enabled(const struct device *dev, uint16_t proto)
 {
 	int idx = rc_protocol_index(proto);
 

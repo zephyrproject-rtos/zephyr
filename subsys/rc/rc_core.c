@@ -65,7 +65,7 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
 	return ret;
 }
 
-int rc_get_caps(const struct device *dev, struct rc_caps *caps)
+int z_impl_rc_get_caps(const struct device *dev, struct rc_caps *caps)
 {
 	*caps = rc_data(dev)->caps;
 
@@ -105,7 +105,7 @@ static int rc_rx_timeout_apply(const struct device *dev, uint32_t us)
 	return 0;
 }
 
-int rc_set_rx_timeout(const struct device *dev, uint32_t us)
+int z_impl_rc_set_rx_timeout(const struct device *dev, uint32_t us)
 {
 	int ret;
 

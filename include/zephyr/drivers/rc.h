@@ -203,6 +203,8 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
 /**
  * @brief Start or stop reception.
  *
+ * Supervisor mode only.
+ *
  * @param dev rc device.
  * @param enable true to start, false to stop.
  *
