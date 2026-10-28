@@ -1059,6 +1059,28 @@ GPIO
 * The :dtcompatible:`awinic,aw9523b-gpio` driver no longer has the ``reset-gpios`` property. This has instead
   been moved to the parent :dtcompatible:`awinic,aw9523b` MFD device.
 
+* The Silicon Labs SiWx91x UULP GPIO driver now uses the Zephyr WUC and
+  device-wakeup APIs for system-off wakeup. Applications using
+  ``GPIO_INT_WAKEUP`` must enable :kconfig:option:`CONFIG_WUC` and
+  :kconfig:option:`CONFIG_PM_DEVICE`, describe the GPIO controller as a
+  wakeup source, and enable device wakeup before configuring the interrupt.
+
+  .. code-block:: devicetree
+
+     &uulpgpio {
+             wakeup-source;
+             wakeup-ctrls = <&wuc0 SIWX91X_WUC_GPIO>;
+     };
+
+  .. code-block:: c
+
+     pm_device_wakeup_enable(button.port, true);
+     gpio_pin_interrupt_configure_dt(
+             &button, GPIO_INT_LEVEL_ACTIVE | GPIO_INT_WAKEUP);
+
+  Without these changes, wakeup interrupt configuration returns ``-EPERM``
+  or ``-ENOTSUP``.
+
 Haptics
 =======
 

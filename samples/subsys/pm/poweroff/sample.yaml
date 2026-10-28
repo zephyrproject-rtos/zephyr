@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: Power off the SiWx917 and wake it using an RTC alarm or GPIO
+  name: SiWx917 power off with RTC and GPIO wakeup
+
+common:
+  tags:
+    - power
+    - rtc
+    - siwx91x
+    - poweroff
+    - gpio
+  platform_allow:
+    - siwx917_rb4338a
+  filter: >
+    dt_alias_exists("sw0") and
+    dt_alias_exists("rtc")
+  depends_on:
+    - gpio
+    - rtc
+
+tests:
+  sample.boards.silabs.poweroff:
+    build_only: true
+    integration_platforms:
+      - siwx917_rb4338a
