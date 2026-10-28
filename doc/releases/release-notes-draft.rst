@@ -78,6 +78,10 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Pulse IO
+
+  * :c:func:`pulse_io_transmit_multi_sync`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
