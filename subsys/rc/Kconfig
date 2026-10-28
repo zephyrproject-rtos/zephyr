@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RC
+	bool "Remote control (IR) support"
+	help
+	  Enable the remote control subsystem: raw pulse and space capture,
+	  protocol decoding and encoding, and transmission for infrared
+	  remote controls.
+
+if RC
+
+module = RC
+module-str = rc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # RC
