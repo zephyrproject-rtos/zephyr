@@ -136,3 +136,5 @@ i2c0: &scb0 {
 &gpio_prt17 {
 	status = "okay";
 };
+
+#include "arduino_r3_connector.dtsi"
