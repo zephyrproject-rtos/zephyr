@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/ethernet/phy_connection_type.h>
 #include <zephyr/net/phy.h>
 #include "r_ether_api.h"
 #include "r_ether.h"
@@ -39,7 +40,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 	(ETHER_EESR_EVENT_MASK_RFOF | ETHER_EESR_EVENT_MASK_RDE | ETHER_EESR_EVENT_MASK_FR |       \
 	 ETHER_EESR_EVENT_MASK_TFUF | ETHER_EESR_EVENT_MASK_TDE | ETHER_EESR_EVENT_MASK_TC)
 
-BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection setting");
+BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= ETHERNET_PHY_CONN_TYPE_RMII,
+	     "Invalid PHY connection setting");
 
 void renesas_ra_eth_callback(ether_callback_args_t *p_args);
 static void renesas_ra_eth_buffer_init(const struct device *dev);
@@ -437,10 +439,10 @@ int renesas_ra_eth_init(const struct device *dev)
 	}
 
 	switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
-	case 0: /* mii */
+	case ETHERNET_PHY_CONN_TYPE_MII:
 		R_PMISC->PFENET = (uint8_t)(0x1 << R_PMISC_PFENET_PHYMODE0_Pos);
 		break;
-	case 1: /* rmii */
+	case ETHERNET_PHY_CONN_TYPE_RMII:
 		R_PMISC->PFENET = (uint8_t)(0x0 << R_PMISC_PFENET_PHYMODE0_Pos);
 		break;
 	default:
