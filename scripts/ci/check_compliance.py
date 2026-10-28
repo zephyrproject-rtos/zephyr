@@ -810,6 +810,9 @@ class DevicetreeLintingCheck(ComplianceTest):
             except RuntimeError as ex:
                 self.failure(f"{ex}")
 
+        # dts-linter does not write the patch file when it fails
+        temp_patch_files = [patch for patch in temp_patch_files if os.path.exists(patch)]
+
         # merge all temp patch files into one
         with open("dts_linter.patch", "wb") as final_patch:
             for patch in temp_patch_files:
