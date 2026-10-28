@@ -16,6 +16,11 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/video/controls.h>
+#include <zephyr/video/video.h>
+
+#include "video_common.h"
 #if defined(CONFIG_VIDEO_STM32_VENC_SMH_ALLOC)
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
@@ -35,8 +40,15 @@ LOG_MODULE_REGISTER(stm32_venc, CONFIG_VIDEO_LOG_LEVEL);
 #define VENC_DEFAULT_IN_FMT              VIDEO_PIX_FMT_NV12
 #define VENC_DEFAULT_OUT_FMT             VIDEO_PIX_FMT_H264
 #define VENC_DEFAULT_FRAMERATE           30
-#define VENC_DEFAULT_LEVEL               H264ENC_LEVEL_4
+#define VENC_DEFAULT_GOP_SIZE            30
+#define VENC_MAX_GOP_SIZE                300
+#define VENC_MAX_FRAMERATE               BIT_MASK(20)
+#define VENC_MIN_BITRATE                 10000
+#define VENC_MAX_BITRATE                 60000000
+#define VENC_DEFAULT_BITRATE             1000000
 #define VENC_DEFAULT_QP                  25
+#define VENC_DEFAULT_MIN_QP              10
+#define VENC_MAX_QP                      51
 #define VENC_ESTIMATED_COMPRESSION_RATIO 10
 
 #define ALIGNMENT_INCR 8UL
@@ -95,11 +107,46 @@ struct stm32_venc_ewl {
 
 static struct stm32_venc_ewl ewl_instance;
 
+static const H264EncLevel stm32_venc_levels[] = {
+	[VIDEO_H264_LEVEL_1_0] = H264ENC_LEVEL_1,   [VIDEO_H264_LEVEL_1B] = H264ENC_LEVEL_1_b,
+	[VIDEO_H264_LEVEL_1_1] = H264ENC_LEVEL_1_1, [VIDEO_H264_LEVEL_1_2] = H264ENC_LEVEL_1_2,
+	[VIDEO_H264_LEVEL_1_3] = H264ENC_LEVEL_1_3, [VIDEO_H264_LEVEL_2_0] = H264ENC_LEVEL_2,
+	[VIDEO_H264_LEVEL_2_1] = H264ENC_LEVEL_2_1, [VIDEO_H264_LEVEL_2_2] = H264ENC_LEVEL_2_2,
+	[VIDEO_H264_LEVEL_3_0] = H264ENC_LEVEL_3,   [VIDEO_H264_LEVEL_3_1] = H264ENC_LEVEL_3_1,
+	[VIDEO_H264_LEVEL_3_2] = H264ENC_LEVEL_3_2, [VIDEO_H264_LEVEL_4_0] = H264ENC_LEVEL_4,
+	[VIDEO_H264_LEVEL_4_1] = H264ENC_LEVEL_4_1, [VIDEO_H264_LEVEL_4_2] = H264ENC_LEVEL_4_2,
+	[VIDEO_H264_LEVEL_5_0] = H264ENC_LEVEL_5,   [VIDEO_H264_LEVEL_5_1] = H264ENC_LEVEL_5_1,
+};
+
+static const char *const stm32_venc_header_mode[] = {
+	"Separate Buffer",
+	NULL,
+};
+
+struct stm32_venc_ctrls {
+	struct video_ctrl gop_size;
+	struct video_ctrl bitrate_mode;
+	struct video_ctrl bitrate;
+	struct video_ctrl frame_rc_enable;
+	struct video_ctrl header_mode;
+	struct video_ctrl mb_rc_enable;
+	struct video_ctrl force_key_frame;
+	struct video_ctrl i_qp;
+	struct video_ctrl p_qp;
+	struct video_ctrl min_qp;
+	struct video_ctrl max_qp;
+	struct video_ctrl h264_level;
+	struct video_ctrl h264_profile;
+	struct video_ctrl prepend_spspps;
+};
+
 struct stm32_venc_data {
 	const struct device *dev;
 	struct k_mutex lock;
+	struct stm32_venc_ctrls ctrls;
 	struct video_format in_fmt;
 	struct video_format out_fmt;
+	struct video_frmival frmival;
 	struct k_fifo in_fifo_in;
 	struct k_fifo in_fifo_out;
 	struct k_fifo out_fifo_in;
@@ -107,6 +154,8 @@ struct stm32_venc_data {
 	struct video_buffer *vbuf;
 	H264EncInst encoder;
 	uint32_t frame_nb;
+	uint32_t gop_idx;
+	bool streaming;
 	bool resync;
 };
 
@@ -445,32 +494,82 @@ static int stm32_venc_get_fmt(const struct device *dev, struct video_format *fmt
 	return 0;
 }
 
+static int stm32_venc_apply_rate_ctrl(struct stm32_venc_data *data, bool reset_qp)
+{
+	const struct stm32_venc_ctrls *c = &data->ctrls;
+	H264EncRateCtrl rc = {0};
+	H264EncRet h264ret;
+
+	h264ret = H264EncGetRateCtrl(data->encoder, &rc);
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncGetRateCtrl error=%d", h264ret);
+		return -EIO;
+	}
+
+	rc.mbRc = c->mb_rc_enable.val;
+	rc.pictureSkip = 0;
+	rc.gopLen = c->gop_size.val > 0 ? c->gop_size.val : VENC_MAX_GOP_SIZE;
+
+	if (c->frame_rc_enable.val != 0) {
+		rc.pictureRc = 1;
+		rc.hrd = (c->bitrate_mode.val == VIDEO_CODEC_BITRATE_MODE_CBR) ? 1 : 0;
+		rc.bitPerSecond = c->bitrate.val;
+		rc.fixedIntraQp = 0;
+		rc.qpMin = c->min_qp.val;
+		rc.qpMax = c->max_qp.val;
+		rc.qpHdr = reset_qp ? -1 : CLAMP(rc.qpHdr, c->min_qp.val, c->max_qp.val);
+	} else {
+		rc.pictureRc = 0;
+		rc.hrd = 0;
+		rc.qpHdr = c->p_qp.val;
+		rc.fixedIntraQp = c->i_qp.val;
+		rc.qpMin = 0;
+		rc.qpMax = VENC_MAX_QP;
+	}
+
+	h264ret = H264EncSetRateCtrl(data->encoder, &rc);
+	if (h264ret == H264ENC_INVALID_STATUS) {
+		return -EBUSY;
+	}
+	if (h264ret == H264ENC_INVALID_ARGUMENT) {
+		return -EINVAL;
+	}
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncSetRateCtrl error=%d", h264ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int encoder_prepare(struct stm32_venc_data *data)
 {
+	const struct stm32_venc_ctrls *c = &data->ctrls;
 	H264EncRet h264ret;
 	H264EncConfig cfg = {0};
 	H264EncPreProcessingCfg preproc_cfg = {0};
-	H264EncRateCtrl ratectrl_cfg = {0};
 	H264EncCodingCtrl codingctrl_cfg = {0};
 	struct stm32_venc_ewl *inst = &ewl_instance;
+	int ret;
 
 	data->frame_nb = 0;
+	data->gop_idx = 0;
 	inst->irq_cnt = 0;
 	inst->irq_fuse_cnt = 0;
 
 	/* set config to 1 reference frame */
 	cfg.refFrameAmount = 1;
 	/* frame rate */
-	cfg.frameRateDenom = 1;
-	cfg.frameRateNum = VENC_DEFAULT_FRAMERATE;
+	cfg.frameRateDenom = data->frmival.numerator;
+	cfg.frameRateNum = data->frmival.denominator;
 	/* image resolution */
 	cfg.width = data->out_fmt.width;
 	cfg.height = data->out_fmt.height;
 	/* stream type */
 	cfg.streamType = H264ENC_BYTE_STREAM;
 
-	/* encoding level*/
-	cfg.level = VENC_DEFAULT_LEVEL;
+	/* encoding level */
+	cfg.level = stm32_venc_levels[c->h264_level.val];
 	cfg.svctLevel = 0;
 	cfg.viewMode = H264ENC_BASE_VIEW_SINGLE_BUFFER;
 
@@ -484,51 +583,62 @@ static int encoder_prepare(struct stm32_venc_data *data)
 	h264ret = H264EncGetPreProcessing(data->encoder, &preproc_cfg);
 	if (h264ret != H264ENC_OK) {
 		LOG_ERR("H264EncGetPreProcessing error=%d", h264ret);
-		return -EIO;
+		ret = -EIO;
+		goto err;
 	}
 	preproc_cfg.inputType = to_h264pixfmt(data->in_fmt.pixelformat);
 	h264ret = H264EncSetPreProcessing(data->encoder, &preproc_cfg);
 	if (h264ret != H264ENC_OK) {
 		LOG_ERR("H264EncSetPreProcessing error=%d", h264ret);
-		return -EIO;
+		ret = -EIO;
+		goto err;
 	}
 
 	/* setup coding ctrl */
 	h264ret = H264EncGetCodingCtrl(data->encoder, &codingctrl_cfg);
 	if (h264ret != H264ENC_OK) {
 		LOG_ERR("H264EncGetCodingCtrl error=%d", h264ret);
-		return -EIO;
+		ret = -EIO;
+		goto err;
+	}
+
+	codingctrl_cfg.idrHeader = c->prepend_spspps.val;
+	switch (c->h264_profile.val) {
+	case VIDEO_H264_PROFILE_CONSTRAINED_BASELINE:
+		codingctrl_cfg.enableCabac = 0;
+		codingctrl_cfg.transform8x8Mode = 0;
+		break;
+	case VIDEO_H264_PROFILE_MAIN:
+		codingctrl_cfg.enableCabac = 1;
+		codingctrl_cfg.transform8x8Mode = 0;
+		break;
+	case VIDEO_H264_PROFILE_HIGH:
+		codingctrl_cfg.enableCabac = 1;
+		codingctrl_cfg.transform8x8Mode = 2;
+		break;
+	default:
+		ret = -ENOTSUP;
+		goto err;
 	}
 
 	h264ret = H264EncSetCodingCtrl(data->encoder, &codingctrl_cfg);
 	if (h264ret != H264ENC_OK) {
 		LOG_ERR("H264EncSetCodingCtrl error=%d", h264ret);
-		return -EIO;
+		ret = -EIO;
+		goto err;
 	}
 
-	/* set bit rate configuration */
-	h264ret = H264EncGetRateCtrl(data->encoder, &ratectrl_cfg);
-	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncGetRateCtrl error=%d", h264ret);
-		return -EIO;
-	}
-
-	/* Constant bitrate */
-	ratectrl_cfg.pictureRc = 0;
-	ratectrl_cfg.mbRc = 0;
-	ratectrl_cfg.pictureSkip = 0;
-	ratectrl_cfg.hrd = 0;
-	ratectrl_cfg.qpHdr = VENC_DEFAULT_QP;
-	ratectrl_cfg.qpMin = ratectrl_cfg.qpHdr;
-	ratectrl_cfg.qpMax = ratectrl_cfg.qpHdr;
-
-	h264ret = H264EncSetRateCtrl(data->encoder, &ratectrl_cfg);
-	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncSetRateCtrl error=%d", h264ret);
-		return -EIO;
+	ret = stm32_venc_apply_rate_ctrl(data, true);
+	if (ret < 0) {
+		goto err;
 	}
 
 	return 0;
+
+err:
+	H264EncRelease(data->encoder);
+	data->encoder = NULL;
+	return ret;
 }
 
 static int encoder_start(struct stm32_venc_data *data, struct video_buffer *output)
@@ -582,6 +692,9 @@ static int encode_frame(struct stm32_venc_data *data)
 	H264EncOut enc_out = {0};
 	struct stm32_venc_ewl *inst = &ewl_instance;
 
+	uint32_t gop;
+	bool is_idr;
+
 	if (k_fifo_is_empty(&data->in_fifo_in) || k_fifo_is_empty(&data->out_fifo_in)) {
 		/* Encoding deferred to next buffer queueing */
 		return 0;
@@ -605,17 +718,21 @@ static int encode_frame(struct stm32_venc_data *data)
 		goto out;
 	}
 
-	/* one key frame every VENC_DEFAULT_FRAMERATE frames */
-	if ((data->frame_nb % VENC_DEFAULT_FRAMERATE) == 0 || data->resync) {
+	gop = data->ctrls.gop_size.val;
+	is_idr = data->frame_nb == 0 || data->resync || (gop > 0 && data->gop_idx >= gop);
+
+	enc_in.timeIncrement = (data->frame_nb == 0) ? 0 : data->frmival.numerator;
+
+	if (is_idr) {
 		/* if frame is the first or resync needed: set as intra coded */
 		enc_in.codingType = H264ENC_INTRA_FRAME;
 		data->resync = false;
+		data->gop_idx = 0;
 
 		LOG_DBG("frames=%d irq=%d fuse=%d", data->frame_nb, inst->irq_cnt,
 			inst->irq_fuse_cnt);
 	} else {
 		/* if there was a frame previously, set as predicted */
-		enc_in.timeIncrement = 1;
 		enc_in.codingType = H264ENC_PREDICTED_FRAME;
 	}
 
@@ -674,6 +791,7 @@ static int encode_frame(struct stm32_venc_data *data)
 	}
 
 	data->frame_nb++;
+	data->gop_idx++;
 
 out:
 	k_fifo_put(&data->in_fifo_out, input);
@@ -689,12 +807,17 @@ static int stm32_venc_set_stream(const struct device *dev, bool enable, enum vid
 
 	ARG_UNUSED(type);
 
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	data->streaming = enable;
 	if (!enable) {
 		/* Stop VENC */
 		encoder_end(data);
 		LOG_DBG("frames=%d irq=%d fuse=%d", data->frame_nb, inst->irq_cnt,
 			inst->irq_fuse_cnt);
 	}
+
+	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -809,6 +932,152 @@ static int stm32_venc_get_caps(const struct device *dev, struct video_caps *caps
 	return 0;
 }
 
+static int stm32_venc_set_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	struct stm32_venc_data *data = dev->data;
+	uint32_t num, den, gcd;
+
+	if (frmival->numerator == 0 || frmival->denominator == 0) {
+		return -EINVAL;
+	}
+
+	gcd = sys_gcd(frmival->numerator, frmival->denominator);
+	num = frmival->numerator / gcd;
+	den = frmival->denominator / gcd;
+
+	if (num > den && !(num == 1001 && den == 1000)) {
+		num = 1;
+		den = 1;
+	} else if (den > VENC_MAX_FRAMERATE) {
+		num = MAX(1U, (uint32_t)DIV_ROUND_CLOSEST((uint64_t)num * VENC_MAX_FRAMERATE, den));
+		den = VENC_MAX_FRAMERATE;
+		gcd = sys_gcd(num, den);
+		num /= gcd;
+		den /= gcd;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	if (data->streaming) {
+		k_mutex_unlock(&data->lock);
+		return -EBUSY;
+	}
+
+	frmival->numerator = num;
+	frmival->denominator = den;
+	data->frmival = *frmival;
+	k_mutex_unlock(&data->lock);
+
+	return 0;
+}
+
+static int stm32_venc_get_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	struct stm32_venc_data *data = dev->data;
+
+	*frmival = data->frmival;
+
+	return 0;
+}
+
+static int stm32_venc_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
+{
+	const struct video_format_cap *caps;
+	size_t idx;
+	int ret;
+
+	ARG_UNUSED(dev);
+
+	if (fie->format == NULL) {
+		return -EINVAL;
+	}
+
+	if (fie->index >= 1) {
+		return -ERANGE;
+	}
+
+	caps = (fie->format->type == VIDEO_BUF_TYPE_INPUT) ? in_fmts : out_fmts;
+	ret = video_format_caps_index(caps, fie->format, &idx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	fie->type = VIDEO_FRMIVAL_TYPE_STEPWISE;
+	fie->stepwise.min.numerator = 1;
+	fie->stepwise.min.denominator = VENC_MAX_FRAMERATE;
+	fie->stepwise.max.numerator = 1;
+	fie->stepwise.max.denominator = 1;
+	fie->stepwise.step.numerator = 1;
+	fie->stepwise.step.denominator = VENC_MAX_FRAMERATE;
+
+	return 0;
+}
+
+static int stm32_venc_set_ctrl(const struct device *dev, uint32_t id)
+{
+	struct stm32_venc_data *data = dev->data;
+	struct stm32_venc_ctrls *c = &data->ctrls;
+	int ret = 0;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	switch (id) {
+	case VIDEO_CID_CODEC_FORCE_KEY_FRAME:
+		data->resync = true;
+		break;
+	case VIDEO_CID_H264_PROFILE:
+		if (c->h264_profile.val != VIDEO_H264_PROFILE_CONSTRAINED_BASELINE &&
+		    c->h264_profile.val != VIDEO_H264_PROFILE_MAIN &&
+		    c->h264_profile.val != VIDEO_H264_PROFILE_HIGH) {
+			ret = -ENOTSUP;
+			break;
+		}
+		if (data->streaming) {
+			ret = -EBUSY;
+		}
+		break;
+	case VIDEO_CID_CODEC_BITRATE_MODE:
+	case VIDEO_CID_CODEC_FRAME_RC_ENABLE:
+	case VIDEO_CID_CODEC_MB_RC_ENABLE:
+	case VIDEO_CID_CODEC_HEADER_MODE:
+	case VIDEO_CID_H264_LEVEL:
+	case VIDEO_CID_CODEC_PREPEND_SPSPPS_TO_IDR:
+		if (data->streaming) {
+			ret = -EBUSY;
+		}
+		break;
+	case VIDEO_CID_H264_MIN_QP:
+	case VIDEO_CID_H264_MAX_QP:
+		if (c->min_qp.val > c->max_qp.val) {
+			ret = -EINVAL;
+			break;
+		}
+		__fallthrough;
+	case VIDEO_CID_CODEC_GOP_SIZE:
+	case VIDEO_CID_CODEC_BITRATE:
+	case VIDEO_CID_H264_I_FRAME_QP:
+	case VIDEO_CID_H264_P_FRAME_QP:
+		if (!data->streaming) {
+			break;
+		}
+		if (c->frame_rc_enable.val != 0 &&
+		    c->bitrate_mode.val == VIDEO_CODEC_BITRATE_MODE_CBR) {
+			ret = -EBUSY;
+			break;
+		}
+		if (data->encoder != NULL) {
+			ret = stm32_venc_apply_rate_ctrl(data, id == VIDEO_CID_CODEC_BITRATE);
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	k_mutex_unlock(&data->lock);
+
+	return ret;
+}
+
 static DEVICE_API(video, stm32_venc_driver_api) = {
 	.set_format = stm32_venc_set_fmt,
 	.get_format = stm32_venc_get_fmt,
@@ -816,6 +1085,10 @@ static DEVICE_API(video, stm32_venc_driver_api) = {
 	.enqueue = stm32_venc_enqueue,
 	.dequeue = stm32_venc_dequeue,
 	.get_caps = stm32_venc_get_caps,
+	.set_ctrl = stm32_venc_set_ctrl,
+	.set_frmival = stm32_venc_set_frmival,
+	.get_frmival = stm32_venc_get_frmival,
+	.enum_frmival = stm32_venc_enum_frmival,
 };
 
 static void stm32_venc_irq_config_func(const struct device *dev)
@@ -824,7 +1097,38 @@ static void stm32_venc_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-static struct stm32_venc_data stm32_venc_data_0 = {};
+static struct stm32_venc_data stm32_venc_data_0 = {
+	.ctrls.gop_size = {.id = VIDEO_CID_CODEC_GOP_SIZE,
+			   .range = {.max = VENC_MAX_GOP_SIZE,
+				     .step = 1,
+				     .def = VENC_DEFAULT_GOP_SIZE}},
+	.ctrls.bitrate_mode = {.id = VIDEO_CID_CODEC_BITRATE_MODE,
+			       .range = {.max = VIDEO_CODEC_BITRATE_MODE_CBR,
+					 .def = VIDEO_CODEC_BITRATE_MODE_VBR}},
+	.ctrls.bitrate = {.id = VIDEO_CID_CODEC_BITRATE,
+			  .range = {.min = VENC_MIN_BITRATE,
+				    .max = VENC_MAX_BITRATE,
+				    .step = 1,
+				    .def = VENC_DEFAULT_BITRATE}},
+	.ctrls.frame_rc_enable = {.id = VIDEO_CID_CODEC_FRAME_RC_ENABLE},
+	.ctrls.header_mode = {.id = VIDEO_CID_CODEC_HEADER_MODE, .menu = stm32_venc_header_mode},
+	.ctrls.mb_rc_enable = {.id = VIDEO_CID_CODEC_MB_RC_ENABLE},
+	.ctrls.force_key_frame = {.id = VIDEO_CID_CODEC_FORCE_KEY_FRAME},
+	.ctrls.i_qp = {.id = VIDEO_CID_H264_I_FRAME_QP,
+		       .range = {.min = 1, .max = VENC_MAX_QP, .step = 1, .def = VENC_DEFAULT_QP}},
+	.ctrls.p_qp = {.id = VIDEO_CID_H264_P_FRAME_QP,
+		       .range = {.max = VENC_MAX_QP, .step = 1, .def = VENC_DEFAULT_QP}},
+	.ctrls.min_qp = {.id = VIDEO_CID_H264_MIN_QP,
+			 .range = {.max = VENC_MAX_QP, .step = 1, .def = VENC_DEFAULT_MIN_QP}},
+	.ctrls.max_qp = {.id = VIDEO_CID_H264_MAX_QP,
+			 .range = {.max = VENC_MAX_QP, .step = 1, .def = VENC_MAX_QP}},
+	.ctrls.h264_level = {.id = VIDEO_CID_H264_LEVEL,
+			     .range = {.max = VIDEO_H264_LEVEL_5_1, .def = VIDEO_H264_LEVEL_4_0}},
+	.ctrls.h264_profile = {.id = VIDEO_CID_H264_PROFILE,
+			       .range = {.max = VIDEO_H264_PROFILE_HIGH,
+					 .def = VIDEO_H264_PROFILE_MAIN}},
+	.ctrls.prepend_spspps = {.id = VIDEO_CID_CODEC_PREPEND_SPSPPS_TO_IDR},
+};
 
 static const struct stm32_venc_config stm32_venc_config_0 = {
 	.reg = DT_INST_REG_ADDR(0),
@@ -884,8 +1188,19 @@ static int stm32_venc_init(const struct device *dev)
 	data->out_fmt.height = VENC_DEFAULT_HEIGHT;
 	data->out_fmt.pixelformat = VENC_DEFAULT_OUT_FMT;
 
+	/* default frame interval */
+	data->frmival.numerator = 1;
+	data->frmival.denominator = VENC_DEFAULT_FRAMERATE;
+
 	/* store config for register accesses */
 	ewl_instance.config = config;
+
+	err = video_register_ctrls((struct video_ctrl *)&data->ctrls,
+				   sizeof(data->ctrls) / sizeof(struct video_ctrl), dev);
+	if (err < 0) {
+		LOG_ERR("failed to register controls: %d", err);
+		return err;
+	}
 
 	LOG_DBG("%s inited", dev->name);
 
@@ -894,3 +1209,5 @@ static int stm32_venc_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &stm32_venc_init, NULL, &stm32_venc_data_0, &stm32_venc_config_0,
 		      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &stm32_venc_driver_api);
+
+VIDEO_DEVICE_DEFINE(stm32_venc_0, DEVICE_DT_INST_GET(0), NULL);

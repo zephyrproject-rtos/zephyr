@@ -1047,67 +1047,10 @@ static DEVICE_API(video, ov2640_driver_api) = {
 
 static int ov2640_init_controls(const struct device *dev)
 {
-	int ret;
 	struct ov2640_data *drv_data = dev->data;
-	struct ov2640_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->ae, dev, VIDEO_CID_EXPOSURE,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->awb, dev, VIDEO_CID_WHITE_BALANCE_TEMPERATURE,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->gain, dev, VIDEO_CID_GAIN,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
-			      (struct video_ctrl_range){.min = -2, .max = 2, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST,
-			      (struct video_ctrl_range){.min = -2, .max = 2, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->saturation, dev, VIDEO_CID_SATURATION,
-			      (struct video_ctrl_range){.min = -2, .max = 2, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->jpeg, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY,
-		(struct video_ctrl_range){.min = 5, .max = 100, .step = 1, .def = 50});
-	if (ret) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls((struct video_ctrl *)&drv_data->ctrls,
+				    sizeof(drv_data->ctrls) / sizeof(struct video_ctrl), dev);
 }
 
 static int ov2640_init(const struct device *dev)
@@ -1184,7 +1127,25 @@ static const struct ov2640_config ov2640_cfg_0 = {
 #endif
 	.clock_rate_control = DT_INST_PROP(0, clock_rate_control),
 };
-static struct ov2640_data ov2640_data_0;
+static struct ov2640_data ov2640_data_0 = {
+	.ctrls = {
+		.hflip = {.id = VIDEO_CID_HFLIP},
+		.vflip = {.id = VIDEO_CID_VFLIP},
+		.ae = {.id = VIDEO_CID_EXPOSURE, .range = {.max = 1, .step = 1, .def = 1}},
+		.awb = {.id = VIDEO_CID_WHITE_BALANCE_TEMPERATURE,
+			.range = {.max = 1, .step = 1, .def = 1}},
+		.gain = {.id = VIDEO_CID_GAIN, .range = {.max = 1, .step = 1, .def = 1}},
+		.brightness = {.id = VIDEO_CID_BRIGHTNESS,
+			       .range = {.min = -2, .max = 2, .step = 1}},
+		.contrast = {.id = VIDEO_CID_CONTRAST,
+			     .range = {.min = -2, .max = 2, .step = 1}},
+		.saturation = {.id = VIDEO_CID_SATURATION,
+			       .range = {.min = -2, .max = 2, .step = 1}},
+		.jpeg = {.id = VIDEO_CID_JPEG_COMPRESSION_QUALITY,
+			 .range = {.min = 5, .max = 100, .step = 1, .def = 50}},
+		.test_pattern = {.id = VIDEO_CID_TEST_PATTERN, .range = {.max = 1}},
+	},
+};
 
 static int ov2640_init_0(const struct device *dev)
 {

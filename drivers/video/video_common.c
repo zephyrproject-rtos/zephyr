@@ -35,7 +35,7 @@ struct video_device *video_find_vdev(const struct device *dev)
 	return NULL;
 }
 
-const char *const *video_get_std_menu_ctrl(uint32_t id)
+static const char *const *video_get_std_menu_ctrl(uint32_t id)
 {
 	static char const *const power_line_frequency[] = {
 		"Disabled", "50 Hz", "60 Hz", "Auto", NULL,
@@ -44,12 +44,51 @@ const char *const *video_get_std_menu_ctrl(uint32_t id)
 		"Auto Mode", "Manual Mode", "Shutter Priority Mode", "Aperture Priority Mode", NULL,
 	};
 	static char const *const colorfx[] = {
-		"None", "Black & White", "Sepia", "Negative", "Emboss", "Sketch", "Sky Blue",
-		"Grass Green", "Skin Whiten", "Vivid", "Aqua", "Art Freeze", "Silhouette",
-		"Solarization", "Antique", "Set Cb/Cr", NULL,
+		"None",       "Black & White", "Sepia",       "Negative",  "Emboss", "Sketch",
+		"Sky Blue",   "Grass Green",   "Skin Whiten", "Vivid",     "Aqua",   "Art Freeze",
+		"Silhouette", "Solarization",  "Antique",     "Set Cb/Cr", NULL,
 	};
 	static char const *const camera_orientation[] = {
-		"Front", "Back", "External", NULL,
+		"Front",
+		"Back",
+		"External",
+		NULL,
+	};
+	static char const *const codec_bitrate_mode[] = {
+		"Variable Bitrate",
+		"Constant Bitrate",
+		"Constant Quality",
+		NULL,
+	};
+	static char const *const codec_header_mode[] = {
+		"Separate Buffer",
+		"Joined With 1st Frame",
+		NULL,
+	};
+	static char const *const h264_level[] = {
+		"1", "1b",  "1.1", "1.2", "1.3", "2",   "2.1", "2.2", "3",   "3.1", "3.2",
+		"4", "4.1", "4.2", "5",   "5.1", "5.2", "6.0", "6.1", "6.2", NULL,
+	};
+	static char const *const h264_profile[] = {
+		"Baseline",
+		"Constrained Baseline",
+		"Main",
+		"Extended",
+		"High",
+		"High 10",
+		"High 422",
+		"High 444 Predictive",
+		"High 10 Intra",
+		"High 422 Intra",
+		"High 444 Intra",
+		"CAVLC 444 Intra",
+		"Scalable Baseline",
+		"Scalable High",
+		"Scalable High Intra",
+		"Stereo High",
+		"Multiview High",
+		"Constrained High",
+		NULL,
 	};
 
 	switch (id) {
@@ -64,6 +103,16 @@ const char *const *video_get_std_menu_ctrl(uint32_t id)
 		return colorfx;
 	case VIDEO_CID_CAMERA_ORIENTATION:
 		return camera_orientation;
+
+	/* Codec control menus */
+	case VIDEO_CID_CODEC_BITRATE_MODE:
+		return codec_bitrate_mode;
+	case VIDEO_CID_CODEC_HEADER_MODE:
+		return codec_header_mode;
+	case VIDEO_CID_H264_LEVEL:
+		return h264_level;
+	case VIDEO_CID_H264_PROFILE:
+		return h264_profile;
 	default:
 		return NULL;
 	}
@@ -73,7 +122,8 @@ static inline int check_range(enum video_ctrl_type type, struct video_ctrl_range
 {
 	switch (type) {
 	case VIDEO_CTRL_TYPE_BOOLEAN:
-		if (range.step != 1 || range.max > 1 || range.min < 0) {
+		if (range.step != 1 || range.max > 1 || range.min < 0 ||
+		    !IN_RANGE(range.def, range.min, range.max)) {
 			return -ERANGE;
 		}
 		return 0;
@@ -101,11 +151,10 @@ static inline int check_range(enum video_ctrl_type type, struct video_ctrl_range
 	}
 }
 
-static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32_t *flags)
+/* Standard controls have a fixed type and flags, private controls keep what the driver set */
+static inline void set_type_flag(struct video_ctrl *ctrl)
 {
-	*flags = 0;
-
-	switch (id) {
+	switch (ctrl->id) {
 	case VIDEO_CID_AUTO_WHITE_BALANCE:
 	case VIDEO_CID_AUTOGAIN:
 	case VIDEO_CID_HFLIP:
@@ -115,83 +164,138 @@ static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32
 	case VIDEO_CID_EXPOSURE_AUTO_PRIORITY:
 	case VIDEO_CID_FOCUS_AUTO:
 	case VIDEO_CID_WIDE_DYNAMIC_RANGE:
-		*type = VIDEO_CTRL_TYPE_BOOLEAN;
+	case VIDEO_CID_CODEC_FRAME_RC_ENABLE:
+	case VIDEO_CID_CODEC_MB_RC_ENABLE:
+	case VIDEO_CID_CODEC_PREPEND_SPSPPS_TO_IDR:
+		ctrl->type = VIDEO_CTRL_TYPE_BOOLEAN;
 		break;
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
 	case VIDEO_CID_EXPOSURE_AUTO:
 	case VIDEO_CID_COLORFX:
 	case VIDEO_CID_TEST_PATTERN:
 	case VIDEO_CID_CAMERA_ORIENTATION:
-		*type = VIDEO_CTRL_TYPE_MENU;
+	case VIDEO_CID_CODEC_BITRATE_MODE:
+	case VIDEO_CID_CODEC_HEADER_MODE:
+	case VIDEO_CID_H264_LEVEL:
+	case VIDEO_CID_H264_PROFILE:
+		ctrl->type = VIDEO_CTRL_TYPE_MENU;
+		break;
+	case VIDEO_CID_CODEC_FORCE_KEY_FRAME:
+		ctrl->type = VIDEO_CTRL_TYPE_BUTTON;
 		break;
 	case VIDEO_CID_PIXEL_RATE:
-		*type = VIDEO_CTRL_TYPE_INTEGER64;
-		*flags |= VIDEO_CTRL_FLAG_READ_ONLY;
+		ctrl->type = VIDEO_CTRL_TYPE_INTEGER64;
+		ctrl->flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 		break;
 	case VIDEO_CID_LINK_FREQ:
-		*type = VIDEO_CTRL_TYPE_INTEGER_MENU;
+		ctrl->type = VIDEO_CTRL_TYPE_INTEGER_MENU;
+		break;
+	case VIDEO_CID_PAN_RELATIVE:
+	case VIDEO_CID_TILT_RELATIVE:
+	case VIDEO_CID_FOCUS_RELATIVE:
+	case VIDEO_CID_IRIS_RELATIVE:
+	case VIDEO_CID_ZOOM_RELATIVE:
+		/* A relative move is an action, repeating it with the same value makes sense */
+		ctrl->type = VIDEO_CTRL_TYPE_INTEGER;
+		ctrl->flags |= VIDEO_CTRL_FLAG_WRITE_ONLY | VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE;
 		break;
 	default:
-		*type = VIDEO_CTRL_TYPE_INTEGER;
+		if (ctrl->id < VIDEO_CID_PRIVATE_BASE || ctrl->type == 0) {
+			ctrl->type = VIDEO_CTRL_TYPE_INTEGER;
+		}
 		break;
+	}
+
+	if (ctrl->type == VIDEO_CTRL_TYPE_BUTTON) {
+		ctrl->flags |= VIDEO_CTRL_FLAG_WRITE_ONLY | VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE;
 	}
 }
 
-int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-		    struct video_ctrl_range range)
+/* The index range of a menu is fixed, its entries come from the driver or the standard menus */
+static int set_menu(struct video_ctrl *ctrl)
+{
+	ctrl->range.min = 0;
+	ctrl->range.step = 1;
+
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER_MENU) {
+		return ctrl->int_menu == NULL ? -EINVAL : 0;
+	}
+
+	if (ctrl->menu == NULL) {
+		ctrl->menu = video_get_std_menu_ctrl(ctrl->id);
+	}
+
+	/* A menu sized by the driver may stay unnamed, otherwise its entries give the size */
+	if (ctrl->range.max != 0) {
+		if (ctrl->menu != NULL) {
+			for (int32_t i = 0; i <= ctrl->range.max; i++) {
+				if (ctrl->menu[i] == NULL) {
+					return -ERANGE;
+				}
+			}
+		}
+		return 0;
+	}
+
+	if (ctrl->menu == NULL || ctrl->menu[0] == NULL) {
+		return -EINVAL;
+	}
+
+	while (ctrl->menu[ctrl->range.max + 1] != NULL) {
+		ctrl->range.max++;
+	}
+
+	return 0;
+}
+
+int video_register_ctrl(struct video_ctrl *ctrl, const struct device *dev)
 {
 	int ret;
-	uint32_t flags;
-	enum video_ctrl_type type;
 	struct video_ctrl *vc;
 	struct video_device *vdev;
 
-	if (ctrl == NULL) {
+	if (ctrl == NULL || dev == NULL || ctrl->id < VIDEO_CID_BASE) {
 		return -EINVAL;
 	}
 
 	vdev = video_find_vdev(dev);
-	if (!vdev) {
+	if (vdev == NULL) {
 		return -EINVAL;
 	}
 
-	/* Sanity checks */
-	if (id < VIDEO_CID_BASE) {
-		return -EINVAL;
+	set_type_flag(ctrl);
+
+	switch (ctrl->type) {
+	case VIDEO_CTRL_TYPE_BOOLEAN:
+		ctrl->range.min = 0;
+		ctrl->range.max = 1;
+		ctrl->range.step = 1;
+		break;
+	case VIDEO_CTRL_TYPE_BUTTON:
+		ctrl->range = (struct video_ctrl_range){0};
+		break;
+	case VIDEO_CTRL_TYPE_MENU:
+	case VIDEO_CTRL_TYPE_INTEGER_MENU:
+		ret = set_menu(ctrl);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+	default:
+		break;
 	}
 
-	vdev = video_find_vdev(dev);
-	if (!vdev) {
-		return -EINVAL;
-	}
-
-	/* Sanity checks */
-	if (id < VIDEO_CID_BASE) {
-		return -EINVAL;
-	}
-
-	set_type_flag(id, &type, &flags);
-
-	ret = check_range(type, range);
-	if (ret) {
+	ret = check_range(ctrl->type, ctrl->range);
+	if (ret < 0) {
 		return ret;
 	}
 
-	ctrl->cluster_sz = 0;
-	ctrl->cluster = NULL;
-	ctrl->is_auto = false;
-	ctrl->has_volatiles = false;
-	ctrl->menu = NULL;
 	ctrl->vdev = vdev;
-	ctrl->id = id;
-	ctrl->type = type;
-	ctrl->flags = flags;
-	ctrl->range = range;
 
-	if (type == VIDEO_CTRL_TYPE_INTEGER64) {
-		ctrl->val64 = range.def64;
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		ctrl->val64 = ctrl->range.def64;
 	} else {
-		ctrl->val = range.def;
+		ctrl->val = ctrl->range.def;
 	}
 
 	/* Insert in an ascending order of ctrl's id */
@@ -207,52 +311,20 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	return 0;
 }
 
-int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			 uint8_t def, const char *const menu[])
-{
-	int ret;
-	uint8_t sz = 0;
-	const char *const *_menu = menu ? menu : video_get_std_menu_ctrl(id);
-
-	if (!_menu) {
-		return -EINVAL;
-	}
-
-	while (_menu[sz]) {
-		sz++;
-	}
-
-	ret = video_init_ctrl(
-		ctrl, dev, id,
-		(struct video_ctrl_range){.min = 0, .max = sz - 1, .step = 1, .def = def});
-
-	if (ret) {
-		return ret;
-	}
-
-	ctrl->menu = _menu;
-
-	return 0;
-}
-
-int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			     uint8_t def, const int64_t menu[], size_t menu_len)
+int video_register_ctrls(struct video_ctrl *ctrls, size_t num, const struct device *dev)
 {
 	int ret;
 
-	if (!menu) {
+	if (ctrls == NULL) {
 		return -EINVAL;
 	}
 
-	ret = video_init_ctrl(
-		ctrl, dev, id,
-		(struct video_ctrl_range){.min = 0, .max = menu_len - 1, .step = 1, .def = def});
-
-	if (ret) {
-		return ret;
+	for (size_t i = 0; i < num; i++) {
+		ret = video_register_ctrl(&ctrls[i], dev);
+		if (ret < 0) {
+			return ret;
+		}
 	}
-
-	ctrl->int_menu = menu;
 
 	return 0;
 }

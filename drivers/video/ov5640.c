@@ -1205,87 +1205,25 @@ static DEVICE_API(video, ov5640_driver_api) = {
 
 static int ov5640_init_controls(const struct device *dev)
 {
-	int ret;
 	struct ov5640_data *drv_data = dev->data;
 	struct ov5640_ctrls *ctrls = &drv_data->ctrls;
-	struct video_ctrl *auto_ctrls = &ctrls->auto_gain;
+	int ret;
 
-	ret = video_init_ctrl(&ctrls->auto_gain, dev, VIDEO_CID_AUTOGAIN,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
-	if (ret) {
-		return ret;
-	}
+	/* The frame rate tables are not constant expressions, so this range is set at runtime */
+	ctrls->pixel_rate.range = (struct video_ctrl_range){
+		.min64 = csi2_qqvga_frmrate_params[0].pixelrate,
+		.max64 = csi2_hd_frmrate_params[ARRAY_SIZE(csi2_hd_frmrate_params) - 1].pixelrate,
+		.step64 = 1,
+		.def64 = csi2_hd_frmrate_params[1].pixelrate,
+	};
 
-	ret = video_init_ctrl(
-		&ctrls->gain, dev, VIDEO_CID_ANALOGUE_GAIN,
-		(struct video_ctrl_range){.min = 0, .max = 1023, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_auto_cluster_ctrl(auto_ctrls, 2, true);
+	ret = video_register_ctrls((struct video_ctrl *)ctrls,
+				   sizeof(*ctrls) / sizeof(struct video_ctrl), dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(
-		&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
-		(struct video_ctrl_range){.min = -15, .max = 15, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST,
-			      (struct video_ctrl_range){.min = 0, .max = 255, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->hue, dev, VIDEO_CID_HUE,
-			      (struct video_ctrl_range){.min = 0, .max = 359, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->saturation, dev, VIDEO_CID_SATURATION,
-		(struct video_ctrl_range){.min = 0, .max = 255, .step = 1, .def = 64});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_menu_ctrl(&ctrls->light_freq, dev, VIDEO_CID_POWER_LINE_FREQUENCY,
-				   VIDEO_CID_POWER_LINE_FREQUENCY_50HZ, NULL);
-	if (ret) {
-		return ret;
-	}
-
-	ret = video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
-				   test_pattern_menu);
-	if (ret) {
-		return ret;
-	}
-
-	return video_init_ctrl(
-		&ctrls->pixel_rate, dev, VIDEO_CID_PIXEL_RATE,
-		(struct video_ctrl_range){
-			.min64 = csi2_qqvga_frmrate_params[0].pixelrate,
-			.max64 = csi2_hd_frmrate_params[ARRAY_SIZE(csi2_hd_frmrate_params) - 1]
-					 .pixelrate,
-			.step64 = 1,
-			.def64 = csi2_hd_frmrate_params[1].pixelrate});
+	return video_auto_cluster_ctrl(&ctrls->auto_gain, 2, true);
 }
 
 static int ov5640_init(const struct device *dev)
@@ -1481,7 +1419,25 @@ static int ov5640_init(const struct device *dev)
 	DT_PROP_OR(DT_CHILD(DT_INST_CHILD(n, port), endpoint), prop, default)
 
 #define OV5640_INIT(n)                                                                             \
-	static struct ov5640_data ov5640_data_##n;                                                 \
+	static struct ov5640_data ov5640_data_##n = {                                              \
+		.ctrls = {                                                                         \
+			.auto_gain = {.id = VIDEO_CID_AUTOGAIN, .range = {.def = 1}},              \
+			.gain = {.id = VIDEO_CID_ANALOGUE_GAIN,                                    \
+				 .range = {.max = 1023, .step = 1}},                               \
+			.brightness = {.id = VIDEO_CID_BRIGHTNESS,                                 \
+				       .range = {.min = -15, .max = 15, .step = 1}},               \
+			.contrast = {.id = VIDEO_CID_CONTRAST, .range = {.max = 255, .step = 1}},  \
+			.hue = {.id = VIDEO_CID_HUE, .range = {.max = 359, .step = 1}},            \
+			.saturation = {.id = VIDEO_CID_SATURATION,                                 \
+				       .range = {.max = 255, .step = 1, .def = 64}},               \
+			.hflip = {.id = VIDEO_CID_HFLIP},                                          \
+			.vflip = {.id = VIDEO_CID_VFLIP},                                          \
+			.light_freq = {.id = VIDEO_CID_POWER_LINE_FREQUENCY,                       \
+				       .range = {.def = VIDEO_CID_POWER_LINE_FREQUENCY_50HZ}},     \
+			.test_pattern = {.id = VIDEO_CID_TEST_PATTERN, .menu = test_pattern_menu}, \
+			.pixel_rate = {.id = VIDEO_CID_PIXEL_RATE},                                \
+		},                                                                                 \
+	};                                                                                         \
                                                                                                    \
 	static const struct ov5640_config ov5640_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \

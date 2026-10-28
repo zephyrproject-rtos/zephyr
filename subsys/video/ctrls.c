@@ -154,16 +154,19 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		return -EACCES;
 	}
 
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
-		    ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
-		    : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max)) {
+	/* A button holds no value, so there is no range to check */
+	if (ctrl->type != VIDEO_CTRL_TYPE_BUTTON &&
+	    (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
+		     ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
+		     : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max))) {
 		LOG_ERR("Control id 0x%08x value is invalid for %s", control->id, dev->name);
 		return -ERANGE;
 	}
 
-	/* No new value */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
-						    : ctrl->val == control->val) {
+	/* No new value, unless the control is executed on each write */
+	if ((ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
+						     : ctrl->val == control->val) &&
+	    (ctrl->flags & VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE) == 0) {
 		return 0;
 	}
 
@@ -327,6 +330,38 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 	case VIDEO_CID_CAMERA_SENSOR_ROTATION:
 		return "Camera Sensor Rotation";
 
+	/* Codec controls */
+	case VIDEO_CID_CODEC_GOP_SIZE:
+		return "Video GOP Size";
+	case VIDEO_CID_CODEC_BITRATE_MODE:
+		return "Video Bitrate Mode";
+	case VIDEO_CID_CODEC_BITRATE:
+		return "Video Bitrate";
+	case VIDEO_CID_CODEC_FRAME_RC_ENABLE:
+		return "Frame Level Rate Control Enable";
+	case VIDEO_CID_CODEC_HEADER_MODE:
+		return "Sequence Header Mode";
+	case VIDEO_CID_CODEC_MB_RC_ENABLE:
+		return "MB Level Rate Control Enable";
+	case VIDEO_CID_CODEC_FORCE_KEY_FRAME:
+		return "Force Key Frame";
+	case VIDEO_CID_H264_I_FRAME_QP:
+		return "H264 I-Frame QP Value";
+	case VIDEO_CID_H264_P_FRAME_QP:
+		return "H264 P-Frame QP Value";
+	case VIDEO_CID_H264_MIN_QP:
+		return "H264 Minimum QP Value";
+	case VIDEO_CID_H264_MAX_QP:
+		return "H264 Maximum QP Value";
+	case VIDEO_CID_H264_LEVEL:
+		return "H264 Level";
+	case VIDEO_CID_H264_PROFILE:
+		return "H264 Profile";
+	case VIDEO_CID_CODEC_PREPEND_SPSPPS_TO_IDR:
+		return "Prepend SPS and PPS to IDR";
+	case VIDEO_CID_CODEC_CONSTANT_QUALITY:
+		return "Constant Quality";
+
 	/* JPEG encoder controls */
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
 		return "Compression Quality";
@@ -388,6 +423,9 @@ fill_query:
 		cq->int_menu = ctrl->int_menu;
 	}
 	cq->name = video_get_ctrl_name(cq->id);
+	if (cq->name == NULL) {
+		cq->name = ctrl->name;
+	}
 
 	return 0;
 }
@@ -396,7 +434,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 {
 	const char *type = NULL;
 	char buf[11];
-	int ret;
+	int ret = 0;
 
 	if (cq == NULL || cq->dev == NULL) {
 		LOG_ERR("%s - Invalid parameter given", __func__);
@@ -423,18 +461,25 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	case VIDEO_CTRL_TYPE_STRING:
 		type = "string";
 		break;
+	case VIDEO_CTRL_TYPE_BUTTON:
+		type = "button";
+		break;
 	default:
 		break;
 	}
 	snprintf(buf, sizeof(buf), "(%s)", type);
 
-	/* Get current value of the control */
+	/* Get current value of the control, if readable */
 	struct video_control vc = {.id = cq->id};
 
-	ret = video_get_ctrl(cq->dev, &vc);
+	if ((cq->flags & VIDEO_CTRL_FLAG_WRITE_ONLY) == 0) {
+		ret = video_get_ctrl(cq->dev, &vc);
+	}
 
 	/* Print the control information */
-	if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {
+	if (cq->type == VIDEO_CTRL_TYPE_BUTTON) {
+		LOG_INF("%32s 0x%08x %-10s (flags=0x%02x)", cq->name, cq->id, buf, cq->flags);
+	} else if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {
 		LOG_INF("%32s 0x%08x %-10s (flags=0x%02x) : min=%lld max=%lld step=%lld "
 			"default=%lld value=%lld ",
 			cq->name, cq->id, buf, cq->flags, cq->range.min64, cq->range.max64,

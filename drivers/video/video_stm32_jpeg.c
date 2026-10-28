@@ -584,9 +584,7 @@ static int stm32_jpeg_init(const struct device *dev)
 	data->m2m.out.fmt.height = stm32_jpeg_out_fmts[0].height_min;
 	data->m2m.out.fmt.pixelformat = stm32_jpeg_out_fmts[0].pixelformat;
 
-	ret = video_init_ctrl(
-		&data->jpeg_quality, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY,
-		(struct video_ctrl_range){.min = 5, .max = 100, .step = 1, .def = 50});
+	ret = video_register_ctrl(&data->jpeg_quality, dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -620,6 +618,8 @@ static void stm32_jpeg_isr(const struct device *dev)
                                                                                                    \
 	static struct stm32_jpeg_data stm32_jpeg_data_##n = {                                      \
 		.hjpeg = {.Instance = (JPEG_TypeDef *)DT_INST_REG_ADDR(n)},                        \
+		.jpeg_quality = {.id = VIDEO_CID_JPEG_COMPRESSION_QUALITY,                         \
+				 .range = {.min = 5, .max = 100, .step = 1, .def = 50}},           \
 	};                                                                                         \
                                                                                                    \
 	static const struct stm32_jpeg_config stm32_jpeg_config_##n = {                            \
