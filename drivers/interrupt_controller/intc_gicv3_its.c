@@ -604,11 +604,16 @@ static unsigned int gicv3_its_alloc_intid(const struct device *dev)
 	return atomic_inc(&nlpi_intid);
 }
 
-static uint32_t gicv3_its_get_msi_addr(const struct device *dev)
+static uint64_t gicv3_its_get_msi_addr64(const struct device *dev)
 {
 	const struct gicv3_its_config *cfg = (const struct gicv3_its_config *)dev->config;
 
-	return cfg->base_addr + GITS_TRANSLATER;
+	return (uint64_t)cfg->base_addr + GITS_TRANSLATER;
+}
+
+static uint32_t gicv3_its_get_msi_addr(const struct device *dev)
+{
+	return (uint32_t)gicv3_its_get_msi_addr64(dev);
 }
 
 #define ITS_RDIST_MAP(n)									  \
@@ -702,6 +707,7 @@ DEVICE_API(its, gicv3_its_api) = {
 	.map_intid = gicv3_its_map_intid,
 	.send_int = gicv3_its_send_int,
 	.get_msi_addr = gicv3_its_get_msi_addr,
+	.get_msi_addr64 = gicv3_its_get_msi_addr64,
 };
 
 #define GICV3_ITS_INIT(n)						       \
