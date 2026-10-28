@@ -49,6 +49,7 @@
 #include <esp_private/esp_pmu.h>
 #include <esp_private/esp_modem_clock.h>
 #include <ocode_init.h>
+#include <esp_sleep.h>
 #endif
 
 #include <zephyr/drivers/clock_control.h>
@@ -658,6 +659,24 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 			cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
 		}
 	} while (cal_val == 0);
+
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	static esp_sleep_pd_domain_t slow_clk_pd = ESP_PD_DOMAIN_MAX;
+	esp_sleep_pd_domain_t new_pd = ESP_PD_DOMAIN_MAX;
+
+	if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K ||
+	    rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+		new_pd = ESP_PD_DOMAIN_XTAL32K;
+	} else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+		new_pd = ESP_PD_DOMAIN_RC32K;
+	}
+
+	if (new_pd != slow_clk_pd) {
+		esp_sleep_pd_config(slow_clk_pd, ESP_PD_OPTION_OFF);
+		esp_sleep_pd_config(new_pd, ESP_PD_OPTION_ON);
+		slow_clk_pd = new_pd;
+	}
+#endif
 
 	LOG_DBG("RTC_SLOW_CLK calibration value: %d", cal_val);
 
