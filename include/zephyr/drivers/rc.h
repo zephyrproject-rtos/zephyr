@@ -17,7 +17,10 @@
 #include <stdint.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/rc/rc.h>
+#include <zephyr/rc/rc_protocol.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
@@ -77,13 +80,26 @@ __subsystem struct rc_driver_api {
 struct rc_dev_data {
 	/** @cond INTERNAL_HIDDEN */
 	struct rc_caps caps;
+	ATOMIC_DEFINE(protocols, RC_PROTOCOL_MAX);
 	/** @endcond */
 };
 
 /** @cond INTERNAL_HIDDEN */
-int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct device *dev));
+int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct device *dev),
+		     const uint16_t *protocols, size_t num_protocols);
 
-#define Z_RC_INIT_NAME(node_id) _CONCAT(z_rc_init_, DT_DEP_ORD(node_id))
+#define Z_RC_INIT_NAME(node_id)      _CONCAT(z_rc_init_, DT_DEP_ORD(node_id))
+#define Z_RC_PROTOCOLS_NAME(node_id) _CONCAT(z_rc_protocols_, DT_DEP_ORD(node_id))
+
+#define Z_RC_PROTOCOLS_DEFINE(node_id)                                                             \
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, protocols),                                           \
+		   (static const uint16_t Z_RC_PROTOCOLS_NAME(node_id)[] =                         \
+			    DT_PROP(node_id, protocols);))
+
+#define Z_RC_PROTOCOLS_ARGS(node_id)                                                               \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, protocols),                                          \
+		    (Z_RC_PROTOCOLS_NAME(node_id), ARRAY_SIZE(Z_RC_PROTOCOLS_NAME(node_id))),      \
+		    (NULL, 0))
 /** @endcond */
 
 /**
@@ -99,9 +115,10 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
  * @param api Pointer to the struct rc_driver_api of the driver.
  */
 #define RC_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api)                  \
+	Z_RC_PROTOCOLS_DEFINE(node_id)                                                             \
 	static int _CONCAT(z_rc_init_, DT_DEP_ORD(node_id))(const struct device *dev)              \
 	{                                                                                          \
-		return z_rc_device_init(dev, init_fn);                                             \
+		return z_rc_device_init(dev, init_fn, Z_RC_PROTOCOLS_ARGS(node_id));               \
 	}                                                                                          \
 	DEVICE_DT_DEFINE(node_id, Z_RC_INIT_NAME(node_id), pm, data, config, level, prio, api)
 

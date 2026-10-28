@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common properties of remote control devices.
+
+include: base.yaml
+
+properties:
+  protocols:
+    type: array
+    description: |
+      Protocols enabled at init, as RC_PROTO_* values from
+      <zephyr/dt-bindings/rc/rc-proto.h>. Each value enables the decoder
+      that handles it, with all protocols of that decoder's group. Values
+      without a built decoder are ignored. If the property is absent, all
+      built decoders are enabled.

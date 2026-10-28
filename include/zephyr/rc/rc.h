@@ -129,6 +129,40 @@ static inline bool rc_raw_is_pulse(uint32_t word)
  */
 int rc_get_caps(const struct device *dev, struct rc_caps *caps);
 
+/**
+ * @brief Enable decoding of a protocol on a device.
+ *
+ * @param dev rc device.
+ * @param proto Protocol, one of RC_PROTO_*.
+ *
+ * @retval 0 Success.
+ * @retval -ENOTSUP No decoder for @p proto is built.
+ */
+int rc_protocol_enable(const struct device *dev, uint16_t proto);
+
+/**
+ * @brief Disable decoding of a protocol on a device.
+ *
+ * @param dev rc device.
+ * @param proto Protocol, one of RC_PROTO_*.
+ *
+ * @retval 0 Success.
+ * @retval -ENOTSUP No decoder for @p proto is built.
+ */
+int rc_protocol_disable(const struct device *dev, uint16_t proto);
+
+/**
+ * @brief Check whether decoding of a protocol is enabled on a device.
+ *
+ * @param dev rc device.
+ * @param proto Protocol, one of RC_PROTO_*.
+ *
+ * @retval 1 Enabled.
+ * @retval 0 Disabled.
+ * @retval -ENOTSUP No decoder for @p proto is built.
+ */
+int rc_protocol_is_enabled(const struct device *dev, uint16_t proto);
+
 /** @} */
 
 #ifdef __cplusplus
