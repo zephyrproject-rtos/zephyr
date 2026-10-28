@@ -97,6 +97,7 @@ static void cap_initiator_test_unicast_start_fixture_init(
 	}
 
 	fixture->group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	fixture->group_param.sca = BT_GAP_SCA_UNKNOWN;
 	fixture->group_param.params_count = pair_idx + 1U;
 	fixture->group_param.params = fixture->group_pair_params;
 

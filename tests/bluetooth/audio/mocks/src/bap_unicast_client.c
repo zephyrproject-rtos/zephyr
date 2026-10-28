@@ -808,6 +808,7 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 		stream_param = &param->params[i];
 
 		(*unicast_group)->cig_param.packing = param->packing;
+		(*unicast_group)->cig_param.sca = param->sca;
 
 		err = unicast_group_add_stream_pair(*unicast_group, stream_param);
 		__ASSERT(err == 0, "%d", err);
@@ -856,6 +857,9 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 		struct bt_bap_unicast_group_stream_pair_param *stream_param = &param->params[i];
 		struct bt_bap_unicast_group_stream_param *rx_param = stream_param->rx_param;
 		struct bt_bap_unicast_group_stream_param *tx_param = stream_param->tx_param;
+
+		unicast_group->cig_param.packing = param->packing;
+		unicast_group->cig_param.sca = param->sca;
 
 		if (rx_param != NULL) {
 			struct bt_bap_iso *bap_iso =

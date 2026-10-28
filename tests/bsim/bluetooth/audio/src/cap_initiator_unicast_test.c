@@ -701,7 +701,7 @@ static void unicast_group_create(struct bt_cap_unicast_group **out_unicast_group
 	struct bt_cap_unicast_group_stream_param group_source_stream_params;
 	struct bt_cap_unicast_group_stream_param group_sink_stream_params;
 	struct bt_cap_unicast_group_stream_pair_param pair_params;
-	struct bt_cap_unicast_group_param group_param;
+	struct bt_cap_unicast_group_param group_param = {0};
 	int err;
 
 	group_sink_stream_params.qos_cfg = &unicast_preset_16_2_1.qos;
@@ -714,6 +714,7 @@ static void unicast_group_create(struct bt_cap_unicast_group **out_unicast_group
 	pair_params.rx_param = &group_source_stream_params;
 
 	group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	group_param.sca = BT_GAP_SCA_UNKNOWN;
 	group_param.params_count = 1;
 	group_param.params = &pair_params;
 
