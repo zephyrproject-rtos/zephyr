@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra0.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <freq.h>
 
 / {
@@ -250,6 +251,47 @@
 					status = "disabled";
 				};
 			};
+
+			sau-i2c {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				i2c00: sau-i2c@0 {
+					compatible = "renesas,ra-i2c-sau";
+					sau-channels = <&sau_ch00>;
+					reg = <0>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					status = "disabled";
+				};
+
+				i2c01: sau-i2c@1 {
+					compatible = "renesas,ra-i2c-sau";
+					sau-channels = <&sau_ch01>;
+					reg = <1>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					status = "disabled";
+				};
+
+				i2c10: sau-i2c@10 {
+					compatible = "renesas,ra-i2c-sau";
+					sau-channels = <&sau_ch02>;
+					reg = <0x10>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					status = "disabled";
+				};
+
+				i2c11: sau-i2c@11 {
+					compatible = "renesas,ra-i2c-sau";
+					sau-channels = <&sau_ch03>;
+					reg = <0x11>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					status = "disabled";
+				};
+			};
 		};
 
 		sau1: sau@400a2200 {
@@ -284,6 +326,29 @@
 					interrupts = <14 1>;
 					sau-channels = <&sau_ch10>, <&sau_ch11>;
 					reg = <2>;
+					status = "disabled";
+				};
+			};
+
+			sau-i2c {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				i2c20: sau-i2c@20 {
+					compatible = "renesas,ra-i2c-sau";
+					sau-channels = <&sau_ch10>;
+					reg = <0x20>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					status = "disabled";
+				};
+
+				i2c21: sau-i2c@21 {
+					compatible = "renesas,ra-i2c-sau";
+					sau-channels = <&sau_ch11>;
+					reg = <0x21>;
+					#address-cells = <1>;
+					#size-cells = <0>;
 					status = "disabled";
 				};
 			};

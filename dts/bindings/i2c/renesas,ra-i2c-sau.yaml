@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA SAU Simplified I2C (IIC Master)
+
+compatible: "renesas,ra-i2c-sau"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  reg:
+    required: true
+    description: |
+      SAU I2C peripheral instance index.
+
+  sau-channels:
+    required: true
+    type: phandle-array
+    description: |
+      SAU channel phandle for this I2C instance.
+      Must contain exactly 1 phandle pointing to the underlying SAU channel.
+
+  sda-delay-us:
+    type: int
+    default: 5
+    description: |
+      SDA output delay time in microseconds to meet slave device hold/setup time constraints.
+      Maps to delay_time in sau_i2c_extended_cfg_t.
