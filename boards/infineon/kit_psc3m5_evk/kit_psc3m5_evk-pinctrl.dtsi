@@ -20,6 +20,17 @@
 	input-enable;
 };
 
+/* Configure pin drive mode for i2c pins */
+&p9_0_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p9_2_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
+
 /* Configure pin drive mode for can pins */
 &p5_2_can1_rx {
 	input-enable;
