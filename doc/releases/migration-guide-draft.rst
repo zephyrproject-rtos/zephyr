@@ -32,6 +32,11 @@ Kernel
 Boards
 ******
 
+* :zephyr:board:`cy8ckit_041s_max`: the console moved from SCB2 to SCB1 on the same pins (P0.4,
+  P0.5), and its node label changed from ``uart2`` to ``uart1``. The ``spi1`` node on SCB1
+  (P2.0 to P2.2) was removed. SCB2 is now ``arduino_spi`` on the Arduino header pins D11 to D13
+  (P10.0 to P10.2), disabled by default.
+
 Device Drivers and Devicetree
 *****************************
 

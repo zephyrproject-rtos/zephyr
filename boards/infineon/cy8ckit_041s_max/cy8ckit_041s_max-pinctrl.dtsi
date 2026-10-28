@@ -6,25 +6,12 @@
  */
 
 /* Configure pin drive mode for uart pins */
-&p0_5_scb2_uart_tx {
+&p0_5_scb1_uart_tx {
 	drive-push-pull;
 };
 
-&p0_4_scb2_uart_rx {
+&p0_4_scb1_uart_rx {
 	input-enable;
-};
-
-/* Configure pin drive mode for spi pins */
-&p2_0_scb1_spi_m_mosi {
-	drive-push-pull;
-};
-
-&p2_1_scb1_spi_m_miso {
-	input-enable;
-};
-
-&p2_2_scb1_spi_m_clk {
-	drive-push-pull;
 };
 
 /* Configure pin drive mode for i2c pins */
@@ -36,4 +23,17 @@
 &p1_1_scb0_i2c_sda {
 	drive-open-drain;
 	input-enable;
+};
+
+/* Configure pin drive mode for the Arduino SPI pins */
+&p10_0_scb2_spi_m_mosi {
+	drive-push-pull;
+};
+
+&p10_1_scb2_spi_m_miso {
+	input-enable;
+};
+
+&p10_2_scb2_spi_m_clk {
+	drive-push-pull;
 };
