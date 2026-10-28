@@ -13,7 +13,6 @@ versions are:
 
   - v4.5: Current release
   - v4.4: Prior release
-  - v4.3: Prior release
   - v3.7: Current LTS
 
 ## Reporting process
