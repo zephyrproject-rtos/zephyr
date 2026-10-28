@@ -17,6 +17,35 @@ config RC_INIT_PRIORITY
 	  Init priority of remote control devices. Must be higher than the
 	  priority of devices they depend on, such as Pulse IO controllers.
 
+config RC_RAW_BUFFER_SIZE
+	int "Raw receive buffer size per device, in words"
+	default 128
+	help
+	  Number of raw pulse and space words buffered per device between
+	  the driver and the rc receive work queue. Must be a power of 2.
+
+config RC_DECODER_STATE_SIZE
+	int "Decoder state size per device, in bytes"
+	default 128
+	help
+	  Memory per device for the state of all built protocol decoders.
+	  Device init fails if the built decoders need more.
+
+config RC_RX_WORKQ_STACK_SIZE
+	int "Receive work queue stack size"
+	default 2048 if 64BIT || SPARC
+	default 1024
+	help
+	  Stack size of the work queue that decodes raw words of all rc
+	  devices.
+
+config RC_RX_WORKQ_PRIORITY
+	int "Receive work queue priority"
+	default 10
+	help
+	  Preemptible priority of the work queue that decodes raw words of
+	  all rc devices.
+
 module = RC
 module-str = rc
 source "subsys/logging/Kconfig.template.log_config"

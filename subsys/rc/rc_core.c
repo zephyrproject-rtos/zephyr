@@ -14,10 +14,15 @@
 LOG_MODULE_REGISTER(rc, CONFIG_RC_LOG_LEVEL);
 
 int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct device *dev),
-		     const uint16_t *protocols, size_t num_protocols)
+		     const struct z_rc_init_cfg *cfg)
 {
 	const struct rc_driver_api *api = DEVICE_API_GET(rc, dev);
+	struct rc_dev_data *data = rc_data(dev);
 	int ret;
+
+	data->dev = dev;
+	data->ring = cfg->ring;
+	data->decoder_state = cfg->decoder_state;
 
 	if (init_fn != NULL) {
 		ret = init_fn(dev);
@@ -26,13 +31,20 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
 		}
 	}
 
-	ret = api->get_caps(dev, &rc_data(dev)->caps);
+	ret = api->get_caps(dev, &data->caps);
 	if (ret != 0) {
 		LOG_ERR("%s: get_caps failed (%d)", dev->name, ret);
 		return ret;
 	}
 
-	return rc_protocol_init(dev, protocols, num_protocols);
+	ret = rc_protocol_init(dev, cfg->protocols, cfg->num_protocols);
+	if (ret != 0) {
+		return ret;
+	}
+
+	rc_raw_init(dev);
+
+	return 0;
 }
 
 int rc_get_caps(const struct device *dev, struct rc_caps *caps)

@@ -30,6 +30,16 @@ extern "C" {
 /** Maximum number of protocol decoders in one build */
 #define RC_PROTOCOL_MAX 32
 
+/** @brief Result of a decoded frame. */
+struct rc_decode_result {
+	/** Protocol, one of RC_PROTO_* */
+	uint16_t proto;
+	/** RC_EVENT_FLAG_TOGGLE and RC_EVENT_FLAG_REPEAT bits */
+	uint16_t flags;
+	/** Scancode in the protocol's Linux layout */
+	uint32_t scancode;
+};
+
 /** @brief Protocol decoder and encoder. */
 struct rc_protocol {
 	/** Protocol name */
@@ -38,6 +48,25 @@ struct rc_protocol {
 	uint16_t proto_first;
 	/** Last RC_PROTO_* identifier handled */
 	uint16_t proto_last;
+	/** Size in bytes of the per-device decoder state */
+	uint16_t state_size;
+	/**
+	 * @brief Reset the decoder state. Optional.
+	 *
+	 * @param state Decoder state of one device.
+	 */
+	void (*reset)(void *state);
+	/**
+	 * @brief Feed one raw word to the decoder. Optional, NULL for encode only.
+	 *
+	 * @param state Decoder state of one device.
+	 * @param word Raw word.
+	 * @param res Filled when a frame is complete.
+	 *
+	 * @retval 1 Frame complete, @p res is valid.
+	 * @retval 0 More words needed.
+	 */
+	int (*decode)(void *state, uint32_t word, struct rc_decode_result *res);
 };
 
 /**

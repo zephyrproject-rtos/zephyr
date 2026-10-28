@@ -8,4 +8,5 @@ zephyr_library()
 zephyr_library_sources(
   rc_core.c
   rc_protocol.c
+  rc_raw.c
 )

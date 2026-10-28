@@ -18,9 +18,11 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
 #include <zephyr/rc/rc.h>
 #include <zephyr/rc/rc_protocol.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/spsc_lockfree.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
@@ -74,32 +76,70 @@ __subsystem struct rc_driver_api {
 	int (*tx)(const struct device *dev, const uint32_t *words, size_t count);
 };
 
+/** @cond INTERNAL_HIDDEN */
+struct rc_raw_ring {
+	struct spsc _spsc;
+	uint32_t *const buffer;
+};
+/** @endcond */
+
 /**
  * @brief Common rc state of a device, the first member of the driver data.
  */
 struct rc_dev_data {
 	/** @cond INTERNAL_HIDDEN */
+	const struct device *dev;
 	struct rc_caps caps;
 	ATOMIC_DEFINE(protocols, RC_PROTOCOL_MAX);
+	ATOMIC_DEFINE(reset_pending, RC_PROTOCOL_MAX);
+	struct rc_raw_ring *ring;
+	uint8_t *decoder_state;
+	atomic_t flags;
+	uint64_t last_edge;
+	struct k_work rx_work;
 	/** @endcond */
 };
 
 /** @cond INTERNAL_HIDDEN */
-int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct device *dev),
-		     const uint16_t *protocols, size_t num_protocols);
+struct z_rc_init_cfg {
+	const uint16_t *protocols;
+	size_t num_protocols;
+	struct rc_raw_ring *ring;
+	uint8_t *decoder_state;
+};
 
-#define Z_RC_INIT_NAME(node_id)      _CONCAT(z_rc_init_, DT_DEP_ORD(node_id))
-#define Z_RC_PROTOCOLS_NAME(node_id) _CONCAT(z_rc_protocols_, DT_DEP_ORD(node_id))
+int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct device *dev),
+		     const struct z_rc_init_cfg *cfg);
+
+#define Z_RC_NAME(prefix, node_id)   _CONCAT(prefix, DT_DEP_ORD(node_id))
+#define Z_RC_INIT_NAME(node_id)      Z_RC_NAME(z_rc_init_, node_id)
+#define Z_RC_PROTOCOLS_NAME(node_id) Z_RC_NAME(z_rc_protocols_, node_id)
 
 #define Z_RC_PROTOCOLS_DEFINE(node_id)                                                             \
 	IF_ENABLED(DT_NODE_HAS_PROP(node_id, protocols),                                           \
 		   (static const uint16_t Z_RC_PROTOCOLS_NAME(node_id)[] =                         \
 			    DT_PROP(node_id, protocols);))
 
-#define Z_RC_PROTOCOLS_ARGS(node_id)                                                               \
+#define Z_RC_PROTOCOLS_PTR(node_id)                                                                \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, protocols), (Z_RC_PROTOCOLS_NAME(node_id)), (NULL))
+
+#define Z_RC_PROTOCOLS_NUM(node_id)                                                                \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, protocols),                                          \
-		    (Z_RC_PROTOCOLS_NAME(node_id), ARRAY_SIZE(Z_RC_PROTOCOLS_NAME(node_id))),      \
-		    (NULL, 0))
+		    (ARRAY_SIZE(Z_RC_PROTOCOLS_NAME(node_id))), (0))
+
+#define Z_RC_STATE_DEFINE(node_id)                                                                 \
+	BUILD_ASSERT(IS_POWER_OF_TWO(CONFIG_RC_RAW_BUFFER_SIZE));                                  \
+	static uint32_t Z_RC_NAME(z_rc_raw_buf_, node_id)[CONFIG_RC_RAW_BUFFER_SIZE];              \
+	static struct rc_raw_ring Z_RC_NAME(z_rc_raw_ring_, node_id) =                             \
+		SPSC_INITIALIZER(CONFIG_RC_RAW_BUFFER_SIZE, Z_RC_NAME(z_rc_raw_buf_, node_id));    \
+	static uint8_t Z_RC_NAME(z_rc_decoder_state_, node_id)[CONFIG_RC_DECODER_STATE_SIZE]       \
+		__aligned(8);                                                                      \
+	static const struct z_rc_init_cfg Z_RC_NAME(z_rc_init_cfg_, node_id) = {                   \
+		.protocols = Z_RC_PROTOCOLS_PTR(node_id),                                          \
+		.num_protocols = Z_RC_PROTOCOLS_NUM(node_id),                                      \
+		.ring = &Z_RC_NAME(z_rc_raw_ring_, node_id),                                       \
+		.decoder_state = Z_RC_NAME(z_rc_decoder_state_, node_id),                          \
+	}
 /** @endcond */
 
 /**
@@ -116,9 +156,10 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
  */
 #define RC_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api)                  \
 	Z_RC_PROTOCOLS_DEFINE(node_id)                                                             \
+	Z_RC_STATE_DEFINE(node_id);                                                                \
 	static int _CONCAT(z_rc_init_, DT_DEP_ORD(node_id))(const struct device *dev)              \
 	{                                                                                          \
-		return z_rc_device_init(dev, init_fn, Z_RC_PROTOCOLS_ARGS(node_id));               \
+		return z_rc_device_init(dev, init_fn, &Z_RC_NAME(z_rc_init_cfg_, node_id));        \
 	}                                                                                          \
 	DEVICE_DT_DEFINE(node_id, Z_RC_INIT_NAME(node_id), pm, data, config, level, prio, api)
 
@@ -141,6 +182,42 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
  * @retval <0 Driver error.
  */
 int rc_rx_enable(const struct device *dev, bool enable);
+
+/**
+ * @brief Store one raw word received by a driver.
+ *
+ * ISR safe.
+ *
+ * @param dev rc device.
+ * @param word Raw word, see RC_RAW_PULSE_US() and RC_RAW_SPACE_US().
+ *
+ * @retval 0 Success.
+ * @retval -ENOMEM Buffer full, word dropped.
+ */
+int rc_raw_store(const struct device *dev, uint32_t word);
+
+/**
+ * @brief Store the interval ending at a signal edge.
+ *
+ * ISR safe.
+ *
+ * @param dev rc device.
+ * @param pulse_start true if the edge starts a pulse, so the interval
+ *        ending at it was a space.
+ *
+ * @retval 0 Success.
+ * @retval -ENOMEM Buffer full, word dropped.
+ */
+int rc_raw_store_edge(const struct device *dev, bool pulse_start);
+
+/**
+ * @brief Report a receive overflow detected by the driver.
+ *
+ * ISR safe.
+ *
+ * @param dev rc device.
+ */
+void rc_raw_overflow(const struct device *dev);
 
 /** @} */
 

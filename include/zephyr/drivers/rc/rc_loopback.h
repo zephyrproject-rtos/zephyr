@@ -13,6 +13,8 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <zephyr/device.h>
 
@@ -36,6 +38,19 @@ extern "C" {
  * @retval false Reception is disabled.
  */
 bool rc_loopback_rx_is_enabled(const struct device *dev);
+
+/**
+ * @brief Inject raw words as if received.
+ *
+ * @param dev Loopback rc device.
+ * @param words Raw words.
+ * @param count Number of words.
+ *
+ * @retval 0 Success.
+ * @retval -EAGAIN Reception is disabled.
+ * @retval -ENOMEM Receive buffer full, remaining words dropped.
+ */
+int rc_loopback_inject(const struct device *dev, const uint32_t *words, size_t count);
 
 /** @} */
 
