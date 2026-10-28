@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Software loopback remote control device, for testing the remote control
+  subsystem without hardware.
+
+compatible: "zephyr,rc-loopback"
+
+include: base.yaml

@@ -10,6 +10,13 @@ menuconfig RC
 
 if RC
 
+config RC_INIT_PRIORITY
+	int "Remote control device init priority"
+	default 90
+	help
+	  Init priority of remote control devices. Must be higher than the
+	  priority of devices they depend on, such as Pulse IO controllers.
+
 module = RC
 module-str = rc
 source "subsys/logging/Kconfig.template.log_config"

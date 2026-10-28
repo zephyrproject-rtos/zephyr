@@ -15,12 +15,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <zephyr/device.h>
 #include <zephyr/dt-bindings/rc/rc-proto.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Defined in <zephyr/drivers/rc.h> */
+struct rc_caps;
 
 /**
  * @brief Remote control (IR) interface
@@ -114,6 +118,16 @@ static inline bool rc_raw_is_pulse(uint32_t word)
 {
 	return (word & RC_RAW_PULSE) != 0U;
 }
+
+/**
+ * @brief Get the capabilities of an rc device.
+ *
+ * @param dev rc device.
+ * @param caps Filled with the capabilities.
+ *
+ * @retval 0 Success.
+ */
+int rc_get_caps(const struct device *dev, struct rc_caps *caps);
 
 /** @} */
 

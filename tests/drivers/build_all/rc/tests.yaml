@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - rc
+  build_only: true
+tests:
+  drivers.rc.default:
+    platform_allow:
+      - native_sim
