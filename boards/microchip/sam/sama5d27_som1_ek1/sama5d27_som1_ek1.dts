@@ -25,6 +25,10 @@
 	};
 };
 
+&aes {
+	status = "okay";
+};
+
 &pit {
 	clock-frequency = <DT_FREQ_K(5125)>;
 	status = "okay";

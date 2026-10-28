@@ -11,6 +11,7 @@ toolchain:
   - zephyr
 ram: 128
 supported:
+  - crypto
   - rtc
   - shell
   - uart
