@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon window watchdog timer
+
+description: |
+  Basic watchdog timer with window mode, found on TRAVEO T2G and XMC7000
+  devices. Every service restarts the counter at zero. A service before the
+  lower limit or no service before the upper limit resets the device, and
+  reaching the warning limit raises an interrupt.
+
+  The interrupt is optional. Without it the watchdog can only reset the
+  device, and timeouts with a callback are rejected.
+
+compatible: "infineon,window-wdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: Watchdog counter clock (ILO0).
