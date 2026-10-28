@@ -17,6 +17,7 @@
 #include <zephyr/logging/log.h>
 
 #include <r_ssi.h>
+#include <rp_ssi.h>
 #include <r_dtc.h>
 
 #include <soc.h>
@@ -317,7 +318,7 @@ static int renesas_ra_ssie_rx_start_transfer(const struct device *dev)
 	}
 #endif
 
-	fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, stream->mem_block, stream->mem_block_len);
+	fsp_err = RP_SSI_Read(&dev_data->fsp_ctrl, stream->mem_block, stream->mem_block_len);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("Failed to start read data");
 		dev_data->state = I2S_STATE_ERROR;
@@ -346,7 +347,7 @@ static int renesas_ra_ssie_tx_start_transfer(const struct device *dev)
 		return -ENOMEM;
 	}
 
-	fsp_err = R_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block, tx_stream->mem_block_len);
+	fsp_err = RP_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block, tx_stream->mem_block_len);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("Failed to start write data");
 		dev_data->state = I2S_STATE_ERROR;
@@ -394,8 +395,8 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 	}
 #endif
 
-	fsp_err = R_SSI_WriteRead(&dev_data->fsp_ctrl, stream_tx->mem_block, stream_rx->mem_block,
-				  MAX(stream_rx->mem_block_len, stream_tx->mem_block_len));
+	fsp_err = RP_SSI_WriteRead(&dev_data->fsp_ctrl, stream_tx->mem_block, stream_rx->mem_block,
+				   MAX(stream_rx->mem_block_len, stream_tx->mem_block_len));
 	if (fsp_err != FSP_SUCCESS) {
 		dev_data->state = I2S_STATE_ERROR;
 		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
@@ -483,8 +484,8 @@ static void renesas_ra_ssie_rx_callback(const struct device *dev)
 	}
 
 	if (dev_data->rx_stream_next.mem_block != NULL) {
-		fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, dev_data->rx_stream_next.mem_block,
-				     dev_data->rx_stream_next.mem_block_len);
+		fsp_err = RP_SSI_Read(&dev_data->fsp_ctrl, dev_data->rx_stream_next.mem_block,
+				      dev_data->rx_stream_next.mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
 			dev_data->state = I2S_STATE_ERROR;
 			LOG_ERR("Failed to restart RX transfer");
@@ -567,8 +568,8 @@ stop:
 			goto stop;
 		}
 
-		fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, dev_data->rx_stream.mem_block,
-				     dev_data->rx_stream.mem_block_len);
+		fsp_err = RP_SSI_Read(&dev_data->fsp_ctrl, dev_data->rx_stream.mem_block,
+				      dev_data->rx_stream.mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
 			dev_data->state = I2S_STATE_ERROR;
 			LOG_ERR("Failed to restart RX transfer");
@@ -615,8 +616,8 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 			goto tx_disable;
 		}
 
-		fsp_err = R_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block,
-				      tx_stream->mem_block_len);
+		fsp_err = RP_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block,
+				       tx_stream->mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
 			LOG_ERR("Failed to restart write data");
 		}
@@ -804,8 +805,6 @@ static int renesas_ra_trigger_prepare(const struct device *dev, enum i2s_dir dir
 	(I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_CONTROLLER |    \
 	 I2S_OPT_BIT_CLK_TARGET | I2S_OPT_BIT_CLK_CONT)
 
-#define I2S_UNSUPPORTED_FORMATS (I2S_FMT_DATA_FORMAT_PCM_SHORT | I2S_FMT_DATA_FORMAT_PCM_LONG)
-
 static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir dir,
 					 const struct i2s_config *i2s_cfg)
 {
@@ -815,22 +814,36 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 	i2s_pcm_width_t pcm_width;
 	i2s_word_length_t word_length;
 	i2s_mode_t operating_mode;
+	rp_ssi_audio_format_t audio_format;
+	uint8_t frame_channels;
+	uint32_t word_size_bytes;
 	fsp_err_t fsp_err;
 	int ret;
 
-	/* Supports only the I2S format */
-	if ((i2s_cfg->format & I2S_UNSUPPORTED_FORMATS) != 0) {
+	/*
+	 * I2S format: two words per frame.
+	 * PCM short and long frame: SSIE monaural format, one word per frame.
+	 */
+	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
+	case I2S_FMT_DATA_FORMAT_I2S:
+		audio_format = RP_SSI_AUDIO_FORMAT_I2S;
+		frame_channels = 2;
+		break;
+	case I2S_FMT_DATA_FORMAT_PCM_SHORT:
+		audio_format = RP_SSI_AUDIO_FORMAT_MONAURAL_SHORT_FRAME;
+		frame_channels = 1;
+		break;
+	case I2S_FMT_DATA_FORMAT_PCM_LONG:
+		audio_format = RP_SSI_AUDIO_FORMAT_MONAURAL_LONG_FRAME;
+		frame_channels = 1;
+		break;
+	default:
 		LOG_ERR("Unsupported format: 0x%02x", i2s_cfg->format);
-		return -ENOTSUP;
-	}
-
-	/* I2S format using only MSB order */
-	if (i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) {
 		return -EINVAL;
 	}
 
-	if (i2s_cfg->format & I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED &&
-	    i2s_cfg->format & I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED) {
+	/* Supports only MSB order */
+	if (i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) {
 		return -EINVAL;
 	}
 
@@ -878,7 +891,7 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 		return 0;
 	}
 
-	if (i2s_cfg->channels != 2) {
+	if (i2s_cfg->channels != frame_channels) {
 		LOG_ERR("Unsupported number of channels: %u", i2s_cfg->channels);
 		return -EINVAL;
 	}
@@ -897,30 +910,39 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 	case 8:
 		pcm_width = I2S_PCM_WIDTH_8_BITS;
 		word_length = I2S_WORD_LENGTH_8_BITS;
-		frame_size_bytes = 2;
+		word_size_bytes = 1;
 		break;
 	case 16:
 		pcm_width = I2S_PCM_WIDTH_16_BITS;
 		word_length = I2S_WORD_LENGTH_16_BITS;
-		frame_size_bytes = 4;
+		word_size_bytes = 2;
 		break;
 	case 24:
 		pcm_width = I2S_PCM_WIDTH_24_BITS;
 		word_length = I2S_WORD_LENGTH_24_BITS;
-		frame_size_bytes = 8;
+		word_size_bytes = 4;
 		break;
 	case 32:
 		pcm_width = I2S_PCM_WIDTH_32_BITS;
 		word_length = I2S_WORD_LENGTH_32_BITS;
-		frame_size_bytes = 8;
+		word_size_bytes = 4;
 		break;
 	default:
 		LOG_ERR("Unsupported word size: %u", i2s_cfg->word_size);
 		return -EINVAL;
 	}
 
+	frame_size_bytes = word_size_bytes * frame_channels;
+
 	if ((i2s_cfg->block_size % frame_size_bytes) != 0) {
 		LOG_ERR("Block size must be multiple of frame size");
+		return -EINVAL;
+	}
+
+	/* The DTC moves one frame per request and counts the requests in 16 bits */
+	if (IS_ENABLED(CONFIG_I2S_RENESAS_RA_SSIE_DTC) &&
+	    (i2s_cfg->block_size / frame_size_bytes) > UINT16_MAX) {
+		LOG_ERR("Block size must be at most %u frames", UINT16_MAX);
 		return -EINVAL;
 	}
 
@@ -938,10 +960,15 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 		}
 	}
 
+	/*
+	 * TX and RX share one frame format: configuring one direction with a
+	 * different data format invalidates the other direction.
+	 */
 	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
 		dev_data->tx_cfg = *i2s_cfg;
 		dev_data->tx_configured = true;
-		if (dev_data->full_duplex == false) {
+		if (dev_data->full_duplex == false || ((dev_data->rx_cfg.format ^ i2s_cfg->format) &
+						       I2S_FMT_DATA_FORMAT_MASK) != 0U) {
 			dev_data->rx_configured = false;
 		}
 	}
@@ -949,7 +976,8 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 	if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
 		dev_data->rx_cfg = *i2s_cfg;
 		dev_data->rx_configured = true;
-		if (dev_data->full_duplex == false) {
+		if (dev_data->full_duplex == false || ((dev_data->tx_cfg.format ^ i2s_cfg->format) &
+						       I2S_FMT_DATA_FORMAT_MASK) != 0U) {
 			dev_data->tx_configured = false;
 		}
 	}
@@ -969,7 +997,7 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 	fsp_cfg->operating_mode = operating_mode;
 	fsp_cfg->p_extend = &dev_data->fsp_ext_cfg;
 
-	fsp_err = R_SSI_Open(&dev_data->fsp_ctrl, fsp_cfg);
+	fsp_err = RP_SSI_Open(&dev_data->fsp_ctrl, fsp_cfg, audio_format);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("Failed to configure the device");
 		return -EIO;
@@ -1149,7 +1177,7 @@ static int i2s_renesas_ra_ssie_init(const struct device *dev)
 		    sizeof(struct renesas_ra_ssie_stream),
 		    CONFIG_I2S_RENESAS_RA_SSIE_RX_BLOCK_COUNT);
 
-	fsp_err = R_SSI_Open(&dev_data->fsp_ctrl, &dev_data->fsp_cfg);
+	fsp_err = RP_SSI_Open(&dev_data->fsp_ctrl, &dev_data->fsp_cfg, RP_SSI_AUDIO_FORMAT_I2S);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("Failed to initialize the device");
 		return -EIO;
