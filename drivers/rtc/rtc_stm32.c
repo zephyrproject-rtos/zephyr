@@ -153,6 +153,7 @@ struct rtc_stm32_config {
 	uint32_t async_prescaler;
 	uint32_t sync_prescaler;
 	const struct stm32_pclken *pclken;
+	size_t pclken_count;
 #if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
 	uint32_t cal_out_freq;
 #endif
@@ -539,11 +540,17 @@ static int rtc_stm32_init(const struct device *dev)
 
 	stm32_backup_domain_enable_access();
 
-	/* Enable RTC bus clock */
-	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
-		stm32_backup_domain_disable_access();
-		LOG_ERR("clock op failed\n");
-		return -EIO;
+	/* Enable the gate clocks; entry 1 selects the RTC source. */
+	for (size_t i = 0; i < cfg->pclken_count; i++) {
+		if (i == 1U) {
+			continue;
+		}
+
+		if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[i]) != 0) {
+			stm32_backup_domain_disable_access();
+			LOG_ERR("RTC clock enabling failed");
+			return -EIO;
+		}
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32WB0X) || defined(CONFIG_SOC_SERIES_STM32WL3X)
@@ -1260,6 +1267,7 @@ static const struct rtc_stm32_config rtc_config = {
 #error Invalid RTC SRC
 #endif
 	.pclken = rtc_clk,
+	.pclken_count = ARRAY_SIZE(rtc_clk),
 #if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
 	.cal_out_freq = _CONCAT(_CONCAT(LL_RTC_CALIB_OUTPUT_, DT_INST_PROP(0, calib_out_freq)), HZ),
 #endif
