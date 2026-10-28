@@ -218,6 +218,8 @@ Default Zephyr Peripheral Mapping:
 - USB OTG : PA11/PA12
 - PWM4 : CN14 PB6
 - PWM3 : CN4 PE4
+- SPI2 SCK/MISO/MOSI : PD1/PD3/PD4 (Wi-Fi module)
+- Wi-Fi module NSS/RESETN/NOTIFY/FLOW : PB12/PF15/PD14/PG15
 
 System Clock
 ------------
@@ -238,6 +240,15 @@ Backup SRAM
 
 In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
 do it by removing ``SB6`` jumper on the back side of the board.
+
+Wi-Fi
+-----
+
+The MXCHIP EMW3080 Wi-Fi module is supported by the ``mxchip,emw3080`` driver and
+connected to SPI2. The driver requires the module to run firmware V2.3.4.
+
+Boards may ship with a different firmware version. To update it, follow the
+instructions provided with the `X-WIFI-EMW3080B`_ package.
 
 
 Programming and Debugging
@@ -366,6 +377,9 @@ Step 4:
 
 .. _STMicroelectronics customized version of OpenOCD:
    https://github.com/STMicroelectronics/OpenOCD
+
+.. _X-WIFI-EMW3080B:
+   https://www.st.com/en/development-tools/x-wifi-emw3080b.html
 
 .. _AN5347, in section 9:
    https://www.st.com/resource/en/application_note/dm00625692-stm32l5-series-trustzone-features-stmicroelectronics.pdf
