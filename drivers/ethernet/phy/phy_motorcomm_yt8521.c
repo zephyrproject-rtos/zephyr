@@ -25,7 +25,8 @@ LOG_MODULE_REGISTER(phy_motorcomm_yt85xx, CONFIG_PHY_LOG_LEVEL);
 #include "phy_mii.h"
 
 #define PHY_ID_YT8521 (0x0000011A)
-#define PHY_ID_YT8531 (0x0000E91A)
+#define PHY_ID_YT8531S (0x0000E91A)
+#define PHY_ID_YT8531  (0x0000E91B)
 
 /* PHY Specific Status Register */
 #define SPEC_STATUS_REG_DUPLEX_MASK (1U << 13)
@@ -59,6 +60,7 @@ LOG_MODULE_REGISTER(phy_motorcomm_yt85xx, CONFIG_PHY_LOG_LEVEL);
 #define YT8521_RGMII_CONFIG1_REG  0xA003
 #define YT8521_RC1R_RX_DELAY_MASK GENMASK(13, 10)
 #define YT8521_RC1R_TX_DELAY_MASK GENMASK(3, 0)
+#define YT8521_RC1R_FE_TX_DELAY_MASK GENMASK(7, 4)
 
 #define YTPHY_WOL_CONFIG_REG 0xA00A
 #define YTPHY_WCR_ENABLE     BIT(3)
@@ -73,6 +75,8 @@ struct mc_ytphy_config {
 	const struct device *mdio;
 	uint8_t rx_delay_sel;
 	uint8_t tx_delay_sel;
+	int16_t tx_delay_sel_fe;
+	bool rxc_delay_en;
 	enum phy_link_speed default_speeds;
 };
 
@@ -197,7 +201,8 @@ static int mc_ytphy_cfg_clock_delay(const struct device *dev)
 	uint16_t mask, val = 0;
 	int ret;
 
-	ret = mc_ytphy_modify_ext(dev, YT8521_CHIP_CONFIG_REG, YT8521_CCR_RXC_DLY_EN, 0);
+	ret = mc_ytphy_modify_ext(dev, YT8521_CHIP_CONFIG_REG, YT8521_CCR_RXC_DLY_EN,
+				  cfg->rxc_delay_en ? YT8521_CCR_RXC_DLY_EN : 0);
 	if (ret) {
 		return ret;
 	}
@@ -206,6 +211,11 @@ static int mc_ytphy_cfg_clock_delay(const struct device *dev)
 
 	val |= FIELD_PREP(YT8521_RC1R_RX_DELAY_MASK, cfg->rx_delay_sel);
 	val |= FIELD_PREP(YT8521_RC1R_TX_DELAY_MASK, cfg->tx_delay_sel);
+
+	if (cfg->tx_delay_sel_fe >= 0) {
+		mask |= YT8521_RC1R_FE_TX_DELAY_MASK;
+		val |= FIELD_PREP(YT8521_RC1R_FE_TX_DELAY_MASK, cfg->tx_delay_sel_fe);
+	}
 
 	return mc_ytphy_modify_ext(dev, YT8521_RGMII_CONFIG1_REG, mask, val);
 }
@@ -506,7 +516,7 @@ static int mc_ytphy_get_id(const struct device *dev, uint32_t *phy_id)
 			continue;
 		}
 
-		if (val == PHY_ID_YT8521 || val == PHY_ID_YT8531) {
+		if (val == PHY_ID_YT8521 || val == PHY_ID_YT8531S || val == PHY_ID_YT8531) {
 			found = true;
 			break;
 		}
@@ -598,6 +608,8 @@ static DEVICE_API(ethphy, mc_ytphy_driver_api) = {
 		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),                                             \
 		.rx_delay_sel = DT_INST_PROP_OR(n, motorcomm_rx_delay_sel, 0),                     \
 		.tx_delay_sel = DT_INST_PROP_OR(n, motorcomm_tx_delay_sel, 0),                     \
+		.tx_delay_sel_fe = DT_INST_PROP_OR(n, motorcomm_tx_delay_sel_fe, -1),              \
+		.rxc_delay_en = DT_INST_PROP(n, motorcomm_rxc_delay_en),                           \
 		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),                             \
 	};
 
