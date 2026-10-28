@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* TX (PB12) and RX (PB13) must be connected together for loopback */
+/* RTS (PB14) and CTS (PB28) must be connected together for flow control */
+
+&unicomm13_0 {
+	status = "okay";
+};
+
+dut: &unicomm13_0_uart {
+	pinctrl-0 = <&uc13_0_tx_pb12 &uc13_0_rx_pb13 &uc13_0_rts_pb14 &uc13_0_cts_pb28>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	hw-flow-control;
+	status = "okay";
+};
