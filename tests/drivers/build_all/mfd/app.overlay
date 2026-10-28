@@ -67,6 +67,18 @@
 				backup-switch-mode = "disabled";
 				status = "okay";
 			};
+
+			test_atecc608a: atecc608a@60 {
+				compatible = "microchip,atecc608a";
+				reg = <0x60>;
+				status = "okay";
+				reset-gpios = <&test_gpio 0 0>;
+
+				test_atecc608a_trng: atecc608a_trng {
+					compatible = "microchip,atecc608a-trng";
+					status = "okay";
+				};
+			};
 		};
 
 		test_uart: uart@55556666 {
