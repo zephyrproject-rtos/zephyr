@@ -97,6 +97,15 @@ struct tmc_ramp_generator_data {
 			/** Velocity threshold for switching to a different chopper mode */
 			uint32_t thigh;
 		};
+		/** TMC522X specific ramp parameters */
+		struct {
+			/** Second acceleration phase, between V1 and V2 */
+			uint32_t a2;
+			/** Six-point ramp intermediate velocity threshold */
+			uint32_t v2;
+			/** Second deceleration phase, between V2 and V1 */
+			uint32_t d2;
+		};
 	};
 };
 
@@ -149,6 +158,28 @@ struct tmc_ramp_generator_data {
 		.tpwmthrs = DT_INST_PROP(node, tpwmthrs),			\
 		.tcoolthrs = DT_INST_PROP(node, tcoolthrs),			\
 		.thigh = DT_INST_PROP(node, thigh),				\
+	}
+
+/**
+ * @brief Get TMC522X Stepper Ramp Generator data from DT
+ *
+ * @param node DT driver instance number
+ *
+ * @return struct tmc_ramp_generator_data
+ */
+#define TMC_RAMP_DT_SPEC_GET_TMC522X(node)					\
+	{									\
+		.vstart = DT_INST_PROP(node, vstart),				\
+		.v1 = DT_INST_PROP(node, v1),					\
+		.vmax = DT_INST_PROP(node, vmax),				\
+		.a1 = DT_INST_PROP(node, a1),					\
+		.amax = DT_INST_PROP(node, amax),				\
+		.d1 = DT_INST_PROP(node, d1),					\
+		.dmax = DT_INST_PROP(node, dmax),				\
+		.vstop = DT_INST_PROP(node, vstop),				\
+		.a2 = DT_INST_PROP(node, a2),					\
+		.v2 = DT_INST_PROP(node, v2),					\
+		.d2 = DT_INST_PROP(node, d2),					\
 	}
 
 /**
