@@ -253,6 +253,7 @@ if(CONFIG_INPUT)
 endif()
 
 if(CONFIG_RC)
+  zephyr_iterable_section(NAME rc_callback KVMA RAM_REGION GROUP RODATA_REGION)
   zephyr_iterable_section(NAME rc_protocol KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 

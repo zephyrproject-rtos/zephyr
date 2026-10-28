@@ -14,3 +14,9 @@ target_sources(app PRIVATE
   src/raw.c
   src/sync.c
 )
+
+if(CONFIG_TEST_RC_CALLBACKS)
+  target_sources(app PRIVATE src/callback.c)
+else()
+  target_sources(app PRIVATE src/no_callback.c)
+endif()

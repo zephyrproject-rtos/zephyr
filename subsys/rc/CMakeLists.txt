@@ -6,6 +6,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/rc.h)
 zephyr_library()
 
 zephyr_library_sources(
+  rc_callback.c
   rc_core.c
   rc_keystate.c
   rc_protocol.c
