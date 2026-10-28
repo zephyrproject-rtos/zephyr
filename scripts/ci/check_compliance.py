@@ -713,23 +713,30 @@ class DevicetreeLintingCheck(ComplianceTest):
 
     def _parse_json_output(self, cmd, cwd=None):
         """Run command and parse single JSON output with issues array"""
+        # The JSON is written to stdout only. Keep stderr separate, as Node.js
+        # and npm print warnings and notices there.
         result = subprocess.run(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            capture_output=True,
             check=False,
             text=True,
             cwd=cwd or GIT_TOP,
         )
 
-        if not result.stdout.strip():
-            return None
-
+        # dts-linter exits with status 1 when it reports issues, so the exit
+        # status does not tell whether it ran; the JSON output does.
         try:
             json_data = json.loads(result.stdout)
-            return json_data
         except json.JSONDecodeError as e:
-            raise RuntimeError(f"Failed to parse dts-linter JSON output: {e}") from e
+            raise RuntimeError(
+                f"Failed to parse dts-linter JSON output (exit status {result.returncode}): {e}\n"
+                f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+            ) from e
+
+        if result.stderr.strip():
+            logging.warning(f"dts-linter stderr:\n{result.stderr.rstrip()}")
+
+        return json_data
 
     def _process_json_output(self, json_output: dict):
         if "issues" not in json_output:
@@ -800,15 +807,6 @@ class DevicetreeLintingCheck(ComplianceTest):
                 if json_output:
                     self._process_json_output(json_output)
 
-            except subprocess.CalledProcessError as ex:
-                stderr_output = ex.stderr if ex.stderr else ""
-                if stderr_output.strip():
-                    self.failure(f"dts-linter found issues:\n{stderr_output}")
-                else:
-                    err = "dts-linter failed with no output. "
-                    err += "Make sure you install Node.js and then run "
-                    err += "[npm --prefix ./scripts/ci ci] inside ZEPHYR_BASE"
-                    self.failure(err)
             except RuntimeError as ex:
                 self.failure(f"{ex}")
 
