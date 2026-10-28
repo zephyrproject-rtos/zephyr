@@ -534,6 +534,7 @@ Base OS:
     - tests/misc/print_format/
     - tests/lib/p4workq/
     - tests/lib/fdtable/
+    - tests/lib/div64/
   files-exclude:
     - include/zephyr/sys/cbprintf*
     - tests/unit/cbprintf/
@@ -550,6 +551,7 @@ Base OS:
     - printk
     - libraries.fdtable.fdtable
     - libraries.p4wq
+    - libraries.div64
     - utilities
 
 BeagleBoard Platforms:
