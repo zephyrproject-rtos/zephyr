@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Board Kconfig defaults for the BK7258 EVB: only "what value an existing
+# Kconfig symbol takes on this board".
+
+if BOARD_BK7258_EVB
+
+config BOARD
+	default "bk7258_evb"
+
+endif # BOARD_BK7258_EVB

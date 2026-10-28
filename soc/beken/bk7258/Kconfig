@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Capabilities the BK7258 series needs. Select-only, as usual: the visible
+# symbols and their defaults live in Kconfig.soc and Kconfig.defconfig.
+
+config SOC_SERIES_BK7258
+	# Zephyr has no CPU symbol matching this core, so the closest Armv8-M
+	# Mainline profile is selected; CPU_CORTEX_M and ARMV8_M_MAINLINE come in
+	# with it.
+	select CPU_CORTEX_M33
+
+	# CPU_CORTEX_M only selects CPU_CORTEX, so ARM has to be pulled in here.
+	select ARM
+
+	# ARM_TRUSTZONE_M is deliberately not selected. This image runs in the
+	# TrustZone secure state, but it does not manage the secure/non-secure
+	# split, so nothing has to be programmed for it.
+
+config SOC_BK7258
+	select SOC_SERIES_BK7258
