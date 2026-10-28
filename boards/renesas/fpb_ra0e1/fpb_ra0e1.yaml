@@ -8,4 +8,6 @@ toolchain:
   - zephyr
 supported:
   - gpio
+  - sdhc
+  - spi
   - uart

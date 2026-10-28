@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Test requires following connections:
+ * SCK:  P2_1  (SCK11) - P1_2 (SCK00)
+ * MOSI: P2_13 (SO11)  - P1_0 (SI00)
+ * MISO: P2_12 (SI11)  - P1_1 (SO00)
+ * CS:   P1_12         - P1_3 (SSI00)
+ *
+ * SPI00 is the peripheral: SSI00 is the only chip select input on the SAU. It uses SAU0
+ * channel 0, shared with the console uart0, so the console moves to uart2. SPI11 is the
+ * controller; P2_12 and P2_13 double as the main clock X1 and X2, which this board does
+ * not fit, so they are free for SI11 and SO11.
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};
+
+&uart0 {
+	status = "disabled";
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&pinctrl {
+	spi11_default: spi11_default {
+		group1 {
+			/* sck so */
+			psels = <RA_PSEL(RA_PSEL_P2nPFS_SCK11B, 2, 1)>,
+				<RA_PSEL(RA_PSEL_P2nPFS_SO11A, 2, 13)>;
+			output-enable;
+		};
+
+		group2 {
+			/* si */
+			psels = <RA_PSEL(RA_PSEL_P2nPFS_SI11A, 2, 12)>;
+		};
+	};
+};
+
+&spi11 {
+	pinctrl-0 = <&spi11_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&ioport1 12 GPIO_ACTIVE_LOW>;
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+/* FSP Open makes SCK an input when the channel is opened in peripheral mode */
+dut_spis: &spi00 {
+	status = "okay";
+};

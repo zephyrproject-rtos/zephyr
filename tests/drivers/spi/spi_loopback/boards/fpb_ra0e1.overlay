@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * SPI20 is the only SAU SPI instance free on this board: SPI00 shares SAU0 channel 0 with the
+ * console uart0, and SPI11 uses the clock crystal pins. The SAU has no internal loopback, so
+ * SO20 (P1_9) and SI20 (P1_10) must be wired together.
+ */
+
+&spi20 {
+	status = "okay";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
