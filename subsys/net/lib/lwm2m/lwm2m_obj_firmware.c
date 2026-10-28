@@ -80,6 +80,9 @@ static lwm2m_engine_set_data_cb_t write_cb[MAX_INSTANCE_COUNT];
 static lwm2m_engine_execute_cb_t update_cb[MAX_INSTANCE_COUNT];
 static lwm2m_engine_user_cb_t cancel_cb[MAX_INSTANCE_COUNT];
 
+/* Set while a push (write to Package) is downloading; a pull leaves it clear */
+static bool push_active[MAX_INSTANCE_COUNT];
+
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 extern int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri);
 #endif
@@ -140,6 +143,9 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 	path.res_id = FIRMWARE_STATE_ID;
 
 	lwm2m_set_u8(&path, state);
+	if (state != STATE_DOWNLOADING) {
+		push_active[obj_inst_id] = false;
+	}
 	lwm2m_registry_unlock();
 
 	LOG_DBG("Update state = %d", state);
@@ -239,16 +245,29 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 			    size_t total_size, size_t offset)
 {
 	uint8_t state;
+	bool pull;
 	int ret = 0;
 	lwm2m_engine_set_data_cb_t write_callback;
 	lwm2m_engine_user_cb_t cancel_callback;
 
+	lwm2m_registry_lock();
 	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
+	pull = state == STATE_DOWNLOADING && !push_active[obj_inst_id];
+	lwm2m_registry_unlock();
+
+	if (pull) {
+		LOG_DBG("Package is not writable while a pull is in progress");
+		return -EPERM;
+	}
+
 	if (state == STATE_IDLE) {
 		/* TODO: setup timer to check download status,
 		 * make sure it fail after timeout
 		 */
+		lwm2m_registry_lock();
 		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
+		push_active[obj_inst_id] = true;
+		lwm2m_registry_unlock();
 	} else if (state == STATE_DOWNLOADED) {
 		if (data_len == 0U || (data_len == 1U && data[0] == '\0')) {
 			/* reset to state idle and result default */
