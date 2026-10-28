@@ -792,7 +792,7 @@
 		};
 
 		crc: crc1: crc@58009000 {
-			compatible = "st,stm32-crc";
+			compatible = "st,stm32-crc-v2";
 			reg = <0x58009000 0x1000>;
 			clocks = <&rcc STM32_CLOCK(AHB6, 20)>;
 			resets = <&rctl STM32_RESET(AHB6, 20)>;

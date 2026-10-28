@@ -356,7 +356,7 @@
 		};
 
 		crc: crc@40023000 {
-			compatible = "st,stm32-crc";
+			compatible = "st,stm32-crc-v2";
 			reg = <0x40023000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
 			resets = <&rctl STM32_RESET(AHB1, 12)>;

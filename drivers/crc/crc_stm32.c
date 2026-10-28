@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT      st_stm32_crc
+#define DT_DRV_COMPAT      st_stm32_crc_v2
 
 #include <soc.h>
 #include <stm32_ll_crc.h>

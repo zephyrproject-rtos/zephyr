@@ -8,7 +8,7 @@ description: |
   programmable initial value and programmable polynomials
   of 7-, 8-, 16- and 32-bit size.
 
-compatible: "st,stm32-crc"
+compatible: "st,stm32-crc-v2"
 
 include: [base.yaml, reset-device.yaml]
 
