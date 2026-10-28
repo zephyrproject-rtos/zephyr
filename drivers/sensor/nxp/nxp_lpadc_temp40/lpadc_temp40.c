@@ -71,12 +71,24 @@ static int lpadc_temp40_sample_fetch(const struct device *dev, enum sensor_chann
 	vbe8 = data->buffer[0] >> conv_result_shift;
 
 	/* Calculate temperature using exact formula */
+#if defined(FSL_FEATURE_LPADC_TEMP_PARAMETER_SLOP)
+	/*
+	 * Parts characterized with a slope and offset (i.MX RT) leave ALPHA out of
+	 * the numerator.
+	 */
+	data->temperature = (float)FSL_FEATURE_LPADC_TEMP_PARAMETER_SLOP *
+				    (((float)vbe8 - (float)vbe1) /
+				     ((float)vbe8 + (float)FSL_FEATURE_LPADC_TEMP_PARAMETER_ALPHA *
+							    ((float)vbe8 - (float)vbe1))) -
+			    (float)FSL_FEATURE_LPADC_TEMP_PARAMETER_OFFSET;
+#else
 	data->temperature =
 		FSL_FEATURE_LPADC_TEMP_PARAMETER_A *
 			(FSL_FEATURE_LPADC_TEMP_PARAMETER_ALPHA * ((float)vbe8 - (float)vbe1) /
 			 ((float)vbe8 +
 			  FSL_FEATURE_LPADC_TEMP_PARAMETER_ALPHA * ((float)vbe8 - (float)vbe1))) -
 		FSL_FEATURE_LPADC_TEMP_PARAMETER_B;
+#endif
 
 	LOG_DBG("VBE1=%d VBE8=%d Temp=%.3f", vbe1, vbe8, (double)data->temperature);
 	return 0;
