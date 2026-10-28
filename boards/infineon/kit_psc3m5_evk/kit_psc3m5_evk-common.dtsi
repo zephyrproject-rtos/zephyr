@@ -102,6 +102,10 @@
 	status = "okay";
 };
 
+&gpio_prt9 {
+	status = "okay";
+};
+
 uart3: &scb3 {
 	compatible = "infineon,uart";
 	current-speed = <115200>;
@@ -115,6 +119,30 @@ uart3: &scb3 {
 
 &peri0_group4_8bit_0 {
 	clock-div = <86>;
+	status = "okay";
+};
+
+/*
+ * P9.0 (SCL) and P9.2 (SDA) reach the Arduino, mikroBUS, Shield2Go and
+ * expansion headers and the KitProg3 USB-I2C bridge.
+ *
+ * Note: the I2C driver sets SCB0's divider from the bus speed, so no other
+ * peripheral may share it.
+ */
+i2c0: &scb0 {
+	compatible = "infineon,i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	clocks = <&peri0_group4_16_5bit_1>;
+
+	pinctrl-0 = <&p9_0_scb0_i2c_scl &p9_2_scb0_i2c_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&peri0_group4_16_5bit_1 {
+	clock-div = <10>;
 	status = "okay";
 };
 
