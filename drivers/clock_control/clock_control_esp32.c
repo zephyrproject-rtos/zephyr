@@ -552,6 +552,12 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 	soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk & RTC_CNTL_ANA_CLK_RTC_SEL_V;
 #else
 	soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk;
+	rtc_cal_sel_t cal_clk_32k = RTC_CAL_32K_XTAL;
+
+	if (slow_clk == ESP32_RTC_SLOW_CLK_32K_EXT_OSC) {
+		rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW;
+		cal_clk_32k = RTC_CAL_32K_OSC_SLOW;
+	}
 #endif
 	uint32_t cal_val = 0;
 	/* number of times to repeat 32k XTAL calibration
@@ -572,7 +578,12 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 			LOG_DBG("waiting for external clock by pin0 to start up");
 			rtc_clk_32k_enable_external();
 #else
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+		if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K ||
+		    rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+#else
 		if (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
+#endif
 			/* 32k XTAL oscillator needs to be enabled and running before it can
 			 * be used. Hardware doesn't have a direct way of checking if the
 			 * oscillator is running. Here we use rtc_clk_cal function to count
@@ -594,6 +605,8 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
 				cal_val = rtc_clk_cal(RTC_CAL_32K_OSC_SLOW,
 								CONFIG_RTC_CLK_CAL_CYCLES);
+#elif defined(CONFIG_SOC_SERIES_ESP32C6)
+				cal_val = rtc_clk_cal(cal_clk_32k, CONFIG_RTC_CLK_CAL_CYCLES);
 #else
 				cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, CONFIG_RTC_CLK_CAL_CYCLES);
 #endif
@@ -625,7 +638,11 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
 			rtc_clk_32k_disable_external();
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
-			rtc_clk_32k_enable(false);
+			if (cal_clk_32k == RTC_CAL_32K_XTAL) {
+				rtc_clk_32k_enable(false);
+			} else {
+				rtc_clk_32k_disable_external();
+			}
 #else
 			rtc_clk_32k_enable(false);
 			rtc_clk_32k_disable_external();
