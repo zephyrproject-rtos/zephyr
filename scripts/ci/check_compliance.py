@@ -89,6 +89,9 @@ with open(Path(__file__).parents[1] / 'bindings_properties_allowlist.yaml') as f
 
 logger = None
 
+# Git root empty tree sha1 (represents a tree with no files)
+EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+
 
 def git(*args, cwd=None, ignore_non_zero=False):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
@@ -243,9 +246,14 @@ class ComplianceTest:
       magic strings below:
       - "<zephyr-base>" can be used to refer to the environment variable
         ZEPHYR_BASE or, when missing, the calculated base of the zephyr tree.
+
+    needs_commits:
+      True for tests that check commits (messages or per-commit diffs) rather
+      than files. They are skipped with --all-files, which has no commits.
     """
 
     path_hint = "<git-top>"
+    needs_commits = False
 
     def __init__(self):
         self.case = TestCase(type(self).name, "Guidelines")
@@ -2085,6 +2093,7 @@ class GitDiffCheck(ComplianceTest):
 
     name = "GitDiffCheck"
     doc = "Git conflict markers and whitespace errors are not allowed in added changes"
+    needs_commits = True
 
     def run(self):
         offending_lines = []
@@ -2211,6 +2220,7 @@ class GitLint(ComplianceTest):
 
     name = "Gitlint"
     doc = zephyr_doc_detail_builder("/contribute/guidelines.html#commit-guidelines")
+    needs_commits = True
 
     def run(self):
         # By default gitlint looks for .gitlint configuration only in
@@ -3190,6 +3200,8 @@ def _run_test(testcase):
     # and 'fmtd_failures' attributes hold the results.
     test = testcase()
     try:
+        if test.needs_commits and COMMIT_RANGE == EMPTY_TREE:
+            test.skip("No commits to check with --all-files")
         test.run()
     except EndTest:
         pass
@@ -3335,8 +3347,6 @@ def _run_tests_parallel(testcases, jobs, loglevel):
 
 def parse_args(argv):
     default_range = 'HEAD~1..HEAD'
-    # Git root empty tree sha1 (represents a tree with no files)
-    empty_tree = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
     parser = argparse.ArgumentParser(
         description="Check for coding style and documentation warnings.", allow_abbrev=False
     )
@@ -3352,10 +3362,19 @@ def parse_args(argv):
         '--all-commits',
         action='store_const',
         dest='commits',
-        const=f'{empty_tree}..HEAD',
+        const=f'{EMPTY_TREE}..HEAD',
         help="""The full history commit range. Useful for testing purposes.
                 WARNING: Should not be set for checks that perform per-commit actions, such as
                 GitDiffCheck/GitLint.""",
+    )
+    group.add_argument(
+        '--all-files',
+        action='store_const',
+        dest='commits',
+        const=EMPTY_TREE,
+        help="""Check all tracked files in the working tree, including uncommitted changes,
+                by comparing them against the empty tree. Checks that need commits, such as
+                GitDiffCheck/GitLint, are skipped. Useful for testing purposes.""",
     )
     parser.add_argument(
         '-o',
