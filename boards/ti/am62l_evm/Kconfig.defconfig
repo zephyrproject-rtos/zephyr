@@ -20,4 +20,14 @@ endif # FLASH_MSPI_NOR
 
 endif # FLASH
 
+if BUILD_WITH_TFA
+
+configdefault TFA_PLATFORM
+	default "k3low"
+
+configdefault TFA_TARGET_BOARD
+	default "am62lx-evm"
+
+endif # BUILD_WITH_TFA
+
 endif # BOARD_AM62L_EVM
