@@ -16,16 +16,18 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_ifx.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/kernel.h>
 
 #ifdef CONFIG_SPI_INFINEON_DMA
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/mux.h>
 #endif
 
 #include <cy_scb_spi.h>
-#include <cy_trigmux.h>
 
 #define IFX_SPI_OVERSAMPLE_MIN 4
 #define IFX_SPI_OVERSAMPLE_MAX 16
@@ -71,6 +73,11 @@ struct ifx_cat1_spi_config {
 	cy_stc_scb_spi_config_t scb_spi_config;
 	cy_cb_scb_spi_handle_events_t spi_handle_events_func;
 	en_clk_dst_t clk_dst;
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+	const struct device *clk_dev;
+	struct ifx_clk_peri clk_info;
+	struct ifx_clk hf_clk;
+#endif /* CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2 */
 
 	uint32_t irq_num;
 	void (*irq_config_func)(const struct device *dev);
@@ -86,6 +93,8 @@ struct ifx_cat1_dma_stream {
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
 	struct dma_block_config blk_cfg;
+	const struct device *trig_dev;
+	const struct mux_state *trig_state;
 };
 #endif
 
@@ -110,7 +119,9 @@ struct ifx_cat1_spi_data {
 #endif
 
 	struct ifx_cat1_resource_inst resource;
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 	struct ifx_cat1_clock clock;
+#endif /* !CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2 */
 	cy_en_scb_spi_sclk_mode_t clk_mode;
 	uint8_t data_bits;
 	bool is_peripheral;
@@ -670,22 +681,45 @@ static int ifx_cat1_spi_deinit(const struct device *dev)
 }
 #endif /* CONFIG_DEVICE_DEINIT_SUPPORT */
 
+#ifdef CONFIG_SPI_INFINEON_DMA
+static int ifx_cat1_spi_dma_trig_apply(const struct ifx_cat1_dma_stream *stream)
+{
+	if (stream->trig_dev == NULL) {
+		return 0;
+	}
+
+	if (!device_is_ready(stream->trig_dev)) {
+		return -ENODEV;
+	}
+
+	return mux_state_apply(stream->trig_dev, stream->trig_state);
+}
+#endif
+
 static int ifx_cat1_spi_init(const struct device *dev)
 {
 	struct ifx_cat1_spi_data *const data = dev->data;
 	const struct ifx_cat1_spi_config *const config = dev->config;
 	int ret;
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 	cy_rslt_t result;
+#endif /* !CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2 */
 
 	/* Dedicate SCB HW resource */
 	data->resource.type = IFX_RSC_SCB;
 	data->resource.block_num = ifx_get_hw_block_num(config->reg_addr);
 
+#if defined(CONFIG_INFINEON_INTC_SYSINTC)
+	irq_enable(config->irq_num);
+#endif /* CONFIG_INFINEON_INTC_SYSINTC */
+
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 	/* Connect this SCB to the peripheral clock */
 	result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
 	if (result != CY_RSLT_SUCCESS) {
 		return -EIO;
 	}
+#endif /* !CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2 */
 
 #ifdef CONFIG_SPI_INFINEON_DMA
 	if (data->dma_rx.dev_dma != NULL) {
@@ -699,11 +733,11 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_rx.dma_cfg.user_data = (void *)dev;
 		data->dma_rx.dma_cfg.dma_callback = dma_callback;
 		data->dma_rx.dma_cfg.source_handshake = 0;
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
-				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_rx.dma_channel,
-				   false, TRIGGER_TYPE_LEVEL);
-#endif
+
+		ret = ifx_cat1_spi_dma_trig_apply(&data->dma_rx);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (data->dma_tx.dev_dma != NULL) {
@@ -717,11 +751,11 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_tx.dma_cfg.user_data = (void *)dev;
 		data->dma_tx.dma_cfg.dma_callback = dma_callback;
 		data->dma_tx.dma_cfg.source_handshake = 1;
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
-				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_tx.dma_channel,
-				   false, TRIGGER_TYPE_EDGE);
-#endif
+
+		ret = ifx_cat1_spi_dma_trig_apply(&data->dma_tx);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 #endif
 
@@ -756,7 +790,17 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		.dest_burst_length = 0,                                                            \
 		.block_count = 1,                                                                  \
 		.complete_callback_en = 1,                                                         \
-	},
+	},                                                                                         \
+	.trig_dev = COND_CODE_1(DT_INST_PROP_HAS_NAME(index, mux_states, dir),                     \
+				(DEVICE_DT_GET(DT_INST_PHANDLE_BY_NAME(index, mux_states, dir))),  \
+				(NULL)),                                                           \
+	.trig_state = COND_CODE_1(DT_INST_PROP_HAS_NAME(index, mux_states, dir),                   \
+				  (MUX_STATE_DT_GET_BY_NAME(DT_DRV_INST(index), dir)), (NULL)),
+
+#define SPI_DMA_TRIG_DEFINE(index, dir)                                                            \
+	IF_ENABLED(UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                                    \
+			      DT_INST_PROP_HAS_NAME(index, mux_states, dir)),                      \
+		   (MUX_STATE_DT_SPEC_DEFINE_BY_NAME(DT_DRV_INST(index), dir);))
 
 #define SPI_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)                          \
 	.dma_##dir = {COND_CODE_1(                                                                 \
@@ -764,6 +808,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		(SPI_DMA_CHANNEL_INIT(index, dir, ch_dir, src_data_size, dst_data_size)),          \
 		(NULL))},
 #else
+#define SPI_DMA_TRIG_DEFINE(index, dir)
 #define SPI_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)
 #endif
 
@@ -791,6 +836,8 @@ static int ifx_cat1_spi_init(const struct device *dev)
 			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
 	},                                                                                         \
 	PERI_INFO(n)
+#elif defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+#define SPI_PERI_CLOCK_INIT(n)
 #else
 #define SPI_PERI_CLOCK_INIT(n)                                                                     \
 	.clock =                                                                                   \
@@ -813,6 +860,18 @@ static int ifx_cat1_spi_init(const struct device *dev)
 #define ADVANCED_SPI_FIELDS(n)
 #endif
 
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+#define CLOCK_GET(n)                                                                               \
+	.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(n))),                               \
+	.clk_info = IFX_CLK_PERI_DT_INST_SPEC_GET(n),                                              \
+	.hf_clk = {                                                                                \
+		.clk = IFX_CLK_HF,                                                                 \
+		.clk_id = DT_REG_ADDR(DT_CLOCKS_CTLR(DT_PARENT(DT_INST_CLOCKS_CTLR(n)))),          \
+	},
+#else
+#define CLOCK_GET(n)
+#endif /* CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2 */
+
 #define IFX_CAT1_SPI_INIT(n)                                                                       \
                                                                                                    \
 	void spi_handle_events_func_##n(uint32_t event)                                            \
@@ -827,6 +886,8 @@ static int ifx_cat1_spi_init(const struct device *dev)
 	}                                                                                          \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	SPI_DMA_TRIG_DEFINE(n, tx)                                                                 \
+	SPI_DMA_TRIG_DEFINE(n, rx)                                                                 \
                                                                                                    \
 	static struct ifx_cat1_spi_config spi_cat1_config_##n = {                                  \
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
@@ -859,6 +920,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
                                                                                                    \
 		.clk_dst = DT_INST_PROP(n, clk_dst),                                               \
 		.irq_num = DT_INST_IRQN(n),                                                        \
+		CLOCK_GET(n)                                                                       \
 		.irq_config_func = ifx_cat1_spi_irq_config_func_##n,                               \
                                                                                                    \
 		.spi_handle_events_func = spi_handle_events_func_##n,                              \
@@ -1015,7 +1077,14 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 	uint32_t divided_freq = 0;
 	uint32_t diff = 0;
 
-#if defined(COMPONENT_CAT1A)
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+	uint32_t peri_freq;
+
+	if (clock_control_get_rate(DEVICE_DT_GET(DT_NODELABEL(clocks)),
+				   (clock_control_subsys_t)&config->hf_clk, &peri_freq) != 0) {
+		return IFX_SPI_RSLT_CLOCK_ERROR;
+	}
+#elif defined(COMPONENT_CAT1A)
 	uint32_t peri_freq = Cy_SysClk_ClkPeriGetFrequency();
 #elif defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) ||                                      \
 	defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
@@ -1072,6 +1141,12 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		CY_UNUSED_PARAMETER(last_ovrsmpl_val);
 	}
 
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+	uint32_t target_rate = peri_freq / last_dvdr_val;
+
+	result = clock_control_set_rate(config->clk_dev, (clock_control_subsys_t)&config->clk_info,
+					(clock_control_subsys_rate_t)&target_rate);
+#else
 	if ((data->clock.block & 0x02) == 0) {
 		result = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &(data->clock),
 							      last_dvdr_val - 1);
@@ -1079,6 +1154,7 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		result = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &(data->clock),
 								   last_dvdr_val - 1, 0);
 	}
+#endif /* CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2 */
 
 	return result;
 }
