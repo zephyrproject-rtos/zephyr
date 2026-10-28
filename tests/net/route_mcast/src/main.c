@@ -71,6 +71,7 @@ static struct net_in6_addr in6addr_mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
 static struct net_if *iface_1;
 static struct net_if *iface_2;
 static struct net_if *iface_3;
+static struct net_if *iface_eth;
 
 #define WAIT_TIME K_MSEC(50)
 
@@ -129,6 +130,8 @@ static uint8_t forwarding_counter;
 static bool iface_1_forwarded;
 static bool iface_2_forwarded;
 static bool iface_3_forwarded;
+static bool iface_eth_forwarded;
+static bool iface_eth_hdr_in_first_frag;
 
 struct net_route_mcast_scenario_cfg {
 	struct net_in6_addr src;
@@ -206,6 +209,16 @@ static void net_route_mcast_iface_init3(struct net_if *iface)
 	net_route_mcast_add_addresses(iface, &iface_3_addr, &ll_addr_3);
 }
 
+static void net_route_mcast_iface_init_eth(struct net_if *iface)
+{
+	uint8_t *mac = net_route_mcast_get_mac(net_if_get_device(iface));
+
+	iface_eth = iface;
+	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
+	ethernet_init(iface);
+	net_if_flag_set(iface, NET_IF_FORWARD_MULTICASTS);
+}
+
 static bool check_packet_addresses(struct net_pkt *pkt)
 {
 	struct net_ipv6_hdr *ipv6_hdr = NET_IPV6_HDR(pkt);
@@ -244,9 +257,37 @@ static int iface_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
+static int iface_eth_send(const struct device *dev, struct net_pkt *pkt)
+{
+	struct net_ipv6_hdr ipv6_hdr;
+
+	if (!active_scenario.is_active) {
+		return 0;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	if (net_pkt_skip(pkt, sizeof(struct net_eth_hdr)) != 0 ||
+	    net_pkt_read(pkt, &ipv6_hdr, sizeof(ipv6_hdr)) != 0) {
+		return 0;
+	}
+
+	if (memcmp(&active_scenario.src, ipv6_hdr.src, sizeof(struct net_in6_addr)) != 0 ||
+	    memcmp(&active_scenario.mcast, ipv6_hdr.dst, sizeof(struct net_in6_addr)) != 0) {
+		return 0;
+	}
+
+	iface_eth_forwarded = true;
+	iface_eth_hdr_in_first_frag = pkt->buffer->len > sizeof(struct net_eth_hdr);
+
+	return 0;
+}
+
 struct net_route_mcast_iface_cfg net_route_data_if1;
 struct net_route_mcast_iface_cfg net_route_data_if2;
 struct net_route_mcast_iface_cfg net_route_data_if3;
+struct net_route_mcast_iface_cfg net_route_data_if_eth;
 
 static struct dummy_api net_route_mcast_if_api_1 = {
 	.iface_api.init = net_route_mcast_iface_init1,
@@ -261,6 +302,11 @@ static struct dummy_api net_route_mcast_if_api_2 = {
 static struct dummy_api net_route_mcast_if_api_3 = {
 	.iface_api.init = net_route_mcast_iface_init3,
 	.send = iface_send,
+};
+
+static const struct ethernet_api net_route_mcast_if_api_eth = {
+	.iface_api.init = net_route_mcast_iface_init_eth,
+	.send = iface_eth_send,
 };
 
 #define _ETH_L2_LAYER DUMMY_L2
@@ -286,6 +332,12 @@ NET_DEVICE_INIT_INSTANCE(mcast_iface_3, "mcast_iface_3", iface_3,
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&net_route_mcast_if_api_3, _ETH_L2_LAYER,
 			_ETH_L2_CTX_TYPE, 127);
+
+ETH_NET_DEVICE_INIT(mcast_iface_eth, "mcast_iface_eth",
+		    net_route_mcast_dev_init, NULL,
+		    &net_route_data_if_eth, NULL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    &net_route_mcast_if_api_eth, NET_ETH_MTU);
 
 static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
 				      struct net_in6_addr *src_addr,
@@ -759,6 +811,52 @@ void test_route_mcast_multiple_route_ifaces(void)
 	zassert_equal(forwarding_counter, 1, "unexpected forwarded packet count");
 }
 
+static void test_route_mcast_eth_egress(void)
+{
+	/*
+	 * A packet forwarded to an Ethernet interface is cloned for that
+	 * interface, so with CONFIG_NET_L2_ETHERNET_RESERVE_HEADER its
+	 * Ethernet header goes into the space reserved in front of the
+	 * IPv6 header instead of into a separate fragment.
+	 */
+	struct net_route_ipv6_entry_mcast *route;
+	bool res;
+
+	route = net_route_ipv6_mcast_lookup(&mcast_prefix_site_local);
+	zassert_not_null(route, "failed to find the route entry");
+
+	res = net_route_ipv6_mcast_iface_add(route, iface_eth);
+	zassert_true(res, "failed to add iface_eth to the entry");
+
+	reset_counters();
+	iface_eth_forwarded = false;
+	memcpy(&active_scenario.src, &iface_3_addr, sizeof(struct net_in6_addr));
+	active_scenario.src.s6_addr[15] = 0x02;
+
+	memcpy(&active_scenario.mcast, &mcast_prefix_site_local, sizeof(struct net_in6_addr));
+	active_scenario.mcast.s6_addr[15] = 0x01;
+
+	struct net_pkt *pkt = setup_ipv6_udp(iface_3, &active_scenario.src, &active_scenario.mcast,
+					     20015, 20001);
+
+	active_scenario.is_active = true;
+	if (net_recv_data(iface_3, pkt) < 0) {
+		net_pkt_unref(pkt);
+		zassert_true(0, "failed to receive initial packet!");
+	}
+	k_sleep(WAIT_TIME);
+	active_scenario.is_active = false;
+
+	res = net_route_ipv6_mcast_iface_del(route, iface_eth);
+	zassert_true(res, "failed to remove iface_eth from the entry");
+
+	zassert_true(iface_eth_forwarded, "iface_eth did not forward");
+	zassert_true(iface_2_forwarded, "iface_2 did not forward");
+	zassert_equal(iface_eth_hdr_in_first_frag,
+		      IS_ENABLED(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER),
+		      "unexpected Ethernet header placement");
+}
+
 /*test case main entry*/
 ZTEST(route_mcast_test_suite, test_route_mcast)
 {
@@ -769,6 +867,7 @@ ZTEST(route_mcast_test_suite, test_route_mcast)
 	test_route_mcast_scenario2();
 	test_route_mcast_scenario3();
 	test_route_mcast_multiple_route_ifaces();
+	test_route_mcast_eth_egress();
 	test_route_mcast_lookup();
 	test_route_mcast_lookup_by_iface();
 	test_route_mcast_route_del();

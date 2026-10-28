@@ -6,3 +6,10 @@ tests:
     tags:
       - net
       - route_mcast
+  net.route_mcast.reserve_header:
+    min_ram: 21
+    tags:
+      - net
+      - route_mcast
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=y
