@@ -22,7 +22,7 @@ typedef int (*its_api_setup_deviceid_t)(const struct device *dev, uint32_t devic
 typedef int (*its_api_map_intid_t)(const struct device *dev, uint32_t device_id,
 				   uint32_t event_id, unsigned int intid);
 typedef int (*its_api_send_int_t)(const struct device *dev, uint32_t device_id, uint32_t event_id);
-typedef uint32_t (*its_api_get_msi_addr_t)(const struct device *dev);
+typedef uint64_t (*its_api_get_msi_addr_t)(const struct device *dev);
 
 __subsystem struct its_driver_api {
 	its_api_alloc_intid_t alloc_intid;
@@ -54,7 +54,7 @@ static inline int its_send_int(const struct device *dev, uint32_t device_id, uin
 	return DEVICE_API_GET(its, dev)->send_int(dev, device_id, event_id);
 }
 
-static inline uint32_t its_get_msi_addr(const struct device *dev)
+static inline uint64_t its_get_msi_addr(const struct device *dev)
 {
 	return DEVICE_API_GET(its, dev)->get_msi_addr(dev);
 }
