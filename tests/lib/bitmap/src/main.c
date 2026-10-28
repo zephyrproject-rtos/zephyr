@@ -158,6 +158,51 @@ ZTEST(bitmap, test_find_next_none)
 	zassert_equal(sys_bitmap_find_next_clear(ones, 8, 0), 8);
 }
 
+/* Searches for @p bit as the only match, with the unused bits of the last byte matching
+ * too, from every start.
+ */
+static void check_search(uint8_t *bitmap, size_t num_bits, size_t bit, bool set_search)
+{
+	size_t num_bytes = SYS_BITMAP_SIZE(num_bits);
+
+	memset(bitmap, set_search ? 0x00 : 0xff, num_bytes);
+
+	for (size_t unused = num_bits; unused < num_bytes * BITS_PER_BYTE; unused++) {
+		sys_bitmap_set_bit_to(bitmap, unused, set_search);
+	}
+
+	sys_bitmap_set_bit_to(bitmap, bit, set_search);
+
+	for (size_t start = 0; start <= num_bits; start++) {
+		size_t found = set_search ? sys_bitmap_find_next_set(bitmap, num_bits, start)
+					  : sys_bitmap_find_next_clear(bitmap, num_bits, start);
+
+		zassert_equal(found, (start <= bit) ? bit : num_bits,
+			      "%s search, alignment %zu bits %zu bit %zu start %zu",
+			      set_search ? "set" : "clear",
+			      (size_t)((uintptr_t)bitmap % sizeof(unsigned long)), num_bits, bit,
+			      start);
+	}
+}
+
+/* Every start, bit and buffer alignment, so that searches go through the leading bytes, the
+ * whole words and the trailing bytes.
+ */
+ZTEST(bitmap, test_find_next_alignment)
+{
+	static const size_t sizes[] = { 1, 7, 8, 9, 31, 32, 33, 63, 64, 65, 127, 128, 129, 200 };
+	static uint8_t buf[(2 * sizeof(unsigned long)) + SYS_BITMAP_SIZE(200)];
+
+	for (size_t offset = 0; offset < (2 * sizeof(unsigned long)); offset++) {
+		ARRAY_FOR_EACH(sizes, i) {
+			for (size_t bit = 0; bit < sizes[i]; bit++) {
+				check_search(&buf[offset], sizes[i], bit, true);
+				check_search(&buf[offset], sizes[i], bit, false);
+			}
+		}
+	}
+}
+
 ZTEST(bitmap, test_count_set)
 {
 	const uint8_t bitmap[] = { 0x02, 0x03, 0xe8 };
