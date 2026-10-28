@@ -44,6 +44,30 @@
 		};
 	};
 
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <SMI_MDC_GPIO5>,
+				 <SMI_MDIO_GPIO6>;
+		};
+	};
+
+	rgmii_default: rgmii_default {
+		group1 {
+			pinmux = <RGMII_TX_CLK_GPIO13>,
+				 <RGMII_TX_CTL_GPIO12>,
+				 <RGMII_TXD0_GPIO8>,
+				 <RGMII_TXD1_GPIO9>,
+				 <RGMII_TXD2_GPIO10>,
+				 <RGMII_TXD3_GPIO11>,
+				 <RGMII_RX_CLK_GPIO14>,
+				 <RGMII_RX_CTL_GPIO15>,
+				 <RGMII_RXD0_GPIO19>,
+				 <RGMII_RXD1_GPIO18>,
+				 <RGMII_RXD2_GPIO17>,
+				 <RGMII_RXD3_GPIO16>;
+		};
+	};
+
 	rmt_default: rmt_default {
 		group1 {
 			pinmux = <RMT_OUT0_GPIO60>;

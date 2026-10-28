@@ -95,6 +95,28 @@
 	status = "okay";
 };
 
+&eth {
+	status = "okay";
+	phy-connection-type = "rgmii-id";
+	phy-handle = <&phy>;
+	pinctrl-0 = <&rgmii_default>;
+	pinctrl-names = "default";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "motorcomm,yt8531";
+		reg = <0>;
+		motorcomm,rxc-delay-en;
+		motorcomm,tx-delay-sel = <13>;
+		motorcomm,tx-delay-sel-fe = <13>;
+	};
+};
+
 &wdt0 {
 	status = "okay";
 };

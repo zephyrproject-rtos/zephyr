@@ -24,6 +24,9 @@ microphone, and an NS4150B class D amplifier. An addressable RGB LED is driven
 by GPIO60 and the BOOT button is on GPIO61. The serial console runs on GPIO58
 (TX) and GPIO59 (RX).
 
+The Ethernet PHY is a Motorcomm YT8531 at MDIO address 0. It is connected over
+RGMII on GPIO8 to GPIO19, with MDC on GPIO5 and MDIO on GPIO6.
+
 Most of the remaining I/O pins are broken out to the 40-pin J2 header, and the
 J5 headers allow measuring the module current consumption.
 
