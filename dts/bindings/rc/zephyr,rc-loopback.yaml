@@ -8,3 +8,11 @@ description: |
 compatible: "zephyr,rc-loopback"
 
 include: rc-device.yaml
+
+properties:
+  hw-rx-timeout:
+    type: boolean
+    description: |
+      Behave as a driver that detects the receiver timeout in hardware:
+      implement set_rx_timeout and report a timeout range in the
+      capabilities. Timeout words are then injected by the test.

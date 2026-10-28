@@ -110,6 +110,7 @@ int rc_protocol_enable(const struct device *dev, uint16_t proto)
 	if (!atomic_test_bit(data->protocols, idx)) {
 		atomic_set_bit(data->reset_pending, idx);
 		atomic_set_bit(data->protocols, idx);
+		(void)rc_rx_timeout_update(dev);
 	}
 
 	return 0;
@@ -123,7 +124,9 @@ int rc_protocol_disable(const struct device *dev, uint16_t proto)
 		return idx;
 	}
 
-	atomic_clear_bit(rc_data(dev)->protocols, idx);
+	if (atomic_test_and_clear_bit(rc_data(dev)->protocols, idx)) {
+		(void)rc_rx_timeout_update(dev);
+	}
 
 	return 0;
 }
@@ -176,4 +179,20 @@ void rc_protocol_decode(const struct device *dev, uint32_t word)
 		}
 		idx++;
 	}
+}
+
+uint32_t rc_protocol_min_timeout_us(const struct device *dev)
+{
+	struct rc_dev_data *data = rc_data(dev);
+	uint32_t timeout = 0U;
+	int idx = 0;
+
+	STRUCT_SECTION_FOREACH(rc_protocol, p) {
+		if ((p->decode != NULL) && atomic_test_bit(data->protocols, idx)) {
+			timeout = MAX(timeout, p->min_timeout_us);
+		}
+		idx++;
+	}
+
+	return timeout;
 }

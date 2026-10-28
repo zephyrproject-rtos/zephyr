@@ -130,6 +130,18 @@ static inline bool rc_raw_is_pulse(uint32_t word)
 int rc_get_caps(const struct device *dev, struct rc_caps *caps);
 
 /**
+ * @brief Set the receiver timeout.
+ *
+ * @param dev rc device.
+ * @param us Timeout in us.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL Timeout out of range.
+ * @retval <0 Driver error.
+ */
+int rc_set_rx_timeout(const struct device *dev, uint32_t us);
+
+/**
  * @brief Enable decoding of a protocol on a device.
  *
  * @param dev rc device.

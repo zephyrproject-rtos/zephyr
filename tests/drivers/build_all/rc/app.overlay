@@ -14,6 +14,14 @@
 	rc-loopback-1 {
 		compatible = "zephyr,rc-loopback";
 		protocols = <RC_PROTO_NEC RC_PROTO_RC5>;
+		rx-timeout-us = <100000>;
+		status = "okay";
+	};
+
+	rc-loopback-2 {
+		compatible = "zephyr,rc-loopback";
+		hw-rx-timeout;
+		rx-timeout-us = <5000>;
 		status = "okay";
 	};
 };
