@@ -1492,4 +1492,58 @@ ZTEST(socket_misc_test_suite, test_so_domain_socket_option)
 	zassert_equal(ret, 0, "close failed, %d", -errno);
 }
 
+/* TCP connect() to a multicast or broadcast address fails at once with
+ * EADDRNOTAVAIL and sends nothing.
+ */
+static void check_tcp_connect_not_unicast(int family, const char *addr_str)
+{
+	struct net_sockaddr_storage dst = { 0 };
+	net_socklen_t len;
+	int sock;
+	int ret;
+
+	if (family == NET_AF_INET6) {
+		net_sin6(net_sad(&dst))->sin6_family = NET_AF_INET6;
+		net_sin6(net_sad(&dst))->sin6_port = net_htons(DST_PORT);
+		ret = zsock_inet_pton(NET_AF_INET6, addr_str, &net_sin6(net_sad(&dst))->sin6_addr);
+		len = sizeof(struct net_sockaddr_in6);
+	} else {
+		net_sin(net_sad(&dst))->sin_family = NET_AF_INET;
+		net_sin(net_sad(&dst))->sin_port = net_htons(DST_PORT);
+		ret = zsock_inet_pton(NET_AF_INET, addr_str, &net_sin(net_sad(&dst))->sin_addr);
+		len = sizeof(struct net_sockaddr_in);
+	}
+
+	zassert_equal(ret, 1, "cannot parse %s", addr_str);
+
+	sock = zsock_socket(family, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(sock >= 0, "socket open failed, %d", errno);
+
+	current_dev = NULL;
+	sys_sem_init(&send_sem, 0, 1);
+
+	ret = zsock_connect(sock, net_sad(&dst), len);
+	zexpect_equal(ret, -1, "connect to %s succeeded", addr_str);
+	zexpect_equal(errno, EADDRNOTAVAIL, "connect to %s: errno %d, expected %d", addr_str, errno,
+		      EADDRNOTAVAIL);
+
+	ret = sys_sem_take(&send_sem, K_MSEC(100));
+	zexpect_not_equal(ret, 0, "connect to %s sent a packet", addr_str);
+	zexpect_is_null(current_dev, "connect to %s sent a packet", addr_str);
+
+	ret = zsock_close(sock);
+	zexpect_equal(ret, 0, "close failed, %d", errno);
+}
+
+ZTEST(socket_misc_test_suite, test_tcp_connect_not_unicast)
+{
+	check_tcp_connect_not_unicast(NET_AF_INET6, "ff02::1");
+	check_tcp_connect_not_unicast(NET_AF_INET6, "ff0e::1");
+	check_tcp_connect_not_unicast(NET_AF_INET, "224.0.0.1");
+	check_tcp_connect_not_unicast(NET_AF_INET, "239.255.0.1");
+	check_tcp_connect_not_unicast(NET_AF_INET, "255.255.255.255");
+	/* Subnet broadcast of TEST_MY_IPV4_ADDR with the default netmask */
+	check_tcp_connect_not_unicast(NET_AF_INET, "192.0.1.255");
+}
+
 ZTEST_SUITE(socket_misc_test_suite, NULL, setup, NULL, NULL, NULL);
