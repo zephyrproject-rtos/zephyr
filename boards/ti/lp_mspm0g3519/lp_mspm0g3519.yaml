@@ -10,6 +10,7 @@ ram: 128
 flash: 512
 supported:
   - adc
+  - aes
   - can
   - counter
   - crc

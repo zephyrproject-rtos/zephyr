@@ -10,6 +10,7 @@ ram: 32
 flash: 128
 supported:
   - adc
+  - aes
   - can
   - counter
   - crc

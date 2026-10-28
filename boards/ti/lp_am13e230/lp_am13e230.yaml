@@ -7,6 +7,7 @@ toolchain:
 ram: 96
 flash: 512
 supported:
+  - aes
   - can
   - counter
   - crc
