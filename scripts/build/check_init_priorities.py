@@ -26,6 +26,7 @@ import pickle
 import sys
 
 from elftools.elf.elffile import ELFFile
+from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
 # This is needed to load edt.pickle files.
@@ -113,9 +114,35 @@ class ZephyrInitLevels:
     def __init__(self, file_path, elf_file):
         self.file_path = file_path
         self._elf = ELFFile(elf_file)
+        # In a relocatable file (e.g. the native_sim zephyr.elf) symbol
+        # values are section offsets, so symbols from different sections
+        # collide at the same value. Address symbols by (section, offset)
+        # there and resolve pointers through the relocation entries.
+        self._relocatable = self._elf.header.e_type == "ET_REL"
+        self._relocs = {}
         self._load_objects()
         self._load_level_addr()
         self._process_initlevels()
+
+    def _sym_addr(self, sym):
+        """Return the address key of a symbol."""
+        if self._relocatable:
+            return (sym.entry.st_shndx, sym.entry.st_value)
+        return sym.entry.st_value
+
+    @staticmethod
+    def _addr_offset(addr):
+        """Return the plain integer part of an address key."""
+        if isinstance(addr, tuple):
+            return addr[1]
+        return addr
+
+    @staticmethod
+    def _addr_add(addr, size):
+        """Advance an address key by size bytes."""
+        if isinstance(addr, tuple):
+            return (addr[0], addr[1] + size)
+        return addr + size
 
     def _load_objects(self):
         """Initialize the object table."""
@@ -132,12 +159,13 @@ class ZephyrInitLevels:
                     and sym.entry.st_size > 0
                     and sym.entry.st_info.type in ["STT_OBJECT", "STT_FUNC"]
                 ):
-                    self._objects[sym.entry.st_value] = (
+                    addr = self._sym_addr(sym)
+                    self._objects[addr] = (
                         sym.name,
                         sym.entry.st_size,
                         sym.entry.st_shndx,
                     )
-                    self._object_addr[sym.name] = sym.entry.st_value
+                    self._object_addr[sym.name] = addr
 
     def _load_level_addr(self):
         """Find the address associated with known init levels."""
@@ -151,9 +179,9 @@ class ZephyrInitLevels:
                 for level in _DEVICE_INIT_LEVELS:
                     name = f"__init_{level}_start"
                     if sym.name == name:
-                        self._init_level_addr[level] = sym.entry.st_value
+                        self._init_level_addr[level] = self._sym_addr(sym)
                     elif sym.name == "__init_end":
-                        self._init_level_end = sym.entry.st_value
+                        self._init_level_end = self._sym_addr(sym)
 
         if len(self._init_level_addr) != len(_DEVICE_INIT_LEVELS):
             raise ValueError(f"Missing init symbols, found: {self._init_level_addr}")
@@ -180,6 +208,25 @@ class ZephyrInitLevels:
         else:
             return "unknown"
 
+    def _section_relocs(self, shidx):
+        """Return the {offset: (symbol, addend)} relocations applied to a section."""
+        if shidx in self._relocs:
+            return self._relocs[shidx]
+
+        relocs = {}
+        for section in self._elf.iter_sections():
+            if not isinstance(section, RelocationSection) or section.header.sh_info != shidx:
+                continue
+
+            symtab = self._elf.get_section(section.header.sh_link)
+            for reloc in section.iter_relocations():
+                sym = symtab.get_symbol(reloc.entry.r_info_sym)
+                addend = reloc.entry.r_addend if section.is_RELA() else None
+                relocs[reloc.entry.r_offset] = (sym, addend)
+
+        self._relocs[shidx] = relocs
+        return relocs
+
     def _initlevel_pointer(self, addr, idx, shidx):
         elfclass = self._elf.elfclass
         if elfclass == 32:
@@ -190,15 +237,32 @@ class ZephyrInitLevels:
             raise ValueError(f"Unknown pointer size for ELF class f{elfclass}")
 
         section = self._elf.get_section(shidx)
-        start = section.header.sh_addr
         data = section.data()
 
-        offset = addr - start
+        if self._relocatable:
+            offset = self._addr_offset(addr)
+        else:
+            offset = addr - section.header.sh_addr
 
         start = offset + ptrsize * idx
         stop = offset + ptrsize * (idx + 1)
 
-        return int.from_bytes(data[start:stop], byteorder="little")
+        value = int.from_bytes(data[start:stop], byteorder="little")
+
+        if not self._relocatable:
+            return value
+
+        reloc = self._section_relocs(shidx).get(start)
+        if reloc is None:
+            # Unrelocated data, i.e. a NULL or constant pointer.
+            return value
+
+        sym, addend = reloc
+        if addend is None:
+            # REL relocations keep the addend in the section data.
+            addend = value
+
+        return (sym.entry.st_shndx, sym.entry.st_value + addend)
 
     def _process_initlevels(self):
         """Process the init level and find the init functions and devices."""
@@ -214,11 +278,14 @@ class ZephyrInitLevels:
 
             self.initlevels[level] = []
 
+            if self._relocatable and start[0] != stop[0]:
+                raise ValueError(f"init level {level} spans sections {start[0]} and {stop[0]}")
+
             priority = 0
             addr = start
             while addr < stop:
                 if addr not in self._objects:
-                    raise ValueError(f"no symbol at addr {addr:08x}")
+                    raise ValueError(f"no symbol at addr {self._addr_offset(addr):08x}")
                 obj, size, shidx = self._objects[addr]
 
                 arg0_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
@@ -237,7 +304,7 @@ class ZephyrInitLevels:
 
                 self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
 
-                addr += size
+                addr = self._addr_add(addr, size)
                 priority += 1
 
 
