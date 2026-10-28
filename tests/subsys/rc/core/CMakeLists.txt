@@ -14,6 +14,7 @@ target_sources(app PRIVATE
   src/raw.c
   src/rawio.c
   src/sync.c
+  src/tx.c
 )
 
 if(CONFIG_TEST_RC_CALLBACKS)

@@ -26,6 +26,10 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
 	data->dev = dev;
 	data->ring = cfg->ring;
 	data->decoder_state = cfg->decoder_state;
+#ifdef CONFIG_RC_TX
+	data->tx_carrier_hz = cfg->tx_carrier_hz;
+	data->tx_duty_pct = cfg->tx_duty_pct;
+#endif
 
 	if (init_fn != NULL) {
 		ret = init_fn(dev);

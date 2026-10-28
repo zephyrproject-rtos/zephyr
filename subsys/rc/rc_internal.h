@@ -47,6 +47,11 @@ void rc_sync_dispatch(void);
 
 void rc_callback_call(const struct device *dev, const struct rc_event *evt);
 
+/* Complete with an error on rc_rx */
+void rc_sqe_done(struct rtio_iodev_sqe *iodev_sqe);
+
+void rc_tx_dispatch(void);
+
 bool rc_raw_has_readers(void);
 
 void rc_raw_report(const struct device *dev, const uint32_t *words, size_t count);

@@ -14,3 +14,5 @@ zephyr_library_sources(
   rc_rtio.c
   rc_sync.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_RC_TX rc_tx.c)

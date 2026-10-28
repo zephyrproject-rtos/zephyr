@@ -70,4 +70,18 @@
 		rx-timeout-us = <5000>;
 		status = "okay";
 	};
+
+	rc_loopback10: rc-loopback-10 {
+		compatible = "zephyr,rc-loopback";
+		protocols = <0x1fe>;
+		rx-timeout-us = <5000>;
+		tx-echo;
+		status = "okay";
+	};
+
+	rc_loopback11: rc-loopback-11 {
+		compatible = "zephyr,rc-loopback";
+		rx-only;
+		status = "okay";
+	};
 };

@@ -10,3 +10,8 @@ tests:
   drivers.rc.default:
     platform_allow:
       - native_sim
+  drivers.rc.rx_only:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=rx_only.overlay

@@ -16,3 +16,13 @@ properties:
       Behave as a driver that detects the receiver timeout in hardware:
       implement set_rx_timeout and report a timeout range in the
       capabilities. Timeout words are then injected by the test.
+
+  rx-only:
+    type: boolean
+    description: Behave as a receiver without transmit support.
+
+  tx-echo:
+    type: boolean
+    description: |
+      Store transmitted words as received words, when reception is
+      enabled.

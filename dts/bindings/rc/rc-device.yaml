@@ -24,3 +24,18 @@ properties:
       none needs one, clamped to the driver timeout range. It is
       recomputed when protocols are enabled or disabled. An explicit
       value is never changed by protocol selection.
+
+  carrier-hz:
+    type: int
+    default: 38000
+    description: |
+      Transmit carrier frequency in Hz for raw transmissions, until
+      changed with rc_set_tx_carrier(). Scancode transmissions use the
+      carrier of their protocol.
+
+  duty-cycle-percent:
+    type: int
+    default: 50
+    description: |
+      Transmit carrier duty cycle in percent, 1 to 99, for raw
+      transmissions, until changed with rc_set_tx_carrier().

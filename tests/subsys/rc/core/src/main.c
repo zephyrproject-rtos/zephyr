@@ -57,7 +57,8 @@ ZTEST(rc_core, test_get_caps)
 	struct rc_caps caps;
 
 	zassert_ok(rc_get_caps(rc_dev, &caps));
-	zassert_equal(caps.roles, RC_ROLE_RAW_RX);
+	zassert_equal(caps.roles, RC_ROLE_RAW_RX | RC_ROLE_RAW_TX);
+	zassert_equal(caps.max_tx_words, CONFIG_RC_LOOPBACK_TX_WORDS);
 	zassert_equal(caps.rx_resolution_ns, 1000U);
 }
 
