@@ -1,0 +1,24 @@
+/* Copyright (C) 2026 BeagleBoard.org Foundation
+ * Copyright (C) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Wire HAT SPI0 MOSI (pin 19) to MISO (pin 21) for an external loopback, or
+ * use CONFIG_SPI_LOOPBACK_MODE_LOOP for controller internal loopback.
+ */
+
+#include <freq.h>
+
+&mcu_spi0 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_K(500)>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(12)>;
+	};
+};
