@@ -1,0 +1,26 @@
+# Copyright (c) 2026 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+module = IT51XXX_HW_RSA
+module-str = it51xxx-hw-rsa
+source "subsys/logging/Kconfig.template.log_config"
+
+config IT51XXX_HW_RSA_CALCULATION
+	bool "IT51XXX hardware RSA calculation"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_HW_RSA_ENABLED
+	select SOC_IT51XXX_CPU_IDLE_GATING
+	select SOC_IT51XXX_HW_CRYPTO_ACCELERATE
+	select MFD
+	help
+	  This option enables it51xxx hardware rsa engine.
+
+if IT51XXX_HW_RSA_CALCULATION
+
+config IT51XXX_RSA_INIT_PRIORITY
+	int "IT51XXX HW RSA init priority"
+	default 51
+	help
+	  it51xxx hardware rsa driver initialization priority.
+
+endif # IT51XXX_HW_RSA_CALCULATION
