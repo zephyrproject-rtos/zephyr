@@ -273,7 +273,7 @@ whd_result_t whd_bus_sdio_register_oob_intr(whd_driver_t whd_driver)
 	 * same singleton directly, matching how whd_bus_sdio_oob_irq_handler
 	 * and the SDIO card callback in this file already get at it.
 	 */
-	struct airoc_wifi_data *data = &airoc_wifi_data;
+	struct airoc_wifi_data *data = &airoc_wifi_dev_data;
 
 	/* Get OOB pin info */
 	const whd_oob_config_t *oob_config = &whd_driver->bus_priv->sdio_config.oob_config;

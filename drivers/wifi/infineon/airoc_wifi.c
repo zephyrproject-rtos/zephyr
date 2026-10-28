@@ -100,7 +100,7 @@ static const whd_event_num_t ap_link_events[] = {WLC_E_DISASSOC_IND, WLC_E_DEAUT
 static uint16_t sta_event_handler_index = 0xFF;
 static void airoc_event_task(void);
 /* Not static: airoc_whd_hal_sdio.c needs direct access; see there for why. */
-struct airoc_wifi_data airoc_wifi_data = {0};
+struct airoc_wifi_data airoc_wifi_dev_data = {0};
 
 #if defined(SPI_DATA_IRQ_SHARED)
 PINCTRL_DT_INST_DEFINE(0);
@@ -156,12 +156,12 @@ static void airoc_wifi_scan_cb_search(whd_scan_result_t **result_ptr, void *user
 				      whd_scan_status_t status)
 {
 	if (status == WHD_SCAN_ABORTED) {
-		k_sem_give(&airoc_wifi_data.sema_scan);
+		k_sem_give(&airoc_wifi_dev_data.sema_scan);
 		return;
 	}
 
 	if (status == WHD_SCAN_COMPLETED_SUCCESSFULLY) {
-		k_sem_give(&airoc_wifi_data.sema_scan);
+		k_sem_give(&airoc_wifi_dev_data.sema_scan);
 	} else if ((status == WHD_SCAN_INCOMPLETE) && (user_data != NULL) &&
 		   ((**result_ptr).SSID.length == ((whd_scan_result_t *)user_data)->SSID.length)) {
 		if (strncmp(((whd_scan_result_t *)user_data)->SSID.value, (**result_ptr).SSID.value,
@@ -175,7 +175,7 @@ static void airoc_wifi_scan_cb_search(whd_scan_result_t **result_ptr, void *user
 static void airoc_wifi_supp_scan2_cb(whd_scan_result_t **result_ptr, void *user_data,
 				     whd_scan_status_t status)
 {
-	struct airoc_wifi_data *data = &airoc_wifi_data;
+	struct airoc_wifi_data *data = &airoc_wifi_dev_data;
 
 	if ((result_ptr == NULL) || (*result_ptr == NULL)) {
 		/* Check for scan complete */
@@ -199,7 +199,7 @@ static void airoc_wifi_supp_scan2_cb(whd_scan_result_t **result_ptr, void *user_
 	}
 
 	if (status == WHD_SCAN_COMPLETED_SUCCESSFULLY) {
-		k_sem_give(&airoc_wifi_data.sema_scan);
+		k_sem_give(&airoc_wifi_dev_data.sema_scan);
 	} else if ((status == WHD_SCAN_INCOMPLETE) && (user_data != NULL) &&
 		   ((**result_ptr).SSID.length == data->ssid.length)) {
 		if (memcmp(data->ssid.value, (**result_ptr).SSID.value,
@@ -216,7 +216,7 @@ static void airoc_wifi_supp_scan2_cb(whd_scan_result_t **result_ptr, void *user_
 			info->external_scan = 0;
 			info->nl_scan_event = 1;
 
-			airoc_wifi_data.airoc_wifi_wpa_supp_dev_callbk_fns.scan_done(
+			airoc_wifi_dev_data.airoc_wifi_wpa_supp_dev_callbk_fns.scan_done(
 				data->supp_if_ctx, &event);
 		}
 	} else {
@@ -487,14 +487,14 @@ static void airoc_wifi_network_process_ethernet_data(whd_interface_t interface, 
 	airoc_wifi_buffer_release(buffer, WHD_NETWORK_RX);
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-	airoc_wifi_data.stats.bytes.received += len;
-	airoc_wifi_data.stats.pkts.rx++;
+	airoc_wifi_dev_data.stats.bytes.received += len;
+	airoc_wifi_dev_data.stats.pkts.rx++;
 #endif
 
 	if (net_pkt_unref_flag) {
 		net_pkt_unref(pkt);
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-		airoc_wifi_data.stats.errors.rx++;
+		airoc_wifi_dev_data.stats.errors.rx++;
 #endif
 	}
 }
@@ -905,7 +905,7 @@ static int airoc_mgmt_connect(const struct device *dev,
 			goto error;
 		}
 
-		if (k_sem_take(&airoc_wifi_data.sema_scan, K_MSEC(AIROC_WIFI_SCAN_TIMEOUT_MS)) !=
+		if (k_sem_take(&airoc_wifi_dev_data.sema_scan, K_MSEC(AIROC_WIFI_SCAN_TIMEOUT_MS)) !=
 		    0) {
 			whd_wifi_stop_scan(airoc_sta_if);
 			ret = -EAGAIN;
@@ -1467,7 +1467,7 @@ int airoc_wifi_wpa_supp_scan2(void *priv, struct wpa_driver_scan_params *params)
 
 	data->airoc_wifi_wpa_supp_dev_callbk_fns.scan_start(data->supp_if_ctx);
 
-	if (k_sem_take(&airoc_wifi_data.sema_scan, K_MSEC(AIROC_WIFI_SCAN_TIMEOUT_MS)) != 0) {
+	if (k_sem_take(&airoc_wifi_dev_data.sema_scan, K_MSEC(AIROC_WIFI_SCAN_TIMEOUT_MS)) != 0) {
 		whd_wifi_stop_scan(airoc_sta_if);
 		ret = -EAGAIN;
 	}
@@ -2514,13 +2514,13 @@ static const struct net_wifi_mgmt_offload airoc_api = {
 };
 
 #ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
-NET_DEVICE_DT_INST_DEFINE(0, airoc_init, NULL, &airoc_wifi_data, &airoc_wifi_config,
+NET_DEVICE_DT_INST_DEFINE(0, airoc_init, NULL, &airoc_wifi_dev_data, &airoc_wifi_config,
 			  CONFIG_WIFI_INIT_PRIORITY, &airoc_api, ETHERNET_L2,
 			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), WHD_LINK_MTU);
 
 CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));
 #else
-NET_DEVICE_INIT_INSTANCE(airoc_wifi_sta, "wlan0", 0, airoc_init, NULL, &airoc_wifi_data,
+NET_DEVICE_INIT_INSTANCE(airoc_wifi_sta, "wlan0", 0, airoc_init, NULL, &airoc_wifi_dev_data,
 			 &airoc_wifi_config, CONFIG_WIFI_INIT_PRIORITY, &airoc_api, ETHERNET_L2,
 			 NET_L2_GET_CTX_TYPE(ETHERNET_L2), WHD_LINK_MTU)
 
