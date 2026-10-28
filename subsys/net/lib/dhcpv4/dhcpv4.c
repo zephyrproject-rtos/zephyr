@@ -689,7 +689,7 @@ fail:
 	}
 
 	/* Nothing was sent, so try again after a short random delay. */
-	return sys_rand32_get() %
+	return sys_rand8_get() %
 			(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
 			 DHCPV4_INITIAL_DELAY_MIN) +
 			DHCPV4_INITIAL_DELAY_MIN;
@@ -2175,12 +2175,6 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 		 */
 		iface->config.dhcpv4.attempts = 0U;
 
-		/* Random delay before sending the initial discover message,
-		 * drawn separately from the transaction identifier so that
-		 * one cannot be guessed from the other.
-		 */
-		entropy = sys_rand32_get();
-
 		/* RFC 2131 4.1: choose the identifier so that two clients are
 		 * unlikely to pick the same one. It stays put for the whole of
 		 * the exchange that follows; the next exchange draws another.
@@ -2195,6 +2189,12 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 		 */
 		if (first_start &&
 		    iface->config.dhcpv4.state == NET_DHCPV4_INIT) {
+			/* Random delay before sending the initial discover message,
+			 * drawn separately from the transaction identifier so that
+			 * one cannot be guessed from the other.
+			 */
+			entropy = sys_rand8_get();
+
 			timeout = entropy % (CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
 					DHCPV4_INITIAL_DELAY_MIN) + DHCPV4_INITIAL_DELAY_MIN;
 		}
