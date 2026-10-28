@@ -13,3 +13,6 @@ CONFIG_SERIAL=y
 # Enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
+
+# Keep the external flash memory-mapped for execution in place
+CONFIG_MSPI_MEMMAP=y
