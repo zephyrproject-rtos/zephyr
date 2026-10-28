@@ -55,6 +55,13 @@ LOG_MODULE_REGISTER(eth_adin2111, CONFIG_ETHERNET_LOG_LEVEL);
 /* As per RM rev. A page 20: approximately 10 ms (maximum) for internal logic to be ready. */
 #define ADIN2111_SW_RESET_DELAY_MS		10U
 
+#define ADIN2111_OA_TX_HEADER_AREA_SIZE \
+	(CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT * OA_TC6_HDR_SIZE)
+
+BUILD_ASSERT(OA_TC6_HDR_SIZE == sizeof(uint32_t), "OA TC6 header must be 4 bytes");
+BUILD_ASSERT(ADIN2111_OA_TX_BURST_SZ >= (ADIN2111_OA_TX_HEADER_AREA_SIZE + 64U),
+	     "OA TX buffer must fit all headers and one maximum CPS");
+
 int eth_adin2111_mac_reset(const struct device *dev)
 {
 	uint32_t val;
@@ -125,20 +132,8 @@ int eth_adin2111_unlock(const struct device *dev)
 	return k_mutex_unlock(&ctx->lock);
 }
 
-static inline bool eth_adin2111_oa_get_parity(const uint32_t x)
-{
-	uint32_t y;
-
-	y = x ^ (x >> 1);
-	y = y ^ (y >> 2);
-	y = y ^ (y >> 4);
-	y = y ^ (y >> 8);
-	y = y ^ (y >> 16);
-
-	return !(y & 1);
-}
-
-int eth_adin2111_oa_spi_xfer(const struct device *dev, uint8_t *buf_rx, uint8_t *buf_tx, int len)
+static int eth_adin2111_oa_spi_xfer(const struct device *dev, uint8_t *buf_rx, uint8_t *buf_tx,
+				    int len)
 {
 	const struct adin2111_config *cfg = dev->config;
 
@@ -167,260 +162,438 @@ int eth_adin2111_oa_spi_xfer(const struct device *dev, uint8_t *buf_rx, uint8_t 
 	return 0;
 }
 
-static int eth_adin2111_reg_read_oa(const struct device *dev, const uint16_t reg,
-				    uint32_t *val)
-{
-	struct adin2111_data *ctx = dev->data;
-	uint8_t rx_buf[ADIN2111_OA_CTL_LEN_PROT] = {0};
-	uint8_t tx_buf[ADIN2111_OA_CTL_LEN_PROT] = {0};
-	uint32_t pval;
-	uint32_t *hdr = (uint32_t *)tx_buf;
-	int len;
-	int ret;
-
-	*hdr = reg << 8;
-	if (reg >= 0x30) {
-		*hdr |= ADIN2111_OA_CTL_MMS;
-	}
-
-	*hdr |= eth_adin2111_oa_get_parity(*hdr);
-	*hdr = sys_cpu_to_be32(*hdr);
-
-	len = (ctx->oa_prot) ? ADIN2111_OA_CTL_LEN_PROT : ADIN2111_OA_CTL_LEN;
-
-	ret = eth_adin2111_oa_spi_xfer(dev, rx_buf, tx_buf, len);
-	if (ret < 0) {
-		return ret;
-	}
-
-	*val = sys_be32_to_cpu(*(uint32_t *)&rx_buf[8]);
-
-	/* In protected mode read data is followed by its compliment value */
-	if (ctx->oa_prot) {
-		pval = sys_be32_to_cpu(*(uint32_t *)&rx_buf[12]);
-		if (*val != ~pval) {
-			LOG_ERR("OA protected mode rx error !");
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
-static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t reg,
-				     uint32_t val)
-{
-	struct adin2111_data *ctx = dev->data;
-	uint8_t rx_buf[ADIN2111_OA_CTL_LEN_PROT] = {0};
-	uint8_t tx_buf[ADIN2111_OA_CTL_LEN_PROT] = {0};
-	uint32_t pval;
-	uint32_t *hdr = (uint32_t *)tx_buf;
-	int len;
-	int ret;
-
-	*hdr = reg << 8 | ADIN2111_OA_CTL_WNR;
-	if (reg >= 0x30) {
-		*hdr |= ADIN2111_OA_CTL_MMS;
-	}
-
-	*hdr |= eth_adin2111_oa_get_parity(*hdr);
-	*hdr = sys_cpu_to_be32(*hdr);
-
-	len = (ctx->oa_prot) ? ADIN2111_OA_CTL_LEN_PROT : ADIN2111_OA_CTL_LEN;
-
-	*(uint32_t *)&tx_buf[4] = sys_cpu_to_be32(val);
-	if (ctx->oa_prot) {
-		*(uint32_t *)&tx_buf[8] = sys_cpu_to_be32(~val);
-	}
-
-	ret = eth_adin2111_oa_spi_xfer(dev, rx_buf, tx_buf, len);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (ctx->oa_prot) {
-		pval = sys_be32_to_cpu(*(uint32_t *)&rx_buf[12]);
-		if (val != ~pval) {
-			LOG_ERR("OA protected mode tx error !");
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
 int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 {
 	struct adin2111_data *ctx = dev->data;
 	struct net_if *iface = ((struct adin2111_port_data *)ctx->port[port_idx]->data)->iface;
 	struct net_pkt *pkt;
+	uint32_t bufsts;
 	uint32_t hdr, ftr;
-	int i, len, rx_pos, ret, rca, swo;
+	int i, len, rx_pos, ret = 0, rca, swo, chunk_count;
+	int xfer_len;
 
-	ret = eth_adin2111_reg_read(dev, ADIN2111_BUFSTS, &rca);
+	ret = eth_adin2111_reg_read(dev, ADIN2111_BUFSTS, &bufsts);
 	if (ret < 0) {
 		LOG_ERR("can't read BUFSTS");
-		return -EIO;
+		return ret;
 	}
 
-	rca &= ADIN2111_BUFSTS_RCA_MASK;
-
-	/* Preare all tx headers */
-	hdr = ADIN2111_OA_DATA_HDR_DNC;
-	hdr |= eth_adin2111_oa_get_parity(hdr);
-	hdr = sys_cpu_to_be32(hdr);
-	for (i = 0, len = 0; i < rca; ++i) {
-		*(uint32_t *)&ctx->oa_tx_buf[len] = hdr;
-		len += sizeof(uint32_t) + ctx->oa_cps;
+	rca = FIELD_GET(OA_BUFSTS_RCA, bufsts);
+	if (rca == 0) {
+		return 0;
 	}
 
-	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, len);
+	chunk_count = MIN(rca, (int)CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT);
+
+	for (i = 0, xfer_len = 0; i < chunk_count; i++) {
+		hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1);
+		hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
+
+		*(uint32_t *)&ctx->oatxbuf[xfer_len] = sys_cpu_to_be32(hdr);
+		memset(&ctx->oatxbuf[xfer_len + OA_TC6_HDR_SIZE], 0, ctx->tc6.cps);
+
+		xfer_len += OA_TC6_HDR_SIZE + ctx->tc6.cps;
+	}
+
+	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oarxbuf, ctx->oatxbuf, xfer_len);
 	if (ret < 0) {
 		LOG_ERR("SPI xfer failed");
 		return ret;
 	}
 
-	for (i = 0, rx_pos = 0; i < rca; ++i) {
+	for (i = 0, rx_pos = 0; i < chunk_count; i++) {
+		ftr = sys_be32_to_cpu(*(uint32_t *)&ctx->oarxbuf[rx_pos + ctx->tc6.cps]);
 
-		ftr = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[rx_pos + ctx->oa_cps]);
-
-		if (eth_adin2111_oa_get_parity(ftr)) {
-			LOG_ERR("OA RX: Footer parity error !");
+		if (oa_tc6_get_parity(ftr)) {
+			LOG_ERR("OA RX: Footer parity error!");
 			return -EIO;
 		}
-		if (!(ftr & ADIN2111_OA_DATA_FTR_SYNC)) {
-			LOG_ERR("OA RX: Configuration not in sync !");
+
+		ctx->tc6.exst = FIELD_GET(OA_DATA_FTR_EXST, ftr);
+		ctx->tc6.sync = FIELD_GET(OA_DATA_FTR_SYNC, ftr);
+		ctx->tc6.rca = FIELD_GET(OA_DATA_FTR_RCA, ftr);
+		ctx->tc6.txc = FIELD_GET(OA_DATA_FTR_TXC, ftr);
+
+		if (!ctx->tc6.sync) {
+			LOG_ERR("OA RX: Configuration not in sync!");
 			return -EIO;
 		}
-		if (!(ftr & ADIN2111_OA_DATA_FTR_DV)) {
-			LOG_DBG("OA RX: Data chunk not valid, skip !");
+
+		if (!FIELD_GET(OA_DATA_FTR_DV, ftr)) {
+			LOG_DBG("OA RX: Data chunk not valid, skip!");
 			goto update_pos;
 		}
-		if (ftr & ADIN2111_OA_DATA_FTR_SV) {
-			swo = (ftr & ADIN2111_OA_DATA_FTR_SWO_MSK) >> ADIN2111_OA_DATA_FTR_SWO;
+
+		if (FIELD_GET(OA_DATA_FTR_SV, ftr)) {
+			swo = FIELD_GET(OA_DATA_FTR_SWO, ftr);
 			if (swo != 0) {
-				LOG_ERR("OA RX: Misalignbed start of frame !");
+				LOG_ERR("OA RX: Misaligned start of frame!");
+				ctx->scur = 0;
 				return -EIO;
 			}
-			/* Reset store cursor */
+
 			ctx->scur = 0;
 		}
 
-		len = (ftr & ADIN2111_OA_DATA_FTR_EV) ?
-		       ((ftr & ADIN2111_OA_DATA_FTR_EBO_MSK) >> ADIN2111_OA_DATA_FTR_EBO) + 1 :
-		       ctx->oa_cps;
+		len = FIELD_GET(OA_DATA_FTR_EV, ftr) ? (FIELD_GET(OA_DATA_FTR_EBO, ftr) + 1)
+						     : ctx->tc6.cps;
 
-		if (ctx->scur + len > CONFIG_ETH_ADIN2111_BUFFER_SIZE) {
+		if ((ctx->scur + len) > CONFIG_ETH_ADIN2111_BUFFER_SIZE) {
 			ctx->scur = 0;
-			LOG_ERR("OA RX: Frame is larger than maximum size !");
+			LOG_ERR("OA RX: Frame is larger than maximum size!");
 			goto update_pos;
 		}
 
-		memcpy(&ctx->buf[ctx->scur], &ctx->oa_rx_buf[rx_pos], len);
+		memcpy(&ctx->buf[ctx->scur], &ctx->oarxbuf[rx_pos], len);
 		ctx->scur += len;
 
-		if (ftr & ADIN2111_OA_DATA_FTR_EV) {
-			pkt = net_pkt_rx_alloc_with_buffer(iface, CONFIG_ETH_ADIN2111_BUFFER_SIZE,
+		if (FIELD_GET(OA_DATA_FTR_EV, ftr)) {
+			if (FIELD_GET(OA_DATA_FTR_FD, ftr)) {
+				LOG_ERR("OA RX: Frame drop indicated!");
+				ctx->scur = 0;
+				goto update_pos;
+			}
+
+			if (ctx->scur < sizeof(uint32_t)) {
+				ctx->scur = 0;
+				LOG_ERR("OA RX: Frame too short for CRC");
+				return -EIO;
+			}
+
+			pkt = net_pkt_rx_alloc_with_buffer(iface, ctx->scur - sizeof(uint32_t),
 							   NET_AF_UNSPEC, 0,
 							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 			if (!pkt) {
 				LOG_ERR("OA RX: cannot allocate packet space, skipping.");
+				ctx->scur = 0;
 				return -ENOMEM;
 			}
-			/* Skipping CRC32 */
+
 			ret = net_pkt_write(pkt, ctx->buf, ctx->scur - sizeof(uint32_t));
 			if (ret < 0) {
 				net_pkt_unref(pkt);
 				LOG_ERR("Failed to write pkt, scur %d, err %d", ctx->scur, ret);
+				ctx->scur = 0;
 				return ret;
 			}
+
 			ret = net_recv_data(iface, pkt);
 			if (ret < 0) {
 				net_pkt_unref(pkt);
-				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-					port_idx, ret);
+				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d", port_idx,
+					ret);
+				ctx->scur = 0;
 				return ret;
 			}
+
+			ctx->scur = 0;
 		}
+
 update_pos:
-		rx_pos += ctx->oa_cps + sizeof(uint32_t);
+		rx_pos += ctx->tc6.cps + OA_TC6_FTR_SIZE;
 	}
 
-	return ret;
+	return 0;
 }
 
-/*
- * Setting up for a single dma transfer.
- */
+static int adin2111_oa_tx_next_batch(struct net_buf **cur_frag, size_t *frag_off,
+				     size_t *remaining, size_t first_chunk,
+				     size_t chunks, size_t max_chunks,
+				     size_t max_bufs, size_t cps,
+				     size_t *batch_chunks, size_t *batch_buf_count)
+{
+	size_t buf_count = 0U;
+
+	*batch_chunks = 0U;
+	*batch_buf_count = 0U;
+
+	while ((*batch_chunks < max_chunks) && ((first_chunk + *batch_chunks) < chunks)) {
+		struct net_buf *next_frag = *cur_frag;
+		size_t next_frag_off = *frag_off;
+		size_t next_remaining = *remaining;
+		size_t chunk_idx = first_chunk + *batch_chunks;
+		size_t chunk_payload_len = MIN(next_remaining, cps);
+		size_t chunk_remaining = chunk_payload_len;
+		size_t chunk_buf_count = 1U;
+
+		while (chunk_remaining > 0U) {
+			size_t seg_len;
+
+			while ((next_frag != NULL) && (next_frag_off >= next_frag->len)) {
+				next_frag = next_frag->frags;
+				next_frag_off = 0U;
+			}
+
+			if (next_frag == NULL) {
+				return -EINVAL;
+			}
+
+			seg_len = MIN(chunk_remaining, (size_t)(next_frag->len - next_frag_off));
+			chunk_remaining -= seg_len;
+			next_remaining -= seg_len;
+			next_frag_off += seg_len;
+			chunk_buf_count++;
+		}
+
+		if ((chunk_idx == (chunks - 1U)) && (chunk_payload_len < cps)) {
+			chunk_buf_count++;
+		}
+
+		if ((chunk_buf_count > max_bufs) || (buf_count > (max_bufs - chunk_buf_count))) {
+			if (*batch_chunks == 0U) {
+				return -ENOMEM;
+			}
+
+			break;
+		}
+
+		*cur_frag = next_frag;
+		*frag_off = next_frag_off;
+		*remaining = next_remaining;
+		buf_count += chunk_buf_count;
+		(*batch_chunks)++;
+	}
+
+	if (*batch_chunks == 0U) {
+		return -ENOMEM;
+	}
+
+	*batch_buf_count = buf_count;
+
+	return 0;
+}
+
+struct adin2111_oa_tx_builder {
+	struct spi_buf *tx_bufs;
+	uint8_t *hdr_buf;
+	uint8_t *pad_buf;
+	struct net_buf *frag;
+	size_t frag_off;
+	size_t remaining;
+	size_t tx_buf_count;
+	size_t first_chunk;
+	size_t batch_chunks;
+	size_t chunks;
+	size_t tx_len;
+	size_t cps;
+	uint16_t port_idx;
+};
+
+static int adin2111_oa_tx_build_batch(struct adin2111_oa_tx_builder *builder)
+{
+	size_t batch_idx;
+
+	builder->tx_buf_count = 0U;
+	for (batch_idx = 0U; batch_idx < builder->batch_chunks; batch_idx++) {
+		size_t chunk_idx = builder->first_chunk + batch_idx;
+		size_t chunk_payload_len = MIN(builder->remaining, builder->cps);
+		size_t chunk_remaining = chunk_payload_len;
+		size_t chunk_pad = 0U;
+		size_t hdr_off = batch_idx * OA_TC6_HDR_SIZE;
+		size_t ebo = 0U;
+		uint32_t hdr;
+
+		if (chunk_idx == (builder->chunks - 1U)) {
+			size_t last_seg = builder->tx_len - (chunk_idx * builder->cps);
+
+			if (last_seg > builder->cps) {
+				last_seg = builder->cps;
+			}
+
+			ebo = last_seg - 1U;
+			chunk_pad = builder->cps - chunk_payload_len;
+		}
+
+		hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 1) |
+		      FIELD_PREP(OA_DATA_HDR_NORX, 1);
+		hdr |= (!!builder->port_idx << ADIN2111_OA_DATA_HDR_VS);
+
+		if (chunk_idx == 0U) {
+			hdr |= FIELD_PREP(OA_DATA_HDR_SV, 1);
+		}
+
+		if (chunk_idx == (builder->chunks - 1U)) {
+			hdr |= FIELD_PREP(OA_DATA_HDR_EV, 1) |
+			       FIELD_PREP(OA_DATA_HDR_EBO, ebo);
+		}
+
+		hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
+		sys_put_be32(hdr, &builder->hdr_buf[hdr_off]);
+
+		builder->tx_bufs[builder->tx_buf_count].buf = &builder->hdr_buf[hdr_off];
+		builder->tx_bufs[builder->tx_buf_count].len = OA_TC6_HDR_SIZE;
+		builder->tx_buf_count++;
+
+		while (chunk_remaining > 0U) {
+			size_t seg_len;
+
+			while ((builder->frag != NULL) &&
+			       (builder->frag_off >= builder->frag->len)) {
+				builder->frag = builder->frag->frags;
+				builder->frag_off = 0U;
+			}
+
+			if (builder->frag == NULL) {
+				LOG_ERR("OA TX: packet fragment list ended too early");
+				return -EINVAL;
+			}
+
+			seg_len = MIN(chunk_remaining,
+				      (size_t)(builder->frag->len - builder->frag_off));
+			builder->tx_bufs[builder->tx_buf_count].buf =
+				builder->frag->data + builder->frag_off;
+			builder->tx_bufs[builder->tx_buf_count].len = seg_len;
+			builder->tx_buf_count++;
+
+			chunk_remaining -= seg_len;
+			builder->remaining -= seg_len;
+			builder->frag_off += seg_len;
+		}
+
+		if (chunk_pad > 0U) {
+			builder->tx_bufs[builder->tx_buf_count].buf = builder->pad_buf;
+			builder->tx_bufs[builder->tx_buf_count].len = chunk_pad;
+			builder->tx_buf_count++;
+		}
+	}
+
+	return 0;
+}
+
 static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *pkt,
 				      const uint16_t port_idx)
 {
+	const struct adin2111_config *cfg = dev->config;
 	struct adin2111_data *ctx = dev->data;
-	uint16_t clen, len = net_pkt_get_len(pkt);
-	uint32_t hdr;
-	uint8_t chunks, i;
-	int ret, txc, cur, ebo;
+	struct net_buf *cur_frag;
+	struct net_buf *preflight_frag;
+	struct spi_buf_set tx;
+	struct spi_buf *tx_bufs = ctx->oa_tx_bufs;
+	uint8_t *hdr_buf = ctx->oatxbuf;
+	uint8_t *pad_buf = NULL;
+	size_t tx_buf_max = CONFIG_ETH_ADIN2111_OA_TX_MAX_SPI_BUFS;
+	size_t total_len = net_pkt_get_len(pkt);
+	size_t pad_buf_offset = ADIN2111_OA_TX_HEADER_AREA_SIZE;
+	size_t tx_len;
+	size_t remaining;
+	size_t preflight_remaining;
+	size_t frag_off = 0U;
+	size_t preflight_frag_off = 0U;
+	size_t batch_chunks;
+	size_t batch_buf_count;
+	size_t first_chunk;
+	size_t chunks;
+	uint32_t ftr;
+	int ret;
 
-	chunks = len / ctx->oa_cps;
-
-	if (len % ctx->oa_cps) {
-		chunks++;
+	if (total_len == 0U) {
+		return -EINVAL;
 	}
 
-	if (chunks > 1) {
-		/* we have to calculate EBO so we do not exceed maximum Ethernet frame length */
-		ebo = (len % ctx->oa_cps) - 1;
-		if (ebo < 0) {
-			ebo += ctx->oa_cps;
-		}
-	} else {
-		/* we have to pad to the minimum Ethernet frame length */
-		ebo = ctx->oa_cps - 1;
+	if (ctx->tc6.cps == 0U) {
+		return -EINVAL;
+	}
+	if ((ctx->oatxbuf == NULL) || (tx_bufs == NULL) ||
+	    (pad_buf_offset > ADIN2111_OA_TX_BURST_SZ) ||
+	    (ctx->tc6.cps > (ADIN2111_OA_TX_BURST_SZ - pad_buf_offset))) {
+		return -EINVAL;
 	}
 
-	ret = eth_adin2111_reg_read(dev, ADIN2111_BUFSTS, &txc);
-	if (ret < 0) {
-		LOG_ERR("Cannot read txc");
-		return -EIO;
-	}
+	pad_buf = &ctx->oatxbuf[pad_buf_offset];
 
-	txc = (txc & ADIN2111_BUFSTS_TXC_MASK) >> ADIN2111_BUFSTS_TXC;
-	if (txc < chunks) {
-		return -EIO;
-	}
+	tx_len = MAX(total_len, 60U);
+	chunks = DIV_ROUND_UP(tx_len, (size_t)ctx->tc6.cps);
 
-	/* Prepare for single dma transfer */
-	for (i = 1, cur = 0; i <= chunks; i++) {
-		hdr = ADIN2111_OA_DATA_HDR_DNC | ADIN2111_OA_DATA_HDR_DV |
-			ADIN2111_OA_DATA_HDR_NORX;
-		hdr |= (!!port_idx << ADIN2111_OA_DATA_HDR_VS);
-		if (i == 1) {
-			hdr |= ADIN2111_OA_DATA_HDR_SV;
-		}
-		if (i == chunks) {
-			hdr |= ADIN2111_OA_DATA_HDR_EV;
-			hdr |= ebo << ADIN2111_OA_DATA_HDR_EBO;
-		}
+	/* Validate all batches before transmitting any part of the frame. */
+	preflight_frag = pkt->frags;
+	preflight_remaining = total_len;
+	first_chunk = 0U;
 
-		hdr |= eth_adin2111_oa_get_parity(hdr);
-
-		*(uint32_t *)&ctx->oa_tx_buf[cur] = sys_cpu_to_be32(hdr);
-		cur += sizeof(uint32_t);
-
-		clen = len > ctx->oa_cps ? ctx->oa_cps : len;
-		ret = net_pkt_read(pkt, &ctx->oa_tx_buf[cur], clen);
+	while (first_chunk < chunks) {
+		ret = adin2111_oa_tx_next_batch(&preflight_frag, &preflight_frag_off,
+						&preflight_remaining, first_chunk, chunks,
+						CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT,
+						tx_buf_max, ctx->tc6.cps, &batch_chunks,
+						&batch_buf_count);
 		if (ret < 0) {
-			LOG_ERR("Cannot read from tx packet");
+			if (ret == -ENOMEM) {
+				LOG_ERR("OA TX SPI buffer table cannot fit one chunk");
+			} else {
+				LOG_ERR("OA TX: packet fragment list ended too early");
+			}
+
 			return ret;
 		}
-		cur += ctx->oa_cps;
-		len -= clen;
+
+		first_chunk += batch_chunks;
 	}
 
-	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, cur);
+	ret = oa_tc6_read_status(&ctx->tc6, &ftr);
 	if (ret < 0) {
-		LOG_ERR("Error on SPI xfer");
+		LOG_ERR("Failed to read OA status, %d", ret);
 		return ret;
+	}
+
+	if (ctx->tc6.txc < chunks) {
+		return -EIO;
+	}
+
+	memset(pad_buf, 0, ctx->tc6.cps);
+	cur_frag = pkt->frags;
+	remaining = total_len;
+	frag_off = 0U;
+	first_chunk = 0U;
+
+	while (first_chunk < chunks) {
+		struct net_buf *batch_start_frag = cur_frag;
+		size_t batch_start_frag_off = frag_off;
+		size_t batch_start_remaining = remaining;
+
+		ret = adin2111_oa_tx_next_batch(&cur_frag, &frag_off, &remaining,
+						first_chunk, chunks,
+						CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT,
+						tx_buf_max, ctx->tc6.cps, &batch_chunks,
+						&batch_buf_count);
+		if (ret < 0) {
+			LOG_ERR("OA TX batch planning failed after preflight");
+			return ret;
+		}
+
+		struct adin2111_oa_tx_builder builder = {
+			.tx_bufs = tx_bufs,
+			.hdr_buf = hdr_buf,
+			.pad_buf = pad_buf,
+			.frag = batch_start_frag,
+			.frag_off = batch_start_frag_off,
+			.remaining = batch_start_remaining,
+			.first_chunk = first_chunk,
+			.batch_chunks = batch_chunks,
+			.chunks = chunks,
+			.tx_len = tx_len,
+			.cps = ctx->tc6.cps,
+			.port_idx = port_idx,
+		};
+
+		ret = adin2111_oa_tx_build_batch(&builder);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (builder.tx_buf_count != batch_buf_count) {
+			LOG_ERR("OA TX batch descriptor count mismatch");
+			return -EINVAL;
+		}
+
+		tx.buffers = tx_bufs;
+		tx.count = builder.tx_buf_count;
+
+		ret = spi_write_dt(&cfg->spi, &tx);
+		if (ret < 0) {
+			LOG_ERR("Error on SPI write");
+			return ret;
+		}
+
+		first_chunk += batch_chunks;
 	}
 
 	return 0;
@@ -523,7 +696,7 @@ int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg,
 	int rval;
 
 	if (ctx->oa) {
-		rval = eth_adin2111_reg_read_oa(dev, reg, val);
+		rval = oa_tc6_reg_read(&ctx->tc6, adin2111_oa_to_tc6_reg(reg), val);
 	} else {
 		rval = eth_adin2111_reg_read_generic(dev, reg, val);
 	}
@@ -538,7 +711,7 @@ int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg,
 	int rval;
 
 	if (ctx->oa) {
-		rval = eth_adin2111_reg_write_oa(dev, reg, val);
+		rval = oa_tc6_reg_write(&ctx->tc6, adin2111_oa_to_tc6_reg(reg), val);
 	} else {
 		rval = eth_adin2111_reg_write_generic(dev, reg, val);
 	}
@@ -759,6 +932,21 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 			}
 		} while (status1 & (ADIN2111_STATUS1_P1_RX_RDY | ADIN2111_STATUS1_P2_RX_RDY));
 
+		if (ctx->oa) {
+			uint32_t ftr;
+
+			ret = oa_tc6_read_status(&ctx->tc6, &ftr); /* refresh sync/exst */
+			if (ret < 0) {
+				LOG_ERR("Failed to read OA status, %d", ret);
+				goto continue_unlock;
+			}
+
+			ret = oa_tc6_check_status(&ctx->tc6);
+			if (ret < 0) {
+				goto continue_unlock;
+			}
+		}
+
 continue_unlock:
 		/* clear interrupts */
 		ret = eth_adin2111_reg_write(dev, ADIN2111_STATUS0, ADIN2111_STATUS0_CLEAR);
@@ -833,7 +1021,7 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 		 */
 		ret = eth_adin2111_reg_read(adin, ADIN2111_BUFSTS, &val);
 		if (ret < 0) {
-			return ret;
+			goto end_unlock;
 		}
 		rca = val & ADIN2111_BUFSTS_RCA_MASK;
 
@@ -1327,7 +1515,7 @@ static int adin2111_await_device(const struct device *dev)
 			if ((val >> 10) == ADIN2111_PHYID_OUI) {
 				/* clear RESETC */
 				ret = eth_adin2111_reg_write(dev, ADIN2111_STATUS0,
-							 ADIN2111_STATUS0_RESETC);
+							     ADIN2111_STATUS0_RESETC);
 				if (ret >= 0) {
 					break;
 				}
@@ -1375,6 +1563,10 @@ static int adin2111_init(const struct device *dev)
 		LOG_ERR("SPI bus %s not ready", cfg->spi.bus->name);
 		return -ENODEV;
 	}
+
+	ctx->tc6.spi = &cfg->spi;
+	ctx->tc6.cps = 64U;
+	ctx->tc6.protected = ctx->oa_prot;
 
 	if (!gpio_is_ready_dt(&cfg->interrupt)) {
 		LOG_ERR("Interrupt GPIO device %s is not ready",
@@ -1456,6 +1648,14 @@ static int adin2111_init(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Failed to write CONFIG0, %d", ret);
 		return ret;
+	}
+
+	if (ctx->oa && ctx->oa_prot) {
+		ret = oa_tc6_set_protected_ctrl(&ctx->tc6, true);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable OA protected ctrl, %d", ret);
+			return ret;
+		}
 	}
 
 	/* CONFIG 2 */
@@ -1549,42 +1749,44 @@ static const struct ethernet_api adin2111_port_api = {
 
 #define ADIN2111_SPI_OPERATION									\
 	((uint16_t)(SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
-#define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)					\
-	ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);		\
+#define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)                                        \
+	ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);                   \
 	COND_CODE_1(DT_INST_PROP(inst, spi_oa),							\
 	(											\
-		ADIN2111_DEF_BUF(name##_oa_tx_buf_##inst, ADIN2111_OA_BUF_SZ);			\
-		ADIN2111_DEF_BUF(name##_oa_rx_buf_##inst, ADIN2111_OA_BUF_SZ);			\
-	), ())											\
-	static const struct adin2111_config name##_config_##inst = {				\
-		.id = dev_id,									\
-		.spi = SPI_DT_SPEC_INST_GET(inst, ADIN2111_SPI_OPERATION),			\
-		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),				\
-		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, { 0 }),			\
-	};											\
-	static struct adin2111_data name##_data_##inst = {					\
-		.ifaces_left_to_init = ifaces,							\
-		.port = {},									\
-		.offload_sem = Z_SEM_INITIALIZER(name##_data_##inst.offload_sem, 0, 1),		\
-		.lock = Z_MUTEX_INITIALIZER(name##_data_##inst.lock),				\
-		.buf = name##_buffer_##inst,							\
-		.oa = DT_INST_PROP(inst, spi_oa),						\
-		.oa_prot = DT_INST_PROP(inst, spi_oa_protection),				\
-		.oa_cps = 64,									\
-		.oa_tx_buf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
-					 (name##_oa_tx_buf_##inst), (NULL)),			\
-		.oa_rx_buf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
-					 (name##_oa_rx_buf_##inst), (NULL)),			\
-	};											\
-	/* adin */										\
-	DEVICE_DT_DEFINE(DT_DRV_INST(inst), adin2111_init, NULL,				\
-			 &name##_data_##inst, &name##_config_##inst,				\
-			 POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,					\
-			 NULL);
+		ADIN2111_DEF_BUF(name##_oa_rx_buf_##inst, ADIN2111_OA_RX_BURST_SZ);                \
+		static struct spi_buf \
+			name##_oa_tx_bufs_##inst[CONFIG_ETH_ADIN2111_OA_TX_MAX_SPI_BUFS]; \
+		ADIN2111_DEF_BUF(name##_oa_tx_buf_##inst, ADIN2111_OA_TX_BURST_SZ); \
+	), ())                                            \
+	static const struct adin2111_config name##_config_##inst = {                               \
+		.id = dev_id,                                                                      \
+		.spi = SPI_DT_SPEC_INST_GET(inst, ADIN2111_SPI_OPERATION),                         \
+		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
+	};                                                                                         \
+	static struct adin2111_data name##_data_##inst = {                                         \
+		.ifaces_left_to_init = ifaces,                                                     \
+		.port = {},                                                                        \
+		.offload_sem = Z_SEM_INITIALIZER(name##_data_##inst.offload_sem, 0, 1),            \
+		.lock = Z_MUTEX_INITIALIZER(name##_data_##inst.lock),                              \
+		.buf = name##_buffer_##inst,                                                       \
+		.oa = DT_INST_PROP(inst, spi_oa),                                                  \
+		.oa_prot = DT_INST_PROP(inst, spi_oa_protection),                                  \
+		.oarxbuf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),                                 \
+					 (name##_oa_rx_buf_##inst), (NULL)),                       \
+		.oatxbuf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),                                 \
+					 (name##_oa_tx_buf_##inst), (NULL)),                       \
+		.oa_tx_bufs = COND_CODE_1(DT_INST_PROP(inst, spi_oa),                              \
+					 (name##_oa_tx_bufs_##inst), (NULL)),                      \
+	};                                                                                         \
+	/* adin */                                                                                 \
+	DEVICE_DT_DEFINE(DT_DRV_INST(inst), adin2111_init, NULL, &name##_data_##inst,              \
+			 &name##_config_##inst, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY, NULL);
 
-#define ADIN2111_MAC_INIT(inst)	ADIN2111_MAC_INITIALIZE(inst, ADIN2111_MAC, 2, adin2111)	\
-	/* ports */										\
-	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 0, 1, adin2111)				\
+#define ADIN2111_MAC_INIT(inst)                                                                    \
+	ADIN2111_MAC_INITIALIZE(inst, ADIN2111_MAC, 2, adin2111)                                   \
+	/* ports */                                                                                \
+	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 0, 1, adin2111)                                   \
 	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 1, 2, adin2111)
 
 #undef DT_DRV_COMPAT

@@ -5,6 +5,7 @@ menuconfig ETH_ADIN2111
 	bool "ADIN2111 2-port 10BASE-T1L Controller"
 	default y
 	depends on DT_HAS_ADI_ADIN2111_ENABLED || DT_HAS_ADI_ADIN1110_ENABLED
+	select ETH_OA_TC6
 	select SPI
 	imply CRC
 	help
@@ -53,5 +54,27 @@ config ETH_ADIN2111_BUFFER_SIZE
 	default 1524
 	help
 	  Transmission and reception buffer size.
+
+config ETH_ADIN2111_OA_MAX_RCA_COUNT
+	int "Maximum OA chunks handled per transfer"
+	range 1 255
+	default 255
+	help
+	   Maximum number of OPEN Alliance chunks transmitted or received in one SPI
+	   transfer. Lower values reduce OA buffer memory but may require more SPI
+	   transfers for large TX frames.
+
+config ETH_ADIN2111_OA_TX_MAX_SPI_BUFS
+	int "Maximum OA TX SPI buffer descriptors"
+	range 3 4096
+	default 511
+	help
+	  Maximum number of struct spi_buf descriptors allocated for one OA TX SPI
+	  transfer batch. The default supports 255 chunks with one descriptor for each
+	  chunk header and one for its contiguous payload, plus one descriptor for
+	  final-chunk padding. Highly fragmented packets may require more
+	  descriptors; the driver batches frames as needed and rejects a frame before
+	  the first SPI write if one chunk exceeds the configured capacity. Each
+	  descriptor uses sizeof(struct spi_buf) bytes of static RAM.
 
 endif # ETH_ADIN2111
