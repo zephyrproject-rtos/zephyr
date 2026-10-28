@@ -604,11 +604,11 @@ static unsigned int gicv3_its_alloc_intid(const struct device *dev)
 	return atomic_inc(&nlpi_intid);
 }
 
-static uint32_t gicv3_its_get_msi_addr(const struct device *dev)
+static uint64_t gicv3_its_get_msi_addr(const struct device *dev)
 {
 	const struct gicv3_its_config *cfg = (const struct gicv3_its_config *)dev->config;
 
-	return cfg->base_addr + GITS_TRANSLATER;
+	return (uint64_t)cfg->base_addr + GITS_TRANSLATER;
 }
 
 #define ITS_RDIST_MAP(n)									  \

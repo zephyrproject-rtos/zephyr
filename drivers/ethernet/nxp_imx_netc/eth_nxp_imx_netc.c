@@ -381,7 +381,7 @@ int netc_eth_init_common(const struct device *dev)
 	/* MSIX entry configuration */
 #ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 	int ret;
-	uint32_t msg_addr;
+	uint64_t msg_addr;
 
 	if (config->msi_dev == NULL) {
 		LOG_ERR("MSI device is not configured");
