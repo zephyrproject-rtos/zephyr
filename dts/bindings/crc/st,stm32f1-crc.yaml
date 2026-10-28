@@ -1,0 +1,20 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32F1-like CRC calculation unit
+
+description: |
+  STM32F1-like Cyclic Redundancy Check (CRC) calculation unit with
+  fix word-size (32 bits), polynomial (0x04C11DB7) and initial value
+  (0xFFFFFFFF).
+
+compatible: "st,stm32f1-crc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
