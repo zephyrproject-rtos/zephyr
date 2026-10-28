@@ -105,6 +105,11 @@ struct rc_dev_data {
 	struct k_spinlock evt_lock;
 	struct rtio_iodev_sqe *evt_head;
 	struct rtio_iodev_sqe *evt_tail;
+	struct rc_event key;
+	const struct rc_protocol *key_decoder;
+	bool key_pressed;
+	int64_t keyup_deadline;
+	struct k_work_delayable keyup_work;
 	/** @endcond */
 };
 

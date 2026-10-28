@@ -26,6 +26,11 @@ int rc_rx_submit(struct k_work *work)
 	return k_work_submit_to_queue(&rc_rx_wq, work);
 }
 
+int rc_rx_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
+{
+	return k_work_reschedule_for_queue(&rc_rx_wq, dwork, delay);
+}
+
 static uint64_t rc_cycles(void)
 {
 	if (IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {

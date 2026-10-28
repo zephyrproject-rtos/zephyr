@@ -8,6 +8,7 @@ project(rc_core)
 
 target_sources(app PRIVATE
   src/event.c
+  src/keystate.c
   src/main.c
   src/protocol.c
   src/raw.c
