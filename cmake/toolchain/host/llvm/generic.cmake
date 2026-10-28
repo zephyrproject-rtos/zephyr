@@ -8,7 +8,7 @@ if(LLVM_TOOLCHAIN_PATH)
   set(TOOLCHAIN_HOME ${LLVM_TOOLCHAIN_PATH}/bin/)
 endif()
 
-set(LLVM_TOOLCHAIN_PATH ${CLANG_ROOT_DIR} CACHE PATH "clang install directory")
+set(LLVM_TOOLCHAIN_PATH ${LLVM_TOOLCHAIN_PATH} CACHE PATH "clang install directory")
 
 set(COMPILER clang)
 set(BINTOOLS llvm)
