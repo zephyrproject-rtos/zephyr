@@ -197,18 +197,18 @@ def nrfutil_dictionary_from_serial(
     cmd = (
         "nrfutil trace stm --database-config "
         f"{config_str} "
-        f"--input-serialport {UART_PATH} "
-        f"--output-ascii {decoded_file_name}"
+        f"--input-serialport {UART_PATH}"
     )
     try:
         # run nrfutil trace in background non-blocking
         logger.info(f"Executing:\n{cmd}")
-        proc = subprocess.Popen(cmd.split(),
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                encoding='UTF-8',
-                                errors='replace')
+        with open(decoded_file_name, "wb") as out_f:
+            proc = subprocess.Popen(cmd.split(),
+                                    stdin=subprocess.PIPE,
+                                    stdout=out_f,
+                                    stderr=subprocess.STDOUT,
+                                    encoding='UTF-8',
+                                    errors='replace')
     except OSError as exc:
         logger.error(f"Unable to start nrfutil trace:\n{cmd}\n{exc}")
     try:
