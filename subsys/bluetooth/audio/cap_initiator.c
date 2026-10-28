@@ -11,7 +11,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <sys/errno.h>
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
@@ -625,6 +624,17 @@ static bool codec_cfg_and_data_eq(const struct bt_audio_codec_cfg *a,
 	       util_eq(a->data, a->data_len, b->data, b->data_len);
 }
 
+static bool qos_cfg_negotiated_eq(const struct bt_bap_qos_cfg *a, const struct bt_bap_qos_cfg *b)
+{
+	if (a == NULL || b == NULL) {
+		return false;
+	}
+
+	/* ASE QoS status does not contain the CIS test parameters (Max_PDU, BN and NSE) */
+	return a->interval == b->interval && a->framing == b->framing && a->phy == b->phy &&
+	       a->sdu == b->sdu && a->rtn == b->rtn && a->latency == b->latency && a->pd == b->pd;
+}
+
 static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 {
 	const enum bt_cap_common_subproc_type subproc_type = active_proc->subproc_type;
@@ -673,7 +683,7 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 					 */
 					__ASSERT(err == 0, "Failed to get QoS from stream %p: %d",
 						 bap_stream, err);
-					if (bt_bap_qos_cfg_eq(bap_stream->qos, &qos)) {
+					if (qos_cfg_negotiated_eq(bap_stream->qos, &qos)) {
 						proc_done_cnt++;
 					}
 				} else if (state < BT_BAP_EP_STATE_CODEC_CONFIGURED) {
@@ -863,7 +873,7 @@ get_next_proc_param(struct bt_cap_common_proc *active_proc)
 				 */
 				__ASSERT(err == 0, "Failed to get QoS from stream %p: %d",
 					 bap_stream, err);
-				if (!bt_bap_qos_cfg_eq(bap_stream->qos, &qos)) {
+				if (!qos_cfg_negotiated_eq(bap_stream->qos, &qos)) {
 					return proc_param;
 				}
 			}
