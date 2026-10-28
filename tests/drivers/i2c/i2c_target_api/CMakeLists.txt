@@ -7,6 +7,5 @@ project(i2c_target_api)
 
 add_subdirectory(common)
 
-FILE(GLOB app_sources src/*.c)
-
-target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_I2C_TARGET_API_PM app PRIVATE src/test_i2c_pm.c)
