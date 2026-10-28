@@ -257,6 +257,15 @@ static uint32_t ifx_dmic_cic_decim_factor(cy_en_pdm_pcm_ch_cic_decimcode_t code)
 	return 2U << (uint32_t)code;
 }
 
+/* FIR0_DECIM_1 = 0 ... FIR0_DECIM_5 = 4, decimation factor is code + 1. FIR0 is
+ * disabled by default, in which case it contributes a factor of 1 regardless
+ * of the configured decimation code.
+ */
+static uint32_t ifx_dmic_fir0_decim_factor(bool enable, cy_en_pdm_pcm_ch_fir0_decimcode_t code)
+{
+	return enable ? ((uint32_t)code + 1U) : 1U;
+}
+
 /* FIR1_DECIM_1 = 0 ... FIR1_DECIM_4 = 3, decimation factor is code + 1 */
 static uint32_t ifx_dmic_fir1_decim_factor(cy_en_pdm_pcm_ch_fir1_decimcode_t code)
 {
@@ -344,16 +353,38 @@ static int ifx_dmic_configure(const struct device *dev, struct dmic_cfg *cfg)
 		ifx_cat1_utils_peri_pclk_get_frequency(PCLK_PDM0_CLK_IF_SRSS, &data->clock);
 
 	/* The PDM clock to PCM sample rate ratio (oversampling) is determined by the
-	 * CIC and FIR1 decimation configured for the first requested channel. All
-	 * channels sharing this PDM instance's clock are expected to use the same
-	 * decimation configuration.
+	 * CIC, FIR0, and FIR1 decimation configured for the first requested channel.
+	 * All channels sharing this PDM instance's clock are required to use the
+	 * same decimation configuration, so verify that here rather than assume it.
 	 */
 	dmic_parse_channel_map(channel->req_chan_map_lo, channel->req_chan_map_hi, 0, &pdm_ctl_idx,
 			       &lr);
 	uint8_t pdm_ch_n0 = (2 * pdm_ctl_idx) + ((lr == PDM_CHAN_LEFT) ? 0U : 1U);
+	cy_stc_pdm_pcm_channel_config_t *ch_cfg0 = &data->pdm_pcm_ch_cfg[pdm_ch_n0];
+
+	for (uint8_t ch = 1; ch < channel->req_num_chan; ch++) {
+		uint8_t pdm_ctl_idx_n;
+		enum pdm_lr lr_n;
+
+		dmic_parse_channel_map(channel->req_chan_map_lo, channel->req_chan_map_hi, ch,
+				       &pdm_ctl_idx_n, &lr_n);
+		uint8_t pdm_ch_n = (2 * pdm_ctl_idx_n) + ((lr_n == PDM_CHAN_LEFT) ? 0U : 1U);
+		cy_stc_pdm_pcm_channel_config_t *ch_cfg_n = &data->pdm_pcm_ch_cfg[pdm_ch_n];
+
+		if ((ch_cfg_n->cic_decim_code != ch_cfg0->cic_decim_code) ||
+		    (ch_cfg_n->fir0_enable != ch_cfg0->fir0_enable) ||
+		    (ch_cfg_n->fir0_decim_code != ch_cfg0->fir0_decim_code) ||
+		    (ch_cfg_n->fir1_decim_code != ch_cfg0->fir1_decim_code)) {
+			LOG_ERR("All channels must share the same CIC/FIR0/FIR1 decimation "
+				"configuration");
+			return -EINVAL;
+		}
+	}
+
 	uint32_t oversampling =
-		ifx_dmic_cic_decim_factor(data->pdm_pcm_ch_cfg[pdm_ch_n0].cic_decim_code) *
-		ifx_dmic_fir1_decim_factor(data->pdm_pcm_ch_cfg[pdm_ch_n0].fir1_decim_code);
+		ifx_dmic_cic_decim_factor(ch_cfg0->cic_decim_code) *
+		ifx_dmic_fir0_decim_factor(ch_cfg0->fir0_enable, ch_cfg0->fir0_decim_code) *
+		ifx_dmic_fir1_decim_factor(ch_cfg0->fir1_decim_code);
 
 	/* clkDiv is the register field and represents a divider value of clkDiv + 1.
 	 * Equivalent to round-to-nearest of peri_freq / (pcm_rate * oversampling) using
