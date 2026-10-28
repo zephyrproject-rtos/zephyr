@@ -1406,6 +1406,14 @@ Display drivers:
     - drivers.display
     - sample.display
 
+Division by Reciprocal:
+  status: maintained
+  maintainers:
+    - npitre
+  files:
+    - include/zephyr/sys/div64.h
+    - lib/os/div64.c
+
 Documentation:
   status: maintained
   maintainers:
