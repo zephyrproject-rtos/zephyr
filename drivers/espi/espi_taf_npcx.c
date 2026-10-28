@@ -373,6 +373,15 @@ static int taf_npcx_completion_handler(const struct device *dev, uint8_t type, u
 
 	taf_set_flash_c_avail(dev);
 
+	if (WAIT_FOR(IS_BIT_SET(inst->ESPISTS, NPCX_ESPISTS_FLNACS),
+		CONFIG_ESPI_TAF_TX_AVAIL_CHECK_TIME, NULL) == false) {
+		LOG_ERR("TAF completion transmission timeout");
+		return -ETIMEDOUT;
+	}
+
+	/* W1C: acknowledge the completion-sent indication. */
+	inst->ESPISTS = BIT(NPCX_ESPISTS_FLNACS);
+
 	if (!CYC_TYPE_IS_CONTINUATION(type)) {
 		taf_release_flash_np_free(dev);
 	}
