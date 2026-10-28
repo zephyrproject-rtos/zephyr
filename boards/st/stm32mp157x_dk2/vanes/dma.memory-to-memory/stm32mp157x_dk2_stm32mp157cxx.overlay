@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dmamux: dma-test-dmamux {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dmamux>;
+		channels = <6 10 2>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux {
+	status = "okay";
+};

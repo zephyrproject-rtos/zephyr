@@ -1,3 +1,6 @@
+SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+SPDX-License-Identifier: Apache-2.0
+
 UART receiver error handling test
 =================================
 
@@ -27,7 +30,9 @@ Minimum wiring:
 
 For hardware flow control tests, also connect RTS/CTS between the instances.
 
-Board overlays may define optional GPIO nodes used by stop-bit injection:
+The board describes the two instances and the wire in its vane for the
+uart.pair test setup (see tests/vanes/uart.pair.yml), which may define
+optional GPIO nodes used by stop-bit injection:
 
   fake_tx  - GPIO bit-banging on the dut_aux TX line
   fake_cts - GPIO input on dut_aux CTS (wired to dut RTS) for *_hwfc cases

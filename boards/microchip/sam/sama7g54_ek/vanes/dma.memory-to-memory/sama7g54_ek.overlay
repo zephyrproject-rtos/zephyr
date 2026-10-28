@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma0: dma-test-dma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma0>;
+		channels = <4 7>;
+	};
+
+	dma_test_dma1: dma-test-dma1 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma1>;
+		channels = <4 7>;
+	};
+
+	dma_test_dma2: dma-test-dma2 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma2>;
+		channels = <4 7>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};

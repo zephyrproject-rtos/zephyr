@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dmac: dma-test-dmac {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dmac>;
+		scatter-gather;
+		cyclic;
+	};
+};
+
+&dmac {
+	status = "okay";
+};

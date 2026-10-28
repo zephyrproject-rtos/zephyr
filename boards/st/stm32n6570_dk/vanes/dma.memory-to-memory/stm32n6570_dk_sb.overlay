@@ -1,0 +1,27 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 STMicroelectronics
+ */
+
+/ {
+	dma_test_gpdma1: dma-test-gpdma1 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&gpdma1>;
+		channels = <0 1 8>;
+	};
+
+	dma_test_hpdma1: dma-test-hpdma1 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&hpdma1>;
+		channels = <0 1 8>;
+	};
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&hpdma1 {
+	status = "okay";
+};

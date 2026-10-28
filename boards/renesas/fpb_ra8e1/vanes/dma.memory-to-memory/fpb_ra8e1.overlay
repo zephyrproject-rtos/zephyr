@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma0: dma-test-dma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma0>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+	interrupts = <95 1>, <94 1>, <93 1>;
+	interrupt-names = "ch0", "ch1", "ch2";
+};

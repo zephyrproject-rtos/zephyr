@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dmamux1: dma-test-dmamux1 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dmamux1>;
+		channels = <2>;
+	};
+};
+
+&dmamux1 {
+	status = "okay";
+};

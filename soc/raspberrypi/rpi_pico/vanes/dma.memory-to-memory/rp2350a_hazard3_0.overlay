@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Andrew Featherstone <andrew.featherstone@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma: dma-test-dma {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma>;
+	};
+};
+
+&dma {
+	status = "okay";
+};

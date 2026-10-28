@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dmac: dma-test-dmac {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dmac>;
+		max-transfer-size = <2048>;
+	};
+};
+
+&dmac {
+	status = "okay";
+};

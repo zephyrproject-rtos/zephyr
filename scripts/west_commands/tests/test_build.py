@@ -180,6 +180,40 @@ def test_cmake_args(monkeypatch, test_case):
     b._run_cmake(board='any', origin=None)
 
 
+def test_test_item_requires_setups(tmp_path):
+    """Test: -T passes the setups a scenario requires as VANES."""
+    test_dir = tmp_path / 'tests' / 'app'
+    test_dir.mkdir(parents=True)
+    (test_dir / 'tests.yaml').write_text(
+        'common:\n'
+        '  requires:\n'
+        '    - api: gpio\n'
+        '    - setup: gpio.loopback\n'
+        'tests:\n'
+        '  app.test:\n'
+        '    requires:\n'
+        '      - setup: pwm.loopback\n'
+        '  app.plain: {}\n'
+    )
+
+    def cmake_opts_for(item):
+        b = Build()
+        b.config = _FakeConfig()
+        parser = argparse.ArgumentParser(allow_abbrev=False)
+        command_parser = b.do_add_parser(parser.add_subparsers())
+        b.args, remainder = command_parser.parse_known_args(
+            ['-b', 'native_sim', '-T', str(test_dir / item)]
+        )
+        b._parse_remainder(remainder)
+        b.source_dir = os.getcwd()
+        b.args.cmake_opts = getattr(b.args, 'cmake_opts', [])
+        b._resolve_test_item('native_sim')
+        return b.args.cmake_opts
+
+    assert cmake_opts_for('app.test') == ['-DVANES=gpio.loopback;pwm.loopback']
+    assert cmake_opts_for('app.plain') == ['-DVANES=gpio.loopback']
+
+
 def test_test_item_updates_source_dir(tmp_path, monkeypatch):
     """Test: _resolve_test_item sets source_dir from test path, not CWD."""
     sample_dir = tmp_path / 'samples' / 'app'

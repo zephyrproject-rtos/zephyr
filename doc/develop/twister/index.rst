@@ -850,6 +850,36 @@ filter: <expression>
 
     Would match it.
 
+.. _twister_requires:
+
+requires: <list of requirements>
+    What the scenario needs, stated without naming boards. Each entry is one
+    of:
+
+    ``api: <feature>``
+        A feature the platform has to support, as listed under ``supported``
+        in its board metadata; the same check as ``depends_on``.
+
+    ``setup: <name>``
+        A test setup a board provides: two wired pins, a loopback on a bus, a
+        known voltage on an ADC input. The setup is defined under
+        :file:`tests/vanes/` and a board realizes it with a vane of its own,
+        or with its own devicetree when the setup names what the devicetree
+        shows (see :ref:`vanes`). Twister filters the platforms whose board
+        has no vane for a setup only a vane provides, leaves the others to
+        the scenario's ``filter``, and builds those with a vane with its
+        files. A run needs
+        the fixtures the scenario names, each replaced or waived by a vane
+        naming it, plus those the vanes name on their own.
+
+    .. code-block:: yaml
+
+        tests:
+          drivers.counter.capture:
+            requires:
+              - api: counter
+              - setup: counter.capture
+
 required_snippets: <list of needed snippets>
     :ref:`Snippets <snippets>` are supported in twister for test scenarios that
     require them. As with normal applications, twister supports using the base
@@ -1121,6 +1151,18 @@ Expressions
 
 **Parameters:**
    - ``label``: The node label to match.
+   - ``prop``: The node's property to check.
+
+``dt_compat_any_prop_enabled(compat, prop)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if any enabled DT node with the specified compatible has the specified property with
+   a non-empty value. Useful for a capability a board states on a node of its own, whose label
+   differs from board to board.
+
+**Parameters:**
+   - ``compat``: The compatible string to match.
    - ``prop``: The node's property to check.
 
 ``dt_node_has_prop(node_id, prop)``

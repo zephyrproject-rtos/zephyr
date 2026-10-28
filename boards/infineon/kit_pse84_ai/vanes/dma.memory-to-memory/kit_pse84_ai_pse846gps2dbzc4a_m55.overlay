@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma0: dma-test-dma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma0>;
+		scatter-gather;
+		max-transfer-size = <256>;
+	};
+
+	dma_test_axidmac: dma-test-axidmac {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&axidmac>;
+		scatter-gather;
+		max-transfer-size = <256>;
+	};
+
+	dma_test_dma1: dma-test-dma1 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma1>;
+		max-transfer-size = <256>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&axidmac {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};

@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 GARDENA GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma: dma-test-dma {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma>;
+		max-transfer-size = <1024>;
+	};
+};
+
+&dma {
+	status = "okay";
+};

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A DMA controller a test can run memory-to-memory transfers on, described
+  in a test-dma-memory-to-memory node with the channels the test may take,
+  the largest transfer the controller does and the memory region the
+  buffers have to be in, with the controller enabled.
+compatible: test-dma-memory-to-memory

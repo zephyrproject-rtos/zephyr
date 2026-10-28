@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma: dma-test-dma {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma>;
+		channels = <4>;
+		max-transfer-size = <4094>;
+	};
+};
+
+&dma {
+	status = "okay";
+};

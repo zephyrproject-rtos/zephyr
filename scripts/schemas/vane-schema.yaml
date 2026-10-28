@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# JSON Schema for a board's or SoC's realization of a test setup,
+# vanes/<setup>/vane.yml
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+properties:
+  fixture:
+    # What this hardware needs instead of the fixture the test scenario names:
+    # a fixture the scenario does not name, or a mapping from fixtures the
+    # scenario names to their replacement here, 'none' for none
+    oneOf:
+      - type: string
+      - type: object
+        additionalProperties:
+          type: string
+        minProperties: 1
+additionalProperties: false

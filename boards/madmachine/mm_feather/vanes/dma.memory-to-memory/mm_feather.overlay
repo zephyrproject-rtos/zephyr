@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_edma0: dma-test-edma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&edma0>;
+	};
+};
+
+&edma0 {
+	status = "okay";
+};

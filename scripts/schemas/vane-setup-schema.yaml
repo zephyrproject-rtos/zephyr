@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# JSON Schema for a test setup definition, tests/vanes/<setup>.yml
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+properties:
+  name:
+    type: string
+  description:
+    type: string
+  # What the devicetree shows when the setup is provided, at most one of
+  # compatible, chosen and node; a setup naming none is provided only with
+  # a vane
+  compatible:
+    # An enabled node with this compatible
+    type: string
+  chosen:
+    # This chosen node, enabled
+    type: string
+  node:
+    # The node at this path
+    type: string
+  property:
+    # A property the node has
+    type: string
+required:
+  - description
+additionalProperties: false

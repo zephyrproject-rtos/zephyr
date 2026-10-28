@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2026 Meta Platforms
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run the
+    tests/drivers/counter/counter_capture test in Zephyr, in a board's
+    vane for the counter.capture test setup.
+
+compatible: "test-counter-capture"
+
+properties:
+  test-counter-captures:
+    type: phandle-array
+    required: true
+    description: |
+      Counter pins that will be used for capturing a rising and falling edge of a
+      gpio signal. The first index is the channel number.
+
+  capture-tolerance-us:
+    type: int
+    default: 100
+    description: |
+      Largest difference, in microseconds, between the counter value read
+      just before the trigger toggles and the timestamp the capture records,
+      for the signal path of this board.

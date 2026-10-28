@@ -286,6 +286,16 @@ def ast_expr(ast, env, edt):
         if node and prop in node.props and node.props[prop].val:
             return True
         return False
+    elif ast[0] == "dt_compat_any_prop_enabled":
+        # Whether an enabled node with the compatible has the property with a
+        # non-empty value, for a property a board sets on a node of its own
+        compat = ast[1][0]
+        prop = ast[1][1]
+        for node in edt.nodes:
+            if (node.matching_compat == compat or compat in node.compats) and \
+                    node.status == "okay" and prop in node.props and node.props[prop].val:
+                return True
+        return False
     elif ast[0] == "dt_node_has_prop":
         # 1st arg 'node_id' must be a valid node alias (defined in aliases node)
         # or a node path

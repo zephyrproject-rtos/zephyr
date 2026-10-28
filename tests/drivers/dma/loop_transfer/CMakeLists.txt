@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.28.0)
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(loop_transfer)
+project(dma_loop_transfer)
 
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
-
-zephyr_code_relocate(FILES src/test_dma_loop.c LOCATION ${CONFIG_DMA_LOOP_TRANSFER_RELOCATE_SECTION}_RODATA_BSS)
+target_sources(app PRIVATE src/test_loop_transfer.c ../common/dma_test.c)
+target_include_directories(app PRIVATE ../common)

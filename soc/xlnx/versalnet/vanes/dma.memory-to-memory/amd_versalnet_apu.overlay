@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_adma0: dma-test-adma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&adma0>;
+		channels = <0>;
+	};
+};
+
+&adma0 {
+	status = "okay";
+};
