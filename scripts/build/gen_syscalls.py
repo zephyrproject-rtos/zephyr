@@ -408,10 +408,16 @@ def marshall_defs(func_name, func_type, args):
 
     if func_type == "void":
         mrsh += "\t" + f"{vrfy_call};\n"
+        mrsh += "#ifdef CONFIG_STACK_USAGE\n"
+        mrsh += "\t" + f"z_syscall_stack_measure(K_SYSCALL_{func_name.upper()});\n"
+        mrsh += "#endif\n"
         mrsh += "\t" + "_current->syscall_frame = NULL;\n"
         mrsh += "\t" + "return 0;\n"
     else:
         mrsh += "\t" + f"{func_type} ret = {vrfy_call};\n"
+        mrsh += "#ifdef CONFIG_STACK_USAGE\n"
+        mrsh += "\t" + f"z_syscall_stack_measure(K_SYSCALL_{func_name.upper()});\n"
+        mrsh += "#endif\n"
 
         if need_split(func_type):
             rval = mrsh_rval(nmrsh - 1, nmrsh)
