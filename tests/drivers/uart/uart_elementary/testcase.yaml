@@ -152,6 +152,8 @@ tests:
       - CONFIG_PM_DEVICE_RUNTIME=y
   drivers.uart.uart_elementary.lp_am13e230:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    harness_config:
+      fixture: uart_loopback_rts_cts
     platform_allow:
       - lp_am13e230
     integration_platforms:
