@@ -19,36 +19,6 @@ K_THREAD_STACK_DEFINE(wait_thread_stack_area, WAIT_THREAD_STACK_SIZE);
 struct k_thread wait_thread_data;
 
 /* Define result of CRC computation */
-#define RESULT_CRC_16_THREADSAFE_WAIT_THREAD_ENTRY 0xD543
-
-/**
- * 1) Take the semaphore
- * 2) Sleep for 50 ms (to allow ztest main thread to attempt to acquire semaphore)
- * 3) Give the semaphore
- */
-static void wait_thread_entry(void *a, void *b, void *c)
-{
-	static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_crc));
-
-	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
-
-	struct crc_ctx ctx = {
-		.type = CRC16,
-		.polynomial = CRC16_POLY,
-		.seed = CRC16_INIT_VAL,
-		.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT,
-	};
-
-	crc_begin(dev, &ctx);
-
-	k_sleep(K_MSEC(50));
-
-	crc_update(dev, &ctx, data, sizeof(data));
-	crc_finish(dev, &ctx);
-	zassert_equal(crc_verify(&ctx, RESULT_CRC_16_THREADSAFE_WAIT_THREAD_ENTRY), 0);
-}
-
-/* Define result of CRC computation */
 #define RESULT_CRC_8 0xB2
 
 /**
@@ -351,19 +321,53 @@ ZTEST(crc, test_crc_16_ccitt_remain_2)
 #define CRC_TEST_POLY                       CRC8_POLY
 #define CRC_TEST_INIT_VAL                   CRC8_INIT_VAL
 #define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
-#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0x75
 #elif defined(CONFIG_CRC_DRIVER_HAS_CRC16)
 #define CRC_TEST_VARIANT                    CRC16
 #define CRC_TEST_POLY                       CRC16_POLY
 #define CRC_TEST_INIT_VAL                   CRC16_INIT_VAL
 #define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
-#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0xBDE3
-#else
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC32_C)
 #define CRC_TEST_VARIANT                    CRC32_C
 #define CRC_TEST_POLY                       CRC32C_POLY
 #define CRC_TEST_INIT_VAL                   CRC32_C_INIT_VAL
 #define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
+#else
+#define CRC_TEST_VARIANT        CRC32_IEEE
+#define CRC_TEST_POLY           CRC32_IEEE_POLY
+#define CRC_TEST_INIT_VAL       CRC32_IEEE_INIT_VAL
+#define CRC_TEST_REVERSE_CONFIG (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
+#endif
+
+#if !IS_ENABLED(CONFIG_CRC_DRIVER_NEEDS_WORDS)
+
+#define CRC_TEST_DISCONTINUOUS_BUF_DATA1 {0x0A, 0x2B, 0x4C, 0x6D, 0x8E}
+#define CRC_TEST_DISCONTINUOUS_BUF_DATA2 {0x49, 0x00, 0xC4, 0x3B, 0x78}
+
+#ifdef CONFIG_CRC_DRIVER_HAS_CRC8
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0x75
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC16)
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0xBDE3
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC32_C)
 #define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0x20477127
+#else
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0xe5cc797c
+#endif
+
+#else
+
+#define CRC_TEST_DISCONTINUOUS_BUF_DATA1 {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x12, 0x9F, 0x53}
+#define CRC_TEST_DISCONTINUOUS_BUF_DATA2 {0x49, 0x00, 0xC4, 0x3B, 0x78, 0x33, 0xB1, 0x86}
+
+#ifdef CONFIG_CRC_DRIVER_HAS_CRC8
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0xB4
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC16)
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0xF074
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC32_C)
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0x12438a53
+#else
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0x7340bc63
+#endif
+
 #endif
 
 /**
@@ -373,8 +377,8 @@ ZTEST(crc, test_discontinuous_buf)
 {
 	static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_crc));
 
-	uint8_t data1[5] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E};
-	uint8_t data2[5] = {0x49, 0x00, 0xC4, 0x3B, 0x78};
+	uint8_t data1[] = CRC_TEST_DISCONTINUOUS_BUF_DATA1;
+	uint8_t data2[] = CRC_TEST_DISCONTINUOUS_BUF_DATA2;
 
 	struct crc_ctx ctx = {
 		.type = CRC_TEST_VARIANT,
@@ -391,13 +395,63 @@ ZTEST(crc, test_discontinuous_buf)
 }
 
 /* Define result of CRC computation */
+#if !IS_ENABLED(CONFIG_CRC_DRIVER_NEEDS_WORDS)
+
+#define CRC_TEST_THREADSAFE_DATA {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4, 0x3D, 0x4D, 0x51}
+
 #ifdef CONFIG_CRC_DRIVER_HAS_CRC8
 #define CRC_TEST_THREADSAFE_EXPECTED 0xBB
 #elif defined(CONFIG_CRC_DRIVER_HAS_CRC16)
 #define CRC_TEST_THREADSAFE_EXPECTED 0x24CA
-#else
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC32_C)
 #define CRC_TEST_THREADSAFE_EXPECTED 0x9BCEE9AB
+#else
+#define CRC_TEST_THREADSAFE_EXPECTED 0x3184C185
 #endif
+
+#else
+
+#define CRC_TEST_THREADSAFE_DATA                                                                   \
+	{0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4, 0x3D, 0x4D, 0x51, 0xF7}
+
+#ifdef CONFIG_CRC_DRIVER_HAS_CRC8
+#define CRC_TEST_THREADSAFE_EXPECTED 0x79
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC16)
+#define CRC_TEST_THREADSAFE_EXPECTED 0xD1E5
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC32_C)
+#define CRC_TEST_THREADSAFE_EXPECTED 0X1CFDDBEA
+#else
+#define CRC_TEST_THREADSAFE_EXPECTED 0x6C387B5C
+#endif
+
+#endif
+
+/**
+ * 1) Take the semaphore
+ * 2) Sleep for 50 ms (to allow ztest main thread to attempt to acquire semaphore)
+ * 3) Give the semaphore
+ */
+static void wait_thread_entry(void *a, void *b, void *c)
+{
+	static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_crc));
+
+	uint8_t data[] = CRC_TEST_THREADSAFE_DATA;
+
+	struct crc_ctx ctx = {
+		.type = CRC_TEST_VARIANT,
+		.polynomial = CRC_TEST_POLY,
+		.seed = CRC_TEST_INIT_VAL,
+		.reversed = CRC_TEST_REVERSE_CONFIG,
+	};
+
+	crc_begin(dev, &ctx);
+
+	k_sleep(K_MSEC(50));
+
+	crc_update(dev, &ctx, data, sizeof(data));
+	crc_finish(dev, &ctx);
+	zassert_equal(crc_verify(&ctx, CRC_TEST_THREADSAFE_EXPECTED), 0);
+}
 
 /**
  * @brief Test CRC function semaphore wait for thread safety
@@ -407,10 +461,9 @@ ZTEST(crc, test_discontinuous_buf)
  */
 ZTEST(crc, test_crc_threadsafe)
 {
-
 	static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_crc));
 
-	uint8_t data[11] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4, 0x3D, 0x4D, 0x51};
+	uint8_t data[] = CRC_TEST_THREADSAFE_DATA;
 
 	struct crc_ctx ctx = {
 		.type = CRC_TEST_VARIANT,
