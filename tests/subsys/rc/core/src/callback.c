@@ -26,6 +26,7 @@ static size_t dev8_count;
 static bool dev8_on_rc_rx;
 static void *dev8_user_data;
 static int dev8_sync_ret;
+static int dev8_send_ret;
 static atomic_t all_dev8_count;
 static atomic_t dev7_count;
 static K_SEM_DEFINE(dev8_sem, 0, LOG_SIZE);
@@ -41,6 +42,8 @@ static void dev8_cb(const struct device *dev, const struct rc_event *evt, void *
 	dev8_on_rc_rx = (strcmp(k_thread_name_get(k_current_get()), "rc_rx") == 0);
 	dev8_user_data = user_data;
 	dev8_sync_ret = rc_receive_sync(dev, &unused, K_NO_WAIT);
+	dev8_send_ret =
+		rc_send_raw_sync(dev, &(const uint32_t){RC_RAW_PULSE_US(100)}, 1, K_NO_WAIT);
 	k_sem_give(&dev8_sem);
 }
 
@@ -115,6 +118,7 @@ ZTEST(rc_callback, test_receive_sync_deadlock)
 	inject(100);
 	zassert_ok(k_sem_take(&dev8_sem, K_MSEC(500)));
 	zassert_equal(dev8_sync_ret, -EDEADLK);
+	zassert_equal(dev8_send_ret, -EDEADLK);
 }
 
 ZTEST(rc_callback, test_filter)

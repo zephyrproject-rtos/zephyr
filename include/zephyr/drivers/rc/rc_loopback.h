@@ -61,6 +61,37 @@ uint32_t rc_loopback_rx_timeout_us(const struct device *dev);
  */
 int rc_loopback_inject(const struct device *dev, const uint32_t *words, size_t count);
 
+/**
+ * @brief Get the last transmission and the carrier set by the rc core.
+ *
+ * @param dev Loopback rc device.
+ * @param words Filled with the words of the last transmission.
+ * @param max Size of @p words.
+ * @param hz Filled with the last carrier frequency set, 0 if never set.
+ * @param duty_pct Filled with the last duty cycle set, 0 if never set.
+ *
+ * @return Number of words copied.
+ */
+size_t rc_loopback_tx_get(const struct device *dev, uint32_t *words, size_t max, uint32_t *hz,
+			  uint8_t *duty_pct);
+
+/**
+ * @brief Get the number of transmissions so far.
+ *
+ * @param dev Loopback rc device.
+ *
+ * @return Number of transmissions.
+ */
+uint32_t rc_loopback_tx_total(const struct device *dev);
+
+/**
+ * @brief Hold or release transmissions.
+ *
+ * @param dev Loopback rc device.
+ * @param hold true to hold, false to release.
+ */
+void rc_loopback_tx_hold(const struct device *dev, bool hold);
+
 /** @} */
 
 #ifdef __cplusplus

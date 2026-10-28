@@ -67,6 +67,50 @@ config RC_RECEIVE_SYNC_MAX
 	  time. One global limit shared by all rc devices. Sizes the
 	  rc-owned RTIO context used by the call.
 
+config RC_TX
+	bool
+	help
+	  Transmit support: the rc transmit work queue, RC_DT_TX_IODEV(),
+	  rc_send_raw_sync() and rc_set_tx_carrier(). Selected by drivers of
+	  devices that can transmit.
+
+if RC_TX
+
+config RC_TX_WORKQ_STACK_SIZE
+	int "Transmit work queue stack size"
+	default 2048 if 64BIT || SPARC
+	default 1024
+	help
+	  Stack size of the work queue that transmits for all rc devices.
+
+config RC_TX_WORKQ_PRIORITY
+	int "Transmit work queue priority"
+	default 12
+	help
+	  Preemptible priority of the work queue that transmits for all rc
+	  devices. Lower than the receive work queue by default, so decoding
+	  is not delayed by a driver transmitting.
+
+config RC_SEND_SYNC_MAX
+	int "Maximum concurrent rc_send_raw_sync() calls"
+	default 2
+	range 1 64
+	help
+	  Number of threads that can wait in rc_send_raw_sync() at the same
+	  time. One global limit shared by all rc devices. Sizes the
+	  rc-owned RTIO context used by the call.
+
+config RC_TX_BUFFER_WORDS
+	int "Transmit buffer size, in words"
+	default 256
+	range 1 4096
+	help
+	  Size of the buffer that raw transmissions are copied into before
+	  they are sent, shared by all rc devices. A raw transmission has at
+	  most this many words.
+
+endif # RC_TX
+
 module = RC
 module-str = rc
 source "subsys/logging/Kconfig.template.log_config"

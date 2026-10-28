@@ -73,7 +73,7 @@ __subsystem struct rc_driver_api {
 	int (*set_rx_timeout)(const struct device *dev, uint32_t us);
 	/** Set TX carrier frequency and duty cycle. Optional. */
 	int (*set_carrier)(const struct device *dev, uint32_t hz, uint8_t duty_pct);
-	/** Transmit raw words, blocking until the last word is sent. Mandatory for transmitters. */
+	/** Transmit raw words, blocking until sent. Mandatory for transmitters. */
 	int (*tx)(const struct device *dev, const uint32_t *words, size_t count);
 };
 
@@ -105,6 +105,10 @@ struct rc_dev_data {
 	struct k_spinlock evt_lock;
 	struct rtio_iodev_sqe *evt_head;
 	struct rtio_iodev_sqe *evt_tail;
+#ifdef CONFIG_RC_TX
+	uint32_t tx_carrier_hz;
+	uint8_t tx_duty_pct;
+#endif
 	struct rc_event key;
 	const struct rc_protocol *key_decoder;
 	bool key_pressed;
@@ -120,6 +124,10 @@ struct z_rc_init_cfg {
 	uint32_t rx_timeout_us;
 	struct rc_raw_ring *ring;
 	uint8_t *decoder_state;
+#ifdef CONFIG_RC_TX
+	uint32_t tx_carrier_hz;
+	uint8_t tx_duty_pct;
+#endif
 };
 
 int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct device *dev),
@@ -143,6 +151,8 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
 
 #define Z_RC_STATE_DEFINE(node_id)                                                                 \
 	BUILD_ASSERT(IS_POWER_OF_TWO(CONFIG_RC_RAW_BUFFER_SIZE));                                  \
+	BUILD_ASSERT(IN_RANGE(DT_PROP_OR(node_id, duty_cycle_percent, 50), 1, 99),                 \
+		     "duty-cycle-percent must be 1 to 99");                                        \
 	static uint32_t Z_RC_NAME(z_rc_raw_buf_, node_id)[CONFIG_RC_RAW_BUFFER_SIZE];              \
 	static struct rc_raw_ring Z_RC_NAME(z_rc_raw_ring_, node_id) =                             \
 		SPSC_INITIALIZER(CONFIG_RC_RAW_BUFFER_SIZE, Z_RC_NAME(z_rc_raw_buf_, node_id));    \
@@ -154,6 +164,9 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
 		.rx_timeout_us = DT_PROP_OR(node_id, rx_timeout_us, 0),                            \
 		.ring = &Z_RC_NAME(z_rc_raw_ring_, node_id),                                       \
 		.decoder_state = Z_RC_NAME(z_rc_decoder_state_, node_id),                          \
+		IF_ENABLED(CONFIG_RC_TX,                                                           \
+			   (.tx_carrier_hz = DT_PROP_OR(node_id, carrier_hz, 0),                   \
+			    .tx_duty_pct = DT_PROP_OR(node_id, duty_cycle_percent, 0),))           \
 	}
 /** @endcond */
 

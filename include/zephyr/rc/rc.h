@@ -240,7 +240,12 @@ struct rc_raw_iodev_data {
 };
 
 extern const struct rtio_iodev_api rc_raw_iodev_api;
+
+extern const struct rtio_iodev_api rc_tx_iodev_api;
 /** @endcond */
+
+/** Maximum total duration of one raw transmission in us, as Linux IR_MAX_DURATION */
+#define RC_TX_MAX_DURATION_US 1000000U
 
 /**
  * @brief Define an RTIO iodev streaming the events of an rc device.
@@ -265,6 +270,21 @@ extern const struct rtio_iodev_api rc_raw_iodev_api;
 		.config = {.dev = DEVICE_DT_GET(node_id)},                                         \
 	};                                                                                         \
 	RTIO_IODEV_DEFINE(name, &rc_raw_iodev_api, &_CONCAT(name, _data))
+
+/**
+ * @brief Define an RTIO iodev transmitting raw words on an rc device.
+ *
+ * Requires CONFIG_RC_TX.
+ *
+ * @param name Name of the iodev.
+ * @param node_id Devicetree node identifier of the rc device.
+ */
+#define RC_DT_TX_IODEV(name, node_id)                                                              \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_RC_TX), "RC_DT_TX_IODEV() needs CONFIG_RC_TX");             \
+	static struct rc_iodev_config _CONCAT(name, _config) = {                                   \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+	};                                                                                         \
+	RTIO_IODEV_DEFINE(name, &rc_tx_iodev_api, &_CONCAT(name, _config))
 
 /**
  * @brief Start streaming events into an RTIO context.
@@ -321,6 +341,46 @@ static inline int rc_stream(const struct rtio_iodev *iodev, struct rtio *ctx, vo
  * @retval -EDEADLK Called from the rc receive work queue.
  */
 int rc_receive_sync(const struct device *dev, struct rc_event *evt, k_timeout_t timeout);
+
+/**
+ * @brief Transmit raw words and wait until they are sent.
+ *
+ * Requires CONFIG_RC_TX.
+ * Not callable from an ISR or the rc work queues.
+ *
+ * @param dev rc device.
+ * @param words Raw words, valid until the call returns.
+ * @param count Number of words.
+ * @param timeout Time to wait for the transmission to start and end.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid words.
+ * @retval -ENOBUFS Too many words.
+ * @retval -ENOTSUP Device cannot transmit.
+ * @retval -EAGAIN Not started within @p timeout.
+ * @retval -ENOMEM CONFIG_RC_SEND_SYNC_MAX callers already waiting, counted
+ *         over all rc devices.
+ * @retval -ENODEV Device not ready.
+ * @retval -EDEADLK Called from an rc work queue.
+ * @retval <0 Driver error.
+ */
+int rc_send_raw_sync(const struct device *dev, const uint32_t *words, size_t count,
+		     k_timeout_t timeout);
+
+/**
+ * @brief Set the carrier of raw transmissions.
+ *
+ * Requires CONFIG_RC_TX.
+ *
+ * @param dev rc device.
+ * @param hz Carrier frequency in Hz, within the device capabilities.
+ * @param duty_pct Duty cycle in percent, 1 to 99.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL Frequency or duty cycle out of range.
+ * @retval -ENOTSUP Device cannot transmit.
+ */
+int rc_set_tx_carrier(const struct device *dev, uint32_t hz, uint8_t duty_pct);
 
 /** @} */
 

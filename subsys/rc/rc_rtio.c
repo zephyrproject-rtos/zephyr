@@ -40,6 +40,13 @@ static const struct device *rc_sqe_dev(const struct rtio_iodev_sqe *iodev_sqe)
 	return config->dev;
 }
 
+static uint8_t rc_sqe_valid_op(const struct rtio_iodev_sqe *iodev_sqe)
+{
+	return (IS_ENABLED(CONFIG_RC_TX) && (iodev_sqe->sqe.iodev->api == &rc_tx_iodev_api))
+		       ? RTIO_OP_TX
+		       : RTIO_OP_RX;
+}
+
 static void rc_done_work_handler(struct k_work *work)
 {
 	struct rtio_iodev_sqe *iodev_sqe;
@@ -59,7 +66,7 @@ static void rc_done_work_handler(struct k_work *work)
 		rc_sqe_set_next(iodev_sqe, NULL);
 		if (!device_is_ready(rc_sqe_dev(iodev_sqe))) {
 			err = -ENODEV;
-		} else if (iodev_sqe->sqe.op != RTIO_OP_RX) {
+		} else if (iodev_sqe->sqe.op != rc_sqe_valid_op(iodev_sqe)) {
 			err = -EINVAL;
 		}
 		rtio_iodev_sqe_err(iodev_sqe, err);
@@ -67,11 +74,14 @@ static void rc_done_work_handler(struct k_work *work)
 	}
 
 	rc_sync_dispatch();
+	if (IS_ENABLED(CONFIG_RC_TX)) {
+		rc_tx_dispatch();
+	}
 }
 
 static K_WORK_DEFINE(rc_done_work, rc_done_work_handler);
 
-static void rc_sqe_done(struct rtio_iodev_sqe *iodev_sqe)
+void rc_sqe_done(struct rtio_iodev_sqe *iodev_sqe)
 {
 	k_spinlock_key_t key = k_spin_lock(&rc_done_lock);
 
