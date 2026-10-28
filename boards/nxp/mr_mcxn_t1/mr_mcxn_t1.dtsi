@@ -45,7 +45,10 @@
 			   <6 0 &gpio3 9 0>,  /* GNSS fix-status indicator */
 			   <7 0 &gpio3 0 0>,  /* GNSS F9P EXTINT time-mark */
 			   <8 0 &gpio1 2 0>,  /* User input 0 */
-			   <9 0 &gpio1 3 0>;  /* User input 1 */
+			   <9 0 &gpio1 3 0>,  /* User input 1 */
+			   <10 0 &gpio3 6 0>, /* UWB SR250 reset (RSTN) */
+			   <11 0 &gpio3 1 0>, /* UWB SR250 wakeup */
+			   <12 0 &gpio3 10 0>; /* UWB SR250 host interrupt */
 	};
 };
 
@@ -133,6 +136,8 @@ mr_mcxn_t1_flow_spi_imu42688: &flexcomm6_lpspi6 {};
 };
 
 mr_mcxn_t1_flow_spi_imu45686: &flexcomm7_lpspi7 {};
+
+mr_mcxn_t1_uwb_spi: &flexcomm7_lpspi7 {};
 
 &flexcomm7_lpuart7 {
 	pinctrl-0 = <&pinmux_flexcomm7_lpuart>;
