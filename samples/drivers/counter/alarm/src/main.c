@@ -54,7 +54,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define SAMPLE_TIMER DT_NODELABEL(burtc0)
 #elif defined(CONFIG_COUNTER_GECKO_STIMER)
 #define SAMPLE_TIMER DT_CHOSEN(silabs_sleeptimer)
-#elif defined(CONFIG_COUNTER_INFINEON_CAT1) || defined(CONFIG_COUNTER_INFINEON_TCPWM)
+#elif defined(CONFIG_COUNTER_INFINEON_CAT1) || defined(CONFIG_COUNTER_INFINEON_TCPWM) || \
+	defined(CONFIG_COUNTER_INFINEON_TCPWM_GRP)
 #define SAMPLE_TIMER DT_NODELABEL(counter0_1)
 #elif defined(CONFIG_COUNTER_AMBIQ)
 #define SAMPLE_TIMER DT_NODELABEL(counter0)
