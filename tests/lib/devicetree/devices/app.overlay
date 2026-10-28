@@ -99,5 +99,12 @@
 			status = "okay";
 			reg = <0x1000 0x1000>;
 		};
+
+		/* Enabled node without a device object */
+		test_nodev: counter@2000 {
+			compatible = "vnd,counter";
+			status = "okay";
+			reg = <0x2000 0x1000>;
+		};
 	};
 };

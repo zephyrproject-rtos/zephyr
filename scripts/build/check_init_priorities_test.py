@@ -81,7 +81,14 @@ class testZephyrInitLevels(unittest.TestCase):
         s2.entry.st_value = 0xBB
         s2.entry.st_shndx = 2
 
-        sts.iter_symbols.return_value = [s0, s1, s2]
+        s3 = mock.Mock()
+        s3.name = "__weak_device_dts_ord_1"
+        s3.entry.st_info.type = "STT_OBJECT"
+        s3.entry.st_size = 4
+        s3.entry.st_value = 0xAA
+        s3.entry.st_shndx = 1
+
+        sts.iter_symbols.return_value = [s0, s1, s2, s3]
 
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock_elf
