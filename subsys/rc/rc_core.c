@@ -9,14 +9,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/rc/rc.h>
 
+#include "rc_internal.h"
+
 LOG_MODULE_REGISTER(rc, CONFIG_RC_LOG_LEVEL);
 
-static struct rc_dev_data *rc_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct device *dev))
+int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct device *dev),
+		     const uint16_t *protocols, size_t num_protocols)
 {
 	const struct rc_driver_api *api = DEVICE_API_GET(rc, dev);
 	int ret;
@@ -34,7 +32,7 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
 		return ret;
 	}
 
-	return 0;
+	return rc_protocol_init(dev, protocols, num_protocols);
 }
 
 int rc_get_caps(const struct device *dev, struct rc_caps *caps)

@@ -5,4 +5,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/rc.h)
 
 zephyr_library()
 
-zephyr_library_sources(rc_core.c)
+zephyr_library_sources(
+  rc_core.c
+  rc_protocol.c
+)

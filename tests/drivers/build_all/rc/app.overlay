@@ -3,9 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/rc/rc-proto.h>
+
 / {
-	rc-loopback {
+	rc-loopback-0 {
 		compatible = "zephyr,rc-loopback";
+		status = "okay";
+	};
+
+	rc-loopback-1 {
+		compatible = "zephyr,rc-loopback";
+		protocols = <RC_PROTO_NEC RC_PROTO_RC5>;
 		status = "okay";
 	};
 };

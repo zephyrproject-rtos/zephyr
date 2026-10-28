@@ -8,4 +8,10 @@
 		compatible = "zephyr,rc-loopback";
 		status = "okay";
 	};
+
+	rc_loopback1: rc-loopback-1 {
+		compatible = "zephyr,rc-loopback";
+		protocols = <0x1f2 0x1fe>;
+		status = "okay";
+	};
 };

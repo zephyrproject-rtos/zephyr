@@ -7,4 +7,4 @@ description: |
 
 compatible: "zephyr,rc-loopback"
 
-include: base.yaml
+include: rc-device.yaml
