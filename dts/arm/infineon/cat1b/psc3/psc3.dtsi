@@ -330,9 +330,12 @@
 		};
 
 		watchdog0: watchdog@4220c000 {
-			compatible = "infineon,watchdog";
-			reg = <0x4220c000 0x10>;
+			compatible = "infineon,match-wdt";
+			reg = <0x4220c000 0x10>, <0x42200200 0x10>;
+			reg-names = "wdt", "intr";
 			interrupts = <28 4>;
+			clocks = <&clk_ilo>;
+			counter-bits = <32>;
 			status = "disabled";
 		};
 
