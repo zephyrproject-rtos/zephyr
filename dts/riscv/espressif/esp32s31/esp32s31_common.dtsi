@@ -157,6 +157,29 @@
 			status = "disabled";
 		};
 
+		eth: eth@20350000 {
+			compatible = "espressif,esp32-eth", "snps,dwmac";
+			reg = <0x20350000 0x4000>;
+			interrupts = <SBD_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_EMAC_MODULE>,
+				 <&clock ESP32_EMAC_PTP_MODULE>;
+			clock-names = "mac", "ptp";
+			snps,perfect-filter-entries = <9>;
+			status = "disabled";
+
+			mdio: mdio {
+				compatible = "snps,dwmac-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
+		};
+
 		rmt: rmt@20355000 {
 			compatible = "espressif,esp32-rmt";
 			reg = <0x20355000 0x1000>;
