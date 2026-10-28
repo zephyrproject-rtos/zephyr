@@ -23,6 +23,10 @@ zephyr_sources_ifdef(CONFIG_SOC_SERIES_IMXRT266X_CM85
 
 zephyr_include_directories(.)
 
+if(CONFIG_MCUX_NONCACHEABLE_CUSTOM)
+  zephyr_linker_sources(SECTIONS nocache_sram.ld)
+endif()
+
 if(CONFIG_SOC_SERIES_IMXRT266X_CM85)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
 endif()

@@ -10,6 +10,8 @@
  * and clock roots belong to the nxp,imx-ccm-rev3 driver, driven from devicetree.
  */
 
+#include <string.h>
+
 #include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/fatal.h>
@@ -22,9 +24,11 @@
 #include "soc.h"
 #include "soc_clock.h"
 
+#include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_powercon.h>
-
+#include <fsl_power.h>
+#include <fsl_reset.h>
 /*
  * The ROM leaves SCB->VTOR at 0 and SystemInit() only relocates it for a RAM
  * vector table, so an XIP image has to point VTOR at this one itself.
@@ -82,6 +86,11 @@ static void soc_release_sleep_hold(void)
 	POWERCON_DisableSleepHold(SYSCON__POWERCON_CMC0_CTRL);
 }
 
+#ifdef CONFIG_MCUX_NONCACHEABLE_CUSTOM
+extern char __mcux_noncacheable_start[];
+extern char __mcux_noncacheable_end[];
+#endif
+
 void soc_reset_hook(void)
 {
 	/*
@@ -106,6 +115,11 @@ void soc_early_init_hook(void)
 	/* Access control first: every step after it is a peripheral access. */
 	soc_trdc_setup();
 
+#ifdef CONFIG_MCUX_NONCACHEABLE_CUSTOM
+	/* nocache_sram.ld is NOLOAD; zero it as Zephyr zeroes its nocache section. */
+	memset(__mcux_noncacheable_start, 0, __mcux_noncacheable_end - __mcux_noncacheable_start);
+#endif
+
 	soc_release_sleep_hold();
 
 	/*
@@ -120,11 +134,18 @@ void soc_early_init_hook(void)
 	sys_cache_data_enable();
 
 	/*
-	 * Clocks last: this reconfigures the PLLs, which parks both XSPI
+	 * Clocks next: this reconfigures the PLLs, which parks both XSPI
 	 * controllers -- including the flash this code runs from -- so everything
 	 * it depends on has to be working already.
 	 */
 	soc_clock_init();
+
+	/*
+	 * Last: soc_trdc_assign_masters() writes MEDIA__TRDC, which sits on the
+	 * MEDIA domain bus that soc_clock_init() just started clocking via
+	 * mediabus_rootclk. Any earlier and that write stalls the bus forever.
+	 */
+	soc_trdc_assign_masters();
 }
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
