@@ -66,6 +66,10 @@
 #include <hal/regi2c_ctrl_ll.h>
 #include <hal/clk_tree_hal.h>
 #include <esp_private/esp_clk_tree_common.h>
+#include <esp_clk_tree.h>
+#if !defined(CONFIG_SOC_SERIES_ESP32C2)
+#include <hal/uart_ll.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -738,13 +742,16 @@ static int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cf
 
 #if defined(CONFIG_ESP_CONSOLE_UART)
 #if !defined(CONFIG_SOC_SERIES_ESP32C2) && !defined(CONFIG_SOC_SERIES_ESP32C6)
-#if defined(CONFIG_MCUBOOT) && defined(ESP_ROM_UART_CLK_IS_XTAL)
-	uint32_t uart_clock_src_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
-#else
-	uint32_t uart_clock_src_hz = esp_clk_apb_freq();
-#endif
-	esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, uart_clock_src_hz,
-					CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+	uart_sclk_t uart_sclk;
+	uint32_t uart_clock_src_hz;
+
+	uart_ll_get_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), &uart_sclk);
+	if (esp_clk_tree_src_get_freq_hz((soc_module_clk_t)uart_sclk,
+					 ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+					 &uart_clock_src_hz) == ESP_OK) {
+		esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, uart_clock_src_hz,
+						CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+	}
 #endif
 #endif
 	return 0;
