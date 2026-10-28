@@ -17,6 +17,7 @@ config NET_TX_STACK_SIZE
 
 config NET_RX_STACK_SIZE
 	int "RX thread stack size"
+	default 3072 if ARM64
 	default 1792 if DNS_RESOLVER
 	default 1500
 	help
