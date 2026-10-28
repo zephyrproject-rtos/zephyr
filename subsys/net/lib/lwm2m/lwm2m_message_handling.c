@@ -87,8 +87,27 @@ static struct lwm2m_message *ongoing_block2_tx;
  */
 #define ENCODE_BUFFER_POOL_SIZE (CONFIG_LWM2M_NUM_OUTPUT_BLOCK_CONTEXT + 1)
 /* buffers for serializing big message bodies */
+#if defined(CONFIG_LWM2M_COAP_ENCODE_BUFFER_CUSTOM_SECTION)
+#define ENCODE_BUFFER_BLOCK_SIZE WB_UP(CONFIG_LWM2M_COAP_ENCODE_BUFFER_SIZE)
+/* Only the buffer is in the section. The slab is initialized by the engine, as the
+ * section may not be usable yet when the kernel initializes static memory slabs.
+ * The Kconfig value is already a string literal, so it is not passed through
+ * Z_GENERIC_SECTION(), which would stringify it again.
+ */
+static char body_encode_buffer[ENCODE_BUFFER_POOL_SIZE * ENCODE_BUFFER_BLOCK_SIZE]
+	__aligned(WB_UP(4)) __attribute__((section(CONFIG_LWM2M_COAP_ENCODE_BUFFER_SECTION_NAME)));
+static struct k_mem_slab body_encode_buffer_slab;
+
+static int body_encode_buffer_slab_init(void)
+{
+	return k_mem_slab_init(&body_encode_buffer_slab, body_encode_buffer,
+			       ENCODE_BUFFER_BLOCK_SIZE, ENCODE_BUFFER_POOL_SIZE);
+}
+LWM2M_ENGINE_INIT(body_encode_buffer_slab_init);
+#else
 K_MEM_SLAB_DEFINE_STATIC(body_encode_buffer_slab, CONFIG_LWM2M_COAP_ENCODE_BUFFER_SIZE,
 			 ENCODE_BUFFER_POOL_SIZE, 4);
+#endif
 #endif
 
 /* External resources */
