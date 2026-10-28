@@ -9,3 +9,15 @@ config PWM_TI_AM3352_ECAP
 	select PINCTRL
 	help
 	  Enable ECAP controller for TI SoCs
+
+if PWM_TI_AM3352_ECAP
+config PWM_TI_AM3352_ECAP_VARIANT_AM13
+	bool "TI ECAP AM13E variant"
+	depends on SOC_SERIES_AM13E
+	default y
+	select MUX
+	select SYSCON
+	help
+	  Enable AM13E ECAP support : mux-states xbar routing
+	  and sysctl for setting PWREN bits.
+endif
