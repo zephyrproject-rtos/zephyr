@@ -24,7 +24,7 @@
 		reg = <0x60000000 0x4000000>;
 	};
 
-	srom0: memory@fe000000 {
+	srom0: memory@50000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x50000000 0x1000000>;
