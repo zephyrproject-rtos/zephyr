@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/infineon-aurix-pinctrl.h>
+
+/* Same pins as the console, RX with a pull-up */
+&pinctrl {
+	test_tx: test_tx {
+		pinmux = <AURIX_PINMUX(14, 0, 2)>;
+		output-enable;
+	};
+
+	test_rx: test_rx {
+		pinmux = <AURIX_PINMUX(14, 1, 0)>;
+		bias-pull-up;
+	};
+};
+
+/ {
+	test_device: test-device {
+		compatible = "vnd,pinctrl-device";
+		pinctrl-0 = <&test_tx &test_rx>;
+		pinctrl-names = "default";
+	};
+};
