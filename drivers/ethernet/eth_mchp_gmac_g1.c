@@ -10,6 +10,7 @@
 #include <zephyr/net/mii.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/ethernet/phy_connection_type.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -18,14 +19,11 @@ LOG_MODULE_REGISTER(eth_mchp_gmac_g1, CONFIG_ETHERNET_LOG_LEVEL);
 
 #define DT_DRV_COMPAT microchip_gmac_g1_eth
 
-#define GMAC_PHY_CONN_TYPE_MII  0
-#define GMAC_PHY_CONN_TYPE_RMII 1
-
-#if (DT_INST_ENUM_IDX(0, phy_connection_type) == GMAC_PHY_CONN_TYPE_MII)
+#if (DT_INST_ENUM_IDX(0, phy_connection_type) == ETHERNET_PHY_CONN_TYPE_MII)
 #define GMAC_PHY_CONN_TYPE_MII_ENABLED
 #endif
 
-#if (DT_INST_ENUM_IDX(0, phy_connection_type) == GMAC_PHY_CONN_TYPE_RMII)
+#if (DT_INST_ENUM_IDX(0, phy_connection_type) == ETHERNET_PHY_CONN_TYPE_RMII)
 #define GMAC_PHY_CONN_TYPE_RMII_ENABLED
 #endif
 
@@ -180,7 +178,8 @@ struct gmac_frame_info {
 #error Not enough RX buffers to allocate descriptors for each HW queue
 #endif
 
-BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection");
+BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= ETHERNET_PHY_CONN_TYPE_RMII,
+	     "Invalid PHY connection");
 
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT] __nocache
 	__aligned(GMAC_DESC_ALIGNMENT);
