@@ -123,6 +123,64 @@ uppercase. Use dashes (``-``) instead of underscores. (The one exception to
 this rule is if you are replicating a well-established binding from somewhere
 like Linux.)
 
+Describe the hardware, not the driver
+=====================================
+
+Properties describe the hardware and how it is wired up, not how a particular
+driver is implemented. A devicetree that uses the binding must remain
+meaningful on its own, independent of the driver, its internal data
+structures or the software libraries it is built on. Any implementation must
+be able to interpret the property values.
+
+Describing the hardware in more detail than a Linux binding does is fine. For
+example, Linux drivers often read the supported features or the size of a FIFO
+from a hardware configuration register at runtime. In Zephyr, it is preferred
+to describe these in the devicetree, so they are known at build time. This
+allows the driver to optimize for the given hardware and to only include the
+code for a feature if the hardware supports it.
+
+.. code-block:: yaml
+
+   properties:
+     vnd,has-dma:
+       type: boolean
+       description: |
+         The controller was synthesized with the optional DMA engine.
+         This is also indicated by the DMA bit of the CONFIG register.
+
+Do not use ``string`` or ``string-array`` properties, or
+``enum:`` values, which contain names of C macros, enumerators or other
+definitions from the driver or the libraries it uses. Such values only work if
+the driver pastes them into C code where these definitions are visible, tying
+the binding to that implementation and its naming. Use values that describe
+the hardware instead, such as integers matching the register field or
+datasheet values, or descriptive lowercase strings.
+
+Example of what **not** to do:
+
+.. code-block:: yaml
+
+   properties:
+     # Values are C macro names, only usable by code that defines them
+     drive-strength:
+       type: string
+       enum:
+         - "VND_GPIO_SPEED_LOW"
+         - "VND_GPIO_SPEED_MEDIUM"
+         - "VND_GPIO_SPEED_HIGH"
+
+Use this instead:
+
+.. code-block:: yaml
+
+   properties:
+     drive-strength:
+       type: string
+       enum:
+         - "low"
+         - "medium"
+         - "high"
+
 Rules for vendor prefixes
 *************************
 
