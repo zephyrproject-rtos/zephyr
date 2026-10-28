@@ -9,6 +9,7 @@ tests:
       or dt_compat_enabled("silabs,gecko-wdog")
       or dt_compat_enabled("silabs,wdog")
       or dt_compat_enabled("nuvoton,numaker-wdt")
+      or dt_compat_enabled("infineon,window-wdt")
     integration_platforms:
       - s32z2xxdc2/s32z270/rtu0
     tags:
