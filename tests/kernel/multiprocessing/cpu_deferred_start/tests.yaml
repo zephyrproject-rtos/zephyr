@@ -1,0 +1,38 @@
+tests:
+  kernel.multiprocessing.cpu_deferred_start:
+    tags:
+      - kernel
+      - smp
+    platform_allow:
+      - intel_adsp/cavs25
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86_64
+  kernel.multiprocessing.cpu_deferred_start.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags:
+      - kernel
+      - smp
+      - libc
+    platform_allow:
+      - intel_adsp/cavs25
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  # Only some of the secondary CPUs are deferred: CPU 1 is started during boot
+  # while the others are left for a run-time start.
+  kernel.multiprocessing.cpu_deferred_start.asymmetric:
+    tags:
+      - kernel
+      - smp
+    platform_allow:
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86_64
+    # Setting DTC_OVERLAY_FILE replaces the board overlay that is otherwise
+    # picked up automatically, so it has to be listed again here.
+    extra_dtc_overlay_files:
+      - boards/qemu_x86_64.overlay
+      - asymmetric.overlay

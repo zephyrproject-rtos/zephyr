@@ -12,6 +12,20 @@
 #error "This test must have at least CONFIG_MP_MAX_NUM_CPUS=2 CPUs"
 #endif
 
+/**
+ * @brief Tests for the IPI work item API
+ *
+ * @defgroup kernel_ipi_work_tests IPI Work Tests
+ *
+ * @ingroup all_tests
+ *
+ * These tests exercise k_ipi_work_add(), k_ipi_work_signal() and
+ * k_ipi_work_wait(), which queue a function for execution on another CPU by
+ * way of an interprocessor interrupt.
+ * @{
+ * @}
+ */
+
 /* structs */
 
 struct test_ipi_work {
@@ -31,12 +45,8 @@ static K_SEM_DEFINE(timer_sem, 0, 1);
 static K_TIMER_DEFINE(timer, timer_func, NULL);
 static uint32_t timer_target_cpu;
 
-/**
- * This function is called when the IPI work item is executed on a CPU.
- * It sets the CPU ID in the test_item structure to indicate which CPU
- * executed the work item.
- *
- * @param item Pointer to the IPI work item to be executed
+/* Body of the IPI work item: records the CPU it was executed on so the test
+ * can verify it ran on the targeted CPU.
  */
 static void test_function(struct k_ipi_work *item)
 {
@@ -49,9 +59,8 @@ static void test_function(struct k_ipi_work *item)
 	my_work->cpu_bit = BIT(cpu);
 }
 
-/**
- * Timer function that is called to initiate the IPI work from
- * an ISR and to wait for the work item to complete.
+/* Timer expiry handler: initiates the IPI work from an ISR and spins until the
+ * work item has completed, then wakes the waiting thread.
  */
 static void timer_func(struct k_timer *tmr)
 {
@@ -72,14 +81,39 @@ static void timer_func(struct k_timer *tmr)
 }
 
 /**
- * This test covers the simplest working cases of IPI work
- * item execution and waiting. It adds a single IPI work item
- * to another CPU's queue, signals it and waits for it to complete.
- * Waiting covers two scenarios
- *  1. From thread level
- *  2. From a k_timer (ISR).
+ * @brief Verify that an IPI work item executes on the targeted CPU.
+ *
+ * @ingroup kernel_ipi_work_tests
+ *
+ * @details
+ * A work item queued to another CPU with k_ipi_work_add() and signalled with
+ * k_ipi_work_signal() must run on that CPU, and k_ipi_work_wait() must not
+ * return success before it has. The work item records the CPU it executed on,
+ * which is compared against the requested target mask. Both ways of waiting
+ * are covered: pending from thread level with K_FOREVER, and polling with
+ * K_NO_WAIT from a k_timer expiry handler, where pending is not allowed.
+ *
+ * Test steps:
+ * - Initialize the work item with k_ipi_work_init().
+ * - With interrupts locked, target the other CPU, add the work item and
+ *   signal it, then unlock.
+ * - Wait for completion with k_ipi_work_wait(K_FOREVER) and check the CPU the
+ *   item ran on.
+ * - Start a timer whose handler adds and signals the same work item, then
+ *   polls k_ipi_work_wait() with K_NO_WAIT until it stops returning -EAGAIN.
+ * - Take the semaphore given by the timer handler and re-check the recorded
+ *   CPU.
+ *
+ * Expected result:
+ * - k_ipi_work_wait() returns 0 in both cases and the work item executed on
+ *   the targeted CPU, not on the requesting one.
+ *
+ * @see k_ipi_work_init()
+ * @see k_ipi_work_add()
+ * @see k_ipi_work_signal()
+ * @see k_ipi_work_wait()
  */
-ZTEST(ipi_work, test_ipi_work_simple)
+ZTEST(ipi_work, test_ipi_work_executes_on_target_cpu)
 {
 	unsigned int key;
 	unsigned int cpu_id;
