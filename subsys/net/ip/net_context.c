@@ -1492,7 +1492,7 @@ int net_context_connect(struct net_context *context,
 		}
 
 		if (net_context_get_proto(context) == NET_IPPROTO_TCP &&
-		    net_ipv6_is_addr_mcast(&addr6->sin6_addr)) {
+		    net_ipv6_is_addr_mcast(&net_sin6(addr)->sin6_addr)) {
 			ret = -EADDRNOTAVAIL;
 			goto unlock;
 		}
@@ -1544,9 +1544,9 @@ int net_context_connect(struct net_context *context,
 		}
 
 		if (net_context_get_proto(context) == NET_IPPROTO_TCP &&
-		    (net_ipv4_is_addr_mcast(&addr4->sin_addr) ||
+		    (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) ||
 		     net_ipv4_is_addr_bcast(net_context_get_iface(context),
-					    &addr4->sin_addr))) {
+					    &net_sin(addr)->sin_addr))) {
 			ret = -EADDRNOTAVAIL;
 			goto unlock;
 		}
