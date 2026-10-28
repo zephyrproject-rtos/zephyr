@@ -110,4 +110,8 @@ config CRC_DRIVER_HAS_CRC32_MPEG2
 	help
 	  CRC driver has CRC32 MPEG-2 computation
 
+config CRC_DRIVER_NEEDS_WORDS
+	bool
+	help
+	  CRC driver to be fed with hash-sized words rather than an arbitrary number of bytes.
 endif # CRC_DEVICE
