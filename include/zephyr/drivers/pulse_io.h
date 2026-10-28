@@ -160,7 +160,10 @@ struct pulse_io_caps {
 	bool tx_carrier;
 	/** Hardware stops automatically at end of loop. */
 	bool tx_loop_auto_stop;
-	/** Multiple channels can start on the same clock edge. */
+	/**
+	 * Multiple channels can start on the same clock edge, see
+	 * @ref pulse_io_transmit_multi_sync.
+	 */
 	bool tx_sync_multi_channel;
 	/** Hardware carrier demodulation on RX. */
 	bool rx_carrier_demod;
@@ -295,6 +298,11 @@ __subsystem struct pulse_io_driver_api {
 	/** @driver_ops_mandatory */
 	int (*stop)(const struct device *dev, struct pulse_io_channel *chan);
 
+	/** @driver_ops_optional @copybrief pulse_io_transmit_multi_sync */
+	int (*transmit_multi_sync)(const struct device *dev, struct pulse_io_channel *const *chans,
+				   const struct pulse_io_tx_req *reqs, size_t num,
+				   k_timeout_t timeout);
+
 	/** @driver_ops_optional RTIO submit; NULL if the backend has no RTIO support. */
 	void (*submit)(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 	/** @driver_ops_optional */
@@ -417,6 +425,53 @@ __syscall int pulse_io_stop(const struct device *dev, struct pulse_io_channel *c
 static inline int z_impl_pulse_io_stop(const struct device *dev, struct pulse_io_channel *chan)
 {
 	return DEVICE_API_GET(pulse_io, dev)->stop(dev, chan);
+}
+
+/** @brief Maximum number of channels of @ref pulse_io_transmit_multi_sync. */
+#define PULSE_IO_TX_MULTI_MAX 8
+
+/**
+ * @brief Blocking transmit on several channels that start together.
+ *
+ * Each channel of @p chans, all different and configured for TX on @p dev,
+ * transmits the request of the same index in @p reqs, and the first periods
+ * of all the channels start on the same clock edge. Returns once every
+ * request has been transmitted or the timeout elapses. Backends that
+ * support it report @c tx_sync_multi_channel in their capabilities.
+ *
+ * @param dev     Pulse IO device.
+ * @param chans   Channels to transmit on.
+ * @param reqs    Request of each channel.
+ * @param num     Number of channels, 1 to @ref PULSE_IO_TX_MULTI_MAX.
+ * @param timeout Timeout of the whole transmit.
+ *
+ * @retval 0 Success.
+ * @retval -ENOSYS The backend cannot start several channels together.
+ * @retval -EINVAL @p num is out of range.
+ * @retval -EINVAL A channel is invalid, repeated or not configured.
+ * @retval -ENOTSUP A request uses a feature the backend does not support.
+ * @retval -ENOMEM A request is longer than the backend can transmit.
+ * @retval -EAGAIN The timeout elapsed.
+ */
+__syscall int pulse_io_transmit_multi_sync(const struct device *dev,
+					   struct pulse_io_channel *const *chans,
+					   const struct pulse_io_tx_req *reqs, size_t num,
+					   k_timeout_t timeout);
+
+static inline int z_impl_pulse_io_transmit_multi_sync(const struct device *dev,
+						      struct pulse_io_channel *const *chans,
+						      const struct pulse_io_tx_req *reqs,
+						      size_t num, k_timeout_t timeout)
+{
+	const struct pulse_io_driver_api *api = DEVICE_API_GET(pulse_io, dev);
+
+	if (api->transmit_multi_sync == NULL) {
+		return -ENOSYS;
+	}
+	if ((num == 0U) || (num > PULSE_IO_TX_MULTI_MAX)) {
+		return -EINVAL;
+	}
+	return api->transmit_multi_sync(dev, chans, reqs, num, timeout);
 }
 
 /**
