@@ -60,16 +60,25 @@ if(CONFIG_MBEDTLS)
     endfunction()
 
     # Generate config-psa.h, which defines PSA_WANT_xxx for each enabled
-    # CONFIG_PSA_WANT_xxx Kconfig symbol.
+    # CONFIG_PSA_WANT_xxx Kconfig symbol, and config-psa-accel.h, which
+    # defines MBEDTLS_PSA_ACCEL_xxx when both CONFIG_PSA_WANT_xxx and
+    # CONFIG_PSA_ACCEL_xxx are enabled, so that drivers can select
+    # PSA_ACCEL_xxx unconditionally.
     function(zephyr_mbedtls_generate_psa_config)
       set(psa_want "")
+      set(psa_accel "")
       get_cmake_property(cmake_vars VARIABLES)
       foreach(var ${cmake_vars})
         if(var MATCHES "^CONFIG_(PSA_WANT_[A-Z0-9_]+)$")
           string(APPEND psa_want "#define ${CMAKE_MATCH_1} 1\n")
+        elseif(var MATCHES "^CONFIG_PSA_ACCEL_([A-Z0-9_]+)$")
+          if(CONFIG_PSA_WANT_${CMAKE_MATCH_1})
+            string(APPEND psa_accel "#define MBEDTLS_PSA_ACCEL_${CMAKE_MATCH_1}\n")
+          endif()
         endif()
       endforeach()
       zephyr_mbedtls_write_config_header(config-psa.h "${psa_want}")
+      zephyr_mbedtls_write_config_header(config-psa-accel.h "${psa_accel}")
     endfunction()
     zephyr_mbedtls_generate_psa_config()
 
