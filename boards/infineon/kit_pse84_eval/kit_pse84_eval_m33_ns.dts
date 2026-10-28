@@ -7,8 +7,8 @@
 
 /dts-v1/;
 #include <infineon/edge/mpns/pse846gps2dbzc4a.dtsi>
-#include <infineon/edge/pse84/pse84.cm33.dtsi>
-#include <infineon/edge/pse84/system_clocks.dtsi>
+#include <infineon/edge/pse8x/pse8x.cm33.dtsi>
+#include <infineon/edge/pse8x/system_clocks.dtsi>
 
 #include "kit_pse84_eval_common.dtsi"
 #include "kit_pse84_eval_memory_map.dtsi"

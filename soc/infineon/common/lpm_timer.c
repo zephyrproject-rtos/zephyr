@@ -8,10 +8,10 @@
 /**
  * @brief LPM companion timer for Infineon CAT1 SoCs using MCWDT.
  *
- * Shared by the PSC3 and PSE84 SoCs.  When SysTick is the primary system timer
+ * Shared by the PSC3 and PSE8x SoCs.  When SysTick is the primary system timer
  * it stops during deepsleep because the HF clocks are gated. This module drives
  * the MCWDT (Multi-Counter Watchdog Timer) from the always-on 32 kHz
- * low-frequency clock (WCO on PSC3, PILO on PSE84) and implements the
+ * low-frequency clock (WCO on PSC3, PILO on PSE8x) and implements the
  * z_sys_clock_lpm_enter/exit hooks so the SysTick driver can reconcile elapsed
  * time after wakeup.
  *

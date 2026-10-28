@@ -10,5 +10,5 @@ if(SB_CONFIG_BOARD_KIT_PSE84_AI_PSE846GPS2DBZC4A_M55)
     BOARD kit_pse84_ai/pse846gps2dbzc4a/m33
   )
 
-  set_config_bool(enable_cm55 CONFIG_SOC_PSE84_M55_ENABLE 1)
+  set_config_bool(enable_cm55 CONFIG_SOC_PSE8X_M55_ENABLE 1)
 endif()
