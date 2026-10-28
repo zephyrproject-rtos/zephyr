@@ -9,5 +9,8 @@ config UART_ASCLIN
 	default y
 	depends on DT_HAS_INFINEON_ASCLIN_UART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select CLOCK_CONTROL
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_INFINEON_ASCLIN_UART),pinctrl-0)
 	help
 	  This option enables the ASCLIN driver for AURIX processors.

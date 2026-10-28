@@ -1,0 +1,47 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/tc3x/tc3x.dtsi>
+
+/ {
+	/* Data scratch-pad RAM of CPU0 */
+	dsram0: memory@70000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x70000000 DT_SIZE_K(240)>;
+		zephyr,memory-region = "DSRAM0";
+	};
+};
+
+&flashctrl {
+	flash0: flash@80000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80000000 DT_SIZE_M(3)>;
+		ranges = <0x0 0x80000000 DT_SIZE_M(3)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	flash1: flash@80300000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80300000 DT_SIZE_M(3)>;
+		ranges = <0x0 0x80300000 DT_SIZE_M(3)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};
+
+&pinctrl {
+	p00: gpio@f003a000 {
+		compatible = "infineon,aurix-tc3x-gpio", "infineon,aurix-gpio";
+		reg = <0xf003a000 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		status = "disabled";
+	};
+};
