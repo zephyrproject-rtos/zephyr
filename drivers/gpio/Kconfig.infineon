@@ -11,3 +11,11 @@ config GPIO_INFINEON
 	help
 	  Enable GPIO driver for Infineon MCUs using the "infineon,gpio"
 	  compatible.
+
+config GPIO_INFINEON_IOSS
+	bool "Infineon IOSS GPIO driver"
+	default y
+	depends on DT_HAS_INFINEON_IOSS_GPIO_ENABLED
+	help
+	  Enable the register level GPIO driver for the Infineon IOSS GPIO
+	  ports using the "infineon,ioss-gpio" compatible.
