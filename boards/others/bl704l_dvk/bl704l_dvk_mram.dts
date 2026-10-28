@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <bflb/bl704l.dtsi>
+#include "bl704l_dvk_common.dtsi"
+#include "bl704l_dvk-pinctrl.dtsi"
+
+&sf_bank2 {
+	status = "okay";
+
+	pinctrl-0 = <&sf2_default>;
+	pinctrl-names = "default";
+
+	s3a3204v: mram@0 {
+		compatible = "bflb,sf-device", "soc-nv-flash";
+		reg = <0 DT_SIZE_M(4)>;
+
+		spi-bus-mode = <4>;
+		use-qpi;
+		sf-pad = <2>;
+		jedec-id = [d9 01 06];
+
+		read-command = <0x0b>;
+		read-dummy-cycles = <3>;
+		write-command = <0xda>;
+		write-dummy-cycles = <0>;
+		enter-qpi-command = <0x38>;
+		exit-qpi-command = <0xff>;
+
+		initialization-sequence = <0x06 0x0 0x0 0x87 0x01250600 0x4>;
+		quirk-bytes-read = [a0];
+		quirk-bytes-write = [a0];
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mram_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "mram_storage";
+				reg = <0x00000000 DT_SIZE_M(4)>;
+			};
+		};
+	};
+};
