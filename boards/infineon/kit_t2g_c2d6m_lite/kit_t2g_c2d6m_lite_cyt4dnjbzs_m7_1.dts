@@ -48,7 +48,7 @@
  * used by another core; change it to any free SCB if needed.
  */
 uart1: &scb1 {
-	compatible = "infineon,uart";
+	compatible = "infineon,scb-uart";
 	current-speed = <115200>;
 	clocks = <&peri0_group1_8bit_2>;
 
