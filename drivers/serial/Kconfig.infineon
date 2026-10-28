@@ -47,6 +47,7 @@ config UART_INFINEON_SCB
 	default y
 	depends on DT_HAS_INFINEON_SCB_UART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	select PINCTRL
 	select CLOCK_CONTROL
 	help
