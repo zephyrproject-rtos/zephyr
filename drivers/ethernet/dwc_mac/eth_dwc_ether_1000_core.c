@@ -702,6 +702,11 @@ int dwmac_probe(const struct device *dev)
 	DWMAC_REG_WRITE(DWMAC_MMC_TX_INTERRUPT_MASK, UINT32_MAX);
 	DWMAC_REG_WRITE(DWMAC_MMC_IPC_RX_INTERRUPT_MASK, UINT32_MAX);
 
+	/* The RGMII/SGMII link status interrupt stays asserted until the link
+	 * status register is read, which the interrupt handler never does.
+	 */
+	DWMAC_REG_WRITE(DWMAC_MACIMR, DWMAC_REG_READ(DWMAC_MACIMR) | DWMAC_MACIMR_RGSMIIIM);
+
 	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
 	ret = dwmac_platform_init(dev);
