@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  ignore_faults: true
+  platform_allow:
+    - qemu_xtensa/dc233c
+  integration_platforms:
+    - qemu_xtensa/dc233c
+  tags:
+    - kernel
+    - interrupt
+tests:
+  arch.xtensa.vector_long_jumps: {}

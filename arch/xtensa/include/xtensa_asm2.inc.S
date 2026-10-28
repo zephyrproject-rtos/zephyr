@@ -674,6 +674,11 @@ _Level\LVL\()VectorHelper :
 _Level\LVL\()Vector:
 #endif
 
+.if \LVL == 1
+	/* Exception entries use A0 to reach the common handler. */
+	rsr a0, ZSR_A0SAVE
+.endif
+
 #ifdef CONFIG_XTENSA_MMU
 .if \LVL == 1
 	/* If there are any TLB misses during interrupt handling,

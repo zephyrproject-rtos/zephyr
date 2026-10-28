@@ -527,8 +527,14 @@ _continue:
 
 	j _xt_alloca_exc
 _not_alloca:
+#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE)
+	/* Keep the extended emulation entry's existing direct dispatch. */
 	rsr a0, ZSR_A0SAVE
 	j _Level1Vector
+#else
+	movi a0, _Level1Vector
+	jx a0
+#endif
 #ifdef CONFIG_XTENSA_MMU
 _handle_tlb_miss_user:
 	/**
@@ -575,15 +581,15 @@ _Level1RealVector:
 .pushsection .KernelExceptionVector.text, "ax"
 .global _KernelExceptionVector
 _KernelExceptionVector:
-#ifdef CONFIG_XTENSA_MMU
 	wsr a0, ZSR_A0SAVE
+#ifdef CONFIG_XTENSA_MMU
 	rsr.exccause a0
 	beqi a0, EXCCAUSE_ITLB_MISS, _handle_tlb_miss_kernel
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_kernel
-	rsr a0, ZSR_A0SAVE
 #endif
-	j _Level1Vector
+	movi a0, _Level1Vector
+	jx a0
 #ifdef CONFIG_XTENSA_MMU
 _handle_tlb_miss_kernel:
 	/* The TLB miss handling is used only during xtensa_mmu_init()
@@ -622,31 +628,15 @@ _DoubleExceptionVector:
 	wsr a0, ZSR_DEPC_SAVE
 
 	rsr a0, ZSR_DBLEXC
+	wsr a0, ZSR_A0SAVE
 
 	j _Level1Vector
 
-_TripleFault:
+#else
+	wsr a0, ZSR_A0SAVE
+	movi a0, _TripleFault
+	jx a0
 #endif /* CONFIG_XTENSA_MMU */
-
-#if XCHAL_HAVE_DEBUG && defined(CONFIG_XTENSA_BREAK_ON_UNRECOVERABLE_EXCEPTIONS)
-	/* Signals an unhandled double exception, and unrecoverable exceptions.
-	 * Definitely needs debugger to be attached to the hardware or simulator
-	 * to catch this.
-	 */
-	break	1, 4
-#elif defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
-/* Tell simulator to stop executing here, instead of trying to do
- * an infinite loop (see below). Greatly help with using tracing in
- * simulator so that traces will not have infinite iterations of
- * jumps.
- */
-	movi a3, 1
-	movi a2, SYS_exit
-	simcall
-#endif
-	call0 xtensa_triple_fault_breadcrumb
-1:
-	j	1b
 
 #ifdef CONFIG_XTENSA_MMU
 _handle_tlb_miss_dblexc:
@@ -667,6 +657,44 @@ _handle_tlb_miss_dblexc:
 	rsr a0, ZSR_DBLEXC
 	rfde
 #endif
+.popsection
+
+/* Keep terminal fault handling beside the common level-1 handler. */
+#if defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
+.pushsection .iram.text, "ax"
+#else
+.pushsection .iram0.text, "ax"
+#endif
+
+	.align 4
+_triple_fault_breadcrumb_address:
+	.word xtensa_triple_fault_breadcrumb
+_TripleFault:
+#ifndef CONFIG_XTENSA_MMU
+	rsr a0, ZSR_A0SAVE
+#endif
+
+#if XCHAL_HAVE_DEBUG && defined(CONFIG_XTENSA_BREAK_ON_UNRECOVERABLE_EXCEPTIONS)
+	/* Signals an unhandled double exception, and unrecoverable exceptions.
+	 * Definitely needs debugger to be attached to the hardware or simulator
+	 * to catch this.
+	 */
+	break	1, 4
+#elif defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
+/* Tell simulator to stop executing here, instead of trying to do
+ * an infinite loop (see below). Greatly help with using tracing in
+ * simulator so that traces will not have infinite iterations of
+ * jumps.
+ */
+	movi a3, 1
+	movi a2, SYS_exit
+	simcall
+#endif
+	l32r a0, _triple_fault_breadcrumb_address
+	callx0 a0
+1:
+	j	1b
+
 .popsection
 
 #endif
