@@ -1,0 +1,128 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Ezurio
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/gpio/smarc-gpio.h>
+#include <dt-bindings/gpio/smarc-gbe.h>
+
+/ {
+	chosen {
+		zephyr,canbus = &smarc_can0;
+	};
+
+	aliases {
+		led0 = &carrier_led0;
+		led1 = &carrier_led1;
+		i2s-codec-tx = &smarc_i2s0;
+		i2s-tx = &smarc_i2s0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		carrier_led0: led_0 {
+			label = "ENET1 Link 100";
+			gpios = <&smarc_gbe_led SMARC_GBE0_LINK100 GPIO_ACTIVE_LOW>;
+		};
+
+		carrier_led1: led_1 {
+			label = "ENET2 Link 100";
+			gpios = <&smarc_gbe_led SMARC_GBE1_LINK100 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&smarc_gpio SMARC_GPIO_IO1 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+		status = "okay";
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&smarc_gpio SMARC_GPIO_IO4 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+		status = "okay";
+	};
+};
+
+&smarc_can0 {
+	phys = <&can_phy0>;
+	status = "okay";
+};
+
+&smarc_can1 {
+	phys = <&can_phy1>;
+	status = "okay";
+};
+
+&smarc_ser2 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&smarc_i2c_gp {
+	smarc_i2c_mux: tca9546a@73 {
+		compatible = "ti,tca9546a";
+		reg = <0x73>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+		reset-gpios = <&smarc_gpio SMARC_GPIO_IO6 GPIO_ACTIVE_LOW>;
+
+		smarc_i2c_gp_rtc: mux_i2c@0 {
+			/* Real-time clock I2C channel */
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		smarc_i2c_gp_usbc: mux_i2c@1 {
+			/* USB-C I2C channel */
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		smarc_i2c_gp_audio: mux_i2c@2 {
+			/* Audio I2C channel */
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			audio_codec: wm8962@1a {
+				compatible = "wolfson,wm8962";
+				reg = <0x1a>;
+				clock-source = "MCLK";
+				clock-names = "mclk";
+				status = "okay";
+			};
+		};
+
+		smarc_i2c_gp_pcie: mux_i2c@3 {
+			/* PCIe I2C channel */
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&smarc_spi0 {
+	status = "okay";
+};
+
+&smarc_sdio {
+	status = "okay";
+
+	sdmmc {
+		status = "okay";
+	};
+};
+
+&smarc_usb0 {
+	status = "okay";
+};
