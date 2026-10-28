@@ -35,8 +35,31 @@ RC_PROTOCOL_DEFINE(test_proto_evt) = {
 	.name = "test-evt",
 	.proto_first = TEST_PROTO_EVT,
 	.proto_last = TEST_PROTO_EVT,
+	.repeat_period_ms = 1,
 	.decode = test_evt_decode,
 };
+
+static bool is_release(struct rtio *r, struct rtio_cqe *cqe)
+{
+	struct rc_event evt;
+	uint32_t len = 0U;
+	uint8_t *buf = NULL;
+
+	if ((cqe->result != 0) || (rtio_cqe_get_mempool_buffer(r, cqe, &buf, &len) != 0) ||
+	    (buf == NULL) || (len < sizeof(evt))) {
+		return false;
+	}
+
+	memcpy(&evt, buf, sizeof(evt));
+	if ((evt.flags & RC_EVENT_FLAG_RELEASE) == 0U) {
+		return false;
+	}
+
+	rtio_release_buffer(r, buf, len);
+	rtio_cqe_release(r, cqe);
+
+	return true;
+}
 
 RC_DT_EVENT_IODEV(evt_iodev, DT_NODELABEL(rc_loopback5));
 
@@ -59,10 +82,12 @@ static struct rtio_cqe *wait_cqe(struct rtio *r)
 	for (int i = 0; i < 200; i++) {
 		struct rtio_cqe *cqe = rtio_cqe_consume(r);
 
-		if (cqe != NULL) {
+		if ((cqe != NULL) && !is_release(r, cqe)) {
 			return cqe;
 		}
-		k_sleep(K_MSEC(1));
+		if (cqe == NULL) {
+			k_sleep(K_MSEC(1));
+		}
 	}
 
 	zassert_unreachable("no completion");
@@ -72,8 +97,13 @@ static struct rtio_cqe *wait_cqe(struct rtio *r)
 
 static void expect_no_cqe(struct rtio *r)
 {
+	struct rtio_cqe *cqe;
+
 	k_sleep(K_MSEC(20));
-	zassert_is_null(rtio_cqe_consume(r), "unexpected completion");
+	do {
+		cqe = rtio_cqe_consume(r);
+	} while ((cqe != NULL) && is_release(r, cqe));
+	zassert_is_null(cqe, "unexpected completion");
 }
 
 static void expect_event(struct rtio *r, void *userdata, uint32_t scancode, struct rc_event *out)
@@ -135,6 +165,7 @@ static void rc_event_before(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
+	k_sleep(K_MSEC(20));
 	zassert_ok(rc_rx_enable(dev5, true));
 }
 
@@ -147,7 +178,12 @@ static void rc_event_after(void *fixture)
 	zassert_ok(rc_rx_enable(dev5, false));
 	k_sleep(K_MSEC(5));
 	ARRAY_FOR_EACH(ctxs, i) {
-		zassert_is_null(rtio_cqe_consume(ctxs[i]), "completion left in ctx %zu", i);
+		struct rtio_cqe *cqe;
+
+		do {
+			cqe = rtio_cqe_consume(ctxs[i]);
+		} while ((cqe != NULL) && is_release(ctxs[i], cqe));
+		zassert_is_null(cqe, "completion left in ctx %zu", i);
 		zassert_equal(ctxs[i]->sqe_pool->pool_free, ctxs[i]->sqe_pool->pool_size,
 			      "submission leaked in ctx %zu", i);
 		if (ctxs[i]->block_pool != NULL) {
@@ -191,7 +227,7 @@ ZTEST(rc_event, test_oneshot_once)
 ZTEST(rc_event, test_no_submission_dropped)
 {
 	inject(100);
-	k_sleep(K_MSEC(5));
+	k_sleep(K_MSEC(20));
 
 	submit_oneshot(&ctx_a, NULL);
 	inject(200);

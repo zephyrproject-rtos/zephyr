@@ -34,7 +34,7 @@ extern "C" {
 struct rc_decode_result {
 	/** Protocol, one of RC_PROTO_* */
 	uint16_t proto;
-	/** RC_EVENT_FLAG_TOGGLE and RC_EVENT_FLAG_REPEAT bits */
+	/** RC_EVENT_FLAG_TOGGLE, or RC_EVENT_FLAG_REPEAT for a repeat code without scancode */
 	uint16_t flags;
 	/** Scancode in the protocol's Linux layout */
 	uint32_t scancode;
@@ -52,6 +52,8 @@ struct rc_protocol {
 	uint16_t state_size;
 	/** Shortest receiver timeout that ends a frame of this protocol, in us, 0 if none */
 	uint32_t min_timeout_us;
+	/** Time between repeated frames of a held key, in ms */
+	uint16_t repeat_period_ms;
 	/**
 	 * @brief Reset the decoder state. Optional.
 	 *

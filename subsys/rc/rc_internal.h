@@ -12,6 +12,8 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/rc.h>
+#include <zephyr/kernel.h>
+#include <zephyr/rc/rc_protocol.h>
 
 #define RC_FLAG_OVERFLOW     0
 #define RC_FLAG_IDLE         1
@@ -35,7 +37,14 @@ int rc_rx_timeout_update(const struct device *dev);
 
 int rc_rx_submit(struct k_work *work);
 
+int rc_rx_reschedule(struct k_work_delayable *dwork, k_timeout_t delay);
+
 void rc_event_report(const struct device *dev, const struct rc_event *evt);
+
+void rc_key_init(const struct device *dev);
+
+void rc_key_frame(const struct device *dev, const struct rc_protocol *p,
+		  const struct rc_decode_result *res);
 
 void rc_raw_init(const struct device *dev, bool core_timeout);
 

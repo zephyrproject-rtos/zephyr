@@ -46,6 +46,7 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
 	}
 
 	rc_raw_init(dev, api->set_rx_timeout == NULL);
+	rc_key_init(dev);
 
 	if (cfg->rx_timeout_us == 0U) {
 		atomic_set_bit(&data->flags, RC_FLAG_TIMEOUT_AUTO);
