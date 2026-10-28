@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/ethernet/phy_connection_type.h>
 #include <zephyr/irq.h>
 #include <zephyr/random/random.h>
 #include <xmc_eth_mac.h>
@@ -121,6 +122,10 @@ DWMAC_MMC_COUNTERS_DEFINE(xmc_mmc, XMC_MMC_COUNTERS);
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
+BUILD_ASSERT(DT_INST_ENUM_IDX_OR(0, phy_connection_type, ETHERNET_PHY_CONN_TYPE_MII) <=
+		     ETHERNET_PHY_CONN_TYPE_RMII,
+	     "Only mii and rmii are supported");
+
 static const XMC_ETH_MAC_PORT_CTRL_t eth_xmc_port_ctrl = {
 	.rxd0 = DT_INST_ENUM_IDX(0, rxd0_port_ctrl),
 	.rxd1 = DT_INST_ENUM_IDX(0, rxd1_port_ctrl),
@@ -132,7 +137,7 @@ static const XMC_ETH_MAC_PORT_CTRL_t eth_xmc_port_ctrl = {
 	.rxer = DT_INST_ENUM_IDX(0, rxer_port_ctrl),
 	.col = DT_INST_ENUM_IDX_OR(0, col_port_ctrl, 0),
 	.clk_tx = DT_INST_ENUM_IDX_OR(0, tx_clk_port_ctrl, 0),
-	.mode = DT_INST_ENUM_IDX_OR(0, phy_connection_type, 0),
+	.mode = DT_INST_ENUM_IDX_OR(0, phy_connection_type, ETHERNET_PHY_CONN_TYPE_MII),
 	.mdio = DT_INST_ENUM_IDX_OR(0, mdi_port_ctrl, 0),
 };
 
