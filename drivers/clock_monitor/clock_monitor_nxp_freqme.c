@@ -206,13 +206,26 @@ static int freqme_compute_thresholds(uint32_t expected_hz, uint32_t tol_ppm,
 /* Route a source's INPUTMUX connection to its FREQME destination via the
  * mux subsystem. Returns 0 on success, negative errno on failure.
  */
-static int nxp_freqme_route(const struct nxp_freqme_source *src)
+static int nxp_freqme_route(const struct nxp_freqme_config *config,
+			    const struct nxp_freqme_source *src)
 {
+	int ret;
+
 	if (!device_is_ready(src->mux_dev)) {
 		LOG_ERR("inputmux device not ready");
 		return -ENODEV;
 	}
-	return mux_state_apply(src->mux_dev, src->mux_state);
+
+	ret = mux_state_apply(src->mux_dev, src->mux_state);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/*
+	 * The INPUTMUX driver gates its clock off again after routing, and on
+	 * RT266x that is the FREQME gate as well.
+	 */
+	return clock_control_on(config->gate_clk_dev, config->gate_clk_subsys);
 }
 
 /*
@@ -583,13 +596,13 @@ static int nxp_freqme_set_source(const struct device *dev, uint32_t reference, u
 	 * driver's to gate off.
 	 */
 	if (ref_changed) {
-		ret = nxp_freqme_route(&config->ref_srcs[new_ref_idx]);
+		ret = nxp_freqme_route(config, &config->ref_srcs[new_ref_idx]);
 		if (ret != 0) {
 			goto route_err;
 		}
 	}
 	if (tar_changed) {
-		ret = nxp_freqme_route(&config->tar_srcs[new_tar_idx]);
+		ret = nxp_freqme_route(config, &config->tar_srcs[new_tar_idx]);
 		if (ret != 0) {
 			goto route_err;
 		}
@@ -740,12 +753,12 @@ static int nxp_freqme_init(const struct device *dev)
 	 * driver does not enable these source clocks - the caller must have them
 	 * running before configure()/start().
 	 */
-	ret = nxp_freqme_route(&config->ref_srcs[data->cur_ref_idx]);
+	ret = nxp_freqme_route(config, &config->ref_srcs[data->cur_ref_idx]);
 	if (ret != 0) {
 		LOG_ERR("%s: failed to route default ref source (%d)", dev->name, ret);
 		return ret;
 	}
-	ret = nxp_freqme_route(&config->tar_srcs[data->cur_tar_idx]);
+	ret = nxp_freqme_route(config, &config->tar_srcs[data->cur_tar_idx]);
 	if (ret != 0) {
 		LOG_ERR("%s: failed to route default tar source (%d)", dev->name, ret);
 		return ret;

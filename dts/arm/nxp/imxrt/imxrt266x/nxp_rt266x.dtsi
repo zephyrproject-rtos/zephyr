@@ -9,6 +9,7 @@
 #include <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 
 /*
  * i.MX RT266x shared peripheral tree. The CPU, its TCMs and its NVIC
@@ -1673,6 +1674,85 @@
 		compatible = "nxp,crc";
 		reg = <0x42980000 0x1000>;
 		status = "disabled";
+	};
+
+	/* SYSCON INPUTMUX: routes the SYSCON FREQME reference and target clocks. */
+	inputmux0: syscon_inputmux: inputmux@405a0000 {
+		compatible = "nxp,inputmux";
+		reg = <0x405a0000 0x1000>;
+		/* Shared with the SYSCON FREQME. */
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_SYSCON_FREQME, IMX_CCM_ROOT_NONE)>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+		status = "disabled";
+	};
+
+	freqme0: syscon_freqme: freqme@40590000 {
+		compatible = "nxp,freqme";
+		reg = <0x40590000 0x10>;
+		interrupts = <96 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_SYSCON_FREQME, IMX_CCM_ROOT_NONE)>;
+		status = "disabled";
+
+		reference-sources {
+			ref-sxosc {
+				default-source;
+				mux-states = <&inputmux0 0 NXP_FREQME_RT266X_REF_SXOSC>;
+				clocks = <&ccm IMX_CCM_CLK(IMX_CCM_GATE_NONE,
+							   IMX_CCM_ROOT_CGU_SXOSC_ROOTCLK)>;
+			};
+
+			ref-fro192m {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT266X_REF_FRO192M>;
+				clocks = <&ccm IMX_CCM_CLK(IMX_CCM_GATE_NONE,
+							   IMX_CCM_ROOT_CGU_FRO192M_ROOTCLK)>;
+			};
+
+			ref-ulp32k {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT266X_REF_ULP32K>;
+				clocks = <&ccm IMX_CCM_CLK(IMX_CCM_GATE_NONE,
+							   IMX_CCM_ROOT_CGU_ULP32K_ROOTCLK)>;
+			};
+		};
+
+		target-sources {
+			tar-fro96m {
+				default-source;
+				mux-states = <&inputmux0 0 NXP_FREQME_RT266X_TAR_FRO96M>;
+				clocks = <&ccm IMX_CCM_CLK(IMX_CCM_GATE_NONE,
+							   IMX_CCM_ROOT_CGU_FRO96M_ROOTCLK)>;
+			};
+
+			tar-fro24m {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT266X_TAR_FRO24M>;
+				clocks = <&ccm IMX_CCM_CLK(IMX_CCM_GATE_NONE,
+							   IMX_CCM_ROOT_CGU_FRO24M_ROOTCLK)>;
+			};
+
+			tar-fro48m {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT266X_TAR_FRO48M>;
+				clocks = <&ccm IMX_CCM_CLK(IMX_CCM_GATE_NONE,
+							   IMX_CCM_ROOT_CGU_FRO48M_ROOTCLK)>;
+			};
+
+			tar-fro192m {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT266X_TAR_FRO192M>;
+				clocks = <&ccm IMX_CCM_CLK(IMX_CCM_GATE_NONE,
+							   IMX_CCM_ROOT_CGU_FRO192M_ROOTCLK)>;
+			};
+
+			tar-sxosc {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT266X_TAR_SXOSC>;
+				clocks = <&ccm IMX_CCM_CLK(IMX_CCM_GATE_NONE,
+							   IMX_CCM_ROOT_CGU_SXOSC_ROOTCLK)>;
+			};
+
+			tar-ulp32k {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT266X_TAR_ULP32K>;
+				clocks = <&ccm IMX_CCM_CLK(IMX_CCM_GATE_NONE,
+							   IMX_CCM_ROOT_CGU_ULP32K_ROOTCLK)>;
+			};
+		};
 	};
 
 	/* eDMA3 (MAIN domain) version 4. Channels 0..31 = IRQ 29..60. */
