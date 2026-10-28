@@ -41,3 +41,14 @@ config UART_INFINEON_PDL_MP_FIELD_QUIRK
 	  "enableMultiProcessorMode". Older PDL revisions misspell it as
 	  "enableMutliProcessorMode"; the driver picks the field name from
 	  this symbol.
+
+config UART_INFINEON_SCB
+	bool "Infineon SCB UART driver"
+	default y
+	depends on DT_HAS_INFINEON_SCB_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select PINCTRL
+	select CLOCK_CONTROL
+	help
+	  Enable the register level UART driver for the Infineon SCB block
+	  using the "infineon,scb-uart" compatible.
