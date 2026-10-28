@@ -258,6 +258,50 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start)
 	}
 }
 
+static void test_unicast_start_interleaved(
+	struct cap_initiator_test_unicast_start_fixture *fixture, enum bt_bap_ep_state state)
+{
+	int err;
+
+	fixture->group_param.packing = BT_ISO_PACKING_INTERLEAVED;
+	err = bt_cap_unicast_group_reconfig(fixture->unicast_group, &fixture->group_param);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	ARRAY_FOR_EACH_PTR(fixture->audio_start_stream_params, stream_param) {
+		test_unicast_set_state(stream_param->stream, stream_param->member.member,
+				       stream_param->ep, &fixture->preset.codec_cfg, state);
+	}
+
+	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_qos_configured",
+			   state == BT_BAP_EP_STATE_IDLE ? 1 : 0,
+			   mock_cap_initiator_unicast_start_qos_configured_cb_fake.call_count);
+	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 1,
+			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);
+	zassert_equal(mock_cap_initiator_unicast_start_complete_cb_fake.arg0_val, 0);
+
+	ARRAY_FOR_EACH(fixture->cap_streams, i) {
+		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
+		const struct bt_bap_unicast_group *group = bap_stream->group;
+
+		zassert_equal(group->cig_param.packing, BT_ISO_PACKING_INTERLEAVED);
+		zassert_equal(bap_stream->ep->state, BT_BAP_EP_STATE_STREAMING);
+	}
+}
+
+static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_interleaved)
+{
+	test_unicast_start_interleaved(fixture, BT_BAP_EP_STATE_IDLE);
+}
+
+static ZTEST_F(cap_initiator_test_unicast_start,
+	       test_initiator_unicast_start_interleaved_state_qos_configured)
+{
+	test_unicast_start_interleaved(fixture, BT_BAP_EP_STATE_QOS_CONFIGURED);
+}
+
 static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_inval_param_null)
 {
 	int err;
