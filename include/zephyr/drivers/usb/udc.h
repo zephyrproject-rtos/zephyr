@@ -359,7 +359,7 @@ static inline bool udc_is_suspended(const struct device *dev)
  * @param[in] event_ctx Opaque pointer to higher layer context
  *
  * @return 0 on success, all other values should be treated as error.
- * @retval -EINVAL on parameter error (no callback is passed)
+ * @retval -EINVAL on parameter error (no callback or context is passed)
  * @retval -EALREADY already initialized
  */
 int udc_init(const struct device *dev,
@@ -402,6 +402,7 @@ int udc_disable(const struct device *dev);
  * @param[in] dev    Pointer to device struct of the driver instance
  *
  * @return 0 on success, all other values should be treated as error.
+ * @retval -EBUSY controller is enabled
  * @retval -EALREADY controller is not initialized
  */
 int udc_shutdown(const struct device *dev);
@@ -431,7 +432,7 @@ static inline struct udc_device_caps udc_caps(const struct device *dev)
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  *
- * @return USB device controller capabilities.
+ * @return Actual bus speed, UDC_BUS_UNKNOWN if the controller is not enabled.
  */
 enum udc_bus_speed udc_device_speed(const struct device *dev);
 
@@ -565,8 +566,8 @@ int udc_ep_try_config(const struct device *dev,
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EINVAL on wrong parameter (control IN/OUT endpoint)
- * @retval -EPERM controller is not initialized
- * @retval -ENODEV endpoint configuration not found
+ * @retval -EPERM controller is not enabled
+ * @retval -ENODEV endpoint configuration not found or not valid
  * @retval -EALREADY endpoint is already enabled
  */
 int udc_ep_enable(const struct device *dev,
@@ -634,7 +635,7 @@ int udc_ep_clear_halt(const struct device *dev, const uint8_t ep);
  * @retval -ENODEV endpoint configuration not found
  * @retval -EACCES endpoint is not enabled (TBD)
  * @retval -EBUSY request can not be queued
- * @retval -EPERM controller is not initialized
+ * @retval -EPERM controller is not enabled
  */
 int udc_ep_enqueue(const struct device *dev, struct net_buf *const buf);
 
@@ -644,7 +645,7 @@ int udc_ep_enqueue(const struct device *dev, struct net_buf *const buf);
  * @param[in] dev    Pointer to device struct of the driver instance
  *
  * @return 0 on success, all other values should be treated as error.
- * @return -EBUSY controller is not shutdown
+ * @retval -EBUSY controller is not shutdown
  */
 int udc_purge_queues(const struct device *dev);
 
@@ -671,7 +672,6 @@ bool udc_ep_queue_is_empty(const struct device *dev, const uint8_t ep);
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -ENODEV endpoint configuration not found
- * @retval -EACCES endpoint is not disabled
  * @retval -EPERM controller is not initialized
  */
 int udc_ep_dequeue(const struct device *dev, const uint8_t ep);
