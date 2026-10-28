@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MR_MCXN_T1_UWB
+	def_bool $(shields_list_contains,mr_mcxn_t1_uwb)
+
+config SHIELD_NXP_SR250
+	def_bool SHIELD_MR_MCXN_T1_UWB
+	
