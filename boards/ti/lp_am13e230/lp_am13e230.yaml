@@ -6,4 +6,8 @@ toolchain:
   - zephyr
 ram: 96
 flash: 512
+supported:
+  - pinctrl
+  - uart
+  - i2c
 vendor: ti
