@@ -17,6 +17,15 @@ if SOC_SERIES_ESP32S31
 
 rsource "Kconfig.caps"
 
+config ESP32S31_EMAC
+	bool
+	default y if ETH_ESP32
+	default y if ETH_ESP32_DWC_ETHER_1000
+	default y if MDIO_ESP32
+	help
+	  Hidden option to build the ESP32-S31 Ethernet MAC HAL. Both the
+	  Ethernet and the MDIO drivers depend on it.
+
 config SOC_ESP32S31_REV_MIN_FULL
 	int
 	default 0 if SOC_ESP32S31_REV_0_0
