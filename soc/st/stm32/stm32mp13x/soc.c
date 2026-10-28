@@ -40,6 +40,9 @@ void soc_early_init_hook(void)
 
 	/* Clear TE bit to take exceptions in Thumb mode to fix the DDR init */
 	write_sctlr(read_sctlr() & ~SCTLR_TE_Msk);
+
+	/* Clear A bit in SCTLR to disable alignment check */
+	write_sctlr(read_sctlr() & ~SCTLR_A_Msk);
 	barrier_isync_fence_full();
 }
 
