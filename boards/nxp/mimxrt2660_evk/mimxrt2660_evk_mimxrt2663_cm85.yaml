@@ -15,5 +15,7 @@ ram: 32768
 flash: 65536
 supported:
   - gpio
+  - pwm
+  - spi
   - uart
 vendor: nxp

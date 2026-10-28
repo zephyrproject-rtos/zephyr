@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &flexio0_pwm;
+	};
+};
+
+&pinctrl {
+	/* PIO2_26 drives the user LED D16. */
+	pinmux_flexio0_pwm_default: pinmux_flexio0_pwm_default {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_26_hsp_flexio0_fxio_d26>;
+		};
+	};
+};
+
+&flexio0 {
+	status = "okay";
+
+	flexio0_pwm: flexio0_pwm {
+		compatible = "nxp,flexio-pwm";
+		#pwm-cells = <3>;
+		status = "okay";
+		pinctrl-0 = <&pinmux_flexio0_pwm_default>;
+		pinctrl-names = "default";
+
+		pwm_0 {
+			pin-id = <26>;
+			prescaler = <1>;
+		};
+	};
+};
