@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config JDI_PARALLEL
+	bool "JDI parallel interface display driver"
+	default y
+	depends on DT_HAS_JDI_PARALLEL_ENABLED
+	select JDI
+	help
+	  Enable driver for JDI parallel interface display.
