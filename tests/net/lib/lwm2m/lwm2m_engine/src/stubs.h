@@ -22,6 +22,8 @@
 
 void set_socket_events(short events);
 void clear_socket_events(void);
+uint32_t get_zero_timeout_polls(void);
+void clear_zero_timeout_polls(void);
 
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_rd_client_pause);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_rd_client_resume);

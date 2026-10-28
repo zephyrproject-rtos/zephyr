@@ -64,6 +64,17 @@ struct zvfs_pollfd {
 };
 
 static short my_events;
+static uint32_t zero_timeout_polls;
+
+uint32_t get_zero_timeout_polls(void)
+{
+	return zero_timeout_polls;
+}
+
+void clear_zero_timeout_polls(void)
+{
+	zero_timeout_polls = 0;
+}
 
 void set_socket_events(short events)
 {
@@ -128,6 +139,10 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 
 int z_impl_zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout)
 {
+	if (poll_timeout == 0) {
+		zero_timeout_polls++;
+	}
+
 	k_sleep(K_MSEC(1));
 	fds->revents = my_events;
 	return 0;
