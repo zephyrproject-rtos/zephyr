@@ -15,12 +15,22 @@ description: |
   core.
 
   To declare a peripheral "PERx" clock in the dtsi, you can follow the example
-  below:
+  below, where the second entry is the clock crossbar (flexgen) channel that
+  feeds the peripheral kernel clock. Declaring it lets the clock controller
+  resolve the peripheral rate without any peripheral-specific code:
     PERx {
       ...
-      clocks = <&rcc STM32_CLOCK(PERx, STM32_CLK)>;
+      clocks = <&rcc STM32_CLOCK(PERx, STM32_CLK)>,
+               <&rcc STM32_SRC_FLEXGEN(12) NO_SEL>;
       ...
     };
+
+  Beware that the channel mapping depends on the SoC derivative.
+
+  Other clock sources (bus clocks, oscillators, PLL outputs) can be referenced
+  the same way to query their rate through clock_control_get_rate(). All these
+  entries are read-only: the clock tree is owned by the Cortex-A35, so they can
+  neither be gated nor re-routed.
 
 compatible: "st,stm32mp2-rcc"
 
