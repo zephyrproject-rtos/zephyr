@@ -18,3 +18,49 @@
 / {
 	model = "TI CC2745R10_Q1 LaunchPad with CC2755R10 SoC";
 };
+
+&lgpt1 {
+	status = "okay";
+	clk-prescale = <31>;
+};
+
+&pwm3 {
+	status = "okay";
+	pinctrl-0 = <&pwm3_default>;
+	pinctrl-names = "default";
+};
+
+/* Enable LGPT3 timer for PWM LEDs:
+ * - PWM9 (channel 0) on DIO16 for Red LED
+ * - PWM10 (channel 1) on DIO12 for Green LED
+ * LGPT3 is a 24-bit timer, supporting periods up to ~44 seconds at 375kHz
+ */
+&lgpt3 {
+	status = "okay";
+	/* Prescaler at 96MHz: Effective clock = 96MHz / (31 + 1) = 3MHz */
+	clk-prescale = <31>;
+};
+
+&pwm9 {
+	status = "okay";
+	pinctrl-0 = <&pwm9_default>;
+	pinctrl-names = "default";
+};
+
+&pwm10 {
+	status = "okay";
+	pinctrl-0 = <&pwm10_default>;
+	pinctrl-names = "default";
+};
+
+/* Enable LGPT2 timer for PWM7 (channel 1) on DIO5 (BP15) */
+&lgpt2 {
+	status = "okay";
+	clk-prescale = <31>;
+};
+
+&pwm7 {
+	status = "okay";
+	pinctrl-0 = <&pwm7_default>;
+	pinctrl-names = "default";
+};

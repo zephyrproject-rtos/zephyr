@@ -228,4 +228,22 @@
 		bias-disable;
 		input-enable;
 	};
+
+	/* PWM - LGPT3 Channel 1 on DIO12 (T3_C1) for LED0/Green LED and test capture */
+	pwm10_default: pwm10_default {
+		pinmux = <12 DIO12_T3_C1>;
+		bias-disable;
+	};
+
+	/* PWM - LGPT3 Channel 0 on DIO16 (T3_C0) for LED1/Red LED */
+	pwm9_default: pwm9_default {
+		pinmux = <16 DIO16_T3_C0>;
+		bias-disable;
+	};
+
+	/* PWM - LGPT2 Channel 1 on DIO5 (T2_C1) - BP15 for idle level */
+	pwm7_default: pwm7_default {
+		pinmux = <5 DIO5_T2_C1>;
+		bias-disable;
+	};
 };
