@@ -659,6 +659,18 @@ config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR
 	help
 	  Network address of the CoAP proxy server.
 
+config LWM2M_FIRMWARE_UPDATE_PUSH_TIMEOUT
+	int "Firmware push transfer timeout"
+	default 180
+	range 0 $(UINT32_MAX)
+	help
+	  Time in seconds the Firmware Update object waits for the next block
+	  of a block-wise write to the Package resource. When it passes, the
+	  download is given up: the State goes back to Idle, the Update Result
+	  is set to 4 (connection lost) and the cancel callback is called, so
+	  the server can retry by push or by pull. Set it above the server's
+	  CoAP retransmission window. 0 disables the timeout.
+
 endif # LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
 
 config LWM2M_LOCATION_OBJ_SUPPORT
