@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_MCXL
@@ -31,5 +31,13 @@ config FLASH_FILL_BUFFER_SIZE
 
 config RESET
 	default y if DT_HAS_NXP_MRCC_RESET_ENABLED
+
+# Shift the cpu1 image LMA from VMA (0x00000000 in CM0+ / AON SRAM view)
+# to the reserved slot in CM33 flash (0x10078000 = last 32 KB of 512 KB).
+configdefault BUILD_OUTPUT_ADJUST_LMA
+	default "0x10078000" if SOC_MCXL255_SECOND_CORE && SOC_MCXL255_CPU1
+
+configdefault BUILD_OUTPUT_INFO_HEADER
+	default y if SOC_MCXL255_SECOND_CORE && SOC_MCXL255_CPU1
 
 endif # SOC_FAMILY_MCXL
