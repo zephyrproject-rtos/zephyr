@@ -16,7 +16,6 @@ properties:
 
   ti,clk-prescaler:
     type: int
-    required: true
     description: |
       TIMCLK clock source prescaler value.
       Valid range [0 ... 255].
