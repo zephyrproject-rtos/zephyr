@@ -299,6 +299,45 @@ extern void z_irq_spurious(const void *unused);
 #define RV_STATUS_PIE MSTATUS_MPIE_EN
 #endif
 
+#define ARCH_MEM_PARTITION_ATTR_STR_MAX 32
+
+/**
+ * @brief Decode PMP R/W/X bits into a 3-character permission string
+ *
+ * @param pmp_cfg PMP configuration bits to decode.
+ * @param out     Output buffer, at least 4 bytes (3 chars + NUL).
+ */
+static ALWAYS_INLINE void arch_pmp_perm_str(uint8_t pmp_cfg, char *out)
+{
+	out[0] = (pmp_cfg & PMP_R) ? 'R' : '-';
+	out[1] = (pmp_cfg & PMP_W) ? 'W' : '-';
+	out[2] = (pmp_cfg & PMP_X) ? 'X' : '-';
+	out[3] = '\0';
+}
+
+/**
+ * @brief Format a memory partition attribute as a string
+ *
+ * M-mode is not constrained by PMP, so only U-mode permissions are decoded.
+ *
+ * @param buf  Buffer to write the formatted string to, at least
+ *             ARCH_MEM_PARTITION_ATTR_STR_MAX bytes.
+ * @param attr Partition attribute to format.
+ *
+ * @retval buf Always returns @p buf.
+ */
+static ALWAYS_INLINE char *arch_mem_partition_attr_str(
+	char *buf, const k_mem_partition_attr_t *attr)
+{
+	char perm[4];
+
+	arch_pmp_perm_str(attr->pmp_attr, perm);
+	snprintk(buf, ARCH_MEM_PARTITION_ATTR_STR_MAX,
+		 "Priv: RWX | User: %s", perm);
+
+	return buf;
+}
+
 /**
  * @brief Read the privilege-level status register (mstatus or sstatus).
  *

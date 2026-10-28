@@ -460,6 +460,7 @@ config RISCV_PMP
 	select MEM_DOMAIN_ISOLATED_STACKS if USERSPACE
 	select PMP_KERNEL_MODE_DYNAMIC if MEM_ATTR
 	select ARCH_HAS_EXECUTABLE_PAGE_BIT
+	select ARCH_HAS_MEMPARTS_ATTR_STR
 	help
 	  MCU implements Physical Memory Protection.
 
