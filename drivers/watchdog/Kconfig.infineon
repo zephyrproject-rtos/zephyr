@@ -12,3 +12,23 @@ config WDT_INFINEON_CAT1
 	select USE_INFINEON_WDT
 	help
 	  Enable Watchdog driver for Infineon CAT1 devices.
+
+config WDT_INFINEON_WINDOW
+	bool "Infineon window watchdog driver"
+	default y
+	depends on DT_HAS_INFINEON_WINDOW_WDT_ENABLED
+	select CLOCK_CONTROL
+	select HAS_WDT_DISABLE_AT_BOOT
+	select HAS_WDT_MULTISTAGE
+	help
+	  Enable the native driver for the window watchdog of Infineon
+	  TRAVEO T2G devices.
+
+config WDT_INFINEON_WINDOW_WARN_MARGIN_MS
+	int "Warning margin before reset in milliseconds"
+	default 10
+	range 1 1000
+	depends on WDT_INFINEON_WINDOW
+	help
+	  For a single-stage timeout with a callback, the callback runs this
+	  many milliseconds before the watchdog resets the device.
