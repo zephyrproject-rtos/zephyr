@@ -63,6 +63,65 @@ respective operations.
   Attribute ``read`` and ``write`` callbacks are called directly from RX Thread
   thus it is not recommended to block for long periods of time in them.
 
+With :kconfig:option:`CONFIG_BT_GATT_DEFERRED_RSP` an attribute whose value the
+application cannot produce right away, for example because it lives behind
+another link, can be declared with :c:macro:`BT_GATT_CHARACTERISTIC_DEFERRED` or
+:c:macro:`BT_GATT_ATTRIBUTE_DEFERRED`. Its :c:member:`bt_gatt_attr_deferred.read` and
+:c:member:`bt_gatt_attr_deferred.write` methods receive a :c:struct:`bt_gatt_req`
+and may return before the request has a response. The application copies the
+request and responds to it later with :c:func:`bt_gatt_read_rsp`,
+:c:func:`bt_gatt_write_rsp` or :c:func:`bt_gatt_error_rsp`, from any thread.
+Errors are given as ``BT_GATT_ERR()`` values, the same as the synchronous
+callbacks return them. The copy holds its connection without a reference, so
+take one with :c:func:`bt_conn_ref` while it is kept.
+
+An attribute uses either its synchronous ``read`` and ``write`` callbacks or
+the deferred ones: every remote request of a kind that has a deferred
+method goes to that method. The host only reads attributes it defines itself,
+such as service declarations, so a service does not need both for one
+attribute. A Client Characteristic Configuration descriptor is the exception:
+the host reads it locally to tell whether a client is subscribed, so a
+host-managed one keeps its synchronous ``read`` (:c:func:`bt_gatt_attr_read_ccc`)
+and an application-managed one keeps a synchronous ``read`` that returns the
+stored configuration.
+
+These requests can be responded to later:
+
+* Read
+* Read Blob
+* Read By Type
+* Read Multiple
+* Read Multiple Variable Length
+* Write
+* Prepare Write
+* Execute Write
+
+A Read Multiple request asks each deferred attribute it lists in turn, once
+the previous one has a response, and an error for any of them fails the
+request. An Execute Write request writes each prepared value the same way, in
+the order the client prepared them (Core Specification 6.3 Vol 3 Part F
+3.4.6.1), and an error for one of them is the response. It may be deferred only
+when every attribute in the request is deferred; with a synchronous one
+among them it is written synchronously, so no other bearer sees a half-applied
+request (3.4.6.3, atomic Execute Write). Other bearers are served in between,
+so the application keeps the request atomic when that matters. Write Command
+and Signed Write Command have no response: the ``write`` method completes them
+before it returns.
+
+The deferred methods are called from the RX thread, like the synchronous
+ones, and must return without waiting on other threads, semaphores or timers.
+Responding to a request only records the response; the host then queues it
+for sending from the RX thread, the same path a synchronous response takes.
+
+A request has to be responded to within :c:macro:`BT_ATT_TIMEOUT_SEC` seconds,
+or the client fails it. A client may only have one request outstanding per
+bearer; when it sends another one before the deferred request has a response,
+the host disconnects that bearer, which for the unenhanced bearer means the
+connection. The host reserves one deferred-response slot for every bearer that
+can exist at once, so every bearer can always defer its one in-flight request.
+Each slot holds an ATT buffer until the response is sent, and a request that
+finds no slot is rejected with Insufficient Resources.
+
 Attribute value changes can be notified using :c:func:`bt_gatt_notify` API,
 alternatively there is :c:func:`bt_gatt_notify_cb` where it is possible to
 pass a callback to be called when it is necessary to know the exact instant when

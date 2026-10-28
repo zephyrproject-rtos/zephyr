@@ -249,6 +249,223 @@ typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
 					     const void *buf, uint16_t len,
 					     uint16_t offset, uint8_t flags);
 
+/** @brief An ATT request served by a deferred attribute method
+ *
+ *  Handed to the methods of @ref bt_gatt_attr_deferred to identify the request
+ *  they serve. The object is only valid during the call: copy it by value to
+ *  respond to the request later with @ref bt_gatt_read_rsp,
+ *  @ref bt_gatt_write_rsp or @ref bt_gatt_error_rsp.
+ *
+ *  The copy holds @ref bt_gatt_req.conn without a reference of its own, so
+ *  take one with @ref bt_conn_ref while it is kept, and drop it with
+ *  @ref bt_conn_drop once the request has been responded to or given up on.
+ *
+ *  Errors are always @ref BT_GATT_ERR with a ``BT_ATT_ERR_*`` code, as the
+ *  return value of the methods and as the argument of @ref bt_gatt_error_rsp,
+ *  the same as the synchronous methods return them.
+ *
+ *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+ */
+struct bt_gatt_req {
+	/** The connection the request arrived on, held without a reference. */
+	struct bt_conn *conn;
+	/** @brief Identifies the request
+	 *
+	 *  Never 0 for a request that can be responded to, and unique among the
+	 *  requests awaiting a response on all bearers and connections, so
+	 *  it can be used as a key to find the request again. 0 for Write
+	 *  Command and Signed Write Command, which have no response.
+	 */
+	uint32_t id;
+};
+
+/** @typedef bt_gatt_attr_read_deferred_func_t
+ *  @brief Deferred attribute read callback
+ *
+ *  Serves a remote read of @p attr. Unlike @ref bt_gatt_attr_read_func_t, the
+ *  value does not have to be available when the callback runs: it returns 0,
+ *  and the request is responded to with @ref bt_gatt_read_rsp or
+ *  @ref bt_gatt_error_rsp, later from any thread or from the callback itself.
+ *
+ *  Read, Read Blob, Read By Type, Read Multiple and Read Multiple Variable
+ *  Length Requests are served this way. A Read Multiple [Variable Length]
+ *  Request calls the method of each deferred attribute it lists, one after
+ *  the other: the next one once the previous value has a response.
+ *
+ *  See @ref bt_gatt_attr_deferred for the rules both methods follow.
+ *
+ *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+ *
+ *  @param req     The request to respond to.
+ *  @param attr    The attribute that is being read.
+ *  @param offset  Offset to start reading from.
+ *  @param max_len Largest value the response can carry. A longer value is
+ *                 truncated by the host.
+ *
+ *  @retval 0 The request is accepted; a response follows.
+ *  @return @ref BT_GATT_ERR with a specific ``BT_ATT_ERR_*`` error code to
+ *          reject it with an Error Response instead.
+ */
+typedef int (*bt_gatt_attr_read_deferred_func_t)(const struct bt_gatt_req *req,
+					      const struct bt_gatt_attr *attr,
+					      uint16_t offset, uint16_t max_len);
+
+/** @typedef bt_gatt_attr_write_deferred_func_t
+ *  @brief Deferred attribute write callback
+ *
+ *  Serves a remote write of @p attr. Unlike @ref bt_gatt_attr_write_func_t,
+ *  the write does not have to be complete when the callback runs: it returns
+ *  0, and the request is responded to with @ref bt_gatt_write_rsp or
+ *  @ref bt_gatt_error_rsp, later from any thread or from the callback itself.
+ *
+ *  Write Request, Prepare Write Request and Execute Write Request are served
+ *  this way. A Prepare Write Request only calls the method of an attribute with
+ *  @ref BT_GATT_PERM_PREPARE_WRITE; for any other one the host queues the
+ *  value and responds on its own. An Execute Write Request calls the method
+ *  once for each value the client prepared, in the order the client sent
+ *  them: the next one once the previous one has a response, and the
+ *  Execute Write Response after the last one. An error on one of them
+ *  is the response, and the values left are discarded. Other bearers are
+ *  served while the values are processed, so keeping the request atomic is up
+ *  to the application. An Execute Write is only deferred when every value in
+ *  it is for a deferred attribute; if any is synchronous the request is
+ *  not deferred, so the method is called with @ref bt_gatt_req.id 0 and must
+ *  complete the write before it returns, as for a Write Command. Returning 0
+ *  then lets the host send the Execute Write Response, and a later
+ *  @ref bt_gatt_write_rsp carrying id 0 is refused with ``-EINVAL``.
+ *
+ *  Write Command and Signed Write Command have no response, so there is
+ *  nothing to respond to later: ``BT_GATT_WRITE_FLAG_CMD`` is set in @p flags, the
+ *  callback completes the write before it returns and returns its outcome.
+ *  @ref bt_gatt_req.conn tells which client sent it, and @ref bt_gatt_req.id
+ *  is 0.
+ *
+ *  See @ref bt_gatt_attr_deferred for the rules both methods follow.
+ *
+ *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+ *
+ *  @param req    The request to respond to.
+ *  @param attr   The attribute that is being written.
+ *  @param buf    Buffer with the data to write. Only valid during the call.
+ *  @param len    Number of bytes in the buffer.
+ *  @param offset Offset to start writing from.
+ *  @param flags  Bitmap of @ref bt_gatt_attr_write_flag values.
+ *
+ *  @retval 0 The request is accepted; a response follows. For Write Command
+ *            and Signed Write Command: the write is done.
+ *  @return @ref BT_GATT_ERR with a specific ``BT_ATT_ERR_*`` error code to
+ *          reject it with an Error Response instead.
+ */
+typedef int (*bt_gatt_attr_write_deferred_func_t)(const struct bt_gatt_req *req,
+					       const struct bt_gatt_attr *attr,
+					       const void *buf, uint16_t len,
+					       uint16_t offset,
+					       enum bt_gatt_attr_write_flag flags);
+
+/** @brief Deferred Attribute Value methods
+ *
+ *  An attribute is served either by its synchronous methods,
+ *  @ref bt_gatt_attr.read and @ref bt_gatt_attr.write, or by these. When one
+ *  of these is set, every remote request of that kind is served by it and
+ *  never by the synchronous one. The host itself only reads attributes it
+ *  defines (declarations, and Client Characteristic Configuration descriptors
+ *  through @ref bt_gatt_attr_read_ccc), so a service never has to provide
+ *  both for the same attribute.
+ *
+ *  The methods run in the Bluetooth RX thread, like the synchronous ones, and
+ *  return without waiting for anything: not for other threads, not on
+ *  semaphores and not in k_sleep() or similar.
+ *
+ *  A request has to be responded to within @ref BT_ATT_TIMEOUT_SEC seconds, or
+ *  the client fails it and stops using the bearer. A bearer serves one request
+ *  at a time: when the client sends another request on it before the deferred
+ *  one has a response, the host disconnects the bearer, which for the
+ *  unenhanced bearer means the connection.
+ *
+ *  The host reserves one deferred-response slot per bearer that can exist at
+ *  once, so every bearer can always defer its one in-flight request. A request
+ *  that finds no slot is rejected with ``BT_ATT_ERR_INSUFFICIENT_RESOURCES``
+ *  without calling the method.
+ *
+ *  One object of this type serves every attribute that points at it.
+ *
+ *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+ */
+struct bt_gatt_attr_deferred {
+	/** @brief Deferred read method
+	 *
+	 *  Takes precedence over the
+	 *  synchronous one for remote reads. See
+	 *  @ref bt_gatt_attr_read_deferred_func_t.
+	 */
+	bt_gatt_attr_read_deferred_func_t read;
+
+	/** @brief Deferred write method
+	 *
+	 *  Takes precedence over the
+	 *  synchronous one for remote writes. See
+	 *  @ref bt_gatt_attr_write_deferred_func_t.
+	 */
+	bt_gatt_attr_write_deferred_func_t write;
+};
+
+/** @brief Respond to a deferred read
+ *
+ *  The value is copied before this returns, and the response is sent from the
+ *  Bluetooth RX thread. The response buffer is allocated when the request
+ *  arrives, so this cannot fail for want of one.
+ *
+ *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+ *
+ *  @param req  The request to respond to.
+ *  @param data Value of the attribute from the offset the callback was given.
+ *              Truncated to what the response can carry.
+ *  @param len  Length of @p data.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL The request cannot be responded to: it has a response
+ *                  already, it is not a read, @p data is NULL with @p len
+ *                  nonzero, or the bearer it arrived on is gone.
+ *  @retval -ENOTCONN The connection is gone.
+ */
+int bt_gatt_read_rsp(const struct bt_gatt_req *req, const void *data, uint16_t len);
+
+/** @brief Respond to a deferred write
+ *
+ *  The response is sent from the Bluetooth RX thread. The response buffer is
+ *  allocated when the request arrives, so this cannot fail for want of one.
+ *
+ *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+ *
+ *  @param req The request to respond to.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL The request cannot be responded to: it has a response
+ *                  already, it is not a write, it has no response, or the
+ *                  bearer it arrived on is gone.
+ *  @retval -ENOTCONN The connection is gone.
+ */
+int bt_gatt_write_rsp(const struct bt_gatt_req *req);
+
+/** @brief Reject a deferred read or write with an error
+ *
+ *  For a Read Multiple [Variable Length] Request this fails the whole request.
+ *  The response is sent from the Bluetooth RX thread.
+ *
+ *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+ *
+ *  @param req The request to respond to.
+ *  @param err @ref BT_GATT_ERR with a specific ``BT_ATT_ERR_*`` error code.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL @p err is not @ref BT_GATT_ERR of an ATT error code, or
+ *                  the request cannot be responded to: it has a response
+ *                  already, it has no response channel, or the bearer it
+ *                  arrived on is gone.
+ *  @retval -ENOTCONN The connection is gone.
+ */
+int bt_gatt_error_rsp(const struct bt_gatt_req *req, int err);
+
 /** @brief GATT Attribute
  *
  *  This type primarily represents an ATT Attribute that may be
@@ -300,6 +517,18 @@ struct bt_gatt_attr {
 	 *  See @ref bt_gatt_attr_write_func_t.
 	 */
 	bt_gatt_attr_write_func_t write;
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP) || defined(__DOXYGEN__)
+	/** @brief Deferred Attribute Value methods
+	 *
+	 *  NULL for an attribute served by read() and write(). The methods
+	 *  set in it serve the remote requests of their kind instead of
+	 *  read() and write(). See @ref bt_gatt_attr_deferred.
+	 *
+	 *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+	 */
+	const struct bt_gatt_attr_deferred *deferred;
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 	/** @brief Private data for read() and write() implementation
 	 *
@@ -1072,6 +1301,34 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _user_data)
 
 /**
+ *  @brief Characteristic and Value Declaration Macro with deferred
+ *  callbacks.
+ *
+ *  Like @ref BT_GATT_CHARACTERISTIC, but the value callbacks may respond to a
+ *  remote read or write later.
+ *
+ *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+ *
+ *  @param _uuid Characteristic attribute uuid.
+ *  @param _props Characteristic attribute properties,
+ *                a bitmap of ``BT_GATT_CHRC_*`` macros.
+ *  @param _perm Characteristic Attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Characteristic Attribute read callback
+ *               (@ref bt_gatt_attr_read_deferred_func_t).
+ *  @param _write Characteristic Attribute write callback
+ *                (@ref bt_gatt_attr_write_deferred_func_t).
+ *  @param _user_data Characteristic Attribute user data.
+ */
+#define BT_GATT_CHARACTERISTIC_DEFERRED(_uuid, _props, _perm, _read, _write, _user_data) \
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,                 \
+			  bt_gatt_attr_read_chrc, NULL,                         \
+			  ((struct bt_gatt_chrc[]) {                            \
+				BT_GATT_CHRC_INIT(_uuid, 0U, _props),           \
+						   })),                         \
+	BT_GATT_ATTRIBUTE_DEFERRED(_uuid, _perm, _read, _write, _user_data)
+
+/**
  *  @brief BT_GATT_CCC_MAX is defined depending on whether
  *  @kconfig{CONFIG_BT_SETTINGS_CCC_LAZY_LOADING} or @kconfig{CONFIG_BT_CONN} is set.
  *
@@ -1402,6 +1659,31 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 	.perm = _perm,							\
 }
 
+/**
+ *  @brief Attribute Declaration Macro with deferred callbacks.
+ *
+ *  Like @ref BT_GATT_ATTRIBUTE, but the callbacks may respond to a remote read or
+ *  write later.
+ *
+ *  @kconfig_dep{CONFIG_BT_GATT_DEFERRED_RSP}
+ *
+ *  @param _uuid Attribute uuid.
+ *  @param _perm Attribute access permissions, a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Attribute read callback (@ref bt_gatt_attr_read_deferred_func_t).
+ *  @param _write Attribute write callback (@ref bt_gatt_attr_write_deferred_func_t).
+ *  @param _user_data Attribute user data.
+ */
+#define BT_GATT_ATTRIBUTE_DEFERRED(_uuid, _perm, _read, _write, _user_data)	\
+{									\
+	.uuid = _uuid,							\
+	.deferred = ((const struct bt_gatt_attr_deferred[]) {			\
+		{ .read = (_read), .write = (_write) },			\
+	}),								\
+	.user_data = _user_data,					\
+	.handle = 0,							\
+	.perm = _perm,							\
+}
+
 /** @brief Notification complete result callback.
  *
  *  @param conn Connection object.
@@ -1677,7 +1959,7 @@ struct bt_gatt_indicate_params {
  *  @ref bt_att_get_max_indicate_size and has to be truncated by the caller if it is
  *  larger than that.
  *
- *  @note This procedure is asynchronous therefore the parameters need to
+ *  @note This procedure is deferred therefore the parameters need to
  *        remains valid while it is active. The procedure is active until
  *        the destroy callback is run.
  *
@@ -2349,7 +2631,7 @@ struct bt_gatt_subscribe_params {
  *  ISR; see
  *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *
- *  @note Notifications are asynchronous therefore the @p params must remain
+ *  @note Notifications are deferred therefore the @p params must remain
  *        valid while subscribed and cannot be reused for additional subscriptions
  *        whilst active.
  *
@@ -2379,7 +2661,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
  *  previous connections when bonded, so resubscribing can be done without
  *  performing a new subscribe procedure after a power cycle.
  *
- *  @note Notifications are asynchronous therefore the parameters need to
+ *  @note Notifications are deferred therefore the parameters need to
  *        remain valid while subscribed.
  *
  *  @param id     Local identity (in most cases BT_ID_DEFAULT).

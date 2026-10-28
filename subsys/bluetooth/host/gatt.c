@@ -3332,16 +3332,26 @@ uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn)
 	return bt_att_get_uatt_mtu(conn);
 }
 
+static bool gatt_attr_is_readable(const struct bt_gatt_attr *attr)
+{
+	return (bt_gatt_attr_deferred_read(attr) != NULL) || (attr->read != NULL);
+}
+
+static bool gatt_attr_is_writable(const struct bt_gatt_attr *attr)
+{
+	return (bt_gatt_attr_deferred_write(attr) != NULL) || (attr->write != NULL);
+}
+
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint16_t mask)
 {
 	if ((mask & BT_GATT_PERM_READ) &&
-	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read)) {
+	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !gatt_attr_is_readable(attr))) {
 		return BT_ATT_ERR_READ_NOT_PERMITTED;
 	}
 
 	if ((mask & BT_GATT_PERM_WRITE) &&
-	    (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !attr->write)) {
+	    (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !gatt_attr_is_writable(attr))) {
 		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
 	}
 
@@ -3398,6 +3408,36 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_GATT_DEFERRED_RSP)
+int bt_gatt_read_rsp(const struct bt_gatt_req *req, const void *data, uint16_t len)
+{
+	if ((req == NULL) || (req->conn == NULL) || ((data == NULL) && (len != 0U))) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_read(req->conn, req->id, data, len);
+}
+
+int bt_gatt_write_rsp(const struct bt_gatt_req *req)
+{
+	if ((req == NULL) || (req->conn == NULL)) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_write(req->conn, req->id);
+}
+
+int bt_gatt_error_rsp(const struct bt_gatt_req *req, int err)
+{
+	/* BT_GATT_ERR() of an ATT error code, 0x01 to 0xff */
+	if ((req == NULL) || (req->conn == NULL) || (err >= 0) || (err < -UINT8_MAX)) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_error(req->conn, req->id, (uint8_t)-err);
+}
+#endif /* CONFIG_BT_GATT_DEFERRED_RSP */
 
 static void sc_restore_rsp(struct bt_conn *conn,
 			   struct bt_gatt_indicate_params *params, uint8_t err)
