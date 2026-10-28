@@ -36,3 +36,8 @@
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
 };
+
+&clkctrl {
+	clocks = <&pll>;
+	clock-divider = <6>; /* 100 MHz */
+};
