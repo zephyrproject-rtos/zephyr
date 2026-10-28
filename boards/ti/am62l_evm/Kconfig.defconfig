@@ -3,6 +3,9 @@
 
 if BOARD_AM62L_EVM
 
+configdefault ETH_DRIVER
+	default y
+
 if FLASH
 
 config BOARD_TI_MSPI_FLASH_BOOT_MODE_RESET
