@@ -54,10 +54,10 @@ extern "C" {
  * In 8 bits, dividing by 10: p = 8, m = ceil(256 * 8 / 10) = 205, e = 2, so
  * n / 10 = (n * 205) >> 11.
  *
- * These are integer constant expressions, so the optimizer folds them for a
- * constant d. With 2^64 = q * d + r, m rounded down is q * p + r * p / d,
- * and r * p % d is d - e. A power of two d, 1 included, is a plain shift
- * instead.
+ * These are integer constant expressions, so SYS_DIV64_RECIP_INIT() is a
+ * static initializer, and the optimizer folds them for a constant d. With
+ * 2^64 = q * d + r, m rounded down is q * p + r * p / d, and r * p % d is
+ * d - e. A power of two d, 1 included, is a plain shift instead.
  */
 
 #define Z_DIV64_LOG2(d) (31 - __builtin_clz(((uint32_t)(d) - 1U) | 1U))
@@ -76,11 +76,14 @@ extern "C" {
 #define Z_DIV64_HI(x)    ((x) >> 32)
 
 #define Z_DIV64_FLAG_BIAS  0x80U
+#define Z_DIV64_FLAG_SHIFT 0x40U /* n >> shift, for a power of two */
 #define Z_DIV64_SHIFT_MASK 0x3fU
 #define Z_DIV64_FLAGS(d)   (Z_DIV64_SHIFT(d) | (Z_DIV64_BIAS(d) ? Z_DIV64_FLAG_BIAS : 0U))
 
 /* The short form of z_div64_mulhi() needs room for a carry between m's halves. */
 #define Z_DIV64_NO_OVF(d) ((Z_DIV64_HI(Z_DIV64_M(d)) + Z_DIV64_LO(Z_DIV64_M(d))) <= UINT32_MAX)
+
+#define Z_DIV64_ILOG2(d) (31 - __builtin_clz((uint32_t)(d)))
 
 /* (n * m) >> 64, adding m first when @p bias is set. @p bias and @p no_ovf
  * are constant at each call site, so only one form is emitted.
@@ -232,6 +235,95 @@ static ALWAYS_INLINE int64_t z_sdiv64_u32_const(int64_t n, uint64_t d)
  */
 #define sys_sdiv64_u32_const(n, d)                                                                 \
 	Z_DIV64_IF_CONST(n, (int64_t)(n) / (int64_t)(d), z_sdiv64_u32_const((n), (d)))
+
+/**
+ * @brief Reciprocal of a 32-bit divisor known only at run time.
+ *
+ * Set up by sys_div64_recip_init() or SYS_DIV64_RECIP_INIT(), then used by
+ * sys_div64_recip_div() and sys_div64_recip_mod(). The fields are internal.
+ */
+struct sys_div64_recip {
+	/** @cond INTERNAL_HIDDEN */
+	uint32_t div;
+#if !defined(CONFIG_64BIT)
+	uint32_t flags;
+	uint64_t m;
+#endif
+	/** @endcond */
+};
+
+/**
+ * @brief Static initializer for a reciprocal of a constant divisor.
+ *
+ * @param d Divisor, an integer constant expression from 1 to UINT32_MAX.
+ */
+#if defined(CONFIG_64BIT)
+#define SYS_DIV64_RECIP_INIT(d) {.div = (d)}
+#else
+#define SYS_DIV64_RECIP_INIT(d)                                                                    \
+	{                                                                                          \
+		.div = (d),                                                                        \
+		.flags = IS_POWER_OF_TWO(d) ? (Z_DIV64_ILOG2(d) | Z_DIV64_FLAG_SHIFT)              \
+					    : Z_DIV64_FLAGS(d),                                    \
+		.m = IS_POWER_OF_TWO(d) ? 0U : Z_DIV64_M(d),                                       \
+	}
+#endif
+
+#if defined(CONFIG_64BIT) || defined(__DOXYGEN__)
+
+/**
+ * @brief Set up the reciprocal of a divisor.
+ *
+ * Takes four 32-bit divisions on a 32-bit target, so do it where the divisor
+ * changes, not before each division.
+ *
+ * @param r Reciprocal to set up.
+ * @param d Divisor, from 1 to UINT32_MAX.
+ */
+static inline void sys_div64_recip_init(struct sys_div64_recip *r, uint32_t d)
+{
+	r->div = d;
+}
+
+#else
+
+void sys_div64_recip_init(struct sys_div64_recip *r, uint32_t d);
+
+#endif /* CONFIG_64BIT || __DOXYGEN__ */
+
+/**
+ * @brief Divide a 64-bit value by a reciprocal's divisor.
+ *
+ * @param n Dividend.
+ * @param r Reciprocal of the divisor.
+ *
+ * @return @p n divided by the divisor of @p r.
+ */
+static inline uint64_t sys_div64_recip_div(uint64_t n, const struct sys_div64_recip *r)
+{
+#if defined(CONFIG_64BIT)
+	return n / r->div;
+#else
+	return z_div64_u32_recip(n, r->m, r->flags);
+#endif
+}
+
+/**
+ * @brief Remainder of a 64-bit value divided by a reciprocal's divisor.
+ *
+ * @param n Dividend.
+ * @param r Reciprocal of the divisor.
+ *
+ * @return @p n modulo the divisor of @p r.
+ */
+static inline uint32_t sys_div64_recip_mod(uint64_t n, const struct sys_div64_recip *r)
+{
+#if defined(CONFIG_64BIT)
+	return (uint32_t)(n % r->div);
+#else
+	return (uint32_t)n - ((uint32_t)sys_div64_recip_div(n, r) * r->div);
+#endif
+}
 
 /** @} */
 
