@@ -10,6 +10,7 @@ toolchain:
 ram: 128
 supported:
   - crypto
+  - dma
   - entropy
   - gpio
   - kernel
