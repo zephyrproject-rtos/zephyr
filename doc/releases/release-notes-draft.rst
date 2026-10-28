@@ -85,6 +85,14 @@ New APIs and options
     unsigned) or 2 cells (64-bit unsigned, high word first) and produces a
     scalar ``DT_PROP`` integer macro
 
+* Interrupt controllers
+
+  * :c:func:`its_get_msi_addr64`
+
+* PCIe
+
+  * :c:func:`pcie_msi_map64`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
