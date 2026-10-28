@@ -47,6 +47,10 @@ void rc_sync_dispatch(void);
 
 void rc_callback_call(const struct device *dev, const struct rc_event *evt);
 
+bool rc_raw_has_readers(void);
+
+void rc_raw_report(const struct device *dev, const uint32_t *words, size_t count);
+
 void rc_key_init(const struct device *dev);
 
 void rc_key_frame(const struct device *dev, const struct rc_protocol *p,

@@ -82,6 +82,45 @@ static void rc_sqe_done(struct rtio_iodev_sqe *iodev_sqe)
 	(void)rc_rx_submit(&rc_done_work);
 }
 
+/* Caller holds the list lock */
+static void rc_list_append(struct rtio_iodev_sqe **head, struct rtio_iodev_sqe **tail,
+			   struct rtio_iodev_sqe *iodev_sqe)
+{
+	rc_sqe_set_next(iodev_sqe, NULL);
+	if (*tail == NULL) {
+		*head = iodev_sqe;
+	} else {
+		rc_sqe_set_next(*tail, iodev_sqe);
+	}
+	*tail = iodev_sqe;
+}
+
+static bool rc_list_remove(struct rtio_iodev_sqe **head, struct rtio_iodev_sqe **tail,
+			   struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_iodev_sqe *prev = NULL;
+
+	for (struct rtio_iodev_sqe *curr = *head; curr != NULL;
+	     prev = curr, curr = rc_sqe_next(curr)) {
+		if (curr != iodev_sqe) {
+			continue;
+		}
+
+		if (prev == NULL) {
+			*head = rc_sqe_next(curr);
+		} else {
+			rc_sqe_set_next(prev, rc_sqe_next(curr));
+		}
+		if (*tail == curr) {
+			*tail = prev;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 static void rc_event_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct device *dev = rc_sqe_dev(iodev_sqe);
@@ -94,42 +133,9 @@ static void rc_event_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	}
 
 	data = rc_data(dev);
-	rc_sqe_set_next(iodev_sqe, NULL);
-
 	key = k_spin_lock(&data->evt_lock);
-	if (data->evt_tail == NULL) {
-		data->evt_head = iodev_sqe;
-	} else {
-		rc_sqe_set_next(data->evt_tail, iodev_sqe);
-	}
-	data->evt_tail = iodev_sqe;
+	rc_list_append(&data->evt_head, &data->evt_tail, iodev_sqe);
 	k_spin_unlock(&data->evt_lock, key);
-}
-
-/* Caller holds evt_lock */
-static bool rc_evt_remove(struct rc_dev_data *data, struct rtio_iodev_sqe *iodev_sqe)
-{
-	struct rtio_iodev_sqe *prev = NULL;
-
-	for (struct rtio_iodev_sqe *curr = data->evt_head; curr != NULL;
-	     prev = curr, curr = rc_sqe_next(curr)) {
-		if (curr != iodev_sqe) {
-			continue;
-		}
-
-		if (prev == NULL) {
-			data->evt_head = rc_sqe_next(curr);
-		} else {
-			rc_sqe_set_next(prev, rc_sqe_next(curr));
-		}
-		if (data->evt_tail == curr) {
-			data->evt_tail = prev;
-		}
-
-		return true;
-	}
-
-	return false;
 }
 
 static void rc_event_iodev_cancel(const struct rtio_iodev *iodev, struct rtio *r,
@@ -149,7 +155,7 @@ static void rc_event_iodev_cancel(const struct rtio_iodev *iodev, struct rtio *r
 	key = k_spin_lock(&data->evt_lock);
 	iodev_sqe = rtio_iodev_sqe_from_handle(r, handle);
 	if (iodev_sqe != NULL) {
-		removed = rc_evt_remove(data, iodev_sqe);
+		removed = rc_list_remove(&data->evt_head, &data->evt_tail, iodev_sqe);
 	}
 	k_spin_unlock(&data->evt_lock, key);
 
@@ -200,4 +206,123 @@ void rc_event_report(const struct device *dev, const struct rc_event *evt)
 	rc_sync_dispatch();
 
 	rc_callback_call(dev, evt);
+}
+
+static void rc_raw_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rc_raw_iodev_data *raw = iodev_sqe->sqe.iodev->data;
+	k_spinlock_key_t key;
+
+	if (!device_is_ready(raw->config.dev) || (iodev_sqe->sqe.op != RTIO_OP_RX)) {
+		rc_sqe_done(iodev_sqe);
+		return;
+	}
+
+	key = k_spin_lock(&raw->lock);
+	rc_list_append(&raw->head, &raw->tail, iodev_sqe);
+	k_spin_unlock(&raw->lock, key);
+}
+
+static void rc_raw_iodev_cancel(const struct rtio_iodev *iodev, struct rtio *r,
+				rtio_sqe_handle_t handle)
+{
+	struct rc_raw_iodev_data *raw = iodev->data;
+	struct rtio_iodev_sqe *iodev_sqe;
+	k_spinlock_key_t key;
+	bool removed = false;
+
+	key = k_spin_lock(&raw->lock);
+	iodev_sqe = rtio_iodev_sqe_from_handle(r, handle);
+	if (iodev_sqe != NULL) {
+		removed = rc_list_remove(&raw->head, &raw->tail, iodev_sqe);
+	}
+	raw->active = false;
+	raw->missed = false;
+	k_spin_unlock(&raw->lock, key);
+
+	if (removed) {
+		rc_sqe_done(iodev_sqe);
+	}
+}
+
+const struct rtio_iodev_api rc_raw_iodev_api = {
+	.submit = rc_raw_iodev_submit,
+	.cancel = rc_raw_iodev_cancel,
+};
+
+bool rc_raw_has_readers(void)
+{
+	int count;
+
+	STRUCT_SECTION_COUNT(rc_raw_iodev_data, &count);
+
+	return count > 0;
+}
+
+static void rc_raw_complete(struct rtio_iodev_sqe *iodev_sqe, bool missed, const uint32_t *words,
+			    size_t count)
+{
+	size_t total = count + (missed ? 1U : 0U);
+	uint32_t buf_len;
+	uint32_t *out;
+	size_t cap;
+	size_t n = 0;
+	uint8_t *buf;
+
+	if (rtio_sqe_rx_buf(iodev_sqe, sizeof(uint32_t), total * sizeof(uint32_t), &buf,
+			    &buf_len) != 0) {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
+
+	out = (uint32_t *)buf;
+	cap = MIN(buf_len / sizeof(uint32_t), total);
+	if (missed) {
+		out[n++] = RC_RAW_OVERFLOW;
+	}
+	for (size_t i = 0; n < cap; i++) {
+		out[n++] = words[i];
+	}
+	if (cap < total) {
+		out[cap - 1U] = RC_RAW_OVERFLOW;
+	}
+
+	rtio_iodev_sqe_ok(iodev_sqe, (int)cap);
+}
+
+void rc_raw_report(const struct device *dev, const uint32_t *words, size_t count)
+{
+	STRUCT_SECTION_FOREACH(rc_raw_iodev_data, raw) {
+		struct rtio_iodev_sqe *iodev_sqe;
+		k_spinlock_key_t key;
+		bool missed;
+
+		if (raw->config.dev != dev) {
+			continue;
+		}
+
+		/* Detach first: a multishot completion re-submits to this list */
+		key = k_spin_lock(&raw->lock);
+		iodev_sqe = raw->head;
+		raw->head = NULL;
+		raw->tail = NULL;
+		missed = raw->missed;
+		raw->missed = (iodev_sqe == NULL) && raw->active;
+		if (iodev_sqe != NULL) {
+			raw->active = true;
+		}
+		k_spin_unlock(&raw->lock, key);
+
+		while (iodev_sqe != NULL) {
+			struct rtio_iodev_sqe *next = rc_sqe_next(iodev_sqe);
+
+			rc_sqe_set_next(iodev_sqe, NULL);
+			if (rtio_iodev_sqe_is_canceled(iodev_sqe)) {
+				rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
+			} else {
+				rc_raw_complete(iodev_sqe, missed, words, count);
+			}
+			iodev_sqe = next;
+		}
+	}
 }
