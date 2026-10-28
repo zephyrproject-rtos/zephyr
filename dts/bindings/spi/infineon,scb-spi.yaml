@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon serial communication block (SCB) in SPI mode
+
+  The SCB runs SPI from its functional clock CLK_SCB, which is the output of
+  the peripheral clock divider referenced by "clocks". The SPI clock is
+  CLK_SCB divided by an oversampling factor of 4 to 16, so the driver programs
+  the divider at run time from the requested bus frequency. The divider must be
+  an integer divider (8-bit or 16-bit) without a fixed "clock-div" value, and it
+  must not be shared with another peripheral.
+
+  Example:
+
+    &scb0 {
+      compatible = "infineon,scb-spi";
+      clocks = <&peri0_group1_16bit_3>;
+      pinctrl-0 = <&p11_3_scb0_spi_mosi &p11_0_scb0_spi_miso &p11_2_scb0_spi_clk>;
+      pinctrl-names = "default";
+      cs-gpios = <&gpio_prt11 1 GPIO_ACTIVE_LOW>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+    };
+
+compatible: "infineon,scb-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml, "infineon,scb.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  infineon,ss-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the slave select pin in peripheral mode. The SCB
+      raises no interrupt when the controller deselects it between frames,
+      so the driver watches the slave select pin through the GPIO port
+      interrupt to end a peripheral transfer that the controller stops
+      before the buffers are full. The GPIO edge detector works while the
+      pin is routed to the SCB. Without this property a peripheral
+      transfer ends only when the buffers are full.
