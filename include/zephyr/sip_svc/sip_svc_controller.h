@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Intel Corporation.
+ * Copyright (c) 2026, Altera Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,6 +82,8 @@ struct sip_svc_controller {
 	uint8_t *async_resp_data;
 	/* Thread id of sip_svc thread */
 	k_tid_t tid;
+	/* Blocks the internal thread until a new transaction is enqueued */
+	struct k_sem thread_sem;
 
 #if CONFIG_ARM_SIP_SVC_SUBSYS_SINGLY_OPEN
 	/* Atomic variable to restrict one client access */
@@ -96,6 +99,12 @@ struct sip_svc_controller {
 	K_KERNEL_STACK_MEMBER(stack, CONFIG_ARM_SIP_SVC_SUBSYS_THREAD_STACK_SIZE);
 };
 
+#if defined(CONFIG_SOC_AGILEX5)
+#define SIP_SVC_ASYNC_RESP_BUF_SEC __attribute__((section("MBOX_DDR")))
+#else
+#define SIP_SVC_ASYNC_RESP_BUF_SEC
+#endif
+
 /**
  * @brief Controller define used by sip_svc driver to instantiate each controller.
  * Each sip_svc driver will use this API to instantiate a controller for sip_svc
@@ -107,12 +116,15 @@ struct sip_svc_controller {
 		((sip_num_clients <= CONFIG_ARM_SIP_SVC_SUBSYS_MAX_CLIENT_COUNT) &&                \
 		 (sip_num_clients > 0)),                                                           \
 		"Number of client should be within 1 and ARM_SIP_SVC_SUBSYS_MAX_CLIENT_COUNT");    \
+	static SIP_SVC_ASYNC_RESP_BUF_SEC uint8_t async_resp_buf##inst[sip_resp_size]              \
+		__aligned(CONFIG_DCACHE_LINE_SIZE);                                                \
 	static STRUCT_SECTION_ITERABLE(sip_svc_controller, sip_svc_##inst) = {                     \
 		.method = conduit_name,                                                            \
 		.dev = sip_dev,                                                                    \
 		.num_clients = sip_num_clients,                                                    \
 		.max_transactions = sip_max_transactions,                                          \
 		.resp_size = sip_resp_size,                                                        \
+		.async_resp_data = async_resp_buf##inst,                                           \
 	}
 
 #else
