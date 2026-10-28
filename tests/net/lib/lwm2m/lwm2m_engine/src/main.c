@@ -69,6 +69,28 @@ static void test_service(struct k_work *work)
 	k_sleep(K_MSEC(10));
 }
 
+static int self_calls;
+static int pair_calls;
+
+/* A handler may schedule itself again from inside the dispatch loop */
+static void self_service(struct k_work *work)
+{
+	self_calls++;
+	if (self_calls < 3) {
+		(void)lwm2m_engine_call_now(self_service);
+	}
+}
+
+static void pair_service_a(struct k_work *work)
+{
+	pair_calls++;
+}
+
+static void pair_service_b(struct k_work *work)
+{
+	pair_calls++;
+}
+
 static void setup(void *data)
 {
 #if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
@@ -169,6 +191,55 @@ ZTEST(lwm2m_engine, test_engine_add_service)
 	k_sleep(K_MSEC(1500));
 	ret = lwm2m_engine_update_service_period(test_service, 500);
 	zassert_equal(ret, 0);
+	ret = lwm2m_engine_stop(&ctx);
+	zassert_equal(ret, 0);
+}
+
+ZTEST(lwm2m_engine, test_service_dispatch)
+{
+	int ret;
+	struct lwm2m_ctx ctx;
+
+	(void)memset(&ctx, 0x0, sizeof(ctx));
+
+	k_mutex_init(&ctx.lock);
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
+	ctx.load_credentials = NULL;
+
+	self_calls = 0;
+	pair_calls = 0;
+
+	ret = lwm2m_engine_start(&ctx);
+	zassert_equal(ret, 0);
+
+	/* Two services due at once, and one that reschedules itself twice */
+	ret = lwm2m_engine_call_now(pair_service_a);
+	zassert_equal(ret, 0);
+	ret = lwm2m_engine_call_now(pair_service_b);
+	zassert_equal(ret, 0);
+	ret = lwm2m_engine_call_now(self_service);
+	zassert_equal(ret, 0);
+
+	k_sleep(K_MSEC(200));
+	zassert_equal(pair_calls, 2);
+	zassert_equal(self_calls, 3);
+
+	/* A one-shot service is gone once it ran; a removed service is not found */
+	ret = lwm2m_engine_update_service_period(pair_service_a, 0);
+	zassert_equal(ret, -ENOENT);
+
+	/* A periodic service can be rescheduled and removed from another thread.
+	 * The one-shot is due far enough away that it cannot run before it is removed.
+	 */
+	ret = lwm2m_engine_add_service(test_service, 1000);
+	zassert_equal(ret, 0);
+	ret = lwm2m_engine_call_at(test_service, k_uptime_get() + 10000);
+	zassert_equal(ret, 0);
+	ret = lwm2m_engine_update_service_period(test_service, 0);
+	zassert_equal(ret, 1);
+	ret = lwm2m_engine_update_service_period(test_service, 0);
+	zassert_equal(ret, -ENOENT);
+
 	ret = lwm2m_engine_stop(&ctx);
 	zassert_equal(ret, 0);
 }
