@@ -99,4 +99,38 @@ ZTEST(sys_util, test_WRITE_BIT)
  * @}
  */
 
+ZTEST(sys_util, test_gcd_mixed_sign)
+{
+	int32_t a = -12;
+	uint32_t b = 8;
+
+	zexpect_equal(sys_gcd(0U, -15), 15U);
+	zexpect_equal(sys_gcd(-15, 0U), 15U);
+	zexpect_equal(sys_gcd(0, UINT32_MAX), UINT32_MAX);
+	zexpect_equal(sys_gcd(UINT32_MAX, 0), UINT32_MAX);
+	zexpect_equal(sys_gcd(15U, -15), 15U);
+	zexpect_equal(sys_gcd(-15, 15U), 15U);
+	zexpect_equal(sys_gcd(INT32_MIN, UINT32_MAX), 1U);
+	zexpect_equal(sys_gcd(UINT32_MAX, INT32_MIN), 1U);
+	zexpect_equal(sys_gcd(a++, b++), 4U);
+	zexpect_equal(a, -11);
+	zexpect_equal(b, 9U);
+}
+
+ZTEST(sys_util, test_lcm_mixed_sign)
+{
+	int32_t a = -12;
+	uint32_t b = 8;
+
+	zexpect_equal(sys_lcm(5U, -15), 15U);
+	zexpect_equal(sys_lcm(-15, 5U), 15U);
+	zexpect_equal(sys_lcm(1, UINT32_MAX), UINT32_MAX);
+	zexpect_equal(sys_lcm(UINT32_MAX, 1), UINT32_MAX);
+	zexpect_equal(sys_lcm(0U, -15), 0U);
+	zexpect_equal(sys_lcm(-15, 0U), 0U);
+	zexpect_equal(sys_lcm(a++, b++), 24U);
+	zexpect_equal(a, -11);
+	zexpect_equal(b, 9U);
+}
+
 ZTEST_SUITE(sys_util, NULL, NULL, NULL, NULL, NULL);
