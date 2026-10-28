@@ -34,6 +34,7 @@ synchronization.
    scheduling/index.rst
    threads/system_threads.rst
    threads/workqueue.rst
+   offloader.rst
    threads/nothread.rst
    interrupts.rst
    polling.rst
