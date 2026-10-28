@@ -9,9 +9,12 @@ toolchain:
   - zephyr
 ram: 128
 supported:
+  - crypto
+  - entropy
   - gpio
   - kernel
   - led
   - logging
+  - rtc
   - uart
 vendor: microchip
