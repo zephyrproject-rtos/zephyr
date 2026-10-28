@@ -1214,8 +1214,8 @@ static void ConfigCGUDig_MEDIA(void)
 
 /*
  * AUDIO domain (11 slices on AUDIO_CCM). Only the domain-base root is set
- * here: audio_clk (AUDIOBUS). The per-peripheral leaf roots (dmic, sai,
- * spdif, asrc) are not described anywhere yet and keep their reset values.
+ * here: audio_clk (AUDIOBUS). The SAI MCLK0 roots come from devicetree, and
+ * the remaining leaf roots (dmic, spdif, asrc) keep their reset values.
  */
 static void ConfigCGUDig_AUDIO(void)
 {

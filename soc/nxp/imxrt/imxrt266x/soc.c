@@ -22,9 +22,11 @@
 #include "soc.h"
 #include "soc_clock.h"
 
+#include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_powercon.h>
-
+#include <fsl_power.h>
+#include <fsl_reset.h>
 /*
  * The ROM leaves SCB->VTOR at 0 and SystemInit() only relocates it for a RAM
  * vector table, so an XIP image has to point VTOR at this one itself.
@@ -120,11 +122,18 @@ void soc_early_init_hook(void)
 	sys_cache_data_enable();
 
 	/*
-	 * Clocks last: this reconfigures the PLLs, which parks both XSPI
+	 * Clocks next: this reconfigures the PLLs, which parks both XSPI
 	 * controllers -- including the flash this code runs from -- so everything
 	 * it depends on has to be working already.
 	 */
 	soc_clock_init();
+
+	/*
+	 * Last: soc_trdc_assign_masters() writes MEDIA__TRDC, which sits on the
+	 * MEDIA domain bus that soc_clock_init() just started clocking via
+	 * mediabus_rootclk. Any earlier and that write stalls the bus forever.
+	 */
+	soc_trdc_assign_masters();
 }
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
