@@ -16,7 +16,6 @@ supported:
   - pwm
   - rtc
   - spi
-  - trng
   - uart
   - vref
   - watchdog
