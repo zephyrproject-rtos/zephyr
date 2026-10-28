@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
 #include <threads.h>
 
 #include <zephyr/kernel.h>
@@ -15,10 +14,6 @@ int tss_create(tss_t *key, tss_dtor_t destructor)
 	switch (pthread_key_create(key, destructor)) {
 	case 0:
 		return thrd_success;
-	case EAGAIN:
-		return thrd_busy;
-	case ENOMEM:
-		return thrd_nomem;
 	default:
 		return thrd_error;
 	}
@@ -34,8 +29,6 @@ int tss_set(tss_t key, void *val)
 	switch (pthread_setspecific(key, val)) {
 	case 0:
 		return thrd_success;
-	case ENOMEM:
-		return thrd_nomem;
 	default:
 		return thrd_error;
 	}
