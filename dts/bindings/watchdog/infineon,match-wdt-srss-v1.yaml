@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon PSOC 6 match watchdog timer
+
+description: |
+  Basic watchdog timer of PSOC 6 devices: a 16-bit counter with an enable
+  bit and a register lock in the control register.
+
+compatible: "infineon,match-wdt-srss-v1"
+
+include: infineon,match-wdt-common.yaml

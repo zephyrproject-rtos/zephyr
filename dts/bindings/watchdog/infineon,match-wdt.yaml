@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon match watchdog timer
+
+description: |
+  Basic watchdog timer of CAT1B and PSOC Edge devices: a counter with an
+  enable bit and a register lock in the control register, and a second
+  match register that sets how many counter bits are compared.
+
+compatible: "infineon,match-wdt"
+
+include: infineon,match-wdt-common.yaml
+
+properties:
+  counter-bits:
+    type: int
+    required: true
+    enum: [22, 32]
+    description: Width of the watchdog counter in bits.
