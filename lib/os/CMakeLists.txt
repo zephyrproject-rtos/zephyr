@@ -83,6 +83,7 @@ if(CONFIG_ZVFS)
 endif()
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
+zephyr_sources_ifndef(CONFIG_64BIT div64.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
 add_subdirectory_ifdef(CONFIG_CPU_LOAD cpu_load)
 
