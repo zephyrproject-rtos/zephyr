@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/rc/rc-proto.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
@@ -175,6 +176,51 @@ int rc_protocol_disable(const struct device *dev, uint16_t proto);
  * @retval -ENOTSUP No decoder for @p proto is built.
  */
 int rc_protocol_is_enabled(const struct device *dev, uint16_t proto);
+
+/**
+ * @brief Callback for rc events.
+ *
+ * @param dev rc device of the event.
+ * @param evt Event, valid during the call only.
+ * @param user_data User data of the callback definition.
+ */
+typedef void (*rc_callback_t)(const struct device *dev, const struct rc_event *evt,
+			      void *user_data);
+
+/** @brief rc callback definition, see RC_CALLBACK_DEFINE(). */
+struct rc_callback {
+	/** rc device, or NULL for all rc devices */
+	const struct device *dev;
+	/** Callback function */
+	rc_callback_t callback;
+	/** User data passed to the callback */
+	void *user_data;
+};
+
+/**
+ * @brief Register a callback for rc events, with an explicit name.
+ *
+ * @param _dev rc device, or NULL for the events of all rc devices.
+ * @param _callback Callback function, see rc_callback_t.
+ * @param _user_data User data passed to the callback.
+ * @param _name Name of the callback definition.
+ */
+#define RC_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, _name)                               \
+	static const STRUCT_SECTION_ITERABLE(rc_callback, _rc_callback__##_name) = {               \
+		.dev = _dev,                                                                       \
+		.callback = _callback,                                                             \
+		.user_data = _user_data,                                                           \
+	}
+
+/**
+ * @brief Register a callback for rc events.
+ *
+ * @param _dev rc device, or NULL for the events of all rc devices.
+ * @param _callback Callback function, see rc_callback_t.
+ * @param _user_data User data passed to the callback.
+ */
+#define RC_CALLBACK_DEFINE(_dev, _callback, _user_data)                                            \
+	RC_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, _callback)
 
 /** @cond INTERNAL_HIDDEN */
 struct rc_iodev_config {

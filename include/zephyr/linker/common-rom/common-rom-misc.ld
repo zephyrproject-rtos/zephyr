@@ -43,6 +43,7 @@
 #endif
 
 #if defined(CONFIG_RC)
+	ITERABLE_SECTION_ROM(rc_callback, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_ROM(rc_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 

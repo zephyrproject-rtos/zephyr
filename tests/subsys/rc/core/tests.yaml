@@ -8,3 +8,6 @@ common:
     - native_sim
 tests:
   rc.core: {}
+  rc.core.no_callbacks:
+    extra_configs:
+      - CONFIG_TEST_RC_CALLBACKS=n

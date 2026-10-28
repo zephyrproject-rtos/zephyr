@@ -198,4 +198,6 @@ void rc_event_report(const struct device *dev, const struct rc_event *evt)
 	}
 
 	rc_sync_dispatch();
+
+	rc_callback_call(dev, evt);
 }

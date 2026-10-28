@@ -45,6 +45,8 @@ void rc_event_report(const struct device *dev, const struct rc_event *evt);
 
 void rc_sync_dispatch(void);
 
+void rc_callback_call(const struct device *dev, const struct rc_event *evt);
+
 void rc_key_init(const struct device *dev);
 
 void rc_key_frame(const struct device *dev, const struct rc_protocol *p,
