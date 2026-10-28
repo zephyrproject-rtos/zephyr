@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_FAKE
+	bool "Fake I2S driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_I2S_ENABLED
+	help
+	  Enable support for the FFF-based fake I2S driver.
