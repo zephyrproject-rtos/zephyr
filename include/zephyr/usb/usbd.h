@@ -857,7 +857,7 @@ int usbd_add_configuration(struct usbd_context *uds_ctx,
  * for example CDC_ACM for CDC ACM class instance,
  * and can also be easily identified in the shell.
  * Class instance can only be registered when the USB device stack
- * is disabled.
+ * is not initialized.
  * Registered instances are initialized at initialization
  * of the USB device stack, and the interface descriptors
  * of each instance are adapted to the whole context.
@@ -913,7 +913,7 @@ int usbd_register_all_classes(struct usbd_context *uds_ctx,
  *
  * USB class instance will be removed and will not appear
  * on the next start of the stack. Instance can only be unregistered
- * when the USB device stack is disabled.
+ * when the USB device stack is not initialized.
  *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] name    Class instance name
