@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &tpm0;
+	};
+};
+
+&pinctrl {
+	/* PIO2_0 is also SAI0 TX_DATA0, an input of the codec. */
+	pinmux_tpm0: pinmux_tpm0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_0_hsp_qtpm0_ch0>;
+		};
+	};
+};
+
+&tpm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_tpm0>;
+	pinctrl-names = "default";
+};

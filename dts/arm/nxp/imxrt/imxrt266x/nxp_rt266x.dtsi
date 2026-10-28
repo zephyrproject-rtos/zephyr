@@ -259,6 +259,18 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x40060000 0x4000>;
+
+		/*
+		 * CLOCK_ROOT21, shared by HSP TPM0..3, so programmed here rather
+		 * than from a TPM "source" cell. PERI3 (400 MHz) / 5 = 80 MHz.
+		 */
+		main_qtpm0_rootclk: clock-root@150 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0x150 0x10>;
+			nxp,root-id = <IMX_CCM_ROOT_MAIN_QTPM0_FCLK>;
+			clock-mux = <IMX_CCM_MUX_QTPM0_PERI3>;
+			clock-div = <5>;
+		};
 	};
 
 	/*
@@ -1221,8 +1233,8 @@
 	};
 
 	/*
-	 * QuadTPM0 (HSP domain). Four channels share the hsp_qtpm0 gate; channel
-	 * interrupts are IRQ 137..140.
+	 * QuadTPM0 (HSP domain). The four TPMs share the hsp_qtpm0 gate and root;
+	 * their interrupts are IRQ 137..140.
 	 */
 	tpm0: hsp_tpm_0: pwm@420a0000 {
 		compatible = "nxp,kinetis-tpm";
