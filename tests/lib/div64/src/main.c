@@ -8,6 +8,7 @@
 #include <zephyr/ztest.h>
 
 #define RANDOM_DIVIDENDS 1000
+#define RANDOM_DIVISORS  5000
 
 /* Divisors with and without the bias, with and without the short multiply,
  * powers of two and their neighbors, and the rates time conversions use.
@@ -60,6 +61,18 @@ static uint64_t dividend(uint32_t i, uint32_t d, uint64_t *s)
 	uint64_t v = xorshift(s);
 
 	return v >> (xorshift(s) & 63U);
+}
+
+static void check_recip(const struct sys_div64_recip *r, uint32_t d, uint32_t count, uint64_t *s)
+{
+	for (uint32_t i = 0; i < count; i++) {
+		uint64_t n = dividend(i, d, s);
+
+		zassert_equal(sys_div64_recip_div(n, r), n / d, "%llu / %u",
+			      (unsigned long long)n, d);
+		zassert_equal(sys_div64_recip_mod(n, r), (uint32_t)(n % d), "%llu %% %u",
+			      (unsigned long long)n, d);
+	}
 }
 
 /* One function per divisor, so the divisor stays a constant expression and the
@@ -127,6 +140,75 @@ ZTEST(div64, test_single_eval)
 	zassert_equal(sys_div64_u32_const(v[--i], 1000), 123456789012ULL);
 	zassert_equal(sys_mod64_u32_const(v[i--], 1000), 345U);
 	zassert_equal(i, 0U);
+}
+
+#if defined(CONFIG_64BIT)
+#define CHECK_RECIP_FIELDS(r, rs, d)
+#else
+#define CHECK_RECIP_FIELDS(r, rs, d)                                                               \
+	zassert_equal((r).m, (rs).m, "m for %u", (uint32_t)(d));                                   \
+	zassert_equal((r).flags, (rs).flags, "flags for %u", (uint32_t)(d))
+#endif
+
+/* SYS_DIV64_RECIP_INIT() divides correctly and matches sys_div64_recip_init(). */
+#define DEFINE_CHECK_STATIC(d)                                                                     \
+	static void check_static_##d(uint64_t *s)                                                  \
+	{                                                                                          \
+		static const struct sys_div64_recip rs = SYS_DIV64_RECIP_INIT(d);                  \
+		struct sys_div64_recip r;                                                          \
+                                                                                                   \
+		sys_div64_recip_init(&r, d);                                                       \
+		zassert_equal(r.div, rs.div, "divisor %u", (uint32_t)(d));                         \
+		CHECK_RECIP_FIELDS(r, rs, d);                                                      \
+		check_recip(&rs, d, RANDOM_DIVIDENDS, s);                                          \
+	}
+
+FOR_EACH_DIVISOR(DEFINE_CHECK_STATIC)
+
+#define CHECK_STATIC_ENTRY(d) check_static_##d,
+
+ZTEST(div64, test_recip_static)
+{
+	static void (*const checks[])(uint64_t *s) = {FOR_EACH_DIVISOR(CHECK_STATIC_ENTRY)};
+	uint64_t s = 0x2545f4914f6cdd1dULL;
+
+	ARRAY_FOR_EACH(checks, i) {
+		checks[i](&s);
+	}
+}
+
+ZTEST(div64, test_recip_runtime)
+{
+	uint64_t s = 0x9e3779b97f4a7c15ULL;
+	struct sys_div64_recip r;
+
+	for (uint32_t d = 1U; d <= 4096U; d++) {
+		sys_div64_recip_init(&r, d);
+		check_recip(&r, d, 16U, &s);
+	}
+
+	for (uint32_t k = 0U; k < 32U; k++) {
+		uint32_t pow2 = BIT(k);
+
+		sys_div64_recip_init(&r, pow2);
+		check_recip(&r, pow2, 32U, &s);
+		sys_div64_recip_init(&r, pow2 + 1U);
+		check_recip(&r, pow2 + 1U, 32U, &s);
+		if (pow2 > 1U) {
+			sys_div64_recip_init(&r, pow2 - 1U);
+			check_recip(&r, pow2 - 1U, 32U, &s);
+		}
+	}
+
+	for (uint32_t j = 0U; j < RANDOM_DIVISORS; j++) {
+		uint32_t d = (uint32_t)xorshift(&s) >> (xorshift(&s) & 31U);
+
+		if (d == 0U) {
+			continue;
+		}
+		sys_div64_recip_init(&r, d);
+		check_recip(&r, d, 12U, &s);
+	}
 }
 
 ZTEST_SUITE(div64, NULL, NULL, NULL, NULL, NULL);
