@@ -112,6 +112,10 @@ static int wdt_nrf_gswdt_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (cfg->window.max == 0U) {
+		return -EINVAL;
+	}
+
 #if defined(CONFIG_NRFS_GSWDT_SERVICE_ENABLED)
 	nrfs_err_t status = nrfs_gswdt_timeout_set(cfg->window.max, NULL);
 
