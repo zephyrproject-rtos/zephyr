@@ -21,4 +21,8 @@ supported:
   - pinctrl
   - rtc
   - watchdog
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
 vendor: infineon
