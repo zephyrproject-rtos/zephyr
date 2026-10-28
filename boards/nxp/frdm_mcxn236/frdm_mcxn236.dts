@@ -53,10 +53,10 @@
 			reg = <0x00014000 DT_SIZE_K(440)>;
 		};
 
-		slot1_partition: partition@84000 {
+		slot1_partition: partition@82000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-1";
-			reg = <0x0084000 DT_SIZE_K(440)>;
+			reg = <0x00082000 DT_SIZE_K(440)>;
 		};
 
 		storage_partition: partition@f0000 {
