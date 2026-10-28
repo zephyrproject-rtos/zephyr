@@ -33,8 +33,13 @@ BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii) ||
 		     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) || ETH_ESP32_RGMII,
 	     "Unsupported PHY interface type. Only RMII, MII and RGMII are supported.");
 
+#ifdef CONFIG_SOC_SERIES_ESP32S31
+/* The DMA bus master interface is a 64-bit AXI interface on ESP32-S31 */
+#define DATA_BUS_WIDTH 64
+#else
 /* The DMA bus master interface is a 32-bit AHB interface on this IP */
 #define DATA_BUS_WIDTH 32
+#endif
 
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 
@@ -149,7 +154,7 @@ int dwmac_platform_init(const struct device *dev)
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
 
-#ifdef CONFIG_SOC_SERIES_ESP32P4
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
 	/* Deactivates store and forward mode for rx and tx */
 	/* Enable OSF (Operate on Second Frame) to improve performance */
 	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_OSF | FIELD_PREP(DWMAC_DMAOMR_RTC, 0x3));
