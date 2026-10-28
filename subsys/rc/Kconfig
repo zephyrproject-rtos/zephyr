@@ -48,6 +48,16 @@ config RC_RX_WORKQ_PRIORITY
 	  Preemptible priority of the work queue that decodes raw words of
 	  all rc devices.
 
+config RC_RAW_CHUNK_WORDS
+	int "Raw words per raw iodev completion"
+	default 32
+	range 1 256
+	help
+	  Raw words drained from a device's receive buffer are delivered to
+	  raw iodev readers in chunks of at most this many words, one
+	  completion per pending read per chunk. The chunk is a stack buffer
+	  of the rc receive work queue, used only when a raw iodev exists.
+
 config RC_RECEIVE_SYNC_MAX
 	int "Maximum concurrent rc_receive_sync() calls"
 	default 2

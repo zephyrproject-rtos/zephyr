@@ -143,21 +143,55 @@ void rc_raw_overflow(const struct device *dev)
 	atomic_set_bit(&data->flags, RC_FLAG_OVERFLOW);
 }
 
+static bool rc_rx_drain_one(struct rc_dev_data *data, uint32_t *word)
+{
+	uint32_t *slot = spsc_consume(data->ring);
+
+	if (slot == NULL) {
+		return false;
+	}
+
+	*word = *slot;
+	spsc_release(data->ring);
+
+	if ((*word & RC_RAW_OVERFLOW) != 0U) {
+		rc_protocol_reset_all(data->dev);
+	} else {
+		rc_protocol_decode(data->dev, *word);
+	}
+
+	return true;
+}
+
+static void rc_rx_drain_raw(struct rc_dev_data *data)
+{
+	uint32_t chunk[CONFIG_RC_RAW_CHUNK_WORDS];
+	size_t count = 0;
+
+	while (rc_rx_drain_one(data, &chunk[count])) {
+		count++;
+		if (count == ARRAY_SIZE(chunk)) {
+			rc_raw_report(data->dev, chunk, count);
+			count = 0;
+		}
+	}
+
+	if (count > 0U) {
+		rc_raw_report(data->dev, chunk, count);
+	}
+}
+
 static void rc_rx_work_handler(struct k_work *work)
 {
 	struct rc_dev_data *data = CONTAINER_OF(work, struct rc_dev_data, rx_work);
-	uint32_t *slot;
+	uint32_t word;
 
-	while ((slot = spsc_consume(data->ring)) != NULL) {
-		uint32_t word = *slot;
+	if (rc_raw_has_readers()) {
+		rc_rx_drain_raw(data);
+		return;
+	}
 
-		spsc_release(data->ring);
-
-		if ((word & RC_RAW_OVERFLOW) != 0U) {
-			rc_protocol_reset_all(data->dev);
-		} else {
-			rc_protocol_decode(data->dev, word);
-		}
+	while (rc_rx_drain_one(data, &word)) {
 	}
 }
 

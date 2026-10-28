@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/rc/rc-proto.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 
@@ -228,6 +229,17 @@ struct rc_iodev_config {
 };
 
 extern const struct rtio_iodev_api rc_event_iodev_api;
+
+struct rc_raw_iodev_data {
+	struct rc_iodev_config config;
+	struct k_spinlock lock;
+	struct rtio_iodev_sqe *head;
+	struct rtio_iodev_sqe *tail;
+	bool active;
+	bool missed;
+};
+
+extern const struct rtio_iodev_api rc_raw_iodev_api;
 /** @endcond */
 
 /**
@@ -243,9 +255,21 @@ extern const struct rtio_iodev_api rc_event_iodev_api;
 	RTIO_IODEV_DEFINE(name, &rc_event_iodev_api, &_CONCAT(name, _config))
 
 /**
+ * @brief Define an RTIO iodev streaming the raw words of an rc device.
+ *
+ * @param name Name of the iodev.
+ * @param node_id Devicetree node identifier of the rc device.
+ */
+#define RC_DT_RAW_IODEV(name, node_id)                                                             \
+	static STRUCT_SECTION_ITERABLE(rc_raw_iodev_data, _CONCAT(name, _data)) = {                \
+		.config = {.dev = DEVICE_DT_GET(node_id)},                                         \
+	};                                                                                         \
+	RTIO_IODEV_DEFINE(name, &rc_raw_iodev_api, &_CONCAT(name, _data))
+
+/**
  * @brief Start streaming events into an RTIO context.
  *
- * @param iodev Iodev defined with RC_DT_EVENT_IODEV().
+ * @param iodev Iodev defined with RC_DT_EVENT_IODEV() or RC_DT_RAW_IODEV().
  * @param ctx RTIO context with a memory pool.
  * @param userdata Userdata of the completions.
  * @param handle Filled with the submission handle, may be NULL.

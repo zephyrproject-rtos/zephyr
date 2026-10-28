@@ -63,4 +63,11 @@
 		rx-timeout-us = <5000>;
 		status = "okay";
 	};
+
+	rc_loopback9: rc-loopback-9 {
+		compatible = "zephyr,rc-loopback";
+		protocols = <0x1fe>;
+		rx-timeout-us = <5000>;
+		status = "okay";
+	};
 };
