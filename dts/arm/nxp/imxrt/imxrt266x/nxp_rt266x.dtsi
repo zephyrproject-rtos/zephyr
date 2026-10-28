@@ -1672,6 +1672,7 @@
 	crc: hsp_crc: crc@42980000 {
 		compatible = "nxp,crc";
 		reg = <0x42980000 0x1000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_CRC, IMX_CCM_ROOT_NONE)>;
 		status = "disabled";
 	};
 
