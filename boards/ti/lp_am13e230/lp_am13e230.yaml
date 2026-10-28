@@ -9,6 +9,7 @@ flash: 512
 supported:
   - can
   - counter
+  - crc
   - gpio
   - i2c
   - mux

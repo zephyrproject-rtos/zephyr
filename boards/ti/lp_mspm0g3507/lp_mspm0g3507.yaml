@@ -12,6 +12,7 @@ supported:
   - adc
   - can
   - counter
+  - crc
   - dac
   - dma
   - gpio
