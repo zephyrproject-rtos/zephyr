@@ -619,8 +619,8 @@ static int64_t check_notifications(struct lwm2m_ctx *ctx, const int64_t timestam
 		}
 
 		rc = generate_notify_message(ctx, obs, NULL);
-		if (rc == -ENOMEM) {
-			/* no memory/messages available, retry later */
+		if (rc == -EAGAIN) {
+			/* No free message, retry later */
 			goto cleanup;
 		}
 		obs->event_timestamp =

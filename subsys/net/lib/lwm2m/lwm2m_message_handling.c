@@ -3381,8 +3381,8 @@ int generate_notify_message(struct lwm2m_ctx *ctx, struct observe_node *obs, voi
 
 	msg = lwm2m_get_message(ctx);
 	if (!msg) {
-		LOG_ERR("Unable to get a lwm2m message!");
-		return -ENOMEM;
+		LOG_DBG("No free message for notification");
+		return -EAGAIN;
 	}
 msg_init:
 
