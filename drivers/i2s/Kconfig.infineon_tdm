@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_INFINEON_TDM
+	bool "Infineon TDM I2S driver"
+	default y
+	depends on DT_HAS_INFINEON_TDM_I2S_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	select DMA
+	help
+	  Register-level I2S driver for the Infineon TDM/I2S interface.
+
+if I2S_INFINEON_TDM
+
+config I2S_INFINEON_TDM_RX_QUEUE_SIZE
+	int "RX queue length"
+	default 8
+	help
+	  Number of received blocks the RX queue holds. This should match the
+	  number of blocks in the memory slab that holds the received data.
+
+config I2S_INFINEON_TDM_TX_QUEUE_SIZE
+	int "TX queue length"
+	default 8
+	help
+	  Number of blocks the TX queue holds. This should match the number of
+	  blocks in the memory slab that holds the data to transmit.
+
+endif # I2S_INFINEON_TDM
