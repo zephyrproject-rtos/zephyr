@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <zephyr/sys/bitmap.h>
 #include <zephyr/sys/util.h>
 
 #define BT_MESH_BLOB_OP_XFER_GET BT_MESH_MODEL_OP_2(0x83, 0x00)
@@ -95,13 +96,13 @@ static inline size_t blob_block_size(size_t xfer_size, uint8_t block_size_log,
 static inline void blob_chunk_missing_set(uint8_t *missing_chunks,
 					  int idx, bool missing)
 {
-	WRITE_BIT(missing_chunks[idx / 8], idx % 8, missing);
+	sys_bitmap_set_bit_to(missing_chunks, idx, missing);
 }
 
 static inline bool
 blob_chunk_missing_get(const uint8_t *missing_chunks, int idx)
 {
-	return !!(missing_chunks[idx / 8] & BIT(idx % 8));
+	return sys_bitmap_test_bit(missing_chunks, idx);
 }
 
 static inline void blob_chunk_missing_set_all(struct bt_mesh_blob_block *block)

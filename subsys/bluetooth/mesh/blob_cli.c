@@ -193,13 +193,7 @@ static uint16_t next_missing_chunk(struct bt_mesh_blob_cli *cli,
 				   const uint8_t *missing_chunks,
 				   uint16_t idx)
 {
-	do {
-		if (blob_chunk_missing_get(missing_chunks, idx)) {
-			break;
-		}
-	} while (++idx < cli->block.chunk_count);
-
-	return idx;
+	return sys_bitmap_find_next_set(missing_chunks, cli->block.chunk_count, idx);
 }
 
 /* Used in Pull mode to collect all missing chunks from each target in cli->block.missing. */
@@ -210,14 +204,14 @@ static void update_missing_chunks(struct bt_mesh_blob_cli *cli)
 	memset(cli->block.missing, 0, sizeof(cli->block.missing));
 
 	TARGETS_FOR_EACH(cli, target) {
+		size_t idx;
+
 		if (target->procedure_complete || target->timedout) {
 			continue;
 		}
 
-		for (size_t idx = 0; idx < cli->block.chunk_count; idx++) {
-			bool missing = blob_chunk_missing_get(cli->block.missing, idx) ||
-				       blob_chunk_missing_get(target->pull->missing, idx);
-			blob_chunk_missing_set(cli->block.missing, idx, missing);
+		SYS_BITMAP_FOR_EACH_SET_BIT(target->pull->missing, cli->block.chunk_count, idx) {
+			blob_chunk_missing_set(cli->block.missing, idx, true);
 		}
 	}
 }
