@@ -37,9 +37,9 @@ extern struct k_thread *pending_current;
 struct k_spinlock _sched_spinlock;  /* The scheduler's spinlock */
 
 /* Storage to "complete" the context switch from an invalid/incomplete thread
- * context (ex: exiting an ISR that aborted _current)
+ * context (ex: exiting an ISR that aborted _current), one per CPU
  */
-__incoherent struct k_thread _thread_dummy;
+__incoherent struct k_thread _thread_dummy[CONFIG_MP_MAX_NUM_CPUS];
 
 static ALWAYS_INLINE void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_key_t *key);
@@ -667,7 +667,7 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 				z_spin_validate_reset(true);
 			}
 #endif
-			z_dummy_thread_init(&_thread_dummy);
+			z_dummy_thread_init(&_thread_dummy[_current_cpu->id]);
 
 		}
 
