@@ -86,10 +86,11 @@ static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 			/* Signal any waiting threads */
 			k_sem_give(&data->stream_empty);
 		}
-		data->active_buf->line_offset = (data->frame_idx / 2) * SDMA_LINE_COUNT;
-		data->active_buf->timestamp = k_uptime_get_32();
-		k_fifo_put(&data->fifo_out, data->active_buf);
-
+		if (data->active_buf != NULL) {
+			data->active_buf->line_offset = (data->frame_idx / 2) * SDMA_LINE_COUNT;
+			data->active_buf->timestamp = k_uptime_get_32();
+			k_fifo_put(&data->fifo_out, data->active_buf);
+		}
 	}
 	/* Toggle buffer reload flag*/
 	data->buf_reload_flag = !data->buf_reload_flag;
