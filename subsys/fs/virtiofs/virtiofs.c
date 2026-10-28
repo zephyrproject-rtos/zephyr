@@ -582,6 +582,12 @@ int virtiofs_write(
 		return valid_ret;
 	}
 
+	if (req.write_out.size > size) {
+		LOG_ERR("FUSE_WRITE response size 0x%x invalid for request %u", req.write_out.size,
+			size);
+		return -EIO;
+	}
+
 #ifdef CONFIG_VIRTIOFS_DEBUG
 	fuse_dump_write_out(&req.write_out);
 #endif
@@ -842,6 +848,18 @@ int virtiofs_readdir(
 
 	if (valid_ret != 0) {
 		return valid_ret;
+	}
+
+	/*
+	 * out_header.len is host-controlled; guard against underflow (smaller
+	 * than the header) and against returning more bytes than the dirent and
+	 * name buffers can hold.
+	 */
+	if (req.out_header.len < sizeof(req.out_header) ||
+	    (req.out_header.len - sizeof(req.out_header)) > dirent_size + name_size) {
+		LOG_ERR("FUSE_READDIR response length 0x%x invalid for buffers %u",
+			req.out_header.len, dirent_size + name_size);
+		return -EIO;
 	}
 
 	return req.out_header.len - sizeof(req.out_header);
