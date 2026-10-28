@@ -2,8 +2,8 @@ identifier: frdm_mcxw72
 name: NXP FRDM-MCXW72
 type: mcu
 arch: arm
-ram: 264
-flash: 2048
+ram: 232
+flash: 928
 toolchain:
   - zephyr
   - gnuarmemb

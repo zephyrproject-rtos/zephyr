@@ -1,0 +1,15 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MCXW716A lacks the FlexCAN peripheral present on MCXW716C (confirmed via
+ * HAL: CAN0_BASE/CAN0_BASE_NS and CAN0_IRQn are absent from
+ * MCXW716A_COMMON.h, present in MCXW716C_COMMON.h). No other peripheral or
+ * memory differences exist between the two parts.
+ */
+#include "nxp_mcxw716c.dtsi"
+
+/delete-node/ &flexcan0;

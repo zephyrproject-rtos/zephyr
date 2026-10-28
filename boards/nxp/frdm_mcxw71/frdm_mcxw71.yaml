@@ -8,8 +8,8 @@ identifier: frdm_mcxw71
 name: NXP FRDM-MCXW71
 type: mcu
 arch: arm
-ram: 64
-flash: 1024
+ram: 112
+flash: 424
 toolchain:
   - zephyr
   - gnuarmemb

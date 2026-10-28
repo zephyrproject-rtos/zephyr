@@ -66,104 +66,6 @@
 		};
 	};
 
-	soc {
-		fmu: memory-controller@50020000 {
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			compatible = "nxp,msf1";
-			reg = <0x50020000 0x30>;
-			interrupts = <27 0>;
-			status = "disabled";
-
-			/*
-			 * reg and the matching ranges are set by the
-			 * per-variant dtsi, which knows the flash size.
-			 */
-			flash: flash@0 {
-				compatible = "soc-nv-flash";
-				write-block-size = <16>;
-				erase-block-size = <DT_SIZE_K(8)>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-
-			ifr0: flash@2000000 {
-				compatible = "nxp,mcxw-ifr";
-				write-block-size = <16>;
-				erase-block-size = <DT_SIZE_K(8)>;
-				reg = <0x2000000 DT_SIZE_K(32)>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				/* nvmem-layout: hw_params uses sector 1 (User Sector) */
-				ieee802154_eui64_ifr0: ieee802154-eui64@2002000 {
-					reg = <0x2002000 0x8>;
-					#nvmem-cell-cells = <0>;
-					status = "disabled";
-				};
-
-				/* padding 8 bytes: next address aligned on write-block-size */
-
-				zb_settings_ifr0: zb-settings@2002010 {
-					reg = <0x2002010 0x1f0>;
-					#nvmem-cell-cells = <0>;
-					read-only;
-					status = "disabled";
-				};
-
-				zb_secured_ifr0: zb-secured@2002200 {
-					reg = <0x2002200 0x80>;
-					#nvmem-cell-cells = <0>;
-					read-only;
-					status = "disabled";
-				};
-			};
-		};
-
-		ctcm: sram@14000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			ctcm0: code_memory@0 {
-				compatible = "mmio-sram";
-			};
-		};
-
-		stcm: sram@30000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			stcm0: system_memory@0 {
-				compatible = "mmio-sram";
-			};
-		};
-
-		peripheral: peripheral@50000000 {
-			ranges = <0x0 0x50000000 0x10000000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			pbridge2: pbridge2@0 {
-				ranges;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-
-			fast_peripheral0: fast_peripherals0@8000000 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				ranges = <0x0 0x8000000 0x40000>;
-			};
-
-			fast_peripheral1: fast_peripherals1@8800000 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				ranges = <0x0 0x8800000 0x20a000>;
-			};
-		};
-	};
-
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
 	};
@@ -177,6 +79,86 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+};
+
+/*
+ * fmu/ctcm/stcm/peripheral themselves (unit address and, for peripheral,
+ * ranges into system address space) are declared by the per-variant
+ * (secure/ns) dtsi, which knows the alias to use. Everything below is
+ * relative to those bus nodes and stays identical between variants.
+ */
+&fmu {
+	flash: flash@0 {
+		compatible = "soc-nv-flash";
+		write-block-size = <16>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	ifr0: flash@2000000 {
+		compatible = "nxp,mcxw-ifr";
+		write-block-size = <16>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		reg = <0x2000000 DT_SIZE_K(32)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* nvmem-layout: hw_params uses sector 1 (User Sector) */
+		ieee802154_eui64_ifr0: ieee802154-eui64@2002000 {
+			reg = <0x2002000 0x8>;
+			#nvmem-cell-cells = <0>;
+			status = "disabled";
+		};
+
+		/* padding 8 bytes: next address aligned on write-block-size */
+
+		zb_settings_ifr0: zb-settings@2002010 {
+			reg = <0x2002010 0x1f0>;
+			#nvmem-cell-cells = <0>;
+			read-only;
+			status = "disabled";
+		};
+
+		zb_secured_ifr0: zb-secured@2002200 {
+			reg = <0x2002200 0x80>;
+			#nvmem-cell-cells = <0>;
+			read-only;
+			status = "disabled";
+		};
+	};
+};
+
+&ctcm {
+	ctcm0: code_memory@0 {
+		compatible = "mmio-sram";
+	};
+};
+
+&stcm {
+	stcm0: system_memory@0 {
+		compatible = "mmio-sram";
+	};
+};
+
+&peripheral {
+	pbridge2: pbridge2@0 {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	fast_peripheral0: fast_peripherals0@8000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x8000000 0x40000>;
+	};
+
+	fast_peripheral1: fast_peripherals1@8800000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x8800000 0x20a000>;
+	};
 };
 
 &pbridge2 {

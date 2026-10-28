@@ -4,6 +4,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	soc {
+		fmu: memory-controller@50020000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "nxp,msf1";
+			reg = <0x50020000 0x30>;
+			interrupts = <27 0>;
+			status = "disabled";
+		};
+
+		ctcm: sram@14000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		stcm: sram@30000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};
+
 #include "nxp_mcxw7x_common.dtsi"
 
 &fast_peripheral1 {
@@ -124,7 +153,7 @@
 };
 
 &clk_ctrl {
-	/* MCXW71 has SIRC hardware; enable it in low-power mode by default. */
+	/* MCXW716C has SIRC hardware; enable it in low-power mode by default. */
 	sirc-supported;
 	enable-sirc-in-lp-mode;
 };
