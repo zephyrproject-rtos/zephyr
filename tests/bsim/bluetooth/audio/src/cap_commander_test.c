@@ -82,6 +82,7 @@ CREATE_FLAG(flag_broadcast_code_distributed);
 CREATE_FLAG(flag_broadcaster_found);
 CREATE_FLAG(flag_base_received);
 CREATE_FLAG(flag_recv_state_updated_with_bis_sync);
+CREATE_FLAG(flag_recv_state_removed);
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_pa_sync_lost);
 CREATE_FLAG(flag_syncable);
@@ -577,9 +578,17 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 	}
 }
 
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
+{
+	LOG_INF("BASS recv state from %p with src_id %u removed", conn, src_id);
+
+	SET_FLAG(flag_recv_state_removed);
+}
+
 static struct bt_bap_broadcast_assistant_cb ba_cbs = {
 	.discover = bap_broadcast_assistant_discover_cb,
 	.recv_state = bap_broadcast_assistant_recv_state_cb,
+	.recv_state_removed = bap_broadcast_assistant_recv_state_removed_cb,
 	.add_src = bap_broadcast_assistant_add_src_cb,
 };
 
@@ -714,6 +723,7 @@ static void init(size_t acceptor_cnt)
 	UNSET_FLAG(flag_broadcaster_found);
 	UNSET_FLAG(flag_base_received);
 	UNSET_FLAG(flag_recv_state_updated_with_bis_sync);
+	UNSET_FLAG(flag_recv_state_removed);
 	UNSET_FLAG(flag_pa_synced);
 	UNSET_FLAG(flag_pa_sync_lost);
 	UNSET_FLAG(flag_syncable);
@@ -1375,6 +1385,62 @@ static void test_main_cap_commander_broadcast_reception_error(void)
 	PASS("Broadcast reception error passed\n");
 }
 
+static void test_main_cap_commander_broadcast_reception_removed_src(void)
+{
+	size_t acceptor_count;
+
+	/* The test consists of N devices
+	 * 1 device is the broadcast source
+	 * 1 device is the CAP commander
+	 * This leaves N - 2 devices for the acceptor
+	 */
+	acceptor_count = get_dev_cnt() - 2;
+	LOG_DBG("Acceptor count: %d", acceptor_count);
+
+	init(acceptor_count);
+
+	for (size_t i = 0U; i < acceptor_count; i++) {
+		scan_and_connect();
+
+		WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+		update_security(connected_conns[i]);
+	}
+
+	/* TODO: We should use CSIP to find set members */
+	discover_cas(acceptor_count);
+	discover_bass(acceptor_count);
+
+	pa_sync_to_broadcaster();
+
+	test_broadcast_reception_start(connected_conns, connected_conn_cnt);
+	WAIT_FOR_FLAG(flag_broadcast_reception_started);
+
+	test_distribute_broadcast_code(connected_conns, connected_conn_cnt);
+	WAIT_FOR_FLAG(flag_broadcast_code_distributed);
+
+	for (size_t i = 0U; i < connected_conn_cnt; i++) {
+		backchannel_sync_wait_any(); /* wait for the acceptor to receive data */
+	}
+
+	/* One of the acceptors removes its receive state outside of any CAP procedure */
+	LOG_INF("Waiting for receive state to be removed");
+	WAIT_FOR_FLAG(flag_recv_state_removed);
+
+	/* Expect success even though a source has already been removed */
+	test_broadcast_reception_stop(connected_conns, connected_conn_cnt);
+	WAIT_FOR_FLAG(flag_broadcast_reception_stopped);
+
+	/* Disconnect all CAP acceptors */
+	disconnect_acl(connected_conns, connected_conn_cnt);
+
+	backchannel_sync_send_all(); /* let others know we have received what we wanted */
+
+	deinit();
+
+	PASS("Broadcast reception removed source passed\n");
+}
+
 static void test_main_cap_commander_cancel(void)
 {
 	size_t acceptor_count;
@@ -1481,6 +1547,12 @@ static const struct bst_test_instance test_cap_commander[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_commander_broadcast_reception_error,
+	},
+	{
+		.test_id = "cap_commander_broadcast_reception_removed_src",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_cap_commander_broadcast_reception_removed_src,
 	},
 	{
 		.test_id = "cap_commander_cancel",
