@@ -348,3 +348,5 @@ i2c0: &scb0 {
 	negative-input = "dac";
 	status = "okay";
 };
+
+#include "arduino_r3_connector.dtsi"

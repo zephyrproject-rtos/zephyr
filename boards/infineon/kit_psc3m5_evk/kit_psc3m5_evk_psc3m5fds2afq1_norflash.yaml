@@ -22,4 +22,7 @@ supported:
   - spi
   - timer
   - uart
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
 vendor: infineon
