@@ -229,6 +229,30 @@ should see the following message in the terminal:
    *** Booting Zephyr OS v3.7.0 ***
    Hello World! mimxrt700_evk/mimxrt798s/cm33_cpu0
 
+Building with VG-Lite GPU Acceleration
+=======================================
+When using LVGL with VG-Lite GPU acceleration on the MIMXRT700 EVK, use the
+``mimxrt700_evk_expanded_memory.overlay`` to expand available memory:
+
+- SRAM: 512 KB → 6136 KB
+- XSPI Flash: Expanded to 128 MB
+
+This overlay is required for:
+
+- Large display resolutions
+- LVGL with VG-Lite GPU acceleration
+- Graphics-intensive applications
+
+Example building for :zephyr:board:`mimxrt700_evk` with VG-Lite GPU acceleration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: mimxrt700_evk
+   :goals: build flash
+   :gen-args: -DDTC_OVERLAY_FILE="boards/mimxrt700_evk_expanded_memory.overlay"
+              -DVGLITE_OS=zephyr -DVGLITE_PLATFORM=rt700 -DCONFIG_VGLITE=y
+              -DCONFIG_LV_USE_DRAW_VG_LITE=y
+
 SEGGER RTT Logging
 ==================
 
