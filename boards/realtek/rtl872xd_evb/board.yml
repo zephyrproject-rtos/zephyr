@@ -4,3 +4,5 @@ board:
   vendor: realtek
   socs:
     - name: rtl872xd
+      variants:
+        - name: ns
