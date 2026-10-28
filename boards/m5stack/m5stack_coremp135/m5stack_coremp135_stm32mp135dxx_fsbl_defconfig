@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SIZE_OPTIMIZATIONS=y
+
+# The BootROM loads the complete FSBL into SYSRAM, so code and data share one region.
+CONFIG_XIP=n
+
+# The MMU (Memory Management Unit) needs three L2 (level 2) translation tables for the
+# partial SYSRAM (System RAM), SRAM (Static RAM), and GIC (Generic Interrupt Controller)
+# mappings, plus one spare. Four tables use 4 KB; the default 64 tables would consume half
+# of the 128 KB FSBL (First-Stage Boot Loader) SYSRAM.
+CONFIG_ARM_MMU_NUM_L2_TABLES=4
+CONFIG_SOC_SERIES_STM32MP13X_BOOTROM_HEADER=y
