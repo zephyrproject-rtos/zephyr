@@ -3,10 +3,10 @@ sample:
   description: Demonstrates how to update the Nordic IronSide SE firmware
 common:
   build_only: true
-  tags: nrf_ironside
+  tags: ironside_se
   integration_platforms:
     - nrf54h20dk/nrf54h20/cpuapp
 
 tests:
-  sample.boards.nordic.nrf_ironside.update:
+  sample.boards.nordic.ironside_se.update:
     platform_allow: nrf54h20dk/nrf54h20/cpuapp

@@ -1354,7 +1354,7 @@ New Samples
 * :zephyr:code-sample:`min-heap`
 * :zephyr:code-sample:`mspi-timing-scan`
 * :zephyr:code-sample:`net-pkt-filter`
-* :zephyr:code-sample:`nrf_ironside_update`
+* :zephyr:code-sample:`ironside_se_update`
 * :zephyr:code-sample:`paj7620_gesture`
 * :zephyr:code-sample:`pressure_interrupt`
 * :zephyr:code-sample:`pressure_polling`

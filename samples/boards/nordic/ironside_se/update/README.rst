@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: nrf_ironside_update
+.. zephyr:code-sample:: ironside_se_update
    :name: Nordic IronSide SE firmware update
 
    Update the Nordic IronSide SE firmware.
@@ -54,7 +54,7 @@ Building and running the application for nrf54h20dk/nrf54h20/cpuapp
 #. Build and program the application:
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/boards/nordic/nrf_ironside/update
+      :zephyr-app: samples/boards/nordic/ironside_se/update
       :board: nrf54h20dk/nrf54h20/cpuapp
       :goals: flash
 
