@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config RC_LOOPBACK
+	bool "Software loopback remote control driver"
+	default y
+	depends on DT_HAS_ZEPHYR_RC_LOOPBACK_ENABLED
+	help
+	  Enable the software loopback remote control driver, used to test
+	  the remote control subsystem without hardware.

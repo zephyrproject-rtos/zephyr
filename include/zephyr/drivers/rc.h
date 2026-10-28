@@ -71,6 +71,60 @@ __subsystem struct rc_driver_api {
 	int (*tx)(const struct device *dev, const uint32_t *words, size_t count);
 };
 
+/**
+ * @brief Common rc state of a device, the first member of the driver data.
+ */
+struct rc_dev_data {
+	/** @cond INTERNAL_HIDDEN */
+	struct rc_caps caps;
+	/** @endcond */
+};
+
+/** @cond INTERNAL_HIDDEN */
+int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct device *dev));
+
+#define Z_RC_INIT_NAME(node_id) _CONCAT(z_rc_init_, DT_DEP_ORD(node_id))
+/** @endcond */
+
+/**
+ * @brief Define an rc device from a devicetree node.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param init_fn Driver init function, may be NULL.
+ * @param pm PM device resources reference, may be NULL.
+ * @param data Driver data.
+ * @param config Driver config, may be NULL.
+ * @param level Initialization level.
+ * @param prio Initialization priority.
+ * @param api Pointer to the struct rc_driver_api of the driver.
+ */
+#define RC_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api)                  \
+	static int _CONCAT(z_rc_init_, DT_DEP_ORD(node_id))(const struct device *dev)              \
+	{                                                                                          \
+		return z_rc_device_init(dev, init_fn);                                             \
+	}                                                                                          \
+	DEVICE_DT_DEFINE(node_id, Z_RC_INIT_NAME(node_id), pm, data, config, level, prio, api)
+
+/**
+ * @brief Like RC_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT compatible.
+ *
+ * @param inst Instance number.
+ * @param ... Other parameters as expected by RC_DEVICE_DT_DEFINE().
+ */
+#define RC_DEVICE_DT_INST_DEFINE(inst, ...) RC_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Start or stop reception.
+ *
+ * @param dev rc device.
+ * @param enable true to start, false to stop.
+ *
+ * @retval 0 Success.
+ * @retval -ENOSYS Device cannot receive.
+ * @retval <0 Driver error.
+ */
+int rc_rx_enable(const struct device *dev, bool enable);
+
 /** @} */
 
 #ifdef __cplusplus
