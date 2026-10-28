@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Reuse the board's existing I2S0 pinctrl (GPIO5/MCLK, GPIO16/BCK,
+ * GPIO7/WS, GPIO6/O_SD, GPIO15/I_SD) and expose it as i2s_rxtx so
+ * the echo sample filter can find the node.
+ */
+
+i2s_rxtx: &i2s0 {
+	status = "okay";
+
+	dmas = <&dma 2>, <&dma 3>;
+	dma-names = "rx", "tx";
+};
+
+&dma {
+	status = "okay";
+};

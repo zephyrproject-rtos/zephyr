@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Goodix GT1151 capacitive touch panel
+
+compatible: "goodix,gt1151"
+
+include: [i2c-device.yaml, touchscreen-common.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: Interrupt GPIO. Active level depends on the controller configuration.
+  reset-gpios:
+    type: phandle-array
+    description: Reset GPIO used during initialization.
