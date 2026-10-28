@@ -4,17 +4,22 @@
  */
 
 /*
- * Pulse IO on an STM32 timer channel, CELL mode transmit only.
+ * Pulse IO on the channels of an STM32 timer, CELL mode transmit only.
  *
- * The channel runs in PWM mode 1 with a preloaded compare register. Each
- * update event loads the duty cycle of the current period from the preload
- * register and requests a DMA transfer that writes the duty cycle of the
- * following period into it. The first two duty cycles are written by the
- * CPU before the counter starts, the DMA provides the others, and an extra
- * cell at the idle level ends every frame.
+ * The channels run in PWM mode 1 with preloaded compare registers. Each
+ * update event loads the duty cycles of the current period from the preload
+ * registers and requests a DMA burst that writes the duty cycles of the
+ * following period into them through the DMA address register (DMAR), one
+ * word per compare register from the first to the last transmitting channel.
+ * The first two duty cycles are written by the CPU before the counter
+ * starts, the DMA provides the others, and an extra cell at the idle level
+ * ends every frame. The channels of a transmit start on the same update
+ * event.
  */
 
 #define DT_DRV_COMPAT st_stm32_pulse_io
+
+#include <stddef.h>
 
 #include <zephyr/cache.h>
 #include <zephyr/device.h>
@@ -57,6 +62,7 @@ struct stm32_pio_config {
 	uint32_t dma_channel;
 	uint32_t dma_slot;
 	uint32_t dma_priority;
+	/* buf_cells cells of up to STM32_PIO_NUM_CHANNELS words */
 	uint32_t *buf;
 	size_t buf_cells;
 };
@@ -71,8 +77,8 @@ struct stm32_pio_data {
 	uint8_t reserved;
 	uint8_t configured;
 	bool idle_high[STM32_PIO_NUM_CHANNELS];
-	/* Channel of the frame being sent, or -1 */
-	int8_t busy;
+	/* Channels of the frame being sent */
+	uint8_t busy;
 	int dma_status;
 };
 
@@ -126,13 +132,17 @@ static void stm32_pio_set_idle(const struct device *dev, uint8_t idx)
 					       : LL_TIM_OCMODE_FORCED_INACTIVE);
 }
 
-static void stm32_pio_halt(const struct device *dev, uint8_t idx)
+static void stm32_pio_halt(const struct device *dev, uint8_t channels)
 {
 	const struct stm32_pio_config *cfg = dev->config;
 
 	LL_TIM_DisableDMAReq_UPDATE(cfg->timer);
 	LL_TIM_DisableCounter(cfg->timer);
-	stm32_pio_set_idle(dev, idx);
+	for (uint8_t i = 0; i < STM32_PIO_NUM_CHANNELS; i++) {
+		if ((channels & BIT(i)) != 0U) {
+			stm32_pio_set_idle(dev, i);
+		}
+	}
 }
 
 static void stm32_pio_dma_callback(const struct device *dma_dev, void *user_data,
@@ -177,6 +187,7 @@ static int stm32_pio_get_capabilities(const struct device *dev, struct pulse_io_
 		.cell_duty_bits = IS_TIM_32B_COUNTER_INSTANCE(cfg->timer) ? 32U : 16U,
 		.num_channels = STM32_PIO_NUM_CHANNELS,
 		.supports_tx = true,
+		.tx_sync_multi_channel = true,
 	};
 
 	return 0;
@@ -281,53 +292,85 @@ unlock:
 	return ret;
 }
 
-static int stm32_pio_transmit_sync(const struct device *dev, struct pulse_io_channel *chan,
-				   const struct pulse_io_tx_req *req, k_timeout_t timeout)
+/*
+ * Transmit the requests of the channels in idx, which start on the same
+ * update event. A channel that has sent all its cells stays at its idle level.
+ */
+static int stm32_pio_transmit(const struct device *dev, const uint8_t *idx,
+			      const struct pulse_io_tx_req *reqs, size_t num, k_timeout_t timeout)
 {
 	const struct stm32_pio_config *cfg = dev->config;
 	struct stm32_pio_data *data = dev->data;
 	TIM_TypeDef *timer = cfg->timer;
-	int idx = stm32_pio_channel_index(dev, chan);
 	struct dma_block_config block = {0};
 	struct dma_config dma_cfg = {0};
+	uint32_t ccr[STM32_PIO_NUM_CHANNELS];
+	uint8_t channels = 0U;
+	uint8_t first = STM32_PIO_NUM_CHANNELS;
+	uint8_t last = 0U;
+	size_t count = 0U;
+	size_t span;
 	uint32_t period_ns;
-	uint32_t idle_duty;
-	size_t count;
 	unsigned int key;
 	int ret = 0;
 
-	if (idx < 0) {
-		return idx;
+	for (size_t i = 0; i < num; i++) {
+		if ((channels & BIT(idx[i])) != 0U) {
+			return -EINVAL;
+		}
+		if (reqs[i].loop_count != 0U) {
+			return -ENOTSUP;
+		}
+		if (reqs[i].count + 1U > cfg->buf_cells) {
+			return -ENOMEM;
+		}
+		channels |= BIT(idx[i]);
+		first = MIN(first, idx[i]);
+		last = MAX(last, idx[i]);
+		count = MAX(count, reqs[i].count);
 	}
 
-	if (req->loop_count != 0U) {
-		return -ENOTSUP;
-	}
-
-	if (req->count == 0U) {
+	if (count == 0U) {
 		return 0;
-	}
-
-	if (req->count + 1U > cfg->buf_cells) {
-		return -ENOMEM;
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if ((data->configured & BIT(idx)) == 0U) {
+	if ((channels & ~data->configured) != 0U) {
 		ret = -EINVAL;
 		goto unlock;
 	}
 
-	/* A duty cycle of a full period keeps the line high */
-	idle_duty = data->idle_high[idx] ? data->period : 0U;
-	for (size_t i = 0; i < req->count; i++) {
-		cfg->buf[i] = MIN(req->cells[i].duty, data->period);
+	/*
+	 * The DMA burst writes the compare registers from the first to the last
+	 * channel: the channels in between that don't transmit keep their value.
+	 */
+	span = last - first + 1U;
+	for (uint8_t ch = first; ch <= last; ch++) {
+		if ((channels & BIT(ch)) == 0U) {
+			ccr[ch] = *stm32_pio_ccr(timer, ch);
+		} else {
+			/* A duty cycle of a full period keeps the line high */
+			ccr[ch] = data->idle_high[ch] ? data->period : 0U;
+		}
 	}
-	cfg->buf[req->count] = idle_duty;
-	count = req->count + 1U;
 
-	sys_cache_data_flush_range(cfg->buf, count * sizeof(cfg->buf[0]));
+	/* One more cell at the idle level ends the frame */
+	count++;
+	for (size_t c = 0; c < count; c++) {
+		uint32_t *cell = &cfg->buf[c * span];
+
+		for (uint8_t ch = first; ch <= last; ch++) {
+			cell[ch - first] = ccr[ch];
+		}
+		for (size_t i = 0; i < num; i++) {
+			if (c < reqs[i].count) {
+				cell[idx[i] - first] = MIN(reqs[i].cells[c].duty, data->period);
+			}
+		}
+	}
+
+	sys_cache_data_flush_range(cfg->buf, count * span * sizeof(cfg->buf[0]));
 
 	LL_TIM_DisableCounter(timer);
 	LL_TIM_DisableDMAReq_UPDATE(timer);
@@ -336,15 +379,24 @@ static int stm32_pio_transmit_sync(const struct device *dev, struct pulse_io_cha
 	LL_TIM_EnableARRPreload(timer);
 	LL_TIM_SetCounter(timer, 0U);
 
-	/* The update event makes the first duty cycle active, then preload the second one */
-	*stm32_pio_ccr(timer, idx) = cfg->buf[0];
+	/* The update event makes the first duty cycles active, then preload the second ones */
+	for (uint8_t ch = first; ch <= last; ch++) {
+		*stm32_pio_ccr(timer, ch) = cfg->buf[ch - first];
+	}
 	LL_TIM_GenerateEvent_UPDATE(timer);
-	*stm32_pio_ccr(timer, idx) = cfg->buf[1];
+	for (uint8_t ch = first; ch <= last; ch++) {
+		*stm32_pio_ccr(timer, ch) = cfg->buf[span + ch - first];
+	}
 
 	if (count > 2U) {
-		block.source_address = (uint32_t)(uintptr_t)&cfg->buf[2];
-		block.dest_address = (uint32_t)(uintptr_t)stm32_pio_ccr(timer, idx);
-		block.block_size = (count - 2U) * sizeof(cfg->buf[0]);
+		/* CCR1 to CCR4 are consecutive, and DBA counts words from CR1 */
+		timer->DCR = (((offsetof(TIM_TypeDef, CCR1) / sizeof(uint32_t)) + first)
+			      << TIM_DCR_DBA_Pos) |
+			     ((span - 1U) << TIM_DCR_DBL_Pos);
+
+		block.source_address = (uint32_t)(uintptr_t)&cfg->buf[2U * span];
+		block.dest_address = (uint32_t)(uintptr_t)&timer->DMAR;
+		block.block_size = (count - 2U) * span * sizeof(cfg->buf[0]);
 		block.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		block.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
@@ -353,7 +405,7 @@ static int stm32_pio_transmit_sync(const struct device *dev, struct pulse_io_cha
 		dma_cfg.channel_priority = cfg->dma_priority;
 		dma_cfg.source_data_size = sizeof(cfg->buf[0]);
 		dma_cfg.dest_data_size = sizeof(cfg->buf[0]);
-		/* Single transfers: the burst length is the data size */
+		/* Single transfers: the timer requests one per register of the burst */
 		dma_cfg.source_burst_length = sizeof(cfg->buf[0]);
 		dma_cfg.dest_burst_length = sizeof(cfg->buf[0]);
 		dma_cfg.block_count = 1U;
@@ -379,7 +431,7 @@ static int stm32_pio_transmit_sync(const struct device *dev, struct pulse_io_cha
 		LL_TIM_EnableDMAReq_UPDATE(timer);
 	}
 
-	data->busy = idx;
+	data->busy = channels;
 
 	/*
 	 * The first period starts as soon as the counter does. A channel leaving a
@@ -388,8 +440,10 @@ static int stm32_pio_transmit_sync(const struct device *dev, struct pulse_io_cha
 	 * effect at once when entered from the frozen mode, which holds the level.
 	 */
 	key = irq_lock();
-	LL_TIM_OC_SetMode(timer, ll_channels[idx], LL_TIM_OCMODE_FROZEN);
-	LL_TIM_OC_SetMode(timer, ll_channels[idx], LL_TIM_OCMODE_PWM1);
+	for (size_t i = 0; i < num; i++) {
+		LL_TIM_OC_SetMode(timer, ll_channels[idx[i]], LL_TIM_OCMODE_FROZEN);
+		LL_TIM_OC_SetMode(timer, ll_channels[idx[i]], LL_TIM_OCMODE_PWM1);
+	}
 	LL_TIM_EnableCounter(timer);
 	irq_unlock(key);
 
@@ -397,14 +451,14 @@ static int stm32_pio_transmit_sync(const struct device *dev, struct pulse_io_cha
 		ret = k_sem_take(&data->done, timeout);
 		if (ret < 0) {
 			(void)dma_stop(cfg->dma_dev, cfg->dma_channel);
-			stm32_pio_halt(dev, idx);
+			stm32_pio_halt(dev, channels);
 			ret = -EAGAIN;
 			goto unlock;
 		}
 
 		if (data->dma_status < 0) {
 			(void)dma_stop(cfg->dma_dev, cfg->dma_channel);
-			stm32_pio_halt(dev, idx);
+			stm32_pio_halt(dev, channels);
 			ret = (data->dma_status == -ECANCELED) ? -ECANCELED : -EIO;
 			goto unlock;
 		}
@@ -419,13 +473,52 @@ static int stm32_pio_transmit_sync(const struct device *dev, struct pulse_io_cha
 	if (count > 2U) {
 		(void)dma_stop(cfg->dma_dev, cfg->dma_channel);
 	}
-	stm32_pio_halt(dev, idx);
+	stm32_pio_halt(dev, channels);
 
 unlock:
-	data->busy = -1;
+	data->busy = 0U;
 	k_mutex_unlock(&data->lock);
 
 	return ret;
+}
+
+static int stm32_pio_transmit_sync(const struct device *dev, struct pulse_io_channel *chan,
+				   const struct pulse_io_tx_req *req, k_timeout_t timeout)
+{
+	int idx = stm32_pio_channel_index(dev, chan);
+	uint8_t ch;
+
+	if (idx < 0) {
+		return idx;
+	}
+
+	ch = (uint8_t)idx;
+
+	return stm32_pio_transmit(dev, &ch, req, 1U, timeout);
+}
+
+static int stm32_pio_transmit_multi_sync(const struct device *dev,
+					 struct pulse_io_channel *const *chans,
+					 const struct pulse_io_tx_req *reqs, size_t num,
+					 k_timeout_t timeout)
+{
+	uint8_t idx[STM32_PIO_NUM_CHANNELS];
+
+	/* A repeated channel would exceed the channels of the timer */
+	if (num > STM32_PIO_NUM_CHANNELS) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < num; i++) {
+		int ret = stm32_pio_channel_index(dev, chans[i]);
+
+		if (ret < 0) {
+			return ret;
+		}
+		idx[i] = (uint8_t)ret;
+	}
+
+	return stm32_pio_transmit(dev, idx, reqs, num, timeout);
 }
 
 static int stm32_pio_receive_sync(const struct device *dev, struct pulse_io_channel *chan,
@@ -453,7 +546,7 @@ static int stm32_pio_stop(const struct device *dev, struct pulse_io_channel *cha
 
 	/* Wake up the transmitting thread, which stops the DMA and the timer */
 	key = irq_lock();
-	if (data->busy == idx) {
+	if ((data->busy & BIT(idx)) != 0U) {
 		data->dma_status = -ECANCELED;
 		k_sem_give(&data->done);
 	}
@@ -470,6 +563,7 @@ static DEVICE_API(pulse_io, stm32_pio_api) = {
 	.transmit_sync = stm32_pio_transmit_sync,
 	.receive_sync = stm32_pio_receive_sync,
 	.stop = stm32_pio_stop,
+	.transmit_multi_sync = stm32_pio_transmit_multi_sync,
 };
 
 static int stm32_pio_init(const struct device *dev)
@@ -481,7 +575,6 @@ static int stm32_pio_init(const struct device *dev)
 
 	k_mutex_init(&data->lock);
 	k_sem_init(&data->done, 0, 1);
-	data->busy = -1;
 
 	if (!device_is_ready(cfg->dma_dev)) {
 		LOG_ERR_DEVICE_NOT_READY(cfg->dma_dev);
@@ -533,7 +626,8 @@ static int stm32_pio_init(const struct device *dev)
 	static const struct stm32_pclken stm32_pio_pclken_##inst[] =                               \
 		STM32_DT_CLOCKS(STM32_PIO_TIMER(inst));                                            \
                                                                                                    \
-	static uint32_t stm32_pio_buf_##inst[DT_INST_PROP(inst, st_max_cells)]                     \
+	static uint32_t stm32_pio_buf_##inst[DT_INST_PROP(inst, st_max_cells) *                    \
+					     STM32_PIO_NUM_CHANNELS]                               \
 		__aligned(STM32_PIO_BUF_ALIGN);                                                \
                                                                                                    \
 	static const struct stm32_pio_config stm32_pio_config_##inst = {                           \
