@@ -24,12 +24,28 @@ typedef int (*its_api_map_intid_t)(const struct device *dev, uint32_t device_id,
 typedef int (*its_api_send_int_t)(const struct device *dev, uint32_t device_id, uint32_t event_id);
 typedef uint32_t (*its_api_get_msi_addr_t)(const struct device *dev);
 
+/**
+ * @brief Callback type for retrieving the 64-bit MSI target address.
+ *
+ * @param dev ITS device instance.
+ *
+ * @return The 64-bit MSI target address.
+ */
+typedef uint64_t (*its_api_get_msi_addr64_t)(const struct device *dev);
+
 __subsystem struct its_driver_api {
 	its_api_alloc_intid_t alloc_intid;
 	its_api_setup_deviceid_t setup_deviceid;
 	its_api_map_intid_t map_intid;
 	its_api_send_int_t send_int;
 	its_api_get_msi_addr_t get_msi_addr;
+	/**
+	 * @brief Optional callback returning the 64-bit MSI target address.
+	 *
+	 * When not implemented, the 32-bit get_msi_addr() callback is used and
+	 * its result is zero-extended.
+	 */
+	its_api_get_msi_addr64_t get_msi_addr64;
 };
 
 static inline int its_alloc_intid(const struct device *dev)
@@ -54,9 +70,31 @@ static inline int its_send_int(const struct device *dev, uint32_t device_id, uin
 	return DEVICE_API_GET(its, dev)->send_int(dev, device_id, event_id);
 }
 
+/* Requires get_msi_addr; providers with only get_msi_addr64 must use its_get_msi_addr64(). */
 static inline uint32_t its_get_msi_addr(const struct device *dev)
 {
 	return DEVICE_API_GET(its, dev)->get_msi_addr(dev);
+}
+
+/**
+ * @brief Get the 64-bit MSI target address for an ITS device.
+ *
+ * Uses the optional 64-bit callback when implemented; otherwise the 32-bit
+ * address returned by its_get_msi_addr() is zero-extended.
+ *
+ * @param dev ITS device instance.
+ *
+ * @return The 64-bit MSI target address.
+ */
+static inline uint64_t its_get_msi_addr64(const struct device *dev)
+{
+	const struct its_driver_api *api = DEVICE_API_GET(its, dev);
+
+	if (api->get_msi_addr64 != NULL) {
+		return api->get_msi_addr64(dev);
+	}
+
+	return (uint64_t)api->get_msi_addr(dev);
 }
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GICV3_ITS_H_ */
