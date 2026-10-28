@@ -10,6 +10,8 @@
  * Output:  pwm3  LGPT1 ch0  DIO15 (T1_C0N)  ─┐  wire together
  * Capture: pwm0  LGPT0 ch0  DIO0  (T0_C0)   ─┘
  *
+ * Wire BoosterPack pin 35 <-> pin 40 to close the loopback.
+ *
  * lgpt0 and lgpt1 are not enabled in the board DTS; they are enabled here.
  * Prescaler 127 → effective clock = 48 MHz / (127 + 1) = 375 kHz.
  * Max period (16-bit) = 65535 / 375 kHz ≈ 174 ms (covers the 100 ms test signal).

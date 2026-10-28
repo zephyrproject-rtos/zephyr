@@ -7,8 +7,8 @@
 /*
  * PWM loopback test overlay for lp_em_cc2340r5 (CC23x0 family).
  *
- * Output:  pwm0 channel 0 -> LGPT0 ch0 -> DIO8 (T0_C0N PFUNC5) -> BoosterPack pin 36
- * Capture: pwm5 channel 2 -> LGPT1 ch2 -> DIO6 (T1_C2  PFUNC3) -> BoosterPack pin 38
+ * Output:  pwm0 channel 0 -> LGPT0 ch0 -> DIO8 (T0_C0N) -> BoosterPack pin 36
+ * Capture: pwm5 channel 2 -> LGPT1 ch2 -> DIO6 (T1_C2) -> BoosterPack pin 38
  *
  * Wire BoosterPack pin 36 <-> pin 38 to close the loopback.
  *
