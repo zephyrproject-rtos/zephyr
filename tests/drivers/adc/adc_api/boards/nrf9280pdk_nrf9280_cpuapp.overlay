@@ -1,7 +1,0 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright (c) 2025 Nordic Semiconductor ASA
- */
-
-#include "nrf9280pdk_nrf9280_common.dtsi"
