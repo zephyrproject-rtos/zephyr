@@ -33,6 +33,25 @@ spi1: &scb1 {
 	status = "okay";
 };
 
+/*
+ * P1.0 (SCL) and P1.1 (SDA) reach the Arduino header and the KitProg3
+ * USB-I2C bridge.
+ *
+ * Note: the I2C driver sets SCB0's divider from the bus speed, so no other
+ * peripheral may share it.
+ */
+i2c0: &scb0 {
+	compatible = "infineon,i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	clocks = <&peri_clk_div5>;
+
+	pinctrl-0 = <&p1_0_scb0_i2c_scl &p1_1_scb0_i2c_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &peri_clk_div0 {
 	status = "okay";
 };
@@ -52,6 +71,10 @@ spi1: &scb1 {
 
 &peri_clk_div4 {
 	clock-div = <4>;
+	status = "okay";
+};
+
+&peri_clk_div5 {
 	status = "okay";
 };
 
