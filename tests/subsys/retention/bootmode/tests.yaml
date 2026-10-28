@@ -1,0 +1,10 @@
+tests:
+  retention.bootmode:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    tags:
+      - retention
+      - bootmode
