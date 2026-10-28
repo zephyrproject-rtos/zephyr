@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Loopback: connect X800.19 (P11.3, MOSI) to X800.21 (P11.0, MISO) */
+
+/ {
+	zephyr,user {
+		sdi-gpios = <&gpio_prt11 0 GPIO_ACTIVE_HIGH>;
+		sdo-gpios = <&gpio_prt11 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi0 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <12500000>;
+	};
+};
