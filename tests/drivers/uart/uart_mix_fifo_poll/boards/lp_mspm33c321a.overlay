@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* TX (PB12) and RX (PB13) must be connected together for loopback */
+
+#include <dt-bindings/uart/mspm0_uart.h>
+
+&unicomm13_0 {
+	status = "okay";
+};
+
+dut: &unicomm13_0_uart {
+	pinctrl-0 = <&uc13_0_tx_pb12 &uc13_0_rx_pb13>;
+	pinctrl-names = "default";
+	current-speed = <9600>;
+	rx-fifo-threshold = <MSPM0_UART_RX_FIFO_LEVEL_ONE_ENTRY>;
+	status = "okay";
+};
+
+counter_dev: &counterg12_0 {
+	status = "okay";
+};
+
+&timg12_0 {
+	status = "okay";
+};

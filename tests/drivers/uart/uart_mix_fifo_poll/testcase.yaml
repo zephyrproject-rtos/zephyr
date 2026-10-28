@@ -19,6 +19,8 @@ common:
     - nrf54lm20bsim/nrf54lm20a/cpuapp
     - nrf7120dk/nrf7120/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
+    - lp_am13e230
+    - lp_mspm33c321a
   integration_platforms:
     - nrf52840dk/nrf52840
   harness_config:
