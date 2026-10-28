@@ -13,4 +13,5 @@ supported:
   - arduino_i2c
   - arduino_spi
   - counter
+  - crc
 vendor: st

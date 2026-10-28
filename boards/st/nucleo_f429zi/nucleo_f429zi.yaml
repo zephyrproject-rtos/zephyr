@@ -23,6 +23,7 @@ supported:
   - adc
   - dac
   - dma
+  - crc
   - rtc
   - usbd
 vendor: st
