@@ -108,7 +108,7 @@ struct airoc_wifi_data {
 #endif
 };
 
-extern struct airoc_wifi_data airoc_wifi_data;
+extern struct airoc_wifi_data airoc_wifi_dev_data;
 
 union airoc_wifi_bus {
 #if defined(CONFIG_AIROC_WIFI_BUS_SDIO)
