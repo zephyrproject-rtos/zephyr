@@ -403,6 +403,31 @@
 				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
+
+			/* STM32 pulse_io channel: TIM1 update -> DMA2 -> GPIOC BSRR (PC0) */
+			pulseio0: pulse-io-0 {
+				compatible = "st,stm32-timer-pulse-io";
+				#pulse-io-cells = <1>;
+				timer = <&timers1>;
+				dmas = <&dma2 5 6
+					(STM32_DMA_MEMORY_TO_PERIPH |
+					 STM32_DMA_MEM_INC |
+					 STM32_DMA_PERIPH_32BITS |
+					 STM32_DMA_MEM_32BITS |
+					 STM32_DMA_PRIORITY_HIGH)
+					0>;
+				dma-names = "tx";
+
+				/*
+				 * TIM1 is on APB2 at 168 MHz. With prescaler 0 the timer
+				 * ticks at 168 MHz; for a 10 MHz resolution the backend
+				 * programs ARR = 16, giving ~10.5 MHz per cell tick
+				 * (close enough to ws2812_pulse_io's 10 MHz assumption).
+				 */
+				st,prescaler = <0>;
+				buffer-size = <4096>;
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
