@@ -223,10 +223,12 @@
 			status = "disabled";
 		};
 
-		watchdog0: watchdog@40030000 {
-			compatible = "infineon,watchdog";
-			reg = <0x40030000 0xf1c>;
+		watchdog0: watchdog@40030038 {
+			compatible = "infineon,match-wdt-srsslt";
+			reg = <0x40030038 0xc>, <0x40030044 0xc>;
+			reg-names = "wdt", "intr";
 			interrupts = <6 0>;
+			clocks = <&clk_ilo>;
 			status = "disabled";
 		};
 
