@@ -21,19 +21,29 @@ int select_nanosleep(int selection, clockid_t clock_id, int flags, const struct 
 
 static void common_errors(int selection, clockid_t clock_id, int flags)
 {
+	const int exp_err = (selection == SELECT_NANOSLEEP) ? -1 : EINVAL;
 	struct timespec rem = {};
 	struct timespec req = {};
 
 	/*
 	 * invalid parameters
 	 */
-	zassert_equal(select_nanosleep(selection, clock_id, flags, NULL, NULL), -1);
-	zassert_equal(errno, EFAULT);
+	errno = 0;
+	zassert_equal(select_nanosleep(selection, clock_id, flags, NULL, NULL), exp_err);
+	if (selection == SELECT_NANOSLEEP) {
+		zassert_equal(errno, EFAULT);
+	} else {
+		zassert_equal(errno, 0, "clock_nanosleep modified errno");
+	}
 
 	/* NULL request */
 	errno = 0;
-	zassert_equal(select_nanosleep(selection, clock_id, flags, NULL, &rem), -1);
-	zassert_equal(errno, EFAULT);
+	zassert_equal(select_nanosleep(selection, clock_id, flags, NULL, &rem), exp_err);
+	if (selection == SELECT_NANOSLEEP) {
+		zassert_equal(errno, EFAULT);
+	} else {
+		zassert_equal(errno, 0, "clock_nanosleep modified errno");
+	}
 	/* Expect rem to be the same when function returns */
 	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", (int)rem.tv_sec, 0);
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", (int)rem.tv_nsec, 0);
@@ -41,24 +51,40 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	/* negative times */
 	errno = 0;
 	req = (struct timespec){.tv_sec = -1, .tv_nsec = 0};
-	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
-	zassert_equal(errno, EINVAL);
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), exp_err);
+	if (selection == SELECT_NANOSLEEP) {
+		zassert_equal(errno, EINVAL);
+	} else {
+		zassert_equal(errno, 0, "clock_nanosleep modified errno");
+	}
 
 	errno = 0;
 	req = (struct timespec){.tv_sec = 0, .tv_nsec = -1};
-	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
-	zassert_equal(errno, EINVAL);
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), exp_err);
+	if (selection == SELECT_NANOSLEEP) {
+		zassert_equal(errno, EINVAL);
+	} else {
+		zassert_equal(errno, 0, "clock_nanosleep modified errno");
+	}
 
 	errno = 0;
 	req = (struct timespec){.tv_sec = -1, .tv_nsec = -1};
-	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
-	zassert_equal(errno, EINVAL);
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), exp_err);
+	if (selection == SELECT_NANOSLEEP) {
+		zassert_equal(errno, EINVAL);
+	} else {
+		zassert_equal(errno, 0, "clock_nanosleep modified errno");
+	}
 
 	/* nanoseconds too high */
 	errno = 0;
 	req = (struct timespec){.tv_sec = 0, .tv_nsec = 1000000000};
-	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), -1);
-	zassert_equal(errno, EINVAL);
+	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, NULL), exp_err);
+	if (selection == SELECT_NANOSLEEP) {
+		zassert_equal(errno, EINVAL);
+	} else {
+		zassert_equal(errno, 0, "clock_nanosleep modified errno");
+	}
 
 	/*
 	 * Valid parameters
