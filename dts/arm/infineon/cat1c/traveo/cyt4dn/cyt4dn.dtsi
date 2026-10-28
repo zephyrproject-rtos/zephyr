@@ -7,6 +7,7 @@
  */
 
 #include <mem.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_cyt4dnxx.h>
