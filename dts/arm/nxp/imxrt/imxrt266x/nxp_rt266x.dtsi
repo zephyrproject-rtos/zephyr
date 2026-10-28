@@ -948,16 +948,21 @@
 		status = "disabled";
 	};
 
-	/* FlexCAN (HSP domain). Each has a common + error IRQ. */
+	/*
+	 * FlexCAN (HSP domain). Each has a common + error IRQ. Protocol clock:
+	 * SXOSC / 1 = 24 MHz, crystal-accurate for bit timing.
+	 */
 	flexcan0: hsp_flexcan_0: can@420f0000 {
 		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0x420f0000 0x10000>;
 		interrupts = <165 0>, <166 0>;
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_CAN0,
-					   IMX_CCM_ROOT_MAIN_FLEXCAN0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_FLEXCAN0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_FLEXCAN0_FCLK,
+						IMX_CCM_MUX_FLEXCAN0_SXOSC, 1, 1)>;
 		clk-source = <0>;
-		clock-names = "clksrc0";
+		clock-names = "clksrc0", "source";
 		number-of-mb = <96>;
 		status = "disabled";
 	};
@@ -968,9 +973,11 @@
 		interrupts = <167 0>, <168 0>;
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_CAN1,
-					   IMX_CCM_ROOT_MAIN_FLEXCAN1_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_FLEXCAN1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_FLEXCAN1_FCLK,
+						IMX_CCM_MUX_FLEXCAN1_SXOSC, 1, 1)>;
 		clk-source = <0>;
-		clock-names = "clksrc0";
+		clock-names = "clksrc0", "source";
 		number-of-mb = <96>;
 		status = "disabled";
 	};
@@ -981,9 +988,11 @@
 		interrupts = <169 0>, <170 0>;
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_CAN2,
-					   IMX_CCM_ROOT_MAIN_FLEXCAN2_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_FLEXCAN2_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_FLEXCAN2_FCLK,
+						IMX_CCM_MUX_FLEXCAN2_SXOSC, 1, 1)>;
 		clk-source = <0>;
-		clock-names = "clksrc0";
+		clock-names = "clksrc0", "source";
 		number-of-mb = <96>;
 		status = "disabled";
 	};
