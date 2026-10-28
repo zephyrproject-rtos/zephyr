@@ -39,7 +39,11 @@ int rc_rx_submit(struct k_work *work);
 
 int rc_rx_reschedule(struct k_work_delayable *dwork, k_timeout_t delay);
 
+bool rc_rx_is_current(void);
+
 void rc_event_report(const struct device *dev, const struct rc_event *evt);
+
+void rc_sync_dispatch(void);
 
 void rc_key_init(const struct device *dev);
 

@@ -31,6 +31,11 @@ int rc_rx_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 	return k_work_reschedule_for_queue(&rc_rx_wq, dwork, delay);
 }
 
+bool rc_rx_is_current(void)
+{
+	return k_current_get() == k_work_queue_thread_get(&rc_rx_wq);
+}
+
 static uint64_t rc_cycles(void)
 {
 	if (IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {

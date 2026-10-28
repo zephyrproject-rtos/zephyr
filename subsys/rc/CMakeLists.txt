@@ -11,4 +11,5 @@ zephyr_library_sources(
   rc_protocol.c
   rc_raw.c
   rc_rtio.c
+  rc_sync.c
 )

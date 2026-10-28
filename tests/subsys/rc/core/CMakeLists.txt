@@ -12,4 +12,5 @@ target_sources(app PRIVATE
   src/main.c
   src/protocol.c
   src/raw.c
+  src/sync.c
 )
