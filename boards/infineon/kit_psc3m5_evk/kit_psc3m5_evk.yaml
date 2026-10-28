@@ -15,6 +15,7 @@ toolchain:
 supported:
   - can
   - gpio
+  - i2c
   - spi
   - timer
   - uart
