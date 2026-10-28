@@ -6,12 +6,33 @@
 / {
 	rc_loopback0: rc-loopback-0 {
 		compatible = "zephyr,rc-loopback";
+		rx-timeout-us = <20000>;
 		status = "okay";
 	};
 
 	rc_loopback1: rc-loopback-1 {
 		compatible = "zephyr,rc-loopback";
 		protocols = <0x1f2 0x1fe>;
+		status = "okay";
+	};
+
+	rc_loopback2: rc-loopback-2 {
+		compatible = "zephyr,rc-loopback";
+		hw-rx-timeout;
+		protocols = <0x1fe>;
+		rx-timeout-us = <5000>;
+		status = "okay";
+	};
+
+	rc_loopback3: rc-loopback-3 {
+		compatible = "zephyr,rc-loopback";
+		hw-rx-timeout;
+		status = "okay";
+	};
+
+	rc_loopback4: rc-loopback-4 {
+		compatible = "zephyr,rc-loopback";
+		hw-rx-timeout;
 		status = "okay";
 	};
 };

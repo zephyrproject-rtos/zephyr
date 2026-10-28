@@ -50,6 +50,8 @@ struct rc_protocol {
 	uint16_t proto_last;
 	/** Size in bytes of the per-device decoder state */
 	uint16_t state_size;
+	/** Shortest receiver timeout that ends a frame of this protocol, in us, 0 if none */
+	uint32_t min_timeout_us;
 	/**
 	 * @brief Reset the decoder state. Optional.
 	 *

@@ -14,3 +14,13 @@ properties:
       that handles it, with all protocols of that decoder's group. Values
       without a built decoder are ignored. If the property is absent, all
       built decoders are enabled.
+
+  rx-timeout-us:
+    type: int
+    description: |
+      Receiver timeout in us: a space longer than this ends a frame.
+      If absent, the timeout follows the enabled decoders: the longest
+      min_timeout_us of the enabled decoders plus 10 ms, or 125 ms if
+      none needs one, clamped to the driver timeout range. It is
+      recomputed when protocols are enabled or disabled. An explicit
+      value is never changed by protocol selection.

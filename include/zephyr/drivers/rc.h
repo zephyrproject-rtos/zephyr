@@ -94,9 +94,13 @@ struct rc_dev_data {
 	ATOMIC_DEFINE(reset_pending, RC_PROTOCOL_MAX);
 	struct rc_raw_ring *ring;
 	uint8_t *decoder_state;
+	struct k_spinlock lock;
 	atomic_t flags;
 	uint64_t last_edge;
+	uint64_t last_store;
+	atomic_t rx_timeout_us;
 	struct k_work rx_work;
+	struct k_work_delayable timeout_work;
 	/** @endcond */
 };
 
@@ -104,6 +108,7 @@ struct rc_dev_data {
 struct z_rc_init_cfg {
 	const uint16_t *protocols;
 	size_t num_protocols;
+	uint32_t rx_timeout_us;
 	struct rc_raw_ring *ring;
 	uint8_t *decoder_state;
 };
@@ -137,6 +142,7 @@ int z_rc_device_init(const struct device *dev, int (*init_fn)(const struct devic
 	static const struct z_rc_init_cfg Z_RC_NAME(z_rc_init_cfg_, node_id) = {                   \
 		.protocols = Z_RC_PROTOCOLS_PTR(node_id),                                          \
 		.num_protocols = Z_RC_PROTOCOLS_NUM(node_id),                                      \
+		.rx_timeout_us = DT_PROP_OR(node_id, rx_timeout_us, 0),                            \
 		.ring = &Z_RC_NAME(z_rc_raw_ring_, node_id),                                       \
 		.decoder_state = Z_RC_NAME(z_rc_decoder_state_, node_id),                          \
 	}

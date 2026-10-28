@@ -14,6 +14,7 @@
 
 #define TEST_PROTO_RAW 0x1f8
 #define LOG_SIZE       (2 * CONFIG_RC_RAW_BUFFER_SIZE)
+#define RX_TIMEOUT_US  DT_PROP(DT_NODELABEL(rc_loopback0), rx_timeout_us)
 
 struct test_raw_state {
 	uint32_t resets;
@@ -24,8 +25,11 @@ static size_t word_count;
 static uint32_t *dev0_state;
 static size_t reset_at;
 static K_SEM_DEFINE(word_sem, 0, LOG_SIZE);
+static uint32_t last_timeout;
+static K_SEM_DEFINE(timeout_sem, 0, LOG_SIZE);
 
 static const struct device *const dev0 = DEVICE_DT_GET(DT_NODELABEL(rc_loopback0));
+static const struct device *const dev2 = DEVICE_DT_GET(DT_NODELABEL(rc_loopback2));
 
 static void test_raw_reset(void *state)
 {
@@ -40,6 +44,11 @@ static int test_raw_decode(void *state, uint32_t word, struct rc_decode_result *
 	ARG_UNUSED(res);
 
 	dev0_state = state;
+	if ((word & RC_RAW_TIMEOUT) != 0U) {
+		last_timeout = word;
+		k_sem_give(&timeout_sem);
+		return 0;
+	}
 	if (word_count < LOG_SIZE) {
 		word_log[word_count++] = word;
 	}
@@ -63,6 +72,12 @@ static void wait_words(size_t n)
 		zassert_ok(k_sem_take(&word_sem, K_MSEC(100)), "word %zu not decoded", i);
 	}
 	zassert_equal(k_sem_take(&word_sem, K_MSEC(10)), -EAGAIN, "extra word decoded");
+}
+
+static void wait_idle(void)
+{
+	k_sleep(K_USEC(2 * RX_TIMEOUT_US));
+	k_sem_reset(&timeout_sem);
 }
 
 static uint32_t resets(void)
@@ -213,6 +228,13 @@ ZTEST(rc_raw, test_store_from_isr)
 
 ZTEST(rc_raw, test_store_edge)
 {
+	const uint32_t word = RC_RAW_PULSE_US(100);
+
+	zassert_ok(rc_loopback_inject(dev0, &word, 1));
+	wait_words(1);
+	zassert_ok(k_sem_take(&timeout_sem, K_USEC(3 * RX_TIMEOUT_US)));
+	word_count = 0;
+
 	k_sched_lock();
 	zassert_ok(rc_raw_store_edge(dev0, true));
 	k_busy_wait(560);
@@ -221,16 +243,77 @@ ZTEST(rc_raw, test_store_edge)
 	zassert_ok(rc_raw_store_edge(dev0, true));
 	k_sched_unlock();
 
-	wait_words(3);
-	zassert_false(rc_raw_is_pulse(word_log[0]));
-	zassert_true(rc_raw_is_pulse(word_log[1]));
-	zassert_false(rc_raw_is_pulse(word_log[2]));
+	wait_words(2);
+	zassert_true(rc_raw_is_pulse(word_log[0]));
+	zassert_false(rc_raw_is_pulse(word_log[1]));
 
 	/* Exact durations only on native_sim, where code takes no simulated time */
 	if (IS_ENABLED(CONFIG_BOARD_NATIVE_SIM)) {
-		zassert_equal(rc_raw_duration_us(word_log[1]), 560U);
-		zassert_equal(rc_raw_duration_us(word_log[2]), 1690U);
+		zassert_equal(rc_raw_duration_us(word_log[0]), 560U);
+		zassert_equal(rc_raw_duration_us(word_log[1]), 1690U);
 	}
+}
+
+ZTEST(rc_raw, test_timeout_after_idle)
+{
+	const uint32_t word = RC_RAW_PULSE_US(100);
+	int64_t start;
+
+	wait_idle();
+	start = k_uptime_get();
+	zassert_ok(rc_loopback_inject(dev0, &word, 1));
+	wait_words(1);
+
+	zassert_ok(k_sem_take(&timeout_sem, K_USEC(3 * RX_TIMEOUT_US)));
+	zassert_true(k_uptime_get() - start >= RX_TIMEOUT_US / 1000);
+	zassert_false(rc_raw_is_pulse(last_timeout));
+	zassert_true(rc_raw_duration_us(last_timeout) >= RX_TIMEOUT_US);
+
+	zassert_equal(k_sem_take(&timeout_sem, K_USEC(2 * RX_TIMEOUT_US)), -EAGAIN);
+}
+
+ZTEST(rc_raw, test_timeout_rearmed)
+{
+	const uint32_t word = RC_RAW_PULSE_US(100);
+
+	wait_idle();
+	for (int i = 0; i < 4; i++) {
+		zassert_ok(rc_loopback_inject(dev0, &word, 1));
+		k_sleep(K_USEC(RX_TIMEOUT_US / 2));
+		zassert_equal(k_sem_take(&timeout_sem, K_NO_WAIT), -EBUSY, "early timeout %d", i);
+	}
+
+	zassert_ok(k_sem_take(&timeout_sem, K_USEC(3 * RX_TIMEOUT_US)));
+}
+
+ZTEST(rc_raw, test_driver_timeout_word)
+{
+	const uint32_t words[] = {RC_RAW_PULSE_US(100), RC_RAW_TIMEOUT | RC_RAW_SPACE_US(5000)};
+
+	wait_idle();
+	zassert_ok(rc_loopback_inject(dev0, words, ARRAY_SIZE(words)));
+	zassert_ok(k_sem_take(&timeout_sem, K_MSEC(100)));
+	zassert_equal(last_timeout, words[1]);
+
+	zassert_equal(k_sem_take(&timeout_sem, K_USEC(2 * RX_TIMEOUT_US)), -EAGAIN);
+}
+
+ZTEST(rc_raw, test_set_rx_timeout)
+{
+	zassert_equal(rc_set_rx_timeout(dev0, 0), -EINVAL);
+	zassert_equal(rc_set_rx_timeout(dev0, RC_RAW_DURATION_MASK + 1U), -EINVAL);
+	zassert_ok(rc_set_rx_timeout(dev0, RX_TIMEOUT_US));
+}
+
+ZTEST(rc_raw, test_set_rx_timeout_hw)
+{
+	zassert_equal(rc_loopback_rx_timeout_us(dev2),
+		      DT_PROP(DT_NODELABEL(rc_loopback2), rx_timeout_us));
+	zassert_equal(rc_set_rx_timeout(dev2, 500), -EINVAL);
+	zassert_equal(rc_set_rx_timeout(dev2, 2000000), -EINVAL);
+	zassert_ok(rc_set_rx_timeout(dev2, 8000));
+	zassert_equal(rc_loopback_rx_timeout_us(dev2), 8000U);
+	zassert_ok(rc_set_rx_timeout(dev2, 5000));
 }
 
 ZTEST_SUITE(rc_raw, NULL, NULL, rc_raw_before, rc_raw_after, NULL);

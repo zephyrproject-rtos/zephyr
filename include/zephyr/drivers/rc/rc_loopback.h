@@ -40,6 +40,15 @@ extern "C" {
 bool rc_loopback_rx_is_enabled(const struct device *dev);
 
 /**
+ * @brief Get the receiver timeout set by the rc core.
+ *
+ * @param dev Loopback rc device.
+ *
+ * @return Timeout in us, 0 if never set.
+ */
+uint32_t rc_loopback_rx_timeout_us(const struct device *dev);
+
+/**
  * @brief Inject raw words as if received.
  *
  * @param dev Loopback rc device.
