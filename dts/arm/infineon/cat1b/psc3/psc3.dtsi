@@ -6,6 +6,7 @@
  */
 
 #include <mem.h>
+#include <zephyr/dt-bindings/mux/infineon-trigmux-psc3.h>
 #include "psc3.cm33.dtsi"
 
 / {
@@ -15,6 +16,14 @@
 	};
 
 	soc {
+		trigmux: mux-controller@42008000 {
+			compatible = "infineon,trigmux";
+			reg = <0x42008000 0x8000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@42400000 {
 			compatible = "infineon,pinctrl";
 			reg = <0x42400000 0x20000>;

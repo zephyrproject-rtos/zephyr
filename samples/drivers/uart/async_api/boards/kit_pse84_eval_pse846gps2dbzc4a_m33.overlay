@@ -21,6 +21,15 @@
 
 	dmas = <&dma0 0>, <&dma0 1>;
 	dma-names = "tx", "rx";
+	mux-states = <&trigmux0 PSE84_PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 IFX_TRIGMUX_EDGE
+		      PSE84_PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT2>,
+		     <&trigmux0 PSE84_PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN1 IFX_TRIGMUX_LEVEL
+		      PSE84_PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT2>;
+	mux-state-names = "tx", "rx";
+};
+
+&trigmux0 {
+	status = "okay";
 };
 
 &peri0_group1_16bit_0 {

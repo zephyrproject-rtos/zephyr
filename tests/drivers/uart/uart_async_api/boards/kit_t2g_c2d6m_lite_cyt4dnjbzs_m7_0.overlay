@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma1 {
+	status = "okay";
+};
+
+&peri0_group1_16bit_2 {
+	status = "okay";
+};
+
+dut: &uart9 {
+	status = "okay";
+	clocks = <&peri0_group1_16bit_2>;
+};

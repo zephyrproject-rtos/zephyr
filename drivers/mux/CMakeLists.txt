@@ -10,6 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE         mux_handlers.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_MUX_ADI_ADGM3121  mux_adi_adgm3121.c)
 zephyr_library_sources_ifdef(CONFIG_MUX_GPIO          mux_gpio.c)
+zephyr_library_sources_ifdef(CONFIG_MUX_INFINEON_TRIGMUX mux_infineon_trigmux.c)
 zephyr_library_sources_ifdef(CONFIG_MUX_NXP_INPUTMUX  mux_nxp_inputmux.c)
 zephyr_library_sources_ifdef(CONFIG_MUX_NXP_TRGMUX    mux_nxp_trgmux.c)
 zephyr_library_sources_ifdef(CONFIG_MUX_NXP_XBAR      mux_nxp_xbar.c)
