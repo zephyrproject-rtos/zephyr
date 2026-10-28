@@ -26,3 +26,14 @@
 &p2_2_scb1_spi_m_clk {
 	drive-push-pull;
 };
+
+/* Configure pin drive mode for i2c pins */
+&p1_0_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p1_1_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
