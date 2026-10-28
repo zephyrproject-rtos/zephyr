@@ -5691,11 +5691,10 @@ Release:
   status: maintained
   meta: true
   maintainers:
-    - henrikbrixandersen
-    - teburd
+    - nashif
+    - iuliana-prodan
   collaborators:
     - kartben
-    - nashif
   files:
     - VERSION
     - SDK_VERSION
