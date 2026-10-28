@@ -71,6 +71,25 @@ config IPM_MBOX
 	help
 	  IPM driver using a MBOX driver as the backend mechanism.
 
+config IPM_TI_K3_RPROC
+	bool "TI K3 remoteproc control messages"
+	default y
+	depends on DT_HAS_TI_K3_RPROC_IPM_ENABLED
+	depends on ARM
+	help
+	  IPM device that answers the shutdown request TI's Linux kernel
+	  sends before it stops a K3 remote core, and passes every other
+	  message to the application. The core then halts in WFI, which the
+	  kernel waits for before it resets the core.
+
+config IPM_TI_K3_RPROC_INIT_PRIORITY
+	int "TI K3 remoteproc control messages init priority"
+	default 51
+	depends on IPM_TI_K3_RPROC
+	help
+	  Must be after the IPM device it sits in front of, which is
+	  initialized at KERNEL_INIT_PRIORITY_DEVICE.
+
 # zephyr-keep-sorted-start
 source "drivers/ipm/Kconfig.imx"
 source "drivers/ipm/Kconfig.ivshmem"
