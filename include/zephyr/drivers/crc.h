@@ -228,7 +228,7 @@ static inline int z_impl_crc_begin(const struct device *dev, struct crc_ctx *ctx
  *
  * @retval 0 if successful
  * @retval -ENOSYS if function is not implemented
- * @reval -EINVAL if this is called of of turn, i.e not between crc_begin and the next call to
+ * @retval -EINVAL if this is called out of turn, i.e not between crc_begin and the next call to
  * crc_finish.
  * @retval errno code on failure
  */
@@ -255,11 +255,10 @@ static inline int z_impl_crc_update(const struct device *dev, struct crc_ctx *ct
  *
  * @retval 0 if successful
  * @retval -ENOSYS if function is not implemented
- * @reval -EINVAL if:
- *                - this is called of of turn, eg. not the first call to crc_finish after a call to
- *                  crc_begin, or
- *                - CONFIG_CRC_DRIVER_NEEDS_WORDS is set and the data passed wasn't an integer
- *                  number of words.
+ * @retval -EINVAL if this is called out of turn, eg. not the first call to crc_finish after a call to
+ * crc_begin
+ * @retval -ENOTSUP if CONFIG_CRC_DRIVER_NEEDS_WORDS is set and the data passed wasn't an integer number
+ * of words.
  * @retval errno code on failure
  */
 __syscall int crc_finish(const struct device *dev, struct crc_ctx *ctx);
