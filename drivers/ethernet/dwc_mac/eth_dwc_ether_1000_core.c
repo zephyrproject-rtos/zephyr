@@ -60,6 +60,9 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs[idx])
 #define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs[idx])
 
+BUILD_ASSERT(IS_POWER_OF_TWO(CONFIG_ETH_DWC_ETHER_1000_CORE_DMA_PBL),
+	     "CONFIG_ETH_DWC_ETHER_1000_CORE_DMA_PBL must be 1, 2, 4, 8, 16 or 32");
+
 static void dwmac_rx_refill(const struct device *dev);
 
 static uint32_t phys_lo32(void *addr)
@@ -727,7 +730,7 @@ int dwmac_probe(const struct device *dev)
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
 	reg_val = DWMAC_REG_READ(DWMAC_DMABMR) & ~DWMAC_DMABMR_PBL;
-	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, 32);
+	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, CONFIG_ETH_DWC_ETHER_1000_CORE_DMA_PBL);
 
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
 		reg_val |= DWMAC_DMABMR_EDFE;
