@@ -265,7 +265,6 @@ extern struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_A
 extern struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 extern struct named_lc3_preset default_sink_preset;
 extern struct named_lc3_preset default_source_preset;
-
 int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param);
 
 #if defined(CONFIG_BT_CAP_INITIATOR)
@@ -279,6 +278,7 @@ extern struct bt_cap_unicast_group_stream_pair_param
 	cap_initiator_unicast_group_pair_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
 extern struct bt_cap_unicast_audio_start_param cap_initiator_unicast_audio_start_param;
 extern struct bt_cap_unicast_group_param cap_initiator_unicast_group_param;
+
 #endif /* CONFIG_BT_CAP_INITIATOR */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */

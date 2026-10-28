@@ -768,6 +768,7 @@ static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t 
 	cap_initiator_unicast_group_param.params_count =
 		cap_initiator_unicast_audio_start_param.count;
 	cap_initiator_unicast_group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	cap_initiator_unicast_group_param.sca = BT_GAP_SCA_UNKNOWN;
 
 	cap_commander_reception_stop_param.type = BT_CAP_SET_TYPE_AD_HOC;
 	cap_commander_reception_stop_param.param = cap_commander_reception_stop_member_params;
