@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_a2g_tc375_lite/tc375tp/cpu0
+name: AURIX TC375 lite kit (CPU0)
+type: mcu
+arch: tricore
+toolchain:
+  - tricore
+  - host/llvm
+env:
+  - TRICORE_TOOLCHAIN_PATH
+ram: 240
+flash: 3072
+supported:
+  - uart
+vendor: infineon

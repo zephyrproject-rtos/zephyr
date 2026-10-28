@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KIT_A2G_TC375_LITE
+	select SOC_TC375TP_CPU0 if BOARD_KIT_A2G_TC375_LITE_TC375TP_CPU0
