@@ -149,6 +149,13 @@ static void cancel_notify(uint16_t obj_inst_id)
 	}
 }
 
+/* Return to Idle with the given result and let the application drop the image */
+static void download_cancel(uint16_t obj_inst_id, uint8_t result)
+{
+	lwm2m_firmware_set_update_result_inst(obj_inst_id, result);
+	cancel_notify(obj_inst_id);
+}
+
 static void push_timeout_service(struct k_work *work)
 {
 	int64_t now = k_uptime_get();
@@ -334,6 +341,14 @@ void lwm2m_firmware_set_update_result(uint8_t result)
 	lwm2m_firmware_set_update_result_inst(0, result);
 }
 
+/* An empty or NULL ('\0') Package write resets the state machine; a block-wise
+ * transfer can only produce such a payload past offset zero.
+ */
+static bool is_reset_write(const uint8_t *data, uint16_t data_len, size_t offset)
+{
+	return offset == 0 && (data_len == 0U || (data_len == 1U && data[0] == '\0'));
+}
+
 static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 			    uint16_t res_inst_id, uint8_t *data,
 			    uint16_t data_len, bool last_block,
@@ -343,7 +358,6 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	bool pull;
 	int ret = 0;
 	lwm2m_engine_set_data_cb_t write_callback;
-	lwm2m_engine_user_cb_t cancel_callback;
 
 	lwm2m_registry_lock();
 	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
@@ -353,6 +367,16 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	if (pull) {
 		LOG_DBG("Package is not writable while a pull is in progress");
 		return -EPERM;
+	}
+
+	if (state != STATE_UPDATING && is_reset_write(data, data_len, offset)) {
+		if (state == STATE_IDLE) {
+			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
+		} else {
+			download_cancel(obj_inst_id, RESULT_DEFAULT);
+		}
+		LOG_DBG("Update canceled by writing %d bytes", data_len);
+		return 0;
 	}
 
 	if (state == STATE_IDLE) {
@@ -367,16 +391,6 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 		push_active[obj_inst_id] = true;
 		lwm2m_registry_unlock();
 	} else if (state == STATE_DOWNLOADED) {
-		if (data_len == 0U || (data_len == 1U && data[0] == '\0')) {
-			/* reset to state idle and result default */
-			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
-			cancel_callback = lwm2m_firmware_get_cancel_cb_inst(obj_inst_id);
-			if (cancel_callback) {
-				ret = cancel_callback(obj_inst_id);
-			}
-			LOG_DBG("Update canceled by writing %d bytes", data_len);
-			return 0;
-		}
 		LOG_WRN("Download has already completed");
 		return -EPERM;
 	} else if (state != STATE_DOWNLOADING) {
@@ -425,6 +439,7 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	uint8_t state;
+	bool pull;
 	bool empty_uri;
 
 	/* writes every block of a block-wise transfer to the start of
@@ -436,17 +451,31 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 		return -EFBIG;
 	}
 
+	lwm2m_registry_lock();
 	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
+	pull = state == STATE_DOWNLOADING && !push_active[obj_inst_id];
+	lwm2m_registry_unlock();
 	empty_uri = data_len == 0 || strnlen(data, data_len) == 0;
 
-	if (state == STATE_IDLE) {
-		if (!empty_uri) {
-			lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
-			lwm2m_firmware_start_transfer(obj_inst_id, package_uri[obj_inst_id]);
+	if (empty_uri) {
+		/* Nothing can stop a pull or an update yet; tell the server rather than pretend */
+		if (pull || state == STATE_UPDATING) {
+			LOG_DBG("Package URI cannot be reset: state = %d", state);
+			return -EPERM;
 		}
-	} else if (state == STATE_DOWNLOADED && empty_uri) {
-		/* reset to state idle and result default */
-		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
+
+		if (state == STATE_IDLE) {
+			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
+		} else {
+			download_cancel(obj_inst_id, RESULT_DEFAULT);
+		}
+
+		return 0;
+	}
+
+	if (state == STATE_IDLE) {
+		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
+		lwm2m_firmware_start_transfer(obj_inst_id, package_uri[obj_inst_id]);
 	}
 
 	return 0;
