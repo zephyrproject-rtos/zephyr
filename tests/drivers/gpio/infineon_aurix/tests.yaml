@@ -1,0 +1,10 @@
+tests:
+  drivers.gpio.infineon_aurix:
+    tags:
+      - drivers
+      - gpio
+    platform_allow:
+      - kit_a2g_tc375_lite/tc375tp/cpu0
+      - kit_a3g_tc4d7_lite/tc4d7xp/cpu0
+    integration_platforms:
+      - kit_a3g_tc4d7_lite/tc4d7xp/cpu0
