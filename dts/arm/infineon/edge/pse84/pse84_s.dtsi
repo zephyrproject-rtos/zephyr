@@ -550,9 +550,12 @@
 		};
 
 		watchdog0: watchdog@5240c000 {
-			compatible = "infineon,watchdog";
-			reg = <0x5240c000 0x180>;
+			compatible = "infineon,match-wdt";
+			reg = <0x5240c000 0x10>, <0x52400200 0x10>;
+			reg-names = "wdt", "intr";
 			interrupts = <54 4>;
+			clocks = <&clk_pilo>;
+			counter-bits = <22>;
 			status = "disabled";
 			wakeup-source;
 		};
