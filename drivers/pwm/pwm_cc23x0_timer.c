@@ -180,52 +180,12 @@ static uint32_t pwm_cc23x0_out_enable(uint32_t channel)
 	}
 }
 
-/*
- * Configure IOCTL so the complementary output (CxN) pin inverts OUTx.
- *
- * On CC23x0 the LGPT_O_IOCTL register has, per output, an OUTx field (bits
- * 1:0/5:4/9:8) and a COUTx field (bits 3:2/7:6/11:10). After reset both fields
- * are 0 (NRM) which makes the CxN pin track OUTx with the same phase, not
- * inverted - so a board that pinmuxes a CxN pin sees the wrong signal (or no
- * toggle at all, depending on initial state). Setting COUTx = INV (b11) makes
- * CxN truly complementary. The default pinctrl entries on this SoC all map
- * the negative pin (CxN), so we set COUTx_INV for the channel in use.
- */
-static void pwm_cc23x0_enable_complementary_output(const struct pwm_cc23x0_config *config,
-						   uint32_t channel)
-{
-	uint32_t mask, inv;
-
-	switch (channel) {
-	case 0:
-		mask = LGPT_IOCTL_COUT0_M;
-		inv = LGPT_IOCTL_COUT0_INV;
-		break;
-	case 1:
-		mask = LGPT_IOCTL_COUT1_M;
-		inv = LGPT_IOCTL_COUT1_INV;
-		break;
-	case 2:
-		mask = LGPT_IOCTL_COUT2_M;
-		inv = LGPT_IOCTL_COUT2_INV;
-		break;
-	default:
-		return;
-	}
-
-	uint32_t val = HWREG(config->base + LGPT_O_IOCTL);
-
-	val = (val & ~mask) | inv;
-	HWREG(config->base + LGPT_O_IOCTL) = val;
-}
-
 static void pwm_cc23x0_set_initial_compare(const struct pwm_cc23x0_config *config, uint32_t channel,
 					   uint32_t pulse, uint8_t capture_compare_action)
 {
 	HWREG(config->base + pwm_cc23x0_cxcc_offset(channel)) = pulse;
 	HWREG(config->base + pwm_cc23x0_cxcfg_offset(channel)) =
 		pwm_cc23x0_out_enable(channel) | capture_compare_action;
-	pwm_cc23x0_enable_complementary_output(config, channel);
 }
 
 static void pwm_cc23x0_set_next_target(const struct pwm_cc23x0_config *config, uint32_t period)
@@ -284,7 +244,7 @@ static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel, uin
 		return -EINVAL;
 	}
 
-	capture_compare_action = (flags & PWM_POLARITY_INVERTED) ? 0xB : 0xA;
+	capture_compare_action = (flags & PWM_POLARITY_INVERTED) ? 0xA : 0xB;
 
 	key = k_spin_lock(&data->lock);
 
