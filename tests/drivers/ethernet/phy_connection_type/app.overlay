@@ -1,0 +1,91 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	eth_mii: eth-mii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "mii";
+	};
+
+	eth_rmii: eth-rmii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "rmii";
+	};
+
+	eth_gmii: eth-gmii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "gmii";
+	};
+
+	eth_rgmii: eth-rgmii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "rgmii";
+	};
+
+	eth_rgmii_id: eth-rgmii-id {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "rgmii-id";
+	};
+
+	eth_rgmii_txid: eth-rgmii-txid {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "rgmii-txid";
+	};
+
+	eth_rgmii_rxid: eth-rgmii-rxid {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "rgmii-rxid";
+	};
+
+	eth_tbi: eth-tbi {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "tbi";
+	};
+
+	eth_rtbi: eth-rtbi {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "rtbi";
+	};
+
+	eth_smii: eth-smii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "smii";
+	};
+
+	eth_sgmii: eth-sgmii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "sgmii";
+	};
+
+	eth_rev_mii: eth-rev-mii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "rev-mii";
+	};
+
+	eth_xgmii: eth-xgmii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "xgmii";
+	};
+
+	eth_moca: eth-moca {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "moca";
+	};
+
+	eth_qsgmii: eth-qsgmii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "qsgmii";
+	};
+
+	eth_trgmii: eth-trgmii {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "trgmii";
+	};
+
+	eth_internal: eth-internal {
+		compatible = "vnd,ethernet";
+		phy-connection-type = "internal";
+	};
+};
