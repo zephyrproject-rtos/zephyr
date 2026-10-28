@@ -28,6 +28,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,flash = &w25q512nw;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &ext_flash_ctrl;
 	};
 
@@ -101,18 +102,12 @@
 	pinctrl-names = "default";
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
 
-	/*
-	 * The FlexSPI NOR flash controller is intentionally disabled: the
-	 * boot ROM configures FlexSPI1 for XIP and runtime flash access is
-	 * not supported yet. The chosen zephyr,flash-controller entry is
-	 * still required so the build system can resolve the XIP setup.
-	 */
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(64*8)>;
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "disabled";
+		status = "okay";
 		jedec-id = [ef 60 20];
 
 		#address-cells = <1>;
@@ -128,6 +123,40 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
+
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				/*
+				 * Partition sizes must be aligned
+				 * to the flash memory sector size of 4KB.
+				 */
+				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					label = "mcuboot";
+					reg = <0x00000000 DT_SIZE_K(128)>;
+				};
+
+				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-0";
+					reg = <0x00020000 DT_SIZE_M(16)>;
+				};
+
+				slot1_partition: partition@1020000 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-1";
+					reg = <0x01020000 DT_SIZE_M(16)>;
+				};
+
+				storage_partition: partition@2020000 {
+					compatible = "zephyr,mapped-partition";
+					label = "storage";
+					reg = <0x02020000 (DT_SIZE_M(32) - DT_SIZE_K(128))>;
+				};
+			};
 		};
 	};
 };
