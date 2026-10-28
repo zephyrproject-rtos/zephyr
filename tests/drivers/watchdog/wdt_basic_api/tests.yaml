@@ -114,6 +114,10 @@ tests:
       - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - nucleo_f091rc
+  drivers.watchdog.stm32iwdg_wl3:
+    filter: dt_compat_enabled("st,stm32-watchdog")
+    platform_allow:
+      - nucleo_wl33cc1
   drivers.watchdog.mec15xxevb_assy6853:
     build_only: true
     platform_allow: mec15xxevb_assy6853
