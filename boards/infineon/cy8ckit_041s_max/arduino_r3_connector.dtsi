@@ -1,0 +1,82 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Arduino UNO R3 connector on J1 to J4, per kit guide 002-32436 Rev. *D,
+ * Table 5.
+ *
+ * A0 to A5 are the SAR ADC inputs on port 2 and are also GPIO.  The optional
+ * ratiometric thermistor connection reaches J2 through zero-ohm resistors
+ * (kit guide, section 3.2.9).
+ *
+ * D14 (SDA) and D15 (SCL) are shared with the KitProg3 USB-I2C bridge (kit
+ * guide, section 3.2.2.1).
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio_prt2 0 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio_prt2 1 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio_prt2 2 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio_prt2 3 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio_prt2 4 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio_prt2 5 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio_prt8 0 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio_prt8 1 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio_prt8 2 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio_prt8 3 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio_prt6 0 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio_prt6 1 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio_prt6 2 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio_prt6 3 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio_prt10 4 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio_prt10 5 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio_prt10 3 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio_prt10 0 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio_prt10 1 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio_prt10 2 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio_prt1 1 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio_prt1 0 0>;
+	};
+};
+
+arduino_i2c: &i2c0 {};
+
+/*
+ * SCB2 on D11 (MOSI), D12 (MISO) and D13 (SCK).  Left disabled; a shield
+ * enables it and supplies the chip select, normally on D10.
+ */
+arduino_spi: &scb2 {
+	compatible = "infineon,spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	clocks = <&peri_clk_div2>;
+
+	pinctrl-0 = <&p10_0_scb2_spi_m_mosi &p10_1_scb2_spi_m_miso &p10_2_scb2_spi_m_clk>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+/* D4 to D7 are on port 6, D0 to D3 on port 8 and D8 to D13 on port 10. */
+&gpio_prt6 {
+	status = "okay";
+};
+
+&gpio_prt8 {
+	status = "okay";
+};
+
+&gpio_prt10 {
+	status = "okay";
+};
