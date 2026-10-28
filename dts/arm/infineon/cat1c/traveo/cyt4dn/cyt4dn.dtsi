@@ -142,6 +142,15 @@
 			};
 		};
 
+		watchdog0: watchdog@4026c000 {
+			compatible = "infineon,window-wdt";
+			reg = <0x4026c000 0x80>;
+			interrupt-parent = <&intmux_ch0>;
+			interrupts = <17 0>;
+			clocks = <&ilo0>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@40300000 {
 			compatible = "infineon,pinctrl";
 			reg = <0x40300000 0x20000>;
