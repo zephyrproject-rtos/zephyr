@@ -9,6 +9,7 @@ ram: 128
 flash: 1024
 supported:
   - can
+  - crc
   - pwm
   - counter
   - adc
