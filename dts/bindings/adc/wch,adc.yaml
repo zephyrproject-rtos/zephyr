@@ -23,6 +23,24 @@ properties:
     description: |
       Reference voltage in mV. This is typically VDD.
 
+  channels:
+    type: int
+    min: 10
+    max: 18
+    required: true
+    description: |
+      Number of ADC channels. 10 on the CH32V003 and CH32V00x, 18 on
+      the CH32V20x/30x.
+
+  resolution:
+    type: int
+    min: 10
+    max: 12
+    required: true
+    description: |
+      Resolution of the ADC in bits. 10 on the CH32V003, 12 on the
+      CH32V00x and CH32V20x/30x.
+
   pinctrl-0:
     required: true
 
