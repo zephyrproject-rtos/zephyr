@@ -10,6 +10,7 @@ flash: 2048
 supported:
   - arduino_i2c
   - counter
+  - crc
   - i2c
   - spi
   - arduino_spi

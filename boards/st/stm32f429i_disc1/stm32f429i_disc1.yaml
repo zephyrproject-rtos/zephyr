@@ -9,6 +9,7 @@ ram: 192
 flash: 2048
 supported:
   - counter
+  - crc
   - i2c
   - spi
   - display

@@ -153,6 +153,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&crc {
+	status = "okay";
+};
+
 &sdmmc1 {
 	clocks = <&rcc STM32_CLOCK(APB2, 11)>,
 		 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;

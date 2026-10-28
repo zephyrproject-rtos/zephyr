@@ -246,3 +246,7 @@ zephyr_udc0: &usbotg_fs {
 &vbat {
 	status = "okay";
 };
+
+&crc {
+	status = "okay";
+};
