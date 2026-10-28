@@ -18,6 +18,9 @@ GDATA(_kernel)
 #if CONFIG_IRQ_OFFLOAD
 GTEXT(z_tricore_irq_done)
 #endif
+#if CONFIG_MPU_STACK_GUARD
+GTEXT(z_tricore_mpu_stackguard_enable)
+#endif
 
 SECTION_FUNC(TEXT, _syscall_wrapper)
 	/* Syscall table */
@@ -38,6 +41,10 @@ switch_syscall:
 1:
 	fcall	z_tricore_switch
 
+	/* z_tricore_switch clobbers %a15 across the MPU reconfigure */
+	movh.a	%a15, hi:(_kernel + ___kernel_t_cpus_OFFSET)
+	lea	%a15, [%a15], lo:(_kernel + ___kernel_t_cpus_OFFSET)
+
 	ld.a	%a13, [%a15]+_cpu_offset_to_to_reclaim
 	jz.a	%a13, switch_no_reclaim
 	mov.aa	%a4, %a13
@@ -46,6 +53,13 @@ switch_syscall:
 	st.a	[%a15]+_cpu_offset_to_to_reclaim, %a12
 	st.a	[%a13]+_thread_offset_to_saved_pcxi, %a12
 switch_no_reclaim:
+#if CONFIG_MPU_STACK_GUARD
+	/* After thread switch, install the new thread's stack guard */
+	movh.a  %a15, hi:(_kernel + ___kernel_t_cpus_OFFSET)
+	lea     %a15, [%a15], lo:(_kernel + ___kernel_t_cpus_OFFSET)
+	ld.a    %a4, [%a15]+___cpu_t_current_OFFSET
+	call    z_tricore_mpu_stackguard_enable
+#endif
 	j 	syscall_return
 
 #if CONFIG_IRQ_OFFLOAD

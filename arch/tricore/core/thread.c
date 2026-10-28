@@ -78,12 +78,30 @@ unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t 
 
 	upper->psw |= (1 << 8) | (2 << 10); /* GW & Privileged mode */
 
+#if defined(CONFIG_TRICORE_MPU)
+	{
+		uint32_t prs = thread->arch.prs;
+
+		upper->psw |= ((prs & 1U) << 12) |
+			      ((prs & 2U) << 12) |
+			      ((prs & 4U) << 13);
+	}
+#endif
+
 	return fcx;
 }
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
 		     k_thread_entry_t entry, void *p1, void *p2, void *p3)
 {
+	uint8_t prs = FIELD_GET(K_PROTECTION_SET_MASK, thread->base.user_options);
+
+	thread->arch.prs = prs;
+
+#if CONFIG_CPU_TC18
+	thread->callee_saved.pprs = prs;
+#endif
+
 	thread->callee_saved.pcxi = z_tricore_create_context(thread, entry, p1, p2, p3, stack_ptr);
 
 	/* our switch handle is the thread pointer itself */

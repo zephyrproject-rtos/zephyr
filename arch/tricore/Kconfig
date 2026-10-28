@@ -51,6 +51,64 @@ config TRICORE_RESET_TRAMPOLINE
 
 menu "TriCore Processor Options"
 
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	bool "Custom fixed SoC MPU region definition"
+	help
+	  If enabled, the SoC defines and configures its own fixed MPU regions in
+	  the SoC layer. These fixed MPU regions are programmed at boot time and
+	  typically set the default access policies for flash and SRAM.
+
+config TRICORE_MPU
+	bool "TriCore MPU Support"
+	select THREAD_STACK_INFO
+	select CPU_HAS_MPU
+	select MPU
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	select ARCH_HAS_STACK_PROTECTION
+	select SRAM_REGION_PERMISSIONS
+	help
+	  Enable the TriCore Memory Protection Unit. The MPU enforces per-region
+	  read, write and execute access permissions and provides a stack guard
+	  with HW_STACK_PROTECTION.
+
+if TRICORE_MPU
+
+config TRICORE_MPU_CODE_REGIONS
+	int "Number of MPU code regions"
+	default 8
+	help
+	  Number of code-protection regions (CPRs) supported by the MPU on this
+	  SoC. Used to bound region allocation tables at compile time.
+
+config TRICORE_MPU_DATA_REGIONS
+	int "Number of MPU data regions"
+	default 16
+	help
+	  Number of data-protection regions (DPRs) supported by the MPU on this
+	  SoC.
+
+config TRICORE_MPU_PROTECTION_SETS
+	int "Number of MPU protection sets"
+	default 4
+	help
+	  Number of protection sets (PRS) supported by the MPU on this SoC. PRS 0
+	  is used by kernel and ISR contexts.
+
+endif # TRICORE_MPU
+
+config MPU_STACK_GUARD
+	def_bool y
+	depends on HW_STACK_PROTECTION
+
+config MPU_STACK_GUARD_MIN_SIZE
+	int "Stack Guard area size"
+	depends on MPU_STACK_GUARD
+	default 512
+	help
+	  Hardware stack protection installs a guard area at the bottom of the
+	  stack using the MPU. Accessing the guard area triggers a fault so stack
+	  overflows can be caught.
+
 config CPU_HAS_TRICORE_VIRTUALIZATION
 	bool
 	depends on CPU_TC18
@@ -69,5 +127,17 @@ config GEN_IRQ_VECTOR_TABLE
 config NUM_IRQ_PRIORITIES
 	int
 	default 256
+
+config MAIN_STACK_SIZE
+	default 4096 if TRICORE_MPU
+
+config IDLE_STACK_SIZE
+	default 2048 if TRICORE_MPU
+
+config ISR_STACK_SIZE
+	default 4096 if MPU_STACK_GUARD
+
+config TEST_EXTRA_STACK_SIZE
+	default 1024 if TRICORE_MPU
 
 endmenu

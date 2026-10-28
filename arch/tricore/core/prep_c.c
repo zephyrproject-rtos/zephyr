@@ -19,6 +19,9 @@
 #include <kernel_internal.h>
 #include <zephyr/arch/common/init.h>
 #include <zephyr/arch/common/xip.h>
+#ifdef CONFIG_TRICORE_MPU
+#include <zephyr/arch/tricore/mpu.h>
+#endif
 
 /**
  *
@@ -31,6 +34,10 @@ void z_prep_c(void)
 {
 	arch_bss_zero();
 	arch_data_copy();
+
+#ifdef CONFIG_TRICORE_MPU
+	z_tricore_mpu_init();
+#endif
 
 	z_cstart();
 	CODE_UNREACHABLE;

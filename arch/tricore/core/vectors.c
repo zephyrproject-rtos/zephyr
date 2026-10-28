@@ -32,7 +32,13 @@ TRAP_VECTOR(0, "svlcx\n\t"
 	       "mov %d5, %d15\n\t"
 	       "j z_tricore_fault");
 
+/* Run the class 1 (protection) handler with PSW.PRS = 0, the kernel set */
 TRAP_VECTOR(1, "svlcx\n\t"
+	       "mfcr %d14, 0xfe04\n\t"
+	       "insert %d14, %d14, 0, 12, 2\n\t"
+	       "insert %d14, %d14, 0, 15, 1\n\t"
+	       "mtcr 0xfe04, %d14\n\t"
+	       "isync\n\t"
 	       "mov %d4, 1\n\t"
 	       "mov %d5, %d15\n\t"
 	       "j z_tricore_fault");

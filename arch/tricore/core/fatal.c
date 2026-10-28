@@ -10,6 +10,9 @@
 #include <zephyr/fatal_types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/tricore/exception.h>
+#if CONFIG_MPU_STACK_GUARD
+#include <zephyr/arch/tricore/mpu.h>
+#endif
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -139,15 +142,51 @@ void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower)
 	z_fatal_error(reason, lower);
 }
 
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS, CONFIG_ISR_STACK_SIZE);
+
+static bool bad_stack_pointer(struct z_tricore_upper_context *upper)
+{
+#if CONFIG_MPU_STACK_GUARD
+	if ((upper->psw & BIT(9)) != 0 && upper->a10 >= POINTER_TO_UINT(z_interrupt_stacks[0]) &&
+	    upper->a10 < POINTER_TO_UINT(z_interrupt_stacks[0]) + Z_TRICORE_STACK_GUARD_SIZE) {
+		return true;
+	} else if ((upper->psw & BIT(11)) != 0 &&
+		   (upper->a10 >= _current->stack_info.start - Z_TRICORE_STACK_GUARD_SIZE &&
+		    upper->a10 < _current->stack_info.start)) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+
 void z_tricore_fault(uint8_t trap_class, uint8_t tin)
 {
 	uint32_t pcxi = cr_read(TRICORE_PCXI);
 	struct arch_esf *lower = UINT_TO_POINTER(((pcxi & 0xF0000) << 12) | ((pcxi & 0xFFFF) << 6));
+	struct z_tricore_upper_context *upper = NULL;
+	unsigned int reason = K_ERR_CPU_EXCEPTION;
+
+	if ((lower->pcxi & 0xFFFFF) != 0) {
+		upper = UINT_TO_POINTER(((lower->pcxi & 0xF0000) << 12) |
+					((lower->pcxi & 0xFFFF) << 6));
+	}
+
+	/* CSA and call-depth traps are reported as stack overflows */
+	if (trap_class == TRICORE_TRAP_CONTEXT_MANAGEMENT &&
+	    (tin == TRICORE_TRAP3_FCD || tin == TRICORE_TRAP3_CDO || tin == TRICORE_TRAP3_CDU ||
+	     tin == TRICORE_TRAP3_CSU)) {
+		reason = K_ERR_STACK_CHK_FAIL;
+	}
+
+	if (upper != NULL && bad_stack_pointer(upper)) {
+		reason = K_ERR_STACK_CHK_FAIL;
+	}
 
 	LOG_ERR("TriCore Trap: Class %u TIN %u (%s)", trap_class, tin,
 		z_tricore_trap_cause_str(trap_class, tin));
 
-	z_tricore_fatal_error(K_ERR_CPU_EXCEPTION, lower);
+	z_tricore_fatal_error(reason, lower);
 }
 
 void __weak z_tricore_fault_fcu(void)
