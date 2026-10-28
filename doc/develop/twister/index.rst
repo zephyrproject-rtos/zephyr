@@ -1153,6 +1153,18 @@ Expressions
    - ``label``: The node label to match.
    - ``prop``: The node's property to check.
 
+``dt_compat_any_prop_enabled(compat, prop)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if any enabled DT node with the specified compatible has the specified property with
+   a non-empty value. Useful for a capability a board states on a node of its own, whose label
+   differs from board to board.
+
+**Parameters:**
+   - ``compat``: The compatible string to match.
+   - ``prop``: The node's property to check.
+
 ``dt_node_has_prop(node_id, prop)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
