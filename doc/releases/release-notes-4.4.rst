@@ -582,6 +582,10 @@ New APIs and options
     mailbox usage. Applications should be prepared to receive a NULL payload pointer
     in IPM callbacks when no data buffer is provided by the mailbox.
 
+* MIPI DSI
+
+  * :c:macro:`MIPI_DSI_MODE_HS_BLANKING`
+
 * Management
 
   * MCUmgr
@@ -1370,6 +1374,7 @@ New Drivers
 
    * :dtcompatible:`eink,ac057tc1` (:github:`104142`)
    * :dtcompatible:`ilitek,ili9163c` (:github:`104071`)
+   * :dtcompatible:`lontium,lt8912b` (:github:`118166`)
    * :dtcompatible:`nxp,imx-lcdifv2` (:github:`103646`)
    * :dtcompatible:`qemu,ramfb` (:github:`103887`)
    * :dtcompatible:`sifli,sf32lb-lcdc` (:github:`99549`)
