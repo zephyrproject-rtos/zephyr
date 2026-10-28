@@ -4,9 +4,3 @@ family:
   - name: miv
     socs:
     - name: miv
-  - name: polarfire
-    socs:
-    - name: polarfire
-      cpuclusters:
-      - name: e51
-      - name: u54

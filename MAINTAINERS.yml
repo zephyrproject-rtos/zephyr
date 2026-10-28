@@ -4238,6 +4238,7 @@ Microchip RISC-V Platforms:
     - boards/microchip/pic64gx_curiosity_kit/
     - dts/riscv/microchip/
     - soc/microchip/miv/
+    - soc/microchip/polarfire/
     - soc/microchip/pic64/
     - drivers/*/*mchp*mss*
     - dts/bindings/*/microchip,mpfs*
