@@ -71,8 +71,8 @@ config RC_TX
 	bool
 	help
 	  Transmit support: the rc transmit work queue, RC_DT_TX_IODEV(),
-	  rc_send_raw_sync() and rc_set_tx_carrier(). Selected by drivers of
-	  devices that can transmit.
+	  rc_send_sync(), rc_send_raw_sync() and rc_set_tx_carrier().
+	  Selected by drivers of devices that can transmit.
 
 if RC_TX
 
@@ -92,22 +92,33 @@ config RC_TX_WORKQ_PRIORITY
 	  is not delayed by a driver transmitting.
 
 config RC_SEND_SYNC_MAX
-	int "Maximum concurrent rc_send_raw_sync() calls"
+	int "Maximum concurrent rc_send_sync() and rc_send_raw_sync() calls"
 	default 2
 	range 1 64
 	help
-	  Number of threads that can wait in rc_send_raw_sync() at the same
-	  time. One global limit shared by all rc devices. Sizes the
-	  rc-owned RTIO context used by the call.
+	  Number of threads that can wait in rc_send_sync() and
+	  rc_send_raw_sync() at the same time. One global limit shared by
+	  all rc devices. Sizes the rc-owned RTIO context used by the calls.
 
 config RC_TX_BUFFER_WORDS
 	int "Transmit buffer size, in words"
 	default 256
 	range 1 4096
 	help
-	  Size of the buffer that raw transmissions are copied into before
-	  they are sent, shared by all rc devices. A raw transmission has at
-	  most this many words.
+	  Size of the buffer that raw transmissions are copied into and that
+	  protocol encoders fill for a scancode transmission, shared by all
+	  rc devices. A raw transmission or an encoded frame has at most this
+	  many words.
+
+config RC_TX_MAX_DURATION_MS
+	int "Maximum duration of a scancode transmission, in ms"
+	default 2000
+	range 1 65535
+	help
+	  Longest scancode request, from the start of its first frame to the
+	  end of its last repeat. Longer requests are rejected before any
+	  frame is sent. Bounds the time the rc transmit work queue is busy
+	  with one request.
 
 endif # RC_TX
 

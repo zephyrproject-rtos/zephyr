@@ -26,3 +26,9 @@ properties:
     description: |
       Store transmitted words as received words, when reception is
       enabled.
+
+  fixed-carrier:
+    type: boolean
+    description: |
+      Behave as a transmitter with a fixed carrier: no set_carrier and no
+      carrier range in the capabilities.

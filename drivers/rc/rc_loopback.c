@@ -24,6 +24,7 @@ struct rc_loopback_config {
 	bool hw_rx_timeout;
 	bool rx_only;
 	bool tx_echo;
+	bool fixed_carrier;
 };
 
 struct rc_loopback_data {
@@ -39,6 +40,7 @@ struct rc_loopback_data {
 	uint8_t duty_pct;
 	atomic_t tx_hold;
 	struct k_sem tx_gate;
+	rc_loopback_tx_cb_t tx_cb;
 #endif
 };
 
@@ -54,8 +56,10 @@ static int rc_loopback_get_caps(const struct device *dev, struct rc_caps *caps)
 #ifdef CONFIG_RC_TX
 	if (!config->rx_only) {
 		caps->roles |= RC_ROLE_RAW_TX;
-		caps->carrier_min_hz = RC_LOOPBACK_CARRIER_MIN_HZ;
-		caps->carrier_max_hz = RC_LOOPBACK_CARRIER_MAX_HZ;
+		if (!config->fixed_carrier) {
+			caps->carrier_min_hz = RC_LOOPBACK_CARRIER_MIN_HZ;
+			caps->carrier_max_hz = RC_LOOPBACK_CARRIER_MAX_HZ;
+		}
 		caps->max_tx_words = CONFIG_RC_LOOPBACK_TX_WORDS;
 	}
 #endif
@@ -134,6 +138,7 @@ static int rc_loopback_tx(const struct device *dev, const uint32_t *words, size_
 {
 	const struct rc_loopback_config *config = dev->config;
 	struct rc_loopback_data *data = dev->data;
+	rc_loopback_tx_cb_t cb;
 	k_spinlock_key_t key;
 
 	if (atomic_get(&data->tx_hold) != 0) {
@@ -144,7 +149,12 @@ static int rc_loopback_tx(const struct device *dev, const uint32_t *words, size_
 	data->tx_count = MIN(count, ARRAY_SIZE(data->tx_words));
 	memcpy(data->tx_words, words, data->tx_count * sizeof(words[0]));
 	data->tx_total++;
+	cb = data->tx_cb;
 	k_spin_unlock(&data->tx_lock, key);
+
+	if (cb != NULL) {
+		cb(dev);
+	}
 
 	if (config->tx_echo && rc_loopback_rx_is_enabled(dev)) {
 		for (size_t i = 0; i < count; i++) {
@@ -194,6 +204,15 @@ void rc_loopback_tx_hold(const struct device *dev, bool hold)
 	}
 }
 
+void rc_loopback_tx_cb_set(const struct device *dev, rc_loopback_tx_cb_t cb)
+{
+	struct rc_loopback_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->tx_lock);
+
+	data->tx_cb = cb;
+	k_spin_unlock(&data->tx_lock, key);
+}
+
 static int rc_loopback_init(const struct device *dev)
 {
 	struct rc_loopback_data *data = dev->data;
@@ -223,9 +242,18 @@ static DEVICE_API(rc, rc_loopback_hw_timeout_api) = {
 #endif
 };
 
+static DEVICE_API(rc, rc_loopback_fixed_carrier_api) = {
+	.get_caps = rc_loopback_get_caps,
+	.rx_enable = rc_loopback_rx_enable,
+#ifdef CONFIG_RC_TX
+	.tx = rc_loopback_tx,
+#endif
+};
+
 #define RC_LOOPBACK_API(inst)                                                                      \
 	COND_CODE_1(DT_INST_PROP(inst, hw_rx_timeout), (&rc_loopback_hw_timeout_api),              \
-		    (&rc_loopback_api))
+		    (COND_CODE_1(DT_INST_PROP(inst, fixed_carrier),                                \
+				 (&rc_loopback_fixed_carrier_api), (&rc_loopback_api))))
 
 #define RC_LOOPBACK_INIT COND_CODE_1(CONFIG_RC_TX, (rc_loopback_init), (NULL))
 
@@ -234,6 +262,7 @@ static DEVICE_API(rc, rc_loopback_hw_timeout_api) = {
 		.hw_rx_timeout = DT_INST_PROP(inst, hw_rx_timeout),                                \
 		.rx_only = DT_INST_PROP(inst, rx_only),                                            \
 		.tx_echo = DT_INST_PROP(inst, tx_echo),                                            \
+		.fixed_carrier = DT_INST_PROP(inst, fixed_carrier),                                \
 	};                                                                                         \
 	static struct rc_loopback_data rc_loopback_data_##inst;                                    \
 	RC_DEVICE_DT_INST_DEFINE(inst, RC_LOOPBACK_INIT, NULL, &rc_loopback_data_##inst,           \

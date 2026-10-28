@@ -271,8 +271,11 @@ extern const struct rtio_iodev_api rc_tx_iodev_api;
 	};                                                                                         \
 	RTIO_IODEV_DEFINE(name, &rc_raw_iodev_api, &_CONCAT(name, _data))
 
+/** RTIO iodev flag of a transmit write carrying a struct rc_tx_req */
+#define RC_IODEV_TX_SCANCODE BIT(0)
+
 /**
- * @brief Define an RTIO iodev transmitting raw words on an rc device.
+ * @brief Define an RTIO iodev transmitting on an rc device.
  *
  * Requires CONFIG_RC_TX.
  *
@@ -285,6 +288,22 @@ extern const struct rtio_iodev_api rc_tx_iodev_api;
 		.dev = DEVICE_DT_GET(node_id),                                                     \
 	};                                                                                         \
 	RTIO_IODEV_DEFINE(name, &rc_tx_iodev_api, &_CONCAT(name, _config))
+
+/**
+ * @brief Prepare a write of a scancode transmit request.
+ *
+ * @param sqe Submission to prepare.
+ * @param iodev Iodev defined with RC_DT_TX_IODEV().
+ * @param req Request, valid until the write completes.
+ * @param userdata Userdata of the completion.
+ */
+static inline void rc_sqe_prep_send(struct rtio_sqe *sqe, const struct rtio_iodev *iodev,
+				    const struct rc_tx_req *req, void *userdata)
+{
+	rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM, (const uint8_t *)req, sizeof(*req),
+			    userdata);
+	sqe->iodev_flags = RC_IODEV_TX_SCANCODE;
+}
 
 /**
  * @brief Start streaming events into an RTIO context.
@@ -366,6 +385,34 @@ int rc_receive_sync(const struct device *dev, struct rc_event *evt, k_timeout_t 
  */
 int rc_send_raw_sync(const struct device *dev, const uint32_t *words, size_t count,
 		     k_timeout_t timeout);
+
+/**
+ * @brief Transmit a scancode and wait until it is sent.
+ *
+ * Requires CONFIG_RC_TX.
+ * Not callable from an ISR or the rc work queues.
+ *
+ * @param dev rc device.
+ * @param req Request, valid until the call returns.
+ * @param timeout Time to wait for the transmission to start and end.
+ *
+ * @retval 0 Success.
+ * @retval -ENOTSUP Device cannot transmit, no encoder for the protocol, or
+ *         protocol carrier out of the device range.
+ * @retval -EINVAL Invalid scancode, the encoder made invalid words, or
+ *         repeats for a protocol without rc_protocol::tx_period_ms.
+ * @retval -ENOBUFS Frame longer than CONFIG_RC_TX_BUFFER_WORDS or
+ *         rc_caps::max_tx_words.
+ * @retval -E2BIG Request with its repeats longer than
+ *         CONFIG_RC_TX_MAX_DURATION_MS.
+ * @retval -EAGAIN Not sent within @p timeout.
+ * @retval -ENOMEM CONFIG_RC_SEND_SYNC_MAX callers already waiting, counted
+ *         over all rc devices.
+ * @retval -ENODEV Device not ready.
+ * @retval -EDEADLK Called from an rc work queue.
+ * @retval <0 Driver error.
+ */
+int rc_send_sync(const struct device *dev, const struct rc_tx_req *req, k_timeout_t timeout);
 
 /**
  * @brief Set the carrier of raw transmissions.

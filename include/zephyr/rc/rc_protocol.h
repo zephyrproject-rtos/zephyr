@@ -52,8 +52,12 @@ struct rc_protocol {
 	uint16_t state_size;
 	/** Shortest receiver timeout that ends a frame of this protocol, in us, 0 if none */
 	uint32_t min_timeout_us;
+	/** Carrier of transmitted frames in Hz, 0 for the device's raw carrier */
+	uint32_t carrier_hz;
 	/** Time between repeated frames of a held key, in ms */
 	uint16_t repeat_period_ms;
+	/** Start to start time of the frames of one request in ms, 0 for no repeats */
+	uint16_t tx_period_ms;
 	/**
 	 * @brief Reset the decoder state. Optional.
 	 *
@@ -71,6 +75,26 @@ struct rc_protocol {
 	 * @retval 0 More words needed.
 	 */
 	int (*decode)(void *state, uint32_t word, struct rc_decode_result *res);
+	/**
+	 * @brief Encode a frame. Optional, NULL for decode only.
+	 *
+	 * @param proto Protocol, one of RC_PROTO_* handled.
+	 * @param scancode Scancode in the protocol's Linux layout.
+	 * @param flags RC_EVENT_FLAG_TOGGLE to set the toggle bit, if any.
+	 * @param words Filled with raw words.
+	 * @param max Size of @p words.
+	 *
+	 * @return Number of words on success.
+	 * @retval -EINVAL Invalid scancode.
+	 * @retval -ENOBUFS The frame needs more than @p max words.
+	 */
+	int (*encode)(uint16_t proto, uint32_t scancode, uint16_t flags, uint32_t *words,
+		      size_t max);
+	/**
+	 * @brief Encode a repeat frame, such as the NEC repeat code. Optional.
+	 */
+	int (*encode_repeat)(uint16_t proto, uint32_t scancode, uint16_t flags, uint32_t *words,
+			     size_t max);
 };
 
 /**

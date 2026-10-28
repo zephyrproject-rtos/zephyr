@@ -92,6 +92,21 @@ uint32_t rc_loopback_tx_total(const struct device *dev);
  */
 void rc_loopback_tx_hold(const struct device *dev, bool hold);
 
+/**
+ * @brief Callback run by tx() after recording a transmission.
+ *
+ * @param dev Loopback rc device.
+ */
+typedef void (*rc_loopback_tx_cb_t)(const struct device *dev);
+
+/**
+ * @brief Set the callback run on each transmission.
+ *
+ * @param dev Loopback rc device.
+ * @param cb Callback, NULL for none.
+ */
+void rc_loopback_tx_cb_set(const struct device *dev, rc_loopback_tx_cb_t cb);
+
 /** @} */
 
 #ifdef __cplusplus
