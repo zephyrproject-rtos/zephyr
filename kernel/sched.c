@@ -586,8 +586,13 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 			 */
 			if (key != NULL) {
 				while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
-					z_sched_spinlock_unlock(*key);
-					*key = z_sched_spinlock_lock();
+					/* Keep interrupts masked while releasing spinlock
+					 * so scheduler can run: unmasking interrupts
+					 * would switch away from a halting _current
+					 * before its joiners are woken.
+					 */
+					z_sched_spinlock_release();
+					(void)z_sched_spinlock_lock();
 				}
 			}
 			unpend_all(&thread->join_queue);
