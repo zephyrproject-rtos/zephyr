@@ -342,7 +342,9 @@ class CheckPatch(ComplianceTest):
 
         cmd.extend(['--mailback', '--no-tree', '-'])
         with subprocess.Popen(
-            ('git', 'diff', '--no-ext-diff', COMMIT_RANGE), stdout=subprocess.PIPE, cwd=GIT_TOP
+            ('git', 'diff', '--no-ext-diff', COMMIT_RANGE, '--', ':!*.diff', ':!*.patch'),
+            stdout=subprocess.PIPE,
+            cwd=GIT_TOP,
         ) as diff:
             try:
                 subprocess.run(
