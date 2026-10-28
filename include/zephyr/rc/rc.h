@@ -130,7 +130,7 @@ static inline bool rc_raw_is_pulse(uint32_t word)
  *
  * @retval 0 Success.
  */
-int rc_get_caps(const struct device *dev, struct rc_caps *caps);
+__syscall int rc_get_caps(const struct device *dev, struct rc_caps *caps);
 
 /**
  * @brief Set the receiver timeout.
@@ -142,7 +142,7 @@ int rc_get_caps(const struct device *dev, struct rc_caps *caps);
  * @retval -EINVAL Timeout out of range.
  * @retval <0 Driver error.
  */
-int rc_set_rx_timeout(const struct device *dev, uint32_t us);
+__syscall int rc_set_rx_timeout(const struct device *dev, uint32_t us);
 
 /**
  * @brief Enable decoding of a protocol on a device.
@@ -153,7 +153,7 @@ int rc_set_rx_timeout(const struct device *dev, uint32_t us);
  * @retval 0 Success.
  * @retval -ENOTSUP No decoder for @p proto is built.
  */
-int rc_protocol_enable(const struct device *dev, uint16_t proto);
+__syscall int rc_protocol_enable(const struct device *dev, uint16_t proto);
 
 /**
  * @brief Disable decoding of a protocol on a device.
@@ -164,7 +164,7 @@ int rc_protocol_enable(const struct device *dev, uint16_t proto);
  * @retval 0 Success.
  * @retval -ENOTSUP No decoder for @p proto is built.
  */
-int rc_protocol_disable(const struct device *dev, uint16_t proto);
+__syscall int rc_protocol_disable(const struct device *dev, uint16_t proto);
 
 /**
  * @brief Check whether decoding of a protocol is enabled on a device.
@@ -176,7 +176,7 @@ int rc_protocol_disable(const struct device *dev, uint16_t proto);
  * @retval 0 Disabled.
  * @retval -ENOTSUP No decoder for @p proto is built.
  */
-int rc_protocol_is_enabled(const struct device *dev, uint16_t proto);
+__syscall int rc_protocol_is_enabled(const struct device *dev, uint16_t proto);
 
 /**
  * @brief Callback for rc events.
@@ -278,6 +278,7 @@ extern const struct rtio_iodev_api rc_tx_iodev_api;
  * @brief Define an RTIO iodev transmitting on an rc device.
  *
  * Requires CONFIG_RC_TX.
+ * Supervisor mode only.
  *
  * @param name Name of the iodev.
  * @param node_id Devicetree node identifier of the rc device.
@@ -307,6 +308,8 @@ static inline void rc_sqe_prep_send(struct rtio_sqe *sqe, const struct rtio_iode
 
 /**
  * @brief Start streaming events into an RTIO context.
+ *
+ * Supervisor mode only.
  *
  * @param iodev Iodev defined with RC_DT_EVENT_IODEV() or RC_DT_RAW_IODEV().
  * @param ctx RTIO context with a memory pool.
@@ -347,6 +350,7 @@ static inline int rc_stream(const struct rtio_iodev *iodev, struct rtio *ctx, vo
  * @brief Wait for the next event of an rc device.
  *
  * Not callable from an ISR or the rc work queues.
+ * Supervisor mode only.
  *
  * @param dev rc device.
  * @param evt Filled with the event.
@@ -366,6 +370,7 @@ int rc_receive_sync(const struct device *dev, struct rc_event *evt, k_timeout_t 
  *
  * Requires CONFIG_RC_TX.
  * Not callable from an ISR or the rc work queues.
+ * Supervisor mode only.
  *
  * @param dev rc device.
  * @param words Raw words, valid until the call returns.
@@ -391,6 +396,7 @@ int rc_send_raw_sync(const struct device *dev, const uint32_t *words, size_t cou
  *
  * Requires CONFIG_RC_TX.
  * Not callable from an ISR or the rc work queues.
+ * Supervisor mode only.
  *
  * @param dev rc device.
  * @param req Request, valid until the call returns.
@@ -418,6 +424,7 @@ int rc_send_sync(const struct device *dev, const struct rc_tx_req *req, k_timeou
  * @brief Set the carrier of raw transmissions.
  *
  * Requires CONFIG_RC_TX.
+ * Supervisor mode only.
  *
  * @param dev rc device.
  * @param hz Carrier frequency in Hz, within the device capabilities.
@@ -434,5 +441,7 @@ int rc_set_tx_carrier(const struct device *dev, uint32_t hz, uint8_t duty_pct);
 #ifdef __cplusplus
 }
 #endif
+
+#include <zephyr/syscalls/rc.h>
 
 #endif /* ZEPHYR_INCLUDE_RC_RC_H_ */
