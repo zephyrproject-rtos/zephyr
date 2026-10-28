@@ -1,0 +1,48 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+&unicomm2 {
+	status = "okay";
+};
+
+&unicomm2_spi {
+	status = "okay";
+	pinctrl-0 = <&uc2_sclk_pb18 &uc2_poci_pb19 &uc2_pico_pb17>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+};
+
+&unicomm15_0 {
+	status = "okay";
+};
+
+&unicomm15_0_i2c {
+	status = "okay";
+	pinctrl-0 = <&uc15_0_sda_pa0 &uc15_0_scl_pa1>;
+	pinctrl-names = "default";
+
+	gt911_touch: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		alt-addr = <0x14>;
+		irq-gpios = <&gpiob 20 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpiob 21 GPIO_ACTIVE_LOW>;
+		screen-width = <320>;
+		screen-height = <480>;
+		status = "okay";
+	};
+};
+
+&waveshare_3_5_rpi_lcd_f_mipi_dbi {
+	dc-gpios = <&gpioa 25 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpiob 26 GPIO_ACTIVE_LOW>;
+	spi-dev = <&unicomm2_spi>;
+};
+
+&st7796s_display {
+	mipi-max-frequency = <20000000>;
+};
