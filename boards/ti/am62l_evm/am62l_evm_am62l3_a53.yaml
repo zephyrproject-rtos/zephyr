@@ -12,6 +12,7 @@ supported:
   - shdc
   - pwm
   - netif:eth
+  - can
 testing:
   ignore_tags:
     - bluetooth

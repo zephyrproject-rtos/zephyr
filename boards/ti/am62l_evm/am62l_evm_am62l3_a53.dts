@@ -22,6 +22,7 @@
 		zephyr,flash = &flash0_memory;
 		zephyr,display = &dss;
 		zephyr,touch = &gt911;
+		zephyr,canbus = &main_mcan0;
 	};
 
 	aliases {
@@ -406,6 +407,12 @@ zephyr_udc0: &main_usb0 {
 
 &main_spi0 {
 	pinctrl-0 = <&main_spi0_clk &main_spi0_cs0 &main_spi0_d0 &main_spi0_d1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_mcan0 {
+	pinctrl-0 = <&main_mcan0_rx>, <&main_mcan0_tx>;
 	pinctrl-names = "default";
 	status = "okay";
 };
