@@ -132,7 +132,9 @@ static const XMC_ETH_MAC_PORT_CTRL_t eth_xmc_port_ctrl = {
 	.rxer = DT_INST_ENUM_IDX(0, rxer_port_ctrl),
 	.col = DT_INST_ENUM_IDX_OR(0, col_port_ctrl, 0),
 	.clk_tx = DT_INST_ENUM_IDX_OR(0, tx_clk_port_ctrl, 0),
-	.mode = DT_INST_ENUM_IDX_OR(0, phy_connection_type, 0),
+	.mode = DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
+			? XMC_ETH_MAC_PORT_CTRL_MODE_RMII
+			: XMC_ETH_MAC_PORT_CTRL_MODE_MII,
 	.mdio = DT_INST_ENUM_IDX_OR(0, mdi_port_ctrl, 0),
 };
 
