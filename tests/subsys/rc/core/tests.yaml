@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - rc
+  integration_platforms:
+    - native_sim
+tests:
+  rc.core: {}
