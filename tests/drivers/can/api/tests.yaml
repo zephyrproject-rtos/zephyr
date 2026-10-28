@@ -26,7 +26,9 @@ tests:
       - xiao_esp32s3/esp32s3/procpu
       - esp32h2_devkitm
   drivers.can.api.twaifd:
-    extra_args: DTC_OVERLAY_FILE=twaifd-enable.overlay
+    extra_args:
+      - platform:esp32c5_devkitc/esp32c5/hpcore:DTC_OVERLAY_FILE=twaifd-enable.overlay
+      - platform:esp32s31_function_coreboard/esp32s31/hpcore:DTC_OVERLAY_FILE=twaifd-enable-esp32s31.overlay
     platform_allow:
       - esp32c5_devkitc/esp32c5/hpcore
   drivers.can.api.nxp_s32_canxl.non_rx_fifo:
