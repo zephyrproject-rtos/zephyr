@@ -271,6 +271,10 @@ int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits
 	__ASSERT_NO_MSG(other != NULL);
 	__ASSERT_NO_MSG(other->num_bits > 0);
 
+	if (dst == other) {
+		return sys_bitarray_clear_region(dst, num_bits, offset);
+	}
+
 	key_dst = k_spin_lock(&dst->lock);
 	key_other = k_spin_lock(&other->lock);
 
