@@ -33,7 +33,7 @@ extern "C" {
 #ifdef CONFIG_PCIE_CONTROLLER
 struct msi_vector_generic {
 	unsigned int irq;
-	uint32_t address;
+	uint64_t address;
 	uint16_t eventid;
 	unsigned int priority;
 };
@@ -111,9 +111,7 @@ extern bool pcie_msi_vector_connect(pcie_bdf_t bdf,
  * @param n_vector the size of the vector array
  * @return A (32-bit) value for the MSI MAP register.
  */
-extern uint32_t pcie_msi_map(unsigned int irq,
-			     msi_vector_t *vector,
-			     uint8_t n_vector);
+extern uint64_t pcie_msi_map(unsigned int irq, msi_vector_t *vector, uint8_t n_vector);
 
 /**
  * @brief Compute the data for an MSI posted write.
