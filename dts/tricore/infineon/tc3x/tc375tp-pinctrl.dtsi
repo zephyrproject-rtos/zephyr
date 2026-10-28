@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/infineon-aurix-pinctrl.h>
+
+/* TC37x data sheet v1.1, port function tables */
+&pinctrl {
+	/omit-if-no-ref/ asclin0_tx_p14_0: asclin0_tx_p14_0 {
+		pinmux = <AURIX_PINMUX(14, 0, 2)>;
+		output-enable;
+	};
+
+	/omit-if-no-ref/ asclin0_rx_p14_1: asclin0_rx_p14_1 {
+		pinmux = <AURIX_PINMUX(14, 1, 0)>;
+	};
+};

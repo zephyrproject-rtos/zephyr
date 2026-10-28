@@ -14,10 +14,16 @@ config ARCH
 config CPU_TC162
 	bool
 	select CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_CACHE_INCOHERENT
 	imply FPU
 
 config CPU_TC18
 	bool
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_CACHE_INCOHERENT
 
 config TRICORE_CSA_COUNT
 	int "Number of Context Save Areas allocated"

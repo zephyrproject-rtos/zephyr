@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_TC3X
+
+# Highest service request node index: 1021
+config NUM_IRQS
+	default 1024
+
+config CLOCK_CONTROL
+	default y
+
+endif
+
+if SOC_SERIES_TC4X
+
+# Highest service request node index: 2035
+config NUM_IRQS
+	default 2048
+
+config CLOCK_CONTROL
+	default y
+
+endif
+
+rsource "*/Kconfig.defconfig"

@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AURIX port as GPIO controller.
+
+  The node is a child of the pin controller node and covers the register
+  block of one port, with at most 16 pins (ngpios). Interrupts are not
+  supported.
+
+compatible: "infineon,aurix-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
