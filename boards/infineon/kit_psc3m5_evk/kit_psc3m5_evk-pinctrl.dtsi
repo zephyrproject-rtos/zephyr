@@ -39,3 +39,16 @@
 &p5_3_can1_tx {
 	drive-push-pull;
 };
+
+/* Configure pin drive mode for the Arduino SPI pins */
+&p7_1_scb2_spi_m_mosi {
+	drive-push-pull;
+};
+
+&p7_2_scb2_spi_m_miso {
+	input-enable;
+};
+
+&p7_0_scb2_spi_m_clk {
+	drive-push-pull;
+};
