@@ -508,7 +508,7 @@ static int clock_control_esp32_on(const struct device *dev, clock_control_subsys
 	enum clock_control_status status = clock_control_esp32_get_status(dev, sys);
 
 	if (status == CLOCK_CONTROL_STATUS_ON && !reset_reason_is_cpu_reset()) {
-		return -EALREADY;
+		return 0;
 	}
 
 	periph_module_enable((periph_module_t)sys);
