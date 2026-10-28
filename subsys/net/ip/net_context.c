@@ -1577,6 +1577,42 @@ int net_context_connect(struct net_context *context,
 		net_sin6(local_addr)->sin6_port = lport =
 			net_sin6(&context->local)->sin6_port;
 
+		/* If bound to the unspecified address, pick a concrete source
+		 * address now so that the TCP connection and the connection
+		 * handler agree on the local endpoint (same as Linux).
+		 */
+		if (net_context_get_proto(context) == NET_IPPROTO_TCP &&
+		    net_context_is_local_addr_set(context) &&
+		    net_ipv6_is_addr_unspecified(&net_sin6(&context->local)->
+				sin6_addr)) {
+			const struct net_in6_addr *src;
+
+			/* Same as IPv4: re-select the interface from the
+			 * peer address unless explicitly bound to one.
+			 */
+			if (!net_context_is_bound_to_iface(context)) {
+				struct net_if *iface;
+
+				iface =
+				net_if_ipv6_select_src_iface(&addr6->sin6_addr);
+				if (iface != NULL) {
+					net_context_set_iface(context, iface);
+				}
+			}
+
+			src = net_if_ipv6_select_src_addr(net_context_get_iface
+				(context),
+				&addr6->sin6_addr);
+			if (src == NULL ||
+			    net_ipv6_is_addr_unspecified(src)) {
+				ret = -EADDRNOTAVAIL;
+				goto unlock;
+			}
+
+			net_ipaddr_copy(&net_sin6(&context->local)->sin6_addr,
+					src);
+		}
+
 		if (net_context_is_local_addr_set(context)) {
 			net_ipaddr_copy(&net_sin6(local_addr)->sin6_addr,
 				     &net_sin6(&context->local)->sin6_addr);
@@ -1624,6 +1660,46 @@ int net_context_connect(struct net_context *context,
 		net_sin(local_addr)->sin_family = NET_AF_INET;
 		net_sin(local_addr)->sin_port = lport =
 			net_sin(&context->local)->sin_port;
+
+		/* If bound to INADDR_ANY, pick a concrete source address now
+		 * so that the TCP connection and the connection handler
+		 * agree on the local endpoint (same as Linux).
+		 */
+		if (net_context_get_proto(context) == NET_IPPROTO_TCP &&
+		    net_context_is_local_addr_set(context) &&
+		    net_ipv4_is_addr_unspecified(&net_sin(&context->local)
+				->sin_addr)) {
+			const struct net_in_addr *src;
+
+			/* bind() to INADDR_ANY happens before the peer is
+			 * known, so the interface picked at that time may be
+			 * wrong (e.g. loopback). Re-select it from the peer
+			 * address unless the socket is explicitly bound to an
+			 * interface.
+			 */
+			if (!net_context_is_bound_to_iface(context)) {
+				struct net_if *iface;
+
+				iface =
+				net_if_ipv4_select_src_iface(&addr4->sin_addr);
+				if (iface != NULL) {
+					net_context_set_iface(context, iface);
+				}
+			}
+
+			src =
+			net_if_ipv4_select_src_addr(net_context_get_iface
+				(context),
+				&addr4->sin_addr);
+			if (src == NULL ||
+			    net_ipv4_is_addr_unspecified(src)) {
+				ret = -EADDRNOTAVAIL;
+				goto unlock;
+			}
+
+			net_ipaddr_copy(&net_sin(&context->local)->sin_addr,
+					src);
+		}
 
 		if (net_context_is_local_addr_set(context)) {
 			net_ipaddr_copy(&net_sin(local_addr)->sin_addr,
