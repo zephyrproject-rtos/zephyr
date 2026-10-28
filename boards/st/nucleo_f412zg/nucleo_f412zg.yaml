@@ -17,4 +17,5 @@ supported:
   - gpio
   - usb_device
   - counter
+  - crc
 vendor: st

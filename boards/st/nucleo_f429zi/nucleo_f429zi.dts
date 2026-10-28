@@ -175,6 +175,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&crc {
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };

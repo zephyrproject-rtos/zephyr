@@ -18,4 +18,5 @@ supported:
   - usb_device
   - usbd
   - counter
+  - crc
 vendor: st
