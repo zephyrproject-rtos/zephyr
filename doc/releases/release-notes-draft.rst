@@ -138,6 +138,16 @@ Devicetree
 * :dtcompatible:`zephyr,charger-gpio` supports charging and charge-complete status inputs,
   including chargers without a software-controlled enable pin.
 
+* Networking
+
+  * Added on-device generation of TLS private keys and Certificate Signing Requests (CSRs),
+    so that the private key never leaves the device. See
+    :c:func:`tls_credential_keygen_generate` and :c:func:`tls_credential_keygen_delete`.
+    Enable it with :kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN`.
+    The :ref:`TLS credentials shell <tls_credentials_shell>` has the new ``cred keygen``,
+    ``cred keydel``, ``cred csr`` and ``cred pubkey`` commands, and the
+    :zephyr:code-sample:`tls-keygen` sample shows the full flow.
+
 Other notable changes
 *********************
 
