@@ -12,8 +12,8 @@
 #include "adafruit_trrs_trinkey-pinctrl.dtsi"
 
 / {
-	model = "Adafruit TRRS Trinkey";
 	compatible = "adafruit,trrs-trinkey", "atmel,samd21e18a", "atmel,samd21";
+	model = "Adafruit TRRS Trinkey";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -42,13 +42,12 @@
 };
 
 &rtc {
-	status = "okay";
 	counter-mode = "clock";
 	prescaler = <1024>;
+	status = "okay";
 };
 
 zephyr_i2c: &sercom2 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
@@ -56,6 +55,7 @@ zephyr_i2c: &sercom2 {
 
 	pinctrl-0 = <&sercom2_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
@@ -66,15 +66,15 @@ zephyr_i2c: &sercom2 {
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "uf2";
 			reg = <0x00000000 DT_SIZE_K(8)>;
+			label = "uf2";
 			read-only;
 		};
 
 		code_partition: partition@2000 {
 			compatible = "zephyr,mapped-partition";
-			label = "code";
 			reg = <0x2000 DT_SIZE_K(256-(8+16))>;
+			label = "code";
 			read-only;
 		};
 
@@ -85,8 +85,8 @@ zephyr_i2c: &sercom2 {
 		 */
 		storage_partition: partition@3c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0003c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };
@@ -96,10 +96,10 @@ zephyr_i2c: &sercom2 {
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
 
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 #include <../boards/common/usb/cdc_acm_serial.dtsi>

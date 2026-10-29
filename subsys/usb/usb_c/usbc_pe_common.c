@@ -383,7 +383,12 @@ void pe_message_received(const struct device *dev)
  */
 void pe_got_hard_reset(const struct device *dev)
 {
-	pe_set_state(dev, PE_SNK_TRANSITION_TO_DEFAULT);
+	if (IS_ENABLED(CONFIG_USBC_CSM_SUPPORTS_SOURCE) &&
+	    pe_get_power_role(dev) == TC_ROLE_SOURCE) {
+		pe_set_state(dev, PE_SRC_HARD_RESET_RECEIVED);
+	} else {
+		pe_set_state(dev, PE_SNK_TRANSITION_TO_DEFAULT);
+	}
 }
 
 /**

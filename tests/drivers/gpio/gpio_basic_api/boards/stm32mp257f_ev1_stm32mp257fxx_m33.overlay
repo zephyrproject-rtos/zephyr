@@ -12,9 +12,9 @@
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
-		status = "okay";
 		out-gpios = <&gpiob 7 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
 		in-gpios = <&gpiob 8 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
+		status = "okay";
 	};
 };
 

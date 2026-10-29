@@ -10,8 +10,8 @@
  */
 
 &clk_msi {
-	status = "okay";
 	msi-range = <11>;
+	status = "okay";
 };
 
 &rcc {

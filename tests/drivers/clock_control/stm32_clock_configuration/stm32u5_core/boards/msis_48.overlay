@@ -14,9 +14,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <0>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &rcc {

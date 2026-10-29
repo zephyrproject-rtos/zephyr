@@ -15,18 +15,13 @@
 &adc0 {
 	compatible = "microchip,xec-adc";
 
-	status = "okay";
-
 	pinctrl-0 = <&adc03_gpio203 &adc04_gpio204 &adc05_gpio205>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	/*
-	 * Close JP124 (10-11) (13-14), (16-17) to connect GPIO203, GPIO204 and adc05_gpio205
-	 * to VCHIP_VREF_ADC (internal reference)
-	 */
+	status = "okay";
 
 	channel@3 {
 		reg = <3>;
@@ -51,4 +46,9 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <10>;
 	};
+
+	/*
+	 * Close JP124 (10-11) (13-14), (16-17) to connect GPIO203, GPIO204 and adc05_gpio205
+	 * to VCHIP_VREF_ADC (internal reference)
+	 */
 };

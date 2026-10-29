@@ -27,20 +27,236 @@ tests:
       tests_scripts:
         - test_scripts/[!_]*.sh
 
-  bluetooth.audio.bsim.audio_config.cap:
+  bluetooth.audio.bsim.audio_config.cap_1:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
-        - test_scripts/audio_config_tests/cap*
+        - test_scripts/audio_config_tests/cap_ac_1_*
     required_applications:
       - application: bluetooth.audio.bsim
 
-  bluetooth.audio.bsim.audio_config.gmap:
+  bluetooth.audio.bsim.audio_config.cap_2:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
-        - test_scripts/audio_config_tests/gmap*
+        - test_scripts/audio_config_tests/cap_ac_2_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_3:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_3_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_4:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_4_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_5:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_5_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_6:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_6_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_7:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_7_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_8:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_8_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_9:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_9_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_10:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_10_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_11:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_11_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_12:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_12_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_13:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_13_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.cap_14:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap_ac_14_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_1:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_1_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_2:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_2_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_3:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_3_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_4:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_4_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_5:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_5_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_6:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_6_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_7:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_7_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_8:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_8_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_11:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_11_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_12:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_12_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_13:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_13_*
+    required_applications:
+      - application: bluetooth.audio.bsim
+
+  bluetooth.audio.bsim.audio_config.gmap_14:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap_ac_14_*
     required_applications:
       - application: bluetooth.audio.bsim

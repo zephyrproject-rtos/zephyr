@@ -10,6 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/linker/section_tags.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/cache.h>
 #include <fsl_clock.h>
@@ -828,6 +829,35 @@ int mipi_csi2rx_clock_set_freq(clock_root_t clock_root, uint32_t rate)
 }
 #endif
 
+/* The boot ROM leaves the AHB read prefetch of the FlexSPI on, and the memc driver doesn't
+ * initialise the FlexSPI the image executes in place from, so its ahb-prefetch property isn't
+ * applied otherwise. With the prefetch on, a fetch from the flash waits for the prefetch of other
+ * data to finish, which stalls the CPU for tens of microseconds, with interrupts held off.
+ */
+#define FLEXSPI_PREFETCH_OFF(node_id)                                                              \
+	(DT_NODE_HAS_STATUS_OKAY(node_id) && FLEXSPI_IS_XIP(node_id) &&                            \
+	 !DT_PROP(node_id, ahb_prefetch))
+
+#if FLEXSPI_PREFETCH_OFF(DT_NODELABEL(flexspi)) || FLEXSPI_PREFETCH_OFF(DT_NODELABEL(flexspi2))
+/* Runs from RAM, as no instruction can be fetched from the FlexSPI meanwhile */
+static __ramfunc void flexspi_ahb_prefetch_off(FLEXSPI_Type *base)
+{
+	const uint32_t idle = FLEXSPI_STS0_ARBIDLE_MASK | FLEXSPI_STS0_SEQIDLE_MASK;
+
+	__DSB();
+	__ISB();
+
+	while ((base->STS0 & idle) != idle) {
+	}
+
+	base->AHBCR = (base->AHBCR & ~FLEXSPI_AHBCR_PREFETCHEN_MASK) |
+		      FLEXSPI_AHBCR_CLRAHBRXBUF_MASK;
+
+	__DSB();
+	__ISB();
+}
+#endif
+
 /**
  *
  * @brief Perform basic hardware initialization
@@ -872,6 +902,13 @@ static int imxrt_init(void)
 
 	/* Initialize system clock */
 	clock_init();
+
+#if FLEXSPI_PREFETCH_OFF(DT_NODELABEL(flexspi))
+	flexspi_ahb_prefetch_off((FLEXSPI_Type *)DT_REG_ADDR_BY_IDX(DT_NODELABEL(flexspi), 0));
+#endif
+#if FLEXSPI_PREFETCH_OFF(DT_NODELABEL(flexspi2))
+	flexspi_ahb_prefetch_off((FLEXSPI_Type *)DT_REG_ADDR_BY_IDX(DT_NODELABEL(flexspi2), 0));
+#endif
 
 #if defined(CONFIG_CPU_CORTEX_M7)
 	/* ERR050396

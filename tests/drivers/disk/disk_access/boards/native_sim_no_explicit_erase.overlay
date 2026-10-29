@@ -17,8 +17,8 @@
 		#size-cells = <1>;
 
 		flashdisk_partition: partition@0 {
-			label = "flashdisk";
 			reg = <0x00000000 0x00100000>;
+			label = "flashdisk";
 		};
 	};
 };

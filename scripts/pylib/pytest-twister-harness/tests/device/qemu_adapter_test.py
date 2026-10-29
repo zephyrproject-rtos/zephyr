@@ -48,6 +48,27 @@ def test_if_qemu_adapter_runs_without_errors(resources, device: QemuAdapter) -> 
     assert file_lines[-2:] == lines[-2:]
 
 
+def test_qemu_adapter_stops_process_before_closing_fifo(device: QemuAdapter) -> None:
+    fifo = device.connections[0]._fifo_connection
+    events = []
+
+    def stop_process() -> None:
+        events.append('process')
+
+    def stop_reader() -> None:
+        events.append('reader')
+
+    with (
+        mock.patch.object(device, '_stop_subprocess', side_effect=stop_process),
+        mock.patch.object(device, 'stop_reader', side_effect=stop_reader),
+        mock.patch.object(fifo, 'disconnect', side_effect=lambda: events.append('fifo')),
+        mock.patch.object(fifo, 'cleanup', side_effect=lambda: events.append('cleanup')),
+    ):
+        device.close()
+
+    assert events == ['process', 'reader', 'fifo', 'cleanup']
+
+
 def test_if_qemu_adapter_raise_exception_due_to_no_fifo_connection(device: QemuAdapter) -> None:
     device.connections[0].timeout = 0.3
     device.command = ['sleep', '1']

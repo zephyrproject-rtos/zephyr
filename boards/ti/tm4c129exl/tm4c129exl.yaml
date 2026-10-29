@@ -1,0 +1,14 @@
+identifier: tm4c129exl
+name: TI Tiva C Series TM4C129E Crypto Connected LaunchPad
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - pinctrl
+  - uart
+vendor: ti

@@ -136,9 +136,9 @@ static const int32_t ibat_fullscale_ua[] = {256000, 128000, 64000, 32000};
 
 /* Equations: Ref. Datasheet - VBAT/IBAT and ADC chapters */
 /* Voltages */
-#define VBAT_MV(vbat) (5120 * (vbat) / 1023)
-#define VBUS_MV(vbus) (12500 * (vbus) / 1023)
-#define VSYS_MV(vsys) (6375 * (vsys) / 1023)
+#define VBAT_MV(vbat) (5120 * (vbat) / 1024)
+#define VBUS_MV(vbus) (12500 * (vbus) / 1024)
+#define VSYS_MV(vsys) (6375 * (vsys) / 1024)
 /* Charge/discharge current (µA) */
 #define IBAT_CHG_UA(ictrl, ibat, cal)                                                              \
 	(((ibat) < 69) ? 0                                                                         \
@@ -146,12 +146,12 @@ static const int32_t ibat_fullscale_ua[] = {256000, 128000, 64000, 32000};
 				 ((int64_t)(cal)))
 #define IBAT_DIS_UA(ictrl, ibat, cal)                                                              \
 	(((ibat) < 69) ? 0                                                                         \
-		       : 1875LL * ((int64_t)ictrl + 1LL) * (15LL * (int64_t)(ibat) - 1024LL) /     \
-				 (4LL * (int64_t)(cal)))
+		       : 250LL * ((int64_t)ictrl + 1LL) * (15LL * (int64_t)(ibat) - 1024LL) /      \
+				 ((int64_t)(cal)))
 /* Battery temperature (milli-°C) */
 #define BAT_TEMP_MC(beta, tbat)                                                                    \
 	(lroundf(1000.f /                                                                          \
-		 (1.f / 298.15f - 1.f / (float)(beta) * logf(1023.f / (float)(tbat) - 1.f))) -     \
+		 (1.f / 298.15f - 1.f / (float)(beta) * logf(1024.f / (float)(tbat) - 1.f))) -     \
 	 273150)
 /* Die temperature (milli-°C) */
 #define DIE_TEMP_MC(tdie)             (390490 - 796 * (int32_t)(tdie))

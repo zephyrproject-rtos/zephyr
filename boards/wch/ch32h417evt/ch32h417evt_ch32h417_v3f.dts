@@ -9,8 +9,8 @@
 #include <wch/ch32h417/ch32h417_v3f.dtsi>
 
 / {
-	model = "WCH CH32H417EVT V3F waker";
 	compatible = "wch,ch32h417";
+	model = "WCH CH32H417EVT V3F waker";
 
 	chosen {
 		zephyr,sram = &sram0;

@@ -6,18 +6,18 @@
  */
 
 i2c1: &scb1 {
-	status = "okay";
 	compatible = "infineon,i2c";
 	clocks = <&peri_clk_div2>;
 	pinctrl-0 = <&p6_3_scb1_i2c_scl &p6_4_scb1_i2c_sda>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	mpu6050@68 {
 		compatible = "invensense,mpu6050";
 		reg = <0x68>;
-		status = "okay";
 		smplrt-div = <249>;
+		status = "okay";
 	};
 };

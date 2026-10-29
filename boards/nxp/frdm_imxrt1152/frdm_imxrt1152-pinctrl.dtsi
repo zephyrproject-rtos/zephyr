@@ -44,4 +44,28 @@
 			input-enable;
 		};
 	};
+
+	pinmux_sai1: pinmux_sai1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_03_sai1_mclk>,
+				 <&iomuxc_gpio_disp_b2_06_sai1_rx_data00>,
+				 <&iomuxc_gpio_disp_b2_07_sai1_tx_data00>,
+				 <&iomuxc_gpio_disp_b2_08_sai1_tx_bclk>,
+				 <&iomuxc_gpio_disp_b2_09_sai1_tx_sync>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c4: pinmux_lpi2c4 {
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_12_lpi2c4_scl>,
+				 <&iomuxc_gpio_disp_b2_13_lpi2c4_sda>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
 };

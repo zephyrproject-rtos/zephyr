@@ -115,6 +115,13 @@ properties:
       or Erase) if those are supported by the flash chip, or if necessary,
       it will switch the chip to 4-byte addressing mode.
 
+  use-runtime-sfdp:
+    type: boolean
+    description: |
+      Indicates that SFDP data should be read from the flash chip at runtime
+      instead of being taken from flash node properties like `sfdp-bfp`,
+      `sfdp-ff05`, and `sfdp-ff84`.
+
   initial-soft-reset:
     type: boolean
     description: |

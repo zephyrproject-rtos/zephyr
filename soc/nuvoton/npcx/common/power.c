@@ -260,6 +260,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			/* Restore interrupts */
 			__enable_irq();
 			break;
+		case 2:	/* Sub-state 2: Sleep */
+			/* Restore interrupts */
+			__enable_irq();
+			break;
 		default:
 			LOG_DBG("Unsupported power substate-id %u",
 				substate_id);

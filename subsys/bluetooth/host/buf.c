@@ -30,6 +30,16 @@
 
 LOG_MODULE_REGISTER(bt_buf, CONFIG_BT_LOG_LEVEL);
 
+/* The metadata of received ACL data. Received ISO data has buffers of its own,
+ * see bt_iso_get_rx(), and without connections these buffers only carry
+ * events, which have none.
+ */
+#if defined(CONFIG_BT_CONN)
+#define RX_USER_DATA_SIZE sizeof(struct bt_conn_rx)
+#else
+#define RX_USER_DATA_SIZE 0
+#endif
+
 /* Events have a length field of 1 byte. This size fits all events.
  *
  * It's true that we don't put all kinds of events there (yet). However, the
@@ -112,7 +122,7 @@ static void hci_rx_pool_destroy(struct net_buf *buf)
 }
 
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT, BT_BUF_RX_SIZE,
-			  sizeof(struct bt_conn_rx), hci_rx_pool_destroy);
+			  RX_USER_DATA_SIZE, hci_rx_pool_destroy);
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
@@ -131,6 +141,15 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 		buf = net_buf_alloc(&evt_pool, timeout);
 	} else {
 		buf = net_buf_alloc(&acl_in_pool, timeout);
+		if (buf != NULL) {
+			struct bt_conn_rx *rx = net_buf_user_data(buf);
+
+			/* Dropped before hci_acl() has looked up its connection,
+			 * the packet is not to be reported for connection 0,
+			 * which the zeroed user data would name.
+			 */
+			rx->index = BT_CONN_INDEX_INVALID;
+		}
 	}
 #else
 	buf = net_buf_alloc(&hci_rx_pool, timeout);

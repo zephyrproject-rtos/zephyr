@@ -5,6 +5,6 @@
  */
 
 &timer0 {
-	status = "okay";
 	prescaler = <59999>;
+	status = "okay";
 };

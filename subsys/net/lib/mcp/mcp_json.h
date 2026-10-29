@@ -120,8 +120,10 @@ struct mcp_params_tools_list {
 };
 
 struct mcp_result_tools_list {
-	/* Raw JSON that the user generates for now */
-	char tools_json[MCP_MAX_JSON_CHUNK_LEN];
+	/* Raw JSON that the user generates for now. It ends up in a single
+	 * message, so it can use the whole message size.
+	 */
+	char tools_json[CONFIG_MCP_MAX_MESSAGE_SIZE];
 };
 
 struct mcp_params_tools_call {

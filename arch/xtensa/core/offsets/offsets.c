@@ -37,6 +37,10 @@ GEN_OFFSET_SYM(_xtensa_irq_bsa_t, lend);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, scompare1);
 #endif
 
+#if XCHAL_HAVE_BOOLEANS
+GEN_OFFSET_SYM(_xtensa_irq_bsa_t, br);
+#endif
+
 #if XCHAL_HAVE_THREADPTR
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, threadptr);
 #endif

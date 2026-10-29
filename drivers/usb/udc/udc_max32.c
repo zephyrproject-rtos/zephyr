@@ -142,6 +142,7 @@ static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep
 
 	ret = MXC_USB_WriteEndpoint(ep_request);
 	if (ret != 0) {
+		buf = udc_buf_get(ep_cfg);
 		udc_ep_set_busy(ep_cfg, false);
 		LOG_ERR("Failed to start IN transfer: ep 0x%02x error: %x", ep_cfg->addr, ret);
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
@@ -202,6 +203,7 @@ static void udc_event_xfer_out(const struct device *dev, struct udc_ep_config *e
 	udc_ep_set_busy(ep_cfg, true);
 	ret = MXC_USB_ReadEndpoint(ep_request);
 	if (ret != 0) {
+		buf = udc_buf_get(ep_cfg);
 		udc_ep_set_busy(ep_cfg, false);
 		LOG_ERR("Failed to start OUT transfer: ep 0x%02x error: %x", ep_cfg->addr, ret);
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);

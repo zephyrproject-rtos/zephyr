@@ -10,7 +10,7 @@
  */
 
 dut: &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	nxp,loopback;
+	status = "okay";
 };

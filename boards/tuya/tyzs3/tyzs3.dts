@@ -9,8 +9,8 @@
 #include "tyzs3-pinctrl.dtsi"
 
 / {
-	model = "Tuya TYZS3";
 	compatible = "tuya,tyzs3", "silabs,efr32mg13p";
+	model = "Tuya TYZS3";
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {

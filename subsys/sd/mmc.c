@@ -442,6 +442,8 @@ static int mmc_set_hs_timing(struct sd_card *card)
 	if (ret) {
 		return ret;
 	}
+	/* HS200 and HS400 overwrite this after their own switch */
+	card->card_speed = MMC_HS_TIMING;
 
 	return ret;
 }

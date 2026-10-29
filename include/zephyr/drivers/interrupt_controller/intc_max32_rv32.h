@@ -15,6 +15,13 @@
 #define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MAX32_RV32_H_
 
 /**
+ * @brief Set a pending interrupt in the controller.
+ *
+ * @param source the IRQ number to set the pending status for.
+ */
+void intc_max32_rv32_irq_set_pending(int source);
+
+/**
  * @brief Clear the pending interrupt line in the controller.
  *
  * @param source the IRQ number to clear any pending status for.

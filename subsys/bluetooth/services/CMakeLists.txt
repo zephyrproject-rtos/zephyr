@@ -29,3 +29,7 @@ endif()
 if(CONFIG_BT_ZEPHYR_NUS)
   add_subdirectory(nus)
 endif()
+
+if(CONFIG_BT_HIDS)
+  add_subdirectory(hids)
+endif()

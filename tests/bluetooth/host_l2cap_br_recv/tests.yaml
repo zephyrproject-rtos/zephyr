@@ -1,0 +1,14 @@
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host_l2cap_br_recv: {}
+  bluetooth.host_l2cap_br_recv.ret_fc:
+    extra_configs:
+      - CONFIG_BT_L2CAP_STREAM=y

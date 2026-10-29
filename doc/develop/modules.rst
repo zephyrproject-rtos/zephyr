@@ -888,8 +888,8 @@ and inside the :file:`modules.cmake` file, add the following content
    set(ZEPHYR_FOO_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR}/foo)
    set(ZEPHYR_FOO_KCONFIG   ${CMAKE_CURRENT_LIST_DIR}/foo/Kconfig)
 
-Module integration files (zephyr/module.yml)
---------------------------------------------
+Module description file (zephyr/module.yml)
+-------------------------------------------
 
 The module description file :file:`zephyr/module.yml` can be used to specify
 that the build files, :file:`CMakeLists.txt` and :file:`Kconfig`, are located

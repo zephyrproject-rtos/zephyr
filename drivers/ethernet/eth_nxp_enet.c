@@ -186,6 +186,89 @@ static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev,
 }
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
+/* With the accelerator on, the ENET inserts the IPv4 header checksum and the
+ * TCP, UDP and ICMP checksum into every frame it sends, and it needs the
+ * checksum fields cleared. The stack clears them only when it offloads the
+ * checksum, but a frame forwarded by a bridge, or sent by the bridge
+ * interface, has them filled in.
+ */
+static void eth_nxp_enet_clear_tx_chksum(uint8_t *frame, size_t len)
+{
+	const struct net_eth_hdr *eth_hdr = (const struct net_eth_hdr *)frame;
+	size_t ip_off = sizeof(struct net_eth_hdr);
+	uint16_t type;
+	size_t chksum_off;
+	size_t l4_off;
+	uint8_t proto;
+
+	if (len < ip_off) {
+		return;
+	}
+
+	type = eth_hdr->type;
+
+	/* The ENET also inserts the checksums of a frame with an 802.1Q tag */
+	if (type == net_htons(NET_ETH_PTYPE_VLAN)) {
+		ip_off = sizeof(struct net_eth_vlan_hdr);
+		if (len < ip_off) {
+			return;
+		}
+
+		type = ((const struct net_eth_vlan_hdr *)frame)->type;
+	}
+
+	if (type == net_htons(NET_ETH_PTYPE_IP)) {
+		struct net_ipv4_hdr *ipv4_hdr = (struct net_ipv4_hdr *)&frame[ip_off];
+
+		if (len < ip_off + sizeof(struct net_ipv4_hdr)) {
+			return;
+		}
+
+		ipv4_hdr->chksum = 0U;
+
+		/* The protocol checksum covers the whole datagram, which a
+		 * fragment does not carry, so the stack computes it in software
+		 * before fragmenting.
+		 */
+		if ((sys_get_be16(ipv4_hdr->offset) &
+		     (NET_IPV4_MORE_FRAG_MASK | NET_IPV4_FRAGH_OFFSET_MASK)) != 0U) {
+			return;
+		}
+
+		l4_off = ip_off + (size_t)(ipv4_hdr->vhl & 0x0fU) * 4U;
+		proto = ipv4_hdr->proto;
+	} else if (type == net_htons(NET_ETH_PTYPE_IPV6)) {
+		const struct net_ipv6_hdr *ipv6_hdr = (const struct net_ipv6_hdr *)&frame[ip_off];
+
+		if (len < ip_off + sizeof(struct net_ipv6_hdr)) {
+			return;
+		}
+
+		l4_off = ip_off + sizeof(struct net_ipv6_hdr);
+		proto = ipv6_hdr->nexthdr;
+	} else {
+		return;
+	}
+
+	switch (proto) {
+	case NET_IPPROTO_TCP:
+		chksum_off = l4_off + offsetof(struct net_tcp_hdr, chksum);
+		break;
+	case NET_IPPROTO_UDP:
+		chksum_off = l4_off + offsetof(struct net_udp_hdr, chksum);
+		break;
+	case NET_IPPROTO_ICMP:
+		chksum_off = l4_off + offsetof(struct net_icmp_hdr, chksum);
+		break;
+	default:
+		return;
+	}
+
+	if (chksum_off + sizeof(uint16_t) <= len) {
+		sys_put_be16(0U, &frame[chksum_off]);
+	}
+}
+
 static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct nxp_enet_mac_data *data = dev->data;
@@ -200,6 +283,10 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	if (ret) {
 		k_sem_give(&data->tx_buf_sem);
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)) {
+		eth_nxp_enet_clear_tx_chksum(data->tx_frame_buf, total_len);
 	}
 
 	frame_is_timestamped = net_pkt_is_tx_timestamping(pkt);

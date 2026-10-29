@@ -19,6 +19,7 @@ config MM_DRV_PAGE_SIZE
 
 config MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
 	bool "Power off unused RAM"
+	depends on MM_DRV_INTEL_ADSP_MTL_TLB
 	help
 	  Allows TLB driver to remap unused RAM - unused
 	  being defined as memory ranging from linker script
@@ -63,7 +64,7 @@ if EXTERNAL_ADDRESS_TRANSLATION
 
 config MM_TI_RAT
 	bool "Texas Instruments RAT module"
-	depends on EXTERNAL_ADDRESS_TRANSLATION
+	depends on SOC_FAMILY_TI_K3
 	help
 	  Enables Region based address translation support
 	  functions specific to TI SoCs.

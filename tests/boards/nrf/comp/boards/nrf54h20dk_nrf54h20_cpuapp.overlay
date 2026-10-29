@@ -26,7 +26,6 @@
 };
 
 &comp {
-	status = "okay";
 	psel = <NRF_COMP_AIN5>;
 	refsel = "AREF";
 	extrefsel = <NRF_COMP_AIN1>;
@@ -35,4 +34,5 @@
 	th-down = <30>;
 	isource = "DISABLED";
 	enable-hyst;
+	status = "okay";
 };

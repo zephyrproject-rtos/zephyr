@@ -8,9 +8,9 @@
 	status = "okay";
 
 	adafruit_ina3221: ina3221@40 {
-		status = "okay";
 		compatible = "ti,ina3221";
 		reg = <0x40>;
 		shunt-resistors = <50>, <50>, <50>;
+		status = "okay";
 	};
 };

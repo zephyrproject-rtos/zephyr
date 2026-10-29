@@ -12,21 +12,21 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "code-partition";
 			reg = <0 DT_SIZE_K(54)>;
+			label = "code-partition";
 			read-only;
 		};
 
 		storage_partition: partition@d800 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0xd800 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

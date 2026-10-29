@@ -9,8 +9,8 @@
 #include "candlelightfd.dtsi"
 
 / {
-	model = "candleLight FD Dual";
 	compatible = "candlelightfd";
+	model = "candleLight FD Dual";
 
 	transceiver1: can-phy1 {
 		compatible = "nxp,tja1051", "can-transceiver-gpio";

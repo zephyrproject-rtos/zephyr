@@ -266,6 +266,24 @@ ZTEST(gpio_ite_it8xxx2_v2, test_interrupt_level_active)
 	posix_sw_set_pending_IRQ(TEST_IRQ);
 	k_sleep(K_MSEC(100));
 	zexpect_equal(callback_called, 5, "callback_called=%d", callback_called);
+
+	/*
+	 * Test DISABLE_ONLY stops worker callbacks while pin is active, and
+	 * ENABLE_ONLY resumes.
+	 */
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN,
+						GPIO_INT_DISABLE | GPIO_INT_ENABLE_DISABLE_ONLY));
+	callback_called = 0;
+	registers.gpdmr = BIT(TEST_PIN);
+	k_sleep(K_MSEC(100));
+	zexpect_equal(callback_called, 0, "callback_called=%d", callback_called);
+
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN,
+						GPIO_INT_ENABLE | GPIO_INT_ENABLE_DISABLE_ONLY));
+	k_sleep(K_MSEC(100));
+	zexpect_equal(callback_called, 5, "callback_called=%d", callback_called);
+
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN, GPIO_INT_DISABLE));
 }
 
 /* Tests both the inactive level case and the interrupt already firing at configure case. */
@@ -295,6 +313,7 @@ ZTEST(gpio_ite_it8xxx2_v2, test_interrupt_level_inactive)
 	posix_sw_set_pending_IRQ(TEST_IRQ);
 	k_sleep(K_MSEC(100));
 	zexpect_equal(callback_called, 5, "callback_called=%d", callback_called);
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN, GPIO_INT_DISABLE));
 }
 
 ZTEST(gpio_ite_it8xxx2_v2, test_set_active_high)
@@ -447,6 +466,29 @@ ZTEST(gpio_ite_it8xxx2_v2, test_disconnected_tristate_unsupported)
 	zexpect_equal(registers.p18scr, 0);
 	zexpect_equal(registers.gpcr[TEST_PIN], GPCR_PORT_PIN_MODE_INPUT, "gpcr[%d]=%x", TEST_PIN,
 		      registers.gpcr[TEST_PIN]);
+}
+
+ZTEST(gpio_ite_it8xxx2_v2, test_get_direction)
+{
+	gpio_port_pins_t inputs;
+	gpio_port_pins_t outputs;
+	const gpio_pin_t output_pin = TEST_PIN + 1;
+	const gpio_pin_t disconnected_pin = TEST_PIN + 2;
+	gpio_port_pins_t map = BIT(TEST_PIN) | BIT(output_pin) | BIT(disconnected_pin);
+
+	zassert_true(device_is_ready(gpio_dev));
+	zassert_ok(gpio_pin_configure(gpio_dev, TEST_PIN, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure(gpio_dev, output_pin, GPIO_OUTPUT));
+	zassert_ok(gpio_pin_configure(gpio_dev, disconnected_pin, GPIO_DISCONNECTED));
+
+	zassert_ok(gpio_port_get_direction(gpio_dev, map, &inputs, &outputs));
+	zexpect_equal(inputs, BIT(TEST_PIN));
+	zexpect_equal(outputs, BIT(output_pin));
+
+	zassert_ok(gpio_port_get_direction(gpio_dev, BIT(output_pin), &inputs, NULL));
+	zexpect_equal(inputs, 0);
+	zassert_ok(gpio_port_get_direction(gpio_dev, BIT(TEST_PIN), NULL, &outputs));
+	zexpect_equal(outputs, 0);
 }
 
 ZTEST(gpio_ite_it8xxx2_v2, test_input_1P8V)

@@ -14,8 +14,8 @@
 #include "kit_t2g_b_h_evk_common.dtsi"
 
 / {
-	model = "Infineon Evaluation board for CYT4BFBCHE M7_1";
 	compatible = "infineon,kit_t2g_b_h_evk", "infineon,TVIIBH8M";
+	model = "Infineon Evaluation board for CYT4BFBCHE M7_1";
 
 	chosen {
 		zephyr,sram = &sram_m7_1;

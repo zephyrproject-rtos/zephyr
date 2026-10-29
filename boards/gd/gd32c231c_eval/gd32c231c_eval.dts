@@ -9,8 +9,8 @@
 #include "gd32c231c_eval-pinctrl.dtsi"
 
 / {
-	model = "GigaDevice GD32C231C-EVAL";
 	compatible = "gd,gd32c231c-eval";
+	model = "GigaDevice GD32C231C-EVAL";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -47,8 +47,8 @@
 };
 
 &usart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

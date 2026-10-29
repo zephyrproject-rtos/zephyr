@@ -19,11 +19,11 @@
 			portc: gpio@41004500 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41004500 0x80>;
-
-				#atmel,pin-cells = <2>;
 				#gpio-cells = <2>;
 
 				gpio-controller;
+
+				#atmel,pin-cells = <2>;
 			};
 		};
 

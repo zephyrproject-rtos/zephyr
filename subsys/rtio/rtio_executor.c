@@ -97,10 +97,6 @@ void rtio_executor_submit(struct rtio *r)
 			rtio_iodev_sqe_set_canceled(iodev_sqe);
 		}
 
-		/* If this submission was cancelled before submit, then generate no response */
-		if (rtio_iodev_sqe_is_canceled(iodev_sqe)) {
-			iodev_sqe->sqe.flags |= RTIO_SQE_NO_RESPONSE;
-		}
 		iodev_sqe->r = r;
 
 		struct rtio_iodev_sqe *curr = iodev_sqe, *next;
@@ -128,12 +124,9 @@ void rtio_executor_submit(struct rtio *r)
 				rtio_iodev_sqe_set_canceled(next);
 			}
 
-			/* If the current submission was cancelled before submit,
-			 * then cancel the next one and generate no response
-			 */
+			/* Cancellation cascades down the chain like a failure */
 			if (rtio_iodev_sqe_is_canceled(curr)) {
 				rtio_iodev_sqe_set_canceled(next);
-				next->sqe.flags |= RTIO_SQE_NO_RESPONSE;
 			}
 			curr->next = next;
 			curr = next;
@@ -176,24 +169,34 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 	 * re-submitting, rebooting or anything else.
 	 */
 	if (is_canceled || !is_ok) {
+		/* Say the stream was stopped, unless there is a real error to report */
+		if (is_canceled && is_ok) {
+			result = -ECANCELED;
+		}
+
 		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->rt.rx_bind.buf,
 			iodev_sqe->rt.rx_bind.buf_len);
 		rtio_release_buffer(r, iodev_sqe->rt.rx_bind.buf, iodev_sqe->rt.rx_bind.buf_len);
 		rtio_sqe_pool_free(r->sqe_pool, iodev_sqe);
-	} else {
-		/* Request was not canceled, put the SQE back in the queue */
+
+		/* The blocks are back in the pool, so do not hand them out again */
+		cqe_flags = 0;
+	}
+
+	if (requires_response) {
+		rtio_cqe_submit(r, result, userdata, cqe_flags);
+	}
+
+	/* resubmit directly to the iodev if the sqe has not stopped */
+	if (is_ok && !is_canceled) {
+		/* Request was not canceled, re-arm it */
 		if (iodev_sqe->sqe.op == RTIO_OP_RX && uses_mempool) {
 			/* Reset the buffer info so the next request can get a new one */
 			iodev_sqe->rt.rx_bind.buf = NULL;
 			iodev_sqe->rt.rx_bind.buf_len = 0;
 		}
 
-		mpsc_push(&r->sq, &iodev_sqe->q);
-		rtio_executor_submit(r);
-	}
-
-	if (requires_response) {
-		rtio_cqe_submit(r, result, userdata, cqe_flags);
+		rtio_iodev_submit(iodev_sqe, 0);
 	}
 }
 
@@ -218,12 +221,12 @@ static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe
 	 */
 	do {
 		void *userdata = curr->sqe.userdata;
-		uint32_t cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
+		uint32_t cqe_flags = rtio_cqe_compute_flags(curr);
 		struct rtio_iodev_sqe *next = rtio_iodev_sqe_next(curr);
 
 		sqe_flags = curr->sqe.flags;
 
-		if (!is_canceled && FIELD_GET(RTIO_SQE_NO_RESPONSE, sqe_flags) == 0) {
+		if (FIELD_GET(RTIO_SQE_NO_RESPONSE, sqe_flags) == 0) {
 			/* Generate a result back to the client if need be.*/
 			rtio_cqe_submit(r, result, userdata, cqe_flags);
 		}

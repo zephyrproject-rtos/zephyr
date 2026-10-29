@@ -228,7 +228,9 @@ struct bt_le_ext_adv {
 
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
 
+#if defined(CONFIG_BT_LIM_ADV)
 	struct k_work_delayable	lim_adv_timeout_work;
+#endif /* CONFIG_BT_LIM_ADV */
 
 	/** The options used to set the parameters for this advertising set
 	 * @ref bt_le_adv_param
@@ -349,12 +351,14 @@ struct bt_dev_le {
 	 */
 	uint8_t                    rl_entries;
 #endif /* CONFIG_BT_SMP */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 	/* List of `struct bt_conn` that have either pending data to send, or
 	 * something to process (e.g. a disconnection event).
 	 *
 	 * Each element in this list contains a reference to its `conn` object.
 	 */
 	sys_slist_t		conn_ready;
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 };
 
 struct bt_dev_br {
@@ -381,11 +385,15 @@ struct bt_dev {
 	struct bt_conn_le_create_param create_param;
 
 #if !defined(CONFIG_BT_EXT_ADV)
+#if defined(CONFIG_BT_BROADCASTER)
 	/* Legacy advertiser */
 	struct bt_le_ext_adv    adv;
+#endif /* CONFIG_BT_BROADCASTER */
 #else
+#if defined(CONFIG_BT_BROADCASTER)
 	/* Pointer to reserved advertising set */
 	struct bt_le_ext_adv    *adv;
+#endif /* CONFIG_BT_BROADCASTER */
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	/* When supporting multiple concurrent connectable advertising sets,
 	 * we need to know the identity of the terminating advertising set to
@@ -487,6 +495,12 @@ struct bt_dev {
 
 extern struct bt_dev bt_dev;
 
+/* Assert that the current thread holds the host lock. k_mutex resets the
+ * owner on the final unlock, so the owner check alone is exact.
+ */
+#define BT_DEV_LOCK_ASSERT()                                                                       \
+	__ASSERT(bt_dev.lock.owner == k_current_get(), "host lock not held by %p", k_current_get())
+
 /* Lock/unlock the host lock. k_mutex is recursive, so nested lock/unlock
  * pairs on the same thread are legal (needed e.g. for the
  * bt_att_req_send() -> bt_att_chan_req_send() nesting).
@@ -500,17 +514,16 @@ static inline void bt_dev_lock(void)
 
 static inline void bt_dev_unlock(void)
 {
-	__maybe_unused int err = k_mutex_unlock(&bt_dev.lock);
+	__maybe_unused int err;
+
+	/* k_mutex_unlock() skips its owner check with CONFIG_NO_RUNTIME_CHECKS */
+	BT_DEV_LOCK_ASSERT();
+
+	err = k_mutex_unlock(&bt_dev.lock);
 
 	__ASSERT(err == 0, "failed to unlock the host lock (err %d)", err);
 }
 
-/* Assert that the current thread holds the host lock. k_mutex resets the
- * owner on the final unlock, so the owner check alone is exact.
- */
-#define BT_DEV_LOCK_ASSERT()						\
-	__ASSERT(bt_dev.lock.owner == k_current_get(),			\
-		 "host lock not held by %p", k_current_get())
 extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
@@ -523,6 +536,9 @@ enum bt_security_err bt_security_err_get(uint8_t hci_err);
 int bt_work_submit(struct k_work *work);
 int bt_work_schedule(struct k_work_delayable *work, k_timeout_t delay);
 int bt_work_reschedule(struct k_work_delayable *work, k_timeout_t delay);
+
+/* Check whether it is executing in the `bt_workq` thread context. */
+bool bt_is_work_thread(void);
 
 /* Data type to store state related with command to be updated
  * when command completes successfully.
@@ -659,5 +675,12 @@ int bt_hci_le_read_remote_features(struct bt_conn *conn);
 int bt_hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time);
 
 bool bt_drv_quirk_no_auto_dle(void);
+
+static inline bool bt_drv_quirk_no_adv_term_on_dir_timeout(void)
+{
+	/* A build-time constant, so the code it guards is left out of builds without the quirk */
+	return DT_ENUM_HAS_VALUE(DT_CHOSEN(zephyr_bt_hci), bt_hci_quirks,
+				 no_adv_term_on_dir_timeout);
+}
 
 void bt_tx_irq_raise(void);

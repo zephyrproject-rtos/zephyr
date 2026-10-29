@@ -15,7 +15,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <lmac_types.h>
 #include <bl60x_fw_api.h>
 #include <lmac_mac.h>
 #include <lmac_msg.h>

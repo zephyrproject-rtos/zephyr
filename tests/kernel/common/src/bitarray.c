@@ -751,6 +751,14 @@ ZTEST(bitarray, test_bitarray_popcount_region)
 	ret = sys_bitarray_popcount_region(&ba, 129, 0, &count);
 	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
 		      ret);
+
+	/* offset + num_bits wraps around */
+	ret = sys_bitarray_popcount_region(&ba, 1, SIZE_MAX, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
+	ret = sys_bitarray_popcount_region(&ba, SIZE_MAX, 1, &count);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_popcount_region() returned unexpected value: %d",
+		      ret);
 }
 
 /**
@@ -917,6 +925,12 @@ ZTEST(bitarray, test_bitarray_xor)
 	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
 	ret = sys_bitarray_xor(&ba, &bb, 0, 0);
 	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
+
+	/* offset + num_bits wraps around */
+	ret = sys_bitarray_xor(&ba, &bb, 1, SIZE_MAX);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
+	ret = sys_bitarray_xor(&ba, &bb, SIZE_MAX, 1);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
 }
 
 /**
@@ -1046,6 +1060,15 @@ ZTEST(bitarray, test_bitarray_find_nth_set)
 		      ret);
 
 	ret = sys_bitarray_find_nth_set(&ba, 0, 128, 0, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+
+	/* offset + num_bits wraps around */
+	ret = sys_bitarray_find_nth_set(&ba, 1, 1, SIZE_MAX, &found_at);
+	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
+		      ret);
+
+	ret = sys_bitarray_find_nth_set(&ba, 1, SIZE_MAX, 1, &found_at);
 	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
 		      ret);
 }

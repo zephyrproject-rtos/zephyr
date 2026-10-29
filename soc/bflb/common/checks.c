@@ -27,3 +27,9 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_CODE_DATA_RELOCATION),
 BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_itcm),
 	     "BFLB E24 Platforms requires usage of dedicated CPU TCM relocation");
 #endif
+
+/* The PSRAM heaps must not be touched before the memory controller is up */
+#if DT_HAS_CHOSEN(bflb_heap_ram_late) && defined(CONFIG_MEMC)
+BUILD_ASSERT(CONFIG_MEMC_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_LIBC,
+	     "PSRAM must be initialized before the libc heap");
+#endif

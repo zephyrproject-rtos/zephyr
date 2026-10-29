@@ -27,6 +27,7 @@
 
 /* Bit map for present stage register */
 #define XLNX_SDHC_PSR_INHIBIT_DAT_MASK	BIT(1)
+#define XLNX_SDHC_INTR_BWR_MASK         BIT(4)
 #define XLNX_SDHC_INTR_BRR_MASK		BIT(5)
 #define XLNX_SDHC_PSR_CARD_INSRT_MASK	BIT(16)
 #define XLNX_SDHC_CARD_BUSY		0x1F00000U
@@ -194,12 +195,16 @@
 
 #define XLNX_SDHC_DAT_PRESENT_SEL_MASK	BIT(5)
 
-#define XLNX_SDHC_TXFR_INTR_EN_MASK	0x8023U
+#define XLNX_SDHC_TXFR_INTR_EN_MASK	0x8033U
 #define XLNX_SDHC_DAT_LINE_TIMEOUT	0xEU
 
 #define XLNX_SDHC_SD_SLOT		0x0U
 #define XLNX_SDHC_EMMC_SLOT		0X1U
 
+/*
+ * Offsets are checked by BUILD_ASSERTs in xlnx_sdhc.c. No member is wider
+ * than 32 bits: the controller discards 64-bit accesses.
+ */
 struct reg_base {
 	volatile uint32_t sdma_sysaddr;  /**< SDMA System Address */
 	volatile uint16_t block_size;    /**< Block Size */
@@ -229,14 +234,16 @@ struct reg_base {
 	volatile uint16_t err_int_signal_en;    /**< Error Interrupt Signal Enable */
 	volatile uint16_t auto_cmd_err_stat;    /**< Auto CMD Error Status */
 	volatile uint16_t host_ctrl2;           /**< Host Control 2 */
-	volatile uint64_t capabilities;         /**< Capabilities */
-
-	volatile uint64_t max_current_cap;        /**< Max Current Capabilities */
+	volatile uint32_t capabilities;         /**< Capabilities */
+	volatile uint32_t capabilities_upr;     /**< Capabilities Upper */
+	volatile uint32_t max_current_cap;      /**< Max Current Capabilities */
+	volatile uint32_t max_current_cap_upr;  /**< Max Current Capabilities Upper */
 	volatile uint16_t force_err_autocmd_stat; /**< Force Event for Auto CMD Error Status*/
 	volatile uint16_t force_err_int_stat;     /**< Force Event for Error Interrupt Status */
 	volatile uint8_t adma_err_stat;           /**< ADMA Error Status */
 	volatile uint8_t reserved0[3];
-	volatile uint64_t adma_sys_addr; /**< ADMA System Address */
+	volatile uint32_t adma_sys_addr;     /**< ADMA System Address */
+	volatile uint32_t adma_sys_addr_upr; /**< ADMA System Address Upper */
 	volatile uint16_t preset_val_0;   /**< Preset Value 0 */
 	volatile uint16_t preset_val_1;   /**< Preset Value 1 */
 	volatile uint16_t preset_val_2;   /**< Preset Value 2 */
@@ -285,5 +292,5 @@ struct reg_base {
 	volatile uint32_t reserved3[15261];
 	volatile uint32_t itap_dly; /**< Input Tap Delay Select */
 	volatile uint32_t otap_dly; /**< Output Tap Delay Select */
-} __packed;
+};
 #endif /* __XLNX_SDHC_H__ */

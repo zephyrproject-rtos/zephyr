@@ -5,9 +5,9 @@
  */
 
 &twai0 {
-	status = "okay";
 	pinctrl-0 = <&twai0_loopback>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pinctrl {

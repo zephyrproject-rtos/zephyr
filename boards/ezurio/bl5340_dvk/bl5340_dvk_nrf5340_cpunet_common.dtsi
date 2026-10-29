@@ -32,32 +32,32 @@
 
 &flash1 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x0000c000 0x16000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@22000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00022000 0x16000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@38000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x00038000 0x8000>;
+			label = "storage";
 		};
 	};
 };

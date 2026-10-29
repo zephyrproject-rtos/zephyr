@@ -43,6 +43,7 @@ enum rsc_table_entries {
 	RSC_TABLE_NUM_ENTRY
 };
 
+/* Linux memcpy()s the table, also to device memory: keep the size a multiple of 8 */
 struct fw_resource_table {
 	struct resource_table hdr;
 	uint32_t offset[RSC_TABLE_NUM_ENTRY];
@@ -57,7 +58,7 @@ struct fw_resource_table {
 	/* rpmsg trace entry */
 	struct fw_rsc_trace cm_trace;
 #endif
-} METAL_PACKED_END;
+} METAL_PACKED_END __aligned(8);
 
 #if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
 	#define VDEV_OFFSET	offsetof(struct fw_resource_table, vdev),

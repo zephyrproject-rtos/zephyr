@@ -66,7 +66,6 @@ struct shell_websocket {
 	 *  to send the shell prompt for instance.
 	 */
 	struct k_work_delayable send_work;
-	struct k_work_sync work_sync;
 
 	/** If set, no output is sent to the WEBSOCKET client. */
 	bool output_lock;

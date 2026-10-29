@@ -9,17 +9,17 @@
 		#size-cells = <1>;
 
 		test_spi: spi@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x11112222 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "okay";
 
 			test_spi_pcm1681: pcm1681@0 {
 				compatible = "ti,pcm1681";
-				status = "okay";
 				reg = <0x0>;
 				spi-max-frequency = <100000>;
+				status = "okay";
 			};
 
 			test_spi_tlv320aic26: tlv320aic26@1 {
@@ -27,6 +27,20 @@
 				reg = <0x1>;
 				spi-max-frequency = <12000000>;
 				mclk-frequency = <12000000>;
+				status = "okay";
+			};
+
+			test_spi_cs35l56: cs35l56@2 {
+				compatible = "cirrus,cs35l56";
+				reg = <0x2>;
+				spi-max-frequency = <10000000>;
+				status = "okay";
+			};
+
+			test_spi_cs35l57: cs35l57@3 {
+				compatible = "cirrus,cs35l57";
+				reg = <0x3>;
+				spi-max-frequency = <10000000>;
 				status = "okay";
 			};
 		};

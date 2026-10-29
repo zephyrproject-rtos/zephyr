@@ -223,6 +223,14 @@ static inline int smartbond_clock_control_on(const struct device *dev,
 
 	ARG_UNUSED(dev);
 
+	/*
+	 * NONE and anything past the last entry are not clock identifiers;
+	 * the default case is for real clocks this driver does not manage.
+	 */
+	if (clk <= SMARTBOND_CLK_NONE || clk > SMARTBOND_CLK_SYS_CLK) {
+		return -EINVAL;
+	}
+
 	switch (clk) {
 	case SMARTBOND_CLK_RC32K:
 		smartbond_start_rc32k();
@@ -274,6 +282,14 @@ static inline int smartbond_clock_control_off(const struct device *dev,
 	int ret = 0;
 
 	ARG_UNUSED(dev);
+
+	/*
+	 * NONE and anything past the last entry are not clock identifiers;
+	 * the default case is for real clocks this driver does not manage.
+	 */
+	if (clk <= SMARTBOND_CLK_NONE || clk > SMARTBOND_CLK_SYS_CLK) {
+		return -EINVAL;
+	}
 
 	switch (clk) {
 	case SMARTBOND_CLK_RC32K:

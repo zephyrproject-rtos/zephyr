@@ -829,7 +829,7 @@ static int open(const struct device *instance)
 		rc = rpmsg_lite_wait_for_link_up(
 			ipc_rpmsg_inst->rpmsg_lite_inst,
 			CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_LINK_UP_TIMEOUT_MS);
-		if (rc != RL_SUCCESS) {
+		if (rc != RL_TRUE) {
 			err = -ETIMEDOUT;
 			goto error;
 		}

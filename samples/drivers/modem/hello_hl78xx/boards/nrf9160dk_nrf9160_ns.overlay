@@ -8,20 +8,20 @@
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	hw-flow-control;
-	status = "okay";
 
 	pinctrl-0 = <&uart1_default_alt>;
+	status = "okay";
 
 	modem: hl_modem {
 		compatible = "swir,hl7812";
-		status = "okay";
 		mdm-reset-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		status = "okay";
 
 		socket_offload: socket_offload {
 			compatible = "swir,hl7812-offload";
-			status = "okay";
 			/* optional properties for future: */
 			max-data-length = <512>;
+			status = "okay";
 		};
 
 		gnss: hl_gnss {

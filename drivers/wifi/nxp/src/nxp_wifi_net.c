@@ -1147,7 +1147,7 @@ int net_get_if_addr(struct net_ip_config *addr, void *intrfc_handle)
 	interface_t *if_handle = (interface_t *)intrfc_handle;
 
 #if defined(CONFIG_NET_IPV4)
-	struct net_if_ipv4 *ipv4 = if_handle->netif->config.ip.ipv4;
+	struct net_if_ipv4 *ipv4 = net_if_get_config(if_handle->netif)->ip.ipv4;
 
 	addr->ipv4.address = NET_IPV4_ADDR_U32(ipv4->unicast[0].ipv4.address);
 	addr->ipv4.netmask = ipv4->unicast[0].netmask.s_addr;
@@ -1239,7 +1239,7 @@ int net_get_if_ipv6_addr(struct net_ip_config *addr, void *intrfc_handle)
 	struct net_if_ipv6 *ipv6;
 	struct net_if_addr *unicast;
 
-	ipv6 = if_handle->netif->config.ip.ipv6;
+	ipv6 = net_if_get_config(if_handle->netif)->ip.ipv6;
 
 	addr->ipv6_count = 0;
 
@@ -1267,7 +1267,7 @@ uint8_t net_get_all_if_ipv6_addr_and_cnt(char *buf, uint32_t buf_size)
 	uint32_t offset = 0;
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
-		ipv6 = iface->config.ip.ipv6;
+		ipv6 = net_if_get_config(iface)->ip.ipv6;
 		for (i = 0; ipv6 && i < CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT; i++) {
 			unicast = &ipv6->unicast[i];
 			if (!unicast->is_used) {
@@ -1294,7 +1294,7 @@ int net_get_if_ipv6_pref_addr(struct net_ip_config *addr, void *intrfc_handle)
 	struct net_if_ipv6 *ipv6;
 	struct net_if_addr *unicast;
 
-	ipv6 = if_handle->netif->config.ip.ipv6;
+	ipv6 = net_if_get_config(if_handle->netif)->ip.ipv6;
 
 	addr->ipv6_count = 0;
 
@@ -1342,7 +1342,7 @@ int net_get_if_ip_addr(uint32_t *ip, void *intrfc_handle)
 {
 #if defined(CONFIG_NET_IPV4)
 	interface_t *if_handle = (interface_t *)intrfc_handle;
-	struct net_if_ipv4 *ipv4 = if_handle->netif->config.ip.ipv4;
+	struct net_if_ipv4 *ipv4 = net_if_get_config(if_handle->netif)->ip.ipv4;
 
 	if (ipv4 != NULL) {
 		*ip = NET_IPV4_ADDR_U32(ipv4->unicast[0].ipv4.address);
@@ -1361,7 +1361,7 @@ int net_get_if_ip_mask(uint32_t *nm, void *intrfc_handle)
 {
 #if defined(CONFIG_NET_IPV4)
 	interface_t *if_handle = (interface_t *)intrfc_handle;
-	struct net_if_ipv4 *ipv4 = if_handle->netif->config.ip.ipv4;
+	struct net_if_ipv4 *ipv4 = net_if_get_config(if_handle->netif)->ip.ipv4;
 
 	*nm = ipv4->unicast[0].netmask.s_addr;
 #else

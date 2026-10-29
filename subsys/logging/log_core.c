@@ -336,7 +336,7 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 		return 0;
 	}
 
-	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_MAX_BACKENDS);
+	__ASSERT_NO_MSG(log_backend_count_get() <= LOG_FILTERS_MAX_BACKENDS);
 
 	if (atomic_inc(&initialized) != 0) {
 		return 0;
@@ -992,7 +992,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		/* If all backends are ready, periodic wake up is not needed. */
 		timeout = K_FOREVER;
 	}
-	bool processed_any = false;
+	bool processing = false;
 	thread_set(k_current_get());
 
 	/* Logging thread is periodically waken up until all backends that
@@ -1022,14 +1022,17 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		}
 
 
+		if (!processing && z_log_msg_pending()) {
+			processing = true;
+			log_backend_notify_all(LOG_BACKEND_EVT_PROCESS_THREAD_START, NULL);
+		}
+
 		if (log_process() == false) {
-			if (processed_any) {
-				processed_any = false;
+			if (processing) {
+				processing = false;
 				log_backend_notify_all(LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
 			}
 			(void)k_sem_take(&log_process_thread_sem, timeout);
-		} else {
-			processed_any = true;
 		}
 	}
 }

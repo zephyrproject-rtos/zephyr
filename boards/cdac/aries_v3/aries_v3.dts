@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "C-DAC ARIES v3.0";
 	compatible = "cdac,aries-v3", "cdac,thejas32";
+	model = "C-DAC ARIES v3.0";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -47,8 +47,8 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &gpio0 {

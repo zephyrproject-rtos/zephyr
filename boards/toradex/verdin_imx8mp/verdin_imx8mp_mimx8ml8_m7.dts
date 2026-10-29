@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Toradex Verdin iMX8M Plus M7";
 	compatible = "nxp,mimx8mp_evk";
+	model = "Toradex Verdin iMX8M Plus M7";
 
 	chosen {
 		/* TCM */
@@ -39,22 +39,22 @@
 };
 
 &uart4 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-names = "default";
 	run-in-wait;
+	status = "okay";
 };
 
 &pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pwm2_default>;
 	pinctrl-names = "default";
 	run-in-wait;
+	status = "okay";
 };

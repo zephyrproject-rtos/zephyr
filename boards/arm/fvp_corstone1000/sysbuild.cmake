@@ -375,9 +375,10 @@ else()
   set(tfa_build_debug "0")
 endif()
 
-# Get the Zephyr binary from the main image
-# Use the known sysbuild path structure: ${CMAKE_BINARY_DIR}/<image>/zephyr/zephyr.bin
-set(zephyr_bl33 ${CMAKE_BINARY_DIR}/${DEFAULT_IMAGE}/zephyr/zephyr.bin)
+# Get the Zephyr binary from the main image. Its name comes from the image's
+# CONFIG_KERNEL_BIN_NAME, which is only known at generate time.
+set(zephyr_bl33_name $<TARGET_PROPERTY:${DEFAULT_IMAGE},CONFIG_KERNEL_BIN_NAME>)
+set(zephyr_bl33 ${CMAKE_BINARY_DIR}/${DEFAULT_IMAGE}/zephyr/${zephyr_bl33_name}.bin)
 
 # TF-A build arguments for Corstone-1000 with Cortex-A320
 # Aligned with Yocto meta-arm CORSTONE1000-2025.12 reference build

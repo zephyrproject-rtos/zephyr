@@ -39,11 +39,11 @@
 };
 
 &zephyr_mipi_dsi {
-	nxp,dc = <&dpu>;
 	dpi-color-coding = "24-bit";
 	dpi-video-mode = "non-burst-sync-pulse";
 	dphy-ref-frequency = <24000000>;
 	data-rate-clock = <890666666>;
+	nxp,dc = <&dpu>;
 	status = "okay";
 
 	rm692c9@0 {

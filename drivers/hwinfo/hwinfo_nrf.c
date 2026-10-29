@@ -23,6 +23,12 @@
 #include <hal/nrf_ficr.h>
 #endif
 
+#if defined(CONFIG_HAS_IRONSIDE_SE) && (TARGET_IRONSIDE_SE_VERSION > IRONSIDE_SE_V23_0_2_17)
+#include <ironside/se/boot_report.h>
+#define IRONSIDE_BOOT_REPORT \
+	(const struct ironside_se_boot_report *)IRONSIDE_SE_APPLICATION_BOOT_REPORT_ADDRESS
+#endif
+
 struct nrf_uid {
 	uint32_t id[2];
 };
@@ -52,13 +58,18 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	 */
 	buf[1] |= (nrf_ficr_er_get(NRF_FICR, 0) & 0xFF) << 16;
 	buf[1] |= (nrf_ficr_ir_get(NRF_FICR, 0) & 0xFF) << 24;
-#elif NRF_FICR_HAS_NFC_TAGHEADER_ARRAY
-	/* DEVICEID is not accessible, use NFCID instead.
-	 * Assume that it is always accessible from the non-secure image.
-	 * Skip TAGHEADER[0] as it always contain Manufacturer ID.
-	 */
-	buf[0] = nrf_ficr_nfc_tagheader_get(NRF_FICR, 1);
-	buf[1] = nrf_ficr_nfc_tagheader_get(NRF_FICR, 2);
+#elif defined(IRONSIDE_BOOT_REPORT)
+	/* DEVICEID is not accessible, use Ironside SE boot report instead. */
+	const struct ironside_se_boot_report *report = IRONSIDE_BOOT_REPORT;
+
+	buf[0] = (report->device_info_uuid[0]) |
+		 (report->device_info_uuid[1] << 8) |
+		 (report->device_info_uuid[2] << 16) |
+		 ((uint32_t)report->device_info_uuid[3] << 24);
+	buf[1] = (report->device_info_uuid[4]) |
+		 (report->device_info_uuid[5] << 8) |
+		 (report->device_info_uuid[6] << 16) |
+		 ((uint32_t)report->device_info_uuid[7] << 24);
 #else
 #error "No suitable source for hwinfo device_id generation"
 #endif

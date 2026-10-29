@@ -101,6 +101,10 @@ static struct bt_mesh_blob_target *target_get(struct bt_mesh_blob_cli *cli,
 {
 	struct bt_mesh_blob_target *target;
 
+	if (cli->inputs == NULL) {
+		return NULL;
+	}
+
 	TARGETS_FOR_EACH(cli, target) {
 		if (target->addr == addr) {
 			/* A skipped target can still receive and answer a group-addressed
@@ -1364,6 +1368,13 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
 	size_t len;
 	int idx;
 
+	if (cli->state != BT_MESH_BLOB_CLI_STATE_BLOCK_START &&
+	    cli->state != BT_MESH_BLOB_CLI_STATE_BLOCK_SEND &&
+	    cli->state != BT_MESH_BLOB_CLI_STATE_BLOCK_CHECK) {
+		LOG_WRN("Wrong state: %d", cli->state);
+		return -EBUSY;
+	}
+
 	target = target_get(cli, ctx->addr);
 	if (!target) {
 		return -ENOENT;
@@ -1374,6 +1385,12 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
 	status.missing = status_and_format >> 6;
 	status.block.number = net_buf_simple_pull_le16(buf);
 	chunk_size = net_buf_simple_pull_le16(buf);
+	/* Chunk Size 0 is Prohibited (MshMBTv1.0 3.1.2.3) */
+	if (chunk_size == 0U) {
+		LOG_WRN("Invalid chunk size");
+		return -EINVAL;
+	}
+
 	status.block.chunk_count =
 		DIV_ROUND_UP(cli->block.size, chunk_size);
 

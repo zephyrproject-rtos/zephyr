@@ -24,6 +24,7 @@ from twisterlib.error import BuildError
 from twisterlib.harness import Pytest
 from twisterlib.runner import CMake, ExecutionCounter, FilterBuilder, ProjectBuilder, TwisterRunner
 from twisterlib.statuses import TwisterStatus
+from twisterlib.testsuite import TestCase
 from twisterlib.testsuitedata import HarnessConfig
 
 from . import ZEPHYR_BASE
@@ -262,6 +263,8 @@ TESTDATA_1_2 = [
      False, False, TwisterStatus.PASS, None, False, False),
     (1, True, 'ERROR: region `FLASH\' overflowed by 123 MB',
      True,  True, TwisterStatus.SKIP, 'FLASH overflow', True, False),
+    (1, True, 'ld: region `sram0_0_seg\' overflowed by 90576 bytes',
+     True,  True, TwisterStatus.SKIP, 'sram0_0_seg overflow', True, False),
     (1, True, 'Error: Image size (99 B) + trailer (1 B) exceeds requested size',
      True, True, TwisterStatus.SKIP, 'imgtool overflow', True, False),
     (1, True, 'mock.ANY',
@@ -274,7 +277,8 @@ TESTDATA_1_2 = [
     ' expected_change_skip, expected_add_missing',
     TESTDATA_1_2,
     ids=['no error, no instance run', 'no error, instance run',
-         'error - region overflow', 'error - image size exceed', 'error']
+         'error - region overflow', 'error - sram segment overflow',
+         'error - image size exceed', 'error']
 )
 @pytest.mark.parametrize('sys_platform', TESTDATA_1_1)
 def test_cmake_run_build(
@@ -3009,6 +3013,7 @@ def test_twisterrunner_run(
         return None
 
     instances = {'dummy instance': mock.Mock(metrics={'k': 'v'})}
+    instances['dummy instance'].testsuite.extra_args = ['platform:native_sim:MAKE=/opt/make']
     suites = [mock.Mock()]
     env_mock = mock.Mock()
 
@@ -3018,6 +3023,7 @@ def test_twisterrunner_run(
     tr.options.retry_build_errors = True
     tr.options.jobs = None
     tr.options.build_only = None
+    tr.options.extra_args = ['USE_CCACHE=0']
     for k, v in options.items():
         setattr(tr.options, k, v)
     tr.update_counting_before_pipeline = mock.Mock()
@@ -3028,6 +3034,7 @@ def test_twisterrunner_run(
     gnumakejobserver_mock().name='GNUMakeJobServer'
     jobclient_mock = mock.Mock()
     jobclient_mock().name='JobClient'
+    fifo_supported_mock = mock.Mock(return_value=True)
 
     processing_queue = deque()
     processing_ready = {}
@@ -3059,6 +3066,7 @@ def test_twisterrunner_run(
                     mock_client_from_environ), \
          mock.patch('twisterlib.runner.GNUMakeJobServer',
                     gnumakejobserver_mock), \
+         mock.patch('twisterlib.runner.fifo_supported', fifo_supported_mock), \
          mock.patch('twisterlib.runner.JobClient', jobclient_mock), \
          mock.patch('multiprocessing.cpu_count', return_value=8), \
          mock.patch('sys.platform', platform), \
@@ -3067,6 +3075,13 @@ def test_twisterrunner_run(
         tr.run()
 
     assert f'JOBS: {expected_jobs}' in caplog.text
+
+    if expected_jobserver == 'GNUMakeJobServer':
+        fifo_supported_mock.assert_called_once_with(
+            env_mock.generator_cmd,
+            ['USE_CCACHE=0', 'platform:native_sim:MAKE=/opt/make'],
+        )
+        gnumakejobserver_mock.assert_called_with(expected_jobs, fifo=True)
 
     assert tr.jobserver.name == expected_jobserver
 
@@ -3276,6 +3291,51 @@ def test_twisterrunner_add_tasks_to_queue(
 
     assert processing_queue_mock.append.call_args_list == \
            [mock.call(el) for el in expected_pipeline_elements]
+
+
+def test_twisterrunner_add_tasks_to_queue_retry_resets_testcases(tmp_path):
+    blocked = TestCase('dummy.blocked')
+    blocked.status = TwisterStatus.BLOCK
+    blocked.reason = 'Timeout during flashing'
+    blocked.duration = 1.5
+    blocked.output = 'stale output'
+    passed = TestCase('dummy.passed')
+    passed.status = TwisterStatus.PASS
+
+    instance = mock.Mock(
+        run=True,
+        retries=0,
+        status=TwisterStatus.FAIL,
+        build_dir=tmp_path,
+        testcases=[blocked, passed],
+    )
+    instance.testsuite.build = True
+    instance.testsuite.filter = None
+
+    tr = TwisterRunner({'dummy': instance}, [], env=mock.Mock())
+    tr.results = mock.Mock(iteration=2)
+
+    statuses_at_decrement = []
+
+    def mock_decrement(inst, results, decrement=False):
+        statuses_at_decrement.extend(tc.status for tc in inst.testcases)
+
+    with mock.patch.object(
+        ProjectBuilder,
+        '_add_instance_testcases_to_status_counts',
+        side_effect=mock_decrement
+    ):
+        tr.add_tasks_to_queue(mock.Mock(), False, True, False)
+
+    # The previous attempt's statuses are subtracted before they are cleared.
+    assert statuses_at_decrement == [TwisterStatus.BLOCK, TwisterStatus.PASS]
+    assert instance.retries == 1
+    assert instance.status == TwisterStatus.NONE
+    for case in instance.testcases:
+        assert case.status == TwisterStatus.NONE
+        assert case.reason is None
+        assert case.duration == 0
+        assert case.output == ""
 
 
 TESTDATA_19 = [

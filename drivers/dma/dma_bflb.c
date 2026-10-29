@@ -19,16 +19,24 @@ LOG_MODULE_REGISTER(dma_bflb, CONFIG_DMA_LOG_LEVEL);
 #include <common_defines.h>
 #include <bouffalolab/common/dma_reg.h>
 
+#define BFLB_DMA_CLOCK_ADDR(inst) BFLB_DMA_CLOCK_ADDR_##inst
+#define BFLB_DMA_CLOCK_VAL(inst) BFLB_DMA_CLOCK_VAL_##inst
+
 #if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
 	|| defined(CONFIG_SOC_SERIES_BL616CL)
-#define BFLB_DMA_CLOCK_ADDR (GLB_BASE + GLB_DMA_CFG0_OFFSET)
+#define BFLB_DMA_CLOCK_ADDR_0 (GLB_BASE + GLB_DMA_CFG0_OFFSET)
 #else
-#define BFLB_DMA_CLOCK_ADDR (GLB_BASE + GLB_CLK_CFG2_OFFSET)
+#define BFLB_DMA_CLOCK_ADDR_0 (GLB_BASE + GLB_CLK_CFG2_OFFSET)
 #endif
 
-#define BFLB_DMA_CH_OFFSET(n) ((n + 1) * 0x100)
+#define BFLB_DMA_CLOCK_VAL_0 GLB_DMA_CLK_EN_MSK
 
-#define BFLB_DMA_CH_NB DT_INST_PROP(0, dma_channels)
+#if defined(CONFIG_SOC_SERIES_BL808)
+#define BFLB_DMA_CLOCK_ADDR_1 (GLB_BASE + GLB_DMA_CFG1_OFFSET)
+#define BFLB_DMA_CLOCK_VAL_1 GLB_DMA2_CLK_EN_MSK
+#endif
+
+#define BFLB_DMA_CH_OFFSET(n) (((n) + 1U) * 0x100U)
 
 #define BFLB_DMA_WIDTH_BYTE  0
 #define BFLB_DMA_WIDTH_2BYTE 1
@@ -53,11 +61,16 @@ struct dma_bflb_channel {
 };
 
 struct dma_bflb_data {
-	struct dma_bflb_channel channels[BFLB_DMA_CH_NB];
+	struct dma_bflb_channel *channels;
 };
 
 struct dma_bflb_config {
-	uint32_t base_reg;
+	uintptr_t clk_addr;
+	uint32_t clk_value;
+	uintptr_t base_reg;
+	uintptr_t clock_reg;
+	size_t nb_chans;
+	void (*irq_config_func)(const struct device *dev);
 };
 
 static size_t dma_bflb_get_transfer_size(const struct device *dev, uint32_t channel)
@@ -99,7 +112,7 @@ static void dma_bflb_isr(const struct device *dev)
 	status = sys_read32(cfg->base_reg + DMA_INTTCSTATUS_OFFSET);
 	error = sys_read32(cfg->base_reg + DMA_INTERRORSTATUS_OFFSET);
 
-	for (uint8_t i = 0; i < BFLB_DMA_CH_NB; i++) {
+	for (uint8_t i = 0; i < cfg->nb_chans; i++) {
 		if (data->channels[i].cb) {
 			if (error & (1 << i)) {
 				data->channels[i].cb(dev, data->channels[i].user_data, i, -1);
@@ -124,7 +137,7 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 	uint32_t control = 0;
 	uint16_t size;
 
-	if (channel >= BFLB_DMA_CH_NB) {
+	if (channel >= cfg->nb_chans) {
 		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	}
@@ -242,6 +255,13 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 	/* Unmask interrupts */
 	ch_config &= ~(DMA_ITC | DMA_IE);
 
+	/* Enable *DMA* (eg not peripheral transfer) completion interrupt */
+	if (config->dma_callback != NULL) {
+		control |= DMA_I;
+	} else {
+		control &= ~DMA_I;
+	}
+
 	sys_write32(control, cfg->base_reg
 			+ DMA_CxCONTROL_OFFSET + BFLB_DMA_CH_OFFSET(channel));
 	sys_write32(ch_config, cfg->base_reg
@@ -337,7 +357,7 @@ static int dma_bflb_get_status(const struct device *dev, uint32_t channel,
 	const struct dma_bflb_config *cfg = dev->config;
 	uint32_t config, control, direction;
 
-	if (channel >= BFLB_DMA_CH_NB || stat == NULL) {
+	if (channel >= cfg->nb_chans || stat == NULL) {
 		return -EINVAL;
 	}
 
@@ -383,9 +403,9 @@ static int dma_bflb_init(const struct device *dev)
 	uint32_t tmp;
 
 	/* Ensure DMA clocks are enabled*/
-	tmp = sys_read32(BFLB_DMA_CLOCK_ADDR);
-	tmp |= 0xFF << GLB_DMA_CLK_EN_POS;
-	sys_write32(tmp, BFLB_DMA_CLOCK_ADDR);
+	tmp = sys_read32(cfg->clk_addr);
+	tmp |= cfg->clk_value;
+	sys_write32(tmp, cfg->clk_addr);
 
 	/* Enable DMA controller */
 	tmp = sys_read32(cfg->base_reg + DMA_TOP_CONFIG_OFFSET);
@@ -393,7 +413,7 @@ static int dma_bflb_init(const struct device *dev)
 	sys_write32(tmp, cfg->base_reg + DMA_TOP_CONFIG_OFFSET);
 
 	/* Ensure all channels are disabled and their interrupts masked */
-	for (int i = 0; i < BFLB_DMA_CH_NB; i++) {
+	for (int i = 0; i < cfg->nb_chans; i++) {
 		tmp = sys_read32(cfg->base_reg + DMA_CxCONFIG_OFFSET + BFLB_DMA_CH_OFFSET(i));
 		tmp &= ~DMA_E;
 		tmp |= DMA_ITC | DMA_IE;
@@ -407,17 +427,10 @@ static int dma_bflb_init(const struct device *dev)
 	sys_write32(0xFF, cfg->base_reg + DMA_INTERRCLR_OFFSET);
 	sys_write32(0xFF, cfg->base_reg + DMA_INTTCCLEAR_OFFSET);
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dma_bflb_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQN(0));
+	cfg->irq_config_func(dev);
 
 	return 0;
 }
-
-static struct dma_bflb_data bflb_dma_data = {0};
-static struct dma_bflb_config bflb_dma_config = {
-	.base_reg = DT_INST_REG_ADDR(0),
-};
 
 static DEVICE_API(dma, dma_bflb_api) = {
 	.config = dma_bflb_configure,
@@ -427,6 +440,36 @@ static DEVICE_API(dma, dma_bflb_api) = {
 	.get_status = dma_bflb_get_status,
 };
 
-DEVICE_DT_INST_DEFINE(0, dma_bflb_init, NULL,
-		      &bflb_dma_data, &bflb_dma_config, PRE_KERNEL_1,
-		      CONFIG_DMA_INIT_PRIORITY, &dma_bflb_api);
+#define DMA_BFLB_IRQ_HANDLER_DECL(inst)						\
+	static void dma_bflb_config_func_##inst(const struct device *dev)
+#define DMA_BFLB_IRQ_HANDLER_FUNC(inst)						\
+	.irq_config_func = dma_bflb_config_func_##inst
+#define DMA_BFLB_IRQ_HANDLER(inst)						\
+	static void dma_bflb_config_func_##inst(const struct device *dev)	\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(inst),					\
+			    DT_INST_IRQ(inst, priority),			\
+			    dma_bflb_isr,					\
+			    DEVICE_DT_INST_GET(inst),				\
+			    0);							\
+		irq_enable(DT_INST_IRQN(inst));					\
+	}
+
+#define DMA_BFLB_INIT(inst)									\
+	DMA_BFLB_IRQ_HANDLER_DECL(inst);							\
+	static struct dma_bflb_data bflb_dma_data##inst = {					\
+		.channels = (struct dma_bflb_channel[DT_INST_PROP(inst, dma_channels)]) {},	\
+	};											\
+	static struct dma_bflb_config bflb_dma_config##inst = {					\
+		.clk_addr = BFLB_DMA_CLOCK_ADDR(inst),						\
+		.clk_value = BFLB_DMA_CLOCK_VAL(inst),						\
+		.base_reg = DT_INST_REG_ADDR(inst),						\
+		.nb_chans = DT_INST_PROP(inst, dma_channels),					\
+		DMA_BFLB_IRQ_HANDLER_FUNC(inst),						\
+	};											\
+	DEVICE_DT_INST_DEFINE(inst, dma_bflb_init, NULL,					\
+			      &bflb_dma_data##inst, &bflb_dma_config##inst, PRE_KERNEL_1,	\
+			      CONFIG_DMA_INIT_PRIORITY, &dma_bflb_api);				\
+	DMA_BFLB_IRQ_HANDLER(inst)
+
+DT_INST_FOREACH_STATUS_OKAY(DMA_BFLB_INIT)

@@ -25,8 +25,8 @@
 };
 
 i2s_tx: &i2s0 {
-	status = "okay";
 	pinctrl-0 = <&i2s0_default_alt>;
 	pinctrl-names = "default";
 	clock-source = "ACLK";
+	status = "okay";
 };

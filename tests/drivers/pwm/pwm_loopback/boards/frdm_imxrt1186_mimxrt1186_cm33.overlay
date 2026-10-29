@@ -34,7 +34,7 @@
 };
 
 &flexpwm2_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&flexpwm2_pwm0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

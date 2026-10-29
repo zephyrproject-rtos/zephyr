@@ -68,8 +68,14 @@ static inline void *get_sock_vtable(int sock,
 #endif /* CONFIG_USERSPACE */
 
 	if (ctx == NULL) {
+		const char *name = k_thread_name_get(_current);
+
+		/* k_thread_name_get() returns NULL when CONFIG_THREAD_NAME=n;
+		 * the deferred-logging string packaging strlen()s the %s arg,
+		 * so pass a non-NULL placeholder to avoid a NULL dereference.
+		 */
 		NET_DBG("Invalid access on sock %d by thread %p (%s)", sock,
-			_current, k_thread_name_get(_current));
+			_current, name != NULL ? name : "?");
 	}
 
 	return ctx;

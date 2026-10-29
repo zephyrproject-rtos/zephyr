@@ -15,40 +15,24 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "intel,raptor-lake", "intel,x86_64";
-			d-cache-line-size = <64>;
 			reg = <0>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 	};
 
 	dram0: memory@0 {
-		device_type = "memory";
 		reg = <0x0 DT_DRAM_SIZE>;
-	};
-
-	intc: ioapic@fec00000 {
-		compatible = "intel,ioapic";
-		#address-cells = <1>;
-		#interrupt-cells = <3>;
-		reg = <0xfec00000 0x1000>;
-		interrupt-controller;
-	};
-
-	intc_loapic: loapic@fee00000 {
-		compatible = "intel,loapic";
-		reg = <0xfee00000 0x1000>;
-		interrupt-controller;
-		#interrupt-cells = <3>;
-		#address-cells = <1>;
+		device_type = "memory";
 	};
 
 	pcie0: pcie0 {
+		compatible = "pcie-controller";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "pcie-controller";
 		acpi-hid = "PNP0A08";
-		ranges;
 
 		smbus0: smbus0 {
 			compatible = "intel,pch-smbus";
@@ -234,14 +218,14 @@
 			device-id = <0x7aaa>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pw,cs-mode = <0>;
-			pw,cs-output = <0>;
-			pw,fifo-depth = <64>;
 			cs-gpios = <&gpio_0_i 15 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 			dmas = <&spi0_dma 0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
 			status = "okay";
 		};
 
@@ -257,14 +241,14 @@
 			device-id = <0x7aab>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pw,cs-mode = <0>;
-			pw,cs-output = <0>;
-			pw,fifo-depth = <64>;
 			cs-gpios = <&gpio_0_i 19 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 			dmas = <&spi1_dma 0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
 			status = "disabled";
 		};
 
@@ -280,14 +264,14 @@
 			device-id = <0x7afb>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pw,cs-mode = <0>;
-			pw,cs-output = <0>;
-			pw,fifo-depth = <64>;
 			cs-gpios = <&gpio_0_r 12 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 			dmas = <&spi2_dma 0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
 			status = "disabled";
 		};
 
@@ -345,16 +329,31 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-		vtd: vtd@fed91000 {
-			compatible = "intel,vt-d";
-			reg = <0xfed91000 0x1000>;
+		mfd: mfd@70 {
+			compatible = "motorola,mc146818-mfd";
+			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
 
 			status = "okay";
+
+			rtc: counter: rtc {
+				compatible = "motorola,mc146818";
+				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+				interrupt-parent = <&intc>;
+				alarms-count = <1>;
+
+				status = "okay";
+			};
+
+			bbram: bbram {
+				compatible = "motorola,mc146818-bbram";
+				size = <241>;
+				status = "okay";
+			};
 		};
 
 		uart_ec_0: uart@3f8 {
@@ -368,51 +367,16 @@
 			status = "okay";
 		};
 
-		gpio_0_i: gpio@e06e0700 {
-			compatible = "intel,gpio";
-			reg = <0xe06e0700 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			group-index = <0x0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <23>;
-			pin-offset = <0>;
+		tco_wdt: tco_wdt@400 {
+			compatible = "intel,tco-wdt";
+			reg = <0x0400 0x20>;
 
-			status = "okay";
+			status = "disabled";
 		};
 
-		gpio_0_r: gpio@e06e0890 {
+		gpio_5_d: gpio@e0690700 {
 			compatible = "intel,gpio";
-			reg = <0xe06e0890 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			group-index = <0x1>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <22>;
-			pin-offset = <26>;
-
-			status = "okay";
-		};
-
-		gpio_0_j: gpio@e06e0a00 {
-			compatible = "intel,gpio";
-			reg = <0xe06e0a00 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			group-index = <0x2>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <12>;
-			pin-offset = <49>;
-
-			status = "okay";
-		};
-
-		gpio_1_b: gpio@e06d0700 {
-			compatible = "intel,gpio";
-			reg = <0xe06d0700 0x1000>;
+			reg = <0xe0690700 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 			group-index = <0x0>;
@@ -424,59 +388,13 @@
 			status = "okay";
 		};
 
-		gpio_1_g: gpio@e06d0880 {
-			compatible = "intel,gpio";
-			reg = <0xe06d0880 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			group-index = <0x1>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <8>;
-			pin-offset = <24>;
-
-			status = "okay";
-		};
-
-		gpio_1_h: gpio@e06d0900 {
-			compatible = "intel,gpio";
-			reg = <0xe06d0900 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			group-index = <0x2>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <24>;
-			pin-offset = <32>;
-
-			status = "okay";
-		};
-
-		gpio_3_a: gpio@e06b0790 {
-			compatible = "intel,gpio";
-			reg = <0xe06b0790 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			group-index = <0x1>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <15>;
-			pin-offset = <9>;
-
-			status = "okay";
-		};
-
-		gpio_3_c: gpio@e06b0890 {
-			compatible = "intel,gpio";
-			reg = <0xe06b0890 0x1000>;
-			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			group-index = <0x2>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <24>;
-			pin-offset = <25>;
-
+		pwm0: pwm@e06a0000 {
+			compatible = "intel,blinky-pwm";
+			reg = <0xe06a0000 0x400>;
+			reg-offset = <0x304>;
+			clock-frequency = <32768>;
+			max-pins = <1>;
+			#pwm-cells = <2>;
 			status = "okay";
 		};
 
@@ -536,9 +454,37 @@
 			status = "okay";
 		};
 
-		gpio_5_d: gpio@e0690700 {
+		gpio_3_a: gpio@e06b0790 {
 			compatible = "intel,gpio";
-			reg = <0xe0690700 0x1000>;
+			reg = <0xe06b0790 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <15>;
+			pin-offset = <9>;
+
+			status = "okay";
+		};
+
+		gpio_3_c: gpio@e06b0890 {
+			compatible = "intel,gpio";
+			reg = <0xe06b0890 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+			pin-offset = <25>;
+
+			status = "okay";
+		};
+
+		gpio_1_b: gpio@e06d0700 {
+			compatible = "intel,gpio";
+			reg = <0xe06d0700 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 			group-index = <0x0>;
@@ -550,34 +496,72 @@
 			status = "okay";
 		};
 
-		pwm0: pwm@e06a0000 {
-			compatible = "intel,blinky-pwm";
-			reg = <0xe06a0000 0x400>;
-			reg-offset = <0x304>;
-			clock-frequency = <32768>;
-			max-pins = <1>;
-			#pwm-cells = <2>;
+		gpio_1_g: gpio@e06d0880 {
+			compatible = "intel,gpio";
+			reg = <0xe06d0880 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			pin-offset = <24>;
+
 			status = "okay";
 		};
 
-		mfd: mfd@70 {
-			compatible = "motorola,mc146818-mfd";
-			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
+		gpio_1_h: gpio@e06d0900 {
+			compatible = "intel,gpio";
+			reg = <0xe06d0900 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+			pin-offset = <32>;
 
-			rtc: counter: rtc {
-				compatible = "motorola,mc146818";
-				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
-				interrupt-parent = <&intc>;
-				alarms-count = <1>;
+			status = "okay";
+		};
 
-				status = "okay";
-			};
+		gpio_0_i: gpio@e06e0700 {
+			compatible = "intel,gpio";
+			reg = <0xe06e0700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <23>;
+			pin-offset = <0>;
 
-			bbram: bbram {
-				compatible = "motorola,mc146818-bbram";
-				size = <241>;
-				status = "okay";
-			};
+			status = "okay";
+		};
+
+		gpio_0_r: gpio@e06e0890 {
+			compatible = "intel,gpio";
+			reg = <0xe06e0890 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <22>;
+			pin-offset = <26>;
+
+			status = "okay";
+		};
+
+		gpio_0_j: gpio@e06e0a00 {
+			compatible = "intel,gpio";
+			reg = <0xe06e0a00 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			group-index = <0x2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <12>;
+			pin-offset = <49>;
 
 			status = "okay";
 		};
@@ -599,11 +583,27 @@
 			status = "okay";
 		};
 
-		tco_wdt: tco_wdt@400 {
-			compatible = "intel,tco-wdt";
-			reg = <0x0400 0x20>;
+		vtd: vtd@fed91000 {
+			compatible = "intel,vt-d";
+			reg = <0xfed91000 0x1000>;
 
-			status = "disabled";
+			status = "okay";
 		};
+	};
+
+	intc: ioapic@fec00000 {
+		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
+		#address-cells = <1>;
+		#interrupt-cells = <3>;
+		interrupt-controller;
+	};
+
+	intc_loapic: loapic@fee00000 {
+		compatible = "intel,loapic";
+		reg = <0xfee00000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+		#address-cells = <1>;
 	};
 };

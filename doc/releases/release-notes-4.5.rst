@@ -26,8 +26,8 @@
 
 .. _zephyr_4.5:
 
-Zephyr 4.5.0 (Working Draft)
-############################
+Zephyr 4.5.0
+############
 
 We are pleased to announce the release of Zephyr version 4.5.0.
 
@@ -51,12 +51,16 @@ Major enhancements with this release include:
 
   - :ref:`QUIC <quic_transport_interface>` and :ref:`HTTP/3 <http_server_interface>` support.
 
+  - :ref:`RTP <rtp_interface>` (:rfc:`3550`) stack for sending and receiving media streams over
+    UDP.
+
   - :zephyr:code-sample:`SSH server and client <ssh-server-client>`, including a shell backend.
 
   - :ref:`Model Context Protocol (MCP) server <mcp_server_interface>` to let AI agents use tools
     exposed by a device.
 
-  - Gateway features: IPv4 forwarding, NAT and :ref:`DHCPv6 <dhcpv6_interface>` prefix delegation.
+  - Gateway features: IPv4 forwarding, NAT, IPv6 router role and :ref:`DHCPv6 <dhcpv6_interface>`
+    prefix delegation.
 
 **New driver classes**
   Zephyr 4.5 adds several new driver APIs:
@@ -77,7 +81,9 @@ Major enhancements with this release include:
 **Security and SBOM improvements**
   This release improves SBOM generation, hardening checks and cryptographic acceleration:
 
-  - :ref:`SPDX 3.0 SBOMs <west-spdx>`, including the :ref:`Build profile <west-spdx-build-profile>`.
+  - :ref:`SPDX 3 SBOMs <west-spdx>` that record how the image was built (:ref:`Build profile
+    <west-spdx-build-profile>`), the :ref:`prebuilt libraries <west-spdx-blobs>` it links, and
+    :ref:`package identifiers <west-spdx-package-id>` for vulnerability matching.
 
   - A revamped :ref:`hardening tool <hardening>` with CWE references and CI integration.
 
@@ -682,6 +688,8 @@ New APIs and options
     * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LTK`
     * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LK`
     * :c:func:`bt_sdp_unregister_service`
+    * :kconfig:option:`CONFIG_BT_L2CAP_SIG_TX_BUF_COUNT` to set the number of L2CAP signaling TX
+      buffers.
 
   * HCI Drivers
 
@@ -787,6 +795,12 @@ New APIs and options
     ``zassert_vprint()`` and ``zassert_post_action()``.
     The legacy ``__ASSERT()`` family continues to work largely unchanged as a thin compatibility
     layer over the ZASSERT ``DEFAULT`` module.
+
+* Demand Paging
+
+  * :kconfig:option:`CONFIG_EVICTION_LRU` is now supported on x86, where it is the default
+    eviction algorithm.
+  * Demand paging files have been moved to ``subsys/mem_mgmt/demand_paging``.
 
 * Devicetree
 
@@ -1017,6 +1031,14 @@ New APIs and options
     statically configured time receiver, so it can synchronize through IEEE 802.1AS automotive
     profile bridges that transmit no Announce messages.
 
+* PCIe
+
+  * The PCIe host shell (:kconfig:option:`CONFIG_PCIE_SHELL`) gained diagnostic commands,
+    including configuration space writes, a resource decoder, AER telemetry, link speed
+    retraining and capability tracking, and device power gating.
+  * Support for Type-1 bridge prefetchable/64-bit memory windows and for scanning additional PCIe
+    buses.
+
 * POSIX
 
   * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_NETAPP`, a Zephyr-specific subprofile with the
@@ -1058,6 +1080,13 @@ New APIs and options
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_IS_CONFIGURABLE`
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE_IS_CONFIGURABLE`
 
+* Serial
+
+  * The Realtek Bee UART driver now supports the :ref:`asynchronous UART API <uart_async_api>` on
+    RTL87x2G and RTL8752H SoCs.
+  * The NXP i.MX UART driver now supports runtime configuration with
+    :c:func:`uart_configure` when :kconfig:option:`CONFIG_UART_USE_RUNTIME_CONFIGURE` is enabled.
+  * The Nordic nrfx UARTE driver now supports 5- to 9-bit frames on nRF54x devices.
 
 * Timer
 
@@ -1067,9 +1096,25 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_USBC_LOG_PD_MSG_NAMES`
 
+* Userspace
+
+  * :c:macro:`K_SYSCALL_OBJ_STATIC` to validate kernel objects that a system call handler retains
+    beyond the call, rejecting dynamically allocated ones.
+  * ``k_futex`` is no longer a kernel object: any address accessible to user mode can be
+    used as a futex.
+
 * Utilities
 
   * :c:macro:`ARGS_UNUSED` to mark multiple arguments as unused.
+
+* Xtensa
+
+  * :kconfig:option:`CONFIG_XTENSA_FATAL_BREADCRUMB` and the weak ``xtensa_fatal_breadcrumb()``
+    and ``xtensa_triple_fault_breadcrumb()`` hooks, which let a SoC record fatal exception and
+    triple fault state for diagnosis by a host.
+  * MMU address space IDs (ASIDs) are now recycled when memory domains are destroyed, so
+    applications that frequently create short-lived memory domains no longer exhaust the ASID
+    space.
 
 * Zbus
 
@@ -2565,7 +2610,9 @@ Libraries / Subsystems
   * Added a native LoRaWAN backend
     (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) that implements
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
-    the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
+    the Semtech LoRaMac-node dependency.  Currently supports the EU868 and
+    KR920 regions, the latter including the listen-before-talk that band
+    uses in place of a duty cycle.
   * :c:member:`lora_modem_config.sync_word`
 
 * Networking
@@ -2641,6 +2688,14 @@ Libraries / Subsystems
 
   * ``psa_its_get()`` called with a ``data_size`` of 0 now reports whether the entry exists
     and is valid instead of always returning ``PSA_SUCCESS``.
+
+  * ``psa_its_set()`` and ``psa_its_remove()`` now only replace or remove an entry that cannot be
+    read back when it is corrupt, and fail with the underlying error otherwise.
+
+  * The decrypted data of an entry is now wiped from the subsystem's own buffers before returning.
+
+  * The ZMS store now supports 64-bit UIDs through 64-bit ZMS IDs and rejects the UIDs it cannot map
+    instead of aliasing them. See the :ref:`migration guide <migration_4.5>` for more information.
 
 * Precision timing
 
@@ -2733,6 +2788,31 @@ Other notable changes
     ``-DHARDENCONFIG_EXTRA_SOURCES=``. The database is validated in CI against the actual Kconfig
     tree so entries can no longer go stale.
 
+* Software bill of materials (``west spdx``)
+
+  * SPDX 3.0 JSON-LD documents, selected with ``--spdx-version 3.0``, alongside the SPDX 2.3
+    default; SPDX 3.1 output is experimental. Element IDs are unique to each build, so the SBOMs of
+    the images of a :ref:`sysbuild` build can be merged into one graph. See
+    :ref:`west-spdx-versions`.
+
+  * SPDX 3 documents carry the :ref:`Build profile <west-spdx-build-profile>`: the toolchain with
+    its versions, the board and architecture, and a sub-build per library with its sources and
+    compile flags.
+
+  * Zephyr and its modules are recorded with a supplier and a purl pinned to the revision that was
+    built, and Zephyr with a CPE built from :zephyr_file:`VERSION`, release candidates included.
+    The sources of each module are linked to its ``modules-deps`` entry. See
+    :ref:`west-spdx-package-id`.
+
+  * Prebuilt libraries linked into the image, such as vendor blobs, are now listed, with the
+    version and download URL their module declares. See :ref:`west-spdx-blobs`.
+
+  * Licenses and copyrights are resolved with the :command:`reuse` tool, so :file:`REUSE.toml` and
+    :file:`.license` files are honored, including for binary files.
+
+  * Files are also hashed with SHA512, and each document records its author and the Zephyr version
+    of the tool that generated it.
+
 * CRC
 
   * Added CRC-32/MPEG-2 support (:c:func:`crc32_mpeg2` / ``crc32_mpeg2_update``) to the
@@ -2822,6 +2902,10 @@ Other notable changes
     :c:struct:`wifi_p2p_params`, along with the new
     :c:macro:`WIFI_P2P_STATUS_BUF_SIZE` buffer-size macro.
 
+  * ``NET_REQUEST_WIFI_CONN_PARAMS`` no longer returns the caller's buffers of the
+    last connect request. The ``psk``, ``sae_password`` and EAP fields are now NULL,
+    and the SSID stays valid until the next connect request.
+
 * MCUboot
 
   * :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE` now accepts a comma-separated list of
@@ -2836,6 +2920,12 @@ Other notable changes
     They now build a swap-using-offset MCUboot with rollback and an RSA-2048 signed
     application, and the shared Espressif partition tables no longer reserve a scratch
     partition. See the :ref:`migration guide <migration_4.5>`.
+
+* Microchip
+
+  * The default ``west flash`` runner for the Microchip development boards with PIC32C family
+    devices has changed from ``jlink`` to ``mplab_ipe`` (the MPLAB IPE programmer, invoking
+    ``ipecmd``). Pass ``--runner jlink`` to keep using J-Link.
 
 * NXP
 

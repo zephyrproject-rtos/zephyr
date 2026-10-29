@@ -10,8 +10,8 @@
 #include "raspberrypi_40pins_connector.dtsi"
 
 / {
-	model = "DH electronics STM32MP255C DHCOS DHSBC";
 	compatible = "dh,stm32mp255c-dhcos-dhsbc", "st,stm32mp25";
+	model = "DH electronics STM32MP255C DHCOS DHSBC";
 
 	chosen {
 		zephyr,console = &uart4;

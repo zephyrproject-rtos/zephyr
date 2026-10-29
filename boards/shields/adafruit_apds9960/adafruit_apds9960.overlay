@@ -9,7 +9,7 @@
 
 	adafruit_apds9960: apds9960@39 {
 		compatible = "avago,apds9960";
-		status = "okay";
 		reg = <0x39>;
+		status = "okay";
 	};
 };

@@ -686,7 +686,7 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
 	struct eswifi_dev *eswifi = dev->data;
-	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	struct net_if_ipv4 *ipv4 = net_if_get_config(iface)->ip.ipv4;
 	struct net_if_addr *unicast = NULL;
 	int err = -EIO, i;
 

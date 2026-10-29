@@ -270,9 +270,9 @@
 /** Data, no post increment */
 #define MII_MMD_ACR_DATA_NO_POS_INC (0x01 << 14)
 /** Data, post increment on reads and writes */
-#define MII_MMD_ACR_DATA_RW_POS_INC (0x10 << 14)
+#define MII_MMD_ACR_DATA_RW_POS_INC (0x02 << 14)
 /** Data, post increment on writes only */
-#define MII_MMD_ACR_DATA_W_POS_INC  (0x11 << 14)
+#define MII_MMD_ACR_DATA_W_POS_INC  (0x03 << 14)
 /** @} */
 
 /**

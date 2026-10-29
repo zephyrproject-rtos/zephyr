@@ -23,8 +23,8 @@
 
 		uc8179_waveshare_epaper_gdew075t7: uc8179@0 {
 			compatible = "gooddisplay,gdew075t7", "ultrachip,uc8179";
-			mipi-max-frequency = <4000000>;
 			reg = <0>;
+			mipi-max-frequency = <4000000>;
 			width = <800>;
 			height = <480>;
 			busy-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>;

@@ -520,6 +520,38 @@ ZTEST_P(test_utils_fn, test_net_addr)
 	zassert_true(check_net_addr(tc->data), "check_net_addr failed: %s", tc->name);
 }
 
+/* Check that net_addr_ntop() wrote nothing after the terminator. This runs
+ * in a user thread, where a failed zexpect cannot be recorded, so zassert
+ * is used.
+ */
+static void check_ntop_tail(const char *buf, size_t size, const char *expected)
+{
+	size_t len = strlen(expected) + 1U;
+
+	zassert_str_equal(buf, expected, "Unexpected address string");
+
+	for (size_t i = len; i < size; i++) {
+		zassert_equal((uint8_t)buf[i], 0xaaU,
+			      "Byte %zu after \"%s\" was written", i, expected);
+	}
+}
+
+ZTEST_USER(test_utils_fn, test_net_addr_ntop_writes_only_the_string)
+{
+	struct net_in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct net_in_addr addr4 = { { { 192, 0, 2, 1 } } };
+	char buf[NET_INET6_ADDRSTRLEN];
+
+	memset(buf, 0xaa, sizeof(buf));
+	zassert_not_null(net_addr_ntop(NET_AF_INET6, &addr6, buf, sizeof(buf)));
+	check_ntop_tail(buf, sizeof(buf), "fe80::1");
+
+	memset(buf, 0xaa, sizeof(buf));
+	zassert_not_null(net_addr_ntop(NET_AF_INET, &addr4, buf, sizeof(buf)));
+	check_ntop_tail(buf, sizeof(buf), "192.0.2.1");
+}
+
 ZTEST(test_utils_fn, test_addr_parse)
 {
 	struct net_sockaddr addr;
@@ -1889,6 +1921,45 @@ ZTEST(test_utils_fn, test_parse_ipv6_overflow)
 		zassert_equal(net_sin6(addr)->sin6_port, net_htons(8080),
 			      "Case 9: port must be 8080");
 	}
+}
+
+ZTEST(test_utils_fn, test_ipv6_ll_sl_prefix)
+{
+	static const struct {
+		const char *addr;
+		bool ll;
+		bool sl;
+	} cases[] = {
+		{ "fe80::1", true, false },
+		{ "fe81::1", true, false },
+		{ "febf::1", true, false },
+		{ "fe7f::1", false, false },
+		{ "fec0::1", false, true },
+		{ "feff::1", false, true },
+		{ "ff02::1", false, false },
+	};
+	struct net_in6_addr addr;
+
+	ARRAY_FOR_EACH(cases, i) {
+		zassert_ok(net_addr_pton(NET_AF_INET6, cases[i].addr, &addr));
+		zassert_equal(net_ipv6_is_ll_addr(&addr), cases[i].ll,
+			      "%s link-local mismatch", cases[i].addr);
+		zassert_equal(net_ipv6_is_sl_addr(&addr), cases[i].sl,
+			      "%s site-local mismatch", cases[i].addr);
+	}
+}
+
+ZTEST_USER(test_utils_fn, test_net_addr_ntop_short_buffer)
+{
+	struct net_in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct net_in_addr addr4 = { { { 192, 0, 2, 1 } } };
+	char str6[NET_INET6_ADDRSTRLEN - 1];
+	char str4[NET_INET_ADDRSTRLEN - 1];
+
+	/* Same result in user and kernel mode: the buffer is too small */
+	zassert_is_null(net_addr_ntop(NET_AF_INET6, &addr6, str6, sizeof(str6)));
+	zassert_is_null(net_addr_ntop(NET_AF_INET, &addr4, str4, sizeof(str4)));
 }
 
 ZTEST_SUITE(test_utils_fn, NULL, NULL, NULL, NULL, NULL);

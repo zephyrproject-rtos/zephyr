@@ -190,6 +190,50 @@ struct lwan_region_ops {
 				    uint32_t *freq, int32_t *delay_ms);
 
 	/**
+	 * @brief Cap the TX power for one channel.
+	 *
+	 * A plan whose EIRP limit is not the same across its whole
+	 * frequency range needs the cap applied per channel, which
+	 * get_tx_params() cannot do because it never sees the channel.
+	 * Left NULL where one limit covers the plan.
+	 *
+	 * @param freq Frequency the stack is about to transmit on.
+	 * @param power_dbm TX power, lowered in place where the channel
+	 *                  calls for it.
+	 */
+	void (*clamp_tx_power)(uint32_t freq, int8_t *power_dbm);
+
+	/**
+	 * @brief Get the listen-before-talk parameters for a channel.
+	 *
+	 * A region that keeps the air clear with LBT rather than a duty
+	 * cycle reports the RSSI the channel has to stay under and how long
+	 * to listen before deciding. Left NULL by the regions that do not
+	 * work that way.
+	 *
+	 * @param freq Frequency the stack is about to transmit on.
+	 * @param bandwidth_hz Output: how wide a slice around the channel to
+	 *                     measure, which is usually wider than the
+	 *                     channel itself.
+	 * @param threshold_dbm Output: the channel counts as busy at or
+	 *                      above this RSSI.
+	 * @param scan_time_ms Output: how long to listen.
+	 * @return 0 when LBT applies to this channel, -ENOTSUP when it does
+	 *         not.
+	 */
+	int (*get_lbt_params)(uint32_t freq, uint32_t *bandwidth_hz, int16_t *threshold_dbm,
+			      uint32_t *scan_time_ms);
+
+	/**
+	 * @brief How many further channels to draw when one is busy.
+	 *
+	 * Selection draws at random, so each retry is a fresh draw. Only
+	 * read where get_lbt_params() is set; zero there means the first
+	 * busy channel ends the attempt.
+	 */
+	uint8_t max_lbt_retries;
+
+	/**
 	 * @brief Record a completed TX for duty cycle tracking.
 	 *
 	 * @param freq TX frequency in Hz.

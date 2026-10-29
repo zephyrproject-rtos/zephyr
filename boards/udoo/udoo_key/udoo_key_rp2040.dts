@@ -16,8 +16,8 @@
 #include "../../raspberrypi/common/rpi_pico-led.dtsi"
 
 / {
-	model = "UDOO KEY RP2040";
 	compatible = "udoo,key-rp2040";
+	model = "UDOO KEY RP2040";
 };
 
 / {
@@ -79,8 +79,8 @@
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
+			label = "second_stage_bootloader";
 			read-only;
 		};
 
@@ -90,8 +90,8 @@
 		 */
 		code_partition: partition@100 {
 			compatible = "zephyr,mapped-partition";
-			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(8) - 0x100)>;
+			label = "code-partition";
 			read-only;
 		};
 	};
@@ -99,9 +99,9 @@
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -110,23 +110,23 @@
 
 &i2c0 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
-	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "disabled";
 };
 
 &spi0 {
 	clock-frequency = <DT_FREQ_M(8)>;
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timer {

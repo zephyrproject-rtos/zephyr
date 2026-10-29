@@ -8,11 +8,11 @@ updates:
   - The most recent release, and the release prior to that.
   - Active LTS releases.
 
-At this time, with the latest release of v4.4, the supported
+At this time, with the latest release of v4.5, the supported
 versions are:
 
-  - v4.4: Current release
-  - v4.3: Prior release
+  - v4.5: Current release
+  - v4.4: Prior release
   - v3.7: Current LTS
 
 ## Reporting process

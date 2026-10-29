@@ -19,10 +19,10 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
-			clock-frequency = <DT_FREQ_M(594)>;
 			reg = <0>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(594)>;
 		};
 	};
 
@@ -40,35 +40,13 @@
 			#interrupt-cells = <3>;
 		};
 
-		itcm: memory@24020000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			device_type = "memory";
-			compatible = "mmio-sram";
-
-			reg = <0x24020000 DT_SIZE_K(64)>;
-
-			adsp_reset: memory@24020000 {
-				reg = <0x24020000 DT_SIZE_K(1)>;
-			};
-		};
-
-		dtcm: memory@24000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			device_type = "memory";
-			compatible = "mmio-sram";
-
-			reg = <0x24000000 DT_SIZE_K(64)>;
-		};
-
 		ram0_cached: memory@200000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			device_type = "memory";
 			compatible = "mmio-sram";
 
 			reg = <0x00200000 DT_SIZE_K(512)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
 
 			adsp_text: memory@400000 {
 				reg = <0x00400000 DT_SIZE_K(256)>;
@@ -84,15 +62,37 @@
 		 * Both of these nodes represent the (physically) same block of memory.
 		 */
 		ram0_noncached: memory@20400000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			device_type = "memory";
 			compatible = "mmio-sram";
 
 			reg = <0x20400000 DT_SIZE_K(512)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
 
 			adsp_data_nocache: memory@20440000 {
 				reg = <0x20440000 DT_SIZE_K(256)>;
+			};
+		};
+
+		dtcm: memory@24000000 {
+			compatible = "mmio-sram";
+
+			reg = <0x24000000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+		};
+
+		itcm: memory@24020000 {
+			compatible = "mmio-sram";
+
+			reg = <0x24020000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+
+			adsp_reset: memory@24020000 {
+				reg = <0x24020000 DT_SIZE_K(1)>;
 			};
 		};
 
@@ -107,47 +107,6 @@
 				compatible = "nxp,lpc-syscon";
 				reg = <0x1000 0x1000>;
 				#clock-cells = <1>;
-			};
-
-			gpio: gpio@100000 {
-				reg = <0x100000 0x1000>;
-
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				compatible = "nxp,lpc-gpio";
-
-				gpio0: gpio@0 {
-					reg = <0>;
-
-					gpio-controller;
-					#gpio-cells = <2>;
-					int-source = "pint";
-
-					compatible = "nxp,lpc-gpio-port";
-				};
-
-				gpio1: gpio@1 {
-					reg = <1>;
-
-					gpio-controller;
-					#gpio-cells = <2>;
-					int-source = "pint";
-
-					compatible = "nxp,lpc-gpio-port";
-				};
-			};
-
-			pint: pint@25000 {
-				compatible = "nxp,pint";
-				reg = <0x25000 0x1000>;
-				interrupt-controller;
-				#interrupt-cells = <1>;
-				#address-cells = <0>;
-				interrupts = <7 0 0>, <8 0 0>, <9 0 0>, <10 0 0>,
-					     <11 0 0>, <12 0 0>;
-				num-lines = <8>;
-				num-inputs = <64>;
 			};
 
 			iocon: iocon@4000 {
@@ -165,13 +124,16 @@
 				#clock-cells = <1>;
 			};
 
-			dma1: dma-controller@105000 {
-				compatible = "nxp,lpc-dma";
-				reg = <0x105000 0x1000>;
-				interrupts = <21 0 0>;
-				dma-channels = <33>;
-				status = "disabled";
-				#dma-cells = <1>;
+			pint: pint@25000 {
+				compatible = "nxp,pint";
+				reg = <0x25000 0x1000>;
+				interrupt-controller;
+				#interrupt-cells = <1>;
+				#address-cells = <0>;
+				interrupts = <7 0 0>, <8 0 0>, <9 0 0>, <10 0 0>,
+					     <11 0 0>, <12 0 0>;
+				num-lines = <8>;
+				num-inputs = <64>;
 			};
 
 			i3c0: i3c@36000 {
@@ -184,6 +146,44 @@
 				clk-divider = <2>;
 				clk-divider-slow = <1>;
 				clk-divider-tc = <1>;
+				status = "disabled";
+			};
+
+			gpio: gpio@100000 {
+
+				compatible = "nxp,lpc-gpio";
+				reg = <0x100000 0x1000>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				gpio0: gpio@0 {
+
+					compatible = "nxp,lpc-gpio-port";
+					reg = <0>;
+
+					gpio-controller;
+					#gpio-cells = <2>;
+					int-source = "pint";
+				};
+
+				gpio1: gpio@1 {
+
+					compatible = "nxp,lpc-gpio-port";
+					reg = <1>;
+
+					gpio-controller;
+					#gpio-cells = <2>;
+					int-source = "pint";
+				};
+			};
+
+			dma1: dma-controller@105000 {
+				compatible = "nxp,lpc-dma";
+				reg = <0x105000 0x1000>;
+				interrupts = <21 0 0>;
+				dma-channels = <33>;
+				#dma-cells = <1>;
 				status = "disabled";
 			};
 
@@ -212,10 +212,10 @@
 			};
 
 			mbox: mbox@111000 {
-				#mbox-cells = <1>;
 
 				compatible = "nxp,mbox-imx-mu";
 				reg = <0x111000 0x1000>;
+				#mbox-cells = <1>;
 
 				interrupts = <19 0 0>;
 				rx-channels = <4>;

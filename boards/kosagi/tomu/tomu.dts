@@ -11,8 +11,8 @@
 #include <freq.h>
 
 / {
-	model = "Tomu";
 	compatible = "kosagi,tomu";
+	model = "Tomu";
 
 	chosen {
 		zephyr,sram = &sram0;

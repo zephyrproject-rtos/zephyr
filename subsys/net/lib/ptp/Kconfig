@@ -366,6 +366,55 @@ config PTP_PEER_DELAY_MAX_NS
 	  update meanLinkDelay. Adjust this sanity threshold to the expected network
 	  topology and PTP profile; it is not a clock-accuracy requirement.
 
+config PTP_SERVO_STEP_THRESHOLD_MS
+	int "Offset above which the clock is stepped, in milliseconds"
+	default 1000
+	range 1 1000000
+	help
+	  Offsets larger than this value are corrected by setting the clock
+	  instead of adjusting its rate, and the servo starts acquisition again.
+	  The check applies to every sample, also while the servo is locked,
+	  so the outlier threshold cannot be set above this value. Before the
+	  servo locks, offsets above a fixed 100 ms are stepped as well.
+
+config PTP_SERVO_OUTLIER_THRESHOLD_MS
+	int "Offset above which a sample is an outlier, in milliseconds"
+	default 100 if PTP_SERVO_STEP_THRESHOLD_MS >= 100
+	default PTP_SERVO_STEP_THRESHOLD_MS
+	range 1 PTP_SERVO_STEP_THRESHOLD_MS
+	help
+	  While the servo is locked, samples with a larger offset are rejected,
+	  and two consecutive outliers reset the servo. The default is 100 ms,
+	  or the step threshold when that is smaller. Before the servo locks,
+	  this value is not used: offsets above a fixed 100 ms are stepped.
+
+	  The servo locks after three samples within 10 ms. A value below
+	  10 ms can therefore reject samples that the servo has just locked
+	  on, so that it locks, rejects and resets again and again while it
+	  converges.
+
+config PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL
+	bool "Scale the PI gains by the Sync interval"
+	help
+	  The PI gains of PRECISION_TIMING_PI_KP and PRECISION_TIMING_PI_KI
+	  are taken as the gains for a Sync interval of one second, and are
+	  divided by the time since the previous servo update, measured on
+	  the Sync origin timestamps, so lost Sync messages and rejected
+	  samples count. The loop then keeps its stability and damping for
+	  any Sync interval. Without this option the gains are used as they
+	  are for every Sync message, so the loop gets slower and less damped
+	  with a shorter Sync interval.
+
+	  For the first update, after a servo reset or a time transmitter
+	  change, the advertised Sync interval of the multicast Sync messages
+	  is used instead, or PTP_SYNC_LOG_INTERVAL until one is received.
+	  An elapsed time shorter than 2^-10 s, the shortest Sync interval
+	  the port accepts, is taken as 2^-10 s.
+
+	  With a short Sync interval the scaled gains are large, so the noise
+	  of the timestamps gives proportionally larger rate changes. Set
+	  PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM together with this option.
+
 config PTP_DISABLED_PRESENT
 	bool
 	default y

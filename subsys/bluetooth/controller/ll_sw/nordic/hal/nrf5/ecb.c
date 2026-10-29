@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <hal/nrf_ecb.h>
@@ -64,7 +66,36 @@ struct ecb_param {
 
 static void do_ecb(struct ecb_param *ep)
 {
+	/* Incremented by each do_ecb() attempt. A do_ecb() that preempts another one
+	 * reprograms the ECB, so the preempted one starts over when the count changed.
+	 */
+	static atomic_t ecb_attempts;
+	/* Another thread must not run do_ecb() in the middle of this one: calls that
+	 * preempt each other, as from ISRs, only work when they nest.
+	 */
+	bool is_thread = !k_is_in_isr();
+	uint32_t in_ptr;
+#ifdef EASYVDMA_PRESENT
+	uint32_t out_ptr;
+#endif /* EASYVDMA_PRESENT */
+	atomic_val_t attempt;
+
+	if (is_thread) {
+		k_sched_lock();
+	}
+
+	/* Restored at the end, as a do_ecb() preempted by this one may be about to
+	 * start the ECB with the pointers it has set, and a NULL IN.PTR faults.
+	 */
+	in_ptr = NRF_ECB->ECBDATAPTR;
+#ifdef EASYVDMA_PRESENT
+	out_ptr = NRF_ECB->OUT.PTR;
+#endif /* EASYVDMA_PRESENT */
+
 	do {
+		(void)atomic_inc(&ecb_attempts);
+		attempt = atomic_get(&ecb_attempts);
+
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 
 #ifdef EASYVDMA_PRESENT
@@ -96,9 +127,7 @@ static void do_ecb(struct ecb_param *ep)
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STARTECB);
-		while ((NRF_ECB->EVENTS_ENDECB == 0) &&
-		       (NRF_ECB->EVENTS_ERRORECB == 0) &&
-		       (NRF_ECB->ECBDATAPTR != 0)) {
+		while ((NRF_ECB->EVENTS_ENDECB == 0) && (NRF_ECB->EVENTS_ERRORECB == 0)) {
 			Z_SPIN_DELAY(10);
 			/* FIXME: use cpu_sleep(), but that will need interrupt
 			 *        wake up source and hence necessary appropriate
@@ -106,9 +135,16 @@ static void do_ecb(struct ecb_param *ep)
 			 */
 		}
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
-	} while ((NRF_ECB->EVENTS_ERRORECB != 0) || (NRF_ECB->ECBDATAPTR == 0));
+	} while ((NRF_ECB->EVENTS_ERRORECB != 0) || (atomic_get(&ecb_attempts) != attempt));
 
-	NRF_ECB->ECBDATAPTR = 0;
+	NRF_ECB->ECBDATAPTR = in_ptr;
+#ifdef EASYVDMA_PRESENT
+	NRF_ECB->OUT.PTR = out_ptr;
+#endif /* EASYVDMA_PRESENT */
+
+	if (is_thread) {
+		k_sched_unlock();
+	}
 }
 
 void ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,

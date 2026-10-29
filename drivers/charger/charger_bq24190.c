@@ -8,7 +8,7 @@
 
 #include <errno.h>
 
-#include "bq24190.h"
+#include "charger_bq24190.h"
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/charger.h>
@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(ti_bq24190, CONFIG_CHARGER_LOG_LEVEL);
 struct bq24190_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec ce_gpio;
+	uint32_t watchdog_timeout_ms;
 };
 
 struct bq24190_data {
@@ -114,7 +115,7 @@ static int bq24190_charger_get_health(const struct device *dev, enum charger_hea
 	}
 
 	if (v & BQ24190_REG_F_NTC_FAULT_MASK) {
-		switch (v >> BQ24190_REG_F_NTC_FAULT_SHIFT & 0x7) {
+		switch (FIELD_GET(BQ24190_REG_F_NTC_FAULT_MASK, v)) {
 		case BQ24190_NTC_FAULT_TS1_COLD:
 		case BQ24190_NTC_FAULT_TS2_COLD:
 		case BQ24190_NTC_FAULT_TS1_TS2_COLD:
@@ -131,7 +132,7 @@ static int bq24190_charger_get_health(const struct device *dev, enum charger_hea
 	} else if (v & BQ24190_REG_F_BAT_FAULT_MASK) {
 		*health = CHARGER_HEALTH_OVERVOLTAGE;
 	} else if (v & BQ24190_REG_F_CHRG_FAULT_MASK) {
-		switch (v >> BQ24190_REG_F_CHRG_FAULT_SHIFT & 0x3) {
+		switch (FIELD_GET(BQ24190_REG_F_CHRG_FAULT_MASK, v)) {
 		case BQ24190_CHRG_FAULT_INPUT_FAULT:
 			/*
 			 * This could be over-voltage or under-voltage
@@ -376,8 +377,33 @@ static int bq24190_set_constant_charge_voltage(const struct device *dev, uint32_
 	return i2c_reg_update_byte_dt(&config->i2c, BQ24190_REG_CVC, BQ24190_REG_CVC_VREG_MASK, v);
 }
 
+static int bq24190_set_watchdog_timeout(const struct device *dev, uint32_t timeout_ms)
+{
+	const struct bq24190_config *const config = dev->config;
+	uint8_t wdt;
+
+	if (timeout_ms == 0) {
+		wdt = BQ24190_REG_CTTC_WATCHDOG_SEL_DISABLE;
+	} else if (timeout_ms <= 40000) {
+		wdt = BQ24190_REG_CTTC_WATCHDOG_SEL_40S;
+	} else if (timeout_ms <= 80000) {
+		wdt = BQ24190_REG_CTTC_WATCHDOG_SEL_80S;
+	} else if (timeout_ms <= 160000) {
+		wdt = BQ24190_REG_CTTC_WATCHDOG_SEL_160S;
+	} else {
+		LOG_WRN("Watchdog timeout %u ms out of range, clamping", timeout_ms);
+		wdt = BQ24190_REG_CTTC_WATCHDOG_SEL_160S;
+	}
+
+	wdt = FIELD_PREP(BQ24190_REG_CTTC_WATCHDOG_MASK, wdt);
+
+	return i2c_reg_update_byte_dt(&config->i2c, BQ24190_REG_CTTC,
+				      BQ24190_REG_CTTC_WATCHDOG_MASK, wdt);
+}
+
 static int bq24190_set_config(const struct device *dev)
 {
+	const struct bq24190_config *const config = dev->config;
 	struct bq24190_data *data = dev->data;
 	union charger_propval val;
 	int ret;
@@ -391,7 +417,12 @@ static int bq24190_set_config(const struct device *dev)
 
 	val.const_charge_voltage_uv = data->vreg_uv;
 
-	return bq24190_set_constant_charge_voltage(dev, val.const_charge_voltage_uv);
+	ret = bq24190_set_constant_charge_voltage(dev, val.const_charge_voltage_uv);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return bq24190_set_watchdog_timeout(dev, config->watchdog_timeout_ms);
 }
 
 static int bq24190_get_prop(const struct device *dev, charger_prop_t prop,
@@ -509,6 +540,7 @@ static DEVICE_API(charger, bq24190_driver_api) = {
 	static const struct bq24190_config bq24190_config_##inst = {                               \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.ce_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, ce_gpios, {}),                           \
+		.watchdog_timeout_ms = DT_INST_PROP(inst, watchdog_timeout_ms),                    \
 	};                                                                                         \
                                                                                                    \
 	static struct bq24190_data bq24190_data_##inst = {                                         \

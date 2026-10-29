@@ -142,7 +142,10 @@ static void mcux_gau_adc_read_samples(struct k_work *work)
 	size_t length = data->results_length;
 
 	while ((ADC_GetFifoDataCount(base) > 0) && (length-- > 0)) {
-		*(data->results++) = (uint16_t)ADC_GetConversionResult(base);
+		/* Signed result, clamp negative values near ground to 0 */
+		int16_t result = (int16_t)ADC_GetConversionResult(base);
+
+		*(data->results++) = (result < 0) ? 0U : (uint16_t)result;
 	}
 
 	adc_context_on_sampling_done(&data->ctx, dev);

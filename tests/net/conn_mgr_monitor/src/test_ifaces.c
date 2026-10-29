@@ -12,15 +12,25 @@
 /* Create test ifaces */
 
 /* Generic iface initializer, shared by all test ifaces */
-static void test_iface_init(struct net_if *iface)
+static void test_iface_init_type(struct net_if *iface, enum net_link_type type)
 {
 	/* Fake link layer address is needed to silence assertions inside the net core */
 	static uint8_t fake_lladdr[] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x01 };
 
-	net_if_set_link_addr(iface, fake_lladdr, sizeof(fake_lladdr), NET_LINK_DUMMY);
+	net_if_set_link_addr(iface, fake_lladdr, sizeof(fake_lladdr), type);
 
 	/* Do not automatically start the iface */
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+}
+
+static void test_iface_init(struct net_if *iface)
+{
+	test_iface_init_type(iface, NET_LINK_DUMMY);
+}
+
+static void test_eth_iface_init(struct net_if *iface)
+{
+	test_iface_init_type(iface, NET_LINK_ETHERNET);
 }
 
 /* Mandatory stub for NET_DEVICE_INIT */
@@ -43,7 +53,7 @@ static struct dummy_api test_iface_api = {
 };
 
 static struct ethernet_api dummy_eth_api = {
-	.iface_api.init = test_iface_init,
+	.iface_api.init = test_eth_iface_init,
 };
 
 NET_DEVICE_INIT(test_if_simple_a,

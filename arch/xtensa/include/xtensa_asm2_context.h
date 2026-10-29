@@ -41,9 +41,11 @@
  *
  * SP-60  Saved SCOMPARE special register (if S32C1I enabled)
  *
- * SP-64  Saved EXCCAUSE special register
+ * SP-64  Saved BR special register (if booleans enabled)
  *
- * SP-68  Saved THREADPTR special register (if processor has thread pointer)
+ * SP-68  Saved EXCCAUSE special register
+ *
+ * SP-72  Saved THREADPTR special register (if processor has thread pointer)
  *
  *       (The above fixed-size region is known as the "base save area" in the
  *        code below)
@@ -109,6 +111,12 @@
 # define _BSA_PADDING_S32C1I		(0)
 #endif
 
+#if XCHAL_HAVE_BOOLEANS
+# define _BSA_PADDING_BOOLEANS		(sizeof(uintptr_t))
+#else
+# define _BSA_PADDING_BOOLEANS		(0)
+#endif
+
 #if XCHAL_HAVE_LOOPS
 # define _BSA_PADDING_LOOPS		(sizeof(uintptr_t) * 3U)
 #else
@@ -124,6 +132,7 @@
 	 _BSA_PADDING_HIFI + \
 	 _BSA_PADDING_THREADPTR + \
 	 _BSA_PADDING_S32C1I + \
+	 _BSA_PADDING_BOOLEANS + \
 	 _BSA_PADDING_LOOPS + \
 	 _BSA_PADDING_COMMON)
 
@@ -158,6 +167,10 @@ struct xtensa_irq_base_save_area {
 
 #if XCHAL_HAVE_S32C1I
 	uintptr_t scompare1;
+#endif
+
+#if XCHAL_HAVE_BOOLEANS
+	uintptr_t br;
 #endif
 
 	uintptr_t exccause;

@@ -9,12 +9,12 @@
 };
 
 &tc3 {
-	status = "okay";
 	compatible = "microchip,tc-g1-pwm";
 	prescaler = <1>;
 	#pwm-cells = <3>;
 	pinctrl-0 = <&tc3_pwm_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pinctrl {

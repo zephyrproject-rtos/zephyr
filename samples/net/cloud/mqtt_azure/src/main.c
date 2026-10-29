@@ -471,7 +471,7 @@ static void check_network_connection(struct k_work *work)
 		goto end;
 	}
 
-	if (iface->config.dhcpv4.state == NET_DHCPV4_BOUND) {
+	if (net_if_get_config(iface)->dhcpv4.state == NET_DHCPV4_BOUND) {
 		k_sem_give(&mqtt_start);
 		return;
 	}

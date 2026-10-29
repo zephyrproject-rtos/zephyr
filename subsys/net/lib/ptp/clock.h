@@ -112,6 +112,13 @@ void ptp_clock_handle_state_decision_evt(void);
 int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg);
 
 /**
+ * @brief Function setting the Sync interval used by the clock servo.
+ *
+ * @param[in] log_sync_interval Sync interval of the time transmitter, as log2 of seconds.
+ */
+void ptp_clock_sync_interval_set(int8_t log_sync_interval);
+
+/**
  * @brief Function synchronizing local PTP Hardware Clock to the remote.
  *
  * @param[in] ingress Timestamp of the message reception from the remote node in nanoseconds.

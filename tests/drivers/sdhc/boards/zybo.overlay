@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 David Paul-Beier
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Zybo's microSD slot is on PS SDIO0 (Digilent zynq-zybo.dts: sdio@e0100000) */
+/ {
+	aliases {
+		sdhc0 = &sdhc0;
+	};
+};
+
+&sdhc0 {
+	status = "okay";
+};

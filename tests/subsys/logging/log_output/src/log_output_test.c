@@ -129,6 +129,35 @@ ZTEST(test_log_output, test_ts_flag)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+/* A raw timestamp with its top bit set prints as an unsigned number of the
+ * timestamp's own width. With a format that did not match log_timestamp_t,
+ * 64-bit targets that keep 32-bit values sign-extended in registers (RV64)
+ * printed 2147483648 as 18446744071562067968.
+ */
+ZTEST(test_log_output, test_ts_flag_high_bit)
+{
+	char __aligned(Z_LOG_MSG_ALIGNMENT) package[256];
+#ifdef CONFIG_LOG_TIMESTAMP_64BIT
+	const log_timestamp_t timestamp = UINT64_C(1) << 63;
+	static const char *exp_str =
+		"[09223372036854775808] " DNAME "/" SNAME ": " TEST_STR "\r\n";
+#else
+	const log_timestamp_t timestamp = UINT32_C(1) << 31;
+	static const char *exp_str = "[2147483648] " DNAME "/" SNAME ": " TEST_STR "\r\n";
+#endif
+	uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP;
+	int err;
+
+	err = cbprintf_package(package, sizeof(package), 0, TEST_STR);
+	zassert_true(err > 0);
+
+	log_output_process(&log_output, timestamp, DNAME, SNAME, NULL, 0, LOG_LEVEL_INF,
+			   package, NULL, 0, flags);
+
+	mock_buffer[mock_len] = '\0';
+	zassert_str_equal(exp_str, mock_buffer);
+}
+
 ZTEST(test_log_output, test_format_ts)
 {
 #ifdef CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP

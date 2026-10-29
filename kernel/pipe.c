@@ -303,19 +303,44 @@ void z_impl_k_pipe_reset(struct k_pipe *pipe)
 
 void z_impl_k_pipe_close(struct k_pipe *pipe)
 {
+	k_spinlock_key_t key;
+	bool need_resched;
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, close, pipe);
-	K_SPINLOCK(&pipe->lock) {
-		pipe->flags = 0;
-		z_sched_wake_all(&pipe->data, 0, NULL);
-		z_sched_wake_all(&pipe->space, 0, NULL);
+
+	key = k_spin_lock(&pipe->lock);
+
+	pipe->flags = 0;
+	need_resched = z_sched_wake_all(&pipe->data, 0, NULL);
+	need_resched |= z_sched_wake_all(&pipe->space, 0, NULL);
+
+#ifdef CONFIG_POLL
+	/*
+	 * Closing is a broadcast: wake every registered poller. Later
+	 * k_poll() calls see the hangup through is_condition_met().
+	 */
+	while (z_handle_obj_poll_events(&pipe->poll_events,
+					K_POLL_STATE_PIPE_DATA_AVAILABLE)) {
+		need_resched = true;
 	}
+#endif /* CONFIG_POLL */
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, close, pipe);
+
+	if (need_resched) {
+		z_reschedule(&pipe->lock, key);
+	} else {
+		k_spin_unlock(&pipe->lock, key);
+	}
 }
 
 #ifdef CONFIG_USERSPACE
 void z_vrfy_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size)
 {
 	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(buffer_size <= RING_BUFFER_MAX_SIZE,
+				    "pipe buffer size %zu exceeds %u", buffer_size,
+				    (unsigned int)RING_BUFFER_MAX_SIZE));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(buffer, buffer_size));
 
 	z_impl_k_pipe_init(pipe, buffer, buffer_size);

@@ -14,15 +14,10 @@
 
 / {
 	soc {
-		sram0: memory@1ffe0000 {
-			compatible = "mmio-sram";
-			reg = <0x1ffe0000 DT_SIZE_K(256)>;
-		};
-
 		code_flash_ctrl: code-flash-ctrl {
 			compatible = "renesas,ra-flash-hp-controller";
-			command-interface = <&faci>;
 			ranges;
+			command-interface = <&faci>;
 			programming-enable;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -40,8 +35,8 @@
 
 		data_flash_ctrl: data-flash-ctrl {
 			compatible = "renesas,ra-flash-hp-controller";
-			command-interface = <&faci>;
 			ranges;
+			command-interface = <&faci>;
 			programming-enable;
 			erase-value-undefined;
 			#address-cells = <1>;
@@ -61,14 +56,6 @@
 		trng: trng {
 			compatible = "renesas,ra-sce7-rng";
 			status = "disabled";
-		};
-
-		adc@4005c000 {
-			channel-available-mask = <0x1700ef>;
-		};
-
-		adc@4005c200 {
-			channel-available-mask = <0x300e7>;
 		};
 
 		option_setting_ofs0: option-setting-ofs0@400 {
@@ -91,9 +78,22 @@
 
 		option_setting_osis: option-setting-osis@100a150 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			reg = <0x0100a150 0x10>;
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			status = "okay";
+		};
+
+		sram0: memory@1ffe0000 {
+			compatible = "mmio-sram";
+			reg = <0x1ffe0000 DT_SIZE_K(256)>;
+		};
+
+		adc@4005c000 {
+			channel-available-mask = <0x1700ef>;
+		};
+
+		adc@4005c200 {
+			channel-available-mask = <0x300e7>;
 		};
 	};
 

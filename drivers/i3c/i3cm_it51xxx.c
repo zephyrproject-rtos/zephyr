@@ -653,6 +653,58 @@ static int it51xxx_prepare_priv_xfer(const struct device *dev)
 	return 0;
 }
 
+static int it51xxx_i3cm_i2c_get_config(const struct device *dev, uint32_t *dev_config)
+{
+	struct it51xxx_i3cm_data *data = dev->data;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
+	uint32_t speed;
+
+	switch (ctrl_config->scl.i2c) {
+	case KHZ(100):
+		speed = I2C_SPEED_STANDARD;
+		break;
+	case KHZ(400):
+		speed = I2C_SPEED_FAST;
+		break;
+	case MHZ(1):
+		speed = I2C_SPEED_FAST_PLUS;
+		break;
+	default:
+		return -ERANGE;
+	}
+
+	*dev_config = I2C_MODE_CONTROLLER | I2C_SPEED_SET(speed);
+
+	return 0;
+}
+
+static int it51xxx_i3cm_i2c_configure(const struct device *dev, uint32_t config)
+{
+	struct it51xxx_i3cm_data *data = dev->data;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
+	int ret;
+
+	switch (I2C_SPEED_GET(config)) {
+	case I2C_SPEED_STANDARD:
+		ctrl_config->scl.i2c = KHZ(100);
+		break;
+	case I2C_SPEED_FAST:
+		ctrl_config->scl.i2c = KHZ(400);
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		ctrl_config->scl.i2c = MHZ(1);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = it51xxx_set_i2c_clock(dev);
+	k_mutex_unlock(&data->lock);
+
+	return ret;
+}
+
 static int it51xxx_i3cm_i2c_api_transfer(const struct device *dev, struct i2c_msg *msgs,
 					 uint8_t num_msgs, uint16_t addr)
 {
@@ -1758,6 +1810,8 @@ out:
 }
 
 static DEVICE_API(i3c, it51xxx_i3cm_api) = {
+	.i2c_api.get_config = it51xxx_i3cm_i2c_get_config,
+	.i2c_api.configure = it51xxx_i3cm_i2c_configure,
 	.i2c_api.transfer = it51xxx_i3cm_i2c_api_transfer,
 #ifdef CONFIG_I2C_RTIO
 	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,

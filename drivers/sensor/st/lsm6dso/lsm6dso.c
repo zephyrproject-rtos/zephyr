@@ -915,7 +915,8 @@ static int lsm6dso_init(const struct device *dev)
 #define LSM6DSO_CFG_IRQ(inst)						\
 	.trig_enabled = true,						\
 	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
-	.int_pin = DT_INST_PROP(inst, int_pin)
+	.int_pin = DT_INST_PROP(inst, int_pin),				\
+	.int_open_drain = DT_INST_PROP(inst, int_open_drain)
 #else
 #define LSM6DSO_CFG_IRQ(inst)
 #endif /* CONFIG_LSM6DSO_TRIGGER */

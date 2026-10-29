@@ -10,6 +10,7 @@ DT_CHOSEN_Z_DTCM := zephyr,dtcm
 config ETH_DWC_ETHER_QOS_CORE
 	bool
 	depends on NET_BUF_FIXED_DATA_SIZE
+	select ETH_PHY_DRIVER
 	select CACHE_MANAGEMENT if DCACHE
 	# The DMA descriptor rings are not cache maintained, so they need an
 	# uncached region, which on ARM can only be carved out by the MPU.
@@ -23,6 +24,7 @@ config ETH_DWC_ETHER_QOS_CORE
 config ETH_DWC_ETHER_1000_CORE
 	bool
 	depends on NET_BUF_FIXED_DATA_SIZE
+	select ETH_PHY_DRIVER
 	select CACHE_MANAGEMENT if DCACHE
 	# The DMA descriptor rings are not cache maintained, so they need an
 	# uncached region, which on ARM can only be carved out by the MPU.
@@ -144,7 +146,7 @@ config ETH_ROCKCHIP_DWC_ETHER_QOS
 
 config ETH_DWMAC_MMU
 	bool "Synopsys DesignWare MAC driver for MMU based platforms"
-	depends on MMU
+	depends on CPU_HAS_MMU
 	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
 	select ETH_DWC_ETHER_QOS_CORE
 	default y

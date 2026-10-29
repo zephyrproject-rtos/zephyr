@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/sensor/veml60xx-common.h>
-
 /**
  * @file
  * @brief Header file for extended sensor API of VEML6046 sensor.
@@ -14,6 +12,8 @@
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML6046_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML6046_H_
+
+#include <zephyr/drivers/sensor/veml60xx-common.h>
 
 /**
  * @defgroup veml6046_interface VEML6046

@@ -123,6 +123,7 @@ static enum test_case_no {
 	TEST_SERVER_RST_ON_CLOSED_PORT_FIN = 22,
 	TEST_ADVERTISED_RECV_WINDOW = 23,
 	TEST_TCP_PKT_LINEARIZE_FRAG_CHAIN = 24,
+	TEST_SERVER_MSS_AFTER_OPTIONS = 25,
 } test_case_no;
 
 static enum test_state t_state;
@@ -248,12 +249,46 @@ static void test_sem_take_failure(k_timeout_t timeout, int line)
 	}
 }
 
+/* MSS carried by tcp_options[] */
+#define TESTER_MSS 1460
+
 static uint8_t tcp_options[20] = {
 	0x02, 0x04, 0x05, 0xb4, /* Max segment */
 	0x04, 0x02, /* SACK */
 	0x08, 0x0a, 0xc2, 0x7b, 0xef, 0x0f, 0x00, 0x00, 0x00, 0x00, /* Time */
 	0x01, /* NOP */
 	0x03, 0x03, 0x07 /* Win scale*/ };
+
+/* Options a peer sends after the handshake: a single SACK block. */
+static uint8_t tcp_sack_options[12] = {
+	0x01, 0x01, /* NOP, NOP */
+	0x05, 0x0a, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0xc8 /* SACK 100-200 */ };
+
+/* Options the tester puts on the segment it is about to send. */
+static uint8_t tester_options(uint8_t flags, const uint8_t **opts)
+{
+	switch (test_case_no) {
+	case TEST_SERVER_WITH_OPTIONS_IPV4:
+		if ((flags & SYN) != 0) {
+			*opts = tcp_options;
+			return sizeof(tcp_options);
+		}
+		break;
+	case TEST_SERVER_MSS_AFTER_OPTIONS:
+		if ((flags & SYN) != 0) {
+			*opts = tcp_options;
+			return sizeof(tcp_options);
+		}
+
+		*opts = tcp_sack_options;
+		return sizeof(tcp_sack_options);
+	default:
+		break;
+	}
+
+	*opts = NULL;
+	return 0;
+}
 
 static struct net_pkt *tester_prepare_tcp_pkt(net_sa_family_t af,
 					      uint16_t src_port,
@@ -265,12 +300,9 @@ static struct net_pkt *tester_prepare_tcp_pkt(net_sa_family_t af,
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct tcphdr);
 	struct net_pkt *pkt;
 	struct tcphdr *th;
-	uint8_t opts_len = 0;
+	const uint8_t *opts;
+	uint8_t opts_len = tester_options(flags, &opts);
 	int ret = -EINVAL;
-
-	if ((test_case_no == TEST_SERVER_WITH_OPTIONS_IPV4) && (flags & SYN)) {
-		opts_len = sizeof(tcp_options);
-	}
 
 	/* Allocate buffer */
 	pkt = net_pkt_alloc_with_buffer(net_iface,
@@ -304,11 +336,7 @@ static struct net_pkt *tester_prepare_tcp_pkt(net_sa_family_t af,
 	th->th_sport = src_port;
 	th->th_dport = dst_port;
 
-	if ((test_case_no == TEST_SERVER_WITH_OPTIONS_IPV4) && (flags & SYN)) {
-		th->th_off = 10U;
-	} else {
-		th->th_off = 5U;
-	}
+	th->th_off = 5U + opts_len / 4U;
 
 	th->th_flags = flags;
 	th->th_win = net_htons(NET_IPV6_MTU);
@@ -323,9 +351,8 @@ static struct net_pkt *tester_prepare_tcp_pkt(net_sa_family_t af,
 		goto fail;
 	}
 
-	if ((test_case_no == TEST_SERVER_WITH_OPTIONS_IPV4) && (flags & SYN)) {
-		/* Add TCP Options */
-		ret = net_pkt_write(pkt, tcp_options, opts_len);
+	if (opts_len > 0) {
+		ret = net_pkt_write(pkt, opts, opts_len);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -622,6 +649,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case TEST_SERVER_IPV4:
 	case TEST_SERVER_IPV6:
+	case TEST_SERVER_MSS_AFTER_OPTIONS:
 		handle_server_test(net_pkt_family(pkt), &th);
 		break;
 	case TEST_CLIENT_SYN_RESEND:
@@ -956,6 +984,7 @@ static void test_server_timeout(struct k_work *work)
 {
 	if (test_case_no == TEST_SERVER_IPV4 ||
 	    test_case_no == TEST_SERVER_WITH_OPTIONS_IPV4 ||
+	    test_case_no == TEST_SERVER_MSS_AFTER_OPTIONS ||
 	    test_case_no == TEST_SERVER_RST_ON_CLOSED_PORT ||
 	    test_case_no == TEST_SERVER_RST_ON_LISTENING_PORT_NO_ACTIVE_CONNECTION) {
 		handle_server_test(NET_AF_INET, NULL);
@@ -1142,6 +1171,76 @@ ZTEST(net_tcp, test_server_with_options_ipv4)
 	if (ret < 0) {
 		zassert_true(false, "Failed to recv data from peer");
 	}
+
+	/* Trigger the peer to send FIN after timeout */
+	k_work_reschedule(&test_server, K_NO_WAIT);
+
+	/* Let the receiving thread run */
+	k_msleep(50);
+
+	net_context_put(ctx);
+	net_context_put(accepted_ctx);
+}
+
+/* The peer negotiates the MSS in the SYN and then adds a SACK block to
+ * every later segment. The negotiated MSS must survive those options.
+ */
+ZTEST(net_tcp, test_server_mss_kept_after_options_ipv4)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = TEST_SERVER_MSS_AFTER_OPTIONS;
+	seq = ack = 0;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_ok(ret, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	ret = net_context_bind(ctx, (struct net_sockaddr *)&my_addr_s,
+			       sizeof(struct net_sockaddr_in));
+	zassert_ok(ret, "Failed to bind net_context");
+
+	ret = net_context_listen(ctx, 1);
+	zassert_ok(ret, "Failed to listen on net_context");
+
+	/* Trigger the peer to send SYN */
+	k_work_reschedule(&test_server, K_NO_WAIT);
+
+	ret = net_context_accept(ctx, test_tcp_accept_cb, K_FOREVER, NULL);
+	zassert_ok(ret, "Failed to set accept on net_context");
+
+	/* test_tcp_accept_cb will release the semaphore after successful
+	 * connection.
+	 */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	/* The handshake ACK already carried a SACK block. */
+	conn = accepted_ctx->tcp;
+	zassert_true(conn->recv_options.mss_found,
+		     "MSS from the SYN dropped by the handshake ACK");
+	zassert_equal(conn->recv_options.mss, TESTER_MSS,
+		      "MSS %u instead of %u after the handshake ACK",
+		      conn->recv_options.mss, TESTER_MSS);
+
+	/* Trigger the peer to send DATA with a SACK block */
+	k_work_reschedule(&test_server, K_NO_WAIT);
+
+	ret = net_context_recv(accepted_ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
+	zassert_ok(ret, "Failed to recv data from peer");
+
+	zassert_true(conn->recv_options.mss_found,
+		     "MSS from the SYN dropped by a data segment");
+	zassert_equal(conn->recv_options.mss, TESTER_MSS,
+		      "MSS %u instead of %u after a data segment",
+		      conn->recv_options.mss, TESTER_MSS);
+	zassert_equal(conn_mss(conn),
+		      MIN(TESTER_MSS, net_tcp_get_supported_mss(conn)),
+		      "Connection MSS %u does not follow the negotiated MSS",
+		      conn_mss(conn));
 
 	/* Trigger the peer to send FIN after timeout */
 	k_work_reschedule(&test_server, K_NO_WAIT);

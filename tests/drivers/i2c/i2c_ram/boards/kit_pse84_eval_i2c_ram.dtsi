@@ -23,7 +23,6 @@ i2c0: &scb0 {
 	compatible = "infineon,i2c";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 
 	/*
 	 * Use a dedicated peripheral clock divider. The board console UART
@@ -35,6 +34,7 @@ i2c0: &scb0 {
 
 	pinctrl-0 = <&p8_0_scb0_i2c_scl &p8_1_scb0_i2c_sda>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	/* Infineon CY15B104Q I2C FRAM (part of CY15FRAMKIT-001)
 	 * This is a 256Kbit (32KB) I2C FRAM device
@@ -53,8 +53,8 @@ i2c0: &scb0 {
 
 /* Enable the dedicated peripheral clock divider for SCB0 */
 &peri0_group1_16bit_3 {
-	status = "okay";
 	clock-div = <10>;
+	status = "okay";
 };
 
 /* Ensure GPIO port 8 is enabled for SCB0 I2C pins */

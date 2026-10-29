@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,uart-mcumgr = &euart0;
+	};
+
+	euart0: uart-emul {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		status = "okay";
+	};
+};

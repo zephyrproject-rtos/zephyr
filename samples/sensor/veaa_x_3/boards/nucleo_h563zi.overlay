@@ -9,13 +9,13 @@
 
 / {
 	test_veaa_x_3: test_veaa_x_3 {
-		status = "okay";
 		compatible = "festo,veaa-x-3";
 		io-channels = <&adc1 3>;
 		dac = <&dac1>;
 		dac-channel-id = <2>;
 		dac-resolution = <12>;
 		pressure-range-type = "D2";
+		status = "okay";
 	};
 };
 

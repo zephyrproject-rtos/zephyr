@@ -542,20 +542,52 @@ static void esp_ppa_start_txn(struct esp_ppa_txn *txn)
 		ppa_ll_srm_enable_mirror_x(ppa, cfg->mirror_x);
 		ppa_ll_srm_enable_mirror_y(ppa, cfg->mirror_y);
 
-		uint32_t out_depth = (out_cm == PPA_SRM_COLOR_MODE_RGB888) ? 24 : 16;
-		uint32_t w_div = (out_cm == PPA_SRM_COLOR_MODE_RGB888) ? 32 : 64;
-		uint32_t w_out = sx_int * cfg->in.block_w +
-				 sx_frac * cfg->in.block_w / PPA_LL_SRM_SCALING_FRAG_MAX;
+		/* A leftover block smaller than the 2D-DMA FIFO is never counted, so
+		 * the transfer never ends (DIG-734). Bypassing the macro block order
+		 * avoids such blocks. The blocks are cut after rotation, so a quarter
+		 * turn swaps the sides and the scale factors.
+		 */
+		bool quarter_turn = (cfg->rotation_angle == PPA_SRM_ROTATION_ANGLE_90 ||
+				     cfg->rotation_angle == PPA_SRM_ROTATION_ANGLE_270);
+		uint32_t blk_w = quarter_turn ? cfg->in.block_h : cfg->in.block_w;
+		uint32_t blk_h = quarter_turn ? cfg->in.block_w : cfg->in.block_h;
+		uint32_t bx_int = quarter_turn ? sy_int : sx_int;
+		uint32_t bx_frac = quarter_turn ? sy_frac : sx_frac;
+		uint32_t by_int = quarter_turn ? sx_int : sy_int;
+		uint32_t by_frac = quarter_turn ? sx_frac : sy_frac;
+		uint32_t out_depth;
+		uint32_t w_div;
+
+		switch (out_cm) {
+		case PPA_SRM_COLOR_MODE_ARGB8888:
+			out_depth = 32;
+			w_div = 32;
+			break;
+		case PPA_SRM_COLOR_MODE_RGB888:
+			out_depth = 24;
+			w_div = 32;
+			break;
+		case PPA_SRM_COLOR_MODE_GRAY8:
+			out_depth = 8;
+			w_div = 64;
+			break;
+		default:
+			out_depth = 16;
+			w_div = 64;
+			break;
+		}
+
+		uint32_t w_out = bx_int * blk_w + bx_frac * blk_w / PPA_LL_SRM_SCALING_FRAG_MAX;
 		uint32_t w_left = w_out % w_div;
 		uint32_t h_mb = (mb_size == PPA_LL_SRM_MB_SIZE_16_16) ? 16 : 32;
-		uint32_t h_in_left = cfg->in.block_h % h_mb;
+		uint32_t h_in_left = blk_h % h_mb;
 		uint32_t h_left;
 		bool bypass;
 
 		w_left = (w_left == 0) ? w_div : w_left;
 		h_in_left = (h_in_left == 0) ? h_mb : h_in_left;
-		h_left = sy_int * h_in_left + sy_frac * h_in_left / PPA_LL_SRM_SCALING_FRAG_MAX;
-		bypass = ((w_out > w_div) || (cfg->in.block_h > h_mb)) &&
+		h_left = by_int * h_in_left + by_frac * h_in_left / PPA_LL_SRM_SCALING_FRAG_MAX;
+		bypass = ((w_out > w_div) || (blk_h > h_mb)) &&
 			 ((w_left * h_left * out_depth) < (12 * 128));
 		ppa_ll_srm_bypass_mb_order(ppa, bypass);
 

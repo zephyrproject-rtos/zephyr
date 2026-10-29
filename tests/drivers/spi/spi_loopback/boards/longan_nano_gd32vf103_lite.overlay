@@ -20,7 +20,6 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 
@@ -28,6 +27,7 @@
 
 	dmas = <&dma0 1 0>, <&dma0 2 0>;
 	dma-names = "rx", "tx";
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

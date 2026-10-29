@@ -9,8 +9,8 @@
 #include "nrf51_blenano-pinctrl.dtsi"
 
 / {
-	model = "Redbear BLE Nano";
 	compatible = "redbear,blenano";
+	model = "Redbear BLE Nano";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -46,8 +46,8 @@
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

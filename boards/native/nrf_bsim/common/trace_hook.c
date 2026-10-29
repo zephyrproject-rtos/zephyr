@@ -21,8 +21,14 @@ static const char *cpu_prefix;
 static const unsigned int cpu_number;
 #endif /* (CONFIG_NATIVE_SIMULATOR_NUMBER_MCUS > 1) */
 
+/* Provisional hack until bsim's libUtilv1 is updated to a version > 1.16
+ * At that point this commit shall be reverted
+ */
+extern void bsim_set_trace_error(uint8_t code);
+
 void posix_vprint_error_and_exit(const char *format, va_list vargs)
 {
+	bsim_set_trace_error(255);
 	bs_trace_vprint(BS_TRACE_ERROR, cpu_prefix, cpu_number, 0, BS_TRACE_AUTOTIME, 0,
 			format, vargs);
 }
@@ -75,6 +81,7 @@ int posix_trace_over_tty(int file_number)
 
 void nsi_vprint_error_and_exit(const char *format, va_list vargs)
 {
+	bsim_set_trace_error(255);
 	bs_trace_vprint(BS_TRACE_ERROR, cpu_prefix, cpu_number, 0, BS_TRACE_AUTOTIME, 0,
 			format, vargs);
 }

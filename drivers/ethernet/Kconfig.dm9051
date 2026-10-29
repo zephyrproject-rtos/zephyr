@@ -7,6 +7,7 @@ menuconfig ETH_DM9051
 	bool "Davicom DM9051 Ethernet Controller"
 	default y
 	depends on DT_HAS_DAVICOM_DM9051_ENABLED
+	select ETH_PHY_DRIVER
 	select SPI
 	help
 	  Davicom DM9051 Ethernet Controller with SPI Interface

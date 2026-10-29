@@ -222,6 +222,81 @@ ZTEST(precision_timing, test_pi_instances_and_gains_are_independent)
 	zassert_double_close(second.integral, 0.0);
 }
 
+ZTEST(precision_timing, test_pi_integral_limit)
+{
+	struct precision_pi pi;
+
+	precision_pi_init(&pi, 1.0, 0.5);
+	precision_pi_set_limits(&pi, 2.0, 0.0);
+
+	zassert_double_close(precision_pi_update(&pi, 4.0), 6.0);
+	zassert_double_close(pi.integral, 2.0);
+	zassert_double_close(precision_pi_update(&pi, 4.0), 6.0);
+	zassert_double_close(pi.integral, 2.0);
+	zassert_double_close(precision_pi_update(&pi, -2.0), -1.0);
+	zassert_double_close(pi.integral, 1.0);
+}
+
+ZTEST(precision_timing, test_pi_output_limit_holds_integral)
+{
+	struct precision_pi pi;
+
+	precision_pi_init(&pi, 1.0, 0.5);
+	precision_pi_set_limits(&pi, 0.0, 5.0);
+
+	/* Unlimited output would be 6, and the integral would move to 2 */
+	zassert_double_close(precision_pi_update(&pi, 4.0), 5.0);
+	zassert_double_close(pi.integral, 0.0);
+	zassert_double_close(precision_pi_update(&pi, -12.0), -5.0);
+	zassert_double_close(pi.integral, 0.0);
+	zassert_double_close(precision_pi_update(&pi, -1.0), -1.5);
+	zassert_double_close(pi.integral, -0.5);
+}
+
+ZTEST(precision_timing, test_pi_interval_scales_gains)
+{
+	struct precision_pi one_second;
+	struct precision_pi quarter_second;
+	struct precision_pi plain;
+
+	precision_pi_init(&one_second, 0.4, 0.075);
+	precision_pi_init(&quarter_second, 0.4, 0.075);
+	precision_pi_init(&plain, 0.4, 0.075);
+
+	zassert_double_close(precision_pi_update_interval(&one_second, 100.0, 1.0), 47.5);
+	zassert_double_close(precision_pi_update_interval(&quarter_second, 100.0, 0.25), 190.0);
+	zassert_double_close(quarter_second.integral, 30.0);
+	zassert_double_close(precision_pi_update(&plain, 100.0), 47.5);
+	zassert_double_close(plain.integral, one_second.integral);
+}
+
+/*
+ * Clock servo with a Sync interval of 0.25 s: the local clock runs 66 ppm
+ * slow and starts 40 ms ahead. The output is a rate correction in ppb, so
+ * the offset changes by ppb * interval nanoseconds per sample.
+ */
+ZTEST(precision_timing, test_pi_clock_loop_with_limits)
+{
+	const double interval = 0.25;
+	const double drift_ppb = -66000.0;
+	const double integral_limit_ppb = 150000.0;
+	struct precision_pi pi;
+	double offset_ns = 40000000.0;
+	double ppb;
+
+	precision_pi_init(&pi, 0.4, 0.075);
+	precision_pi_set_limits(&pi, integral_limit_ppb, 47500000.0);
+
+	for (int i = 0; i < 400; i++) {
+		ppb = precision_pi_update_interval(&pi, -offset_ns, interval);
+		zassert_true(fabs(pi.integral) <= integral_limit_ppb);
+		offset_ns += (drift_ppb + ppb) * interval;
+	}
+
+	zassert_true(fabs(offset_ns) < 1.0, "offset %f ns", offset_ns);
+	zassert_within(pi.integral, -drift_ppb, 1.0);
+}
+
 ZTEST(precision_timing, test_clock_dispatch_and_error_propagation)
 {
 	struct fake_clock_data data = {.time_ns = 123};

@@ -12,8 +12,8 @@
 #include "adafruit_feather_esp32s3_tft_reverse-pinctrl.dtsi"
 
 / {
-	model = "Adafruit ESP32-S3 Reverse TFT Feather APPCPU";
 	compatible = "adafruit,feather_esp32s3_tft_reverse", "espressif,esp32s3";
+	model = "Adafruit ESP32-S3 Reverse TFT Feather APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

@@ -151,12 +151,17 @@ config BT_STM32WB0
 	help
 	  ST STM32WB0 HCI Bluetooth interface
 
+# Workaround to have commas in function arguments
+DT_CHOSEN_Z_BT_HCI := zephyr,bt-hci
+
 config BT_USERCHAN
 	bool
 	depends on NATIVE_LIBRARY
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
 	select NATIVE_USE_NSI_ERRNO
+	select NATIVE_SIMULATOR_PREFER_REAL_TIME if \
+		$(dt_chosen_has_compat,$(DT_CHOSEN_Z_BT_HCI),$(DT_COMPAT_ZEPHYR_BT_HCI_USERCHAN))
 	help
 	  This driver provides access to the local Linux host's Bluetooth
 	  adapter using a User Channel HCI socket to the Linux kernel. It

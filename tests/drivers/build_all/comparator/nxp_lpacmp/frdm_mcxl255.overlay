@@ -5,7 +5,7 @@
  */
 
 &lpacmp {
-	status = "okay";
 	positive-input = "comp_in0";
 	negative-input = <7>;
+	status = "okay";
 };

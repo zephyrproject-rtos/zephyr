@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
 #include <zephyr/ztest.h>
 #include <zephyr/toolchain.h>
 #include <mmu.h>
+#include <kernel_arch_interface.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/cache.h>
 
@@ -459,6 +461,104 @@ ZTEST(mem_map_api, test_k_mem_map_unmap)
 			ztest_test_fail();
 		}
 	}
+}
+
+/* Map one page of virt to phys, asserting success */
+static void map_one_page(uint8_t *virt, uintptr_t phys)
+{
+	int ret;
+
+	ret = arch_mem_map(virt, phys, CONFIG_MMU_PAGE_SIZE, BASE_FLAGS | K_MEM_PERM_RW);
+	zassert_equal(ret, 0, "arch_mem_map(%p) failed: %d", virt, ret);
+}
+
+/**
+ * @brief Verify that k_mem_update_flags() keeps each page's physical frame.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A virtually contiguous region, for example one from k_mem_map(), is not
+ * necessarily physically contiguous. Updating its flags must leave every page
+ * mapped to the frame it was mapped to before. Skipped with demand paging, as
+ * the frames are swapped behind the paging code's back.
+ *
+ * Test steps:
+ * - Map two pages with k_mem_map() and, if their frames are physically
+ *   contiguous, swap them so the region is not.
+ * - Fill each page with a different pattern.
+ * - Call k_mem_update_flags() on the whole region.
+ * - Restore the original frame order and unmap the region.
+ *
+ * Expected result:
+ * - Each page still maps to the same frame and holds its pattern.
+ *
+ * @see k_mem_update_flags()
+ */
+ZTEST(mem_map_api, test_k_mem_update_flags_noncontig)
+{
+	const size_t size = CONFIG_MMU_PAGE_SIZE * 2;
+	uintptr_t phys[2], new_phys, orig_phys[2];
+	uint8_t *mapped;
+	size_t i, j;
+	int ret;
+
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING)) {
+		ztest_test_skip();
+	}
+
+	expect_fault = false;
+
+	mapped = k_mem_map(size, K_MEM_PERM_RW);
+	zassert_not_null(mapped, "failed to map memory");
+
+	for (i = 0; i < 2; i++) {
+		ret = arch_page_phys_get(mapped + (i * CONFIG_MMU_PAGE_SIZE), &orig_phys[i]);
+		zassert_equal(ret, 0, "no physical address for page %zu", i);
+		phys[i] = orig_phys[i];
+	}
+
+	if (phys[1] == (phys[0] + CONFIG_MMU_PAGE_SIZE)) {
+		phys[0] = orig_phys[1];
+		phys[1] = orig_phys[0];
+
+		ret = arch_mem_unmap(mapped, size);
+		zassert_equal(ret, 0, "arch_mem_unmap failed: %d", ret);
+		map_one_page(mapped, phys[0]);
+		map_one_page(mapped + CONFIG_MMU_PAGE_SIZE, phys[1]);
+	}
+
+	for (i = 0; i < 2; i++) {
+		(void)memset(mapped + (i * CONFIG_MMU_PAGE_SIZE), 0xA0 + i, CONFIG_MMU_PAGE_SIZE);
+	}
+
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		sys_cache_data_flush_range(mapped, size);
+	}
+
+	ret = k_mem_update_flags(mapped, size, BASE_FLAGS | K_MEM_PERM_RW);
+	zassert_equal(ret, 0, "k_mem_update_flags failed: %d", ret);
+
+	for (i = 0; i < 2; i++) {
+		ret = arch_page_phys_get(mapped + (i * CONFIG_MMU_PAGE_SIZE), &new_phys);
+		zassert_equal(ret, 0, "no physical address for page %zu", i);
+		zassert_equal(new_phys, phys[i],
+			      "page %zu remapped from 0x%" PRIxPTR " to 0x%" PRIxPTR,
+			      i, phys[i], new_phys);
+
+		for (j = 0; j < CONFIG_MMU_PAGE_SIZE; j++) {
+			zassert_equal(mapped[(i * CONFIG_MMU_PAGE_SIZE) + j], 0xA0 + i,
+				      "bad data in page %zu at %zu", i, j);
+		}
+	}
+
+	/* Restore the original frames so unmapping releases them correctly */
+	ret = arch_mem_unmap(mapped, size);
+	zassert_equal(ret, 0, "arch_mem_unmap failed: %d", ret);
+	map_one_page(mapped, orig_phys[0]);
+	map_one_page(mapped + CONFIG_MMU_PAGE_SIZE, orig_phys[1]);
+
+	k_mem_unmap(mapped, size);
 }
 
 /**

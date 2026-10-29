@@ -147,7 +147,7 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 	 */
 	status = HAL_HASH_Compute(&data->hhash, pkt->in_buf, pkt->in_len, pkt->out_buf,
 				  UINT32_MAX, &digest_size, HAL_MAX_DELAY);
-	UNUSED(digest_size);
+	(void)digest_size;
 #elif defined(HAL_HASH_VERSION) && HAL_HASH_VERSION == 200
 	HASH_ConfigTypeDef hash_cfg = {
 		.DataType = HASH_BYTE_SWAP,

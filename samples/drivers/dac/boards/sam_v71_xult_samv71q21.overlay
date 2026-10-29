@@ -7,9 +7,9 @@
 };
 
 &dacc {
-	status = "okay";
 	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pinctrl {

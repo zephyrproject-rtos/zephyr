@@ -9,8 +9,8 @@
 
 	w1_adafruit_ds2482: w1@18 {
 		compatible = "maxim,ds2484";
-		status = "okay";
 		reg = <0x18>;
+		status = "okay";
 	};
 };
 

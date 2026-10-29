@@ -12,8 +12,8 @@
 
 &gpt3 {
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&gpt3_pins>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

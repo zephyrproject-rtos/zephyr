@@ -11,6 +11,6 @@
 };
 
 &pinctrl {
-	status = "okay";
 	compatible = "nxp,imx8mp-pinctrl";
+	status = "okay";
 };

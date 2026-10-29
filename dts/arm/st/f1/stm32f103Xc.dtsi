@@ -10,37 +10,7 @@
 #include <st/f1/stm32f103Xb.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(48)>;
-	};
-
 	soc {
-		flash-controller@40022000 {
-			flash0: flash@8000000 {
-				reg = <0x08000000 DT_SIZE_K(256)>;
-				ranges = <0 0x8000000 DT_SIZE_K(256)>;
-				erase-block-size = <DT_SIZE_K(2)>;
-			};
-		};
-
-		uart4: serial@40004c00 {
-			compatible = "st,stm32-uart";
-			reg = <0x40004c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
-			resets = <&rctl STM32_RESET(APB1, 19)>;
-			interrupts = <52 0>;
-			status = "disabled";
-		};
-
-		uart5: serial@40005000 {
-			compatible = "st,stm32-uart";
-			reg = <0x40005000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
-			resets = <&rctl STM32_RESET(APB1, 20)>;
-			interrupts = <53 0>;
-			status = "disabled";
-		};
-
 		timers5: timers@40000c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000c00 0x400>;
@@ -54,8 +24,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -106,12 +76,30 @@
 
 		spi3: spi@40003c00 {
 			compatible = "st,stm32-spi";
+			reg = <0x40003c00 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <51 0>;
 			st,spi-data-width = "limited-8-16-bit";
+			status = "disabled";
+		};
+
+		uart4: serial@40004c00 {
+			compatible = "st,stm32-uart";
+			reg = <0x40004c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
+			resets = <&rctl STM32_RESET(APB1, 19)>;
+			interrupts = <52 0>;
+			status = "disabled";
+		};
+
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
+			resets = <&rctl STM32_RESET(APB1, 20)>;
+			interrupts = <53 0>;
 			status = "disabled";
 		};
 
@@ -119,8 +107,8 @@
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@40010800 {
@@ -128,17 +116,17 @@
 
 			gpiof: gpio@40011c00 {
 				compatible = "st,stm32-gpio";
+				reg = <0x40011c00 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40011c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(APB2, 7)>;
 			};
 
 			gpiog: gpio@40012000 {
 				compatible = "st,stm32-gpio";
+				reg = <0x40012000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40012000 0x400>;
 				clocks = <&rcc STM32_CLOCK(APB2, 8)>;
 			};
 		};
@@ -150,30 +138,6 @@
 				clock-names = "adcx";
 				/* Shares vector with ADC1 */
 				interrupts = <18 0>;
-				#io-channel-cells = <1>;
-				status = "disabled";
-			};
-		};
-
-		adc3_common: adc@40013c00 {
-			compatible = "st,stm32f1-adc", "st,stm32-adc";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			reg = <0x40013c00 0x400>;
-			ranges;
-			st,adc-resolutions = <12>;
-			sampling-times = <2 8 14 29 42 56 72 240>;
-			st,adc-sequencer = "programmable";
-			st,adc-oversampler = "none";
-			st,adc-internal-regulator = "none";
-			st,adc-has-injected-support;
-			status = "disabled";
-
-			adc3: adc@40013c00 {
-				reg = <0x40013c00 0x400>;
-				clocks = <&rcc STM32_CLOCK(APB2, 15)>;
-				clock-names = "adcx";
-				interrupts = <47 0>;
 				#io-channel-cells = <1>;
 				status = "disabled";
 			};
@@ -192,8 +156,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -202,13 +166,49 @@
 			};
 		};
 
+		adc3_common: adc@40013c00 {
+			compatible = "st,stm32f1-adc", "st,stm32-adc";
+			reg = <0x40013c00 0x400>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			sampling-times = <2 8 14 29 42 56 72 240>;
+			st,adc-resolutions = <12>;
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "none";
+			st,adc-internal-regulator = "none";
+			st,adc-has-injected-support;
+			status = "disabled";
+
+			adc3: adc@40013c00 {
+				reg = <0x40013c00 0x400>;
+				clocks = <&rcc STM32_CLOCK(APB2, 15)>;
+				clock-names = "adcx";
+				interrupts = <47 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
+		};
+
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
-			#dma-cells = <2>;
 			reg = <0x40020400 0x400>;
+			#dma-cells = <2>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>;
 			status = "disabled";
 		};
+
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(256)>;
+				ranges = <0 0x8000000 DT_SIZE_K(256)>;
+				erase-block-size = <DT_SIZE_K(2)>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(48)>;
 	};
 };

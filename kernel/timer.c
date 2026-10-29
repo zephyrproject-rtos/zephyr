@@ -16,6 +16,50 @@
 
 static struct k_spinlock timer_lock;
 
+/* The top bit of timer->status is set while an expiry is pending, from
+ * k_timer_start() until k_timer_stop() or the last expiry. It is only
+ * changed under timer_lock, unlike the timeout's queue linkage, which
+ * the announcer changes under timeout_lock. The other bits count
+ * expiries.
+ */
+#define TIMER_ARMED 0x80000000U
+
+static inline bool timer_armed(const struct k_timer *timer)
+{
+	return (timer->status & TIMER_ARMED) != 0U;
+}
+
+/* Arm the timer and reset its expiry count. */
+static inline void timer_arm(struct k_timer *timer)
+{
+	timer->status = TIMER_ARMED;
+}
+
+static inline void timer_disarm(struct k_timer *timer)
+{
+	timer->status &= ~TIMER_ARMED;
+}
+
+static inline uint32_t timer_count(const struct k_timer *timer)
+{
+	return timer->status & ~TIMER_ARMED;
+}
+
+/* Saturate within the count bits: a periodic timer nobody polls can reach
+ * 2^31 expiries, and carrying into the armed bit would disarm it.
+ */
+static inline void timer_count_inc(struct k_timer *timer)
+{
+	if (timer_count(timer) != ~TIMER_ARMED) {
+		timer->status += 1U;
+	}
+}
+
+static inline void timer_count_clear(struct k_timer *timer)
+{
+	timer->status &= TIMER_ARMED;
+}
+
 #ifdef CONFIG_OBJ_CORE_TIMER
 K_OBJ_TYPE_DEFINE(obj_type_timer, k_timer, K_OBJ_TYPE_TIMER_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_TIMER */
@@ -75,16 +119,13 @@ void z_timer_expiration_handler(struct _timeout *t)
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
-	/* A same-CPU IRQ may have raced with our dispatch between
-	 * sys_clock_announce() popping us off the queue and us taking
-	 * timer.c::lock. Two cases:
-	 *  - The timer was restarted (z_add_timeout re-queued the timeout):
-	 *    it is active again, and the new schedule fires later.
-	 *  - The timer was stopped (z_try_abort_timeout marked the
-	 *    in-flight slot superseded): bail without firing expiry_fn.
+	/* The timer may have been restarted or stopped between the
+	 * announcer popping the timeout and us taking timer_lock:
+	 *  - restarted: the timeout is queued again and fires later;
+	 *  - stopped: k_timer_stop() cleared the armed bit and has
+	 *    delivered the stop instead.
 	 */
-	if (!z_is_inactive_timeout(t) ||
-	    z_timeout_inflight_superseded(t)) {
+	if (!z_is_inactive_timeout(t) || !timer_armed(timer)) {
 		k_spin_unlock(&timer_lock, key);
 		return;
 	}
@@ -110,10 +151,12 @@ void z_timer_expiration_handler(struct _timeout *t)
 #endif /* CONFIG_TIMEOUT_64BIT */
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			      next);
+	} else {
+		timer_disarm(timer);
 	}
 
 	/* update timer's status */
-	timer->status += 1U;
+	timer_count_inc(timer);
 
 	z_timer_observer_on_expiry(timer);
 
@@ -196,6 +239,7 @@ retry:
 	 * whose handler does that is a caller bug; ordinary stop/start do
 	 * not wait and so cannot stall.
 	 */
+	timer_disarm(timer);
 	if (z_try_abort_timeout(&timer->timeout) == -EAGAIN) {
 		k_spin_unlock(&timer_lock, key);
 		goto retry;
@@ -259,18 +303,16 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	}
 
 	/* Hold the timer lock across abort + add to serialize against a
-	 * concurrent k_timer_start on the same timer. An in-flight handler
-	 * (z_try_abort_timeout() returning non-zero) is flagged superseded
-	 * and will bail; the re-arm below also re-links the node, which
-	 * makes a not-yet-committed handler bail too. Either way we do not
-	 * wait for it.
+	 * concurrent k_timer_start on the same timer. A handler in flight
+	 * and not yet past its check bails, as the re-arm below queues the
+	 * timeout again. We do not wait for it.
 	 */
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
 	(void)z_try_abort_timeout(&timer->timeout);
 
 	timer->period = period;
-	timer->status = 0U;
+	timer_arm(timer);
 
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler, duration);
 
@@ -296,15 +338,19 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
-	if (z_try_abort_timeout(&timer->timeout) != 0) {
-		/* Not removed from the queue: either the timer was not
-		 * active, or its handler is in flight. In the latter case
-		 * z_try_abort_timeout() has flagged it superseded so the
-		 * handler bails; we do not wait for it. Nothing to stop here.
+	if (!timer_armed(timer)) {
+		/* Not started, already stopped, or its last expiry was
+		 * delivered. Nothing to stop.
 		 */
 		k_spin_unlock(&timer_lock, key);
 		return;
 	}
+
+	/* The stop wins over any expiry not yet delivered: a handler in
+	 * flight bails once it sees the armed bit cleared.
+	 */
+	timer_disarm(timer);
+	(void)z_try_abort_timeout(&timer->timeout);
 
 	z_timer_observer_on_stop(timer);
 
@@ -347,9 +393,9 @@ static inline void z_vrfy_k_timer_stop(struct k_timer *timer)
 uint32_t z_impl_k_timer_status_get(struct k_timer *timer)
 {
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
-	uint32_t result = timer->status;
+	uint32_t result = timer_count(timer);
 
-	timer->status = 0U;
+	timer_count_clear(timer);
 	k_spin_unlock(&timer_lock, key);
 
 	return result;
@@ -375,30 +421,23 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 		do {
 			unsigned int key = irq_lock();
 
-			if (!z_is_inactive_timeout(&timer->timeout)) {
-				result = *(volatile uint32_t *)&timer->status;
-				timer->status = 0U;
-				if (result > 0) {
-					irq_unlock(key);
-					break;
-				} else {
-					k_cpu_atomic_idle(key);
-				}
-			} else {
-				result = timer->status;
+			result = timer_count(timer);
+			timer_count_clear(timer);
+			if (result > 0U || !timer_armed(timer)) {
 				irq_unlock(key);
 				break;
 			}
+			k_cpu_atomic_idle(key);
 		} while (true);
 
 		return result;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
-	uint32_t result = timer->status;
+	uint32_t result = timer_count(timer);
 
 	if (result == 0U) {
-		if (!z_is_inactive_timeout(&timer->timeout)) {
+		if (timer_armed(timer)) {
 			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_timer, status_sync, timer, K_FOREVER);
 
 			/* wait for timer to expire or stop */
@@ -406,7 +445,6 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 
 			/* get updated timer status */
 			key = k_spin_lock(&timer_lock);
-			result = timer->status;
 		} else {
 			/* timer is already stopped */
 		}
@@ -414,7 +452,8 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 		/* timer has already expired at least once */
 	}
 
-	timer->status = 0U;
+	result = timer_count(timer);
+	timer_count_clear(timer);
 	k_spin_unlock(&timer_lock, key);
 
 	/**

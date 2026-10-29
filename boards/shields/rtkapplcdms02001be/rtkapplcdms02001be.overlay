@@ -31,22 +31,24 @@
 	status = "okay";
 
 	ili9881c: panel-controller@0 {
-		status = "okay";
 		compatible = "ilitek,ili9881c";
 		reg = <0x0>;
 		height = <1280>;
 		width = <720>;
 		data-lanes = <4>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		status = "okay";
 	};
 };
 
 &zephyr_lcdif {
-	status = "okay";
 	width = <720>;
 	height = <1280>;
 	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	backlight-gpios = <&renesas_mipi_connector 21 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -62,6 +64,4 @@
 		hfront-porch = <133>;
 		vfront-porch = <22>;
 	};
-
-	backlight-gpios = <&renesas_mipi_connector 21 GPIO_ACTIVE_HIGH>;
 };

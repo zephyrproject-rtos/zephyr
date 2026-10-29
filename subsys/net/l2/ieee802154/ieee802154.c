@@ -657,6 +657,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 static int ieee802154_enable(struct net_if *iface, bool state)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	int ret;
 
 	NET_ASSERT(ctx != NULL);
 
@@ -672,10 +673,19 @@ static int ieee802154_enable(struct net_if *iface, bool state)
 	k_sem_give(&ctx->ctx_lock);
 
 	if (state) {
-		return ieee802154_radio_start(iface);
+		ret = ieee802154_radio_start(iface);
+	} else {
+		ret = ieee802154_radio_stop(iface);
 	}
 
-	return ieee802154_radio_stop(iface);
+	/* The radio may already be in the requested state: a scan starts it
+	 * whether or not the interface is up.
+	 */
+	if (ret == -EALREADY) {
+		ret = 0;
+	}
+
+	return ret;
 }
 
 static enum net_l2_flags ieee802154_flags(struct net_if *iface)

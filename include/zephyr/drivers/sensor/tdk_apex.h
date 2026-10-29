@@ -4,17 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Extended public API for TDK MEMS sensor
+ * @ingroup tdk_apex_interface
+ *
+ * Some capabilities and operational requirements for this sensor
+ * cannot be expressed within the sensor driver abstraction.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_TDK_APEX_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_TDK_APEX_H_
 
 #include <zephyr/drivers/sensor.h>
 
 /**
- * @file
- * @brief Extended public API for TDK MEMS sensor
- *
- * Some capabilities and operational requirements for this sensor
- * cannot be expressed within the sensor driver abstraction.
+ * @brief TDK InvenSense APEX motion features
+ * @defgroup tdk_apex_interface TDK APEX
+ * @ingroup sensor_interface_ext_tdk
+ * @{
  */
 
 /** @name TDK APEX features */
@@ -54,4 +62,7 @@ enum sensor_channel_tdk_apex {
 	/** APEX features */
 	SENSOR_CHAN_APEX_MOTION = SENSOR_CHAN_PRIV_START,
 };
+
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_TDK_APEX_H_ */

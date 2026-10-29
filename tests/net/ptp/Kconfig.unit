@@ -13,3 +13,9 @@ config PTP_LOG_LEVEL
 
 config PTP_DELAY_MECHANISM
 	default 1
+
+config PTP_SERVO_STEP_THRESHOLD_MS
+	default 1000
+
+config PTP_SERVO_OUTLIER_THRESHOLD_MS
+	default 100

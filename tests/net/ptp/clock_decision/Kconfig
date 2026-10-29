@@ -26,7 +26,16 @@ config PRECISION_TIMING_PI_KP
 config PRECISION_TIMING_PI_KI
 	default 300
 
+config PRECISION_TIMING_PI_INTEGRAL_LIMIT_PPM
+	default 0
+
+config PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM
+	default 0
+
 config PTP_PEER_DELAY_MAX_NS
 	default 10000000
+
+config PTP_SYNC_LOG_INTERVAL
+	default 0
 
 source "Kconfig.zephyr"

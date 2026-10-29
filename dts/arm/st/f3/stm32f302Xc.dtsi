@@ -7,18 +7,7 @@
 #include <st/f3/stm32f302.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(40)>;
-	};
-
 	soc {
-		flash-controller@40022000 {
-			flash0: flash@8000000 {
-				reg = <0x08000000 DT_SIZE_K(256)>;
-				ranges = <0 0x8000000 DT_SIZE_K(256)>;
-			};
-		};
-
 		timers2: timers@40000000 {
 			clocks = <&rcc STM32_CLOCK(APB1, 0)>,
 				 <&rcc STM32_SRC_TIMPCLK1 TIM2_SEL(0)>;
@@ -37,8 +26,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -66,8 +55,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -82,15 +71,6 @@
 			};
 		};
 
-		dma2: dma@40020400 {
-			compatible = "st,stm32-dma-v2bis";
-			#dma-cells = <2>;
-			reg = <0x40020400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
-			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>;
-			status = "disabled";
-		};
-
 		uart5: serial@40005000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
@@ -99,12 +79,28 @@
 			status = "disabled";
 		};
 
+		dma2: dma@40020400 {
+			compatible = "st,stm32-dma-v2bis";
+			reg = <0x40020400 0x400>;
+			#dma-cells = <2>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>;
+			status = "disabled";
+		};
+
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(256)>;
+				ranges = <0 0x8000000 DT_SIZE_K(256)>;
+			};
+		};
+
 		pinctrl: pin-controller@48000000 {
 			gpioe: gpio@48001000 {
 				compatible = "st,stm32-gpio";
+				reg = <0x48001000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x48001000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 21)>;
 			};
 		};
@@ -117,6 +113,10 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(40)>;
 	};
 };
 

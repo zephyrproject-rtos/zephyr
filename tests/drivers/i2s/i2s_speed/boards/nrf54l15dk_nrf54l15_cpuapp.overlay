@@ -24,7 +24,7 @@
 };
 
 &i2s20 {
-	status = "okay";
 	pinctrl-0 = <&i2s20_default_alt>;
 	pinctrl-names = "default";
+	status = "okay";
 };

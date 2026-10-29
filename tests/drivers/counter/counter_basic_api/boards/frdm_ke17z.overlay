@@ -5,11 +5,11 @@
  */
 
 &ftm0 {
-	status = "okay";
 	compatible = "nxp,ftm";
 	prescaler = <128>;
 	clocks = <&scg KINETIS_SCG_CORESYS_CLK>;
 	clock-source = "system";
+	status = "okay";
 };
 
 &lpit0_channel0 {

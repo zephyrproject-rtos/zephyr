@@ -12,12 +12,12 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <57600>;
+	status = "okay";
 
 	fingerprint0: fingerprint0 {
 		compatible = "zhiantec,zfm-x0";
-		status = "okay";
 		comm-addr = <0xffffffff>;
+		status = "okay";
 	};
 };

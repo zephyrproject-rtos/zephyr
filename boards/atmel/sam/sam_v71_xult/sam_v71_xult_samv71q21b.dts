@@ -11,6 +11,6 @@
 #include "sam_v71_xult-common.dtsi"
 
 / {
-	model = "Atmel SAM V71B Xplained Ultra board";
 	compatible = "atmel,sam_v71_xult", "atmel,samv71q21b", "atmel,samv71b";
+	model = "Atmel SAM V71B Xplained Ultra board";
 };

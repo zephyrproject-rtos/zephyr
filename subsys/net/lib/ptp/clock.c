@@ -39,19 +39,59 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 /*
  * Servo acquisition policy:
  * - offsets above the step threshold are corrected by setting the clock;
+ * - while unlocked, offsets above 100 ms are also corrected by setting the
+ *   clock, because the PI output for them typically exceeds the PHC driver's
+ *   rate range;
  * - three consecutive samples within 10 ms mark the frequency servo as locked;
- * - while locked, offsets above 100 ms are rejected, and two consecutive
- *   outliers reset the servo. The next sample starts acquisition again.
+ * - while locked, offsets above the outlier threshold are rejected, and two
+ *   consecutive outliers reset the servo. The servo is then unlocked again,
+ *   so the next sample is handled by the rules above.
+ *
+ * The 100 ms bound is an acquisition fast path, not the usable rate range of
+ * the PHC, which depends on the PI gains and the clock driver. It is fixed and
+ * does not follow the outlier threshold. Even below 100 ms, an unlocked servo
+ * steps if the PI output is unrepresentable or the driver rejects the rate
+ * with -EINVAL, -ERANGE or -ENOTSUP. Other errors reset the servo without
+ * stepping; locked rate failures also only reset.
+ * The PTP driver API does not specify range-error codes: -EINVAL is used by
+ * existing range-checking drivers, but a driver reporting range rejection as
+ * a generic error will retain the reset/reacquisition behavior.
  *
  * Lock is based on samples rather than elapsed time, so acquisition time follows
  * the configured Sync interval. These thresholds protect the PI controller from
  * bad timestamps; they are not clock-accuracy guarantees.
  */
-#define SYNC_SERVO_STEP_THRESHOLD_NS (1LL * NSEC_PER_SEC)
+#define SYNC_SERVO_STEP_THRESHOLD_NS ((int64_t)CONFIG_PTP_SERVO_STEP_THRESHOLD_MS * NSEC_PER_MSEC)
 #define SYNC_SERVO_LOCK_OFFSET_NS (10LL * NSEC_PER_MSEC)
-#define SYNC_SERVO_OUTLIER_NS (100LL * NSEC_PER_MSEC)
+#define SYNC_SERVO_OUTLIER_NS ((int64_t)CONFIG_PTP_SERVO_OUTLIER_THRESHOLD_MS * NSEC_PER_MSEC)
+#define SYNC_SERVO_UNLOCKED_STEP_NS (100LL * NSEC_PER_MSEC)
 #define SYNC_SERVO_LOCK_SAMPLES 3U
 #define SYNC_SERVO_OUTLIER_SAMPLES 2U
+
+/*
+ * With PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL, an elapsed time longer than this
+ * many advertised Sync intervals is not used to scale the gains: after so many
+ * missing samples the next one is handled like a first sample.
+ */
+#define SYNC_SERVO_MAX_INTERVALS 16
+
+/*
+ * Shortest elapsed time used to scale the gains, in seconds: 2^-10 s, the
+ * shortest Sync interval the port accepts (PTP_LOG_MSG_INTERVAL_MIN in port.c).
+ * The gains are divided by the elapsed time, so two samples a few microseconds
+ * apart would otherwise multiply them by 10^5 or more. It does not depend on the
+ * advertised interval, which unicast Sync messages do not give.
+ */
+#define SYNC_SERVO_MIN_INTERVAL_S (1.0 / 1024.0)
+
+/*
+ * Range of the advertised Sync interval used to scale the gains, in log2 seconds:
+ * the range the port accepts from multicast Sync messages (PTP_LOG_MSG_INTERVAL_MIN
+ * and PTP_LOG_MSG_INTERVAL_MAX in port.c). A management SET of the interval is not
+ * limited to it, and a value far outside would scale the gains by up to 2^63.
+ */
+#define SYNC_SERVO_MIN_LOG_INTERVAL (-10)
+#define SYNC_SERVO_MAX_LOG_INTERVAL 22
 
 /**
  * @brief PTP Clock structure.
@@ -86,6 +126,9 @@ struct ptp_clock {
 	uint8_t sync_servo_lock_samples;
 	uint8_t sync_servo_outlier_samples;
 	bool sync_servo_locked;
+	int8_t sync_log_interval;
+	/* Sync origin time of the last sample applied by the servo, 0 if none */
+	uint64_t sync_servo_last_t1;
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -146,6 +189,11 @@ static bool clock_selected_tt_matches(const struct ptp_foreign_tt_clock *best)
 
 static void clock_selected_tt_update(const struct ptp_foreign_tt_clock *best)
 {
+	if (!clock_selected_tt_matches(best)) {
+		/* Origin timestamps of another time transmitter are another time base */
+		ptp_clk.sync_servo_last_t1 = 0U;
+	}
+
 	ptp_clk.selected_tt.sender = best->dataset.sender;
 	ptp_clk.selected_tt.grandmaster = best->dataset.clk_id;
 	ptp_clk.selected_tt.valid = true;
@@ -353,6 +401,10 @@ const struct ptp_clock *ptp_clock_init(void)
 
 	precision_pi_init(&ptp_clk.pi, (double)CONFIG_PRECISION_TIMING_PI_KP / 1000.0,
 			  (double)CONFIG_PRECISION_TIMING_PI_KI / 1000.0);
+	precision_pi_set_limits(&ptp_clk.pi,
+				(double)CONFIG_PRECISION_TIMING_PI_INTEGRAL_LIMIT_PPM * 1000.0,
+				(double)CONFIG_PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM * 1000.0);
+	ptp_clk.sync_log_interval = CONFIG_PTP_SYNC_LOG_INTERVAL;
 
 	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (ret < 0) {
@@ -597,6 +649,7 @@ static void clock_servo_reset(void)
 	int ret;
 
 	precision_pi_reset(&ptp_clk.pi);
+	ptp_clk.sync_servo_last_t1 = 0U;
 	ptp_clk.sync_servo_lock_samples = 0;
 	ptp_clk.sync_servo_outlier_samples = 0;
 	ptp_clk.sync_servo_locked = false;
@@ -622,6 +675,54 @@ static void clock_servo_update_lock(int64_t offset)
 	    ptp_clk.sync_servo_lock_samples >= SYNC_SERVO_LOCK_SAMPLES) {
 		ptp_clk.sync_servo_locked = true;
 	}
+}
+
+void ptp_clock_sync_interval_set(int8_t log_sync_interval)
+{
+	ptp_clk.sync_log_interval = log_sync_interval;
+}
+
+/* Advertised Sync interval in seconds, limited to the range the port accepts */
+static double clock_servo_advertised_interval_s(void)
+{
+	int8_t log_interval = CLAMP(ptp_clk.sync_log_interval, SYNC_SERVO_MIN_LOG_INTERVAL,
+				    SYNC_SERVO_MAX_LOG_INTERVAL);
+
+	if (log_interval < 0) {
+		return 1.0 / (double)BIT(-log_interval);
+	}
+
+	return (double)BIT(log_interval);
+}
+
+/*
+ * Time since the last sample applied by the servo, in seconds, for scaling the
+ * PI gains. It is measured on the Sync origin timestamps, the time of the time
+ * transmitter, so lost Syncs and rejected samples count. The advertised Sync
+ * interval is used when there is no previous sample (first one, after a servo
+ * reset or a time transmitter change) or the elapsed time is too long to be
+ * plausible. A shorter elapsed time than SYNC_SERVO_MIN_INTERVAL_S is raised to it.
+ */
+static double clock_servo_interval_s(void)
+{
+	double advertised_s = clock_servo_advertised_interval_s();
+	uint64_t t1 = ptp_clk.timestamp.t1;
+	double elapsed_s;
+
+	if ((ptp_clk.sync_servo_last_t1 == 0U) || (t1 <= ptp_clk.sync_servo_last_t1)) {
+		return advertised_s;
+	}
+
+	elapsed_s = (double)(t1 - ptp_clk.sync_servo_last_t1) / (double)NSEC_PER_SEC;
+	if (elapsed_s > (SYNC_SERVO_MAX_INTERVALS * advertised_s)) {
+		return advertised_s;
+	}
+
+	if (elapsed_s < SYNC_SERVO_MIN_INTERVAL_S) {
+		return SYNC_SERVO_MIN_INTERVAL_S;
+	}
+
+	return elapsed_s;
 }
 
 static uint64_t clock_abs_delta_u64(uint64_t a, uint64_t b)
@@ -670,17 +771,18 @@ static __noinline void clock_log_ingress_fallback(uint64_t ingress,
 			  (uint32_t)(current_time % NSEC_PER_SEC), ingress_phc_delta);
 }
 
-static __noinline void clock_step(const struct precision_clock *precision_clk,
-				  precision_time_t sampled_time, int64_t offset, int64_t delay,
-				  uint64_t phc_now_ns)
+static __noinline int clock_step(const struct precision_clock *precision_clk,
+				 precision_time_t sampled_time, int64_t offset, int64_t delay,
+				 uint64_t phc_now_ns)
 {
 	precision_time_t current_time;
 	precision_time_t target_time;
 	int ret;
 
-	LOG_WRN_RATELIMIT("Clock offset exceeds 1 second (t1=%" PRIu64 ".%09u t2=%" PRIu64
-			  ".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64
+	LOG_WRN_RATELIMIT("Clock offset exceeds servo range (step threshold %d ms, t1=%" PRIu64
+			  ".%09u t2=%" PRIu64 ".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64
 			  ".%09u |t2-phc|=%" PRIu64 "ns)",
+			  CONFIG_PTP_SERVO_STEP_THRESHOLD_MS,
 			  ptp_clk.timestamp.t1 / NSEC_PER_SEC,
 			  (uint32_t)(ptp_clk.timestamp.t1 % NSEC_PER_SEC),
 			  ptp_clk.timestamp.t2 / NSEC_PER_SEC,
@@ -692,19 +794,19 @@ static __noinline void clock_step(const struct precision_clock *precision_clk,
 	ret = precision_clock_read(precision_clk, &current_time);
 	if (ret < 0) {
 		LOG_WRN_RATELIMIT("Failed to read PHC time for clock step (err %d)", ret);
-		return;
+		return ret;
 	}
 
 	ret = precision_time_sub(current_time, offset, &target_time);
 	if (ret < 0) {
 		LOG_WRN_RATELIMIT("Failed to calculate PHC time for clock step (err %d)", ret);
-		return;
+		return ret;
 	}
 
 	ret = precision_clock_set(precision_clk, target_time);
 	if (ret < 0) {
 		LOG_WRN_RATELIMIT("Failed to set PHC time (err %d)", ret);
-		return;
+		return ret;
 	}
 
 	/* A hard step invalidates the timestamps used by the E2E delay path and
@@ -716,10 +818,19 @@ static __noinline void clock_step(const struct precision_clock *precision_clk,
 
 	LOG_WRN("Set clock time: %" PRIu64 ".%09u", (uint64_t)(target_time / NSEC_PER_SEC),
 		(uint32_t)(target_time % NSEC_PER_SEC));
+
+	return 0;
 }
 
-static __noinline void clock_adjust_rate(const struct precision_clock *precision_clk,
-					 int64_t offset)
+/* Apply a PI frequency correction for offset.
+ *
+ * Returns 0 if a rate adjustment was applied, or if the offset was handled by
+ * the locked-outlier policy. Returns a negative errno if the requested rate
+ * could not be applied. The PI integral has already been updated on failure;
+ * the caller must step or reset the servo before using another sample.
+ */
+static __noinline int clock_adjust_rate(const struct precision_clock *precision_clk,
+					int64_t offset)
 {
 	double ppb;
 	int64_t scaled_ppm;
@@ -736,30 +847,33 @@ static __noinline void clock_adjust_rate(const struct precision_clock *precision
 		if (ptp_clk.sync_servo_outlier_samples >= SYNC_SERVO_OUTLIER_SAMPLES) {
 			clock_servo_reset();
 		}
-		return;
+		return 0;
 	}
 
 	ptp_clk.sync_servo_outlier_samples = 0;
 
-	ppb = precision_pi_update(&ptp_clk.pi, -offset);
+	if (IS_ENABLED(CONFIG_PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL)) {
+		ppb = precision_pi_update_interval(&ptp_clk.pi, -offset, clock_servo_interval_s());
+	} else {
+		ppb = precision_pi_update(&ptp_clk.pi, -offset);
+	}
 	ret = precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm);
 	if (ret < 0) {
-		LOG_WRN_RATELIMIT("PTP PI output is out of range (ppb=%f), resetting servo",
-				  ppb);
-		clock_servo_reset();
-		return;
+		LOG_WRN_RATELIMIT("PTP PI output is out of range (ppb=%f)", ppb);
+		return ret;
 	}
 
 	ret = precision_clock_adjust_rate(precision_clk, scaled_ppm);
 	if (ret < 0) {
-		LOG_WRN_RATELIMIT("Failed to adjust PHC rate for offset %lldns (ppb=%f err %d), "
-				  "resetting servo",
+		LOG_WRN_RATELIMIT("Failed to adjust PHC rate for offset %lldns (ppb=%f err %d)",
 				  offset, ppb, ret);
-		clock_servo_reset();
-		return;
+		return ret;
 	}
 
+	ptp_clk.sync_servo_last_t1 = ptp_clk.timestamp.t1;
 	clock_servo_update_lock(offset);
+
+	return 0;
 }
 
 static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
@@ -800,14 +914,31 @@ static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 
 	offset = (int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1) - delay;
 
-	/* If diff is too big, ptp_clk needs to be set first. */
-	if (offset > SYNC_SERVO_STEP_THRESHOLD_NS ||
-	    offset < -SYNC_SERVO_STEP_THRESHOLD_NS) {
+	/* If diff is too big for the frequency servo, ptp_clk needs to be set first. */
+	if (offset > SYNC_SERVO_STEP_THRESHOLD_NS || offset < -SYNC_SERVO_STEP_THRESHOLD_NS ||
+	    (!ptp_clk.sync_servo_locked &&
+	     (offset > SYNC_SERVO_UNLOCKED_STEP_NS || offset < -SYNC_SERVO_UNLOCKED_STEP_NS))) {
 		clock_step(precision_clk, current_time, offset, delay, phc_now_ns);
 		return;
 	}
 
-	clock_adjust_rate(precision_clk, offset);
+	ret = clock_adjust_rate(precision_clk, offset);
+	if (ret >= 0) {
+		return;
+	}
+
+	if (ptp_clk.sync_servo_locked || (ret != -EINVAL && ret != -ERANGE && ret != -ENOTSUP)) {
+		clock_servo_reset();
+		return;
+	}
+
+	/* Only range/unsupported errors justify a step during acquisition.
+	 * Hardware failures may affect rate adjustment without affecting set().
+	 */
+	ret = clock_step(precision_clk, current_time, offset, delay, phc_now_ns);
+	if (ret < 0) {
+		clock_servo_reset();
+	}
 }
 
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid)

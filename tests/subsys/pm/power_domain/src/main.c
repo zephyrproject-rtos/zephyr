@@ -417,6 +417,49 @@ ZTEST(power_domain_1cpu, test_power_domain_get_while_async_suspend)
 	zassert_equal(ret, 0);
 }
 
+#define TEST_DOMAIN_RESUME_FAIL DT_NODELABEL(test_domain_resume_fail)
+#define TEST_DEV_RESUME_FAIL    DT_NODELABEL(test_dev_resume_fail)
+
+static int resume_fail_pm_action(const struct device *dev, enum pm_device_action pm_action)
+{
+	ARG_UNUSED(dev);
+
+	return (pm_action == PM_DEVICE_ACTION_RESUME) ? -EIO : 0;
+}
+
+PM_DEVICE_DT_DEFINE(TEST_DOMAIN_RESUME_FAIL, domain_pm_action,
+		    COND_CODE_1(CONFIG_TEST_PM_DEVICE_ISR_SAFE, (PM_DEVICE_ISR_SAFE), (0)));
+DEVICE_DT_DEFINE(TEST_DOMAIN_RESUME_FAIL, NULL, PM_DEVICE_DT_GET(TEST_DOMAIN_RESUME_FAIL), NULL,
+		 NULL, POST_KERNEL, 10, NULL);
+
+PM_DEVICE_DT_DEFINE(TEST_DEV_RESUME_FAIL, resume_fail_pm_action,
+		    COND_CODE_1(CONFIG_TEST_PM_DEVICE_ISR_SAFE, (PM_DEVICE_ISR_SAFE), (0)));
+DEVICE_DT_DEFINE(TEST_DEV_RESUME_FAIL, NULL, PM_DEVICE_DT_GET(TEST_DEV_RESUME_FAIL), NULL, NULL,
+		 POST_KERNEL, 20, NULL);
+
+/**
+ * @brief Test the power domain is released when a device fails to resume
+ */
+ZTEST(power_domain_1cpu, test_power_domain_resume_failure)
+{
+	const struct device *resume_fail_domain = DEVICE_DT_GET(TEST_DOMAIN_RESUME_FAIL);
+	const struct device *dev = DEVICE_DT_GET(TEST_DEV_RESUME_FAIL);
+	enum pm_device_state state;
+
+	pm_device_init_suspended(resume_fail_domain);
+	pm_device_init_suspended(dev);
+	zassert_ok(pm_device_runtime_enable(resume_fail_domain));
+	zassert_ok(pm_device_runtime_enable(dev));
+
+	zassert_equal(pm_device_runtime_get(dev), -EIO);
+
+	/* The domain claimed for the failed resume should be released */
+	zassert_false(atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED));
+	zassert_equal(pm_device_runtime_usage(resume_fail_domain), 0);
+	pm_device_state_get(resume_fail_domain, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+}
+
 ZTEST(power_domain_1cpu, test_on_power_domain)
 {
 	zassert_true(device_is_ready(domain), "Device is not ready!");

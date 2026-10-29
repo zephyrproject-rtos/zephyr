@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Tocoding Neonkey 96boards";
 	compatible = "tocoding,neonkey";
+	model = "Tocoding Neonkey 96boards";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -99,8 +99,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
@@ -108,8 +108,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c3 {
@@ -117,8 +117,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 
 	lp3943@60 {
 		compatible = "ti,lp3943";

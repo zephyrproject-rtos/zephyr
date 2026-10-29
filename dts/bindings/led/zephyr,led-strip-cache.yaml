@@ -1,0 +1,44 @@
+# Copyright (c) 2026 Simon Guinot <simon.guinot@sequanux.org>
+# SPDX-License-Identifier: Apache-2.0
+
+title: LED strip cache.
+
+description: |
+  A virtual LED device composed of one or more LED strip devices.
+
+  The LED strip devices are concatenated in the order specified by `led-strips`.
+
+compatible: "zephyr,led-strip-cache"
+
+properties:
+  led-strips:
+    required: true
+    type: phandles
+    min-len: 1
+    description: |
+      References to LED strip nodes.
+
+examples:
+  - |
+    / {
+            led_strip_0: led-strip-0 {
+                    compatible = "vnd,led-strip-0";
+                    chain-length = <8>;
+                    color-mapping = <LED_COLOR_ID_RED
+                                     LED_COLOR_ID_GREEN
+                                     LED_COLOR_ID_BLUE>;
+            };
+
+            led_strip_1: led-strip-1 {
+                    compatible = "vnd,led-strip-1";
+                    chain-length = <10>;
+                    color-mapping = <LED_COLOR_ID_BLUE
+                                     LED_COLOR_ID_GREEN
+                                     LED_COLOR_ID_RED>;
+            };
+
+            leds {
+                    compatible = "zephyr,led-strip-cache";
+                    led-strips = <&led_strip_0>, <&led_strip_1>;
+            };
+    };

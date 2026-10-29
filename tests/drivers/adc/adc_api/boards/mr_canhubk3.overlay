@@ -14,9 +14,9 @@
 
 &adc0 {
 	group-channel = "standard";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@16 {
 		reg = <22>;

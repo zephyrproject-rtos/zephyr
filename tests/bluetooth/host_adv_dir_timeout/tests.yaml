@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+
+tests:
+  bluetooth.host_adv_dir_timeout:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  bluetooth.host_adv_dir_timeout.conn_complete_only:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay;conn_complete_only.overlay"
+  bluetooth.host_adv_dir_timeout.conn_complete_only.multiple_sets:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay;conn_complete_only.overlay"
+    extra_configs:
+      - CONFIG_BT_EXT_ADV_MAX_ADV_SET=2
+      - CONFIG_BT_MAX_CONN=2

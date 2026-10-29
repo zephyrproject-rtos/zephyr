@@ -8,8 +8,8 @@
 #include "stm32l562e_dk-common.dtsi"
 
 / {
-	model = "STMicroelectronics STM32L562E-DK Discovery board";
 	compatible = "st,stm32l562e-dk";
+	model = "STMicroelectronics STM32L562E-DK Discovery board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -23,20 +23,20 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		storage_partition: partition@c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0000c000 DT_SIZE_K(464)>;
+			label = "storage";
 		};
 	};
 };
@@ -47,20 +47,20 @@
 
 &ext_flash {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		slot0_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00000000 DT_SIZE_M(32)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@2000000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x02000000 DT_SIZE_M(32)>;
+			label = "image-1";
 		};
 	};
 };

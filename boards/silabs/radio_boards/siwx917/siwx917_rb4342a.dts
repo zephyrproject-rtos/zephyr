@@ -10,8 +10,8 @@
 #include "common.dtsi"
 
 / {
-	model = "Silicon Labs BRD4342A (SiWG917 Radio Board)";
 	compatible = "silabs,x917_rb4342a", "silabs,siwg917";
+	model = "Silicon Labs BRD4342A (SiWG917 Radio Board)";
 };
 
 &pinctrl0 {

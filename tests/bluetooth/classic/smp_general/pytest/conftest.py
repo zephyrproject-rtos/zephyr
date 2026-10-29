@@ -33,7 +33,7 @@ def fixture_initialize(request, shell: Shell, dut: DeviceAdapter):
 
     shell.exec_command("bt init")
     dut.readlines_until(regex="Settings Loaded")
-    regex = r'(?P<bd_addr>([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) *\((.*?)\))'
+    regex = r'[PR]:(?P<bd_addr>([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2})'
     bd_addr = None
     lines = shell.exec_command("bt id-show")
     for line in lines:

@@ -9,6 +9,22 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 
+		uart0: uart@ff000000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0x0 0xff000000 0x0 DT_SIZE_K(64)>;
+			interrupt-names = "irq_0";
+			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart1: uart@ff010000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0x0 0xff010000 0x0 DT_SIZE_K(64)>;
+			interrupt-names = "irq_1";
+			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
 		/*
 		 * OCM (On-Chip Memory) is used by TF-A (Trusted Firmware-A) by default.
 		 * Enable this node only if TF-A is not using this memory region or if
@@ -17,24 +33,40 @@
 		ocm: memory@fffc0000 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0 0xfffc0000 0x0 DT_SIZE_K(256)>;
-			status = "disabled";
 			zephyr,memory-region = "OCM";
+			status = "disabled";
 		};
 
-		uart0: uart@ff000000 {
-			compatible = "arm,sbsa-uart";
-			reg = <0x0 0xff000000 0x0 DT_SIZE_K(64)>;
+		ttc0: timer@ff0e0000 {
+			compatible = "xlnx,ttc";
+			reg = <0x0 0xff0e0000 0x0 0x1000>;
+			timer-width = <32>;
+			clock-frequency = <149999863>;
 			status = "disabled";
-			interrupt-names = "irq_0";
-			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		};
 
-		uart1: uart@ff010000 {
-			compatible = "arm,sbsa-uart";
-			reg = <0x0 0xff010000 0x0 DT_SIZE_K(64)>;
-			status = "disabled";
-			interrupt-names = "irq_1";
-			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ttc0_timer0: counter@0 {
+				compatible = "xlnx,ttc-counter";
+				reg = <0>;
+				interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			ttc0_timer1: counter@1 {
+				compatible = "xlnx,ttc-counter";
+				reg = <1>;
+				interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			ttc0_timer2: counter@2 {
+				compatible = "xlnx,ttc-counter";
+				reg = <2>;
+				interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
 		};
 	};
 };

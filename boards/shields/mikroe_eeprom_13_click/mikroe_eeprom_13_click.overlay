@@ -16,8 +16,8 @@
 };
 
 &mikrobus_i2c {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	i2c_mikroe_eeprom_13_click: eeprom@50 {
 		compatible = "st,m24m01", "st,m24xxx", "atmel,at24";
@@ -26,7 +26,6 @@
 		pagesize = <256>;
 		address-width = <16>;
 		timeout = <5>;
-		status = "okay";
 
 		/*
 		 * All write operations are disabled when the /WC signal is
@@ -34,5 +33,6 @@
 		 * not low active.
 		 */
 		wp-gpios = <&mikrobus_header 1 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };

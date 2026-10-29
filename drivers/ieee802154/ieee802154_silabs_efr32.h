@@ -217,6 +217,12 @@ struct sl_802154_data {
 	uint32_t csl_sample_time_us;
 	uint32_t csl_period;
 
+	/* Most recently completed RX metrics, used by the Link Metrics utility
+	 * when constructing the next Enhanced ACK.
+	 */
+	int8_t last_rssi;
+	uint8_t last_lqi;
+
 	/* Current channel (11-26 for 2.4 GHz O-QPSK). Set by set_channel(). */
 	uint16_t current_channel;
 

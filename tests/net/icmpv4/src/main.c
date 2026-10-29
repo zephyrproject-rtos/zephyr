@@ -108,13 +108,55 @@ static const unsigned char icmpv4_echo_req_opt_bad[] = {
 	0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
 	0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x00 };
 
+/* Destination Unreachable with a non-zero TOS, an ICMP error message */
+static const unsigned char icmpv4_dst_unreach[] = {
+	/* IPv4 Header, TOS 0x20 */
+	0x45, 0x20, 0x00, 0x38, 0x12, 0x34, 0x00, 0x00,
+	0x40, 0x01, 0x00, 0x00, 0xc0, 0x00, 0x02, 0x02,
+	0xc0, 0x00, 0x02, 0x01,
+	/* ICMP Header (Destination Unreachable, Port Unreachable) */
+	0x03, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	/* Quoted IPv4 Header and UDP Header */
+	0x45, 0x00, 0x00, 0x24, 0x56, 0x78, 0x00, 0x00,
+	0x40, 0x11, 0x00, 0x00, 0xc0, 0x00, 0x02, 0x01,
+	0xc0, 0x00, 0x02, 0x02,
+	0x13, 0x88, 0x13, 0x89, 0x00, 0x10, 0x00, 0x00 };
+
+/* Same as above, with IPv4 header options */
+static const unsigned char icmpv4_dst_unreach_opt[] = {
+	/* IPv4 Header, TOS 0x20 */
+	0x46, 0x20, 0x00, 0x3c, 0x12, 0x35, 0x00, 0x00,
+	0x40, 0x01, 0x00, 0x00, 0xc0, 0x00, 0x02, 0x02,
+	0xc0, 0x00, 0x02, 0x01,
+	/* IPv4 Header Options (NOP) */
+	0x01, 0x01, 0x01, 0x01,
+	/* ICMP Header (Destination Unreachable, Port Unreachable) */
+	0x03, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	/* Quoted IPv4 Header and UDP Header */
+	0x45, 0x00, 0x00, 0x24, 0x56, 0x79, 0x00, 0x00,
+	0x40, 0x11, 0x00, 0x00, 0xc0, 0x00, 0x02, 0x01,
+	0xc0, 0x00, 0x02, 0x02,
+	0x13, 0x88, 0x13, 0x89, 0x00, 0x10, 0x00, 0x00 };
+
+/* ICMP datagram that ends after the IPv4 header options */
+static const unsigned char icmpv4_no_icmp_hdr[] = {
+	/* IPv4 Header, TOS 0x20 */
+	0x46, 0x20, 0x00, 0x18, 0x12, 0x36, 0x00, 0x00,
+	0x40, 0x01, 0x00, 0x00, 0xc0, 0x00, 0x02, 0x02,
+	0xc0, 0x00, 0x02, 0x01,
+	/* IPv4 Header Options (NOP) */
+	0x01, 0x01, 0x01, 0x01 };
+
 #define TEST_ICMPV4_UNKNOWN  0
 #define TEST_ICMPV4_ECHO_REQ  1
 #define TEST_ICMPV4_ECHO_REQ_OPTS 2
+#define TEST_ICMPV4_ERROR 3
 
 static uint8_t current = TEST_ICMPV4_UNKNOWN;
 static struct net_in_addr my_addr  = { { { 192, 0, 2, 1 } } };
 static struct net_if *net_iface;
+static K_SEM_DEFINE(error_sent, 0, 1);
+static uint8_t error_type;
 
 static enum net_verdict handle_reply_msg(struct net_icmp_ctx *ctx,
 					 struct net_pkt *pkt,
@@ -292,6 +334,18 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		return verify_echo_reply(pkt);
 	} else if (current == TEST_ICMPV4_ECHO_REQ_OPTS) {
 		return verify_echo_reply_with_opts(pkt);
+	} else if (current == TEST_ICMPV4_ERROR) {
+		net_pkt_set_overwrite(pkt, true);
+		net_pkt_cursor_init(pkt);
+
+		if (net_pkt_skip(pkt, NET_IPV4H_LEN) != 0 ||
+		    net_pkt_read_u8(pkt, &error_type) != 0) {
+			return -EINVAL;
+		}
+
+		k_sem_give(&error_sent);
+
+		return 0;
 	}
 
 	return -EINVAL;
@@ -517,6 +571,77 @@ ZTEST(net_icmpv4, test_icmpv4_send_echo)
 {
 	icmpv4_send_echo_req();
 	icmpv4_send_echo_rep();
+}
+
+static int send_error_for(const unsigned char *data, size_t len)
+{
+	struct net_pkt *pkt;
+	int ret;
+
+	current = TEST_ICMPV4_ERROR;
+	k_sem_reset(&error_sent);
+
+	pkt = net_pkt_alloc_with_buffer(net_iface, len, NET_AF_INET,
+					NET_IPPROTO_ICMP, K_FOREVER);
+	zassert_not_null(pkt, "Packet alloc failed");
+
+	zassert_equal(net_pkt_write(pkt, data, len), 0, "Packet write failed");
+
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_cursor_init(pkt);
+
+	ret = net_icmpv4_send_error(pkt, NET_ICMPV4_DST_UNREACH,
+				    NET_ICMPV4_DST_UNREACH_NO_PROTO);
+
+	net_pkt_unref(pkt);
+
+	return ret;
+}
+
+ZTEST(net_icmpv4, test_no_error_for_icmp_error)
+{
+	int ret;
+
+	ret = send_error_for(icmpv4_dst_unreach, sizeof(icmpv4_dst_unreach));
+	zexpect_equal(ret, -EINVAL, "Error accepted for ICMP error (%d)", ret);
+	zexpect_not_equal(k_sem_take(&error_sent, K_MSEC(100)), 0,
+			  "Error sent for ICMP error");
+
+	ret = send_error_for(icmpv4_dst_unreach_opt,
+			     sizeof(icmpv4_dst_unreach_opt));
+	zexpect_equal(ret, -EINVAL, "Error accepted for ICMP error (%d)", ret);
+	zexpect_not_equal(k_sem_take(&error_sent, K_MSEC(100)), 0,
+			  "Error sent for ICMP error with options");
+}
+
+ZTEST(net_icmpv4, test_error_for_icmp_query)
+{
+	int ret;
+
+	ret = send_error_for(icmpv4_echo_req, sizeof(icmpv4_echo_req));
+	zexpect_equal(ret, 0, "Error not sent for Echo Request (%d)", ret);
+	zexpect_equal(k_sem_take(&error_sent, K_MSEC(100)), 0,
+		      "Error not sent for Echo Request");
+	zexpect_equal(error_type, NET_ICMPV4_DST_UNREACH, "Wrong error type %u",
+		      error_type);
+
+	ret = send_error_for(icmpv4_echo_req_opt, sizeof(icmpv4_echo_req_opt));
+	zexpect_equal(ret, 0, "Error not sent for Echo Request (%d)", ret);
+	zexpect_equal(k_sem_take(&error_sent, K_MSEC(100)), 0,
+		      "Error not sent for Echo Request with options");
+	zexpect_equal(error_type, NET_ICMPV4_DST_UNREACH, "Wrong error type %u",
+		      error_type);
+}
+
+ZTEST(net_icmpv4, test_no_error_without_icmp_hdr)
+{
+	int ret;
+
+	ret = send_error_for(icmpv4_no_icmp_hdr, sizeof(icmpv4_no_icmp_hdr));
+	zexpect_equal(ret, -EINVAL, "Error accepted without ICMP header (%d)",
+		      ret);
+	zexpect_not_equal(k_sem_take(&error_sent, K_MSEC(100)), 0,
+			  "Error sent without ICMP header");
 }
 
 ZTEST_SUITE(net_icmpv4, NULL, icmpv4_setup, NULL, NULL, icmpv4_teardown);

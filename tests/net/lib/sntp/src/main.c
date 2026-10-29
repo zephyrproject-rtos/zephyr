@@ -299,6 +299,83 @@ ZTEST(sntp_response, test_plausible_delay_and_uncertainty_are_reported)
 		     ts.uncertainty_us);
 }
 
+/* sntp_simple_addr() waits 100 ms for the response to its first request
+ * and 200 ms for the second, so a first response sent after 150 ms is
+ * read while the client waits for the response to its second request.
+ */
+#define STALE_RESPONSE_DELAY_MS 150
+
+#define LATE_SERVER_STACK_SIZE 2048
+#define LATE_SERVER_PRIORITY   K_PRIO_PREEMPT(8)
+
+static struct k_thread late_server_thread_data;
+static K_THREAD_STACK_DEFINE(late_server_stack, LATE_SERVER_STACK_SIZE);
+
+/* Answer the first request late, never answer the second and answer the
+ * third at once. Returns when a request does not arrive within the server
+ * socket's receive timeout.
+ */
+static void late_server_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (int i = 0; i < 3; i++) {
+		struct sntp_pkt response = response_template();
+		struct net_sockaddr_in client;
+		net_socklen_t client_len = sizeof(client);
+		struct sntp_pkt request;
+		int ret;
+
+		ret = zsock_recvfrom(server_fd, &request, sizeof(request), 0,
+				     (struct net_sockaddr *)&client, &client_len);
+		if (ret != (int)sizeof(request)) {
+			return;
+		}
+
+		if (i == 1) {
+			continue;
+		}
+
+		if (i == 0) {
+			k_msleep(STALE_RESPONSE_DELAY_MS);
+		}
+
+		response.orig_tm_s = request.tx_tm_s;
+		response.orig_tm_f = request.tx_tm_f;
+
+		(void)zsock_sendto(server_fd, &response, sizeof(response), 0,
+				   (struct net_sockaddr *)&client, client_len);
+	}
+}
+
+/* A response to an earlier request, read while waiting for the response
+ * to the current one, must not end sntp_simple_addr() before its timeout
+ * when the current response is lost as well.
+ */
+ZTEST(sntp_response, test_simple_retries_after_stale_response)
+{
+	struct net_sockaddr_in server = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(SNTP_PORT),
+		.sin_addr = {{{127, 0, 0, 1}}},
+	};
+	struct sntp_time ts;
+	int ret;
+
+	k_thread_create(&late_server_thread_data, late_server_stack,
+			K_THREAD_STACK_SIZEOF(late_server_stack), late_server_thread, NULL, NULL,
+			NULL, LATE_SERVER_PRIORITY, 0, K_NO_WAIT);
+
+	ret = sntp_simple_addr((struct net_sockaddr *)&server, sizeof(server), 2000, &ts);
+
+	zassert_ok(k_thread_join(&late_server_thread_data, K_SECONDS(2)),
+		   "the server thread did not stop");
+
+	zassert_ok(ret, "sntp_simple_addr() gave up before its timeout: %d", ret);
+}
+
 static void *setup(void)
 {
 	struct net_sockaddr_in addr = {

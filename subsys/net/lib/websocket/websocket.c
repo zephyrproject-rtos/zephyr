@@ -1139,6 +1139,12 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 
 			if (ret < 0) {
 				if ((ret == -EAGAIN) && (payload.count > 0)) {
+					if (remaining != NULL) {
+						*remaining = ctx->parser_remaining;
+					}
+					if (message_type != NULL) {
+						*message_type = ctx->message_type;
+					}
 					/* go to unmasking */
 					break;
 				}

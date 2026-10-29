@@ -14,9 +14,9 @@
 
 	partitions {
 		coredump_partition: partition@31000 {
-			label = "coredump-partition";
 
 			reg = <0x31000 DT_SIZE_K(8)>;
+			label = "coredump-partition";
 		};
 	};
 };

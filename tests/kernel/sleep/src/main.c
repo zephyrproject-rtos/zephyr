@@ -172,6 +172,33 @@ static void helper_thread(void *p1, void *p2, void *p3)
 	irq_offload(irq_offload_isr, (const void *)test_thread_id);
 }
 
+#ifdef CONFIG_TIMEOUT_64BIT
+static void abs_wakeup_fn(struct k_timer *timer)
+{
+	k_wakeup((k_tid_t)k_timer_user_data_get(timer));
+}
+
+K_TIMER_DEFINE(abs_wakeup_timer, abs_wakeup_fn, NULL);
+
+static void sleep_abs_timeout_return(void)
+{
+	int32_t rem;
+	const uint64_t deadline = sys_clock_tick_get() + k_ms_to_ticks_ceil64(1000);
+
+	/* woken early: the remainder to the absolute deadline is reported */
+	k_timer_user_data_set(&abs_wakeup_timer, k_current_get());
+	k_timer_start(&abs_wakeup_timer, K_MSEC(100), K_NO_WAIT);
+	rem = k_sleep(K_TIMEOUT_ABS_TICKS(deadline));
+	zassert_true((rem > 0) && (rem <= 1000),
+		     "woken sleeper reported %d ms remaining, not (0, 1000]", rem);
+
+	/* re-arming against the same absolute deadline sleeps out the remainder */
+	rem = k_sleep(K_TIMEOUT_ABS_TICKS(deadline));
+	zassert_equal(rem, 0, "expired absolute sleep reported %d ms remaining", rem);
+	zassert_true(sys_clock_tick_get() >= deadline, "woke before the absolute deadline");
+}
+#endif /* CONFIG_TIMEOUT_64BIT */
+
 /**
  * @brief Verify that k_sleep() sleeps for the requested time and that
  *        k_wakeup() cancels a pending sleep immediately.
@@ -249,6 +276,11 @@ ZTEST(sleep, test_sleep)
 	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED),
 		     "k_sleep() slept for %d ticks, not %d\n",
 		     end_tick - start_tick, ONE_SECOND_ALIGNED);
+
+#ifdef CONFIG_TIMEOUT_64BIT
+	/* absolute-timeout sleeps report the remainder when woken early */
+	sleep_abs_timeout_return();
+#endif
 
 	status = TC_PASS;
 }

@@ -359,7 +359,7 @@ int bt_addr_le_from_str(const char *str, bt_addr_le_t *addr);
  *  address (public or random static) using the host Identity Resolving Key
  *  (IRK) database.
  *
- *  @kconfig_dep{CONFIG_BT_PRIVACY}
+ *  @kconfig_dep{CONFIG_BT_PRIVACY,CONFIG_BT_SMP}
  *
  *  @param[in]  id            Local identity whose IRK database is used.
  *                            Must be less than @kconfig{CONFIG_BT_ID_MAX}.

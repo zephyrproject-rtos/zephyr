@@ -90,6 +90,7 @@ tests:
     platform_exclude:
       # below boards are customized
       - frdm_mcxe247
+      - frdm_mcxa577
       - frdm_mcxe31b
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
@@ -108,6 +109,7 @@ tests:
       - arduino_gpio
     filter: dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
     platform_allow:
+      - frdm_mcxa577
       - frdm_mcxe31b
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk

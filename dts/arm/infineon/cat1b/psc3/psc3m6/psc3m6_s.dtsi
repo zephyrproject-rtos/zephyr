@@ -9,12 +9,22 @@
 #include "psc3m6.cm33.dtsi"
 
 / {
-	sram0: memory@34000000 {
-		compatible = "mmio-sram";
-		reg = <0x34000000 0x20000>;
-	};
-
 	soc {
+		watchdog0: watchdog@5220c000 {
+			compatible = "infineon,watchdog";
+			reg = <0x5220c000 0x10>;
+			interrupts = <36 4>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@52220000 {
+			compatible = "infineon,rtc";
+			reg = <0x52220000 0xff0c>;
+			interrupts = <33 4>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@52400000 {
 			compatible = "infineon,pinctrl";
 			reg = <0x52400000 0x20000>;
@@ -26,8 +36,8 @@
 			interrupts = <14 4>;
 			gpio-controller;
 			ngpios = <2>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt1: gpio@52410080 {
@@ -36,8 +46,8 @@
 			interrupts = <15 4>;
 			gpio-controller;
 			ngpios = <4>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt2: gpio@52410100 {
@@ -46,8 +56,8 @@
 			interrupts = <16 4>;
 			gpio-controller;
 			ngpios = <4>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt3: gpio@52410180 {
@@ -56,8 +66,8 @@
 			interrupts = <17 4>;
 			gpio-controller;
 			ngpios = <4>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt4: gpio@52410200 {
@@ -66,8 +76,8 @@
 			interrupts = <18 4>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt5: gpio@52410280 {
@@ -76,8 +86,8 @@
 			interrupts = <19 4>;
 			gpio-controller;
 			ngpios = <4>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt6: gpio@52410300 {
@@ -86,8 +96,8 @@
 			interrupts = <20 4>;
 			gpio-controller;
 			ngpios = <4>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt7: gpio@52410380 {
@@ -96,8 +106,8 @@
 			interrupts = <21 4>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt8: gpio@52410400 {
@@ -106,8 +116,8 @@
 			interrupts = <22 4>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt9: gpio@52410480 {
@@ -116,8 +126,8 @@
 			interrupts = <23 4>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt10: gpio@52410500 {
@@ -126,8 +136,8 @@
 			interrupts = <24 4>;
 			gpio-controller;
 			ngpios = <3>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt11: gpio@52410580 {
@@ -136,8 +146,8 @@
 			interrupts = <25 4>;
 			gpio-controller;
 			ngpios = <2>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt12: gpio@52410600 {
@@ -146,8 +156,8 @@
 			interrupts = <26 4>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt13: gpio@52410680 {
@@ -156,8 +166,42 @@
 			interrupts = <27 4>;
 			gpio-controller;
 			ngpios = <3>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		canfd0: canfd@52800000 {
+			compatible = "infineon,canfd-controller";
+			reg = <0x52800000 0x1088>, <0x52810000 0x1000>;
+			ranges;
+			reg-names = "wrapper", "mram";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			can0: can@52800000 {
+				compatible = "infineon,can";
+				reg = <0x52800000 0x200>, <0x52810000 0x800>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x40a>;
+				interrupts = <113 4>,
+					     <114 4>;
+				interrupt-names = "int0", "int1";
+				bosch,mram-cfg = <0x0 15 15 8 8 0 8 8>;
+				status = "disabled";
+			};
+
+			can1: can@52800200 {
+				compatible = "infineon,can";
+				reg = <0x52800200 0x200>, <0x52810000 0x1000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x40b>;
+				interrupts = <115 4>,
+					     <116 4>;
+				interrupt-names = "int0", "int1";
+				bosch,mram-cfg = <0x800 15 15 8 8 0 8 8>;
+				status = "disabled";
+			};
 		};
 
 		scb0: scb@52820000 {
@@ -207,54 +251,10 @@
 			clk-dst = <0x600>;
 			status = "disabled";
 		};
+	};
 
-		rtc0: rtc@52220000 {
-			compatible = "infineon,rtc";
-			reg = <0x52220000 0xff0c>;
-			interrupts = <33 4>;
-			alarms-count = <2>;
-			status = "disabled";
-		};
-
-		watchdog0: watchdog@5220c000 {
-			compatible = "infineon,watchdog";
-			reg = <0x5220c000 0x10>;
-			interrupts = <36 4>;
-			status = "disabled";
-		};
-
-		canfd0: canfd@52800000 {
-			compatible = "infineon,canfd-controller";
-			reg = <0x52800000 0x1088>, <0x52810000 0x1000>;
-			reg-names = "wrapper", "mram";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges;
-			status = "disabled";
-
-			can0: can@52800000 {
-				compatible = "infineon,can";
-				reg = <0x52800000 0x200>, <0x52810000 0x800>;
-				reg-names = "m_can", "message_ram";
-				clk-dst = <0x40a>;
-				status = "disabled";
-				bosch,mram-cfg = <0x0 15 15 8 8 0 8 8>;
-				interrupts = <113 4>,
-					     <114 4>;
-				interrupt-names = "int0", "int1";
-			};
-
-			can1: can@52800200 {
-				compatible = "infineon,can";
-				reg = <0x52800200 0x200>, <0x52810000 0x1000>;
-				reg-names = "m_can", "message_ram";
-				clk-dst = <0x40b>;
-				status = "disabled";
-				bosch,mram-cfg = <0x800 15 15 8 8 0 8 8>;
-				interrupts = <115 4>,
-					     <116 4>;
-				interrupt-names = "int0", "int1";
-			};
-		};
+	sram0: memory@34000000 {
+		compatible = "mmio-sram";
+		reg = <0x34000000 0x20000>;
 	};
 };

@@ -320,6 +320,23 @@ static inline void record_entered_dpd(const struct device *const dev)
 }
 
 #if ANY_INST_HAS_DPD
+/*
+ * DPD timings are stored in milliseconds. System-managed PM resume runs in
+ * the idle thread while wake interrupts are masked, so that path cannot sleep.
+ */
+static void spi_nor_delay_ms(uint32_t delay_ms)
+{
+	if (delay_ms == 0U) {
+		return;
+	}
+
+	if (k_can_yield()) {
+		k_sleep(K_MSEC(delay_ms));
+	} else {
+		k_busy_wait(delay_ms * USEC_PER_MSEC);
+	}
+}
+
 /* Check the current time against the time DPD was entered and delay
  * until it's ok to initiate the DPD exit process.
  */
@@ -348,7 +365,7 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 			 * until it reaches zero before we can proceed.
 			 */
 			if (since < 0) {
-				k_sleep(K_MSEC((uint32_t)-since));
+				spi_nor_delay_ms((uint32_t)-since);
 			}
 		}
 	}
@@ -637,7 +654,7 @@ static int exit_dpd(const struct device *const dev)
 			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RDID);
 
 			/* Deassert CSn and wait for tRDP */
-			k_sleep(K_MSEC(cfg->t_rdp_ms));
+			spi_nor_delay_ms(cfg->t_rdp_ms);
 #endif /* ANY_INST_HAS_DPD_WAKEUP_SEQUENCE */
 		} else {
 			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RDPD);
@@ -645,7 +662,7 @@ static int exit_dpd(const struct device *const dev)
 #if ANY_INST_HAS_T_EXIT_DPD
 			if (ret == 0) {
 				if (cfg->dpd_exist) {
-					k_sleep(K_MSEC(cfg->t_exit_dpd));
+					spi_nor_delay_ms(cfg->t_exit_dpd);
 				}
 			}
 #endif /* T_EXIT_DPD */

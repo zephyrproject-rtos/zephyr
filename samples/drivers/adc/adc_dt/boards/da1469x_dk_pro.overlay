@@ -34,6 +34,9 @@
 &adc {
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	channel@0 {
@@ -75,14 +78,14 @@
 		zephyr,oversampling = <0>;
 		zephyr,input-positive = <SMARTBOND_GPADC_P1_19>;
 	};
-
-	pinctrl-0 = <&adc_default>;
-	pinctrl-names = "default";
 };
 
 &sdadc {
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sdadc_default>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	channel@0 {
@@ -115,7 +118,4 @@
 		zephyr,oversampling = <7>;
 		zephyr,input-positive = <SMARTBOND_SDADC_VBAT>;
 	};
-
-	pinctrl-0 = <&sdadc_default>;
-	pinctrl-names = "default";
 };

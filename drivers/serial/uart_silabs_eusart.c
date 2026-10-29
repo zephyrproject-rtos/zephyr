@@ -796,6 +796,7 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 {
 	const struct eusart_config *config = dev->config;
 	struct eusart_data *data = dev->data;
+	unsigned int key;
 	int ret;
 
 	if (!data->dma_rx.dma_dev) {
@@ -825,12 +826,7 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 	data->dma_rx.enabled = true;
 	eusart_pm_lock_get(dev, EUSART_PM_LOCK_RX);
 
-	if (dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel)) {
-		LOG_ERR("UART ERR: RX DMA start failed!");
-		data->dma_rx.enabled = false;
-		eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
-		return -EFAULT;
-	}
+	key = irq_lock();
 
 	sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IF_RXOF);
 	sl_hal_eusart_enable_interrupts(config->eusart, EUSART_IF_RXOF);
@@ -843,7 +839,18 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 		eusart_async_timer_start(&data->dma_rx.timeout_work, data->dma_rx.timeout);
 	}
 
+	if (dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel)) {
+		LOG_ERR("UART ERR: RX DMA start failed!");
+		eusart_async_rx_irq_disable(config->eusart);
+		irq_unlock(key);
+		k_work_cancel_delayable(&data->dma_rx.timeout_work);
+		data->dma_rx.enabled = false;
+		eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
+		return -EFAULT;
+	}
+
 	eusart_async_evt_rx_buf_request(data);
+	irq_unlock(key);
 
 	return ret;
 }
@@ -1121,25 +1128,15 @@ static sl_hal_eusart_stop_bits_t eusart_cfg2ll_stopbits(enum uart_config_stop_bi
 	}
 }
 
-static sl_hal_eusart_data_bits_t eusart_cfg2ll_databits(enum uart_config_data_bits db,
-						      enum uart_config_parity p)
+static sl_hal_eusart_data_bits_t eusart_cfg2ll_databits(enum uart_config_data_bits db)
 {
 	switch (db) {
 	case UART_CFG_DATA_BITS_7:
-		if (p == UART_CFG_PARITY_NONE) {
-			return SL_HAL_EUSART_DATA_BITS_7;
-		} else {
-			return SL_HAL_EUSART_DATA_BITS_8;
-		}
+		return SL_HAL_EUSART_DATA_BITS_7;
 	case UART_CFG_DATA_BITS_9:
 		return SL_HAL_EUSART_DATA_BITS_9;
 	case UART_CFG_DATA_BITS_8:
 	default:
-		if (p == UART_CFG_PARITY_NONE) {
-			return SL_HAL_EUSART_DATA_BITS_8;
-		} else {
-			return SL_HAL_EUSART_DATA_BITS_9;
-		}
 		return SL_HAL_EUSART_DATA_BITS_8;
 	}
 }
@@ -1173,7 +1170,7 @@ static int eusart_configure_peripheral(const struct device *dev, bool enable)
 								init.oversampling);
 	init.parity = eusart_cfg2ll_parity(data->uart_cfg.parity);
 	init.stop_bits = eusart_cfg2ll_stopbits(data->uart_cfg.stop_bits);
-	init.data_bits = eusart_cfg2ll_databits(data->uart_cfg.data_bits, data->uart_cfg.parity);
+	init.data_bits = eusart_cfg2ll_databits(data->uart_cfg.data_bits);
 	advanced_init.hw_flow_control_mode = eusart_cfg2ll_hwctrl(data->uart_cfg.flow_ctrl);
 	init.advanced_config = &advanced_init;
 

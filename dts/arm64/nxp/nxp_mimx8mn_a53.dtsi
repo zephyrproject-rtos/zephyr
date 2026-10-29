@@ -26,27 +26,27 @@
 		timebase-frequency = <DT_FREQ_M(8)>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <1>;
+			device_type = "cpu";
 		};
 
 		cpu@2 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <2>;
+			device_type = "cpu";
 		};
 
 		cpu@3 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <3>;
+			device_type = "cpu";
 		};
 	};
 
@@ -61,15 +61,6 @@
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-	};
-
-	gic: interrupt-controller@38800000 {
-		compatible = "arm,gic-v3", "arm,gic";
-		reg = <0x38800000 0x10000>, /* GIC Dist */
-		      <0x38880000 0xc0000>; /* GICR (RD_base + SGI_base) */
-		interrupt-controller;
-		#interrupt-cells = <4>;
-		status = "okay";
 	};
 
 	gpio1: gpio@30200000 {
@@ -183,8 +174,8 @@
 		status = "okay";
 
 		pinctrl: pinctrl {
-			status = "okay";
 			compatible = "nxp,imx8mp-pinctrl";
+			status = "okay";
 		};
 	};
 
@@ -197,78 +188,6 @@
 		compatible = "nxp,imx-ccm";
 		reg = <0x30380000 DT_SIZE_K(64)>;
 		#clock-cells = <3>;
-	};
-
-	uart2: serial@30890000 {
-		compatible = "nxp,imx-iuart";
-		reg = <0x30890000 DT_SIZE_K(64)>;
-		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-names = "irq_0";
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
-		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
-			RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
-		status = "disabled";
-	};
-
-	uart4: serial@30a60000 {
-		compatible = "nxp,imx-iuart";
-		reg = <0x30a60000 DT_SIZE_K(64)>;
-		interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-names = "irq_0";
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
-		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
-			RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
-		status = "disabled";
-	};
-
-	i2c1: i2c@30a20000 {
-		compatible = "nxp,ii2c";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0x30a20000 0x10000>;
-		interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_I2C1_CLK 0 0>;
-		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
-		status = "disabled";
-	};
-
-	i2c2: i2c@30a30000 {
-		compatible = "nxp,ii2c";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0x30a30000 0x10000>;
-		interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_I2C2_CLK 0 0>;
-		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
-		status = "disabled";
-	};
-
-	i2c3: i2c@30a40000 {
-		compatible = "nxp,ii2c";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0x30a40000 0x10000>;
-		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_I2C3_CLK 0 0>;
-		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
-		status = "disabled";
-	};
-
-	i2c4: i2c@30a50000 {
-		compatible = "nxp,ii2c";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0x30a50000 0x10000>;
-		interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_I2C4_CLK 0 0>;
-		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
-		status = "disabled";
 	};
 
 	rdc: rdc@303d0000 {
@@ -320,6 +239,78 @@
 		status = "disabled";
 	};
 
+	uart2: serial@30890000 {
+		compatible = "nxp,imx-iuart";
+		reg = <0x30890000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
+		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+			RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+		status = "disabled";
+	};
+
+	i2c1: i2c@30a20000 {
+		compatible = "nxp,ii2c";
+		reg = <0x30a20000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_I2C1_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		status = "disabled";
+	};
+
+	i2c2: i2c@30a30000 {
+		compatible = "nxp,ii2c";
+		reg = <0x30a30000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_I2C2_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		status = "disabled";
+	};
+
+	i2c3: i2c@30a40000 {
+		compatible = "nxp,ii2c";
+		reg = <0x30a40000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_I2C3_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		status = "disabled";
+	};
+
+	i2c4: i2c@30a50000 {
+		compatible = "nxp,ii2c";
+		reg = <0x30a50000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_I2C4_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		status = "disabled";
+	};
+
+	uart4: serial@30a60000 {
+		compatible = "nxp,imx-iuart";
+		reg = <0x30a60000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+			RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+		status = "disabled";
+	};
+
 	enet: enet@30be0000 {
 		compatible = "nxp,enet";
 		reg = <0x30be0000 DT_SIZE_K(64)>;
@@ -332,8 +323,8 @@
 			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "COMMON";
 			interrupt-parent = <&gic>;
-			nxp,mdio = <&enet_mdio>;
 			ptp-clock = <&enet_ptp_clock>;
+			nxp,mdio = <&enet_mdio>;
 			status = "disabled";
 		};
 
@@ -351,6 +342,15 @@
 			clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
 			status = "disabled";
 		};
+	};
+
+	gic: interrupt-controller@38800000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0x38800000 0x10000>, /* GIC Dist */
+		      <0x38880000 0xc0000>; /* GICR (RD_base + SGI_base) */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
 	};
 };
 

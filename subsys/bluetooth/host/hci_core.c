@@ -45,7 +45,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
-#include <soc.h>
 
 #include "addr_internal.h"
 #include "adv.h"
@@ -124,6 +123,11 @@ static K_WORK_DEFINE(rx_work, rx_work_handler);
  */
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+
+bool bt_is_work_thread(void)
+{
+	return k_current_get() == bt_workq.thread_id;
+}
 
 int bt_work_submit(struct k_work *work)
 {
@@ -343,6 +347,11 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 
 	/* Do nothing if controller to host flow control is not supported */
 	if (drv_quirk_no_flow_control() || !BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
+		return;
+	}
+
+	/* Dropped before its connection was looked up */
+	if (index == BT_CONN_INDEX_INVALID) {
 		return;
 	}
 
@@ -1533,6 +1542,9 @@ static void le_conn_complete_adv_timeout(void)
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 		bt_conn_unref(conn);
+	} else if (bt_drv_quirk_no_adv_term_on_dir_timeout()) {
+		/* No LE Advertising Set Terminated event follows to end the advertising set */
+		bt_le_adv_high_duty_timeout();
 	}
 }
 
@@ -3766,6 +3778,35 @@ static void le_read_resolving_list_size_complete(struct net_buf *buf)
 }
 #endif /* defined(CONFIG_BT_SMP) */
 
+/* Octet 7, bit 3 of the supported commands mask indicates support for
+ * HCI_Write_Connection_Accept_Timeout.
+ */
+#define CONN_ACCEPT_TIMEOUT_SUPPORTED() \
+	(BT_CMD_TEST(bt_dev.supported_commands, 7, 3) != 0)
+
+__maybe_unused static int set_conn_accept_timeout(uint16_t timeout)
+{
+	struct bt_hci_cp_write_conn_accept_timeout *cp;
+	struct net_buf *buf;
+
+	/* Leave the controller default in place when it does not claim the
+	 * command.
+	 */
+	if (!CONN_ACCEPT_TIMEOUT_SUPPORTED()) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->conn_accept_timeout = sys_cpu_to_le16(timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT, buf, NULL);
+}
+
 static int common_init(void)
 {
 	struct net_buf *rsp;
@@ -3821,6 +3862,13 @@ static int common_init(void)
 		return err;
 	}
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+#if defined(CONFIG_BT_CONN_ACCEPT_TIMEOUT)
+	err = set_conn_accept_timeout(CONFIG_BT_CONN_ACCEPT_TIMEOUT);
+	if (err != 0) {
+		return err;
+	}
+#endif /* CONFIG_BT_CONN_ACCEPT_TIMEOUT */
 
 	return 0;
 }
@@ -4639,7 +4687,7 @@ static void le_conn_complete_prio(uint8_t role)
 		 * object to keep host in sync with controller state.
 		 */
 		atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
-		(void)bt_le_lim_adv_cancel_timeout(adv);
+		bt_le_lim_adv_cancel_timeout(adv);
 	}
 }
 
@@ -5153,7 +5201,7 @@ int bt_disable(void)
 		buf = net_buf_slist_get(&bt_dev.rx_queue);
 	}
 
-	if (k_current_get() == bt_workq.thread_id) {
+	if (bt_is_work_thread()) {
 		(void)k_work_cancel(&rx_work);
 	} else {
 		struct k_work_sync sync;

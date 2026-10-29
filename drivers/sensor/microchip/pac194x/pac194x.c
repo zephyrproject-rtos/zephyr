@@ -688,7 +688,15 @@ static int pac194x_attr_set(const struct device *dev,
 		 * It is necessary to manually refresh ACC counters on every
 		 * PAC194X_CTRL_REG change.
 		 */
-		return pac194x_cmd_refresh(dev);
+		ret = pac194x_cmd_refresh(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* Wait at least 1ms (t_REFRESH) for the refresh cycle to complete */
+		k_msleep(2);
+
+		return 0;
 	}
 	case SENSOR_ATTR_REFRESH_MODE:
 		switch (val->val1) {

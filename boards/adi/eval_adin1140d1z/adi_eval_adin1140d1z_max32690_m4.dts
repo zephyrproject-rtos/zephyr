@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices EVAL-ADIN1140D1Z";
 	compatible = "adi,eval-adin1140d1z";
+	model = "Analog Devices EVAL-ADIN1140D1Z";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -133,13 +133,13 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0b_miso_p2_27 &spi0b_mosi_p2_28 &spi0b_sck_p2_29>;
 	cs-gpios = <&gpio2 26 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 	pinctrl-names = "default";
 
 	dmas = <&dma0 1 MAX32_DMA_SLOT_SPI0_TX>, <&dma0 2 MAX32_DMA_SLOT_SPI0_RX>;
 	dma-names = "tx", "rx";
+	status = "okay";
 
 	adin1140: adin1140@0 {
 		compatible = "adi,adin1140";
@@ -147,9 +147,9 @@
 		spi-max-frequency = <DT_FREQ_M(25)>;
 		int-gpios = <&gpio3 1 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH | GPIO_PULL_UP)>;
 		wake-gpios = <&gpio3 0 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
-		status = "okay";
 		local-mac-address = [00 e0 22 fe da d0];
 		phy-handle = <&adin1140_phy>;
+		status = "okay";
 
 		mdio {
 			compatible = "adi,adin1140-mdio";
@@ -157,8 +157,8 @@
 			#size-cells = <0>;
 
 			adin1140_phy: ethernet-phy@0 {
-				reg = <0x0>;
 				compatible = "adi,adin1140-phy";
+				reg = <0x0>;
 				plca-enable;
 				plca-node-id = <0>;
 				plca-node-count = <5>;
@@ -210,8 +210,8 @@
 			#size-cells = <0>;
 
 			ethernet-phy@1 {
-				reg = <0x1>;
 				compatible = "adi,adin2111-phy";
+				reg = <0x1>;
 			};
 		};
 	};
@@ -240,9 +240,9 @@ pmod_spi: &spi4 {
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1a_scl_p0_12 &i2c1a_sda_p0_11>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	adt7420: adt7420@48 {
 		compatible = "adi,adt7420";
@@ -251,17 +251,17 @@ pmod_spi: &spi4 {
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eeprom: eeprom@50 {
 		compatible = "atmel,at24";
 		reg = <0x50>;
-		status = "okay";
 		size = <DT_SIZE_K(64)>;
 		pagesize = <32>;
 		address-width = <8>;
 		timeout = <5>;
+		status = "okay";
 	};
 };

@@ -68,6 +68,13 @@ test_sara_r4: sara_r4 {
 	mdm-reset-gpios = <&test_gpio 0 0>;
 };
 
+test_lara_r6: lara_r6 {
+	compatible = "u-blox,lara-r6";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+	mdm-reset-gpios = <&test_gpio 0 0>;
+};
+
 test_fibocom_le250: fibocom_le250 {
 	compatible = "fibocom,le250";
 
@@ -82,6 +89,13 @@ test_simcom_sim7080: sim7080 {
 
 test_quectel_bg9x: quectel_bg9x {
 	compatible = "quectel,bg9x";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+	mdm-reset-gpios = <&test_gpio 0 0>;
+};
+
+test_quectel_bg95: quectel_bg95 {
+	compatible = "quectel,bg95";
 
 	mdm-power-gpios = <&test_gpio 0 0>;
 	mdm-reset-gpios = <&test_gpio 0 0>;

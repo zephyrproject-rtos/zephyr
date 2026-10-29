@@ -15,25 +15,21 @@
 	};
 
 	soc {
-		/* Accessing code RAM over AXIF - a read-only flash memory bus */
-		cram1: memory@7d900000 {
-			compatible = "mmio-sram";
-			reg = <0x7d900000 DT_SIZE_M(7)>;
-		};
-
-		stm0: stm@76a00000 {
-			compatible = "nxp,s32-sys-timer";
-			reg = <0x76a00000 0x10000>;
-			interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_RTU1_REG_INTF_CLK>;
+		swt0: watchdog@76800000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76800000 0x10000>;
+			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_FIRC_CLK>;
+			service-mode = "fixed";
 			status = "disabled";
 		};
 
-		stm1: stm@76a10000 {
-			compatible = "nxp,s32-sys-timer";
-			reg = <0x76a10000 0x10000>;
-			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_RTU1_REG_INTF_CLK>;
+		swt1: watchdog@76810000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76810000 0x10000>;
+			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_FIRC_CLK>;
+			service-mode = "fixed";
 			status = "disabled";
 		};
 
@@ -53,42 +49,6 @@
 			status = "disabled";
 		};
 
-		swt0: watchdog@76800000 {
-			compatible = "nxp,s32-swt";
-			reg = <0x76800000 0x10000>;
-			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_FIRC_CLK>;
-			service-mode = "fixed";
-			status = "disabled";
-		};
-
-		swt1: watchdog@76810000 {
-			compatible = "nxp,s32-swt";
-			reg = <0x76810000 0x10000>;
-			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_FIRC_CLK>;
-			service-mode = "fixed";
-			status = "disabled";
-		};
-
-		swt2: watchdog@76a20000 {
-			compatible = "nxp,s32-swt";
-			reg = <0x76a20000 0x10000>;
-			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_FIRC_CLK>;
-			service-mode = "fixed";
-			status = "disabled";
-		};
-
-		swt3: watchdog@76a30000 {
-			compatible = "nxp,s32-swt";
-			reg = <0x76a30000 0x10000>;
-			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_FIRC_CLK>;
-			service-mode = "fixed";
-			status = "disabled";
-		};
-
 		swt4: watchdog@76940000 {
 			compatible = "nxp,s32-swt";
 			reg = <0x76940000 0x10000>;
@@ -104,9 +64,9 @@
 			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
 			max-load-value = <0x00ffffff>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			pit0_channel0: pit0_channel@0 {
 				compatible = "nxp,pit-channel";
@@ -143,6 +103,46 @@
 				reg = <5>;
 				status = "disabled";
 			};
+		};
+
+		stm0: stm@76a00000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76a00000 0x10000>;
+			interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_RTU1_REG_INTF_CLK>;
+			status = "disabled";
+		};
+
+		stm1: stm@76a10000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x76a10000 0x10000>;
+			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_RTU1_REG_INTF_CLK>;
+			status = "disabled";
+		};
+
+		swt2: watchdog@76a20000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76a20000 0x10000>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_FIRC_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		swt3: watchdog@76a30000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x76a30000 0x10000>;
+			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_FIRC_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		/* Accessing code RAM over AXIF - a read-only flash memory bus */
+		cram1: memory@7d900000 {
+			compatible = "mmio-sram";
+			reg = <0x7d900000 DT_SIZE_M(7)>;
 		};
 	};
 };

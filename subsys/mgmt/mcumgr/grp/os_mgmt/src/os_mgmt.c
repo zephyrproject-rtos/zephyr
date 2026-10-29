@@ -248,7 +248,7 @@ os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 	stack_size = thread->stack_info.size / 4;
 
 #ifdef CONFIG_INIT_STACKS
-	unsigned int stack_unused;
+	size_t stack_unused;
 
 	if (k_thread_stack_space_get(thread, &stack_unused) == 0) {
 		stack_used = (thread->stack_info.size - stack_unused) / 4;

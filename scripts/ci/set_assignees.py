@@ -250,9 +250,10 @@ west.yml and submanifests/optional.yaml:
 MAINTAINERS.yml:
   If --updated-maintainer-file is provided, it (the PR's version) is diffed
   field-by-field against --base-maintainer-file (maintainers, collaborators,
-  labels, files, files-regex, status).  Maintainers of every area that changed
-  are appended to the reviewer candidate list so that the people responsible
-  for each changed area are automatically notified.  As with the manifest, the
+  labels, files, files-regex, status).  Every maintainer and collaborator of
+  each changed area, taken from both the base and the PR version, is appended
+  to the reviewer candidate list, so people added to or removed from an area
+  as well as the rest of that area are notified.  As with the manifest, the
   base file must be the version the PR forked from, not the base-branch tip;
   it defaults to the checked-out MAINTAINERS.yml when omitted.
 
@@ -608,6 +609,21 @@ def compare_areas(old: dict, new: dict) -> set:
                 logger.debug("  %s", change)
 
     return added_areas | removed_areas | changed_areas
+
+
+def changed_area_members(old: dict, new: dict, area_names: set) -> set:
+    """Return every maintainer and collaborator of *area_names* in *old* or *new*.
+
+    Both versions are consulted so that people added to or removed from an
+    area, as well as members of added or removed areas, are all included.
+    """
+    members = set()
+    for area_name in area_names:
+        for areas in (old, new):
+            entry = areas.get(area_name, {})
+            members |= set_or_empty(entry, "maintainers")
+            members |= set_or_empty(entry, "collaborators")
+    return members
 
 
 def _pick_assignees(pr, area_counter: dict, all_maintainers: dict, num_files: int):
@@ -1366,10 +1382,9 @@ def process_pr(gh, args, maintainer_file, number: int):
                 old_areas = load_areas(args.base_maintainer_file or 'MAINTAINERS.yml')
                 new_areas = load_areas(args.updated_maintainer_file)
                 changed_area_names = compare_areas(old_areas, new_areas)
-                for area_name in changed_area_names:
-                    area_matches = maintainer_file.name2areas(area_name)
-                    if area_matches:
-                        additional_reviews.update(maintainer_file.areas[area_name].maintainers)
+                additional_reviews.update(
+                    changed_area_members(old_areas, new_areas, changed_area_names)
+                )
                 logger.info(
                     "MAINTAINERS.yml changed; adding extra reviewers: %s",
                     sorted(additional_reviews),

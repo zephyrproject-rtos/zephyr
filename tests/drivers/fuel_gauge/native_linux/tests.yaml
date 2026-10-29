@@ -1,0 +1,10 @@
+tests:
+  drivers.fuel_gauge.native_linux:
+    tags:
+      - drivers
+      - fuel_gauge
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim

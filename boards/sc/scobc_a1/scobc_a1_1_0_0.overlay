@@ -16,8 +16,8 @@
 
 		uartlite0: uartlite@50010000 {
 			compatible = "xlnx,xps-uartlite-1.00.a";
-			interrupts = <0 0>;
 			reg = <0x50010000 0x10000>;
+			interrupts = <0 0>;
 		};
 	};
 };

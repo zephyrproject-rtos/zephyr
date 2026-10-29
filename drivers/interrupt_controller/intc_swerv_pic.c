@@ -26,6 +26,12 @@
 #define SWERV_PIC_MAX_ID	(SWERV_PIC_MAX_NUM + CONFIG_SWERV_PIC_MAX_GENERIC_IRQ)
 #define SWERV_PIC_MAX_PRIO		16
 
+#if defined(CONFIG_64BIT)
+#define SWERV_PIC_MEIHAP_ID_SHIFT	3U
+#else
+#define SWERV_PIC_MEIHAP_ID_SHIFT	2U
+#endif
+
 #define SWERV_PIC_mpiccfg		0x3000
 #define SWERV_PIC_meipl(s)		(0x0 + (s)*4)
 #define SWERV_PIC_meip(x)		(0x1000 + (x)*4)
@@ -123,7 +129,7 @@ int swerv_pic_get_irq(void)
 
 static void swerv_pic_irq_handler(const void *arg)
 {
-	uint32_t tmp;
+	uintptr_t tmp;
 	uint32_t irq;
 	const struct _isr_table_entry *ite;
 
@@ -131,11 +137,12 @@ static void swerv_pic_irq_handler(const void *arg)
 	__asm__ swerv_pic_writecsr(meicpct, 0);
 
 	__asm__ swerv_pic_readcsr(meihap, tmp);
-	irq = (tmp >> 2) & 0xff;
+	irq = (tmp >> SWERV_PIC_MEIHAP_ID_SHIFT) & 0xffU;
 
 	save_irq = irq;
 
-	if (irq == 0U || irq >= 64) {
+	/* irq is masked to 0xff above; 0 is the sentinel, so 1-255 are all valid sources. */
+	if (irq == 0U || irq >= 256U) {
 		z_irq_spurious(NULL);
 	}
 	irq += CONFIG_SWERV_PIC_MAX_GENERIC_IRQ;

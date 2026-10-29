@@ -25,6 +25,11 @@ config TLS_CREDENTIALS_BACKEND_VOLATILE
 	  TLS credentials management volatile backend implementation,
 	  storing credentials in system runtime memory.
 
+	  The credential data is not copied. tls_credential_add() stores only
+	  the passed pointer, so the buffer must stay valid and unchanged for
+	  as long as the tag is in use, that is, until the credential is
+	  removed with tls_credential_delete().
+
 config TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE
 	bool "TLS credentials management protected storage backend"
 	depends on BUILD_WITH_TFM || SECURE_STORAGE

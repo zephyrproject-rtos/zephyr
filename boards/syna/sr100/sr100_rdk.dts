@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Synaptics SR100 RDK board";
 	compatible = "syna,sr100-rdk";
+	model = "Synaptics SR100 RDK board";
 
 	chosen {
 		zephyr,console = &ns16550_uart1;

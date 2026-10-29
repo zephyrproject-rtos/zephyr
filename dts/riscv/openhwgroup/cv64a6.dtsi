@@ -18,21 +18,21 @@
 		#size-cells = <0>;
 
 		cpu_0: cpu@0 {
+			compatible = "openhwgroup,cva6", "riscv";
+			reg = <0>;
 			clock-frequency = <DT_FREQ_M(50)>;
 			timebase-frequency = <DT_FREQ_M(25)>;
 			device_type = "cpu";
-			compatible = "openhwgroup,cva6", "riscv";
+			mmu-type = "riscv,sv39";
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
-			mmu-type = "riscv,sv39";
-			reg = <0>;
 
 			status = "okay";
 
 			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
 				#interrupt-cells = <0x01>;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 				status = "okay";
 			};
 		};

@@ -1,9 +1,9 @@
 &rtc0 {
-	status = "okay";
 	fixed-top;
+	status = "okay";
 };
 
 &rtc2 {
-	status = "okay";
 	fixed-top;
+	status = "okay";
 };
