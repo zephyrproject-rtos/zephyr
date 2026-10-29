@@ -1716,3 +1716,9 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_rak12035: rak12035@df {
+	compatible = "rakwireless,rak12035";
+	reg = <0xdf>;
+	reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+};
