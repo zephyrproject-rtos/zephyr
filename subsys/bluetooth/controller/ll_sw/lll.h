@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_CTLR_RX_PDU_META)
+#if defined(CONFIG_BT_CTLR_RX_PDU_META) || defined(CONFIG_BT_CTLR_TX_PDU_META)
 #include "lll_meta.h"
-#endif /* CONFIG_BT_CTLR_RX_PDU_META */
+#endif /* CONFIG_BT_CTLR_RX_PDU_META || CONFIG_BT_CTLR_TX_PDU_META */
 
 #define TICKER_INSTANCE_ID_CTLR 0
 #define TICKER_USER_ID_LLL      MAYFLY_CALL_ID_0
