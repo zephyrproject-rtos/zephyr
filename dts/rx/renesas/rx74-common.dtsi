@@ -313,6 +313,116 @@
 			};
 		};
 
+		group_irq_il0: grp_intc@87006550 {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x87006550 0x04>,
+			      <0x87006570 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <17 4>;
+			status = "disabled";
+		};
+
+		group_irq_bl0: grp_intc@87006640 {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x87006640 0x04>,
+			      <0x870066c0 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <102 4>;
+			status = "disabled";
+		};
+
+		group_irq_bl1: grp_intc@87006644 {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x87006644 0x04>,
+			      <0x870066c4 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <103 4>;
+			status = "disabled";
+		};
+
+		group_irq_al0: grp_intc@87006740 {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x87006740 0x04>,
+			      <0x870067c0 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <104 4>;
+			status = "disabled";
+		};
+
+		group_irq_al1: grp_intc@87006744 {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x87006744 0x04>,
+			      <0x870067c4 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <105 4>;
+			status = "disabled";
+		};
+
+		group_irq_al2: grp_intc@87006748 {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x87006748 0x04>,
+			      <0x870067c8 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <106 4>;
+			status = "disabled";
+		};
+
+		group_irq_al3: grp_intc@8700674c {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x8700674c 0x04>,
+			      <0x870067cc 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <107 4>;
+			status = "disabled";
+		};
+
+		group_irq_al4: grp_intc@87006750 {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x87006750 0x04>,
+			      <0x870067d0 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <108 4>;
+			status = "disabled";
+		};
+
+		group_irq_al5: grp_intc@87006754 {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x87006754 0x04>,
+			      <0x870067d4 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <109 4>;
+			status = "disabled";
+		};
+
+		group_irq_al6: grp_intc@87006758 {
+			compatible = "renesas,rx-grp-intc-fsp";
+			reg = <0x87006758 0x04>,
+			      <0x870067d8 0x04>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "GRP", "GEN";
+			interrupts = <110 4>;
+			status = "disabled";
+		};
+
 		sci0: sci0@87458000 {
 			compatible = "renesas,rx-sci-b";
 			reg = <0x87458000 0x100>;
