@@ -404,6 +404,17 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	case WLAN_REASON_FW_RESET:
 		LOG_DBG("WLAN: FW hang");
 		break;
+	case WLAN_REASON_ROAMING_AUTH_SUCCESS:
+#if defined(CONFIG_WIFI_MGMT_ROAMING_DHCP)
+		ret = net_mgmt(NET_REQUEST_WIFI_ROAMING_DHCP, g_mlan.netif, NULL, 0);
+		if (ret) {
+			LOG_WRN("WLAN: roaming DHCP request failed (%d)", ret);
+			wlan_gw_probe_done(false);
+		}
+#else
+		wlan_gw_probe_done(false);
+#endif
+		break;
 	default:
 		LOG_WRN("WLAN: Unknown Event: %d", reason);
 	}
@@ -2570,6 +2581,15 @@ static uint32_t nxp_wifi_get_iface_caps(const struct device *dev,
 	return BIT(WIFI_TYPE_STA);
 }
 
+#if defined(CONFIG_WIFI_MGMT_ROAMING_DHCP)
+static int nxp_wifi_gw_probe_done(const struct device *dev __unused,
+				  struct net_if *iface __unused,
+				  bool reachable_same_gw)
+{
+	return wlan_gw_probe_done(reachable_same_gw);
+}
+#endif
+
 static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.get_version = nxp_wifi_version,
 	.scan = nxp_wifi_scan,
@@ -2599,6 +2619,9 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 #endif
 	.set_rts_threshold = nxp_wifi_set_rts_threshold,
 	.get_iface_caps = nxp_wifi_get_iface_caps,
+#if defined(CONFIG_WIFI_MGMT_ROAMING_DHCP)
+	.gw_probe_done = nxp_wifi_gw_probe_done,
+#endif
 };
 
 #if defined(CONFIG_WIFI_NM) && !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)

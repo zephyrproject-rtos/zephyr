@@ -153,6 +153,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_BGSCAN,
 	/** Wi-Fi Direct (P2P) operations*/
 	NET_REQUEST_WIFI_CMD_P2P_OPER,
+	/** roaming DHCP*/
+	NET_REQUEST_WIFI_CMD_ROAMING_DHCP,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -374,6 +376,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN);
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_P2P_OPER)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_P2P_OPER);
+
+/** Request a Wi-Fi roaming DHCP */
+#define NET_REQUEST_WIFI_ROAMING_DHCP				\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_ROAMING_DHCP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_ROAMING_DHCP);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -2477,6 +2485,18 @@ struct wifi_mgmt_ops {
 	 * Return 0 to let the caller use the default.
 	 */
 	 uint32_t (*get_iface_caps)(const struct device *dev, struct net_if *iface);
+
+	/** Gateway probe after roaming has completed.
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface on which the probe was run.
+	 * @param same_gw old and new APs with same gateway
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*gw_probe_done)(const struct device *dev,
+			struct net_if *iface,
+			bool same_gw);
 };
 
 /** Wi-Fi management offload API */
