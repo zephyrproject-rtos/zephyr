@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX ICUM group interrupt controller
+
+compatible: "renesas,rx-icum-grp-irq"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Group interrupt registers, in the order given by reg-names.
+
+  reg-names:
+    required: true
+    description: |
+      Names of the register regions:
+        - grp: Group interrupt request register (GRPxxx)
+        - gen: Group interrupt request enable register (GENxxx)
+
+  interrupts:
+    required: true
+    description: |
+      Vector number and priority of the group interrupt.
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
