@@ -112,6 +112,7 @@ power-domain	Power domain
 ppc	PPC architecture
 ps2	PS/2 (Personal System/2)
 psi5	PSI5 (Peripheral Sensor Interface, 5th generation)
+ptp_clock	PTP (Precision Time Protocol) clock
 pulse-io	Pulse IO
 pwm	PWM (Pulse Width Modulation)
 qspi	QSPI (Quad Serial Peripheral Interface)
