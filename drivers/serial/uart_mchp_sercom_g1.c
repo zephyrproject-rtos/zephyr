@@ -139,6 +139,9 @@ typedef struct uart_mchp_dev_data {
 	/* Cached UART configuration */
 	struct uart_config config_cache;
 
+	/* TX byte written, transmission not yet complete */
+	volatile bool tx_busy;
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* IRQ callback function */
 	uart_irq_callback_user_data_t cb;
@@ -515,6 +518,22 @@ static int uart_set_baudrate(sercom_registers_t *regs, bool is_clock_external, u
 }
 
 /**
+ * @brief Check if the UART TX is complete.
+ *
+ * This function checks if the TX operation is complete for the specified UART instance.
+ *
+ * @param regs Pointer to the sercom_registers_t structure.
+ * @param is_clock_external Boolean to indicate external or internal clock
+ * @return True if TX is complete, false otherwise.
+ */
+static bool uart_is_tx_complete(sercom_registers_t *regs, bool is_clock_external)
+{
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	return ((usart->SERCOM_INTFLAG & SERCOM_USART_INTFLAG_TXC_Msk) != 0);
+}
+
+/**
  * @brief Enable or disable the UART.
  *
  * @param regs Pointer to the sercom_registers_t structure.
@@ -738,24 +757,6 @@ static uint32_t uart_get_err(const struct device *dev)
 
 	return err;
 }
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_MCHP_ASYNC)
-/**
- * @brief Check if the UART TX is complete.
- *
- * This function checks if the TX operation is complete for the specified UART instance.
- *
- * @param regs Pointer to the sercom_registers_t structure.
- * @param is_clock_external Boolean to indicate external or internal clock
- * @return True if TX is complete, false otherwise.
- */
-static bool uart_is_tx_complete(sercom_registers_t *regs, bool is_clock_external)
-{
-	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
-
-	return ((usart->SERCOM_INTFLAG & SERCOM_USART_INTFLAG_TXC_Msk) != 0);
-}
-#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 /**
@@ -1228,6 +1229,20 @@ static int uart_mchp_configure(const struct device *dev, const struct uart_confi
 	int retval = UART_SUCCESS;
 
 	do {
+		/*
+		 * Disabling stops the transmitter mid-frame. DRE is set as soon as a byte leaves
+		 * DATA, so only TXC says the frame is done. Wait for it, but only if a byte was
+		 * actually written, since TXC stays 0 on a UART that has not sent anything.
+		 */
+		if (dev_data->tx_busy == true) {
+			if (WAIT_FOR((uart_is_tx_complete(regs, is_clock_external) == true),
+				     TIMEOUT_VALUE_US, k_busy_wait(DELAY_US)) == false) {
+				LOG_ERR("Timeout waiting for UART TXC set");
+				return -ETIMEDOUT;
+			}
+			dev_data->tx_busy = false;
+		}
+
 		/* Forcefully disable UART before configuring. run_in_standby is ignored here */
 		uart_enable(regs, is_clock_external, false, false);
 
@@ -1345,6 +1360,7 @@ static int uart_mchp_poll_in(const struct device *dev, unsigned char *data)
  */
 static void uart_mchp_poll_out(const struct device *dev, unsigned char data)
 {
+	uart_mchp_dev_data_t *const dev_data = dev->data;
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
 	bool is_clock_external = cfg->is_clock_external;
@@ -1353,6 +1369,7 @@ static void uart_mchp_poll_out(const struct device *dev, unsigned char data)
 	}
 
 	/* send a character */
+	dev_data->tx_busy = true;
 	uart_tx_char(regs, is_clock_external, data);
 }
 
@@ -1429,12 +1446,14 @@ static void uart_mchp_irq_tx_enable(const struct device *dev)
  */
 static int uart_mchp_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
+	uart_mchp_dev_data_t *const dev_data = dev->data;
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
 	bool is_clock_external = cfg->is_clock_external;
 	int retval = 0;
 
 	if ((uart_is_tx_ready(regs, is_clock_external) == true) && (len >= 1)) {
+		dev_data->tx_busy = true;
 		uart_tx_char(regs, is_clock_external,
 			     tx_data[0]); /* Transmit the first character */
 		retval = 1;
@@ -1650,6 +1669,10 @@ static void uart_mchp_irq_update(const struct device *dev)
 	 * after caching...this will cause TXC to never be cached.
 	 */
 	dev_data->is_tx_completed_cache = uart_is_tx_complete(regs, is_clock_external);
+	if (dev_data->is_tx_completed_cache == true) {
+		/* TX complete */
+		dev_data->tx_busy = false;
+	}
 	uart_clear_interrupts(regs, is_clock_external);
 }
 
