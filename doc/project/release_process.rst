@@ -604,6 +604,18 @@ Each release has a GitHub issue associated with it that contains the full
 checklist. After a release is complete, a checklist for the next release is
 created.
 
+:zephyr_file:`scripts/release/check_release.py` verifies the items of the
+checklist that can be checked from the repository and GitHub: the
+:zephyr_file:`VERSION` file, the tags and release branch, the release notes and
+migration guide, the supported and end-of-life releases in the documentation,
+release blocker issues, milestones, labels and the GitHub release. Run it for
+each release candidate, the final release and after the release, for example::
+
+    $ git fetch upstream --tags
+    $ ./scripts/release/check_release.py rc 4.6.0-rc1 --pre-tag
+    $ ./scripts/release/check_release.py final 4.6.0
+    $ ./scripts/release/check_release.py post-release 4.6.0 --ref upstream/main
+
 Tagging
 =======
 
