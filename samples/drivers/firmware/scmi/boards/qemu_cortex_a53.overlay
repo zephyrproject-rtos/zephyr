@@ -19,10 +19,10 @@
 
 		scmi {
 			compatible = "linaro,scmi-optee";
-			linaro,optee = <&optee>;
-			linaro,optee-channel-id = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			linaro,optee = <&optee>;
+			linaro,optee-channel-id = <0>;
 
 			scmi_clock: protocol@14 {
 				compatible = "arm,scmi-clock";
