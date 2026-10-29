@@ -83,8 +83,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 	 *  - The timer was stopped (z_try_abort_timeout marked the
 	 *    in-flight slot superseded): bail without firing expiry_fn.
 	 */
-	if (!z_is_inactive_timeout(t) ||
-	    z_timeout_inflight_superseded(t)) {
+	if (!z_is_inactive_timeout(t) || !z_timeout_inflight_claim(t)) {
 		k_spin_unlock(&timer_lock, key);
 		return;
 	}
@@ -259,11 +258,10 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	}
 
 	/* Hold the timer lock across abort + add to serialize against a
-	 * concurrent k_timer_start on the same timer. An in-flight handler
-	 * (z_try_abort_timeout() returning non-zero) is flagged superseded
-	 * and will bail; the re-arm below also re-links the node, which
-	 * makes a not-yet-committed handler bail too. Either way we do not
-	 * wait for it.
+	 * concurrent k_timer_start on the same timer. An unclaimed in-flight
+	 * handler is flagged superseded and will bail. A handler that has already
+	 * claimed its dispatch completes while the re-arm below schedules the new
+	 * expiration. Either way we do not wait for it.
 	 */
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
@@ -295,16 +293,21 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
+	int ret = z_try_abort_timeout(&timer->timeout);
+	bool inflight_aborted = z_timeout_inflight_abort_claim(&timer->timeout);
 
-	if (z_try_abort_timeout(&timer->timeout) != 0) {
-		/* Not removed from the queue: either the timer was not
-		 * active, or its handler is in flight. In the latter case
-		 * z_try_abort_timeout() has flagged it superseded so the
-		 * handler bails; we do not wait for it. Nothing to stop here.
+	if (ret != 0 && !inflight_aborted) {
+		/* The timer was inactive or its expiration handler has already
+		 * committed to running.
 		 */
 		k_spin_unlock(&timer_lock, key);
 		return;
 	}
+
+	/* This caller either removed an active timeout or won ownership of an
+	 * expiration superseded before it committed. Complete the stop operation
+	 * here without waiting for the handler.
+	 */
 
 	z_timer_observer_on_stop(timer);
 

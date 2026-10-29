@@ -112,18 +112,29 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
  *             so handlers that need to bail may check via
  *             z_timeout_inflight_superseded()).
  *   -EAGAIN — the handler is currently in flight on another CPU. The caller
- *             must drop any lock that the handler may need and retry. A short
- *             arch_spin_relax() has already been done before this return.
+ *             must arbitrate with the handler or drop any lock that the
+ *             handler may need and retry. A short arch_spin_relax() has
+ *             already been done before this return.
  *
- * On -EAGAIN, the only correct response is to drop outer locks and call again.
- * After a non-EAGAIN return, the handler is guaranteed not to be in flight.
+ * A caller that must wait for an in-flight handler, for example before freeing
+ * its storage, must drop outer locks and retry after -EAGAIN.
  */
 int z_try_abort_timeout(struct _timeout *to);
 
-/* True if @to is the currently in-flight timeout and a same-CPU aborter
- * has marked the slot as superseded. Handlers with non-idempotent side
- * effects (e.g. k_timer's expiry_fn) should call this at entry, after
- * taking their own lock, and bail if it returns true.
+/* Claim an in-flight timeout before committing handler side effects. This
+ * returns false when an aborter has already superseded @to. A successful
+ * claim prevents a later abort from superseding a handler that has already
+ * committed to running.
+ */
+bool z_timeout_inflight_claim(const struct _timeout *to);
+
+/* Claim completion of an in-flight timeout that an aborter has superseded.
+ * This returns true only for the first caller that claims the abort.
+ */
+bool z_timeout_inflight_abort_claim(const struct _timeout *to);
+
+/* True if @to is the currently in-flight timeout and an aborter has marked
+ * the slot as superseded.
  */
 bool z_timeout_inflight_superseded(const struct _timeout *to);
 

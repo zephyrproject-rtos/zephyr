@@ -421,10 +421,12 @@ static k_spinlock_key_t timeout_wheel_announce_now(k_spinlock_key_t key)
 		timeout_wheel_clear_flags(t);
 
 		inflight_timeout = t;
+		inflight_claimed = false;
 		k_spin_unlock(&timeout_lock, key);
 		t->fn(t);
 		key = k_spin_lock(&timeout_lock);
 		inflight_timeout = NULL;
+		inflight_claimed = false;
 	}
 	wheel.announcing = 0;
 
