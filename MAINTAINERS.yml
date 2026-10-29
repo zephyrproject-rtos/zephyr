@@ -402,6 +402,7 @@ Alif Semiconductor Platforms:
     - dts/arm/alif/
     - dts/bindings/*/alif,*
     - include/zephyr/dt-bindings/*/alif*.h
+    - scripts/west_commands/runners/alif_flash.py
     - soc/alif/
   labels:
     - "platform: Alif Semiconductor"
