@@ -661,7 +661,8 @@
 		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
 			reg = <0x420c0800 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 18)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+				 <&rcc STM32_SRC_HSI48 RNG_SEL(0)>;
 			interrupts = <114 0>;
 			nist-config = <0xf00d00>;
 			health-test-config = <0xaac7>;
