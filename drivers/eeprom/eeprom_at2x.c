@@ -88,6 +88,18 @@ static inline int eeprom_at2x_write_enable(const struct device *dev)
 }
 #endif /* ANY_INST_HAS_WP_GPIOS */
 
+static bool eeprom_at2x_range_is_valid(const struct device *dev, off_t offset,
+		size_t len)
+{
+	const struct eeprom_at2x_config *config = dev->config;
+
+	if (offset < 0 || (uintmax_t)offset > (uintmax_t)config->size) {
+		return false;
+	}
+
+	return len <= config->size - (size_t)offset;
+}
+
 static int eeprom_at2x_read(const struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
@@ -100,7 +112,7 @@ static int eeprom_at2x_read(const struct device *dev, off_t offset, void *buf,
 		return 0;
 	}
 
-	if ((offset + len) > config->size) {
+	if (!eeprom_at2x_range_is_valid(dev, offset, len)) {
 		LOG_WRN("attempt to read past device boundary");
 		return -EINVAL;
 	}
@@ -164,7 +176,7 @@ static int eeprom_at2x_write(const struct device *dev, off_t offset,
 		return 0;
 	}
 
-	if ((offset + len) > config->size) {
+	if (!eeprom_at2x_range_is_valid(dev, offset, len)) {
 		LOG_WRN("attempt to write past device boundary");
 		return -EINVAL;
 	}
@@ -450,7 +462,7 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 		return 0;
 	}
 
-	if ((offset + len) > config->size) {
+	if (!eeprom_at2x_range_is_valid(dev, offset, len)) {
 		LOG_WRN("attempt to read past device boundary");
 		return -EINVAL;
 	}
