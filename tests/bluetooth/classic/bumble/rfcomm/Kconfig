@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_RFCOMM_MAX_CHANNEL_COUNT
+	int "Maximum RFCOMM channel count"
+	depends on BT_RFCOMM
+	default 16
+	range 2 31
+	help
+	  The maximum number of RFCOMM channels that can be created for testing.
+	  Simply increasing the value of this configuration parameter may lead to disconnections
+	  caused by connection timeouts. In such cases, you can appropriately increase the number
+	  of transmit buffers—defined by `CONFIG_BT_L2CAP_TX_BUF_COUNT` to prevent timeouts and
+	  subsequent disconnections, thereby avoiding test failures.
+
+config BT_BUF_ACL_RX_COUNT_EXTRA
+	default TEST_RFCOMM_MAX_CHANNEL_COUNT
+
+config BT_L2CAP_TX_BUF_COUNT
+	default 10 if TEST_RFCOMM_MAX_CHANNEL_COUNT > 20
+	default 7 if TEST_RFCOMM_MAX_CHANNEL_COUNT > 15
+	default 5 if TEST_RFCOMM_MAX_CHANNEL_COUNT > 10
+
+source "Kconfig.zephyr"
+
+module = TEST_CLASSIC_RFCOMM_SIM
+module-str = test_classic_rfcomm_sim
+source "subsys/logging/Kconfig.template.log_config"
