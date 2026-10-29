@@ -80,7 +80,10 @@ static int sys_hashmap_oa_lp_insert_no_rehash(struct sys_hashmap *map, uint64_t 
 	struct oalp_entry *entry = NULL;
 	struct sys_hashmap_oa_lp_data *data = (struct sys_hashmap_oa_lp_data *)map->data;
 
-	entry = sys_hashmap_oa_lp_find(map, key, true, true, true);
+	entry = sys_hashmap_oa_lp_find(map, key, true, true, false);
+	if (entry == NULL || entry->state == UNUSED) {
+		entry = sys_hashmap_oa_lp_find(map, key, false, true, true);
+	}
 	__ASSERT_NO_MSG(entry != NULL);
 
 	switch (entry->state) {
