@@ -727,13 +727,13 @@ static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 #define nxp_enet_unique_mac(...)
 #endif
 
-#ifdef CONFIG_SOC_FAMILY_NXP_IMXRT
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 #include <fsl_ocotp.h>
 #endif
 
 static inline void nxp_enet_fused_mac(uint8_t *mac_addr)
 {
-#ifdef CONFIG_SOC_FAMILY_NXP_IMXRT
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	uint32_t mac_addr_fuse[2] = {0};
 
 #if defined(CONFIG_SOC_SERIES_IMXRT10XX)
@@ -1092,6 +1092,7 @@ struct nxp_enet_mod_config {
 	DEVICE_MMIO_ROM;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_cfg;
 	const struct pinctrl_dev_config *pincfg;
 };
 
@@ -1103,6 +1104,14 @@ static int nxp_enet_mod_init(const struct device *dev)
 {
 	const struct nxp_enet_mod_config *config = dev->config;
 	int ret;
+
+	if (config->clock_cfg != NULL) {
+		ret = clock_control_configure(config->clock_dev, config->clock_cfg, NULL);
+		if (ret) {
+			LOG_ERR("ENET clock source error");
+			return ret;
+		}
+	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret) {
@@ -1131,6 +1140,8 @@ static const struct nxp_enet_mod_config nxp_enet_mod_cfg_##n = {			\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),		\
 		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\
 							DT_DRV_INST(n), 0, name),	\
+		.clock_cfg = (void *)COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(n, source),	\
+			(DT_INST_CLOCKS_CELL_BY_NAME(n, source, name)), (NULL)),	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 };											\
 											\

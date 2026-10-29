@@ -14,6 +14,11 @@ toolchain:
 ram: 32768
 flash: 65536
 supported:
+  - netif:eth
   - gpio
   - uart
+  - dma
+  - i2c
+  - spi
+  - usbd
 vendor: nxp

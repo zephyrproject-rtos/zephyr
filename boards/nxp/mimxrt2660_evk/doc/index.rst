@@ -91,12 +91,32 @@ Connections and I/Os
 +-----------+-----------------+------------------------------------+
 | User SW   | WAKE GPIO0 0    | PIO1_0 (WAKE_SS_BTN)               |
 +-----------+-----------------+------------------------------------+
+| ENET      | RGMII, MDIO     | PIO4_0..PIO4_13 (YT8531 U46, J71;  |
+|           |                 | 10/100 Mbit/s only for now)        |
++-----------+-----------------+------------------------------------+
 | XSPI0     | SCLK0, SS0_N,   | PIO6_0, PIO6_1, PIO6_2..PIO6_5     |
 |           | DATA0..DATA3    | (quad; the flash is not wired      |
 |           |                 | octal on this board)               |
 +-----------+-----------------+------------------------------------+
+| LPI2C1    | SDA, SCL        | PIO2_24, PIO2_25 (on-board         |
+|           |                 | P3T1755DP temperature sensor at    |
+|           |                 | 0x48, ``ambient-temp0``)           |
++-----------+-----------------+------------------------------------+
+| LPSPI0    | SCK, SDO, SDI,  | PIO3_20, PIO3_21 (J56 pin 5),      |
+|           | PCS0            | PIO3_22 (J56 pin 6), PIO3_23       |
+|           |                 | (needs J53 at 1-2, see below)      |
++-----------+-----------------+------------------------------------+
+| GPIO test | VBAT GPIO0 2,   | PIO0_2 (J51 pin 2),                |
+|           | VBAT GPIO0 3    | PIO0_3 (J51 pin 3)                 |
++-----------+-----------------+------------------------------------+
 
 The debug console runs at 115200 8N1 on the MCU-Link virtual COM port.
+
+PIO3_20..PIO3_23 are shared between the LCD interface and LPSPI0 through the U33
+and U34 analog switches, which select the LCD by default: move J53 to 1-2 to
+route them to LPSPI0. The board has no SPI target, so ``spi_loopback`` also needs
+J56 pin 5 (SDO) shorted to J56 pin 6 (SDI). ``gpio_basic_api`` needs J51 pin 2
+shorted to pin 3; no jumper change is required for those pads.
 
 System Clock
 ============

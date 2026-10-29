@@ -22,9 +22,12 @@
 #include "soc.h"
 #include "soc_clock.h"
 
+#include <fsl_clock.h>
 #include <fsl_common.h>
+#include <fsl_modcon.h>
 #include <fsl_powercon.h>
-
+#include <fsl_power.h>
+#include <fsl_reset.h>
 /*
  * The ROM leaves SCB->VTOR at 0 and SystemInit() only relocates it for a RAM
  * vector table, so an XIP image has to point VTOR at this one itself.
@@ -101,6 +104,15 @@ void soc_reset_hook(void)
 	SystemInit();
 }
 
+/* COMM_ENET takes its MII/RGMII selection from MODCON rather than from the MAC. */
+static void soc_enet_init(void)
+{
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet_mac)) &&                                             \
+	DT_ENUM_HAS_VALUE(DT_NODELABEL(enet_mac), phy_connection_type, rgmii)
+	MODCON_SetCFG((uint32_t)kModCon_COMM_ETH1, 0U, MODCON_CFG_ENET1G_RGMII_EN(1U));
+#endif
+}
+
 void soc_early_init_hook(void)
 {
 	/* Access control first: every step after it is a peripheral access. */
@@ -120,11 +132,20 @@ void soc_early_init_hook(void)
 	sys_cache_data_enable();
 
 	/*
-	 * Clocks last: this reconfigures the PLLs, which parks both XSPI
+	 * Clocks next: this reconfigures the PLLs, which parks both XSPI
 	 * controllers -- including the flash this code runs from -- so everything
 	 * it depends on has to be working already.
 	 */
 	soc_clock_init();
+
+	/*
+	 * Last: soc_trdc_assign_masters() writes MEDIA__TRDC, which sits on the
+	 * MEDIA domain bus that soc_clock_init() just started clocking via
+	 * mediabus_rootclk. Any earlier and that write stalls the bus forever.
+	 */
+	soc_trdc_assign_masters();
+
+	soc_enet_init();
 }
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
