@@ -26,6 +26,10 @@
 
 #include <zephyr/sys/byteorder.h>
 
+#if defined(CONFIG_BT_CTLR_CONN_META)
+#include "conn_meta.h"
+#endif /* CONFIG_BT_CTLR_CONN_META */
+
 static struct bt_conn *default_conn;
 
 /*
@@ -104,6 +108,21 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		default_conn = bt_conn_ref(conn);
 
 		printk("Peripheral Connected\n");
+
+#if defined(CONFIG_BT_CTLR_CONN_META)
+		uint16_t handle;
+
+		if (bt_hci_get_conn_handle(conn, &handle) != 0) {
+			FAIL("Failed to get connection handle\n");
+			return;
+		}
+
+		if (!conn_meta_initialized(handle)) {
+			FAIL("Connection meta data not initialized\n");
+			return;
+		}
+#endif /* CONFIG_BT_CTLR_CONN_META */
+
 		repeat_connect++;
 
 		if (repeat_connect >= 20) { /* We consider it passed */
