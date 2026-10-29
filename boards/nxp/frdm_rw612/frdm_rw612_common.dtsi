@@ -212,7 +212,7 @@ mikrobus_serial: &flexcomm0 {};
 		};
 	};
 
-	aps6404l: aps6404l@2 {
+	ext_psram_ctrl: memory-controller@2 {
 		compatible = "nxp,imx-flexspi-aps6404l";
 		/* APS6404L is 8MB, 64MBit pSRAM */
 		size = <DT_SIZE_M(8 * 8)>;
@@ -230,6 +230,16 @@ mikrobus_serial: &flexcomm0 {};
 		column-space = <0>;
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x1c000000 DT_SIZE_M(64)>;
+
+		psram0: aps6404l@0 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0 DT_SIZE_M(8)>;
+			zephyr,memory-region = "PSRAM";
+		};
 	};
 
 	/*
