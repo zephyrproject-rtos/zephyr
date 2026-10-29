@@ -41,8 +41,21 @@ struct node_tx {
 		memq_link_t *link;
 	};
 
+#if defined(CONFIG_BT_CTLR_TX_PDU_META)
+	union {
+		lll_tx_pdu_meta_t tx_pdu_meta __aligned(4); /* force alignment of union */
+		struct {
+			uint8_t _pdu_offset[LLL_TX_PDU_META_PDU_OFFSET];
+			uint8_t pdu[0];
+		};
+	};
+#else /* !CONFIG_BT_CTLR_TX_PDU_META */
 	uint8_t pdu[];
+#endif /* !CONFIG_BT_CTLR_TX_PDU_META */
 };
+
+/* As for node rx: keep pdu[] 2-byte aligned */
+BUILD_ASSERT((offsetof(struct node_tx, pdu) % 2U) == 0U, "pdu[] must be 2-byte aligned");
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 struct data_pdu_length {
