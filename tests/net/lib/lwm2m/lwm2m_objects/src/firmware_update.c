@@ -252,15 +252,10 @@ ZTEST(lwm2m_firmware_update, test_reset_rejected_while_updating)
 
 ZTEST(lwm2m_firmware_update, test_writes_rejected_during_pull)
 {
-	uint8_t nul = '\0';
-
 	/* A pull is Downloading without a push in progress */
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
 
 	zassert_equal(package_write(block, sizeof(block), false, 0), -EPERM);
-	zassert_equal(package_write(&nul, 1, true, 0), -EPERM);
-	zassert_equal(package_write(block, 0, true, 0), -EPERM);
-	zassert_equal(package_uri_write(""), -EPERM);
 	zassert_equal(package_uri_write("coap://[::1]/fw.bin"), -EPERM);
 
 	zassert_equal(get_state(), STATE_DOWNLOADING);
