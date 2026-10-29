@@ -34,6 +34,7 @@ static char proxy_uri[LWM2M_PACKAGE_URI_LEN];
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
 static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 					 struct coap_reply *reply, const struct net_sockaddr *from);
+static void firmware_transfer(void);
 
 static struct firmware_pull_context {
 	uint8_t obj_inst_id;
@@ -51,6 +52,11 @@ static enum service_state {
 	IDLE,
 	STOPPING,
 } pull_service_state;
+
+/* A transfer requested while the previous one is still closing; it starts
+ * once the pull service has released the context.
+ */
+static bool start_pending;
 
 static void pull_service(struct k_work *work)
 {
@@ -75,6 +81,10 @@ static void pull_service(struct k_work *work)
 		lwm2m_engine_update_service_period(pull_service, 5000);
 		pull_service_state = IDLE;
 		k_sem_give(&lwm2m_pull_sem);
+		if (start_pending) {
+			start_pending = false;
+			firmware_transfer();
+		}
 		lwm2m_registry_unlock();
 		break;
 	}
@@ -453,6 +463,15 @@ error:
 	cleanup_context();
 }
 
+static void set_request(const char *uri, const struct requesting_object *req)
+{
+	context.obj_inst_id = req->obj_inst_id;
+	strcpy(context.uri, uri);
+	context.is_firmware_uri = req->is_firmware_uri;
+	context.result_cb = req->result_cb;
+	context.write_cb = req->write_cb;
+}
+
 int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k_timeout_t timeout)
 {
 	int ret;
@@ -474,6 +493,18 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 		return ret;
 	}
 
+	/* The previous transfer is still closing: run once it has released the context */
+	if (pull_service_state == STOPPING) {
+		if (start_pending) {
+			return -EALREADY;
+		}
+
+		set_request(uri, &req);
+		start_pending = true;
+
+		return 0;
+	}
+
 	/* Check if we are not in the middle of downloading */
 	ret = k_sem_take(&lwm2m_pull_sem, K_NO_WAIT);
 	if (ret) {
@@ -481,11 +512,7 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 	}
 	k_sem_give(&lwm2m_pull_sem);
 
-	context.obj_inst_id = req.obj_inst_id;
-	strcpy(context.uri, uri);
-	context.is_firmware_uri = req.is_firmware_uri;
-	context.result_cb = req.result_cb;
-	context.write_cb = req.write_cb;
+	set_request(uri, &req);
 
 	(void)memset(&context.block_ctx, 0, sizeof(struct coap_block_context));
 	context.firmware_ctx.sock_fd = -1;
@@ -497,8 +524,17 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 
 int lwm2m_pull_context_cancel(bool is_firmware_uri)
 {
-	/* The semaphore is held for as long as a transfer owns the context */
-	if (k_sem_count_get(&lwm2m_pull_sem) != 0 || pull_service_state == STOPPING) {
+	bool active;
+
+	if (pull_service_state == STOPPING) {
+		/* The closing transfer is already gone; only a queued one is left to drop */
+		active = start_pending;
+	} else {
+		/* The semaphore is held for as long as a transfer owns the context */
+		active = k_sem_count_get(&lwm2m_pull_sem) == 0;
+	}
+
+	if (!active) {
 		return -ENOENT;
 	}
 
@@ -507,7 +543,11 @@ int lwm2m_pull_context_cancel(bool is_firmware_uri)
 	}
 
 	LOG_INF("Cancelling the transfer from %s", context.uri);
-	cleanup_context();
+	if (start_pending) {
+		start_pending = false;
+	} else {
+		cleanup_context();
+	}
 
 	return 0;
 }
