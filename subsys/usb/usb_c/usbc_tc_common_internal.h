@@ -42,6 +42,12 @@ enum tc_state_t {
 	/** Attached Sink State */
 	TC_ATTACHED_SNK_STATE,
 #endif
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+	/** Try Sink State */
+	TC_TRY_SNK_STATE,
+	/** Try Wait Source State */
+	TC_TRY_WAIT_SRC_STATE,
+#endif
 #ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/** Super state that applies Rp to the CC lines */
 	TC_CC_RP_SUPER_STATE,
@@ -103,6 +109,14 @@ struct tc_sm_t {
 #ifdef CONFIG_USBC_CSM_DRP
 	/** tDRP toggle timer */
 	struct usbc_timer_t tc_t_drp_toggle;
+#endif
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+	/** tDRPTry timer */
+	struct usbc_timer_t tc_t_drp_try;
+	/** tTryCCDebounce timer */
+	struct usbc_timer_t tc_t_try_cc_debounce;
+	/** tDRPTryWait timer */
+	struct usbc_timer_t tc_t_drp_try_wait;
 #endif
 };
 

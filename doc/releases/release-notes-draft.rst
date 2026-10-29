@@ -63,6 +63,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* USB Type-C
+
+  * :kconfig:option:`CONFIG_USBC_CSM_DRP_TRY_SNK`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

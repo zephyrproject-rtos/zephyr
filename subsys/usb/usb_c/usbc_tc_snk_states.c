@@ -304,6 +304,119 @@ void tc_attached_snk_exit(void *obj)
 	}
 }
 
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+static bool tc_is_cc_only_one_rp(enum tc_cc_voltage_state cc1, enum tc_cc_voltage_state cc2)
+{
+	return tcpc_is_cc_rp(cc1) != tcpc_is_cc_rp(cc2);
+}
+
+/**
+ * @brief Spec. Release 2.5, section 4.5.2.2.12 Try.SNK State
+ *
+ * When in the Try.SNK state, the port is querying to determine if the port
+ * partner supports the Source role.
+ *
+ * Requirements:
+ *   1: The port shall not drive VBUS or VCONN.
+ *      NOTE: VBUS and VCONN are not driven in AttachWait.SRC.
+ *
+ *   2: Both the CC1 and CC2 pins shall be independently terminated to
+ *      ground through Rd.
+ *      NOTE: Implemented in the tc_cc_rd super state.
+ */
+void tc_try_snk_entry(void *obj)
+{
+	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+
+	LOG_INF("Try.SNK");
+
+	tc->cc_state = TC_CC_NONE;
+
+	usbc_timer_start(&tc->tc_t_drp_try);
+}
+
+enum smf_state_result tc_try_snk_run(void *obj)
+{
+	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+	const struct device *dev = tc->dev;
+	struct usbc_port_data *data = dev->data;
+	const struct device *vbus = data->vbus;
+	enum tc_cc_states new_cc_state;
+
+	/*
+	 * The port shall wait for tDRPTry and only then begin monitoring the
+	 * CC1 and CC2 pins for the SNK.Rp state.
+	 */
+	if (usbc_timer_running(&tc->tc_t_drp_try)) {
+		if (usbc_timer_expired(&tc->tc_t_drp_try) == false) {
+			return SMF_EVENT_PROPAGATE;
+		}
+
+		usbc_timer_start(&tc->tc_t_try_cc_debounce);
+		/* Not in the spec: bounds the wait for VBUS after SNK.Rp is detected */
+		usbc_timer_start(&tc->tc_t_drp_try_wait);
+	}
+
+	if (tc_is_cc_only_one_rp(tc->cc1, tc->cc2)) {
+		new_cc_state = TC_CC_DFP_ATTACHED;
+	} else {
+		new_cc_state = TC_CC_NONE;
+	}
+
+	/* Debounce the cc state */
+	if (new_cc_state != tc->cc_state) {
+		usbc_timer_start(&tc->tc_t_try_cc_debounce);
+		tc->cc_state = new_cc_state;
+	}
+
+	/* Wait for tTryCCDebounce */
+	if (usbc_timer_running(&tc->tc_t_try_cc_debounce) &&
+	    usbc_timer_expired(&tc->tc_t_try_cc_debounce) == false) {
+		if (CONFIG_USBC_STATE_MACHINE_CYCLE_TIME >= TC_T_TRY_CC_DEBOUNCE_MIN_MS) {
+			/* Make sure the debounce time won't be longer than specified */
+			usbc_bypass_next_sleep(tc->dev);
+		}
+
+		return SMF_EVENT_PROPAGATE;
+	}
+
+	/*
+	 * The port shall transition to TryWait.SRC if SNK.Rp state is not
+	 * detected for tTryCCDebounce.
+	 */
+	if (new_cc_state == TC_CC_NONE) {
+		tc_set_state(dev, TC_TRY_WAIT_SRC_STATE);
+		return SMF_EVENT_HANDLED;
+	}
+
+	/*
+	 * The port shall then transition to Attached.SNK when the SNK.Rp state
+	 * is detected on exactly one of the CC1 or CC2 pins for at least
+	 * tTryCCDebounce and VBUS is detected.
+	 */
+	if (usbc_vbus_check_level(vbus, TC_VBUS_PRESENT)) {
+		tc_set_state(dev, TC_ATTACHED_SNK_STATE);
+		return SMF_EVENT_HANDLED;
+	}
+
+	if (usbc_timer_expired(&tc->tc_t_drp_try_wait)) {
+		tc_set_state(dev, TC_TRY_WAIT_SRC_STATE);
+		return SMF_EVENT_HANDLED;
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
+void tc_try_snk_exit(void *obj)
+{
+	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+
+	usbc_timer_stop(&tc->tc_t_drp_try);
+	usbc_timer_stop(&tc->tc_t_try_cc_debounce);
+	usbc_timer_stop(&tc->tc_t_drp_try_wait);
+}
+#endif
+
 /**
  * @brief Rd on CC lines Entry
  */

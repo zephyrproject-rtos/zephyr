@@ -195,10 +195,17 @@ enum smf_state_result tc_attach_wait_src_run(void *obj)
 	 * The port shall transition to Attached.SRC when VBUS is at vSafe0V
 	 * and the SRC.Rd state is detected on exactly one of the CC1 or CC2
 	 * pins for at least tCCDebounce.
+	 *
+	 * A DRP that strongly prefers the Sink role may optionally transition
+	 * to Try.SNK instead of Attached.SRC.
 	 */
 	if (usbc_vbus_check_level(vbus, TC_VBUS_SAFE0V)) {
 		if (new_cc_state == TC_CC_UFP_ATTACHED) {
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+			tc_set_state(dev, TC_TRY_SNK_STATE);
+#else
 			tc_set_state(dev, TC_ATTACHED_SRC_STATE);
+#endif
 		}
 	}
 	return SMF_EVENT_PROPAGATE;
@@ -359,6 +366,92 @@ void tc_attached_src_exit(void *obj)
 		LOG_ERR("Couldn't disable VCONN source");
 	}
 }
+
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+/**
+ * @brief Spec. Release 2.5, section 4.5.2.2.13 TryWait.SRC State
+ *
+ * When in the TryWait.SRC state, the port has failed to become a Sink and
+ * is waiting to attach as a Source.
+ *
+ * Requirements:
+ *   The requirements for this state are identical to Unattached.SRC.
+ */
+void tc_try_wait_src_entry(void *obj)
+{
+	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+
+	LOG_INF("TryWait.SRC");
+
+	tc->cc_state = TC_CC_NONE;
+
+	usbc_timer_start(&tc->tc_t_drp_try);
+}
+
+enum smf_state_result tc_try_wait_src_run(void *obj)
+{
+	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+	const struct device *dev = tc->dev;
+	struct usbc_port_data *data = dev->data;
+	const struct device *vbus = data->vbus;
+	enum tc_cc_states new_cc_state;
+
+	/*
+	 * The port shall transition to Unattached.SNK after tDRPTry if neither
+	 * of the CC1 or CC2 pins are in the SRC.Rd state.
+	 */
+	if (tcpc_is_cc_at_least_one_rd(tc->cc1, tc->cc2) == false) {
+		if (usbc_timer_running(&tc->tc_t_drp_try) == false ||
+		    usbc_timer_expired(&tc->tc_t_drp_try)) {
+			tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
+			return SMF_EVENT_HANDLED;
+		}
+	}
+
+	if (tcpc_is_cc_only_one_rd(tc->cc1, tc->cc2)) {
+		new_cc_state = TC_CC_UFP_ATTACHED;
+	} else {
+		new_cc_state = TC_CC_NONE;
+	}
+
+	/* Debounce the cc state */
+	if (new_cc_state != tc->cc_state) {
+		usbc_timer_start(&tc->tc_t_try_cc_debounce);
+		tc->cc_state = new_cc_state;
+	}
+
+	/* Wait for tTryCCDebounce */
+	if (usbc_timer_running(&tc->tc_t_try_cc_debounce) &&
+	    usbc_timer_expired(&tc->tc_t_try_cc_debounce) == false) {
+		if (CONFIG_USBC_STATE_MACHINE_CYCLE_TIME >= TC_T_TRY_CC_DEBOUNCE_MIN_MS) {
+			/* Make sure the debounce time won't be longer than specified */
+			usbc_bypass_next_sleep(tc->dev);
+		}
+
+		return SMF_EVENT_PROPAGATE;
+	}
+
+	/*
+	 * The port shall transition to Attached.SRC when VBUS is at vSafe0V
+	 * and the SRC.Rd state is detected on exactly one of the CC pins for
+	 * at least tTryCCDebounce.
+	 */
+	if (usbc_vbus_check_level(vbus, TC_VBUS_SAFE0V)) {
+		if (new_cc_state == TC_CC_UFP_ATTACHED) {
+			tc_set_state(dev, TC_ATTACHED_SRC_STATE);
+		}
+	}
+	return SMF_EVENT_PROPAGATE;
+}
+
+void tc_try_wait_src_exit(void *obj)
+{
+	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+
+	usbc_timer_stop(&tc->tc_t_drp_try);
+	usbc_timer_stop(&tc->tc_t_try_cc_debounce);
+}
+#endif
 
 /**
  * @brief This is a super state for Source States that

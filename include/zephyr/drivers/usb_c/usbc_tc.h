@@ -211,7 +211,7 @@ extern "C" {
  *	  the try-wait process.
  *	  See Table 4-31 CC Timing
  */
-#define TC_T_TRY_CC_DEBOUNCE_MAX_MS 10
+#define TC_T_TRY_CC_DEBOUNCE_MAX_MS 20
 
 /**
  * @brief Minimum time a self-powered port shall remain in the ErrorRecovery state.
