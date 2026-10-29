@@ -11,8 +11,10 @@ ram: 128
 supported:
   - crypto
   - dma
+  - eeprom
   - entropy
   - gpio
+  - i2c
   - kernel
   - led
   - logging
