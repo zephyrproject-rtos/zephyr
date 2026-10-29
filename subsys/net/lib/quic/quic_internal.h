@@ -669,6 +669,16 @@ struct quic_long_header_info {
 };
 
 /**
+ * The sequence numbers of one type of peer-initiated streams that have been
+ * opened: every number below @a base, and the ones whose bit is set in
+ * @a mask, bit 0 standing for @a base.
+ */
+struct quic_stream_seq_window {
+	uint64_t base;
+	uint64_t mask;
+};
+
+/**
  * QUIC endpoint information
  */
 struct quic_endpoint {
@@ -898,6 +908,11 @@ struct quic_endpoint {
 		uint64_t open_uni;   /* peer-initiated uni  streams currently open */
 		uint64_t total_bidi; /* peer-initiated bidi streams ever opened */
 		uint64_t total_uni;  /* peer-initiated uni  streams ever opened */
+		/* Which peer-initiated streams were opened, so that a late
+		 * frame for a closed one does not open it again.
+		 */
+		struct quic_stream_seq_window opened_bidi;
+		struct quic_stream_seq_window opened_uni;
 	} rx_sl;
 
 	/** Peer's transport parameters */
@@ -917,7 +932,11 @@ struct quic_endpoint {
 
 	/** Idle timeout tracking */
 	struct {
-		/** Last time we received ANY packet from peer (in milliseconds) */
+		/** Start of the current idle period (in milliseconds): the
+		 * last time a packet from the peer was received and
+		 * authenticated, or the time the first ack-eliciting packet
+		 * after that was sent.
+		 */
 		int64_t last_rx_time;
 
 		/** Negotiated idle timeout (milliseconds)
@@ -930,6 +949,11 @@ struct quic_endpoint {
 
 		/** Flag to disable idle timeout (when negotiated to 0) */
 		bool idle_timeout_disabled;
+
+		/** An ack-eliciting packet was sent since the last packet
+		 * from the peer was received and authenticated.
+		 */
+		bool ack_eliciting_sent;
 	} idle;
 
 	/** Handshake timeout tracking */
@@ -1013,6 +1037,13 @@ struct quic_endpoint {
 	 * transport parameters and any Path MTU Discovery we perform.
 	 */
 	uint16_t max_tx_payload_size;
+
+	/** The reference held for the endpoint list of a context has been
+	 * dropped. References left are held by whoever is using the endpoint
+	 * at the moment. Not a bit field: it is written under contexts_lock,
+	 * the bits below are not.
+	 */
+	bool list_ref_dropped;
 
 	/** Is this endpoint in a server role.
 	 */
@@ -1263,6 +1294,12 @@ __net_socket struct quic_context {
 	/** Error code to be passed to application when connection is closed. */
 	int error_code;
 
+	/** The connection was closed, by the peer or by its endpoint going
+	 * away. Reported as POLLHUP, whether or not streams are still waiting
+	 * to be accepted.
+	 */
+	bool closed;
+
 	/** Stream priority */
 	uint8_t stream_priority;
 
@@ -1470,6 +1507,7 @@ bool quic_recovery_tx_slot_available(struct quic_endpoint *ep,
 void quic_crypto_context_destroy(struct quic_crypto_context *ctx);
 void quic_endpoint_discard_keys(struct quic_endpoint *ep,
 				enum quic_secret_level level);
+void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep);
 int quic_send_packet(struct quic_endpoint *ep, enum quic_secret_level level,
 		     const uint8_t *payload, size_t payload_len);
 void quic_key_update_destroy(struct quic_key_update *ku);
@@ -1594,5 +1632,8 @@ bool tls_server_ticket_cache_lookup(const uint8_t *ticket, size_t ticket_len,
 void tls_server_ticket_cache_consume(const uint8_t *ticket, size_t ticket_len);
 bool tls_ticket_age_acceptable(uint64_t issued_at_ms, uint32_t ticket_age_add,
 			       uint32_t obfuscated_ticket_age, uint64_t now_ms);
+void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
+void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr);
+struct quic_endpoint *quic_test_endpoint_alloc(void);
 
 #endif /* CONFIG_NET_TEST */

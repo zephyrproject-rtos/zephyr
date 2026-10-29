@@ -3122,6 +3122,7 @@ static int quic_context_unref(struct quic_context *ctx)
 		quic_stats_merge_endpoint(ctx, ep);
 		sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
 		quic_endpoint_send_connection_close(ep, 0, NULL);
+		ep->list_ref_dropped = true;
 		released[released_count++] = ep;
 
 		if (ctx->listen == ep) {
@@ -3130,6 +3131,7 @@ static int quic_context_unref(struct quic_context *ctx)
 	}
 
 	if (ctx->listen != NULL) {
+		ctx->listen->list_ref_dropped = true;
 		released[released_count++] = ctx->listen;
 		ctx->listen = NULL;
 	}
@@ -3366,7 +3368,7 @@ static bool quic_endpoint_ref_unless_zero(struct quic_endpoint *ep)
 }
 
 /* Notify all streams associated with this endpoint that the connection is closed */
-static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 {
 	int i;
 
@@ -3382,15 +3384,22 @@ static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 	for (i = 0; i < ARRAY_SIZE(contexts); i++) {
 		struct quic_context *ctx = &contexts[i];
 		struct quic_stream *stream, *tmp;
+		bool affected;
 
 		if (!quic_context_is_used(ctx)) {
 			continue;
 		}
 
-		ctx->error_code = -ECONNRESET;
+		/* Only the connection the endpoint belongs to, or that has
+		 * streams on it, is closed. Other connections, including a
+		 * new one that reuses the context of a closed one, are not.
+		 */
+		affected = sys_slist_find(&ctx->endpoints, &ep->node, NULL);
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 			if (stream->ep == ep) {
+				affected = true;
+
 				NET_DBG("[EP:%p/%d] Notifying stream %" PRIu64
 					" of connection close",
 					ep, quic_get_by_ep(ep), stream->id);
@@ -3407,6 +3416,13 @@ static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 				ep->is_closing_notified = true;
 			}
 		}
+
+		if (!affected) {
+			continue;
+		}
+
+		ctx->error_code = -ECONNRESET;
+		ctx->closed = true;
 
 		/* This will release any accepts waiting on this stream */
 		k_sem_give(&ctx->incoming.stream_sem);
@@ -4162,6 +4178,26 @@ bool quic_recovery_tx_slot_available(struct quic_endpoint *ep,
 	return free_slots > QUIC_SENT_PKT_HISTORY_RESERVE;
 }
 
+/*
+ * The idle timer also restarts when an ack-eliciting packet is sent, but
+ * only for the first such packet after one was received from the peer
+ * (RFC 9000 ch. 10.1). A connection is then not closed right after new
+ * activity was started on it, and an endpoint that keeps sending into the
+ * void still times out.
+ */
+static void quic_endpoint_note_ack_eliciting_tx(struct quic_endpoint *ep)
+{
+	if (ep->idle.ack_eliciting_sent) {
+		return;
+	}
+
+	ep->idle.ack_eliciting_sent = true;
+
+	if (!ep->idle.idle_timeout_disabled) {
+		ep->idle.last_rx_time = k_uptime_get();
+	}
+}
+
 ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 						   enum quic_secret_level level,
 						   uint64_t pkt_num,
@@ -4173,6 +4209,10 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	int pn_space = level_to_pn_space(level);
 	uint16_t idx;
 	struct quic_sent_pkt_info *info;
+
+	if (ack_eliciting) {
+		quic_endpoint_note_ack_eliciting_tx(ep);
+	}
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
@@ -5877,6 +5917,14 @@ fail:
 	return ret;
 }
 
+#if defined(CONFIG_NET_TEST)
+/* Let tests take an endpoint from the pool, as a connection would */
+struct quic_endpoint *quic_test_endpoint_alloc(void)
+{
+	return endpoint_alloc_from_slab(&endpoints_slab, K_NO_WAIT);
+}
+#endif /* CONFIG_NET_TEST */
+
 static struct quic_context *quic_context_init(struct quic_context *ctx)
 {
 	k_fifo_init(&ctx->pending.accept_q);
@@ -5901,6 +5949,7 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 	 */
 	ctx->sock = -1;
 	ctx->error_code = 0;
+	ctx->closed = false;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 	memset(&ctx->stats, 0, sizeof(ctx->stats));
@@ -6399,7 +6448,7 @@ static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
  * without unlinking the endpoint (e.g. setsockopt failed before the endpoint
  * was attached to the context list).
  */
-static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
+ZTESTABLE_STATIC void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
 {
 	struct quic_endpoint *orphans[CONFIG_QUIC_MAX_ENDPOINTS] = { 0 };
 	int orphan_count = 0;
@@ -6411,8 +6460,13 @@ static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remo
 		struct quic_endpoint *ep = endpoints[i];
 		struct quic_endpoint *matched;
 
+		/* An endpoint that a context has let go of is not an orphan,
+		 * even when it is on no context: the references it still has
+		 * belong to whoever is using it, for example the receive path
+		 * in the middle of a packet, and they drop them themselves.
+		 */
 		if (ep == NULL || atomic_get(&ep->refcount) == 0 || ep->is_server ||
-		    ep->sock < 0) {
+		    ep->sock < 0 || ep->list_ref_dropped) {
 			continue;
 		}
 
@@ -6425,16 +6479,19 @@ static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remo
 			continue;
 		}
 
+		ep->list_ref_dropped = true;
 		orphans[orphan_count++] = ep;
 	}
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
 
+	/* Drop the reference that was meant for the endpoint list, and only
+	 * that one. Dropping every reference would free the endpoint under
+	 * anyone still using it.
+	 */
 	for (int i = 0; i < orphan_count; i++) {
-		while (atomic_get(&orphans[i]->refcount) > 0) {
-			quic_endpoint_unref(orphans[i]);
-		}
+		quic_endpoint_unref(orphans[i]);
 	}
 }
 
@@ -8031,11 +8088,13 @@ static void process_pkt(struct quic_pkt *pkt)
  * to decrypt, or anyone who knows the addresses and the connection ID could
  * keep the connection from ever timing out.
  */
-static void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
 {
 	if (!ep->idle.idle_timeout_disabled) {
 		ep->idle.last_rx_time = k_uptime_get();
 	}
+
+	ep->idle.ack_eliciting_sent = false;
 }
 
 static bool process_long_header_msg(struct quic_pkt *pkt)

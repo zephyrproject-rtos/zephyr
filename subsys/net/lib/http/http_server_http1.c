@@ -30,9 +30,12 @@ LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 static const char not_found_response[] = "HTTP/1.1 404 Not Found\r\n"
 					 "Content-Length: 9\r\n\r\n"
 					 "Not Found";
-static const char not_allowed_response[] = "HTTP/1.1 405 Method Not Allowed\r\n"
-					   "Content-Length: 18\r\n\r\n"
-					   "Method Not Allowed";
+/* The Allow header field goes between the two parts, see send_http1_405() */
+static const char not_allowed_response_start[] = "HTTP/1.1 405 Method Not Allowed\r\n"
+						 "Allow: ";
+static const char not_allowed_response_end[] = "\r\n"
+					       "Content-Length: 18\r\n\r\n"
+					       "Method Not Allowed";
 static const char conflict_response[] = "HTTP/1.1 409 Conflict\r\n\r\n";
 
 static const char final_chunk[] = "0\r\n\r\n";
@@ -160,10 +163,32 @@ static int send_http1_404(struct http_client_ctx *client)
 				       sizeof(not_found_response) - 1);
 }
 
-static int send_http1_405(struct http_client_ctx *client)
+static int send_http1_405(struct http_client_ctx *client, uint32_t allowed_methods)
 {
-	return send_http1_error_common(client, not_allowed_response,
-				       sizeof(not_allowed_response) - 1);
+	/* Only the server thread gets here, so the buffer can be static */
+	static char response[sizeof(not_allowed_response_start) +
+			     HTTP_SERVER_ALLOW_VALUE_SIZE +
+			     sizeof(not_allowed_response_end)];
+	size_t pos = sizeof(not_allowed_response_start) - 1;
+	int ret;
+
+	/* A 405 response has to say which methods the resource does support
+	 * (RFC 9110 ch. 15.5.6).
+	 */
+	memcpy(response, not_allowed_response_start, pos);
+
+	ret = http_server_format_allow(allowed_methods, response + pos,
+				       HTTP_SERVER_ALLOW_VALUE_SIZE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	pos += ret;
+	memcpy(response + pos, not_allowed_response_end,
+	       sizeof(not_allowed_response_end) - 1);
+	pos += sizeof(not_allowed_response_end) - 1;
+
+	return send_http1_error_common(client, response, pos);
 }
 
 static int send_http1_409(struct http_client_ctx *client)
@@ -237,7 +262,7 @@ static int handle_http1_static_resource(
 	int ret;
 
 	if (client->method != HTTP_GET) {
-		return send_http1_405(client);
+		return send_http1_405(client, BIT(HTTP_GET));
 	}
 
 	data = static_detail->static_data;
@@ -745,7 +770,7 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 	char http_response[STATIC_FS_RESPONSE_SIZE];
 
 	if (client->method != HTTP_GET) {
-		return send_http1_405(client);
+		return send_http1_405(client, BIT(HTTP_GET));
 	}
 
 	/* get filename and content-type from url */
@@ -839,7 +864,7 @@ static int handle_http1_dynamic_resource(
 	user_method = dynamic_detail->common.bitmask_of_supported_http_methods;
 
 	if (!(BIT(client->method) & user_method)) {
-		return send_http1_405(client);
+		return send_http1_405(client, user_method);
 	}
 
 	if (dynamic_detail->holder != NULL && dynamic_detail->holder != client) {

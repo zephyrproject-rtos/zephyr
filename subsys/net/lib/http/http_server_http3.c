@@ -40,6 +40,14 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 #define H3_FRAME_GOAWAY         0x07
 #define H3_FRAME_MAX_PUSH_ID    0x0d
 
+/* Frame types of HTTP/2 that have no HTTP/3 equivalent. They are reserved
+ * and must not be sent (RFC 9114 ch. 7.2.8 and ch. 11.2.1).
+ */
+#define H3_FRAME_H2_PRIORITY      0x02
+#define H3_FRAME_H2_PING          0x06
+#define H3_FRAME_H2_WINDOW_UPDATE 0x08
+#define H3_FRAME_H2_CONTINUATION  0x09
+
 /* HTTP/3 Settings identifiers (RFC 9114 Section 7.2.4.1) */
 #define H3_SETTINGS_QPACK_MAX_TABLE_CAPACITY  0x01
 #define H3_SETTINGS_MAX_FIELD_SECTION_SIZE    0x06
@@ -336,6 +344,8 @@ static void h3_init_conn_ctx(struct h3_conn_ctx *ctx)
 	ctx->peer_settings.received = false;
 
 	ctx->settings_sent = false;
+	ctx->peer_goaway_received = false;
+	ctx->peer_goaway_id = 0U;
 	ctx->initialized = true;
 }
 
@@ -1219,8 +1229,14 @@ static int h3_send_425(struct http_client_ctx *client)
 /**
  * Send HTTP/3 405 Method Not Allowed response.
  */
-static int h3_send_405(struct http_client_ctx *client)
+static int h3_send_405(struct http_client_ctx *client, uint32_t allowed_methods)
 {
+	/* Only the server thread gets here, so the buffer can be static */
+	static char allow[HTTP_SERVER_ALLOW_VALUE_SIZE];
+	const struct http_header allow_header = {
+		.name = "allow",
+		.value = allow,
+	};
 	int ret;
 
 	/* The request is refused: a body that follows must not be passed to
@@ -1228,8 +1244,16 @@ static int h3_send_405(struct http_client_ctx *client)
 	 */
 	h3_forget_refused_request(client);
 
+	/* A 405 response has to say which methods the resource does support
+	 * (RFC 9110 ch. 15.5.6).
+	 */
+	ret = http_server_format_allow(allowed_methods, allow, sizeof(allow));
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = h3_send_headers_frame(client, HTTP_405_METHOD_NOT_ALLOWED,
-				    NULL, NULL, 0);
+				    NULL, &allow_header, 1);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1247,7 +1271,7 @@ static int h3_handle_static_resource(
 	int ret;
 
 	if (client->method != HTTP_GET) {
-		return h3_send_405(client);
+		return h3_send_405(client, BIT(HTTP_GET));
 	}
 
 	ret = h3_send_headers_frame(client, HTTP_200_OK,
@@ -1292,7 +1316,7 @@ static int h3_handle_static_fs_resource(
 	char tmp[64];
 
 	if (client->method != HTTP_GET) {
-		return h3_send_405(client);
+		return h3_send_405(client, BIT(HTTP_GET));
 	}
 
 	/* Get filename and content-type from URL */
@@ -1559,7 +1583,7 @@ static int h3_handle_dynamic_resource(
 	user_method = dynamic_detail->common.bitmask_of_supported_http_methods;
 
 	if (!(BIT(client->method) & user_method)) {
-		return h3_send_405(client);
+		return h3_send_405(client, user_method);
 	}
 
 	if (dynamic_detail->holder != NULL &&
@@ -2288,14 +2312,40 @@ int h3_handle_control_stream(struct http_client_ctx *client, int fd)
 			}
 			break;
 
-		case H3_FRAME_GOAWAY:
+		case H3_FRAME_GOAWAY: {
+			uint64_t goaway_id;
+
+			/* The payload is exactly one identifier (RFC 9114
+			 * ch. 7.1 and ch. 7.2.6).
+			 */
+			ret = h3_parse_varint(rx_ctx->buffer + pos + hdr_bytes,
+					      (size_t)frame_len, &goaway_id);
+			if (ret < 0 || (uint64_t)ret != frame_len) {
+				LOG_DBG("[%p] H3: Malformed GOAWAY", client);
+				return -H3_FRAME_ERROR;
+			}
+
 			/* A GOAWAY from a client only limits the server
 			 * pushes it still accepts (RFC 9114 ch. 5.2). There
 			 * are none, and the requests in progress must be
-			 * allowed to finish, so there is nothing to do.
+			 * allowed to finish, so the frame needs no action.
+			 * The identifier must not grow from one GOAWAY to
+			 * the next though, that is a connection error of
+			 * type H3_ID_ERROR.
 			 */
-			LOG_DBG("[%p] H3: Control stream GOAWAY", client);
+			if (h3_ctx->peer_goaway_received &&
+			    goaway_id > h3_ctx->peer_goaway_id) {
+				LOG_DBG("[%p] H3: GOAWAY identifier grew from %llu to %llu",
+					client, h3_ctx->peer_goaway_id, goaway_id);
+				return -H3_ID_ERROR;
+			}
+
+			h3_ctx->peer_goaway_received = true;
+			h3_ctx->peer_goaway_id = goaway_id;
+
+			LOG_DBG("[%p] H3: Control stream GOAWAY, id=%llu", client, goaway_id);
 			break;
+		}
 
 		case H3_FRAME_MAX_PUSH_ID:
 			LOG_DBG("[%p] H3: Control stream MAX_PUSH_ID (ignored)", client);
@@ -2304,6 +2354,18 @@ int h3_handle_control_stream(struct http_client_ctx *client, int fd)
 		case H3_FRAME_CANCEL_PUSH:
 			LOG_DBG("[%p] H3: Control stream CANCEL_PUSH (ignored)", client);
 			break;
+
+		case H3_FRAME_H2_PRIORITY:
+		case H3_FRAME_H2_PING:
+		case H3_FRAME_H2_WINDOW_UPDATE:
+		case H3_FRAME_H2_CONTINUATION:
+			/* Unlike an unknown frame type, a reserved HTTP/2
+			 * frame type is a connection error of type
+			 * H3_FRAME_UNEXPECTED (RFC 9114 ch. 7.2.8).
+			 */
+			LOG_DBG("[%p] H3: reserved frame type=0x%llx on control stream",
+				client, frame_type);
+			return -H3_FRAME_UNEXPECTED;
 
 		default:
 			/* Unknown frame types on control stream are ignored */
@@ -2548,6 +2610,20 @@ int h3_open_uni_streams(struct http_client_ctx *client, int quic_sock)
 }
 
 /**
+ * Tell whether an error returned by the HTTP/3 code is an HTTP/3 error code,
+ * which the stream handling returns for conditions that end the connection,
+ * as opposed to an errno value.
+ *
+ * @param err Negative error value.
+ *
+ * @return true if the error is a negated HTTP/3 error code.
+ */
+bool h3_is_connection_error(int err)
+{
+	return err <= -H3_NO_ERROR && err >= -H3_VERSION_FALLBACK;
+}
+
+/**
  * Identify and register an incoming unidirectional stream.
  *
  * @param client  Client context.
@@ -2700,6 +2776,7 @@ static bool h3_request_body_pending(const struct http_client_ctx *client)
 static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 {
 	bool need_more_data = false;
+	bool request_frame_seen = false;
 	size_t pos = 0;
 
 	while (pos < client->data_len) {
@@ -2727,6 +2804,7 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 		switch (frame_type) {
 		case H3_FRAME_HEADERS:
 			LOG_DBG("[%p] H3: HEADERS frame, len=%llu", client, frame_len);
+			request_frame_seen = true;
 
 			ret = h3_parse_qpack_headers(client, payload,
 						     (size_t)frame_len);
@@ -2770,6 +2848,7 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 
 		case H3_FRAME_DATA:
 			LOG_DBG("[%p] H3: DATA frame, len=%llu", client, frame_len);
+			request_frame_seen = true;
 
 			ret = h3_process_data_frame(client, payload,
 						    (size_t)frame_len, false);
@@ -2800,6 +2879,18 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 			 * while client->fd still points at the request stream.
 			 */
 			LOG_DBG("[%p] H3: frame type=0x%llx not allowed on request stream",
+				client, frame_type);
+			return -H3_FRAME_UNEXPECTED;
+
+		case H3_FRAME_H2_PRIORITY:
+		case H3_FRAME_H2_PING:
+		case H3_FRAME_H2_WINDOW_UPDATE:
+		case H3_FRAME_H2_CONTINUATION:
+			/* Unlike an unknown frame type, a reserved HTTP/2
+			 * frame type is a connection error of type
+			 * H3_FRAME_UNEXPECTED (RFC 9114 ch. 7.2.8).
+			 */
+			LOG_DBG("[%p] H3: reserved frame type=0x%llx on request stream",
 				client, frame_type);
 			return -H3_FRAME_UNEXPECTED;
 
@@ -2843,6 +2934,16 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 		client->current_detail = NULL;
 
 		return 0;
+	}
+
+	/* Frames of unknown types are skipped (RFC 9114 ch. 9) and can be
+	 * sent on a request stream at any point (ch. 7.2.8). When nothing
+	 * but such frames was read, the request has made no progress: it is
+	 * neither answered nor complete, so keep the stream and wait for the
+	 * frames that follow.
+	 */
+	if (!request_frame_seen) {
+		return -EAGAIN;
 	}
 
 	return (need_more_data || client->data_len > 0) ? -EAGAIN : 0;

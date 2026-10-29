@@ -2119,6 +2119,250 @@ ZTEST(server_h3_tests, test_h3_push_promise_on_request_stream_is_connection_erro
 	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
 }
 
+/* Frame types of HTTP/2 that are reserved in HTTP/3 */
+static const uint8_t reserved_h2_frame_types[] = { 0x02, 0x06, 0x08, 0x09 };
+
+ZTEST(server_h3_tests, test_h3_reserved_frame_on_request_stream_is_connection_error)
+{
+	ARRAY_FOR_EACH(reserved_h2_frame_types, i) {
+		const uint8_t frame[] = { reserved_h2_frame_types[i], 0x00 };
+
+		if (i > 0) {
+			close_h3_client();
+			connect_h3_client(NULL);
+		}
+
+		expect_request_stream_frame_closes_connection(frame, sizeof(frame));
+	}
+}
+
+ZTEST(server_h3_tests, test_h3_reserved_frame_on_control_stream_is_connection_error)
+{
+	ARRAY_FOR_EACH(reserved_h2_frame_types, i) {
+		const uint8_t frames[] = {
+			H3_FRAME_SETTINGS, 0x00,
+			reserved_h2_frame_types[i], 0x00,
+		};
+
+		if (i > 0) {
+			close_h3_client();
+			connect_h3_client(NULL);
+		}
+
+		(void)send_control_stream_data(frames, sizeof(frames));
+
+		expect_connection_closed_and_server_alive();
+	}
+}
+
+ZTEST(server_h3_tests, test_h3_unknown_control_frame_type_is_ignored)
+{
+	/* 0x21 is one of the frame types reserved for exercising the
+	 * requirement that unknown types are ignored.
+	 */
+	static const uint8_t control_frames[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		0x21, 0x01, 0xaa,
+	};
+
+	(void)start_h3_session_with_control_data(control_frames, sizeof(control_frames));
+	send_get_and_expect_static(false);
+}
+
+/* A frame of a type reserved for exercising the rule that unknown frame
+ * types are ignored, with one byte of payload.
+ */
+static const uint8_t unknown_h3_frame[] = { 0x21, 0x01, 0xaa };
+
+ZTEST(server_h3_tests, test_h3_unknown_frame_before_request_is_ignored)
+{
+	uint8_t headers[64];
+	size_t headers_len;
+	int stream_fd;
+
+	start_h3_session(false);
+
+	/* The unknown frame reaches the server on its own, the request
+	 * follows later on the same stream and must still be answered.
+	 */
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	send_all(stream_fd, unknown_h3_frame, sizeof(unknown_h3_frame));
+	k_msleep(50);
+
+	headers_len = build_headers_frame(headers, HTTP_GET, "/");
+	send_all(stream_fd, headers, headers_len);
+	expect_static_get_response(stream_fd);
+}
+
+ZTEST(server_h3_tests, test_h3_unknown_frame_inside_request_body_is_ignored)
+{
+	static const uint8_t payload[] = TEST_DYNAMIC_POST_PAYLOAD;
+	uint8_t headers[32];
+	uint8_t data_frame[64];
+	size_t headers_len;
+	size_t data_len;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_headers_frame(headers, HTTP_POST, "/dynamic");
+	send_all(stream_fd, headers, headers_len);
+	k_msleep(50);
+
+	/* An unknown frame on its own between the headers and the body
+	 * must not end the request.
+	 */
+	send_all(stream_fd, unknown_h3_frame, sizeof(unknown_h3_frame));
+	k_msleep(50);
+
+	data_len = build_data_frame(data_frame, payload, sizeof(payload) - 1);
+	send_all(stream_fd, data_frame, data_len);
+
+	shutdown_stream_send(stream_fd);
+	expect_headers_only_response(stream_fd);
+
+	zassert_true(dynamic_complete, "Dynamic callback did not observe completion");
+	zassert_equal(dynamic_bytes_received, sizeof(payload) - 1,
+		      "Dynamic callback received wrong byte count");
+	zassert_mem_equal(dynamic_payload, payload, sizeof(payload) - 1,
+			  "Dynamic callback received wrong payload");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close POST stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
+ZTEST(server_h3_tests, test_h3_client_goaway_identifier_must_not_grow)
+{
+	static const uint8_t shrinking[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		H3_FRAME_GOAWAY, 0x01, 0x05,
+		H3_FRAME_GOAWAY, 0x01, 0x05,
+		H3_FRAME_GOAWAY, 0x01, 0x02,
+	};
+	static const uint8_t growing[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		H3_FRAME_GOAWAY, 0x01, 0x02,
+		H3_FRAME_GOAWAY, 0x01, 0x05,
+	};
+
+	/* The same or a smaller identifier is fine, requests are served */
+	(void)start_h3_session_with_control_data(shrinking, sizeof(shrinking));
+	send_get_and_expect_static(false);
+
+	close_h3_client();
+	connect_h3_client(NULL);
+
+	/* A larger one is a connection error */
+	(void)send_control_stream_data(growing, sizeof(growing));
+	expect_connection_closed_and_server_alive();
+}
+
+ZTEST(server_h3_tests, test_h3_malformed_client_goaway_closes_connection)
+{
+	static const uint8_t empty[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		H3_FRAME_GOAWAY, 0x00,
+	};
+	static const uint8_t trailing_byte[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		H3_FRAME_GOAWAY, 0x02, 0x01, 0x00,
+	};
+
+	(void)send_control_stream_data(empty, sizeof(empty));
+	expect_connection_closed_and_server_alive();
+
+	close_h3_client();
+	connect_h3_client(NULL);
+
+	(void)send_control_stream_data(trailing_byte, sizeof(trailing_byte));
+	expect_connection_closed_and_server_alive();
+}
+
+ZTEST(server_h3_tests, test_h3_duplicate_critical_stream_closes_connection)
+{
+	static const uint8_t stream_types[] = {
+		H3_UNI_STREAM_CONTROL,
+		H3_UNI_STREAM_QPACK_ENCODER,
+		H3_UNI_STREAM_QPACK_DECODER,
+	};
+
+	ARRAY_FOR_EACH(stream_types, i) {
+		int first_fd;
+		int second_fd;
+
+		if (i > 0) {
+			close_h3_client();
+			connect_h3_client(NULL);
+		}
+
+		start_h3_session(false);
+
+		/* The control stream is open already, the QPACK streams are
+		 * opened here. A request shows the first one was taken in.
+		 */
+		if (stream_types[i] != H3_UNI_STREAM_CONTROL) {
+			first_fd = open_client_stream(QUIC_STREAM_UNIDIRECTIONAL);
+			send_all(first_fd, &stream_types[i], 1);
+		}
+
+		send_get_and_expect_static(false);
+
+		/* A second stream of the same type is a connection error */
+		second_fd = open_client_stream(QUIC_STREAM_UNIDIRECTIONAL);
+		send_all(second_fd, &stream_types[i], 1);
+
+		expect_connection_closed_and_server_alive();
+	}
+}
+
+static bool buffer_contains(const uint8_t *buf, size_t len, const char *str)
+{
+	size_t str_len = strlen(str);
+
+	for (size_t i = 0; i + str_len <= len; i++) {
+		if (memcmp(buf + i, str, str_len) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+ZTEST(server_h3_tests, test_h3_405_carries_allow_header)
+{
+	uint8_t response[MAX_RESPONSE_SIZE];
+	uint8_t headers[64];
+	size_t response_len;
+	size_t headers_len;
+	int stream_fd;
+
+	start_h3_session(false);
+
+	/* The dynamic resource only takes POST */
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_headers_frame(headers, HTTP_GET, "/dynamic");
+	send_all(stream_fd, headers, headers_len);
+
+	response_len = read_stream_to_eof(stream_fd, response, sizeof(response));
+	zassert_true(response_len > 0, "Empty H3 response");
+	zassert_equal(response[0], H3_FRAME_HEADERS, "Expected a HEADERS frame");
+
+	/* The server sends the status code and this field as literals, so
+	 * they can be found in the field section as they are.
+	 */
+	zassert_true(buffer_contains(response, response_len, "405"),
+		     "Response is not a 405");
+	zassert_true(buffer_contains(response, response_len, "allow"),
+		     "405 response has no Allow header");
+	zassert_true(buffer_contains(response, response_len, "POST"),
+		     "Allow header does not name the supported method");
+	zassert_false(buffer_contains(response, response_len, "GET"),
+		      "Allow header names a method that is not supported");
+}
+
 ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(server_h3_tests, NULL, http_server_h3_setup,
 	    http_server_h3_before, http_server_h3_after, http_server_h3_teardown);

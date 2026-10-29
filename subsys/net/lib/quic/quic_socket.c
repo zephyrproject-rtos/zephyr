@@ -153,6 +153,7 @@ static int quic_connection_init(struct quic_context *ctx,
 
 fail:
 	sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ep->list_ref_dropped = true;
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
@@ -703,13 +704,16 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 		}
 	}
 
-	/* Report POLLHUP when the connection has been closed (no endpoints
-	 * remain). This allows upper layers (e.g. the HTTP server) to
-	 * immediately detect and clean up stale connections instead of
-	 * waiting for an inactivity timer. POLLHUP is always reported
-	 * regardless of the requested events, per POSIX semantics.
+	/* Report POLLHUP when the connection has been closed: no endpoints
+	 * remain, or the connection was closed while streams the peer opened
+	 * are still waiting to be accepted. Those make the socket readable
+	 * too, so the hang-up would otherwise not show until they are taken.
+	 * This allows upper layers (e.g. the HTTP server) to immediately
+	 * detect and clean up stale connections instead of waiting for an
+	 * inactivity timer. POLLHUP is always reported regardless of the
+	 * requested events, per POSIX semantics.
 	 */
-	if (quic_ctx_is_eof(ctx)) {
+	if (quic_ctx_is_eof(ctx) || (!ctx->is_listening && ctx->closed)) {
 		pfd->revents |= ZSOCK_POLLHUP;
 	}
 
@@ -992,6 +996,14 @@ static int quic_send_stream_fin(struct quic_stream *stream, struct quic_endpoint
 	size_t frame_len = 0;
 	uint64_t sent_pn;
 	int ret;
+
+	/* A unidirectional stream that the peer opened is receive-only for
+	 * us (RFC 9000 ch. 2.1): it has no sending part that could be
+	 * finished, and a STREAM frame on it is an error for the peer.
+	 */
+	if ((stream->id & 2U) != 0U && ((stream->id & 1U) != 0U) != ep->is_server) {
+		return 0;
+	}
 
 	/*
 	 * STREAM frame type bits:
