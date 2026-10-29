@@ -1,0 +1,13 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - cpp
+    - userspace
+  filter: CONFIG_ARCH_HAS_USERSPACE
+  integration_platforms:
+    - qemu_riscv32
+    - mps2/an385
+tests:
+  cpp.userspace: {}
