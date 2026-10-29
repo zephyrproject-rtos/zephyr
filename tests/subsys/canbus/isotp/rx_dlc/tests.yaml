@@ -1,0 +1,14 @@
+common:
+  tags:
+    - can
+    - isotp
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  canbus.isotp.rx_dlc: {}
+  canbus.isotp.rx_dlc.fd:
+    extra_configs:
+      - CONFIG_CAN_FD_MODE=y
