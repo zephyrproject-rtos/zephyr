@@ -17,7 +17,7 @@
 	chosen {
 		zephyr,code-partition = &l2_ram_text;
 		zephyr,sram = &l2_ram_data;
-
+		zephyr,shell-uart = &uart0;
 		zephyr,console = &uart0;
 	};
 
