@@ -9,11 +9,30 @@
 #include "ganymed_bob_sy120-pinctrl.dtsi"
 
 / {
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+	};
+
 	chosen {
 		zephyr,code-partition = &l2_ram_text;
 		zephyr,sram = &l2_ram_data;
 
 		zephyr,console = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_0: led_0 {
+			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+			label = "USERLED0";
+		};
+
+		led_1: led_1 {
+			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			label = "USERLED1";
+		};
 	};
 };
 
