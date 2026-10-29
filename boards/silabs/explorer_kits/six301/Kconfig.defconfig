@@ -1,0 +1,17 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SIXG301_EK2719A
+
+config FPU
+	default y if SOC_GECKO_USE_RAIL || BT
+
+if BT
+
+config MAIN_STACK_SIZE
+	default 3072 if PM
+	default 2304
+
+endif # BT
+
+endif
