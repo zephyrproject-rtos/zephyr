@@ -87,9 +87,8 @@ static size_t rmt_tx_fill(struct rmt_channel *ch, rmt_symbol_word_t *mem, size_t
 	return n;
 }
 
-static void rmt_tx_isr(void *arg)
+void rmt_tx_isr(struct rmt_channel *ch)
 {
-	struct rmt_channel *ch = arg;
 	struct rmt_data *data = ch->dev->data;
 	rmt_soc_handle_t regs = data->hal.regs;
 	uint32_t id = ch->index;
@@ -162,16 +161,7 @@ int rmt_tx_configure(const struct device *dev, struct rmt_channel *ch)
 	rmt_hal_tx_channel_reset(&data->hal, id);
 	k_spin_unlock(&data->glock, key);
 
-	if (ch->intr != NULL) {
-		esp_intr_free(ch->intr);
-		ch->intr = NULL;
-	}
-	if (esp_intr_alloc_intrstatus(soc_rmt_signals[0].irq, RMT_INTR_ALLOC_FLAGS,
-				      (uint32_t)rmt_ll_get_interrupt_status_reg(regs),
-				      RMT_LL_EVENT_TX_MASK(id), rmt_tx_isr, ch, &ch->intr) != 0) {
-		LOG_ERR("failed to install TX interrupt");
-		return -ENODEV;
-	}
+	ch->irq_attached = true;
 
 	ch->with_dma = false;
 #if RMT_DMA_SUPPORTED

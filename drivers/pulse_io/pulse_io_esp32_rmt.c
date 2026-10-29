@@ -258,10 +258,7 @@ static int rmt_channel_release(const struct device *dev, struct pulse_io_channel
 		k_sem_reset(&ch->done);
 	}
 
-	if (ch->intr != NULL) {
-		esp_intr_free(ch->intr);
-		ch->intr = NULL;
-	}
+	ch->irq_attached = false;
 
 	key = k_spin_lock(&data->glock);
 	ch->state = RMT_CH_FREE;
@@ -409,6 +406,37 @@ static int rmt_stop(const struct device *dev, struct pulse_io_channel *chan)
 	return 0;
 }
 
+/*
+ * All channels share one interrupt source. Call the handler of every channel
+ * that has one attached and whose events are pending.
+ */
+static void rmt_isr(const void *arg)
+{
+	const struct device *dev = arg;
+	struct rmt_data *data = dev->data;
+	uint32_t status = *(volatile uint32_t *)rmt_ll_get_interrupt_status_reg(data->hal.regs);
+
+	for (uint8_t i = 0; i < RMT_NUM_CHANNELS; i++) {
+		struct rmt_channel *ch = &data->channels[i];
+
+		if (!ch->irq_attached) {
+			continue;
+		}
+
+		if (ch->cfg.dir == PULSE_IO_DIR_TX) {
+			if ((status & RMT_LL_EVENT_TX_MASK(ch->index)) != 0U) {
+				rmt_tx_isr(ch);
+			}
+		} else {
+			uint32_t rx_mask = RMT_LL_EVENT_RX_MASK(ch->index - RMT_RX_CHANNEL_OFFSET);
+
+			if ((status & rx_mask) != 0U) {
+				rmt_rx_isr(ch);
+			}
+		}
+	}
+}
+
 static int rmt_init(const struct device *dev)
 {
 	const struct rmt_config *config = dev->config;
@@ -462,6 +490,8 @@ static int rmt_init(const struct device *dev)
 		k_sem_init(&ch->done, 0, 1);
 	}
 
+	config->irq_configure();
+
 	return 0;
 }
 
@@ -494,10 +524,17 @@ static DEVICE_API(pulse_io, rmt_pulse_io_api) = {
 
 #define RMT_PULSE_IO_INIT(idx)                                                                     \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	static void rmt_irq_configure_##idx(void)                                                  \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(idx), IRQ_DEFAULT_PRIORITY, rmt_isr,                      \
+			    DEVICE_DT_INST_GET(idx), 0);                                           \
+		irq_enable(DT_INST_IRQN(idx));                                                     \
+	}                                                                                          \
 	static const struct rmt_config rmt_config_##idx = {                                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
+		.irq_configure = rmt_irq_configure_##idx,                                          \
 		RMT_DMA_INIT(idx)};                                                                \
 	static struct rmt_data rmt_data_##idx = {                                                  \
 		.hal =                                                                             \

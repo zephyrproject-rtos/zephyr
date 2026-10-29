@@ -61,9 +61,8 @@ static void rmt_rx_finish(struct rmt_channel *ch)
 	k_sem_give(&ch->done);
 }
 
-static void rmt_rx_isr(void *arg)
+void rmt_rx_isr(struct rmt_channel *ch)
 {
-	struct rmt_channel *ch = arg;
 	struct rmt_data *data = ch->dev->data;
 	rmt_soc_handle_t regs = data->hal.regs;
 	uint32_t id = ch->index - RMT_RX_CHANNEL_OFFSET;
@@ -189,10 +188,7 @@ int rmt_rx_configure(const struct device *dev, struct rmt_channel *ch)
 	rmt_hal_rx_channel_reset(&data->hal, id);
 	k_spin_unlock(&data->glock, key);
 
-	if (ch->intr != NULL) {
-		esp_intr_free(ch->intr);
-		ch->intr = NULL;
-	}
+	ch->irq_attached = false;
 
 	ch->with_dma = false;
 #if RMT_DMA_SUPPORTED
@@ -226,15 +222,7 @@ int rmt_rx_configure(const struct device *dev, struct rmt_channel *ch)
 	}
 #endif
 
-	if (!ch->with_dma) {
-		if (esp_intr_alloc_intrstatus(soc_rmt_signals[0].irq, RMT_INTR_ALLOC_FLAGS,
-					      (uint32_t)rmt_ll_get_interrupt_status_reg(regs),
-					      RMT_LL_EVENT_RX_MASK(id), rmt_rx_isr, ch,
-					      &ch->intr) != 0) {
-			LOG_ERR("failed to install RX interrupt");
-			return -ENODEV;
-		}
-	}
+	ch->irq_attached = !ch->with_dma;
 
 	ret = rmt_select_channel_clock(dev, ch, ch->cfg.resolution_hz);
 	if (ret) {

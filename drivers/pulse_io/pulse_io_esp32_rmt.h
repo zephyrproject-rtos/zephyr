@@ -18,7 +18,7 @@
 #include <hal/rmt_hal.h>
 #include <hal/rmt_ll.h>
 #include <hal/rmt_periph.h>
-#include <esp_intr_alloc.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <esp_clk_tree.h>
 
 #define RMT_NUM_CHANNELS      RMT_LL_GET(CHANS_PER_INST)
@@ -44,8 +44,6 @@
 #ifndef RMT_LL_CHANNEL_CLOCK_MAX_PRESCALE
 #define RMT_LL_CHANNEL_CLOCK_MAX_PRESCALE 256
 #endif
-
-#define RMT_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 
 #ifdef CONFIG_PULSE_IO_ESP32_RMT_DMA
 #define RMT_DMA_SUPPORTED 1
@@ -91,7 +89,8 @@ struct rmt_channel {
 	uint8_t state;
 	struct pulse_io_config cfg;
 	uint32_t resolution_hz;
-	intr_handle_t intr;
+	/* The device ISR dispatches this channel's events */
+	bool irq_attached;
 	struct k_sem done;
 	struct k_spinlock lock;
 	rmt_symbol_word_t *hw_mem;
@@ -115,6 +114,7 @@ struct rmt_config {
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
+	void (*irq_configure)(void);
 #if RMT_DMA_SUPPORTED
 	const struct device *dma_dev;
 	uint8_t tx_dma_channel;
@@ -141,6 +141,8 @@ int rmt_tx_start(const struct device *dev, struct rmt_channel *ch,
 int rmt_rx_start(const struct device *dev, struct rmt_channel *ch,
 		 const struct pulse_io_rx_req *req);
 void rmt_tx_halt(const struct device *dev, struct rmt_channel *ch);
+void rmt_tx_isr(struct rmt_channel *ch);
+void rmt_rx_isr(struct rmt_channel *ch);
 void rmt_rx_halt(const struct device *dev, struct rmt_channel *ch);
 
 #endif /* ZEPHYR_DRIVERS_PULSE_IO_ESPRESSIF_RMT_PULSE_IO_ESP32_RMT_H_ */
