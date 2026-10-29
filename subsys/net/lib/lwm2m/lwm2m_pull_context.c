@@ -231,6 +231,11 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	struct coap_block_context received_block_ctx;
 	const uint8_t *payload_start;
 
+	/* Transfer was cancelled, drop replies still in flight */
+	if (pull_service_state == STOPPING) {
+		return 0;
+	}
+
 	/* token is used to determine a valid ACK vs a separated response */
 	tkl = coap_header_get_token(check_response, token);
 
@@ -359,6 +364,10 @@ error:
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
+	if (pull_service_state == STOPPING) {
+		return;
+	}
+
 	LOG_ERR("TIMEOUT - Too many retry packet attempts! "
 		"Aborting firmware download.");
 	context.result_cb(context.obj_inst_id, -ETIMEDOUT);
@@ -458,6 +467,18 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 	firmware_transfer();
 
 	return 0;
+}
+
+void lwm2m_pull_context_cancel(bool is_firmware_uri)
+{
+	/* Nothing to do unless a transfer of this kind holds the context */
+	if (k_sem_count_get(&lwm2m_pull_sem) != 0 || pull_service_state == STOPPING ||
+	    context.is_firmware_uri != is_firmware_uri) {
+		return;
+	}
+
+	LOG_INF("Cancelling the transfer of %s", context.uri);
+	cleanup_context();
 }
 
 void lwm2m_pull_context_set_sockopt_callback(lwm2m_set_sockopt_cb_t set_sockopt_cb)

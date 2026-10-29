@@ -30,4 +30,10 @@ struct requesting_object {
  */
 int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k_timeout_t timeout);
 
+/*
+ * Stop the transfer in progress, if it was started for a firmware URI
+ * (is_firmware_uri true) or for another object (false). result_cb is not called.
+ */
+void lwm2m_pull_context_cancel(bool is_firmware_uri);
+
 #endif /* LWM2M_PULL_CONTEXT_H */

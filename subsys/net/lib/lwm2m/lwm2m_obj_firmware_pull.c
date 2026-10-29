@@ -63,9 +63,9 @@ static struct requesting_object req = {
 	.verify_cb = NULL
 };
 
-/* TODO: */
 int lwm2m_firmware_cancel_transfer(void)
 {
+	lwm2m_pull_context_cancel(true);
 	return 0;
 }
 

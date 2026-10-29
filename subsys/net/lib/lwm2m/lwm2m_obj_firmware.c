@@ -89,6 +89,7 @@ static int64_t push_deadline[MAX_INSTANCE_COUNT];
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 extern int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri);
+extern int lwm2m_firmware_cancel_transfer(void);
 #endif
 
 static void push_timeout_service(struct k_work *work);
@@ -341,6 +342,13 @@ void lwm2m_firmware_set_update_result(uint8_t result)
 	lwm2m_firmware_set_update_result_inst(0, result);
 }
 
+static void pull_cancel(void)
+{
+#ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	lwm2m_firmware_cancel_transfer();
+#endif
+}
+
 /* An empty or NULL ('\0') Package write resets the state machine; a block-wise
  * transfer can only produce such a payload past offset zero.
  */
@@ -364,12 +372,16 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	pull = state == STATE_DOWNLOADING && !push_active[obj_inst_id];
 	lwm2m_registry_unlock();
 
-	if (pull) {
+	if (pull && !is_reset_write(data, data_len, offset)) {
 		LOG_DBG("Package is not writable while a pull is in progress");
 		return -EPERM;
 	}
 
 	if (state != STATE_UPDATING && is_reset_write(data, data_len, offset)) {
+		if (pull) {
+			pull_cancel();
+		}
+
 		if (state == STATE_IDLE) {
 			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
 		} else {
@@ -485,10 +497,14 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	empty_uri = data_len == 0 || strnlen(data, data_len) == 0;
 
 	if (empty_uri) {
-		/* Nothing can stop a pull or an update yet; tell the server rather than pretend */
-		if (pull || state == STATE_UPDATING) {
+		/* Nothing can stop an update yet; tell the server rather than pretend */
+		if (state == STATE_UPDATING) {
 			LOG_DBG("Package URI cannot be reset: state = %d", state);
 			return -EPERM;
+		}
+
+		if (pull) {
+			pull_cancel();
 		}
 
 		if (state == STATE_IDLE) {
