@@ -52,6 +52,10 @@ like this:
      # You can constrain the children of the nodes matching this binding
      # using this key.
 
+   child-bindings:
+     # Or give children different bindings depending on their node names
+     # using this key.
+
    # If the node describes bus hardware, like an SPI bus controller
    # on an SoC, use 'bus:' to say which one, like this:
    bus: spi
@@ -755,6 +759,73 @@ will apply to the ``grandchild`` node in this DTS:
            };
    };
 
+.. _dt-bindings-child-bindings:
+
+Child-bindings
+**************
+
+``child-bindings`` can be used when a node has children with different
+properties, told apart by their node names. It maps regular expressions to
+bindings. A child node without a ``compatible`` property gets the binding whose
+pattern matches its node name, including any unit address. If no pattern
+matches, the child gets the ``child-binding`` binding, if there is one. This
+corresponds to ``patternProperties`` in Linux devicetree schemas, so patterns
+from Linux bindings can be used as they are.
+
+As in ``patternProperties``, patterns are not anchored: use ``^`` and ``$``
+to match the whole node name. It is an error if a node name matches more than
+one pattern.
+
+Consider an Ethernet controller node with configuration child nodes like this
+one:
+
+.. code-block:: devicetree
+
+   ethernet {
+           compatible = "foo";
+
+           axi-config {
+                   burst-lengths = <256 128 64 32 0 0 0>;
+           };
+
+           rx-queues-config {
+                   queues-to-use = <1>;
+
+                   queue0 {
+                           dma-channel = <0>;
+                   };
+           };
+   };
+
+The binding would look like this:
+
+.. code-block:: YAML
+
+   compatible: "foo"
+
+   child-bindings:
+     "^axi-config$":
+       description: AXI bus parameters
+       properties:
+         burst-lengths:
+           type: array
+
+     "^rx-queues-config$":
+       description: RX queue parameters
+       properties:
+         queues-to-use:
+           type: int
+
+       child-bindings:
+         "^queue[0-9]$":
+           description: RX queue
+           properties:
+             dma-channel:
+               type: int
+
+As shown above, ``child-bindings`` also works recursively, and the bindings it
+contains can use ``child-binding`` as well.
+
 .. _dt-bindings-bus:
 
 Bus
@@ -1027,8 +1098,8 @@ included into this binding.
 
 Included files are merged into bindings with a simple recursive dictionary
 merge. The build system will check that the resulting merged binding is
-well-formed. It is allowed to include at any level, including ``child-binding``,
-like this:
+well-formed. It is allowed to include at any level, including ``child-binding``
+and the entries of ``child-bindings``, like this:
 
 .. code-block:: YAML
 
@@ -1127,6 +1198,21 @@ Finally, you can filter from a child binding like this:
        child-binding:
          property-allowlist:
            - child-prop-to-allow
+
+The bindings in ``child-bindings`` are filtered by their node name patterns,
+which must be written exactly as in the included file:
+
+.. code-block:: YAML
+
+   include:
+     - name: bar.yaml
+       child-bindings:
+         "^axi-config$":
+           property-allowlist:
+             - child-prop-to-allow
+
+Child binding filters can be nested with ``child-binding`` and
+``child-bindings`` keys, following the structure of the included file.
 
 Nexus nodes and maps
 ********************
