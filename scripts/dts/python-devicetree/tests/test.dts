@@ -199,10 +199,9 @@
 		#address-cells = <0>;
 
 		node {
+			ranges;
 			#address-cells = <0>;
 			#size-cells = <0>;
-
-			ranges;
 		};
 	};
 
@@ -210,12 +209,11 @@
 		#address-cells = <0>;
 
 		node {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
 			ranges = <0xa>,
 				 <0x1a>,
 				 <0x2a>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 
@@ -224,11 +222,11 @@
 
 		node {
 			reg = <1>;
-			#address-cells = <1>;
 
 			ranges = <0xa 0xb>,
 				 <0x1a 0x1b>,
 				 <0x2a 0x2b>;
+			#address-cells = <1>;
 		};
 	};
 
@@ -237,12 +235,12 @@
 
 		node {
 			reg = <1>;
-			#address-cells = <1>;
-			#size-cells = <2>;
 
 			ranges = <0xa 0xb 0xc>,
 				 <0x1a 0x1b 0x1c>,
 				 <0x2a 0x2b 0x2c>;
+			#address-cells = <1>;
+			#size-cells = <2>;
 		};
 	};
 
@@ -263,34 +261,34 @@
 
 		node@1 {
 			reg = <1 2>;
-			#size-cells = <2>;
 
 			ranges = <0xa 0xb 0xc 0xd 0xe>,
 				 <0x1a 0x1b 0x1c 0x1d 0x1e>,
 				 <0x2a 0x2b 0x2c 0x2d 0x1d>;
+			#size-cells = <2>;
 		};
 	};
 
 	ranges-three-address-cells {
 		node@1 {
 			reg = <0 1 2>;
-			#address-cells = <3>;
 
 			ranges = <0xa 0xb 0xc 0xd 0xe 0xf>,
 				 <0x1a 0x1b 0x1c 0x1d 0x1e 0x1f>,
 				 <0x2a 0x2b 0x2c 0x2d 0x2e 0x2f>;
+			#address-cells = <3>;
 		};
 	};
 
 	ranges-three-address-two-size-cells {
 		node@1 {
 			reg = <0 1 2>;
-			#address-cells = <3>;
-			#size-cells = <2>;
 
 			ranges = <0xa 0xb 0xc 0xd 0xe 0xf 0x10>,
 				 <0x1a 0x1b 0x1c 0x1d 0x1e 0x1f 0x110>,
 				 <0x2a 0x2b 0x2c 0x2d 0x2e 0x2f 0x210>;
+			#address-cells = <3>;
+			#size-cells = <2>;
 		};
 	};
 
@@ -322,10 +320,10 @@
 		#address-cells = <2>;
 
 		parent {
-			#address-cells = <1>;
 			ranges = <1 0xa 0xb 1 /* 1    -> 0xA 0xB */
 				  2 0xc 0xd 2 /* 2..3 -> 0xC 0xD */
 				  4 0xe 0xf 1 /* 4    -> 0xE 0xF */>;
+			#address-cells = <1>;
 
 			node {
 				reg = <5 1 /* Matches no range */
@@ -343,13 +341,13 @@
 		#address-cells = <3>;
 
 		grandparent {
+			ranges = <0 0 3 0 0 2 2>;
 			#address-cells = <2>;
 			#size-cells = <2>;
-			ranges = <0 0 3 0 0 2 2>;
 
 			parent {
-				#address-cells = <1>;
 				ranges = <0 2 0 2>;
+				#address-cells = <1>;
 
 				node {
 					reg = <1 1>;
@@ -709,24 +707,8 @@
 
 		cpu@0 {
 			compatible = "test-cpu-fallback";
-			device_type = "cpu";
 			reg = <0>;
-		};
-
-		cpu@1 {
-			compatible = "test-cpu-fallback";
 			device_type = "cpu";
-			reg = <1>;
-			clock-frequency = <2000>;
-		};
-
-		cpu@2 {
-			/* No compatible: exercises the _CPU_BINDING fallback. */
-			device_type = "cpu";
-			reg = <2>;
-			clock-frequency = <3000>;
-			enable-method = "spin-table";
-			status = "disabled";
 		};
 
 		power-states {
@@ -738,6 +720,22 @@
 				power-state-name = "suspend-to-idle";
 				min-residency-us = <500>;
 			};
+		};
+
+		cpu@1 {
+			compatible = "test-cpu-fallback";
+			reg = <1>;
+			device_type = "cpu";
+			clock-frequency = <2000>;
+		};
+
+		cpu@2 {
+			reg = <2>;
+			/* No compatible: exercises the _CPU_BINDING fallback. */
+			device_type = "cpu";
+			clock-frequency = <3000>;
+			enable-method = "spin-table";
+			status = "disabled";
 		};
 	};
 };
