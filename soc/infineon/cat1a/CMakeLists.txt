@@ -9,10 +9,12 @@ if(CONFIG_SOC_FAMILY_PSOC6)
   zephyr_linker_sources(NOINIT common/noinit.ld)
 
   # Add section for cm0p image ROM
-  zephyr_linker_sources(ROM_START SORT_KEY 0x0cm0p common/rom_cm0image.ld)
+  zephyr_linker_sources_ifdef(CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP
+                              ROM_START SORT_KEY 0x0cm0p common/rom_cm0image.ld)
 
   # Add section for cm0p image RAM
-  zephyr_linker_sources(RAM_SECTIONS SORT_KEY 0 common/ram_cm0image.ld)
+  zephyr_linker_sources_ifdef(CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP
+                              RAM_SECTIONS SORT_KEY 0 common/ram_cm0image.ld)
   zephyr_linker_sources(RAMFUNC_SECTION SORT_KEY 0 common/ram_func.ld)
   zephyr_linker_sources(RODATA SORT_KEY 0 common/rom.ld)
 

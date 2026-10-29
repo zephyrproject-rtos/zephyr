@@ -43,8 +43,9 @@ config SOC_PSOC6_M0_ENABLES_M4
 
 if SOC_FAMILY_PSOC6
 ## PSOC™ 6 Cortex M0+ prebuilt images
-choice
+choice SOC_PSOC6_CM0P_IMAGE
 	prompt "PSOC™ 6 Cortex M0+ prebuilt images"
+	default SOC_PSOC6_CM0P_IMAGE_SLEEP
 	help
 	  Choose the prebuilt application image to be executed on the Cortex-M0+ core of the PSOC™ 6
 	  dual-core MCU. The image is responsible for booting the Cortex-M4 on the device.
@@ -56,6 +57,13 @@ config SOC_PSOC6_CM0P_IMAGE_SLEEP
 	  dual-core MCU.The image is provided as C array ready to be compiled as part of the Cortex-M4
 	  application. The Cortex-M0+ application code is placed to internal flash by the Cortex-M4
 	  linker script.
+
+config SOC_PSOC6_CM0P_IMAGE_NONE
+	bool "None"
+	help
+	  Link no Cortex-M0+ image and reserve neither flash nor SRAM for one. The Cortex-M4 image
+	  then starts with its own vector table, so something else has to release the Cortex-M4 at
+	  CY_CORTEX_M4_APPL_ADDR. This is what an image loaded into an MCUboot slot relies on.
 endchoice
 
 config SOC_PSOC6_CM0P_IMAGE_ROM_SIZE
