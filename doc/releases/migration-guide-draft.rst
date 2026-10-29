@@ -52,6 +52,14 @@ Device Drivers and Devicetree
 Bluetooth
 *********
 
+Bluetooth HCI
+=============
+
+* The STM32WB HCI driver now constructs its generated public Bluetooth address using the low
+  16 bits of the device UDN, the device ID, and the full 24-bit ST company ID. This corrects the
+  previous address layout and changes the generated address on affected devices. Previously bonded
+  peers may need to remove the old bond and pair with the device again.
+
 Networking
 **********
 
