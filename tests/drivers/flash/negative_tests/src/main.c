@@ -41,7 +41,7 @@
 #define TEST_AREA_DEVICE   (DEVICE_DT_GET(DEVICE_NODE))
 #define TEST_FLASH_START   (DT_REG_ADDR(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
 #define TEST_FLASH_SIZE    (DT_REG_SIZE(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
-#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4) || defined(CONFIG_SOC_FAMILY_PSOC6)
 /* storage_partition is a child of partitions, which is a child of flash0.
  * Go up two levels: storage_partition -> partitions -> flash0.
  */
