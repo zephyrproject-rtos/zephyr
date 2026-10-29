@@ -229,7 +229,9 @@ void load_call_unload(const struct llext_test *test_case)
 	/* "domain" is on the stack: it must leave the arch domain list before
 	 * this frame goes away.
 	 */
-	zassert_ok(k_mem_domain_deinit(&domain), "domain deinit should succeed");
+	if (IS_ENABLED(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)) {
+		zassert_ok(k_mem_domain_deinit(&domain), "domain deinit should succeed");
+	}
 
 #else /* CONFIG_USERSPACE */
 	/* No userspace support: run the test only in supervisor mode, without
