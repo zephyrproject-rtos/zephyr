@@ -1716,3 +1716,10 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_lps22hx: lps22hx@df {
+	compatible = "st,lps22hx";
+	reg = <0xdf>;
+	drdy-gpios = <&test_gpio 0 0>;
+	odr = <LPS22HH_DT_ODR_75HZ>;
+};

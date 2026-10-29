@@ -78,7 +78,7 @@ static void lps22hh_handle_interrupt(const struct device *dev)
 		lps22hh->handler_drdy(dev, lps22hh->data_ready_trigger);
 	}
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LPS22H_ANY_INST_ON_BUS(i3c)
 	if (cfg->i3c.bus != NULL) {
 		/*
 		 * I3C IBI does not rely on GPIO.
@@ -147,7 +147,7 @@ static void lps22hh_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD */
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LPS22H_ANY_INST_ON_BUS(i3c)
 static int lps22hh_ibi_cb(struct i3c_device_desc *target,
 			  struct i3c_ibi_payload *payload)
 {
@@ -171,7 +171,7 @@ int lps22hh_init_interrupt(const struct device *dev)
 
 	/* setup data ready gpio interrupt */
 	if (!gpio_is_ready_dt(&cfg->gpio_int)
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LPS22H_ANY_INST_ON_BUS(i3c)
 	    && (cfg->i3c.bus == NULL)
 #endif
 	   ) {
@@ -198,7 +198,7 @@ int lps22hh_init_interrupt(const struct device *dev)
 	lps22hh->work.handler = lps22hh_work_cb;
 #endif /* CONFIG_LPS22HH_TRIGGER_OWN_THREAD */
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LPS22H_ANY_INST_ON_BUS(i3c)
 	if (cfg->i3c.bus == NULL)
 #endif
 	{
@@ -227,7 +227,7 @@ int lps22hh_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LPS22H_ANY_INST_ON_BUS(i3c)
 	if (cfg->i3c.bus != NULL) {
 		/* I3C IBI does not utilize GPIO interrupt. */
 		lps22hh->i3c_dev->ibi_cb = lps22hh_ibi_cb;
