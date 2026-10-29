@@ -7,8 +7,13 @@
 
 #include <stdbool.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 #include <nsi_main.h>
 #include <nsi_tasks.h>
 #include <nsi_tracing.h>
@@ -24,8 +29,31 @@ void native_set_reboot_on_exit(void)
 	reboot_on_exit = true;
 }
 
+/*
+ * Return the path of the running executable, or NULL if it cannot be determined
+ */
+static const char *self_exe_path(char *buffer, size_t size)
+{
+#ifdef __APPLE__
+	uint32_t length = size;
+
+	if (_NSGetExecutablePath(buffer, &length) != 0) {
+		return NULL;
+	}
+
+	return buffer;
+#else
+	(void)buffer;
+	(void)size;
+
+	return "/proc/self/exe";
+#endif
+}
+
 void maybe_reboot(void)
 {
+	char path_buffer[PATH_MAX];
+	const char *path;
 	char **argv;
 	int argc;
 
@@ -42,7 +70,13 @@ void maybe_reboot(void)
 
 	nsi_print_warning("%s: Restarting process.\n", module);
 
-	(void)execv("/proc/self/exe", argv);
+	path = self_exe_path(path_buffer, sizeof(path_buffer));
+	if (path == NULL) {
+		nsi_print_error_and_exit("%s: Could not find own executable path, exiting\n",
+					 module);
+	}
+
+	(void)execv(path, argv);
 
 	nsi_print_error_and_exit("%s: Failed to restart process, exiting (%s)\n", module,
 				 strerror(errno));
