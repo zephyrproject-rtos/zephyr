@@ -1,0 +1,9 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: ASPEED AST2700 SPI memory controller, two chip selects
+
+compatible: "aspeed,ast2700-spi"
+
+include: aspeed,mspi-common.yaml

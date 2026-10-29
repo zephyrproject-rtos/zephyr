@@ -1,0 +1,31 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MSPI_ASPEED
+	bool "ASPEED SPI memory controller driver"
+	default y
+	depends on DT_HAS_ASPEED_AST2700_FMC_ENABLED || DT_HAS_ASPEED_AST2700_SPI_ENABLED
+	select CLOCK_CONTROL
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_ASPEED_AST2700_FMC),pinctrl-0)
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_ASPEED_AST2700_SPI),pinctrl-0)
+	select RESET if $(dt_compat_any_has_prop,$(DT_COMPAT_ASPEED_AST2700_FMC),resets)
+	select RESET if $(dt_compat_any_has_prop,$(DT_COMPAT_ASPEED_AST2700_SPI),resets)
+	help
+	  Enable polled transfers through the ASPEED firmware SPI flash
+	  controller (FMC) and SPI memory controllers, on every chip select
+	  that has a flash, in single, dual (1-1-2, 1-2-2) and quad (1-1-4,
+	  1-4-4) I/O with 3-byte or 4-byte addresses.
+
+if MSPI_ASPEED
+
+config MSPI_ASPEED_DMA
+	bool "DMA reads"
+	default y
+	depends on MSPI_DMA
+	help
+	  Use the controller's internal DMA engine for aligned reads larger than
+	  128 bytes. Other transfers use programmed I/O, including DMA requests
+	  that do not meet the controller's constraints. Completion is polled.
+
+endif # MSPI_ASPEED

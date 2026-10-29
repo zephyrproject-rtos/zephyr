@@ -1,0 +1,37 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties of the ASPEED SPI memory controllers.
+#
+# Each child is a flash on a chip select, with reg the chip select number.
+# The decode window of a chip select is the size of its flash, from the
+# child's size property in bits, and the windows are laid out one after
+# another from the start of the AHB window. A chip select without size gets
+# the controller's default window (64 MiB on the FMC, 32 MiB on the SPI
+# controllers); a flash larger than that sets size, or its reads above the
+# window fall back from DMA to programmed I/O.
+
+include: [mspi-controller.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Controller registers followed by the AHB window through which the
+      flashes on the chip selects are accessed.
+
+  clocks:
+    required: true
+    description: HCLK source clock.
+
+  clock-names:
+    required: true
+    description: Name of the HCLK source clock, hclk.
+
+  packet-data-limit:
+    default: 33554432
+    description: |
+      Maximum data length per packet. The default is the 32 MiB limit of the
+      controller's 25-bit DMA length register. A smaller limit can be used to
+      bound the duration of a single transaction.
