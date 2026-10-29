@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - counter
+  - crc
   - gpio
   - uart
 vendor: nxp
