@@ -77,27 +77,20 @@
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
 
-		ethernet@1a000000 {
+		eth: ethernet@1a000000 {
+			compatible = "smsc,lan91c111";
 			reg = <0x1a000000 0x1000>;
-
-			eth: ethernet {
-				compatible = "smsc,lan91c111";
-				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-
-				phy-handle = <&phy>;
-				status = "disabled";
-			};
+			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			phy-handle = <&phy>;
 
 			mdio: mdio {
 				compatible = "smsc,lan91c111-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
-				status = "disabled";
 
 				phy: ethernet-phy@0 {
 					compatible = "ethernet-phy";
 					reg = <0>;
-					status = "disabled";
 				};
 			};
 		};
