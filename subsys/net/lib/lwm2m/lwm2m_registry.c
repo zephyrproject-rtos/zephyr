@@ -1242,8 +1242,10 @@ int lwm2m_create_res_inst(const struct lwm2m_obj_path *path)
 		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
+
+	ret = lwm2m_engine_allocate_resource_instance(res, &res_inst, path->res_inst_id);
 	k_mutex_unlock(&registry_lock);
-	return lwm2m_engine_allocate_resource_instance(res, &res_inst, path->res_inst_id);
+	return ret;
 }
 
 int lwm2m_delete_res_inst(const struct lwm2m_obj_path *path)
