@@ -9,6 +9,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
+#include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/mutex.h>
 #include <zephyr/ztest_assert.h>
 
@@ -1357,6 +1358,300 @@ ZTEST(socket_packet, test_raw_dgram_udp_socks_recv)
 	zassert_mem_equal(rx_buf, tx_buf + offset, pkt_len, "Invalid payload received");
 }
 
+#define BLOCKED_RECV_TIMEOUT_MS  1000
+#define BLOCKED_RECV_MAX_WAIT_MS (BLOCKED_RECV_TIMEOUT_MS / 2)
+#define BLOCKED_RECV_PRIO        K_LOWEST_APPLICATION_THREAD_PRIO
+#define BLOCKED_RECV_READERS     2
+
+static K_THREAD_STACK_ARRAY_DEFINE(blocked_recv_stack, BLOCKED_RECV_READERS,
+				   1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(closer_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread closer_thread;
+static bool closer_started;
+static K_SEM_DEFINE(closer_done, 0, 1);
+
+static struct blocked_recv {
+	struct k_thread thread;
+	bool started;
+	bool returned;
+	int sock;
+	int flags;
+	int ret;
+	int err;
+	int64_t end;
+	uint8_t buf[64];
+} blocked_recv[BLOCKED_RECV_READERS];
+
+static struct {
+	int sock;
+	struct k_mutex *lock;
+	struct blocked_recv *reader;
+	bool reader_held_lock;
+	bool reader_returned;
+	int ret;
+	int err;
+} window_close;
+
+static void blocked_recv_fn(void *p1, void *p2, void *p3)
+{
+	struct blocked_recv *r = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	r->ret = zsock_recv(r->sock, r->buf, sizeof(r->buf), r->flags);
+	r->err = errno;
+	r->end = k_uptime_get();
+	r->returned = true;
+}
+
+static void set_recv_timeout(int sock)
+{
+	struct timeval optval = {
+		.tv_usec = BLOCKED_RECV_TIMEOUT_MS * USEC_PER_MSEC,
+	};
+	int ret;
+
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval, sizeof(optval));
+	zassert_ok(ret, "setsockopt failed (%d)", errno);
+}
+
+static struct blocked_recv *spawn_recv(int idx, int sock, int flags)
+{
+	struct blocked_recv *r = &blocked_recv[idx];
+
+	r->sock = sock;
+	r->flags = flags;
+	r->returned = false;
+	r->started = true;
+	k_thread_create(&r->thread, blocked_recv_stack[idx],
+			K_THREAD_STACK_SIZEOF(blocked_recv_stack[idx]), blocked_recv_fn, r, NULL,
+			NULL, BLOCKED_RECV_PRIO, 0, K_NO_WAIT);
+
+	return r;
+}
+
+static struct blocked_recv *start_blocked_recv(int idx, int sock, int flags)
+{
+	struct blocked_recv *r;
+
+	set_recv_timeout(sock);
+	r = spawn_recv(idx, sock, flags);
+
+	k_sleep(K_MSEC(50));
+	zassert_false(r->returned, "recv() did not block");
+
+	return r;
+}
+
+static void wait_blocked_recv(struct blocked_recv *r)
+{
+	zassert_ok(k_thread_join(&r->thread, K_MSEC(2 * BLOCKED_RECV_TIMEOUT_MS)),
+		   "recv() did not return");
+}
+
+static void send_to_self(int sock)
+{
+	struct net_sockaddr_ll dst = {
+		.sll_family = NET_AF_PACKET,
+		.sll_protocol = net_htons(ETH_P_TSN),
+	};
+	int ret;
+
+	memcpy(dst.sll_addr, lladdr2, sizeof(lladdr2));
+
+	ret = zsock_sendto(sock, test_payload, sizeof(test_payload), 0,
+			   (const struct net_sockaddr *)&dst, sizeof(dst));
+	zassert_equal(ret, sizeof(test_payload), "Cannot send all data (%d)", -errno);
+}
+
+ZTEST(socket_packet, test_packet_sock_send_during_recv)
+{
+	struct blocked_recv *r;
+	int64_t start;
+	int64_t elapsed;
+
+	prepare_packet_socket(&packet_sock_1, ud.second, NET_SOCK_DGRAM, net_htons(ETH_P_TSN));
+	r = start_blocked_recv(0, packet_sock_1, 0);
+
+	start = k_uptime_get();
+	send_to_self(packet_sock_1);
+	elapsed = k_uptime_get() - start;
+	zassert_true(elapsed < BLOCKED_RECV_MAX_WAIT_MS,
+		     "sendto() waited %lld ms for the blocked recv()", elapsed);
+
+	wait_blocked_recv(r);
+	zassert_equal(r->ret, sizeof(test_payload), "recv() failed (%d)", r->err);
+	zassert_true(r->end >= start, "recv() returned before sendto()");
+	zassert_mem_equal(r->buf, test_payload, sizeof(test_payload), "Data mismatch");
+}
+
+static void assert_woken_by_close(struct blocked_recv *r, int64_t start)
+{
+	wait_blocked_recv(r);
+	zassert_equal(r->ret, -1, "recv() on a closed socket returned %d", r->ret);
+	zassert_equal(r->err, EINTR, "recv() on a closed socket failed with %d", r->err);
+	zassert_true(r->end >= start, "recv() returned before close()");
+	zassert_true(r->end - start < BLOCKED_RECV_MAX_WAIT_MS, "recv() was not woken by close()");
+}
+
+static void test_close_during_recv_common(int flags, int readers)
+{
+	int64_t start;
+	int64_t elapsed;
+	int ret;
+
+	prepare_packet_socket(&packet_sock_1, ud.second, NET_SOCK_DGRAM, net_htons(ETH_P_TSN));
+
+	for (int i = 0; i < readers; i++) {
+		(void)start_blocked_recv(i, packet_sock_1, flags);
+	}
+
+	start = k_uptime_get();
+	ret = zsock_close(packet_sock_1);
+	elapsed = k_uptime_get() - start;
+	packet_sock_1 = -1;
+	zassert_ok(ret, "close() failed (%d)", errno);
+	zassert_true(elapsed < BLOCKED_RECV_MAX_WAIT_MS,
+		     "close() waited %lld ms for the blocked recv()", elapsed);
+
+	/* Every reader wakes, not only the first one queued */
+	for (int i = 0; i < readers; i++) {
+		wait_blocked_recv(&blocked_recv[i]);
+		zassert_true(blocked_recv[i].end - start < BLOCKED_RECV_MAX_WAIT_MS,
+			     "recv() %d was not woken by close()", i);
+	}
+
+	for (int i = 0; i < readers; i++) {
+		assert_woken_by_close(&blocked_recv[i], start);
+	}
+}
+
+ZTEST(socket_packet, test_packet_sock_close_during_recv)
+{
+	test_close_during_recv_common(0, 1);
+}
+
+ZTEST(socket_packet, test_packet_sock_close_during_recv_peek)
+{
+	test_close_during_recv_common(ZSOCK_MSG_PEEK, 1);
+}
+
+ZTEST(socket_packet, test_packet_sock_close_during_recv_two_readers)
+{
+	test_close_during_recv_common(0, 2);
+}
+
+static void window_closer_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	window_close.reader_held_lock = window_close.lock->owner == &window_close.reader->thread;
+	window_close.ret = zsock_close(window_close.sock);
+	window_close.err = errno;
+	window_close.reader_returned = window_close.reader->returned;
+	k_sem_give(&closer_done);
+}
+
+/* The reader holds the socket mutex from the socket call prologue until it
+ * releases it to wait for a packet. A higher priority close() queued on the
+ * mutex takes it at that release and runs to completion before the reader
+ * waits.
+ */
+static void test_close_before_recv_waits_common(int flags)
+{
+	const struct fd_op_vtable *vtable;
+	struct blocked_recv *r;
+	char state[32];
+	int64_t start;
+	int ret;
+
+	prepare_packet_socket(&packet_sock_1, ud.second, NET_SOCK_DGRAM, net_htons(ETH_P_TSN));
+	set_recv_timeout(packet_sock_1);
+	zassert_not_null(zvfs_get_fd_obj_and_vtable(packet_sock_1, &vtable, &window_close.lock));
+	window_close.sock = packet_sock_1;
+
+	/* Park the reader on the socket mutex in the socket call prologue */
+	zassert_ok(k_mutex_lock(window_close.lock, K_FOREVER));
+	r = spawn_recv(0, packet_sock_1, flags);
+	window_close.reader = r;
+	k_sleep(K_MSEC(50));
+	zassert_not_null(strstr(k_thread_state_str(&r->thread, state, sizeof(state)), "pending"),
+			 "recv() did not wait for the socket mutex (%s)", state);
+
+	k_sem_reset(&closer_done);
+	closer_started = true;
+	k_thread_create(&closer_thread, closer_stack, K_THREAD_STACK_SIZEOF(closer_stack),
+			window_closer_fn, NULL, NULL, NULL, BLOCKED_RECV_PRIO - 1, 0, K_NO_WAIT);
+
+	/* Hand the mutex to the reader; this cooperative thread keeps running */
+	zassert_ok(k_mutex_unlock(window_close.lock));
+	zassert_ok(k_sem_take(&closer_done, K_MSEC(BLOCKED_RECV_TIMEOUT_MS)),
+		   "close() did not return");
+	packet_sock_1 = -1;
+
+	zassert_true(window_close.reader_held_lock, "close() did not wait for the reader");
+	zassert_false(window_close.reader_returned, "recv() returned before close()");
+	zassert_ok(window_close.ret, "close() failed (%d)", window_close.err);
+
+	start = k_uptime_get();
+	prepare_packet_socket(&packet_sock_2, ud.second, NET_SOCK_DGRAM, net_htons(ETH_P_TSN));
+	set_recv_timeout(packet_sock_2);
+	send_to_self(packet_sock_2);
+
+	assert_woken_by_close(r, start);
+
+	/* The frame is delivered asynchronously; wait for it */
+	ret = zsock_recv(packet_sock_2, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, sizeof(test_payload), "New socket did not get its frame (%d)", -errno);
+	zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload), "Data mismatch");
+}
+
+ZTEST(socket_packet, test_packet_sock_close_before_recv_waits)
+{
+	test_close_before_recv_waits_common(0);
+}
+
+ZTEST(socket_packet, test_packet_sock_close_before_recv_waits_peek)
+{
+	test_close_before_recv_waits_common(ZSOCK_MSG_PEEK);
+}
+
+ZTEST(socket_packet, test_packet_sock_recv_peek_packet_taken_by_other_reader)
+{
+	struct blocked_recv *r;
+	char state[32];
+	int64_t start;
+	int ret;
+
+	prepare_packet_socket(&packet_sock_1, ud.second, NET_SOCK_DGRAM, net_htons(ETH_P_TSN));
+	r = start_blocked_recv(0, packet_sock_1, ZSOCK_MSG_PEEK);
+
+	k_thread_suspend(&r->thread);
+	send_to_self(packet_sock_1);
+	k_sleep(K_MSEC(50));
+	zassert_is_null(strstr(k_thread_state_str(&r->thread, state, sizeof(state)), "pending"),
+			"MSG_PEEK recv() was not woken by the packet (%s)", state);
+
+	ret = zsock_recv(packet_sock_1, tx_buf, sizeof(tx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(test_payload), "Cannot take the packet (%d)", -errno);
+
+	k_thread_resume(&r->thread);
+	k_sleep(K_MSEC(50));
+	zassert_false(r->returned,
+		      "MSG_PEEK recv() returned %d (%d) after another reader took the packet",
+		      r->ret, r->err);
+
+	start = k_uptime_get();
+	send_to_self(packet_sock_1);
+
+	wait_blocked_recv(r);
+	zassert_equal(r->ret, sizeof(test_payload), "recv() failed (%d)", r->err);
+	zassert_true(r->end >= start, "recv() returned before the second packet");
+}
+
 /* Multicast group membership handling, i.e. the ZSOCK_PACKET_ADD_MEMBERSHIP
  * and ZSOCK_PACKET_DROP_MEMBERSHIP socket options.
  */
@@ -2277,6 +2572,18 @@ static void test_after(void *arg)
 	memset(&tx_buf, 0, sizeof(tx_buf));
 
 	eth_filter_ret = 0;
+
+	for (int i = 0; i < BLOCKED_RECV_READERS; i++) {
+		if (blocked_recv[i].started) {
+			k_thread_abort(&blocked_recv[i].thread);
+			blocked_recv[i].started = false;
+		}
+	}
+
+	if (closer_started) {
+		k_thread_abort(&closer_thread);
+		closer_started = false;
+	}
 
 	test_sockets_close();
 }
