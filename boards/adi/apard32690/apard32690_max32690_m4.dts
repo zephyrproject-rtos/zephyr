@@ -43,6 +43,7 @@
 		led1 = &red_led;
 		led2 = &green_led;
 		sw0 = &usr_btn;
+		wifi0 = &esp_wifi;
 	};
 
 	arduino_header: connector {
@@ -318,4 +319,25 @@ arduino_spi: &spi1 {
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+};
+
+&uart2a_tx_p1_10 {
+	power-source = <1>;
+};
+
+&uart2a_rx_p1_9 {
+	power-source = <1>;
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2a_tx_p1_10 &uart2a_rx_p1_9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+
+	esp_wifi: esp-wifi {
+		compatible = "espressif,esp-at";
+		status = "okay";
+		reset-gpios = <&gpio3 9 GPIO_ACTIVE_LOW>;
+	};
 };
