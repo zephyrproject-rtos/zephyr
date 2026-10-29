@@ -1,0 +1,260 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# This file contains the binding for MAX40109 sensor
+
+description: |
+  MAX40109, a low-power, precision sensor interface SoC that includes a
+  high-precision, programmable Analog frontend (AFE), Analog-to-Digital
+  Converter (ADC), calibration memory, and digital signal processing.
+
+  When setting the enumerated properties below, include the binding constants
+  header and use the MAX40109_DT_* macros for readability:
+
+  #include <zephyr/dt-bindings/sensor/max40109.h>
+
+compatible: "adi,max40109"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the ALERT pin of the MAX40109. ALERT is an
+      active-low output, so this should normally be flagged
+      GPIO_ACTIVE_LOW unless the board inverts the signal.
+
+      Note this is the ALERT pin, not the INT pin: INT is the analog
+      temperature input that a diode or thermistor connects to.
+
+  digital-filter:
+    type: int
+    description: Digital filter setting. Average among Samples = 2^(N+1).
+    enum:
+      - 0x00 # MAX40109_DT_FILTER_AVG_NONE
+      - 0x01 # MAX40109_DT_FILTER_AVG_4
+      - 0x02 # MAX40109_DT_FILTER_AVG_8
+      - 0x03 # MAX40109_DT_FILTER_AVG_16
+      - 0x04 # MAX40109_DT_FILTER_AVG_32
+      - 0x05 # MAX40109_DT_FILTER_AVG_64
+      - 0x06 # MAX40109_DT_FILTER_AVG_128
+
+  alert-mode:
+    type: int
+    description: Alert mode setting.
+    enum:
+      - 0x00 # MAX40109_DT_ALERT_INTERRUPT
+      - 0x01 # MAX40109_DT_ALERT_TEMP_PWM
+      - 0x02 # MAX40109_DT_ALERT_PRESSURE_CASE1
+      - 0x03 # MAX40109_DT_ALERT_PRESSURE_CASE2
+      - 0x04 # MAX40109_DT_ALERT_PRESSURE_CASE3
+      - 0x05 # MAX40109_DT_ALERT_PRESSURE_CASE4
+
+  temp-current:
+    type: int
+    description: Temperature sensor current setting.
+    enum:
+      - 0x00 # MAX40109_DT_TEMP_CURRENT_150UA
+      - 0x01 # MAX40109_DT_TEMP_CURRENT_250UA
+      - 0x02 # MAX40109_DT_TEMP_CURRENT_500UA
+      - 0x03 # MAX40109_DT_TEMP_CURRENT_750UA
+
+  pga-pressure-gain:
+    type: int
+    description: Pressure PGA gain setting.
+    enum:
+      - 0x0F # MAX40109_DT_PGA_PRESSURE_GAIN_5
+      - 0x00 # MAX40109_DT_PGA_PRESSURE_GAIN_10
+      - 0x01 # MAX40109_DT_PGA_PRESSURE_GAIN_15
+      - 0x02 # MAX40109_DT_PGA_PRESSURE_GAIN_20
+      - 0x03 # MAX40109_DT_PGA_PRESSURE_GAIN_24
+      - 0x04 # MAX40109_DT_PGA_PRESSURE_GAIN_40
+      - 0x05 # MAX40109_DT_PGA_PRESSURE_GAIN_60
+      - 0x06 # MAX40109_DT_PGA_PRESSURE_GAIN_72
+      - 0x07 # MAX40109_DT_PGA_PRESSURE_GAIN_90
+      - 0x08 # MAX40109_DT_PGA_PRESSURE_GAIN_108
+      - 0x09 # MAX40109_DT_PGA_PRESSURE_GAIN_126
+      - 0x0A # MAX40109_DT_PGA_PRESSURE_GAIN_144
+      - 0x0B # MAX40109_DT_PGA_PRESSURE_GAIN_160
+      - 0x0C # MAX40109_DT_PGA_PRESSURE_GAIN_180
+      - 0x0D # MAX40109_DT_PGA_PRESSURE_GAIN_200
+      - 0x0E # MAX40109_DT_PGA_PRESSURE_GAIN_252
+      - 0x10 # MAX40109_DT_PGA_PRESSURE_GAIN_540
+      - 0x11 # MAX40109_DT_PGA_PRESSURE_GAIN_1080
+      - 0x12 # MAX40109_DT_PGA_PRESSURE_GAIN_1440
+      - 0x13 # MAX40109_DT_PGA_PRESSURE_GAIN_2520
+
+  current-source:
+    type: int
+    description: Current source setting.
+    enum:
+      - 0x00 # MAX40109_DT_CURRENT_SOURCE_250UA
+      - 0x01 # MAX40109_DT_CURRENT_SOURCE_300UA
+      - 0x02 # MAX40109_DT_CURRENT_SOURCE_400UA
+      - 0x03 # MAX40109_DT_CURRENT_SOURCE_450UA
+      - 0x04 # MAX40109_DT_CURRENT_SOURCE_500UA
+      - 0x05 # MAX40109_DT_CURRENT_SOURCE_550UA
+      - 0x06 # MAX40109_DT_CURRENT_SOURCE_650UA
+      - 0x07 # MAX40109_DT_CURRENT_SOURCE_750UA
+
+  adc-sample-rate:
+    type: int
+    description: ADC sample rate setting for pressure and temperature measurements.
+    enum:
+      - 0x00 # MAX40109_DT_SAMPLE_RATE_1KSPS_1SPS
+      - 0x01 # MAX40109_DT_SAMPLE_RATE_1KSPS_10SPS
+      - 0x02 # MAX40109_DT_SAMPLE_RATE_2KSPS_1SPS
+      - 0x03 # MAX40109_DT_SAMPLE_RATE_2KSPS_10SPS
+      - 0x04 # MAX40109_DT_SAMPLE_RATE_4KSPS_1SPS
+      - 0x05 # MAX40109_DT_SAMPLE_RATE_4KSPS_10SPS
+      - 0x06 # MAX40109_DT_SAMPLE_RATE_8KSPS_1SPS
+      - 0x07 # MAX40109_DT_SAMPLE_RATE_8KSPS_10SPS
+      - 0x08 # MAX40109_DT_SAMPLE_RATE_16KSPS_1SPS
+      - 0x09 # MAX40109_DT_SAMPLE_RATE_16KSPS_10SPS
+
+  pga-temperature-gain:
+    type: int
+    description: Temperature PGA gain setting.
+    enum:
+      - 0x00 # MAX40109_DT_PGA_TEMP_GAIN_1_5
+      - 0x01 # MAX40109_DT_PGA_TEMP_GAIN_2
+      - 0x02 # MAX40109_DT_PGA_TEMP_GAIN_3
+      - 0x03 # MAX40109_DT_PGA_TEMP_GAIN_5
+      - 0x04 # MAX40109_DT_PGA_TEMP_GAIN_6
+      - 0x05 # MAX40109_DT_PGA_TEMP_GAIN_10
+      - 0x06 # MAX40109_DT_PGA_TEMP_GAIN_15
+      - 0x07 # MAX40109_DT_PGA_TEMP_GAIN_20
+      - 0x08 # MAX40109_DT_PGA_TEMP_GAIN_24
+      - 0x09 # MAX40109_DT_PGA_TEMP_GAIN_30
+      - 0x0A # MAX40109_DT_PGA_TEMP_GAIN_36
+      - 0x0B # MAX40109_DT_PGA_TEMP_GAIN_40
+      - 0x0C # MAX40109_DT_PGA_TEMP_GAIN_45
+      - 0x0D # MAX40109_DT_PGA_TEMP_GAIN_60
+      - 0x0E # MAX40109_DT_PGA_TEMP_GAIN_72
+      - 0x0F # MAX40109_DT_PGA_TEMP_GAIN_90
+
+  bridge-drive:
+    type: int
+    description: Bridge drive setting.
+    enum:
+      - 0x00 # MAX40109_DT_BRIDGE_DRIVE_DISCONNECTED
+      - 0x01 # MAX40109_DT_BRIDGE_DRIVE_CURRENT_SOURCE
+      - 0x02 # MAX40109_DT_BRIDGE_DRIVE_VOLTAGE_4V
+      - 0x03 # MAX40109_DT_BRIDGE_DRIVE_VOLTAGE_3V3
+      - 0x04 # MAX40109_DT_BRIDGE_DRIVE_VOLTAGE_1V8
+      - 0x05 # MAX40109_DT_BRIDGE_DRIVE_VOLTAGE_2V3
+
+  temp-mode:
+    type: int
+    description: Temperature measurement mode.
+    enum:
+      - 0x00 # MAX40109_DT_TEMP_MODE_INT_SE_GAIN_1
+      - 0x01 # MAX40109_DT_TEMP_MODE_INT_SE_GAIN_GT_1
+      - 0x02 # MAX40109_DT_TEMP_MODE_INT_DIFF_DAC_OFFS
+      - 0x03 # MAX40109_DT_TEMP_MODE_DRV_SE_GAIN_1
+      - 0x04 # MAX40109_DT_TEMP_MODE_DRV_DIFF_DAC_OFFS
+
+  drv-scale:
+    type: int
+    description: DRV Input scale setting.
+    enum:
+      - 0x00 # MAX40109_DT_DRV_SCALE_1_0
+      - 0x01 # MAX40109_DT_DRV_SCALE_0_5
+      - 0x02 # MAX40109_DT_DRV_SCALE_0_375
+      - 0x03 # MAX40109_DT_DRV_SCALE_0_25
+
+  analog-filter-bw:
+    type: int
+    description: Analog filter bandwidth setting.
+    enum:
+      - 0x00 # MAX40109_DT_ANALOG_FILTER_BW_1200HZ
+      - 0x01 # MAX40109_DT_ANALOG_FILTER_BW_9000HZ
+      - 0x02 # MAX40109_DT_ANALOG_FILTER_BW_37000HZ
+      - 0x03 # MAX40109_DT_ANALOG_FILTER_BW_45000HZ
+
+  analog-output-stage:
+    type: int
+    description: |
+      Analog output stage (AOS) setting. Selects the function, reference and
+      full-scale of the analog output. 0x01 is reserved and not selectable.
+    enum:
+      - 0x00 # MAX40109_DT_AOS_SHUTDOWN
+      - 0x02 # MAX40109_DT_AOS_RATIO_VDD5V_1X
+      - 0x03 # MAX40109_DT_AOS_RATIO_VDD5V_0_91X
+      - 0x04 # MAX40109_DT_AOS_RATIO_VDD5V_0_6X
+      - 0x05 # MAX40109_DT_AOS_RATIO_EXT_0_1515X
+      - 0x06 # MAX40109_DT_AOS_RATIO_EXT_0_25X
+      - 0x07 # MAX40109_DT_AOS_ABS_CURRENT
+      - 0x08 # MAX40109_DT_AOS_ABS_VOLTAGE_4X
+      - 0x09 # MAX40109_DT_AOS_ABS_VOLTAGE_6X_1
+      - 0x0A # MAX40109_DT_AOS_ABS_VOLTAGE_6X_2
+      - 0x0B # MAX40109_DT_AOS_ABS_VOLTAGE_EXT_0_4X
+      - 0x0C # MAX40109_DT_AOS_ABS_VOLTAGE_EXT_1X
+      - 0x0D # MAX40109_DT_AOS_RATIO_VDD5V_1X_ALT1
+      - 0x0E # MAX40109_DT_AOS_RATIO_VDD5V_1X_ALT2
+      - 0x0F # MAX40109_DT_AOS_RATIO_VDD5V_1X_ALT3
+
+  k0:
+    type: int
+    description: K0 calibration coefficient in thousandths
+  k1:
+    type: int
+    description: K1 calibration coefficient in thousandths
+  k2:
+    type: int
+    description: K2 calibration coefficient in thousandths
+  k3:
+    type: int
+    description: K3 calibration coefficient in thousandths
+  h0:
+    type: int
+    description: H0 calibration coefficient in thousandths
+  h1:
+    type: int
+    description: H1 calibration coefficient in thousandths
+  h2:
+    type: int
+    description: H2 calibration coefficient in thousandths
+  h3:
+    type: int
+    description: H3 calibration coefficient in thousandths
+  g0:
+    type: int
+    description: G0 calibration coefficient in thousandths
+  g1:
+    type: int
+    description: G1 calibration coefficient in thousandths
+  g2:
+    type: int
+    description: G2 calibration coefficient in thousandths
+  g3:
+    type: int
+    description: G3 calibration coefficient in thousandths
+  n0:
+    type: int
+    description: N0 calibration coefficient in thousandths
+  n1:
+    type: int
+    description: N1 calibration coefficient in thousandths
+  n2:
+    type: int
+    description: N2 calibration coefficient in thousandths
+  n3:
+    type: int
+    description: N3 calibration coefficient in thousandths
+  m0:
+    type: int
+    description: M0 calibration coefficient in thousandths
+  m1:
+    type: int
+    description: M1 calibration coefficient in thousandths
+  m2:
+    type: int
+    description: M2 calibration coefficient in thousandths
+  m3:
+    type: int
+    description: M3 calibration coefficient in thousandths
