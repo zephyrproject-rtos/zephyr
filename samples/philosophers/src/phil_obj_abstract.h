@@ -146,7 +146,7 @@
 	fork_obj_t fork_objs[NUM_PHIL];
 #endif
 
-static fork_t forks[NUM_PHIL] = {
+static fork_t const forks[NUM_PHIL] = {
 #if STATIC_OBJS
 	&fork0, &fork1, &fork2,
 	&fork3, &fork4, &fork5,
