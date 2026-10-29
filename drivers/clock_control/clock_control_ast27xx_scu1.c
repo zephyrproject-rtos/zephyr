@@ -43,6 +43,8 @@
 #define CLK_SEL2_UXCLK  GENMASK(1, 0)
 #define CLK_SEL2_HUXCLK GENMASK(4, 3)
 
+#define CLK_SEL2_HCLK_DIV GENMASK(22, 20)
+
 /* UART clock generator: Fout = Fin * R / (2 * N) */
 #define UART_CLKGEN_R GENMASK(7, 0)
 #define UART_CLKGEN_N GENMASK(17, 8)
@@ -193,6 +195,29 @@ static int ast27xx_scu1_uart_rate(const struct device *syscon, bool huart, uint3
 	return 0;
 }
 
+static int ast27xx_scu1_hclk_rate(const struct device *syscon, uint32_t *rate)
+{
+	uint64_t hpll;
+	uint32_t sel2;
+	uint32_t divisor;
+	int ret;
+
+	ret = syscon_read_reg(syscon, SCU1_CLK_SEL2, &sel2);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = ast27xx_scu1_pll_rate(syscon, SCU1_HPLL_PARAM, &hpll);
+	if (ret != 0) {
+		return ret;
+	}
+
+	divisor = MAX(2U, FIELD_GET(CLK_SEL2_HCLK_DIV, sel2) + 1U);
+	*rate = (uint32_t)(hpll / divisor);
+
+	return 0;
+}
+
 /* UART index of a UART clock gate, which is also its UARTX/HUARTX select bit in CLK_SEL1 */
 static int ast27xx_scu1_uart_index(uint32_t clk_id)
 {
@@ -231,6 +256,8 @@ static int ast27xx_scu1_clock_control_get_rate(const struct device *dev, clock_c
 		return ast27xx_scu1_uart_rate(config->syscon, false, rate);
 	case SCU1_CLK_HUARTX:
 		return ast27xx_scu1_uart_rate(config->syscon, true, rate);
+	case SCU1_CLK_AHB:
+		return ast27xx_scu1_hclk_rate(config->syscon, rate);
 	default:
 		uart = ast27xx_scu1_uart_index(clk_id);
 		if (uart < 0) {
