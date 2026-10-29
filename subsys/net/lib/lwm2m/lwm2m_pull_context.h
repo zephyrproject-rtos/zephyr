@@ -33,4 +33,15 @@ struct requesting_object {
  */
 int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k_timeout_t timeout);
 
+/*
+ * Stop the transfer in progress without calling its result callback. Blocks
+ * that arrive after the call are dropped. Only a transfer of the given kind
+ * is stopped, so the firmware object cannot interrupt a software management
+ * pull and vice versa.
+ *
+ * Returns 0 when a transfer was stopped, -ENOENT when none is in progress and
+ * -EBUSY when the transfer in progress belongs to the other kind of object.
+ */
+int lwm2m_pull_context_cancel(bool is_firmware_uri);
+
 #endif /* LWM2M_PULL_CONTEXT_H */
