@@ -752,7 +752,7 @@ ZTEST_USER(timer_api, test_timer_user_data)
 ZTEST_USER(timer_api, test_timer_remaining)
 {
 	uint32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2);
-	uint32_t rem_ms, rem_ticks, exp_ticks;
+	uint32_t rem_ms, rem_ticks, exp_ticks, max_rem_ticks;
 	uint32_t latency_ticks;
 	int32_t delta_ticks;
 	uint32_t slew_ticks;
@@ -780,17 +780,17 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	TIMER_ASSERT(tdata.stop_cnt == 1, &remain_timer);
 
 	/*
-	 * While the busy_wait_ms() works with the maximum possible resolution,
-	 * the k_timer api is limited by the system tick abstraction. As result
-	 * the value obtained through k_timer_remaining_get() could be larger
-	 * than actual remaining time with maximum error equal to one tick.
-	 * That one tick of error has to be converted to ms by rounding up:
-	 * a tick shorter than a millisecond would otherwise round down to a
-	 * zero tolerance and the legitimate one-tick overshoot would trip the
-	 * check on high tick rate platforms.
+	 * The timer expires DURATION, rounded up to whole ticks, plus one
+	 * tick for the partial tick it was started in. At least DURATION / 2,
+	 * rounded down to whole ticks, has elapsed since then, and
+	 * k_timer_remaining_get() rounds the rest up to the next ms. At a
+	 * 1024 Hz tick rate that is 103 + 1 - 51 = 53 ticks, or 52 ms.
 	 */
-	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_ceil64(1),
-		     NULL);
+	max_rem_ticks = k_ms_to_ticks_ceil32(DURATION) + 1U -
+			k_ms_to_ticks_floor32(DURATION / 2);
+	zassert_true(rem_ms <= k_ticks_to_ms_ceil32(max_rem_ticks),
+		     "remaining %u ms, expected at most %u ms", rem_ms,
+		     k_ticks_to_ms_ceil32(max_rem_ticks));
 
 	/* We stopped half way through the wait, so the remaining ticks
 	 * should match the half duration converted to ticks. That is
