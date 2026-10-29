@@ -31,10 +31,27 @@ struct net_if;
 struct net_l2;
 
 /**
- * @brief Resend either NET_L4_CONNECTED or NET_L4_DISCONNECTED depending on whether connectivity
- * is currently available.
+ * @brief Resend L4 connectivity and DNS readiness events depending on current status.
+ *
+ * Events covered:
+ * - NET_EVENT_L4_CONNECTED / NET_EVENT_L4_DISCONNECTED
+ * - NET_EVENT_L4_IPV4_CONNECTED / NET_EVENT_L4_IPV4_DISCONNECTED
+ * - NET_EVENT_L4_IPV6_CONNECTED / NET_EVENT_L4_IPV6_DISCONNECTED
+ * - NET_EVENT_L4_DNS_READY / NET_EVENT_L4_DNS_LOST
  */
 void conn_mgr_mon_resend_status(void);
+
+/**
+ * @brief Check whether name resolution is currently available.
+ *
+ * A unicast DNS server being configured does not mean that it can be reached.
+ * Requires CONFIG_DNS_RESOLVER or offloaded name resolution.
+ *
+ * @retval true A unicast DNS server is configured for a ready iface and address family,
+ *              or name resolution is offloaded and an iface is ready.
+ * @retval false Name resolution is not available.
+ */
+bool conn_mgr_dns_is_ready(void);
 
 /**
  * @brief Mark an iface to be ignored by conn_mgr.
