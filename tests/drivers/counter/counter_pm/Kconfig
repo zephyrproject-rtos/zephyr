@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_PM_ACTIVE_MS
+	int "Active counting time in milliseconds"
+	default 20
+	range 1 60000
+	help
+	  Time the counter runs while power management is blocked.
+
+source "Kconfig.zephyr"
