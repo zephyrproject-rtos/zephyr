@@ -30,6 +30,7 @@ tests:
       - mcx_n9xx_evk/mcxn947/cpu0
       - mcx_n5xx_evk/mcxn547/cpu0
       - frdm_mcxa577
+      - mimxrt2660_evk/mimxrt2663/cm85
     integration_platforms:
       - frdm_mcxw71
       - frdm_mcxw72
