@@ -54,6 +54,15 @@ Ethernet
   the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
   must select it as well. (:github:`120871`)
 
+* The STM32 HAL PTP clock rate-adjustment bounds now have Kconfig ranges.
+  :kconfig:option:`CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT` must be between 1 and 99, and
+  :kconfig:option:`CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MAX_PCT` must be between 100 and 2147483647,
+  inclusive. The lower bound must be below the nominal rate of 100% so the clock can be slowed down.
+  Update out-of-tree configurations that assign values outside these ranges, or remove the
+  assignments to use the unchanged defaults of 90 and 110, respectively. These constraints
+  apply whenever :kconfig:option:`CONFIG_PTP_CLOCK_STM32_HAL` is enabled, even if
+  :kconfig:option:`CONFIG_PTP_CLOCK_STM32_HAL_OUTPUT` is disabled. (:github:`121471`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
