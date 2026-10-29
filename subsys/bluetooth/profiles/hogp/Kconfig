@@ -1,0 +1,58 @@
+# Bluetooth HID over GATT Profile (HOGP)
+
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HOGP_HOST
+	bool "HID over GATT Profile (HOGP) Host [EXPERIMENTAL]"
+	depends on BT_CENTRAL
+	depends on BT_GATT_CLIENT
+	depends on BT_SMP
+	select EXPERIMENTAL
+	help
+	  Enable the Report Host role of the HID over GATT Profile: discover the
+	  HID Service of a HID Device, read its Report Map and HID Information,
+	  subscribe to its Input Reports, and read and write its Reports.
+
+	  HOGP requires the Host to use the GAP Central role and to bond with
+	  the Device.
+
+	  Not supported yet: Boot Protocol Mode and the Boot Host role, the HID
+	  Control Point, more than one HID Service instance with the External
+	  Report Reference descriptor, the Battery Service and the Device
+	  Information Service of the Device, the Scan Parameters Profile, and
+	  the HID ISO feature of HOGP v1.1.
+
+if BT_HOGP_HOST
+
+config BT_HOGP_HOST_MAX_CONNS
+	int "Number of Devices the Host is connected to at a time"
+	default 1
+	range 1 BT_MAX_CONN
+	help
+	  Each connection holds a copy of the Report Map and the Report
+	  information of its Device.
+
+config BT_HOGP_HOST_MAX_REPORTS
+	int "Number of Report characteristics of a HID Service"
+	default 8
+	range 1 255
+	help
+	  The discovery fails on a Device with more Report characteristics.
+
+config BT_HOGP_HOST_REPORT_MAP_MAX_LEN
+	int "Maximum Report Map length"
+	default 512
+	range 1 512
+	help
+	  The discovery fails on a Device with a longer Report Map. The HID
+	  Service limits the Report Map to 512 octets.
+
+config BT_HOGP_HOST_MAX_REPORT_LEN
+	int "Maximum length of a Report read with bt_hogp_host_report_read()"
+	default 64
+	range 1 512
+	help
+	  A longer Report fails the read with -ENOMEM.
+
+endif # BT_HOGP_HOST
