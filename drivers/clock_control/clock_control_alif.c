@@ -73,6 +73,11 @@ struct alif_clock_control_config {
 	(DT_PROP(DT_CLOCKS_CTLR(DT_NODELABEL(clk_128k)), clock_frequency) *        \
 	 DT_PROP(DT_NODELABEL(clk_128k), clock_mult) /                             \
 	 DT_PROP(DT_NODELABEL(clk_128k), clock_div))
+/*
+ * RMII reference clock, which runs at 50 MHz whether it comes from the
+ * internal PLL output or from the ETH_REFCLK pin.
+ */
+#define ALIF_CLOCK_50M_FREQ          MHZ(50)
 
 /*
  * Clock Configuration Field Extraction Macros
@@ -225,6 +230,8 @@ static uint32_t alif_get_clock_freq(uint32_t clock_id)
 		return ALIF_CLOCK_S32K_FREQ;
 	case ALIF_PARENT_CLK_128K:
 		return ALIF_CLOCK_128K_FREQ;
+	case ALIF_PARENT_CLK_50M:
+		return ALIF_CLOCK_50M_FREQ;
 	default:
 		__ASSERT(false, "Invalid parent clock: %u", parent_clk);
 		return 0;

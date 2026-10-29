@@ -123,3 +123,8 @@
 	interrupt-parent = <&gic>;
 	interrupts = <GIC_SPI 338 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
+
+&eth {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 137 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
