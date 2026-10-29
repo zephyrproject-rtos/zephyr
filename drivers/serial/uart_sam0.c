@@ -130,18 +130,27 @@ static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate,
 
 #if CONFIG_UART_SAM0_ASYNC
 
+static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data);
+static int uart_sam0_rx_disable(const struct device *dev);
+
 static void uart_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
 				  uint32_t id, int error_code)
 {
 	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
-	ARG_UNUSED(error_code);
 
 	struct uart_sam0_dev_data *const dev_data =
 		(struct uart_sam0_dev_data *const) arg;
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 
 	SercomUsart * const regs = cfg->regs;
+
+	if (error_code < 0) {
+		/* Nothing more goes out: report what did, as a timeout does */
+		k_work_cancel_delayable(&dev_data->tx_timeout_work);
+		uart_sam0_tx_halt(dev_data);
+		return;
+	}
 
 	regs->INTENSET.reg = SERCOM_USART_INTENSET_TXC;
 }
@@ -224,13 +233,22 @@ static void uart_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 {
 	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
-	ARG_UNUSED(error_code);
 
 	struct uart_sam0_dev_data *const dev_data =
 		(struct uart_sam0_dev_data *const)arg;
 	const struct device *dev = dev_data->dev;
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 	SercomUsart * const regs = cfg->regs;
+
+	if (error_code < 0) {
+		/*
+		 * The DMA stopped before the end of the buffer: end the
+		 * reception as uart_rx_disable() does, with the bytes it got
+		 */
+		(void)uart_sam0_rx_disable(dev);
+		return;
+	}
+
 	unsigned int key = irq_lock();
 
 	if (dev_data->rx_len == 0U) {
