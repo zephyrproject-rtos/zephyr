@@ -389,7 +389,9 @@ SECTIONS
      * There is almost 1MB space (due to TLB pinning) so we can
      * be generous.
      */
+#if !(defined(CONFIG_COVERAGE) && defined(CONFIG_USERSPACE))
     LIB_OBJ_FUNC_IN_SECT(libkernel.a,,*)
+#endif /* !(defined(CONFIG_COVERAGE) && defined(CONFIG_USERSPACE)) */
 
     LIB_OBJ_FUNC_IN_SECT(libdrivers__console.a,,*)
     LIB_OBJ_FUNC_IN_SECT(libdrivers__timer.a,,*)
