@@ -49,7 +49,7 @@ GTEXT(_interrupt_handler)
  *   7       Interrupt
  */
 SECTION_FUNC(reset, __start)
-	.p2align 2
+	.p2align 8
 	/* 0: Reset */
 	jump #__reset_handler
 	/* 1: Machine check */
