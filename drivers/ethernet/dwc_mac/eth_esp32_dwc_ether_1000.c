@@ -160,6 +160,17 @@ int dwmac_platform_init(const struct device *dev)
 	return 0;
 }
 
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_speed speed)
+{
+	ARG_UNUSED(dev);
+
+	if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
+		esp32_emac_rmii_link_speed(speed);
+	}
+}
+#endif
+
 static const struct dwmac_config dwmac_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),

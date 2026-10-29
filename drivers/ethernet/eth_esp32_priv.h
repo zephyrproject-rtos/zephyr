@@ -10,6 +10,7 @@
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/net/phy.h>
 
 #include <esp_clk_tree.h>
 #include <esp_private/esp_clk_tree_common.h>
@@ -280,5 +281,15 @@ static inline void esp32_emac_iomux_init_mii(void)
 		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 }
+
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+/* Divide the 50 MHz RMII reference down to the RX/TX clock of the given link
+ * speed: 25 MHz at 100 Mbps and 2.5 MHz at 10 Mbps.
+ */
+static inline void esp32_emac_rmii_link_speed(enum phy_link_speed speed)
+{
+	emac_ll_clock_rmii_rx_tx_div(NULL, PHY_LINK_IS_SPEED_10M(speed) ? 19 : 1);
+}
+#endif
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_ESP32_PRIV_H_ */
