@@ -9,6 +9,7 @@
 #include <zephyr/ztest.h>
 
 #include <zephyr/net/wifi.h>
+#include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
 
 struct chan_to_band_test {
@@ -225,6 +226,116 @@ ZTEST(net_wifi_utils, test_chan_to_freq_round_trip)
 				      chan, bands[i], freq, wifi_utils_freq_to_chan(freq));
 		}
 	}
+}
+
+/* Measurement Report: token, mode, type 8 (LCI), LCI subelement (ID 0, length
+ * 16) and the LCI field encoded for 37.42 N, 122.07 W, 10.5 m, with
+ * uncertainties of 18/18/15, datum 1 and version 1.
+ */
+static const uint8_t lci_report[] = {
+	0x01, 0x00, 0x08, 0x00, 0x10,
+	0x52, 0x8f, 0xc2, 0xb5, 0x12, 0x92, 0x3d, 0x0a,
+	0xf7, 0xc2, 0xf1, 0x00, 0x2a, 0x00, 0x00, 0x41,
+};
+
+ZTEST(net_wifi_utils, test_location_parse_lci)
+{
+	struct wifi_location loc = {0};
+
+	zassert_equal(wifi_location_parse_measurement_report(lci_report, sizeof(lci_report),
+							      &loc), 0);
+	zassert_true(loc.has_lci);
+	zassert_equal(loc.lci.latitude, 1255606845);
+	zassert_equal(loc.lci.longitude, -4095989514);
+	zassert_equal(loc.lci.altitude_type, 1);
+	zassert_equal(loc.lci.altitude, 2688);
+	zassert_equal(loc.lci.lat_uncertainty, 18);
+	zassert_equal(loc.lci.long_uncertainty, 18);
+	zassert_equal(loc.lci.alt_uncertainty, 15);
+}
+
+/* LCI report from hostap tests/hwsim/test_rrm.py, with a trailing Azimuth
+ * subelement that the parser must ignore.
+ */
+ZTEST(net_wifi_utils, test_location_parse_lci_hostap)
+{
+	static const uint8_t report[] = {
+		0x01, 0x00, 0x08, 0x00, 0x10,
+		0x12, 0x98, 0xc0, 0xb5, 0x12, 0x92, 0x66, 0x66,
+		0xf6, 0xc2, 0xf1, 0x00, 0x1c, 0x00, 0x00, 0x41,
+		0x04, 0x05, 0x00, 0x00, 0xc0, 0x00, 0x12,
+	};
+	struct wifi_location loc = {0};
+
+	zassert_equal(wifi_location_parse_measurement_report(report, sizeof(report), &loc), 0);
+	zassert_true(loc.has_lci);
+	/* 37.41994 N, 122.075 W, 7 m (metres) */
+	zassert_equal(loc.lci.latitude, 1255604832);
+	zassert_equal(loc.lci.longitude, -4096157286);
+	zassert_equal(loc.lci.altitude_type, 1);
+	zassert_equal(loc.lci.altitude, 1792);
+	zassert_equal(loc.lci.lat_uncertainty, 18);
+	zassert_equal(loc.lci.long_uncertainty, 18);
+	zassert_equal(loc.lci.alt_uncertainty, 15);
+}
+
+ZTEST(net_wifi_utils, test_location_parse_lci_malformed)
+{
+	struct wifi_location loc = {0};
+	uint8_t bad[sizeof(lci_report)];
+
+	/* Truncated field */
+	zassert_equal(wifi_location_parse_measurement_report(lci_report,
+							      sizeof(lci_report) - 1, &loc),
+		      -EBADMSG);
+
+	/* Not an LCI subelement */
+	memcpy(bad, lci_report, sizeof(bad));
+	bad[3] = 1;
+	zassert_equal(wifi_location_parse_measurement_report(bad, sizeof(bad), &loc), -EBADMSG);
+}
+
+ZTEST(net_wifi_utils, test_location_parse_civic)
+{
+	/* Type 11, civic type 0, subelement ID 0, length 7: "NO" then
+	 * CAtype 1 (A1), length 3, "Osl".
+	 */
+	static const uint8_t report[] = {
+		0x01, 0x00, 0x0b, 0x00, 0x00, 0x07,
+		'N', 'O', 0x01, 0x03, 'O', 's', 'l',
+	};
+	struct wifi_location loc = {0};
+
+	zassert_equal(wifi_location_parse_measurement_report(report, sizeof(report), &loc), 0);
+	zassert_true(loc.has_civic);
+	zassert_mem_equal(loc.civic.country, "NO", 2);
+	zassert_equal(loc.civic.addr_len, 5);
+	zassert_mem_equal(loc.civic.addr, &report[8], 5);
+
+	/* Subelement length runs past the report */
+	zassert_equal(wifi_location_parse_measurement_report(report, sizeof(report) - 1, &loc),
+		      -EBADMSG);
+}
+
+/* Opaque filler bytes taken from the civic vector in hostap
+ * tests/hwsim/test_rrm.py, wrapped in a valid report: civic type 0 and a
+ * Location Civic subelement (ID 0, length 25).
+ */
+ZTEST(net_wifi_utils, test_location_parse_civic_filler)
+{
+	static const uint8_t report[] = {
+		0x01, 0x00, 0x0b, 0x00, 0x00, 0x19,
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00,
+		0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0xaa,
+		0xbb, 0xcc, 0xdd, 0xee, 0xff,
+	};
+	struct wifi_location loc = {0};
+
+	zassert_equal(wifi_location_parse_measurement_report(report, sizeof(report), &loc), 0);
+	zassert_true(loc.has_civic);
+	zassert_mem_equal(loc.civic.country, &report[6], 2);
+	zassert_equal(loc.civic.addr_len, 23);
+	zassert_mem_equal(loc.civic.addr, &report[8], 23);
 }
 
 ZTEST_SUITE(net_wifi_utils, NULL, NULL, NULL, NULL, NULL);
