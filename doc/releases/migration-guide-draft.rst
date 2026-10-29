@@ -74,6 +74,13 @@ Networking
 Other subsystems
 ****************
 
+Shell
+=====
+
+* Calling a shell command with an unknown subcommand, such as ``kernel foo``, now returns
+  ``-ENOEXEC`` instead of ``SHELL_CMD_HELP_PRINTED`` (1). The help is still printed. Update code
+  that checks the return value of :c:func:`shell_execute_cmd` for this case.
+
 Modules
 *******
 
