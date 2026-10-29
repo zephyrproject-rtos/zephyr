@@ -348,10 +348,10 @@ static int llext_adjust_mmu_permissions(struct llext *ext)
 		ret = k_mem_update_flags(addr, size, flags);
 
 		if (ret != 0) {
-			LOG_ERR("Failed to update memory flags for region %d, ret %d", mem_idx, ret);
+			LOG_ERR("Failed to update memory flags for region %d, ret %d", mem_idx,
+				ret);
 			return ret;
 		}
-
 
 		if ((flags & K_MEM_PERM_EXEC) != 0) {
 			/* new code must reach PoU (flush above) before the
@@ -388,7 +388,7 @@ int llext_mem_finalize(struct llext_loader *ldr, struct llext *ext,
 					K_MEM_PERM_EXEC);
 
 				if (ret != 0) {
-					LOG_ERR("Failed to update memory flags for region %d, ret %d",
+					LOG_ERR("Failed to update memory flags for region %d: %d",
 						i, ret);
 					return ret;
 				}
