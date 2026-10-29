@@ -194,6 +194,8 @@ extern "C" {
 #define PROCESSOR_NAME "openrisc"
 #elif defined(CONFIG_TRICORE)
 #define PROCESSOR_NAME "tricore"
+#elif defined(CONFIG_HEXAGON)
+#define PROCESSOR_NAME "hexagon"
 #endif
 
 #if defined(CONFIG_ARCH_POSIX)
