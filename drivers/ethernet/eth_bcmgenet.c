@@ -23,7 +23,7 @@ struct bcmgenet_data {
 	DEVICE_MMIO_RAM;
 	struct net_if *iface;
 	struct net_pkt *rx_pkt;
-	struct net_buf *rx_frags[GENET_NB_RX_DESCS];
+	struct net_buf *rx_frags[GENET_RX_RING_DESCS];
 	uint8_t mac_addr[NET_ETH_ADDR_LEN];
 	uint16_t rx_idx;
 	uint16_t tx_idx;
@@ -161,7 +161,7 @@ static int bcmgenet_rx_ring_init(const struct device *dev)
 	bcmgenet_write(dev, GENET_RX_DMA_START_ADDR, 0);
 	bcmgenet_write(dev, GENET_RX_DMA_READ_PTR, 0);
 	bcmgenet_write(dev, GENET_RX_DMA_WRITE_PTR, 0);
-	bcmgenet_write(dev, GENET_RX_DMA_END_ADDR, GENET_DMA_DESC_SIZE_GET(GENET_NB_RX_DESCS));
+	bcmgenet_write(dev, GENET_RX_DMA_END_ADDR, GENET_DMA_DESC_SIZE_GET(GENET_RX_RING_DESCS));
 	bcmgenet_write(dev, GENET_RX_DMA_PIDX, 0);
 	bcmgenet_write(dev, GENET_RX_DMA_CIDX, 0);
 
@@ -169,11 +169,11 @@ static int bcmgenet_rx_ring_init(const struct device *dev)
 	data->rx_idx = 0;
 
 	bcmgenet_write(dev, GENET_RX_DMA_RING_BUF_SIZE,
-		       GENET_DMA_RING_SIZE_SET(GENET_NB_RX_DESCS) | GENET_BUF_SIZE);
+		       GENET_DMA_RING_SIZE_SET(GENET_RX_RING_DESCS) | GENET_BUF_SIZE);
 	bcmgenet_write(dev, GENET_RX_DMA_XOR_THRESH, GENET_DMA_FC_THRESH_VALUE);
 	bcmgenet_write(dev, GENET_RX_DMA_RING_CFG, GENET_QUEUES_CFG);
 
-	for (uint16_t i = 0; i < GENET_NB_RX_DESCS; i++) {
+	for (uint16_t i = 0; i < GENET_RX_RING_DESCS; i++) {
 		ret = bcmgenet_rx_refill(dev, i);
 		if (ret < 0) {
 			bcmgenet_rx_drain(dev, i);
@@ -264,7 +264,7 @@ done:
 	bcmgenet_write(dev, GENET_RX_DMA_CIDX, data->cidx);
 
 	data->rx_idx++;
-	if (data->rx_idx >= GENET_NB_RX_DESCS) {
+	if (data->rx_idx >= GENET_RX_RING_DESCS) {
 		data->rx_idx = 0;
 	}
 

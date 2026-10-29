@@ -56,6 +56,16 @@
 #define GENET_NB_RX_DESCS 256
 #define GENET_NB_TX_DESCS 256
 
+/*
+ * Rx descriptors in use: a power of two up to half of the Rx buffer pool,
+ * so that the network stack keeps buffers while the ring is full.
+ */
+#define GENET_RX_POOL_HALF  (CONFIG_NET_BUF_RX_COUNT / 2)
+#define GENET_RX_RING_DESCS (GENET_RX_POOL_HALF >= 256 ? 256                                       \
+			   : GENET_RX_POOL_HALF >= 128 ? 128                                       \
+			   : GENET_RX_POOL_HALF >= 64 ? 64                                         \
+			   : 32)
+
 #define GENET_QUEUES     16
 #define GENET_QUEUES_CFG (1 << GENET_QUEUES)
 
@@ -135,7 +145,7 @@
 #define GENET_RX_DMA_READ_PTR         (GENET_RX_DMA_RING_REG_BASE + 0x2c)
 
 #define GENET_DMA_FC_THRESH_LOW   5
-#define GENET_DMA_FC_THRESH_HIGH  (GENET_NB_RX_DESCS >> 4)
+#define GENET_DMA_FC_THRESH_HIGH  (GENET_RX_RING_DESCS >> 4)
 #define GENET_DMA_FC_THRESH_VALUE ((GENET_DMA_FC_THRESH_LOW << 16) | GENET_DMA_FC_THRESH_HIGH)
 
 #define GENET_TX_TIMEOUT_US     100000
@@ -143,6 +153,6 @@
 #define GENET_BUF_SIZE          CONFIG_NET_BUF_DATA_SIZE
 
 #define GENET_BUF_RX_COUNT \
-	(GENET_NB_RX_DESCS + DIV_ROUND_UP(GENET_MAX_FRAME_LEN, GENET_BUF_SIZE))
+	(GENET_RX_RING_DESCS + DIV_ROUND_UP(GENET_MAX_FRAME_LEN, GENET_BUF_SIZE))
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_BCMGENET_H_ */
