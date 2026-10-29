@@ -9,11 +9,3 @@ config MFD_RV3032
 	select I2C
 	help
 	  Enable MFD driver for RV3032 RTC
-
-config MFD_MICROCRYSTAL_RV3032_INIT_PRIORITY
-	int "Init priority of rv3032 MFD"
-	depends on MFD_RV3032
-	default 50
-	help
-	  Initialization priority for the Microcrystal rv3032c7 MFD driver.
-	  It must be proor the RTC, COUNTER and Sensor driver init priority.

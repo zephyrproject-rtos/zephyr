@@ -546,7 +546,7 @@ static DEVICE_API(rtc, rtc_mc146818_driver_api) = {
 	DEVICE_DT_INST_DEFINE(inst, &rtc_mc146818_init##inst, NULL,		   \
 			      &rtc_mc146818_data##inst, &rtc_mc146818_config##inst,\
 			      POST_KERNEL,					   \
-			      UTIL_INC(CONFIG_MFD_MOTOROLA_MC146818_INIT_PRIORITY),\
+			      CONFIG_RTC_INIT_PRIORITY,				   \
 			      &rtc_mc146818_driver_api);			   \
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_MC146818_DEV_CFG)

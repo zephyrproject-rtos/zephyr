@@ -335,6 +335,6 @@ static int mfd_adp5360_init(const struct device *dev)
 	MFD_ADP5360_PM_DEVICE_DEFINE(inst)                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &mfd_adp5360_init, PM_DEVICE_DT_INST_GET(inst),                \
 			      &mfd_adp5360_data_##inst, &mfd_adp5360_config_##inst, POST_KERNEL,   \
-			      CONFIG_MFD_ADP5360_INIT_PRIORITY, NULL);
+			      CONFIG_MFD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_ADP5360_DEFINE)
