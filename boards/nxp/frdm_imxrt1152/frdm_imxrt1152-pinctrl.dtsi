@@ -31,6 +31,37 @@
 		};
 	};
 
+	pinmux_usdhc1: pinmux_usdhc1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_usdhc1_cmd>,
+				 <&iomuxc_gpio_sd_b1_01_usdhc1_clk>,
+				 <&iomuxc_gpio_sd_b1_02_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b1_03_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b1_04_usdhc1_data2>,
+				 <&iomuxc_gpio_sd_b1_05_usdhc1_data3>;
+			bias-pull-up;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_34_usdhc1_vselect>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+
+		group2 {
+			pinmux = <&iomuxc_gpio_ad_33_gpio_mux4_io00>;
+			input-enable;
+		};
+
+		group3 {
+			pinmux = <&iomuxc_gpio_ad_35_gpio10_io02>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_flexspi1: pinmux_flexspi1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_sd_b2_05_flexspi1_a_dqs>,
