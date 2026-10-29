@@ -36,6 +36,17 @@ Connections and IOs
 
 The `PIC32CZ CA90 Curiosity Ultra User Guide`_ has detailed information about board connections.
 
+Ethernet
+========
+
+The board has a gigabit Ethernet interface: the SoC's ETH controller, a
+Cadence GEM, on GMII to a Microchip KSZ9031MNX PHY at MDIO address 7, with
+the PHY's RESET_N on PB23. The PHY supports 10BASE-T, 100BASE-TX and
+1000BASE-T.
+
+The PHY and the graphics interface share pins, so a given board can use one
+or the other, not both.
+
 Programming & Debugging
 ***********************
 

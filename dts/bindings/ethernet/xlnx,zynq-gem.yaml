@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM in the Xilinx Zynq-7000 processing system.
+
+  The clocks come from the clock controller of the SLCR (xlnx,ps7-clkc),
+  as in the Linux devicetree: the GEM AMBA clock as "pclk" and "hclk" and
+  the GEM reference clock as "tx_clk", which the driver retunes to the
+  link speed through its dividers.
+  The MAC does not support half duplex at 1000 Mbit/s; restrict the PHY
+  with its default-speeds property if that matters.
+
+compatible: "xlnx,zynq-gem"
+
+include: cdns,gem.yaml

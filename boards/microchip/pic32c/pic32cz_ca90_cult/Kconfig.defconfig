@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PIC32CZ_CA90_CULT
+
+configdefault ETH_DRIVER
+	default y
+
+endif # BOARD_PIC32CZ_CA90_CULT

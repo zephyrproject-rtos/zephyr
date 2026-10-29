@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PTP clock of the Cadence MACB/GEM Ethernet MAC, its 1588 time stamp unit.
+  A child node named ptp-clock of the MAC node, whose registers it uses.
+  The unit runs from the "tsu_clk" clock of the MAC node, from "pclk" when
+  there is none.
+
+    &eth0 {
+      eth0_ptp: ptp-clock {
+        compatible = "cdns,macb-ptp-clock";
+      };
+    };
+
+compatible: "cdns,macb-ptp-clock"
+
+include: base.yaml

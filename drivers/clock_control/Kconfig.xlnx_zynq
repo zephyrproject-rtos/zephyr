@@ -1,0 +1,22 @@
+# Xilinx Zynq clock controller drivers
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_XLNX_ZYNQ
+	bool "Xilinx Zynq-7000 clock controller driver"
+	default y
+	depends on DT_HAS_XLNX_PS7_CLKC_ENABLED
+	select SYSCON
+	help
+	  Enable the driver for the clock controller of the Xilinx Zynq-7000
+	  processing system, the clock part of the SLCR.
+
+config CLOCK_CONTROL_XLNX_ZYNQMP
+	bool "Xilinx ZynqMP clock controller driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_CLK_ENABLED
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK if DT_HAS_FIXED_CLOCK_ENABLED
+	help
+	  Enable the driver for the clock controller of the Xilinx ZynqMP,
+	  accessing the CRL_APB and CRF_APB registers directly.
