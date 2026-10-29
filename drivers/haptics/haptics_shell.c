@@ -59,7 +59,7 @@ static const char *const monitor_units[] = {
 
 static int monitor_lookup(const char *const arg, enum haptics_monitor *const monitor)
 {
-	int ret;
+	int ret = 0;
 
 	if (strcmp(arg, "bemf") == 0) {
 		*monitor = HAPTICS_MONITOR_BEMF;
@@ -93,7 +93,7 @@ static int monitor_lookup(const char *const arg, enum haptics_monitor *const mon
 
 static int source_lookup(const char *const arg, enum haptics_source *const src)
 {
-	int ret;
+	int ret = 0;
 
 	if (strcmp(arg, "rom") == 0) {
 		*src = HAPTICS_SOURCE_ROM;
@@ -121,7 +121,7 @@ static int source_lookup(const char *const arg, enum haptics_source *const src)
 
 static int trigger_type_lookup(const char *const arg, enum haptics_trigger_type *const type)
 {
-	int ret;
+	int ret = 0;
 
 	if (strcmp(arg, "rising") == 0) {
 		*type = HAPTICS_TRIGGER_RISING;
@@ -147,7 +147,7 @@ static int cmd_calibrate(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t routine = 0;
-	int ret;
+	int ret = 0;
 
 	dev = shell_device_get_binding(argv[HAPTICS_ARGS_DEVICE]);
 	if (dev == NULL) {
@@ -342,7 +342,7 @@ static int cmd_set_trigger(const struct shell *sh, size_t argc, char **argv)
 	enum haptics_source src = 0;
 	uint32_t level = 0, trigger;
 	const struct device *dev;
-	int ret;
+	int ret = 0;
 
 	dev = shell_device_get_binding(argv[HAPTICS_ARGS_DEVICE]);
 	if (dev == NULL) {
@@ -441,7 +441,7 @@ static int cmd_stream(const struct shell *sh, size_t argc, char **argv)
 	uint8_t samples[HAPTICS_ARGS_MAX];
 	const struct device *dev;
 	uint32_t byte;
-	int ret;
+	int ret = 0;
 
 	dev = shell_device_get_binding(argv[HAPTICS_ARGS_DEVICE]);
 	if (dev == NULL) {
@@ -483,7 +483,7 @@ static int cmd_trigger(const struct shell *sh, size_t argc, char **argv)
 	enum haptics_trigger_type type;
 	const struct device *dev;
 	uint32_t trigger;
-	int ret;
+	int ret = 0;
 
 	dev = shell_device_get_binding(argv[HAPTICS_ARGS_DEVICE]);
 	if (dev == NULL) {
