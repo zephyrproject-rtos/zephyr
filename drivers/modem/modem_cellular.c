@@ -583,16 +583,24 @@ void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t 
 	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_SIM_IMSI);
 }
 
+static bool modem_cellular_status_is_registered(enum cellular_registration_status status)
+{
+	return (status == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
+	       (status == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
+}
+
 static bool modem_cellular_is_registered(struct modem_cellular_data *data)
 {
-	return (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
-		(data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_ROAMING) ||
-		(data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
-		(data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_ROAMING) ||
-		(data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
-		(data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_ROAMING) ||
-		(data->registration_status_5g == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
-		(data->registration_status_5g == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
+	return modem_cellular_status_is_registered(data->registration_status_gsm) ||
+	       modem_cellular_status_is_registered(data->registration_status_gprs) ||
+	       modem_cellular_status_is_registered(data->registration_status_lte) ||
+	       modem_cellular_status_is_registered(data->registration_status_5g);
+}
+
+/* Whether a data call can be made: registered, or with the data context active per +CGEV */
+static bool modem_cellular_is_attached(struct modem_cellular_data *data)
+{
+	return modem_cellular_is_registered(data) || data->pdn_active;
 }
 
 static void modem_cellular_clear_registration_status(struct modem_cellular_data *data)
@@ -601,6 +609,7 @@ static void modem_cellular_clear_registration_status(struct modem_cellular_data 
 	data->registration_status_gprs = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_lte = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_5g = CELLULAR_REGISTRATION_NOT_REGISTERED;
+	data->pdn_active = false;
 }
 
 #if defined(CONFIG_MODEM_CELLULAR_STATS)
@@ -693,6 +702,10 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	} else {
+		/* Losing registration loses the context, unless +CxREG never reported it */
+		if (modem_cellular_status_is_registered(registration_prev)) {
+			data->pdn_active = false;
+		}
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
 		/* On deregistration report the status, as periodic network status AT
 		 * commands are not guaranteed to respond normally.
@@ -709,13 +722,41 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 	modem_cellular_emit_reg_state(data, registration_status);
 }
 
+/* Context ID of a +CGEV ACT or DEACT event, or -1 when the event does not carry one */
+static int modem_cellular_cgev_cid(char **argv, uint16_t argc)
+{
+	/* The last word of the event is <cid>, <p_cid> or <PDP_type> */
+	const char *param = strrchr(argv[1], ' ');
+
+	if (param == NULL) {
+		return -1;
+	}
+	param++;
+
+	if ((*param < '0') || (*param > '9')) {
+		/* DEACT <PDP_type>, <PDP_addr>, [<cid>], the <cid> only given if known to the MT */
+		return (argc > 3) ? atoi(argv[3]) : -1;
+	}
+	if (strstr(argv[1], "PDN") != NULL) {
+		/* PDN ACT <cid> or PDN DEACT <cid> */
+		return atoi(param);
+	}
+	/* ACT <p_cid>, <cid>, <event_type> or DEACT <p_cid>, <cid>, <event_type> */
+	return (argc > 2) ? atoi(argv[2]) : -1;
+}
+
 void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	const struct modem_cellular_config *config = data->dev->config;
+	/* The modem dials the default context itself, otherwise the driver dials its own */
+	const int data_cid =
+		config->use_default_pdp_context ? 0 : CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID;
 	bool connected;
+	int cid;
 
-	if (strcmp(argv[0], "+CGEV: ") != 0) {
+	if ((argc < 2) || (strcmp(argv[0], "+CGEV: ") != 0)) {
 		return;
 	}
 	/* See 3GPP TS 27.007 for +CGEV syntax
@@ -737,28 +778,35 @@ void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t 
 	 * +CGEV: ME DEACT <p_cid>, <cid>, <event_type>
 	 */
 
-	if (strstr(argv[0], " ACT")) {
-		connected = true;
-	} else if ((strstr(argv[0], "DETACH")) ||
-		   (strstr(argv[0], "DEACT"))) {
+	/* argv[0] is the match, the event up to the first ',' follows in argv[1] */
+	if (strstr(argv[1], "DETACH") != NULL) {
+		/* Detaching from the network ends every context */
 		connected = false;
+	} else if ((strstr(argv[1], " ACT") != NULL) || (strstr(argv[1], "DEACT") != NULL)) {
+		cid = modem_cellular_cgev_cid(argv, argc);
+		/* Events for other contexts do not affect the data call. An event without a
+		 * <cid> may be for the data call, so it is assumed to be.
+		 */
+		if ((cid >= 0) && (cid != data_cid)) {
+			return;
+		}
+		connected = (strstr(argv[1], " ACT") != NULL);
 	} else {
 		return;
 	}
 
-	/* Only notify the event if the registration status does not
-	 * match what our state machine expects.
-	 * For example, we might stay registered while losing the PDN connection, and it
-	 * might be resumed later without deregistering first.
+	/* Retained, as the states that ignore the events below still need it on leaving */
+	data->pdn_active = connected;
+
+	/* We might stay registered while losing the PDN connection, so a disconnect is
+	 * always reported. It cannot be gated on the registration status, which is never
+	 * set when a PDN activation alone counted as registration. States without a data
+	 * call ignore it.
 	 */
-	if (modem_cellular_is_registered(data)) {
-		if (!connected) {
-			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
-		}
-	} else {
-		if (connected) {
-			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
-		}
+	if (!connected) {
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
+	} else if (!modem_cellular_is_registered(data)) {
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	}
 }
 
@@ -2015,7 +2063,7 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 {
 	modem_chat_attach(&data->chat, data->dlci1_pipe);
 	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
-	if (modem_cellular_is_registered(data)) {
+	if (modem_cellular_is_attached(data)) {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	}
 	return 0;
@@ -2238,7 +2286,7 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		if (modem_cellular_has_network_script(config) &&
-		    !modem_cellular_is_registered(data)) {
+		    !modem_cellular_is_attached(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
 		} else if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT) &&
 			   !net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
