@@ -15,20 +15,11 @@ testing:
   default: true
   timeout_multiplier: 2
   ignore_tags:
-    - net
     - bluetooth
+    - cache
+    - can
     - cpp
-  only_tags:
-    - cbprintf
-    - cmsis_rtos
-    - heap
-    - introduction
-    - log_api
-    - log_output
-    - logging
-    - mipi-sys-t
-    - security
-    - smf
+    - net
 supported:
   - uart
 vendor: qemu

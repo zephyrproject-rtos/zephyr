@@ -66,7 +66,7 @@ static inline void set_fault_valid(bool valid)
 #else
 #define MEM_REGION_ALLOC (4)
 #endif
-#elif defined(CONFIG_XTENSA)
+#elif defined(CONFIG_XTENSA) || defined(CONFIG_HEXAGON)
 #define MEM_REGION_ALLOC (4096)
 #else
 #error "Test suite not compatible for the given architecture"
@@ -82,6 +82,10 @@ static inline void set_fault_valid(bool valid)
 	(defined(CONFIG_RISCV) && defined(CONFIG_64BIT)))
 #define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 1024
 #define MAX_OBJ 512
+#elif defined(CONFIG_HEXAGON)
+/* struct k_thread embeds the privileged stack */
+#define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * (256 + CONFIG_PRIVILEGED_STACK_SIZE)
+#define MAX_OBJ 4096
 #else
 #define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 256
 #define MAX_OBJ 256
