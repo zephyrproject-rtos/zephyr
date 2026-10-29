@@ -960,6 +960,14 @@ config BT_CTLR_RX_PDU_META
 	  LLL_RX_PDU_META_PDU_OFFSET, so the meta data can be the radio's own
 	  receive buffer descriptor and the radio can receive into the node.
 
+config BT_CTLR_TX_PDU_META
+	bool "TX pdu meta data"
+	help
+	  Enables vendor specific Tx PDU meta data as part of the Tx object.
+	  The PDU is placed inside the meta data at the vendor's
+	  LLL_TX_PDU_META_PDU_OFFSET, so the meta data can be the radio's own
+	  transmit buffer descriptor and the radio can transmit from the node.
+
 config BT_CTLR_NRF_GRTC
 	bool "Use nRF GRTC peripheral"
 	depends on BT_TICKER_CNTR_FREE_RUNNING && SOC_COMPATIBLE_NRF54LX
