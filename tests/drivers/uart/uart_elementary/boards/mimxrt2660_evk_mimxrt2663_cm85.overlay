@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Internal loopback, no wiring needed. The pads use their own group instead of
+ * the board's pinmux_lpuart2 because an enabled pad receiver latches a noise
+ * byte from the floating line during init.
+ */
+&pinctrl {
+	pinmux_lpuart2_loopback: pinmux_lpuart2_loopback {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_8_hsp_lpuart2_txd>,
+				 <&main__iomuxc_pio2_9_hsp_lpuart2_rxd>;
+			slew-rate = "high";
+		};
+	};
+};
+
+dut: &lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart2_loopback>;
+	pinctrl-names = "default";
+	nxp,loopback;
+};

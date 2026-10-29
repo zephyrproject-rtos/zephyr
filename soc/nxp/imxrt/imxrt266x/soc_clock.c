@@ -1231,8 +1231,8 @@ static void ConfigCGUDig_AUDIO(void)
 /*
  * COMM domain (17 slices on COMM_CCM). Only the two domain-base roots are
  * set here: comm_clk (COMMBUS) and comm_ulp32k (ULP32K). The per-peripheral
- * leaf roots (usdhc, xspir, usb, eth, xeno, dll) are not described anywhere yet
- * and keep their reset values.
+ * leaf roots keep their reset values; usb0_phyclk is set by the USB PHY PLL
+ * driver.
  */
 static void ConfigCGUDig_COMM(void)
 {

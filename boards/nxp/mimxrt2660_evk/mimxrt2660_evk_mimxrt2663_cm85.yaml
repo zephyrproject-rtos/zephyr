@@ -16,4 +16,9 @@ flash: 65536
 supported:
   - gpio
   - uart
+  - dma
+  - i2c
+  - spi
+  - usbd
+  - usbh
 vendor: nxp
