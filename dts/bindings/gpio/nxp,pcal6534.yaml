@@ -1,6 +1,26 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
-description: NXP PCAL6534 I2C GPIO expander
+description: |
+  The parent GPIO controller exposes pins 0 through 31. The remaining two
+  GPIOs are exposed by a child nxp,pca-series-gpio-port controller:
+
+    pcal6534: gpio@22 {
+      compatible = "nxp,pcal6534";
+      reg = <0x22>;
+      gpio-controller;
+      #gpio-cells = <2>;
+      ngpios = <32>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      pcal6534_pins_32_33: gpio-port@4 {
+        compatible = "nxp,pca-series-gpio-port";
+        reg = <4>;
+        gpio-controller;
+        #gpio-cells = <2>;
+        ngpios = <2>;
+      };
+    };
 
 compatible: "nxp,pcal6534"
 

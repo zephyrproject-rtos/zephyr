@@ -115,6 +115,16 @@
 				ngpios = <32>;
 				int-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 0 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				test_i2c_pcal6534a_pins_32_33: gpio-port@4 {
+					compatible = "nxp,pca-series-gpio-port";
+					reg = <4>;
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <2>;
+				};
 			};
 
 			test_i2c_pca9538: pca9538@70 {

@@ -33,6 +33,8 @@ extern "C" {
  * This function pulls reset pin to reset a pca_series
  * device if reset_pin is present. Otherwise it write
  * reset value to device registers.
+ * All configured GPIO windows are reset and their caches are refreshed.
+ * Calling this function on a window resets the entire expander.
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
