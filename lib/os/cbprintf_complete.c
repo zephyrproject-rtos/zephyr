@@ -790,6 +790,7 @@ static char *encode_uint(uint_value_type value,
 			 char *bps,
 			 const char *bpe)
 {
+	const bool is_zero = (value == 0);
 	bool upcase = isupper((int)conv->specifier) != 0;
 	const unsigned int radix = conversion_radix(conv->specifier);
 	char *bp = bps + (bpe - bps);
@@ -810,7 +811,7 @@ static char *encode_uint(uint_value_type value,
 		if (radix == 8) {
 			conv->altform_0 = true;
 		} else if (radix == 16) {
-			conv->altform_0c = true;
+			conv->altform_0c = !is_zero;
 		} else {
 			;
 		}

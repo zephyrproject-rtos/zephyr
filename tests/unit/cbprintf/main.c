@@ -666,6 +666,19 @@ ZTEST(prf, test_x_flags)
 	zassert_equal(strncmp("/123/123/", buf, rc), 0);
 }
 
+ZTEST(prf, test_x_zero_alternate)
+{
+	int rc;
+
+	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
+		ztest_test_skip();
+		return;
+	}
+
+	TEST_PRF(&rc, "%#x/%#X/%#5x/%#.3x", 0U, 0U, 0U, 0U);
+	PRF_CHECK("0/0/    0/000", rc);
+}
+
 ZTEST(prf, test_o)
 {
 	unsigned int v = 01234567;
