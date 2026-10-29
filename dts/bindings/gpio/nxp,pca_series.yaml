@@ -20,8 +20,8 @@ include: [gpio-controller.yaml, i2c-device.yaml]
 #   PCAL9539  compatible with  PCAL9555  PCAL6416(*a)
 #   (a) PCA(L)64xxA series support voltage level translation,
 #       but has no difference from driver's view.
-#   (b) PCAL6534 has 34 GPIO pins in 4x 8-bit port and 1x
-#       2-bit port. This driver only support 4x 8-bit port.
+#   (b) PCAL6534 has 34 GPIOs. The expander node exposes pins 0-31,
+#       a "nxp,pca-series-gpio-port" child node can expose pins 32-33.
 
 properties:
   reset-gpios:

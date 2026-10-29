@@ -33,10 +33,17 @@ extern "C" {
  * This function pulls reset pin to reset a pca_series
  * device if reset_pin is present. Otherwise it write
  * reset value to device registers.
+ * All configured GPIO segments are reset and their caches are refreshed.
+ * Calling this function on a segment resets the entire expander.
+ *
+ * @note This function may block and must not be called from ISR context.
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
+ * @retval -EWOULDBLOCK If called from ISR context.
+ * @return A negative error code if resetting registers or refreshing caches
+ *         fails.
  */
 int gpio_pca_series_reset(const struct device *dev);
 
