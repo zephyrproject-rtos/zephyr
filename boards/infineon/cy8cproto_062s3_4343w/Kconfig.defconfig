@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CY8CPROTO_062S3_4343W
+
+# cm0_sram already keeps the prebuilt Cortex-M0+ image's SRAM out of every
+# image's reach, so the linker must not reserve it a second time.
+config SOC_PSOC6_CM0P_IMAGE_RAM_SIZE
+	default 0x0
+
+endif # BOARD_CY8CPROTO_062S3_4343W
