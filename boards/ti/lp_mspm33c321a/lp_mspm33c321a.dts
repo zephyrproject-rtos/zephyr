@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <ti/mspm33c/mspm33c321a.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	compatible = "ti,lp-mspm33c321a";
@@ -24,4 +25,25 @@
 
 &sram0 {
 	status = "okay";
+};
+
+&timg8_0 {
+	status = "okay";
+
+	counterg8_0: counterg8_0 {
+		status = "okay";
+	};
+};
+
+&tima0_0 {
+	ti,clk-div = <8>;
+};
+
+&pwma0_0 {
+	status = "okay";
+	pinctrl-0 = <&tima0_0_ccp0_pa8>;
+	pinctrl-names = "default";
+	ti,cc-index = <0>;
+	ti,pwm-mode = "EDGE_ALIGN";
+	ti,period = <7812>; /* ~100 ms at 78,125 Hz */
 };
