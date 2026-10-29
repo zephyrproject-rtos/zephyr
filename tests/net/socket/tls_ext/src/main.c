@@ -546,6 +546,256 @@ ZTEST(net_socket_tls_api_extension, test_tls_cert_verify_cb_opt_bad_cert)
 	test_tls_cert_verify_cb_opt_common(MBEDTLS_ERR_X509_CERT_VERIFY_FAILED);
 }
 
+/*
+ * @brief Wire-level check of the ClientHello sent by a TLS client socket.
+ *
+ * A plain TCP server socket accepts the connection started by a TLS
+ * client socket and reads the first record, which is the ClientHello.
+ * The handshake is never completed; only the server_name extension
+ * (RFC 6066) is inspected.
+ */
+
+#define SNI_TEST_PORT         4243
+#define SNI_TEST_HOSTNAME     "zephyr.example.org"
+#define CLIENT_HELLO_BUF_SIZE 1024
+
+/* Extension type for server_name, RFC 6066 section 3. */
+#define TLS_EXT_SERVER_NAME 0
+
+static uint8_t client_hello_buf[CLIENT_HELLO_BUF_SIZE];
+static size_t client_hello_len;
+static struct k_sem sni_test_sem;
+
+static K_THREAD_STACK_DEFINE(sni_test_stack, STACK_SIZE);
+static struct k_thread sni_test_thread;
+
+/* Receive exactly len bytes, as zsock_recv() may return a partial read.
+ * Returns 0 on success, -1 if the peer closed or an error occurred first.
+ */
+static int recv_all(int fd, uint8_t *buf, size_t len)
+{
+	size_t got = 0;
+
+	while (got < len) {
+		ssize_t r = zsock_recv(fd, buf + got, len - got, 0);
+
+		if (r <= 0) {
+			return -1;
+		}
+		got += (size_t)r;
+	}
+
+	return 0;
+}
+
+static void sni_server_thread_fn(void *arg0, void *arg1, void *arg2)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+
+	const int listen_fd = POINTER_TO_INT(arg0);
+	size_t record_len;
+	int conn_fd;
+
+	client_hello_len = 0;
+
+	conn_fd = zsock_accept(listen_fd, NULL, NULL);
+	if (conn_fd < 0) {
+		k_sem_give(&sni_test_sem);
+		return;
+	}
+
+	/* Read the full first record: the 5 byte record header, then the
+	 * fragment length it announces.
+	 */
+	if (recv_all(conn_fd, client_hello_buf, 5U) == 0) {
+		record_len = ((size_t)client_hello_buf[3] << 8) | client_hello_buf[4];
+		if (5U + record_len <= sizeof(client_hello_buf) &&
+		    recv_all(conn_fd, client_hello_buf + 5U, record_len) == 0) {
+			client_hello_len = 5U + record_len;
+		}
+	}
+
+	zsock_close(conn_fd);
+	k_sem_give(&sni_test_sem);
+}
+
+/*
+ * Locate the server_name extension in a ClientHello. Returns 1 when the
+ * extension is present, with host_offset and host_len pointing to the
+ * HostName field of the first ServerName entry; 0 when it is absent; and
+ * -EINVAL when the ClientHello cannot be parsed.
+ */
+static int client_hello_get_server_name(const uint8_t *buf, size_t len, size_t *host_offset,
+					size_t *host_len)
+{
+	size_t hs_len, ext_total, pos, end, name_len;
+
+	if (len < 9U || buf[0] != 0x16U || buf[5] != 0x01U) {
+		return -EINVAL;
+	}
+
+	/* Handshake header: length in bytes 6..8. Everything below is
+	 * bounded by the handshake message, itself bounded by the record.
+	 */
+	hs_len = ((size_t)buf[6] << 16) | ((size_t)buf[7] << 8) | buf[8];
+	if (9U + hs_len > len) {
+		return -EINVAL;
+	}
+	end = 9U + hs_len;
+
+	/* ClientHello: legacy_version (2), random (32), session_id,
+	 * cipher_suites, compression_methods, extensions.
+	 */
+	pos = 9U + 2U + 32U;
+	if (pos + 1U > end) {
+		return -EINVAL;
+	}
+	pos += 1U + buf[pos]; /* session_id */
+	if (pos + 2U > end) {
+		return -EINVAL;
+	}
+	pos += 2U + (((size_t)buf[pos] << 8) | buf[pos + 1]); /* cipher_suites */
+	if (pos + 1U > end) {
+		return -EINVAL;
+	}
+	pos += 1U + buf[pos]; /* compression methods */
+	if (pos == end) {
+		return 0; /* no extensions at all */
+	}
+	if (pos + 2U > end) {
+		return -EINVAL;
+	}
+	ext_total = ((size_t)buf[pos] << 8) | buf[pos + 1];
+	pos += 2U;
+	if (pos + ext_total != end) {
+		return -EINVAL;
+	}
+
+	while (pos < end) {
+		size_t ext_type, ext_len;
+
+		if (pos + 4U > end) {
+			return -EINVAL;
+		}
+		ext_type = ((size_t)buf[pos] << 8) | buf[pos + 1];
+		ext_len = ((size_t)buf[pos + 2] << 8) | buf[pos + 3];
+		pos += 4U;
+		if (pos + ext_len > end) {
+			return -EINVAL;
+		}
+		if (ext_type != TLS_EXT_SERVER_NAME) {
+			pos += ext_len;
+			continue;
+		}
+
+		/* ServerNameList: list_length (2), then one or more entries
+		 * of name_type (1) and HostName length (2) + data.
+		 */
+		if (ext_len < 5U || buf[pos + 2] != 0U) {
+			return -EINVAL;
+		}
+		name_len = ((size_t)buf[pos + 3] << 8) | buf[pos + 4];
+		if (5U + name_len > ext_len) {
+			return -EINVAL;
+		}
+		*host_offset = pos + 5U;
+		*host_len = name_len;
+		return 1;
+	}
+
+	return 0;
+}
+
+static void test_client_hello_common(bool set_hostname)
+{
+	struct net_sockaddr_in listen_sa = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(SNI_TEST_PORT),
+	};
+	struct net_sockaddr_in connect_sa;
+	size_t host_offset = 0, host_len = 0;
+	int listen_fd;
+	int client_fd;
+	int sem_r;
+	int r;
+
+	client_hello_len = 0;
+	k_sem_init(&sni_test_sem, 0, 1);
+
+	listen_fd = zsock_socket(NET_PF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_not_equal(listen_fd, -1, "failed to create listener (%d)", errno);
+
+	r = zsock_bind(listen_fd, (struct net_sockaddr *)&listen_sa, sizeof(listen_sa));
+	zassert_not_equal(r, -1, "failed to bind listener (%d)", errno);
+	r = zsock_listen(listen_fd, 1);
+	zassert_not_equal(r, -1, "failed to listen (%d)", errno);
+
+	client_fd = zsock_socket(NET_PF_INET, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
+	zassert_not_equal(client_fd, -1, "failed to create TLS socket (%d)", errno);
+
+	r = ZSOCK_TLS_PEER_VERIFY_NONE;
+	r = zsock_setsockopt(client_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY, &r, sizeof(r));
+	zassert_not_equal(r, -1, "failed to set TLS_PEER_VERIFY (%d)", errno);
+
+	if (set_hostname) {
+		r = zsock_setsockopt(client_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME,
+				     SNI_TEST_HOSTNAME, sizeof(SNI_TEST_HOSTNAME));
+		zassert_not_equal(r, -1, "failed to set TLS_HOSTNAME (%d)", errno);
+	}
+
+	/* The peer closes the connection instead of completing the
+	 * handshake, so connect() is expected to fail; only the
+	 * ClientHello matters here.
+	 */
+	connect_sa.sin_family = NET_AF_INET;
+	connect_sa.sin_port = net_htons(SNI_TEST_PORT);
+	r = zsock_inet_pton(NET_AF_INET, MY_IPV4_ADDR, &connect_sa.sin_addr.s_addr);
+	zassert_equal(r, 1, "inet_pton() failed (%d)", errno);
+
+	/* No assertions from here until the server thread is joined, so a
+	 * failure cannot leave it blocked in accept() or recv(). Closing
+	 * both sockets before the join unblocks it in any case.
+	 */
+	k_thread_create(&sni_test_thread, sni_test_stack, STACK_SIZE, sni_server_thread_fn,
+			INT_TO_POINTER(listen_fd), NULL, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+
+	(void)zsock_connect(client_fd, (struct net_sockaddr *)&connect_sa, sizeof(connect_sa));
+
+	sem_r = k_sem_take(&sni_test_sem, K_MSEC(TIMEOUT));
+
+	zsock_close(client_fd);
+	zsock_close(listen_fd);
+	k_thread_join(&sni_test_thread, K_FOREVER);
+
+	zassert_equal(sem_r, 0, "server thread did not capture the ClientHello");
+	zassert_not_equal(client_hello_len, 0, "no ClientHello captured");
+
+	r = client_hello_get_server_name(client_hello_buf, client_hello_len, &host_offset,
+					 &host_len);
+	zassert_true(r >= 0, "failed to parse the ClientHello (%d)", r);
+
+	if (set_hostname) {
+		zassert_equal(r, 1, "server_name extension not found");
+		zassert_equal(host_len, sizeof(SNI_TEST_HOSTNAME) - 1,
+			      "unexpected hostname length");
+		zassert_mem_equal(SNI_TEST_HOSTNAME, &client_hello_buf[host_offset], host_len,
+				  "unexpected hostname");
+	} else {
+		zassert_equal(r, 0, "server_name extension sent without hostname");
+	}
+}
+
+ZTEST(net_socket_tls_api_extension, test_client_hello_no_sni)
+{
+	test_client_hello_common(false);
+}
+
+ZTEST(net_socket_tls_api_extension, test_client_hello_with_sni)
+{
+	test_client_hello_common(true);
+}
+
 static void *setup(void)
 {
 	int r;
