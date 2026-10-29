@@ -91,11 +91,25 @@ static void mcux_lpdac_power_lock_put(const struct device *dev)
 #endif
 }
 
+static void mcux_lpdac_enable_output(const struct device *dev, bool enable)
+{
+	const struct mcux_lpdac_config *config = dev->config;
+	uint32_t mask = LPDAC_GCR_DACEN_MASK;
+
+#if defined(FSL_FEATURE_LPDAC_HAS_GCR_BUF_EN) && FSL_FEATURE_LPDAC_HAS_GCR_BUF_EN
+	mask |= LPDAC_GCR_BUF_EN_MASK;
+#endif  /* FSL_FEATURE_LPDAC_HAS_GCR_BUF_EN */
+
+	if (enable) {
+		config->base->GCR |= mask;
+	} else {
+		config->base->GCR &= ~mask;
+	}
+}
+
 /*
- * Write the devicetree configuration into the register block. DAC_Init()
- * releases the peripheral reset, resets the logic and the FIFO, then writes
- * GCR in full, which leaves GCR[DACEN] clear: the block is configured but not
- * converting when this returns.
+ * DAC_Init() releases reset and writes the configuration into GCR. Leave
+ * the converter and its optional OPAMP output buffer disabled afterwards.
  */
 static void mcux_lpdac_configure(const struct device *dev)
 {
@@ -110,6 +124,7 @@ static void mcux_lpdac_configure(const struct device *dev)
 	dac_config.enableLowPowerMode = config->low_power;
 #endif
 	DAC_Init(config->base, &dac_config);
+	mcux_lpdac_enable_output(dev, false);
 }
 
 /*
@@ -191,7 +206,7 @@ static int mcux_lpdac_write_value(const struct device *dev, uint8_t channel, uin
 
 	mcux_lpdac_power_lock_get(dev);
 
-	DAC_Enable(config->base, true);
+	mcux_lpdac_enable_output(dev, true);
 	DAC_SetData(config->base, value);
 
 	data->value = value;
@@ -237,20 +252,15 @@ static int mcux_lpdac_pm_callback(const struct device *dev, enum pm_device_actio
 		 */
 		if (data->output_on) {
 			mcux_lpdac_power_lock_get(dev);
-			DAC_Enable(config->base, true);
+			mcux_lpdac_enable_output(dev, true);
 			DAC_SetData(config->base, data->value);
 		}
 
 		return 0;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		/*
-		 * Clearing GCR[DACEN] switches the analog output buffer off, so
-		 * the output really stops driving. Relying on the SoC to gate
-		 * the DAC clock instead would leave the buffer holding whatever
-		 * level it had.
-		 */
-		DAC_Enable(config->base, false);
+		/* Disable the converter and its optional OPAMP buffer. */
+		mcux_lpdac_enable_output(dev, false);
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
 		if (err < 0 && err != -ENOENT) {
