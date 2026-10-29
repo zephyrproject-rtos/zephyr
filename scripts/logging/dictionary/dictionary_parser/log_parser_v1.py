@@ -252,6 +252,9 @@ class LogParserV1(LogParser):
                 % ((" " * prefix_len), hex_vals, hex_padding, chr_vals)
             )
 
+    def enable_sorting(self, latency_ms, ts_freq):
+        raise ValueError("Sorting of messages is supported only for version 3 databases.")
+
     def get_full_msg_hdr_size(self):
         """Get the size of the full message header"""
         return (
