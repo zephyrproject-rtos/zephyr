@@ -990,6 +990,7 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 		gpio_pin_set_dt(&config->reset_gpio, 1);
 	}
 
+	data->recovery_count = 0;
 	modem_cellular_clear_registration_status(data);
 	modem_cellular_notify_user_pipes_disconnected(data);
 	modem_chat_release(&data->chat);
