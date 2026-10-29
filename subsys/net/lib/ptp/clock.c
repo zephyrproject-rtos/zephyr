@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/precision_timing/precision_clock_ptp.h>
 #include <zephyr/precision_timing/precision_pi.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/slist.h>
 
 #include "btca.h"
@@ -99,6 +100,10 @@ struct ptp_clock {
 	uint8_t sync_servo_lock_samples;
 	uint8_t sync_servo_outlier_samples;
 	bool sync_servo_locked;
+#if defined(CONFIG_PTP_SYSTEM_CLOCK_SYNC)
+	bool sys_clock_set;
+	int64_t sys_clock_set_uptime;
+#endif
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -725,6 +730,9 @@ static __noinline int clock_step(const struct precision_clock *precision_clk,
 	 */
 	memset(&ptp_clk.timestamp, 0, sizeof(ptp_clk.timestamp));
 	ptp_clk.current_ds.mean_delay = 0;
+#if defined(CONFIG_PTP_SYSTEM_CLOCK_SYNC)
+	ptp_clk.sys_clock_set = false;
+#endif
 	clock_servo_reset();
 
 	LOG_WRN("Set clock time: %" PRIu64 ".%09u", (uint64_t)(target_time / NSEC_PER_SEC),
@@ -782,6 +790,60 @@ static __noinline int clock_adjust_rate(const struct precision_clock *precision_
 	return 0;
 }
 
+#if defined(CONFIG_PTP_SYSTEM_CLOCK_SYNC)
+static void clock_update_system_clock(const struct precision_clock *precision_clk)
+{
+	const struct ptp_time_prop_ds *tpds = &ptp_clk.time_prop_ds;
+	int64_t uptime = k_uptime_get();
+	precision_time_t phc_time;
+	struct timespec ts;
+	int ret;
+
+	if (!ptp_clk.sync_servo_locked) {
+		return;
+	}
+
+	if (ptp_clk.sys_clock_set &&
+	    (uptime - ptp_clk.sys_clock_set_uptime) <
+		    ((int64_t)CONFIG_PTP_SYSTEM_CLOCK_SYNC_INTERVAL * MSEC_PER_SEC)) {
+		return;
+	}
+
+	ret = precision_clock_read(precision_clk, &phc_time);
+	if (ret < 0) {
+		LOG_WRN_RATELIMIT("Failed to read PHC time for system clock (err %d)", ret);
+		return;
+	}
+
+	/* The PTP timescale is TAI, SYS_CLOCK_REALTIME is UTC. */
+	if ((tpds->flags & PTP_MSG_PTP_TIMESCALE_FLAG) != 0U) {
+		ret = precision_time_sub(phc_time,
+					 (int64_t)tpds->current_utc_offset * NSEC_PER_SEC,
+					 &phc_time);
+		if (ret < 0 || phc_time < 0) {
+			LOG_WRN_RATELIMIT("PHC time not representable as UTC");
+			return;
+		}
+	}
+
+	ts.tv_sec = (time_t)(phc_time / NSEC_PER_SEC);
+	ts.tv_nsec = (long)(phc_time % NSEC_PER_SEC);
+
+	ret = sys_clock_settime(SYS_CLOCK_REALTIME, &ts);
+	if (ret < 0) {
+		LOG_WRN_RATELIMIT("Failed to set system clock (err %d)", ret);
+		return;
+	}
+
+	if (!ptp_clk.sys_clock_set) {
+		LOG_INF("Set system clock: %" PRId64 ".%09ld", (int64_t)ts.tv_sec, ts.tv_nsec);
+	}
+
+	ptp_clk.sys_clock_set = true;
+	ptp_clk.sys_clock_set_uptime = uptime;
+}
+#endif /* CONFIG_PTP_SYSTEM_CLOCK_SYNC */
+
 static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 					 ptp_timeinterval mean_delay, bool ingress_ts_valid)
 {
@@ -830,6 +892,9 @@ static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 
 	ret = clock_adjust_rate(precision_clk, offset);
 	if (ret >= 0) {
+#if defined(CONFIG_PTP_SYSTEM_CLOCK_SYNC)
+		clock_update_system_clock(precision_clk);
+#endif
 		return;
 	}
 

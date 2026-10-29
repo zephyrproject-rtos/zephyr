@@ -55,6 +55,16 @@ PTP clock node. The 1 Hz signal can be observed with an oscilloscope or a logic
 analyzer. Comparing the PPS outputs of two boards, or of a board and the
 grandmaster, shows how well the clocks are synchronized.
 
+System Clock
+============
+
+The sample enables :kconfig:option:`CONFIG_PTP_SYSTEM_CLOCK_SYNC`, so the
+system realtime clock is set from the PTP hardware clock once the device is
+synchronized to a time transmitter. Log messages are timestamped with the
+realtime clock (:kconfig:option:`CONFIG_LOG_TIMESTAMP_USE_REALTIME`): they show
+the time since boot until the first synchronization and the time of day
+afterwards.
+
 Interpreting net ptp Output
 ===========================
 
