@@ -22,6 +22,7 @@
 static int server_fd = -1;
 static uint8_t fw_buf[64];
 static atomic_t write_calls;
+static atomic_t cancel_calls;
 static int write_ret;
 
 static void *fw_get_buf(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
@@ -39,18 +40,24 @@ static int fw_write_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_
 	return write_ret;
 }
 
+static int fw_cancel_cb(const uint16_t obj_inst_id)
+{
+	atomic_inc(&cancel_calls);
+	return 0;
+}
+
 /* Same call the engine makes for a non block-wise Write of Package URI */
 static int write_package_uri(const char *uri)
 {
 	struct lwm2m_engine_res *res;
 	char *buf;
+	size_t buf_len;
 	uint16_t len = strlen(uri);
 
 	zassert_ok(lwm2m_get_resource(&LWM2M_OBJ(5, 0, 1), &res));
-	buf = res->res_instances->data_ptr;
-	zassert_true(len < res->res_instances->max_data_len);
+	buf = res->pre_write_cb(0, 1, 0, &buf_len);
+	zassert_true(len < buf_len);
 	memcpy(buf, uri, len + 1);
-	res->res_instances->data_len = len;
 
 	return res->post_write_cb(0, 1, 0, buf, len, true, 0, 0);
 }
@@ -118,6 +125,7 @@ static void *suite_setup(void)
 
 	lwm2m_register_pre_write_callback(&LWM2M_OBJ(5, 0, 0), fw_get_buf);
 	lwm2m_firmware_set_write_cb(fw_write_cb);
+	lwm2m_firmware_set_cancel_cb(fw_cancel_cb);
 	return NULL;
 }
 
@@ -125,6 +133,7 @@ static void before(void *f)
 {
 	lwm2m_firmware_set_update_result(RESULT_DEFAULT);
 	atomic_clear(&write_calls);
+	atomic_clear(&cancel_calls);
 	write_ret = 0;
 	k_sleep(RELEASE_DELAY);
 }
@@ -161,6 +170,28 @@ ZTEST(lwm2m_fw_pull, test_error_response_is_connection_lost)
 	zassert_equal(atomic_get(&write_calls), 0);
 	zassert_equal(lwm2m_firmware_get_update_state(), STATE_IDLE);
 	zassert_equal(lwm2m_firmware_get_update_result(), RESULT_CONNECTION_LOST);
+}
+
+ZTEST(lwm2m_fw_pull, test_empty_uri_cancels_pull)
+{
+	static const uint8_t block[64];
+	uint8_t buf[256];
+	struct coap_packet req;
+	struct net_sockaddr from;
+	net_socklen_t from_len = sizeof(from);
+
+	start_pull(&req, buf, sizeof(buf), &from, &from_len);
+	zassert_ok(write_package_uri(""));
+
+	zassert_equal(lwm2m_firmware_get_update_state(), STATE_IDLE);
+	zassert_equal(lwm2m_firmware_get_update_result(), RESULT_DEFAULT);
+	zassert_equal(atomic_get(&cancel_calls), 1);
+
+	/* A late block must neither reach the application nor ask for the next one */
+	send_reply(&req, COAP_RESPONSE_CODE_CONTENT, block, sizeof(block), true, &from, from_len);
+	zassert_equal(recv_request(&req, buf, sizeof(buf), &from, &from_len, 500), -EAGAIN);
+	zassert_equal(atomic_get(&write_calls), 0);
+	zassert_equal(lwm2m_firmware_get_update_result(), RESULT_DEFAULT);
 }
 
 ZTEST_SUITE(lwm2m_fw_pull, NULL, suite_setup, before, NULL, NULL);

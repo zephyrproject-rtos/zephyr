@@ -252,20 +252,41 @@ ZTEST(lwm2m_firmware_update, test_reset_rejected_while_updating)
 
 ZTEST(lwm2m_firmware_update, test_writes_rejected_during_pull)
 {
-	uint8_t nul = '\0';
-
 	/* A pull is Downloading without a push in progress */
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
 
 	zassert_equal(package_write(block, sizeof(block), false, 0), -EPERM);
-	zassert_equal(package_write(&nul, 1, true, 0), -EPERM);
-	zassert_equal(package_write(block, 0, true, 0), -EPERM);
-	zassert_equal(package_uri_write(""), -EPERM);
 	zassert_equal(package_uri_write("coap://[::1]/fw.bin"), -EPERM);
 
 	zassert_equal(get_state(), STATE_DOWNLOADING);
 	zassert_equal(write_calls, 0);
 	zassert_equal(cancel_calls, 0);
+}
+
+ZTEST(lwm2m_firmware_update, test_pull_reset_by_null_package)
+{
+	uint8_t nul = '\0';
+
+	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
+
+	zassert_ok(package_write(&nul, 1, true, 0));
+
+	zassert_equal(get_state(), STATE_IDLE);
+	zassert_equal(get_result(), RESULT_DEFAULT);
+	zassert_equal(write_calls, 0);
+	zassert_equal(cancel_calls, 1);
+}
+
+ZTEST(lwm2m_firmware_update, test_pull_reset_by_empty_uri)
+{
+	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
+
+	zassert_ok(package_uri_write(""));
+
+	zassert_equal(get_state(), STATE_IDLE);
+	zassert_equal(get_result(), RESULT_DEFAULT);
+	zassert_equal(cancel_calls, 1);
+	zassert_str_equal(stored_uri(), "");
 }
 
 ZTEST(lwm2m_firmware_update, test_uri_rejected_when_downloaded)
