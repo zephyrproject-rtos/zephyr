@@ -6,6 +6,11 @@
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
+/*
+ * No wiring needed. To check the output, probe these i2s0 pins:
+ *   SSI_BCK: P403, SSI_LRCK: P404, SSI_DATA: P608
+ */
+
 / {
 	aliases {
 		i2s-tx = &i2s0;
