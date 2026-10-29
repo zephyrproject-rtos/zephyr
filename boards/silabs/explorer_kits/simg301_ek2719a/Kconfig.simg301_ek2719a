@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SIMG301_EK2719A
+	select SOC_SIMG301M104LIL

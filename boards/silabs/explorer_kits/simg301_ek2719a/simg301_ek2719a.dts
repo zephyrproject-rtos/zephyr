@@ -1,0 +1,183 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/six301/simg301m104lil.dtsi>
+#include <silabs/six301/clock-hfxo.dtsi>
+#include <silabs/six301/clock-socpll.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "simg301_ek2719a-pinctrl.dtsi"
+
+/ {
+	compatible = "silabs,simg301_ek2719a";
+	model = "Silicon Labs SixG301 Explorer Kit (BRD2719A)";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
+			label = "Push Button 0";
+			zephyr,code = <INPUT_BTN_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			label = "Push Button 1";
+			zephyr,code = <INPUT_BTN_1>;
+		};
+	};
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &eusart0;
+		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,openthread-counter = &protimer;
+		zephyr,shell-uart = &eusart0;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &eusart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1: led_1 {
+			gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	qwiic_connector: stemma-qt-connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpioc 4 0>, /* SCL */
+			   <1 0 &gpioc 5 0>; /* SDA */
+	};
+
+	/* mikroBUS I2C shares its pins with the Qwiic connector. */
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <10 0 &gpioc 4 0>, /* SCL */
+			   <11 0 &gpioc 5 0>; /* SDA */
+	};
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&eusart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&eusart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00010000 DT_SIZE_K(1888)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@1e8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x001e8000 DT_SIZE_K(1888)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@3c0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x003c0000 DT_SIZE_K(64)>;
+			label = "storage";
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&hfxo {
+	ctune = <173>;
+	precision = <50>;
+	status = "okay";
+};
+
+zephyr_i2c: &i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ieee802154 {
+	hfxo = <&hfxo>;
+	status = "okay";
+};
+
+&protimer {
+	status = "okay";
+};
+
+&pti {
+	pinctrl-0 = <&pti_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
