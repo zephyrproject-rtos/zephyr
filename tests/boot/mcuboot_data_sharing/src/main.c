@@ -13,10 +13,23 @@
 #include <bootutil/image.h>
 #include <zephyr/mcuboot_version.h>
 
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET
+#define EXPECTED_BOOT_MODE	MCUBOOT_MODE_SWAP_USING_OFFSET
+#define FLASH_RESERVED_SECTORS 1
+#elif CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE
+#define EXPECTED_BOOT_MODE	MCUBOOT_MODE_SWAP_USING_MOVE
+#define FLASH_RESERVED_SECTORS 2
+#else
+#error Attempting to build test for unrecognized bootloader operation mode.
+#endif
+
+#ifndef EXPECTED_BOOT_SIGNATURE
+#error Attempting to build test for unrecognized signature type.
+#endif
+
 #define FLASH_SECTOR_SIZE 1024
 #define FLASH_SECTOR_SIZE_KB 4
 #define FLASH_MAX_APP_SECTORS 34
-#define FLASH_RESERVED_SECTORS 1
 #define FLASH_MAX_APP_SIZE ((FLASH_MAX_APP_SECTORS - FLASH_RESERVED_SECTORS) \
 			    * FLASH_SECTOR_SIZE_KB)
 #define RUNNING_SLOT 0
@@ -29,7 +42,7 @@ ZTEST(mcuboot_shared_data, test_mode)
 	memset(var, 0xff, sizeof(var));
 	rc = settings_runtime_get("blinfo/mode", var, sizeof(var));
 	zassert_equal(rc, sizeof(var), "Expected data length mismatch");
-	zassert_equal(var[0], MCUBOOT_MODE_SWAP_USING_OFFSET, "Expected data mismatch");
+	zassert_equal(var[0], EXPECTED_BOOT_MODE, "Expected data mismatch");
 }
 
 ZTEST(mcuboot_shared_data, test_signature_type)
@@ -40,7 +53,7 @@ ZTEST(mcuboot_shared_data, test_signature_type)
 	memset(var, 0xff, sizeof(var));
 	rc = settings_runtime_get("blinfo/signature_type", var, sizeof(var));
 	zassert_equal(rc, sizeof(var), "Expected data length mismatch");
-	zassert_equal(var[0], MCUBOOT_SIGNATURE_TYPE_RSA, "Expected data mismatch");
+	zassert_equal(var[0], EXPECTED_BOOT_SIGNATURE, "Expected data mismatch");
 }
 
 ZTEST(mcuboot_shared_data, test_recovery)
