@@ -18,7 +18,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner
+from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner, elf_entry_point
 
 try:
     import pylink
@@ -127,7 +127,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt', 'reset'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt', 'reset',
+                                    'load'},
                           dev_id=True, flash_addr=True, erase=True, reset=True, reset_types=True,
                           tool_opt=True, file=True, rtt=True, batch_debug=True, gdb_init=True)
 
@@ -382,6 +383,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         if command == 'flash':
             self.flash(**kwargs)
+        elif command == 'load':
+            self.load_ram(**kwargs)
         elif command == 'debugserver':
             if self.gdb_host:
                 raise ValueError('Cannot run debugserver with --gdb-host')
@@ -581,6 +584,58 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                           '\n'.join(lines))
         return flash_file, lines
 
+    def get_default_load_commands(self):
+        if self.file is not None:
+            if self.file_type != FileType.ELF:
+                raise ValueError('Cannot load; elf file required')
+            elf_file = self.file
+        elif self.elf_name is None:
+            raise ValueError('Cannot load; elf is missing')
+        else:
+            elf_file = self.elf_name
+        if not os.path.isfile(elf_file):
+            raise ValueError(f'Cannot load; file ({elf_file}) not found')
+
+        lines = list(self.pre_script_cmds or [])  # Prepend custom script commands
+
+        if self.reset_type:
+            lines.insert(0, f"RSetType {self.reset_type}")
+
+        lines += [
+            'ExitOnError 1',  # Treat any command-error as fatal
+            # Reset and halt, or only halt, the target before writing RAM
+            'r' if self.reset else 'h',
+            'BE' if self.build_conf.getboolean('CONFIG_BIG_ENDIAN') else 'LE',
+            f'loadfile "{elf_file}"',
+            # No reset after loading: it could clear RAM, and the reset
+            # vector most likely points at flash. Start at the entry point.
+            f'WReg PC 0x{elf_entry_point(elf_file):x}',
+            'g',  # Start the CPU
+            # Flush the Debug Port CTRL/STAT write, see get_default_flash_commands()
+            'writeDP 1 0',
+            'readDP 1',
+            'q',  # Close the connection and quit
+        ]
+
+        self.logger.debug('JLink commander script:\n' +
+                          '\n'.join(lines))
+        return elf_file, lines
+
+    def run_commander_script(self, lines, flash_file=None, **kwargs):
+        # Don't use NamedTemporaryFile: the resulting file can't be
+        # opened again on Windows.
+        with tempfile.TemporaryDirectory(suffix='jlink') as d:
+            fname = os.path.join(d, 'runner.jlink')
+            with open(fname, 'wb') as f:
+                f.writelines(bytes(line + '\n', 'utf-8') for line in lines)
+
+            self.run_flash_cmd(fname, flash_file, **kwargs)
+
+    def load_ram(self, **kwargs):
+        elf_file, lines = self.get_default_load_commands()
+        self.logger.info(f'Loading {elf_file} into RAM')
+        self.run_commander_script(lines, **kwargs)
+
     def run_flash_cmd(self, fname, flash_file, **kwargs):
         loader_details = ""
         if self.supports_loader and self.loader:
@@ -631,16 +686,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.check_call(cmd, **kwargs)
 
     def flash(self, **kwargs):
-        fname = self.flash_script
-        if fname is None:
-            # Don't use NamedTemporaryFile: the resulting file can't be
-            # opened again on Windows.
-            with tempfile.TemporaryDirectory(suffix='jlink') as d:
-                flash_file, lines = self.get_default_flash_commands()
-                fname = os.path.join(d, 'runner.jlink')
-                with open(fname, 'wb') as f:
-                    f.writelines(bytes(line + '\n', 'utf-8') for line in lines)
-
-                self.run_flash_cmd(fname, flash_file, **kwargs)
+        if self.flash_script is None:
+            flash_file, lines = self.get_default_flash_commands()
+            self.run_commander_script(lines, flash_file, **kwargs)
         else:
-            self.run_flash_cmd(fname, None, **kwargs)
+            self.run_flash_cmd(self.flash_script, None, **kwargs)

@@ -358,8 +358,8 @@ client started by ``west debug`` and ``west attach``. The option can be given
 multiple times and the commands run in the order given, last of everything the
 runner sends to GDB and before the target is resumed. Since they are only
 appended, they cannot change the runner's own connect, load and reset sequence.
-``west flash``, ``west reset``, ``west rtt`` and ``west debugserver`` are
-unaffected.
+``west flash``, ``west load``, ``west reset``, ``west rtt`` and ``west debugserver``
+are unaffected.
 
 For example, to enable J-Link semihosting for the duration of a debug session:
 

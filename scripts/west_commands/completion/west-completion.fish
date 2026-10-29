@@ -184,6 +184,7 @@ function __zephyr_west_complete_help
                     "debugserver" "connect to board and launch a debug server" \
                     "attach" "interactively debug a board" \
                     "rtt" "open an rtt shell" \
+                    "load" "load the image into RAM over the debug probe and run it" \
                     "zephyr-export" "export Zephyr installation as a CMake config package" \
                     "spdx" "create SPDX bill of materials" \
                     "blobs" "work with binary blobs" \
@@ -632,21 +633,24 @@ complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in
 # attach
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra attach -d "interactively debug a board"
 
-## flash, debug, debugserver, attach
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o d -l build-dir -ra "(__zephyr_west_complete_directories)" -d "build directory to create or use"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o r -l runner -r -d "override default runner from build-dir"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l rebuild -l no-rebuild -d "manually specify to reinvoke cmake or not"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l domain -r -d "execute build tool (make or ninja) for a given domain"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o H -l context -d "print runner-specific options"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l board-dir -ra "(__zephyr_west_complete_directories)" -d "board directory"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o f -l file -Fr -d "path to binary"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o t -l file-type -ra "hex bin elf" -d "type of binary"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l elf-file -rka "(__fish_complete_suffix .elf)" -d "path to zephyr.elf"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l hex-file -rka "(__fish_complete_suffix .hex)" -d "path to zephyr.hex"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l bin-file -rka "(__fish_complete_suffix .bin)" -d "path to zephyr.bin"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l gdb -Fr -d "path to GDB"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l openocd -Fr -d "path to openocd"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l openocd-search -ra "(__zephyr_west_complete_directories)" -d "path to add to openocd search path"
+# load
+complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra load -d "load the image into RAM over the debug probe and run it"
+
+## flash, debug, debugserver, attach, load
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -o d -l build-dir -ra "(__zephyr_west_complete_directories)" -d "build directory to create or use"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -o r -l runner -r -d "override default runner from build-dir"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -l rebuild -l no-rebuild -d "manually specify to reinvoke cmake or not"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -l domain -r -d "execute build tool (make or ninja) for a given domain"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -o H -l context -d "print runner-specific options"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -l board-dir -ra "(__zephyr_west_complete_directories)" -d "board directory"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -o f -l file -Fr -d "path to binary"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -o t -l file-type -ra "hex bin elf" -d "type of binary"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -l elf-file -rka "(__fish_complete_suffix .elf)" -d "path to zephyr.elf"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -l hex-file -rka "(__fish_complete_suffix .hex)" -d "path to zephyr.hex"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -l bin-file -rka "(__fish_complete_suffix .bin)" -d "path to zephyr.bin"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -l gdb -Fr -d "path to GDB"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -l openocd -Fr -d "path to openocd"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach load" -l openocd-search -ra "(__zephyr_west_complete_directories)" -d "path to add to openocd search path"
 
 # zephyr-export
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra zephyr-export -d "export Zephyr installation as a CMake config package"

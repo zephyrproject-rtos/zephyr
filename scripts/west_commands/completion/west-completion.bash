@@ -951,6 +951,11 @@ __comp_west_rtt()
 	__comp_west_runner_cmd
 }
 
+__comp_west_load()
+{
+	__comp_west_runner_cmd
+}
+
 __comp_west_spdx()
 {
 	local bool_opts="
@@ -1275,6 +1280,7 @@ __comp_west()
 		debugserver
 		attach
 		rtt
+		load
 		zephyr-export
 		spdx
 		blobs

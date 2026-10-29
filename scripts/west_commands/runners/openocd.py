@@ -21,12 +21,7 @@ if os_name != "nt":
     import sys
     import termios
 
-try:  # noqa SIM105
-    from elftools.elf.elffile import ELFFile
-except ImportError:
-    pass
-
-from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner
+from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner, elf_entry_point
 
 _logger = logging.getLogger('runners')
 
@@ -143,7 +138,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt', 'load'},
                           dev_id=True, rtt=True, erase=True, skip_load=True, file=True,
                           gdb_init=True)
 
@@ -319,9 +314,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
-        if globals().get('ELFFile') is None:
-            raise RuntimeError(
-                'elftools missing; please "pip3 install elftools"')
 
         self.cfg_cmd = []
         if self.openocd_config is not None:
@@ -371,32 +363,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             if self.verify_cmd is None:
                 raise ValueError('Cannot flash; verify command is missing')
 
-        ep_addr = None
-        if self.image_type == FileType.ELF:
-            with open(image_file, 'rb') as f:
-                ep_addr = f"0x{ELFFile(f).header['e_entry']:016x}"
-
         self.logger.info(f'Flashing file: {image_file}')
 
-        pre_init = self.pre_init_flash if self.pre_init_flash else self.pre_init
-        pre_init_cmd = self._openocd_cmd(pre_init)
-
         if self.image_type == FileType.ELF:
-            pre_load_cmd = []
-            load_image = []
-            if not self.do_verify_only:
-                pre_load_cmd = self._openocd_cmd(self.pre_load)
-                load_image = ['-c', self.reset_halt_cmd,
-                              '-c', 'load_image ' + image_file]
-
-            verify_image = []
-            post_verify_cmd = []
-            if self.do_verify or self.do_verify_only:
-                verify_image = ['-c', 'verify_image ' + image_file]
-                post_verify_cmd = self._openocd_cmd(self.post_verify)
-
-            epilogue = ['-c', 'resume ' + ep_addr, '-c', 'shutdown']
-
+            tail = self._ram_load_args(image_file)
         else:
             pre_load_cmd = self._openocd_cmd(self.pre_load)
             post_verify_cmd = self._openocd_cmd(self.post_verify)
@@ -429,12 +399,57 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
             epilogue = ['-c', 'reset run', '-c', 'shutdown']
 
-        cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
-               pre_init_cmd + self.init_arg + self.targets_arg +
-               pre_load_cmd + load_image +
-               verify_image + post_verify_cmd +
-               epilogue)
-        self.check_call(cmd)
+            tail = (pre_load_cmd + load_image +
+                    verify_image + post_verify_cmd +
+                    epilogue)
+
+        self.check_call(self._flash_head() + tail)
+
+    def _flash_head(self):
+        """openocd arguments up to and including 'init' and 'targets'."""
+        pre_init = self.pre_init_flash if self.pre_init_flash else self.pre_init
+        return (self.openocd_cmd + self.serial + self.cfg_cmd +
+                self._openocd_cmd(pre_init) + self.init_arg + self.targets_arg)
+
+    def _ram_load_args(self, elf_file):
+        """-c arguments that reset or halt the target, write an ELF file into
+        RAM, optionally verify it, and resume at its entry point.
+
+        The target is not reset after loading: RAM may be cleared by a
+        reset, and the reset vector most likely points at flash."""
+        ep_addr = f'0x{elf_entry_point(elf_file):016x}'
+
+        pre_load_cmd = []
+        load_image = []
+        if not self.do_verify_only:
+            pre_load_cmd = self._openocd_cmd(self.pre_load)
+            load_image = ['-c', self.reset_halt_cmd,
+                          '-c', 'load_image ' + elf_file]
+
+        verify_image = []
+        post_verify_cmd = []
+        if self.do_verify or self.do_verify_only:
+            verify_image = ['-c', 'verify_image ' + elf_file]
+            post_verify_cmd = self._openocd_cmd(self.post_verify)
+
+        return (pre_load_cmd + load_image +
+                verify_image + post_verify_cmd +
+                ['-c', 'resume ' + ep_addr, '-c', 'shutdown'])
+
+    def do_load(self, **kwargs):
+        if self.file is not None:
+            if self.image_type != FileType.ELF:
+                raise ValueError('Cannot load; only an ELF file can be loaded '
+                                 'into RAM (use --file-type=elf)')
+            elf_file = self.file
+        elif self.elf_name is not None:
+            self.ensure_output('elf')
+            elf_file = self.elf_name
+        else:
+            raise ValueError('Cannot load; no .elf specified')
+
+        self.logger.info(f'Loading {elf_file} into RAM')
+        self.check_call(self._flash_head() + self._ram_load_args(elf_file))
 
     def do_attach_debug_rtt(self, command, **kwargs):
         if self.gdb_cmd is None:
