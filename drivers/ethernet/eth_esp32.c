@@ -36,9 +36,12 @@ LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 #define MAC_RESET_TIMEOUT_MS 100
 #define ETH_CRC_LENGTH       4
 
+#define ETH_ESP32_RGMII ESP32_EMAC_DT_IS_RGMII(DT_DRV_INST(0))
+
 BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii) ||
-	     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii),
-	     "Unsupported PHY interface type. Only RMII and MII are supported.");
+	     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) ||
+	     ETH_ESP32_RGMII,
+	     "Unsupported PHY interface type. Only RMII, MII and RGMII are supported.");
 
 /*
  * On SoCs with L2 cache (ESP32-P4), DMA data is accessed by the CPU
@@ -452,7 +455,13 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev __unused,
 					    struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+
+	if (ETH_ESP32_RGMII) {
+		caps |= ETHERNET_LINK_1000BASE;
+	}
+
+	return caps;
 }
 
 static int eth_esp32_set_config(const struct device *dev,
@@ -621,10 +630,17 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 	if (state->is_up) {
 		eth_speed_t speed = ETH_SPEED_10M;
 
-		if (PHY_LINK_IS_SPEED_100M(state->speed)) {
+		if (PHY_LINK_IS_SPEED_1000M(state->speed)) {
+			speed = ETH_SPEED_1000M;
+		} else if (PHY_LINK_IS_SPEED_100M(state->speed)) {
 			speed = ETH_SPEED_100M;
 		}
 
+#if SOC_EMAC_SUPPORT_1000M
+		if (ETH_ESP32_RGMII && esp32_emac_rgmii_link_speed(state->speed) != 0) {
+			LOG_ERR("Failed to set the RGMII TX clock");
+		}
+#endif
 #if !defined(CONFIG_SOC_SERIES_ESP32)
 		if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
 			esp32_emac_rmii_link_speed(state->speed);
@@ -677,22 +693,25 @@ int eth_esp32_initialize(const struct device *dev)
 	/* Initialize HAL context */
 	emac_hal_init(&dev_data->hal);
 
-	/* Configure ISR */
-	res = esp_intr_alloc(
-		DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
-			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		eth_esp32_isr, (void *)(uintptr_t)dev, NULL);
-	if (res != 0) {
-		goto err;
-	}
-
-	/* Configure phy for Media-Independent Interface (MII) or
-	 * Reduced Media-Independent Interface (RMII) mode
+	/* Configure phy for Media-Independent Interface (MII), Reduced
+	 * Media-Independent Interface (RMII) or Reduced Gigabit
+	 * Media-Independent Interface (RGMII) mode
 	 */
 
-	if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
+	if (ETH_ESP32_RGMII) {
+#if SOC_EMAC_SUPPORT_1000M
+		res = esp32_emac_iomux_init_rgmii_pinctrl(cfg->pcfg);
+		if (res != 0) {
+			goto err;
+		}
+
+		res = esp32_emac_rgmii_clock_init();
+		if (res != 0) {
+			LOG_ERR("Failed to configure the RGMII clock");
+			goto err;
+		}
+#endif
+	} else if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
 		int rmii_clk_gpio = -1;
 
 		res = esp32_emac_iomux_init_rmii_pinctrl(cfg->pcfg, &rmii_clk_gpio);
@@ -742,7 +761,7 @@ int eth_esp32_initialize(const struct device *dev)
 	}
 	if (!reset_success) {
 		res = -ETIMEDOUT;
-		goto err;
+		goto err_clk;
 	}
 
 	/* Set dma_burst_len as ETH_DMA_BURST_LEN_32 by default */
@@ -783,9 +802,20 @@ int eth_esp32_initialize(const struct device *dev)
 
 	res = generate_mac_addr(dev_data->mac_addr);
 	if (res != 0) {
-		goto err;
+		goto err_clk;
 	}
 	emac_hal_set_address(&dev_data->hal, dev_data->mac_addr);
+
+	/* Configure ISR */
+	res = esp_intr_alloc(
+		DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags)) |
+			ESP_INTR_FLAG_IRAM,
+		eth_esp32_isr, (void *)(uintptr_t)dev, NULL);
+	if (res != 0) {
+		goto err_clk;
+	}
 
 	k_tid_t tid = k_thread_create(
 		&dev_data->rx_thread, dev_data->rx_thread_stack,
@@ -802,6 +832,12 @@ int eth_esp32_initialize(const struct device *dev)
 
 	return 0;
 
+err_clk:
+#if SOC_EMAC_SUPPORT_1000M
+	if (ETH_ESP32_RGMII) {
+		esp32_emac_rgmii_clock_deinit();
+	}
+#endif
 err:
 	return res;
 }
