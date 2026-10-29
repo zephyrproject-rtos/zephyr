@@ -201,9 +201,15 @@ int wireguard_peer_remove(int peer_id);
 /**
  * @brief Send a Wireguard keepalive message to peer.
  *
+ * Without a session with the peer, start the handshake with it instead, to
+ * the endpoint learnt from the peer or, if none is learnt yet, to the
+ * configured one. This lets an application bring a tunnel up without sending
+ * traffic into it.
+ *
  * @param peer_id Peer id returned by wireguard_peer_add()
  *
- * @return 0 on success, a negative errno otherwise.
+ * @return 0 on success, -EDESTADDRREQ if there is no session and no endpoint
+ *         to start the handshake with, a negative errno otherwise.
  */
 int wireguard_peer_keepalive(int peer_id);
 

@@ -347,6 +347,49 @@ static int wg_send_keepalive(struct wg_iface_context *ctx,
 	struct net_pkt *pkt;
 	int ret;
 
+	/* Without a session there is nothing to keep alive: start the
+	 * handshake instead. Before the first handshake no endpoint is learnt
+	 * yet, so initiate to the configured one, as the first data packet to
+	 * the peer does.
+	 */
+	if (!peer->session.keypair.current.is_valid) {
+		if (peer->endpoint.ss_family == NET_AF_UNSPEC) {
+			memcpy(&peer->endpoint, &peer->cfg_endpoint, sizeof(peer->endpoint));
+		}
+
+		if (peer->endpoint.ss_family == NET_AF_UNSPEC) {
+			/* The peer has to contact us first */
+			return -EDESTADDRREQ;
+		}
+
+		/* The periodic timer resends an initiation left unanswered while
+		 * there is no session. Setting send_handshake here would outlive
+		 * the handshake and start another one after the rekey timeout.
+		 */
+		if (!can_send_init(peer)) {
+			return 0;
+		}
+
+		/* Cleared once the initiation is sent, else the periodic timer
+		 * retries it.
+		 */
+		peer->send_handshake = true;
+
+		ret = start_handshake(ctx, peer);
+		if (ret < 0) {
+			(void)k_work_schedule(&ctx->wg_ctx->wg_periodic_timer,
+					      K_MSEC(WG_TIMER_PERIOD));
+			return ret;
+		}
+
+		/* As the first data packet does, so that it does not start
+		 * another handshake.
+		 */
+		peer->last_tx = sys_clock_tick_get_32();
+
+		return 0;
+	}
+
 	ret = select_target_iface(peer, addr, &peer->endpoint, &target_iface);
 	if (ret < 0) {
 		NET_DBG("Unknown address family %d", peer->endpoint.ss_family);
