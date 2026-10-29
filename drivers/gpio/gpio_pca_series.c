@@ -1853,6 +1853,7 @@ static int gpio_pca_series_init(const struct device *dev)
 
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("i2c bus device not found");
+		ret = -ENODEV;
 		goto out_bus;
 	}
 
