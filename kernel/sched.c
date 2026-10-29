@@ -45,6 +45,7 @@ static ALWAYS_INLINE void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_key_t *key);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
+#ifndef CONFIG_SMP
 /* Uniprocessor selection of the next thread, used to refresh the ready
  * queue cache. The SMP scheduler selects its next thread at the context
  * switch instead, in kernel/smp/sched_smp.c.
@@ -63,6 +64,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 */
 	return (thread != NULL) ? thread : _current_cpu->idle_thread;
 }
+#endif /* !CONFIG_SMP */
 
 void move_current_to_end_of_prio_q(void)
 {
