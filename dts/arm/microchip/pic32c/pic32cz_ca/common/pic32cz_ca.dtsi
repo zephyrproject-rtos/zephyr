@@ -65,6 +65,11 @@
 			};
 		};
 
+		rstc: rstc@44030000 {
+			compatible = "microchip,rstc-g1-reset";
+			reg = <0x44030000 0x8>;
+		};
+
 		clock: clock@44052000 {
 			compatible = "microchip,pic32cz-ca-clock";
 			reg = <0x44052000 0x60>, <0x44040000 0x8c>,
