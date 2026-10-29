@@ -153,6 +153,14 @@ Boards
   that relied on the alias, such as :zephyr:code-sample:`blinky`, need an
   overlay pointing at a LED wired to the headers.
 
+* The RAKwireless ``rak3112`` board is renamed to :zephyr:board:`rak3212`. It
+  was named after the WisDuo stamp module it carries rather than the board it
+  describes, which is the RAK3212 Breakout Board. The other carrier for the
+  same module is the new :zephyr:board:`rak3312` WisBlock Core Module.
+  :file:`boards/deprecated.cmake` keeps ``-b rak3112/esp32s3/procpu`` and
+  ``-b rak3112/esp32s3/appcpu`` working with a warning, but out-of-tree code
+  testing ``CONFIG_BOARD_RAK3112`` must switch to ``CONFIG_BOARD_RAK3212``.
+
 * The Espressif SoC family is renamed from ``espressif_esp32`` to ``espressif``. The
   :kconfig:option:`CONFIG_SOC_FAMILY` string is now ``"espressif"`` and the family option is
   :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF`. ``CONFIG_SOC_FAMILY_ESPRESSIF_ESP32`` is still set
