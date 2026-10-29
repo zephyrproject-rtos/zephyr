@@ -18,6 +18,12 @@ if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
     CACHE INTERNAL ""
   )
 
+  # Controller ISR profiling, with asserts as BT_ASSERT kernel oops for the lowest flash size.
+  # The fatal error handler sends the profiling dump and the stack frame to the Host.
+  set_config_bool(${NET_APP} CONFIG_BT_CTLR_PROFILE_ISR y)
+  set_config_bool(${NET_APP} CONFIG_BT_CTLR_ASSERT_HANDLER n)
+  set_config_bool(${NET_APP} CONFIG_BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE n)
+
   native_simulator_set_child_images(${DEFAULT_IMAGE} ${NET_APP})
 endif()
 

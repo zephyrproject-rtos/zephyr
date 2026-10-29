@@ -19,3 +19,18 @@ if(CONFIG_USE_USB_AUDIO_OUTPUT)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
   target_sources(app PRIVATE src/usb.c)
 endif()
+
+if(CONFIG_BT_LL_SW_SPLIT AND CONFIG_CODE_DATA_RELOCATION_SRAM)
+  zephyr_code_relocate(LIBRARY subsys__bluetooth__controller__ll_sw__nordic LOCATION RAM NOKEEP)
+
+  # Controller code outside the Nordic LLL used by the radio, radio timer and LLL handlers,
+  # channel selection and mayfly, and by the ticker
+  set(ctlr_dir ${ZEPHYR_BASE}/subsys/bluetooth/controller)
+  zephyr_code_relocate(FILES
+    ${ctlr_dir}/ll_sw/lll_chan.c
+    ${ctlr_dir}/util/util.c
+    ${ctlr_dir}/util/mayfly.c
+    ${ctlr_dir}/util/memq.c
+    ${ctlr_dir}/ticker/ticker.c
+    LOCATION RAM NOKEEP)
+endif()
