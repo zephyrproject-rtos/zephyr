@@ -122,6 +122,18 @@
 	status = "okay";
 };
 
+&plli2s {
+	/* 49.143 MHz on PLLI2SR: with the I2S MCK output enabled, the I2S
+	 * prescaler divides it down to 256 x Fs within 0.02% for 8, 16 and
+	 * 48 kHz.
+	 */
+	div-m = <26>;
+	mul-n = <344>;
+	div-r = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(96)>;
@@ -151,6 +163,11 @@
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
+
+	audio_codec: nau88c10@1a {
+		compatible = "nuvoton,nau88c10";
+		reg = <0x1a>;
+	};
 
 	lis2mdl@1e {
 		compatible = "st,lis2mdl";
@@ -193,6 +210,19 @@
 &spi1 {
 	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&i2s2 {
+	mck-enabled;
+	pinctrl-0 = <&i2s2_ws_pb12 &i2s2_ck_pb13 &i2s2_sd_pb15 &i2s2_mck_pc6>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1, 14)>,
+		 <&rcc STM32_SRC_PLLI2S_R I2S2_SEL(0)>;
 	status = "okay";
 };
 
