@@ -39,6 +39,46 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		fmc: mspi@14000000 {
+			compatible = "aspeed,ast2700-fmc";
+			reg = <0x14000000 0x200>, <0x20000000 0x20000000>;
+			clocks = <&sysclk1 SCU1_CLK_AHB>;
+			clock-names = "hclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi0: mspi@14010000 {
+			compatible = "aspeed,ast2700-spi";
+			reg = <0x14010000 0x200>, <0x40000000 0x4000000>;
+			clocks = <&sysclk1 SCU1_CLK_AHB>;
+			clock-names = "hclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: mspi@14020000 {
+			compatible = "aspeed,ast2700-spi";
+			reg = <0x14020000 0x200>, <0x44000000 0x4000000>;
+			clocks = <&sysclk1 SCU1_CLK_AHB>;
+			clock-names = "hclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: mspi@14030000 {
+			compatible = "aspeed,ast2700-spi";
+			reg = <0x14030000 0x200>, <0x48000000 0x4000000>;
+			clocks = <&sysclk1 SCU1_CLK_AHB>;
+			clock-names = "hclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		/* The boot ROM patch locks SRAM offsets 244 KB to 248 KB */
 		sram: memory@14b80000 {
 			compatible = "mmio-sram";
