@@ -715,7 +715,7 @@ void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t 
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	bool connected;
 
-	if (strcmp(argv[0], "+CGEV: ") != 0) {
+	if ((argc < 2) || (strcmp(argv[0], "+CGEV: ") != 0)) {
 		return;
 	}
 	/* See 3GPP TS 27.007 for +CGEV syntax
@@ -737,10 +737,11 @@ void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t 
 	 * +CGEV: ME DEACT <p_cid>, <cid>, <event_type>
 	 */
 
-	if (strstr(argv[0], " ACT")) {
+	/* argv[0] is the match, the event up to the first ',' follows in argv[1] */
+	if (strstr(argv[1], " ACT")) {
 		connected = true;
-	} else if ((strstr(argv[0], "DETACH")) ||
-		   (strstr(argv[0], "DEACT"))) {
+	} else if ((strstr(argv[1], "DETACH")) ||
+		   (strstr(argv[1], "DEACT"))) {
 		connected = false;
 	} else {
 		return;
