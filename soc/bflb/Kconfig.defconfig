@@ -10,6 +10,16 @@ config MAIN_STACK_SIZE
 DT_CHOSEN_BFLB_HEAP_RAM_EARLY := bflb,heap-ram-early
 DT_CHOSEN_BFLB_HEAP_RAM_LATE := bflb,heap-ram-late
 
+# If only late heap RAM is available, enable MbedTLS dedicated heap to save more main memory
+configdefault MBEDTLS_ENABLE_HEAP
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_BFLB_HEAP_RAM_LATE)) && MEMC \
+		&& !$(dt_chosen_enabled,$(DT_CHOSEN_BFLB_HEAP_RAM_EARLY))
+
+# And size it appropriately
+configdefault MBEDTLS_HEAP_SIZE
+	default 65536 if MBEDTLS_ENABLE_HEAP
+
+# Always enable the custom regardless
 configdefault MBEDTLS_HEAP_CUSTOM_SECTION
 	default y if $(dt_chosen_enabled,$(DT_CHOSEN_BFLB_HEAP_RAM_EARLY))
 	default y if $(dt_chosen_enabled,$(DT_CHOSEN_BFLB_HEAP_RAM_LATE)) && MEMC
