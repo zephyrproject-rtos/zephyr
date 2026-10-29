@@ -705,45 +705,10 @@ static const char *const imx335_test_pattern_menu[] = {
 
 static int imx335_init_controls(const struct device *dev)
 {
-	int ret;
 	struct imx335_data *drv_data = dev->data;
-	struct imx335_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(
-		&ctrls->gain, dev, VIDEO_CID_ANALOGUE_GAIN,
-		(struct video_ctrl_range){
-			.min = IMX335_GAIN_MIN,
-			.max = IMX335_GAIN_MAX,
-			.step = IMX335_GAIN_UNIT_MDB,
-			.def = 0});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
-		(struct video_ctrl_range){
-			.min = 1,
-			.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN,
-			.step = 1,
-			.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->pixel_rate, dev, VIDEO_CID_PIXEL_RATE,
-		(struct video_ctrl_range){
-			.min64 = IMX335_PIXEL_RATE,
-			.max64 = IMX335_PIXEL_RATE,
-			.step64 = 1,
-			.def64 = IMX335_PIXEL_RATE});
-	if (ret < 0) {
-		return ret;
-	}
-
-	return video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
-				   imx335_test_pattern_menu);
+	return video_register_ctrls((struct video_ctrl *)&drv_data->ctrls,
+				    sizeof(drv_data->ctrls) / sizeof(struct video_ctrl), dev);
 }
 
 static int imx335_init(const struct device *dev)
@@ -826,6 +791,23 @@ static int imx335_init(const struct device *dev)
 
 #define IMX335_INIT(n)										\
 	static struct imx335_data imx335_data_##n = {						\
+		.ctrls = {									\
+			.gain = {.id = VIDEO_CID_ANALOGUE_GAIN,					\
+				 .range = {.min = IMX335_GAIN_MIN, .max = IMX335_GAIN_MAX,	\
+					   .step = IMX335_GAIN_UNIT_MDB}},			\
+			.exposure = {.id = VIDEO_CID_EXPOSURE,					\
+				     .range = {.min = 1,					\
+					       .max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN,	\
+					       .step = 1,					\
+					       .def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN}},	\
+			.pixel_rate = {.id = VIDEO_CID_PIXEL_RATE,				\
+				       .range = {.min64 = IMX335_PIXEL_RATE,			\
+						 .max64 = IMX335_PIXEL_RATE,			\
+						 .step64 = 1,					\
+						 .def64 = IMX335_PIXEL_RATE}},			\
+			.test_pattern = {.id = VIDEO_CID_TEST_PATTERN,				\
+					 .menu = imx335_test_pattern_menu},			\
+		},										\
 		.fmt = {									\
 			.pixelformat = VIDEO_PIX_FMT_SRGGB10P,					\
 			.width = IMX335_NATIVE_WIDTH,						\

@@ -657,18 +657,10 @@ static int ov767x_get_fmt(const struct device *dev, struct video_format *fmt)
 
 static int ov767x_init_controls(const struct device *dev)
 {
-	int ret;
 	struct ov767x_data *drv_data = dev->data;
-	struct ov767x_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls((struct video_ctrl *)&drv_data->ctrls,
+				    sizeof(drv_data->ctrls) / sizeof(struct video_ctrl), dev);
 }
 
 static int ov767x_init(const struct device *dev)
@@ -825,6 +817,9 @@ static DEVICE_API(video, ov767x_api) = {
 #define OV767X_PWDN_GPIO(inst)
 #endif
 
+/* Defined outside of OV767X_INIT() as its id parameter would replace the .id designators */
+#define OV767X_CTRLS_INIT {.hflip = {.id = VIDEO_CID_HFLIP}, .vflip = {.id = VIDEO_CID_VFLIP}}
+
 #define OV767X_INIT(inst, id)                                                                      \
 	static const struct ov767x_config ov##id##_config##inst = {                                \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
@@ -833,7 +828,9 @@ static DEVICE_API(video, ov767x_api) = {
 		.pclk_hb_disable = DT_INST_PROP(inst, pclk_hb_disable),                            \
 		OV767X_RESET_GPIO(inst)	OV767X_PWDN_GPIO(inst)};                                   \
                                                                                                    \
-	static struct ov767x_data ov##id##_data##inst;                                             \
+	static struct ov767x_data ov##id##_data##inst = {                                          \
+		.ctrls = OV767X_CTRLS_INIT,                                                        \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, ov767x_init, NULL, &ov##id##_data##inst,                       \
 			      &ov##id##_config##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,     \

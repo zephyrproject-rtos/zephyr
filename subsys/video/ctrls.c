@@ -154,16 +154,19 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		return -EACCES;
 	}
 
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
-		    ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
-		    : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max)) {
+	/* A button holds no value, so there is no range to check */
+	if (ctrl->type != VIDEO_CTRL_TYPE_BUTTON &&
+	    (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
+		     ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
+		     : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max))) {
 		LOG_ERR("Control id 0x%08x value is invalid for %s", control->id, dev->name);
 		return -ERANGE;
 	}
 
-	/* No new value */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
-						    : ctrl->val == control->val) {
+	/* No new value, unless the control is executed on each write */
+	if ((ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
+						     : ctrl->val == control->val) &&
+	    (ctrl->flags & VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE) == 0) {
 		return 0;
 	}
 
@@ -388,6 +391,9 @@ fill_query:
 		cq->int_menu = ctrl->int_menu;
 	}
 	cq->name = video_get_ctrl_name(cq->id);
+	if (cq->name == NULL) {
+		cq->name = ctrl->name;
+	}
 
 	return 0;
 }
@@ -422,6 +428,9 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 		break;
 	case VIDEO_CTRL_TYPE_STRING:
 		type = "string";
+		break;
+	case VIDEO_CTRL_TYPE_BUTTON:
+		type = "button";
 		break;
 	default:
 		break;

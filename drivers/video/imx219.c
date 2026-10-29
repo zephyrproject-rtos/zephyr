@@ -436,54 +436,9 @@ static const char *const imx219_test_pattern_menu[] = {
 static int imx219_init_ctrls(const struct device *dev)
 {
 	struct imx219_data *drv_data = dev->data;
-	struct imx219_ctrls *ctrls = &drv_data->ctrls;
-	int ret;
 
-	ret = video_init_ctrl(
-		&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
-		(struct video_ctrl_range){.min = 0x0000, .max = 0xffff, .step = 1,
-					  .def = IMX219_INTEGRATION_TIME_DEFAULT});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
-		(struct video_ctrl_range){.min = 0x00, .max = 0x3ff, .step = 1,
-					  .def = IMX219_DT_PEDESTAL_DEFAULT});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->analogue_gain, dev, VIDEO_CID_ANALOGUE_GAIN,
-		(struct video_ctrl_range){.min = IMX219_ANALOG_GAIN_MIN,
-					  .max = IMX219_ANALOG_GAIN_MAX,
-					  .step = 1,
-					  .def = IMX219_ANALOG_GAIN_DEFAULT});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_ctrl(
-		&ctrls->digital_gain, dev, VIDEO_CID_DIGITAL_GAIN,
-		(struct video_ctrl_range){.min = 0x000, .max = 0xfff, .step = 1,
-					  .def = IMX219_DIGITAL_GAIN_DEFAULT});
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_init_int_menu_ctrl(&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ,
-				       0, imx219_2dl_link_frequency,
-				       ARRAY_SIZE(imx219_2dl_link_frequency));
-	if (ret < 0) {
-		return ret;
-	}
-
-	ctrls->linkfreq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-
-	return video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
-				   imx219_test_pattern_menu);
+	return video_register_ctrls((struct video_ctrl *)&drv_data->ctrls,
+				    sizeof(drv_data->ctrls) / sizeof(struct video_ctrl), dev);
 }
 
 static int imx219_set_input_clk(const struct device *dev, uint32_t rate_hz)
@@ -568,7 +523,30 @@ static int imx219_init(const struct device *dev)
 }
 
 #define IMX219_INIT(n)                                                                             \
-	static struct imx219_data imx219_data_##n;                                                 \
+	static struct imx219_data imx219_data_##n = {                                              \
+		.ctrls = {                                                                         \
+			.exposure = {.id = VIDEO_CID_EXPOSURE,                                     \
+				     .range = {.max = 0xffff, .step = 1,                           \
+					       .def = IMX219_INTEGRATION_TIME_DEFAULT}},           \
+			.brightness = {.id = VIDEO_CID_BRIGHTNESS,                                 \
+				       .range = {.max = 0x3ff, .step = 1,                          \
+						 .def = IMX219_DT_PEDESTAL_DEFAULT}},              \
+			.analogue_gain = {.id = VIDEO_CID_ANALOGUE_GAIN,                           \
+					  .range = {.min = IMX219_ANALOG_GAIN_MIN,                 \
+						    .max = IMX219_ANALOG_GAIN_MAX,                 \
+						    .step = 1,                                     \
+						    .def = IMX219_ANALOG_GAIN_DEFAULT}},           \
+			.digital_gain = {.id = VIDEO_CID_DIGITAL_GAIN,                             \
+					 .range = {.max = 0xfff, .step = 1,                        \
+						   .def = IMX219_DIGITAL_GAIN_DEFAULT}},           \
+			.linkfreq = {.id = VIDEO_CID_LINK_FREQ,                                    \
+				     .flags = VIDEO_CTRL_FLAG_READ_ONLY,                           \
+				     .range = {.max = ARRAY_SIZE(imx219_2dl_link_frequency) - 1},  \
+				     .int_menu = imx219_2dl_link_frequency},                       \
+			.test_pattern = {.id = VIDEO_CID_TEST_PATTERN,                             \
+					 .menu = imx219_test_pattern_menu},                        \
+		},                                                                                 \
+	};                                                                                         \
                                                                                                    \
 	static const struct imx219_config imx219_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
