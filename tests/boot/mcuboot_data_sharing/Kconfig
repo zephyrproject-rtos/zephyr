@@ -1,0 +1,22 @@
+# Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Expected signature type passed from MCUboot via retention"
+	default TEST_EXPECTED_MCUBOOT_SIGNATURE_TYPE_NONE
+
+config TEST_EXPECTED_MCUBOOT_SIGNATURE_TYPE_ECDSA_P256
+	bool "Expected ECDSA P256"
+
+config TEST_EXPECTED_MCUBOOT_SIGNATURE_TYPE_ED25519
+	bool "Expected ED25519"
+
+config TEST_EXPECTED_MCUBOOT_SIGNATURE_TYPE_RSA
+	bool "Expected RSA"
+
+config TEST_EXPECTED_MCUBOOT_SIGNATURE_TYPE_NONE
+	bool "Expected None"
+
+endchoice
+
+source "Kconfig.zephyr"
