@@ -153,6 +153,16 @@ struct ec_host_cmd {
 	enum ec_host_cmd_state state;
 	/** Thread running the host command handler loop. */
 	k_tid_t thread;
+#ifdef CONFIG_EC_HOST_CMD_RATE_LIMITING
+	/** Timestamp (ms) when the current command arrived in RX notify. */
+	int64_t cmd_arrival_time;
+	/** Timestamp (ms) when the previous command response was sent. */
+	int64_t last_response_time;
+	/** Timestamp (ms) when the rate-limiting window last started or recessed. */
+	int64_t last_recess_time;
+	/** True when cmd_arrival_time holds a fresh RX notify timestamp. */
+	bool cmd_arrival_valid;
+#endif /* CONFIG_EC_HOST_CMD_RATE_LIMITING */
 };
 
 /**

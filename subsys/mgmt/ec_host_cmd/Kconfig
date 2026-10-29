@@ -114,6 +114,37 @@ config EC_HOST_CMD_IN_PROGRESS_STATUS
 	  EC_HOST_CMD_IN_PROGRESS status. The saved status can be get with the
 	  ec_host_cmd_send_in_progress_status function.
 
+config EC_HOST_CMD_RATE_LIMITING
+	bool "Host command rate limiting"
+	help
+	  Enable rate limiting to prevent rapid host command bursts from
+	  monopolizing the CPU and starving lower-priority threads.
+
+if EC_HOST_CMD_RATE_LIMITING
+
+config EC_HOST_CMD_RATE_LIMITING_PERIOD_MS
+	int "Rate limiting period in milliseconds"
+	default 10
+	help
+	  Maximum continuous host command processing time before enforcing
+	  a recess.
+
+config EC_HOST_CMD_RATE_LIMITING_MIN_REST_MS
+	int "Minimum host idle rest time in milliseconds"
+	default 3
+	help
+	  Minimum idle time between the end of a command response and the
+	  arrival of the next command to reset the rate limiting period.
+
+config EC_HOST_CMD_RATE_LIMITING_RECESS_MS
+	int "Recess sleep time in milliseconds"
+	default 2
+	help
+	  Sleep time before sending the response when the period deadline
+	  is reached.
+
+endif # EC_HOST_CMD_RATE_LIMITING
+
 source "subsys/mgmt/ec_host_cmd/Kconfig.logging"
 source "subsys/mgmt/ec_host_cmd/backends/Kconfig"
 

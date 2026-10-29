@@ -827,6 +827,49 @@ ZTEST(ec_host_cmd, test_log_on_request_max_version)
 	verify_tx_error(EC_HOST_CMD_INVALID_VERSION);
 }
 
+#ifdef CONFIG_EC_HOST_CMD_RATE_LIMITING
+#define EC_CMD_BUSY 0x0004
+static enum ec_host_cmd_status
+ec_host_cmd_busy(struct ec_host_cmd_handler_args *args)
+{
+	k_busy_wait(15000);
+	return EC_HOST_CMD_SUCCESS;
+}
+EC_HOST_CMD_HANDLER_UNBOUND(EC_CMD_BUSY, ec_host_cmd_busy, BIT(0));
+
+ZTEST(ec_host_cmd, test_rate_limiting)
+{
+	int64_t start_time;
+	int64_t elapsed_ms;
+
+	/* 1. Fast command with rest: should complete immediately without recess */
+	host_to_dut->header.prtcl_ver = 3;
+	host_to_dut->header.cmd_id = EC_CMD_HELLO;
+	host_to_dut->header.cmd_ver = 0;
+	host_to_dut->header.reserved = 0;
+	host_to_dut->header.data_len = sizeof(host_to_dut->add);
+	host_to_dut->add.in_data = 0x10203040;
+
+	start_time = k_uptime_get();
+	simulate_rx_data();
+	elapsed_ms = k_uptime_get() - start_time;
+	zassert_true(elapsed_ms < 10, "Fast command took unexpectedly long (%lld ms)",
+		     elapsed_ms);
+
+	/* 2. Heavy command exceeding PERIOD_MS (10 ms): triggers recess (20 ms) */
+	host_to_dut->header.cmd_id = EC_CMD_BUSY;
+	host_to_dut->header.cmd_ver = 0;
+	host_to_dut->header.reserved = 0;
+	host_to_dut->header.data_len = 0;
+
+	start_time = k_uptime_get();
+	simulate_rx_data();
+	elapsed_ms = k_uptime_get() - start_time;
+	zassert_true(elapsed_ms >= 20, "Rate limiting recess did not trigger (%lld ms)",
+		     elapsed_ms);
+}
+#endif
+
 static void *ec_host_cmd_tests_setup(void)
 {
 	ec_host_cmd_backend_sim_install_send_cb(host_send, &sent);
