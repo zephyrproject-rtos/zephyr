@@ -645,7 +645,7 @@ New Boards
 
 * RAKwireless Technology Limited
 
-   * :zephyr:board:`rak3112` (``rak3112``)
+   * ``rak3112``
 
 * Raspberry Pi Foundation
 
