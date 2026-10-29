@@ -15,6 +15,22 @@ tests:
       - spi
       - i2c
 
+  drivers.gpio.build.pca_series.no_cache:
+    min_ram: 32
+    platform_allow: qemu_cortex_a53
+    integration_platforms:
+      - qemu_cortex_a53
+    extra_configs:
+      - CONFIG_GPIO_PCA_SERIES_CACHE_ALL=n
+
+  drivers.gpio.build.pca_series.no_interrupt:
+    min_ram: 32
+    platform_allow: qemu_cortex_a53
+    integration_platforms:
+      - qemu_cortex_a53
+    extra_configs:
+      - CONFIG_GPIO_PCA_SERIES_INTERRUPT=n
+
   drivers.gpio.build.efinix_sapphire:
     min_ram: 32
     platform_allow: titanium_ti60_f225
