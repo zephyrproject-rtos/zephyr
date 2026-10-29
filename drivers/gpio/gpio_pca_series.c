@@ -614,7 +614,7 @@ static inline struct gpio_pca_series_reg_cache_mini *gpio_pca_series_reg_cache_m
 {
 	struct gpio_pca_series_data *data = dev->data;
 	struct gpio_pca_series_reg_cache_mini *cache =
-		(struct gpio_pca_series_reg_cache_mini *)(&data->cache);
+		(struct gpio_pca_series_reg_cache_mini *)data->cache;
 	LOG_DBG("mini cache addr 0x%p", (void *)cache);
 	return cache;
 }
@@ -2606,7 +2606,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
 		(GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(part_no) /** true */\
 		 ), \
 		(sizeof(struct gpio_pca_series_reg_cache_mini) /** false */ \
-		 ))]; \
+		 ))] __aligned(4); \
 	static struct gpio_pca_series_data gpio_##part_no##_##inst##_data = { \
 		.lock = Z_SEM_INITIALIZER(gpio_##part_no##_##inst##_data.lock, 1, 1), \
 		.cache = (void *)gpio_##part_no##_##inst##_reg_cache, \
