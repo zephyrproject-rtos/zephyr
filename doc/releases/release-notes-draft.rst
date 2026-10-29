@@ -50,6 +50,10 @@ API Changes
 Removed APIs and options
 ========================
 
+* I2C
+
+    * ``CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS``
+
 Deprecated APIs and options
 ===========================
 
