@@ -1,0 +1,25 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_PLAYER
+	bool "LED player"
+	depends on LED && SYS_CLOCK_EXISTS
+	help
+	  Play on/off animations on LEDs driven by the LED driver API, for
+	  example to report a status on a single LED with one blink pattern
+	  per status.
+
+if LED_PLAYER
+
+config LED_PLAYER_INIT_PRIORITY
+	int "LED player initialization priority"
+	default 32
+	help
+	  Initialization priority of the LED player, at the POST_KERNEL level.
+	  The LED player API must not be used before it is initialized.
+
+module = LED_PLAYER
+module-str = LED player
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # LED_PLAYER
