@@ -269,3 +269,32 @@ config BT_SILABS_EFR32_LL_THREAD_PRIO
 	def_int 0
 
 endmenu
+
+config BT_HCI_SILABS_NCP
+	bool "Silicon Labs network co-processor HCI driver"
+	default y
+	depends on DT_HAS_SILABS_NCP_HCI_ENABLED
+	depends on MFD_SILABS_NCP
+	select EXPERIMENTAL
+	help
+	  Bluetooth HCI driver for a controller running on a Silicon Labs
+	  network co-processor. HCI packets (H4 framing) are carried by a CPC
+	  endpoint of the co-processor.
+
+if BT_HCI_SILABS_NCP
+
+config BT_HCI_SILABS_NCP_INIT_PRIORITY
+	int "Initialization priority"
+	default 90
+	help
+	  Must be greater than MFD_SILABS_NCP_INIT_PRIORITY.
+
+config BT_HCI_SILABS_NCP_RX_COUNT
+	int "Number of receive buffers handed to CPC"
+	default 4
+
+config BT_HCI_SILABS_NCP_TX_COUNT
+	int "Number of packets in flight towards the co-processor"
+	default 4
+
+endif # BT_HCI_SILABS_NCP

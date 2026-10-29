@@ -476,3 +476,48 @@ tests:
       required_devices:
         # second device required, with the same platform and application
         - {}
+  bluetooth.shell.silabs_ncp_uart:
+    extra_args: SNIPPET=silabs-ncp-uart
+    platform_allow:
+      - xg28_rb4401c/efr32zg28b322f1024im68
+    platform_exclude:
+      - native_sim
+    integration_platforms:
+      - xg28_rb4401c/efr32zg28b322f1024im68
+    build_only: true
+  bluetooth.shell.silabs_ncp_sdio.nucleo_h755zi_q:
+    extra_args:
+      - SNIPPET=silabs-ncp-sdio
+      - EXTRA_DTC_OVERLAY_FILE=boards/nucleo_h755zi_q_stm32h755xx_m7_silabs_ncp.overlay
+      - EXTRA_CONF_FILE=boards/nucleo_h755zi_q_stm32h755xx_m7_silabs_ncp.conf
+    platform_allow:
+      - nucleo_h755zi_q/stm32h755xx/m7
+    platform_exclude:
+      - native_sim
+    integration_platforms:
+      - nucleo_h755zi_q/stm32h755xx/m7
+    build_only: true
+  bluetooth.shell.silabs_ncp_spi.nucleo_h755zi_q:
+    extra_args:
+      - SNIPPET=silabs-ncp-spi
+      - EXTRA_DTC_OVERLAY_FILE=boards/nucleo_h755zi_q_stm32h755xx_m7_silabs_ncp.overlay
+      - EXTRA_CONF_FILE=boards/nucleo_h755zi_q_stm32h755xx_m7_silabs_ncp.conf
+    platform_allow:
+      - nucleo_h755zi_q/stm32h755xx/m7
+    platform_exclude:
+      - native_sim
+    integration_platforms:
+      - nucleo_h755zi_q/stm32h755xx/m7
+    build_only: true
+  bluetooth.shell.silabs_ncp_uart.nucleo_h755zi_q:
+    extra_args:
+      - SNIPPET=silabs-ncp-uart
+      - EXTRA_DTC_OVERLAY_FILE=boards/nucleo_h755zi_q_stm32h755xx_m7_silabs_ncp.overlay
+      - EXTRA_CONF_FILE=boards/nucleo_h755zi_q_stm32h755xx_m7_silabs_ncp.conf
+    platform_allow:
+      - nucleo_h755zi_q/stm32h755xx/m7
+    platform_exclude:
+      - native_sim
+    integration_platforms:
+      - nucleo_h755zi_q/stm32h755xx/m7
+    build_only: true

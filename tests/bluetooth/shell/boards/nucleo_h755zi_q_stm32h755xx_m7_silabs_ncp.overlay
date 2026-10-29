@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Storage partition for the Bluetooth settings on the Nucleo-H755ZI-Q, which
+ * does not define one: the two last 128 KB sectors of the flash bank of the
+ * Cortex-M7. NVS does not support sectors above 64 KB, the scenario uses ZMS.
+ */
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@c0000 {
+			label = "storage";
+			reg = <0x000c0000 DT_SIZE_K(256)>;
+		};
+	};
+};

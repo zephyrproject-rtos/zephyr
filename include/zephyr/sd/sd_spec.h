@@ -909,6 +909,8 @@ enum sdio_cccr_flags {
 	SDIO_SUPPORT_DDR50 = BIT(3),
 	SDIO_SUPPORT_4BIT_LS_BUS = BIT(4),
 	SDIO_SUPPORT_MULTIBLOCK = BIT(5),
+	/** Low speed card (LSC) */
+	SDIO_LOW_SPEED_CARD = BIT(6),
 };
 
 /**

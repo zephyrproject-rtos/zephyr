@@ -1,0 +1,69 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_SILABS_NCP
+	bool "Silicon Labs network co-processor Wi-Fi driver"
+	default y
+	depends on DT_HAS_SILABS_NCP_WIFI_ENABLED
+	select WIFI_NM_WPA_SUPPLICANT
+	select EXPERIMENTAL
+	select NET_L2_ETHERNET
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	help
+	  Wi-Fi driver for a station running on a Silicon Labs network
+	  co-processor. Ethernet frames and the commands of the network
+	  processor are carried by two CPC endpoints of the co-processor. The
+	  Zephyr supplicant drives the association and the key exchange.
+
+if WIFI_SILABS_NCP
+
+config WIFI_SILABS_NCP_INIT_PRIORITY
+	int "Initialization priority"
+	default 87
+	help
+	  Must be greater than MFD_SILABS_NCP_INIT_PRIORITY and lower than
+	  NET_INIT_PRIO.
+
+config WIFI_SILABS_NCP_DATA_RX_COUNT
+	int "Number of Ethernet frame buffers handed to CPC"
+	default 4
+
+config WIFI_SILABS_NCP_DATA_TX_COUNT
+	int "Number of Ethernet frames in flight towards the co-processor"
+	default 4
+
+config WIFI_SILABS_NCP_MGMT_RX_COUNT
+	int "Number of management frame buffers handed to CPC"
+	default 4
+	help
+	  The buffers are held until the work queue has handled the frames.
+
+config WIFI_SILABS_NCP_MGMT_TX_COUNT
+	int "Number of management frames in flight towards the co-processor"
+	default 2
+
+config WIFI_SILABS_NCP_WQ_STACK_SIZE
+	int "Stack size of the work queue handling the management frames"
+	default 4096
+	help
+	  The confirmations and the indications of the network processor are
+	  handled on this work queue, which calls into the supplicant.
+
+config WIFI_SILABS_NCP_WQ_PRIORITY
+	int "Priority of the work queue handling the management frames"
+	default 7
+
+config WIFI_SILABS_NCP_CMD_TIMEOUT_MS
+	int "Time to wait for the confirmation of a command, in milliseconds"
+	default 2000
+
+config WIFI_SILABS_NCP_SCAN_RESULTS
+	int "Number of scan results kept for the supplicant"
+	default 16
+
+config WIFI_SILABS_NCP_SCAN_IE_MAX
+	int "Bytes of information elements kept per scan result"
+	default 512
+
+endif # WIFI_SILABS_NCP

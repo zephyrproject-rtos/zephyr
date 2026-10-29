@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+name: silabs-ncp-uart
+description: |
+  Silicon Labs network co-processor wired on a UART, with its Bluetooth HCI
+  controller as the Zephyr Bluetooth HCI. On the Nucleo-H755ZI-Q, USART2 on
+  the ST Zio connector CN9; on the BRD4401C, EUSART2 on the expansion header.
+
+append:
+  EXTRA_CONF_FILE: silabs-ncp-uart.conf
+
+boards:
+  /nucleo_h755zi_q/stm32h755xx/m7/:
+    append:
+      EXTRA_CONF_FILE: boards/nucleo_h755zi_q_stm32h755xx_m7.conf
+      EXTRA_DTC_OVERLAY_FILE: boards/nucleo_h755zi_q_stm32h755xx_m7.overlay
+  xg28_rb4401c/efr32zg28b322f1024im68:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/xg28_rb4401c.overlay
