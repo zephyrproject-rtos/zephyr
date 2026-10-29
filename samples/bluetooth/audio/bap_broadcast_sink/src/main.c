@@ -25,6 +25,9 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
@@ -87,6 +90,84 @@ static volatile bool big_synced;
 static volatile bool base_received;
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
+static uint8_t acl_conn_count;
+
+static volatile bool pa_synced;
+
+/* Red blinks until PA and BIG are synced, then green blinks; blue blinks while connected */
+#if DT_NODE_EXISTS(DT_ALIAS(led_red))
+#define LED_RED_NODE DT_ALIAS(led_red)
+#else
+#define LED_RED_NODE DT_ALIAS(led0)
+#endif
+#if DT_NODE_EXISTS(DT_ALIAS(led_green))
+#define LED_GREEN_NODE DT_ALIAS(led_green)
+#else
+#define LED_GREEN_NODE DT_ALIAS(led1)
+#endif
+#if DT_NODE_EXISTS(DT_ALIAS(led_blue))
+#define LED_BLUE_NODE DT_ALIAS(led_blue)
+#else
+#define LED_BLUE_NODE DT_ALIAS(led2)
+#endif
+
+#define LED_BLINK_INTERVAL K_MSEC(250)
+
+enum led_id {
+	LED_RED,
+	LED_GREEN,
+	LED_BLUE,
+	LED_COUNT,
+};
+
+static const struct gpio_dt_spec leds[LED_COUNT] = {
+	[LED_RED] = GPIO_DT_SPEC_GET_OR(LED_RED_NODE, gpios, {0}),
+	[LED_GREEN] = GPIO_DT_SPEC_GET_OR(LED_GREEN_NODE, gpios, {0}),
+	[LED_BLUE] = GPIO_DT_SPEC_GET_OR(LED_BLUE_NODE, gpios, {0}),
+};
+static bool led_ready[LED_COUNT];
+static volatile bool led_blink[LED_COUNT];
+static bool led_phase_on;
+
+static void led_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(led_work, led_work_handler);
+
+static void led_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	led_phase_on = !led_phase_on;
+
+	for (size_t i = 0U; i < LED_COUNT; i++) {
+		if (led_ready[i]) {
+			(void)gpio_pin_set_dt(&leds[i], (int)(led_phase_on && led_blink[i]));
+		}
+	}
+
+	(void)k_work_reschedule(&led_work, LED_BLINK_INTERVAL);
+}
+
+static void leds_update(void)
+{
+	const bool synced = pa_synced && big_synced;
+
+	led_blink[LED_RED] = !synced;
+	led_blink[LED_GREEN] = synced;
+	led_blink[LED_BLUE] = (acl_conn_count > 0U);
+}
+
+static void leds_init(void)
+{
+	for (size_t i = 0U; i < LED_COUNT; i++) {
+		if (leds[i].port != NULL && gpio_is_ready_dt(&leds[i]) &&
+		    gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE) == 0) {
+			led_ready[i] = true;
+		}
+	}
+
+	leds_update();
+	(void)k_work_reschedule(&led_work, K_NO_WAIT);
+}
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	(BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ |
@@ -397,6 +478,8 @@ static void broadcast_sink_started_cb(struct bt_bap_broadcast_sink *sink)
 	printk("Broadcast sink %p started\n", sink);
 
 	big_synced = true;
+	leds_update();
+
 	k_sem_give(&sem_big_synced);
 }
 
@@ -405,6 +488,8 @@ static void broadcast_sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_
 	printk("Broadcast sink %p stopped with reason 0x%02X\n", sink, reason);
 
 	big_synced = false;
+	leds_update();
+
 	k_sem_give(&sem_broadcast_sink_stopped);
 }
 
@@ -680,6 +765,9 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	printk("Connected: %s\n", bt_conn_dst_str(conn));
+	acl_conn_count++;
+	leds_update();
+
 	broadcast_assistant_conn = bt_conn_ref(conn);
 
 	k_sem_give(&sem_connected);
@@ -687,6 +775,11 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	if (acl_conn_count > 0U) {
+		acl_conn_count--;
+	}
+	leds_update();
+
 	if (conn != broadcast_assistant_conn) {
 		return;
 	}
@@ -907,6 +1000,9 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 			pa_sync = sync;
 		}
 
+		pa_synced = true;
+		leds_update();
+
 		k_work_cancel_delayable(&pa_timer);
 		k_sem_give(&sem_pa_synced);
 	}
@@ -918,6 +1014,8 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 	if (sync == pa_sync) {
 		printk("PA sync %p lost with reason 0x%02X\n", sync, info->reason);
 		pa_sync = NULL;
+		pa_synced = false;
+		leds_update();
 
 		k_sem_give(&sem_pa_sync_lost);
 
@@ -963,6 +1061,8 @@ static int init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	leds_init();
 
 	err = bt_pacs_register(&pacs_param);
 	if (err != 0) {
@@ -1011,6 +1111,7 @@ static int reset(void)
 
 	req_recv_state = NULL;
 	big_synced = false;
+	pa_synced = false;
 	base_received = false;
 	(void)memset(&base_recv_data, 0, sizeof(base_recv_data));
 	(void)memset(&requested_bis_sync, 0, sizeof(requested_bis_sync));
@@ -1018,6 +1119,7 @@ static int reset(void)
 	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
 	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
 	broadcaster_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	leds_update();
 
 	if (broadcast_sink != NULL) {
 		err = bt_bap_broadcast_sink_delete(broadcast_sink);
