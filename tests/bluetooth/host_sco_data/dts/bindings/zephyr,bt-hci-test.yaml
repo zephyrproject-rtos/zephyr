@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bluetooth HCI test device
+
+compatible: "zephyr,bt-hci-test"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "test"
+  bt-hci-bus:
+    default: "virtual"
