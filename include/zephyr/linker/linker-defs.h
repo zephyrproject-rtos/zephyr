@@ -201,6 +201,7 @@ extern char __dtcm_noinit_end[];
 extern char __dtcm_data_load_start[];
 extern char __dtcm_start[];
 extern char __dtcm_end[];
+extern char __dtcm_size[];
 #endif
 
 #if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ocm)))
