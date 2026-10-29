@@ -25,16 +25,17 @@ LOG_MODULE_REGISTER(usbh_ch9, CONFIG_USBH_LOG_LEVEL);
 #define SETUP_REQ_TIMEOUT	5000U
 
 K_SEM_DEFINE(ch9_req_sync, 0, 1);
+K_MUTEX_DEFINE(ch9_req_lock);
 static bool ctrl_req_no_status;
 
 static int ch9_req_cb(struct usb_device *const udev, struct uhc_transfer *const xfer)
 {
+	ARG_UNUSED(udev);
+
 	LOG_DBG("Request finished %p, err %d", xfer, xfer->err);
+
 	if (xfer->err == -ECONNRESET) {
 		LOG_INF("Transfer %p cancelled", (void *)xfer);
-		usbh_xfer_free(udev, xfer);
-
-		return 0;
 	}
 
 	k_sem_give(&ch9_req_sync);
@@ -66,9 +67,12 @@ int usbh_req_setup(struct usb_device *const udev,
 	uint8_t ep = usb_reqtype_is_to_device(&req) ? 0x00 : 0x80;
 	int ret;
 
+	k_mutex_lock(&ch9_req_lock, K_FOREVER);
+
 	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL);
 	if (!xfer) {
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto unlock;
 	}
 
 	memcpy(xfer->setup_pkt, &req, sizeof(req));
@@ -87,26 +91,41 @@ int usbh_req_setup(struct usb_device *const udev,
 		xfer->no_status = true;
 	}
 
+	/* A transfer left behind by a failed cancellation may still signal. */
+	k_sem_reset(&ch9_req_sync);
+
 	ret = usbh_xfer_enqueue(udev, xfer);
 	if (ret) {
 		goto buf_alloc_err;
 	}
 
 	if (k_sem_take(&ch9_req_sync, K_MSEC(SETUP_REQ_TIMEOUT)) != 0) {
+		LOG_ERR("Timeout");
+
 		ret = usbh_xfer_dequeue(udev, xfer);
 		if (ret != 0) {
 			LOG_ERR("Failed to cancel transfer");
-			return ret;
+			goto unlock;
 		}
 
-		LOG_ERR("Timeout");
-		return -ETIMEDOUT;
+		/*
+		 * Dequeue only requests cancellation. The controller still
+		 * writes into the transfer and its buffer when it finally
+		 * returns them, so wait for that before the caller frees.
+		 */
+		k_sem_take(&ch9_req_sync, K_FOREVER);
+
+		ret = -ETIMEDOUT;
+		goto buf_alloc_err;
 	}
 
 	ret = xfer->err;
 
 buf_alloc_err:
 	usbh_xfer_free(udev, xfer);
+
+unlock:
+	k_mutex_unlock(&ch9_req_lock);
 
 	return ret;
 }
