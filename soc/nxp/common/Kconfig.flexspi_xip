@@ -25,7 +25,7 @@ config FLASH_MCUX_FLEXSPI_XIP
 	default $(DT_FLASH_PARENT_IS_FLEXSPI)
 	depends on !(MCUBOOT_BOOTLOADER_MODE_RAM_LOAD || \
 		     MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
-	select XIP
+	depends on XIP
 	help
 	  Allows for the soc to safely initialize the clocks for the
 	  FlexSpi when planning to execute code in FlexSpi Memory.
