@@ -36,6 +36,10 @@ static void set_update_result(uint16_t obj_inst_id, int error_code)
 		result = RESULT_INTEGRITY_FAILED;
 		break;
 	case -ENOMSG:
+		result = RESULT_UNSUP_FW;
+		break;
+	case -EBADMSG:
+	case -ETIMEDOUT:
 		result = RESULT_CONNECTION_LOST;
 		break;
 	case -ENOTSUP:

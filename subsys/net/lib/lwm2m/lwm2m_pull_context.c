@@ -252,7 +252,7 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	if (resp_code != COAP_RESPONSE_CODE_CONTENT) {
 		LOG_ERR("Unexpected response from server: %d.%d",
 			COAP_RESPONSE_CODE_CLASS(resp_code), COAP_RESPONSE_CODE_DETAIL(resp_code));
-		ret = -ENOMSG;
+		ret = -EBADMSG;
 		goto error;
 	}
 
@@ -361,7 +361,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
 	LOG_ERR("TIMEOUT - Too many retry packet attempts! "
 		"Aborting firmware download.");
-	context.result_cb(context.obj_inst_id, -ENOMSG);
+	context.result_cb(context.obj_inst_id, -ETIMEDOUT);
 	cleanup_context();
 }
 
