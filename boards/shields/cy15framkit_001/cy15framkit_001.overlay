@@ -1,0 +1,51 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	aliases {
+		eeprom-0 = &fm24w256_cy15framkit_001;
+		eeprom-1 = &fm25w256_cy15framkit_001;
+	};
+};
+
+&arduino_i2c {
+	status = "okay";
+
+	/*
+	 * FM24W256 (U2).  The address is 0b1010 followed by the A2..A0 pins,
+	 * which DIP switch SW1 sets.  This describes SW1 position 1 on (A0
+	 * high) and positions 2 and 3 off, giving 0x51.  The kit ships with
+	 * all three off, which gives 0x50.
+	 *
+	 * F-RAM has no page-write boundary and no write cycle, so pagesize
+	 * and timeout only bound the driver's transfers.
+	 */
+	fm24w256_cy15framkit_001: eeprom@51 {
+		compatible = "atmel,at24";
+		reg = <0x51>;
+		size = <DT_SIZE_K(32)>;
+		pagesize = <256>;
+		address-width = <16>;
+		timeout = <5>;
+	};
+};
+
+&arduino_spi {
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	/* FM25W256 (U1).  WP# and HOLD# are pulled up on the shield. */
+	fm25w256_cy15framkit_001: fram@0 {
+		compatible = "infineon,fm25xxx";
+		reg = <0>;
+		spi-max-frequency = <20000000>;
+		size = <DT_SIZE_K(32)>;
+	};
+};
