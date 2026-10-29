@@ -668,6 +668,23 @@ struct quic_long_header_info {
 	size_t pn_offset;
 };
 
+/* A peer can leave at most as many stream IDs of a type unused as it may
+ * still open, and that is bounded by the streams we allow it.
+ */
+#define QUIC_STREAM_SEQ_GAPS_MAX MAX(CONFIG_QUIC_MAX_STREAMS_BIDI, CONFIG_QUIC_MAX_STREAMS_UNI)
+
+/**
+ * The sequence numbers of one type of peer-initiated streams that have been
+ * opened: every number below @a next, except the @a gap_count numbers in
+ * @a gaps. A gap is a stream that a higher one opened implicitly (RFC 9000
+ * ch. 2.1) and that has not been used yet.
+ */
+struct quic_stream_seq_set {
+	uint64_t next;
+	uint64_t gaps[QUIC_STREAM_SEQ_GAPS_MAX];
+	uint8_t gap_count;
+};
+
 /**
  * QUIC endpoint information
  */
@@ -898,6 +915,11 @@ struct quic_endpoint {
 		uint64_t open_uni;   /* peer-initiated uni  streams currently open */
 		uint64_t total_bidi; /* peer-initiated bidi streams ever opened */
 		uint64_t total_uni;  /* peer-initiated uni  streams ever opened */
+		/* Which peer-initiated streams were opened, so that a late
+		 * frame for a closed one does not open it again.
+		 */
+		struct quic_stream_seq_set opened_bidi;
+		struct quic_stream_seq_set opened_uni;
 	} rx_sl;
 
 	/** Peer's transport parameters */
@@ -1013,6 +1035,13 @@ struct quic_endpoint {
 	 * transport parameters and any Path MTU Discovery we perform.
 	 */
 	uint16_t max_tx_payload_size;
+
+	/** The reference held for the endpoint list of a context has been
+	 * dropped. References left are held by whoever is using the endpoint
+	 * at the moment. Not a bit field: it is written under contexts_lock,
+	 * the bits below are not.
+	 */
+	bool list_ref_dropped;
 
 	/** Is this endpoint in a server role.
 	 */
@@ -1257,11 +1286,27 @@ __net_socket struct quic_context {
 	bool stats_metadata_valid;
 #endif /* CONFIG_NET_STATISTICS_QUIC */
 
-	/** Stream id counter */
-	uint64_t stream_id_counter;
+	/** Sequence number of the next stream of our own, per direction:
+	 * index 0 for bidirectional and 1 for unidirectional streams. The
+	 * IDs of each stream type are used in order (RFC 9000 ch. 2.1), so
+	 * the two directions need their own count. Use
+	 * quic_stream_id_counter() to pick one.
+	 */
+	uint64_t stream_id_counter[2];
 
 	/** Error code to be passed to application when connection is closed. */
 	int error_code;
+
+	/** The connection was closed, by the peer or by its endpoint going
+	 * away. Reported as POLLHUP, whether or not streams are still waiting
+	 * to be accepted.
+	 */
+	bool closed;
+
+	/** The application closed the socket: nothing is accepted on it any
+	 * more. Written under contexts_lock.
+	 */
+	bool accept_closed;
 
 	/** Stream priority */
 	uint8_t stream_priority;
@@ -1272,6 +1317,15 @@ __net_socket struct quic_context {
 	/** Information whether this context is the listening one */
 	bool is_listening : 1;
 };
+
+/**
+ * The counter of our own streams of the direction of a stream ID or a
+ * stream type: bit 1 of either is set for a unidirectional stream.
+ */
+static inline uint64_t *quic_stream_id_counter(struct quic_context *ctx, uint64_t id_or_type)
+{
+	return &ctx->stream_id_counter[(id_or_type & 2U) != 0U ? 1 : 0];
+}
 
 #if defined(CONFIG_QUIC_STATS_HISTORY)
 struct quic_closed_context_stats {
@@ -1594,5 +1648,16 @@ bool tls_server_ticket_cache_lookup(const uint8_t *ticket, size_t ticket_len,
 void tls_server_ticket_cache_consume(const uint8_t *ticket, size_t ticket_len);
 bool tls_ticket_age_acceptable(uint64_t issued_at_ms, uint32_t ticket_age_add,
 			       uint32_t obfuscated_ticket_age, uint64_t now_ms);
+void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
+void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr);
+struct quic_endpoint *quic_test_endpoint_alloc(void);
+void quic_test_endpoint_unref(struct quic_endpoint *ep);
+void quic_test_context_unref(struct quic_context *ctx);
+void quic_connection_accept_enqueue(struct quic_endpoint *child_ep);
+struct quic_stream *quic_get_stream(struct quic_context *conn);
+
+bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq);
+bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq);
+void stream_seq_mark_opened(struct quic_stream_seq_set *set, uint64_t seq);
 
 #endif /* CONFIG_NET_TEST */

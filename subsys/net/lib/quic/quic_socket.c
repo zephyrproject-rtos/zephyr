@@ -33,7 +33,28 @@ static int quic_connection_init(struct quic_context *ctx,
 	if (remote_addr == NULL) {
 		/* Server side, find endpoint by local address only */
 		ep = find_local_endpoint(local_addr);
-		if (ep == NULL) {
+		if (ep != NULL) {
+			/* The listener of a closed context lives on while its
+			 * connections hold it as their parent. The new context
+			 * takes it over, the reference just taken becomes its
+			 * list reference. A listener of a live context cannot
+			 * be shared.
+			 */
+			if (!ep->list_ref_dropped) {
+				quic_endpoint_unref(ep);
+				k_mutex_unlock(&endpoints_lock);
+				k_mutex_unlock(&contexts_lock);
+				return -EADDRINUSE;
+			}
+
+			ep->list_ref_dropped = false;
+			sys_slist_prepend(&ctx->endpoints, &ep->node);
+			ctx->listen = ep;
+			ctx->is_listening = true;
+
+			NET_DBG("[EP:%p/%d] Listener taken over by a new context", ep,
+				quic_get_by_ep(ep));
+		} else {
 			ep = alloc_local_endpoint(ctx, local_addr);
 			if (ep == NULL) {
 				k_mutex_unlock(&endpoints_lock);
@@ -80,7 +101,7 @@ static int quic_connection_init(struct quic_context *ctx,
 					&net_sin(remote_addr)->sin_addr));
 	}
 
-	ctx->stream_id_counter = 0ULL;
+	memset(ctx->stream_id_counter, 0, sizeof(ctx->stream_id_counter));
 	ctx->id = connection_ids++;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
@@ -153,6 +174,7 @@ static int quic_connection_init(struct quic_context *ctx,
 
 fail:
 	sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ep->list_ref_dropped = true;
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
@@ -541,6 +563,43 @@ static void quic_ctx_drain_incoming_streams(struct quic_context *ctx)
 	}
 }
 
+/*
+ * The application closes the socket of a context, so nothing is accepted on
+ * it any more. Release the streams and the connections that were handed over
+ * to it but not accepted yet: each holds a reference to a context. The flag is
+ * set under contexts_lock, where a connection is handed over, so that either
+ * the hand-over sees it or the connection is taken here.
+ */
+static void quic_ctx_release_unaccepted(struct quic_context *ctx)
+{
+	struct quic_context *waiting[CONFIG_QUIC_MAX_CONTEXTS];
+	size_t waiting_count = 0;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
+	ctx->accept_closed = true;
+
+	while (waiting_count < ARRAY_SIZE(waiting)) {
+		waiting[waiting_count] = k_fifo_get(&ctx->pending.accept_q, K_NO_WAIT);
+		if (waiting[waiting_count] == NULL) {
+			break;
+		}
+
+		waiting_count++;
+	}
+
+	k_mutex_unlock(&contexts_lock);
+
+	quic_ctx_drain_incoming_streams(ctx);
+
+	for (size_t i = 0; i < waiting_count; i++) {
+		NET_DBG("[CO:%p/%d] Releasing connection that was not accepted",
+			waiting[i], quic_get_by_conn(waiting[i]));
+		quic_ctx_drain_incoming_streams(waiting[i]);
+		quic_context_unref(waiting[i]);
+	}
+}
+
 static int quic_ctx_close_vmeth(void *obj)
 {
 	struct quic_context *ctx = obj;
@@ -565,11 +624,7 @@ static int quic_ctx_close_vmeth(void *obj)
 	 */
 	ctx->sock = -1;
 
-	/*
-	 * Release any unaccepted incoming streams. Each holds a context ref;
-	 * without this, ctx->refcount stays elevated and the context leaks.
-	 */
-	quic_ctx_drain_incoming_streams(ctx);
+	quic_ctx_release_unaccepted(ctx);
 
 	quic_context_unref(ctx);
 
@@ -703,13 +758,16 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 		}
 	}
 
-	/* Report POLLHUP when the connection has been closed (no endpoints
-	 * remain). This allows upper layers (e.g. the HTTP server) to
-	 * immediately detect and clean up stale connections instead of
-	 * waiting for an inactivity timer. POLLHUP is always reported
-	 * regardless of the requested events, per POSIX semantics.
+	/* Report POLLHUP when the connection has been closed: no endpoints
+	 * remain, or the connection was closed while streams the peer opened
+	 * are still waiting to be accepted. Those make the socket readable
+	 * too, so the hang-up would otherwise not show until they are taken.
+	 * This allows upper layers (e.g. the HTTP server) to immediately
+	 * detect and clean up stale connections instead of waiting for an
+	 * inactivity timer. POLLHUP is always reported regardless of the
+	 * requested events, per POSIX semantics.
 	 */
-	if (quic_ctx_is_eof(ctx)) {
+	if (quic_ctx_is_eof(ctx) || (!ctx->is_listening && ctx->closed)) {
 		pfd->revents |= ZSOCK_POLLHUP;
 	}
 
@@ -992,6 +1050,14 @@ static int quic_send_stream_fin(struct quic_stream *stream, struct quic_endpoint
 	size_t frame_len = 0;
 	uint64_t sent_pn;
 	int ret;
+
+	/* A unidirectional stream that the peer opened is receive-only for
+	 * us (RFC 9000 ch. 2.1): it has no sending part that could be
+	 * finished, and a STREAM frame on it is an error for the peer.
+	 */
+	if ((stream->id & 2U) != 0U && ((stream->id & 1U) != 0U) != ep->is_server) {
+		return 0;
+	}
 
 	/*
 	 * STREAM frame type bits:
@@ -2439,12 +2505,13 @@ int quic_connection_close(int sock)
 	}
 
 	/*
-	 * Release any peer-initiated streams that were received but never
-	 * accepted via zsock_accept(). Each holds a context reference; without
-	 * this the context refcount stays elevated and quic_context_unref()
-	 * below never reaches zero, leaving the context pool slot occupied.
+	 * Release any peer-initiated streams and connections that were
+	 * received but never accepted via zsock_accept(). Each holds a context
+	 * reference; without this the context refcount stays elevated and
+	 * quic_context_unref() below never reaches zero, leaving the context
+	 * pool slot occupied.
 	 */
-	quic_ctx_drain_incoming_streams(ctx);
+	quic_ctx_release_unaccepted(ctx);
 
 	(void)sock_obj_core_dealloc(ctx->sock);
 	quic_context_unref(ctx);
@@ -2455,7 +2522,9 @@ int quic_connection_close(int sock)
 
 static uint64_t quic_stream_id_get(struct quic_stream *stream)
 {
-	return ((stream->conn->stream_id_counter++) << 2) | (uint64_t)stream->type;
+	uint64_t *counter = quic_stream_id_counter(stream->conn, stream->type);
+
+	return ((*counter)++ << 2) | (uint64_t)stream->type;
 }
 
 int quic_stream_open(int connection_sock,

@@ -3066,6 +3066,26 @@ static int quic_context_ref(struct quic_context *ctx)
 	return ref + 1;
 }
 
+/*
+ * Take a reference only if the context is still alive. Its reference count
+ * drops to zero before its teardown takes contexts_lock, so finding it on the
+ * context list does not make it alive. Returns true when a reference was
+ * taken.
+ */
+static bool quic_context_ref_unless_zero(struct quic_context *ctx)
+{
+	atomic_val_t ref;
+
+	do {
+		ref = atomic_get(&ctx->refcount);
+		if (ref == 0) {
+			return false;
+		}
+	} while (!atomic_cas(&ctx->refcount, ref, ref + 1));
+
+	return true;
+}
+
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 static int quic_context_unref_debug(struct quic_context *ctx, const char *caller, int line)
 #define quic_context_unref(ctx) quic_context_unref_debug(ctx, __func__, __LINE__)
@@ -3122,7 +3142,14 @@ static int quic_context_unref(struct quic_context *ctx)
 		quic_stats_merge_endpoint(ctx, ep);
 		sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
 		quic_endpoint_send_connection_close(ep, 0, NULL);
-		released[released_count++] = ep;
+
+		/* The list reference is dropped once, by whoever takes it
+		 * first
+		 */
+		if (!ep->list_ref_dropped) {
+			ep->list_ref_dropped = true;
+			released[released_count++] = ep;
+		}
 
 		if (ctx->listen == ep) {
 			ctx->listen = NULL;
@@ -3130,7 +3157,11 @@ static int quic_context_unref(struct quic_context *ctx)
 	}
 
 	if (ctx->listen != NULL) {
-		released[released_count++] = ctx->listen;
+		if (!ctx->listen->list_ref_dropped) {
+			ctx->listen->list_ref_dropped = true;
+			released[released_count++] = ctx->listen;
+		}
+
 		ctx->listen = NULL;
 	}
 
@@ -3366,7 +3397,7 @@ static bool quic_endpoint_ref_unless_zero(struct quic_endpoint *ep)
 }
 
 /* Notify all streams associated with this endpoint that the connection is closed */
-static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 {
 	int i;
 
@@ -3382,15 +3413,22 @@ static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 	for (i = 0; i < ARRAY_SIZE(contexts); i++) {
 		struct quic_context *ctx = &contexts[i];
 		struct quic_stream *stream, *tmp;
+		bool affected;
 
 		if (!quic_context_is_used(ctx)) {
 			continue;
 		}
 
-		ctx->error_code = -ECONNRESET;
+		/* Only the connection the endpoint belongs to, or that has
+		 * streams on it, is closed. Other connections, including a
+		 * new one that reuses the context of a closed one, are not.
+		 */
+		affected = sys_slist_find(&ctx->endpoints, &ep->node, NULL);
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 			if (stream->ep == ep) {
+				affected = true;
+
 				NET_DBG("[EP:%p/%d] Notifying stream %" PRIu64
 					" of connection close",
 					ep, quic_get_by_ep(ep), stream->id);
@@ -3407,6 +3445,13 @@ static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 				ep->is_closing_notified = true;
 			}
 		}
+
+		if (!affected) {
+			continue;
+		}
+
+		ctx->error_code = -ECONNRESET;
+		ctx->closed = true;
 
 		/* This will release any accepts waiting on this stream */
 		k_sem_give(&ctx->incoming.stream_sem);
@@ -3742,6 +3787,13 @@ static struct quic_endpoint *find_local_endpoint(const struct net_sockaddr *loca
 			continue;
 		}
 
+		/* The connections of a listener share its address, only the
+		 * listener itself is looked for
+		 */
+		if (!endpoints[i]->is_server || endpoints[i]->parent != NULL) {
+			continue;
+		}
+
 		if (IS_ENABLED(CONFIG_NET_IPV4) && local_addr->sa_family == NET_AF_INET) {
 			struct net_sockaddr_in *laddr_in =
 				net_sin(net_sad(&endpoints[i]->local_addr));
@@ -3754,8 +3806,13 @@ static struct quic_endpoint *find_local_endpoint(const struct net_sockaddr *loca
 					      &net_sin(local_addr)->sin_addr) &&
 			    (net_sin(local_addr)->sin_port == 0 ||
 			     laddr_in->sin_port == net_sin(local_addr)->sin_port)) {
-				ep = endpoints[i];
-				quic_endpoint_ref(ep);
+				/* A listener whose last reference is being
+				 * dropped must not be taken over
+				 */
+				if (quic_endpoint_ref_unless_zero(endpoints[i])) {
+					ep = endpoints[i];
+				}
+
 				break;
 			}
 		}
@@ -3773,8 +3830,13 @@ check_next:
 					      &net_sin6(local_addr)->sin6_addr) &&
 			    (net_sin6(local_addr)->sin6_port == 0 ||
 			     laddr_in->sin6_port == net_sin6(local_addr)->sin6_port)) {
-				ep = endpoints[i];
-				quic_endpoint_ref(ep);
+				/* A listener whose last reference is being
+				 * dropped must not be taken over
+				 */
+				if (quic_endpoint_ref_unless_zero(endpoints[i])) {
+					ep = endpoints[i];
+				}
+
 				break;
 			}
 		}
@@ -5877,6 +5939,26 @@ fail:
 	return ret;
 }
 
+#if defined(CONFIG_NET_TEST)
+/* Let tests take an endpoint from the pool, as a connection would */
+struct quic_endpoint *quic_test_endpoint_alloc(void)
+{
+	return endpoint_alloc_from_slab(&endpoints_slab, K_NO_WAIT);
+}
+
+/* Let tests drop a reference, which frees the endpoint with the last one */
+void quic_test_endpoint_unref(struct quic_endpoint *ep)
+{
+	(void)quic_endpoint_unref(ep);
+}
+
+/* Let tests drop a reference to a context that no socket stands for */
+void quic_test_context_unref(struct quic_context *ctx)
+{
+	(void)quic_context_unref(ctx);
+}
+#endif /* CONFIG_NET_TEST */
+
 static struct quic_context *quic_context_init(struct quic_context *ctx)
 {
 	k_fifo_init(&ctx->pending.accept_q);
@@ -5901,6 +5983,8 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 	 */
 	ctx->sock = -1;
 	ctx->error_code = 0;
+	ctx->closed = false;
+	ctx->accept_closed = false;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 	memset(&ctx->stats, 0, sizeof(ctx->stats));
@@ -5980,9 +6064,17 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	return stream;
 }
 
-static struct quic_stream *quic_get_stream(struct quic_context *conn)
+ZTESTABLE_STATIC struct quic_stream *quic_get_stream(struct quic_context *conn)
 {
 	struct quic_stream *stream = NULL;
+
+	/* The stream holds a reference to its context. A context whose
+	 * count already reached zero is being released, and a stream added
+	 * to it would keep pointing at it after its slot is reused.
+	 */
+	if (!quic_context_ref_unless_zero(conn)) {
+		return NULL;
+	}
 
 	k_mutex_lock(&streams_lock, K_FOREVER);
 
@@ -5998,11 +6090,14 @@ static struct quic_stream *quic_get_stream(struct quic_context *conn)
 		sys_slist_prepend(&conn->streams, &stream->node);
 
 		stream->conn = conn;
-		quic_context_ref(conn);
 		break;
 	}
 
 	k_mutex_unlock(&streams_lock);
+
+	if (stream == NULL) {
+		quic_context_unref(conn);
+	}
 
 	return stream;
 }
@@ -6375,14 +6470,15 @@ static int quic_client_endpoint_init_cids(struct quic_endpoint *ep,
 	return 0;
 }
 
-static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
+static bool quic_endpoint_on_context_list(const struct quic_endpoint *ep)
 {
+	/* Every context counts, also one whose reference count reached zero:
+	 * it is being released and its teardown, which runs once it gets
+	 * contexts_lock, unlinks the endpoint and drops the list reference
+	 * itself. An unused context has no endpoints.
+	 */
 	for (int i = 0; i < ARRAY_SIZE(contexts); i++) {
 		struct quic_endpoint *endp, *tmp;
-
-		if (!quic_context_is_used(&contexts[i])) {
-			continue;
-		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&contexts[i].endpoints, endp, tmp, node) {
 			if (endp == ep) {
@@ -6399,7 +6495,7 @@ static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
  * without unlinking the endpoint (e.g. setsockopt failed before the endpoint
  * was attached to the context list).
  */
-static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
+ZTESTABLE_STATIC void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
 {
 	struct quic_endpoint *orphans[CONFIG_QUIC_MAX_ENDPOINTS] = { 0 };
 	int orphan_count = 0;
@@ -6411,8 +6507,13 @@ static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remo
 		struct quic_endpoint *ep = endpoints[i];
 		struct quic_endpoint *matched;
 
+		/* An endpoint that a context has let go of is not an orphan,
+		 * even when it is on no context: the references it still has
+		 * belong to whoever is using it, for example the receive path
+		 * in the middle of a packet, and they drop them themselves.
+		 */
 		if (ep == NULL || atomic_get(&ep->refcount) == 0 || ep->is_server ||
-		    ep->sock < 0) {
+		    ep->sock < 0 || ep->list_ref_dropped) {
 			continue;
 		}
 
@@ -6421,20 +6522,23 @@ static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remo
 			continue;
 		}
 
-		if (quic_endpoint_on_active_context(ep)) {
+		if (quic_endpoint_on_context_list(ep)) {
 			continue;
 		}
 
+		ep->list_ref_dropped = true;
 		orphans[orphan_count++] = ep;
 	}
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
 
+	/* Drop the reference that was meant for the endpoint list, and only
+	 * that one. Dropping every reference would free the endpoint under
+	 * anyone still using it.
+	 */
 	for (int i = 0; i < orphan_count; i++) {
-		while (atomic_get(&orphans[i]->refcount) > 0) {
-			quic_endpoint_unref(orphans[i]);
-		}
+		quic_endpoint_unref(orphans[i]);
 	}
 }
 
@@ -7008,21 +7112,33 @@ ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
  * Creates a new quic_context for the connection, migrates the endpoint
  * into it, and enqueues it in the listening context's pending.accept_q.
  */
-static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
+ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 {
 	struct quic_context *listen_ctx;
 	struct quic_context *child_ctx;
 	struct quic_stream *stream, *tmp;
 	struct quic_stream *queued_streams[ARRAY_SIZE(streams)];
 	size_t queued_stream_count = 0U;
+	size_t migrated = 0U;
 
 	/* Only server child endpoints should be enqueued */
 	if (!child_ep->is_server || child_ep->parent == NULL) {
 		return;
 	}
 
-	/* Find the listening context via the parent (listening) endpoint */
+	/* Find the listening context via the parent (listening) endpoint, and
+	 * hold it until the connection has been handed over: closing the
+	 * listening socket at the same time could release it otherwise.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
 	listen_ctx = quic_find_context(child_ep->parent);
+	if (listen_ctx != NULL && !quic_context_ref_unless_zero(listen_ctx)) {
+		listen_ctx = NULL;
+	}
+
+	k_mutex_unlock(&contexts_lock);
+
 	if (listen_ctx == NULL) {
 		NET_ERR("[EP:%p/%d] Cannot find listening context for parent ep %d [%p]",
 			child_ep, quic_get_by_ep(child_ep),
@@ -7035,12 +7151,37 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	if (child_ctx == NULL) {
 		NET_ERR("[EP:%p/%d] Cannot allocate context for accepted connection",
 			child_ep, quic_get_by_ep(child_ep));
+		quic_context_unref(listen_ctx);
 		return;
 	}
+
+	/* Inherit the listening endpoint reference so stream getsockopt works */
+	child_ctx->listen = NULL;
+	memset(child_ctx->stream_id_counter, 0, sizeof(child_ctx->stream_id_counter));
+	child_ctx->id = connection_ids++;
+	child_ctx->is_listening = false;
 
 	/* Migrate the child endpoint from the listening context to the new one */
 	k_mutex_lock(&contexts_lock, K_FOREVER);
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
+
+	/* A listening socket that is closed accepts nothing any more. The
+	 * endpoint stays on the listening context and is closed with it.
+	 * The close sets accept_closed and takes the connections still
+	 * waiting for accept under contexts_lock, so a connection is either
+	 * not handed over or taken by the close.
+	 */
+	if (listen_ctx->accept_closed) {
+		k_mutex_unlock(&endpoints_lock);
+		k_mutex_unlock(&contexts_lock);
+
+		NET_DBG("[EP:%p/%d] Listening socket closed, connection not accepted",
+			child_ep, quic_get_by_ep(child_ep));
+
+		quic_context_unref(child_ctx);
+		quic_context_unref(listen_ctx);
+		return;
+	}
 
 	sys_slist_find_and_remove(&listen_ctx->endpoints, &child_ep->node);
 	sys_slist_prepend(&child_ctx->endpoints, &child_ep->node);
@@ -7070,6 +7211,10 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 		sys_slist_find_and_remove(&listen_ctx->streams, &stream->node);
 		sys_slist_prepend(&child_ctx->streams, &stream->node);
 
+		/* The stream holds a reference to its context */
+		quic_context_ref(child_ctx);
+		migrated++;
+
 		stream->conn = child_ctx;
 		stream->ep = child_ep;
 	}
@@ -7093,6 +7238,9 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 				sys_slist_find_and_remove(&listen_ctx->streams, &stream->node);
 				sys_slist_prepend(&child_ctx->streams, &stream->node);
 
+				quic_context_ref(child_ctx);
+				migrated++;
+
 				stream->conn = child_ctx;
 				stream->ep = child_ep;
 			}
@@ -7105,14 +7253,6 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 		}
 	}
 
-	k_mutex_unlock(&endpoints_lock);
-	k_mutex_unlock(&contexts_lock);
-
-	/* Inherit the listening endpoint reference so stream getsockopt works */
-	child_ctx->listen = NULL;
-	child_ctx->stream_id_counter = 0ULL;
-	child_ctx->id = connection_ids++;
-	child_ctx->is_listening = false;
 	quic_stats_merge_endpoint(child_ctx, child_ep);
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 	quic_stats_set_context_metadata(child_ctx, child_ep);
@@ -7127,6 +7267,19 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	/* Make the child context reachable to accept() */
 	k_fifo_put(&listen_ctx->pending.accept_q, child_ctx);
 	k_sem_give(&listen_ctx->pending.accept_sem);
+
+	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
+
+	/* The migrated streams no longer hold the listening context, and the
+	 * handover is done
+	 */
+	while (migrated > 0U) {
+		quic_context_unref(listen_ctx);
+		migrated--;
+	}
+
+	quic_context_unref(listen_ctx);
 
 	k_yield();
 }

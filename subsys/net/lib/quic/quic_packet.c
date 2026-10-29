@@ -204,6 +204,59 @@ ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
  *   0x02 (LEN): Length field present
  *   0x01 (FIN): Final frame of stream
  */
+/* Tell whether a peer-initiated stream with this sequence number has been
+ * opened already.
+ */
+ZTESTABLE_STATIC bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq)
+{
+	if (seq >= set->next) {
+		return false;
+	}
+
+	for (uint8_t i = 0; i < set->gap_count; i++) {
+		if (set->gaps[i] == seq) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* Tell whether there is room to remember the streams that opening this
+ * one leaves unused below it.
+ */
+ZTESTABLE_STATIC bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq)
+{
+	if (seq <= set->next) {
+		return true;
+	}
+
+	return seq - set->next <= ARRAY_SIZE(set->gaps) - set->gap_count;
+}
+
+ZTESTABLE_STATIC void stream_seq_mark_opened(struct quic_stream_seq_set *set, uint64_t seq)
+{
+	if (seq >= set->next) {
+		/* The streams in between are opened implicitly but not used
+		 * yet. stream_seq_gaps_fit() made sure they fit.
+		 */
+		for (uint64_t gap = set->next; gap < seq; gap++) {
+			set->gaps[set->gap_count++] = gap;
+		}
+
+		set->next = seq + 1U;
+
+		return;
+	}
+
+	for (uint8_t i = 0; i < set->gap_count; i++) {
+		if (set->gaps[i] == seq) {
+			set->gaps[i] = set->gaps[--set->gap_count];
+			break;
+		}
+	}
+}
+
 static int handle_stream_frame(struct quic_endpoint *ep,
 			       const uint8_t *buf, size_t len,
 			       size_t *consumed,
@@ -272,6 +325,27 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	/* Find or create the stream */
 	stream = quic_find_stream(conn, ep, stream_id);
 	if (stream == NULL) {
+		bool local_init = ((stream_id & 1U) != 0U) == ep->is_server;
+		struct quic_stream_seq_set *opened =
+			((stream_id & 2U) == 0U) ? &ep->rx_sl.opened_bidi : &ep->rx_sl.opened_uni;
+
+		/* A stream that is not found can be one that was closed
+		 * already, and the frame a late one, for example a FIN that
+		 * crossed our STOP_SENDING. All its data was received or is
+		 * not wanted any more, so the frame is discarded (RFC 9000
+		 * ch. 3.2) instead of opening the stream again. Stream IDs
+		 * are used in order (ch. 2.1), so a stream of ours with an ID
+		 * below the next one we would open was opened before.
+		 */
+		if ((local_init && (stream_id >> 2) < *quic_stream_id_counter(conn, stream_id)) ||
+		    (!local_init && stream_seq_was_opened(opened, stream_id >> 2))) {
+			NET_DBG("[EP:%p/%d] STREAM frame for closed stream %" PRIu64 " ignored",
+				ep, quic_get_by_ep(ep), stream_id);
+			*consumed = pos + data_len;
+
+			return pos + data_len;
+		}
+
 		/*
 		 * This is a new peer-initiated stream. Before allocating a slot,
 		 * verify the peer has not exceeded the stream limit we advertised.
@@ -294,7 +368,11 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		if (peer_init) {
 			uint64_t limit = is_bidi ? ep->rx_sl.max_bidi : ep->rx_sl.max_uni;
 
-			if (stream_seq >= limit) {
+			/* The stream IDs a peer leaves unused count against
+			 * its limit too, so with the limit kept there is
+			 * always room to remember them.
+			 */
+			if (stream_seq >= limit || !stream_seq_gaps_fit(opened, stream_seq)) {
 				NET_ERR("[EP:%p/%d] Stream %" PRIu64
 					" exceeds our %s limit %" PRIu64
 					", sending STREAM_LIMIT_ERROR",
@@ -340,6 +418,10 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 			NET_DBG("[CO:%p/%d] Failed to create stream %" PRIu64,
 				conn, quic_get_by_conn(conn), stream_id);
 			return -ENOMEM;
+		}
+
+		if (!local_init) {
+			stream_seq_mark_opened(opened, stream_id >> 2);
 		}
 
 		sys_slist_find_and_remove(&conn->streams, &stream->node);
@@ -444,7 +526,8 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 
 static int quic_send_reset_stream(struct quic_endpoint *ep,
 				  uint64_t stream_id,
-				  uint64_t error_code)
+				  uint64_t error_code,
+				  uint64_t final_size)
 {
 	uint8_t frame[32];
 	int pos = 0;
@@ -464,7 +547,8 @@ static int quic_send_reset_stream(struct quic_endpoint *ep,
 	}
 	pos += n;
 
-	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, 0 /* final_size */);
+	/* The bytes sent on the stream so far (RFC 9000 ch. 4.5) */
+	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, final_size);
 	if (n <= 0) {
 		return -EINVAL;
 	}
@@ -591,7 +675,7 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 		 * one that is closed already, which is fine, so only an ID
 		 * past everything opened so far is taken as never created.
 		 */
-		if (conn != NULL && (stream_id >> 2) >= conn->stream_id_counter) {
+		if (conn != NULL && (stream_id >> 2) >= *quic_stream_id_counter(conn, stream_id)) {
 			NET_DBG("[EP:%p/%d] STOP_SENDING for stream %" PRIu64
 				" that was never opened",
 				ep, quic_get_by_ep(ep), stream_id);
@@ -604,11 +688,11 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 
 	if (stream != NULL && stream->tx_reset) {
 		if (quic_reply_budget_take(budget)) {
-			quic_send_reset_stream(ep, stream_id, error_code);
+			quic_send_reset_stream(ep, stream_id, error_code, stream->bytes_sent);
 		}
 	} else if (stream != NULL) {
 		/* Send RESET_STREAM, our TX side is being abandoned */
-		quic_send_reset_stream(ep, stream_id, error_code);
+		quic_send_reset_stream(ep, stream_id, error_code, stream->bytes_sent);
 
 		/* Mark TX side as reset so future sends return an error */
 		stream->tx_reset = true;
