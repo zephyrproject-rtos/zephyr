@@ -156,21 +156,17 @@ static void dma_lpf3_isr(const struct device *dev)
 			LOG_DBG("DMA transfer completed on channel %d", i);
 
 			ch_data = &data->channels[i];
+
+			if (ch_data->mode == UDMA_MODE_AUTO) {
+				uDMADisableChannel(BIT(i));
+			}
+
 			if (ch_data->cb) {
 				ch_data->cb(dev, ch_data->user_data, i, DMA_STATUS_COMPLETE);
 			}
 
 			uDMAClearInt(BIT(i));
 		}
-
-		LOG_DBG("DMA transfer completed on channel %u", i);
-
-		ch_data = &data->channels[i];
-		if (ch_data->cb) {
-			ch_data->cb(dev, ch_data->user_data, i, DMA_STATUS_COMPLETE);
-		}
-
-		uDMAClearInt(done_flags & BIT(i));
 	}
 }
 
