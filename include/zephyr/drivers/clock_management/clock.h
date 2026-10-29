@@ -357,17 +357,6 @@ struct clk_mux_subsys_data {
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_CLOCK_DECLARE_INTERNAL)
 
 /**
- * @brief Helper to get a clock dependency ordinal if the clock is referenced
- *
- * The build system will convert these dependency ordinals into clock object
- * references after the first link phase is completed
- * @param node_id Clock identifier
- */
-#define Z_GET_CLOCK_DEP_ORD(node_id)                                           \
-	IF_ENABLED(DT_NODE_HAS_STATUS(node_id, okay),                          \
-		(DT_DEP_ORD(node_id),))
-
-/**
  * @brief Clock dependency array name
  * @param node_id Clock identifier
  */
@@ -375,19 +364,24 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_CLOCK_DECLARE_INTERNAL)
 	_CONCAT(__clock_children_, Z_CLOCK_DT_CLK_ID(node_id))
 
 /**
+ * @brief String name for clock ordinal
+ *
+ * Helper to convert a clock ordinal to the form "<ord>,"
+ *
+ * @param ord Clock ordinal
+ */
+#define Z_CLOCK_ORD_STRING(ord) #ord ","
+
+/**
  * @brief Define clock children array
  *
  * This macro defines a clock children array. A reference to
  * the clock dependency array can be retrieved with `Z_CLOCK_GET_CHILDREN`
  *
- * In the initial build, this array will expand to a list of clock ordinal
+ * In the initial build, this array will expand to a string of clock ordinal
  * numbers that describe children of the clock, like so:
  * @code{.c}
- *     const clock_handle_t __weak __clock_children_clk_dts_ord_45[] = {
- *         66,
- *         30,
- *         55,
- *     }
+ *     const char* __weak __clock_children_clk_dts_ord_45 = "66,30,55,CLK_END";
  * @endcode
  *
  * In the second pass of the build, gen_clock_deps.py will create a strong
@@ -409,8 +403,9 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_CLOCK_DECLARE_INTERNAL)
  * @param node_id Clock identifier
  */
 #define Z_CLOCK_DEFINE_CHILDREN(node_id)                                       \
-	const clock_handle_t __weak Z_CLOCK_CHILDREN_NAME(node_id)[] =         \
-		{DT_SUPPORTS_CLK_ORDS(node_id)};
+	const char __weak Z_CLOCK_CHILDREN_NAME(node_id)[] =                   \
+		FOR_EACH_NONEMPTY_TERM(Z_CLOCK_ORD_STRING, (),                 \
+			DT_SUPPORTS_CLK_ORDS(node_id)) "CLK_END";
 
 /**
  * @brief Get clock dependency array
@@ -420,7 +415,8 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_CLOCK_DECLARE_INTERNAL)
  * an array of pointers to the clock objects dependent on this clock.
  * @param node_id Clock identifier
  */
-#define Z_CLOCK_GET_CHILDREN(node_id) Z_CLOCK_CHILDREN_NAME(node_id)
+#define Z_CLOCK_GET_CHILDREN(node_id)                                          \
+	(const clock_handle_t *)Z_CLOCK_CHILDREN_NAME(node_id)
 
 
 /** @endcond */

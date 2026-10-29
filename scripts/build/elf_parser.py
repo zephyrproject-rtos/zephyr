@@ -91,9 +91,14 @@ class ClockOrdinals(_Symbol):
 
     def __init__(self, elf, sym, clock_ords):
         super().__init__(elf, sym)
-        format = "<" if self.elf.little_endian else ">"
-        format += f"{len(self.data) // 2:d}h"
-        self._ordinals = struct.unpack(format, self.data)
+        # Clocks are stored as a C string of comma-separated ordinals,
+        # ending with "CLK_END"
+        clk_list = self.data.decode('utf-8').split(",")
+        self._ordinals = []
+        for clk in clk_list:
+            if "CLK_END" in clk:
+                break
+            self._ordinals.append(int(clk))
         self._handles = []
         for ordinal in self._ordinals:
             # Find ordinal handle
