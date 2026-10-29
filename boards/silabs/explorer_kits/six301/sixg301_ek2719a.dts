@@ -1,0 +1,232 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/six301/simg301m104lil.dtsi>
+#include <silabs/six301/clock-hfxo.dtsi>
+#include <silabs/six301/clock-socpll.dtsi>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "sixg301_ek2719a-pinctrl.dtsi"
+
+/ {
+	compatible = "silabs,sixg301_ek2719a";
+	model = "Silicon Labs SixG301 Explorer Kit (BRD2719A)";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
+			label = "Push Button 0";
+			zephyr,code = <INPUT_BTN_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			label = "Push Button 1";
+			zephyr,code = <INPUT_BTN_1>;
+		};
+	};
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &eusart0;
+		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,openthread-counter = &protimer;
+		zephyr,shell-uart = &eusart0;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &eusart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1: led_1 {
+			gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	qwiic_connector: stemma-qt-connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpioc 4 0>, /* SCL */
+			   <1 0 &gpioc 5 0>; /* SDA */
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <MIKROBUS_AN 0 &gpiod 2 0>,
+			   <MIKROBUS_RST 0 &gpioc 6 0>,
+			   <MIKROBUS_CS 0 &gpioc 3 0>,
+			   <MIKROBUS_SCK 0 &gpioc 2 0>,
+			   <MIKROBUS_MISO 0 &gpioc 1 0>,
+			   <MIKROBUS_MOSI 0 &gpioc 0 0>,
+			   <MIKROBUS_PWM 0 &gpiod 0 0>,
+			   <MIKROBUS_INT 0 &gpiob 1 0>,
+			   <MIKROBUS_RX 0 &gpioa 8 0>,
+			   <MIKROBUS_TX 0 &gpioa 7 0>,
+			   <MIKROBUS_SCL 0 &gpioc 4 0>,
+			   <MIKROBUS_SDA 0 &gpioc 5 0>;
+	};
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&eusart0 {
+	current-speed = <115200>;
+	hw-flow-control;
+	pinctrl-0 = <&eusart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&eusart1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(8)>;
+	cs-gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash0 {
+	/* Adjust logical flash size to account for code regions consuming 36 kB physical flash
+	 * memory per 32 kB logical memory, since the device enables AXiP for code regions by
+	 * default:
+	 *
+	 *          | Logical | Physical
+	 *     -----|---------|---------
+	 *     SE   |         |  192 kB
+	 *     Code | 2016 kB | 2268 kB
+	 *     Data | 1636 kB | 1636 kB
+	 *     -------------------------
+	 *     Sum  | 3652 kB | 4096 kB
+	 *
+	 * If the region configuration of the device is modified, this partition table must be
+	 * updated.
+	 */
+	reg = <0x11000000 DT_SIZE_K(3652)>;
+	ranges = <0x0 0x11000000 DT_SIZE_K(3652)>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(32)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x8000 DT_SIZE_K(1984)>;
+			label = "image-0";
+		};
+
+		data_region: partition@1f8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x001f8000 DT_SIZE_K(1636)>;
+			ranges = <0x0 0x001f8000 DT_SIZE_K(1636)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@191000 {
+				compatible = "zephyr,mapped-partition";
+				reg = <0x00191000 DT_SIZE_K(32)>;
+				label = "storage";
+			};
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&hfxo {
+	ctune = <173>;
+	precision = <50>;
+	status = "okay";
+};
+
+mikrobus_i2c: &i2c0 {};
+
+mikrobus_spi: &eusart1 {};
+
+zephyr_i2c: &i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ieee802154 {
+	hfxo = <&hfxo>;
+	status = "okay";
+};
+
+&lpwaes {
+	status = "okay";
+};
+
+&protimer {
+	status = "okay";
+};
+
+&pti {
+	pinctrl-0 = <&pti_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
