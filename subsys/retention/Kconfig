@@ -55,6 +55,12 @@ config RETENTION_BOOT_MODE
 	  byte must be created and set as the "zephyr,boot-mode" chosen node
 	  via device tree.
 
+config RETENTION_BOOT_MODE_SHELL
+	bool "Boot mode shell"
+	depends on RETENTION_BOOT_MODE && SHELL
+	help
+	  Adds the bootmode shell command to check, set and clear the boot mode.
+
 source "subsys/retention/Kconfig.blinfo"
 
 endmenu
