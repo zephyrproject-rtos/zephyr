@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Kim Bøndergaard
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADC_WAVESHARE_CH32V003
+	bool "Waveshare CH32V003 ADC input"
+	default y
+	depends on DT_HAS_WAVESHARE_CH32V003_ADC_ENABLED
+	depends on ADC
+	select MFD
+	select MFD_WAVESHARE_CH32V003
+	help
+	  Enable ADC input support for the Waveshare CH32V003.
+
+if ADC_WAVESHARE_CH32V003
+
+config ADC_WAVESHARE_CH32V003_INIT_PRIORITY
+	int "ADC init priority"
+	default 71
+	help
+	  Device driver initialization priority for CH32V003 ADC.
+
+endif # ADC_WAVESHARE_CH32V003
