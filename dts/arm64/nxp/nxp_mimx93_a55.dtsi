@@ -473,21 +473,14 @@
 		status = "disabled";
 	};
 
-	enet: enet@42890000 {
+	enet: ethernet@42890000 {
 		compatible = "nxp,enet";
 		reg = <0x42890000 DT_SIZE_K(64)>;
 		clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+		interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "COMMON";
+		interrupt-parent = <&gic>;
 		status = "disabled";
-
-		enet_mac: ethernet {
-			compatible = "nxp,enet-mac";
-			interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "COMMON";
-			interrupt-parent = <&gic>;
-			ptp-clock = <&enet_ptp_clock>;
-			nxp,mdio = <&enet_mdio>;
-			status = "disabled";
-		};
 
 		enet_mdio: mdio {
 			compatible = "nxp,enet-mdio";

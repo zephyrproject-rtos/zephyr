@@ -1834,16 +1834,9 @@
 		reg = <0x4a0d0000 0x10000>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH0,
 					   IMX_CCM_ROOT_COMM_ETH0_TRXCLK)>;
+		interrupts = <299 0>, <300 0>;
+		interrupt-names = "TX", "RX";
 		status = "disabled";
-
-		enet_mac: ethernet {
-			compatible = "nxp,enet-mac";
-			interrupts = <299 0>, <300 0>;
-			interrupt-names = "TX", "RX";
-			ptp-clock = <&enet_ptp_clock>;
-			nxp,mdio = <&enet_mdio>;
-			status = "disabled";
-		};
 
 		enet_mdio: mdio {
 			compatible = "nxp,enet-mdio";

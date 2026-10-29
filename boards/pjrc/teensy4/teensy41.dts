@@ -51,10 +51,6 @@
 &enet {
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&enet_mac {
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
 	nxp,unique-mac;

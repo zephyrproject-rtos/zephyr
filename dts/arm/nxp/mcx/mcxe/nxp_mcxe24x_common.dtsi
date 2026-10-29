@@ -681,16 +681,10 @@
 			compatible = "nxp,enet";
 			reg = <0x40079000 0x620>;
 			clocks = <&core_clk>;
-
-			enet_mac: ethernet {
-				compatible = "nxp,enet-mac";
-				interrupts = <73 0>, <74 0>, <75 0>;
-				interrupt-names = "TX", "RX", "ERR";
-				ptp-clock = <&enet_ptp_clock>;
-				phy-connection-type = "rmii";
-				nxp,mdio = <&enet_mdio>;
-				status = "disabled";
-			};
+			interrupts = <73 0>, <74 0>, <75 0>;
+			interrupt-names = "TX", "RX", "ERR";
+			phy-connection-type = "rmii";
+			status = "disabled";
 
 			enet_mdio: mdio {
 				compatible = "nxp,enet-mdio";

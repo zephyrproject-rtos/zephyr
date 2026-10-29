@@ -22,7 +22,7 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
     message(FATAL_ERROR "Unsupported board revision: ${BOARD_REVISION}")
   endif()
 
-  if(CONFIG_DT_HAS_NXP_ENET_MAC_ENABLED AND ${xtal32_status})
+  if(CONFIG_DT_HAS_NXP_ENET_ENABLED AND ${xtal32_status})
     message(FATAL_ERROR "mutually exclusive on RW612_BGA due to shared PCB nets "
       "between the ethernet PHY and the external oscillator")
   endif()

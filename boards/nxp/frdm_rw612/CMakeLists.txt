@@ -17,7 +17,7 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
   zephyr_library_sources(W25Q512JVFIQ_FCB.c)
 endif()
 
-if(CONFIG_DT_HAS_NXP_ENET_MAC_ENABLED AND ${xtal32_status})
+if(CONFIG_DT_HAS_NXP_ENET_ENABLED AND ${xtal32_status})
   message(FATAL_ERROR "Ethernet and external 32K clock source are "
     "mutually exclusive on FRDM_RW612 due to shared PCB nets "
     "between the ethernet PHY and the external oscillator")

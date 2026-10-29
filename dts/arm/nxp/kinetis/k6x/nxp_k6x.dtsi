@@ -450,16 +450,10 @@
 			compatible = "nxp,enet";
 			reg = <0x400c0000 0x620>;
 			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_CORESYS_CLK, 0x102C, 0)>;
-
-			enet_mac: ethernet {
-				compatible = "nxp,enet-mac";
-				interrupts = <83 0>, <84 0>, <85 0>;
-				interrupt-names = "TX", "RX", "ERR";
-				ptp-clock = <&enet_ptp_clock>;
-				phy-connection-type = "rmii";
-				nxp,mdio = <&enet_mdio>;
-				status = "disabled";
-			};
+			interrupts = <83 0>, <84 0>, <85 0>;
+			interrupt-names = "TX", "RX", "ERR";
+			phy-connection-type = "rmii";
+			status = "disabled";
 
 			enet_mdio: mdio {
 				compatible = "nxp,enet-mdio";

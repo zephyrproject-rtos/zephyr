@@ -17,7 +17,7 @@
 
 struct nxp_enet_mdio_config {
 	const struct pinctrl_dev_config *pincfg;
-	const struct device *module_dev;
+	const struct device *mac_dev;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint32_t mdc_freq;
@@ -27,8 +27,6 @@ struct nxp_enet_mdio_config {
 struct nxp_enet_mdio_data {
 	ENET_Type *base;
 	struct k_mutex mdio_mutex;
-	struct k_sem mdio_sem;
-	bool interrupt_up;
 };
 
 /*
@@ -40,21 +38,16 @@ struct nxp_enet_mdio_data {
  */
 static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 {
-	struct nxp_enet_mdio_data *data = dev->data;
+	const struct nxp_enet_mdio_config *config = dev->config;
+	struct nxp_enet_mac_data *mac_data = config->mac_dev->data;
 
 	/* This function will not make sense from IRQ context */
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
-	if (!data->interrupt_up) {
-		/* If the interrupt is not available to use yet, just busy wait */
-		k_busy_wait(CONFIG_MDIO_NXP_ENET_TIMEOUT);
-		k_sem_give(&data->mdio_sem);
-	}
-
 	/* Wait for the MDIO transaction to finish or time out */
-	int result = k_sem_take(&data->mdio_sem, K_USEC(CONFIG_MDIO_NXP_ENET_TIMEOUT));
+	int result = k_sem_take(&mac_data->mdio_done, K_USEC(CONFIG_MDIO_NXP_ENET_TIMEOUT));
 
 	if (result == -EAGAIN) {
 		return -ETIMEDOUT;
@@ -66,6 +59,8 @@ static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 enum mdio_opcode op, bool c45, uint16_t data_in, uint16_t *data_out)
 {
+	const struct nxp_enet_mdio_config *config = dev->config;
+	struct nxp_enet_mac_data *mac_data = config->mac_dev->data;
 	struct nxp_enet_mdio_data *data = dev->data;
 	int ret;
 
@@ -79,7 +74,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/* Reset semaphore to discard any stale k_sem_give from a previous timed-out transfer */
-	k_sem_reset(&data->mdio_sem);
+	k_sem_reset(&mac_data->mdio_done);
 
 	/*
 	 * Write MDIO frame to MII management register which will
@@ -164,64 +159,16 @@ static DEVICE_API(mdio, nxp_enet_mdio_api) = {
 	.write_c45 = nxp_enet_mdio_write_c45
 };
 
-static void nxp_enet_mdio_isr_cb(const struct device *dev)
-{
-	struct nxp_enet_mdio_data *data = dev->data;
-
-	data->base->EIR = ENET_EIR_MII_MASK;
-
-	k_sem_give(&data->mdio_sem);
-}
-
-static void nxp_enet_mdio_post_module_reset_init(const struct device *dev)
-{
-	const struct nxp_enet_mdio_config *config = dev->config;
-	struct nxp_enet_mdio_data *data = dev->data;
-	uint32_t enet_module_clock_rate;
-
-	/* Set up MSCR register */
-	(void) clock_control_get_rate(config->clock_dev, config->clock_subsys,
-							&enet_module_clock_rate);
-	uint32_t mii_speed = (enet_module_clock_rate + 2 * config->mdc_freq - 1) /
-					(2 * config->mdc_freq) - 1;
-	uint32_t holdtime = (10 + NSEC_PER_SEC / enet_module_clock_rate - 1) /
-					(NSEC_PER_SEC / enet_module_clock_rate) - 1;
-	uint32_t mscr = ENET_MSCR_MII_SPEED(mii_speed) | ENET_MSCR_HOLDTIME(holdtime) |
-			(config->disable_preamble ? ENET_MSCR_DIS_PRE_MASK : 0);
-	data->base->MSCR = mscr;
-}
-
-void nxp_enet_mdio_callback(const struct device *dev,
-				enum nxp_enet_callback_reason event, void *cb_data)
-{
-	struct nxp_enet_mdio_data *data = dev->data;
-
-	ARG_UNUSED(cb_data);
-
-	switch (event) {
-	case NXP_ENET_MODULE_RESET:
-		nxp_enet_mdio_post_module_reset_init(dev);
-		break;
-	case NXP_ENET_INTERRUPT:
-		nxp_enet_mdio_isr_cb(dev);
-		break;
-	case NXP_ENET_INTERRUPT_ENABLED:
-		/* IRQ was enabled in NVIC, now enable in enet */
-		data->interrupt_up = true;
-		data->base->EIMR |= ENET_EIMR_MII_MASK;
-		break;
-	default:
-		break;
-	}
-}
-
 static int nxp_enet_mdio_init(const struct device *dev)
 {
 	const struct nxp_enet_mdio_config *config = dev->config;
 	struct nxp_enet_mdio_data *data = dev->data;
-	int ret = 0;
+	uint32_t enet_module_clock_rate;
+	uint32_t mii_speed;
+	uint32_t holdtime;
+	int ret;
 
-	data->base = (ENET_Type *)DEVICE_MMIO_GET(config->module_dev);
+	data->base = (ENET_Type *)DEVICE_MMIO_GET(config->mac_dev);
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
@@ -233,22 +180,31 @@ static int nxp_enet_mdio_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = k_sem_init(&data->mdio_sem, 0, 1);
-	if (ret) {
+	/* Set up MSCR register */
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				     &enet_module_clock_rate);
+	if (ret != 0) {
 		return ret;
 	}
 
-	/* All operations done after module reset should be done during device init too */
-	nxp_enet_mdio_post_module_reset_init(dev);
+	mii_speed =
+		(enet_module_clock_rate + 2 * config->mdc_freq - 1) / (2 * config->mdc_freq) - 1;
+	holdtime = (10 + NSEC_PER_SEC / enet_module_clock_rate - 1) /
+		   (NSEC_PER_SEC / enet_module_clock_rate) - 1;
+	data->base->MSCR = ENET_MSCR_MII_SPEED(mii_speed) | ENET_MSCR_HOLDTIME(holdtime) |
+			   (config->disable_preamble ? ENET_MSCR_DIS_PRE_MASK : 0);
 
-	return ret;
+	/* The parent MAC has enabled the shared interrupt line */
+	data->base->EIMR |= ENET_EIMR_MII_MASK;
+
+	return 0;
 }
 
 #define NXP_ENET_MDIO_INIT(inst)							\
 	PINCTRL_DT_INST_DEFINE(inst);							\
 											\
 	static const struct nxp_enet_mdio_config nxp_enet_mdio_cfg_##inst = {		\
-		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),			\
+		.mac_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),				\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),	\
 		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\

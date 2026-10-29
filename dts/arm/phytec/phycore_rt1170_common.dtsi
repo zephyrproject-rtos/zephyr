@@ -59,10 +59,6 @@
 &enet1g {
 	pinctrl-0 = <&pinmux_enet1g>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&enet1g_mac {
 	phy-handle = <&enet1g_phy>;
 	phy-connection-type = "rgmii";
 	zephyr,random-mac-address;

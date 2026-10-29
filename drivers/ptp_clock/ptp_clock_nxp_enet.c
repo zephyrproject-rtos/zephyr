@@ -20,7 +20,7 @@
 
 struct ptp_clock_nxp_enet_config {
 	const struct pinctrl_dev_config *pincfg;
-	const struct device *module_dev;
+	const struct device *mac_dev;
 	const struct device *port;
 	const struct device *clock_dev;
 	struct device *clock_subsys;
@@ -29,20 +29,20 @@ struct ptp_clock_nxp_enet_config {
 
 struct ptp_clock_nxp_enet_data {
 	ENET_Type *base;
-	enet_handle_t *enet_handle;
-	struct k_mutex ptp_mutex;
 };
 
 static int ptp_clock_nxp_enet_set(const struct device *dev,
 				struct net_ptp_time *tm)
 {
+	const struct ptp_clock_nxp_enet_config *config = dev->config;
+	struct nxp_enet_mac_data *mac_data = config->mac_dev->data;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	enet_ptp_time_t enet_time;
 
 	enet_time.second = tm->second;
 	enet_time.nanosecond = tm->nanosecond;
 
-	ENET_Ptp1588SetTimer(data->base, data->enet_handle, &enet_time);
+	ENET_Ptp1588SetTimer(data->base, &mac_data->enet_handle, &enet_time);
 
 	return 0;
 }
@@ -50,10 +50,12 @@ static int ptp_clock_nxp_enet_set(const struct device *dev,
 static int ptp_clock_nxp_enet_get(const struct device *dev,
 				struct net_ptp_time *tm)
 {
+	const struct ptp_clock_nxp_enet_config *config = dev->config;
+	struct nxp_enet_mac_data *mac_data = config->mac_dev->data;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	enet_ptp_time_t enet_time;
 
-	ENET_Ptp1588GetTimer(data->base, data->enet_handle, &enet_time);
+	ENET_Ptp1588GetTimer(data->base, &mac_data->enet_handle, &enet_time);
 
 	tm->second = enet_time.second;
 	tm->nanosecond = enet_time.nanosecond;
@@ -93,6 +95,7 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 					double ratio)
 {
 	const struct ptp_clock_nxp_enet_config *config = dev->config;
+	struct nxp_enet_mac_data *mac_data = config->mac_dev->data;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	int corr;
 	int32_t mul;
@@ -135,69 +138,41 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 		mul = val;
 	}
 
-	k_mutex_lock(&data->ptp_mutex, K_FOREVER);
+	k_mutex_lock(&mac_data->ptp_mutex, K_FOREVER);
 
 	ENET_Ptp1588AdjustTimer(data->base, corr, mul);
 
-	k_mutex_unlock(&data->ptp_mutex);
+	k_mutex_unlock(&mac_data->ptp_mutex);
 
 	return 0;
-}
-
-void nxp_enet_ptp_clock_callback(const struct device *dev,
-			enum nxp_enet_callback_reason event,
-			void *cb_data)
-{
-	const struct ptp_clock_nxp_enet_config *config = dev->config;
-	struct ptp_clock_nxp_enet_data *data = dev->data;
-	struct nxp_enet_ptp_data *ptp_data;
-
-	__ASSERT(cb_data != NULL, "ptp data is NULL");
-
-	ptp_data = (struct nxp_enet_ptp_data *)cb_data;
-
-	if (event == NXP_ENET_MODULE_RESET) {
-		enet_ptp_config_t ptp_config;
-		uint32_t enet_ref_pll_rate;
-		uint8_t ptp_multicast[6] = { 0x01, 0x1B, 0x19, 0x00, 0x00, 0x00 };
-		uint8_t ptp_peer_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
-
-		(void) clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&enet_ref_pll_rate);
-
-		ENET_AddMulticastGroup(data->base, ptp_multicast);
-		ENET_AddMulticastGroup(data->base, ptp_peer_multicast);
-
-		/* only for ERRATA_2579 */
-		ptp_config.channel = kENET_PtpTimerChannel3;
-		ptp_config.ptp1588ClockSrc_Hz = enet_ref_pll_rate;
-
-		/* Share the mutex with mac driver */
-		ptp_data->ptp_mutex = &data->ptp_mutex;
-		/* Get enet handle from mac driver */
-		data->enet_handle = ptp_data->enet;
-
-		ENET_Ptp1588SetChannelMode(data->base, kENET_PtpTimerChannel3,
-				kENET_PtpChannelPulseHighonCompare, true);
-		ENET_Ptp1588StartTimer(data->base, ptp_config.ptp1588ClockSrc_Hz);
-		ENET_EnableInterrupts(data->base, ENET_TS_INTERRUPT);
-	}
 }
 
 static int ptp_clock_nxp_enet_init(const struct device *port)
 {
 	const struct ptp_clock_nxp_enet_config *config = port->config;
 	struct ptp_clock_nxp_enet_data *data = port->data;
+	uint32_t enet_ref_pll_rate;
+	uint8_t ptp_multicast[6] = {0x01, 0x1B, 0x19, 0x00, 0x00, 0x00};
+	uint8_t ptp_peer_multicast[6] = {0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E};
 	int ret;
 
-	data->base = (ENET_Type *)DEVICE_MMIO_GET(config->module_dev);
+	data->base = (ENET_Type *)DEVICE_MMIO_GET(config->mac_dev);
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
 	}
 
-	k_mutex_init(&data->ptp_mutex);
+	(void)clock_control_get_rate(config->clock_dev, config->clock_subsys, &enet_ref_pll_rate);
+
+	ENET_AddMulticastGroup(data->base, ptp_multicast);
+	ENET_AddMulticastGroup(data->base, ptp_peer_multicast);
+
+	/* only for ERRATA_2579 */
+	ENET_Ptp1588SetChannelMode(data->base, kENET_PtpTimerChannel3,
+				   kENET_PtpChannelPulseHighonCompare, true);
+	ENET_Ptp1588StartTimer(data->base, enet_ref_pll_rate);
+	ENET_EnableInterrupts(data->base, ENET_TS_INTERRUPT);
 
 	config->irq_config_func();
 
@@ -206,6 +181,8 @@ static int ptp_clock_nxp_enet_init(const struct device *port)
 
 static void ptp_clock_nxp_enet_isr(const struct device *dev)
 {
+	const struct ptp_clock_nxp_enet_config *config = dev->config;
+	struct nxp_enet_mac_data *mac_data = config->mac_dev->data;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	enet_ptp_timer_channel_t channel;
 
@@ -218,7 +195,7 @@ static void ptp_clock_nxp_enet_isr(const struct device *dev)
 		}
 	}
 
-	ENET_TimeStampIRQHandler(data->base, data->enet_handle);
+	ENET_TimeStampIRQHandler(data->base, &mac_data->enet_handle);
 
 	irq_unlock(irq_lock_key);
 }
@@ -245,7 +222,7 @@ static DEVICE_API(ptp_clock, ptp_clock_nxp_enet_api) = {
 										\
 	static const struct ptp_clock_nxp_enet_config				\
 		ptp_clock_nxp_enet_##n##_config = {				\
-			.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
+			.mac_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
 			.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 			.port = DEVICE_DT_INST_GET(n),				\
 			.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\

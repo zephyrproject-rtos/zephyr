@@ -260,7 +260,7 @@
 		/delete-node/ flexpwm@403e8000;
 
 		/* Remove Ethernet, it doesn't exist on RT1010 */
-		/delete-node/ enet@402d8000;
+		/delete-node/ ethernet@402d8000;
 
 		/* Fixup USB it has different base addr and interrupt numbers on RT1010 */
 		/delete-node/ usbd@402e0000;

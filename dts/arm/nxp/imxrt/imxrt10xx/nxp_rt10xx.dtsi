@@ -713,19 +713,13 @@
 			status = "disabled";
 		};
 
-		enet: enet@402d8000 {
+		enet: ethernet@402d8000 {
 			compatible = "nxp,enet";
 			reg = <0x402d8000 0x628>;
 			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
-
-			enet_mac: ethernet {
-				compatible = "nxp,enet-mac";
-				interrupts = <114 0>;
-				interrupt-names = "COMMON";
-				ptp-clock = <&enet_ptp_clock>;
-				nxp,mdio = <&enet_mdio>;
-				status = "disabled";
-			};
+			interrupts = <114 0>;
+			interrupt-names = "COMMON";
+			status = "disabled";
 
 			enet_mdio: mdio {
 				compatible = "nxp,enet-mdio";
