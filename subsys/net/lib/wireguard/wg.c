@@ -571,6 +571,11 @@ static void wg_ctrl_iface_init(struct net_if *iface)
 		NET_DBG("Cannot set interface name (%d)", ret);
 	}
 
+	/* Taking an interface up requires a link address. RFC 7042,
+	 * s.2.1.1. address to use in documentation, as the loopback does.
+	 */
+	(void)net_if_set_link_addr(iface, "\x00\x00\x5e\x00\x53\xff", 6, NET_LINK_DUMMY);
+
 	/* The control interface is turned off by default, and it will
 	 * turn on after the first VPN connection. User is not able to
 	 * manually turn the control interface up if there are no VPN
