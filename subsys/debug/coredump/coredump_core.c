@@ -264,12 +264,15 @@ void process_memory_region_list(struct k_thread *current)
 		for (thread = _kernel.threads, n = 0;
 		     (thread != NULL) && (n < max_threads);
 		     thread = thread->next_thread, n++) {
-			if (snapshot_count < COREDUMP_THREAD_SNAPSHOT_MAX) {
+			if ((thread != current) &&
+			    (snapshot_count < COREDUMP_THREAD_SNAPSHOT_MAX)) {
 				snapshot[snapshot_count++] = thread;
 			}
 			/*
+			 * The faulting thread has already been dumped and is excluded
+			 * from the snapshot.
 			 * If the list is longer than the snapshot capacity the
-			 * dump is truncated to the first N threads rather than
+			 * remaining threads are truncated to the first N rather than
 			 * risking unbounded fatal-path stack; raise
 			 * CONFIG_DEBUG_COREDUMP_THREAD_SNAPSHOT_MAX to capture
 			 * more. A mid-dump diagnostic is deliberately not
@@ -283,17 +286,20 @@ void process_memory_region_list(struct k_thread *current)
 		}
 
 		for (n = 0; n < snapshot_count; n++) {
-			dump_thread(snapshot[n], snapshot[n] == current);
+			dump_thread(snapshot[n], /* is_current */ false);
 		}
 #else
 		/*
 		 * On uniprocessor, IRQs are already locked by the exception
 		 * entry path so no other context can modify the list.
+		 * The faulting thread has already been dumped and is skipped.
 		 */
 		for (thread = _kernel.threads, n = 0;
 		     (thread != NULL) && (n < max_threads);
 		     thread = thread->next_thread, n++) {
-			dump_thread(thread, thread == current);
+			if (thread != current) {
+				dump_thread(thread, /* is_current */ false);
+			}
 		}
 #endif /* CONFIG_SMP */
 
@@ -383,7 +389,9 @@ void coredump(unsigned int reason, const struct arch_esf *esf,
 #endif
 
 	if (thread != NULL) {
-#ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN
+#if defined(CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN) ||                                              \
+	defined(CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS)
+		/* Dump the faulting thread first before other threads fill the backend. */
 		dump_thread(thread, /* is_current */ true);
 #endif
 	}

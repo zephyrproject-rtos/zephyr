@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - coredump
+  filter: CONFIG_ARCH_SUPPORTS_COREDUMP_THREADS
+  ignore_faults: true
+  integration_platforms:
+    - qemu_cortex_m3
+    - qemu_cortex_a53/qemu_cortex_a53/smp
+tests:
+  debug.coredump.thread_order:
+    filter: not CONFIG_SMP and CONFIG_ARCH_SUPPORTS_COREDUMP_THREADS
+  debug.coredump.thread_order.smp:
+    filter: CONFIG_SMP and CONFIG_ARCH_SUPPORTS_COREDUMP_THREADS
+    extra_configs:
+      - CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE=65536
+  debug.coredump.thread_order.truncated:
+    extra_configs:
+      - CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE=4096
+  debug.coredump.thread_order.snapshot_limit:
+    filter: CONFIG_SMP and CONFIG_ARCH_SUPPORTS_COREDUMP_THREADS
+    extra_configs:
+      - CONFIG_DEBUG_COREDUMP_THREAD_SNAPSHOT_MAX=1
+      - CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE=65536
