@@ -6,6 +6,13 @@
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
+/*
+ * Loopback wiring between the two SSIE channels:
+ *   P403 (i2s0 SSI_BCK)  <-> P204 (i2s1 SSI_BCK)
+ *   P113 (i2s0 SSI_LRCK) <-> P205 (i2s1 SSI_LRCK)
+ *   P405 (i2s0 SSI_TX)   <-> P206 (i2s1 SSI_DATA)
+ */
+
 / {
 	aliases {
 		i2s-node0 = &i2s1;
