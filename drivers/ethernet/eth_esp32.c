@@ -224,6 +224,7 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 
 		desc_iter->TDES0.FirstSegment = 0;
 		desc_iter->TDES0.LastSegment = 0;
+		desc_iter->TDES0.InterruptOnComplete = 0;
 
 		if (i == 0) {
 			desc_iter->TDES0.FirstSegment = 1;
@@ -233,6 +234,7 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 		}
 		if (i == (bufcount - 1)) {
 			desc_iter->TDES0.LastSegment = 1;
+			desc_iter->TDES0.InterruptOnComplete = 1;
 			desc_iter->TDES1.TransmitBuffer1Size = lastlen;
 			memcpy(ADDR_DMA_TO_CPU(desc_iter->Buffer1Addr),
 			       buf + i * CONFIG_ETH_ESP32_DMA_BUFFER_SIZE, lastlen);
