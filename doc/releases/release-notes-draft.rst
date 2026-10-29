@@ -65,6 +65,18 @@ New APIs and options
 
 * Bluetooth
 
+  * Profiles
+
+    * :kconfig:option:`CONFIG_BT_HOGP_HOST`
+    * :c:func:`bt_hogp_host_cb_register`
+    * :c:func:`bt_hogp_host_discover`
+    * :c:func:`bt_hogp_host_service_count_get`
+    * :c:func:`bt_hogp_host_hid_info_get`
+    * :c:func:`bt_hogp_host_report_map_get`
+    * :c:func:`bt_hogp_host_reports_get`
+    * :c:func:`bt_hogp_host_report_read`
+    * :c:func:`bt_hogp_host_report_write`
+
   * Services
 
     * :kconfig:option:`CONFIG_BT_HIDS`

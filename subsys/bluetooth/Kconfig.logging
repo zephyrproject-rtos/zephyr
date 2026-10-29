@@ -592,6 +592,18 @@ endif # BT_HIDS
 
 endmenu # Services
 
+menu "Profiles"
+
+if BT_HOGP_HOST
+
+module = BT_HOGP_HOST
+module-str = HID over GATT Profile Host
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BT_HOGP_HOST
+
+endmenu # Profiles
+
 endmenu # Bluetooth logging
 
 endif # BT_LOG
