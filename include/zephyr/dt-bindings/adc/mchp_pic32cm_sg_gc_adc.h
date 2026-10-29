@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADC_MCHP_PIC32CM_SG_GC_ADC_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_ADC_MCHP_PIC32CM_SG_GC_ADC_H_
+
+#define ADC_CORES_NO_DIFF_SUPPORT 0
+
+#define MCHP_ADC_AIN0  0x00
+#define MCHP_ADC_AIN1  0x01
+#define MCHP_ADC_AIN2  0x02
+#define MCHP_ADC_AIN3  0x03
+#define MCHP_ADC_AIN4  0x04
+#define MCHP_ADC_AIN5  0x05
+#define MCHP_ADC_AIN6  0x06
+#define MCHP_ADC_AIN7  0x07
+#define MCHP_ADC_AIN8  0x08
+#define MCHP_ADC_AIN9  0x09
+#define MCHP_ADC_AIN10 0x0A
+#define MCHP_ADC_AIN11 0x0B
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_MCHP_PIC32CM_SG_GC_ADC_H_ */
