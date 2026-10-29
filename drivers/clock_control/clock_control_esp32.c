@@ -49,6 +49,7 @@
 #include <esp_private/esp_pmu.h>
 #include <esp_private/esp_modem_clock.h>
 #include <ocode_init.h>
+#include <esp_sleep.h>
 #endif
 
 #include <zephyr/drivers/clock_control.h>
@@ -66,6 +67,10 @@
 #include <hal/regi2c_ctrl_ll.h>
 #include <hal/clk_tree_hal.h>
 #include <esp_private/esp_clk_tree_common.h>
+#include <esp_clk_tree.h>
+#if !defined(CONFIG_SOC_SERIES_ESP32C2)
+#include <hal/uart_ll.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -504,7 +509,7 @@ static int clock_control_esp32_on(const struct device *dev, clock_control_subsys
 	enum clock_control_status status = clock_control_esp32_get_status(dev, sys);
 
 	if (status == CLOCK_CONTROL_STATUS_ON && !reset_reason_is_cpu_reset()) {
-		return -EALREADY;
+		return 0;
 	}
 
 	periph_module_enable((periph_module_t)sys);
@@ -542,18 +547,25 @@ static int clock_control_esp32_get_rate(const struct device *dev, clock_control_
 	return 0;
 }
 
-static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
+static int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 {
 #if !defined(CONFIG_SOC_SERIES_ESP32C6)
 	soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk & RTC_CNTL_ANA_CLK_RTC_SEL_V;
 #else
 	soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk;
+	rtc_cal_sel_t cal_clk_32k = RTC_CAL_32K_XTAL;
+
+	if (slow_clk == ESP32_RTC_SLOW_CLK_32K_EXT_OSC) {
+		rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW;
+		cal_clk_32k = RTC_CAL_32K_OSC_SLOW;
+	}
 #endif
 	uint32_t cal_val = 0;
 	/* number of times to repeat 32k XTAL calibration
 	 * before giving up and switching to the internal RC
 	 */
 	int retry_32k_xtal = 3;
+	bool revoke_32k = false;
 
 	do {
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
@@ -567,7 +579,12 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 			LOG_DBG("waiting for external clock by pin0 to start up");
 			rtc_clk_32k_enable_external();
 #else
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+		if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K ||
+		    rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+#else
 		if (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
+#endif
 			/* 32k XTAL oscillator needs to be enabled and running before it can
 			 * be used. Hardware doesn't have a direct way of checking if the
 			 * oscillator is running. Here we use rtc_clk_cal function to count
@@ -589,6 +606,8 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
 				cal_val = rtc_clk_cal(RTC_CAL_32K_OSC_SLOW,
 								CONFIG_RTC_CLK_CAL_CYCLES);
+#elif defined(CONFIG_SOC_SERIES_ESP32C6)
+				cal_val = rtc_clk_cal(cal_clk_32k, CONFIG_RTC_CLK_CAL_CYCLES);
 #else
 				cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, CONFIG_RTC_CLK_CAL_CYCLES);
 #endif
@@ -596,8 +615,13 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 					if (retry_32k_xtal-- > 0) {
 						continue;
 					}
-					LOG_ERR("32 kHz XTAL not found");
-					return -ENODEV;
+					if (!fallback) {
+						LOG_ERR("32 kHz clock not found");
+						return -ENODEV;
+					}
+					LOG_WRN("32 kHz clock not found, switching to internal RC");
+					rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+					revoke_32k = true;
 				}
 			}
 #if defined(CONFIG_SOC_SERIES_ESP32C6)
@@ -611,6 +635,22 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 #endif
 		rtc_clk_slow_src_set(rtc_slow_clk_src);
 
+		if (revoke_32k) {
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+			rtc_clk_32k_disable_external();
+#elif defined(CONFIG_SOC_SERIES_ESP32C6)
+			if (cal_clk_32k == RTC_CAL_32K_XTAL) {
+				rtc_clk_32k_enable(false);
+			} else {
+				rtc_clk_32k_disable_external();
+			}
+#else
+			rtc_clk_32k_enable(false);
+			rtc_clk_32k_disable_external();
+#endif
+			revoke_32k = false;
+		}
+
 		if (CONFIG_RTC_CLK_CAL_CYCLES > 0) {
 			cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, CONFIG_RTC_CLK_CAL_CYCLES);
 		} else {
@@ -619,6 +659,24 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 			cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
 		}
 	} while (cal_val == 0);
+
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	static esp_sleep_pd_domain_t slow_clk_pd = ESP_PD_DOMAIN_MAX;
+	esp_sleep_pd_domain_t new_pd = ESP_PD_DOMAIN_MAX;
+
+	if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K ||
+	    rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+		new_pd = ESP_PD_DOMAIN_XTAL32K;
+	} else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+		new_pd = ESP_PD_DOMAIN_RC32K;
+	}
+
+	if (new_pd != slow_clk_pd) {
+		esp_sleep_pd_config(slow_clk_pd, ESP_PD_OPTION_OFF);
+		esp_sleep_pd_config(new_pd, ESP_PD_OPTION_ON);
+		slow_clk_pd = new_pd;
+	}
+#endif
 
 	LOG_DBG("RTC_SLOW_CLK calibration value: %d", cal_val);
 
@@ -720,13 +778,16 @@ static int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cf
 
 #if defined(CONFIG_ESP_CONSOLE_UART)
 #if !defined(CONFIG_SOC_SERIES_ESP32C2) && !defined(CONFIG_SOC_SERIES_ESP32C6)
-#if defined(CONFIG_MCUBOOT) && defined(ESP_ROM_UART_CLK_IS_XTAL)
-	uint32_t uart_clock_src_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
-#else
-	uint32_t uart_clock_src_hz = esp_clk_apb_freq();
-#endif
-	esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, uart_clock_src_hz,
-					CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+	uart_sclk_t uart_sclk;
+	uint32_t uart_clock_src_hz;
+
+	uart_ll_get_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), &uart_sclk);
+	if (esp_clk_tree_src_get_freq_hz((soc_module_clk_t)uart_sclk,
+					 ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+					 &uart_clock_src_hz) == ESP_OK) {
+		esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, uart_clock_src_hz,
+						CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+	}
 #endif
 #endif
 	return 0;
@@ -743,7 +804,7 @@ static int clock_control_esp32_configure(const struct device *dev, clock_control
 		rtc_clk_fast_src_set(new_cfg->rtc.rtc_fast_clock_src);
 		break;
 	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW:
-		ret = esp32_select_rtc_slow_clk(new_cfg->rtc.rtc_slow_clock_src);
+		ret = esp32_select_rtc_slow_clk(new_cfg->rtc.rtc_slow_clock_src, false);
 		break;
 	case ESP32_CLOCK_CONTROL_SUBSYS_CPU:
 		/* Normalize frequency */
@@ -800,7 +861,7 @@ static int clock_control_esp32_init(const struct device *dev)
 #if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
 	rtc_clk_fast_src_set(cfg->rtc.rtc_fast_clock_src);
 
-	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src);
+	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src, true);
 	if (ret) {
 		LOG_ERR("Failed to configure RTC clock");
 		return ret;
