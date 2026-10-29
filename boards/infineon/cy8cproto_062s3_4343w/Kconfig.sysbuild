@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOOTLOADER_MCUBOOT
+
+# The 512 byte flash write-block size is above the BOOT_MAX_ALIGN limit the swap
+# modes assert on, so only overwrite is usable here.
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_OVERWRITE_ONLY
+endchoice
+
+endif # BOOTLOADER_MCUBOOT
