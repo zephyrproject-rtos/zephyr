@@ -382,6 +382,11 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	net_pkt_set_ipv4_opts_len(pkt, opts_len);
 
 	pkt_len = net_ntohs(hdr->len);
+	if (pkt_len < hdr_len) {
+		NET_DBG("DROP: pkt len per hdr %d < hdr len %u", pkt_len, hdr_len);
+		goto drop;
+	}
+
 	if (real_len < pkt_len) {
 		NET_DBG("DROP: pkt len per hdr %d != pkt real len %d",
 			pkt_len, real_len);
