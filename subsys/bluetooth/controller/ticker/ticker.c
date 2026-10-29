@@ -340,6 +340,17 @@ struct ticker_instance {
 					 */
 	uint8_t ticks_slot_previous_forced:1;
 
+	uint8_t  ticker_id_slot_last;	/* Id of last slot reserving ticker
+					 * node, retained after its reservation
+					 * has elapsed
+					 */
+	uint32_t ticks_at_slot_last;	/* Absolute ticks at start of the last
+					 * slot reservation
+					 */
+	uint32_t ticks_slot_last;	/* Number of ticks reserved by the last
+					 * slot reserving ticker node
+					 */
+
 #if defined(CONFIG_BT_TICKER_EXT)
 	uint8_t  ticker_id_slot_window_previous; /* Id of previous ticker node
 						  * with ticks_slot_window that
@@ -836,6 +847,51 @@ static uint32_t ticker_dequeue(struct ticker_instance *instance, uint8_t id)
 
 #if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
 	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+/**
+ * @brief Check late ticker node collision with last slot reservation
+ *
+ * @details A ticker node started with its expiry in the past, or with
+ * negative drift, expires with ticks_to_expire_minus, i.e. its ticks_at_expire
+ * lies before the current ticks. Its reserved time may hence overlap the slot
+ * reservation of a ticker node that expired before it, even when that
+ * reservation has already elapsed and ticks_slot_previous does not cover it.
+ *
+ * @param instance      Pointer to ticker instance
+ * @param ticker        Pointer to ticker node expiring
+ * @param ticks_expired Expired ticks of the ticker node relative to
+ *                      ticks_current
+ *
+ * @return 0 if no collision was detected. 1 if ticker node overlaps the last
+ * slot reservation
+ * @internal
+ */
+static uint8_t ticker_late_collision(struct ticker_instance *instance,
+				     struct ticker_node *ticker,
+				     uint32_t ticks_expired)
+{
+	uint32_t ticks_at_expire;
+
+	if ((ticker->ticks_to_expire_minus == 0U) || (ticker->ticks_slot == 0U) ||
+	    (instance->ticks_slot_last == 0U) ||
+	    (instance->ticker_id_slot_last == (ticker - &instance->nodes[0]))) {
+		return 0U;
+	}
+
+	ticks_at_expire = (instance->ticks_current + ticks_expired -
+			   ticker->ticks_to_expire_minus) & HAL_TICKER_CNTR_MASK;
+
+	if ((ticks_at_expire - instance->ticks_at_slot_last) & BIT(HAL_TICKER_CNTR_MSBIT)) {
+		/* Starts before the last slot reservation */
+		return (ticker->ticks_slot >
+			ticker_ticks_diff_get(instance->ticks_at_slot_last, ticks_at_expire)) ?
+		       1U : 0U;
+	}
+
+	/* Starts at or after the start of the last slot reservation */
+	return (ticker_ticks_diff_get(ticks_at_expire, instance->ticks_at_slot_last) <
+		instance->ticks_slot_last) ? 1U : 0U;
+}
+
 /**
  * @brief Resolve ticker node collision
  *
@@ -1452,6 +1508,7 @@ void ticker_worker(void *param)
 		if (((ticker->ticks_slot != 0U) || TICKER_HAS_SLOT_WINDOW(ticker)) &&
 		    ((slot_reserved != 0U) ||
 		     (instance->ticks_slot_previous > ticks_expired) ||
+		     (ticker_late_collision(instance, ticker, ticks_expired) != 0U) ||
 #if defined(CONFIG_BT_TICKER_EXT)
 		     (slot_window_collide != 0U) ||
 #endif /* CONFIG_BT_TICKER_EXT */
@@ -2043,6 +2100,33 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 			}
 		}
 
+		/* If yield_abs/stop/stop_abs then also trim the last slot
+		 * reservation, which may already have elapsed.
+		 */
+		if (instance->ticker_id_slot_last == user_op->id) {
+			uint32_t ticks_at_yield;
+			uint32_t ticks_used;
+
+			if ((user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS) ||
+			    (user_op->op == TICKER_USER_OP_TYPE_STOP_ABS)) {
+				ticks_at_yield = user_op->params.yield.ticks_at_yield;
+			} else {
+				ticks_at_yield = ticks_now;
+			}
+
+			if ((ticks_at_yield - instance->ticks_at_slot_last) &
+			    BIT(HAL_TICKER_CNTR_MSBIT)) {
+				ticks_used = 0U;
+			} else {
+				ticks_used = ticker_ticks_diff_get(ticks_at_yield,
+								   instance->ticks_at_slot_last);
+			}
+
+			if (instance->ticks_slot_last > ticks_used) {
+				instance->ticks_slot_last = ticks_used;
+			}
+		}
+
 #if defined(CONFIG_BT_TICKER_EXT)
 		/* If yield_abs/stop/stop_abs then also clear any tracked
 		 * ticks_slot_window reservation held by this node.
@@ -2302,6 +2386,17 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				instance->ticks_slot_previous_forced =
 					((ticker->force != 0U) || (ticker->ticks_periodic == 0U)) ?
 					1U : 0U;
+			}
+
+			/* Nodes with only a slot window margin do not reserve air time,
+			 * and shall not replace the last slot reservation checked by
+			 * late expiring nodes.
+			 */
+			if (ticker->ticks_slot != 0U) {
+				instance->ticker_id_slot_last = id_expired;
+				instance->ticks_at_slot_last = (ticks_previous + ticks_expired) &
+							       HAL_TICKER_CNTR_MASK;
+				instance->ticks_slot_last = ticker->ticks_slot;
 			}
 
 #if defined(CONFIG_BT_TICKER_EXT)
@@ -3427,6 +3522,8 @@ ticker_job_compare_update(struct ticker_instance *instance,
 			instance->ticker_id_slot_previous = TICKER_NULL;
 			instance->ticks_slot_previous = 0U;
 			instance->ticks_slot_previous_forced = 0U;
+			instance->ticker_id_slot_last = TICKER_NULL;
+			instance->ticks_slot_last = 0U;
 
 #if defined(CONFIG_BT_TICKER_EXT)
 			instance->ticker_id_slot_window_previous = TICKER_NULL;
@@ -3781,6 +3878,8 @@ uint8_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 	instance->ticker_id_slot_previous = TICKER_NULL;
 	instance->ticks_slot_previous = 0U;
 	instance->ticks_slot_previous_forced = 0U;
+	instance->ticker_id_slot_last = TICKER_NULL;
+	instance->ticks_slot_last = 0U;
 
 #if defined(CONFIG_BT_TICKER_EXT)
 	instance->ticker_id_slot_window_previous = TICKER_NULL;
