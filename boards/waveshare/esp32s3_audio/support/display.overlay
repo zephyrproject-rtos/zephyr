@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Display overlay template for esp32s3_audio/esp32s3/procpu.
+ * Add the attached panel's binding and required properties, then select it
+ * with zephyr,display in /chosen.
+ * Connector: CS GPIO3, SCLK GPIO4, MISO GPIO8, MOSI GPIO9,
+ * D/C GPIO7, backlight GPIO5, reset gpio_expander pin 0.
+ * Set control polarities and SPI frequency for the attached panel.
+ */
+
+&spi2 {
+	/* Add the display controller or MIPI DBI bus node here. */
+};
