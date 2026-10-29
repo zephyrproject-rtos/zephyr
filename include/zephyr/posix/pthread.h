@@ -62,7 +62,7 @@ extern "C" {
  *
  * Initialize a condition variable with the default condition variable attributes.
  */
-#define PTHREAD_COND_INITIALIZER (-1)
+#define PTHREAD_COND_INITIALIZER ((pthread_cond_t)(-1))
 
 /**
  * @brief POSIX threading compatibility API
@@ -146,14 +146,14 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
  *
  * Initialize a mutex with the default mutex attributes.
  */
-#define PTHREAD_MUTEX_INITIALIZER (-1)
+#define PTHREAD_MUTEX_INITIALIZER ((pthread_mutex_t)(-1))
 
 /**
  * @brief Declare a rwlock as initialized
  *
  * Initialize a rwlock with the default rwlock attributes.
  */
-#define PTHREAD_RWLOCK_INITIALIZER (-1)
+#define PTHREAD_RWLOCK_INITIALIZER ((pthread_rwlock_t)(-1))
 
 /*
  *  Mutex attributes - type
