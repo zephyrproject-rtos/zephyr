@@ -32,6 +32,14 @@ Kernel
 Boards
 ******
 
+* The RAKwireless ``rak3112`` board is renamed to :zephyr:board:`rak3212`. It
+  was named after the WisDuo stamp module it carries rather than the board it
+  describes, which is the RAK3212 Breakout Board. The other carrier for the
+  same module is the new :zephyr:board:`rak3312` WisBlock Core Module.
+  :file:`boards/deprecated.cmake` keeps ``-b rak3112/esp32s3/procpu`` and
+  ``-b rak3112/esp32s3/appcpu`` working with a warning, but out-of-tree code
+  testing ``CONFIG_BOARD_RAK3112`` must switch to ``CONFIG_BOARD_RAK3212``.
+
 Device Drivers and Devicetree
 *****************************
 
