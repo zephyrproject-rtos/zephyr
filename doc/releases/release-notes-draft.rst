@@ -125,6 +125,12 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Devicetree
+
+  * Bindings can give child nodes different bindings depending on their node names with the new
+    ``child-bindings:`` key (see :ref:`dt-bindings-child-bindings`), the equivalent of
+    ``patternProperties`` in Linux devicetree schemas.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
