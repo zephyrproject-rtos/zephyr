@@ -141,9 +141,9 @@ exclude_patterns = ["_build"]
 RELEASE_NOTES_GLOB_PATTERNS = [
     "releases/release-notes-[12].*.rst",
     "releases/release-notes-3.[0-6].rst",
-    "releases/release-notes-4.[01].rst",
+    "releases/release-notes-4.[0-3].rst",
     "releases/migration-guide-3.[56].rst",
-    "releases/migration-guide-4.[01].rst",
+    "releases/migration-guide-4.[0-3].rst",
 ]
 exclude_patterns.extend(RELEASE_NOTES_GLOB_PATTERNS)
 
