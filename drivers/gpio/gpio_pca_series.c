@@ -1582,13 +1582,13 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 	} else {
 		if (trig == GPIO_INT_TRIG_BOTH) {
 			int_edge = (int_edge & (~edge_cfg_mask)) |
-				   (PCA_INTERRUPT_EITHER_EDGE << edge_cfg_shift);
+				   ((uint64_t)PCA_INTERRUPT_EITHER_EDGE << edge_cfg_shift);
 		} else if (trig == GPIO_INT_TRIG_LOW) {
 			int_edge = (int_edge & (~edge_cfg_mask)) |
-				   (PCA_INTERRUPT_FALLING_EDGE << edge_cfg_shift);
+				   ((uint64_t)PCA_INTERRUPT_FALLING_EDGE << edge_cfg_shift);
 		} else if (trig == GPIO_INT_TRIG_HIGH) {
 			int_edge = (int_edge & (~edge_cfg_mask)) |
-				   (PCA_INTERRUPT_RISING_EDGE << edge_cfg_shift);
+				   ((uint64_t)PCA_INTERRUPT_RISING_EDGE << edge_cfg_shift);
 		}
 		int_mask &= ~BIT(pin); /** set 0 to enable interrupt */
 	}
