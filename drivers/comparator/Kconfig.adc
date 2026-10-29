@@ -1,0 +1,10 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_ADC
+	bool "ADC voltage comparator driver"
+	default y
+	depends on DT_HAS_ADC_COMPARATOR_ENABLED
+	depends on ADC
+	help
+	  Enable the ADC-backed voltage comparator driver.

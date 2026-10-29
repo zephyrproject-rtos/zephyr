@@ -1,0 +1,11 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.comparator.adc_comparator:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - drivers
+      - comparator
