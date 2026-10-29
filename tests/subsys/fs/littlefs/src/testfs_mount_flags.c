@@ -30,3 +30,20 @@ ZTEST(littlefs, test_fs_mount_flags_lfs)
 
 	test_fs_mount_flags();
 }
+
+/**
+ * @brief littlefs must reject a mount with no pre-allocated fs_data
+ */
+ZTEST(littlefs, test_fs_mount_null_fs_data)
+{
+	struct fs_mount_t mp = {
+		.type = FS_LITTLEFS,
+		.mnt_point = "/nullfs",
+		.fs_data = NULL,
+	};
+	int ret;
+
+	ret = fs_mount(&mp);
+	zassert_equal(ret, -EINVAL,
+		      "NULL fs_data must be rejected with -EINVAL, got %d", ret);
+}
