@@ -1,0 +1,27 @@
+common:
+  # Deliberately not tagged "net": qemu_x86_64 lists net in ignore_tags (net
+  # tests historically needed manual host setup), which the sidecar automates.
+  tags:
+    - net-tools
+  # The net harness is runnable (has regex) and implies the net-tools sidecar.
+  sidecar: net-tools
+  sidecar_config:
+    net-tools:
+      apps:
+        - echo-server
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "NET_TOOLS_SIDECAR: PING REPLY OK"
+      - "NET_TOOLS_SIDECAR: UDP ECHO OK"
+tests:
+  net.net_tools_sidecar:
+    # The e1000 NIC attaches to the host tap that the net-tools sidecar brings
+    # up; the guest then pings the host and echoes off the companion echo-server.
+    platform_allow:
+      - qemu_x86_64
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86_64
