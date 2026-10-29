@@ -1297,7 +1297,7 @@ static int gpio_pca_series_port_write(const struct device *dev,
 {
 	struct gpio_pca_series_data *data = dev->data;
 	uint32_t out_old;
-	uint32_t out;
+	uint32_t out = 0U;
 	int ret = 0;
 
 	/* Can't do I2C bus operations from an ISR */
@@ -1314,7 +1314,7 @@ static int gpio_pca_series_port_write(const struct device *dev,
 	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_OUTPUT_PORT,
 						 (uint8_t *)&out_old);
 	if (ret) {
-		return -EINVAL; /** should never fail */
+		goto out; /** should never fail */
 	}
 	out_old = sys_le32_to_cpu(out_old);
 #else  /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
@@ -1333,6 +1333,9 @@ static int gpio_pca_series_port_write(const struct device *dev,
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 	}
 
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+out:
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 	k_sem_give(&data->lock);
 
 	LOG_DBG("dev %s write return %d result 0x%8.8x", dev->name, ret, out);
