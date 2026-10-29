@@ -12,15 +12,6 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
 MODEM_CHAT_MATCHES_DEFINE(u_blox_lara_r6_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	u_blox_lara_r6_set_baudrate_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR=" STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE),
-						       ok_match));
-
-MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_set_baudrate_chat_script,
-			 u_blox_lara_r6_set_baudrate_chat_script_cmds, abort_matches,
-			 modem_cellular_chat_callback_handler, 1);
-
 /* NOTE: For some reason, a CMUX max frame size of 127 causes FCS errors in
  * this modem; larger or smaller doesn't. The modem's default value is 31,
  * which works well
@@ -86,13 +77,12 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_periodic_chat_script,
 			 u_blox_lara_r6_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
 
-static const struct modem_cellular_vendor_config u_blox_lara_r6_vendor = {
+static const struct modem_cellular_vendor_config_common u_blox_lara_r6_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &u_blox_lara_r6_init_chat_script,
 		.dial = &u_blox_lara_r6_dial_chat_script,
 		.periodic = &u_blox_lara_r6_periodic_chat_script,
-		.set_baudrate = &u_blox_lara_r6_set_baudrate_chat_script,
 	},
 	.unsol_matches = {
 		.matches = u_blox_lara_r6_unsol,
@@ -101,6 +91,8 @@ static const struct modem_cellular_vendor_config u_blox_lara_r6_vendor = {
 	/* clang-format on */
 	.chat_delimiter = "\r",
 	.chat_filter = "\n",
+	.baudrate_update_delay_ms = 100,
+	.reset_power_on_delay_ms = 500,
 	.power_pulse_duration_ms = 1500,
 	.reset_pulse_duration_ms = 100,
 	.startup_time_ms = 9000,
@@ -110,10 +102,23 @@ static const struct modem_cellular_vendor_config u_blox_lara_r6_vendor = {
 #define MODEM_CELLULAR_DEVICE_U_BLOX_LARA_R6(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
+	MODEM_CELLULAR_COMMON_BAUDRATE_CHAT_SCRIPT(inst);                                          \
+                                                                                                   \
+	static const struct modem_cellular_vendor_config_inst MODEM_CELLULAR_INST_NAME(            \
+		vendor_config_inst, inst) = {                                                      \
+		MODEM_CELLULAR_VENDOR_CONFIG_INST_TARGET_BAUDRATE(inst),                           \
+	};                                                                                         \
+                                                                                                   \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &u_blox_lara_r6_vendor,                                                  \
+		.instance = &MODEM_CELLULAR_INST_NAME(vendor_config_inst, inst),                   \
+	};                                                                                         \
+                                                                                                   \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3), (user_pipe_0, 4))          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &u_blox_lara_r6_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_U_BLOX_LARA_R6)

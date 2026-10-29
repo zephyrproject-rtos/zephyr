@@ -14,3 +14,6 @@ properties:
 
   zephyr,mdm-reset-behavior:
     default: ["toggle_on_recovery"]
+
+  target-baudrate:
+    default: 3000000
