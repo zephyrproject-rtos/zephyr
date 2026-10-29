@@ -57,6 +57,7 @@ source "drivers/mfd/Kconfig.rv3032_mfd"
 source "drivers/mfd/Kconfig.sc18is606_mfd"
 source "drivers/mfd/Kconfig.tla2528"
 source "drivers/mfd/Kconfig.tle9104"
+source "drivers/mfd/Kconfig.waveshare_ch32v003"
 # zephyr-keep-sorted-stop
 
 endif # MFD
