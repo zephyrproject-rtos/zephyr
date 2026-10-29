@@ -1200,6 +1200,23 @@ static int execute(const struct shell *sh)
 						SHELL_MSG_CMD_NOT_FOUND);
 			}
 
+			/* Unknown subcommand and no handler to pass it to as
+			 * an argument.
+			 */
+			if ((cmd_lvl > 0) && (has_last_handler == false) &&
+			    (sh->ctx->active_cmd.handler == NULL)) {
+				if (IS_ENABLED(CONFIG_SHELL_MSG_CMD_NOT_FOUND)) {
+					z_shell_fprintf(sh, SHELL_ERROR,
+							"%s%s\n", argvp[-1],
+							SHELL_MSG_CMD_NOT_FOUND);
+				}
+				if (IS_ENABLED(CONFIG_SHELL_HELP) && (help_entry.help != NULL)) {
+					sh->ctx->active_cmd = help_entry;
+					shell_internal_help_print(sh);
+				}
+				return -ENOEXEC;
+			}
+
 			/* last handler found - no need to search commands in
 			 * the next iteration.
 			 */

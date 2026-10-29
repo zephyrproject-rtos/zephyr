@@ -195,7 +195,7 @@ ZTEST(net_shell_test_suite, test_net_shell)
 
 	/* There is no foobar command */
 	ret = shell_execute_cmd(NULL, "net foobar");
-	zassert_equal(ret, 1, "");
+	zassert_equal(ret, -ENOEXEC, "");
 
 	/* The cache flushing commands are registered even when the
 	 * corresponding cache is not built in.
