@@ -101,7 +101,7 @@ int cpu_load_cb_reg(cpu_load_cb_t cb, uint8_t threshold_percent)
 static int cpu_load_log_init(void)
 {
 	/* Only the current CPU may be touched here: the secondary CPUs are
-	 * initialized at INIT_LEVEL_SMP, which runs after POST_KERNEL, so their
+	 * initialized at INIT_LEVEL_PRE_MAIN, which runs after POST_KERNEL, so their
 	 * per-CPU kernel state does not exist yet. They simply start their first
 	 * measurement window at the first report.
 	 */
