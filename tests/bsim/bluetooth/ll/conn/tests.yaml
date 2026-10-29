@@ -19,6 +19,16 @@ tests:
         - tests_scripts/basic_conn_encrypted_split.sh
         - tests_scripts/conn_scan_window_split.sh
 
+  bluetooth.controller.conn.split_conn_meta:
+    platform_allow:
+      - nrf52_bsim
+    extra_args: CONF_FILE=prj_split_conn_meta.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_conn_prj_split_conn_meta_conf
+      tests_scripts:
+        - tests_scripts/basic_conn_split_conn_meta.sh
+
   bluetooth.controller.conn.split_1ms:
     platform_allow:
       - nrf52_bsim
