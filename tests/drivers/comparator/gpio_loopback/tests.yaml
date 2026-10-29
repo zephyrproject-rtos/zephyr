@@ -27,6 +27,7 @@ tests:
       - frdm_mcxe247
       - frdm_imxrt1186/mimxrt1186/cm33
       - frdm_imxrt1186/mimxrt1186/cm7
+      - frdm_imxrt1152/mimxrt1152
   drivers.comparator.gpio_loopback.nrf_comp:
     extra_args:
       - FILE_SUFFIX="nrf_comp"

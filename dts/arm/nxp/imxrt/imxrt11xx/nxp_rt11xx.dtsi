@@ -56,6 +56,12 @@
 		#clock-cells = <0>;
 	};
 
+	/* Reached through the ANADIG analog interface, so it has no reg */
+	tmpsns: tmpsns {
+		compatible = "nxp,tmpsns";
+		status = "disabled";
+	};
+
 	soc {
 		ocram: ocram@20200000 {
 			compatible = "zephyr,memory-region", "mmio-sram";

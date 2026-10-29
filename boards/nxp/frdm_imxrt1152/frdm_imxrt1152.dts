@@ -19,6 +19,7 @@
 		led1 = &red_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		die-temp0 = &tmpsns;
 	};
 
 	chosen {
@@ -133,6 +134,17 @@
 };
 
 &systick {
+	status = "okay";
+};
+
+/* ADC1 CH0A (GPIO_AD_06) is on J47-8 (A3), CH3A (GPIO_AD_12) on J47-4 (A1) */
+&lpadc1 {
+	pinctrl-0 = <&pinmux_lpadc1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tmpsns {
 	status = "okay";
 };
 

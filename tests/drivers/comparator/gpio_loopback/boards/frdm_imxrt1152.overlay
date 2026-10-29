@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &acmp3;
+	};
+
+	zephyr,user {
+		/* Short J11-4 (D9, GPIO_AD_10) to J11-12 (D13, ACMP3_IN1) */
+		test-gpios = <&gpio3 9 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	acmp3_default: acmp3_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_28_acmp3_in1>;
+			drive-strength = "high";
+		};
+	};
+};
+
+&acmp3 {
+	pinctrl-0 = <&acmp3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	positive-mux-input = "IN1";
+	negative-mux-input = "IN7"; /* DAC output */
+
+	/* The GPIO_AD pads are 3.3 V: sample the input through the divider */
+	discrete-mode-enable-positive-channel;
+	discrete-mode-enable-resistor-divider;
+
+	dac-vref-source = "VIN2"; /* VDDA_1P8_IN, VIN1 tied to GND on this chip */
+	dac-value = <127>;
+	dac-enable;
+};

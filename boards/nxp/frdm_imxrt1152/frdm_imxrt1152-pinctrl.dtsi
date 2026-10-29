@@ -7,6 +7,16 @@
 #include <nxp/imxrt/imxrt11xx/pinctrl/mimxrt1152xhm8b-pinctrl.dtsi>
 
 &pinctrl {
+	pinmux_lpadc1: pinmux_lpadc1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_06_adc1_ch0a>,
+				 <&iomuxc_gpio_ad_12_adc1_ch3a>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_25_lpuart1_rx>,
