@@ -1,0 +1,32 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADC-backed voltage comparator
+
+compatible: "adc-comparator"
+
+include: base.yaml
+
+properties:
+  io-channels:
+    required: true
+    description:
+      ADC channel used to measure the input voltage.
+
+  output-ohms:
+    type: int
+    required: true
+    description:
+      Resistance of the lower leg of the voltage divider.
+
+  full-ohms:
+    type: int
+    description:
+      Resistance of the full path through the voltage divider. If omitted or
+      zero, the measured ADC voltage is not scaled.
+
+  threshold-mv:
+    type: int
+    required: true
+    description:
+      Voltage threshold in millivolts above which the comparator output is high.
