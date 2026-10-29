@@ -727,6 +727,20 @@ static int transceive(const struct device *dev,
 	}
 
 	ret = spi_context_wait_for_completion(&data->ctx);
+#ifndef CONFIG_DSPI_MCUX_EDMA
+	if (ret != 0) {
+		const struct spi_mcux_config *config = dev->config;
+		unsigned int key;
+
+		/* Sync only. The SDK does not call back once the handle is idle. */
+		key = irq_lock();
+		DSPI_MasterTransferAbort(config->base, &data->handle);
+		irq_unlock(key);
+
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_clear_completion(&data->ctx);
+	}
+#endif /* !CONFIG_DSPI_MCUX_EDMA */
 
 out:
 	spi_context_release(&data->ctx, ret);
