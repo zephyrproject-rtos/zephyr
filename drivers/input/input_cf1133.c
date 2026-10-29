@@ -12,7 +12,9 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
 #include <zephyr/input/input_touch.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 #include <stdbool.h>
 
 LOG_MODULE_REGISTER(cf1133, CONFIG_INPUT_LOG_LEVEL);
@@ -51,6 +53,8 @@ LOG_MODULE_REGISTER(cf1133, CONFIG_INPUT_LOG_LEVEL);
 #define SITRONIX_RESERVED_TYPE_0 0x0
 #define SITRONIX_A_TYPE          0x1
 #define SITRONIX_B_TYPE          0x2
+#define STARTUP_TIMEOUT_US       (100U * USEC_PER_MSEC)
+#define STARTUP_POLL_MS          1
 
 /* Mask */
 #define ONE_D_SENSING_CONTROL_SHFT GENMASK(1, 1)
@@ -103,17 +107,16 @@ struct cf1133_data {
 
 static int cf1133_get_chip_id(const struct device *dev)
 {
-	int ret;
 	uint8_t buffer[3];
 	uint8_t num_x;
 	uint8_t num_y;
 	const struct cf1133_config *config = dev->config;
 	struct cf1133_data *data = dev->data;
 
-	ret = i2c_burst_read_dt(&config->bus, CHIP_ID, buffer, sizeof(buffer));
-	if (ret < 0) {
-		LOG_ERR("Read burst failed: %d", ret);
-		return ret;
+	if (!WAIT_FOR(i2c_burst_read_dt(&config->bus, CHIP_ID, buffer, sizeof(buffer)) == 0,
+		      STARTUP_TIMEOUT_US, k_msleep(STARTUP_POLL_MS))) {
+		LOG_ERR("Read burst timed out");
+		return -ETIMEDOUT;
 	}
 	if (buffer[0] == 0) {
 		if (buffer[1] + buffer[2] > 32) {
