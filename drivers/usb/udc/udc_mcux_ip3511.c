@@ -542,7 +542,15 @@ static int udc_mcux_ep_enqueue(const struct device *dev,
 		return 0;
 	}
 
-	return udc_mcux_ep_try_feed(dev, cfg);
+	/*
+	 * The buf is queued, so the buf belongs to the driver from
+	 * here on and must not be handed back to the caller.
+	 */
+	if (udc_mcux_ep_try_feed(dev, cfg) != 0) {
+		LOG_DBG("ep 0x%02x not fed", cfg->addr);
+	}
+
+	return 0;
 }
 
 static int udc_mcux_ep_dequeue(const struct device *dev,
@@ -604,7 +612,11 @@ static int udc_mcux_ep_clear_halt(const struct device *dev,
 {
 	(void)udc_mcux_control(dev, kUSB_DeviceControlEndpointUnstall, &cfg->addr);
 	/* transfer is enqueued after stalled */
-	return udc_mcux_ep_try_feed(dev, cfg);
+	if (udc_mcux_ep_try_feed(dev, cfg) != 0) {
+		LOG_DBG("ep 0x%02x not fed", cfg->addr);
+	}
+
+	return 0;
 }
 
 static int udc_mcux_ep_enable(const struct device *dev,
