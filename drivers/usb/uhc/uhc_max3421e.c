@@ -27,9 +27,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max3421e, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
-
-#define MAX3421E_STATE_BUS_RESET	0
-#define MAX3421E_STATE_BUS_RESUME	1
+#define MAX3421E_STATE_BUS_RESET      0
+#define MAX3421E_STATE_BUS_RESUME     1
+#define MAX3421E_STATE_DEVICE_PRESENT 2
 
 struct max3421e_data {
 	struct gpio_callback gpio_cb;
@@ -589,12 +589,14 @@ static void max3421e_handle_condet(const struct device *dev)
 	if (jk == 0) {
 		type = UHC_EVT_DEV_REMOVED;
 		mode &= ~MAX3421E_SOFKAENAB;
+		atomic_clear_bit(&priv->state, MAX3421E_STATE_DEVICE_PRESENT);
 	}
 
 	if (jk == MAX3421E_JSTATUS) {
 		mode |= MAX3421E_SOFKAENAB;
 		type = (mode & MAX3421E_LOWSPEED) != 0U ? UHC_EVT_DEV_CONNECTED_LS
 							: UHC_EVT_DEV_CONNECTED_FS;
+		atomic_set_bit(&priv->state, MAX3421E_STATE_DEVICE_PRESENT);
 	}
 
 	if (jk == MAX3421E_KSTATUS) {
@@ -602,6 +604,7 @@ static void max3421e_handle_condet(const struct device *dev)
 		mode |= MAX3421E_SOFKAENAB;
 		type = (mode & MAX3421E_LOWSPEED) != 0U ? UHC_EVT_DEV_CONNECTED_LS
 							: UHC_EVT_DEV_CONNECTED_FS;
+		atomic_set_bit(&priv->state, MAX3421E_STATE_DEVICE_PRESENT);
 	}
 
 	err = max3421e_mode_update(dev, mode);
@@ -703,6 +706,11 @@ static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&priv->irq_sem, K_FOREVER);
 
 		max3421e_lock(dev);
+
+		if (!uhc_is_enabled(dev)) {
+			max3421e_unlock(dev);
+			continue;
+		}
 
 		/*
 		 * Get HRSL and HIRQ values, do not perform any operation
@@ -980,9 +988,9 @@ static int max3421e_hien_setup(const struct device *dev)
 	return 0;
 }
 
-static int max3421e_enable_int_output(const struct device *dev)
+static int max3421e_set_int_output(const struct device *dev, bool enable)
 {
-	const uint8_t cpuctl = MAX3421E_IE;
+	const uint8_t cpuctl = enable ? MAX3421E_IE : 0;
 	uint8_t tmp;
 	int ret;
 
@@ -1042,30 +1050,52 @@ static int uhc_max3421e_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = max3421e_enable_int_output(dev);
-	if (ret) {
-		LOG_ERR("Failed to enable INT output");
-		return ret;
-	}
 
 	LOG_INF("REV 0x%x, MODE 0x%02x, HIEN 0x%02x",
 		rev, priv->mode, priv->hien);
 
 	priv->addr = 0;
 
-	/* Sample bus if device is already connected */
-	return max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SAMPLEBUS);
+	return 0;
 }
 
 static int uhc_max3421e_enable(const struct device *dev)
 {
-	/* TODO */
-	return 0;
+	int err;
+
+	err = max3421e_set_int_output(dev, true);
+	if (err) {
+		LOG_ERR("Failed to enable INT output");
+		return err;
+	}
+
+	/* Sample bus if device is already connected */
+	return max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SAMPLEBUS);
 }
 
 static int uhc_max3421e_disable(const struct device *dev)
 {
-	/* TODO */
+	struct max3421e_data *priv = uhc_get_private(dev);
+	int err;
+
+	err = max3421e_set_int_output(dev, false);
+	if (err) {
+		LOG_ERR("Failed to disable INT output");
+		return err;
+	}
+
+	err = max3421e_mode_update(dev, priv->mode & ~(MAX3421E_SOFKAENAB));
+	if (err) {
+		LOG_ERR("Failed to disable automatic SOF/KA generation");
+		return err;
+	}
+
+	max3421e_xfer_drop_active(dev, -ECONNRESET);
+
+	if (atomic_test_bit(&priv->state, MAX3421E_STATE_DEVICE_PRESENT)) {
+		uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
+	}
+
 	return 0;
 }
 
