@@ -77,6 +77,11 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
+#if defined(CONFIG_PM)
+#include <hal/gpio_hal.h>
+#include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
+#include <zephyr/init.h>
+#endif
 #include <errno.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
@@ -1734,3 +1739,36 @@ static DEVICE_API(uart, uart_esp32_api) = {
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);
+
+#if defined(CONFIG_PM)
+/*
+ * GPIO driver enables sleep pin isolate function at init, after UART runs.
+ * In order to properly exclude the UART pins from this functionality,
+ * we need to run switch disable after GPIO init, so at POST_KERNEL.
+ */
+static int uart_esp32_sleep_switch_init(void)
+{
+	STRUCT_SECTION_FOREACH(device, dev) {
+		const struct uart_esp32_config *config;
+		const struct pinctrl_state *state;
+		gpio_hal_context_t gpio_hal = {.dev = GPIO_HAL_GET_HW(GPIO_PORT_0)};
+
+		if (dev->api != &uart_esp32_api) {
+			continue;
+		}
+
+		config = dev->config;
+		if (pinctrl_lookup_state(config->pcfg, PINCTRL_STATE_DEFAULT, &state) < 0) {
+			continue;
+		}
+
+		for (uint8_t i = 0; i < state->pin_cnt; i++) {
+			gpio_hal_sleep_sel_dis(&gpio_hal, ESP32_PIN_NUM(state->pins[i].pinmux));
+		}
+	}
+
+	return 0;
+}
+
+SYS_INIT(uart_esp32_sleep_switch_init, POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY);
+#endif
