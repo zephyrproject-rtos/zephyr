@@ -34,6 +34,10 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0x1000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
 
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc)),
+		   (MMU_REGION_FLAT_ENTRY("adc", ADC_BASE_ADDRESS, 0x200,
+					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(microchip_aes_g1),
 		   (MMU_REGION_FLAT_ENTRY("aes", AES_BASE_ADDRESS, 0x100,
 					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
@@ -159,6 +163,11 @@ void relocate_vector_table(void)
 
 void soc_early_init_hook(void)
 {
+	/* Enable Generic clock for ADC, frequency is 80MHz */
+	if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc))) {
+		CONFIGURE_GCLK(ID_ADC, 5, PMC_PCR_GCLKCSS_SYSPLL);
+	}
+
 	/* Enable Generic clock for PIT64B0 for system tick */
 	CONFIGURE_GCLK(ID_PIT64B0, 40, PMC_PCR_GCLKCSS_SYSPLL);
 
