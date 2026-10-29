@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  boards.esp32.dma_status:
+    tags:
+      - dma
+      - drivers
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    harness: ztest
