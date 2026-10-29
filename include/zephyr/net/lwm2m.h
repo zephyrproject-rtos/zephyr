@@ -1328,7 +1328,12 @@ int lwm2m_register_delete_callback(uint16_t obj_id,
  * @brief Set data buffer for a resource
  *
  * Use this function to set the data buffer and flags for the specified LwM2M
- * resource.
+ * resource. The buffer replaces the storage the object provides and stays in
+ * use until it is replaced by another call, or until the resource instance or
+ * the object instance is deleted. A resource instance given a buffer other than
+ * the one it currently holds counts as application-supplied from then on, even
+ * if the object's own storage is set again later, and lwm2m_delete_res_inst()
+ * releases whatever buffer it holds.
  *
  * @param[in] path LwM2M path as a struct
  * @param[in] buffer_ptr Data buffer pointer
@@ -1391,7 +1396,14 @@ int lwm2m_create_res_inst(const struct lwm2m_obj_path *path);
 /**
  * @brief Delete a resource instance
  *
- * Use this function to remove an existing resource instance
+ * Use this function to remove an existing resource instance.
+ *
+ * The storage the object provides for the instance is kept and serves the next
+ * resource instance created in its place. A buffer set with lwm2m_set_res_buf()
+ * is released together with the data flags, so an instance created afterwards
+ * needs a new buffer before it can be written. A server Write that creates an
+ * instance in such a slot fails unless a pre-write callback supplies the
+ * buffer.
  *
  * @param[in] path LwM2M path as a struct
  *
