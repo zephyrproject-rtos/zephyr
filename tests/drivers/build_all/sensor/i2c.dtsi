@@ -1716,3 +1716,8 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_ak09940a: ak09940a@df {
+	compatible = "asahi-kasei,ak09940a";
+	reg = <0xdf>;
+};
