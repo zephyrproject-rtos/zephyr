@@ -24,8 +24,10 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 /* select MSIS as wake-up system clock if configured, HSI otherwise */
 #if STM32_SYSCLK_SRC_MSIS
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_MSIS
+#define RCC_STOP_WAKEUPCLOCK_STATUS   LL_RCC_SYS_CLKSOURCE_STATUS_MSIS
 #else
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
+#define RCC_STOP_WAKEUPCLOCK_STATUS   LL_RCC_SYS_CLKSOURCE_STATUS_HSI
 #endif
 
 #ifdef CONFIG_STM32_STOP3_LP_MODE
@@ -142,8 +144,14 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		LOG_DBG("Unsupported power state %u", state);
 		break;
 	}
-	/* need to restore the clock */
-	stm32_clock_control_init(NULL);
+	/*
+	 * Exiting STOP always leaves SYSCLK on the wake-up clock. Any other SYSCLK
+	 * means a wake-up event arrived before STOP was entered, so the clock tree
+	 * is untouched and reconfiguring it would only relock the PLLs.
+	 */
+	if (LL_RCC_GetSysClkSource() == RCC_STOP_WAKEUPCLOCK_STATUS) {
+		stm32_clock_control_init(NULL);
+	}
 
 	/*
 	 * System is now in active mode.
