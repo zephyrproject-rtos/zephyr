@@ -39,6 +39,18 @@ config INTEL_ADSP_IPC_OLD_INTERFACE
 	  Expose the old IPC interface (intel_adsp_ipc_* functions) to
 	  maintain backward compatibility.
 
+config INTEL_ADSP_HIFI_64BIT_MMIO
+	bool "HiFi AE 64-bit load/store MMIO access"
+	depends on XTENSA_EAGER_HIFI_SHARING
+	# Only xt-clang provides the headers to support this option.
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
+	select XTENSA_SOC_HAS_CUSTOM_SYS_IO
+	help
+	  Alter the functions performing 64-bit MMIO accesses to use the 64-bit
+	  load/store assembly instructions that are part of an ISA extension of the
+	  Xtensa HiFi core family. Without this option, the compiler translates a
+	  64-bit access into two 32-bit operations.
+
 config MEMORY_WIN_0_SIZE
 	int "Size of memory window 0"
 	default 8192
