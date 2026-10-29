@@ -134,6 +134,14 @@
 			clock-frequency = <15000000>; /* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
 		};
 
+		miwu3: miwu@400ab000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400ab000 0x2000>;
+			index = <3>;
+			#miwu-cells = <2>;
+			status = "disabled";
+		};
+
 		uart1: serial@400e0000 {
 			compatible = "nuvoton,npcx-uart";
 			/* Index 0: UART1 register, Index 1: MDMA1 register */
@@ -328,6 +336,67 @@
 
 			lvol-maps = <&lvol_iof0 &lvol_iof1 &lvol_iof2 &lvol_iof3
 				     &lvol_iof4 &lvol_iof5 &lvol_none &lvol_none>;
+		};
+
+		/* GPIO ports specific to npcx4 series */
+		gpiog: gpio@400a1000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x400a1000 0x2000>;
+			gpio-controller;
+			index = <0x10>;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			wui-maps = <&wui_iog0 &wui_iog1 &wui_iog2 &wui_iog3
+				    &wui_iog4 &wui_iog5 &wui_iog6 &wui_iog7>;
+
+			lvol-maps = <&lvol_iog0 &lvol_iog1 &lvol_iog2 &lvol_iog3
+				     &lvol_iog4 &lvol_iog5 &lvol_iog6 &lvol_iog7>;
+			status = "disabled";
+		};
+
+		gpioh: gpio@400a7000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x400a7000 0x2000>;
+			gpio-controller;
+			index = <0x11>;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			wui-maps = <&wui_ioh0 &wui_ioh1 &wui_ioh2 &wui_ioh3
+				    &wui_ioh4 &wui_ioh5 &wui_ioh6 &wui_ioh7>;
+
+			lvol-maps = <&lvol_ioh0 &lvol_ioh1 &lvol_ioh2 &lvol_ioh3
+				     &lvol_ioh4 &lvol_ioh5 &lvol_ioh6 &lvol_ioh7>;
+			status = "disabled";
+		};
+
+		gpioj: gpio@400a9000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x400a9000 0x2000>;
+			gpio-controller;
+			index = <0x12>;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			wui-maps = <&wui_ioj0 &wui_ioj1 &wui_ioj2 &wui_ioj3
+				    &wui_ioj4 &wui_ioj5 &wui_ioj6 &wui_ioj7>;
+
+			lvol-maps = <&lvol_ioj0 &lvol_ioj1 &lvol_ioj2 &lvol_ioj3
+				     &lvol_ioj4 &lvol_ioj5 &lvol_ioj6 &lvol_ioj7>;
+			status = "disabled";
+		};
+
+		gpiok: gpio@400ad000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x400ad000 0x2000>;
+			gpio-controller;
+			index = <0x13>;
+			ngpios = <8>;
+			#gpio-cells = <2>;
+			wui-maps = <&wui_iok0 &wui_iok1 &wui_iok2 &wui_iok3
+				    &wui_iok4 &wui_iok5 &wui_iok6 &wui_iok7>;
+
+			lvol-maps = <&lvol_iok0 &lvol_iok1 &lvol_iok2 &lvol_iok3
+				     &lvol_iok4 &lvol_iok5 &lvol_iok6 &lvol_iok7>;
+			status = "disabled";
 		};
 
 		/* I2c Controllers - Do not use them as i2c node directly */
