@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/linker/linker-defs.h>
 
 const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	{
@@ -19,6 +20,14 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 		.attrs = XTENSA_MMU_PERM_X | XTENSA_MMU_CACHED_WB | XTENSA_MMU_MAP_SHARED,
 		.name = "vecbase",
 	},
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_COVERAGE_GCOV)
+	{
+		.start = (uint32_t)&__gcov_bss_start,
+		.end   = (uint32_t)&__gcov_bss_end,
+		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB | XTENSA_MMU_MAP_SHARED,
+		.name = "gcov_bss",
+	},
+#endif
 	{
 		/* The ROM is 32MB but the address wraps around back to 0x00000000.
 		 * So just skip the last page so we don't have to deal with integer
