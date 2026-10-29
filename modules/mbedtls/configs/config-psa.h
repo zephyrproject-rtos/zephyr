@@ -32,6 +32,10 @@
 #define PSA_WANT_ALG_CMAC 1
 #endif
 
+#if defined(CONFIG_PSA_WANT_ALG_SP800_108_COUNTER_CMAC)
+#define PSA_WANT_ALG_SP800_108_COUNTER_CMAC 1
+#endif
+
 #if defined(CONFIG_PSA_WANT_ALG_CFB)
 #define PSA_WANT_ALG_CFB 1
 #endif
