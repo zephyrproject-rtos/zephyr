@@ -3,6 +3,12 @@
 # Copyright (c) 2022 Intellinium <giuliano.franchetto@intellinium.com>
 # SPDX-License-Identifier: Apache-2.0
 
+config LORAWAN_NVM_SETTINGS_SUPPORTED
+	bool
+	help
+	  Selected by LoRaWAN backends that can persist their state through
+	  the Settings-based NVM interface.
+
 choice LORAWAN_NVM
 	bool "LoRaWAN NVM backend"
 	default LORAWAN_NVM_SETTINGS if SETTINGS
@@ -19,7 +25,9 @@ config LORAWAN_NVM_NONE
 config LORAWAN_NVM_SETTINGS
 	bool "Settings based NVM"
 	depends on SETTINGS
-	# The settings-based NVM implementation currently only supports loramac-node
-	depends on LORA_MODULE_BACKEND_LORAMAC_NODE
+	depends on LORAWAN_NVM_SETTINGS_SUPPORTED
+	help
+	  Persist the LoRaWAN backend's records using Settings. The backend
+	  defines which state is stored and when it is restored or updated.
 
 endchoice

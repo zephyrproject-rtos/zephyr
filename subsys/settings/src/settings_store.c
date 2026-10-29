@@ -67,6 +67,8 @@ int settings_load_subtree_direct(
 	void                   *param)
 {
 	struct settings_store *cs;
+	int rc;
+	int err = 0;
 
 	const struct settings_load_arg arg = {
 		.subtree = subtree,
@@ -81,10 +83,13 @@ int settings_load_subtree_direct(
 	 */
 	settings_lock_take();
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
-		cs->cs_itf->csi_load(cs, &arg);
+		rc = cs->cs_itf->csi_load(cs, &arg);
+		if (rc < 0 && err == 0) {
+			err = rc;
+		}
 	}
 	settings_lock_release();
-	return 0;
+	return err;
 }
 
 struct default_param {
