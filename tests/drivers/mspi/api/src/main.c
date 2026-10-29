@@ -9,9 +9,9 @@
 #include <zephyr/drivers/mspi_emul.h>
 #include <zephyr/ztest.h>
 
-#define TEST_MSPI_REINIT    1
+#define TEST_MSPI_REINIT 1
 
-#define MSPI_BUS_NODE       DT_ALIAS(mspi0)
+#define MSPI_BUS_NODE DT_ALIAS(mspi0)
 
 /* add else if for other SoC platforms */
 #if defined(CONFIG_SOC_POSIX)
@@ -25,6 +25,12 @@ typedef enum mspi_ambiq_timing_param mspi_timing_param;
 #define MSPI_PORT ((DT_REG_ADDR(MSPI_BUS_NODE) - MSPI0_BASE) / (MSPI1_BASE - MSPI0_BASE))
 #else
 #define MSPI_PORT 0
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X)
+#define MSPI_TEST_DEV_CFG_MASK (MSPI_DEVICE_CONFIG_ALL & ~MSPI_DEVICE_CONFIG_DQS)
+#else
+#define MSPI_TEST_DEV_CFG_MASK MSPI_DEVICE_CONFIG_ALL
 #endif
 
 static const struct device *mspi_devices[] = {
@@ -46,7 +52,6 @@ struct mspi_cfg hardware_cfg = {
 	.re_init                  = true,
 };
 #endif
-
 
 static struct mspi_dev_id dev_id[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, MSPI_DEVICE_ID_DT, (,))
@@ -77,7 +82,7 @@ ZTEST(mspi_api, test_mspi_api)
 
 #if TEST_MSPI_REINIT
 	const struct mspi_dt_spec spec = {
-		.bus    = mspi_bus,
+		.bus = mspi_bus,
 		.config = hardware_cfg,
 	};
 
@@ -89,8 +94,8 @@ ZTEST(mspi_api, test_mspi_api)
 
 		zassert_true(device_is_ready(mspi_devices[dev_idx]), "mspi_device is not ready");
 
-		ret = mspi_dev_config(mspi_bus, &dev_id[dev_idx],
-				      MSPI_DEVICE_CONFIG_ALL, &device_cfg[dev_idx]);
+		ret = mspi_dev_config(mspi_bus, &dev_id[dev_idx], MSPI_TEST_DEV_CFG_MASK,
+				      &device_cfg[dev_idx]);
 		zassert_equal(ret, 0, "mspi_dev_config failed.");
 
 #if CONFIG_MSPI_MEMMAP
@@ -111,8 +116,8 @@ ZTEST(mspi_api, test_mspi_api)
 		zassert_equal(ret, 0, "mspi_timing_config failed.");
 #endif
 
-		ret = mspi_register_callback(mspi_bus, &dev_id[dev_idx],
-					     MSPI_BUS_XFER_COMPLETE, NULL, NULL);
+		ret = mspi_register_callback(mspi_bus, &dev_id[dev_idx], MSPI_BUS_XFER_COMPLETE,
+					     NULL, NULL);
 		if (ret == -ENOTSUP) {
 			printf("mspi_register_callback not supported.\n");
 		} else {
@@ -121,7 +126,6 @@ ZTEST(mspi_api, test_mspi_api)
 
 		ret = mspi_get_channel_status(mspi_bus, 0);
 		zassert_equal(ret, 0, "mspi_get_channel_status failed.");
-
 	}
 }
 
