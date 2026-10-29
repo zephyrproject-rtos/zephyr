@@ -792,6 +792,14 @@ static bool ad_is_limited(const struct bt_data *ad, size_t ad_len)
 	return false;
 }
 
+static inline bool adv_is_directed(const struct bt_le_ext_adv *adv)
+{
+	/* The advertiser is assumed to be directed when the peer address has
+	 * been set.
+	 */
+	return !bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY);
+}
+
 static int le_adv_update(struct bt_le_ext_adv *adv,
 			 const struct bt_data *ad, size_t ad_len,
 			 const struct bt_data *sd, size_t sd_len,
@@ -824,11 +832,34 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 	return 0;
 }
 
+#if defined(CONFIG_BT_LIM_ADV)
+static void adv_timeout(struct k_work *work);
+
+/* The timeout runs from when the advertising data got the flag */
+static void lim_adv_timeout_update(struct bt_le_ext_adv *adv, const struct bt_data *ad,
+				   size_t ad_len)
+{
+	/* Directed advertising ignores the data */
+	if (adv_is_directed(adv)) {
+		return;
+	}
+
+	if (!ad_is_limited(ad, ad_len)) {
+		bt_le_lim_adv_cancel_timeout(adv);
+	} else if (!k_work_delayable_is_pending(&adv->lim_adv_timeout_work)) {
+		k_work_init_delayable(&adv->lim_adv_timeout_work, adv_timeout);
+		bt_work_reschedule(&adv->lim_adv_timeout_work,
+				   K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
+	}
+}
+#endif /* CONFIG_BT_LIM_ADV */
+
 int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 			  const struct bt_data *sd, size_t sd_len)
 {
 	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
-	bool scannable;
+	struct bt_ad wrapper;
+	int err;
 
 	if (!adv) {
 		return -EINVAL;
@@ -838,9 +869,37 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 		return -EAGAIN;
 	}
 
-	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
+	/* Nothing would end the limited discoverable mode. Directed advertising
+	 * ignores the data.
+	 */
+	if (!IS_ENABLED(CONFIG_BT_LIM_ADV) && !adv_is_directed(adv) && ad_is_limited(ad, ad_len)) {
+		return -ENOTSUP;
+	}
 
-	return le_adv_update(adv, ad, ad_len, sd, sd_len, false, scannable);
+	wrapper.data = ad;
+	wrapper.len = ad_len;
+
+	err = set_ad(adv, &wrapper, 1);
+	if (err != 0) {
+		return err;
+	}
+
+#if defined(CONFIG_BT_LIM_ADV)
+	/* The Controller has the advertising data, also if the scan response then fails */
+	lim_adv_timeout_update(adv, ad, ad_len);
+#endif /* CONFIG_BT_LIM_ADV */
+
+	if (atomic_test_bit(adv->flags, BT_ADV_SCANNABLE)) {
+		wrapper.data = sd;
+		wrapper.len = sd_len;
+
+		err = set_sd(adv, &wrapper, 1);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	return 0;
 }
 
 static uint8_t get_filter_policy(uint32_t options)
@@ -876,14 +935,6 @@ static uint8_t get_adv_channel_map(uint32_t options)
 	}
 
 	return channel_map;
-}
-
-static inline bool adv_is_directed(const struct bt_le_ext_adv *adv)
-{
-	/* The advertiser is assumed to be directed when the peer address has
-	 * been set.
-	 */
-	return !bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY);
 }
 
 static bool adv_is_high_duty_dir(const struct bt_le_ext_adv *adv)
@@ -1398,8 +1449,6 @@ static int adv_start_ext(struct bt_le_ext_adv *adv,
 }
 
 #if defined(CONFIG_BT_LIM_ADV)
-static void adv_timeout(struct k_work *work);
-
 void bt_le_lim_adv_cancel_timeout(struct bt_le_ext_adv *adv)
 {
 	(void)k_work_cancel_delayable(&adv->lim_adv_timeout_work);
