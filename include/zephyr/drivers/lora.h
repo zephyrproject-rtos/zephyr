@@ -281,7 +281,7 @@ struct lora_modem_config {
 
 	/**
 	 * Fixed packet length when explicit lora header is disabled.
-	 * Make sure that @a data_len from @ref lora_send and @ref lora_send_asnyc
+	 * Make sure that @a data_len from @ref lora_send and @ref lora_send_async
 	 * matches this setting. Otherwise @c -EINVAL is returned.
 	 * Ignored when @c explicit_header_disable is false.
 	 */
