@@ -322,6 +322,19 @@ static inline void get_region_attr_from_mpu_partition_info(
 #endif
 }
 
+/**
+ * This internal function checks if region is enabled or not.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
+ */
+static inline int is_enabled_region(uint32_t index)
+{
+	mpu_set_rnr(index);
+
+	return (mpu_get_rlar() & MPU_RLAR_EN_Msk) ? 1 : 0;
+}
+
 #if defined(CONFIG_USERSPACE)
 
 /**
@@ -353,19 +366,6 @@ static inline uint32_t mpu_region_get_size(uint32_t index)
 {
 	return mpu_region_get_last_addr(index) + 1
 		- mpu_region_get_base(index);
-}
-
-/**
- * This internal function checks if region is enabled or not.
- *
- * Note:
- *   The caller must provide a valid region number.
- */
-static inline int is_enabled_region(uint32_t index)
-{
-	mpu_set_rnr(index);
-
-	return (mpu_get_rlar() & MPU_RLAR_EN_Msk) ? 1 : 0;
 }
 
 #if defined(CONFIG_AARCH32_ARMV8_R)
@@ -730,6 +730,103 @@ static inline uint8_t get_num_regions(void)
 	return mpu_get_num_regions();
 }
 
+/* This internal function checks whether the access permissions of a
+ * programmed MPU region include those requested for a dynamic region.
+ */
+static bool mpu_region_attr_grants(const arm_mpu_region_attr_t *have,
+				   const k_mem_partition_attr_t *want)
+{
+	/* AP[0] set: unprivileged access allowed. AP[1] set: read-only. */
+	uint32_t have_ap = (have->rbar & MPU_RBAR_AP_Msk) >> MPU_RBAR_AP_Pos;
+	uint32_t want_ap = (want->rbar & MPU_RBAR_AP_Msk) >> MPU_RBAR_AP_Pos;
+
+	if (((want_ap & 0x1U) != 0U) && ((have_ap & 0x1U) == 0U)) {
+		return false;
+	}
+
+	if (((want_ap & 0x2U) == 0U) && ((have_ap & 0x2U) != 0U)) {
+		return false;
+	}
+
+	if ((want->rbar & MPU_RBAR_XN_Msk) == 0U) {
+		if ((have->rbar & MPU_RBAR_XN_Msk) != 0U) {
+			return false;
+		}
+
+#ifdef CONFIG_ARM_MPU_PXN
+		if ((want->pxn == 0U) && (have->pxn != 0U)) {
+			return false;
+		}
+#endif
+	}
+
+	return true;
+}
+
+/* This internal function checks a dynamic region against the static MPU
+ * regions.
+ *
+ * Dynamic regions are expected inside the memory areas marked for dynamic
+ * region programming, where the background region is restored or disabled
+ * before the dynamic regions are programmed. A dynamic region outside these
+ * areas may not be programmed on top of a static region: the MPU does not
+ * allow regions to overlap, and the static regions are neither split nor
+ * restored. If the static region already grants the requested access, the
+ * dynamic region needs no programming at all.
+ *
+ * It returns 1 if the dynamic region is covered by a static region that
+ * grants the requested access, 0 if the dynamic region is to be programmed,
+ * or -EINVAL if the dynamic region overlaps a static region that does not
+ * grant the requested access.
+ */
+static int mpu_dynamic_region_check_static(const struct z_arm_mpu_partition *region, int reg_num)
+{
+	uint32_t start = region->start;
+	uint32_t last = region->start + region->size - 1U;
+
+	for (int i = 0; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
+		const struct arm_mpu_region *area = &dyn_reg_info[i].region_conf;
+		uint32_t area_last = area->attr.r_limit | (~MPU_RLAR_LIMIT_Msk);
+
+		if ((dyn_reg_info[i].index != -EINVAL) && (start >= area->base) &&
+		    (last <= area_last)) {
+			return 0;
+		}
+	}
+
+	for (uint32_t r = 0U; r < static_regions_num; r++) {
+		if (is_enabled_region(r) == 0) {
+			continue;
+		}
+
+		uint32_t r_base = mpu_region_get_base(r);
+		uint32_t r_last = mpu_region_get_last_addr(r);
+
+		if ((last < r_base) || (start > r_last)) {
+			continue;
+		}
+
+		if ((start >= r_base) && (last <= r_last)) {
+			arm_mpu_region_attr_t attr;
+
+			mpu_region_get_access_attr(r, &attr);
+			if (mpu_region_attr_grants(&attr, &region->attr)) {
+				LOG_DBG("Dynamic region %d covered by static region %u", reg_num,
+					r);
+				return 1;
+			}
+
+			LOG_ERR("Dynamic region %d: static region %u denies access", reg_num, r);
+			return -EINVAL;
+		}
+
+		LOG_ERR("Dynamic region %d overlaps static region %u", reg_num, r);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /* This internal function programs the dynamic MPU regions.
  *
  * It returns the number of MPU region indices configured.
@@ -756,15 +853,7 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 		region_init(dyn_reg_info[i].index,
 			&dyn_reg_info[i].region_conf);
 	}
-
-	/* In ARMv8-M architecture the dynamic regions are programmed on SRAM,
-	 * forming a full partition of the background area, specified by the
-	 * given boundaries.
-	 */
-	mpu_reg_index = mpu_configure_regions_and_partition(dynamic_regions,
-		regions_num, mpu_reg_index, true);
 #else
-
 	/* We are going to skip the full partition of the background areas.
 	 * So we can disable MPU regions inside which dynamic memory regions
 	 * may be programmed.
@@ -772,14 +861,49 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 	for (int i = 0; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
 		mpu_clear_region(dyn_reg_info[i].index);
 	}
-
-	/* The dynamic regions are now programmed on top of
-	 * existing SRAM region configuration.
-	 */
-	mpu_reg_index = mpu_configure_regions(dynamic_regions,
-		regions_num, mpu_reg_index, true);
-
 #endif /* CONFIG_MPU_GAP_FILLING */
+
+	for (int i = 0; i < regions_num; i++) {
+		int ret;
+
+		if (dynamic_regions[i].size == 0U) {
+			continue;
+		}
+
+		if (mpu_partition_is_valid(&dynamic_regions[i]) == 0) {
+			LOG_ERR("Partition %d: coherence check failed.", i);
+			return -EINVAL;
+		}
+
+		ret = mpu_dynamic_region_check_static(&dynamic_regions[i], i);
+		if (ret < 0) {
+			return -EINVAL;
+		}
+
+		if (ret > 0) {
+			/* Already covered by a static region. */
+			continue;
+		}
+
+#if defined(CONFIG_MPU_GAP_FILLING)
+		/* In ARMv8-M architecture the dynamic regions are programmed
+		 * on SRAM, forming a full partition of the background area,
+		 * specified by the given boundaries.
+		 */
+		mpu_reg_index = mpu_configure_regions_and_partition(&dynamic_regions[i], 1,
+								    mpu_reg_index, false);
+#else
+		/* The dynamic regions are now programmed on top of
+		 * existing SRAM region configuration.
+		 */
+		mpu_reg_index = mpu_configure_regions(&dynamic_regions[i], 1, mpu_reg_index, false);
+#endif /* CONFIG_MPU_GAP_FILLING */
+
+		if (mpu_reg_index == -EINVAL) {
+			return mpu_reg_index;
+		}
+	}
+
 	return mpu_reg_index;
 }
 
