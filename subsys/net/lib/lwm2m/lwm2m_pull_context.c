@@ -32,6 +32,8 @@ static char proxy_uri[LWM2M_PACKAGE_URI_LEN];
 #endif
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
+static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
+					 struct coap_reply *reply, const struct net_sockaddr *from);
 
 static struct firmware_pull_context {
 	uint8_t obj_inst_id;
@@ -64,11 +66,16 @@ static void pull_service(struct k_work *work)
 		/* Nothing to do */
 		break;
 	case STOPPING:
-		/* Clean up the current socket context */
+		/* The objects start and cancel transfers under the registry lock;
+		 * holding it here leaves them no gap between the closing transfer
+		 * and the next one.
+		 */
+		lwm2m_registry_lock();
 		lwm2m_engine_stop(&context.firmware_ctx);
 		lwm2m_engine_update_service_period(pull_service, 5000);
 		pull_service_state = IDLE;
 		k_sem_give(&lwm2m_pull_sem);
+		lwm2m_registry_unlock();
 		break;
 	}
 }
@@ -216,8 +223,8 @@ cleanup:
 	return ret;
 }
 
-static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
-					 struct coap_reply *reply, const struct net_sockaddr *from)
+static int handle_transfer_reply(const struct coap_packet *response, struct coap_reply *reply,
+				 const struct net_sockaddr *from)
 {
 	int ret;
 	bool last_block;
@@ -364,16 +371,34 @@ error:
 	return ret;
 }
 
+/* The firmware object resets its state machine under the registry lock, from
+ * the engine thread or from an application thread. Holding it here keeps a
+ * reset from landing between a block and its result.
+ */
+static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
+					 struct coap_reply *reply, const struct net_sockaddr *from)
+{
+	int ret;
+
+	lwm2m_registry_lock();
+	ret = handle_transfer_reply(response, reply, from);
+	lwm2m_registry_unlock();
+
+	return ret;
+}
+
 static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
-	if (pull_service_state == STOPPING) {
-		return;
+	lwm2m_registry_lock();
+
+	if (pull_service_state != STOPPING) {
+		LOG_ERR("TIMEOUT - Too many retry packet attempts! "
+			"Aborting firmware download.");
+		context.result_cb(context.obj_inst_id, -ENOMSG);
+		cleanup_context();
 	}
 
-	LOG_ERR("TIMEOUT - Too many retry packet attempts! "
-		"Aborting firmware download.");
-	context.result_cb(context.obj_inst_id, -ENOMSG);
-	cleanup_context();
+	lwm2m_registry_unlock();
 }
 
 static void firmware_transfer(void)
