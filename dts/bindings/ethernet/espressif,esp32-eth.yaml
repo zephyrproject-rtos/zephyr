@@ -24,5 +24,6 @@ properties:
 
   pinctrl-0:
     description: |
-      RMII pin configuration, using the RMII_* macros from the SoC
-      pinctrl header to select the GPIO for each signal.
+      RMII or RGMII pin configuration, using the RMII_* or RGMII_* macros
+      from the SoC pinctrl header to select the GPIO for each signal.
+      RGMII is only available on SoCs with a gigabit capable MAC.
