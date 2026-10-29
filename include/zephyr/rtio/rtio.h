@@ -20,10 +20,12 @@
  * operation is complete the next will be executed. If the current operation fails
  * all chained operations will also fail.
  *
- * Operations may also be submitted as a transaction where a set of operations are considered
- * to be one operation.
+ * Operations may also be submitted as a transaction, where a set of operations is handed to one
+ * iodev as a single unit of work. Each member of the set still completes in its own right.
  *
- * The completion of these operations typically provide one or more completion queue events.
+ * Every operation reaches the completion queue, reporting the result it ran with, the error it
+ * failed with, or -ECANCELED if a cancellation stopped it. Only @ref RTIO_SQE_NO_RESPONSE
+ * suppresses that, for an operation that wants no completion however it finishes.
  */
 
 #ifndef ZEPHYR_INCLUDE_RTIO_RTIO_H_
@@ -989,7 +991,9 @@ static inline struct rtio_iodev_sqe *rtio_iodev_sqe_from_handle(struct rtio *r,
  * @brief Attempt to cancel an SQE
  *
  * If possible (not currently executing), cancel an SQE and generate a failure with -ECANCELED
- * result.
+ * result. Cancellation is best effort: a submission that is running or about to run may beat it
+ * and complete with the result its iodev produced. Either way the completion is produced just as
+ * it is for one that runs, unless the submission carries @ref RTIO_SQE_NO_RESPONSE.
  *
  * The submission is identified by an opaque @ref rtio_sqe_handle_t previously
  * captured from @p r (e.g. via rtio_sqe_copy_in_get_handles()). If the submission
@@ -1193,7 +1197,9 @@ static inline int z_impl_rtio_cqe_copy_out(struct rtio *r,
  * @warning It is undefined behavior to have re-entrant calls to submit
  *
  * @param r RTIO context
- * @param wait_count Number of submissions to wait for completion of.
+ * @param wait_count Number of submissions to wait for completion of. Every submission reaches
+ *                   the completion queue, whether it ran, failed or was canceled, so this counts
+ *                   every submission queued except those carrying @ref RTIO_SQE_NO_RESPONSE.
  *
  * @retval 0 On success
  */
