@@ -647,10 +647,7 @@ static void phy_mc_ksz8081_monitor_work_handler(struct k_work *work)
 		data->flags |= KSZ8081_SILENCE_DEBUG_LOGS;
 	}
 
-	if (USING_INTERRUPT_GPIO) {
-		return;
-	}
-
+	/* Keep polling as a fallback when the PHY interrupt is unavailable. */
 	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
