@@ -356,6 +356,12 @@ static uint32_t eth_esp32_validate_rx_frame(struct eth_esp32_dev_data *dev_data,
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_CHECKSUM_OFFLOAD) && last_desc->RDES0.ExtendStatusAvailable &&
+	    (last_desc->ExtendedStatus.IPHeadErr || last_desc->ExtendedStatus.IPPayloadErr)) {
+		eth_esp32_drop_rx_frame(dev_data, first_desc, last_desc);
+		return 0;
+	}
+
 	ret_len = last_desc->RDES0.FrameLength - ETH_CRC_LENGTH;
 	if (ret_len > NET_ETH_MAX_FRAME_SIZE) {
 		eth_esp32_drop_rx_frame(dev_data, first_desc, last_desc);
@@ -465,6 +471,10 @@ static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev __unused,
 
 	if (ETH_ESP32_RGMII) {
 		caps |= ETHERNET_LINK_1000BASE;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CHECKSUM_OFFLOAD)) {
+		caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 	}
 
 	return caps;
