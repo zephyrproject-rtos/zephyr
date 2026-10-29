@@ -47,6 +47,17 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
+Video
+=====
+
+* :c:struct:`video_frmival` and :c:func:`video_frmival_nsec` have been removed in favor of passing
+  :c:type:`uint32_t` frame intervals in microseconds directly. :c:struct:`video_frmival_enum` now
+  uses :c:type:`uint32_t` for its discrete frame interval, and :c:struct:`video_frmival_stepwise`
+  now defines intervals in microseconds (:c:type:`uint32_t`) instead of fractions.
+  :c:func:`video_set_frmival` and :c:func:`video_get_frmival` now take a pointer to a
+  :c:type:`uint32_t` frame interval in microseconds. :c:func:`video_closest_frmival_stepwise` now
+  takes and returns intervals directly in microseconds. (:github:`120731`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth

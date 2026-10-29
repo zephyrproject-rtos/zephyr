@@ -108,8 +108,8 @@ struct uvc_data {
 	const struct device *video_dev;
 	/* Video format cached locally for efficiency */
 	struct video_format video_fmt;
-	/* Current frame interval selected by the host */
-	struct video_frmival video_frmival;
+	/* Current frame interval selected by the host in microseconds */
+	uint32_t video_frmival;
 	/* Signal to alert video devices of buffer-related evenets */
 	struct k_poll_signal *video_sig;
 	/* Last pixel format that was added by uvc_add_format() */
@@ -367,7 +367,7 @@ static int uvc_get_vs_probe_frame_interval(const struct device *dev, struct uvc_
 		probe->dwFrameInterval = sys_cpu_to_le32(1);
 		break;
 	case UVC_GET_CUR:
-		probe->dwFrameInterval = sys_cpu_to_le32(data->video_frmival.numerator);
+		probe->dwFrameInterval = sys_cpu_to_le32(data->video_frmival * 10);
 		break;
 	default:
 		return -EINVAL;
@@ -575,8 +575,7 @@ static int uvc_set_vs_probe(const struct device *dev, const struct net_buf *cons
 	}
 
 	if (probe.dwFrameInterval != 0) {
-		data->video_frmival.numerator = sys_le32_to_cpu(probe.dwFrameInterval);
-		data->video_frmival.denominator = NSEC_PER_SEC / 100;
+		data->video_frmival = sys_le32_to_cpu(probe.dwFrameInterval) / 10;
 	}
 
 	if (probe.bFrameIndex != 0) {
@@ -605,7 +604,7 @@ static int uvc_set_vs_commit(const struct device *dev, const struct net_buf *con
 {
 	struct uvc_data *data = dev->data;
 	struct video_format *fmt = &data->video_fmt;
-	struct video_frmival *frmival = &data->video_frmival;
+	uint32_t frmival = data->video_frmival;
 	int ret;
 
 	__ASSERT_NO_MSG(data->video_dev != NULL);
@@ -615,9 +614,9 @@ static int uvc_set_vs_commit(const struct device *dev, const struct net_buf *con
 		return ret;
 	}
 
-	LOG_INF("Host selected format '%s' %ux%u, frame interval %u/%u",
+	LOG_INF("Host selected format '%s' %ux%u, frame interval %u us",
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height,
-		frmival->numerator, frmival->denominator);
+		frmival);
 
 	if (atomic_test_bit(&data->state, UVC_STATE_STREAM_READY)) {
 		atomic_set_bit(&data->state, UVC_STATE_STREAM_RESTART);
@@ -1315,14 +1314,14 @@ static int uvc_compare_frmival_desc(const void *const a, const void *const b)
 }
 
 static void uvc_set_vs_bitrate_range(struct uvc_frame_common_descriptor *const desc,
-				     const uint64_t frmival_nsec,
+				     const uint32_t frmival_usec,
 				     const struct video_format *const fmt)
 {
 	uint32_t bitrate_min = sys_le32_to_cpu(desc->dwMinBitRate);
 	uint32_t bitrate_max = sys_le32_to_cpu(desc->dwMaxBitRate);
 	uint32_t bitrate;
 
-	bitrate = (uint64_t)fmt->size * frmival_nsec / (NSEC_PER_SEC / 100);
+	bitrate = (uint64_t)fmt->size * frmival_usec / (USEC_PER_SEC / 100);
 
 	/* Extend the min/max value to include the bitrate of this format */
 	bitrate_min = MIN(bitrate_min, bitrate);
@@ -1341,7 +1340,7 @@ static void uvc_set_vs_bitrate_range(struct uvc_frame_common_descriptor *const d
 }
 
 static int uvc_add_vs_frame_interval(struct uvc_frame_common_descriptor *const desc,
-				     const struct video_frmival *const frmival,
+				     const uint32_t frmival_usec,
 				     const struct video_format *const fmt)
 {
 	uint8_t *dwFrameInterval;
@@ -1373,12 +1372,12 @@ static int uvc_add_vs_frame_interval(struct uvc_frame_common_descriptor *const d
 		return -ENOMEM;
 	}
 
-	sys_put_le32(sys_cpu_to_le32(video_frmival_nsec(frmival) / 100),
+	sys_put_le32(sys_cpu_to_le32(frmival_usec * 10),
 		     &dwFrameInterval[sizeof(uint32_t) * *bFrameIntervalType]);
 	*bFrameIntervalType += 1;
 	desc->bLength += sizeof(uint32_t);
 
-	uvc_set_vs_bitrate_range(desc, video_frmival_nsec(frmival), fmt);
+	uvc_set_vs_bitrate_range(desc, frmival_usec, fmt);
 
 	return 0;
 }
@@ -1453,7 +1452,7 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 		case VIDEO_FRMIVAL_TYPE_DISCRETE:
 			LOG_DBG("Adding discrete frame interval %u", fie.index);
 
-			ret = uvc_add_vs_frame_interval(desc, &fie.discrete, fmt);
+			ret = uvc_add_vs_frame_interval(desc, fie.discrete, fmt);
 			if (ret != 0) {
 				return ret;
 			}
@@ -1462,12 +1461,12 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 		case VIDEO_FRMIVAL_TYPE_STEPWISE:
 			LOG_DBG("Adding stepwise frame interval %u", fie.index);
 
-			ret = uvc_add_vs_frame_interval(desc, &fie.stepwise.min, fmt);
+			ret = uvc_add_vs_frame_interval(desc, fie.stepwise.min, fmt);
 			if (ret != 0) {
 				return ret;
 			}
 
-			ret = uvc_add_vs_frame_interval(desc, &fie.stepwise.max, fmt);
+			ret = uvc_add_vs_frame_interval(desc, fie.stepwise.max, fmt);
 			if (ret != 0) {
 				return ret;
 			}
@@ -1479,11 +1478,9 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 		fie.index++;
 	}
 
-	/* If no frame intrval supported, default to 30 FPS */
+	/* If no frame interval supported, default to 30 FPS */
 	if (*bFrameIntervalType == 0) {
-		struct video_frmival frmival = {.numerator = 1, .denominator = 30};
-
-		ret = uvc_add_vs_frame_interval(desc, &frmival, fmt);
+		ret = uvc_add_vs_frame_interval(desc, USEC_PER_SEC / 30, fmt);
 		if (ret != 0) {
 			return ret;
 		}
@@ -2039,7 +2036,7 @@ static int uvc_get_format(const struct device *dev, struct video_format *const f
 	return 0;
 }
 
-static int uvc_get_frmival(const struct device *dev, struct video_frmival *const frmival)
+static int uvc_get_frmival(const struct device *dev, uint32_t *const frmival)
 {
 	struct uvc_data *data = dev->data;
 

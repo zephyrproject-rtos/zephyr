@@ -306,14 +306,14 @@ static int video_renesas_ra_ceu_dequeue(const struct device *dev, struct video_b
 	return 0;
 }
 
-static int video_renesas_ra_ceu_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_renesas_ra_ceu_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_renesas_ra_ceu_config *config = dev->config;
 
 	return video_get_frmival(config->source_dev, frmival);
 }
 
-static int video_renesas_ra_ceu_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_renesas_ra_ceu_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_renesas_ra_ceu_config *config = dev->config;
 
