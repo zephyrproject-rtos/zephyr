@@ -124,8 +124,8 @@
 		 */
 		reset-gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
 
-		flash-storage = <&flash_1>;
-		flash-offset = <0>;
+		cirrus,flash-storage = <&flash_1>;
+		cirrus,flash-offset = <0>;
 
 		status = "okay";
 	};
