@@ -19,7 +19,7 @@
 #include <hal/mipi_dsi_brg_ll.h>
 #include <hal/dw_gdma_ll.h>
 #include <soc/interrupts.h>
-#include <esp_intr_alloc.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include "display_esp32_dsi.h"
 
@@ -42,9 +42,8 @@ LOG_MODULE_REGISTER(display_esp32_dsi, CONFIG_DISPLAY_LOG_LEVEL);
 struct display_esp32_dsi_config {
 	const struct device *panel;
 	uint8_t dma_channel;
-	uint8_t irq_source;
-	uint8_t irq_priority;
-	uint8_t irq_flags;
+	unsigned int irq;
+	void (*irq_configure)(void);
 	uint16_t width;
 	uint16_t height;
 	uint32_t pixel_format;
@@ -67,7 +66,7 @@ struct display_esp32_dsi_data {
 	bool started;
 	uint32_t writers;
 	void *prev_buf;
-	intr_handle_t dma_intr;
+	bool irq_connected;
 	struct k_spinlock lock;
 	atomic_t dma_err_count;
 	atomic_t frame_count;
@@ -234,9 +233,9 @@ static int display_esp32_dsi_wait_buffer_free(struct display_esp32_dsi_data *dat
 	return 0;
 }
 
-static void display_esp32_dsi_dma_isr(void *arg)
+static void display_esp32_dsi_dma_isr(const void *arg)
 {
-	struct display_esp32_dsi_data *data = arg;
+	struct display_esp32_dsi_data *data = (struct display_esp32_dsi_data *)arg;
 	dw_gdma_dev_t *dma = DW_GDMA_LL_GET_HW(0);
 	uint8_t ch = data->dma_channel;
 
@@ -396,20 +395,11 @@ static int display_esp32_dsi_dma_setup(const struct device *dev)
 			DW_GDMA_LL_CHANNEL_EVENT_SHADOWREG_OR_LLI_INVALID_ERR,
 		true);
 
-	if (data->dma_intr == NULL) {
-		int err = esp_intr_alloc_intrstatus(
-			config->irq_source,
-			ESP_INTR_FLAG_SHARED | ESP_PRIO_TO_FLAGS(config->irq_priority) |
-				ESP_INT_FLAGS_CHECK(config->irq_flags),
-			(uint32_t)dw_gdma_ll_get_intr_status_reg(dma),
-			DW_GDMA_LL_CHANNEL_EVENT_MASK(ch), display_esp32_dsi_dma_isr, data,
-			&data->dma_intr);
-		if (err != 0) {
-			LOG_ERR("Failed to allocate DMA interrupt (%d)", err);
-			dw_gdma_ll_channel_enable(dma, ch, false);
-			return -EIO;
-		}
+	if (!data->irq_connected) {
+		config->irq_configure();
+		data->irq_connected = true;
 	}
+	irq_enable(config->irq);
 
 	dw_gdma_ll_channel_set_link_list_master_port(dma, ch, DW_GDMA_LL_MASTER_PORT_MEMORY);
 
@@ -487,6 +477,7 @@ int display_esp32_dsi_start(const struct device *dev, uint32_t bits_per_pixel)
 
 int display_esp32_dsi_stop(const struct device *dev)
 {
+	const struct display_esp32_dsi_config *config = dev->config;
 	struct display_esp32_dsi_data *data = dev->data;
 	dw_gdma_dev_t *dma = DW_GDMA_LL_GET_HW(0);
 
@@ -511,9 +502,7 @@ int display_esp32_dsi_stop(const struct device *dev)
 	 * channel is idle, not that a handler already latched on the other
 	 * core has finished re-arming it.
 	 */
-	if (data->dma_intr != NULL) {
-		esp_intr_disable(data->dma_intr);
-	}
+	irq_disable(config->irq);
 
 	dw_gdma_ll_channel_enable_intr_propagation(
 		dma, data->dma_channel,
@@ -521,11 +510,6 @@ int display_esp32_dsi_stop(const struct device *dev)
 			DW_GDMA_LL_CHANNEL_EVENT_SHADOWREG_OR_LLI_INVALID_ERR,
 		false);
 	dw_gdma_ll_channel_abort(dma, data->dma_channel);
-
-	if (data->dma_intr != NULL) {
-		esp_intr_free(data->dma_intr);
-		data->dma_intr = NULL;
-	}
 
 	/* Release a writer blocked on a frame that will never be presented,
 	 * then wait for every one of them to leave before the buffers they
@@ -1020,13 +1004,17 @@ static int display_esp32_dsi_init(const struct device *dev)
 
 #define DISPLAY_ESP32_DSI_DEVICE(inst)                                                             \
 	static struct display_esp32_dsi_data display_esp32_dsi_data_##inst;                        \
+	static void display_esp32_dsi_irq_configure_##inst(void)                                   \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), IRQ_DEFAULT_PRIORITY, display_esp32_dsi_dma_isr,    \
+			    &display_esp32_dsi_data_##inst, 0);                                    \
+	}                                                                                          \
 	static const struct device *const display_esp32_dsi_panels_##inst[] = {                    \
 		DISPLAY_ESP32_DSI_PANEL(inst)};                                                    \
 	static const struct display_esp32_dsi_config display_esp32_dsi_config_##inst = {           \
 		.dma_channel = DT_INST_PROP(inst, dma_channel),                                    \
-		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                    \
-		.irq_priority = DT_INST_IRQ_BY_IDX(inst, 0, priority),                             \
-		.irq_flags = DT_INST_IRQ_BY_IDX(inst, 0, flags),                                   \
+		.irq = DT_INST_IRQN(inst),                                                         \
+		.irq_configure = display_esp32_dsi_irq_configure_##inst,                           \
 		.panel = ARRAY_SIZE(display_esp32_dsi_panels_##inst)                               \
 				 ? display_esp32_dsi_panels_##inst[0]                              \
 				 : NULL,                                                           \
