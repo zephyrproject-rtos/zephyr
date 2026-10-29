@@ -86,6 +86,9 @@ static void bcmgenet_reset(const struct device *dev)
 	bcmgenet_write(dev, GENET_MAC_MIB_CTRL, value);
 	k_busy_wait(2);
 	bcmgenet_write(dev, GENET_MAC_MIB_CTRL, 0);
+
+	/* A bootloader may leave 2-byte receive alignment enabled */
+	bcmgenet_clear_bits(dev, GENET_RBUF_CTRL, GENET_RBUF_ALIGN_2B);
 }
 
 static void bcmgenet_ctrl(const struct device *dev, bool enable)
@@ -99,15 +102,12 @@ static void bcmgenet_ctrl(const struct device *dev, bool enable)
 
 static void bcmgenet_dma_ctrl(const struct device *dev, bool enable)
 {
-	uint32_t dma_ctrl;
-
 	if (enable) {
-		dma_ctrl = GENET_DMA_RING_BUF_EN(GENET_QUEUES) | GENET_DMA_EN;
-		bcmgenet_set_bits(dev, GENET_TX_DMA_CTRL, dma_ctrl);
-		bcmgenet_set_bits(dev, GENET_RX_DMA_CTRL, dma_ctrl);
+		bcmgenet_set_bits(dev, GENET_TX_DMA_CTRL, GENET_DMA_CTRL);
+		bcmgenet_set_bits(dev, GENET_RX_DMA_CTRL, GENET_DMA_CTRL);
 	} else {
-		bcmgenet_clear_bits(dev, GENET_TX_DMA_CTRL, GENET_DMA_EN);
-		bcmgenet_clear_bits(dev, GENET_RX_DMA_CTRL, GENET_DMA_EN);
+		bcmgenet_clear_bits(dev, GENET_TX_DMA_CTRL, GENET_DMA_CTRL);
+		bcmgenet_clear_bits(dev, GENET_RX_DMA_CTRL, GENET_DMA_CTRL);
 	}
 }
 
@@ -152,14 +152,21 @@ static int bcmgenet_rx_ring_init(const struct device *dev)
 	struct bcmgenet_data *data = dev->data;
 	int ret;
 
+	/*
+	 * The ring pointers and indices only take writes while the ring is
+	 * disabled; reset them so that no state left by a bootloader remains.
+	 */
+	bcmgenet_write(dev, GENET_RX_DMA_RING_CFG, 0);
 	bcmgenet_write(dev, GENET_RX_DMA_SCB_BURST_SIZE, GENET_DMA_MAX_BURST_LEN);
 	bcmgenet_write(dev, GENET_RX_DMA_START_ADDR, 0);
 	bcmgenet_write(dev, GENET_RX_DMA_READ_PTR, 0);
 	bcmgenet_write(dev, GENET_RX_DMA_WRITE_PTR, 0);
 	bcmgenet_write(dev, GENET_RX_DMA_END_ADDR, GENET_DMA_DESC_SIZE_GET(GENET_NB_RX_DESCS));
+	bcmgenet_write(dev, GENET_RX_DMA_PIDX, 0);
+	bcmgenet_write(dev, GENET_RX_DMA_CIDX, 0);
 
+	data->cidx = 0;
 	data->rx_idx = 0;
-	bcmgenet_write(dev, GENET_RX_DMA_CIDX, bcmgenet_read(dev, GENET_RX_DMA_PIDX));
 
 	bcmgenet_write(dev, GENET_RX_DMA_RING_BUF_SIZE,
 		       GENET_DMA_RING_SIZE_SET(GENET_NB_RX_DESCS) | GENET_BUF_SIZE);
@@ -282,14 +289,18 @@ static void bcmgenet_tx_ring_init(const struct device *dev)
 {
 	struct bcmgenet_data *data = dev->data;
 
+	/* Reset the ring while it is disabled, as for Rx */
+	bcmgenet_write(dev, GENET_TX_DMA_RING_CFG, 0);
 	bcmgenet_write(dev, GENET_TX_DMA_SCB_BURST_SIZE, GENET_DMA_MAX_BURST_LEN);
 	bcmgenet_write(dev, GENET_TX_DMA_START_ADDR, 0);
 	bcmgenet_write(dev, GENET_TX_DMA_READ_PTR, 0);
 	bcmgenet_write(dev, GENET_TX_DMA_WRITE_PTR, 0);
 	bcmgenet_write(dev, GENET_TX_DMA_END_ADDR, GENET_DMA_DESC_SIZE_GET(GENET_NB_TX_DESCS));
+	bcmgenet_write(dev, GENET_TX_DMA_PIDX, 0);
+	bcmgenet_write(dev, GENET_TX_DMA_CIDX, 0);
 
+	data->pidx = 0;
 	data->tx_idx = 0;
-	bcmgenet_write(dev, GENET_TX_DMA_PIDX, bcmgenet_read(dev, GENET_TX_DMA_CIDX));
 
 	bcmgenet_write(dev, GENET_TX_DMA_MBUF_DONE_THRESH, BIT(0));
 	bcmgenet_write(dev, GENET_TX_DMA_FLOW_PERIOD, 0);

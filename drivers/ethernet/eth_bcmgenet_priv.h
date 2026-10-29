@@ -76,7 +76,8 @@
 #define GENET_DMA_DESC_OFF_GET(i, o) (((i) * GENET_DMA_DESC_SIZE) + (o))
 
 /* Tx/Rx DMA descriptor bits */
-#define GENET_DMA_EN BIT(0)
+#define GENET_DMA_EN   BIT(0)
+#define GENET_DMA_CTRL (GENET_DMA_RING_BUF_EN(GENET_QUEUES) | GENET_DMA_EN)
 
 #define GENET_DMA_MAX_BURST_LEN       BIT(3)
 #define GENET_DMA_WRAP                BIT(12)
