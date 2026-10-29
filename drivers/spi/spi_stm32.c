@@ -2276,6 +2276,14 @@ static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action a
 		if (err < 0) {
 			return err;
 		}
+#if defined(CONFIG_SOC_SERIES_STM32WLX)
+		/*
+		 * Stop 2 does not retain SPIx. Stop 0/1 and a clock-only
+		 * runtime suspend do. The PM callback cannot tell them
+		 * apart, so drop the cached config for this series only.
+		 */
+		data->ctx.config = NULL;
+#endif
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Stop device clock. */
