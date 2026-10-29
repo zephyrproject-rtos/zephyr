@@ -23,6 +23,7 @@ ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/ll/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/mesh/compile.sh
+${ZEPHYR_BASE}/tests/bsim/bluetooth/profiles/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/services/compile.sh
 if [ ${BOARD} == "nrf52_bsim/native" ]; then
