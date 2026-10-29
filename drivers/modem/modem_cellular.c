@@ -64,6 +64,8 @@ static void modem_cellular_delegate_event_ptr(struct modem_cellular_data *data,
 static void modem_cellular_event_handler(struct modem_cellular_data *data,
 					 enum modem_cellular_event evt);
 
+static void modem_cellular_connect_cmux_power_off(struct modem_cellular_data *data);
+
 static const char *modem_cellular_state_str(enum modem_cellular_state state)
 {
 	switch (state) {
@@ -991,6 +993,10 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 	}
 
 	data->recovery_count = 0;
+	/* Modem is powered off, so no CMUX connect attempt is outstanding */
+	data->suspend_pending = false;
+	data->cmux_connect_failed = false;
+	data->cmux_bus_opened = false;
 	modem_cellular_clear_registration_status(data);
 	modem_cellular_notify_user_pipes_disconnected(data);
 	modem_chat_release(&data->chat);
@@ -1327,6 +1333,7 @@ static void modem_cellular_recovery_event_handler(struct modem_cellular_data *da
 		 * next connect attempt. No-op when CMUX is not attached.
 		 */
 		modem_cmux_release(&data->cmux);
+		data->cmux_connect_failed = false;
 
 		if (modem_cellular_gpio_is_enabled(&config->reset_gpio) &&
 		    config->reset_on_recovery) {
@@ -1339,6 +1346,11 @@ static void modem_cellular_recovery_event_handler(struct modem_cellular_data *da
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
+		if (data->cmux_connect_failed) {
+			/* Still powered and likely in CMUX mode, as when suspended mid connect */
+			modem_cellular_connect_cmux_power_off(data);
+			break;
+		}
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
 		break;
 
@@ -1447,6 +1459,8 @@ static int modem_cellular_on_connect_cmux_state_enter(struct modem_cellular_data
 	data->suspend_pending = false;
 	data->cmux_connect_failed = false;
 	data->cmux_bus_opened = false;
+	/* Drop any DLCI2 pipe from a previous session, it is reassigned once DLCI2 opens */
+	data->cmd_pipe = NULL;
 	modem_cellular_start_timer(data, K_MSEC(100));
 	return 0;
 }
