@@ -25,6 +25,9 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
@@ -87,6 +90,130 @@ static volatile bool big_synced;
 static volatile bool base_received;
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
+static uint8_t acl_conn_count;
+
+#define LED1_NODE DT_ALIAS(led0)
+#define LED2_NODE DT_ALIAS(led1)
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE) || DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+#define LED_BLINK_INTERVAL K_MSEC(250)
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+static const struct gpio_dt_spec led_iso = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
+static struct k_work_delayable led_iso_work;
+static bool led_iso_is_on;
+static bool led_iso_blinking;
+static bool led_iso_ready;
+
+static void led_iso_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (!led_iso_blinking) {
+		return;
+	}
+
+	led_iso_is_on = !led_iso_is_on;
+	(void)gpio_pin_set_dt(&led_iso, (int)led_iso_is_on);
+	(void)k_work_reschedule(&led_iso_work, LED_BLINK_INTERVAL);
+}
+
+static void led_iso_blink_set(bool enable)
+{
+	if (!led_iso_ready) {
+		return;
+	}
+
+	led_iso_blinking = enable;
+
+	if (!enable) {
+		(void)k_work_cancel_delayable(&led_iso_work);
+		led_iso_is_on = false;
+		(void)gpio_pin_set_dt(&led_iso, 0);
+		return;
+	}
+
+	(void)k_work_reschedule(&led_iso_work, K_NO_WAIT);
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
+#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+static const struct gpio_dt_spec led_acl = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
+static struct k_work_delayable led_acl_work;
+static bool led_acl_is_on;
+static bool led_acl_blinking;
+static bool led_acl_ready;
+
+static void led_acl_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (!led_acl_blinking) {
+		return;
+	}
+
+	led_acl_is_on = !led_acl_is_on;
+	(void)gpio_pin_set_dt(&led_acl, (int)led_acl_is_on);
+	(void)k_work_reschedule(&led_acl_work, LED_BLINK_INTERVAL);
+}
+
+static void led_acl_blink_set(bool enable)
+{
+	if (!led_acl_ready) {
+		return;
+	}
+
+	led_acl_blinking = enable;
+
+	if (!enable) {
+		(void)k_work_cancel_delayable(&led_acl_work);
+		led_acl_is_on = false;
+		(void)gpio_pin_set_dt(&led_acl, 0);
+		return;
+	}
+
+	(void)k_work_reschedule(&led_acl_work, K_NO_WAIT);
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
+
+static void leds_init(void)
+{
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	if (gpio_is_ready_dt(&led_iso)) {
+		int err;
+
+		err = gpio_pin_configure_dt(&led_iso, GPIO_OUTPUT_INACTIVE);
+		if (err == 0) {
+			k_work_init_delayable(&led_iso_work, led_iso_work_handler);
+			led_iso_ready = true;
+		}
+	}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
+#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+	if (gpio_is_ready_dt(&led_acl)) {
+		int err;
+
+		err = gpio_pin_configure_dt(&led_acl, GPIO_OUTPUT_INACTIVE);
+		if (err == 0) {
+			k_work_init_delayable(&led_acl_work, led_acl_work_handler);
+			led_acl_ready = true;
+		}
+	}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
+}
+
+#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+static void update_acl_led(void)
+{
+	led_acl_blink_set(acl_conn_count > 0U);
+}
+#else
+static void update_acl_led(void)
+{
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ,
@@ -395,6 +522,11 @@ static void broadcast_sink_started_cb(struct bt_bap_broadcast_sink *sink)
 	printk("Broadcast sink %p started\n", sink);
 
 	big_synced = true;
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	led_iso_blink_set(true);
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
 	k_sem_give(&sem_big_synced);
 }
 
@@ -403,6 +535,11 @@ static void broadcast_sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_
 	printk("Broadcast sink %p stopped with reason 0x%02X\n", sink, reason);
 
 	big_synced = false;
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	led_iso_blink_set(false);
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
 	k_sem_give(&sem_broadcast_sink_stopped);
 }
 
@@ -678,6 +815,9 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	printk("Connected: %s\n", bt_conn_dst_str(conn));
+	acl_conn_count++;
+	update_acl_led();
+
 	broadcast_assistant_conn = bt_conn_ref(conn);
 
 	k_sem_give(&sem_connected);
@@ -685,6 +825,11 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	if (acl_conn_count > 0U) {
+		acl_conn_count--;
+	}
+	update_acl_led();
+
 	if (conn != broadcast_assistant_conn) {
 		return;
 	}
@@ -962,6 +1107,8 @@ static int init(void)
 
 	printk("Bluetooth initialized\n");
 
+	leds_init();
+
 	err = bt_pacs_register(&pacs_param);
 	if (err != 0) {
 		printk("Could not register PACS (err %d)\n", err);
@@ -1010,12 +1157,19 @@ static int reset(void)
 	req_recv_state = NULL;
 	big_synced = false;
 	base_received = false;
+	acl_conn_count = 0U;
 	(void)memset(&base_recv_data, 0, sizeof(base_recv_data));
 	(void)memset(&requested_bis_sync, 0, sizeof(requested_bis_sync));
 	(void)memset(sink_broadcast_code, 0, sizeof(sink_broadcast_code));
 	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
 	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
 	broadcaster_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	led_iso_blink_set(false);
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
+	update_acl_led();
 
 	if (broadcast_sink != NULL) {
 		err = bt_bap_broadcast_sink_delete(broadcast_sink);
