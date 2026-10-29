@@ -14,11 +14,9 @@
 #include <esp_clk_tree.h>
 #include <esp_private/esp_clk_tree_common.h>
 #include <hal/emac_periph.h>
+#include <hal/gpio_ll.h>
 #include <soc/gpio_periph.h>
 #include <soc/io_mux_reg.h>
-#if SOC_EMAC_USE_MULTI_IO_MUX
-#include <hal/gpio_ll.h>
-#endif
 
 /*
  * Find the IOMUX entry matching a specific GPIO number.
@@ -50,7 +48,7 @@ static inline void esp32_emac_iomux_output(const emac_iomux_info_t *pin, uint32_
 	if (pin == NULL) {
 		return;
 	}
-	PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	ARG_UNUSED(sig_idx);
 }
 
@@ -59,8 +57,8 @@ static inline void esp32_emac_iomux_input(const emac_iomux_info_t *pin, uint32_t
 	if (pin == NULL) {
 		return;
 	}
-	PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-	PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	gpio_ll_input_enable(&GPIO, pin->gpio_num);
+	gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 #if SOC_EMAC_USE_MULTI_IO_MUX
 	/*
 	 * On P4, tell the peripheral to read input from IOMUX pad
@@ -194,8 +192,8 @@ static inline void esp32_emac_iomux_rmii_clk_input(int gpio_num)
 
 	pin = esp32_emac_iomux_find(emac_rmii_iomux_pins.clki, gpio_num);
 	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_input_enable(&GPIO, pin->gpio_num);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 }
 #endif
@@ -206,80 +204,80 @@ static inline void esp32_emac_iomux_init_mii(void)
 
 	/*
 	 * ESP32 EMAC uses dedicated IOMUX pins, not GPIO matrix.
-	 * Only PIN_FUNC_SELECT is needed to route signals.
+	 * Only the IOMUX function select is needed to route signals.
 	 */
 
 	/* TX_CLK - input */
 	pin = emac_mii_iomux_pins.clk_tx;
 	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_input_enable(&GPIO, pin->gpio_num);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	/* TX_EN - output */
 	pin = emac_mii_iomux_pins.tx_en;
 	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	/* TXD0-3 - outputs */
 	pin = emac_mii_iomux_pins.txd0;
 	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	pin = emac_mii_iomux_pins.txd1;
 	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	pin = emac_mii_iomux_pins.txd2;
 	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	pin = emac_mii_iomux_pins.txd3;
 	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	/* RX_CLK - input */
 	pin = emac_mii_iomux_pins.clk_rx;
 	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_input_enable(&GPIO, pin->gpio_num);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	/* RX_DV - input */
 	pin = emac_mii_iomux_pins.rx_dv;
 	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_input_enable(&GPIO, pin->gpio_num);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	/* RXD0-3 - inputs */
 	pin = emac_mii_iomux_pins.rxd0;
 	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_input_enable(&GPIO, pin->gpio_num);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	pin = emac_mii_iomux_pins.rxd1;
 	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_input_enable(&GPIO, pin->gpio_num);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	pin = emac_mii_iomux_pins.rxd2;
 	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_input_enable(&GPIO, pin->gpio_num);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 
 	pin = emac_mii_iomux_pins.rxd3;
 	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+		gpio_ll_input_enable(&GPIO, pin->gpio_num);
+		gpio_ll_func_sel(&GPIO, pin->gpio_num, pin->func);
 	}
 }
 
