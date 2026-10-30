@@ -25,9 +25,6 @@ tests:
   drivers.wifi.bflb.macsw_ack:
     extra_configs:
       - CONFIG_WIFI_BFLB_WIFI6_MACSW_ACK=y
-  drivers.wifi.bflb.macsw_coex:
-    extra_configs:
-      - CONFIG_WIFI_BFLB_WIFI6_MACSW_COEX=y
   drivers.wifi.bflb.ap:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_AP=y

@@ -183,3 +183,26 @@ __printf_like(1, 2) int blob_printf(const char *format, ...)
 #endif
 	return 0;
 }
+
+/* Uses enum wifi_diag_level, translate to zephyr levels */
+bool wifi_verbosity_enabled(uint8_t severity)
+{
+#if defined(CONFIG_LOG) && !defined(CONFIG_WIFI_LOG_LEVEL_OFF)
+#if defined(CONFIG_WIFI_LOG_LEVEL_DBG)
+#define LOG_MAX WIFI_DIAG_DEBUG
+#elif defined(CONFIG_WIFI_LOG_LEVEL_INF)
+#define LOG_MAX WIFI_DIAG_INFO
+#elif defined(CONFIG_WIFI_LOG_LEVEL_WRN)
+#define LOG_MAX WIFI_DIAG_WARN
+#else
+#define LOG_MAX WIFI_DIAG_ERROR
+#endif
+	if (severity <= LOG_MAX) {
+		return true;
+	}
+	return false;
+#undef LOG_MAX
+#else
+	return false;
+#endif
+}

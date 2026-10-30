@@ -16,21 +16,59 @@
 
 #include <bflb_soc.h>
 #include <wl_api.h>
+#include <aon_reg.h>
 #include <rfparam/rfparam_adapter.h>
 
 LOG_MODULE_REGISTER(bflb_rf, LOG_LEVEL_ERR);
 
-#define XTAL_FREQ DT_PROP(DT_NODELABEL(clk_crystal), clock_frequency)
+#define XTAL_FREQ		DT_PROP(DT_NODELABEL(clk_crystal), clock_frequency)
 
-#define AON_BASE_ADDR       0x2000f000U
-#define AON_XTAL_CFG_OFFSET 0x884U
-#define AON_XTAL_CFG_ADDR   (AON_BASE_ADDR + AON_XTAL_CFG_OFFSET)
-#define CAPCODE_IN_POS      22U
-#define CAPCODE_OUT_POS     16U
-#define CAPCODE_MSK         0x3fU
+#define WIFI_NODE		DT_INST(0, bflb_wifi6)
+#define BT_NODE			DT_INST(0, bflb_bt_hci)
+#define IEEE802154_NODE		DT_INST(0, bflb_ieee802154)
 
-#define BFLB_EFUSE_DEFAULT_TRIM 0x80U
-#define TEMPERATURE_MP_DEFAULT  35
+#define AON_XTAL_CFG_ADDR	(AON_BASE + AON_XTAL_CFG_OFFSET)
+#define CAPCODE_IN_POS		AON_XTAL_CAPCODE_IN_AON_POS
+#define CAPCODE_OUT_POS		AON_XTAL_CAPCODE_OUT_AON_POS
+#define CAPCODE_MSK		0x3fU
+
+#define BFLB_EFUSE_DEFAULT_TRIM	0x80U
+#define TEMPERATURE_MP_DEFAULT	35
+
+#define DT_COPY_I8(node, prop, dst, n)                                                             \
+	do {                                                                                       \
+		static const int32_t _v[] = {                                                      \
+			DT_FOREACH_PROP_ELEM_SEP(node, prop,                                       \
+				DT_PROP_BY_IDX, (,))};                                             \
+		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
+		for (int _i = 0; _i < (n); _i++) {                                                 \
+			(dst)[_i] = (int8_t)_v[_i];                                                \
+		}                                                                                  \
+	} while (0)
+
+#define DT_COPY_I16(node, prop, dst, n)                                                            \
+	do {                                                                                       \
+		static const int32_t _v[] = {                                                      \
+			DT_FOREACH_PROP_ELEM_SEP(node, prop,                                       \
+				DT_PROP_BY_IDX, (,))};                                             \
+		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
+		for (int _i = 0; _i < (n); _i++) {                                                 \
+			(dst)[_i] = (int16_t)_v[_i];                                               \
+		}                                                                                  \
+	} while (0)
+
+/* pwr-offset DTS encoding: 16 = 0 dBm, step 0.25 dBm */
+#define DT_COPY_PWR_OFFSET(node, prop, dst, n)                                                     \
+	do {                                                                                       \
+		static const int32_t _v[] = {                                                      \
+			DT_FOREACH_PROP_ELEM_SEP(node, prop,                                       \
+				DT_PROP_BY_IDX, (,))};                                             \
+		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
+		for (int _i = 0; _i < (n); _i++) {                                                 \
+			(dst)[_i] = (int8_t)(_v[_i] - 16);                                         \
+		}                                                                                  \
+	} while (0)
+
 
 struct efuse_trim_desc {
 	uint16_t en_addr;
@@ -139,44 +177,6 @@ static void capcode_set(uint8_t capcode_in, uint8_t capcode_out)
 	       ((uint32_t)(capcode_out & CAPCODE_MSK) << CAPCODE_OUT_POS);
 	sys_write32(val, AON_XTAL_CFG_ADDR);
 }
-
-#define WIFI_NODE       DT_INST(0, bflb_wifi6)
-#define BT_NODE         DT_INST(0, bflb_bt_hci)
-#define IEEE802154_NODE DT_INST(0, bflb_ieee802154)
-
-#define DT_COPY_I8(node, prop, dst, n)                                                             \
-	do {                                                                                       \
-		static const int32_t _v[] = {                                                      \
-			DT_FOREACH_PROP_ELEM_SEP(node, prop,              \
-				DT_PROP_BY_IDX, (,))};                   \
-		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
-		for (int _i = 0; _i < (n); _i++) {                                                 \
-			(dst)[_i] = (int8_t)_v[_i];                                                \
-		}                                                                                  \
-	} while (0)
-
-#define DT_COPY_I16(node, prop, dst, n)                                                            \
-	do {                                                                                       \
-		static const int32_t _v[] = {                                                      \
-			DT_FOREACH_PROP_ELEM_SEP(node, prop,              \
-				DT_PROP_BY_IDX, (,))};                   \
-		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
-		for (int _i = 0; _i < (n); _i++) {                                                 \
-			(dst)[_i] = (int16_t)_v[_i];                                               \
-		}                                                                                  \
-	} while (0)
-
-/* pwr-offset DTS encoding: 16 = 0 dBm, step 0.25 dBm */
-#define DT_COPY_PWR_OFFSET(node, prop, dst, n)                                                     \
-	do {                                                                                       \
-		static const int32_t _v[] = {                                                      \
-			DT_FOREACH_PROP_ELEM_SEP(node, prop,              \
-				DT_PROP_BY_IDX, (,))};                   \
-		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
-		for (int _i = 0; _i < (n); _i++) {                                                 \
-			(dst)[_i] = (int8_t)(_v[_i] - 16);                                         \
-		}                                                                                  \
-	} while (0)
 
 int8_t rfparam_load(struct wl_param_t *param)
 {

@@ -17,13 +17,14 @@
 #include <bflb_soc.h>
 #include <wl_api.h>
 #include <aon_reg.h>
+#include <rfparam/rfparam_adapter.h>
 
-LOG_MODULE_REGISTER(bflb_rf, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(bflb_rf, LOG_LEVEL_ERR);
 
-#define XTAL_FREQ	DT_PROP(DT_NODELABEL(clk_crystal), clock_frequency)
+#define XTAL_FREQ		DT_PROP(DT_NODELABEL(clk_crystal), clock_frequency)
 
-#define WIFI_NODE	DT_INST(0, bflb_wifi6)
-#define BT_NODE		DT_INST(0, bflb_bt_hci)
+#define WIFI_NODE		DT_INST(0, bflb_wifi6)
+#define BT_NODE			DT_INST(0, bflb_bt_hci)
 
 #define AON_XTAL_CFG_ADDR	(AON_BASE + AON_XTAL_CORE0_OFFSET)
 #define CAPCODE_IN_POS		AON_XTAL_CAPCODE_IN_AON_POS
@@ -32,8 +33,6 @@ LOG_MODULE_REGISTER(bflb_rf, LOG_LEVEL_DBG);
 
 #define BFLB_EFUSE_DEFAULT_TRIM	0x80U
 #define TEMPERATURE_MP_DEFAULT	35
-
-#define RFPARAM_ERR_PARAM_CHECK -50
 
 #define DT_COPY_I8(node, prop, dst, n)                                                             \
 	do {                                                                                       \
@@ -190,7 +189,7 @@ static void capcode_set(uint8_t capcode_in, uint8_t capcode_out)
 	sys_write32(val, AON_XTAL_CFG_ADDR);
 }
 
-static int8_t rfparam_load(struct wl_param_t *param)
+int8_t rfparam_load(struct wl_param_t *param)
 {
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 	static const struct efuse_trim_desc *const tmp_mp_descs[] = {
@@ -303,7 +302,7 @@ static int8_t rfparam_load(struct wl_param_t *param)
 		}
 	}
 
-	return 0;
+	return RFPARAM_SUSS;
 }
 
 static void efuse_load_trims(struct wl_cfg_t *cfg)

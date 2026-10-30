@@ -9,6 +9,7 @@ set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld 
 
 if(CONFIG_BT_BFLB OR CONFIG_WIFI_BFLB OR CONFIG_IEEE802154_BFLB)
   zephyr_sources(bflb_rf.c)
+  zephyr_include_directories(${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/common/wifi6)
 endif()
 
 if(CONFIG_IEEE802154_BFLB)
