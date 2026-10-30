@@ -1,0 +1,159 @@
+# Copyright (c) 2024 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+if XEN
+
+config ZEPHYR_XENLIB_MODULE
+	bool
+
+config XENLIB
+	bool "xenlib library"
+	depends on ZEPHYR_XENLIB_MODULE
+	help
+	  xenlib library
+
+config XEN_STORE_COMMON
+	bool
+	help
+	  Common code for handling xenstore.
+
+config XEN_STORE_SRV
+	bool "Enable XenStore server"
+	select XEN_STORE_COMMON
+	help
+	  Enable xenstore server library. It should be included
+	  if you are running Zephyr as Dom0.
+
+config XEN_STORE_SRV_SHELL_CMDS
+	depends on SHELL
+	depends on XEN_STORE_SRV
+	default y
+	bool "Enable XenStore server shell"
+	help
+	  Enable shell for XenStore server.
+
+config XEN_LIBFDT
+	bool "Enable libfdt support"
+	help
+	  Enable libfdt module. This module allows you to generate
+	  Domain device tree based on the parameters set in the
+	  Domain config. It provides complete toolset to work with
+	  flattened device tree.
+
+config PARTIAL_DEVICE_TREE_SIZE
+	int "Domain device tree size"
+	default 8192
+	help
+	  Maximum size of the domain device tree
+
+config XEN_DOMAIN_MANAGEMENT
+	bool "Enable Xen Domain Management"
+	help
+	  Enable domain management library. This library allows you
+	  to create, destroy and manage xen domains.
+
+config XEN_DOMAIN_MANAGEMENT_SHELL_CMDS
+	depends on SHELL
+	depends on XEN_DOMAIN_MANAGEMENT
+	default y
+	bool "Enable Xen domain management shell"
+	help
+	  Enable shell for Xen domain management.
+
+config XEN_DOMCFG_SECTION
+	bool "Enable Xen domain config section"
+	default y
+	depends on XEN_DOMAIN_MANAGEMENT
+	help
+	  Enable gathering domain configurations to a common section.
+	  This allows you to declare multiple domain configs with
+	  a DECL_CONFIG macro. Configs can be later accessed by
+	  their name.
+
+config XEN_DOMCFG_READ_PDT
+	bool "Enable reading of domain partial device-tree (PDT) binary"
+	default y
+	depends on XEN_DOMAIN_MANAGEMENT
+	help
+	  Enables reading of domain partial device-tree (PDT) binary by using
+	  callbacks in struct xen_domain_cfg.
+	  It also enables this feature in "xu create" shell command which will
+	  try to load PDT binary using struct xen_domain_cfg callbacks.
+
+config XEN_CONSOLE_SRV
+	bool "Enable Xen Console server"
+	help
+	  Enable xen console server. It should be included if you
+	  are running Zephyr as Dom0, otherwise any DomU that uses
+	  Xen para-virtual console (PVC) may lock up. On other hand,
+	  this server can be omitted if you are certain that DomUs
+	  will never touch PV console.
+
+config XEN_SHELL
+	bool "Enable Xen shell commands"
+	select SHELL
+	help
+	  Enable set of Xen shell commands for domain management.
+
+config XENSTORE_SHELL_READ_SIZE
+	int "Size of xs read buffer"
+	default 256
+	depends on XEN_SHELL
+	help
+	  Sets the maximum size that xs read cmd can handle
+
+config XENSTORE_TREE_TRAVERSE_DEPTH
+	int "Maximum xs traverse depth"
+	default 8
+	range 1 16
+	help
+	  Sets the maximum xs traverse depth to avoid stack overflow
+	  in case of deeply nested XS trees.
+
+config XEN_VCH
+	bool "Enable Xen vchannels support"
+	help
+	  Enable vchannel communication library.
+
+config VCH_PATH_MAXLEN
+	int "Maximum length of vchannel ID to read from XenStore"
+	default 32
+	help
+	  The maximum XenStore path size that identify a separate vchannel.
+
+config PFN_CHUNK_SIZE
+	int "Chunk size for memory mapping operations"
+	default 128
+	help
+	  Chunk size for helper functions for mapping/unmapping
+	  memory from guest domain to Dom0.
+
+config DOMU_MAX
+	int "Maximum number of DomUs"
+	default 4
+	range 1 32
+	help
+	  Maximum number of DomUs that can be created and launched.
+
+config XSTAT
+	bool "Enable XSTAT support"
+	help
+	  Enable xstat support which allows statistic information about running domains
+
+config XSTAT_SHELL_CMDS
+	depends on XSTAT
+	depends on SHELL
+	bool "Enable XSTAT shell commands"
+	help
+	  Enable set of XSTAT shell commands.
+
+config XEN_DOM0LESS_BOOT
+	bool "Xen dom0less boot support [EXPERIMENTAL]"
+	help
+	  Enable to support Xen dom0less boot. The domains started by Xen
+	  will be identified and added to xenlib domain management subsystem, for each domain
+	  xenstore will be initialized.
+
+	  This is EXPERIMENTAL and depends on work in Xen mainline.
+
+endif # XEN
