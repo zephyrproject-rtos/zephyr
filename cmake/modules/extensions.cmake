@@ -7328,10 +7328,15 @@ function(add_llext_target target_name)
   set(has_post_build_cmds "$<TARGET_PROPERTY:${llext_proc_target},has_post_build_cmds>")
   set(noop_cmd ${CMAKE_COMMAND} -E true)
   set(copy_cmd ${CMAKE_COMMAND} -E copy ${llext_lib_output} ${llext_pkg_input})
+  # The dependency on `llext_proc_target` only orders this command after any
+  # POST_BUILD commands, it does not make `llext_pkg_input` out of date. The
+  # file dependency on `llext_lib_output` makes this command re-run whenever
+  # the library is rebuilt, so that the build tool re-checks `llext_pkg_input`
+  # and re-packages the llext if a POST_BUILD command regenerated it.
   add_custom_command(
     OUTPUT ${llext_pkg_input}
     COMMAND "$<IF:${has_post_build_cmds},${noop_cmd},${copy_cmd}>"
-    DEPENDS ${llext_proc_target}
+    DEPENDS ${llext_proc_target} ${llext_lib_output}
     COMMAND_EXPAND_LISTS
   )
 
