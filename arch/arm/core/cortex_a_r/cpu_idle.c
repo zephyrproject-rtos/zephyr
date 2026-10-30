@@ -71,14 +71,11 @@ void arch_cpu_atomic_idle(unsigned int key)
 #endif
 
 	/*
-	 * Lock PRIMASK while sleeping: wfe will still get interrupted by
-	 * incoming interrupts but the CPU will not service them right away.
+	 * Keep IRQs masked while sleeping. WFI wakes for a pending IRQ even
+	 * when CPSR.I is set; the ISR runs after IRQs are unmasked.
 	 */
 	__disable_irq();
-
-	/* No BASEPRI, call wfe directly
-	 */
-	SLEEP_IF_ALLOWED(__WFE);
+	SLEEP_IF_ALLOWED(__WFI);
 
 	if (!key) {
 		__enable_irq();
