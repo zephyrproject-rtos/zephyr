@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.emc1702:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim
