@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config REALTEK_AMEBA_TIMER_STACK_SIZE
+	int "Ameba software timer thread stack size"
+	default 6144
+	range 1024 65536
+	help
+	  Stack for the dedicated thread that executes vendor software timer
+	  callbacks. Wi-Fi authentication callbacks can take mutexes and must
+	  not execute in interrupt context or on the system workqueue.
+
+config REALTEK_AMEBA_TIMER_PRIORITY
+	int "Ameba software timer thread priority"
+	default 4 if NUM_PREEMPT_PRIORITIES > 4
+	default 0
+	range 0 127
+	help
+	  Preemptible priority of the dedicated Ameba software timer thread.
