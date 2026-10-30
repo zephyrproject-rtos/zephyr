@@ -1,0 +1,63 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PolarFire SoC clock controller
+
+compatible: "microchip,mpfs-pll"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      MSS PLL register region.
+
+  clocks:
+    required: true
+    description: External MSS PLL reference clock.
+
+  "#clock-cells":
+    description: Clock specifier is a single clock ID.
+
+child-binding:
+  description: Child clock nodes (PLL outputs)
+  properties:
+    reg:
+      type: int
+      required: true
+      description: MSS PLL output index
+
+    clocks:
+      type: phandle-array
+      required: true
+      description: Reference to parent clock (PLL or other clock source).
+
+    "#clock-cells":
+      type: int
+      required: true
+      description: Clock specifier is a single clock ID. Required if node acts as clock provider.
+
+    frequency-max:
+      type: int
+      required: true
+      description: Maximum output frequency in Hz.
+
+    frequency-min:
+      type: int
+      required: true
+      description: Minimum output frequency in Hz.
+
+    frequency-step:
+      type: int
+      default: 1
+      description: Frequency step in Hz.
+
+  child-binding:
+    description: Child clock nodes (PLL outputs)
+    properties:
+      compatible:
+        type: string-array
+        enum:
+          - microchip,mpfs-clk
+          - microchip,pic64gx-clk
