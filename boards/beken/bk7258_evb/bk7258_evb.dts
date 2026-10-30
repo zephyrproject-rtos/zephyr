@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 Beken Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board-level devicetree for the BK7258 EVB.
+ *
+ * A board file only has three jobs:
+ *   1. declare which SoC it is
+ *   2. fill in /chosen (console / sram / flash)
+ *   3. enable the SoC peripherals that are actually wired up, which are
+ *      status = "disabled" by default
+ *
+ * Wiring: UART0 is brought out to a CH340 USB bridge, TX on GPIO11 and RX on
+ * GPIO10, and the UART driver initialises the port. When
+ * CONFIG_SOC_BK7258_VENDOR_FIRMWARE is set, the firmware the device ships with
+ * has already configured it and the driver leaves it alone instead.
+ */
+
+/dts-v1/;
+
+#include <beken/bk7258.dtsi>
+
+/ {
+	model = "Beken BK7258 EVB";
+	compatible = "beken,bk7258-evb";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		/*
+		 * No zephyr,code-partition: the application slot is one whole
+		 * code region and there is no sub-partition concept here.
+		 */
+	};
+};
+
+/* UART0 is the console port */
+&uart0 {
+	status = "okay";
+};
