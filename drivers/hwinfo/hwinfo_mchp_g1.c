@@ -51,7 +51,8 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 	*supported = RESET_POR | RESET_BROWNOUT | RESET_PIN | RESET_WATCHDOG | RESET_SOFTWARE |
 		     RESET_USER | RESET_LOW_POWER_WAKE;
 
-#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC)
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC) ||                                          \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA)
 	*supported |= RESET_CPU_LOCKUP;
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC */
 
@@ -86,7 +87,8 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if ((rcause & BIT(RSTC_G1_RCAUSE_BACKUP)) != 0) {
 		result |= RESET_LOW_POWER_WAKE;
 	}
-#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC)
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC) ||                                          \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA)
 	if ((rcause & BIT(RSTC_G1_RCAUSE_LOCKUP)) != 0) {
 		result |= RESET_CPU_LOCKUP;
 	}
