@@ -279,7 +279,7 @@
 		};
 
 		crc: crc@48200000 {
-			compatible = "st,stm32-crc";
+			compatible = "st,stm32-crc-v2";
 			reg = <0x48200000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(AHB0, 12)>;
 			resets = <&rctl STM32_RESET(AHB0, 12)>;

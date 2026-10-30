@@ -79,7 +79,7 @@
 		 * which is not compatible with `st,stm32-crc`.
 		 */
 		crc: crc@40023000 {
-			compatible = "st,stm32-crc";
+			compatible = "st,stm32-crc-v2";
 			reg = <0x40023000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 6)>;
 			status = "disabled";

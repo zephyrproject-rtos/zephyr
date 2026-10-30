@@ -183,6 +183,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&crc {
+	status = "okay";
+};
+
 &backup_sram {
 	status = "okay";
 };

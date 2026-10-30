@@ -311,7 +311,7 @@
 		};
 
 		crc: crc@504c0000 {
-			compatible = "st,stm32-crc";
+			compatible = "st,stm32-crc-v2";
 			reg = <0x504c0000 0x400>;
 			clocks = <&rcc STM32_CLOCK(CRC, STM32_CLK)>;
 			status = "disabled";

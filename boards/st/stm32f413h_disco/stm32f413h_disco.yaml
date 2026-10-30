@@ -12,4 +12,5 @@ supported:
   - arduino_serial
   - arduino_i2c
   - arduino_spi
+  - crc
 vendor: st

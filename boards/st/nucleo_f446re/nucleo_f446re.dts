@@ -149,6 +149,10 @@
 	status = "okay";
 };
 
+&crc {
+	status = "okay";
+};
+
 &backup_sram {
 	status = "okay";
 };

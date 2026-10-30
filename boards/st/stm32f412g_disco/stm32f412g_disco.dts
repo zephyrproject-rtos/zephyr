@@ -151,6 +151,10 @@
 	status = "okay";
 };
 
+&crc {
+	status = "okay";
+};
+
 &quadspi {
 	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pg6
 		     &quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9
