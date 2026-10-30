@@ -10,7 +10,10 @@ tests:
   keyvalstorage.zms.sim.no_erase:
     extra_configs:
       - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=n
-    platform_allow: qemu_x86
+      - CONFIG_FLASH_SIMULATOR_CALLBACKS=y
+    platform_allow:
+      - native_sim
+      - qemu_x86
   keyvalstorage.zms.sim.corrupt_close:
     extra_configs:
       - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=y
