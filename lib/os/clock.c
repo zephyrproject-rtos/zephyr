@@ -183,7 +183,7 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 
 	/* sleep for relative time duration */
 	if ((sizeof(rqtp->tv_sec) == sizeof(int64_t)) &&
-	    unlikely(rqtp->tv_sec >= (time_t)(UINT64_MAX / NSEC_PER_SEC))) {
+	    unlikely(duration.tv_sec >= (time_t)(UINT64_MAX / NSEC_PER_SEC))) {
 		uint64_t ns = (uint64_t)k_sleep(K_SECONDS(duration.tv_sec - 1)) * NSEC_PER_MSEC;
 		struct timespec rem = {
 			.tv_sec = (time_t)(ns / NSEC_PER_SEC),
