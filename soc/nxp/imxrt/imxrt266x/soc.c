@@ -23,7 +23,7 @@
 #include "soc_clock.h"
 
 #include <fsl_common.h>
-#include <fsl_powercon.h>
+#include <fsl_power.h>
 
 /*
  * The ROM leaves SCB->VTOR at 0 and SystemInit() only relocates it for a RAM
@@ -72,14 +72,23 @@ static void soc_llc_init(void)
 }
 
 /*
- * Release the sleep hold, which comes out of reset set. It pins the CMC state
- * machine at its current step, so a WFI never completes: only a debugger halt
- * brings the core back. The SDK clears it from POWER_SetPolicy(); nothing else
- * in this port programs POWERCON, so it happens here.
+ * The HAL's one-time POWERCON, PDCON and MEMCON baseline, which every fsl_power
+ * entry point assumes: function clocks, the standby mask that keeps a plain WFI
+ * a core-only sleep, the PDCON and MEMCON trigger modes, the NPU, COMM and MEDIA
+ * domains powered, and every wakeup source masked until a driver enables it. It
+ * also releases the sleep hold, which comes out of reset set and pins the CMC
+ * state machine, so that no WFI would complete. The SDK runs it from its board
+ * boot code ahead of the clock bring-up, followed by the default policy, which is
+ * the hardware reset state.
  */
-static void soc_release_sleep_hold(void)
+static void soc_power_init(void)
 {
-	POWERCON_DisableSleepHold(SYSCON__POWERCON_CMC0_CTRL);
+	power_policy_config_t policy;
+
+	POWER_Init();
+
+	POWER_GetDefaultPolicyConfig(&policy);
+	POWER_SetPolicy(&policy);
 }
 
 void soc_reset_hook(void)
@@ -106,7 +115,7 @@ void soc_early_init_hook(void)
 	/* Access control first: every step after it is a peripheral access. */
 	soc_trdc_setup();
 
-	soc_release_sleep_hold();
+	soc_power_init();
 
 	/*
 	 * Caches before the clock bring-up, whose switching window saves and

@@ -31,7 +31,9 @@ tests:
       - native_sim
       - native_sim/native/64
       - frdm_mcxn236
+      - mimxrt2660_evk/mimxrt2663/cm85
     platform_allow:
       - native_sim
       - native_sim/native/64
       - frdm_mcxn236
+      - mimxrt2660_evk/mimxrt2663/cm85

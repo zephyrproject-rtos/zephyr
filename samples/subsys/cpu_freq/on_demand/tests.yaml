@@ -20,9 +20,11 @@ tests:
     integration_platforms:
       - native_sim
       - native_sim/native/64
+      - mimxrt2660_evk/mimxrt2663/cm85
     platform_allow:
       - native_sim
       - native_sim/native/64
+      - mimxrt2660_evk/mimxrt2663/cm85
 
   sample.cpu_freq.stub:
     integration_platforms:
