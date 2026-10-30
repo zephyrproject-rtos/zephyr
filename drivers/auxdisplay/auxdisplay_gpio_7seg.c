@@ -30,7 +30,8 @@ static const uint8_t DIGITS[] = {
 #define BLANK (0x00)
 
 struct auxdisplay_gpio_7seg_data {
-	struct k_timer timer;
+	const struct device *dev;
+	struct k_work_delayable refresh_dwork;
 	uint32_t refresh_pos;
 	int16_t cursor_x;
 	int16_t cursor_y;
@@ -48,20 +49,29 @@ struct auxdisplay_gpio_7seg_config {
 
 static int auxdisplay_gpio_7seg_display_on(const struct device *dev)
 {
-	const struct auxdisplay_gpio_7seg_config *cfg = dev->config;
 	struct auxdisplay_gpio_7seg_data *data = dev->data;
 
 	data->refresh_pos = 0;
-	k_timer_start(&data->timer, K_NO_WAIT, K_MSEC(cfg->refresh_period_ms));
+	k_work_schedule(&data->refresh_dwork, K_NO_WAIT);
 
 	return 0;
 }
 
 static int auxdisplay_gpio_7seg_display_off(const struct device *dev)
 {
+	const struct auxdisplay_gpio_7seg_config *cfg = dev->config;
 	struct auxdisplay_gpio_7seg_data *data = dev->data;
+	struct k_work_sync sync;
 
-	k_timer_stop(&data->timer);
+	k_work_cancel_delayable_sync(&data->refresh_dwork, &sync);
+
+	/* Turn off all digits */
+	for (uint32_t i = 0; i < cfg->digit_count; i++) {
+		gpio_pin_set_dt(&cfg->digit_gpios[i], 0);
+	}
+
+	/* Reset the refresh position */
+	data->refresh_pos = 0;
 
 	return 0;
 }
@@ -168,11 +178,13 @@ static int auxdisplay_gpio_7seg_write(const struct device *dev, const uint8_t *c
 	return 0;
 }
 
-static void auxdisplay_gpio_7seg_timer_expiry_fn(struct k_timer *timer)
+static void auxdisplay_gpio_7seg_refresh_fn(struct k_work *work)
 {
-	const struct device *dev = k_timer_user_data_get(timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct auxdisplay_gpio_7seg_data *data =
+		CONTAINER_OF(dwork, struct auxdisplay_gpio_7seg_data, refresh_dwork);
+	const struct device *dev = data->dev;
 	const struct auxdisplay_gpio_7seg_config *cfg = dev->config;
-	struct auxdisplay_gpio_7seg_data *data = dev->data;
 
 	/* Turn off the current digit and move to the next one */
 	gpio_pin_set_dt(&cfg->digit_gpios[data->refresh_pos], 0);
@@ -185,27 +197,16 @@ static void auxdisplay_gpio_7seg_timer_expiry_fn(struct k_timer *timer)
 
 	/* Turn on the new digit */
 	gpio_pin_set_dt(&cfg->digit_gpios[data->refresh_pos], 1);
-}
 
-static void auxdisplay_gpio_7seg_timer_stop_fn(struct k_timer *timer)
-{
-	const struct device *dev = k_timer_user_data_get(timer);
-	const struct auxdisplay_gpio_7seg_config *cfg = dev->config;
-	struct auxdisplay_gpio_7seg_data *data = dev->data;
-
-	/* Turn off all digits */
-	for (uint32_t i = 0; i < cfg->digit_count; i++) {
-		gpio_pin_set_dt(&cfg->digit_gpios[i], 0);
-	}
-
-	/* Reset the refresh position */
-	data->refresh_pos = 0;
+	k_work_schedule(&data->refresh_dwork, K_MSEC(cfg->refresh_period_ms));
 }
 
 static int auxdisplay_gpio_7seg_init(const struct device *dev)
 {
 	const struct auxdisplay_gpio_7seg_config *cfg = dev->config;
 	struct auxdisplay_gpio_7seg_data *data = dev->data;
+
+	data->dev = dev;
 
 	for (uint32_t i = 0; i < cfg->segment_count; i++) {
 		gpio_pin_configure_dt(&cfg->segment_gpios[i], GPIO_OUTPUT_INACTIVE);
@@ -215,9 +216,7 @@ static int auxdisplay_gpio_7seg_init(const struct device *dev)
 		gpio_pin_configure_dt(&cfg->digit_gpios[i], GPIO_OUTPUT_INACTIVE);
 	}
 
-	k_timer_init(&data->timer, auxdisplay_gpio_7seg_timer_expiry_fn,
-		     auxdisplay_gpio_7seg_timer_stop_fn);
-	k_timer_user_data_set(&data->timer, (void *)dev);
+	k_work_init_delayable(&data->refresh_dwork, auxdisplay_gpio_7seg_refresh_fn);
 
 	auxdisplay_gpio_7seg_display_on(dev);
 
