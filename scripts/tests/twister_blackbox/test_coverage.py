@@ -13,18 +13,63 @@ Covered options:
   --disable-coverage-aggregation  Skip the merged coverage report
   --gcov-tool PATH             Override the gcov binary
   --coverage-basedir DIR       Base directory for source paths in reports
+  --coverage-exclude-dir DIR   Additional directory to exclude from reports
 """
 
+import json
 import os
 from unittest import mock
 
 import pytest
-from conftest import TEST_DATA, TEST_FILENAME_MOCK
+from conftest import TEST_DATA, TEST_FILENAME_MOCK, requires_tool
 from twisterlib.testplan import TestPlan
 from twisterlib.twister_main import main as twister_main
 
 AGNOSTIC = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
 GROUP2 = os.path.join(AGNOSTIC, 'group2')
+
+_COVERAGE_REPORT_FILENAME = {'gcovr': 'coverage.json', 'lcov': 'coverage.info'}
+# Cache of baseline (no --coverage-exclude-dir) report paths, keyed by tool,
+# so each backend's reference build only runs once across this module.
+_BASELINE_PATHS_CACHE: dict[str, list[str]] = {}
+
+
+def _covered_paths(out_path, tool):
+    """Return the source file paths present in a generated coverage report."""
+    report_path = os.path.join(out_path, _COVERAGE_REPORT_FILENAME[tool])
+    if tool == 'gcovr':
+        with open(report_path) as fh:
+            data = json.load(fh)
+        return [f['file'] for f in data.get('files', [])]
+
+    # lcov: paths are listed as 'SF:<path>' lines in the tracefile.
+    with open(report_path) as fh:
+        return [line[len('SF:'):].strip() for line in fh if line.startswith('SF:')]
+
+
+def _is_under(path, dirname):
+    """True if dirname is a path component of path.
+
+    Matches add_ignore_directory()'s semantics for both gcovr's base_dir
+    -relative paths (e.g. 'kernel/sched.c', no leading separator) and
+    lcov's absolute paths (e.g. '/.../kernel/sched.c').
+    """
+    return path == dirname or path.startswith(dirname + '/') or ('/' + dirname + '/') in path
+
+
+def _baseline_coverage_paths(tmp_path_factory, tool):
+    """Build once per tool without --coverage-exclude-dir and cache the paths."""
+    if tool not in _BASELINE_PATHS_CACHE:
+        out_path = str(tmp_path_factory.mktemp(f'coverage_baseline_{tool}'))
+        args = [
+            '-i', '--outdir', out_path, '-T', AGNOSTIC,
+            '--coverage', '--coverage-tool', tool, '-p', 'native_sim',
+        ]
+        assert twister_main(args) == 0
+        _BASELINE_PATHS_CACHE[tool] = _covered_paths(out_path, tool)
+    return _BASELINE_PATHS_CACHE[tool]
+
+
 
 
 @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
@@ -221,4 +266,90 @@ class TestDisableCoverageAggregation:
         # ... but the merged report must not have been generated.
         assert not os.path.isfile(os.path.join(out_path, 'coverage.log')), (
             'coverage.log should not be generated when aggregation is disabled'
+        )
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestCoverageExcludeDir:
+    """Tests for --coverage-exclude-dir option."""
+
+    @pytest.mark.build
+    @pytest.mark.parametrize(
+        'tool',
+        [
+            pytest.param('gcovr', marks=requires_tool('gcovr')),
+            pytest.param('lcov', marks=requires_tool('lcov')),
+        ],
+        ids=['gcovr', 'lcov'],
+    )
+    def test_coverage_exclude_dir_removes_matching_paths(self, out_path, tmp_path_factory, tool):
+        """--coverage-exclude-dir removes matching source paths from the report."""
+        baseline = _baseline_coverage_paths(tmp_path_factory, tool)
+        assert any(_is_under(p, 'kernel') for p in baseline), (
+            f'baseline {tool} report has no kernel/ paths; the exclusion check below '
+            'would be vacuous'
+        )
+
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '--coverage',
+            '--coverage-tool',
+            tool,
+            '--coverage-exclude-dir',
+            'kernel',
+            '-p',
+            'native_sim',
+        ]
+        assert twister_main(args) == 0
+
+        paths = _covered_paths(out_path, tool)
+        assert paths, 'Expected some covered source paths in the report'
+        remaining = [p for p in paths if _is_under(p, 'kernel')]
+        assert not remaining, f'--coverage-exclude-dir did not remove kernel/ paths: {remaining}'
+
+    @pytest.mark.build
+    @requires_tool('gcovr')
+    def test_coverage_exclude_dir_repeated_flags_all_apply(self, out_path, tmp_path_factory):
+        """Multiple --coverage-exclude-dir flags are all applied (action='append')."""
+        baseline = _baseline_coverage_paths(tmp_path_factory, 'gcovr')
+        assert any(_is_under(p, 'kernel') for p in baseline), (
+            'baseline gcovr report has no kernel/ paths; the exclusion check below would '
+            'be vacuous'
+        )
+        assert any(_is_under(p, 'arch') for p in baseline), (
+            'baseline gcovr report has no arch/ paths; the exclusion check below would '
+            'be vacuous'
+        )
+
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '--coverage',
+            '--coverage-tool',
+            'gcovr',
+            '--coverage-exclude-dir',
+            'kernel',
+            '--coverage-exclude-dir',
+            'arch',
+            '-p',
+            'native_sim',
+        ]
+        assert twister_main(args) == 0
+
+        paths = _covered_paths(out_path, 'gcovr')
+        assert paths, 'Expected some covered source paths in the report'
+        remaining_kernel = [p for p in paths if _is_under(p, 'kernel')]
+        remaining_arch = [p for p in paths if _is_under(p, 'arch')]
+        assert not remaining_kernel, (
+            f'--coverage-exclude-dir did not remove kernel/ paths: {remaining_kernel}'
+        )
+        assert not remaining_arch, (
+            f'--coverage-exclude-dir did not remove arch/ paths: {remaining_arch}'
         )

@@ -163,6 +163,21 @@ command line option, for example:
 
    $ west twister --coverage -p native_sim --coverage-basedir $ZEPHYR_BASE -T your_project_dir
 
+Twister always excludes the ``generated``, ``tests`` and ``samples`` directories from the
+report. To exclude further directories -- for example vendor code or third-party libraries
+pulled in by your project -- pass ``--coverage-exclude-dir`` with a directory name; the
+option may be repeated and is honored by both ``gcovr`` and ``lcov``. The match applies
+anywhere in a file's path, not just relative to your project root, so prefer a specific or
+distinctive name to avoid excluding an unrelated directory that happens to share it. Stick
+to plain directory names: ``gcovr`` interprets the pattern as a regular expression and
+``lcov`` as a shell glob, so wildcard characters do not behave identically across the two
+tools:
+
+.. code-block:: console
+
+   $ west twister --coverage -p native_sim --coverage-basedir $ZEPHYR_BASE \
+       --coverage-exclude-dir mbedtls --coverage-exclude-dir vendor_hal -T your_project_dir
+
 .. note::
 
    By default, Twister calls ``gcovr`` tool which filters source files assuming real paths

@@ -556,6 +556,7 @@ complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o a -l arch -r
 complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o A -l board-root -xa "(__zephyr_west_complete_directories)" -d "add a board root"
 complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l alt-config-root -xa "(__zephyr_west_complete_directories)" -d "alternative configuration root"
 complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l coverage-basedir -xa "(__zephyr_west_complete_directories)" -d "base directory for coverage"
+complete -c west -n "__zephyr_west_seen_subcommand_from twister" -l coverage-exclude-dir -xa "(__zephyr_west_complete_directories)" -d "directory to exclude from coverage"
 complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o O -l outdir -xa "(__zephyr_west_complete_directories)" -d "output directory"
 complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o o -l report-dir -xa "(__zephyr_west_complete_directories)" -d "output reports directory"
 complete -c west -n "__zephyr_west_seen_subcommand_from twister" -o T -l testsuite-root -xa "(__zephyr_west_complete_directories)" -d "testsuite root directory"
