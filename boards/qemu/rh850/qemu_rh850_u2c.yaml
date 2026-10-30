@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: qemu_rh850_u2c
+name: QEMU emulation for Renesas RH850/U2C
+type: qemu
+simulation:
+  - name: qemu
+arch: rh850
+toolchain:
+  - rh850
+env:
+  - RH850_TOOLCHAIN_PATH
+ram: 1248
+flash: 8192
+supported:
+  - uart
+testing:
+  default: true
+  ignore_tags:
+    - bluetooth
+    - cache
+    - can
+    - cpp
+    - net
+vendor: renesas
