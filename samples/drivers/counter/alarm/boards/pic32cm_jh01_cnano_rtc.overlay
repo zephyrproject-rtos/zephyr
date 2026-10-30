@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use the RTC peripheral as the counter for this sample.
+ * Build with: -DFILE_SUFFIX=rtc
+ */
+
+/ {
+	aliases {
+		counter = &rtc;
+	};
+};
+
+&rtc {
+	compatible = "microchip,rtc-g1-counter";
+	max-bit-width = <32>;
+	status = "okay";
+};
