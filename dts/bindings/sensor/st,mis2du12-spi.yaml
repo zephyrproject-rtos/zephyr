@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics MIS2DU12 3-axis accelerometer accessed through SPI bus
+
+compatible: "st,mis2du12"
+
+include: ["st,lis2du12-common.yaml", "spi-device.yaml"]
+
+on-bus: spi
