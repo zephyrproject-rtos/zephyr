@@ -5,7 +5,7 @@ menuconfig WIFI_ESP32
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
-	depends on !SMP
+	depends on !SMP || SOC_SERIES_ESP32S3
 	select THREAD_CUSTOM_DATA
 	select EVENTS
 	select NET_L2_WIFI_MGMT
@@ -20,9 +20,9 @@ menuconfig WIFI_ESP32
 	select DYNAMIC_THREAD
 	select DYNAMIC_THREAD_ALLOC
 	help
-	  Enable ESP32 SoC WiFi support. Only supported in single
-	  core mode because the network stack is not aware of SMP
-	  stuff.
+	  Enable ESP32 SoC Wi-Fi support. Under SMP the Wi-Fi task is pinned
+	  to the core selected by ESP32_WIFI_TASK_CORE_ID, the core the Wi-Fi
+	  interrupt is routed to.
 
 if WIFI_ESP32
 

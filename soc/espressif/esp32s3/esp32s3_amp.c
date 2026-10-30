@@ -21,9 +21,6 @@
 
 #define TAG "amp"
 
-/* AMP support */
-#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_ENABLE_APPCPU
-
 #include <bootloader_flash_priv.h>
 
 #define sys_mmap   bootloader_mmap
@@ -89,8 +86,8 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	sys_munmap(data);
 
 	if (image_header.header_magic == ESP_LOAD_HEADER_MAGIC) {
-		ESP_EARLY_LOGI(TAG,
-			"APPCPU image, area id: %d, offset: 0x%x, hdr.off: 0x%x, size: %d kB",
+		ESP_EARLY_LOGI(
+			TAG, "APPCPU image, area id: %d, offset: 0x%x, hdr.off: 0x%x, size: %d kB",
 			fa_id, fa_offset, hdr_offset, fa_size / 1024);
 	} else if ((image_header.header_magic & 0xff) == 0xE9) {
 		ESP_EARLY_LOGE(TAG, "ESP image format is not supported");
@@ -114,31 +111,31 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 
 	if (!esp_ptr_in_iram((void *)image_header.entry_addr)) {
 		ESP_EARLY_LOGE(TAG, "Application entry point (%xh) is not in IRAM. Aborting",
-			   image_header.entry_addr);
+			       image_header.entry_addr);
 		abort();
 	}
 
 	ESP_EARLY_LOGI(TAG, "IRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load",
-		   (fa_offset + image_header.iram_flash_offset), image_header.iram_dest_addr,
-		   image_header.iram_size, image_header.iram_size);
+		       (fa_offset + image_header.iram_flash_offset), image_header.iram_dest_addr,
+		       image_header.iram_size, image_header.iram_size);
 
 	load_segment(fa_offset + image_header.iram_flash_offset, image_header.iram_size,
 		     image_header.iram_dest_addr);
 
 	ESP_EARLY_LOGI(TAG, "DRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load",
-		   (fa_offset + image_header.dram_flash_offset), image_header.dram_dest_addr,
-		   image_header.dram_size, image_header.dram_size);
+		       (fa_offset + image_header.dram_flash_offset), image_header.dram_dest_addr,
+		       image_header.dram_size, image_header.dram_size);
 
 	load_segment(fa_offset + image_header.dram_flash_offset, image_header.dram_size,
 		     image_header.dram_dest_addr);
 
 	ESP_EARLY_LOGI(TAG, "IROM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) map",
-		   (fa_offset + image_header.irom_flash_offset), image_header.irom_map_addr,
-		   image_header.irom_size, image_header.irom_size);
+		       (fa_offset + image_header.irom_flash_offset), image_header.irom_map_addr,
+		       image_header.irom_size, image_header.irom_size);
 
 	ESP_EARLY_LOGI(TAG, "DROM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) map",
-		   (fa_offset + image_header.drom_flash_offset), image_header.drom_map_addr,
-		   image_header.drom_size, image_header.drom_size);
+		       (fa_offset + image_header.drom_flash_offset), image_header.drom_map_addr,
+		       image_header.drom_size, image_header.drom_size);
 
 	struct rom_segments rom = {
 		image_header.drom_map_addr,
@@ -195,5 +192,3 @@ int esp_appcpu_init(void)
 extern int esp_appcpu_init(void);
 SYS_INIT(esp_appcpu_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
-
-#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_ENABLE_APPCPU */
