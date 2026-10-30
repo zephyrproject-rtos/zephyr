@@ -9,8 +9,8 @@ tests:
     arch_exclude:
       - posix
       - tricore
-    build_only: true
     filter: CONFIG_ATOMIC_OPERATIONS_C
     integration_platforms:
+      - qemu_cortex_m0
       - rpi_pico
       - robokit1
