@@ -2065,6 +2065,11 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 
 	__ASSERT((ctrl_cfg != NULL), "Controller configuration should not be NULL");
 
+	if (ctrl_cfg->scl.i3c == 0U) {
+		LOG_ERR("%s: I3C SCL rate not set", dev->name);
+		return -EINVAL;
+	}
+
 	if (ctrl_cfg->scl_od_min.low_ns < I3C_OD_TLOW_MIN_NS) {
 		LOG_ERR("%s: Open Drain Low Period is out of range", dev->name);
 		return -EINVAL;
