@@ -195,8 +195,8 @@ typedef int (*variant_w1_script_cmd_fn)(const struct device *dev,
 					uint8_t rx_len);
 
 struct w1_ds2477_85_config {
-	/** w1 master config, common to all drivers */
-	struct w1_master_config master_config;
+	/** w1 controller config, common to all drivers */
+	struct w1_controller_config controller_config;
 	/** I2C device */
 	const struct i2c_dt_spec i2c_spec;
 	/** config reg of weak pullup, active pullup, and switch threshold */
@@ -216,8 +216,8 @@ struct w1_ds2477_85_config {
 };
 
 struct w1_ds2477_85_data {
-	/** w1 master data, common to all drivers */
-	struct w1_master_data master_data;
+	/** w1 controller data, common to all drivers */
+	struct w1_controller_data controller_data;
 	/** master specific runtime configuration */
 	union master_config_reg master_reg;
 };
@@ -225,8 +225,8 @@ struct w1_ds2477_85_data {
 #define W1_DS2477_85_DT_CONFIG_GET(node_id, _t_op, _t_seq, _script_cmd)        \
 	{                                                                      \
 		.i2c_spec = I2C_DT_SPEC_GET(node_id),                          \
-		.master_config.slave_count =                                   \
-			W1_SLAVE_COUNT(node_id),                               \
+		.controller_config.peripheral_count =                          \
+			W1_PERIPHERAL_COUNT(node_id),                          \
 		.rpup_buf = RPUP_BUF_CUSTOM |                                  \
 			RPUP_BUF_SW_TH_PREP(DT_ENUM_IDX(node_id,               \
 						       switching_threshold)) | \

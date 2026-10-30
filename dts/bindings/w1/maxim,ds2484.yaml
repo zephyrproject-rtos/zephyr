@@ -1,11 +1,11 @@
 # Copyright (c) 2022 Caspar Friedrich <c.s.w.friedrich@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: DS4284 Single-Channel 1-Wire Master
+description: DS4284 Single-Channel 1-Wire Controller
 
 compatible: "maxim,ds2484"
 
-include: [i2c-device.yaml, w1-master.yaml]
+include: [i2c-device.yaml, w1-controller.yaml]
 
 properties:
   slpz-gpios:

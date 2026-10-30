@@ -14,7 +14,7 @@ description: |
 
 compatible: "zephyr,w1-gpio"
 
-include: [w1-master.yaml]
+include: [w1-controller.yaml]
 
 properties:
   gpios:

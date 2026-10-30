@@ -1,4 +1,4 @@
-# Configuration options for the Zephyr GPIO 1-Wire Master driver
+# Configuration options for the Zephyr GPIO 1-Wire controller driver
 
 # Copyright (c) 2023 Hudson C. Dalpra
 # SPDX-License-Identifier: Apache-2.0
@@ -8,7 +8,7 @@ config W1_ZEPHYR_GPIO
 	default y
 	depends on DT_HAS_ZEPHYR_W1_GPIO_ENABLED
 	help
-	  This option enables the Zephyr GPIO 1-Wire master driver.
+	  This option enables the Zephyr GPIO 1-Wire controller driver.
 
 	  The bus reset, and bit read and write operations are executed
 	  via byte read and write operations on top of the Zephyr
