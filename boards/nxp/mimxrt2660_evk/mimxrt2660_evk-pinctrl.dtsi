@@ -30,4 +30,41 @@
 			input-enable;
 		};
 	};
+
+	/* LPI2C0 on PIO2_12 (SDA) / PIO2_13 (SCL): PCAL6524 + PCA9555 expanders. */
+	pinmux_lpi2c0: pinmux_lpi2c0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_12_hsp_lpi2c0_sda>,
+				 <&main__iomuxc_pio2_13_hsp_lpi2c0_scl>;
+			input-enable;
+			drive-open-drain;
+		};
+	};
+
+	/* DCIF DBI (Type B/8080, 16-bit data + CSX + DCS + RDX + WRX) */
+	pinmux_dcif_dbi: pinmux_dcif_dbi {
+		group0 {
+			pinmux = <&main__iomuxc_pio3_0_media_dcif_dbi_ab_data00>,
+				 <&main__iomuxc_pio3_1_media_dcif_dbi_ab_data01>,
+				 <&main__iomuxc_pio3_2_media_dcif_dbi_ab_data02>,
+				 <&main__iomuxc_pio3_3_media_dcif_dbi_ab_data03>,
+				 <&main__iomuxc_pio3_4_media_dcif_dbi_ab_data04>,
+				 <&main__iomuxc_pio3_5_media_dcif_dbi_ab_data05>,
+				 <&main__iomuxc_pio3_6_media_dcif_dbi_ab_data06>,
+				 <&main__iomuxc_pio3_7_media_dcif_dbi_ab_data07>,
+				 <&main__iomuxc_pio3_8_media_dcif_dbi_ab_data08>,
+				 <&main__iomuxc_pio3_9_media_dcif_dbi_ab_data09>,
+				 <&main__iomuxc_pio3_10_media_dcif_dbi_ab_data10>,
+				 <&main__iomuxc_pio3_11_media_dcif_dbi_ab_data11>,
+				 <&main__iomuxc_pio3_12_media_dcif_dbi_ab_data12>,
+				 <&main__iomuxc_pio3_13_media_dcif_dbi_ab_data13>,
+				 <&main__iomuxc_pio3_14_media_dcif_dbi_ab_data14>,
+				 <&main__iomuxc_pio3_15_media_dcif_dbi_ab_data15>,
+				 <&main__iomuxc_pio3_16_media_dcif_dbi_csx_ab>,
+				 <&main__iomuxc_pio3_17_media_dcif_dbi_ab_dcs>,
+				 <&main__iomuxc_pio3_18_media_dcif_dbi_b_rdx>,
+				 <&main__iomuxc_pio3_19_media_dcif_dbi_a_rwx_or_b_wrx>;
+			slew-rate = "high";
+		};
+	};
 };
