@@ -227,12 +227,16 @@ static int shell_ssh_setup(struct shell_ssh_context *ctx, struct ssh_channel *ch
 {
 	static const struct shell_backend_config_flags cfg_flags =
 		SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
+	bool log_backend = CONFIG_SHELL_SSH_INIT_LOG_LEVEL > 0;
+	uint32_t level = (CONFIG_SHELL_SSH_INIT_LOG_LEVEL > LOG_LEVEL_DBG)
+				 ? CONFIG_LOG_MAX_LEVEL
+				 : CONFIG_SHELL_SSH_INIT_LOG_LEVEL;
 	const struct shell *sh;
 	int ret;
 
 	sh = ssh_server_shell_instance_alloc(ctx);
 	if (sh != NULL) {
-		ret = shell_init(sh, channel, cfg_flags, false, LOG_LEVEL_NONE);
+		ret = shell_init(sh, channel, cfg_flags, log_backend, level);
 		if (ret == 0) {
 			ctx->sh = sh;
 		} else {
