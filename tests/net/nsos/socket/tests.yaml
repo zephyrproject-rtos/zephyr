@@ -1,0 +1,15 @@
+common:
+  depends_on: netif
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - net
+    - socket
+tests:
+  net.nsos.socket: {}
+  net.nsos.socket.asan:
+    extra_configs:
+      - CONFIG_ASAN=y
