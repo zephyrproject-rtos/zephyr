@@ -827,13 +827,18 @@ void soc_early_init_hook(void)
 #if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
 #include <zephyr_image_info.h>
 
-/* Determine if CM33 needs to adjust the address to access CM7 memory */
-#if ((CM7_BOOT_ADDRESS >= 0U) && (CM7_BOOT_ADDRESS <= 0x1FFFFU))
-	/* Adjust to CM33 address to access CM7 ITCM */
-	#define MEMMAP_ADJUST 0x303C0000U
-#else
-	#define MEMMAP_ADJUST 0U /* No adjustment needed */
-#endif
+/* CM7 ITCM is at 0x0-0x1FFFF from the CM7 point of view, but CM33 can
+ * only reach it through the alias at 0x303C0000. If the CM7 image runs
+ * from ITCM, offset the copy destination so CM33 writes to that alias.
+ *
+ * Note: this is deliberately a C expression and not an #if. ADJUSTED_LMA
+ * is negative when the CM7 run address is above its flash partition
+ * (e.g. CM7 code in external RAM), and evaluating CM7_BOOT_ADDRESS in
+ * #if mixes it with an unsigned DT address, which makes the preprocessor
+ * emit a sign-promotion warning.
+ */
+#define MEMMAP_ADJUST \
+	(((uint32_t)(CM7_BOOT_ADDRESS) <= 0x1FFFFU) ? 0x303C0000U : 0U)
 
 /* Memcpy macro to copy segments from secondary core image stored in flash
  * to RAM section that secondary core boots from.
