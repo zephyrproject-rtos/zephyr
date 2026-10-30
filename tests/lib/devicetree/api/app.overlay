@@ -1114,6 +1114,7 @@
 				partition@c000 {
 					compatible = "zephyr,mapped-partition";
 					reg = <0x0000c000 0x00076000>;
+					reg-names = "cpu-mapped";
 					label = "mapped-partition-2";
 				};
 
@@ -1180,7 +1181,7 @@
 		test_reg_64: reg-holder-64@ffffffff11223344 {
 			compatible = "vnd,reg-holder-64";
 			reg = <0xffffffff 0x11223344>;
-			reg-names = "test_name";
+			reg-names = "TEST_NAME";
 			status = "okay";
 		};
 	};
@@ -1282,8 +1283,9 @@
 
 				partition@f8000 {
 					compatible = "zephyr,mapped-partition";
-					reg = <0x000f8000 0x00008000>;
+					reg = <0x000f8000 0x00008000>, <0x00000000 0x00004000>;
 					ranges = <0x0 0x000f8000 0x00008000>;
+					reg-names = "cpu-mapped", "execution";
 					label = "mapped-partition-4";
 					#address-cells = <1>;
 					#size-cells = <1>;
