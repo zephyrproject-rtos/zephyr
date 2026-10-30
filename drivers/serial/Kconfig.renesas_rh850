@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_RENESAS_RH850_RLIN3
+	bool "Renesas RH850 RLIN3 UART driver"
+	default y
+	depends on DT_HAS_RENESAS_RH850_RLIN3_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  Polled UART driver for the RLIN3 units of Renesas RH850 SoCs.
