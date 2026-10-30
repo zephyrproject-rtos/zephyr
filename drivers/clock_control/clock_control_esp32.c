@@ -11,10 +11,46 @@
 
 #if defined(CONFIG_SOC_SERIES_ESP32P4)
 #include <esp_private/esp_clk_tree_common.h>
+#include <hal/clk_gate_ll.h>
+#include <soc/hp_sys_clkrst_reg.h>
 #endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+/* CRYPTO_CLK_SRC_SEL keeps its value across CPU and core resets. The mux does
+ * not switch away from a stopped clock: the 240 MHz branch is ungated before
+ * the field is written.
+ */
+#define ESP32P4_CRYPTO_CLK_SRC_XTAL      0U
+#define ESP32P4_CRYPTO_CLK_SRC_PLL_F240M 2U
+
+/*
+ * Runs before esp_clk_tree_initialize(), which gates the 240 MHz branch on every
+ * reset other than a CPU reset. A selector inherited from the previous image
+ * is moved back to XTAL while the branch is still running.
+ */
+static void esp32p4_crypto_clk_to_xtal(void)
+{
+	clk_gate_ll_ref_240m_clk_en(true);
+	REG_SET_FIELD(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_CRYPTO_CLK_SRC_SEL,
+		      ESP32P4_CRYPTO_CLK_SRC_XTAL);
+}
+
+/* The reference on PLL_F240M is never released, so no other user of the branch
+ * can gate it under the selector.
+ */
+static void esp32p4_crypto_clk_to_pll(void)
+{
+	if (esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F240M, true) != ESP_OK) {
+		return;
+	}
+
+	REG_SET_FIELD(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_CRYPTO_CLK_SRC_SEL,
+		      ESP32P4_CRYPTO_CLK_SRC_PLL_F240M);
+}
+#endif
 
 static enum clock_control_status clock_control_esp32_get_status(const struct device *dev,
 								clock_control_subsys_t sys)
@@ -154,6 +190,10 @@ static int clock_control_esp32_init(const struct device *dev)
 	const struct esp32_clock_config *cfg = dev->config;
 	int ret;
 
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	esp32p4_crypto_clk_to_xtal();
+#endif
+
 	esp_rtc_init();
 
 	ret = esp32_cpu_clock_configure(&cfg->cpu);
@@ -188,6 +228,10 @@ static int clock_control_esp32_init(const struct device *dev)
 	 */
 	_timg_ll_enable_bus_clock(0, true);
 	_timg_ll_reset_register(0);
+
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	esp32p4_crypto_clk_to_pll();
+#endif
 #endif
 
 	return 0;
