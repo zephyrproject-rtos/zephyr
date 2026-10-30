@@ -44,6 +44,21 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	addi %d15, %d15, 1
 	st.w [%a15]+___cpu_t_nested_OFFSET, %d15
 
+#ifdef CONFIG_PROFILING_PERF
+	/*
+	 * Perf walks the CSA chain from the interrupted context; save its
+	 * PCXI before the ISR body changes it.
+	 */
+	add	%d15, %d15, -1
+	mov	%d14, CONFIG_PROFILING_PERF_TRICORE_MAX_NESTING
+	jge.u	%d15, %d14, .L_perf_pcxi_done
+	mfcr	%d14, TRICORE_PCXI
+	movh.a	%a13, hi:z_tricore_perf_pcxi
+	addsc.a	%a13, %a13, %d15, 2
+	st.w	[%a13]lo:z_tricore_perf_pcxi, %d14
+.L_perf_pcxi_done:
+#endif
+
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_enter
 #endif
