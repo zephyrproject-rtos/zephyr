@@ -492,7 +492,6 @@ void i2c_stm32_event(const struct device *dev)
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
-	int ret = 0;
 
 #if defined(CONFIG_I2C_TARGET)
 	if (data->target_attached && !data->controller_active) {
@@ -525,7 +524,7 @@ void i2c_stm32_event(const struct device *dev)
 		 * so send a stop condition manually
 		 */
 		LL_I2C_GenerateStopCondition(i2c);
-		ret = -EIO;
+		data->xfer_err = -EIO;
 	}
 
 	/* STOP received */
@@ -534,7 +533,7 @@ void i2c_stm32_event(const struct device *dev)
 		LL_I2C_DisableReloadMode(i2c);
 		i2c_stm32_controller_mode_end(dev);
 
-		i2c_stm32_rtio_complete(dev, ret);
+		i2c_stm32_rtio_complete(dev, data->xfer_err);
 		return;
 	}
 
@@ -562,7 +561,7 @@ void i2c_stm32_event(const struct device *dev)
 			}
 
 			i2c_stm32_disable_transfer_interrupts(dev);
-			i2c_stm32_rtio_complete(dev, ret);
+			i2c_stm32_rtio_complete(dev, data->xfer_err);
 		}
 	}
 }
@@ -646,6 +645,7 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, s
 	data->xfer_buf = buf;
 	data->xfer_len = buf_len;
 	data->xfer_flags = flags;
+	data->xfer_err = 0;
 
 	if (LL_I2C_IsEnabledReloadMode(i2c)) {
 		__ASSERT_NO_MSG((flags & I2C_MSG_RESTART) == 0U);
