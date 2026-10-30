@@ -192,6 +192,18 @@ struct fs_file_system_t {
 	 */
 	int (*statvfs)(struct fs_mount_t *mountp, const char *path,
 					struct fs_statvfs *stat);
+#if defined(CONFIG_FILE_SYSTEM_GETATTR) || defined(__DOXYGEN__)
+	/**
+	 * Returns the attributes of a file or directory.
+	 * Available only if @kconfig{CONFIG_FILE_SYSTEM_GETATTR} is enabled.
+	 *
+	 * @param mountp Mount point.
+	 * @param path Path to the file or directory.
+	 * @param attr File or directory attributes.
+	 * @return 0 on success, negative errno code on fail.
+	 */
+	int (*getattr)(struct fs_mount_t *mountp, const char *path, struct fs_attr *attr);
+#endif
 #if defined(CONFIG_FILE_SYSTEM_GC) || defined(__DOXYGEN__)
 	/**
 	 * Attempt to proactively clean file system
