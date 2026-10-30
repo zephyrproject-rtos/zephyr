@@ -338,3 +338,7 @@ st_cam_dvp: &dcmi {
 zephyr_jpegenc: &jpeg {
 	status = "okay";
 };
+
+&dma2d {
+	status = "okay";
+};
