@@ -102,6 +102,13 @@ tests:
       - lpcxpresso55s36
       - frdm_mcxw23
       - mcxw23_evk
+      - cy8ckit_041s_max
+      - kit_psc3m5_evk
+      - kit_psc3m5_evk/psc3m5fds2afq1/norflash
+      - kit_psc3m6_eval
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
   drivers.gpio.2pin_arduino_customized:
     min_flash: 34
     depends_on:
@@ -125,6 +132,13 @@ tests:
       - stm32mp257f_ev1/stm32mp257fxx/m33
       - frdm_mcxw23
       - mcxw23_evk
+      - cy8ckit_041s_max
+      - kit_psc3m5_evk
+      - kit_psc3m5_evk/psc3m5fds2afq1/norflash
+      - kit_psc3m6_eval
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
     integration_platforms:
       - mimxrt595_evk/mimxrt595s/cm33
   drivers.gpio.st_2pin_arduino:

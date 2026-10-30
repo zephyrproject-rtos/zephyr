@@ -112,3 +112,16 @@
 	input-enable;
 	drive-strength = "half";
 };
+
+/* Configure pin drive mode for the Arduino SPI pins */
+&p16_1_scb10_spi_m_mosi {
+	drive-push-pull;
+};
+
+&p16_2_scb10_spi_m_miso {
+	input-enable;
+};
+
+&p16_0_scb10_spi_m_clk {
+	drive-push-pull;
+};

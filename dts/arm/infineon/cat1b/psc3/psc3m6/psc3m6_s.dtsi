@@ -6,6 +6,7 @@
  */
 
 #include <mem.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include "psc3m6.cm33.dtsi"
 
 / {

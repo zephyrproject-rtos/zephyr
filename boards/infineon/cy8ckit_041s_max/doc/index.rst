@@ -63,9 +63,19 @@ Default Zephyr Peripheral Mapping
 +-----------+-----------------+----------------------------+
 | Pin       | Function        | Usage                      |
 +===========+=================+============================+
-| P0.5      | SCB2 UART TX    | Console TX                 |
+| P0.5      | SCB1 UART TX    | Console TX                 |
 +-----------+-----------------+----------------------------+
-| P0.4      | SCB2 UART RX    | Console RX                 |
+| P0.4      | SCB1 UART RX    | Console RX                 |
++-----------+-----------------+----------------------------+
+| P1.0      | SCB0 I2C SCL    | Arduino SCL (``i2c0``)     |
++-----------+-----------------+----------------------------+
+| P1.1      | SCB0 I2C SDA    | Arduino SDA (``i2c0``)     |
++-----------+-----------------+----------------------------+
+| P10.0     | SCB2 SPI MOSI   | Arduino D11, disabled      |
++-----------+-----------------+----------------------------+
+| P10.1     | SCB2 SPI MISO   | Arduino D12, disabled      |
++-----------+-----------------+----------------------------+
+| P10.2     | SCB2 SPI CLK    | Arduino D13, disabled      |
 +-----------+-----------------+----------------------------+
 | P7.3      | GPIO            | LED0                       |
 +-----------+-----------------+----------------------------+
@@ -84,8 +94,9 @@ Serial Port
 
 The PSOC™ 4100S Max has multiple SCB (Serial Communication Block) interfaces
 that can be configured as UART, SPI, or I2C. The Zephyr console output is
-assigned to **SCB2** (``uart2``), which is routed through the KitProg3
-USB-UART bridge.
+assigned to **SCB1** (``uart1``), which is routed through the KitProg3
+USB-UART bridge. SCB2 is left for the Arduino SPI pins (``arduino_spi``),
+which no other SCB reaches.
 
 Default communication settings are **115200 8N1**.
 
