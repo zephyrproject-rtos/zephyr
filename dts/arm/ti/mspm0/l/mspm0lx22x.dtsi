@@ -28,7 +28,6 @@
 			interrupts = <21 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg0: counterg0 {
 				compatible = "ti,mspm0-timer-counter";
@@ -44,7 +43,6 @@
 			interrupts = <22 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg4: counterg4 {
 				compatible = "ti,mspm0-timer-counter";
@@ -60,7 +58,6 @@
 			interrupts = <23 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg5: counterg5 {
 				compatible = "ti,mspm0-timer-counter";
@@ -76,7 +73,6 @@
 			interrupts = <20 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg8: counterg8 {
 				compatible = "ti,mspm0-timer-counter";
@@ -98,7 +94,6 @@
 			interrupts = <18 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			countera0: countera0 {
 				compatible = "ti,mspm0-timer-counter";
@@ -114,7 +109,6 @@
 			interrupts = <2 0>;
 			ti,clk-prescaler = <0>; /* No prescaler */
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg12: counterg12 {
 				compatible = "ti,mspm0-timer-counter";

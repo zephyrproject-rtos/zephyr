@@ -48,8 +48,16 @@
 	status = "okay";
 };
 
+&regulators {
+	status = "okay";
+};
+
 &vregmain {
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	status = "okay";
+};
+
+&vregusb {
 	status = "okay";
 };
 
@@ -123,6 +131,10 @@
 };
 
 &ieee802154 {
+	status = "okay";
+};
+
+&usbhs_wrapper {
 	status = "okay";
 };
 

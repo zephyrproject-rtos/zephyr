@@ -3,6 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&sci7 {
+	status = "okay";
+};
+
 dut: &uart7 {
 	tx-dtc;
 	rx-dtc;

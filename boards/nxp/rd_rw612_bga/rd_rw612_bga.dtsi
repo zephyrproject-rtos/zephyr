@@ -316,6 +316,10 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+};
+
 /* RTC is the wakeup source for PM modes 3,4 */
 &rtc_highres {
 	wakeup-source;
