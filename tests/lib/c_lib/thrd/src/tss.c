@@ -48,6 +48,27 @@ ZTEST(libc_tss, test_tss_create_delete)
 	/* happy path tested in before() / after() */
 }
 
+ZTEST(libc_tss, test_tss_create_exhaustion)
+{
+	tss_t keys[CONFIG_POSIX_THREAD_KEYS_MAX];
+	size_t count;
+	int ret = thrd_success;
+
+	/* before() already holds one key, so this must exhaust the key pool. */
+	for (count = 0; count < ARRAY_SIZE(keys); ++count) {
+		ret = tss_create(&keys[count], NULL);
+		if (ret != thrd_success) {
+			break;
+		}
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		tss_delete(keys[i]);
+	}
+
+	zassert_equal(thrd_error, ret, "unexpected status %d", ret);
+}
+
 static int thread_fn(void *arg)
 {
 	int32_t val = *(int32_t *)arg;
