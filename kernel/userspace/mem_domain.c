@@ -61,7 +61,7 @@ static bool check_add_partition(struct k_mem_domain *domain,
 	/* Check that this partition doesn't overlap any existing ones already
 	 * in the domain
 	 */
-	for (i = 0; i < domain->num_partitions; i++) {
+	for (i = 0; i < max_partitions; i++) {
 		struct k_mem_partition *dpart = &domain->partitions[i];
 
 		if (dpart->size == 0U) {
