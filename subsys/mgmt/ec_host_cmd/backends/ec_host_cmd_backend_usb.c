@@ -185,27 +185,34 @@ static struct net_buf *ec_host_cmd_buf_alloc_int(const uint8_t ep)
 	return buf;
 }
 
-static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
+/* Queue a notification of the given type on the interrupt IN endpoint. */
+static int send_irq(struct usbd_class_data *const c_data, enum ec_host_cmd_usb_irq_type type)
 {
-	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 	struct net_buf *buf;
 	int ret;
 
 	buf = ec_host_cmd_buf_alloc_int(ec_host_cmd_get_in_int_ep(c_data));
 	if (buf == NULL) {
-		LOG_WRN("Event has been already signaled but not polled by the host");
-		return 0;
+		LOG_ERR("Failed to allocate buf IN INT");
+		return -ENOMEM;
 	}
-	net_buf_add_le32(buf, USB_EC_HOST_CMD_IRQ_TYPE_EVENT);
+	net_buf_add_le32(buf, type);
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue EP IN INT: %d", ret);
 		net_buf_unref(buf);
-		return ret;
 	}
-	atomic_clear_bit(&ctx->flags, EC_HOST_CMD_EVENT_PENDING);
 
-	return 0;
+	return ret;
+}
+
+static void ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
+{
+	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
+
+	if (!send_irq(c_data, USB_EC_HOST_CMD_IRQ_TYPE_EVENT)) {
+		atomic_clear_bit(&ctx->flags, EC_HOST_CMD_EVENT_PENDING);
+	}
 }
 
 static int handle_out_transfer(struct usbd_class_data *const c_data)
@@ -506,7 +513,6 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 {
 	struct ec_host_cmd_usb_ctx *ctx = backend->ctx;
 	struct usbd_class_data *const c_data = ctx->c_data;
-	struct net_buf *buf;
 	int ret;
 
 	if (!atomic_test_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED)) {
@@ -532,22 +538,10 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 		return ret;
 	}
 
-	buf = ec_host_cmd_buf_alloc_int(ec_host_cmd_get_in_int_ep(c_data));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buf IN INT");
-		k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
-		return -ENOMEM;
-	}
-
 	/* Signal to host that response is ready. */
-	net_buf_add_le32(buf, USB_EC_HOST_CMD_IRQ_TYPE_RESP_READY);
-
-	ret = usbd_ep_enqueue(c_data, buf);
+	ret = send_irq(c_data, USB_EC_HOST_CMD_IRQ_TYPE_RESP_READY);
 	if (ret) {
-		net_buf_unref(buf);
-		LOG_ERR("Failed to enqueue EP IN INT: %d", ret);
 		k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
-		return ret;
 	}
 
 	return ret;
