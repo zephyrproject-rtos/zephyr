@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STMicroelectronics LSM9DS1 3-axis accelerometer + gyroscope accessed
+  through I2C bus.
+
+compatible: "st,lsm9ds1"
+
+include: ["i2c-device.yaml", "st,lsm9ds1-common.yaml"]
