@@ -78,6 +78,18 @@ extern void z_riscv_irq_vector_set(unsigned int irq);
 #define z_riscv_irq_vector_set(i) /* Nothing */
 #endif /* CONFIG_RISCV_HAS_CLIC */
 
+/**
+ * @brief Log interrupt information on a spurious interrupt
+ *
+ * Called from z_irq_spurious() after the cause has been logged. The default
+ * weak implementation does nothing; interrupt controllers and SoCs override
+ * it to log the interrupt line that caused the spurious interrupt.
+ *
+ * @param cause Exception code from mcause (scause in S-mode), masked with
+ *              CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
+ */
+extern void z_riscv_log_saved_info(unsigned long cause);
+
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
 	Z_ISR_DECLARE(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
