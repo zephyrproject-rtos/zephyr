@@ -31,5 +31,6 @@ tests:
       - pic32cm_jh01_cpro
       - it8xxx2_evb
       - it82xx2_evb
+      - kit_psc3m5_evk/psc3m5fds2afq1
       - pic32cz_ca80_cult
       - pic32cz_ca90_cult
