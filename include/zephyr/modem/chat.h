@@ -481,6 +481,7 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
  * @returns -EBUSY if a script is currently running
  * @returns -EPERM if modem pipe is not attached
  * @returns -EINVAL if arguments or script is invalid
+ * @returns -EAGAIN if the script timed out, was aborted or the chat was released
  * @note Script runs until complete or aborted.
  */
 int modem_chat_run_script(struct modem_chat *chat, const struct modem_chat_script *script);
