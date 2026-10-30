@@ -350,6 +350,7 @@ ARM64 arch:
     - npitre
     - JiafeiPan
     - carlocaione
+    - hongquan-prog
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
@@ -3756,6 +3757,7 @@ Intel Platforms (Xtensa):
     - ycsin
     - dcpleung
     - nashif
+    - hongquan-prog
   files:
     - drivers/interrupt_controller/
     - dts/bindings/interrupt-controller/
