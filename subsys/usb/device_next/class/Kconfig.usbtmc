@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_USBTMC_CLASS
+	bool "USB Test and Measurement Class support [EXPERIMENTAL]"
+	default y
+	depends on DT_HAS_ZEPHYR_USBTMC_DEVICE_ENABLED
+	select EXPERIMENTAL
+	help
+	  USB Test and Measurement Class (USBTMC) device support.
+
+if USBD_USBTMC_CLASS
+
+config USBD_USBTMC_BUF_POOL_SIZE
+	int "USBTMC transfer buffer size"
+	range 512 65536
+	default 2048
+	help
+	  Size of the buffers used for bulk transfers and to stage message
+	  data submitted by the application. It limits the number of message
+	  data bytes transferred at once, larger messages are transferred in
+	  multiple chunks. The size must be a multiple of the maximum bulk
+	  endpoint packet size.
+
+config USBD_USBTMC_TX_BUF_COUNT
+	int "Number of buffers to stage message data to be sent"
+	range 1 16
+	default 2
+	help
+	  Number of buffers, per instance, used to stage message data
+	  submitted by the application before the host reads it.
+
+module = USBD_USBTMC
+module-str = usbd usbtmc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBD_USBTMC_CLASS

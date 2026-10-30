@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: USBTMC (USB Test and Measurement Class) device
+
+description: |
+  USB Test and Measurement Class (USBTMC) device instance. The node is a
+  child of a USB device controller and provides the transport for test and
+  measurement instruments, interpretation of the device dependent messages,
+  typically IEEE 488.2 or SCPI commands, is left to the application.
+
+compatible: "zephyr,usbtmc-device"
+
+include: base.yaml
+
+on-bus: usb
+
+properties:
+  label:
+    description: |
+      The string defined by the label property is also used for the USB
+      device interface string descriptor.
+
+examples:
+  - |
+    &zephyr_udc0 {
+        usbtmc0: usbtmc0 {
+            compatible = "zephyr,usbtmc-device";
+            label = "USBTMC instrument";
+        };
+    };
