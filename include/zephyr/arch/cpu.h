@@ -37,6 +37,8 @@
 #include <zephyr/arch/hexagon/arch.h>
 #elif defined(CONFIG_TRICORE)
 #include <zephyr/arch/tricore/arch.h>
+#elif defined(CONFIG_RH850)
+#include <zephyr/arch/rh850/arch.h>
 #elif defined(CONFIG_ARCH_IS_SET)
 #error "The selected architecture is missing from this dispatch header"
 #endif

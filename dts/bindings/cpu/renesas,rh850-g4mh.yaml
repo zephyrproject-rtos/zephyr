@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 G4MH CPU core
+
+compatible: "renesas,rh850-g4mh"
+
+include: renesas,rh850.yaml
