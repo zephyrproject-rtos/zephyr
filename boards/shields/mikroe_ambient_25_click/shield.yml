@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_ambient_25_click
+  full_name: Ambient 25 Click
+  vendor: mikroe
+  supported_features:
+    - sensor
