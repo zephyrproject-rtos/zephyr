@@ -2,7 +2,11 @@
 # Copyright (c) 2021, Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-description: TCA9538 GPIO
+description: |
+  TCA9538 GPIO
+
+  The TCA9536 has the same registers with four pins and is described with
+  this compatible and ngpios = <4>.
 
 compatible: "ti,tca9538"
 
@@ -13,9 +17,12 @@ properties:
     const: 2
 
   ngpios:
-    const: 8
+    enum:
+      - 4
+      - 8
     description: |
-      Number of GPIOs available on port expander.
+      Number of GPIOs available on port expander: 8 for the TCA9538, 4 for
+      the TCA9536.
 
   nint-gpios:
     type: phandle-array
