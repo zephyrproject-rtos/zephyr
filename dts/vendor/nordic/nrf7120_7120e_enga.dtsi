@@ -548,6 +548,7 @@
 				ieee802154-supported;
 				ble-2mbps-supported;
 				ble-coded-phy-supported;
+				ble-cs-supported;
 				status = "disabled";
 
 				ieee802154: ieee802154 {
