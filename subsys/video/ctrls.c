@@ -13,10 +13,11 @@
 
 LOG_MODULE_REGISTER(video_controls, CONFIG_VIDEO_LOG_LEVEL);
 
-/* By definition, the cluster is in manual mode if the primary control value is 0 */
+/* The cluster is in manual mode if the primary control holds the value given at clustering */
 static inline bool is_cluster_manual(const struct video_ctrl *primary)
 {
-	return primary->type == VIDEO_CTRL_TYPE_INTEGER64 ? primary->val64 == 0 : primary->val == 0;
+	return primary->type == VIDEO_CTRL_TYPE_INTEGER64 ? primary->val64 == primary->manual_val
+							  : primary->val == primary->manual_val;
 }
 
 int video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
@@ -40,7 +41,8 @@ int video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
 	return 0;
 }
 
-int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile)
+int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, int32_t manual_val,
+			    bool set_volatile)
 {
 	int ret;
 
@@ -55,6 +57,7 @@ int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volat
 	}
 
 	ctrls->is_auto = true;
+	ctrls->manual_val = manual_val;
 	ctrls->has_volatiles = set_volatile;
 	ctrls->flags |= VIDEO_CTRL_FLAG_UPDATE;
 

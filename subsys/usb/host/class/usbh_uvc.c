@@ -2071,7 +2071,7 @@ static int init_control_by_cid(const struct device *dev, uint32_t cid,
 			break;
 		}
 
-		video_auto_cluster_ctrl(&ctrls->auto_exposure, 2, true);
+		video_auto_cluster_ctrl(&ctrls->auto_exposure, 2, VIDEO_EXPOSURE_MANUAL, true);
 		LOG_DBG("Created auto-exposure cluster");
 		break;
 

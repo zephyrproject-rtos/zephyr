@@ -1223,7 +1223,7 @@ static int ov5640_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	ret = video_auto_cluster_ctrl(auto_ctrls, 2, true);
+	ret = video_auto_cluster_ctrl(auto_ctrls, 2, 0, true);
 	if (ret < 0) {
 		return ret;
 	}
