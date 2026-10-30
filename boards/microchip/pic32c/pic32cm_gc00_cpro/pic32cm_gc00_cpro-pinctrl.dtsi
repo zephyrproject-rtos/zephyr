@@ -7,6 +7,13 @@
 #include <dt-bindings/pic32c/pic32cm_sg_gc/pic32cm_gc00/pic32cm5112gc00100-pinctrl.h>
 
 &pinctrl {
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PA8B_ADC_ADC0_AIN5>,   /* Arduino A0 */
+				 <PB6B_ADC_ADC0_AIN11>;  /* VR300 potentiometer */
+		};
+	};
+
 	sercom4_uart_default: sercom4_uart_default {
 		group1 {
 			pinmux = <PD20D_SERCOM4_PAD1>,
