@@ -16,6 +16,19 @@ FILE(GLOB app_sources
   src/*.c
 )
 
+zephyr_get(sysbuild_binary_dir VAR APPLICATION_BINARY_DIR SYSBUILD GLOBAL)
+import_kconfig(SB_CONFIG_BOOT_SIGNATURE_TYPE_* "${sysbuild_binary_dir}/zephyr/.config")
+
+if(SB_CONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256)
+  target_compile_definitions(app PRIVATE EXPECTED_BOOT_SIGNATURE=MCUBOOT_SIGNATURE_TYPE_ECDSA_P256)
+elseif(SB_CONFIG_BOOT_SIGNATURE_TYPE_RSA)
+  target_compile_definitions(app PRIVATE EXPECTED_BOOT_SIGNATURE=MCUBOOT_SIGNATURE_TYPE_RSA)
+elseif(SB_CONFIG_BOOT_SIGNATURE_TYPE_NONE)
+  target_compile_definitions(app PRIVATE EXPECTED_BOOT_SIGNATURE=MCUBOOT_SIGNATURE_TYPE_NONE)
+elseif(SB_CONFIG_BOOT_SIGNATURE_TYPE_ED25519)
+  target_compile_definitions(app PRIVATE EXPECTED_BOOT_SIGNATURE=MCUBOOT_SIGNATURE_TYPE_ED25519)
+endif()
+
 target_sources(app PRIVATE ${app_sources})
 
 # Get MCUboot version from the VERSION file in the repository and create a local output header
