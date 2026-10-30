@@ -272,4 +272,31 @@ ZTEST(iterable_sections, test_rom)
 		      out);
 }
 
+struct test_rom_large {
+	uint32_t data[1024];
+};
+
+#ifdef CONFIG_TEST_LARGE_ROM_SECTION
+const STRUCT_SECTION_ITERABLE(test_rom_large, rom_large2) = {.data = {[1023] = 0x02}};
+const STRUCT_SECTION_ITERABLE(test_rom_large, rom_large1) = {.data = {[1023] = 0x01}};
+#endif
+
+/**
+ *
+ * @brief Test reading the end of an iterable section spanning several pages.
+ *
+ */
+ZTEST(iterable_sections, test_rom_large)
+{
+	uint32_t out = 0U;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_TEST_LARGE_ROM_SECTION);
+
+	STRUCT_SECTION_FOREACH(test_rom_large, t) {
+		out = (out << 8) | t->data[ARRAY_SIZE(t->data) - 1];
+	}
+
+	zassert_equal(out, 0x0102U, "Check value incorrect (got: 0x%x)", out);
+}
+
 ZTEST_SUITE(iterable_sections, NULL, NULL, NULL, NULL, NULL);
