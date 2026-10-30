@@ -310,6 +310,8 @@ enum smp_transport_type {
 	SMP_LORAWAN_TRANSPORT,
 	/** SMP SPI */
 	SMP_SPI_TRANSPORT,
+	/** SMP raw Ethernet */
+	SMP_ETHERNET_TRANSPORT,
 
 	/** IDs up to 63 reserved for future in-tree transports */
 
