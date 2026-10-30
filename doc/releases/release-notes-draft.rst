@@ -53,6 +53,12 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Clock control
+
+  * :kconfig:option:`CONFIG_CLOCK_STM32_N6_PRESERVE_BOOT_CONFIG` has been deprecated. Use
+    :kconfig:option:`CONFIG_CLOCK_STM32_PRESERVE_BOOT_CONFIG` instead, which is also available on
+    STM32H5, STM32H7, STM32H7RS and STM32U5 series.
+
 New APIs and options
 ====================
 ..

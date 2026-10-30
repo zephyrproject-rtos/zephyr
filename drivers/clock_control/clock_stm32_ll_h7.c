@@ -1190,6 +1190,17 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_AHBSRAM2);
 #endif
 #endif
+	/*
+	 * dev is NULL when called on exit from STOP mode, where the clock tree
+	 * must be restored. Only preserve the boot configuration at init.
+	 */
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_PRESERVE_BOOT_CONFIG) && (dev != NULL)) {
+		SystemCoreClockUpdate();
+		optimize_regulator_voltage_scale(SystemCoreClock);
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+		return 0;
+	}
+
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
