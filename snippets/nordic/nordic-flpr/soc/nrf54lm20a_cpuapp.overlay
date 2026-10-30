@@ -24,7 +24,7 @@
 	rx-region = <&cpuflpr_cpuapp_ipc_shm>;
 };
 
-&cpuapp_sram {
+&cpuapp_sram_app {
 	reg = <0x60 (DT_SIZE_K(411) - 0x60)>;
 };
 
