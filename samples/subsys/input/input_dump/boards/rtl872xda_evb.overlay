@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	status = "okay";
+};
+
+&ctc {
+	pinctrl-0 = <&adc_in0_pb19 &adc_in1_pb18 &adc_in2_pb17 &adc_in3_pb16>;
+	pinctrl-names = "default";
+	status = "okay";
+};
