@@ -1,0 +1,13 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Federico Borgo
+ */
+
+&i2c0 {
+	ltc3337: ltc3337@64 {
+		compatible = "adi,ltc3337";
+		reg = <0x64>;
+		ipeak-milliamp = <100>;
+		status = "okay";
+	};
+};
