@@ -21,6 +21,20 @@ extern "C" {
 #endif
 
 /**
+ * @brief Virtual bus speed
+ */
+enum uvb_speed {
+	/** Low speed */
+	UVB_SPEED_LS,
+	/** Full speed */
+	UVB_SPEED_FS,
+	/** High speed */
+	UVB_SPEED_HS,
+	/** Super speed */
+	UVB_SPEED_SS,
+};
+
+/**
  * @brief Virtual bus event types
  */
 enum uvb_event_type {
@@ -34,6 +48,8 @@ enum uvb_event_type {
 	UVB_EVT_SUSPEND,
 	/** Port reset detected */
 	UVB_EVT_RESET,
+	/** Start of Frame */
+	UVB_EVT_SOF,
 	/** Endpoint request event */
 	UVB_EVT_REQUEST,
 	/** Endpoint request reply event */
@@ -48,15 +64,15 @@ enum uvb_event_type {
 enum uvb_device_act {
 	/** Device issue remote wakeup */
 	UVB_DEVICE_ACT_RWUP,
-	/** Low speed connection detected */
+	/** Low speed device connected */
 	UVB_DEVICE_ACT_LS,
-	/** Full speed connection detected */
+	/** Full speed device connected */
 	UVB_DEVICE_ACT_FS,
-	/** High speed connection detected */
+	/** High speed device connected */
 	UVB_DEVICE_ACT_HS,
-	/** Super speed connection detected */
+	/** Super speed device connected */
 	UVB_DEVICE_ACT_SS,
-	/** Connection removed, issued when a device is disabled */
+	/** Device removed */
 	UVB_DEVICE_ACT_REMOVED,
 };
 
