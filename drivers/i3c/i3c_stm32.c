@@ -151,6 +151,8 @@ struct i3c_stm32_data {
 	struct k_sem device_sync_sem; /* Sync between device communication messages */
 	struct k_mutex bus_mutex;     /* Sync between transfers */
 	struct i3c_stm32_msg curr_msg;
+	int transfer_error;
+	bool transfer_active;
 	uint8_t target_addr;    /* Current target xfer address */
 	uint8_t num_msgs;       /* Number of messages to send on bus */
 #ifdef CONFIG_I3C_STM32_DMA
@@ -936,12 +938,12 @@ static void i3c_stm32_flush_all_fifo(const struct device *dev)
 }
 #endif /* CONFIG_I3C_CONTROLLER */
 
-static void i3c_stm32_log_err_type(const struct device *dev)
+static void i3c_stm32_log_err_type(const struct device *dev, bool noack_expected)
 {
 	const struct i3c_stm32_config *config = dev->config;
 	I3C_TypeDef *i3c = config->i3c;
 
-	if (LL_I3C_IsActiveFlag_ANACK(i3c)) {
+	if (LL_I3C_IsActiveFlag_ANACK(i3c) && !noack_expected) {
 		LOG_ERR("Address NACK");
 	}
 
@@ -949,7 +951,7 @@ static void i3c_stm32_log_err_type(const struct device *dev)
 		LOG_ERR("Control/Status FIFO underrun/overrun");
 	}
 
-	if (LL_I3C_IsActiveFlag_DOVR(i3c)) {
+	if (LL_I3C_IsActiveFlag_DOVR(i3c) && !noack_expected) {
 		LOG_ERR("TX/RX FIFO underrun/overrun");
 	}
 
@@ -1343,15 +1345,19 @@ static int i3c_stm32_transfer_begin(const struct device *dev)
 #endif
 
 	/* Begin transmission */
+	data->transfer_error = -EIO;
+	data->transfer_active = true;
 	LL_I3C_RequestTransfer(i3c);
 
 	/* Wait for whole transfer to complete */
 	if (k_sem_take(&data->device_sync_sem, STM32_I3C_TRANSFER_TIMEOUT) != 0) {
+		data->transfer_active = false;
 		return -ETIMEDOUT;
 	}
+	data->transfer_active = false;
 
 	if (data->msg_state == STM32_I3C_MSG_ERR) {
-		return -EIO;
+		return data->transfer_error;
 	}
 
 	return 0;
@@ -1385,7 +1391,9 @@ static int i3c_stm32_i3c_transfer(const struct device *dev, struct i3c_device_de
 	ret = i3c_stm32_transfer_begin(dev);
 	if (ret != 0) {
 		i3c_stm32_clear_err(dev, false);
-		LOG_ERR("Failed to transfer messages, err=%d", ret);
+		if (ret != -ENODATA) {
+			LOG_ERR("Failed to transfer messages, err=%d", ret);
+		}
 		return ret;
 	}
 
@@ -2169,6 +2177,17 @@ static void i3c_stm32_event_isr(void *arg)
 #endif /*CONFIG_I3C_TARGET*/
 }
 
+/* True when the active private transfer expects an address NACK from the target */
+static bool i3c_stm32_noack_expected(struct i3c_stm32_data *data)
+{
+	struct i3c_stm32_msg *curr_msg = &data->curr_msg;
+
+	return data->transfer_active &&
+	       curr_msg->msg_type == LL_I3C_CONTROLLER_MTYPE_PRIVATE &&
+	       curr_msg->xfer_msg_idx < curr_msg->num_msgs &&
+	       (curr_msg->i3c_msg_ptr->flags & I3C_MSG_NOACK_EXPECTED) != 0U;
+}
+
 /* Handles the I3C error ISR */
 static int i3c_stm32_error(void *arg)
 {
@@ -2184,7 +2203,11 @@ static int i3c_stm32_error(void *arg)
 	}
 #endif /* CONFIG_I3C_STM32_COMBINED_INTERRUPT */
 
-	i3c_stm32_log_err_type(dev);
+	bool noack_expected = i3c_stm32_noack_expected(data) &&
+			      (LL_I3C_IsActiveFlag_ANACK(i3c) != 0U);
+
+	i3c_stm32_log_err_type(dev, noack_expected);
+	data->transfer_error = noack_expected ? -ENODATA : -EIO;
 
 	LL_I3C_ClearFlag_ERR(i3c);
 
