@@ -389,6 +389,7 @@ class Build(Forceable):
             extra_dtc_overlay_files = []
             extra_overlay_confs = []
             extra_conf_files = []
+            extra_args_conf_files = []
             required_snippets = []
             for section in [common, item]:
                 if not section:
@@ -437,6 +438,15 @@ class Build(Forceable):
                         args.extend([
                             "-D{}".format(arg.replace('"', '')) for arg in non_config_options
                         ])
+
+                        # CMake keeps only the last -D option given for a
+                        # variable, so remember what extra_args sets for
+                        # EXTRA_CONF_FILE; it is merged with the other sources
+                        # below instead of being dropped by the merged option.
+                        extra_args_conf_files = [
+                            arg.split('=', 1)[1] for arg in args
+                            if arg.startswith('-DEXTRA_CONF_FILE=')
+                        ]
                     elif data == 'extra_conf_files':
                         extra_conf_files.extend(arg_list)
                         continue
@@ -457,14 +467,22 @@ class Build(Forceable):
 
         if found_test_metadata:
             args = []
-            if extra_conf_files:
-                args.append(f"EXTRA_CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+            # The extra conf files, the overlay confs and whatever extra_args
+            # sets are all consumed through the single EXTRA_CONF_FILE variable,
+            # so they have to be merged into one argument instead of being
+            # passed as several -D options of which only the last one would
+            # survive. The overlay confs are applied last so that they can
+            # override what an extra conf file has set.
+            conf_files_arg = (extra_conf_files or extra_args_conf_files[-1:]) + extra_overlay_confs
+            if conf_files_arg:
+                args.append(f"EXTRA_CONF_FILE=\"{';'.join(conf_files_arg)}\"")
+
+            # _run_cmake() merges the command line --extra-conf value into the
+            # same option, and needs the overlay confs to keep them applied.
+            self.args.extra_overlay_confs = extra_overlay_confs
 
             if extra_dtc_overlay_files:
                 args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
-
-            if extra_overlay_confs:
-                args.append(f"OVERLAY_CONFIG=\"{';'.join(extra_overlay_confs)}\"")
 
             if required_snippets:
                 args.append(f"SNIPPET=\"{';'.join(required_snippets)}\"")
@@ -691,7 +709,11 @@ class Build(Forceable):
         if self.args.shields:
             cmake_opts.append(f'-DSHIELD={";".join(self.args.shields)}')
         if self.args.extra_conf_files:
-            cmake_opts.append(f'-DEXTRA_CONF_FILE={";".join(self.args.extra_conf_files)}')
+            # The command line takes precedence over what the test metadata
+            # sets, but the overlay confs have to stay applied after it.
+            conf_files = self.args.extra_conf_files + \
+                getattr(self.args, 'extra_overlay_confs', [])
+            cmake_opts.append(f'-DEXTRA_CONF_FILE={";".join(conf_files)}')
         if self.args.extra_dtc_overlay_files:
             cmake_opts.append(
                 f'-DEXTRA_DTC_OVERLAY_FILE='
@@ -716,7 +738,7 @@ class Build(Forceable):
         # This is important because users expect invocations like this
         # to Just Work:
         #
-        # west build -- -DOVERLAY_CONFIG=relative-path.conf
+        # west build -- -DEXTRA_CONF_FILE=relative-path.conf
         final_cmake_args = [
             f'-DWEST_PYTHON={pathlib.Path(sys.executable).as_posix()}',
             f'-DWEST_TOPDIR={pathlib.Path(str(west_topdir(self.source_dir))).as_posix()}',
