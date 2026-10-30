@@ -441,7 +441,6 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 	/* Check if we are not in the middle of downloading */
 	ret = k_sem_take(&lwm2m_pull_sem, K_NO_WAIT);
 	if (ret) {
-		context.result_cb(req.obj_inst_id, -EALREADY);
 		return -EALREADY;
 	}
 	k_sem_give(&lwm2m_pull_sem);

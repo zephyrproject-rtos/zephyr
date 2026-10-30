@@ -73,10 +73,10 @@ int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri)
 
 	/* start file transfer work */
 	error_code = lwm2m_pull_context_start_transfer(package_uri, req, K_NO_WAIT);
-
-	if (error_code) {
-		return error_code;
+	if (error_code != 0) {
+		/* Reported like a failed download, so the object returns to Idle */
+		set_update_result(obj_inst_id, error_code);
 	}
 
-	return 0;
+	return error_code;
 }
