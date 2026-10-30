@@ -14,6 +14,7 @@ import shutil
 from pathlib import Path
 
 from runners.core import MissingProgram, RunnerCaps, RunnerConfig, ZephyrBinaryRunner
+from runners.st_common import STM32CubeCLI
 
 STLINK_GDB_SERVER_DEFAULT_PORT = 61234
 
@@ -49,6 +50,15 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
             # Sort candidates and return the path to the most recent version
             most_recent_install = sorted(installations, key=lambda e: e[0], reverse=True)[0]
             return most_recent_install[1]
+
+        # Attempt to find using STM32CubeCLI
+        stm32cubecli = STM32CubeCLI()
+        if stm32cubecli.available():
+            stlink = stm32cubecli.search_tool("stlink-gdbserver")
+            programmer = stm32cubecli.search_tool("programmer")
+
+            if stlink is not None and programmer is not None:
+                return (stlink, programmer.parent)
 
         cur_platform = platform.system()
 
