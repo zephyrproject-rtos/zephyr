@@ -118,11 +118,27 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	int ret = 0;
 	int detachstate;
 	struct timer_obj *timer;
+	bool default_evp_used = false;
+	struct sigevent default_evp;
 	const k_timeout_t alloc_timeout = K_MSEC(CONFIG_TIMER_CREATE_WAIT);
 
-	if (evp == NULL || timerid == NULL) {
+	if (timerid == NULL) {
 		errno = EINVAL;
 		return -1;
+	}
+
+	if ((clockid_t)(int)clockid != clockid || sys_clock_from_clockid((int)clockid) < 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (evp == NULL) {
+		default_evp = (struct sigevent){
+			.sigev_notify = SIGEV_SIGNAL,
+			.sigev_signo = SIGALRM,
+		};
+		evp = &default_evp;
+		default_evp_used = true;
 	}
 
 	if (k_mem_slab_alloc(&posix_timer_slab, (void **)&timer, alloc_timeout) != 0) {
@@ -192,6 +208,9 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	}
 
 	*timerid = (timer_t)timer;
+	if (default_evp_used) {
+		timer->evp.sigev_value.sival_ptr = (void *)timer;
+	}
 	goto out;
 
 free_timer:
