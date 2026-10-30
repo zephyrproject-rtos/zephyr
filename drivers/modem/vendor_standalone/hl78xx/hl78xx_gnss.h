@@ -179,10 +179,11 @@ enum hl78xx_gnss_search_state hl78xx_gnss_get_search_state(struct hl78xx_gnss_da
  * that only a URC from the (now dead) session could clear.
  *
  * gnss_mode_enter_pending is preserved: it records an unserved caller request,
- * which the boot path is expected to honour in the new session.
+ * which the next session's boot serves in airplane mode, drops at the
+ * carrier-on, or in a low-power build serves from the first sleep.
  *
- * Called from hl78xx_reset_modem_session_state(); safe to call when the GNSS
- * device is absent.
+ * Called by every caller of hl78xx_reset_modem_session_state(), next to that
+ * call; safe to call when the GNSS device is absent.
  *
  * @param data Parent modem data structure.
  */
