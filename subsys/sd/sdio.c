@@ -466,8 +466,10 @@ static int sdio_set_bus_width(struct sd_card *card, enum sdhc_bus_width width)
 
 static inline void sdio_select_bus_speed(struct sd_card *card)
 {
+	/* Skip the modes that only run above the host's maximum bus clock */
 	if (card->host_props.host_caps.sdr104_support &&
-		(card->cccr_flags & SDIO_SUPPORT_SDR104)) {
+		(card->cccr_flags & SDIO_SUPPORT_SDR104) &&
+		(card->host_props.f_max > UHS_SDR50_MAX_DTR)) {
 		card->card_speed = SD_TIMING_SDR104;
 		card->switch_caps.uhs_max_dtr = UHS_SDR104_MAX_DTR;
 	} else if (card->host_props.host_caps.ddr50_support &&
@@ -475,7 +477,8 @@ static inline void sdio_select_bus_speed(struct sd_card *card)
 		card->card_speed = SD_TIMING_DDR50;
 		card->switch_caps.uhs_max_dtr = UHS_DDR50_MAX_DTR;
 	} else if (card->host_props.host_caps.sdr50_support &&
-		(card->cccr_flags & SDIO_SUPPORT_SDR50)) {
+		(card->cccr_flags & SDIO_SUPPORT_SDR50) &&
+		(card->host_props.f_max > HS_MAX_DTR)) {
 		card->card_speed = SD_TIMING_SDR50;
 		card->switch_caps.uhs_max_dtr = UHS_SDR50_MAX_DTR;
 	} else if (card->host_props.host_caps.high_spd_support &&
