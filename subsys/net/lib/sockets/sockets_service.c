@@ -100,6 +100,107 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 		for (i = 0; i < len; i++) {
 			svc->pev[i].event = fds[i];
 			svc->pev[i].user_data = user_data;
+			break;
+		}
+	}
+
+	/* Tell the thread to re-read the variables */
+	zvfs_eventfd_write(ctx.events[0].fd, 1);
+	ret = 0;
+
+out:
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
+int z_impl_net_socket_service_register_single_fd(const struct net_socket_service_desc *svc,
+				       struct zsock_pollfd *fd, void *user_data)
+{
+	int i, ret = -ENOENT;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (thread_status == SOCKET_SERVICE_THREAD_UNINITIALIZED) {
+		(void)k_condvar_wait(&wait_start, &lock, K_FOREVER);
+	} else if (thread_status != SOCKET_SERVICE_THREAD_RUNNING) {
+		NET_ERR("Socket service thread not running, service %p register fails.", svc);
+		ret = -EIO;
+		goto out;
+	}
+
+	if (STRUCT_SECTION_START(net_socket_service_desc) > svc ||
+	    STRUCT_SECTION_END(net_socket_service_desc) <= svc) {
+		goto out;
+	}
+
+	if (fd != NULL) {
+		for (i = 0; i < svc->pev_len; i++) {
+			if (svc->pev[i].event.fd == -1) {
+				svc->pev[i].event = *fd;
+				svc->pev[i].user_data = user_data;
+				break;
+			} else if (svc->pev[i].event.fd == fd->fd) {
+				NET_ERR("File descriptor %d already registered"
+						"with service %p",
+						fd->fd, svc);
+				ret = -EINVAL;
+				goto out;
+			}
+		}
+		if (i == svc->pev_len) {
+				NET_ERR("Too many file descriptors, "
+						"max is %d for service %p",
+						svc->pev_len, svc);
+				ret = -ENOMEM;
+				goto out;
+		}
+	}
+
+	/* Tell the thread to re-read the variables */
+	zvfs_eventfd_write(ctx.events[0].fd, 1);
+	ret = 0;
+
+out:
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
+int z_impl_net_socket_service_unregister_single_fd(const struct net_socket_service_desc *svc,
+				       int fd)
+{
+	int i, ret = -ENOENT;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (thread_status == SOCKET_SERVICE_THREAD_UNINITIALIZED) {
+		(void)k_condvar_wait(&wait_start, &lock, K_FOREVER);
+	} else if (thread_status != SOCKET_SERVICE_THREAD_RUNNING) {
+		NET_ERR("Socket service thread not running, service %p register fails.", svc);
+		ret = -EIO;
+		goto out;
+	}
+
+	if (STRUCT_SECTION_START(net_socket_service_desc) > svc ||
+		STRUCT_SECTION_END(net_socket_service_desc) <= svc) {
+		goto out;
+	}
+
+	{
+		/* Register the fd and user_data in the first empty slot */
+		for (i = 0; i < svc->pev_len; i++) {
+			if (svc->pev[i].event.fd == fd) {
+				svc->pev[i].event.fd = -1;
+				svc->pev[i].user_data = NULL;
+				break;
+			}
+		}
+		if (i == svc->pev_len) {
+				NET_ERR("File descriptors %d not found"
+						"for service %p",
+						fd, svc);
+				goto out;
 		}
 	}
 
