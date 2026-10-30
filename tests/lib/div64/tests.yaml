@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - div64
+tests:
+  libraries.div64:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+      - qemu_cortex_m0
+      - qemu_cortex_m3
+      - qemu_riscv32
+  libraries.div64.speed:
+    extra_configs:
+      - CONFIG_SPEED_OPTIMIZATIONS=y
+    integration_platforms:
+      - qemu_cortex_m0
+      - qemu_cortex_m3
+      - qemu_riscv32
+  libraries.div64.no_optimizations:
+    extra_configs:
+      - CONFIG_NO_OPTIMIZATIONS=y
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_riscv32
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_riscv32
