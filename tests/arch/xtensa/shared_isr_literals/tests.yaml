@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  arch.xtensa.shared_isr_literals:
+    platform_allow:
+      - qemu_xtensa/dc233c
+    integration_platforms:
+      - qemu_xtensa/dc233c
+    toolchain_allow:
+      - zephyr/gnu
+    tags:
+      - interrupt
+      - linker
