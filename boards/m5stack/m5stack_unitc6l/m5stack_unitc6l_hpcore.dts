@@ -137,8 +137,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
-		/* TODO: interrupt gpio doesn't work, defaulting to polling in 50ms interval */
-		/* int-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>; */
+		int-gpios = <&gpio0 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 };
 
