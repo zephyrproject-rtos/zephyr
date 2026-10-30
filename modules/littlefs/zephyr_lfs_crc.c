@@ -4,6 +4,9 @@
  * Copyright (c) 2017, Arm Limited. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
+
+/* Register the littlefs log module declared by lfs.c */
+#define LFS_LOG_REGISTER
 #include "lfs_util.h"
 
 /* Use the LFS naive CRC implementation until it has been decided which CRC to
