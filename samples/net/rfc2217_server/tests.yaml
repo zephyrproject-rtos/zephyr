@@ -1,0 +1,35 @@
+common:
+  tags:
+    - net
+    - rfc2217
+sample:
+  name: RFC 2217 server
+tests:
+  sample.net.rfc2217_server:
+    build_only: true
+    platform_allow:
+      - native_sim
+      - nucleo_f767zi
+    integration_platforms:
+      - native_sim
+      - nucleo_f767zi
+  # pyserial's rfc2217:// client on the host, through offloaded sockets
+  sample.net.rfc2217_server.nsos:
+    harness: pytest
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-nsos.conf"
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+  sample.net.rfc2217_server.nsos.api:
+    harness: pytest
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-nsos.conf"
+      - DTC_OVERLAY_FILE="api.overlay"
+    extra_configs:
+      - CONFIG_SAMPLE_RFC2217_PORT=2218
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
