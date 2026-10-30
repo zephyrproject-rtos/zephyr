@@ -804,6 +804,10 @@ static void hl78xx_power_down_work_handler(struct k_work *work_item)
 	 * waiting on it and let the interface go.
 	 */
 	data->status.lpm.power_down.shutdown_pending = true;
+	/* Kept when the application aborts the power down: the result of the
+	 * aborted script can be handled after that answer.
+	 */
+	data->status.lpm.power_down.script_aborted = true;
 	hl78xx_chat_abort_active_script(data);
 
 	/* Give the application time to perform graceful teardown (e.g. cloud
