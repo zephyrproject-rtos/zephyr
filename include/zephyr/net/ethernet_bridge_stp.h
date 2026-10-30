@@ -185,8 +185,11 @@ struct eth_bridge_stp_topology_event {
  * The protocol blocks a port by not forwarding frames from and to it in
  * software. A port whose device forwards frames to its other ports in
  * hardware (ETHERNET_DSA_USER_PORT or ETHERNET_HW_PORT_FORWARDING) cannot be
- * blocked that way, so the protocol does not start on a bridge with such a
- * port, and such a port cannot be added while it runs.
+ * blocked that way, unless the device also reports
+ * ETHERNET_HW_STP_PORT_STATE: the protocol then sets the port state and
+ * flushes the learned addresses in hardware too. Without it the protocol
+ * does not start on a bridge with such a port, and such a port cannot be
+ * added while it runs.
  *
  * The Bridge Identifier is made of the Bridge Priority and the MAC address
  * of the bridge interface. Use a stable bridge MAC address, as a random one
@@ -199,8 +202,8 @@ struct eth_bridge_stp_topology_event {
  * @retval -EALREADY The protocol was already in that state.
  * @retval -EINVAL @p br is not a bridge interface.
  * @retval -ENOTSUP A port of @p br forwards frames to other ports in hardware,
- *                  as DSA switch ports and the ADIN2111 do, so it cannot be
- *                  blocked.
+ *                  as DSA switch ports and the ADIN2111 do, and its device
+ *                  cannot block it.
  */
 int eth_bridge_stp_enable(struct net_if *br, bool enable);
 

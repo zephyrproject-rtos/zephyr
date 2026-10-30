@@ -63,6 +63,11 @@ struct fake_port {
 	size_t last_bpdu_len;
 	/* Report ETHERNET_HW_PORT_FORWARDING */
 	bool hw_forwarding;
+	/* Report ETHERNET_HW_STP_PORT_STATE */
+	bool hw_stp;
+	/* Last ETHERNET_CONFIG_TYPE_STP_PORT_STATE value, -1 for none */
+	atomic_t hw_state;
+	atomic_t hw_flushes;
 };
 
 struct wire_frame {
@@ -191,17 +196,31 @@ static enum ethernet_hw_caps fake_get_capabilities(const struct device *dev, str
 	ARG_UNUSED(iface);
 
 	return ETHERNET_PROMISC_MODE | ETHERNET_LINK_100BASE |
-	       (fake_of(dev)->hw_forwarding ? ETHERNET_HW_PORT_FORWARDING : 0);
+	       (fake_of(dev)->hw_forwarding ? ETHERNET_HW_PORT_FORWARDING : 0) |
+	       (fake_of(dev)->hw_stp ? ETHERNET_HW_STP_PORT_STATE : 0);
 }
 
 static int fake_set_config(const struct device *dev, struct net_if *iface,
 			   enum ethernet_config_type type, const struct ethernet_config *config)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(iface);
-	ARG_UNUSED(config);
+	struct fake_port *fp = fake_of(dev);
 
-	return type == ETHERNET_CONFIG_TYPE_PROMISC_MODE ? 0 : -ENOTSUP;
+	ARG_UNUSED(iface);
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		return 0;
+	case ETHERNET_CONFIG_TYPE_STP_PORT_STATE:
+		zexpect_true(fp->hw_stp);
+		(void)atomic_set(&fp->hw_state, config->stp_port_state);
+		return 0;
+	case ETHERNET_CONFIG_TYPE_FDB_FLUSH:
+		zexpect_true(fp->hw_stp);
+		(void)atomic_inc(&fp->hw_flushes);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static const struct ethernet_api fake_api = {
@@ -731,6 +750,54 @@ ZTEST(rstp_bridge, test_hw_forwarding_port)
 	zassert_ok(eth_bridge_stp_enable(bridges[0], true));
 	k_sleep(RECONVERGE_TIME);
 
+	expect_ring_converged();
+}
+
+/* A port that forwards in hardware runs the protocol when its device takes
+ * the port state: the device follows every state change and FDB flush, and
+ * the port forwards again once the protocol no longer controls it.
+ */
+ZTEST(rstp_bridge, test_hw_stp_port_state)
+{
+	zassert_ok(eth_bridge_iface_remove(bridges[2], fake[5].iface));
+	fake[5].hw_forwarding = true;
+	fake[5].hw_stp = true;
+	(void)atomic_set(&fake[5].hw_state, -1);
+	(void)atomic_clear(&fake[5].hw_flushes);
+
+	zassert_ok(eth_bridge_iface_add(bridges[2], fake[5].iface));
+	zexpect_equal(atomic_get(&fake[5].hw_state), ETHERNET_STP_PORT_STATE_DISCARDING);
+	k_sleep(RECONVERGE_TIME);
+	expect_ring_converged();
+	zexpect_equal(atomic_get(&fake[5].hw_state), ETHERNET_STP_PORT_STATE_DISCARDING);
+
+	/* bridge2 moves its root port to the hardware port */
+	zassert_ok(eth_bridge_stp_port_set_path_cost(bridges[2], fake[3].iface,
+						     ETH_RSTP_MAX_PATH_COST));
+	k_sleep(RECONVERGE_TIME);
+	zexpect_equal(bridge_status(2).root_port, fake[5].iface);
+	zexpect_equal(atomic_get(&fake[5].hw_state), ETHERNET_STP_PORT_STATE_FORWARDING);
+	zexpect_true(atomic_get(&fake[5].hw_flushes) > 0, "topology change flushes the port");
+
+	zassert_ok(eth_bridge_stp_port_set_path_cost(bridges[2], fake[3].iface, 0U));
+	k_sleep(RECONVERGE_TIME);
+	expect_ring_converged();
+	zexpect_equal(atomic_get(&fake[5].hw_state), ETHERNET_STP_PORT_STATE_DISCARDING);
+
+	zassert_ok(eth_bridge_stp_enable(bridges[2], false));
+	zexpect_equal(atomic_get(&fake[5].hw_state), ETHERNET_STP_PORT_STATE_FORWARDING);
+	zassert_ok(eth_bridge_stp_enable(bridges[2], true));
+	zexpect_equal(atomic_get(&fake[5].hw_state), ETHERNET_STP_PORT_STATE_DISCARDING);
+	k_sleep(RECONVERGE_TIME);
+	expect_ring_converged();
+
+	zassert_ok(eth_bridge_iface_remove(bridges[2], fake[5].iface));
+	zexpect_equal(atomic_get(&fake[5].hw_state), ETHERNET_STP_PORT_STATE_FORWARDING);
+
+	fake[5].hw_forwarding = false;
+	fake[5].hw_stp = false;
+	zassert_ok(eth_bridge_iface_add(bridges[2], fake[5].iface));
+	k_sleep(RECONVERGE_TIME);
 	expect_ring_converged();
 }
 
