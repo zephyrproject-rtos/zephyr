@@ -973,6 +973,8 @@ SECTIONS
     . = ALIGN(16);
     KEEP(*(.ot_msg_pool*))
     . = ALIGN(16);
+    KEEP(*(.libc_malloc_arena*))
+    . = ALIGN(16);
 
     _ext_ram_bss_end = ABSOLUTE(.);
 
