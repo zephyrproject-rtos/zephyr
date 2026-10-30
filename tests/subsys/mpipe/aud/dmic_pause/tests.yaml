@@ -1,0 +1,8 @@
+tests:
+  mpipe.aud.dmic_pause:
+    tags:
+      - mpipe
+      - audio
+      - dmic
+    platform_allow:
+      - native_sim/native/64
