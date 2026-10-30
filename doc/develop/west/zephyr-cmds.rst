@@ -272,6 +272,27 @@ Each intermediate target, such as a static library, also gets its own sub-build 
 sources, tools and compile flags that produced its artifact, so any output can be traced back to how
 it was built.
 
+.. _west-spdx-reproducible:
+
+Reproducible output
+-------------------
+
+``west spdx`` honors the `SOURCE_DATE_EPOCH`_ environment variable defined by the Reproducible
+Builds project. When it is set, the documents record that time as their creation time
+(``Created`` in SPDX 2.x, ``CreationInfo.created`` in SPDX 3.0) instead of the current time, and
+the default namespace prefix is derived from it, the SPDX version and the hashes of every file in
+the bill-of-materials instead of from a random UUID. Running ``west spdx`` again on the same build
+then produces identical documents, while builds with different contents, such as the images of a
+sysbuild build, still get distinct prefixes. The paths and tool versions recorded in the documents
+still have to match for two builds to give identical documents. A value that is not a whole number
+of seconds since the Unix epoch is rejected.
+
+For example, to date the documents with the last commit of the application:
+
+.. code-block:: console
+
+   SOURCE_DATE_EPOCH=$(git -C <app> log -1 --format=%ct) west spdx -d build
+
 Command-line options
 --------------------
 
@@ -284,7 +305,9 @@ Command-line options
 - ``-n PREFIX``: a prefix for the Document Namespaces that will be included in
   the generated SPDX documents. See `SPDX specification clause 6`_ for
   details. If ``-n`` is omitted, a default namespace will be generated
-  according to the default format described in section 2.5 using a random UUID.
+  according to the default format described in section 2.5 using a random UUID,
+  or a UUID derived from ``SOURCE_DATE_EPOCH`` when it is set (see
+  :ref:`west-spdx-reproducible`).
 
 - ``-s SPDX_DIR``: specifies an alternate directory where the SPDX documents
   should be written instead of :file:`BUILD_DIR/spdx/`.
@@ -318,6 +341,8 @@ Command-line options
 
 .. _SPDX specification clause 6:
    https://spdx.github.io/spdx-spec/v2.2.2/document-creation-information/
+
+.. _SOURCE_DATE_EPOCH: https://reproducible-builds.org/specs/source-date-epoch/
 
 .. _west-blobs:
 
