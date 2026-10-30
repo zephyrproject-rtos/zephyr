@@ -159,21 +159,29 @@ static inline void ethernet_update_length(struct net_if *iface,
 	}
 }
 
-
-static void ethernet_update_rx_stats(struct net_if *iface, size_t length,
-				     bool dst_broadcast, bool dst_eth_multicast)
+static void ethernet_update_rx_stats(struct net_if *iface __maybe_unused,
+				     size_t length __maybe_unused,
+				     bool dst_broadcast __maybe_unused,
+				     bool dst_eth_multicast __maybe_unused)
 {
-	if (!IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
+
+	if (stats == NULL) {
 		return;
 	}
 
-	eth_stats_update_bytes_rx(iface, length);
-	eth_stats_update_pkts_rx(iface);
+	stats->bytes.received += length;
+	stats->pkts.rx++;
+
 	if (dst_broadcast) {
-		eth_stats_update_broadcast_rx(iface);
+		stats->broadcast.rx++;
 	} else if (dst_eth_multicast) {
-		eth_stats_update_multicast_rx(iface);
+		stats->multicast.rx++;
+	} else {
+		/* Unicast frame */
 	}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 }
 
 static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
@@ -960,22 +968,28 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	return hdr_frag;
 }
 
-static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
+static void ethernet_update_tx_stats(struct net_if *iface __maybe_unused,
+				     struct net_pkt *pkt __maybe_unused)
 {
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
+	if (stats == NULL) {
 		return;
 	}
 
-	eth_stats_update_bytes_tx(iface, net_pkt_get_len(pkt));
-	eth_stats_update_pkts_tx(iface);
+	stats->bytes.sent += net_pkt_get_len(pkt);
+	stats->pkts.tx++;
 
 	if (net_eth_is_addr_broadcast(&hdr->dst)) {
-		eth_stats_update_broadcast_tx(iface);
+		stats->broadcast.tx++;
 	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
-		eth_stats_update_multicast_tx(iface);
+		stats->multicast.tx++;
+	} else {
+		/* Unicast frame */
 	}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 }
 
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
