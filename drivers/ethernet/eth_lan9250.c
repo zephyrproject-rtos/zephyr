@@ -22,6 +22,10 @@
 
 LOG_MODULE_REGISTER(eth_lan9250, CONFIG_ETHERNET_LOG_LEVEL);
 
+#define LAN9250_RX_DATA_OFFSET 4U
+#define LAN9250_RX_MIN_LEN     (sizeof(struct net_eth_hdr) + LAN9250_CRC_LEN)
+#define LAN9250_RX_MAX_LEN     (NET_ETH_MAX_FRAME_SIZE + LAN9250_CRC_LEN)
+
 static int lan9250_write_sys_reg(const struct device *dev, uint16_t address, uint32_t data)
 {
 	const struct lan9250_config *config = dev->config;
@@ -44,33 +48,49 @@ static int lan9250_write_sys_reg(const struct device *dev, uint16_t address, uin
 	return spi_write_dt(&config->spi, &tx);
 }
 
-static int lan9250_read_sys_reg(const struct device *dev, uint16_t address, uint32_t *value)
+/* Read data using the SPI Read instruction (up to 30 MHz) or, if enabled,
+ * the Fast Read instruction (up to 80 MHz), which needs one dummy byte.
+ */
+static int lan9250_read(const struct device *dev, uint16_t address, uint8_t *data, size_t len)
 {
 	const struct lan9250_config *config = dev->config;
-	uint8_t cmd[1] = {LAN9250_SPI_INSTR_READ};
-	uint8_t addr[2];
-	struct spi_buf tx_buf[3];
-	struct spi_buf rx_buf[3];
-	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 3};
-	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 3};
+	const bool fast = IS_ENABLED(CONFIG_ETH_LAN9250_SPI_FAST_READ);
+	/* Instruction, address and optional dummy byte */
+	uint8_t hdr[4] = {fast ? LAN9250_SPI_INSTR_FAST_READ : LAN9250_SPI_INSTR_READ};
+	size_t hdr_len = fast ? 4 : 3;
+	struct spi_buf tx_buf[2];
+	struct spi_buf rx_buf[2];
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 2};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 2};
 
-	sys_put_be16(address, addr);
+	sys_put_be16(address, &hdr[1]);
 
-	tx_buf[0].buf = &cmd;
-	tx_buf[0].len = ARRAY_SIZE(cmd);
-	tx_buf[1].buf = addr;
-	tx_buf[1].len = ARRAY_SIZE(addr);
-	tx_buf[2].buf = NULL;
-	tx_buf[2].len = sizeof(uint32_t);
+	tx_buf[0].buf = hdr;
+	tx_buf[0].len = hdr_len;
+	tx_buf[1].buf = NULL;
+	tx_buf[1].len = len;
 
 	rx_buf[0].buf = NULL;
-	rx_buf[0].len = 1;
-	rx_buf[1].buf = NULL;
-	rx_buf[1].len = 2;
-	rx_buf[2].buf = value;
-	rx_buf[2].len = sizeof(uint32_t);
+	rx_buf[0].len = hdr_len;
+	rx_buf[1].buf = data;
+	rx_buf[1].len = len;
 
 	return spi_transceive_dt(&config->spi, &tx, &rx);
+}
+
+static int lan9250_read_sys_reg(const struct device *dev, uint16_t address, uint32_t *value)
+{
+	uint8_t data[4];
+	int ret;
+
+	ret = lan9250_read(dev, address, data, sizeof(data));
+	if (ret < 0) {
+		return ret;
+	}
+
+	*value = sys_get_le32(data);
+
+	return 0;
 }
 
 static int lan9250_wait_ready(const struct device *dev, uint16_t address, uint32_t mask,
@@ -88,7 +108,7 @@ static int lan9250_wait_ready(const struct device *dev, uint16_t address, uint32
 		if (sys_timepoint_expired(end)) {
 			return -EIO;
 		}
-		k_busy_wait(USEC_PER_MSEC * 1U);
+		k_msleep(1);
 	}
 }
 
@@ -278,22 +298,6 @@ static int lan9250_set_macaddr(const struct device *dev)
 				     ctx->mac_address[4] | (ctx->mac_address[5] << 8));
 }
 
-static int lan9250_hw_cfg_check(const struct device *dev)
-{
-	uint32_t tmp;
-	int ret;
-
-	do {
-		ret = lan9250_read_sys_reg(dev, LAN9250_HW_CFG, &tmp);
-		if (ret < 0) {
-			return ret;
-		}
-		k_busy_wait(USEC_PER_MSEC * 1U);
-	} while ((tmp & LAN9250_HW_CFG_DEVICE_READY) == 0);
-
-	return 0;
-}
-
 static int lan9250_sw_reset(const struct device *dev)
 {
 	int ret;
@@ -315,8 +319,10 @@ static int lan9250_configure(const struct device *dev)
 	uint32_t tmp;
 	int ret;
 
-	ret = lan9250_hw_cfg_check(dev);
+	ret = lan9250_wait_ready(dev, LAN9250_HW_CFG, LAN9250_HW_CFG_DEVICE_READY,
+				 LAN9250_HW_CFG_DEVICE_READY, LAN9250_RESET_TIMEOUT);
 	if (ret < 0) {
+		LOG_ERR("Device not ready");
 		return ret;
 	}
 
@@ -327,7 +333,7 @@ static int lan9250_configure(const struct device *dev)
 	}
 
 	if ((tmp & LAN9250_ID_REV_CHIP_ID) != LAN9250_ID_REV_CHIP_ID_DEFAULT) {
-		LOG_ERR("ERROR: Bad Rev ID: %08x\n", tmp);
+		LOG_ERR("Bad Rev ID: %08x", tmp);
 		return -ENODEV;
 	}
 
@@ -414,18 +420,6 @@ static int lan9250_configure(const struct device *dev)
 		return ret;
 	}
 
-	/* Configure PHY basic control:
-	 *
-	 *   - Auto-Negotiation for 10/100 Mbits and Half/Full Duplex
-	 */
-	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_BASIC_CONTROL,
-				    LAN9250_PHY_BASIC_CONTROL_PHY_AN |
-					    LAN9250_PHY_BASIC_CONTROL_PHY_SPEED_SEL_LSB |
-					    LAN9250_PHY_BASIC_CONTROL_PHY_DUPLEX);
-	if (ret < 0) {
-		return ret;
-	}
-
 	/* Configure PHY auto-negotiation advertisement capability:
 	 *
 	 *   - Asymmetric pause
@@ -440,6 +434,20 @@ static int lan9250_configure(const struct device *dev)
 			LAN9250_PHY_AN_ADV_100BTX_HD | LAN9250_PHY_AN_ADV_100BTX_FD |
 			LAN9250_PHY_AN_ADV_10BT_HD | LAN9250_PHY_AN_ADV_10BT_FD |
 			LAN9250_PHY_AN_ADV_SELECTOR_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Configure PHY basic control:
+	 *
+	 *   - Auto-Negotiation for 10/100 Mbits and Half/Full Duplex
+	 *   - Restart Auto-Negotiation to apply the advertisement
+	 */
+	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_BASIC_CONTROL,
+				    LAN9250_PHY_BASIC_CONTROL_PHY_AN |
+					    LAN9250_PHY_BASIC_CONTROL_PHY_RST_AN |
+					    LAN9250_PHY_BASIC_CONTROL_PHY_SPEED_SEL_LSB |
+					    LAN9250_PHY_BASIC_CONTROL_PHY_DUPLEX);
 	if (ret < 0) {
 		return ret;
 	}
@@ -474,8 +482,8 @@ static int lan9250_configure(const struct device *dev)
 	 *   - Link down
 	 */
 	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_INTERRUPT_MASK,
-				    LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP |
-					    LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN);
+				    LAN9250_PHY_INTERRUPT_MASK_LINK_UP |
+					    LAN9250_PHY_INTERRUPT_MASK_LINK_DOWN);
 	if (ret < 0) {
 		return ret;
 	}
@@ -498,8 +506,8 @@ static int lan9250_configure(const struct device *dev)
 
 	/* Configure HMAC control:
 	 *
-	 *   - Automatically strip the pad field on incoming packets
-	 *   - Full duplex
+	 *   - No pad stripping, so that every RX frame includes the CRC
+	 *   - Full duplex, updated from the PHY on link up
 	 *   - TX enable
 	 *   - RX enable
 	 *   - Pass all multicast frames
@@ -507,8 +515,22 @@ static int lan9250_configure(const struct device *dev)
 	 *   - Promiscuous disabled
 	 */
 	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_CR,
-				    LAN9250_HMAC_CR_PADSTR | LAN9250_HMAC_CR_TXEN |
-					    LAN9250_HMAC_CR_RXEN | LAN9250_HMAC_CR_FDPX);
+				    LAN9250_HMAC_CR_TXEN | LAN9250_HMAC_CR_RXEN |
+					    LAN9250_HMAC_CR_FDPX | LAN9250_HMAC_CR_MCPAS);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Configure HMAC flow control:
+	 *
+	 *   - Pause time sent in automatic pause frames: maximum. Pause frames
+	 *     with a pause time of zero are sent when the RX FIFO drains, see
+	 *     AFC_CFG.
+	 *   - Act on received pause frames (full duplex) and enable
+	 *     backpressure (half duplex), as pause is advertised by the PHY
+	 */
+	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_FLOW,
+				    LAN9250_HMAC_FLOW_FCPT_MAX | LAN9250_HMAC_FLOW_FCEN);
 	if (ret < 0) {
 		return ret;
 	}
@@ -558,38 +580,102 @@ static int lan9250_write_buf(const struct device *dev, uint8_t *data_buffer, uin
 
 static int lan9250_read_buf(const struct device *dev, uint8_t *data_buffer, uint16_t buf_len)
 {
-	const struct lan9250_config *config = dev->config;
-	uint8_t cmd[1] = {LAN9250_SPI_INSTR_READ};
-	uint8_t instr[2] = {(LAN9250_RX_DATA_FIFO >> 8) & 0xFF, (LAN9250_RX_DATA_FIFO & 0xFF)};
-	struct spi_buf tx_buf[3];
-	struct spi_buf rx_buf[3];
-	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 3};
-	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 3};
+	return lan9250_read(dev, LAN9250_RX_DATA_FIFO, data_buffer, buf_len);
+}
 
-	tx_buf[0].buf = &cmd;
-	tx_buf[0].len = ARRAY_SIZE(cmd);
-	tx_buf[1].buf = &instr;
-	tx_buf[1].len = ARRAY_SIZE(instr);
-	tx_buf[2].buf = NULL;
-	tx_buf[2].len = buf_len;
+/* Discard the current frame from the RX data FIFO. Its status has already
+ * been read from the RX status FIFO.
+ */
+static int lan9250_rx_discard(const struct device *dev, uint16_t pkt_len)
+{
+	/* RX data offset and frame data, padded to a DWORD */
+	uint16_t dwords = (LAN9250_RX_DATA_OFFSET + pkt_len + 3) / 4;
+	uint32_t tmp;
+	int ret;
 
-	rx_buf[0].buf = NULL;
-	rx_buf[0].len = 1;
-	rx_buf[1].buf = NULL;
-	rx_buf[1].len = 2;
-	rx_buf[2].buf = data_buffer;
-	rx_buf[2].len = buf_len;
+	/* Fast-forward needs at least 4 DWORDs of frame data in the FIFO */
+	if (((pkt_len + 3) / 4) < 4) {
+		for (uint16_t i = 0; i < dwords; i++) {
+			ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
+			if (ret < 0) {
+				return ret;
+			}
+		}
 
-	return spi_transceive_dt(&config->spi, &tx, &rx);
+		return 0;
+	}
+
+	ret = lan9250_write_sys_reg(dev, LAN9250_RX_DP_CTRL, LAN9250_RX_DP_CTRL_RX_FFWD);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lan9250_wait_ready(dev, LAN9250_RX_DP_CTRL, LAN9250_RX_DP_CTRL_RX_FFWD, 0,
+				  LAN9250_MAC_TIMEOUT);
+}
+
+static int lan9250_rx_frame(const struct device *dev)
+{
+	struct lan9250_runtime *ctx = dev->data;
+	struct net_pkt *pkt;
+	uint16_t pkt_len;
+	uint32_t tmp;
+	int ret;
+
+	/* Check packet status, the length includes the CRC */
+	ret = lan9250_read_sys_reg(dev, LAN9250_RX_STATUS_FIFO, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+	pkt_len = (tmp & LAN9250_RX_STS_PACKET_LEN) >> 16;
+
+	if (((tmp & LAN9250_RX_STS_ES) != 0) || (pkt_len < LAN9250_RX_MIN_LEN) ||
+	    (pkt_len > LAN9250_RX_MAX_LEN)) {
+		LOG_DBG("Dropping RX frame, status 0x%08x", tmp);
+		eth_stats_update_errors_rx(ctx->iface);
+		return lan9250_rx_discard(dev, pkt_len);
+	}
+
+	/* Read dummy  data */
+	ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Read the frame including CRC and padding in one DWORD-aligned
+	 * transfer, so that the RX data FIFO is at the next frame afterwards.
+	 */
+	ret = lan9250_read_buf(dev, ctx->buf, LAN9250_ALIGN(pkt_len));
+	if (ret < 0) {
+		return ret;
+	}
+	pkt_len -= LAN9250_CRC_LEN;
+
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len, NET_AF_UNSPEC, 0,
+					   K_MSEC(CONFIG_ETH_LAN9250_BUF_ALLOC_TIMEOUT));
+	if (pkt == NULL) {
+		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
+		eth_stats_update_errors_rx(ctx->iface);
+		return 0;
+	}
+
+	if (net_pkt_write(pkt, ctx->buf, pkt_len) < 0) {
+		LOG_ERR("%s: Could not copy rx frame", dev->name);
+		eth_stats_update_errors_rx(ctx->iface);
+		net_pkt_unref(pkt);
+		return 0;
+	}
+
+	/* Feed buffer frame to IP stack */
+	if (net_recv_data(ctx->iface, pkt) < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return 0;
 }
 
 static int lan9250_rx(const struct device *dev)
 {
-	struct lan9250_runtime *ctx = dev->data;
-	const uint16_t buf_rx_size = CONFIG_NET_BUF_DATA_SIZE;
-	struct net_pkt *pkt;
-	struct net_buf *pkt_buf;
-	uint16_t pkt_len;
 	uint8_t pktcnt;
 	uint32_t tmp;
 	int ret;
@@ -599,95 +685,60 @@ static int lan9250_rx(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	pktcnt = (tmp & 0x00ff0000) >> 16;
+	pktcnt = (tmp & LAN9250_RX_FIFO_INF_RXSUSED) >> 16;
 
-	/* Check packet length */
-	ret = lan9250_read_sys_reg(dev, LAN9250_RX_STATUS_FIFO, &tmp);
-	if (ret < 0) {
-		return ret;
-	}
-	pkt_len = (tmp & LAN9250_RX_STS_PACKET_LEN) >> 16;
-
-	if (pktcnt == 0 || pkt_len == 0) {
-		return 0;
-	}
-
-	/* Read dummy  data */
-	ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
-	if (ret < 0) {
-		return ret;
-	}
-	pkt_len -= 4;
-
-	if (pkt_len > NET_ETH_MAX_FRAME_SIZE) {
-		LOG_ERR("Maximum frame length exceeded, it should be: %d", NET_ETH_MAX_FRAME_SIZE);
-		eth_stats_update_errors_rx(ctx->iface);
-	}
-
-	/* Get the frame from the buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len, NET_AF_UNSPEC, 0,
-					   K_MSEC(CONFIG_ETH_LAN9250_BUF_ALLOC_TIMEOUT));
-	if (!pkt) {
-		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
-		eth_stats_update_errors_rx(ctx->iface);
-		return 0;
-	}
-
-	pkt_buf = pkt->buffer;
-
-	do {
-		uint8_t *data_ptr = pkt_buf->data;
-		uint16_t data_len;
-
-		if (pkt_len > buf_rx_size) {
-			data_len = buf_rx_size;
-		} else {
-			data_len = pkt_len;
-		}
-		pkt_len -= data_len;
-
-		ret = lan9250_read_buf(dev, data_ptr, data_len);
+	/* Frames arriving from now on set INT_STS.RSFL again and are handled
+	 * on the next interrupt.
+	 */
+	for (; pktcnt > 0; pktcnt--) {
+		ret = lan9250_rx_frame(dev);
 		if (ret < 0) {
 			return ret;
 		}
-		net_buf_add(pkt_buf, data_len);
-		pkt_buf = pkt_buf->frags;
-	} while (pkt_len > 0);
-
-	ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
-	if (ret < 0) {
-		return ret;
 	}
-
-	/* Feed buffer frame to IP stack */
-	if (net_recv_data(ctx->iface, pkt) < 0) {
-		net_pkt_unref(pkt);
-	}
-
-	k_sem_give(&ctx->tx_rx_sem);
 
 	return 0;
 }
 
-static int lan9250_tx(const struct device *dev, struct net_pkt *pkt)
+static int lan9250_tx_frame(const struct device *dev, struct net_pkt *pkt)
 {
 	struct lan9250_runtime *ctx = dev->data;
 	size_t len = net_pkt_get_len(pkt);
 	uint32_t regval;
 	uint16_t free_size;
 	uint8_t status_size;
+	k_timepoint_t end;
 	uint32_t tmp;
 	int ret;
 
-	ret = lan9250_read_sys_reg(dev, LAN9250_TX_FIFO_INF, &regval);
-	if (ret < 0) {
-		return ret;
+	if (len > NET_ETH_MAX_FRAME_SIZE) {
+		LOG_ERR("TX frame too long: %zu", len);
+		return -EMSGSIZE;
+	}
+
+	/* Wait for room for TX commands 'A' and 'B' and the padded frame */
+	end = sys_timepoint_calc(K_MSEC(LAN9250_TX_TIMEOUT));
+	while (true) {
+		ret = lan9250_read_sys_reg(dev, LAN9250_TX_FIFO_INF, &regval);
+		if (ret < 0) {
+			return ret;
+		}
+
+		free_size = regval & LAN9250_TX_FIFO_INF_TXFREE;
+		if (free_size >= LAN9250_ALIGN(len) + 2 * sizeof(uint32_t)) {
+			break;
+		}
+
+		if (sys_timepoint_expired(end)) {
+			LOG_ERR("TX FIFO full");
+			eth_stats_update_errors_tx(ctx->iface);
+			return -EBUSY;
+		}
+
+		k_msleep(1);
 	}
 
 	status_size = (regval & LAN9250_TX_FIFO_INF_TXSUSED) >> 16;
-	free_size = regval & LAN9250_TX_FIFO_INF_TXFREE;
-
-	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
 
 	/* TX command 'A' */
 	ret = lan9250_write_sys_reg(
@@ -721,9 +772,19 @@ static int lan9250_tx(const struct device *dev, struct net_pkt *pkt)
 		}
 	}
 
-	k_sem_give(&ctx->tx_rx_sem);
-
 	return 0;
+}
+
+static int lan9250_tx(const struct device *dev, struct net_pkt *pkt)
+{
+	struct lan9250_runtime *ctx = dev->data;
+	int ret;
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = lan9250_tx_frame(dev, pkt);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 static void lan9250_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -733,6 +794,130 @@ static void lan9250_gpio_callback(const struct device *dev, struct gpio_callback
 	k_sem_give(&context->int_sem);
 }
 
+static int lan9250_update_duplex(const struct device *dev)
+{
+	uint16_t phy_sts;
+	uint32_t mac_cr;
+	uint32_t new_cr;
+	int ret;
+
+	ret = lan9250_read_phy_reg(dev, LAN9250_PHY_SPECIAL_CONTROL_STATUS, &phy_sts);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lan9250_read_mac_reg(dev, LAN9250_HMAC_CR, &mac_cr);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((phy_sts & LAN9250_PHY_SPECIAL_CONTROL_STATUS_SPEED_FDPX) != 0) {
+		new_cr = mac_cr | LAN9250_HMAC_CR_FDPX;
+	} else {
+		new_cr = mac_cr & ~LAN9250_HMAC_CR_FDPX;
+	}
+
+	LOG_DBG("Link %s duplex", (new_cr & LAN9250_HMAC_CR_FDPX) != 0 ? "full" : "half");
+
+	if (new_cr == mac_cr) {
+		return 0;
+	}
+
+	return lan9250_write_mac_reg(dev, LAN9250_HMAC_CR, new_cr);
+}
+
+static int lan9250_handle_link(const struct device *dev)
+{
+	struct lan9250_runtime *context = dev->data;
+	uint16_t tmp;
+	int ret;
+
+	/* Read PHY interrupt source register */
+	ret = lan9250_read_phy_reg(dev, LAN9250_PHY_INTERRUPT_SOURCE, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((tmp & (LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP |
+		    LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN)) == 0) {
+		return 0;
+	}
+
+	/* Link up and down may both be latched after a short link drop, so
+	 * report the current link status. The link status bit latches low,
+	 * read it twice.
+	 */
+	ret = lan9250_read_phy_reg(dev, LAN9250_PHY_BASIC_STATUS, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lan9250_read_phy_reg(dev, LAN9250_PHY_BASIC_STATUS, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((tmp & LAN9250_PHY_BASIC_STATUS_LINK_STATUS) != 0) {
+		/* Match the MAC duplex mode to the negotiated one */
+		ret = lan9250_update_duplex(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		net_eth_carrier_on(context->iface);
+	} else {
+		net_eth_carrier_off(context->iface);
+	}
+
+	return 0;
+}
+
+static int lan9250_handle_irq(const struct device *dev)
+{
+	uint32_t int_sts;
+	uint32_t ier;
+	int ret;
+
+	/* Save interrupt enable register value */
+	ret = lan9250_read_sys_reg(dev, LAN9250_INT_EN, &ier);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Disable interrupts to release the interrupt line */
+	ret = lan9250_write_sys_reg(dev, LAN9250_INT_EN, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Read interrupt status register */
+	ret = lan9250_read_sys_reg(dev, LAN9250_INT_STS, &int_sts);
+	if (ret < 0) {
+		goto reenable;
+	}
+
+	if ((int_sts & LAN9250_INT_STS_PHY_INT) != 0) {
+		ret = lan9250_handle_link(dev);
+		if (ret < 0) {
+			LOG_ERR("PHY interrupt handling failed: %d", ret);
+		}
+	}
+
+	if ((int_sts & LAN9250_INT_STS_RSFL) != 0) {
+		ret = lan9250_write_sys_reg(dev, LAN9250_INT_STS, LAN9250_INT_STS_RSFL);
+		if (ret == 0) {
+			ret = lan9250_rx(dev);
+		}
+		if (ret < 0) {
+			LOG_ERR("RX failed: %d", ret);
+		}
+	}
+
+reenable:
+	/* Re-enable interrupts */
+	return lan9250_write_sys_reg(dev, LAN9250_INT_EN, ier);
+}
+
 static void lan9250_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
@@ -740,40 +925,18 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 
 	const struct device *dev = p1;
 	struct lan9250_runtime *context = dev->data;
-	uint32_t int_sts;
-	uint16_t tmp = 0;
-	uint32_t ier;
+	int ret;
 
 	while (true) {
 		k_sem_take(&context->int_sem, K_FOREVER);
 
-		/* Save interrupt enable register value */
-		lan9250_read_sys_reg(dev, LAN9250_INT_EN, &ier);
+		k_mutex_lock(&context->lock, K_FOREVER);
+		ret = lan9250_handle_irq(dev);
+		k_mutex_unlock(&context->lock);
 
-		/* Disable interrupts to release the interrupt line */
-		lan9250_write_sys_reg(dev, LAN9250_INT_EN, 0);
-
-		/* Read interrupt status register */
-		lan9250_read_sys_reg(dev, LAN9250_INT_STS, &int_sts);
-
-		if ((int_sts & LAN9250_INT_STS_PHY_INT) != 0) {
-
-			/* Read PHY interrupt source register */
-			lan9250_read_phy_reg(dev, LAN9250_PHY_INTERRUPT_SOURCE, &tmp);
-			if (tmp & LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP) {
-				net_eth_carrier_on(context->iface);
-			} else if (tmp & LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN) {
-				net_eth_carrier_off(context->iface);
-			}
+		if (ret < 0) {
+			LOG_ERR("Interrupt handling failed: %d", ret);
 		}
-
-		if ((int_sts & LAN9250_INT_STS_RSFL) != 0) {
-			lan9250_write_sys_reg(dev, LAN9250_INT_STS, LAN9250_INT_STS_RSFL);
-			lan9250_rx(dev);
-		}
-
-		/* Re-enable interrupts */
-		lan9250_write_sys_reg(dev, LAN9250_INT_EN, ier);
 	}
 }
 
@@ -808,6 +971,38 @@ static void lan9250_iface_init(struct net_if *iface)
 			K_PRIO_COOP(CONFIG_ETH_LAN9250_RX_THREAD_PRIO), 0, K_NO_WAIT);
 }
 
+static int lan9250_set_promisc(const struct device *dev, bool enable)
+{
+	uint32_t reg;
+	int ret;
+
+	ret = lan9250_read_mac_reg(dev, LAN9250_HMAC_CR, &reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* See Table 11-1 from the LAN9250 data sheet */
+	if (enable) {
+		if ((reg & LAN9250_HMAC_CR_PRMS) != 0) {
+			return -EALREADY;
+		}
+
+		reg &= ~LAN9250_HMAC_CR_MCPAS;
+		reg |= LAN9250_HMAC_CR_PRMS;
+		reg &= ~LAN9250_HMAC_CR_HO;
+	} else {
+		if ((reg & LAN9250_HMAC_CR_PRMS) == 0) {
+			return -EALREADY;
+		}
+
+		reg |= LAN9250_HMAC_CR_MCPAS;
+		reg &= ~LAN9250_HMAC_CR_PRMS;
+		reg &= ~LAN9250_HMAC_CR_HO;
+	}
+
+	return lan9250_write_mac_reg(dev, LAN9250_HMAC_CR, reg);
+}
+
 static int lan9250_set_config(const struct device *dev,
 			      struct net_if *iface __unused,
 			      enum ethernet_config_type type,
@@ -818,9 +1013,11 @@ static int lan9250_set_config(const struct device *dev,
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		k_mutex_lock(&ctx->lock, K_FOREVER);
 		memcpy(ctx->mac_address, config->mac_address.addr,
 		       sizeof(ctx->mac_address));
 		ret = lan9250_set_macaddr(dev);
+		k_mutex_unlock(&ctx->lock);
 		if (ret < 0) {
 			LOG_ERR("Set mac address failed");
 			return ret;
@@ -835,33 +1032,11 @@ static int lan9250_set_config(const struct device *dev,
 		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
-			uint32_t reg;
+			k_mutex_lock(&ctx->lock, K_FOREVER);
+			ret = lan9250_set_promisc(dev, config->promisc_mode);
+			k_mutex_unlock(&ctx->lock);
 
-			ret = lan9250_read_mac_reg(dev, LAN9250_HMAC_CR, &reg);
-			if (ret < 0) {
-				return ret;
-			}
-
-			/* See Table 11-1 from the LAN9250 data sheet */
-			if (config->promisc_mode) {
-				if ((reg & LAN9250_HMAC_CR_PRMS) != 0) {
-					return -EALREADY;
-				}
-
-				reg &= ~LAN9250_HMAC_CR_MCPAS;
-				reg |= LAN9250_HMAC_CR_PRMS;
-				reg &= ~LAN9250_HMAC_CR_HO;
-			} else {
-				if ((reg & LAN9250_HMAC_CR_PRMS) == 0) {
-					return -EALREADY;
-				}
-
-				reg |= LAN9250_HMAC_CR_MCPAS;
-				reg &= ~LAN9250_HMAC_CR_PRMS;
-				reg &= ~LAN9250_HMAC_CR_HO;
-			}
-
-			return lan9250_write_mac_reg(dev, LAN9250_HMAC_CR, reg);
+			return ret;
 		}
 
 		break;
@@ -967,7 +1142,7 @@ static int lan9250_init(const struct device *dev)
 
 #define LAN9250_DEFINE(inst)                                                                       \
 	static struct lan9250_runtime lan9250_##inst##_runtime = {                                 \
-		.tx_rx_sem = Z_SEM_INITIALIZER(lan9250_##inst##_runtime.tx_rx_sem, 1, UINT_MAX),   \
+		.lock = Z_MUTEX_INITIALIZER(lan9250_##inst##_runtime.lock),                        \
 		.int_sem = Z_SEM_INITIALIZER(lan9250_##inst##_runtime.int_sem, 0, UINT_MAX),       \
 	};                                                                                         \
                                                                                                    \
