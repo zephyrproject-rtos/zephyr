@@ -1985,6 +1985,10 @@ ZTEST(periph_loc, test_conn_update_periph_loc_reject)
 	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
 	ut_rx_q_is_empty();
 
+	/* The rejected CPR must not leave a stale remote collision state behind */
+	zassert_equal(conn.llcp.remote.incompat, INCOMPAT_NO_COLLISION,
+		      "Remote incompat %d", conn.llcp.remote.incompat);
+
 	/* Release Ntf */
 	release_ntf(ntf);
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
@@ -2188,6 +2192,10 @@ ZTEST(periph_loc, test_conn_update_periph_loc_unsupp_feat_wo_feat_exch)
 	/* There should be one host notification */
 	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
 	ut_rx_q_is_empty();
+
+	/* The rejected CPR must not leave a stale remote collision state behind */
+	zassert_equal(conn.llcp.remote.incompat, INCOMPAT_NO_COLLISION,
+		      "Remote incompat %d", conn.llcp.remote.incompat);
 
 	/* Release Ntf */
 	release_ntf(ntf);
