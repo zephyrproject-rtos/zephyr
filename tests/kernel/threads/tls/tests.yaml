@@ -2,6 +2,89 @@ common:
   integration_platforms:
     - qemu_x86
 tests:
+  kernel.threads.tls.linker_generator:
+    tags:
+      - kernel
+      - threads
+      - linker_generator
+    platform_allow: qemu_cortex_m3
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+      - CONFIG_TEST_TLS_ALIGNMENT=64
+  kernel.threads.tls.aligned:
+    tags:
+      - kernel
+      - threads
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    arch_allow:
+      - arm
+      - x86
+      - riscv
+    extra_configs:
+      - CONFIG_TEST_TLS_ALIGNMENT=64
+  kernel.threads.tls.aligned.userspace:
+    tags:
+      - kernel
+      - threads
+      - userspace
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_ARCH_HAS_USERSPACE and
+      CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    arch_allow:
+      - arm
+      - x86
+      - riscv
+    platform_exclude:
+      - ucans32k1sic
+      - mimxrt1170_evk@A/mimxrt1176/cm4
+      - mimxrt1170_evk@B/mimxrt1176/cm4
+      - mimxrt1160_evk/mimxrt1166/cm4
+    extra_configs:
+      - CONFIG_TEST_TLS_ALIGNMENT=64
+      - CONFIG_TEST_USERSPACE=y
+  kernel.threads.tls.aligned.bss:
+    tags:
+      - kernel
+      - threads
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    arch_allow:
+      - arm
+      - x86
+      - riscv
+    extra_configs:
+      - CONFIG_TEST_TLS_BSS_ALIGNMENT=64
+  kernel.threads.tls.aligned.canary:
+    tags:
+      - kernel
+      - threads
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    arch_allow:
+      - riscv
+    # Clang's RISC-V backend does not support TLS stack canary guards.
+    toolchain_exclude:
+      - llvm
+      - zephyr/llvm
+    extra_configs:
+      - CONFIG_TEST_TLS_ALIGNMENT=64
+      - CONFIG_STACK_CANARIES=y
+      - CONFIG_STACK_CANARIES_TLS=y
+      - CONFIG_TEST_RANDOM_GENERATOR=y
+  kernel.threads.tls.aligned.bss.canary:
+    tags:
+      - kernel
+      - threads
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    arch_allow:
+      - riscv
+    # Clang's RISC-V backend does not support TLS stack canary guards.
+    toolchain_exclude:
+      - llvm
+      - zephyr/llvm
+    extra_configs:
+      - CONFIG_TEST_TLS_BSS_ALIGNMENT=64
+      - CONFIG_STACK_CANARIES=y
+      - CONFIG_STACK_CANARIES_TLS=y
+      - CONFIG_TEST_RANDOM_GENERATOR=y
   kernel.threads.tls:
     tags:
       - kernel
