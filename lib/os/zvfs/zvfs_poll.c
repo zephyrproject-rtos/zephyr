@@ -17,6 +17,20 @@ bool net_socket_is_tls(void *obj);
 #define net_socket_is_tls(obj) false
 #endif
 
+static bool zvfs_poll_is_held(const uint32_t *held, int fd)
+{
+	return (fd < ZVFS_OPEN_SIZE) && ((held[fd / 32] & BIT(fd % 32)) != 0);
+}
+
+static void zvfs_poll_put_all(const uint32_t *held)
+{
+	for (int fd = 0; fd < ZVFS_OPEN_SIZE; fd++) {
+		if (zvfs_poll_is_held(held, fd)) {
+			zvfs_fd_put(fd);
+		}
+	}
+}
+
 int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 {
 	bool retry;
@@ -26,8 +40,12 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 	struct k_poll_event poll_events[CONFIG_ZVFS_POLL_MAX];
 	struct k_poll_event *pev;
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
+	/* Index into fds of the entry that prepared each event */
+	int pev_owner[CONFIG_ZVFS_POLL_MAX];
+	int pev_count;
+	/* The fds held until we return, so that close() cannot free their slots */
+	uint32_t held[DIV_ROUND_UP(ZVFS_OPEN_SIZE, 32)] = {0};
 	const struct fd_op_vtable *vtable;
-	struct k_mutex *lock;
 	k_timepoint_t end;
 	bool offload = false;
 	const struct fd_op_vtable *offl_vtable = NULL;
@@ -37,6 +55,7 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 
 	pev = poll_events;
 	for (pfd = fds, i = nfds; i--; pfd++) {
+		struct k_poll_event *pev_start = pev;
 		void *ctx;
 		int result;
 
@@ -45,13 +64,19 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			continue;
 		}
 
-		ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
+		if (!zvfs_poll_is_held(held, pfd->fd)) {
+			if (zvfs_fd_get(pfd->fd) < 0) {
+				/* Will set POLLNVAL in return loop */
+				continue;
+			}
+			held[pfd->fd / 32] |= BIT(pfd->fd % 32);
+		}
+
+		ctx = zvfs_fd_get_locked(pfd->fd, &vtable);
 		if (ctx == NULL) {
 			/* Will set POLLNVAL in return loop */
 			continue;
 		}
-
-		(void)k_mutex_lock(lock, K_FOREVER);
 
 		result = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_PREPARE, pfd, &pev,
 						 pev_end);
@@ -82,13 +107,20 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			result = 0;
 		}
 
-		k_mutex_unlock(lock);
+		zvfs_fd_unlock_put(pfd->fd);
 
 		if (result < 0) {
 			errno = -result;
-			return -1;
+			ret = -1;
+			goto out;
+		}
+
+		for (; pev_start < pev; pev_start++) {
+			pev_owner[pev_start - poll_events] = pfd - fds;
 		}
 	}
+
+	pev_count = pev - poll_events;
 
 	if (offload) {
 		int poll_timeout;
@@ -99,18 +131,20 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			poll_timeout = k_ticks_to_ms_floor32(timeout.ticks);
 		}
 
-		return zvfs_fdtable_call_ioctl(offl_vtable, offl_ctx, ZFD_IOCTL_POLL_OFFLOAD, fds,
-					       nfds, poll_timeout);
+		ret = zvfs_fdtable_call_ioctl(offl_vtable, offl_ctx, ZFD_IOCTL_POLL_OFFLOAD, fds,
+					      nfds, poll_timeout);
+		goto out;
 	}
 
 	timeout = sys_timepoint_timeout(end);
 
 	do {
-		ret = k_poll(poll_events, pev - poll_events, timeout);
+		ret = k_poll(poll_events, pev_count, timeout);
 		/* EAGAIN when timeout expired, EINTR when cancelled (i.e. EOF) */
 		if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
 			errno = -ret;
-			return -1;
+			ret = -1;
+			goto out;
 		}
 
 		retry = false;
@@ -118,7 +152,7 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 
 		pev = poll_events;
 		for (pfd = fds, i = nfds; i--; pfd++) {
-			void *ctx;
+			void *ctx = NULL;
 			int result;
 
 			pfd->revents = 0;
@@ -127,25 +161,33 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 				continue;
 			}
 
-			ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
+			if (zvfs_poll_is_held(held, pfd->fd)) {
+				ctx = zvfs_fd_get_locked(pfd->fd, &vtable);
+			}
+
 			if (ctx == NULL) {
+				/* Skip the events it prepared before close() */
+				while ((pev < poll_events + pev_count) &&
+				       (pev_owner[pev - poll_events] == pfd - fds)) {
+					pev++;
+				}
+
 				pfd->revents = ZVFS_POLLNVAL;
 				ret++;
 				continue;
 			}
 
-			(void)k_mutex_lock(lock, K_FOREVER);
-
 			result = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_UPDATE, pfd,
 							 &pev);
-			k_mutex_unlock(lock);
+			zvfs_fd_unlock_put(pfd->fd);
 
 			if (result == -EAGAIN) {
 				retry = true;
 				continue;
 			} else if (result != 0) {
 				errno = -result;
-				return -1;
+				ret = -1;
+				goto out;
 			}
 
 			if (pfd->revents != 0) {
@@ -165,6 +207,9 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			}
 		}
 	} while (retry);
+
+out:
+	zvfs_poll_put_all(held);
 
 	return ret;
 }
