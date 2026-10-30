@@ -15,8 +15,8 @@ source code is sometimes good reference material.
 
 Bindings are YAML files that describe devicetree nodes. Devicetree
 nodes are usually mapped to bindings via their 'compatible = "..."' property,
-but a binding can also come from a 'child-binding:' key in the binding for the
-parent devicetree node.
+but a binding can also come from a 'child-binding:' or 'child-bindings:' key
+in the binding for the parent devicetree node.
 
 Each devicetree node (dtlib.Node) gets a corresponding edtlib.Node instance,
 which has all the information related to the node.
@@ -105,10 +105,12 @@ def _compute_hash(path: str) -> str:
 @dataclass
 class _LocalProps:
     # The properties a binding declares on its own, before any
-    # 'include:' is merged in, and the same for its 'child-binding:'.
+    # 'include:' is merged in, and the same for its 'child-binding:'
+    # and each 'child-bindings:' entry.
 
     props: dict
     child: Optional["_LocalProps"]
+    children: dict[str, "_LocalProps"]
 
 
 #
@@ -149,7 +151,7 @@ class Binding:
 
       This may be None. For example, it's None when the Binding is inferred
       from node properties. It can also be None for Binding objects created
-      using 'child-binding:' with no compatible.
+      using 'child-binding:' or 'child-bindings:' with no compatible.
 
     examples:
       Provides a minimal example node illustrating the binding (optional).
@@ -212,6 +214,12 @@ class Binding:
       this is a Binding object for those children; it is None otherwise.
       A Binding object's 'child_binding.child_binding' is not None if there
       are multiple levels of 'child-binding' descriptions in the binding.
+
+    child_bindings:
+      A dict mapping the node name patterns from 'child-bindings:' to
+      Binding objects for the child nodes whose names match them. The
+      dict is empty if the binding has no 'child-bindings:'. Use
+      child_binding_for() to look up the binding of a child node.
     """
 
     def __init__(self, path: Optional[str], fname2path: dict[str, str],
@@ -291,9 +299,42 @@ class Binding:
                 raw=raw["child-binding"],
                 require_compatible=False,
                 require_description=False,
-                local_props=local_props.child or _LocalProps({}, None))
+                local_props=local_props.child or _LocalProps({}, None, {}))
         else:
             self.child_binding = None
+
+        # Same for the child bindings selected by node name.
+        self.child_bindings: dict[str, Binding] = {}
+        self._child_binding_res: list[tuple[re.Pattern, Binding]] = []
+        if "child-bindings" in raw:
+            child_bindings = raw["child-bindings"]
+            if not isinstance(child_bindings, dict):
+                _err(f"malformed 'child-bindings:' in {self.path}, "
+                     "expected a dictionary mapping node name patterns "
+                     "to bindings")
+            for pattern, child_raw in child_bindings.items():
+                if not isinstance(pattern, str):
+                    _err(f"malformed node name pattern '{pattern}' in "
+                         f"'child-bindings:' in {self.path}, expected a "
+                         "string")
+                try:
+                    pattern_re = re.compile(pattern)
+                except re.error as e:
+                    _err(f"invalid node name pattern '{pattern}' in "
+                         f"'child-bindings:' in {self.path}: {e}")
+                if not isinstance(child_raw, dict):
+                    _err(f"malformed '{pattern}:' in 'child-bindings:' in "
+                         f"{self.path}, expected a binding (dictionary "
+                         "with keys/values)")
+                child = Binding(
+                    path, fname2path,
+                    raw=child_raw,
+                    require_compatible=False,
+                    require_description=False,
+                    local_props=(local_props.children.get(pattern)
+                                 or _LocalProps({}, None, {})))
+                self.child_bindings[pattern] = child
+                self._child_binding_res.append((pattern_re, child))
 
         # Make sure this is a well defined object.
         self._check(require_compatible, require_description, require_title)
@@ -366,6 +407,35 @@ class Binding:
         "See the class docstring"
         return sorted(self._included_binding_paths)
 
+    def child_binding_for(self, name: str) -> Optional['Binding']:
+        """
+        Returns the binding for a child node without a 'compatible'
+        named 'name' (including any unit address): the 'child-bindings:'
+        entry whose pattern matches 'name', or else 'child_binding'.
+
+        As in JSON Schema 'patternProperties', the patterns are not
+        anchored. It is an error if more than one pattern matches.
+        """
+        matches = [(pattern_re.pattern, binding)
+                   for pattern_re, binding in self._child_binding_res
+                   if pattern_re.search(name)]
+        if len(matches) > 1:
+            _err(f"node name '{name}' matches several 'child-bindings:' "
+                 f"patterns in {self.path}: "
+                 f"{', '.join(repr(pattern) for pattern, _ in matches)}")
+        if matches:
+            return matches[0][1]
+        return self.child_binding
+
+    def all_child_bindings(self) -> list['Binding']:
+        """
+        Returns this binding's direct child bindings: 'child_binding', if
+        any, followed by the values of 'child_bindings'.
+        """
+        res = [self.child_binding] if self.child_binding else []
+        res.extend(self.child_bindings.values())
+        return res
+
     def _merge_includes(self, raw: dict, binding_path: Optional[str]) -> dict:
         # Constructor helper. Merges included files in
         # 'raw["include"]' into 'raw' using 'self._include_paths' as a
@@ -401,6 +471,7 @@ class Binding:
                     allowlist = elem.pop('property-allowlist', None)
                     blocklist = elem.pop('property-blocklist', None)
                     child_filter = elem.pop('child-binding', None)
+                    child_filters = elem.pop('child-bindings', None)
 
                     if elem:
                         # We've popped out all the valid keys.
@@ -408,12 +479,14 @@ class Binding:
                              f"these unexpected contents: {elem}")
 
                     _check_include_dict(name, allowlist, blocklist,
-                                        child_filter, binding_path)
+                                        child_filter, child_filters,
+                                        binding_path)
 
                     contents = self._load_raw(name)
 
                     _filter_properties(contents, allowlist, blocklist,
-                                       child_filter, binding_path)
+                                       child_filter, child_filters,
+                                       binding_path)
                     _merge_props(merged, contents, None, binding_path, False)
                 else:
                     _err(f"all elements in 'include:' in '{binding_path}' "
@@ -486,7 +559,7 @@ class Binding:
         # removed by _load_raw() already.
         ok_top = {"title", "description", "compatible", "bus",
                   "on-bus", "class", "properties", "child-binding",
-                  "examples"}
+                  "child-bindings", "examples"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -1663,10 +1736,10 @@ class Node:
     @property
     def has_child_binding(self) -> bool:
         """
-        True if the node's binding contains a child-binding definition, False
-        otherwise
+        True if the node's binding contains a child-binding or
+        child-bindings definition, False otherwise
         """
-        return bool(self._binding and self._binding.child_binding)
+        return bool(self._binding and self._binding.all_child_bindings())
 
     @property
     def is_pci_device(self) -> bool:
@@ -1802,8 +1875,8 @@ class Node:
         self._binding = Binding(None, {}, raw=raw, require_compatible=False)
 
     def _binding_from_parent(self) -> Optional[Binding]:
-        # Returns the binding from 'child-binding:' in the parent node's
-        # binding.
+        # Returns the binding from 'child-bindings:' or 'child-binding:'
+        # in the parent node's binding.
 
         if not self.parent:
             return None
@@ -1812,10 +1885,7 @@ class Node:
         if not pbinding:
             return None
 
-        if pbinding.child_binding:
-            return pbinding.child_binding
-
-        return None
+        return pbinding.child_binding_for(self.name)
 
     def _bus_node(self, support_fixed_partitions_on_any_bus: bool = True
                   ) -> Optional['Node']:
@@ -2804,10 +2874,12 @@ class EDT:
 
             # Register the binding in self._compat2binding, along with
             # any child bindings that have their own compatibles.
-            while binding is not None:
+            bindings = [binding] if binding is not None else []
+            while bindings:
+                binding = bindings.pop(0)
                 if binding.compatible:
                     self._register_binding(binding)
-                binding = binding.child_binding
+                bindings.extend(binding.all_child_bindings())
 
     def _binding(self,
                  raw: Optional[dict],
@@ -3067,10 +3139,12 @@ def _check_include_dict(name: Optional[str],
                         allowlist: Optional[list[str]],
                         blocklist: Optional[list[str]],
                         child_filter: Optional[dict],
+                        child_filters: Optional[dict],
                         binding_path: Optional[str]) -> None:
     # Check that an 'include:' named 'name' with property-allowlist
-    # 'allowlist', property-blocklist 'blocklist', and
-    # child-binding filter 'child_filter' has valid structure.
+    # 'allowlist', property-blocklist 'blocklist', child-binding filter
+    # 'child_filter', and child-bindings filters 'child_filters' has
+    # valid structure.
 
     if name is None:
         _err(f"'include:' element in '{binding_path}' "
@@ -3081,49 +3155,104 @@ def _check_include_dict(name: Optional[str],
              "should not specify both 'property-allowlist:' "
              "and 'property-blocklist:'")
 
-    while child_filter is not None:
-        child_copy = deepcopy(child_filter)
-        child_allowlist: Optional[list[str]] = (
-            child_copy.pop('property-allowlist', None))
-        child_blocklist: Optional[list[str]] = (
-            child_copy.pop('property-blocklist', None))
-        next_child_filter: Optional[dict] = (
-            child_copy.pop('child-binding', None))
+    if child_filter is not None:
+        _check_child_filter(name, 'child-binding', child_filter,
+                            binding_path)
 
-        if child_copy:
-            # We've popped out all the valid keys.
-            _err(f"'include:' of file '{name}' in '{binding_path}' "
-                 "should not have these unexpected contents in a "
-                 f"'child-binding': {child_copy}")
+    if child_filters is not None:
+        _check_child_filters(name, child_filters, binding_path)
 
-        if child_allowlist is not None and child_blocklist is not None:
-            _err(f"'include:' of file '{name}' in '{binding_path}' "
-                 "should not specify both 'property-allowlist:' and "
-                 "'property-blocklist:' in a 'child-binding:'")
 
-        child_filter = next_child_filter
+def _check_child_filter(name: Optional[str],
+                        key: str,
+                        child_filter: Any,
+                        binding_path: Optional[str]) -> None:
+    # _check_include_dict() helper. Checks the filter 'child_filter' found
+    # under 'key' (a 'child-binding:' or a 'child-bindings:' pattern),
+    # and any filters nested in it.
+
+    if not isinstance(child_filter, dict):
+        _err(f"'include:' of file '{name}' in '{binding_path}' "
+             f"should have a dictionary in '{key}:', "
+             f"but got: {child_filter}")
+
+    child_copy = deepcopy(child_filter)
+    child_allowlist: Optional[list[str]] = (
+        child_copy.pop('property-allowlist', None))
+    child_blocklist: Optional[list[str]] = (
+        child_copy.pop('property-blocklist', None))
+    next_child_filter: Optional[dict] = (
+        child_copy.pop('child-binding', None))
+    next_child_filters: Optional[dict] = (
+        child_copy.pop('child-bindings', None))
+
+    if child_copy:
+        # We've popped out all the valid keys.
+        _err(f"'include:' of file '{name}' in '{binding_path}' "
+             "should not have these unexpected contents in a "
+             f"'{key}': {child_copy}")
+
+    if child_allowlist is not None and child_blocklist is not None:
+        _err(f"'include:' of file '{name}' in '{binding_path}' "
+             "should not specify both 'property-allowlist:' and "
+             f"'property-blocklist:' in a '{key}:'")
+
+    if next_child_filter is not None:
+        _check_child_filter(name, 'child-binding', next_child_filter,
+                            binding_path)
+
+    if next_child_filters is not None:
+        _check_child_filters(name, next_child_filters, binding_path)
+
+
+def _check_child_filters(name: Optional[str],
+                         child_filters: Any,
+                         binding_path: Optional[str]) -> None:
+    # _check_include_dict() helper. Checks a 'child-bindings:' filter,
+    # which maps node name patterns to filters.
+
+    if not isinstance(child_filters, dict):
+        _err(f"'include:' of file '{name}' in '{binding_path}' "
+             "should have a dictionary in 'child-bindings:', "
+             f"but got: {child_filters}")
+
+    for pattern, child_filter in child_filters.items():
+        _check_child_filter(name, pattern, child_filter, binding_path)
 
 
 def _filter_properties(raw: dict,
                        allowlist: Optional[list[str]],
                        blocklist: Optional[list[str]],
                        child_filter: Optional[dict],
+                       child_filters: Optional[dict],
                        binding_path: Optional[str]) -> None:
-    # Destructively modifies 'raw["properties"]' and
-    # 'raw["child-binding"]', if they exist, according to
-    # 'allowlist', 'blocklist', and 'child_filter'.
+    # Destructively modifies 'raw["properties"]', 'raw["child-binding"]'
+    # and the 'raw["child-bindings"]' entries, if they exist, according
+    # to 'allowlist', 'blocklist', 'child_filter', and 'child_filters'.
 
     props = raw.get('properties')
     _filter_properties_helper(props, allowlist, blocklist, binding_path)
 
     child_binding = raw.get('child-binding')
-    while child_filter is not None and child_binding is not None:
-        _filter_properties_helper(child_binding.get('properties'),
-                                  child_filter.get('property-allowlist'),
-                                  child_filter.get('property-blocklist'),
-                                  binding_path)
-        child_filter = child_filter.get('child-binding')
-        child_binding = child_binding.get('child-binding')
+    if child_filter is not None and isinstance(child_binding, dict):
+        _filter_properties(child_binding,
+                           child_filter.get('property-allowlist'),
+                           child_filter.get('property-blocklist'),
+                           child_filter.get('child-binding'),
+                           child_filter.get('child-bindings'),
+                           binding_path)
+
+    child_bindings = raw.get('child-bindings')
+    if child_filters is not None and isinstance(child_bindings, dict):
+        for pattern, pattern_filter in child_filters.items():
+            child_raw = child_bindings.get(pattern)
+            if isinstance(child_raw, dict):
+                _filter_properties(child_raw,
+                                   pattern_filter.get('property-allowlist'),
+                                   pattern_filter.get('property-blocklist'),
+                                   pattern_filter.get('child-binding'),
+                                   pattern_filter.get('child-bindings'),
+                                   binding_path)
 
 
 def _filter_properties_helper(props: Optional[dict],
@@ -3163,11 +3292,15 @@ def _check_prop_filter(name: str, value: Optional[list[str]],
 
 def _local_props(raw: Any) -> _LocalProps:
     # Returns the properties 'raw' declares on its own, and the same for
-    # any nested 'child-binding:'. Each entry is copied, as
-    # _merge_props() merges into them in place.
+    # any nested 'child-binding:' and 'child-bindings:' entries. Each
+    # entry is copied, as _merge_props() merges into them in place.
 
     if not isinstance(raw, dict):
-        return _LocalProps({}, None)
+        return _LocalProps({}, None, {})
+
+    child_bindings = raw.get("child-bindings")
+    if not isinstance(child_bindings, dict):
+        child_bindings = {}
 
     return _LocalProps(
         {
@@ -3176,6 +3309,10 @@ def _local_props(raw: Any) -> _LocalProps:
             if isinstance(options, dict)
         },
         _local_props(raw["child-binding"]) if "child-binding" in raw else None,
+        {
+            pattern: _local_props(child_raw)
+            for pattern, child_raw in child_bindings.items()
+        },
     )
 
 
@@ -3183,16 +3320,18 @@ def _merge_props(to_dict: dict,
                  from_dict: dict,
                  parent: Optional[str],
                  binding_path: Optional[str],
-                 check_required: bool = False):
+                 check_required: bool = False,
+                 binding_root: bool = False,
+                 in_child_bindings: bool = False):
     # Recursively merges 'from_dict' into 'to_dict', to implement 'include:'.
     #
     # If 'from_dict' and 'to_dict' contain a 'required:' key for the same
     # property, then the values are ORed together.
     #
-    # 'class:' values at a binding root (top level or a child-binding
-    # level) are unioned instead of overwritten, so that a binding which
-    # includes several class base bindings is a member of all of their
-    # classes.
+    # 'class:' values at a binding root (top level, a child-binding
+    # level or a 'child-bindings:' entry) are unioned instead of
+    # overwritten, so that a binding which includes several class base
+    # bindings is a member of all of their classes.
     #
     # If 'check_required' is True, then an error is raised if 'from_dict' has
     # 'required: true' while 'to_dict' has 'required: false'. This prevents
@@ -3206,15 +3345,23 @@ def _merge_props(to_dict: dict,
     # 'parent' is the name of the parent key containing 'to_dict' and
     # 'from_dict', and 'binding_path' is the path to the top-level binding.
     # These are used to generate errors for sketchy property overwrites.
+    #
+    # 'binding_root' is True when 'to_dict' is a 'child-bindings:' entry,
+    # and 'in_child_bindings' is True when 'to_dict' is the
+    # 'child-bindings:' dictionary itself.
 
     for prop in from_dict:
         if (isinstance(to_dict.get(prop), dict)
             and isinstance(from_dict[prop], dict)):
             _merge_props(to_dict[prop], from_dict[prop], prop, binding_path,
-                         check_required)
+                         check_required,
+                         binding_root=in_child_bindings,
+                         in_child_bindings=(prop == "child-bindings"
+                                            and not in_child_bindings))
         elif prop not in to_dict:
             to_dict[prop] = from_dict[prop]
-        elif prop == "class" and parent in (None, "child-binding"):
+        elif prop == "class" and (binding_root
+                                  or parent in (None, "child-binding")):
             to_dict[prop] = _merge_class(to_dict[prop], from_dict[prop])
         elif _bad_overwrite(to_dict, from_dict, prop, check_required):
             _err(f"'{binding_path}' (in '{parent}'): '{prop}' "

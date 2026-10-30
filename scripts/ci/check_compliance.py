@@ -600,12 +600,10 @@ class DevicetreeBindingsCheck(ComplianceTest):
             self.skip('no changes to bindings were made')
 
         def check(binding, callback, children=True):
+            callback(binding)
             if children:
-                while binding is not None:
-                    callback(binding)
-                    binding = binding.child_binding
-            else:
-                callback(binding)
+                for child in binding.all_child_bindings():
+                    check(child, callback)
 
         for binding in bindings:
             check(binding, self.check_yaml_property_name)

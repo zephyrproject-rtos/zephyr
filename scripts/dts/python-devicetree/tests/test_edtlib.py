@@ -783,6 +783,339 @@ def test_child_binding():
     assert top.compatible == 'top-binding-with-compat'
     assert child.compatible == 'child-compat'
 
+CHILD_BINDINGS_YAML = '''\
+description: child-bindings test
+
+compatible: "child-bindings-top"
+
+child-bindings:
+  "^axi-config$":
+    description: AXI node
+    properties:
+      axi-prop:
+        type: int
+        required: true
+
+  "^queues-config$":
+    description: queues node
+    properties:
+      queues-to-use:
+        type: int
+
+    child-bindings:
+      "^queue[0-9]$":
+        description: queue node
+        properties:
+          queue-prop:
+            type: int
+          queue-ref:
+            type: phandle
+
+  "^with-compat$":
+    compatible: "child-bindings-compat"
+    properties:
+      compat-prop:
+        type: int
+
+child-binding:
+  description: fallback node
+  properties:
+    fallback-prop:
+      type: int
+'''
+
+CHILD_BINDINGS_DTS = '''\
+/dts-v1/;
+
+/ {
+	dep {};
+
+	top {
+		compatible = "child-bindings-top";
+
+		axi-config {
+			axi-prop = <1>;
+		};
+
+		queues-config {
+			queues-to-use = <2>;
+
+			queue0 {
+				queue-prop = <3>;
+				queue-ref = <&{/dep}>;
+			};
+
+			queue1 {
+				queue-prop = <4>;
+			};
+		};
+
+		other {
+			fallback-prop = <5>;
+		};
+
+		with-compat {
+			compatible = "child-bindings-compat";
+			compat-prop = <6>;
+		};
+	};
+
+	standalone {
+		compatible = "child-bindings-compat";
+		compat-prop = <7>;
+	};
+};
+'''
+
+def test_child_bindings(tmp_path):
+    '''Test 'child-bindings:' in bindings'''
+    bindings_dir = tmp_path / "bindings"
+    bindings_dir.mkdir()
+    binding_file = bindings_dir / "child-bindings-top.yaml"
+    binding_file.write_text(CHILD_BINDINGS_YAML)
+    dts_file = tmp_path / "child-bindings.dts"
+    dts_file.write_text(CHILD_BINDINGS_DTS)
+
+    edt = edtlib.EDT(dts_file, [bindings_dir])
+
+    axi = edt.get_node("/top/axi-config")
+    assert axi.description == "AXI node"
+    assert axi.binding_path == str(binding_file)
+    verify_props(axi, ['axi-prop'], ['int'], [1])
+
+    queues = edt.get_node("/top/queues-config")
+    assert queues.description == "queues node"
+    verify_props(queues, ['queues-to-use'], ['int'], [2])
+
+    queue0 = edt.get_node("/top/queues-config/queue0")
+    queue1 = edt.get_node("/top/queues-config/queue1")
+    assert queue0.description == "queue node"
+    assert queue1.description == "queue node"
+    verify_props(queue0, ['queue-prop'], ['int'], [3])
+    verify_props(queue1, ['queue-prop'], ['int'], [4])
+
+    other = edt.get_node("/top/other")
+    assert other.description == "fallback node"
+    verify_props(other, ['fallback-prop'], ['int'], [5])
+
+    # Child bindings with a compatible are registered like any other
+    # binding, so they also apply to nodes that are not children.
+    for path, value in [("/top/with-compat", 6), ("/standalone", 7)]:
+        node = edt.get_node(path)
+        assert node.matching_compat == "child-bindings-compat"
+        verify_props(node, ['compat-prop'], ['int'], [value])
+
+    # A phandle in a node matched by a pattern makes the parent device
+    # depend on the target, as with 'child-binding:'.
+    dep = edt.get_node("/dep")
+    top = edt.get_node("/top")
+    assert dep in top.depends_on
+    assert top in dep.required_by
+
+    binding = edtlib.Binding(str(binding_file), {})
+    assert list(binding.child_bindings) == [
+        "^axi-config$", "^queues-config$", "^with-compat$"
+    ]
+    assert binding.child_binding_for("axi-config") is \
+        binding.child_bindings["^axi-config$"]
+    assert binding.child_binding_for("axi-config-2") is binding.child_binding
+    assert binding.all_child_bindings() == [
+        binding.child_binding, *binding.child_bindings.values()
+    ]
+
+    queues_binding = binding.child_bindings["^queues-config$"]
+    assert queues_binding.child_binding is None
+    assert queues_binding.child_binding_for("queue7") is \
+        queues_binding.child_bindings["^queue[0-9]$"]
+    assert queues_binding.child_binding_for("other") is None
+
+def test_child_bindings_unanchored(tmp_path):
+    '''Test that 'child-bindings:' patterns are not anchored'''
+    binding_file = tmp_path / "unanchored.yaml"
+    binding_file.write_text('''\
+description: unanchored patterns
+
+child-bindings:
+  "queue":
+    description: queue node
+''')
+    binding = edtlib.Binding(str(binding_file), {}, require_compatible=False)
+    queue = binding.child_bindings["queue"]
+    assert binding.child_binding_for("queue0") is queue
+    assert binding.child_binding_for("rx-queue@1") is queue
+    assert binding.child_binding_for("other") is None
+
+def test_child_bindings_errs(tmp_path):
+    '''Test errors for malformed or ambiguous 'child-bindings:' '''
+    binding_file = tmp_path / "bad-child-bindings.yaml"
+    path = str(binding_file)
+
+    def check_binding_err(yaml_content, expected_err):
+        binding_file.write_text(yaml_content)
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding(path, {}, require_compatible=False)
+        assert str(e.value) == expected_err
+
+    check_binding_err('''\
+description: test
+child-bindings: [foo]
+''', f"malformed 'child-bindings:' in {path}, expected a dictionary "
+     "mapping node name patterns to bindings")
+
+    check_binding_err('''\
+description: test
+child-bindings:
+  "^foo(": {}
+''', f"invalid node name pattern '^foo(' in 'child-bindings:' in {path}: "
+     "missing ), unterminated subpattern at position 4")
+
+    check_binding_err('''\
+description: test
+child-bindings:
+  "^foo$": bar
+''', f"malformed '^foo$:' in 'child-bindings:' in {path}, expected a "
+     "binding (dictionary with keys/values)")
+
+    binding_file.write_text('''\
+description: test
+child-bindings:
+  "^queue":
+    description: queue
+  "[0-9]$":
+    description: numbered
+''')
+    binding = edtlib.Binding(path, {}, require_compatible=False)
+    assert binding.child_binding_for("queue") is \
+        binding.child_bindings["^queue"]
+    with pytest.raises(edtlib.EDTError) as e:
+        binding.child_binding_for("queue0")
+    assert str(e.value) == \
+        (f"node name 'queue0' matches several 'child-bindings:' patterns "
+         f"in {path}: '^queue', '[0-9]$'")
+
+def test_child_bindings_include(tmp_path):
+    '''Test merging and filtering 'child-bindings:' from included files'''
+    (tmp_path / "base.yaml").write_text('''\
+child-bindings:
+  "^cfg$":
+    class: class-a
+    properties:
+      cfg-prop-1:
+        type: int
+      cfg-prop-2:
+        type: int
+    child-bindings:
+      "^queue[0-9]$":
+        properties:
+          queue-prop-1:
+            type: int
+          queue-prop-2:
+            type: int
+  "^other$":
+    properties:
+      other-prop:
+        type: int
+''')
+    fname2path = {"base.yaml": str(tmp_path / "base.yaml")}
+
+    binding_file = tmp_path / "merge.yaml"
+    binding_file.write_text('''\
+description: merge test
+include: base.yaml
+child-bindings:
+  "^cfg$":
+    class: class-b
+    properties:
+      cfg-prop-1:
+        required: true
+      cfg-prop-3:
+        type: int
+  "^new$":
+    properties:
+      new-prop:
+        type: int
+''')
+    binding = edtlib.Binding(str(binding_file), fname2path,
+                             require_compatible=False)
+    assert list(binding.child_bindings) == ["^cfg$", "^new$", "^other$"]
+    cfg = binding.child_bindings["^cfg$"]
+    assert cfg.classes == ["class-b", "class-a"]
+    assert set(cfg.prop2specs) == {"cfg-prop-1", "cfg-prop-2", "cfg-prop-3"}
+    assert cfg.prop2specs["cfg-prop-1"].required
+    assert cfg.prop2specs["cfg-prop-1"].type == "int"
+    assert set(cfg.child_bindings["^queue[0-9]$"].prop2specs) == \
+        {"queue-prop-1", "queue-prop-2"}
+
+    (tmp_path / "child.yaml").write_text('''\
+properties:
+  child-prop:
+    type: int
+''')
+    fname2path["child.yaml"] = str(tmp_path / "child.yaml")
+    binding_file = tmp_path / "nested-include.yaml"
+    binding_file.write_text('''\
+description: nested include test
+child-bindings:
+  "^child$":
+    include: child.yaml
+    properties:
+      child-prop:
+        required: true
+''')
+    binding = edtlib.Binding(str(binding_file), fname2path,
+                             require_compatible=False)
+    child = binding.child_bindings["^child$"]
+    assert child.prop2specs["child-prop"].type == "int"
+    assert child.prop2specs["child-prop"].required
+
+    binding_file = tmp_path / "filter.yaml"
+    binding_file.write_text('''\
+description: filter test
+include:
+  - name: base.yaml
+    child-bindings:
+      "^cfg$":
+        property-allowlist: [cfg-prop-1]
+        child-bindings:
+          "^queue[0-9]$":
+            property-blocklist: [queue-prop-1]
+''')
+    binding = edtlib.Binding(str(binding_file), fname2path,
+                             require_compatible=False)
+    cfg = binding.child_bindings["^cfg$"]
+    assert set(cfg.prop2specs) == {"cfg-prop-1"}
+    assert set(cfg.child_bindings["^queue[0-9]$"].prop2specs) == \
+        {"queue-prop-2"}
+    assert set(binding.child_bindings["^other$"].prop2specs) == {"other-prop"}
+
+    binding_file.write_text('''\
+description: filter test
+include:
+  - name: base.yaml
+    child-bindings:
+      "^cfg$":
+        bad-key: foo
+''')
+    with pytest.raises(edtlib.EDTError) as e:
+        edtlib.Binding(str(binding_file), fname2path,
+                       require_compatible=False)
+    assert str(e.value) == \
+        (f"'include:' of file 'base.yaml' in '{binding_file}' should not "
+         "have these unexpected contents in a '^cfg$': {'bad-key': 'foo'}")
+
+    binding_file.write_text('''\
+description: filter test
+include:
+  - name: base.yaml
+    child-bindings: [foo]
+''')
+    with pytest.raises(edtlib.EDTError) as e:
+        edtlib.Binding(str(binding_file), fname2path,
+                       require_compatible=False)
+    assert str(e.value) == \
+        (f"'include:' of file 'base.yaml' in '{binding_file}' should have "
+         "a dictionary in 'child-bindings:', but got: ['foo']")
+
 def test_props():
     '''Test Node.props (derived from DT and 'properties:' in the binding)'''
     with from_here():
