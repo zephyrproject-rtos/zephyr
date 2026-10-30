@@ -96,6 +96,7 @@ struct vector_desc_t {
 	int source: 16;                               /* Int mux flags, used when not shared */
 	struct shared_vector_desc_t *shared_vec_info; /* used when VECDESC_FL_SHARED */
 	struct vector_desc_t *next;
+	volatile bool isr_busy; /**< Shared ISR is walking shared_vec_info */
 };
 
 /** Interrupt handler associated data structure */
@@ -239,6 +240,20 @@ int esp_intr_alloc_intrstatus(int source,
  */
 int esp_intr_free(intr_handle_t handle);
 
+/**
+ * @brief Install a raw handler on an interrupt line of the current core
+ *
+ * The line is neither allocated nor routed and its enable state is left
+ * alone. A NULL handler removes the entry.
+ *
+ * @param intno The number of the interrupt line (0-31)
+ * @param handler Handler to run on this core, or NULL to remove it
+ * @param arg Argument passed to the handler
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Invalid interrupt line
+ */
+int esp_intr_set_line_handler(int intno, intr_handler_t handler, void *arg);
 
 /**
  * @brief Get CPU number an interrupt is tied to
