@@ -1,0 +1,45 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MediaTek MT8188 GPIO bank.
+
+  The GPIO registers are a single block owned by the pin controller, in which
+  each register holds one bit per pin for a group of 32 pins.  A bank is
+  therefore selected by index rather than by address, and these nodes appear as
+  children of the pin controller they belong to.
+
+  Because Zephyr addresses at most 32 pins per GPIO device, the 177 pins of this
+  SoC are described as six banks.
+
+compatible: "mediatek,mt8188-gpio"
+
+include: [gpio-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  mediatek,gpio-bank:
+    type: int
+    required: true
+    description: |
+      Index of this bank within the GPIO register block.  Bank n covers pins
+      n * 32 to n * 32 + 31, and selects bit n of each register group.
+
+  mediatek,eint:
+    type: phandle
+    required: true
+    description: |
+      The external interrupt controller that delivers edge and level events for
+      the pins in this bank.
+
+  ngpios:
+    required: true
+    description: |
+      Number of pins in this bank.  32 for all banks except the last, which is
+      partially populated.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

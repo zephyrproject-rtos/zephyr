@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 MediaTek Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Needs a wire between GPIO 38 and GPIO 40, header pins 22 and 18, which are
+ * pins 6 and 8 of bank 1.  The board leaves the bank disabled, so it is enabled
+ * here, with both pins switched to their GPIO function: every other function of
+ * these two pins is a JTAG signal.
+ */
+
+#include <zephyr/dt-bindings/pinctrl/mt8188-pinctrl.h>
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio32_63 6 0>;
+		in-gpios = <&gpio32_63 8 0>;
+	};
+};
+
+&pinctrl {
+	gpio32_63_default: gpio32_63_default {
+		group1 {
+			pinmux = <PINMUX_PIN_38__FUNC_B_GPIO38>,
+				 <PINMUX_PIN_40__FUNC_B_GPIO40>;
+		};
+	};
+};
+
+&gpio32_63 {
+	pinctrl-0 = <&gpio32_63_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
