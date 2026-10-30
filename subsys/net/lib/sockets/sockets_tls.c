@@ -4763,6 +4763,11 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 	int remaining;
 	uint32_t entry = k_uptime_get_32();
 
+	if (nfds > CONFIG_ZVFS_POLL_MAX) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	/* Overwrite TLS file descriptors with underlying ones. */
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
