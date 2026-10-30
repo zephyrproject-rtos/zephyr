@@ -691,7 +691,7 @@ fail:
 	/* Nothing was sent, so try again after a short random delay. */
 	return sys_rand8_get() %
 			(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
-			 DHCPV4_INITIAL_DELAY_MIN) +
+			 DHCPV4_INITIAL_DELAY_MIN + 1U) +
 			DHCPV4_INITIAL_DELAY_MIN;
 }
 
@@ -2196,7 +2196,7 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 			entropy = sys_rand8_get();
 
 			timeout = entropy % (CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
-					DHCPV4_INITIAL_DELAY_MIN) + DHCPV4_INITIAL_DELAY_MIN;
+					DHCPV4_INITIAL_DELAY_MIN + 1U) + DHCPV4_INITIAL_DELAY_MIN;
 		}
 
 		NET_DBG("wait timeout=%us", timeout);

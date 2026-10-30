@@ -1646,11 +1646,14 @@ ZTEST(dhcpv4_tests, test_init_reboot_dns_after_iface_down)
  */
 ZTEST(dhcpv4_tests, test_discover_retransmission_keeps_xid)
 {
-	/* Long enough for two retransmissions: the backoff is four seconds,
-	 * then eight, plus a second of randomisation each. native_sim
-	 * fast-forwards idle time, so this costs no wall clock.
+	/* Long enough for two retransmissions after the initial delay: the
+	 * backoff is four seconds, then eight, plus a second of randomisation
+	 * each, and one more second so the last discover does not race the
+	 * end of the sleep. native_sim fast-forwards idle time, so this costs
+	 * no wall clock.
 	 */
-	const k_timeout_t settle = K_SECONDS(4 + 8 + 4);
+	const k_timeout_t settle = K_SECONDS(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX +
+					     (4 + 1) + (8 + 1) + 1);
 	struct net_if *iface;
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
