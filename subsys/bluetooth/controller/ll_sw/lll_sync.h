@@ -15,8 +15,8 @@ enum sync_status {
 struct lll_sync {
 	struct lll_hdr hdr;
 
-	uint8_t access_addr[4];
-	uint8_t crc_init[3];
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
+	uint8_t crc_init[PDU_CRC_SIZE];
 
 	uint8_t phy:3;
 	/* Bitmask providing not allowed types of CTE. */
