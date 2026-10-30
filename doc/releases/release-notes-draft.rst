@@ -50,6 +50,12 @@ API Changes
 Removed APIs and options
 ========================
 
+* Bluetooth
+
+  * Host
+
+    * ``CONFIG_BT_ISO_TX_MTU``
+
 Deprecated APIs and options
 ===========================
 
