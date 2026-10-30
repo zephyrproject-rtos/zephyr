@@ -1,0 +1,69 @@
+# TI MSPM0 Family
+
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments MSPM0 zero-drift, chopper-stabilized Operational Amplifier (OPA).
+compatible: "ti,mspm0-opa"
+
+include:
+  - opamp-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  ti,psel:
+    type: string
+    default: "open"
+    enum: ["open", "in0p", "in1p", "dac12out", "dac8out", "vref",
+           "prev-opa-rtop", "gpamp-out", "vss"]
+    description: |
+      Selects non inverting terminals input via OPA's internal P-MUX.
+
+  ti,nsel:
+    type: string
+    default: "open"
+    enum: ["open", "in0n", "in1n", "prev-opa-rbot", "rtap", "rtop"]
+    description: |
+      Selects inverting terminals input via OPA's internal N-MUX.
+
+  ti,msel:
+    type: string
+    default: "open"
+    enum: ["open", "in1n", "gnd", "dac12out", "prev-opa-rtop"]
+    description: |
+       Selects the input for OPA's internal M-MUX which is connected to the
+       programmable gain stage resister ladder.
+
+  ti,chop-mode:
+    type: string
+    default: "disabled"
+    enum: ["disabled", "standard", "adc-assisted"]
+    description: |
+      Selects the OPA's chopping mode.
+
+  ti,outpin-enable:
+    type: boolean
+    description: |
+      Enables the opa output on the external OPAx_OUT package pin.
+
+  ti,power-mode:
+    type: string
+    default: "lp"
+    enum: ["lp", "std"]
+    description: |
+      Selects the opa power mode.
+      LP mode sets the GBW value as 1MHz,
+      STD mode sets the GBW value as 6MHz.
+
+  ti,rri-enable:
+    type: boolean
+    description: |
+      Selects rail-to-rail input mode.
+
+  vref:
+    type: phandle
+    description: |
+      Selects vref as the input for non-inverting terminal.
