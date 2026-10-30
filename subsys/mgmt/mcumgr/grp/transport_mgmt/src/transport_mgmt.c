@@ -280,6 +280,100 @@ int transport_mgmt_disconnect_all(void)
 	return 0;
 }
 
+/* Whether a transport implements the functions needed to be bridged */
+static bool transport_mgmt_can_bridge(const struct smp_transport *transport)
+{
+	return transport->functions.bridge_connect != NULL &&
+	       transport->functions.bridge_disconnect != NULL &&
+	       transport->functions.bridge_output != NULL;
+}
+
+/*
+ * Connects a bridge from @p incoming to @p outgoing. @p zsd holds the connection parameters and
+ * errors are added to @p zse.
+ */
+static int transport_mgmt_bridge_open(struct smp_transport *incoming,
+				      struct smp_transport *outgoing, uint32_t mode,
+				      zcbor_state_t *zsd, zcbor_state_t *zse)
+{
+	bool same_transport = (outgoing == incoming);
+	uint8_t bridge_id = UCHAR_MAX;
+	uint8_t i = 0;
+
+	if (!transport_mgmt_can_bridge(incoming) || !transport_mgmt_can_bridge(outgoing)) {
+		smp_add_cmd_err(zse, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_TRANSPORT_MISSING_REQUIRED_FUNCTIONS);
+		return -ENOTSUP;
+	}
+
+	transport_mgmt_lock();
+
+	while (i < CONFIG_MCUMGR_GRP_TRANSPORT_MAX_BRIDGES) {
+		if (bridges[i].status == 0 && bridge_id == UCHAR_MAX) {
+			bridge_id = i;
+		}
+
+		if (bridges[i].status == 1) {
+			if (bridges[i].incoming_transport == incoming) {
+				transport_mgmt_unlock();
+				smp_add_cmd_err(zse, MGMT_GROUP_ID_TRANSPORT,
+				  TRANSPORT_MGMT_ERR_TRANSPORT_INCOMING_TRANSPORT_ALREADY_BRIDGED);
+				return -EBUSY;
+			}
+
+			if (bridges[i].outgoing_transport == outgoing) {
+				transport_mgmt_unlock();
+				smp_add_cmd_err(zse, MGMT_GROUP_ID_TRANSPORT,
+				  TRANSPORT_MGMT_ERR_TRANSPORT_OUTGOING_TRANSPORT_ALREADY_BRIDGED);
+				return -EBUSY;
+			}
+		}
+
+		++i;
+	}
+
+	if (bridge_id == UCHAR_MAX) {
+		transport_mgmt_unlock();
+		smp_add_cmd_err(zse, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_ALL_CONTEXTS_USED);
+		return -ENOMEM;
+	}
+
+	if (!outgoing->functions.bridge_connect(&bridges[bridge_id], true, mode, same_transport,
+						zsd, zse)) {
+		transport_mgmt_unlock();
+		return -EIO;
+	}
+
+	if (!incoming->functions.bridge_connect(&bridges[bridge_id], false, 0, same_transport,
+						zsd, zse)) {
+		(void)outgoing->functions.bridge_disconnect(&bridges[bridge_id], true);
+		transport_mgmt_unlock();
+		return -EIO;
+	}
+
+	bridges[bridge_id].status = 1;
+	bridges[bridge_id].incoming_transport = incoming;
+	bridges[bridge_id].outgoing_transport = outgoing;
+	bridge_active = true;
+
+	transport_mgmt_unlock();
+
+	return 0;
+}
+
+int transport_mgmt_connect_bridge(struct smp_transport *incoming, struct smp_transport *outgoing,
+				  uint32_t mode, struct cbor_nb_reader *input_data,
+				  struct cbor_nb_writer *output_data)
+{
+	if (incoming == NULL || outgoing == NULL || input_data == NULL || output_data == NULL) {
+		return -EINVAL;
+	}
+
+	return transport_mgmt_bridge_open(incoming, outgoing, mode, input_data->zs,
+					  output_data->zs);
+}
+
 static int transport_mgmt_connect(struct smp_streamer *ctxt)
 {
 	zcbor_state_t *zse = ctxt->writer->zs;
@@ -290,17 +384,13 @@ static int transport_mgmt_connect(struct smp_streamer *ctxt)
 	uint32_t mode = 0;
 	size_t backup_element_count_reader = zsd->elem_count;
 	struct smp_transport *outgoing_transport;
-	uint8_t i = 0;
-	uint8_t bridge_id = UCHAR_MAX;
 
 	struct zcbor_map_decode_key_val cbor_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("transport", zcbor_uint32_decode, &transport_id),
 		ZCBOR_MAP_DECODE_KEY_DECODER("mode", zcbor_uint32_decode, &mode),
 	};
 
-	if (ctxt->smpt->functions.bridge_connect == NULL ||
-	    ctxt->smpt->functions.bridge_disconnect == NULL ||
-	    ctxt->smpt->functions.bridge_output == NULL) {
+	if (!transport_mgmt_can_bridge(ctxt->smpt)) {
 		smp_add_cmd_err(zse, MGMT_GROUP_ID_TRANSPORT,
 				TRANSPORT_MGMT_ERR_TRANSPORT_MISSING_REQUIRED_FUNCTIONS);
 		goto end;
@@ -338,66 +428,8 @@ static int transport_mgmt_connect(struct smp_streamer *ctxt)
 		goto end;
 	}
 
-	if (outgoing_transport->functions.bridge_connect == NULL ||
-	    outgoing_transport->functions.bridge_disconnect == NULL ||
-	    outgoing_transport->functions.bridge_output == NULL) {
-		smp_add_cmd_err(zse, MGMT_GROUP_ID_TRANSPORT,
-				TRANSPORT_MGMT_ERR_TRANSPORT_MISSING_REQUIRED_FUNCTIONS);
-		goto end;
-	}
-
-	transport_mgmt_lock();
-
-	while (i < CONFIG_MCUMGR_GRP_TRANSPORT_MAX_BRIDGES) {
-		if (bridges[i].status == 0 && bridge_id == UCHAR_MAX) {
-			bridge_id = i;
-		}
-
-		if (bridges[i].status == 1) {
-			if (bridges[i].incoming_transport == ctxt->smpt) {
-				transport_mgmt_unlock();
-				smp_add_cmd_err(zse, MGMT_GROUP_ID_TRANSPORT,
-				  TRANSPORT_MGMT_ERR_TRANSPORT_INCOMING_TRANSPORT_ALREADY_BRIDGED);
-				goto end;
-			}
-
-			if (bridges[i].outgoing_transport == outgoing_transport) {
-				transport_mgmt_unlock();
-				smp_add_cmd_err(zse, MGMT_GROUP_ID_TRANSPORT,
-				  TRANSPORT_MGMT_ERR_TRANSPORT_OUTGOING_TRANSPORT_ALREADY_BRIDGED);
-				goto end;
-			}
-		}
-
-		++i;
-	}
-
-	if (bridge_id == UCHAR_MAX) {
-		transport_mgmt_unlock();
-		smp_add_cmd_err(zse, MGMT_GROUP_ID_TRANSPORT,
-				TRANSPORT_MGMT_ERR_ALL_CONTEXTS_USED);
-		goto end;
-	}
-
-	if (!outgoing_transport->functions.bridge_connect(&bridges[bridge_id], true, mode,
-			 (outgoing_transport == ctxt->smpt ? true : false), zsd, zse)) {
-		transport_mgmt_unlock();
-		goto end;
-	}
-
-	if (!ctxt->smpt->functions.bridge_connect(&bridges[bridge_id], false, 0,
-			(outgoing_transport == ctxt->smpt ? true : false), zsd, zse)) {
-		(void)outgoing_transport->functions.bridge_disconnect(&bridges[bridge_id], true);
-		transport_mgmt_unlock();
-		goto end;
-	}
-
-	bridges[bridge_id].status = 1;
-	bridges[bridge_id].incoming_transport = ctxt->smpt;
-	bridges[bridge_id].outgoing_transport = outgoing_transport;
-	bridge_active = true;
-
-	transport_mgmt_unlock();
+	/* Errors are added to the response */
+	(void)transport_mgmt_bridge_open(ctxt->smpt, outgoing_transport, mode, zsd, zse);
 
 end:
 	return MGMT_RETURN_CHECK(ok);

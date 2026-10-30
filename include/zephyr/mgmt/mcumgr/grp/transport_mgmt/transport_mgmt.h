@@ -19,12 +19,15 @@
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt_defines.h>
 
+struct cbor_nb_reader;
+struct cbor_nb_writer;
+
 /**
  * @brief MCUmgr Transport management API
  * @defgroup mcumgr_transport_mgmt Transport management
  * @ingroup mcumgr_mgmt_api
  * @since 4.5
- * @version 0.1.0
+ * @version 0.2.0
  * @{
  */
 
@@ -137,6 +140,37 @@ const struct smp_transport_bridge *transport_mgmt_get_bridge_internal(
 							bool direction);
 
 /** @endcond  */
+
+/**
+ * @brief Connects a bridge between two transports.
+ *
+ * Requests received on @p incoming are forwarded out of @p outgoing, and responses received on
+ * @p outgoing are forwarded out of @p incoming, as with a bridge connected by the connect command.
+ * Disconnect it with transport_mgmt_disconnect_bridge(), transport_mgmt_disconnect_transport(),
+ * transport_mgmt_disconnect_all() or the disconnect command.
+ *
+ * @p input_data and @p output_data are passed to the bridge connect functions of both transports,
+ * as the request and response of the connect command are. @p input_data is a CBOR map with the
+ * connection parameters of the transports, such as the address of an outgoing Bluetooth device.
+ * An incoming Bluetooth transport uses the connection that the buffer of @p input_data was
+ * received on. Errors are added to @p output_data as to the response of the connect command.
+ *
+ * @param incoming	transport whose requests are forwarded
+ * @param outgoing	transport the requests are forwarded to
+ * @param mode		mode of the outgoing transport
+ * @param input_data	CBOR reader of the connection parameters
+ * @param output_data	CBOR writer that errors are added to
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL A transport, @p input_data or @p output_data is NULL.
+ * @retval -ENOTSUP A transport does not support bridging.
+ * @retval -EBUSY A transport is already bridged.
+ * @retval -ENOMEM All bridge contexts are in use.
+ * @retval -EIO A transport refused the bridge, the reason is in @p output_data.
+ */
+int transport_mgmt_connect_bridge(struct smp_transport *incoming, struct smp_transport *outgoing,
+				  uint32_t mode, struct cbor_nb_reader *input_data,
+				  struct cbor_nb_writer *output_data);
 
 /**
  * @brief Disconnects an active bridge.
