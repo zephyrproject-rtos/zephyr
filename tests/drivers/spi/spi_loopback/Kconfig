@@ -11,6 +11,12 @@ config SPI_LARGE_BUFFER_SIZE
 	int "Large buffer size"
 	default 8192
 
+config SPI_LOOPBACK_PM
+	bool "SPI loopback light sleep test"
+	depends on PM
+	help
+	  Run the light sleep cases in the SPI loopback suite.
+
 config SPI_IDEAL_TRANSFER_DURATION_SCALING
 	int "Scaling factor to compare ideal and measured SPI transfer duration"
 	default 40 if SPI_NXP_LPSPI_DMA || SPI_MCUX_FLEXIO
