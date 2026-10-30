@@ -110,6 +110,7 @@ struct virtnet_data {
 	const struct _virtio_net_config *virtio_devcfg;
 	uint8_t mac[6];
 	struct _rx_cb_data rx_cb_data[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS];
+	struct k_sem tx_done;
 	uint8_t txb[VIRTIO_NET_BUFLEN];
 	uint8_t rxb[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS][VIRTIO_NET_BUFLEN];
 };
@@ -133,14 +134,30 @@ static enum ethernet_hw_caps virtnet_get_capabilities(const struct device *dev _
 	       ETHERNET_LINK_2500BASE | ETHERNET_LINK_5000BASE;
 }
 
+static void virtnet_tx_cb(void *priv, uint32_t len)
+{
+	struct virtnet_data *data = priv;
+
+	ARG_UNUSED(len);
+	k_sem_give(&data->tx_done);
+}
+
 static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct virtnet_config *config = dev->config;
 	struct virtnet_data *data = dev->data;
 	size_t len = net_pkt_get_len(pkt);
+	int ret;
+
+	/* The device owns txb until it returns the TX descriptor. */
+	ret = k_sem_take(&data->tx_done, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (net_pkt_read(pkt, data->txb + sizeof(struct _virtio_net_hdr), len)) {
 		LOG_ERR("could not read contents of packet to be sent");
+		k_sem_give(&data->tx_done);
 		return -EIO;
 	}
 
@@ -148,8 +165,9 @@ static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 	struct virtq_buf vqbuf[] = {
 		{.addr = data->txb, .len = sizeof(struct _virtio_net_hdr) + len}};
 
-	if (virtq_add_buffer_chain(vq, vqbuf, 1, 1, NULL, NULL, K_FOREVER)) {
+	if (virtq_add_buffer_chain(vq, vqbuf, 1, 1, virtnet_tx_cb, data, K_FOREVER)) {
 		LOG_ERR("could not send packet");
+		k_sem_give(&data->tx_done);
 		return -EIO;
 	}
 	virtio_notify_virtqueue(config->vdev, VIRTQ_TX(1));
@@ -213,6 +231,8 @@ static int virtnet_dev_init(const struct device *dev)
 {
 	const struct virtnet_config *config = dev->config;
 	struct virtnet_data *data = dev->data;
+
+	k_sem_init(&data->tx_done, 1, 1);
 
 	(void)net_eth_mac_load(&config->mcfg, data->mac);
 
