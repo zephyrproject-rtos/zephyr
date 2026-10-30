@@ -46,6 +46,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define LFXO_NODE DT_NODELABEL(lfxo)
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT)
 
 struct mpc_region_override {
 	nrf_mpc_override_config_t config;
@@ -146,6 +147,7 @@ static inline NRF_SPU_Type *spu_instance_from_peripheral_addr(uint32_t periphera
 
 	return (NRF_SPU_Type *)(0x50000000 | apb_bus_number);
 }
+#endif /* !CONFIG_BOOTLOADER_MCUBOOT */
 
 static void grtc_configuration(void)
 {
@@ -227,7 +229,9 @@ int nordicsemi_nrf71_init(void)
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Skip for tf-m, configuration exist in target_cfg_71.c */
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT)
 	mpc_configuration();
+#endif
 	grtc_configuration();
 	ipct_configuration();
 #endif
@@ -282,7 +286,8 @@ int nordicsemi_nrf71_init(void)
 	nrf_gpio_port_pwrctrl_set(NRF_P4, pwrctrl);
 
 	/* Configure LFXO capacitive load if internal load capacitors are used */
-#if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
+#if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal) && \
+	!defined(CONFIG_BOOTLOADER_MCUBOOT)
 	nrf_lfxo_cload_set(NRF_LFXO,
 			(uint8_t)(DT_PROP(LFXO_NODE, load_capacitance_femtofarad) / 1000));
 #endif
