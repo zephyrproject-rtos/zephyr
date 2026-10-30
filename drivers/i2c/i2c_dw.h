@@ -153,6 +153,7 @@ struct i2c_dw_rom_config {
 	uint32_t bitrate;
 	uint32_t sda_hold_tx;
 	uint32_t sda_hold_rx;
+
 #ifdef CONFIG_I2C_RTS5912
 	uint32_t irqnumber;
 #endif
@@ -161,6 +162,9 @@ struct i2c_dw_rom_config {
 	uint8_t fs_spk_len;
 	uint8_t hs_spk_len;
 	k_timeout_t transfer_timeout;
+	uint32_t scl_lcnt;
+	uint32_t scl_hcnt;
+
 
 #if I2C_DW_PINCTRL_ENABLED
 	const struct pinctrl_dev_config *pcfg;

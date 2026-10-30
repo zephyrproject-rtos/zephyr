@@ -85,3 +85,15 @@ properties:
 
       For example, with an input clock frequency of 100 MHz, a value of
       1 corresponds to a spike width of 10 ns.
+
+  scl-lcnt:
+    type: int
+    default: 0
+    description: |
+      Override I2C Clock SCL Low Count.
+
+  scl-hcnt:
+    type: int
+    default: 0
+    description: |
+      Override I2C Clock SCL High Count.

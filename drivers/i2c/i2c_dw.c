@@ -1048,21 +1048,21 @@ static int i2c_dw_configure(const struct device *dev, uint32_t config)
 	/* and have setup the clock frequency and speed mode */
 	switch (I2C_SPEED_GET(config)) {
 	case I2C_SPEED_STANDARD:
-		lcnt_val = I2C_STD_LCNT + rom->lcnt_offset;
-		hcnt_val = I2C_STD_HCNT + rom->hcnt_offset;
+		lcnt_val = rom->scl_lcnt ? rom->scl_lcnt : (I2C_STD_LCNT + rom->lcnt_offset);
+		hcnt_val = rom->scl_hcnt ? rom->scl_hcnt : (I2C_STD_HCNT + rom->hcnt_offset);
 		break;
 	case I2C_SPEED_FAST:
-		lcnt_val = I2C_FS_LCNT + rom->lcnt_offset;
-		hcnt_val = I2C_FS_HCNT + rom->hcnt_offset;
+		lcnt_val = rom->scl_lcnt ? rom->scl_lcnt : (I2C_FS_LCNT + rom->lcnt_offset);
+		hcnt_val = rom->scl_hcnt ? rom->scl_hcnt : (I2C_FS_HCNT + rom->hcnt_offset);
 		break;
 	case I2C_SPEED_FAST_PLUS:
-		lcnt_val = I2C_FSP_LCNT + rom->lcnt_offset;
-		hcnt_val = I2C_FSP_HCNT + rom->hcnt_offset;
+		lcnt_val = rom->scl_lcnt ? rom->scl_lcnt : (I2C_FSP_LCNT + rom->lcnt_offset);
+		hcnt_val = rom->scl_hcnt ? rom->scl_hcnt : (I2C_FSP_HCNT + rom->hcnt_offset);
 		break;
 	case I2C_SPEED_HIGH:
 		if (dw->support_hs_mode) {
-			lcnt_val = I2C_HS_LCNT + rom->lcnt_offset;
-			hcnt_val = I2C_HS_HCNT + rom->hcnt_offset;
+			lcnt_val = rom->scl_lcnt ? rom->scl_lcnt : (I2C_HS_LCNT + rom->lcnt_offset);
+			hcnt_val = rom->scl_hcnt ? rom->scl_hcnt : (I2C_HS_HCNT + rom->hcnt_offset);
 		} else {
 			rc = -EINVAL;
 		}
@@ -1652,9 +1652,11 @@ static int i2c_dw_initialize(const struct device *dev)
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
 		.fs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, fs_spike_len, 0), DW_IC_SPKLEN_MIN), \
 		.hs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, hs_spike_len, 0), DW_IC_SPKLEN_MIN), \
-		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(inst),                            \
-		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)   \
-			I2C_CONFIG_DMA_INIT(n) CLOCK_DW_CONFIG(n)};                                \
+		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(inst), \
+		.scl_lcnt = DT_INST_PROP_OR(n, scl_lcnt, 0), \
+		.scl_hcnt = DT_INST_PROP_OR(n, scl_hcnt, 0), \
+		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n) \
+			I2C_CONFIG_DMA_INIT(n) CLOCK_DW_CONFIG(n)};
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_tx, 0) <= 0xffff, "Invalid SDA_HOLD_TX value");   \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_rx, 0) <= 0xff, "Invalid SDA_HOLD_RX value");     \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \
