@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon SCB I2C controller
+
+description: |
+  Serial Communication Block (SCB) of Infineon TRAVEO T2G devices operated
+  in I2C mode. The block is an I2C controller and can additionally act as a
+  target with one 7-bit address.
+
+  The SCB clock comes from an integer peripheral clock divider (8-bit or
+  16-bit) without a fixed clock-div value, since the driver programs it for
+  the selected bus speed. Standard, Fast and Fast-mode Plus are supported.
+
+  SCL and SDA pins must be configured as open-drain with the input buffer
+  enabled.
+
+compatible: "infineon,scb-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: Integer peripheral clock divider feeding the SCB.
+
+  clk-dst:
+    type: int
+    required: true
+    description: Peripheral clock destination ID of this SCB instance.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO routed to the SCL pin, used to recover a stuck bus. Must be given
+      together with sda-gpios.
+
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO routed to the SDA pin, used to recover a stuck bus. Must be given
+      together with scl-gpios.
