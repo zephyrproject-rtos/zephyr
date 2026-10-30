@@ -319,9 +319,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 
 	while (1) {
 		if (spi_context_tx_buf_on(ctx) && spi_context_rx_buf_on(ctx)) {
-			if (ctx->rx_buf == ctx->tx_buf) {
-				spi_context_update_rx(ctx, 1, ctx->rx_len);
-			} else if (!(config->operation & SPI_HALF_DUPLEX)) {
+			if (!(config->operation & SPI_HALF_DUPLEX)) {
 				ret = spi_ambiq_xfer_full_duplex(dev);
 				if (ret != 0) {
 					spi_ambiq_reset(dev);
