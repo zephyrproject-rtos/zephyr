@@ -7,6 +7,7 @@ config HWINFO_BFLB
 	depends on SOC_FAMILY_BFLB
 	depends on OTP_BFLB
 	select HWINFO_HAS_DRIVER
+	select RETAINED_MEM if SOC_SERIES_BL60X
 	help
 	  Enable Bouffalo Lab hwinfo driver.
 	  Uses the factory-programmed MAC address from efuse as a unique
