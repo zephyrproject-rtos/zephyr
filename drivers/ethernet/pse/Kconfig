@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PSE
+	bool "Power Sourcing Equipment (PSE) drivers"
+	help
+	  Include drivers for Power Sourcing Equipment (PSE) controllers, as
+	  defined in IEEE 802.3 Clause 30/33/104/145.
+
+if PSE
+
+module = PSE
+module-str = pse
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # PSE
