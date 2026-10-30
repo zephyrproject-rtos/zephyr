@@ -396,7 +396,15 @@ static int cmd_cap_handover_unicast_to_broadcast(const struct shell *sh, size_t 
 	cap_initiator_broadcast_create_param.subgroup_params =
 		&cap_initiator_broadcast_subgroup_param;
 	cap_initiator_broadcast_create_param.qos = &default_source.qos;
-	cap_initiator_broadcast_create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	cap_initiator_broadcast_create_param.packing = default_broadcast_group_cfg.packing;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	if (default_broadcast_group_cfg.iso_interval != 0U) {
+		cap_initiator_broadcast_create_param.irc = default_broadcast_group_cfg.irc;
+		cap_initiator_broadcast_create_param.pto = default_broadcast_group_cfg.pto;
+		cap_initiator_broadcast_create_param.iso_interval =
+			default_broadcast_group_cfg.iso_interval;
+	}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
 	param.unicast_group = default_unicast_group.cap_group;
@@ -767,7 +775,10 @@ static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t 
 	cap_initiator_unicast_group_param.params = cap_initiator_unicast_group_pair_params;
 	cap_initiator_unicast_group_param.params_count =
 		cap_initiator_unicast_audio_start_param.count;
-	cap_initiator_unicast_group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	err = cap_unicast_group_cfg_apply(&cap_initiator_unicast_group_param);
+	if (err != 0) {
+		return -ENOEXEC;
+	}
 
 	cap_commander_reception_stop_param.type = BT_CAP_SET_TYPE_AD_HOC;
 	cap_commander_reception_stop_param.param = cap_commander_reception_stop_member_params;

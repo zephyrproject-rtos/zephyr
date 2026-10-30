@@ -78,6 +78,12 @@ void test_unicast_set_state(struct bt_cap_stream *cap_stream, struct bt_conn *co
 	if (state > BT_BAP_EP_STATE_CODEC_CONFIGURED) {
 		err = bt_bap_unicast_client_qos_from_group(bap_stream, &bap_stream->ep->qos);
 		zassert_equal(err, 0, "Unexpected return value %d", err);
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		/* ASE QoS status does not contain the CIS test parameters */
+		bap_stream->ep->qos.max_pdu = 0U;
+		bap_stream->ep->qos.burst_number = 0U;
+		bap_stream->ep->qos.num_subevents = 0U;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 		bap_stream->qos = &bap_stream->ep->qos;
 	}
 

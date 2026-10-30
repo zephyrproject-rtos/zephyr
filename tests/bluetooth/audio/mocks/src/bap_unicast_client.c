@@ -24,7 +24,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
-#include <sys/errno.h>
 
 #include "audio/bap_endpoint.h"
 #include "audio/bap_iso.h"
@@ -210,6 +209,12 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 			bt_bap_unicast_client_qos_from_group(stream, &stream->ep->qos);
 
 		__ASSERT(err == 0, "%d", err);
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		/* ASE QoS status does not contain the CIS test parameters */
+		stream->ep->qos.max_pdu = 0U;
+		stream->ep->qos.burst_number = 0U;
+		stream->ep->qos.num_subevents = 0U;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 		stream->qos = &stream->ep->qos;
 
 		if (stream->conn == conn) {
@@ -808,6 +813,7 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 		stream_param = &param->params[i];
 
 		(*unicast_group)->cig_param.packing = param->packing;
+		(*unicast_group)->cig_param.sca = param->sca;
 
 		err = unicast_group_add_stream_pair(*unicast_group, stream_param);
 		__ASSERT(err == 0, "%d", err);
@@ -856,6 +862,9 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 		struct bt_bap_unicast_group_stream_pair_param *stream_param = &param->params[i];
 		struct bt_bap_unicast_group_stream_param *rx_param = stream_param->rx_param;
 		struct bt_bap_unicast_group_stream_param *tx_param = stream_param->tx_param;
+
+		unicast_group->cig_param.packing = param->packing;
+		unicast_group->cig_param.sca = param->sca;
 
 		if (rx_param != NULL) {
 			struct bt_bap_iso *bap_iso =

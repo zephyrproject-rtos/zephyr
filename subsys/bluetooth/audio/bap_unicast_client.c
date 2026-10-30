@@ -2288,7 +2288,7 @@ static void bt_bap_qos_cfg_to_cig_param(struct bt_iso_cig_param *cig_param,
 	cig_param->c_to_p_latency = group->cig_param.c_to_p_latency;
 	cig_param->p_to_c_latency = group->cig_param.p_to_c_latency;
 	cig_param->packing = group->cig_param.packing;
-	cig_param->sca = BT_GAP_SCA_UNKNOWN;
+	cig_param->sca = group->cig_param.sca;
 
 	IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
 		cig_param->c_to_p_ft = group->cig_param.c_to_p_ft;
@@ -2639,10 +2639,14 @@ static int unicast_group_add_stream_pair(struct bt_bap_unicast_group *group,
 
 	if (param->rx_param != NULL) {
 		unicast_group_add_stream(group, param->rx_param, iso, BT_AUDIO_DIR_SOURCE);
+	} else {
+		iso->chan.qos->rx = NULL;
 	}
 
 	if (param->tx_param != NULL) {
 		unicast_group_add_stream(group, param->tx_param, iso, BT_AUDIO_DIR_SINK);
+	} else {
+		iso->chan.qos->tx = NULL;
 	}
 
 	bt_bap_iso_unref(iso);
@@ -3018,6 +3022,7 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 		stream_param = &param->params[i];
 
 		unicast_group->cig_param.packing = param->packing;
+		unicast_group->cig_param.sca = param->sca;
 		IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
 			unicast_group->cig_param.c_to_p_ft = param->c_to_p_ft;
 			unicast_group->cig_param.p_to_c_ft = param->p_to_c_ft;
@@ -3082,8 +3087,12 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 			CONTAINER_OF(tmp_stream->iso, struct bt_bap_iso, chan);
 		const struct bt_iso_chan_qos *qos = bap_iso->chan.qos;
 
-		memcpy(&rx_io_qos_backup[idx], qos->rx, sizeof(rx_io_qos_backup[idx]));
-		memcpy(&tx_io_qos_backup[idx], qos->tx, sizeof(tx_io_qos_backup[idx]));
+		if (qos->rx != NULL) {
+			memcpy(&rx_io_qos_backup[idx], qos->rx, sizeof(rx_io_qos_backup[idx]));
+		}
+		if (qos->tx != NULL) {
+			memcpy(&tx_io_qos_backup[idx], qos->tx, sizeof(tx_io_qos_backup[idx]));
+		}
 		IF_ENABLED(
 			CONFIG_BT_ISO_TEST_PARAMS,
 			(num_subevents_backup[idx] = qos->num_subevents));
@@ -3098,6 +3107,7 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 		struct bt_bap_unicast_group_stream_param *tx_param = stream_param->tx_param;
 
 		unicast_group->cig_param.packing = param->packing;
+		unicast_group->cig_param.sca = param->sca;
 		IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
 			unicast_group->cig_param.c_to_p_ft = param->c_to_p_ft;
 			unicast_group->cig_param.p_to_c_ft = param->p_to_c_ft;
@@ -3134,8 +3144,14 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 				CONTAINER_OF(tmp_stream->iso, struct bt_bap_iso, chan);
 			struct bt_iso_chan_qos *qos = bap_iso->chan.qos;
 
-			memcpy(qos->rx, &rx_io_qos_backup[idx], sizeof(rx_io_qos_backup[idx]));
-			memcpy(qos->tx, &tx_io_qos_backup[idx], sizeof(tx_io_qos_backup[idx]));
+			if (qos->rx != NULL) {
+				memcpy(qos->rx, &rx_io_qos_backup[idx],
+				       sizeof(rx_io_qos_backup[idx]));
+			}
+			if (qos->tx != NULL) {
+				memcpy(qos->tx, &tx_io_qos_backup[idx],
+				       sizeof(tx_io_qos_backup[idx]));
+			}
 			IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS,
 				   (qos->num_subevents =
 					    num_subevents_backup[idx]));
@@ -3328,6 +3344,7 @@ int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_gro
 		info->framing = BT_BAP_QOS_CFG_FRAMING_UNFRAMED;
 	}
 	info->packing = unicast_group->cig_param.packing;
+	info->sca = unicast_group->cig_param.sca;
 	info->has_been_connected = unicast_group->has_been_connected;
 	IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
 		info->c_to_p_ft = unicast_group->cig_param.c_to_p_ft;
