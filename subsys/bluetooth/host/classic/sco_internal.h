@@ -325,3 +325,9 @@ bool sco_has_data(struct bt_conn *conn);
 
 /* Work to move data from tx_pending to tx_queue. */
 void sco_tx_worker(struct k_work *work);
+
+/** A callback used to notify about freed buffer in the SCO rx pool. */
+typedef void (*bt_sco_buf_rx_freed_cb_t)(void);
+
+/** Set rx buffer freed callback */
+void bt_sco_buf_rx_freed_cb_set(bt_sco_buf_rx_freed_cb_t cb);
