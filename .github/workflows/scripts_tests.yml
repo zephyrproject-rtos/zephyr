@@ -9,6 +9,8 @@ on:
       - main
       - v*-branch
     paths:
+      - 'cmake/modules/arch.cmake'
+      - 'cmake/modules/boards.cmake'
       - 'scripts/build/**'
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'
@@ -22,6 +24,8 @@ on:
       - main
       - v*-branch
     paths:
+      - 'cmake/modules/arch.cmake'
+      - 'cmake/modules/boards.cmake'
       - 'scripts/build/**'
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'
