@@ -911,6 +911,16 @@ int stm32_clock_control_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
+	/*
+	 * dev is NULL when called on exit from STOP mode, where the clock tree
+	 * must be restored. Only preserve the boot configuration at init.
+	 */
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_PRESERVE_BOOT_CONFIG) && (dev != NULL)) {
+		SystemCoreClockUpdate();
+		set_regu_voltage(SystemCoreClock, SELECTED_VOLTAGE_SCALE);
+		return 0;
+	}
+
 	/* Current hclk value */
 	old_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(get_startup_frequency(), LL_RCC_GetAHBPrescaler());
 
