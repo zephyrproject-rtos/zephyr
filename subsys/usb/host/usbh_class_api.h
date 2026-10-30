@@ -33,7 +33,7 @@ static inline int usbh_class_init(struct usbh_class_data *const c_data)
 		return api->init(c_data);
 	}
 
-	return -ENOTSUP;
+	return 0;
 }
 
 /**
@@ -70,8 +70,7 @@ static inline int usbh_class_completion_cb(struct usbh_class_data *const c_data,
  * @return -ENOTSUP if the class is not matching
  */
 static inline int usbh_class_probe(struct usbh_class_data *const c_data,
-				   struct usb_device *const udev,
-				   const uint8_t iface)
+				   struct usb_device *const udev, const uint8_t iface)
 {
 	const struct usbh_class_api *api = c_data->api;
 

@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_HUB
+	bool "USB hub support (Chapter 11)"
+	default n
+	help
+	  Hub control requests and host-core hub driver (Chapter 11 hub driver).
+	  Powers downstream ports, handles port status change events, and
+	  enumerates devices on hub ports.
+
+if USBH_HUB
+
+config USBH_HUB_INSTANCES_COUNT
+	int "Number of USB hub driver instances"
+	default 2
+	range 1 8
+	help
+	  One instance is bound per physical hub on the bus (one hub driver
+	  context per physical hub). Increase for cascaded hubs. Each hub also
+	  consumes one entry from CONFIG_USBH_USB_DEVICE_MAX.
+
+config USBH_HUB_PORT_RESET_MS
+	int "Milliseconds to wait during hub port reset"
+	default 50
+	range 10 500
+	help
+	  Delay after SET_FEATURE(PORT_RESET) before polling for C_PORT_RESET.
+
+config USBH_HUB_MAX_PORTS
+	int "Maximum downstream ports supported by the hub driver"
+	default 8
+	range 1 15
+	help
+	  Size of the hub status-change bitmap and port scan loops.
+
+endif # USBH_HUB
