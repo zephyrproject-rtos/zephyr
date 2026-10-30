@@ -1,8 +1,19 @@
 tests:
-  subsys.lorawan.native_region:
+  subsys.lorawan.native_region.as923:
     tags:
       - lorawan
     platform_allow:
       - native_sim
     integration_platforms:
       - native_sim
+    extra_configs:
+      - CONFIG_LORAWAN_REGION_AS923=y
+  subsys.lorawan.native_region.kr920:
+    tags:
+      - lorawan
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_LORAWAN_REGION_KR920=y

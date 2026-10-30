@@ -121,6 +121,11 @@ Libraries / Subsystems
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
 
+* LoRaWAN
+
+  * The native backend now supports the AS923 region
+    (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
+
 Other notable changes
 *********************
 
