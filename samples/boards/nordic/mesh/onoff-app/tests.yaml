@@ -2,6 +2,9 @@ sample:
   name: Bluetooth Mesh
 tests:
   sample.bluetooth.mesh.onoff:
-    platform_allow: nrf52840dk/nrf52840
+    qualifiers_allow:
+      - nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
     tags: bluetooth
     harness: bluetooth

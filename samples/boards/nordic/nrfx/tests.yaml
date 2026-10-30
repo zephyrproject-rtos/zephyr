@@ -2,9 +2,9 @@ sample:
   name: nrfx use example
 tests:
   sample.boards.nrf.nrfx:
-    platform_allow:
-      - nrf52840dk/nrf52840
-      - nrf9160dk/nrf9160
+    qualifiers_allow:
+      - nrf52840
+      - nrf9160
     integration_platforms:
       - nrf52840dk/nrf52840
     tags: board
