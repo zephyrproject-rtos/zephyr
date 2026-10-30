@@ -14,6 +14,7 @@ ZTEST(modbus, test_setup_low_none)
 	test_di_rd();
 	test_input_reg();
 	test_holding_reg();
+	test_illegal_data_value();
 	test_diagnostic();
 	test_client_disable();
 	test_server_disable();
@@ -27,6 +28,7 @@ ZTEST(modbus, test_setup_low_odd)
 	test_di_rd();
 	test_input_reg();
 	test_holding_reg();
+	test_illegal_data_value();
 	test_diagnostic();
 	test_client_disable();
 	test_server_disable();
@@ -40,6 +42,7 @@ ZTEST(modbus, test_setup_high_even)
 	test_di_rd();
 	test_input_reg();
 	test_holding_reg();
+	test_illegal_data_value();
 	test_diagnostic();
 	test_client_disable();
 	test_server_disable();
@@ -53,6 +56,7 @@ ZTEST(modbus, test_setup_ascii)
 	test_di_rd();
 	test_input_reg();
 	test_holding_reg();
+	test_illegal_data_value();
 	test_diagnostic();
 	test_client_disable();
 	test_server_disable();
@@ -66,6 +70,10 @@ ZTEST(modbus, test_setup_raw)
 	test_di_rd();
 	test_input_reg();
 	test_holding_reg();
+	/*
+	 * test_illegal_data_value() is not called, because the RAW mode rejects
+	 * exception responses with a length error (MODBUS_RAW_MIN_MSG_SIZE).
+	 */
 	test_diagnostic();
 	test_client_disable();
 	test_server_disable();

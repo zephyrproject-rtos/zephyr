@@ -27,6 +27,15 @@
 LOG_MODULE_REGISTER(modbus_s, CONFIG_MODBUS_LOG_LEVEL);
 
 /*
+ * Get the exception code for the error of a write callback.
+ * -EINVAL indicates an invalid value, all other errors an unsupported address.
+ */
+static uint8_t mbs_wr_err_to_excep(int err)
+{
+	return (err == -EINVAL) ? MODBUS_EXC_ILLEGAL_DATA_VAL : MODBUS_EXC_ILLEGAL_DATA_ADDR;
+}
+
+/*
  * This functions are used to reset and update server's
  * statistics and communications counters.
  */
@@ -560,8 +569,8 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 	err = ctx->mbs_user_cb->coil_wr(coil_addr, coil_state);
 
 	if (err != 0) {
-		LOG_INF("Coil address not supported");
-		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+		LOG_INF("Failed to write coil %u (%d)", coil_addr, err);
+		mbs_exception_rsp(ctx, mbs_wr_err_to_excep(err));
 		return true;
 	}
 
@@ -610,8 +619,8 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 	err = ctx->mbs_user_cb->holding_reg_wr(reg_addr, reg_val);
 
 	if (err != 0) {
-		LOG_INF("Register address not supported");
-		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+		LOG_INF("Failed to write register %u (%d)", reg_addr, err);
+		mbs_exception_rsp(ctx, mbs_wr_err_to_excep(err));
 		return true;
 	}
 
@@ -787,8 +796,8 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 						coil_state);
 
 		if (err != 0) {
-			LOG_INF("Coil address not supported");
-			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+			LOG_INF("Failed to write coil %u (%d)", coil_addr + coil_cntr, err);
+			mbs_exception_rsp(ctx, mbs_wr_err_to_excep(err));
 			return true;
 		}
 
@@ -911,8 +920,8 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 		}
 
 		if (err != 0) {
-			LOG_INF("Register address not supported");
-			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+			LOG_INF("Failed to write register %u (%d)", addr, err);
+			mbs_exception_rsp(ctx, mbs_wr_err_to_excep(err));
 			return true;
 		}
 	}
