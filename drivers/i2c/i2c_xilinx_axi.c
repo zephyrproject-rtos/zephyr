@@ -464,7 +464,7 @@ static int i2c_xilinx_axi_wait_tx_done(const struct device *dev)
 			LOG_ERR("Arbitration lost on TX");
 			return -EAGAIN;
 		}
-		LOG_ERR("TX received NAK");
+		LOG_DBG("TX received NAK");
 		return -ENXIO;
 	}
 	return 0;
@@ -494,15 +494,21 @@ static int i2c_xilinx_axi_write(const struct device *dev, const struct i2c_msg *
 	uint32_t bytes_left = msg->len;
 	uint32_t cr = CR_EN | CR_TX;
 	uint32_t fifo_space = FIFO_SIZE - 1; /* account for address being written */
+	uint32_t addr_word = (addr << 1) | TX_FIFO_START;
 
 	if (msg->flags & I2C_MSG_RESTART) {
 		cr |= CR_MSMS | CR_RSTA;
 	}
 
+	/* With no data bytes, the address byte carries the stop */
+	if ((bytes_left == 0U) && ((msg->flags & I2C_MSG_STOP) != 0U)) {
+		addr_word |= TX_FIFO_STOP;
+	}
+
 	i2c_xilinx_axi_clear_interrupt(dev, ISR_TX_ERR_TARGET_COMP | ISR_ARB_LOST);
 
 	sys_write32(cr, base + REG_CR);
-	sys_write32((addr << 1) | TX_FIFO_START, base + REG_TX_FIFO);
+	sys_write32(addr_word, base + REG_TX_FIFO);
 
 	/* TX FIFO empty detection is somewhat fragile because the status register
 	 * TX_FIFO_EMPTY bit can be set prior to the transaction actually being
@@ -513,7 +519,7 @@ static int i2c_xilinx_axi_write(const struct device *dev, const struct i2c_msg *
 	 * while the TX FIFO is being filled up to try to avoid this.
 	 */
 
-	while (bytes_left) {
+	do {
 		uint32_t bytes_to_send = bytes_left;
 		const k_spinlock_key_t key = k_spin_lock(&data->lock);
 		int ret;
@@ -539,7 +545,7 @@ static int i2c_xilinx_axi_write(const struct device *dev, const struct i2c_msg *
 			return ret;
 		}
 		fifo_space = FIFO_SIZE;
-	}
+	} while (bytes_left > 0U);
 	return 0;
 }
 
