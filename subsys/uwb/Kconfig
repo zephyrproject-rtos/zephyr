@@ -1,0 +1,50 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UWB
+	bool "Ultra-Wideband subsystem"
+	default n
+	help
+	  Enable Ultra wideband subsystem
+
+if UWB
+
+choice "UWB_LOG_LEVEL_CHOICE"
+	prompt "Max compiled-in log level for UWB"
+	default UWB_LOG_LEVEL_DEFAULT
+	depends on LOG
+
+config UWB_LOG_LEVEL_OFF
+	bool "UWB logging level Off"
+
+config UWB_LOG_LEVEL_ERR
+	bool "UWB logging level Error"
+
+config UWB_LOG_LEVEL_WRN
+	bool "UWB logging level Warning"
+
+config UWB_LOG_LEVEL_INF
+	bool "UWB logging level Info"
+
+config UWB_LOG_LEVEL_DBG
+	bool "UWB logging level Debug"
+
+config UWB_LOG_LEVEL_DEFAULT
+	bool "UWB logging level Default"
+
+endchoice
+
+config UWB_LOG_LEVEL
+	int
+	depends on LOG
+	default 0 if UWB_LOG_LEVEL_OFF
+	default 1 if UWB_LOG_LEVEL_ERR
+	default 2 if UWB_LOG_LEVEL_WRN
+	default 3 if UWB_LOG_LEVEL_INF
+	default 4 if UWB_LOG_LEVEL_DBG
+	default LOG_DEFAULT_LEVEL if UWB_LOG_LEVEL_DEFAULT
+
+rsource "uci_lib/Kconfig"
+rsource "uwb_api/Kconfig"
+
+endif # UWB
