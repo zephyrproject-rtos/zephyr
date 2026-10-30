@@ -5486,6 +5486,17 @@ QNX Hypervisor Platforms:
   labels:
     - "platform: Quicklogic"
 
+RAKwireless Platforms:
+  status: maintained
+  maintainers:
+    - juanjin-dev
+  files:
+    - boards/rakwireless/
+    - boards/shields/rakwireless_*/
+    - dts/vendor/rakwireless/
+  labels:
+    - "platform: RAKwireless"
+
 RISCV Platforms:
   status: maintained
   maintainers:
