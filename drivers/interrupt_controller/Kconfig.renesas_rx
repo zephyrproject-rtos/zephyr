@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Renesas Electronics Corporation
+# Copyright (c) 2025-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config RENESAS_RX_ICU
@@ -14,3 +14,10 @@ config RENESAS_RX_GRP_INTC
 	depends on DT_HAS_RENESAS_RX_GRP_INTC_ENABLED
 	help
 	  Renesas RX series group interrupt feature
+
+config RENESAS_RX_GRP_INTC_FSP
+	bool "Renesas RX series group interrupt using FSP"
+	default y
+	depends on DT_HAS_RENESAS_RX_GRP_INTC_FSP_ENABLED
+	help
+	  Renesas RX series group interrupt feature using FSP
