@@ -28,6 +28,14 @@ memory, from which instructions cannot be fetched. The
 ``kernel.multiprocessing.smp.xip`` test scenario uses an overlay that executes
 the image in place from a 1 MiB region at the reset address.
 
+AArch32 builds with :kconfig:option:`CONFIG_KERNEL_COHERENCE` were validated
+with FVP version 11.32, build 19. The runner enables cache state modeling and
+the Cortex-R52 cache policy, disables L1 coherence protocols, and removes the
+model's L2 cache to exercise software coherence with write-through L1 caches.
+
+On Cortex-R52, :kconfig:option:`CONFIG_KERNEL_COHERENCE` supports execution
+from RAM only and is incompatible with :kconfig:option:`CONFIG_XIP`.
+
 Hardware
 ********
 
