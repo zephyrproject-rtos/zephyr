@@ -399,15 +399,30 @@ static inline esp_dma_desc_t *dma_esp32_desc_uncached(esp_dma_desc_t *desc)
 }
 #endif
 
-/* The successful-EOF register is a latch and keeps its value until the next
- * EOF, so it can still name a descriptor from an earlier configuration. Only
- * trust it inside this channel's own list.
- */
-static inline bool dma_esp32_desc_in_list(struct dma_esp32_channel *dma_channel,
-					  esp_dma_desc_t *desc)
+/* Validate the hardware address before forming a descriptor pointer. */
+static inline esp_dma_desc_t *IRAM_ATTR dma_esp32_get_desc(struct dma_esp32_channel *dma_channel,
+							   uintptr_t address)
 {
-	return desc >= dma_channel->desc_list &&
-	       desc < &dma_channel->desc_list[ARRAY_SIZE(dma_channel->desc_list)];
+	uintptr_t base = (uintptr_t)dma_channel->desc_list;
+	uintptr_t offset;
+
+	if (address < base) {
+		return NULL;
+	}
+
+	offset = address - base;
+	if (offset >= sizeof(dma_channel->desc_list) ||
+	    offset % sizeof(dma_channel->desc_list[0]) != 0U) {
+		return NULL;
+	}
+
+	/* The EOF latch can still name the tail of a previous, longer RX chain. */
+	if (dma_channel->dir == DMA_RX &&
+	    (dma_channel->tail == NULL || address > (uintptr_t)dma_channel->tail)) {
+		return NULL;
+	}
+
+	return &dma_channel->desc_list[offset / sizeof(dma_channel->desc_list[0])];
 }
 
 /*
@@ -583,6 +598,8 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 				       struct dma_block_config *block)
 {
+	dma_channel->tail = NULL;
+
 	if (!block) {
 		LOG_ERR("At least one dma block is required");
 		return -EINVAL;
@@ -1079,6 +1096,7 @@ static int IRAM_ATTR dma_esp32_get_status(const struct device *dev, uint32_t cha
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 	struct dma_esp32_channel *dma_channel;
 	esp_dma_desc_t *desc;
+	uintptr_t address;
 
 	if (channel >= config->dma_channel_max) {
 		return -EINVAL;
@@ -1095,9 +1113,9 @@ static int IRAM_ATTR dma_esp32_get_status(const struct device *dev, uint32_t cha
 	if (dma_channel->dir == DMA_RX) {
 		status->busy = !dma_ll_rx_is_fsm_idle(data, dma_channel->channel_id);
 		status->dir = PERIPHERAL_TO_MEMORY;
-		desc = (esp_dma_desc_t *)dma_ll_rx_get_prefetched_desc(data,
-								       dma_channel->channel_id);
-		if (desc == NULL) {
+		address = (uintptr_t)dma_ll_rx_get_prefetched_desc(data, dma_channel->channel_id);
+		desc = dma_esp32_get_desc(dma_channel, address);
+		if (address == 0U) {
 			/* Not every controller keeps the prefetched descriptor
 			 * readable once the transfer has ended; the AHB
 			 * instance on esp32p4 reports zero there. The
@@ -1108,30 +1126,32 @@ static int IRAM_ATTR dma_esp32_get_status(const struct device *dev, uint32_t cha
 			 * only take it while the descriptor it names has been
 			 * handed back by the controller.
 			 */
-			desc = (esp_dma_desc_t *)dma_ll_rx_get_suc_eof_desc(
-				data, dma_channel->channel_id);
+			address = (uintptr_t)dma_ll_rx_get_suc_eof_desc(data,
+									dma_channel->channel_id);
+			desc = dma_esp32_get_desc(dma_channel, address);
 
-			if (dma_esp32_desc_in_list(dma_channel, desc) &&
-			    dma_esp32_desc_uncached(desc)->dw0.owner ==
-				    DMA_DESCRIPTOR_BUFFER_OWNER_DMA) {
+			if (desc != NULL && dma_esp32_desc_uncached(desc)->dw0.owner ==
+						    DMA_DESCRIPTOR_BUFFER_OWNER_DMA) {
 				desc = NULL;
 			}
 		}
 
-		if (dma_esp32_desc_in_list(dma_channel, desc)) {
+		if (desc != NULL) {
 			esp_dma_desc_t *desc_nc = dma_esp32_desc_uncached(desc);
 
 			status->read_position = desc - dma_channel->desc_list;
-			status->total_copied =
-				desc_nc->dw0.length +
-				dma_channel->desc_list[0].dw0.size * status->read_position;
+			status->total_copied = desc_nc->dw0.length;
+			/* Earlier blocks can have different descriptor sizes. */
+			for (uint32_t i = 0; i < status->read_position; i++) {
+				status->total_copied += dma_channel->desc_list[i].dw0.size;
+			}
 		}
 	} else if (dma_channel->dir == DMA_TX) {
 		status->busy = !dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id);
 		status->dir = MEMORY_TO_PERIPHERAL;
-		desc = (esp_dma_desc_t *)dma_ll_tx_get_prefetched_desc(data,
-								       dma_channel->channel_id);
-		if (dma_esp32_desc_in_list(dma_channel, desc)) {
+		address = (uintptr_t)dma_ll_tx_get_prefetched_desc(data, dma_channel->channel_id);
+		desc = dma_esp32_get_desc(dma_channel, address);
+		if (desc != NULL) {
 			status->write_position = desc - dma_channel->desc_list;
 		}
 	}
@@ -1269,6 +1289,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 		return -EINVAL;
 	}
 
+	dma_channel->tail = NULL;
 	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list); ++i) {
 		memset(desc_iter, 0, sizeof(esp_dma_desc_t));
 		desc_iter->buffer = (void *)(buf + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED * i);
