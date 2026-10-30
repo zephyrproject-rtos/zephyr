@@ -229,6 +229,19 @@ static void modbus_ascii_tx_adu(struct modbus_context *ctx)
 	uint16_t tx_bytes = 0;
 	uint8_t lrc;
 	uint8_t *pbuf;
+	/* ':', unit id, function code, data, LRC, CR/LF */
+	size_t frame_len = 1U + 2U * (2U + ctx->tx_adu.length + 1U) + 2U;
+
+	if (frame_len > sizeof(cfg->uart_buf)) {
+		LOG_ERR("ASCII frame of %zu bytes exceeds buffer of %zu bytes",
+			frame_len, sizeof(cfg->uart_buf));
+		/* Nothing is sent, resume reception */
+		if (!atomic_test_bit(&ctx->state, MODBUS_STATE_RX_ENABLED)) {
+			modbus_serial_rx_on(ctx);
+		}
+
+		return;
+	}
 
 	/* Place the start-of-frame character into output buffer */
 	cfg->uart_buf[0] = MODBUS_ASCII_START_FRAME_CHAR;
