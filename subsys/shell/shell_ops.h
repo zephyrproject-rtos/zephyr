@@ -385,17 +385,17 @@ void z_shell_backend_rx_buffer_flush(const struct shell *sh);
 
 static inline bool z_shell_trylock(const struct shell *sh, k_timeout_t timeout)
 {
-	return k_sem_take(&sh->ctx->lock_sem, timeout) == 0;
+	return k_mutex_lock(&sh->ctx->lock_mtx, timeout) == 0;
 }
 
 static inline void z_shell_lock(const struct shell *sh)
 {
-	(void)k_sem_take(&sh->ctx->lock_sem, K_FOREVER);
+	(void)k_mutex_lock(&sh->ctx->lock_mtx, K_FOREVER);
 }
 
 static inline void z_shell_unlock(const struct shell *sh)
 {
-	k_sem_give(&sh->ctx->lock_sem);
+	k_mutex_unlock(&sh->ctx->lock_mtx);
 }
 
 #ifdef __cplusplus
