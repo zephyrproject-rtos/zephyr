@@ -1,0 +1,64 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * ADC Channel to GPIO Pin Mapping for Testing:
+ *
+ * Channel      ADC Pin Routing Type    GPIO Pin        Test Pin (V+)   Test Pin (V-)
+ * Channel 0    4       SARMUX          P5.4            P5.4            GND
+ * Channel 1    2, 3    SARMUX (diff)   P5.2 (V+), P5.3 (V-)    P5.2    P5.3
+ *
+ * P5.0 and P5.1 are used by the console UART and P5.5 by the user button.
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-sar.h>
+
+/ {
+	aliases {
+		adc = &adc0;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>, <&adc0 1>;
+	};
+};
+
+/* 48 MHz / 32 = 1.5 MHz, within the SAR clock limit even without a Vref bypass capacitor */
+&peri_clk_div4 {
+	status = "okay";
+	clock-div = <32>;
+};
+
+&adc0 {
+	status = "okay";
+	clocks = <&peri_clk_div4>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,input-positive = <CY_SAR_ADDR_SARMUX_4>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,differential;
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,input-positive = <CY_SAR_ADDR_SARMUX_2>;
+		zephyr,input-negative = <CY_SAR_ADDR_SARMUX_3>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+};

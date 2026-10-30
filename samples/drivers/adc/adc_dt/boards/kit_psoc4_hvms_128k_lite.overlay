@@ -1,0 +1,81 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-sar.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 0>, <&adc0 1>, <&adc0 2>, <&adc0 3>;
+	};
+};
+
+/* 48 MHz / 32 = 1.5 MHz, within the SAR clock limit even without a Vref bypass capacitor */
+&peri_clk_div4 {
+	status = "okay";
+	clock-div = <32>;
+};
+
+/*
+ * The potentiometer (J6) is on P5.3, SARMUX pin 3. The VDDA reference (VDDA = 3.3 V) gives
+ * the full 0 - VDDA input range, a single-ended input can not go above the reference.
+ */
+&adc0 {
+	status = "okay";
+	clocks = <&peri_clk_div4>;
+	vref-src = "vdda";
+	vref-mv = <3300>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,input-positive = <CY_SAR_ADDR_SARMUX_3>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 50)>;
+	};
+
+	/* Free input on P5.4 for an external signal, floating if nothing is connected */
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,input-positive = <CY_SAR_ADDR_SARMUX_4>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 50)>;
+	};
+
+	/* Internal VSSA, expected close to 0 */
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,input-positive = <CY_SAR_ADDR_DIAG_GND>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 50)>;
+	};
+
+	/* Internal bandgap, expected about 1200 mV */
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,input-positive = <CY_SAR_ADDR_DIAG_SRSS_BGR>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 50)>;
+	};
+};
