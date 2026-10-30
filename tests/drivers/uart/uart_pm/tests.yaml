@@ -104,3 +104,17 @@ tests:
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+
+  drivers.uart.pm.generic:
+    platform_allow:
+      - kit_psc3m5_evk
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+
+  drivers.uart.pm.generic.int_driven:
+    platform_allow:
+      - kit_psc3m5_evk
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_ASYNC_API=n
