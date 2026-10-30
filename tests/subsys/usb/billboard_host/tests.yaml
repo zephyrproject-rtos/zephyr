@@ -1,0 +1,10 @@
+tests:
+  usb.host.billboard:
+    tags:
+      - usb
+      - billboard
+    platform_allow:
+      - native_sim/native
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native

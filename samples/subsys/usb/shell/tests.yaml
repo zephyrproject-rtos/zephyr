@@ -47,3 +47,12 @@ tests:
     platform_allow:
       - native_sim/native/64
     build_only: true
+  sample.usbh.shell.billboard:
+    depends_on:
+      - usbh
+    tags:
+      - usb
+    extra_args:
+      - FILE_SUFFIX=host
+      - EXTRA_CONF_FILE="usbh_billboard_prj.conf"
+    build_only: true

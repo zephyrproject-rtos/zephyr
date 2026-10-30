@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -17,6 +18,28 @@
 #include <stdint.h>
 
 #include <zephyr/usb/usbh.h>
+#include <zephyr/usb/bos.h>
+
+/**
+ * @brief Get BOS descriptor.
+ *
+ * @param[in] udev USB device.
+ *
+ * @return A pointer to the BOS descriptor or NULL.
+ */
+const void *usbh_desc_get_bos(const struct usb_device *const udev);
+
+/**
+ * @brief Return the next capability descriptor
+ *
+ * @param[in] bos_desc   Pointer to the BOS descriptor.
+ * @param[in] seek_desc  Pointer to the current capability descriptor or BOS descriptor.
+ * @param[in] capability Filter for a specific capability type (0 means no filter).
+ *
+ * @return Pointer to the next capability descriptor, or NULL if not found.
+ */
+const void *usbh_desc_get_next_capability(const struct usb_bos_descriptor *const bos_desc,
+					  const void *const seek_desc, uint8_t capability);
 
 /**
  * @brief Get the next descriptor in an array of descriptors.
