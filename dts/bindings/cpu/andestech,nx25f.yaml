@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Andes Technology AndesCore NX25F RISC-V core
+
+compatible: "andestech,nx25f"
+
+include: riscv-common.yaml
