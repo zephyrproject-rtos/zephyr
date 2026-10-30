@@ -6,11 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
 #include <zephyr/sys/util.h>
@@ -18,6 +20,7 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
+#include "audio/cap_internal.h"
 #include "cap_commander.h"
 #include "conn.h"
 #include "expects_util.h"
@@ -177,4 +180,22 @@ ZTEST_F(cap_commander_test_suite, test_commander_discover_inval_param_null)
 
 	err = bt_cap_commander_discover(NULL);
 	zassert_equal(-EINVAL, err, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(cap_commander_test_suite, test_commander_br_disconnected)
+{
+	struct bt_cap_common_proc *active_proc;
+	struct bt_conn br_conn = {0};
+	uint32_t lock_count;
+
+	test_conn_init(&br_conn);
+	br_conn.info.type = BT_CONN_TYPE_BR;
+	mock_bt_conn_disconnected(&br_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	/* A lock left taken by the disconnection would add to the count */
+	active_proc = bt_cap_common_get_active_proc();
+	lock_count = bt_cap_common_get_active_proc_mutex_lock_count(active_proc);
+	bt_cap_common_unlock_proc();
+
+	zassert_equal(1U, lock_count, "Unexpected lock count %u", lock_count);
 }

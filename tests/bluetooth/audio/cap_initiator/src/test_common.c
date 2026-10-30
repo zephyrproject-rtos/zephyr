@@ -22,6 +22,7 @@
 #include <zephyr/ztest_assert.h>
 
 #include "audio/bap_endpoint.h"
+#include "bap_unicast_client.h"
 #include "cap_initiator.h"
 #include "conn.h"
 #include "expects_util.h"
@@ -32,6 +33,7 @@ DEFINE_FFF_GLOBALS;
 void test_mocks_init(void)
 {
 	mock_cap_initiator_init();
+	mock_bap_unicast_client_set_disable_err(NULL, 0);
 }
 
 void test_mocks_cleanup(void)
