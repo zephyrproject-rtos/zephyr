@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Space Cubics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_AVALANCHE_MRAM
+	bool "Avalanche Technology serial MRAM"
+	default y
+	depends on DT_HAS_AVALANCHE_AS301G208_ENABLED || \
+		DT_HAS_AVALANCHE_AS302G208_ENABLED || \
+		DT_HAS_AVALANCHE_AS304G208_ENABLED || \
+		DT_HAS_AVALANCHE_AS308G208_ENABLED || \
+		DT_HAS_AVALANCHE_AS3064204_ENABLED || \
+		DT_HAS_AVALANCHE_AS3128208_ENABLED
+	select SPI
+	select SPI_EXTENDED_MODES
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_DRIVER_FILL
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	help
+	  Enable the Flash API driver for supported Avalanche Technology serial
+	  MRAM-based persistent SRAM devices: AS301G208, AS302G208, AS304G208,
+	  AS308G208, AS3064204, and AS3128208. Single-SPI and QPI (4-4-4)
+	  operation are supported.
+
+	  AS301G208, AS302G208, AS304G208, AS308G208, and AS3128208 expose two
+	  QSPI interfaces. Each devicetree instance exposes one interface's capacity.
+	  Dual-parallel operation across both interfaces is not supported.
+
+config FLASH_AVALANCHE_MRAM_TRANSFER_SIZE
+	int "Maximum Avalanche MRAM command data length"
+	default 256
+	range 1 1024
+	depends on FLASH_AVALANCHE_MRAM
+	help
+	  Maximum data length, in bytes, issued in one MRAM memory command.
+	  Controllers without FIFO streaming require this limit to fit their FIFO
+	  capacity.
+	  QPI reads include five latency bytes up to 40 MHz and six above it.
+	  The limit must also leave room for at least one data byte.
