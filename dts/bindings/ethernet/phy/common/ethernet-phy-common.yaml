@@ -11,3 +11,15 @@ properties:
   reg:
     required: true
     description: PHY address
+
+  rx-internal-delay-ps:
+    type: int
+    description: |
+      Specifies the internal delay of the receive path in picoseconds.
+      Only for RGMII interfaces. Applied by the PHY.
+
+  tx-internal-delay-ps:
+    type: int
+    description: |
+      Specifies the internal delay of the transmit path in picoseconds.
+      Only for RGMII interfaces. Applied by the PHY.
