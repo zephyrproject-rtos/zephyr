@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.audio.cs47l63:
+    platform_allow: native_sim
+    harness: ztest
+    tags:
+      - drivers
+      - audio
+      - codec
