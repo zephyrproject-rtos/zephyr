@@ -10,6 +10,11 @@
  * @deprecated Please include zephyr/sys/clock.h straight instead
  */
 
+#ifndef ZEPHYR_INCLUDE_SYS_CLOCK_H__
+#define ZEPHYR_INCLUDE_SYS_CLOCK_H__
+
 #warning "include/zephyr/sys_clock.h is deprecated, please use 'include/zephyr/sys/clock.h' instead"
 
 #include <zephyr/sys/clock.h>
+
+#endif /* ZEPHYR_INCLUDE_SYS_CLOCK_H__ */
