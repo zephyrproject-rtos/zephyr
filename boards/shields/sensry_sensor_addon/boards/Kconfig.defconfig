@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Sensry GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF54L15DK_NRF54L15_CPUAPP && SPI
+
+config SPI_COMPLETION_TIMEOUT_TOLERANCE
+	default 1000
+
+if (SPI_NRFX_SPIM || SPI_NRFX_SPIM_RTIO) && !HAS_NORDIC_DMM
+
+# Fit a BMI270 configuration block in the EasyDMA staging buffer.
+config SPI_NRFX_RAM_BUFFER_SIZE
+	default 64
+
+endif # (SPI_NRFX_SPIM || SPI_NRFX_SPIM_RTIO) && !HAS_NORDIC_DMM
+
+endif # BOARD_NRF54L15DK_NRF54L15_CPUAPP && SPI
