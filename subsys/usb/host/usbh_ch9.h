@@ -18,41 +18,26 @@
  */
 void usbh_req_omit_status(const bool omit);
 
-int usbh_req_setup(struct usb_device *const udev,
-		   const uint8_t bmRequestType,
-		   const uint8_t bRequest,
-		   const uint16_t wValue,
-		   const uint16_t wIndex,
-		   const uint16_t wLength,
-		   struct net_buf *const data);
+int usbh_req_setup(struct usb_device *const udev, const uint8_t bmRequestType,
+		   const uint8_t bRequest, const uint16_t wValue, const uint16_t wIndex,
+		   const uint16_t wLength, struct net_buf *const data);
 
-int usbh_req_desc(struct usb_device *const udev,
-		  const uint8_t type, const uint8_t index,
-		  const uint16_t id,
-		  const uint16_t len,
-		  struct net_buf *const data);
+int usbh_req_desc(struct usb_device *const udev, const uint8_t type, const uint8_t index,
+		  const uint16_t id, const uint16_t len, struct net_buf *const data);
 
-int usbh_req_desc_dev(struct usb_device *const udev,
-		      const uint16_t len,
+int usbh_req_desc_dev(struct usb_device *const udev, const uint16_t len,
 		      struct usb_device_descriptor *const dev);
 
-int usbh_req_desc_cfg(struct usb_device *const udev,
-		      const uint8_t index,
-		      const uint16_t len,
+int usbh_req_desc_cfg(struct usb_device *const udev, const uint8_t index, const uint16_t len,
 		      struct usb_cfg_descriptor *const desc);
 
-int usbh_req_set_alt(struct usb_device *const udev,
-		     const uint8_t iface,
-		     const uint8_t alt);
+int usbh_req_set_alt(struct usb_device *const udev, const uint8_t iface, const uint8_t alt);
 
-int usbh_req_set_address(struct usb_device *const udev,
-			 const uint8_t addr);
+int usbh_req_set_address(struct usb_device *const udev, const uint8_t addr);
 
-int usbh_req_set_cfg(struct usb_device *const udev,
-		     const uint8_t cfg);
+int usbh_req_set_cfg(struct usb_device *const udev, const uint8_t cfg);
 
-int usbh_req_get_cfg(struct usb_device *const udev,
-		     uint8_t *const cfg);
+int usbh_req_get_cfg(struct usb_device *const udev, uint8_t *const cfg);
 
 int usbh_req_set_sfs_rwup(struct usb_device *const udev);
 
@@ -61,5 +46,31 @@ int usbh_req_clear_sfs_rwup(struct usb_device *const udev);
 int usbh_req_set_sfs_halt(struct usb_device *const udev, const uint8_t ep);
 
 int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep);
+
+#if IS_ENABLED(CONFIG_USBH_HUB)
+
+int usbh_req_get_hcfs_port_status(struct usb_device *const hub, const uint8_t port,
+				  uint16_t *const portstatus, uint16_t *const portchange);
+
+int usbh_req_get_hcfs_hub_status(struct usb_device *const hub, uint16_t *const hubstatus,
+				 uint16_t *const hubchange);
+
+int usbh_req_set_hcfs_port_feature(struct usb_device *const hub, const uint8_t port,
+				   const uint8_t feature);
+
+int usbh_req_clear_hcfs_port_feature(struct usb_device *const hub, const uint8_t port,
+				     const uint8_t feature);
+
+int usbh_req_clear_hcfs_hub_feature(struct usb_device *const hub, const uint8_t feature);
+
+int usbh_req_desc_hub(struct usb_device *const hub, const uint16_t len, void *const desc);
+
+int usbh_hub_port_reset(struct usb_device *const hub, const uint8_t port, const uint32_t reset_ms);
+
+#endif /* CONFIG_USBH_HUB */
+
+int usbh_req_set_hcfs_ppwr(const struct usb_device *udev, const uint8_t port);
+
+int usbh_req_set_hcfs_prst(const struct usb_device *udev, const uint8_t port);
 
 #endif /* ZEPHYR_INCLUDE_USBH_CH9_H */

@@ -19,8 +19,7 @@ bool usbh_class_is_any_iface_bound(struct usb_device *const udev)
 	STRUCT_SECTION_FOREACH(usbh_class_node, c_node) {
 		struct usbh_class_data *const c_data = c_node->c_data;
 
-		if (c_node->state == USBH_CLASS_STATE_BOUND &&
-		    c_data->udev == udev) {
+		if (c_node->state == USBH_CLASS_STATE_BOUND && c_data->udev == udev) {
 			return true;
 		}
 	}
@@ -36,15 +35,13 @@ void usbh_class_init_all(void)
 		struct usbh_class_data *const c_data = c_node->c_data;
 
 		if (c_node->state != USBH_CLASS_STATE_IDLE) {
-			LOG_DBG("Skipping '%s' in state %u",
-				c_data->name, c_node->state);
+			LOG_DBG("Skipping '%s' in state %u", c_data->name, c_node->state);
 			continue;
 		}
 
 		ret = usbh_class_init(c_data);
 		if (ret != 0) {
-			LOG_WRN("Failed to initialize class %s (%d)",
-				c_data->name, ret);
+			LOG_WRN("Failed to initialize class %s (%d)", c_data->name, ret);
 			c_node->state = USBH_CLASS_STATE_ERROR;
 		}
 	}
@@ -103,10 +100,9 @@ static void usbh_class_probe_function(struct usb_device *const udev,
 	STRUCT_SECTION_FOREACH(usbh_class_node, c_node) {
 		struct usbh_class_data *const c_data = c_node->c_data;
 
-		if (c_node->state == USBH_CLASS_STATE_BOUND &&
-		    c_data->udev == udev && c_data->iface == iface) {
-			LOG_DBG("Interface %u bound to '%s', skipping",
-				iface, c_data->name);
+		if (c_node->state == USBH_CLASS_STATE_BOUND && c_data->udev == udev &&
+		    c_data->iface == iface) {
+			LOG_DBG("Interface %u bound to '%s', skipping", iface, c_data->name);
 			return;
 		}
 	}
@@ -116,25 +112,32 @@ static void usbh_class_probe_function(struct usb_device *const udev,
 		struct usbh_class_data *const c_data = c_node->c_data;
 
 		if (c_node->state != USBH_CLASS_STATE_IDLE) {
-			LOG_DBG("Class %s already matched, skipping",
-				c_data->name);
+			LOG_DBG("Class %s already matched, skipping", c_data->name);
 			continue;
 		}
 
 		if (!usbh_class_is_matching(c_node->filters, filter_data)) {
-			LOG_DBG("Class %s not matching interface %u",
-				c_data->name, iface);
+			LOG_DBG("Class %s not matching interface %u", c_data->name, iface);
 			continue;
 		}
 
 		ret = usbh_class_probe(c_data, udev, iface);
-		if (ret != 0) {
-			LOG_DBG("Class %s not supporting this function, skipping",
-				c_data->name);
+		if (ret == -ENOTSUP) {
+			LOG_DBG("Class %s not supporting this function, skipping", c_data->name);
 			continue;
 		}
 
-		LOG_INF("Class '%s' matches interface %u", c_data->name, iface);
+		if (ret != 0) {
+			LOG_WRN("Class %s probe failed for interface %u (%d)", c_data->name, iface,
+				ret);
+			continue;
+		}
+
+		if (iface == USBH_CLASS_IFNUM_DEVICE) {
+			LOG_INF("Class '%s' matches device", c_data->name);
+		} else {
+			LOG_INF("Class '%s' matches interface %u", c_data->name, iface);
+		}
 		c_node->state = USBH_CLASS_STATE_BOUND;
 		c_data->udev = udev;
 		c_data->iface = iface;
@@ -165,17 +168,17 @@ void usbh_class_probe_device(struct usb_device *const udev)
 	}
 
 	/* To support multi-function devices, match against each function */
+	const void *desc_end = usbh_desc_cfg_end(udev->cfg_desc);
 
 	while (true) {
-		desc = usbh_desc_get_next_function(desc);
+		desc = usbh_desc_get_next_function(desc, desc_end);
 		if (desc == NULL) {
 			break;
 		}
 
 		ret = usbh_desc_fill_filter(desc, &filter_data, &iface);
 		if (ret != 0) {
-			LOG_ERR("Failed to collect class codes for matching interface %u",
-				iface);
+			LOG_ERR("Failed to collect class codes for matching interface %u", iface);
 			continue;
 		}
 
