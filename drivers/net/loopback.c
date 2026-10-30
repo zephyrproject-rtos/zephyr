@@ -46,9 +46,10 @@ static void loopback_init(struct net_if *iface)
 {
 	struct net_if_addr *ifaddr;
 
-	/* RFC 7042, s.2.1.1. address to use in documentation */
-	net_if_set_link_addr(iface, "\x00\x00\x5e\x00\x53\xff", 6,
-			     NET_LINK_DUMMY);
+	/* The loopback has no link layer addressing and no neighbors, so
+	 * it has no link address and does no IPv6 neighbor discovery.
+	 */
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct net_in_addr ipv4_loopback = NET_INADDR_LOOPBACK_INIT;
