@@ -12,6 +12,7 @@ ram: 1024
 supported:
   - adc
   - clock_control
+  - dma
   - entropy
   - flash
   - gpio
