@@ -296,7 +296,7 @@ static inline int linear_range_get_win_index(const struct linear_range *r,
 	}
 
 	*idx = r->min_idx + DIV_ROUND_UP((uint32_t)(val_min - r->min), r->step);
-	if ((r->min + r->step * (*idx - r->min_idx)) > val_max) {
+	if ((r->min + (int64_t)r->step * (*idx - r->min_idx)) > val_max) {
 		return -EINVAL;
 	}
 
