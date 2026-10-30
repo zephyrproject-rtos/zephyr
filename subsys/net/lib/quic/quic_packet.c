@@ -345,6 +345,12 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		sys_slist_find_and_remove(&conn->streams, &stream->node);
 		sys_slist_prepend(&conn->streams, &stream->node);
 
+		/* The reference of the new stream goes to the accept queue,
+		 * where the application can take the stream and close it at
+		 * once. Keep one until the data of this frame is delivered.
+		 */
+		quic_stream_ref(stream);
+
 		/* Queue for accept() call */
 		k_fifo_put(&conn->incoming.stream_q, stream);
 
@@ -364,7 +370,7 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		 */
 		NET_DBG("[CO:%p/%d] Failed to deliver stream data: %d",
 			conn, quic_get_by_conn(conn), ret);
-		return ret;
+		goto out;
 	}
 
 	if (level == QUIC_SECRET_LEVEL_EARLY) {
@@ -381,8 +387,12 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	}
 
 	*consumed = pos + data_len;
+	ret = pos + data_len;
 
-	return pos + data_len;
+out:
+	quic_stream_unref(stream);
+
+	return ret;
 }
 
 /*

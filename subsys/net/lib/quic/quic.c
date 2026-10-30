@@ -7687,7 +7687,9 @@ ooo_flow_control_error:
 }
 
 /*
- * Find an existing stream by ID
+ * Find an existing stream by ID. The stream is returned with a reference,
+ * which the caller drops with quic_stream_unref(), so that the stream cannot
+ * be released while the caller uses it.
  */
 ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
 						      struct quic_endpoint *ep,
@@ -7705,11 +7707,17 @@ ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
 		 * match too, or data would be delivered to a stream of
 		 * another peer that happens to use the same ID.
 		 */
-		if (stream->id == stream_id && stream->conn == ctx &&
-		    stream->ep == ep) {
-			found = stream;
-			break;
+		if (stream->id != stream_id || stream->conn != ctx ||
+		    stream->ep != ep) {
+			continue;
 		}
+
+		if (!quic_stream_ref_if_used(stream)) {
+			continue;
+		}
+
+		found = stream;
+		break;
 	}
 
 	k_mutex_unlock(&contexts_lock);
