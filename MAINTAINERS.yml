@@ -5732,6 +5732,7 @@ Renesas R-Car Platforms:
     - lorc
   collaborators:
     - xakep-amatop
+    - jpanisbl
   files:
     - boards/renesas/rcar_*/
     - drivers/*/*rcar*
