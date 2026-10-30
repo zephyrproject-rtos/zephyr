@@ -304,10 +304,13 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 	 * them before the carrier is announced, so that the write cannot land
 	 * on a frame the stack has already handed to the DMA.
 	 */
-	mac_configuration =
-		base->MAC_CONFIGURATION & ~(ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
-					    ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1));
-	base->MAC_CONFIGURATION = mac_configuration;
+	mac_configuration = base->MAC_CONFIGURATION;
+	if (mac_configuration & (ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
+				 ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1))) {
+		mac_configuration &= ~(ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
+				       ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1));
+		base->MAC_CONFIGURATION = mac_configuration;
+	}
 
 	if (PHY_LINK_IS_SPEED_10M(state->speed)) {
 		LOG_DBG("Link Speed reduced to 10MBit");
