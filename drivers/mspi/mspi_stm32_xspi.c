@@ -373,7 +373,7 @@ static int mspi_hal_init(const struct mspi_stm32_conf *dev_cfg, struct mspi_stm3
 						    : HAL_XSPI_SAMPLE_SHIFT_NONE;
 	hal_cfg.timing.hold = HAL_XSPI_DELAY_HOLD_NONE;
 	hal_cfg.timing.cs_high_time_cycle = 1U;
-	hal_cfg.timing.cs_refresh_time_cycle = 0U;
+	hal_cfg.timing.cs_refresh_time_cycle = dev_cfg->refresh;
 	hal_cfg.timing.dlyb_state = HAL_XSPI_DLYB_ON;
 
 	if (HAL_XSPI_SetConfig(&dev_data->hmspi.xspi, &hal_cfg) != HAL_OK) {
@@ -739,6 +739,9 @@ static int mspi_hal_init(const struct mspi_stm32_conf *dev_cfg, struct mspi_stm3
 	hxspi->Init.ChipSelectHighTimeCycle = 1;
 	hxspi->Init.ClockMode = HAL_XSPI_CLOCK_MODE_0;
 	hxspi->Init.ChipSelectBoundary = dev_cfg->cs_boundary;
+#if defined(XSPI_DCR4_REFRESH)
+	hxspi->Init.Refresh = dev_cfg->refresh;
+#endif /* XSPI_DCR4_REFRESH */
 	hxspi->Init.MemoryMode = HAL_XSPI_SINGLE_MEM;
 	hxspi->Init.MemorySize = dev_cfg->mem_size;
 	hxspi->Init.MemoryType = dev_cfg->mem_type;
@@ -2080,6 +2083,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##index),                              \
 		.dma_specified = DT_INST_NODE_HAS_PROP(index, dmas),                              \
 		.cs_boundary = DT_INST_PROP(index, st_csbound),                                   \
+		.refresh = DT_INST_PROP(index, st_refresh),                                       \
 		.ssht_enable = DT_INST_PROP(index, st_ssht_enable),                               \
 		.mem_size = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26) - 1,                         \
 		.mem_type = MSPI_STM32_HAL_MEMTYPE(index),                                        \
