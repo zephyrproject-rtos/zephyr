@@ -1,7 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
-# Copyright (c) 2025 Cypress Semiconductor Corporation.
 # SPDX-License-Identifier: Apache-2.0
-#
 
 identifier: kit_psc3m5_evk
 name: The Infineon PSOC™ Control C3M5 Evaluation Kit (KIT_PSC3M5_EVK)
