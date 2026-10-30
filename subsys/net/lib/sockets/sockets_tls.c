@@ -5121,6 +5121,14 @@ mbedtls_ssl_context *ztls_get_mbedtls_ssl_context(int fd)
 	return &ctx->active_session->ssl;
 }
 
+uint32_t ztls_get_session_count(void)
+{
+	return k_mem_slab_num_used_get(&tls_session_contexts);
+}
+
+#endif /* CONFIG_NET_TEST */
+
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE)
 int ztls_get_cached_session(int fd, mbedtls_ssl_session *session)
 {
 	struct net_sockaddr_storage peer_addr = { 0 };
@@ -5141,13 +5149,7 @@ int ztls_get_cached_session(int fd, mbedtls_ssl_session *session)
 
 	return tls_session_get(net_sad(&peer_addr), session);
 }
-
-uint32_t ztls_get_session_count(void)
-{
-	return k_mem_slab_num_used_get(&tls_session_contexts);
-}
-
-#endif /* CONFIG_NET_TEST */
+#endif /* CONFIG_NET_SOCKETS_TEST_SESSION_CACHE */
 
 static ssize_t tls_sock_read_vmeth(void *obj, void *buffer, size_t count)
 {
