@@ -16,6 +16,8 @@ static K_SEM_DEFINE(end_sem, 0, 1);
 static ZTEST_BMEM struct k_thread *dyn_thread;
 static struct k_thread *dynamic_threads[CONFIG_MAX_THREAD_BYTES * 8];
 
+extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
+
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
 	if (reason != K_ERR_KERNEL_OOPS) {
@@ -214,17 +216,51 @@ ZTEST(thread_dynamic, test_dyn_thread_index_recycle)
 	zassert_true(dynamic_threads[0] != NULL,
 		     "couldn't create thread object\n");
 
-	/* TODO: Implement a test that shows that thread IDs are properly
-	 * recycled when a thread object is garbage collected due to references
-	 * dropping to zero. For example, we ought to be able to exit here
-	 * without calling k_object_free() on any of the threads we created
-	 * here; their references would drop to zero and they would be
-	 * automatically freed. However, it is known that the thread IDs are
-	 * not properly recycled when this happens, see #17023.
-	 */
 	for (i = 0; i < ctr; i++) {
 		k_object_free(dynamic_threads[i]);
 	}
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Test that thread indexes are recycled by refcount auto-disposal
+ *
+ * @details A thread object whose last permission is revoked is garbage
+ * collected by unref_check() rather than by k_object_free(). Drain the index
+ * pool, drop the last reference on every object so each one is collected that
+ * way, then drain it again. Both passes must hand out the same number of
+ * indexes.
+ */
+ZTEST(thread_dynamic, test_thread_index_recycled_on_unref)
+{
+	int idx = 0;
+	uint8_t before[CONFIG_MAX_THREAD_BYTES];
+
+	memcpy(before, _thread_idx_map, sizeof(before));
+
+	while (idx < (int)ARRAY_SIZE(dynamic_threads)) {
+		struct k_thread *t = k_object_alloc(K_OBJ_THREAD);
+
+		if (t == NULL) {
+			break;
+		}
+
+		dynamic_threads[idx] = t;
+		idx++;
+	}
+
+	zassert_true(idx != 0, "unable to create any thread objects");
+
+	/* This thread holds the only permission on each object, so releasing it
+	 * drops the reference count to zero and the object is disposed of by
+	 * unref_check() instead of k_object_free().
+	 */
+	for (int i = 0; i < idx; i++) {
+		k_object_release(dynamic_threads[i]);
+		dynamic_threads[i] = NULL;
+	}
+
+	zassert_mem_equal(before, _thread_idx_map, sizeof(before), "thread indexes leaked");
 }
 
 /**
