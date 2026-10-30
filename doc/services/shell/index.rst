@@ -683,8 +683,11 @@ modules you can execute the following command:
 This feature is activated by :kconfig:option:`CONFIG_SHELL_WILDCARD` set to ``y``.
 
 .. note::
-	When the wildcard feature is enabled, the characters ``*`` and ``?``
-	cannot be used as normal characters in commands or arguments.
+	When the wildcard feature is enabled, an argument containing ``*`` or ``?``
+	is replaced by the subcommands it matches. An argument that matches no
+	subcommand is passed to the command handler unchanged, so ``*`` and ``?``
+	can be used as normal characters, for example in a URL, as long as the
+	argument does not match a subcommand.
 
 Meta Keys Feature
 *****************
