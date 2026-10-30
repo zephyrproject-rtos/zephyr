@@ -178,16 +178,17 @@ a.icon-home:visited {
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
-}
-
-.wy-body-for-nav {
-    background-color: var(--content-wrap-background-color);
+    max-width: 100%;
 }
 
 @media only screen and (min-width: 769px) {
     .wy-nav-content {
-        max-width: 915px;
+        padding: 1.618em;
     }
+}
+
+.wy-body-for-nav {
+    background-color: var(--content-wrap-background-color);
 }
 
 /* Table display tweaks */
