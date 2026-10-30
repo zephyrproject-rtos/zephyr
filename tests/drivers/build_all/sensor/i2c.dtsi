@@ -1728,3 +1728,9 @@ test_i2c_as7341: as7341@df {
 	compatible = "ams,as7341";
 	reg = <0xdf>;
 };
+
+test_i2c_lps33hw: lps33hw@e0 {
+	compatible = "st,lps33hw";
+	reg = <0xe0>;
+	odr = <75>;
+};
