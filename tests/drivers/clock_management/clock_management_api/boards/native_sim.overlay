@@ -31,14 +31,12 @@
 			compatible = "fixed-clock";
 			clock-frequency = <100000000>;
 			#clock-cells = <0>;
-			clock-ranking = <3>;
 		};
 
 		emul_source4: emul-source4 {
 			compatible = "fixed-clock";
 			clock-frequency = <1500000>;
 			#clock-cells = <0>;
-			clock-ranking = <3>;
 		};
 
 		test_emul_onoff_source: test-emul-onoff-source {
@@ -51,7 +49,6 @@
 			compatible = "vnd,emul-clock-div";
 			max-div = <64>;
 			#clock-cells = <1>;
-			clock-ranking = <1>;
 			input = <&emul_source1>;
 		};
 
@@ -59,7 +56,6 @@
 			compatible = "vnd,emul-clock-div";
 			max-div = <256>;
 			#clock-cells = <1>;
-			clock-ranking = <2>;
 			input = <&emul_source2>;
 		};
 
