@@ -71,6 +71,9 @@ static void isr_abort(void *param);
 	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	*/
 static void isr_done_cleanup(void *param);
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+static bool is_pipeline_dup(const struct lll_scan *lll);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
@@ -562,12 +565,28 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
 	struct lll_scan *lll;
 
-	/* Prepare being cancelled (no resume for scan) */
+	lll = curr;
+
+	/* Prepare being cancelled */
 	if (next == NULL) {
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+		/* Continuous scanning is deferred, to be resumed when the current event
+		 * yields or is done, unless already in the prepare pipeline.
+		 */
+		if ((lll->ticks_window == 0U) && (lll->is_stop == 0U) &&
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		    (!lll->duration_reload || lll->duration_expire) &&
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+		    !is_pipeline_dup(lll)) {
+			*resume_cb = resume_prepare_cb;
+
+			return -EAGAIN;
+		}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+		/* No resume for scan */
 		return 0;
 	}
-
-	lll = curr;
 
 #if defined(CONFIG_BT_CENTRAL)
 	/* Irrespective of same state/role (initiator radio event) or different
@@ -669,6 +688,13 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		return;
 	}
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	/* Being put back into the pipeline as deferred event, keep the preparations */
+	if (param != NULL) {
+		return;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	/* NOTE: Else clean the top half preparations of the aborted event
 	 * currently in preparation pipeline.
 	 */
@@ -677,6 +703,30 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	lll_done(prepare_param->param);
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+/* Check if the prepare pipeline has more than one prepare of the scan instance */
+static bool is_pipeline_dup(const struct lll_scan *lll)
+{
+	struct lll_event *e;
+	uint8_t count;
+	void *idx;
+
+	count = 0U;
+	idx = NULL;
+	while ((e = ull_prepare_dequeue_iter(&idx)) != NULL) {
+		if ((e->is_aborted == 0U) && (e->prepare_param.param == lll)) {
+			count++;
+		}
+
+		if (idx == NULL) {
+			break;
+		}
+	}
+
+	return count > 1U;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			   uint32_t remainder, uint16_t lazy, uint8_t force,
