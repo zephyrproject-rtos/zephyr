@@ -69,6 +69,10 @@ K_FIFO_DEFINE(free_tx);
 #if defined(CONFIG_BT_CONN_TX_NOTIFY_WQ)
 static struct k_work_q conn_tx_workq;
 static K_KERNEL_STACK_DEFINE(conn_tx_workq_thread_stack, CONFIG_BT_CONN_TX_NOTIFY_WQ_STACK_SIZE);
+
+/* See the same check for the RX workqueue in hci_core.c */
+BUILD_ASSERT(CONFIG_BT_CONN_TX_NOTIFY_WQ_PRIO < CONFIG_NUM_COOP_PRIORITIES,
+	     "The Bluetooth connection TX notify workqueue needs a cooperative priority");
 #endif /* CONFIG_BT_CONN_TX_NOTIFY_WQ */
 
 static void tx_free(struct bt_conn_tx *tx);
