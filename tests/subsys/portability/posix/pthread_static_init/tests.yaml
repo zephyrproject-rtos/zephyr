@@ -1,0 +1,13 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - cpp
+    - posix
+  min_ram: 32
+  integration_platforms:
+    - mps2/an385
+    - qemu_riscv32
+tests:
+  posix.pthread_static_init: {}
