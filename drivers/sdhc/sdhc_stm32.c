@@ -1970,10 +1970,10 @@ static int sdhc_stm32_pm_action(const struct device *dev, enum pm_device_action 
 #define STM32_SDHC_IRQ_HANDLER(index)                                                              \
 	static void sdhc_stm32_irq_config_func_##index(void)                                       \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, event, irq),                                \
-			    DT_INST_IRQ_BY_NAME(index, event, priority), sdhc_stm32_event_isr,     \
+		IRQ_CONNECT(DT_INST_IRQN(index),                                                   \
+			    DT_INST_IRQ(index, priority), sdhc_stm32_event_isr,                    \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
-		irq_enable(DT_INST_IRQ_BY_NAME(index, event, irq));                                \
+		irq_enable(DT_INST_IRQN(index));                                                   \
 	}
 
 #define SDHC_STM32_INIT(index)                                                                     \
