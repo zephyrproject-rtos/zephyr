@@ -579,6 +579,18 @@ vendor_exclude: <list of vendors>
     The vendor is defined as part of the board. Boards associated with this
     vendors will be excluded.
 
+qualifiers_allow: <list of qualifiers>
+    Set of board qualifiers that this test scenario should only be run for. The
+    qualifiers of a board target are everything following the board name, e.g.
+    ``nrf5340/cpuapp/ns`` for ``nrf5340dk/nrf5340/cpuapp/ns``, and are matched
+    as a complete string. Board targets with qualifiers in this list will be
+    included.
+
+qualifiers_exclude: <list of qualifiers>
+    Set of board qualifiers that this test scenario should not run on. The
+    qualifiers are matched as a complete string, as for ``qualifiers_allow``.
+    Board targets with qualifiers in this list will be excluded.
+
 platform_allow: <list of platforms>
     Set of platforms that this test scenario should only be run for. Do not use
     this option to limit testing or building in CI due to time or resource

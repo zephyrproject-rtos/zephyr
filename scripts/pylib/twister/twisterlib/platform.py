@@ -62,6 +62,8 @@ class Platform:
 
         self.name = ""
         self.aliases = []
+        # board target qualifiers following the board name
+        self.qualifiers = ""
         self.normalized_name = ""
         # if sysbuild to be used by default on a given platform
         self.sysbuild = False
@@ -105,6 +107,7 @@ class Platform:
         """
         self.name = target
         self.aliases = aliases
+        self.qualifiers = target.partition("/")[2]
 
         self.normalized_name = self.name.replace("/", "_")
         self.sysbuild = variant_data.get("sysbuild", data.get("sysbuild", self.sysbuild))
