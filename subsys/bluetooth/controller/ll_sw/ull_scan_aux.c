@@ -47,6 +47,7 @@
 #include "ull_sync_types.h"
 #include "ull_adv_types.h"
 #include "ull_adv_internal.h"
+#include "ull_filter.h"
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
@@ -194,6 +195,23 @@ static inline struct ll_sync_iso_set *
 #endif /* !CONFIG_BT_CTLR_SYNC_ISO */
 }
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+static void anon_allow_set(struct node_rx_ftr *ftr, const struct ll_scan_set *scan)
+{
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	/* Whether the scanner filter policy lets anonymous advertising be
+	 * reported is recorded now, as the scan parameters and the Filter
+	 * Accept List can change before the report is generated. A policy that
+	 * uses the list needs its anonymous entry.
+	 */
+	ftr->anon_allow = (scan != NULL) &&
+			  (((scan->lll.filter_policy & SCAN_FP_FILTER) == 0U) ||
+			   ull_filter_ull_fal_anon_listed());
+#else
+	ARG_UNUSED(ftr);
+	ARG_UNUSED(scan);
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+}
 
 #if !defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
@@ -445,6 +463,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	ftr->extra = NULL;
 
 	ftr->aux_sched = 0U;
+
+	anon_allow_set(ftr, scan);
 
 	pdu = (void *)rx->pdu;
 	p = (void *)&pdu->adv_ext_ind;
@@ -1884,6 +1904,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	ftr->extra = NULL;
 
 	ftr->aux_sched = 0U;
+
+	anon_allow_set(ftr, scan);
 
 	if (chain) {
 		chain->aux_sched = 0U;
