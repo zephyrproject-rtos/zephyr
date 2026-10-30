@@ -125,6 +125,9 @@ static enum test_case_no {
 	TEST_TCP_PKT_LINEARIZE_FRAG_CHAIN = 24,
 	TEST_SERVER_MSS_AFTER_OPTIONS = 25,
 	TEST_SERVER_SYN_ACK_RESEND = 26,
+	TEST_CLIENT_WIN_SCALE = 27,
+	TEST_CLIENT_WIN_SCALE_NO_PEER = 28,
+	TEST_CLIENT_WIN_SCALE_CLAMP = 29,
 } test_case_no;
 
 static enum test_state t_state;
@@ -138,6 +141,7 @@ static void handle_client_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_server_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_syn_ack_resend(struct net_pkt *pkt, struct tcphdr *th);
+static void handle_win_scale_client(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_advertised_recv_window(struct tcphdr *th);
 static void handle_syn_rst_ack(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_test(net_sa_family_t af, struct tcphdr *th);
@@ -261,6 +265,22 @@ static uint8_t tcp_options[20] = {
 	0x01, /* NOP */
 	0x03, 0x03, 0x07 /* Win scale*/ };
 
+/* Window scale shift count carried by tcp_options[] */
+#define TESTER_WS_SHIFT 7U
+
+/* Window scale shift count of 15, above the limit of RFC 7323 */
+static uint8_t tcp_ws15_options[4] = {
+	0x01, /* NOP */
+	0x03, 0x03, 0x0f /* Win scale */ };
+
+/* Window scale option on a segment without SYN, which must be ignored */
+static uint8_t tcp_ws_late_options[4] = {
+	0x01, /* NOP */
+	0x03, 0x03, 0x03 /* Win scale */ };
+
+/* Window field the tester advertises */
+static uint16_t tester_win = NET_IPV6_MTU;
+
 /* Options a peer sends after the handshake: a single SACK block. */
 static uint8_t tcp_sack_options[12] = {
 	0x01, 0x01, /* NOP, NOP */
@@ -285,6 +305,20 @@ static uint8_t tester_options(uint8_t flags, const uint8_t **opts)
 
 		*opts = tcp_sack_options;
 		return sizeof(tcp_sack_options);
+	case TEST_CLIENT_WIN_SCALE:
+		if ((flags & SYN) != 0) {
+			*opts = tcp_options;
+			return sizeof(tcp_options);
+		}
+
+		*opts = tcp_ws_late_options;
+		return sizeof(tcp_ws_late_options);
+	case TEST_CLIENT_WIN_SCALE_CLAMP:
+		if ((flags & SYN) != 0) {
+			*opts = tcp_ws15_options;
+			return sizeof(tcp_ws15_options);
+		}
+		break;
 	default:
 		break;
 	}
@@ -342,7 +376,7 @@ static struct net_pkt *tester_prepare_tcp_pkt(net_sa_family_t af,
 	th->th_off = 5U + opts_len / 4U;
 
 	th->th_flags = flags;
-	th->th_win = net_htons(NET_IPV6_MTU);
+	th->th_win = net_htons(tester_win);
 	th->th_seq = net_htonl(seq);
 
 	if (ACK & flags) {
@@ -478,11 +512,12 @@ fail:
 
 /*
  * Walk the option list of a received segment. Reports whether SACK permitted
- * was offered, the MSS if one is present (0 otherwise), and the edges of the
+ * was offered, the MSS if one is present (0 otherwise), the window scale
+ * shift count if the option is present (-1 otherwise), and the edges of the
  * first SACK block if one is present.
  */
 static int read_tcp_options(struct net_pkt *pkt, struct tcphdr *th,
-			    bool *sack_perm, uint16_t *mss,
+			    bool *sack_perm, uint16_t *mss, int *wnd_shift,
 			    uint32_t *left, uint32_t *right)
 {
 	uint8_t opts[40];
@@ -493,6 +528,9 @@ static int read_tcp_options(struct net_pkt *pkt, struct tcphdr *th,
 	*sack_perm = false;
 	if (mss != NULL) {
 		*mss = 0;
+	}
+	if (wnd_shift != NULL) {
+		*wnd_shift = -1;
 	}
 	if (left != NULL) {
 		*left = 0;
@@ -551,6 +589,9 @@ static int read_tcp_options(struct net_pkt *pkt, struct tcphdr *th,
 			   opt_len == NET_TCP_MSS_SIZE) {
 			*mss = net_ntohs(UNALIGNED_GET(
 				(uint16_t *)&opts[i + 2]));
+		} else if (kind == NET_TCP_WINDOW_SCALE_OPT && wnd_shift != NULL &&
+			   opt_len == NET_TCP_WINDOW_SCALE_SIZE) {
+			*wnd_shift = opts[i + 2];
 		} else if (kind == NET_TCP_SACK_OPT && left != NULL &&
 			   opt_len >= 2 + 8) {
 			*left = net_ntohl(UNALIGNED_GET(
@@ -628,9 +669,10 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	case TEST_CLIENT_IPV6:
 		if (th.th_flags & SYN) {
 			bool sack_perm;
+			int wnd_shift;
 
 			zassert_ok(read_tcp_options(pkt, &th, &sack_perm,
-						    NULL, NULL, NULL),
+						    NULL, &wnd_shift, NULL, NULL),
 				   "Cannot read TCP options");
 			/* SACK is offered only when enabled, which needs
 			 * the receive queue to hold data out of order.
@@ -639,28 +681,52 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 				      IS_ENABLED(CONFIG_NET_TCP_SACK),
 				      "SACK permitted in the SYN does not "
 				      "match CONFIG_NET_TCP_SACK");
+			zexpect_equal(wnd_shift >= 0,
+				      IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE),
+				      "Window scale in the SYN does not match "
+				      "CONFIG_NET_TCP_WINDOW_SCALE");
 		}
 		handle_client_test(net_pkt_family(pkt), &th);
 		break;
 	case TEST_SERVER_WITH_OPTIONS_IPV4:
 		if ((th.th_flags & SYN) && (th.th_flags & ACK)) {
 			bool sack_perm;
+			int wnd_shift;
 
 			zassert_ok(read_tcp_options(pkt, &th, &sack_perm,
-						    NULL, NULL, NULL),
+						    NULL, &wnd_shift, NULL, NULL),
 				   "Cannot read TCP options");
-			/* The peer offered SACK; it is offered back only
-			 * when enabled here.
+			/* The peer offered SACK and window scaling; they are
+			 * offered back only when enabled here.
 			 */
 			zassert_equal(sack_perm,
 				      IS_ENABLED(CONFIG_NET_TCP_SACK),
 				      "SACK permitted in the SYN-ACK does not "
 				      "match CONFIG_NET_TCP_SACK");
+			zexpect_equal(wnd_shift >= 0,
+				      IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE),
+				      "Window scale in the SYN-ACK does not "
+				      "match CONFIG_NET_TCP_WINDOW_SCALE");
+			zexpect_true(wnd_shift <= (int)NET_TCP_MAX_WINDOW_SHIFT,
+				     "Window scale shift %d above 14", wnd_shift);
 		}
 		handle_server_test(net_pkt_family(pkt), &th);
 		break;
 	case TEST_SERVER_IPV4:
 	case TEST_SERVER_IPV6:
+		if ((th.th_flags & SYN) && (th.th_flags & ACK)) {
+			bool sack_perm;
+			int wnd_shift;
+
+			zassert_ok(read_tcp_options(pkt, &th, &sack_perm,
+						    NULL, &wnd_shift, NULL, NULL),
+				   "Cannot read TCP options");
+			/* The peer did not offer window scaling */
+			zexpect_equal(wnd_shift, -1,
+				      "Window scale in the SYN-ACK without an offer");
+		}
+		handle_server_test(net_pkt_family(pkt), &th);
+		break;
 	case TEST_SERVER_MSS_AFTER_OPTIONS:
 		handle_server_test(net_pkt_family(pkt), &th);
 		break;
@@ -669,6 +735,11 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case TEST_SERVER_SYN_ACK_RESEND:
 		handle_syn_ack_resend(pkt, &th);
+		break;
+	case TEST_CLIENT_WIN_SCALE:
+	case TEST_CLIENT_WIN_SCALE_NO_PEER:
+	case TEST_CLIENT_WIN_SCALE_CLAMP:
+		handle_win_scale_client(pkt, &th);
 		break;
 	case TEST_ADVERTISED_RECV_WINDOW:
 		handle_advertised_recv_window(&th);
@@ -1345,13 +1416,17 @@ static void verify_handshake_options(struct net_pkt *pkt, struct tcphdr *th,
 {
 	bool sack_perm;
 	uint16_t mss;
+	int wnd_shift;
 
-	zassert_ok(read_tcp_options(pkt, th, &sack_perm, &mss, NULL, NULL),
+	zassert_ok(read_tcp_options(pkt, th, &sack_perm, &mss, &wnd_shift, NULL, NULL),
 		   "Cannot read TCP options");
 	zexpect_not_equal(mss, 0, "No MSS in handshake segment %u", times);
 	zexpect_equal(sack_perm, IS_ENABLED(CONFIG_NET_TCP_SACK),
 		      "SACK permitted in handshake segment %u does not match "
 		      "CONFIG_NET_TCP_SACK", times);
+	zexpect_equal(wnd_shift >= 0, IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE),
+		      "Window scale in handshake segment %u does not match "
+		      "CONFIG_NET_TCP_WINDOW_SCALE", times);
 }
 
 static void handle_syn_resend(struct net_pkt *pkt, struct tcphdr *th)
@@ -1469,6 +1544,374 @@ ZTEST(net_tcp, test_server_syn_ack_resend)
 	k_msleep(50);
 
 	net_context_put(ctx);
+}
+
+/* Shift count a TCP offering a window of win bytes has to use */
+static int test_win_shift(uint32_t win)
+{
+	int shift = 0;
+
+	while (shift < (int)NET_TCP_MAX_WINDOW_SHIFT && (win >> shift) > UINT16_MAX) {
+		shift++;
+	}
+
+	return shift;
+}
+
+static struct tcp *ws_conn;
+static uint16_t ws_port;
+static size_t ws_sent_bytes;
+static uint16_t ws_ack_win;
+static uint32_t ws_ack_recv_win;
+
+static void handle_win_scale_client(struct net_pkt *pkt, struct tcphdr *th)
+{
+	struct net_pkt *reply;
+	bool sack_perm;
+	int wnd_shift;
+	int expected_shift;
+
+	zassert_ok(read_tcp_options(pkt, th, &sack_perm, NULL, &wnd_shift, NULL, NULL),
+		   "Cannot read TCP options");
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		expected_shift = IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE) ?
+				 test_win_shift(ws_conn->recv_win_max) : -1;
+		zexpect_equal(wnd_shift, expected_shift,
+			      "Window scale %d in the SYN, expected %d",
+			      wnd_shift, expected_shift);
+		zexpect_equal(net_ntohs(th->th_win), MIN(ws_conn->recv_win, UINT16_MAX),
+			      "Window of the SYN is scaled");
+		seq = 0U;
+		ack = net_ntohl(th->th_seq) + 1U;
+		ws_port = th->th_sport;
+		reply = prepare_syn_ack_packet(NET_AF_INET, net_htons(MY_PORT), ws_port);
+		t_state = T_SYN_ACK;
+		break;
+	case T_SYN_ACK:
+		test_verify_flags(th, ACK);
+		zexpect_equal(wnd_shift, -1, "Window scale on a segment without SYN");
+		ws_ack_win = net_ntohs(th->th_win);
+		ws_ack_recv_win = ws_conn->recv_win;
+		seq++;
+		t_state = T_DATA;
+		test_sem_give();
+		return;
+	case T_DATA:
+		/* Count what the stack sends, acknowledge nothing */
+		ws_sent_bytes += net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+				 net_pkt_ip_opts_len(pkt) - th->th_off * 4U;
+		return;
+	case T_DATA_ACK:
+		test_verify_flags(th, ACK);
+		ws_ack_win = net_ntohs(th->th_win);
+		ws_ack_recv_win = ws_conn->recv_win;
+		t_state = T_DATA;
+		test_sem_give();
+		return;
+	default:
+		zassert_true(false, "%s: unexpected state", __func__);
+		return;
+	}
+
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send reply");
+}
+
+/* Connect to the tester, which answers the SYN with the options of the test
+ * case, and return once the handshake is complete.
+ */
+static struct net_context *win_scale_connect(enum test_case_no tc, uint16_t win)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = tc;
+	seq = ack = 0;
+	tester_win = win;
+	ws_sent_bytes = 0;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_equal(ret, 0, "Failed to get net_context");
+
+	net_context_ref(ctx);
+	ws_conn = ctx->tcp;
+
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in), NULL, K_MSEC(100), NULL);
+	zassert_equal(ret, 0, "Failed to connect to peer");
+
+	/* The tester releases the semaphore on the ACK of the handshake */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	return ctx;
+}
+
+/* Send a segment without SYN, so the stack takes the tester's window from a
+ * segment that is scaled.
+ */
+static void win_scale_send_ack(void)
+{
+	struct net_pkt *reply;
+
+	reply = prepare_ack_packet(NET_AF_INET, net_htons(MY_PORT), ws_port);
+	zassert_not_null(reply, "Failed to prepare ACK");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send ACK");
+
+	k_msleep(10);
+}
+
+static void win_scale_close(struct net_context *ctx)
+{
+	struct net_pkt *reply;
+
+	reply = prepare_rst_packet(NET_AF_INET, net_htons(MY_PORT), ws_port);
+	zassert_not_null(reply, "Failed to prepare RST");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send RST");
+
+	k_msleep(10);
+
+	net_context_put(ctx);
+	tester_win = NET_IPV6_MTU;
+}
+
+/* Test case scenario IPv4
+ *   send SYN with window scale,
+ *   expect SYN ACK with window scale,
+ *   send ACK with a window field that is scaled,
+ *   expect both shift counts in use, the peer's window scaled and the window
+ *   scale option on the later segment ignored.
+ */
+ZTEST(net_tcp, test_client_win_scale)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_WINDOW_SCALE);
+
+	ctx = win_scale_connect(TEST_CLIENT_WIN_SCALE, 1000U);
+	conn = ctx->tcp;
+
+	zexpect_true(conn->win_scale, "Window scaling not in use");
+	zexpect_equal(conn->send_win_shift, TESTER_WS_SHIFT, "Wrong send shift %u",
+		      conn->send_win_shift);
+	zexpect_equal(conn->recv_win_shift, test_win_shift(conn->recv_win_max),
+		      "Wrong receive shift %u", conn->recv_win_shift);
+	zexpect_equal(ws_ack_win,
+		      DIV_ROUND_UP(ws_ack_recv_win, 1U << conn->recv_win_shift),
+		      "ACK window %u for a window of %u", ws_ack_win, ws_ack_recv_win);
+
+	win_scale_send_ack();
+
+	zexpect_equal(conn->send_win_shift, TESTER_WS_SHIFT,
+		      "Window scale on a segment without SYN was used");
+	zexpect_equal(conn->send_win, MIN(1000U << TESTER_WS_SHIFT, conn->send_win_max),
+		      "Send window %u not scaled", conn->send_win);
+
+	win_scale_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send SYN, with window scale when enabled,
+ *   expect SYN ACK without window scale,
+ *   expect no scaling in either direction and a receive window that fits
+ *   the 16 bit window field.
+ */
+ZTEST(net_tcp, test_client_win_scale_no_peer)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+
+	ctx = win_scale_connect(TEST_CLIENT_WIN_SCALE_NO_PEER, 1000U);
+	conn = ctx->tcp;
+
+	zexpect_false(conn->win_scale, "Window scaling in use without an offer");
+	zexpect_equal(conn->send_win_shift, 0U, "Send shift without an offer");
+	zexpect_equal(conn->recv_win_shift, 0U, "Receive shift without an offer");
+	zexpect_true(conn->recv_win_max <= UINT16_MAX, "Receive window %u above 16 bits",
+		     conn->recv_win_max);
+	zexpect_equal(ws_ack_win, ws_ack_recv_win, "ACK window %u for a window of %u",
+		      ws_ack_win, ws_ack_recv_win);
+
+	win_scale_send_ack();
+
+	zexpect_equal(conn->send_win, 1000U, "Send window %u scaled", conn->send_win);
+
+	win_scale_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send SYN with window scale,
+ *   expect SYN ACK with a shift count of 15,
+ *   expect a shift count of 14 to be used.
+ */
+ZTEST(net_tcp, test_client_win_scale_clamp)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_WINDOW_SCALE);
+
+	ctx = win_scale_connect(TEST_CLIENT_WIN_SCALE_CLAMP, 1000U);
+	conn = ctx->tcp;
+
+	zexpect_equal(conn->send_win_shift, NET_TCP_MAX_WINDOW_SHIFT,
+		      "Send shift %u not limited to 14", conn->send_win_shift);
+
+	win_scale_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect with window scaling,
+ *   send one byte, so the receive window is not a multiple of the scale,
+ *   expect an ACK whose window is rounded up, not down,
+ *   send RST right after the receive window but within the advertised one,
+ *   expect it to be accepted as in window.
+ */
+ZTEST(net_tcp, test_client_win_scale_round_up)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	struct net_pkt *reply;
+	uint32_t scale;
+	int rsterr;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_WINDOW_SCALE);
+
+	ctx = win_scale_connect(TEST_CLIENT_WIN_SCALE, 1000U);
+	conn = ctx->tcp;
+	scale = 1U << conn->recv_win_shift;
+	if (scale == 1U) {
+		/* The receive window fits 16 bits, nothing is rounded */
+		win_scale_close(ctx);
+		ztest_test_skip();
+	}
+
+	zassert_ok(net_context_recv(ctx, test_tcp_recv_cb, K_NO_WAIT, NULL),
+		   "Failed to set the receive callback");
+
+	t_state = T_DATA_ACK;
+	reply = prepare_data_packet(NET_AF_INET, net_htons(MY_PORT), ws_port, "A", 1U);
+	zassert_not_null(reply, "Failed to prepare data");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send data");
+
+	/* The tester releases the semaphore on the ACK of the data */
+	test_sem_take(K_MSEC(100), __LINE__);
+	seq++;
+
+	zassert_not_equal(ws_ack_recv_win % scale, 0U,
+			  "Receive window %u is a multiple of the scale", ws_ack_recv_win);
+	zexpect_equal(ws_ack_win, DIV_ROUND_UP(ws_ack_recv_win, scale),
+		      "ACK window %u for a window of %u, scale %u", ws_ack_win,
+		      ws_ack_recv_win, scale);
+
+	rsterr = GET_STAT(net_iface, tcp.rsterr);
+	seq += ws_ack_recv_win;
+	reply = prepare_rst_packet(NET_AF_INET, net_htons(MY_PORT), ws_port);
+	zassert_not_null(reply, "Failed to prepare RST");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send RST");
+	k_msleep(10);
+	zexpect_equal(GET_STAT(net_iface, tcp.rsterr), rsterr,
+		      "RST within the advertised window was dropped");
+
+	/* Close with an RST at the left edge in case the one above was dropped */
+	seq -= ws_ack_recv_win;
+	win_scale_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect with window scaling and a peer window above 64 KB,
+ *   queue data until the window is full,
+ *   expect more than 64 KB on the wire without an ACK.
+ *
+ * Without congestion avoidance only the windows limit the data in flight.
+ */
+ZTEST(net_tcp, test_client_win_scale_in_flight)
+{
+	static uint8_t data[1024];
+	struct net_context *ctx;
+	struct tcp *conn;
+	size_t queued = 0;
+	int no_delay = 1;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_WINDOW_SCALE);
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_TCP_CONGESTION_AVOIDANCE);
+
+	ctx = win_scale_connect(TEST_CLIENT_WIN_SCALE, 1000U);
+	conn = ctx->tcp;
+	zassert_true(conn->send_win_max > UINT16_MAX, "Send window %u fits 16 bits",
+		     conn->send_win_max);
+
+	win_scale_send_ack();
+	zassert_true(conn->send_win > UINT16_MAX, "Send window %u fits 16 bits",
+		     conn->send_win);
+
+	/* Send the last partial segment too, without waiting for an ACK */
+	zassert_ok(net_tcp_set_option(ctx, TCP_OPT_NODELAY, &no_delay, sizeof(no_delay)),
+		   "Failed to disable Nagle");
+
+	do {
+		ret = net_context_send(ctx, data, sizeof(data), NULL, K_NO_WAIT, NULL);
+		if (ret > 0) {
+			queued += ret;
+		}
+	} while (ret > 0);
+
+	/* Less than the retransmission timeout, so nothing is sent twice */
+	k_msleep(20);
+
+	zexpect_true(ws_sent_bytes > UINT16_MAX, "Only %zu bytes sent", ws_sent_bytes);
+	zexpect_equal(ws_sent_bytes, queued, "%zu bytes sent of %zu queued", ws_sent_bytes,
+		      queued);
+
+	win_scale_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect, with and without window scaling from the peer,
+ *   raise SO_RCVBUF above what the receive shift can express,
+ *   expect the receive window limited to 65535 << shift.
+ */
+ZTEST(net_tcp, test_client_win_scale_rcvbuf_after_handshake)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t limit;
+	int rcvbuf;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_WINDOW_SCALE);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_CONTEXT_RCVBUF);
+
+	/* Peer without window scaling: the window has to fit 16 bits */
+	ctx = win_scale_connect(TEST_CLIENT_WIN_SCALE_NO_PEER, 1000U);
+	conn = ctx->tcp;
+	rcvbuf = (int)((uint32_t)UINT16_MAX << 2);
+	zassert_ok(net_context_set_option(ctx, NET_OPT_RCVBUF, &rcvbuf, sizeof(rcvbuf)),
+		   "Failed to set SO_RCVBUF");
+	/* The option is applied when the next segment arrives */
+	win_scale_send_ack();
+	zexpect_equal(conn->recv_win_max, UINT16_MAX, "Receive window max %u without scaling",
+		      conn->recv_win_max);
+	zexpect_true(conn->recv_win <= UINT16_MAX, "Receive window %u without scaling",
+		     conn->recv_win);
+	win_scale_close(ctx);
+
+	/* Peer with window scaling: the window is limited by our shift */
+	ctx = win_scale_connect(TEST_CLIENT_WIN_SCALE, 1000U);
+	conn = ctx->tcp;
+	limit = (uint32_t)UINT16_MAX << conn->recv_win_shift;
+	rcvbuf = (int)(limit + 4096U);
+	zassert_ok(net_context_set_option(ctx, NET_OPT_RCVBUF, &rcvbuf, sizeof(rcvbuf)),
+		   "Failed to set SO_RCVBUF");
+	win_scale_send_ack();
+	zexpect_equal(conn->recv_win_max, limit, "Receive window max %u, limit %u",
+		      conn->recv_win_max, limit);
+	zexpect_true(conn->recv_win <= limit, "Receive window %u, limit %u", conn->recv_win,
+		     limit);
+	win_scale_close(ctx);
 }
 
 static void handle_advertised_recv_window(struct tcphdr *th)
@@ -2475,11 +2918,12 @@ ZTEST(net_tcp, test_client_invalid_rst)
 {
 	struct net_context *ctx;
 	struct tcp *conn;
-	uint16_t wnd;
+	uint32_t wnd;
 
 	ctx = create_server_socket(0, 0);
 
-	conn = ctx->tcp;
+	/* The window of the accepted connection, not of the listener */
+	conn = accepted_ctx->tcp;
 	wnd = conn->recv_win;
 
 	/* Failure cases, the RST packets should be dropped */
@@ -2522,7 +2966,7 @@ static void handle_server_recv_out_of_order(struct net_pkt *pkt)
 		bool sack_perm;
 		uint32_t left, right;
 
-		zassert_ok(read_tcp_options(pkt, &th, &sack_perm, NULL,
+		zassert_ok(read_tcp_options(pkt, &th, &sack_perm, NULL, NULL,
 					    &left, &right),
 			   "Cannot read TCP options");
 
