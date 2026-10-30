@@ -161,6 +161,23 @@ static int mspi_nxp_qspi_setup_lut(QuadSPI_Type *base, int seq_idx,
 	return 0;
 }
 
+static int mspi_nxp_qspi_ip_start(QuadSPI_Type *base, uint32_t addr, uint8_t seq_idx, uint32_t size)
+{
+	if (!WAIT_FOR(!(QSPI_GetStatusFlags(base) &
+			((uint32_t)kQSPI_Busy | (uint32_t)kQSPI_IPAccess)),
+		      CONFIG_MSPI_NXP_QSPI_BUSY_TIMEOUT_US, k_busy_wait(1))) {
+		LOG_ERR("Controller busy before IP command");
+		return -EIO;
+	}
+
+	QSPI_SetIPCommandAddress(base, addr);
+	QSPI_ClearCommandSequence(base, kQSPI_IPSeq);
+	base->IPCR = QuadSPI_IPCR_SEQID(seq_idx / FSL_FEATURE_QSPI_LUT_SEQ_UNIT) |
+		     QuadSPI_IPCR_IDATSZ(size);
+
+	return 0;
+}
+
 static int mspi_nxp_qspi_ip_read(QuadSPI_Type *base, uint32_t addr, uint8_t seq_idx,
 			 void *buf, uint32_t len)
 {
@@ -172,11 +189,13 @@ static int mspi_nxp_qspi_ip_read(QuadSPI_Type *base, uint32_t addr, uint8_t seq_
 		uint32_t chunk = MIN(left, rx_fifo_size);
 		uint32_t aligned = (chunk + 3U) & ~3U;
 		uint32_t tmp[FSL_FEATURE_QSPI_RXFIFO_DEPTH];
+		int ret;
 
 		QSPI_ClearFifo(base, kQSPI_RxFifo);
-		QSPI_SetIPCommandSize(base, chunk);
-		QSPI_SetIPCommandAddress(base, addr + off);
-		QSPI_ExecuteIPCommand(base, seq_idx);
+		ret = mspi_nxp_qspi_ip_start(base, addr + off, seq_idx, chunk);
+		if (ret != 0) {
+			return ret;
+		}
 		if (!WAIT_FOR(!(base->SR & QuadSPI_SR_BUSY_MASK),
 			      CONFIG_MSPI_NXP_QSPI_BUSY_TIMEOUT_US, k_busy_wait(1))) {
 			LOG_ERR("IP read timed out");
@@ -203,6 +222,7 @@ static int mspi_nxp_qspi_ip_write(QuadSPI_Type *base, uint32_t addr, uint8_t seq
 	uint32_t aligned_size = MAX((len + 3U) & ~3U, 16U);
 	uint32_t total_words = aligned_size / 4U;
 	uint32_t tx_words[FSL_FEATURE_QSPI_TXFIFO_DEPTH];
+	int ret;
 
 	if (total_words > FSL_FEATURE_QSPI_TXFIFO_DEPTH) {
 		LOG_ERR("Write too large: %u bytes (max %u)",
@@ -230,9 +250,10 @@ static int mspi_nxp_qspi_ip_write(QuadSPI_Type *base, uint32_t addr, uint8_t seq
 		base->TBDR = tx_words[i];
 	}
 
-	QSPI_SetIPCommandSize(base, aligned_size);
-	QSPI_SetIPCommandAddress(base, addr);
-	QSPI_ExecuteIPCommand(base, seq_idx);
+	ret = mspi_nxp_qspi_ip_start(base, addr, seq_idx, aligned_size);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (!WAIT_FOR(!(base->SR & QuadSPI_SR_BUSY_MASK),
 		      CONFIG_MSPI_NXP_QSPI_BUSY_TIMEOUT_US, k_busy_wait(1))) {
@@ -245,8 +266,11 @@ static int mspi_nxp_qspi_ip_write(QuadSPI_Type *base, uint32_t addr, uint8_t seq
 
 static int mspi_nxp_qspi_ip_cmd(QuadSPI_Type *base, uint32_t addr, uint8_t seq_idx)
 {
-	QSPI_SetIPCommandAddress(base, addr);
-	QSPI_ExecuteIPCommand(base, seq_idx);
+	int ret = mspi_nxp_qspi_ip_start(base, addr, seq_idx, 0U);
+
+	if (ret != 0) {
+		return ret;
+	}
 	if (!WAIT_FOR(!(base->SR & QuadSPI_SR_BUSY_MASK),
 		      CONFIG_MSPI_NXP_QSPI_BUSY_TIMEOUT_US, k_busy_wait(1))) {
 		LOG_ERR("IP cmd timed out");
