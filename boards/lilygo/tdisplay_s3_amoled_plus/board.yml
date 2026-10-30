@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: tdisplay_s3_amoled_plus
+  full_name: LilyGO T-Display S3 AMOLED Plus
+  vendor: lilygo
+  socs:
+  - name: esp32s3
