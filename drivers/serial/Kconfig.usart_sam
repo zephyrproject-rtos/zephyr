@@ -10,6 +10,23 @@ config USART_SAM
 	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC if USART_SAM_HAS_PDC
 	select MFD if SOC_SERIES_SAMA7G5
 	help
 	  This option enables the USARTx driver for Atmel SAM MCUs.
+
+config USART_SAM_HAS_PDC
+	def_bool SOC_SERIES_SAM3X || SOC_SERIES_SAM4E || SOC_SERIES_SAM4S
+	depends on USART_SAM
+	help
+	  The USART has a Peripheral DMA Controller (PDC) channel, used to implement the
+	  asynchronous API.
+
+config USART_SAM_ASYNC_TX_CACHE_SIZE
+	int "Asynchronous TX cache size"
+	default 8
+	range 1 $(UINT16_MAX)
+	depends on USART_SAM_HAS_PDC && UART_ASYNC_API
+	help
+	  The PDC can't read the internal flash. A TX buffer outside the SRAM is sent in chunks
+	  through a cache of this size.
