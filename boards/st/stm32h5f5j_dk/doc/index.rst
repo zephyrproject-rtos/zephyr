@@ -10,20 +10,18 @@ the STM32H5F5J-DK Discovery board:
 
 
 - STM32H5F5LJH7Q microcontroller featuring 4 Mbytes of Flash memory and 1.5 Mbytes of SRAM in TFBGA225 package
-- 4.3" RGB 480X572pixels TFT colored LCD module and touch panel
+- 4.3" RGB 480x272 pixels TFT colored LCD module and touch panel
 - USB Type-C® Full-Speed device with USB power-delivery sink only controller
-- SAI Audio DAC stereo with one audio jacks for input/output,
-- ST MEMS digital microphone with PDM interface
 - Octo-SPI interface connected to 512Mbit Octo-SPI NORFlash memory device (MX25LM51245GXDI00 from MACRONIX)
 - Octo-SPI interface connected to 64Mbit Octo-SPI SRAM memory.
 - 10/100-Mbit Ethernet,
 - microSD™
-- A Wi‑Fi® add-on board
+- Accelerometer/gyroscope module
 - Board connectors
 
-  - STMod+ expansion connector with fan-out expansion board for Wi‑Fi®, Grove and mikroBUS™ compatible connectors
-  - Pmod™ expansion connector
-  - Audio MEMS daughterboard expansion connector
+  - M.2 Key E connectRF connector for connectivity extension
+  - JTAG/SWD and TRACE debug connector
+  - I3C camera connector
   - ARDUINO® Uno V3 expansion connector
 
 - Flexible power-supply options
@@ -32,14 +30,14 @@ the STM32H5F5J-DK Discovery board:
   - USB VBUS
   - external sources
 
-- On-board STLINK-V3E debugger/programmer with USB re-enumeration capability:
+- On-board STLINK-V3EC debugger/programmer with USB re-enumeration capability:
 
   - mass storage
   - Virtual COM port
   - debug port
 
 - 4 user LEDs
-- User and reset push-buttons
+- User, reset and boot push-buttons
 
 More information about the board can be found at the `STM32H5F5J-DK Discovery website`_.
 
