@@ -3,12 +3,43 @@
 Overview
 ********
 
-The Radxa ROCK 5B+ is a single-board computer based on the Rockchip RK3588.
-The SoC combines four Cortex-A76 and four Cortex-A55 CPU cores. The board is
-available with up to 32 GB of LPDDR5 memory and provides eMMC, microSD, PCIe,
-USB, Ethernet, and a 40-pin expansion header.
+The `Radxa ROCK 5B+`_ is a single-board computer based on the Rockchip RK3588
+SoC. The SoC combines four Arm Cortex-A76 and four Arm Cortex-A55 CPU cores.
+The board is available with up to 32 GB of LPDDR5 memory and provides eMMC,
+microSD, PCIe, USB, Ethernet, and a 40-pin expansion header.
 
 The SMP variant supports all four Cortex-A55 and four Cortex-A76 cores.
+
+.. figure:: img/rock_5b_plus.webp
+   :align: center
+   :alt: Radxa ROCK 5B+
+
+   Radxa ROCK 5B+ (Credit: Radxa)
+
+Hardware
+********
+
+The ROCK 5B+ includes the following hardware features:
+
+* Rockchip RK3588 SoC
+* Four Arm Cortex-A76 cores up to 2.4 GHz and four Arm Cortex-A55 cores up to 1.8 GHz
+* Arm Mali-G610 GPU and neural processing unit (NPU) with up to 6 TOPS
+* 64-bit LPDDR5 memory, available in 4 GB, 8 GB, 12 GB, 16 GB, and 32 GB variants
+* Onboard eMMC storage
+* microSD card slot
+* Two M.2 M Key connectors, each with a PCIe 3.0 x2 interface, for 2280 NVMe SSDs
+  (M.2 SATA SSDs are not supported)
+* M.2 B Key connector with SIM card slot for 4G modules
+* 2.5 Gigabit Ethernet with Power over Ethernet (PoE) support (requires an optional PoE HAT)
+* Onboard Realtek 8852BE Wi-Fi 6 and Bluetooth 5.2 module
+* Two USB 2.0 host ports, two USB 3.1 Gen 1 ports (one host and one OTG), and one
+  full-function USB Type-C port
+* Two HDMI outputs, one DisplayPort output over USB Type-C, and one MIPI DSI output
+* One standard HDMI input port supporting up to 4Kp60
+* Two MIPI CSI camera interfaces
+* 40-pin expansion header
+* USB Type-C power delivery (PD 2.0)
+* 100 mm x 75 mm board size
 
 Supported Features
 ==================
@@ -76,9 +107,12 @@ the temporary image, devicetree, and Zephyr runtime regions separate avoids
 overwriting any of them during the handoff.
 
 References
-==========
+**********
 
 More information is available from the `Radxa ROCK 5B+ documentation`_.
+
+.. _Radxa ROCK 5B+:
+   https://radxa.com/products/rock5/5bp
 
 .. _Radxa ROCK 5B+ documentation:
    https://docs.radxa.com/en/rock5/rock5b
