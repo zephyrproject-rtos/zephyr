@@ -1,0 +1,11 @@
+sample:
+  name: NXP single-wire UART sample
+  description: Demonstrates polling communication between two NXP LPUARTs in single-wire mode.
+tests:
+  sample.boards.nxp.uart.single_wire:
+    platform_allow:
+      - frdm_mcxw72
+    tags:
+      - drivers
+      - uart
+    build_only: true
