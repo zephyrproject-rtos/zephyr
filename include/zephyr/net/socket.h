@@ -263,6 +263,12 @@ extern "C" {
  *  In such case it's the application's responsibility to verify the provided
  *  certificates and decide whether to proceed or abort the handshake.
  *
+ *  For TLS clients, hostname verification still applies. If no hostname is
+ *  configured with @ref ZSOCK_TLS_HOSTNAME and peer verification is required,
+ *  the handshake fails before the callback is invoked. Applications that
+ *  verify the server identity in the callback should set
+ *  @ref ZSOCK_TLS_HOSTNAME to NULL.
+ *
  *  The option is only available if CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
  *  Kconfig option is enabled.
  */
