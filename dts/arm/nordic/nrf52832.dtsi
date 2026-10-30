@@ -147,6 +147,7 @@
 			reg = <0x40002000 0x1000>;
 			interrupts = <2 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
+			current-speed-is-enum;
 		};
 
 		i2c0: i2c@40003000 {

@@ -151,6 +151,9 @@ BUILD_ASSERT(NRF_UARTE_HAS_FRAMETIMEOUT_DMAEND_SHORT,
  */
 #define UARTE_ANY_HIGH_SPEED (UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_HIGH_SPEED, (||), (0)))
 
+#define UARTE_USE_BAUDRATE_FORMULA                                                                 \
+	(!DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY(nordic_nrf_uarte, current_speed_is_enum))
+
 #ifdef UARTE_ANY_CACHE
 /* uart120 instance does not retain BAUDRATE register when ENABLE=0. When this instance
  * is used then baudrate must be set after enabling the peripheral and not before.
@@ -592,7 +595,7 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 	nrf_uarte_baudrate_t nrf_baudrate;
 
 	/* calculated baudrate divisor */
-	if (UARTE_ANY_HIGH_SPEED && (config->clock_freq > NRF_UARTE_BASE_FREQUENCY_16MHZ)) {
+	if (UARTE_USE_BAUDRATE_FORMULA) {
 		nrf_baudrate = UARTE_GET_CUSTOM_BAUDRATE(config->clock_freq, baudrate);
 	} else {
 		nrf_baudrate = NRF_BAUDRATE(baudrate);
@@ -3435,10 +3438,10 @@ static int uarte_instance_deinit(const struct device *dev)
  * must have baudrate adjust to the ratio between UARTE clocking frequency and 16 MHz.
  * Additionally, >1Mbaud speeds are calculated using a formula.
  */
-#define UARTE_GET_BAUDRATE2(f_pclk, current_speed)					\
-	((f_pclk > NRF_UARTE_BASE_FREQUENCY_16MHZ) && (current_speed > 1000000)) ?	\
-		UARTE_GET_CUSTOM_BAUDRATE(f_pclk, current_speed) :			\
-		(NRF_BAUDRATE(current_speed) / UARTE_GET_BAUDRATE_DIV(f_pclk))
+#define UARTE_GET_BAUDRATE2(f_pclk, current_speed)                                                 \
+	UARTE_USE_BAUDRATE_FORMULA                                                                 \
+	? UARTE_GET_CUSTOM_BAUDRATE(f_pclk, current_speed)                                         \
+	: (NRF_BAUDRATE(current_speed) / UARTE_GET_BAUDRATE_DIV(f_pclk))
 
 /* Convert DT current-speed to a value that is written to the BAUDRATE register. */
 #define UARTE_GET_BAUDRATE(idx) \

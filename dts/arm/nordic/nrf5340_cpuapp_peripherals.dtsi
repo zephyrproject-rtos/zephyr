@@ -166,6 +166,7 @@ uart0: uart@8000 {
 	reg = <0x8000 0x1000>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
+	current-speed-is-enum;
 };
 
 i2c1: i2c@9000 {
@@ -207,6 +208,7 @@ uart1: uart@9000 {
 	reg = <0x9000 0x1000>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
+	current-speed-is-enum;
 };
 
 spi4: spi@a000 {
@@ -261,6 +263,7 @@ uart2: uart@b000 {
 	reg = <0xb000 0x1000>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
+	current-speed-is-enum;
 };
 
 i2c3: i2c@c000 {
@@ -302,6 +305,7 @@ uart3: uart@c000 {
 	reg = <0xc000 0x1000>;
 	interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
+	current-speed-is-enum;
 };
 
 adc: adc@e000 {
