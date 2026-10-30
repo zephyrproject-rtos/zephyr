@@ -9,3 +9,15 @@ config GPIO_SAM0
 	depends on DT_HAS_ATMEL_SAM0_GPIO_ENABLED
 	help
 	  Enable support for the Atmel SAM0 'PORT' GPIO controllers.
+
+config GPIO_SAM0_HW_DEBOUNCE
+	bool "SAM0 EIC hardware debounce support (DPRESCALER + DEBOUNCEN)"
+	depends on GPIO_SAM0
+	help
+	  Enable hardware debounce on the External Interrupt Controller (EIC).
+	  This configures GCLK1 @ OSCULP32K as slow clock for the EIC and
+	  enables the DPRESCALER and DEBOUNCEN registers for per-line hardware
+	  filtering. Use the 'microchip,debounce-time-us' devicetree property
+	  on the EIC node to set the target debounce time.
+	  Only effective on SoC variants with DPRESCALER registers
+	  (SAMC2xN, SAMD5x/E5x series).
