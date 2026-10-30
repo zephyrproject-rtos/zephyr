@@ -248,7 +248,7 @@ static void history_handle(const struct shell *sh, bool up)
 
 	/* Start by checking if history is not empty. */
 	history_mode = z_shell_history_get(sh->history, up,
-					   sh->ctx->cmd_buff, &len);
+					   (uint8_t *)sh->ctx->cmd_buff, &len);
 
 	/* On exiting history mode print backed up command. */
 	if (!history_mode) {
@@ -1079,7 +1079,7 @@ static int execute(const struct shell *sh)
 
 	if (IS_ENABLED(CONFIG_SHELL_HISTORY)) {
 		z_shell_cmd_trim(sh);
-		history_put(sh, sh->ctx->cmd_buff,
+		history_put(sh, (uint8_t *)sh->ctx->cmd_buff,
 			    sh->ctx->cmd_buff_len);
 	}
 

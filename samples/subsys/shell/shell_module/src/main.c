@@ -217,7 +217,7 @@ static int cmd_demo_hexdump(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "argc = %zd", argc);
 	for (size_t cnt = 0; cnt < argc; cnt++) {
 		shell_print(sh, "argv[%zd]", cnt);
-		shell_hexdump(sh, argv[cnt], strlen(argv[cnt]));
+		shell_hexdump(sh, (const uint8_t *)argv[cnt], strlen(argv[cnt]));
 	}
 
 	return 0;

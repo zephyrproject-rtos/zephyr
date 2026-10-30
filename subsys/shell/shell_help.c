@@ -145,7 +145,7 @@ static void formatted_structured_help_print(const struct shell *sh, const char *
 static void help_item_print(const struct shell *sh, const char *item_name,
 			    uint16_t item_name_width, const char *item_help)
 {
-	static const uint8_t tabulator[] = "  ";
+	static const char tabulator[] = "  ";
 	static const char sub_cmd_sep[] = ": "; /* subcommands separator */
 	const uint16_t offset = 2 * strlen(tabulator) + item_name_width + strlen(sub_cmd_sep);
 	const uint16_t item_name_len = z_shell_strlen(item_name);
