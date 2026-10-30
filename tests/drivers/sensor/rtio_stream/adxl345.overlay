@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * ADXL345 on the pmod_acl shield: the accel0 alias comes from the shield.
+ */
+
+#include <zephyr/dt-bindings/sensor/adxl345.h>
+
+&adxl345_pmod_acl {
+	odr = <ADXL345_DT_ODR_400>;
+};
+
+/ {
+	zephyr,user {
+		stream-rate-hz = <400>;
+		rate-tolerance-percent = <5>;
+		one-g-tolerance-mg = <150>;
+	};
+};
