@@ -13,6 +13,7 @@
 #include <kswap.h>
 #include <ipi.h>
 #include <ksmp.h>
+#include <kuser.h>
 #include <kernel_arch_func.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -626,12 +627,7 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 		k_obj_core_unlink(K_OBJ_CORE(thread));
 #endif /* CONFIG_OBJ_CORE_THREAD */
 
-#ifdef CONFIG_USERSPACE
-		z_mem_domain_exit_thread(thread);
-		k_thread_perms_all_clear(thread);
-		k_object_uninit(thread->stack_obj);
-		k_object_uninit(thread);
-#endif /* CONFIG_USERSPACE */
+		z_thread_user_exit(thread);
 
 #ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
 		k_thread_abort_cleanup(thread);

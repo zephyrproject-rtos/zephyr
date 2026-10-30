@@ -30,6 +30,7 @@
 #include <kthread.h>
 #include <ipi.h>
 #include <ksmp.h>
+#include <kuser.h>
 #include <zephyr/sys/dlist.h>
 #include <kernel_internal.h>
 #include <zephyr/drivers/entropy.h>
@@ -81,14 +82,7 @@ static void z_init_static_threads(void)
 		thread_data->init_thread->init_data = thread_data;
 	}
 
-#ifdef CONFIG_USERSPACE
-	STRUCT_SECTION_FOREACH(k_object_assignment, pos) {
-		for (int i = 0; pos->objects[i] != NULL; i++) {
-			k_object_access_grant(pos->objects[i],
-					      pos->thread);
-		}
-	}
-#endif /* CONFIG_USERSPACE */
+	z_thread_user_grant_static();
 
 	/*
 	 * Static threads may be started immediately or
