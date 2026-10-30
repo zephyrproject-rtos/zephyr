@@ -9,6 +9,7 @@ tests:
       - arm
       - arm64
       - riscv
+      - rh850
       - sparc
       - tricore
     filter: CONFIG_ARMV7_M_ARMV8_M_FP or CONFIG_ARMV7_R_FP or CONFIG_CPU_HAS_FPU
