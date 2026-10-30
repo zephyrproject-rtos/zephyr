@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 RLIN3 in UART mode
+
+compatible: "renesas,rh850-rlin3-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      "lin" (INTRLIN3n), "tx" (INTRLIN3nUR0), "rx" (INTRLIN3nUR1),
+      "err" (INTRLIN3nUR2).
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Frequency in Hz of CLK_RLIN3, used to compute the baud rate
+      prescaler.
+
+  current-speed:
+    required: true
