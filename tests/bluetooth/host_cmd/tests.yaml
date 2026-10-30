@@ -1,0 +1,22 @@
+common:
+  extra_dtc_overlay_files:
+    - test.overlay
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+  # Several cases wait for the command deadline of ten seconds
+  timeout: 240
+tests:
+  bluetooth.host_cmd: {}
+  bluetooth.host_cmd.tx_processor_syswq:
+    extra_configs:
+      - CONFIG_BT_TX_PROCESSOR_THREAD=n
+  # Runs the one suite that needs a controller without a reset on disable
+  bluetooth.host_cmd.no_reset:
+    extra_dtc_overlay_files:
+      - no_reset.overlay

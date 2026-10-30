@@ -40,6 +40,7 @@ enum {
 	BT_DEV_DISABLING,   /* Host stack is being disabled */
 	BT_DEV_OPEN,        /* HCI transport is open */
 	BT_DEV_CTLR_RX,     /* Controller has sent a packet during bt_enable() */
+	BT_DEV_CMD_FAILED,  /* The controller stopped responding to commands */
 	BT_DEV_READY,       /* Host stack has completed init */
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
@@ -93,6 +94,7 @@ enum {
 				 BIT(BT_DEV_DISABLING) | \
 				 BIT(BT_DEV_OPEN) | \
 				 BIT(BT_DEV_CTLR_RX) | \
+				 BIT(BT_DEV_CMD_FAILED) | \
 				 BIT(BT_DEV_PRESET_ID))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
@@ -228,14 +230,17 @@ struct bt_le_ext_adv {
 
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
 
+	/** The options used to set the parameters for this advertising set
+	 * @ref bt_le_adv_param
+	 *
+	 * Before the work item, which is aligned to eight bytes, so that
+	 * neither of them is followed by padding.
+	 */
+	uint32_t options;
+
 #if defined(CONFIG_BT_LIM_ADV)
 	struct k_work_delayable	lim_adv_timeout_work;
 #endif /* CONFIG_BT_LIM_ADV */
-
-	/** The options used to set the parameters for this advertising set
-	 * @ref bt_le_adv_param
-	 */
-	uint32_t options;
 };
 
 enum {
@@ -412,7 +417,10 @@ struct bt_dev {
 	bt_addr_le_t            id_addr[CONFIG_BT_ID_MAX];
 	uint8_t                    id_count;
 
+#if defined(CONFIG_BT_CENTRAL)
+	/* Parameters of the connection that is being created */
 	struct bt_conn_le_create_param create_param;
+#endif /* CONFIG_BT_CENTRAL */
 
 #if !defined(CONFIG_BT_EXT_ADV)
 #if defined(CONFIG_BT_BROADCASTER)
@@ -479,14 +487,24 @@ struct bt_dev {
 	/* Number of commands controller can accept */
 	struct k_sem		ncmd_sem;
 
-	/* Last sent HCI command */
+	/* Last sent HCI command, protected by cmd_lock */
 	struct net_buf		*sent_cmd;
 
 	/* Queue for incoming HCI events & ACL data */
 	sys_slist_t rx_queue;
 
-	/* Queue for outgoing HCI commands */
-	struct k_fifo		cmd_tx_queue;
+	/* Queue for outgoing HCI commands, protected by cmd_lock */
+	sys_slist_t		cmd_tx_queue;
+	struct k_spinlock	cmd_lock;
+
+#if defined(CONFIG_BT_CONN)
+	/* Asynchronous commands waiting for a command buffer, and those whose
+	 * completion callback is still to run. Protected by cmd_lock. Built
+	 * with the one kind of user that there is so far.
+	 */
+	sys_slist_t		cmd_op_queue;
+	sys_slist_t		cmd_done_list;
+#endif /* CONFIG_BT_CONN */
 
 	const struct device *hci;
 
@@ -579,6 +597,11 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       atomic_t *target, int bit, bool val);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
+
+/* Tear down a connection that the controller turns out not to have any more,
+ * as a Disconnection Complete event with the given reason would.
+ */
+void bt_hci_conn_lost(struct bt_conn *conn, uint8_t reason);
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);
