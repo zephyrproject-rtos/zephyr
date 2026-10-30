@@ -34,6 +34,7 @@ struct crypto_stm32_data {
 	hal_crypt_handle_t hcryp;
 	struct k_sem device_sem;
 	struct k_sem session_sem;
+	struct k_sem complete_sem;
 };
 
 #ifdef CONFIG_STM32_HAL2

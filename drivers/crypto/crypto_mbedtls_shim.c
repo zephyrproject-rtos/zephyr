@@ -21,6 +21,10 @@
 #define MBEDTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
 		      CAP_NO_IV_PREFIX)
 
+#define CRYPTO_CIPHER_AES_128_KEY_LEN 16U
+#define CRYPTO_CIPHER_AES_192_KEY_LEN 24U
+#define CRYPTO_CIPHER_AES_256_KEY_LEN 32U
+
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbedtls_shim);
@@ -288,7 +292,9 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (ctx->keylen != 16U) {
+	if (ctx->keylen != CRYPTO_CIPHER_AES_128_KEY_LEN &&
+	    ctx->keylen != CRYPTO_CIPHER_AES_192_KEY_LEN &&
+	    ctx->keylen != CRYPTO_CIPHER_AES_256_KEY_LEN) {
 		LOG_ERR("%u key size is not supported", ctx->keylen);
 		return -EINVAL;
 	}
