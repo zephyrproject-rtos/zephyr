@@ -1,0 +1,13 @@
+sample:
+  name: Bluetooth Classic HID Keyboard
+tests:
+  sample.bluetooth.classic.hid_keyboard:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - sf32lb52_devkit_lcd/sf32lb525uc6
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
+      - sf32lb52_devkit_lcd/sf32lb525uc6
