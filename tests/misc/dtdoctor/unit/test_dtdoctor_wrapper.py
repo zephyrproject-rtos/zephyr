@@ -66,6 +66,21 @@ TESTDATA_TOOLCHAIN_ERRORS = [
         "ld.lld: error: undefined symbol: __device_dts_ord_7",
         "__device_dts_ord_7",
     ),
+    # Node identifiers that do not resolve leave the identifier in the symbol
+    (
+        "main.c:21:40: error: ‘__device_dts_ord_DT_N_ALIAS_led0_P_gpios_IDX_0_PH_ORD’ "
+        "undeclared here (not in a function)",
+        "__device_dts_ord_DT_N_ALIAS_led0_P_gpios_IDX_0_PH_ORD",
+    ),
+    (
+        "main.cpp:21:40: error: '__device_dts_ord_DT_N_ALIAS_led0_ORD' was not declared "
+        "in this scope",
+        "__device_dts_ord_DT_N_ALIAS_led0_ORD",
+    ),
+    (
+        "main.c:21:40: error: use of undeclared identifier '__device_dts_ord___ORD'",
+        "__device_dts_ord___ORD",
+    ),
 ]
 
 
@@ -80,6 +95,9 @@ TESTDATA_TOOLCHAIN_ERRORS = [
         'gnu-ld',
         'clang',
         'lld',
+        'gcc-unresolved',
+        'g++-unresolved',
+        'clang-unresolved',
     ],
 )
 def test_toolchain_regex_detection(monkeypatch, stderr_line, expected_symbol):
