@@ -117,3 +117,14 @@ tests:
     # two extra func1 frames at the start; the regex expects the alternating
     # func1/func2 pattern but gets func1/func1/func2 instead.
     filter: not CONFIG_RISCV_S_MODE
+  arch.common.stack_unwind.tricore:
+    arch_allow: tricore
+    integration_platforms:
+      - qemu_tc4x
+      - qemu_tc3x
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: call trace:"
+        - "E:\\s+\\d+: 0x[0-9a-f]+"
+        - "E:\\s+\\d+: 0x[0-9a-f]+"
