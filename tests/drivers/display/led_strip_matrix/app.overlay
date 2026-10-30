@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+&sdl_dc {
+	status = "disabled";
+};
+
+/ {
+	chosen {
+		zephyr,display = &matrix;
+	};
+
+	fake_strip: led-strip {
+		compatible = "vnd,led-strip-fake";
+		chain-length = <8>;
+	};
+
+	matrix: led-strip-matrix {
+		compatible = "led-strip-matrix";
+		led-strips = <&fake_strip>;
+		width = <4>;
+		height = <2>;
+		circulative;
+		modules-circulative;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	};
+};
