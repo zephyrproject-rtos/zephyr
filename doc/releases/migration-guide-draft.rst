@@ -32,6 +32,19 @@ Kernel
 Boards
 ******
 
+* The RAKwireless ``rak3172`` board is renamed to :zephyr:board:`rak3272s`. It
+  was named after the WisDuo stamp module it carries rather than the board it
+  describes, which is the RAK3272S Breakout Board. The other carrier for the
+  same module is the new :zephyr:board:`rak3372` WisBlock Core Module.
+  :file:`boards/deprecated.cmake` keeps ``-b rak3172`` working with a warning,
+  but out-of-tree code testing ``CONFIG_BOARD_RAK3172`` must switch to
+  ``CONFIG_BOARD_RAK3272S``.
+
+* :zephyr:board:`rak3272s` no longer defines ``led0``. The RAK3272S carries no
+  LEDs and leaves the two module pins the nodes used unrouted. Applications
+  that relied on the alias, such as :zephyr:code-sample:`blinky`, need an
+  overlay pointing at a LED wired to the headers.
+
 Device Drivers and Devicetree
 *****************************
 

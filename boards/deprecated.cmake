@@ -52,6 +52,9 @@ set(bl54l15u_dvk/nrf54l15/cpuflpr_DEPRECATED
 set(elemrv/elemrv_n_DEPRECATED
     elemrv_flask_n
 )
+set(rak3172_DEPRECATED
+    rak3272s
+)
 set(adafruit_metro_rp2350/rp2350b/m33_DEPRECATED
     adafruit_metro_rp2350/rp2350b/m33_0
 )
