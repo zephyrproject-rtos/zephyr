@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RH850_OSTM_TIMER
+	bool "Renesas RH850 OS timer (OSTM) system timer"
+	default y
+	depends on DT_HAS_RENESAS_RH850_OSTM_ENABLED
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	select SYSTEM_CLOCK_LOCK_FREE_COUNT
+	help
+	  System timer driver for the RH850 OS timer OSTM0 in free-run
+	  compare mode.
