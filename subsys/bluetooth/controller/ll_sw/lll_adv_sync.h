@@ -7,6 +7,7 @@
 int lll_adv_sync_init(void);
 int lll_adv_sync_reset(void);
 void lll_adv_sync_prepare(void *param);
+void lll_adv_sync_rsp_prepare(void *param);
 
 extern uint16_t ull_adv_sync_lll_handle_get(const struct lll_adv_sync *lll);
 

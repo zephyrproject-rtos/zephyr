@@ -47,6 +47,10 @@ if(CONFIG_BT_BROADCASTER)
     ll_sw/ull_adv_sync.c
     )
   zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_ADV_PERIODIC_RSP
+    ll_sw/ull_adv_sync_rsp.c
+    )
+  zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_ADV_ISO
     ll_sw/ull_adv_iso.c
     )
@@ -63,6 +67,10 @@ if(CONFIG_BT_OBSERVER)
   zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_SYNC_PERIODIC
     ll_sw/ull_sync.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_SYNC_PERIODIC_RSP
+    ll_sw/ull_sync_rsp.c
     )
   zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_SYNC_ISO
