@@ -109,3 +109,5 @@
 &psram {
 	status = "okay";
 };
+
+zephyr_mipi_dsi: &mipi_dsi {};
