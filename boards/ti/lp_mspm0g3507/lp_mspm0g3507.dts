@@ -20,6 +20,7 @@
 	aliases {
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -160,5 +161,9 @@
 &vref0 {
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };
