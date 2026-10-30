@@ -41,12 +41,6 @@ static int clk_generated_on(const struct device *dev, clock_control_subsys_t sys
 	uint32_t val = gck->layout->cmd | PMC_PCR_GCLKEN_Msk;
 	k_spinlock_key_t key;
 
-	LOG_DBG("gckdiv = %d, parent id = %d\n", gck->gckdiv, gck->parent_id);
-
-	mask |= PMC_PCR_GCLKDIV_Msk | gck->layout->gckcss_mask;
-	val |= FIELD_PREP(PMC_PCR_GCLKDIV_Msk, gck->gckdiv);
-	val |= FIELD_PREP(gck->layout->gckcss_mask, gck->parent_id);
-
 	key = k_spin_lock(gck->lock);
 	regmap_write((void *)gck->pmc, gck->layout->offset, (gck->id & gck->layout->pid_mask));
 	regmap_update_bits((void *)gck->pmc, gck->layout->offset, mask, val);
@@ -184,7 +178,11 @@ int clk_register_generated(pmc_registers_t *const pmc, struct k_spinlock *lock,
 	gck->id = id;
 	gck->pmc = pmc;
 	gck->lock = lock;
-	gck->range = *range;
+
+	if (range != NULL) {
+		gck->range = *range;
+	}
+
 	gck->chg_pid = chg_pid;
 	gck->layout = layout;
 	memcpy(gck->mux_table, mux_table, num_parents * sizeof(mux_table));
