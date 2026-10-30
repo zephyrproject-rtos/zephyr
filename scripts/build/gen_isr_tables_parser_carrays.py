@@ -273,11 +273,6 @@ typedef void (* ISR)(const void *);
         isr = self.__swt[i][0][1]
         self.write_isr_case_block(fp, i, isr, arg)
 
-    def write_isr_case_shared_irq(self, fp, i):
-        arg = f"&z_shared_sw_isr_table[{i}]"
-        isr = self.__config.swt_shared_handler
-        self.write_isr_case_block(fp, i, isr, arg)
-
     def write_isr_case_default_block(self, fp):
         fp.write("\t\tdefault:\n")
         fp.write("\t\t{\n")
@@ -299,8 +294,13 @@ typedef void (* ISR)(const void *);
                 # Single interrupt
                 self.write_isr_case_single_irq(fp, i)
             else:
-                # Shared interrupt
-                self.write_isr_case_shared_irq(fp, i)
+                # Shared interrupts dispatch through z_shared_sw_isr_table[] and
+                # the _sw_isr_table[] entry of the shared line, neither of which
+                # the switch-case table provides.
+                self.__log.error(
+                    f"IRQ {i} has {len(self.__swt[i])} clients; shared interrupts "
+                    "require CONFIG_GEN_SW_ISR_TABLE_ARRAY"
+                )
 
         self.write_isr_case_default_block(fp)
 
