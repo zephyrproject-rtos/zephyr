@@ -10,3 +10,8 @@ config MC_UART_SENDER
 	help
 	  Configure this board to initiate the UART integration test. Disable
 	  this option on the peer board to configure it as the receiver.
+
+config MC_UART_MSG_TEST
+	bool "Test the MC message layer over UART"
+	help
+	  Select the message and signal test instead of the communication test.

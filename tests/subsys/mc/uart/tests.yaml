@@ -1,8 +1,17 @@
 tests:
-  mc.uart:
+  mc.uart.comm:
+    build_only: true
+    extra_args: CONF_FILE=prj_sender.conf
+    tags:
+      - mc
+      - uart
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+  mc.uart.msg:
     build_only: true
     tags:
       - mc
       - uart
+    extra_args: CONF_FILE=prj_msg_sender.conf
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp

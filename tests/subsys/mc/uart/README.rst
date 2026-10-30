@@ -1,7 +1,8 @@
 MC UART integration test
 ========================
 
-This test validates ``mc_comm`` over a physical UART between two nRF54L15 DKs.
+These tests validate ``mc_comm`` and ``mc_msg`` over a physical UART between
+two nRF54L15 DKs.
 
 Connect the boards as follows::
 
@@ -30,3 +31,8 @@ Build the receiver on Board B::
 Open both console UARTs at 115200 baud. Both boards should report a PASS
 message. The sender transmits a normal payload and an empty payload; the
 receiver validates both through ``mc_comm``.
+
+For the message and signal test, use ``prj_msg_sender.conf`` and
+``prj_msg_receiver.conf`` in the corresponding build commands. The sender
+transmits a message and a zero-length signal; the receiver validates both
+through ``mc_msg``.

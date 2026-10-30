@@ -16,4 +16,12 @@ config MC_COMM
 	  Enable framed, acknowledged byte communication using application-owned
 	  storage and application-provided transport callbacks.
 
+config MC_MSG
+	bool "ID-based message communication"
+	depends on MC_COMM
+	default y
+	help
+	  Enable message IDs, subscriptions, and zero-length signals on top of
+	  MC_COMM.
+
 endif
