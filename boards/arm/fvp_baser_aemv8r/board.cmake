@@ -74,3 +74,14 @@ elseif(CONFIG_BOARD_FVP_BASER_AEMV8R_FVP_AEMV8R_AARCH32 OR
     -C cache_state_modelled=0
     )
 endif()
+
+if(CONFIG_CPU_CORTEX_R52 AND CONFIG_KERNEL_COHERENCE)
+  # Model separate CPU caches to exercise software coherence.
+  list(APPEND ARMFVP_FLAGS
+    -C cache_state_modelled=1
+    -C cluster0.is_uniprocessor=1
+    -C cluster0.l1cache_has_r52_cache_policy=1
+    -C cluster0.l2cache-size=0
+    -C bp.exclusive_monitor.monitor_access_level=2
+  )
+endif()
