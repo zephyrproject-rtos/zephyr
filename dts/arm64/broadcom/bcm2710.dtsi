@@ -23,15 +23,44 @@
 	interrupt-parent = <&armctrl_intc>;
 
 	cpus {
+		enable-method = "spin-table";
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		/*
+		 * armstub8 parks the secondary cores in a WFE loop and
+		 * polls a per-core release word at 0xd8 + reg * 8; the
+		 * spin-table pm_cpu_ops backend writes the entry point
+		 * there and issues SEV.
+		 */
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-a53";
 			reg = <0>;
 			device_type = "cpu";
+			cpu-release-addr = <0x0 0x000000d8>;
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
+		};
+
+		cpu@1 {
+			compatible = "arm,cortex-a53";
+			reg = <1>;
+			device_type = "cpu";
+			cpu-release-addr = <0x0 0x000000e0>;
+		};
+
+		cpu@2 {
+			compatible = "arm,cortex-a53";
+			reg = <2>;
+			device_type = "cpu";
+			cpu-release-addr = <0x0 0x000000e8>;
+		};
+
+		cpu@3 {
+			compatible = "arm,cortex-a53";
+			reg = <3>;
+			device_type = "cpu";
+			cpu-release-addr = <0x0 0x000000f0>;
 		};
 	};
 
