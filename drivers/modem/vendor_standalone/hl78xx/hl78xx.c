@@ -3977,11 +3977,47 @@ static int hl78xx_on_airplane_mode_state_leave(struct hl78xx_data *data)
 {
 	return 0;
 }
-/* pwroff script moved to hl78xx_chat.c */
-static int hl78xx_on_init_power_off_state_enter(struct hl78xx_data *data)
+
+/**
+ * @brief Send the power-off script, or defer its start.
+ *
+ * A script that still holds the chat is aborted first: a command in flight
+ * when the state is entered, the power-off script that a restart of the modem
+ * orphaned, or a command that took the chat after it.
+ */
+static void hl78xx_init_power_off_send(struct hl78xx_data *data)
 {
 	int ret;
 
+	if (modem_chat_is_running(&data->chat)) {
+		/* The power-off waits for no other script: the abort runs on the
+		 * chat work queue, after this event, and the script starts on the
+		 * state timer.
+		 */
+		hl78xx_chat_abort_active_script(data);
+	}
+
+	ret = hl78xx_start_state_script(data, hl78xx_run_pwroff_script_async);
+	if (ret == 0) {
+		/* Backstop for a modem that never answers the detach - a GSM PDP
+		 * activation cut short by this shutdown can still be occupying the
+		 * modem itself for another couple of minutes. Nothing else arms a
+		 * timer in this state, so without this the shutdown would have no
+		 * way to finish and the modem would stay powered. Armed again for
+		 * each attempt.
+		 */
+		hl78xx_reschedule_timer(data, K_SECONDS(HL78XX_SCRIPT_TIMEOUT_POWEROFF + 5));
+	} else if (ret != -EBUSY) {
+		LOG_WRN("Power off script could not be started (%d); powering down anyway", ret);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+	} else {
+		/* Deferred: the state timer starts the script */
+	}
+}
+
+/* pwroff script moved to hl78xx_chat.c */
+static int hl78xx_on_init_power_off_state_enter(struct hl78xx_data *data)
+{
 	/* This session is ending: whatever the driver believed about the
 	 * modem's functionality or GNSS engine must not survive into the next
 	 * power-up (the pwroff script below also changes CFUN without going
@@ -3999,26 +4035,19 @@ static int hl78xx_on_init_power_off_state_enter(struct hl78xx_data *data)
 	 * IMSI detach before powering down IS recommended by the AT command manual
 	 *
 	 */
-	ret = hl78xx_run_pwroff_script_async(data);
-	if (ret < 0) {
-		LOG_WRN("Power off script could not be started (%d); powering down anyway", ret);
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
-		return 0;
-	}
-
-	/* Backstop for a modem that never answers the detach - a GSM PDP
-	 * activation cut short by this shutdown can still be occupying the modem
-	 * itself for another couple of minutes. Nothing else arms a timer in this
-	 * state, so without this the shutdown would have no way to finish and the
-	 * modem would stay powered.
-	 */
-	hl78xx_start_timer(data, K_SECONDS(HL78XX_SCRIPT_TIMEOUT_POWEROFF + 5));
+	hl78xx_init_power_off_send(data);
 
 	return 0;
 }
 
 static void hl78xx_init_power_off_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
+	if ((evt == MODEM_HL78XX_EVENT_TIMEOUT) && data->events.script_start_deferred) {
+		/* Not the backstop: the power-off script waits for the chat */
+		hl78xx_init_power_off_send(data);
+		return;
+	}
+
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		hl78xx_stop_timer(data);
@@ -4038,21 +4067,24 @@ static void hl78xx_init_power_off_event_handler(struct hl78xx_data *data, enum h
 		break;
 
 	case MODEM_HL78XX_EVENT_DEREGISTERED:
-		hl78xx_stop_timer(data);
+		if (!data->events.script_start_deferred) {
+			hl78xx_stop_timer(data);
+		}
 		break;
 
 	case MODEM_HL78XX_EVENT_MDM_RESTART:
 		/* The modem rebooted underneath the power-off (its +KSUP banner
-		 * arrived while AT+CFUN=0/AT+CPWROFF was in flight), so the
-		 * response the script is waiting for will never come. The
-		 * decision to power off is already final: drop the orphaned
-		 * script and complete the power-off now instead of stalling
-		 * for the full script timeout with the board unrecoverable.
+		 * arrived while AT+CFUN=0/AT+CPWROFF was in flight): the response
+		 * the script is waiting for will never come, and the modem is on
+		 * again. Send the power-off to the new session once the chat is
+		 * free. The abort of the orphaned script reports a failure, and a
+		 * result of the first attempt can be queued behind this event:
+		 * neither ends the power-off, as script results are dropped until
+		 * the script has started again. Each attempt is still bounded by
+		 * the script timeout.
 		 */
-		LOG_WRN("Modem restarted during power-off; completing power-off immediately");
-		hl78xx_stop_timer(data);
-		hl78xx_chat_abort_active_script(data);
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		LOG_WRN("Modem restarted during power-off; sending the power-off again");
+		hl78xx_init_power_off_send(data);
 		break;
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
