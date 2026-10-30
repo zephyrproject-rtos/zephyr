@@ -136,6 +136,12 @@ are assigned to their respective API linker section. This is required for
 :c:macro:`DEVICE_API_GET` and :c:macro:`DEVICE_API_IS` to validate at runtime
 that a device's API belongs to the expected class.
 
+Which API class a device ends up implementing is a Kconfig decision, so it is
+only known once the driver is built and linked. A devicetree binding can
+declare the classes its drivers *can* implement with :ref:`dt-bindings-class`,
+which enumerates candidates at build time; :c:macro:`DEVICE_API_IS` is how such
+a candidate is narrowed to a device of that class at runtime.
+
 A subsystem API definition typically looks like this:
 
 .. code-block:: C
