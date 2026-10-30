@@ -14,7 +14,9 @@ toolchain:
 ram: 32768
 flash: 65536
 supported:
+  - display
   - gpio
+  - i2c
   - uart
   - video
 vendor: nxp
