@@ -479,6 +479,10 @@ d3_version = "7.9.0"
 # Without this, every diagram is drawn in a box of a fixed height and centered in it.
 mermaid_height = "auto"
 
+# Packet diagrams default to 32px per bit, so a 32-bit row is wider than the page content and
+# gets scaled down along with its text. 25px keeps a 32-bit row at its natural size.
+mermaid_init_config = {"startOnLoad": False, "packet": {"bitWidth": 25}}
+
 if tags.has("no-external-deps"): # pylint: disable=undefined-variable  # noqa: F821
     mermaid_use_local = "js/mermaid/mermaid.esm.mjs"
     d3_use_local = "js/d3/d3.min.js"
