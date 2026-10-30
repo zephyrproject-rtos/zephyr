@@ -9,3 +9,5 @@ tests:
       - sam_e54_xpro
       - pic32cx_sg41_cult
       - pic32cz_ca80_cult
+      - pic32ck_gc01_cult
+      - pic32ck_sg01_cult
