@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Radu Pirea
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_XLNX_PS
+	select PINCTRL if BOARD_PYNQ_Z1
