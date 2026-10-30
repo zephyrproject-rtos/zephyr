@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 ASPEED Technology Inc.
+
+config SOC_SERIES_AST27XX
+	bool
+	select SOC_FAMILY_ASPEED
+	help
+	  Enable support for ASPEED AST27XX series.
+
+config SOC_SERIES
+	default "ast27xx" if SOC_SERIES_AST27XX
+
+config SOC_AST2700
+	bool
+	select SOC_SERIES_AST27XX
+	help
+	  AST2700
+
+config SOC_AST2700_BOOTMCU
+	bool
+	select SOC_AST2700
+	help
+	  Enable support for the AST2700 BootMCU RISC-V core.
+
+config SOC
+	default "ast2700" if SOC_AST2700

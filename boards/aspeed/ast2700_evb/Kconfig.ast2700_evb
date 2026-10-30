@@ -1,0 +1,5 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AST2700_EVB
+	select SOC_AST2700_BOOTMCU if BOARD_AST2700_EVB_AST2700_BOOTMCU
