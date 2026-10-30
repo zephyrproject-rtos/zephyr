@@ -232,6 +232,58 @@ ZTEST(posix_timers, test_TIMER_ABSTIME_large_timeout)
 	zassert_equal(exp_count, 1, "TIMER_ABSTIME fired %d times, expected 1", exp_count);
 }
 
+static atomic_t in_handler;
+static atomic_t handler_calls;
+
+static void busy_handler(union sigval val)
+{
+	ARG_UNUSED(val);
+
+	atomic_set(&in_handler, 1);
+	atomic_inc(&handler_calls);
+	k_busy_wait(USEC_PER_MSEC);
+	atomic_set(&in_handler, 0);
+}
+
+ZTEST(posix_timers, test_timer_delete_waits_for_handler)
+{
+	struct sigevent sig = {
+		.sigev_notify = SIGEV_SIGNAL,
+		.sigev_notify_function = busy_handler,
+	};
+	struct itimerspec value = {
+		.it_value.tv_nsec = NSEC_PER_MSEC,
+		.it_interval.tv_nsec = NSEC_PER_MSEC,
+	};
+	atomic_val_t calls;
+	int64_t end;
+
+	if (!IS_ENABLED(CONFIG_SMP) || (arch_num_cpus() < 2)) {
+		ztest_test_skip();
+	}
+
+	for (int i = 0; i < 10; i++) {
+		zassert_ok(timer_create(CLOCK_MONOTONIC, &sig, &timerid));
+		zassert_ok(timer_settime(timerid, 0, &value, NULL));
+
+		/* Delete the timer while its expiry function runs on another CPU. */
+		end = k_uptime_get() + 100;
+		while ((atomic_get(&in_handler) == 0) && (k_uptime_get() < end)) {
+		}
+
+		zassert_ok(timer_delete(timerid));
+		timerid = -1;
+
+		zassert_equal(atomic_get(&in_handler), 0,
+			      "expiry function still running after timer_delete()");
+	}
+
+	calls = atomic_get(&handler_calls);
+	k_msleep(20);
+	zassert_equal(atomic_get(&handler_calls), calls,
+		      "expiry function called after timer_delete()");
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
