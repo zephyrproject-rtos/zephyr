@@ -78,6 +78,18 @@ inhibit_announce, asCapable "true", ignore_source_id). The standards analog of
 disabling the BMCA this way is the external port configuration of IEEE
 802.1AS-2020 (clause 10.3.14, derived from IEEE 1588-2019 clause 17.6.2).
 
+Static timeTransmitter operation
+********************************
+
+Enabling :kconfig:option:`CONFIG_NET_GPTP_STATIC_TIME_TRANSMITTER` configures
+the node as the grandmaster of such a network. BMCA and all Announce handling
+are bypassed, every port is pinned to the time transmitter role and asCapable
+is forced. Pdelay requests are answered but not sent, as a time transmitter
+does not use the path delay.
+The option requires :kconfig:option:`CONFIG_NET_GPTP_GM_CAPABLE`. This mirrors
+the linuxptp ptp4l automotive time transmitter configuration (BMCA "noop",
+serverOnly, inhibit_announce, inhibit_delay_req, asCapable "true").
+
 Application interfaces
 **********************
 
