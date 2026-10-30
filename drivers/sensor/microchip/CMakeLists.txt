@@ -1,5 +1,6 @@
 # Copyright (c) 2024 Analog Devices, Inc.
 # Copyright (c) 2025 Microchip Technology Inc.
+# Copyright 2026 Ahmed Ashraf NourEldeen <a.programmer55559@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
@@ -8,5 +9,6 @@ add_subdirectory_ifdef(CONFIG_MCP970X mcp970x)
 add_subdirectory_ifdef(CONFIG_MTCH9010 mtch9010)
 add_subdirectory_ifdef(CONFIG_PAC194X pac194x)
 add_subdirectory_ifdef(CONFIG_TACH_XEC mchp_tach_xec)
+add_subdirectory_ifdef(CONFIG_TC74 tc74)
 add_subdirectory_ifdef(CONFIG_TCN75A tcn75a)
 # zephyr-keep-sorted-stop
