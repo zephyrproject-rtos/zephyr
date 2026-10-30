@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 ID8 Engineering AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf9151_laca.dtsi>
+#include "seven_nrf9151_common.dtsi"
+
+/ {
+	model = "Seven nRF9151";
+	compatible = "id8,seven-nrf9151";
+
+	chosen {
+		zephyr,sram = &sram0_s;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram-secure-partition = &sram0_s;
+		zephyr,sram-non-secure-partition = &sram0_ns;
+	};
+};

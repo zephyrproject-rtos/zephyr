@@ -1,0 +1,277 @@
+/*
+ * Copyright (c) 2026 ID8 Engineering AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "seven_nrf9151_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/regulator/npm13xx.h>
+#include <nordic/nrf91xx_partition.dtsi>
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,led-strip = &system_led;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	/*
+	 * Seven provides default serial routing for the mikroBUS™ sockets:
+	 *   - mikroBUS™ 1 uses uart2 / i2c2 / spi2
+	 *   - mikroBUS™ 2 uses uart3 / i2c3 / spi3
+	 *
+	 * Application overlays enable the function they need on the target socket.
+	 *
+	 * On nRF9151, the serial blocks are multiplexed:
+	 *   - uart1 / i2c1 / spi1 share one hardware block
+	 *   - uart2 / i2c2 / spi2 share one hardware block
+	 *   - uart3 / i2c3 / spi3 share one hardware block
+	 *
+	 * Only one function from each group can be enabled at a time, so each
+	 * mikroBUS™ socket may use UART or I2C or SPI, but not multiple of those
+	 * functions simultaneously.
+	 *
+	 * For the non-secure target, uart1 is disabled by default to match the
+	 * upstream nrf9151dk behavior where TF-M uses it by default.
+	 *
+	 * The on-board RGB LED uses spi1 with MOSI on P0.18 by default, so serial
+	 * block 1 is not available for mikroBUS™ overlays unless that LED route is
+	 * overridden.
+	 */
+
+	buzzer: buzzer {
+		compatible = "pwm-buzzer";
+		pwms = <&pwm1 0 PWM_USEC(250) PWM_POLARITY_NORMAL>;
+		status = "okay";
+	};
+
+	mikrobus_1_header: mikrobus-connector-1 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 20 0>,  /* AN */
+			   <1 0 &gpio0 16 0>,  /* RST */
+			   <2 0 &gpio0 7 0>,   /* CS */
+			   <3 0 &gpio0 29 0>,  /* SCK */
+			   <4 0 &gpio0 28 0>,  /* MISO */
+			   <5 0 &gpio0 21 0>,  /* MOSI */
+			   <6 0 &gpio0 17 0>,  /* PWM */
+			   <7 0 &gpio0 15 0>,  /* INT */
+			   <8 0 &gpio0 13 0>,  /* RX */
+			   <9 0 &gpio0 12 0>,  /* TX */
+			   <10 0 &gpio0 23 0>, /* SCL */
+			   <11 0 &gpio0 22 0>; /* SDA */
+	};
+
+	mikrobus_2_header: mikrobus-connector-2 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 14 0>,  /* AN */
+			   <1 0 &gpio0 2 0>,   /* RST */
+			   <2 0 &gpio0 0 0>,   /* CS */
+			   <3 0 &gpio0 6 0>,   /* SCK */
+			   <4 0 &gpio0 5 0>,   /* MISO */
+			   <5 0 &gpio0 4 0>,   /* MOSI */
+			   <6 0 &gpio0 3 0>,   /* PWM */
+			   <7 0 &gpio0 1 0>,   /* INT */
+			   <8 0 &gpio0 11 0>,  /* RX */
+			   <9 0 &gpio0 10 0>,  /* TX */
+			   <10 0 &gpio0 8 0>,  /* SCL */
+			   <11 0 &gpio0 9 0>;  /* SDA */
+	};
+
+	aliases {
+		led-strip = &system_led;
+		watchdog0 = &wdt0;
+		mikrobus-header-1 = &mikrobus_1_header;
+		mikrobus-header-2 = &mikrobus_2_header;
+		mikrobus-header = &mikrobus_1_header;
+		mikrobus-1-serial = &uart2;
+		mikrobus-1-uart = &uart2;
+		mikrobus-1-i2c = &i2c2;
+		mikrobus-1-spi = &spi2;
+		mikrobus-2-serial = &uart3;
+		mikrobus-2-uart = &uart3;
+		mikrobus-2-i2c = &i2c3;
+		mikrobus-2-spi = &spi3;
+	};
+};
+
+/*
+ * Upstream Zephyr shields expect the default mikroBUS™ connector to expose
+ * these node labels directly. Socket 1 is the default connector on Seven.
+ */
+mikrobus_header: &mikrobus_1_header {};
+
+mikrobus_serial: &uart2 {};
+
+mikrobus_i2c: &i2c2 {};
+
+mikrobus_spi: &spi2 {};
+
+/*
+ * Also expose explicit labels for both sockets so applications or future
+ * shields can target either connector without depending on aliases.
+ */
+mikrobus_1_serial: &uart2 {};
+
+mikrobus_1_i2c: &i2c2 {};
+
+mikrobus_1_spi: &spi2 {};
+
+mikrobus_2_serial: &uart3 {};
+
+mikrobus_2_i2c: &i2c3 {};
+
+mikrobus_2_spi: &spi3 {};
+
+&adc {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* mikroBUS 1 AN: P0.20 / AIN7 */
+	channel@0 {
+		reg = <0>; /* SAADC channel slot 0 */
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40)>;
+		zephyr,input-positive = <NRF_SAADC_AIN7>;
+		zephyr,resolution = <12>;
+	};
+
+	/* mikroBUS 2 AN: P0.14 / AIN1 */
+	channel@1 {
+		reg = <1>; /* SAADC channel slot 1 */
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40)>;
+		zephyr,input-positive = <NRF_SAADC_AIN1>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&system_led_spi_default>;
+	pinctrl-1 = <&system_led_spi_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	system_led: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		reg = <0>;
+		spi-max-frequency = <4000000>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+		spi-one-frame = <0x70>;
+		spi-zero-frame = <0x40>;
+		reset-delay = <50>;
+	};
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart2 {
+	status = "disabled";
+	pinctrl-0 = <&mikrobus_1_uart_default>;
+	pinctrl-1 = <&mikrobus_1_uart_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart3 {
+	status = "disabled";
+	pinctrl-0 = <&mikrobus_2_uart_default>;
+	pinctrl-1 = <&mikrobus_2_uart_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c2 {
+	status = "disabled";
+	pinctrl-0 = <&mikrobus_1_i2c_default>;
+	pinctrl-1 = <&mikrobus_1_i2c_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c3 {
+	status = "disabled";
+	pinctrl-0 = <&mikrobus_2_i2c_default>;
+	pinctrl-1 = <&mikrobus_2_i2c_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&pmic_i2c_default>;
+	pinctrl-1 = <&pmic_i2c_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	npm1300: pmic@6b {
+		compatible = "nordic,npm1300";
+		reg = <0x6b>;
+		status = "disabled";
+
+		regulators {
+			compatible = "nordic,npm1300-regulator";
+
+			vdd_gnss: LDO1 {
+				regulator-initial-mode = <NPM13XX_LDSW_MODE_LDSW>;
+				regulator-boot-on;
+			};
+
+			vdd_power_led: LDO2 {
+				regulator-initial-mode = <NPM13XX_LDSW_MODE_LDSW>;
+				regulator-boot-on;
+			};
+		};
+	};
+};
+
+&spi2 {
+	compatible = "nordic,nrf-spim";
+	status = "disabled";
+	pinctrl-0 = <&mikrobus_1_spi_default>;
+	pinctrl-1 = <&mikrobus_1_spi_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "disabled";
+	pinctrl-0 = <&mikrobus_2_spi_default>;
+	pinctrl-1 = <&mikrobus_2_spi_sleep>;
+	pinctrl-names = "default", "sleep";
+};
