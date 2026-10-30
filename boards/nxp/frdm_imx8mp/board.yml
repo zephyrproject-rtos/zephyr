@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+
+board:
+  name: frdm_imx8mp
+  full_name: FRDM-IMX8MPLUS
+  vendor: nxp
+  socs:
+  - name: mimx8ml8
+    variants:
+    - name: ddr
+      cpucluster: m7
