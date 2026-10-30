@@ -6,13 +6,22 @@ if RISCV
 config NUM_IRQS
 	int
 	# let's pretend that the level 1 supports 64 lines
-	# (MAX_IRQ_PER_AGGREGATOR x (NUM_2ND_LEVEL_AGGREGATORS + NUM_3RD_LEVEL_AGGREGATORS)) + 64
-	# (64 x 4) + 64 = 320
+	# (MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR x NUM_2ND_LEVEL_AGGREGATORS) +
+	# (MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR x NUM_3RD_LEVEL_AGGREGATORS) + 64
+	# (64 x 2) + (32 x 2) + 64 = 256, rounded up to 320
 	default 320
 
 endif # RISCV
 
 config DUMP_INTC_TABLE
 	bool "Enable to dump the content of intc table"
+
+config TEST_ISR_TABLE_PLACEMENT
+	bool "Build the tests in isr_table_placement.c"
+	help
+	  Check the slot gen_isr_tables.py places a statically connected handler
+	  in against the slot z_get_sw_isr_table_idx() resolves it to at runtime.
+	  Needs the aggregator offsets that the scenario enabling this sets, so
+	  it is off by default.
 
 source "Kconfig.zephyr"

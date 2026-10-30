@@ -33,7 +33,10 @@ config MAX_IRQ_PER_AGGREGATOR
 
 	help
 	  The maximum number of interrupt inputs to any aggregator in the
-	  system.
+	  system. This is the common fallback value: the per-level symbols
+	  MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR and MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	  default to it, and can be overridden individually when aggregators
+	  at different levels have different input counts.
 
 config 2ND_LEVEL_INTERRUPTS
 	bool "Second-level interrupt support"
@@ -59,6 +62,15 @@ config NUM_2ND_LEVEL_AGGREGATORS
 	  The number of level 2 interrupt aggregators to support. Each
 	  aggregator can manage at most MAX_IRQ_PER_AGGREGATOR level 2
 	  interrupts.
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	int "Max IRQs per second level interrupt aggregator"
+	default MAX_IRQ_PER_AGGREGATOR
+	depends on 2ND_LEVEL_INTERRUPTS
+	help
+	  The maximum number of interrupt inputs to any level 2 aggregator.
+	  Sizes each level 2 aggregator's window in _sw_isr_table. Defaults
+	  to MAX_IRQ_PER_AGGREGATOR.
 
 config 2ND_LEVEL_INTERRUPT_BITS
 	int "Total number of second level interrupt bits"
@@ -113,6 +125,15 @@ config 3RD_LVL_ISR_TBL_OFFSET
 	  This is the offset in _sw_isr_table, the generated ISR handler table,
 	  where storage for 3rd level interrupt ISRs begins. This is
 	  typically allocated after ISRs for level 2 interrupts.
+
+config MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	int "Max IRQs per third level interrupt aggregator"
+	default MAX_IRQ_PER_AGGREGATOR
+	depends on 3RD_LEVEL_INTERRUPTS
+	help
+	  The maximum number of interrupt inputs to any level 3 aggregator.
+	  Sizes each level 3 aggregator's window in _sw_isr_table. Defaults
+	  to MAX_IRQ_PER_AGGREGATOR.
 
 config 3RD_LEVEL_INTERRUPT_BITS
 	int "Total number of third level interrupt bits"
