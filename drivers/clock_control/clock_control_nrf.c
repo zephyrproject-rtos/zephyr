@@ -665,7 +665,8 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 }
 
-void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
+void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode,
+			       z_nrf_clock_control_lf_on_cb_t cb)
 {
 	static atomic_t on;
 	static struct onoff_client cli;
@@ -676,7 +677,11 @@ void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 				get_onoff_manager(CLOCK_DEVICE,
 						  CLOCK_CONTROL_NRF_TYPE_LFCLK);
 
-		sys_notify_init_spinwait(&cli.notify);
+		if (cb) {
+			sys_notify_init_callback(&cli.notify, cb);
+		} else {
+			sys_notify_init_spinwait(&cli.notify);
+		}
 		err = onoff_request(mgr, &cli);
 		__ASSERT_NO_MSG(err >= 0);
 	}
