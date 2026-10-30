@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Peripheral PLL: 25 MHz * 32 = 800 MHz, fPLL2 = 800 MHz / (2.0 * 2) = 200 MHz */
+/ {
+	clocks {
+		fosc: fosc {
+			compatible = "fixed-clock";
+			clock-frequency = <25000000>;
+			#clock-cells = <0>;
+		};
+	};
+
+	zephyr,user {
+		asclinf-hz = <50000000>;
+	};
+};
+
+&ccu {
+	clocks = <&fosc>;
+	asclinf-div = <4>;
+
+	per-pll {
+		p-div = <1>;
+		n-div = <32>;
+		k2-div = <5>;
+		k3-div = <2>;
+		k3-prediv = <20>;
+		k4-div = <4>;
+	};
+};

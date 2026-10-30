@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AURIX TC3x clock control unit (SCU clock registers).
+
+  fsource0, fsource1 and fsource2 switch between fBACK and the PLLs
+  together, so sys-pll and per-pll are either both present or both absent.
+  The peripheral PLL K3 output uses the fixed 1.6 pre-divider
+  (PERPLLCON0.DIVBY = 0, erratum PER_PLL_TC.001) and k3-div must be 1 or 2
+  (erratum PER_PLL_TC.002). fsi-div is the FSIDIV field: fFSI = fSRI /
+  fsi-div for sri-div 1 or 2, else fFSI = fSRI.
+
+compatible: "infineon,aurix-tc3x-ccu"
+
+include: infineon,aurix-ccu.yaml
