@@ -1,0 +1,67 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/usb/audio.h>
+
+/ {
+	uac2_loopback: usb_audio2 {
+		compatible = "zephyr,uac2";
+		status = "okay";
+		full-speed;
+		audio-function = <AUDIO_FUNCTION_HEADSET>;
+
+		uac2_loopback_clk: aclk {
+			compatible = "zephyr,uac2-clock-source";
+			clock-type = "internal-fixed";
+			sof-synchronized;
+			sampling-frequencies = <48000>;
+		};
+
+		usb_in_terminal: usb_input_terminal {
+			compatible = "zephyr,uac2-input-terminal";
+			clock-source = <&uac2_loopback_clk>;
+			terminal-type = <USB_TERMINAL_STREAMING>;
+			front-left;
+			front-right;
+		};
+
+		headphones_terminal: headphones {
+			compatible = "zephyr,uac2-output-terminal";
+			data-source = <&usb_in_terminal>;
+			clock-source = <&uac2_loopback_clk>;
+			terminal-type = <BIDIRECTIONAL_TERMINAL_HEADSET>;
+			assoc-terminal = <&microphone_terminal>;
+		};
+
+		microphone_terminal: microphone {
+			compatible = "zephyr,uac2-input-terminal";
+			clock-source = <&uac2_loopback_clk>;
+			terminal-type = <BIDIRECTIONAL_TERMINAL_HEADSET>;
+			front-left;
+			front-right;
+		};
+
+		usb_out_terminal: usb_output_terminal {
+			compatible = "zephyr,uac2-output-terminal";
+			data-source = <&microphone_terminal>;
+			clock-source = <&uac2_loopback_clk>;
+			terminal-type = <USB_TERMINAL_STREAMING>;
+		};
+
+		playback_stream: playback {
+			compatible = "zephyr,uac2-audio-streaming";
+			linked-terminal = <&usb_in_terminal>;
+			subslot-size = <2>;
+			bit-resolution = <16>;
+		};
+
+		capture_stream: capture {
+			compatible = "zephyr,uac2-audio-streaming";
+			linked-terminal = <&usb_out_terminal>;
+			subslot-size = <2>;
+			bit-resolution = <16>;
+		};
+	};
+};
