@@ -7,6 +7,7 @@
 #include <infineon/cat1a/mpns/CY8C6245LQI_S3D72.dtsi>
 #include <infineon/cat1a/system_clocks.dtsi>
 #include "cy8cproto_062s3_4343w-common.dtsi"
+#include "cy8cproto_062s3_4343w-partitions.dtsi"
 #include "cy8cproto_062s3_4343w-pinctrl.dtsi"
 
 / {
@@ -20,9 +21,11 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &app_sram;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flash_controller;
+		/* Used only when the image opts in with USE_DT_CODE_PARTITION */
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 	};

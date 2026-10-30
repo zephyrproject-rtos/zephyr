@@ -6,6 +6,22 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
+	reserved-memory {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Cortex-M0+ SRAM is not to be used by Cortex-M4.
+		 */
+		cm0_sram: memory@8000000 {
+			reg = <0x08000000 DT_SIZE_K(8)>;
+		};
+
+		app_sram: memory@8002000 {
+			reg = <0x08002000 DT_SIZE_K(248)>;
+		};
+	};
+
 	aliases {
 		led0 = &user_led;
 		sw0 = &user_bt;

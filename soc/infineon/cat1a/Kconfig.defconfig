@@ -5,6 +5,17 @@
 
 if SOC_FAMILY_INFINEON_CAT1A
 
+if SOC_FAMILY_PSOC6
+
+# A chain-loaded image sits in a slot, behind a bootloader that already carries
+# the prebuilt Cortex-M0+ image. Embedding a second copy would place it where
+# the bootloader jumps and push the vector table out of reach.
+choice SOC_PSOC6_CM0P_IMAGE
+	default SOC_PSOC6_CM0P_IMAGE_NONE if BOOTLOADER_MCUBOOT
+endchoice
+
+endif # SOC_FAMILY_PSOC6
+
 rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_INFINEON_CAT1A
