@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Enabling the STA and SoftAP netdev nodes turns on CONFIG_WIFI_AMEBA and links
+ * the WHC host blobs. The 802.11 driver runs on KM4 and the MAC firmware on KM0
+ * (vendor images).
+ */
+
+&wifi0 {
+	status = "okay";
+};
+
+&wifi1 {
+	status = "okay";
+};

@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# Clusters: ca32 (dual Cortex-A32, SMP, boots via TF-A), km4 (Cortex-M55 network
+# core), km0 (Cortex-M23 low-power core). BUILD_WITH_TFA is selected in Kconfig.
+config BOARD_RTL8730E_EVB
+	bool "RTL8730E EVB Platform Board"
+	select SOC_RTL8730E_CA32 if BOARD_RTL8730E_EVB_RTL8730E_CA32
+	select SOC_RTL8730E_KM4  if BOARD_RTL8730E_EVB_RTL8730E_KM4
+	select SOC_RTL8730E_KM0  if BOARD_RTL8730E_EVB_RTL8730E_KM0

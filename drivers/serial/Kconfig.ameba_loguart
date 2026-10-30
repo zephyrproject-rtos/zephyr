@@ -6,5 +6,34 @@ config UART_AMEBA_LOGUART
 	default y
 	depends on DT_HAS_REALTEK_AMEBA_LOGUART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the LOGUART driver for Realtek Ameba SoCs.
+
+config UART_AMEBA_LOGUART_XCORE_LOCK
+	bool "Serialize LOGUART output across cores"
+	depends on UART_AMEBA_LOGUART
+	help
+	  The LOGUART muxes the CA32, KM4 and KM0 TX paths per byte, so
+	  concurrent console output interleaves mid-line. Buffer a line per
+	  core and flush it under a hardware semaphore; only useful when more
+	  than one core runs this driver.
+
+if UART_AMEBA_LOGUART_XCORE_LOCK
+
+config UART_AMEBA_LOGUART_XCORE_LINE_MAX
+	int "Per-core console line buffer size"
+	default 128
+	help
+	  Bytes buffered per core before a flush. Longer lines are flushed in
+	  chunks that may interleave with other cores.
+
+config UART_AMEBA_LOGUART_XCORE_SEM_ID
+	int "Core-to-core hardware semaphore index"
+	range 7 15
+	default 15
+	help
+	  IPC hardware semaphore for the console line flush. IDs 0-6 belong to
+	  the vendor firmware (IMQ/FLASH/OTP/CRYPTO/DIAGNOSE/SYSON/GDMA).
+
+endif # UART_AMEBA_LOGUART_XCORE_LOCK

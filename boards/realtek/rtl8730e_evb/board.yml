@@ -1,0 +1,6 @@
+board:
+  name: rtl8730e_evb
+  full_name: RTL8730E EVB Board
+  vendor: realtek
+  socs:
+    - name: rtl8730e

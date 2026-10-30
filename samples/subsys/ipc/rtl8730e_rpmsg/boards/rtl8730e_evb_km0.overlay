@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * KM0 (Cortex-M23, LP core) is an rpmsg remote on IPCLP, NVIC IRQ 0.
+ *
+ * mbox cells are absolute register bits (see realtek,rtl8730e-ipc.yaml):
+ *   tx = bit 4  (LP_TO_AP ch4)
+ *   rx = bit 20 (AP_TO_LP ch4, RX-full group starts at bit 16)
+ *
+ * KM0 cannot reach PSRAM, so the vrings live in KM0 SRAM, the only window shared
+ * with CA32. KM0 has no D-cache; ATTR_MPU_RAM_NOCACHE only gives an explicit MPU map.
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	sram_ipc_lp: memory@2301b000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2301b000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM_IPC_LP";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+	};
+
+	soc {
+		ipc_mbox: mbox@42008600 {
+			compatible = "realtek,rtl8730e-ipc";
+			reg = <0x42008600 0x14>;
+			interrupt-parent = <&nvic>;
+			interrupts = <0 3>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc_lp>;
+			mboxes = <&ipc_mbox 4>, <&ipc_mbox 20>;
+			mbox-names = "tx", "rx";
+			role = "remote";
+			status = "okay";
+		};
+	};
+};
+
+/* Reserve the top 16 KB of KM0_BD_RAM for the shared vring window. */
+&sram0 {
+	reg = <0x23002020 (0x2301b000 - 0x23002020)>;
+};

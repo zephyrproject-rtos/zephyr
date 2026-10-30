@@ -5,6 +5,7 @@
  */
 
 #include <os_wrapper.h>
+#include "os_wrapper_deferred.h"
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(os_if_timer);
 
@@ -151,4 +152,34 @@ uint32_t rtos_timer_get_id(rtos_timer_t p_handle)
 _WEAK void init_timer_wrapper(void)
 {
 	LOG_ERR("Not Support");
+}
+
+/* Trampoline: three-void* slot -> the caller's (void *, uint32_t) signature. */
+static void invoke_pended_call(void *fn, void *p1, void *p2)
+{
+	void (*func)(void *, uint32_t) = (void (*)(void *, uint32_t))fn;
+
+	if (func != NULL) {
+		func(p1, (uint32_t)(uintptr_t)p2);
+	}
+}
+
+int rtos_timer_pend_function_call(void (*p_func)(void *, uint32_t), void *pv_p1, uint32_t ul_p2,
+				  uint32_t wait_ms)
+{
+	ARG_UNUSED(wait_ms);
+	if (p_func == NULL) {
+		return RTK_FAIL;
+	}
+
+	if (rtos_critical_is_in_interrupt()) {
+		LOG_ERR("%s: called from ISR", __func__);
+		return RTK_FAIL;
+	}
+
+	if (deferred_submit(invoke_pended_call, (void *)p_func, pv_p1,
+			    (void *)(uintptr_t)ul_p2) != 0) {
+		return RTK_FAIL;
+	}
+	return RTK_SUCCESS;
 }

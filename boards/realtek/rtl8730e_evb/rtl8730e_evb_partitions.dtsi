@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Flash0 body shared by every core, included inside each core's flash0 node.
+ * Only reg differs: it is the per-core RSIP XIP logic window.
+ */
+
+compatible = "soc-nv-flash";
+erase-block-size = <DT_SIZE_K(4)>;
+write-block-size = <4>;
+status = "okay";
+
+partitions {
+	compatible = "fixed-partitions";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	/* Vendor boot.bin */
+	boot_partition: partition@0 {
+		label = "bootloader";
+		reg = <BOOT_SLOT_BASE BOOT_SLOT_SIZE>;
+		read-only;
+	};
+
+	/* Primary app slot: KM0 + KM4 + CA32/ATF */
+	slot0_partition: partition@40000 {
+		label = "image-0";
+		reg = <APP_SLOT0_OFFSET APP_SLOT_SIZE>;
+	};
+
+	/* Settings/NVS storage in the vendor VFS1 region, see partitions.h */
+	storage_partition: partition@640000 {
+		label = "storage";
+		reg = <STORAGE_OFFSET DT_SIZE_K(128)>;
+	};
+};

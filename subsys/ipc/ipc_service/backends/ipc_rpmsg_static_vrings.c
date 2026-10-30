@@ -842,7 +842,8 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)
 
 #define BACKEND_CONFIG_INIT(n) &backend_config_##n,
 
-#if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET)
+#if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET) || \
+	defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET_REMOTE)
 static int shared_memory_prepare(void)
 {
 	static const struct backend_config_t *config[] = {
@@ -850,8 +851,15 @@ static int shared_memory_prepare(void)
 	};
 
 	for (int i = 0; i < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); i++) {
-		if (config[i]->role == ROLE_HOST) {
+		if (config[i]->role == ROLE_HOST ?
+		    IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET) :
+		    IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET_REMOTE)) {
 			memset((void *) config[i]->shm_addr, 0, VDEV_STATUS_SIZE);
+			/* Make the cleared status visible to the other core. */
+			if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT)) {
+				sys_cache_data_flush_range((void *) config[i]->shm_addr,
+							   VDEV_STATUS_SIZE);
+			}
 		}
 	}
 
@@ -860,4 +868,4 @@ static int shared_memory_prepare(void)
 
 SYS_INIT(shared_memory_prepare, PRE_KERNEL_1,
 	 CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_INIT_PRIORITY);
-#endif /* CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET */
+#endif /* CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET(_REMOTE) */
