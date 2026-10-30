@@ -240,6 +240,7 @@ struct tcan4x5x_config {
 };
 
 struct tcan4x5x_data {
+	const struct device *dev;
 	struct gpio_callback int_gpio_cb;
 	struct k_thread int_thread;
 	struct k_sem int_sem;
@@ -415,21 +416,31 @@ static void tcan4x5x_int_gpio_callback_handler(const struct device *port, struct
 					       gpio_port_pins_t pins)
 {
 	struct tcan4x5x_data *tcan_data = CONTAINER_OF(cb, struct tcan4x5x_data, int_gpio_cb);
+	const struct can_mcan_config *mcan_config = tcan_data->dev->config;
+	const struct tcan4x5x_config *tcan_config = mcan_config->custom;
+	int err;
+
+	err = gpio_pin_interrupt_configure_dt(&tcan_config->int_gpio, GPIO_INT_DISABLE);
+	if (err != 0) {
+		LOG_ERR("failed to disable nINT GPIO level-triggered interrupt (err %d)", err);
+	}
 
 	k_sem_give(&tcan_data->int_sem);
 }
 
 static void tcan4x5x_int_thread(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
 	const struct device *dev = p1;
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct tcan4x5x_config *tcan_config = mcan_config->custom;
 	struct can_mcan_data *mcan_data = dev->data;
 	struct tcan4x5x_data *tcan_data = mcan_data->custom;
 	uint32_t status;
 	uint32_t ir;
 	int err;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	while (true) {
 		k_sem_take(&tcan_data->int_sem, K_FOREVER);
@@ -475,6 +486,13 @@ static void tcan4x5x_int_thread(void *p1, void *p2, void *p3)
 				LOG_ERR("failed to read interrupt register (err %d)", err);
 				break;
 			}
+		}
+
+		err = gpio_pin_interrupt_configure_dt(&tcan_config->int_gpio,
+						      GPIO_INT_LEVEL_ACTIVE);
+		if (err != 0) {
+			LOG_ERR("failed to configure nINT GPIO level-triggered interrupt (err %d)",
+				err);
 		}
 	}
 }
@@ -724,6 +742,8 @@ static int tcan4x5x_init(const struct device *dev)
 	k_tid_t tid;
 	int err;
 
+	tcan_data->dev = dev;
+
 	/* Initialize int_sem to 1 to ensure any pending IRQ is serviced */
 	k_sem_init(&tcan_data->int_sem, 1, 1);
 
@@ -798,9 +818,9 @@ static int tcan4x5x_init(const struct device *dev)
 	}
 
 	/* Initialize nINT GPIO callback and interrupt handler thread to ACK any early SPIERR */
-	err = gpio_pin_interrupt_configure_dt(&tcan_config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	err = gpio_pin_interrupt_configure_dt(&tcan_config->int_gpio, GPIO_INT_LEVEL_ACTIVE);
 	if (err != 0) {
-		LOG_ERR("failed to configure nINT GPIO interrupt (err %d)", err);
+		LOG_ERR("failed to configure nINT GPIO level-triggered interrupt (err %d)", err);
 		return -ENODEV;
 	}
 
