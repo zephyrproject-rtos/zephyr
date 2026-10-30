@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * External-loopback overlay for the i2c_target_api dual-role test.
+ *
+ * GPIO7/GPIO8 are the onboard touch bus, so the loopback uses header
+ * pins that are not connected to another device.
+ *
+ * Wire up two physical jumpers on J1:
+ *   GPIO2 (i2c0 SDA) <-> GPIO32 (i2c1 SDA)
+ *   GPIO3 (i2c0 SCL) <-> GPIO33 (i2c1 SCL)
+ */
+
+&pinctrl {
+	i2c0_loopback: i2c0_loopback {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO2>,
+				 <I2C0_SCL_GPIO3>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO32>,
+				 <I2C1_SCL_GPIO33>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};
+
+&gt911 {
+	status = "disabled";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_loopback>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

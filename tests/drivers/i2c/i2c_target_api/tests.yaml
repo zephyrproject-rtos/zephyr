@@ -48,6 +48,29 @@ tests:
       - nucleo_h753zi
     extra_configs:
       - CONFIG_APP_DUAL_ROLE_I2C=y
+  drivers.i2c.target_api.dual_role.pm:
+    extra_args:
+      - platform:esp32s3_devkitc/esp32s3/procpu:SNIPPET="espressif-pm"
+      - platform:esp32h2_devkitm:SNIPPET="espressif-pm"
+      - platform:esp32p4x_function_ev_board/esp32p4/hpcore:SNIPPET="espressif-pm"
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+      - CONFIG_I2C_TARGET_API_PM=y
+  drivers.i2c.target_api.dual_role.pm.esp.periph_pd:
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+      - CONFIG_I2C_TARGET_API_PM=y
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
   drivers.i2c.target_api.single_role:
     platform_allow:
       - frdm_ke17z512
