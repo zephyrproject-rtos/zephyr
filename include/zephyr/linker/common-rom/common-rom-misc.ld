@@ -14,6 +14,27 @@
 	ITERABLE_SECTION_ROM(settings_handler_static, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
+#if defined(CONFIG_SAFETY_TEST)
+	SECTION_PROLOGUE(safety_test_area,,)
+	{
+		PLACE_SYMBOL_HERE(__safety_test_start);
+		CREATE_OBJ_LEVEL(safety_test, EARLY)
+		CREATE_OBJ_LEVEL(safety_test, PRE_KERNEL_1)
+		CREATE_OBJ_LEVEL(safety_test, PRE_KERNEL_2)
+		CREATE_OBJ_LEVEL(safety_test, POST_KERNEL)
+		CREATE_OBJ_LEVEL(safety_test, APPLICATION)
+		PLACE_SYMBOL_HERE(__safety_test_end);
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	SECTION_PROLOGUE(safety_test_level_error,,)
+	{
+		KEEP(*(SORT(.z_safety_test_*)))
+	}
+	ASSERT(SIZEOF(safety_test_level_error) == 0, "Undefined safety test levels used.")
+
+	ITERABLE_SECTION_ROM(safety_test_failure_hook, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 #if defined(CONFIG_MODEM_CELLULAR)
 	ITERABLE_SECTION_ROM(modem_cellular_board_init, Z_LINK_ITERABLE_SUBALIGN)
 #endif
