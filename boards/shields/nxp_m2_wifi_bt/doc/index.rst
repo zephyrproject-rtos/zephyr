@@ -43,6 +43,7 @@ While the shield can be used with other host platforms, other combinations
 are not actively tested or validated.
 
 - :zephyr:board:`mimxrt1060_evk` Rev-C.
+- :zephyr:board:`mimxrt1170_evk` Rev-B, Wi-Fi with the Embedded Artists 2EL module.
 
 Fetch Binary Blobs
 ******************
@@ -99,6 +100,11 @@ Wi-Fi HostAP/WPA supplicant:
    To enable HostAP/WPA supplicant support, additional "nxp/overlay_hostap_hosted_mcu.conf" file
    needs to be passed.
    In above mentioned commands, shield parameter can be modified with respect to module selection.
+
+.. note::
+   On :zephyr:board:`mimxrt1170_evk` Rev-B, the Wi-Fi host sleep and firmware dump options of
+   ``nxp/overlay_hosted_mcu.conf`` are not supported. Disable them with
+   ``-DCONFIG_PM=n -DCONFIG_NXP_WIFI_FW_DEBUG=n``.
 
 Hardware Rework to Enable M.2 Interfaces
 ****************************************
