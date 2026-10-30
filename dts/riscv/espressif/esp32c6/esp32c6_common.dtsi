@@ -441,6 +441,14 @@
 			ngpios = <30>;   /* 0..29 */
 		};
 
+		sdm0: sdm@60091f00 {
+			compatible = "espressif,esp32-sdm";
+			reg = <0x60091f00 0x28>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		rtc_timer: rtc_timer@600b0c00 {
 			compatible = "espressif,esp32-rtc-timer";
 			reg = <0x600b0c00 DT_SIZE_K(1)>;
