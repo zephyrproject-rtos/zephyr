@@ -55,4 +55,15 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
+if SMP
+
+choice RISCV_SMP_IPI_IMPL
+	default RISCV_SMP_IPI_CUSTOM
+endchoice
+
+configdefault RISCV_CUSTOM_ANDES_PLIC_IPI
+	default y
+
+endif # SMP
+
 endif # SOC_SERIES_AE350

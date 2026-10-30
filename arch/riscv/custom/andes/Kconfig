@@ -107,3 +107,44 @@ config RISCV_CUSTOM_CSR_ANDES_NMI
 	  overriding the weak one, and to set up what that handler needs, such
 	  as an NMI stack in mscratch, before enabling any NMI source. The weak
 	  default only parks the core.
+
+config RISCV_CUSTOM_ANDES_PLIC_IPI
+	bool "Andes PLIC-SWINT based IPI"
+	depends on RISCV_SMP_IPI_CUSTOM
+	depends on $(dt_nodelabel_enabled_with_compat,plic_sw,$(DT_COMPAT_ANDESTECH_NCEPLIC100))
+	depends on PLIC_SUPPORTS_SOFT_INTERRUPT
+	select PLIC_IRQ_AFFINITY if MP_MAX_NUM_CPUS > 1
+	select DYNAMIC_INTERRUPTS
+	help
+	  Use PLIC-SWINT (PLIC-based software interrupts) for the custom
+	  Inter-Processor Interrupt implementation on Andes cores.
+
+config RISCV_CUSTOM_ANDES_MORE_SPIN_RELAX_NOPS
+	bool "Use Andes specific arch_spin_relax() with more NOPs"
+	depends on RISCV_CUSTOM_ANDES_PLIC_IPI
+	depends on MP_MAX_NUM_CPUS > 1
+	help
+	  Add some NOPs after failure to lock a spinlock. This gives
+	  the bus extra time to synchronize the RCW transaction
+	  among CPUs.
+
+config RISCV_CUSTOM_ANDES_NUM_SPIN_RELAX_NOPS
+	int "Number of NOPs to be used in Andes specific arch_spin_relax()"
+	depends on RISCV_CUSTOM_ANDES_MORE_SPIN_RELAX_NOPS
+	default 128 if MP_MAX_NUM_CPUS = 2
+	default 192 if MP_MAX_NUM_CPUS = 3
+	default 256 if MP_MAX_NUM_CPUS = 4
+	default 320 if MP_MAX_NUM_CPUS = 5
+	default 384 if MP_MAX_NUM_CPUS = 6
+	default 448 if MP_MAX_NUM_CPUS = 7
+	default 512
+	help
+	  Specify the number of NOPs in Andes specific arch_spin_relax().
+
+config RISCV_CUSTOM_ANDES_SPIN_RELAX_NOPS_JITTER
+	bool "Add jitter to the NOPs in Andes specific arch_spin_relax()"
+	depends on RISCV_CUSTOM_ANDES_MORE_SPIN_RELAX_NOPS
+	help
+	  Add a bounded jitter derived from mcycle to the number of NOPs in
+	  arch_spin_relax(). This staggers the RCW retries of the CPUs to
+	  further avoid them hitting the RCW transactions at the same time.

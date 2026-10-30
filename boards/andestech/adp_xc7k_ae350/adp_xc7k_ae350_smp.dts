@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Andes Technology Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <andes/andes_v5_ae350.dtsi>
+#include "adp_xc7k_ae350_common.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Andes ADP-XC7K AE350 SMP";
+	compatible = "andestech,adp_xc7k_ae350";
+};
+
+&l2_cache {
+	status = "okay";
+};
+
+&mbox {
+	status = "okay";
+};
