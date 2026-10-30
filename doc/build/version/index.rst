@@ -132,6 +132,25 @@ following defines are available:
 | APP_BUILD_VERSION           | String (unquoted) | None (see `Application build version`_ above)        | v3.3.0-18-g2c85d92        |
 +-----------------------------+-------------------+------------------------------------------------------+---------------------------+
 
+``APPVERSION`` packs the version fields as follows:
+
+.. mermaid::
+   :caption: APPVERSION layout, most significant bit first
+   :alt: 32-bit APPVERSION value: bits 24 to 31 hold VERSION_MAJOR, bits 16 to
+         23 VERSION_MINOR, bits 8 to 15 PATCHLEVEL and bits 0 to 7
+         VERSION_TWEAK.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+   ---
+   packet
+     0-7: "VERSION_TWEAK"
+     8-15: "PATCHLEVEL"
+     16-23: "VERSION_MINOR"
+     24-31: "VERSION_MAJOR"
+
 Use in Kconfig
 ==============
 
