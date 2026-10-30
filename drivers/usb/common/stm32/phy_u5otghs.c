@@ -121,8 +121,14 @@ static int stm32_u5otghs_phy_enable(const struct stm32_usb_phy *phy)
 static int stm32_u5otghs_phy_disable(const struct stm32_usb_phy *phy)
 {
 	const struct stm32_u5otghs_phy_config *cfg = phy->pcfg;
+	int ret;
 
-	return clock_control_off(rcc, (clock_control_subsys_t)&cfg->clocks[0]);
+	ret = clock_control_off(rcc, (clock_control_subsys_t)&cfg->clocks[0]);
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	}
+
+	return ret;
 }
 
 /*

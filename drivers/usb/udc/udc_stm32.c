@@ -677,7 +677,8 @@ static int udc_stm32_clock_disable(const struct device *dev)
 		}
 	}
 
-	if (clock_control_off(clk, &cfg->pclken[0]) != 0) {
+	err = clock_control_off(clk, &cfg->pclken[0]);
+	if (err != 0 && err != -ENOTSUP) {
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}

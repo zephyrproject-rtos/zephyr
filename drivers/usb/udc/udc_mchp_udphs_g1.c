@@ -662,14 +662,14 @@ static int stop_clock(const struct device *dev)
 
 	if (!config->hclk_is_fixed) {
 		ret = clock_control_off(SAM_DT_PMC_CONTROLLER, (void *)&config->hclk_cfg);
-		if (ret) {
+		if (ret != 0 && ret != -ENOTSUP) {
 			LOG_ERR("Failed to disable hclk");
 			return ret;
 		}
 	}
 
 	ret = clock_control_off(SAM_DT_PMC_CONTROLLER, (void *)&config->pclk_cfg);
-	if (ret) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("Failed to disable pclk");
 		return ret;
 	}
