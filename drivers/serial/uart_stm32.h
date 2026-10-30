@@ -103,6 +103,10 @@ struct uart_stm32_data {
 	struct uart_dma_stream dma_tx;
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	/* USART reset needed to resume RX DMA requests, deferred until TX is idle */
+	bool rx_dma_reset_pending;
+#endif
 #endif
 #ifdef CONFIG_PM
 	bool tx_poll_stream_on;

@@ -1298,6 +1298,40 @@ static inline void async_evt_rx_err(struct uart_stm32_data *data, int err_code)
 	async_user_callback(data, &event);
 }
 
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+/*
+ * Workaround for STM32H5/U5: USART does not generate DMA requests
+ * after clearing/setting DMAR. This issue is not documented in the
+ * errata but behaves similarly to the documented DMAT issue.
+ * Toggle UE (USART Enable) to reset the USART internal state machine
+ * before re-enabling DMAR.
+ */
+static void uart_stm32_dma_rx_reset(USART_TypeDef *usart)
+{
+	LL_USART_DisableDMAReq_RX(usart);
+	LL_USART_Disable(usart);
+	LL_USART_Enable(usart);
+	/* Wait for USART to be ready after re-enable */
+	while (!LL_USART_IsActiveFlag_TEACK(usart)) {
+		/* busy-wait for transmit enable acknowledge */
+	}
+	LL_USART_EnableDMAReq_RX(usart);
+}
+
+/* Apply the USART reset that was deferred by RX enable while TX was ongoing */
+static void uart_stm32_dma_rx_reset_deferred(struct uart_stm32_data *data)
+{
+	const struct uart_stm32_config *config = data->uart_dev->config;
+
+	if (data->rx_dma_reset_pending) {
+		data->rx_dma_reset_pending = false;
+		if (data->dma_rx.enabled) {
+			uart_stm32_dma_rx_reset(config->usart);
+		}
+	}
+}
+#endif /* CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED */
+
 static inline void async_evt_tx_done(struct uart_stm32_data *data)
 {
 	LOG_DBG("tx done: %d", data->dma_tx.counter);
@@ -1313,6 +1347,9 @@ static inline void async_evt_tx_done(struct uart_stm32_data *data)
 	data->dma_tx.counter = 0;
 #ifdef CONFIG_PM
 	data->tx_int_stream_on = false;
+#endif
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	uart_stm32_dma_rx_reset_deferred(data);
 #endif
 
 	async_user_callback(data, &event);
@@ -1333,6 +1370,9 @@ static inline void async_evt_tx_abort(struct uart_stm32_data *data)
 	data->dma_tx.counter = 0;
 #ifdef CONFIG_PM
 	data->tx_int_stream_on = false;
+#endif
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	uart_stm32_dma_rx_reset_deferred(data);
 #endif
 
 	async_user_callback(data, &event);
@@ -1602,33 +1642,42 @@ static inline void uart_stm32_dma_rx_enable(const struct device *dev)
 	USART_TypeDef *usart = config->usart;
 
 #ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
-	/*
-	 * Workaround for STM32H5/U5: USART does not generate DMA requests
-	 * after clearing/setting DMAR. This issue is not documented in the
-	 * errata but behaves similarly to the documented DMAT issue.
-	 * Toggle UE (USART Enable) to reset the USART internal state machine
-	 * before re-enabling DMAR.
-	 */
-	LL_USART_Disable(usart);
-	LL_USART_Enable(usart);
-	/* Wait for USART to be ready after re-enable */
-	while (!LL_USART_IsActiveFlag_TEACK(usart)) {
-		/* busy-wait for transmit enable acknowledge */
-	}
-#endif /* CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED */
+	unsigned int key = irq_lock();
 
+	data->dma_rx.enabled = true;
+	if (data->dma_tx.buffer_length != 0) {
+		/* Toggling UE would abort the ongoing transmission: defer the reset
+		 * until the TX completes or is aborted.
+		 */
+		LL_USART_EnableDMAReq_RX(usart);
+		data->rx_dma_reset_pending = true;
+	} else {
+		uart_stm32_dma_rx_reset(usart);
+	}
+	irq_unlock(key);
+#else
 	LL_USART_EnableDMAReq_RX(usart);
 	data->dma_rx.enabled = true;
+#endif /* CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED */
 }
 
 static inline void uart_stm32_dma_rx_disable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	/* Keep a TX completion from applying a deferred reset in the middle */
+	unsigned int key = irq_lock();
+
+	data->rx_dma_reset_pending = false;
+#endif
 
 	LL_USART_DisableDMAReq_RX(config->usart);
 
 	data->dma_rx.enabled = false;
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	irq_unlock(key);
+#endif
 }
 
 static int uart_stm32_async_rx_disable(const struct device *dev)
@@ -1882,12 +1931,14 @@ static int uart_stm32_async_tx(const struct device *dev,
 
 		if (ret != 0) {
 			LOG_ERR("dma tx config error!");
-			return -EINVAL;
+			ret = -EINVAL;
+			goto tx_error;
 		}
 
 		if (dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel)) {
 			LOG_ERR("UART err: TX DMA start failed!");
-			return -EFAULT;
+			ret = -EFAULT;
+			goto tx_error;
 		}
 
 		/* Start TX timer */
@@ -1926,6 +1977,19 @@ static int uart_stm32_async_tx(const struct device *dev,
 	}
 
 	return 0;
+
+tx_error:
+	/* Undo the TX setup so no stale TX_DONE event is generated */
+	LL_USART_DisableIT_TC(usart);
+	data->dma_tx.buffer_length = 0;
+#ifdef CONFIG_PM
+	data->tx_int_stream_on = false;
+#endif
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	/* RX may have been enabled meanwhile and deferred its reset to this TX */
+	uart_stm32_dma_rx_reset_deferred(data);
+#endif
+	return ret;
 }
 
 static void set_timeout_itr(USART_TypeDef *usart, uint32_t baudrate, int32_t timeout)
@@ -2070,25 +2134,47 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 
 static int uart_stm32_async_tx_abort(const struct device *dev)
 {
+	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
-	size_t tx_buffer_length = data->dma_tx.buffer_length;
+	size_t tx_buffer_length;
 	struct dma_status stat;
+	unsigned int key;
+	bool tc_enabled;
 
+	key = irq_lock();
+	tx_buffer_length = data->dma_tx.buffer_length;
 	if (tx_buffer_length == 0) {
+		irq_unlock(key);
 		return -EFAULT;
 	}
 
+	/* Disable the TC interrupt so the aborted transfer does not also report
+	 * UART_TX_DONE. The PM lock it would have released is released here.
+	 */
+	tc_enabled = LL_USART_IsEnabledIT_TC(config->usart);
+	LL_USART_DisableIT_TC(config->usart);
+	irq_unlock(key);
+
 	(void)k_work_cancel_delayable(&data->dma_tx.timeout_work);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
+	/* Suspend first so the transfer count read below no longer changes */
+	dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+#endif
 	if (!dma_get_status(data->dma_tx.dma_dev,
 				data->dma_tx.dma_channel, &stat)) {
 		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
-	dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
-#endif
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 	async_evt_tx_abort(data);
+
+#ifdef CONFIG_PM
+	if (tc_enabled) {
+		uart_stm32_pm_policy_state_lock_put_unconditional();
+	}
+#else
+	ARG_UNUSED(tc_enabled);
+#endif
 
 	return 0;
 }
