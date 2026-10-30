@@ -19,7 +19,8 @@
 	status = "okay";
 };
 
-/* rtc can also be configured as counter for this sample.
+/*
+ * rtc can also be configured as counter for this sample.
  * To use it update the above the alias with &rtc
  */
 &rtc {

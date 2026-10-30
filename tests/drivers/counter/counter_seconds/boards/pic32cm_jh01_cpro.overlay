@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc-0 = &rtc;
+	};
+};
+
+/* Use the 1 kHz RTC clock source so that, with the /1024 prescaler below,
+ * the counter ticks at 1024 / 1024 = 1 Hz (1 tick == 1 second), which is
+ * what the counter_seconds test expects. The binding default (XOSC32K,
+ * 32768 Hz) would give 32768 / 1024 = 32 Hz and bust the test's bounds.
+ */
+&rtcclock {
+	rtc-src = "ULP1K";
+};
+
+&rtc {
+	compatible = "microchip,rtc-g1-counter";
+	max-bit-width = <32>;
+	prescaler = <1024>;
+	status = "okay";
+};
