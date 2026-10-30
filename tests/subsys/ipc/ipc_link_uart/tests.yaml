@@ -1,0 +1,17 @@
+common:
+  tags:
+    - ipc
+  harness: ztest
+  integration_platforms:
+    - native_sim
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+
+tests:
+  ipc.ipc_link.uart.async:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+  ipc.ipc_link.uart.interrupt_driven:
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y

@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IPC service instance over an SPI bus, the IPC link backend's SPI transport in the peripheral
+  role. A child node of the SPI controller, in peripheral mode, connected to the peer, which runs
+  the controller role. The driver needs the asynchronous SPI API. The RDY and IRQ lines are
+  outputs here.
+
+compatible: "zephyr,ipc-spi-peripheral"
+
+include: ipc-link-spi.yaml

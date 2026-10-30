@@ -1,0 +1,16 @@
+common:
+  tags:
+    - ipc
+  harness: ztest
+  integration_platforms:
+    - native_sim
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+
+tests:
+  ipc.ipc_link.spi: {}
+  ipc.ipc_link.spi.mismatch:
+    extra_args: DTC_OVERLAY_FILE="app.overlay;mismatch.overlay"
+    extra_configs:
+      - CONFIG_TEST_IPC_LINK_SPI_MISMATCH=y

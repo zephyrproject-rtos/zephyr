@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties of the IPC link backend transports
+
+include: base.yaml
+
+properties:
+  retransmit-timeout-ms:
+    type: int
+    default: 100
+    description: |
+      Time without acknowledgment after which a payload is sent again, in milliseconds. Also the
+      interval of the boot announcements while the peer does not answer, and of the polls for
+      credits. Longer than the time a frame takes on the wire, both ways.

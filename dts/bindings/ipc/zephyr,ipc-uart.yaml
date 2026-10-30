@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IPC service instance over a UART, the IPC link backend's UART transport. A child node of the
+  UART controller connected to the peer, which runs the same transport.
+
+compatible: "zephyr,ipc-uart"
+
+examples:
+  - |
+    &uart1 {
+        ipc0: ipc-uart {
+            compatible = "zephyr,ipc-uart";
+        };
+    };
+
+include: [uart-device.yaml, ipc-link.yaml]
+
+properties:
+  mtu:
+    type: int
+    default: 256
+    description: |
+      Frame size in bytes, a multiple of 4, the same on both sides: the header carries it, and a
+      peer with another size is reported and never connects. A frame holds a 12 byte header, the
+      messages, each with a 4 byte header, and a 2 byte CRC.
