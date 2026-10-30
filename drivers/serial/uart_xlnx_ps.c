@@ -135,6 +135,9 @@
 #define XUARTPS_SR_RXEMPTY 0x00000002U /**< RX FIFO empty */
 #define XUARTPS_SR_RTRIG   0x00000001U /**< RX FIFO fill over trigger */
 
+/* 64-byte TX FIFO plus the shift register, at up to 12 bits per character */
+#define XUARTPS_TX_DRAIN_BITS ((64U + 1U) * 12U)
+
 /** Device configuration structure */
 struct uart_xlnx_ps_dev_config {
 	DEVICE_MMIO_ROM;
@@ -229,7 +232,7 @@ static void xlnx_ps_enable_uart(uintptr_t reg_base)
 static void set_baudrate(const struct device *dev, uint32_t baud_rate)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
-	uint32_t baud = dev_cfg->baud_rate;
+	uint32_t baud = baud_rate;
 	uint32_t clk_freq = dev_cfg->sys_clk_freq;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t divisor, generator;
@@ -648,7 +651,8 @@ static inline bool uart_xlnx_ps_cfg2ll_hwctrl(uint32_t *modemcr_reg,
  * @param cfg The configuration parameters to be applied.
  *
  * @return 0 if the configuration completed successfully, ENOTSUP
- *         error if an unsupported configuration parameter is detected.
+ *         error if an unsupported configuration parameter is detected,
+ *         ETIMEDOUT error if the transmitter does not become idle.
  */
 static int uart_xlnx_ps_configure(const struct device *dev, const struct uart_config *cfg)
 {
@@ -657,6 +661,7 @@ static int uart_xlnx_ps_configure(const struct device *dev, const struct uart_co
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t mode_reg = 0;
 	uint32_t modemcr_reg = 0;
+	uint32_t drain_us;
 
 	/* Read the current mode register & modem control register values */
 	mode_reg = sys_read32(reg_base + XUARTPS_MR_OFFSET);
@@ -674,6 +679,19 @@ static int uart_xlnx_ps_configure(const struct device *dev, const struct uart_co
 	    (!uart_xlnx_ps_cfg2ll_databits(&mode_reg, cfg->data_bits)) ||
 	    (!uart_xlnx_ps_cfg2ll_hwctrl(&modemcr_reg, cfg->flow_ctrl))) {
 		return -ENOTSUP;
+	}
+
+	/*
+	 * Wait until the TX FIFO has drained and the transmitter is idle, so
+	 * that disabling the controller does not cut off a character mid-frame.
+	 * The timeout allows twice the time needed to send a full FIFO at the
+	 * current baud rate; with hardware flow control, CTS may hold it off.
+	 */
+	drain_us = DIV_ROUND_UP(2U * XUARTPS_TX_DRAIN_BITS * USEC_PER_SEC, dev_cfg->baud_rate);
+	if (!WAIT_FOR((sys_read32(reg_base + XUARTPS_SR_OFFSET) &
+		       (XUARTPS_SR_TXEMPTY | XUARTPS_SR_TACTIVE)) == XUARTPS_SR_TXEMPTY,
+		      drain_us, k_busy_wait(1))) {
+		return -ETIMEDOUT;
 	}
 
 	/* Disable the controller before modifying any config registers */
@@ -930,9 +948,13 @@ static void uart_xlnx_ps_irq_tx_enable(const struct device *dev)
 	struct uart_xlnx_ps_dev_data_t *dev_data = dev->data;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	sys_write32((XUARTPS_IXR_TTRIG | XUARTPS_IXR_TXEMPTY), reg_base + XUARTPS_IER_OFFSET);
-	if ((sys_read32(reg_base + XUARTPS_SR_OFFSET) & (XUARTPS_SR_TTRIG | XUARTPS_SR_TXEMPTY)) !=
-	    0) {
+	/*
+	 * Only the TX FIFO empty interrupt is used: the TX trigger interrupt
+	 * and status flag indicate that the FIFO fill level is at or *above*
+	 * the TX trigger level, i.e. that the FIFO is filling up.
+	 */
+	sys_write32(XUARTPS_IXR_TXEMPTY, reg_base + XUARTPS_IER_OFFSET);
+	if ((sys_read32(reg_base + XUARTPS_SR_OFFSET) & XUARTPS_SR_TXEMPTY) != 0) {
 		/*
 		 * Enabling TX empty interrupts does not cause an interrupt
 		 * if the FIFO is already empty.
@@ -956,22 +978,20 @@ static void uart_xlnx_ps_irq_tx_disable(const struct device *dev)
 }
 
 /**
- * @brief Check if Tx IRQ has been raised
+ * @brief Check if the TX FIFO can accept a new character
  *
  * @param dev UART device struct
  *
- * @return 1 if an IRQ is ready, 0 otherwise
+ * @return 1 if the TX interrupt is enabled and the TX FIFO is not full,
+ *         0 otherwise
  */
 static int uart_xlnx_ps_irq_tx_ready(const struct device *dev)
 {
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
-	uint32_t reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
+	uint32_t reg_imr = sys_read32(reg_base + XUARTPS_IMR_OFFSET);
+	uint32_t reg_sr = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 
-	if ((reg_val & (XUARTPS_SR_TTRIG | XUARTPS_SR_TXEMPTY)) == 0) {
-		return 0;
-	} else {
-		return 1;
-	}
+	return ((reg_imr & XUARTPS_IXR_TXEMPTY) != 0) && ((reg_sr & XUARTPS_SR_TXFULL) == 0);
 }
 
 /**
