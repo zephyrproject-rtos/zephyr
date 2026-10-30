@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_INFINEON_DW
+	bool "Infineon DataWire (P-DMA) driver"
+	default y
+	depends on DT_HAS_INFINEON_DW_DMA_ENABLED
+	help
+	  Register-level driver for the Infineon DataWire (P-DMA) controller.
+
+config DMA_INFINEON_DW_DESCRIPTOR_COUNT
+	int "Number of descriptors per DMA channel"
+	default 2
+	depends on DMA_INFINEON_DW
+	help
+	  Number of descriptors allocated for each DMA channel. Must be 1 or
+	  greater. This is also the maximum block_count accepted by
+	  dma_config().

@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon DataWire (P-DMA) controller
+
+description: |
+  Infineon DataWire (P-DMA) DMA controller. Each channel has its own
+  interrupt, listed in channel order in the interrupts property.
+
+  Example:
+
+    dma0: dma-controller@40280000 {
+      compatible = "infineon,dw-dma";
+      reg = <0x40280000 0x10000>;
+      #dma-cells = <1>;
+      dma-channels = <76>;
+      interrupt-parent = <&intmux_ch4>;
+      interrupts = <296 0>, <297 0>;
+    };
+
+compatible: "infineon,dw-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 1
+
+  enable-chaining:
+    type: boolean
+    description: |
+      Make the last descriptor of a channel point to itself instead of
+      ending the descriptor list.
+
+dma-cells:
+  - channel
