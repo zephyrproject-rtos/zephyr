@@ -332,7 +332,7 @@ static int cs40l5x_poll(const struct device *const dev, const uint32_t addr, con
 	LOG_INST_DBG(config->log, "timed out polling 0x%08x, expected 0x%08x but received 0x%08x",
 		     addr, val, reg_val);
 
-	return -EBUSY;
+	return -ETIME;
 }
 
 static inline bool cs40l5x_valid_wavetable_source(const struct device *dev,
@@ -371,7 +371,7 @@ static int cs40l5x_write_mailbox(const struct device *const dev, const uint32_t 
 
 	LOG_INST_DBG(config->log, "failed write to mailbox (%d)", ret);
 
-	return 0;
+	return -ETIME;
 }
 
 static int cs40l5x_increment_mailbox(const struct device *const dev, uint32_t *const mbox_ptr)
@@ -973,14 +973,8 @@ static int cs40l5x_write_errata(const struct device *const dev)
 static int cs40l5x_boost_configuration(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
-	struct cs40l5x_data *const data = dev->data;
 
-	if (data->rev_id != CS40L5X_REVID_B0) {
-		return -ENOTSUP;
-	}
-
-	return (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERNAL_BOOST) ||
-		config->external_boost != NULL)
+	return (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL)
 		       ? cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_b0_external_boost,
 						 ARRAY_SIZE(cs40l5x_b0_external_boost))
 		       : cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_b0_internal_boost,
