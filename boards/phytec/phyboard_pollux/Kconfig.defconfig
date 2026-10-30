@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PHYBOARD_POLLUX
+
+configdefault MAIN_STACK_SIZE
+	default 3072 if BOARD_PHYBOARD_POLLUX_MIMX8ML8_ADSP
+
+endif # BOARD_PHYBOARD_POLLUX
