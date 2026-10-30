@@ -33,6 +33,15 @@ Build applications as usual (see :ref:`build_an_application` and
    :board: titanium_ti60_f225
    :goals: build
 
+SPI flash
+*********
+
+The on-board 8 MiB Winbond W25Q64JW SPI NOR flash is reached through ``spi0``.
+Its first 3.5 MiB hold the FPGA bitstream and are described as the read-only
+``fpga_bitstream`` partition. The last 64 KiB form the ``storage``
+partition. The Sapphire bootloader loads the application image from offset
+0x380000, which is not described as a partition.
+
 Flashing
 ********
 

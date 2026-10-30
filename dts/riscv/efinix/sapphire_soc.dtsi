@@ -65,6 +65,17 @@
 			status = "disabled";
 		};
 
+		spi0: spi@f8014000 {
+			compatible = "spinalhdl,spi-xdr-master-ctrl";
+			reg = <0xf8014000 0x1000>;
+			interrupt-parent = <&plic0>;
+			interrupts = <4 1>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		gpio0: gpio@f8015000 {
 			compatible = "efinix,sapphire-gpio";
 			reg = <0xf8015000 0x100>;

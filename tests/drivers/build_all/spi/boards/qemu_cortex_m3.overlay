@@ -17,4 +17,12 @@
 		tx-fifo-depth = <256>;
 		clock-frequency = <100000000>;
 	};
+
+	spi1: spi@88889000 {
+		compatible = "spinalhdl,spi-xdr-master-ctrl";
+		reg = <0x88889000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <100000000>;
+	};
 };
