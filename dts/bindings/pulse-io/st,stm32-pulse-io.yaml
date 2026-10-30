@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 timer Pulse IO controller
+
+description: |
+  Pulse IO controller on the channels of an STM32 timer, for fixed-period
+  cells (CELL mode) in transmission only. The channel runs in PWM mode and
+  each timer update event triggers a DMA transfer that loads the duty cycle
+  of the next period. The channels share the timer prescaler and period and
+  transmit one at a time.
+
+  The node is a child of an st,stm32-timers node, whose other functions
+  cannot be used at the same time. The pulse-ios cell is the timer channel
+  index, 0 for CH1 to 3 for CH4.
+
+compatible: "st,stm32-pulse-io"
+
+include: [pulse-io-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  dmas:
+    required: true
+    description: |
+      DMA channel driven by the update request of the timer (TIMx_UP).
+
+  dma-names:
+    required: true
+    enum:
+      - tx
+
+  "#pulse-io-cells":
+    const: 1
+
+  st,max-cells:
+    type: int
+    default: 256
+    description: |
+      Maximum number of cells of a transmission, plus one for the idle cell
+      that ends it. It sets the size of the DMA buffer, of 4 bytes per cell.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/dma/stm32_dma.h>
+
+    timers3: timers@40000400 {
+      compatible = "st,stm32-timers";
+      /* ... */
+
+      pio3: pulse-io {
+        compatible = "st,stm32-pulse-io";
+        pinctrl-0 = <&tim3_ch4_pb1>;
+        pinctrl-names = "default";
+        dmas = <&dmamux1 0 27 STM32_DMA_PRIORITY_HIGH>;
+        dma-names = "tx";
+        #pulse-io-cells = <1>;
+      };
+    };

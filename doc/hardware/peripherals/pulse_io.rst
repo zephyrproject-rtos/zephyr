@@ -53,7 +53,10 @@ which mode and feature set to use, reserve a channel with
 :c:func:`pulse_io_channel_configure` before any transfer. Blocking
 transfers use :c:func:`pulse_io_transmit_sync` and
 :c:func:`pulse_io_receive_sync`; asynchronous and streaming transfers use
-the RTIO path.
+the RTIO path. On backends that report ``tx_sync_multi_channel``,
+:c:func:`pulse_io_transmit_multi_sync` transmits on several channels of a
+device whose first periods start on the same clock edge, for example the
+motor outputs of a DShot ESC.
 
 The byte-to-symbol helper :c:func:`pulse_io_encode_bytes` and its inverse
 :c:func:`pulse_io_decode_bytes` convert between a protocol byte stream and

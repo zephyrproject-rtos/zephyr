@@ -85,6 +85,30 @@ static inline int z_vrfy_pulse_io_receive_sync(const struct device *dev,
 }
 #include <zephyr/syscalls/pulse_io_receive_sync_mrsh.c>
 
+static inline int z_vrfy_pulse_io_transmit_multi_sync(const struct device *dev,
+						      struct pulse_io_channel *const *chans,
+						      const struct pulse_io_tx_req *reqs,
+						      size_t num, k_timeout_t timeout)
+{
+	struct pulse_io_channel *chans_copy[PULSE_IO_TX_MULTI_MAX];
+	struct pulse_io_tx_req reqs_copy[PULSE_IO_TX_MULTI_MAX];
+
+	/* The operation is optional: the implementation returns -ENOSYS without it */
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_PULSE_IO));
+	if ((num == 0U) || (num > PULSE_IO_TX_MULTI_MAX)) {
+		return -EINVAL;
+	}
+	K_OOPS(k_usermode_from_copy(chans_copy, chans, num * sizeof(chans_copy[0])));
+	K_OOPS(k_usermode_from_copy(reqs_copy, reqs, num * sizeof(reqs_copy[0])));
+	for (size_t i = 0; i < num; i++) {
+		K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(reqs_copy[i].symbols, reqs_copy[i].count,
+						   PULSE_IO_ELEM_SIZE));
+	}
+	return z_impl_pulse_io_transmit_multi_sync((const struct device *)dev, chans_copy,
+						   reqs_copy, num, timeout);
+}
+#include <zephyr/syscalls/pulse_io_transmit_multi_sync_mrsh.c>
+
 static inline int z_vrfy_pulse_io_stop(const struct device *dev, struct pulse_io_channel *chan)
 {
 	K_OOPS(K_SYSCALL_DRIVER_PULSE_IO(dev, stop));

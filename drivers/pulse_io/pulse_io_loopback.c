@@ -51,6 +51,7 @@ static int lb_get_capabilities(const struct device *dev, struct pulse_io_caps *c
 		.tx_channel_mask = BIT_MASK(data->num_channels),
 		.rx_channel_mask = BIT_MASK(data->num_channels),
 		.num_channels = data->num_channels,
+		.tx_sync_multi_channel = true,
 	};
 	return 0;
 }
@@ -156,6 +157,40 @@ static int lb_stop(const struct device *dev, struct pulse_io_channel *chan)
 	return 0;
 }
 
+static int lb_transmit_multi_sync(const struct device *dev, struct pulse_io_channel *const *chans,
+				  const struct pulse_io_tx_req *reqs, size_t num,
+				  k_timeout_t timeout)
+{
+	/* Validate every channel and request before looping any of them back */
+	for (size_t i = 0; i < num; i++) {
+		struct pulse_io_lb_channel *ch = to_channel(dev, chans[i]);
+
+		if (ch == NULL || !ch->configured) {
+			return -EINVAL;
+		}
+		for (size_t j = 0; j < i; j++) {
+			if (chans[j] == chans[i]) {
+				return -EINVAL;
+			}
+		}
+		if (reqs[i].loop_count == UINT32_MAX) {
+			return -ENOTSUP;
+		}
+		if (reqs[i].count > PULSE_IO_LB_MAX_SYMBOLS) {
+			return -ENOMEM;
+		}
+	}
+
+	for (size_t i = 0; i < num; i++) {
+		int rc = lb_transmit_sync(dev, chans[i], &reqs[i], timeout);
+
+		if (rc != 0) {
+			return rc;
+		}
+	}
+	return 0;
+}
+
 #ifdef CONFIG_RTIO
 static const struct pulse_io_encoder_api lb_encoder = {
 	.encode = pulse_io_encode_bytes,
@@ -222,6 +257,7 @@ static DEVICE_API(pulse_io, pulse_io_lb_api) = {
 	.transmit_sync = lb_transmit_sync,
 	.receive_sync = lb_receive_sync,
 	.stop = lb_stop,
+	.transmit_multi_sync = lb_transmit_multi_sync,
 #ifdef CONFIG_RTIO
 	.submit = lb_submit,
 	.get_encoder = lb_get_encoder,
