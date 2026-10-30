@@ -228,6 +228,96 @@ static int test_file_truncate(void)
 	return res;
 }
 
+static int test_file_seek_past_end(void)
+{
+	char read_buff[11];
+	off_t size;
+	ssize_t brw;
+	int res;
+
+	TC_PRINT("\nSeek past the end tests:\n");
+
+	res = fs_seek(&filep, 0, FS_SEEK_END);
+	if (res != 0) {
+		TC_PRINT("fs_seek failed [%d]\n", res);
+		fs_close(&filep);
+		return res;
+	}
+
+	size = fs_tell(&filep);
+
+	/* The file is open for writing, so it grows up to the new position */
+	res = fs_seek(&filep, 10, FS_SEEK_END);
+	if (res != 0) {
+		TC_PRINT("fs_seek past the end failed [%d]\n", res);
+		fs_close(&filep);
+		return res;
+	}
+
+	if (fs_tell(&filep) != (size + 10)) {
+		TC_PRINT("Position after seeking past the end not as expected\n");
+		fs_close(&filep);
+		return TC_FAIL;
+	}
+
+	brw = fs_write(&filep, "x", 1);
+	if (brw != 1) {
+		TC_PRINT("Failed writing past the end [%zd]\n", brw);
+		fs_close(&filep);
+		return TC_FAIL;
+	}
+
+	fs_seek(&filep, size, FS_SEEK_SET);
+	brw = fs_read(&filep, read_buff, sizeof(read_buff));
+	if (brw != sizeof(read_buff)) {
+		TC_PRINT("Failed reading the extended region [%zd]\n", brw);
+		fs_close(&filep);
+		return TC_FAIL;
+	}
+
+	for (int i = 0; i < 10; i++) {
+		if (read_buff[i] != 0) {
+			TC_PRINT("Extended region is not zeroed\n");
+			fs_close(&filep);
+			return TC_FAIL;
+		}
+	}
+
+	if (read_buff[10] != 'x') {
+		TC_PRINT("Data written past the end not read back\n");
+		fs_close(&filep);
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
+static int test_file_seek_past_end_read_only(void)
+{
+	struct fs_file_t file;
+	int res;
+
+	TC_PRINT("\nSeek past the end of a read-only file tests:\n");
+
+	fs_file_t_init(&file);
+
+	res = fs_open(&file, TEST_FILE, FS_O_READ);
+	if (res != 0) {
+		TC_PRINT("Failed opening file [%d]\n", res);
+		return res;
+	}
+
+	res = fs_seek(&file, 1, FS_SEEK_END);
+	fs_close(&file);
+
+	if (res != -EINVAL) {
+		TC_PRINT("Seeking past the end of a read-only file returned [%d]\n", res);
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
 int test_file_close(void)
 {
 	int res;
@@ -276,6 +366,8 @@ void test_fat_file(void)
 	zassert_true(test_file_sync() == TC_PASS);
 	zassert_true(test_file_read() == TC_PASS);
 	zassert_true(test_file_truncate() == TC_PASS);
+	zassert_true(test_file_seek_past_end() == TC_PASS);
 	zassert_true(test_file_close() == TC_PASS);
+	zassert_true(test_file_seek_past_end_read_only() == TC_PASS);
 	zassert_true(test_file_delete() == TC_PASS);
 }
