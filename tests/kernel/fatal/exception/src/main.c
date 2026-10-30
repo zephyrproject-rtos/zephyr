@@ -92,6 +92,9 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_TRICORE)
 	/* Null pointer call triggers PSE trap (Class 4) */
 	((void (*)(void))0xF0000000)();
+#elif defined(CONFIG_RH850)
+	/* Reserved instruction exception (RIE) */
+	__asm__ volatile ("rie");
 #else
 	/* Triggers usage fault on ARM, illegal instruction on
 	 * xtensa, TLB exception (instruction fetch) on MIPS.
@@ -142,6 +145,17 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_HEXAGON)
 	/* A duplex instruction that writes to r0 twice raises a CPU exception. */
 	__asm__ volatile(".word 0x0");
+#elif defined(CONFIG_RH850)
+	/* No divide-by-zero trap: a misaligned LDL.W raises MAE */
+	{
+		volatile uint32_t buf[2];
+		uint32_t val;
+
+		__asm__ volatile ("ldl.w [%1], %0"
+				  : "=r"(val)
+				  : "r"((uintptr_t)&buf[0] + 2U)
+				  : "memory");
+	}
 #else
 	/* used to create a divide by zero error on X86 and MIPS */
 	volatile int error;
