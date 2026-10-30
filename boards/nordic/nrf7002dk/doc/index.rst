@@ -196,7 +196,7 @@ applications as usual (:ref:`build_an_application` and
 
 .. note::
 
-   Flashing and debugging applications on the nRF5340 DK requires
+   Flashing and debugging applications on the nRF7002 DK requires
    upgrading the nRF Command Line Tools to version 10.12.0. Further
    information on how to install the nRF Command Line Tools can be
    found in :ref:`nordic_segger_flashing`.
