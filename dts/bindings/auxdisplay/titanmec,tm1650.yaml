@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Smile
+
+description: TM1650 7-segment LED display controller
+
+compatible: "titanmec,tm1650"
+
+include: ["i2c-device.yaml", "auxdisplay-device.yaml"]
+
+properties:
+  rows:
+    const: 1
+    description: TM1650 only supports 1 row (up to 4 digits).
+
+  columns:
+    enum: [1, 2, 3, 4]
+    description: |
+      Number of digits connected to the TM1650. The TM1650 supports up
+      to 4 of 7-segment digits.
+
+examples:
+  - |
+    &i2c {
+      status = "okay";
+
+      auxdisplay_0: auxdisplay@24 {
+        compatible = "titanmec,tm1650";
+        status = "okay";
+        reg = <0x24>; /* 7 MSB of TM1650 system command address 0x48 */
+        columns = <4>;
+        rows = <1>;
+      };
+    };
