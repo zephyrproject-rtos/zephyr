@@ -99,13 +99,16 @@ DEFINE_FFF_GLOBALS;
 
 static struct ll_conn conn;
 
-/* void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
- *		    uint8_t *const cipher_text_le, uint8_t *const cipher_text_be);
+/* int ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
+ *		   uint8_t *const cipher_text_le, uint8_t *const cipher_text_be);
  */
-FAKE_VOID_FUNC(ecb_encrypt, uint8_t const *const, uint8_t const *const,
-			    uint8_t *const, uint8_t *const);
+FAKE_VALUE_FUNC(int, ecb_encrypt, uint8_t const *const, uint8_t const *const, uint8_t *const,
+		uint8_t *const);
 
 struct {
+	/* Calls that find the AES block busy (-EAGAIN, nothing written) before it is free */
+	uint8_t busy;
+
 	/* In */
 	uint8_t key_le[16];
 	uint8_t clear_text_le[16];
@@ -115,9 +118,15 @@ struct {
 	uint8_t cipher_text_be[16];
 } ecb_encrypt_custom_fake_context;
 
-void ecb_encrypt_custom_fake(uint8_t const *const key_le, uint8_t const *const clear_text_le,
+int ecb_encrypt_custom_fake(uint8_t const *const key_le, uint8_t const *const clear_text_le,
 			    uint8_t *const cipher_text_le, uint8_t *const cipher_text_be)
 {
+	if (ecb_encrypt_custom_fake_context.busy > 0U) {
+		ecb_encrypt_custom_fake_context.busy--;
+
+		return -EAGAIN;
+	}
+
 	zassert_mem_equal(key_le, ecb_encrypt_custom_fake_context.key_le, 16);
 	zassert_mem_equal(clear_text_le, ecb_encrypt_custom_fake_context.clear_text_le, 16);
 
@@ -128,6 +137,8 @@ void ecb_encrypt_custom_fake(uint8_t const *const key_le, uint8_t const *const c
 	if (cipher_text_be) {
 		memcpy(cipher_text_be, ecb_encrypt_custom_fake_context.cipher_text_be, 16);
 	}
+
+	return 0;
 }
 
 
@@ -544,6 +555,133 @@ ZTEST(encryption_start, test_encryption_start_central_loc_limited_memory)
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/* As test_encryption_start_central_loc, with the AES block busy when the
+ * session key is due (LL_START_ENC_REQ received): the procedure waits, sends
+ * nothing, and derives the key and sends LL_START_ENC_RSP at the next event.
+ *
+ * +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |          LL_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |                            |    LL_START_ENC_REQ |
+ *    |                            |<--------------------|
+ *    |           ---------------\ |                     |
+ *    |           | AES busy:    |-|                     |
+ *    |           | nothing sent | |                     |
+ *    |           |--------------| |                     |
+ *    |                            |                     |
+ *    |          ----------------\ |                     |
+ *    |          | Next event:   |-|                     |
+ *    |          | AES free      | |                     |
+ *    |          | Tx Encryption | |                     |
+ *    |          | Rx Decryption | |                     |
+ *    |          |---------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_START_ENC_RSP    |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |    LL_START_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ *
+
+ */
+ZTEST(encryption_start, test_encryption_start_central_loc_aes_busy)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	const uint8_t rand[] = { RAND };
+	const uint8_t ediv[] = { EDIV };
+	const uint8_t ltk[] = { LTK };
+	const uint8_t skd[] = { SKDM, SKDS };
+	const uint8_t sk_be[] = { SK_BE };
+	const uint8_t iv[] = { IVM, IVS };
+
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
+
+	lll_csrand_get_fake.return_val = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+	lll_csrand_get_custom_fake_context.buf = exp_enc_req.skdm;
+	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm);
+
+	memcpy(ecb_encrypt_custom_fake_context.key_le, ltk, 16);
+	memcpy(ecb_encrypt_custom_fake_context.clear_text_le, skd, 16);
+	memcpy(ecb_encrypt_custom_fake_context.cipher_text_be, sk_be, 16);
+
+	/* Busy on the first attempt, free on the second */
+	ecb_encrypt_custom_fake_context.busy = 1U;
+
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	event_prepare(&conn);
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
+	lt_rx_q_is_empty(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	lt_tx(LL_ENC_RSP, &conn, &enc_rsp);
+	lt_tx(LL_START_ENC_REQ, &conn, NULL);
+	event_done(&conn);
+
+	/* Busy: no key, no LL_START_ENC_RSP, nothing held */
+	zassert_equal(ecb_encrypt_fake.call_count, 1U);
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+	lt_rx_q_is_empty(&conn);
+
+	/* Next event: free, so the key is derived and LL_START_ENC_RSP sent */
+	event_prepare(&conn);
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	zassert_equal(ecb_encrypt_fake.call_count, 2U);
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Tx paused & enc. */
+	CHECK_RX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
+	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
+	ull_cp_release_tx(&conn, tx);
+
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+	event_done(&conn);
+
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
+	release_ntf(ntf);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(), "Free CTX buffers %d",
+		      llcp_ctx_buffers_free());
 }
 
 /* +-----+                     +-------+              +-----+
@@ -1993,6 +2131,155 @@ ZTEST(encryption_start, test_encryption_start_periph_rem_limited_memory)
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/* As test_encryption_start_periph_rem, with the AES block busy when the
+ * session key is due (after the host's LTK reply): the procedure waits, sends
+ * nothing, and derives the key and sends LL_START_ENC_REQ at the next event.
+ *
+ * +-----+                +-------+              +-----+
+ * | UT  |                | LL_A  |              | LT  |
+ * +-----+                +-------+              +-----+
+ *    |                       |                     |
+ *    |                       |          LL_ENC_REQ |
+ *    |                       |<--------------------|
+ *    |    -----------------\ |                     |
+ *    |    | Empty Tx queue |-|                     |
+ *    |    |----------------| |                     |
+ *    |                       |                     |
+ *    |                       | LL_ENC_RSP          |
+ *    |                       |-------------------->|
+ *    |                       |                     |
+ *    |           LTK Request |                     |
+ *    |<----------------------|                     |
+ *    |                       |                     |
+ *    | LTK Request Reply     |                     |
+ *    |---------------------->|                     |
+ *    |                       |                     |
+ *    |      ---------------\ |                     |
+ *    |      | AES busy:    |-|                     |
+ *    |      | nothing sent | |                     |
+ *    |      |--------------| |                     |
+ *    |                       |                     |
+ *    |       --------------\ |                     |
+ *    |       | Next event: |-|                     |
+ *    |       | AES free    | |                     |
+ *    |       |-------------| |                     |
+ *    |                       |                     |
+ *    |                       | LL_START_ENC_REQ    |
+ *    |                       |-------------------->|
+ *    |     ----------------\ |                     |
+ *    |     | Rx Decryption |-|                     |
+ *    |     |---------------| |                     |
+ *    |                       |                     |
+ *    |                       |    LL_START_ENC_RSP |
+ *    |                       |<--------------------|
+ *    |                       |                     |
+ *    |     Encryption Change |                     |
+ *    |<----------------------|                     |
+ *    |                       |                     |
+ *    |                       | LL_START_ENC_RSP    |
+ *    |                       |-------------------->|
+ *    |     ----------------\ |                     |
+ *    |     | Tx Encryption |-|                     |
+ *    |     |---------------| |                     |
+ *    |                       |                     |
+ *
+
+ */
+ZTEST(encryption_start, test_encryption_start_periph_rem_aes_busy)
+{
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	const uint8_t ltk[] = { LTK };
+	const uint8_t skd[] = { SKDM, SKDS };
+	const uint8_t sk_be[] = { SK_BE };
+	const uint8_t iv[] = { IVM, IVS };
+
+	struct pdu_data_llctrl_enc_req enc_req = {
+		.rand = { RAND },
+		.ediv = { EDIV },
+		.skdm = { SKDM },
+		.ivm = { IVM },
+	};
+	struct pdu_data_llctrl_enc_rsp exp_enc_rsp = {
+		.skds = { SKDS },
+		.ivs = { IVS },
+	};
+
+	lll_csrand_get_fake.return_val = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
+	lll_csrand_get_custom_fake_context.buf = exp_enc_rsp.skds;
+	lll_csrand_get_custom_fake_context.len = sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs);
+
+	memcpy(ecb_encrypt_custom_fake_context.key_le, ltk, 16);
+	memcpy(ecb_encrypt_custom_fake_context.clear_text_le, skd, 16);
+	memcpy(ecb_encrypt_custom_fake_context.cipher_text_be, sk_be, 16);
+
+	/* Busy on the first attempt, free on the second */
+	ecb_encrypt_custom_fake_context.busy = 1U;
+
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	event_prepare(&conn);
+	lt_tx(LL_ENC_REQ, &conn, &enc_req);
+	event_done(&conn);
+
+	event_prepare(&conn);
+	lt_rx(LL_ENC_RSP, &conn, &tx, &exp_enc_rsp);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	ut_rx_pdu(LL_ENC_REQ, &ntf, &enc_req);
+	ut_rx_q_is_empty();
+	release_ntf(ntf);
+
+	ull_cp_ltk_req_reply(&conn, ltk);
+
+	/* Busy: no key, no LL_START_ENC_REQ, nothing held */
+	event_prepare(&conn);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+
+	zassert_equal(ecb_encrypt_fake.call_count, 1U);
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
+	/* Next event: free, so the key is derived and LL_START_ENC_REQ sent */
+	event_prepare(&conn);
+	lt_rx(LL_START_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	zassert_equal(ecb_encrypt_fake.call_count, 2U);
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+	CHECK_RX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	event_prepare(&conn);
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+	event_done(&conn);
+
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
+	release_ntf(ntf);
+
+	event_prepare(&conn);
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(), "Free CTX buffers %d",
+		      llcp_ctx_buffers_free());
 }
 
 /* +-----+                +-------+              +-----+

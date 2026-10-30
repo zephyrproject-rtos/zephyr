@@ -21,10 +21,13 @@ struct ecb {
 	void    *context;
 };
 
-void ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,
-		    uint8_t * const cipher_text_be);
-void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
-		 uint8_t * const cipher_text_le, uint8_t * const cipher_text_be);
+/* 0, or -EAGAIN (outputs unwritten) to an LLL/ULL caller while the AES block is busy elsewhere.
+ * A thread never gets -EAGAIN.
+ */
+int ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,
+		   uint8_t * const cipher_text_be);
+int ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
+		uint8_t * const cipher_text_le, uint8_t * const cipher_text_be);
 
 void ecb_encrypt_nonblocking(struct ecb *e);
 

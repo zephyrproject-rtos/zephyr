@@ -21,8 +21,8 @@
 
 LOG_MODULE_REGISTER(bt_ctlr_rv32m1_ecb, LOG_LEVEL_DBG);
 
-void ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,
-		    uint8_t *const cipher_text_be)
+int ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text_be,
+		   uint8_t *const cipher_text_be)
 {
 	uint8_t keyAes[16] __aligned(4);
 	status_t status;
@@ -43,18 +43,20 @@ void ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text
 	status = CAU3_AES_SetKey(CAU3, &handle, keyAes, sizeof(keyAes));
 	if (status != kStatus_Success) {
 		LOG_ERR("CAUv3 AES key set failed %d", status);
-		return;
+		return 0;
 	}
 
 	status = CAU3_AES_Encrypt(CAU3, &handle, clear_text_be, cipher_text_be);
 	if (status != kStatus_Success) {
 		LOG_ERR("CAUv3 AES encrypt failed %d", status);
-		return;
+		return 0;
 	}
+
+	return 0;
 }
 
-void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
-		 uint8_t *const cipher_text_le, uint8_t *const cipher_text_be)
+int ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
+		uint8_t *const cipher_text_le, uint8_t *const cipher_text_be)
 {
 	uint8_t keyAes[16] __aligned(4);
 	uint8_t clear[16];
@@ -85,13 +87,13 @@ void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le
 	status = CAU3_AES_SetKey(CAU3, &handle, keyAes, sizeof(keyAes));
 	if (status != kStatus_Success) {
 		LOG_ERR("CAUv3 AES key set failed %d", status);
-		return;
+		return 0;
 	}
 
 	status = CAU3_AES_Encrypt(CAU3, &handle, clear, cipher);
 	if (status != kStatus_Success) {
 		LOG_ERR("CAUv3 AES encrypt failed %d", status);
-		return;
+		return 0;
 	}
 
 	if (cipher_text_le) {
@@ -102,6 +104,8 @@ void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le
 	if (cipher_text_be) {
 		memcpy(cipher_text_be, &cipher, sizeof(cipher));
 	}
+
+	return 0;
 }
 
 void ecb_encrypt_nonblocking(struct ecb *e)
