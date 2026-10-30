@@ -1,0 +1,94 @@
+# Copyright (c) 2026 Witekio
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_EMW3080
+	bool "MXCHIP EMW3080 Wi-Fi support"
+	default y
+	depends on DT_HAS_MXCHIP_EMW3080_ENABLED
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	select NET_L2_ETHERNET
+	select SPI
+	select GPIO
+	help
+	  Enable the MXCHIP EMW3080 Wi-Fi module driver. The module is used
+	  in network bypass mode: Ethernet frames are exchanged over SPI and
+	  the IP stack runs on the host. Station mode only, with open, WEP,
+	  WPA-Personal and WPA2-Personal security.
+
+if WIFI_EMW3080
+
+config WIFI_EMW3080_SPI_THREAD_STACK_SIZE
+	int "SPI transport thread stack size"
+	default 2048
+	help
+	  Stack size of the thread that runs SPI transactions and delivers
+	  received frames, including bypass frames to the network stack.
+
+config WIFI_EMW3080_SPI_THREAD_PRIORITY
+	int "SPI transport thread priority"
+	default 1
+	help
+	  Preemptive priority of the SPI transport thread. It must be higher
+	  (numerically lower) than the driver work queue priority.
+
+config WIFI_EMW3080_WORKQ_STACK_SIZE
+	int "Driver work queue stack size"
+	default 4096
+	help
+	  Stack size of the work queue running scan, connect, disconnect and
+	  module recovery.
+
+config WIFI_EMW3080_WORKQ_PRIORITY
+	int "Driver work queue priority"
+	default 5
+	help
+	  Preemptive priority of the driver work queue.
+
+config WIFI_EMW3080_FLOW_TIMEOUT_MS
+	int "FLOW handshake timeout (ms)"
+	default 200
+	help
+	  Maximum time to wait for the module to raise FLOW during an SPI
+	  transaction.
+
+config WIFI_EMW3080_RESET_PULSE_MS
+	int "Reset pulse duration (ms)"
+	default 100
+
+config WIFI_EMW3080_BOOT_DELAY_MS
+	int "Boot delay after reset (ms)"
+	default 1200
+	help
+	  Time to wait after releasing reset before the module accepts
+	  commands.
+
+config WIFI_EMW3080_CMD_TIMEOUT_MS
+	int "Default command timeout (ms)"
+	default 3000
+	help
+	  Timeout for commands without a dedicated timeout, including
+	  bypass frame transmission.
+
+config WIFI_EMW3080_SCAN_TIMEOUT_MS
+	int "Scan command timeout (ms)"
+	default 10000
+
+config WIFI_EMW3080_CONNECT_TIMEOUT_MS
+	int "Connection timeout (ms)"
+	default 15000
+	help
+	  Maximum time between a connect request and the station up event.
+	  On expiry the attempt is aborted and reported as failed.
+
+config WIFI_EMW3080_MAX_CMD_TIMEOUTS
+	int "Command timeouts before module reset"
+	default 3
+	range 0 255
+	help
+	  Number of consecutive command timeouts or transport errors after
+	  which the module is considered lost: the link is reported down,
+	  then the module is reset and reconfigured. 0 disables the
+	  recovery.
+
+endif # WIFI_EMW3080

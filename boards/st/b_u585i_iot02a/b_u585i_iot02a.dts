@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 STMicroelectronics
+ * Copyright (c) 2026 Witekio
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,4 +113,20 @@
 
 &rng {
 	status = "okay";
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_sck_pd1 &spi2_miso_pd3 &spi2_mosi_pd4>;
+	pinctrl-names = "default";
+
+	emw3080: wifi@0 {
+		compatible = "mxchip,emw3080";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		resetn-gpios = <&gpiof 15 GPIO_ACTIVE_LOW>;
+		nss-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+		notify-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+		flow-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
+	};
 };

@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Witekio
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MXCHIP EMW3080 Wi-Fi module connected over SPI.
+
+  The EMW3080 uses a custom SPI protocol with flow control and
+  interrupt (notify) signaling. The host communicates using an IPC
+  request/response protocol over this SPI link.
+
+compatible: "mxchip,emw3080"
+
+include: spi-device.yaml
+
+properties:
+  resetn-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the module RESET pin (active low).
+
+  nss-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the module SPI chip select (active low).
+      Driven by the driver instead of the SPI controller because it
+      must stay asserted across the FLOW handshakes of a transaction.
+
+  notify-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the module NOTIFY (IRQ) pin.
+      The module asserts this pin when it has data ready to send.
+
+  flow-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the module FLOW control pin.
+      The host must wait for this pin to be high before transferring
+      data on SPI.
