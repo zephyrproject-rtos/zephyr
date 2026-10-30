@@ -32,6 +32,14 @@ tests:
       - frdm_mcxw72
       - mcxw72_evk
       - frdm_mcxw70
+  sample.net.openthread.shell.mcxw_openthread_host_rgb_status_led:
+    build_only: true
+    extra_args:
+      - EXTRA_CONF_FILE="prj-ot-host.conf"
+    extra_configs:
+      - CONFIG_OT_SHELL_SAMPLE_RGB_STATUS_LED=y
+    platform_allow:
+      - frdm_mcxw72
   sample.net.openthread.shell.mcxw_openthread_host_no_l2:
     build_only: true
     extra_args:
