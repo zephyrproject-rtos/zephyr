@@ -366,7 +366,7 @@
 		lintc0: clint@f0010000 {
 			compatible = "riscv,clint0";
 			reg = <0xf0010000 0x10000>;
-			interrupts-extended = <&L0 3 &L0 7>;
+			interrupts-extended = <&L0 3>;
 			reg-names = "control";
 		};
 
