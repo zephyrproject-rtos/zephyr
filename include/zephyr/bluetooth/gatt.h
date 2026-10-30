@@ -17,7 +17,7 @@
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
  * @since 1.0
- * @version 1.0.2
+ * @version 1.0.3
  * @ingroup bluetooth
  * @{
  */
@@ -737,6 +737,14 @@ int bt_gatt_authorization_cb_register(const struct bt_gatt_authorization_cb *cb)
 int bt_gatt_service_register(struct bt_gatt_service *svc);
 
 /** @brief Unregister GATT service.
+ *
+ *  This takes the service out of the database without waiting for callbacks
+ *  for its attributes that other threads are in, such as the read or write
+ *  callback of an attribute that a peer reads or writes, or the function given
+ *  to @ref bt_gatt_foreach_attr_type. Such a callback can still be running, or
+ *  be about to start, when this returns: the memory of the service, its
+ *  attributes and their user data must not be freed or reused until it has
+ *  returned.
  *
  *  @param svc Service to be unregistered.
  *
