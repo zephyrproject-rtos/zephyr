@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Siratul Islam <siratul.islam@linux.dev>
+
+description: |
+  Hi-Link AI-10 face and palm recognition module, using the binary
+  UART protocol at 115200 baud. Face IDs are 1 through 1000 and palm IDs
+  are 1001 through 2000.
+
+  Also rebranded as the DFRobot SEN0677.
+
+compatible: "hilink,ai10"
+
+include: [uart-device.yaml]
+
+properties:
+  startup-delay-ms:
+    type: int
+    default: 2500
+    description: |
+      Time from driver initialization until the module can receive its first
+      command. The default covers the documented maximum startup time when
+      the module and host are powered together.
+
+examples:
+  - |
+    &uart1 {
+      status = "okay";
+      current-speed = <115200>;
+
+      ai10: biometrics {
+        compatible = "hilink,ai10";
+      };
+    };
