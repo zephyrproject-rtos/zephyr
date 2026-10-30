@@ -19,6 +19,11 @@ endif()
 set(APP_DIR ${APP_DIR} CACHE PATH "Main Application Source Directory")
 set(Sysbuild_DIR ${CMAKE_CURRENT_LIST_DIR}/../sysbuild-package/cmake)
 
+# Remove local APP_DIR so that it won't shadow the cache one, which gets
+# normalized. On Windows, the path separator will become forward slash
+# from backslash and can avoid potential parse error in the following.
+unset(APP_DIR)
+
 project(sysbuild_toplevel LANGUAGES)
 
 if(NOT DEFINED APPLICATION_BINARY_DIR)
