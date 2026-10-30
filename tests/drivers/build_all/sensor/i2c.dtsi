@@ -1728,3 +1728,8 @@ test_i2c_as7341: as7341@df {
 	compatible = "ams,as7341";
 	reg = <0xdf>;
 };
+
+test_i2c_vl53l4cd: vl53l4cd@e0 {
+	compatible = "st,vl53l4cd";
+	reg = <0xe0>;
+};

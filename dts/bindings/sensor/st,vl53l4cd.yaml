@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ST VL53L4CD time-of-flight distance sensor (I2C).
+
+compatible: "st,vl53l4cd"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  xshut-gpios:
+    type: phandle-array
+    description: |
+      XSHUT pin (hardware standby, active low on the sensor). Optional.
+      Must be described with GPIO_ACTIVE_HIGH: the driver drives it to the
+      logical inactive level (pin low = standby) and then to the logical
+      active level (pin high = running). AVDD must be on before XSHUT is
+      raised.
+
+  io-1v8:
+    type: boolean
+    description: |
+      Set when the I2C bus and GPIO are pulled up at 1.8 V. When not set, the
+      driver configures the sensor for pull-ups at AVDD (2.8 V), which is the
+      reference driver default.
+
+  fast-mode-plus:
+    type: boolean
+    description: |
+      Set to enable the sensor's I2C fast mode plus (1 MHz) support. Only
+      needed when the I2C bus runs at 1 MHz.
+
+  timing-budget-ms:
+    type: int
+    default: 50
+    description: |
+      Ranging timing budget in milliseconds (10 to 200). The default of 50 ms
+      is the value the reference driver uses after init: a balance between
+      accuracy and measurement rate.
+
+  inter-measurement-ms:
+    type: int
+    default: 0
+    description: |
+      Inter-measurement period in milliseconds. Must be 0 or greater than
+      timing-budget-ms. The default of 0 selects continuous ranging, which is
+      the reference driver default and gives the highest measurement rate.
+      Any other value selects autonomous low power mode.
