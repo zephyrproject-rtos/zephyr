@@ -1692,6 +1692,28 @@ ZTEST(net_iface, test_ipv6_iid_eui64)
 #endif
 }
 
+ZTEST(net_iface, test_ipv6_iid_eui64_no_lladdr)
+{
+#if defined(CONFIG_NET_IPV6_IID_EUI_64)
+	const struct net_in6_addr prefix = { { { 0x20, 0x01, 0x1b, 0x98, 0x24, 0xb8, 0x7e, 0xbb,
+					     0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct net_linkaddr lladdr = { .type = NET_LINK_DUMMY, .len = 0U };
+	struct net_in6_addr iid_addr = { };
+	int ret;
+
+	ret = net_ipv6_addr_generate_iid(eth_iface, &prefix, NULL, 0, 0, &iid_addr, &lladdr);
+	zexpect_equal(ret, -EINVAL, "Unexpected value (%d) returned", ret);
+
+	lladdr.type = NET_LINK_ETHERNET;
+	lladdr.len = 2U;
+
+	ret = net_ipv6_addr_generate_iid(eth_iface, &prefix, NULL, 0, 0, &iid_addr, &lladdr);
+	zexpect_equal(ret, -EINVAL, "Unexpected value (%d) returned", ret);
+#else
+	ztest_test_skip();
+#endif
+}
+
 ZTEST(net_iface, test_ipv6_iid_stable)
 {
 #if defined(CONFIG_NET_IPV6_IID_STABLE)
