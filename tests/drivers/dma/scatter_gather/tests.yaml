@@ -27,6 +27,11 @@ tests:
       - kg100s_rb4332a
       - pic32cz_ca80_cult
       - sixg301_rb4407a
+      - kit_psc3m5_evk
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
     filter: dt_nodelabel_enabled("tst_dma0")
     integration_platforms:
       - intel_adsp/cavs25
