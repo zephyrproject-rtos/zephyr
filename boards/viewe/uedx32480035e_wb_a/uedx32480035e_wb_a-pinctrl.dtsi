@@ -30,6 +30,16 @@
 		};
 	};
 
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_O_SD_GPIO5>,	/* DIN */
+				 <I2S0_O_BCK_GPIO6>,
+				 <I2S0_O_WS_GPIO7>;	/* LRC */
+
+			output-low;
+		};
+	};
+
 	spim2_default: spim2_default {
 		group1 {
 			pinmux = <SPIM2_SCLK_GPIO40>;
