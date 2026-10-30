@@ -87,6 +87,30 @@ indicating whether the chunk is in use, and chunk-indexed link
 pointers to the previous and next chunk in a "free list" to which
 unused chunks are added.
 
+On heaps small enough for 16-bit chunk indexes, the start of a chunk is laid
+out as follows. Larger heaps use 32-bit fields in the same order.
+
+.. mermaid::
+   :caption: Start of a chunk on a small heap, one 16-bit field per row
+   :alt: Start of a sys_heap chunk in memory order: the left chunk size; the
+         chunk size in chunk units with the in-use flag in bit 0; then, in free
+         chunks only, the indexes of the previous and next chunks in the free
+         list.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+       bitsPerRow: 16
+       bitWidth: 48
+   ---
+   packet
+     0-15: "Left chunk size"
+     16: "Used"
+     17-31: "Chunk size"
+     32-47: "Previous free chunk (free chunks only)"
+     48-63: "Next free chunk (free chunks only)"
+
 The heap code takes reasonable care to avoid fragmentation.  Free
 block lists are stored in "buckets" by their size, each bucket storing
 blocks within one power of two (i.e. a bucket for blocks of 3-4
