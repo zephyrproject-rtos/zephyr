@@ -34,8 +34,18 @@ struct stts22h_config {
 struct stts22h_data {
 	const struct device *dev;
 	int16_t sample_temp;
+	uint8_t odr;
 
 #ifdef CONFIG_STTS22H_TRIGGER
+	uint8_t temp_hi;
+	uint8_t temp_lo;
+	/*
+	 * Set when PM turn-on arms INT, cleared by turn-off or by a turn-on that
+	 * fails after arming; the handler leaves the interrupt armed only while set.
+	 */
+	atomic_t int_enabled;
+	/* The thread or work item and the GPIO callback are set up once, on first init */
+	bool trigger_ready;
 	struct gpio_callback gpio_cb;
 
 	const struct sensor_trigger *thsld_trigger;
@@ -58,6 +68,7 @@ int stts22h_trigger_set(const struct device *dev,
 			sensor_trigger_handler_t handler);
 
 int stts22h_init_interrupt(const struct device *dev);
+int stts22h_config_interrupt(const struct device *dev, bool enable);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_STTS22H_STTS22H_H_ */
