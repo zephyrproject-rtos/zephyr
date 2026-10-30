@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use UART20/Serial Port 1 for the protocol and UART30/Serial Port 0 as console. */
+/ {
+	aliases {
+		mc-uart = &uart20;
+	};
+
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+	};
+};
+
+&uart20 {
+	current-speed = <1000000>;
+};
+
+&uart30 {
+	status = "okay";
+};
