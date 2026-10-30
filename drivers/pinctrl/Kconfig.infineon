@@ -10,3 +10,20 @@ config PINCTRL_INFINEON_CAT1
 	depends on DT_HAS_INFINEON_PINCTRL_ENABLED
 	help
 	  Enable Pin controller driver for Infineon CAT1 MCUs
+
+config PINCTRL_INFINEON_IOSS
+	bool "Infineon IOSS pin controller driver"
+	default y
+	depends on DT_HAS_INFINEON_IOSS_PINCTRL_ENABLED
+	help
+	  Enable the register level pin controller driver for the Infineon
+	  IOSS block, which programs the HSIOM function selection and the
+	  GPIO port drive mode of each pin.
+
+config PINCTRL_INFINEON_IOSS_EXT
+	bool
+	default y if SOC_SERIES_PSE84 || SOC_SERIES_PSC3
+	depends on PINCTRL_INFINEON_IOSS
+	help
+	  The IOSS sets the slew rate and drive strength of a pin in the
+	  CFG_SLEW_EXT and CFG_DRIVE_EXT registers.

@@ -262,8 +262,9 @@
 		};
 
 		pinctrl: pinctrl@40300000 {
-			compatible = "infineon,pinctrl";
-			reg = <0x40300000 0x20000>;
+			compatible = "infineon,ioss-pinctrl";
+			reg = <0x40300000 0x4000>, <0x40310000 0x10000>;
+			reg-names = "hsiom", "gpio";
 		};
 
 		hsiom: hsiom@40300000 {
