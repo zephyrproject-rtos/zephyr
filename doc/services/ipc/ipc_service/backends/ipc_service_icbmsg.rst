@@ -32,7 +32,7 @@ The data sending process is following:
 * The sender allocates one or more blocks from the pool.
   If there are not enough sequential blocks, a thread context waits using the timeout provided in the parameter that also includes K_FOREVER and K_NO_WAIT.
 * The allocated blocks are filled with data.
-  At the beginning of the first block there is a 32 bit message header with length, endpoint ID and own block index.
+  At the beginning of the first block there is a 32 bit message header with the data size, own block index and endpoint address.
   For the zero-copy case, this is done by the caller, otherwise, it is copied automatically.
   During this time other threads are not blocked in any way as long as there are enough free blocks for them.
   They can allocate, send data and receive data.
@@ -46,6 +46,19 @@ The data sending process is following:
 * When data is no longer needed, the receiver writes to the consumer queue the block index.
 * The sender is performing a garbage collection by reading the consumer queue and freeing the buffers.
   Garbage collection is performed after sending any message or if there is no available buffers.
+
+The message header at the beginning of the first block has the following layout:
+
+.. mermaid::
+   :caption: ICBMsg message header layout
+   :alt: ICBMsg message header in memory order: data size (2 bytes), block
+         index (1 byte) and endpoint address (1 byte), followed by the data.
+
+   packet
+     0-15: "Data size"
+     16-23: "Block index"
+     24-31: "Endpoint address"
+     32-63: "Data (data size bytes)"
 
 Configuration
 =============
