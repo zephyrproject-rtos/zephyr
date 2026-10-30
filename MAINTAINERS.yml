@@ -2696,6 +2696,7 @@ Documentation Infrastructure:
     - yangbolu1991
   files:
     - drivers/ptp_clock/
+    - dts/bindings/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
   labels:
     - "area: Clocks"
