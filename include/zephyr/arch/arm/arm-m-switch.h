@@ -48,6 +48,23 @@
 #endif
 
 /**
+ * @brief Reports if the passed return address is a valid EXC_RETURN
+ * that will restore to the PSP running in thread mode.
+ *
+ * A valid EXC_RETURN has the highest 4 bits set, and to indicate
+ * the PSP and thread mode, the low four bits are 0b110x.
+ * Note that bit 0, Exception Secure, is ignored. Zephyr may be
+ * running as secure or non-secure (if running alongside TF-M), so
+ * allow either value.
+ *
+ * See ARMv8M manual D1.2.96 and ARMv7M manual B1.5.8.
+ */
+static inline bool is_thread_return(uint32_t lr)
+{
+	return (lr & 0xf000000c) == 0xf000000c;
+}
+
+/**
  * @brief Create an initial switch frame on a new thread's stack.
  *
  * The stack contents are prepared so that the first invocation of
@@ -93,22 +110,26 @@ bool arm_m_must_switch(void);
 void arm_m_exc_exit(void);
 
 /**
- * @brief Recover an interrupted IT/ICI instruction after a context switch.
+ * @brief Recover an interrupted IT/ICI instruction or preempted secure call
+ * after a cooperative context switch.
  *
  * The function is called from the fault handler that follows the deliberate
- * `UDF` in arm_m_iciit_stub(). It detects whether the undefined instruction
+ * `UDF` in arm_m_iciit_stub() or arm_m_secure_preempt_stub().
+ *
+ * It detects whether the undefined instruction
  * came from our stub and, if so, restores the saved PC/xPSR to re-execute the
- * original instruction.
+ * original instruction (in the case of an interrupted IT/ICI) or restores the
+ * EXC_RETURN. (in order to return from interrupt into an
+ * interrupted secure call)
  *
  * @param msp Exception entry stack pointer for MSP.
  * @param psp Exception entry stack pointer for PSP.
  * @param lr  EXC_RETURN value captured on exception entry.
  *
- * @retval true  The fault corresponded to the IT/ICI recovery stub and was
- *               handled.
+ * @retval true  The fault corresponded to either stub and was handled.
  * @retval false The fault was unrelated and should be processed normally.
  */
-bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr);
+bool arm_m_udf_fixup_check(uint32_t msp, uint32_t psp, uint32_t lr);
 
 /**
  * @brief Undefined-instruction stub used to force IT/ICI recovery.
@@ -205,14 +226,13 @@ static inline void arm_m_exc_tail(void)
 	if (isr_lr != arm_m_cs_ptrs.lr_fixup) {
 		/* We need to return to arm_m_exc_exit only if an exception is returning to thread
 		 * mode with PSP. Note that it is possible to get an exception in arm_m_exc_exit
-		 * after interrupts are enabled but, before branching to lr (0xFFFFFFFD) and, at
+		 * after interrupts are enabled but, before branching to lr (EXC_RETURN) and, at
 		 * this point the exception pushes an ESF on MSP. If we write arm_m_exc_exit at top
 		 * of MSP at this point, we are corrupting the XPSR of the ESF which will result in
 		 * a usage fault. So, make sure that we do this only if we are returning to thread
 		 * mode and using PSP to do so.
 		 */
-		if ((((uint32_t)isr_lr & 0xFFFFFF00U) == 0xFFFFFF00U)
-				&& (((uint32_t)isr_lr & 0xC) == 0xC)) {
+		if (is_thread_return((uint32_t)isr_lr)) {
 			arm_m_cs_ptrs.lr_save = isr_lr;
 			*arm_m_exc_lr_ptr = (uint32_t)arm_m_cs_ptrs.lr_fixup;
 		}
