@@ -197,7 +197,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 	status = DSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
-		return status == kDSPI_Busy ? -EBUSY : -EINVAL;
+		return status == kStatus_DSPI_Busy ? -EBUSY : -EINVAL;
 	}
 
 	return 0;
