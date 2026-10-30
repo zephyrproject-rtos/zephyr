@@ -176,6 +176,17 @@ bool is_tracing_thread(void)
 }
 #endif
 
+bool is_tracing_internal(const void *object)
+{
+#ifdef CONFIG_TRACING_SKIP_INTERNAL_OBJECTS
+	return object == &tracing_thread || object == &tracing_thread_timer ||
+	       object == &tracing_thread_sem;
+#else
+	ARG_UNUSED(object);
+	return false;
+#endif
+}
+
 bool is_tracing_enabled(void)
 {
 	return atomic_get(&tracing_state) == TRACING_ENABLE;
