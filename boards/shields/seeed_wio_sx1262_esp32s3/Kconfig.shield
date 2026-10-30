@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SEEED_WIO_SX1262_ESP32S3
+	def_bool $(shields_list_contains,seeed_wio_sx1262_esp32s3)
