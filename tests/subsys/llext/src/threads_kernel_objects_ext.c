@@ -21,8 +21,12 @@
 /*
  * Some platforms do not define any usable DT devices (not even the console).
  * In those cases the device API test can't be executed.
+ *
+ * mem_window devices are declared with a NULL driver API, so gen_kobject_list.py
+ * never registers them as kernel objects and they are unusable from user mode.
  */
-#if DT_HAS_CHOSEN(zephyr_console) && DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_console))
+#if DT_HAS_CHOSEN(zephyr_console) && DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_console)) &&         \
+	!DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), intel_adsp_mem_window)
 #define CONSOLE_DT_NODE DT_CHOSEN(zephyr_console)
 #endif
 

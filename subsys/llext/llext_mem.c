@@ -311,12 +311,13 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
-void llext_adjust_mmu_permissions(struct llext *ext)
-{
 #ifdef CONFIG_MMU
+static int llext_adjust_mmu_permissions(struct llext *ext)
+{
 	void *addr;
 	size_t size;
 	uint32_t flags;
+	int ret;
 
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
 		addr = ext->mem[mem_idx];
@@ -330,6 +331,7 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 		case LLEXT_MEM_VENEER:
 #endif
 			flags = K_MEM_PERM_EXEC;
+
 			break;
 		case LLEXT_MEM_DATA:
 		case LLEXT_MEM_BSS:
@@ -341,18 +343,94 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 		default:
 			continue;
 		}
+
 		sys_cache_data_flush_range(addr, size);
+
+		ret = k_mem_update_flags(addr, size, flags);
+
+		if (ret != 0) {
+			LOG_ERR("Failed to update memory flags for region %d, ret %d", mem_idx,
+				ret);
+			return ret;
+		}
+
 		if ((flags & K_MEM_PERM_EXEC) != 0) {
 			/* new code must reach PoU (flush above) before the
 			 * stale instruction lines are dropped
 			 */
 			sys_cache_instr_invd_range(addr, size);
 		}
-		k_mem_update_flags(addr, size, flags);
+
 	}
 
 	ext->mmu_permissions_set = true;
+
+	return 0;
+}
 #endif
+
+int llext_mem_finalize(struct llext_loader *ldr, struct llext *ext,
+		      const struct llext_load_param *ldr_parm)
+{
+#ifdef CONFIG_CACHE_MANAGEMENT
+	/* Make sure changes to memory regions are flushed to RAM */
+	for (int i = 0; i < LLEXT_MEM_COUNT; ++i) {
+		if (ext->mem[i]) {
+			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
+			if ((i == LLEXT_MEM_TEXT && !ldr_parm->pre_located)
+#ifdef CONFIG_LLEXT_VENEERS
+			    || i == LLEXT_MEM_VENEER
+#endif
+			    ) {
+#ifdef CONFIG_MMU
+				int ret = k_mem_update_flags(
+					ext->mem[i],
+					ROUND_UP(ext->mem_size[i], CONFIG_MMU_PAGE_SIZE),
+					K_MEM_PERM_EXEC);
+
+				if (ret != 0) {
+					LOG_ERR("Failed to update memory flags for region %d: %d",
+						i, ret);
+					return ret;
+				}
+				if (!ldr_parm->pre_located) {
+					ext->mmu_permissions_set = true;
+				}
+#endif
+				sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
+			}
+		}
+	}
+
+	/* Detached section caches should be synchronized in place */
+	if (ldr_parm->section_detached) {
+		for (int i = 0; i < ext->sect_cnt; ++i) {
+			elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+			if (ldr_parm->section_detached(shdr)) {
+				void *base = llext_peek(ldr, shdr->sh_offset);
+
+				if (base == NULL) {
+					LOG_ERR("Failed to access detached section %d", i);
+					return -ENOEXEC;
+				}
+
+				sys_cache_data_flush_range(base, shdr->sh_size);
+				if (shdr->sh_flags & SHF_EXECINSTR && !ldr_parm->pre_located) {
+					sys_cache_instr_invd_range(base, shdr->sh_size);
+				}
+			}
+		}
+	}
+#endif
+
+#ifdef CONFIG_MMU
+	if (!ldr_parm->pre_located) {
+		return llext_adjust_mmu_permissions(ext);
+	}
+#endif
+
+	return 0;
 }
 
 void llext_free_regions(struct llext *ext)

@@ -49,6 +49,7 @@ tests:
       - CONFIG_LLEXT_VENEERS=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
+      - CONFIG_LLEXT_READONLY_1CPU=y
   llext.readonly.memblk:
     arch_allow:
       - arm
@@ -63,6 +64,7 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
       - CONFIG_LLEXT_HEAP_MEMBLK=y
+      - CONFIG_LLEXT_READONLY_1CPU=y
   llext.readonly_mpu:
     arch_allow:
       - arm # Currently not supported on RISC-V
@@ -73,6 +75,7 @@ tests:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_VENEERS=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_READONLY_1CPU=y
   llext.readonly_mpu.memblk:
     arch_allow:
       - arm # Currently not supported on RISC-V
@@ -85,6 +88,7 @@ tests:
       - CONFIG_LLEXT_HEAP_MEMBLK=y
       - CONFIG_LLEXT_EXT_HEAP_SIZE=64
       - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=8192
+      - CONFIG_LLEXT_READONLY_1CPU=y
   llext.readonly_mpu.memblk.power_of_two_alignment:
     arch_allow:
       - arm # Currently not supported on RISC-V
@@ -97,6 +101,7 @@ tests:
       - CONFIG_LLEXT_HEAP_MEMBLK=y
       - CONFIG_LLEXT_EXT_HEAP_SIZE=64
       - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=8192
+      - CONFIG_LLEXT_READONLY_1CPU=y
   # Writable storage under an MPU, running the extension in a user-mode
   # thread: the counterpart of the readonly_mpu cases above for targets
   # that copy the extension into RAM instead of running it in place.

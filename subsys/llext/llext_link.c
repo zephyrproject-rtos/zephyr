@@ -11,7 +11,6 @@
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/llext_internal.h>
 #include <zephyr/kernel.h>
-#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
@@ -653,45 +652,5 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 		}
 	}
 
-	if (link_err != 0) {
-		return link_err;
-	}
-
-#ifdef CONFIG_CACHE_MANAGEMENT
-	/* Make sure changes to memory regions are flushed to RAM */
-	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
-		if (ext->mem[i]) {
-			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
-			if ((i == LLEXT_MEM_TEXT && !ldr_parm->pre_located)
-#ifdef CONFIG_LLEXT_VENEERS
-			    || i == LLEXT_MEM_VENEER
-#endif
-			    ) {
-				sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
-			}
-		}
-	}
-
-	/* Detached section caches should be synchronized in place */
-	if (ldr_parm->section_detached) {
-		for (i = 0; i < ext->sect_cnt; ++i) {
-			elf_shdr_t *shdr = ext->sect_hdrs + i;
-
-			if (ldr_parm->section_detached(shdr)) {
-				void *base = llext_peek(ldr, shdr->sh_offset);
-
-				if (base == NULL) {
-					return -ENOEXEC;
-				}
-
-				sys_cache_data_flush_range(base, shdr->sh_size);
-				if (shdr->sh_flags & SHF_EXECINSTR && !ldr_parm->pre_located) {
-					sys_cache_instr_invd_range(base, shdr->sh_size);
-				}
-			}
-		}
-	}
-#endif
-
-	return 0;
+	return link_err;
 }
