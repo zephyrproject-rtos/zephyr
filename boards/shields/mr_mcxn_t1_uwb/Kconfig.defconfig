@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MR_MCXN_T1_UWB && !MCUBOOT
+
+config UWB
+	default y
+
+config NXP_UWB_DEVICE
+	default y
+endif
