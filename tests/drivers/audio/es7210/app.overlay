@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	es7210_i2c: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x100 0x4>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		adc12: codec@40 {
+			compatible = "everest,es7210";
+			reg = <0x40>;
+			everest,sdout = <1>;
+			everest,micbias-millivolt = <2870>;
+			everest,vdda-millivolt = <3300>;
+			everest,vddd-millivolt = <3300>;
+		};
+
+		adc34: codec@41 {
+			compatible = "everest,es7210";
+			reg = <0x41>;
+			everest,sdout = <2>;
+			everest,micbias-millivolt = <2180>;
+			everest,vdda-millivolt = <3300>;
+			everest,vddd-millivolt = <3300>;
+		};
+
+		adc_absent: codec@42 {
+			compatible = "everest,es7210";
+			reg = <0x42>;
+			everest,sdout = <1>;
+			everest,micbias-millivolt = <2870>;
+			everest,vdda-millivolt = <3300>;
+			everest,vddd-millivolt = <3300>;
+		};
+
+		adc_low_voltage: codec@43 {
+			compatible = "everest,es7210";
+			reg = <0x43>;
+			everest,sdout = <1>;
+			everest,micbias-millivolt = <2870>;
+			everest,vdda-millivolt = <1800>;
+			everest,vddd-millivolt = <1800>;
+		};
+	};
+};
