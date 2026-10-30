@@ -17,6 +17,8 @@
 #include <kswap.h>
 #include <wait_q.h>
 
+ZASSERT_MODULE(KERNEL);
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 void idle(void *unused1, void *unused2, void *unused3)
@@ -25,7 +27,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
-	__ASSERT_NO_MSG(_current->base.prio >= 0);
+	ZASSERT(_current->base.prio >= 0);
 
 	while (true) {
 		/* SMP systems without a working IPI can't actual
@@ -99,7 +101,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 
 void __weak arch_spin_relax(void)
 {
-	__ASSERT(!arch_cpu_irqs_are_enabled(),
+	ZASSERT(!arch_cpu_irqs_are_enabled(),
 		 "this is meant to be called with IRQs disabled");
 
 	arch_nop();

@@ -225,6 +225,7 @@ static inline bool z_is_thread_essential(const struct k_thread *thread)
 static ALWAYS_INLINE bool should_preempt(const struct k_thread *thread,
 					 int preempt_ok)
 {
+	ZASSERT_MODULE(KERNEL);
 	/* Preemption is OK if it's being explicitly allowed by
 	 * software state (e.g. the thread called k_yield())
 	 */
@@ -232,7 +233,7 @@ static ALWAYS_INLINE bool should_preempt(const struct k_thread *thread,
 		return true;
 	}
 
-	__ASSERT(_current != NULL, "");
+	ZASSERT(_current != NULL);
 
 	/* Or if we're pended/suspended/dummy (duh) */
 	if (z_is_thread_prevented_from_running(_current)) {

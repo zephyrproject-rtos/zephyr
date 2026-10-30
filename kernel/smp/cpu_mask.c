@@ -8,6 +8,8 @@
 #include <ksched.h>
 #include <zephyr/spinlock.h>
 
+ZASSERT_MODULE(KERNEL);
+
 # ifdef CONFIG_SMP
 /* The mask width scales with CONFIG_MP_MAX_NUM_CPUS, up to 32 bits */
 BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 32, "Too many CPUs for mask word");
@@ -19,8 +21,8 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 	int ret = 0;
 
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	__ASSERT(z_is_thread_prevented_from_running(thread),
-		 "Running threads cannot change CPU pin");
+	ZASSERT(z_is_thread_prevented_from_running(thread),
+		"Running threads cannot change CPU pin");
 #endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 
 	Z_SCHED_SPINLOCK {
@@ -31,8 +33,8 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 #if defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 			uint32_t m = thread->base.cpu_mask;
 
-			__ASSERT(m != 0 && (m & (m - 1)) == 0,
-				 "PIN_ONLY requires exactly one CPU in mask");
+			ZASSERT(m != 0 && (m & (m - 1)) == 0,
+				"PIN_ONLY requires exactly one CPU in mask");
 #endif /* defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY) */
 
 		} else {

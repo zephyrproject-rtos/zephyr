@@ -71,10 +71,11 @@ void z_smp_halt_queue_wake(struct k_thread *thread);
  */
 static inline struct _cpu *z_smp_thread_active_elsewhere(struct k_thread *thread)
 {
+	ZASSERT_MODULE(KERNEL);
 	int thread_cpu_id = thread->base.cpu;
 	struct _cpu *thread_cpu;
 
-	__ASSERT_NO_MSG((thread_cpu_id >= 0) && (thread_cpu_id < arch_num_cpus()));
+	ZASSERT((thread_cpu_id >= 0) && (thread_cpu_id < arch_num_cpus()));
 
 	thread_cpu = &_kernel.cpus[thread_cpu_id];
 	if ((thread_cpu->current == thread) && (thread_cpu != _current_cpu)) {

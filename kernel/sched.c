@@ -28,6 +28,7 @@
 #include <timeslicing.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+ZASSERT_MODULE(KERNEL);
 
 /* pending_current is owned by timeslicing.c; sleep.c also accesses it */
 #if defined(CONFIG_SWAP_NONATOMIC) && defined(CONFIG_TIMESLICING)
@@ -99,7 +100,7 @@ static ALWAYS_INLINE void update_cache(int preempt_ok)
 static inline void ready_thread(struct k_thread *thread)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(thread));
+	ZASSERT(sys_cache_is_mem_coherent(thread));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	/* If thread is queued already, do not try and added it to the
@@ -188,7 +189,7 @@ void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 				key = z_sched_spinlock_lock();
 			}
 			z_swap_locked(key);
-			__ASSERT(!terminate, "aborted _current back from dead");
+			ZASSERT(!terminate, "aborted _current back from dead");
 		} else {
 			z_sched_spinlock_unlock(key);
 		}
@@ -261,7 +262,7 @@ void z_sched_yield(void)
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
 	/* A thread must not already be on a wait queue when added to a new one. */
-	__ASSERT_NO_MSG(thread->base.pended_on == NULL);
+	ZASSERT(thread->base.pended_on == NULL);
 
 	unready_thread(thread);
 	z_mark_thread_as_pending(thread);
@@ -281,7 +282,7 @@ static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 			k_timeout_t timeout)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(wait_q == NULL || sys_cache_is_mem_coherent(wait_q));
+	ZASSERT(wait_q == NULL || sys_cache_is_mem_coherent(wait_q));
 #endif /* CONFIG_KERNEL_COHERENCE */
 	add_to_waitq_locked(thread, wait_q);
 	z_add_thread_timeout(thread, timeout);
@@ -290,7 +291,7 @@ static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout)
 {
-	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
+	ZASSERT(thread == _current || is_thread_dummy(thread));
 	Z_SCHED_SPINLOCK {
 		pend_locked(thread, wait_q, timeout);
 	}
@@ -353,14 +354,14 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	 * #111518. Placed first so the refusal performs no side effect.
 	 */
 	if (arch_is_in_isr()) {
-		__ASSERT(false, "blocking pend from ISR context");
+		ZASSERT(false, "blocking pend from ISR context");
 		k_panic();
 	}
 
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
-	__ASSERT_NO_MSG((sizeof(struct k_spinlock) == 0) || !z_is_sched_spinlock(lock));
+	ZASSERT((sizeof(struct k_spinlock) == 0) || !z_is_sched_spinlock(lock));
 
 	/* We do a "lock swap" prior to calling z_swap(), such that
 	 * the caller's lock gets released as desired.  But we ensure
