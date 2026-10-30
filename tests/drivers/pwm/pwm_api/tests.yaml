@@ -17,6 +17,7 @@ tests:
       - platform:frdm_ke17z/mke17z7:DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_pwm.overlay"
       - platform:frdm_ke17z512/mke17z9:DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_pwm.overlay"
       - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:DTC_OVERLAY_FILE="boards/mimxrt700_evk_mimxrt798s_cm33_cpu0_flexio_pwm.overlay"
+      - platform:frdm_imxrt700/mimxrt798s/cm33_cpu0:DTC_OVERLAY_FILE="boards/frdm_imxrt700_mimxrt798s_cm33_cpu0_flexio_pwm.overlay"
       - platform:mimxrt1180_evk/mimxrt1189/cm33:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
       - platform:mimxrt1180_evk/mimxrt1189/cm7:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
       - platform:frdm_mcxa366/mcxa366:DTC_OVERLAY_FILE="boards/frdm_mcxa366_flexio_pwm.overlay"
@@ -31,6 +32,7 @@ tests:
       - frdm_ke17z
       - frdm_ke17z512
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - frdm_imxrt700/mimxrt798s/cm33_cpu0
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
       - frdm_mcxa366/mcxa366
@@ -60,6 +62,13 @@ tests:
       - frdm_mcxn947/mcxn947/cpu0/qspi
       - mcx_n9xx_evk/mcxn947/cpu0
       - mcx_n9xx_evk/mcxn947/cpu0/qspi
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.frdm_imxrt700_sctimer:
+    extra_args: DTC_OVERLAY_FILE="boards/frdm_imxrt700_mimxrt798s_cm33_cpu0_sctimer.overlay"
+    extra_configs:
+      - CONFIG_DEFAULT_PWM_PORT=2
+    platform_allow:
+      - frdm_imxrt700/mimxrt798s/cm33_cpu0
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.native_sim:
     platform_allow:
