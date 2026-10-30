@@ -43,7 +43,8 @@
 		pwm-led2 = &green_pwm_led_2;
 		pwm-led3 = &green_pwm_led_3;
 		rtc = &rtc;
-		spi-flash0 = &is25lp01gj;
+		spi-flash0 = &ext_flash_ctrl;
+		ext-nor0 = &ext_flash_ctrl;
 		sw0 = &btn0;
 		sw1 = &btn1;
 		sw2 = &btn2;
@@ -359,21 +360,37 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &quadspi {
+	compatible = "st,stm32-qspi-controller";
+	clock-names = "qspix";
+	clock-frequency = <DT_FREQ_M(72)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,cs-high-time = <4>;
 	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_ncs_pb10
 		     &quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9
 		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pf6>;
 	pinctrl-names = "default";
-	flash-id = <1>;
 	status = "okay";
 
-	is25lp01gj: qspi-nor-flash@0 {
-		compatible = "st,stm32-qspi-nor";
+	ext_flash_ctrl: nor-flash-controller@0 {
+		compatible = "jedec,nor";
 		reg = <0>;
-		size = <DT_SIZE_M(1024)>; /* 1Gb = 128MB */
-		qspi-max-frequency = <DT_FREQ_M(72)>;
-		cs-high-time = <4>; /* >= 50 ns */
-		spi-bus-width = <4>;
-		reset-cmd;
+		size = <DT_SIZE_M(1024)>; /* 1Gb = 128MB, IS25LP01GJ */
+		sfdp-bfp = [e5 20 fb ff ff ff ff 3f
+			    44 eb 08 6b 08 3b 80 bb
+			    fe ff ff ff ff ff 00 ff
+			    ff ff 44 eb 0c 20 0f 52
+			    10 d8 00 ff 35 32 a1 00
+			    85 a2 0c e1 ec 83 19 4c
+			    7a 75 7a 75 f7 a4 d5 5c
+			    4a d2 2c ff e1 30 fa a9];
+		sfdp-ff84 = [ff ef ff ff 21 5c dc ff];
+		mspi-max-frequency = <DT_FREQ_M(72)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+		use-4byte-addressing;
+		initial-soft-reset;
+		t-reset-recovery = <35000>;
 
 		partitions {
 			compatible = "fixed-partitions";
