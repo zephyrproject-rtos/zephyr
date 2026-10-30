@@ -212,9 +212,18 @@ union tcp_endpoint {
 #define NET_TCP_MSS_SIZE          4
 #define NET_TCP_WINDOW_SCALE_SIZE 3
 
+/* Largest window scale shift count, RFC 7323 section 2.3 */
+#define NET_TCP_MAX_WINDOW_SHIFT 14U
+
+/* Largest send or receive window this TCP can use */
+#define NET_TCP_MAX_WINDOW						\
+	(IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE) ?			\
+	 ((uint32_t)UINT16_MAX << NET_TCP_MAX_WINDOW_SHIFT) :		\
+	 (uint32_t)UINT16_MAX)
+
 struct tcp_options {
 	uint16_t mss;
-	uint16_t window;
+	uint8_t wnd_shift;
 	bool mss_found : 1;
 	bool wnd_found : 1;
 	bool sack_perm_found : 1;
@@ -311,7 +320,17 @@ struct tcp { /* TCP connection */
 	uint32_t recv_win;
 	uint32_t send_win_max;
 	uint32_t send_win;
+	/* Right edge of the receive window last advertised, used when the
+	 * receive window is scaled.
+	 */
+	uint32_t recv_adv_edge;
 	uint16_t recv_since_ack;
+	/* Window scale shift counts: send applies to the peer's window,
+	 * recv to the window we advertise (Snd.Wind.Shift and Rcv.Wind.Shift
+	 * of RFC 7323).
+	 */
+	uint8_t send_win_shift;
+	uint8_t recv_win_shift;
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
 	uint16_t rto;
 #endif
@@ -333,6 +352,8 @@ struct tcp { /* TCP connection */
 	bool rst_received : 1;
 	/* Both ends offered SACK during the handshake. */
 	bool sack_perm : 1;
+	/* Both ends offered window scaling during the handshake. */
+	bool win_scale : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
