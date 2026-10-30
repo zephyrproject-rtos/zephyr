@@ -1,0 +1,68 @@
+# ADIS16607 6-DoF IMU driver
+#
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADIS16607
+	bool "ADIS16607 6-DoF IMU (accelerometer + gyroscope)"
+	default y
+	depends on DT_HAS_ADI_ADIS16607_2_ENABLED || \
+		DT_HAS_ADI_ADIS16607_3_ENABLED
+	select SPI
+	help
+	  Enable driver for the Analog Devices ADIS16607 family of
+	  6-degrees-of-freedom IMUs (+/-40 g accelerometer, selectable
+	  gyroscope full scale: +/-450 or +/-2000 deg/s).
+
+	  The device uses an SPI half-duplex protocol that differs from
+	  standard ADIS devices.
+
+if ADIS16607
+
+choice ADIS16607_TRIGGER_MODE
+	prompt "Trigger mode"
+	default ADIS16607_TRIGGER_NONE
+	help
+	  Select how the driver responds to data-ready interrupts.
+
+config ADIS16607_TRIGGER_NONE
+	bool "No trigger"
+	help
+	  Sensor data is fetched synchronously on demand via sensor_sample_fetch().
+
+config ADIS16607_TRIGGER_GLOBAL_THREAD
+	bool "Global system workqueue"
+	depends on GPIO
+	select ADIS16607_TRIGGER
+	help
+	  Data-ready interrupt handling runs in the global system workqueue.
+	  Lower memory overhead than the own-thread option.
+
+config ADIS16607_TRIGGER_OWN_THREAD
+	bool "Dedicated driver thread"
+	depends on GPIO
+	select ADIS16607_TRIGGER
+	help
+	  Data-ready interrupt handling runs in a dedicated kernel thread.
+	  Provides lower latency at the cost of a thread stack.
+
+endchoice
+
+config ADIS16607_TRIGGER
+	bool
+
+config ADIS16607_THREAD_PRIORITY
+	int "Interrupt thread priority"
+	depends on ADIS16607_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of the kernel thread used to handle data-ready interrupts.
+
+config ADIS16607_THREAD_STACK_SIZE
+	int "Interrupt thread stack size (bytes)"
+	depends on ADIS16607_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size for the dedicated interrupt-handling thread.
+
+endif # ADIS16607
