@@ -5,6 +5,7 @@
  */
 #include <string.h>
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/sys/bitmap.h>
 #include <common/bt_str.h>
 #include "net.h"
 #include "access.h"
@@ -64,14 +65,7 @@ static inline uint32_t max_chunk_count(const struct bt_mesh_blob_srv *srv)
 
 static inline uint32_t missing_chunks(const struct bt_mesh_blob_block *block)
 {
-	int i;
-	uint32_t count = 0;
-
-	for (i = 0; i < ARRAY_SIZE(block->missing); ++i) {
-		count += POPCOUNT(block->missing[i]);
-	}
-
-	return count;
+	return sys_bitmap_count_set(block->missing, sizeof(block->missing) * BITS_PER_BYTE);
 }
 
 static void store_state(const struct bt_mesh_blob_srv *srv)
@@ -186,8 +180,8 @@ static void block_report(struct bt_mesh_blob_srv *srv)
 		.send_ttl = srv->state.ttl,
 		.addr = srv->state.cli,
 	};
+	size_t chunk;
 	int count;
-	int i;
 
 	LOG_DBG("rx BLOB Timeout Timer: %i", k_work_delayable_is_pending(&srv->rx_timeout));
 
@@ -197,11 +191,13 @@ static void block_report(struct bt_mesh_blob_srv *srv)
 
 	count = pull_req_max(srv);
 
-	for (i = 0; i < srv->block.chunk_count && count; ++i) {
-		if (blob_chunk_missing_get(srv->block.missing, i)) {
-			buf_chunk_index_add(&buf, i);
-			count--;
+	SYS_BITMAP_FOR_EACH_SET_BIT(srv->block.missing, srv->block.chunk_count, chunk) {
+		if (count == 0) {
+			break;
 		}
+
+		buf_chunk_index_add(&buf, chunk);
+		count--;
 	}
 
 	(void)bt_mesh_model_send(srv->mod, &ctx, &buf, &report_cb, srv);
@@ -359,7 +355,6 @@ static void block_status_rsp(struct bt_mesh_blob_srv *srv,
 {
 	enum bt_mesh_blob_chunks_missing format;
 	uint32_t missing;
-	int i;
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_BLOCK_STATUS,
 				 BLOB_BLOCK_STATUS_MSG_MAXLEN);
@@ -401,13 +396,16 @@ static void block_status_rsp(struct bt_mesh_blob_srv *srv,
 
 	} else if (format == BT_MESH_BLOB_CHUNKS_MISSING_ENCODED) {
 		int count = pull_req_max(srv);
+		size_t chunk;
 
-		for (i = 0; (i < srv->block.chunk_count) && count; ++i) {
-			if (blob_chunk_missing_get(srv->block.missing, i)) {
-				LOG_DBG("Missing %u", i);
-				buf_chunk_index_add(&buf, i);
-				count--;
+		SYS_BITMAP_FOR_EACH_SET_BIT(srv->block.missing, srv->block.chunk_count, chunk) {
+			if (count == 0) {
+				break;
 			}
+
+			LOG_DBG("Missing %zu", chunk);
+			buf_chunk_index_add(&buf, chunk);
+			count--;
 		}
 	}
 
@@ -765,7 +763,7 @@ static int handle_chunk(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 		k_work_reschedule(&srv->pull.report, REPORT_TIMER_TIMEOUT);
 	}
 
-	if (!blob_chunk_missing_get(srv->block.missing, idx)) {
+	if (!sys_bitmap_test_bit(srv->block.missing, idx)) {
 		LOG_DBG("Duplicate chunk %u", idx);
 		return -EALREADY;
 	}
@@ -775,7 +773,7 @@ static int handle_chunk(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 		return err;
 	}
 
-	blob_chunk_missing_set(srv->block.missing, idx, false);
+	sys_bitmap_clear_bit(srv->block.missing, idx);
 	if (missing_chunks(&srv->block)) {
 		return 0;
 	}

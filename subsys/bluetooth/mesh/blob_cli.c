@@ -5,6 +5,7 @@
  */
 #include <string.h>
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/sys/bitmap.h>
 #include <common/bt_str.h>
 #include "mesh.h"
 #include "blob.h"
@@ -193,13 +194,7 @@ static uint16_t next_missing_chunk(struct bt_mesh_blob_cli *cli,
 				   const uint8_t *missing_chunks,
 				   uint16_t idx)
 {
-	do {
-		if (blob_chunk_missing_get(missing_chunks, idx)) {
-			break;
-		}
-	} while (++idx < cli->block.chunk_count);
-
-	return idx;
+	return sys_bitmap_find_next_set(missing_chunks, cli->block.chunk_count, idx);
 }
 
 /* Used in Pull mode to collect all missing chunks from each target in cli->block.missing. */
@@ -210,14 +205,14 @@ static void update_missing_chunks(struct bt_mesh_blob_cli *cli)
 	memset(cli->block.missing, 0, sizeof(cli->block.missing));
 
 	TARGETS_FOR_EACH(cli, target) {
+		size_t idx;
+
 		if (target->procedure_complete || target->timedout) {
 			continue;
 		}
 
-		for (size_t idx = 0; idx < cli->block.chunk_count; idx++) {
-			bool missing = blob_chunk_missing_get(cli->block.missing, idx) ||
-				       blob_chunk_missing_get(target->pull->missing, idx);
-			blob_chunk_missing_set(cli->block.missing, idx, missing);
+		SYS_BITMAP_FOR_EACH_SET_BIT(target->pull->missing, cli->block.chunk_count, idx) {
+			sys_bitmap_set_bit(cli->block.missing, idx);
 		}
 	}
 }
@@ -371,7 +366,7 @@ static struct bt_mesh_blob_target *next_target(struct bt_mesh_blob_cli *cli,
 
 		if (SENDING_CHUNKS_IN_PULL_MODE(cli) &&
 		    (k_uptime_get() < (*current)->pull->block_report_timestamp ||
-		     !blob_chunk_missing_get((*current)->pull->missing, cli->chunk_idx))) {
+		     !sys_bitmap_test_bit((*current)->pull->missing, cli->chunk_idx))) {
 			/* Skip targets that didn't time out or timed out, but confirmed
 			 * the currently transmitted chunk (cli->chunk_idx).
 			 */
@@ -981,7 +976,7 @@ static void chunk_send_end(struct bt_mesh_blob_cli *cli)
 	 * sent chunk has been received.
 	 */
 	if (cli->xfer->mode == BT_MESH_BLOB_XFER_MODE_PUSH) {
-		blob_chunk_missing_set(cli->block.missing, cli->chunk_idx, false);
+		sys_bitmap_clear_bit(cli->block.missing, cli->chunk_idx);
 	}
 
 	cli->chunk_idx = next_missing_chunk(cli, cli->block.missing, cli->chunk_idx + 1);
@@ -1339,7 +1334,7 @@ static int handle_block_report(const struct bt_mesh_model *mod, struct bt_mesh_m
 			return idx;
 		}
 
-		blob_chunk_missing_set(status.block.missing, idx, true);
+		sys_bitmap_set_bit(status.block.missing, idx);
 	}
 
 	/* If all chunks were already confirmed by this target, Send Data State Machine is in Final
@@ -1431,7 +1426,7 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
 
 			LOG_DBG("Missing %d", idx);
 
-			blob_chunk_missing_set(status.block.missing, idx, true);
+			sys_bitmap_set_bit(status.block.missing, idx);
 		}
 		break;
 	}
