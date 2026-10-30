@@ -26,13 +26,9 @@
 #include <driverlib/ull.h>
 #include <driverlib/pmctl.h>
 
-/* Configuring TI Power module to not use its policy function (we use Zephyr's
- * instead), and disable oscillator calibration functionality for now.
- */
-const PowerCC23X0_Config PowerCC23X0_config = {
-	.policyInitFxn = NULL,
-	.policyFxn = NULL,
-};
+/* The range of pins available on this device */
+const uint_least8_t GPIO_pinLowerBound;
+const uint_least8_t GPIO_pinUpperBound = 25;
 
 #ifdef CONFIG_PM
 
@@ -232,6 +228,12 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 static int power_initialize(void)
 {
 	Power_init();
+
+	/*
+	 * Explicitly disable any SimplelLink policy
+	 * since everything is handled by Zephyr
+	 */
+	Power_disablePolicy();
 
 	if (DT_HAS_COMPAT_STATUS_OKAY(ti_cc23x0_lf_xosc)) {
 		PowerLPF3_selectLFXT();
