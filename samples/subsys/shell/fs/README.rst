@@ -184,6 +184,16 @@ Optionally a offset in the file can be given.
 
   fs write <path> [-o <offset>] <hex number> ...
 
+Write Text
+----------
+
+Write one or more strings to a file.
+Optionally append to an existing file.
+
+.. code-block:: console
+
+  fs write_text <path> [-a] <string> [<string> ...]
+
 Read
 ----
 
