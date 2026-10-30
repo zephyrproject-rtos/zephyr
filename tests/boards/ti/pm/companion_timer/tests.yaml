@@ -1,0 +1,7 @@
+tests:
+  boards.ti.pm.companion_timer:
+    tags: pm
+    harness: ztest
+    platform_allow:
+      - lp_mspm0g3519/mspm0g3519
+    timeout: 10
