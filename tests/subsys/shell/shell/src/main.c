@@ -117,13 +117,13 @@ ZTEST(sh, test_cmd_shell)
 {
 	test_shell_execute_cmd("shell -h", 1);
 	test_shell_execute_cmd("shell --help", 1);
-	test_shell_execute_cmd("shell dummy", 1);
-	test_shell_execute_cmd("shell dummy dummy", 1);
+	test_shell_execute_cmd("shell dummy", -ENOEXEC);
+	test_shell_execute_cmd("shell dummy dummy", -ENOEXEC);
 
 	/* subcommand: backspace_mode */
 	test_shell_execute_cmd("shell backspace_mode -h", 1);
 	test_shell_execute_cmd("shell backspace_mode --help", 1);
-	test_shell_execute_cmd("shell backspace_mode dummy", 1);
+	test_shell_execute_cmd("shell backspace_mode dummy", -ENOEXEC);
 
 	test_shell_execute_cmd("shell backspace_mode backspace", 0);
 	test_shell_execute_cmd("shell backspace_mode backspace -h", 1);
@@ -142,8 +142,8 @@ ZTEST(sh, test_cmd_shell)
 	/* subcommand: colors */
 	test_shell_execute_cmd("shell colors -h", 1);
 	test_shell_execute_cmd("shell colors --help", 1);
-	test_shell_execute_cmd("shell colors dummy", 1);
-	test_shell_execute_cmd("shell colors dummy dummy", 1);
+	test_shell_execute_cmd("shell colors dummy", -ENOEXEC);
+	test_shell_execute_cmd("shell colors dummy dummy", -ENOEXEC);
 
 	test_shell_execute_cmd("shell colors off", 0);
 	test_shell_execute_cmd("shell colors off -h", 1);
@@ -180,8 +180,8 @@ ZTEST(sh, test_cmd_shell)
 	test_shell_execute_cmd("shell stats", 1);
 	test_shell_execute_cmd("shell stats -h", 1);
 	test_shell_execute_cmd("shell stats --help", 1);
-	test_shell_execute_cmd("shell stats dummy", 1);
-	test_shell_execute_cmd("shell stats dummy dummy", 1);
+	test_shell_execute_cmd("shell stats dummy", -ENOEXEC);
+	test_shell_execute_cmd("shell stats dummy dummy", -ENOEXEC);
 
 	test_shell_execute_cmd("shell stats reset", 0);
 	test_shell_execute_cmd("shell stats reset -h", 1);
@@ -468,7 +468,7 @@ ZTEST(sh, test_set_root_cmd)
 	err = shell_set_root_cmd("shell");
 	zassert_equal(err, 0, "Unexpected error %d", err);
 
-	test_shell_execute_cmd("shell colors", 1);
+	test_shell_execute_cmd("shell colors", -ENOEXEC);
 	test_shell_execute_cmd("colors on", 0);
 
 	err = shell_set_root_cmd(NULL);
