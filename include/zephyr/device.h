@@ -498,7 +498,7 @@ struct device_state {
 	/** Indicates the device initialization function has been
 	 * invoked and succeeded.
 	 */
-	bool initialized : 1;
+	bool initialized;
 };
 
 struct pm_device_base;
