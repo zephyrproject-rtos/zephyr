@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/thread.h>
 
 #include "net_private.h"
+#include "ipv6.h"
 #include "openthread_utils.h"
 
 #define ALOC16_MASK 0xfc
@@ -100,6 +101,46 @@ void pkt_list_remove_last(struct openthread_context *context)
 	}
 
 	context->pkt_list_full = 0U;
+}
+
+void update_ml_prefix_onlink(struct openthread_context *context)
+{
+	static struct net_in6_addr onlink_prefix;
+	static bool onlink_prefix_set;
+	const otMeshLocalPrefix *ml_prefix =
+				otThreadGetMeshLocalPrefix(openthread_get_default_instance());
+	struct net_in6_addr prefix = { 0 };
+
+	if (ml_prefix == NULL) {
+		return;
+	}
+
+	memcpy(prefix.s6_addr, ml_prefix->m8, sizeof(ml_prefix->m8));
+
+	if (onlink_prefix_set) {
+		if (net_ipv6_addr_cmp(&prefix, &onlink_prefix)) {
+			return;
+		}
+
+		(void)net_if_ipv6_prefix_rm(context->iface, &onlink_prefix,
+					    OT_IP6_PREFIX_BITSIZE);
+		onlink_prefix_set = false;
+	}
+
+	/* The mesh-local prefix is on-link on the OpenThread interface. Without
+	 * it, the Zephyr stack has no route for mesh-local destinations and, on
+	 * a device with another interface providing a default router (e.g. a
+	 * Border Router), sends such packets through that interface instead.
+	 */
+	if (net_if_ipv6_prefix_add(context->iface, &prefix, OT_IP6_PREFIX_BITSIZE,
+				   NET_IPV6_ND_INFINITE_LIFETIME) == NULL) {
+		NET_WARN("Cannot add mesh-local prefix %s/%d",
+			net_sprint_ipv6_addr(&prefix), OT_IP6_PREFIX_BITSIZE);
+		return;
+	}
+
+	net_ipaddr_copy(&onlink_prefix, &prefix);
+	onlink_prefix_set = true;
 }
 
 void add_ipv6_addr_to_zephyr(struct openthread_context *context)
