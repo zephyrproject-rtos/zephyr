@@ -54,100 +54,111 @@ static uint32_t get_wlen(const union mpsc_pbuf_generic *packet)
 }
 
 static void notify_drop(const struct mpsc_pbuf_buffer *buffer,
-			const union mpsc_pbuf_generic *packet)
-{
-}
+			const union mpsc_pbuf_generic *packet);
 
 static const struct mpsc_pbuf_buffer_config config = {
 	.buf = dbuf,
 	.size = ARRAY_SIZE(dbuf),
 	.notify_drop = notify_drop,
 	.get_wlen = get_wlen,
-	.flags = 0
+	.flags = MPSC_PBUF_MODE_OVERWRITE
 };
+
+enum uart_state {
+	UART_STATE_OFF,
+	UART_STATE_IDLE,
+	UART_STATE_ACTIVE,
+};
+
 static const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
-static struct mpsc_pbuf_buffer buf;
-static atomic_t active_cnt; /* Counts number of buffered messages. */
+static struct mpsc_pbuf_buffer pbuf;
 static atomic_t dropped; /* Counter storing number of dropped messages to be reported. */
-static atomic_t adding_drop; /* Indicates that drop report message is being added. */
 static volatile bool in_panic; /* Indicates that logging is in panic state. */
+static atomic_t uart_state;
 static bool dropped_notify; /* Indicate that drop report message should be added. */
+static struct log_dict_output_dropped_msg_t drop_msg;
+static const uint8_t *curr_tx_buf;
+static size_t curr_tx_len;
 
-static void tx(void);
-static atomic_val_t add_drop_msg(void);
 
 static void timeout(struct k_timer *timer)
 {
-	if (dropped != 0) {
-		dropped_notify = true;
-		if (add_drop_msg() == 0) {
-			tx();
-		}
-	}
+	dropped_notify = true;
 }
 
 K_TIMER_DEFINE(dropped_timer, timeout, NULL);
 
-/* Attempts to get pending message and initiate UART transfer. In panic it polls
- * out the message in the blocking mode.
- */
-static void tx(void)
+static void notify_drop(const struct mpsc_pbuf_buffer *buffer,
+			const union mpsc_pbuf_generic *packet)
 {
-	union log_frontend_pkt generic_pkt;
-	struct log_frontend_uart_generic_pkt *pkt;
+	if (atomic_inc(&dropped) == 0) {
+		k_timeout_t t = K_MSEC(CONFIG_LOG_FRONTEND_DICT_UART_DROPPED_NOTIFY_PERIOD);
 
-	if (!IS_ENABLED(CONFIG_UART_ASYNC_API) && !in_panic) {
-		uart_irq_tx_enable(uart_dev);
+		k_timer_start(&dropped_timer, t, K_NO_WAIT);
+	}
+}
+
+/* Called when UART TX is done. */
+static void on_tx_done(const uint8_t *buf)
+{
+	if (curr_tx_buf != buf) {
 		return;
 	}
 
-	generic_pkt.ro_pkt = mpsc_pbuf_claim(&buf);
-	pkt = generic_pkt.generic;
-	__ASSERT_NO_MSG(pkt == NULL);
+	union log_frontend_pkt generic_pkt;
 
-	size_t len = sizeof(uint32_t) * pkt->hdr.len - pkt->hdr.noff -
+	generic_pkt.generic = CONTAINER_OF(buf, struct log_frontend_uart_generic_pkt, data[0]);
+	curr_tx_buf = NULL;
+
+	mpsc_pbuf_free(&pbuf, generic_pkt.ro_pkt);
+}
+
+/* Attempts to get pending message and initiate UART transfer. In panic it polls
+ * out the message in the blocking mode.
+ */
+static bool tx(const uint8_t *data, size_t in_len)
+{
+	union log_frontend_pkt generic_pkt;
+	struct log_frontend_uart_generic_pkt *pkt;
+	const uint8_t *buf;
+	size_t len;
+
+	if (!IS_ENABLED(CONFIG_UART_ASYNC_API) && !in_panic) {
+		curr_tx_buf = data;
+		curr_tx_len = in_len;
+		uart_irq_tx_enable(uart_dev);
+		return true;
+	}
+
+	if (data == NULL) {
+		generic_pkt.ro_pkt = mpsc_pbuf_claim(&pbuf);
+		pkt = generic_pkt.generic;
+		if (pkt == NULL) {
+			return false;
+		}
+
+		len = sizeof(uint32_t) * pkt->hdr.len - pkt->hdr.noff -
 			sizeof(struct log_frontend_uart_pkt_hdr);
+		buf = pkt->data;
+		curr_tx_buf = buf;
+	} else {
+		len = in_len;
+		buf = data;
+	}
 
 	if (in_panic) {
 		for (int i = 0; i < len; i++) {
-			uart_poll_out(uart_dev, pkt->data[i]);
+			uart_poll_out(uart_dev, buf[i]);
 		}
-		atomic_dec(&active_cnt);
+		on_tx_done(buf);
 	} else {
-		int err = uart_tx(uart_dev, pkt->data, len, SYS_FOREVER_US);
+		int err = uart_tx(uart_dev, buf, len, SYS_FOREVER_US);
 
 		(void)err;
 		__ASSERT_NO_MSG(err == 0);
 	}
-}
-
-/* Add drop message and reset drop message count. */
-static atomic_val_t add_drop_msg(void)
-{
-	union log_frontend_pkt generic_pkt;
-	struct log_frontend_uart_dropped_pkt *pkt;
-	size_t len = sizeof(struct log_frontend_uart_dropped_pkt);
-	size_t wlen = DIV_ROUND_UP(len, sizeof(uint32_t));
-
-	if (atomic_cas(&adding_drop, 0, 1) == false) {
-		return 1;
-	}
-
-	generic_pkt.rw_pkt = mpsc_pbuf_alloc(&buf, wlen, K_NO_WAIT);
-	pkt = generic_pkt.dropped;
-	if (pkt == NULL) {
-		return 1;
-	}
-
-	dropped_notify = false;
-	pkt->hdr.len = wlen;
-	pkt->hdr.noff = sizeof(uint32_t) * wlen - len;
-	pkt->data.type = MSG_DROPPED_MSG;
-	pkt->data.num_dropped_messages = atomic_set(&dropped, 0);
-	mpsc_pbuf_commit(&buf, generic_pkt.rw_pkt);
-
-	return atomic_inc(&active_cnt);
+	return true;
 }
 
 static void uart_callback(const struct device *dev,
@@ -157,27 +168,19 @@ static void uart_callback(const struct device *dev,
 	switch (evt->type) {
 	case UART_TX_DONE:
 	{
-		union log_frontend_pkt generic_pkt;
-		struct log_frontend_uart_pkt_hdr *hdr;
-
-		hdr = (struct log_frontend_uart_pkt_hdr *)evt->data.tx.buf;
-		generic_pkt.generic = CONTAINER_OF(hdr, struct log_frontend_uart_generic_pkt, hdr);
-
-		mpsc_pbuf_free(&buf, generic_pkt.ro_pkt);
-		atomic_val_t rem_pkts = atomic_dec(&active_cnt);
+		on_tx_done(evt->data.tx.buf);
 
 		if (dropped_notify) {
-			rem_pkts = add_drop_msg();
+			drop_msg.num_dropped_messages = atomic_set(&dropped, 0);
+			dropped_notify = false;
+			tx((const uint8_t *)&drop_msg, sizeof(drop_msg));
+		} else {
+			if (tx(NULL, 0) == false) {
+				atomic_set(&uart_state, UART_STATE_IDLE);
+			}
 		}
-
-		if (rem_pkts > 1) {
-			tx();
-		}
-	}
-	break;
-
-	case UART_TX_ABORTED:
 		break;
+	}
 	default:
 		break;
 	}
@@ -190,64 +193,74 @@ static void uart_isr_callback(const struct device *dev, void *user_data)
 
 	uart_irq_update(dev);
 
-	if (uart_irq_tx_ready(dev)) {
-		if (isr_pkt.ro_pkt == NULL) {
-			isr_pkt.ro_pkt = mpsc_pbuf_claim(&buf);
-			__ASSERT_NO_MSG(isr_pkt.ro_pkt != NULL);
-
-			curr_offset = 0;
-		}
-
+	if (!uart_irq_tx_ready(dev)) {
+		return;
+	}
+	if (curr_tx_buf != NULL && curr_tx_len == curr_offset) {
+		curr_tx_buf = NULL;
+		curr_tx_len = 0;
+		curr_offset = 0;
 		if (isr_pkt.ro_pkt != NULL) {
-			struct log_frontend_uart_generic_pkt *pkt = isr_pkt.generic;
-			size_t len = sizeof(uint32_t) * pkt->hdr.len - pkt->hdr.noff -
-				sizeof(struct log_frontend_uart_pkt_hdr);
-			size_t rem = len - curr_offset;
-
-			if (rem > 0) {
-				uint8_t *d = &pkt->data[curr_offset];
-
-				curr_offset += uart_fifo_fill(dev, d, rem);
-			} else {
-				mpsc_pbuf_free(&buf, isr_pkt.ro_pkt);
-				isr_pkt.ro_pkt = NULL;
-
-				static struct k_spinlock lock;
-				k_spinlock_key_t key = k_spin_lock(&lock);
-
-				active_cnt--;
-				if (active_cnt == 0) {
-					uart_irq_tx_disable(dev);
-				}
-				k_spin_unlock(&lock, key);
-			}
+			mpsc_pbuf_free(&pbuf, isr_pkt.ro_pkt);
+			isr_pkt.ro_pkt = NULL;
 		}
 	}
+
+	if (curr_tx_buf == NULL) {
+		if (dropped_notify) {
+			drop_msg.num_dropped_messages = atomic_set(&dropped, 0);
+			dropped_notify = false;
+			curr_tx_buf = (const uint8_t *)&drop_msg;
+			curr_tx_len = sizeof(drop_msg);
+		} else if (isr_pkt.ro_pkt == NULL) {
+			isr_pkt.ro_pkt = mpsc_pbuf_claim(&pbuf);
+			if (isr_pkt.ro_pkt == NULL) {
+				uart_irq_tx_disable(dev);
+				atomic_set(&uart_state, UART_STATE_IDLE);
+				return;
+			}
+
+			struct log_frontend_uart_generic_pkt *pkt = isr_pkt.generic;
+
+			curr_tx_len = sizeof(uint32_t) * pkt->hdr.len - pkt->hdr.noff -
+				sizeof(struct log_frontend_uart_pkt_hdr);
+			curr_tx_buf = pkt->data;
+		} else {
+			/* Should not happen */
+			__ASSERT_NO_MSG(false);
+		}
+	}
+
+	size_t rem = curr_tx_len - curr_offset;
+
+	curr_offset += uart_fifo_fill(dev, &curr_tx_buf[curr_offset], rem);
 }
 
 static inline void hdr_fill(struct log_dict_output_normal_msg_hdr_t *hdr,
 			    const void *source,
-			    const struct log_msg_desc desc)
+			    const struct log_msg_desc desc, log_timestamp_t timestamp)
 {
+	uint32_t source_id = IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && desc.domain != 0 ?
+		(uintptr_t)source : (source != NULL) ? log_source_id(source) : 0U;
 	hdr->type = MSG_NORMAL;
 	hdr->domain = desc.domain;
 	hdr->level = desc.level;
 	hdr->package_len = desc.package_len;
 	hdr->data_len = desc.data_len;
-	hdr->timestamp = z_log_timestamp();
-	hdr->source = (source != NULL) ? log_source_id(source) : 0U;
+	hdr->timestamp = timestamp;
+	hdr->source = source_id;
 }
 
 /* Handle logging message in synchronous manner, in panic mode. */
 static void sync_msg(const void *source,
 		     const struct log_msg_desc desc,
-		     uint8_t *package, const void *data)
+		     uint8_t *package, const void *data, log_timestamp_t timestamp)
 {
 	struct log_dict_output_normal_msg_hdr_t hdr;
 	uint8_t *datas[3] = {(uint8_t *)&hdr, package, (uint8_t *)data};
 	size_t len[3] = {sizeof(hdr), desc.package_len, desc.data_len};
 
-	hdr_fill(&hdr, source, desc);
+	hdr_fill(&hdr, source, desc, timestamp);
 
 	for (int i = 0; i < ARRAY_SIZE(datas); i++) {
 		for (int j = 0; j < len[i]; j++) {
@@ -256,28 +269,31 @@ static void sync_msg(const void *source,
 	}
 }
 
-void log_frontend_msg(const void *source,
+static void log_frontend_msg_with_timestamp(const void *source,
 		      const struct log_msg_desc desc,
-		      uint8_t *package, const void *data)
+		      uint8_t *package, const void *data, log_timestamp_t timestamp)
 {
+	if (!mpsc_pbuf_is_init(&pbuf)) {
+		return;
+	}
+
 	uint16_t strl[4];
 	struct log_msg_desc outdesc = desc;
 	int plen = cbprintf_package_copy(package, desc.package_len, NULL, 0,
 					 CBPRINTF_PACKAGE_CONVERT_RW_STR,
 					 strl, ARRAY_SIZE(strl));
 	size_t dlen = desc.data_len;
-	bool dev_ready = device_is_ready(uart_dev);
 	size_t total_len = plen + dlen + sizeof(struct log_frontend_uart_pkt);
 	size_t total_wlen = DIV_ROUND_UP(total_len, sizeof(uint32_t));
 
 	if (in_panic) {
-		sync_msg(source, desc, package, data);
+		sync_msg(source, desc, package, data, timestamp);
 	}
 
 	union log_frontend_pkt generic_pkt;
 	struct log_frontend_uart_pkt *pkt;
 
-	generic_pkt.rw_pkt = mpsc_pbuf_alloc(&buf, total_wlen, K_NO_WAIT);
+	generic_pkt.rw_pkt = mpsc_pbuf_alloc(&pbuf, total_wlen, K_NO_WAIT);
 
 	pkt = generic_pkt.pkt;
 	if (pkt == NULL) {
@@ -289,66 +305,81 @@ void log_frontend_msg(const void *source,
 	pkt->hdr.len = total_wlen;
 	pkt->hdr.noff = sizeof(uint32_t) * total_wlen - total_len;
 	outdesc.package_len = plen;
-	hdr_fill(&pkt->data_hdr, source, outdesc);
+	hdr_fill(&pkt->data_hdr, source, outdesc, timestamp);
 
 	plen = cbprintf_package_copy(package, desc.package_len,
 				     pkt->data, plen,
 				     CBPRINTF_PACKAGE_CONVERT_RW_STR,
 				     strl, ARRAY_SIZE(strl));
-	if (plen < 0) {
-		/* error */
-	}
+	__ASSERT_NO_MSG(plen >= 0);
 
 	if (dlen != 0) {
 		memcpy(&pkt->data[plen], data, dlen);
 	}
 
-	mpsc_pbuf_commit(&buf, generic_pkt.rw_pkt);
+	mpsc_pbuf_commit(&pbuf, generic_pkt.rw_pkt);
 
-	if (dev_ready && (atomic_inc(&active_cnt) == 0)) {
-		tx();
+	if (atomic_cas(&uart_state, UART_STATE_IDLE, UART_STATE_ACTIVE) == true) {
+		if (tx(NULL, 0) == false) {
+			atomic_set(&uart_state, UART_STATE_IDLE);
+		}
 	}
+}
+
+void log_frontend_msg(const void *source,
+		      const struct log_msg_desc desc,
+		      uint8_t *package, const void *data)
+{
+	log_timestamp_t timestamp = IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
+		sys_clock_tick_get() : k_cycle_get_32();
+
+	log_frontend_msg_with_timestamp(source, desc, package, data, timestamp);
 }
 
 void log_frontend_panic(void)
 {
 	in_panic = true;
 
+	if (curr_tx_buf != NULL) {
+		on_tx_done(curr_tx_buf);
+	}
+
 	/* Flush all data */
-	while (atomic_get(&active_cnt) > 0) {
-		tx();
+	while (tx(NULL, 0) == true) {
 		/* empty */
 	}
 }
 
 void log_frontend_init(void)
 {
-	int err;
-
-	if (IS_ENABLED(CONFIG_UART_ASYNC_API)) {
-		err = uart_callback_set(uart_dev, uart_callback, NULL);
-	} else if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
-		uart_irq_callback_user_data_set(uart_dev, uart_isr_callback, NULL);
-		err = 0;
-	}
-
-	__ASSERT(err == 0, "Failed to set callback");
-	if (err < 0) {
-		return;
-	}
-
-	mpsc_pbuf_init(&buf, &config);
+	drop_msg.type = MSG_DROPPED_MSG;
+	mpsc_pbuf_init(&pbuf, &config);
 }
 
-/* Cannot be started in log_frontend_init because it is called before kernel is ready. */
-static int log_frontend_uart_start_timer(void)
+/* Cannot be started in log_frontend_init because it is called before UART is ready. */
+static int log_frontend_uart_init(void)
 {
-	k_timeout_t t = K_MSEC(CONFIG_LOG_FRONTEND_DICT_UART_DROPPED_NOTIFY_PERIOD);
+	int err;
+	static const uint8_t init_msg[] = LOG_DICT_BIN_SEP;
 
-	k_timer_start(&dropped_timer, t, t);
+	__ASSERT(device_is_ready(uart_dev), "UART device not ready");
+
+	if (IS_ENABLED(CONFIG_UART_ASYNC_API)) {
+		atomic_set(&uart_state, UART_STATE_ACTIVE);
+		err = uart_callback_set(uart_dev, uart_callback, NULL);
+		if (err < 0) {
+			return err;
+		}
+		return uart_tx(uart_dev, init_msg, sizeof(init_msg), SYS_FOREVER_US);
+	}
+
+	uart_irq_callback_user_data_set(uart_dev, uart_isr_callback, NULL);
+	for (int i = 0; i < sizeof(init_msg); i++) {
+		uart_poll_out(uart_dev, init_msg[i]);
+	}
+	atomic_set(&uart_state, UART_STATE_IDLE);
 
 	return 0;
 }
 
-SYS_INIT(log_frontend_uart_start_timer, POST_KERNEL,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(log_frontend_uart_init, PRE_KERNEL_1, UTIL_INC(UTIL_INC(CONFIG_SERIAL_INIT_PRIORITY)));
