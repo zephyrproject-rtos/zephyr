@@ -275,11 +275,11 @@
 #define MASK_SET(__val, __basename) (((__val) & __basename##_MASK) << __basename##_SHIFT)
 #define MASK_GET(__reg, __basename) (((__reg) >> __basename##_SHIFT) & __basename##_MASK)
 
+bool arm_gic_lpi_is_valid(uint32_t intid);
+
 #ifdef CONFIG_GIC_V3_ITS
 void its_rdist_map(void);
 void its_rdist_invall(void);
-
-extern atomic_t nlpi_intid;
 #endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTC_GICV3_PRIV_H_ */
