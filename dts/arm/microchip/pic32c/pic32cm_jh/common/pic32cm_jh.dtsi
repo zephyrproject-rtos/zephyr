@@ -157,13 +157,13 @@
 			low-power-mode;
 
 			porta-unsupported-pins = <0xf4000100>; /*8|26|28|29|30|31*/
-			porta-special-pins-1 = <0xb000000 0x4>; /*24|25|27*/
+			porta-eic-lines = [10 32 54 76 90 ba dc fe 10 32 54 76 dc f0 00 00];
 
 			portb-unsupported-pins = <0x20004300>; /*26|27|28|29*/
+			portb-eic-lines = [10 32 54 76 00 ba dc f0 10 32 54 76 98 ba 0c fe];
 
 			portc-supported-pins = <0xffef>; /*0|1|2|3|5|6|7|8|9|10|1|12|13|14|15*/
-			portc-special-pins-1 = <0xef 0x8>; /*0|1|2|3|5|6|7*/
-			portc-special-pins-2 = <0xff00 0x8>; /*8|9|10|1|12|13|14|15*/
+			portc-eic-lines = [98 ba d0 fe 10 32 54 76 00 00 00 00 00 00 00 00];
 		};
 
 		pinctrl: pinctrl@41000000 {

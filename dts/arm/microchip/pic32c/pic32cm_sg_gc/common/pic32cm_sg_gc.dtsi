@@ -145,6 +145,27 @@
 			status = "disabled";
 		};
 
+		eic: interrupt-controller@44020000 {
+			compatible = "microchip,eic-g1-intc";
+			reg = <0x44020000 0x44>;
+			interrupts = <16 0>, <17 0>, <18 0>, <19 0>,
+				     <20 0>, <21 0>, <22 0>, <23 0>,
+				     <24 0>, <25 0>, <26 0>, <27 0>,
+				     <28 0>, <29 0>, <30 0>, <31 0>;
+			interrupt-names = "extint-0", "extint-1", "extint-2", "extint-3",
+					  "extint-4", "extint-5", "extint-6", "extint-7",
+					  "extint-8", "extint-9", "extint-10", "extint-11",
+					  "extint-12", "extint-13", "extint-14", "extint-15";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_EIC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EIC>;
+			clock-names = "mclk", "gclk";
+			porta-eic-lines = [10 32 54 76 98 ba dc fe 10 32 04 00 00 00 00 00];
+			portb-eic-lines = [10 32 54 86 a9 cb e2 0f 21 00 00 00 00 00 00 00];
+			portc-eic-lines = [10 32 54 06 90 ba dc fe 10 32 00 00 00 00 00 00];
+			portd-eic-lines = [10 00 32 40 65 98 ba dc fe 10 02 00 00 00 00 00];
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@44800000 {
 			compatible = "microchip,port-g1-pinctrl";
 			reg = <0x44800000 0x200>;
