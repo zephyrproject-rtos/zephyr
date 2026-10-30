@@ -280,7 +280,7 @@ static int usbd_preallocate(struct usbd_context *const uds_ctx)
 	 * to not reallocate it on udc_disable()/udc_enable() cycles.
 	 */
 	if (uds_ctx->setup_buf == NULL) {
-		uds_ctx->setup_buf = udc_ctrl_setup_alloc(uds_ctx->dev);
+		uds_ctx->setup_buf = usbd_ep_ctrl_setup_alloc(uds_ctx->dev);
 	}
 
 	if (uds_ctx->setup_buf == NULL) {
