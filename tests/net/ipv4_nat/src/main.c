@@ -11,6 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
+
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -20,6 +23,9 @@
 
 #include "ipv4.h"
 #include "arp.h"
+#include "ipv4_nat_internal.h"
+#include "icmpv4.h"
+#include "net_private.h"
 
 #include <zephyr/ztest.h>
 
@@ -28,6 +34,8 @@
 #include <zephyr/net/net_pkt_filter.h>
 #include <zephyr/net/ipv4_nat.h>
 #include <zephyr/net/net_ip.h>
+
+extern struct net_ip4_table iptables;
 
 uint8_t dummy_mac[] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 
@@ -440,4 +448,258 @@ ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_skip_local_dst)
 	npf_append_ipv4_recv_rule(&npf_default_ok);
 }
 
-ZTEST_SUITE(net_ipv4_nat_test_suite, NULL, NULL, NULL, NULL, NULL);
+/* Run a UDP packet through the NAT filter and return its source and
+ * destination after translation, ports in host byte order.
+ */
+static void nat_udp(struct net_if *iface,
+		    struct net_in_addr *src, uint16_t src_port,
+		    struct net_in_addr *dst, uint16_t dst_port,
+		    struct net_in_addr *out_src, uint16_t *out_src_port,
+		    struct net_in_addr *out_dst, uint16_t *out_dst_port)
+{
+	struct net_pkt *pkt = build_test_udp_pkt(src, dst, src_port, dst_port, iface);
+	struct net_ipv4_hdr *ip_hdr;
+	struct net_udp_hdr *udp_hdr;
+
+	zassert_true(net_pkt_filter_ip_recv_ok(pkt), "NAT did not match the packet");
+
+	ip_hdr = NET_IPV4_HDR(pkt);
+	udp_hdr = (struct net_udp_hdr *)((uint8_t *)ip_hdr + sizeof(struct net_ipv4_hdr));
+
+	net_ipv4_addr_copy_raw(out_src->s4_addr, ip_hdr->src);
+	net_ipv4_addr_copy_raw(out_dst->s4_addr, ip_hdr->dst);
+	*out_src_port = net_ntohs(udp_hdr->src_port);
+	*out_dst_port = net_ntohs(udp_hdr->dst_port);
+
+	net_pkt_unref(pkt);
+}
+
+/* Two clients using the same source port towards the same server must get
+ * distinct external ports, and replies must reach the right client.
+ */
+ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_same_source_port)
+{
+	struct net_in_addr addr_a = { { { 192, 168, 1, 1 } } };
+	struct net_in_addr addr_b = { { { 192, 168, 2, 1 } } };
+	struct net_in_addr client1 = { { { 192, 168, 1, 6 } } };
+	struct net_in_addr client2 = { { { 192, 168, 1, 7 } } };
+	struct net_in_addr server1 = { { { 192, 168, 2, 6 } } };
+	struct net_in_addr server2 = { { { 192, 168, 2, 7 } } };
+	struct net_iptable_rule_params rule = {0};
+	uint8_t mask[4] = { 255, 255, 255, 0 };
+	struct net_in_addr src;
+	struct net_in_addr dst;
+	uint16_t src_port;
+	uint16_t dst_port;
+	uint16_t ext_port;
+	uint16_t ext_port_low;
+	int rule_idx;
+
+	npf_remove_ipv4_recv_rule(&npf_default_ok);
+	npf_append_ipv4_recv_rule(&npf_default_drop);
+
+	zassert_not_null(net_if_ipv4_addr_add(dummy_iface_a, &addr_a, NET_ADDR_MANUAL, 0),
+			 "Failed to add IPv4 addr to dummy_iface_a");
+	zassert_not_null(net_if_ipv4_addr_add(dummy_iface_b, &addr_b, NET_ADDR_MANUAL, 0),
+			 "Failed to add IPv4 addr to dummy_iface_b");
+
+	rule.input_iface_idx = net_if_get_by_iface(dummy_iface_a);
+	rule.output_iface_idx = net_if_get_by_iface(dummy_iface_b);
+	memcpy(rule.src, client1.s4_addr, 4);
+	memcpy(rule.src_mask, mask, 4);
+	rule.proto = NET_IPPROTO_UDP;
+	rule.priority = 5;
+
+	rule_idx = net_ipv4_table_rule_add(&rule);
+	zassert_true(rule_idx >= 0, "Could not add NAT table rule");
+
+	/* The first mapping keeps the client's port */
+	nat_udp(dummy_iface_a, &client1, 2000, &server1, 53, &src, &src_port, &dst, &dst_port);
+	zexpect_true(net_ipv4_addr_cmp(&src, &addr_b), "Source was not translated");
+	zexpect_equal(src_port, 2000U, "Free source port was not preserved");
+
+	/* The second one must not share it */
+	nat_udp(dummy_iface_a, &client2, 2000, &server1, 53, &src, &ext_port, &dst, &dst_port);
+	zexpect_true(net_ipv4_addr_cmp(&src, &addr_b), "Source was not translated");
+	zexpect_not_equal(ext_port, 2000U, "Two clients share one external port");
+	zexpect_true(ext_port >= 1024U, "External port left the 1024-65535 range");
+	zexpect_equal(ext_port % 2U, 0U, "External port parity was not preserved");
+
+	nat_udp(dummy_iface_b, &server1, 53, &addr_b, 2000, &src, &src_port, &dst, &dst_port);
+	zexpect_true(net_ipv4_addr_cmp(&dst, &client1), "Reply did not reach the first client");
+	zexpect_equal(dst_port, 2000U, "Reply port to the first client was wrong");
+
+	nat_udp(dummy_iface_b, &server1, 53, &addr_b, ext_port, &src, &src_port, &dst, &dst_port);
+	zexpect_true(net_ipv4_addr_cmp(&dst, &client2), "Reply did not reach the second client");
+	zexpect_equal(dst_port, 2000U, "Reply port to the second client was not restored");
+
+	/* The mapping is endpoint independent: a new server sees the same port */
+	nat_udp(dummy_iface_a, &client2, 2000, &server2, 53, &src, &src_port, &dst, &dst_port);
+	zexpect_equal(src_port, ext_port, "Second server got a different external port");
+
+	/* Well-known source ports stay in the well-known range */
+	nat_udp(dummy_iface_a, &client1, 701, &server1, 53, &src, &src_port, &dst, &dst_port);
+	zexpect_equal(src_port, 701U, "Free source port was not preserved");
+	nat_udp(dummy_iface_a, &client2, 701, &server1, 53, &src, &ext_port_low, &dst, &dst_port);
+	zexpect_not_equal(ext_port_low, 701U, "Two clients share one external port");
+	zexpect_true(ext_port_low > 0U && ext_port_low < 1024U,
+		     "External port left the 1-1023 range");
+	zexpect_equal(ext_port_low % 2U, 1U, "External port parity was not preserved");
+
+	net_ipv4_table_rule_del(rule_idx);
+	(void)net_if_ipv4_addr_rm(dummy_iface_a, &addr_a);
+	(void)net_if_ipv4_addr_rm(dummy_iface_b, &addr_b);
+	npf_remove_ipv4_recv_rule(&npf_default_drop);
+	npf_append_ipv4_recv_rule(&npf_default_ok);
+}
+
+static struct net_pkt *build_test_icmp_pkt(struct net_in_addr *src, struct net_in_addr *dst,
+					   uint8_t type, uint16_t id, struct net_if *iface)
+{
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(struct net_ipv4_hdr) +
+					   NET_ICMPV4H_LEN + NET_ICMPV4_UNUSED_LEN,
+					   NET_AF_INET, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "ICMP packet alloc failed");
+
+	zassert_ok(net_ipv4_create(pkt, src, dst), "Cannot create IPv4 packet");
+	zassert_ok(net_icmpv4_create(pkt, type, 0), "Cannot create ICMP header");
+	zassert_ok(net_pkt_write_be16(pkt, id), "Cannot write identifier");
+	zassert_ok(net_pkt_write_be16(pkt, 1U), "Cannot write sequence");
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_ipv4_finalize(pkt, NET_IPPROTO_ICMP), "Cannot finalize ICMP packet");
+	net_pkt_cursor_init(pkt);
+
+	return pkt;
+}
+
+/* Run an ICMP echo packet through the NAT filter and return its addresses,
+ * identifier in host byte order and whether its ICMP checksum is valid.
+ */
+static bool nat_icmp(struct net_if *iface, struct net_in_addr *src, struct net_in_addr *dst,
+		     uint8_t type, uint16_t id, struct net_in_addr *out_src,
+		     struct net_in_addr *out_dst, uint16_t *out_id, bool *chksum_ok)
+{
+	struct net_pkt *pkt = build_test_icmp_pkt(src, dst, type, id, iface);
+	struct net_ipv4_hdr *ip_hdr;
+	uint16_t chksum;
+	bool matched;
+
+	matched = net_pkt_filter_ip_recv_ok(pkt);
+
+	ip_hdr = NET_IPV4_HDR(pkt);
+	net_ipv4_addr_copy_raw(out_src->s4_addr, ip_hdr->src);
+	net_ipv4_addr_copy_raw(out_dst->s4_addr, ip_hdr->dst);
+	*out_id = net_ntohs(UNALIGNED_GET((uint16_t *)((uint8_t *)ip_hdr +
+						       sizeof(struct net_ipv4_hdr) +
+						       NET_ICMPV4H_LEN)));
+	*chksum_ok = net_calc_chksum_icmpv4(pkt, &chksum) == 0 && chksum == 0U;
+
+	net_pkt_unref(pkt);
+
+	return matched;
+}
+
+/* Two clients pinging the same server with the same echo identifier must
+ * get distinct external identifiers, and replies must reach the right client.
+ */
+ZTEST(net_ipv4_nat_test_suite, test_ipv4_nat_same_icmp_identifier)
+{
+	struct net_in_addr addr_a = { { { 192, 168, 1, 1 } } };
+	struct net_in_addr addr_b = { { { 192, 168, 2, 1 } } };
+	struct net_in_addr client1 = { { { 192, 168, 1, 6 } } };
+	struct net_in_addr client2 = { { { 192, 168, 1, 7 } } };
+	struct net_in_addr server1 = { { { 192, 168, 2, 6 } } };
+	struct net_in_addr server2 = { { { 192, 168, 2, 7 } } };
+	struct net_iptable_rule_params rule = {0};
+	uint8_t mask[4] = { 255, 255, 255, 0 };
+	struct net_in_addr src;
+	struct net_in_addr dst;
+	uint16_t id;
+	uint16_t ext_id;
+	bool chksum_ok;
+	int rule_idx;
+
+	npf_remove_ipv4_recv_rule(&npf_default_ok);
+	npf_append_ipv4_recv_rule(&npf_default_drop);
+
+	zassert_not_null(net_if_ipv4_addr_add(dummy_iface_a, &addr_a, NET_ADDR_MANUAL, 0),
+			 "Failed to add IPv4 addr to dummy_iface_a");
+	zassert_not_null(net_if_ipv4_addr_add(dummy_iface_b, &addr_b, NET_ADDR_MANUAL, 0),
+			 "Failed to add IPv4 addr to dummy_iface_b");
+
+	rule.input_iface_idx = net_if_get_by_iface(dummy_iface_a);
+	rule.output_iface_idx = net_if_get_by_iface(dummy_iface_b);
+	memcpy(rule.src, client1.s4_addr, 4);
+	memcpy(rule.src_mask, mask, 4);
+	rule.proto = NET_IPPROTO_ICMP;
+	rule.priority = 5;
+
+	rule_idx = net_ipv4_table_rule_add(&rule);
+	zassert_true(rule_idx >= 0, "Could not add NAT table rule");
+
+	/* The first mapping keeps the client's identifier */
+	zexpect_true(nat_icmp(dummy_iface_a, &client1, &server1, NET_ICMPV4_ECHO_REQUEST,
+			      0x1234U, &src, &dst, &id, &chksum_ok),
+		     "NAT did not match the first request");
+	zexpect_true(net_ipv4_addr_cmp(&src, &addr_b), "Source was not translated");
+	zexpect_equal(id, 0x1234U, "Free identifier was not preserved");
+	zexpect_true(chksum_ok, "ICMP checksum broken by the translation");
+
+	/* The second one must not share it */
+	zexpect_true(nat_icmp(dummy_iface_a, &client2, &server1, NET_ICMPV4_ECHO_REQUEST,
+			      0x1234U, &src, &dst, &ext_id, &chksum_ok),
+		     "NAT did not match the second request");
+	zexpect_true(net_ipv4_addr_cmp(&src, &addr_b), "Source was not translated");
+	zexpect_not_equal(ext_id, 0x1234U, "Two clients share one external identifier");
+	zexpect_true(chksum_ok, "ICMP checksum not updated for the new identifier");
+
+	zexpect_true(nat_icmp(dummy_iface_b, &server1, &addr_b, NET_ICMPV4_ECHO_REPLY,
+			      0x1234U, &src, &dst, &id, &chksum_ok),
+		     "NAT did not match the first reply");
+	zexpect_true(net_ipv4_addr_cmp(&dst, &client1), "Reply did not reach the first client");
+	zexpect_equal(id, 0x1234U, "Reply identifier to the first client was wrong");
+	zexpect_true(chksum_ok, "ICMP checksum broken by the translation");
+
+	zexpect_true(nat_icmp(dummy_iface_b, &server1, &addr_b, NET_ICMPV4_ECHO_REPLY,
+			      ext_id, &src, &dst, &id, &chksum_ok),
+		     "NAT did not match the second reply");
+	zexpect_true(net_ipv4_addr_cmp(&dst, &client2), "Reply did not reach the second client");
+	zexpect_equal(id, 0x1234U, "Reply identifier to the second client was not restored");
+	zexpect_true(chksum_ok, "ICMP checksum not updated for the restored identifier");
+
+	/* The mapping is endpoint independent: a new server sees the same identifier */
+	zexpect_true(nat_icmp(dummy_iface_a, &client2, &server2, NET_ICMPV4_ECHO_REQUEST,
+			      0x1234U, &src, &dst, &id, &chksum_ok),
+		     "NAT did not match the request to the second server");
+	zexpect_equal(id, ext_id, "Second server got a different external identifier");
+
+	/* A second identifier from the same client gets its own mapping and
+	 * leaves the first one in place.
+	 */
+	zexpect_true(nat_icmp(dummy_iface_a, &client1, &server1, NET_ICMPV4_ECHO_REQUEST,
+			      0x5678U, &src, &dst, &id, &chksum_ok),
+		     "NAT did not match the request with a second identifier");
+	zexpect_equal(id, 0x5678U, "Free identifier was not preserved");
+	zexpect_true(nat_icmp(dummy_iface_b, &server1, &addr_b, NET_ICMPV4_ECHO_REPLY,
+			      0x1234U, &src, &dst, &id, &chksum_ok),
+		     "Reply to the first identifier no longer matched");
+	zexpect_true(net_ipv4_addr_cmp(&dst, &client1), "Reply did not reach the first client");
+
+	net_ipv4_table_rule_del(rule_idx);
+	(void)net_if_ipv4_addr_rm(dummy_iface_a, &addr_a);
+	(void)net_if_ipv4_addr_rm(dummy_iface_b, &addr_b);
+	npf_remove_ipv4_recv_rule(&npf_default_drop);
+	npf_append_ipv4_recv_rule(&npf_default_ok);
+}
+
+/* Start every test without the mappings of the previous ones */
+static void nat_conn_track_clear(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	memset(iptables.table, 0, sizeof(iptables.table));
+}
+
+ZTEST_SUITE(net_ipv4_nat_test_suite, NULL, NULL, nat_conn_track_clear, NULL, NULL);

@@ -105,7 +105,6 @@ static bool conn_track_match_origin(struct net_pkt *pkt,
 				    struct net_nat4_entry *entry)
 {
 	struct net_conn_tuple *tuple = &entry->tuple[NET_NAT_DIR_ORIGIN];
-	struct net_conn_tuple *reply = &entry->tuple[NET_NAT_DIR_REPLY];
 
 	if (iphdr->proto != tuple->proto ||
 	    !net_ipv4_addr_cmp_raw(iphdr->src, tuple->src) ||
@@ -117,11 +116,9 @@ static bool conn_track_match_origin(struct net_pkt *pkt,
 		struct net_icmp_hdr *icmphdr = (struct net_icmp_hdr *)l4hdr;
 
 		if (icmphdr->type == NET_ICMPV4_ECHO_REQUEST &&
-		    net_pkt_get_contiguous_len(pkt) >= NET_ICMPV4H_LEN + NET_ICMPV4_UNUSED_LEN) {
-			/* update IN tuple because ICMP has only one request in the air */
-			tuple->icmp.identifier = UNALIGNED_GET(
-				(uint16_t *)((uint8_t *)l4hdr + sizeof(struct net_icmp_hdr)));
-			reply->icmp.identifier = tuple->icmp.identifier;
+		    net_pkt_get_contiguous_len(pkt) >= NET_ICMPV4H_LEN + NET_ICMPV4_UNUSED_LEN &&
+		    UNALIGNED_GET((uint16_t *)((uint8_t *)l4hdr +
+		    sizeof(struct net_icmp_hdr))) == tuple->icmp.identifier) {
 			return true;
 		}
 	} else if (tuple->proto == NET_IPPROTO_TCP) {
@@ -145,6 +142,100 @@ static bool conn_track_match_origin(struct net_pkt *pkt,
 	return false;
 }
 
+/* Internal and external port of a TCP or UDP mapping, or echo identifier of
+ * an ICMP mapping, in network byte order.
+ */
+static uint16_t conn_track_int_port(const struct net_nat4_entry *entry)
+{
+	const struct net_conn_tuple *in = &entry->tuple[NET_NAT_DIR_ORIGIN];
+
+	if (in->proto == NET_IPPROTO_ICMP) {
+		return in->icmp.identifier;
+	}
+
+	return in->proto == NET_IPPROTO_TCP ? in->tcp.src_port : in->udp.src_port;
+}
+
+static uint16_t conn_track_ext_port(const struct net_nat4_entry *entry)
+{
+	const struct net_conn_tuple *out = &entry->tuple[NET_NAT_DIR_REPLY];
+
+	if (out->proto == NET_IPPROTO_ICMP) {
+		return out->icmp.identifier;
+	}
+
+	return out->proto == NET_IPPROTO_TCP ? out->tcp.dst_port : out->udp.dst_port;
+}
+
+/* Check whether an active mapping uses ext_port on the external address of
+ * entry for the same protocol.
+ */
+static bool conn_track_port_in_use(const struct net_nat4_entry *entry, uint16_t ext_port)
+{
+	const struct net_conn_tuple *out = &entry->tuple[NET_NAT_DIR_REPLY];
+	int i;
+
+	for (i = 0; i < CONFIG_NET_IPV4_CONN_TRACK_MAX_NUM; i++) {
+		const struct net_nat4_entry *other = &iptables.table[i];
+
+		if (other->state != CONN_TRACK_UNUSED &&
+		    other->tuple[NET_NAT_DIR_REPLY].proto == out->proto &&
+		    net_ipv4_addr_cmp_raw(other->tuple[NET_NAT_DIR_REPLY].dst, out->dst) &&
+		    conn_track_ext_port(other) == ext_port) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Choose the external port or echo identifier of a new mapping, in network
+ * byte order. An internal address and port that already has a mapping keeps its
+ * external port for every destination (endpoint-independent mapping,
+ * RFC 4787 REQ-1, RFC 5382 REQ-1). Otherwise the internal port is used when
+ * it is free, and on a collision the next free port of the same range
+ * (1-1023 or 1024-65535) and parity, so that two internal endpoints never
+ * share an external port (RFC 4787 REQ-3 and REQ-4, RFC 5382 REQ-7).
+ * ICMP echo identifiers follow the same rules (RFC 5508 REQ-1), but any
+ * identifier can replace any other.
+ */
+static bool conn_track_alloc_port(const struct net_nat4_entry *entry, uint16_t *ext_port)
+{
+	const struct net_conn_tuple *in = &entry->tuple[NET_NAT_DIR_ORIGIN];
+	const struct net_conn_tuple *out = &entry->tuple[NET_NAT_DIR_REPLY];
+	bool icmp = in->proto == NET_IPPROTO_ICMP;
+	uint16_t int_port = net_ntohs(conn_track_int_port(entry));
+	uint32_t first = (icmp || int_port < 1024U) ? 0U : 1024U;
+	uint32_t span = icmp ? 65536U : (int_port < 1024U ? 1024U : 65536U - 1024U);
+	uint32_t inc = icmp ? 1U : 2U;
+	uint32_t step;
+	int i;
+
+	for (i = 0; i < CONFIG_NET_IPV4_CONN_TRACK_MAX_NUM; i++) {
+		const struct net_nat4_entry *other = &iptables.table[i];
+
+		if (other->state != CONN_TRACK_UNUSED &&
+		    other->tuple[NET_NAT_DIR_ORIGIN].proto == in->proto &&
+		    net_ipv4_addr_cmp_raw(other->tuple[NET_NAT_DIR_ORIGIN].src, in->src) &&
+		    conn_track_int_port(other) == conn_track_int_port(entry) &&
+		    net_ipv4_addr_cmp_raw(other->tuple[NET_NAT_DIR_REPLY].dst, out->dst)) {
+			*ext_port = conn_track_ext_port(other);
+			return true;
+		}
+	}
+
+	for (step = 0U; step < span; step += inc) {
+		uint16_t port = (uint16_t)(first + (int_port - first + step) % span);
+
+		if ((icmp || port != 0U) && !conn_track_port_in_use(entry, net_htons(port))) {
+			*ext_port = net_htons(port);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool conn_track_new(struct net_pkt *pkt,
 			   struct net_ipv4_hdr *iphdr,
 			   void *l4hdr,
@@ -154,6 +245,7 @@ static bool conn_track_new(struct net_pkt *pkt,
 	struct net_conn_tuple *out = &entry->tuple[NET_NAT_DIR_REPLY];
 	struct net_if *reply = entry->iface[NET_NAT_DIR_REPLY];
 	struct net_if_addr *ifaddr;
+	uint16_t ext_port;
 
 	ifaddr = net_if_ipv4_addr_get_first_by_index(net_if_get_by_iface(reply));
 	if (ifaddr == NULL) {
@@ -163,13 +255,12 @@ static bool conn_track_new(struct net_pkt *pkt,
 	if (iphdr->proto == NET_IPPROTO_ICMP) {
 		struct net_icmp_hdr *icmphdr = (struct net_icmp_hdr *)l4hdr;
 
-		if (icmphdr->type != NET_ICMPV4_ECHO_REQUEST) {
+		if (icmphdr->type != NET_ICMPV4_ECHO_REQUEST ||
+		    net_pkt_get_contiguous_len(pkt) < NET_ICMPV4H_LEN + NET_ICMPV4_UNUSED_LEN) {
 			return false;
 		}
 
 		in->icmp.identifier = UNALIGNED_GET(
-			(uint16_t *)((uint8_t *)l4hdr + sizeof(struct net_icmp_hdr)));
-		out->icmp.identifier = UNALIGNED_GET(
 			(uint16_t *)((uint8_t *)l4hdr + sizeof(struct net_icmp_hdr)));
 		in->proto = NET_IPPROTO_ICMP;
 		out->proto = NET_IPPROTO_ICMP;
@@ -199,6 +290,19 @@ static bool conn_track_new(struct net_pkt *pkt,
 	net_ipv4_addr_copy_raw(in->dst, iphdr->dst);
 	net_ipv4_addr_copy_raw(out->src, iphdr->dst);
 	net_ipv4_addr_copy_raw(out->dst, ifaddr->address.in_addr.s4_addr);
+
+	if (!conn_track_alloc_port(entry, &ext_port)) {
+		NET_DBG("No free external port");
+		return false;
+	}
+
+	if (in->proto == NET_IPPROTO_ICMP) {
+		out->icmp.identifier = ext_port;
+	} else if (in->proto == NET_IPPROTO_TCP) {
+		out->tcp.dst_port = ext_port;
+	} else {
+		out->udp.dst_port = ext_port;
+	}
 
 	entry->state = CONN_TRACK_WAITING;
 	return true;
@@ -356,6 +460,13 @@ static void do_snat(struct net_pkt *pkt,
 
 		udphdr->src_port = tuple->udp.dst_port;
 		udphdr->chksum = update_chksum(udphdr->chksum, sum);
+	} else if (iphdr->proto == NET_IPPROTO_ICMP) {
+		struct net_icmp_hdr *icmphdr = (struct net_icmp_hdr *)l4hdr;
+		uint16_t *id = (uint16_t *)((uint8_t *)l4hdr + sizeof(struct net_icmp_hdr));
+
+		sum = sum_update(UNALIGNED_GET(id), tuple->icmp.identifier);
+		UNALIGNED_PUT(tuple->icmp.identifier, id);
+		icmphdr->chksum = update_chksum(icmphdr->chksum, sum);
 	}
 
 	/* update IP header, the forwarding path decrements the TTL */
@@ -397,6 +508,13 @@ static void do_dnat(struct net_pkt *pkt,
 
 		udphdr->dst_port = tuple->udp.src_port;
 		udphdr->chksum = update_chksum(udphdr->chksum, sum);
+	} else if (iphdr->proto == NET_IPPROTO_ICMP) {
+		struct net_icmp_hdr *icmphdr = (struct net_icmp_hdr *)l4hdr;
+		uint16_t *id = (uint16_t *)((uint8_t *)l4hdr + sizeof(struct net_icmp_hdr));
+
+		sum = sum_update(UNALIGNED_GET(id), tuple->icmp.identifier);
+		UNALIGNED_PUT(tuple->icmp.identifier, id);
+		icmphdr->chksum = update_chksum(icmphdr->chksum, sum);
 	}
 
 	/* update IP header, the forwarding path decrements the TTL */
