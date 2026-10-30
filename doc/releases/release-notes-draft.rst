@@ -77,6 +77,11 @@ New APIs and options
     * :c:func:`bt_hids_report_set`
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
+    * :c:func:`bt_hids_boot_report_set`
+    * :c:func:`bt_hids_boot_report_get`
+    * :c:func:`bt_hids_boot_report_send`
+    * :c:func:`bt_hids_protocol_mode_get`
+    * :c:func:`bt_hids_suspend_state_get`
 
 .. zephyr-keep-sorted-stop
 
@@ -119,7 +124,9 @@ Libraries / Subsystems
 * Bluetooth
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
-    the HID Device role of the HID over GATT Profile is built on.
+    the HID Device role of the HID over GATT Profile is built on, with a
+    ``hids`` Bluetooth shell command set
+    (:kconfig:option:`CONFIG_BT_HIDS_SHELL`).
 
 Other notable changes
 *********************

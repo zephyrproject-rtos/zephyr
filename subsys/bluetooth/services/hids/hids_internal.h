@@ -7,6 +7,7 @@
 #ifndef BT_HIDS_INTERNAL_H_
 #define BT_HIDS_INTERNAL_H_
 
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/hids.h>
 
@@ -66,6 +67,49 @@ struct hids_report_ctx {
 
 	/* Report value attribute, resolved when the service is registered */
 	const struct bt_gatt_attr *attr;
+};
+
+/* Longest Boot Protocol Mode Report. The Boot Reports have a fixed format and
+ * length, defined by the USB HID Specification, so they are not described in
+ * the Report Map and have no Report Reference descriptor.
+ */
+#define HIDS_BOOT_REPORT_MAX_LEN sizeof(struct bt_hids_boot_kb_in_report)
+
+/* Per Boot Report characteristic state, protected by hids_mutex in hids.c.
+ * Each Boot Report characteristic refers to its own context through the
+ * attribute user data.
+ */
+struct hids_boot_report_ctx {
+	/* Value a Host reads from this Boot Report. It is all zeroes until the
+	 * application sets it, which is the idle state of both a boot keyboard
+	 * and a boot mouse.
+	 */
+	uint8_t value[HIDS_BOOT_REPORT_MAX_LEN];
+
+	/* Fixed length of this Boot Report */
+	uint8_t len;
+
+	/* Report value attribute, resolved when the service is registered */
+	const struct bt_gatt_attr *attr;
+};
+
+/* Per-connection HID state, protected by hids_mutex in hids.c. The Protocol
+ * Mode and the Suspend state are tracked per Host, and reset to their default
+ * values when the slot is claimed, so they start at defaults on each new
+ * connection and are held for the life of that connection.
+ *
+ * A slot is claimed for a Host when its link has the security level the
+ * characteristics require, and freed on disconnect, so the pool holds one slot
+ * per trackable Host rather than one per bt_conn_index(). The slot holds no
+ * connection reference; conn identifies the occupant and is NULL when the slot
+ * is free.
+ */
+struct hids_conn {
+	struct bt_conn *conn;
+	enum bt_hids_protocol_mode protocol_mode;
+
+	/* Not readable over GATT; the HID Control Point is write only */
+	bool suspended;
 };
 
 /* Registration state, protected by hids_mutex in hids.c */
