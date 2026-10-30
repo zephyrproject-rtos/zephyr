@@ -1,0 +1,19 @@
+name: infineon-pse84-cm55-ram-load
+description: |
+  Boots the Infineon PSE84 CM55 core from internal SoCMEM RAM instead of
+  executing in place from external SMIF0 flash. Applies to both the
+  sysbuild main image (CM55) and the CM33 "enable_cm55" companion image
+  sysbuild adds automatically.
+
+append:
+  EXTRA_DTC_OVERLAY_FILE: boards/kit_pse84_ai_common.overlay
+
+boards:
+  /kit_pse84_ai\/.*\/m33/:
+    append:
+      EXTRA_CONF_FILE: boards/kit_pse84_ai_m33.conf
+      EXTRA_DTC_OVERLAY_FILE: boards/kit_pse84_ai_m33.overlay
+  /kit_pse84_ai\/.*\/m55/:
+    append:
+      EXTRA_CONF_FILE: boards/kit_pse84_ai_m55.conf
+      EXTRA_DTC_OVERLAY_FILE: boards/kit_pse84_ai_m55.overlay

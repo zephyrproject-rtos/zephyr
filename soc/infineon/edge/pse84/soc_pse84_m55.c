@@ -19,6 +19,25 @@
 #include <cy_sysint.h>
 #include <system_edge.h>
 
+#if defined(CONFIG_SOC_PSE84_M55_DISABLE_SMIF_XIP)
+#include <cy_smif.h>
+
+/*
+ * This option only makes sense once this core itself is no longer executing
+ * from m55_xip -- leaving SMIF0 XIP mode while still fetching instructions
+ * from it hangs this core. Absence of a zephyr,flash chosen node is this
+ * build's own authority on that: a board/application overlay enabling
+ * CONFIG_SOC_PSE84_M55_RAM_LOAD (a separate image/build this one cannot see
+ * into) deletes zephyr,flash and supplies CONFIG_FLASH_BASE_ADDRESS/
+ * CONFIG_FLASH_SIZE directly instead, so check for that here rather than
+ * trust that the two images were set up together.
+ */
+BUILD_ASSERT(!DT_HAS_CHOSEN(zephyr_flash),
+	     "CONFIG_SOC_PSE84_M55_DISABLE_SMIF_XIP requires no zephyr,flash "
+	     "chosen node (delete it and set CONFIG_FLASH_BASE_ADDRESS/SIZE "
+	     "directly instead)");
+#endif
+
 #if defined(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
 #include <cy_syslib.h>
 #include "mtb_ipc_config.h"
@@ -192,6 +211,19 @@ void soc_early_init_hook(void)
 	 * application proceeds.
 	 */
 	Cy_SysLib_Delay(CM55_STARTUP_WAIT_MS);
+#endif
+
+#if defined(CONFIG_SOC_PSE84_M55_DISABLE_SMIF_XIP)
+	/*
+	 * This core's code/data are fully resident in SoCMEM now (see
+	 * CONFIG_SOC_PSE84_M55_RAM_LOAD), and m33 has had the delay above to
+	 * reach its own deep-sleep loop, so nothing is still fetching from
+	 * SMIF0. Clearing XIP mode here, once, is the actual fix for
+	 * Cy_SMIF_MemEraseSector()'s critical section disabling all
+	 * interrupts for the duration of every later flash_area erase
+	 * whenever the bit is still set.
+	 */
+	Cy_SMIF_SetMode(SMIF0_CORE, CY_SMIF_NORMAL);
 #endif
 }
 

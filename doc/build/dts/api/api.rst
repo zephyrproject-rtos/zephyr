@@ -444,6 +444,11 @@ device.
    * - zephyr,boot-mode
      - Used for :ref:`boot_mode_api` selection, part of :ref:`retention_api`, which specifies
        what image on a device should be booted.
+   * - zephyr,boot-ram-load-region
+     - Destination for a RAM-load boot sequence, where one core copies
+       another core's image into RAM (the ``reg`` of the chosen node)
+       before releasing it. See
+       :kconfig:option:`CONFIG_SOC_PSE84_M55_RAM_LOAD` for an example.
    * - zephyr,bootloader-info
      - Selects the :ref:`retention_api` area used to share information with the bootloader.
    * - zephyr,bt-c2h-uart

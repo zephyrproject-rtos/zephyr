@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Shared between kit_pse84_ai_m33.overlay and kit_pse84_ai_m55.overlay: the
+ * SoCMEM region CM33 copies the CM55 image into, and the region CM55 then
+ * executes from once released there. CM33 and CM55 build as two
+ * independent Zephyr images with two independent devicetrees, so defining
+ * this node once and applying this same overlay to both is what keeps the
+ * address and size CM33 writes to in sync with what CM55 is linked to
+ * execute from, rather than relying on two separately maintained copies.
+ */
+&{/reserved-memory} {
+	snippet_pse84_cm55_ram_load_dst: memory@26200000 {
+		reg = <0x26200000 DT_SIZE_M(1)>;
+	};
+};
