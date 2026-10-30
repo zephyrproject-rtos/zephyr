@@ -743,7 +743,7 @@ def winstream_write(base, msg):
         start = end
         lenmsg = wlen - 1
     lenmsg = min(lenmsg, wlen)
-    if seq != 0:
+    if seq != 0 or start != end:
         avail = (wlen - 1) - idx_sub(wlen, end, start)
         if lenmsg > avail:
             hdr.START = idx_mod(wlen, start + (lenmsg - avail))
