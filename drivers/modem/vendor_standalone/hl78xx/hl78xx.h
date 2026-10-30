@@ -437,8 +437,9 @@ struct hl78xx_modem_boot_status {
 	bool is_booted_previously;
 	bool init_sequence_completed;
 	enum hl78xx_module_status status;
-	/* RUN_INIT_SCRIPT found the chat busy and aborted the script holding it:
-	 * until the init script starts, a script result is the aborted script's.
+	/* RUN_INIT_SCRIPT waits to start the init script: the chat was busy at
+	 * the entry, or a pending power down stopped the script. Until it starts,
+	 * a script result is not the init script's.
 	 */
 	bool init_script_retry_pending;
 	/* AIRPLANE waits to enter the state again after a restart of the modem:

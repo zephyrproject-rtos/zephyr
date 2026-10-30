@@ -2385,6 +2385,13 @@ static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum 
 			/* A timer the previous state left running: no retry is due */
 			break;
 		}
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		if (data->status.lpm.power_down.shutdown_pending) {
+			/* Wait for the decision on the pending power down */
+			hl78xx_reschedule_timer(data, K_MSEC(100));
+			break;
+		}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 		if (atomic_get(&data->events.script_results_queued) > 0) {
 			/* A result of the script that held the chat is queued behind
 			 * this timeout. Started now, the init script would get it:
@@ -2393,7 +2400,7 @@ static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum 
 			hl78xx_reschedule_timer(data, K_MSEC(100));
 			break;
 		}
-		/* The retry armed by a busy entry */
+		/* The retry armed by a busy entry or a power down */
 		ret = hl78xx_run_init_script_async(data);
 		if (ret == -EBUSY) {
 			/* The aborted script, or a command sent since, still holds
@@ -2424,6 +2431,23 @@ static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum 
 
 	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		if ((evt == MODEM_HL78XX_EVENT_SCRIPT_FAILED) &&
+		    data->status.lpm.power_down.shutdown_pending) {
+			/* The power down aborted the init script to take the chat
+			 * and owns the modem from here: a reset would race its
+			 * power off. If the power down is aborted, the timeout
+			 * starts the init script again, as after a busy entry: a
+			 * command sent on the free chat meanwhile is waited for,
+			 * and a script result is not the init script's.
+			 */
+			LOG_INF("Init script stopped for a pending power down");
+			hl78xx_clear_script_failure(data);
+			data->status.boot.init_script_retry_pending = true;
+			hl78xx_reschedule_timer(data, K_MSEC(100));
+			break;
+		}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
 		break;
 
