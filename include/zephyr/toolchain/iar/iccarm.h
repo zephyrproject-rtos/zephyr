@@ -93,7 +93,7 @@
 #define ALIAS_OF(of) __attribute__((alias(#of)))
 
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
-	return_type new_alias() ALIAS_OF(real_func)
+	__typeof__(real_func) new_alias ALIAS_OF(real_func)
 
 #define CODE_UNREACHABLE __builtin_unreachable()
 #define FUNC_NORETURN    __attribute__((__noreturn__))
