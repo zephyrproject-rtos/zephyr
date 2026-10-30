@@ -997,6 +997,7 @@ int usbd_disable(struct usbd_context *uds_ctx);
  * @param[in] uds_ctx Pointer to USB device support context
  *
  * @return 0 on success, other values on fail.
+ * @retval -EBUSY if the USB device support is enabled
  */
 int usbd_shutdown(struct usbd_context *const uds_ctx);
 
