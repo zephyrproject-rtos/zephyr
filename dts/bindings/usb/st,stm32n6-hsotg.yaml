@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32N6 OTG_HS DWC2 compatible controller, driven by the native DWC2 host
+  driver. The embedded high-speed PHY is selected by the "phys" phandle, which
+  points at an "st,stm32n6-usbphyc" node.
+
+compatible: "st,stm32n6-hsotg"
+
+include: "snps,dwc2.yaml"
+
+properties:
+  clocks:
+    required: true
+
+  phys:
+    required: true
+
+  vbus-gpios:
+    type: phandle-array
+    description: |
+      GPIO enabling the external VBUS power switch in host mode. It is driven
+      active while the controller is enabled.
