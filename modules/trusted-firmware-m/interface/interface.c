@@ -11,6 +11,7 @@
 #include <zephyr/arch/arm/cortex_m/fpu.h>
 
 #include <tfm_ns_interface.h>
+#include <tfm_ns_interface_zephyr.h>
 
 /**
  * @file @brief Zephyr's TF-M NS interface implementation
@@ -75,6 +76,19 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 	}
 
 	return result;
+}
+
+void tfm_ns_interface_lock_forever(void)
+{
+	/* Secure calls from these contexts bypass the mutex, see
+	 * tfm_ns_interface_dispatch(), so there is nothing to wait for, and
+	 * blocking would not be allowed anyway.
+	 */
+	if (k_is_in_isr() || k_is_pre_kernel()) {
+		return;
+	}
+
+	(void)k_mutex_lock(&tfm_mutex, K_FOREVER);
 }
 
 uint32_t tfm_ns_interface_init(void)
