@@ -15,6 +15,7 @@
 #include <zephyr/fatal.h>
 #include <zephyr/debug/coredump.h>
 #include <zephyr/sys/reboot.h>
+#include <zephyr/arch/common/semihost.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -34,12 +35,23 @@ FUNC_NORETURN __weak void arch_system_halt(unsigned int reason)
 }
 /* LCOV_EXCL_STOP */
 
+static inline void fatal_semihost_exit(unsigned int reason)
+{
+#ifdef CONFIG_SEMIHOST_EXIT_ON_FATAL_ERROR
+	/* Only returns if no debugger is attached */
+	(void)semihost_exit(SEMIHOST_EXIT_RUNTIME_ERROR_UNKNOWN, reason);
+#else
+	ARG_UNUSED(reason);
+#endif
+}
+
 /* LCOV_EXCL_START */
 __weak void k_sys_fatal_error_handler(unsigned int reason,
 				      const struct arch_esf *esf)
 {
 	ARG_UNUSED(esf);
 	LOG_PANIC();
+	fatal_semihost_exit(reason);
 
 #if CONFIG_RESET_ON_FATAL_ERROR
 	EXCEPTION_DUMP("Resetting system");
@@ -85,6 +97,7 @@ static const char *reason_to_str(unsigned int reason)
 /* LCOV_EXCL_START */
 FUNC_NORETURN void k_fatal_halt(unsigned int reason)
 {
+	fatal_semihost_exit(reason);
 	arch_system_halt(reason);
 }
 /* LCOV_EXCL_STOP */
