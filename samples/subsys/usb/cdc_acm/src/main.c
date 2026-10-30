@@ -161,11 +161,11 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 			}
 
 			send_len = uart_fifo_fill(dev, buffer, rb_len);
-			if (send_len < rb_len) {
-				LOG_ERR("Drop %d bytes", rb_len - send_len);
+			if (send_len < 0) {
+				LOG_ERR("Failed to fill UART FIFO (%d)", send_len);
+			} else {
+				LOG_DBG("ringbuf -> tty fifo %d bytes", send_len);
 			}
-
-			LOG_DBG("ringbuf -> tty fifo %d bytes", send_len);
 		}
 	}
 }
