@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT infineon_ioss_pinctrl
 
 #include <errno.h>
+#include <stdbool.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/sys_io.h>
@@ -15,6 +16,17 @@
 
 #define IFX_IOSS_HSIOM_BASE		DT_INST_REG_ADDR_BY_NAME(0, hsiom)
 #define IFX_IOSS_GPIO_BASE		DT_INST_REG_ADDR_BY_NAME(0, gpio)
+
+#define IFX_IOSS_HAS_SMIF0		DT_INST_REG_HAS_NAME(0, smif0_gpio)
+#define IFX_IOSS_HAS_SMIF1		DT_INST_REG_HAS_NAME(0, smif1_gpio)
+#define IFX_IOSS_SMIF0_HSIOM_BASE                                              \
+	DT_INST_REG_ADDR_BY_NAME_OR(0, smif0_hsiom, 0)
+#define IFX_IOSS_SMIF0_GPIO_BASE                                               \
+	DT_INST_REG_ADDR_BY_NAME_OR(0, smif0_gpio, 0)
+#define IFX_IOSS_SMIF1_HSIOM_BASE                                              \
+	DT_INST_REG_ADDR_BY_NAME_OR(0, smif1_hsiom, 0)
+#define IFX_IOSS_SMIF1_GPIO_BASE                                               \
+	DT_INST_REG_ADDR_BY_NAME_OR(0, smif1_gpio, 0)
 
 #define IFX_IOSS_HSIOM_PRT_SIZE		0x10U
 #define IFX_IOSS_HSIOM_PORT_SEL(pin)	(((pin) / 4U) * 4U)
@@ -56,7 +68,47 @@
 #define IFX_IOSS_GPIO_DRIVE_EXT_FULL		7U
 #define IFX_IOSS_GPIO_CFG_OUT3_MSK		GENMASK(3, 0)
 
+#define IFX_IOSS_SMIF0_PORT0		22U
+#define IFX_IOSS_SMIF1_PORT0		25U
+#define IFX_IOSS_SMIF_PORTS		3U
+
+struct ifx_ioss_port {
+	mem_addr_t hsiom;
+	mem_addr_t gpio;
+	bool smif;
+};
+
 static struct k_spinlock ifx_ioss_lock;
+
+static inline bool ifx_ioss_in_smif(uint32_t port, uint32_t first)
+{
+	return (port >= first) && (port < (first + IFX_IOSS_SMIF_PORTS));
+}
+
+static inline void ifx_ioss_port_get(uint32_t port, struct ifx_ioss_port *prt)
+{
+	mem_addr_t hsiom = IFX_IOSS_HSIOM_BASE;
+	mem_addr_t gpio = IFX_IOSS_GPIO_BASE;
+	bool smif = false;
+
+	if (IFX_IOSS_HAS_SMIF0 &&
+	    ifx_ioss_in_smif(port, IFX_IOSS_SMIF0_PORT0)) {
+		hsiom = IFX_IOSS_SMIF0_HSIOM_BASE;
+		gpio = IFX_IOSS_SMIF0_GPIO_BASE;
+		port -= IFX_IOSS_SMIF0_PORT0;
+		smif = true;
+	} else if (IFX_IOSS_HAS_SMIF1 &&
+		   ifx_ioss_in_smif(port, IFX_IOSS_SMIF1_PORT0)) {
+		hsiom = IFX_IOSS_SMIF1_HSIOM_BASE;
+		gpio = IFX_IOSS_SMIF1_GPIO_BASE;
+		port -= IFX_IOSS_SMIF1_PORT0;
+		smif = true;
+	}
+
+	prt->hsiom = hsiom + (port * IFX_IOSS_HSIOM_PRT_SIZE);
+	prt->gpio = gpio + (port * IFX_IOSS_GPIO_PRT_SIZE);
+	prt->smif = smif;
+}
 
 static inline int ifx_ioss_drive_sel(uint32_t drive, uint32_t *sel)
 {
@@ -165,12 +217,12 @@ static int ifx_ioss_configure_pin(const pinctrl_soc_pin_t *pin)
 	uint32_t cfg = pin->pincfg & IFX_IOSS_GPIO_CFG_MSK;
 	uint32_t cfg_shift = IFX_IOSS_GPIO_CFG_SHIFT(pin_num);
 	uint32_t sel_shift = IFX_IOSS_HSIOM_SEL_SHIFT(pin_num);
-	mem_addr_t gpio = IFX_IOSS_GPIO_BASE + (port * IFX_IOSS_GPIO_PRT_SIZE);
-	mem_addr_t hsiom_prt = IFX_IOSS_HSIOM_BASE +
-			       (port * IFX_IOSS_HSIOM_PRT_SIZE);
+	struct ifx_ioss_port prt;
 	k_spinlock_key_t key;
 	uint32_t drive = 0U;
 	int ret;
+
+	ifx_ioss_port_get(port, &prt);
 
 	if ((pin->pincfg & IFX_IOSS_PINCFG_DRIVE_EN) != 0U) {
 		ret = ifx_ioss_drive_sel(IFX_IOSS_PINCFG_DRIVE(pin->pincfg),
@@ -183,27 +235,27 @@ static int ifx_ioss_configure_pin(const pinctrl_soc_pin_t *pin)
 	key = k_spin_lock(&ifx_ioss_lock);
 
 	if (IS_ENABLED(CONFIG_TRUSTED_EXECUTION_SECURE)) {
-		sys_clear_bit(hsiom_prt + IFX_IOSS_HSIOM_NONSEC, pin_num);
+		sys_clear_bit(prt.hsiom + IFX_IOSS_HSIOM_NONSEC, pin_num);
 	}
 
 	if (IFX_IOSS_PINCFG_DM(pin->pincfg) == IFX_IOSS_DM_PULLDOWN) {
-		sys_write32(BIT(pin_num), gpio + IFX_IOSS_GPIO_PRT_OUT_CLR);
+		sys_write32(BIT(pin_num), prt.gpio + IFX_IOSS_GPIO_PRT_OUT_CLR);
 	} else {
-		sys_write32(BIT(pin_num), gpio + IFX_IOSS_GPIO_PRT_OUT_SET);
+		sys_write32(BIT(pin_num), prt.gpio + IFX_IOSS_GPIO_PRT_OUT_SET);
 	}
 
-	ifx_ioss_configure_out(gpio, pin_num, pin->pincfg, drive);
+	ifx_ioss_configure_out(prt.gpio, pin_num, pin->pincfg, drive);
 
-	if (IS_ENABLED(CONFIG_SOC_SERIES_PSE84) &&
+	if (IS_ENABLED(CONFIG_SOC_SERIES_PSE84) && !prt.smif &&
 	    (IFX_IOSS_PINCFG_DM(pin->pincfg) == IFX_IOSS_DM_HIGHZ)) {
-		ifx_ioss_rmw(gpio + IFX_IOSS_GPIO_PRT_CFG_OUT3,
+		ifx_ioss_rmw(prt.gpio + IFX_IOSS_GPIO_PRT_CFG_OUT3,
 			     IFX_IOSS_GPIO_CFG_OUT3_MSK << cfg_shift, 0U);
 	}
 
-	ifx_ioss_rmw(gpio + IFX_IOSS_GPIO_PRT_CFG,
+	ifx_ioss_rmw(prt.gpio + IFX_IOSS_GPIO_PRT_CFG,
 		     IFX_IOSS_GPIO_CFG_MSK << cfg_shift, cfg << cfg_shift);
 
-	ifx_ioss_rmw(hsiom_prt + IFX_IOSS_HSIOM_PORT_SEL(pin_num),
+	ifx_ioss_rmw(prt.hsiom + IFX_IOSS_HSIOM_PORT_SEL(pin_num),
 		     IFX_IOSS_HSIOM_SEL_MSK << sel_shift,
 		     (hsiom & IFX_IOSS_HSIOM_SEL_MSK) << sel_shift);
 
