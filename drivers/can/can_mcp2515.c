@@ -278,6 +278,11 @@ static void mcp2515_convert_mcp2515frame_to_canframe(const uint8_t *source,
 
 	target->dlc = source[MCP2515_FRAME_OFFSET_DLC] & 0x0F;
 
+	/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+	if (target->dlc > CAN_MAX_DLC) {
+		target->dlc = CAN_MAX_DLC;
+	}
+
 	if ((source[MCP2515_FRAME_OFFSET_DLC] & BIT(6)) != 0) {
 		target->flags |= CAN_FRAME_RTR;
 	} else {

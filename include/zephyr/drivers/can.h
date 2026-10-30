@@ -169,7 +169,12 @@ enum can_state {
 struct can_frame {
 	/** Standard (11-bit) or extended (29-bit) CAN identifier. */
 	uint32_t id;
-	/** Data Length Code (DLC) indicating data length in bytes. */
+	/**
+	 * Data Length Code (DLC) indicating data length in bytes.
+	 *
+	 * Frames without the @ref CAN_FRAME_FDF flag carry at most 8 data bytes. A received
+	 * classical CAN frame with a DLC of 9 to 15 is reported with a DLC of 8.
+	 */
 	uint8_t dlc;
 	/** Flags. @see @ref CAN_FRAME_FLAGS. */
 	uint8_t flags;
