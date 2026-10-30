@@ -19,3 +19,6 @@ tests:
   net.packet.no_assert:
     extra_configs:
       - CONFIG_ASSERT=n
+  net.packet.reserve_header:
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET_RESERVE_HEADER=y

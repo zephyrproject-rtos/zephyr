@@ -893,6 +893,58 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 	net_pkt_unref(cloned_pkt);
 }
 
+/* A TX clone is allocated for the given interface: net_pkt_tx_clone() lets
+ * the L2 reserve its header space, net_pkt_tx_clone_raw() copies the buffer
+ * as is.
+ */
+ZTEST(net_pkt_test_suite, test_net_pkt_tx_clone)
+{
+	uint8_t buf[26] = {"abcdefghijklmnopqrstuvwxyz"};
+	uint8_t read_buf[sizeof(buf)];
+	struct net_pkt *cloned_pkt;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_rx_alloc_with_buffer(eth_if, sizeof(buf), NET_AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "Pkt not allocated");
+
+	ret = net_pkt_write(pkt, buf, sizeof(buf));
+	zassert_equal(ret, 0, "Pkt write failed");
+
+	cloned_pkt = net_pkt_tx_clone_raw(pkt, eth_if, K_NO_WAIT);
+	zassert_not_null(cloned_pkt, "Pkt not cloned");
+	zassert_equal(net_pkt_iface(cloned_pkt), eth_if, "Cloned pkt iface mismatch");
+	zassert_equal(net_pkt_get_len(cloned_pkt), sizeof(buf), "Cloned pkt length mismatch");
+	zassert_equal(net_buf_headroom(cloned_pkt->buffer), 0, "Raw clone has headroom");
+
+	net_pkt_cursor_init(cloned_pkt);
+	ret = net_pkt_read(cloned_pkt, read_buf, sizeof(read_buf));
+	zassert_equal(ret, 0, "Cloned pkt read failed");
+	zassert_mem_equal(read_buf, buf, sizeof(buf), "Cloned pkt data mismatch");
+
+	net_pkt_unref(cloned_pkt);
+
+	cloned_pkt = net_pkt_tx_clone(pkt, eth_if, K_NO_WAIT);
+	zassert_not_null(cloned_pkt, "Pkt not cloned");
+	zassert_equal(net_pkt_iface(cloned_pkt), eth_if, "Cloned pkt iface mismatch");
+	zassert_equal(net_pkt_get_len(cloned_pkt), sizeof(buf), "Cloned pkt length mismatch");
+
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER)) {
+		zassert_true(net_buf_headroom(cloned_pkt->buffer) >= sizeof(struct net_eth_hdr),
+			     "No link layer header space reserved");
+	} else {
+		zassert_equal(net_buf_headroom(cloned_pkt->buffer), 0, "Clone has headroom");
+	}
+
+	net_pkt_cursor_init(cloned_pkt);
+	ret = net_pkt_read(cloned_pkt, read_buf, sizeof(read_buf));
+	zassert_equal(ret, 0, "Cloned pkt read failed");
+	zassert_mem_equal(read_buf, buf, sizeof(buf), "Cloned pkt data mismatch");
+
+	net_pkt_unref(cloned_pkt);
+	net_pkt_unref(pkt);
+}
+
 NET_BUF_POOL_FIXED_DEFINE(test_net_pkt_headroom_pool, 4, 2, 4, NULL);
 
 ZTEST(net_pkt_test_suite, test_net_pkt_headroom)

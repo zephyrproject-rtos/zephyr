@@ -667,14 +667,15 @@ static void test_recv_with_bridge(void)
 }
 
 /* A frame that no other port can take is freed, not kept by the bridge.
- * The forwarded copy is cloned from the RX pool, so a leak shows there.
+ * The received frame is on the RX pool and its forwarded copy on the TX
+ * pool, so a leak shows in one of them.
  */
 static void test_recv_no_forwarding_port(void)
 {
-	struct k_mem_slab *rx;
-	uint32_t rx_free;
+	struct k_mem_slab *rx, *tx;
+	uint32_t rx_free, tx_free;
 
-	net_pkt_get_info(&rx, NULL, NULL, NULL);
+	net_pkt_get_info(&rx, &tx, NULL, NULL);
 
 	/* test_recv_with_bridge() leaves what fake_iface[1] sent */
 	for (int i = 0; i < 3; i++) {
@@ -688,6 +689,7 @@ static void test_recv_no_forwarding_port(void)
 	net_if_down(fake_iface[2]);
 
 	rx_free = k_mem_slab_num_free_get(rx);
+	tx_free = k_mem_slab_num_free_get(tx);
 
 	_recv_data(fake_iface[0]);
 
@@ -695,6 +697,7 @@ static void test_recv_no_forwarding_port(void)
 	k_sleep(K_MSEC(100));
 
 	zexpect_equal(k_mem_slab_num_free_get(rx), rx_free, "RX packet leaked");
+	zexpect_equal(k_mem_slab_num_free_get(tx), tx_free, "TX packet leaked");
 
 	for (int i = 0; i < 3; i++) {
 		zexpect_is_null(eth_fake_data[i].sent_pkt, "Frame sent on fake_iface[%d]", i);
