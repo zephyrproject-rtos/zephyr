@@ -53,6 +53,11 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Clock Control
+
+  * :kconfig:option:`CONFIG_CLOCK_STM32_N6_PRESERVE_BOOT_CONFIG` has been deprecated. Use
+    :kconfig:option:`CONFIG_CLOCK_STM32_CHAINLOAD_SKIP_RECONFIG` instead.
+
 New APIs and options
 ====================
 ..
@@ -73,6 +78,10 @@ New APIs and options
     * :c:func:`bt_hids_report_set`
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
+
+* Clock Control
+
+  * :kconfig:option:`CONFIG_CLOCK_STM32_CHAINLOAD_SKIP_RECONFIG`
 
 .. zephyr-keep-sorted-stop
 

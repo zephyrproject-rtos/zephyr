@@ -977,7 +977,7 @@ int stm32_clock_control_init(const struct device *dev)
 	 * The application's devicetree must describe the retained clock and
 	 * external-memory configuration.
 	 */
-	if (IS_ENABLED(CONFIG_CLOCK_STM32_N6_PRESERVE_BOOT_CONFIG)) {
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_CHAINLOAD_SKIP_RECONFIG)) {
 		SystemCoreClockUpdate();
 		return 0;
 	}

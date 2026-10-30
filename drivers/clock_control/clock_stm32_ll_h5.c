@@ -927,12 +927,23 @@ int stm32_clock_control_init(const struct device *dev)
 	return 0;
 }
 
+static int clock_control_stm32_rcc_init(const struct device *dev)
+{
+	/* A chain-loading bootloader already configured the clock tree */
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_CHAINLOAD_SKIP_RECONFIG)) {
+		SystemCoreClockUpdate();
+		return 0;
+	}
+
+	return stm32_clock_control_init(dev);
+}
+
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
  */
 DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
-		    stm32_clock_control_init,
+		    clock_control_stm32_rcc_init,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,

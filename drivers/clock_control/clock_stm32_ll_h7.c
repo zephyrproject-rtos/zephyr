@@ -1190,6 +1190,13 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_AHBSRAM2);
 #endif
 #endif
+	/* A chain-loading bootloader already configured the clock tree */
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_CHAINLOAD_SKIP_RECONFIG)) {
+		SystemCoreClockUpdate();
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+		return 0;
+	}
+
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
