@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * PHYs certified on CC2340R5. Each node names an LRF_Config provided by
+ * hal_ti (source/ti/radio_phys/cc23x0r5/) and describes its operating modes.
+ * Labels are shared with the catalogs of other SoCs that certify the same
+ * PHY, so an overlay ports by changing only the include.
+ *
+ * Include this file from an overlay and point phy-mode of a
+ * basic-radio-base PHY child at one of the mode labels below. Only the
+ * referenced PHYs are linked into the image.
+ */
+
+/ {
+	radio-phys {
+		/* 2.4 GHz - Bluetooth 5, LE - 1 Mbps / 2 Mbps / Coded (generic PBE) */
+		ti_phy_2_4_ghz_bluetooth_5_le_1_mbps_2_mbps_coded: ble5-1-mbps-2-mbps-coded {
+			compatible = "ti,cc23x0-radio-phy-config";
+			ti,lrf-config = "LRF_config_ble5_1m_2m_coded_generic";
+			ti,len-pos = <8>;
+			ti,num-len-bits = <8>;
+
+			ti_phy_2_4_ghz_bluetooth_5_le_1_mbps_2_mbps_coded_1_mbps: mode-1-mbps {
+				ti,phy-feature = <0x0000>;
+				modulation = "2-gfsk";
+				datarate-bps = <1000000>;
+				deviation-hz = <250000>;
+				frequency-min-hz = <2400000000>;
+				frequency-max-hz = <2483500000>;
+				crc-enable;
+				variable-length;
+			};
+
+			ti_phy_2_4_ghz_bluetooth_5_le_1_mbps_2_mbps_coded_2_mbps: mode-2-mbps {
+				ti,phy-feature = <0x0001>;
+				modulation = "2-gfsk";
+				datarate-bps = <2000000>;
+				deviation-hz = <500000>;
+				frequency-min-hz = <2400000000>;
+				frequency-max-hz = <2483500000>;
+				crc-enable;
+				variable-length;
+			};
+
+			ti_phy_2_4_ghz_bluetooth_5_le_1_mbps_2_mbps_coded_coded: mode-coded {
+				ti,phy-feature = <0x0002>;
+				modulation = "2-gfsk";
+				datarate-bps = <1000000>;
+				deviation-hz = <250000>;
+				frequency-min-hz = <2400000000>;
+				frequency-max-hz = <2483500000>;
+				crc-enable;
+				variable-length;
+			};
+		};
+
+		/* 2.4 GHz - IEEE 802.15.4 - 250 kbps, O-QPSK (generic PBE) */
+		ti_phy_2_4_ghz_ieee_802_15_4_250_kbps_o_qpsk: ieee-802-15-4-250-kbps-o-qpsk {
+			compatible = "ti,cc23x0-radio-phy-config";
+			ti,lrf-config = "LRF_config_ieee_802_15_4_generic";
+			ti,len-pos = <0>;
+			ti,num-len-bits = <7>;
+
+			ti_phy_2_4_ghz_ieee_802_15_4_250_kbps_o_qpsk_default: mode-default {
+				ti,phy-feature = <0x0000>;
+				modulation = "oqpsk";
+				datarate-bps = <250000>;
+				deviation-hz = <125000>;
+				frequency-min-hz = <2400000000>;
+				frequency-max-hz = <2483500000>;
+				crc-enable;
+				variable-length;
+			};
+		};
+	};
+};
