@@ -26,3 +26,16 @@ tests:
     extra_configs:
       - CONFIG_NET_BUF_DATA_SIZE=1536
       - CONFIG_NET_BUF_RX_COUNT=128
+  net.tcp.window_scale:
+    # Windows above 64 KB, and no congestion window, so that only the windows
+    # limit the data in flight. SO_RCVBUF for the receive window limit.
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_NET_TCP_WINDOW_SCALE=y
+      - CONFIG_NET_TCP_CONGESTION_AVOIDANCE=n
+      - CONFIG_NET_CONTEXT_RCVBUF=y
+      - CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE=131072
+      - CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE=131072
+      - CONFIG_NET_BUF_DATA_SIZE=1536
+      - CONFIG_NET_BUF_TX_COUNT=256
