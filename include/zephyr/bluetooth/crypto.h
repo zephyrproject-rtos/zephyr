@@ -86,11 +86,13 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
  *  @param aad       Additional authenticated data
  *  @param aad_len   Additional authenticated data length
  *  @param plaintext Plaintext buffer to place result in
- *  @param mic_size  Size of the trailing MIC (in bytes)
+ *  @param mic_size  Size of the trailing MIC (in bytes). Accepted values are
+ *                   even bytes from 4 through 16.
  *
  *  @retval 0        Successfully decrypted the data.
  *  @retval -EINVAL  Invalid parameters.
  *  @retval -EBADMSG Authentication failed.
+ *  @retval -EIO     Internal error.
  */
 int bt_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *enc_data,
 		   size_t len, const uint8_t *aad, size_t aad_len,
@@ -111,10 +113,12 @@ int bt_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *enc_
  *  @param aad       Additional authenticated data
  *  @param aad_len   Additional authenticated data length
  *  @param enc_data  Buffer to place encrypted data in
- *  @param mic_size  Size of the trailing MIC (in bytes)
+ *  @param mic_size  Size of the trailing MIC (in bytes). Accepted values are
+ *                   even bytes from 4 through 16.
  *
  *  @retval 0        Successfully encrypted the data.
  *  @retval -EINVAL  Invalid parameters.
+ *  @retval -EIO     Internal error.
  */
 int bt_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
 		   const uint8_t *plaintext, size_t len, const uint8_t *aad,

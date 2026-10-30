@@ -1142,10 +1142,13 @@ endif # BT_HCI_HOST
 
 config BT_HOST_CCM
 	bool "Host side AES-CCM module"
+	select PSA_CRYPTO
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CCM
 	help
-	  Enables the software based AES-CCM engine in the host. Will use the
-	  controller's AES encryption functions if available, or BT_HOST_CRYPTO
-	  otherwise.
+	  Enables AES-CCM in the Bluetooth host using the PSA Crypto AEAD API.
+	  PSA Crypto must be initialized before the first call; with Mbed TLS
+	  as the provider, MBEDTLS_INIT does that at boot.
 
 config BT_PER_ADV_SYNC_BUF_SIZE
 	int "Maximum periodic advertising report size"
