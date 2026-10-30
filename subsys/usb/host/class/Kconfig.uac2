@@ -1,0 +1,76 @@
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_UAC2_CLASS
+	bool "USB host Audio Class 2.0 support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  USB Host Audio Class 2.0 implementation.
+
+if USBH_UAC2_CLASS
+
+config USBH_UAC2_INSTANCES_COUNT
+	int "Number of UAC2 host instances"
+	default 4
+	range 1 8
+	help
+	  Maximum number of UAC2 devices that can be connected simultaneously.
+
+config USBH_UAC2_STREAM_IN_CONCURRENT_TRANSFERS
+	int "Number of concurrent isochronous transfers for audio stream in"
+	default 4
+	range 1 8
+	help
+	  Number of concurrent transfers for audio input (device to host).
+
+config USBH_UAC2_STREAM_OUT_CONCURRENT_TRANSFERS
+	int "Number of concurrent isochronous transfers for audio stream out"
+	default 4
+	range 1 8
+	help
+	  Number of concurrent transfers for audio output (host to device).
+
+config USBH_UAC2_AUDIO_EFFECT_CONTROLS
+	bool "Include audio effect control mappings"
+	default n
+	help
+	  Include control mappings for audio effect processing: parametric
+	  equalizer, reverberation, modulation delay (chorus/flanger), and
+	  dynamic range compressor. Enable this option when connecting to USB
+	  audio devices that expose effect processing controls. Disabling
+	  reduces the size of the control mapping table in read-only data.
+
+config USBH_UAC2_AUDIO_PROCESSING_CONTROLS
+	bool "Include audio spatial processing control mappings"
+	default n
+	help
+	  Include control mappings for audio spatial and mixing processing:
+	  up/down-mix, Dolby Prologic, and stereo extender. Enable this
+	  option when connecting to USB audio devices that expose these
+	  processing controls. Disabling reduces the size of the control
+	  mapping table in read-only data.
+
+config USBH_UAC2_COMPRESSED_AUDIO_CONTROLS
+	bool "Include compressed audio decoder control mappings"
+	default n
+	help
+	  Include control mappings for compressed audio decoder units:
+	  MPEG, AC-3, WMA, and DTS. Enable this option when connecting to
+	  USB audio devices that expose compressed audio decoder controls.
+	  Disabling reduces the size of the control mapping table in
+	  read-only data.
+
+config USBH_UAC2_MAX_RANGE_SUBRANGES
+	int "Maximum number of subranges in RANGE requests"
+	default 8
+	range 1 16
+	help
+	  Maximum number of subranges when querying control ranges.
+	  Devices may report multiple discrete values as subranges.
+	  Higher values increase stack usage.
+
+module = USBH_UAC2
+module-str = usbh_uac2
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_UAC2_CLASS
