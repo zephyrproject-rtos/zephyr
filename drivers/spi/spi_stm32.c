@@ -1184,7 +1184,6 @@ static int spi_stm32_half_duplex_switch_direction(const struct device *dev)
 		ll_set_transfer_size(spi, data->rx_len);
 		ll_set_transfer_direction(spi, STM32_SPI_HALF_DUPLEX_RX);
 		LL_SPI_Enable(spi);
-		spi_stm32_cs_control(dev, true);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		LL_SPI_StartMasterTransfer(spi);
@@ -1223,6 +1222,9 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	const struct spi_stm32_config *cfg = dev->config;
 	SPI_TypeDef *spi = cfg->spi;
 	struct spi_stm32_data *data = dev->data;
+	bool will_switch_direction = (status == 0) &&
+				     (ll_get_transfer_direction(spi) != STM32_SPI_FULL_DUPLEX) &&
+				     spi_stm32_transfer_ongoing(data);
 
 #ifdef CONFIG_SPI_RTIO
 #if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
@@ -1279,7 +1281,12 @@ static void spi_stm32_complete(const struct device *dev, int status)
 			}
 		}
 
-		spi_stm32_cs_control(dev, false);
+		/* Half-duplex master TX->RX keeps the transfer ongoing: hold a GPIO CS
+		 * asserted across the direction switch instead of toggling it.
+		 */
+		if (!will_switch_direction) {
+			spi_stm32_cs_control(dev, false);
+		}
 	}
 
 	/* BSY flag is cleared when MODF flag is raised */
@@ -1316,8 +1323,7 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 	}
 
-	if (ll_get_transfer_direction(spi) != STM32_SPI_FULL_DUPLEX &&
-	    spi_stm32_transfer_ongoing(data)) {
+	if (will_switch_direction) {
 		spi_stm32_half_duplex_switch_direction(dev);
 	} else {
 		spi_context_complete(&data->ctx, dev, status);
