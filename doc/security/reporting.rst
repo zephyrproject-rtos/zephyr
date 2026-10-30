@@ -21,6 +21,140 @@ granted access to view the issues that they have reported.
 .. _security advisory: https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability#privately-reporting-a-security-vulnerability
 .. _security advisories page: https://github.com/zephyrproject-rtos/zephyr/security/advisories
 
+.. _vulnerability_scope:
+
+Vulnerability Scope
+===================
+
+Not every defect that can crash or corrupt a Zephyr system is a security
+vulnerability.  The security response team treats a report as a
+vulnerability when a released version of Zephyr lets an attacker cross a
+trust boundary that Zephyr is designed to enforce.  Reports that do not
+meet this definition are still welcome, but they are handled as regular
+bugs through the public `issue tracker`_: no CVE is assigned and no
+embargo applies.
+
+.. _issue tracker: https://github.com/zephyrproject-rtos/zephyr/issues
+
+Trust model
+-----------
+
+Zephyr is one component of a product, and the product integrator is
+responsible for the security of the system as a whole.  Unless a
+Zephyr feature explicitly documents otherwise, the following are
+trusted.  A report in which the attacker is one of them describes a
+bug, not a vulnerability:
+
+- The application and all code linked into the firmware image.  The
+  kernel, drivers, subsystems and the application share a single trust
+  domain.  Passing invalid arguments to an API, misusing an API, or
+  corrupting memory from code running in supervisor mode is a bug in
+  that code; the API is not expected to defend against its callers.
+
+- Everything supplied at build time: Kconfig options, devicetree,
+  linker scripts, generated files and the toolchain.
+
+- The hardware the image runs on: the SoC, memory-mapped peripherals,
+  and devices attached to the board over buses such as I2C, SPI, UART,
+  SDIO or PCIe, including sensors, displays, flash and Ethernet
+  PHYs.  A device that returns malformed register contents, bogus
+  lengths or breaks its bus protocol is a faulty or malicious part of
+  the product.  Zephyr drivers are not hardened against it, and a crash
+  or memory corruption caused by such a device is a robustness bug.
+
+- Co-processors and companion firmware that are part of the same
+  product and that Zephyr talks to over a local transport, such as a
+  Bluetooth controller behind HCI, a cellular modem behind an AT or
+  CMUX link, or a remote core reached through IPC.  A rogue Bluetooth
+  controller sending malformed HCI events, for instance, is a defect of
+  the controller, not a vulnerability in the host stack.  Data these
+  components relay from outside the device, such as IP packets from a
+  modem or packets from a remote Bluetooth peer, remains untrusted.
+
+- Parties with unrestricted access through debug ports or a privileged
+  console or shell, and attackers who bypass the assumed hardware
+  protections through fault injection, glitching or hardware side-channel
+  attacks.  Physical access alone does not make a party trusted: peers on
+  exposed communication interfaces remain subject to the rules below.
+
+The following are not trusted.  A defect that an attacker can trigger
+from one of these positions is a vulnerability:
+
+- Peers on communication interfaces that leave the device: IP
+  networking, Bluetooth and other wireless links, IEEE 802.15.4, the
+  USB host when Zephyr runs as a USB device, and comparable interfaces.
+  This includes data received over such an interface and then processed
+  later, for example a downloaded file or a received firmware image.
+
+- Threads running in user mode when :ref:`user mode <usermode_api>` is
+  enabled.  The kernel and system call handlers must validate every
+  argument that comes from user mode, and a user thread gaining
+  supervisor privileges, or reading or writing memory in violation of its
+  configured access permissions, is a vulnerability.  See the
+  :ref:`user mode threat model <usermode_overview>` for the protections
+  provided and their limitations.
+
+Some interfaces are trusted in one product and exposed to attackers in
+another: a file system on removable media, a USB device attached to a
+Zephyr USB host, or data read from an external bus that is physically
+accessible.  When a report depends on such an interface, say so and
+describe the configuration.  The security response team decides these
+cases individually.
+
+Defects in unreleased code
+--------------------------
+
+The vulnerability process exists to protect users of released
+software.  A defect introduced on the ``main`` branch after the most
+recent release, and therefore not present in any tagged release, is a
+regular bug: report it in the public `issue tracker`_ following the
+:ref:`bug reporting <bug_reporting>` guidelines, where it is fixed
+through the normal pull request process.  No CVE is assigned and no
+embargo applies, whatever the severity of the defect.
+
+A defect that is present in a tagged release is a vulnerability even
+if the code has since been changed or removed on ``main``.
+
+If you are unsure whether the affected code was ever released, report
+through the security channels and say so.  The security response team
+checks the release history, and when the code was never released it
+rejects the advisory and reproduces the report as a public issue, or
+asks the reporter to do so.
+
+Other reports that are not vulnerabilities
+------------------------------------------
+
+The following are also handled outside the vulnerability process:
+
+- Missing hardening or security features, such as a Kconfig option
+  whose default is not the most secure choice, or a mitigation Zephyr
+  does not implement.  These are enhancement requests, unless a feature
+  Zephyr documents as a security mechanism does not work as described.
+
+- Defects that can only be triggered by a trusted party, for example
+  resource exhaustion or a deadlock caused by the application's own
+  misuse of a kernel object.
+
+- Defects in a function that lacks input validation when no untrusted
+  input reaches that function.  A report must show a path from an
+  untrusted position, as described above, to the defect.
+
+- Defects originating in upstream code that Zephyr imports from
+  third-party projects, such as the HAL modules, Mbed TLS or other
+  repositories listed in ``west.yml``.  Report these to the upstream
+  project's security contact.  The security response team tracks the
+  integration of the upstream fix into Zephyr.  Vulnerabilities introduced
+  by Zephyr-specific changes to imported code remain within Zephyr's
+  vulnerability process.  If the origin is uncertain, report privately
+  through Zephyr's security channels so the response team can determine
+  responsibility.
+
+- Defects that affect only releases no longer listed as supported in
+  the project `security policy`_.  These releases do not receive fixes;
+  users are expected to upgrade.
+
+.. _security policy: https://github.com/zephyrproject-rtos/zephyr/blob/main/.github/SECURITY.md
+
 Vulnerability Reporting Guidelines
 ==================================
 
@@ -47,7 +181,9 @@ report should:
   proof-of-concept where possible.
 
 - Explain the security impact (for example, loss of confidentiality,
-  integrity, or availability) and any known mitigations.
+  integrity, or availability), who the attacker is and which trust
+  boundary described in :ref:`vulnerability_scope` is crossed, and any
+  known mitigations.
 
 - Avoid including destructive payloads or components that could cause harm to
   users or systems if the report were inadvertently disclosed.
@@ -104,6 +240,10 @@ number of states according to this diagram:
 
 - Assigned: The issue has been assigned, and is awaiting a fix by the
   assignee.
+
+- Rejected: The report is not a vulnerability as defined in
+  :ref:`vulnerability_scope`, or could not be reproduced.  When the
+  report describes a bug, it is reproduced in the public issue tracker.
 
 - Review: Once there is a Zephyr pull request for the issue, the PR
   link will be added to a comment in the issue, and the issue moved to
