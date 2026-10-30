@@ -40,6 +40,31 @@
 				pinmux = <DT_CAT1_PINMUX(17, 0, HSIOM_SEL_ACT_14)>;
 				drive-push-pull;
 			};
+
+			/omit-if-no-ref/ p11_0_scb0_spi_miso: p11_0_scb0_spi_miso {
+				pinmux = <DT_CAT1_PINMUX(11, 0, HSIOM_SEL_DS_6)>;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p11_1_scb0_spi_sel0: p11_1_scb0_spi_sel0 {
+				pinmux = <DT_CAT1_PINMUX(11, 1, HSIOM_SEL_DS_6)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p11_2_scb0_spi_clk: p11_2_scb0_spi_clk {
+				pinmux = <DT_CAT1_PINMUX(11, 2, HSIOM_SEL_DS_6)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p11_3_scb0_spi_mosi: p11_3_scb0_spi_mosi {
+				pinmux = <DT_CAT1_PINMUX(11, 3, HSIOM_SEL_DS_6)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p12_0_scb0_spi_sel3: p12_0_scb0_spi_sel3 {
+				pinmux = <DT_CAT1_PINMUX(12, 0, HSIOM_SEL_DS_6)>;
+				drive-push-pull;
+			};
 		};
 	};
 };

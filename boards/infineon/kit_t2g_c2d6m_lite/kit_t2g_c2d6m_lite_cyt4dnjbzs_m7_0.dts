@@ -53,3 +53,11 @@
 &gpio_prt9 {
 	status = "okay";
 };
+
+&gpio_prt11 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};

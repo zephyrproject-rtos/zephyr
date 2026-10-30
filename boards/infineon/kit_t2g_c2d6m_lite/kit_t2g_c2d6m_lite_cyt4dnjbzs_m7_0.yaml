@@ -16,5 +16,6 @@ toolchain:
 supported:
   - adc
   - gpio
+  - spi
   - uart
 vendor: infineon

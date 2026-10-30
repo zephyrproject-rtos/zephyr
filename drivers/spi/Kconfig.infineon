@@ -25,6 +25,17 @@ config SPI_INFINEON_PDL
 	help
 	  This option enables the PDL based SPI driver for Infineon family.
 
+config SPI_INFINEON_SCB
+	bool "Infineon SCB SPI driver"
+	default y
+	depends on DT_HAS_INFINEON_SCB_SPI_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable the SPI driver for the Infineon serial communication block
+	  (SCB). The driver programs the SCB registers directly and takes its
+	  clock from the peripheral clock divider driver.
+
 if USE_INFINEON_SPI
 
 config SPI_INFINEON_DMA
