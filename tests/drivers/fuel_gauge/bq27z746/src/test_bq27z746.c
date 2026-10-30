@@ -104,8 +104,8 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 		FUEL_GAUGE_AVG_CURRENT_UA,
 		FUEL_GAUGE_CYCLE_COUNT,
 		FUEL_GAUGE_CURRENT_UA,
-		FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
-		FUEL_GAUGE_REMAINING_CAPACITY_UAH,
+		FUEL_GAUGE_FULL_CHARGE_CAPACITY,
+		FUEL_GAUGE_REMAINING_CAPACITY,
 		FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS,
 		FUEL_GAUGE_RUNTIME_TO_FULL_MINS,
 		FUEL_GAUGE_SBS_MFR_ACCESS,
@@ -130,8 +130,8 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 	zassert_equal(vals[0].avg_current_ua, -2000);
 	zassert_equal(vals[1].cycle_count, 1);
 	zassert_equal(vals[2].current_ua, -2000);
-	zassert_equal(vals[3].full_charge_capacity_uah, 1000);
-	zassert_equal(vals[4].remaining_capacity_uah, 1000);
+	zassert_equal(vals[3].full_charge_capacity, 1000);
+	zassert_equal(vals[4].remaining_capacity, 1000);
 	zassert_equal(vals[5].runtime_to_empty_mins, 1);
 	zassert_equal(vals[6].runtime_to_full_mins, 1);
 	zassert_equal(vals[7].sbs_mfr_access_word, 1);
@@ -150,8 +150,8 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 	zassert_between_inclusive(vals[0].avg_current_ua, INT16_MIN * 1000, INT16_MAX * 1000);
 	zassert_between_inclusive(vals[1].cycle_count, 0, UINT16_MAX);
 	zassert_between_inclusive(vals[2].current_ua, INT16_MIN * 1000, INT16_MAX * 1000);
-	zassert_between_inclusive(vals[3].full_charge_capacity_uah, 0, INT16_MAX * 1000);
-	zassert_between_inclusive(vals[4].remaining_capacity_uah, 0, INT16_MAX * 1000);
+	zassert_between_inclusive(vals[3].full_charge_capacity, 0, INT16_MAX * 1000);
+	zassert_between_inclusive(vals[4].remaining_capacity, 0, INT16_MAX * 1000);
 	zassert_between_inclusive(vals[5].runtime_to_empty_mins, 0, UINT16_MAX);
 	zassert_between_inclusive(vals[6].runtime_to_full_mins, 0, UINT16_MAX);
 	/* Not testing props[7]. This is the manufacturer access and has only status bits */

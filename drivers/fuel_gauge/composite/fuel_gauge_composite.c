@@ -179,15 +179,15 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	}
 
 	switch (prop) {
-	case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
+	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
 		rc = composite_channel_get(dev, SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY, &sensor_val);
 		if (rc == 0) {
-			val->full_charge_capacity_uah = sensor_value_to_micro(&sensor_val);
+			val->full_charge_capacity = sensor_value_to_micro(&sensor_val);
 		} else if (rc == -ENOTSUP) {
 			if (config->charge_capacity_microamp_hours == 0) {
 				return -ENOTSUP;
 			}
-			val->full_charge_capacity_uah = config->charge_capacity_microamp_hours;
+			val->full_charge_capacity = config->charge_capacity_microamp_hours;
 			rc = 0;
 		}
 		break;

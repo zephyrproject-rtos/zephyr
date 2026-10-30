@@ -28,9 +28,9 @@ LOG_MODULE_REGISTER(app);
 	X(FUEL_GAUGE_CYCLE_COUNT)                                                                  \
 	X(FUEL_GAUGE_CONNECT_STATE)                                                                \
 	X(FUEL_GAUGE_FLAGS)                                                                        \
-	X(FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH)                                                     \
+	X(FUEL_GAUGE_FULL_CHARGE_CAPACITY)                                                         \
 	X(FUEL_GAUGE_PRESENT_STATE)                                                                \
-	X(FUEL_GAUGE_REMAINING_CAPACITY_UAH)                                                       \
+	X(FUEL_GAUGE_REMAINING_CAPACITY)                                                           \
 	X(FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS)                                                        \
 	X(FUEL_GAUGE_RUNTIME_TO_FULL_MINS)                                                         \
 	X(FUEL_GAUGE_SBS_MFR_ACCESS)                                                               \
@@ -168,14 +168,14 @@ static void decode_and_log_property(fuel_gauge_prop_t prop, union fuel_gauge_pro
 	case FUEL_GAUGE_FLAGS:
 		LOG_INF("  Flags: 0x%" PRIX32, value.flags);
 		break;
-	case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
-		LOG_INF("  Full charge capacity: %" PRIu32 " μAh", value.full_charge_capacity_uah);
+	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
+		LOG_INF("  Full charge capacity: %" PRIu32 " μAh", value.full_charge_capacity);
 		break;
 	case FUEL_GAUGE_PRESENT_STATE:
 		LOG_INF("  Present state: %s", value.present_state ? "yes" : "no");
 		break;
-	case FUEL_GAUGE_REMAINING_CAPACITY_UAH:
-		LOG_INF("  Remaining capacity: %" PRIu32 " μAh", value.remaining_capacity_uah);
+	case FUEL_GAUGE_REMAINING_CAPACITY:
+		LOG_INF("  Remaining capacity: %" PRIu32 " μAh", value.remaining_capacity);
 		break;
 	case FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS:
 		LOG_INF("  Runtime to empty: %" PRIu32 " minutes", value.runtime_to_empty_mins);
@@ -322,9 +322,9 @@ int main(void)
 			FUEL_GAUGE_CYCLE_COUNT,
 			FUEL_GAUGE_CONNECT_STATE,
 			FUEL_GAUGE_FLAGS,
-			FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
+			FUEL_GAUGE_FULL_CHARGE_CAPACITY,
 			FUEL_GAUGE_PRESENT_STATE,
-			FUEL_GAUGE_REMAINING_CAPACITY_UAH,
+			FUEL_GAUGE_REMAINING_CAPACITY,
 			FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS,
 			FUEL_GAUGE_RUNTIME_TO_FULL_MINS,
 			FUEL_GAUGE_SBS_MFR_ACCESS,
