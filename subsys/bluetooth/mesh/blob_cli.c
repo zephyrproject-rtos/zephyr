@@ -271,7 +271,7 @@ static int chunk_idx_decode(struct net_buf_simple *buf)
 static void block_set(struct bt_mesh_blob_cli *cli, uint16_t block_idx)
 {
 	cli->block.number = block_idx;
-	cli->block.offset = block_idx * (1UL << cli->xfer->block_size_log);
+	cli->block.offset = block_idx * BIT64(cli->xfer->block_size_log);
 	cli->block.size = blob_block_size(cli->xfer->size, cli->xfer->block_size_log,
 					  block_idx);
 	cli->block.chunk_count =
@@ -831,7 +831,7 @@ static void caps_collected(struct bt_mesh_blob_cli *cli)
 	}
 
 	while (success &&
-	       (1UL << cli->caps.max_block_size_log) >
+	       BIT64(cli->caps.max_block_size_log) >
 	       (cli->caps.max_chunk_size * cli->caps.max_chunks)) {
 		cli->caps.max_block_size_log--;
 	}
@@ -1236,14 +1236,42 @@ static int handle_xfer_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
 	info.phase = net_buf_simple_pull_u8(buf);
 
 	if (buf->len) {
+		if (buf->len < sizeof(info.id)) {
+			LOG_WRN("Invalid BLOB ID length: %u", buf->len);
+			return -EINVAL;
+		}
+
 		info.id = net_buf_simple_pull_le64(buf);
 	}
 
-	if (buf->len >= 7) {
+	/* BLOB Size, Block Size Log, Transfer MTU Size and Blocks Not Received are either all
+	 * present or all absent (MshMBTv1.0 4.4).
+	 */
+	if (buf->len) {
+		uint32_t block_count;
+
+		if (buf->len < 7) {
+			LOG_WRN("Invalid message length: %u", buf->len);
+			return -EINVAL;
+		}
+
 		info.size = net_buf_simple_pull_le32(buf);
 		info.block_size_log = net_buf_simple_pull_u8(buf);
 		info.mtu_size = net_buf_simple_pull_le16(buf);
-		info.missing_blocks = net_buf_simple_pull(buf, buf->len);
+
+		if (info.block_size_log < 0x06 || info.block_size_log > 0x20) {
+			LOG_WRN("Invalid block size log: %u", info.block_size_log);
+			return -EINVAL;
+		}
+
+		/* The block size can be 2^32, so compute the block count in 64 bits. */
+		block_count = DIV_ROUND_UP((uint64_t)info.size, BIT64(info.block_size_log));
+		if (buf->len != DIV_ROUND_UP(block_count, 8)) {
+			LOG_WRN("Invalid Blocks Not Received length: %u", buf->len);
+			return -EINVAL;
+		}
+
+		info.missing_blocks = net_buf_simple_pull_mem(buf, buf->len);
 	}
 
 	LOG_DBG("status: %u %s phase: %u %s", info.status,
