@@ -30,11 +30,14 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/irq.h>
+#include <zephyr/dt-bindings/adc/infineon-hppass-sar.h>
 
 #include <infineon_hppass.h>
 #include "cy_hppass_sar.h"
+#include "adc_common.h"
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+#define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #include "adc_context.h"
 
 #define IFX_HPPASS_SAR_ADC_RESOLUTION (12u)
@@ -136,11 +139,15 @@ const cy_stc_hppass_sar_t ifx_hppass_sar_pdl_cfg_struct_default = {
 
 /* 28-channel mask, OR'd into CFG_RESULT_MASK (Regs TRM §20.1.18). */
 #define IFX_HPPASS_SAR_CHAN_MSK            ((1UL << HPPASS_SAR_ADC_MAX_CHANNELS) - 1UL)
-/* Group 0 done bit, bit 0 of the ENTRY_DONE field in CFG_SAR_RESULT_INTR/_SET/_MASK/_MASKED
- * (Regs TRM §20.1.26-29).  Derived from the IP register header so the bit position tracks
- * silicon revisions rather than a hand-coded literal.
- */
-#define IFX_HPPASS_SAR_INTR_RESULT_GROUP_0 BIT(HPPASS_SAR_CFG_SAR_RESULT_INTR_ENTRY_DONE_Pos)
+
+/* SAMPLE_TIME is 10-bit and the aperture is the field plus one (Regs TRM §20.1.10). */
+#define IFX_HPPASS_SAR_SAMP_TIME_MAX 1024
+
+/* Aperture for a group that asks for none; a muxed input needs it to settle. */
+#define IFX_HPPASS_SAR_SAMP_TIME_DEFAULT 32
+
+/* The PDL leaves this many simultaneous samplers uncompensated (cy_hppass_sar.c). */
+#define IFX_HPPASS_SAR_CROSSTALK_MIN_SAMPLERS 4
 
 /*
  * SAR controller register offsets relative to the SAR controller reg
@@ -184,6 +191,17 @@ const cy_stc_hppass_sar_t ifx_hppass_sar_pdl_cfg_struct_default = {
 #define IFX_HPPASS_SAR_CHAN_CFG_AVG_SEL      GENMASK(26, 24) /* averaging select */
 #define IFX_HPPASS_SAR_CHAN_CFG_FIFO_SEL     GENMASK(30, 28) /* result FIFO select */
 
+/* Per-group done bits in SAR_RESULT_INTR.ENTRY_DONE, bits [7:0] (Regs TRM §20.1.26). */
+#define IFX_HPPASS_SAR_INTR_RESULT_GROUP(n) BIT(HPPASS_SAR_CFG_SAR_RESULT_INTR_ENTRY_DONE_Pos + (n))
+
+struct ifx_hppass_sar_grp_cfg {
+	uint32_t channels;
+	uint8_t trigger;
+	/* Extra sampling aperture in SAR clock cycles, 0 for immediate hold. */
+	uint16_t samp_time_cycles;
+	bool declared;
+};
+
 /*
  * Configuration and data structures
  */
@@ -204,6 +222,8 @@ struct ifx_hppass_sar_adc_config {
 	bool gain_cal;
 	bool offset_cal;
 	bool linear_cal;
+	struct ifx_hppass_sar_grp_cfg groups[CY_HPPASS_SAR_GRP_NUM];
+	uint8_t num_groups;
 };
 
 /**
@@ -215,6 +235,8 @@ struct ifx_hppass_sar_adc_data {
 	uint32_t enabled_channels;
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
+	uint8_t grp_samp_sel[CY_HPPASS_SAR_GRP_NUM];
+	uint8_t trig0_grp_msk;
 };
 
 /*
@@ -235,12 +257,16 @@ struct ifx_hppass_sar_adc_data {
  *
  * @param channels Bitmask of channels to be enabled in the group
  * @param group Group number to configure (0-7)
+ * @param samp_sel Sampling timer selection (cy_en_hppass_sar_samp_time_t)
  *
  * Configure SAR_SEQ_GROUP[group] to fire the requested channels on the next trigger.
  * Each mux sampler can select only one of its four inputs; returns -EINVAL if more than
  * one channel per mux group is requested.
+ *
+ * Cross-talk compensation is left to the caller,it keys off every group sharing the trigger.
  */
-static int ifx_hppass_sar_configure_group(mem_addr_t ctrl_base, uint32_t channels, uint32_t group)
+static int ifx_hppass_sar_configure_group(mem_addr_t ctrl_base, uint32_t channels, uint32_t group,
+					  uint8_t trigger, uint8_t samp_sel)
 {
 	uint32_t mux_samp_msk = 0;
 	uint32_t mux_sel[4] = {0};
@@ -268,28 +294,18 @@ static int ifx_hppass_sar_configure_group(mem_addr_t ctrl_base, uint32_t channel
 	}
 
 	/* Single-shot conversion via SEQ_ENTRY0 (Regs TRM §20.1.5). */
-	uint32_t seq_entry_reg =
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_DIRECT_SAMPLER_EN,
-			   channels & ADC_SAMPLER_DIRECT_MASK) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUXED_SAMPLER_EN, mux_samp_msk) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX0_SEL, mux_sel[0]) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX1_SEL, mux_sel[1]) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX2_SEL, mux_sel[2]) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX3_SEL, mux_sel[3]) |
-		/* MFD wires TR0 to FW_PULSE via trig-in-0-type */
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_TR_SEL, CY_HPPASS_SAR_TRIG_0) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_SAMP_TIME_SEL,
-			   CY_HPPASS_SAR_SAMP_TIME_0);
+	uint32_t seq_entry_reg = FIELD_PREP(IFX_HPPASS_SAR_SEQ_DIRECT_SAMPLER_EN,
+					    channels & ADC_SAMPLER_DIRECT_MASK) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUXED_SAMPLER_EN, mux_samp_msk) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX0_SEL, mux_sel[0]) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX1_SEL, mux_sel[1]) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX2_SEL, mux_sel[2]) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX3_SEL, mux_sel[3]) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_TR_SEL, trigger) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_SAMP_TIME_SEL, samp_sel);
 
 	sys_write32(seq_entry_reg, ctrl_base + IFX_HPPASS_SAR_SEQ_ENTRY(group));
 
-	/*
-	 * Cross-talk compensation: adjusts per-sampler offset trim based on
-	 * the number of simultaneously active samplers.  Must be called each
-	 * time the active sampler set changes (per cy_hppass_sar.h:1172-1177).
-	 * Reads calOffsetMirror[] populated by Cy_HPPASS_SAR_Init().
-	 */
-	Cy_HPPASS_SAR_CrossTalkAdjust((uint8_t)1U << group);
 	return 0;
 }
 
@@ -345,10 +361,15 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	if (sequence->channels == 0) {
 		LOG_ERR("No channels specified");
 		adc_context_complete(&data->ctx, -EINVAL);
-	} else if (ifx_hppass_sar_configure_group(ctrl_base, sequence->channels, 0) != 0) {
+	} else if (ifx_hppass_sar_configure_group(ctrl_base, sequence->channels, 0,
+						  CY_HPPASS_SAR_TRIG_0,
+						  data->grp_samp_sel[0]) != 0) {
 		LOG_ERR("Invalid channel group selection");
 		adc_context_complete(&data->ctx, -EINVAL);
 	} else {
+		/* The sampler set just changed, so re-trim before triggering. */
+		Cy_HPPASS_SAR_CrossTalkAdjust(data->trig0_grp_msk);
+
 		/* Clear previous results before triggering the next conversion. */
 		sys_write32(sequence->channels & IFX_HPPASS_SAR_CHAN_MSK,
 			    ctrl_base + IFX_HPPASS_SAR_RESULT_UPDATED);
@@ -404,6 +425,14 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
+/* adc_context only stops the interval timer when a sequence finishes without error. */
+static void adc_context_on_complete(struct adc_context *ctx, int status)
+{
+	ARG_UNUSED(status);
+
+	adc_context_disable_timer(ctx);
+}
+
 /**
  * @brief Start read operation
  *
@@ -415,10 +444,14 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct ifx_hppass_sar_adc_data *data = dev->data;
+	const struct ifx_hppass_sar_adc_config *cfg = dev->config;
+	uint32_t other_grp_channels = 0;
+	int ret;
 
-	if (sequence->buffer_size < (sizeof(int16_t) * POPCOUNT(sequence->channels))) {
+	ret = adc_sequence_validate_buffer(sequence, POPCOUNT(sequence->channels), sizeof(int16_t));
+	if (ret != 0) {
 		LOG_ERR("Buffer too small");
-		return -ENOMEM;
+		return ret;
 	}
 
 	if (sequence->resolution != IFX_HPPASS_SAR_ADC_RESOLUTION) {
@@ -439,6 +472,26 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	if (sequence->oversampling != 0) {
 		LOG_ERR("Oversampling not supported");
 		return -EINVAL;
+	}
+
+	/* adc_read only ever fires group 0; reject channels another group owns. */
+	if (cfg->num_groups > 0) {
+		if (cfg->groups[0].declared == true) {
+			if (sequence->channels & ~cfg->groups[0].channels) {
+				LOG_ERR("adc_read channels span outside group 0");
+				return -EINVAL;
+			}
+		} else {
+			for (uint8_t g = 1; g < CY_HPPASS_SAR_GRP_NUM; g++) {
+				if (cfg->groups[g].declared == true) {
+					other_grp_channels |= cfg->groups[g].channels;
+				}
+			}
+			if (sequence->channels & other_grp_channels) {
+				LOG_ERR("adc_read channels overlap groups 1-7");
+				return -EINVAL;
+			}
+		}
 	}
 
 	data->buffer = sequence->buffer;
@@ -474,8 +527,7 @@ static void ifx_hppass_sar_adc_isr(const struct device *dev)
 	sys_write32(result_intr_status, ctrl_base + IFX_HPPASS_SAR_RESULT_INTR);
 	(void)sys_read32(ctrl_base + IFX_HPPASS_SAR_RESULT_INTR);
 
-	if (result_intr_status & IFX_HPPASS_SAR_INTR_RESULT_GROUP_0) {
-		LOG_DBG("SAR Group 0 conversion complete");
+	if (result_intr_status & IFX_HPPASS_SAR_INTR_RESULT_GROUP(0)) {
 
 #if defined(CONFIG_ADC_ASYNC)
 		if (data->ctx.asynchronous) {
@@ -500,15 +552,6 @@ static void ifx_hppass_sar_adc_isr(const struct device *dev)
 			}
 		}
 #endif /* CONFIG_ADC_ASYNC */
-	}
-
-	/*
-	 * This implementation only uses Group 0. Any other interrupts indicates a configuration
-	 * error.
-	 */
-	if (result_intr_status & ~IFX_HPPASS_SAR_INTR_RESULT_GROUP_0) {
-		LOG_ERR("SAR Results Interrupt for unhandled groups: 0x%08X",
-			(uint32_t)(result_intr_status & ~IFX_HPPASS_SAR_INTR_RESULT_GROUP_0));
 	}
 }
 
@@ -688,6 +731,19 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 }
 
 /**
+ * @brief Mux samplers a channel mask draws on
+ *
+ * One bit per mux sampler (0-3), where per group of four multiplexed channels.
+ */
+static uint32_t ifx_hppass_sar_mux_samplers(uint32_t channels)
+{
+	return ((channels & ADC_SAMPLER_12_CHANNEL_GROUP) ? BIT(0) : 0) |
+	       ((channels & ADC_SAMPLER_13_CHANNEL_GROUP) ? BIT(1) : 0) |
+	       ((channels & ADC_SAMPLER_14_CHANNEL_GROUP) ? BIT(2) : 0) |
+	       ((channels & ADC_SAMPLER_15_CHANNEL_GROUP) ? BIT(3) : 0);
+}
+
+/**
  * @brief Initialize ADC device
  */
 static int ifx_hppass_sar_adc_init(const struct device *dev)
@@ -695,6 +751,14 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 	const struct ifx_hppass_sar_adc_config *cfg = dev->config;
 	struct ifx_hppass_sar_adc_data *data = dev->data;
 	cy_stc_hppass_sar_t sar_cfg;
+	uint16_t samp_slot_cycles[CY_HPPASS_SAR_SAMP_TIME_NUM] = {0};
+	uint8_t samp_slots_used = 0;
+	uint32_t all_grp_channels = 0;
+	uint32_t all_grp_mux = 0;
+	uint32_t shared_mux = 0;
+	uint8_t done_msk = 0;
+	uint8_t compensated_sets = 0;
+	int ret;
 
 	data->dev = dev;
 
@@ -710,23 +774,158 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/* Validate the group set before configure the SAR. */
+	for (uint8_t grp = 0; grp < CY_HPPASS_SAR_GRP_NUM; grp++) {
+		uint32_t mux_samplers;
+
+		if (cfg->groups[grp].declared != true) {
+			continue;
+		}
+		if (all_grp_channels & cfg->groups[grp].channels) {
+			LOG_ERR("Channel overlap in group %u", grp);
+			return -EINVAL;
+		}
+		all_grp_channels |= cfg->groups[grp].channels;
+
+		mux_samplers = ifx_hppass_sar_mux_samplers(cfg->groups[grp].channels);
+		shared_mux |= all_grp_mux & mux_samplers;
+		all_grp_mux |= mux_samplers;
+	}
+
+	/* 3 timers serve 8 groups, so equal apertures share one (Arch TRM §27.2.2.2). */
+	for (uint8_t grp = 0; grp < CY_HPPASS_SAR_GRP_NUM; grp++) {
+		uint16_t cycles = cfg->groups[grp].samp_time_cycles;
+		uint8_t slot;
+
+		/* adc_read() fires group 0 whether or not the devicetree declares it. */
+		if (cfg->groups[grp].declared != true && grp != 0U) {
+			continue;
+		}
+
+		if (cycles == 0U) {
+			cycles = IFX_HPPASS_SAR_SAMP_TIME_DEFAULT;
+		}
+
+		for (slot = 0; slot < samp_slots_used; slot++) {
+			if (samp_slot_cycles[slot] == cycles) {
+				break;
+			}
+		}
+		if (slot == samp_slots_used) {
+			if (samp_slots_used == CY_HPPASS_SAR_SAMP_TIME_NUM) {
+				LOG_ERR("More than %u distinct sample times requested",
+					CY_HPPASS_SAR_SAMP_TIME_NUM);
+				return -EINVAL;
+			}
+			samp_slot_cycles[samp_slots_used] = cycles;
+			samp_slots_used++;
+		}
+		data->grp_samp_sel[grp] = CY_HPPASS_SAR_SAMP_TIME_0 + slot;
+	}
+
+	/* Every group sharing a mux route needs settling time (Arch TRM §27.2.2.3). */
+	for (uint8_t grp = 0; grp < CY_HPPASS_SAR_GRP_NUM; grp++) {
+		if (cfg->groups[grp].declared != true) {
+			continue;
+		}
+		if ((shared_mux & ifx_hppass_sar_mux_samplers(cfg->groups[grp].channels)) != 0U &&
+		    cfg->groups[grp].samp_time_cycles == 0U) {
+			LOG_ERR("Group %u shares a mux sampler but sets no sample time", grp);
+			return -EINVAL;
+		}
+
+		/* Cross-talk is only defined for a trigger set with one sampling timer. */
+		for (uint8_t peer = grp + 1; peer < CY_HPPASS_SAR_GRP_NUM; peer++) {
+			if (cfg->groups[peer].declared == true &&
+			    cfg->groups[peer].trigger == cfg->groups[grp].trigger &&
+			    data->grp_samp_sel[peer] != data->grp_samp_sel[grp]) {
+				LOG_ERR("Groups %u and %u share a trigger but not a sample time",
+					grp, peer);
+				return -EINVAL;
+			}
+		}
+	}
+
 	ifx_init_pdl_struct(&sar_cfg, cfg);
+
+	for (uint8_t slot = 0; slot < samp_slots_used; slot++) {
+		sar_cfg.sampTime[slot] = samp_slot_cycles[slot];
+	}
 
 	/*
 	 * Cy_HPPASS_SAR_Init() copies SFLASH calibration into
 	 * SAR_CALOFFST[0..3]/CALGAINC/CALGAINF and populates the PDL
-	 * calOffsetMirror[] table.  The cross-talk compensation in
-	 * ifx_hppass_sar_configure_group() reads that table via
-	 * Cy_HPPASS_SAR_CrossTalkAdjust(), so this call must stay.
+	 * calOffsetMirror[] table.  The cross-talk compensation below reads
+	 * that table, so this call must stay.
 	 */
 	if (Cy_HPPASS_SAR_Init(&sar_cfg) != CY_RSLT_SUCCESS) {
 		LOG_ERR("Failed to initialize HPPASS SAR ADC");
 		return -EIO;
 	}
 
+	/* Write SEQ_ENTRY register for each declared group */
+	for (uint8_t grp = 0; grp < CY_HPPASS_SAR_GRP_NUM; grp++) {
+		if (cfg->groups[grp].declared != true) {
+			continue;
+		}
+		ret = ifx_hppass_sar_configure_group(cfg->ctrl_base, cfg->groups[grp].channels, grp,
+						     cfg->groups[grp].trigger,
+						     data->grp_samp_sel[grp]);
+		if (ret != 0) {
+			LOG_ERR("Failed to configure group %u", grp);
+			return ret;
+		}
+	}
+
+	/*
+	 * CrossTalkAdjust() reads the sampler set out of SEQ_GROUP[] and wants one
+	 * mask per set of groups that sample together (cy_hppass_sar.h), so it runs
+	 * here rather than per group.  Only the set compensated last keeps its trim,
+	 * since the CALOFFST trim is shared by every group.
+	 */
+	for (uint8_t grp = 0; grp < CY_HPPASS_SAR_GRP_NUM; grp++) {
+		uint32_t set_channels = 0;
+		uint8_t set_msk = 0;
+
+		if (cfg->groups[grp].declared != true || (done_msk & BIT(grp)) != 0U) {
+			continue;
+		}
+		for (uint8_t peer = grp; peer < CY_HPPASS_SAR_GRP_NUM; peer++) {
+			if (cfg->groups[peer].declared == true &&
+			    cfg->groups[peer].trigger == cfg->groups[grp].trigger) {
+				set_msk |= BIT(peer);
+				set_channels |= cfg->groups[peer].channels;
+			}
+		}
+		done_msk |= set_msk;
+
+		if (cfg->groups[grp].trigger == CY_HPPASS_SAR_TRIG_0) {
+			data->trig0_grp_msk = set_msk;
+		}
+		Cy_HPPASS_SAR_CrossTalkAdjust(set_msk);
+
+		if ((POPCOUNT(set_channels & ADC_SAMPLER_DIRECT_MASK) +
+		     POPCOUNT(ifx_hppass_sar_mux_samplers(set_channels))) >
+		    IFX_HPPASS_SAR_CROSSTALK_MIN_SAMPLERS) {
+			compensated_sets++;
+		}
+	}
+
+	if (compensated_sets > 1) {
+		LOG_WRN("%u independently triggered group sets; only the last is cross-talk "
+			"compensated", compensated_sets);
+	}
+
+	if (data->trig0_grp_msk == 0U) {
+		data->trig0_grp_msk = BIT(0);
+	}
+
 #if defined(CONFIG_ADC_ASYNC)
-	/* Group 0 result interrupt drives async completions. */
-	sys_write32(IFX_HPPASS_SAR_INTR_RESULT_GROUP_0,
+	/*
+	 * Only group 0 has a reader. ENTRY_DONE for the other groups would cost an
+	 * interrupt per conversion with nothing to do.
+	 */
+	sys_write32(IFX_HPPASS_SAR_INTR_RESULT_GROUP(0),
 		    cfg->ctrl_base + IFX_HPPASS_SAR_RESULT_INTR_MASK);
 	cfg->irq_func();
 #endif /* CONFIG_ADC_ASYNC */
@@ -754,64 +953,71 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 #endif
 
 /*
- * Devicetree channel mask generation
+ * Devicetree channel discovery
  *
- * dir_samp_en_mask:
- *   One bit per direct sampler channel (0..11) that has a child node.
- *
- * mux_samp_en_mask:
- *   One bit per mux sampler group:
- *     Bit0 -> any of channels 12..15 present
- *     Bit1 -> any of channels 16..19 present
- *     Bit2 -> any of channels 20..23 present
- *     Bit3 -> any of channels 24..27 present
+ * Channels 0..11 own a direct sampler each; channels 12..27 share four mux
+ * samplers four ways, so one enable bit covers the whole set.
  */
 
-#define IFX_HPPASS_SAR_CH_EXISTS(inst, ch) \
-	DT_NODE_EXISTS(DT_CHILD_BY_UNIT_ADDR_INT(DT_DRV_INST(inst), ch))
+/* Channel nodes are the only ADC children carrying the generic channel properties. */
+#define IFX_SAR_CHAN_MASK_BIT(child)                                                               \
+	COND_CODE_1(DT_NODE_HAS_PROP(child, zephyr_gain), (BIT(DT_REG_ADDR(child))), (0)) |
 
-/* Direct sampler bitmap (0..11) */
-#define IFX_HPPASS_SAR_DIR_MASK(inst)                                                              \
-	((IFX_HPPASS_SAR_CH_EXISTS(inst, 0) ? BIT(0) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 1) ? BIT(1) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 2) ? BIT(2) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 3) ? BIT(3) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 4) ? BIT(4) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 5) ? BIT(5) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 6) ? BIT(6) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 7) ? BIT(7) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 8) ? BIT(8) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 9) ? BIT(9) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 10) ? BIT(10) : 0) |                                      \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 11) ? BIT(11) : 0))
+/* Bitmap of every enabled channel node. */
+#define IFX_HPPASS_SAR_CHAN_MASK(inst)                                                             \
+	(DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, IFX_SAR_CHAN_MASK_BIT) 0)
 
-/* Group presence helpers */
-#define IFX_HPPASS_SAR_GRP0_PRESENT(inst)                                                          \
-	(IFX_HPPASS_SAR_CH_EXISTS(inst, 12) || IFX_HPPASS_SAR_CH_EXISTS(inst, 13) ||               \
-	 IFX_HPPASS_SAR_CH_EXISTS(inst, 14) || IFX_HPPASS_SAR_CH_EXISTS(inst, 15))
+#define IFX_HPPASS_SAR_DIR_MASK(inst) (IFX_HPPASS_SAR_CHAN_MASK(inst) & ADC_SAMPLER_DIRECT_MASK)
 
-#define IFX_HPPASS_SAR_GRP1_PRESENT(inst)                                                          \
-	(IFX_HPPASS_SAR_CH_EXISTS(inst, 16) || IFX_HPPASS_SAR_CH_EXISTS(inst, 17) ||               \
-	 IFX_HPPASS_SAR_CH_EXISTS(inst, 18) || IFX_HPPASS_SAR_CH_EXISTS(inst, 19))
-
-#define IFX_HPPASS_SAR_GRP2_PRESENT(inst)                                                          \
-	(IFX_HPPASS_SAR_CH_EXISTS(inst, 20) || IFX_HPPASS_SAR_CH_EXISTS(inst, 21) ||               \
-	 IFX_HPPASS_SAR_CH_EXISTS(inst, 22) || IFX_HPPASS_SAR_CH_EXISTS(inst, 23))
-
-#define IFX_HPPASS_SAR_GRP3_PRESENT(inst)                                                          \
-	(IFX_HPPASS_SAR_CH_EXISTS(inst, 24) || IFX_HPPASS_SAR_CH_EXISTS(inst, 25) ||               \
-	 IFX_HPPASS_SAR_CH_EXISTS(inst, 26) || IFX_HPPASS_SAR_CH_EXISTS(inst, 27))
-
-/* Mux sampler enable mask (bit per group if any channel in that group exists) */
 #define IFX_HPPASS_SAR_MUX_MASK(inst)                                                              \
-	((IFX_HPPASS_SAR_GRP0_PRESENT(inst) ? BIT(0) : 0) |                                        \
-	 (IFX_HPPASS_SAR_GRP1_PRESENT(inst) ? BIT(1) : 0) |                                        \
-	 (IFX_HPPASS_SAR_GRP2_PRESENT(inst) ? BIT(2) : 0) |                                        \
-	 (IFX_HPPASS_SAR_GRP3_PRESENT(inst) ? BIT(3) : 0))
+	(((IFX_HPPASS_SAR_CHAN_MASK(inst) & ADC_SAMPLER_12_CHANNEL_GROUP) ? BIT(0) : 0) |          \
+	 ((IFX_HPPASS_SAR_CHAN_MASK(inst) & ADC_SAMPLER_13_CHANNEL_GROUP) ? BIT(1) : 0) |          \
+	 ((IFX_HPPASS_SAR_CHAN_MASK(inst) & ADC_SAMPLER_14_CHANNEL_GROUP) ? BIT(2) : 0) |          \
+	 ((IFX_HPPASS_SAR_CHAN_MASK(inst) & ADC_SAMPLER_15_CHANNEL_GROUP) ? BIT(3) : 0))
+
+/*
+ * Sequencer group parsing
+ *
+ * Groups hang off the "sequencer" child rather than the ADC node itself: ADC
+ * children are addressed by channel number, and a group sharing that address
+ * space hides the real channel from ADC_DT_SPEC_GET().
+ */
+#define IFX_SAR_SEQ_NODE(inst) DT_INST_CHILD(inst, sequencer)
+
+#define IFX_GRP_FOREACH(inst, fn)                                                                  \
+	COND_CODE_1(DT_NODE_EXISTS(IFX_SAR_SEQ_NODE(inst)),                                        \
+		    (DT_FOREACH_CHILD_STATUS_OKAY_VARGS(IFX_SAR_SEQ_NODE(inst), fn, inst)), ())
+
+#define IFX_GRP_DT_COUNT(inst)                                                                     \
+	COND_CODE_1(DT_NODE_EXISTS(IFX_SAR_SEQ_NODE(inst)),                                        \
+		    (DT_CHILD_NUM_STATUS_OKAY(IFX_SAR_SEQ_NODE(inst))), (0))
+
+#define IFX_GRP_CFG_ENTRY(child, inst)                                                             \
+	[DT_REG_ADDR(child)] = {                                                                   \
+		.channels = DT_PROP(child, infineon_channel_mask),                                 \
+		.trigger = DT_PROP(child, infineon_trigger_source),                                \
+		.samp_time_cycles = DT_PROP_OR(child, infineon_sample_time_cycles, 0),             \
+		.declared = true,                                                                  \
+	},
+
+#define IFX_GRP_VALIDATE(child, inst)                                                              \
+	BUILD_ASSERT(DT_REG_ADDR(child) < CY_HPPASS_SAR_GRP_NUM, "group reg must be 0-7");         \
+	BUILD_ASSERT(DT_PROP(child, infineon_channel_mask) != 0,                                   \
+		     "infineon,channel-mask must select at least one channel");                    \
+	BUILD_ASSERT((DT_PROP(child, infineon_channel_mask) &                                      \
+		      ~(IFX_HPPASS_SAR_CHAN_MASK(inst) & IFX_HPPASS_SAR_CHAN_MSK)) == 0,           \
+		     "infineon,channel-mask needs an enabled channel node for every bit");         \
+	BUILD_ASSERT(DT_PROP_OR(child, infineon_sample_time_cycles, 1) <=                          \
+			     IFX_HPPASS_SAR_SAMP_TIME_MAX,                                         \
+		     "infineon,sample-time-cycles must be 1-1024");                                \
+	BUILD_ASSERT(DT_REG_ADDR(child) != 0 ||                                                    \
+			     DT_PROP(child, infineon_trigger_source) == IFX_HPPASS_SAR_TRIG_0,     \
+		     "group 0 must use IFX_HPPASS_SAR_TRIG_0, the line adc_read() pulses");
 
 /* Device instantiation */
 #define IFX_HPPASS_SAR_ADC_INIT(n)                                                                 \
 	ADC_IFX_HPPASS_SAR_DRIVER_API(n);                                                          \
+	IFX_GRP_FOREACH(n, IFX_GRP_VALIDATE)                                                       \
 	static void ifx_hppass_sar_adc_config_func_##n(void);                                      \
 	static const struct ifx_hppass_sar_adc_config ifx_hppass_sar_adc_config_##n = {            \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
@@ -824,7 +1030,10 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 		.vref_internal_source = DT_INST_PROP(n, ref_internal_source),                      \
 		.gain_cal = DT_INST_PROP(n, gain_cal),                                             \
 		.offset_cal = DT_INST_PROP(n, offset_cal),                                         \
-		.linear_cal = DT_INST_PROP(n, linear_cal)};                                        \
+		.linear_cal = DT_INST_PROP(n, linear_cal),                                         \
+		.groups = {IFX_GRP_FOREACH(n, IFX_GRP_CFG_ENTRY)},                                 \
+		.num_groups = IFX_GRP_DT_COUNT(n),                                                 \
+	};                                                                                         \
 	static struct ifx_hppass_sar_adc_data ifx_hppass_sar_adc_data_##n = {                      \
 		ADC_CONTEXT_INIT_TIMER(ifx_hppass_sar_adc_data_##n, ctx),                          \
 		ADC_CONTEXT_INIT_LOCK(ifx_hppass_sar_adc_data_##n, ctx),                           \

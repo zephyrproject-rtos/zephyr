@@ -9,6 +9,7 @@
  * Common devicetree content for the kit_psc3m5_evk secure board variants.
  */
 
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -263,7 +264,18 @@ uart3: &scb3 {
 };
 
 &adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
+
+	/* On-board potentiometer on AN_B4, the first input of mux sampler 0. */
+	channel@c {
+		reg = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+	};
 };
 
 &csg0 {
