@@ -182,12 +182,12 @@ enum {
 /* TODO switch to video_set_selection() API for cropping instead */
 static const struct video_format_cap imx219_fmts[] = {
 	[IMX219_RAW8_FULL_FRAME] = {
-		.pixelformat = VIDEO_PIX_FMT_SBGGR8,
+		.pixelformat = VIDEO_PIX_FMT_SRGGB8,
 		.width_min = 4, .width_max = IMX219_FULL_WIDTH, .width_step = 4,
 		.height_min = 4, .height_max = IMX219_FULL_HEIGHT, .height_step = 4,
 	},
 	[IMX219_RAW10_FULL_FRAME] = {
-		.pixelformat = VIDEO_PIX_FMT_SBGGR10P,
+		.pixelformat = VIDEO_PIX_FMT_SRGGB10P,
 		.width_min = 4, .width_max = IMX219_FULL_WIDTH, .width_step = 4,
 		.height_min = 4, .height_max = IMX219_FULL_HEIGHT, .height_step = 4,
 	},
