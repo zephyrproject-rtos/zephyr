@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - cmis
+  harness: ztest
+
+tests:
+  drivers.cmis:
+    integration_platforms:
+      - native_sim

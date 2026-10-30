@@ -1,0 +1,24 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	sfp_i2c: i2c@100 {
+		status = "okay";
+		compatible = "zephyr,i2c-emul-controller";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x100 4>;
+
+		sfp0: sff8472@50 {
+			compatible = "sff,sff8472";
+			reg = <0x50>;
+			status = "okay";
+		};
+	};
+};
