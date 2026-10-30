@@ -50,11 +50,29 @@ properties:
     type: int
     required: true
     description: Key code to emit.
+  channel-io:
+    type: int
+    description: |
+      Channel I/O within the parent group that this key node owns. Must be a
+      single bit also present in the parent group's channel-ios mask.
+
+      When the parent group declares more than one channel I/O (multi-channel
+      multiplexing), this property is required so the driver can route the
+      acquisition result for each I/O to the correct key. When the parent
+      group declares exactly one channel I/O, this property may be omitted and
+      the driver derives it from the parent's channel-ios mask.
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
 
 examples:
   - |
     #include <zephyr/dt-bindings/input/input-event-codes.h>
+    #include <zephyr/dt-bindings/input/stm32-tsc-defines.h>
 
+    /* Single channel I/O per group: channel-io may be omitted. */
     &tsc {
       compatible = "st,stm32-tsc";
 
@@ -66,6 +84,49 @@ examples:
           oversampling = <10>;
           noise-threshold = <50>;
           zephyr,code = <INPUT_KEY_0>;
+        };
+      };
+    };
+
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+    #include <zephyr/dt-bindings/input/stm32-tsc-defines.h>
+
+    /* Multi-channel group: each tsc-keys child owns one channel I/O.
+     * The driver multiplexes acquisitions across them.
+     */
+    &tsc {
+      compatible = "st,stm32-tsc";
+      st,acquisition-interval-ms = <10>;
+
+      tsc_group2: g2 {
+        group = <2>;
+        channel-ios = <(TSC_IO2 | TSC_IO3 | TSC_IO4)>;
+        sampling-io = <TSC_IO1>;
+
+        ts_a {
+          compatible = "tsc-keys";
+          channel-io = <TSC_IO2>;
+          sampling-interval-ms = <10>;
+          oversampling = <10>;
+          noise-threshold = <50>;
+          zephyr,code = <INPUT_KEY_0>;
+        };
+        ts_b {
+          compatible = "tsc-keys";
+          channel-io = <TSC_IO3>;
+          sampling-interval-ms = <10>;
+          oversampling = <10>;
+          noise-threshold = <50>;
+          zephyr,code = <INPUT_KEY_1>;
+        };
+        ts_c {
+          compatible = "tsc-keys";
+          channel-io = <TSC_IO4>;
+          sampling-interval-ms = <10>;
+          oversampling = <10>;
+          noise-threshold = <50>;
+          zephyr,code = <INPUT_KEY_2>;
         };
       };
     };
