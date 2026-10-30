@@ -1,0 +1,14 @@
+common:
+  tags:
+    - arch
+    - tricore
+    - soak
+  arch_allow: tricore
+tests:
+  arch.tricore.soak:
+    timeout: 120
+  arch.tricore.soak.long:
+    slow: true
+    timeout: 700
+    extra_configs:
+      - CONFIG_TRICORE_SOAK_SECONDS=300

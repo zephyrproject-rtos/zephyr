@@ -1,0 +1,7 @@
+common:
+  tags:
+    - arch
+    - tricore
+  arch_allow: tricore
+tests:
+  arch.tricore.no_multithreading: {}
