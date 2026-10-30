@@ -75,6 +75,14 @@ fallback if the peer does not support the requested mode.
   Client requests Streaming mode with optional fallback.
   Extra conf: :file:`prj_stream.conf`.
 
+``bluetooth.classic.sim.l2cap.multiple_channels_simultaneously.basic``
+  Both sides negotiate Basic mode.
+  Extra conf: :file:`prj_basic.conf`.
+
+``bluetooth.classic.sim.l2cap.multiple_channels_simultaneously.eret``
+  Both sides negotiate Basic mode.
+  Extra conf: :file:`prj_eret.conf`.
+
 Requirements
 ************
 
