@@ -120,6 +120,13 @@ Ethernet
   driver now always uses the standard Ethernet MTU of 1500 bytes, as the Ethernet L2 does not
   support jumbo frames. (:github:`122863`)
 
+* The ``reset-gpios`` timing properties of the Ethernet PHY bindings, such as
+  :dtcompatible:`ethernet-phy` and :dtcompatible:`ethernet-phy-fixed-link`, have been renamed to
+  align with the Linux Ethernet PHY binding, which uses the same names.
+  Replace ``reset-assert-duration-us`` with ``reset-assert-us``, and replace
+  ``reset-deassertion-timeout-ms`` with ``reset-deassert-us``, multiplying its value by 1000 as
+  it is now in microseconds. (:github:`124061`)
+
 OPAMP
 =====
 
