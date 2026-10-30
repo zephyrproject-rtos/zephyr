@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_OV5647
+	bool "OV5647 CMOS digital image sensor"
+	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV5647),pwdn-gpios)
+	depends on DT_HAS_OVTI_OV5647_ENABLED
+	default y
+	help
+	  Enable driver for OV5647 CMOS digital image sensor device
