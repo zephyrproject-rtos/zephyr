@@ -48,6 +48,18 @@ void usbh_req_omit_status(const bool omit)
 	ctrl_req_no_status = omit;
 }
 
+/* Temporary workaround until usbh_req_setup() is reworked */
+__weak int usbh_root_hub_control(struct usb_device *const udev,
+				 struct usb_setup_packet *const setup,
+				 struct net_buf *const buf)
+{
+	ARG_UNUSED(udev);
+	ARG_UNUSED(setup);
+	ARG_UNUSED(buf);
+
+	return -ENOTSUP;
+}
+
 int usbh_req_setup(struct usb_device *const udev,
 		   const uint8_t bmRequestType,
 		   const uint8_t bRequest,
@@ -66,6 +78,13 @@ int usbh_req_setup(struct usb_device *const udev,
 	struct uhc_transfer *xfer;
 	uint8_t ep = usb_reqtype_is_to_device(&req) ? 0x00 : 0x80;
 	int ret;
+
+	if (udev->level == 1) {
+		ret = usbh_root_hub_control(udev, &req, buf);
+		if (ret != -ENOTSUP) {
+			return ret;
+		}
+	}
 
 	k_mutex_lock(&ch9_req_lock, K_FOREVER);
 
