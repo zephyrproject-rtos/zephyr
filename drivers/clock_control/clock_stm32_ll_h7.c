@@ -21,6 +21,8 @@
 #include <stm32_backup_domain.h>
 #include <stm32_hsem.h>
 
+#include "clock_stm32_flash_latency.h"
+
 /* Power supply / regulator configuration node */
 #define PWRC_NODE DT_INST(0, st_stm32h7_pwr)
 
@@ -1187,7 +1189,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
 	/* If freq increases, set flash latency before any clock setting */
 	if (new_hclk_freq > old_hclk_freq) {
-		LL_SetFlashLatency(new_hclk_freq);
+		stm32_set_flash_latency(new_hclk_freq);
 	}
 
 	/* Preset the prescalers prior to choosing SYSCLK */
@@ -1238,7 +1240,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
 	/* If freq not increased, set flash latency after all clock setting */
 	if (new_hclk_freq <= old_hclk_freq) {
-		LL_SetFlashLatency(new_hclk_freq);
+		stm32_set_flash_latency(new_hclk_freq);
 	}
 
 	optimize_regulator_voltage_scale(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);

@@ -15,3 +15,21 @@ properties:
       RDP1 but in multi-image environment, some other image could check if
       RDP1 is enabled by comparing it to some hardcoded value. The byte has to
       be different than 0xAA and 0xCC.
+
+  st,flash-latency:
+    type: int
+    description: |
+      Number of wait states to use as flash latency.
+
+      If this property is not set, the appropriate number of wait states is
+      computed automatically, but the algorithm used assumes nominal operating
+      conditions (e.g., VDD supply voltage) which may not hold on certain boards.
+      This property can be used in such cases to override the algorithm when it
+      would compute an incorrect amount of wait states.
+
+      No build-time validation is performed against HCLK or VDD supply voltage
+      or any other parameter on which the number of wait states depends. The
+      board author is expected to provide a correct value based on the relevant
+      documentation applicable to the SoC used (Reference Manual / Data Sheet,
+      e.g. RM0090 Rev 22, Section 3.5.1 for STM32F405xx/407xx/415xx/417xx).
+      CONFIG_STM32_FLASH_PREFETCH is not touched by this property.
