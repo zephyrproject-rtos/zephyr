@@ -594,17 +594,6 @@ static int eth_dm9051_rx(const struct device *dev)
 			net_pkt_unref(pkt);
 			goto out_update_errors_rx;
 		}
-
-		/* Update ethernet statistics */
-		eth_stats_update_bytes_rx(data->iface, net_pkt_get_len(pkt));
-		eth_stats_update_pkts_rx(data->iface);
-		if (net_eth_is_addr_broadcast(&NET_ETH_HDR(pkt)->dst)) {
-			eth_stats_update_broadcast_rx(data->iface);
-		} else if (net_eth_is_addr_multicast(&NET_ETH_HDR(pkt)->dst)) {
-			eth_stats_update_multicast_rx(data->iface);
-		} else {
-			/* Unicast frame */
-		}
 	}
 
 	goto out_spi_unlock;
