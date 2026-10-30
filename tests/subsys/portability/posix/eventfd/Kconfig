@@ -14,11 +14,6 @@ config TEST_DURATION_S
 	   eventfd_write() are stable enough to run for an arbitrarily long
 	   period of time without encountering any race conditions.
 
-config TEST_TIMEOUT_S
-	int "Number of seconds to run the test"
-	range 1 21600
-	default 10
-
 config TEST_STACK_SIZE
 	int "Size of each thread stack in this test"
 	default 2048
@@ -37,7 +32,3 @@ config TEST_EXTRA_QUIET
 	help
 	  In order to get a true benchmark, there should be as few branches
 	  as possible on the hot path. Say 'y' here to skip reporting.
-
-module = EVENTFD_TEST
-module-str = eventfd
-source "subsys/logging/Kconfig.template.log_config"
