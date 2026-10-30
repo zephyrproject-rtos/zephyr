@@ -7,11 +7,13 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE charger_handlers.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_include_directories_ifdef(CONFIG_CHARGER_ADP5360 ${ZEPHYR_BASE}/drivers/mfd)
+zephyr_library_include_directories_ifdef(CONFIG_CHARGER_BQ25620 ${ZEPHYR_BASE}/drivers/mfd)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_ADP5360 charger_adp5360.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_AXP2101 charger_axp2101.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ24190 charger_bq24190.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ2429X charger_bq2429x.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ2518X charger_bq2518x.c)
+zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ25620 charger_bq25620.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ25713 charger_bq25713.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_GPIO    charger_gpio.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_MAX20335 charger_max20335.c)

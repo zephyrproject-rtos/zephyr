@@ -4,6 +4,7 @@
 zephyr_library()
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_EMUL_BQ25620 emul_bq25620.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_AD559X mfd_ad559x.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_AD559X_BUS_I2C mfd_ad559x_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_AD559X_BUS_SPI mfd_ad559x_spi.c)
@@ -14,6 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_MFD_AW9523B mfd_aw9523b.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_AXP192 mfd_axp192.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_AXP2101 mfd_axp2101.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_BD8LB600FS mfd_bd8lb600fs.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_BQ25620 mfd_bq25620.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_DS3231 mfd_ds3231.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_INFINEON_AUTANALOG mfd_infineon_autanalog.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_INFINEON_AUTANALOG_CTB mfd_infineon_autanalog_ctb.c)
