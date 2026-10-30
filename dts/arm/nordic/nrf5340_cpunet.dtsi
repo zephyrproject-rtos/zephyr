@@ -106,6 +106,13 @@
 			};
 		};
 
+		reset: reset@41005000 {
+			compatible = "nordic,nrf-reset";
+			reset-reason-available;
+			reg = <0x41005000 0x1000>;
+			status = "disabled";
+		};
+
 		radio: radio@41008000 {
 			compatible = "nordic,nrf-radio";
 			reg = <0x41008000 0x1000>;

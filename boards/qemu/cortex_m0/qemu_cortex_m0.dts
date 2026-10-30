@@ -85,3 +85,7 @@
 &lfclk {
 	k32src = "xtal";
 };
+
+&power {
+	/delete-property/ reset-reason-available;
+};
