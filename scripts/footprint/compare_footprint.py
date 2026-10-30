@@ -24,12 +24,12 @@ BASE_COMMIT is the commit used as base to compare results.
 """
 
 import argparse
-import os
 import csv
-import subprocess
 import logging
-import tempfile
+import os
 import shutil
+import subprocess
+import tempfile
 
 if "ZEPHYR_BASE" not in os.environ:
     logging.error("$ZEPHYR_BASE environment variable undefined.\n")
@@ -39,15 +39,20 @@ logger = None
 GIT_ENABLED = False
 RELEASE_DATA = 'twister_last_release.csv'
 
+
 def is_git_enabled():
     global GIT_ENABLED
-    proc = subprocess.Popen('git rev-parse --is-inside-work-tree',
-                            stdout=subprocess.PIPE,
-                            cwd=os.environ.get('ZEPHYR_BASE'), shell=True)
+    proc = subprocess.Popen(
+        'git rev-parse --is-inside-work-tree',
+        stdout=subprocess.PIPE,
+        cwd=os.environ.get('ZEPHYR_BASE'),
+        shell=True,
+    )
     if proc.wait() != 0:
         GIT_ENABLED = False
 
     GIT_ENABLED = True
+
 
 def init_logs():
     global logger
@@ -67,88 +72,122 @@ def init_logs():
 
     logging.debug("Log init completed")
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
-                description="Compare footprint apps RAM and ROM sizes. Note: "
-                "To run it you need to set up the same environment as twister.",
-                allow_abbrev=False)
-    parser.add_argument('-b', '--base-commit', default=None,
-                        help="Commit ID to use as base for footprint "
-                                    "compare. Default is parent current commit."
-                                    " or twister_last_release.csv if we don't have git.")
-    parser.add_argument('-c', '--commit', default=None,
-                        help="Commit ID to use compare footprint against base. "
-                                    "Default is HEAD or working tree.")
+        description="Compare footprint apps RAM and ROM sizes. Note: "
+        "To run it you need to set up the same environment as twister.",
+        allow_abbrev=False,
+    )
+    parser.add_argument(
+        '-b',
+        '--base-commit',
+        default=None,
+        help="Commit ID to use as base for footprint "
+        "compare. Default is parent current commit."
+        " or twister_last_release.csv if we don't have git.",
+    )
+    parser.add_argument(
+        '-c',
+        '--commit',
+        default=None,
+        help="Commit ID to use compare footprint against base. Default is HEAD or working tree.",
+    )
     return parser.parse_args()
+
 
 def get_git_commit(commit):
     commit_id = None
-    proc = subprocess.Popen('git rev-parse %s' % commit, stdout=subprocess.PIPE,
-                            cwd=os.environ.get('ZEPHYR_BASE'), shell=True)
+    proc = subprocess.Popen(
+        f'git rev-parse {commit}',
+        stdout=subprocess.PIPE,
+        cwd=os.environ.get('ZEPHYR_BASE'),
+        shell=True,
+    )
     if proc.wait() == 0:
         commit_id = proc.stdout.read().decode("utf-8").strip()
     return commit_id
 
-def sanity_results_filename(commit=None, cwd=os.environ.get('ZEPHYR_BASE')):
+
+def sanity_results_filename(commit=None, cwd=None):
+    if cwd is None:
+        cwd = os.environ.get('ZEPHYR_BASE')
+
     if not commit:
         file_name = "tmp.csv"
     else:
         if commit == RELEASE_DATA:
             file_name = RELEASE_DATA
         else:
-            file_name = "%s.csv" % commit
+            file_name = f"{commit}.csv"
 
-    return os.path.join(cwd,'scripts', 'sanity_chk', file_name)
+    return os.path.join(cwd, 'scripts', 'sanity_chk', file_name)
 
-def git_reset(commit, cwd=os.environ.get('ZEPHYR_BASE')):
-    proc = subprocess.Popen('git diff --quiet', stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT, cwd=cwd, shell=True)
+
+def git_reset(commit, cwd=None):
+    if cwd is None:
+        cwd = os.environ.get('ZEPHYR_BASE')
+
+    proc = subprocess.Popen(
+        'git diff --quiet', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd, shell=True
+    )
     if proc.wait() != 0:
         raise Exception("Cannot continue, you have unstaged changes in your working tree")
 
-    proc = subprocess.Popen('git reset %s --hard' % commit,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            cwd=cwd, shell=True)
+    proc = subprocess.Popen(
+        f'git reset {commit} --hard',
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=cwd,
+        shell=True,
+    )
     if proc.wait() == 0:
         return True
     else:
         logger.error(proc.stdout.read())
     return False
 
-def run_sanity_footprint(commit=None, cwd=os.environ.get('ZEPHYR_BASE'),
-                         output_file=None):
+
+def run_sanity_footprint(commit=None, cwd=None, output_file=None):
+    if cwd is None:
+        cwd = os.environ.get('ZEPHYR_BASE')
+
     if not output_file:
         output_file = sanity_results_filename(commit)
     cmd = '/bin/bash -c "source ./zephyr-env.sh && twister'
-    cmd += ' +scripts/sanity_chk/sanity_compare.args -o %s"' % output_file
-    logger.debug('Sanity (%s)   %s' %(commit, cmd))
+    cmd += f' +scripts/sanity_chk/sanity_compare.args -o {output_file}"'
+    logger.debug(f'Sanity ({commit})   {cmd}')
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                            cwd=cwd, shell=True)
-    output,_ = proc.communicate()
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=cwd, shell=True)
+    output, _ = proc.communicate()
     if proc.wait() == 0:
         logger.debug(output)
         return True
 
-    logger.error("Couldn't build footprint apps in commit %s" % commit)
+    logger.error(f"Couldn't build footprint apps in commit {commit}")
     logger.error(output)
-    raise Exception("Couldn't build footprint apps in commit %s" % commit)
+    raise Exception(f"Couldn't build footprint apps in commit {commit}")
+
 
 def run_footprint_build(commit=None):
-    logging.debug("footprint build for %s" % commit)
+    logging.debug(f"footprint build for {commit}")
     if not commit:
         run_sanity_footprint()
     else:
-        cmd = "git clone --no-hardlinks %s" % os.environ.get('ZEPHYR_BASE')
-        tmp_location = os.path.join(tempfile.gettempdir(),
-                                os.path.basename(os.environ.get('ZEPHYR_BASE')))
+        cmd = f"git clone --no-hardlinks {os.environ.get('ZEPHYR_BASE')}"
+        tmp_location = os.path.join(
+            tempfile.gettempdir(), os.path.basename(os.environ.get('ZEPHYR_BASE'))
+        )
         if os.path.exists(tmp_location):
             shutil.rmtree(tmp_location)
-        logging.debug("cloning into %s" % tmp_location)
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                cwd=tempfile.gettempdir(), shell=True)
+        logging.debug(f"cloning into {tmp_location}")
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=tempfile.gettempdir(),
+            shell=True,
+        )
         if proc.wait() == 0:
             if git_reset(commit, tmp_location):
                 run_sanity_footprint(commit, tmp_location)
@@ -156,6 +195,7 @@ def run_footprint_build(commit=None):
             logger.error(proc.stdout.read())
         shutil.rmtree(tmp_location, ignore_errors=True)
     return True
+
 
 def read_sanity_report(filename):
     data = []
@@ -165,6 +205,7 @@ def read_sanity_report(filename):
             data.append(row)
     return data
 
+
 def get_footprint_results(commit=None):
     sanity_file = sanity_results_filename(commit)
     if (not os.path.exists(sanity_file) or not commit) and commit != RELEASE_DATA:
@@ -172,18 +213,20 @@ def get_footprint_results(commit=None):
 
     return read_sanity_report(sanity_file)
 
+
 def tree_changes():
-    proc = subprocess.Popen('git diff --quiet', stdout=subprocess.PIPE,
-                            cwd=os.environ.get('ZEPHYR_BASE'), shell=True)
-    if proc.wait() != 0:
-        return True
-    return False
+    proc = subprocess.Popen(
+        'git diff --quiet', stdout=subprocess.PIPE, cwd=os.environ.get('ZEPHYR_BASE'), shell=True
+    )
+    return proc.wait() != 0
+
 
 def get_default_current_commit():
     if tree_changes():
         return None
     else:
         return get_git_commit('HEAD')
+
 
 def get_default_base_commit(current_commit):
     if not current_commit:
@@ -192,7 +235,8 @@ def get_default_base_commit(current_commit):
         else:
             return get_git_commit('HEAD~1')
     else:
-        return get_git_commit('%s~1'%current_commit)
+        return get_git_commit(f'{current_commit}~1')
+
 
 def build_history(b_commit=None, c_commit=None):
     if not GIT_ENABLED:
@@ -214,18 +258,17 @@ def build_history(b_commit=None, c_commit=None):
         logger.error("Cannot resolve base commit")
         return
 
-    logger.info("Base:    %s" % base_commit)
-    logger.info("Current: %s" % (current_commit if current_commit else
-                    'working space'))
+    logger.info(f"Base:    {base_commit}")
+    logger.info(f"Current: {current_commit if current_commit else 'working space'}")
 
     current_results = get_footprint_results(current_commit)
     base_results = get_footprint_results(base_commit)
     deltas = compare_results(base_results, current_results)
     print_deltas(deltas)
 
+
 def compare_results(base_results, current_results):
-    interesting_metrics = [("ram_size", int),
-                           ("rom_size", int)]
+    interesting_metrics = [("ram_size", int), ("rom_size", int)]
     results = {}
     metrics = {}
 
@@ -236,17 +279,17 @@ def compare_results(base_results, current_results):
             for m, mtype in interesting_metrics:
                 if row[m]:
                     d[m] = mtype(row[m])
-            if not row["test"] in metrics[type]:
+            if row["test"] not in metrics[type]:
                 metrics[type][row["test"]] = {}
             metrics[type][row["test"]][row["platform"]] = d
 
     for test, platforms in metrics['current'].items():
-        if not test in metrics['base']:
+        if test not in metrics['base']:
             continue
         tests = {}
 
         for platform, test_data in platforms.items():
-            if not platform in metrics['base'][test]:
+            if platform not in metrics['base'][test]:
                 continue
             golden_metric = metrics['base'][test][platform]
             tmp = {}
@@ -271,26 +314,33 @@ def compare_results(base_results, current_results):
 
     return results
 
+
 def print_deltas(deltas):
     error_count = 0
     for test in sorted(deltas):
-        print("\n{:<25}".format(test))
+        print(f"\n{test:<25}")
         for platform, data in deltas[test].items():
-            print(" {:<25}".format(platform))
+            print(f" {platform:<25}")
             for metric, value in data.items():
-                percentage = (float(value['delta']) / float(value['current'] -
-                                                            value['delta']))
-                print("  {} ({:+.2%}) {:+6}   current size {:>7} bytes".format(
-                        "RAM" if metric == "ram_size" else "ROM", percentage,
-                        value['delta'], value['current']))
+                percentage = float(value['delta']) / float(value['current'] - value['delta'])
+                print(
+                    "  {} ({:+.2%}) {:+6}   current size {:>7} bytes".format(
+                        "RAM" if metric == "ram_size" else "ROM",
+                        percentage,
+                        value['delta'],
+                        value['current'],
+                    )
+                )
                 error_count = error_count + 1
     if error_count == 0:
         print("There are no changes in RAM neither in ROM of footprint apps.")
     return error_count
 
+
 def main():
     args = parse_args()
     build_history(args.base_commit, args.commit)
+
 
 if __name__ == "__main__":
     init_logs()

@@ -2,17 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# diffconfig - a tool to compare .config files.
+# diffconfig.py - a tool to compare .config files.
 #
 # originally written in 2006 by Matt Mackall
 #  (at least, this was in his bloatwatch source code)
 # last worked on 2008 by Tim Bird
 #
 
-import sys, os
+import os
+import sys
+
 
 def usage():
-    print("""Usage: diffconfig [-h] [-m] [<config1> <config2>]
+    print("""Usage: diffconfig.py [-h] [-m] [<config1> <config2>]
 
 Diffconfig is a simple utility for comparing two .config files.
 Using standard diff to compare .config files often includes extraneous and
@@ -28,7 +30,7 @@ changed and new values in kernel config option format.
 If no config files are specified, .config and .config.old are used.
 
 Example usage:
- $ diffconfig .config config-with-some-changes
+ $ diffconfig.py .config config-with-some-changes
 -EXT2_FS_XATTR  n
 -EXT2_FS_XIP  n
  CRAMFS  n -> y
@@ -37,6 +39,7 @@ Example usage:
  PRINTK_TIME  n -> y
 """)
     sys.exit(0)
+
 
 # returns a dictionary of name/value pairs for config items in the file
 def readconfig(config_file):
@@ -50,28 +53,26 @@ def readconfig(config_file):
             d[line[9:-11]] = "n"
     return d
 
-def print_config(op, config, value, new_value):
-    global merge_style
 
+def print_config(op, config, value, new_value, merge_style):
     if merge_style:
         if new_value:
-            if new_value=="n":
-                print("# CONFIG_%s is not set" % config)
+            if new_value == "n":
+                print(f"# CONFIG_{config} is not set")
             else:
-                print("CONFIG_%s=%s" % (config, new_value))
+                print(f"CONFIG_{config}={new_value}")
     else:
-        if op=="-":
-            print("-%s %s" % (config, value))
-        elif op=="+":
-            print("+%s %s" % (config, new_value))
+        if op == "-":
+            print(f"-{config} {value}")
+        elif op == "+":
+            print(f"+{config} {new_value}")
         else:
-            print(" %s %s -> %s" % (config, value, new_value))
+            print(f" {config} {value} -> {new_value}")
+
 
 def main():
-    global merge_style
-
     # parse command line args
-    if ("-h" in sys.argv or "--help" in sys.argv):
+    if "-h" in sys.argv or "--help" in sys.argv:
         usage()
 
     merge_style = 0
@@ -80,15 +81,15 @@ def main():
         sys.argv.remove("-m")
 
     argc = len(sys.argv)
-    if not (argc==1 or argc == 3):
+    if argc not in [1, 3]:
         print("Error: incorrect number of arguments or unrecognized option")
         usage()
 
     if argc == 1:
         # if no filenames given, assume .config and .config.old
-        build_dir=""
+        build_dir = ""
         if "KBUILD_OUTPUT" in os.environ:
-            build_dir = os.environ["KBUILD_OUTPUT"]+"/"
+            build_dir = os.environ["KBUILD_OUTPUT"] + "/"
         configa_filename = build_dir + ".config.old"
         configb_filename = build_dir + ".config"
     else:
@@ -96,11 +97,12 @@ def main():
         configb_filename = sys.argv[2]
 
     try:
-        a = readconfig(open(configa_filename))
-        b = readconfig(open(configb_filename))
-    except (IOError):
-        e = sys.exc_info()[1]
-        print("I/O error[%s]: %s\n" % (e.args[0],e.args[1]))
+        with open(configa_filename) as configa_file:
+            a = readconfig(configa_file)
+        with open(configb_filename) as configb_file:
+            b = readconfig(configb_file)
+    except OSError as err:
+        print(f"I/O error[{err.args[0]}]: {err.args[1]}\n")
         usage()
 
     # print items in a but not b (accumulate, sort and print)
@@ -110,7 +112,7 @@ def main():
             old.append(config)
     old.sort()
     for config in old:
-        print_config("-", config, a[config], None)
+        print_config("-", config, a[config], None, merge_style)
         del a[config]
 
     # print items that changed (accumulate, sort, and print)
@@ -122,13 +124,14 @@ def main():
             del b[config]
     changed.sort()
     for config in changed:
-        print_config("->", config, a[config], b[config])
+        print_config("->", config, a[config], b[config], merge_style)
         del b[config]
 
     # now print items in b but not in a
     # (items from b that were in a were removed above)
     new = sorted(b.keys())
     for config in new:
-        print_config("+", config, None, b[config])
+        print_config("+", config, None, b[config], merge_style)
+
 
 main()

@@ -2320,7 +2320,11 @@ def filter_py(root, fnames):
         for fname in fnames
         if (
             fname.endswith(".py")
-            or magic.from_file(os.path.join(root, fname), mime=True) == "text/x-python"
+            or (
+                not Path(fname).suffix
+                and magic.from_file(os.path.join(root, fname), mime=True)
+                in ("text/x-python", "text/x-script.python")
+            )
         )
     ]
 
@@ -2721,13 +2725,20 @@ class Ruff(ComplianceTest):
     def run(self):
         if (ruff := shutil.which("ruff")) is None:
             raise FileNotFoundError("ruff is not installed")
+
+        files = get_files(filter="d")
+        py_files = filter_py(GIT_TOP, files)
+        script_files = filter_py(
+            GIT_TOP,
+            [file for file in git("ls-files").splitlines() if not Path(file).suffix],
+        )
+
         try:
             subprocess.run(
-                f"{ruff} check --output-format=json",
+                [ruff, "check", "--output-format=json", ".", *script_files],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
-                shell=True,
                 cwd=GIT_TOP,
             )
         except subprocess.CalledProcessError as ex:
@@ -2756,15 +2767,11 @@ class Ruff(ComplianceTest):
                     desc=m.get("message"),
                 )
 
-        for file in get_files(filter="d"):
-            if not file.endswith((".py", ".pyi")):
-                continue
-
+        for file in [*py_files, *(file for file in files if file.endswith(".pyi"))]:
             try:
                 subprocess.run(
-                    f"{ruff} format --force-exclude --diff {file}",
+                    [ruff, "format", "--force-exclude", "--diff", file],
                     check=True,
-                    shell=True,
                     cwd=GIT_TOP,
                 )
             except subprocess.CalledProcessError:
@@ -2784,7 +2791,7 @@ class PythonCompatCheck(ComplianceTest):
     MAX_VERSION_STR = f"{MAX_VERSION[0]}.{MAX_VERSION[1]}"
 
     def run(self):
-        py_files = [f for f in get_files(filter="d") if f.endswith(".py")]
+        py_files = filter_py(GIT_TOP, get_files(filter="d"))
         if not py_files:
             return
         cmd = [

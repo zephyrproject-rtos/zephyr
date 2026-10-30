@@ -15,7 +15,7 @@ foreach(report ram rom)
   add_custom_target(
     ${report}_report
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/footprint/size_report
+    ${ZEPHYR_BASE}/scripts/footprint/size_report.py
     -k ${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
     -z ${ZEPHYR_BASE}
     -o ${CMAKE_BINARY_DIR}
@@ -49,7 +49,7 @@ if(CONFIG_BUILD_WITH_TFM)
     add_custom_target(
       tfm_${report}_report
       ${PYTHON_EXECUTABLE}
-      ${ZEPHYR_BASE}/scripts/footprint/size_report
+      ${ZEPHYR_BASE}/scripts/footprint/size_report.py
       -k $<TARGET_PROPERTY:tfm,TFM_S_ELF_FILE>
       -z ${ZEPHYR_BASE}
       -o ${CMAKE_BINARY_DIR}
@@ -83,7 +83,7 @@ if(CONFIG_TFM_BL2)
     add_custom_target(
       bl2_${report}_report
       ${PYTHON_EXECUTABLE}
-      ${ZEPHYR_BASE}/scripts/footprint/size_report
+      ${ZEPHYR_BASE}/scripts/footprint/size_report.py
       -k $<TARGET_PROPERTY:tfm,BL2_ELF_FILE>
       -z ${ZEPHYR_BASE}
       -o ${CMAKE_BINARY_DIR}
