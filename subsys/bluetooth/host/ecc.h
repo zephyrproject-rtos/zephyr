@@ -101,9 +101,23 @@ typedef void (*bt_dh_key_cb_t)(const uint8_t key[BT_DH_KEY_LEN]);
  *
  *  Calculate a DH Key from the remote Public Key.
  *
- *  @param remote_pk Remote Public Key.
+ *  @param remote_pk Remote Public Key. It is not copied: it has to stay valid and
+ *                   unchanged until @p cb has been called or
+ *                   bt_dh_key_gen_release() has returned.
  *  @param cb Callback to notify the calculated key.
  *
  *  @return Zero on success or negative error code otherwise
  */
 int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb);
+
+/*  @brief Stop using the remote Public Key of a DH Key calculation.
+ *
+ *  After this has returned, the key given to bt_dh_key_gen() may be changed or
+ *  freed. The callback is still called: with NULL, unless the calculation had
+ *  already taken the key, so a requester that releases the key ignores the
+ *  result.
+ *
+ *  @param remote_pk The key given to bt_dh_key_gen(). Nothing happens if it is
+ *                   not the key of a pending calculation.
+ */
+void bt_dh_key_gen_release(const uint8_t remote_pk[BT_PUB_KEY_LEN]);
