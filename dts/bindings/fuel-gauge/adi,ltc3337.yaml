@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Federico Borgo
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices LTC3337 primary battery state of health monitor with
+  precision coulomb counter.
+
+  The chip counts the charge drawn from the battery. It does not know the capacity of the
+  battery, so the count is reported as FUEL_GAUGE_CONSUMED_CAPACITY_UAH, and
+  FUEL_GAUGE_REMAINING_CAPACITY_UAH is not supported. The counter has 16 bits: choose the
+  prescaler (FUEL_GAUGE_CC_CONFIG) so that it covers the capacity of the battery and does not
+  wrap during its life.
+
+  Voltage and temperature are not available (-ENODATA) while the coulomb counter is shut down
+  through FUEL_GAUGE_CC_CONFIG, because they are then only updated by a conversion that the
+  driver does not start.
+
+compatible: "adi,ltc3337"
+
+include: [base.yaml, i2c-device.yaml, fuel-gauge.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ipeak-milliamp:
+    type: int
+    required: true
+    enum:
+      - 5
+      - 10
+      - 15
+      - 20
+      - 25
+      - 50
+      - 75
+      - 100
+    description: |
+      Peak input current selected by the IPK[2:0] pins (datasheet Table 1).
+      The pins are hard wired, so this value must match the board. It sets
+      the charge represented by one counter LSB. The driver compares it with
+      the pin state read back from the chip and warns on a mismatch.
