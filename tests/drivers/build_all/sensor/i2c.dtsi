@@ -1728,3 +1728,8 @@ test_i2c_as7341: as7341@df {
 	compatible = "ams,as7341";
 	reg = <0xdf>;
 };
+
+test_i2c_ictx53xx: ictx53xx@e0 {
+	compatible = "invensense,ictx53xx";
+	reg = <0xe0>;
+};

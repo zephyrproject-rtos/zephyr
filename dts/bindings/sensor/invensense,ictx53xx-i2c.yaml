@@ -1,0 +1,37 @@
+# Copyright (c) 2024 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICTx53xx High Accuracy TMR Magnetometer Sensor
+
+compatible: "invensense,ictx53xx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  mode:
+    type: string
+    default: "sleep"
+    description: |
+      Default mode for sensor.
+      Maps to MODE field in MODE_CTRL setting
+      Power-on reset value is mode SLEEP.
+    enum:
+      - "sleep"
+      - "pulsed"
+      - "single-shot"
+      - "mrm"
+
+  odr-hz:
+    type: int
+    default: 100
+    description: |
+      Default frequency of magnetometer measurement pulsed. (Unit - Hz)
+      Maps to ODR field in MODE_CTRL setting
+      Power-on reset value is 100.
+    enum:
+      - 100
+      - 50
+      - 10
+      - 5
+      - 320
+      - 200
