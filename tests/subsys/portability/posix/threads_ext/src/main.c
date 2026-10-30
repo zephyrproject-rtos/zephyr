@@ -70,7 +70,7 @@ ZTEST(posix_threads_ext, test_pthread_attr_setguardsize)
 ZTEST(posix_threads_ext, test_pthread_mutexattr_gettype)
 {
 	int type;
-	pthread_mutexattr_t attr;
+	pthread_mutexattr_t attr = {0};
 
 	/* degenerate cases */
 	{
