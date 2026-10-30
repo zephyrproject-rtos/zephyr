@@ -1035,7 +1035,8 @@ static int eth_mchp_get_config(const struct device *dev, struct net_if *iface __
 	uint32_t val;
 	uint32_t retval = 0;
 	uint32_t chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
-				  ETHERNET_CHECKSUM_SUPPORT_TCP | ETHERNET_CHECKSUM_SUPPORT_UDP;
+				  ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP |
+				  ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:

@@ -655,9 +655,10 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
 		if (!dev_conf->disable_rx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
-						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
-						 ETHERNET_CHECKSUM_SUPPORT_TCP |
-						 ETHERNET_CHECKSUM_SUPPORT_UDP;
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP;
 		} else {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_NONE;
 		}
@@ -665,9 +666,10 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT:
 		if (!dev_conf->disable_tx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
-						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
-						 ETHERNET_CHECKSUM_SUPPORT_TCP |
-						 ETHERNET_CHECKSUM_SUPPORT_UDP;
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP;
 		} else {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_NONE;
 		}
