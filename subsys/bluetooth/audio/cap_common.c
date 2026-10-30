@@ -235,7 +235,7 @@ bool bt_cap_common_conn_in_active_proc(const struct bt_conn *conn)
 		return false;
 	}
 
-	for (size_t i = 0U; i < active_proc.proc_initiated_cnt; i++) {
+	for (size_t i = 0U; i < active_proc.proc_cnt; i++) {
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
 		if (bt_cap_common_active_proc_is_initiator()) {
 			if (active_proc.proc_param.initiator[i].stream->bap_stream.conn == conn) {

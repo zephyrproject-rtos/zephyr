@@ -1386,6 +1386,77 @@ static void test_cap_acceptor_broadcast_reception_reject_first(void)
 	test_cap_acceptor_broadcast_reception();
 }
 
+static void remove_recv_state_locally(void)
+{
+	uint8_t src_id;
+	int err;
+
+	if (g_recv_state == NULL) {
+		FAIL("No receive state to remove\n");
+		return;
+	}
+
+	src_id = g_recv_state->src_id;
+
+	/* Stop and delete the broadcast sink, if any */
+	g_total_bis_sync_req = 0U;
+	UNSET_FLAG(flag_bis_sync_requested);
+	update_sink_state();
+	WAIT_FOR_UNSET_FLAG(flag_broadcaster_synced);
+
+	/* Terminate the PA sync, if any */
+	if (pa_sync != NULL) {
+		err = bt_le_per_adv_sync_delete(pa_sync);
+		if (err != 0) {
+			FAIL("Could not delete PA sync: %d\n", err);
+			return;
+		}
+	}
+	WAIT_FOR_UNSET_FLAG(flag_pa_synced);
+
+	LOG_INF("Removing receive state with src_id %u", src_id);
+	err = bt_bap_scan_delegator_rem_src(src_id);
+	if (err != 0) {
+		FAIL("Could not remove receive state: %d\n", err);
+		return;
+	}
+
+	if (g_recv_state != NULL) {
+		FAIL("Receive state was not removed\n");
+		return;
+	}
+}
+
+static void test_cap_acceptor_broadcast_reception_remove_src(void)
+{
+	init();
+
+	test_start_adv();
+
+	LOG_INF("Waiting for PA sync request");
+	WAIT_FOR_FLAG(flag_pa_request);
+
+	LOG_INF("Waiting for BIS sync request");
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
+
+	LOG_INF("Waiting for broadcast code");
+	WAIT_FOR_FLAG(flag_broadcast_code);
+
+	LOG_INF("Waiting for sink synced");
+	WAIT_FOR_FLAG(flag_broadcaster_synced);
+
+	wait_for_data();
+	/* let other devices know we have received what we wanted */
+	backchannel_sync_send_all();
+
+	/* Stop receiving and remove the receive state without involving the broadcast assistant */
+	remove_recv_state_locally();
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	PASS("CAP acceptor broadcast reception remove source passed\n");
+}
+
 static void test_cap_acceptor_broadcast_reception_disconnect(void)
 {
 	SET_FLAG(flag_disconnect_in_procedure);
@@ -1466,6 +1537,12 @@ static const struct bst_test_instance test_cap_acceptor[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_broadcast_reception_reject_first,
+	},
+	{
+		.test_id = "cap_acceptor_broadcast_reception_remove_src",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_acceptor_broadcast_reception_remove_src,
 	},
 	{
 		.test_id = "cap_acceptor_broadcast_reception_disconnect",
