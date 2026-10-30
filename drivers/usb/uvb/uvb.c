@@ -39,6 +39,15 @@ struct uvb_msg {
 	};
 };
 
+static void handle_msg_event(struct uvb_msg *const msg);
+static void handle_msg_to_host(struct uvb_msg *const msg);
+
+/*
+ * Set while a message is being dispatched, so inline dispatch cannot race
+ * subscriber-list iteration against subscribe/unsubscribe.
+ */
+static atomic_t uvb_active;
+
 K_MEM_SLAB_DEFINE_STATIC_TYPE(uvb_msg_slab, struct uvb_msg,
 			      CONFIG_UVB_MAX_MESSAGES);
 
@@ -96,12 +105,43 @@ static struct uvb_msg *uvb_alloc_msg(const struct uvb_node *const node)
 	return msg;
 }
 
+/*
+ * Dispatch inline when nothing is queued and nothing else is currently
+ * being dispatched, to avoid an allocation and a workqueue hop.
+ * Not used for UVB_MSG_SUBSCRIBE/UNSUBSCRIBE.
+ */
+static ALWAYS_INLINE bool try_dispatch_inline(struct uvb_msg *const msg)
+{
+	if (!k_fifo_is_empty(&uvb_queue) || !atomic_cas(&uvb_active, 0, 1)) {
+		return false;
+	}
+
+	if (msg->type == UVB_MSG_ADVERT) {
+		handle_msg_event(msg);
+	} else {
+		handle_msg_to_host(msg);
+	}
+
+	atomic_set(&uvb_active, 0);
+
+	return true;
+}
+
 int uvb_advert(const struct uvb_node *const host_node,
 	       const enum uvb_event_type type,
 	       const struct uvb_packet *const pkt)
 {
+	struct uvb_msg stack_msg = {
+		.source = host_node,
+		.type = UVB_MSG_ADVERT,
+		.event = { .type = type, .data = (void *)pkt },
+	};
 	struct uvb_msg *msg;
 	int err;
+
+	if (try_dispatch_inline(&stack_msg)) {
+		return 0;
+	}
 
 	msg = uvb_alloc_msg(host_node);
 	if (msg == NULL) {
@@ -120,8 +160,17 @@ int uvb_to_host(const struct uvb_node *const dev_node,
 		const enum uvb_event_type type,
 		const struct uvb_packet *const pkt)
 {
+	struct uvb_msg stack_msg = {
+		.source = dev_node,
+		.type = UVB_MSG_TO_HOST,
+		.event = { .type = type, .data = (void *)pkt },
+	};
 	struct uvb_msg *msg;
 	int err;
+
+	if (try_dispatch_inline(&stack_msg)) {
+		return 0;
+	}
 
 	msg = uvb_alloc_msg(dev_node);
 	if (msg == NULL) {
@@ -288,8 +337,11 @@ static void uvb_work_handler(struct k_work *work)
 {
 	struct uvb_msg *msg;
 
+	atomic_set(&uvb_active, 1);
+
 	msg = k_fifo_get(&uvb_queue, K_NO_WAIT);
 	if (msg == NULL) {
+		atomic_set(&uvb_active, 0);
 		return;
 	}
 
@@ -312,8 +364,11 @@ static void uvb_work_handler(struct k_work *work)
 	}
 
 	k_mem_slab_free(&uvb_msg_slab, (void *)msg);
+
 	if (!k_fifo_is_empty(&uvb_queue)) {
 		(void)k_work_submit(work);
+	} else {
+		atomic_set(&uvb_active, 0);
 	}
 }
 

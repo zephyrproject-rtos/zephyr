@@ -39,6 +39,7 @@ struct udc_vrt_data {
 	struct k_fifo fifo;
 	struct k_thread thread_data;
 	uint8_t addr;
+	uint16_t frame_number;
 };
 
 struct udc_vrt_event {
@@ -272,6 +273,12 @@ static void udc_vrt_uvb_cb(const void *const vrt_priv,
 	case UVB_EVT_RESET:
 		if (udc_is_enabled(dev)) {
 			vrt_submit_uvb_event(dev, type, NULL);
+		}
+		break;
+	case UVB_EVT_SOF:
+		priv->frame_number = (uint16_t)POINTER_TO_INT(data);
+		if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) && udc_is_enabled(dev)) {
+			udc_submit_sof_event(dev);
 		}
 		break;
 	case UVB_EVT_REQUEST:
