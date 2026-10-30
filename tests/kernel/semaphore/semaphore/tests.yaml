@@ -4,3 +4,9 @@ tests:
       - kernel
       - userspace
     ignore_faults: true
+    # Renode retires an svc without taking the exception when it is the
+    # first instruction after a quantum switch with a masked IRQ asserted;
+    # test_sem_give_from_isr then loses an irq_offload() on this target.
+    # https://github.com/renode/renode/issues/1035
+    platform_exclude:
+      - cortex_r8_virtual/cortex_r8_virtual/smp
