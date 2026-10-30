@@ -110,9 +110,22 @@ struct lll_sync_iso {
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 	uint8_t is_lll_resume:1;
+
+	/* Set by the current event that yields to this ready event */
+	uint8_t is_yield_to:1;
+
+	/* HF clock was running when the event was prepared */
+	uint8_t is_hfclock_ready:1;
+
 	uint32_t ticks_start;
 	uint32_t ready_us;
 	uint32_t aa_us;
+
+	/* Next subevent to receive and its radio start ticks, used to
+	 * yield the radio while idle and to resume at this subevent.
+	 */
+	uint32_t ticks_se_next;
+	uint8_t se_next;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	/* Last scheduled subevent and its access address sync */

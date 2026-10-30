@@ -183,6 +183,10 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	sync_iso->timeout = sync_timeout;
 	sync_iso->timeout_reload = 0U;
 	sync_iso->timeout_expire = 0U;
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	sync_iso->lazy_oust = 0U;
+	sync_iso->ticks_drift_lag = 0;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	/* Setup the periodic sync to establish ISO sync */
 	node_rx->hdr.link = link_sync_estab;
@@ -862,6 +866,29 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 		lll->latency_event = 0U;
 	}
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	/* A yielded event can be done after the next event has been prepared, then the drift
+	 * compensation applies to the event thereafter, and the next event measures its drift
+	 * from an anchor point that excludes this compensation. Exclude the compensation not
+	 * included in the anchor point of this event, to not compensate the drift twice.
+	 */
+	int32_t ticks_drift = 0;
+
+	if (done->extra.trx_cnt != 0U) {
+		ticks_drift = (int32_t)ticks_drift_plus - (int32_t)ticks_drift_minus -
+			      sync_iso->ticks_drift_lag;
+		if (ticks_drift >= 0) {
+			ticks_drift_plus = ticks_drift;
+			ticks_drift_minus = 0U;
+		} else {
+			ticks_drift_plus = 0U;
+			ticks_drift_minus = -ticks_drift;
+		}
+	}
+
+	sync_iso->ticks_drift_lag = (ull_ref_get(&sync_iso->ull) != 0U) ? ticks_drift : 0;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	force = 0U;
 	elapsed_event = lll->lazy_prepare + 1U;
 
@@ -1093,6 +1120,27 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	sync_iso = param;
 	lll = &sync_iso->lll;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	/* An ousted expiry is prepared too, the LLL resolves the overlap with other Broadcast
+	 * ISO events by yielding at subevent boundaries. The lazy of an ousted expiry counts
+	 * the ousted event, and the lazy of later expiries count the prepared ousted events,
+	 * hence, exclude them from the lazy passed to LLL.
+	 */
+	if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) && !IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING) &&
+	    ((lazy & TICKER_LAZY_OUST_EXPIRE_BITMASK) != 0U) && (sync_iso->timeout_reload != 0U)) {
+		lazy &= ~TICKER_LAZY_OUST_EXPIRE_BITMASK;
+		LL_ASSERT_DBG(lazy > sync_iso->lazy_oust);
+
+		lazy -= sync_iso->lazy_oust + 1U;
+		sync_iso->lazy_oust++;
+	} else if ((lazy & TICKER_LAZY_OUST_EXPIRE_BITMASK) == 0U) {
+		LL_ASSERT_DBG(lazy >= sync_iso->lazy_oust);
+
+		lazy -= sync_iso->lazy_oust;
+		sync_iso->lazy_oust = 0U;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) && !IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING) &&
 	    ((lazy & TICKER_LAZY_OUST_EXPIRE_BITMASK) != 0U)) {
 		lazy &= ~TICKER_LAZY_OUST_EXPIRE_BITMASK;
@@ -1129,13 +1177,14 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 					      (ticker_status == TICKER_STATUS_BUSY) ||
 					      ((void *)sync_iso == ull_disable_mark_get()));
 			}
-		} else {
-			LL_ASSERT_MSG(false, "%s: %p Ousted %llu lazy %u\n", __func__, lll,
-				      (uint64_t)lll->payload_count, lazy);
+
+			DEBUG_RADIO_CLOSE_O(0);
+			return;
 		}
 
-		DEBUG_RADIO_CLOSE_O(0);
-		return;
+		/* Timeout elapsed while being ousted, proceed with the prepare so that the
+		 * event done handling terminates the synchronization.
+		 */
 	}
 
 	/* Increment prepare reference count */

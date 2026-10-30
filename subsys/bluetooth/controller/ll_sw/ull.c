@@ -2264,6 +2264,9 @@ struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 	e->abort_cb = abort_cb;
 	e->is_resume = is_resume;
 	e->is_aborted = 0U;
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	e->is_yield = 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	/* Enqueue lll_event */
 	*next = NULL;
@@ -2375,6 +2378,75 @@ void *ull_prepare_dequeue_iter(void **idx)
 	return e;
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+void ull_prepare_dequeue_first_set(struct lll_event *e)
+{
+	void **e_prev;
+	void **e_curr;
+
+	e_prev = NULL;
+	e_curr = pipeline.head;
+	while ((e_curr != NULL) && (((uint8_t *)e_curr + sizeof(void *)) != (uint8_t *)e)) {
+		e_prev = e_curr;
+		e_curr = *e_curr;
+	}
+
+	LL_ASSERT_ERR(e_curr != NULL);
+
+	/* Already at the head */
+	if (e_prev == NULL) {
+		return;
+	}
+
+	/* Unlink */
+	*e_prev = *e_curr;
+	if (*e_prev == NULL) {
+		pipeline.tail = e_prev;
+	}
+
+	/* Link at the head */
+	*e_curr = pipeline.head;
+	pipeline.head = e_curr;
+}
+
+/* Check if a prepare can use the radio before a yielded event, i.e. a resume prepare or a
+ * deferred scan prepare.
+ */
+static bool is_prepare_dequeue_yield_alt(const struct lll_event *e)
+{
+	return (e->is_aborted == 0U) &&
+	       ((e->is_resume != 0U) ||
+		((e->prepare_param.defer != 0U) &&
+		 (ull_scan_lll_is_valid_get(e->prepare_param.param) != NULL)));
+}
+
+/* Check if a yielded event, waiting in the prepare pipeline to be resumed at its next subevent,
+ * shall be skipped so that another prepare uses the radio until the yielded event preempts it.
+ */
+static bool is_prepare_dequeue_yield_skip(const struct lll_event *e)
+{
+	struct lll_event *iter;
+	void *idx;
+
+	if ((e->is_yield == 0U) || !lll_is_yield_early(e)) {
+		return false;
+	}
+
+	idx = NULL;
+	while ((iter = ull_prepare_dequeue_iter(&idx)) != NULL) {
+		if (is_prepare_dequeue_yield_alt(iter)) {
+			return true;
+		}
+
+		if (idx == NULL) {
+			break;
+		}
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 void ull_prepare_dequeue(uint8_t caller_id)
 {
 	static memq_link_t link;
@@ -2424,6 +2496,19 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 		/* Get reference to the event structure */
 		e = (void *)((uint8_t *)e_curr + sizeof(void *));
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+		/* Skip a yielded event, and normal prepares thereafter except a deferred scan
+		 * prepare, when another prepare can use the radio before the yielded event.
+		 */
+		if ((is_enqueued == 0U) && (e->is_aborted == 0U) && (e->is_resume == 0U) &&
+		    is_prepare_dequeue_yield_skip(e)) {
+			is_enqueued = 2U;
+		} else if ((is_enqueued == 2U) && (e->is_resume == 0U) &&
+			   is_prepare_dequeue_yield_alt(e)) {
+			is_enqueued = 0U;
+		}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 		/* Dequeue all aborted prepare and enqueue a normal prepare */
 		is_aborted = !!e->is_aborted;
@@ -2475,16 +2560,39 @@ void ull_prepare_dequeue(uint8_t caller_id)
 	}
 
 	/* We have not enqueued any normal prepare, if there are resume prepare then enqueue them */
-	if (!is_enqueued && pipeline.head) {
+	if ((is_enqueued != 1U) && pipeline.head) {
 		struct lll_event *e;
 		uint32_t ret;
 		void **head;
 
-		/* Dequeue the resume prepare */
+		e_prev = NULL;
 		head = pipeline.head;
-		pipeline.head = *pipeline.head;
-		if (!pipeline.head) {
-			pipeline.tail = NULL;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+		/* Skipped yielded event is before the resume prepare */
+		if (is_enqueued != 0U) {
+			e = (void *)((uint8_t *)head + sizeof(void *));
+			while (e->is_resume == 0U) {
+				e_prev = head;
+				head = *head;
+				LL_ASSERT_ERR(head);
+
+				e = (void *)((uint8_t *)head + sizeof(void *));
+			}
+		}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+		/* Dequeue the resume prepare */
+		if (e_prev == NULL) {
+			pipeline.head = *pipeline.head;
+			if (!pipeline.head) {
+				pipeline.tail = NULL;
+			}
+		} else {
+			*e_prev = *head;
+			if (*e_prev == NULL) {
+				pipeline.tail = e_prev;
+			}
 		}
 
 		/* Get reference to the event structure */
