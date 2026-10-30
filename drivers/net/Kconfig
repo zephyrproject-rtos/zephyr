@@ -285,6 +285,13 @@ config NET_NATIVE_OFFLOADED_SOCKETS_HOST_IF_NAME
 	  directly. When left empty, the interface used for the default route
 	  (default gateway) is used.
 
+config NET_NATIVE_OFFLOADED_SOCKETS_NO_AUTO_START
+	bool "Disable offloaded interface auto-start"
+	help
+	  Set NET_IF_NO_AUTO_START on the offloaded interface so that it is not
+	  brought up automatically after initialization. The application brings
+	  the interface up with net_if_up() once it is ready to use it.
+
 config NET_NATIVE_OFFLOADED_SOCKETS_CONNECTIVITY_SIM
 	bool "Support for the network connectivity API"
 	help
