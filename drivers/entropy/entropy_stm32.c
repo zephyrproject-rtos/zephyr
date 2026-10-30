@@ -972,6 +972,10 @@ static int entropy_stm32_init_wq(void)
 {
 	struct entropy_stm32_rng_dev_data *dev_data = &entropy_stm32_rng_data;
 
+	if (!IRQLESS_TRNG && !device_is_ready(DEVICE_DT_GET(DT_DRV_INST(0)))) {
+		return 0;
+	}
+
 #ifdef CONFIG_ENTROPY_STM32_WORKQUEUE
 	k_work_queue_init(&entropy_stm32_wq);
 	k_work_queue_start(&entropy_stm32_wq, (k_thread_stack_t *)&entropy_stm32_wq_stack,
