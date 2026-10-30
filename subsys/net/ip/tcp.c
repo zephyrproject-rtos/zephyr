@@ -1824,6 +1824,28 @@ static void tcp_out(struct tcp *conn, uint8_t flags)
 	(void)tcp_out_ext(conn, flags, 0 /* no data */, conn->seq + conn->unacked_len);
 }
 
+/* Send a SYN or SYN-ACK. The handshake options go on every one of them,
+ * retransmissions included, as the peer may only receive a retransmitted one.
+ */
+static int tcp_out_syn(struct tcp *conn, uint8_t flags, uint32_t seq)
+{
+	int ret;
+
+	conn->send_options.mss_found = true;
+	if ((flags & ACK) != 0) {
+		conn->send_options.sack_perm_found = conn->sack_perm;
+	} else {
+		conn->send_options.sack_perm_found = tcp_sack_supported();
+	}
+
+	ret = tcp_out_ext(conn, flags, 0, seq);
+
+	conn->send_options.mss_found = false;
+	conn->send_options.sack_perm_found = false;
+
+	return ret;
+}
+
 static int tcp_pkt_pull(struct net_pkt *pkt, size_t len, size_t total)
 {
 	int ret = 0;
@@ -2135,10 +2157,10 @@ static void tcp_resend_data(struct k_work *work)
 
 	switch (conn->state) {
 	case TCP_SYN_SENT:
-		(void)tcp_out_ext(conn, SYN, 0, conn->seq - 1);
+		(void)tcp_out_syn(conn, SYN, conn->seq - 1);
 		break;
 	case TCP_SYN_RECEIVED:
-		(void)tcp_out_ext(conn, SYN | ACK, 0, conn->seq - 1);
+		(void)tcp_out_syn(conn, SYN | ACK, conn->seq - 1);
 		break;
 	case TCP_ESTABLISHED:
 	case TCP_CLOSE_WAIT:
@@ -3340,17 +3362,11 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				tcp_backlog_dec(conn->accepted_conn);
 			}
 
-			/* Make sure our MSS is also sent in the ACK */
-			conn->send_options.mss_found = true;
-			conn->send_options.sack_perm_found =
-				tcp_sack_supported() &&
+			conn->sack_perm = tcp_sack_supported() &&
 				conn->recv_options.sack_perm_found;
-			conn->sack_perm = conn->send_options.sack_perm_found;
 			conn->isn_peer = th_seq(th);
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
-			tcp_out(conn, SYN | ACK);
-			conn->send_options.mss_found = false;
-			conn->send_options.sack_perm_found = false;
+			(void)tcp_out_syn(conn, SYN | ACK, conn->seq);
 			conn_seq(conn, + 1);
 			next = TCP_SYN_RECEIVED;
 
@@ -4238,17 +4254,13 @@ static int tcp_start_handshake(struct tcp *conn)
 	/* Start the connection handshake */
 	k_mutex_lock(&conn->lock, K_FOREVER);
 	tcp_check_sock_options(conn);
-	conn->send_options.mss_found = true;
-	conn->send_options.sack_perm_found = tcp_sack_supported();
-	ret = tcp_out_ext(conn, SYN, 0 /* no data */, conn->seq);
+	ret = tcp_out_syn(conn, SYN, conn->seq);
 	if (ret < 0) {
 		k_mutex_unlock(&conn->lock);
 		return ret;
 	}
 	tcp_setup_retransmission(conn);
 
-	conn->send_options.mss_found = false;
-	conn->send_options.sack_perm_found = false;
 	conn_seq(conn, + 1);
 	conn_state(conn, TCP_SYN_SENT);
 	tcp_conn_ref(conn);
