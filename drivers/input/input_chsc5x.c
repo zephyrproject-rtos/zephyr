@@ -104,7 +104,7 @@ static void chsc5x_isr_handler(const struct device *dev, struct gpio_callback *c
 {
 	struct chsc5x_data *data = CONTAINER_OF(cb, struct chsc5x_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 
 #if defined(CONFIG_INPUT_CHSC5X_VERIFY_IC_TYPE)

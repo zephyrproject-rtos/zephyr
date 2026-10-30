@@ -71,7 +71,7 @@ static void longpress_cb(struct input_event *evt, void *user_data)
 
 	if (evt->value) {
 		entry->long_fired = false;
-		k_work_schedule(&entry->work, K_MSEC(cfg->long_delays_ms));
+		input_work_schedule(&entry->work, K_MSEC(cfg->long_delays_ms));
 	} else {
 		k_work_cancel_delayable(&entry->work);
 		if (entry->long_fired) {

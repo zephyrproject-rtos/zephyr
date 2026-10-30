@@ -19,3 +19,8 @@ tests:
   input.api.synchronous:
     extra_configs:
       - CONFIG_INPUT_MODE_SYNCHRONOUS=y
+  input.api.dedicated_workqueue:
+    extra_configs:
+      - CONFIG_INPUT_MODE_THREAD=y
+      - CONFIG_INPUT_DEDICATED_WORKQUEUE=y
+      - CONFIG_MP_MAX_NUM_CPUS=1
