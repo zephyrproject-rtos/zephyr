@@ -511,14 +511,6 @@ static struct net_stats_eth *eth_intel_igc_get_stats(const struct device *dev,
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct net_stats_eth *stats = &data->stats;
 
-	stats->bytes.sent += sys_read32(data->base + INTEL_IGC_TOTL);
-	stats->bytes.received += sys_read32(data->base + INTEL_IGC_TORL);
-	stats->pkts.tx += sys_read32(data->base + INTEL_IGC_TPT);
-	stats->pkts.rx += sys_read32(data->base + INTEL_IGC_TPR);
-	stats->broadcast.tx += sys_read32(data->base + INTEL_IGC_BPTC);
-	stats->broadcast.rx += sys_read32(data->base + INTEL_IGC_BPRC);
-	stats->multicast.tx += sys_read32(data->base + INTEL_IGC_MPTC);
-	stats->multicast.rx += sys_read32(data->base + INTEL_IGC_MPRC);
 	stats->errors.rx += sys_read32(data->base + INTEL_IGC_RERC);
 	stats->error_details.rx_length_errors += sys_read32(data->base + INTEL_IGC_RLEC);
 	stats->error_details.rx_crc_errors += sys_read32(data->base + INTEL_IGC_CRCERRS);
