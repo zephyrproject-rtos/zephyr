@@ -134,6 +134,8 @@ struct supplicant_context {
 	char if_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
 	struct k_fifo fifo;
 	int sock;
+	struct k_fifo nan_fifo;
+	int nan_sock;
 	struct k_work iface_work;
 	struct k_work_q iface_wq;
 	int (*iface_handler)(struct supplicant_context *ctx, struct net_if *iface);
@@ -434,6 +436,11 @@ static int wpa_supplicant_set_default_dev_name(struct wpa_supplicant *wpa_s)
 	return 0;
 }
 
+static int zephyr_nan_add_iface(struct supplicant_context *ctx, struct net_if *iface)
+{
+	return send_data(&ctx->nan_fifo, ctx->nan_sock, (const char *)&iface, sizeof(iface), 0);
+}
+
 static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant *wpa_s;
@@ -448,8 +455,13 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	LOG_DBG("Adding interface %s [%d] (%p)", ifname, net_if_get_by_iface(iface), iface);
 
-	ret = zephyr_wpa_cli_global_cmd_v("interface_add %s %s %s %s",
-					  ifname, "zephyr", "zephyr", "zephyr");
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE) &&
+	    IS_BIT_SET(get_iface_caps(iface), WIFI_TYPE_NAN)) {
+		ret = zephyr_nan_add_iface(ctx, iface);
+	} else {
+		ret = zephyr_wpa_cli_global_cmd_v("interface_add %s %s %s %s",
+						  ifname, "zephyr", "zephyr", "zephyr");
+	}
 	if (ret) {
 		LOG_ERR("Failed to add interface %s", ifname);
 		goto out;
@@ -838,6 +850,77 @@ static int register_supplicant_event_socket(struct supplicant_context *ctx)
 	return 0;
 }
 
+/*
+ * wpa_supplicant_add_iface() and the rest of wpa_supplicant's core state are
+ * only ever touched from the hostap_handler thread (inside eloop, driven by
+ * wpa_supplicant_run()). add_interface() itself runs on whichever thread
+ * raised the net_if admin-up event, so the request to add a NAN management
+ * interface has to be marshaled onto the hostap_handler thread the same way
+ * driver events are (event_socket_handler() above), instead of calling
+ * wpa_supplicant_add_iface() directly from add_interface().
+ */
+static void nan_add_handler(int sock, void *eloop_ctx, void *user_data)
+{
+	struct supplicant_context *ctx = user_data;
+	struct zephyr_msg *msg;
+	zvfs_eventfd_t value;
+
+	ARG_UNUSED(eloop_ctx);
+
+	do {
+		zvfs_eventfd_read(sock, &value);
+
+		msg = k_fifo_get(&ctx->nan_fifo, K_NO_WAIT);
+		if (msg == NULL) {
+			return;
+		}
+
+		if (msg->data != NULL && msg->len == sizeof(struct net_if *)) {
+			struct net_if *iface;
+			struct wpa_interface wpa_iface = { 0 };
+			char ifname[IFNAMSIZ + 1] = { 0 };
+
+			memcpy(&iface, msg->data, sizeof(iface));
+
+			if (net_if_get_name(iface, ifname, sizeof(ifname) - 1) >= 0 &&
+			    !wpa_supplicant_get_iface(ctx->supplicant, ifname)) {
+				wpa_iface.ifname = ifname;
+				wpa_iface.driver = "zephyr";
+				wpa_iface.ctrl_interface = "zephyr";
+				wpa_iface.nan_mgmt = true;
+
+				if (wpa_supplicant_add_iface(ctx->supplicant, &wpa_iface,
+							      NULL) == NULL) {
+					LOG_ERR("Failed to add NAN iface %s", ifname);
+				}
+			}
+		}
+
+		os_free(msg->data);
+		os_free(msg);
+	} while (!k_fifo_is_empty(&ctx->nan_fifo));
+}
+
+static int register_nan_add_socket(struct supplicant_context *ctx)
+{
+	int ret;
+
+	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
+	if (ret < 0) {
+		ret = -errno;
+		LOG_ERR("Failed to initialize NAN add socket (%d)", ret);
+		return ret;
+	}
+
+	ctx->nan_sock = ret;
+
+	k_fifo_init(&ctx->nan_fifo);
+
+	eloop_register_read_sock(ctx->nan_sock, nan_add_handler, NULL, ctx);
+
+	return 0;
+}
+
 static void handler(void)
 {
 	struct supplicant_context *ctx;
@@ -891,6 +974,10 @@ static void handler(void)
 
 	register_supplicant_event_socket(ctx);
 
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE)) {
+		register_nan_add_socket(ctx);
+	}
+
 	submit_iface_work(ctx, NULL, setup_interface_monitoring);
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
@@ -904,6 +991,10 @@ static void handler(void)
 
 	eloop_unregister_read_sock(ctx->sock);
 
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE)) {
+		eloop_unregister_read_sock(ctx->nan_sock);
+	}
+
 	zephyr_global_wpa_ctrl_deinit();
 
 	fst_global_deinit();
@@ -912,6 +1003,10 @@ out:
 	wpa_supplicant_deinit(ctx->supplicant);
 
 	close(ctx->sock);
+
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE)) {
+		close(ctx->nan_sock);
+	}
 
 err:
 	os_free(params.pid_file);
