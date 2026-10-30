@@ -333,6 +333,13 @@ static int wg_send_keepalive(struct wg_iface_context *ctx,
 	struct net_pkt *pkt;
 	int ret;
 
+	/* Before the first handshake no endpoint is learnt yet: send to the
+	 * configured one, as the first data packet to the peer does.
+	 */
+	if (peer->endpoint.ss_family == 0) {
+		memcpy(&peer->endpoint, &peer->cfg_endpoint, sizeof(peer->endpoint));
+	}
+
 	ret = select_target_iface(peer, addr, &peer->endpoint, &target_iface);
 	if (ret < 0) {
 		NET_DBG("Unknown address family %d", peer->endpoint.ss_family);
