@@ -54,6 +54,16 @@ SPDX-License-Identifier: Apache-2.0
             <li class="nav-item {% if current == 'kconfig' %}current{% endif %}">
               <a href="kconfig.html" class="nav-link">Kconfig</a>
             </li>
+            {% if build.hardening %}
+            <li class="nav-item {% if current == 'hardening' %}current{% endif %}">
+              <a href="hardening.html" class="nav-link">
+                Hardening
+                {% if build.hardening_fail_count %}
+                <i class="ms-2 bi bi-exclamation-circle" title="Options deviating from the hardening recommendations!"></i>
+                {% endif %}
+              </a>
+            </li>
+            {% endif %}
             <li class="nav-item {% if current == 'sysinit' %}current{% endif %}">
               <a href="sysinit.html" class="nav-link">
                 Sys Init
