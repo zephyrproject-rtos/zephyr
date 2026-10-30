@@ -147,6 +147,23 @@ static inline NRF_SPU_Type *spu_instance_from_peripheral_addr(uint32_t periphera
 	return (NRF_SPU_Type *)(0x50000000 | apb_bus_number);
 }
 
+static void oscillators_configuration(void)
+{
+	NRF_SPU_Type *spu_instance =
+		spu_instance_from_peripheral_addr(NRF_OSCILLATORS_S_BASE);
+	uint16_t periph_id = NRFX_PERIPHERAL_ID_GET(NRF_OSCILLATORS_S_BASE);
+	uint16_t spu_id = NRFX_PERIPHERAL_ID_GET(spu_instance);
+	uint8_t index = (uint8_t)(periph_id - spu_id);
+
+	/*
+	 * Wi-Fi is non-secure and configures the PLL in NRF_OSCILLATORS.
+	 * NRF_OSCILLATORS and NRF_REGULATORS share a peripheral ID and must
+	 * therefore have the same security configuration.
+	 */
+	nrf_spu_periph_perm_secattr_set(spu_instance, index, false);
+	nrf_spu_periph_perm_lock_enable(spu_instance, index);
+}
+
 static void grtc_configuration(void)
 {
 	/* Split security configuration to let Wi-Fi access GRTC */
@@ -227,6 +244,7 @@ int nordicsemi_nrf71_init(void)
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Skip for tf-m, configuration exist in target_cfg_71.c */
+	oscillators_configuration();
 	mpc_configuration();
 	grtc_configuration();
 	ipct_configuration();
