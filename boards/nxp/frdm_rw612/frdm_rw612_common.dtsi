@@ -375,6 +375,10 @@ zephyr_udc0: &usb_otg {
 	status = "okay";
 };
 
+zephyr_uhc0: &usbh {
+	status = "okay";
+};
+
 /*
  * the default resistors on the board breaks out the MOSI/MISO
  * pins to the nets labelled "UART" which go to J1 2 and 4,
