@@ -1,0 +1,187 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include "esp32s3_audio-pinctrl.dtsi"
+
+/ {
+	compatible = "waveshare,esp32s3-audio";
+	model = "Waveshare ESP32-S3-AUDIO-Board PROCPU";
+
+	aliases {
+		i2c-0 = &i2c0;
+		i2s-rx = &i2s0;
+		i2s-tx = &i2s0;
+		led-strip = &led_strip;
+		rtc = &rtc0;
+		sdhc0 = &sdhc0;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &button3;
+		uart-0 = &uart0;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button-0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	user-buttons {
+		compatible = "gpio-keys";
+		/* The expander interrupt is not connected on the stock board. */
+		polling-mode;
+		zephyr,suspend-action = "none";
+
+		button1: button-1 {
+			gpios = <&gpio_expander 9 GPIO_ACTIVE_LOW>;
+			label = "KEY1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		button2: button-2 {
+			gpios = <&gpio_expander 10 GPIO_ACTIVE_LOW>;
+			label = "KEY2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		button3: button-3 {
+			gpios = <&gpio_expander 11 GPIO_ACTIVE_LOW>;
+			label = "KEY3";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	led_strip: led-strip {
+		compatible = "worldsemi,ws2812-pulse-io";
+		pulse-ios = <&rmt 0>;
+		chain-length = <7>;
+		color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE>;
+		reset-delay = <300>;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_expander: gpio@20 {
+		compatible = "ti,tca9555", "nxp,pca9555";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
+
+	rtc0: rtc@51 {
+		compatible = "nxp,pcf85063a";
+		reg = <0x51>;
+	};
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&rmt {
+	pinctrl-0 = <&rmt_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	max-bus-freq = <20000000>;
+	bus-width = <1>;
+	status = "okay";
+
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usb_serial {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};

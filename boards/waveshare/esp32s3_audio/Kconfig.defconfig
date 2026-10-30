@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32S3_AUDIO_ESP32S3_PROCPU
+
+# The I2C expander requires kernel threading.
+configdefault GPIO_PCA_SERIES
+	default n if !MULTITHREADING
+
+configdefault GPIO_PCA_SERIES_INTERRUPT
+	default n
+
+endif # BOARD_ESP32S3_AUDIO_ESP32S3_PROCPU

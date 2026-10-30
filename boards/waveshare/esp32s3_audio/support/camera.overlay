@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Camera overlay template for esp32s3_audio/esp32s3/procpu.
+ * Complete the sensor and capture configuration before enabling the camera.
+ * gpio_expander pin 6 selects camera XCLK/PCLK: high uses GPIO43/GPIO44
+ * (disable UART0); low uses GPIO20/GPIO19 (disable USB Serial/JTAG and move
+ * the console). Configure the switch before enabling capture.
+ * Use the version 1.1 schematic for the parallel camera pin mapping.
+ */
+
+&i2c0 {
+	/* Add the attached sensor's binding, address, and control GPIOs here. */
+};
+
+&lcd_cam {
+	status = "disabled";
+	/* Add camera pinctrl matching the connector before enabling capture. */
+};
+
+&lcd_cam_dvp {
+	status = "disabled";
+	/* Add the sensor source, clock, data width, and endpoint connections. */
+};
