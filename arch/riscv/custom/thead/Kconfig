@@ -1,4 +1,4 @@
-# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
 # SPDX-License-Identifier: Apache-2.0
 
 config RISCV_ISA_EXT_XTHEAD_BA
@@ -84,14 +84,25 @@ config RISCV_ISA_EXT_XTHEAD_VECTOR
 config RISCV_CUSTOM_CSR_THEAD_CMO
 	bool
 	depends on RISCV_ISA_EXT_XTHEAD_CMO
+	depends on RISCV_ISA_EXT_XTHEAD_SYNC
 	default y if CACHE_MANAGEMENT
 	help
 	  This option enables the cache operation for XuanTie family of CPUs.
 
-config RISCV_CUSTOM_CSR_THEAD_CMO_E907
+config RISCV_CUSTOM_CSR_THEAD_CMO_E907_C906
 	bool
 	depends on RISCV_ISA_EXT_XTHEAD_CMO
-	depends on DT_HAS_XUANTIE_E907_ENABLED
+	depends on RISCV_ISA_EXT_XTHEAD_SYNC
+	depends on DT_HAS_XUANTIE_E907_ENABLED || DT_HAS_XUANTIE_C906_ENABLED
 	default y if CACHE_MANAGEMENT
 	help
-	  This option enables the additional cache operation for XuanTie E907 cores.
+	  This option enables the additional cache operation for XuanTie E907 and C906 cores.
+
+config RISCV_CUSTOM_CSR_THEAD_CMO_E902
+	bool
+	depends on RISCV_ISA_EXT_XTHEAD_CMO
+	depends on RISCV_ISA_EXT_XTHEAD_SYNC
+	depends on DT_HAS_XUANTIE_E902_ENABLED
+	default y if CACHE_MANAGEMENT
+	help
+	  This option enables the additional cache operation for XuanTie E902 cores.
