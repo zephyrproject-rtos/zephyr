@@ -494,6 +494,42 @@ class DeviceHandler(Handler):
             timeout += 120
         return timeout
 
+    def monitor_stdout(self, proc, harness):
+        """Feed the output of the runner process to the harness, line by line."""
+        with open(self.log, "w", encoding="utf-8") as log_out_fp:
+            for line in iter(proc.stdout.readline, b''):
+                line_decoded = line.decode('utf-8', 'replace')
+                log_out_fp.write(strip_ansi_sequences(line_decoded))
+                log_out_fp.flush()
+                if stripped_line := line_decoded.strip():
+                    logger.debug(f"DEVICE: {stripped_line}")
+                    harness.handle(stripped_line)
+
+    def run_with_runner_console(self, command, timeout, harness):
+        """Run a runner that prints the device output and exits with the test status."""
+        logger.debug(f'Run command: {command}')
+        d_log = f"{self.instance.build_dir}/device.log"
+        failure_type = Handler.FailureType.NONE
+
+        with subprocess.Popen(command, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as proc:
+            reader = threading.Thread(target=self.monitor_stdout, daemon=True,
+                                      args=(proc, harness))
+            reader.start()
+            try:
+                proc.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                logger.warning("Test execution timed out.")
+                self.terminate(proc)
+                failure_type = Handler.FailureType.TIMEOUT
+            reader.join(self.get_test_timeout())
+            self.returncode = proc.returncode
+            with open(d_log, "w") as dlog_fp:
+                dlog_fp.write(proc.stderr.read().decode(errors="ignore"))
+
+        logger.debug(f"Runner exited with {self.returncode}")
+        return failure_type
+
     def monitor_serial(self, ser, halt_event, harness):
         if self.options.enable_coverage:
             # Set capture_coverage to True to indicate that right after
@@ -799,7 +835,8 @@ class DeviceHandler(Handler):
             ser_pty_master, slave = pty.openpty()
             serial_device = os.ttyname(slave)
 
-        logger.debug(f"Using serial device {serial_device} @ {hardware.serial_baud} baud")
+        if not hardware.runner_console:
+            logger.debug(f"Using serial device {serial_device} @ {hardware.serial_baud} baud")
 
         command = self._create_command(runner, hardware)
 
@@ -817,6 +854,28 @@ class DeviceHandler(Handler):
                 harness, hardware, command, serial_device, serial_pty,
                 post_flash_script, post_script, script_param, flash_timeout
             )
+            return
+
+        if hardware.runner_console:
+            start_time = time.time()
+            failure_type = self.run_with_runner_console(
+                command, flash_timeout + self.get_test_timeout(), harness
+            )
+
+            if post_flash_script:
+                self.run_custom_script(
+                    post_flash_script,
+                    (script_param or {}).get("post_flash_timeout", 30)
+                )
+
+            self.execution_time = time.time() - start_time
+            self._update_instance_info(harness, failure_type)
+            self._final_handle_actions(harness)
+
+            if post_script:
+                self.run_custom_script(
+                    post_script, (script_param or {}).get("post_script_timeout", 30)
+                )
             return
 
         serial_port = None
