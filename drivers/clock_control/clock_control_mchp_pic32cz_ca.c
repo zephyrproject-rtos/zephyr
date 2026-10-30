@@ -1234,7 +1234,17 @@ static int clock_mchp_get_rate(const struct device *dev, clock_control_subsys_t 
 		ret_val = clock_get_rate_gclkgen(dev, 0, CLOCK_MCHP_GCLK_SRC_MAX + 1,
 						 &gclkgen_src_freq);
 		if (ret_val == 0) {
-			mclk_div = (config->mclk_regs->MCLK_CLKDIV[inst] & MCLK_CLKDIV_DIV_Msk) >>
+			/*
+			 * MCLK peripheral IDs identify a peripheral, not an MCLK
+			 * divider. All peripheral clocks use the peripheral domain
+			 * divider (CLKDIV[1]).
+			 */
+			uint8_t mclk_domain = (subsys.bits.type == SUBSYS_TYPE_MCLKPERIPH)
+						      ? CLOCK_MCHP_MCLKDOMAIN_ID_PERIPH
+						      : inst;
+
+			mclk_div = (config->mclk_regs->MCLK_CLKDIV[mclk_domain] &
+				    MCLK_CLKDIV_DIV_Msk) >>
 				   MCLK_CLKDIV_DIV_Pos;
 			if (mclk_div != 0) {
 				*freq = gclkgen_src_freq / mclk_div;
@@ -1610,6 +1620,7 @@ void clock_dpll_out_init(const struct device *dev, struct clock_dpll_out_init *d
 
 	uint32_t val32, pos_postdiv;
 	int inst = dpll_out_init->subsys.bits.inst;
+	uint32_t subsys_id = dpll_out_init->subsys.val;
 	int pll;
 
 	/* Check if the DPLL_OUT is already on */
@@ -1635,16 +1646,21 @@ void clock_dpll_out_init(const struct device *dev, struct clock_dpll_out_init *d
 		return;
 	}
 
+	/* PLL1 outputs 0 and 1 feed the fractional dividers FRACDIV0 and FRACDIV1.
+	 * Written once the PLL is locked and the output is enabled: a FRACDIV write
+	 * stays pending until its source delivers a clock.
+	 */
 	/* Check if fractional dividers to be configured. */
-	if ((inst == CLOCK_MCHP_DPLL1_ID_OUT0) || (inst == CLOCK_MCHP_DPLL1_ID_OUT1)) {
-		/* same macro for both DPLL0 and DPLL1 */
-		val32 = *(&oscctrl_regs->OSCCTRL_FRACDIV0 + (pll * 2));
+	if ((subsys_id == CLOCK_MCHP_DPLL1_ID_OUT0) || (subsys_id == CLOCK_MCHP_DPLL1_ID_OUT1)) {
+		uint8_t regoffset = inst % 2;
+		/* same macro for both DPLL0 and DPLL1 */ val32 =
+			*(&oscctrl_regs->OSCCTRL_FRACDIV0 + (regoffset * 2));
 		val32 &= ~(OSCCTRL_FRACDIV0_INTDIV_Msk | OSCCTRL_FRACDIV0_REMDIV_Msk);
 		val32 |= OSCCTRL_FRACDIV0_INTDIV(dpll_out_init->fract_divider_int) |
 			 OSCCTRL_FRACDIV0_REMDIV(dpll_out_init->fract_divider_rem);
-		*(&oscctrl_regs->OSCCTRL_FRACDIV0 + (pll * 2)) = val32;
+		*(&oscctrl_regs->OSCCTRL_FRACDIV0 + (regoffset * 2)) = val32;
 		if (WAIT_FOR(((oscctrl_regs->OSCCTRL_SYNCBUSY &
-			       BIT(OSCCTRL_SYNCBUSY_FRACDIV0_Pos + pll)) == 0),
+			       BIT(OSCCTRL_SYNCBUSY_FRACDIV0_Pos + regoffset)) == 0),
 			     TIMEOUT_REG_SYNC, NULL) == false) {
 			LOG_ERR("%s: timeout on writing fractional divider", __func__);
 			return;
@@ -1818,9 +1834,9 @@ void clock_mclkdomain_init(const struct device *dev, uint32_t subsys_val, uint8_
 
 	val32 = config->mclk_regs->MCLK_CLKDIV[inst] & ~(MCLK_CLKDIV_DIV_Msk);
 	val32 |= MCLK_CLKDIV_DIV(mclk_div);
-	/* config->mclk_regs->MCLK_CLKDIV[inst] = val32;
-	 *todo, system halts if we program MCLK_CLKDIV register. To resolve..
-	 */
+	if (inst == 1U) {
+		config->mclk_regs->MCLK_CLKDIV[inst] = val32;
+	}
 
 	/* Wait for the Main Clock to be Ready */
 	if (WAIT_FOR(((MCLK_REGS->MCLK_INTFLAG & MCLK_INTFLAG_CKRDY_Msk) == MCLK_INTFLAG_CKRDY_Msk),
