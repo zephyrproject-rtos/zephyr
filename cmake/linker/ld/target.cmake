@@ -93,7 +93,7 @@ endmacro()
 # Force symbols to be entered in the output file as undefined symbols
 function(toolchain_ld_force_undefined_symbols)
   foreach(symbol ${ARGN})
-    zephyr_link_libraries(${LINKERFLAGPREFIX},-u,${symbol})
+    zephyr_link_libraries(${LINKERFLAGPREFIX},-u,$<TARGET_PROPERTY:compiler,symbol_prefix>${symbol})
   endforeach()
 endfunction()
 
