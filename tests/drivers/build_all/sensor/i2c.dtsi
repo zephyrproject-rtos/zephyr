@@ -1735,3 +1735,9 @@ test_i2c_cht8305: cht8305@e0 {
 	heater;
 	disable-clock-stretching;
 };
+
+test_i2c_adxl373: adxl373@e1 {
+	compatible = "adi,adxl373";
+	reg = <0xe1>;
+	int1-gpios = <&test_gpio 0 0>;
+};
