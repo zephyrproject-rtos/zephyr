@@ -48,11 +48,13 @@ static struct {
 		lll_is_abort_cb_t is_abort_cb;
 		lll_abort_cb_t    abort_cb;
 		uint32_t          ticks_at_expire;
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
 	defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
 	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
 		uint32_t          ticks_drift;
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
 	* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
 	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
 	*/
@@ -84,6 +86,7 @@ static inline void done_inc(void);
 #else /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 static void mfy_ull_prepare_dequeue(void *param);
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+static inline bool is_ready_yield(const struct lll_event *ready);
 static inline struct lll_event *prepare_dequeue_iter_ready_get(void **idx);
 static inline struct lll_event *resume_enqueue(lll_is_abort_cb_t is_abort_cb,
 					       lll_abort_cb_t abort_cb, lll_prepare_cb_t resume_cb,
@@ -672,6 +675,80 @@ bool lll_is_done(void *param, bool *is_resume)
 	return !event.curr.abort_cb;
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+/* Enqueue the current event back into the prepare pipeline, as a deferred event or as a
+ * resume event, to be resumed using resume_cb after the pending events in the pipeline
+ * have used the radio. The ticks_at_expire is set to ticks_resume after the event anchor,
+ * i.e. ticks_at_expire less ticks_drift, and accounted as drift, placing the deferred event
+ * in the pipeline in the order of its resume time. The caller is responsible for closing
+ * the radio use of the current event, the current event does not generate a done event.
+ *
+ * With is_yield set, the event is enqueued as a normal prepare that a resume prepare in the
+ * pipeline is dequeued before, and the preempt timeout of the event preempts the resume
+ * prepare at the resume time.
+ */
+void lll_defer(lll_prepare_cb_t resume_cb, uint8_t is_resume, uint8_t is_yield,
+	       uint32_t ticks_resume)
+{
+	struct lll_prepare_param prepare_param;
+	struct lll_event *next;
+
+	prepare_param.ticks_at_expire = (event.curr.ticks_at_expire - event.curr.ticks_drift +
+					 ticks_resume) & HAL_TICKER_CNTR_MASK;
+	prepare_param.ticks_drift = ticks_resume;
+	prepare_param.remainder = event.curr.remainder;
+	prepare_param.lazy = event.curr.lazy;
+	prepare_param.force = 0U;
+	prepare_param.defer = (is_yield == 0U) ? 1U : 0U;
+	prepare_param.param = event.curr.param;
+
+	/* Remove parameter assignment from currently active radio event so that done event
+	 * is not generated.
+	 */
+	event.curr.param = NULL;
+
+	/* Enqueue as deferred, resume or yielded event */
+	next = ull_prepare_enqueue(event.curr.is_abort_cb, event.curr.abort_cb,
+				   &prepare_param, resume_cb, is_resume);
+	LL_ASSERT_ERR(next);
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	next->is_yield = is_yield;
+#else /* !CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+	LL_ASSERT_DBG(is_yield == 0U);
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+/* Check if the preempt timeout of a yielded event is later than the overhead to resume
+ * another event, i.e. another event can use the radio before the yielded event resumes.
+ */
+bool lll_is_yield_early(const struct lll_event *e)
+{
+	uint32_t ticks_at_preempt;
+	uint32_t ticks_diff;
+	uint32_t ticks_now;
+
+	ticks_at_preempt = e->prepare_param.ticks_at_expire +
+			   HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US) -
+			   HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	ticks_now = ticker_ticks_now_get() + HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_RESUME_US);
+
+	ticks_diff = ticker_ticks_diff_get(ticks_at_preempt & HAL_TICKER_CNTR_MASK,
+					   ticks_now & HAL_TICKER_CNTR_MASK);
+
+	return (ticks_diff != 0U) && ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U);
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 int lll_is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
 	ARG_UNUSED(resume_cb);
@@ -949,12 +1026,12 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	if (((is_dequeue == 0U) && (is_done_sync() == 0U)) ||
 	    (event.curr.abort_cb != NULL) ||
 	    (ready_short != NULL) ||
-	    ((ready != NULL) && (is_resume != 0U)) ||
+	    ((ready != NULL) && (is_resume != 0U) && !is_ready_yield(ready)) ||
 	    ((!IS_ENABLED(CONFIG_BT_CTLR_RADIO_TIMER_ISR) || (ready != NULL)) &&
 	     (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN) && (prepare_param->defer == 0U) &&
 	      (event.curr.has_margin == 0U) && (is_resume == 0U)))) {
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
-		lll_prepare_cb_t resume_cb;
+		lll_prepare_cb_t resume_cb = NULL;
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && event.curr.param) {
@@ -1037,15 +1114,18 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		return -EINPROGRESS;
 	}
 
-	LL_ASSERT_ERR(!ready || &ready->prepare_param == prepare_param);
+	LL_ASSERT_ERR(!ready || (&ready->prepare_param == prepare_param) ||
+		      ((is_resume != 0U) && is_ready_yield(ready)));
 
 	event.curr.param = prepare_param->param;
 	event.curr.ticks_at_expire = prepare_param->ticks_at_expire;
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
 	defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
 	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
 	event.curr.ticks_drift = prepare_param->ticks_drift;
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
 	* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
 	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
 	*/
@@ -1121,6 +1201,18 @@ static void mfy_ull_prepare_dequeue(void *param)
 }
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
+/* A yielded event, until its preempt timeout, does not hold back a resume prepare */
+static inline bool is_ready_yield(const struct lll_event *ready)
+{
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	return ready->is_yield != 0U;
+#else /* !CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+	ARG_UNUSED(ready);
+
+	return false;
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+}
+
 static inline struct lll_event *prepare_dequeue_iter_ready_get(void **idx)
 {
 	struct lll_event *ready;
@@ -1147,6 +1239,19 @@ static inline struct lll_event *resume_enqueue(lll_is_abort_cb_t is_abort_cb,
 
 	prepare_param.param = param;
 	prepare_param.ticks_at_expire = ticks_at_expire;
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	/* Retain the drift of the current event so that the resume can calculate its offset
+	 * from the event anchor.
+	 */
+	prepare_param.ticks_drift = event.curr.ticks_drift;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 
 	return ull_prepare_enqueue(is_abort_cb, abort_cb, &prepare_param, resume_cb, 1U);
 }
@@ -1370,8 +1475,11 @@ static void preempt(void *param)
 {
 	lll_prepare_cb_t curr_resume_cb;
 	struct lll_event *ready;
+	uint8_t is_yield;
 	void *idx;
 	int err;
+
+	is_yield = 0U;
 
 	/* No event to abort */
 	if (!event.curr.abort_cb || !event.curr.param) {
@@ -1417,23 +1525,34 @@ static void preempt(void *param)
 		return;
 	}
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	/* Yielded event is due, it is no more dequeued after resume prepares */
+	is_yield = ready->is_yield;
+	ready->is_yield = 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	/* Check if current event want to continue */
 	err = event.curr.is_abort_cb(ready->prepare_param.param, event.curr.param, &curr_resume_cb);
 	if ((err == 0U) || (err == -EBUSY) || (err == -EINPROGRESS)) {
 		uint32_t ret;
 
 		/* Returns 0 to continue the current event, -EINPROGRESS to resume after the
-		 * preemptor (ready) event
+		 * preemptor (ready) event. The ready event's prepare callback is passed to its
+		 * is_abort_cb, to be retained or replaced when it is enqueued back as deferred.
 		 */
-		lll_prepare_cb_t ready_resume_cb = NULL;
+		lll_prepare_cb_t ready_resume_cb = ready->prepare_cb;
 
 		/* Check if curr and next ready event are different state/role  */
 		if (event.curr.param != ready->prepare_param.param) {
 			int err_ready;
 
-			/* Check if ready event want to continue */
-			err_ready = ready->is_abort_cb(NULL, ready->prepare_param.param,
-						       &ready_resume_cb);
+			/* Check if ready event want to continue, a yielded event resumes */
+			if (is_yield != 0U) {
+				err_ready = 0;
+			} else {
+				err_ready = ready->is_abort_cb(NULL, ready->prepare_param.param,
+							       &ready_resume_cb);
+			}
 			if ((err_ready == 0U) || (err_ready == -EBUSY) ||
 			    (err_ready == -EINPROGRESS)) {
 				/* Preemptor (ready) event wants to cancel the current event */
@@ -1546,14 +1665,16 @@ preempt_cancel_curr:
 		 * deferred event.
 		 */
 		prepare_param.ticks_at_expire = ready->prepare_param.ticks_at_expire;
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
 	defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
 	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
 		prepare_param.ticks_drift = event.curr.ticks_drift;
 		prepare_param.ticks_drift +=
 			ticker_ticks_diff_get(ready->prepare_param.ticks_at_expire,
 					      event.curr.ticks_at_expire);
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
 	* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
 	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
 	*/
