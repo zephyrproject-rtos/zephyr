@@ -1,10 +1,10 @@
 common:
-  depends_on: eeprom
   tags:
     - drivers
     - eeprom
 tests:
   drivers.eeprom.api:
+    depends_on: eeprom
     # Tests overwrite EEPROM content, only run on select boards
     platform_allow:
       - native_sim
@@ -17,6 +17,7 @@ tests:
     integration_platforms:
       - qemu_x86
   drivers.eeprom.api.w_at2x_emul:
+    depends_on: eeprom
     # Tests overwrite EEPROM content, only run on select boards
     extra_args:
       - DTC_OVERLAY_FILE=at2x_emul.overlay
@@ -27,6 +28,7 @@ tests:
     integration_platforms:
       - native_sim
   drivers.eeprom.api.build:
+    depends_on: eeprom
     # Build-only test for boards with EEPROMs
     build_only: true
     platform_exclude:
@@ -36,3 +38,15 @@ tests:
       - nucleo_l152re
       - nucleo_l073rz
       - sama7g54_ek
+  drivers.eeprom.api.shield.cy15framkit_001:
+    depends_on:
+      - arduino_gpio
+      - arduino_i2c
+      - arduino_spi
+    # Needs the shield fitted, which the fixture declares
+    extra_args: SHIELD=cy15framkit_001
+    harness: ztest
+    harness_config:
+      fixture: fixture_shield_cy15framkit_001
+    integration_platforms:
+      - frdm_k64f
