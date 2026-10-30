@@ -116,6 +116,10 @@ Libraries / Subsystems
       :c:enumerator:`ETHERNET_HW_STP_PORT_STATE` capability and takes the port state and FDB
       flushes from the protocol.
 
+  * TCP can scale its window (RFC 7323) when :kconfig:option:`CONFIG_NET_TCP_WINDOW_SCALE` is
+    enabled, so a connection can use send and receive windows above 64 KB. The window size
+    options, ``SO_RCVBUF`` and ``SO_SNDBUF`` then accept values up to 65535 << 14.
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per
