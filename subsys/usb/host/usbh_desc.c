@@ -136,11 +136,11 @@ const void *usbh_desc_get_iad(const struct usb_device *const udev, const uint8_t
 	return NULL;
 }
 
-const void *usbh_desc_get_endpoint(const struct usb_device *const udev, const uint8_t ep)
+struct usb_host_ep *usbh_desc_get_endpoint(struct usb_device *const udev, const uint8_t ep)
 {
-	uint8_t idx = USB_EP_GET_IDX(ep) & 0xf;
+	struct usb_host_ep *host_ep = uhc_get_udev_ep(udev, ep);
 
-	return USB_EP_DIR_IS_IN(ep) ? udev->ep_in[idx].desc : udev->ep_out[idx].desc;
+	return host_ep->enabled ? host_ep : NULL;
 }
 
 int usbh_desc_fill_filter(const struct usb_desc_header *const desc,
