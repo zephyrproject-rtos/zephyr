@@ -113,6 +113,11 @@ tests:
       - SHIELD=tcan4550evm
     platform_allow:
       - frdm_k64f
+  drivers.can.build_all.xlnx_zynq:
+    extra_dtc_overlay_files:
+      - xlnx_zynq.overlay
+    platform_allow:
+      - zedboard
   drivers.can.build_all.xmc4xxx:
     platform_allow:
       - xmc47_relax_kit
