@@ -629,6 +629,12 @@ struct modem_status {
 	 * timeout the previous state queued before it left is not that one.
 	 */
 	bool sleep_wake_timer_armed;
+	/* INIT_POWER_OFF armed its backstop and no detach report has stopped
+	 * it: a timeout is taken for its expiry only then, and only once it has
+	 * run out. A timeout the previous state queued before it left is not
+	 * that one.
+	 */
+	bool power_off_backstop_armed;
 
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	struct hl78xx_wdsi_status wdsi;
