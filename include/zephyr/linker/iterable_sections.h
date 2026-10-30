@@ -64,8 +64,11 @@
  * @brief Define a read-only iterable section output, sorted numerically.
  *
  * This version of ITERABLE_SECTION_ROM() sorts the entries numerically, that
- * is, `SECNAME_10` will come after `SECNAME_2`. `_` separator is required, and
- * up to 2 numeric digits are handled (0-99).
+ * is, `SECNAME_10` will come after `SECNAME_2`. The number must be surrounded
+ * by `_` separators and up to 5 numeric digits are handled (0-99999). The
+ * trailing separator is added to the section postfix by
+ * TYPE_SECTION_ITERABLE(), so only the leading `_` needs to be part of the
+ * name.
  *
  * @see ITERABLE_SECTION_ROM()
  */
@@ -117,8 +120,11 @@
  * @brief Define a read-write iterable section output, sorted numerically.
  *
  * This version of ITERABLE_SECTION_RAM() sorts the entries numerically, that
- * is, `SECNAME10` will come after `SECNAME2`. Up to 2 numeric digits are
- * handled (0-99).
+ * is, `SECNAME_10` will come after `SECNAME_2`. The number must be surrounded
+ * by `_` separators and up to 5 numeric digits are handled (0-99999). The
+ * trailing separator is added to the section postfix by
+ * TYPE_SECTION_ITERABLE(), so only the leading `_` needs to be part of the
+ * name.
  *
  * @see ITERABLE_SECTION_RAM()
  */
