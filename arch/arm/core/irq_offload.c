@@ -11,7 +11,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq_offload.h>
+#ifndef CONFIG_CPU_ARM9
 #include <cmsis_core.h>
+#endif
 
 /* Called by z_arm_svc, which must preserve the callee-saved regs. r4 and r5. */
 __attribute__((naked)) void z_irq_do_offload(void)
