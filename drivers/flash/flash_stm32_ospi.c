@@ -45,13 +45,11 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_OSPI_DLYB_BYPASSED DT_PROP(STM32_OSPI_NODE, dlyb_bypass)
 
-#define STM32_OSPI_USE_DMA DT_NODE_HAS_PROP(STM32_OSPI_NODE, dmas)
-
-#if STM32_OSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_OSPI_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
 #include <stm32_ll_dma.h>
-#endif /* STM32_OSPI_USE_DMA */
+#endif /* CONFIG_FLASH_STM32_OSPI_DMA */
 
 #define STM32_OSPI_FIFO_THRESHOLD         4
 
@@ -76,14 +74,14 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 /* used as default value for DTS writeoc */
 #define SPI_NOR_WRITEOC_NONE 0xFF
 
-#if STM32_OSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_OSPI_DMA
 struct stream {
 	DMA_TypeDef *reg;
 	const struct device *dev;
 	uint32_t channel;
 	struct dma_config cfg;
 };
-#endif /* STM32_OSPI_USE_DMA */
+#endif /* CONFIG_FLASH_STM32_OSPI_DMA */
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
@@ -134,9 +132,9 @@ struct flash_stm32_ospi_data {
 	uint8_t jedec_id[JESD216_READ_ID_LEN];
 #endif /* CONFIG_FLASH_JESD216_API */
 	int cmd_status;
-#if STM32_OSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_OSPI_DMA
 	struct stream dma;
-#endif /* STM32_OSPI_USE_DMA */
+#endif /* CONFIG_FLASH_STM32_OSPI_DMA */
 };
 
 static inline void ospi_lock_thread(const struct device *dev)
@@ -190,7 +188,7 @@ static int ospi_read_access(const struct device *dev, OSPI_RegularCmdTypeDef *cm
 		return -EIO;
 	}
 
-#if STM32_OSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_OSPI_DMA
 	hal_ret = HAL_OSPI_Receive_DMA(&dev_data->hospi, data);
 #else
 	hal_ret = HAL_OSPI_Receive_IT(&dev_data->hospi, data);
@@ -231,7 +229,7 @@ static int ospi_write_access(const struct device *dev, OSPI_RegularCmdTypeDef *c
 		return -EIO;
 	}
 
-#if STM32_OSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_OSPI_DMA
 	hal_ret = HAL_OSPI_Transmit_DMA(&dev_data->hospi, (uint8_t *)data);
 #else
 	hal_ret = HAL_OSPI_Transmit_IT(&dev_data->hospi, (uint8_t *)data);
@@ -1599,7 +1597,7 @@ __weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
 
 /* This function is executed in the interrupt context */
-#if STM32_OSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_OSPI_DMA
 static void ospi_dma_callback(const struct device *dev, void *arg,
 			 uint32_t channel, int status)
 {
@@ -2216,7 +2214,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return ret;
 	}
 
-#if STM32_OSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_OSPI_DMA
 	/*
 	 * DMA configuration
 	 * Due to use of OSPI HAL API in current driver,
@@ -2267,7 +2265,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	}
 	LOG_INF("OSPI with DMA transfer");
 
-#endif /* STM32_OSPI_USE_DMA */
+#endif /* CONFIG_FLASH_STM32_OSPI_DMA */
 
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -2569,7 +2567,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	return 0;
 }
 
-#if STM32_OSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_OSPI_DMA
 #define DMA_CHANNEL_CONFIG(node, dir)					\
 		DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
@@ -2598,7 +2596,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 #else
 #define OSPI_DMA_CHANNEL(node, dir)
-#endif /* CONFIG_USE_STM32_HAL_DMA */
+#endif /* CONFIG_FLASH_STM32_OSPI_DMA */
 
 #define DT_WRITEOC_PROP_OR(inst, default_value)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),					\

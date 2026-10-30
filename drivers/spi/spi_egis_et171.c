@@ -1259,7 +1259,7 @@ static void spi_et171_irq_handler(void *arg)
 #define DMA_CHANNEL_CONFIG(id, dir)						\
 		DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
 
-#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)                               \
+#define SPI_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)                                        \
 	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                           \
 	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                                 \
 	.dma_cfg =                                                                                 \
@@ -1287,15 +1287,15 @@ static void spi_et171_irq_handler(void *arg)
 	.dst_addr_increment =                                                                      \
 		EGIS_DMA_CONFIG_##dest_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(index, dir))
 
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)				\
+#define SPI_DMA_CHANNEL(id, dir, src, dest)					\
 	.dma_##dir = {								\
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
-			(SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),	\
+			(SPI_DMA_CHANNEL_INIT(id, dir, src, dest)),		\
 			(NULL))							\
 		},
 
 #else
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)
+#define SPI_DMA_CHANNEL(id, dir, src, dest)
 #endif
 
 #define SPI_BUSY_INIT .busy = false,
@@ -1311,8 +1311,8 @@ static void spi_et171_irq_handler(void *arg)
 		SPI_CONTEXT_INIT_LOCK(spi_et171_dev_data_##n, ctx),                                \
 		SPI_CONTEXT_INIT_SYNC(spi_et171_dev_data_##n, ctx),                                \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)                               \
-			SPI_BUSY_INIT SPI_DMA_CHANNEL(n, rx, RX, PERIPHERAL, MEMORY)               \
-				SPI_DMA_CHANNEL(n, tx, TX, MEMORY, PERIPHERAL)};                   \
+			SPI_BUSY_INIT SPI_DMA_CHANNEL(n, rx, PERIPHERAL, MEMORY)                   \
+				SPI_DMA_CHANNEL(n, tx, MEMORY, PERIPHERAL)};                       \
 	static void spi_et171_cfg_##n(void);                                                       \
 	static struct spi_et171_cfg spi_et171_dev_cfg_##n = {                                      \
 		.cfg_func = spi_et171_cfg_##n,                                                     \
