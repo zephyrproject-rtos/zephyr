@@ -88,6 +88,9 @@ default of the ADIN1110 driver.
 The ``port1`` MAC address is a fixed default. Change it if several boards share
 the same network.
 
+The :zephyr:code-sample:`ad_swiot1l_sl_t1l_static_ip` sample brings the
+interface up with a static IPv4 address.
+
 Programming and Debugging
 *************************
 
