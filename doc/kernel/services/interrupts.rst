@@ -106,6 +106,30 @@ There are three interrupt levels shown here.
   device 'B' on line 2.
 * The LEVEL 3 controller has one device 'D' on line 2.
 
+With the default widths of 8 bits per level, set by
+:kconfig:option:`CONFIG_1ST_LEVEL_INTERRUPT_BITS`,
+:kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPT_BITS` and
+:kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPT_BITS`, an interrupt number is laid
+out as follows:
+
+.. mermaid::
+   :caption: Multi-level interrupt number with the default level widths
+   :alt: 32-bit interrupt number: bits 0 to 7 hold the level 1 line, bits 8 to
+         15 the level 2 line plus one, bits 16 to 23 the level 3 line plus one,
+         and bits 24 to 31 are unused. A level field of zero means the
+         interrupt has no line at that level.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+   ---
+   packet
+     0-7: "Level 1 line"
+     8-15: "Level 2 line + 1"
+     16-23: "Level 3 line + 1"
+     24-31: "Unused"
+
 Here's how unique interrupt numbers are generated for each
 hardware interrupt.  Let's consider four interrupts shown above
 as A, B, C, and D:
