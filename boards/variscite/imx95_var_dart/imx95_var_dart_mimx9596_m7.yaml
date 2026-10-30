@@ -1,0 +1,21 @@
+#
+# Copyright 2025 Variscite Ltd.
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx95_var_dart/mimx9596/m7
+name: Variscite DART-MX95
+type: mcu
+arch: arm
+ram: 256
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - uart
+  - gpio
+vendor: nxp
