@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On frdm_mcxa266, frdm_mcxa346 and frdm_mcxa366, DAC0 output on J1 pin 4 (P2_2) conflicts with
+  LPUART2 TX, so the console is moved to LPUART3 and the hardware map provides that UART as a
+  second serial port (connection index 1) for the test output.

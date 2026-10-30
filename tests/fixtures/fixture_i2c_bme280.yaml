@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Bosch BME280 sensor on I2C: at address 0x76 on feather_i2c of
+  adafruit_feather_m0_basic_proto, or the sparkfun_environmental_combo shield on
+  adafruit_qt_py_rp2040.
+notes: >-
+  The rpi_pico overlay of the same sample puts the BME280 on spi0 (CS GPIO17).

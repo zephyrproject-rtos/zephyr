@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  Two GPIO outputs emulating an encoder (qenca, qencb) wired to the QDEC phase A and phase B
+  inputs: on frdm_mcxa153 J1-12 to J3-3 and J1-14 to J3-1.
+notes: >-
+  The nRF scenarios of the same sample gate the same wiring with gpio_loopback.

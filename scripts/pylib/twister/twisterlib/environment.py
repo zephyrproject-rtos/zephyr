@@ -888,6 +888,13 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         help="Specify a fixture that a board might support.")
 
     parser.add_argument(
+        "--fixture-registry", action="append", default=[], metavar="DIR",
+        help="""Additional fixture registry directory, laid out like
+        tests/fixtures/, for test suites outside the Zephyr tree. May be given
+        multiple times. Test suites that request a fixture missing from every
+        registry fail to load.""")
+
+    parser.add_argument(
         "-x", "--extra-args", action="append", default=[],
         help="""Extra CMake cache entries to define when building test cases.
         May be called multiple times. The key-value entries will be

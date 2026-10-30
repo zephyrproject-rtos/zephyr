@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A DS18B20 1-Wire temperature sensor on a bus driven by the Arduino header UART
+  (zephyr,w1-serial) of a nucleo_g071rb, through an external open-drain interface circuit
+  between UART TX/RX and the 1-Wire line.

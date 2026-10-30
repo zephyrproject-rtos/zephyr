@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  Pins of the board wired together with jumpers as the test's board overlay calls for, usually a
+  GPIO output to a GPIO input. Several tests use the same name for a peripheral's own pins
+  looped back (UART TX to RX and RTS to CTS, I2S SDOUT to SDIN, SPI bitbang SDO to SDI, GPIOs
+  driving PWM, comparator or QDEC inputs, a regulator output to an ADC input).
+notes: >-
+  A catch-all: the required wiring depends on the test and the board, and only the board overlay
+  or README of each test says which pins to connect.

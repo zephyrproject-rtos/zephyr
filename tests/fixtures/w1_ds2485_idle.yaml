@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Maxim DS2485 I2C to 1-Wire master at address 0x40 on the Arduino I2C header with no 1-Wire
+  devices on the bus; the tests expect no presence pulse.

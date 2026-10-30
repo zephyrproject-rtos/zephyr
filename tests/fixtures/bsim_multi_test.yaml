@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  Opt-in for multi-device BabbleSim tests: the host has BabbleSim installed with BSIM_OUT_PATH
+  and BSIM_COMPONENTS_PATH set, and the scenario's tests_scripts start several simulated devices
+  and the 2G4 phy. Pass --fixture bsim_multi_test to run them.
+notes: >-
+  Describes no hardware; it keeps the bsim multi-device scenarios out of ordinary twister runs.
+references:
+  - :ref:`bsim`

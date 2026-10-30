@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A known voltage, given in millivolts by the reference-mv property of the zephyr,user node,
+  applied to the ADC channel in io-channels. Some boards need an external source on an analog
+  pin (nrf52840dk: 3000 mV on AIN1/P0.03; nrf54l15dk: 1800 mV on AIN2); others measure an
+  internal channel.

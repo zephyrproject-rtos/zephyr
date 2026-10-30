@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The on-chip 1-Wire master of an ADI MAX32 or MAX78 evaluation kit with the internal pull-up
+  enabled and any number of 1-Wire devices on its pins.

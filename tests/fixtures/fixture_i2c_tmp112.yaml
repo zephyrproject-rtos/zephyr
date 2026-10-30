@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A TI TMP112 temperature sensor on I2C, as described by the board overlay (frdm_k64f: address
+  0x4a on i2c0).

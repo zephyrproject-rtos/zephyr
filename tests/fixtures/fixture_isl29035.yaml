@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An Intersil ISL29035 ambient light sensor breakout at address 0x44 on i2c0 of an
+  nrf52dk/nrf52832: SDA P0.26, SCL P0.27, interrupt on P0.11 (active low, pull-up).

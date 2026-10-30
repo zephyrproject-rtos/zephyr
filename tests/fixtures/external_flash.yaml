@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An external serial NOR flash present and wired as the test's board overlay expects: the
+  onboard MX25R64 of Nordic DKs enabled by the overlay, or the NAND used by the Cadence NAND
+  sample on intel_socfpga_agilex5_socdk.
+notes: >-
+  The exact device differs per board; some scenarios that only touch internal flash or RRAM are
+  gated by this name as well.

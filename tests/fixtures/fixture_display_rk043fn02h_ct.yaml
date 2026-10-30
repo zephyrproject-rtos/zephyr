@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Rocktech RK043FN02H-CT shield (4.3 inch 480x272 parallel RGB TFT with capacitive touch) on
+  the 40-pin parallel FPC and 6-pin I2C touch connectors of an i.MX RT10xx EVK.
+notes: >-
+  The panel is discontinued; its replacement is fixture_display_rk043fn66hs_ctg.

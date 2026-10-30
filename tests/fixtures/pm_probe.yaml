@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A power monitor measuring the supply current of the DUT, connected to the twister host over
+  serial; the serial port follows the name after a colon (pm_probe:/dev/ttyACM1). The only
+  supported monitor is the ST PowerShield of the stm32l562e_dk.
+references:
+  - :ref:`twister_power_harness`

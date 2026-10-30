@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A camera module on the board's camera connector, with the display shield the scenario's
+  extra_args select: for example MT9M114 on dvp_fpc24 with rk043fn66hs_ctg on mimxrt1064_evk,
+  OV5640 (nxp_btb44) with rk055hdmipi4ma0 on mimxrt1170_evk, OV7670 (dvp_20pin) on frdm_mcxn947,
+  or a WeAct OV2640 with an ST7735 TFT on mini_stm32h743. Boards with a built-in camera need no
+  module.

@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An external pull-down resistor on the GPIO named by the test-gpio-external-pulldown node of
+  the board overlay (Raspberry Pi Pico 2: pico_header pin 15). The test drives and reads back
+  that pin.

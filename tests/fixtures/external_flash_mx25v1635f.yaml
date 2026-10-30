@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Macronix MX25V1635F SPI NOR on SPIM0 of an nrf52840dk: SCK P1.09, MOSI P0.11, MISO P0.12, CS
+  P0.13, plus HOLD on P0.14 and WP on P0.15 for the wp_hold scenario.

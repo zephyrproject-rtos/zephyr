@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The UART pins named by the board overlay looped back: either TX to RX (and RTS to CTS where
+  flow control is used) on one instance, or two instances cross-connected TX to RX. For example
+  nrf54l15dk uart22 to uart21 (uart_async_dual), frdm_mcxn947 J1.2 to J1.4 and npcx4m8f CR_SIN2
+  to CR_SOUT2 (MCTP), nrf54lm20dk P1.03-P1.04 and P1.13-P1.14 (Modbus).
+notes: >-
+  Most UART driver tests gate the same wiring with gpio_loopback.

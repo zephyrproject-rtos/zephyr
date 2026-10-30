@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On frdm_rw612, a jumper from J7-2 (hsgpio0 pin 18, output) to J7-4 (hsgpio1 pin 44, input) to
+  exercise the high-speed GPIO controller.

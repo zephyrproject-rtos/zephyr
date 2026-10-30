@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The GPIO named by timerout-gpios in the test-kernel-timer-behavior-external node (frdm_k64f:
+  Arduino D7, PTC3) connected to a Saleae Logic 2 analyzer whose automation API is reachable
+  from the twister host at 127.0.0.1:10430. The test toggles the pin every timer period and the
+  host measures period and drift.
+notes: >-
+  The host must run the Saleae Logic 2 software with the automation API enabled.

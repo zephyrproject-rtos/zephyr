@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  Two SPI instances of the same SoC joined into one bus: the controller's SCK, MOSI and MISO to
+  the peripheral's SCK, MOSI and MISO, and the controller's cs-gpios pin to the peripheral's
+  CSN. The board overlays of the test list the pins (nrf54l15dk: P1.13-P1.12, P1.09-P1.08,
+  P1.11-P1.10 and CSN P1.14).
+notes: >-
+  Despite the name this is SPI wiring, not GPIO wiring.

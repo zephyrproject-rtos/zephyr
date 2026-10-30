@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A MikroElektronika Flash 5 Click (Winbond W25N01GV SPI NAND) in the mikroBUS socket
+  (SHIELD=mikroe_flash_5_click). The tests write the storage partition at the start of the NAND.
+notes: >-
+  The same chip hand-wired is w25n01gv.

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On Nordic DKs, the SDA pins of a TWIM (controller) and a TWIS (target) instance wired
+  together, and likewise their SCL pins, as listed in the board overlay (nrf52840dk: P1.01-P1.02
+  and P1.03-P1.04).
+notes: >-
+  Same wiring as i2c_bus_short.

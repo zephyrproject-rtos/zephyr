@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The SCL and SDA lines of two I2C controllers of the DUT wired together into one bus with pull-
+  ups, so that one instance acts as controller and the other as target. The board overlay gives
+  the pins (nrf54l15dk: SDA P1.08-P1.09, SCL P1.10-P1.11).
+notes: >-
+  Same wiring as i2c_loopback.

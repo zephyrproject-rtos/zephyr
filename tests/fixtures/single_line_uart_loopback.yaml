@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The TX pins of two UARTs in half-duplex single-wire mode wired together: USART2 PA2 to UART4
+  PC10 on stm32f3_disco, USART2 PA12 to LPUART1 PA2 (open-drain with pull-up) on nucleo_wba55cg.

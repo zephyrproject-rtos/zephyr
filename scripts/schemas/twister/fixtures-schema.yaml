@@ -1,0 +1,17 @@
+#
+# Schema to validate one twister fixture description (tests/fixtures/<name>.yaml).
+#
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+properties:
+  description:
+    type: string
+  notes:
+    type: string
+  references:
+    type: array
+    items:
+      type: string
+required:
+  - description
+additionalProperties: false

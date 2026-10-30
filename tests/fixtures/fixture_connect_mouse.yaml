@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A PS/2 mouse plugged into the PS/2 port of a board with a Microchip XEC PS/2 controller, such
+  as mec172xmodular_assy6930.

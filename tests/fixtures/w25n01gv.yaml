@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Winbond W25N01GV SPI NAND wired to SPI22 as the test's board overlay lists: nrf54l15dk SCK
+  P1.11, MOSI P1.12, MISO P1.13, CS P1.14 (onboard MX25R64 disabled); nrf7120dk SCK P1.13, MISO
+  P1.14, MOSI P1.15, CS P1.12.
+notes: >-
+  The same chip on a mikroBUS board is mikroe_flash_5_click.

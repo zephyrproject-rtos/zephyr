@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An external SPI RAM or FRAM with the standard FRAM opcode set (FM25W256, CY15B256, MB85RS256
+  or similar) on the SPI controller named by the spi-ram devicetree alias; it is written and
+  read back.
