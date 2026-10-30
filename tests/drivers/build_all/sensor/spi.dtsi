@@ -558,3 +558,9 @@ test_spi_icm56686: icm56686@42 {
 	gyro-lpf = <1>;
 	gyro-pwr-mode = <2>;
 };
+
+test_spi_dps310: dps310@45 {
+	compatible = "infineon,dps310";
+	reg = <0x45>;
+	spi-max-frequency = <0>;
+};

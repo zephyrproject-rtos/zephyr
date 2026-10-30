@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-description: Infineon DPS310 temperature and pressure sensor
+description: Infineon DPS310 temperature and pressure sensor on I2C
 
 include: [sensor-device.yaml, i2c-device.yaml]
 
