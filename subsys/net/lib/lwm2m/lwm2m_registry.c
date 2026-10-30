@@ -473,6 +473,9 @@ int lwm2m_set_res_buf(const struct lwm2m_obj_path *path, void *buffer_ptr, uint1
 	}
 
 	/* assign data elements */
+	if (buffer_ptr != res_inst->data_ptr) {
+		res_inst->app_buf = true;
+	}
 	res_inst->data_ptr = buffer_ptr;
 	res_inst->data_len = data_len;
 	res_inst->max_data_len = buffer_len;
@@ -1239,8 +1242,10 @@ int lwm2m_create_res_inst(const struct lwm2m_obj_path *path)
 		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
+
+	ret = lwm2m_engine_allocate_resource_instance(res, &res_inst, path->res_inst_id);
 	k_mutex_unlock(&registry_lock);
-	return lwm2m_engine_allocate_resource_instance(res, &res_inst, path->res_inst_id);
+	return ret;
 }
 
 int lwm2m_delete_res_inst(const struct lwm2m_obj_path *path)
@@ -1264,9 +1269,16 @@ int lwm2m_delete_res_inst(const struct lwm2m_obj_path *path)
 		return -ENOENT;
 	}
 
-	res_inst->data_ptr = NULL;
-	res_inst->max_data_len = 0U;
+	/* The object's own storage stays with the slot for the next instance
+	 * created in it; a buffer the application attached is released.
+	 */
+	if (res_inst->app_buf) {
+		res_inst->data_ptr = NULL;
+		res_inst->max_data_len = 0U;
+		res_inst->app_buf = false;
+	}
 	res_inst->data_len = 0U;
+	res_inst->data_flags = 0U;
 	res_inst->res_inst_id = RES_INSTANCE_NOT_CREATED;
 	k_mutex_unlock(&registry_lock);
 	return 0;

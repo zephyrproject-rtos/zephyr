@@ -67,7 +67,17 @@ static int exec_cb(uint16_t obj_inst_id, uint8_t *args, uint16_t args_len)
 	return 0;
 }
 
-ZTEST_SUITE(lwm2m_registry, NULL, NULL, NULL, NULL, NULL);
+static void registry_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (lwm2m_engine_get_obj_inst(&LWM2M_OBJ(16, 0)) != NULL) {
+		(void)lwm2m_delete_object_inst(&LWM2M_OBJ(16, 0));
+		zassert_unreachable("Portfolio instance 16/0 left behind by an earlier case");
+	}
+}
+
+ZTEST_SUITE(lwm2m_registry, NULL, NULL, registry_before, NULL, NULL);
 
 ZTEST(lwm2m_registry, test_object_creation_and_deletion)
 {
@@ -310,6 +320,106 @@ ZTEST(lwm2m_registry, test_resource_instance_creation_and_deletion)
 	zassert_equal(ret, 0);
 
 	ret = lwm2m_delete_res_inst(&LWM2M_OBJ(4, 0, 1, 0));
+	zassert_equal(ret, 0);
+}
+
+ZTEST(lwm2m_registry, test_resource_instance_recreation)
+{
+	int ret;
+	char buf[40] = {0};
+	static const char string_a[] = "Hello";
+	static const char string_b[] = "World";
+	struct lwm2m_obj_path path = LWM2M_OBJ(16, 0, 0, 0);
+	struct lwm2m_obj_path path_other = LWM2M_OBJ(16, 0, 0, 5);
+
+	ret = lwm2m_create_object_inst(&LWM2M_OBJ(16, 0));
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_create_res_inst(&path);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_set_string(&path, string_a);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_delete_res_inst(&path);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	zassert_equal(ret, -ENOENT);
+
+	/* The slot freed above is reused and must keep its buffer. */
+	ret = lwm2m_create_res_inst(&path);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_set_string(&path, string_b);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(0, memcmp(buf, string_b, sizeof(string_b)));
+
+	ret = lwm2m_delete_res_inst(&path);
+	zassert_equal(ret, 0);
+
+	/* A different instance ID lands in the same freed slot. */
+	ret = lwm2m_create_res_inst(&path_other);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_set_string(&path_other, string_a);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_get_string(&path_other, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(0, memcmp(buf, string_a, sizeof(string_a)));
+
+	ret = lwm2m_delete_object_inst(&LWM2M_OBJ(16, 0));
+	zassert_equal(ret, 0);
+}
+
+ZTEST(lwm2m_registry, test_resource_instance_app_buffer)
+{
+	int ret;
+	static char app_buf[16];
+	static char app_buf_b[16];
+	void *buf_ptr = app_buf;
+	uint16_t buf_len = 1U;
+	uint8_t flags = 0xffU;
+	static const char string_a[] = "Hello";
+	struct lwm2m_obj_path path = LWM2M_OBJ(16, 0, 0, 0);
+
+	ret = lwm2m_create_object_inst(&LWM2M_OBJ(16, 0));
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_create_res_inst(&path);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_set_res_buf(&path, app_buf, sizeof(app_buf), 0, LWM2M_RES_DATA_FLAG_RO);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_delete_res_inst(&path);
+	zassert_equal(ret, 0);
+
+	/* The application buffer and its flags do not survive the delete. */
+	ret = lwm2m_create_res_inst(&path);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_get_res_buf(&path, &buf_ptr, &buf_len, NULL, &flags);
+	zassert_equal(ret, 0);
+	zassert_is_null(buf_ptr);
+	zassert_equal(buf_len, 0U);
+	zassert_equal(flags, 0U);
+
+	ret = lwm2m_set_string(&path, string_a);
+	zassert_equal(ret, -EINVAL);
+
+	ret = lwm2m_set_res_buf(&path, app_buf_b, sizeof(app_buf_b), 0, 0);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_set_string(&path, string_a);
+	zassert_equal(ret, 0);
+	zassert_equal(0, memcmp(app_buf_b, string_a, sizeof(string_a)));
+
+	ret = lwm2m_delete_object_inst(&LWM2M_OBJ(16, 0));
 	zassert_equal(ret, 0);
 }
 
