@@ -512,6 +512,12 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	if (err) {
 		LOG_ERR("L2CAP CoC error: %d while trying to execute OACP "
 			"Read procedure", err);
+
+		err = bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
+		if (err != 0) {
+			LOG_WRN("Disconnecting L2CAP returned error %d", err);
+		}
+
 		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 	} else {
 		read_op->sent_len += len;
