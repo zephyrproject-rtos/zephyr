@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <rom/ets_sys.h>
@@ -68,6 +69,7 @@ void esp_init_psram(void)
 {
 	intptr_t mapped_vaddr = 0;
 	size_t mapped_size = 0;
+	uintptr_t mapped_end;
 
 	/*
 	 * PSRAM chip init transitions the MSPI clock through low and high
@@ -106,8 +108,7 @@ void esp_init_psram(void)
 	}
 
 	esp_psram_get_mapped_region(&mapped_vaddr, &mapped_size);
-	ARG_UNUSED(mapped_vaddr);
-	ARG_UNUSED(mapped_size);
+	mapped_end = (uintptr_t)mapped_vaddr + mapped_size;
 
 	/*
 	 * Use the linker-reserved heap window inside the PSRAM-backed
@@ -120,6 +121,23 @@ void esp_init_psram(void)
 	smh_psram.addr = (uintptr_t)&_ext_ram_heap_start;
 	smh_psram.size = (uintptr_t)&_ext_ram_heap_end -
 			 (uintptr_t)&_ext_ram_heap_start;
+
+	/*
+	 * The linker sizes that window from CONFIG_ESP_SPIRAM_HEAP_SIZE
+	 * without knowing the size of the PSRAM nor the part of it the
+	 * .rodata and .text copies take: keep the heap inside the mapped
+	 * region, and stop if the data placed before it is not.
+	 */
+	if (smh_psram.addr > mapped_end) {
+		ets_printf("External RAM data ends past the mapped PSRAM, aborting.\n");
+		abort();
+	}
+	if (smh_psram.addr + smh_psram.size > mapped_end) {
+		ets_printf("External RAM heap reduced from %u to %u bytes to fit the PSRAM.\n",
+			   (unsigned int)smh_psram.size,
+			   (unsigned int)(mapped_end - smh_psram.addr));
+		smh_psram.size = mapped_end - smh_psram.addr;
+	}
 
 	if (IS_ENABLED(CONFIG_ESP_SPIRAM_MEMTEST)) {
 		if (esp_psram_is_initialized()) {
