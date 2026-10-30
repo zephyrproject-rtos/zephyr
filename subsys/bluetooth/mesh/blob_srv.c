@@ -457,8 +457,8 @@ static int handle_xfer_start(const struct bt_mesh_model *mod, struct bt_mesh_msg
 	block_size_log = net_buf_simple_pull_u8(buf);
 	mtu_size = net_buf_simple_pull_le16(buf);
 
-	LOG_DBG("\n\tsize: %u block size: %u\n\tmtu_size: %u\n\tmode: %s",
-		size, (1U << block_size_log), mtu_size,
+	LOG_DBG("\n\tsize: %u block size log: %u\n\tmtu_size: %u\n\tmode: %s",
+		size, block_size_log, mtu_size,
 		mode == BT_MESH_BLOB_XFER_MODE_PUSH ? "push" : "pull");
 
 	if (mode != BT_MESH_BLOB_XFER_MODE_PULL &&
@@ -510,8 +510,7 @@ static int handle_xfer_start(const struct bt_mesh_model *mod, struct bt_mesh_msg
 		goto rsp;
 	}
 
-	if (((1U << block_size_log) < CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN) ||
-	    ((1U << block_size_log) > CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX)) {
+	if (block_size_log < BLOB_BLOCK_SIZE_LOG_MIN || block_size_log > BLOB_BLOCK_SIZE_LOG_MAX) {
 		LOG_WRN("Invalid block size: %u", block_size_log);
 		status = BT_MESH_BLOB_ERR_INVALID_BLOCK_SIZE;
 		goto rsp;
