@@ -99,7 +99,10 @@ endif()
 # Don't just test CONFIG_SMP, there is at least one test of the lower
 # level multiprocessor API that wants an auxiliary CPU but doesn't
 # want SMP using it.
-if(NOT CONFIG_MP_MAX_NUM_CPUS MATCHES "1")
+#
+# A board whose machine has more harts than Zephyr runs on, such as one with a
+# core of another kind in front of them, sets QEMU_SMP_FLAGS itself.
+if(NOT DEFINED QEMU_SMP_FLAGS AND NOT CONFIG_MP_MAX_NUM_CPUS MATCHES "1")
   list(APPEND QEMU_SMP_FLAGS -smp cpus=${CONFIG_MP_MAX_NUM_CPUS})
 endif()
 
