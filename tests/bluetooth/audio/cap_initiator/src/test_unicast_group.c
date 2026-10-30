@@ -62,20 +62,20 @@ static void cap_initiator_test_unicast_group_before(void *f)
 	fixture->group_param = calloc(sizeof(struct bt_cap_unicast_group_param), 1);
 	zassert_not_null(fixture->group_param);
 	pair_params = calloc(sizeof(struct bt_cap_unicast_group_stream_pair_param),
-			     DIV_ROUND_UP(CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT, 2U));
+			     DIV_ROUND_UP(CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT, 2U));
 	zassert_not_null(pair_params);
 	stream_params = calloc(sizeof(struct bt_cap_unicast_group_stream_param),
-			       CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+			       CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 	zassert_not_null(stream_params);
-	cap_streams = calloc(sizeof(struct bt_cap_stream),
-			     CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+	cap_streams =
+		calloc(sizeof(struct bt_cap_stream), CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 	zassert_not_null(cap_streams);
 	fixture->qos_cfg = calloc(sizeof(struct bt_bap_qos_cfg), 1);
 	zassert_not_null(fixture->qos_cfg);
 
 	*fixture->qos_cfg = BT_BAP_QOS_CFG_UNFRAMED(10000u, 40u, 2u, 10u, 40000u); /* 16_2_1 */
 
-	while (str_cnt < CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	while (str_cnt < CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT) {
 		stream_params[str_cnt].stream = &cap_streams[str_cnt];
 		stream_params[str_cnt].qos_cfg = fixture->qos_cfg;
 
@@ -180,7 +180,7 @@ static ZTEST_F(cap_initiator_test_unicast_group,
 {
 	int err = 0;
 
-	fixture->group_param->params_count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT + 1;
+	fixture->group_param->params_count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT + 1;
 
 	err = bt_cap_unicast_group_create(fixture->group_param, &fixture->unicast_group);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);

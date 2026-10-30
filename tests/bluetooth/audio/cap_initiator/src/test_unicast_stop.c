@@ -37,7 +37,7 @@
 
 BUILD_ASSERT(CONFIG_BT_MAX_CONN * (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
 				   CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT) >=
-	     CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+	     CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 
 /* Either BT_AUDIO_DIR_SINK or BT_AUDIO_DIR_SOURCE */
 #define INDEX_TO_DIR(_idx) (((_idx) & 1U) + 1U)
@@ -45,8 +45,8 @@ BUILD_ASSERT(CONFIG_BT_MAX_CONN * (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
 struct cap_initiator_test_unicast_stop_fixture {
 	struct bt_bap_ep *snk_eps[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 	struct bt_bap_ep *src_eps[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
-	struct bt_cap_stream *audio_stop_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
-	struct bt_cap_stream cap_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_cap_stream *audio_stop_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
+	struct bt_cap_stream cap_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 	struct bt_cap_unicast_audio_stop_param audio_stop_param;
 	struct bt_cap_unicast_group *unicast_group;
 	struct bt_conn conns[CONFIG_BT_MAX_CONN];
@@ -57,9 +57,9 @@ static void cap_initiator_test_unicast_stop_fixture_init(
 	struct cap_initiator_test_unicast_stop_fixture *fixture)
 {
 	struct bt_cap_unicast_group_stream_pair_param
-		group_pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT] = {0};
+		group_pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT] = {0};
 	struct bt_cap_unicast_group_stream_param
-		group_stream_param[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT] = {0};
+		group_stream_param[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT] = {0};
 	struct bt_cap_unicast_group_param group_param = {0};
 	size_t stream_cnt = 0U;
 	size_t pair_idx = 0U;
@@ -544,7 +544,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_inva
 {
 	int err;
 
-	fixture->audio_stop_param.count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT + 1U;
+	fixture->audio_stop_param.count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT + 1U;
 
 	err = bt_cap_initiator_unicast_audio_stop(&fixture->audio_stop_param);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);

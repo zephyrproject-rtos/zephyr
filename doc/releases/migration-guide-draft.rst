@@ -85,6 +85,19 @@ OPAMP
 Bluetooth
 *********
 
+Bluetooth Audio
+===============
+
+.. zephyr-keep-sorted-start re(^\* \w)
+
+* BAP
+
+  * ``CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT`` has been renamed to
+    :kconfig:option:`CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT`. All applications must apply a
+    search and replace on this.
+
+.. zephyr-keep-sorted-stop
+
 Bluetooth Classic
 =================
 

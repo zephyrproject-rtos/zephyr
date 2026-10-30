@@ -94,7 +94,7 @@ static void set_gmap_features(struct bt_gmap_feat *features)
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 		features->ugg_feat |= (BT_GMAP_UGG_FEAT_MULTIPLEX | BT_GMAP_UGG_FEAT_96KBPS_SOURCE);
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1 &&                                              \
-	CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT > 1
+	CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT > 1
 		features->ugg_feat |= BT_GMAP_UGG_FEAT_MULTISINK;
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1 && > 1 */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */

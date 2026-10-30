@@ -26,10 +26,10 @@
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 #define UNICAST_GROUP_CNT	 CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_COUNT
-#define UNICAST_GROUP_STREAM_CNT CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT
+#define UNICAST_GROUP_CIS_CNT    CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT
 #else /* !CONFIG_BT_BAP_UNICAST_CLIENT */
 #define UNICAST_GROUP_CNT 0U
-#define UNICAST_GROUP_STREAM_CNT 0U
+#define UNICAST_GROUP_CIS_CNT 0U
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 #define BROADCAST_STREAM_CNT CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
@@ -87,7 +87,7 @@ struct bt_bap_unicast_group {
 	bool has_been_connected;
 	struct bt_iso_cig *cig;
 	/* The ISO API for CIG creation requires an array of pointers to ISO channels */
-	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];
+	struct bt_iso_chan *cis[UNICAST_GROUP_CIS_CNT];
 	sys_slist_t streams;
 
 	/* Configured sink presentation delay */
