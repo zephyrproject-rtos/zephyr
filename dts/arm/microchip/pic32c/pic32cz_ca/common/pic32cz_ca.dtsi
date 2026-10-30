@@ -152,6 +152,31 @@
 			status = "disabled";
 		};
 
+		eic: interrupt-controller@44800000 {
+			compatible = "microchip,eic-g1-intc";
+			reg = <0x44800000 0x3c>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>,
+				     <23 0>, <24 0>, <25 0>, <26 0>,
+				     <27 0>, <28 0>, <29 0>, <30 0>,
+				     <31 0>, <32 0>, <33 0>, <34 0>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_EIC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EIC>;
+			clock-names = "mclk", "gclk";
+			porta-special-pins-1 = <0x20 0x1>; /*5*/
+			portc-unsupported-pins = <0x110000>; /*16|20*/
+			portc-special-pins-1 = <0x4 0x1>; /*2*/
+			portd-supported-pins = <0x3fbfffff>; /*0-21|23-29*/
+			portd-special-pins-1 = <0x8000 0xf>; /*15*/
+			portd-special-pins-2 = <0x3f6000 0x1>; /*13|14|16-21*/
+			porte-supported-pins = <0xfff>; /*0-11*/
+			portf-supported-pins = <0x1ff>; /*0-8*/
+			portf-special-pins-1 = <0x1 0x1>; /*0*/
+			portg-supported-pins = <0xfff>; /*0-11*/
+			status = "disabled";
+		};
+
 		trng: random@44870000 {
 			compatible = "microchip,trng-g1-entropy";
 			reg = <0x44870000 0x24>;
@@ -164,6 +189,7 @@
 
 		pinctrl: pinctrl@44840000 {
 			compatible = "microchip,port-g1-pinctrl";
+			reg = <0x44840000 0x380>;
 			ranges = <0x44840000 0x44840000 0x380>;
 			#address-cells = <1>;
 			#size-cells = <1>;
