@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_AESC_PRNG
+	bool "Aesc Silicon PRNG driver"
+	default y
+	depends on DT_HAS_AESC_PRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable the driver for the Aesc Silicon PRNG IP core. The IP core is a
+	  32-bit Galois LFSR and not a source of true entropy; its output is not
+	  suitable for cryptographic use.
