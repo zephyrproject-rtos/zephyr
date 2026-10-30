@@ -40,7 +40,7 @@
 		#size-cells = <0x01>;
 
 		ram0: memory@10000000 {
-			reg = <0x10000000 0x10000>;
+			reg = <0x10000000 0x20000>;
 			device_type = "memory";
 		};
 
@@ -90,7 +90,7 @@
 		aontimer: aontimer@40470000 {
 			compatible = "lowrisc,opentitan-aontimer";
 			reg = <0x40470000 0x1000>;
-			interrupts = <156 1>;
+			interrupts = <157 1>;
 			interrupt-names = "wdog_bark";
 			interrupt-parent = <&plic>;
 			clock-frequency = <200000>;
@@ -105,7 +105,7 @@
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
 			riscv,max-priority = <7>;
-			riscv,ndev = <182>;
+			riscv,ndev = <186>;
 			status = "okay";
 		};
 	};

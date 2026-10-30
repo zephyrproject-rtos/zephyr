@@ -40,33 +40,47 @@ Building and Flashing
 =====================
 
 Here is an example for building the :zephyr:code-sample:`hello_world` application. The
-following steps were tested on OpenTitan master branch @ 6a3c2e98.
+following steps were tested on the OpenTitan ``earlgrey_1.0.0`` branch @ ccd5f716a1
+with Verilator 5.052. That branch is frozen against Verilator 4.210, so the
+Verilator 5 fix from OpenTitan master commit af9262c4c0 (``--no-timing`` for the
+AST power-good models) must be cherry-picked on top of it.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: opentitan_earlgrey
    :goals: build
 
+Build the simulation binary, the test ROM and the OTP image in the OpenTitan
+repository:
+
+.. code-block:: console
+
+   cd $OT_HOME
+   ./bazelisk.sh build //hw:verilator \
+     //sw/device/lib/testing/test_rom:test_rom_sim_verilator \
+     //hw/ip/otp_ctrl/data:img_rma
+
 The OpenTitan Vchip_sim_tb tool can take the Zephyr .elf as input and place it
-in simulated flash. The OpenTitan test ROM will then run in simulation, read
-the manifest header from simulated flash, and begin executing Zephyr from the
-entry point.
+in simulated flash bank 0. The OpenTitan test ROM will then run in simulation,
+read the manifest header from simulated flash, and begin executing Zephyr from
+the entry point. Use ``bazel cquery --output=files <target>`` to find the exact
+output paths; they look like this:
 
 .. code-block:: console
 
-   $OT_HOME/bazel-bin/hw/build.verilator_real/sim-verilator/Vchip_sim_tb --verbose-mem-load \
-   -r $OT_HOME/bazel-out/k8-fastbuild-ST-2cc462681f62/bin/sw/device/lib/testing/test_rom/test_rom_sim_verilator.39.scr.vmem \
+   $OT_HOME/bazel-out/k8-fastbuild/bin/hw/build.verilator_real/sim-verilator/Vchip_sim_tb \
+   --meminit=rom,$OT_HOME/bazel-out/k8-fastbuild-ST-<hash>/bin/sw/device/lib/testing/test_rom/test_rom_sim_verilator.39.scr.vmem \
    --meminit=otp,$OT_HOME/bazel-out/k8-fastbuild/bin/hw/ip/otp_ctrl/data/img_rma.24.vmem \
-   --meminit=flash,$ZEPHYR_PATH/build/zephyr/zephyr.elf
+   --meminit=flash0,$ZEPHYR_PATH/build/zephyr/zephyr.elf
 
-UART output:
+UART output (also written to ``uart0.log`` in the working directory):
 
 .. code-block:: console
 
-   I00000 test_rom.c:135] Version: earlgrey_silver_release_v5-9599-g6a3c2e988, Build Date: 2023-01-17 16:02:09
-   I00001 test_rom.c:237] Test ROM complete, jumping to flash (addr: 20000384)!
-   *** Booting Zephyr OS build zephyr-v3.2.0-3494-gf0729b494b98 ***
-   Hello World! opentitan_earlgrey
+   I00001 test_rom.c:158] kBuildInfo: scm_revision=54697461
+   I00002 test_rom.c:230] Test ROM complete, jumping to flash (addr: 20000400)!
+   *** Booting Zephyr OS build v4.5.0-663-g3526ef7d2cbc ***
+   Hello World! opentitan_earlgrey/opentitan
 
 References
 **********
