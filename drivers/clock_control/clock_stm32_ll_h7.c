@@ -192,9 +192,12 @@
 #if defined(CONFIG_CPU_CORTEX_M7)
 /* Offset to access bus clock registers from M7 (or only) core */
 #define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc))
+/* Offset from a bus clock enable register to its sleep mode (LPENR) counterpart */
+#define STM32H7_BUS_LPEN_OFFSET	0x28
 #elif defined(CONFIG_CPU_CORTEX_M4)
 /* Offset to access bus clock registers from M4 core */
 #define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc)) + 0x60
+#define STM32H7_BUS_LPEN_OFFSET	0x38
 #endif
 
 #if IS_ENABLED(STM32_PLL_P_ENABLED)
@@ -452,6 +455,8 @@ static int stm32_clock_control_on(const struct device *dev, clock_control_subsys
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	sys_set_bits(STM32H7_BUS_CLK_REG + pclken->bus, pclken->enr);
+	/* Keep the clock running in CSleep, whatever the LPENR value found at boot */
+	sys_set_bits(STM32H7_BUS_CLK_REG + pclken->bus + STM32H7_BUS_LPEN_OFFSET, pclken->enr);
 	/* Delay after enabling the clock, to allow it to become active.
 	 * See RM0433 8.5.10 "Clock enabling delays"
 	 */
