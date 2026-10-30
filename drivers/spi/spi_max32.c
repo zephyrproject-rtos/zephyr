@@ -85,6 +85,12 @@ struct max32_spi_data {
 #define SPI_MAX32_DMA_DONE_FLAG    (SPI_MAX32_DMA_RX_DONE_FLAG | SPI_MAX32_DMA_TX_DONE_FLAG)
 #endif /* CONFIG_SPI_MAX32_DMA */
 
+/* Extended mode are also half-duplex operations */
+static inline bool spi_max32_is_half_duplex_op(spi_operation_t operation)
+{
+	return (operation & SPI_HALF_DUPLEX) || (operation & SPI_LINES_MASK) != SPI_LINES_SINGLE;
+}
+
 #if defined(CONFIG_SPI_MAX32_INTERRUPT)
 static void spi_max32_callback(mxc_spi_req_t *req, int error);
 #endif /* CONFIG_SPI_MAX32_INTERRUPT */
@@ -410,14 +416,8 @@ static int spi_max32_transceive(const struct device *dev)
 		break;
 	}
 #else
-	if ((ctx->config->operation & SPI_HALF_DUPLEX)
-	    || (SPI_OP_MODE_GET(data->ctx.config->operation) & SPI_OP_MODE_PERIPHERAL)
-#if defined(CONFIG_SPI_EXTENDED_MODES)
-	    || (ctx->config->operation & SPI_LINES_DUAL)
-	    || (ctx->config->operation & SPI_LINES_QUAD)
-	    || (ctx->config->operation & SPI_LINES_OCTAL)
-#endif
-		) {
+	if (spi_max32_is_half_duplex_op(ctx->config->operation) ||
+	    (SPI_OP_MODE_GET(ctx->config->operation) & SPI_OP_MODE_PERIPHERAL)) {
 		/* Half duplex mode, tx should be set only if no rx */
 		data->req.txLen = ctx->tx_buf ? ctx->tx_len : 0;
 	} else {
@@ -485,6 +485,8 @@ static int spi_max32_transceive(const struct device *dev)
 		}
 
 		MXC_SPI_SetSlave(cfg->regs, ctx->config->peripheral);
+
+		data->dma_stat = 0;
 
 		ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
 					     data->req.rxLen >> dfs_shift, dfs_shift);
@@ -647,9 +649,17 @@ static void spi_max32_iodev_complete(const struct device *dev, int status);
 
 #ifdef CONFIG_SPI_MAX32_DMA
 
-static inline bool spi_max32_dma_is_half_duplex_op(spi_operation_t operation)
+static inline void spi_max32_dma_update_ctx(struct spi_context *ctx, bool half_duplex,
+					    uint8_t dfs, uint32_t len)
 {
-	return (operation & SPI_HALF_DUPLEX) || (operation & SPI_LINES_MASK) != SPI_LINES_SINGLE;
+	if (half_duplex) {
+		/* TX and RX buffers are consumed independently */
+		spi_context_update_tx(ctx, dfs, ctx->tx_len);
+		spi_context_update_rx(ctx, dfs, ctx->rx_len);
+	} else {
+		spi_context_update_tx(ctx, dfs, len);
+		spi_context_update_rx(ctx, dfs, len);
+	}
 }
 
 static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t channel,
@@ -711,12 +721,21 @@ static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t
 	uint32_t len;
 	uint8_t dfs = spi_max32_get_dfs_shift(ctx) ? 2 : 1;
 
-	if ((data->dma_stat & SPI_MAX32_DMA_DONE_FLAG) == SPI_MAX32_DMA_DONE_FLAG ||
-	    (spi_max32_dma_is_half_duplex_op(ctx->config->operation) && data->dma_stat) ||
-	    (!ctx->rx_len && (data->dma_stat & SPI_MAX32_DMA_RX_DONE_FLAG))) {
+	bool half_duplex = spi_max32_is_half_duplex_op(ctx->config->operation);
+	bool done;
+
+	if (half_duplex) {
+		/* TX phase then RX phase: finished when the last active phase is done */
+		done = ctx->rx_buf ? (data->dma_stat & SPI_MAX32_DMA_RX_DONE_FLAG) != 0
+				   : (data->dma_stat & SPI_MAX32_DMA_TX_DONE_FLAG) != 0;
+	} else {
+		done = (data->dma_stat & SPI_MAX32_DMA_DONE_FLAG) == SPI_MAX32_DMA_DONE_FLAG ||
+		       (!ctx->rx_len && (data->dma_stat & SPI_MAX32_DMA_RX_DONE_FLAG));
+	}
+
+	if (done) {
 		len = spi_context_max_continuous_chunk(ctx);
-		spi_context_update_tx(ctx, dfs, len);
-		spi_context_update_rx(ctx, dfs, len);
+		spi_max32_dma_update_ctx(ctx, half_duplex, dfs, len);
 
 #ifdef CONFIG_SPI_ASYNC
 		if (!ctx->asynchronous) {
@@ -775,10 +794,7 @@ static int spi_max32_tx_dma_setup(const struct device *dev, const uint8_t *buf, 
 				  uint32_t word_count, uint8_t dfs_shift)
 {
 	const struct max32_spi_config *cfg = dev->config;
-	struct max32_spi_data *data = dev->data;
 	mxc_spi_regs_t *spi = cfg->regs;
-
-	data->dma_stat = 0;
 
 	if (!len) {
 		spi->ctrl1 &= ~MXC_F_SPI_CTRL1_TX_NUM_CHAR;
@@ -834,10 +850,7 @@ static int spi_max32_rx_dma_setup(const struct device *dev, const uint8_t *buf, 
 				  uint32_t word_count, uint8_t dfs_shift)
 {
 	const struct max32_spi_config *cfg = dev->config;
-	struct max32_spi_data *data = dev->data;
 	mxc_spi_regs_t *spi = cfg->regs;
-
-	data->dma_stat = 0;
 
 	if (!len) {
 		spi->ctrl1 &= ~MXC_F_SPI_CTRL1_RX_NUM_CHAR;
@@ -863,19 +876,27 @@ static int spi_max32_transceive_dma(const struct device *dev)
 	struct max32_spi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	mxc_spi_regs_t *spi = cfg->regs;
-	uint32_t len, word_count;
+	uint32_t len, tx_len, rx_len;
 	uint8_t dfs_shift;
 	uint8_t dfs;
+	bool half_duplex = spi_max32_is_half_duplex_op(ctx->config->operation);
 
 	len = spi_context_max_continuous_chunk(ctx);
 	dfs_shift = spi_max32_get_dfs_shift(ctx);
-	word_count = len >> dfs_shift;
 
-	if (word_count == 0) {
+	if (half_duplex) {
+		/* TX then RX in a single transaction, each with its own length */
+		tx_len = ctx->tx_buf ? ctx->tx_len : 0;
+		rx_len = ctx->rx_buf ? ctx->rx_len : 0;
+	} else {
+		tx_len = len;
+		rx_len = len;
+	}
+
+	if (((tx_len | rx_len) >> dfs_shift) == 0) {
 		/* Nothing to do, handle next work if async, otherwise return */
 		dfs = dfs_shift ? 2 : 1;
-		spi_context_update_tx(ctx, dfs, len);
-		spi_context_update_rx(ctx, dfs, len);
+		spi_max32_dma_update_ctx(ctx, half_duplex, dfs, len);
 #ifdef CONFIG_SPI_ASYNC
 		if (ctx->asynchronous) {
 			if ((spi_context_tx_on(ctx) || spi_context_rx_on(ctx))) {
@@ -889,16 +910,14 @@ static int spi_max32_transceive_dma(const struct device *dev)
 		return ret;
 	}
 
-	ret = spi_max32_rx_dma_setup(dev, ctx->rx_buf,
-				     (ctx->config->operation & SPI_HALF_DUPLEX) ? ctx->rx_len : len,
-				     word_count, dfs_shift);
+	data->dma_stat = 0;
+
+	ret = spi_max32_rx_dma_setup(dev, ctx->rx_buf, rx_len, rx_len >> dfs_shift, dfs_shift);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = spi_max32_tx_dma_setup(dev, ctx->tx_buf,
-				     (ctx->config->operation & SPI_HALF_DUPLEX) ? ctx->tx_len : len,
-				     word_count, dfs_shift);
+	ret = spi_max32_tx_dma_setup(dev, ctx->tx_buf, tx_len, tx_len >> dfs_shift, dfs_shift);
 	if (ret < 0) {
 		return ret;
 	}
