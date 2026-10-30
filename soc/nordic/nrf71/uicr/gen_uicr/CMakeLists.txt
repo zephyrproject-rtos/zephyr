@@ -37,6 +37,9 @@ add_custom_command(
   COMMENT "Generating UICR hex: ${uicr_hex}"
 )
 
+# Inform sysbuild about the outputs to allow creating proper dependencies
+set(BYPRODUCT_KERNEL_HEX_NAME ${uicr_hex} CACHE FILEPATH "UICR hex file" FORCE)
+
 add_custom_target(gen_uicr ALL DEPENDS ${uicr_hex})
 
 # Create the runners_yaml_props_target that flash system expects
