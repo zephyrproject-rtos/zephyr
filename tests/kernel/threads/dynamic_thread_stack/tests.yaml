@@ -54,6 +54,21 @@ tests:
       - CONFIG_DYNAMIC_THREAD_ALLOC=y
       - CONFIG_DYNAMIC_THREAD_PREFER_ALLOC=y
       - CONFIG_USERSPACE=y
+  kernel.threads.dynamic_thread.stack.no_pool.alloc.user.pmp_guard_pow2:
+    tags: userspace
+    # See kernel.threads.dynamic_thread.stack.no_pool.no_alloc.user above.
+    platform_exclude: rpi_zero_2w
+    # See kernel.threads.dynamic_thread.stack.no_pool.alloc.user.
+    ignore_faults: true
+    # PMP stack guard with power-of-two PMP regions. Conditional rather than
+    # platform_allow, which would error on the common integration platforms.
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD_POOL_SIZE=0
+      - CONFIG_DYNAMIC_THREAD_ALLOC=y
+      - CONFIG_DYNAMIC_THREAD_PREFER_ALLOC=y
+      - CONFIG_USERSPACE=y
+      - platform:qemu_riscv32/qemu_virt_riscv32:CONFIG_HW_STACK_PROTECTION=y
+      - platform:qemu_riscv32/qemu_virt_riscv32:CONFIG_PMP_POWER_OF_TWO_ALIGNMENT=y
   kernel.threads.dynamic_thread.stack.pool.no_alloc.no_user:
     extra_configs:
       # 100

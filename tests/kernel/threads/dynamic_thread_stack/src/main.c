@@ -244,6 +244,111 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 	}
 }
 
+#define SYSCALL_STACK_SIZE (2 * CONFIG_DYNAMIC_THREAD_STACK_SIZE)
+#define SYSCALL_THREADS    4
+#define SYSCALL_LOOPS      16
+#define CANARY             0x5a5aa5a5U
+
+ZTEST_DMEM bool syscall_flag[SYSCALL_THREADS];
+
+static void syscall_func(void *arg1, void *arg2, void *arg3)
+{
+	bool *flag = (bool *)arg1;
+	volatile uint32_t canary[8];
+
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	for (size_t i = 0; i < ARRAY_SIZE(canary); i++) {
+		canary[i] = CANARY ^ i;
+	}
+
+	for (size_t i = 0; i < SYSCALL_LOOPS; i++) {
+		k_yield();
+		(void)k_uptime_get();
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(canary); i++) {
+		if (canary[i] != (CANARY ^ i)) {
+			return;
+		}
+	}
+
+	*flag = true;
+}
+
+/**
+ * @brief Verify that syscalls do not corrupt a heap-allocated user stack.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * On targets that generate privileged stacks, the privileged stack of a
+ * dynamically allocated user stack lives in the same allocation, past the
+ * user stack buffer. The stacks are larger than
+ * CONFIG_DYNAMIC_THREAD_STACK_SIZE, so the allocation is not aligned to the
+ * stack object alignment and the placement has to account for the full
+ * K_THREAD_STACK_LEN() footprint. Skipped unless userspace and heap
+ * allocation are enabled and heap allocation is preferred.
+ *
+ * Test steps:
+ * - Allocate as many user stacks larger than CONFIG_DYNAMIC_THREAD_STACK_SIZE
+ *   as fit, up to SYSCALL_THREADS.
+ * - Run a user thread on each that keeps values on its stack and makes
+ *   several syscalls.
+ * - Join every thread and check the flag it raised.
+ * - Free all stacks.
+ *
+ * Expected result:
+ * - Every thread finds its stack values intact after the syscalls.
+ *
+ * @see k_thread_stack_alloc()
+ */
+ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_user_syscalls)
+{
+	static struct k_thread th[SYSCALL_THREADS];
+	k_thread_stack_t *stack[SYSCALL_THREADS];
+	k_tid_t tid[SYSCALL_THREADS];
+	size_t n;
+
+	if (!IS_ENABLED(CONFIG_USERSPACE)) {
+		ztest_test_skip();
+	}
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	/* consecutive allocations land at different alignments */
+	for (n = 0; n < SYSCALL_THREADS; n++) {
+		stack[n] = k_thread_stack_alloc(SYSCALL_STACK_SIZE, K_USER);
+		if (stack[n] == NULL) {
+			break;
+		}
+	}
+	zassert_true(n > 0, "no stack allocated");
+
+	for (size_t i = 0; i < n; i++) {
+		syscall_flag[i] = false;
+		tid[i] = k_thread_create(&th[i], stack[i], SYSCALL_STACK_SIZE, syscall_func,
+					 &syscall_flag[i], NULL, NULL, 0, K_USER | K_INHERIT_PERMS,
+					 K_NO_WAIT);
+	}
+
+	for (size_t i = 0; i < n; i++) {
+		zassert_ok(k_thread_join(tid[i], K_MSEC(TIMEOUT_MS)));
+		zassert_true(syscall_flag[i], "stack of thread %zu corrupted", i);
+	}
+
+	for (size_t i = 0; i < n; i++) {
+		zassert_ok(k_thread_stack_free(stack[i]));
+	}
+}
+
 /** @brief Reject dynamically allocated kernel stacks with overflowing sizes. */
 ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_size_overflow)
 {
