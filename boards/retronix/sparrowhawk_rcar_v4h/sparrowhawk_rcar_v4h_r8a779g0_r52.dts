@@ -32,3 +32,19 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&can0_global {
+	status = "okay";
+};
+
+&can3 {
+	pinctrl-0 = <&can3_rx_default &can3_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can4 {
+	pinctrl-0 = <&can4_rx_default &can4_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
