@@ -21,9 +21,11 @@ int radio_tx(const uint8_t *data, size_t len,
 	     uint32_t freq, const struct lwan_dr_params *dr,
 	     int8_t power);
 
-/* RX: IQ inverted, CRC off; returns byte count, 0 on timeout, -EIO on error */
+/* RX: IQ inverted, CRC off; returns byte count or 0 on timeout.
+ * Returns -ENOTSUP if the search timeout is unsupported, -EIO on other errors.
+ */
 int radio_rx(uint32_t freq, const struct lwan_dr_params *dr,
-	     uint32_t timeout_ms,
+	     uint32_t search_timeout_ms, uint32_t packet_timeout_ms,
 	     uint8_t *buf, uint8_t buf_size,
 	     int16_t *rssi, int8_t *snr);
 

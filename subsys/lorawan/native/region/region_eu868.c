@@ -286,62 +286,26 @@ static int eu868_validate_tx_power(uint8_t tx_power_idx)
 static int eu868_apply_adr_channel_mask(struct lwan_channel *ch, size_t count,
 					uint8_t ch_mask_cntl, uint16_t ch_mask)
 {
-	/*
-	 * A single LinkADRReq's ChMask is 16 bits wide, so it can only
-	 * address channels 0..15 regardless of the region's total count.
-	 */
-	const size_t bits = MIN(count, (size_t)16);
-	uint8_t enabled_count;
+	uint16_t defined = 0U;
+
+	for (size_t i = 0U; i < MIN(count, 16U); i++) {
+		if (ch[i].frequency != 0U) {
+			defined |= BIT(i);
+		}
+	}
 
 	if (ch_mask_cntl == EU868_CH_MASK_CNTL_ALL_ON) {
-		for (size_t i = 0; i < count; i++) {
-			if (ch[i].frequency != 0) {
-				ch[i].enabled = true;
-			}
-		}
-		return 0;
-	}
-
-	if (ch_mask_cntl != EU868_CH_MASK_CNTL_DIRECT) {
+		ch_mask = defined;
+	} else if (ch_mask_cntl != EU868_CH_MASK_CNTL_DIRECT) {
 		return -EINVAL;
 	}
 
-	/*
-	 * Default channels (0..2) must remain enabled per the spec; the
-	 * mask can only toggle channels above that range.  Reject a mask
-	 * that would disable a default channel.
-	 */
-	for (size_t i = 0; i < EU868_DEFAULT_CH_COUNT && i < count; i++) {
-		if ((ch_mask & BIT(i)) == 0) {
-			return -EINVAL;
-		}
-	}
-
-	/*
-	 * Pre-count the resulting enabled channels without mutating ch[]:
-	 * we must reject a mask that leaves zero channels enabled before
-	 * committing any change.
-	 */
-	enabled_count = 0;
-	for (size_t i = 0; i < bits; i++) {
-		if (ch[i].frequency == 0) {
-			continue;
-		}
-		if (ch_mask & BIT(i)) {
-			enabled_count++;
-		}
-	}
-
-	if (enabled_count == 0) {
+	if (ch_mask == 0U || (ch_mask & ~defined) != 0U) {
 		return -EINVAL;
 	}
 
-	/* Validated — commit. */
-	for (size_t i = 0; i < bits; i++) {
-		if (ch[i].frequency == 0) {
-			continue;
-		}
-		ch[i].enabled = (ch_mask & BIT(i)) != 0;
+	for (size_t i = 0U; i < count; i++) {
+		ch[i].enabled = i < 16U && (ch_mask & BIT(i)) != 0U;
 	}
 
 	return 0;
