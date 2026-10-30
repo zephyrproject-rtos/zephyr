@@ -9,3 +9,16 @@ config MIPI_DBI_BITBANG
 	help
 	  Enable support for MIPI DBI bit banging driver. This driver implements
 	  a MIPI-DBI mode A and B compatible controller using GPIO.
+
+config MIPI_DBI_BITBANG_MAX_LUT_PORTS
+	int "Maximum GPIO ports covered by the 8-bit data bus lookup table"
+	default 4
+	range 1 4
+	depends on MIPI_DBI_BITBANG
+	help
+	  An 8-bit data bus is written one byte at a time through a 256-entry
+	  lookup table per GPIO port the bus spans. Each table takes 1 KiB of
+	  flash per instance, and each slot adds a device pointer, a mask and a
+	  table pointer to every instance's configuration. A bus spanning more
+	  ports than this value is written one pin at a time. Set to 1 if all
+	  data pins are on one port to keep only a single slot.
