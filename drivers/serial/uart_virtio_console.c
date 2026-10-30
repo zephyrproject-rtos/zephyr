@@ -284,7 +284,7 @@ static void virtconsole_control_recv_cb(void *priv, uint32_t len)
 				(data->rx_ctlbuf[i].port) < VIRTIO_CONSOLE_MAX_PORTS);
 			break;
 		case VIRTIO_CONSOLE_DEVICE_REMOVE: {
-			int port = data->rx_ctlbuf[i].port;
+			uint32_t port = data->rx_ctlbuf[i].port;
 
 			if ((port < VIRTIO_CONSOLE_MAX_PORTS) &&
 			    IS_BIT_SET(data->console_ports, port)) {
@@ -297,15 +297,18 @@ static void virtconsole_control_recv_cb(void *priv, uint32_t len)
 			break;
 		}
 		case VIRTIO_CONSOLE_CONSOLE_PORT: {
-			int port = data->rx_ctlbuf[i].port;
+			uint32_t port = data->rx_ctlbuf[i].port;
 
-			if ((port < VIRTIO_CONSOLE_MAX_PORTS) &&
-			    !IS_BIT_SET(data->console_ports, port)) {
+			if (port >= VIRTIO_CONSOLE_MAX_PORTS) {
+				LOG_WRN("device requested invalid console port %u", port);
+				break;
+			}
+
+			if (!IS_BIT_SET(data->console_ports, port)) {
 				data->console_ports |= BIT(port);
 				data->n_console_ports++;
 			}
-			virtconsole_send_control_msg(data->dev, data->rx_ctlbuf[i].port,
-						     VIRTIO_CONSOLE_PORT_OPEN, 1);
+			virtconsole_send_control_msg(data->dev, port, VIRTIO_CONSOLE_PORT_OPEN, 1);
 
 			if (atomic_test_bit(&data->flags, RX_IRQ_ENABLED)) {
 				if (!atomic_test_bit(&(data->rx_started), port)) {
