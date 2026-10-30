@@ -66,9 +66,9 @@ can be used to configure the functionality of a pin.
 +------------+-----------------+----------------------------+
 | Name       | Function        | Usage                      |
 +============+=================+============================+
-| PIO0_2     | UART            | UART RX                    |
+| PIO1_8     | UART            | UART RX                    |
 +------------+-----------------+----------------------------+
-| PIO0_3     | UART            | UART TX                    |
+| PIO1_9     | UART            | UART TX                    |
 +------------+-----------------+----------------------------+
 
 System Clock
@@ -81,7 +81,7 @@ Serial Port
 ===========
 
 The FRDM-MCXA577 SoC has 6 LPUART  interfaces for serial communication.
-LPUART0 is configured as UART for the console.
+LPUART1 is configured as UART for the console.
 
 Programming and Debugging
 *************************
