@@ -77,9 +77,10 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
-#ifdef CONFIG_PM
-#include <power.h>
+#if defined(CONFIG_PM)
+#include <hal/gpio_hal.h>
 #include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
+#include <zephyr/init.h>
 #endif
 #include <errno.h>
 #include <zephyr/sys/util.h>
@@ -1549,30 +1550,6 @@ static void uart_esp32_uhci_hw_init(const struct device *dev)
 }
 #endif
 
-#ifdef CONFIG_PM
-/*
- * Sleep switches every pad to its sleep configuration, which isolates
- * the pin and leaves it floating. With the UART RX line floating and
- * the peripheral still on, the receiver reads a constant low as a break
- * character and stores a null byte, while raising a pending interrupt
- * which stalls the driver/system on wake. Holding the pads keeps the
- * lines at their idle level, avoiding this problem.
- */
-static void uart_esp32_sleep_hold_pins(const struct device *dev)
-{
-	const struct uart_esp32_config *config = dev->config;
-	const struct pinctrl_state *state;
-
-	if (pinctrl_lookup_state(config->pcfg, PINCTRL_STATE_DEFAULT, &state) < 0) {
-		return;
-	}
-
-	for (uint8_t i = 0; i < state->pin_cnt; i++) {
-		esp32_sleep_gpio_hold_config(ESP32_PIN_NUM(state->pins[i].pinmux), true);
-	}
-}
-#endif
-
 static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct uart_esp32_config *config = dev->config;
@@ -1601,10 +1578,6 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 			LOG_ERR("Failed to configure UART pins (%d)", ret);
 			return ret;
 		}
-
-#ifdef CONFIG_PM
-		uart_esp32_sleep_hold_pins(dev);
-#endif
 
 #if UART_SLEEP_RETENTION_ENABLED
 		struct uart_esp32_data *data = dev->data;
@@ -1766,3 +1739,36 @@ static DEVICE_API(uart, uart_esp32_api) = {
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);
+
+#if defined(CONFIG_PM)
+/*
+ * GPIO driver enables sleep pin isolate function at init, after UART runs.
+ * In order to properly exclude the UART pins from this functionality,
+ * we need to run switch disable after GPIO init, so at POST_KERNEL.
+ */
+static int uart_esp32_sleep_switch_init(void)
+{
+	STRUCT_SECTION_FOREACH(device, dev) {
+		const struct uart_esp32_config *config;
+		const struct pinctrl_state *state;
+		gpio_hal_context_t gpio_hal = {.dev = GPIO_HAL_GET_HW(GPIO_PORT_0)};
+
+		if (dev->api != &uart_esp32_api) {
+			continue;
+		}
+
+		config = dev->config;
+		if (pinctrl_lookup_state(config->pcfg, PINCTRL_STATE_DEFAULT, &state) < 0) {
+			continue;
+		}
+
+		for (uint8_t i = 0; i < state->pin_cnt; i++) {
+			gpio_hal_sleep_sel_dis(&gpio_hal, ESP32_PIN_NUM(state->pins[i].pinmux));
+		}
+	}
+
+	return 0;
+}
+
+SYS_INIT(uart_esp32_sleep_switch_init, POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY);
+#endif
