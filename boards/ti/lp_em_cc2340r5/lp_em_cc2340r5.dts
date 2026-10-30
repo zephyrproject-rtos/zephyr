@@ -240,6 +240,10 @@
 	status = "okay";
 };
 
+&rng {
+	status = "okay";
+};
+
 &comparator {
 	status = "disabled";
 	pinctrl-0 = <&lpcmp_pos0_default &lpcmp_out0_default>;
