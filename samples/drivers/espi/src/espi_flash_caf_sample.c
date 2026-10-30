@@ -86,7 +86,7 @@ int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 	LOG_INF("Test eSPI write flash");
 	flash_addr = start_flash_addr;
 	pattern = 0x99;
-	for (i = 0; i <= blocks; i++) {
+	for (i = 0; i < blocks; i++) {
 		memset(flash_write_buf, pattern++, sizeof(flash_write_buf));
 		ret = write_test_block(flash_write_buf, flash_addr, sizeof(flash_write_buf));
 		if (ret) {
@@ -100,7 +100,7 @@ int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 	LOG_INF("Test eSPI read flash");
 	flash_addr = start_flash_addr;
 	pattern = 0x99;
-	for (i = 0; i <= blocks; i++) {
+	for (i = 0; i < blocks; i++) {
 		/* Set expected content */
 		memset(flash_write_buf, pattern, sizeof(flash_write_buf));
 		/* Clear last read content */
@@ -111,11 +111,17 @@ int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 			return ret;
 		}
 
-		/* Compare buffers  */
-		int cmp = memcmp(flash_write_buf, flash_read_buf, sizeof(flash_write_buf));
+		/* Compare buffers and report the first mismatching byte */
+		if (memcmp(flash_write_buf, flash_read_buf, sizeof(flash_write_buf)) != 0) {
+			size_t pos = 0;
 
-		if (cmp != 0) {
-			LOG_ERR("eSPI read mismmatch at %d expected %x", cmp, pattern);
+			while ((pos < sizeof(flash_read_buf)) &&
+			       (flash_read_buf[pos] == flash_write_buf[pos])) {
+				pos++;
+			}
+
+			LOG_ERR("eSPI read mismatch at block %u offset %zu expected %x got %x", i,
+				pos, pattern, flash_read_buf[pos]);
 		}
 
 		flash_addr += sizeof(flash_read_buf);
