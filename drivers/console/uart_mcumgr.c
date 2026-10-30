@@ -88,6 +88,14 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 	struct uart_mcumgr_rx_buf *rx_buf;
 
 #if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
+	/* Frame markers never occur inside a frame, so they always start a new line. */
+	if (byte == MCUMGR_SERIAL_HDR_PKT_1 || byte == MCUMGR_SERIAL_HDR_FRAG_1) {
+		uart_mcumgr_ignoring = false;
+		if (uart_mcumgr_cur_buf != NULL) {
+			uart_mcumgr_cur_buf->length = 0;
+		}
+	}
+
 	if (!uart_mcumgr_ignoring) {
 #endif
 		if (uart_mcumgr_cur_buf == NULL) {
@@ -145,6 +153,7 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 	struct uart_mcumgr_rx_buf *rx_buf;
 	uint8_t *p;
 	int len;
+	int rc;
 
 	ARG_UNUSED(dev);
 
@@ -164,7 +173,13 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 		}
 		break;
 	case UART_RX_DISABLED:
+		/* Reception stops after an RX error; restart it */
 		async_current = 0;
+		rc = uart_rx_enable(dev, async_buffer[0], sizeof(async_buffer[0]),
+				    CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_RX_TIMEOUT_US);
+		if (rc != 0) {
+			LOG_ERR("Failed to restart RX: %d", rc);
+		}
 		break;
 	case UART_RX_BUF_REQUEST:
 		/*

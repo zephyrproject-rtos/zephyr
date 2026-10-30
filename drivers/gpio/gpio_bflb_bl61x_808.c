@@ -348,6 +348,9 @@ void gpio_bflb_common_config_internal(const struct device *dev,
 				      const uint8_t mode)
 {
 	const struct gpio_bflb_config * const conf = dev->config;
+#ifdef CONFIG_GPIO_BFLB_BL61X_808_CACHE_WRITE
+	struct gpio_bflb_data *data = dev->data;
+#endif
 	uintptr_t base = conf->base;
 	uint8_t sect = conf->section;
 	uint32_t cfg;
@@ -382,6 +385,9 @@ void gpio_bflb_common_config_internal(const struct device *dev,
 			tmp &= ~(1U << pin);
 			sys_write32(tmp, GPIO_BFLB_PIN_SET_REG(base, GLB_GPIO_CFG136_OFFSET, sect));
 		}
+#ifdef CONFIG_GPIO_BFLB_BL61X_808_CACHE_WRITE
+		data->cache = tmp;
+#endif
 	}
 	/* Hi-Z */
 	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == 0) {

@@ -341,8 +341,6 @@ static void *test_setup(void)
 		records[i].port = &services[i].port;
 	}
 
-	mdns_responder_set_ext_records(records, EXT_RECORDS_NUM);
-
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
 
@@ -403,6 +401,10 @@ static void free_ext_record(struct dns_sd_rec *rec)
 static void before(void *d)
 {
 	ARG_UNUSED(d);
+
+	/* Re-register every time: a test may unregister the records */
+	zassert_ok(mdns_responder_set_ext_records(records, EXT_RECORDS_NUM),
+		   "Failed to register the external records");
 
 	responses_count = 0;
 	test_started = true;
@@ -591,6 +593,53 @@ ZTEST(test_mdns_responder, test_external_records)
 				     sizeof(payload_foo_tcp_local));
 	check_service_type_enum_resp(response_pkts[6], payload_custom_tcp_local,
 				     sizeof(payload_custom_tcp_local));
+}
+
+/* NULL with a zero count unregisters the external records, so only the
+ * statically registered services are enumerated afterwards.
+ */
+ZTEST(test_mdns_responder, test_external_records_clear)
+{
+	int res;
+
+	zassert_not_null(alloc_ext_record("bar", "_foo", "_tcp", "local", NULL, 0, 5353),
+			 "Failed to alloc the record");
+
+	zassert_equal(mdns_responder_set_ext_records(NULL, 1), -EINVAL,
+		      "NULL records with a non-zero count must be rejected");
+	zassert_equal(mdns_responder_set_ext_records(records, 0), -EINVAL,
+		      "Zero count with non-NULL records must be rejected");
+
+	zassert_ok(mdns_responder_set_ext_records(NULL, 0),
+		   "Failed to unregister the external records");
+
+	send_msg(dns_sd_service_enumeration_query, sizeof(dns_sd_service_enumeration_query));
+
+	/* Expect the static service only */
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response");
+
+	check_service_type_enum_resp(response_pkts[0], payload_foo_udp_local,
+				     sizeof(payload_foo_udp_local));
+
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_equal(res, -EAGAIN, "Unexpected response after unregistering the records");
+
+	/* Registering again brings the external record back */
+	zassert_ok(mdns_responder_set_ext_records(records, EXT_RECORDS_NUM),
+		   "Failed to register the external records");
+
+	send_msg(dns_sd_service_enumeration_query, sizeof(dns_sd_service_enumeration_query));
+
+	for (int i = 0; i < 2; ++i) {
+		res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+		zassert_ok(res, "Did not receive a response number %d", i + 1);
+	}
+
+	check_service_type_enum_resp(response_pkts[1], payload_foo_udp_local,
+				     sizeof(payload_foo_udp_local));
+	check_service_type_enum_resp(response_pkts[2], payload_foo_tcp_local,
+				     sizeof(payload_foo_tcp_local));
 }
 
 static void skip_labels(struct net_pkt *pkt)

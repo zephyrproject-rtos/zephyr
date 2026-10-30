@@ -19,6 +19,7 @@ path = [
     "doc/requirements.txt",
     "scripts/requirements-*.in",
     "scripts/requirements-*.txt",
+    "tests/drivers/fuel_gauge/native_linux/power_supply/**",
     # zephyr-keep-sorted-stop
 ]
 SPDX-License-Identifier = "Apache-2.0"

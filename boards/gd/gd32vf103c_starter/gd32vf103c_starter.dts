@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "GigaDevice GD32VF103C-STARTER";
 	compatible = "gd,gd32vf103c-starter";
+	model = "GigaDevice GD32VF103C-STARTER";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -75,20 +75,20 @@
 };
 
 &usart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timer2 {
-	status = "okay";
 	prescaler = <128>;
+	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&pwm2_default>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

@@ -6,6 +6,9 @@
 
 /* Device tree declarations of npcm soc family */
 #include "npcm.dtsi"
+#include <zephyr/dt-bindings/pinctrl/npcm4-pinctrl.h>
+#include "npcm4/npcm4-pinfunc.dtsi"
+#include "npcm4/npcm4-pinctrl.dtsi"
 #include <freq.h>
 
 / {

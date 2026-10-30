@@ -64,7 +64,7 @@ static int stm32_clock_control_on(const struct device *dev, clock_control_subsys
 	sys_write32(pclken->enr, DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
 	/* Ensure that the write operation is completed */
 	temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
-	UNUSED(temp);
+	(void)temp;
 
 	return 0;
 }
@@ -85,7 +85,7 @@ static int stm32_clock_control_off(const struct device *dev, clock_control_subsy
 	sys_write32(pclken->enr, DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus + RCC_CLR_OFFSET);
 	/* Ensure that the write operation is completed */
 	temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus + RCC_CLR_OFFSET);
-	UNUSED(temp);
+	(void)temp;
 
 	return 0;
 }

@@ -74,6 +74,21 @@ int arch_irq_is_enabled(unsigned int source)
 	return ret;
 }
 
+void intc_max32_rv32_irq_set_pending(int source)
+{
+	volatile rv32_intc_regs_t *regs = get_intc_regs();
+	uint8_t grp = source / 32;
+	uint32_t val = source % 32;
+	volatile rv32_intc_grp_t *int_grp = &regs->intr[grp];
+	volatile rv32_intc_grp_t *event_grp = &regs->event[grp];
+	unsigned int key;
+
+	key = arch_irq_lock();
+	int_grp->set_pending |= BIT(val);
+	event_grp->set_pending |= BIT(val);
+	arch_irq_unlock(key);
+}
+
 void intc_max32_rv32_irq_clear_pending(int source)
 {
 	volatile rv32_intc_regs_t *regs = get_intc_regs();

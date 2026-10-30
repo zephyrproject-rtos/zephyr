@@ -11,8 +11,8 @@ a user LED, a BOOT button, battery charging with a voltage-divider enable, and
 a USB-C connector for power, programming (TinyUF2 bootloader) and a CDC-ACM
 virtual serial port.
 
-For more details see the `Seeed Studio XIAO STM32C5`_ board documentation
-and examples repository.
+For more details see the `Seeed Studio XIAO STM32C5`_ getting started guide
+and the `XIAO STM32C5 examples`_ repository.
 
 .. figure:: img/xiao_stm32c5.webp
    :align: center
@@ -114,6 +114,8 @@ References
 .. target-notes::
 
 .. _`Seeed Studio XIAO STM32C5`:
+   https://wiki.seeedstudio.com/xiao_stm32c5_getting_started/
+.. _`XIAO STM32C5 examples`:
    https://github.com/Seeed-Studio/platform-seeedboards/tree/main/examples/seeed-xiao-stm32c5
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html

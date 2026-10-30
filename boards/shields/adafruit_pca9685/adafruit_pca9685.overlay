@@ -10,17 +10,17 @@
 	status = "okay";
 
 	pca9685_adafruit_pca9685: pca9685@40 {
-		status = "okay";
 		compatible = "nxp,pca9685-pwm";
 		reg = <0x40>;
 		#pwm-cells = <3>;
+		status = "okay";
 	};
 };
 
 / {
 	pwmleds {
-		status = "okay";
 		compatible = "pwm-leds";
+		status = "okay";
 
 		s_led0: s-led-0 {
 			pwms = <&pca9685_adafruit_pca9685 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;

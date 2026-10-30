@@ -5,7 +5,7 @@
 #
 
 config MPIPE_BASE
-	bool "Base optional elements (e.g. caps_filter, queue, tee, app_src, app_sink)"
+	bool "Base elements"
 	help
 	  Media-agnostic elements that shape a graph rather than its data: a caps
 	  filter that constrains what a link may carry, a tee that splits a graph
@@ -44,7 +44,8 @@ config MPIPE_BASE_APP_SRC_POOL_NUM
 	default 2
 	depends on MPIPE_BASE_APP_SRC
 	help
-	  Number of pushed payloads that can be in flight at once.
+	  Number of buffers in the pool shared by every app_src element: the
+	  pushed payloads that can be in flight at once.
 
 config MPIPE_BASE_APP_SRC_BUF_SZ
 	int "Buffer size of the app_src element (in bytes)"
@@ -66,20 +67,16 @@ config MPIPE_BASE_APP_SRC_QUEUE_DEPTH
 config MPIPE_BASE_CAPS_FILTER
 	bool "Caps filter element"
 	help
-	  Enable the caps_filter element. Caps filter restricts the media
-	  format flowing between two elements by filtering on capabilities
-	  such as sample rate, pixel format, etc. This allows forcing a
-	  specific format at a given point in the pipeline.
+	  Enable the caps_filter element, which constrains the format
+	  negotiated on the link it sits on.
 
 config MPIPE_BASE_QUEUE
 	bool "Queue element (for pipeline-level threading)"
 	help
-	  Enable the queue element which decouples pipeline segments
-	  into separate threads for parallel processing. The queue
-	  deposits buffers into a FIFO and spawns a dedicated thread
-	  to drive the downstream segment. A full queue holds the
-	  producer by default; a leak policy makes it drop the oldest
-	  or the arriving buffer instead.
+	  Enable the queue element, which runs the elements downstream of it
+	  on a thread of its own, counted in MPIPE_THREADS_NUM. A full queue
+	  holds the producer by default; a leak policy drops the oldest or the
+	  arriving buffer instead.
 
 config MPIPE_BASE_QUEUE_MAX_SIZE
 	int "Max size of a queue element"
@@ -87,7 +84,8 @@ config MPIPE_BASE_QUEUE_MAX_SIZE
 	default 2
 	depends on MPIPE_BASE_QUEUE
 	help
-	  Maximum number of buffers that can be queued into a queue element.
+	  Upper bound of the number of buffers a queue element holds, set per
+	  element with its size property; also the default.
 
 config MPIPE_BASE_TEE
 	bool "Tee element"
@@ -101,11 +99,7 @@ config MPIPE_BASE_TEE_MAX_SRC_PADS_NUM
 	default 2
 	depends on MPIPE_BASE_TEE
 	help
-	  Number of output branches a tee element provides. The pads are part of
-	  the element, so this is reserved whether or not every branch is linked;
-	  a branch left unlinked is simply skipped.
-
-	  Note that every branch must accept a format the single input can
-	  supply, since one negotiation has to satisfy them all.
+	  Upper bound of the number of source pads of a tee element, set per
+	  element with its property. Storage is reserved for all of them.
 
 endif # MPIPE_BASE

@@ -10,11 +10,11 @@
 /* I3C SDA J18.20 */
 /* I3C SCL J18.19 */
 &i3c0 {
-	status = "okay";
 	i3c-scl-hz = <7500000>;
 	i3c-od-scl-hz = <1500000>;
 
 	bcr = <0x67>;
+	status = "okay";
 
 	mctp_endpoint0: mctp_endpoint0@20a00000011 {
 		compatible = "zephyr,mctp-i3c-endpoint";

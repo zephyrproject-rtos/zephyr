@@ -23,15 +23,15 @@
 		timebase-frequency = <DT_FREQ_M(200)>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <1>;
+			device_type = "cpu";
 		};
 	};
 
@@ -43,11 +43,11 @@
 
 		scmi {
 			compatible = "arm,scmi-smc";
-			arm,smc-id = <0x82004000>;
 			shmem = <&scmi_shmem>;
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			arm,smc-id = <0x82004000>;
 
 			scmi_pds: protocol@11 {
 				compatible = "arm,scmi-power";
@@ -60,19 +60,6 @@
 				reg = <0x14>;
 				#clock-cells = <1>;
 			};
-		};
-	};
-
-	oc_sram: sram@70800000 {
-		compatible = "mmio-sram";
-		reg = <0x70800000 DT_SIZE_K(64)>;
-		ranges = <0x0 0x70800000 0x10000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		scmi_shmem: sram@0 {
-			compatible = "arm,scmi-shmem";
-			reg = <0x0 0x1000>;
 		};
 	};
 
@@ -99,6 +86,19 @@
 			compatible = "arm,gic-v3-its";
 			reg = <0x01820000 0x10000>;
 			status = "okay";
+		};
+	};
+
+	oc_sram: sram@70800000 {
+		compatible = "mmio-sram";
+		reg = <0x70800000 DT_SIZE_K(64)>;
+		ranges = <0x0 0x70800000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		scmi_shmem: sram@0 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x0 0x1000>;
 		};
 	};
 };

@@ -10,6 +10,6 @@
 #include "feather_connector.dtsi"
 
 / {
-	model = "Adafruit Feather ESP32-S2";
 	compatible = "espressif,esp32s2";
+	model = "Adafruit Feather ESP32-S2";
 };

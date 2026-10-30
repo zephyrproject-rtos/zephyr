@@ -61,13 +61,16 @@ static int ameba_clock_on(const struct device *dev, clock_control_subsys_t sub_s
 	ARG_UNUSED(dev);
 
 	if (clk_idx >= AMEBA_CLK_MAX) {
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 
 	/* Find the parents,and loop to enable all gating */
 	do {
+		/* clk_idx must point to a valid clock at all levels, so an
+		 * index outside the table means a broken parent.
+		 */
 		if (clk_idx >= AMEBA_CLK_MAX) {
-			break;
+			return -EFAULT;
 		}
 
 		phandle = &(ameba_clk_ctrl_reg_array[clk_idx]);
@@ -99,7 +102,7 @@ static int ameba_clock_off(const struct device *dev, clock_control_subsys_t sub_
 	ARG_UNUSED(dev);
 
 	if (clk_idx >= AMEBA_CLK_MAX) {
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 
 	phandle = &(ameba_clk_ctrl_reg_array[clk_idx]);

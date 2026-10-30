@@ -7,8 +7,8 @@
 
 .. _migration_4.5:
 
-Migration guide to Zephyr v4.5.0 (Working Draft)
-################################################
+Migration guide to Zephyr v4.5.0
+################################
 
 This document describes the changes required when migrating your application from Zephyr v4.4.0 to
 Zephyr v4.5.0.
@@ -178,6 +178,11 @@ Kernel
   :c:func:`k_obj_type_walk_locked` or :c:func:`k_obj_type_walk_unlocked` with
   the object type found by :c:func:`k_obj_type_find`.
 
+* The type of the expected value parameter for :c:func:`k_futex_wait` is now
+  ``atomic_val_t`` instead of ``int`` to match the type of the value stored
+  internally by :c:struct:`k_futex`. Callers might have to add an explicit
+  cast if the compiler does not implicitly cast the value.
+
 Boards
 ******
 
@@ -196,6 +201,10 @@ Boards
   On RP2040, the ``regulator-always-on`` and ``regulator-allowed-modes =
   <REGULATOR_RPI_PICO_MODE_NORMAL>`` properties are now set by default in the SoC dtsi. Boards
   that previously set them explicitly can remove those lines. (:github:`114751`)
+
+* On RP2040, the ``mbox`` node was split into ``mbox0`` and ``mbox1`` to provide
+  per-core mailbox instances. The ``ipm_mbox`` node was renamed to ``ipm_mbox0`` and
+  ``ipm_mbox1``, respectively.
 
 * On RP2350 (rpi_pico family), the ``hazard3`` and ``m33`` cpucluster qualifiers are deprecated in
   favor of ``hazard3_0`` and ``m33_0``, which explicitly identify the cluster as CPU0 and pave the
@@ -221,8 +230,8 @@ Boards
   populated the Kconfig values). If either option is manually adjusted, it will cause
   :kconfig:option:`CONFIG_SRAM_DEPRECATED_KCONFIG_SET` to be set which indicates this deprecation.
 
-* The internal Nordic SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM``
-  and ``NRF_PLATFORM_LUMOS`` are no longer used by in-tree code, which now
+* The internal Nordic SoC platform Kconfig symbols ``CONFIG_NRF_PLATFORM_HALTIUM``
+  and ``CONFIG_NRF_PLATFORM_LUMOS`` are no longer used by in-tree code, which now
   relies on explicit :kconfig:option:`CONFIG_SOC_SERIES_NRF54H`,
   :kconfig:option:`CONFIG_SOC_SERIES_NRF92`,
   :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` and
@@ -233,10 +242,10 @@ Boards
   building with a Kconfig deprecation warning. Out-of-tree Kconfig, CMake and code using these
   symbols should be updated:
 
-  * The ``CONFIG_NRF_PLATFORM_HALTIUM`` with
+  * ``CONFIG_NRF_PLATFORM_HALTIUM`` with
     :kconfig:option:`CONFIG_SOC_SERIES_NRF54H` or
     :kconfig:option:`CONFIG_SOC_SERIES_NRF92`.
-  * The ``CONFIG_NRF_PLATFORM_LUMOS`` with
+  * ``CONFIG_NRF_PLATFORM_LUMOS`` with
     :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` or
     :kconfig:option:`CONFIG_SOC_SERIES_NRF71`.
 
@@ -248,6 +257,11 @@ Boards
   STM32MP157F-DK2 with ``-b stm32mp157x_dk2/stm32mp157fxx``. The previous
   ``-b stm32mp157c_dk2`` is deprecated and now maps to
   ``stm32mp157x_dk2/stm32mp157cxx``.
+
+* The Infineon ``kit_psc3m6_evk`` board has been renamed to
+  ``kit_psc3m6_eval``. The previous ``-b kit_psc3m6_evk`` and
+  ``-b kit_psc3m6_evk/psc3m6ges3ahq1`` are deprecated and now map to
+  ``kit_psc3m6_eval`` and ``kit_psc3m6_eval/psc3m6ges3ahq1``.
 
 * The Nordic sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR``
   has been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
@@ -440,14 +454,24 @@ Boards
 * The Silabs Kconfig option ``CONFIG_SOC_SILABS_PM_LOW_INTERRUPT_LATENCY``
   has been renamed to :kconfig:option:`CONFIG_SOC_VENDOR_SILABS_PM_LOW_INTERRUPT_LATENCY`.
 
-* The stm32h573i_dk, stm32h5f5j_dk disco kit are now adopting the mspi controller model.
-  This is the next step of the migration to mspi stm32 support.
-  For both boards, declare the xspi node as ``st,stm32-xspi-controller`` compatible.
+* The following STM32-based boards have migrated their external serial memory to the MSPI
+  controller model in this release:
 
-* The stm32l562e and stm32h735g_disco kit are now adopting the mspi controller model.
-  This is the next step of the migration to mspi stm32 support.
-  For that board, declare the ospi node as ``st,stm32-ospi-controller`` compatible.
-  The stm32l5 and stm32h735 devices DTS will be updated once all the target boards are changed.
+  * :zephyr:board:`stm32h573i_dk` and :zephyr:board:`stm32h5f5j_dk` use
+    :dtcompatible:`st,stm32-xspi-controller`.
+  * :zephyr:board:`stm32h735g_disco`, :zephyr:board:`stm32h7b3i_dk`,
+    :zephyr:board:`stm32l562e_dk`, and :zephyr:board:`fk7b0m1_vbt6` use
+    :dtcompatible:`st,stm32-ospi-controller`.
+
+  The migration is ongoing, otherer STM32 boards still use the legacy bindings.
+  See :ref:`migration_4_5_mspi_stm32` for the migration and deprecation timeline,
+  and the required configuration changes.
+
+* The GD32F4xx SoC device-tree files ``gd32f405vg.dtsi`` and
+  ``gd32f470ik.dtsi`` have been renamed to ``gd32f405xg.dtsi`` and
+  ``gd32f470xk.dtsi``.
+
+* On GD32L233RC, the ``sram`` node label has been replaced by ``sram0``.
 
 Device Drivers and Devicetree
 *****************************
@@ -604,27 +628,26 @@ Clock control nrf deprecation
 
    #. Rename the following Kconfig options:
 
-      * Replace :kconfig:option:`CONFIG_NRFX_CLOCK_USE_LFRC_CALIBRATION` with :kconfig:option:`CONFIG_NRFX_CLOCK_LFCLK_USE_LFRC_CALIBRATION`.
       * Replace :kconfig:option:`CONFIG_NRFX_CLOCK_LF_CAL_ENABLED` with :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION`.
 
    #. Move the following Kconfig options to the ``nordic,nrf-clock-lfclk`` devicetree node:
 
       * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_FREQUENCY` with the ``k32src-frequency`` property.
       * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_SOURCE` choice with the ``k32src`` enum property.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_RC` and :kconfig:option:`NRFX_CLOCK_LF_SRC_RC` with the ``k32src = "rc"``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_XTAL` and :kconfig:option:`NRFX_CLOCK_LF_SRC_XTAL` with the ``k32src = "xtal"``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_SYNTH` and :kconfig:option:`NRFX_CLOCK_LF_SRC_SYNTH` with the ``k32src = "synth"``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING` and :kconfig:option:`NRFX_CLOCK_LF_SRC_LOW_SWING` with the ``k32src = "ext_low_swing"``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING` and :kconfig:option:`NRFX_CLOCK_LF_SRC_FULL_SWING` with the ``k32src = "ext_full_swing"``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC` and :kconfig:option:`CONFIG_NRFX_CLOCK_LF_SRC_RC` with the ``k32src = "rc"``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL` and :kconfig:option:`CONFIG_NRFX_CLOCK_LF_SRC_XTAL` with the ``k32src = "xtal"``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH` and :kconfig:option:`CONFIG_NRFX_CLOCK_LF_SRC_SYNTH` with the ``k32src = "synth"``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING` and :kconfig:option:`CONFIG_NRFX_CLOCK_LF_SRC_LOW_SWING` with the ``k32src = "ext_low_swing"``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING` and :kconfig:option:`CONFIG_NRFX_CLOCK_LF_SRC_FULL_SWING` with the ``k32src = "ext_full_swing"``.
       * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_ACCURACY_PPM` choice with the ``k32src-accuracy-ppm`` enum property.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_500PPM` with the ``k32src-accuracy-ppm = <500>``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_250PPM` with the ``k32src-accuracy-ppm = <250>``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_150PPM` with the ``k32src-accuracy-ppm = <150>``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_100PPM` with the ``k32src-accuracy-ppm = <100>``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_75PPM` with the ``k32src-accuracy-ppm = <75>``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_50PPM` with the ``k32src-accuracy-ppm = <50>``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_30PPM` with the ``k32src-accuracy-ppm = <30>``.
-      * Replace :kconfig:option:`CLOCK_CONTROL_NRF_K32SRC_20PPM` with the ``k32src-accuracy-ppm = <20>``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_500PPM` with the ``k32src-accuracy-ppm = <500>``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_250PPM` with the ``k32src-accuracy-ppm = <250>``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_150PPM` with the ``k32src-accuracy-ppm = <150>``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_100PPM` with the ``k32src-accuracy-ppm = <100>``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_75PPM` with the ``k32src-accuracy-ppm = <75>``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_50PPM` with the ``k32src-accuracy-ppm = <50>``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_30PPM` with the ``k32src-accuracy-ppm = <30>``.
+      * Replace :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_K32SRC_20PPM` with the ``k32src-accuracy-ppm = <20>``.
       * Replace :kconfig:option:`CONFIG_NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED` with ``k32src = "xtal"`` or ``k32src = "ext_low_swing"`` or ``k32src = "ext_full_swing"``.
 
    #. Update your application to use the new clock control API.
@@ -1219,8 +1242,106 @@ MBOX
              channel-mask = <0x1>;
      };
 
+.. _migration_4_5_mspi_stm32:
+
 MSPI
 ====
+
+* STM32 external serial memory support is migrating from the legacy QSPI, OSPI, and XSPI
+  flash and RAM drivers to separate MSPI controller and memory-device drivers. The new drivers
+  provide a more flexible model that supports multiple memory devices on a single controller
+  and a unified interface with clear layering for all external serial memories,
+  including NOR flashes and external RAMs.
+
+  The migration is ongoing in Zephyr 4.5 and is planned for completion in the next release.
+  The legacy STM32 controller-specific external flash and RAM driver model will be officially
+  deprecated in favor of MSPI in that release.
+
+  Application-facing APIs remain unchanged. The migration changes the devicetree bindings and
+  Kconfig options to use the MSPI model only on impacted boards. SoC devicetree descriptions
+  are unchanged in Zephyr 4.5 and will be updated in the next release. Legacy drivers remain
+  available for boards that have not yet migrated.
+
+  This is not just a Kconfig change. Out-of-tree boards and overlays can migrate ahead of the
+  next release by updating both the controller node and its memory-device children:
+
+  * Replace :dtcompatible:`st,stm32-xspi` with :dtcompatible:`st,stm32-xspi-controller`,
+    :dtcompatible:`st,stm32-ospi` with :dtcompatible:`st,stm32-ospi-controller`, or
+    :dtcompatible:`st,stm32-qspi` with :dtcompatible:`st,stm32-qspi-controller`, as appropriate.
+    Set ``op-mode`` to ``"MSPI_OP_MODE_CONTROLLER"`` and provide ``clock-frequency`` on the
+    controller. Retain the required clocks, pin control, DMA, and port-routing configuration.
+  * Replace the legacy NOR child compatible with :dtcompatible:`jedec,nor` and any applicable
+    vendor-specific compatibles. For devices using :dtcompatible:`st,nor`, also provide the
+    required ``st,mem-type`` property.
+  * Rename ``ospi-max-frequency`` or ``qspi-max-frequency`` to ``mspi-max-frequency``,
+    ``spi-bus-width`` to ``mspi-io-mode``, and ``data-rate`` to ``mspi-data-rate`` where applicable.
+    The MSPI mode and data-rate properties take string values such as ``"MSPI_IO_MODE_OCTAL"``
+    and ``"MSPI_DATA_RATE_DUAL"`` rather than the legacy numeric constants.
+  * When applicable, configure the memory's command opcodes, command length, dummy cycles, and addressing mode
+    for the selected protocol. The legacy ``four-byte-opcodes`` property is not part of the MSPI NOR binding;
+    use the new binding's addressing and command configuration instead.
+  * Preserve flash-region and partition labels referenced by application overlays and chosen
+    nodes, and retain the appropriate memory mapping. Update overlays that refer to old node
+    names or controller-specific properties.
+  * For memory-mapped configurations, enable :kconfig:option:`CONFIG_MSPI_MEMMAP` and configure
+    the device's ``memmap-config`` property.
+
+  The following STM32H573I-DK example shows the XSPI controller and octal DTR NOR changes.
+  Existing pin control, clocks, DMA, and flash-region/partition definitions are omitted and must
+  be retained. The command and timing values are specific to this board's flash device.
+
+  .. tabs::
+
+     .. group-tab:: Before (CONFIG_FLASH_STM32_XSPI)
+
+        .. code-block:: devicetree
+
+           &xspi1 {
+               compatible = "st,stm32-xspi";
+               status = "okay";
+
+               ext_flash_ctrl: xspi-flash-controller@0 {
+                   compatible = "st,stm32-xspi-nor";
+                   reg = <0>;
+                   size = <DT_SIZE_M(512)>;
+                   ospi-max-frequency = <50000000>;
+                   spi-bus-width = <XSPI_OCTO_MODE>;
+                   data-rate = <XSPI_DTR_TRANSFER>;
+                   four-byte-opcodes;
+                   status = "okay";
+               };
+           };
+
+     .. group-tab:: After (CONFIG_FLASH_MSPI_NOR)
+
+        .. code-block:: devicetree
+
+           &xspi1 {
+               compatible = "st,stm32-xspi-controller";
+               op-mode = "MSPI_OP_MODE_CONTROLLER";
+               clock-frequency = <50000000>;
+               st,csbound = <0>;
+               status = "okay";
+
+               ext_flash_ctrl: nor-flash-controller@0 {
+                   compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
+                   reg = <0>;
+                   size = <DT_SIZE_M(512)>;
+                   mspi-max-frequency = <50000000>;
+                   mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+                   mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+                   mspi-hardware-ce-num = <0>;
+                   st,mem-type = "macronix";
+                   read-command = <0xee11>;
+                   write-command = <0x12ed>;
+                   rx-dummy = <20>;
+                   command-length = "INSTR_2_BYTE";
+                   status = "okay";
+               };
+           };
+
+  See :zephyr_file:`boards/st/stm32h573i_dk/stm32h573i_dk-common.dtsi` for the complete
+  devicetree, as an example of migrated board.
 
 * MSPI device binding filenames now use ``(vendor,)device-mspi.yaml`` for
   MSPI-specific variants, while the devicetree ``compatible`` strings describe
@@ -1575,6 +1696,11 @@ Sensor
   have been removed; describe the routing with a mux controller node (for example
   :dtcompatible:`nxp,inputmux`) and reference it from the decoder node's ``mux-states`` property
   instead. (:github:`112088`)
+
+* :dtcompatible:`ti,tmag5273` now interprets ``SENSOR_ATTR_FULL_SCALE`` in Gauss, matching the
+  unit of the ``SENSOR_CHAN_MAGN_*`` channels, instead of millitesla. Applications using
+  ``TMAG5273_DT_AXIS_RANGE_RUNTIME`` must multiply the values they pass to and read back from
+  :c:func:`sensor_attr_set` and :c:func:`sensor_attr_get` by 10, e.g. 80 (mT) becomes 800 (G).
 
 * :dtcompatible:`nxp,mcux-qdec` now routes its input signals through the generic
   :ref:`mux <mux_api>` subsystem. The ``xbar`` property has been removed; describe the routing with
@@ -2963,6 +3089,104 @@ Random
 
 * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION`` has been removed. It did not have any effect.
 
+RTIO
+====
+
+* The cancellation handle changed type from ``struct rtio_sqe *`` to a handle containing
+  a generation and index into the pool typedefed as :c:type:`rtio_sqe_handle_t`. Unlike a raw
+  pointer, a handle can be checked (bounds + generation). Cancelling a submission that has already
+  completed and had its pool slot recycled is now a safe no-op instead of undefined behavior.
+
+* :c:func:`rtio_sqe_cancel` now takes the owning RTIO context in addition to the handle, so it can
+  resolve the handle against the context's SQE pool:
+
+  .. code-block:: c
+
+     /* Before */
+     int rtio_sqe_cancel(struct rtio_sqe *sqe);
+
+  .. code-block:: c
+
+     /* After */
+     int rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handle);
+
+* The handle out-parameter of :c:func:`rtio_sqe_copy_in_get_handles`, :c:func:`sensor_stream` and
+  :c:func:`adc_stream` changed from ``struct rtio_sqe **`` to ``rtio_sqe_handle_t *``. Variables that
+  hold such a handle (including the ``stream_sqe`` field of :c:struct:`sensing_sensor`) must be
+  retyped to :c:type:`rtio_sqe_handle_t`. Use :c:macro:`RTIO_SQE_HANDLE_INVALID` as the "no
+  submission" sentinel where code previously compared a handle pointer against ``NULL``.
+
+* :c:func:`rtio_sqe_copy_in_get_handles` now writes one handle per copied SQE rather than only
+  the first, so its out-parameter is an array of ``sqe_count`` handles. Callers that copy in a
+  single SQE are unaffected; callers that copy in a chain or a transaction and passed the address
+  of one variable must pass an array that big instead.
+
+* :c:func:`rtio_sqe_cancel` marks only the submission its handle names. It never reaches the rest
+  of a chain or transaction, so cancelling one means cancelling every handle
+  :c:func:`rtio_sqe_copy_in_get_handles` returned for it. Cancellation stays best effort:
+  marking a member before it is dispatched does stop it, because the executor checks each
+  member's status on the way to its iodev, but a member whose predecessor completes before or
+  while it is being marked may already be running and will then run to completion.
+
+* The ``RTIO_SQE_CANCELED`` flag has been deprecated. Cancellation state moved from ``sqe.flags``
+  into the atomic status word of the owning :c:struct:`rtio_iodev_sqe`, where it is set and
+  checked atomically. Code that read the flag, typically drivers servicing streaming submissions,
+  must call :c:func:`rtio_iodev_sqe_is_canceled` instead; reading the flag still compiles (with a
+  deprecation warning) but no longer reflects cancellation requested at runtime through
+  :c:func:`rtio_sqe_cancel`. Setting the flag before submit still cancels the submission for as
+  long as the flag exists, but new code should cancel by handle instead.
+
+* Runtime state that the subsystem or a driver mutates after submit moved out of
+  :c:struct:`rtio_sqe` into the owning :c:struct:`rtio_iodev_sqe`: the mempool buffer binding
+  (formerly written back to ``sqe->rx.buf`` / ``sqe->rx.buf_len``), the await signal state and
+  the delay expiry. An iodev must not re-read ``sqe->rx.buf`` to recover a mempool-bound buffer
+  in a later completion step; calling :c:func:`rtio_sqe_rx_buf` again returns the already bound
+  buffer. For mempool submissions the field now stays ``NULL`` at runtime, with no compile-time
+  diagnostic. Caller-provided RX buffers are unaffected.
+
+  A Coccinelle semantic patch rewrites the two field moves, ``sqe.await.{ok,callback,userdata}``
+  into ``rt.await.{ok,callback,userdata}`` and ``sqe.delay.expiry`` into ``rt.delay_expiry``:
+
+  .. code-block:: shell
+
+     spatch --sp-file scripts/coccinelle/rtio_sqe_runtime_state.cocci \
+            --macro-file scripts/coccinelle/macros.h --dir . --in-place
+
+  The mempool buffer has no mechanical rewrite, since replacing a ``sqe.rx`` read with a
+  :c:func:`rtio_sqe_rx_buf` call needs the buffer length the driver wants and an error path for a
+  failed allocation. ``MODE=report`` flags those reads instead, in the files that bind a mempool
+  buffer themselves. Reaching the moved ``await`` and ``delay`` members through a bare
+  ``struct rtio_sqe *`` no longer compiles and needs the wrapper, through
+  :c:macro:`CONTAINER_OF` or the :c:struct:`rtio_iodev_sqe` the op was handed.
+
+* Most applications can migrate automatically with a second Coccinelle semantic patch, which
+  retypes handle variables, rewrites ``rtio_sqe_cancel(handle)`` into
+  ``rtio_sqe_cancel(ctx, handle)`` (binding ``ctx`` from the producing
+  ``rtio_sqe_copy_in_get_handles`` / ``sensor_stream`` / ``adc_stream`` call), and rewrites reads
+  of ``RTIO_SQE_CANCELED`` into :c:func:`rtio_iodev_sqe_is_canceled` calls:
+
+  .. code-block:: shell
+
+     spatch --sp-file scripts/coccinelle/rtio_sqe_handle.cocci \
+            --macro-file scripts/coccinelle/macros.h --dir . --in-place
+
+  or, using the wrapper, ``MODE=patch scripts/coccicheck``. Handles stored in a struct field or
+  cancelled in a different function than they were produced (as in the sensing subsystem), and
+  handles kept in arrays, fall outside what the patch can bind and must be updated by hand;
+  ``MODE=report`` flags the remaining ``rtio_sqe_cancel()`` call sites and any leftover
+  ``RTIO_SQE_CANCELED`` uses, including writes, which have no mechanical rewrite.
+
+* A canceled submission now produces a completion queue event, where cancellation used to be
+  silent. A thread waiting in :c:func:`rtio_submit` for a submission that is then canceled is
+  released instead of waiting forever. :c:macro:`RTIO_SQE_NO_RESPONSE` is the only thing that
+  suppresses the completion, for a canceled submission as for one that runs.
+
+  Cancellation is best effort. A submission that is running or about to run may beat the
+  cancellation and complete with the result its iodev produced. One that is stopped completes
+  with ``-ECANCELED``, and cascades along a chain the way a failure does, so each submission
+  behind it also reports ``-ECANCELED``. Consumers that drain a fixed number of completions, or
+  that treat any completion as data, need to expect the extra events and read ``cqe->result``.
+
 Secure Storage
 ==============
 
@@ -2983,6 +3207,17 @@ Secure Storage
 * ``psa_its_get()`` called with a ``data_size`` of 0 goes through the usual retrieval path, so
   it can now fail, with ``PSA_ERROR_DOES_NOT_EXIST`` for instance, instead of always returning
   ``PSA_SUCCESS``. (:github:`118718`)
+
+* When :kconfig:option:`CONFIG_SECURE_STORAGE_64_BIT_UID` is enabled, the ZMS store
+  (:kconfig:option:`CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS`) now enables
+  :kconfig:option:`CONFIG_ZMS_ID_64BIT` by default, which changes the ZMS storage format.
+  Set it back to ``n`` to keep compatibility with entries written by earlier versions.
+  The store now also rejects UIDs with bit 30 or 31 set (which are reserved for the caller ID)
+  with ``PSA_ERROR_INVALID_ARGUMENT`` instead of silently aliasing them.
+
+* ``psa_its_set()`` and ``psa_its_remove()`` no longer replace or remove an entry that fails to
+  be read back for a reason other than failed authentication or corruption, such as a key
+  provider or storage error. They return that error instead.
 
 Shell
 =====

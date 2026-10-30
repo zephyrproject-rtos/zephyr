@@ -8,14 +8,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			gpio-controller;
-			reg = <0xdeadbeef 0x1000>;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
 		test_regulator: regulator {
 			compatible = "zephyr,fake-regulator";
 
@@ -23,37 +15,37 @@
 		};
 
 		test_i2c: i2c@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			test_i2c_tas6422dac: tas6422dac@0 {
 				compatible = "ti,tas6422dac";
-				status = "okay";
 				reg = <0x0>;
+				status = "okay";
 			};
 
 			test_i2c_tlv320dac: tlv320dac@1 {
 				compatible = "ti,tlv320dac";
-				status = "okay";
 				reg = <0x1>;
 				reset-gpios = <&test_gpio 0 0>;
+				status = "okay";
 			};
 
 			test_i2c_pcm1681: pcm1681@2 {
 				compatible = "ti,pcm1681";
-				status = "okay";
 				reg = <0x2>;
+				status = "okay";
 			};
 
 			test_i2c_max98091: max98091@3 {
 				compatible = "maxim,max98091";
-				status = "okay";
 				reg = <0x3>;
 				mclk-frequency = <13000000>;
+				status = "okay";
 			};
 
 			test_i2c_tas2563: tas2563@4 {
@@ -64,46 +56,54 @@
 
 			test_i2c_aw88298: aw88298@5 {
 				compatible = "awinic,aw88298";
-				status = "okay";
 				reg = <0x5>;
+				status = "okay";
 			};
 
 			test_i2c_cs43l22: cs43l22@6 {
 				compatible = "cirrus,cs43l22";
-				status = "okay";
 				reg = <0x6>;
 				reset-gpios = <&test_gpio 1 0>;
+				status = "okay";
 			};
 
 			test_i2c_wm8904: wm8904@7 {
 				compatible = "wolfson,wm8904";
-				status = "okay";
 				reg = <0x7>;
+				status = "okay";
 			};
 
 			test_i2c_cs35l56: cs35l56@8 {
 				compatible = "cirrus,cs35l56";
 				reg = <0x8>;
-				status = "okay";
 				reset-gpios = <&test_gpio 1 0>;
 				vdd-p-supply = <&test_regulator>;
 				vdd-io-supply = <&test_regulator>;
 				vdd-a-supply = <&test_regulator>;
 				vdd-b-supply = <&test_regulator>;
 				vdd-amp-supply = <&test_regulator>;
+				status = "okay";
 			};
 
 			test_i2c_cs35l57: cs35l57@9 {
 				compatible = "cirrus,cs35l57";
 				reg = <0x9>;
-				status = "okay";
 				reset-gpios = <&test_gpio 1 0>;
 				vdd-p-supply = <&test_regulator>;
 				vdd-io-supply = <&test_regulator>;
 				vdd-a-supply = <&test_regulator>;
 				vdd-b-supply = <&test_regulator>;
 				vdd-amp-supply = <&test_regulator>;
+				status = "okay";
 			};
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };

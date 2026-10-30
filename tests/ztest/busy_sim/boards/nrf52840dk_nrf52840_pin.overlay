@@ -5,15 +5,15 @@
  */
 
 &timer0 {
-	status = "okay";
 	interrupts = <8 0>;
+	status = "okay";
 };
 
 / {
 	busy-sim {
 		compatible = "vnd,busy-sim";
-		status = "okay";
 		counter = <&timer0>;
 		active-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };

@@ -89,8 +89,7 @@ bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 		 */
 		start = (uintptr_t)thread->stack_obj;
 		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
-	} else if (((ps & PS_RING_MASK) == 0U) &&
-		   ((thread->base.user_options & K_USER) == K_USER)) {
+	} else if (((ps & PS_RING_MASK) == 0U) && k_thread_is_user_thread(thread)) {
 		/* Check if this is a user thread, and that it was running in
 		 * kernel mode. If so, we must have been doing a syscall, so
 		 * check with privileged stack bounds.
@@ -103,7 +102,7 @@ bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
 	}
 
-	invalid = (addr <= start) || ((addr + sz) >= end);
+	invalid = (addr <= start) || (sz > (UINTPTR_MAX - addr)) || ((addr + sz) >= end);
 
 	return invalid;
 }
@@ -214,6 +213,15 @@ void xtensa_dump_stack(const void *stack)
 #endif
 }
 
+/**
+ * @brief Extract a bit field.
+ *
+ * @param offset Position of the least significant bit of the field.
+ * @param num_bits Width of the field.
+ * @param val Value to extract from.
+ *
+ * @return Field value.
+ */
 static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 {
 	int mask;
@@ -223,6 +231,13 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 	return val & mask;
 }
 
+/**
+ * @brief Print the cause, PC and PS of a fatal exception.
+ *
+ * @param print_stack Interrupt stack frame of the exception.
+ * @param is_dblexc True for a double exception.
+ * @param depc Value of DEPC, printed for double exceptions only.
+ */
 static void print_fatal_exception(void *print_stack, bool is_dblexc, uint32_t depc)
 {
 	void *pc;
@@ -235,22 +250,23 @@ static void print_fatal_exception(void *print_stack, bool is_dblexc, uint32_t de
 		EXCEPTION_DUMP(" ** FATAL EXCEPTION");
 	}
 
-	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %u (%s)",
-		arch_curr_cpu()->id, (uint32_t)bsa->exccause,
-		xtensa_exccause(bsa->exccause));
-
 	/* Don't print information if the BSA area is invalid as any elements
 	 * obtained via de-referencing the pointer are probably also invalid.
 	 * Or worse, cause another access violation.
 	 */
 	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
-		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)bsa->excvaddr, print_stack);
+		EXCEPTION_DUMP(" ** CPU %d Invalid BSA %p SP %p", arch_curr_cpu()->id, bsa,
+			       print_stack);
 		/* Do not waste hook bandwidth on broken records. */
 #if defined(CONFIG_EXCEPTION_DUMP_HOOK)
 		arch_exception_call_drain_hook(true);
 #endif
 		return;
 	}
+
+	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %u (%s)",
+		arch_curr_cpu()->id, (uint32_t)bsa->exccause,
+		xtensa_exccause(bsa->exccause));
 
 	ps = bsa->ps;
 	pc = (void *)bsa->pc;
@@ -272,6 +288,9 @@ static void print_fatal_exception(void *print_stack, bool is_dblexc, uint32_t de
 		       get_bits(XCHAL_PS_CALLINC_SHIFT, XCHAL_PS_CALLINC_BITS, ps));
 }
 
+/**
+ * @brief Stop thread usage accounting on interrupt entry.
+ */
 static ALWAYS_INLINE void usage_stop(void)
 {
 #ifdef CONFIG_SCHED_THREAD_USAGE
@@ -279,6 +298,9 @@ static ALWAYS_INLINE void usage_stop(void)
 #endif
 }
 
+/**
+ * @brief Notify tracing and idle hooks of ISR entry.
+ */
 static ALWAYS_INLINE void isr_enter_hook(void)
 {
 #if defined(CONFIG_TRACING_ISR) || defined(CONFIG_SYS_IDLE_HOOKS)
@@ -292,11 +314,36 @@ static ALWAYS_INLINE void isr_enter_hook(void)
 #endif
 }
 
+/**
+ * @brief Select the context to return to from an interrupt.
+ *
+ * @param interrupted Switch handle of the interrupted context.
+ *
+ * @return Switch handle of the next thread when leaving the outermost
+ *         interrupt, @p interrupted otherwise.
+ */
 static inline void *return_to(void *interrupted)
 {
 #ifdef CONFIG_MULTITHREADING
-	return _current_cpu->nested <= 1 ?
-		z_get_next_switch_handle(interrupted) : interrupted;
+	void *next =
+		_current_cpu->nested <= 1 ? z_get_next_switch_handle(interrupted) : interrupted;
+
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	if (next != interrupted) {
+		unsigned int cp;
+
+		/* Disable the HiFi coprocessor, as xtensa_switch() does, so
+		 * that the incoming thread traps on its first HiFi
+		 * instruction instead of using the registers of the current
+		 * HiFi owner.
+		 */
+		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
+		cp &= ~BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+	}
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+
+	return next;
 #else
 	return interrupted;
 #endif /* CONFIG_MULTITHREADING */
@@ -304,9 +351,13 @@ static inline void *return_to(void *interrupted)
 
 #if defined(LAZY_COPROCESSOR_LOCK)
 /**
- * Spin until thread is no longer the HiFi owner on specified CPU.
+ * @brief Spin until thread is no longer the HiFi owner on specified CPU.
+ *
  * Note: Interrupts are locked on entry. Unlock before spinning to allow
  * an IPI to be caught and processed; restore them afterwards.
+ *
+ * @param cpu CPU owning the HiFi state of @p thread.
+ * @param thread Thread whose HiFi state is being saved.
  */
 static void spin_while_hifi_owner(struct _cpu *cpu, struct k_thread *thread)
 {
@@ -331,8 +382,15 @@ static void spin_while_hifi_owner(struct _cpu *cpu, struct k_thread *thread)
 }
 
 /**
+ * @brief Find the other CPU, if any, owning the HiFi state of a thread.
+ *
  * Determine if the thread is the owner of a HiFi on another CPU. This is
  * called with the coprocessor lock held
+ *
+ * @param thread Thread to look up.
+ *
+ * @return CPU owning the HiFi state of @p thread, NULL if none other
+ *         than the current CPU.
  */
 static struct _cpu *thread_hifi_owner_elsewhere(struct k_thread *thread)
 {
@@ -450,10 +508,14 @@ static const uint32_t xtensa_lvl_mask[MAX_INTR_LEVEL][GRP_COUNT] = {
 #endif
 };
 
-/* Handles all interrupts for given IRQ Level.
+/**
+ * @brief Handle all pending interrupts of an interrupt level.
+ *
  * - Supports up to 128 interrupts (max supported by Xtensa)
  * - Supports all IRQ levels
  * - Uses __builtin_ctz that for most xtensa configurations will be optimized using nsau instruction
+ *
+ * @param irq_lvl Interrupt level, starting at 1.
  */
 __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 {
@@ -512,6 +574,14 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 #endif
 }
 
+/**
+ * @brief Define the C handler xtensa_int\<l\>_c() of interrupt level @p l.
+ *
+ * The handler takes the interrupted stack frame and returns the switch
+ * handle of the context to return to.
+ *
+ * @param l Interrupt level.
+ */
 #define DEF_INT_C_HANDLER(l)                                                                       \
 	__unused void *xtensa_int##l##_c(void *interrupted_stack)                                  \
 	{                                                                                          \
@@ -546,6 +616,13 @@ DEF_INT_C_HANDLER(7)
 #endif
 
 #if XCHAL_HAVE_NMI
+/**
+ * @brief C handler for the non-maskable interrupt.
+ *
+ * @param interrupted_stack Interrupt stack frame of the interrupted context.
+ *
+ * @return Switch handle of the context to return to.
+ */
 __unused void *xtensa_nmi_c(void *interrupted_stack)
 {
 	usage_stop();
@@ -557,10 +634,16 @@ __unused void *xtensa_nmi_c(void *interrupted_stack)
 
 static inline DEF_INT_C_HANDLER(1)
 
-/* C handler for level 1 exceptions/interrupts.  Hooked from the
- * DEF_EXCINT 1 vector declaration in assembly code.  This one looks
+/**
+ * @brief C handler for level 1 exceptions/interrupts.
+ *
+ * Hooked from the DEF_EXCINT 1 vector declaration in assembly code.  This one looks
  * different because exceptions and interrupts land at the same
  * vector; other interrupt levels have their own vectors.
+ *
+ * @param esf Exception stack frame.
+ *
+ * @return Switch handle of the context to return to.
  */
 void *xtensa_excint1_c(void *esf)
 {
@@ -798,6 +881,13 @@ return_to_interrupted:
 }
 
 #if defined(CONFIG_GDBSTUB)
+/**
+ * @brief C handler for the debug interrupt, entering the GDB stub.
+ *
+ * @param interrupted_stack Interrupt stack frame of the interrupted context.
+ *
+ * @return Switch handle of the context to return to.
+ */
 void *xtensa_debugint_c(int *interrupted_stack)
 {
 	extern void z_gdb_isr(struct arch_esf *esf);

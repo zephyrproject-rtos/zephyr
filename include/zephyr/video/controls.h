@@ -393,6 +393,23 @@ enum video_camera_orientation {
 #define VIDEO_CID_IMAGE_SOURCE_CLASS_BASE 0x009e0900
 
 /**
+ * @brief Vertical blanking
+ *
+ * The idle period after every frame during which no image data is produced. The unit of vertical
+ * blanking is a line.  Every line has length of the image width plus horizontal blanking at the
+ * pixel rate defined by @ref VIDEO_CID_PIXEL_RATE control in the same sub-device.
+ */
+#define VIDEO_CID_VBLANK (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 1)
+
+/**
+ * @brief Horizontal blanking
+ *
+ * The idle period after every line of image data during which no image data is produced. The unit
+ * of horizontal blanking is pixels.
+ */
+#define VIDEO_CID_HBLANK (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 2)
+
+/**
  * @brief Analogue gain control
  *
  * Analogue gain is gain affecting all colour components in the pixel

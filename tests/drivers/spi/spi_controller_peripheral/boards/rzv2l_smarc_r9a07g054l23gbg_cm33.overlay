@@ -27,17 +27,17 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
-	renesas,spn-delay = <3>;
-	renesas,rx-trigger = <4>;
-	renesas,tx-trigger = <0>;
 
 	dmas = <&dma0 6 RZ_DMA_PERIPH_TO_MEM>,
 	       <&dma0 5 RZ_DMA_MEM_TO_PERIPH>;
 	dma-names = "rx", "tx";
+	renesas,spn-delay = <3>;
+	renesas,rx-trigger = <4>;
+	renesas,tx-trigger = <0>;
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -49,18 +49,18 @@
 };
 
 dut_spis: &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_pins>;
 	pinctrl-names = "default";
-	renesas,rx-trigger = <4>;
-	renesas,tx-trigger = <0>;
 
 	dmas = <&dma0 1 RZ_DMA_PERIPH_TO_MEM>,
 	       <&dma0 2 RZ_DMA_MEM_TO_PERIPH>;
 	dma-names = "rx", "tx";
+	renesas,rx-trigger = <4>;
+	renesas,tx-trigger = <0>;
+	status = "okay";
 };
 
 &dma0 {
-	status = "okay";
 	dma-buf-addr-alignment = <1>;
+	status = "okay";
 };

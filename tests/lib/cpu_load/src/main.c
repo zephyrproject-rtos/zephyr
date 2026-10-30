@@ -106,6 +106,56 @@ ZTEST(cpu_load, test_load)
 	zassert_within(load_idle, 0, DELTA, "idle window: %d", load_idle);
 }
 
+ZTEST(cpu_load, test_long_load)
+{
+	/* Test can be long, avoid on non-qemu targets. */
+	Z_TEST_SKIP_IFNDEF(CONFIG_QEMU_TARGET);
+	/* Some qemus are slow, use only those that are confirmed to be fast. */
+	Z_TEST_SKIP_IFNDEF(UTIL_OR(IS_ENABLED(CONFIG_X86), IS_ENABLED(CONFIG_RISCV)));
+	/* Skip test on SMP targets. */
+	Z_TEST_SKIP_IFDEF(CONFIG_SMP);
+	/* Second phase sleeps for over 4000 seconds. It is fast only if QEMU icount is used and
+	 * virtual time jumps to the next timer deadline when CPU is sleeping.
+	 */
+	Z_TEST_SKIP_IFNDEF(CONFIG_QEMU_ICOUNT);
+	Z_TEST_SKIP_IFDEF(CONFIG_QEMU_ICOUNT_SLEEP);
+
+	uint64_t start_us;
+	uint64_t now_us;
+	int load;
+
+	(void)cpu_load_get_cpu(TEST_CPU, true);
+	start_us = k_cyc_to_us_floor64(k_cycle_get_64());
+
+	/* Lets check if active time is big then calculation is ok as calculation requires
+	 * 64 bit operations. CPU is busy looping so expect 100% load. Use a margin (1 ms) so that
+	 * the measured window is unambiguously above the threshold at which 1000 * active_us
+	 * overflows 32 bits.
+	 */
+	do {
+		now_us = k_cyc_to_us_floor64(k_cycle_get_64());
+		if (1000 * (now_us - start_us) > (uint64_t)UINT32_MAX + 1000000) {
+			break;
+		}
+	} while (1);
+
+	load = cpu_load_get_cpu(TEST_CPU, true);
+	zassert_equal(load, 1000, "Unexpected load: %d", load);
+	start_us = k_cyc_to_us_floor64(k_cycle_get_64());
+
+	/* Now get total time that exceeds 32 bits. */
+	do {
+		now_us = k_cyc_to_us_floor64(k_cycle_get_64());
+		if ((now_us - start_us) > UINT32_MAX) {
+			break;
+		}
+		k_msleep(1000);
+	} while (1);
+
+	load = cpu_load_get_cpu(TEST_CPU, false);
+	zassert_within(load, 1, DELTA, "Unexpected load: %d", load);
+}
+
 /* The per-CPU getter must report every CPU and reject out-of-range ids. */
 ZTEST(cpu_load, test_get_cpu)
 {

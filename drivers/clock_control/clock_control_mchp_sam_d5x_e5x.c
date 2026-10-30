@@ -944,8 +944,9 @@ static int clock_get_rate_fdpll(const struct device *dev, uint8_t fdpll_id, uint
 			    OSCCTRL_DPLLRATIO_LDRFRAC_Pos;
 
 		frac_mult_max = OSCCTRL_DPLLRATIO_LDRFRAC_Msk >> OSCCTRL_DPLLRATIO_LDRFRAC_Pos;
-		*freq = (src_freq * (((mult_int + 1) * (frac_mult_max + 1)) + mult_frac)) /
-			(frac_mult_max + 1);
+		*freq = ((uint64_t)src_freq *
+			 (((mult_int + 1U) * (frac_mult_max + 1U)) + mult_frac)) /
+			(frac_mult_max + 1U);
 	} while (0);
 
 	return ret_val;
@@ -1352,6 +1353,7 @@ static void clock_mchp_isr(const struct device *dev)
  *
  * @return 0 if the clock is successfully turned on
  * @return -ENOTSUP If the requested operation is not supported.
+ * @return -EINVAL If the subsystem is not a clock the driver knows.
  * @return -ETIMEDOUT If the requested operation is timedout.
  * @return -EALREADY If clock is already on.
  */
@@ -1367,6 +1369,7 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 	do {
 		/* Validate subsystem. */
 		if (CLOCK_SUCCESS != clock_check_subsys(subsys)) {
+			ret_val = -EINVAL;
 			break;
 		}
 
@@ -1431,11 +1434,12 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
  *
  * @return 0 if the clock is successfully turned off
  * @return -ENOTSUP If the requested operation is not supported.
+ * @return -EINVAL If the subsystem is not a clock the driver knows.
  * @return -EALREADY If clock is already off.
  */
 static int clock_mchp_off(const struct device *dev, clock_control_subsys_t sys)
 {
-	int ret_val = -ENOTSUP;
+	int ret_val = -EINVAL;
 	const struct clock_mchp_config *config = dev->config;
 	union clock_mchp_subsys subsys = {.val = (uint32_t)sys};
 
@@ -1519,6 +1523,7 @@ static enum clock_control_status clock_mchp_get_status(const struct device *dev,
  *
  * @return 0 if the clock is successfully turned on
  * @return -ENOTSUP If the requested operation is not supported.
+ * @return -EINVAL If the subsystem is not a clock the driver knows.
  * @return -EBUSY If an async call is already in progress.
  * @return -EALREADY If clock is already on, or starting.
  */
@@ -1543,6 +1548,7 @@ static int clock_mchp_async_on(const struct device *dev, clock_control_subsys_t 
 		}
 		/* Validate subsystem. */
 		if (CLOCK_SUCCESS != clock_check_subsys(subsys)) {
+			ret_val = -EINVAL;
 			break;
 		}
 

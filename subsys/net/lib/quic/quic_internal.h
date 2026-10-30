@@ -535,6 +535,11 @@ struct quic_crypto_context {
 	/** Are the settings initialized
 	 */
 	bool initialized;
+
+	/** The keys of this level were discarded for good (RFC 9001
+	 * ch. 4.9) and must not be set up again for this connection.
+	 */
+	bool discarded;
 };
 
 /**
@@ -1463,6 +1468,10 @@ int quic_flush_deferred_crypto(struct quic_endpoint *ep);
 bool quic_recovery_tx_slot_available(struct quic_endpoint *ep,
 				     enum quic_secret_level level);
 void quic_crypto_context_destroy(struct quic_crypto_context *ctx);
+void quic_endpoint_discard_keys(struct quic_endpoint *ep,
+				enum quic_secret_level level);
+int quic_send_packet(struct quic_endpoint *ep, enum quic_secret_level level,
+		     const uint8_t *payload, size_t payload_len);
 void quic_key_update_destroy(struct quic_key_update *ku);
 bool quic_setup_ciphers_ex(struct quic_ciphers *ciphers,
 			   psa_algorithm_t hash_alg,
@@ -1569,6 +1578,9 @@ int process_long_header(struct quic_endpoint *ep,
 			net_socklen_t addrlen,
 			struct quic_long_header_info *info,
 			size_t datagram_len);
+struct quic_stream *quic_find_stream(struct quic_context *ctx,
+				     struct quic_endpoint *ep,
+				     uint64_t stream_id);
 
 /* Server session-ticket cache helpers (single-use / freshness). */
 struct quic_server_ticket_entry;

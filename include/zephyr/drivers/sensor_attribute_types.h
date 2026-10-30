@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Attribute value types for the sensor API
+ * @ingroup sensor_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ATTRIBUTE_TYPES_H
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ATTRIBUTE_TYPES_H
 
@@ -14,6 +20,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @addtogroup sensor_interface
+ * @{
+ */
 
 /**
  * Used by the following channel/attribute pairs:
@@ -35,6 +46,8 @@ struct sensor_three_axis_attribute {
 		q31_t values[3];
 	};
 };
+
+/** @} */
 
 #ifdef __cplusplus
 }

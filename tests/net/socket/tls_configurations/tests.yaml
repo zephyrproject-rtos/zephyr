@@ -17,6 +17,13 @@ tests:
       - CONFIG_SERVER_PORT=4001
     harness_config:
       pytest_args: ["--server-type", "1.2-psk", "--port", "4001"]
+  net.sockets.tls12.psk_kex.opaque:
+    extra_configs:
+      - CONFIG_MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_256_CBC_SHA384=y
+      - CONFIG_TLS_CONFIGURATIONS_PSK_FORMAT_OPAQUE=y
+      - CONFIG_SERVER_PORT=4007
+    harness_config:
+      pytest_args: ["--server-type", "1.2-psk", "--port", "4007"]
   net.sockets.tls12.ec_kex:
     extra_configs:
       - CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256=y

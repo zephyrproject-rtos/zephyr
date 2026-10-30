@@ -53,6 +53,10 @@ const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, u
 		return NULL;
 	}
 
+	if (ldr->sect_map[sh_ndx].detached) {
+		return llext_peek(ldr, ext->sect_hdrs[sh_ndx].sh_offset);
+	}
+
 	return (const uint8_t *)ext->mem[mem_idx] + ldr->sect_map[sh_ndx].offset;
 }
 
@@ -122,6 +126,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 	for (int i = 0; i < ext->sect_cnt; i++) {
 		ldr->sect_map[i].mem_idx = LLEXT_MEM_COUNT;
 		ldr->sect_map[i].offset = 0;
+		ldr->sect_map[i].detached = false;
 	}
 
 	ext->sect_hdrs = (elf_shdr_t *)llext_peek(ldr, ldr->hdr.e_shoff);
@@ -395,6 +400,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 					(void *)((char *)detached_sect_ptr + shdr->sh_size));
 				return -ENOEXEC;
 			}
+			ldr->sect_map[i].detached = true;
 			continue;
 		}
 

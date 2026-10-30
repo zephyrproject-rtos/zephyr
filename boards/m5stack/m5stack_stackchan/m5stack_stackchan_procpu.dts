@@ -20,8 +20,8 @@
 #include "../m5stack_cores3/m5stack_cores3_procpu.dts"
 
 / {
-	model = "M5Stack StackChan PROCPU";
 	compatible = "m5stack,stackchan";
+	model = "M5Stack StackChan PROCPU";
 };
 
 /* UART1 drives the two SCS0009 serial servos in the body (GPIO6 TX / GPIO7 RX). */

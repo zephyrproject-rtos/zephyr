@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_rtio_loopback);
 
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/drivers/spi.h>
+#include "spi_rtio.h"
 
 #define SPI_FAST_DEV	DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_fast)
 #define SPI_SLOW_DEV	DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_slow)
@@ -390,6 +391,123 @@ static int spi_rx_every_4(struct rtio_iodev *spi_iodev)
 	return 0;
 }
 
+/* Helper to submit, consume, and release all CQEs for a transaction safely */
+static int spi_rtio_wait_and_drain(struct rtio *r_ctx, int count)
+{
+	struct rtio_cqe *cqe;
+	int first_err = 0;
+
+	int flush_err;
+
+	rtio_submit(r_ctx, count);
+	while (count > 0) {
+		cqe = rtio_cqe_consume(r_ctx);
+		count--;
+		if (cqe != NULL) {
+			if (cqe->result < 0 && first_err == 0) {
+				first_err = cqe->result;
+			}
+			rtio_cqe_release(r_ctx, cqe);
+		}
+	}
+	flush_err = rtio_flush_completion_queue(r_ctx);
+	if (first_err == 0) {
+		first_err = flush_err;
+	}
+	return first_err;
+}
+
+/* Test asymmetric SPI transceive with NULL (discard) buffers under RTIO */
+static int spi_asymmetric_null_buffers(struct rtio_iodev *spi_iodev)
+{
+	struct rtio_sqe *last_sqe = NULL;
+	int ret;
+	int err;
+
+	LOG_INF("Start asymmetric null buffers test");
+
+	/* Test 1: Subsystem spi_rtio_copy decomposition of asymmetric buffers with small discard */
+	struct spi_buf tx_buf_arr1[] = {
+		{ .buf = buffer_tx, .len = 4 },
+		{ .buf = buffer_tx + 4, .len = 4 },
+	};
+	struct spi_buf rx_buf_arr1[] = {
+		{ .buf = NULL, .len = 4 },
+		{ .buf = buffer_rx, .len = 4 },
+	};
+	struct spi_buf_set tx_set1 = { .buffers = tx_buf_arr1, .count = ARRAY_SIZE(tx_buf_arr1) };
+	struct spi_buf_set rx_set1 = { .buffers = rx_buf_arr1, .count = ARRAY_SIZE(rx_buf_arr1) };
+
+	(void)memset(buffer_rx, 0xaa, BUF_SIZE);
+
+	ret = spi_rtio_copy(&r, spi_iodev, &tx_set1, &rx_set1, false, &last_sqe);
+	zassert_true(ret > 0, "spi_rtio_copy failed with code %d", ret);
+
+	err = spi_rtio_wait_and_drain(&r, ret);
+	zassert_ok(err, "spi_rtio_copy Test 1 failed with error %d", err);
+	zassert_mem_equal(buffer_rx, buffer_tx + 4, 4,
+			  "Discard failed: buffer_rx did not match expected data");
+
+	/* Test 2: Subsystem spi_rtio_copy multi-chunk scratch buffer discard */
+	static const uint8_t expected_nop[4] = { 0 };
+	struct spi_buf tx_buf_arr2[] = {
+		{ .buf = buffer_tx, .len = 3 },
+	};
+	struct spi_buf rx_buf_arr2[] = {
+		{ .buf = NULL, .len = 64 },
+		{ .buf = buffer_rx, .len = 4 },
+	};
+	struct spi_buf_set tx_set2 = { .buffers = tx_buf_arr2, .count = ARRAY_SIZE(tx_buf_arr2) };
+	struct spi_buf_set rx_set2 = { .buffers = rx_buf_arr2, .count = ARRAY_SIZE(rx_buf_arr2) };
+
+	(void)memset(buffer_rx, 0xaa, BUF_SIZE);
+
+	ret = spi_rtio_copy(&r, spi_iodev, &tx_set2, &rx_set2, false, &last_sqe);
+	zassert_true(ret > 0, "spi_rtio_copy multi-chunk failed with code %d", ret);
+
+	err = spi_rtio_wait_and_drain(&r, ret);
+	zassert_ok(err, "spi_rtio_copy multi-chunk failed with error %d", err);
+	zassert_mem_equal(buffer_rx, expected_nop, 4,
+			  "Multi-chunk discard failed: expected NOP received data");
+	zassert_equal((uint8_t)buffer_rx[4], 0xaa,
+		      "Multi-chunk discard overflowed receive buffer");
+
+	/* Test 3: Multi-chunk scratch buffer discard with payload data verification */
+	struct spi_buf tx_buf_arr3[] = {
+		{ .buf = NULL, .len = 64 },
+		{ .buf = buffer_tx, .len = 4 },
+	};
+	struct spi_buf rx_buf_arr3[] = {
+		{ .buf = NULL, .len = 64 },
+		{ .buf = buffer_rx, .len = 4 },
+	};
+	struct spi_buf_set tx_set3 = { .buffers = tx_buf_arr3, .count = ARRAY_SIZE(tx_buf_arr3) };
+	struct spi_buf_set rx_set3 = { .buffers = rx_buf_arr3, .count = ARRAY_SIZE(rx_buf_arr3) };
+
+	(void)memset(buffer_rx, 0xaa, BUF_SIZE);
+
+	ret = spi_rtio_copy(&r, spi_iodev, &tx_set3, &rx_set3, false, &last_sqe);
+	zassert_true(ret > 0, "spi_rtio_copy Test 3 failed with code %d", ret);
+
+	err = spi_rtio_wait_and_drain(&r, ret);
+	zassert_ok(err, "spi_rtio_copy Test 3 failed with error %d", err);
+	zassert_mem_equal(buffer_rx, buffer_tx, 4,
+			  "Multi-chunk discard failed: payload mismatch after 64 discard bytes");
+
+	/* Test 4: Standalone discard read with NO TX buffer (tx_bufs == NULL) */
+	struct spi_buf rx_buf_arr4[] = {
+		{ .buf = NULL, .len = 64 },
+	};
+	struct spi_buf_set rx_set4 = { .buffers = rx_buf_arr4, .count = ARRAY_SIZE(rx_buf_arr4) };
+
+	ret = spi_rtio_copy(&r, spi_iodev, NULL, &rx_set4, false, &last_sqe);
+	zassert_true(ret > 0, "spi_rtio_copy read-only discard failed with code %d", ret);
+
+	err = spi_rtio_wait_and_drain(&r, ret);
+	zassert_ok(err, "spi_rtio_copy read-only discard failed with error %d", err);
+	LOG_INF("Passed asymmetric null buffers test");
+	return 0;
+}
 
 ZTEST(spi_loopback_rtio, test_spi_loopback_rtio)
 {
@@ -405,7 +523,8 @@ ZTEST(spi_loopback_rtio, test_spi_loopback_rtio)
 	    spi_null_tx_buf(&spi_slow) ||
 	    spi_rx_half_start(&spi_slow) ||
 	    spi_rx_half_end(&spi_slow) ||
-	    spi_rx_every_4(&spi_slow)
+	    spi_rx_every_4(&spi_slow) ||
+	    spi_asymmetric_null_buffers(&spi_slow)
 	    ) {
 		goto end;
 	}
@@ -419,7 +538,8 @@ ZTEST(spi_loopback_rtio, test_spi_loopback_rtio)
 	    spi_null_tx_buf(&spi_fast) ||
 	    spi_rx_half_start(&spi_fast) ||
 	    spi_rx_half_end(&spi_fast) ||
-	    spi_rx_every_4(&spi_fast)
+	    spi_rx_every_4(&spi_fast) ||
+	    spi_asymmetric_null_buffers(&spi_fast)
 	    ) {
 		goto end;
 	}
@@ -439,4 +559,9 @@ static void *spi_loopback_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(spi_loopback_rtio, NULL, spi_loopback_setup, NULL, NULL, NULL);
+static void spi_loopback_rtio_before(void *fixture)
+{
+	(void)rtio_flush_completion_queue(&r);
+}
+
+ZTEST_SUITE(spi_loopback_rtio, NULL, spi_loopback_setup, spi_loopback_rtio_before, NULL, NULL);

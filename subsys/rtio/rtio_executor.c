@@ -10,6 +10,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rtio_executor, CONFIG_RTIO_LOG_LEVEL);
 
+/* Deprecated pre-submit cancellation flag (RTIO_SQE_CANCELED), spelled out so
+ * honoring it does not itself emit the deprecation warning. Remove once the
+ * flag is gone.
+ */
+#define RTIO_SQE_CANCELED_LEGACY BIT(3)
+
 /**
  * @brief Callback which completes an RTIO_AWAIT_OP handled by the executor
  *
@@ -56,7 +62,7 @@ static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe, int last_result)
  */
 static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe, int last_result)
 {
-	if (FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags)) {
+	if (rtio_iodev_sqe_is_canceled(iodev_sqe)) {
 		rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
 		return;
 	}
@@ -79,16 +85,18 @@ static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe, int last_
  */
 void rtio_executor_submit(struct rtio *r)
 {
-	const uint16_t cancel_no_response = (RTIO_SQE_CANCELED | RTIO_SQE_NO_RESPONSE);
 	struct mpsc_node *node = mpsc_pop(&r->sq);
 
 	while (node != NULL) {
 		struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
 
-		/* If this submission was cancelled before submit, then generate no response */
-		if (iodev_sqe->sqe.flags  & RTIO_SQE_CANCELED) {
-			iodev_sqe->sqe.flags |= cancel_no_response;
+		/* Honor the deprecated pre-submit cancellation flag by
+		 * transferring it into the status word.
+		 */
+		if ((iodev_sqe->sqe.flags & RTIO_SQE_CANCELED_LEGACY) != 0) {
+			rtio_iodev_sqe_set_canceled(iodev_sqe);
 		}
+
 		iodev_sqe->r = r;
 
 		struct rtio_iodev_sqe *curr = iodev_sqe, *next;
@@ -112,11 +120,13 @@ void rtio_executor_submit(struct rtio *r)
 
 			next = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
 
-			/* If the current submission was cancelled before submit,
-			 * then cancel the next one and generate no response
-			 */
-			if (curr->sqe.flags  & RTIO_SQE_CANCELED) {
-				next->sqe.flags |= cancel_no_response;
+			if ((next->sqe.flags & RTIO_SQE_CANCELED_LEGACY) != 0) {
+				rtio_iodev_sqe_set_canceled(next);
+			}
+
+			/* Cancellation cascades down the chain like a failure */
+			if (rtio_iodev_sqe_is_canceled(curr)) {
+				rtio_iodev_sqe_set_canceled(next);
 			}
 			curr->next = next;
 			curr = next;
@@ -147,7 +157,7 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 						  int result, bool is_ok)
 {
 	struct rtio *r = iodev_sqe->r;
-	const bool is_canceled = FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) == 1;
+	const bool is_canceled = rtio_iodev_sqe_is_canceled(iodev_sqe);
 	const bool uses_mempool = FIELD_GET(RTIO_SQE_MEMPOOL_BUFFER, iodev_sqe->sqe.flags) == 1;
 	const bool requires_response = FIELD_GET(RTIO_SQE_NO_RESPONSE, iodev_sqe->sqe.flags) == 0;
 	uint32_t cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
@@ -159,24 +169,34 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 	 * re-submitting, rebooting or anything else.
 	 */
 	if (is_canceled || !is_ok) {
-		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->sqe.rx.buf,
-			iodev_sqe->sqe.rx.buf_len);
-		rtio_release_buffer(r, iodev_sqe->sqe.rx.buf, iodev_sqe->sqe.rx.buf_len);
-		rtio_sqe_pool_free(r->sqe_pool, iodev_sqe);
-	} else {
-		/* Request was not canceled, put the SQE back in the queue */
-		if (iodev_sqe->sqe.op == RTIO_OP_RX && uses_mempool) {
-			/* Reset the buffer info so the next request can get a new one */
-			iodev_sqe->sqe.rx.buf = NULL;
-			iodev_sqe->sqe.rx.buf_len = 0;
+		/* Say the stream was stopped, unless there is a real error to report */
+		if (is_canceled && is_ok) {
+			result = -ECANCELED;
 		}
 
-		mpsc_push(&r->sq, &iodev_sqe->q);
-		rtio_executor_submit(r);
+		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->rt.rx_bind.buf,
+			iodev_sqe->rt.rx_bind.buf_len);
+		rtio_release_buffer(r, iodev_sqe->rt.rx_bind.buf, iodev_sqe->rt.rx_bind.buf_len);
+		rtio_sqe_pool_free(r->sqe_pool, iodev_sqe);
+
+		/* The blocks are back in the pool, so do not hand them out again */
+		cqe_flags = 0;
 	}
 
 	if (requires_response) {
 		rtio_cqe_submit(r, result, userdata, cqe_flags);
+	}
+
+	/* resubmit directly to the iodev if the sqe has not stopped */
+	if (is_ok && !is_canceled) {
+		/* Request was not canceled, re-arm it */
+		if (iodev_sqe->sqe.op == RTIO_OP_RX && uses_mempool) {
+			/* Reset the buffer info so the next request can get a new one */
+			iodev_sqe->rt.rx_bind.buf = NULL;
+			iodev_sqe->rt.rx_bind.buf_len = 0;
+		}
+
+		rtio_iodev_submit(iodev_sqe, 0);
 	}
 }
 
@@ -190,7 +210,7 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe,
 						int last_result, bool is_ok)
 {
-	const bool is_canceled = FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) == 1;
+	const bool is_canceled = rtio_iodev_sqe_is_canceled(iodev_sqe);
 	struct rtio_iodev_sqe *curr = iodev_sqe;
 	struct rtio *r = iodev_sqe->r;
 	uint32_t sqe_flags;
@@ -201,12 +221,12 @@ static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe
 	 */
 	do {
 		void *userdata = curr->sqe.userdata;
-		uint32_t cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
+		uint32_t cqe_flags = rtio_cqe_compute_flags(curr);
 		struct rtio_iodev_sqe *next = rtio_iodev_sqe_next(curr);
 
 		sqe_flags = curr->sqe.flags;
 
-		if (!is_canceled && FIELD_GET(RTIO_SQE_NO_RESPONSE, sqe_flags) == 0) {
+		if (FIELD_GET(RTIO_SQE_NO_RESPONSE, sqe_flags) == 0) {
 			/* Generate a result back to the client if need be.*/
 			rtio_cqe_submit(r, result, userdata, cqe_flags);
 		}
@@ -222,6 +242,18 @@ static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe
 
 	/* curr should now be the last sqe in the transaction if that is what completed */
 	if (FIELD_GET(RTIO_SQE_CHAINED, sqe_flags) == 1) {
+		/* A chain cascades failure, so a canceled link stops the ones behind
+		 * it. Cancellation only ever marks the submission its handle names,
+		 * and the mark is carried forward one link at a time here rather than
+		 * by walking the chain from the canceling context, where the entries
+		 * are not owned and may be completed and recycled mid-walk. The
+		 * submission below does not reach the iodev once marked: it completes
+		 * the link with -ECANCELED, which frees it and brings us back here for
+		 * the link after it.
+		 */
+		if (is_canceled) {
+			rtio_iodev_sqe_set_canceled(curr);
+		}
 		rtio_iodev_submit(curr, last_result);
 	}
 }

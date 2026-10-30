@@ -35,9 +35,9 @@
 
 	flash-controller@80000000 {
 		reg = <0x80000000 DT_SIZE_M(10)>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		spiflash: flash@80000000 {
 			compatible = "soc-nv-flash";
@@ -53,8 +53,8 @@
 
 				code_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "code";
 					reg = <0x0 DT_SIZE_M(10)>;
+					label = "code";
 					read-only;
 				};
 			};

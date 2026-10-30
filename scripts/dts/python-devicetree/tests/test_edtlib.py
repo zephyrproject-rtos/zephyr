@@ -297,6 +297,33 @@ def test_ranges():
         edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x2, length=0x2f00000210)
     ]
 
+def test_dma_ranges_undeclared(tmp_path):
+    '''dma-ranges, like ranges, need not be declared in the binding'''
+    # 'defaults' declares properties, but not dma-ranges
+    dts_file = tmp_path / "dma-ranges.dts"
+    dts_file.write_text("""\
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	node {
+		compatible = "defaults";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		dma-ranges = <0x0 0x10000000 0x1000>;
+	};
+};
+""", encoding="utf-8")
+    with from_here():
+        edt = edtlib.EDT(str(dts_file), ["test-bindings"])
+
+    node = edt.get_node("/node")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x0, parent_bus_cells=0x1, parent_bus_addr=0x10000000, length_cells=0x1, length=0x1000)
+    ]
+
 def test_reg():
     '''Tests for the regs property'''
     with from_here():

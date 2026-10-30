@@ -29,7 +29,7 @@
 };
 
 &ana_cmpr1 {
-	status = "okay";
 	ref-source = "internal";
 	ref-voltage = <50>;
+	status = "okay";
 };

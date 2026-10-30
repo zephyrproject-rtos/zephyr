@@ -489,7 +489,7 @@ static inline void rtc_stm32_disable_alarm(uint16_t id)
 #endif /* RTC_STM32_ALARMS_COUNT > 1 */
 }
 
-void rtc_stm32_isr(const struct device *dev)
+static void rtc_stm32_isr(const struct device *dev)
 {
 	struct rtc_stm32_data *data = dev->data;
 	struct rtc_stm32_alrm *p_rtc_alrm;

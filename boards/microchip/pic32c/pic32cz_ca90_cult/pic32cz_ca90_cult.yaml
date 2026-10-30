@@ -10,7 +10,9 @@ toolchain:
 flash: 8192
 ram: 1024
 supported:
+  - adc
   - clock_control
+  - entropy
   - flash
   - gpio
   - i2c

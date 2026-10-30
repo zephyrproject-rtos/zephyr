@@ -14,9 +14,10 @@
 		zephyr,ipc = &mailbox0;
 	};
 
-	shmem: memory@a4000000 {
-		compatible = "mmio-sram";
-		reg = <0xa4000000 0x500000>;
+	mailbox0: mailbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu1 1>, <&mu1 1>;
+		mbox-names = "tx", "rx";
 	};
 
 	rsc_table: memory@2001e000 {
@@ -24,10 +25,9 @@
 		reg = <0x2001e000 0x100>;
 	};
 
-	mailbox0: mailbox {
-		compatible = "zephyr,mbox-ipm";
-		mboxes = <&mu1 1>, <&mu1 1>;
-		mbox-names = "tx", "rx";
+	shmem: memory@a4000000 {
+		compatible = "mmio-sram";
+		reg = <0xa4000000 0x500000>;
 	};
 };
 

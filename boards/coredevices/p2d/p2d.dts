@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/sensor/lsm6dso.h>
 
 / {
-	model = "Core Devices Pebble 2 Duo";
 	compatible = "coredevices,p2d";
+	model = "Core Devices Pebble 2 Duo";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -82,10 +82,10 @@
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	npm1300: pmic@6b {
 		compatible = "nordic,npm1300";
@@ -137,10 +137,10 @@
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mmc5603: magnetic-sensor@30 {
 		compatible = "memsic,mmc56x3";
@@ -172,10 +172,10 @@
 
 &i2s0 {
 	compatible = "nordic,nrf-i2s";
-	status = "okay";
 	pinctrl-0 = <&i2s0_default>;
 	pinctrl-1 = <&i2s0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {
@@ -183,24 +183,24 @@
 };
 
 &pdm0 {
-	status = "okay";
 	pinctrl-0 = <&pdm0_default>;
 	pinctrl-names = "default";
 	clock-source = "PCLK32M_HFXO";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	gd25le255e: memory@0 {
 		compatible = "nordic,qspi-nor";
@@ -229,12 +229,12 @@
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 
 	ls013b7dh05: display@0 {
 		compatible = "sharp,ls0xx";
@@ -249,11 +249,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uicr {

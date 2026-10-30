@@ -17,8 +17,8 @@
 			bias-disable;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 			input-enable;
+			nxp,speed = "100-mhz";
 		};
 
 		group1 {
@@ -58,8 +58,8 @@
 				 <&iomuxc_gpio_ad_b1_09_flexcan1_rx>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 			input-enable;
+			nxp,speed = "100-mhz";
 		};
 	};
 
@@ -70,8 +70,8 @@
 				 <&iomuxc_gpio_ad_b0_03_flexcan2_rx>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 			input-enable;
+			nxp,speed = "100-mhz";
 		};
 	};
 
@@ -82,8 +82,8 @@
 				 <&iomuxc_gpio_emc_37_flexcan3_rx>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 			input-enable;
+			nxp,speed = "100-mhz";
 		};
 	};
 
@@ -95,8 +95,8 @@
 			drive-strength = "r0-6";
 			drive-open-drain;
 			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 			input-enable;
+			nxp,speed = "100-mhz";
 		};
 	};
 
@@ -108,8 +108,8 @@
 			drive-strength = "r0-6";
 			drive-open-drain;
 			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 			input-enable;
+			nxp,speed = "100-mhz";
 		};
 	};
 
@@ -121,8 +121,8 @@
 			drive-strength = "r0-6";
 			drive-open-drain;
 			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 			input-enable;
+			nxp,speed = "100-mhz";
 		};
 	};
 
@@ -134,8 +134,8 @@
 			drive-strength = "r0-6";
 			drive-open-drain;
 			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 			input-enable;
+			nxp,speed = "100-mhz";
 		};
 	};
 

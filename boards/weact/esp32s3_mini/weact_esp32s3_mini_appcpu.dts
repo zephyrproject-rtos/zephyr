@@ -10,8 +10,8 @@
 #include "weact_esp32s3_mini-pinctrl.dtsi"
 
 / {
-	model = "WeAct Studio ESP32-S3-Mini APPCPU";
 	compatible = "weact,esp32s3-mini";
+	model = "WeAct Studio ESP32-S3-Mini APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

@@ -67,24 +67,24 @@
 				compatible = "renesas,ra-cgc-pll-out";
 				div = <2>;
 				freq = <DT_FREQ_M(1000)>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pllq: pllq {
 				compatible = "renesas,ra-cgc-pll-out";
 				div = <6>;
 				freq = <333333333>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pllr: pllr {
 				compatible = "renesas,ra-cgc-pll-out";
 				div = <5>;
 				freq = <DT_FREQ_M(400)>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -102,24 +102,24 @@
 				compatible = "renesas,ra-cgc-pll-out";
 				div = <4>;
 				freq = <DT_FREQ_M(600)>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pll2q: pll2q {
 				compatible = "renesas,ra-cgc-pll-out";
 				div = <3>;
 				freq = <DT_FREQ_M(800)>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pll2r: pll2r {
 				compatible = "renesas,ra-cgc-pll-out";
 				div = <5>;
 				freq = <DT_FREQ_M(480)>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 		};
 

@@ -9,9 +9,9 @@
  */
 
 &lpspi3 {
-	status = "okay";
 	pinctrl-0 = <&lpspi3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

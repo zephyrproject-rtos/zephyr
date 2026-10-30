@@ -93,7 +93,8 @@ static int enable(const struct shell_transport *transport, bool blocking)
 		return -ENODEV;
 	}
 
-	sh_rpmsg->blocking = blocking;
+	sh_rpmsg->blocking =
+		blocking || IS_ENABLED(CONFIG_SHELL_BACKEND_RPMSG_FORCE_TX_BLOCKING_MODE);
 
 	return 0;
 }

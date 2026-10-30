@@ -15,7 +15,7 @@
  * @brief L2CAP
  * @defgroup bt_l2cap L2CAP
  * @since 1.0
- * @version 1.0.0
+ * @version 1.0.1
  * @ingroup bluetooth
  * @{
  */
@@ -535,6 +535,13 @@ struct bt_l2cap_br_chan {
 	struct k_work_delayable	        rtx_work;
 	struct k_work_sync              rtx_sync;
 
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Retry worker for deferred signaling operations */
+	struct k_work_delayable         retry_work;
+
+	/** @endcond */
+
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
 	sys_snode_t                     _pdu_ready;
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
@@ -941,6 +948,7 @@ int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server);
  *  @param psm Channel PSM to connect to.
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @retval -EINVAL @p conn is not an LE connection.
  */
 int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 				struct bt_l2cap_chan **chans, uint16_t psm);
@@ -1017,6 +1025,11 @@ int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_
  *  the location (address) of bt_l2cap_chan type object which is a member
  *  of both transport dedicated objects.
  *
+ *  @note For BR/EDR connections, this function does not wait for a signaling buffer. If signaling
+ *  buffers are temporarily unavailable, the connection request will be retried asynchronously.
+ *  The return value 0 indicates that the connection process has been successfully initiated, not
+ *  that the connection request PDU has been sent.
+ *
  *  @warning It is the responsibility of the caller to zero out the
  *  parent of the chan object.
  *
@@ -1025,6 +1038,7 @@ int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_
  *  @param psm Channel PSM to connect to.
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @retval -EINVAL @p conn is neither a BR/EDR nor an LE connection.
  */
 int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			  uint16_t psm);
@@ -1035,6 +1049,11 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
  *  canceled and as a result the channel disconnected() callback is called.
  *  Regarding to input parameter, to get details see reference description
  *  to bt_l2cap_chan_connect() API above.
+ *
+ *  @note For BR/EDR connections, this function does not wait for a signaling buffer. If signaling
+ *  buffers are temporarily unavailable, the disconnection request will be retried asynchronously.
+ *  The return value 0 indicates that the disconnection process has been successfully initiated,
+ *  not that the disconnection request PDU has been sent.
  *
  *  @param chan Channel object.
  *

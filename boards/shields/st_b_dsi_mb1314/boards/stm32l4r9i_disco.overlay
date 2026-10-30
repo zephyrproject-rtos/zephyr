@@ -31,6 +31,11 @@
 };
 
 &pllsai2 {
+	div-m = <1>;
+	mul-n = <60>;
+	div-r = <4>;
+	post-div-r = <4>;
+	clocks = <&clk_msi>;
 	/* PLLSAI2 is here to generate the PCLK to feed the DSI
 	 * We need to feed roughly 500Mbps. PCLK depends on format
 	 * For 24bit (RGB888) format, we need roughly 20.8 MHz.  (Actually target 15 MHz)
@@ -39,11 +44,6 @@
 	 * PCLK = MSI (4MHz) * mul-n / (div-m * div-r * post-div-r)
 	 */
 	status = "okay";
-	div-m = <1>;
-	mul-n = <60>;
-	div-r = <4>;
-	post-div-r = <4>;
-	clocks = <&clk_msi>;
 };
 
 &zephyr_mipi_dsi {

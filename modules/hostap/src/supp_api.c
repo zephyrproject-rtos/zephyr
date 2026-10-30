@@ -36,6 +36,7 @@ extern struct wpa_global *global;
 
 /* save the last wifi connection parameters */
 static struct wifi_connect_req_params last_wifi_conn_params;
+static uint8_t last_wifi_conn_ssid[WIFI_SSID_MAX_LEN];
 
 enum requested_ops {
 	CONNECT = 0,
@@ -519,6 +520,34 @@ static int wpas_config_process_blob(struct wpa_config *config, char *name, uint8
 
 #if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
 	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+static void supplicant_clear_enterprise_creds(void)
+{
+	bin_clear_free(enterprise_creds.ca_cert, enterprise_creds.ca_cert_len);
+	bin_clear_free(enterprise_creds.client_cert, enterprise_creds.client_cert_len);
+	bin_clear_free(enterprise_creds.client_key, enterprise_creds.client_key_len);
+	bin_clear_free(enterprise_creds.ca_cert2, enterprise_creds.ca_cert2_len);
+	bin_clear_free(enterprise_creds.client_cert2, enterprise_creds.client_cert2_len);
+	bin_clear_free(enterprise_creds.client_key2, enterprise_creds.client_key2_len);
+	os_memset(&enterprise_creds, 0, sizeof(enterprise_creds));
+}
+
+static int supplicant_copy_enterprise_cred(uint8_t **dst, uint32_t *dst_len, const uint8_t *src,
+					   uint32_t src_len)
+{
+	if (src == NULL || src_len == 0) {
+		return 0;
+	}
+
+	*dst = os_memdup(src, src_len);
+	if (*dst == NULL) {
+		return -ENOMEM;
+	}
+
+	*dst_len = src_len;
+
+	return 0;
+}
+
 int supplicant_add_enterprise_creds(const struct device *dev __unused,
 				    struct net_if *iface __unused,
 				    struct wifi_enterprise_creds_params *creds)
@@ -531,8 +560,45 @@ int supplicant_add_enterprise_creds(const struct device *dev __unused,
 		goto out;
 	}
 
-	memcpy((void *)&enterprise_creds, (void *)creds,
-			sizeof(struct wifi_enterprise_creds_params));
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	supplicant_clear_enterprise_creds();
+
+	ret = supplicant_copy_enterprise_cred(&enterprise_creds.ca_cert,
+					      &enterprise_creds.ca_cert_len, creds->ca_cert,
+					      creds->ca_cert_len);
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.client_cert,
+						      &enterprise_creds.client_cert_len,
+						      creds->client_cert, creds->client_cert_len);
+	}
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.client_key,
+						      &enterprise_creds.client_key_len,
+						      creds->client_key, creds->client_key_len);
+	}
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.ca_cert2,
+						      &enterprise_creds.ca_cert2_len,
+						      creds->ca_cert2, creds->ca_cert2_len);
+	}
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.client_cert2,
+						      &enterprise_creds.client_cert2_len,
+						      creds->client_cert2, creds->client_cert2_len);
+	}
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.client_key2,
+						      &enterprise_creds.client_key2_len,
+						      creds->client_key2, creds->client_key2_len);
+	}
+
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "failed to copy enterprise creds");
+		supplicant_clear_enterprise_creds();
+	}
+
+	k_mutex_unlock(&wpa_supplicant_mutex);
 
 out:
 	return ret;
@@ -1393,17 +1459,52 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 	}
 
-	/* enable and select network */
-	if (!wpa_cli_cmd_v("enable_network %d", resp.network_id)) {
-		goto out;
+	/*
+	 * Select the network to connect to.
+	 *
+	 * SELECT_NETWORK already enables the target network and disables all
+	 * the others, so for STA mode we must NOT issue a separate
+	 * ENABLE_NETWORK here: ENABLE_NETWORK schedules an immediate scan and
+	 * the subsequent SELECT_NETWORK schedules a second one. As the first
+	 * scan is already running, the second request gets deferred
+	 * ("Already scanning - Reschedule") and ends up executing right after
+	 * association completes. That extra post-connect scan is redundant,
+	 * puts the receiver off-channel immediately after connecting (risking
+	 * packet loss) and can trigger an unwanted intra-ESS roam.
+	 *
+	 * SoftAP (ap_scan == 2) still relies on ENABLE_NETWORK to start the AP,
+	 * so keep it for the AP path only.
+	 */
+	if (mode_ap) {
+		if (!wpa_cli_cmd_v("enable_network %d", resp.network_id)) {
+			goto out;
+		}
 	}
 
 	if (!wpa_cli_cmd_v("select_network %d", resp.network_id)) {
 		goto out;
 	}
 
-	memset(&last_wifi_conn_params, 0, sizeof(struct wifi_connect_req_params));
-	memcpy((void *)&last_wifi_conn_params, params, sizeof(struct wifi_connect_req_params));
+	memset(&last_wifi_conn_params, 0, sizeof(last_wifi_conn_params));
+	last_wifi_conn_params.ssid_length = MIN(params->ssid_length, sizeof(last_wifi_conn_ssid));
+	memcpy(last_wifi_conn_ssid, params->ssid, last_wifi_conn_params.ssid_length);
+	last_wifi_conn_params.ssid = last_wifi_conn_ssid;
+	last_wifi_conn_params.psk_is_pbkdf2 = params->psk_is_pbkdf2;
+	last_wifi_conn_params.band = params->band;
+	last_wifi_conn_params.channel = params->channel;
+	last_wifi_conn_params.security = params->security;
+	last_wifi_conn_params.mfp = params->mfp;
+	memcpy(last_wifi_conn_params.bssid, params->bssid, sizeof(last_wifi_conn_params.bssid));
+	last_wifi_conn_params.timeout = params->timeout;
+	last_wifi_conn_params.wpa3_ent_mode = params->wpa3_ent_mode;
+	last_wifi_conn_params.TLS_cipher = params->TLS_cipher;
+	last_wifi_conn_params.eap_ver = params->eap_ver;
+	last_wifi_conn_params.verify_peer_cert = params->verify_peer_cert;
+	last_wifi_conn_params.ft_used = params->ft_used;
+	last_wifi_conn_params.ignore_broadcast_ssid = params->ignore_broadcast_ssid;
+	last_wifi_conn_params.bandwidth = params->bandwidth;
+	last_wifi_conn_params.ssid_protection = params->ssid_protection;
+	last_wifi_conn_params.transition_disable = params->transition_disable;
 	return 0;
 
 rem_net:
@@ -2042,6 +2143,9 @@ int supplicant_reg_domain(const struct device *dev,
 {
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
 	struct wpa_supplicant *wpa_s;
+	char cmd[sizeof("SET country XX")];
+	/* Must hold the longest reply to "SET country": "OK", "FAIL" or "UNKNOWN COMMAND" */
+	char resp[32] = {0};
 	int ret = -1;
 
 	if (!wifi_mgmt_api || !wifi_mgmt_api->reg_domain) {
@@ -2070,7 +2174,17 @@ int supplicant_reg_domain(const struct device *dev,
 			goto out;
 		}
 
-		if (!wpa_cli_cmd_v("set country %s", reg_domain->country_code)) {
+		if (wpa_s->ctrl_conn == NULL) {
+			wpa_printf(MSG_ERROR, "Control interface not ready, dropping command: %s",
+				   "SET country");
+			goto out;
+		}
+
+		snprintf(cmd, sizeof(cmd), "SET country %c%c",
+			 reg_domain->country_code[0], reg_domain->country_code[1]);
+		if (zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd, resp) ||
+		    strncmp(resp, "OK", 2) != 0) {
+			ret = -EINVAL;
 			goto out;
 		}
 

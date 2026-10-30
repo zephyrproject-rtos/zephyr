@@ -31,6 +31,18 @@ __weak bool xtensa_soc_ptr_executable(const void *p)
  */
 #define XTENSA_BACKTRACE_DEFAULT_PC_MASK 0x40000000
 
+/**
+ * @brief Convert a saved return address to the address of the call.
+ *
+ * Replaces the window increment in the top two bits of a return address
+ * with the code region bits, then steps back to the calling instruction.
+ *
+ * @param pc Return address read from the stack.
+ * @param mask Code region bits to use for the top two bits.
+ * @param cause Exception cause of the fault.
+ *
+ * @return Address of the instruction before the return address.
+ */
 static inline uint32_t xtensa_cpu_process_stack_pc(uint32_t pc, uint32_t mask, int cause)
 {
 	if (pc & 0x80000000) {
@@ -49,6 +61,14 @@ static inline uint32_t xtensa_cpu_process_stack_pc(uint32_t pc, uint32_t mask, i
 	return pc - 3;
 }
 
+/**
+ * @brief Check whether a stack pointer is valid.
+ *
+ * @param sp Stack pointer.
+ *
+ * @retval true Stack pointer is valid.
+ * @retval false Stack pointer is invalid.
+ */
 static inline bool xtensa_stack_ptr_is_sane(uint32_t sp)
 {
 	bool valid;
@@ -61,6 +81,14 @@ static inline bool xtensa_stack_ptr_is_sane(uint32_t sp)
 	return valid;
 }
 
+/**
+ * @brief Check whether an address is executable.
+ *
+ * @param p Address to check.
+ *
+ * @retval true Address is executable.
+ * @retval false Address is not executable.
+ */
 static inline bool xtensa_ptr_executable(const void *p)
 {
 	return xtensa_soc_ptr_executable(p);
@@ -68,10 +96,10 @@ static inline bool xtensa_ptr_executable(const void *p)
 
 bool xtensa_backtrace_get_next_frame(struct xtensa_backtrace_frame_t *frame)
 {
-	/* Do not continue backtrace when we encounter an invalid stack
-	 * frame pointer.
+	/* Do not continue backtrace when the base save area (4 words
+	 * under the stack frame pointer) is not within the stack.
 	 */
-	if (xtensa_is_outside_stack_bounds((uintptr_t)frame->sp, 0, UINT32_MAX)) {
+	if (xtensa_is_outside_stack_bounds((uintptr_t)frame->sp - 16U, 16U, UINT32_MAX)) {
 		return false;
 	}
 

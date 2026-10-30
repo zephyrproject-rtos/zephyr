@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "DA14695 series Development Kit USB";
 	compatible = "renesas,da14695_dk_usb";
+	model = "DA14695 series Development Kit USB";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -104,9 +104,33 @@
 	ranges = <0x0 0x16000000 DT_SIZE_M(4)>;
 
 	partitions {
+		ranges;
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
-		ranges;
+
+		boot_partition: partition@2400 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x000002400 0x0000dc00>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00010000 DT_SIZE_K(512)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@90000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00090000 DT_SIZE_K(512)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@110000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00110000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
 
 		/*
 		 * By default, and due to executing from external flash memories, the I-cache
@@ -120,30 +144,6 @@
 		 * minimum cacheable area and then slot0 and slot1 partition entries should follow
 		 * without gaps in between.
 		 */
-
-		boot_partition: partition@2400 {
-			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
-			reg = <0x000002400 0x0000dc00>;
-		};
-
-		slot0_partition: partition@10000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(512)>;
-		};
-
-		slot1_partition: partition@90000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-1";
-			reg = <0x00090000 DT_SIZE_K(512)>;
-		};
-
-		storage_partition: partition@110000 {
-			compatible = "zephyr,mapped-partition";
-			label = "storage";
-			reg = <0x00110000 DT_SIZE_K(32)>;
-		};
 	};
 };
 
@@ -157,9 +157,9 @@
 
 &uart {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart2 {

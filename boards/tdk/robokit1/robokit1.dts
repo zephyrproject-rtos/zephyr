@@ -12,6 +12,6 @@
 #include "robokit1-common.dtsi"
 
 / {
-	model = "TDK RoboKit1";
 	compatible = "tdk,robokit1", "atmel,same70q21b", "atmel,same70";
+	model = "TDK RoboKit1";
 };

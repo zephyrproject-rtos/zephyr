@@ -20,9 +20,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m55";
 			reg = <0>;
+			device_type = "cpu";
 			d-cache-line-size = <32>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -34,19 +34,24 @@
 		#size-cells = <1>;
 
 		clk_sys: clk_sys {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(260)>;
 		};
 
 		rcc: rcc@41008000 {
 			compatible = "realtek,ameba-rcc";
-			#clock-cells = <1>;
 			reg = <0x41008000 0x400>;
+			#clock-cells = <1>;
 		};
 	};
 
 	soc {
+		bt: bt {
+			compatible = "realtek,ameba-bt-hci";
+			status = "disabled";
+		};
+
 		ram_image2_entry: memory@20004da0 {
 			compatible = "zephyr,memory-region";
 			reg = <0x20004da0 0x20>;
@@ -148,6 +153,33 @@
 			reg = <0x41008d80 0x20>;
 			interrupts = <65 0>;
 			early-int-cnt-ms = <500>;
+			status = "disabled";
+		};
+
+		uart0: serial@4100c000 {
+			compatible = "realtek,ameba-uart";
+			reg = <0x4100c000 0x60>;
+			clocks = <&rcc AMEBA_UART0_CLK>;
+			interrupts = <24 0>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart1: serial@4100d000 {
+			compatible = "realtek,ameba-uart";
+			reg = <0x4100d000 0x60>;
+			clocks = <&rcc AMEBA_UART1_CLK>;
+			interrupts = <25 0>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart2: serial@4100e000 {
+			compatible = "realtek,ameba-uart";
+			reg = <0x4100e000 0x60>;
+			clocks = <&rcc AMEBA_UART2_CLK>;
+			interrupts = <26 0>;
+			current-speed = <115200>;
 			status = "disabled";
 		};
 
@@ -316,11 +348,6 @@
 			dmas = <&dma 4 24 0>,
 			       <&dma 5 23 0>;
 			dma-names = "rx", "tx";
-			status = "disabled";
-		};
-
-		bt: bt {
-			compatible = "realtek,ameba-bt-hci";
 			status = "disabled";
 		};
 	};

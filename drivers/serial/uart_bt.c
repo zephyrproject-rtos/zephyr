@@ -47,13 +47,18 @@ static void bt_notif_enabled(bool enabled, void *ctx)
 
 	const struct device *dev = (const struct device *)ctx;
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
+	int err;
 
 	(void)atomic_set(&dev_data->bt.enabled, enabled ? 1 : 0);
 
 	LOG_DBG("%s() - %s", __func__, enabled ? "enabled" : "disabled");
 
 	if (!ring_buf_is_empty(dev_data->uart.tx_ringbuf)) {
-		k_work_reschedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_NO_WAIT);
+		err = k_work_reschedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work,
+						  K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule TX work: %d", err);
+		}
 	}
 }
 
@@ -68,6 +73,7 @@ static void bt_received(struct bt_conn *conn, const void *data, uint16_t len, vo
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 	struct ring_buf *ringbuf = dev_data->uart.rx_ringbuf;
 	uint32_t put_len;
+	int err;
 
 	LOG_DBG("%s() - len: %d, rx_ringbuf space %d", __func__, len, ring_buf_space_get(ringbuf));
 	LOG_HEXDUMP_DBG(data, len, "data");
@@ -77,7 +83,10 @@ static void bt_received(struct bt_conn *conn, const void *data, uint16_t len, vo
 		LOG_ERR("RX Ring buffer full. received: %d, added to queue: %d", len, put_len);
 	}
 
-	k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+	err = k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+	if (err < 0) {
+		LOG_ERR("Failed to submit callback work: %d", err);
+	}
 }
 
 static void foreach_conn_handler_get_att_mtu(struct bt_conn *conn, void *data)
@@ -151,7 +160,10 @@ static void tx_work_handler(struct k_work *work)
 	} while (len > 0 && !err);
 
 	if ((ring_buf_space_get(dev_data->uart.tx_ringbuf) > 0) && dev_data->uart.tx_irq_ena) {
-		k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+		err = k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+		if (err < 0) {
+			LOG_ERR("Failed to submit callback work: %d", err);
+		}
 	}
 }
 
@@ -159,14 +171,32 @@ static int uart_bt_fifo_fill(const struct device *dev, const uint8_t *tx_data, i
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 	size_t wrote;
+	int err;
 
 	wrote = ring_buf_put(dev_data->uart.tx_ringbuf, tx_data, len);
+
+	if (atomic_get(&dev_data->bt.enabled) == 0) {
+		if (wrote < len) {
+			LOG_WRN_RATELIMIT("Ring buffer full, discard %zu bytes", len - wrote);
+		}
+
+		if (dev_data->uart.tx_irq_ena) {
+			err = k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+			if (err < 0) {
+				LOG_ERR("Failed to submit callback work: %d", err);
+			}
+		}
+
+		return len;
+	}
+
 	if (wrote < len) {
 		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
 
-	if (atomic_get(&dev_data->bt.enabled)) {
-		k_work_reschedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_NO_WAIT);
+	err = k_work_reschedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_NO_WAIT);
+	if (err < 0) {
+		LOG_ERR("Failed to schedule TX work: %d", err);
 	}
 
 	return wrote;
@@ -190,6 +220,7 @@ static void uart_bt_poll_out(const struct device *dev, unsigned char c)
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 	struct ring_buf *ringbuf = dev_data->uart.tx_ringbuf;
+	int err;
 
 	/** Right now we're discarding data if ring-buf is full. */
 	while (!ring_buf_put(ringbuf, &c, 1)) {
@@ -203,11 +234,15 @@ static void uart_bt_poll_out(const struct device *dev, unsigned char c)
 
 	/** Don't flush the data until notifications are enabled. */
 	if (atomic_get(&dev_data->bt.enabled)) {
-		/** Delay will allow buffering some characters before transmitting
+		/* Delay will allow buffering some characters before transmitting
 		 * data, so more than one byte is transmitted (e.g: when poll_out is
 		 * called inside a for-loop).
 		 */
-		k_work_schedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_MSEC(1));
+		err = k_work_schedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work,
+						K_MSEC(1));
+		if (err < 0) {
+			LOG_ERR("Failed to schedule TX work: %d", err);
+		}
 	}
 }
 
@@ -215,7 +250,9 @@ static int uart_bt_irq_tx_ready(const struct device *dev)
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 
-	if ((ring_buf_space_get(dev_data->uart.tx_ringbuf) > 0) && dev_data->uart.tx_irq_ena) {
+	if (((ring_buf_space_get(dev_data->uart.tx_ringbuf) > 0) ||
+	     (atomic_get(&dev_data->bt.enabled) == 0)) &&
+	    dev_data->uart.tx_irq_ena) {
 		return 1;
 	}
 
@@ -225,11 +262,15 @@ static int uart_bt_irq_tx_ready(const struct device *dev)
 static void uart_bt_irq_tx_enable(const struct device *dev)
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
+	int err;
 
 	dev_data->uart.tx_irq_ena = true;
 
 	if (uart_bt_irq_tx_ready(dev)) {
-		k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+		err = k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+		if (err < 0) {
+			LOG_ERR("Failed to submit callback work: %d", err);
+		}
 	}
 }
 
@@ -254,10 +295,14 @@ static int uart_bt_irq_rx_ready(const struct device *dev)
 static void uart_bt_irq_rx_enable(const struct device *dev)
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
+	int err;
 
 	dev_data->uart.rx_irq_ena = true;
 
-	k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+	err = k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+	if (err < 0) {
+		LOG_ERR("Failed to submit callback work: %d", err);
+	}
 }
 
 static void uart_bt_irq_rx_disable(const struct device *dev)

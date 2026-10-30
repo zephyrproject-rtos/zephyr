@@ -1114,6 +1114,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 
 int bt_br_discovery_stop(void)
 {
+	bool resolving_names = false;
 	int err;
 	int i;
 
@@ -1121,11 +1122,6 @@ int bt_br_discovery_stop(void)
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return -EALREADY;
-	}
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
-	if (err) {
-		return err;
 	}
 
 	for (i = 0; i < discovery_results_count; i++) {
@@ -1139,6 +1135,8 @@ int bt_br_discovery_stop(void)
 			continue;
 		}
 
+		resolving_names = true;
+
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			continue;
@@ -1148,6 +1146,25 @@ int bt_br_discovery_stop(void)
 		bt_addr_copy(&cp->bdaddr, &discovery_results[i].addr);
 
 		bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_CANCEL, buf, NULL);
+	}
+
+	/* A remote name is only requested once the controller has reported
+	 * Inquiry Complete, and the Host is only told to issue Inquiry Cancel
+	 * before that event (Core Specification 6.3, Vol 4, Part E,
+	 * Section 7.1.2), so skip the cancel while a name is outstanding.
+	 */
+	if (!resolving_names) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
+		/* The inquiry may complete while the cancel is in flight.
+		 * If the event started no name request it has already
+		 * cleared the flag, and a failure with the flag clear is
+		 * that completion, not an error. If it started one the flag
+		 * stays set until the last name request completes, and the
+		 * error is returned: discovery is still resolving names.
+		 */
+		if (err != 0 && atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+			return err;
+		}
 	}
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);

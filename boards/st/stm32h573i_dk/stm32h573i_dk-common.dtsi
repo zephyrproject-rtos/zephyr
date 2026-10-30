@@ -15,8 +15,8 @@
 #include <zephyr/dt-bindings/display/panel.h>
 
 / {
-	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
 	compatible = "st,stm32h573i-dk";
+	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -240,9 +240,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pa3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -251,9 +251,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pb5>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -262,7 +262,6 @@
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rmii_rxd0_pc4
 		     &eth_rmii_rxd1_pc5
 		     &eth_rmii_ref_clk_pa1
@@ -273,12 +272,13 @@
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -346,7 +346,6 @@
 	/* Change the compatible here, and keep xspi for other boards */
 	compatible = "st,stm32-xspi-controller";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
-	st,csbound = <0>;
 	clock-frequency = <DT_FREQ_M(50)>;
 
 	pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
@@ -360,12 +359,14 @@
 	dmas = <&gpdma1 4 57 STM32_DMA_PERIPH_TX
 		&gpdma1 5 57 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
+	st,csbound = <0>;
 
 	status = "okay";
 
 	ext_flash_ctrl: nor-flash-controller@0 {
 		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 
 		read-command = <0xee11>;
@@ -375,24 +376,23 @@
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
 		mspi-hardware-ce-num = <0>;
-		st,mem-type = "macronix";
 		command-length = "INSTR_2_BYTE";
 
 		/* external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
+		st,mem-type = "macronix";
 
 		status = "okay";
 
 		ext_flash: mx25lm51245: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
+			ranges;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };

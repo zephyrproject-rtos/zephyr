@@ -32,9 +32,10 @@ if(NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING)
   if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH)
     message(WARNING "
       The PSA ITS encryption key provider in use generates keys by hashing the device ID
-      retrieved through the HW info API. This is not necessarily secure as the device ID may be
+      retrieved through the HW info API. This is not secure as the device ID may be
       easily readable by an attacker, not unique, and/or guessable, depending on the device.
-      This means that the data and keys stored via the PSA APIs may not be secure at rest.")
+      This means that the data and keys stored via the PSA APIs will not be secure at rest.
+      Use a secure key provider if possible.")
   elseif(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH)
     message(WARNING "
       The PSA ITS encryption key provider in use is not secure.

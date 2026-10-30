@@ -13,9 +13,9 @@
 
 	i3c0: i3c@88888888 {
 		compatible = "cdns,i3c";
+		reg = <0x88888888 0x400>;
 		#address-cells = <3>;
 		#size-cells = <0>;
-		reg = <0x88888888 0x400>;
 		interrupt-parent = <&nvic>;
 		interrupts = <4 1>;
 		input-clock-frequency = <200000000>;
@@ -25,9 +25,9 @@
 
 	i3c1: i3c@cccccccc {
 		compatible = "snps,designware-i3c";
+		reg = <0xcccccccc 0x400>;
 		#address-cells = <3>;
 		#size-cells = <0>;
-		reg = <0xcccccccc 0x400>;
 		interrupt-parent = <&nvic>;
 		interrupts = <8 1>;
 		clocks = <&test_fixed_clk>;

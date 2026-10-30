@@ -8,6 +8,7 @@
 
 void tester_verify_rpa_procedure(void);
 void dut_rpa_expired_procedure(void);
+void dut_rpa_expired_limited_procedure(void);
 
 static const struct bst_test_instance test_to_add[] = {
 	{
@@ -17,6 +18,10 @@ static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "peripheral_rpa_expired",
 		.test_main_f = dut_rpa_expired_procedure,
+	},
+	{
+		.test_id = "peripheral_rpa_expired_limited",
+		.test_main_f = dut_rpa_expired_limited_procedure,
 	},
 	BSTEST_END_MARKER,
 };

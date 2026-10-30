@@ -3393,6 +3393,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		if (sync->is_started) {
 			uint32_t ticks_to_expire;
 			uint32_t sync_remainder_us = 0U;
+			uint32_t aux_remainder_us = 0U;
 
 			LL_ASSERT_DBG(context->other_expire_info);
 
@@ -3405,14 +3406,16 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			hal_ticker_remove_jitter(&ticks_to_expire, &sync_remainder_us);
 
 			/* Add a tick for negative remainder and return positive remainder
-			 * value.
+			 * value. Converted on a copy: remainder itself is passed to the
+			 * aux prepare below, in the ticker's own unit.
 			 */
-			hal_ticker_add_jitter(&ticks_to_expire, &remainder);
+			aux_remainder_us = remainder;
+			hal_ticker_add_jitter(&ticks_to_expire, &aux_remainder_us);
 #endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 
 			/* Store the offset in us */
 			lll_sync->us_adv_sync_pdu_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
-						  sync_remainder_us - remainder;
+						  sync_remainder_us - aux_remainder_us;
 
 			/* store the lazy value */
 			lll_sync->sync_lazy = context->other_expire_info->lazy;

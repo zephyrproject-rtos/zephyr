@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: ChipSourceTek AXS5106L self-capacitive touch controller
+
+description: |
+  The AXS5106L is a self-capacitive touch controller with an I2C interface.
+  It asserts its interrupt line when touch data is available.
+
+compatible: "chipsourcetek,axs5106l"
+
+include: [i2c-device.yaml, touchscreen-common.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO. Used by the controller to signal that touch data is
+      available. Active low.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO. Active low. Leave it unset when the reset line is shared
+      with the display controller, as a reset of the touch controller would
+      then also reset the display. The display driver resets both
+      controllers in that case.

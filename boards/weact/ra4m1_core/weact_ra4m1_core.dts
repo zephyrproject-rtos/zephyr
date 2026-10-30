@@ -14,8 +14,8 @@
 #include "weact_ra4m1_core-pinctrl.dtsi"
 
 / {
-	model = "WeAct RA4M1-Core";
 	compatible = "renesas,ra4m1", "renesas,ra";
+	model = "WeAct RA4M1-Core";
 
 	chosen {
 		zephyr,sram = &sram0;

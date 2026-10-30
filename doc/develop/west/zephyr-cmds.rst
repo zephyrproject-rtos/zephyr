@@ -90,7 +90,8 @@ select another version with the ``--spdx-version`` option.
 
 SPDX 2.3 is a superset of 2.2 and adds fields such as ``PrimaryPackagePurpose``. Pick SPDX 2.x for
 compatibility with tooling that does not yet understand SPDX 3; pick SPDX 3.0 or above for the
-richer, machine-readable build provenance described in :ref:`west-spdx-build-profile`.
+richer, machine-readable build provenance described in :ref:`west-spdx-build-profile`. SPDX 3.1
+also records the size of every file (``software_artifactSize``).
 
 .. note::
 
@@ -114,8 +115,8 @@ Generating SPDX documents
 
       west spdx -d BUILD_DIR
 
-   This generates SPDX 2.3 tag-value documents by default. To generate SPDX 2.2
-   or 3.0 documents instead, pass ``--spdx-version``:
+   This generates SPDX 2.3 tag-value documents by default. To generate SPDX 2.2,
+   3.0 or 3.1 documents instead, pass ``--spdx-version``:
 
    .. code-block:: bash
 
@@ -151,7 +152,13 @@ profiles, and :file:`build.jsonld` additionally declares the :ref:`Build profile
 <west-spdx-build-profile>` that captures how the artifacts were produced. Element IDs are full
 IRIs under the namespace prefix (``-n``), so the documents of separate builds, such as the images
 of a :ref:`sysbuild <sysbuild>` build, can be combined into one graph as long as each build has its
-own prefix, which the default prefix guarantees.
+own prefix, which the default prefix guarantees. An element defined in one document and referenced
+from another, such as a source file of the ``zephyr`` document used by the build, is imported
+through an ``ExternalMap`` rather than copied.
+
+Every document names The Zephyr Project as its author, and the generating tool together with the
+Zephyr version it comes from (``Creator`` lines in SPDX 2.x, ``createdBy`` and ``createdUsing`` in
+SPDX 3).
 
 Every file in the bill-of-materials is scanned so that its hashes (SHA512, SHA256 and SHA1) can be
 recorded, together with its license and copyright.
@@ -170,11 +177,71 @@ What is found is written out as ``LicenseInfoInFile``, ``LicenseConcluded`` and
    Copyright extraction uses heuristics that may not capture complete notice text, so
    ``FileCopyrightText`` content is best-effort. This aligns with SPDX specification recommendations.
 
+.. _west-spdx-package-id:
+
+Package identification
+----------------------
+
+Every package records where it came from, so that the SBOM can be matched against vulnerability
+databases:
+
+- a **supplier**, the owner of the repository the sources were checked out from: The Zephyr
+  Project for Zephyr and the modules hosted under ``zephyrproject-rtos``, the repository's
+  namespace otherwise.
+
+- a **PURL** (Package URL) built from the repository the sources were checked out from, pinned to
+  the release tag when the checked-out revision is tagged and to the revision itself otherwise. It
+  identifies the exact tree that was built, which for a fork is the fork's own repository.
+
+- a **CPE** (Common Platform Enumeration) name, which identifies the product and version rather
+  than the checkout, and so does not depend on which remote the sources came from.
+
+For Zephyr itself, the CPE is ``cpe:2.3:o:zephyrproject:zephyr:<version>:<update>:*:*:*:*:*:*``,
+built from the version reported by Zephyr's :zephyr_file:`VERSION` file. Any ``EXTRAVERSION``
+becomes the CPE ``update`` field, so a release candidate is recorded as
+``cpe:2.3:o:zephyrproject:zephyr:4.4.0:rc3:*:*:*:*:*:*`` and a final release as
+``cpe:2.3:o:zephyrproject:zephyr:4.4.0:-:*:*:*:*:*:*``. Both the ``zephyr`` source package and the
+Zephyr entry in ``modules-deps`` carry it.
+
+Modules are identified the same way, and can additionally declare curated references (for instance
+the upstream project's CPE, when the module is a fork) in their :file:`zephyr/module.yml`. See
+:ref:`modules <modules-vulnerability-monitoring>`.
+
+Each module, and Zephyr itself, appears as two packages:
+
+- ``<module>-sources``, in the ``zephyr`` document, lists the files of the checked-out tree that
+  went into the build.
+
+- ``<module>-deps``, in ``modules-deps``, carries no files and identifies the upstream module for
+  vulnerability tracking. One is emitted for every module of the west manifest, whether or not its
+  code is built.
+
+A ``VARIANT_OF`` relationship (``hasVariant`` in SPDX 3) ties the two together, and each package
+carries a comment stating its role.
+
+.. _west-spdx-blobs:
+
+Prebuilt libraries
+------------------
+
+Prebuilt libraries linked into the image, such as the :ref:`binary blobs <bin-blobs>` of a vendor
+HAL, are listed although no build target produces them. ``west spdx`` reads them from each
+target's link command, resolving ``-lNAME`` flags against the ``-L`` search directories as the
+linker does, attributes each library to the module it comes from, and links it to the target's
+output with a ``STATIC_LINK`` relationship (``hasStaticLink`` in SPDX 3).
+
+When the library is a blob declared in the module's :file:`zephyr/module.yml` and fetched with
+:ref:`west blobs <west-blobs>`, its file entry also records the blob's version and download URL,
+plus its description in SPDX 3. ``west spdx`` warns when the file's SHA256 differs from the one the
+module declares.
+
 Relationships
 -------------
 
 SPDX relationships are created to indicate dependencies between CMake build targets, build targets
 that are linked together, and source files that are compiled to generate the built library files.
+CMake utility targets, such as ``menuconfig`` or ``ram_report``, produce no software and are left
+out.
 
 The two specification families express build provenance differently:
 

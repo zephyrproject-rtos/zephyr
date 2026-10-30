@@ -34,9 +34,9 @@ struct ctx_pkt_slab_info {
 	bool pkt_source_found;
 };
 
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 static void check_context_pool(struct net_context *context, void *user_data)
 {
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	if (!net_context_is_used(context)) {
 		return;
 	}
@@ -49,8 +49,8 @@ static void check_context_pool(struct net_context *context, void *user_data)
 			info->pkt_source_found = true;
 		}
 	}
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 }
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 static bool is_pkt_ptr_valid(const void *ptr)
 {
@@ -62,7 +62,8 @@ static bool is_pkt_ptr_valid(const void *ptr)
 		return true;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_CONTEXT_NET_PKT_POOL)) {
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	{
 		struct ctx_pkt_slab_info info;
 
 		info.ptr = ptr;
@@ -74,6 +75,7 @@ static bool is_pkt_ptr_valid(const void *ptr)
 			return true;
 		}
 	}
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 	return false;
 }

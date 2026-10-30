@@ -1,7 +1,8 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MCXL
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select CLOCK_CONTROL
 	select ARM
 	select HAS_MCUX

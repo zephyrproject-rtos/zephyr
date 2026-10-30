@@ -183,7 +183,10 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	zfp->mp = mp;
 	rc = mp->fs->open(zfp, file_name, flags);
 	if (rc < 0) {
-		LOG_ERR("file open error (%d)", rc);
+		/* A file that doesn't exist is a valid open response, as for fs_stat() */
+		if (rc != -ENOENT) {
+			LOG_ERR("file open error (%d)", rc);
+		}
 		zfp->mp = NULL;
 		return rc;
 	}
@@ -365,6 +368,7 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 {
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
+	size_t match_len = 0;
 
 	if ((abs_path == NULL) || (abs_path[0] != '/')) {
 		LOG_ERR("invalid directory name!!");
@@ -376,8 +380,11 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 	}
 
 
-	if (strcmp(abs_path, "/") == 0) {
-		/* Open VFS root dir, marked by zdp->mp == NULL */
+	if ((strcmp(abs_path, "/") == 0) &&
+	    ((fs_get_mnt_point(&mp, abs_path, &match_len) < 0) || (match_len != 1))) {
+		/* Nothing is mounted at the root itself: open the virtual VFS
+		 * root dir that lists mount points, marked by zdp->mp == NULL
+		 */
 		k_mutex_lock(&mutex, K_FOREVER);
 
 		zdp->mp = NULL;
@@ -809,15 +816,22 @@ int fs_mount(struct fs_mount_t *mp)
 	/* Check if mount point already exists */
 	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
 		itr = CONTAINER_OF(node, struct fs_mount_t, node);
-		/* continue if length does not match */
-		if (len != itr->mountp_len) {
-			continue;
-		}
 
-		CHECKIF(mp->fs_data == itr->fs_data) {
+		/* A file system's private state may only be owned by a single
+		 * mount point, no matter how the mount point strings compare,
+		 * fs_data may still be NULL here for file systems that
+		 * allocate their state while mounting, such as ext2, and NULL
+		 * must not be treated as a collision.
+		 */
+		if ((mp->fs_data != NULL) && (mp->fs_data == itr->fs_data)) {
 			LOG_ERR("file system already mounted!!");
 			rc = -EBUSY;
 			goto mount_err;
+		}
+
+		/* continue if length does not match */
+		if (len != itr->mountp_len) {
+			continue;
 		}
 
 		if (strncmp(mp->mnt_point, itr->mnt_point, len) == 0) {

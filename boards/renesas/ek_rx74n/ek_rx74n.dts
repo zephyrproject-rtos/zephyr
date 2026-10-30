@@ -11,8 +11,8 @@
 #include "ek_rx74n-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RX74N";
 	compatible = "renesas,ek_rx74n";
+	model = "Renesas EK-RX74N";
 
 	chosen {
 		zephyr,sram = &sram0;

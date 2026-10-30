@@ -25,6 +25,14 @@ config USBD_CDC_NCM_SUPPORT_NTB32
 	  Enable support for NTB32 format which allows larger
 	  packet sizes.
 
+config USBD_CDC_NCM_TX_TIMEOUT
+	int "TX transfer timeout (milliseconds)"
+	range 1 1000
+	default 100
+	help
+	  Maximum time cdc_ncm_send() waits for the previous IN transfer to
+	  complete before it drops the packet.
+
 module = USBD_CDC_NCM
 module-str = usbd cdc_ncm
 source "subsys/logging/Kconfig.template.log_config"

@@ -15,7 +15,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/sys/slist.h>
 #endif
 
-#if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE)
+#if defined(CONFIG_NET_CONTEXT)
 static void context_cb(struct net_context *context, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
@@ -49,9 +49,10 @@ static void context_cb(struct net_context *context, void *user_data)
 
 	(*count)++;
 }
-#endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
+#endif /* CONFIG_NET_CONTEXT */
 
-#if defined(CONFIG_NET_NATIVE)
+#if defined(CONFIG_NET_NATIVE) && \
+	(defined(CONFIG_NET_IP) || defined(CONFIG_NET_CONNECTION_SOCKETS))
 static void conn_handler_cb(struct net_conn *conn, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
@@ -102,7 +103,7 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 
 	(*count)++;
 }
-#endif /* CONFIG_NET_NATIVE */
+#endif /* CONFIG_NET_NATIVE && (CONFIG_NET_IP || CONFIG_NET_CONNECTION_SOCKETS) */
 
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 struct tcp_detail_info {
@@ -216,18 +217,25 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 	struct net_shell_user_data user_data;
 	int count = 0;
 
-	PR("     Context   \tIface  Flags            Local             Remote\n");
-
 	user_data.sh = sh;
 	user_data.user_data = &count;
+
+#if defined(CONFIG_NET_CONTEXT)
+	PR("     Context   \tIface  Flags            Local             Remote\n");
 
 	net_context_foreach(context_cb, &user_data);
 
 	if (count == 0) {
 		PR("No connections\n");
 	}
+#else
+	PR_INFO("Set %s to enable %s support.\n",
+		"CONFIG_NET_CONTEXT",
+		"network context information");
+#endif /* CONFIG_NET_CONTEXT */
 
-#if defined(CONFIG_NET_NATIVE)
+#if defined(CONFIG_NET_NATIVE) && \
+	(defined(CONFIG_NET_IP) || defined(CONFIG_NET_CONNECTION_SOCKETS))
 	PR("\n     Handler    Callback  Proto            Local                  Remote\n");
 
 	count = 0;
@@ -237,7 +245,7 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 	if (count == 0) {
 		PR("No connection handlers found.\n");
 	}
-#endif /* CONFIG_NET_NATIVE */
+#endif /* CONFIG_NET_NATIVE && (CONFIG_NET_IP || CONFIG_NET_CONNECTION_SOCKETS) */
 
 #if defined(CONFIG_NET_TCP)
 	PR("\nTCP        Context   Src port Dst port   "
@@ -276,7 +284,7 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 		"CONFIG_NET_TCP_LOG_LEVEL_DBG", "TCP debugging");
 #endif /* CONFIG_NET_TCP_LOG_LEVEL < LOG_LEVEL_DBG */
 
-#endif
+#endif /* CONFIG_NET_TCP */
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 	count = 0;
@@ -284,7 +292,7 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 	net_ipv6_frag_foreach(ipv6_frag_cb, &user_data);
 
 	/* Do not print anything if no fragments are pending atm */
-#endif
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 #else
 	PR_INFO("Set %s to enable %s support.\n",

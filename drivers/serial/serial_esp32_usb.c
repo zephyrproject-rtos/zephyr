@@ -68,6 +68,13 @@ static void serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
 	struct serial_esp32_usb_data *data = dev->data;
 	int64_t start_time = k_uptime_get();
 
+	/* WR_DONE is ignored while the host still owns the IN FIFO. It only
+	 * recommits data whose commit was dropped by a USB bus reset.
+	 */
+	if (usb_serial_jtag_ll_txfifo_writable() == 0) {
+		usb_serial_jtag_ll_txfifo_flush();
+	}
+
 	/*
 	 * If there is no USB host connected, this function will busy-wait once for the timeout
 	 * period, but return immediately for subsequent calls.
@@ -117,6 +124,12 @@ static int serial_esp32_usb_init(const struct device *dev)
 			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
 				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
 			     (intr_handler_t)serial_esp32_usb_isr, (void *)dev, NULL);
+	if (ret != 0) {
+		return ret;
+	}
+
+	usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_BUS_RESET);
+	usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_BUS_RESET);
 #endif
 	return ret;
 }
@@ -241,6 +254,23 @@ static void IRAM_ATTR serial_esp32_usb_isr(void *arg)
 		return;
 	}
 	usb_serial_jtag_ll_clr_intsts_mask(uart_intr_status);
+
+	/* Every bus reset can drop a pending commit. Arm the EP1 IN token
+	 * interrupt for one token only: it fires on every host poll once
+	 * the port is open, and flushing before the host reads EP1 does
+	 * not recover the data.
+	 */
+	if ((uart_intr_status & USB_SERIAL_JTAG_INTR_BUS_RESET) != 0U) {
+		usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1);
+		usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1);
+	}
+
+	if ((uart_intr_status & USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1) != 0U) {
+		usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1);
+		if (usb_serial_jtag_ll_txfifo_writable() == 0) {
+			usb_serial_jtag_ll_txfifo_flush();
+		}
+	}
 
 	if (data->irq_cb != NULL) {
 		data->irq_cb(dev, data->irq_cb_data);

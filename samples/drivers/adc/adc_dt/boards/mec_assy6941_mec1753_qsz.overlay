@@ -12,12 +12,12 @@
 
 &adc0 {
 	compatible = "microchip,xec-adc";
-	status = "okay";
 	pinctrl-0 = <&adc04_gpio204 &adc05_gpio205
 		     &adc06_gpio206 &adc07_gpio207>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@4 {
 		reg = <4>;

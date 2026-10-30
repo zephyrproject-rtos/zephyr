@@ -8,8 +8,8 @@
 #include <st/h7/stm32h743zitx-pinctrl.dtsi>
 
 / {
-	model = "SEGGER NAND Flash Evaluator";
 	compatible = "segger,nandeval-h743zi";
+	model = "SEGGER NAND Flash Evaluator";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -31,19 +31,19 @@
 		};
 	};
 
-	nand_mmio: memory@80000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x80000000 DT_SIZE_M(256)>;
-		zephyr,memory-region = "NAND_MMIO";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
-	};
-
 	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+	};
+
+	nand_mmio: memory@80000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x80000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "NAND_MMIO";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 };
 

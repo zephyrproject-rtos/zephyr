@@ -344,11 +344,18 @@ struct net_linger {
 #if !defined(NET_CMSG_NXTHDR)
 /**
  * Returns the next valid cmsghdr after the passed cmsghdr. It returns NULL
- * when there isn't enough space left in the buffer.
+ * when there isn't enough space left in the buffer, or when the length of
+ * the passed cmsghdr is not valid: too small to hold a header, as is the
+ * case in the unused, zeroed part of a buffer, or larger than what is left
+ * of the buffer.
  */
 #define NET_CMSG_NXTHDR(msghdr, cmsg)					 \
 	(((cmsg) == NULL) ? NET_CMSG_FIRSTHDR(msghdr) :			 \
-	 (((uint8_t *)(cmsg) + NET_ALIGN_H((cmsg)->cmsg_len) +		 \
+	 (((cmsg)->cmsg_len < sizeof(struct net_cmsghdr) ||		 \
+	   (cmsg)->cmsg_len > (size_t)((uint8_t *)((msghdr)->msg_control) + \
+				       (msghdr)->msg_controllen -	 \
+				       (uint8_t *)(cmsg)) ||		 \
+	   (uint8_t *)(cmsg) + NET_ALIGN_H((cmsg)->cmsg_len) +		 \
 	   NET_ALIGN_D(sizeof(struct net_cmsghdr)) >			 \
 	   (uint8_t *)((msghdr)->msg_control) + (msghdr)->msg_controllen) ? \
 	  NULL :							 \
@@ -1201,7 +1208,7 @@ static inline bool net_ipv6_addr_cmp_raw(const uint8_t *addr1,
 /** @cond INTERNAL_HIDDEN */
 static inline bool net_ipv6_is_ll_addr_raw(const uint8_t *addr)
 {
-	return UNALIGNED_GET((uint16_t *)addr) == net_htons(0xFE80);
+	return (UNALIGNED_GET((uint16_t *)addr) & net_htons(0xFFC0)) == net_htons(0xFE80);
 }
 /** @endcond */
 
@@ -1226,7 +1233,7 @@ static inline bool net_ipv6_is_ll_addr(const struct net_in6_addr *addr)
  */
 static inline bool net_ipv6_is_sl_addr(const struct net_in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr16[0]) == net_htons(0xFEC0);
+	return (UNALIGNED_GET(&addr->s6_addr16[0]) & net_htons(0xFFC0)) == net_htons(0xFEC0);
 }
 
 

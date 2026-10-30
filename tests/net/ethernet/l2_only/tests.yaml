@@ -1,0 +1,8 @@
+tests:
+  net.ethernet.l2_only:
+    build_only: true
+    integration_platforms:
+      - native_sim
+    tags:
+      - net
+      - ethernet

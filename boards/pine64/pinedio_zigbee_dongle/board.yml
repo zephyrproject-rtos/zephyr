@@ -1,0 +1,6 @@
+board:
+  name: pinedio_zigbee_dongle
+  full_name: PineDio USB-C Zigbee Dongle
+  vendor: pine64
+  socs:
+    - name: bl706c22q2i

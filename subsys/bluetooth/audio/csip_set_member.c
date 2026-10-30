@@ -1177,6 +1177,7 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 		int mutex_err;
 
 		LOG_DBG("CSIS service register failed: %d", err);
+		(void)memset(inst, 0, offsetof(struct bt_csip_set_member_svc_inst, mutex));
 		mutex_err = k_mutex_unlock(&inst->mutex);
 		__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
 		return err;

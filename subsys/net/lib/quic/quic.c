@@ -329,9 +329,9 @@ enum quic_stream_states {
 
 ZTESTABLE_STATIC int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val);
 static struct quic_context *quic_find_context(struct quic_endpoint *ep);
-static struct quic_stream *quic_find_stream(struct quic_context *ctx,
-					    struct quic_endpoint *ep,
-					    uint64_t stream_id);
+ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
+						      struct quic_endpoint *ep,
+						      uint64_t stream_id);
 static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx,
 							struct quic_endpoint *ep,
 							uint64_t stream_id);
@@ -342,6 +342,7 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 					      bool is_fin);
 static struct quic_stream *quic_find_stream_by_id(struct quic_endpoint *ep,
 						  uint64_t stream_id);
+static struct quic_endpoint *quic_stream_endpoint_get(struct quic_stream *stream);
 static void quic_tls_cleanup(struct quic_tls_context *tls);
 static struct quic_tls_context *tls_init(struct quic_endpoint *ep);
 static int quic_handshake_complete(struct quic_endpoint *ep);
@@ -387,10 +388,10 @@ static int quic_send_packet_with_pn(struct quic_endpoint *ep,
 				    const uint8_t *payload,
 				    size_t payload_len,
 				    uint64_t *sent_pn_out);
-static int quic_send_packet(struct quic_endpoint *ep,
-			    enum quic_secret_level level,
-			    const uint8_t *payload,
-			    size_t payload_len);
+ZTESTABLE_STATIC int quic_send_packet(struct quic_endpoint *ep,
+				      enum quic_secret_level level,
+				      const uint8_t *payload,
+				      size_t payload_len);
 static int quic_send_stop_sending(struct quic_endpoint *ep,
 				  uint64_t stream_id,
 				  uint64_t error_code);
@@ -970,6 +971,21 @@ static int pollfd_try_add(net_sa_family_t family, int sock)
 }
 
 /*
+ * Report a failed key import. Running out of PSA key slots is a
+ * configuration problem that is otherwise hard to tell from the log, so
+ * name it.
+ */
+static void quic_log_key_import_failure(const char *what, psa_status_t status)
+{
+	if (status == PSA_ERROR_INSUFFICIENT_MEMORY) {
+		NET_ERR("Failed to import %s key: no free PSA key slot, "
+			"see CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT", what);
+	} else {
+		NET_ERR("Failed to import %s key: %d", what, status);
+	}
+}
+
+/*
  * Cleanup helper to call when destroying context or switching keys.
  * Destroys all PSA keys and clears sensitive data.
  */
@@ -1005,6 +1021,17 @@ ZTESTABLE_STATIC void quic_crypto_context_destroy(struct quic_crypto_context *ct
 	}
 
 	ctx->initialized = false;
+}
+
+/*
+ * Discard the keys of one encryption level for the rest of the connection
+ * (RFC 9001 ch. 4.9). Unlike a plain destroy this is remembered, so the
+ * level is not set up again and late packets for it are dropped.
+ */
+static void quic_crypto_context_discard(struct quic_crypto_context *ctx)
+{
+	quic_crypto_context_destroy(ctx);
+	ctx->discarded = true;
 }
 
 /*
@@ -1590,8 +1617,7 @@ static int quic_hkdf_expand_label_ex(psa_algorithm_t hash_alg,
 
 	status = psa_import_key(&attributes, secret, secret_len, &key_id);
 	if (status != PSA_SUCCESS) {
-		NET_DBG("psa_import_key failed: status=%d, hash_alg=0x%x, secret_len=%zu",
-			status, hash_alg, secret_len);
+		quic_log_key_import_failure("HKDF", status);
 		return -EIO;
 	}
 
@@ -1761,6 +1787,7 @@ static bool quic_hp_setup(struct quic_hp_cipher *hp_cipher, int hash_algo,
 	crypto_zero(hp_key, sizeof(hp_key));
 
 	if (status != PSA_SUCCESS) {
+		quic_log_key_import_failure("HP", status);
 		return false;
 	}
 
@@ -1847,6 +1874,7 @@ static bool quic_pp_setup(struct quic_pp_cipher *pp_cipher, int hash_algo,
 	crypto_zero(pp_key, sizeof(pp_key));
 
 	if (status != PSA_SUCCESS) {
+		quic_log_key_import_failure("PP", status);
 		memset(pp_cipher->iv, 0, sizeof(pp_cipher->iv));
 		return false;
 	}
@@ -1958,7 +1986,7 @@ static bool quic_hp_setup_ex(struct quic_hp_cipher *hp_cipher,
 	crypto_zero(hp_key, sizeof(hp_key));
 
 	if (status != PSA_SUCCESS) {
-		NET_ERR("Failed to import HP key:  %d", status);
+		quic_log_key_import_failure("HP", status);
 		return false;
 	}
 
@@ -2050,7 +2078,7 @@ static bool quic_pp_setup_ex(struct quic_pp_cipher *pp_cipher,
 	crypto_zero(pp_key, sizeof(pp_key));
 
 	if (status != PSA_SUCCESS) {
-		NET_ERR("Failed to import PP key:  %d", status);
+		quic_log_key_import_failure("PP", status);
 		memset(pp_cipher->iv, 0, sizeof(pp_cipher->iv));
 		return false;
 	}
@@ -3181,6 +3209,7 @@ static int quic_stream_unref_debug(struct quic_stream *stream, const char *calle
 static int quic_stream_unref(struct quic_stream *stream)
 #endif
 {
+	struct quic_endpoint *ep;
 	atomic_val_t ref;
 
 	do {
@@ -3216,37 +3245,44 @@ static int quic_stream_unref(struct quic_stream *stream)
 	 * Peer-initiated streams on a server endpoint have bit 0 == 0 (client bit).
 	 * Peer-initiated streams on a client endpoint have bit 0 == 1 (server bit).
 	 * Bidi streams have bit 1 == 0; uni streams have bit 1 == 1.
+	 *
+	 * The connection can be torn down by another thread while this runs,
+	 * which clears stream->ep, so one endpoint is taken with a reference
+	 * and used throughout.
 	 */
-	if (stream->ep != NULL && stream->id != QUIC_STREAM_ID_UNASSIGNED) {
-		bool is_server = stream->ep->is_server;
+	ep = stream->id != QUIC_STREAM_ID_UNASSIGNED ? quic_stream_endpoint_get(stream) : NULL;
+	if (ep != NULL) {
+		bool is_server = ep->is_server;
 		bool peer_init = ((stream->id & 1u) == 0u) == is_server;
 		bool is_bidi = (stream->id & 2u) == 0u;
 
 		if (peer_init) {
-			if (is_bidi && stream->ep->rx_sl.open_bidi > 0) {
-				stream->ep->rx_sl.open_bidi--;
+			if (is_bidi && ep->rx_sl.open_bidi > 0) {
+				ep->rx_sl.open_bidi--;
 
 				/*
 				 * Slide the cumulative limit up by 1: the freed slot
 				 * is now available for a future stream.  Notify the
 				 * peer so it can unblock if it was waiting.
 				 */
-				stream->ep->rx_sl.max_bidi++;
-				(void)quic_send_max_streams(stream->ep, true);
+				ep->rx_sl.max_bidi++;
+				(void)quic_send_max_streams(ep, true);
 
 				NET_DBG("[EP:%p/%d] Stream %" PRIu64 " closed, "
 					"open_bidi=%" PRIu64 " max_bidi=%" PRIu64,
-					stream->ep, quic_get_by_ep(stream->ep),
+					ep, quic_get_by_ep(ep),
 					stream->id,
-					stream->ep->rx_sl.open_bidi,
-					stream->ep->rx_sl.max_bidi);
+					ep->rx_sl.open_bidi,
+					ep->rx_sl.max_bidi);
 
-			} else if (!is_bidi && stream->ep->rx_sl.open_uni > 0) {
-				stream->ep->rx_sl.open_uni--;
-				stream->ep->rx_sl.max_uni++;
-				(void)quic_send_max_streams(stream->ep, false);
+			} else if (!is_bidi && ep->rx_sl.open_uni > 0) {
+				ep->rx_sl.open_uni--;
+				ep->rx_sl.max_uni++;
+				(void)quic_send_max_streams(ep, false);
 			}
 		}
+
+		quic_endpoint_unref(ep);
 	}
 
 	if (stream->conn != NULL) {
@@ -4029,6 +4065,24 @@ static void quic_recovery_discard_pn_space(struct quic_endpoint *ep, int pn_spac
 	 */
 	quic_reset_pto_timer_locked(ep);
 	k_mutex_unlock(&ep->recovery.lock);
+}
+
+/*
+ * Discard the keys of the Initial or the Handshake level for the rest of
+ * the connection (RFC 9001 ch. 4.9), together with the loss recovery state
+ * of the packets sent with them. Those packets can no longer be
+ * acknowledged, so they must not stay counted as in flight or keep the probe
+ * timer armed (RFC 9002 ch. 6.4).
+ */
+ZTESTABLE_STATIC void quic_endpoint_discard_keys(struct quic_endpoint *ep,
+						 enum quic_secret_level level)
+{
+	__ASSERT_NO_MSG(level == QUIC_SECRET_LEVEL_INITIAL ||
+			level == QUIC_SECRET_LEVEL_HANDSHAKE);
+
+	quic_crypto_context_discard(level == QUIC_SECRET_LEVEL_INITIAL ?
+				    &ep->crypto.initial : &ep->crypto.handshake);
+	quic_recovery_discard_pn_space(ep, level_to_pn_space(level));
 }
 
 ZTESTABLE_STATIC void quic_recovery_init(struct quic_endpoint *ep)
@@ -6603,18 +6657,24 @@ static int derive_application_secrets(struct quic_tls_context *ctx)
 				"Server app traffic secret:");
 	}
 
-	/* Notify QUIC layer of new secrets */
+	/* Notify QUIC layer of new secrets. Without the keys the connection
+	 * cannot be used, so a failure here must end the handshake.
+	 */
 	if (ctx->secret_cb != NULL) {
 		if (ctx->ep->is_server) {
-			ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
-				       ctx->ks.client_ap_traffic_secret,
-				       ctx->ks.server_ap_traffic_secret,
-				       ctx->ks.hash_len);
+			ret = ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
+					     ctx->ks.client_ap_traffic_secret,
+					     ctx->ks.server_ap_traffic_secret,
+					     ctx->ks.hash_len);
 		} else {
-			ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
-				       ctx->ks.server_ap_traffic_secret,
-				       ctx->ks.client_ap_traffic_secret,
-				       ctx->ks.hash_len);
+			ret = ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
+					     ctx->ks.server_ap_traffic_secret,
+					     ctx->ks.client_ap_traffic_secret,
+					     ctx->ks.hash_len);
+		}
+
+		if (ret != 0) {
+			return ret;
 		}
 	}
 
@@ -7136,6 +7196,14 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_INITIAL));
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
 
+	if (ep->handshake_confirmed) {
+		/* RFC 9001 ch. 4.9.2: the server has confirmed the handshake
+		 * and has no further use for the Handshake keys. The client
+		 * does the same when it receives HANDSHAKE_DONE.
+		 */
+		quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_HANDSHAKE);
+	}
+
 	quic_endpoint_handshake_complete(ep);
 
 	if (IS_ENABLED(CONFIG_QUIC_0RTT) && !ep->is_server &&
@@ -7621,9 +7689,9 @@ ooo_flow_control_error:
 /*
  * Find an existing stream by ID
  */
-static struct quic_stream *quic_find_stream(struct quic_context *ctx,
-					    struct quic_endpoint *ep,
-					    uint64_t stream_id)
+ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
+						      struct quic_endpoint *ep,
+						      uint64_t stream_id)
 {
 	struct quic_stream *stream, *tmp, *found = NULL;
 
@@ -7631,8 +7699,14 @@ static struct quic_stream *quic_find_stream(struct quic_context *ctx,
 	k_mutex_lock(&contexts_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
-		/* Stream found, verify it belongs to this connection */
-		if (stream->id == stream_id && stream->conn == ctx) {
+		/* A stream ID is only unique within one connection. The
+		 * streams of all connections that are not accepted yet are
+		 * kept in the listening context, so the endpoint has to
+		 * match too, or data would be delivered to a stream of
+		 * another peer that happens to use the same ID.
+		 */
+		if (stream->id == stream_id && stream->conn == ctx &&
+		    stream->ep == ep) {
 			found = stream;
 			break;
 		}
@@ -7949,6 +8023,21 @@ static void process_pkt(struct quic_pkt *pkt)
 /* This is called by Quic handler thread and it will decrypt the header and process
  * the packet further.
  */
+/*
+ * Restart the idle timer of an endpoint for a packet that was received and
+ * authenticated (RFC 9000 ch. 10.1). It must be the endpoint the packet is
+ * for, not the one that owns the UDP socket, which a server shares between
+ * all of its connections. And it must not be done for a packet that failed
+ * to decrypt, or anyone who knows the addresses and the connection ID could
+ * keep the connection from ever timing out.
+ */
+static void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
+{
+	if (!ep->idle.idle_timeout_disabled) {
+		ep->idle.last_rx_time = k_uptime_get();
+	}
+}
+
 static bool process_long_header_msg(struct quic_pkt *pkt)
 {
 	enum quic_packet_type ptype = pkt->ptype;
@@ -7970,6 +8059,18 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 
 	if (IS_ENABLED(CONFIG_QUIC_TXRX_DEBUG)) {
 		NET_HEXDUMP_DBG(buf, pkt->total_len, "Msg:");
+	}
+
+	if ((ptype == QUIC_PACKET_TYPE_INITIAL && ep->crypto.initial.discarded) ||
+	    (ptype == QUIC_PACKET_TYPE_HANDSHAKE && ep->crypto.handshake.discarded)) {
+		/* The keys of this level are gone (RFC 9001 ch. 4.9). A late
+		 * or retransmitted packet cannot be read any more and is of
+		 * no use, drop it and leave the connection alone.
+		 */
+		NET_DBG("[EP:%p/%d] Dropping packet for a discarded key level",
+			ep, quic_get_by_ep(ep));
+		QUIC_EP_STAT_INC(ep, drop_rx);
+		goto fail;
 	}
 
 	if (ptype == QUIC_PACKET_TYPE_INITIAL) {
@@ -8060,13 +8161,32 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 	if (ret != 0) {
 		NET_DBG("[EP:%p/%d] Packet decryption failed (%d)", ep,
 			quic_get_by_ep(ep), ret);
+
+		if ((ptype == QUIC_PACKET_TYPE_INITIAL && ep->crypto.initial.discarded) ||
+		    (ptype == QUIC_PACKET_TYPE_HANDSHAKE && ep->crypto.handshake.discarded)) {
+			/* The keys were discarded while this packet was being
+			 * handled, which is not an error of the connection.
+			 */
+			goto fail;
+		}
+
 		goto free_ep;
 	}
+
+	quic_endpoint_restart_idle_timer(ep);
 
 	pkt->pkt_num = decrypted.packet_number;
 
 	if (ptype == QUIC_PACKET_TYPE_HANDSHAKE) {
 		quic_endpoint_validate_address(ep);
+
+		if (ep->is_server && !ep->crypto.initial.discarded) {
+			/* RFC 9001 ch. 4.9.1: a server discards the Initial
+			 * keys when it first successfully processes a
+			 * Handshake packet.
+			 */
+			quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_INITIAL);
+		}
 	}
 
 	NET_DBG("[EP:%p/%d] Decrypted packet %" PRIu64 ", payload %zu bytes", ep,
@@ -8077,7 +8197,7 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 				"Decrypted payload:");
 	}
 
-	if (!ep->crypto.initial.initialized) {
+	if (!ep->crypto.initial.initialized && !ep->crypto.initial.discarded) {
 		if (!quic_conn_init_setup(ep, ep->peer_orig_dcid,
 					  ep->peer_orig_dcid_len)) {
 			NET_ERR("[EP:%p/%d] Failed to setup Initial crypto for new endpoint",
@@ -8165,6 +8285,8 @@ static bool process_short_header_msg(struct quic_pkt *pkt)
 		NET_ERR("Failed to decrypt short header packet: %d", ret);
 		return false;
 	}
+
+	quic_endpoint_restart_idle_timer(ep);
 
 	NET_DBG("[EP:%p/%d] Decrypted short header packet %" PRIu64 ", payload %zu bytes",
 		ep, quic_get_by_ep(ep), decrypted.packet_number, decrypted.payload_len);
@@ -8588,6 +8710,25 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		struct quic_endpoint *new_ep;
 		bool token_validated = false;
 
+		/* Only an Initial packet starts a connection, and the address
+		 * validation and the datagram size check below are applied to
+		 * Initial packets only. Any other long header packet that
+		 * matches no connection is dropped (RFC 9000 ch. 5.2.2):
+		 * creating an endpoint for it would let anyone fill the
+		 * endpoint table with packets that pass none of those checks.
+		 * 0-RTT packets that arrive ahead of their Initial packet are
+		 * not buffered, the client sends that data again.
+		 */
+		if (ptype != QUIC_PACKET_TYPE_INITIAL) {
+			NET_DBG("[EP:%p/%d] Dropping long header packet type %d "
+				"for an unknown connection",
+				ep, quic_get_by_ep(ep), ptype);
+			QUIC_EP_STAT_INC(ep, peer_not_found);
+			QUIC_EP_STAT_INC(ep, drop_rx);
+			ret = 1;
+			goto out;
+		}
+
 		/* Make sure that the initial packet's UDP datagram is at least
 		 * 1200 bytes long (RFC 9000 Section 14.1) to prevent
 		 * amplification attacks.
@@ -8724,11 +8865,6 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		QUIC_EP_STAT_INC(existing_ep, drop_rx);
 		ret = -ENOBUFS;
 		goto out;
-	}
-
-	/* Update idle timer on ANY received packet */
-	if (!existing_ep->idle.idle_timeout_disabled) {
-		existing_ep->idle.last_rx_time = k_uptime_get();
 	}
 
 	/*
@@ -8870,11 +9006,6 @@ static int process_short_header(struct quic_endpoint *ep,
 
 	quic_endpoint_note_unvalidated_rx(target_ep, len);
 
-	/* Update idle timer on ANY received packet */
-	if (!ep->idle.idle_timeout_disabled) {
-		ep->idle.last_rx_time = k_uptime_get();
-	}
-
 	pn_offset = 1 + target_ep->my_cid_len;
 
 	/* Get crypto context for APPLICATION level (1-RTT) */
@@ -8946,6 +9077,8 @@ static int process_short_header(struct quic_endpoint *ep,
 			target_ep, quic_get_by_ep(target_ep), ret);
 		goto out;
 	}
+
+	quic_endpoint_restart_idle_timer(target_ep);
 
 	NET_DBG("[EP:%p/%d] Short header packet %" PRIu64 ", payload %zu bytes",
 		target_ep, quic_get_by_ep(target_ep), decrypted.packet_number,

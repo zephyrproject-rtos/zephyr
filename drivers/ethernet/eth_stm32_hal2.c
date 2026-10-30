@@ -574,6 +574,7 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(dev_data->mac_addr, config->mac_address.addr, sizeof(dev_data->mac_addr));
 		HAL_ETH_GetConfig(heth, &eth_cfg);
 		memcpy(eth_cfg.mac_addr, dev_data->mac_addr, sizeof(dev_data->mac_addr));
 

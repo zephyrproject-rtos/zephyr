@@ -63,6 +63,21 @@ before pushing on zephyr repo. To do this, make the file
 If you want to override checkpatch verdict and push you branch despite reported
 issues, you can add option --no-verify to the git push command.
 
+Checkpatch reads default options from a ``.checkpatch.conf`` file, searched for in the current
+directory, ``$HOME`` and ``.scripts``, in that order. The Zephyr tree provides one at its top
+level. To use a configuration file from another directory, for example when checking a repository
+outside the Zephyr tree, set the ``CHECKPATCH_CONFIG_DIR`` environment variable to the directory
+containing it:
+
+.. code-block:: bash
+
+    CHECKPATCH_CONFIG_DIR=/path/to/config ${ZEPHYR_BASE}/scripts/checkpatch.pl -
+
+If ``CHECKPATCH_CONFIG_DIR`` is set but contains no ``.checkpatch.conf``, checkpatch prints a
+warning and falls back to the default search path. An empty value is ignored. Relative paths
+inside the configuration file, such as ``--typedefsfile``, are still resolved against the current
+directory.
+
 A different way for running ``checkpatch`` is by using :ref:`check_compliance_py`
 script, which does additional style and compliance related checks.
 
@@ -100,7 +115,7 @@ For individual files
 
 .. code-block:: bash
 
-   npx --ignore-scripts --prefix ./scripts/ci dts-linter --format --file board.dts --file board_pinctrl.dtsi --patchFile diff.patch
+   npx --ignore-scripts --prefix ./scripts/ci dts-linter --format --file board.dts --file board_pinctrl.dtsi --patchFile diff.patch --enableSortNodesAndProperties --sortNodesNodesBy address
    git apply diff.patch
 
 You can omit ``--file`` and this will format all files under the directory where the command
@@ -111,7 +126,7 @@ You can also fix in place with
 
 .. code-block:: bash
 
-   npx --ignore-scripts --prefix ./scripts/ci dts-linter --formatFixAll
+   npx --ignore-scripts --prefix ./scripts/ci dts-linter --formatFixAll --enableSortNodesAndProperties --sortNodesNodesBy address
 
 
 Editor Integration

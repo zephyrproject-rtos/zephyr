@@ -26,22 +26,13 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m85";
 			reg = <0>;
+			device_type = "cpu";
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 			d-cache-line-size = <32>;
-
-			/*
-			 * clock-frequency is deliberately not set here. It is
-			 * the frequency the core actually runs at, which
-			 * depends on how the board configures the CPU clock
-			 * root, so boards declare it. It is also not the system
-			 * timer's rate when SysTick counts the external
-			 * reference -- see CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
-			 */
 
 			/*
 			 * The ARM private peripherals are banked by execution
@@ -53,6 +44,15 @@
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+
+			/*
+			 * clock-frequency is deliberately not set here. It is
+			 * the frequency the core actually runs at, which
+			 * depends on how the board configures the CPU clock
+			 * root, so boards declare it. It is also not the system
+			 * timer's rate when SysTick counts the external
+			 * reference -- see CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
+			 */
 		};
 	};
 };

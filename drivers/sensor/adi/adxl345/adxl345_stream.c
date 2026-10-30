@@ -11,6 +11,18 @@
 
 LOG_MODULE_DECLARE(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
 
+/*
+ * End the stream with an error. The FIFO may still hold samples above its
+ * watermark, keeping the edge-triggered interrupt line asserted; clearing
+ * fifo_watermark_irq makes the next stream reconfigure and flush the FIFO.
+ */
+static void adxl345_stream_fail(struct adxl345_dev_data *data,
+				struct rtio_iodev_sqe *iodev_sqe, int err)
+{
+	data->fifo_watermark_irq = 0;
+	rtio_iodev_sqe_err(iodev_sqe, err);
+}
+
 void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg =
@@ -171,7 +183,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	if (rtio_sqe_rx_buf(current_sqe, min_read_size, ideal_read_size, &buf, &buf_len) != 0) {
 		LOG_ERR("Failed to get buffer");
-		rtio_iodev_sqe_err(current_sqe, -ENOMEM);
+		adxl345_stream_fail(data, current_sqe, -ENOMEM);
 		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
 	}
@@ -224,7 +236,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	/* Bail/cancel attempt to read sensor on any error */
 	if (res != 0) {
-		rtio_iodev_sqe_err(current_sqe, res);
+		adxl345_stream_fail(data, current_sqe, res);
 		return;
 	}
 
@@ -328,7 +340,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 
 	/* Bail/cancel attempt to read sensor on any error */
 	if (res != 0) {
-		rtio_iodev_sqe_err(current_sqe, res);
+		adxl345_stream_fail(data, current_sqe, res);
 		return;
 	}
 
@@ -344,7 +356,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		data->sqe = NULL;
 		if (rtio_sqe_rx_buf(current_sqe, sizeof(struct adxl345_fifo_data),
 				    sizeof(struct adxl345_fifo_data), &buf, &buf_len) != 0) {
-			rtio_iodev_sqe_err(current_sqe, -ENOMEM);
+			adxl345_stream_fail(data, current_sqe, -ENOMEM);
 			gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 			return;
 		}
@@ -401,7 +413,7 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
 		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(data->sqe, rc);
+		adxl345_stream_fail(data, data->sqe, rc);
 		return;
 	}
 

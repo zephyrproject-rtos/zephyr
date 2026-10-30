@@ -34,6 +34,7 @@ static uint8_t query_ipv4[] = { 0xda, 0x0f, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
 				0x72, 0x67, 0x00, 0x00, 0x01, 0x00, 0x01 };
 
 #define DNAME1 "www.zephyrproject.org"
+#define DNAME1_FQDN DNAME1 "."
 
 /* Domain: zephyr.local
  * Type: standard query (IPv6)
@@ -421,6 +422,10 @@ ZTEST(dns_packet, test_dns_query)
 	rc = eval_query(DNAME1, tid1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
 	zassert_equal(rc, 0, "Query test failed for domain: "DNAME1);
+
+	rc = eval_query(DNAME1_FQDN, tid1, DNS_RR_TYPE_A,
+			query_ipv4, sizeof(query_ipv4));
+	zassert_equal(rc, 0, "Query test failed for domain: "DNAME1_FQDN);
 
 	rc = eval_query(NULL, tid1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
@@ -1604,6 +1609,120 @@ ZTEST(dns_packet, test_dns_invalid_compress_bits_cname)
 		     "invalid compression rsp", ret, errno);
 
 	net_buf_unref(dns_cname);
+}
+
+/* Fill name with labels of the given lengths, separated by dots */
+static void make_name(char *name, size_t size, const uint8_t *labels, size_t count)
+{
+	size_t pos = 0U;
+
+	for (size_t i = 0U; i < count; i++) {
+		zassert_true(pos + labels[i] + 1U < size, "Name buffer too small");
+
+		if (i > 0U) {
+			name[pos++] = '.';
+		}
+
+		memset(&name[pos], 'a', labels[i]);
+		pos += labels[i];
+	}
+
+	name[pos] = '\0';
+}
+
+ZTEST(dns_packet, test_dns_qname_limits)
+{
+	/* RFC 1035 ch. 3.1: labels of 63 octets or less, names of 255 octets
+	 * or less including the length octets and the terminating zero.
+	 */
+	static const uint8_t label_63[] = {63};
+	static const uint8_t label_64[] = {64};
+	static const uint8_t name_255[] = {63, 63, 63, 61};
+	static const uint8_t name_256[] = {63, 63, 63, 62};
+	static char name[300];
+	uint16_t len;
+
+	make_name(name, sizeof(name), label_63, ARRAY_SIZE(label_63));
+	zexpect_ok(dns_msg_pack_qname(&len, qname, MAX_BUF_SIZE, name), "63 octet label");
+	zexpect_equal(len, 65U, "63 octet label packed to %u", len);
+
+	make_name(name, sizeof(name), label_64, ARRAY_SIZE(label_64));
+	zexpect_equal(dns_msg_pack_qname(&len, qname, MAX_BUF_SIZE, name), -EINVAL,
+		      "64 octet label accepted");
+
+	make_name(name, sizeof(name), name_255, ARRAY_SIZE(name_255));
+	zexpect_ok(dns_msg_pack_qname(&len, qname, MAX_BUF_SIZE, name), "255 octet name");
+	zexpect_equal(len, 255U, "255 octet name packed to %u", len);
+	strcat(name, ".");
+	zexpect_ok(dns_msg_pack_qname(&len, qname, MAX_BUF_SIZE, name), "255 octet absolute name");
+	zexpect_equal(len, 255U, "255 octet absolute name packed to %u", len);
+
+	make_name(name, sizeof(name), name_256, ARRAY_SIZE(name_256));
+	zexpect_equal(dns_msg_pack_qname(&len, qname, MAX_BUF_SIZE, name), -EINVAL,
+		      "256 octet name accepted");
+
+	zexpect_ok(dns_msg_pack_qname(&len, qname, MAX_BUF_SIZE, "."), "Root name");
+	zexpect_equal(len, 1U, "Root name packed to %u", len);
+	zexpect_equal(dns_msg_pack_qname(&len, qname, MAX_BUF_SIZE, "a..b"), -EINVAL,
+		      "Empty interior label accepted");
+	zexpect_equal(dns_msg_pack_qname(&len, qname, MAX_BUF_SIZE, ".a"), -EINVAL,
+		      "Empty first label accepted");
+	zexpect_equal(dns_msg_pack_qname(&len, qname, MAX_BUF_SIZE, "a.."), -EINVAL,
+		      "Empty label before the root accepted");
+}
+
+/* Build a response with one A record whose owner name is a single,
+ * uncompressed label of label_len octets.
+ */
+static size_t make_answer_with_label(uint8_t *buf, size_t size, uint8_t label_len)
+{
+	static const uint8_t header[DNS_HEADER_SIZE] = {
+		0x01, 0x00, 0x81, 0x80, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+	};
+	static const uint8_t rr[] = {
+		0x00, 0x01,             /* Type A */
+		0x00, 0x01,             /* Class IN */
+		0x00, 0x00, 0x00, 0x3c, /* TTL */
+		0x00, 0x04,             /* RR data length */
+		0xc0, 0x00, 0x02, 0x01, /* Address */
+	};
+	size_t pos = 0;
+
+	zassert_true(sizeof(header) + 1 + label_len + 1 + sizeof(rr) <= size);
+
+	memcpy(&buf[pos], header, sizeof(header));
+	pos += sizeof(header);
+	buf[pos++] = label_len;
+	memset(&buf[pos], 'a', label_len);
+	pos += label_len;
+	buf[pos++] = 0x00;
+	memcpy(&buf[pos], rr, sizeof(rr));
+	pos += sizeof(rr);
+
+	return pos;
+}
+
+ZTEST(dns_packet, test_dns_answer_label_limits)
+{
+	/* RFC 1035 ch. 3.1: a label is at most 63 octets */
+	static uint8_t buf[128];
+	struct dns_msg_t dns_msg = {
+		.msg = buf,
+		.answer_offset = DNS_HEADER_SIZE,
+	};
+	enum dns_rr_type type = DNS_RR_TYPE_INVALID;
+	uint32_t ttl = 0U;
+	int ret;
+
+	dns_msg.msg_size = make_answer_with_label(buf, sizeof(buf), 63);
+	ret = dns_unpack_answer(&dns_msg, 0, &ttl, &type);
+	zexpect_ok(ret, "63 octet owner label rejected (%d)", ret);
+	zexpect_equal(type, DNS_RR_TYPE_A, "Wrong answer type %d", type);
+	zexpect_equal(ttl, 60U, "Wrong TTL %u", ttl);
+
+	dns_msg.msg_size = make_answer_with_label(buf, sizeof(buf), 64);
+	ret = dns_unpack_answer(&dns_msg, 0, &ttl, &type);
+	zexpect_equal(ret, -EINVAL, "64 octet owner label accepted (%d)", ret);
 }
 
 ZTEST_SUITE(dns_packet, NULL, NULL, NULL, NULL, NULL);

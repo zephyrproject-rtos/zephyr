@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32666EVKIT";
 	compatible = "adi,max32666evkit";
+	model = "Analog Devices MAX32666EVKIT";
 
 	leds {
 		compatible = "gpio-leds";
@@ -49,21 +49,21 @@
 
 	spibb0: spibb0 {
 		compatible = "zephyr,spi-bitbang";
-		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio1 11 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		sdo-gpios = <&gpio1 9 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		cs-gpios = <&gpio1 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "disabled";
 
 		ls0xx_ls013b7dh03: ls0xx@0 {
 			compatible = "sharp,ls0xx";
-			status = "disabled";
-			spi-max-frequency = <2000000>;
 			reg = <0>;
+			spi-max-frequency = <2000000>;
 			width = <128>;
 			height = <128>;
 			disp-en-gpios = <&gpio1 10 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+			status = "disabled";
 		};
 	};
 };

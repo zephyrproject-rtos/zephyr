@@ -69,7 +69,11 @@ static int counter_silabs_get_value(const struct device *dev, uint32_t *ticks)
 static uint32_t counter_silabs_get_top_value(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+#if defined(CONFIG_COUNTER_SILABS_BURTC_ALARM)
+	return BURTC_MAX_VALUE;
+#else
 	return sl_hal_burtc_get_compare();
+#endif
 }
 
 static uint32_t counter_silabs_get_freq(const struct device *dev)
@@ -89,8 +93,11 @@ static uint32_t counter_silabs_get_freq(const struct device *dev)
 static int counter_silabs_set_alarm(const struct device *dev, uint8_t chan_id,
 				    const struct counter_alarm_cfg *alarm_cfg)
 {
+	bool absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	struct counter_silabs_data *const dev_data = dev->data;
 	uint32_t alarm_ticks = alarm_cfg->ticks;
+	uint32_t start, elapsed;
+	int err = 0;
 
 	/* BURTC has only one channel */
 	if (chan_id != 0) {
@@ -102,11 +109,12 @@ static int counter_silabs_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -EINVAL;
 	}
 
-	if (!(alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE)) {
-		alarm_ticks += sl_hal_burtc_get_counter();
-	}
+	sl_hal_burtc_disable_interrupts(BURTC_IF_COMP);
 
-	sl_hal_burtc_clear_interrupts(BURTC_IF_COMP);
+	start = sl_hal_burtc_get_counter();
+	if (!absolute) {
+		alarm_ticks += start;
+	}
 
 	dev_data->callback = alarm_cfg->callback;
 	dev_data->user_data = alarm_cfg->user_data;
@@ -114,9 +122,27 @@ static int counter_silabs_set_alarm(const struct device *dev, uint8_t chan_id,
 	sl_hal_burtc_set_compare(alarm_ticks);
 	LOG_DBG("set alarm: %u", alarm_ticks);
 
+	sl_hal_burtc_clear_interrupts(BURTC_IF_COMP);
+	elapsed = sl_hal_burtc_get_counter() - start;
+
+	if (!absolute) {
+		/* Expire the relative alarm if already due */
+		if (alarm_cfg->ticks <= elapsed) {
+			sl_hal_burtc_set_interrupts(BURTC_IF_COMP);
+		}
+	} else if (alarm_ticks - start - 1 < elapsed) {
+		/* Absolute alarm is late, disable or immediately expire it */
+		err = -ETIME;
+		if (!(alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE)) {
+			dev_data->callback = NULL;
+			return err;
+		}
+		sl_hal_burtc_set_interrupts(BURTC_IF_COMP);
+	}
+
 	/* Enable the compare interrupt */
 	sl_hal_burtc_enable_interrupts(BURTC_IF_COMP);
-	return 0;
+	return err;
 }
 
 static int counter_silabs_cancel_alarm(const struct device *dev, uint8_t chan_id)

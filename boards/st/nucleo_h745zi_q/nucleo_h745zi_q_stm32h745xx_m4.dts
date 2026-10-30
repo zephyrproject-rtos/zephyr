@@ -9,8 +9,8 @@
 #include "nucleo_h745zi_q.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H745ZI-Q-NUCLEO board";
 	compatible = "st,stm32h745zi-q-nucleo";
+	model = "STMicroelectronics STM32H745ZI-Q-NUCLEO board";
 
 	/* HW resources belonging to CM4 */
 	chosen {

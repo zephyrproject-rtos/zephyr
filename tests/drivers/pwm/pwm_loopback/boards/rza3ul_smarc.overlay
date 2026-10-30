@@ -20,9 +20,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&mtu1_pins>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -30,8 +30,8 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&mtu3_pins>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

@@ -7,8 +7,8 @@
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
-		status = "okay";
 		out-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		in-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };

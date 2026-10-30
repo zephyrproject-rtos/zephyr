@@ -15,7 +15,6 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioa 31 GPIO_ACTIVE_LOW>;
@@ -28,6 +27,7 @@
 		 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
 		 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(0))>;
 	dma-names = "tx", "rx";
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

@@ -5,7 +5,6 @@
  */
 
 &manual_flash_1k {
-	status = "okay";
 
 	m1k-sel-access-flash = "external-fspi-cs1";
 
@@ -14,6 +13,7 @@
 		     &fspi_fdio3_gph6_default
 		     &fspi_fsck_gpg7_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	flash_m1k1: flash_m1k1@1 {
 		compatible = "soc-nv-flash";
@@ -30,8 +30,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@40000 {
-			label = "storage";
 			reg = <0x00040000 DT_SIZE_K(256)>;
+			label = "storage";
 		};
 	};
 };

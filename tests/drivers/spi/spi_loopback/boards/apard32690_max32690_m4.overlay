@@ -9,10 +9,10 @@
 };
 
 arduino_spi: &spi1 {
-	status = "okay";
 
 	dmas = <&dma0 1 MAX32_DMA_SLOT_SPI1_TX>, <&dma0 2 MAX32_DMA_SLOT_SPI1_RX>;
 	dma-names = "tx", "rx";
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

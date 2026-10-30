@@ -18,6 +18,11 @@
 
 static bool bsim_disconnect_on_exit;
 
+/* Provisional hack until bsim's libUtilv1 is updated to a version > 1.16
+ * At that point this commit shall be reverted
+ */
+static uint8_t trace_exit_code;
+
 /*
  * Control what will happen to the overall simulation when this executable exists.
  * If <terminate> is true (default behavior) the Phy will be told to end the simulation
@@ -30,9 +35,14 @@ void bsim_set_terminate_on_exit(bool terminate)
 	bsim_disconnect_on_exit = !terminate;
 }
 
+void bsim_set_trace_error(uint8_t code)
+{
+	trace_exit_code = code;
+}
+
 static uint8_t main_clean_up_trace_wrap(void)
 {
-	return nsi_exit_inner(0);
+	return nsi_exit_inner(trace_exit_code);
 }
 
 static void trace_registration(void)

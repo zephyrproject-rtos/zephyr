@@ -12,9 +12,9 @@
 /delete-node/ &eeprom1;
 
 &i2c0 {
-	status = "okay";
 	clocks = <&i2c_ref_clk>;
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";

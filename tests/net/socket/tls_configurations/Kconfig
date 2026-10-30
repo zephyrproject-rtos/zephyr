@@ -5,4 +5,16 @@ config SERVER_PORT
 	int "Server port to connect to"
 	default 4242
 
+choice TLS_CONFIGURATIONS_PSK_FORMAT
+	prompt "Format of the PSK stored in TLS credentials"
+	default TLS_CONFIGURATIONS_PSK_FORMAT_PLAINTEXT
+
+config TLS_CONFIGURATIONS_PSK_FORMAT_PLAINTEXT
+	bool "Plaintext"
+
+config TLS_CONFIGURATIONS_PSK_FORMAT_OPAQUE
+	bool "Opaque"
+
+endchoice
+
 source "Kconfig.zephyr"

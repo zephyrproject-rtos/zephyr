@@ -39,7 +39,6 @@
 };
 
 &sc_timer {
-	status = "okay";
 	pinctrl-0 = <&pinmux_pwm0>;
 	pinctrl-names = "default";
 	prescaler = <1>;
@@ -47,6 +46,7 @@
 	 * connection 0 = kINPUTMUX_SctGpioInAToSct0.
 	 */
 	mux-states = <&inputmux0 1 0>;
+	status = "okay";
 };
 
 &inputmux0 {

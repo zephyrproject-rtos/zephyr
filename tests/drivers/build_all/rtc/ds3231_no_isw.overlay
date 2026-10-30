@@ -15,10 +15,10 @@
 		#size-cells = <1>;
 
 		test_i2c_no_isw: i2c@22221111 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x22221111 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
 
 			test_ds3231_no_isw: ds3231@a {

@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Base Power Company
+# SPDX-License-Identifier: Apache-2.0
+
+board_runner_args(dfu-util "--pid=0483:df11" "--alt=0" "--dfuse")
+board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+
+include(${ZEPHYR_BASE}/boards/common/dfu-util.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/openocd-stm32.board.cmake)

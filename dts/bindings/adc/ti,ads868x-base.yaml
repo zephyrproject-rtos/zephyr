@@ -1,0 +1,54 @@
+# Copyright (c) 2026 Ryomei Osaki
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI ADS8684/ADS8688 16-bit SAR ADC (SPI, 4 or 8 single-ended inputs with a
+  per-channel input range).
+
+  The input range of a channel is selected with the standard channel
+  properties, relative to the 4.096 V reference (Vref):
+
+    zephyr,gain    zephyr,differential   input range
+    ADC_GAIN_2_5   (absent)              0 .. 2.5 x Vref   (0 .. 10.24 V)
+    ADC_GAIN_4_5   (absent)              0 .. 1.25 x Vref  (0 .. 5.12 V)
+    ADC_GAIN_2_5   true                  -2.5 .. +2.5 x Vref   (+/-10.24 V)
+    ADC_GAIN_4_5   true                  -1.25 .. +1.25 x Vref (+/-5.12 V)
+
+  The inputs are single-ended; zephyr,differential selects the bipolar
+  variant of a range. Samples of bipolar channels are returned as signed
+  16-bit values (the offset binary output of the device is converted to
+  two's complement), which is what adc_raw_to_millivolts_dt() expects for
+  a differential channel. The +/-0.625 x Vref range would need a gain of
+  8/5, which the ADC API does not define, and is not supported.
+
+  zephyr,reference must be ADC_REF_INTERNAL (REFSEL pin low, internal
+  4.096 V reference) or ADC_REF_EXTERNAL0 (REFSEL pin high, external
+  4.096 V reference on REFIO). zephyr,resolution must be 16.
+
+  Example:
+
+    ads8688@0 {
+      compatible = "ti,ads8688";
+      reg = <0>;
+      spi-max-frequency = <17000000>;
+      #io-channel-cells = <1>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      channel@0 {
+        reg = <0>;
+        zephyr,gain = "ADC_GAIN_4_5";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,resolution = <16>;
+      };
+    };
+
+include: [spi-device.yaml, adc-controller.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

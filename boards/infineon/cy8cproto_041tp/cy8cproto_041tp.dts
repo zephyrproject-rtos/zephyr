@@ -12,8 +12,8 @@
 #include "cy8cproto_041tp_common.dtsi"
 
 / {
-	model = "CY8CPROTO-041TP Development Board";
 	compatible = "infineon,cy8cproto-041tp", "infineon,psoc4100tp";
+	model = "CY8CPROTO-041TP Development Board";
 
 	chosen {
 		zephyr,sram = &sram0;

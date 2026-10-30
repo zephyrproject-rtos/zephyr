@@ -11,6 +11,6 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Andes ADP-XC7K AE350 CLIC";
 	compatible = "andestech,adp_xc7k_ae350-clic";
+	model = "Andes ADP-XC7K AE350 CLIC";
 };

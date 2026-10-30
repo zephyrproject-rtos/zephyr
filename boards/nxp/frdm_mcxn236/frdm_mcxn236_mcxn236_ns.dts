@@ -10,8 +10,8 @@
 #include "frdm_mcxn236.dtsi"
 
 / {
-	model = "NXP FRDM_N236 board";
 	compatible = "nxp,mcxn236", "nxp,mcx";
+	model = "NXP FRDM_N236 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -42,9 +42,9 @@
 	/delete-node/ partitions;
 
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * Partition sizes must be aligned to the flash memory sector size (8 KB).
@@ -55,42 +55,42 @@
 		 */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
+			label = "mcuboot";
 		};
 
 		/* Secure image - primary */
 		slot0_partition: partition@14000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(224)>;
+			label = "image-0";
 		};
 
 		/* Non-secure image - primary */
 		slot0_ns_partition: partition@4c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0-nonsecure";
 			reg = <0x0004c000 DT_SIZE_K(216)>;
+			label = "image-0-nonsecure";
 		};
 
 		/* Secure image - secondary */
 		slot1_partition: partition@82000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00082000 DT_SIZE_K(224)>;
+			label = "image-1";
 		};
 
 		/* Non-secure image - secondary */
 		slot1_ns_partition: partition@ba000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1-nonsecure";
 			reg = <0x000ba000 DT_SIZE_K(216)>;
+			label = "image-1-nonsecure";
 		};
 
 		storage_partition: partition@f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

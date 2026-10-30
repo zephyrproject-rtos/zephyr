@@ -13,11 +13,11 @@
 	status = "okay";
 
 	rv3032c_mikroe_rtc_18_click: rv3032c@51 {
-		status = "okay";
 		compatible = "microcrystal,rv3032";
 		reg = <0x51>;
 		backup-switch-mode = "disabled";
 		clkout-frequency = <0>;
 		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };

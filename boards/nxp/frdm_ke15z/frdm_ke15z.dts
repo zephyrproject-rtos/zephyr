@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
-	model = "NXP Freedom KE15Z board";
 	compatible = "nxp,ke15z", "nxp,mke15z7";
+	model = "NXP Freedom KE15Z board";
 
 	aliases {
 		watchdog0 = &wdog;
@@ -129,18 +129,18 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	sample-time = <12>;
 	vref-mv = <3300>;
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpiob {
@@ -164,8 +164,8 @@
 };
 
 &sosc_clk {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
 };
 
 &soscdiv2_clk {
@@ -173,7 +173,6 @@
 };
 
 &ftm0 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	clocks = <&scg KINETIS_SCG_SOSC_CLK>;
@@ -181,10 +180,10 @@
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
 	clock-source = "fixed";
+	status = "okay";
 };
 
 &ftm2 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	clocks = <&scg KINETIS_SCG_SOSC_CLK>;
@@ -192,6 +191,7 @@
 	pinctrl-0 = <&ftm2_default>;
 	pinctrl-names = "default";
 	clock-source = "fixed";
+	status = "okay";
 };
 
 &flash0 {
@@ -205,8 +205,8 @@
 		 * to the flash memory sector size of 2KB.
 		 */
 		storage_partition: partition@3e000 {
-			label = "storage";
 			reg = <0x0003e000 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

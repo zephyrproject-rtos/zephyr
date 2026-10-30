@@ -15,4 +15,5 @@ target_sources(app PRIVATE
 zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
+  ${ZEPHYR_BASE}/samples/bluetooth/central_gatt_write/src
 )

@@ -122,11 +122,20 @@ static uint8_t get_ident(void)
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+#define L2CAP_LE_CID_DYN_COUNT (L2CAP_LE_CID_DYN_END - L2CAP_LE_CID_DYN_START + 1U)
+
+static inline uint8_t l2cap_le_cid_increase(uint8_t cid_index)
+{
+	return (uint8_t)(((uint16_t)cid_index + 1) % L2CAP_LE_CID_DYN_COUNT);
+}
+
 static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 						     struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
-	uint16_t cid;
+	uint8_t sentinel;
+	size_t index;
+	static uint8_t le_cid_index_next[CONFIG_BT_MAX_CONN];
 
 	/*
 	 * No action needed if there's already a CID allocated, e.g. in
@@ -136,12 +145,20 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 		return le_chan;
 	}
 
-	for (cid = L2CAP_LE_CID_DYN_START; cid <= L2CAP_LE_CID_DYN_END; cid++) {
-		if (!bt_l2cap_le_lookup_rx_cid(conn, cid)) {
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(le_cid_index_next), "Index is out of bounds");
+
+	sentinel = le_cid_index_next[index];
+
+	do {
+		const uint8_t cid = le_cid_index_next[index] + L2CAP_LE_CID_DYN_START;
+
+		le_cid_index_next[index] = l2cap_le_cid_increase(le_cid_index_next[index]);
+		if (bt_l2cap_le_lookup_rx_cid(conn, cid) == NULL) {
 			le_chan->rx.cid = cid;
 			return le_chan;
 		}
-	}
+	} while (le_cid_index_next[index] != sentinel);
 
 	return NULL;
 }
@@ -470,6 +487,7 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
+		bt_l2cap_chan_remove(conn, chan);
 		l2cap_chan_del(chan);
 	}
 }
@@ -807,7 +825,7 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 	make_closure(pdu->user_data, cb, user_data);
 	LOG_DBG("push: pdu %p len %d cb %p userdata %p", pdu, pdu->len, cb, user_data);
 
-	k_fifo_put(&le_chan->tx_queue, pdu);
+	k_fifo_put(&le_chan->tx_queue, net_buf_take(&pdu));
 
 	raise_data_ready(le_chan); /* tis just a flag */
 
@@ -996,6 +1014,11 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		 */
 		LOG_DBG("no credits for new K-frame on %p", lechan);
 		lower_data_ready(lechan);
+
+		/* Another channel of this connection may have data to send:
+		 * re-trigger the TX processor to pull from it.
+		 */
+		bt_tx_irq_raise();
 		return NULL;
 	}
 
@@ -1359,6 +1382,14 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 				       uint16_t credits)
 {
 	LOG_DBG("chan %p credits %u", chan, credits);
+
+	/* Connection requests and responses may carry 0 initial credits. Such
+	 * a channel is not sendable, and setting BT_L2CAP_STATUS_OUT for it
+	 * would keep the first real grant from resuming TX below.
+	 */
+	if (credits == 0U) {
+		return;
+	}
 
 	atomic_add(&chan->tx.credits, credits);
 
@@ -2858,7 +2889,7 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	k_fifo_put(&chan->rx_queue, buf);
+	k_fifo_put(&chan->rx_queue, net_buf_take(&buf));
 	bt_work_submit(&chan->rx_work);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -3080,6 +3111,11 @@ int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 	LOG_DBG("conn %p chan %p psm 0x%04x", conn, chan, psm);
 
 	if (!conn || !chan) {
+		return -EINVAL;
+	}
+
+	if (!bt_conn_is_le(conn)) {
+		LOG_ERR("Invalid ACL conn %p type 0x%02x", conn, conn->type);
 		return -EINVAL;
 	}
 
@@ -3322,6 +3358,11 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return bt_l2cap_br_chan_connect(conn, chan, psm);
 	}
 
+	if (!bt_conn_is_le(conn)) {
+		LOG_ERR("Invalid ACL conn %p type 0x%02x", conn, conn->type);
+		return -EINVAL;
+	}
+
 	if (le_chan->required_sec_level > BT_SECURITY_L4) {
 		return -EINVAL;
 	} else if (le_chan->required_sec_level == BT_SECURITY_L0) {
@@ -3445,7 +3486,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	net_buf_push_le16(buf, sdu_len);
 
 	/* Put buffer on TX queue */
-	k_fifo_put(&le_chan->tx_queue, buf);
+	k_fifo_put(&le_chan->tx_queue, net_buf_take(&buf));
 
 	/* Always process the queue in the same context */
 	raise_data_ready(le_chan);

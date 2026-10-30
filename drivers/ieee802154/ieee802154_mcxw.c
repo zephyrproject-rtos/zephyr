@@ -389,7 +389,7 @@ static int mcxw_set_pan_id(const struct device *dev, uint16_t aPanId)
 
 static int mcxw_set_extended_address(const struct device *dev, const uint8_t *ieee_addr)
 {
-	struct mcxw_context *mcxw_radio = dev->data;
+	ARG_UNUSED(dev);
 
 	macToPlmeMessage_t msg;
 
@@ -397,7 +397,14 @@ static int mcxw_set_extended_address(const struct device *dev, const uint8_t *ie
 	msg.msgData.setReq.PibAttribute = gPhyPibLongAddress_c;
 	msg.msgData.setReq.PibAttributeValue = *(uint64_t *)ieee_addr;
 
-	memcpy(mcxw_radio->mac, ieee_addr, 8);
+	/*
+	 * Do NOT update mcxw_radio->mac here.  That buffer holds the
+	 * factory-assigned IEEE EUI-64 (read at boot) and is referenced
+	 * by the net_if link address.  Overwriting it would cause
+	 * otPlatRadioGetIeeeEui64() to return the operational extended
+	 * address instead of the factory EUI-64, breaking the Joiner ID
+	 * derivation during Thread commissioning.
+	 */
 
 	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
 
@@ -811,6 +818,21 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	}
 
 	k_sem_take(&mcxw_radio->tx_wait, K_FOREVER);
+
+	/* Propagate the security flags back to the net_pkt so that the
+	 * OT platform layer (radio.c) can report the correct values to
+	 * OpenThread via otPlatRadioTxDone(). This mirrors what the
+	 * Nordic driver does in its TX Done path (ieee802154_nrf5.c).
+	 *
+	 * Without this, the net_pkt retains the pre-TX flag values and
+	 * OT never learns that the NBU has encrypted the frame and
+	 * updated the header (Frame Counter). On MAC-layer retries OT
+	 * then re-submits the frame with the original (stale) flags,
+	 * and the driver skips gPhyUpdHDr — the NBU reuses the old
+	 * Frame Counter, causing the receiver to reject the frame.
+	 */
+	net_pkt_set_ieee802154_frame_secured(pkt, mcxw_radio->tx_frame.sec_processed);
+	net_pkt_set_ieee802154_mac_hdr_rdy(pkt, mcxw_radio->tx_frame.hdr_updated);
 
 	switch (mcxw_radio->tx_status) {
 	case 0:
@@ -1258,6 +1280,7 @@ static int mcxw_cca(const struct device *dev)
 static int mcxw_set_channel(const struct device *dev, uint16_t channel)
 {
 	struct mcxw_context *mcxw_radio = dev->data;
+	int ret = 0;
 
 	LOG_DBG("Set channel: %u -> %u", mcxw_radio->channel, channel);
 
@@ -1273,7 +1296,18 @@ static int mcxw_set_channel(const struct device *dev, uint16_t channel)
 	/* Permanent change, restart RX if radio is active */
 	bool restart_rx = (mcxw_radio->state == RADIO_STATE_RECEIVE);
 
-	return rf_change_channel(channel, false, restart_rx);
+	ret = rf_change_channel(channel, false, restart_rx);
+
+	if (ret == 0 && !restart_rx && mcxw_ctx.csl_period == 0U) {
+		macToPlmeMessage_t msg;
+
+		msg.msgType = gPlmeSetReq_c;
+		msg.msgData.setReq.PibAttribute = gPhyPibRxOnWhenIdle;
+		msg.msgData.setReq.PibAttributeValue = (uint64_t)rx_on_when_idle;
+		(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
+	}
+
+	return ret;
 }
 
 static net_time_t mcxw_get_time_ns(const struct device *dev)

@@ -26,7 +26,6 @@
 #include <zephyr/sys/util_macro.h>
 
 #include "common/bt_str.h"
-#include "common/rpa.h"
 #include "conn_internal.h"
 #include "gatt_internal.h"
 #include "hci_core.h"
@@ -322,7 +321,7 @@ struct bt_keys *bt_keys_find_irk(uint8_t id, const bt_addr_le_t *addr)
 			continue;
 		}
 
-		if (bt_rpa_irk_matches(key_pool[i].irk.val, &addr->a)) {
+		if (bt_addr_matches_irk(&addr->a, key_pool[i].irk.val)) {
 			LOG_DBG("RPA %s matches %s", bt_addr_str(&key_pool[i].irk.rpa),
 				bt_addr_le_str(&key_pool[i].addr));
 

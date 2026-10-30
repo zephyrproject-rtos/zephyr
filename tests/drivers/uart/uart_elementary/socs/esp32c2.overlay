@@ -22,8 +22,8 @@
 };
 
 dut: &uart1 {
-	status = "okay";
 	pinctrl-0 = <&uart1_test>;
 	pinctrl-names = "default";
 	current-speed = <74880>;
+	status = "okay";
 };

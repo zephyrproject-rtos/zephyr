@@ -92,7 +92,7 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 	thread->arch.ptables = (uintptr_t)NULL;
 #endif /* CONFIG_X86_COMMON_PAGE_TABLE */
 
-	if ((thread->base.user_options & K_USER) != 0U) {
+	if (k_thread_is_user_thread(thread)) {
 		initial_entry = arch_user_mode_enter;
 
 #ifdef CONFIG_INIT_STACKS
@@ -166,7 +166,7 @@ int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stac
 
 	struct z_x86_thread_stack_header *hdr_stack_obj;
 
-	if ((thread->base.user_options & K_USER) != K_USER) {
+	if (!k_thread_is_user_thread(thread)) {
 		return -EINVAL;
 	}
 

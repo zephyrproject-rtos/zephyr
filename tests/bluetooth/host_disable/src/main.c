@@ -15,11 +15,13 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -157,7 +159,31 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8
 	(void)memset(rp->le_states, 0xFF, sizeof(rp->le_states));
 }
 
+/* A vendor command whose response is longer than the Host is configured to
+ * receive, although it fits an HCI event.
+ */
+#define TEST_OP_LONG_RSP BT_OP(BT_OGF_VS, 0x03ff)
+#define LONG_RSP_SIZE    200U
+
+BUILD_ASSERT(LONG_RSP_SIZE > CONFIG_BT_BUF_EVT_RX_SIZE);
+
+static void long_rsp(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
+{
+	struct bt_hci_evt_cc_status *rp;
+
+	ARG_UNUSED(buf);
+
+	rp = cmd_complete(evt, len, opcode);
+	(void)memset(rp, 0xAA, len);
+	rp->status = BT_HCI_ERR_SUCCESS;
+}
+
 static const struct cmd_handler cmds[] = {
+	{
+		TEST_OP_LONG_RSP,
+		LONG_RSP_SIZE,
+		long_rsp,
+	},
 	{
 		BT_HCI_OP_READ_LOCAL_FEATURES,
 		sizeof(struct bt_hci_rp_read_local_features),
@@ -272,6 +298,35 @@ static void disconnect_rsp_handler(struct k_work *work)
 
 static K_WORK_DELAYABLE_DEFINE(disconnect_rsp_work, disconnect_rsp_handler);
 
+/* The Host Number Of Completed Packets commands that the controller has been
+ * given: how many, and the first entry of each of the first few of them.
+ */
+#define HOST_NCP_LOG_SIZE 4U
+
+struct host_ncp {
+	uint8_t num_handles;
+	uint16_t handle;
+	uint16_t count;
+};
+
+static struct host_ncp host_ncp_log[HOST_NCP_LOG_SIZE];
+static atomic_t host_ncp_num;
+static K_SEM_DEFINE(host_ncp_sem, 0, K_SEM_MAX_LIMIT);
+
+static void host_ncp_handle(const struct net_buf *cmd)
+{
+	const struct bt_hci_cp_host_num_completed_packets *cp = (const void *)cmd->data;
+	atomic_val_t num = atomic_inc(&host_ncp_num);
+
+	if (num < HOST_NCP_LOG_SIZE) {
+		host_ncp_log[num].num_handles = cp->num_handles;
+		host_ncp_log[num].handle = sys_le16_to_cpu(cp->h[0].handle);
+		host_ncp_log[num].count = sys_le16_to_cpu(cp->h[0].count);
+	}
+
+	k_sem_give(&host_ncp_sem);
+}
+
 static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 {
 	struct net_buf *evt = NULL;
@@ -280,6 +335,12 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 
 	chdr = net_buf_pull_mem(cmd, sizeof(*chdr));
 	opcode = sys_le16_to_cpu(chdr->opcode);
+
+	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
+		/* The controller does not respond to this command */
+		host_ncp_handle(cmd);
+		return;
+	}
 
 	if (opcode == BT_HCI_OP_DISCONNECT) {
 		const struct bt_hci_cp_disconnect *cp = (const void *)cmd->data;
@@ -405,6 +466,29 @@ static void before(void *fixture)
 
 ZTEST_SUITE(bt_disable, NULL, NULL, before, NULL, NULL);
 
+/* The response to a command is handed to the sender in the command's own
+ * buffer, which is as large as the events that the Host is configured to
+ * receive. A longer response must fail the command instead of being written
+ * past that buffer, and the commands that follow must work.
+ */
+static ZTEST(bt_disable, test_command_response_too_long)
+{
+	struct bt_hci_rp_read_bd_addr *rp;
+	struct net_buf *rsp = NULL;
+	int err;
+
+	err = bt_hci_cmd_send_sync(TEST_OP_LONG_RSP, NULL, &rsp);
+	zassert_equal(err, -EIO, "Unexpected result %d for a response that is too long", err);
+	zassert_is_null(rsp, "A response was handed over");
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
+	zassert_ok(err, "The next command failed (err %d)", err);
+	zassert_equal(rsp->len, sizeof(*rp), "Unexpected response length %u", rsp->len);
+	rp = (void *)rsp->data;
+	zassert_equal(rp->bdaddr.val[0], 0x11, "Unexpected response contents");
+	net_buf_unref(rsp);
+}
+
 /* A driver without a close() op cannot be disabled, and bt_disable() has to
  * find that out before it tears anything down: the controller must not have
  * been reset under a Host that goes on saying it is ready.
@@ -523,7 +607,7 @@ static ZTEST(bt_disable, test_enable_silent_controller_cb)
 	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
 }
 
-static K_THREAD_STACK_DEFINE(enable_stack, CONFIG_ZTEST_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(enable_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread enable_thread;
 static bool enable_returned;
 
@@ -722,7 +806,7 @@ static ZTEST(bt_disable, test_data_sent_during_disable)
  * system workqueue, which delivers the delayed responses of the controller here
  * and must not be held up by a call that waits for one.
  */
-static K_THREAD_STACK_DEFINE(app_stack, 1024);
+static K_THREAD_STACK_DEFINE(app_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_work_q app_workq;
 static K_SEM_DEFINE(disconnect_returned, 0, 1);
 static int disconnect_err;
@@ -875,6 +959,96 @@ static ZTEST(bt_conn_tx, test_data_send_failure_disconnect_rejected)
 	zassert_ok(bt_conn_get_info(test_conn, &info), "No connection info");
 	zassert_equal(info.state, BT_CONN_STATE_CONNECTED, "The connection is in state %u",
 		      info.state);
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
+
+/* A dynamic LE L2CAP channel ID that no channel has: the Host drops what the
+ * peer sends on it, once it has received it.
+ */
+#define TEST_UNKNOWN_CID 0x007FU
+
+/* The peer sends an L2CAP PDU on the connection */
+static void l2cap_pdu_recv(uint16_t cid, const uint8_t *data, uint16_t len)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_acl_hdr *hdr;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(TEST_CONN_HANDLE, BT_ACL_START));
+	hdr->len = sys_cpu_to_le16(BT_L2CAP_HDR_SIZE + len);
+	net_buf_add_le16(buf, len);
+	net_buf_add_le16(buf, cid);
+	net_buf_add_mem(buf, data, len);
+	bt_hci_recv(dev, buf);
+}
+
+static void host_ncp_reset(void)
+{
+	atomic_clear(&host_ncp_num);
+	k_sem_reset(&host_ncp_sem);
+}
+
+/* The Host reports nothing more */
+static void expect_no_more_host_ncp(void)
+{
+	/* Not in the assertion, whose message would count before the wait */
+	int err = k_sem_take(&host_ncp_sem, K_MSEC(100));
+
+	zassert_equal(err, -EAGAIN, "%ld Host Number Of Completed Packets commands",
+		      (long)atomic_get(&host_ncp_num));
+}
+
+/* The Host reports count completed packets for handle, in a command for that
+ * connection alone, and reports nothing else.
+ */
+static void expect_host_ncp(uint16_t handle, uint16_t count)
+{
+	zassert_ok(k_sem_take(&host_ncp_sem, K_SECONDS(1)),
+		   "No Host Number Of Completed Packets command");
+	zassert_equal(host_ncp_log[0].num_handles, 1U, "Reported for %u connections",
+		      host_ncp_log[0].num_handles);
+	zassert_equal(host_ncp_log[0].handle, handle, "Reported for handle 0x%04x",
+		      host_ncp_log[0].handle);
+	zassert_equal(host_ncp_log[0].count, count, "Reported %u packets", host_ncp_log[0].count);
+	expect_no_more_host_ncp();
+}
+
+ZTEST_SUITE(bt_host_ncp, NULL, NULL, before, NULL, NULL);
+
+/* A received packet that is dropped before the Host has looked up its
+ * connection is reported for none, and in particular not for the first
+ * connection, which the zeroed metadata of the buffer would name. The packet
+ * that the Host does receive is reported for its connection.
+ */
+static ZTEST(bt_host_ncp, test_dropped_packets_not_reported)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	const uint8_t data = 0x00U;
+	struct net_buf *buf;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE) ||
+	    !IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+	host_ncp_reset();
+
+	/* The driver gives up on a packet that it had a buffer for */
+	net_buf_unref(bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER));
+
+	/* A packet too short for its header */
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	net_buf_add_le16(buf, bt_acl_handle_pack(TEST_CONN_HANDLE, BT_ACL_START));
+	bt_hci_recv(dev, buf);
+
+	l2cap_pdu_recv(TEST_UNKNOWN_CID, &data, sizeof(data));
+	expect_host_ncp(TEST_CONN_HANDLE, 1U);
 
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
 	bt_conn_unref(test_conn);

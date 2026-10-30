@@ -162,9 +162,15 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len,
 	return spi_transceive_dt(&bus, &spi_tx, &spi_rx);
 }
 
-static inline uint16_t bt_spi_get_cmd(uint8_t *msg)
+static inline uint16_t bt_spi_get_cmd(const uint8_t *msg)
 {
 	return (msg[CMD_OCF] << 8) | msg[CMD_OGF];
+}
+
+static inline bool bt_spi_is_reset(const uint8_t *pkt)
+{
+	return pkt[PACKET_TYPE] == BT_HCI_H4_CMD &&
+	       bt_spi_get_cmd(pkt) == BT_HCI_OP_RESET;
 }
 
 static inline uint16_t bt_spi_get_evt(uint8_t *msg)
@@ -575,6 +581,7 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 	int ret;
 	uint8_t *data_ptr;
 	uint16_t remaining_bytes;
+	bool on_the_bus = false;
 
 	ARG_UNUSED(dev);
 
@@ -603,12 +610,25 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2) */
 
 		if (!ret) {
-			/* Transmit the message */
+			/* Transmit the message. The controller may have room
+			 * for none of it yet, and then nothing of it goes out.
+			 */
+			if (size > 0U) {
+				on_the_bus = true;
+			}
+
 			ret = bt_spi_transceive(data_ptr, size, rx_first, 1);
 		}
 		remaining_bytes -= size;
 		data_ptr += size;
 	} while (remaining_bytes > 0 && !ret);
+
+	/* An EVT_BLUE_INITIALIZED from before this reset must not end the wait
+	 * for it. The one that follows cannot be read while the bus is held.
+	 */
+	if (DT_INST_PROP_OR(0, reset_event, false) && bt_spi_is_reset(pkt)) {
+		k_sem_reset(&sem_initialised);
+	}
 
 	release_cs(size > 0);
 
@@ -616,7 +636,18 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 
 	if (ret) {
 		LOG_ERR("Error %d", ret);
-		return ret;
+
+		/* An error return says that no response to a command will
+		 * follow. Once part of a command has been on the bus that
+		 * cannot be said any more, as the controller may answer what
+		 * it got. The command then counts as sent, and what comes of
+		 * it shows in its response or in the lack of one.
+		 */
+		if (!on_the_bus || pkt[PACKET_TYPE] != BT_HCI_H4_CMD) {
+			return ret;
+		}
+
+		ret = 0;
 	}
 
 	LOG_HEXDUMP_DBG(pkt, len, "SPI TX");
@@ -629,9 +660,13 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 	 * RESET has actually taken place.  Instead, we use the vendor command
 	 * EVT_BLUE_INITIALIZED as an indication that it is safe to proceed.
 	 */
-	if (bt_spi_get_cmd((uint8_t *)pkt) == BT_HCI_OP_RESET) {
+	if (DT_INST_PROP_OR(0, reset_event, false) && bt_spi_is_reset(pkt)) {
 		if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
-			ret = -EIO;
+			/* The reset has been sent, so this is no failure to
+			 * send it. A controller that has not come up leaves
+			 * the commands that follow unanswered.
+			 */
+			LOG_ERR("No sign of the controller after the reset");
 		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
@@ -709,6 +744,9 @@ static int bt_spi_open(const struct device *dev)
 	if (err) {
 		return err;
 	}
+
+	/* An EVT_BLUE_INITIALIZED from before this reset must not end the wait for it */
+	k_sem_reset(&sem_initialised);
 
 	/* Take BLE out of reset */
 	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));

@@ -42,6 +42,12 @@ config STM32_LTDC_RGB565
 	  One pixel consists of 5-bit red, 6-bit green and 5-bit blue value
 	  (2 bytes per pixel)
 
+config STM32_LTDC_L8
+	bool "L8"
+	help
+	  One pixel consists of 8-bit luminance value
+	  (1 byte per pixel)
+
 endchoice
 
 config STM32_LTDC_FB_NUM

@@ -10,18 +10,18 @@
  */
 pwm9: pwm@40005890 {
 	reg = <0x40005890 0x10>;
-	status = "disabled";
 	#pwm-cells = <3>;
+	status = "disabled";
 };
 
 pwm10: pwm@400058a0 {
 	reg = <0x400058a0 0x10>;
-	status = "disabled";
 	#pwm-cells = <3>;
+	status = "disabled";
 };
 
 pwm11: pwm@400058b0 {
 	reg = <0x400058b0 0x10>;
-	status = "disabled";
 	#pwm-cells = <3>;
+	status = "disabled";
 };

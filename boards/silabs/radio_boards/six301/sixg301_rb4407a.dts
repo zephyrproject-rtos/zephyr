@@ -251,7 +251,7 @@
 &gpioa {
 	status = "okay";
 
-	board-controller-enable {
+	vcom_enable: vcom-enable {
 		gpio-hog;
 		gpios = <8 GPIO_ACTIVE_HIGH>;
 		output-high;

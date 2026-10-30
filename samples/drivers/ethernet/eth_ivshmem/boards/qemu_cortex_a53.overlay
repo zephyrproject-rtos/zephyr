@@ -17,11 +17,11 @@
 
 		pcie: pcie@8e00000 {
 			compatible = "pci-host-ecam-generic";
-			device_type = "pci";
 			reg = <0x00 0x08e00000 0x00 0x100000>;
+			ranges = <0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
+			device_type = "pci";
 			#size-cells = <0x02>;
 			#address-cells = <0x03>;
-			ranges = <0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
 			#interrupt-cells = <0x01>;
 			interrupt-map-mask = <0x00 0x00 0x00 0x07>;
 			interrupt-map = <0x00 0x00 0x00 1 &gic 0 0 GIC_SPI 108
@@ -47,6 +47,7 @@
 &pcie {
 	ivshmem0: ivshmem@0 {
 		compatible = "qemu,ivshmem";
+		reg = <0x00 0x00 0x00 0x00 0x01>;
 		ivshmem-v2;
 		vendor-id = <0x110a>;           /* Siemens */
 		device-id = <0x4106>;           /* IVSHMEM */
@@ -54,7 +55,6 @@
 		class-rev-mask = <0xffffff00>;  /* PCI_CLASS_MASK | IVSHMEM_PROTO_MASK */
 		interrupt-parent = <&pcie>;
 		interrupts = <1 2 3 4>;
-		reg = <0x00 0x00 0x00 0x00 0x01>;
 		status = "okay";
 	};
 };

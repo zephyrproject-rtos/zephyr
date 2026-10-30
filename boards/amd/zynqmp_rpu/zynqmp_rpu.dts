@@ -8,13 +8,8 @@
 #include <arm/xilinx/zynqmp_rpu.dtsi>
 
 / {
-	model = "AMD ZynqMP RPU";
 	compatible = "xlnx,zynqmp-r5";
-
-	sram0: memory@4000000 {
-		compatible = "mmio-sram";
-		reg = <0x04000000 0x04000000>;
-	};
+	model = "AMD ZynqMP RPU";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -22,6 +17,11 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,ocm = &ocm;
+	};
+
+	sram0: memory@4000000 {
+		compatible = "mmio-sram";
+		reg = <0x04000000 0x04000000>;
 	};
 };
 
@@ -31,14 +31,14 @@
 
 /* UART reference clock (Hz) */
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
+	status = "okay";
 };
 
 &ttc0 {
-	status = "okay";
 	clock-frequency = <100000000>;
+	status = "okay";
 };
 
 &psgpio {

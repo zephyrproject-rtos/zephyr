@@ -61,7 +61,7 @@ static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 	}
 
 #ifdef CONFIG_USERSPACE
-	if ((thread->base.user_options & K_USER) != 0) {
+	if (k_thread_is_user_thread(thread)) {
 		if ((z_arc_v2_aux_reg_read(_ARC_V2_ERSTATUS) &
 		     _ARC_V2_STATUS32_U) != 0) {
 			/* Normal user mode context. There is no specific

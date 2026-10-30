@@ -335,6 +335,12 @@ static int rylr_config(const struct device *dev, const struct lora_modem_config 
 		return err;
 	}
 
+	if (config->explicit_header_disable) {
+		LOG_ERR("Implicit mode not supported");
+		err = -ENOTSUP;
+		goto exit;
+	}
+
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
 		LOG_ERR("pending async operation");
 		err = -EBUSY;

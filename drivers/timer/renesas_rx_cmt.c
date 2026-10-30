@@ -69,9 +69,10 @@ const int32_t z_sys_timer_irq_for_test = CMT0_IRQ_NUM;
  * straight: k_busy_wait() with interrupts masked has to keep working for well
  * over a second, poor practice though that is, and the core's masked delta
  * aliases past one period. So the count is extended in software here, and the
- * core is handed 32 bits. Each read folds a wrap in, which is what keeps the
- * extension alive while interrupts are masked and no ISR can run. Reading
- * mutates that state, hence TIMER_CORE_COUNTER_NONATOMIC.
+ * core is handed 32 bits. Each read folds a wrap in. CMT1's own wrap interrupt
+ * does such a read every period, and while interrupts are masked and no ISR
+ * can run the reads themselves keep the extension alive. Reading mutates that
+ * state, hence TIMER_CORE_COUNTER_NONATOMIC.
  *
  * The alarm is unaffected: CMT0's CMCOR is still 16 bits, so
  * TIMER_CORE_ALARM_MAX_CYCLES below keeps the armed delay inside one period.
@@ -90,19 +91,25 @@ const int32_t z_sys_timer_irq_for_test = CMT0_IRQ_NUM;
 /* Whole CMT1 periods consumed, the upper bits of the extended count. */
 static uint32_t cycle_count;
 
+/* CMCNT as of the last read. */
+static uint16_t last_count;
+
 static uint32_t timer_driver_cycle_get(void)
 {
 	uint16_t val1 = *cycle_timer_cfg.cmcnt;
 	bool matched = ICU_IR[CMT1_IRQN] != 0;
 	uint16_t val2 = *cycle_timer_cfg.cmcnt;
 
-	/* The compare-match flag catches a wrap that happened before this read,
-	 * and val1 > val2 one that happened during it.
+	/* A wrap since the last read shows up as the compare-match flag, as
+	 * val1 > val2 when it happened during this read, or as a count below the
+	 * last one when the wrap interrupt took the flag. Any of them is the
+	 * same single wrap.
 	 */
-	if (matched || (val1 > val2)) {
+	if (matched || (val1 > val2) || (val2 < last_count)) {
 		cycle_count += CYCLES_CYCLE_TIMER;
 		ICU_IR[CMT1_IRQN] = 0;
 	}
+	last_count = val2;
 
 	return cycle_count + val2;
 }
@@ -123,6 +130,17 @@ static inline void timer_driver_set_reload(uint32_t cycles)
 static void cmt0_isr(void)
 {
 	timer_core_announce();
+}
+
+static void cmt1_isr(void)
+{
+	k_spinlock_key_t key = sys_clock_lock();
+
+	/* The read folds the wrap in, or finds it already folded by an
+	 * earlier read.
+	 */
+	(void)timer_driver_cycle_get();
+	sys_clock_unlock(key);
 }
 
 static int sys_clock_driver_init(void)
@@ -150,6 +168,8 @@ static int sys_clock_driver_init(void)
 
 	IRQ_CONNECT(CMT0_IRQ_NUM, 0x01, cmt0_isr, NULL, 0);
 	irq_enable(CMT0_IRQ_NUM);
+	IRQ_CONNECT(CMT1_IRQN, 0x01, cmt1_isr, NULL, 0);
+	irq_enable(CMT1_IRQN);
 
 	*tick_timer_cfg.cmstr = 0x0003; /* start cmt0,1 */
 

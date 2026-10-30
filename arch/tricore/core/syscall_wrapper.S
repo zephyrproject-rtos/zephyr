@@ -66,8 +66,10 @@ invalid_syscall:
 	/* Set K_ERR_CPU_EXCEPTION as reason */
 	mov	%d4, 0
 except_syscall:
+	/* CSA address is {PCXS, 6'b0, PCXO, 6'b0}, see z_tricore_pcx_to_addr */
 	mfcr  	%d15, TRICORE_PCXI
-	sh    	%d5, %d15, 12
+	extr.u	%d5, %d15, 16, 4
+	sh    	%d5, %d5, 28
 	insert	%d5, %d5, %d15, 6, 16
 	mov.a 	%a4, %d5
 	call  	z_tricore_fatal_error

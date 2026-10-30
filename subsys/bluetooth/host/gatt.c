@@ -2401,11 +2401,14 @@ struct notify_data {
 
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
 
+/* Pending notification batch of each connection. The notifying threads, the
+ * flush work and the disconnection cleanup all take and send or drop these
+ * buffers, so every access holds the host lock.
+ */
 static struct net_buf *nfy_mult[CONFIG_BT_MAX_CONN];
 
 static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf *buf)
 {
-	int ret;
 	uint8_t *pdu = buf->data;
 	/* PDU structure is [Opcode (1)] [Handle (2)] [Length (2)] [Value (Length)] */
 	uint16_t first_attr_len = sys_get_le16(&pdu[3]);
@@ -2428,17 +2431,14 @@ static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf *buf)
 		LOG_DBG("Converted BT_ATT_OP_NOTIFY_MULT with single attr to BT_ATT_OP_NOTIFY");
 	}
 
-	ret = bt_att_send(conn, buf);
-	if (ret < 0) {
-		net_buf_unref(buf);
-	}
-
-	return ret;
+	return bt_att_send(conn, buf);
 }
 
 static void notify_mult_process(struct k_work *work)
 {
 	int i;
+
+	bt_dev_lock();
 
 	/* Send to any connection with an allocated buffer */
 	for (i = 0; i < ARRAY_SIZE(nfy_mult); i++) {
@@ -2452,6 +2452,8 @@ static void notify_mult_process(struct k_work *work)
 			bt_conn_unref(conn);
 		}
 	}
+
+	bt_dev_unlock();
 }
 
 K_WORK_DELAYABLE_DEFINE(nfy_mult_work, notify_mult_process);
@@ -2473,10 +2475,14 @@ static int gatt_notify_flush(struct bt_conn *conn)
 	int err = 0;
 	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
 
+	bt_dev_lock();
+
 	if (*buf) {
 		err = gatt_notify_mult_send(conn, *buf);
 		*buf = NULL;
 	}
+
+	bt_dev_unlock();
 
 	return err;
 }
@@ -2485,7 +2491,9 @@ static void cleanup_notify(struct bt_conn *conn)
 {
 	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
 
+	bt_dev_lock();
 	net_buf_drop(buf);
+	bt_dev_unlock();
 }
 
 static void gatt_add_nfy_to_buf(struct net_buf *buf,
@@ -2505,45 +2513,85 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 			    struct bt_gatt_notify_params *params)
 {
 	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
+	struct net_buf *new_buf;
+	int ret;
+
+	LOG_DBG("handle 0x%04x len %u", handle, params->len);
+
+	bt_dev_lock();
 
 	/* Check if we can fit more data into it, in case it doesn't fit send
-	 * the existing buffer and proceed to create a new one
+	 * the existing buffer and proceed to create a new one. The ATT buffers
+	 * are sized for the local ATT_MTU, which the negotiated one can be
+	 * smaller than.
 	 */
 	if (*buf && ((net_buf_tailroom(*buf) < sizeof(struct bt_att_notify_mult) + params->len) ||
+	    ((*buf)->len + sizeof(struct bt_att_notify_mult) + params->len >
+	     bt_att_get_mtu(conn)) ||
 	    !bt_att_tx_meta_data_match(*buf, params->func, params->user_data,
 				       BT_ATT_CHAN_OPT(params)))) {
-		int ret;
-
 		ret = gatt_notify_mult_send(conn, *buf);
 		*buf = NULL;
 		if (ret < 0) {
+			bt_dev_unlock();
 			return ret;
 		}
 	}
 
-	if (!*buf) {
-		*buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT,
-					 sizeof(struct bt_att_notify_mult) + params->len);
-		if (!*buf) {
-			return -ENOMEM;
-		}
-
-		bt_att_set_tx_meta_data(*buf, params->func, params->user_data,
-					BT_ATT_CHAN_OPT(params));
-	} else {
+	if (*buf != NULL) {
 		/* Increment the number of handles, ensuring the notify callback
 		 * gets called once for every attribute.
 		 */
 		bt_att_increment_tx_meta_data_attr_count(*buf, 1);
+		gatt_add_nfy_to_buf(*buf, handle, params);
+		bt_work_schedule(&nfy_mult_work, K_MSEC(CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS));
+		bt_dev_unlock();
+
+		return 0;
 	}
 
-	LOG_DBG("handle 0x%04x len %u", handle, params->len);
-	gatt_add_nfy_to_buf(*buf, handle, params);
+	bt_dev_unlock();
+
+	/* The allocation can block, so the host lock is not held across it */
+	new_buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT,
+				    sizeof(struct bt_att_notify_mult) + params->len);
+	if (new_buf == NULL) {
+		return -ENOMEM;
+	}
+
+	bt_att_set_tx_meta_data(new_buf, params->func, params->user_data, BT_ATT_CHAN_OPT(params));
+	gatt_add_nfy_to_buf(new_buf, handle, params);
+
+	bt_dev_lock();
+
+	/* During the allocation the connection may have been disconnected,
+	 * and its cleanup would not drop a buffer stored after it, or another
+	 * thread may have started a batch.
+	 */
+	if (conn->state != BT_CONN_CONNECTED) {
+		bt_dev_unlock();
+		net_buf_unref(new_buf);
+		return -ENOTCONN;
+	}
+
+	if (*buf != NULL) {
+		ret = gatt_notify_mult_send(conn, *buf);
+		*buf = NULL;
+		if (ret < 0) {
+			bt_dev_unlock();
+			net_buf_unref(new_buf);
+			return ret;
+		}
+	}
+
+	*buf = new_buf;
 
 	/* Use `bt_work_schedule` to keep the original deadline, instead of
 	 * re-setting the timeout whenever a new notification is appended.
 	 */
 	bt_work_schedule(&nfy_mult_work, K_MSEC(CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS));
+
+	bt_dev_unlock();
 
 	return 0;
 }
@@ -3087,8 +3135,17 @@ static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
 	const struct bt_gatt_attr *attr = NULL;
 
 	for (uint16_t i = 0; i < num_params; i++) {
-		/* Compute the total data length. */
-		*total_len += params[i].len;
+		/* Compute the total PDU length: each value is preceded by its
+		 * handle and length.
+		 */
+		*total_len += sizeof(struct bt_att_notify_mult) + params[i].len;
+
+		/* PDU length is specified with a 16-bit value. Checking it
+		 * for every value also keeps the sum from wrapping.
+		 */
+		if (*total_len > UINT16_MAX) {
+			return -ERANGE;
+		}
 
 		/* If attribute is a characteristic declaration, resolve to the value
 		 * attribute to ensure the correct permissions are checked
@@ -3131,14 +3188,8 @@ static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
 		}
 	}
 
-	/* PDU length is specified with a 16-bit value. */
-	if (*total_len > UINT16_MAX) {
-		return -ERANGE;
-	}
-
 	/* Check there is a bearer with a high enough MTU. */
-	if (bt_att_get_mtu(conn) <
-	    (sizeof(struct bt_att_notify_mult) + *total_len)) {
+	if (bt_att_get_mtu(conn) < (sizeof(struct bt_att_hdr) + *total_len)) {
 		return -ERANGE;
 	}
 
@@ -3173,8 +3224,7 @@ int bt_gatt_notify_multiple(struct bt_conn *conn,
 	gatt_notify_flush(conn);
 
 	/* Build the PDU */
-	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT,
-				sizeof(struct bt_att_notify_mult) + total_len);
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT, total_len);
 	if (!buf) {
 		return -ENOMEM;
 	}

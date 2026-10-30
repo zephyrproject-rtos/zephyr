@@ -45,11 +45,11 @@
 
 &spi130 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&spi130_default_alt>;
 	pinctrl-1 = <&spi130_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&cpuapp_dma_region>;
+	status = "okay";
 };
 
 &dma_fast_region {
@@ -58,11 +58,11 @@
 
 &spi120 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&spi120_default_alt>;
 	pinctrl-1 = <&spi120_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&dma_fast_region>;
+	status = "okay";
 };
 
 cycle_timer: &timer120 {

@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "UDOO KEY APPCPU";
 	compatible = "espressif,esp32";
+	model = "UDOO KEY APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

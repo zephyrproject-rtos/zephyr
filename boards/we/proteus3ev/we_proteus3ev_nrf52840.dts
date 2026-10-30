@@ -8,8 +8,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "we_proteus3ev_nrf52840";
 	compatible = "we,we-proteus3ev-nrf52840";
+	model = "we_proteus3ev_nrf52840";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -83,11 +83,11 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {

@@ -153,6 +153,7 @@ static int unicast_client_ep_set_codec_cfg(struct bt_bap_ep *ep, uint8_t id, uin
 static int unicast_client_ep_start(struct bt_bap_ep *ep, struct net_buf_simple *buf);
 
 static int unicast_client_ase_discover(struct bt_conn *conn, uint16_t start_handle);
+static void reset_att_buf(struct unicast_client *client);
 
 static void unicast_client_reset(struct bt_bap_ep *ep, uint8_t reason);
 
@@ -185,6 +186,7 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 	err = unicast_client_ep_start(ep, buf);
 	if (err != 0) {
 		LOG_DBG("unicast_client_ep_start failed: %d", err);
+		reset_att_buf(&uni_cli_insts[bt_conn_index(ep->stream->conn)]);
 
 		return err;
 	}
@@ -2179,6 +2181,7 @@ int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 	if (max_write_command_size < 0) {
 		__ASSERT(max_write_command_size != -EINVAL, "Unexpected -EINVAL");
 		LOG_DBG("Failed to get max write size: %d", max_write_command_size);
+		reset_att_buf(client);
 		return max_write_command_size; /* contains errno value */
 	}
 
@@ -2200,6 +2203,7 @@ int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 		err = bt_gatt_write(conn, &client->write_params);
 		if (err != 0) {
 			LOG_DBG("bt_gatt_write failed: %d", err);
+			reset_att_buf(client);
 			atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 		}
 	} else {
@@ -3374,6 +3378,7 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 
 	err = unicast_client_ep_config(ep, buf, codec_cfg);
 	if (err != 0) {
+		reset_att_buf(&uni_cli_insts[bt_conn_index(stream->conn)]);
 		return err;
 	}
 
@@ -3536,6 +3541,7 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 		if (err != 0) {
 			LOG_DBG("[%zu] Failed to add QoS parameters for stream %p: %d",
 				op->num_ases, stream, err);
+			reset_att_buf(&uni_cli_insts[bt_conn_index(conn)]);
 
 			return err;
 		}
@@ -3582,6 +3588,7 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 
 	err = unicast_client_ep_enable(ep, buf, meta, meta_len);
 	if (err != 0) {
+		reset_att_buf(&uni_cli_insts[bt_conn_index(stream->conn)]);
 		return err;
 	}
 
@@ -3615,6 +3622,7 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 
 	err = unicast_client_ep_metadata(ep, buf, meta, meta_len);
 	if (err != 0) {
+		reset_att_buf(&uni_cli_insts[bt_conn_index(stream->conn)]);
 		return err;
 	}
 
@@ -3731,6 +3739,7 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 
 	err = unicast_client_ep_disable(ep, buf);
 	if (err != 0) {
+		reset_att_buf(&uni_cli_insts[bt_conn_index(stream->conn)]);
 		return err;
 	}
 
@@ -3767,6 +3776,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 		err = unicast_client_ep_stop(ep, buf);
 		if (err != 0) {
+			reset_att_buf(&uni_cli_insts[bt_conn_index(stream->conn)]);
 			return err;
 		}
 		req->num_ases++;
@@ -3783,7 +3793,11 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 
 			return -ENOEXEC;
 		}
+
+		return 0;
 	}
+
+	reset_att_buf(&uni_cli_insts[bt_conn_index(stream->conn)]);
 
 	return 0;
 }
@@ -3821,11 +3835,13 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 
 	err = unicast_client_ep_release(ep, buf);
 	if (err != 0) {
+		reset_att_buf(&uni_cli_insts[bt_conn_index(stream->conn)]);
 		return err;
 	}
 
 	/* Check if anything needs to be send */
 	if (len == buf->len) {
+		reset_att_buf(&uni_cli_insts[bt_conn_index(stream->conn)]);
 		return 0;
 	}
 

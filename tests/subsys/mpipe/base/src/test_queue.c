@@ -69,7 +69,7 @@ static struct mpipe_object *queue_object(struct mpipe_queue *queue)
 
 /*
  * READY -> PAUSED creates the queue thread with an indefinite start delay,
- * so nothing consumes the msgq until PAUSED -> PLAYING: what the chain
+ * so nothing consumes the msgq until PAUSED -> PLAYING: what the processing
  * function leaves in it can be inspected.
  */
 static void queue_enter_paused(struct mpipe_queue *queue, uint8_t size, uint8_t leak)
@@ -90,12 +90,12 @@ static void queue_leave_paused(struct mpipe_queue *queue)
 	zassert_equal(k_msgq_num_used_get(&queue->msgq), 0, "teardown left buffers queued");
 }
 
-static void queue_chain(struct mpipe_queue *queue, struct net_buf *buf)
+static void queue_process(struct mpipe_queue *queue, struct net_buf *buf)
 {
 	struct net_buf *out = NULL;
 	struct mpipe_pad *sink_pad = &queue->transform.sink_pad;
 
-	zassert_ok(sink_pad->chain_fn(sink_pad, buf, &out));
+	zassert_ok(sink_pad->process_fn(sink_pad, buf, &out));
 	zassert_is_null(out, "the queue hands nothing back synchronously");
 }
 
@@ -135,7 +135,7 @@ ZTEST_F(test_queue, test_leak_oldest_keeps_the_freshest)
 	queue_enter_paused(queue, 1, MPIPE_BASE_QUEUE_LEAK_OLDEST);
 
 	for (uint8_t i = 0; i < BUFS_NUM; i++) {
-		queue_chain(queue, fixture->bufs[i]);
+		queue_process(queue, fixture->bufs[i]);
 	}
 
 	zassert_equal(k_msgq_num_used_get(&queue->msgq), 1);
@@ -153,7 +153,7 @@ ZTEST_F(test_queue, test_leak_newest_keeps_the_order)
 	queue_enter_paused(queue, 1, MPIPE_BASE_QUEUE_LEAK_NEWEST);
 
 	for (uint8_t i = 0; i < BUFS_NUM; i++) {
-		queue_chain(queue, fixture->bufs[i]);
+		queue_process(queue, fixture->bufs[i]);
 	}
 
 	zassert_equal(k_msgq_num_used_get(&queue->msgq), 1);
@@ -172,12 +172,12 @@ ZTEST_F(test_queue, test_leak_never_drops_eos)
 
 	queue_enter_paused(queue, 1, MPIPE_BASE_QUEUE_LEAK_OLDEST);
 
-	queue_chain(queue, fixture->bufs[0]);
+	queue_process(queue, fixture->bufs[0]);
 	zassert_ok(sink_pad->event_fn(sink_pad, &eos));
 	zassert_equal(k_msgq_num_used_get(&queue->msgq), 2, "EOS is queued behind the buffer");
 
 	/* A full queue makes room from a buffer, never from the sentinel */
-	queue_chain(queue, fixture->bufs[1]);
+	queue_process(queue, fixture->bufs[1]);
 	zassert_equal(fixture->bufs[0]->ref, 0, "the buffer ahead of EOS was released");
 	zassert_equal(k_msgq_num_used_get(&queue->msgq), 2);
 

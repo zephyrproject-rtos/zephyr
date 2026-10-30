@@ -15,8 +15,6 @@ LOG_MODULE_REGISTER(net_l2_dummy, LOG_LEVEL_NONE);
 
 #include <zephyr/net/dummy.h>
 
-#include "net_stats.h"
-
 static inline enum net_verdict dummy_recv(struct net_if *iface,
 					  struct net_pkt *pkt)
 {
@@ -61,11 +59,7 @@ static inline int dummy_send(struct net_if *iface, struct net_pkt *pkt)
 
 	ret = net_l2_send(api->send, dev, iface, pkt);
 	if (!ret) {
-		if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
-			NET_DBG("Sending pkt %p len %zu", pkt, pkt_len);
-			net_stats_update_bytes_sent(iface, pkt_len);
-		}
-
+		/* net_if_tx() updates the sent statistics with this length */
 		ret = (int)pkt_len;
 		net_pkt_unref(pkt);
 	}

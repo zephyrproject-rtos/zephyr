@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "emtrion emSBC-NEON-CM7 board";
 	compatible = "emtrion,emsbc-neon-cm7", "st,stm32f769I-disco";
+	model = "emtrion emSBC-NEON-CM7 board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -22,14 +22,6 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,canbus = &can1;
-	};
-
-	sdram1: sdram@c0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
-		reg = <0xc0000000 DT_SIZE_M(32)>;
-		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	leds {
@@ -44,6 +36,14 @@
 	aliases {
 		led0 = &red_led_1;
 		eeprom-0 = &eeprom0;
+	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xc0000000 DT_SIZE_M(32)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
@@ -74,11 +74,11 @@
 };
 
 &mco1 {
-	status = "okay";
 	clocks = <&rcc STM32_SRC_HSE MCO1_SEL(MCO1_SEL_HSE)>;
 	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
 	pinctrl-0 = <&rcc_mco_1_pa8>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 arduino_i2c: &i2c1 {};
@@ -104,8 +104,8 @@ arduino_serial: &usart3 {};
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 
 	eeprom0: eeprom@50 {
 		/* 24AA02E48T */
@@ -190,7 +190,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -204,29 +203,30 @@ zephyr_udc0: &usbotg_fs {
 
 	nvmem-cells = <&eeprom0_eui48>;
 	nvmem-cell-names = "mac-address";
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	ethphy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
-		status = "okay";
 		reset-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioa 10 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &quadspi {
@@ -239,33 +239,33 @@ zephyr_udc0: &usbotg_fs {
 	ext_flash_ctrl: qspi-flash-controller@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(16)>; /* Ext Flash mem-mapped to 0x90000000 */
 		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <DT_FREQ_M(80)>;
-		status = "okay";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(16)>; /* Ext Flash mem-mapped to 0x90000000 */
+		status = "okay";
 
 		ext_flash: is25lp128: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(16)>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			status = "okay";
-			ranges;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				storage_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage";
 					reg = <0x0 DT_SIZE_M(16)>;
+					label = "storage";
 				};
 			};
 		};
@@ -273,7 +273,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &fmc {
-	status = "okay";
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1 &fmc_nbl2_pi4
 		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke0_ph2 &fmc_sdne0_ph3
 		     &fmc_sdnras_pf11 &fmc_sdncas_pg15
@@ -286,14 +285,15 @@ zephyr_udc0: &usbotg_fs {
 		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
 		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sdram {
-		status = "okay";
 
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x230>;
 		refresh-rate = <603>;
+		status = "okay";
 
 		bank@0 {
 			reg = <0>;

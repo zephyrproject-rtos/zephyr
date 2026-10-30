@@ -1209,6 +1209,11 @@ static void process_unack_tx(struct bt_conn *conn)
 {
 	LOG_DBG("%p", conn);
 
+	/* What was sent in part is not continued on the object's next
+	 * connection: a central CIS keeps its object, without it being zeroed.
+	 */
+	conn->next_is_frag = false;
+
 	/* Return any unacknowledged packets */
 	while (1) {
 		struct bt_conn_tx *tx;
@@ -1225,6 +1230,7 @@ static void process_unack_tx(struct bt_conn *conn)
 
 		conn_tx_destroy(conn, tx);
 		k_sem_give(bt_conn_get_pkts(conn));
+		atomic_dec(&conn->in_ll);
 	}
 }
 
@@ -1711,6 +1717,18 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
 		LOG_WRN("Timeout discarded. No blocking in syswq.");
+		timeout = K_NO_WAIT;
+	}
+
+	/*
+	 * Only K_FOREVER is forced to K_NO_WAIT here: it is the only timeout
+	 * that blocks bt_workq indefinitely, since bt_workq is also what
+	 * releases the buffers. Bounded timeouts (e.g. L2CAP_RTX_TIMEOUT)
+	 * only stall RX processing briefly and are intentionally left
+	 * untouched.
+	 */
+	if (K_TIMEOUT_EQ(timeout, K_FOREVER) && bt_is_work_thread()) {
+		LOG_DBG("Timeout K_FOREVER discarded. No blocking in bt_workq.");
 		timeout = K_NO_WAIT;
 	}
 
@@ -4132,7 +4150,7 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 		return -EINVAL;
 	}
 
-	if (!bt_id_scan_random_addr_check()) {
+	if (!bt_id_conn_random_addr_check()) {
 		return -EINVAL;
 	}
 
@@ -4223,7 +4241,7 @@ static int conn_le_create_common_checks(const bt_addr_le_t *peer,
 		return -EALREADY;
 	}
 
-	if (!bt_id_scan_random_addr_check()) {
+	if (!bt_id_conn_random_addr_check()) {
 		LOG_DBG("Conn check failed: invalid random address.");
 		return -EINVAL;
 	}

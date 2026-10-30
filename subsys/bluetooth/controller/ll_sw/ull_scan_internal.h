@@ -78,6 +78,14 @@ int ull_scan_aux_reset(void);
 /* Helper to setup scanning on auxiliary channel */
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx);
 
+/* Whether the extended header of a received extended advertising PDU fits in
+ * the PDU and holds every field that its flags announce (Core Spec v6.3,
+ * Vol 6, Part B, Section 2.3.4). The parsers walk the fields of a complete
+ * header only. A PDU without an extended header has no flags and is complete.
+ * The LLL calls it as ull_scan_aux_lll_ext_hdr_is_complete().
+ */
+bool ull_scan_aux_ext_hdr_is_complete(const struct pdu_adv *pdu);
+
 /* Helper to clean up auxiliary channel scanning */
 void ull_scan_aux_done(struct node_rx_event_done *done);
 

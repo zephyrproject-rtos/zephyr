@@ -219,7 +219,8 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 		} else {
 			dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 			dticks = max(1, dticks);
-			ticks = timeout.ticks;
+			/* report the decoded absolute expiry, not the Z_TICK_ABS encoding */
+			ticks = Z_TICK_ABS(timeout.ticks);
 		}
 
 		if (z_timeout_q_insert(to, dticks) && !any_cpu_announcing()) {
@@ -248,11 +249,14 @@ int z_try_abort_timeout(struct _timeout *to)
 			if (was_first) {
 				reprogram_next(elapsed());
 			}
-		} else if (IS_ENABLED(CONFIG_SMP) && inflight_ptr() == to &&
-			   !this_cpu_announcing()) {
-			/* Handler in flight on another CPU. Free-safety
-			 * callers retry on -EAGAIN to wait it out; others
-			 * rely on the superseded mark below and don't.
+		}
+
+		if (IS_ENABLED(CONFIG_SMP) && inflight_ptr() == to &&
+		    !this_cpu_announcing()) {
+			/* Handler in flight on another CPU, even if we just
+			 * removed a copy it re-queued (periodic timer).
+			 * Free-safety callers retry on -EAGAIN to wait it
+			 * out; others rely on the superseded mark below.
 			 */
 			ret = -EAGAIN;
 		}

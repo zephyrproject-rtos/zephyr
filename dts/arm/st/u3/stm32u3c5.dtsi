@@ -10,16 +10,6 @@
 	soc {
 		compatible = "st,stm32u3c5", "st,stm32u3", "simple-bus";
 
-		pinctrl: pin-controller@42020000 {
-			gpiof: gpio@42021400 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x42021400 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
-			};
-		};
-
 		pwr: power@40030800 {
 			wakeup-controller {
 				wkup@8 {
@@ -28,6 +18,16 @@
 						     <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
 						     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
 				};
+			};
+		};
+
+		pinctrl: pin-controller@42020000 {
+			gpiof: gpio@42021400 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42021400 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
 			};
 		};
 

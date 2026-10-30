@@ -3,8 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-
 / {
 	chosen {
 		zephyr,flash = &hyperram0;
@@ -34,9 +32,9 @@
 	 *
 	 * If not configured by the ROM bootloader, the user must ensure the hyperram0
 	 * device is enabled in the DTS, otherwise, the user must set 'status = "disabled";
-	 * Note: mpu_region.c uses the status property from the DTS to configure the
-	 * corresponding MPU settings.
+	 * Note: mpu_regions.c uses the status property from the DTS to configure the
+	 * corresponding MPU settings, and maps hyperram0 as executable when it is the
+	 * chosen zephyr,flash.
 	 */
-	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	status = "okay";
 };

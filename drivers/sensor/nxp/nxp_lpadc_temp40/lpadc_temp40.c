@@ -14,6 +14,21 @@
 
 LOG_MODULE_REGISTER(lpadc_temp40, CONFIG_SENSOR_LOG_LEVEL);
 
+/*
+ * Some SoC feature headers expose the temperature sensor calibration
+ * constants without the FSL_FEATURE_LPADC_ prefix (e.g. MCXL255).
+ */
+#if !defined(FSL_FEATURE_LPADC_TEMP_PARAMETER_A) && defined(TEMP_PARAMETER_A)
+#define FSL_FEATURE_LPADC_TEMP_PARAMETER_A TEMP_PARAMETER_A
+#endif
+#if !defined(FSL_FEATURE_LPADC_TEMP_PARAMETER_B) && defined(TEMP_PARAMETER_B)
+#define FSL_FEATURE_LPADC_TEMP_PARAMETER_B TEMP_PARAMETER_B
+#endif
+#if !defined(FSL_FEATURE_LPADC_TEMP_PARAMETER_ALPHA) && defined(TEMP_PARAMETER_ALPHA)
+#define FSL_FEATURE_LPADC_TEMP_PARAMETER_ALPHA TEMP_PARAMETER_ALPHA
+#endif
+
+
 /* Four ADC samples: first two are dropped, then VBE1 and VBE8 */
 #define TEMP_ADC_SAMPLES 1
 

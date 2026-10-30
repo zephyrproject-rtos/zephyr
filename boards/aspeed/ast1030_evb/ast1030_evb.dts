@@ -8,8 +8,8 @@
 #include <aspeed/ast10x0.dtsi>
 
 / {
-	model = "Aspeed AST1030 Evaluation board";
 	compatible = "aspeed,ast1030-evb";
+	model = "Aspeed AST1030 Evaluation board";
 
 	chosen {
 		zephyr,console = &uart5;

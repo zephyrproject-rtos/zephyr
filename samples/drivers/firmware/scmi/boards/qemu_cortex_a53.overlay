@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	firmware {
+		optee: optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+			status = "okay";
+		};
+
+		scmi {
+			compatible = "linaro,scmi-optee";
+			linaro,optee = <&optee>;
+			linaro,optee-channel-id = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			scmi_clock: protocol@14 {
+				compatible = "arm,scmi-clock";
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+		};
+	};
+
+	soc {
+		/delete-node/ memory@40000000;
+
+		sram0: memory@60000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x60000000 0x0 DT_SIZE_M(128)>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};

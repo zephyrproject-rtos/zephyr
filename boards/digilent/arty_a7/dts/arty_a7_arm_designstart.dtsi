@@ -166,16 +166,15 @@
 
 	daplink_qspi_mux: daplink_qspi_mux {
 		compatible = "arm,daplink-qspi-mux";
-		status = "disabled";
 		interrupt-parent = <&nvic>;
 		interrupts = <7 0>;
 		mux-gpios = <&daplink_gpio0 0 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
 	};
 
 	soc {
 		daplink_gpio0: gpio@40010000 {
 			compatible = "xlnx,xps-gpio-1.00.a";
-			status = "disabled";
 			reg = <0x40010000 0x10000>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -186,11 +185,11 @@
 			xlnx,gpio-width = <0x20>;
 			xlnx,is-dual = <0x0>;
 			xlnx,tri-default = <0xffffffff>;
+			status = "disabled";
 		};
 
 		daplink_quad_spi0: spi@40020000 {
 			compatible = "xlnx,xps-spi-2.00.a";
-			status = "disabled";
 			reg = <0x40020000 0x10000>;
 			interrupts = <4 0>;
 			#address-cells = <1>;
@@ -198,11 +197,11 @@
 
 			xlnx,num-ss-bits = <0x1>;
 			xlnx,num-transfer-bits = <0x8>;
+			status = "disabled";
 		};
 
 		daplink_single_spi0: spi@40030000 {
 			compatible = "xlnx,xps-spi-2.00.a";
-			status = "disabled";
 			reg = <0x40030000 0x10000>;
 			interrupts = <5 0>;
 			#address-cells = <1>;
@@ -210,18 +209,19 @@
 
 			xlnx,num-ss-bits = <0x1>;
 			xlnx,num-transfer-bits = <0x8>;
+			status = "disabled";
 		};
 
 		uartlite0: uartlite@40100000 {
 			compatible = "xlnx,xps-uartlite-1.00.a";
-			interrupts = <0 0>;
 			reg = <0x40100000 0x10000>;
+			interrupts = <0 0>;
 		};
 
 		gpio0: gpio@40110000 {
 			compatible = "xlnx,xps-gpio-1.00.a";
-			interrupts = <1 0>;
 			reg = <0x40110000 0x10000>;
+			interrupts = <1 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
 
@@ -246,8 +246,8 @@
 
 		gpio1: gpio@40120000 {
 			compatible = "xlnx,xps-gpio-1.00.a";
-			interrupts = <2 0>;
 			reg = <0x40120000 0x10000>;
+			interrupts = <2 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
 
@@ -293,7 +293,6 @@
 					#size-cells = <1>;
 
 					fpga_bitstream_partition: partition@0 {
-						label = "fpga_bitstream";
 						/* From Xilinx 7 Series FPGA User Guide (UG470)
 						 * Table 1-1: Bitstream Length
 						 *           Bits    Bytes (sector multiple)
@@ -301,6 +300,7 @@
 						 * A100T: 30,606,304     0x3a8000
 						 */
 						reg = <0x00000000 0x218000>;
+						label = "fpga_bitstream";
 					};
 				};
 			};

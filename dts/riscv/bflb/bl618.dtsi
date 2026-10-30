@@ -8,6 +8,6 @@
 #include <zephyr/dt-bindings/pinctrl/bl618x-pinctrl.h>
 
 &psram {
-	status = "okay";
 	reg = <0xa8000000 DT_SIZE_M(4)>;
+	status = "okay";
 };

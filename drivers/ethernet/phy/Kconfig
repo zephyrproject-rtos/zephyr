@@ -5,7 +5,9 @@
 
 menuconfig ETH_PHY_DRIVER
 	bool "Ethernet PHY drivers"
-	default y
+	help
+	  Enable Ethernet PHY drivers. Ethernet drivers that need a PHY
+	  driver should select this.
 
 if ETH_PHY_DRIVER
 

@@ -58,11 +58,7 @@ int mpipe_structure_clear(struct mpipe_structure *structure)
 {
 	__ASSERT_NO_MSG(structure != NULL);
 
-	/*
-	 * Resetting num_fields to empty the structure. Every read of ids and values is
-	 * bounded by num_fields, so the slots past it are already unreachable. The media
-	 * type and the flags are left alone so the structure can be filled in again as it is.
-	 */
+	/* Reads are bounded by num_fields; the media type and flags stay */
 	structure->num_fields = 0;
 
 	return 0;
@@ -113,7 +109,7 @@ int mpipe_structure_init_fields(struct mpipe_structure *structure, uint8_t media
 	va_list args;
 	struct mpipe_value value;
 	enum mpipe_value_type type;
-	uint8_t field_id;
+	uint32_t field_id;
 	int ret;
 
 	ret = mpipe_structure_init(structure, media_type_id);
@@ -122,9 +118,15 @@ int mpipe_structure_init_fields(struct mpipe_structure *structure, uint8_t media
 	}
 
 	va_start(args, media_type_id);
-	while (1) {
-		field_id = (uint8_t)va_arg(args, uint32_t);
+	while (true) {
+		field_id = va_arg(args, uint32_t);
 		if (field_id == MPIPE_CAPS_END) {
+			break;
+		}
+
+		/* Checked before the narrowing cast, or 256 would pass as field 0 */
+		if (field_id > UINT8_MAX) {
+			ret = -EINVAL;
 			break;
 		}
 
@@ -134,7 +136,7 @@ int mpipe_structure_init_fields(struct mpipe_structure *structure, uint8_t media
 			break;
 		}
 
-		ret = mpipe_structure_append_value(structure, field_id, &value);
+		ret = mpipe_structure_append_value(structure, (uint8_t)field_id, &value);
 		if (ret != 0) {
 			break;
 		}
@@ -203,15 +205,11 @@ int mpipe_structure_intersect(const struct mpipe_structure *struct1,
 	struct mpipe_value intersect_value;
 	bool common = false;
 
-	/*
-	 * The result is built into out field by field, so an out that is also
-	 * an input would be read after it has been reset. Nothing needs it, so
-	 * it is refused rather than paid for with a scratch structure.
-	 */
 	__ASSERT_NO_MSG(struct1 != NULL);
 	__ASSERT_NO_MSG(struct2 != NULL);
 	__ASSERT_NO_MSG(out != NULL);
 
+	/* out is built field by field, so it cannot be an input */
 	if (out == struct1 || out == struct2) {
 		return -EINVAL;
 	}

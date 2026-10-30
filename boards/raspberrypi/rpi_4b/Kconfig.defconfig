@@ -3,6 +3,19 @@
 
 if BOARD_RPI_4B
 
+config PM_DEVICE
+	default y if PM
+
+if PM_DEVICE
+
+config POWER_DOMAIN
+	default y
+
+config PM_DEVICE_POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
 if NET_L2_ETHERNET
 
 configdefault NET_BUF_RX_COUNT

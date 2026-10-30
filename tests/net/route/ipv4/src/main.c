@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_ROUTE_LOG_LEVEL);
 
 #include "route_ipv4.h"
 #include "arp.h"
+#include "ipv4.h"
 
 static struct net_in_addr my_addr = { .s4_addr = { 192, 0, 2, 1 } };
 static struct net_in_addr my_addr_alt = { .s4_addr = { 192, 0, 3, 1 } };
@@ -41,7 +42,10 @@ static struct net_in_addr forward_src_addr = { .s4_addr = { 198, 51, 100, 200 } 
 static struct net_in_addr onlink_dest_addr_alt = { .s4_addr = { 192, 0, 3, 50 } };
 static struct net_in_addr onlink_input_dest = { .s4_addr = { 192, 0, 3, 60 } };
 static struct net_in_addr offlink_dest_addr = { .s4_addr = { 203, 0, 113, 200 } };
+static struct net_in_addr onlink_same_iface_dest = { .s4_addr = { 192, 0, 2, 50 } };
+static struct net_in_addr my_subnet_bcast = { .s4_addr = { 192, 0, 2, 255 } };
 static struct net_eth_addr onlink_input_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x60 } };
+static struct net_eth_addr onlink_same_iface_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x50 } };
 static struct net_eth_addr gateway_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x10 } };
 static struct net_eth_addr gateway_lladdr_alt = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x11 } };
 
@@ -57,6 +61,7 @@ static struct net_if *sent_iface;
 static struct net_if *sent_orig_iface;
 static bool sent_forwarding;
 static uint8_t sent_ipv4_ttl;
+static bool sent_ipv4_chksum_ok;
 
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
@@ -107,6 +112,47 @@ static void net_route_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
+static uint16_t ipv4_checksum(const uint8_t *data, size_t len)
+{
+	uint32_t sum = 0U;
+
+	for (size_t i = 0; i < len; i += 2U) {
+		sum += ((uint16_t)data[i] << 8) | data[i + 1];
+	}
+
+	while ((sum >> 16U) != 0U) {
+		sum = (sum & 0xFFFFU) + (sum >> 16U);
+	}
+
+	return net_htons((uint16_t)(~sum & 0xFFFFU));
+}
+
+/* Verify the header checksum over the full header, options included */
+static bool forwarded_ipv4_chksum_ok(struct net_pkt *pkt)
+{
+	uint8_t hdr[NET_IPV4H_LEN + NET_IPV4_HDR_OPTNS_MAX_LEN];
+	struct net_pkt_cursor backup;
+	size_t hdr_len;
+	bool ok = false;
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, sizeof(struct net_eth_hdr)) == 0 &&
+	    net_pkt_read(pkt, hdr, NET_IPV4H_LEN) == 0) {
+		hdr_len = (hdr[0] & 0x0FU) * 4U;
+
+		if (hdr_len >= NET_IPV4H_LEN &&
+		    net_pkt_read(pkt, &hdr[NET_IPV4H_LEN], hdr_len - NET_IPV4H_LEN) == 0) {
+			ok = ipv4_checksum(hdr, hdr_len) == 0U;
+		}
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ok;
+}
+
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
@@ -122,6 +168,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	sent_ll_proto_type = net_pkt_ll_proto_type(pkt);
 	sent_arp_request_seen = false;
 	sent_ipv4_ttl = sent_forwarding ? net_pkt_ipv4_ttl(pkt) : 0U;
+	sent_ipv4_chksum_ok = sent_forwarding &&
+			      net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP &&
+			      forwarded_ipv4_chksum_ok(pkt);
 
 	resolve_addr = net_pkt_ipv4_ll_resolve_addr(pkt);
 	if (resolve_addr != NULL) {
@@ -175,22 +224,12 @@ static void reset_send_state(void)
 	sent_orig_iface = NULL;
 	sent_forwarding = false;
 	sent_ipv4_ttl = 0U;
+	sent_ipv4_chksum_ok = false;
 }
 
 static uint16_t ipv4_header_checksum(const struct net_ipv4_hdr *hdr)
 {
-	const uint8_t *data = (const uint8_t *)hdr;
-	uint32_t sum = 0U;
-
-	for (size_t i = 0; i < sizeof(*hdr); i += 2U) {
-		sum += ((uint16_t)data[i] << 8) | data[i + 1];
-	}
-
-	while ((sum >> 16U) != 0U) {
-		sum = (sum & 0xFFFFU) + (sum >> 16U);
-	}
-
-	return net_htons((uint16_t)(~sum & 0xFFFFU));
+	return ipv4_checksum((const uint8_t *)hdr, sizeof(*hdr));
 }
 
 static struct net_route_test net_route_data = {
@@ -765,6 +804,87 @@ static void test_route_ipv4_forward_ttl_expired_drops(void)
 	zassert_ok(net_route_ipv4_del(route), "Forwarding route del failed");
 }
 
+/* Receive an IPv4 header with 40 bytes of options. With split_options the
+ * options are in a second buffer, apart from the fixed header.
+ */
+static void recv_ipv4_options_frame(uint16_t total_len, bool split_options)
+{
+	uint8_t ip[NET_IPV4H_LEN + NET_IPV4_HDR_OPTNS_MAX_LEN] = { 0 };
+	struct net_ipv4_hdr *hdr = (struct net_ipv4_hdr *)ip;
+	size_t first_len = split_options ? NET_IPV4H_LEN : sizeof(ip);
+	struct net_eth_hdr eth = { 0 };
+	struct net_buf *buf;
+	struct net_pkt *pkt;
+
+	reset_send_state();
+	drain_wait_data();
+
+	hdr->vhl = 0x4f;
+	hdr->ttl = 2U;
+	hdr->proto = NET_IPPROTO_UDP;
+	hdr->len = net_htons(total_len);
+	net_ipv4_addr_copy_raw(hdr->src, forward_src_addr.s4_addr);
+	net_ipv4_addr_copy_raw(hdr->dst, dest_addr_iface1.s4_addr);
+	memset(&ip[NET_IPV4H_LEN], NET_IPV4_OPTS_NOP, NET_IPV4_HDR_OPTNS_MAX_LEN);
+	hdr->chksum = ipv4_checksum(ip, sizeof(ip));
+
+	memcpy(eth.dst.addr, net_if_get_link_addr(my_iface)->addr, sizeof(eth.dst.addr));
+	memcpy(eth.src.addr, gateway_lladdr.addr, sizeof(eth.src.addr));
+	eth.type = net_htons(NET_ETH_PTYPE_IP);
+
+	pkt = net_pkt_rx_alloc_on_iface(my_iface, K_NO_WAIT);
+	zassert_not_null(pkt, "Input packet alloc failed");
+
+	buf = net_pkt_get_frag(pkt, sizeof(eth) + first_len, K_NO_WAIT);
+	zassert_not_null(buf, "Input buffer alloc failed");
+	net_buf_add_mem(buf, &eth, sizeof(eth));
+	net_buf_add_mem(buf, ip, first_len);
+	/* Bytes past the end of the data must never be read */
+	memset(net_buf_tail(buf), 0xAA, net_buf_tailroom(buf));
+	net_pkt_append_buffer(pkt, buf);
+
+	if (split_options) {
+		buf = net_pkt_get_frag(pkt, sizeof(ip) - first_len, K_NO_WAIT);
+		zassert_not_null(buf, "Option buffer alloc failed");
+		net_buf_add_mem(buf, &ip[first_len], sizeof(ip) - first_len);
+		net_pkt_append_buffer(pkt, buf);
+	}
+
+	zassert_ok(net_recv_data(my_iface, pkt), "Input receive failed");
+}
+
+static void test_route_ipv4_forward_hdr_options(void)
+{
+	struct net_route_entry *route;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_FORWARDING);
+
+	route = net_route_ipv4_add(my_iface_alt, &dest_addr_iface1, 32,
+				   &gateway_addr_alt, NET_ROUTE_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "Forwarding route add failed");
+
+	net_arp_update(my_iface_alt, &gateway_addr_alt, &gateway_lladdr_alt, true);
+
+	/* The checksum covers 60 bytes, but the datagram ends after 20 */
+	recv_ipv4_options_frame(NET_IPV4H_LEN, false);
+	zexpect_not_equal(k_sem_take(&wait_data, WAIT_TIME), 0,
+			  "IPv4 header longer than the datagram must not be forwarded");
+	zexpect_false(sent_pkt_seen, "IPv4 header longer than the datagram was sent");
+
+	recv_ipv4_options_frame(NET_IPV4H_LEN + NET_IPV4_HDR_OPTNS_MAX_LEN, false);
+	zexpect_ok(k_sem_take(&wait_data, WAIT_TIME), "IPv4 packet with options not forwarded");
+	zexpect_true(sent_ipv4_chksum_ok, "Forwarded IPv4 header checksum is wrong");
+
+	recv_ipv4_options_frame(NET_IPV4H_LEN + NET_IPV4_HDR_OPTNS_MAX_LEN, true);
+	zexpect_ok(k_sem_take(&wait_data, WAIT_TIME),
+		   "IPv4 packet with options in a second buffer not forwarded");
+	zexpect_true(sent_ipv4_chksum_ok, "Forwarded IPv4 header checksum is wrong");
+
+	net_arp_clear_cache(my_iface_alt);
+	zassert_ok(net_route_ipv4_del(route), "Forwarding route del failed");
+}
+
 static void test_route_ipv4_forward_onlink_packet_between_ifaces(void)
 {
 	struct net_pkt *pkt;
@@ -913,21 +1033,20 @@ static void test_route_ipv4_onlink_null_iface_searches_all(void)
 		      "Off-link address must not match with NULL iface pointer");
 }
 
-static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
+static const struct net_eth_addr *my_iface_lladdr(void)
 {
+	return (const struct net_eth_addr *)net_if_get_link_addr(my_iface)->addr;
+}
+
+/* Inject a frame as if received on my_iface. */
+static void recv_ipv4_frame(const struct net_eth_addr *eth_dst,
+			    const struct net_in_addr *dst,
+			    uint8_t proto, uint8_t ttl)
+{
+	struct net_eth_addr src_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x61 } };
 	struct net_ipv4_hdr *hdr;
 	struct net_eth_hdr *eth;
 	struct net_pkt *pkt;
-	struct net_eth_addr src_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x61 } };
-
-	/* A packet received on my_iface but destined to an address that is not
-	 * ours and has no routing table entry, yet is on-link on my_iface_alt,
-	 * must be routed out my_iface_alt. This exercises the on-link branch of
-	 * ipv4_route_packet(), which only works once net_if_ipv4_addr_onlink()
-	 * honors the NULL "search all interfaces" contract.
-	 */
-	net_arp_clear_cache(my_iface_alt);
-	net_arp_update(my_iface_alt, &onlink_input_dest, &onlink_input_lladdr, true);
 
 	reset_send_state();
 	drain_wait_data();
@@ -936,11 +1055,11 @@ static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
 					sizeof(struct net_eth_hdr) +
 					sizeof(struct net_ipv4_hdr),
 					NET_AF_UNSPEC, 0, K_NO_WAIT);
-	zassert_not_null(pkt, "On-link input packet alloc failed");
+	zassert_not_null(pkt, "Input packet alloc failed");
 
 	eth = (struct net_eth_hdr *)net_buf_add(pkt->buffer, sizeof(struct net_eth_hdr));
 	zassert_not_null(eth, "Cannot reserve Ethernet header");
-	memcpy(eth->dst.addr, net_if_get_link_addr(my_iface)->addr, sizeof(eth->dst.addr));
+	memcpy(eth->dst.addr, eth_dst->addr, sizeof(eth->dst.addr));
 	memcpy(eth->src.addr, src_lladdr.addr, sizeof(eth->src.addr));
 	eth->type = net_htons(NET_ETH_PTYPE_IP);
 
@@ -949,35 +1068,129 @@ static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
 
 	memset(hdr, 0, sizeof(*hdr));
 	hdr->vhl = 0x45;
-	hdr->ttl = 2U;
-	hdr->proto = NET_IPPROTO_UDP;
+	hdr->ttl = ttl;
+	hdr->proto = proto;
 	hdr->len = net_htons(sizeof(struct net_ipv4_hdr));
 	net_ipv4_addr_copy_raw(hdr->src, forward_src_addr.s4_addr);
-	net_ipv4_addr_copy_raw(hdr->dst, onlink_input_dest.s4_addr);
+	net_ipv4_addr_copy_raw(hdr->dst, dst->s4_addr);
 	hdr->chksum = ipv4_header_checksum(hdr);
 
-	zassert_ok(net_recv_data(my_iface, pkt), "On-link input receive failed");
+	zassert_ok(net_recv_data(my_iface, pkt), "Input receive failed");
+}
 
-	/* Skip any ARP frames and wait for the routed IPv4 packet. */
+/* Wait for a routed IPv4 packet to leave, skipping ARP frames. */
+static bool routed_pkt_sent(void)
+{
 	for (int i = 0; i < 5; i++) {
-		zassert_ok(k_sem_take(&wait_data, WAIT_TIME),
-			   "On-link routed packet was not sent");
-		if (sent_ll_proto_type != NET_ETH_PTYPE_ARP) {
-			break;
+		if (k_sem_take(&wait_data, WAIT_TIME) != 0) {
+			return false;
+		}
+
+		if (sent_ll_proto_type == NET_ETH_PTYPE_IP) {
+			return true;
 		}
 	}
 
-	zassert_true(sent_pkt_seen, "On-link routed packet not observed");
-	zassert_not_equal(sent_ll_proto_type, NET_ETH_PTYPE_ARP,
-			  "On-link routing should not stop at ARP");
-	zassert_equal(sent_ll_proto_type, NET_ETH_PTYPE_IP,
-		      "Expected the routed IPv4 packet to be sent");
-	zassert_equal_ptr(sent_iface, my_iface_alt,
-			  "On-link packet routed via wrong egress interface");
-	zassert_equal_ptr(sent_orig_iface, my_iface,
-			  "On-link routed packet missing ingress interface");
+	return false;
+}
+
+static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
+{
+	bool sent;
+
+	/* A packet received on my_iface for an address that is not ours, has
+	 * no routing table entry and is on-link on my_iface_alt. A forwarder
+	 * sends it out my_iface_alt, a host drops it.
+	 */
+	net_arp_clear_cache(my_iface_alt);
+	net_arp_update(my_iface_alt, &onlink_input_dest, &onlink_input_lladdr, true);
+
+	recv_ipv4_frame(my_iface_lladdr(), &onlink_input_dest, NET_IPPROTO_UDP, 2U);
+	sent = routed_pkt_sent();
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_FORWARDING)) {
+		zassert_false(sent, "Host must not route a packet that is not for it");
+	} else {
+		zassert_true(sent, "On-link routed packet was not sent");
+		zassert_equal_ptr(sent_iface, my_iface_alt,
+				  "On-link packet routed via wrong egress interface");
+		zassert_equal_ptr(sent_orig_iface, my_iface,
+				  "On-link routed packet missing ingress interface");
+		zassert_true(sent_forwarding,
+			     "On-link routed packet should be marked forwarded");
+		zassert_equal(sent_ipv4_ttl, 1U,
+			      "On-link routed packet should decrement TTL");
+	}
 
 	net_arp_clear_cache(my_iface_alt);
+}
+
+static void test_route_ipv4_input_onlink_same_iface(void)
+{
+	bool sent;
+
+	/* The destination is another host on the ingress link. A forwarder
+	 * sends it back out my_iface with the TTL decremented, a host drops it.
+	 */
+	net_arp_clear_cache(my_iface);
+	net_arp_update(my_iface, &onlink_same_iface_dest, &onlink_same_iface_lladdr, true);
+
+	recv_ipv4_frame(my_iface_lladdr(), &onlink_same_iface_dest, NET_IPPROTO_UDP, 2U);
+	sent = routed_pkt_sent();
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_FORWARDING)) {
+		zassert_false(sent, "Host must not relay a packet for another host");
+	} else {
+		zassert_true(sent, "Routed packet was not sent");
+		zassert_equal_ptr(sent_iface, my_iface,
+				  "Routed packet used wrong egress interface");
+		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zassert_equal(sent_ipv4_ttl, 1U, "Routed packet should decrement TTL");
+	}
+
+	net_arp_clear_cache(my_iface);
+}
+
+static void test_route_ipv4_input_default_router(void)
+{
+	struct net_if_router *router;
+	bool sent;
+
+	/* Off-link destination with a default router on the ingress link. */
+	router = net_if_ipv4_router_add(my_iface, &gateway_addr, true, 0);
+	zassert_not_null(router, "Default router add failed");
+
+	net_arp_clear_cache(my_iface);
+	net_arp_update(my_iface, &gateway_addr, &gateway_lladdr, true);
+
+	recv_ipv4_frame(my_iface_lladdr(), &offlink_dest_addr, NET_IPPROTO_UDP, 2U);
+	sent = routed_pkt_sent();
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_FORWARDING)) {
+		zassert_false(sent, "Host must not relay a packet to its default router");
+	} else {
+		zassert_true(sent, "Routed packet was not sent");
+		zassert_equal_ptr(sent_iface, my_iface,
+				  "Routed packet used wrong egress interface");
+		zassert_true(sent_ll_resolve_addr_set,
+			     "Routed packet missing L2 resolve address");
+		zassert_true(net_ipv4_addr_cmp(&sent_ll_resolve_addr, &gateway_addr),
+			     "Routed packet should go to the default router");
+		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zassert_equal(sent_ipv4_ttl, 1U, "Routed packet should decrement TTL");
+	}
+
+	net_arp_clear_cache(my_iface);
+	zassert_true(net_if_ipv4_router_rm(router), "Default router remove failed");
+}
+
+static void test_route_ipv4_input_bcast_not_routed(void)
+{
+	/* TCP to the subnet broadcast is not for us and must not be re-sent on
+	 * the link, with or without forwarding.
+	 */
+	recv_ipv4_frame(net_eth_broadcast_addr(), &my_subnet_bcast, NET_IPPROTO_TCP, 2U);
+	zassert_false(routed_pkt_sent(), "Broadcast packet must not be re-sent");
 }
 
 ZTEST(route_test_suite, test_route)
@@ -1000,6 +1213,9 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_onlink_subnet();
 	test_route_ipv4_onlink_null_iface_searches_all();
 	test_route_ipv4_input_onlink_routes_via_matching_iface();
+	test_route_ipv4_input_onlink_same_iface();
+	test_route_ipv4_input_default_router();
+	test_route_ipv4_input_bcast_not_routed();
 	test_route_ipv4_default_route();
 	test_route_ipv4_packet_arp_handoff();
 	test_route_ipv4_packet_without_iface();
@@ -1008,6 +1224,7 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_select_src_iface_uses_explicit_route();
 	test_route_ipv4_forward_ttl_expired_drops();
 	test_route_ipv4_forward_packet_between_ifaces();
+	test_route_ipv4_forward_hdr_options();
 	test_route_ipv4_forward_onlink_packet_between_ifaces();
 	test_route_ipv4_forward_onlink_ttl_expired_drops();
 }

@@ -9,8 +9,8 @@
 #include "rzn2h_evb-pinctrl.dtsi"
 
 / {
-	model = "RZ/N2H Evaluation Board Kit";
 	compatible = "renesas,rzn2h-evb";
+	model = "RZ/N2H Evaluation Board Kit";
 
 	chosen {
 		zephyr,sram = &atcm;
@@ -85,8 +85,8 @@
 };
 
 &gpio0 {
-	status = "okay";
 	irqs = <&irq3 4>;
+	status = "okay";
 };
 
 &gpio2 {
@@ -112,11 +112,11 @@
 	at25sf128a: qspi-nor-flash@50000000 {
 		compatible = "soc-nv-flash";
 		reg = <0x50000000 DT_SIZE_M(16)>;
+		ranges = <0x0 0x50000000 DT_SIZE_M(16)>;
 		write-block-size = <1>;
 		erase-block-size = <4096>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x50000000 DT_SIZE_M(16)>;
 
 		partitions {
 			ranges;
@@ -125,22 +125,22 @@
 
 			loader_param: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "loader-param";
 				reg = <0x0 0x50>;
+				label = "loader-param";
 				read-only;
 			};
 
 			loader_program: partition@50 {
 				compatible = "zephyr,mapped-partition";
-				label = "loader-program";
 				reg = <0x50 (DT_SIZE_K(52) - 0x50)>;
+				label = "loader-program";
 				read-only;
 			};
 
 			slot0_partition: partition@d000 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-0";
 				reg = <0xd000 (DT_SIZE_M(16) - DT_SIZE_K(52))>;
+				label = "image-0";
 				read-only;
 			};
 		};

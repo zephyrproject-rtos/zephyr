@@ -5,10 +5,10 @@
  */
 
 &tc0 {
-	status = "okay";
 	compatible = "microchip,tc-g1-counter";
 	max-bit-width = <32>;
 	prescaler = <1>;
+	status = "okay";
 };
 
 &tcc1 {

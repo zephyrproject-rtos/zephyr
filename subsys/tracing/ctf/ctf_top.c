@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <kernel_internal.h>
 #include <ctf_top.h>
 #include <zephyr/net/net_core.h>
@@ -14,11 +15,19 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/sys/cpu_load.h>
 #include <zephyr/pm/state.h>
+#include <zephyr/rtio/sqe.h>
 
 struct rtio;
 struct rtio_sqe;
 struct rtio_cqe;
 struct rtio_iodev_sqe;
+
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP
+__weak uint64_t ctf_top_timestamp_get(void)
+{
+	return timing_ns_get();
+}
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {
@@ -2208,9 +2217,9 @@ void sys_trace_rtio_sqe_acquire_exit(const struct rtio *r, const struct rtio_sqe
 	ctf_top_rtio_sqe_acquire_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)sqe);
 }
 
-void sys_trace_rtio_sqe_cancel(const struct rtio_sqe *sqe)
+void sys_trace_rtio_sqe_cancel(uint32_t handle)
 {
-	ctf_top_rtio_sqe_cancel((uint32_t)(uintptr_t)sqe);
+	ctf_top_rtio_sqe_cancel(rtio_sqe_handle_index(handle), rtio_sqe_handle_generation(handle));
 }
 
 void sys_trace_rtio_cqe_submit_enter(const struct rtio *r, int result, uint32_t flags)

@@ -14,28 +14,28 @@
  * numbers may vary. Check the relevant schematics for details.
  */
 &i3c1 {
-	zephyr,deferred-init;
-	status = "okay";
 	i3c-scl-hz = <7500000>;
 	i3c-od-scl-hz = <1500000>;
 
 	bcr = <0x46>;
+	zephyr,deferred-init;
+	status = "okay";
 
 	mctp_endpoint0: mctp_endpoint0@20a00000011 {
-		zephyr,deferred-init;
 		compatible = "zephyr,mctp-i3c-endpoint";
 		reg = <0x0000 0x020a 0x00000011>;
+		zephyr,deferred-init;
 		status = "okay";
 	};
 };
 
 &i3c0 {
-	status = "okay";
 	i3c-scl-hz = <7500000>;
 	i3c-od-scl-hz = <1500000>;
 
 	bcr = <0x06>;
 	tgt-pid = <0x0000020a 0x00000011>;
+	status = "okay";
 };
 
 &pcc {

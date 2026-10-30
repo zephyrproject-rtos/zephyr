@@ -13,11 +13,11 @@
 
 / {
 	ite8xxx2: ite8xxx2@0 {
+		compatible = "ite,it8xxx2-bbram";
+		reg = <0x0 0x40>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "ite,it8xxx2-bbram";
 		status = "okay";
-		reg = <0x0 0x40>;
 	};
 
 	npcx: npcx@40 {

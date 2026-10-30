@@ -63,6 +63,11 @@ struct i2s_esp32_stream_data {
 	struct i2s_config i2s_cfg;
 	void *mem_block;
 	size_t mem_block_len;
+#if SOC_GDMA_SUPPORTED
+	/* TX: block linked behind mem_block in the DMA chain, if any */
+	void *next_block;
+	size_t next_block_len;
+#endif
 	struct k_msgq queue;
 #if !SOC_GDMA_SUPPORTED
 	struct intr_handle_data_t *irq_handle;
@@ -453,6 +458,80 @@ static int IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 
 #if I2S_ESP32_IS_DIR_EN(tx)
 
+#if SOC_GDMA_SUPPORTED
+/*
+ * Makes the block the next one to send. A reload on a running channel links
+ * it behind the transfer in flight and dma_start() is then a no-op; on a
+ * parked channel the reload starts over and dma_start() arms it.
+ */
+static int IRAM_ATTR i2s_esp32_tx_link(const struct device *dev, void *buffer, size_t size)
+{
+	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
+	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
+	int err;
+
+	err = dma_reload(stream->conf->dma_dev, stream->conf->dma_channel, (uint32_t)buffer,
+			 (uint32_t)NULL, size);
+	if (err < 0) {
+		return err;
+	}
+
+	err = dma_start(stream->conf->dma_dev, stream->conf->dma_channel);
+	if (err < 0) {
+		LOG_DBG("Failed to start the linked TX block: %d", err);
+	}
+
+	stream->data->next_block = buffer;
+	stream->data->next_block_len = size;
+
+	return 0;
+}
+
+/*
+ * Links the first queued block behind the one in flight, when nothing is
+ * linked yet. A block that cannot be linked stays queued and is started with
+ * a stop in between when the one in flight ends. Called with interrupts
+ * locked or from the DMA callback.
+ */
+static void IRAM_ATTR i2s_esp32_tx_link_next(const struct device *dev)
+{
+	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
+	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
+	struct queue_item item;
+	int err;
+
+	if (stream->data->next_block != NULL || stream->data->mem_block == NULL) {
+		return;
+	}
+
+	if (k_msgq_peek(&stream->data->queue, &item) < 0) {
+		return;
+	}
+
+	err = i2s_esp32_tx_link(dev, item.buffer, item.size);
+	if (err < 0) {
+		LOG_DBG("Next TX block not linked, left queued: %d", err);
+		return;
+	}
+
+	(void)k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
+}
+
+/* Whether the DMA reached the end of its chain and parked. */
+static bool IRAM_ATTR i2s_esp32_tx_chain_ended(const struct device *dev)
+{
+	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
+	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
+	struct dma_status status;
+
+	if (dma_get_status(stream->conf->dma_dev, stream->conf->dma_channel, &status) < 0) {
+		return false;
+	}
+
+	return !status.busy;
+}
+#endif /* SOC_GDMA_SUPPORTED */
+
 void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 {
 	struct i2s_esp32_data *dev_data =
@@ -500,6 +579,15 @@ void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 		LOG_DBG("Failed to restart TX transfer: %d", err);
 		goto tx_disable;
 	}
+
+#if SOC_GDMA_SUPPORTED
+	{
+		unsigned int key = irq_lock();
+
+		i2s_esp32_tx_link_next(dev);
+		irq_unlock(key);
+	}
+#endif /* SOC_GDMA_SUPPORTED */
 
 	return;
 
@@ -558,6 +646,36 @@ static void IRAM_ATTR i2s_esp32_tx_callback(void *arg, int status)
 		goto tx_disable;
 	}
 #endif /* !SOC_GDMA_SUPPORTED */
+
+#if SOC_GDMA_SUPPORTED
+	if (stream->data->next_block != NULL) {
+		/* The DMA went on with the linked block: nothing to restart. */
+		stream->data->mem_block = stream->data->next_block;
+		stream->data->mem_block_len = stream->data->next_block_len;
+		stream->data->next_block = NULL;
+		stream->data->next_block_len = 0;
+		stream->data->dma_pending = true;
+
+		if (!i2s_esp32_tx_chain_ended(dev)) {
+			/* On STOP the linked block plays out, but no further one is linked. */
+			if (dev_data->state != I2S_STATE_STOPPING ||
+			    !dev_data->tx_stop_without_draining) {
+				i2s_esp32_tx_link_next(dev);
+			}
+			return;
+		}
+
+		/*
+		 * The linked block ended too before this callback ran (two EOF
+		 * interrupts merged): release it as well and go on as at the end
+		 * of a chain, instead of staying a block behind for good.
+		 */
+		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
+		stream->data->mem_block = NULL;
+		stream->data->mem_block_len = 0;
+		stream->data->dma_pending = false;
+	}
+#endif /* SOC_GDMA_SUPPORTED */
 
 #if CONFIG_I2S_ESP32_ALLOWED_EMPTY_TX_QUEUE_DEFERRAL_TIME_MS
 	if (k_msgq_num_used_get(&stream->data->queue) == 0 &&
@@ -646,6 +764,14 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 
 	stream->data->transferring = true;
 
+#if SOC_GDMA_SUPPORTED
+	/* Locked against the callback restarting with the same block */
+	unsigned int key = irq_lock();
+
+	i2s_esp32_tx_link_next(dev);
+	irq_unlock(key);
+#endif /* SOC_GDMA_SUPPORTED */
+
 	return 0;
 }
 
@@ -687,6 +813,11 @@ static int IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 	if (stream->data->mem_block != NULL) {
 		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
 		stream->data->mem_block = NULL;
+	}
+	if (stream->data->next_block != NULL) {
+		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->next_block);
+		stream->data->next_block = NULL;
+		stream->data->next_block_len = 0;
 	}
 #else
 	/* Legacy DMA may still own the block; do not return it to the slab. */
@@ -851,6 +982,12 @@ int IRAM_ATTR i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (mem_block_size >
+	    (uint64_t)CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX * I2S_ESP32_DMA_BUFFER_MAX_SIZE) {
+		LOG_DBG("Run out of descriptors. Increase CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX");
+		return -EINVAL;
+	}
+
 	for (int i = 0; i < CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX; ++i) {
 		uint32_t buffer_size;
 
@@ -883,12 +1020,6 @@ int IRAM_ATTR i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 			}
 			break;
 		}
-	}
-
-	if (desc_iter->empty)  {
-		stream->data->dma_pending = false;
-		LOG_DBG("Run out of descriptors. Increase CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX");
-		return -EINVAL;
 	}
 #endif /* SOC_GDMA_SUPPORTED */
 
@@ -1254,6 +1385,15 @@ static int i2s_esp32_config_check(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("Block size is 0");
 		return -EINVAL;
 	}
+
+#if !SOC_GDMA_SUPPORTED
+	if ((dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) &&
+	    i2s_cfg->block_size >
+		    (uint64_t)CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX * I2S_ESP32_DMA_BUFFER_MAX_SIZE) {
+		LOG_DBG("RX block size exceeds DMA descriptor capacity");
+		return -EINVAL;
+	}
+#endif /* !SOC_GDMA_SUPPORTED */
 
 	data_format = i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK;
 
@@ -1677,8 +1817,9 @@ static int i2s_esp32_read(const struct device *dev, void **mem_block, size_t *si
 	}
 
 	err = k_msgq_get(&stream->data->queue, &item,
-			 (state == I2S_STATE_ERROR) ? K_NO_WAIT
-						    : K_MSEC(stream->data->i2s_cfg.timeout));
+			 (state == I2S_STATE_ERROR)
+				 ? K_NO_WAIT
+				 : SYS_TIMEOUT_MS(stream->data->i2s_cfg.timeout));
 	if (err == 0) {
 		*mem_block = item.buffer;
 		*size = item.size;
@@ -1728,8 +1869,31 @@ static int i2s_esp32_write(const struct device *dev, void *mem_block, size_t siz
 
 	struct queue_item item = {.buffer = mem_block, .size = size};
 
+#if SOC_GDMA_SUPPORTED
+	/*
+	 * Nothing linked behind the block in flight: link this one now, or
+	 * the callback finds the queue empty and stops the output. Only with
+	 * an empty queue, to keep the order.
+	 */
+	unsigned int key = irq_lock();
+
+	if (dev_data->state == I2S_STATE_RUNNING && stream->data->transferring &&
+	    stream->data->dma_pending && stream->data->mem_block != NULL &&
+	    stream->data->next_block == NULL &&
+	    k_msgq_num_used_get(&stream->data->queue) == 0) {
+		err = i2s_esp32_tx_link(dev, mem_block, size);
+		irq_unlock(key);
+		if (err == 0) {
+			return 0;
+		}
+		LOG_DBG("Failed to link the TX block, queueing it: %d", err);
+	} else {
+		irq_unlock(key);
+	}
+#endif /* SOC_GDMA_SUPPORTED */
+
 	err = k_msgq_put(&stream->data->queue, &item,
-			 K_MSEC(stream->data->i2s_cfg.timeout));
+			 SYS_TIMEOUT_MS(stream->data->i2s_cfg.timeout));
 	if (err < 0) {
 		LOG_DBG("TX queue full");
 	}

@@ -580,6 +580,9 @@ struct http_client_ctx {
 	/** Flag indicating that HTTP2 preface was sent. */
 	bool preface_sent : 1;
 
+	/** Flag indicating that the client acknowledged the server's SETTINGS. */
+	bool settings_acked : 1;
+
 	/** Flag indicating that HTTP1 headers were sent. */
 	bool http1_headers_sent : 1;
 

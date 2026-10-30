@@ -7,8 +7,8 @@
 #include "dt_xt_zb1-pinctrl.dtsi"
 
 / {
-	model = "Zigbee 3.0 and BLE 5.0 Coexistence Module";
 	compatible = "bflb,bl702";
+	model = "Zigbee 3.0 and BLE 5.0 Coexistence Module";
 
 	chosen {
 		zephyr,flash = &kh25v80;
@@ -56,34 +56,34 @@
 
 			boot_header_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "boot_header";
 				reg = <0x00000000 0x2000>;
+				label = "boot_header";
 				read-only;
 			};
 
 			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-0";
 				reg = <0x00002000 (0x80000 - 0x2000)>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@80000 {
 				compatible = "zephyr,mapped-partition";
-				label = "storage";
 				reg = <0x0080000 0x80000>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &sec_eng_trng {
@@ -95,8 +95,8 @@
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
 
 	pinctrl-0 = <&usb_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

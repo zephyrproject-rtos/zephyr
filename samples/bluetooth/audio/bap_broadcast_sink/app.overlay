@@ -9,9 +9,9 @@
 / {
 	uac2_microphone: usb_audio2 {
 		compatible = "zephyr,uac2";
-		status = "okay";
 		full-speed;
 		audio-function = <AUDIO_FUNCTION_MICROPHONE>;
+		status = "okay";
 
 		/* Clock supporting 48KHz
 		 *

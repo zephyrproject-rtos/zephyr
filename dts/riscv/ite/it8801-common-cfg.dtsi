@@ -53,19 +53,18 @@
 	/* KBD */
 	ioex_it8801_kbd: it8801_kbd@40 {
 		compatible = "ite,it8801-kbd";
-		status = "disabled";
 		reg = <0x40 1
 		       0x41 1
 		       0x42 1
 		       0x43 1>;
 		row-size = <8>;
 		col-size = <13>;
+		status = "disabled";
 	};
 
 	/* PWM */
 	ioex_it8801_pwm1: it8801_pwm@60 {
 		compatible = "ite,it8801-pwm";
-		status = "disabled";
 		reg = <0x60 1   /* PWMMCR */
 		       0x64 1   /* PWMDCR */
 		       0x66 1   /* PWMPRSL */
@@ -73,11 +72,11 @@
 		mfdctrl = <&pwm1_gp12_default>;
 		channel = <1>;
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	ioex_it8801_pwm2: it8801_pwm@68 {
 		compatible = "ite,it8801-pwm";
-		status = "disabled";
 		reg = <0x68 1   /* PWMMCR */
 		       0x6c 1   /* PWMDCR */
 		       0x6e 1   /* PWMPRSL */
@@ -85,11 +84,11 @@
 		mfdctrl = <&pwm2_gp13_default>;
 		channel = <2>;
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	ioex_it8801_pwm3: it8801_pwm@70 {
 		compatible = "ite,it8801-pwm";
-		status = "disabled";
 		reg = <0x70 1   /* PWMMCR */
 		       0x74 1   /* PWMDCR */
 		       0x76 1   /* PWMPRSL */
@@ -97,11 +96,11 @@
 		mfdctrl = <&pwm3_gp14_default>;
 		channel = <3>;
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	ioex_it8801_pwm4: it8801_pwm@78 {
 		compatible = "ite,it8801-pwm";
-		status = "disabled";
 		reg = <0x78 1   /* PWMMCR */
 		       0x7c 1   /* PWMDCR */
 		       0x7e 1   /* PWMPRSL */
@@ -109,11 +108,11 @@
 		mfdctrl = <&pwm4_gp15_default>;
 		channel = <4>;
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	ioex_it8801_pwm7: it8801_pwm@90 {
 		compatible = "ite,it8801-pwm";
-		status = "disabled";
 		reg = <0x90 1   /* PWMMCR */
 		       0x94 1   /* PWMDCR */
 		       0x96 1   /* PWMPRSL */
@@ -121,11 +120,11 @@
 		mfdctrl = <&pwm7_gp20_default>;
 		channel = <7>;
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	ioex_it8801_pwm8: it8801_pwm@98 {
 		compatible = "ite,it8801-pwm";
-		status = "disabled";
 		reg = <0x98 1   /* PWMMCR */
 		       0x9c 1   /* PWMDCR */
 		       0x9e 1   /* PWMPRSL */
@@ -133,11 +132,11 @@
 		mfdctrl = <&pwm8_gp23_default>;
 		channel = <8>;
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	ioex_it8801_pwm9: it8801_pwm@a0 {
 		compatible = "ite,it8801-pwm";
-		status = "disabled";
 		reg = <0xa0 1   /* PWMMCR */
 		       0xa4 1   /* PWMDCR */
 		       0xa6 1   /* PWMPRSL */
@@ -145,5 +144,6 @@
 		mfdctrl = <&pwm9_gp22_default>;
 		channel = <9>;
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 };

@@ -43,9 +43,9 @@
 	/delete-node/ partitions;
 
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * All partition sizes must be aligned to the flash memory sector size (8 KB).
@@ -58,36 +58,36 @@
 		 */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;  /* 64 KB */
+			label = "mcuboot";
 		};
 
 		/* Secure image - primary */
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(288)>;  /* 288 KB */
+			label = "image-0";
 		};
 
 		/* Non-secure image - primary */
 		slot0_ns_partition: partition@58000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0-nonsecure";
 			reg = <0x00058000 DT_SIZE_K(256)>;  /* 256 KB */
+			label = "image-0-nonsecure";
 		};
 
 		/* Secure image - secondary */
 		slot1_partition: partition@98000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1-secondary";
 			reg = <0x00098000 DT_SIZE_K(288)>;  /* 288 KB */
+			label = "image-1-secondary";
 		};
 
 		/* Non-secure image - secondary */
 		slot1_ns_partition: partition@e0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1-non-secure";
 			reg = <0x000e0000 DT_SIZE_K(256)>;  /* 256 KB */
+			label = "image-1-non-secure";
 		};
 	};
 };

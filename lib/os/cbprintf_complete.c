@@ -1352,7 +1352,9 @@ static int outs(cbprintf_cb __out,
 	cbprintf_cb out = __out;
 
 	while ((sp < ep) || ((ep == NULL) && *sp)) {
-		int rc = out((int)*sp, ctx);
+		/* char -> int is implementation-defined, convert to uchar first */
+		unsigned char uc = *sp;
+		int rc = out((int)uc, ctx);
 		++sp;
 
 		if (rc < 0) {
@@ -1379,9 +1381,12 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
  * updating count.
  *
  * NB: c is evaluated exactly once: side-effects are OK
+ *
+ * char -> int is implementation-defined, convert to uchar first
  */
 #define OUTC(c) do { \
-	int rc = (*out)((int)(c), ctx); \
+	unsigned char uc = (c); \
+	int rc = (*out)((int)uc, ctx); \
 	\
 	if (rc < 0) { \
 		return rc; \

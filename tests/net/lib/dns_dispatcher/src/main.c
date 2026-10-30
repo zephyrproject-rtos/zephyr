@@ -308,22 +308,34 @@ ZTEST(dns_dispatcher, test_dispatcher_pair_cleanup)
  */
 ZTEST(dns_dispatcher, test_dispatcher_null_slot_dropped)
 {
-	/* dispatch_table entries start with the dispatcher pointer, so a plain
-	 * NULL pointer slot is layout-compatible for index 0.
+	/* dispatch_table entries start with the dispatcher pointer, so an
+	 * array of NULL pointers is layout-compatible with the real table.
 	 */
-	struct dns_socket_dispatcher *table[1] = { NULL };
+	static struct dns_socket_dispatcher *table[ZVFS_OPEN_SIZE];
 	struct net_socket_service_event pev = {
 		.event = {
-			.fd = 0,
 			.revents = ZSOCK_POLLIN,
 		},
 		.user_data = table,
 	};
+	int sock;
 
-	/* Prior to the NULL guard this dereferenced a NULL dispatcher and
-	 * crashed; reaching the next statement proves the event was dropped.
+	/* The handler drains an unowned slot's descriptor, so the event must
+	 * carry a real socket.
+	 */
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "Cannot create socket (%d)", -errno);
+	zassert_true((size_t)sock < ARRAY_SIZE(table), "Socket %d outside the table", sock);
+
+	memset(table, 0, sizeof(table));
+	pev.event.fd = sock;
+
+	/* Reaching the next statement proves the event was dropped instead of
+	 * dereferencing the NULL dispatcher.
 	 */
 	dns_dispatcher_svc_handler(&pev);
+
+	(void)zsock_close(sock);
 }
 
 ZTEST(dns_dispatcher, test_dns_dispatcher_ephemeral_ports)

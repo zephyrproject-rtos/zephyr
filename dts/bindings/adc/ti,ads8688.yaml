@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Ryomei Osaki
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI ADS8688 8-channel 16-bit SAR ADC
+
+compatible: "ti,ads8688"
+
+include: ti,ads868x-base.yaml

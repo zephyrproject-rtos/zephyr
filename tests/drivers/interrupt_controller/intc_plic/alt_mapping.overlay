@@ -7,8 +7,7 @@
 / {
 	soc {
 		plic: interrupt-controller@c000000 {
-			riscv,max-priority = <7>;
-			riscv,ndev = <1024>;
+			compatible = "sifive,plic-1.0.0";
 			reg = <0x0c000000 0x04000000>;
 			interrupts-extended = <&hlic0 0x0b
 					       &hlic1 0x0b &hlic1 0x09
@@ -19,9 +18,10 @@
 					       &hlic6 0x0b &hlic6 0x09
 					       &hlic7 0x0b &hlic7 0x09>;
 			interrupt-controller;
-			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0x00>;
 			#interrupt-cells = <0x02>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <1024>;
 		};
 	};
 };

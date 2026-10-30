@@ -1,0 +1,30 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MCXC243: 128 KB flash, 32 KB SRAM (MCX C143/144/243/244/443/444 data sheet,
+ * Rev. 5, Table 1). Unlike the MCXC242 it has a DAC and an I2S module, but no
+ * CRC module, and it has an on-chip USB voltage regulator.
+ */
+
+#include <nxp/mcx/mcxc/nxp_mcxc_common.dtsi>
+
+/delete-node/ &sram0;
+
+/ {
+	sram0: memory@1fffe000 {
+		compatible = "mmio-sram";
+		reg = <0x1fffe000 DT_SIZE_K(32)>;
+	};
+};
+
+&flash0 {
+	reg = <0 DT_SIZE_K(128)>;
+	ranges = <0x0 0x0 DT_SIZE_K(128)>;
+};
+
+/* The MCXC243 HAL does not provide a CRC peripheral. */
+/delete-node/ &crc;

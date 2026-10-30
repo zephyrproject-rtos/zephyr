@@ -1276,6 +1276,35 @@ host directory seeded from a template with:
          virtiofs:
            shared: shared
 
+The ``bumble`` sidecar runs linked `Bumble <https://github.com/google/bumble>`_
+virtual Bluetooth controllers for native_sim tests: the guest reaches its
+controller through the HCI user-channel driver (``--bt-dev=<ip:port>``,
+injected by the sidecar), and further Zephyr instances launched by the sidecar
+act as peers on the other controllers. Each controller listens on a
+kernel-chosen loopback port, so instances running in parallel never collide.
+The handler watches the guest only, so the sidecar reads the Ztest results
+each peer printed: the cases a peer ran are reported, and a peer that fails,
+ends without a verdict or exits with an error fails the test. So does a peer
+that is still running when the scenario's timeout has passed and ten seconds
+after the guest ended.
+``{addrN}`` and ``{ctrlN}`` placeholders in the device argument strings expand
+to controller N's Bluetooth device address and TCP endpoint. Bumble must be
+importable by the Python interpreter running Twister; otherwise the test is
+built but not run:
+
+.. code-block:: yaml
+
+   tests:
+     some.test:
+       harness: ztest
+       sidecar: bumble
+       sidecar_config:
+         bumble:
+           addresses: ["00:00:01:00:00:01", "00:00:01:00:00:02"]
+           devices:
+             - '--peer_bd_address={addr1} -test=central::connect'
+             - '--peer_bd_address={addr0} -test=peripheral::connect'
+
 
 Selecting platform scope
 ************************

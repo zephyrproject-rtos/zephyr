@@ -156,7 +156,10 @@ static int wdog_cmsdk_apb_feed(const struct device *dev, int channel_id)
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 
 	ARG_UNUSED(dev);
-	ARG_UNUSED(channel_id);
+
+	if (channel_id != 0) {
+		return -EINVAL;
+	}
 
 	/* Clear the interrupt */
 	wdog->intclr = CMSDK_APB_WDOG_INTCLR;

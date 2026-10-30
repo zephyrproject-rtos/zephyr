@@ -19,6 +19,15 @@ config MPIPE_PLAYER
 
 if MPIPE_PLAYER
 
+config MPIPE_PLAYER_NUM
+	int "Number of players the application can have at once"
+	range 1 255
+	default 1
+	help
+	  Each player owns a worker thread, so this sizes a pool of worker
+	  stacks. A pipeline that streams needs an mpipe thread of its own as
+	  well: MPIPE_THREADS_NUM must cover every pipeline playing at once.
+
 config MPIPE_PLAYER_WORKER_STACK_SIZE
 	int "Player worker thread stack size"
 	default 6144
@@ -63,6 +72,15 @@ config MPIPE_PLAYER_DUMP_ON_STATE_CHANGE
 	    sed -n '/^digraph/,/^}/p' log > pipe.dot
 
 endif # MPIPE_PLAYER
+
+config MPIPE_DUMP
+	bool "Pipeline topology dump"
+	select MPIPE_ELEMENT_NAME
+	help
+	  Render a bin as a Graphviz graph for debugging: every element with
+	  its state and pads, the peer of each pad and the capability
+	  negotiated on it. The DOT text is written through a callback, to the
+	  console by default.
 
 config MPIPE_DUMP_MAX_ELEMENTS
 	int "Maximum number of elements a dump can index"

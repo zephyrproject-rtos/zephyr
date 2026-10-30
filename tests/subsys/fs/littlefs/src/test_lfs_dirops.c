@@ -38,3 +38,42 @@ ZTEST(littlefs, test_lfs_dirops)
 	 */
 	test_fs_dirops();
 }
+
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(root_lfs);
+static struct fs_mount_t root_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &root_lfs,
+	.mnt_point = "/",
+};
+
+ZTEST(littlefs, test_lfs_opendir_root_mount)
+{
+	struct fs_file_t file;
+	struct fs_dir_t dir;
+	struct fs_dirent entry;
+	bool found = false;
+	int rc;
+
+	root_mnt.storage_dev = testfs_small_mnt.storage_dev;
+	zassert_equal(testfs_lfs_wipe_partition(&root_mnt), TC_PASS, "failed to wipe partition");
+	zassert_equal(fs_mount(&root_mnt), 0, "failed to mount at /");
+
+	fs_file_t_init(&file);
+	zassert_equal(fs_open(&file, "/root_file", FS_O_CREATE | FS_O_WRITE), 0,
+		      "failed to create /root_file");
+	zassert_equal(fs_close(&file), 0, "failed to close /root_file");
+
+	fs_dir_t_init(&dir);
+	zassert_equal(fs_opendir(&dir, "/"), 0, "failed to open /");
+	do {
+		rc = fs_readdir(&dir, &entry);
+		if ((rc == 0) && (strcmp(entry.name, "root_file") == 0)) {
+			found = true;
+		}
+	} while ((rc == 0) && (entry.name[0] != '\0'));
+	zassert_equal(fs_closedir(&dir), 0, "failed to close /");
+	zassert_equal(fs_unmount(&root_mnt), 0, "failed to unmount /");
+
+	zassert_equal(rc, 0, "readdir of / failed: %d", rc);
+	zassert_true(found, "root_file not listed by readdir of /");
+}

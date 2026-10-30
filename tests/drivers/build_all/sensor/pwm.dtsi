@@ -7,10 +7,10 @@
  */
 
 test_pwm_tsic_xx6: tsic_xx6 {
-	status = "okay";
 	compatible = "ist,tsic-xx6";
 	pwms = <&test_pwm 0 0 0>;
 	data-bits = <14>;
 	lower-temperature-limit = <(-100)>;
 	higher-temperature-limit = <250>;
+	status = "okay";
 };

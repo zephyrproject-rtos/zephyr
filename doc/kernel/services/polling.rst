@@ -26,7 +26,7 @@ There is a limited set of such conditions:
 - a kernel FIFO contains data ready to be retrieved
 - a kernel LIFO contains data ready to be retrieved
 - a kernel message queue contains data ready to be retrieved
-- a kernel pipe contains data ready to be retrieved
+- a kernel pipe contains data ready to be retrieved, or has been closed
 - a poll signal is raised
 
 A thread that wants to wait on multiple conditions must define an array of
@@ -170,7 +170,11 @@ In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
                 // handle data
             } else if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
                 bytes_read = k_pipe_read(events[3].pipe, buf, bytes_to_read, K_NO_WAIT);
-                // handle data
+                if (bytes_read == -EPIPE) {
+                    // pipe is closed
+                } else {
+                    // handle data
+                }
             }
         } else {
             // handle timeout
@@ -199,7 +203,12 @@ to :c:macro:`K_POLL_STATE_NOT_READY` by the user.
             }
             if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
                 bytes_read = k_pipe_read(events[3].pipe, buf, bytes_to_read, K_NO_WAIT);
-                // handle data
+                if (bytes_read == -EPIPE) {
+                    // closed pipe stays ready; stop polling it
+                    events[3].type = K_POLL_TYPE_IGNORE;
+                } else {
+                    // handle data
+                }
             }
             events[0].state = K_POLL_STATE_NOT_READY;
             events[1].state = K_POLL_STATE_NOT_READY;

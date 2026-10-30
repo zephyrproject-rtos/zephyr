@@ -28,7 +28,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 const struct bt_csip_set_coordinator_set_member *btp_csip_set_members[CONFIG_BT_MAX_CONN];
 static const struct bt_csip_set_coordinator_csis_inst *cur_csis_inst;
-static struct bt_csip_set_coordinator_svc_inst *csip_inst;
 static uint8_t members_count;
 
 static uint8_t btp_csip_supported_commands(const void *cmd, uint16_t cmd_len,
@@ -126,18 +125,21 @@ static void csip_discover_cb(struct bt_conn *conn,
 
 	btp_send_csip_sirk_ev(conn, sirk, sirk_size);
 
+	btp_csip_set_members[conn_index] = member;
+
 	for (size_t i = 0U; i < set_count; i++) {
+		const struct bt_csip_set_coordinator_svc_inst *csip_inst;
+
 		LOG_DBG("CSIS[%zu]: %p", i, &member->insts[i]);
 		LOG_DBG("Rank: %u", member->insts[i].info.rank);
 		LOG_DBG("Set Size: %u", member->insts[i].info.set_size);
 		LOG_DBG("Lockable: %u", member->insts[i].info.lockable);
+
+		csip_inst = bt_csip_set_coordinator_lookup_instance_by_index(conn, i);
+		btp_send_csip_discovered_ev(conn, csip_inst->sirk_handle,
+					    csip_inst->set_size_handle, csip_inst->set_lock_handle,
+					    csip_inst->rank_handle, err);
 	}
-
-	btp_csip_set_members[conn_index] = member;
-
-	csip_inst = bt_csip_set_coordinator_lookup_instance_by_index(conn, conn_index);
-	btp_send_csip_discovered_ev(conn, csip_inst->sirk_handle, csip_inst->set_size_handle,
-				    csip_inst->set_lock_handle, csip_inst->rank_handle, err);
 }
 
 static void csip_lock_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst,

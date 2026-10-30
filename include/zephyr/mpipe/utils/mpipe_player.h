@@ -31,6 +31,10 @@
  * The caller enqueues commands with the mpipe_player_*() API; the worker applies
  * them one at a time.
  *
+ * An application may run several pipelines, each with a player of its own, up
+ * to CONFIG_MPIPE_PLAYER_NUM at once. The shell commands take the id of the
+ * pipeline to act on; without one they act on every player.
+ *
  * @{
  */
 
@@ -60,6 +64,7 @@ struct mpipe_player_cmd_msg {
  * pointer to the mpipe_player_*() API.
  */
 struct mpipe_player {
+	/** @cond INTERNAL_HIDDEN */
 	/** Controlled pipeline. */
 	struct mpipe *pipeline;
 	/** Command queue feeding the worker thread. */
@@ -72,8 +77,11 @@ struct mpipe_player {
 	struct mpipe_message last_error;
 	/** Worker thread control block. */
 	struct k_thread worker;
+	/** Slot in the player table, which is also the worker's stack. */
+	uint8_t slot;
 	/** Signaled by the worker just before it exits. */
 	struct k_sem exited;
+	/** @endcond */
 };
 
 /**
@@ -83,12 +91,14 @@ struct mpipe_player {
  * error. The pipeline must already be built and linked, but should be in the
  * READY state (not yet playing).
  *
- * @note Only a single player instance can be active at a time.
+ * @note Up to CONFIG_MPIPE_PLAYER_NUM players can exist at once, one per
+ *       pipeline.
  *
  * @param player   Pointer to an uninitialized @ref mpipe_player.
  * @param pipeline Pointer to the pipeline to control.
  * @retval 0 Success.
- * @retval -EBUSY Another player instance is already active.
+ * @retval -ENOMEM Every player slot is in use.
+ * @retval -EBUSY The pipeline has a player already.
  * @retval -EIO The bus observer could not be attached.
  */
 int mpipe_player_init(struct mpipe_player *player, struct mpipe *pipeline);

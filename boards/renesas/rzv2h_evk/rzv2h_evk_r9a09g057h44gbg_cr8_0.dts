@@ -11,8 +11,8 @@
 #include "rzv2h_evk-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZ/V2H EVK";
 	compatible = "renesas,rzv2h-evk";
+	model = "Renesas RZ/V2H EVK";
 
 	aliases {
 		led0 = &led5;
@@ -67,6 +67,6 @@
 &i2c2 {
 	pinctrl-0 = <&i2c2_pins>;
 	pinctrl-names = "default";
-	status = "okay";
 	duty-cycle-percent = <20>;
+	status = "okay";
 };

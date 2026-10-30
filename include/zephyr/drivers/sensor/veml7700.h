@@ -5,12 +5,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Extended public API for VEML7700 ambient light sensor
+ * @ingroup veml7700_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML7700_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML7700_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Vishay VEML7700 ambient light sensor
+ * @defgroup veml7700_interface VEML7700
+ * @ingroup sensor_interface_ext_vishay
+ * @{
+ */
 
 /**
  * @brief Number of enumerators in enum veml7700_als_gain.
@@ -40,33 +53,33 @@ extern "C" {
  * @brief VEML7700 gain options for ambient light measurements.
  */
 enum veml7700_als_gain {
-	VEML7700_ALS_GAIN_1   = 0x00, /* 0b00 */
-	VEML7700_ALS_GAIN_2   = 0x01, /* 0b01 */
-	VEML7700_ALS_GAIN_1_8 = 0x02, /* 0b10 */
-	VEML7700_ALS_GAIN_1_4 = 0x03, /* 0b11 */
+	VEML7700_ALS_GAIN_1   = 0x00, /**< Gain 1x */
+	VEML7700_ALS_GAIN_2   = 0x01, /**< Gain 2x */
+	VEML7700_ALS_GAIN_1_8 = 0x02, /**< Gain 1/8x */
+	VEML7700_ALS_GAIN_1_4 = 0x03, /**< Gain 1/4x */
 };
 
 /**
  * @brief VEML7700 integration time options for ambient light measurements.
  */
 enum veml7700_als_it {
-	VEML7700_ALS_IT_25,
-	VEML7700_ALS_IT_50,
-	VEML7700_ALS_IT_100,
-	VEML7700_ALS_IT_200,
-	VEML7700_ALS_IT_400,
-	VEML7700_ALS_IT_800
+	VEML7700_ALS_IT_25,  /**< 25 ms */
+	VEML7700_ALS_IT_50,  /**< 50 ms */
+	VEML7700_ALS_IT_100, /**< 100 ms */
+	VEML7700_ALS_IT_200, /**< 200 ms */
+	VEML7700_ALS_IT_400, /**< 400 ms */
+	VEML7700_ALS_IT_800  /**< 800 ms */
 };
 
 /**
  * @brief VEML7700 ALS interrupt persistence protect number options.
  */
 enum veml7700_int_mode {
-	VEML7700_INT_DISABLED = 0xFF,
-	VEML7700_ALS_PERS_1   = 0x00, /* 0b00 */
-	VEML7700_ALS_PERS_2   = 0x01, /* 0b01 */
-	VEML7700_ALS_PERS_4   = 0x02, /* 0b10 */
-	VEML7700_ALS_PERS_8   = 0x03, /* 0b11 */
+	VEML7700_INT_DISABLED = 0xFF, /**< ALS interrupt disabled */
+	VEML7700_ALS_PERS_1   = 0x00, /**< Interrupt after 1 measurement out of the window */
+	VEML7700_ALS_PERS_2   = 0x01, /**< Interrupt after 2 measurements out of the window */
+	VEML7700_ALS_PERS_4   = 0x02, /**< Interrupt after 4 measurements out of the window */
+	VEML7700_ALS_PERS_8   = 0x03, /**< Interrupt after 8 measurements out of the window */
 };
 
 /**
@@ -156,6 +169,8 @@ enum sensor_channel_veml7700 {
 	 */
 	SENSOR_CHAN_VEML7700_INTERRUPT,
 };
+
+/** @} */
 
 #ifdef __cplusplus
 }

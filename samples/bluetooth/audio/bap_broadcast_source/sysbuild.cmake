@@ -14,7 +14,7 @@ if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
   )
 
   set(${NET_APP}_EXTRA_CONF_FILE
-   ${NET_APP_SRC_DIR}/extra-iso-bt_ll_sw_split.conf
+   ${NET_APP_SRC_DIR}/extra-iso_broadcast-bt_ll_sw_split.conf
    CACHE INTERNAL ""
   )
 

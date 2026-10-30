@@ -9,39 +9,39 @@
 / {
 	i2c0: i2c@88888888 {
 		compatible = "xlnx,xps-iic-2.00.a";
+		reg = <0x88888888 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x88888888 0x10000>;
 		interrupt-parent = <&nvic>;
 		interrupts = <4 1>;
 
 		eeprom@0 {
+			compatible = "zephyr,i2c-target-eeprom";
 			reg = <0x0>;
 			size = <32>;
-			compatible = "zephyr,i2c-target-eeprom";
 		};
 
 		tmp103@1 {
-			reg = <0x1>;
 			compatible = "zephyr,i2c-target-tmp103";
+			reg = <0x1>;
 		};
 	};
 
 	i2c1: i2c@88898888 {
 		compatible = "xlnx,xps-iic-2.1";
+		reg = <0x88898888 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x88898888 0x10000>;
 		interrupt-parent = <&nvic>;
 		interrupts = <5 1>;
 	};
 
 	i2c2: i2c@888a8888 {
 		compatible = "brcm,iproc-i2c";
+		reg = <0x888a8888 0x100>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x888a8888 0x100>;
 		interrupt-parent = <&nvic>;
 		interrupts = <6 1>;
 	};

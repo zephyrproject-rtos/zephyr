@@ -7,7 +7,7 @@
 / {
 	bbram: bbram {
 		compatible = "zephyr,bbram-emul";
-		status = "okay";
 		size = <0x40>;
+		status = "okay";
 	};
 };

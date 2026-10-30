@@ -45,7 +45,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
-#include <soc.h>
 
 #include "addr_internal.h"
 #include "adv.h"
@@ -125,6 +124,11 @@ static K_WORK_DEFINE(rx_work, rx_work_handler);
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
+bool bt_is_work_thread(void)
+{
+	return k_current_get() == bt_workq.thread_id;
+}
+
 int bt_work_submit(struct k_work *work)
 {
 	return k_work_submit_to_queue(&bt_workq, work);
@@ -169,6 +173,25 @@ struct bt_dev bt_dev = {
 	.hci = BT_HCI_DEV,
 	.lock = Z_MUTEX_INITIALIZER(bt_dev.lock),
 };
+
+void bt_dev_lock(void)
+{
+	__maybe_unused int err = k_mutex_lock(&bt_dev.lock, K_FOREVER);
+
+	__ASSERT(err == 0, "failed to lock the host lock (err %d)", err);
+}
+
+void bt_dev_unlock(void)
+{
+	__maybe_unused int err;
+
+	/* k_mutex_unlock() skips its owner check with CONFIG_NO_RUNTIME_CHECKS */
+	BT_DEV_LOCK_ASSERT();
+
+	err = k_mutex_unlock(&bt_dev.lock);
+
+	__ASSERT(err == 0, "failed to unlock the host lock (err %d)", err);
+}
 
 static bt_ready_cb_t ready_cb;
 
@@ -342,7 +365,12 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	net_buf_destroy(buf);
 
 	/* Do nothing if controller to host flow control is not supported */
-	if (drv_quirk_no_flow_control() || !BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
+	if (drv_quirk_no_flow_control() || !bt_dev_cmd_supported(BT_DEV_CMD_SET_CTL_TO_HOST_FLOW)) {
+		return;
+	}
+
+	/* Dropped before its connection was looked up */
+	if (index == BT_CONN_INDEX_INVALID) {
 		return;
 	}
 
@@ -694,7 +722,7 @@ int bt_hci_le_rand(void *buffer, size_t len)
 	int err;
 
 	/* Check first that HCI_LE_Rand is supported */
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 7)) {
+	if (!bt_dev_cmd_supported(BT_DEV_CMD_LE_RAND)) {
 		return -ENOTSUP;
 	}
 
@@ -1533,6 +1561,9 @@ static void le_conn_complete_adv_timeout(void)
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 		bt_conn_unref(conn);
+	} else if (bt_drv_quirk_no_adv_term_on_dir_timeout()) {
+		/* No LE Advertising Set Terminated event follows to end the advertising set */
+		bt_le_adv_high_duty_timeout();
 	}
 }
 
@@ -2333,7 +2364,7 @@ static int set_flow_control(void)
 	}
 
 	/* Check if host flow control is actually supported */
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
+	if (!bt_dev_cmd_supported(BT_DEV_CMD_SET_CTL_TO_HOST_FLOW)) {
 		LOG_WRN("Controller to host flow control not supported");
 		return 0;
 	}
@@ -2799,7 +2830,18 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	 */
 	if (evt_buf != buf) {
 		net_buf_reset(buf);
-		net_buf_add_mem(buf, evt_buf->data, evt_buf->len);
+
+		if (evt_buf->len > net_buf_tailroom(buf)) {
+			/* The command buffer holds a response of the size that
+			 * CONFIG_BT_BUF_EVT_RX_SIZE allows. A longer one cannot
+			 * be handed over, so the command fails.
+			 */
+			LOG_ERR("Response to opcode 0x%04x too long (%u bytes)", opcode,
+				evt_buf->len);
+			status = BT_HCI_ERR_UNSPECIFIED;
+		} else {
+			net_buf_add_mem(buf, evt_buf->data, evt_buf->len);
+		}
 	}
 
 	if (cmd(buf)->state && !status) {
@@ -3582,7 +3624,7 @@ static int read_le_local_supported_features(void)
 
 	/* Read Low Energy Supported Features */
 	if (IS_ENABLED(CONFIG_BT_LE_EXTENDED_FEAT_SET) &&
-	    BT_READ_ALL_LOCAL_FEATURES_SUPPORTED(bt_dev.supported_commands)) {
+	    bt_dev_cmd_supported(BT_DEV_CMD_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES)) {
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES, NULL,
 					   &rsp);
 		if (err != 0) {
@@ -3709,10 +3751,30 @@ static int le_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 static void read_supported_commands_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_supported_commands *rp = (void *)buf->data;
+	const uint8_t *cmds = rp->commands;
 
 	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
-	memcpy(bt_dev.supported_commands, rp->commands, sizeof(bt_dev.supported_commands));
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_WRITE_CONN_ACCEPT_TIMEOUT,
+			  BT_CMD_TEST(cmds, 7, 3) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_SET_CTL_TO_HOST_FLOW,
+			  BT_CMD_TEST(cmds, 10, 5) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_SET_HOST_CHAN_CLASSIF,
+			  BT_CMD_TEST(cmds, 27, 3) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_RAND,
+			  BT_CMD_TEST(cmds, 27, 7) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_READ_SUPP_STATES,
+			  BT_CMD_LE_STATES(cmds) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_SET_PRIVACY_MODE,
+			  BT_CMD_TEST(cmds, 39, 2) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_READ_BUFFER_SIZE_V2,
+			  BT_CMD_TEST(cmds, 41, 5) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands,
+			  BT_DEV_CMD_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES,
+			  BT_READ_ALL_LOCAL_FEATURES_SUPPORTED(cmds) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands,
+			  BT_DEV_CMD_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2,
+			  BT_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2_SUPPORTED(cmds) != 0U);
 }
 
 static void read_local_features_complete(struct net_buf *buf)
@@ -3754,6 +3816,29 @@ static void le_read_resolving_list_size_complete(struct net_buf *buf)
 	bt_dev.le.rl_size = rp->rl_size;
 }
 #endif /* defined(CONFIG_BT_SMP) */
+
+__maybe_unused static int set_conn_accept_timeout(uint16_t timeout)
+{
+	struct bt_hci_cp_write_conn_accept_timeout *cp;
+	struct net_buf *buf;
+
+	/* Leave the controller default in place when it does not claim the
+	 * command.
+	 */
+	if (!bt_dev_cmd_supported(BT_DEV_CMD_WRITE_CONN_ACCEPT_TIMEOUT)) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->conn_accept_timeout = sys_cpu_to_le16(timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT, buf, NULL);
+}
 
 static int common_init(void)
 {
@@ -3810,6 +3895,13 @@ static int common_init(void)
 		return err;
 	}
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+#if defined(CONFIG_BT_CONN_ACCEPT_TIMEOUT)
+	err = set_conn_accept_timeout(CONFIG_BT_CONN_ACCEPT_TIMEOUT);
+	if (err != 0) {
+		return err;
+	}
+#endif /* CONFIG_BT_CONN_ACCEPT_TIMEOUT */
 
 	return 0;
 }
@@ -3979,8 +4071,7 @@ static int le_set_event_mask(void)
 		/* Only set v2 event mask if controller supports it; v1-only CS controllers
 		 * may reject the Set Event Mask command if an unknown bit is set.
 		 */
-		if (BT_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2_SUPPORTED(
-				bt_dev.supported_commands)) {
+		if (bt_dev_cmd_supported(BT_DEV_CMD_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2)) {
 			mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_V2;
 		}
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE;
@@ -4009,8 +4100,7 @@ static int le_init_iso(void)
 		}
 	}
 
-	/* Octet 41, bit 5 is read buffer size V2 */
-	if (BT_CMD_TEST(bt_dev.supported_commands, 41, 5)) {
+	if (bt_dev_cmd_supported(BT_DEV_CMD_LE_READ_BUFFER_SIZE_V2)) {
 		/* Read ISO Buffer Size V2 */
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE_V2,
 					   NULL, &rsp);
@@ -4118,7 +4208,7 @@ static int le_init(void)
 	}
 
 	/* Read LE Supported States */
-	if (BT_CMD_LE_STATES(bt_dev.supported_commands)) {
+	if (bt_dev_cmd_supported(BT_DEV_CMD_LE_READ_SUPP_STATES)) {
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_SUPP_STATES, NULL,
 					   &rsp);
 		if (err) {
@@ -4628,7 +4718,7 @@ static void le_conn_complete_prio(uint8_t role)
 		 * object to keep host in sync with controller state.
 		 */
 		atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
-		(void)bt_le_lim_adv_cancel_timeout(adv);
+		bt_le_lim_adv_cancel_timeout(adv);
 	}
 }
 
@@ -4740,7 +4830,7 @@ static void rx_queue_put(struct net_buf *buf)
 		return;
 	}
 
-	net_buf_slist_put(&bt_dev.rx_queue, buf);
+	net_buf_slist_put(&bt_dev.rx_queue, net_buf_take(&buf));
 
 	const int err = bt_work_submit(&rx_work);
 
@@ -5142,7 +5232,7 @@ int bt_disable(void)
 		buf = net_buf_slist_get(&bt_dev.rx_queue);
 	}
 
-	if (k_current_get() == bt_workq.thread_id) {
+	if (bt_is_work_thread()) {
 		(void)k_work_cancel(&rx_work);
 	} else {
 		struct k_work_sync sync;
@@ -5209,7 +5299,9 @@ int bt_disable(void)
 	hci_cmd_sent_purge();
 
 	/* Some functions rely on checking this bitfield */
-	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
+	ARRAY_FOR_EACH(bt_dev.supported_commands, i) {
+		atomic_clear(&bt_dev.supported_commands[i]);
+	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_settings_flush();
@@ -5437,7 +5529,7 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 		return -ENOTSUP;
 	}
 
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 3)) {
+	if (!bt_dev_cmd_supported(BT_DEV_CMD_LE_SET_HOST_CHAN_CLASSIF)) {
 		LOG_WRN("Set Host Channel Classification command is "
 			"not supported");
 		return -ENOTSUP;

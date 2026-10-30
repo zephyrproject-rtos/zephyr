@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 
 / {
-	model = "Armfly STM32H743XIH6 board";
 	compatible = "armfly,stm32h743xih6";
+	model = "Armfly STM32H743XIH6 board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -25,30 +25,6 @@
 		zephyr,itcm = &itcm;
 		zephyr,display = &ltdc;
 		zephyr,touch = &gt911;
-	};
-
-	sdram1: sdram@c0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
-		reg = <0xc0000000 DT_SIZE_M(32)>;
-		zephyr,memory-region = "SDRAM1";
-	};
-
-	fmc_extio: memory@60000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x60000000 DT_SIZE_K(64)>;
-		zephyr,memory-region = "FMC_EXTIO";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
-	};
-
-	latch_gpio: gpio@60001000 {
-		compatible = "gpio-mmio-latch";
-		reg = <0x60001000 0x4>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		ngpios = <32>;
-		initial-output = <0x00000f14>;
-		status = "disabled";
 	};
 
 	leds: leds {
@@ -142,6 +118,30 @@
 			label = "lcd_backlight_pwm";
 		};
 	};
+
+	fmc_extio: memory@60000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x60000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "FMC_EXTIO";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
+
+	latch_gpio: gpio@60001000 {
+		compatible = "gpio-mmio-latch";
+		reg = <0x60001000 0x4>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		initial-output = <0x00000f14>;
+		status = "disabled";
+	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xc0000000 DT_SIZE_M(32)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM1";
+	};
 };
 
 &clk_lsi {
@@ -218,8 +218,26 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	bh1750: bh1750@23 {
+		compatible = "rohm,bh1750";
+		reg = <0x23>;
+		resolution = <1>;
+		mtreg = <69>;
+		status = "okay";
+	};
+
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <DT_SIZE_K(16)>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+		status = "okay";
+	};
 
 	gt911: gt911@5d {
 		compatible = "goodix,gt911";
@@ -231,34 +249,16 @@
 	mpu6050: mpu6050@68 {
 		compatible = "invensense,mpu6050";
 		reg = <0x68>;
-		status = "okay";
 		accel-fs = <2>;
 		gyro-fs = <250>;
 		smplrt-div = <249>;
-	};
-
-	bh1750: bh1750@23 {
-		compatible = "rohm,bh1750";
-		reg = <0x23>;
 		status = "okay";
-		resolution = <1>;
-		mtreg = <69>;
 	};
 
 	bmp180: bmp180@77 {
 		compatible = "bosch,bmp180";
 		reg = <0x77>;
-		status = "okay";
 		osr-press = <3>;
-	};
-
-	eeprom0: eeprom@50 {
-		compatible = "atmel,at24";
-		reg = <0x50>;
-		size = <DT_SIZE_K(16)>;
-		pagesize = <64>;
-		address-width = <16>;
-		timeout = <5>;
 		status = "okay";
 	};
 };
@@ -278,9 +278,9 @@
 		size = <DT_SIZE_M(256)>; /* 256 Mbits */
 		qspi-max-frequency = <100000000>;
 		cs-high-time = <1>;
-		status = "okay";
 		spi-bus-width = <4>;
 		writeoc = "PP_1_1_4";
+		status = "okay";
 	};
 };
 
@@ -295,11 +295,11 @@
 		reg = <0>;
 		spi-max-frequency = <40000000>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
-		status = "okay";
 		jedec-id = [ef 40 17];
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -307,15 +307,14 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(8)>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8
 		     &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10
@@ -327,10 +326,10 @@
 	disk-name = "SD";
 	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
 		 <&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
+	status = "okay";
 };
 
 &fmc {
-	status = "okay";
 
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
 		     &fmc_nbl2_pi4 &fmc_nbl3_pi5
@@ -353,13 +352,14 @@
 		     &fmc_d24_pi0 &fmc_d25_pi1 &fmc_d26_pi2 &fmc_d27_pi3
 		     &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9 &fmc_d31_pi10>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x230>;
 		refresh-rate = <1543>;
+		status = "okay";
 
 		bank@0 {
 			reg = <0>;
@@ -378,10 +378,10 @@
 	};
 
 	fmc_norsram: sram {
-		status = "okay";
 		compatible = "st,stm32-fmc-nor-psram";
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "okay";
 
 		sram1@0 {
 			reg = <STM32_FMC_NORSRAM_BANK1>;
@@ -418,11 +418,15 @@
 	clocks = <&rcc STM32_CLOCK(APB3, 3)>,
 		 <&rcc STM32_SRC_PLL3_R NO_SEL>;
 	ext-sdram = <&sdram1>;
-	status = "okay";
 
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	def-back-color-red = <0x00>;
+	def-back-color-green = <0x00>;
+	def-back-color-blue = <0x00>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -440,10 +444,6 @@
 		vback-porch = <10>;
 		vfront-porch = <10>;
 	};
-
-	def-back-color-red = <0x00>;
-	def-back-color-green = <0x00>;
-	def-back-color-blue = <0x00>;
 };
 
 &timers1 {
@@ -451,14 +451,13 @@
 
 	tim1_pwm: pwm {
 		compatible = "st,stm32-pwm";
-		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pa8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &mac {
-	status = "okay";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
 	pinctrl-names = "default";
@@ -469,12 +468,13 @@
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	status = "okay";
 
 	eth_phy: ethernet-phy@1 {
 		compatible = "ethernet-phy";

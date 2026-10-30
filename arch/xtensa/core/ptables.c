@@ -426,7 +426,10 @@ static ALWAYS_INLINE void l2_page_tables_counter_dec(uint32_t *l2_table);
 /**
  * @brief Check if the page table entry is illegal.
  *
- * @param[in] Page table entry.
+ * @param[in] pte Page table entry.
+ *
+ * @retval true PTE is illegal.
+ * @retval false PTE is not illegal.
  */
 static inline bool is_pte_illegal(uint32_t pte)
 {
@@ -456,6 +459,12 @@ static void init_page_table(uint32_t *ptable, size_t num_entries, uint32_t val)
 	}
 }
 
+/**
+ * @brief Update the maximum L2 page table usage statistics.
+ *
+ * Does nothing unless CONFIG_XTENSA_MMU_PAGE_TABLE_STATS is enabled.
+ * Must be called with xtensa_counter_lock held.
+ */
 static void calc_l2_page_tables_usage(void)
 {
 #ifdef CONFIG_XTENSA_MMU_PAGE_TABLE_STATS
@@ -575,6 +584,12 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 	}
 }
 
+/**
+ * @brief Initialize the kernel page tables.
+ *
+ * Maps the Zephyr image, the SoC memory ranges and the page tables
+ * themselves. Only the first call has any effect.
+ */
 static void xtensa_init_page_tables(void)
 {
 	volatile uint8_t entry;
@@ -1201,7 +1216,7 @@ static ALWAYS_INLINE void l2_page_tables_counter_dec(uint32_t *l2_table)
  */
 static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
 {
-	if ((thread->base.user_options & K_USER) != 0U) {
+	if (k_thread_is_user_thread(thread)) {
 		return thread->arch.ptables;
 	}
 
@@ -1213,7 +1228,7 @@ static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
  *
  * This allocates a new level 1 page table from the L1 table array.
  *
- * @return Pointer to the newly allocated L2 table. NULL if no free table
+ * @return Pointer to the newly allocated L1 table. NULL if no free table
  *         in the array.
  */
 static inline uint32_t *alloc_l1_table(void)
@@ -1298,6 +1313,10 @@ static uint32_t *dup_l2_table(uint32_t *src_l2_table, enum dup_action action)
 	case COPY:
 		memcpy(l2_table, src_l2_table, sizeof(l2_page_tables[0]));
 		break;
+	}
+
+	if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
+		sys_cache_data_flush_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
 	}
 
 	return l2_table;
@@ -1433,8 +1452,6 @@ static bool dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 	l2_page_tables_counter_dec(src_l2_table);
 
 	k_spin_unlock(&xtensa_counter_lock, key);
-
-	sys_cache_data_flush_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
 
 	return true;
 }
@@ -1577,6 +1594,14 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 			sys_cache_data_invd_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 		}
 
+		if (is_pte_illegal(l1_table[l1_pos])) {
+			/* No L2 table, so nothing is mapped here. This happens when
+			 * the memory has been unmapped (and the emptied L2 table
+			 * released) before a partition covering it is removed.
+			 */
+			continue;
+		}
+
 #ifdef CONFIG_USERSPACE
 		if (!dup_l2_table_if_needed(l1_table, l1_pos, RESTORE)) {
 			/* There is no way to report the failure back to the caller,
@@ -1676,6 +1701,11 @@ static inline void reset_region(uint32_t *ptables, uintptr_t start, size_t size,
 		      option | OPTION_RESTORE_ATTRS);
 }
 
+/**
+ * @brief Clear a user thread's stack and grant the thread access to it.
+ *
+ * @param thread User thread.
+ */
 void xtensa_user_stack_perms(struct k_thread *thread)
 {
 	(void)memset((void *)thread->stack_info.start,
@@ -1731,7 +1761,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	domain = thread->mem_domain_info.mem_domain;
 	thread->arch.ptables = domain->arch.ptables;
 
-	is_user = (thread->base.user_options & K_USER) != 0;
+	is_user = k_thread_is_user_thread(thread);
 	is_migration = (old_ptables != NULL) && is_user;
 
 	if (is_migration) {
@@ -1777,7 +1807,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 
-	if ((thread->base.user_options & K_USER) == 0) {
+	if (!k_thread_is_user_thread(thread)) {
 		return 0;
 	}
 
@@ -1998,9 +2028,14 @@ bool xtensa_exc_load_store_ring_error_check(void *bsa_p)
 }
 
 #ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
-/* This is only used when swapping page tables and auto-refill DTLBs
+/**
+ * @brief Switch to the page tables of the incoming thread.
+ *
+ * This is only used when swapping page tables and auto-refill DTLBs
  * needing to be invalidated. Otherwise, SWAP_PAGE_TABLE assembly
  * is used to avoid a function call.
+ *
+ * @param incoming Thread being switched to.
  */
 void xtensa_swap_update_page_tables(struct k_thread *incoming)
 {

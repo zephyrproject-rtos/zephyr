@@ -1616,7 +1616,7 @@ static int spi_stm32_configure(const struct device *dev,
 	data->ctx.config = config;
 
 	LOG_DBG("Installed config %p: freq %uHz (div = %u), mode %u/%u/%u, peripheral %u",
-		config, clock >> br, 1 << br,
+		config, clock >> (br + shift), 1 << (br + shift),
 		(SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0,
 		(SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0,
 		(SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) ? 1 : 0,
@@ -2115,6 +2115,10 @@ static int transceive(const struct device *dev,
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	spi_stm32_pm_policy_state_lock_get(dev);
+
+	/* Make sure DXP and EOT interrupts are disabled before starting the transfer */
+	ll_disable_int_dxp(spi);
+	ll_disable_int_eot(spi);
 
 #ifdef CONFIG_SPI_RTIO
 	ret = spi_rtio_transceive(data->rtio_ctx, config, tx_bufs, rx_bufs);

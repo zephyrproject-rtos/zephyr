@@ -31,10 +31,10 @@
 
 &adc0 {
 	prescaler = <16>;
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@1 {
 		reg = <1>;

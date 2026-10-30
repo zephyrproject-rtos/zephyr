@@ -9,6 +9,6 @@
 #include <amd/acp_6_0.dtsi>
 
 / {
-	model = "AMD ACP_6_0  Audio DSP";
 	compatible = "acp_6_0";
+	model = "AMD ACP_6_0  Audio DSP";
 };

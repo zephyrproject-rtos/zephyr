@@ -10,8 +10,8 @@
 #include <ti/am62x_m4.dtsi>
 
 / {
-	model = "PHYTEC phyBOARD-Lyra AM62x M4";
 	compatible = "phytec,phyboard-lyra-am62xx-m4", "ti,am625";
+	model = "PHYTEC phyBOARD-Lyra AM62x M4";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -27,8 +27,17 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <400000000>;
+			status = "okay";
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		heartbeat_led: led_0 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "Heartbeat LED";
 		};
 	};
 
@@ -47,15 +56,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
 		zephyr,memory-region = "DDR";
-	};
-
-	leds: leds {
-		compatible = "gpio-leds";
-
-		heartbeat_led: led_0 {
-			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
-			label = "Heartbeat LED";
-		};
 	};
 };
 

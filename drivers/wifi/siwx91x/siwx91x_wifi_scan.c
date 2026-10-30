@@ -23,14 +23,15 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 		int sl_val;
 		int z_val;
 	} security_convert[] = {
-		{ SL_WIFI_OPEN,            WIFI_SECURITY_TYPE_NONE    },
-		{ SL_WIFI_WEP,             WIFI_SECURITY_TYPE_WEP     },
-		{ SL_WIFI_WPA,             WIFI_SECURITY_TYPE_WPA_PSK },
-		{ SL_WIFI_WPA2,            WIFI_SECURITY_TYPE_PSK     },
-		{ SL_WIFI_WPA3,            WIFI_SECURITY_TYPE_SAE     },
-		{ SL_WIFI_WPA3_TRANSITION, WIFI_SECURITY_TYPE_SAE     },
-		{ SL_WIFI_WPA_ENTERPRISE,  WIFI_SECURITY_TYPE_EAP     },
-		{ SL_WIFI_WPA2_ENTERPRISE, WIFI_SECURITY_TYPE_EAP     },
+		{ SL_WIFI_OPEN,            WIFI_SECURITY_TYPE_NONE              },
+		{ SL_WIFI_WEP,             WIFI_SECURITY_TYPE_WEP               },
+		{ SL_WIFI_WPA,             WIFI_SECURITY_TYPE_WPA_PSK           },
+		{ SL_WIFI_WPA2,            WIFI_SECURITY_TYPE_PSK               },
+		{ SL_WIFI_WPA3,            WIFI_SECURITY_TYPE_SAE               },
+		{ SL_WIFI_WPA3_TRANSITION, WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL },
+		{ SL_WIFI_WPA_WPA2_MIXED,  WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL },
+		{ SL_WIFI_WPA_ENTERPRISE,  WIFI_SECURITY_TYPE_EAP               },
+		{ SL_WIFI_WPA2_ENTERPRISE, WIFI_SECURITY_TYPE_EAP               },
 	};
 	struct wifi_scan_result tmp = {
 		.channel = result->scan_info[item].rf_channel,

@@ -268,7 +268,7 @@ static bool in_stack_bound(uintptr_t addr, const struct k_thread *const thread,
 	}
 
 #ifdef CONFIG_USERSPACE
-	if ((thread->base.user_options & K_USER) != 0) {
+	if (k_thread_is_user_thread(thread)) {
 		return in_user_thread_stack_bound(addr, thread);
 	}
 #endif /* CONFIG_USERSPACE */
@@ -433,7 +433,7 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 		}
 	}
 #ifdef CONFIG_USERSPACE
-	else if ((_current->base.user_options & K_USER) != 0 && GET_ESR_EC(esr) == 0x24) {
+	else if (k_thread_is_user_thread(_current) && GET_ESR_EC(esr) == 0x24) {
 		sp_limit = (uint64_t)_current->stack_info.start;
 		guard_start = sp_limit - CONFIG_PRIVILEGED_STACK_SIZE - Z_ARM64_STACK_GUARD_SIZE;
 		sp = esf->sp;
@@ -680,8 +680,7 @@ void z_arm64_do_kernel_oops(struct arch_esf *esf)
 	 * User mode is only allowed to induce oopses and stack check
 	 * failures via software-triggered system fatal exceptions.
 	 */
-	if (((_current->base.user_options & K_USER) != 0) &&
-		reason != K_ERR_STACK_CHK_FAIL) {
+	if (k_thread_is_user_thread(_current) && reason != K_ERR_STACK_CHK_FAIL) {
 		reason = K_ERR_KERNEL_OOPS;
 	}
 #endif

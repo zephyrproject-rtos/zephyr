@@ -439,11 +439,19 @@ int img_mgmt_client_upload(struct img_mgmt_client *client, const uint8_t *data, 
 			goto end;
 		}
 
+		if (image_upload_buf->image_upload_offset < offset_before_send) {
+			LOG_ERR("Upload Fail: offset invalid %zu", active_client->upload.offset);
+			image_upload_buf->status = MGMT_ERR_EINVAL;
+			goto end;
+		}
+
 		if (offset_before_send + write_length < active_client->upload.offset) {
 			/* Offset further than expected which indicate upload session resume */
 			goto end;
 		}
 
+		/* The actual written length is determined by the updated offset from target */
+		write_length = image_upload_buf->image_upload_offset - offset_before_send;
 		wrote_length += write_length;
 	}
 end:

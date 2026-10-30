@@ -60,7 +60,7 @@ extern "C" {
  *
  * @defgroup bt_gap Generic Access Profile (GAP)
  * @since 1.0
- * @version 1.1.1
+ * @version 1.1.2
  * @ingroup bluetooth
  * @{
  */
@@ -71,9 +71,6 @@ extern "C" {
  * only one identity address is supported.
  */
 #define BT_ID_DEFAULT 0
-
-/** Size of an Identity Resolving Key in octets. */
-#define BT_IRK_SIZE 16U
 
 /**
  * @brief Number of octets for local supported features
@@ -861,6 +858,10 @@ enum bt_le_adv_opt {
 	 * @kconfig{CONFIG_BT_EXT_ADV} instead.
 	 *
 	 * @note Mutually exclusive with BT_LE_ADV_OPT_USE_IDENTITY.
+	 *
+	 * @note With @kconfig{CONFIG_BT_PRIVACY} and the legacy advertising
+	 *       commands, scanning uses the same NRPA, and connection creation
+	 *       fails while the advertiser is enabled.
 	 */
 	BT_LE_ADV_OPT_USE_NRPA = BIT(19),
 
@@ -2629,7 +2630,8 @@ struct bt_le_scan_recv_info {
 	 * Controller resolved while scanning with the legacy scanning commands.
 	 *
 	 * The address type is @ref BT_ADDR_LE_UNRESOLVED if the Controller was unable to
-	 * resolve it.
+	 * resolve it. Use bt_addr_matches_irk() to check such an address against an IRK the
+	 * application holds.
 	 */
 	const bt_addr_le_t *direct_addr;
 };
@@ -2981,6 +2983,7 @@ struct bt_le_oob {
  *         different local identity address.
  *       - The local identity address conflicts with the local identity address used by other
  *         roles.
+ *       - Advertiser is enabled with @ref BT_LE_ADV_OPT_USE_NRPA.
  *
  * @note This function randomly generates cryptographic material used in the pairing process, and
  *       should be called again for each new pairing process.

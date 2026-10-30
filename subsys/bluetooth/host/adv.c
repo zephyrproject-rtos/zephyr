@@ -884,6 +884,30 @@ static inline bool adv_is_directed(const struct bt_le_ext_adv *adv)
 	return !bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY);
 }
 
+static bool adv_is_high_duty_dir(const struct bt_le_ext_adv *adv)
+{
+	return atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE) && adv_is_directed(adv) &&
+	       (adv->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) == 0U;
+}
+
+static void high_duty_dir_enabled(struct bt_le_ext_adv *adv, void *data)
+{
+	struct bt_le_ext_adv **found = data;
+
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED) && adv_is_high_duty_dir(adv)) {
+		*found = adv;
+	}
+}
+
+static struct bt_le_ext_adv *adv_high_duty_dir_lookup(void)
+{
+	struct bt_le_ext_adv *adv = NULL;
+
+	bt_le_ext_adv_foreach(high_duty_dir_enabled, &adv);
+
+	return adv;
+}
+
 static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 				 struct bt_conn **out_conn)
 {
@@ -901,6 +925,13 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 		bt_conn_set_state(conn, BT_CONN_ADV_CONNECTABLE);
 		*out_conn = conn;
 		return 0;
+	}
+
+	if (bt_drv_quirk_no_adv_term_on_dir_timeout() &&
+	    (adv->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) == 0U &&
+	    adv_high_duty_dir_lookup() != NULL) {
+		/* The connection complete event reporting the timeout names no advertising set */
+		return -EBUSY;
 	}
 
 	if (bt_conn_exists_le(adv->id, &adv->target_addr)) {
@@ -1070,6 +1101,8 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 #if defined(CONFIG_BT_EXT_ADV)
 	adv->sid = BT_GAP_SID_INVALID;
 #endif /* CONFIG_BT_EXT_ADV */
+
+	adv->options = param->options;
 
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE, param->options & BT_LE_ADV_OPT_CONN);
 
@@ -1357,12 +1390,14 @@ static int adv_start_ext(struct bt_le_ext_adv *adv,
 	return 0;
 }
 
+#if defined(CONFIG_BT_LIM_ADV)
 static void adv_timeout(struct k_work *work);
 
-int bt_le_lim_adv_cancel_timeout(struct bt_le_ext_adv *adv)
+void bt_le_lim_adv_cancel_timeout(struct bt_le_ext_adv *adv)
 {
-	return k_work_cancel_delayable(&adv->lim_adv_timeout_work);
+	(void)k_work_cancel_delayable(&adv->lim_adv_timeout_work);
 }
+#endif /* CONFIG_BT_LIM_ADV */
 
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
@@ -1370,6 +1405,13 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 {
 	struct bt_le_ext_adv *adv;
 	int err;
+
+	/* Nothing would end the limited discoverable mode. Directed advertising
+	 * ignores the data.
+	 */
+	if (!IS_ENABLED(CONFIG_BT_LIM_ADV) && param->peer == NULL && ad_is_limited(ad, ad_len)) {
+		return -ENOTSUP;
+	}
 
 	err = adv_create_legacy();
 	if (err) {
@@ -1389,11 +1431,13 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		bt_le_adv_delete_legacy();
 	}
 
+#if defined(CONFIG_BT_LIM_ADV)
 	if (ad_is_limited(ad, ad_len)) {
 		k_work_init_delayable(&adv->lim_adv_timeout_work, adv_timeout);
 		bt_work_reschedule(&adv->lim_adv_timeout_work,
 				   K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
 	}
+#endif /* CONFIG_BT_LIM_ADV */
 
 	return err;
 }
@@ -1408,7 +1452,7 @@ int bt_le_adv_stop(void)
 		return 0;
 	}
 
-	(void)bt_le_lim_adv_cancel_timeout(adv);
+	bt_le_lim_adv_cancel_timeout(adv);
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		/* Legacy advertiser exists, but is not currently advertising.
@@ -1665,7 +1709,7 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 		return -EINVAL;
 	}
 
-	(void)bt_le_lim_adv_cancel_timeout(adv);
+	bt_le_lim_adv_cancel_timeout(adv);
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return 0;
@@ -1753,7 +1797,7 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 }
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-
+#if defined(CONFIG_BT_LIM_ADV)
 static void adv_timeout(struct k_work *work)
 {
 	int err = 0;
@@ -1776,6 +1820,7 @@ static void adv_timeout(struct k_work *work)
 		LOG_WRN("Failed to stop advertising: %d", err);
 	}
 }
+#endif /* CONFIG_BT_LIM_ADV */
 
 #if defined(CONFIG_BT_PER_ADV)
 int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
@@ -2287,29 +2332,15 @@ int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
 
 #if defined(CONFIG_BT_EXT_ADV)
 #if defined(CONFIG_BT_BROADCASTER)
-void bt_hci_le_adv_set_terminated(struct net_buf *buf)
+static void adv_set_terminated(struct bt_le_ext_adv *adv,
+			       const struct bt_hci_evt_le_adv_set_terminated *evt)
 {
-	struct bt_hci_evt_le_adv_set_terminated *evt;
-	struct bt_le_ext_adv *adv;
-	uint16_t conn_handle;
+	uint16_t conn_handle = sys_le16_to_cpu(evt->conn_handle);
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	bool was_adv_enabled;
 #endif
 
-	evt = (void *)buf->data;
-	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
-	conn_handle = sys_le16_to_cpu(evt->conn_handle);
-
-	LOG_DBG("status 0x%02x %s adv_handle %u conn_handle 0x%02x num %u",
-		evt->status, bt_hci_err_to_str(evt->status),
-		evt->adv_handle, conn_handle, evt->num_completed_ext_adv_evts);
-
-	if (!adv) {
-		LOG_ERR("No valid adv");
-		return;
-	}
-
-	(void)bt_le_lim_adv_cancel_timeout(adv);
+	bt_le_lim_adv_cancel_timeout(adv);
 
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	was_adv_enabled = atomic_test_bit(adv->flags, BT_ADV_ENABLED);
@@ -2385,7 +2416,8 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 		bt_id_pending_keys_update();
 #endif
 
-		if (adv->cb && adv->cb->sent) {
+		/* Status success means a connection, not the limit, ended advertising */
+		if (evt->status != BT_HCI_ERR_SUCCESS && adv->cb != NULL && adv->cb->sent != NULL) {
 			struct bt_le_ext_adv_sent_info info = {
 				.num_sent = evt->num_completed_ext_adv_evts,
 			};
@@ -2397,6 +2429,54 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 	if (adv == bt_dev.adv) {
 		bt_le_adv_delete_legacy();
 	}
+}
+
+void bt_hci_le_adv_set_terminated(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_adv_set_terminated *evt;
+	struct bt_le_ext_adv *adv;
+
+	evt = (void *)buf->data;
+	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
+
+	LOG_DBG("status 0x%02x %s adv_handle %u conn_handle 0x%02x num %u", evt->status,
+		bt_hci_err_to_str(evt->status), evt->adv_handle, sys_le16_to_cpu(evt->conn_handle),
+		evt->num_completed_ext_adv_evts);
+
+	if (adv == NULL) {
+		LOG_ERR("No valid adv for handle %u", evt->adv_handle);
+		return;
+	}
+
+	if (bt_drv_quirk_no_adv_term_on_dir_timeout() && evt->status == BT_HCI_ERR_ADV_TIMEOUT &&
+	    adv_is_high_duty_dir(adv)) {
+		/* The connection complete event ends the set too, so the quirk must not be set */
+		LOG_WRN("Set terminated despite the no-adv-term-on-dir-timeout quirk");
+	}
+
+	adv_set_terminated(adv, evt);
+}
+
+void bt_le_adv_high_duty_timeout(void)
+{
+	struct bt_hci_evt_le_adv_set_terminated evt = {
+		.status = BT_HCI_ERR_ADV_TIMEOUT,
+		/* No connection was created, so no valid handle */
+		.conn_handle = sys_cpu_to_le16(UINT16_MAX),
+	};
+	struct bt_le_ext_adv *adv;
+
+	adv = adv_high_duty_dir_lookup();
+	if (adv == NULL) {
+		LOG_DBG("No high duty cycle directed advertising set");
+		return;
+	}
+
+	LOG_DBG("adv_handle %u", adv->handle);
+
+	evt.adv_handle = adv->handle;
+
+	adv_set_terminated(adv, &evt);
 }
 
 void bt_hci_le_scan_req_received(struct net_buf *buf)

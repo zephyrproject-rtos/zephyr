@@ -21,30 +21,6 @@
 	soc {
 		compatible = "st,stm32f427", "st,stm32f4", "simple-bus";
 
-		rcc: rcc@40023800 {
-			compatible = "st,stm32f4-rcc";
-		};
-
-		pinctrl: pin-controller@40020000 {
-			reg = <0x40020000 0x2c00>;
-
-			gpioj: gpio@40022400 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40022400 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB1, 9)>;
-			};
-
-			gpiok: gpio@40022800 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40022800 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB1, 10)>;
-			};
-		};
-
 		uart7: serial@40007800 {
 			compatible = "st,stm32-uart";
 			reg = <0x40007800 0x400>;
@@ -65,9 +41,9 @@
 
 		spi4: spi@40013400 {
 			compatible = "st,stm32-spi";
+			reg = <0x40013400 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
 			interrupts = <84 0>;
 			st,spi-data-width = "limited-8-16-bit";
@@ -79,9 +55,9 @@
 		 */
 		spi5: spi@40015000 {
 			compatible = "st,stm32-spi";
+			reg = <0x40015000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
 			interrupts = <85 0>;
 			st,spi-data-width = "limited-8-16-bit";
@@ -93,35 +69,21 @@
 		 */
 		spi6: spi@40015400 {
 			compatible = "st,stm32-spi";
+			reg = <0x40015400 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40015400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
 			interrupts = <86 0>;
 			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
 
-		fmc: memory-controller@a0000000 {
-			compatible = "st,stm32-fmc";
-			reg = <0xa0000000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
-			status = "disabled";
-
-			sdram: sdram {
-				compatible = "st,stm32-fmc-sdram";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-		};
-
 		sai1: sai1@40015800 {
 			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x40015800 0x400>;
 			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
 			clock-names = "sai_ck";
 			status = "disabled";
@@ -143,11 +105,49 @@
 			};
 		};
 
+		pinctrl: pin-controller@40020000 {
+			reg = <0x40020000 0x2c00>;
+
+			gpioj: gpio@40022400 {
+				compatible = "st,stm32-gpio";
+				reg = <0x40022400 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 9)>;
+			};
+
+			gpiok: gpio@40022800 {
+				compatible = "st,stm32-gpio";
+				reg = <0x40022800 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 10)>;
+			};
+		};
+
+		rcc: rcc@40023800 {
+			compatible = "st,stm32f4-rcc";
+		};
+
 		dma2d: dma@4002b000 {
 			compatible = "st,stm32-dma2d";
 			reg = <0x4002b000 0xc00>;
 			interrupts = <90 0>;
 			status = "disabled";
+		};
+
+		fmc: memory-controller@a0000000 {
+			compatible = "st,stm32-fmc";
+			reg = <0xa0000000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
+			status = "disabled";
+
+			sdram: sdram {
+				compatible = "st,stm32-fmc-sdram";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 

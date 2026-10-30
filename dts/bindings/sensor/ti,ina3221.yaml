@@ -86,3 +86,9 @@ properties:
     type: array
     description: |
       List of shunt resistor values for all three channels in mOhms.
+  continuous-mode:
+    type: boolean
+    description: |
+      Convert the shunt and bus voltages continuously, so that a fetch reads
+      the last conversions without waiting. Otherwise, a fetch triggers a
+      conversion and waits for it to complete.

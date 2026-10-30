@@ -71,9 +71,9 @@ static int mcumgr_serial_decode_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt,
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
 static inline bool mcumgr_serial_process_frag_raw(struct mcumgr_serial_rx_ctxt *rx_ctxt,
-							     const uint8_t *frag, int frag_len,
-							     struct smp_hdr *rec_hdr)
+							     const uint8_t *frag, int frag_len)
 {
+	struct smp_hdr *rec_hdr;
 	uint16_t total_size;
 
 	if (frag_len > net_buf_tailroom(rx_ctxt->nb)) {
@@ -134,9 +134,6 @@ struct net_buf *mcumgr_serial_process_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt
 	uint16_t crc;
 	uint16_t op;
 #endif
-#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
-	struct smp_hdr *rec_hdr;
-#endif
 
 	if (rx_ctxt->nb == NULL) {
 		rx_ctxt->nb = smp_packet_alloc();
@@ -151,7 +148,7 @@ struct net_buf *mcumgr_serial_process_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt
 	if (rx_ctxt->raw_transport == true) {
 #endif
 #if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
-		if (mcumgr_serial_process_frag_raw(rx_ctxt, frag, frag_len, rec_hdr) == false) {
+		if (mcumgr_serial_process_frag_raw(rx_ctxt, frag, frag_len) == false) {
 			return NULL;
 		}
 #endif

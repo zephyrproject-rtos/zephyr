@@ -49,7 +49,12 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 
 # Job server only works on Linux for now.
 if sys.platform == 'linux':
-    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
+    from twisterlib.jobserver import (
+        GNUMakeJobClient,
+        GNUMakeJobServer,
+        JobClient,
+        fifo_supported,
+    )
 
 from domains import Domains
 from twisterlib.coverage import run_coverage_instance
@@ -357,7 +362,7 @@ class CMake:
             if log_msg:
                 pattern = (
                     r"region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|"
-                    r"dram\d_\d_seg|iram\d_\d_seg)' "
+                    r"dram\d_\d_seg|iram\d_\d_seg|sram\d_\d_seg)' "
                     "overflowed by"
                 )
                 overflow_found = re.findall(pattern, log_msg)
@@ -2018,7 +2023,14 @@ class TwisterRunner:
             if os.name == 'posix':
                 self.jobserver = GNUMakeJobClient.from_environ(jobs=self.options.jobs)
                 if not self.jobserver:
-                    self.jobserver = GNUMakeJobServer(self.jobs)
+                    # One job server serves every build, so any suite counts
+                    cmake_args = list(self.options.extra_args)
+                    for instance in self.instances.values():
+                        cmake_args.extend(instance.testsuite.extra_args)
+                    self.jobserver = GNUMakeJobServer(
+                        self.jobs,
+                        fifo=fifo_supported(self.env.generator_cmd, cmake_args),
+                    )
                 elif self.jobserver.jobs:
                     self.jobs = self.jobserver.jobs
             # TODO: Implement this on windows/mac also
@@ -2148,6 +2160,15 @@ class TwisterRunner:
                         self.results,
                         decrement=True
                     )
+                    # Testcase results from the failed attempt must not survive
+                    # into the retry: cases that do not report on the retry
+                    # (for example ones not built into the image) would keep a
+                    # stale "blocked" or "failed" status inside a passing suite.
+                    for case in instance.testcases:
+                        case.status = TwisterStatus.NONE
+                        case.reason = None
+                        case.duration = 0
+                        case.output = ""
 
                 # Check if cmake package_helper script can be run in advance.
                 instance.filter_stages = []

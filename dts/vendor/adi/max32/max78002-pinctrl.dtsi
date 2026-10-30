@@ -26,6 +26,10 @@
 			};
 
 			/omit-if-no-ref/ ext_clk_p0_3: ext_clk_p0_3 {
+				pinmux = <MAX32_PINMUX(0, 3, GPIO)>;
+			};
+
+			/omit-if-no-ref/ tmr0a_iob_p0_3: tmr0a_iob_p0_3 {
 				pinmux = <MAX32_PINMUX(0, 3, AF1)>;
 			};
 

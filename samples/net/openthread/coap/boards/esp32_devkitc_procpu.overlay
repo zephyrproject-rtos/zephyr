@@ -16,8 +16,8 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <460800>;
+	status = "okay";
 };
 
 &psram0 {

@@ -54,8 +54,10 @@ static int i3g4250d_sample_fetch(const struct device *dev,
 
 static inline void i3g4250d_convert(struct sensor_value *val, int16_t raw_value)
 {
-	val->val1 = (int16_t)(raw_value * RAW_TO_MICRODEGREEPERSEC / 1000000LL);
-	val->val2 = (int16_t)(raw_value * RAW_TO_MICRODEGREEPERSEC) % 1000000LL;
+	/* Sensitivity is in udps/LSB: convert to 10 udps, then to rad/s */
+	int32_t dval = (int32_t)raw_value * RAW_TO_MICRODEGREEPERSEC / 10;
+
+	sensor_10udegrees_to_rad(dval, val);
 }
 
 static void i3g4250d_channel_convert(enum sensor_channel chan,
@@ -220,7 +222,7 @@ static int i3g4250d_init(const struct device *dev)
 				&i3g4250d_driver_api);
 #define I3G4250D_CONFIG_SPI(inst)	\
 	{	\
-		STMEMSC_CTX_SPI(&i3g4250d_device_config_##inst.stmemsc_cfg),	\
+		STMEMSC_CTX_SPI_INCR(&i3g4250d_device_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {	\
 			.spi = SPI_DT_SPEC_INST_GET(	\
 				inst,	\

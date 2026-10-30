@@ -50,8 +50,25 @@ static struct btp_bap_broadcast_remote_source remote_broadcast_sources[1];
 static struct btp_bap_broadcast_local_source local_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT];
 /* Only one PA sync supported for now. */
 static struct btp_bap_broadcast_remote_source *broadcast_source_to_sync;
+/* All access to remote_broadcast_sources shall be guarded by this mutex. */
+static K_MUTEX_DEFINE(remote_broadcast_sources_mutex);
 /* A mask for the maximum BIS we can sync to. +1 since the BIS indexes start from 1. */
 static const uint32_t bis_index_mask = BIT_MASK(CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT + 1);
+
+static inline void remote_broadcast_sources_lock(void)
+{
+	__maybe_unused int err = k_mutex_lock(&remote_broadcast_sources_mutex, K_FOREVER);
+
+	__ASSERT(err == 0, "Unable to lock mutex (err: %d)", err);
+}
+
+static inline void remote_broadcast_sources_unlock(void)
+{
+	__maybe_unused int err = k_mutex_unlock(&remote_broadcast_sources_mutex);
+
+	__ASSERT(err == 0, "Unable to unlock mutex (err: %d)", err);
+}
+
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20U /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP                      5U
 static struct bt_bap_bass_subgroup delegator_subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
@@ -209,11 +226,19 @@ static void stream_started(struct bt_bap_stream *stream)
 			LOG_ERR("Failed to register stream: %d", err);
 		}
 	} else {
+		bt_addr_le_t address;
+		uint32_t broadcast_id;
+
+		remote_broadcast_sources_lock();
+
 		b_stream->bis_synced = true;
 		broadcaster = &remote_broadcast_sources[b_stream->source_id];
+		bt_addr_le_copy(&address, &broadcaster->address);
+		broadcast_id = broadcaster->broadcast_id;
 
-		btp_send_bis_synced_ev(&broadcaster->address, broadcaster->broadcast_id,
-				       b_stream->bis_id);
+		remote_broadcast_sources_unlock();
+
+		btp_send_bis_synced_ev(&address, broadcast_id, b_stream->bis_id);
 	}
 }
 
@@ -231,7 +256,9 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 			LOG_ERR("Failed to unregister stream: %d", err);
 		}
 	} else {
+		remote_broadcast_sources_lock();
 		b_stream->bis_synced = false;
+		remote_broadcast_sources_unlock();
 	}
 
 	k_sem_give(&sem_stream_stopped);
@@ -274,10 +301,18 @@ static void stream_recv(struct bt_bap_stream *stream, const struct bt_iso_recv_i
 			stream, buf->len, info->flags, info->seq_num, info->ts);
 
 		if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
+			bt_addr_le_t address;
+			uint32_t broadcast_id;
+
 			b_stream->already_sent = true;
+
+			remote_broadcast_sources_lock();
 			broadcaster = &remote_broadcast_sources[b_stream->source_id];
-			send_bis_stream_received_ev(&broadcaster->address,
-						    broadcaster->broadcast_id, b_stream->bis_id,
+			bt_addr_le_copy(&address, &broadcaster->address);
+			broadcast_id = broadcaster->broadcast_id;
+			remote_broadcast_sources_unlock();
+
+			send_bis_stream_received_ev(&address, broadcast_id, b_stream->bis_id,
 						    buf->len, buf->data);
 		}
 	}
@@ -1058,9 +1093,19 @@ uint8_t btp_bap_broadcast_source_stop(const void *cmd, uint16_t cmd_len, void *r
 
 static int broadcast_sink_reset(void)
 {
+	remote_broadcast_sources_lock();
+
+	/* Invalidate the pending source so pa_timer_handler() or bap_pa_sync_synced_cb(),
+	 * which check this pointer under the same lock, cannot use a broadcaster that is
+	 * about to be cleared below.
+	 */
+	broadcast_source_to_sync = NULL;
+
 	for (size_t i = 0U; i < ARRAY_SIZE(remote_broadcast_sources); i++) {
 		remote_broadcaster_free(&remote_broadcast_sources[i]);
 	}
+
+	remote_broadcast_sources_unlock();
 
 	return 0;
 }
@@ -1216,9 +1261,13 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 	LOG_DBG("");
 
+	remote_broadcast_sources_lock();
+
 	broadcaster = remote_broadcaster_find_by_sink(sink);
 	if (broadcaster == NULL) {
 		LOG_ERR("Failed to find broadcaster");
+
+		remote_broadcast_sources_unlock();
 
 		return;
 	}
@@ -1229,6 +1278,9 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	ret = bt_bap_base_get_pres_delay(base);
 	if (ret < 0) {
 		LOG_ERR("Failed to get presentation delay: %d", ret);
+
+		remote_broadcast_sources_unlock();
+
 		return;
 	}
 
@@ -1238,21 +1290,31 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	ret = bt_bap_base_foreach_subgroup(base, base_subgroup_cb, &parse_data);
 	if (ret != 0) {
 		LOG_ERR("Failed to parse subgroups: %d", ret);
+
+		remote_broadcast_sources_unlock();
+
 		return;
 	}
 
 	broadcaster->bis_index_bitfield = parse_data.bis_bitfield & bis_index_mask;
 	LOG_DBG("bis_index_bitfield 0x%08x", broadcaster->bis_index_bitfield);
+
+	remote_broadcast_sources_unlock();
 }
 
 static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
 	int err;
 	uint32_t index_bitfield;
-	struct btp_bap_broadcast_remote_source *broadcaster = remote_broadcaster_find_by_sink(sink);
+	struct btp_bap_broadcast_remote_source *broadcaster;
 
+	remote_broadcast_sources_lock();
+
+	broadcaster = remote_broadcaster_find_by_sink(sink);
 	if (broadcaster == NULL) {
 		LOG_ERR("remote_broadcaster_find_by_sink failed, %p", sink);
+
+		remote_broadcast_sources_unlock();
 
 		return;
 	}
@@ -1261,17 +1323,20 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 		broadcaster->requested_bis_sync);
 
 	broadcaster->biginfo_received = true;
+	broadcaster->biginfo_encrypted = biginfo->encryption;
 
 	if (biginfo->encryption && !broadcaster->broadcast_code_received) {
 		/* Wait for Set Broadcast Code and start sync at broadcast_code_cb */
 		LOG_DBG("BIGInfo received, but have not yet received broadcast code for encrypted "
 			"broadcast");
+		remote_broadcast_sources_unlock();
 		return;
 	}
 
 	if (!broadcaster->assistant_request && broadcaster->requested_bis_sync == 0U) {
 		/* No sync with any BIS was requested yet */
 		LOG_DBG("BIGInfo received, but have not yet received request to sync to broadcast");
+		remote_broadcast_sources_unlock();
 		return;
 	}
 
@@ -1284,6 +1349,8 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 	}
 
 	broadcaster->assistant_request = false;
+
+	remote_broadcast_sources_unlock();
 }
 
 static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
@@ -1294,6 +1361,8 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 static void pa_timer_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
+
+	remote_broadcast_sources_lock();
 
 	if (broadcast_source_to_sync != NULL) {
 		enum bt_bap_pa_state pa_state;
@@ -1313,6 +1382,8 @@ static void pa_timer_handler(struct k_work *work)
 		}
 	}
 
+	remote_broadcast_sources_unlock();
+
 	LOG_DBG("PA timeout");
 }
 
@@ -1321,17 +1392,23 @@ static K_WORK_DELAYABLE_DEFINE(pa_timer, pa_timer_handler);
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
+	struct btp_bap_broadcast_remote_source *broadcaster;
 	int err;
 
 	LOG_DBG("Sync info: service_data 0x%04X", info->service_data);
 
 	k_work_cancel_delayable(&pa_timer);
 
+	remote_broadcast_sources_lock();
+
 	/* We are synced to a PA. We know that this is the Broadcaster PA we wanted
 	 * to sync to, because we support only one sync for now.
 	 */
-	if (broadcast_source_to_sync == NULL) {
+	broadcaster = broadcast_source_to_sync;
+	if (broadcaster == NULL) {
 		LOG_DBG("Failed to create broadcast sink, NULL ptr");
+
+		remote_broadcast_sources_unlock();
 
 		return;
 	}
@@ -1339,14 +1416,15 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 	/* In order to parse the BASE and BIG Info from the Broadcast PA, we have to create
 	 * a Broadcast Sink instance. From now on callbacks of the broadcast_sink_cbs will be used.
 	 */
-	err = bt_bap_broadcast_sink_create(sync, broadcast_source_to_sync->broadcast_id,
-					   &broadcast_source_to_sync->sink);
+	err = bt_bap_broadcast_sink_create(sync, broadcaster->broadcast_id, &broadcaster->sink);
 	if (err != 0) {
 		LOG_DBG("Failed to create broadcast sink: ID 0x%06X, err %d",
-			broadcast_source_to_sync->broadcast_id, err);
+			broadcaster->broadcast_id, err);
 	}
 
 	broadcast_source_to_sync = NULL;
+
+	remote_broadcast_sources_unlock();
 }
 
 static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
@@ -1450,6 +1528,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 
 	LOG_DBG("sync state %d ", recv_state->pa_sync_state);
 
+	remote_broadcast_sources_lock();
+
 	broadcaster = remote_broadcaster_find(&recv_state->addr, recv_state->broadcast_id);
 	if (broadcaster == NULL) {
 		/* The Broadcast Assistant gave us the info about the Broadcaster, we have not
@@ -1459,6 +1539,9 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 		broadcaster = remote_broadcaster_alloc();
 		if (broadcaster == NULL) {
 			LOG_ERR("Failed to allocate broadcast source");
+
+			remote_broadcast_sources_unlock();
+
 			return -EINVAL;
 		}
 
@@ -1469,6 +1552,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	broadcast_source_to_sync = broadcaster;
 
 	broadcaster->sink_recv_state = recv_state;
+
+	remote_broadcast_sources_unlock();
 
 	btp_send_pas_sync_req_ev(conn, recv_state->src_id, recv_state->adv_sid,
 				 recv_state->broadcast_id, past_avail, pa_interval);
@@ -1485,14 +1570,20 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 	LOG_DBG("");
 
+	remote_broadcast_sources_lock();
+
 	broadcaster = remote_broadcaster_find(&recv_state->addr, recv_state->broadcast_id);
 	if (broadcaster == NULL) {
 		LOG_ERR("Failed to find broadcaster");
+
+		remote_broadcast_sources_unlock();
 
 		return -EINVAL;
 	}
 
 	broadcaster->sink_recv_state = recv_state;
+
+	remote_broadcast_sources_unlock();
 
 	tester_gap_padv_stop_sync();
 
@@ -1509,14 +1600,18 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 	ARG_UNUSED(conn);
 
-	LOG_DBG("Broadcast code received for %p", recv_state);
+	remote_broadcast_sources_lock();
 
 	broadcaster = remote_broadcaster_find(&recv_state->addr, recv_state->broadcast_id);
 	if (broadcaster == NULL) {
 		LOG_ERR("Failed to find broadcaster");
 
+		remote_broadcast_sources_unlock();
+
 		return;
 	}
+
+	LOG_DBG("Broadcast code received for %p", recv_state);
 
 	broadcaster->sink_recv_state = recv_state;
 	(void)memcpy(broadcaster->sink_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
@@ -1524,11 +1619,13 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 	if (!broadcaster->requested_bis_sync) {
 		LOG_DBG("Broadcast code received, but not requested to sync");
+		remote_broadcast_sources_unlock();
 		return;
 	}
 
 	if (!broadcaster->biginfo_received) {
 		LOG_DBG("Broadcast code received, but have not yet received BIGInfo");
+		remote_broadcast_sources_unlock();
 		return;
 	}
 
@@ -1539,6 +1636,8 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	if (err != 0) {
 		LOG_DBG("Unable to sync to broadcast source: %d", err);
 	}
+
+	remote_broadcast_sources_unlock();
 }
 
 static int bis_sync_req_cb(struct bt_conn *conn,
@@ -1552,9 +1651,13 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 	LOG_DBG("BIS sync request received for %p: 0x%08x", recv_state, bis_sync_req[0]);
 
+	remote_broadcast_sources_lock();
+
 	broadcaster = remote_broadcaster_find(&recv_state->addr, recv_state->broadcast_id);
 	if (broadcaster == NULL) {
 		LOG_ERR("Failed to find broadcaster");
+
+		remote_broadcast_sources_unlock();
 
 		return -EINVAL;
 	}
@@ -1585,9 +1688,13 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 		if (err != 0) {
 			LOG_DBG("Failed to stop Broadcast Sink: %d", err);
 
+			remote_broadcast_sources_unlock();
+
 			return err;
 		}
 	}
+
+	remote_broadcast_sources_unlock();
 
 	return 0;
 }
@@ -1723,7 +1830,9 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 
 		conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 		if (!conn) {
+			remote_broadcast_sources_lock();
 			broadcast_source_to_sync = NULL;
+			remote_broadcast_sources_unlock();
 
 			return BTP_STATUS_FAILED;
 		}
@@ -1748,11 +1857,16 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 
 		err = tester_gap_padv_create_sync(&create_params);
 
+		remote_broadcast_sources_lock();
+
 		broadcaster = remote_broadcaster_find(&cp->address, broadcast_id);
 		if (broadcaster == NULL) {
 			broadcaster = remote_broadcaster_alloc();
 			if (broadcaster == NULL) {
 				LOG_ERR("Failed to allocate broadcast source");
+
+				remote_broadcast_sources_unlock();
+
 				return BTP_STATUS_FAILED;
 			}
 
@@ -1761,10 +1875,14 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 		}
 
 		broadcast_source_to_sync = broadcaster;
+
+		remote_broadcast_sources_unlock();
 	}
 
 	if (err != 0) {
+		remote_broadcast_sources_lock();
 		broadcast_source_to_sync = NULL;
+		remote_broadcast_sources_unlock();
 
 		return BTP_STATUS_FAILED;
 	}
@@ -1785,9 +1903,13 @@ uint8_t btp_bap_broadcast_sink_stop(const void *cmd, uint16_t cmd_len, void *rsp
 
 	LOG_DBG("");
 
+	remote_broadcast_sources_lock();
+
 	broadcaster = remote_broadcaster_find(&cp->address, broadcast_id);
 	if (broadcaster == NULL) {
 		LOG_ERR("Failed to find broadcaster");
+
+		remote_broadcast_sources_unlock();
 
 		return BTP_STATUS_FAILED;
 	}
@@ -1795,6 +1917,9 @@ uint8_t btp_bap_broadcast_sink_stop(const void *cmd, uint16_t cmd_len, void *rsp
 	broadcaster->requested_bis_sync = 0;
 
 	err = bt_bap_broadcast_sink_stop(broadcaster->sink);
+
+	remote_broadcast_sources_unlock();
+
 	if (err != 0) {
 		LOG_DBG("Unable to sync to broadcast source: %d", err);
 
@@ -1824,9 +1949,13 @@ uint8_t btp_bap_broadcast_sink_bis_sync(const void *cmd, uint16_t cmd_len, void 
 
 	LOG_DBG("");
 
+	remote_broadcast_sources_lock();
+
 	broadcaster = remote_broadcaster_find(&cp->address, sys_get_le24(cp->broadcast_id));
 	if (broadcaster == NULL) {
 		LOG_ERR("Failed to find broadcaster");
+
+		remote_broadcast_sources_unlock();
 
 		return BTP_STATUS_FAILED;
 	}
@@ -1835,6 +1964,14 @@ uint8_t btp_bap_broadcast_sink_bis_sync(const void *cmd, uint16_t cmd_len, void 
 
 	if (!broadcaster->biginfo_received) {
 		LOG_DBG("Broadcast sync requested, but have not yet received BIGInfo");
+		remote_broadcast_sources_unlock();
+		return BTP_STATUS_SUCCESS;
+	}
+
+	if (broadcaster->biginfo_encrypted && !broadcaster->broadcast_code_received) {
+		/* Sync is started from broadcast_code_cb once the code has been written */
+		LOG_DBG("Broadcast sync requested, but have not yet received broadcast code");
+		remote_broadcast_sources_unlock();
 		return BTP_STATUS_SUCCESS;
 	}
 
@@ -1845,8 +1982,12 @@ uint8_t btp_bap_broadcast_sink_bis_sync(const void *cmd, uint16_t cmd_len, void 
 		LOG_DBG("Unable to sync to BISes, req_bis_sync %d, err %d",
 			broadcaster->requested_bis_sync, err);
 
+		remote_broadcast_sources_unlock();
+
 		return BTP_STATUS_FAILED;
 	}
+
+	remote_broadcast_sources_unlock();
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -2306,6 +2447,8 @@ uint8_t btp_bap_set_sink_broadcast_code(const void *cmd, uint16_t cmd_len, void 
 	ARG_UNUSED(rsp);
 	ARG_UNUSED(rsp_len);
 
+	remote_broadcast_sources_lock();
+
 	/* Find the broadcaster by address and broadcast_id */
 	broadcaster = remote_broadcaster_find(&cp->address, host_broadcast_id);
 	if (broadcaster == NULL) {
@@ -2315,6 +2458,9 @@ uint8_t btp_bap_set_sink_broadcast_code(const void *cmd, uint16_t cmd_len, void 
 		broadcaster = remote_broadcaster_alloc();
 		if (broadcaster == NULL) {
 			LOG_DBG("Failed to allocate broadcaster entry");
+
+			remote_broadcast_sources_unlock();
+
 			return BTP_STATUS_FAILED;
 		}
 		bt_addr_le_copy(&broadcaster->address, &cp->address);
@@ -2323,6 +2469,9 @@ uint8_t btp_bap_set_sink_broadcast_code(const void *cmd, uint16_t cmd_len, void 
 		     BT_ISO_BROADCAST_CODE_SIZE);
 	broadcaster->broadcast_id = host_broadcast_id;
 	broadcaster->broadcast_code_received = true;
+
+	remote_broadcast_sources_unlock();
+
 	return BTP_STATUS_SUCCESS;
 }
 

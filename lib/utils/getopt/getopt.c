@@ -73,7 +73,7 @@ void sys_getopt_init(void)
 int sys_getopt(int nargc, char *const nargv[], const char *ostr)
 {
 	struct sys_getopt_state *state;
-	char *oli; /* option letter list index */
+	const char *oli; /* option letter list index */
 
 	/* get getopt state of the current thread */
 	state = sys_getopt_state_get();

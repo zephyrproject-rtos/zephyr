@@ -576,7 +576,7 @@ static int wait_for_clock_on(const struct device *dev, clock_control_subsys_t sy
 
 static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 {
-	int ret_val = -ENOTSUP;
+	int ret_val;
 	const struct clock_mchp_config *config = dev->config;
 	union clock_mchp_subsys subsys = {.val = (uint32_t)sys};
 	enum clock_control_status status;
@@ -592,7 +592,8 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 		/* clock is already on.*/
 		ret_val = -EALREADY;
 	} else {
-		if (clock_on(config, subsys) == 0) {
+		ret_val = clock_on(config, subsys);
+		if (ret_val == 0) {
 			/* clock on operation is successful. */
 			ret_val = wait_for_clock_on(dev, sys);
 		}
@@ -610,7 +611,7 @@ static int clock_mchp_off(const struct device *dev, clock_control_subsys_t sys)
 	if (0 == clock_check_subsys(subsys)) {
 		return clock_off(config, subsys);
 	} else {
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 }
 

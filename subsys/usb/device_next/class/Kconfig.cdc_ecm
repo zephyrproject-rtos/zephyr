@@ -12,6 +12,14 @@ config USBD_CDC_ECM_CLASS
 
 if USBD_CDC_ECM_CLASS
 
+config USBD_CDC_ECM_TX_TIMEOUT
+	int "TX transfer timeout (milliseconds)"
+	range 1 1000
+	default 100
+	help
+	  Maximum time cdc_ecm_send() waits for the previous IN transfer to
+	  complete before it drops the packet.
+
 module = USBD_CDC_ECM
 module-str = usbd cdc_ecm
 default-count = 1

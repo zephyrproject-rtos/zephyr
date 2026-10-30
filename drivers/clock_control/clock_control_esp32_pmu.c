@@ -17,14 +17,38 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-int esp32_select_rtc_slow_clk(uint8_t slow_clk)
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+BUILD_ASSERT(DT_PROP(DT_INST(0, espressif_esp32_clock), slow_clk_src) !=
+		     ESP32_RTC_SLOW_CLK_32K_EXT_OSC,
+	     "ESP32-P4 has no external 32 kHz oscillator input");
+#endif
+
+int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 {
 	soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk;
+	soc_clk_freq_calculation_src_t cal_clk_32k = CLK_CAL_32K_XTAL;
+	bool clk_32k_src = (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_XTAL32K);
 	uint32_t cal_val = 0;
 	/* number of times to repeat 32k XTAL calibration
 	 * before giving up and switching to the internal RC
 	 */
-	int retry_32k_xtal = 3;
+	int retry_32k_xtal = CONFIG_CLOCK_CONTROL_ESP32_RTC_XTAL_CAL_RETRY;
+	bool revoke_32k = false;
+
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	if (slow_clk == ESP32_RTC_SLOW_CLK_32K_EXT_OSC) {
+		return -ENOTSUP;
+	}
+#else
+	if (slow_clk == ESP32_RTC_SLOW_CLK_32K_EXT_OSC) {
+		rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW;
+	}
+
+	if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+		cal_clk_32k = CLK_CAL_32K_OSC_SLOW;
+		clk_32k_src = true;
+	}
+#endif
 
 	/*
 	 * RTC slow clock calibration uses TIMG0 to count XTAL cycles.
@@ -33,22 +57,21 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 	_timg_ll_enable_bus_clock(0, true);
 	_timg_ll_reset_register(0);
 	do {
-		if (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
-			/* 32k XTAL oscillator needs to be enabled and running before it can
-			 * be used. Hardware doesn't have a direct way of checking if the
-			 * oscillator is running. Here we use rtc_clk_cal function to count
-			 * the number of main XTAL cycles in the given number of 32k XTAL
-			 * oscillator cycles. If the 32k XTAL has not started up, calibration
+		if (clk_32k_src) {
+			/* 32k XTAL oscillator or external 32k clock needs to be enabled and
+			 * running before it can be used. Hardware doesn't have a direct way
+			 * of checking if it is running. Here we use rtc_clk_cal function to
+			 * count the number of main XTAL cycles in the given number of 32k
+			 * clock cycles. If the 32k clock has not started up, calibration
 			 * will time out, returning 0.
 			 */
 			LOG_DBG("waiting for 32k oscillator to start up");
-			if (slow_clk == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
+			if (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
 				rtc_clk_32k_enable(true);
 			}
 #if !defined(CONFIG_SOC_SERIES_ESP32P4)
-			else if (slow_clk == ESP32_RTC_SLOW_CLK_32K_EXT_OSC) {
+			else {
 				rtc_clk_32k_enable_external();
-			} else {
 			}
 #endif
 			/* When CLOCK_CONTROL_ESP32_RTC_CLK_CAL_CYCLES is set to 0, clock
@@ -56,16 +79,21 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 			 */
 			if (CONFIG_CLOCK_CONTROL_ESP32_RTC_CLK_CAL_CYCLES > 0) {
 				cal_val =
-					rtc_clk_cal(CLK_CAL_32K_XTAL,
+					rtc_clk_cal(cal_clk_32k,
 						    CONFIG_CLOCK_CONTROL_ESP32_RTC_CLK_CAL_CYCLES);
 				if (cal_val != 0) {
 					/* calibration succeeded */
 				} else if (retry_32k_xtal > 0) {
 					retry_32k_xtal--;
 					continue;
-				} else {
-					LOG_ERR("32 kHz XTAL not found");
+				} else if (!fallback) {
+					LOG_ERR("32 kHz clock not found");
 					return -ENODEV;
+				} else {
+					LOG_WRN("32 kHz clock not found, switching to internal RC");
+					rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+					clk_32k_src = false;
+					revoke_32k = true;
 				}
 			}
 #if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2) ||                    \
@@ -79,6 +107,18 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 		}
 #endif
 		rtc_clk_slow_src_set(rtc_slow_clk_src);
+
+		if (revoke_32k) {
+			if (cal_clk_32k == CLK_CAL_32K_XTAL) {
+				rtc_clk_32k_enable(false);
+			}
+#if !defined(CONFIG_SOC_SERIES_ESP32P4)
+			else {
+				rtc_clk_32k_disable_external();
+			}
+#endif
+			revoke_32k = false;
+		}
 
 		/*
 		 * The source enums differ per SoC (ESP32-C5 has no RC32K,

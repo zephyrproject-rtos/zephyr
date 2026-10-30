@@ -11,98 +11,98 @@
  */
 
 &clk_hsi {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(64)>;
 	hsi-div = <1>;
+	status = "okay";
 };
 
 &cpusw {
-	status = "okay";
 	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
 	clock-frequency = <DT_FREQ_M(600)>;
+	status = "okay";
 };
 
 &ic1 {
-	status = "okay";
 	pll-src = <1>;
 	ic-div = <2>;
+	status = "okay";
 };
 
 &ic2 {
-	status = "okay";
 	pll-src = <2>;
 	ic-div = <3>;
+	status = "okay";
 };
 
 &ic6 {
-	status = "okay";
 	pll-src = <3>;
 	ic-div = <5>;
+	status = "okay";
 };
 
 &ic8 {
-	status = "okay";
 	pll-src = <1>;
 	ic-div = <10>;
+	status = "okay";
 };
 
 &ic9 {
-	status = "okay";
 	pll-src = <2>;
 	ic-div = <16>;
+	status = "okay";
 };
 
 &ic10 {
-	status = "okay";
 	pll-src = <3>;
 	ic-div = <5>;
+	status = "okay";
 };
 
 &ic11 {
-	status = "okay";
 	pll-src = <4>;
 	ic-div = <3>;
+	status = "okay";
 };
 
 &perck {
-	status = "okay";
 	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
+	status = "okay";
 };
 
 &pll1 {
-	status = "okay";
 	clocks = <&clk_hsi>;
 	div-m = <4>;
 	mul-n = <75>;
 	div-p1 = <1>;
 	div-p2 = <1>;
+	status = "okay";
 };
 
 &pll2 {
-	status = "okay";
 	clocks = <&clk_hsi>;
 	div-m = <8>;
 	mul-n = <300>;
 	div-p1 = <1>;
 	div-p2 = <2>;
+	status = "okay";
 };
 
 &pll3 {
-	status = "okay";
 	clocks = <&clk_hsi>;
 	div-m = <2>;
 	mul-n = <75>;
 	div-p1 = <2>;
 	div-p2 = <5>;
+	status = "okay";
 };
 
 &pll4 {
-	status = "okay";
 	clocks = <&clk_hsi>;
 	div-m = <4>;
 	mul-n = <300>;
 	div-p1 = <1>;
 	div-p2 = <3>;
+	status = "okay";
 };
 
 &rcc {

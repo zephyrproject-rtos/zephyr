@@ -145,12 +145,11 @@ int stream_rx_stopped(struct bt_bap_stream *bap_stream)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_LIBLC3) && bap_stream->codec_cfg != NULL &&
-	    bap_stream->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+	if (IS_ENABLED(CONFIG_LIBLC3)) {
 		int err;
 
 		err = lc3_disable(stream);
-		if (err < 0) {
+		if (err < 0 && err != -EALREADY) {
 			LOG_ERR("Error: cannot disable LC3 codec: %d", err);
 			return err;
 		}

@@ -51,7 +51,6 @@ typedef void (*irq_cfg_func_t)(void);
 
 struct uart_sifive_device_config {
 	uintptr_t	port;
-	uint32_t	sys_clk_freq;
 	uint32_t	baud_rate;
 	uint32_t	rxcnt_irq;
 	uint32_t	txcnt_irq;
@@ -285,7 +284,8 @@ static int uart_sifive_irq_is_pending(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
-	return !!(uart->ip & (IE_RXWM | IE_TXWM));
+	/* ip reports the watermark conditions regardless of ie */
+	return (uart->ip & uart->ie & (IE_RXWM | IE_TXWM)) != 0U;
 }
 
 /**
@@ -329,7 +329,7 @@ static int uart_sifive_init(const struct device *dev)
 	uart->rxctrl = RXCTRL_RXEN | CTRL_CNT(cfg->rxcnt_irq);
 
 	/* Set baud rate */
-	uart->div = cfg->sys_clk_freq / cfg->baud_rate - 1;
+	uart->div = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY / cfg->baud_rate - 1;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Ensure that uart IRQ is disabled initially */
@@ -382,7 +382,6 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
 	.port         = DT_INST_REG_ADDR(0),
-	.sys_clk_freq = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,
 	.baud_rate    = DT_INST_PROP(0, current_speed),
 	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_RXCNT_IRQ,
 	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_TXCNT_IRQ,
@@ -425,7 +424,6 @@ PINCTRL_DT_INST_DEFINE(1);
 
 static const struct uart_sifive_device_config uart_sifive_dev_cfg_1 = {
 	.port         = DT_INST_REG_ADDR(1),
-	.sys_clk_freq = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,
 	.baud_rate    = DT_INST_PROP(1, current_speed),
 	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_RXCNT_IRQ,
 	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_TXCNT_IRQ,

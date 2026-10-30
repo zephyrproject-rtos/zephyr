@@ -48,7 +48,7 @@ static int sntp_simple_helper(const struct net_sockaddr *addr, net_socklen_t add
 					res = sntp_recv_response(&sntp_ctx, iter_timeout, ts);
 				}
 
-				if (res != ETIMEDOUT) {
+				if (res != -ETIMEDOUT) {
 					break;
 				}
 			} else {

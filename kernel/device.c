@@ -42,14 +42,22 @@ int do_device_init(const struct device *dev)
 			if (rc > UINT8_MAX) {
 				rc = UINT8_MAX;
 			}
-			dev->state->init_res = rc;
 		}
+
+		/* Always record the result: a device that failed to initialize
+		 * earlier must not keep that error once it initializes
+		 * successfully.
+		 */
+		dev->state->init_res = rc;
 	}
 
-	/* device initialization has been invoked */
-	dev->state->initialized = true;
-
 	if (rc == 0) {
+		/* A failed init leaves the device uninitialized, so it can be
+		 * retried by device_init() and nothing can be released by
+		 * device_deinit().
+		 */
+		dev->state->initialized = true;
+
 		/* Run automatic device runtime enablement */
 		(void)pm_device_runtime_auto_enable(dev);
 	}
@@ -115,6 +123,11 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 
 static inline bool z_vrfy_device_is_ready(const struct device *dev)
 {
+	/* NULL is a documented argument, not an invalid kernel object */
+	if (dev == NULL) {
+		return false;
+	}
+
 	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_DRIVER_ANY));
 
 	return z_impl_device_is_ready(dev);
@@ -181,19 +194,6 @@ size_t z_device_get_all_static(struct device const **devices)
 	STRUCT_SECTION_COUNT(device, &cnt);
 
 	return cnt;
-}
-
-bool z_impl_device_is_ready(const struct device *dev)
-{
-	/*
-	 * if an invalid device pointer is passed as argument, this call
-	 * reports the `device` as not ready for usage.
-	 */
-	if (dev == NULL) {
-		return false;
-	}
-
-	return dev->state->initialized && (dev->state->init_res == 0U);
 }
 
 int z_impl_device_deinit(const struct device *dev)

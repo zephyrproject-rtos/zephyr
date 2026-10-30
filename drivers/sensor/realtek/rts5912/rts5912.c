@@ -30,6 +30,7 @@ struct tach_rts5912_config {
 	const struct device *clk_dev;
 	const struct pinctrl_dev_config *pcfg;
 	int pulses_per_round;
+	void (*irq_config_func)(void);
 };
 
 struct tach_rts5912_data {
@@ -216,8 +217,7 @@ static int tach_rts5912_init(const struct device *dev)
 	tach->ctrl &= ~TACHO_CTRL_SELEDGE_Msk;
 	tach->ctrl = ((0x01ul << TACHO_CTRL_SELEDGE_Pos) | TACHO_CTRL_READMODE | TACHO_CTRL_EN);
 
-	IRQ_CONNECT(DT_INST_IRQN(0), 0, tach_rts5912_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQN(0));
+	cfg->irq_config_func();
 
 	return 0;
 }
@@ -230,6 +230,13 @@ static DEVICE_API(sensor, tach_rts5912_driver_api) = {
 #define REALTEK_TACH_INIT(inst)                                                                    \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
                                                                                                    \
+	static void tach_rts5912_irq_config_##inst(void)                                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), tach_rts5912_isr,     \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}                                                                                          \
+                                                                                                   \
 	static const struct tach_rts5912_config tach_cfg_##inst = {                                \
 		.regs = (struct tacho_regs *const)DT_INST_REG_ADDR(inst),                          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
@@ -237,6 +244,7 @@ static DEVICE_API(sensor, tach_rts5912_driver_api) = {
 		.clk_grp = DT_INST_CLOCKS_CELL_BY_NAME(inst, tacho, clk_grp),                      \
 		.clk_idx = DT_INST_CLOCKS_CELL_BY_NAME(inst, tacho, clk_idx),                      \
 		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                          \
+		.irq_config_func = tach_rts5912_irq_config_##inst,                                 \
 	};                                                                                         \
                                                                                                    \
 	static struct tach_rts5912_data tach_data_##inst;                                          \

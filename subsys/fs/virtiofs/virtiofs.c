@@ -93,15 +93,14 @@ void virtiofs_recv_cb(void *opaque, uint32_t used_len)
 /* Largest buffer chain built by any of the FUSE requests below. */
 #define VIRTIOFS_MAX_CHAIN_BUFS 4
 
-static uint32_t virtiofs_send_receive(
-	const struct device *dev, uint16_t virtq, struct virtq_buf *bufs,
-	uint16_t bufs_size, uint16_t device_readable)
+static int virtiofs_send_receive_checked(const struct device *dev, uint16_t virtq,
+					 struct virtq_buf *bufs, uint16_t bufs_size,
+					 uint16_t device_readable, uint32_t *used_len)
 {
 	struct virtq *virtqueue = virtio_get_virtqueue(dev, virtq);
 	struct recv_cb_param cb_arg;
 	struct virtq_buf bounce_bufs[VIRTIOFS_MAX_CHAIN_BUFS];
 	size_t total_len = 0;
-	uint32_t used_len;
 
 	__ASSERT(bufs_size <= ARRAY_SIZE(bounce_bufs),
 		 "buffer chain longer than VIRTIOFS_MAX_CHAIN_BUFS");
@@ -122,7 +121,7 @@ static uint32_t virtiofs_send_receive(
 
 	if (bounce == NULL) {
 		LOG_ERR("failed to allocate %zu byte bounce buffer", total_len);
-		return 0;
+		return -ENOMEM;
 	}
 
 	size_t offset = 0;
@@ -138,14 +137,19 @@ static uint32_t virtiofs_send_receive(
 
 	k_sem_init(&cb_arg.sem, 0, 1);
 
-	virtq_add_buffer_chain(
-		virtqueue, bounce_bufs, bufs_size, device_readable, virtiofs_recv_cb, &cb_arg,
-		K_FOREVER
-	);
+	int ret = virtq_add_buffer_chain(virtqueue, bounce_bufs, bufs_size, device_readable,
+					 virtiofs_recv_cb, &cb_arg, K_FOREVER);
+
+	if (ret != 0) {
+		LOG_ERR("failed to enqueue request to virtqueue %u (err %d)", virtq, ret);
+		k_free(bounce);
+		return ret;
+	}
+
 	virtio_notify_virtqueue(dev, virtq);
 
 	k_sem_take(&cb_arg.sem, K_FOREVER);
-	used_len = cb_arg.used_len;
+	*used_len = cb_arg.used_len;
 
 	/* Propagate whatever the device wrote back to the caller's buffers. */
 	offset = 0;
@@ -157,6 +161,18 @@ static uint32_t virtiofs_send_receive(
 	}
 
 	k_free(bounce);
+
+	return 0;
+}
+
+static uint32_t virtiofs_send_receive(const struct device *dev, uint16_t virtq,
+				      struct virtq_buf *bufs, uint16_t bufs_size,
+				      uint16_t device_readable)
+{
+	uint32_t used_len = 0;
+
+	(void)virtiofs_send_receive_checked(dev, virtq, bufs, bufs_size, device_readable,
+					    &used_len);
 
 	return used_len;
 }
@@ -473,7 +489,12 @@ int virtiofs_destroy(const struct device *dev)
 	};
 
 	LOG_INF("sending FUSE_DESTROY, unique=%" PRIu64, req.in_header.unique);
-	uint32_t used_len = virtiofs_send_receive(dev, REQUEST_QUEUE, buf, 2, 1);
+	uint32_t used_len;
+	int ret = virtiofs_send_receive_checked(dev, REQUEST_QUEUE, buf, 2, 1, &used_len);
+
+	if (ret != 0) {
+		return ret;
+	}
 
 	LOG_INF("received FUSE_DESTROY response, unique=%" PRIu64, req.out_header.unique);
 

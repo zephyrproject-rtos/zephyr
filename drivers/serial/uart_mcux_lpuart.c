@@ -98,7 +98,7 @@ struct mcux_lpuart_rx_dma_params {
 	size_t buf_len;
 	size_t offset;
 	size_t counter;
-	struct k_work_delayable timeout_work;
+	struct k_timer timeout_timer;
 	size_t timeout_us;
 };
 
@@ -197,34 +197,60 @@ static int mcux_lpuart_poll_in(const struct device *dev, unsigned char *c)
 
 static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 {
+	const struct mcux_lpuart_config *config = dev->config;
 	unsigned int key;
 #ifdef CONFIG_PM
 	struct mcux_lpuart_data *data = dev->data;
 #endif
+	/*
+	 * Wait for the transmitter with interrupts enabled, then lock interrupts
+	 * and check again, as another context may have written in between.
+	 */
+	while (true) {
+		while (!(LPUART_GetStatusFlags(get_base(dev)) & LPUART_STAT_TDRE_MASK)) {
+		}
 
-	while (!(LPUART_GetStatusFlags(get_base(dev))
-		& LPUART_STAT_TDRE_MASK)) {
+		key = irq_lock();
+
+		if (LPUART_GetStatusFlags(get_base(dev)) & LPUART_STAT_TDRE_MASK) {
+			break;
+		}
+
+		irq_unlock(key);
 	}
-	/* Lock interrupts while we send data */
-	key = irq_lock();
+
+	/* Switch TXD pin to output */
+	if (config->single_wire) {
+		get_base(dev)->CTRL |= LPUART_CTRL_TXDIR(true);
+	}
+
 #ifdef CONFIG_PM
 	/*
 	 * We must keep the part from entering lower power mode until the
-	 * transmission completes. Set the power constraint, and enable
-	 * the transmission complete interrupt so we know when transmission is
-	 * completed.
+	 * transmission completes or if single wire mode is enabled.
+	 * Set the power constraint, and enable the transmission complete interrupt
+	 * so we know when transmission is completed.
 	 */
-	if (!data->tx_poll_stream_on && !data->tx_int_stream_on) {
+	if (!config->single_wire && !data->tx_poll_stream_on && !data->tx_int_stream_on) {
 		data->tx_poll_stream_on = true;
 		mcux_lpuart_pm_policy_state_lock_get(dev);
 		/* Enable TC interrupt */
 		LPUART_EnableInterrupts(get_base(dev),
 			kLPUART_TransmissionCompleteInterruptEnable);
-
 	}
 #endif /* CONFIG_PM */
 
 	LPUART_WriteByte(get_base(dev), c);
+
+	/* Switch Pin back to RX direction */
+	if (config->single_wire) {
+		while (!(get_base(dev)->STAT & LPUART_STAT_TC(1))) {
+			/* Wait for shift register to finish with TC bit */
+		}
+		/* Switch to input/RX mode */
+		get_base(dev)->CTRL &= ~(LPUART_CTRL_TXDIR(true));
+	}
+
 	irq_unlock(key);
 }
 
@@ -609,7 +635,7 @@ static int mcux_lpuart_rx_disable(const struct device *dev)
 	const unsigned int key = irq_lock();
 
 	LPUART_EnableRx(lpuart, false);
-	(void)k_work_cancel_delayable(&data->async.rx_dma_params.timeout_work);
+	k_timer_stop(&data->async.rx_dma_params.timeout_timer);
 	LPUART_DisableInterrupts(lpuart, kLPUART_IdleLineInterruptEnable |
 					 kLPUART_RxOverrunInterruptEnable |
 					 kLPUART_NoiseErrorInterruptEnable |
@@ -1035,12 +1061,11 @@ static int mcux_lpuart_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t
 	return ret;
 }
 
-static void mcux_lpuart_async_rx_timeout(struct k_work *work)
+static void mcux_lpuart_async_rx_timeout(struct k_timer *timer)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct mcux_lpuart_rx_dma_params *rx_params = CONTAINER_OF(dwork,
+	struct mcux_lpuart_rx_dma_params *rx_params = CONTAINER_OF(timer,
 								   struct mcux_lpuart_rx_dma_params,
-								   timeout_work);
+								   timeout_timer);
 	struct mcux_lpuart_async_data *async_data = CONTAINER_OF(rx_params,
 								 struct mcux_lpuart_async_data,
 								 rx_dma_params);
@@ -1130,9 +1155,9 @@ static inline void mcux_lpuart_async_isr(const struct device *dev,
 	if (status & kLPUART_IdleLineFlag) {
 		if (data->async.rx_dma_params.timeout_us == 0) {
 			mcux_lpuart_async_rx_flush(dev);
-		} else {
-			async_timer_start(&data->async.rx_dma_params.timeout_work,
-					  data->async.rx_dma_params.timeout_us);
+		} else if (data->async.rx_dma_params.timeout_us != SYS_FOREVER_US) {
+			k_timer_start(&data->async.rx_dma_params.timeout_timer,
+				      K_USEC(data->async.rx_dma_params.timeout_us), K_NO_WAIT);
 		}
 		LPUART_ClearStatusFlags(get_base(dev), kLPUART_IdleLineFlag);
 	}
@@ -1322,8 +1347,7 @@ static int mcux_lpuart_configure_async(const struct device *dev)
 	data->async.next_rx_buffer = NULL;
 	data->async.next_rx_buffer_len = 0;
 	data->async.uart_dev = dev;
-	k_work_init_delayable(&data->async.rx_dma_params.timeout_work,
-			      mcux_lpuart_async_rx_timeout);
+	k_timer_init(&data->async.rx_dma_params.timeout_timer, mcux_lpuart_async_rx_timeout, NULL);
 	k_work_init_delayable(&data->async.tx_dma_params.timeout_work,
 			      mcux_lpuart_async_tx_timeout);
 

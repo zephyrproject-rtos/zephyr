@@ -19,6 +19,7 @@ supported:
   - netif:wifi
   - ptp_clock
   - pulse_io
+  - pwm
   - sdhc
   - spi
   - uart

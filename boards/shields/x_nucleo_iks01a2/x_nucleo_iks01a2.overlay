@@ -16,20 +16,10 @@
 };
 
 &arduino_i2c {
-	hts221_x_nucleo_iks01a2: hts221@5f {
-		compatible = "st,hts221";
-		reg = <0x5f>;
-	};
-
-	lps22hb_press_x_nucleo_iks01a2: lps22hb-press@5d {
-		compatible = "st,lps22hb-press";
-		reg = <0x5d>;
-	};
-
-	lsm6dsl_6b_x_nucleo_iks01a2: lsm6dsl@6b {
-		compatible = "st,lsm6dsl";
-		reg = <0x6b>;
-		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_D4 GPIO_ACTIVE_HIGH>;
+	lsm303agr_accel_19_x_nucleo_iks01a2: lsm303agr-accel@19 {
+		compatible = "st,lis2dh", "st,lsm303agr-accel";
+		reg = <0x19>;
+		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A3 GPIO_ACTIVE_HIGH>;
 	};
 
 	lsm303agr_magn_1e_x_nucleo_iks01a2: lsm303agr-magn@1e {
@@ -38,9 +28,19 @@
 		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A3 GPIO_ACTIVE_HIGH>;
 	};
 
-	lsm303agr_accel_19_x_nucleo_iks01a2: lsm303agr-accel@19 {
-		compatible = "st,lis2dh", "st,lsm303agr-accel";
-		reg = <0x19>;
-		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A3 GPIO_ACTIVE_HIGH>;
+	lps22hb_press_x_nucleo_iks01a2: lps22hb-press@5d {
+		compatible = "st,lps22hb-press";
+		reg = <0x5d>;
+	};
+
+	hts221_x_nucleo_iks01a2: hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+	};
+
+	lsm6dsl_6b_x_nucleo_iks01a2: lsm6dsl@6b {
+		compatible = "st,lsm6dsl";
+		reg = <0x6b>;
+		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_D4 GPIO_ACTIVE_HIGH>;
 	};
 };

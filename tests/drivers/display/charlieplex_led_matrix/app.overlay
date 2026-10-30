@@ -36,8 +36,8 @@
 };
 
 &gpio0 {
-	status = "okay";
 	ngpios = <8>;
+	status = "okay";
 };
 
 &counter0 {

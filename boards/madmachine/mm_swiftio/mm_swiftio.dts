@@ -10,8 +10,8 @@
 #include "mm_swiftio-pinctrl.dtsi"
 
 / {
-	model = "MM MM-SWIFTIO board";
 	compatible = "nxp,mimxrt1052";
+	model = "MM MM-SWIFTIO board";
 
 	aliases {
 		led0 = &green_led;
@@ -28,12 +28,6 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &is25wp064;
-	};
-
-	sdram0: memory@80000000 {
-		/* Micron MT48LC16M16A2B4-6AIT:G */
-		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	leds {
@@ -54,23 +48,29 @@
 			label = "RGB B";
 		};
 	};
+
+	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(32)>;
+		/* Micron MT48LC16M16A2B4-6AIT:G */
+		device_type = "memory";
+	};
 };
 
 &flexspi {
-	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	status = "okay";
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(8 * 8)>;
 		reg = <0>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(8)>;
+		size = <DT_SIZE_M(8 * 8)>;
 		spi-max-frequency = <104000000>;
-		status = "okay";
 		jedec-id = [9d 70 17];
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x60000000 DT_SIZE_M(8)>;
+		status = "okay";
 
 		is25wp064: flash@0 {
 			compatible = "soc-nv-flash";
@@ -82,50 +82,50 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart4 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart6 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart8 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	ov7725: ov7725@21 {
 		compatible = "ovti,ov7725";
 		reg = <0x21>;
-		status = "okay";
 
 		reset-gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 
 		port {
 			ov7725_ep_out: endpoint {
@@ -136,17 +136,17 @@
 };
 
 &lpspi3 {
-	status = "okay";
 	pcs-sck-delay = <50>;
 	sck-pcs-delay = <50>;
 	transfer-delay = <50>;
+	status = "okay";
 };
 
 &lpspi4 {
-	status = "okay";
 	pcs-sck-delay = <50>;
 	sck-pcs-delay = <50>;
 	transfer-delay = <50>;
+	status = "okay";
 };
 
 &flexpwm1_pwm3 {
@@ -190,7 +190,6 @@
 };
 
 &usdhc1 {
-	status = "okay";
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 	no-1-8-v;
 	pinctrl-0 = <&pinmux_usdhc1>;
@@ -198,6 +197,7 @@
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+	status = "okay";
 
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
@@ -207,9 +207,9 @@
 };
 
 &csi {
-	status = "okay";
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	port {
 		csi_ep_in: endpoint {

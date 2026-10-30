@@ -65,6 +65,19 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+PMOD1 Header
+============
+
+To use the PMOD1 header with SPI, the default jumper configuration will need the following
+modifications:
+
+1. Cut the E4 and E5 trace-cut jumpers
+
+2. Solder the E3 and E6 solder bridge jumpers
+
+Once modified, the fpb-RA6E2 can be built with shields like the ``pmod_acl`` which uses
+the SPI bus exposed on the PMOD1 connector.
+
 Programming and Debugging
 *************************
 

@@ -24,6 +24,9 @@
 &adc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	channel@c {
@@ -33,9 +36,6 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
-
-	pinctrl-0 = <&adc0_default>;
-	pinctrl-names = "default";
 };
 
 &adc1 {

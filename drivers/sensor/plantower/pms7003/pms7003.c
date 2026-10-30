@@ -17,6 +17,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/drivers/uart.h>
@@ -142,18 +143,31 @@ static int pms7003_sample_fetch(const struct device *dev,
 		return -ETIME;
 	}
 
-	drv_data->pm_1_0_cf = (pms7003_receive_buffer[2] << 8) + pms7003_receive_buffer[3];
-	drv_data->pm_2_5_cf = (pms7003_receive_buffer[4] << 8) + pms7003_receive_buffer[5];
-	drv_data->pm_10_cf = (pms7003_receive_buffer[6] << 8) + pms7003_receive_buffer[7];
-	drv_data->pm_1_0 = (pms7003_receive_buffer[8] << 8) + pms7003_receive_buffer[9];
-	drv_data->pm_2_5 = (pms7003_receive_buffer[10] << 8) + pms7003_receive_buffer[11];
-	drv_data->pm_10 = (pms7003_receive_buffer[12] << 8) + pms7003_receive_buffer[13];
-	drv_data->pm_0_3_count = (pms7003_receive_buffer[14] << 8) + pms7003_receive_buffer[15];
-	drv_data->pm_0_5_count = (pms7003_receive_buffer[16] << 8) + pms7003_receive_buffer[17];
-	drv_data->pm_1_0_count = (pms7003_receive_buffer[18] << 8) + pms7003_receive_buffer[19];
-	drv_data->pm_2_5_count = (pms7003_receive_buffer[20] << 8) + pms7003_receive_buffer[21];
-	drv_data->pm_5_0_count = (pms7003_receive_buffer[22] << 8) + pms7003_receive_buffer[23];
-	drv_data->pm_10_0_count = (pms7003_receive_buffer[24] << 8) + pms7003_receive_buffer[25];
+	/* check crc, (start bytes + receive buffer) */
+	uint16_t crc = pms7003_start_bytes[0] + pms7003_start_bytes[1];
+
+	for (int i = 0; i < 28; i++) {
+		crc += pms7003_receive_buffer[i];
+	}
+
+	uint16_t expected_crc = sys_get_be16(&pms7003_receive_buffer[28]);
+
+	if (crc != expected_crc) {
+		LOG_WRN("crc error");
+	}
+
+	drv_data->pm_1_0_cf = sys_get_be16(&pms7003_receive_buffer[2]);
+	drv_data->pm_2_5_cf = sys_get_be16(&pms7003_receive_buffer[4]);
+	drv_data->pm_10_cf = sys_get_be16(&pms7003_receive_buffer[6]);
+	drv_data->pm_1_0 = sys_get_be16(&pms7003_receive_buffer[8]);
+	drv_data->pm_2_5 = sys_get_be16(&pms7003_receive_buffer[10]);
+	drv_data->pm_10 = sys_get_be16(&pms7003_receive_buffer[12]);
+	drv_data->pm_0_3_count = sys_get_be16(&pms7003_receive_buffer[14]);
+	drv_data->pm_0_5_count = sys_get_be16(&pms7003_receive_buffer[16]);
+	drv_data->pm_1_0_count = sys_get_be16(&pms7003_receive_buffer[18]);
+	drv_data->pm_2_5_count = sys_get_be16(&pms7003_receive_buffer[20]);
+	drv_data->pm_5_0_count = sys_get_be16(&pms7003_receive_buffer[22]);
+	drv_data->pm_10_0_count = sys_get_be16(&pms7003_receive_buffer[24]);
 
 	LOG_DBG("pm1.0_cf = %d", drv_data->pm_1_0_cf);
 	LOG_DBG("pm2.5_cf = %d", drv_data->pm_2_5_cf);

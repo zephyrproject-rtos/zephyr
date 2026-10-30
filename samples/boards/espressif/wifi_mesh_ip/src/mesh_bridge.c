@@ -72,7 +72,7 @@ static void mesh_dhcp_bound(struct net_mgmt_event_callback *cb, uint64_t mgmt_ev
 	}
 
 	char buf[NET_IPV4_ADDR_LEN];
-	struct net_if_addr *ifaddr = &iface->config.ip.ipv4->unicast[0].ipv4;
+	struct net_if_addr *ifaddr = &net_if_get_config(iface)->ip.ipv4->unicast[0].ipv4;
 
 	LOG_INF("child got IP %s over mesh",
 		net_addr_ntop(AF_INET, &ifaddr->address.in_addr, buf, sizeof(buf)));

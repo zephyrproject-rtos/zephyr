@@ -23,3 +23,17 @@ properties:
 
   pinctrl-names:
     required: true
+
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SCL line is connected. Used only for bus recovery
+      (CONFIG_I2C_BEE_BUS_RECOVERY): the pin is temporarily muxed to GPIO to
+      bit-bang the recovery clocks, then handed back to the I2C controller.
+
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SDA line is connected. Used only for bus recovery
+      (CONFIG_I2C_BEE_BUS_RECOVERY): the pin is temporarily muxed to GPIO to
+      bit-bang the recovery clocks, then handed back to the I2C controller.

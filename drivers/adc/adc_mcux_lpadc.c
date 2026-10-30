@@ -266,11 +266,15 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 #endif
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_CSCALE) && FSL_FEATURE_LPADC_HAS_CMDL_CSCALE
 	/*
-	 * The true scaling factor used by the LPADC is 30/64, instead of
-	 * 1/2. Select 1/2 as this is the closest scaling factor available
-	 * in Zephyr.
+	 * The partial scale of the LPADC is 30/64, the 15/32 gain. The 1/2
+	 * gain also selects it, for the devicetrees that use it, but its
+	 * conversions are 6.25% too low.
 	 */
 	if (channel_cfg->gain == ADC_GAIN_1_2) {
+		LOG_WRN("Use ADC_GAIN_15_32 instead of ADC_GAIN_1_2 to ensure proper conversion");
+	}
+
+	if (channel_cfg->gain == ADC_GAIN_15_32 || channel_cfg->gain == ADC_GAIN_1_2) {
 		LOG_INF("Channel gain of 30/64 selected");
 		cmd->sampleScaleMode = kLPADC_SamplePartScale;
 	} else if (channel_cfg->gain == ADC_GAIN_1) {

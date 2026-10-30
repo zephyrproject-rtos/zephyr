@@ -8,26 +8,26 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			gpio-controller;
-			reg = <0xdeadbeef 0x1000>;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
 		test_uart: uart@55556666 {
 			compatible = "vnd,serial";
 			reg = <0x55556666 0x1000>;
-			status = "okay";
 
 			current-speed = <115200>;
+			status = "okay";
 
 			test_reyax_rylrxxxx: reyax_rylrxxxx {
 				compatible = "reyax,rylrxxx";
-				status = "okay";
 				reset-gpios = <&test_gpio 0 0>;
+				status = "okay";
 			};
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };

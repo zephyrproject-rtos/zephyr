@@ -8,12 +8,12 @@
 	cpus {
 		cpu0: cpu@0 {
 			compatible = "ite,riscv-ite", "riscv";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "zba", "zbb", "zbs", "zicsr", "zifencei";
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <32768>;
 			cpu-power-states = <&standby>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "zba", "zbb", "zbs", "zicsr", "zifencei";
 		};
 	};
 };
