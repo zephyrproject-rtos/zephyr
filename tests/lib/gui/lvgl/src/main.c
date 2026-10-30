@@ -179,5 +179,24 @@ void teardown_lvgl(void *data)
 	lv_deinit();
 }
 
+ZTEST(lvgl_mono, test_mono_display)
+{
+	int ret;
+
+	zassert_ok(display_set_pixel_format(display_dev, PIXEL_FORMAT_MONO10));
+	ret = lvgl_init();
+	zassert_ok(display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888));
+
+	if (!IS_ENABLED(CONFIG_LV_COLOR_FORMAT_I1)) {
+		zassert_equal(ret, -ENOTSUP, "MONO10 accepted without CONFIG_LV_COLOR_FORMAT_I1");
+		return;
+	}
+
+	zassert_ok(ret, "MONO10 rejected with CONFIG_LV_COLOR_FORMAT_I1");
+	lv_label_set_text(lv_label_create(lv_screen_active()), "mono");
+	lv_refr_now(NULL);
+}
+
 ZTEST_SUITE(lvgl_screen, NULL, setup_lvgl, NULL, NULL, teardown_lvgl);
 ZTEST_SUITE(lvgl_fs, NULL, setup_fs, NULL, NULL, teardown_lvgl);
+ZTEST_SUITE(lvgl_mono, NULL, NULL, NULL, NULL, teardown_lvgl);
