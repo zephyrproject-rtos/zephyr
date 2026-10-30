@@ -36,3 +36,27 @@ def test_shell_perf(dut: DeviceAdapter, shell: Shell):
     while i < length:
         i += int(lines[i], 16) + 1
         assert i <= length, 'one of the samples is not true to size'
+
+
+def test_tricore_empty_walk(dut: DeviceAdapter, shell: Shell):
+    shell.base_timeout = 20
+    lines = shell.exec_command('perf record 200 99')
+    if not any('Perf done!' in line for line in lines):
+        lines.extend(dut.readlines_until(regex=r'.*Perf (done!|buf overflow!)'))
+
+    assert any('Perf done!' in line for line in lines)
+    match = re.search(r'CPU 0: Attempts=(\d+), Samples=(\d+)', '\n'.join(lines))
+    assert match is not None
+    assert int(match[1]) > 1
+    assert int(match[2]) == 0
+    assert 'Perf buf length 0' in shell.exec_command('perf printbuf')
+
+
+def test_tricore_sample_overflow(dut: DeviceAdapter, shell: Shell):
+    shell.base_timeout = 20
+    lines = shell.exec_command('perf record 200 99')
+    if not any('Perf buf overflow!' in line for line in lines):
+        lines.extend(dut.readlines_until(regex=r'.*Perf (done!|buf overflow!)'))
+
+    assert any('Perf buf overflow!' in line for line in lines)
+    assert re.search(r'CPU 0: Attempts=[1-9]\d*, Samples=0\b', '\n'.join(lines))

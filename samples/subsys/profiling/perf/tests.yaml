@@ -16,4 +16,35 @@ tests:
       - qemu_riscv32
       - qemu_x86_64
       - qemu_x86
+      - qemu_tc4x
+      - qemu_tc3x
     harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_perf.py::test_shell_perf"
+  sample.perf.tricore_empty_walk:
+    tags:
+      - perf
+      - profiling
+    platform_allow:
+      - qemu_tc3x
+      - qemu_tc4x
+    extra_configs:
+      - CONFIG_ARCH_STACKWALK_MAX_FRAMES=0
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_perf.py::test_tricore_empty_walk"
+  sample.perf.tricore_sample_overflow:
+    tags:
+      - perf
+      - profiling
+    platform_allow:
+      - qemu_tc3x
+      - qemu_tc4x
+    extra_configs:
+      - CONFIG_PROFILING_PERF_BUFFER_SIZE=2
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_perf.py::test_tricore_sample_overflow"
