@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+source "Kconfig.zephyr"
+
+config I2C_ASYNC_TEST_EEPROM_OFFSET
+	int "EEPROM internal offset used by the async I2C test"
+	default 1
+	help
+	  Internal memory offset in the EEPROM that the test writes to and
+	  reads back. Encoded into address bytes according to the device's
+	  address-width property.
+
+config I2C_ASYNC_TEST_DATA_LEN
+	int "Payload length for the async I2C test"
+	default 8
+	range 1 256
+	help
+	  Number of data bytes written to and read back from the EEPROM.
