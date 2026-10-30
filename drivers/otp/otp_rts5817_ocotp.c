@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/otp.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/clock_control.h>
@@ -208,6 +209,20 @@ static int rts_otp_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int rts_otp_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		return rts_otp_init(dev);
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static const struct rts_otp_config otp_config = {
 	.otp_base = DT_INST_REG_ADDR(0),
 	.syscon_ldo = DEVICE_DT_GET(DT_INST_PHANDLE(0, syscon_ldo)),
@@ -217,5 +232,7 @@ static const struct rts_otp_config otp_config = {
 	.size = DT_INST_PROP(0, otp_size),
 };
 
-DEVICE_DT_INST_DEFINE(0, rts_otp_init, NULL, NULL, &otp_config, POST_KERNEL,
+PM_DEVICE_DT_INST_DEFINE(0, rts_otp_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, rts_otp_init, PM_DEVICE_DT_INST_GET(0), NULL, &otp_config, POST_KERNEL,
 		      CONFIG_OTP_INIT_PRIORITY, &rts_otp_api);
