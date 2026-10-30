@@ -23,7 +23,7 @@ tests:
     platform_allow:
       - frdm_k64f
   buildsystem.app_dev.code_relocation.no_itcm:
-    extra_sections:
+    extra_sections: &no_itcm_sections
       - _SRAM2_RODATA_SECTION_NAME
       - _SRAM_TEXT_SECTION_NAME
       - _SRAM_RODATA_SECTION_NAME
@@ -35,5 +35,30 @@ tests:
       - qemu_cortex_m3
       - mps2/an385
       - sam_e70_xplained/same70q21
+    integration_platforms:
+      - qemu_cortex_m3
+  buildsystem.app_dev.code_relocation.lto:
+    tags: lto
+    filter: CONFIG_LTO
+    extra_sections: *no_itcm_sections
+    extra_configs:
+      - CONFIG_CUSTOM_LINKER_SCRIPT="linker_arm_sram2.ld"
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+      - CONFIG_LTO=y
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+  buildsystem.app_dev.code_relocation.lto.singlethreaded:
+    tags: lto
+    filter: CONFIG_LTO_SINGLE_THREADED
+    extra_sections: *no_itcm_sections
+    extra_configs:
+      - CONFIG_CUSTOM_LINKER_SCRIPT="linker_arm_sram2.ld"
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+      - CONFIG_LTO=y
+      - CONFIG_LTO_SINGLE_THREADED=y
+    platform_allow:
+      - qemu_cortex_m3
     integration_platforms:
       - qemu_cortex_m3

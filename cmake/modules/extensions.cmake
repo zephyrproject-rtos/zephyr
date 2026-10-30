@@ -482,6 +482,9 @@ endfunction()
 function(zephyr_get_compile_options_for_lang lang i)
   zephyr_get_parse_args(args ${ARGN})
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
+  # The result is used outside of any target, where the LTO target property can't be read.
+  # Use its default instead, which is to build with LTO.
+  string(REPLACE "$<TARGET_PROPERTY:LTO>" "1" flags "${flags}")
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
@@ -2007,6 +2010,9 @@ endmacro()
 # This directive will relocate the target my_lib to SRAM:
 # zephyr_code_relocate(LIBRARY my_lib SRAM)
 #
+# With CONFIG_LTO, relocated files and libraries are built without LTO, and
+# FILES must not contain generator expressions.
+#
 # The following optional arguments are supported:
 # - NOCOPY: this flag indicates that the file data does not need to be copied
 #   at boot time (For example, for flash XIP).
@@ -2084,30 +2090,27 @@ function(zephyr_code_relocate)
   if(CODE_REL_PHDR)
     set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
   endif()
-  # Disable LTO for relocated files. LTO changes section names (e.g. .text
-  # becomes .gnu.debuglto_.text) which breaks gen_relocate_app.py section
-  # parsing. See issue #69730.
-  if(CODE_REL_FILES AND NOT no_genex STREQUAL CODE_REL_FILES)
-    # File list contains generator expressions - LTO cannot be disabled
-    # statically. Warn so the developer is aware LTO remains active for
-    # these files and the section name mangling issue (#69730) may still
-    # occur.
-    message(WARNING "zephyr_code_relocate(): file list contains generator "
-      "expressions, LTO cannot be disabled for these files. "
-      "Avoid combining CONFIG_LTO with CONFIG_CODE_DATA_RELOCATION when "
-      "using generator expressions (see issue #69730).")
-  elseif(CODE_REL_FILES)
-    set_source_files_properties(${file_list} PROPERTIES
-      COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
-  elseif(CODE_REL_LIBRARY)
-    # DEFER is required here: library targets such as drivers__serial are
-    # created later in the CMake configure step (after the SoC CMakeLists.txt
-    # runs), so the target does not exist yet when zephyr_code_relocate() is
-    # called. cmake_language(DEFER CALL ...) defers the set_property() call
-    # until the end of the current directory scope, by which point all targets
-    # have been created.
-    cmake_language(DEFER CALL set_property TARGET ${CODE_REL_LIBRARY} APPEND PROPERTY
-      COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+  # Relocation picks sections by object file name, and with LTO an object file
+  # carries no code until link time, so relocated sources are built without LTO.
+  # See issue #69730.
+  if(CONFIG_LTO AND CONFIG_CODE_DATA_RELOCATION)
+    # The library, or the target that compiles a file, may not exist yet, so the first recorded
+    # source schedules the exclusion for the end of configuration.
+    get_property(pending_libs GLOBAL PROPERTY ZEPHYR_CODE_RELOCATE_NO_LTO_LIBRARIES)
+    get_property(pending_files GLOBAL PROPERTY ZEPHYR_CODE_RELOCATE_NO_LTO_FILES)
+    if(NOT pending_libs AND NOT pending_files)
+      cmake_language(DEFER DIRECTORY "${CMAKE_SOURCE_DIR}" CALL zephyr_code_relocate_prohibit_lto)
+    endif()
+    if(CODE_REL_LIBRARY)
+      set_property(GLOBAL APPEND PROPERTY ZEPHYR_CODE_RELOCATE_NO_LTO_LIBRARIES
+        "${CODE_REL_LIBRARY}")
+    elseif(NOT no_genex STREQUAL CODE_REL_FILES)
+      message(FATAL_ERROR "zephyr_code_relocate(): LTO cannot be disabled for a "
+        "file list given as a generator expression. With CONFIG_LTO, pass the "
+        "files as plain paths, or relocate the whole library with LIBRARY.")
+    else()
+      set_property(GLOBAL APPEND PROPERTY ZEPHYR_CODE_RELOCATE_NO_LTO_FILES ${file_list})
+    endif()
   endif()
   # Each code relocation directive is placed on an independent line, instead of
   # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
@@ -2118,6 +2121,30 @@ function(zephyr_code_relocate)
   set_property(TARGET code_data_relocation_target
     PROPERTY INTERFACE_SOURCES
     "${code_rel_str}\n${CODE_REL_LOCATION}:${flag_list}:${file_list},${CODE_REL_FILTER}")
+endfunction()
+
+# Excludes the sources recorded by zephyr_code_relocate() from LTO. A source file property
+# only applies to targets created in the directory that sets it, so -fno-lto is set in every
+# directory.
+function(zephyr_code_relocate_prohibit_lto)
+  get_property(libs GLOBAL PROPERTY ZEPHYR_CODE_RELOCATE_NO_LTO_LIBRARIES)
+  get_property(files GLOBAL PROPERTY ZEPHYR_CODE_RELOCATE_NO_LTO_FILES)
+  # A later zephyr_code_relocate() call, e.g. from another deferred call, schedules this again.
+  set_property(GLOBAL PROPERTY ZEPHYR_CODE_RELOCATE_NO_LTO_LIBRARIES "")
+  set_property(GLOBAL PROPERTY ZEPHYR_CODE_RELOCATE_NO_LTO_FILES "")
+  if(libs)
+    set_property(TARGET ${libs} PROPERTY LTO 0)
+  endif()
+  if(files)
+    set(dirs "${CMAKE_SOURCE_DIR}")
+    while(dirs)
+      list(POP_FRONT dirs dir)
+      get_property(subdirs DIRECTORY "${dir}" PROPERTY SUBDIRECTORIES)
+      list(APPEND dirs ${subdirs})
+      set_property(SOURCE ${files} DIRECTORY "${dir}" APPEND PROPERTY
+        COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+    endwhile()
+  endif()
 endfunction()
 
 # Usage:
