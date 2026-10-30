@@ -24,6 +24,10 @@
 	};
 };
 
+&dma {
+	status = "okay";
+};
+
 &pio1 {
 	status = "okay";
 
