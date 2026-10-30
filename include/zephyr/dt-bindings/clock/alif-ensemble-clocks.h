@@ -34,6 +34,9 @@
 /** I2C3 control register offset in CLKCTL_PER_SLV */
 #define ALIF_I2C3_CTRL_REG		0x5CU
 
+/** Peripheral clock enable register offset in CLKCTL_PER_MST */
+#define ALIF_PERIPH_CLK_ENA_REG		0x0CU
+
 /** LPTIMER clock select register offset in VBAT */
 #define ALIF_TIMER_CLKSEL_REG		0x04U
 
@@ -88,6 +91,17 @@
 /** I2C3 clock sourced from system PCLK */
 #define ALIF_I2C3_SYST_PCLK         \
 	ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C3_CTRL, 0U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)
+
+/** @} */
+
+/**
+ * @name SPI peripheral clocks
+ * @{
+ */
+
+/** SPI0 to SPI3 clock, always on, shared by the four instances */
+#define ALIF_SPI_CLK                                                                               \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, PERIPH_CLK_ENA, 0U, 0U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_HCLK)
 
 /** @} */
 

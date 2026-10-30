@@ -114,6 +114,26 @@
 	interrupts = <135 0>;
 };
 
+&spi0 {
+	interrupt-parent = <&nvic>;
+	interrupts = <137 0>;
+};
+
+&spi1 {
+	interrupt-parent = <&nvic>;
+	interrupts = <138 0>;
+};
+
+&spi2 {
+	interrupt-parent = <&nvic>;
+	interrupts = <139 0>;
+};
+
+&spi3 {
+	interrupt-parent = <&nvic>;
+	interrupts = <140 0>;
+};
+
 &lptimer2 {
 	interrupt-parent = <&nvic>;
 	interrupts = <62 0>;

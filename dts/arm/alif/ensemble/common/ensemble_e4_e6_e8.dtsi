@@ -27,6 +27,54 @@
 		status = "disabled";
 	};
 
+	spi0: spi@48103000 {
+		compatible = "snps,designware-spi";
+		reg = <0x48103000 0x1000>;
+		clocks = <&clockctrl ALIF_SPI_CLK>;
+		clock-frequency = <DT_FREQ_M(200)>;
+		fifo-depth = <16>;
+		max-xfer-size = <32>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	spi1: spi@48104000 {
+		compatible = "snps,designware-spi";
+		reg = <0x48104000 0x1000>;
+		clocks = <&clockctrl ALIF_SPI_CLK>;
+		clock-frequency = <DT_FREQ_M(200)>;
+		fifo-depth = <16>;
+		max-xfer-size = <32>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	spi2: spi@48105000 {
+		compatible = "snps,designware-spi";
+		reg = <0x48105000 0x1000>;
+		clocks = <&clockctrl ALIF_SPI_CLK>;
+		clock-frequency = <DT_FREQ_M(200)>;
+		fifo-depth = <16>;
+		max-xfer-size = <32>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	spi3: spi@48106000 {
+		compatible = "snps,designware-spi";
+		reg = <0x48106000 0x1000>;
+		clocks = <&clockctrl ALIF_SPI_CLK>;
+		clock-frequency = <DT_FREQ_M(200)>;
+		fifo-depth = <16>;
+		max-xfer-size = <32>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	gpio9: gpio@49009000 {
 		compatible = "snps,designware-gpio";
 		reg = <0x49009000 0x1000>;
