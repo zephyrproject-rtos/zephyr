@@ -9,3 +9,12 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
+  modem.modem_ppp.dedicated_workqueue:
+    tags: modem_ppp
+    harness: ztest
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_MODEM_DEDICATED_WORKQUEUE=y

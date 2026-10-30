@@ -105,6 +105,8 @@ struct modem_ppp {
 	/* Work */
 	struct k_work send_work;
 	struct k_work process_work;
+	/* Takes the carrier down off the modem work queue (see 'NO CARRIER') */
+	struct k_work carrier_off_work;
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
 	struct net_stats_ppp stats;
