@@ -1,0 +1,38 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Lower PLL1_Q to bring the SPI1 kernel clock into an acceptable range */
+&pll {
+	div-q = <6>;
+};
+
+&sram2 {
+	status = "okay";
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
+&spi1 {
+	dmas = <&gpdma1 0 52 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 1 51 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	st,fifo-threshold = <8>;
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_K(500)>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(16)>;
+	};
+};
+
+&gpdma1 {
+	status = "okay";
+};
