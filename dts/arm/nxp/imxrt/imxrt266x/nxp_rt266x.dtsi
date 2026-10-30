@@ -525,6 +525,13 @@
 		};
 	};
 
+	/* Reset cause is available without pins or a peripheral clock. */
+	resetcon: reset-controller@40530000 {
+		compatible = "nxp,resetcon-hwinfo";
+		reg = <0x40530000 0x1000>;
+		status = "okay";
+	};
+
 	adc0: hsp_adc_0: adc@42050000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x42050000 0x304>;

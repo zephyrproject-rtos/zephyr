@@ -17,3 +17,12 @@ tests:
       - CONFIG_EEPROM=y
     extra_dtc_overlay_files:
       - nvmem.overlay
+  drivers.hwinfo.api.rt2660:
+    tags:
+      - drivers
+      - hwinfo
+    depends_on: hwinfo
+    platform_allow:
+      - mimxrt2660_evk/mimxrt2663/cm85
+    integration_platforms:
+      - mimxrt2660_evk/mimxrt2663/cm85
