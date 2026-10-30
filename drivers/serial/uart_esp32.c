@@ -1239,6 +1239,7 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	struct dma_config dma_cfg = {0};
 	struct dma_block_config dma_blk = {0};
 	struct dma_status dma_status = {0};
+	uart_hw_flowcontrol_t hw_flow;
 	int err = 0;
 	unsigned int key = irq_lock();
 
@@ -1288,7 +1289,10 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 		goto unlock;
 	}
 
-	uart_esp32_async_timer_start(&data->async.tx_timeout_work, timeout);
+	uart_hal_get_hw_flow_ctrl(&data->hal, &hw_flow);
+	if (hw_flow == UART_HW_FLOWCTRL_CTS_RTS) {
+		uart_esp32_async_timer_start(&data->async.tx_timeout_work, timeout);
+	}
 
 #ifdef CONFIG_PM
 	uart_esp32_pm_policy_state_lock_get(dev, TX_ASYNC);
