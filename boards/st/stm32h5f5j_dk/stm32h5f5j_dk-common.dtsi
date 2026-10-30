@@ -24,6 +24,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram1;
 		zephyr,canbus = &fdcan1;
+		zephyr,touch = &st1633i;
 	};
 
 	leds {
@@ -126,6 +127,26 @@
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
 	apb3-prescaler = <1>;
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pk9 &i2c1_sda_pk10>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpiok 9 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiok 10 GPIO_ACTIVE_HIGH>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	st1633i: st1633i@55 {
+		compatible = "sitronix,cf1133";
+		reg = <0x55>;
+		int-gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		screen-width = <480>;
+		screen-height = <272>;
+		swapped-x-y;
+		display = <&ltdc>;
+		status = "okay";
+	};
 };
 
 &i2c3 {
