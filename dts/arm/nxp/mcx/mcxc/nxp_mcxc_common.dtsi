@@ -9,7 +9,7 @@
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
-#include <zephyr/dt-bindings/clock/kinetis_mcg.h>
+#include <zephyr/dt-bindings/clock/nxp_mcg_lite.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -252,14 +252,14 @@
 
 			core_clk {
 				compatible = "fixed-factor-clock";
-				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clocks = <&mcg NXP_MCG_LITE_OUT_CLK>;
 				clock-div = <1>;
 				#clock-cells = <0>;
 			};
 
 			flash_clk {
 				compatible = "fixed-factor-clock";
-				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clocks = <&mcg NXP_MCG_LITE_OUT_CLK>;
 				clock-div = <2>;
 				#clock-cells = <0>;
 			};
@@ -312,10 +312,15 @@
 		};
 
 		mcg: clock-controller@40064000 {
-			compatible = "nxp,kinetis-mcg";
-			reg = <0x40064000 0xd>;
+			compatible = "nxp,mcg-lite";
+			reg = <0x40064000 0x19>;
+			clocks = <&osc>;
+			clock-source = "hirc";
+			lirc-frequency = <DT_FREQ_M(8)>;
 			fcrdiv = <0>;
 			lircdiv2 = <0>;
+			lirc-enable;
+			hirc-enable;
 			#clock-cells = <1>;
 		};
 

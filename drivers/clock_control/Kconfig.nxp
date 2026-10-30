@@ -65,6 +65,13 @@ config CLOCK_CONTROL_NXP_MC_CGM
 	help
 	  Enable support for NXP MC_CGM clock driver.
 
+config CLOCK_CONTROL_NXP_MCG_LITE
+	bool "NXP MCG-Lite driver"
+	default y
+	depends on DT_HAS_NXP_MCG_LITE_ENABLED
+	help
+	  Enable support for NXP MCG-Lite driver.
+
 config CLOCK_CONTROL_NXP_S32
 	bool "NXP S32 clock control driver"
 	default y
