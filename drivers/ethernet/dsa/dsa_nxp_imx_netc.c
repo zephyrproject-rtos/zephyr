@@ -22,6 +22,14 @@ LOG_MODULE_REGISTER(dsa_netc, CONFIG_ETHERNET_LOG_LEVEL);
 #define DEV_CFG(_dev)  ((const struct dsa_netc_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct dsa_netc_data *)(_dev)->data)
 
+/* Ingress port filtering traps gPTP frames and BPDUs to the CPU port */
+#if defined(CONFIG_PTP_CLOCK_NXP_NETC) || defined(CONFIG_NET_ETHERNET_BRIDGE_STP)
+#define DSA_NETC_IPF 1
+#endif
+
+/* NULL Entry ID of the NETC tables, starts a search */
+#define DSA_NETC_NULL_ENTRY_ID 0xFFFFFFFFU
+
 struct dsa_netc_port_config {
 	const struct pinctrl_dev_config *pincfg;
 	netc_hw_mii_mode_t phy_mode;
@@ -45,8 +53,10 @@ struct dsa_netc_data {
 	swt_config_t swt_config;
 	swt_handle_t swt_handle;
 	netc_cmd_bd_t *cmd_bd;
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef DSA_NETC_IPF
 	uint8_t cpu_port_idx;
+#endif
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	struct k_fifo tx_ts_queue;
 #ifndef NETC_SWITCH_TAG_SUPPORT
 	struct k_sem tx_ts_sem;
@@ -61,7 +71,7 @@ struct dsa_netc_data {
 
 static int dsa_netc_port_init(const struct device *dev)
 {
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef DSA_NETC_IPF
 	struct net_if *iface = net_if_lookup_by_dev(dev);
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 #endif
@@ -91,7 +101,7 @@ static int dsa_netc_port_init(const struct device *dev)
 	swt_config->bridgeCfg.dVFCfg.portMembership |= (1 << cfg->port_idx);
 	swt_config->ports[cfg->port_idx].bridgeCfg.enMacStationMove = true;
 
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef DSA_NETC_IPF
 	/* Enable ingress port filter on user ports */
 	if (eth_ctx->dsa_port == DSA_CPU_PORT) {
 		prv->cpu_port_idx = cfg->port_idx;
@@ -118,6 +128,96 @@ static int dsa_netc_port_init(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_NET_ETHERNET_BRIDGE_STP
+/* The spanning tree protocol runs on the host: trap the BPDUs, which are
+ * sent to the Bridge Group Address, to the CPU port instead of forwarding
+ * them, also on a discarding port.
+ */
+static int dsa_netc_trap_bpdus(struct dsa_netc_data *prv)
+{
+	netc_tb_ipf_config_t ipf_entry_cfg = {
+		.keye.dmac = {0x01, 0x80, 0xc2, 0x00, 0x00, 0x00},
+		.keye.dmacMask = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		.keye.srcPort = 0,
+		.keye.srcPortMask = 0x0,
+		.cfge.fltfa = kNETC_IPFRedirectToMgmtPort,
+		.cfge.hr = kNETC_SoftwareDefHR0,
+	};
+	uint32_t entry_id = 0;
+	status_t result;
+
+	result = SWT_RxIPFAddTableEntry(&prv->swt_handle, &ipf_entry_cfg, &entry_id);
+	if ((result != kStatus_Success) || (entry_id == DSA_NETC_NULL_ENTRY_ID)) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int dsa_netc_set_stp_port_state(const struct device *dev,
+				       enum ethernet_stp_port_state state)
+{
+	const struct dsa_port_config *cfg = dev->config;
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	netc_swt_port_stg_mode_t mode;
+
+	switch (state) {
+	case ETHERNET_STP_PORT_STATE_DISCARDING:
+		mode = kNETC_DiscardFrame;
+		break;
+	case ETHERNET_STP_PORT_STATE_LEARNING:
+		mode = kNETC_LearnWithoutFowrad;
+		break;
+	case ETHERNET_STP_PORT_STATE_FORWARDING:
+		mode = kNETC_ForwardFrame;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* Untagged frames use the spanning tree group of the default VLAN filter */
+	if (SWT_SetPortSTGState(&prv->swt_handle, cfg->port_idx,
+				prv->swt_config.bridgeCfg.dVFCfg.stgID, mode) != kStatus_Success) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/* Remove the dynamic FDB entries that forward to the port */
+static int dsa_netc_fdb_flush(const struct device *dev)
+{
+	const struct dsa_port_config *cfg = dev->config;
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	netc_tb_fdb_search_criteria_t criteria = {
+		.resumeEntryId = DSA_NETC_NULL_ENTRY_ID,
+		.cfge.portBitmap = BIT(cfg->port_idx),
+		.cfge.dynamic = 1,
+		.cfgeMc = kNETC_FDBCfgeMacthBoth,
+	};
+	netc_tb_fdb_rsp_data_t rsp;
+	status_t result;
+
+	/* Each search starts over, as a deleted entry cannot be resumed from */
+	while (true) {
+		result = SWT_BridgeSearchFDBTableEntry(&prv->swt_handle, &criteria, &rsp);
+		if (result == kStatus_NETC_NotFound) {
+			return 0;
+		}
+
+		if (result != kStatus_Success) {
+			return -EIO;
+		}
+
+		if (SWT_BridgeDelFDBTableEntry(&prv->swt_handle, rsp.entryID) != kStatus_Success) {
+			return -EIO;
+		}
+	}
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_STP */
 
 static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx)
 {
@@ -185,7 +285,11 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 	k_sem_init(&prv->tx_ts_sem, 1, 1);
 #endif
 #endif
+#ifdef CONFIG_NET_ETHERNET_BRIDGE_STP
+	return dsa_netc_trap_bpdus(prv);
+#else
 	return 0;
+#endif
 }
 
 static void dsa_netc_port_phylink_change(const struct device *phy_dev __unused,
@@ -501,6 +605,14 @@ static int dsa_netc_set_config(const struct device *dev, enum ethernet_config_ty
 		ret = dsa_netc_set_qbv(dev, config);
 		break;
 #endif
+#ifdef CONFIG_NET_ETHERNET_BRIDGE_STP
+	case ETHERNET_CONFIG_TYPE_STP_PORT_STATE:
+		ret = dsa_netc_set_stp_port_state(dev, config->stp_port_state);
+		break;
+	case ETHERNET_CONFIG_TYPE_FDB_FLUSH:
+		ret = dsa_netc_fdb_flush(dev);
+		break;
+#endif
 	default:
 		ret = -ENOTSUP;
 		break;
@@ -536,6 +648,9 @@ static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 
 #ifdef CONFIG_NET_QBV
 	caps |= ETHERNET_QBV;
+#endif
+#ifdef CONFIG_NET_ETHERNET_BRIDGE_STP
+	caps |= ETHERNET_HW_STP_PORT_STATE;
 #endif
 
 	return caps;
