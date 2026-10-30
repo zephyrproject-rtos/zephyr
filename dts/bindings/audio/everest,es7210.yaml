@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Everest Semiconductor ES7210 four-channel microphone ADC.
+  Supports analog or digital microphone inputs, stereo through either
+  output, and four-channel TDM through SDOUT1. MCLK is supplied externally;
+  BCLK and LRCK can be supplied by either the host or the ADC.
+
+compatible: "everest,es7210"
+
+include: i2c-device.yaml
+
+properties:
+  everest,sdout:
+    type: int
+    required: true
+    enum: [1, 2]
+    description: |
+      Serial data output connected to the I2S receiver. SDOUT1 carries
+      MIC1 (left) and MIC2 (right); SDOUT2 carries MIC3 (left) and MIC4
+      (right). Four-channel TDM requires SDOUT1.
+
+  everest,micbias-millivolt:
+    type: int
+    required: true
+    enum: [2180, 2260, 2360, 2450, 2550, 2660, 2780, 2870]
+    description: Microphone bias voltage for MIC1/2 and MIC3/4 with VDDM at 3.3 V.
+
+  everest,micbias34-millivolt:
+    type: int
+    enum: [2180, 2260, 2360, 2450, 2550, 2660, 2780, 2870]
+    description: |
+      Optional separate MIC3/4 bias voltage with VDDM at 3.3 V. When omitted,
+      MIC3/4 uses the everest,micbias-millivolt setting.
+
+  everest,vdda-millivolt:
+    type: int
+    required: true
+    enum: [1800, 3300]
+    description: Analog supply voltage. Analog PGA gain must be at least 21 dB at 1.8 V.
+
+  everest,vddd-millivolt:
+    type: int
+    required: true
+    enum: [1800, 3300]
+    description: Digital supply voltage. Rates above 24 kHz require 3.3 V in this driver.
