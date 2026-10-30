@@ -27,7 +27,7 @@ char *utf8_trunc(char *utf8_str)
 	}
 
 	char *last_byte_p = utf8_str + len - 1U;
-	uint8_t bytes_truncated;
+	size_t bytes_truncated;
 	char seq_start_byte;
 
 	if ((*last_byte_p & ASCII_CHAR) == *last_byte_p) {
@@ -37,28 +37,33 @@ char *utf8_trunc(char *utf8_str)
 
 	/* Find the starting byte and NULL-terminate other bytes */
 	bytes_truncated = 0;
-	while ((*last_byte_p & SEQUENCE_FIRST_MASK) != SEQUENCE_FIRST_MASK &&
-	       last_byte_p > utf8_str) {
+	while ((*last_byte_p & SEQUENCE_FIRST_MASK) == MSB_SET && last_byte_p > utf8_str) {
 		last_byte_p--;
 		bytes_truncated++;
 	}
 	bytes_truncated++; /* include the starting byte */
 
-	/* Verify if the last character actually need to be truncated
-	 * Handles the case where the number of bytes in the last UTF8-char
-	 * matches the number of bytes we searched for the starting byte
-	 */
+	/* Keep a complete final character and drop surplus continuation bytes. */
 	seq_start_byte = *last_byte_p;
+	if ((seq_start_byte & ASCII_CHAR) == seq_start_byte) {
+		/* No starting byte before the continuation bytes, keep the ASCII character */
+		*(last_byte_p + 1) = '\0';
+		return utf8_str;
+	}
+
 	if ((seq_start_byte & SEQUENCE_LEN_4_BYTE) == SEQUENCE_LEN_4_BYTE) {
-		if (bytes_truncated == 4) {
+		if (bytes_truncated >= 4) {
+			*(last_byte_p + 4) = '\0';
 			return utf8_str;
 		}
 	} else if ((seq_start_byte & SEQUENCE_LEN_3_BYTE) == SEQUENCE_LEN_3_BYTE) {
-		if (bytes_truncated == 3) {
+		if (bytes_truncated >= 3) {
+			*(last_byte_p + 3) = '\0';
 			return utf8_str;
 		}
 	} else if ((seq_start_byte & SEQUENCE_LEN_2_BYTE) == SEQUENCE_LEN_2_BYTE) {
-		if (bytes_truncated == 2) {
+		if (bytes_truncated >= 2) {
+			*(last_byte_p + 2) = '\0';
 			return utf8_str;
 		}
 	}
