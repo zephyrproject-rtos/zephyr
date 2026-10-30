@@ -15,11 +15,13 @@ import sys
 import threading
 from contextlib import nullcontext
 from importlib import reload
+from queue import Queue
 from subprocess import CalledProcessError, TimeoutExpired
 from types import SimpleNamespace
 from unittest import mock
 
 import pytest
+import twisterlib.handlers
 import twisterlib.harness
 from serial import SerialException
 from twisterlib.handlers import (
@@ -1752,6 +1754,183 @@ def test_qemuhandler_thread(
     )
 
     file_objs[handler.log].write.assert_has_calls(expected_log_calls)
+
+
+class FakeHarness:
+    """Minimal harness recording the console lines handed to it."""
+
+    def __init__(self, status=TwisterStatus.PASS):
+        self.status = status
+        self.reason = None
+        self.capture_coverage = False
+        self.fault = False
+        self.lines = []
+
+    def handle(self, line):
+        self.lines.append(line)
+
+
+TESTDATA_27 = [
+    # Plain ASCII, the case that already worked
+    pytest.param(b'ascii line\n', True, TwisterStatus.PASS, None,
+                 ['ascii line'], id='ascii'),
+    # The fifo is read one byte at a time, so both characters below are
+    # split across reads by construction
+    pytest.param('caf\u00e9 \u4e2d\u6587\n'.encode('utf-8'), True,
+                 TwisterStatus.PASS, None, ['caf\u00e9 \u4e2d\u6587'],
+                 id='multibyte'),
+    pytest.param('\U0001f680 rocket\n'.encode('utf-8'), True,
+                 TwisterStatus.PASS, None, ['\U0001f680 rocket'],
+                 id='multibyte 4 bytes'),
+    # A wrong byte is not replaced and does not pass
+    pytest.param(b'bad \x81 byte\n', True, TwisterStatus.FAIL,
+                 'unexpected byte', [], id='invalid byte'),
+    # Output that ends in the middle of a character
+    pytest.param(b'trunc \xe4\xb8', True, TwisterStatus.FAIL,
+                 'unexpected byte', [], id='truncated at eof'),
+    # The last line is kept even without its newline
+    pytest.param(b'no trailing newline', True, TwisterStatus.PASS, None,
+                 ['no trailing newline'], id='trailing line'),
+    # A verdict found in the tail does not outrank the unexpected eof
+    pytest.param(b'ok\n', False, TwisterStatus.FAIL, 'unexpected eof',
+                 ['ok'], id='eof beats pass'),
+]
+
+
+@pytest.mark.parametrize(
+    'content, ignore_unexpected_eof, expected_status, expected_reason,'
+    ' expected_lines',
+    TESTDATA_27
+)
+def test_qemuhandler_thread_utf8_output(
+    mocked_instance,
+    faux_timer,
+    content,
+    ignore_unexpected_eof,
+    expected_status,
+    expected_reason,
+    expected_lines
+):
+    """Console output is read byte by byte, multibyte characters must survive.
+
+    Covers the validation matrix of the task: ASCII, multibyte UTF-8,
+    sequences split across reads, malformed input and EOF behaviour.
+    """
+    handler_cls = twisterlib.handlers.QEMUHandler
+    handler = handler_cls(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
+    handler.ignore_unexpected_eof = ignore_unexpected_eof
+    handler.pid_fn = 'pid_fn'
+    handler.fifo_fn = 'fifo_fn'
+    log_file = mock.mock_open()
+
+    def mocked_open(filename, *args, **kwargs):
+        if filename == handler.pid_fn:
+            contents = b'1'
+        elif filename == handler.fifo_fn + '.out':
+            contents = content
+        else:
+            contents = b''
+
+        if filename == handler.log:
+            return log_file.return_value
+
+        file_object = mock.mock_open(read_data=contents).return_value
+        file_object.__iter__.return_value = contents.splitlines(True)
+        return file_object
+
+    harness = FakeHarness()
+    # One poll per byte and one more for the EOF that follows
+    p = mock.Mock()
+    p.poll = mock.Mock(side_effect=[True] * (len(content) + 4))
+    update_info = mock.Mock()
+
+    with mock.patch('time.time', side_effect=faux_timer.time), \
+         mock.patch('builtins.open', new=mocked_open), \
+         mock.patch('select.poll', return_value=p), \
+         mock.patch('os.path.exists', return_value=True), \
+         mock.patch('os.unlink', mock.Mock()), \
+         mock.patch('os.mkfifo', mock.Mock()), \
+         mock.patch('os.kill', mock.Mock()), \
+         mock.patch.object(handler_cls, '_thread_get_fifo_names',
+                           mock.Mock(return_value=('fifo_fn.in', 'fifo_fn.out'))), \
+         mock.patch.object(handler_cls, '_thread_update_instance_info',
+                           update_info):
+        handler_cls._thread(
+            handler,
+            handler.get_test_timeout(),
+            handler.build_dir,
+            handler.log,
+            handler.fifo_fn,
+            handler.pid_fn,
+            harness,
+            handler.ignore_unexpected_eof
+        )
+
+    update_info.assert_called_once_with(handler, expected_status, expected_reason)
+    assert harness.lines == expected_lines
+
+
+TESTDATA_28 = [
+    pytest.param('caf\u00e9 \u4e2d\u6587\n'.encode('utf-8'), True,
+                 TwisterStatus.PASS, None, 'caf\u00e9 \u4e2d\u6587\n',
+                 ['caf\u00e9 \u4e2d\u6587'], id='multibyte'),
+    pytest.param(b'bad \x81 byte\n', True, TwisterStatus.FAIL,
+                 'unexpected byte', '', [], id='invalid byte'),
+    pytest.param(b'trunc \xe4', True, TwisterStatus.FAIL,
+                 'unexpected byte', '', [], id='truncated at eof'),
+    pytest.param(b'no trailing newline', True, TwisterStatus.PASS, None,
+                 'no trailing newline', ['no trailing newline'],
+                 id='trailing line'),
+    # A verdict found in the tail does not outrank the unexpected eof
+    pytest.param(b'ok\n', False, TwisterStatus.FAIL, 'unexpected eof',
+                 'ok\n', ['ok'], id='eof beats pass'),
+]
+
+
+@pytest.mark.parametrize(
+    'content, ignore_unexpected_eof, expected_status, expected_reason,'
+    ' expected_log, expected_lines',
+    TESTDATA_28
+)
+def test_qemuwinhandler_monitor_output(
+    mocked_instance,
+    faux_timer,
+    tmp_path,
+    content,
+    ignore_unexpected_eof,
+    expected_status,
+    expected_reason,
+    expected_log,
+    expected_lines
+):
+    """The Windows handler decodes the same stream through a queue of bytes."""
+    handler_cls = twisterlib.handlers.QEMUWinHandler
+    handler = handler_cls(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
+    handler.ignore_unexpected_eof = ignore_unexpected_eof
+    handler.pid = 0
+
+    queue = Queue()
+    for byte in content:
+        queue.put(bytes([byte]))
+    queue.put(b'')
+    logfile = str(tmp_path / 'handler.log')
+
+    harness = FakeHarness()
+    update_info = mock.Mock()
+
+    with mock.patch('time.time', side_effect=faux_timer.time), \
+         mock.patch('os.path.exists', return_value=False), \
+         mock.patch.object(handler_cls, '_stop_qemu_process', mock.Mock()), \
+         mock.patch.object(handler_cls, '_thread_update_instance_info',
+                           update_info):
+        handler._monitor_output(queue, 60, logfile, 'pid_fn',
+                                harness,
+                                handler.ignore_unexpected_eof)
+
+    update_info.assert_called_once_with(handler, expected_status, expected_reason)
+    assert harness.lines == expected_lines
+    with open(logfile, encoding="utf-8") as log_file:
+        assert log_file.read() == expected_log
 
 
 TESTDATA_26 = [
