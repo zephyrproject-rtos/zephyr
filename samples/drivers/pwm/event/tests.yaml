@@ -10,3 +10,4 @@ tests:
   sample.drivers.pwm.event:
     platform_allow:
       - sam4s_xplained
+      - nrf54l15dk/nrf54l15/cpuapp

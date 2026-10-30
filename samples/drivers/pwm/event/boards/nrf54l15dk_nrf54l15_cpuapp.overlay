@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026, Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The sample uses pwm20 channel 0, which on the DK by default drives pin P1.10 (LED1).
+ * Probe that pin with a logic analyzer to see the waveform.
+ */
+
+/ {
+	aliases {
+		pwm-0 = &pwm20;
+	};
+};
