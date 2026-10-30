@@ -1184,79 +1184,56 @@ out:
 	return ret;
 }
 
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+static int nrf_wifi_if_get_txinjection_mode(const struct device *dev,
+					    struct ethernet_config *config)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = dev->data;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx;
+	int ret;
+
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (rpu_ctx_zep == NULL || rpu_ctx_zep->rpu_ctx == NULL) {
+		LOG_DBG("%s: rpu_ctx_zep or rpu_ctx is NULL", __func__);
+		ret = -1;
+		goto unlock;
+	}
+
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	if (sys_dev_ctx == NULL) {
+		LOG_ERR("%s: sys_dev_ctx is NULL", __func__);
+		ret = -1;
+		goto unlock;
+	}
+
+	config->txinjection_mode = sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode;
+unlock:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	return ret;
+}
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
+
 int nrf_wifi_if_get_config_zep(const struct device *dev,
 			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       struct ethernet_config *config)
 {
-	int ret = -1;
-
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
-
-	if (!dev || !config) {
-		LOG_ERR("%s: Invalid parameters",
-			__func__);
-		goto out;
-	}
-
-	vif_ctx_zep = dev->data;
-	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL",
-			__func__);
-		goto out;
-	}
-
-	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
-	if (ret != 0) {
-		LOG_ERR("%s: Failed to lock vif_lock", __func__);
-		goto out;
-	}
-
-	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
-		LOG_DBG("%s: rpu_ctx_zep or rpu_ctx is NULL",
-			__func__);
-		goto unlock;
-	}
-	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
-	if (!sys_dev_ctx) {
-		LOG_ERR("%s: sys_dev_ctx is NULL",
-			__func__);
-		goto unlock;
-	}
-
-	memset(config, 0, sizeof(struct ethernet_config));
+	switch (type) {
 #ifdef CONFIG_NRF70_RAW_DATA_TX
-	if (type == ETHERNET_CONFIG_TYPE_TXINJECTION_MODE) {
-		config->txinjection_mode =
-			sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode;
-	}
-#endif
-#ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
-	if (type  == ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT ||
-	    type == ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT) {
-		config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
-					 ETHERNET_CHECKSUM_SUPPORT_IPV4_ICMP |
-					 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
-					 ETHERNET_CHECKSUM_SUPPORT_IPV6_ICMP |
-					 ETHERNET_CHECKSUM_SUPPORT_TCP |
-					 ETHERNET_CHECKSUM_SUPPORT_UDP;
-	}
+	case ETHERNET_CONFIG_TYPE_TXINJECTION_MODE:
+		return nrf_wifi_if_get_txinjection_mode(dev, config);
 #endif
 #ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
-	if (type == ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM) {
+	case ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM:
 		config->extra_tx_pkt_headroom = NRF_WIFI_EXTRA_TX_HEADROOM;
-	}
+		return 0;
 #endif
-	ret = 0;
-unlock:
-	k_mutex_unlock(&vif_ctx_zep->vif_lock);
-out:
-	return ret;
+	default:
+		return -ENOTSUP;
+	}
 }
 
 int nrf_wifi_if_set_config_zep(const struct device *dev,
