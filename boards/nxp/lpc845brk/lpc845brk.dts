@@ -7,7 +7,9 @@
 /dts-v1/;
 
 #include <nxp/lpc/lpc84x/nxp_lpc845.dtsi>
-#include <zephyr/dt-bindings/pinctrl/lpc84x-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "lpc845brk-pinctrl.dtsi"
 
 / {
 	compatible = "nxp,lpc845-brk";
@@ -19,6 +21,42 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,flash-controller = &iap;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &user_btn;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+			label = "RGB Green Led";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			label = "RGB Blue Led";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			label = "RGB Red Led";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		user_btn: button_0 {
+			label = "User Button";
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 };
 
@@ -40,17 +78,6 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
-};
-
-&swm {
-	status = "okay";
-
-	uart0_default: uart0_default {
-		group0 {
-			pinmux = <LPC84X_PINMUX_M(LPC84X_SWM_USART0_TXD, P0_25)>,
-				 <LPC84X_PINMUX_M(LPC84X_SWM_USART0_RXD, P0_24)>;
-		};
-	};
 };
 
 &flash0 {
@@ -77,4 +104,24 @@
 			label = "storage";
 		};
 	};
+};
+
+&gpio0 {
+	gpio-reserved-ranges = <2 2>;
+	pinctrl-0 = <&gpio0_default>;
+	pinctrl-1 = <&gpio0_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};
+
+&gpio1 {
+	ngpios = <10>;
+	pinctrl-0 = <&gpio1_default>;
+	pinctrl-1 = <&gpio1_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};
+
+&pint {
+	status = "okay";
 };
