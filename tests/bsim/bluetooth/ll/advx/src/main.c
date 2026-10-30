@@ -133,7 +133,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	is_disconnected = true;
 }
 
-BT_CONN_CB_DEFINE(conn_callbacks) = {
+static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -181,6 +181,11 @@ static void test_advx_main(void)
 	int err;
 
 	printk("\n*Extended Advertising test*\n");
+
+	err = bt_conn_cb_register(&conn_callbacks);
+	if (err != 0) {
+		goto exit;
+	}
 
 	printk("Bluetooth initializing...");
 	err = bt_enable(NULL);
@@ -1302,6 +1307,11 @@ static void test_scanx_main(void)
 
 	printk("\n*Extended Scanning test*\n");
 
+	err = bt_conn_cb_register(&conn_callbacks);
+	if (err != 0) {
+		goto exit;
+	}
+
 	printk("Bluetooth initializing...");
 	err = bt_enable(NULL);
 	if (err) {
@@ -1864,8 +1874,13 @@ struct bst_test_list *test_advx_install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_def);
 }
 
+extern struct bst_test_list *test_aux_connect_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_aux_connect_preempt_install(struct bst_test_list *tests);
+
 bst_test_install_t test_installers[] = {
 	test_advx_install,
+	test_aux_connect_install,
+	test_aux_connect_preempt_install,
 	NULL
 };
 
