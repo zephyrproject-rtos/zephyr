@@ -9,5 +9,5 @@ toolchain:
 supported:
   - gpio
   - serial
-ram: 32
+ram: 256
 flash: 3072
