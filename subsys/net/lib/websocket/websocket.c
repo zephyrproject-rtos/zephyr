@@ -535,6 +535,11 @@ static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 	int ret = 0;
 	int i;
 
+	if (nfds > CONFIG_ZVFS_POLL_MAX) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	/* Overwrite websocket file descriptors with underlying ones. */
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
