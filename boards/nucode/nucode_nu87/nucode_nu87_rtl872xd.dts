@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2026 NUCODE Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <realtek/amebad/amebad.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "NUCODE NU87-TinyDK";
+	compatible = "nucode,nucode-nu87";
+
+	chosen {
+		zephyr,console = &loguart;
+		zephyr,shell-uart = &loguart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &spic;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	/*
+	 * A single RGB LED behind the diffused window on the board edge. The two
+	 * small LEDs beside the USB connector are UART activity indicators driven
+	 * by the CP2102N bridge and are not reachable from firmware.
+	 */
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_red {
+			gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
+			label = "RGB LED red";
+		};
+
+		led1: led_green {
+			gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
+			label = "RGB LED green";
+		};
+
+		led2: led_blue {
+			gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
+			label = "RGB LED blue";
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+	};
+};
+
+&flash0 {
+	reg = <0x0e000020 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0e000020 DT_SIZE_M(4)>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "bootloader";
+			reg = <0x00000000 0x00014000>;
+			read-only;
+		};
+
+		slot0_partition: partition@14000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00014000 0x001ec000>;
+		};
+
+		storage_partition: partition@250000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x00250000 0x00006000>;
+		};
+	};
+};
+
+&loguart {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
