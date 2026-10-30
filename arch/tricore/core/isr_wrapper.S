@@ -16,6 +16,7 @@
 GDATA(_kernel)
 GDATA(_sw_isr_table)
 GTEXT(_isr_wrapper)
+GTEXT(z_tricore_isr_direct)
 #if CONFIG_MULTITHREADING
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_tricore_switch)
@@ -36,6 +37,11 @@ GTEXT(sys_trace_isr_exit)
  *
  */
 SECTION_FUNC(TEXT, _isr_wrapper)
+	/* No direct handler: dispatch through _sw_isr_table */
+	mov.a	%a12, 0
+
+	/* ISR_DIRECT_DECLARE() stubs enter here with the handler in A12 */
+z_tricore_isr_direct:
 	/* Get cpu structure base */
 	movh.a  %a15, hi:(_kernel + ___kernel_t_cpus_OFFSET)
 	lea     %a15, [%a15], lo:(_kernel + ___kernel_t_cpus_OFFSET)
@@ -47,6 +53,8 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_enter
 #endif
+
+	jnz.a	%a12, isr_call_direct
 
 	/* Get current irq number */
 	call	intc_aurix_ir_get_active
@@ -73,6 +81,18 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	/* Call ISR */
 	calli	%a5
 
+	/* Check for a reschedule on exit */
+	mov	%d12, 1
+	j	isr_exit
+
+isr_call_direct:
+	enable
+	calli	%a12
+
+	/* Check for a reschedule only when the direct ISR returned non-zero */
+	mov	%d12, %d2
+
+isr_exit:
 #ifdef CONFIG_TRACING_ISR
 	call	sys_trace_isr_exit
 #endif
@@ -90,6 +110,9 @@ z_tricore_irq_done:
 #if defined(CONFIG_MULTITHREADING)
 	/* Check nesting */
 	jnz	%d15, no_reschedule
+
+	/* Reschedule flag set by the caller */
+	jz	%d12, no_reschedule
 
 	/* Check pending irq for reschedule */
 	mfcr	%d15, TRICORE_ICR
@@ -141,3 +164,17 @@ no_reschedule:
 	/* Return from interrupt */
 	rslcx
 	rfe
+
+/* Vector targets; IRQ_DIRECT_CONNECT() overrides one per priority */
+	.altmacro
+	.macro z_tricore_prio_isr_alias prio
+	.weak	z_tricore_prio_isr_\prio
+	.set	z_tricore_prio_isr_\prio, _isr_wrapper
+	.endm
+
+	.set	z_tricore_prio, 0
+	.rept	256
+	z_tricore_prio_isr_alias %z_tricore_prio
+	.set	z_tricore_prio, z_tricore_prio + 1
+	.endr
+	.noaltmacro

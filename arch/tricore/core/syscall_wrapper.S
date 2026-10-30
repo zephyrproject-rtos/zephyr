@@ -59,6 +59,7 @@ irq_offload:
 	st.w [%a15]+___cpu_t_nested_OFFSET, %d15
 
 	calli	%a5
+	mov	%d12, 1
 	j	z_tricore_irq_done
 #endif
 
