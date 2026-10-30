@@ -3,7 +3,9 @@
 
 identifier: esp32_devkitc/esp32/procpu/qemu
 name: ESP32-DevkitC PROCPU (Espressif QEMU)
-type: mcu
+type: qemu
+simulation:
+  - name: espressif_qemu
 arch: xtensa
 toolchain:
   - zephyr
