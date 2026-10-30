@@ -105,8 +105,11 @@ Networking
   * Targets that enable :kconfig:option:`CONFIG_SECURE_STORAGE` now use
     :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` instead of
     :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS`.
+  * Other non-secure targets with TF-M now use
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS` instead of
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA`, which is deprecated.
 
-  The new default backend can't read credentials that the previous backends stored. To keep
+  The new default backends can't read credentials that the previous backends stored. To keep
   those credentials after updating, enable the previous backend explicitly.
 
 Other subsystems

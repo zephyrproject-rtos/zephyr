@@ -53,6 +53,12 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Networking
+
+  * Deprecated :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA`.
+    Use :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` instead.
+    See the :ref:`migration guide <migration_4.6>` for details.
+
 New APIs and options
 ====================
 ..
