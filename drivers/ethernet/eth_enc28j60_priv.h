@@ -163,6 +163,8 @@
 #define ENC28J60_BIT_EIR_RXERIF    (0x01)
 #define ENC28J60_BIT_ESTAT_TXABRT  (0x02)
 #define ENC28J60_BIT_ESTAT_LATECOL (0x10)
+/* Unimplemented bit, reads 0 on a working chip (errata issue 19) */
+#define ENC28J60_BIT_ESTAT_UNIMPL3 (0x08)
 #define ENC28J60_BIT_PHCON1_PDPXMD (0x0100)
 #define ENC28J60_BIT_PHCON2_HDLDIS (0x0100)
 #define ENC28J60_BIT_PHSTAT2_LSTAT (0x0400)
