@@ -61,7 +61,7 @@ struct nt35510_config {
 };
 
 struct nt35510_data {
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	enum display_orientation orientation;
 	uint16_t xres;
 	uint16_t yres;
@@ -280,7 +280,7 @@ static void nt35510_get_capabilities(const struct device *dev,
 }
 
 static int nt35510_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const uint32_t pixel_format)
 {
 	struct nt35510_data *data = dev->data;
 

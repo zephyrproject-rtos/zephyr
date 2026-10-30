@@ -50,7 +50,7 @@ struct ili98xx_dsi_config {
 	const struct device *mipi_dsi;
 	const struct gpio_dt_spec reset;
 	const struct gpio_dt_spec backlight;
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	uint8_t data_lanes;
 	uint16_t width;
 	uint16_t height;

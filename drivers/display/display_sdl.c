@@ -64,7 +64,7 @@ struct sdl_display_data {
 	void *background_texture;
 	void *round_disp_mask;
 	bool display_on;
-	enum display_pixel_format current_pixel_format;
+	uint32_t current_pixel_format;
 	uint8_t *buf;
 	uint8_t *read_buf;
 	double angle;
@@ -1286,7 +1286,7 @@ static void sdl_display_get_capabilities(
 }
 
 static int sdl_display_set_pixel_format(const struct device *dev,
-					const enum display_pixel_format pixel_format)
+					const uint32_t pixel_format)
 {
 	struct sdl_display_data *disp_data = dev->data;
 

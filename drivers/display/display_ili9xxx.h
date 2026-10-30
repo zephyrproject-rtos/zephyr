@@ -77,7 +77,7 @@ struct ili9xxx_config {
 
 struct ili9xxx_data {
 	uint8_t bytes_per_pixel;
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	enum display_orientation orientation;
 	uint8_t madctl; /* Cached value for quick access and runtime config */
 };

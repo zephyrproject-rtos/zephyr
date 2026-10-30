@@ -81,7 +81,7 @@ struct stm32_ltdc_cb_data {
 
 struct display_stm32_ltdc_data {
 	LTDC_HandleTypeDef hltdc;
-	enum display_pixel_format current_pixel_format;
+	uint32_t current_pixel_format;
 	uint8_t current_pixel_size;
 	uint8_t *frame_buffer;
 	uint32_t frame_buffer_len;
@@ -238,7 +238,7 @@ static int stm32_ltdc_set_yuv(const struct device *dev)
 }
 
 static int stm32_ltdc_set_pixel_format(const struct device *dev,
-				const enum display_pixel_format format)
+				const uint32_t format)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
 	HAL_StatusTypeDef hal_ret;

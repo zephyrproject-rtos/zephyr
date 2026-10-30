@@ -469,7 +469,7 @@ static int hx8394_blanking_on(const struct device *dev)
 }
 
 static int hx8394_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const uint32_t pixel_format)
 {
 	const struct hx8394_config *config = dev->config;
 

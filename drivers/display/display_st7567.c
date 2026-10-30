@@ -54,7 +54,7 @@ struct st7567_config {
 };
 
 struct st7567_data {
-	enum display_pixel_format pf;
+	uint32_t pf;
 };
 
 #if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sitronix_st7567, i2c)
@@ -378,7 +378,7 @@ static void st7567_get_capabilities(const struct device *dev, struct display_cap
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static int st7567_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int st7567_set_pixel_format(const struct device *dev, const uint32_t pf)
 {
 	struct st7567_data *data = dev->data;
 	const struct st7567_config *config = dev->config;

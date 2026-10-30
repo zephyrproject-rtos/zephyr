@@ -413,7 +413,7 @@ static void hx8353e_get_capabilities(const struct device *dev,
 }
 
 static int hx8353e_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pf)
+				    const uint32_t pf)
 {
 	ARG_UNUSED(dev);
 

@@ -217,7 +217,7 @@ static int max7219_set_brightness(const struct device *dev, const uint8_t bright
 }
 
 static int max7219_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format format)
+				    const uint32_t format)
 {
 	ARG_UNUSED(dev);
 

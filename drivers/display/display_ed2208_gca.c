@@ -325,7 +325,7 @@ static void ed2208_gca_get_capabilities(const struct device *dev, struct display
 	display_color_dither_patch_caps(&data->color_dither, caps);
 }
 
-static int ed2208_gca_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int ed2208_gca_set_pixel_format(const struct device *dev, const uint32_t pf)
 {
 	struct ed2208_gca_data *data = dev->data;
 

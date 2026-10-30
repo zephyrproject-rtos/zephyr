@@ -344,7 +344,7 @@ static void sh1122_get_capabilities(const struct device *dev, struct display_cap
 	caps->screen_info = 0;
 }
 
-static int sh1122_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int sh1122_set_pixel_format(const struct device *dev, const uint32_t pf)
 {
 	if (pf == PIXEL_FORMAT_L_8) {
 		return 0;

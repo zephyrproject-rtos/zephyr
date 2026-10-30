@@ -231,7 +231,7 @@ static status_t dsi_mcux_dcnano_transfer(const struct device *dev, uint8_t chann
 	 */
 	if (((msg->cmd == MIPI_DCS_WRITE_MEMORY_START) ||
 		(msg->cmd == MIPI_DCS_WRITE_MEMORY_CONTINUE)) && (channel == 0U)) {
-		enum display_pixel_format pixfmt;
+		uint32_t pixfmt;
 		struct mipi_dbi_config dbi_config = {
 			.mode = MIPI_DBI_MODE_8080_BUS_16_BIT,
 		};

@@ -408,7 +408,7 @@ static void ac057tc1_get_capabilities(const struct device *dev, struct display_c
 	display_color_dither_patch_caps(&data->color_dither, caps);
 }
 
-static int ac057tc1_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int ac057tc1_set_pixel_format(const struct device *dev, const uint32_t pf)
 {
 	struct ac057tc1_data *data = dev->data;
 

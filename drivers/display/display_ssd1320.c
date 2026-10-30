@@ -379,7 +379,7 @@ static void ssd1320_get_capabilities(const struct device *dev, struct display_ca
 	caps->screen_info = 0;
 }
 
-static int ssd1320_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int ssd1320_set_pixel_format(const struct device *dev, const uint32_t pf)
 {
 	if (pf == PIXEL_FORMAT_L_8) {
 		return 0;

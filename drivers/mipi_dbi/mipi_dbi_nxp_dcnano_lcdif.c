@@ -229,7 +229,7 @@ static int mipi_dbi_dcnano_lcdif_write_display(const struct device *dev,
 						   const struct mipi_dbi_config *dbi_config,
 						   const uint8_t *framebuf,
 						   struct display_buffer_descriptor *desc,
-						   enum display_pixel_format pixfmt)
+						   uint32_t pixfmt)
 {
 	const struct mcux_dcnano_lcdif_dbi_config *config = dev->config;
 	struct mcux_dcnano_lcdif_dbi_data *lcdif_data = dev->data;

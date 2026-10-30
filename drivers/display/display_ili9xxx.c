@@ -280,7 +280,7 @@ static int ili9xxx_display_blanking_on(const struct device *dev)
 
 static int
 ili9xxx_set_pixel_format(const struct device *dev,
-			 const enum display_pixel_format pixel_format)
+			 const uint32_t pixel_format)
 {
 	struct ili9xxx_data *data = dev->data;
 
@@ -388,7 +388,7 @@ static int ili9xxx_configure(const struct device *dev)
 	struct ili9xxx_data *data = dev->data;
 
 	int r;
-	enum display_pixel_format pixel_format;
+	uint32_t pixel_format;
 	enum display_orientation orientation;
 
 	/* pixel format */
