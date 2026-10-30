@@ -426,6 +426,8 @@ static int mspi_configure_delay_block(struct mspi_stm32_data *dev_data)
 static int mspi_stm32_xspi_dma_init(hal_dma_handle_t *hdma, struct stm32_stream *dma_stream)
 {
 	hal_dma_direct_xfer_config_t xfer_cfg;
+	struct dma_config dma_cfg = dma_stream->cfg;
+	uint16_t source_addr_adj, dest_addr_adj;
 	int ret;
 
 	/*
@@ -436,6 +438,18 @@ static int mspi_stm32_xspi_dma_init(hal_dma_handle_t *hdma, struct stm32_stream 
 	 * the minimum information to inform the DMA slot will be in used and
 	 * how to route callbacks.
 	 */
+	dma_cfg.source_data_size = 1U;
+	dma_cfg.dest_data_size = 1U;
+	source_addr_adj =
+		dma_stream->src_addr_increment ? DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE;
+	dest_addr_adj =
+		dma_stream->dst_addr_increment ? DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE;
+	ret = dma_stm32_zcfg_to_halcfg(dma_stream->dev, &dma_cfg, &xfer_cfg, source_addr_adj,
+				       dest_addr_adj);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = mspi_stm32_xspi_dma_stream_setup(hdma, dma_stream);
 	if (ret != 0) {
 		return ret;
@@ -452,19 +466,6 @@ static int mspi_stm32_xspi_dma_init(hal_dma_handle_t *hdma, struct stm32_stream 
 		LOG_ERR("XSPI DMA Init failed");
 		return -EIO;
 	}
-
-	/* mspi_stm32_table_* hold LL values, which the hal_dma_* enums alias */
-	xfer_cfg.request = (hal_dma_request_source_t)dma_stream->cfg.dma_slot;
-	xfer_cfg.direction =
-		(hal_dma_direction_t)mspi_stm32_table_direction[dma_stream->cfg.channel_direction];
-	xfer_cfg.src_inc = (dma_stream->src_addr_increment) ? HAL_DMA_SRC_ADDR_INCREMENTED
-							    : HAL_DMA_SRC_ADDR_FIXED;
-	xfer_cfg.dest_inc = (dma_stream->dst_addr_increment) ? HAL_DMA_DEST_ADDR_INCREMENTED
-							     : HAL_DMA_DEST_ADDR_FIXED;
-	xfer_cfg.src_data_width = HAL_DMA_SRC_DATA_WIDTH_BYTE;
-	xfer_cfg.dest_data_width = HAL_DMA_DEST_DATA_WIDTH_BYTE;
-	xfer_cfg.priority =
-		(hal_dma_priority_t)mspi_stm32_table_priority[dma_stream->cfg.channel_priority];
 
 	if (HAL_DMA_SetConfigDirectXfer(hdma, &xfer_cfg) != HAL_OK) {
 		LOG_ERR("XSPI DMA config failed");

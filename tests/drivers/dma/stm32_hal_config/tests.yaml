@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.dma.stm32_hal_config:
+    tags:
+      - drivers
+      - dma
+    platform_allow:
+      - nucleo_c5a3zg
+      - nucleo_c562re
+    integration_platforms:
+      - nucleo_c5a3zg
+    harness: ztest

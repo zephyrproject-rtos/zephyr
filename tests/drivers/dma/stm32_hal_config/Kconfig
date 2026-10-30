@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "STM32 DMA HAL configuration tests"
+
+source "Kconfig.zephyr"
+
+config STM32_DMA_HAL_CONFIG_TEST
+	bool
+	default y
+	select USE_STM32_HAL_DMA

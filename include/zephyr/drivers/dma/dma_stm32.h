@@ -121,24 +121,26 @@
 #endif
 /** @endcond */
 
-#ifndef CONFIG_STM32_HAL2
 /** @cond INTERNAL_HIDDEN */
 /**
- * @brief Convert Zephyr DMA configuration to STM32 HAL DMA init structure.
+ * @brief Convert Zephyr DMA configuration to an STM32 HAL DMA configuration.
  *
  * This is a private STM32 DMA helper intended for direct-DMA users which
- * prepare DMA_InitTypeDef manually, typically when using HAL override.
+ * prepare HAL DMA configurations manually, typically when using HAL override.
  *
- * The function initializes all common DMA_InitTypeDef fields that can be
- * derived from @p zephyr_config. Callers may still override or fill additional
- * STM32-specific fields afterward if required by the peripheral.
+ * The function initializes all common HAL configuration fields that can be
+ * derived from @p zephyr_config. HAL2 uses hal_dma_direct_xfer_config_t instead
+ * of DMA_InitTypeDef. HAL2 transfer modes are selected separately by the caller
+ * through the HAL DMA APIs; this helper only fills the direct transfer fields.
+ * Callers may still override or fill additional STM32-specific fields afterward
+ * if required by the peripheral. HAL2 callers must enable USE_STM32_HAL_DMA.
  *
  * @warning This function is PRIVATE and intended for STM32 drivers only.  No
  * guarantee is provided to any external caller.
  *
  * @param dma Pointer to the DMA device structure
  * @param zephyr_config Pointer to Zephyr DMA configuration
- * @param hal_config Pointer to HAL DMA init structure to initialize
+ * @param hal_config Pointer to HAL DMA configuration structure to initialize
  * @param source_addr_adj Source address adjustment option
  * @param dest_addr_adj Destination address adjustment option
  *
@@ -146,10 +148,15 @@
  * @retval -EINVAL if parameters are invalid or the configuration is inconsistent
  * @retval -ENOTSUP if the configuration cannot be represented with STM32 HAL DMA
  */
+#if defined(CONFIG_STM32_HAL2) && defined(CONFIG_USE_STM32_HAL_DMA)
+int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
+			     hal_dma_direct_xfer_config_t *hal_config, uint16_t source_addr_adj,
+			     uint16_t dest_addr_adj);
+#elif !defined(CONFIG_STM32_HAL2)
 int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
 			     DMA_InitTypeDef *hal_config, uint16_t source_addr_adj,
 			     uint16_t dest_addr_adj);
+#endif
 /** @endcond */
-#endif /* CONFIG_STM32_HAL2 */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_ */
