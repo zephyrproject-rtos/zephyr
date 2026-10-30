@@ -1575,5 +1575,14 @@
 			interrupts = <IT51XXX_IRQ_TIMER1_DW IRQ_TYPE_EDGE_RISING>; /* Warn timer */
 			interrupt-parent = <&intc>;
 		};
+
+		dac0: dac@f01a00 {
+			compatible = "ite,it51xxx-dac";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f01a00 0x04>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
