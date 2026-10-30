@@ -9,8 +9,10 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/counter/stm32.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -32,6 +34,15 @@ LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define HAS_MASTERMODE_SUPPORT 0
 #define IS_TIM_MASTER_INSTANCE(INSTANCE) 0
 #endif
+
+#ifndef LL_TIM_ACTIVEINPUT_DIRECTTI
+#define LL_TIM_ACTIVEINPUT_DIRECTTI LL_TIM_ACTIVEINPUT_DIRECT
+#endif
+
+#ifndef LL_TIM_IC_POLARITY_BOTHEDGE
+#define LL_TIM_IC_POLARITY_BOTHEDGE LL_TIM_IC_POLARITY_RISING_FALLING
+#endif
+
 
 /** Maximum number of timer channels. */
 #define TIMER_MAX_CH 4U
@@ -85,6 +96,18 @@ static void (*const clear_over_capture[TIMER_MAX_CH])(TIM_TypeDef *) = {
 	LL_TIM_ClearFlag_CC1OVR, LL_TIM_ClearFlag_CC2OVR,
 	LL_TIM_ClearFlag_CC3OVR, LL_TIM_ClearFlag_CC4OVR,
 };
+
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+static void (*const enable_dma_request[TIMER_MAX_CH])(TIM_TypeDef *) = {
+	LL_TIM_EnableDMAReq_CC1, LL_TIM_EnableDMAReq_CC2,
+	LL_TIM_EnableDMAReq_CC3, LL_TIM_EnableDMAReq_CC4,
+};
+
+static void (*const disable_dma_request[TIMER_MAX_CH])(TIM_TypeDef *) = {
+	LL_TIM_DisableDMAReq_CC1, LL_TIM_DisableDMAReq_CC2,
+	LL_TIM_DisableDMAReq_CC3, LL_TIM_DisableDMAReq_CC4,
+};
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 #endif /* CONFIG_COUNTER_CAPTURE */
 
 /** Channel to interrupt enable function mapping. */
@@ -133,6 +156,16 @@ struct counter_stm32_ch_data {
 #ifdef CONFIG_COUNTER_CAPTURE
 	counter_capture_cb_t capture_cb;
 	bool single_shot_capture;
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+	const struct device *dev;
+	counter_capture_batch_cb_t batch_cb;
+	uint32_t *batch_ticks;
+	size_t batch_count;
+	struct dma_config dma_cfg;
+	struct dma_block_config dma_block;
+	uint8_t channel;
+	bool dma_started;
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 #endif /* CONFIG_COUNTER_CAPTURE */
 	void *user_data;
 };
@@ -151,6 +184,11 @@ struct counter_stm32_config {
 	const struct reset_dt_spec reset;
 #ifdef CONFIG_COUNTER_CAPTURE
 	const struct pinctrl_dev_config *pcfg;
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+	const struct device *dma_dev[TIMER_MAX_CH];
+	uint32_t dma_channel[TIMER_MAX_CH];
+	uint32_t dma_slot[TIMER_MAX_CH];
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 #endif /* CONFIG_COUNTER_CAPTURE */
 
 	LOG_INSTANCE_PTR_DECLARE(log);
@@ -549,6 +587,149 @@ static int counter_stm32_set_value(const struct device *dev, uint32_t ticks)
 
 
 #ifdef CONFIG_COUNTER_CAPTURE
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+static void counter_stm32_dma_stop(const struct device *dev, uint8_t channel);
+
+static uintptr_t counter_stm32_ccr_address(TIM_TypeDef *timer, uint8_t channel)
+{
+	switch (channel) {
+	case 0U:
+		return (uintptr_t)&timer->CCR1;
+	case 1U:
+		return (uintptr_t)&timer->CCR2;
+	case 2U:
+		return (uintptr_t)&timer->CCR3;
+	default:
+		return (uintptr_t)&timer->CCR4;
+	}
+}
+
+static void counter_stm32_dma_callback(const struct device *dma_dev, void *user_data,
+				       uint32_t dma_channel, int status)
+{
+	struct counter_stm32_ch_data *chdata = user_data;
+	const struct counter_stm32_config *config = chdata->dev->config;
+	counter_capture_batch_cb_t batch_cb;
+	size_t callback_count;
+	uint32_t *callback_ticks;
+	int cb_status = 0;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(dma_channel);
+
+	batch_cb = chdata->batch_cb;
+	if (batch_cb == NULL) {
+		return;
+	}
+
+	if (status < 0) {
+		disable_dma_request[chdata->channel](config->timer);
+		LL_TIM_CC_DisableChannel(config->timer, ch2ll[chdata->channel]);
+		chdata->batch_cb = NULL;
+		batch_cb(chdata->dev, chdata->channel, NULL, 0U, status,
+			 chdata->user_data);
+		return;
+	}
+
+	callback_count = chdata->batch_count / 2U;
+	callback_ticks = chdata->batch_ticks;
+	if (status == DMA_STATUS_COMPLETE) {
+		callback_ticks += callback_count;
+	} else if (status != DMA_STATUS_BLOCK) {
+		LOG_ERR("%s: unexpected DMA callback status %d", chdata->dev->name, status);
+		return;
+	}
+
+	/* The capture interrupt is not enabled in batch mode, so check CCxOF here */
+	if (get_over_capture[chdata->channel](config->timer)) {
+		LOG_ERR("%s: overcapture on channel %d", chdata->dev->name, chdata->channel);
+		clear_over_capture[chdata->channel](config->timer);
+		cb_status = -EOVERFLOW;
+	}
+
+	sys_cache_data_invd_range(callback_ticks,
+				  callback_count * sizeof(*callback_ticks));
+	batch_cb(chdata->dev, chdata->channel, callback_ticks,
+		 callback_count, cb_status, chdata->user_data);
+}
+
+static int counter_stm32_dma_start(const struct device *dev, uint8_t channel)
+{
+	const struct counter_stm32_config *config = dev->config;
+	struct counter_stm32_ch_data *chdata = &config->ch_data[channel];
+	const struct device *dma = config->dma_dev[channel];
+	const size_t buffer_size = chdata->batch_count * sizeof(*chdata->batch_ticks);
+	int ret;
+
+	if ((dma == NULL) || !device_is_ready(dma)) {
+		return -ENODEV;
+	}
+
+	chdata->dma_block = (struct dma_block_config){
+		.source_address = counter_stm32_ccr_address(config->timer, channel),
+		.dest_address = (uintptr_t)chdata->batch_ticks,
+		.block_size = buffer_size,
+		.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+		.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+		.source_reload_en = 1U,
+		.dest_reload_en = 1U,
+	};
+
+	chdata->dma_cfg = (struct dma_config){
+		.channel_direction = PERIPHERAL_TO_MEMORY,
+		.half_complete_callback_en = 1U,
+		.complete_callback_en = 1U,
+		.source_data_size = sizeof(uint32_t),
+		.dest_data_size = sizeof(uint32_t),
+		.source_burst_length = sizeof(uint32_t),
+		.dest_burst_length = sizeof(uint32_t),
+		.dma_slot = config->dma_slot[channel],
+		.block_count = 1U,
+		.head_block = &chdata->dma_block,
+		.cyclic = 1U,
+		.dma_callback = counter_stm32_dma_callback,
+		.user_data = chdata,
+	};
+
+	/* Write back and drop stale lines so they cannot overwrite DMA data later */
+	ret = sys_cache_data_flush_and_invd_range(chdata->batch_ticks, buffer_size);
+	if ((ret != 0) && (ret != -ENOTSUP)) {
+		return ret;
+	}
+
+	/* Discard an overcapture left over from a previous run */
+	clear_over_capture[channel](config->timer);
+
+	ret = dma_config(dma, config->dma_channel[channel], &chdata->dma_cfg);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = dma_start(dma, config->dma_channel[channel]);
+	if (ret != 0) {
+		return ret;
+	}
+
+	enable_dma_request[channel](config->timer);
+	chdata->dma_started = true;
+
+	return 0;
+}
+
+static void counter_stm32_dma_stop(const struct device *dev, uint8_t channel)
+{
+	const struct counter_stm32_config *config = dev->config;
+	struct counter_stm32_ch_data *chdata = &config->ch_data[channel];
+	const struct device *dma = config->dma_dev[channel];
+
+	disable_dma_request[channel](config->timer);
+	if ((dma != NULL) && device_is_ready(dma)) {
+		(void)dma_stop(dma, config->dma_channel[channel]);
+	}
+	chdata->dma_started = false;
+}
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
+
 static int counter_stm32_enable_capture(const struct device *dev, uint8_t chan)
 {
 	const struct counter_stm32_config *config = dev->config;
@@ -563,14 +744,29 @@ static int counter_stm32_enable_capture(const struct device *dev, uint8_t chan)
 	}
 
 	/* Make sure a capture callback is set */
-	if (chdata->capture_cb == NULL) {
+	if ((chdata->capture_cb == NULL)
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+	    && (chdata->batch_cb == NULL)
+#endif
+	) {
 		LOG_ERR("%s: Capture callback not set for channel %d, please configure",
 			dev->name, chan);
 		return -EINVAL;
 	}
 
-	/* enable interrupt */
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+	if (chdata->batch_cb != NULL) {
+		int ret = counter_stm32_dma_start(dev, chan);
+
+		if (ret != 0) {
+			return ret;
+		}
+	} else {
+		enable_it[chan](timer);
+	}
+#else
 	enable_it[chan](timer);
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 
 	LL_TIM_CC_EnableChannel(timer, ch2ll[chan]);
 
@@ -584,6 +780,13 @@ static int counter_stm32_disable_capture(const struct device *dev, uint8_t chan)
 	TIM_TypeDef *timer = config->timer;
 
 	LL_TIM_CC_DisableChannel(timer, ch2ll[chan]);
+
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+	chdata->batch_cb = NULL;
+	if (chdata->dma_started) {
+		counter_stm32_dma_stop(dev, chan);
+	}
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 
 	/* disable interrupt */
 	disable_it[chan](timer);
@@ -698,6 +901,9 @@ static int counter_stm32_capture_configure(const struct device *dev, uint8_t cha
 	}
 
 	chdata->capture_cb = cb;
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+	chdata->batch_cb = NULL;
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 	chdata->user_data = user_data;
 	chdata->single_shot_capture = (flags & COUNTER_CAPTURE_SINGLE_SHOT) ? true : false;
 
@@ -706,6 +912,61 @@ static int counter_stm32_capture_configure(const struct device *dev, uint8_t cha
 
 	return 0;
 }
+
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+static int counter_stm32_capture_configure_batch(
+	const struct device *dev, const struct counter_capture_batch *batch)
+{
+	const struct counter_stm32_config *config = dev->config;
+	struct counter_stm32_ch_data *chdata;
+	size_t line_size;
+	size_t half_size;
+	int ret;
+
+	if ((batch == NULL) || (batch->chan_id >= counter_get_num_of_channels(dev)) ||
+	    (batch->ticks == NULL) || (batch->callback == NULL)) {
+		return -EINVAL;
+	}
+
+	if ((batch->count < 2U) || ((batch->count % 2U) != 0U)) {
+		LOG_ERR("%s: capture buffer size must be an even value >= 2 (got %zu)",
+			dev->name, batch->count);
+		return -EINVAL;
+	}
+
+	line_size = sys_cache_data_line_size_get();
+	half_size = (batch->count / 2U) * sizeof(*batch->ticks);
+	if ((line_size != 0U) &&
+	    (!IS_ALIGNED(batch->ticks, line_size) || !IS_ALIGNED(half_size, line_size))) {
+		LOG_ERR("%s: buffer and half-buffer size must be %zu-byte cache line aligned",
+			dev->name, line_size);
+		return -EINVAL;
+	}
+
+	if ((batch->flags & COUNTER_CAPTURE_SINGLE_SHOT) != 0U) {
+		return -ENOTSUP;
+	}
+
+	if (config->dma_dev[batch->chan_id] == NULL) {
+		return -ENODEV;
+	}
+
+	ret = counter_stm32_capture_configure(dev, batch->chan_id, batch->flags, NULL,
+					      batch->user_data);
+	if (ret != 0) {
+		return ret;
+	}
+
+	chdata = &config->ch_data[batch->chan_id];
+	chdata->dev = dev;
+	chdata->channel = batch->chan_id;
+	chdata->batch_cb = batch->callback;
+	chdata->batch_ticks = batch->ticks;
+	chdata->batch_count = batch->count;
+
+	return 0;
+}
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 #endif
 
 static void counter_stm32_top_irq_handle(const struct device *dev)
@@ -812,6 +1073,9 @@ static DEVICE_API(counter, counter_stm32_driver_api) = {
 	.enable_capture = counter_stm32_enable_capture,
 	.disable_capture = counter_stm32_disable_capture,
 	.capture_configure = counter_stm32_capture_configure,
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+	.capture_configure_batch = counter_stm32_capture_configure_batch,
+#endif
 #endif
 };
 
@@ -869,7 +1133,7 @@ static void counter_stm32_irq_handler_brk_up_trg_com(const struct device *dev)
 	counter_stm32_irq_handler_up(dev);
 }
 
-static void counter_stm32_irq_handler_global(const struct device *dev)
+static void __maybe_unused counter_stm32_irq_handler_global(const struct device *dev)
 {
 	counter_stm32_irq_handler_cc(dev);
 	counter_stm32_irq_handler_brk_up_trg_com(dev);
@@ -885,6 +1149,40 @@ static void counter_stm32_irq_handler_global(const struct device *dev)
 #else /* NVIC */
 #define COUNTER_STM32_GET_IRQ_FLAGS(index, name) 0
 #endif /* CONFIG_GIC */
+#ifdef CONFIG_COUNTER_CAPTURE_BATCH
+#define COUNTER_DMA_DEV_OR_NULL(index, name)						\
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, name),					\
+		    (DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, name))), (NULL))
+
+#define COUNTER_DMA_CH_OR_ZERO(index, name)						\
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, name),					\
+		    (DT_INST_DMAS_CELL_BY_NAME(index, name, channel)), (0U))
+
+#define COUNTER_DMA_SLOT_OR_ZERO(index, name)						\
+	DT_DMAS_CELL_BY_NAME_OR(DT_DRV_INST(index), name, slot, 0U)
+
+#define COUNTER_DMA_INIT(index)								\
+	.dma_dev = {									\
+		COUNTER_DMA_DEV_OR_NULL(index, cc1),					\
+		COUNTER_DMA_DEV_OR_NULL(index, cc2),					\
+		COUNTER_DMA_DEV_OR_NULL(index, cc3),					\
+		COUNTER_DMA_DEV_OR_NULL(index, cc4),					\
+	},										\
+	.dma_channel = {								\
+		COUNTER_DMA_CH_OR_ZERO(index, cc1),					\
+		COUNTER_DMA_CH_OR_ZERO(index, cc2),					\
+		COUNTER_DMA_CH_OR_ZERO(index, cc3),					\
+		COUNTER_DMA_CH_OR_ZERO(index, cc4),					\
+	},										\
+	.dma_slot = {									\
+		COUNTER_DMA_SLOT_OR_ZERO(index, cc1),					\
+		COUNTER_DMA_SLOT_OR_ZERO(index, cc2),					\
+		COUNTER_DMA_SLOT_OR_ZERO(index, cc3),					\
+		COUNTER_DMA_SLOT_OR_ZERO(index, cc4),					\
+	},
+#else
+#define COUNTER_DMA_INIT(index)
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 
 #define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)				\
 {										\
@@ -953,6 +1251,7 @@ static void counter_stm32_irq_handler_global(const struct device *dev)
 			(.pcfg = COND_CODE_1(					  \
 				DT_NODE_HAS_PROP(DT_DRV_INST(idx), pinctrl_0),	  \
 				(PINCTRL_DT_INST_DEV_CONFIG_GET(idx)), (NULL)),)) \
+		COUNTER_DMA_INIT(idx)						  \
 	};									  \
 										  \
 	DEVICE_DT_INST_DEFINE(idx,						  \

@@ -476,6 +476,37 @@ typedef void (*counter_capture_cb_t)(const struct device *dev, uint8_t chan_id,
 				     counter_capture_flags_t flags, uint32_t ticks,
 				     void *user_data);
 
+/** @brief Counter batch capture callback
+ *
+ * @param dev       Pointer to the device structure for the driver instance
+ * @param chan_id   Channel ID
+ * @param ticks     Captured counter values. The pointer is valid only while
+ *                  the callback executes; copy the values if they are needed
+ *                  afterward.
+ * @param count     Number of captured values
+ * @param status    Zero on success, negative errno on failure
+ * @param user_data User data
+ */
+typedef void (*counter_capture_batch_cb_t)(const struct device *dev, uint8_t chan_id,
+					   const uint32_t *ticks, size_t count, int status,
+					   void *user_data);
+
+/** @brief Counter batch capture configuration. */
+struct counter_capture_batch {
+	/** Capture channel ID. */
+	uint8_t chan_id;
+	/** Capture configuration flags. */
+	counter_capture_flags_t flags;
+	/** Application-owned timestamp buffer. */
+	uint32_t *ticks;
+	/** Number of timestamps in the buffer. */
+	size_t count;
+	/** Callback invoked when a buffer portion is ready or an error occurs. */
+	counter_capture_batch_cb_t callback;
+	/** User data passed to the callback. */
+	void *user_data;
+};
+
 /** @brief Alarm callback
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -725,6 +756,11 @@ typedef int (*counter_api_set_top_value_64)(const struct device *dev,
 typedef int (*counter_api_capture_configure)(const struct device *dev, uint8_t chan_id,
 					     counter_capture_flags_t flags,
 					     counter_capture_cb_t cb, void *user_data);
+#if defined(CONFIG_COUNTER_CAPTURE_BATCH) || defined(__DOXYGEN__)
+/** @brief Callback API to configure buffered counter capture on a channel. */
+typedef int (*counter_api_capture_configure_batch)(
+	const struct device *dev, const struct counter_capture_batch *batch);
+#endif
 /** @brief Callback API to configure counter capture on a channel with 64-bit ticks. */
 typedef int (*counter_api_capture_configure_64)(const struct device *dev, uint8_t chan_id,
 						counter_capture_flags_t flags,
@@ -845,6 +881,12 @@ __subsystem struct counter_driver_api {
 	 * @kconfig_dep{CONFIG_COUNTER_CAPTURE}
 	 */
 	counter_api_capture_configure capture_configure;
+#if defined(CONFIG_COUNTER_CAPTURE_BATCH) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief counter_capture_configure_batch
+	 */
+	counter_api_capture_configure_batch capture_configure_batch;
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 #if defined(CONFIG_COUNTER_64BITS_TICKS) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_mandatory @copybrief counter_capture_configure_64
@@ -1812,6 +1854,40 @@ static inline int counter_capture_configure(const struct device *dev, uint8_t ch
 
 	return api->capture_configure(dev, chan_id, flags, cb, user_data);
 }
+
+#if defined(CONFIG_COUNTER_CAPTURE_BATCH) || defined(__DOXYGEN__)
+/**
+ * @brief Configure buffered capture of counter timestamps.
+ *
+ * The application-owned buffer must remain valid until capture is disabled.
+ * Each channel is buffered independently and may complete at a different rate.
+ * Drivers may report a portion of the buffer, such as a half-buffer, rather
+ * than the complete buffer. The callback may run in interrupt context and
+ * must not block or disable the capture channel. Data may be overwritten after
+ * the callback returns when the driver uses a circular buffer.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param batch Batch capture configuration.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure.
+ */
+static inline int counter_capture_configure_batch(
+	const struct device *dev, const struct counter_capture_batch *batch)
+{
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
+
+	if (api->capture_configure_batch == NULL) {
+		return -ENOTSUP;
+	}
+
+	if ((batch == NULL) || (batch->chan_id >= counter_get_num_of_channels(dev))) {
+		return -EINVAL;
+	}
+
+	return api->capture_configure_batch(dev, batch);
+}
+#endif /* CONFIG_COUNTER_CAPTURE_BATCH */
 
 /**
  * @brief Configure a capture channel and register its callback using a DT spec.
