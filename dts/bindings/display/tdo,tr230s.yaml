@@ -1,0 +1,94 @@
+# SPDX-License-Identifier: Apache-2.0
+
+title: TR230S display bridge/controller
+
+description: |
+  Shanghai Top Display Optoelectronics TR230S is a display bridge/controller
+  that accepts RGB565 pixel data from a host and drives an attached RGB display
+  panel.
+
+  This binding and driver support the MIPI DBI Type C four-wire SPI host
+  interface. The TR230S also supports other host interfaces outside the scope
+  of this binding. WAIT is controller-ready flow control and is checked before
+  each controller transaction.
+
+compatible: "tdo,tr230s"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  width:
+    min: 1
+    max: 65535
+
+  height:
+    min: 1
+    max: 65535
+
+  mipi-max-frequency:
+    default: 100000000
+    min: 1
+    max: 100000000
+    description: |
+      Maximum SPI clock frequency, in Hz. The default of 100 MHz is the
+      manufacturer's maximum specified SPI interface frequency; a board may
+      select a lower frequency.
+
+  mipi-mode:
+    default: "MIPI_DBI_MODE_SPI_4WIRE"
+    enum:
+      - "MIPI_DBI_MODE_SPI_4WIRE"
+    description: |
+      MIPI DBI Type C mode used by this binding and driver. Four-wire SPI is
+      the supported and validated mode for this Zephyr integration.
+
+  wait-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Controller-ready input. The active logical state means that the TR230S
+      can accept a new controller transaction.
+
+  ready-timeout-ms:
+    type: int
+    min: 0
+    description: |
+      Maximum time to wait for controller readiness, in milliseconds. If the
+      property is omitted or set to zero, the driver waits indefinitely,
+      matching the manufacturer's STM32 example polling behavior.
+
+  reset-pre-delay-ms:
+    type: int
+    default: 10
+    min: 0
+    description: |
+      Delay before asserting hardware reset, in milliseconds. The 10 ms
+      default follows the manufacturer's STM32 example and was validated on
+      hardware; shorter timing did not initialize the tested module reliably.
+
+  reset-pulse-ms:
+    type: int
+    default: 10
+    min: 1
+    description: |
+      Hardware-reset pulse width, in milliseconds. The 10 ms default follows
+      the manufacturer's STM32 example and was validated on hardware; shorter
+      timing did not initialize the tested module reliably.
+
+  post-reset-delay-ms:
+    type: int
+    default: 2000
+    min: 0
+    description: |
+      Minimum time after releasing hardware reset before the first controller
+      transaction, in milliseconds. The 2000 ms default follows the
+      manufacturer's STM32 example and was validated on hardware; shorter
+      timing did not initialize the tested module reliably.
+
+  initial-brightness:
+    type: int
+    min: 0
+    max: 255
+    required: true
+    description: |
+      Initial non-blanked brightness.
