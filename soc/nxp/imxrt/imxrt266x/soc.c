@@ -104,7 +104,7 @@ void soc_reset_hook(void)
 void soc_early_init_hook(void)
 {
 	/* Access control first: every step after it is a peripheral access. */
-	soc_trdc_setup();
+	soc_ele_release_rdc();
 
 	soc_release_sleep_hold();
 
@@ -120,11 +120,18 @@ void soc_early_init_hook(void)
 	sys_cache_data_enable();
 
 	/*
-	 * Clocks last: this reconfigures the PLLs, which parks both XSPI
+	 * Clocks next: this reconfigures the PLLs, which parks both XSPI
 	 * controllers -- including the flash this code runs from -- so everything
 	 * it depends on has to be working already.
 	 */
 	soc_clock_init();
+
+	/*
+	 * Last: soc_trdc_assign_masters() writes MEDIA__TRDC, which sits on the
+	 * MEDIA domain bus that soc_clock_init() just started clocking via
+	 * mediabus_rootclk. Any earlier and that write stalls the bus forever.
+	 */
+	soc_trdc_assign_masters();
 }
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
