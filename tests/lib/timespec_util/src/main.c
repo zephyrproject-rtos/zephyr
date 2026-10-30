@@ -222,6 +222,18 @@ static const struct ntspec negate_tspecs[] = {
 	{.ts = {1, 1}, .result = {-2, NSEC_PER_SEC - 1}, .expect_failure = false},
 	{.ts = {-1, 1}, .result = {0, NSEC_PER_SEC - 1}, .expect_failure = false},
 	{.ts = {SYS_TIME_T_MAX, 0}, .result = {SYS_TIME_T_MIN + 1, 0}, .expect_failure = false},
+	{.ts = {SYS_TIME_T_MIN, 1},
+	 .result = {SYS_TIME_T_MAX, NSEC_PER_SEC - 1},
+	 .expect_failure = false},
+	{.ts = {SYS_TIME_T_MIN, NSEC_PER_SEC - 1},
+	 .result = {SYS_TIME_T_MAX, 1},
+	 .expect_failure = false},
+	{.ts = {SYS_TIME_T_MAX, NSEC_PER_SEC - 1},
+	 .result = {SYS_TIME_T_MIN, 1},
+	 .expect_failure = false},
+	{.ts = {SYS_TIME_T_MAX, 1},
+	 .result = {SYS_TIME_T_MIN, NSEC_PER_SEC - 1},
+	 .expect_failure = false},
 	/* overflow cases */
 	{.ts = {SYS_TIME_T_MIN, 0}, .result = {0}, .expect_failure = true},
 };
