@@ -2,5 +2,12 @@ board:
   name: opentitan_earlgrey
   full_name: OpenTitan Earl Grey
   vendor: lowrisc
+  revision:
+    format: major.minor.patch
+    default: "1.0.0"
+    exact: true
+    revisions:
+    - name: "0.0.0"
+    - name: "1.0.0"
   socs:
   - name: opentitan
