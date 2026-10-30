@@ -15,7 +15,12 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		timebase-frequency = <DT_FREQ_M(100)>;
+		/* The machine timer's mtime register increments at the core clock divided
+		 * by 4000, i.e. 100 MHz / 4000 = 25 kHz. This is not documented anywhere;
+		 * it was measured on hardware against the mcycle CSR (exact 4000:1 ratio)
+		 * and matches C-DAC's FreeRTOS port, which uses SYS_CLK_FREQ / 4000.
+		 */
+		timebase-frequency = <DT_FREQ_K(25)>;
 
 		cpu0: cpu@0 {
 			compatible = "cdac,vega-et1031", "riscv";
@@ -101,15 +106,13 @@
 		 * interrupt controller block and appear in no public datasheet. The
 		 * addresses come from C-DAC's FreeRTOS port for this SoC
 		 * (configMTIME_BASE_ADDRESS / configMTIMECMP_BASE_ADDRESS) and have
-		 * been verified on silicon: mtime increments at the 100 MHz core
-		 * clock divided by 4000, i.e. 25 kHz.
+		 * been verified on silicon.
 		 */
 		mtimer: timer@20010580 {
 			compatible = "riscv,machine-timer";
 			reg = <0x20010580 0x8>, <0x20010480 0x8>;
 			reg-names = "mtime", "mtimecmp";
 			interrupts-extended = <&cpu0_intc 7>;
-			clock-frequency = <25000>;
 		};
 	};
 

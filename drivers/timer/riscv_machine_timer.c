@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2024-2026 MASSDRIVER EI (massdriver.space)
  * Copyright (c) 2018-2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -10,10 +10,14 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/irq.h>
+#include <zephyr/arch/riscv/csr.h>
 
 #define DT_DRV_COMPAT riscv_machine_timer
 
-#define MTIME_REG    DT_INST_REG_ADDR_BY_NAME(0, mtime)
+/* If mtime is absent (T-Head C906), use TIME CSR to fetch mtime */
+#if DT_INST_REG_HAS_NAME(0, mtime)
+#define MTIME_REG DT_INST_REG_ADDR_BY_NAME(0, mtime)
+#endif
 #define MTIMECMP_REG DT_INST_REG_ADDR_BY_NAME(0, mtimecmp)
 #define TIMER_IRQN   DT_INST_IRQN(0)
 
@@ -28,7 +32,7 @@ static uintptr_t get_hart_mtimecmp(void)
 
 static void set_mtimecmp(uint64_t time)
 {
-#ifdef CONFIG_64BIT
+#if defined(CONFIG_64BIT) && !DT_INST_PROP(0, 32bit_mmio_mtimecmp)
 	*(volatile uint64_t *)get_hart_mtimecmp() = time;
 #else
 	volatile uint32_t *r = (uint32_t *)get_hart_mtimecmp();
@@ -47,7 +51,18 @@ static void set_mtimecmp(uint64_t time)
 
 static uint64_t mtime(void)
 {
-#ifdef CONFIG_64BIT
+#if !defined(MTIME_REG) && defined(CONFIG_64BIT)
+	return csr_read(time);
+#elif !defined(MTIME_REG)
+	uint32_t lo, hi;
+
+	do {
+		hi = csr_read(timeh);
+		lo = csr_read(time);
+	} while (csr_read(timeh) != hi);
+
+	return ((uint64_t)hi << 32U) | lo;
+#elif defined(CONFIG_64BIT)
 	return *(volatile uint64_t *)MTIME_REG;
 #else
 	volatile uint32_t *r = (uint32_t *)MTIME_REG;
