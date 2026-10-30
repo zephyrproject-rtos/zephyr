@@ -1177,6 +1177,29 @@ static void test_unmute(void)
 	LOG_INF("VCP volume unmuted");
 }
 
+static void test_reconnect(void)
+{
+	int err;
+
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Failed to disconnect (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	/* Connecting to the same peer fails while the old connection object is still referenced */
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+	LOG_INF("Reconnected");
+}
+
 static void test_main(void)
 {
 	int err;
@@ -1223,6 +1246,8 @@ static void test_main(void)
 	if (CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0) {
 		test_aics();
 	}
+
+	test_reconnect();
 
 	PASS("VCP volume controller Passed\n");
 }
