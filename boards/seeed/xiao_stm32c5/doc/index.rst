@@ -6,13 +6,13 @@ Overview
 The Seeed Studio XIAO STM32C5 is a compact development board based on the
 STM32C5A3CG SoC (Cortex-M33, 144 MHz, 256 KB SRAM, 1 MB flash). It offers the
 standard XIAO form factor with a 16-pin castellated connector exposing UART,
-I2C, SPI, ADC and two FDCAN buses, an on-board LSM6DSL IMU, a CAN transceiver,
-a user LED, a BOOT button, battery charging with a voltage-divider enable, and
-a USB-C connector for power, programming (TinyUF2 bootloader) and a CDC-ACM
-virtual serial port.
+I2C, SPI, ADC and two FDCAN buses, an on-board LSM6DS3TR-C IMU, a CAN
+transceiver, a user LED, a BOOT button, battery charging with a voltage-divider
+enable, and a USB-C connector for power, programming (TinyUF2 bootloader) and a
+CDC-ACM virtual serial port.
 
-For more details see the `Seeed Studio XIAO STM32C5`_ getting started guide
-and the `XIAO STM32C5 examples`_ repository.
+For more details see the `Seeed Studio XIAO STM32C5`_ getting started guide,
+the `XIAO STM32C5 product page`_ and the `XIAO STM32C5 examples`_ repository.
 
 .. figure:: img/xiao_stm32c5.webp
    :align: center
@@ -65,7 +65,7 @@ On-board devices:
 
 * User LED: PB12 (active low)
 * BOOT button: PH2/BOOT0
-* LSM6DSL IMU: I2C2 (0x6A), interrupt on PC13
+* LSM6DS3TR-C IMU: I2C2 (0x6A), interrupt on PC13
 * Battery voltage divider enable: PA15
 * CAN transceiver standby: PB14
 
@@ -115,6 +115,8 @@ References
 
 .. _`Seeed Studio XIAO STM32C5`:
    https://wiki.seeedstudio.com/xiao_stm32c5_getting_started/
+.. _`XIAO STM32C5 product page`:
+   https://www.seeedstudio.com/XIAO-STM32C5-p-7011.html
 .. _`XIAO STM32C5 examples`:
    https://github.com/Seeed-Studio/platform-seeedboards/tree/main/examples/seeed-xiao-stm32c5
 .. _STM32CubeProgrammer:
