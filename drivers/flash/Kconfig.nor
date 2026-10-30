@@ -75,6 +75,18 @@ config SPI_NOR_SLEEP_ERASE_MS
 	  The delay between polling while waiting for the flash to finish
 	  an erase operation.
 
+config SPI_NOR_WAIT_READY_TIMEOUT_MS
+	int "Timeout while waiting for flash operations to complete in ms"
+	default 1500000
+	help
+	  The time after which waiting for a program, erase or status
+	  register write to complete fails with -ETIMEDOUT, so a device that
+	  never clears its Write-In-Progress bit cannot hang the caller.
+	  It must exceed the longest chip erase time of the device. The
+	  default covers the 1381 s maximum of the 1 Gb Infineon SEMPER
+	  S25HL01GT/S25HS01GT; set a lower value for smaller devices to
+	  fail faster.
+
 
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"
