@@ -37,6 +37,30 @@ zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_TEXT)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION RAM_DATA)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_BSS)
 
+# Test compiler runtime archive relocation on qemu_cortex_m3.
+if(CONFIG_BOARD_QEMU_CORTEX_M3)
+  # qemu_cortex_m3 uses size optimization by default; -Os is also part of the
+  # multilib selection in the Zephyr SDK and selects its */space/ archive.
+  set(runtime_query_args -mcpu=cortex-m3 -mthumb -Os)
+  if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND CONFIG_COMPILER_RT_RTLIB)
+    list(APPEND runtime_query_args --rtlib=compiler-rt)
+  endif()
+
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} ${runtime_query_args} --print-libgcc-file-name
+    OUTPUT_VARIABLE runtime_builtins_archive
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+  message(STATUS "Runtime builtins archive: ${runtime_builtins_archive}")
+
+  target_compile_definitions(app PRIVATE TEST_RUNTIME_BUILTINS_RELOCATION=1)
+  zephyr_code_relocate(
+    FILES src/test_file6.c ${runtime_builtins_archive}
+    LOCATION SRAM2_TEXT
+  )
+endif()
+
 # Test NOKEEP support. Placing both KEEP and NOKEEP symbols in the same location
 # (this and test_file2.c in RAM) should work fine.
 zephyr_code_relocate(FILES ${ZEPHYR_BASE}/kernel/sem.c ${RAM_PHDR} LOCATION RAM NOKEEP)
