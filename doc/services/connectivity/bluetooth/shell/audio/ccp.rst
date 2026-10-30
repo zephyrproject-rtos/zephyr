@@ -110,7 +110,12 @@ For example a remote device may have an incoming call that can be accepted by th
    uart:~$ ccp_call_control_client --help
    ccp_call_control_client - Bluetooth CCP Call Control Client shell commands
    Subcommands:
-     discover  : Discover GTBS and TBS on remote device
+     discover          : Discover GTBS and TBS on remote device
+     read_bearer_name  : Read bearer name [index]
+     read_bearer_uci   : Read bearer UCI [index]
+     read_bearer_tech  : Read bearer technology [index]
+     read_bearer_tech  : Read bearer URI schemes supported list [index]
+
 
 Example Usage when connected
 ============================

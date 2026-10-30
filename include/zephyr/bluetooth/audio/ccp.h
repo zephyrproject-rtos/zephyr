@@ -33,6 +33,7 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
@@ -154,6 +155,9 @@ int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_
  * @retval 0 Success
  * @retval -EINVAL @p bearer or is NULL or @p tech is invalid.
  * @retval -EFAULT @p bearer is not registered.
+ * @retval -ENOEXEC The TBS instance of @p bearer returned unexpected error.
+ * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
+ *                instance of @p bearer is busy.
  */
 int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server_bearer *bearer,
 					       enum bt_bearer_tech tech);
@@ -183,6 +187,9 @@ int bt_ccp_call_control_server_get_bearer_tech(
  * @retval -EFAULT @p bearer is not registered
  * @retval -ENOMEM @p uri_schemes is larger than
  *                 @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH}
+ * @retval -ENOEXEC The TBS instance of @p bearer returned unexpected error.
+ * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
+ *                instance of @p bearer is busy.
  */
 int bt_ccp_call_control_server_set_bearer_uri_schemes(
 	struct bt_ccp_call_control_server_bearer *bearer, const char *uri_schemes);
@@ -205,6 +212,43 @@ int bt_ccp_call_control_server_set_bearer_uri_schemes(
 int bt_ccp_call_control_server_get_bearer_uri_schemes(
 	struct bt_ccp_call_control_server_bearer *bearer, char *uri_schemes,
 	size_t uri_schemes_size);
+
+/**
+ * @brief Set a new bearer signal strength.
+ *
+ * @kconfig_dep{CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH}
+ *
+ * @param bearer The bearer to set the URI schemes supported list for.
+ * @param signal_strength The new signal strength. Values between @ref BT_TBS_SIGNAL_STRENGTH_MIN
+ *                        and @ref BT_TBS_SIGNAL_STRENGTH_MAX, or
+ *                        @ref BT_TBS_SIGNAL_STRENGTH_NO_SERVICE for no service or
+ *                        @ref BT_TBS_SIGNAL_STRENGTH_UNKNOWN for unknown signal strength.
+ *
+ * @retval 0 New signal strength list set, or if there were no change.
+ * @retval -EINVAL @p bearer  is NULL or @p signal_strength is invalid.
+ * @retval -ENOEXEC Unexpected error from TBS
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_set_bearer_signal_strength(
+	struct bt_ccp_call_control_server_bearer *bearer, uint8_t signal_strength);
+
+/**
+ * @brief Get the bearer signal strength.
+ *
+ * @kconfig_dep{CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH}
+ *
+ * @param[in] bearer The bearer to get the signal strength for.
+ * @param[out] signal_strength Pointer that will be updated to be the bearer signal strength. Will
+ *                             be either @ref BT_TBS_SIGNAL_STRENGTH_NO_SERVICE,
+ *                             @ref BT_TBS_SIGNAL_STRENGTH_UNKNOWN or between
+ *                             @ref BT_TBS_SIGNAL_STRENGTH_MIN and @ref BT_TBS_SIGNAL_STRENGTH_MAX.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p bearer or @p signal_strength is NULL.
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_get_bearer_signal_strength(
+	const struct bt_ccp_call_control_server_bearer *bearer, uint8_t *signal_strength);
 /** @} */ /* End of group bt_ccp_call_control_server */
 
 /**
@@ -339,6 +383,28 @@ struct bt_ccp_call_control_client_cb {
 	void (*bearer_uri_schemes)(struct bt_ccp_call_control_client_bearer *bearer, int err,
 				   const char *uri_schemes, void *user_data);
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH) || defined(__DOXYGEN__)
+	/**
+	 * @brief Callback function for bt_ccp_call_control_client_read_signal_strength() or
+	 * notification.
+	 *
+	 * This callback is called once the read bearer technology procedure is completed,
+	 * or when a notification with a new signal strength is received.
+	 *
+	 * @param bearer Call Control Client bearer pointer.
+	 * @param err Error value. 0 on success, GATT error on positive
+	 *            value or errno on negative value.
+	 * @param signal_strength The signal strength of the bearer. Special values are
+	 *                        @ref BT_TBS_SIGNAL_STRENGTH_NO_SERVICE for no service or
+	 *                        @ref BT_TBS_SIGNAL_STRENGTH_UNKNOWN for unknown signal strength.
+	 * @param user_data User data stored in the callback struct. Will always be NULL if
+	 *                  @kconfig{CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA} is not
+	 *                  enabled.
+	 */
+	void (*bearer_signal_strength)(struct bt_ccp_call_control_client_bearer *bearer, int err,
+				       uint8_t signal_strength, void *user_data);
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH */
 
 #if defined(CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA) || defined(__DOXYGEN__)
 	/** User data that will be supplied to all callbacks */
@@ -478,6 +544,25 @@ int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_clien
  * @retval -ENOEXEC The underlying TBS client returned an unexpected error.
  */
 int bt_ccp_call_control_client_read_bearer_uri_schemes(
+	struct bt_ccp_call_control_client_bearer *bearer);
+
+/**
+ * @brief Read the bearer signal strength list of a remote TBS bearer.
+ *
+ * @kconfig_dep{CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH}
+ *
+ * @param bearer The bearer to read the signal strength from
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p bearer is NULL.
+ * @retval -EFAULT @p bearer has not been discovered.
+ * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer.
+ * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
+ * instance of @p bearer is busy.
+ * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected.
+ * @retval -ENOEXEC Rejected by the GATT layer for expected reasons.
+ */
+int bt_ccp_call_control_client_read_bearer_signal_strength(
 	struct bt_ccp_call_control_client_bearer *bearer);
 /** @} */ /* End of group bt_ccp_call_control_client */
 #ifdef __cplusplus

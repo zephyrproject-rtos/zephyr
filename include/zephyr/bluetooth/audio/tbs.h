@@ -142,6 +142,8 @@ extern "C" {
  */
 /** No service */
 #define BT_TBS_SIGNAL_STRENGTH_NO_SERVICE               0U
+/** Minimum signal strength */
+#define BT_TBS_SIGNAL_STRENGTH_MIN                      1U
 /** Maximum signal strength */
 #define BT_TBS_SIGNAL_STRENGTH_MAX                      100U
 /** Signal strength is unknown  */
