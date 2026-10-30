@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief Priority-aware lock-free multiple-producer, single-consumer queue.
+ * @ingroup mpsc_lockfree
  */
 
 #include <zephyr/sys/mpsc_lockfree.h>
@@ -18,9 +19,12 @@ extern "C" {
 #endif
 
 /**
+ * @addtogroup mpsc_lockfree
+ * @{
+ */
+
+/**
  * @brief Priority MPSC queue
- * @param queues Array containing one MPSC queue per priority
- * @param num_priorities Number of elements in @p queues
  */
 struct mpsc_priority {
 	/** @brief Array containing one MPSC queue per priority. */
@@ -95,6 +99,10 @@ static inline struct mpsc_node *mpsc_priority_pop(struct mpsc_priority *q)
 
 	return NULL;
 }
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
