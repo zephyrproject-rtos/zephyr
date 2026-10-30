@@ -77,6 +77,8 @@ struct spi_mcux_data {
 	size_t transfer_len;
 	uint16_t word_size_bytes;
 	uint16_t word_size_bits;
+	/* Set on completion timeout; makes a late SDK callback a no-op */
+	bool aborted;
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
@@ -89,6 +91,17 @@ struct spi_mcux_data {
 };
 
 static bool force_reconfig;
+
+/* The ISR finishes asynchronous transfers and transceive() synchronous ones */
+static inline bool spi_mcux_is_async(const struct spi_context *ctx)
+{
+#ifdef CONFIG_SPI_ASYNC
+	return ctx->asynchronous;
+#else
+	ARG_UNUSED(ctx);
+	return false;
+#endif /* CONFIG_SPI_ASYNC */
+}
 
 static void spi_mcux_transfer_next_packet(const struct device *dev)
 {
@@ -103,8 +116,9 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		/* nothing left to rx or tx, we're done! */
 		spi_context_cs_control(ctx, false);
 		spi_context_complete(ctx, dev, 0);
-		spi_context_release(ctx, 0);
-		pm_policy_device_power_lock_put(dev);
+		if (spi_mcux_is_async(ctx)) {
+			pm_policy_device_power_lock_put(dev);
+		}
 		return;
 	}
 
@@ -153,7 +167,9 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		LOG_ERR("Transfer could not start");
 		spi_context_cs_control(ctx, false);
 		spi_context_complete(ctx, dev, -EIO);
-		pm_policy_device_power_lock_put(dev);
+		if (spi_mcux_is_async(ctx)) {
+			pm_policy_device_power_lock_put(dev);
+		}
 	}
 }
 
@@ -172,6 +188,10 @@ static void spi_mcux_transfer_callback(SPI_Type *base,
 {
 	struct spi_mcux_data *data = userData;
 	struct spi_context *ctx = &data->ctx;
+
+	if (data->aborted) {
+		return;
+	}
 
 	spi_context_update_tx(ctx, data->word_size_bytes, data->transfer_len);
 	spi_context_update_rx(ctx, data->word_size_bytes, data->transfer_len);
@@ -824,9 +844,33 @@ static int transceive(const struct device *dev,
 
 	spi_context_cs_control(ctx, true);
 
+	data->aborted = false;
 	spi_mcux_transfer_next_packet(dev);
 
-	return spi_context_wait_for_completion(ctx);
+	ret = spi_context_wait_for_completion(ctx);
+	if (asynchronous) {
+		/* The ISR releases the context and the power lock when done */
+		return ret;
+	}
+
+	if (ret != 0) {
+		const struct spi_mcux_config *config = dev->config;
+		unsigned int key;
+
+		/*
+		 * The SDK may still call back on a late interrupt, so disarm the
+		 * callback first. SPI_MasterTransferAbort() leaves the FIFO
+		 * interrupts enabled.
+		 */
+		key = irq_lock();
+		data->aborted = true;
+		SPI_MasterTransferAbort(config->base, &data->handle);
+		SPI_DisableInterrupts(config->base, kSPI_TxLvlIrq | kSPI_RxLvlIrq);
+		irq_unlock(key);
+
+		spi_context_cs_control(ctx, false);
+		spi_context_clear_completion(ctx);
+	}
 
 out:
 	spi_context_release(ctx, ret);

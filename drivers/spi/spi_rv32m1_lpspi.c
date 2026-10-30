@@ -42,6 +42,8 @@ struct spi_mcux_data {
 	lpspi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
+	/* Set on completion timeout; makes a late SDK callback a no-op */
+	bool aborted;
 };
 
 static void spi_mcux_transfer_next_packet(const struct device *dev)
@@ -124,6 +126,10 @@ static void spi_mcux_transfer_callback(LPSPI_Type *base,
 				       status_t status, void *userData)
 {
 	struct spi_mcux_data *data = userData;
+
+	if (data->aborted) {
+		return;
+	}
 
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
@@ -231,9 +237,29 @@ static int transceive(const struct device *dev,
 
 	spi_context_cs_control(&data->ctx, true);
 
+	data->aborted = false;
 	spi_mcux_transfer_next_packet(dev);
 
 	ret = spi_context_wait_for_completion(&data->ctx);
+	if (ret != 0) {
+		const struct spi_mcux_config *config = dev->config;
+		unsigned int key;
+
+		/*
+		 * Sync only. The SDK may still call back on a late interrupt,
+		 * so disarm the callback first.
+		 */
+		key = irq_lock();
+		data->aborted = true;
+		LPSPI_MasterTransferAbort(config->base, &data->handle);
+		irq_unlock(key);
+
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_clear_completion(&data->ctx);
+
+		/* The abort resets the LPSPI; reconfigure on the next transfer */
+		data->ctx.config = NULL;
+	}
 out:
 	spi_context_release(&data->ctx, ret);
 
