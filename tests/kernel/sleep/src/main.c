@@ -11,11 +11,7 @@
 #include <zephyr/irq_offload.h>
 #include <stdbool.h>
 
-#if defined(CONFIG_ASSERT) && defined(CONFIG_DEBUG)
 #define THREAD_STACK    (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
-#else
-#define THREAD_STACK    (384 + CONFIG_TEST_EXTRA_STACK_SIZE)
-#endif
 
 #define TEST_THREAD_PRIORITY    -4
 #define HELPER_THREAD_PRIORITY  -10
