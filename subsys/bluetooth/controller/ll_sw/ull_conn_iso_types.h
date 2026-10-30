@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
 struct ll_conn;
 
 typedef void (*ll_iso_stream_released_cb_t)(struct ll_conn *conn);
@@ -22,13 +24,13 @@ struct ll_conn_iso_stream {
 
 	uint16_t c_max_sdu:12;    /* Maximum SDU size C_To_P */
 	uint16_t p_max_sdu:12;    /* Maximum SDU size P_To_C */
-	uint8_t  framed:1;        /* 0: unframed, 1: framed */
-	uint16_t established:1;   /* 0 if CIS has not yet been established.
-				   * 1 if CIS has been established and host
-				   * notified.
-				   */
-	uint16_t trx_performed:1; /* 1 if CIS had a transaction */
-	uint16_t teardown:1;      /* 1 if CIS teardown has been initiated */
+
+	uint8_t framed:1;        /* 0: unframed, 1: framed */
+	uint8_t established:1;   /* 0 if CIS has not yet been established.
+				  * 1 if CIS has been established and host notified.
+				  */
+	uint8_t trx_performed:1; /* 1 if CIS had a transaction */
+	uint8_t teardown:1;      /* 1 if CIS teardown has been initiated */
 
 	union {
 		struct {
