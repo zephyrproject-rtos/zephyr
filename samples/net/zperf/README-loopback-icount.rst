@@ -36,6 +36,10 @@ backend that would otherwise break icount determinism.
    instructions-per-byte), not a real line rate. Only compare values captured
    with the same icount shift, packet size, and tick rate.
 
+This check reports one number per transfer, which is enough to notice a
+regression but not to locate it. To attribute the same run's cost to individual
+functions, see :ref:`zperf-loopback-profiling`.
+
 How it works
 ************
 
