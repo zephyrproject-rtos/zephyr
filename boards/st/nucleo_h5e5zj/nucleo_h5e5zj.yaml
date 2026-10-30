@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nucleo_h5e5zj
+name: ST Nucleo H5E5ZJ
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 256
+flash: 4096
+supported:
+  - arduino_serial
+  - adc
+  - can
+  - dma
+  - entropy
+  - gpio
+  - i2c
+  - pwm
+  - rtc
+  - spi
+  - uart
+  - usbd
+  - watchdog
+vendor: st
