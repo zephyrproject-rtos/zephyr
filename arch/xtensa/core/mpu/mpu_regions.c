@@ -66,6 +66,14 @@ __weak const struct xtensa_mpu_range xtensa_mpu_ranges[] = {
 		.access_rights = XTENSA_MPU_ACCESS_P_RW_U_NA,
 	},
 #endif
+	/* Mark gcov BSS section user read / write accessible */
+#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
+	{
+		.start = (uint32_t)&__gcov_bss_start,
+		.end   = (uint32_t)&__gcov_bss_end,
+		.access_rights = XTENSA_MPU_ACCESS_P_RW_U_RW,
+	},
+#endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
 	/* Mark text segment cacheable, read only and executable */
 	{
 		.start = (uintptr_t)__text_region_start,
