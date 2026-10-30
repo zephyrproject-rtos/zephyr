@@ -8,10 +8,13 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/fs/virtiofs.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/posix/fcntl.h>
 #include "../fs_impl.h"
 #include <string.h>
 #include "virtiofs.h"
+
+LOG_MODULE_DECLARE(virtiofs, CONFIG_VIRTIOFS_LOG_LEVEL);
 
 #define MODE_FTYPE_MASK 0170000
 #define MODE_FTYPE_DIR 040000
@@ -493,6 +496,12 @@ static int virtiofs_zfs_mount(struct fs_mount_t *mountp)
 
 	if (ret == 0) {
 		struct virtiofs_fs_data *fs_data = mountp->fs_data;
+
+		if (out.max_write == 0U) {
+			LOG_ERR("device reported max_write = 0");
+			(void)virtiofs_destroy(mountp->storage_dev);
+			return -ENOTSUP;
+		}
 
 		fs_data->max_write = out.max_write;
 	}
