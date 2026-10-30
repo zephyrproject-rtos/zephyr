@@ -2,29 +2,41 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config I2S_NATIVE_SIM
-	bool "native_sim I2S file backend"
+	bool "native_sim I2S"
 	depends on DT_HAS_ZEPHYR_NATIVE_SIM_I2S_ENABLED
 	default y
 	select NATIVE_USE_NSI_ERRNO
 	help
-	  Enable a native_sim I2S backend which reads RX PCM samples from a host
-	  file and writes TX PCM samples to a host file.
+	  Enable the native_sim I2S driver, which streams RX and TX PCM samples
+	  from and to host files or, with I2S_NATIVE_SIM_ALSA, host ALSA devices.
 
 if I2S_NATIVE_SIM
 
-config I2S_NATIVE_SIM_RX_FILE_PATH
-	string "native_sim I2S RX PCM file path"
+config I2S_NATIVE_SIM_ALSA
+	bool "native_sim ALSA host audio"
+	select NATIVE_SIMULATOR_PREFER_REAL_TIME
+	help
+	  When this option is enabled, this driver can also connect to ALSA PCM
+	  devices. Paths starting with "alsa:" open that ALSA device instead of a
+	  file, for example "alsa:default". Requires the host ALSA dev library.
+	  Word sizes of 8, 16, 24 and 32 bits are supported; 24-bit words are
+	  LSB-justified in 32-bit samples.
+
+config I2S_NATIVE_SIM_RX_PATH
+	string "native_sim I2S RX path"
+	default "alsa:default" if I2S_NATIVE_SIM_ALSA
 	default "i2s_in.pcm"
 	help
-	  Path to the default host PCM file consumed by native_sim I2S RX devices.
-	  Can be overridden from command line.
+	  Default host PCM file, or ALSA device, consumed by native_sim I2S RX
+	  devices. Can be overridden from command line.
 
-config I2S_NATIVE_SIM_TX_FILE_PATH
-	string "native_sim I2S TX PCM file path"
+config I2S_NATIVE_SIM_TX_PATH
+	string "native_sim I2S TX path"
+	default "alsa:default" if I2S_NATIVE_SIM_ALSA
 	default "i2s_out.pcm"
 	help
-	  Path to the default host PCM file produced by native_sim I2S TX devices.
-	  Can be overridden from command line.
+	  Default host PCM file, or ALSA device, produced by native_sim I2S TX
+	  devices. Can be overridden from command line.
 
 config I2S_NATIVE_SIM_QUEUE_SIZE
 	int "native_sim I2S queue depth"

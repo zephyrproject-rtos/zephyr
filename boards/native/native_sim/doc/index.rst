@@ -346,14 +346,15 @@ Here are more details on the peripherals that are currently provided with this b
   from the native simulator runner side and provides zeroes (silence).
 
 **Inter-IC sound (I2S)**
-  A file-backed I2S driver is which can be configured
-  for RX, TX, or both directions. It reads or writes PCM sample data from
-  or to files on the host file system through the Zephyr I2S API. This is
-  useful for testing stream handling and loopback scenarios.
+  An I2S driver which can be configured for RX, TX, or both directions. It
+  reads or writes PCM sample data through the Zephyr I2S API from or to files
+  on the host file system or, with :kconfig:option:`CONFIG_I2S_NATIVE_SIM_ALSA`
+  enabled, ALSA PCM devices on the host. This is useful for testing stream
+  handling and loopback scenarios, and for playing or capturing real audio.
 
-  By default the RX and TX file paths are taken from
-  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH` and
-  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH`. Each I2S instance
+  By default the RX and TX paths are taken from
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_RX_PATH` and
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_PATH`. Each I2S instance
   exposes its own command line overrides in the form of
   ``--<device>_rx=<path>`` and ``--<device>_tx=<path>``. For example, the
   default bidirectional native_sim instance uses ``--i2s_rxtx_rx=<path>`` and
@@ -363,6 +364,27 @@ Here are more details on the peripherals that are currently provided with this b
   native simulator runner side and feeds silence for that stream run. If a TX
   output file cannot be opened, the driver prints a warning and discards TX
   data for that stream run.
+
+  With :kconfig:option:`CONFIG_I2S_NATIVE_SIM_ALSA` enabled, a path starting
+  with ``alsa:`` opens the named ALSA PCM device on the host instead of a file,
+  and both paths default to ``alsa:default``. Other devices can be selected in
+  the same way, for example ``--i2s_rxtx_rx=alsa:hw:0,0``. The device is
+  accessed without blocking and the simulation is slowed down to real time by
+  default. Word sizes of 8, 16, 24 and 32 bits are supported; 24-bit words are
+  LSB-justified in 32-bit samples.
+
+  This requires the ALSA development library on the host, which has to match
+  the word size of the image: the 32-bit version for the default ``native_sim``
+  target and the 64-bit version for :ref:`64bit native_sim<native_sim32_64>`
+  builds. On a Debian/Ubuntu host ``libasound2-dev`` provides the 64-bit
+  library; the 32-bit one is installed, and found by ``pkg-config``, with:
+
+  .. code-block:: console
+
+     $ sudo dpkg --add-architecture i386
+     $ sudo apt update
+     $ sudo apt install pkg-config libasound2-dev:i386
+     $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.

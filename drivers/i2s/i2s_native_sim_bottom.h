@@ -11,7 +11,11 @@
 extern "C" {
 #endif
 
-int ns_i2s_open_file_bottom(const char *pathname, int rx);
+int ns_i2s_open_bottom(const char *pathname, int rx, unsigned int rate, unsigned int frame_bytes,
+		       unsigned int word_size);
+long ns_i2s_write_bottom(int idx, const void *buf, long len);
+long ns_i2s_read_bottom(int idx, void *buf, long len);
+void ns_i2s_close_bottom(int idx);
 
 #ifdef __cplusplus
 }

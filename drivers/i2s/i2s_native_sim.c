@@ -24,6 +24,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+/*
+ * Interval between retries while the host device is not ready. The worker is
+ * a Zephyr thread, so it cannot wait on the host poll descriptors ALSA offers
+ * without stalling the simulation; k_usleep() lets simulated time advance
+ * instead. ns_i2s_pace() already waits one block period per transfer, so a
+ * retry only covers the drift between the simulation and the device clock.
+ */
+#define NS_I2S_RETRY_US 1000U
+
 enum ns_i2s_mode {
 	NS_I2S_MODE_RX,
 	NS_I2S_MODE_TX,
@@ -161,7 +170,7 @@ static struct ns_i2s_stream *ns_i2s_stream_get(struct ns_i2s_data *data, enum i2
 static void ns_i2s_close_file(struct ns_i2s_stream *stream)
 {
 	if (stream->fd >= 0) {
-		(void)nsi_host_close(stream->fd);
+		ns_i2s_close_bottom(stream->fd);
 		stream->fd = -1;
 	}
 }
@@ -264,6 +273,19 @@ static void ns_i2s_pace(struct ns_i2s_stream *stream, size_t size)
 	}
 }
 
+static bool ns_i2s_stream_active(const struct ns_i2s_stream *stream)
+{
+	return (stream->state == I2S_STATE_RUNNING) || (stream->state == I2S_STATE_STOPPING);
+}
+
+/* Lets the simulation run while the host device is not ready */
+static void ns_i2s_retry_wait(struct ns_i2s_data *data)
+{
+	k_mutex_unlock(&data->lock);
+	k_usleep(NS_I2S_RETRY_US);
+	k_mutex_lock(&data->lock, K_FOREVER);
+}
+
 static int ns_i2s_prepare_file(const struct ns_i2s_config *cfg, struct ns_i2s_data *data,
 			       struct ns_i2s_stream *stream, enum i2s_dir dir)
 {
@@ -274,7 +296,8 @@ static int ns_i2s_prepare_file(const struct ns_i2s_config *cfg, struct ns_i2s_da
 		return 0;
 	}
 
-	fd = ns_i2s_open_file_bottom(path, dir == I2S_DIR_RX);
+	fd = ns_i2s_open_bottom(path, dir == I2S_DIR_RX, stream->cfg.frame_clk_freq,
+				ns_i2s_frame_bytes(&stream->cfg), stream->cfg.word_size);
 
 	if (fd < 0) {
 		stream->missing_file = true;
@@ -324,7 +347,7 @@ static bool ns_i2s_process_tx(const struct device *dev)
 {
 	const struct ns_i2s_config *cfg = dev->config;
 	struct ns_i2s_data *data = dev->data;
-	ssize_t written;
+	long written;
 	int ret;
 	bool keep_running;
 
@@ -355,8 +378,23 @@ static bool ns_i2s_process_tx(const struct device *dev)
 	(void)ns_i2s_prepare_file(cfg, data, &data->tx, I2S_DIR_TX);
 
 	if (!data->tx.missing_file) {
-		written = nsi_host_write(data->tx.fd, data->tx.active_block.mem_block,
-					 data->tx.active_block.size);
+		written = ns_i2s_write_bottom(data->tx.fd, data->tx.active_block.mem_block,
+					      data->tx.active_block.size);
+		/*
+		 * The active block is freed only by ns_i2s_flush_queue(), which
+		 * clears active_block_valid under the lock, so it is still owned
+		 * here when the flag survives the wait.
+		 */
+		while (written == -NSI_ERRNO_MID_EAGAIN) {
+			ns_i2s_retry_wait(data);
+			if (!ns_i2s_stream_active(&data->tx) || !data->tx.active_block_valid) {
+				/* Stopped or reset during the wait */
+				k_mutex_unlock(&data->lock);
+				return false;
+			}
+			written = ns_i2s_write_bottom(data->tx.fd, data->tx.active_block.mem_block,
+						      data->tx.active_block.size);
+		}
 		if ((written < 0) || ((size_t)written != data->tx.active_block.size)) {
 			ns_i2s_free_block(&data->tx, &data->tx.active_block);
 			memset(&data->tx.active_block, 0, sizeof(data->tx.active_block));
@@ -406,7 +444,7 @@ static bool ns_i2s_process_rx_file(const struct device *dev)
 	const struct ns_i2s_config *cfg = dev->config;
 	struct ns_i2s_data *data = dev->data;
 	struct ns_i2s_block block = {0};
-	ssize_t bytes_read;
+	long bytes_read;
 	int ret;
 	bool keep_running = true;
 
@@ -448,7 +486,21 @@ static bool ns_i2s_process_rx_file(const struct device *dev)
 		return keep_running;
 	}
 
-	bytes_read = nsi_host_read(data->rx.fd, block.mem_block, data->rx.cfg.block_size);
+	bytes_read = ns_i2s_read_bottom(data->rx.fd, block.mem_block, data->rx.cfg.block_size);
+	while (bytes_read == -NSI_ERRNO_MID_EAGAIN) {
+		struct k_mem_slab *slab = data->rx.cfg.mem_slab;
+
+		ns_i2s_retry_wait(data);
+		if (!ns_i2s_stream_active(&data->rx) || (data->rx.fd < 0)) {
+			/* Stopped or reset during the wait */
+			k_mem_slab_free(slab, block.mem_block);
+			k_mutex_unlock(&data->lock);
+			return false;
+		}
+		bytes_read =
+			ns_i2s_read_bottom(data->rx.fd, block.mem_block, data->rx.cfg.block_size);
+	}
+
 	if (bytes_read == 0) {
 		ns_i2s_free_block(&data->rx, &block);
 		ns_i2s_stream_error(&data->rx, -ENOMSG);
@@ -888,8 +940,8 @@ static int ns_i2s_init(const struct device *dev)
 #define NS_I2S_INIT(inst) \
 	static const struct ns_i2s_config ns_i2s_config_##inst = { \
 		.mode = DT_INST_ENUM_IDX(inst, stream_direction), \
-		.rx_path = CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH, \
-		.tx_path = CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH, \
+		.rx_path = CONFIG_I2S_NATIVE_SIM_RX_PATH, \
+		.tx_path = CONFIG_I2S_NATIVE_SIM_TX_PATH, \
 	}; \
 	static struct ns_i2s_data ns_i2s_data_##inst; \
 	DEVICE_DT_INST_DEFINE(inst, ns_i2s_init, NULL, \
@@ -909,18 +961,18 @@ DT_INST_FOREACH_STATUS_OKAY(NS_I2S_INIT)
 		.name = "path",                                                                    \
 		.type = 's',                                                                       \
 		.dest = (void *)&ns_i2s_data_##inst.cmd_rx_path,                                   \
-		.descript = "Path to binary file to be used as native_sim "                        \
-			    "I2S RX input for " INST_NAME(inst)                                  \
-			    ". Overrides CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH if set",              \
+		.descript =                                                                        \
+			"Host PCM file or alsa:<device> for native_sim I2S RX input of "           \
+			INST_NAME(inst) ". Overrides CONFIG_I2S_NATIVE_SIM_RX_PATH if set",        \
 	},                                                                                         \
 	{                                                                                          \
 		.option = INST_NAME(inst) "_tx",                                                   \
 		.name = "path",                                                                    \
 		.type = 's',                                                                       \
 		.dest = (void *)&ns_i2s_data_##inst.cmd_tx_path,                                   \
-		.descript = "Path to binary file to be used as native_sim "                        \
-			    "I2S TX output for " INST_NAME(inst)                                 \
-			    ". Overrides CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH if set",              \
+		.descript =                                                                        \
+			"Host PCM file or alsa:<device> for native_sim I2S TX output of "          \
+			INST_NAME(inst) ". Overrides CONFIG_I2S_NATIVE_SIM_TX_PATH if set",        \
 	},
 
 static void ns_i2s_options(void)
