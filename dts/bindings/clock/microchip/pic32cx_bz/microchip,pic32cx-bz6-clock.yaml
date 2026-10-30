@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - name: base.yaml
+
+description: Binding for Microchip PIC32CX_BZ6 SOC family clock
+compatible: "microchip,pic32cx-bz6-clock"
+
+properties:
+  frc-freq:
+    type: int
+    default: 8000000
+    description: Fast RC oscillator frequency
+
+  posc-freq:
+    type: int
+    default: 16000000
+    description: Primary oscillator frequency
+
+  on-timeout-ms:
+    type: int
+    default: 5
+    description: Timeout in milliseconds for clock to be on

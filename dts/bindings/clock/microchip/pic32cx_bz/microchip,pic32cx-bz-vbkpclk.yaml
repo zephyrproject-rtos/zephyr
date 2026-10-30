@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: VDDBUKPCORE 32 KHz Clock configuration.
+compatible: "microchip,pic32cx-bz-vbkpclk"
+
+properties:
+  vbkpclk-32kc-src-sel:
+    type: string
+    enum:
+      - "frc"
+      - "posc"
+      - "sosc"
+      - "lprc"
+    default: "frc"
+    description: VDDBUKPCORE 32 KHz Clock Source Selection
