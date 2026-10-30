@@ -5,7 +5,7 @@ description: ITE IT51XXX USB in device mode
 
 compatible: "ite,it51xxx-usb"
 
-include: [pinctrl-device.yaml, usb-ep.yaml]
+include: [pinctrl-device.yaml, usb-ep.yaml, "ite,general-config.yaml"]
 
 properties:
   reg:
@@ -24,9 +24,3 @@ properties:
     type: phandles
     description: |
       UDC node WUC interrupt.
-
-  ite,extend-ctrl:
-    type: array
-    description: |
-      Extend control configuration for UDC pin mapping on some
-      it51xxx SoCs. It is defined as: <reg_address enable_bit disable_bit>

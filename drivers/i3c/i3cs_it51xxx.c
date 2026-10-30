@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(i3cs_it51xxx);
 #include <zephyr/pm/policy.h>
 
 #include <soc_common.h>
+#include <soc_dt.h>
 
 #define BYTE_0(x) FIELD_GET(GENMASK(7, 0), x)
 #define BYTE_1(x) FIELD_GET(GENMASK(15, 8), x)
@@ -182,10 +183,8 @@ struct it51xxx_i3cs_config {
 	uint8_t vendor_info;
 	bool disable_read_abort;
 
-	struct {
-		mm_reg_t addr;
-		uint8_t bit_mask;
-	} extern_enable;
+	struct ite_extend_control *extend_ctrl;
+	size_t extend_ctrl_count;
 
 	void (*irq_config_func)(const struct device *dev);
 
@@ -652,14 +651,8 @@ static int it51xxx_i3cs_init(const struct device *dev)
 	sys_write8(cfg->io_channel, cfg->base + I3CS4D_CONTROL_REG_4);
 	LOG_INST_DBG(cfg->log, "select io channel %d", cfg->io_channel);
 
-	/* set extern enable bit */
-	if (cfg->extern_enable.bit_mask > 7) {
-		LOG_INST_ERR(cfg->log, "invalid bit mask %d for extern enable setting",
-			     cfg->extern_enable.bit_mask);
-		return -EINVAL;
-	}
-	sys_write8(sys_read8(cfg->extern_enable.addr) | BIT(cfg->extern_enable.bit_mask),
-		   cfg->extern_enable.addr);
+	/* set extend enable bit */
+	ite_apply_extend_control(cfg->extend_ctrl, cfg->extend_ctrl_count);
 
 	/* set static address */
 	sys_write8(I3CS_TARGET_ADDRESS(config_target->static_addr), cfg->base + I3CS07_CONFIG_2);
@@ -954,12 +947,6 @@ static void it51xxx_i3cs_isr(const struct device *dev)
 	sys_write8(int_status_2, cfg->base + I3CS0A_STATUS_2);
 }
 
-#define IT51XXX_I3CS_EXTERN_ENABLE(n)                                                              \
-	{                                                                                          \
-		.addr = DT_INST_PROP_BY_IDX(n, extern_enable, 0),                                  \
-		.bit_mask = DT_INST_PROP_BY_IDX(n, extern_enable, 1),                              \
-	}
-
 #define PID_TYPE_RANDOM_VALUE BIT64(32)
 #define IT51XXX_I3CS_PID(n)                                                                        \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pid_random_value),                                    \
@@ -971,6 +958,9 @@ static void it51xxx_i3cs_isr(const struct device *dev)
 	LOG_INSTANCE_REGISTER(DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(n)), n,                          \
 			      CONFIG_I3C_IT51XXX_LOG_LEVEL);                                       \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static struct ite_extend_control extctrl_##n[] = ITE_DT_EXTEND_CTRL_ITEMS_LIST(n);         \
+                                                                                                   \
 	static void it51xxx_i3cs_config_func_##n(const struct device *dev)                         \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), 0, it51xxx_i3cs_isr, DEVICE_DT_INST_GET(n), 0);       \
@@ -981,7 +971,8 @@ static void it51xxx_i3cs_isr(const struct device *dev)
 		.irq_config_func = it51xxx_i3cs_config_func_##n,                                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.io_channel = DT_INST_PROP(n, io_channel),                                         \
-		.extern_enable = IT51XXX_I3CS_EXTERN_ENABLE(n),                                    \
+		.extend_ctrl = extctrl_##n,                                                        \
+		.extend_ctrl_count = ARRAY_SIZE(extctrl_##n),                                      \
 		.vendor_info = DT_INST_PROP_OR(n, vendor_info_fields, 0x0),                        \
 		.disable_read_abort = DT_INST_PROP(n, disable_read_abort),                         \
 		LOG_INSTANCE_PTR_INIT(log, DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(n)), n)};           \
