@@ -15,6 +15,7 @@ target_sources(app PRIVATE
   src/tester.c
   src/main.c
   src/dut.c
+  src/rpa_expired.c
 )
 
 zephyr_include_directories(
