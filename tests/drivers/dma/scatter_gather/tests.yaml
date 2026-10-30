@@ -17,6 +17,8 @@ tests:
       - native_sim/native/64
       - xmc45_relax_kit
       - xmc47_relax_kit
+      - kit_psoc4_hvms_64k_lite
+      - kit_psoc4_hvms_128k_lite
       - siwx917_rb4338a
       - siwx917_rb4342a
       - siwx917_dk2605a
