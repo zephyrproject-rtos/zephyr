@@ -353,7 +353,7 @@ static int sdio_read_cis(struct sdio_func *func,
 			 uint32_t tuple_count)
 {
 	int ret;
-	char *data = func->card->card_buffer;
+	uint8_t *data = func->card->card_buffer;
 	uint32_t cis_ptr = 0, num = 0;
 	uint8_t tpl_code, tpl_link;
 	bool match_tpl = false;
