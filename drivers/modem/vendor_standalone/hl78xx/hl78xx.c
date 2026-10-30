@@ -663,6 +663,10 @@ static int hl78xx_start_state_script(struct hl78xx_data *data,
 		hl78xx_defer_script_start(data);
 	} else if (ret == 0) {
 		data->events.script_start_deferred = false;
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		/* An abort the power down asked for earlier is not that of this script */
+		data->status.lpm.power_down.script_aborted = false;
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 	} else {
 		/* The caller decides what a script that cannot start means */
 	}
@@ -2450,7 +2454,14 @@ static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum 
 			/* A timer the previous state left running: no start is due */
 			break;
 		}
-		/* The start deferred by the entry */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		if (data->status.lpm.power_down.shutdown_pending) {
+			/* Wait for the decision on the pending power down */
+			hl78xx_reschedule_timer(data, K_MSEC(100));
+			break;
+		}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+		/* The start deferred by the entry or by a power down */
 		ret = hl78xx_start_state_script(data, hl78xx_run_init_script_async);
 		if ((ret < 0) && (ret != -EBUSY)) {
 			LOG_ERR("Init script did not start: %d", ret);
@@ -2474,6 +2485,25 @@ static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum 
 
 	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		if ((evt == MODEM_HL78XX_EVENT_SCRIPT_FAILED) &&
+		    (data->status.lpm.power_down.shutdown_pending ||
+		     data->status.lpm.power_down.script_aborted)) {
+			/* The power down aborted the init script to take the chat
+			 * and owns the modem from here: a reset would race its
+			 * power off. If the power down is aborted, also before
+			 * this failure is handled, the timeout starts the init
+			 * script again, as after a busy entry: a command sent on
+			 * the free chat meanwhile is waited for, and a script
+			 * result is not the init script's.
+			 */
+			LOG_INF("Init script stopped for a pending power down");
+			data->status.lpm.power_down.script_aborted = false;
+			hl78xx_clear_script_failure(data);
+			hl78xx_defer_script_start(data);
+			break;
+		}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
 		break;
 

@@ -330,6 +330,12 @@ struct hl78xx_power_down_status {
 	 * back to the state machine.
 	 */
 	bool pdp_activation_held;
+	/** The power down work asked the chat to abort its script. RUN_INIT_SCRIPT
+	 * takes the failure of its script for that abort, also when the power
+	 * down has been aborted since. Cleared there, and when
+	 * hl78xx_start_state_script() starts a script.
+	 */
+	bool script_aborted;
 };
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
@@ -661,9 +667,9 @@ struct modem_event_system {
 	 */
 	atomic_t script_results_queued;
 	/* The current state waits to start its script: another script held the
-	 * chat, or a script result was still queued. Until the script starts, a
-	 * script result is not the result of that script: see
-	 * hl78xx_is_stale_script_result().
+	 * chat, a script result was still queued, or a power down stopped the
+	 * script. Until the script starts, a script result is not the result of
+	 * that script: see hl78xx_is_stale_script_result().
 	 */
 	bool script_start_deferred;
 };
