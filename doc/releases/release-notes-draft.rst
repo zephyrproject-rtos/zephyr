@@ -121,6 +121,17 @@ Libraries / Subsystems
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
 
+* Libc
+
+  * ``zephyr_write_stdout()`` no longer converts LF to CRLF. Backends that
+    convert on their own, such as the UART and EFI consoles, produce the same
+    output as before, and the duplicated carriage return seen with Newlib and
+    the UART console is gone.
+
+  * ``printf()`` output to backends that pass bytes through, such as RTT, RAM
+    console, semihosting, WCH SDI, whisper and the Bluetooth monitor, is now
+    LF-only, matching ``printk()``.
+
 Other notable changes
 *********************
 
