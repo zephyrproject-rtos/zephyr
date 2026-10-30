@@ -127,7 +127,7 @@ int i2c_stm32_suspend(const struct device *dev)
 
 	/* Disable device clock. */
 	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("failure disabling I2C clock");
 		return ret;
 	}
@@ -242,7 +242,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("failure disabling I2C clock");
 		return ret;
 	}
