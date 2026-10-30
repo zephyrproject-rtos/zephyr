@@ -1052,6 +1052,130 @@ ZTEST(workqueue_triggered, test_workq_triggered_cancel)
 	zassert_true(ret == -EINVAL, "triggered cancel failed");
 }
 
+enum sem_waiter {
+	SEM_WAITER_HIGH_WORK = 1,
+	SEM_WAITER_THREAD,
+	SEM_WAITER_LOW_WORK,
+};
+
+static K_THREAD_STACK_DEFINE(sem_high_workq_stack, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(sem_low_workq_stack, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(sem_poll_thread_stack, STACK_SIZE);
+static struct k_work_q sem_high_workq;
+static struct k_work_q sem_low_workq;
+static struct k_thread sem_poll_thread;
+static struct k_work_poll sem_high_work;
+static struct k_work_poll sem_low_work;
+static struct k_poll_event sem_high_event;
+static struct k_poll_event sem_low_event;
+static struct k_sem sem_poll_sem;
+static enum sem_waiter sem_waiters_run[3];
+static int num_sem_waiters_run;
+
+static void sem_waiter_ran(enum sem_waiter waiter)
+{
+	zassert_equal(k_sem_take(&sem_poll_sem, K_NO_WAIT), 0, "semaphore not available");
+	sem_waiters_run[num_sem_waiters_run++] = waiter;
+}
+
+static void sem_high_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	sem_waiter_ran(SEM_WAITER_HIGH_WORK);
+}
+
+static void sem_low_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	sem_waiter_ran(SEM_WAITER_LOW_WORK);
+}
+
+static void sem_poll_thread_main(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct k_poll_event event = K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
+							     K_POLL_MODE_NOTIFY_ONLY,
+							     &sem_poll_sem);
+
+	zassert_equal(k_poll(&event, 1, K_FOREVER), 0, "k_poll failed");
+	sem_waiter_ran(SEM_WAITER_THREAD);
+}
+
+/**
+ * @brief Verify triggered work and a polling thread on one object are woken in
+ * priority order.
+ *
+ * @details
+ * An object's poll events are ordered by the priority of the thread that will
+ * handle them: the polling thread itself, or the work queue thread that runs a
+ * triggered work item. Giving a semaphore signals only the first of them.
+ *
+ * Test steps:
+ * - Submit a triggered work item to a low priority work queue, then one to a
+ *   high priority work queue, both waiting on the same semaphore.
+ * - Start a thread whose priority lies between the two queues and k_poll() the
+ *   same semaphore.
+ * - Give the semaphore three times, waiting for one waiter to run each time.
+ *
+ * Expected result:
+ * - The high priority work, the polling thread and the low priority work run in
+ *   that order.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_poll_submit_to_queue()
+ * @see k_poll()
+ */
+ZTEST(workqueue_triggered, test_workq_triggered_poller_priority)
+{
+	static const enum sem_waiter expected[] = {
+		SEM_WAITER_HIGH_WORK,
+		SEM_WAITER_THREAD,
+		SEM_WAITER_LOW_WORK,
+	};
+
+	BUILD_ASSERT(ARRAY_SIZE(expected) == ARRAY_SIZE(sem_waiters_run));
+
+	num_sem_waiters_run = 0;
+	k_sem_init(&sem_poll_sem, 0, 1);
+
+	k_work_queue_start(&sem_high_workq, sem_high_workq_stack,
+			   K_THREAD_STACK_SIZEOF(sem_high_workq_stack), K_PRIO_COOP(2), NULL);
+	k_work_queue_start(&sem_low_workq, sem_low_workq_stack,
+			   K_THREAD_STACK_SIZEOF(sem_low_workq_stack), K_PRIO_PREEMPT(5), NULL);
+
+	k_work_poll_init(&sem_high_work, sem_high_work_handler);
+	k_work_poll_init(&sem_low_work, sem_low_work_handler);
+	k_poll_event_init(&sem_high_event, K_POLL_TYPE_SEM_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, &sem_poll_sem);
+	k_poll_event_init(&sem_low_event, K_POLL_TYPE_SEM_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, &sem_poll_sem);
+
+	zassert_equal(k_work_poll_submit_to_queue(&sem_low_workq, &sem_low_work,
+						  &sem_low_event, 1, K_FOREVER), 0, NULL);
+	zassert_equal(k_work_poll_submit_to_queue(&sem_high_workq, &sem_high_work,
+						  &sem_high_event, 1, K_FOREVER), 0, NULL);
+
+	k_thread_create(&sem_poll_thread, sem_poll_thread_stack,
+			K_THREAD_STACK_SIZEOF(sem_poll_thread_stack), sem_poll_thread_main,
+			NULL, NULL, NULL, K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
+	k_msleep(SUBMIT_WAIT);
+
+	for (int i = 0; i < (int)ARRAY_SIZE(expected); i++) {
+		k_sem_give(&sem_poll_sem);
+		k_msleep(SUBMIT_WAIT);
+		zassert_equal(num_sem_waiters_run, i + 1, "no waiter ran for give %d", i);
+		zassert_equal(sem_waiters_run[i], expected[i], "waiter %d ran instead of %d",
+			      sem_waiters_run[i], expected[i]);
+	}
+
+	k_thread_join(&sem_poll_thread, K_FOREVER);
+}
+
 /* The shared delayable work items are initialized here as well as in the test
  * cases that submit them, because test_workq_delayed_cancel() cancels items it
  * never initializes itself.
