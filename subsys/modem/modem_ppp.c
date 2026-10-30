@@ -22,6 +22,12 @@ LOG_MODULE_REGISTER(modem_ppp, CONFIG_MODEM_MODULES_LOG_LEVEL);
 #define MODEM_PPP_VALUE_ESCAPE		(0x20)
 #define MODEM_PPP_CODE_CONTROL		(0x03)
 
+/*
+ * Residual value of the running FCS after processing a valid frame
+ * including its FCS field (RFC 1662).
+ */
+#define MODEM_PPP_FCS_GOOD		(0xf0b8)
+
 #define UNSOLICITED_NO_CARRIER "\r\nNO CARRIER\r\n"
 static const char *unsocilicited_no_carrier = UNSOLICITED_NO_CARRIER;
 static const uint8_t unsocilicited_no_carrier_len = sizeof(UNSOLICITED_NO_CARRIER) - 1;
@@ -39,6 +45,19 @@ static uint16_t modem_ppp_fcs_update(uint16_t fcs, uint8_t byte)
 static uint16_t modem_ppp_fcs_final(uint16_t fcs)
 {
 	return fcs ^ 0xFFFF;
+}
+
+static bool modem_ppp_verify_fcs(struct modem_ppp *ppp)
+{
+	if (ppp->rx_pkt_fcs == MODEM_PPP_FCS_GOOD) {
+		return true;
+	}
+
+	LOG_DBG("Invalid FCS (0x%04x)", ppp->rx_pkt_fcs);
+#if defined(CONFIG_NET_STATISTICS_PPP)
+	ppp->stats.chkerr++;
+#endif
+	return false;
 }
 
 static uint16_t modem_ppp_ppp_protocol(struct net_pkt *pkt)
@@ -223,6 +242,8 @@ static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
 		return;
 	}
 
+	ppp->rx_pkt_fcs = modem_ppp_fcs_init(byte);
+
 	LOG_DBG("Receiving ACFC PPP frame");
 	ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
 }
@@ -265,6 +286,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			break;
 		}
 		if (byte == 0xFF) {
+			ppp->rx_pkt_fcs = modem_ppp_fcs_init(byte);
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
 			break;
 		}
@@ -284,6 +306,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 		byte ^= MODEM_PPP_VALUE_ESCAPE;
 		if (byte == 0xFF) {
 			/* Escaped Address field, not an ACFC frame */
+			ppp->rx_pkt_fcs = modem_ppp_fcs_init(byte);
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
 			break;
 		}
@@ -311,6 +334,8 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			}
 
 			LOG_DBG("Receiving PPP frame");
+			ppp->rx_pkt_fcs = modem_ppp_fcs_update(ppp->rx_pkt_fcs,
+							       MODEM_PPP_CODE_CONTROL);
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
 			net_pkt_cursor_init(ppp->rx_pkt);
 		} else {
@@ -322,6 +347,18 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 	case MODEM_PPP_RECEIVE_STATE_WRITING:
 		if (byte == MODEM_PPP_CODE_DELIMITER) {
 			LOG_DBG("Received PPP frame (len %zu)", net_pkt_get_len(ppp->rx_pkt));
+
+			if (IS_ENABLED(CONFIG_MODEM_PPP_VERIFY_FCS) &&
+			    !modem_ppp_verify_fcs(ppp)) {
+				net_pkt_unref(ppp->rx_pkt);
+				ppp->rx_pkt = NULL;
+				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+#if defined(CONFIG_NET_STATISTICS_PPP)
+				ppp->stats.drop++;
+				ppp->stats.pkts.rx++;
+#endif
+				break;
+			}
 
 			/* Remove FCS */
 			net_pkt_remove_tail(ppp->rx_pkt, MODEM_PPP_FRAME_TAIL_SIZE);
@@ -362,12 +399,17 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 #if defined(CONFIG_NET_STATISTICS_PPP)
 			ppp->stats.drop++;
 #endif
+			break;
 		}
+
+		ppp->rx_pkt_fcs = modem_ppp_fcs_update(ppp->rx_pkt_fcs, byte);
 
 		break;
 
 	case MODEM_PPP_RECEIVE_STATE_UNESCAPING:
-		if (net_pkt_write_u8(ppp->rx_pkt, (byte ^ MODEM_PPP_VALUE_ESCAPE)) < 0) {
+		byte ^= MODEM_PPP_VALUE_ESCAPE;
+
+		if (net_pkt_write_u8(ppp->rx_pkt, byte) < 0) {
 			LOG_WRN("Dropped PPP frame");
 			net_pkt_unref(ppp->rx_pkt);
 			ppp->rx_pkt = NULL;
@@ -378,6 +420,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			break;
 		}
 
+		ppp->rx_pkt_fcs = modem_ppp_fcs_update(ppp->rx_pkt_fcs, byte);
 		ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
 		break;
 	}
@@ -507,6 +550,8 @@ static size_t modem_ppp_process_received_bytes_fast(struct modem_ppp *ppp, const
 	if ((span < 2U) || (net_pkt_write(ppp->rx_pkt, data, span) < 0)) {
 		return 0;
 	}
+
+	ppp->rx_pkt_fcs = crc16_ccitt(ppp->rx_pkt_fcs, data, span);
 
 	return span;
 }
