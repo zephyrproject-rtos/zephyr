@@ -2912,10 +2912,13 @@ error:
  *
  * @param dev Pointer to the I3C device structure.
  * @param pos Position of the device in the DAA and DCT tables.
+ * @param desc_out Set to the descriptor bound to this position, or left NULL
+ *                 when the device could not be tracked.
  *
  * @return 0 on success, or a negative error code on failure.
  */
-static int add_slave_from_daa(const struct device *dev, int32_t pos)
+static int add_slave_from_daa(const struct device *dev, int32_t pos,
+			      struct i3c_device_desc **desc_out)
 {
 	struct dw_i3c_data *data = dev->data;
 	uint32_t dat_word;
@@ -2927,6 +2930,8 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 	uint64_t pid;
 	uint8_t dyn_addr;
 	uint8_t dyn_addr_parity;
+
+	*desc_out = NULL;
 
 	/* The IP records the DA it assigned in DCT.LOC4[7:0] (databook figure 2-14).
 	 * Read it from there rather than from the DAT entry the driver programmed.
@@ -3041,6 +3046,7 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 		}
 	}
 	i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, dyn_addr);
+	*desc_out = target;
 
 	return 0;
 }
@@ -3148,7 +3154,32 @@ static int dw_i3c_do_daa(const struct device *dev)
 	for (pos = find_lsb_set(newdevs); pos <= find_msb_set(newdevs); pos++) {
 		idx = pos - 1;
 		if (newdevs & BIT(idx)) {
-			add_slave_from_daa(dev, idx);
+			struct i3c_device_desc *added = NULL;
+
+			add_slave_from_daa(dev, idx, &added);
+
+			/* Silence this target only: DAA also runs at runtime for a
+			 * hot join, where a broadcast would clear these events on
+			 * every target enabled earlier while the driver still
+			 * believes they are enabled. An untracked device (descriptor
+			 * pool exhausted) keeps the HW reset defaults.
+			 *
+			 * HJ is deliberately not cleared: DISEC state outlives the
+			 * dynamic address, so disabling it here would stop the device
+			 * rejoining after a later RSTDAA.
+			 */
+			if (added != NULL) {
+				struct i3c_ccc_events disec_events = {
+					.events = I3C_CCC_EVT_INTR | I3C_CCC_EVT_CR,
+				};
+				int disec_ret = i3c_ccc_do_events_set(added, false, &disec_events);
+
+				if (disec_ret != 0) {
+					LOG_WRN("%s: post-DAA DISEC to 0x%02x failed (%d); "
+						"target may assert IBI/MR before it is expected",
+						dev->name, added->dynamic_addr, disec_ret);
+				}
+			}
 		}
 	}
 
