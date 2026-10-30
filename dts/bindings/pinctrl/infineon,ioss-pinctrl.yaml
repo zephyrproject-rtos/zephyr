@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon IOSS pin controller
+
+  The IOSS block consists of the HSIOM, which selects the peripheral
+  function of each pin, and the GPIO ports, which hold the drive mode
+  and input buffer configuration of each pin.
+
+  The node must describe both register regions, named "hsiom" and
+  "gpio":
+
+    pinctrl: pinctrl@40300000 {
+        compatible = "infineon,ioss-pinctrl";
+        reg = <0x40300000 0x4000>, <0x40310000 0x10000>;
+        reg-names = "hsiom", "gpio";
+    };
+
+  On devices with SMIF GPIO ports, the HSIOM and GPIO regions of the
+  SMIF blocks are described as "smif0_hsiom", "smif0_gpio",
+  "smif1_hsiom" and "smif1_gpio". Their pins use the port numbers
+  IFX_SMIF0_PORT0 to IFX_SMIF1_PORT2.
+
+  Pin configuration nodes set the pin and its HSIOM function with
+  DT_CAT1_PINMUX(port, pin, hsiom):
+
+    &pinctrl {
+        p9_1_scb7_uart_tx: p9_1_scb7_uart_tx {
+            pinmux = <DT_CAT1_PINMUX(9, 1, HSIOM_SEL_ACT_14)>;
+            drive-push-pull;
+        };
+    };
+
+compatible: "infineon,ioss-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+child-binding:
+  description: Infineon IOSS pin configuration node
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-high-impedance
+        - bias-pull-down
+        - bias-pull-up
+        - drive-open-drain
+        - drive-open-source
+        - drive-push-pull
+        - input-enable
+
+  properties:
+    pinmux:
+      type: int
+      required: true
+      description: |
+        Port, pin and HSIOM function, encoded with
+        DT_CAT1_PINMUX(port, pin, hsiom).
+
+    slew-rate:
+      type: string
+      enum:
+        - "fast"
+        - "slow"
+      description: |
+        Output slew rate. The current slew rate setting of the pin is
+        kept when the property is omitted.
+
+    drive-strength:
+      type: string
+      enum:
+        - "full"
+        - "seven-eighths"
+        - "three-fourths"
+        - "five-eighths"
+        - "half"
+        - "three-eighths"
+        - "one-fourth"
+        - "one-eighth"
+      description: |
+        Output drive strength as a fraction of the full drive strength.
+        The supported levels depend on the device, and an unsupported
+        level is rejected. When omitted, PSOC Edge devices use half and
+        other devices keep the current setting.
