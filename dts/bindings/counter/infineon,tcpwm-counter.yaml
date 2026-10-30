@@ -10,6 +10,11 @@ compatible: "infineon,tcpwm-counter"
 include: [base.yaml, "infineon,system-interrupts.yaml"]
 
 properties:
+  clocks:
+    required: true
+    description: |
+      Peripheral clock divider feeding the counter.
+
   external-trigger-gpios:
     type: phandle-array
     description: |

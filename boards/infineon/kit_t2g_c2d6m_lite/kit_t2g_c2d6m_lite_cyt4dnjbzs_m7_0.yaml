@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - counter
   - gpio
   - uart
 vendor: infineon

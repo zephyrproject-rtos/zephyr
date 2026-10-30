@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_peri0 {
+	status = "okay";
+};
+
+&peri0_group0_16bit_0 {
+	status = "okay";
+};
+
+&tcpwm0_1 {
+	clock-frequency = <10000>;
+	status = "okay";
+};
+
+&counter0_1 {
+	clocks = <&peri0_group0_16bit_0>;
+	status = "okay";
+};
