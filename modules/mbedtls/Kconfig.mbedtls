@@ -306,4 +306,9 @@ config MBEDTLS_X509_RSASSA_PSS_SUPPORT
 	  Enable verification of X.509 certificates signed with
 	  the RSASSA-PSS algorithm.
 
+config MBEDTLS_THREADING_ALT
+	bool "Thread support"
+	help
+	  Enable thread support based on Zephyr kernel resources.
+
 endmenu # Mbed TLS configuration
