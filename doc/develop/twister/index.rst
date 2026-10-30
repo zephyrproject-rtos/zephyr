@@ -1337,6 +1337,19 @@ Command line arguments define the initial scope in the following way:
 is used as the initial list. If nothing is left after the filtration, the ``platform_allow`` list
 is used as the initial scope.
 
+The ``--test-tree`` and ``--list-tests`` reports honor ``--platform`` and
+``--exclude-platform``, including platform aliases. When these filters are used, a test
+is listed only if its ``platform_allow`` and ``platform_exclude`` lists permit at least one
+of the selected platforms. ``--force-platform`` overrides these test metadata restrictions
+and command-line platform exclusions.
+
+When ``--platform`` selects specific targets, references to unavailable platforms in
+``platform_allow``, ``platform_exclude`` and ``integration_platforms`` do not abort test
+discovery. These entries remain part of the platform restrictions: a test allowed only on
+an unavailable board does not become unrestricted. Platforms explicitly requested with
+``--platform`` must still exist. Without explicit platform selection, or with ``--all``,
+references to unavailable platforms remain errors.
+
 Running in Integration Mode
 ***************************
 
