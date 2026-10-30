@@ -12,6 +12,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <fsl_elcdif.h>
 
 #ifdef CONFIG_HAS_MCUX_CACHE
@@ -66,6 +67,15 @@ struct mcux_elcdif_data {
 	struct mcux_elcdif_cb_data cb;
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
+	/* Last partial update written into a driver framebuffer */
+	struct {
+		uint16_t x;
+		uint16_t y;
+		uint16_t w;
+		uint16_t h;
+	} last_update;
+	/* The other driver framebuffer misses exactly last_update */
+	bool last_update_valid;
 #ifndef CONFIG_MCUX_ELCDIF_START_ON_INIT
 	bool running;
 #endif
@@ -106,6 +116,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		/* We can use the display buffer directly, no need to copy it */
 		LOG_DBG("Setting FB from %p->%p", (void *)dev_data->active_fb, (void *)buf);
 		dev_data->active_fb = buf;
+		dev_data->last_update_valid = false;
 		full_fb = true;
 	} else if ((x == 0) && (y == 0) && (desc->width == config->rgb_mode.panelHeight) &&
 		   (desc->height == config->rgb_mode.panelWidth) && (desc->pitch == desc->width) &&
@@ -115,21 +126,49 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		 */
 		LOG_DBG("Setting FB from %p->%p", (void *)dev_data->active_fb, (void *)buf);
 		dev_data->active_fb = buf;
+		dev_data->last_update_valid = false;
 		full_fb = true;
 	} else {
 		/* We must use partial framebuffer copy */
+		const size_t stride = dev_data->pixel_bytes * config->rgb_mode.panelWidth;
+		/* Rows of the next framebuffer touched below, to clean from the cache */
+		uint16_t rows_y = y;
+		uint16_t rows_end = y + desc->height;
+
 		if (CONFIG_MCUX_ELCDIF_FB_NUM == 0) {
 			LOG_ERR("Partial display refresh requires driver framebuffers");
 			return -ENOTSUP;
 		} else if (dev_data->active_fb != dev_data->fb[dev_data->next_idx]) {
 			/*
-			 * We must copy the entire current framebuffer to new
-			 * buffer, since we will change the active buffer
-			 * address
+			 * The next buffer must first catch up with the active one,
+			 * since we will change the active buffer address. When the
+			 * active one is a driver buffer, the next one only misses
+			 * the last update written into it: copy that rectangle.
 			 */
 			src = dev_data->active_fb;
 			dst = dev_data->fb[dev_data->next_idx];
-			memcpy(dst, src, dev_data->fb_bytes);
+			if (dev_data->last_update_valid) {
+				const size_t off =
+					dev_data->pixel_bytes *
+					(dev_data->last_update.y * config->rgb_mode.panelWidth +
+					 dev_data->last_update.x);
+				const size_t len = dev_data->pixel_bytes * dev_data->last_update.w;
+
+				src += off;
+				dst += off;
+				for (h_idx = 0; h_idx < dev_data->last_update.h; h_idx++) {
+					memcpy(dst, src, len);
+					src += stride;
+					dst += stride;
+				}
+				rows_y = MIN(rows_y, dev_data->last_update.y);
+				rows_end = MAX(rows_end,
+					       dev_data->last_update.y + dev_data->last_update.h);
+			} else {
+				memcpy(dst, src, dev_data->fb_bytes);
+				rows_y = 0;
+				rows_end = config->rgb_mode.panelHeight;
+			}
 		}
 		/* Now, write the display update into active framebuffer */
 		src = buf;
@@ -139,17 +178,31 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
 			memcpy(dst, src, dev_data->pixel_bytes * desc->width);
 			src += dev_data->pixel_bytes * desc->pitch;
-			dst += dev_data->pixel_bytes * config->rgb_mode.panelWidth;
+			dst += stride;
 		}
+
+		dev_data->last_update.x = x;
+		dev_data->last_update.y = y;
+		dev_data->last_update.w = desc->width;
+		dev_data->last_update.h = desc->height;
+		dev_data->last_update_valid = true;
 
 		LOG_DBG("Setting FB from %p->%p", (void *)dev_data->active_fb,
 			(void *)dev_data->fb[dev_data->next_idx]);
 		/* Set new active framebuffer */
 		dev_data->active_fb = dev_data->fb[dev_data->next_idx];
+
+#ifdef CONFIG_HAS_MCUX_CACHE
+		/* Only the rows written above are dirty in the cache */
+		DCACHE_CleanByRange((uint32_t)dev_data->active_fb + rows_y * stride,
+				    (rows_end - rows_y) * stride);
+#endif
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_CleanByRange((uint32_t)dev_data->active_fb, dev_data->fb_bytes);
+	if (full_fb) {
+		DCACHE_CleanByRange((uint32_t)dev_data->active_fb, dev_data->fb_bytes);
+	}
 #endif
 
 #ifdef CONFIG_MCUX_ELCDIF_PXP
