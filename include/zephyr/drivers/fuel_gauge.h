@@ -189,6 +189,8 @@ enum fuel_gauge_prop_type {
 	FUEL_GAUGE_STATE_OF_HEALTH,
 	/** Thermistor Voltage Sense reading (uV)  */
 	FUEL_GAUGE_THERM_VOLTAGE_UV,
+	/** Charge drawn from the battery, counted by a coulomb counter (uAh) */
+	FUEL_GAUGE_CONSUMED_CAPACITY_UAH,
 
 	/** Reserved to demark end of common fuel gauge properties */
 	FUEL_GAUGE_COMMON_COUNT,
@@ -449,6 +451,8 @@ union fuel_gauge_prop_val {
 	uint8_t state_of_health;
 	/** FUEL_GAUGE_THERM_VOLTAGE_UV */
 	uint32_t therm_voltage_uv;
+	/** FUEL_GAUGE_CONSUMED_CAPACITY_UAH */
+	uint32_t consumed_capacity_uah;
 	/** Generic integer value for downstream custom properties */
 	fuel_gauge_custom_value_int_t custom_int;
 	/** Generic unsigned value for downstream custom properties */
