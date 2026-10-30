@@ -1,5 +1,5 @@
 # Copyright (c) 2026 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_STM32H7_RENODE_REFERENCE_BOARD
+config BOARD_STM32H7_RENODE_REFERENCE_PLATFORM
 	select SOC_STM32H753XX
