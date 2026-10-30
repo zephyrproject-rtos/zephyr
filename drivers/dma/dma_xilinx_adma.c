@@ -177,6 +177,9 @@ struct __attribute__((__packed__)) dma_xilinx_adma_registers {
 
 LOG_MODULE_REGISTER(dma_xilinx_adma, CONFIG_DMA_LOG_LEVEL);
 
+BUILD_ASSERT(XILINX_ADMA_DIR_WRITE_ONLY <= DMA_CHANNEL_DIRECTION_MAX,
+	     "XILINX_ADMA_DIR_WRITE_ONLY does not fit in dma_config.channel_direction");
+
 /* global configuration per DMA device */
 struct dma_xilinx_adma_config {
 	DEVICE_MMIO_ROM;
