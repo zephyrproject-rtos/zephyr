@@ -58,6 +58,14 @@ irq_offload:
 	addi %d15, %d15, 1
 	st.w [%a15]+___cpu_t_nested_OFFSET, %d15
 
+#ifdef CONFIG_ARCH_STACKWALK
+	jne	%d15, 1, .L_stackwalk_pcxi_done
+	ld.a	%a13, [%a15]+___cpu_t_current_OFFSET
+	mfcr	%d14, TRICORE_PCXI
+	st.w	[%a13]+_thread_offset_to_saved_pcxi, %d14
+.L_stackwalk_pcxi_done:
+#endif
+
 	calli	%a5
 	j	z_tricore_irq_done
 #endif

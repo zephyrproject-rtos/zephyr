@@ -21,5 +21,6 @@ zephyr_library_sources(
     vectors.c
 )
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
+zephyr_library_sources_ifdef(CONFIG_ARCH_STACKWALK stacktrace.c)
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x0reset reset.ld)

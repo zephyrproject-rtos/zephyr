@@ -19,6 +19,13 @@ config CPU_TC162
 config CPU_TC18
 	bool
 
+config ARCH_HAS_STACKWALK
+	bool
+	default y
+	help
+	  Internal config to indicate that the arch_stack_walk() API is implemented
+	  and it can be enabled.
+
 config TRICORE_CSA_COUNT
 	int "Number of Context Save Areas allocated"
 	default 256
