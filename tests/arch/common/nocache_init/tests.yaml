@@ -1,0 +1,8 @@
+tests:
+  arch.common.nocache_init:
+    filter: CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT and not CONFIG_XIP
+    tags:
+      - cache
+      - memory
+    integration_platforms:
+      - fvp_baser_aemv8r/fvp_aemv8r_aarch32
