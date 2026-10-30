@@ -5,6 +5,7 @@ board:
   socs:
     - name: qemu_virt_riscv32
       variants:
+        - name: smode
         - name: smp
         - name: aia-imsic
           variants:
