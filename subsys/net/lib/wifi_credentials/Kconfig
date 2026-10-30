@@ -18,7 +18,6 @@ source "subsys/logging/Kconfig.template.log_config"
 choice WIFI_CREDENTIALS_BACKEND
 	prompt "WiFi credentials backend"
 	default WIFI_CREDENTIALS_BACKEND_PSA_PS if BUILD_WITH_TFM || SECURE_STORAGE
-	default WIFI_CREDENTIALS_BACKEND_PSA if BUILD_WITH_TFM
 	default WIFI_CREDENTIALS_BACKEND_SETTINGS
 	default WIFI_CREDENTIALS_BACKEND_NONE if WIFI_CREDENTIALS_STATIC
 	help
@@ -31,8 +30,13 @@ config WIFI_CREDENTIALS_BACKEND_SETTINGS
 	depends on !SETTINGS_NONE
 
 config WIFI_CREDENTIALS_BACKEND_PSA
-	bool "PSA Crypto persistent keys"
+	bool "PSA Crypto persistent keys [DEPRECATED]"
 	depends on BUILD_WITH_TFM
+	select DEPRECATED
+	help
+	  Store credentials as persistent keys using the PSA Crypto API.
+	  This option is deprecated, use WIFI_CREDENTIALS_BACKEND_PSA_PS instead.
+	  Enable it only to keep using credentials stored by it.
 
 config WIFI_CREDENTIALS_BACKEND_PSA_PS
 	bool "PSA Protected Storage entries"
