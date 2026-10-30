@@ -135,6 +135,18 @@ uart4: &scb4 {
 	status = "okay";
 };
 
+/* PWM (TCPWM0 counter 6, 32-bit: line output on P5.0) */
+&tcpwm0_6 {
+	status = "okay";
+};
+
+&pwm0_6 {
+	clocks = <&peri0_group0_16bit_2>;
+	pinctrl-0 = <&p5_0_pwm0_6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 /* Peripheral clock dividers */
 &peri0_group4_8bit_0 {
 	clock-div = <86>;
@@ -148,6 +160,11 @@ uart4: &scb4 {
 
 &peri0_group4_16_5bit_0 {
 	clock-div = <1>;
+	status = "okay";
+};
+
+&peri0_group0_16bit_2 {
+	clock-div = <100>;
 	status = "okay";
 };
 
