@@ -364,11 +364,11 @@ __net_socket struct net_context {
 #endif
 #if defined(CONFIG_NET_CONTEXT_RCVBUF)
 		/** Receive buffer maximum size */
-		uint16_t rcvbuf;
+		uint32_t rcvbuf;
 #endif
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
 		/** Send buffer maximum size */
-		uint16_t sndbuf;
+		uint32_t sndbuf;
 #endif
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 		/**
