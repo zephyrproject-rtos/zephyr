@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Andes Technology Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <riscv/andes/andes_v5_ae350.dtsi>
+
+/ {
+	cpus {
+		/delete-node/ cpu@1;
+		/delete-node/ cpu@2;
+		/delete-node/ cpu@3;
+		/delete-node/ cpu@4;
+		/delete-node/ cpu@5;
+		/delete-node/ cpu@6;
+		/delete-node/ cpu@7;
+	};
+};
+
+/delete-node/ &l2_cache;
+
+&cpu0 {
+	compatible = "andestech,n225", "andestech,andescore-v5", "riscv";
+	mmu-type = "riscv,none";
+	riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbc", "zbs", "xandes";
+};
+
+&plic0 {
+	interrupts-extended = <&cpu0_intc 11>;
+};
+
+&mtimer {
+	interrupts-extended = <&cpu0_intc 7>;
+};
+
+&plic_sw {
+	interrupts-extended = <&cpu0_intc 3>;
+};

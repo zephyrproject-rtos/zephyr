@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2026 Andes Technology Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <riscv/andes/andes_v5_ae350.dtsi>
+
+&cpu0 {
+	compatible = "andestech,ax46", "andestech,andescore-v5", "riscv";
+	mmu-type = "riscv,sv39";
+	riscv,isa-base = "rv64i";
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbc", "zbs", "xandes";
+};
+
+&cpu1 {
+	compatible = "andestech,ax46", "andestech,andescore-v5", "riscv";
+	mmu-type = "riscv,sv39";
+	riscv,isa-base = "rv64i";
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbc", "zbs", "xandes";
+};
+
+&cpu2 {
+	compatible = "andestech,ax46", "andestech,andescore-v5", "riscv";
+	mmu-type = "riscv,sv39";
+	riscv,isa-base = "rv64i";
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbc", "zbs", "xandes";
+};
+
+&cpu3 {
+	compatible = "andestech,ax46", "andestech,andescore-v5", "riscv";
+	mmu-type = "riscv,sv39";
+	riscv,isa-base = "rv64i";
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbc", "zbs", "xandes";
+};
+
+&cpu4 {
+	compatible = "andestech,ax46", "andestech,andescore-v5", "riscv";
+	mmu-type = "riscv,sv39";
+	riscv,isa-base = "rv64i";
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbc", "zbs", "xandes";
+};
+
+&cpu5 {
+	compatible = "andestech,ax46", "andestech,andescore-v5", "riscv";
+	mmu-type = "riscv,sv39";
+	riscv,isa-base = "rv64i";
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbc", "zbs", "xandes";
+};
+
+&cpu6 {
+	compatible = "andestech,ax46", "andestech,andescore-v5", "riscv";
+	mmu-type = "riscv,sv39";
+	riscv,isa-base = "rv64i";
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbc", "zbs", "xandes";
+};
+
+&cpu7 {
+	compatible = "andestech,ax46", "andestech,andescore-v5", "riscv";
+	mmu-type = "riscv,sv39";
+	riscv,isa-base = "rv64i";
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+			       "zba", "zbb", "zbc", "zbs", "xandes";
+};
+
+&l2_cache {
+	status = "okay";
+};
