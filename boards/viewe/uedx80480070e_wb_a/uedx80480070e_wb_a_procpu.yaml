@@ -1,0 +1,19 @@
+identifier: uedx80480070e_wb_a/esp32s3/procpu
+name: VIEWE UEDX80480070E-WB-A PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - dma
+  - input
+  - display
+  - sdhc
+vendor: viewe
