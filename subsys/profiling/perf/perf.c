@@ -1,7 +1,9 @@
 /*
  *  Copyright (c) 2023 KNS Group LLC (YADRO)
  *  Copyright (c) 2020 Yonatan Goldschmidt <yon.goldschmidt@gmail.com>
- *  Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ *  SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its
+ *  SPDX-FileCopyrightText: affiliates <open-source-office@arm.com>
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +16,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "event/internal.h"
 
 /*
  * Return the number of captured frames, zero when the buffer is too small,
@@ -233,10 +237,14 @@ static void perf_dwork_handler(struct k_work *work)
 	} else {
 		shell_print(perf_data_ptr->sh, "Perf done!");
 	}
+
+	z_perf_session_release(PERF_SESSION_RECORD);
 }
 
 static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 {
+	int ret;
+
 	if (k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_warn(sh, "Perf is running");
 		return -EINPROGRESS;
@@ -255,6 +263,14 @@ static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 		target_thread = (k_tid_t)strtoul(argv[3], NULL, 16);
 		shell_print(sh, "Tracing thread: %p", target_thread);
 	}
+
+	ret = z_perf_session_claim(PERF_SESSION_RECORD);
+	if (ret != 0) {
+		shell_warn(sh, "Perf is running");
+		return -EINPROGRESS;
+	}
+
+	z_perf_stat_shell_clear_result();
 
 	perf_data.sh = sh;
 	perf_data.target_thread = target_thread;
@@ -279,7 +295,7 @@ static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 static int cmd_perf_clear(const struct shell *sh, size_t argc, char **argv)
 {
 	if (sh != NULL) {
-		if (k_work_delayable_is_pending(&perf_data.dwork)) {
+		if (z_perf_session_is_active() || k_work_delayable_is_pending(&perf_data.dwork)) {
 			shell_warn(sh, "Perf is running");
 			return -EINPROGRESS;
 		}
@@ -288,13 +304,14 @@ static int cmd_perf_clear(const struct shell *sh, size_t argc, char **argv)
 
 	perf_data.idx = 0;
 	perf_data.buf_full = false;
+	z_perf_stat_shell_clear_result();
 
 	return 0;
 }
 
 static int cmd_perf_info(const struct shell *sh, size_t argc, char **argv)
 {
-	if (k_work_delayable_is_pending(&perf_data.dwork)) {
+	if (z_perf_session_is_active() || k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_print(sh, "Perf is running");
 	}
 
@@ -306,9 +323,12 @@ static int cmd_perf_info(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 {
-	if (k_work_delayable_is_pending(&perf_data.dwork)) {
+	if (z_perf_session_is_active() || k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_warn(sh, "Perf is running");
 		return -EINPROGRESS;
+	}
+	if (z_perf_stat_shell_has_result()) {
+		return z_perf_stat_shell_print_result(sh, true);
 	}
 
 	shell_print(sh, "Perf buf length %zu", perf_data.idx);
@@ -326,10 +346,9 @@ static int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 	"Usage: record <duration> <frequency> [thread_id]\n"                                       \
 	"  thread_id: optional thread ID in hex format to trace specific thread"
 
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	m_sub_perf, SHELL_CMD_ARG(record, NULL, CMD_HELP_RECORD, cmd_perf_record, 3, 1),
-	SHELL_CMD_ARG(printbuf, NULL, "Print the perf buffer", cmd_perf_print, 0, 0),
-	SHELL_CMD_ARG(clear, NULL, "Clear the perf buffer", cmd_perf_clear, 0, 0),
-	SHELL_CMD_ARG(info, NULL, "Print the perf info", cmd_perf_info, 0, 0),
-	SHELL_SUBCMD_SET_END);
+SHELL_SUBCMD_SET_CREATE(m_sub_perf, (perf));
+SHELL_SUBCMD_ADD((perf), record, NULL, CMD_HELP_RECORD, cmd_perf_record, 3, 1);
+SHELL_SUBCMD_ADD((perf), printbuf, NULL, "Print the perf buffer", cmd_perf_print, 0, 0);
+SHELL_SUBCMD_ADD((perf), clear, NULL, "Clear the perf buffer", cmd_perf_clear, 0, 0);
+SHELL_SUBCMD_ADD((perf), info, NULL, "Print the perf info", cmd_perf_info, 0, 0);
 SHELL_CMD_ARG_REGISTER(perf, &m_sub_perf, "Lightweight profiler", NULL, 0, 0);

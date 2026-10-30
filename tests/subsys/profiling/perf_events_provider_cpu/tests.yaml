@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  profiling.perf_events.provider.cpu:
+    tags:
+      - perf
+      - profiling
+      - pmu
+    # The hardware-backed CPU provider requires an ARMv8-A PMUv3 core.
+    filter: CONFIG_ARM64_PMUV3
+    integration_platforms:
+      - versalnet_apu
+      - versalnet_apu/amd_versalnet_apu/smp
+      - versal_apu
+    platform_allow:
+      - versalnet_apu
+      - versalnet_apu/amd_versalnet_apu/smp
+      - versal_apu
+      - versal_apu/versal_apu/smp
