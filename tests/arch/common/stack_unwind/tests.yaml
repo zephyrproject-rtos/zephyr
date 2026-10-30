@@ -117,3 +117,41 @@ tests:
     # two extra func1 frames at the start; the regex expects the alternating
     # func1/func2 pattern but gets func1/func1/func2 instead.
     filter: not CONFIG_RISCV_S_MODE
+  arch.common.stack_unwind.tricore:
+    arch_allow: tricore
+    integration_platforms:
+      - qemu_tc4x
+      - qemu_tc3x
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: call trace:"
+        - "E:\\s+\\d+: 0x[0-9a-f]+"
+        - "E:\\s+\\d+: 0x[0-9a-f]+"
+  arch.common.stack_unwind.tricore_api:
+    arch_allow: tricore
+    integration_platforms:
+      - qemu_tc4x
+      - qemu_tc3x
+    extra_args: EXTRA_CFLAGS=-DSTACK_WALK_API_TEST
+    extra_configs:
+      - CONFIG_SYMTAB=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "CUR: api_walk_here api_level2 api_level1"
+        - "THR: ok"
+        - "STOP: count=3 calls=4 after=0"
+  arch.common.stack_unwind.tricore_zero:
+    arch_allow: tricore
+    integration_platforms:
+      - qemu_tc4x
+      - qemu_tc3x
+    extra_args: EXTRA_CFLAGS=-DSTACK_WALK_API_TEST
+    extra_configs:
+      - CONFIG_ARCH_STACKWALK_MAX_FRAMES=0
+      - CONFIG_SYMTAB=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "ZERO: count=0"

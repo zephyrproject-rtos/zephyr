@@ -9,7 +9,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/fatal_types.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/arch/arch_interface.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/tricore/exception.h>
+#ifdef CONFIG_SYMTAB
+#include <zephyr/debug/symtab.h>
+#endif
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -103,6 +108,33 @@ static const char *const z_tricore_trap_cause_str(uint8_t trap_class, uint8_t ti
 	return trap_class_cause_str[trap_class][tin];
 }
 
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+static bool print_trace_address(void *cookie, unsigned long addr)
+{
+	int *idx = cookie;
+
+#ifdef CONFIG_SYMTAB
+	uint32_t offset = 0;
+	const char *name = symtab_find_symbol_name(addr, &offset);
+
+	EXCEPTION_DUMP("     %2d: 0x%08lx [%s+0x%x]", (*idx)++, addr, name, offset);
+#else
+	EXCEPTION_DUMP("     %2d: 0x%08lx", (*idx)++, addr);
+#endif
+
+	return true;
+}
+
+static void print_stacktrace(const struct arch_esf *esf)
+{
+	int idx = 0;
+
+	EXCEPTION_DUMP("call trace:");
+	arch_stack_walk(print_trace_address, &idx, _current, esf);
+	EXCEPTION_DUMP("");
+}
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
+
 void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower)
 {
 #if CONFIG_EXCEPTION_DEBUG
@@ -132,6 +164,12 @@ void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower)
 			upper->d14, upper->d15);
 		LOG_ERR("PC:  %08x SP:  %08x PSW: %08x PCXI: %08x", lower->a11, upper->a10,
 			upper->psw, upper->pcxi);
+	}
+#endif
+
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+	if (lower != NULL) {
+		print_stacktrace(lower);
 	}
 #endif
 
