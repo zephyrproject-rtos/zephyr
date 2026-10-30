@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	/* Arduino D10 (SPI CS) -> gpioa 15 on SDP-K1. */
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	admt4000: admt4000@0 {
+		compatible = "adi,admt4000";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		adi,vdd-variant = <0>;
+		/* Arduino D4 (COIL_RS on EVAL-ADMT4000ARD1Z) drives the GMR coil reset. */
+		coil-rs-gpios = <&gpiog 9 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/*
+ * EVAL-ADMT4000ARD1Z coil-driver power rails. These are evaluation-board
+ * controls (not part of the ADMT4000 device), so they are enabled here at the
+ * board level via GPIO hogs:
+ *   V_EN high, SHDN_N released (high), so the coil driver is powered.
+ * A3 (V_EN) -> gpioc 1, A1 (SHDN_N) -> gpioa 4 on adi_sdp_k1.
+ */
+&gpioc {
+	admt4000_v_en {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "admt4000-v-en";
+	};
+};
+
+&gpioa {
+	admt4000_shdn_n {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "admt4000-shdn-n";
+	};
+};
