@@ -1,0 +1,10 @@
+/*
+ * Copyright (C) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mchp_sodimm_gmac {
+	pinctrl-0 = <&mchp_sodimm_pinctrl_rgmii_default>;
+	pinctrl-names = "default";
+};
