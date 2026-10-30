@@ -240,7 +240,7 @@ static int stm32_digi_temp_pm_action(const struct device *dev, enum pm_device_ac
 		stm32_digi_temp_disable(dev);
 		/* Stop device clock */
 		err = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken);
-		if (err != 0) {
+		if (err != 0 && err != -ENOTSUP) {
 			LOG_ERR("Could not disable DTS clock");
 			return err;
 		}
