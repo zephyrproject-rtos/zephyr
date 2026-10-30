@@ -1,0 +1,53 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STMicroelectronics STPMIC1 power management IC
+
+  The outputs are defined as children nodes, named after the STPMIC1 outputs:
+  buck1 to buck4, ldo1 to ldo6, vref_ddr, boost, pwr_sw1 and pwr_sw2.
+
+  Only the output voltage and the enable state are handled, plus the active
+  discharge of pwr_sw1 and pwr_sw2. vref_ddr, boost, pwr_sw1 and pwr_sw2 have no
+  selectable voltage.
+
+  The driver waits for the output ramp time after enabling an output or
+  changing its voltage.
+
+compatible: "st,stpmic1"
+
+include: [base.yaml, i2c-device.yaml]
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-name
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-boot-off
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microvolt
+        - regulator-active-discharge
+
+examples:
+  - |
+    pmic@33 {
+      compatible = "st,stpmic1";
+      reg = <0x33>;
+
+      buck1 {
+        regulator-name = "vddcpu";
+        regulator-min-microvolt = <1250000>;
+        regulator-max-microvolt = <1350000>;
+        regulator-always-on;
+      };
+
+      ldo6 {
+        regulator-name = "v1v8_periph";
+        regulator-min-microvolt = <1800000>;
+        regulator-max-microvolt = <1800000>;
+        regulator-boot-on;
+      };
+    };
