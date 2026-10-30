@@ -20,7 +20,8 @@ Summary of the logging features:
 - Deferred logging reduces the time needed to log a message by shifting time
   consuming operations to a known context, instead of processing and sending
   the log message when called.
-- Multiple backends supported (up to 9 backends).
+- Multiple backends supported (up to 9 backends with runtime filtering, 8 if a
+  frontend is also used, and up to 32 backends without runtime filtering).
 - Custom frontend support, which can work together with standard backends.
 - Compile time filtering on module level.
 - Independent runtime filtering for each backend.

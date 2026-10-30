@@ -11,3 +11,7 @@ tests:
   logging.backend.limit.frontend:
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
+  logging.backend.limit.no_runtime_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=n
+      - CONFIG_LOG_RUNTIME_FILTERING=n
