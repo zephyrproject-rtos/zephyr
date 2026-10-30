@@ -1052,7 +1052,7 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
  * @retval -ENOSYS Transfer async is not implemented.
  * @retval -EWOULDBLOCK Device is temporarily busy doing another transfer.
  */
-static inline int i2c_transfer_cb(const struct device *dev,
+__deprecated static inline int i2c_transfer_cb(const struct device *dev,
 				  struct i2c_msg *msgs,
 				  uint8_t num_msgs,
 				  uint16_t addr,
@@ -1092,7 +1092,7 @@ static inline int i2c_transfer_cb(const struct device *dev,
  *
  * @return a value from i2c_transfer_cb()
  */
-static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
+__deprecated static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
 				struct i2c_msg *msgs,
 				uint8_t num_msgs,
 				i2c_callback_t cb,
@@ -1123,7 +1123,7 @@ static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
  *
  * @return 0 on success, negative errno value on failure.
  */
-static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *msgs,
+__deprecated static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr, const void *write_buf,
 				 size_t num_write, void *read_buf, size_t num_read,
 				 i2c_callback_t cb, void *userdata)
@@ -1164,10 +1164,10 @@ static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *ms
  *
  * @return a value from i2c_write_read_cb()
  */
-static inline int i2c_write_read_cb_dt(const struct i2c_dt_spec *spec, struct i2c_msg *msgs,
-				       uint8_t num_msgs, const void *write_buf, size_t num_write,
-				       void *read_buf, size_t num_read, i2c_callback_t cb,
-				       void *userdata)
+__deprecated static inline int i2c_write_read_cb_dt(const struct i2c_dt_spec *spec,
+					struct i2c_msg *msgs, uint8_t num_msgs,
+					const void *write_buf, size_t num_write, void *read_buf,
+					size_t num_read, i2c_callback_t cb, void *userdata)
 {
 	return i2c_write_read_cb(spec->bus, msgs, num_msgs, spec->addr, write_buf, num_write,
 				 read_buf, num_read, cb, userdata);
@@ -1200,7 +1200,7 @@ void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userda
  * @retval -ENOSYS Transfer async is not implemented.
  * @retval -EWOULDBLOCK Device is temporarily busy doing another transfer.
  */
-static inline int i2c_transfer_signal(const struct device *dev,
+__deprecated static inline int i2c_transfer_signal(const struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs,
 				 uint16_t addr,
