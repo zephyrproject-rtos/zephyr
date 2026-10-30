@@ -160,9 +160,12 @@ Limitations
 ===========
 
 * The protocol blocks a port in software. A device that forwards frames between its ports in
-  hardware cannot be blocked that way, so the protocol does not start on a bridge with such a
-  port: DSA switch user ports, and devices that report the
-  :c:enumerator:`ETHERNET_HW_PORT_FORWARDING` capability, such as the ADIN2111.
+  hardware, a DSA switch user port or a device that reports the
+  :c:enumerator:`ETHERNET_HW_PORT_FORWARDING` capability such as the ADIN2111, cannot be
+  blocked that way. The protocol runs on such a port only when its device also reports the
+  :c:enumerator:`ETHERNET_HW_STP_PORT_STATE` capability: the protocol then passes every port
+  state change (:c:enum:`ethernet_stp_port_state`) and FDB flush to the device, which traps
+  the BPDUs to the host. Otherwise the protocol does not start on a bridge with such a port.
 * A bridge with a single port does not receive frames, BPDUs included.
 * BPDUs are not forwarded, also while the protocol is off.
 * MSTP and the BPDU and root guards are not supported.

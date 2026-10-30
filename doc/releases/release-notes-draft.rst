@@ -144,7 +144,9 @@ Libraries / Subsystems
       changes, a new root bridge and the start of a topology change. The protocol does not
       run on ports that forward frames in hardware, DSA switch ports and Ethernet devices that
       report the new :c:enumerator:`ETHERNET_HW_PORT_FORWARDING` capability, as it cannot
-      block them.
+      block them, unless the device also reports the new
+      :c:enumerator:`ETHERNET_HW_STP_PORT_STATE` capability and takes the port state and FDB
+      flushes from the protocol.
 
 Other notable changes
 *********************

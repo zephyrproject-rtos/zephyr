@@ -207,6 +207,12 @@ enum ethernet_hw_caps {
 
 	/** The device forwards frames between its ports in hardware */
 	ETHERNET_HW_PORT_FORWARDING	= BIT(21),
+
+	/** The device applies a spanning tree port state to its hardware
+	 *  forwarding and passes BPDUs to the host, see
+	 *  @ref ethernet_stp_port_state.
+	 */
+	ETHERNET_HW_STP_PORT_STATE	= BIT(22),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -233,6 +239,8 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT,
 	ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT,
 	ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM,
+	ETHERNET_CONFIG_TYPE_STP_PORT_STATE,
+	ETHERNET_CONFIG_TYPE_FDB_FLUSH,
 };
 
 enum ethernet_qav_param_type {
@@ -515,6 +523,25 @@ enum ethernet_checksum_support {
 	ETHERNET_CHECKSUM_SUPPORT_UDP			= NET_IF_CHECKSUM_UDP_BIT,
 };
 
+/**
+ * @brief Spanning tree state of a port that forwards in hardware
+ *
+ * The Ethernet bridge sets it with ETHERNET_CONFIG_TYPE_STP_PORT_STATE on a
+ * port whose device reports ETHERNET_HW_STP_PORT_STATE, and asks the device
+ * to remove the addresses it learned on the port with
+ * ETHERNET_CONFIG_TYPE_FDB_FLUSH. In every state the device passes the BPDUs
+ * received on the port to the host and sends the ones the host gives it.
+ * A port not under the spanning tree protocol is in the forwarding state.
+ */
+enum ethernet_stp_port_state {
+	/** Neither learn source addresses nor forward frames */
+	ETHERNET_STP_PORT_STATE_DISCARDING,
+	/** Learn source addresses, do not forward frames */
+	ETHERNET_STP_PORT_STATE_LEARNING,
+	/** Learn source addresses and forward frames */
+	ETHERNET_STP_PORT_STATE_FORWARDING,
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 struct ethernet_config {
@@ -537,6 +564,8 @@ struct ethernet_config {
 		struct ethernet_filter filter;
 
 		uint16_t extra_tx_pkt_headroom;
+
+		enum ethernet_stp_port_state stp_port_state;
 	} /**< Value for the selected Ethernet configuration type */;
 };
 
