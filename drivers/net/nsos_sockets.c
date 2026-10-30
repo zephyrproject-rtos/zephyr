@@ -275,25 +275,31 @@ static ssize_t nsos_write(void *obj, const void *buf, size_t sz)
 static int nsos_close(void *obj)
 {
 	struct nsos_socket *sock = obj;
-	struct nsos_socket_poll *poll;
+	struct nsos_socket_poll *poll = &sock->poll;
 	k_spinlock_key_t key;
 	int ret;
 
-	ret = nsi_host_close(sock->poll.mid.fd);
-	if (ret < 0) {
-		errno = nsos_adapt_get_zephyr_errno();
-	}
-
+	/*
+	 * Drop a pending poll before the host descriptor is closed: closing it
+	 * removes it from epoll behind our back, the host can hand the same
+	 * number to the next socket, and the socket memory is freed below.
+	 */
 	key = k_spin_lock(&nsos_polls_lock);
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&nsos_polls, poll, node) {
-		if (poll == &sock->poll) {
-			poll->mid.revents = ZSOCK_POLLHUP;
-			poll->mid.cb(&poll->mid);
-		}
+	if (sys_dnode_is_linked(&poll->node)) {
+		nsos_adapt_poll_remove(&poll->mid);
+		sys_dlist_remove(&poll->node);
+
+		poll->mid.revents = ZSOCK_POLLHUP;
+		poll->mid.cb(&poll->mid);
 	}
 
 	k_spin_unlock(&nsos_polls_lock, key);
+
+	ret = nsi_host_close(poll->mid.fd);
+	if (ret < 0) {
+		errno = nsos_adapt_get_zephyr_errno();
+	}
 
 	nsi_host_free(sock);
 
