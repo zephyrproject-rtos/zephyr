@@ -1,7 +1,12 @@
+common:
+  filter: not CONFIG_NEWLIB_LIBC
+  min_flash: 34
+  tags: json
+  integration_platforms:
+    - native_sim
 tests:
-  libraries.encoding.json:
-    filter: not CONFIG_NEWLIB_LIBC
-    min_flash: 34
-    tags: json
-    integration_platforms:
-      - native_sim
+  libraries.encoding.json: {}
+  libraries.encoding.json.high_precision:
+    extra_configs:
+      - CONFIG_JSON_FLOAT_PRECISION=10
+      - CONFIG_JSON_DOUBLE_PRECISION=17
