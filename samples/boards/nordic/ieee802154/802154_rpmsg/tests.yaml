@@ -5,6 +5,8 @@ sample:
 tests:
   sample.boards.nrf.802154_rpmsg:
     build_only: true
-    platform_allow:
+    qualifiers_allow:
+      - nrf5340/cpunet
+    integration_platforms:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340bsim/nrf5340/cpunet

@@ -62,42 +62,62 @@ tests:
       - DTC_OVERLAY_FILE="configs/audiopll.overlay"
   sample.boards.nrfx.clock_control.hfclk:
     filter: dt_nodelabel_enabled("hfclk")
-    platform_allow:
+    qualifiers_allow:
+      - nrf52840
+    integration_platforms:
       - nrf52840dk/nrf52840
     extra_args:
       - CONF_FILE="configs/nrfx_clock.conf"
       - DTC_OVERLAY_FILE="configs/nrfx_hfclk.overlay"
   sample.boards.nrfx.clock_control.lfclk:
     filter: dt_nodelabel_enabled("lfclk")
-    platform_allow:
+    qualifiers_allow:
+      - nrf54l15/cpuapp
+    platform_exclude:
+      - nrf54l15bsim/nrf54l15/cpuapp
+    integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       - CONF_FILE="configs/nrfx_clock.conf"
       - DTC_OVERLAY_FILE="configs/nrfx_lfclk.overlay"
   sample.boards.nrfx.clock_control.xo:
     filter: dt_nodelabel_enabled("xo")
-    platform_allow:
+    qualifiers_allow:
+      - nrf54l15/cpuapp
+    platform_exclude:
+      - nrf54l15bsim/nrf54l15/cpuapp
+    integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       - CONF_FILE="configs/nrfx_clock.conf"
       - DTC_OVERLAY_FILE="configs/nrfx_xo.overlay"
   sample.boards.nrfx.clock_control.hfclk192m:
     filter: dt_nodelabel_enabled("hfclk192m")
-    platform_allow:
+    qualifiers_allow:
+      - nrf5340/cpuapp
+    platform_exclude:
+      - nrf5340bsim/nrf5340/cpuapp
+    integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
     extra_args:
       - CONF_FILE="configs/nrfx_clock.conf"
       - DTC_OVERLAY_FILE="configs/nrfx_hfclk192m.overlay"
   sample.boards.nrfx.clock_control.xo24m:
     filter: dt_nodelabel_enabled("xo24m")
-    platform_allow:
+    qualifiers_allow:
+      - nrf54lm20b/cpuapp
+    integration_platforms:
       - nrf54lm20dk/nrf54lm20b/cpuapp
     extra_args:
       - CONF_FILE="configs/nrfx_clock.conf"
       - DTC_OVERLAY_FILE="configs/nrfx_xo24m.overlay"
   sample.boards.nrfx.clock_control.hfclkaudio:
     filter: dt_nodelabel_enabled("hfclkaudio")
-    platform_allow:
+    qualifiers_allow:
+      - nrf5340/cpuapp
+    platform_exclude:
+      - nrf5340bsim/nrf5340/cpuapp
+    integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
     extra_args:
       - CONF_FILE="configs/nrfx_clock.conf"
