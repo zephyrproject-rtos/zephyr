@@ -1218,6 +1218,8 @@ int net_ipv6_addr_generate_iid(struct net_if *iface,
 				tmp_addr.s6_addr[13] = 0U;
 				tmp_addr.s6_addr[14] = lladdr->addr[0];
 				tmp_addr.s6_addr[15] = lladdr->addr[1];
+			} else {
+				return -EINVAL;
 			}
 
 			break;
@@ -1245,6 +1247,11 @@ int net_ipv6_addr_generate_iid(struct net_if *iface,
 			memcpy(&tmp_addr.s6_addr[8], lladdr->addr, lladdr->len);
 			tmp_addr.s6_addr[8] ^= 0x02;
 			break;
+		default:
+			/* No interface identifier can be formed from the link
+			 * address, for example when the interface has none.
+			 */
+			return -EINVAL;
 		}
 	}
 

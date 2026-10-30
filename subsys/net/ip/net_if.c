@@ -6806,6 +6806,14 @@ static void notify_iface_up(struct net_if *iface)
 	    IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 	    (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)))	{
 		/* CAN does not require link address. */
+	} else if (IS_ENABLED(CONFIG_NET_L2_DUMMY) &&
+		   net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY) &&
+		   (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
+		    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND))) {
+		/* Dummy L2 has no link layer addressing, and without IPv6
+		 * neighbor discovery no IPv6 address is derived from the
+		 * link address.
+		 */
 	} else {
 		if (!net_if_is_offloaded(iface)) {
 			NET_ASSERT(net_if_get_link_addr(iface) != NULL &&
