@@ -387,6 +387,54 @@ Then when the particular instance is declared:
 Note the use of ``DEVICE_DECLARE()`` to avoid a circular dependency on providing
 the IRQ handler argument and the definition of the device itself.
 
+Promising the Device Identity to the Compiler
+=============================================
+
+API functions are called through the function pointers of the API structure,
+so the compiler does not know which device object ``dev`` points to, even when
+the driver has a single instance. :c:macro:`DEVICE_DT_INST_ASSUME` promises the
+compiler that ``dev`` is one of the devices the driver defined for its
+``DT_DRV_COMPAT``. When only one node is enabled, the compiler can then replace
+``dev->config``, ``dev->data`` and the loads from the ``const`` configuration
+structure with constants. With several enabled nodes the promise normally costs
+nothing.
+
+Place it as the first statement of the API function, before any declaration
+that reads ``dev``, since some compilers only use the promise for the code that
+follows it:
+
+.. code-block:: C
+
+  static int iwdg_stm32_feed(const struct device *dev, int channel_id)
+  {
+        DEVICE_DT_INST_ASSUME(dev);
+
+        const struct iwdg_stm32_config *cfg = dev->config;
+
+        ARG_UNUSED(channel_id);
+        LL_IWDG_ReloadCounter(cfg->instance);
+
+        return 0;
+  }
+
+A driver that serves several compatibles lists all of them with
+:c:macro:`DEVICE_DT_ASSUME_COMPAT`, for example
+``DEVICE_DT_ASSUME_COMPAT(dev, vnd_foo, vnd_foo_v2);``.
+
+.. warning::
+
+  The promise is an optimizer hint only. It is never checked at run time, not
+  even with :kconfig:option:`CONFIG_ASSERT`, and the behavior is undefined if
+  it does not hold. Only use it in functions that are reached exclusively
+  through the device objects the driver defines, such as its own API functions
+  and interrupt handlers.
+  Do not use it when the API structure is shared with another compatible or
+  another source file, when devices for the API are also created with
+  :c:macro:`DEVICE_DEFINE` or outside the driver, or when the function may be
+  called with other devices such as a parent or bus. Every enabled node of
+  every listed compatible must result in a device object, otherwise the build
+  fails to link.
+
 Initialization Levels
 *********************
 
