@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Charles Dias.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADI_GMSL2_CAMERA_BRIDGE
+	def_bool $(shields_list_contains,adi_gmsl2_camera_bridge)

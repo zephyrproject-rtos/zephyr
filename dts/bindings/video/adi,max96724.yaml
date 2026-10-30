@@ -1,0 +1,46 @@
+#
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: ADI MAX96724 GMSL2 Deserializer
+
+compatible: "adi,max96724"
+
+include: i2c-device.yaml
+
+child-binding:
+  child-binding:
+    properties:
+      reg:
+        type: int
+        required: true
+
+      phy-id:
+        type: int
+        enum:
+          - 0  # ADI_GMSL_PHY_0
+          - 1  # ADI_GMSL_PHY_1
+          - 2  # ADI_GMSL_PHY_2
+          - 3  # ADI_GMSL_PHY_3
+        description: |
+          CSI-2 D-PHY index for this CSI-2 output port. Use the named
+          constants from dt-bindings/video/adi-gmsl.h (ADI_GMSL_PHY_0
+          through ADI_GMSL_PHY_3). Which PHY is active depends on the board
+          PCB routing between the MAX96724 and the SoC CSI-2 receiver.
+
+      link-id:
+        type: int
+        enum:
+          - 0  # ADI_GMSL_LINK_A
+          - 1  # ADI_GMSL_LINK_B
+          - 2  # ADI_GMSL_LINK_C
+          - 3  # ADI_GMSL_LINK_D
+        description: |
+          GMSL link index for this GMSL input port. Use the named constants
+          from dt-bindings/video/adi-gmsl.h (ADI_GMSL_LINK_A through
+          ADI_GMSL_LINK_D). Which link is active depends on which coax
+          connector the serializer is physically wired to on the board.
+
+    child-binding:
+      include: video-interfaces.yaml

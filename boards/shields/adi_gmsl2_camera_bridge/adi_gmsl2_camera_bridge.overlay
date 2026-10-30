@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2026 Charles Dias
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * ADI GMSL2 Camera Bridge: MAX96724 (deserializer) + 1x MAX96717 (serializer).
+ *
+ * This shield is camera-agnostic. Combine with a camera sensor shield and a
+ * sample overlay that wires the sensor to the MAX96717 serializer input.
+ *
+ */
+
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+#include <dt-bindings/video/adi-gmsl.h>
+
+/* Redirect CSI host input from camera to MAX96724 deserializer output */
+&csi_ep_in {
+	remote-endpoint-label = "des_csi_out";
+	bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+	data-lanes = <1 2>;
+};
+
+&csi_i2c {
+	max96724: max96724@27 {
+		compatible = "adi,max96724";
+		reg = <0x27>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* GMSL link A–D inputs */
+			des_gmsl_port: port@0 {
+				reg = <0>;
+				link-id = <ADI_GMSL_LINK_A>;
+
+				des_gmsl_in: endpoint {
+					remote-endpoint-label = "ser_gmsl_out";
+				};
+			};
+
+			/* CSI-2 PHY 0–3 outputs */
+			des_csi_port: port@1 {
+				reg = <1>;
+				phy-id = <ADI_GMSL_PHY_2>;
+
+				des_csi_out: endpoint {
+					remote-endpoint-label = "csi_ep_in";
+					bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+					data-lanes = <1 2>;
+					link-frequencies = <750000000>;
+				};
+			};
+		};
+	};
+
+	max96717: max96717@40 {
+		compatible = "adi,max96717";
+		reg = <0x40>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+
+				ser_gmsl_out: endpoint {
+					remote-endpoint-label = "des_gmsl_in";
+				};
+			};
+		};
+	};
+};
