@@ -1844,6 +1844,8 @@ static int _api_xip_config(const struct device *dev,
 	int rc;
 
 	if (!cfg->enable) {
+		bool was_enabled = (dev_data->xip_enabled & BIT(dev_id->dev_idx)) != 0;
+
 		rc = vendor_specific_xip_disable(dev, dev_id, cfg);
 		if (rc < 0) {
 			return rc;
@@ -1855,7 +1857,8 @@ static int _api_xip_config(const struct device *dev,
 
 		dev_data->xip_enabled &= ~BIT(dev_id->dev_idx);
 
-		if (!dev_data->xip_enabled) {
+		/* Only release the usage count if this disabled the last XIP device. */
+		if (was_enabled && !dev_data->xip_enabled) {
 			write_ssienr(dev, 0);
 
 			/* Since XIP is disabled, it is okay for the controller
@@ -2022,6 +2025,9 @@ static int dev_pm_action_cb(const struct device *dev,
 #endif
 		vendor_specific_resume(dev);
 
+		/* Make sure controller is disabled. */
+		write_ssienr(dev, 0);
+
 		dev_data->suspended = false;
 
 		return 0;
@@ -2032,17 +2038,9 @@ static int dev_pm_action_cb(const struct device *dev,
 		bool xip_enabled = COND_CODE_1(CONFIG_MSPI_MEMMAP,
 					       (dev_data->xip_enabled != 0),
 					       (false));
+		int rc = 0;
 
-#if defined(CONFIG_PINCTRL)
-		const struct mspi_dw_config *dev_config = dev->config;
-		int rc = pinctrl_apply_state(dev_config->pcfg,
-					     PINCTRL_STATE_SLEEP);
 
-		if (rc < 0) {
-			LOG_ERR("Cannot apply sleep pins state (%d)", rc);
-			return rc;
-		}
-#endif
 #if defined(CONFIG_MULTITHREADING)
 		if (xip_enabled ||
 		    k_sem_take(&dev_data->ctx_lock, K_NO_WAIT) != 0) {
@@ -2053,15 +2051,25 @@ static int dev_pm_action_cb(const struct device *dev,
 			return -EBUSY;
 		}
 
-		dev_data->suspended = true;
+#if defined(CONFIG_PINCTRL)
+		const struct mspi_dw_config *dev_config = dev->config;
 
-		vendor_specific_suspend(dev);
+		rc = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
+		if (rc < 0) {
+			LOG_ERR("Cannot apply sleep pins state (%d)", rc);
+		}
+#endif
+		if (rc >= 0) {
+			dev_data->suspended = true;
+
+			vendor_specific_suspend(dev);
+		}
 
 #if defined(CONFIG_MULTITHREADING)
 		k_sem_give(&dev_data->ctx_lock);
 #endif
 
-		return 0;
+		return rc;
 	}
 
 	return -ENOTSUP;
@@ -2124,15 +2132,7 @@ static int dev_init(const struct device *dev)
 	}
 #endif
 
-	rc = pm_device_driver_init(dev, dev_pm_action_cb);
-	if (rc < 0) {
-		return rc;
-	}
-
-	/* Make sure controller is disabled. */
-	write_ssienr(dev, 0);
-
-	return 0;
+	return pm_device_driver_init(dev, dev_pm_action_cb);
 }
 
 static DEVICE_API(mspi, drv_api) = {
