@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&main_sdhci0 {
+	status = "disabled";
+
+	mmc {
+		status = "disabled";
+	};
+};
+
+&main_sdhci1 {
+	sd {
+		disk-name = "SD";
+	};
+};
