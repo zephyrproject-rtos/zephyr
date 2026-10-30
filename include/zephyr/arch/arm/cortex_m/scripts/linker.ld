@@ -272,6 +272,13 @@ GROUP_END(ITCM)
 
     GROUP_END(ROMABLE_REGION)
 
+#if defined(CONFIG_ROMSTART_REGION_AT_FLASH_BASE)
+    /* The boot vectors at the base of flash must not extend into the
+     * application image in the code partition. */
+    ASSERT(ADDR(rom_start) + SIZEOF(rom_start) <= ROM_ADDR,
+	   "rom_start overlaps the application image, check ROMSTART_REGION_SIZE")
+#endif
+
     /*
      * These are here according to 'arm-zephyr-elf-ld --verbose',
      * before data section.
