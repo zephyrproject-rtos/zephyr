@@ -72,7 +72,7 @@ static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 	return 0;
 }
 
-static int spi_bitbang_transceive(const struct device *dev,
+static int spi_bitbang_transceive_locked(const struct device *dev,
 			      const struct spi_config *spi_cfg,
 			      const struct spi_buf_set *tx_bufs,
 			      const struct spi_buf_set *rx_bufs)
@@ -245,6 +245,22 @@ static int spi_bitbang_transceive(const struct device *dev,
 	return 0;
 }
 
+static int spi_bitbang_transceive(const struct device *dev,
+			      const struct spi_config *spi_cfg,
+			      const struct spi_buf_set *tx_bufs,
+			      const struct spi_buf_set *rx_bufs)
+{
+	struct spi_bitbang_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	int rc;
+
+	spi_context_lock(ctx, false, NULL, NULL, spi_cfg);
+	rc = spi_bitbang_transceive_locked(dev, spi_cfg, tx_bufs, rx_bufs);
+	spi_context_release(ctx, rc);
+
+	return rc;
+}
+
 #ifdef CONFIG_SPI_ASYNC
 static int spi_bitbang_transceive_async(const struct device *dev,
 				    const struct spi_config *spi_cfg,
@@ -282,6 +298,8 @@ int spi_bitbang_init(const struct device *dev)
 {
 	const struct spi_bitbang_config *config = dev->config;
 	struct spi_bitbang_data *data = dev->data;
+
+	spi_context_unlock_unconditionally(&data->ctx);
 	int rc;
 
 	if (!gpio_is_ready_dt(&config->clk_gpio)) {
