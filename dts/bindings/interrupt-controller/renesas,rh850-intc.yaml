@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RH850 interrupt controller (INTC1 of the CPU and the shared
+  INTC2). The first interrupt cell is the channel, the second the
+  priority (0 highest, 15 lowest).
+
+compatible: "renesas,rh850-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
