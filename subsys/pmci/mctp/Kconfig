@@ -115,6 +115,15 @@ config MCTP_I3C_TARGET
 	  Build the MCTP I3C target binding to use MCTP over Zephyr's I3C target
 	  interface and optionally IBI to signal a request to send messages to the bus controller.
 
+config MCTP_I3C_RX_QUEUE_DEPTH
+	int "MCTP I3C deferred receive queue depth"
+	depends on MCTP_I3C_TARGET
+	default 16
+	help
+	  Number of received I3C packets held for deferred processing (PEC
+	  verification and delivery to the MCTP stack) at once. Must be large
+	  enough to hold all fragments of a single MCTP message.
+
 config MCTP_USB
 	bool "MCTP USB Binding"
 	depends on USB_DEVICE_STACK_NEXT
