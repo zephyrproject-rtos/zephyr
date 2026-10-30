@@ -200,6 +200,86 @@ static int i2s_esp32_tx_stop_transfer(const struct device *dev);
 #endif
 static int i2s_esp32_stop_transfer(const struct device *dev, enum i2s_dir dir);
 
+/*
+ * TX supplies the clocks shared by both directions. Stop it only after the
+ * last active stream has stopped, so an RX transfer can finish its final
+ * block in full-duplex mode.
+ */
+static void IRAM_ATTR i2s_esp32_stop_if_idle(const struct device *dev)
+{
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (dev_cfg->rx.data != NULL && dev_cfg->rx.data->transferring) {
+		return;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+#if I2S_ESP32_IS_DIR_EN(tx)
+	const struct i2s_esp32_data *dev_data = dev->data;
+
+	if (dev_cfg->tx.data != NULL && dev_cfg->tx.data->transferring) {
+		return;
+	}
+
+	if (dev_data->active_dir == I2S_DIR_TX || dev_data->active_dir == I2S_DIR_BOTH) {
+		i2s_hal_tx_stop(&dev_cfg->hal);
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+}
+
+#if !SOC_GDMA_SUPPORTED
+/*
+ * ahbm_fifo_rst and ahbm_rst reset the shared legacy DMA AHB master and its
+ * command FIFO. They do not change the I2S configuration. This is the point
+ * at which a stopped legacy transfer no longer owns its buffer. The master
+ * serves both directions, so the reset runs only after every direction has
+ * stopped; blocks stopped earlier stay recorded until then.
+ */
+static void IRAM_ATTR i2s_esp32_legacy_dma_quiesce(const struct device *dev)
+{
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+	const i2s_hal_context_t *hal = &dev_cfg->hal;
+
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (dev_cfg->rx.data != NULL && dev_cfg->rx.data->transferring) {
+		return;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (dev_cfg->tx.data != NULL && dev_cfg->tx.data->transferring) {
+		return;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+
+	/*
+	 * dscr_en is one bit for both directions. Clearing it while the peer is
+	 * still running stops that DMA as well, so it belongs with the shared
+	 * reset rather than with either link.
+	 */
+	i2s_ll_enable_dma(hal->dev, false);
+	hal->dev->lc_conf.ahbm_fifo_rst = 1;
+	hal->dev->lc_conf.ahbm_rst = 1;
+	hal->dev->lc_conf.ahbm_fifo_rst = 0;
+	hal->dev->lc_conf.ahbm_rst = 0;
+	i2s_hal_clear_intr_status(hal, I2S_INTR_MAX);
+
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (dev_cfg->rx.data != NULL && dev_cfg->rx.data->mem_block != NULL) {
+		k_mem_slab_free(dev_cfg->rx.data->i2s_cfg.mem_slab, dev_cfg->rx.data->mem_block);
+		dev_cfg->rx.data->mem_block = NULL;
+		dev_cfg->rx.data->mem_block_len = 0;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (dev_cfg->tx.data != NULL && dev_cfg->tx.data->mem_block != NULL) {
+		k_mem_slab_free(dev_cfg->tx.data->i2s_cfg.mem_slab, dev_cfg->tx.data->mem_block);
+		dev_cfg->tx.data->mem_block = NULL;
+		dev_cfg->tx.data->mem_block_len = 0;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+}
+#endif /* !SOC_GDMA_SUPPORTED */
+
 #if I2S_ESP32_IS_DIR_EN(rx)
 
 #if SOC_GDMA_SUPPORTED
@@ -427,8 +507,7 @@ static int IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 	esp_intr_disable(stream->data->irq_handle);
 	i2s_hal_rx_stop_link(hal);
 	i2s_hal_rx_disable_intr(hal);
-	i2s_hal_rx_disable_dma(hal);
-	i2s_hal_clear_intr_status(hal, I2S_INTR_MAX);
+	i2s_hal_clear_intr_status(hal, I2S_LL_RX_EVENT_MASK);
 #endif /* SOC_GDMA_SUPPORTED */
 
 	/* Cleared before the status test: a failed stop must not strand STOPPING. */
@@ -445,11 +524,11 @@ static int IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
 		stream->data->mem_block = NULL;
 	}
-#else
-	/* Legacy DMA may still own the block; do not return it to the slab. */
-	stream->data->mem_block = NULL;
-#endif /* SOC_GDMA_SUPPORTED */
 	stream->data->mem_block_len = 0;
+#else
+	i2s_esp32_legacy_dma_quiesce(dev);
+#endif /* SOC_GDMA_SUPPORTED */
+	i2s_esp32_stop_if_idle(dev);
 
 	return err;
 }
@@ -796,8 +875,7 @@ static int IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 	esp_intr_disable(stream->data->irq_handle);
 	i2s_hal_tx_stop_link(hal);
 	i2s_hal_tx_disable_intr(hal);
-	i2s_hal_tx_disable_dma(hal);
-	i2s_hal_clear_intr_status(hal, I2S_INTR_MAX);
+	i2s_hal_clear_intr_status(hal, I2S_LL_TX_EVENT_MASK);
 #endif /* SOC_GDMA_SUPPORTED */
 
 	/* Cleared before the status test: a failed stop must not strand STOPPING. */
@@ -819,11 +897,11 @@ static int IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 		stream->data->next_block = NULL;
 		stream->data->next_block_len = 0;
 	}
-#else
-	/* Legacy DMA may still own the block; do not return it to the slab. */
-	stream->data->mem_block = NULL;
-#endif /* SOC_GDMA_SUPPORTED */
 	stream->data->mem_block_len = 0;
+#else
+	i2s_esp32_legacy_dma_quiesce(dev);
+#endif /* SOC_GDMA_SUPPORTED */
+	i2s_esp32_stop_if_idle(dev);
 
 	return err;
 }
