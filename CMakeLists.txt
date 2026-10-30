@@ -96,6 +96,7 @@ set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(DEVICE_API_LD_TARGET       device_api_ld_target)
+set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 # Backward compatibility: open-amp explicitly depends on OFFSETS_H_TARGET
 # which is redundant as zephyr_generated_headers already provides this to
 # all Zephyr libraries.  Remove once open-amp drops this.
@@ -927,6 +928,10 @@ add_custom_command(
           ${syscalls_file_list_output} syscalls_interface
   )
 
+# The Makefile generator copies the rule above into every target that depends on its outputs.
+# Commands that read the json files also depend on this target, so the rule runs only once.
+add_custom_target(${PARSE_SYSCALLS_TARGET} DEPENDS ${syscalls_json} ${struct_tags_json})
+
 # Make sure Picolibc is built before the rest of the system; there's no explicit
 # reference to any of the files as they're all picked up by various compiler
 # settings
@@ -984,7 +989,7 @@ add_custom_command(
   COMMAND
   ${LEGACY_SYSCALL_LIST_H_ARGS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${syscalls_json}
+  DEPENDS ${syscalls_json} ${PARSE_SYSCALLS_TARGET}
   )
 
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
@@ -995,12 +1000,12 @@ gen_kobject_list(
   OUTPUTS ${DRV_VALIDATION}
   SCRIPT_ARGS --validation-output ${DRV_VALIDATION}
   INCLUDES ${struct_tags_json}
-  DEPENDS ${struct_tags_json}
+  DEPENDS ${struct_tags_json} ${PARSE_SYSCALLS_TARGET}
   )
 
 gen_kobject_list_headers(
   INCLUDES ${struct_tags_json}
-  DEPENDS ${struct_tags_json}
+  DEPENDS ${struct_tags_json} ${PARSE_SYSCALLS_TARGET}
   )
 
 # Generate sections for kernel device subsystems
@@ -1026,6 +1031,7 @@ add_custom_command(
   DEPENDS
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
     ${struct_tags_json}
+    ${PARSE_SYSCALLS_TARGET}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
