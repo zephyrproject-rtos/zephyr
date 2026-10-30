@@ -1521,7 +1521,7 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	LOG_DBG("Initiating transfer: ep=0x%02x, vbuf=%p", stream_ep->bEndpointAddress, vbuf);
 
 	xfer = usbh_xfer_alloc(host_data->udev, stream_ep->bEndpointAddress,
-			       stream_iso_req_cb, host_data);
+			       stream_iso_req_cb, host_data, K_NO_WAIT);
 	if (xfer == NULL) {
 		LOG_ERR("Failed to allocate transfer");
 		return -ENOMEM;
