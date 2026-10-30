@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MPFS_ICICLE
+	select QEMU_TARGET if BOARD_MPFS_ICICLE_POLARFIRE_E51_QEMU || \
+		BOARD_MPFS_ICICLE_POLARFIRE_U54_QEMU || \
+		BOARD_MPFS_ICICLE_POLARFIRE_U54_SMP_QEMU
