@@ -2197,6 +2197,15 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				 */
 				ticker->ticks_to_expire = ticks_elapsed;
 
+#if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+				/* Moving the node from its expiry to now is a
+				 * drift, accumulate it so that the reported and
+				 * reverted ticks_drift includes the ticker_job
+				 * latency.
+				 */
+				ticker->ext_data->ticks_drift += ticks_elapsed;
+#endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+
 				/* Reset ticker state, so that its put
 				 * back in requested state later down
 				 * in the code.
