@@ -241,6 +241,12 @@ static void hl78xx_enter_restart_fallback_state(struct hl78xx_data *data)
 {
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
+	/* A reset abandons whatever the chat was doing, as a requested restart
+	 * does: a script started before it would keep the chat through the
+	 * reset and refuse the post-restart script that listens for +KSUP.
+	 */
+	hl78xx_chat_abort_active_script(data);
+
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_POWER_ON_PULSE);
 		return;
@@ -2196,14 +2202,31 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
 		break;
 
-	case MODEM_HL78XX_EVENT_BUS_OPENED:
+	case MODEM_HL78XX_EVENT_BUS_OPENED: {
 		modem_chat_attach(&data->chat, data->uart_pipe);
 #ifdef CONFIG_MODEM_HL78XX_AUTOBAUD_AT_BOOT
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
 #else
-		hl78xx_run_post_restart_script_async(data);
+		int ret = hl78xx_run_post_restart_script_async(data);
+
+		if (ret == -EBUSY) {
+			/* A command sent while the modem was reset holds the chat,
+			 * and the script that listens for +KSUP cannot start. Abort
+			 * it and enter the state again: the abort runs on the chat
+			 * work queue, and the start-up wait opens the bus once more.
+			 */
+			LOG_WRN("Chat busy at the post-restart script: aborting the active script");
+			hl78xx_chat_abort_active_script(data);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_POWER_ON);
+		} else if (ret < 0) {
+			LOG_ERR("Post-restart script did not start: %d", ret);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
+		} else {
+			/* Started: the script listens for +KSUP */
+		}
 #endif /* CONFIG_MODEM_HL78XX_AUTOBAUD_AT_BOOT */
 		break;
+	}
 
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		(void)hl78xx_get_uart_config(data);
