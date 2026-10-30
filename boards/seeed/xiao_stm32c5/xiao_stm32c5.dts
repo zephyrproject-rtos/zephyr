@@ -82,7 +82,7 @@
 	};
 
 	/*
-	 * CAN transceiver: the standby pin (CAN_STB = PB14, XIAO D15) is
+	 * CAN transceiver: the standby pin (CAN_STB = PB14, XIAO D18) is
 	 * driven LOW (inactive) during normal operation and HIGH (active)
 	 * when the CAN bus is idle/disabled to reduce power consumption.
 	 */
