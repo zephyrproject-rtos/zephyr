@@ -88,7 +88,7 @@ const uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
  * type and bypass the _sw_isr_table, then do not generate one.
  */
 #if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
-#ifndef CONFIG_DYNAMIC_INTERRUPTS
+#if !defined(CONFIG_DYNAMIC_INTERRUPTS) && !defined(CONFIG_PIC_OPTIONS)
 const
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 	struct _isr_table_entry __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {

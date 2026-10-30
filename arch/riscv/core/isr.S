@@ -383,7 +383,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 #endif /* CONFIG_RISCV_ISA_EXT_C */
 
 is_fp:	/* Process the FP trap and quickly return from exception */
-	la ra, fp_trap_exit
+	lla ra, fp_trap_exit
 	mv a0, sp
 	tail z_riscv_fpu_trap
 2:
@@ -489,7 +489,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 
 	j no_reschedule
 #else
-	la ra, no_reschedule
+	lla ra, no_reschedule
 	tail z_riscv_fault
 #endif /* CONFIG_EXCEPTION_DEBUG */
 

@@ -533,15 +533,23 @@ zephyr_compile_options($<TARGET_PROPERTY:compiler,warning_extended>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_error_implicit_int>>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_error_implicit_int>>)
 
-# @Intent: Do not make position independent code / executable
-zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_position_independent>>)
-zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_position_independent>>)
+if(NOT DEFINED CONFIG_PIC_OPTIONS)
+  # @Intent: Do not make position independent code / executable
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_position_independent>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_position_independent>>)
+endif()
 
-# In case of CONFIG_NATIVE_LIBRARY we also don't want position independent code,
-# but we cannot tell that to the linker yet as we are first only doing a
-# relocatable link into a static library
-zephyr_link_libraries_ifndef(CONFIG_NATIVE_LIBRARY
-                             $<TARGET_PROPERTY:linker,no_position_independent>)
+if(CONFIG_PIC_OPTIONS)
+  zephyr_compile_options(-fPIC)
+  # @Intent: Link as a static position independent executable, no dynamic linker
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,position_independent_elf>)
+else()
+  # In case of CONFIG_NATIVE_LIBRARY we also don't want position independent code,
+  # but we cannot tell that to the linker yet as we are first only doing a
+  # relocatable link into a static library
+  zephyr_link_libraries_ifndef(CONFIG_NATIVE_LIBRARY
+                               $<TARGET_PROPERTY:linker,no_position_independent>)
+endif()
 
 if(CONFIG_INSTRUMENTATION)
   # @Intent: Enable function instrumentation injection at compile time
