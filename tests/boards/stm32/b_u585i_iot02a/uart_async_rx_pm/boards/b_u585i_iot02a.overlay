@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Vaisala Oyj
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+
+/* Connect Arduino D0 (PD8, USART3_TX) to D1 (PD9, USART3_RX) */
+
+&cpu0 {
+	/* USART wakeup needs HSI16 on demand, which Stop2 doesn't provide */
+	cpu-power-states = <&stop0 &stop1>;
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+dut: &usart3 {
+	/* HSI16 kernel clock so the USART can wake the SoC from Stop */
+	clocks = <&rcc STM32_CLOCK(APB1, 18)>,
+		 <&rcc STM32_SRC_HSI16 USART3_SEL(2)>;
+	current-speed = <19200>;
+	wakeup-source;
+	fifo-enable;
+	dmas = <&gpdma1 0 29 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 1 28 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+};
