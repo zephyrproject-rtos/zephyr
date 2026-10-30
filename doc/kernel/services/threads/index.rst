@@ -129,7 +129,172 @@ owned by an aborted thread.
 
 .. note::
     The kernel does not currently make any claims regarding an application's
-    ability to respawn a thread that aborts.
+    ability to respawn a thread that aborts. A thread can instead be restarted
+    by the kernel after a fatal error, see :ref:`thread_restart`.
+
+.. _thread_restart:
+
+Restartable Threads
+===================
+
+If :kconfig:option:`CONFIG_THREAD_RESTARTABLE` is enabled, a supervisor thread that
+triggers a fatal error can be **restarted**: it is aborted as usual, then created again from
+its entry point. The feature is experimental. It is implemented in the kernel for all
+architectures and requires :kconfig:option:`CONFIG_MULTITHREADING`. It cannot be enabled
+together with :kconfig:option:`CONFIG_HW_SHADOW_STACK`.
+
+A thread is armed for restarts in one of two ways:
+
+* Creating it with the :c:macro:`K_RESTARTABLE` option, which allows
+  :kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_DEFAULT` restarts. This also works with
+  :c:macro:`K_THREAD_DEFINE`. :c:macro:`K_RESTARTABLE` is ignored for :c:macro:`K_USER`
+  threads and for threads whose thread object or stack is a dynamically allocated kernel
+  object (see :kconfig:option:`CONFIG_DYNAMIC_OBJECTS`), which the abort of the thread may
+  free. Combining it with :c:macro:`K_ESSENTIAL` fails an assertion if
+  :kconfig:option:`CONFIG_ASSERT` is enabled. In all these cases the thread is created
+  unarmed.
+* Calling :c:func:`k_thread_restart_limit_set` with a non-zero limit. A limit of 0 disarms
+  the thread. Setting the limit always resets the restart count, which can be read with
+  :c:func:`k_thread_restart_count_get`. :c:func:`k_thread_restart_limit_set` returns
+  ``-EINVAL`` for a limit above :kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_MAX` or a thread
+  that is essential or was created essential, and ``-ENOTSUP`` for a user mode thread or,
+  unless the limit is 0, a thread whose thread object or stack is a dynamically allocated
+  kernel object.
+
+:kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_MAX` bounds how often a thread that keeps
+faulting is restarted, and :kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_DEFAULT` cannot
+exceed it. As setting the limit resets the count, it bounds the restarts between two calls
+to :c:func:`k_thread_restart_limit_set`.
+
+Both routines may be called from ISRs. They are not system calls, so user mode threads
+cannot call them.
+
+The default :c:func:`k_sys_fatal_error_handler` never returns: it halts the system, or
+reboots it if :kconfig:option:`CONFIG_RESET_ON_FATAL_ERROR` is enabled. Restarts therefore
+require the application to provide a :c:func:`k_sys_fatal_error_handler` that returns (see
+:ref:`fatal`). After the handler returns, an armed thread is restarted instead of being
+aborted unless any of the following applies:
+
+* The architecture reports the fault as raised in a nested exception (see
+  :kconfig:option:`CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION`). On architectures without
+  nested exception detection, a fatal error raised in an ISR restarts the interrupted
+  thread, just as it aborts that thread without this feature.
+* The reason is ``K_ERR_KERNEL_PANIC`` or ``K_ERR_SPURIOUS_IRQ``.
+* The thread is a user mode thread or an essential thread, either currently or according to
+  its creation options.
+* The thread is the system workqueue thread.
+* The thread has already been restarted as many times as its limit allows.
+* The system workqueue does not accept the restart, as it is plugged or draining (see
+  :c:func:`k_work_queue_drain`) or stopped. The rejected restart does not count against the
+  limit.
+
+In these cases the thread is aborted as before. Returning from the entry point and calling
+:c:func:`k_thread_abort` on a running thread never restart it. These conditions are checked
+when the fault occurs, so an armed thread that later becomes essential or enters user mode
+through :c:func:`k_thread_user_mode_enter` is aborted on its next fatal error.
+
+The faulting thread is aborted through the normal :c:func:`k_thread_abort` path, so the
+abort handling of the architecture applies and the thread dies as any aborted thread. Once it
+is dead and its CPU no longer uses its stack, which for a fatal error handled in interrupt
+context means once that CPU has left the interrupt, the system workqueue creates it again on
+the same thread object, with the entry point, its three arguments, stack, priority and
+options it was created with, and starts it.
+The restart is therefore delayed while the system workqueue is busy. Interrupts stay locked
+on the CPU of the system workqueue while it creates the thread, and other CPUs creating or
+aborting a thread, freeing a thread stack or handling a fatal error of an armed thread wait
+for it with interrupts locked.
+
+A restarted thread is a newly created thread, except that it keeps its name, CPU mask,
+memory domain, resource pool, restart limit and restart count. Like any newly created
+thread, it starts with a new stack and CPU context, cleared custom data (see
+:ref:`custom_data_v2`), no deadline and no scheduler lock. Its runtime statistics start
+over. The abort clears its kernel object permissions, and a thread created with
+:c:macro:`K_INHERIT_PERMS` does not inherit permissions again when it is restarted, so it
+only has permission on itself.
+
+.. important::
+    The kernel does not release mutexes or other resources the thread held when it faulted.
+    The restarted thread remains the owner of such mutexes, without priority inheritance from
+    their waiters until it locks or unlocks a mutex again. Its entry point must cope with
+    state left behind by the previous run. A system workqueue item that blocks on a mutex
+    held by the faulted thread prevents the restart, just as it would block forever on a
+    mutex held by an aborted thread.
+
+The restarted thread gets the same three arguments again. As the abort clears the kernel
+object permissions of the thread, it frees any dynamically allocated kernel object (see
+:kconfig:option:`CONFIG_DYNAMIC_OBJECTS`) the thread held the last permission on. Such
+objects it uses, through its arguments or otherwise, must stay referenced by a trusted thread:
+a user thread holding the only other reference could release them.
+
+A restarted thread runs with the same stack canary (see
+:kconfig:option:`CONFIG_STACK_CANARIES`), as the canary is chosen once at boot: a thread
+that can be made to overflow its stack repeatedly gets as many attempts as its restart limit
+allows.
+
+:c:func:`k_thread_restart_limit_set` and :c:func:`k_thread_restart_count_get` must not be
+called from a :c:func:`k_thread_foreach` or :c:func:`k_thread_foreach_filter_by_cpu`
+callback, which holds the lock of the thread list. Use the unlocked variants there.
+
+Between its abort and its restart, the thread is dead and its restart is pending. During
+this window:
+
+* The thread reports as dead, and :c:func:`k_thread_join` returns: joining threads are
+  woken by every death of the thread, including the ones followed by a restart.
+* :c:func:`k_thread_abort` cancels the restart, and so does :c:func:`k_thread_create` on the
+  thread object. A thread or an ISR aborting a thread that is faulting at the same time on
+  another CPU also cancels its restart.
+* :c:func:`k_thread_stack_free` returns ``-EBUSY`` for the stack of the thread.
+
+To reclaim the stack or the thread object of an armed thread, or to create another thread on
+the object, abort it first, then join it: :c:func:`k_thread_join` returning does not cancel
+a pending restart.
+
+Threads that run a work queue started with :c:func:`k_work_queue_start` must not be armed.
+Neither must threads of a portability layer that keeps per-thread state in the custom data,
+such as CMSIS-RTOS v1, as the restart resets it.
+Threads started by :c:func:`k_work_user_queue_start` are :c:macro:`K_USER` threads and are
+never restarted.
+
+The following code defines a thread that is restarted up to
+:kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_DEFAULT` times, and a fatal error handler that
+returns for all errors except kernel panics.
+
+.. code-block:: c
+
+    static void worker_entry(void *p1, void *p2, void *p3)
+    {
+            /* Runs again from the start after each restart */
+            worker_init();
+
+            while (true) {
+                    worker_poll();
+                    k_sleep(K_MSEC(100));
+            }
+    }
+
+    K_THREAD_DEFINE(worker_tid, MY_STACK_SIZE, worker_entry, NULL, NULL, NULL,
+                    MY_PRIORITY, K_RESTARTABLE, 0);
+
+    void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
+    {
+            ARG_UNUSED(esf);
+
+            if (reason == K_ERR_KERNEL_PANIC) {
+                    k_fatal_halt(reason);
+            }
+
+            /* Returning restarts or aborts the faulting thread */
+    }
+
+The limit can be changed at run time, for example to allow the maximum number of restarts:
+
+.. code-block:: c
+
+    if (k_thread_restart_count_get(worker_tid) > 0U) {
+            printk("worker restarted %u times\n", k_thread_restart_count_get(worker_tid));
+    }
+
+    (void)k_thread_restart_limit_set(worker_tid, CONFIG_THREAD_RESTART_LIMIT_MAX);
 
 Thread Suspension
 ==================
@@ -375,6 +540,14 @@ The following thread options are supported.
     If :kconfig:option:`CONFIG_USERSPACE` is enabled, this thread will inherit all
     kernel object permissions that the parent thread had, except the parent
     thread object.  See :ref:`usermode_api`.
+
+:c:macro:`K_RESTARTABLE`
+    If :kconfig:option:`CONFIG_THREAD_RESTARTABLE` is enabled, the thread is created again
+    from its entry point after it is aborted for a fatal error, up to
+    :kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_DEFAULT` times. It is ignored for
+    :c:macro:`K_USER` threads and for dynamically allocated thread objects or stacks, and must
+    not be combined with :c:macro:`K_ESSENTIAL`. See
+    :ref:`thread_restart`.
 
 
 .. _custom_data_v2:
@@ -765,6 +938,9 @@ Related configuration options:
 * :kconfig:option:`CONFIG_MAIN_STACK_SIZE`
 * :kconfig:option:`CONFIG_IDLE_STACK_SIZE`
 * :kconfig:option:`CONFIG_THREAD_CUSTOM_DATA`
+* :kconfig:option:`CONFIG_THREAD_RESTARTABLE`
+* :kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_DEFAULT`
+* :kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_MAX`
 * :kconfig:option:`CONFIG_NUM_COOP_PRIORITIES`
 * :kconfig:option:`CONFIG_NUM_PREEMPT_PRIORITIES`
 * :kconfig:option:`CONFIG_TIMESLICING`
@@ -780,5 +956,7 @@ API Reference
 **************
 
 .. doxygengroup:: thread_apis
+
+.. doxygengroup:: thread_restart_apis
 
 .. doxygengroup:: thread_stack_api

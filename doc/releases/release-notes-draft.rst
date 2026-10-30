@@ -85,6 +85,15 @@ New APIs and options
     unsigned) or 2 cells (64-bit unsigned, high word first) and produces a
     scalar ``DT_PROP`` integer macro
 
+* Kernel
+
+  * :c:macro:`K_RESTARTABLE`
+  * :c:func:`k_thread_restart_count_get`
+  * :c:func:`k_thread_restart_limit_set`
+  * :kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_DEFAULT`
+  * :kconfig:option:`CONFIG_THREAD_RESTART_LIMIT_MAX`
+  * :kconfig:option:`CONFIG_THREAD_RESTARTABLE`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -139,3 +148,12 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Kernel
+
+  * Added experimental :ref:`restartable threads <thread_restart>`
+    (:kconfig:option:`CONFIG_THREAD_RESTARTABLE`), implemented in the kernel for all
+    architectures. A supervisor thread armed with :c:macro:`K_RESTARTABLE` or
+    :c:func:`k_thread_restart_limit_set` is created again from its entry point after it is
+    aborted for a fatal error that :c:func:`k_sys_fatal_error_handler` returns from, up to a
+    configurable number of times.

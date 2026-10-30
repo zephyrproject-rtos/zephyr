@@ -251,6 +251,29 @@ struct z_poller {
 	uint8_t mode;
 };
 
+#if defined(CONFIG_THREAD_RESTARTABLE)
+/** @cond INTERNAL_HIDDEN */
+struct _thread_restart {
+	sys_snode_t node;
+	k_thread_entry_t entry;
+	void *p1;
+	void *p2;
+	void *p3;
+	k_thread_stack_t *stack;
+	size_t stack_size;
+	uint32_t options;
+	int prio;
+	uint16_t max;
+	uint16_t count;
+	bool aborted;
+#ifdef CONFIG_SMP
+	bool isr;
+	uint8_t isr_cpu;
+#endif /* CONFIG_SMP */
+};
+/** @endcond */
+#endif /* CONFIG_THREAD_RESTARTABLE */
+
 /**
  * @ingroup thread_apis
  * Thread Structure
@@ -405,6 +428,11 @@ struct k_thread {
 	/** Thread's priority before any mutex inheritance boost. */
 	int8_t orig_prio;
 #endif /* Z_MUTEX_PI_ENABLED */
+
+#if defined(CONFIG_THREAD_RESTARTABLE)
+	/** Creation parameters and state for restart after a fatal error */
+	struct _thread_restart restart;
+#endif /* CONFIG_THREAD_RESTARTABLE */
 
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;

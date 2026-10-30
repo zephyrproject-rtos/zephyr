@@ -47,7 +47,8 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason);
  * a simple infinite loop, power off the hardware, or exit an emulator.
  *
  * If this function returns, then the currently executing thread will be
- * aborted.
+ * aborted, then restarted if it is armed for it (see
+ * @kconfig{CONFIG_THREAD_RESTARTABLE}).
  *
  * A few notes for custom implementations:
  *

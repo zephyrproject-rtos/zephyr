@@ -37,9 +37,15 @@ extern struct k_thread *pending_current;
 struct k_spinlock _sched_spinlock;  /* The scheduler's spinlock */
 
 /* Storage to "complete" the context switch from an invalid/incomplete thread
- * context (ex: exiting an ISR that aborted _current)
+ * context (ex: exiting an ISR that aborted _current), one per CPU. Restarting
+ * a thread reads the switch handle of the dummy thread of another CPU, so it
+ * must then be coherent.
  */
-__incoherent struct k_thread _thread_dummy;
+#ifdef CONFIG_THREAD_RESTARTABLE
+struct k_thread _thread_dummy[CONFIG_MP_MAX_NUM_CPUS];
+#else
+__incoherent struct k_thread _thread_dummy[CONFIG_MP_MAX_NUM_CPUS];
+#endif /* CONFIG_THREAD_RESTARTABLE */
 
 static ALWAYS_INLINE void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_key_t *key);
@@ -586,8 +592,13 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 			 */
 			if (key != NULL) {
 				while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
-					z_sched_spinlock_unlock(*key);
-					*key = z_sched_spinlock_lock();
+					/* Keep interrupts masked while releasing spinlock
+					 * so scheduler can run: unmasking interrupts
+					 * would switch away from a halting _current
+					 * before its joiners are woken.
+					 */
+					z_sched_spinlock_release();
+					(void)z_sched_spinlock_lock();
 				}
 			}
 			unpend_all(&thread->join_queue);
@@ -662,7 +673,7 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 				z_spin_validate_reset(true);
 			}
 #endif
-			z_dummy_thread_init(&_thread_dummy);
+			z_dummy_thread_init(&_thread_dummy[_current_cpu->id]);
 
 		}
 

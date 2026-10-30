@@ -862,6 +862,168 @@ static inline void init_thread_usage(struct k_thread *thread)
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 }
 
+#ifdef CONFIG_THREAD_RESTARTABLE
+static struct k_spinlock restart_lock;
+/* Threads that hit a fatal error, waiting for the system workqueue */
+static sys_slist_t restart_list = SYS_SLIST_STATIC_INIT(&restart_list);
+/* Thread the system workqueue is creating again, scheduler lock held */
+static struct k_thread *restart_rebuilding;
+
+/* Whether the thread is being created again: it is dead until it is
+ * made ready, and must not be woken up meanwhile. Scheduler lock held.
+ */
+static inline bool thread_restart_rebuilding(const struct k_thread *thread)
+{
+	return thread == restart_rebuilding;
+}
+
+/* Cancel the restart of a thread aborted or reused by another thread or by
+ * an ISR. The faulting thread aborting itself keeps its restart.
+ */
+static void thread_restart_cancel(struct k_thread *thread)
+{
+	k_spinlock_key_t key;
+
+	if (thread == _current) {
+		return;
+	}
+
+	key = k_spin_lock(&restart_lock);
+	thread->restart.aborted = true;
+	(void)sys_slist_find_and_remove(&restart_list, &thread->restart.node);
+	k_spin_unlock(&restart_lock, key);
+}
+
+/* Cancel the restart of a thread object about to be created again, before
+ * z_setup_new_thread() reinitializes its restart state. Once cancelled, the
+ * system workqueue no longer creates the thread again, but it may have done
+ * so already. A user mode caller, whose thread and stack objects the verifier
+ * checked uninitialized, gets false then, as either is in use again, and
+ * also when the stack is the one of another thread waiting for its restart.
+ */
+static bool thread_restart_cancel_create(struct k_thread *thread, k_thread_stack_t *stack,
+					 bool user)
+{
+	k_spinlock_key_t key = k_spin_lock(&restart_lock);
+	bool ok = true;
+
+	(void)sys_slist_find_and_remove(&restart_list, &thread->restart.node);
+#ifdef CONFIG_USERSPACE
+	if (user) {
+		struct k_thread *pending;
+
+		ok = k_object_validate(k_object_find(thread), K_OBJ_THREAD, _OBJ_INIT_FALSE) == 0;
+		ok = ok && (k_object_validate(k_object_find(stack), K_OBJ_THREAD_STACK_ELEMENT,
+					      _OBJ_INIT_FALSE) == 0);
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&restart_list, pending, restart.node) {
+			if (pending->restart.stack == stack) {
+				ok = false;
+				break;
+			}
+		}
+	}
+#else
+	ARG_UNUSED(stack);
+	ARG_UNUSED(user);
+#endif /* CONFIG_USERSPACE */
+
+	k_spin_unlock(&restart_lock, key);
+
+	return ok;
+}
+#else
+static inline bool thread_restart_rebuilding(const struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+
+	return false;
+}
+
+static inline void thread_restart_cancel(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+static inline bool thread_restart_cancel_create(struct k_thread *thread,
+						k_thread_stack_t *stack, bool user)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(stack);
+	ARG_UNUSED(user);
+
+	return true;
+}
+#endif /* CONFIG_THREAD_RESTARTABLE */
+
+#ifdef CONFIG_THREAD_RESTARTABLE
+/* Whether the thread object or its stack is a dynamically allocated kernel
+ * object. The abort of the thread can free it once no thread has permissions
+ * on it, so such a thread is not restarted.
+ */
+static bool thread_restart_dynamic(struct k_thread *thread, k_thread_stack_t *stack)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	struct k_object *ko = k_object_find(thread);
+
+	if ((ko != NULL) && ((ko->flags & K_OBJ_FLAG_ALLOC) != 0U)) {
+		return true;
+	}
+
+	ko = k_object_find(stack);
+
+	return (ko != NULL) && ((ko->flags & K_OBJ_FLAG_ALLOC) != 0U);
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(stack);
+
+	return false;
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+#endif /* CONFIG_THREAD_RESTARTABLE */
+
+/* Record the creation parameters a restart after a fatal error uses. */
+static inline void init_thread_restart(struct k_thread *thread,
+				       k_thread_stack_t *stack, size_t stack_size,
+				       k_thread_entry_t entry, void *p1, void *p2, void *p3,
+				       int prio, uint32_t options)
+{
+#ifdef CONFIG_THREAD_RESTARTABLE
+	bool restartable = (options & K_RESTARTABLE) != 0U;
+
+	/* K_USER is not asserted: user threads may pass it via syscall */
+	__ASSERT(!restartable || ((options & K_ESSENTIAL) == 0U),
+		 "K_RESTARTABLE thread %p cannot be K_ESSENTIAL", thread);
+
+	thread->restart = (struct _thread_restart) {
+		.entry = entry,
+		.p1 = p1,
+		.p2 = p2,
+		.p3 = p3,
+		.stack = stack,
+		.stack_size = stack_size,
+		/* Permissions are not inherited again from the system workqueue */
+		.options = options & ~K_INHERIT_PERMS,
+		.prio = prio,
+	};
+
+	if (restartable && ((options & (K_USER | K_ESSENTIAL)) == 0U) &&
+	    !thread_restart_dynamic(thread, stack)) {
+		thread->restart.max = CONFIG_THREAD_RESTART_LIMIT_DEFAULT;
+	}
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(stack);
+	ARG_UNUSED(stack_size);
+	ARG_UNUSED(entry);
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+	ARG_UNUSED(prio);
+	ARG_UNUSED(options);
+#endif /* CONFIG_THREAD_RESTARTABLE */
+}
+
 /* Assert the thread wasn't already linked into the monitor list. */
 static inline void assert_thread_not_reused(struct k_thread *new_thread)
 {
@@ -911,6 +1073,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 
 	/* Initialize various struct k_thread members */
 	z_init_thread_base(&new_thread->base, prio, _THREAD_SLEEPING, options);
+	init_thread_restart(new_thread, stack, stack_size, entry, p1, p2, p3, prio, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
 #if Z_MUTEX_PI_ENABLED
@@ -1022,6 +1185,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 {
 	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
 
+	(void)thread_restart_cancel_create(new_thread, stack, false);
 	z_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options, NULL);
 
@@ -1029,6 +1193,285 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 
 	return new_thread;
 }
+
+#ifdef CONFIG_THREAD_RESTARTABLE
+/* Create a dead thread again with the parameters it was created with,
+ * keeping its name, CPU mask, memory domain, resource pool and restart
+ * count, and make it ready. Called with restart_lock held, so the caller
+ * reschedules once it releases the lock.
+ */
+static bool thread_restart(struct k_thread *thread)
+{
+	struct _thread_restart r = thread->restart;
+	struct k_heap *resource_pool = thread->resource_pool;
+	k_spinlock_key_t sched_key;
+	const char *name = NULL;
+#ifdef CONFIG_THREAD_NAME
+	char name_buf[sizeof(thread->name)];
+#endif /* CONFIG_THREAD_NAME */
+#ifdef CONFIG_SCHED_CPU_MASK
+	uint32_t cpu_mask = thread->base.cpu_mask;
+#endif /* CONFIG_SCHED_CPU_MASK */
+#ifdef CONFIG_USERSPACE
+	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
+#endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_THREAD_NAME
+	(void)memcpy(name_buf, thread->name, sizeof(name_buf));
+	name = name_buf;
+#endif /* CONFIG_THREAD_NAME */
+
+	sched_key = z_sched_spinlock_lock();
+	restart_rebuilding = thread;
+	z_sched_spinlock_unlock(sched_key);
+
+	(void)z_setup_new_thread(thread, r.stack, r.stack_size, r.entry, r.p1, r.p2, r.p3,
+				 r.prio, r.options, name);
+
+	thread->restart.max = r.max;
+	thread->restart.count = r.count;
+	thread->resource_pool = resource_pool;
+#ifdef CONFIG_SCHED_CPU_MASK
+	thread->base.cpu_mask = cpu_mask;
+#endif /* CONFIG_SCHED_CPU_MASK */
+#ifdef CONFIG_USERSPACE
+	/* A new thread joins the memory domain of its creator. Never start it
+	 * in another domain: the caller aborts it, still marked as rebuilt so
+	 * that it cannot be woken up meanwhile.
+	 */
+	if ((thread->mem_domain_info.mem_domain != domain) &&
+	    (k_mem_domain_add_thread(domain, thread) != 0)) {
+		return false;
+	}
+#endif /* CONFIG_USERSPACE */
+
+	sched_key = z_sched_spinlock_lock();
+	restart_rebuilding = NULL;
+	z_mark_thread_as_not_sleeping(thread);
+	z_sched_ready_locked(thread);
+	z_sched_spinlock_unlock(sched_key);
+
+	return true;
+}
+
+/* Whether the CPU that aborted the thread in interrupt context may still use
+ * the stack of the thread. The abort makes the dummy thread of that CPU its
+ * current thread, which the interrupt exit switches away from. Like the
+ * switch handle of any thread switched out, the one of the dummy thread is
+ * set once its context is saved and the interrupted stack no longer used.
+ * Until the abort reaches the dummy thread, the thread is still current on
+ * that CPU. Called with the scheduler lock held.
+ */
+static inline bool thread_restart_isr_exit_pending(const struct k_thread *thread)
+{
+	bool pending = false;
+
+#ifdef CONFIG_SMP
+	if (thread->restart.isr) {
+		volatile void **shp = (void *)&_thread_dummy[thread->restart.isr_cpu].switch_handle;
+
+		pending = (_kernel.cpus[thread->restart.isr_cpu].current == thread) ||
+			  (*shp == NULL);
+	}
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_SMP */
+
+	return pending;
+}
+
+/* Whether a dead thread is switched out. Its CPU may still need the
+ * scheduler lock before it switches away, as halt_thread() can drop it
+ * after marking the thread dead, so this is checked without spinning
+ * under the lock. Called with the scheduler lock held.
+ */
+static inline bool thread_restart_switched_out(const struct k_thread *thread)
+{
+#ifdef CONFIG_SMP
+	volatile void *const *shp = (volatile void *const *)&thread->switch_handle;
+
+	return *shp != NULL;
+#else
+	ARG_UNUSED(thread);
+
+	return true;
+#endif /* CONFIG_SMP */
+}
+
+static void restart_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	for (;;) {
+		k_spinlock_key_t key = k_spin_lock(&restart_lock);
+		sys_snode_t *node = sys_slist_peek_head(&restart_list);
+		k_spinlock_key_t sched_key;
+		struct k_thread *thread;
+		unsigned int irq_key;
+		bool ready;
+
+		if (node == NULL) {
+			k_spin_unlock(&restart_lock, key);
+			break;
+		}
+
+		/* Holding restart_lock until the thread is created again keeps
+		 * an abort or a reuse from cancelling the restart and
+		 * reclaiming the thread meanwhile. On SMP, the CPU of the
+		 * faulting thread may still be aborting it, switching away
+		 * from it once it is dead, or exiting the interrupt it
+		 * aborted it in: retry until it is done instead of spinning
+		 * under the locks it may need.
+		 */
+		thread = CONTAINER_OF(node, struct k_thread, restart.node);
+		sched_key = z_sched_spinlock_lock();
+		ready = z_is_thread_dead(thread) && !thread_restart_isr_exit_pending(thread) &&
+			thread_restart_switched_out(thread);
+		if (ready) {
+			/* Returns at once, orders the reads of the context */
+			z_sched_switch_spin(thread);
+		}
+		z_sched_spinlock_unlock(sched_key);
+
+		if (ready) {
+			(void)sys_slist_get_not_empty(&restart_list);
+			if (!thread_restart(thread)) {
+				k_spin_unlock(&restart_lock, key);
+				LOG_ERR("thread %p not restarted: memory domain", thread);
+				k_thread_abort(thread);
+				key = z_sched_spinlock_lock();
+				restart_rebuilding = NULL;
+				z_sched_spinlock_unlock(key);
+				continue;
+			}
+		}
+		k_spin_unlock(&restart_lock, key);
+
+		if (ready) {
+			/* Let a restarted higher priority thread preempt the workqueue */
+			z_reschedule_unlocked();
+		} else {
+			/* arch_spin_relax() requires interrupts to be masked */
+			irq_key = arch_irq_lock();
+			arch_spin_relax();
+			arch_irq_unlock(irq_key);
+		}
+	}
+}
+
+void z_thread_restart_queue(struct k_thread *thread)
+{
+	static K_WORK_DEFINE(restart_work, restart_work_handler);
+	struct _thread_restart *r = &thread->restart;
+	k_spinlock_key_t key;
+	bool queued = false;
+
+	/* Neither an unarmed thread nor the system workqueue, which may fault
+	 * while it holds restart_lock, takes the lock
+	 */
+	if ((r->max == 0U) || (thread == k_work_queue_thread_get(&k_sys_work_q))) {
+		return;
+	}
+
+	key = k_spin_lock(&restart_lock);
+
+	/* A fault nested in the handling of the first one is not queued again */
+	if (!r->aborted && (r->count < r->max) &&
+	    (((thread->base.user_options | r->options) & (K_USER | K_ESSENTIAL)) == 0U) &&
+	    !sys_slist_find(&restart_list, &r->node, NULL)) {
+		r->count++;
+#ifdef CONFIG_SMP
+		r->isr = arch_is_in_isr();
+		r->isr_cpu = (uint8_t)_current_cpu->id;
+#endif /* CONFIG_SMP */
+		sys_slist_append(&restart_list, &r->node);
+		queued = true;
+	}
+
+	k_spin_unlock(&restart_lock, key);
+
+	if (queued && (k_work_submit(&restart_work) < 0)) {
+		key = k_spin_lock(&restart_lock);
+		/* Not counted unless a running worker took it meanwhile */
+		if (sys_slist_find_and_remove(&restart_list, &r->node) && (r->count > 0U)) {
+			r->count--;
+		}
+		k_spin_unlock(&restart_lock, key);
+	}
+}
+
+bool z_thread_restart_stack_foreach(k_thread_stack_t *stack, k_thread_user_cb_t user_cb,
+				    void *user_data)
+{
+	/* Faulting threads queue their restart under restart_lock before they
+	 * leave the thread list, and restarted threads join it under the lock
+	 */
+	k_spinlock_key_t key = k_spin_lock(&restart_lock);
+	struct k_thread *thread;
+	bool used = false;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&restart_list, thread, restart.node) {
+		if (thread->restart.stack == stack) {
+			used = true;
+			break;
+		}
+	}
+
+#ifdef CONFIG_USERSPACE
+	/* The system workqueue may have created a thread again on the stack
+	 * since a caller checked it uninitialized. A stack object is
+	 * initialized while a thread uses it.
+	 */
+	if (!used) {
+		struct k_object *ko = k_object_find(stack);
+
+		used = (ko != NULL) && ((ko->flags & K_OBJ_FLAG_INITIALIZED) != 0U);
+	}
+#endif /* CONFIG_USERSPACE */
+
+	if (!used) {
+		k_thread_foreach(user_cb, user_data);
+	}
+
+	k_spin_unlock(&restart_lock, key);
+
+	return used;
+}
+
+int k_thread_restart_limit_set(k_tid_t thread, uint16_t max_restarts)
+{
+	bool dynamic = (max_restarts != 0U) &&
+		       thread_restart_dynamic(thread, thread->restart.stack);
+	k_spinlock_key_t key = k_spin_lock(&restart_lock);
+	int ret = 0;
+
+	/* A restart restores the creation options, including K_ESSENTIAL */
+	if ((max_restarts > CONFIG_THREAD_RESTART_LIMIT_MAX) || z_is_thread_essential(thread) ||
+	    ((thread->restart.options & K_ESSENTIAL) != 0U)) {
+		ret = -EINVAL;
+	} else if (((thread->base.user_options & K_USER) != 0U) || dynamic) {
+		ret = -ENOTSUP;
+	} else {
+		thread->restart.max = max_restarts;
+		thread->restart.count = 0U;
+	}
+
+	k_spin_unlock(&restart_lock, key);
+
+	return ret;
+}
+
+uint16_t k_thread_restart_count_get(k_tid_t thread)
+{
+	/* The restart briefly resets the count while it creates the thread */
+	k_spinlock_key_t key = k_spin_lock(&restart_lock);
+	uint16_t count = thread->restart.count;
+
+	k_spin_unlock(&restart_lock, key);
+
+	return count;
+}
+#endif /* CONFIG_THREAD_RESTARTABLE */
 
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack)
@@ -1090,6 +1533,11 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	K_OOPS(K_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
 	K_OOPS(K_SYSCALL_VERIFY(z_is_prio_lower_or_equal(prio,
 							_current->base.prio)));
+
+	/* A faulted thread is uninitialized while its restart is pending */
+	K_OOPS(K_SYSCALL_VERIFY_MSG(thread_restart_cancel_create(new_thread, stack, true),
+				    "thread %p or stack %p in use by a restart", new_thread,
+				    stack));
 
 	z_setup_new_thread(new_thread, stack, stack_size,
 			   entry, p1, p2, p3, prio, options, NULL);
@@ -1735,7 +2183,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 
 	k_spinlock_key_t key = z_sched_spinlock_lock();
 
-	if (z_is_thread_sleeping(thread)) {
+	if (z_is_thread_sleeping(thread) && !thread_restart_rebuilding(thread)) {
 		(void)z_try_abort_thread_timeout(thread);
 		z_mark_thread_as_not_sleeping(thread);
 		z_sched_ready_locked(thread);
@@ -1756,8 +2204,13 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 
 void z_thread_abort(struct k_thread *thread)
 {
-	bool essential = z_is_thread_essential(thread);
-	k_spinlock_key_t key = z_sched_spinlock_lock();
+	bool essential;
+	k_spinlock_key_t key;
+
+	thread_restart_cancel(thread);
+
+	essential = z_is_thread_essential(thread);
+	key = z_sched_spinlock_lock();
 
 	if (z_is_thread_dead(thread)) {
 		z_sched_spinlock_unlock(key);
@@ -1866,7 +2319,13 @@ static inline int z_vrfy_k_thread_join(struct k_thread *thread,
 static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 {
 	if (thread_obj_validate(thread)) {
-		return;
+		/* Dead, but its restart may be pending: cancel it, or abort the
+		 * thread if the system workqueue created it again meanwhile
+		 */
+		thread_restart_cancel(thread);
+		if (thread_obj_validate(thread)) {
+			return;
+		}
 	}
 
 	K_OOPS(K_SYSCALL_VERIFY_MSG(!z_is_thread_essential(thread),
