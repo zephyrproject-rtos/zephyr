@@ -47,3 +47,55 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
+  drivers.i2s.esp.pm:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32s3_devkitc/esp32s3/procpu
+  drivers.i2s.esp.pm.periph_pd:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_args:
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+  drivers.i2s.esp.pm.periph_pd.noflash:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_args:
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore

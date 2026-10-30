@@ -45,4 +45,7 @@ int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r);
 
 int configure_stream(const struct device *dev_i2s, enum i2s_dir dir);
 
+/* Clear state and queued blocks left by the previous test. */
+void i2s_test_recover(const struct device *dev);
+
 #endif
