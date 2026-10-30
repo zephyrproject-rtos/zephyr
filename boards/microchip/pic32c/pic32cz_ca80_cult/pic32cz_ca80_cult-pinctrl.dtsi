@@ -42,4 +42,11 @@
 				 <PA14B_ADC2_AIN0>;	/* PA14, ADC1 positive (differential) */
 		};
 	};
+
+	tcc1_pwm_default: tcc1_pwm_default {
+		group1 {
+			pinmux = <PB10F_TCC1_WO0>,
+				 <PB11F_TCC1_WO1>;
+		};
+	};
 };
