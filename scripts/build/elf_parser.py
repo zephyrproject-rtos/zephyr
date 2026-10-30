@@ -98,7 +98,7 @@ class ClockOrdinals(_Symbol):
         for clk in clk_list:
             if "CLK_END" in clk:
                 break
-            self._ordinals.append(int(clk))
+            self._ordinals.append(clk)
         self._handles = []
         for ordinal in self._ordinals:
             # Find ordinal handle
@@ -362,19 +362,18 @@ class ZephyrElf:
         clock_offsets = {}
 
         def _on_clock(sym):
-            ord_num = int(sym.name.replace('__clock_clk_dts_ord_', ''))
-            clock_offsets[sym.entry.st_value] = ord_num
+            clock_offsets[sym.entry.st_value] = sym.name
 
-        self._object_find_named('__clock_clk_dts_ord', _on_clock)
+        self._object_find_named('__clock_clk_', _on_clock)
         # Sort clock objects by address for handle calculation
         sorted_offsets = dict(sorted(clock_offsets.items()))
-        # Find all ordinal arrays
-        self.clock_ordinal_arrays = {}
+        # Find all child clocks
+        self.child_clock_arrays = {}
 
-        def _on_ordinal(sym):
-            ord_num = int(sym.name.replace('__clock_children_clk_dts_ord_', ''))
-            self.clock_ordinal_arrays[ord_num] = ClockOrdinals(
+        def _on_child_array(sym):
+            clk_id = sym.name.replace('__clock_children_', '')
+            self.child_clock_arrays[clk_id] = ClockOrdinals(
                 self, sym, list(sorted_offsets.values())
             )
 
-        self._object_find_named('__clock_children_', _on_ordinal)
+        self._object_find_named('__clock_children_', _on_child_array)

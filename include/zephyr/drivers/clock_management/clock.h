@@ -168,21 +168,16 @@ struct clk_mux_subsys_data {
 };
 
 /**
- * @brief Get clock identifier
- */
-#define Z_CLOCK_DT_CLK_ID(node_id) _CONCAT(clk_dts_ord_, DT_DEP_ORD(node_id))
-
-/**
  * @brief Name for subsys data
  */
-#define Z_CLOCK_SUBSYS_NAME(node_id) \
-	_CONCAT(__clock_subsys_data_, Z_CLOCK_DT_CLK_ID(node_id))
+#define Z_CLOCK_SUBSYS_NAME(clk_id) \
+	_CONCAT(__clock_subsys_data_, clk_id)
 
 /**
  * @brief Expands to the name of a global clock object.
  *
  * Return the full name of a clock object symbol created by CLOCK_DT_DEFINE(),
- * using the `clk_id` provided by Z_CLOCK_DT_CLK_ID(). This is the name of the
+ * using the `clk_id` provided by CLOCK_DT_CLK_ID(). This is the name of the
  * global variable storing the clock structure
  *
  * It is meant to be used for declaring extern symbols pointing to clock objects
@@ -193,7 +188,7 @@ struct clk_mux_subsys_data {
  * @return The full name of the clock object defined by clock definition
  * macros.
  */
-#define CLOCK_NAME_GET(clk_id) _CONCAT(__clock_, clk_id)
+#define CLOCK_NAME_GET(clk_id) _CONCAT(__clock_clk_, clk_id)
 
 /**
  * @brief The name of the global clock object for @p node_id
@@ -206,7 +201,14 @@ struct clk_mux_subsys_data {
  *
  * @return The name of the clock object as a C identifier
  */
-#define CLOCK_DT_NAME_GET(node_id) CLOCK_NAME_GET(Z_CLOCK_DT_CLK_ID(node_id))
+#define CLOCK_DT_NAME_GET(node_id) CLOCK_NAME_GET(CLOCK_DT_CLK_ID(node_id))
+
+/**
+ * @brief Get clock identifier
+ *
+ * @param node_id Devicetree node identifier for the clock
+ */
+#define CLOCK_DT_CLK_ID(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
 /** @endcond */
 
@@ -235,10 +237,10 @@ struct clk_mux_subsys_data {
  * the linker can optimize unused clocks out of the build. Each type of clock
  * is given a section name prefix, so that the type can be identified at
  * runtime.
- * @param node_id The devicetree node identifier.
+ * @param clk_id  A globally unique identifier for the clock object.
  */
-#define Z_ROOT_CLOCK_SECTION_NAME(node_id)                                     \
-	_CONCAT(.clk_node_root_, Z_CLOCK_DT_CLK_ID(node_id))
+#define Z_ROOT_CLOCK_SECTION_NAME(clk_id)                                     \
+	_CONCAT(.clk_node_root_, clk_id)
 
 /**
  * @brief Section name for standard clock object
@@ -247,10 +249,10 @@ struct clk_mux_subsys_data {
  * so the linker can optimize unused clocks out of the build. Each type of clock
  * is given a section name prefix, so that the type can be identified at
  * runtime.
- * @param node_id The devicetree node identifier.
+ * @param clk_id  A globally unique identifier for the clock object.
  */
-#define Z_STANDARD_CLOCK_SECTION_NAME(node_id)                                 \
-	_CONCAT(.clk_node_standard_, Z_CLOCK_DT_CLK_ID(node_id))
+#define Z_STANDARD_CLOCK_SECTION_NAME(clk_id)                                  \
+	_CONCAT(.clk_node_standard_, clk_id)
 
 /**
  * @brief Section name for mux clock object
@@ -259,10 +261,10 @@ struct clk_mux_subsys_data {
  * the linker can optimize unused clocks out of the build. Each type of clock
  * is given a section name prefix, so that the type can be identified at
  * runtime.
- * @param node_id The devicetree node identifier.
+ * @param clk_id  A globally unique identifier for the clock object.
  */
-#define Z_MUX_CLOCK_SECTION_NAME(node_id)                                      \
-	_CONCAT(.clk_node_mux_, Z_CLOCK_DT_CLK_ID(node_id))
+#define Z_MUX_CLOCK_SECTION_NAME(clk_id)                                      \
+	_CONCAT(.clk_node_mux_, clk_id)
 
 /**
  * @brief Section name for leaf clock object
@@ -271,10 +273,10 @@ struct clk_mux_subsys_data {
  * the linker can optimize unused clocks out of the build. Each type of clock
  * is given a section name prefix, so that the type can be identified at
  * runtime.
- * @param node_id The devicetree node identifier.
+ * @param clk_id  A globally unique identifier for the clock object.
  */
-#define Z_LEAF_CLOCK_SECTION_NAME(node_id)                                     \
-	_CONCAT(.clk_node_leaf_, Z_CLOCK_DT_CLK_ID(node_id))
+#define Z_LEAF_CLOCK_SECTION_NAME(clk_id)                                     \
+	_CONCAT(.clk_node_leaf_, clk_id)
 
 /**
  * @brief Initialize a clock object
@@ -288,7 +290,8 @@ struct clk_mux_subsys_data {
  */
 #define Z_CLOCK_INIT(children_, hw_data_, api_, name_, subsys_data_)                   \
 	{                                                                              \
-		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME, (.children = children_,))  \
+		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME,                            \
+			(.children = (const clock_handle_t *)children_,))              \
 		.hw_data = (void *)hw_data_,                                           \
 		.api = api_,                                                           \
 		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (.clk_name = name_,))     \
@@ -304,31 +307,6 @@ struct clk_mux_subsys_data {
  */
 #define Z_CLOCK_DEF(secname, clk_id)                                           \
 	const Z_DECL_ALIGN(struct clk) Z_GENERIC_SECTION(secname) CLOCK_NAME_GET(clk_id)
-
-/**
- * @brief Define a @ref clk object
- *
- * Defines and initializes configuration and data fields of a @ref clk
- * object
- * @param node_id The devicetree node identifier.
- * @param clk_id clock identifier (used to name the defined @ref clk).
- * @param hw_data Pointer to the clock's private data, which will be
- * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
- * @param config Pointer to the clock's private constant data, which will be
- * stored in the @ref clk.config field
- * @param api Pointer to the clock's API structure.
- * @param secname Section name to place clock object into
- */
-#define Z_CLOCK_BASE_DEFINE(node_id, clk_id, hw_data, api, secname)            \
-	Z_CLOCK_DEFINE_CHILDREN(node_id);                                      \
-	IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME, (                          \
-	struct clk_subsys_data Z_CLOCK_SUBSYS_NAME(node_id);                   \
-	))                                                                     \
-	Z_CLOCK_DEF(secname, clk_id) =                                         \
-		Z_CLOCK_INIT(Z_CLOCK_GET_CHILDREN(node_id),                    \
-			     hw_data, api, DT_NODE_FULL_NAME(node_id),         \
-			     COND_CODE_1(CONFIG_CLOCK_MANAGEMENT_RUNTIME,      \
-			     (&Z_CLOCK_SUBSYS_NAME(node_id)), NULL));
 
 /**
  * @brief Declare a clock for each used clock node in devicetree
@@ -348,30 +326,39 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_CLOCK_DECLARE_INTERNAL)
 
 /**
  * @brief Clock dependency array name
- * @param node_id Clock identifier
+ * @param clk_id Clock identifier
  */
-#define Z_CLOCK_CHILDREN_NAME(node_id)                                         \
-	_CONCAT(__clock_children_, Z_CLOCK_DT_CLK_ID(node_id))
+#define Z_CLOCK_CHILDREN_NAME(clk_id)                                          \
+	_CONCAT(__clock_children_, clk_id)
 
 /**
  * @brief String name for clock ordinal
  *
- * Helper to convert a clock ordinal to the form "<ord>,"
+ * Helper to convert a clock ordinal to the form "_clock_clk_dts_ord_<ord>,"
  *
  * @param ord Clock ordinal
  */
-#define Z_CLOCK_ORD_STRING(ord) #ord ","
+#define Z_CLOCK_ORD_STRING(ord) STRINGIFY(CONCAT(__clock_clk_dts_ord_, ord)) ","
 
 /**
- * @brief Define clock children array
+ * @brief String name for clock reference
+ *
+ * Helper to convert a clock identifier to the form "__clock_clk_<clk_id>,"
+ *
+ * @param clk_id Clock identifier
+ */
+#define Z_CLOCK_NAME_STRING(clk_id) STRINGIFY(CLOCK_NAME_GET(clk_id)) ","
+
+/**
+ * @brief Define clock children array for a DT node
  *
  * This macro defines a clock children array. A reference to
- * the clock dependency array can be retrieved with `Z_CLOCK_GET_CHILDREN`
+ * the clock dependency array can be retrieved with `Z_CLOCK_CHILDREN_NAME`
  *
  * In the initial build, this array will expand to a string of clock ordinal
  * numbers that describe children of the clock, like so:
  * @code{.c}
- *     const char* __weak __clock_children_clk_dts_ord_45 = "66,30,55,CLK_END";
+ *     const char* __weak __clock_children_dts_ord_45 = "66,30,55,CLK_END";
  * @endcode
  *
  * In the second pass of the build, gen_clock_deps.py will create a strong
@@ -379,7 +366,7 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_CLOCK_DECLARE_INTERNAL)
  * a clock handle (or omitted, if no clock structure was defined in the
  * build). The final array will look like so:
  * @code{.c}
- *     const clock_handle_t __clock_children_clk_dts_ord_45[] = {
+ *     const clock_handle_t __clock_children_dts_ord_45[] = {
  *         30, // Handle for clock with ordinal 66
  *         // Clock structure for ordinal 30 was not linked in build
  *         16, // Handle for clock with ordinal 55
@@ -391,23 +378,67 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_CLOCK_DECLARE_INTERNAL)
  * a clock object will be discarded in the first link phase unless another
  * structure references it (such as a clock referencing its parent object)
  * @param node_id Clock identifier
+ * @param ... Additional explicit child clocks for this clock object.
  */
-#define Z_CLOCK_DEFINE_CHILDREN(node_id)                                       \
-	const char __weak Z_CLOCK_CHILDREN_NAME(node_id)[] =                   \
+#define Z_CLOCK_DT_DEFINE_CHILDREN(node_id, ...)                               \
+	const char __weak Z_CLOCK_CHILDREN_NAME(CLOCK_DT_CLK_ID(node_id))[] =  \
 		FOR_EACH_NONEMPTY_TERM(Z_CLOCK_ORD_STRING, (),                 \
-			DT_SUPPORTS_CLK_ORDS(node_id)) "CLK_END";
+			DT_SUPPORTS_CLK_ORDS(node_id))                         \
+		FOR_EACH_NONEMPTY_TERM(Z_CLOCK_NAME_STRING, (), __VA_ARGS__)   \
+			"CLK_END";
 
 /**
- * @brief Get clock dependency array
+ * @brief Define clock children array for a software clock
  *
- * This macro gets the c identifier for the clock dependency array,
- * declared with `CLOCK_DEFINE_DEPS`, which will contain
- * an array of pointers to the clock objects dependent on this clock.
- * @param node_id Clock identifier
+ * @param clk_id Clock identifier for the software clock object.
+ * @param ... child clocks for the software clock object.
  */
-#define Z_CLOCK_GET_CHILDREN(node_id)                                          \
-	(const clock_handle_t *)Z_CLOCK_CHILDREN_NAME(node_id)
+#define Z_CLOCK_DEFINE_CHILDREN(clk_id, ...)                                   \
+	const char __weak Z_CLOCK_CHILDREN_NAME(clk_id)[] =                    \
+		FOR_EACH_NONEMPTY_TERM(Z_CLOCK_NAME_STRING, (), __VA_ARGS__)   \
+			"CLK_END";
 
+/**
+ * @brief Define a @ref clk object
+ *
+ * Defines and initializes configuration and data fields of a @ref clk
+ * object
+ * @param clk_id  A globally unique identifier for the clock object.
+ * @param hw_data Pointer to the clock's private data, which will be
+ * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
+ * @param config Pointer to the clock's private constant data, which will be
+ * stored in the @ref clk.config field
+ * @param api Pointer to the clock's API structure.
+ * @param secname Section name to place clock object into
+ * @param children Symbol representing the clock's children.
+ * @param clk_name The name of the clock as a string.
+ */
+#define Z_CLOCK_DEFINE(clk_id, hw_data, api, secname, children, clk_name)      \
+	IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME, (                          \
+	struct clk_subsys_data Z_CLOCK_SUBSYS_NAME(clk_id);                    \
+	))                                                                     \
+	Z_CLOCK_DEF(secname, clk_id) =                                         \
+		Z_CLOCK_INIT(children,                                         \
+			     hw_data, api, clk_name,                           \
+			     COND_CODE_1(CONFIG_CLOCK_MANAGEMENT_RUNTIME,      \
+			     (&Z_CLOCK_SUBSYS_NAME(clk_id)), NULL));
+
+/**
+ * @brief Define a @ref clk object from a DT node
+ *
+ * Defines and initializes a @ref clk object from a devicetree node.
+ * @param node_id The devicetree node identifier.
+ * @param hw_data Pointer to the clock's private data, which will be
+ * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
+ * @param api Pointer to the clock's API structure.
+ * @param secname Section name to place clock object into
+ * @param ... Additional child clocks for this clock object.
+ */
+#define Z_CLOCK_DT_DEFINE(node_id, hw_data, api, secname, ...)                 \
+	Z_CLOCK_DT_DEFINE_CHILDREN(node_id, __VA_ARGS__);                      \
+	Z_CLOCK_DEFINE(CLOCK_DT_CLK_ID(node_id), hw_data, api, secname,      \
+		       Z_CLOCK_CHILDREN_NAME(CLOCK_DT_CLK_ID(node_id)),      \
+		       DT_NODE_FULL_NAME(node_id))
 
 /** @endcond */
 
@@ -465,15 +496,23 @@ static inline clock_handle_t clk_handle_get(const struct clk *clk_hw)
  * should use the clock management API. Clock objects are considered
  * internal to the clock subsystem.
  *
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id. For
+ * nodes defined in devicetree, this can be retrieved using
+ * `CLOCK_DT_CLK_ID(node_id)`. If absent, clock children will be initialized
+ * based on devicetree dependencies
+ *
  * @param node_id The devicetree node identifier.
  * @param hw_data Pointer to the clock's private data, which will be
  * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
  * @param api Pointer to the clock's API structure.
+ * @param ... Additional child clocks for this clock object.
  */
 
-#define CLOCK_DT_DEFINE(node_id, hw_data, api)                                 \
-	Z_CLOCK_BASE_DEFINE(node_id, Z_CLOCK_DT_CLK_ID(node_id), hw_data,      \
-			    api, Z_STANDARD_CLOCK_SECTION_NAME(node_id));
+#define CLOCK_DT_DEFINE(node_id, hw_data, api, ...)                            \
+	Z_CLOCK_DT_DEFINE(node_id, hw_data, api,                               \
+			Z_STANDARD_CLOCK_SECTION_NAME(CLOCK_DT_CLK_ID(node_id)), \
+			__VA_ARGS__);
 
 /**
  * @brief Like CLOCK_DT_DEFINE(), but uses an instance of `DT_DRV_COMPAT`
@@ -486,6 +525,28 @@ static inline clock_handle_t clk_handle_get(const struct clk *clk_hw)
 	CLOCK_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
+ * @brief Define a "standard clock" object without a devicetree node identifier
+ *
+ * This macro defines a @ref clk. This clock does not correspond to a devicetree
+ * node, and thus cannot directly be configured by the user.
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id, or node ordinal if
+ * defined by a devicetree node.
+ *
+ * @param clk_id Globally unique identifier for the clock object.
+ * @param hw_data Pointer to the clock's private data, which will be
+ * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
+ * @param api Pointer to the clock's API structure.
+ * @param ... Additional child clocks for this clock object.
+ */
+#define CLOCK_DEFINE(clk_id, hw_data, api, ...)                                \
+	Z_CLOCK_DEFINE_CHILDREN(clk_id, __VA_ARGS__);                          \
+	Z_CLOCK_DEFINE(clk_id, hw_data, api,                                   \
+			Z_STANDARD_CLOCK_SECTION_NAME(clk_id),                 \
+			Z_CLOCK_CHILDREN_NAME(clk_id),                         \
+			STRINGIFY(clk_id));
+
+/**
  * @brief Create a "multiplexer clock" object from a devicetree node identifier
  *
  * This macro defines a @ref clk. The global clock object's
@@ -495,15 +556,23 @@ static inline clock_handle_t clk_handle_get(const struct clk *clk_hw)
  * should use the clock management API. Clock objects are considered
  * internal to the clock subsystem.
  *
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id. For
+ * nodes defined in devicetree, this can be retrieved using
+ * `CLOCK_DT_CLK_ID(node_id)`. If absent, clock children will be initialized
+ * based on devicetree dependencies
+ *
  * @param node_id The devicetree node identifier.
  * @param hw_data Pointer to the clock's private data, which will be
  * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
  * @param api Pointer to the clock's API structure.
+ * @param ... Additional child clocks for this clock object.
  */
 
-#define MUX_CLOCK_DT_DEFINE(node_id, hw_data, api)                             \
-	Z_CLOCK_BASE_DEFINE(node_id, Z_CLOCK_DT_CLK_ID(node_id), hw_data,      \
-			    api, Z_MUX_CLOCK_SECTION_NAME(node_id));
+#define MUX_CLOCK_DT_DEFINE(node_id, hw_data, api, ...)                        \
+	Z_CLOCK_DT_DEFINE(node_id, hw_data, api,                               \
+			Z_MUX_CLOCK_SECTION_NAME(CLOCK_DT_CLK_ID(node_id)),  \
+			__VA_ARGS__);
 
 /**
  * @brief Like CLOCK_MUX_DT_DEFINE(), but uses an instance of `DT_DRV_COMPAT`
@@ -515,6 +584,29 @@ static inline clock_handle_t clk_handle_get(const struct clk *clk_hw)
 #define MUX_CLOCK_DT_INST_DEFINE(inst, ...)                                    \
 	MUX_CLOCK_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
+
+/**
+ * @brief Define a "multiplexer clock" object without a devicetree node identifier
+ *
+ * This macro defines a @ref clk. This clock does not correspond to a devicetree
+ * node, and thus cannot directly be configured by the user.
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id, or node ordinal if
+ * defined by a devicetree node.
+ *
+ * @param clk_id Globally unique identifier for the clock object.
+ * @param hw_data Pointer to the clock's private data, which will be
+ * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
+ * @param api Pointer to the clock's API structure.
+ * @param ... Additional child clocks for this clock object.
+ */
+#define MUX_CLOCK_DEFINE(clk_id, hw_data, api, ...)                            \
+	Z_CLOCK_DEFINE_CHILDREN(clk_id, __VA_ARGS__);                          \
+	Z_CLOCK_DEFINE(clk_id, hw_data, api,                                   \
+			Z_MUX_CLOCK_SECTION_NAME(clk_id),                      \
+			Z_CLOCK_CHILDREN_NAME(clk_id),                         \
+			STRINGIFY(clk_id));
+
 /**
  * @brief Create a "root clock" object from a devicetree node identifier
  *
@@ -525,15 +617,23 @@ static inline clock_handle_t clk_handle_get(const struct clk *clk_hw)
  * should use the clock management API. Clock objects are considered
  * internal to the clock subsystem.
  *
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id. For
+ * nodes defined in devicetree, this can be retrieved using
+ * `CLOCK_DT_CLK_ID(node_id)`. If absent, clock children will be initialized
+ * based on devicetree dependencies
+ *
  * @param node_id The devicetree node identifier.
  * @param hw_data Pointer to the clock's private data, which will be
  * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
  * @param api Pointer to the clock's API structure.
+ * @param ... Additional child clocks for this clock object.
  */
 
-#define ROOT_CLOCK_DT_DEFINE(node_id, hw_data, api)                            \
-	Z_CLOCK_BASE_DEFINE(node_id, Z_CLOCK_DT_CLK_ID(node_id), hw_data,      \
-			    api, Z_ROOT_CLOCK_SECTION_NAME(node_id));
+#define ROOT_CLOCK_DT_DEFINE(node_id, hw_data, api, ...)                     \
+	Z_CLOCK_DT_DEFINE(node_id, hw_data, api,                               \
+			Z_ROOT_CLOCK_SECTION_NAME(CLOCK_DT_CLK_ID(node_id)), \
+			__VA_ARGS__);
 
 /**
  * @brief Like ROOT_CLOCK_DT_DEFINE(), but uses an instance of `DT_DRV_COMPAT`
@@ -544,6 +644,28 @@ static inline clock_handle_t clk_handle_get(const struct clk *clk_hw)
  */
 #define ROOT_CLOCK_DT_INST_DEFINE(inst, ...)                                   \
 	ROOT_CLOCK_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Define a "root clock" object without a devicetree node identifier
+ *
+ * This macro defines a @ref clk. This clock does not correspond to a devicetree
+ * node, and thus cannot directly be configured by the user.
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id, or node ordinal if
+ * defined by a devicetree node.
+ *
+ * @param clk_id Globally unique identifier for the clock object.
+ * @param hw_data Pointer to the clock's private data, which will be
+ * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
+ * @param api Pointer to the clock's API structure.
+ * @param ... Additional child clocks for this clock object.
+ */
+#define ROOT_CLOCK_DEFINE(clk_id, hw_data, api, ...)                           \
+	Z_CLOCK_DEFINE_CHILDREN(clk_id, __VA_ARGS__);                          \
+	Z_CLOCK_DEFINE(clk_id, hw_data, api,                                   \
+			Z_ROOT_CLOCK_SECTION_NAME(clk_id),                     \
+			Z_CLOCK_CHILDREN_NAME(clk_id),                         \
+			STRINGIFY(clk_id));
 
 /**
  * @brief Create a "leaf clock" object from a devicetree node identifier
@@ -557,14 +679,22 @@ static inline clock_handle_t clk_handle_get(const struct clk *clk_hw)
  * should use the clock management API. Clock objects are considered
  * internal to the clock subsystem.
  *
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id. For
+ * nodes defined in devicetree, this can be retrieved using
+ * `CLOCK_DT_CLK_ID(node_id)`. If absent, clock children will be initialized
+ * based on devicetree dependencies
+ *
  * @param node_id The devicetree node identifier.
  * @param hw_data Pointer to the clock's private data, which will be
  * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
+ * @param ... Additional child clocks for this clock object.
  */
 
-#define LEAF_CLOCK_DT_DEFINE(node_id, hw_data)                                 \
-	Z_CLOCK_BASE_DEFINE(node_id, Z_CLOCK_DT_CLK_ID(node_id), hw_data,      \
-			    NULL, Z_LEAF_CLOCK_SECTION_NAME(node_id));
+#define LEAF_CLOCK_DT_DEFINE(node_id, hw_data, ...)                            \
+	Z_CLOCK_DT_DEFINE(node_id, hw_data, NULL,                              \
+			Z_LEAF_CLOCK_SECTION_NAME(CLOCK_DT_CLK_ID(node_id)), \
+			__VA_ARGS__);
 
 /**
  * @brief Like LEAF_CLOCK_DT_DEFINE(), but uses an instance of `DT_DRV_COMPAT`
@@ -575,6 +705,29 @@ static inline clock_handle_t clk_handle_get(const struct clk *clk_hw)
  */
 #define LEAF_CLOCK_DT_INST_DEFINE(inst, ...)                                   \
 	LEAF_CLOCK_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Define a "leaf clock" object without a devicetree node identifier
+ *
+ * This API should only be used by the clock management subsystem- no clock
+ * drivers should be defined as leaf nodes.
+ *
+ * This macro defines a @ref clk. This clock does not correspond to a devicetree
+ * node, and thus cannot directly be configured by the user.
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id, or node ordinal if
+ * defined by a devicetree node.
+ *
+ * @param clk_id Globally unique identifier for the clock object.
+ * @param hw_data Pointer to the clock's private data, which will be
+ * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
+ * @param ... Additional child clocks for this clock object.
+ */
+#define LEAF_CLOCK_DEFINE(clk_id, hw_data, ...)                                \
+	Z_CLOCK_DEFINE(clk_id, hw_data, NULL,                                  \
+			Z_LEAF_CLOCK_SECTION_NAME(clk_id),                     \
+			NULL,                                                  \
+			STRINGIFY(clk_id));
 
 #ifdef __cplusplus
 }

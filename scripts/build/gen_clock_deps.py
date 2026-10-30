@@ -83,8 +83,8 @@ def main():
         # Iterate through all clock ordinals lists in the system, and
         # for each one define a new array with the clock objects needed
         # for the final application
-        for ord_num, child_ords in parsed_elf.clock_ordinal_arrays.items():
-            sym_name = f"__clock_children_clk_dts_ord_{ord_num}"
+        for clk_id, child_ords in parsed_elf.child_clock_arrays.items():
+            sym_name = f"__clock_children_{clk_id}"
             sym_values = []
             for child_handles in child_ords.handles:
                 sym_values.append(f"{child_handles}")
