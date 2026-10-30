@@ -15,6 +15,7 @@ ram: 32768
 flash: 65536
 supported:
   - gpio
+  - rtc
   - uart
   - video
 vendor: nxp
