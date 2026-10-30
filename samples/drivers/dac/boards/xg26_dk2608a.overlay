@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dac/silabs-vdac.h>
+
+/ {
+	zephyr,user {
+		dac = <&vdac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+/* VDAC0 CH0 main-output is PB0, which is connected to boards blue LED. */
+&vdac0 {
+	voltage-reference = "AVDD";
+
+	channel@0 {
+		main-output;
+	};
+};
