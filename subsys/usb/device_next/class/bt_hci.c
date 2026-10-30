@@ -30,6 +30,7 @@
 
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/drivers/bluetooth.h>
@@ -64,6 +65,161 @@ LOG_MODULE_REGISTER(bt_hci, CONFIG_USBD_BT_HCI_LOG_LEVEL);
 
 static K_FIFO_DEFINE(bt_hci_rx_queue);
 static K_FIFO_DEFINE(bt_hci_tx_queue);
+
+#if defined(CONFIG_BT_ISO)
+/*
+ * HCI carries no packet-type marker on the bulk endpoint: the host sends ACL and
+ * ISO data on the same bulk OUT, and the type has to be recovered from the
+ * connection handle (ISO and ACL handles come from disjoint controller pools).
+ * See zephyrproject-rtos/zephyr#44013. We learn which handles are ISO by snooping
+ * the controller->host events that create and tear down ISO connections, and use
+ * that set to route bulk-OUT data to BT_BUF_ISO_OUT.
+ */
+#define BT_HCI_ISO_HANDLE_UNUSED	0xffffU
+
+static uint16_t iso_handles[CONFIG_BT_ISO_MAX_CHAN] = {
+	[0 ... (CONFIG_BT_ISO_MAX_CHAN - 1)] = BT_HCI_ISO_HANDLE_UNUSED,
+};
+static struct k_spinlock iso_handles_lock;
+
+static void bt_hci_iso_handle_track(uint16_t handle)
+{
+	k_spinlock_key_t key = k_spin_lock(&iso_handles_lock);
+	int slot = -1;
+
+	for (int i = 0; i < ARRAY_SIZE(iso_handles); i++) {
+		if (iso_handles[i] == handle) {
+			k_spin_unlock(&iso_handles_lock, key);
+			return;
+		}
+		if (slot < 0 && iso_handles[i] == BT_HCI_ISO_HANDLE_UNUSED) {
+			slot = i;
+		}
+	}
+
+	if (slot >= 0) {
+		iso_handles[slot] = handle;
+	} else {
+		LOG_WRN("No room to track ISO handle 0x%04x", handle);
+	}
+
+	k_spin_unlock(&iso_handles_lock, key);
+}
+
+static void bt_hci_iso_handle_untrack(uint16_t handle)
+{
+	k_spinlock_key_t key = k_spin_lock(&iso_handles_lock);
+
+	for (int i = 0; i < ARRAY_SIZE(iso_handles); i++) {
+		if (iso_handles[i] == handle) {
+			iso_handles[i] = BT_HCI_ISO_HANDLE_UNUSED;
+			break;
+		}
+	}
+
+	k_spin_unlock(&iso_handles_lock, key);
+}
+
+static bool bt_hci_handle_is_iso(uint16_t handle)
+{
+	k_spinlock_key_t key = k_spin_lock(&iso_handles_lock);
+	bool found = false;
+
+	for (int i = 0; i < ARRAY_SIZE(iso_handles); i++) {
+		if (iso_handles[i] == handle) {
+			found = true;
+			break;
+		}
+	}
+
+	k_spin_unlock(&iso_handles_lock, key);
+
+	return found;
+}
+
+/* Snoop a controller->host event (type byte already pulled) to keep the ISO
+ * handle set current. Pure lookups otherwise; only connection life-cycle events
+ * mutate the set.
+ */
+static void bt_hci_iso_handle_snoop(const uint8_t *data, size_t len)
+{
+	const struct bt_hci_evt_hdr *hdr = (const void *)data;
+
+	if (len < sizeof(*hdr)) {
+		return;
+	}
+
+	data += sizeof(*hdr);
+	len -= sizeof(*hdr);
+
+	if (hdr->evt == BT_HCI_EVT_DISCONN_COMPLETE) {
+		const struct bt_hci_evt_disconn_complete *evt = (const void *)data;
+
+		if (len >= sizeof(*evt)) {
+			bt_hci_iso_handle_untrack(sys_le16_to_cpu(evt->handle) &
+						  BT_ACL_HANDLE_MASK);
+		}
+		return;
+	}
+
+	if (hdr->evt != BT_HCI_EVT_LE_META_EVENT) {
+		return;
+	}
+
+	const struct bt_hci_evt_le_meta_event *meta = (const void *)data;
+
+	if (len < sizeof(*meta)) {
+		return;
+	}
+
+	const uint8_t *sub = meta->data;
+	size_t sub_len = len - sizeof(*meta);
+
+	switch (meta->subevent) {
+	case BT_HCI_EVT_LE_CIS_ESTABLISHED:
+#if defined(BT_HCI_EVT_LE_CIS_ESTABLISHED_V2)
+	case BT_HCI_EVT_LE_CIS_ESTABLISHED_V2:
+#endif
+	{
+		const struct bt_hci_evt_le_cis_established *evt = (const void *)sub;
+
+		/* Only status + conn_handle are needed and shared by both versions. */
+		if (sub_len >= offsetof(struct bt_hci_evt_le_cis_established, cig_sync_delay) &&
+		    evt->status == BT_HCI_ERR_SUCCESS) {
+			bt_hci_iso_handle_track(sys_le16_to_cpu(evt->conn_handle) &
+						BT_ACL_HANDLE_MASK);
+		}
+		break;
+	}
+	case BT_HCI_EVT_LE_BIG_COMPLETE: {
+		const struct bt_hci_evt_le_big_complete *evt = (const void *)sub;
+
+		if (sub_len >= sizeof(*evt) && evt->status == BT_HCI_ERR_SUCCESS &&
+		    sub_len >= sizeof(*evt) + evt->num_bis * sizeof(uint16_t)) {
+			for (uint8_t i = 0; i < evt->num_bis; i++) {
+				bt_hci_iso_handle_track(sys_le16_to_cpu(evt->handle[i]) &
+							BT_ACL_HANDLE_MASK);
+			}
+		}
+		break;
+	}
+	case BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED: {
+		const struct bt_hci_evt_le_big_sync_established *evt = (const void *)sub;
+
+		if (sub_len >= sizeof(*evt) && evt->status == BT_HCI_ERR_SUCCESS &&
+		    sub_len >= sizeof(*evt) + evt->num_bis * sizeof(uint16_t)) {
+			for (uint8_t i = 0; i < evt->num_bis; i++) {
+				bt_hci_iso_handle_track(sys_le16_to_cpu(evt->handle[i]) &
+							BT_ACL_HANDLE_MASK);
+			}
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+#endif /* CONFIG_BT_ISO */
 
 /* This pool is used exclusively for the OUT transfers */
 UDC_BUF_POOL_DEFINE(bt_hci_out_ep_pool,
@@ -214,12 +370,21 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 		switch (type) {
 		case BT_HCI_H4_EVT:
 			ep = bt_hci_get_int_in(c_data);
+#if defined(CONFIG_BT_ISO)
+			bt_hci_iso_handle_snoop(bt_buf->data, bt_buf->len);
+#endif
 			bt_hci_tx_in(c_data, bt_buf, ep);
 			break;
 		case BT_HCI_H4_ACL:
 			ep = bt_hci_get_bulk_in(c_data);
 			bt_hci_tx_in(c_data, bt_buf, ep);
 			break;
+#if defined(CONFIG_BT_ISO)
+		case BT_HCI_H4_ISO:
+			ep = bt_hci_get_bulk_in(c_data);
+			bt_hci_tx_in(c_data, bt_buf, ep);
+			break;
+#endif
 		default:
 			LOG_ERR("Unsupported type %u", type);
 			break;
@@ -341,6 +506,8 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 	}
 
 	if (hci_data->out_buf == NULL) {
+		enum bt_buf_type buf_type = BT_BUF_ACL_OUT;
+		uint8_t h4_type = BT_HCI_H4_ACL;
 		uint16_t len;
 
 		if (hci_data->out_rem != 0) {
@@ -349,13 +516,27 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 			goto restart_out_transfer;
 		}
 
-		len = hci_pkt_get_len(BT_HCI_H4_ACL, buf->data, buf->len);
+#if defined(CONFIG_BT_ISO)
+		/*
+		 * ACL and ISO data share this bulk OUT endpoint with no H4 type
+		 * marker on the wire, so the type is recovered from the
+		 * connection handle (issue #44013). The first USB chunk always
+		 * holds the data header, hence the full handle.
+		 */
+		if (buf->len >= sizeof(uint16_t) &&
+		    bt_hci_handle_is_iso(sys_get_le16(buf->data) & BT_ACL_HANDLE_MASK)) {
+			buf_type = BT_BUF_ISO_OUT;
+			h4_type = BT_HCI_H4_ISO;
+		}
+#endif
+
+		len = hci_pkt_get_len(h4_type, buf->data, buf->len);
 		if (len == 0 || len < buf->len) {
 			goto restart_out_transfer;
 		}
 
 		hci_data->out_rem = len - buf->len;
-		hci_data->out_buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
+		hci_data->out_buf = bt_buf_get_tx(buf_type, K_FOREVER,
 						  buf->data, buf->len);
 		if (hci_data->out_buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
