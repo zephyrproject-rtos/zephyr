@@ -122,6 +122,8 @@ TESTDATA_PART1 = [
     ("platform_exclude", ['demo_board_2'], None, None, "In test case platform exclude"),
     ("arch_exclude", ['x86'], None, None, "In test case arch exclude"),
     ("arch_allow", ['arm'], None, None, "Not in test case arch allow list"),
+    ("qualifiers_allow", ['foo'], None, None, "Not in testsuite qualifiers allow list"),
+    ("qualifiers_exclude", ['unit_testing'], None, None, "In testsuite qualifiers exclude"),
     ("skip", True, None, None, "Skip filter"),
     ("tags", set(['sensor', 'bluetooth']), "ignore_tags", ['bluetooth'], "Excluded tags per platform (exclude_tags)"),
     ("min_flash", "2024", "flash", "1024", "Not enough FLASH"),
@@ -173,6 +175,10 @@ def test_apply_filters_part1(class_testplan, all_testsuites_dict, platforms_list
             testcase.arch_exclude = tc_value
         if tc_attribute == "arch_allow":
             testcase.arch_allow = tc_value
+        if tc_attribute == "qualifiers_allow":
+            testcase.qualifiers_allow = tc_value
+        if tc_attribute == "qualifiers_exclude":
+            testcase.qualifiers_exclude = tc_value
         if tc_attribute == "skip":
             testcase.skip = tc_value
         if tc_attribute == "tags":
