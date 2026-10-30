@@ -2859,6 +2859,41 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 	}
 
 	ret = xfer->ret;
+
+	/* Post-RSTDAA cleanup: all targets dropped their DAs, so clear
+	 * controller-side bookkeeping (DAT, addr_slots, free_pos,
+	 * controller_priv).  Without this the next ENTDAA allocates new
+	 * slots while stale DAT entries persist, causing directed CCCs
+	 * to NACK.  Targets with a static_addr keep their DAT slot
+	 * reserved for potential SETDASA re-assignment.
+	 */
+	if ((ret == 0) && i3c_ccc_is_payload_broadcast(payload) &&
+	    (payload->ccc.id == I3C_CCC_RSTDAA)) {
+		struct i3c_device_desc *desc;
+
+		I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+			struct dw_i3c_i2c_dev_data *priv = desc->controller_priv;
+
+			if (priv == NULL) {
+				continue;
+			}
+
+			if (desc->dynamic_addr != 0U) {
+				i3c_addr_slots_mark_free(&data->common.attached_dev.addr_slots,
+							 desc->dynamic_addr);
+				desc->dynamic_addr = 0U;
+			}
+
+			if (desc->static_addr == 0U) {
+				uint32_t dat = DEV_ADDR_TABLE_LOC(data->datstartaddr, priv->id);
+
+				sys_write32(0, dw_i3c_regs(dev) + dat);
+				data->free_pos |= BIT(priv->id);
+				desc->controller_priv = NULL;
+			}
+		}
+	}
+
 error:
 	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
