@@ -85,11 +85,11 @@ enum bt_mesh_blob_chunks_missing {
 static inline size_t blob_block_size(size_t xfer_size, uint8_t block_size_log,
 				     uint32_t idx)
 {
-	if (((idx + 1U) << block_size_log) <= xfer_size) {
+	if ((((uint64_t)idx + 1U) << block_size_log) <= xfer_size) {
 		return (1U << block_size_log);
 	}
 
-	return xfer_size & BIT_MASK(block_size_log);
+	return xfer_size & BIT64_MASK(block_size_log);
 }
 
 static inline void blob_chunk_missing_set(uint8_t *missing_chunks,
