@@ -1,0 +1,9 @@
+family:
+- name: microchip_polarfire
+  series:
+  - name: polarfire
+    socs:
+    - name: polarfire
+      cpuclusters:
+      - name: e51
+      - name: u54
