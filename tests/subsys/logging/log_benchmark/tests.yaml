@@ -7,6 +7,22 @@ tests:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_CBPRINTF_COMPLETE=y
+  logging.benchmark.no_opt:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_LOG_SIMPLE_MSG_COMPRESS=n
+  logging.benchmark.mem_utilization:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_LOG_MEM_UTILIZATION=y
+  logging.benchmark.no_opt.mem_utilization:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_LOG_MEM_UTILIZATION=y
+      - CONFIG_LOG_SIMPLE_MSG_COMPRESS=n
   logging.benchmark_speed:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
