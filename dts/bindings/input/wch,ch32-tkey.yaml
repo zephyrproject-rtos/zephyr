@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32 Touch Key Detection (TKEY) peripheral
+
+compatible: "wch,ch32-tkey"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: false
+
+  poll-period-ms:
+    type: int
+    min: 1
+    default: 20
+    description: How often to poll the touch keys in milliseconds.
+
+child-binding:
+  description: Touch Key channel child node
+  properties:
+    channel:
+      type: int
+      min: 0
+      max: 15
+      required: true
+      description: TKEY channel number.
+
+    zephyr,code:
+      type: int
+      required: true
+      min: 1
+      description: Key or button code emitted on touch events.
