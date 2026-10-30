@@ -1802,7 +1802,7 @@ static int sdhc_esp32_controller_init(const struct device *dev)
 	/* Attach interrupt handler */
 	ret = esp_intr_alloc(cfg->irq_source,
 			     ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
+				     ESP_INT_FLAGS_CHECK(cfg->irq_flags),
 			     &sdio_esp32_isr, (void *)dev, &sdhc_esp32_ctrl.intr_handle);
 
 	if (ret != 0) {

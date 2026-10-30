@@ -123,7 +123,7 @@ static int esp32_xt_wdt_init(const struct device *dev)
 	xt_wdt_hal_enable_backup_clk(&data->hal, ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ/1000);
 
 	flags = ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INT_FLAGS_CHECK(cfg->irq_flags) |
-		ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM;
+		ESP_INTR_FLAG_SHARED;
 	err = esp_intr_alloc(cfg->irq_source, flags, (intr_handler_t)esp32_xt_wdt_isr, (void *)dev,
 			     NULL);
 	if (err) {

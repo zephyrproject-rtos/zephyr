@@ -649,15 +649,15 @@ static DEVICE_API(pwm, mcpwm_esp32_api) = {
 
 #ifdef CONFIG_PWM_CAPTURE
 #define IRQ_CONFIG_FUNC(idx)                                                                       \
-	static int mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                    \
+	static int mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                     \
 	{                                                                                          \
-		int ret;                                                                   \
-		ret = esp_intr_alloc(DT_INST_IRQ_BY_IDX(idx, 0, irq),                      \
-				ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |          \
-				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)) |          \
-					ESP_INTR_FLAG_IRAM,                                        \
-				(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);               \
-		return ret;                                                                \
+		int ret;                                                                           \
+		ret = esp_intr_alloc(                                                              \
+			DT_INST_IRQ_BY_IDX(idx, 0, irq),                                           \
+			ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |                  \
+				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)),            \
+			(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);                       \
+		return ret;                                                                        \
 	}
 #define CAPTURE_INIT(idx) .irq_config_func = mcpwm_esp32_irq_config_func_##idx
 #else

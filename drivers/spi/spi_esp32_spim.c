@@ -695,11 +695,9 @@ static int spi_esp32_init(const struct device *dev)
 	spi_ll_clear_int_stat(cfg->spi);
 
 	err = esp_intr_alloc(cfg->irq_source,
-			ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-			ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
-			(intr_handler_t)spi_esp32_isr,
-			(void *)dev,
-			NULL);
+			     ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+			     (intr_handler_t)spi_esp32_isr, (void *)dev, NULL);
 
 	if (err != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", err);

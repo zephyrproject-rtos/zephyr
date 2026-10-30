@@ -1458,14 +1458,12 @@ static int dma_esp32_configure_irq(const struct device *dev)
 		}
 #endif
 
-		int ret = esp_intr_alloc_intrstatus(irq_cfg[i].irq_source,
+		int ret = esp_intr_alloc_intrstatus(
+			irq_cfg[i].irq_source,
 			ESP_PRIO_TO_FLAGS(irq_cfg[i].irq_priority) |
-				ESP_INT_FLAGS_CHECK(irq_cfg[i].irq_flags) | ESP_INTR_FLAG_IRAM,
-			(uint32_t)status_reg,
-			status_mask,
-			(intr_handler_t)config->irq_handlers[i],
-			(void *)dev,
-			NULL);
+				ESP_INT_FLAGS_CHECK(irq_cfg[i].irq_flags),
+			(uint32_t)status_reg, status_mask, (intr_handler_t)config->irq_handlers[i],
+			(void *)dev, NULL);
 
 		if (ret != 0) {
 			LOG_ERR("Could not allocate interrupt handler");

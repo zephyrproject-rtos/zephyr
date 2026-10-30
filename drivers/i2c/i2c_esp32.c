@@ -1261,19 +1261,19 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
+	i2c_hal_init(&data->hal, config->index);
+	i2c_ll_disable_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
+	i2c_ll_clear_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
+
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
-			i2c_esp32_isr,
-			(void *)dev,
-			NULL);
+			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(config->irq_flags),
+			     i2c_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
 		return ret;
 	}
-
-	i2c_hal_init(&data->hal, config->index);
 
 	i2c_hal_master_init(&data->hal);
 

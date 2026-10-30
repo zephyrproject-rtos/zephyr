@@ -421,7 +421,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags));
 
 #if SOC_TOUCH_SENSOR_VERSION <= 2
-	flags |= ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM;
+	flags |= ESP_INTR_FLAG_SHARED;
 	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq), flags, esp32_touch_rtc_isr,
 			     (void *)dev, NULL);
 #elif SOC_TOUCH_SENSOR_VERSION == 3

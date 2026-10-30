@@ -489,7 +489,7 @@ int adc_esp32_dma_init(const struct device *dev)
 
 	i2s_ll_enable_core_clock(i2s_dev, true);
 
-	int err = esp_intr_alloc(I2S0_INTR_SOURCE, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
+	int err = esp_intr_alloc(I2S0_INTR_SOURCE, ESP_INTR_FLAG_INTRDISABLED,
 				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
 	if (err != 0) {
 		LOG_ERR("Could not allocate interrupt (err %d)", err);
@@ -510,8 +510,7 @@ int adc_esp32_dma_init(const struct device *dev)
 
 	spi_dma_ll_rx_enable_burst_desc(spi_dev, 0, true);
 
-	int err = esp_intr_alloc(SPI3_DMA_INTR_SOURCE,
-				 ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
+	int err = esp_intr_alloc(SPI3_DMA_INTR_SOURCE, ESP_INTR_FLAG_INTRDISABLED,
 				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
 	if (err != 0) {
 		LOG_ERR("Could not allocate interrupt (err %d)", err);

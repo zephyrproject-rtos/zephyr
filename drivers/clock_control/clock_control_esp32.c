@@ -15,6 +15,7 @@
 #include <soc/hp_sys_clkrst_reg.h>
 #endif
 
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -168,6 +169,9 @@ static int clock_control_esp32_configure(const struct device *dev, clock_control
 		ret = esp32_select_rtc_slow_clk(new_cfg->rtc.rtc_slow_clock_src, false);
 		break;
 	case ESP32_CLOCK_CONTROL_SUBSYS_CPU:
+		if (IS_ENABLED(CONFIG_SMP) && arch_num_cpus() > 1 && !k_is_pre_kernel()) {
+			return -ENOTSUP;
+		}
 		/* Normalize frequency */
 		new_cfg->cpu.xtal_freq = new_cfg->cpu.xtal_freq > MHZ(1)
 						 ? new_cfg->cpu.xtal_freq / MHZ(1)

@@ -291,8 +291,7 @@ static int esp32_mbox_init(const struct device *dev)
 #if !defined(MBOX_ESP32_LPCORE)
 		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
 				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
-					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu) |
-					     ESP_INTR_FLAG_IRAM,
+					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu),
 				     (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
 #endif
 #if defined(MBOX_ESP32_HPCORE)
@@ -306,8 +305,7 @@ static int esp32_mbox_init(const struct device *dev)
 #else
 		ret = esp_intr_alloc(cfg->irq_source_app_cpu,
 				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_app_cpu) |
-					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_app_cpu) |
-					     ESP_INTR_FLAG_IRAM,
+					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_app_cpu),
 				     (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
 #endif
 	}

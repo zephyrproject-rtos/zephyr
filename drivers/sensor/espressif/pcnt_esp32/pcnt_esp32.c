@@ -302,7 +302,7 @@ int pcnt_esp32_init(const struct device *dev)
 	 */
 	ret = esp_intr_alloc(config->irq_source,
 			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+				     ESP_INT_FLAGS_CHECK(config->irq_flags),
 			     (intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
 	if (ret != 0) {
 		LOG_ERR("pcnt isr alloc failed (%d)", ret);

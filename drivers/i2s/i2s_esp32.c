@@ -114,6 +114,7 @@ struct i2s_esp32_data {
 	enum i2s_dir active_dir;
 	bool tx_stop_without_draining;
 	i2s_hal_clock_info_t clk_info;
+	struct k_spinlock lock;
 #if I2S_ESP32_IS_DIR_EN(tx)
 	struct k_timer tx_deferred_transfer_timer;
 	struct k_timer tx_fifo_drain_timer;
@@ -378,9 +379,13 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg)
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->rx;
 	bool discard = true;
+	k_spinlock_key_t key;
 	int err;
 
+	key = k_spin_lock(&dev_data->lock);
+
 	if (!stream->data->dma_pending) {
+		k_spin_unlock(&dev_data->lock, key);
 		return;
 	}
 
@@ -439,6 +444,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg)
 		}
 
 		stream->data->dma_pending = true;
+		k_spin_unlock(&dev_data->lock, key);
 
 		return;
 	}
@@ -491,10 +497,13 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg)
 		goto rx_disable;
 	}
 
+	k_spin_unlock(&dev_data->lock, key);
+
 	return;
 
 rx_disable:
 	i2s_esp32_rx_stop_transfer(dev, discard);
+	k_spin_unlock(&dev_data->lock, key);
 }
 
 #if !SOC_GDMA_SUPPORTED
@@ -665,8 +674,8 @@ static int IRAM_ATTR i2s_esp32_tx_link(const struct device *dev, void *buffer, s
 /*
  * Links the first queued block behind the one in flight, when nothing is
  * linked yet. A block that cannot be linked stays queued and is started with
- * a stop in between when the one in flight ends. Called with interrupts
- * locked or from the DMA callback.
+ * a stop in between when the one in flight ends. Called with dev_data->lock
+ * held.
  */
 static void IRAM_ATTR i2s_esp32_tx_link_next(const struct device *dev)
 {
@@ -707,11 +716,10 @@ static bool IRAM_ATTR i2s_esp32_tx_chain_ended(const struct device *dev)
 }
 #endif /* SOC_GDMA_SUPPORTED */
 
-void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
+/* Runs with dev_data->lock held by the caller. */
+static void IRAM_ATTR i2s_esp32_tx_compl_transfer_locked(const struct device *dev)
 {
-	struct i2s_esp32_data *dev_data =
-		CONTAINER_OF(timer, struct i2s_esp32_data, tx_deferred_transfer_timer);
-	const struct device *dev = dev_data->dev;
+	struct i2s_esp32_data *dev_data = dev->data;
 	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
 	struct queue_item item;
@@ -758,18 +766,27 @@ void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 	}
 
 #if SOC_GDMA_SUPPORTED
-	{
-		unsigned int key = irq_lock();
-
-		i2s_esp32_tx_link_next(dev);
-		irq_unlock(key);
-	}
+	i2s_esp32_tx_link_next(dev);
 #endif /* SOC_GDMA_SUPPORTED */
 
 	return;
 
 tx_disable:
 	i2s_esp32_tx_stop_transfer(dev, discard);
+}
+
+void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
+{
+	struct i2s_esp32_data *dev_data =
+		CONTAINER_OF(timer, struct i2s_esp32_data, tx_deferred_transfer_timer);
+	const struct i2s_esp32_cfg *dev_cfg = dev_data->dev->config;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&dev_data->lock);
+	if (dev_cfg->tx.data->transferring && !dev_cfg->tx.data->dma_pending) {
+		i2s_esp32_tx_compl_transfer_locked(dev_data->dev);
+	}
+	k_spin_unlock(&dev_data->lock, key);
 }
 
 #if SOC_GDMA_SUPPORTED
@@ -783,12 +800,16 @@ static void IRAM_ATTR i2s_esp32_tx_callback(void *arg)
 	struct i2s_esp32_data *dev_data = dev->data;
 	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&dev_data->lock);
 
 	if (dev_data->state == I2S_STATE_ERROR) {
 		goto tx_disable;
 	}
 
 	if (!stream->data->dma_pending) {
+		k_spin_unlock(&dev_data->lock, key);
 		return;
 	}
 
@@ -831,6 +852,7 @@ static void IRAM_ATTR i2s_esp32_tx_callback(void *arg)
 			    !dev_data->tx_stop_without_draining) {
 				i2s_esp32_tx_link_next(dev);
 			}
+			k_spin_unlock(&dev_data->lock, key);
 			return;
 		}
 
@@ -856,13 +878,16 @@ static void IRAM_ATTR i2s_esp32_tx_callback(void *arg)
 #else
 	{
 #endif
-		i2s_esp32_tx_compl_transfer(&dev_data->tx_deferred_transfer_timer);
+		i2s_esp32_tx_compl_transfer_locked(dev);
 	}
+
+	k_spin_unlock(&dev_data->lock, key);
 
 	return;
 
 tx_disable:
 	i2s_esp32_tx_stop_transfer(dev, true);
+	k_spin_unlock(&dev_data->lock, key);
 }
 
 #if !SOC_GDMA_SUPPORTED
@@ -942,11 +967,7 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 	stream->data->transferring = true;
 
 #if SOC_GDMA_SUPPORTED
-	/* Locked against the callback restarting with the same block */
-	unsigned int key = irq_lock();
-
 	i2s_esp32_tx_link_next(dev);
-	irq_unlock(key);
 #endif /* SOC_GDMA_SUPPORTED */
 
 	return 0;
@@ -1204,11 +1225,11 @@ int IRAM_ATTR i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 	return 0;
 }
 
+/* Runs with dev_data->lock held by the caller. */
 static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = NULL;
-	unsigned int key;
 	int err = 0;
 
 #if !SOC_GDMA_SUPPORTED || I2S_ESP32_IS_DIR_EN(rx)
@@ -1224,12 +1245,10 @@ static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 		return -EINVAL;
 	}
 
-	key = irq_lock();
-
 	err = i2s_esp32_config_dma(dev, dir, stream);
 	if (err < 0) {
 		LOG_DBG("Dma configuration failed: %i", err);
-		goto unlock;
+		return err;
 	}
 
 #if I2S_ESP32_IS_DIR_EN(rx)
@@ -1258,7 +1277,7 @@ static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 	err = dma_start(stream->conf->dma_dev, stream->conf->dma_channel);
 	if (err < 0) {
 		LOG_DBG("Failed to start DMA channel: %" PRIu32, stream->conf->dma_channel);
-		goto unlock;
+		return err;
 	}
 #else
 #if I2S_ESP32_IS_DIR_EN(rx)
@@ -1280,9 +1299,7 @@ static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir)
 
 	stream->data->dma_pending = true;
 
-unlock:
-	irq_unlock(key);
-	return err;
+	return 0;
 }
 
 static int IRAM_ATTR i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
@@ -1418,8 +1435,7 @@ static int i2s_esp32_initialize(const struct device *dev)
 #else
 		int irq_flags = ESP_PRIO_TO_FLAGS(stream->conf->irq_priority) |
 				ESP_INT_FLAGS_CHECK(stream->conf->irq_flags) |
-				ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED |
-				ESP_INTR_FLAG_SHARED;
+				ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED;
 
 		err = esp_intr_alloc_intrstatus(stream->conf->irq_source, irq_flags,
 						(uint32_t)i2s_ll_get_intr_status_reg(hal->dev),
@@ -1454,8 +1470,7 @@ static int i2s_esp32_initialize(const struct device *dev)
 #else
 		int irq_flags = ESP_PRIO_TO_FLAGS(stream->conf->irq_priority) |
 				ESP_INT_FLAGS_CHECK(stream->conf->irq_flags) |
-				ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED |
-				ESP_INTR_FLAG_SHARED;
+				ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED;
 
 		err = esp_intr_alloc_intrstatus(stream->conf->irq_source, irq_flags,
 						(uint32_t)i2s_ll_get_intr_status_reg(hal->dev),
@@ -1878,14 +1893,14 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 {
 	struct i2s_esp32_data *dev_data = dev->data;
 	bool at_least_one_dir_with_pending_transfer;
-	unsigned int key;
+	k_spinlock_key_t key;
 	int err;
 
-	key = irq_lock();
+	key = k_spin_lock(&dev_data->lock);
 
 	err = i2s_esp32_trigger_check(dev, dir, cmd);
 	if (err < 0) {
-		irq_unlock(key);
+		k_spin_unlock(&dev_data->lock, key);
 		return err;
 	}
 
@@ -1900,7 +1915,7 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 		if (err < 0) {
 			LOG_DBG("START - Transfer start failed: %d", err);
 			i2s_esp32_stop_transfer(dev, dir, true);
-			irq_unlock(key);
+			k_spin_unlock(&dev_data->lock, key);
 			return -EIO;
 		}
 		dev_data->state = I2S_STATE_RUNNING;
@@ -1911,7 +1926,7 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 		if (dev_data->active_dir != dir) {
 			LOG_DBG("Trigger dir (%d) different from active dir (%d)", dir,
 				dev_data->active_dir);
-			irq_unlock(key);
+			k_spin_unlock(&dev_data->lock, key);
 			return -EINVAL;
 		}
 
@@ -1938,7 +1953,7 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 		if (dev_data->state == I2S_STATE_RUNNING && dev_data->active_dir != dir) {
 			LOG_DBG("Trigger dir (%d) different from active dir (%d)", dir,
 				dev_data->active_dir);
-			irq_unlock(key);
+			k_spin_unlock(&dev_data->lock, key);
 			return -EINVAL;
 		}
 
@@ -1946,7 +1961,7 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 		i2s_esp32_queue_drop(dev, dir);
 		if (err < 0) {
 			dev_data->state = I2S_STATE_ERROR;
-			irq_unlock(key);
+			k_spin_unlock(&dev_data->lock, key);
 			return -EIO;
 		}
 		dev_data->state = I2S_STATE_READY;
@@ -1956,7 +1971,7 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 		if (err < 0) {
 			LOG_DBG("PREPARE - stop transfer failed: %d", err);
 			dev_data->state = I2S_STATE_ERROR;
-			irq_unlock(key);
+			k_spin_unlock(&dev_data->lock, key);
 			return -EIO;
 		}
 
@@ -1965,11 +1980,11 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 		break;
 	default:
 		LOG_DBG("Unsupported trigger command: %d", (int)cmd);
-		irq_unlock(key);
+		k_spin_unlock(&dev_data->lock, key);
 		return -EIO;
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&dev_data->lock, key);
 	return 0;
 }
 
@@ -2057,20 +2072,20 @@ static int i2s_esp32_write(const struct device *dev, void *mem_block, size_t siz
 	 * the callback finds the queue empty and stops the output. Only with
 	 * an empty queue, to keep the order.
 	 */
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
 	if (dev_data->state == I2S_STATE_RUNNING && stream->data->transferring &&
 	    stream->data->dma_pending && stream->data->mem_block != NULL &&
 	    stream->data->next_block == NULL &&
 	    k_msgq_num_used_get(&stream->data->queue) == 0) {
 		err = i2s_esp32_tx_link(dev, mem_block, size);
-		irq_unlock(key);
+		k_spin_unlock(&dev_data->lock, key);
 		if (err == 0) {
 			return 0;
 		}
 		LOG_DBG("Failed to link the TX block, queueing it: %d", err);
 	} else {
-		irq_unlock(key);
+		k_spin_unlock(&dev_data->lock, key);
 	}
 #endif /* SOC_GDMA_SUPPORTED */
 
