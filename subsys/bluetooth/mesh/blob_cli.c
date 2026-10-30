@@ -271,7 +271,7 @@ static int chunk_idx_decode(struct net_buf_simple *buf)
 static void block_set(struct bt_mesh_blob_cli *cli, uint16_t block_idx)
 {
 	cli->block.number = block_idx;
-	cli->block.offset = block_idx * (1UL << cli->xfer->block_size_log);
+	cli->block.offset = block_idx * BIT64(cli->xfer->block_size_log);
 	cli->block.size = blob_block_size(cli->xfer->size, cli->xfer->block_size_log,
 					  block_idx);
 	cli->block.chunk_count =
@@ -831,7 +831,7 @@ static void caps_collected(struct bt_mesh_blob_cli *cli)
 	}
 
 	while (success &&
-	       (1UL << cli->caps.max_block_size_log) >
+	       BIT64(cli->caps.max_block_size_log) >
 	       (cli->caps.max_chunk_size * cli->caps.max_chunks)) {
 		cli->caps.max_block_size_log--;
 	}
