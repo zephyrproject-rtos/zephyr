@@ -21,7 +21,7 @@ struct hw_frame_fpu {
 	struct hw_frame_base base;
 	uint32_t s_regs[16];
 	uint32_t fpscr;
-	uint32_t reserved;
+	uint32_t vpr; /* reserved without MVE */
 };
 
 /* The hardware frame pushed when entry happens with a misaligned stack */
@@ -53,6 +53,28 @@ struct synth_frame_align {
 	uint32_t r7, r8, r9, r10, r11;
 	uint32_t r4, r5, r6; /* these do NOT match switch format */
 	struct hw_frame_align base;
+};
+
+/* Zephyr's synthesized frame used during context switch on interrupt
+ * exit into a thread with FPU state.  The hardware restores s0-s15
+ * and FPSCR from the extended frame and sets CONTROL.FPCA, which must
+ * be set while the thread's FPU registers are live so that they are
+ * saved again when it is next preempted.  s16-s31 and r4-r11 are
+ * loaded by arm_m_exc_exit.
+ */
+struct synth_frame_fpu {
+	uint32_t s_regs[16]; /* s16-s31 */
+	uint32_t r7, r8, r9, r10, r11;
+	uint32_t r4, r5, r6;
+	struct hw_frame_fpu base;
+};
+
+/* As above, variant used when alignment word is needed */
+struct synth_frame_align_fpu {
+	uint32_t s_regs[16]; /* s16-s31 */
+	uint32_t r7, r8, r9, r10, r11;
+	uint32_t r4, r5, r6;
+	struct hw_frame_align_fpu base;
 };
 
 /* Zephyr's custom frame used for suspended threads, not hw-compatible */
@@ -87,6 +109,9 @@ struct z_frame {
 struct z_frame_fpu {
 	uint32_t have_fpu;
 	uint32_t s_regs[32];
+#ifdef CONFIG_ARMV8_1_M_MVEI
+	uint32_t vpr;
+#endif
 	uint32_t fpscr;
 	union u_frame u;
 };
@@ -98,7 +123,8 @@ struct z_frame_fpu {
  * offsets for in-place copies.
  */
 /* clang-format off */
-#define FRAMESZ (4 + MAX(sizeof(struct z_frame_fpu), sizeof(struct hw_frame_align_fpu)))
+#define FRAMESZ (4 + MAX(MAX(sizeof(struct z_frame_fpu), sizeof(struct hw_frame_align_fpu)), \
+			 sizeof(struct synth_frame_align_fpu)))
 #define PAD(T)  char pad_##T[FRAMESZ - sizeof(struct T)]
 union frame {
 	struct { PAD(hw_frame_base);      struct hw_frame_base hw;          };
@@ -108,6 +134,8 @@ union frame {
 	struct { PAD(z_frame);            struct z_frame z;                 };
 	struct { PAD(z_frame_fpu);        struct z_frame_fpu zfp;           };
 	struct { PAD(synth_frame_align);  struct synth_frame_align synth_a; };
+	struct { PAD(synth_frame_fpu);    struct synth_frame_fpu synth_fp;  };
+	struct { PAD(synth_frame_align_fpu); struct synth_frame_align_fpu synth_fp_a; };
 };
 /* clang-format on */
 
@@ -120,10 +148,26 @@ BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(hwfp_a));
 BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(z));
 BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(zfp));
 BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(synth_a));
+BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(synth_fp));
+BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(synth_fp_a));
 #endif
 
+/* Validate the move order in ZFP_TO_SYNTH(): s0-s15 land above
+ * s0-s29, and s16-s31 move down
+ */
+BUILD_ASSERT(offsetof(union frame, zfp.s_regs[30]) <= offsetof(union frame, synth_fp.base.s_regs));
+BUILD_ASSERT(offsetof(union frame, zfp.s_regs[30]) <=
+	     offsetof(union frame, synth_fp_a.base.base.s_regs));
+BUILD_ASSERT(offsetof(union frame, synth_fp.s_regs) <= offsetof(union frame, zfp.s_regs[16]));
+BUILD_ASSERT(offsetof(union frame, synth_fp_a.s_regs) <= offsetof(union frame, zfp.s_regs[16]));
+
 #ifdef CONFIG_FPU
-uint32_t arm_m_switch_stack_buffer = sizeof(struct z_frame_fpu) - sizeof(struct hw_frame_base);
+/* Without CONFIG_BUILTIN_STACK_GUARD, the padded synthesized FPU
+ * frame can be larger than the suspended frame it is built from.
+ */
+uint32_t arm_m_switch_stack_buffer =
+	MAX(sizeof(struct z_frame_fpu), sizeof(struct synth_frame_align_fpu)) -
+	sizeof(struct hw_frame_base);
 #else
 uint32_t arm_m_switch_stack_buffer = sizeof(struct z_frame) - sizeof(struct hw_frame_base);
 #endif
@@ -142,6 +186,27 @@ void *arm_m_lto_refs[2];
 
 /* Bitmask to determine if the XPSR indicates the exception frame was padded */
 #define XPSR_STACK_ALIGN BIT(9)
+
+/* RETPSR.SFPA: exception return to Secure state loads CONTROL_S.SFPA
+ * from this bit.  If it is clear, the first FP instruction afterwards
+ * resets FPSCR from FPDSCR.
+ */
+#define XPSR_SFPA BIT(20)
+
+#if defined(CONFIG_ARMV8_M_SE) && !defined(CONFIG_ARM_NONSECURE_FIRMWARE)
+#define ZFP_SYNTH_APSR XPSR_SFPA
+#else
+#define ZFP_SYNTH_APSR 0
+#endif
+
+/* VPR (MVE predication) is part of a thread's FP context: it is
+ * stacked in the extended frame's last word and kept in z_frame_fpu
+ */
+#ifdef CONFIG_ARMV8_1_M_MVEI
+#define ZFP_VPR(f) ((f)->zfp.vpr)
+#else
+#define ZFP_VPR(f) 0
+#endif
 
 /* Unit test hook, unused in production */
 void *arm_m_last_switch_handle;
@@ -188,6 +253,37 @@ uint32_t arm_m_switch_control;
 	struct synth_frame_align tmp = { 0 };                           \
 	SWITCH_TO_SYNTH_INNER(sw, tmp, tmp.base.base);                  \
 	hw = tmp;                                                       \
+} while (false)
+
+/* Emits an in-place conversion from the z_frame_fpu to the
+ * synth_frame_fpu or synth_frame_align_fpu (sfp) of union frame f,
+ * whose extended hardware frame is at fphw.  Every field moves and
+ * the two overlap, so the order matters: first save what the hardware
+ * frame overwrites (the integer frame, FPSCR, and s30/s31 when it
+ * covers them), then move s0-s15 up into it, then s16-s31 down to the
+ * bottom (whose old contents are now copied out), then write r4-r11
+ * and the integer hardware frame over the old s16-s31.  On cores
+ * with MVE the hardware also restores VPR from the extended frame.  A frame
+ * saved by arm_m_switch() has no SFPA bit in its APSR word, so set it
+ * (in Secure state) to keep the FPSCR the hardware restores.
+ */
+#define ZFP_TO_SYNTH(f, sfp, fphw) do {                                 \
+	struct switch_frame sw = f->zfp.u.sw;                           \
+	uint32_t fpscr = f->zfp.fpscr;                                  \
+	uint32_t vpr = ZFP_VPR(f);                                      \
+	uint32_t s30 = f->zfp.s_regs[30], s31 = f->zfp.s_regs[31];      \
+	for (int i = 0; i < 16; i++) {                                  \
+		f->sfp.fphw.s_regs[i] = f->zfp.s_regs[i];               \
+	}                                                               \
+	for (int i = 0; i < 14; i++) {                                  \
+		f->sfp.s_regs[i] = f->zfp.s_regs[16 + i];               \
+	}                                                               \
+	f->sfp.s_regs[14] = s30;                                        \
+	f->sfp.s_regs[15] = s31;                                        \
+	SWITCH_TO_SYNTH_INNER(sw, f->sfp, f->sfp.fphw.base);            \
+	f->sfp.fphw.base.apsr |= ZFP_SYNTH_APSR;                        \
+	f->sfp.fphw.fpscr = fpscr;                                      \
+	f->sfp.fphw.vpr = vpr;                                          \
 } while (false)
 
 /* clang-format on */
@@ -314,15 +410,21 @@ static void *arm_m_switch_to_cpu(void *sp)
 	 */
 	bool have_fpu = (*(uint32_t *)sp) != 0;
 
+	/* A thread with FPU state resumes through an extended
+	 * hardware frame, which restores s0-s15 and FPSCR and sets
+	 * CONTROL.FPCA.  s16-s31 are loaded by arm_m_exc_exit after
+	 * all C code has run, as loading them here would let
+	 * compiler-generated code clobber them before the exception
+	 * return.
+	 */
 	if (have_fpu) {
 		f = CONTAINER_OF(sp, union frame, zfp.have_fpu);
 		splim = PSPLIM(f);
-		__asm__ volatile("vldm %0, {s0-s31}" ::"r"(&f->zfp.s_regs[0]));
 		padded = f->zfp.u.sw.apsr & XPSR_STACK_ALIGN;
 		if (padded) {
-			SWITCH_TO_SYNTH_ALIGN(f->zfp.u.sw, f->synth_a);
+			ZFP_TO_SYNTH(f, synth_fp_a, base.base);
 		} else {
-			SWITCH_TO_SYNTH(f->zfp.u.sw, f->zfp.u.hw);
+			ZFP_TO_SYNTH(f, synth_fp, base);
 		}
 	} else {
 		f = CONTAINER_OF(sp, union frame, z.have_fpu);
@@ -353,6 +455,19 @@ static void *arm_m_switch_to_cpu(void *sp)
 	/* Mark the callee-saved pointer for the fixup assembly.  Note
 	 * funny layout that puts r7 first!
 	 */
+#ifdef CONFIG_FPU
+	if (have_fpu && padded) {
+		arm_m_cs_ptrs.in = &f->synth_fp_a.r7;
+		arm_m_cs_ptrs.fpu_in = &f->synth_fp_a.s_regs[0];
+		return &f->synth_fp_a.base.base.base;
+	} else if (have_fpu) {
+		arm_m_cs_ptrs.in = &f->synth_fp.r7;
+		arm_m_cs_ptrs.fpu_in = &f->synth_fp.s_regs[0];
+		return &f->synth_fp.base.base;
+	}
+	arm_m_cs_ptrs.fpu_in = NULL;
+#endif
+
 	if (padded) {
 		arm_m_cs_ptrs.in = &f->synth_a.r7;
 	} else {
@@ -378,7 +493,8 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	union frame *f = NULL;
 	struct hw_frame_base *base = sp;
 	bool padded = (base->apsr & XPSR_STACK_ALIGN);
-	uint32_t fpscr;
+	uint32_t fpscr = 0;
+	uint32_t vpr = 0;
 
 #ifdef CONFIG_FPU
 	if (fpu) {
@@ -386,8 +502,16 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 		 * the stack frame we have to tickle the FPU to force
 		 * it to spill the caller-save registers.  Then clear
 		 * CONTROL.FPCA which gets set again by that instruction.
+		 *
+		 * This must be a real VMRS: clang implements __get_FPSCR()
+		 * as a builtin without side effects and deletes it when the
+		 * result is unused.  The memory clobber keeps the frame
+		 * reads below from moving above the spill.
 		 */
-		(void)__get_FPSCR();
+		uint32_t dummy;
+
+		__asm__ volatile("vmrs %0, fpscr" : "=r"(dummy) : : "memory");
+		(void)dummy;
 		CONTROL_Type control = {.w = __get_CONTROL()};
 
 		control.b.FPCA = 0;
@@ -402,6 +526,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 
 	if (IS_ENABLED(CONFIG_FPU) && fpu) {
 		fpscr = CONTAINER_OF(sp, struct hw_frame_fpu, base)->fpscr;
+		vpr = CONTAINER_OF(sp, struct hw_frame_fpu, base)->vpr;
 	}
 
 	/* There are four (!) different offsets from the interrupted
@@ -437,12 +562,19 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	arm_m_cs_ptrs.out = &f->z.u.sw.r4;
 
 #ifdef CONFIG_FPU
+	/* s16-s31 are stored by arm_m_exc_exit, see arm_m_switch_to_cpu() */
 	if (fpu) {
-		__asm__ volatile("vstm %0, {s16-s31}" ::"r"(&f->zfp.s_regs[16]));
+		arm_m_cs_ptrs.fpu_out = &f->zfp.s_regs[16];
 		f->zfp.fpscr = fpscr;
+#ifdef CONFIG_ARMV8_1_M_MVEI
+		f->zfp.vpr = vpr;
+#else
+		ARG_UNUSED(vpr);
+#endif
 		f->zfp.have_fpu = true;
 		return &f->zfp.have_fpu;
 	}
+	arm_m_cs_ptrs.fpu_out = NULL;
 	f->z.have_fpu = false;
 	return &f->z.have_fpu;
 #else
@@ -619,10 +751,28 @@ void arm_m_legacy_exit(void)
  * call arm_m_must_switch() (which handles the other context switch
  * duties), and spill/fill if necessary.  If no context switch is
  * needed, we just return via the original LR.  If we are switching,
- * we synthesize a integer-only EXC_RETURN as FPU state switching was
- * handled in software already.
+ * we synthesize an EXC_RETURN: integer-only, or with FType=0 if the
+ * incoming thread has FPU state.  In the latter case the hardware
+ * restores s0-s15 and FPSCR from the synthesized extended frame and
+ * sets CONTROL.FPCA, so that the thread's FPU state is saved again if
+ * it is preempted before its next FP instruction.
+ *
+ * s16-s31 are switched here, after all C code has run, rather than
+ * in arm_m_do_switch().  Like r4-r11, they are callee-saved, so they
+ * still hold the outgoing thread's values on return from
+ * arm_m_must_switch().  The caller-saved s0-s15 were spilled to the
+ * exception frame and copied out in C.  Nothing between the loads
+ * below and the exception return can then use the FPU registers,
+ * whatever code the compiler generated for the C functions (clang
+ * vectorizes the frame copies into MVE q0-q7, for example).
  */
 #ifdef CONFIG_MULTITHREADING
+BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, lr_save) == 8);
+#ifdef CONFIG_FPU
+BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, fpu_out) == 16);
+BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, fpu_in) == 20);
+#endif
+
 __attribute__((naked)) void arm_m_exc_exit(void)
 {
 	__asm__("  bl arm_m_must_switch;"
@@ -635,6 +785,16 @@ __attribute__((naked)) void arm_m_exc_exit(void)
 		"  stm r0, {r4-r11};"    /* out is a switch_frame */
 		"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
 		"  ldm r1, {r4-r6};"
+#ifdef CONFIG_FPU
+		"  ldr r0, [r2, #16];" /* fpu_out */
+		"  cbz r0, 2f;"
+		"  vstm r0, {s16-s31};"
+		"2:\n"
+		"  ldr r1, [r2, #20];" /* fpu_in */
+		"  cbz r1, 1f;"
+		"  vldm r1, {s16-s31};"
+		"  bic lr, lr, #0x10;" /* FType=0: extended frame */
+#endif
 		"1:\n"
 		"  msr basepri, r3;" /* release lock taken in must_switch */
 		"  bx lr;");
