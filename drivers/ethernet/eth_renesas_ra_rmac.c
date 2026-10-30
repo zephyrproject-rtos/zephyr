@@ -13,6 +13,7 @@
 #include <ethernet/eth_stats.h>
 #include "eth_renesas_ra_rmac.h"
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/ethernet/phy_connection_type.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
@@ -198,7 +199,7 @@ static void phy_type_setting(const struct device *dev)
 	volatile uint32_t *p_miicr_register;
 
 	/* Configure pins for MII or RMII. Set PHYMODE0 if MII is selected. */
-	R_PMISC->PFENET = (uint8_t)((0 == config->phy_conn_type)
+	R_PMISC->PFENET = (uint8_t)((ETHERNET_PHY_CONN_TYPE_MII == config->phy_conn_type)
 				    << (R_PMISC_PFENET_PHYMODE0_Pos + data->fsp_cfg.channel));
 
 	/* Get pointer to a MIICRn register. */
@@ -206,11 +207,11 @@ static void phy_type_setting(const struct device *dev)
 
 	/* Configure ESWM as MII, RMII, or RGMII. */
 	switch (config->phy_conn_type) {
-	case 1: /* RMII */
+	case ETHERNET_PHY_CONN_TYPE_RMII:
 		*p_miicr_register = 2;
 		break;
 
-	case 3: /* RGMII */
+	case ETHERNET_PHY_CONN_TYPE_RGMII:
 		*p_miicr_register = (R_ESWM_MIICR0_TXCIDE_Msk | 1);
 
 		/* Enable TXC generation.  */
