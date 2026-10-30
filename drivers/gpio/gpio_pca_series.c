@@ -88,7 +88,7 @@ const char *const gpio_pca_series_part_name[] = {
 enum gpio_pca_series_reg_type {			/** Type0 Type1 Type2 Type3 */
 	PCA_REG_TYPE_1B_INPUT_PORT = 0U,	/**   x     x     x     x   */
 	PCA_REG_TYPE_1B_OUTPUT_PORT,		/**   x     x     x     x   */
-/*  PCA_REG_TYPE_1B_POLARITY_INVERSION,		      x     x     x     x   * (unused, omitted) */
+	PCA_REG_TYPE_1B_POLARITY_INVERSION,	/**   x     x     x     x   */
 	PCA_REG_TYPE_1B_CONFIGURATION,		/**   x     x     x     x   */
 	PCA_REG_TYPE_2B_OUTPUT_DRIVE_STRENGTH,	/**         x           x   */
 	PCA_REG_TYPE_1B_INPUT_LATCH,		/**         x           x   */
@@ -118,7 +118,7 @@ enum gpio_pca_series_reg_type {			/** Type0 Type1 Type2 Type3 */
 const char *const gpio_pca_series_reg_name[] = {
 	"1b_input_port",
 	"1b_output_port",
-/*  "1b_polarity_inversion," */
+	"1b_polarity_inversion",
 	"1b_configuration",
 	"2b_output_drive_strength",
 	"1b_input_latch",
@@ -183,6 +183,7 @@ struct gpio_pca_series_config {
 	const struct gpio_pca_series_part_config *part_cfg; /* config of part number */
 	struct gpio_dt_spec gpio_rst;                       /* device reset gpio */
 	bool automatic_reset;
+	uint32_t polinv_mask;              /* polarity inversion mask */
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
 	struct gpio_dt_spec gpio_int; /** device interrupt gpio */
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
@@ -256,7 +257,7 @@ static inline uint32_t gpio_pca_series_reg_size_per_port(const struct device *de
 	switch (reg_type) {
 	case PCA_REG_TYPE_1B_INPUT_PORT:
 	case PCA_REG_TYPE_1B_OUTPUT_PORT:
-/*  case PCA_REG_TYPE_1B_POLARITY_INVERSION: */
+	case PCA_REG_TYPE_1B_POLARITY_INVERSION:
 	case PCA_REG_TYPE_1B_CONFIGURATION:
 	case PCA_REG_TYPE_1B_INPUT_LATCH:
 	case PCA_REG_TYPE_1B_PULL_ENABLE:
@@ -697,6 +698,15 @@ static inline int gpio_pca_series_reset_pin_toggle(const struct device *dev)
 	return ret;
 }
 
+static inline int gpio_pca_series_reset_write_polinv(const struct device *dev)
+{
+	const struct gpio_pca_series_config *cfg = dev->config;
+	uint32_t polinv_mask = sys_cpu_to_le32(cfg->polinv_mask);
+
+	return gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_POLARITY_INVERSION,
+		(uint8_t *)&polinv_mask);
+}
+
 static inline int gpio_pca_series_reset_write_reg(const struct device *dev)
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
@@ -708,6 +718,10 @@ static inline int gpio_pca_series_reset_write_reg(const struct device *dev)
 	 * write reset value to registers
 	 */
 	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT, reset_value_1);
+	if (ret) {
+		return ret;
+	}
+	ret = gpio_pca_series_reset_write_polinv(dev);
 	if (ret) {
 		return ret;
 	}
@@ -770,7 +784,7 @@ int gpio_pca_series_reset(const struct device *dev)
 		if (ret) {
 			LOG_WRN("gpio reset failed (%d), fallback to soft reset", ret);
 		} else {
-			return ret;
+			return gpio_pca_series_reset_write_polinv(dev);
 		}
 	}
 
@@ -1996,6 +2010,9 @@ out_bus:
  *    1b_output_port
  *        - present on all devices
  *        - cacheable
+ *    1b_polarity_inversion
+ *        - present on all devices
+ *        - write only from devicetree config, non-cacheable
  *    1b_configuration
  *        - present on all devices
  *        - cacheable
@@ -2079,7 +2096,7 @@ out_bus:
 static const uint8_t gpio_pca_series_cache_map_pca953x[] = {
 	PCA_REG_INVALID, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x00, /** output_port */
-/*	0x02,     polarity_inversion  (unused, omitted) */
+	PCA_REG_INVALID, /** polarity_inversion, write-only from devicetree, not cached */
 	0x01, /** configuration */
 	PCA_REG_INVALID, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	PCA_REG_INVALID, /** input_latch if PCA_HAS_LATCH*/
@@ -2106,7 +2123,7 @@ static const uint8_t gpio_pca_series_cache_map_pca953x[] = {
 static const uint8_t gpio_pca_series_reg_pca9538[] = {
 	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x01, /** output_port */
-/*	0x02,     polarity_inversion  (unused, omitted) */
+	0x02, /** polarity_inversion */
 	0x03, /** configuration */
 	PCA_REG_INVALID, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	PCA_REG_INVALID, /** input_latch if PCA_HAS_LATCH*/
@@ -2193,7 +2210,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca6408 = {
 static const uint8_t gpio_pca_series_reg_pca9539[] = {
 	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x02, /** output_port */
-/*	0x04,     polarity_inversion  (unused, omitted) */
+	0x04, /** polarity_inversion */
 	0x06, /** configuration */
 	PCA_REG_INVALID, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	PCA_REG_INVALID, /** input_latch if PCA_HAS_LATCH*/
@@ -2300,7 +2317,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca6416 = {
 static const uint8_t gpio_pca_series_cache_map_pcal953x[] = {
 	PCA_REG_INVALID, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x00, /** output_port */
-/*	0x02,     polarity_inversion  (unused, omitted) */
+	PCA_REG_INVALID, /** polarity_inversion, write-only from devicetree, not cached */
 	0x01, /** configuration */
 	0x02, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	0x04, /** input_latch if PCA_HAS_LATCH*/
@@ -2327,7 +2344,7 @@ static const uint8_t gpio_pca_series_cache_map_pcal953x[] = {
 static const uint8_t gpio_pca_series_reg_pcal9538[] = {
 	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x01, /** output_port */
-/*	0x02,     polarity_inversion  (unused, omitted) */
+	0x02, /** polarity_inversion */
 	0x03, /** configuration */
 	0x40, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	0x42, /** input_latch if PCA_HAS_LATCH*/
@@ -2391,7 +2408,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6408 = {
 static const uint8_t gpio_pca_series_reg_pcal9539[] = {
 	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x02, /** output_port */
-/*	0x04,     polarity_inversion  (unused, omitted) */
+	0x04, /** polarity_inversion */
 	0x06, /** configuration */
 	0x40, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	0x44, /** input_latch if PCA_HAS_LATCH*/
@@ -2479,7 +2496,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6416 = {
 static const uint8_t gpio_pca_series_cache_map_pcal65xx[] = {
 	PCA_REG_INVALID, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x00, /** output_port */
-/*	0x02,     polarity_inversion  (unused, omitted) */
+	PCA_REG_INVALID, /** polarity_inversion, write-only from devicetree, not cached */
 	0x01, /** configuration */
 	0x02, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	0x04, /** input_latch if PCA_HAS_LATCH*/
@@ -2506,7 +2523,7 @@ static const uint8_t gpio_pca_series_cache_map_pcal65xx[] = {
 static const uint8_t gpio_pca_series_reg_pcal6524[] = {
 	PCA_REG_INVALID, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x04, /** output_port */
-/*	0x08,     polarity_inversion  (unused, omitted) */
+	0x08, /** polarity_inversion */
 	0x0c, /** configuration */
 	0x40, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	0x48, /** input_latch if PCA_HAS_LATCH*/
@@ -2548,7 +2565,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6524 = {
 static const uint8_t gpio_pca_series_reg_pcal6534[] = {
 	PCA_REG_INVALID, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x05, /** output_port */
-/*	0x0a,     polarity_inversion  (unused, omitted) */
+	0x0a, /** polarity_inversion */
 	0x0f, /** configuration */
 	0x30, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	0x3a, /** input_latch if PCA_HAS_LATCH*/
@@ -2598,6 +2615,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
 		.part_cfg = GPIO_PCA_GET_PART_CFG_BY_PART_NO(part_no), \
 		.gpio_rst = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}), \
 		.automatic_reset = (!(DT_INST_PROP(inst, no_auto_reset))), \
+		.polinv_mask = DT_INST_PROP(inst, polarity_inversion), \
 		IF_ENABLED(CONFIG_GPIO_PCA_SERIES_INTERRUPT, \
 			(.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {}),)) \
 	}; \
