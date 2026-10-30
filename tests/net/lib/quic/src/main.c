@@ -606,6 +606,24 @@ static size_t count_new_quic_closed_contexts(const struct quic_closed_stats_snap
 	return count;
 }
 
+/* A connection context can close a moment after its socket: the QUIC service
+ * thread drops the last reference of a stream once it has handled the frame
+ * whose data the application read before closing the stream.
+ */
+static size_t wait_new_quic_closed_contexts(struct quic_closed_stats_snapshot *snapshot,
+					    int baseline_id, size_t expected)
+{
+	size_t count = count_new_quic_closed_contexts(snapshot, baseline_id);
+
+	for (size_t i = 0U; i < 100U && count < expected; i++) {
+		k_sleep(K_MSEC(10));
+		copy_quic_closed_context_stats(snapshot);
+		count = count_new_quic_closed_contexts(snapshot, baseline_id);
+	}
+
+	return count;
+}
+
 static const struct quic_closed_context_stats *find_new_quic_closed_context_stats(
 	const struct quic_closed_stats_snapshot *snapshot, int baseline_id, bool is_server,
 	uint16_t local_port, uint16_t remote_port)
@@ -6124,6 +6142,7 @@ ZTEST(net_socket_quic, test_470_connection_statistics_track_traffic)
 	const struct quic_closed_context_stats *closed_client;
 	const struct quic_closed_context_stats *closed_server;
 	int closed_baseline_id;
+	size_t closed_count;
 #endif
 	int ret;
 
@@ -6173,7 +6192,8 @@ ZTEST(net_socket_quic, test_470_connection_statistics_track_traffic)
 	zassert_equal(stats_after.connections_opened - stats_before.connections_opened, 3U,
 		      "Expected listener, client, and accepted server connection opens");
 #if defined(CONFIG_QUIC_STATS_HISTORY)
-	zassert_equal(count_new_quic_closed_contexts(&closed_after, closed_baseline_id), 2U,
+	closed_count = wait_new_quic_closed_contexts(&closed_after, closed_baseline_id, 2U);
+	zassert_equal(closed_count, 2U,
 		      "Expected only client and accepted server contexts in closed stats history");
 
 	closed_client = find_new_quic_closed_context_stats(&closed_after, closed_baseline_id, false,
@@ -7025,6 +7045,13 @@ ZTEST(net_socket_quic, test_491_stream_lookup_keeps_connections_apart)
 	link_test_stream(&stream_a, ctx, ep_a, 0);
 	link_test_stream(&stream_b, ctx, ep_b, 0);
 
+	/* The lookup skips streams that are being released */
+	zassert_is_null(quic_find_stream(ctx, ep_a, 0),
+			"Found a stream that is being released");
+
+	atomic_set(&stream_a.refcount, 1);
+	atomic_set(&stream_b.refcount, 1);
+
 	zassert_equal_ptr(quic_find_stream(ctx, ep_a, 0), &stream_a,
 			  "Wrong stream for the first peer");
 	zassert_equal_ptr(quic_find_stream(ctx, ep_b, 0), &stream_b,
@@ -7063,6 +7090,9 @@ ZTEST(net_socket_quic, test_492_stop_sending_replies_are_capped)
 	/* One STOP_SENDING frame for each of the streams */
 	ARRAY_FOR_EACH(test_streams, i) {
 		link_test_stream(&test_streams[i], ctx, ep, 4 * i);
+
+		/* The lookup skips streams that are being released */
+		atomic_set(&test_streams[i].refcount, 1);
 
 		payload[pos++] = QUIC_FRAME_TYPE_STOP_SENDING;
 		payload[pos++] = (uint8_t)(4 * i); /* Stream ID */
@@ -7211,6 +7241,234 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	ret = stop_sending_for_stream(ep, ctx, 0);
 	zassert_true(ret >= 0, "STOP_SENDING for an unknown peer stream must be ignored (%d)",
 		     ret);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+/* One STREAM frame with a length field, without offset and FIN */
+static int stream_frame_for(struct quic_endpoint *ep, uint8_t stream_id,
+			    const uint8_t *data, uint8_t len)
+{
+	uint8_t payload[8];
+	bool ack_only = false;
+
+	__ASSERT_NO_MSG(len <= sizeof(payload) - 3);
+
+	payload[0] = QUIC_FRAME_TYPE_STREAM_BASE | 0x02; /* LEN */
+	payload[1] = stream_id;
+	payload[2] = len;
+
+	if (len > 0U) {
+		memcpy(&payload[3], data, len);
+	}
+
+	return handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					  payload, 3 + len, 3 + len, &ack_only);
+}
+
+/* Accept the first stream as soon as it is queued and close it, then let
+ * the peer open another stream, which can take the slot of the first one.
+ */
+static void accept_and_close_thread(void *p1, void *p2, void *p3)
+{
+	struct quic_endpoint *ep = p1;
+	int *sock = p2;
+	int *next_fd = p3;
+	int fd;
+
+	fd = zsock_accept(*sock, NULL, NULL);
+	if (fd < 0) {
+		return;
+	}
+
+	(void)zsock_close(fd);
+
+	if (stream_frame_for(ep, 4, NULL, 0) < 0) {
+		return;
+	}
+
+	*next_fd = zsock_accept(*sock, NULL, NULL);
+}
+
+ZTEST(net_socket_quic, test_540_stream_closed_while_its_frame_is_delivered)
+{
+	static K_THREAD_STACK_DEFINE(stack, 4096);
+	static struct k_thread thread;
+	static const uint8_t data[] = { 'A', 'B', 'C', 'D' };
+	static int sock;
+	static int next_fd;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	uint8_t buf[sizeof(data)];
+	atomic_val_t listen_ref;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54354");
+	listen_ref = atomic_get(&ctx->refcount);
+	next_fd = -1;
+
+	ep->is_server = true;
+	ep->rx_sl.max_bidi = 4;
+	ep->rx_fc.max_data = 1024;
+	ep->rx_fc.max_data_sent = 1024;
+	atomic_set(&ep->refcount, 1);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	/* The application waits for streams at a higher priority, so it runs
+	 * as soon as the first stream is queued, before the data of the frame
+	 * that opened it is delivered.
+	 */
+	k_thread_create(&thread, stack, K_THREAD_STACK_SIZEOF(stack),
+			accept_and_close_thread, ep, &sock, &next_fd,
+			k_thread_priority_get(k_current_get()) - 1, 0, K_NO_WAIT);
+	k_sleep(K_MSEC(10));
+
+	ret = stream_frame_for(ep, 0, data, sizeof(data));
+	zexpect_true(ret >= 0, "STREAM frame handling failed (%d)", ret);
+
+	ret = k_thread_join(&thread, K_SECONDS(1));
+	zassert_ok(ret, "Application thread did not finish (%d)", ret);
+	zassert_true(next_fd >= 0, "Second stream not accepted (%d)", next_fd);
+
+	/* The data was sent on the first stream, so the second one has none */
+	ret = zsock_recv(next_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zexpect_true(ret == -1 && errno == EAGAIN,
+		     "Second stream received %d bytes of the first one", ret);
+
+	ret = zsock_close(next_fd);
+	zexpect_ok(ret, "Cannot close stream socket (%d)", -errno);
+
+	/* Both streams are released, the first one after its frame */
+	zexpect_equal(atomic_get(&ctx->refcount), listen_ref,
+		      "A stream still holds the listening context");
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+/* Hand one frame that refers to stream 0 to the frame parser */
+static int frame_for_stream_0(struct quic_endpoint *ep, const uint8_t *frame, size_t len)
+{
+	bool ack_only = false;
+
+	return handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					  frame, len, len, &ack_only);
+}
+
+ZTEST(net_socket_quic, test_541_stream_frames_keep_stream_references)
+{
+	static const uint8_t reset_stream[] = {
+		QUIC_FRAME_TYPE_RESET_STREAM, 0x00, 0x00, 0x00,
+	};
+	static const uint8_t stop_sending[] = {
+		QUIC_FRAME_TYPE_STOP_SENDING, 0x00, 0x00,
+	};
+	static const uint8_t max_stream_data[] = {
+		QUIC_FRAME_TYPE_MAX_STREAM_DATA, 0x00, 0x3f,
+	};
+	static const uint8_t stream_data_blocked[] = {
+		QUIC_FRAME_TYPE_STREAM_DATA_BLOCKED, 0x00, 0x00,
+	};
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54355");
+
+	ep->is_server = true;
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	/* A stream in use is changed by the frames, and the lookup gives
+	 * back the reference it took.
+	 */
+	link_test_stream(&stream, ctx, ep, 0);
+	k_poll_signal_init(&stream.send.signal);
+	atomic_set(&stream.refcount, 1);
+
+	ret = frame_for_stream_0(ep, reset_stream, sizeof(reset_stream));
+	zexpect_true(ret >= 0, "RESET_STREAM handling failed (%d)", ret);
+	zexpect_true(stream.read_closed, "RESET_STREAM did not close the read side");
+
+	ret = frame_for_stream_0(ep, stop_sending, sizeof(stop_sending));
+	zexpect_true(ret >= 0, "STOP_SENDING handling failed (%d)", ret);
+	zexpect_true(stream.tx_reset, "STOP_SENDING did not reset the stream");
+
+	ret = frame_for_stream_0(ep, max_stream_data, sizeof(max_stream_data));
+	zexpect_true(ret >= 0, "MAX_STREAM_DATA handling failed (%d)", ret);
+	zexpect_equal(stream.remote_max_data, 0x3f, "MAX_STREAM_DATA not applied");
+
+	ret = frame_for_stream_0(ep, stream_data_blocked, sizeof(stream_data_blocked));
+	zexpect_true(ret >= 0, "STREAM_DATA_BLOCKED handling failed (%d)", ret);
+
+	zexpect_equal(atomic_get(&stream.refcount), 1, "Frames changed the stream references");
+
+	/* A stream whose last reference is gone is still listed until its
+	 * release unlinks it. The frames must not touch it.
+	 */
+	unlink_test_stream(&stream, ctx);
+	link_test_stream(&stream, ctx, ep, 0);
+	k_poll_signal_init(&stream.send.signal);
+
+	(void)frame_for_stream_0(ep, reset_stream, sizeof(reset_stream));
+	(void)frame_for_stream_0(ep, stop_sending, sizeof(stop_sending));
+	(void)frame_for_stream_0(ep, max_stream_data, sizeof(max_stream_data));
+	(void)frame_for_stream_0(ep, stream_data_blocked, sizeof(stream_data_blocked));
+
+	zexpect_false(stream.read_closed, "RESET_STREAM changed a released stream");
+	zexpect_false(stream.tx_reset, "STOP_SENDING changed a released stream");
+	zexpect_equal(stream.remote_max_data, 0, "MAX_STREAM_DATA changed a released stream");
+	zexpect_equal(atomic_get(&stream.refcount), 0, "A released stream was referenced");
+
+	unlink_test_stream(&stream, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_542_deferred_stream_unref)
+{
+	static struct quic_stream stream;
+	struct quic_context *ctx;
+	atomic_val_t listen_ref;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54356");
+	listen_ref = atomic_get(&ctx->refcount);
+
+	/* The stream has no ID, so its release does not look up its
+	 * endpoint. It holds a reference to its context, as
+	 * quic_get_stream() takes one.
+	 */
+	link_test_stream(&stream, ctx, NULL, QUIC_STREAM_ID_UNASSIGNED);
+	stream.sock = -1;
+	atomic_set(&stream.refcount, 2);
+	atomic_inc(&ctx->refcount);
+
+	/* A reference that is not the last one is dropped at once */
+	quic_stream_unref_deferred(&stream);
+	zexpect_equal(atomic_get(&stream.refcount), 1, "Reference not dropped");
+
+	/* The last one is dropped later, outside the caller */
+	quic_stream_unref_deferred(&stream);
+	zexpect_equal(atomic_get(&stream.refcount), 1, "Stream released by the caller");
+	zexpect_equal_ptr(stream.conn, ctx, "Stream released by the caller");
+
+	k_sleep(K_MSEC(10));
+
+	zexpect_equal(atomic_get(&stream.refcount), 0, "Last reference not dropped");
+	zexpect_is_null(stream.conn, "Stream not released");
+	zexpect_equal(atomic_get(&ctx->refcount), listen_ref,
+		      "Stream reference to the context not dropped");
+
+	unlink_test_stream(&stream, ctx);
 
 	ret = quic_connection_close(sock);
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);

@@ -1581,6 +1581,7 @@ int process_long_header(struct quic_endpoint *ep,
 struct quic_stream *quic_find_stream(struct quic_context *ctx,
 				     struct quic_endpoint *ep,
 				     uint64_t stream_id);
+void quic_stream_unref_deferred(struct quic_stream *stream);
 
 /* Server session-ticket cache helpers (single-use / freshness). */
 struct quic_server_ticket_entry;

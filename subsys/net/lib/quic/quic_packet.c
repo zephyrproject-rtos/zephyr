@@ -345,6 +345,12 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		sys_slist_find_and_remove(&conn->streams, &stream->node);
 		sys_slist_prepend(&conn->streams, &stream->node);
 
+		/* The reference of the new stream goes to the accept queue,
+		 * where the application can take the stream and close it at
+		 * once. Keep one until the data of this frame is delivered.
+		 */
+		quic_stream_ref(stream);
+
 		/* Queue for accept() call */
 		k_fifo_put(&conn->incoming.stream_q, stream);
 
@@ -364,7 +370,7 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		 */
 		NET_DBG("[CO:%p/%d] Failed to deliver stream data: %d",
 			conn, quic_get_by_conn(conn), ret);
-		return ret;
+		goto out;
 	}
 
 	if (level == QUIC_SECRET_LEVEL_EARLY) {
@@ -381,8 +387,12 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	}
 
 	*consumed = pos + data_len;
+	ret = pos + data_len;
 
-	return pos + data_len;
+out:
+	quic_stream_unref(stream);
+
+	return ret;
 }
 
 /*
@@ -437,6 +447,8 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 		NET_DBG("[ST:%p/%d] RESET_STREAM: woke blocked readers on "
 			"stream %" PRIu64, stream, quic_get_by_stream(stream),
 			stream_id);
+
+		quic_stream_unref(stream);
 	}
 
 	return pos;
@@ -628,6 +640,10 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 			stream, quic_get_by_stream(stream), stream_id);
 	}
 
+	if (stream != NULL) {
+		quic_stream_unref(stream);
+	}
+
 	return pos;
 }
 
@@ -746,6 +762,8 @@ static int handle_max_stream_data_frame(struct quic_endpoint *ep,
 				(void)quic_replay_rejected_early_data(ep);
 			}
 		}
+
+		quic_stream_unref(stream);
 	} else {
 		NET_DBG("[EP:%p/%d] MAX_STREAM_DATA: stream=%" PRIu64
 			" not found, max=%" PRIu64,
@@ -981,10 +999,15 @@ static int handle_stream_data_blocked_frame(struct quic_endpoint *ep,
 
 	/* Find the stream and send MAX_STREAM_DATA */
 	stream = quic_find_stream_by_id(ep, stream_id);
-	if (stream != NULL && stream->local_max_data > max_stream_data &&
-	    quic_reply_budget_take(budget)) {
+	if (stream == NULL) {
+		return pos;
+	}
+
+	if (stream->local_max_data > max_stream_data && quic_reply_budget_take(budget)) {
 		quic_send_max_stream_data(ep, stream);
 	}
+
+	quic_stream_unref(stream);
 
 	return pos;
 }
