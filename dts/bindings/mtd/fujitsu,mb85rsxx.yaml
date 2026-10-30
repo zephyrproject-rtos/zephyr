@@ -1,7 +1,8 @@
 # Copyright (c) 2024 Antmicro <www.antmicro.com>
+# Copyright (c) 2026 RAKwireless Technology Limited
 # SPDX-License-Identifier: Apache-2.0
 
-description: Fujitsu MB85RSXX SPI FRAM
+description: Fujitsu MB85RSxx SPI FRAM (MB85RS2MT, MB85RS2MTA, MB85RS4MT)
 
 compatible: "fujitsu,mb85rsxx"
 
