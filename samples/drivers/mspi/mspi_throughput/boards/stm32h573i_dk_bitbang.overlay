@@ -1,0 +1,50 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Bitbang MSPI controller on the OCTOSPI1 pins of the STM32H573I-DK, which
+ * the hardware controller and its flash device must release. The on-board
+ * flash only sees unknown commands and ignores them.
+ */
+
+/delete-node/ &ext_flash_ctrl;
+
+&xspi1 {
+	status = "disabled";
+};
+
+/ {
+	aliases {
+		dev0 = &mspi_dummy;
+	};
+
+	mspi_bb: mspi-bitbang-controller {
+		compatible = "zephyr,mspi-bitbang-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+		sck-gpios = <&gpiof 10 GPIO_ACTIVE_HIGH>;
+		io-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>, <&gpiod 12 GPIO_ACTIVE_HIGH>,
+			   <&gpioc 2 GPIO_ACTIVE_HIGH>, <&gpiod 13 GPIO_ACTIVE_HIGH>,
+			   <&gpioh 2 GPIO_ACTIVE_HIGH>, <&gpioh 3 GPIO_ACTIVE_HIGH>,
+			   <&gpiog 9 GPIO_ACTIVE_HIGH>, <&gpioc 0 GPIO_ACTIVE_HIGH>;
+		ce-gpios = <&gpiog 6 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_M(1)>;
+
+		mspi_dummy: mspi_dummy@0 {
+			compatible = "zephyr,peripheral-device";
+			reg = <0>;
+			mspi-max-frequency = <DT_FREQ_M(1)>;
+			mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+			mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+			mspi-cpp-mode = "MSPI_CPP_MODE_0";
+			mspi-endian = "MSPI_BIG_ENDIAN";
+			mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+			command-length = "INSTR_1_BYTE";
+			address-length = "ADDR_1_BYTE";
+		};
+	};
+};

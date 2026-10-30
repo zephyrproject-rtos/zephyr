@@ -1,0 +1,59 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The on-board MX25LM51245G in octal STR mode through the bitbang MSPI
+ * controller on the OCTOSPI1 pins, which the hardware controller and its
+ * flash device must release. The SFDP tables were read from the chip.
+ */
+
+/delete-node/ &ext_flash_ctrl;
+
+&xspi1 {
+	status = "disabled";
+};
+
+/ {
+	aliases {
+		flash0 = &mx25lm51245g;
+	};
+
+	mspi_bb: mspi-bitbang-controller {
+		compatible = "zephyr,mspi-bitbang-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+		sck-gpios = <&gpiof 10 GPIO_ACTIVE_HIGH>;
+		io-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>, <&gpiod 12 GPIO_ACTIVE_HIGH>,
+			   <&gpioc 2 GPIO_ACTIVE_HIGH>, <&gpiod 13 GPIO_ACTIVE_HIGH>,
+			   <&gpioh 2 GPIO_ACTIVE_HIGH>, <&gpioh 3 GPIO_ACTIVE_HIGH>,
+			   <&gpiog 9 GPIO_ACTIVE_HIGH>, <&gpioc 0 GPIO_ACTIVE_HIGH>;
+		ce-gpios = <&gpiog 6 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_M(1)>;
+
+		mx25lm51245g: nor-flash@0 {
+			compatible = "mxicy,mx25u", "jedec,nor";
+			reg = <0>;
+			status = "okay";
+			size = <DT_SIZE_M(512)>;
+			jedec-id = [c2 85 3a];
+			sfdp-bfp = [e5 20 8a ff ff ff ff 1f 00 ff 00 ff 00 ff 00 ff
+				    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 10 d8
+				    00 ff 00 ff 87 69 01 00 82 12 00 e2 cc 02 67 38
+				    30 b0 30 b0 f4 bd d5 5c 00 00 00 ff 10 10 00 20
+				    00 00 00 00 00 00 7c a3 48 00 00 00 00 00 66 66];
+			sfdp-ff05 = [00 ee c0 69 72 72 71 71 00 d8 f7 f6 00 00 00 00
+				     14 35 1c 00];
+			sfdp-ff84 = [43 06 0f 00 21 dc ff ff];
+			mspi-max-frequency = <DT_FREQ_M(1)>;
+			mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+			mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+			mspi-cpp-mode = "MSPI_CPP_MODE_0";
+			mspi-endian = "MSPI_BIG_ENDIAN";
+			mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		};
+	};
+};
