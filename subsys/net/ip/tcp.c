@@ -557,7 +557,7 @@ static void tcp_derive_rto(struct tcp *conn)
 
 static void tcp_new_reno_log(struct tcp *conn, char *step)
 {
-	NET_DBG("[%p] ca %s, cwnd=%d, ssthres=%d, fast_pend=%i",
+	NET_DBG("[%p] ca %s, cwnd=%u, ssthres=%u, fast_pend=%u",
 		conn, step, conn->ca.cwnd, conn->ca.ssthresh,
 		conn->ca.pending_fast_retransmit_bytes);
 }
@@ -1298,11 +1298,11 @@ static int tcp_update_recv_wnd(struct tcp *conn, int32_t delta)
 	bool short_win_before;
 	bool short_win_after;
 
-	new_win = conn->recv_win + delta;
+	new_win = (int32_t)conn->recv_win + delta;
 	if (new_win < 0) {
 		new_win = 0;
-	} else if (new_win > conn->recv_win_max) {
-		new_win = conn->recv_win_max;
+	} else if (new_win > (int32_t)conn->recv_win_max) {
+		new_win = (int32_t)conn->recv_win_max;
 	}
 
 	short_win_before = tcp_short_window(conn);
@@ -1452,7 +1452,7 @@ static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, uint8_t flags,
 	th->th_off = 5 + (tcp_send_options_len(conn) / 4U);
 
 	UNALIGNED_PUT(flags, &th->th_flags);
-	UNALIGNED_PUT(net_htons(conn->recv_win), UNALIGNED_MEMBER_ADDR(th, th_win));
+	UNALIGNED_PUT(net_htons((uint16_t)conn->recv_win), UNALIGNED_MEMBER_ADDR(th, th_win));
 	UNALIGNED_PUT(net_htonl(seq), UNALIGNED_MEMBER_ADDR(th, th_seq));
 
 	if (ACK & flags) {
@@ -3148,7 +3148,7 @@ static void tcp_check_sock_options(struct tcp *conn)
 					     &rcvbuf_opt, NULL);
 	}
 
-	if (sndbuf_opt > 0 && sndbuf_opt != conn->send_win_max) {
+	if (sndbuf_opt > 0 && (uint32_t)sndbuf_opt != conn->send_win_max) {
 		k_mutex_lock(&conn->lock, K_FOREVER);
 
 		conn->send_win_max = sndbuf_opt;
@@ -3159,12 +3159,12 @@ static void tcp_check_sock_options(struct tcp *conn)
 		k_mutex_unlock(&conn->lock);
 	}
 
-	if (rcvbuf_opt > 0 && rcvbuf_opt != conn->recv_win_max) {
+	if (rcvbuf_opt > 0 && (uint32_t)rcvbuf_opt != conn->recv_win_max) {
 		int diff;
 
 		k_mutex_lock(&conn->lock, K_FOREVER);
 
-		diff = rcvbuf_opt - conn->recv_win_max;
+		diff = rcvbuf_opt - (int)conn->recv_win_max;
 		conn->recv_win_max = rcvbuf_opt;
 		tcp_update_recv_wnd(conn, diff);
 

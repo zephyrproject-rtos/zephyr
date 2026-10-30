@@ -118,7 +118,7 @@
 #define conn_send_data_dump(_conn)                                             \
 	({                                                                     \
 		NET_DBG("[%p] total=%zd, unacked_len=%d, "		       \
-			"send_win=%hu, mss=%hu",                               \
+			"send_win=%u, mss=%hu",                                \
 			(_conn), net_pkt_get_len(&(_conn)->send_data),         \
 			_conn->unacked_len, _conn->send_win,                   \
 			(uint16_t)conn_mss((_conn)));                          \
@@ -223,9 +223,9 @@ struct tcp_options {
 #ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
 
 struct tcp_collision_avoidance_reno {
-	uint16_t cwnd;
-	uint16_t ssthresh;
-	uint16_t pending_fast_retransmit_bytes;
+	uint32_t cwnd;
+	uint32_t ssthresh;
+	uint32_t pending_fast_retransmit_bytes;
 };
 #endif
 
@@ -306,12 +306,12 @@ struct tcp { /* TCP connection */
 	uint32_t keep_cnt;
 	uint32_t keep_cur;
 #endif /* CONFIG_NET_TCP_KEEPALIVE */
-	uint16_t recv_win_sent;
-	uint16_t recv_win_max;
-	uint16_t recv_win;
+	uint32_t recv_win_sent;
+	uint32_t recv_win_max;
+	uint32_t recv_win;
+	uint32_t send_win_max;
+	uint32_t send_win;
 	uint16_t recv_since_ack;
-	uint16_t send_win_max;
-	uint16_t send_win;
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
 	uint16_t rto;
 #endif
