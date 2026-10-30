@@ -35,6 +35,7 @@
 #define MODEM_CMUX_T1_TIMEOUT          (K_MSEC(CONFIG_MODEM_CMUX_T1_TIMEOUT))
 #define MODEM_CMUX_T2_TIMEOUT          (K_MSEC(CONFIG_MODEM_CMUX_T2_TIMEOUT))
 #define MODEM_CMUX_T3_TIMEOUT          (K_SECONDS(CONFIG_MODEM_CMUX_T3_TIMEOUT))
+#define MODEM_CMUX_N2_RETRIES          3
 
 /*************************************************************************************************/
 /*                                          Instances                                            */
@@ -120,14 +121,24 @@ static uint8_t cmux_frame_control_sabm_cmd[] = {0xF9, 0x03, 0x3F, 0x01, 0x1C, 0x
 static uint8_t cmux_frame_control_sabm_ack[] = {0xF9, 0x03, 0x73, 0x01, 0xD7, 0xF9};
 static uint8_t cmux_frame_control_cld_cmd[] = {0xF9, 0x03, 0xEF, 0x05, 0xC3, 0x01, 0xF2, 0xF9};
 static uint8_t cmux_frame_control_cld_ack[] = {0xF9, 0x03, 0xEF, 0x05, 0xC1, 0x01, 0xF2, 0xF9};
+static uint8_t cmux_frame_control_peer_cld_cmd[] = {0xF9, 0x01, 0xEF, 0x05,
+						    0xC3, 0x01, 0x93, 0xF9};
+static uint8_t cmux_frame_control_peer_cld_ack[] = {0xF9, 0x01, 0xEF, 0x05,
+						    0xC1, 0x01, 0x93, 0xF9};
 static uint8_t cmux_frame_dlci0_disc_cmd[] = {0xF9, 0x01, 0x53, 0x01, 0x9C, 0xF9};
 static uint8_t cmux_frame_dlci0_ua_ack[] = {0xF9, 0x01, 0x73, 0x01, 0xB6, 0xF9};
+static uint8_t cmux_frame_dlci0_dm_rsp[] = {0xF9, 0x03, 0x1F, 0x01, 0x36, 0xF9};
+static uint8_t cmux_frame_dlci0_sabm_cmd[] = {0xF9, 0x01, 0x3F, 0x01, 0x7D, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_cmd[] = {0xF9, 0x07, 0x3F, 0x01, 0xDE, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_ack[] = {0xF9, 0x07, 0x73, 0x01, 0x15, 0xF9};
 static uint8_t cmux_frame_dlci1_disc_cmd[] = {0xF9, 0x07, 0x53, 0x01, 0x3F, 0xF9};
 static uint8_t cmux_frame_dlci1_msc_cmd[] = {0xF9, 0x03, 0xEF, 0x09, 0xE3,
 					     0x05, 0x07, 0x8D, 0xFB, 0xF9};
 static uint8_t cmux_frame_dlci1_ua_ack[] = {0xF9, 0x07, 0x73, 0x01, 0x15, 0xF9};
+static uint8_t cmux_frame_dlci1_peer_sabm_cmd[] = {0xF9, 0x05, 0x3F, 0x01, 0xBF, 0xF9};
+static uint8_t cmux_frame_dlci1_peer_disc_cmd[] = {0xF9, 0x05, 0x53, 0x01, 0x5E, 0xF9};
+static uint8_t cmux_frame_dlci1_peer_ua_rsp[] = {0xF9, 0x05, 0x73, 0x01, 0x74, 0xF9};
+static uint8_t cmux_frame_dlci1_peer_dm_rsp[] = {0xF9, 0x05, 0x1F, 0x01, 0x95, 0xF9};
 static uint8_t cmux_frame_dlci2_sabm_cmd[] = {0xF9, 0x0B, 0x3F, 0x01, 0x59, 0xF9};
 static uint8_t cmux_frame_dlci2_sabm_ack[] = {0xF9, 0x0B, 0x73, 0x01, 0x92, 0xF9};
 static uint8_t cmux_frame_dlci2_disc_cmd[] = {0xF9, 0x0B, 0x53, 0x01, 0xB8, 0xF9};
@@ -248,6 +259,14 @@ static uint8_t cmux_frame_control_psc_initiator_cmd[] = {0xF9, 0x03, 0xFF, 0x05,
  */
 static uint8_t cmux_frame_control_psc_initiator_ack[] = {0xF9, 0x03, 0xFF, 0x05,
 							 0x41, 0x01, 0xE7, 0xF9};
+
+/*
+ * NSC response from peer to the PSC command of the CMUX initiator.
+ * NSC response type (ea=1, cr=0, value=0x04 -> 0x11), length=1 (0x03),
+ * value is the PSC command type (0x43).
+ */
+static uint8_t cmux_frame_control_psc_initiator_nsc[] = {0xF9, 0x03, 0xEF, 0x07, 0x11,
+							 0x03, 0x43, 0x11, 0xF9};
 
 /*
  * Three flags should trigger peer to start retrying flag characters.
@@ -642,6 +661,106 @@ ZTEST(modem_cmux, test_modem_cmux_flow_control_dlci2)
 		     "Incorrect data received");
 }
 
+ZTEST(modem_cmux, test_modem_cmux_receive_flow_control_dlci2)
+{
+	int ret;
+
+	/* Start with an empty receive buffer */
+	modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+
+	/* Fill the receive buffer above the flow control threshold */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_52, sizeof(cmux_frame_dlci2_ppp_52));
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_18, sizeof(cmux_frame_dlci2_ppp_18));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci2_msc_fcon_cmd), "MSC with FC set not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci2_msc_fcon_cmd,
+			  sizeof(cmux_frame_dlci2_msc_fcon_cmd), "Incorrect MSC with FC set");
+
+	/* Draining the receive buffer clears flow control */
+	ret = modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	zassert_equal(ret,
+		      sizeof(cmux_frame_data_dlci2_ppp_52) + sizeof(cmux_frame_data_dlci2_ppp_18),
+		      "Incorrect number of bytes received");
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci2_msc_cmd), "MSC with FC cleared not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci2_msc_cmd, sizeof(cmux_frame_dlci2_msc_cmd),
+			  "Incorrect MSC with FC cleared");
+}
+
+/* Stop the bus transmitting and fill the CMUX transmit buffer with data */
+static void test_modem_cmux_fill_transmit_buffer(void)
+{
+	bus_mock.transmit_paused = true;
+
+	while (modem_pipe_transmit(dlci2_pipe, cmux_frame_data_large,
+				   sizeof(cmux_frame_data_large)) > 0) {
+	}
+}
+
+/* Let the bus transmit the CMUX transmit buffer again */
+static void test_modem_cmux_resume_transmit(void)
+{
+	bus_mock.transmit_paused = false;
+	zassert_ok(modem_pipe_transmit(dlci2_pipe, NULL, 0));
+	k_msleep(TRANSMISSION_DELAY_MS * 5);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_receive_flow_control_retry)
+{
+	int ret;
+
+	/* Start with an empty receive buffer */
+	modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	/* Fill the receive buffer above the flow control threshold */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_52, sizeof(cmux_frame_dlci2_ppp_52));
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_18, sizeof(cmux_frame_dlci2_ppp_18));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+
+	/* Draining the receive buffer while the transmit buffer is full */
+	test_modem_cmux_fill_transmit_buffer();
+	modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	/* The MSC clearing flow control follows the queued data */
+	test_modem_cmux_resume_transmit();
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_true(ret > (int)sizeof(cmux_frame_dlci2_msc_cmd), "Queued data not sent");
+	zassert_mem_equal(&buffer1[ret - sizeof(cmux_frame_dlci2_msc_cmd)],
+			  cmux_frame_dlci2_msc_cmd, sizeof(cmux_frame_dlci2_msc_cmd),
+			  "MSC with FC cleared not sent");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_power_save_psc_not_sent)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+
+	test_modem_cmux_fill_transmit_buffer();
+
+	/* PSC cannot be queued when the idle timeout expires */
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+	k_msleep(150);
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_CONNECTED,
+		      "CMUX should stay CONNECTED when PSC is not sent");
+
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+	test_modem_cmux_resume_transmit();
+}
+
 ZTEST(modem_cmux, test_modem_cmux_msc_cmd_ack)
 {
 	int ret;
@@ -658,6 +777,29 @@ ZTEST(modem_cmux, test_modem_cmux_msc_cmd_ack)
 	zassert_true(memcmp(buffer1, cmux_frame_control_msc_ack,
 			    sizeof(cmux_frame_control_msc_ack)) == 0,
 		     "Incorrect MSC ACK received");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_flow_control_reset_on_open)
+{
+	/* Peer MSC with RTR cleared stops transmission on DLCI1 */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_msc_cmd,
+			       sizeof(cmux_frame_control_msc_cmd));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	zassert_equal(modem_pipe_transmit(dlci1_pipe, cmux_frame_data_dlci1_at_at,
+					  sizeof(cmux_frame_data_dlci1_at_at)),
+		      0, "Transmit should be blocked by flow control");
+
+	/* Flow control from the previous session does not apply after reopening */
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
+	zassert_ok(modem_pipe_close(dlci1_pipe, K_SECONDS(10)), "Failed to close DLCI1");
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+
+	zassert_equal(modem_pipe_transmit(dlci1_pipe, cmux_frame_data_dlci1_at_at,
+					  sizeof(cmux_frame_data_dlci1_at_at)),
+		      sizeof(cmux_frame_data_dlci1_at_at),
+		      "Transmit should not be blocked after reopening");
 }
 
 ZTEST(modem_cmux, test_modem_cmux_dlci1_close_open)
@@ -887,6 +1029,194 @@ ZTEST(modem_cmux, test_modem_cmux_dlci_close_open_sync)
 	modem_backend_mock_wait_for_transaction(&bus_mock);
 }
 
+static int count_frames(const uint8_t *buf, int len, const uint8_t *frame, size_t frame_len)
+{
+	int count = 0;
+
+	for (int i = 0; (i + frame_len) <= len; i += frame_len) {
+		if (memcmp(&buf[i], frame, frame_len) == 0) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlci_open_retries)
+{
+	uint32_t events;
+	int ret;
+
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
+	zassert_ok(modem_pipe_close(dlci1_pipe, K_SECONDS(10)), "Failed to close DLCI1");
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_disc);
+	zassert_ok(modem_pipe_close(dlci2_pipe, K_SECONDS(10)), "Failed to close DLCI2");
+	modem_backend_mock_reset(&bus_mock);
+	k_event_clear(&cmux_event, UINT32_MAX);
+
+	/* Open both DLCIs at once, the peer never responds */
+	zassert_ok(modem_pipe_open_async(dlci1_pipe));
+	zassert_ok(modem_pipe_open_async(dlci2_pipe));
+	events = k_event_wait_all(&cmux_event, EVENT_CMUX_DLCI1_CLOSED | EVENT_CMUX_DLCI2_CLOSED,
+				  false, K_MSEC(CONFIG_MODEM_CMUX_T1_TIMEOUT *
+						(MODEM_CMUX_N2_RETRIES + 2)));
+	zassert_equal(events, EVENT_CMUX_DLCI1_CLOSED | EVENT_CMUX_DLCI2_CLOSED,
+		      "DLCI open should fail");
+
+	/* Each DLCI sends SABM once and retries it N2 times */
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(count_frames(buffer1, ret, cmux_frame_dlci1_sabm_cmd,
+				   sizeof(cmux_frame_dlci1_sabm_cmd)),
+		      MODEM_CMUX_N2_RETRIES + 1, "Incorrect number of DLCI1 SABM frames");
+	zassert_equal(count_frames(buffer1, ret, cmux_frame_dlci2_sabm_cmd,
+				   sizeof(cmux_frame_dlci2_sabm_cmd)),
+		      MODEM_CMUX_N2_RETRIES + 1, "Incorrect number of DLCI2 SABM frames");
+
+	/* Restore DLCIs */
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
+	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)), "Failed to open DLCI2 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlci_close_while_opening)
+{
+	uint32_t events;
+	int ret;
+
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
+	zassert_ok(modem_pipe_close(dlci1_pipe, K_SECONDS(10)), "Failed to close DLCI1");
+	modem_backend_mock_reset(&bus_mock);
+	k_event_clear(&cmux_event, UINT32_MAX);
+
+	/* Pipe state as for a pipe that has never been opened, otherwise the pipe
+	 * reports it is already closed without requesting the close from CMUX.
+	 */
+	k_event_clear(&dlci1_pipe->event, UINT32_MAX);
+
+	/* Start opening, the peer does not respond */
+	zassert_ok(modem_pipe_open_async(dlci1_pipe));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_sabm_cmd), "SABM not sent");
+
+	/* Close while opening */
+	zassert_ok(modem_pipe_close_async(dlci1_pipe));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_disc_cmd), "DISC not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci1_disc_cmd, sizeof(cmux_frame_dlci1_disc_cmd),
+			  "Incorrect DISC sent");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_ua_ack, sizeof(cmux_frame_dlci1_ua_ack));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_CLOSED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DLCI1_CLOSED, "DLCI1 not closed");
+
+	/* Opening is not retried */
+	k_msleep(CONFIG_MODEM_CMUX_T1_TIMEOUT + TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "Unexpected data sent after close");
+
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlci_peer_disc)
+{
+	uint32_t events;
+	int ret;
+
+	/* Start closing */
+	zassert_ok(modem_pipe_close_async(dlci1_pipe));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_disc_cmd), "DISC not sent");
+
+	/* Peer closes at the same time, confirm with UA and close */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_peer_disc_cmd,
+			       sizeof(cmux_frame_dlci1_peer_disc_cmd));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_CLOSED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DLCI1_CLOSED, "DLCI1 not closed");
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_peer_ua_rsp), "Only UA should be sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci1_peer_ua_rsp,
+			  sizeof(cmux_frame_dlci1_peer_ua_rsp), "Incorrect UA sent");
+
+	/* Closing is not retried */
+	k_msleep(CONFIG_MODEM_CMUX_T1_TIMEOUT + TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "Unexpected data sent after close");
+
+	/* DISC while closed is answered with DM only */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_peer_disc_cmd,
+			       sizeof(cmux_frame_dlci1_peer_disc_cmd));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_peer_dm_rsp), "Only DM should be sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci1_peer_dm_rsp,
+			  sizeof(cmux_frame_dlci1_peer_dm_rsp), "Incorrect DM sent");
+
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlci_peer_sabm)
+{
+	uint32_t events;
+	int ret;
+
+	/* Start closing, the peer tries to open at the same time */
+	zassert_ok(modem_pipe_close_async(dlci1_pipe));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_disc_cmd), "DISC not sent");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_peer_sabm_cmd,
+			       sizeof(cmux_frame_dlci1_peer_sabm_cmd));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_peer_dm_rsp), "SABM should be rejected");
+	zassert_mem_equal(buffer1, cmux_frame_dlci1_peer_dm_rsp,
+			  sizeof(cmux_frame_dlci1_peer_dm_rsp), "Incorrect DM sent");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_ua_ack, sizeof(cmux_frame_dlci1_ua_ack));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_CLOSED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DLCI1_CLOSED, "DLCI1 not closed");
+
+	/* Start opening, the peer opens at the same time */
+	zassert_ok(modem_pipe_open_async(dlci1_pipe));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_sabm_cmd), "SABM not sent");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_peer_sabm_cmd,
+			       sizeof(cmux_frame_dlci1_peer_sabm_cmd));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_OPEN, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DLCI1_OPEN, "DLCI1 not opened");
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci1_peer_ua_rsp), "UA not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci1_peer_ua_rsp,
+			  sizeof(cmux_frame_dlci1_peer_ua_rsp), "Incorrect UA sent");
+
+	/* Our SABM is not retried */
+	k_msleep(CONFIG_MODEM_CMUX_T1_TIMEOUT + TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "Unexpected data sent after open");
+
+	/* Reopen DLCI1 from our side, which also sends our MSC */
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_disc);
+	zassert_ok(modem_pipe_close(dlci1_pipe, K_SECONDS(10)), "Failed to close DLCI1");
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)), "Failed to open DLCI1 pipe");
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
 ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 {
 	const uint8_t transmit[2];
@@ -926,6 +1256,50 @@ ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 	zassert_true(modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1)) == 0);
 
 	/* Restore CMUX */
+	zassert_ok(modem_cmux_attach(&cmux, bus_mock_pipe));
+	modem_backend_mock_prime(&bus_mock, &transaction_control_sabm);
+	zassert_ok(modem_cmux_connect(&cmux));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
+	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_connect_peer_sabm)
+{
+	uint32_t events;
+	int ret;
+
+	/* Disconnect CMUX */
+	modem_backend_mock_prime(&bus_mock, &transaction_control_cld);
+	zassert_ok(modem_cmux_disconnect(&cmux));
+	modem_backend_mock_reset(&bus_mock);
+
+	/* Start connecting, discard our SABM */
+	zassert_ok(modem_cmux_connect_async(&cmux));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_control_sabm_cmd), "SABM not sent");
+
+	/* Peer connects first, accept it */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_sabm_cmd,
+			       sizeof(cmux_frame_control_sabm_cmd));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_CONNECTED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_CONNECTED, "Failed to connect CMUX");
+
+	/* Only the UA response may be sent, our SABM must not be retried */
+	k_msleep(CONFIG_MODEM_CMUX_T1_TIMEOUT + TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_control_sabm_ack), "Unexpected data sent");
+	zassert_mem_equal(buffer1, cmux_frame_control_sabm_ack, sizeof(cmux_frame_control_sabm_ack),
+			  "Incorrect UA sent");
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_CONNECTED, "CMUX should stay connected");
+
+	/* Restore CMUX as initiator */
+	modem_cmux_release(&cmux);
 	zassert_ok(modem_cmux_attach(&cmux, bus_mock_pipe));
 	modem_backend_mock_prime(&bus_mock, &transaction_control_sabm);
 	zassert_ok(modem_cmux_connect(&cmux));
@@ -1058,6 +1432,9 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_disc)
 	int ret;
 	uint32_t events;
 
+	/* Retry count as left by a successful connect */
+	cmux.retry_count = 0;
+
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_disc_cmd,
 			       sizeof(cmux_frame_dlci0_disc_cmd));
 
@@ -1068,6 +1445,207 @@ ZTEST(modem_cmux, test_modem_cmux_dlc0_disc)
 
 	zassert_mem_equal(buffer1, cmux_frame_dlci0_ua_ack, sizeof(cmux_frame_dlci0_ua_ack),
 			  "Incorrect UA ACK received");
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED,
+		      "DLCI0 DISC should cause CMUX disconnection");
+
+	/* The peer has already closed the multiplexer, no CLD may be sent */
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "Unexpected data sent after DLCI0 DISC");
+}
+
+/* Reconnect CMUX as initiator and open both DLCIs */
+static void test_modem_cmux_restore(void)
+{
+	modem_cmux_release(&cmux);
+	zassert_ok(modem_cmux_attach(&cmux, bus_mock_pipe));
+	modem_backend_mock_prime(&bus_mock, &transaction_control_sabm);
+	zassert_ok(modem_cmux_connect(&cmux));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
+	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
+	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)));
+	modem_backend_mock_wait_for_transaction(&bus_mock);
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlc0_dm)
+{
+	uint32_t events;
+	int ret;
+
+	/* Peer is in disconnected mode */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_dm_rsp, sizeof(cmux_frame_dlci0_dm_rsp));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "DLCI0 DM should disconnect CMUX");
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "Unexpected data sent after DLCI0 DM");
+}
+
+static void test_modem_cmux_force_state(enum modem_cmux_state state)
+{
+	k_event_clear(&cmux_event, UINT32_MAX);
+	modem_backend_mock_reset(&bus_mock);
+	cmux.state = state;
+	k_event_set(&cmux.event, BIT(state));
+}
+
+ZTEST(modem_cmux, test_modem_cmux_close_down_entering_power_save)
+{
+	uint32_t events;
+	int ret;
+
+	/* Peer closes the multiplexer with DISC while we request power saving */
+	test_modem_cmux_force_state(MODEM_CMUX_STATE_ENTER_POWERSAVE);
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_disc_cmd,
+			       sizeof(cmux_frame_dlci0_disc_cmd));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "DISC should disconnect CMUX");
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci0_ua_ack), "Only UA should be sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci0_ua_ack, sizeof(cmux_frame_dlci0_ua_ack),
+			  "Incorrect UA sent");
+
+	/* Peer closes the multiplexer with CLD while we confirm power saving */
+	test_modem_cmux_force_state(MODEM_CMUX_STATE_CONFIRM_POWERSAVE);
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_peer_cld_cmd,
+			       sizeof(cmux_frame_control_peer_cld_cmd));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "CLD should disconnect CMUX");
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_control_peer_cld_ack), "Only CLD ack should be sent");
+	zassert_mem_equal(buffer1, cmux_frame_control_peer_cld_ack,
+			  sizeof(cmux_frame_control_peer_cld_ack), "Incorrect CLD ack sent");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_receive_while_changing_state)
+{
+	static const enum modem_cmux_state states[] = {
+		MODEM_CMUX_STATE_ENTER_POWERSAVE,
+		MODEM_CMUX_STATE_CONFIRM_POWERSAVE,
+		MODEM_CMUX_STATE_DISCONNECTING,
+	};
+	uint32_t events;
+	int ret;
+
+	ARRAY_FOR_EACH(states, i) {
+		/* Data from the peer is still delivered */
+		test_modem_cmux_force_state(states[i]);
+		modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_at_at,
+				       sizeof(cmux_frame_dlci1_at_at));
+		events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_RECEIVE_READY, false,
+				      K_MSEC(100));
+		zassert_equal(events, EVENT_CMUX_DLCI1_RECEIVE_READY,
+			      "Data not received in state %d", states[i]);
+
+		ret = modem_pipe_receive(dlci1_pipe, buffer1, sizeof(buffer1));
+		zassert_equal(ret, sizeof(cmux_frame_data_dlci1_at_at),
+			      "Incorrect number of bytes received in state %d", states[i]);
+		zassert_mem_equal(buffer1, cmux_frame_data_dlci1_at_at,
+				  sizeof(cmux_frame_data_dlci1_at_at),
+				  "Incorrect data received in state %d", states[i]);
+	}
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlc0_sabm_connected)
+{
+	uint32_t events;
+	int ret;
+
+	/* SABM from the peer while connected is confirmed with UA */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_sabm_cmd,
+			       sizeof(cmux_frame_dlci0_sabm_cmd));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_dlci0_ua_ack), "UA not sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci0_ua_ack, sizeof(cmux_frame_dlci0_ua_ack),
+			  "Incorrect UA sent");
+
+	/* The existing connection is kept */
+	events = k_event_test(&cmux_event, EVENT_CMUX_CONNECTED | EVENT_CMUX_DISCONNECTED);
+	zassert_equal(events, 0, "Connection state should not change");
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_CONNECTED, "CMUX should stay connected");
+	zassert_true(cmux.initiator, "CMUX should stay initiator");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_bus_pipe_closed)
+{
+	uint32_t events;
+
+	/* Bus pipe closed underneath the connected CMUX */
+	zassert_ok(modem_pipe_close(bus_mock_pipe, K_SECONDS(10)), "Failed to close bus pipe");
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_MSEC(100));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "Bus pipe close should disconnect CMUX");
+
+	zassert_ok(modem_pipe_open(bus_mock_pipe, K_SECONDS(10)), "Failed to open bus pipe");
+}
+
+ZTEST(modem_cmux, test_modem_cmux_connect_rejected)
+{
+	uint32_t events;
+	int ret;
+
+	modem_backend_mock_prime(&bus_mock, &transaction_control_cld);
+	zassert_ok(modem_cmux_disconnect(&cmux));
+	modem_backend_mock_reset(&bus_mock);
+	k_event_clear(&cmux_event, UINT32_MAX);
+
+	zassert_ok(modem_cmux_connect_async(&cmux));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_control_sabm_cmd), "SABM not sent");
+
+	/* Peer rejects the connection, fail without retrying */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_dm_rsp, sizeof(cmux_frame_dlci0_dm_rsp));
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false,
+			      K_MSEC(CONFIG_MODEM_CMUX_T1_TIMEOUT / 2));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED, "DM should fail the connection");
+
+	k_msleep(CONFIG_MODEM_CMUX_T1_TIMEOUT + TRANSMISSION_DELAY_MS);
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0, "SABM retried after DM");
+
+	test_modem_cmux_restore();
+}
+
+/*
+ * Test: work is scheduled on the dedicated modem workqueue.
+ *
+ * All CMUX work must run on the same workqueue, otherwise handlers run
+ * concurrently and race on the CMUX state.
+ */
+ZTEST(modem_cmux, test_modem_cmux_dedicated_workqueue)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+	uint32_t events;
+
+	if (!IS_ENABLED(CONFIG_MODEM_DEDICATED_WORKQUEUE)) {
+		ztest_test_skip();
+	}
+
+	/* Empty transmit request schedules the transmit and runtime PM work */
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0));
+	zassert_not_equal(cmux.transmit_work.queue, &k_sys_work_q,
+			  "Transmit work scheduled on system workqueue");
+	zassert_not_equal(cmux.runtime_pm_work.queue, &k_sys_work_q,
+			  "Runtime PM work scheduled on system workqueue");
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.idle_timeout = saved_timeout;
+
+	/* Peer closing the multiplexer schedules the disconnect work */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_disc_cmd,
+			       sizeof(cmux_frame_dlci0_disc_cmd));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	zassert_not_equal(cmux.disconnect_work.queue, &k_sys_work_q,
+			  "Disconnect work scheduled on system workqueue");
+
 	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
 	zassert_equal(events, EVENT_CMUX_DISCONNECTED,
 		      "DLCI0 DISC should cause CMUX disconnection");
@@ -1247,6 +1825,58 @@ ZTEST(modem_cmux, test_modem_cmux_power_save_cmux_initiated)
 }
 
 /*
+ * Test: PSC response without a PSC command.
+ *
+ * A PSC response received while CMUX did not request power saving, for
+ * example one arriving after the T3 timeout, must not enter power save.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_unexpected_response)
+{
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_psc_ack,
+			       sizeof(cmux_frame_control_psc_ack));
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_CONNECTED,
+		      "CMUX should ignore a PSC response it did not request");
+}
+
+/*
+ * Test: power save not supported by peer.
+ *
+ * When the peer responds to the PSC command with NSC, CMUX must return to
+ * CONNECTED immediately rather than waiting for the T3 timeout.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_not_supported)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+	int ret;
+
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_ENTER_POWERSAVE, K_MSEC(150)),
+		     "CMUX should be in ENTER_POWERSAVE after idle timeout");
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, (int)sizeof(cmux_frame_control_psc_initiator_cmd),
+		      "PSC command should have been sent by CMUX, got %d bytes", ret);
+
+	/* Peer does not support power saving */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_psc_initiator_nsc,
+			       sizeof(cmux_frame_control_psc_initiator_nsc));
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_CONNECTED, TRANSMISSION_DELAY),
+		     "CMUX should return to CONNECTED on NSC");
+
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+}
+
+/*
  * Test: close_pipe_on_power_save.
  *
  * When both runtime power management and close_pipe_on_power_save are enabled,
@@ -1319,6 +1949,53 @@ ZTEST(modem_cmux, test_modem_cmux_power_save_close_pipe)
 			  "Incorrect data frame transmitted after wakeup");
 
 	/* Restore config */
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.close_pipe_on_power_save = saved_cpp;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+}
+
+/*
+ * Test: bus pipe fails to re-open on wakeup.
+ *
+ * When the bus pipe closed for power save cannot be re-opened, CMUX must
+ * disconnect and close the DLCI pipes.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_reopen_failed)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	bool saved_cpp = cmux.config.close_pipe_on_power_save;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+	uint32_t events;
+
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.close_pipe_on_power_save = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+
+	modem_backend_mock_prime(&bus_mock, &transaction_control_psc_initiator);
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_POWERSAVE, K_MSEC(300)),
+		     "CMUX should enter POWERSAVE after idle timeout and PSC ack");
+
+	/* Transmitting data triggers wakeup, the bus pipe fails to open */
+	bus_mock.open_error = -EIO;
+	zassert_equal(modem_pipe_transmit(dlci2_pipe, cmux_frame_data_dlci2_ppp_18,
+					  sizeof(cmux_frame_data_dlci2_ppp_18)),
+		      (int)sizeof(cmux_frame_data_dlci2_ppp_18),
+		      "Transmit during POWERSAVE should queue data");
+
+	events = k_event_wait_all(&cmux_event,
+				  EVENT_CMUX_DISCONNECTED | EVENT_CMUX_DLCI1_CLOSED |
+				  EVENT_CMUX_DLCI2_CLOSED,
+				  false, K_MSEC(100));
+	zassert_equal(events,
+		      EVENT_CMUX_DISCONNECTED | EVENT_CMUX_DLCI1_CLOSED | EVENT_CMUX_DLCI2_CLOSED,
+		      "CMUX should disconnect and close DLCIs");
+
+	/* Restore */
+	bus_mock.open_error = 0;
+	zassert_ok(modem_pipe_open(bus_mock_pipe, K_SECONDS(10)), "Failed to open bus pipe");
 	cmux.config.enable_runtime_power_management = saved_rpm;
 	cmux.config.close_pipe_on_power_save = saved_cpp;
 	cmux.config.idle_timeout = saved_timeout;

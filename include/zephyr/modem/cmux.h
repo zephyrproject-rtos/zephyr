@@ -150,9 +150,11 @@ struct modem_cmux_dlci {
 	/* Work */
 	struct k_work_delayable open_work;
 	struct k_work_delayable close_work;
+	struct k_work rx_resume_work;
 
 	/* State */
 	enum modem_cmux_dlci_state state;
+	uint8_t retry_count;
 
 	/* Statistics */
 #if CONFIG_MODEM_STATS
@@ -162,6 +164,7 @@ struct modem_cmux_dlci {
 	bool flow_control : 1;
 	bool rx_full : 1;
 	bool msc_sent : 1;
+	bool msc_pending : 1;
 };
 
 struct modem_cmux_frame {
@@ -216,6 +219,10 @@ struct modem_cmux {
 	struct k_work_delayable connect_work;
 	struct k_work_delayable disconnect_work;
 	struct k_work_delayable runtime_pm_work;
+	struct k_work bus_closed_work;
+
+	/* Bus pipe closed by us to save power */
+	bool bus_close_expected;
 
 	/* Synchronize actions */
 	struct k_event event;
