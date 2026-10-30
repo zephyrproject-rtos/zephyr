@@ -56,9 +56,32 @@ each representing a DLCI channel.
 
 Protocol defines simple framing for splitting each DLC into small chunks of data.
 
-.. image:: images/cmux_frame.svg
-        :alt: CMUX basic frame
-        :align: center
+.. mermaid::
+   :caption: CMUX basic frame, one octet per row
+   :alt: CMUX basic frame: an opening flag octet (0xF9); an address octet with
+         the EA bit, the C/R bit and a 6-bit DLCI; a control octet with the frame
+         type and the P/F bit; one or two length octets, each with an EA bit; the
+         information field; an FCS octet; and a closing flag octet (0xF9).
+
+   ---
+   config:
+     packet:
+       bitsPerRow: 8
+   ---
+   packet
+     0-7: "Flag (0xF9)"
+     8: "EA"
+     9: "C/R"
+     10-15: "DLCI"
+     16-19: "Type"
+     20: "P/F"
+     21-23: "Type"
+     24: "EA"
+     25-31: "Length [6:0]"
+     32-39: "Length [14:7] (if EA = 0)"
+     40-47: "Information (Length octets)"
+     48-55: "FCS"
+     56-63: "Flag (0xF9)"
 
 Zephyr implements the basic frame type, with build-time configurable MTU size.
 
