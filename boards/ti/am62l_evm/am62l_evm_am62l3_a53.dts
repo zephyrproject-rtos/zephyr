@@ -133,6 +133,14 @@
 		size = <65536>;
 		timeout = <5>;
 	};
+
+	display_mcu: display_mcu@45 {
+		compatible = "raspberrypi,touchscreen-panel-regulator-v2";
+		reg = <0x45>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
 };
 
 &main_i2c1 {
