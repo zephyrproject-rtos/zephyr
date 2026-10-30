@@ -11,6 +11,11 @@ config ARCH
 	string
 	default "rx"
 
+config CPU_NAME
+	default "rxv1" if CPU_RXV1
+	default "rxv2" if CPU_RXV2
+	default "rxv3" if CPU_RXV3
+
 config HAS_EXCEPT_VECTOR_TABLE
 	bool
 	help
