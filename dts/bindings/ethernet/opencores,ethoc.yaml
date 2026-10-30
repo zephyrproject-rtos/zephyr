@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  OpenCores 10/100 Mbps Ethernet MAC (ethmac)
+
+  The register region covers the control registers and the buffer
+  descriptors at offset 0x400. Frame buffers are placed in system memory,
+  so the MAC must be able to access it.
+
+  The MDIO controller is described by an "opencores,ethoc-mdio" child node.
+
+compatible: "opencores,ethoc"
+
+include: ethernet-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  phy-handle:
+    required: true
+
+examples:
+  - |
+    ethernet@92000000 {
+        compatible = "opencores,ethoc";
+        reg = <0x92000000 0x800>;
+        interrupts = <4>;
+        phy-handle = <&phy>;
+
+        mdio {
+            compatible = "opencores,ethoc-mdio";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            phy: ethernet-phy@1 {
+                compatible = "ethernet-phy";
+                reg = <1>;
+            };
+        };
+    };
