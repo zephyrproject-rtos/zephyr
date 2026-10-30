@@ -1,0 +1,24 @@
+common:
+  depends_on: spi
+  filter: dt_nodelabel_enabled("dut_spim") and dt_nodelabel_enabled("dut_spis")
+  tags:
+    - drivers
+    - spi
+    - rtio
+  harness: ztest
+  harness_config:
+    fixture: gpio_spi_loopback
+
+tests:
+  drivers.spi.spim_rtio_loopback.mode0:
+    extra_configs:
+      - CONFIG_TEST_SPI_MODE=0
+  drivers.spi.spim_rtio_loopback.mode1:
+    extra_configs:
+      - CONFIG_TEST_SPI_MODE=1
+  drivers.spi.spim_rtio_loopback.mode2:
+    extra_configs:
+      - CONFIG_TEST_SPI_MODE=2
+  drivers.spi.spim_rtio_loopback.mode3:
+    extra_configs:
+      - CONFIG_TEST_SPI_MODE=3
