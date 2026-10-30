@@ -259,14 +259,25 @@ static void run_test(bool m_same_size, bool s_same_size, bool async)
 	if (!IS_ENABLED(CONFIG_SPI_ASYNC) || !async) {
 		periph_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
 		if (periph_rv == -ENOTSUP) {
+			/* DMA-enabled STM32 builds must accept these transfers. */
+			if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+				zassert_ok(periph_rv);
+				return;
+			}
 			ztest_test_skip();
+			return;
 		}
 	} else {
 #ifdef CONFIG_SPI_ASYNC
 		rv = spi_transceive_signal(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set,
 					   &async_sig);
 		if (rv == -ENOTSUP) {
+			if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+				zassert_ok(rv);
+				return;
+			}
 			ztest_test_skip();
+			return;
 		}
 		zassert_equal(rv, 0);
 
