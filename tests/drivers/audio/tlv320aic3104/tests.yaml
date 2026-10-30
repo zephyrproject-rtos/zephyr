@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.audio.tlv320aic3104:
+    platform_allow: native_sim
+    tags:
+      - drivers
+      - audio
+      - codec
