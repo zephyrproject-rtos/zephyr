@@ -39,6 +39,20 @@ static struct k_spinlock xlat_lock;
 #define XLAT_PTE_COUNT_MASK	GENMASK(15, 0)
 #define XLAT_REF_COUNT_UNIT	BIT(16)
 
+/*
+ * Descriptor attributes that belong to a domain-private mapping (e.g. a
+ * partition or thread stack mapped via private_map()): EL0 accessibility,
+ * execute-never bits, the non-global bit, the guarded-page bit and the
+ * software writability marker. When synchronizing demand paging state
+ * from the kernel ("global") page tables, these attributes must be
+ * preserved on private entries; only the structural state (descriptor
+ * type, physical address or location token, access flag and, for
+ * writable mappings, the read-only dirty-tracking state) is propagated.
+ */
+#define PTE_PRIVATE_ATTRS_MASK                                                                     \
+	(PTE_BLOCK_DESC_AP_ELx | PTE_BLOCK_DESC_NG | PTE_BLOCK_DESC_UXN | PTE_BLOCK_DESC_PXN |     \
+	 PTE_BLOCK_DESC_GP | PTE_SW_WRITABLE)
+
 /* Returns a reference to a free table */
 static uint64_t *new_table(void)
 {
@@ -553,8 +567,35 @@ static void discard_table(uint64_t *table, unsigned int level)
 	table_usage(table, -free_count);
 }
 
-static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
-			   uintptr_t virt, size_t size, unsigned int level)
+/*
+ * Which bits of a descriptor the private mapping owns, given the private
+ * entry @a private_desc. Everything outside the returned mask belongs to
+ * the entry: descriptor type, output address or paging location token,
+ * access flag and memory type.
+ *
+ * The read-only bit is dirty-tracking state wherever the mapping is
+ * writable, so it belongs to the entry there, and is a permission the
+ * private mapping owns otherwise.
+ */
+static uint64_t private_attrs_mask(uint64_t private_desc)
+{
+	uint64_t mask = PTE_PRIVATE_ATTRS_MASK;
+
+	if ((private_desc & PTE_SW_WRITABLE) == 0) {
+		mask |= PTE_BLOCK_DESC_AP_RO;
+	}
+
+	return mask;
+}
+
+/*
+ * preserve_private must be true when propagating demand paging state
+ * (page out/page in, AF/dirty sync) so that private mappings keep their
+ * permissions, and false when the caller wants to strip private mappings
+ * and revert the range to the global entries (see reset_map()).
+ */
+static int globalize_table(uint64_t *dst_table, uint64_t *src_table, uintptr_t virt, size_t size,
+			   unsigned int level, bool preserve_private)
 {
 	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
 	unsigned int i;
@@ -588,8 +629,19 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 
 		if (step != level_size) {
 			/* boundary falls in the middle of this pte */
-			__ASSERT(is_table_desc(src_table[i], level),
-				 "can't have partial block pte here");
+			if (!is_table_desc(src_table[i], level)) {
+				/*
+				 * The source maps this entry whole while the
+				 * range covers only part of it, which is what
+				 * a partition inside a larger kernel block
+				 * looks like. Split it so the walk can go
+				 * finer, the way set_mapping() splits a block
+				 * a new mapping lands inside of.
+				 */
+				if (!expand_to_table(&src_table[i], level)) {
+					return -ENOMEM;
+				}
+			}
 			if (!is_table_desc(dst_table[i], level)) {
 				/* we need more fine grained boundaries */
 				if (!expand_to_table(&dst_table[i], level)) {
@@ -597,11 +649,38 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 				}
 			}
 			ret = globalize_table(pte_desc_table(dst_table[i]),
-					      pte_desc_table(src_table[i]),
-					      virt, step, level + 1);
+					      pte_desc_table(src_table[i]), virt, step, level + 1,
+					      preserve_private);
 			if (ret) {
 				return ret;
 			}
+			continue;
+		}
+
+		/*
+		 * The destination entry may hold a domain-private mapping whose
+		 * permission attributes intentionally differ from the global
+		 * entry (see private_map()). Replacing it wholesale would
+		 * strip user permissions and the nG bit on every page
+		 * out/page in or AF/dirty sync, breaking user access to the
+		 * page. Keep the private permission attributes and only
+		 * synchronize the structural state. Both entries are leaf
+		 * descriptors here, so no table or usage accounting applies.
+		 *
+		 * The read-only bit is dirty-tracking state only where the
+		 * mapping is writable, so it can only be taken from the
+		 * global entry when the private entry says the mapping is
+		 * writable; a genuinely read-only private mapping keeps its
+		 * RO bit even after the kernel dirties the global entry.
+		 */
+		uint64_t mask = private_attrs_mask(dst_table[i]);
+
+		if (preserve_private && !is_free_desc(src_table[i]) &&
+		    !is_table_desc(src_table[i], level) && !is_free_desc(dst_table[i]) &&
+		    !is_table_desc(dst_table[i], level) &&
+		    (dst_table[i] & mask) != (src_table[i] & mask)) {
+			dst_table[i] = (src_table[i] & ~mask) | (dst_table[i] & mask);
+			debug_show_pte(&dst_table[i], level);
 			continue;
 		}
 
@@ -639,11 +718,13 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
  * dst_pt are then discarded. If page tables in the given range are already
  * shared then nothing is done. If page table sharing is not possible then
  * page table entries in dst_pt are synchronized with those from src_pt.
+ * If preserve_private is true, leaf entries holding domain-private mappings
+ * keep their permission attributes and only their structural state is
+ * synchronized; if false, private entries are reverted to the global ones.
  */
-static int globalize_page_range(struct arm_mmu_ptables *dst_pt,
-				struct arm_mmu_ptables *src_pt,
-				uintptr_t virt_start, size_t size,
-				const char *name)
+static int globalize_page_range(struct arm_mmu_ptables *dst_pt, struct arm_mmu_ptables *src_pt,
+				uintptr_t virt_start, size_t size, const char *name,
+				bool preserve_private)
 {
 	k_spinlock_key_t key;
 	int ret;
@@ -653,8 +734,8 @@ static int globalize_page_range(struct arm_mmu_ptables *dst_pt,
 
 	key = k_spin_lock(&xlat_lock);
 
-	ret = globalize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table,
-			      virt_start, size, BASE_XLAT_LEVEL);
+	ret = globalize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table, virt_start, size,
+			      BASE_XLAT_LEVEL, preserve_private);
 
 	k_spin_unlock(&xlat_lock, key);
 	return ret;
@@ -981,6 +1062,44 @@ static struct arm_mmu_ptables kernel_ptables;
 static sys_slist_t domain_list;
 #endif
 
+#ifdef CONFIG_TEST
+/*
+ * Walk @a ptables down to the leaf descriptor covering @a virt and report it
+ * with the level it was found at. Returns -ENOENT when nothing maps that
+ * address. Passing NULL for @a ptables walks the kernel tables.
+ *
+ * Test hook: the descriptors are what tell a domain-private mapping apart
+ * from the kernel entry it was built over, and nothing else in this file
+ * exposes them.
+ */
+int arm64_mmu_pte_get(struct arm_mmu_ptables *ptables, uintptr_t virt, uint64_t *desc,
+		      unsigned int *level)
+{
+	uint64_t *table;
+	unsigned int l = BASE_XLAT_LEVEL;
+
+	if (ptables == NULL) {
+		ptables = &kernel_ptables;
+	}
+	table = ptables->base_xlat_table;
+
+	for (;;) {
+		uint64_t pte = table[XLAT_TABLE_VA_IDX(virt, l)];
+
+		if (is_free_desc(pte)) {
+			return -ENOENT;
+		}
+		if (!is_table_desc(pte, l)) {
+			*desc = pte;
+			*level = l;
+			return 0;
+		}
+		table = pte_desc_table(pte);
+		l++;
+	}
+}
+#endif /* CONFIG_TEST */
+
 /*
  * @brief MMU default configuration
  *
@@ -1035,8 +1154,7 @@ static void sync_domains(uintptr_t virt, size_t size, const char *name)
 	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
 		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 		domain_ptables = &domain->ptables;
-		ret = globalize_page_range(domain_ptables, &kernel_ptables,
-					   virt, size, name);
+		ret = globalize_page_range(domain_ptables, &kernel_ptables, virt, size, name, true);
 		if (ret) {
 			LOG_ERR("globalize_page_range() returned %d", ret);
 		}
@@ -1289,15 +1407,87 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain)
 	return 0;
 }
 
-static int private_map(struct arm_mmu_ptables *ptables, const char *name,
-		       uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+/*
+ * Apply new attributes to the entries covering the given range, leaving
+ * what they map alone. Entries with nothing mapped are left untouched:
+ * access can only be granted to memory that is actually mapped.
+ */
+static int remap_mapping(uint64_t *table, uintptr_t virt, size_t size,
+			 uint64_t attr_desc, unsigned int level)
 {
+	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
+	uint64_t *pte, *subtable;
 	int ret;
 
+	for ( ; size; virt += step, size -= step) {
+		step = level_size - (virt & (level_size - 1));
+		if (step > size) {
+			step = size;
+		}
+		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
+
+		if (is_free_desc(*pte)) {
+			continue;
+		}
+
+		if (step != level_size && is_block_desc(*pte)) {
+			/*
+			 * Need to split this block mapping. Without a table to
+			 * split it into, the attributes would land on the whole
+			 * block, granting access beyond the requested range.
+			 */
+			if (!expand_to_table(pte, level)) {
+				return -ENOMEM;
+			}
+		}
+
+		if (is_table_desc(*pte, level)) {
+			subtable = pte_desc_table(*pte);
+			ret = remap_mapping(subtable, virt, step, attr_desc, level + 1);
+			if (ret != 0) {
+				return ret;
+			}
+			continue;
+		}
+
+		uint64_t mask = private_attrs_mask(attr_desc);
+
+		*pte = (*pte & ~mask) | (attr_desc & mask);
+		debug_show_pte(pte, level);
+	}
+
+	return 0;
+}
+
+/*
+ * Give the given range domain private attributes. The range keeps whatever
+ * the kernel tables map it to: the virtual address is not necessarily the
+ * physical address, and with demand paging the range may be paged out, in
+ * which case the private entry keeps the location token and the new
+ * attributes apply when the page comes back in.
+ */
+static int private_map(struct arm_mmu_ptables *ptables, const char *name,
+		       uintptr_t virt, size_t size, uint32_t attrs)
+{
+	uint64_t attr_desc = get_region_desc(attrs | MT_NG);
+	k_spinlock_key_t key;
+	int ret;
+
+	MMU_DEBUG("private map [%s]: virt %lx size %lx attr %llx\n",
+		  name, virt, size, attr_desc);
+	__ASSERT(((virt | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
+		 "address/size are not page aligned\n");
+
 	ret = privatize_page_range(ptables, &kernel_ptables, virt, size, name);
-	__ASSERT(ret == 0, "privatize_page_range() returned %d", ret);
-	ret = add_map(ptables, name, phys, virt, size, attrs | MT_NG);
-	__ASSERT(ret == 0, "add_map() returned %d", ret);
+	if (ret != 0) {
+		return ret;
+	}
+
+	key = k_spin_lock(&xlat_lock);
+	ret = remap_mapping(ptables->base_xlat_table, virt, size, attr_desc,
+			    BASE_XLAT_LEVEL);
+	k_spin_unlock(&xlat_lock, key);
+
 	invalidate_tlb_all();
 
 	return ret;
@@ -1308,7 +1498,7 @@ static int reset_map(struct arm_mmu_ptables *ptables, const char *name,
 {
 	int ret;
 
-	ret = globalize_page_range(ptables, &kernel_ptables, addr, size, name);
+	ret = globalize_page_range(ptables, &kernel_ptables, addr, size, name, false);
 	__ASSERT(ret == 0, "globalize_page_range() returned %d", ret);
 	invalidate_tlb_all();
 
@@ -1321,8 +1511,8 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
 
-	return private_map(domain_ptables, "partition", ptn->start, ptn->start,
-			   ptn->size, ptn->attr.attrs | MT_NORMAL);
+	return private_map(domain_ptables, "partition", ptn->start, ptn->size,
+			   ptn->attr.attrs | MT_NORMAL);
 }
 
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
@@ -1339,8 +1529,7 @@ static int map_thread_stack(struct k_thread *thread,
 			    struct arm_mmu_ptables *ptables)
 {
 	return private_map(ptables, "thread_stack", thread->stack_info.start,
-			    thread->stack_info.start, thread->stack_info.size,
-			    MT_P_RW_U_RW | MT_NORMAL);
+			   thread->stack_info.size, MT_P_RW_U_RW | MT_NORMAL);
 }
 
 int arch_mem_domain_thread_add(struct k_thread *thread)
@@ -1359,6 +1548,10 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 
 	if (is_migration) {
 		ret = map_thread_stack(thread, domain_ptables);
+		if (ret != 0) {
+			/* Stay on the old tables, where the stack is mapped */
+			return ret;
+		}
 	}
 
 	thread->arch.ptables = domain_ptables;
@@ -1372,11 +1565,23 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 
 	if (is_migration) {
-		ret = reset_map(old_ptables, __func__, thread->stack_info.start,
-				thread->stack_info.size);
+		/*
+		 * The thread now runs on the new tables, so the move is done
+		 * even if this fails. The old domain then still maps the stack
+		 * for user access: revoke it in place, since the private
+		 * entries already cover the stack exactly and no table has to
+		 * be split.
+		 */
+		if (reset_map(old_ptables, __func__, thread->stack_info.start,
+			      thread->stack_info.size) != 0) {
+			(void)private_map(old_ptables, "thread_stack",
+					  thread->stack_info.start,
+					  thread->stack_info.size,
+					  MT_P_RW_U_NA | MT_NORMAL);
+		}
 	}
 
-	return ret;
+	return 0;
 }
 
 int arch_mem_domain_thread_remove(struct k_thread *thread)
@@ -1441,16 +1646,22 @@ void z_arm64_swap_mem_domains(struct k_thread *incoming)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_DEMAND_PAGING
+/*
+ * Invalidate one virtual address from the TLB across every ASID (TLBI
+ * VAAE1{IS}). Domain page tables are allocated ASIDs from 1 up and
+ * their entries are non-global, so a single-ASID VAE1 would leave
+ * stale translations behind in domains that already touched the page.
+ */
 static inline void invalidate_tlb_page(uintptr_t virt)
 {
 #ifdef CONFIG_SMP
 	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
 	__asm__ volatile (
-	"dsb ishst; tlbi vae1is, %0; dsb ish; isb"
+	"dsb ishst; tlbi vaae1is, %0; dsb ish; isb"
 	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
 #else
 	__asm__ volatile (
-	"dsb ishst; tlbi vae1, %0; dsb ish; isb"
+	"dsb ishst; tlbi vaae1, %0; dsb ish; isb"
 	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
 #endif
 }
@@ -1667,10 +1878,13 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	uintptr_t virt = far;
 	uint64_t *pte, desc;
 	uintptr_t phys;
+	uint64_t ec = GET_ESR_EC(esr);
 
 	/* filter relevant exceptions */
-	switch (GET_ESR_EC(esr)) {
+	switch (ec) {
+	case 0x20: /* insn abort from lower EL */
 	case 0x21: /* insn abort from current EL */
+	case 0x24: /* data abort from lower EL */
 	case 0x25: /* data abort from current EL */
 		break;
 	default:
@@ -1685,6 +1899,51 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	}
 
 	virt = ROUND_DOWN(virt, CONFIG_MMU_PAGE_SIZE);
+
+	/*
+	 * Fault status codes for Data aborts (DFSC):
+	 *  0b0010LL	Access flag fault
+	 *  0b0011LL	Permission fault
+	 */
+	uint32_t dfsc = GET_ESR_ISS(esr) & GENMASK(5, 0);
+	bool write = (GET_ESR_ISS(esr) & BIT(6)) != 0; /* WnR */
+
+#ifdef CONFIG_USERSPACE
+	if (ec == 0x20 || ec == 0x24) {
+		/*
+		 * An abort from EL0 was raised against the faulting thread's
+		 * own (domain) page tables, so that is where the access must
+		 * be validated: unless the leaf entry there grants EL0 the
+		 * access it attempted, the fault is genuine and the thread
+		 * must not get the page paged in, dirtied or LRU-refreshed on
+		 * its behalf.
+		 *
+		 * Take xlat_lock: sync_domains() may free domain subtables
+		 * on another CPU.
+		 */
+		k_spinlock_key_t key = k_spin_lock(&xlat_lock);
+		uint64_t *upte = get_pte_location(_current->arch.ptables, virt);
+		uint64_t udesc = upte ? *upte : 0;
+
+		k_spin_unlock(&xlat_lock, key);
+
+		if (!upte || (udesc & PTE_BLOCK_DESC_AP_ELx) == 0) {
+			/* no EL0 access at all */
+			return false;
+		}
+		if (ec == 0x20 && (udesc & PTE_BLOCK_DESC_UXN) != 0) {
+			/* page is not executable from EL0 */
+			return false;
+		}
+		if (ec == 0x24 && write && (udesc & PTE_SW_WRITABLE) == 0) {
+			/*
+			 * Read-only for EL0: the dirty path below judges
+			 * writability from the kernel entry.
+			 */
+			return false;
+		}
+	}
+#endif
 
 	pte = get_pte_location(&kernel_ptables, virt);
 	if (!pte) {
@@ -1707,13 +1966,7 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	 *    RO flag marking the page dirty.
 	 *
 	 * We bail out on anything else.
-	 *
-	 * Fault status codes for Data aborts (DFSC):
-	 *  0b0010LL	Access flag fault
-	 *  0b0011LL	Permission fault
 	 */
-	uint32_t dfsc = GET_ESR_ISS(esr) & GENMASK(5, 0);
-	bool write = (GET_ESR_ISS(esr) & BIT(6)) != 0; /* WnR */
 
 	if (dfsc == (0b001000 | XLAT_LAST_LEVEL) &&
 	    (desc & PTE_BLOCK_DESC_AF) == 0) {
