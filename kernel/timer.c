@@ -242,6 +242,7 @@ retry:
 	timer_disarm(timer);
 	if (z_try_abort_timeout(&timer->timeout) == -EAGAIN) {
 		k_spin_unlock(&timer_lock, key);
+		z_timeout_wait_inflight(&timer->timeout);
 		goto retry;
 	}
 
