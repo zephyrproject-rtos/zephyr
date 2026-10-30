@@ -1,0 +1,42 @@
+common:
+  min_ram: 32
+  timeout: 300
+  tags:
+    - kernel
+    - benchmark
+  # The framework's timed control benchmark spins until a deadline
+  # expires, and on a simulated target time does not advance while the
+  # CPU is busy, so it never returns. tests/benchmarks/memory_allocators
+  # excludes posix for the same reason.
+  arch_exclude:
+    - posix
+  extra_configs:
+    - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+  harness: console
+  integration_platforms:
+    - qemu_x86
+    - qemu_cortex_a53
+    - qemu_riscv32
+  harness_config:
+    type: one_line
+    record:
+      regex:
+        - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+    regex:
+      - "PROJECT EXECUTION SUCCESSFUL"
+
+# One build per ready queue algorithm. The operations measured are the
+# same in each, so the three runs are directly comparable and show what
+# the choice of algorithm costs the kernel calls an application makes.
+tests:
+  benchmark.kernel.latency.objects.simple:
+    extra_configs:
+      - CONFIG_SCHED_SIMPLE=y
+
+  benchmark.kernel.latency.objects.scalable:
+    extra_configs:
+      - CONFIG_SCHED_SCALABLE=y
+
+  benchmark.kernel.latency.objects.multiq:
+    extra_configs:
+      - CONFIG_SCHED_MULTIQ=y
