@@ -1143,7 +1143,9 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
-							 <NRF_FUN_TWIM_SCL>;
+							 <NRF_FUN_TWIM_SCL>,
+							 <NRF_FUN_TWIS_SDA>,
+							 <NRF_FUN_TWIS_SCL>;
 				zephyr,pm-device-runtime-auto;
 				status = "disabled";
 			};
@@ -1187,7 +1189,9 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
-							 <NRF_FUN_TWIM_SCL>;
+							 <NRF_FUN_TWIM_SCL>,
+							 <NRF_FUN_TWIS_SDA>,
+							 <NRF_FUN_TWIS_SCL>;
 				zephyr,pm-device-runtime-auto;
 				status = "disabled";
 			};
@@ -1279,7 +1283,9 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
-							 <NRF_FUN_TWIM_SCL>;
+							 <NRF_FUN_TWIM_SCL>,
+							 <NRF_FUN_TWIS_SDA>,
+							 <NRF_FUN_TWIS_SCL>;
 				zephyr,pm-device-runtime-auto;
 				status = "disabled";
 			};
@@ -1323,7 +1329,9 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
-							 <NRF_FUN_TWIM_SCL>;
+							 <NRF_FUN_TWIM_SCL>,
+							 <NRF_FUN_TWIS_SDA>,
+							 <NRF_FUN_TWIS_SCL>;
 				zephyr,pm-device-runtime-auto;
 				status = "disabled";
 			};
@@ -1415,7 +1423,9 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
-							 <NRF_FUN_TWIM_SCL>;
+							 <NRF_FUN_TWIM_SCL>,
+							 <NRF_FUN_TWIS_SDA>,
+							 <NRF_FUN_TWIS_SCL>;
 				zephyr,pm-device-runtime-auto;
 				status = "disabled";
 			};
@@ -1459,7 +1469,9 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
-							 <NRF_FUN_TWIM_SCL>;
+							 <NRF_FUN_TWIM_SCL>,
+							 <NRF_FUN_TWIS_SDA>,
+							 <NRF_FUN_TWIS_SCL>;
 				zephyr,pm-device-runtime-auto;
 				status = "disabled";
 			};
@@ -1550,7 +1562,9 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
-							 <NRF_FUN_TWIM_SCL>;
+							 <NRF_FUN_TWIM_SCL>,
+							 <NRF_FUN_TWIS_SDA>,
+							 <NRF_FUN_TWIS_SCL>;
 				zephyr,pm-device-runtime-auto;
 				status = "disabled";
 			};
@@ -1594,7 +1608,9 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
-							 <NRF_FUN_TWIM_SCL>;
+							 <NRF_FUN_TWIM_SCL>,
+							 <NRF_FUN_TWIS_SDA>,
+							 <NRF_FUN_TWIS_SCL>;
 				zephyr,pm-device-runtime-auto;
 				status = "disabled";
 			};
