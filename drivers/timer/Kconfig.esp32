@@ -17,3 +17,19 @@ config ESP32_SYS_TIMER
 	help
 	  This option enables the system timer driver for the Espressif ESP32Cx
 	  and provides the standard "system clock driver" interface.
+
+	  ESP32-S3 under CONFIG_SMP has a real, independently-confirmed
+	  correctness bug in the default CCOUNT-based XTENSA_TIMER (CCOUNT is a
+	  private per-core register with no hardware link between the two
+	  cores, which corrupts cross-core tick accounting), and this driver's
+	  genuinely-shared SYSTIMER counter is the architecturally correct fix
+	  -- the same hardware timer ESP-IDF itself uses on this chip. It is
+	  deliberately NOT yet wired up as an ESP32-S3 option here: with it
+	  enabled, esp_wifi_init() hangs during PHY/RF bring-up, for reasons
+	  not yet root-caused (confirmed independent of CPU count and of the
+	  generic esp_timer_get_time() path -- the hang is inside the wifi
+	  blob's own init sequence). drivers/timer/esp32_sys_timer.c's
+	  smp_timer_init() (the per-core-alarm support this would need) is in
+	  place and does not affect any existing single-core user of this
+	  driver, so enabling this for ESP32-S3 later is a Kconfig-only change
+	  once that hang is understood.

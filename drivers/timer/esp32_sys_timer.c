@@ -12,6 +12,7 @@
 #include <esp_private/systimer.h>
 #include <rom/ets_sys.h>
 #include <esp_attr.h>
+#include <esp_cpu.h>
 
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -35,18 +36,36 @@ static bool timeout_idle;
 /* Systimer HAL layer object */
 static systimer_hal_context_t systimer_hal;
 
-static void set_systimer_alarm(uint64_t time)
+/*
+ * SYSTIMER_COUNTER_OS_TICK is one free-running counter genuinely shared by
+ * both cores, but each core has its own alarm/comparator channel watching
+ * it (SYSTIMER_ALARM_OS_TICK_CORE0/1) and its own interrupt, so that core0
+ * arming its deadline never disturbs core1's. Under CONFIG_SMP, every
+ * function here that arms or acknowledges "the" alarm must target the
+ * calling core's own channel rather than hardcoding core0's -- this is
+ * what lets the exact same system_timer_generic.h tick accounting work
+ * unmodified from either core.
+ */
+static inline uint32_t core_alarm_id(void)
 {
-	systimer_hal_select_alarm_mode(&systimer_hal,
-		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_ONESHOT);
+	if (IS_ENABLED(CONFIG_SMP)) {
+		return SYSTIMER_ALARM_OS_TICK_CORE0 + esp_cpu_get_core_id();
+	}
+
+	return SYSTIMER_ALARM_OS_TICK_CORE0;
+}
+
+static void set_systimer_alarm(uint32_t alarm_id, uint64_t time)
+{
+	systimer_hal_select_alarm_mode(&systimer_hal, alarm_id, SYSTIMER_ALARM_MODE_ONESHOT);
 
 	systimer_counter_value_t alarm = {.val = time};
 
-	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, false);
-	systimer_ll_set_alarm_target(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, alarm.val);
-	systimer_ll_apply_alarm_value(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
-	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
-	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
+	systimer_ll_enable_alarm(systimer_hal.dev, alarm_id, false);
+	systimer_ll_set_alarm_target(systimer_hal.dev, alarm_id, alarm.val);
+	systimer_ll_apply_alarm_value(systimer_hal.dev, alarm_id);
+	systimer_ll_enable_alarm(systimer_hal.dev, alarm_id, true);
+	systimer_ll_enable_alarm_int(systimer_hal.dev, alarm_id, true);
 }
 
 static uint64_t get_systimer_alarm(void)
@@ -91,7 +110,7 @@ static void timer_driver_set_compare(uint64_t cycles)
 		return;
 	}
 
-	set_systimer_alarm(cycles);
+	set_systimer_alarm(core_alarm_id(), cycles);
 }
 
 #include "system_timer_generic.h"
@@ -99,7 +118,7 @@ static void timer_driver_set_compare(uint64_t cycles)
 static void IRAM_ATTR sys_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
-	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
+	systimer_ll_clear_alarm_int(systimer_hal.dev, core_alarm_id());
 
 	timer_core_announce();
 }
@@ -114,6 +133,14 @@ void sys_clock_disable(void)
 }
 
 #if defined(CONFIG_PM)
+/*
+ * systimer_pre_idle/lptim_pre_idle/timeout_idle are plain statics, not
+ * per-core: fine for every existing single-core user of this driver, but
+ * unaudited for two cores independently entering/exiting idle at once under
+ * CONFIG_SMP (this driver's first). Neither of today's SMP+PM combinations
+ * has been tested; CONFIG_PM stayed off for the SMP validation this change
+ * is based on.
+ */
 void sys_clock_idle_enter(uint32_t ticks)
 {
 	sys_clock_set_timeout(ticks, false);
@@ -193,6 +220,39 @@ static int sys_clock_driver_init(void)
 	timer_core_init();
 	return 0;
 }
+
+#if defined(CONFIG_SMP)
+/*
+ * Called once on each secondary CPU from smp_init_top() (see kernel/smp/
+ * smp.c). CORE1's alarm channel still watches the same SYSTIMER_COUNTER_OS_TICK
+ * core0's does -- that is the whole point of this driver over the CCOUNT-based
+ * one -- so this only needs to connect and enable core1's own channel and
+ * interrupt, then arm it one tick ahead of the shared baseline exactly like
+ * sys_clock_driver_init() did for core0. esp_intr_alloc() routes an interrupt
+ * source to whichever CPU calls it, so core1's own allocation has to happen
+ * from core1 itself.
+ */
+void smp_timer_init(void)
+{
+	int ret;
+
+	ret = esp_intr_alloc(
+		DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 1, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 1, priority)) |
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 1, flags)) |
+			ESP_INTR_FLAG_IRAM,
+		sys_timer_isr, NULL, NULL);
+	__ASSERT(ret == 0, "systimer core1 IRQ allocation failed: %d", ret);
+
+	systimer_hal_connect_alarm_counter(&systimer_hal,
+		SYSTIMER_ALARM_OS_TICK_CORE1, SYSTIMER_COUNTER_OS_TICK);
+
+	k_spinlock_key_t key = sys_clock_lock();
+
+	timer_core_smp_prime();
+	sys_clock_unlock(key);
+}
+#endif /* CONFIG_SMP */
 
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
 	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
