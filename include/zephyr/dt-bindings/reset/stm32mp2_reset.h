@@ -44,6 +44,10 @@
 #define STM32_RESET_PERIPH_UART8	0x798
 #define STM32_RESET_PERIPH_UART9	0x79C
 
+/* Display peripherals */
+#define STM32_RESET_PERIPH_LTDC		0x840
+#define STM32_RESET_PERIPH_DSI		0x844
+
 /* Camera peripherals */
 #define STM32_RESET_PERIPH_CSI2		0x858
 #define STM32_RESET_PERIPH_DCMIPP	0x85C

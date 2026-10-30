@@ -9,5 +9,19 @@
 / {
 	soc {
 		compatible = "st,stm32mp255", "st,stm32mp2", "simple-bus";
+
+		mipi_dsi: dsihost@48000000 {
+			compatible = "st,stm32mp25-mipi-dsi", "st,stm32-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x48000000 DT_SIZE_K(2)>;
+			interrupts = <143 0>;
+			clock-names = "dsiclk", "refclk", "pixelclk";
+			clocks = <&rcc STM32_CLOCK(DSI, STM32_CLK)>,
+				 <&rcc STM32_CLOCK(DSI, STM32_CLK)>,
+				 <&rcc STM32_CLOCK(LTDC, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(DSI, STM32_RST)>;
+			status = "disabled";
+		};
 	};
 };
