@@ -12,6 +12,7 @@ tests:
       - qemu_x86
       - nucleo_l152re
       - nucleo_l073rz
+      - sama7g54_cpro
       - sama7g54_ek
       - sama7d65_curiosity
     integration_platforms:
