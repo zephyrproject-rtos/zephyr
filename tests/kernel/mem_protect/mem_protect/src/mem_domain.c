@@ -235,6 +235,68 @@ ZTEST(mem_protect_domain, test_mem_domain_no_writes_to_ro)
 	spawn_child_thread(ro_write_entry, &test_domain, true);
 }
 
+/* A read-only partition over constant data. Unlike the other partitions it
+ * does not lie in kernel RAM but in the memory holding the image, which the
+ * boot-time memory map already covers. Reads are volatile so that they are
+ * not folded at compile time.
+ */
+static const volatile uint8_t __aligned(MEM_REGION_ALLOC) rom_buf[MEM_REGION_ALLOC] = {
+	[0] = 0xa5,
+	[MEM_REGION_ALLOC - 1] = 0x5a,
+};
+K_MEM_PARTITION_DEFINE(rom_part, rom_buf, sizeof(rom_buf), K_MEM_PARTITION_P_RO_U_RO);
+
+/* read the rom_part */
+static void rom_part_access(void *p1, void *p2, void *p3)
+{
+	zassert_equal(rom_buf[0], 0xa5, "bad data in rom_buf[0]");
+	zassert_equal(rom_buf[MEM_REGION_ALLOC - 1], 0x5a, "bad data in rom_buf[%d]",
+		      MEM_REGION_ALLOC - 1);
+}
+
+/**
+ * @brief Verify that a partition over constant image data is usable.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A partition does not have to lie in kernel RAM. One over constant data in
+ * the image overlaps the boot-time mapping of that memory, which some MPUs
+ * only allow if the driver resolves the overlap. The partition must be
+ * readable from a member thread, and the boot-time mapping must survive the
+ * switch to a thread without the partition, which still reads constant data
+ * and runs kernel code from the same memory.
+ *
+ * Test steps:
+ * - Replace a read-write partition of the test domain with the constant
+ *   data partition, since the domain is full.
+ * - Spawn a user thread in the test domain that reads the constant data.
+ * - Restore the test domain.
+ * - Spawn a user thread in the test domain that reads the read-only
+ *   partition.
+ *
+ * Expected result:
+ * - Both accesses succeed with no fault.
+ */
+ZTEST(mem_protect_domain, test_mem_domain_rom_partition)
+{
+	set_fault_valid(false);
+
+	zassert_equal(k_mem_domain_remove_partition(&test_domain, &rw_parts[0]), 0,
+		      "failed to remove memory partition");
+	zassert_equal(k_mem_domain_add_partition(&test_domain, &rom_part), 0,
+		      "failed to add memory partition");
+
+	spawn_child_thread(rom_part_access, &test_domain, false);
+
+	zassert_equal(k_mem_domain_remove_partition(&test_domain, &rom_part), 0,
+		      "failed to remove memory partition");
+	zassert_equal(k_mem_domain_add_partition(&test_domain, &rw_parts[0]), 0,
+		      "failed to add memory partition");
+
+	spawn_child_thread(ro_part_access, &test_domain, false);
+}
+
 /**
  * @brief Verify that partition removal and re-addition track access rights.
  *
