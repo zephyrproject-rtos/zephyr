@@ -154,6 +154,7 @@ static void avrcp_ct_disconnected(struct bt_avrcp_ct *ct)
 	default_ct = NULL;
 }
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 static void avrcp_ct_browsing_connected(struct bt_conn *conn, struct bt_avrcp_ct *ct)
 {
 	bt_shell_print("AVRCP CT browsing connected");
@@ -163,6 +164,8 @@ static void avrcp_ct_browsing_disconnected(struct bt_avrcp_ct *ct)
 {
 	bt_shell_print("AVRCP CT browsing disconnected");
 }
+
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 
 static void avrcp_get_caps_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status,
 			       struct net_buf *buf)
@@ -489,6 +492,7 @@ static void avrcp_notification_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t 
 	}
 }
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 static void avrcp_set_browsed_player_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
 					 struct net_buf *buf)
 {
@@ -732,6 +736,8 @@ static void avrcp_browsing_general_reject_rsp(struct bt_avrcp_ct *ct, uint8_t ti
 {
 	bt_shell_print("AVRCP Browsing General Reject received: 0x%02x", reason);
 }
+
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 
 static const char *player_app_attr_name(uint8_t id)
 {
@@ -1054,12 +1060,15 @@ static void avrcp_get_play_status_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
 static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.connected = avrcp_ct_connected,
 	.disconnected = avrcp_ct_disconnected,
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 	.browsing_connected = avrcp_ct_browsing_connected,
 	.browsing_disconnected = avrcp_ct_browsing_disconnected,
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 	.get_caps = avrcp_get_caps_rsp,
 	.unit_info_rsp = avrcp_unit_info_rsp,
 	.subunit_info_rsp = avrcp_subunit_info_rsp,
 	.passthrough_rsp = avrcp_passthrough_rsp,
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 	.set_browsed_player = avrcp_set_browsed_player_rsp,
 	.get_folder_items = avrcp_get_folder_items_rsp,
 	.change_path = avrcp_change_path_rsp,
@@ -1067,6 +1076,7 @@ static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.get_total_number_of_items = avrcp_get_total_number_of_items_rsp,
 	.search = avrcp_search_rsp,
 	.browsing_general_reject = avrcp_browsing_general_reject_rsp,
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 	.notification = avrcp_notification_rsp,
 	.list_player_app_setting_attrs = avrcp_list_player_app_setting_attrs_rsp,
 	.list_player_app_setting_vals = avrcp_list_player_app_setting_vals_rsp,
@@ -1096,10 +1106,13 @@ static void avrcp_tg_disconnected(struct bt_avrcp_tg *tg)
 	default_tg = NULL;
 }
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 static void avrcp_tg_browsing_connected(struct bt_conn *conn, struct bt_avrcp_tg *tg)
 {
 	bt_shell_print("AVRCP TG browsing connected");
 }
+
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 
 static void avrcp_unit_info_req(struct bt_avrcp_tg *tg, uint8_t tid)
 {
@@ -1138,6 +1151,7 @@ static void avrcp_get_caps_req(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t cap_
 	tg_cap_id = cap_id;
 }
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 static void avrcp_tg_browsing_disconnected(struct bt_avrcp_tg *tg)
 {
 	bt_shell_print("AVRCP TG browsing disconnected");
@@ -1316,6 +1330,8 @@ static void avrcp_search_req(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf
 	bt_shell_print("  Get search str (hex)  : ");
 	bt_shell_hexdump(search_str, search_str_len);
 }
+
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 
 static void avrcp_passthrough_req(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
 {
@@ -1540,17 +1556,21 @@ static void avrcp_add_to_now_playing_req(struct bt_avrcp_tg *tg, uint8_t tid, st
 static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.connected = avrcp_tg_connected,
 	.disconnected = avrcp_tg_disconnected,
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 	.browsing_connected = avrcp_tg_browsing_connected,
 	.browsing_disconnected = avrcp_tg_browsing_disconnected,
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 	.unit_info_req = avrcp_unit_info_req,
 	.subunit_info_req = avrcp_subunit_info_req,
 	.get_caps = avrcp_get_caps_req,
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 	.set_browsed_player = avrcp_set_browsed_player_req,
 	.get_folder_items = avrcp_get_folder_items_req,
 	.change_path = avrcp_change_path_req,
 	.get_item_attrs = avrcp_get_item_attrs_req,
 	.get_total_number_of_items = avrcp_get_total_number_of_items_req,
 	.search = avrcp_search_req,
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 	.register_notification = avrcp_register_notification_req,
 	.passthrough_req = avrcp_passthrough_req,
 	.list_player_app_setting_attrs = avrcp_list_player_app_setting_attrs_req,
@@ -1677,6 +1697,7 @@ static int cmd_disconnect(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 static int cmd_browsing_connect(const struct shell *sh, int32_t argc, char *argv[])
 {
 	int err;
@@ -1723,6 +1744,8 @@ static int cmd_browsing_disconnect(const struct shell *sh, int32_t argc, char *a
 
 	return err;
 }
+
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 
 static int cmd_get_unit_info(const struct shell *sh, int32_t argc, char *argv[])
 {
@@ -3414,6 +3437,7 @@ static int cmd_tg_send_add_to_now_playing_rsp(const struct shell *sh, size_t arg
 	return 0;
 }
 
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 static int cmd_set_browsed_player(const struct shell *sh, int32_t argc, char *argv[])
 {
 	uint16_t player_id;
@@ -4125,6 +4149,8 @@ static int cmd_tg_send_browsing_general_reject_rsp(const struct shell *sh, int a
 	return 0;
 }
 
+#endif /* CONFIG_BT_AVRCP_BROWSING */
+
 #define HELP_NONE "[none]"
 #define HELP_PASSTHROUGH_RSP                                                     \
 	"send_passthrough_rsp <op/opvu> <opid> <state>\n"                        \
@@ -4148,6 +4174,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(pause, NULL, "request a pause at the remote player", cmd_pause, 1, 0),
 	SHELL_CMD_ARG(register_notification, NULL, "register notify <event_id> [playback_interval]",
 		      cmd_ct_register_notification, 2, 1),
+	IF_ENABLED(CONFIG_BT_AVRCP_BROWSING, (
 	SHELL_CMD_ARG(set_browsed_player, NULL, "set browsed player <player_id>",
 		      cmd_set_browsed_player, 2, 0),
 	SHELL_CMD_ARG(get_folder_items, NULL, HELP_NONE, cmd_ct_get_folder_items, 1, 0),
@@ -4157,6 +4184,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(get_total_number_of_items, NULL, "get total number of items [scope]",
 		      cmd_ct_get_total_number_of_items, 1, 1),
 	SHELL_CMD_ARG(search, NULL, "search [search_string]", cmd_ct_search, 1, 1),
+	))
 	SHELL_CMD_ARG(list_app_attrs, NULL, HELP_NONE, cmd_ct_list_app_attrs, 1, 0),
 	SHELL_CMD_ARG(list_app_vals,  NULL, "List App vals <attr_id>", cmd_ct_list_app_vals, 2, 0),
 	SHELL_CMD_ARG(get_app_curr,   NULL, "Get curr player app setting val [attr1] [attr2] ...",
@@ -4194,6 +4222,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_send_get_caps_rsp, 1, 1),
 	SHELL_CMD_ARG(send_notification_rsp, NULL, "send notify rsp <event_id> <type> [value...]",
 		      cmd_tg_send_notification_rsp, 3, 2),
+	IF_ENABLED(CONFIG_BT_AVRCP_BROWSING, (
 	SHELL_CMD_ARG(send_browsed_player_rsp, NULL, HELP_BROWSED_PLAYER_RSP,
 		      cmd_send_set_browsed_player_rsp, 1, 5),
 	SHELL_CMD_ARG(send_get_folder_items_rsp, NULL, "send get folder items [status]",
@@ -4208,6 +4237,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(send_search_rsp, NULL, "search [status]", cmd_tg_send_search_rsp, 1, 1),
 	SHELL_CMD_ARG(send_browsing_general_reject, NULL, "send browsing general reject [reason]",
 		      cmd_tg_send_browsing_general_reject_rsp, 1, 1),
+	))
 	SHELL_CMD_ARG(send_passthrough_rsp, NULL, HELP_PASSTHROUGH_RSP, cmd_send_passthrough_rsp,
 		      4, 0),
 	SHELL_CMD_ARG(send_list_player_app_setting_attrs_rsp, NULL,
@@ -4262,9 +4292,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	avrcp_cmds,
 	SHELL_CMD_ARG(connect, NULL, "connect AVRCP", cmd_connect, 1, 0),
 	SHELL_CMD_ARG(disconnect, NULL, "disconnect AVRCP", cmd_disconnect, 1, 0),
+	IF_ENABLED(CONFIG_BT_AVRCP_BROWSING, (
 	SHELL_CMD_ARG(browsing_connect, NULL, "connect browsing AVRCP", cmd_browsing_connect, 1, 0),
 	SHELL_CMD_ARG(browsing_disconnect, NULL, "disconnect browsing AVRCP",
 		      cmd_browsing_disconnect, 1, 0),
+	))
 	SHELL_CMD(ct, &ct_cmds, "AVRCP CT shell commands", cmd_avrcp),
 	SHELL_CMD(tg, &tg_cmds, "AVRCP TG shell commands", cmd_avrcp),
 	SHELL_SUBCMD_SET_END);
