@@ -58,6 +58,7 @@ void arch_timing_stop(void)
 {
 }
 
+__no_instrumentation__
 timing_t arch_timing_counter_get(void)
 {
 	return z_tsc_read();
