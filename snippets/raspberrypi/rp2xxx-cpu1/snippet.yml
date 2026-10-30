@@ -1,0 +1,6 @@
+name: rp2xxx-cpu1
+
+boards:
+  /.*/rp2350[ab]/m33_0(/w)?/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/rp2350_m33_0.overlay
