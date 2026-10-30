@@ -161,6 +161,7 @@ struct uart_xlnx_ps_dev_data_t {
 	struct k_timer timer;
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
+	uint32_t isr_cache;
 #endif
 };
 
@@ -1085,11 +1086,11 @@ static void uart_xlnx_ps_irq_err_disable(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_is_pending(const struct device *dev)
 {
+	const struct uart_xlnx_ps_dev_data_t *dev_data = dev->data;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t reg_imr = sys_read32(reg_base + XUARTPS_IMR_OFFSET);
-	uint32_t reg_isr = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
 
-	if ((reg_imr & reg_isr) != 0) {
+	if ((reg_imr & dev_data->isr_cache) != 0) {
 		return 1;
 	} else {
 		return 0;
@@ -1097,16 +1098,20 @@ static int uart_xlnx_ps_irq_is_pending(const struct device *dev)
 }
 
 /**
- * @brief Update cached contents of IIR
+ * @brief Cache the interrupt status and acknowledge RX/TX interrupts
  *
  * @param dev UART device struct
  */
 static void uart_xlnx_ps_irq_update(const struct device *dev)
 {
+	struct uart_xlnx_ps_dev_data_t *dev_data = dev->data;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	/* Clear RX/TX interrupts */
-	sys_write32(XUARTPS_IXR_TTRIG | XUARTPS_IXR_TXEMPTY | XUARTPS_IXR_RTRIG,
+	dev_data->isr_cache = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
+
+	/* Clear only the RX/TX interrupts that were read */
+	sys_write32(dev_data->isr_cache &
+			    (XUARTPS_IXR_TTRIG | XUARTPS_IXR_TXEMPTY | XUARTPS_IXR_RTRIG),
 		    reg_base + XUARTPS_ISR_OFFSET);
 }
 
