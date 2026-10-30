@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon IOSS GPIO port
+
+  Each node describes one GPIO port of the IOSS block. The "gpio" reg
+  entry is the GPIO port register block and the "hsiom" reg entry is
+  the HSIOM port register block, which routes the pins of the port to
+  the GPIO function:
+
+    gpio_prt7: gpio@40310380 {
+        compatible = "infineon,ioss-gpio";
+        reg = <0x40310380 0x80>, <0x40300070 0x10>;
+        reg-names = "gpio", "hsiom";
+        interrupt-parent = <&intmux_ch0>;
+        interrupts = <31 0>;
+        gpio-controller;
+        ngpios = <8>;
+        #gpio-cells = <2>;
+    };
+
+  The port supports edge triggered interrupts only.
+
+compatible: "infineon,ioss-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
