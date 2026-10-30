@@ -29,6 +29,16 @@ config XTENSA_USE_CORE_CRT1
 	  SoC or boards might define their own __start by setting this setting
 	  to false.
 
+config XTENSA_SOC_HAS_CUSTOM_SYS_IO
+	bool
+	help
+	  Hidden option to allow a SoC to override sys_read*() and sys_write*()
+	  with platform-specific functions named z_soc_sys_read*() and
+	  z_soc_sys_write*().
+
+	  SoCs selecting this option must implement all 8-, 16-, 32-, and 64-bit
+	  read and write functions.
+
 config XTENSA_ENABLE_BACKTRACE
 	bool "Backtrace on panic exception"
 	help
