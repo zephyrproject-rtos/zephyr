@@ -12,6 +12,7 @@ tests:
     platform_allow:
       - nucleo_l073rz
       - nucleo_h753zi
+      - nucleo_wl33cc1
       - disco_l475_iot1
       - cc3220sf_launchxl
       - cc3235sf_launchxl
