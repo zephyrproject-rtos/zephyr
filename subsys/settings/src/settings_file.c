@@ -132,7 +132,7 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 	rc = fs_open(&file, cf->cf_name, FS_O_READ);
 	if (rc != 0) {
 		if (rc == -ENOENT) {
-			return -ENOENT;
+			return 0;
 		}
 
 		return -EINVAL;

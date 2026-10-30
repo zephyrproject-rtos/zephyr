@@ -341,6 +341,8 @@ typedef int (*settings_load_direct_cb)(const char *key, size_t len, settings_rea
  *
  * This function bypasses the normal data workflow in settings module.
  * All the settings values that are found are passed to the given callback.
+ * All source backends are visited even if one reports an error. The first
+ * negative backend result is returned after all sources have been visited.
  *
  * @note
  * This function does not call commit function.

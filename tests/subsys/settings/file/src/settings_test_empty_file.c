@@ -32,6 +32,8 @@ ZTEST(settings_config_fs, test_config_empty_file)
 	 * No files
 	 */
 	settings_load();
+	rc = settings_load_subtree_direct(NULL, NULL, NULL);
+	zassert_ok(rc, "missing settings files must be treated as empty stores");
 
 	rc = fs_mkdir(TEST_CONFIG_DIR);
 	zassert_true(rc == 0 || rc == -EEXIST, "can't create directory");
