@@ -48,6 +48,9 @@ K_MSGQ_DEFINE_STATIC_TYPE(engine_msgq, struct lwan_req, ENGINE_MSGQ_DEPTH);
 static K_THREAD_STACK_DEFINE(engine_stack,
 			     CONFIG_LORAWAN_NATIVE_ENGINE_STACK_SIZE);
 static struct k_thread engine_thread;
+#if defined(CONFIG_ZTEST)
+static bool engine_running;
+#endif /* CONFIG_ZTEST */
 
 static void engine_thread_fn(void *p1, void *p2, void *p3)
 {
@@ -76,7 +79,22 @@ void engine_init(struct lwan_ctx *ctx)
 			CONFIG_LORAWAN_NATIVE_ENGINE_PRIORITY,
 			0, K_NO_WAIT);
 	k_thread_name_set(&engine_thread, "lorawan_engine");
+#if defined(CONFIG_ZTEST)
+	engine_running = true;
+#endif /* CONFIG_ZTEST */
 }
+
+#if defined(CONFIG_ZTEST)
+void engine_stop(void)
+{
+	if (engine_running) {
+		k_thread_abort(&engine_thread);
+		engine_running = false;
+	}
+
+	k_msgq_purge(&engine_msgq);
+}
+#endif /* CONFIG_ZTEST */
 
 int engine_post_req_wait(struct lwan_req *req)
 {
