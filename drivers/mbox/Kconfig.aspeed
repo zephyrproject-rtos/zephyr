@@ -1,0 +1,38 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MBOX_ASPEED
+	bool "ASPEED mailbox driver"
+	default y
+	depends on DT_HAS_ASPEED_AST2700_MAILBOX_ENABLED
+	help
+	  Enable the ASPEED inter-processor mailbox controller. A mailbox with
+	  an interrupt in the devicetree runs its callbacks in interrupt
+	  context. Mailboxes without one share a polling thread, which runs
+	  their callbacks; those callbacks may use blocking APIs and delay
+	  polling of all channels until they return.
+
+if MBOX_ASPEED
+
+config MBOX_ASPEED_POLL_INTERVAL_MS
+	int "Polling interval in milliseconds"
+	default 1
+	range 1 1000
+	help
+	  Interval between checks of the mailboxes without an interrupt while
+	  any of their receive channels is enabled. The polling thread sleeps
+	  when none is enabled.
+
+config MBOX_ASPEED_THREAD_STACK_SIZE
+	int "Polling thread stack size"
+	default 1024
+	help
+	  Stack size in bytes for the polling thread and the callbacks it runs.
+
+config MBOX_ASPEED_THREAD_PRIORITY
+	int "Polling thread priority"
+	default 0
+	help
+	  Priority of the polling thread.
+
+endif # MBOX_ASPEED
