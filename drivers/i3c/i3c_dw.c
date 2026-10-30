@@ -647,6 +647,20 @@ static enum dw_i3c_isr_error_action dw_i3c_isr_error_recovery_action(const struc
 	return DW_I3C_ISR_ERROR_RECOVER_NOW;
 }
 
+/**
+ * @brief Get the DW core clock rate, using vendor glue when needed.
+ */
+static int dw_i3c_get_core_rate(const struct device *dev, uint32_t *core_rate)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (DW_I3C_OPS(config) && config->ops->get_clock_rate) {
+		return config->ops->get_clock_rate(dev, core_rate);
+	}
+
+	return clock_control_get_rate(config->clock, config->clock_subsys, core_rate);
+}
+
 static inline bool dw_i3c_is_current_controller(const struct device *dev)
 {
 	return !!(sys_read32(dw_i3c_regs(dev) + PRESENT_STATE) & PRESENT_STATE_CURRENT_MASTER);
@@ -2398,14 +2412,14 @@ static uint32_t dw_i3c_scl_cnt_sub(uint32_t total, uint32_t sub)
 
 static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_controller *ctrl_cfg)
 {
-	const struct dw_i3c_config *config = dev->config;
+	const struct dw_i3c_config *config __maybe_unused = dev->config;
 	struct dw_i3c_data *data = dev->data;
 	uint32_t core_rate, scl_timing, bus_free;
 #ifdef CONFIG_I3C_CONTROLLER
 	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, free_cnt, i2c_scl_hz, tlow_min_ns;
 #endif /* CONFIG_I3C_CONTROLLER */
 
-	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
+	if (dw_i3c_get_core_rate(dev, &core_rate) != 0) {
 		LOG_ERR("%s: get clock rate failed", dev->name);
 		return -EINVAL;
 	}
