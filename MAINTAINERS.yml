@@ -1501,6 +1501,8 @@ Documentation:
     - nashif
     - carlescufi
   files:
+    - .agents/
+    - .claude/skills/
     - AGENTS.md
     - CLAUDE.md
     - CODE_OF_CONDUCT.md
