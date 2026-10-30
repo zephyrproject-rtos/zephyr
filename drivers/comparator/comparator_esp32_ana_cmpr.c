@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/pm/policy.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ana_cmpr_esp32, CONFIG_COMPARATOR_LOG_LEVEL);
@@ -221,6 +222,11 @@ static int ana_cmpr_esp32_init(const struct device *dev)
 	analog_cmpr_ll_enable_intr(config->hw, ANALOG_CMPR_LL_ALL_INTR_MASK(config->unit), false);
 	analog_cmpr_ll_clear_intr(config->hw, ANALOG_CMPR_LL_ALL_INTR_MASK(config->unit));
 
+	/* Light sleep can turn off the clock and the power domain this unit
+	 * uses. The unit is enabled here and left on, so hold the lock for
+	 * the life of the device.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	analog_cmpr_ll_enable(config->hw, true);
 
 	/*
@@ -239,6 +245,8 @@ static int ana_cmpr_esp32_init(const struct device *dev)
 		&irq_handle);
 	if (ret != 0) {
 		LOG_ERR("unit %d: failed to allocate IRQ (%d)", config->unit, ret);
+		analog_cmpr_ll_enable(config->hw, false);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 		return ret;
 	}
 
