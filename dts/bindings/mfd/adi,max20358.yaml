@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices MAX20358 wearable PMIC (MFD parent).
+
+  Register-compatible with the MAX20356. Selecting this compatible configures the
+  driver for the MAX20358 variant, which additionally permits setting
+  LDO4Cfg.LDO4RTC (0x67 bit 7, "Always-On LDO Off Through PFN1"); that bit is
+  rejected on the MAX20356.
+
+compatible: "adi,max20358"
+
+include: "adi,max2035x-common.yaml"

@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices MAX20356/MAX20358 PMIC GPIO controller.
+
+  Child node of the MAX20356 MFD parent. Exposes the eight multi-purpose control
+  pins (MPC0..MPC7) through the standard Zephyr GPIO API. Pins configured for DVS,
+  power-good or the SPI DVS interface must not be claimed as GPIOs.
+
+compatible: "adi,max20356-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    type: int
+    required: true
+    const: 8
+    description: Number of MPC pins exposed (always 8).
+
+gpio-cells:
+  - pin
+  - flags
