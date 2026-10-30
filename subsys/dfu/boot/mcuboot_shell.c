@@ -101,7 +101,7 @@ static int cmd_mcuboot_erase(const struct shell *sh, size_t argc,
 	}
 #endif
 
-	active_slot = boot_fetch_active_slot();
+	active_slot = boot_fetch_active_slot_area_id();
 
 	if (active_slot == BOOT_INVALID_SLOT_ID) {
 		shell_error(sh, "Failed to determive active partition");
