@@ -29,7 +29,6 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
-      - nrf9280pdk/nrf9280/cpuapp
     integration_platforms:
       - nrf52dk/nrf52810
       - nrf5340dk/nrf5340/cpuapp
@@ -48,7 +47,6 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
-      - nrf9280pdk/nrf9280/cpuapp
     integration_platforms:
       - nrf52dk/nrf52810
       - nrf5340dk/nrf5340/cpuapp
@@ -67,7 +65,6 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
-      - nrf9280pdk/nrf9280/cpuapp
     integration_platforms:
       - nrf52dk/nrf52810
       - nrf5340dk/nrf5340/cpuapp
@@ -82,7 +79,6 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
-      - nrf9280pdk/nrf9280/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
       - nrf54l15dk/nrf54l15/cpuapp
@@ -98,7 +94,6 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf7120dk/nrf7120/cpuapp
-      - nrf9280pdk/nrf9280/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
