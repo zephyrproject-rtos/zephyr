@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  WCH CH446Q 8 x 16 analog crosspoint switch, in serial address mode, as a
+  MUX controller.
+
+  The chip connects any of its X lines (X0-X15) to any of its Y lines
+  (Y0-Y7) through 128 analog switches.  Each X line is a control line, with
+  one addressing cell: the X line number.  Its state is a bitmask of the Y
+  lines it connects to: bit y closes the Xx-Yy switch.
+  mux_control_set() writes only the switches whose state changes,
+  mux_state_get() returns the mask last written (the chip has no readback)
+  and mux_control_disconnect() opens every switch of the X line.
+
+  In serial address mode (P/S tied low, AX0-AX3 and AY0-AY2 tied to GND), a
+  switch is set by shifting its 7-bit address, y * 16 + x, into DAT on the
+  rising edges of CK, AY2 first, then presenting its state on DAT (high
+  closes it) and pulsing STB high.  When the data, clock and strobe lines
+  are on one GPIO port, each step is a single port write.
+
+  Several chips may share the data, clock and reset lines, each with its
+  own strobe line.  RST opens every switch of every chip on it, so the
+  driver pulses reset-gpios only at initialization.  Without reset-gpios,
+  the driver opens the 128 switches one by one at initialization.
+
+compatible: "wch,ch446q"
+
+include: [base.yaml, mux-controller.yaml]
+
+properties:
+  data-gpios:
+    type: phandle-array
+    required: true
+    description: DAT, the serial address and the switch data.
+
+  clock-gpios:
+    type: phandle-array
+    required: true
+    description: CS/CK, the serial clock, active on its rising edge.
+
+  strobe-gpios:
+    type: phandle-array
+    required: true
+    description: STB, the strobe that latches DAT into the addressed switch.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RST, active high: opens every switch.  It may be shared with other
+      chips, so it is pulsed at initialization only.
+
+  "#mux-control-cells":
+    const: 1
+
+  "#mux-state-cells":
+    const: 2
+
+mux-control-cells:
+  # The X line, 0-15
+  - x
+
+mux-state-cells:
+  - x
+  # The Y lines X connects to: bit y closes the Xx-Yy switch
+  - mask
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+
+    /* Two chips sharing data, clock and reset, on an I2C GPIO expander */
+    crosspoint0: crosspoint-0 {
+            compatible = "wch,ch446q";
+            data-gpios = <&expander 0 GPIO_ACTIVE_HIGH>;
+            clock-gpios = <&expander 1 GPIO_ACTIVE_HIGH>;
+            strobe-gpios = <&expander 2 GPIO_ACTIVE_HIGH>;
+            reset-gpios = <&expander 4 GPIO_ACTIVE_HIGH>;
+            #mux-control-cells = <1>;
+            #mux-state-cells = <2>;
+    };
+
+    crosspoint1: crosspoint-1 {
+            compatible = "wch,ch446q";
+            data-gpios = <&expander 0 GPIO_ACTIVE_HIGH>;
+            clock-gpios = <&expander 1 GPIO_ACTIVE_HIGH>;
+            strobe-gpios = <&expander 3 GPIO_ACTIVE_HIGH>;
+            reset-gpios = <&expander 4 GPIO_ACTIVE_HIGH>;
+            #mux-control-cells = <1>;
+            #mux-state-cells = <2>;
+    };
