@@ -987,7 +987,7 @@ static int mcux_lpadc_init(const struct device *dev)
 	int err;
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
+	if (err < 0 && err != -ENOENT) {
 		return err;
 	}
 
