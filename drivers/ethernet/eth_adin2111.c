@@ -647,9 +647,6 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 		return ret;
 	}
 
-	eth_stats_update_bytes_rx(iface, fsize_real);
-	eth_stats_update_pkts_rx(iface);
-
 	return ret;
 }
 
