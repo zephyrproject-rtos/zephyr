@@ -23,7 +23,7 @@ from packaging import version
 logger = logging.getLogger('twister')
 
 supported_coverage_formats = {
-    "gcovr": ["html", "xml", "csv", "txt", "coveralls", "sonarqube"],
+    "gcovr": ["html", "xml", "csv", "txt", "coveralls", "sonarqube", "json"],
     "lcov":  ["html", "lcov"]
 }
 
@@ -209,6 +209,9 @@ class CoverageTool:
                     ),
                     "sonarqube": "Sonarqube report generated: {}".format(
                         os.path.join(outdir, "coverage", "coverage.sonarqube.xml")
+                    ),
+                    "json": "JSON report generated: {}".format(
+                        os.path.join(outdir, "coverage", "coverage.json")
                     )
                 }
                 # Per-instance reports are generated one per test instance and
@@ -653,7 +656,8 @@ class Gcovr(CoverageTool):
             "txt": ["--txt", os.path.join(subdir, "coverage.txt")],
             "coveralls": ["--coveralls", os.path.join(subdir, "coverage.coveralls.json"),
                           "--coveralls-pretty"],
-            "sonarqube": ["--sonarqube", os.path.join(subdir, "coverage.sonarqube.xml")]
+            "sonarqube": ["--sonarqube", os.path.join(subdir, "coverage.sonarqube.xml")],
+            "json": ["--json", os.path.join(subdir, "coverage.json"), "--json-pretty"]
         }
         gcovr_options = self._flatten_list(
             [report_options[r] for r in self.output_formats.split(',')]
