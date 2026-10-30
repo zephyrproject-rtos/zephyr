@@ -87,6 +87,7 @@ static int sys_hashmap_sc_rehash(struct sys_hashmap *map, bool grow)
 						     new_n_buckets * sizeof(*new_buckets));
 	if (new_buckets == NULL && new_n_buckets != 0) {
 		/* re-insert all entries into the hashmap if reallocation fails */
+		map->data->size = 0;
 		sys_hashmap_sc_insert_all(map, &list);
 		return -ENOMEM;
 	}
