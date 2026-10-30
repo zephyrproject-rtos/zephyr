@@ -71,6 +71,26 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Connections and IOs
+===================
+
+10BASE-T1L Ethernet
+-------------------
+
+The ADIN1110 MAC-PHY is connected to SPI2 (P2.2 SCK, P2.3 MISO, P2.4 MOSI,
+P2.5 CS0), with its interrupt on P2.6 and its reset on P2.1. All of these pins
+are supplied from the VDDIOH rail.
+
+The ADIN1110 configuration straps are driven by GPIO hogs and latched when the
+driver releases the reset. They select the Generic SPI protocol with CRC, the
+default of the ADIN1110 driver.
+
+The ``port1`` MAC address is a fixed default. Change it if several boards share
+the same network.
+
+The :zephyr:code-sample:`ad_swiot1l_sl_t1l_static_ip` sample brings the
+interface up with a static IPv4 address.
+
 Programming and Debugging
 *************************
 

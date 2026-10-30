@@ -1,0 +1,11 @@
+sample:
+  name: AD-SWIOT1L-SL 10BASE-T1L static IPv4
+tests:
+  sample.boards.adi.ad_swiot1l_sl.t1l_static_ip:
+    platform_allow:
+      - ad_swiot1l_sl
+    integration_platforms:
+      - ad_swiot1l_sl
+    tags:
+      - net
+      - ethernet

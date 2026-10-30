@@ -1,0 +1,11 @@
+# AD-SWIOT1L-SL board configuration
+
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_AD_SWIOT1L_SL
+
+configdefault ETH_DRIVER
+	default y if NETWORKING
+
+endif # BOARD_AD_SWIOT1L_SL
