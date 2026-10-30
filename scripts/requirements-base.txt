@@ -16,6 +16,7 @@ jsonschema
 
 # used by west_commands
 canopen
+fdt
 packaging
 patool>=2.0.0
 psutil>=5.6.6
