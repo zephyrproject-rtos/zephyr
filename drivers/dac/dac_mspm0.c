@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Linumiz
+ * Copyright (c) 2026 Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,9 +11,134 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/dac.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
-/* TI Driverlib includes */
-#include <ti/driverlib/dl_dac12.h>
+struct dac12_gen_event_regs {
+	volatile uint32_t iidx;  /* !< (@ 0x00001050) Interrupt index */
+	uint32_t reserved0;      /* !< Reserved*/
+	volatile uint32_t imask; /* !< (@ 0x00001058) Interrupt mask */
+	uint32_t reserved1;      /* !< Reserved*/
+	volatile uint32_t ris;   /* !< (@ 0x00001060) Raw interrupt status */
+	uint32_t reserved2;      /* !< Reserved*/
+	volatile uint32_t mis;   /* !< (@ 0x00001068) Masked interrupt status */
+	uint32_t reserved3;      /* !< Reserved*/
+	volatile uint32_t iset;  /* !< (@ 0x00001070) Interrupt set */
+	uint32_t reserved4;      /* !< Reserved*/
+	volatile uint32_t iclr;  /* !< (@ 0x00001078) Interrupt clear */
+};
+
+struct dac12_cpu_init_regs {
+	volatile uint32_t iidx;  /* !< (@ 0x00001020) Interrupt index */
+	uint32_t reserved0;      /* !< Reserved*/
+	volatile uint32_t imask; /* !< (@ 0x00001028) Interrupt mask */
+	uint32_t reserved1;      /* !< Reserved*/
+	volatile uint32_t ris;   /* !< (@ 0x00001030) Raw interrupt status */
+	uint32_t reserved2;      /* !< Reserved*/
+	volatile uint32_t mis;   /* !< (@ 0x00001038) Masked interrupt status */
+	uint32_t reserved3;      /* !< Reserved*/
+	volatile uint32_t iset;  /* !< (@ 0x00001040) Interrupt set */
+	uint32_t reserved4;      /* !< Reserved*/
+	volatile uint32_t iclr;  /* !< (@ 0x00001048) Interrupt clear */
+};
+
+struct dac12_gprcm_regs {
+	volatile uint32_t pwren;  /* !< (@ 0x00000800) Power enable */
+	volatile uint32_t rstctl; /* !< (@ 0x00000804) Reset Control */
+	uint32_t reserved0[3];    /* !< Reserved*/
+	volatile uint32_t stat;   /* !< (@ 0x00000814) Status Register */
+};
+
+struct dac12_regs {
+	uint32_t reserved0[256];
+	volatile uint32_t fsub_0;              /* !< (@ 0x00000400) Subscriber Port 0 */
+	uint32_t reserved1[16];                /* !< Reserved*/
+	volatile uint32_t fpub_1;              /* !< (@ 0x00000444) Publisher port 1 */
+	uint32_t reserved2[238];               /* !< Reserved*/
+	struct dac12_gprcm_regs gprcm;         /* !< (@ 0x00000800) */
+	uint32_t reserved3[514];               /* !< Reserved*/
+	struct dac12_cpu_init_regs cpu_int;    /* !< (@ 0x00001020) */
+	uint32_t reserved4;                    /* !< Reserved*/
+	struct dac12_gen_event_regs gen_event; /* !< (@ 0x00001050) */
+	uint32_t reserved5[25];                /* !< Reserved*/
+	volatile uint32_t evt_mode;            /* !< (@ 0x000010E0) Event Mode */
+	uint32_t reserved6[6];                 /* !< Reserved*/
+	volatile uint32_t desc;                /* !< (@ 0x000010FC) Module Description */
+	volatile uint32_t ctl0;                /* !< (@ 0x00001100) Control 0 */
+	uint32_t reserved7[3];                 /* !< Reserved*/
+	volatile uint32_t ctl1;                /* !< (@ 0x00001110) Control 1 */
+	uint32_t reserved8[3];                 /* !< Reserved*/
+	volatile uint32_t ctl2;                /* !< (@ 0x00001120) Control 2 */
+	uint32_t reserved9[3];                 /* !< Reserved*/
+	volatile uint32_t ctl3;                /* !< (@ 0x00001130) Control 3 */
+	uint32_t reserved10[3];                /* !< Reserved*/
+	volatile uint32_t calctl;              /* !< (@ 0x00001140) Calibration control */
+	uint32_t reserved11[7];                /* !< Reserved*/
+	volatile uint32_t caldata;             /* !< (@ 0x00001160) Calibration data */
+	uint32_t reserved12[39];               /* !< Reserved*/
+	volatile uint32_t data0;               /* !< (@ 0x00001200) Data 0 */
+};
+
+/*
+ * Compile-time checks
+ */
+BUILD_ASSERT(offsetof(struct dac12_regs, gprcm) == 0x0800U);
+BUILD_ASSERT(offsetof(struct dac12_regs, cpu_int) == 0x1020U);
+BUILD_ASSERT(offsetof(struct dac12_regs, gen_event) == 0x1050U);
+BUILD_ASSERT(offsetof(struct dac12_regs, ctl0) == 0x1100U);
+BUILD_ASSERT(offsetof(struct dac12_regs, ctl1) == 0x1110U);
+BUILD_ASSERT(offsetof(struct dac12_regs, calctl) == 0x1140U);
+BUILD_ASSERT(offsetof(struct dac12_regs, data0) == 0x1200U);
+
+/*
+ * Bit-field constants
+ */
+
+#ifndef CONFIG_HAS_MSPM0_SDK
+/* DAC12_RSTCTL Bits */
+#define DAC12_RSTCTL_RESETSTKYCLR_CLR   BIT(1)      /* !< Clear reset sticky bit */
+#define DAC12_RSTCTL_RESETASSERT_ASSERT BIT(0)      /* !< Assert reset */
+#define DAC12_RSTCTL_KEY_UNLOCK_W       0xB1000000U /* !< KEY to allow write access */
+
+/* GPRCM.PWREN — writing the unlock key + enable bit powers the peripheral on */
+#define DAC12_PWREN_KEY_UNLOCK_W  0x26000000U
+#define DAC12_PWREN_ENABLE_ENABLE BIT(0)
+
+/* CTL0 — main DAC enable/disable, resolution, and data format */
+#define DAC12_CTL0_ENABLE_SET  BIT(0) /* bit 0: DAC on */
+#define DAC12_CTL0_ENABLE_MASK BIT(0)
+#define DAC12_CTL0_RES_MASK    BIT(8) /* bit 8: resolution select */
+#define DAC12_CTL0_RES__8BITS  FIELD_PREP(DAC12_CTL0_RES_MASK, 0)
+#define DAC12_CTL0_RES__12BITS FIELD_PREP(DAC12_CTL0_RES_MASK, 1)
+#define DAC12_CTL0_DFM_MASK    BIT(16) /* bit 16: data format (binary vs 2s-comp) */
+#define DAC12_CTL0_DFM_BINARY  FIELD_PREP(DAC12_CTL0_DFM_MASK, 0)
+
+/* CTL1 — output amplifier, voltage reference, and output pin routing */
+#define DAC12_CTL1_AMPEN_MASK   BIT(0)
+#define DAC12_CTL1_AMPEN_ENABLE FIELD_PREP(DAC12_CTL1_AMPEN_MASK, 1) /* bit 0: amp enable */
+#define DAC12_CTL1_AMPHIZ_MASK  BIT(1) /* bit 1: amp-off output state */
+#define DAC12_CTL1_AMPHIZ_PULLDOWN                                                                 \
+	FIELD_PREP(DAC12_CTL1_AMPHIZ_MASK, 1) /* pull DAC_OUT to 0 V when amp is off */
+#define DAC12_CTL1_REFSP_MASK   BIT(8)        /* bit 8: positive reference select */
+#define DAC12_CTL1_REFSP_VDDA   FIELD_PREP(DAC12_CTL1_REFSP_MASK, 0) /* use VDDA as VR+ */
+#define DAC12_CTL1_REFSP_VEREFP FIELD_PREP(DAC12_CTL1_REFSP_MASK, 1) /* use VEREFP pin as VR+ */
+#define DAC12_CTL1_REFSN_MASK   BIT(9) /* bit 9: negative reference select */
+#define DAC12_CTL1_REFSN_VEREFN FIELD_PREP(DAC12_CTL1_REFSN_MASK, 0) /* use VEREFN pin as VR- */
+#define DAC12_CTL1_REFSN_VSSA   FIELD_PREP(DAC12_CTL1_REFSP_MASK, 1) /* use VSSA as VR- */
+#define DAC12_CTL1_OPS_MASK     BIT(24)                              /* bit 24: output pin select */
+#define DAC12_CTL1_OPS_OUT0     FIELD_PREP(DAC12_CTL1_OPS_MASK, 1) /* route output to DAC_OUT pin */
+
+/* CALCTL — self-calibration trigger and trim source select */
+#define DAC12_CALCTL_CALON_MASK BIT(0) /* bit 0: calibration state bit */
+#define DAC12_CALCTL_CALON_ACTIVE                                                                  \
+	FIELD_PREP(DAC12_CALCTL_CALON_MASK, 1)         /* bit 0: calibration running */
+#define DAC12_CALCTL_CALSEL_SELFCALIBRATIONTRIM BIT(1) /* bit 1: use self-cal trim */
+
+/* GEN_EVENT.RIS — raw interrupt status flags */
+#define DAC12_GEN_EVENT_RIS_MODRDYIFG_SET BIT(1) /* bit 1: DAC core is ready */
+
+/* DATA0 — the value written here appears on the DAC output */
+#define DAC12_DATA0_DATA_VALUE_MASK GENMASK(11, 0) /* bits [11:0]: 12-bit data field */
+#endif
 
 #define DAC_RESOLUTION_8BIT	8
 #define DAC_RESOLUTION_12BIT	12
@@ -23,9 +149,15 @@
 #define DAC_PRIMARY_CHANNEL_ID	0
 #define DAC_READY_TIMEOUT_US	1000
 
+#define DAC12_VREF_SOURCE_VEREFP_VEREFN (DAC12_CTL1_REFSP_VEREFP | DAC12_CTL1_REFSN_VEREFN)
+#define DAC12_VREF_SOURCE_VDDA_VSSA     (DAC12_CTL1_REFSP_VDDA | DAC12_CTL1_REFSN_VSSA)
+
+/* Startup delay in cycles */
+#define POWER_STARTUP_DELAY 16
+
 struct dac_mspm0_config {
 	DEVICE_MMIO_ROM;
-	DL_DAC12_VREF_SOURCE dac_vref_src;
+	uint32_t vref_ctl1_bits;
 };
 
 struct dac_mspm0_data {
@@ -34,9 +166,9 @@ struct dac_mspm0_data {
 	uint8_t resolution;
 };
 
-static inline DAC12_Regs *dac_mspm0_regs(const struct device *dev)
+static inline struct dac12_regs *dac_mspm0_regs(const struct device *dev)
 {
-	return (DAC12_Regs *)DEVICE_MMIO_GET(dev);
+	return (struct dac12_regs *)DEVICE_MMIO_GET(dev);
 }
 
 static int dac_mspm0_channel_setup(const struct device *dev,
@@ -44,7 +176,7 @@ static int dac_mspm0_channel_setup(const struct device *dev,
 {
 	const struct dac_mspm0_config *config = dev->config;
 	struct dac_mspm0_data *data = dev->data;
-	DAC12_Regs *regs = dac_mspm0_regs(dev);
+	struct dac12_regs *regs = dac_mspm0_regs(dev);
 
 	if (channel_cfg->channel_id != DAC_PRIMARY_CHANNEL_ID) {
 		return -EINVAL;
@@ -57,43 +189,49 @@ static int dac_mspm0_channel_setup(const struct device *dev,
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	/* DAC must be disabled before configuration */
-	DL_DAC12_disable(regs);
+	/* disable DAC before reconfiguring */
+	regs->ctl0 &= ~DAC12_CTL0_ENABLE_MASK;
 
-	DL_DAC12_configDataFormat(regs, DL_DAC12_REPRESENTATION_BINARY,
-				  (channel_cfg->resolution == DAC_RESOLUTION_12BIT) ?
-				  DL_DAC12_RESOLUTION_12BIT : DL_DAC12_RESOLUTION_8BIT);
+	/* set data format (binary) and resolution in ctl0 */
+	uint32_t res_bits = (channel_cfg->resolution == DAC_RESOLUTION_12BIT)
+				    ? DAC12_CTL0_RES__12BITS
+				    : DAC12_CTL0_RES__8BITS;
 
-	/* buffered must be true to enable amplifier for output drive */
-	DL_DAC12_setAmplifier(regs,
-			      (channel_cfg->buffered) ? DL_DAC12_AMP_ON : DL_DAC12_AMP_OFF_0V);
+	regs->ctl0 =
+		(regs->ctl0 & ~(DAC12_CTL0_DFM_MASK | DAC12_CTL0_RES_MASK)) |
+		((DAC12_CTL0_DFM_BINARY | res_bits) & (DAC12_CTL0_DFM_MASK | DAC12_CTL0_RES_MASK));
 
-	DL_DAC12_setReferenceVoltageSource(regs, config->dac_vref_src);
+	/* configure amplifier, voltage reference, and output routing in ctl1 */
+	uint32_t amp_bits =
+		channel_cfg->buffered ? DAC12_CTL1_AMPEN_ENABLE : DAC12_CTL1_AMPHIZ_PULLDOWN;
+	uint32_t ops_bits = channel_cfg->internal ? 0U : DAC12_CTL1_OPS_OUT0;
+	uint32_t ctl1_mask = DAC12_CTL1_AMPEN_MASK | DAC12_CTL1_AMPHIZ_MASK |
+			     DAC12_CTL1_REFSP_MASK | DAC12_CTL1_REFSN_MASK | DAC12_CTL1_OPS_MASK;
 
-	/*
-	 * CTL1.OPS controls output to both internal modules (OPA, ADC, COMP)
-	 * and the external DAC_OUT pin. HW does not allow separate control.
-	 */
-	if (channel_cfg->internal) {
-		DL_DAC12_enableOutputPin(regs);
-	} else {
-		DL_DAC12_disableOutputPin(regs);
-	}
+	regs->ctl1 = (regs->ctl1 & ~ctl1_mask) |
+		     ((amp_bits | config->vref_ctl1_bits | ops_bits) & ctl1_mask);
 
-	DL_DAC12_enable(regs);
+	/* re-enable the DAC */
+	regs->ctl0 |= DAC12_CTL0_ENABLE_SET;
 
-	/* Wait for DAC core and output buffer to settle */
-	if (!WAIT_FOR(DL_DAC12_getInterruptStatus(regs,
-						  DL_DAC12_INTERRUPT_MODULE_READY),
-		      DAC_READY_TIMEOUT_US, k_busy_wait(1))) {
+	/* Wait for the DAC core and amplifier to settle */
+	if (!WAIT_FOR(regs->gen_event.ris & DAC12_GEN_EVENT_RIS_MODRDYIFG_SET, DAC_READY_TIMEOUT_US,
+		      k_busy_wait(1))) {
 		k_mutex_unlock(&data->lock);
 		return -ETIMEDOUT;
 	}
 
 	data->resolution = channel_cfg->resolution;
 
+	/* self-calibrate offset error if amplifier is active */
 	if (channel_cfg->buffered) {
-		DL_DAC12_performSelfCalibrationBlocking(regs);
+		regs->calctl = DAC12_CALCTL_CALON_ACTIVE | DAC12_CALCTL_CALSEL_SELFCALIBRATIONTRIM;
+		if (!WAIT_FOR((!(regs->calctl & DAC12_CALCTL_CALON_MASK)) &
+				      DAC12_CALCTL_CALON_ACTIVE,
+			      DAC_READY_TIMEOUT_US, k_busy_wait(1))) {
+			k_mutex_unlock(&data->lock);
+			return -ETIMEDOUT;
+		}
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -104,7 +242,7 @@ static int dac_mspm0_channel_setup(const struct device *dev,
 static int dac_mspm0_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	struct dac_mspm0_data *data = dev->data;
-	DAC12_Regs *regs = dac_mspm0_regs(dev);
+	struct dac12_regs *regs = dac_mspm0_regs(dev);
 	int ret = 0;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -120,14 +258,13 @@ static int dac_mspm0_write_value(const struct device *dev, uint8_t channel, uint
 			ret = -EINVAL;
 			goto unlock;
 		}
-		DL_DAC12_output12(regs, value);
-
+		regs->data0 = value & DAC12_DATA0_DATA_VALUE_MASK;
 	} else {
 		if (value > DAC8_MAX_VALUE) {
 			ret = -EINVAL;
 			goto unlock;
 		}
-		DL_DAC12_output8(regs, (uint8_t)value);
+		regs->data0 = (uint8_t)value;
 	}
 
 unlock:
@@ -139,8 +276,12 @@ static int dac_mspm0_init(const struct device *dev)
 {
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
-	DL_DAC12_enablePower(dac_mspm0_regs(dev));
-	delay_cycles(CONFIG_MSPM0_PERIPH_STARTUP_DELAY);
+	struct dac12_regs *regs = dac_mspm0_regs(dev);
+
+	regs->gprcm.rstctl = DAC12_RSTCTL_KEY_UNLOCK_W | DAC12_RSTCTL_RESETSTKYCLR_CLR |
+			     DAC12_RSTCTL_RESETASSERT_ASSERT;
+
+	regs->gprcm.pwren = DAC12_PWREN_KEY_UNLOCK_W | DAC12_PWREN_ENABLE_ENABLE;
 
 	return 0;
 }
@@ -154,9 +295,9 @@ static DEVICE_API(dac, dac_mspm0_driver_api) = {
 												\
 	static const struct dac_mspm0_config dac_mspm0_config_##id = {				\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(id)),						\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(id, vref),                                    \
-			    (.dac_vref_src = DL_DAC12_VREF_SOURCE_VEREFP_VEREFN),		\
-			    (.dac_vref_src = DL_DAC12_VREF_SOURCE_VDDA_VSSA)),			\
+		.vref_ctl1_bits = COND_CODE_1(DT_INST_NODE_HAS_PROP(id, vref),			\
+			DAC12_VREF_SOURCE_VEREFP_VEREFN,					\
+			DAC12_VREF_SOURCE_VDDA_VSSA),						\
 	};											\
 												\
 	static struct dac_mspm0_data dac_mspm0_data_##id = {					\

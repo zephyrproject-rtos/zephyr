@@ -62,6 +62,10 @@ tests:
       - bl652_dvk
       - bl653_dvk
       - bl5340_dvk/nrf5340/cpuapp
+  drivers.dac.api.dac0_channel0_buffered:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac0-channel0-buffered.overlay"
+    platform_allow:
       - lp_mspm0g3507
       - lp_mspm0g3519
   drivers.dac.api.dac0_channel0_mcxaxx6:
