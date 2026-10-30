@@ -182,6 +182,7 @@ static inline void sdmmc_decode_csd(struct sd_csd *csd, uint32_t *raw_csd, uint3
 	csd->file_fmt = (uint8_t)((raw_csd[0U] & 0xC00U) >> 10U);
 }
 
+#if defined(CONFIG_SDMMC_STACK) || defined(CONFIG_SDIO_STACK)
 static inline void sdmmc_decode_cid(struct sd_cid *cid, uint32_t *raw_cid)
 {
 	cid->manufacturer = (uint8_t)((raw_cid[3U] & 0xFF000000U) >> 24U);
@@ -200,6 +201,7 @@ static inline void sdmmc_decode_cid(struct sd_cid *cid, uint32_t *raw_cid)
 
 	cid->date = (uint16_t)((raw_cid[0U] & 0xFFF00U) >> 8U);
 }
+#endif
 
 /* Reads card id/csd register (in SPI mode) */
 static int sdmmc_spi_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t *cxd)

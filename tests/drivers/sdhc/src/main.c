@@ -15,6 +15,8 @@ static struct sdhc_io io;
 
 #define SDHC_FREQUENCY_SLIP 10000000
 
+#define SDHC_EMMC_RCA 0x2U
+
 K_SEM_DEFINE(card_sem, 0, 1);
 
 /* Prepare IO settings for card */
@@ -193,6 +195,304 @@ ZTEST(sdhc, test_card_if_cond)
 	} else {
 		zassert_unreachable("Invalid response to SD interface condition");
 	}
+}
+
+/* CMD8 with no voltage window must time out. A valid 3.3V CMD8 is test_card_if_cond. */
+ZTEST(sdhc, test_wrong_voltage_cmd8)
+{
+	struct sdhc_command cmd = {0};
+	int ret;
+
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
+	if (props.is_spi || props.host_caps.bus_8_bit_support) {
+		ztest_test_skip();
+	}
+
+	io.power_mode = SDHC_POWER_OFF;
+	ret = sdhc_set_io(sdhc_dev, &io);
+	zassert_equal(ret, 0, "Setting io configuration failed");
+	k_msleep(props.power_delay);
+	io.power_mode = SDHC_POWER_ON;
+	ret = sdhc_set_io(sdhc_dev, &io);
+	zassert_equal(ret, 0, "Setting io configuration failed");
+	k_msleep(props.power_delay);
+
+	cmd.opcode = SD_GO_IDLE_STATE;
+	cmd.response_type = SD_RSP_TYPE_NONE;
+	cmd.timeout_ms = 200;
+	ret = sdhc_request(sdhc_dev, &cmd, NULL);
+	zassert_equal(ret, 0, "Card reset command failed");
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.opcode = SD_SEND_IF_COND;
+	cmd.arg = 0;
+	cmd.response_type = SD_RSP_TYPE_R7;
+	cmd.timeout_ms = 200;
+	cmd.retries = 0;
+
+	ret = sdhc_request(sdhc_dev, &cmd, NULL);
+	zassert_equal(ret, -ETIMEDOUT, "CMD8 with VHS 0 must time out");
+}
+
+static int sdhc_send(const struct device *dev, uint32_t opcode, uint32_t arg,
+		     uint32_t response_type, struct sdhc_data *data)
+{
+	struct sdhc_command cmd = {0};
+	int ret;
+
+	cmd.opcode = opcode;
+	cmd.arg = arg;
+	cmd.response_type = response_type;
+	cmd.timeout_ms = 500;
+	cmd.retries = 3;
+
+	ret = sdhc_request(dev, &cmd, data);
+	if (ret == 0 && data == NULL) {
+		return (int)cmd.response[0];
+	}
+	return ret;
+}
+
+/*
+ * eMMC reliable write: CMD23 bit 31, then CMD25. The MMC stack never sends
+ * CMD23, so this stays an SDHC command test. SD cards do not implement it.
+ */
+ZTEST(sdhc, test_reliable_write)
+{
+	static uint8_t wbuf[512] __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT);
+	static uint8_t rbuf[512] __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT);
+	struct sdhc_data data = {0};
+	uint32_t ocr;
+	int ret;
+
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
+	if (props.is_spi) {
+		ztest_test_skip();
+	}
+
+	io.power_mode = SDHC_POWER_OFF;
+	ret = sdhc_set_io(sdhc_dev, &io);
+	zassert_equal(ret, 0, "Setting io configuration failed");
+	k_msleep(props.power_delay);
+	io.power_mode = SDHC_POWER_ON;
+	ret = sdhc_set_io(sdhc_dev, &io);
+	zassert_equal(ret, 0, "Setting io configuration failed");
+	k_msleep(props.power_delay);
+
+	ret = sdhc_send(sdhc_dev, SD_GO_IDLE_STATE, 0, SD_RSP_TYPE_NONE, NULL);
+	zassert_equal(ret, 0, "CMD0 failed");
+
+	ocr = 0;
+	for (int i = 0; i < 100; i++) {
+		struct sdhc_command cmd = {0};
+
+		cmd.opcode = MMC_SEND_OP_COND;
+		cmd.arg = MMC_OCR_VDD27_36FLAG | MMC_OCR_SECTOR_MODE;
+		cmd.response_type = SD_RSP_TYPE_R3;
+		cmd.timeout_ms = 500;
+		cmd.retries = 1;
+		ret = sdhc_request(sdhc_dev, &cmd, NULL);
+		if (ret != 0) {
+			/* SD card: reliable write does not apply. */
+			ztest_test_skip();
+		}
+		ocr = cmd.response[0];
+		if (ocr & SD_OCR_PWR_BUSY_FLAG) {
+			break;
+		}
+		k_msleep(10);
+	}
+	if ((ocr & SD_OCR_PWR_BUSY_FLAG) == 0) {
+		ztest_test_skip();
+	}
+
+	ret = sdhc_send(sdhc_dev, SD_ALL_SEND_CID, 0, SD_RSP_TYPE_R2, NULL);
+	zassert_ok(ret, "CMD2 failed");
+
+	/* eMMC CMD3: the host assigns the RCA. The emulator does not check it. */
+	ret = sdhc_send(sdhc_dev, MMC_SEND_RELATIVE_ADDR, SDHC_EMMC_RCA << 16,
+			SD_RSP_TYPE_R1, NULL);
+	zassert_ok(ret, "CMD3 failed");
+
+	ret = sdhc_send(sdhc_dev, SD_SELECT_CARD, SDHC_EMMC_RCA << 16,
+			SD_RSP_TYPE_R1b, NULL);
+	zassert_ok(ret, "CMD7 failed");
+
+	ret = sdhc_send(sdhc_dev, SD_SET_BLOCK_SIZE, 512, SD_RSP_TYPE_R1, NULL);
+	zassert_ok(ret, "CMD16 failed");
+
+	ret = sdhc_send(sdhc_dev, SD_SET_BLOCK_COUNT, BIT(31) | 1U,
+			SD_RSP_TYPE_R1, NULL);
+	zassert_ok(ret, "CMD23 failed");
+
+	for (int i = 0; i < 512; i++) {
+		wbuf[i] = (uint8_t)(i + 1);
+	}
+	data.block_addr = 0;
+	data.block_size = 512;
+	data.blocks = 1;
+	data.data = wbuf;
+	data.timeout_ms = 1000;
+	ret = sdhc_send(sdhc_dev, SD_WRITE_MULTIPLE_BLOCK, 0, SD_RSP_TYPE_R1, &data);
+	zassert_ok(ret, "CMD25 failed");
+	zassert_equal(data.bytes_xfered, 512, "write bytes_xfered mismatch");
+
+	memset(&data, 0, sizeof(data));
+	memset(rbuf, 0, sizeof(rbuf));
+	data.block_addr = 0;
+	data.block_size = 512;
+	data.blocks = 1;
+	data.data = rbuf;
+	data.timeout_ms = 1000;
+	ret = sdhc_send(sdhc_dev, SD_READ_SINGLE_BLOCK, 0, SD_RSP_TYPE_R1, &data);
+	zassert_ok(ret, "CMD17 failed");
+	zassert_equal(data.bytes_xfered, 512, "read bytes_xfered mismatch");
+	zassert_mem_equal(wbuf, rbuf, 512, "reliable write data mismatch");
+}
+
+/* Tuning is optional. Success, or "not supported", is a valid result. */
+ZTEST(sdhc, test_execute_tuning)
+{
+	int ret;
+
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
+
+	ret = sdhc_execute_tuning(sdhc_dev);
+	zassert_true(ret == 0 || ret == -ENOTSUP || ret == -ENOSYS,
+		     "tuning returned %d", ret);
+}
+
+/* CMD17 is legal only in the transfer state. CMD0 leaves the card idle. */
+/* CMD17 is legal only in the transfer state. CMD0 leaves the card idle. */
+ZTEST(sdhc, test_illegal_state_cmd17_in_idle)
+{
+	static uint8_t buf[512] __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT);
+	struct sdhc_command cmd = {0};
+	struct sdhc_data data = {0};
+	int ret;
+
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
+
+	cmd.opcode = SD_GO_IDLE_STATE;
+	cmd.response_type = SD_RSP_TYPE_NONE;
+	cmd.timeout_ms = 200;
+	ret = sdhc_request(sdhc_dev, &cmd, NULL);
+	zassert_equal(ret, 0, "Card reset command failed");
+
+	cmd.opcode = SD_READ_SINGLE_BLOCK;
+	cmd.arg = 0;
+	cmd.response_type = SD_RSP_TYPE_R1;
+	cmd.timeout_ms = 200;
+	cmd.retries = 0;
+
+	data.block_addr = 0;
+	data.block_size = 512;
+	data.blocks = 1;
+	data.data = buf;
+	data.timeout_ms = 200;
+
+	ret = sdhc_request(sdhc_dev, &cmd, &data);
+	zassert_not_equal(ret, 0, "CMD17 should fail in IDLE state");
+}
+
+/* eMMC CMD5: bit 15 sleeps, RCA is in bits [31:16]. SD cards skip at CMD1. */
+ZTEST(sdhc, test_sleep_awake)
+{
+	static uint8_t buf[512] __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT);
+	struct sdhc_command cmd = {0};
+	struct sdhc_data data = {0};
+	uint32_t ocr = 0;
+	int ret;
+	int sleep_ret;
+	int read_ret;
+	int awake_ret;
+
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
+	if (props.is_spi) {
+		ztest_test_skip();
+	}
+
+	io.power_mode = SDHC_POWER_OFF;
+	ret = sdhc_set_io(sdhc_dev, &io);
+	zassert_equal(ret, 0, "Setting io configuration failed");
+	k_msleep(props.power_delay);
+	io.power_mode = SDHC_POWER_ON;
+	ret = sdhc_set_io(sdhc_dev, &io);
+	zassert_equal(ret, 0, "Setting io configuration failed");
+	k_msleep(props.power_delay);
+
+	cmd.opcode = SD_GO_IDLE_STATE;
+	cmd.response_type = SD_RSP_TYPE_NONE;
+	cmd.timeout_ms = 200;
+	zassert_equal(sdhc_request(sdhc_dev, &cmd, NULL), 0, "CMD0 failed");
+
+	for (int i = 0; i < 100; i++) {
+		memset(&cmd, 0, sizeof(cmd));
+		cmd.opcode = MMC_SEND_OP_COND;
+		cmd.arg = MMC_OCR_VDD27_36FLAG | MMC_OCR_SECTOR_MODE;
+		cmd.response_type = SD_RSP_TYPE_R3;
+		cmd.timeout_ms = 500;
+		cmd.retries = 1;
+		ret = sdhc_request(sdhc_dev, &cmd, NULL);
+		if (ret != 0) {
+			ztest_test_skip();
+		}
+		ocr = cmd.response[0];
+		if (ocr & SD_OCR_PWR_BUSY_FLAG) {
+			break;
+		}
+		k_msleep(10);
+	}
+	if ((ocr & SD_OCR_PWR_BUSY_FLAG) == 0) {
+		ztest_test_skip();
+	}
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.opcode = SD_ALL_SEND_CID;
+	cmd.response_type = SD_RSP_TYPE_R2;
+	cmd.timeout_ms = 500;
+	zassert_equal(sdhc_request(sdhc_dev, &cmd, NULL), 0, "CMD2 failed");
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.opcode = MMC_SEND_RELATIVE_ADDR;
+	cmd.arg = SDHC_EMMC_RCA << 16;
+	cmd.response_type = SD_RSP_TYPE_R1;
+	cmd.timeout_ms = 500;
+	zassert_equal(sdhc_request(sdhc_dev, &cmd, NULL), 0, "CMD3 failed");
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.opcode = MMC_SLEEP_AWAKE;
+	cmd.arg = (SDHC_EMMC_RCA << 16) | BIT(15);
+	cmd.response_type = SD_RSP_TYPE_R1b;
+	cmd.timeout_ms = 1000;
+	sleep_ret = sdhc_request(sdhc_dev, &cmd, NULL);
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.opcode = SD_READ_SINGLE_BLOCK;
+	cmd.response_type = SD_RSP_TYPE_R1;
+	cmd.timeout_ms = 200;
+	data.block_size = 512;
+	data.blocks = 1;
+	data.data = buf;
+	data.timeout_ms = 200;
+	read_ret = sdhc_request(sdhc_dev, &cmd, &data);
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.opcode = MMC_SLEEP_AWAKE;
+	cmd.arg = SDHC_EMMC_RCA << 16;
+	cmd.response_type = SD_RSP_TYPE_R1b;
+	cmd.timeout_ms = 1000;
+	awake_ret = sdhc_request(sdhc_dev, &cmd, NULL);
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.opcode = SD_GO_IDLE_STATE;
+	cmd.response_type = SD_RSP_TYPE_NONE;
+	cmd.timeout_ms = 200;
+	sdhc_request(sdhc_dev, &cmd, NULL);
+
+	zassert_equal(sleep_ret, 0, "CMD5 SLEEP failed");
+	zassert_not_equal(read_ret, 0, "CMD17 succeeded while the card was asleep");
+	zassert_equal(awake_ret, 0, "CMD5 AWAKE failed");
 }
 
 ZTEST_SUITE(sdhc, NULL, sdhc_power_on, NULL, NULL, NULL);
