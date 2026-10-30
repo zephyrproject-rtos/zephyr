@@ -1533,8 +1533,13 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 	start_xfer(dev);
 
-	ret = dw_i3c_wait_for_xfer(dev);
-	if (ret) {
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	if (ret != 0) {
+		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+
+		/* Sanitize local controller state before exit. */
+		(void)dw_i3c_recover_bus_locked(dev);
+
 		goto error;
 	}
 
@@ -2839,8 +2844,13 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	start_xfer(dev);
 
-	ret = dw_i3c_wait_for_xfer(dev);
-	if (ret) {
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	if (ret != 0) {
+		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+
+		/* Ensure next submission does not inherit a silently halted state. */
+		(void)dw_i3c_recover_bus_locked(dev);
+
 		goto error;
 	}
 
@@ -3135,7 +3145,14 @@ static int dw_i3c_do_daa(const struct device *dev)
 		      COMMAND_PORT_CMD(I3C_CCC_ENTDAA) | COMMAND_PORT_ADDR_ASSGN_CMD;
 
 	start_xfer(dev);
-	ret = dw_i3c_wait_for_xfer(dev);
+
+	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	if (ret != 0) {
+		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+
+		/* Sanitize local controller state before exit. */
+		(void)dw_i3c_recover_bus_locked(dev);
+	}
 
 	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
