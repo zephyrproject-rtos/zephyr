@@ -190,7 +190,7 @@ static int i2c_dw_error_chk(const struct device *dev)
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 		dw->need_setup = true;
 #endif
-		LOG_ERR_RATELIMIT("IO Fail on %s", dev->name);
+		LOG_ERR_RATELIMIT("IO Fail on %s, state: 0x%x", dev->name, dw->state);
 		return -EIO;
 	}
 	return 0;
