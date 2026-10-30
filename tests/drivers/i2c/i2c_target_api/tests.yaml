@@ -50,6 +50,7 @@ tests:
       - CONFIG_APP_DUAL_ROLE_I2C=y
   drivers.i2c.target_api.single_role:
     platform_allow:
+      - versal2_rpu
       - frdm_ke17z512
       - frdm_mcxa156
       - frdm_mcxa266
