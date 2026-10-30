@@ -12,7 +12,7 @@ drv2605@0 {
 	compatible = "ti,drv2605";
 	reg = <0x0>;
 
-	actuator-mode = "LRA";
+	ti,actuator-mode = "LRA";
 	status = "okay";
 };
 

@@ -11,6 +11,8 @@ menuconfig HAPTICS_CS40L26
 
 if HAPTICS_CS40L26
 
+CIRRUS_FLASH_STORAGE := cirrus,flash-storage
+
 config HAPTICS_CS40L26_A1
 	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),i2c) || \
 		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),spi)
@@ -29,9 +31,14 @@ config HAPTICS_CS40L26_INTERRUPT
 		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),int-gpios)
 	select GPIO
 
+config HAPTICS_CS40L26_TRIGGER
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),trigger-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),trigger-gpios)
+	select GPIO
+
 config HAPTICS_CS40L26_FLASH
-	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),flash-storage) || \
-		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),flash-storage)
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),$(CIRRUS_FLASH_STORAGE)) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),$(CIRRUS_FLASH_STORAGE))
 	select FLASH
 
 config HAPTICS_CS40L26_CALIBRATION

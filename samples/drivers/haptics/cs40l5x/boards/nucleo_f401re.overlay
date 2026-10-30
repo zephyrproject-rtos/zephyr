@@ -29,11 +29,11 @@
 
 		reset-gpios = <&gpioc 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		int-gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-
-		trigger-mapping = <11 12 13>;
 		trigger-gpios = <&gpioc 13 GPIO_PULL_UP>,
 				<&gpioc 14 GPIO_PULL_UP>,
 				<&gpioc 15 GPIO_PULL_UP>;
+
+		cirrus,trigger-mapping = <11 12 13>;
 
 		status = "okay";
 	};

@@ -151,7 +151,7 @@ static DEVICE_API(haptics, tm6605_driver_api) = {
 	};                                                                                         \
                                                                                                    \
 	static struct tm6605_data tm6605_data_##inst = {                                           \
-		.selected_effect = DT_INST_PROP(inst, default_effect),                             \
+		.selected_effect = DT_INST_PROP(inst, titanmec_default_effect),                    \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, tm6605_init, NULL, &tm6605_data_##inst,                        \

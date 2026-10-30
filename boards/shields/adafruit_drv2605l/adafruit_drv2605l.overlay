@@ -10,7 +10,7 @@
 	adafruit_drv2605: drv2605@5a {
 		compatible = "ti,drv2605";
 		reg = <0x5a>;
-		actuator-mode = "ERM";
+		ti,actuator-mode = "ERM";
 		status = "okay";
 	};
 };
