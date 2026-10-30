@@ -257,7 +257,8 @@ that run the command:
 
    west blobs fetch hal_nxp
 
-.. note:: Only Bluetooth functionality is currently supported.
+.. note:: Wi-Fi requires the :ref:`nxp_m2_wifi_bt` shield. The M.2 module then uses the
+   USDHC1 SDIO bus, which the microSD card slot shares.
 
 Programming and Debugging
 *************************

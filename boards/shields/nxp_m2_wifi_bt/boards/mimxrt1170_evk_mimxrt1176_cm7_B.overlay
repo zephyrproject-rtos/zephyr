@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&m2_wifi_sdio {
+	/* The M.2 module is always present, the microSD card detection does not apply */
+	/delete-property/ detect-dat3;
+	/delete-property/ cd-gpios;
+	non-removable;
+
+	/* Use 1.8 V signalling, limited to the bus modes without tuning */
+	/delete-property/ no-1-8-v;
+	max-bus-freq = <50000000>;
+
+	nxp_wifi {
+		/* The GPIO1 pins are SDRAM pins on this board */
+		/delete-property/ wakeup-gpios;
+		sd-gpios = <&gpio9 15 GPIO_ACTIVE_LOW>;
+		pwr-gpios = <&gpio9 30 GPIO_ACTIVE_HIGH>;
+	};
+};
