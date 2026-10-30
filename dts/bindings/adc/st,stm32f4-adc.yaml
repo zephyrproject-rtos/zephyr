@@ -21,9 +21,11 @@ include:
 child-binding:
   properties:
     clocks:
+      type: phandle-array
       required: true
 
     clock-names:
+      type: string-array
       required: true
       enum:
         - "adcx"
