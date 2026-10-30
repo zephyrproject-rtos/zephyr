@@ -10,6 +10,7 @@ tests:
     depends_on:
       - adc
     platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
       - nucleo_l073rz
       - nucleo_h753zi
       - disco_l475_iot1

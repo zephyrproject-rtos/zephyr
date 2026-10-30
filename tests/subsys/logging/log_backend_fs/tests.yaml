@@ -18,6 +18,7 @@ common:
     - s32z2xxdc2@D/s32z270/rtu1
     - s32k5xxcvb/s32k566/m7
     - s32k5xxcvb/s32k566/r52
+    - kit_pse84_eval/pse846gps2dbzc4a/m55
   integration_platforms:
     - native_sim
 tests:

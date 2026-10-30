@@ -20,24 +20,28 @@ common:
     - nrf7120dk/nrf7120/cpuapp
     - nrf9160dk/nrf9160
     - ophelia4ev/nrf54l15/cpuapp
-  integration_platforms:
-    - nrf52840dk/nrf52840
   harness_config:
     fixture: uart_loopback
 tests:
   drivers.uart.uart_mix_poll:
+    integration_platforms:
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
 
   drivers.uart.uart_mix_poll_fifo:
+    integration_platforms:
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
 
   drivers.uart.uart_mix_poll_async_api:
+    integration_platforms:
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_0_INTERRUPT_DRIVEN=n
@@ -45,6 +49,8 @@ tests:
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
 
   drivers.uart.uart_mix_poll_async_api_const:
+    integration_platforms:
+      - nrf52840dk/nrf52840
     extra_args: TEST_CONST_BUFFER=1
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
@@ -54,6 +60,8 @@ tests:
     tags: bsim_skip_CI # We skip a few tests to save CI time, as they give little extra coverage
 
   drivers.uart.uart_mix_poll_with_ppi:
+    integration_platforms:
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
@@ -64,6 +72,8 @@ tests:
       - nrf9160dk/nrf9160
 
   drivers.uart.uart_mix_poll_fifo_with_ppi:
+    integration_platforms:
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_INTERRUPT_DRIVEN=y
@@ -74,6 +84,8 @@ tests:
       - nrf9160dk/nrf9160
 
   drivers.uart.uart_mix_poll_async_api_with_ppi:
+    integration_platforms:
+      - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_0_INTERRUPT_DRIVEN=n
@@ -83,3 +95,48 @@ tests:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
       - nrf9160dk/nrf9160
+
+  drivers.uart.uart_mix_poll.pse84:
+    integration_platforms:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    vendor_allow:
+      - infineon
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+
+  drivers.uart.uart_mix_poll_fifo.pse84:
+    integration_platforms:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    vendor_allow:
+      - infineon
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_ASYNC_API=n
+
+  drivers.uart.uart_mix_poll_async_api.pse84:
+    integration_platforms:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    vendor_allow:
+      - infineon
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=y
+
+  drivers.uart.uart_mix_poll_async_api_const.pse84:
+    integration_platforms:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    vendor_allow:
+      - infineon
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    extra_args: TEST_CONST_BUFFER=1
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=y
