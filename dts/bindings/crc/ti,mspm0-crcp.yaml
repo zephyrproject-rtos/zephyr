@@ -1,0 +1,18 @@
+# Copyright (c) 2026, Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Texas Instruments MSPM0 CRCP Accelerator
+
+description: |
+  Texas Instruments MSPM0 Cyclic Redundancy Check (CRCP) Engine
+  with polynomial selection. This accelerator generates signature for
+  a given data sequence based on the custom polynomial configurable
+  by the user.
+
+compatible: "ti,mspm0-crcp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

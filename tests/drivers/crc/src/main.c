@@ -18,8 +18,48 @@ static void wait_thread_entry(void *a, void *b, void *c);
 K_THREAD_STACK_DEFINE(wait_thread_stack_area, WAIT_THREAD_STACK_SIZE);
 struct k_thread wait_thread_data;
 
-/* Define result of CRC computation */
-#define RESULT_CRC_16_THREADSAFE_WAIT_THREAD_ENTRY 0xD543
+/* Select CRC test variant macros */
+#ifdef CONFIG_CRC_DRIVER_HAS_CRC8
+#define CRC_TEST_VARIANT                    CRC8
+#define CRC_TEST_POLY                       CRC8_POLY
+#define CRC_TEST_INIT_VAL                   CRC8_INIT_VAL
+#define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
+#define CRC_TEST_WAIT_THREAD_EXPECTED       0xB2
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0x75
+#define CRC_TEST_THREADSAFE_EXPECTED        0xBB
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC16)
+#define CRC_TEST_VARIANT                    CRC16
+#define CRC_TEST_POLY                       CRC16_POLY
+#define CRC_TEST_INIT_VAL                   CRC16_INIT_VAL
+#define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
+#define CRC_TEST_WAIT_THREAD_EXPECTED       0xD543
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0xBDE3
+#define CRC_TEST_THREADSAFE_EXPECTED        0x24CA
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC16_CCITT)
+#define CRC_TEST_VARIANT                    CRC16_CCITT
+#define CRC_TEST_POLY                       CRC16_CCITT_POLY
+#define CRC_TEST_INIT_VAL                   CRC16_CCITT_INIT_VAL
+#define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
+#define CRC_TEST_WAIT_THREAD_EXPECTED       0x445C
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0xD3B2
+#define CRC_TEST_THREADSAFE_EXPECTED        0xCB85
+#elif defined(CONFIG_CRC_DRIVER_HAS_CRC32_IEEE)
+#define CRC_TEST_VARIANT                    CRC32_IEEE
+#define CRC_TEST_POLY                       CRC32_IEEE_POLY
+#define CRC_TEST_INIT_VAL                   CRC32_IEEE_INIT_VAL
+#define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
+#define CRC_TEST_WAIT_THREAD_EXPECTED       0xCEA4A6C2
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0xE5CC797C
+#define CRC_TEST_THREADSAFE_EXPECTED        0x3184C185
+#else
+#define CRC_TEST_VARIANT                    CRC32_C
+#define CRC_TEST_POLY                       CRC32C_POLY
+#define CRC_TEST_INIT_VAL                   CRC32_C_INIT_VAL
+#define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
+#define CRC_TEST_WAIT_THREAD_EXPECTED       0xBB19ECB2
+#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0x20477127
+#define CRC_TEST_THREADSAFE_EXPECTED        0x9BCEE9AB
+#endif
 
 /**
  * 1) Take the semaphore
@@ -33,10 +73,10 @@ static void wait_thread_entry(void *a, void *b, void *c)
 	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
 
 	struct crc_ctx ctx = {
-		.type = CRC16,
-		.polynomial = CRC16_POLY,
-		.seed = CRC16_INIT_VAL,
-		.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT,
+		.type = CRC_TEST_VARIANT,
+		.polynomial = CRC_TEST_POLY,
+		.seed = CRC_TEST_INIT_VAL,
+		.reversed = CRC_TEST_REVERSE_CONFIG,
 	};
 
 	crc_begin(dev, &ctx);
@@ -45,7 +85,7 @@ static void wait_thread_entry(void *a, void *b, void *c)
 
 	crc_update(dev, &ctx, data, sizeof(data));
 	crc_finish(dev, &ctx);
-	zassert_equal(crc_verify(&ctx, RESULT_CRC_16_THREADSAFE_WAIT_THREAD_ENTRY), 0);
+	zassert_equal(crc_verify(&ctx, CRC_TEST_WAIT_THREAD_EXPECTED), 0);
 }
 
 /* Define result of CRC computation */
@@ -345,27 +385,6 @@ ZTEST(crc, test_crc_16_ccitt_remain_2)
 	zassert_equal(crc_verify(&ctx, RESULT_CRC_CCITT_REMAIN_2), 0);
 }
 
-/* Select CRC test variant macros */
-#ifdef CONFIG_CRC_DRIVER_HAS_CRC8
-#define CRC_TEST_VARIANT                    CRC8
-#define CRC_TEST_POLY                       CRC8_POLY
-#define CRC_TEST_INIT_VAL                   CRC8_INIT_VAL
-#define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
-#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0x75
-#elif defined(CONFIG_CRC_DRIVER_HAS_CRC16)
-#define CRC_TEST_VARIANT                    CRC16
-#define CRC_TEST_POLY                       CRC16_POLY
-#define CRC_TEST_INIT_VAL                   CRC16_INIT_VAL
-#define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
-#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0xBDE3
-#else
-#define CRC_TEST_VARIANT                    CRC32_C
-#define CRC_TEST_POLY                       CRC32C_POLY
-#define CRC_TEST_INIT_VAL                   CRC32_C_INIT_VAL
-#define CRC_TEST_REVERSE_CONFIG             (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)
-#define CRC_TEST_DISCONTINUOUS_BUF_EXPECTED 0x20477127
-#endif
-
 /**
  * @brief Test CRC calculation with discontinuous buffers.
  */
@@ -390,15 +409,6 @@ ZTEST(crc, test_discontinuous_buf)
 	zassert_equal(crc_verify(&ctx, CRC_TEST_DISCONTINUOUS_BUF_EXPECTED), 0);
 }
 
-/* Define result of CRC computation */
-#ifdef CONFIG_CRC_DRIVER_HAS_CRC8
-#define CRC_TEST_THREADSAFE_EXPECTED 0xBB
-#elif defined(CONFIG_CRC_DRIVER_HAS_CRC16)
-#define CRC_TEST_THREADSAFE_EXPECTED 0x24CA
-#else
-#define CRC_TEST_THREADSAFE_EXPECTED 0x9BCEE9AB
-#endif
-
 /**
  * @brief Test CRC function semaphore wait for thread safety
  *
@@ -419,6 +429,8 @@ ZTEST(crc, test_crc_threadsafe)
 		.reversed = CRC_TEST_REVERSE_CONFIG,
 	};
 
+	int ret;
+
 	/**
 	 * Create new thread that will immediately take the semaphore
 	 */
@@ -435,9 +447,17 @@ ZTEST(crc, test_crc_threadsafe)
 	 * Attempt to take semaphore, this should wait for the new thread to give the semaphore
 	 * before executing
 	 */
-	crc_begin(dev, &ctx);
-	crc_update(dev, &ctx, data, sizeof(data));
-	crc_finish(dev, &ctx);
+
+	do {
+		ret = crc_begin(dev, &ctx);
+		if (ret == -EBUSY) {
+			k_sleep(K_MSEC(5));
+		}
+	} while (ret == -EBUSY);
+
+	zassert_equal(ret, 0);
+	zassert_equal(crc_update(dev, &ctx, data, sizeof(data)), 0);
+	zassert_equal(crc_finish(dev, &ctx), 0);
 	zassert_equal(crc_verify(&ctx, CRC_TEST_THREADSAFE_EXPECTED), 0);
 }
 
