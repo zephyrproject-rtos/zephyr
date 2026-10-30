@@ -445,6 +445,7 @@ static int arducam_mega_write_reg_wait(const struct spi_dt_spec *bus, uint16_t r
 	return ret;
 }
 
+/* value: VIDEO_CID_AUTO_EXPOSURE_BIAS, in 0.001 EV units, one Mega EV level per EV */
 static enum mega_ev_level arducam_mega_get_ev_level(int value)
 {
 	static const enum mega_ev_level ev_level_map[] = {
@@ -453,9 +454,9 @@ static enum mega_ev_level arducam_mega_get_ev_level(int value)
 		MEGA_EV_LEVEL_3,
 	};
 
-	int index = value + 3;
+	int index = DIV_ROUND_CLOSEST(value, 1000) + 3;
 
-	if (index >= 0 && index < ARRAY_SIZE(ev_level_map) / sizeof(ev_level_map[0])) {
+	if (index >= 0 && index < ARRAY_SIZE(ev_level_map)) {
 		return ev_level_map[index];
 	} else {
 		return MEGA_EV_LEVEL_DEFAULT;
@@ -1173,7 +1174,8 @@ static int arducam_mega_init_controls(const struct device *dev)
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->ev, dev, VIDEO_CID_AUTO_EXPOSURE_BIAS,
-			      (struct video_ctrl_range){.min = 0, .max = 6, .step = 1, .def = 0});
+			      (struct video_ctrl_range){
+				      .min = -3000, .max = 3000, .step = 1000, .def = 0});
 	if (ret < 0) {
 		return ret;
 	}
