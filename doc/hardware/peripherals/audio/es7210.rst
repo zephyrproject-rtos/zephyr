@@ -1,0 +1,189 @@
+.. SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+.. SPDX-License-Identifier: Apache-2.0
+
+.. _es7210_driver:
+
+Everest ES7210 microphone ADC
+#############################
+
+The ES7210 uses the :ref:`audio_codec_api` for I2C control. Applications receive PCM data through
+an independent I2S/TDM receiver. The ADC supports four converters; it is not a PDM controller
+and does not implement acoustic echo cancellation or speech noise suppression.
+
+Serial interface
+****************
+
+:c:func:`audio_codec_configure` supports stereo standard I2S and left-justified output,
+18/20/24/32-bit words as well as 16-bit words, and normal or inverted BCLK/LRCK. The clock options
+describe the host: controller options mean the ADC consumes BCLK/LRCK; target options mean the
+ADC generates both. Mixed BCLK/LRCK ownership is unsupported. The ADC always needs external MCLK.
+The ADC resolution is 24 bits; 32-bit words do not increase it.
+
+The :dtcompatible:`everest,es7210` binding selects the physically connected output. SDOUT1 carries
+ADC1/ADC2; SDOUT2 carries ADC3/ADC4. Unused pairs are powered down. Within an active pair, the
+automatic power sequence requires both converters powered; unselected inputs are deselected and
+digitally muted. The supply and microphone-bias properties must match the actual hardware.
+VDDA/VDDD may be 1.8 or 3.3 V. With 1.8 V VDDA the analog PGA must be at least 21 dB; the driver
+uses that as its default. VDDD must be 3.3 V for rates above 24 kHz in this driver. VDDM must be
+3.3 V for the documented bias voltage settings.
+
+:c:func:`audio_codec_es7210_configure` additionally configures four-channel TDM and explicit
+DSP-A/DSP-B timing. It describes physical wire timing directly, avoiding assumptions about the
+host controller's PCM short/long frame conventions. DSP data follows the rising frame-sync edge,
+with a one-bit delay for DSP-A and no delay for DSP-B. DSP frame-sync inversion is unsupported.
+In controller mode the generated DSP frame-sync shape must be checked against the receiver.
+
+Four-channel output requires SDOUT1. I2S/left-justified TDM orders converters as ADC1, ADC3, ADC2,
+ADC4; DSP TDM orders them ADC1, ADC2, ADC3, ADC4. Disabled converters retain their positions.
+TDM slot width must equal the configured word size; stereo slots may be wider, up to 32 BCLKs.
+A single enabled microphone still occupies a two- or four-slot physical frame. Multi-chip
+cascading and the multiple-LRCK cascade mode require additional vendor documentation and are
+not implemented.
+
+The receiver must support the requested timing and channel count. The Zephyr ESP32 I2S driver
+currently accepts only two channels, so ordinary four-channel capture needs a separate I2S
+TDM prerequisite on that platform. This codec driver does not change the host I2S driver.
+
+Clocks
+******
+
+Supported per-channel rates are 8, 11.025, 12, 16, 22.05, 24, 32, 44.1, 48, 64, 88.2 and 96 kHz.
+Standard MCLK/sample-rate ratios are 64, 128, 256, 384, 512, 768, 1024, 1536, 2048 and 3072,
+subject to the 49.2 MHz MCLK limit. Ratios must fit the 12-bit LRCK divider. Standard clock
+coefficients use OSR 32: ADC clock is 512Fs in single-speed mode and 256Fs in double-speed mode.
+The main clock multiplier and divider are calculated to produce that ADC clock. These ratios
+extend the standard-audio coefficients supplied by Espressif.
+
+The Espressif 19.2 MHz coefficients are supported at 8, 12, 16, 24, 32, 48 and 96 kHz. Its
+64 kHz entry has an ambiguous speed-mode setting and is rejected. In controller mode MCLK must
+also divide evenly into BCLK, with an integer divider of 1 through 127. Unsupported clock
+combinations return ``-ENOTSUP`` before writes. Supplying the actual MCLK frequency remains the
+application's responsibility; the driver does not measure external clocks.
+
+Capture and microphone controls
+*******************************
+
+Configure the codec with ``AUDIO_ROUTE_CAPTURE``. Use :c:func:`audio_codec_start` and
+:c:func:`audio_codec_stop` with ``AUDIO_DAI_DIR_RX``. Start external clocks before capture and
+retain them until codec shutdown completes. The initialization and power-up periods are each
+768 LRCK cycles; discard startup samples accordingly. The legacy output functions have no effect.
+
+``AUDIO_PROPERTY_INPUT_VOLUME`` selects exact integer-decibel analog PGA steps: 0 through 33
+in steps of 3, plus 36 dB. The processing extension expresses gain in half-decibel units and also
+exposes the 34.5 and 37.5 dB PGA steps. Per-converter digital gain ranges from -95.5 to +32 dB
+in 0.5 dB steps. Digital gain registers run in reverse converter order (0x1e for ADC1 through
+0x1b for ADC4); the driver handles this mapping.
+
+``AUDIO_PROPERTY_INPUT_MUTE`` controls digital channel mute. ``AUDIO_CHANNEL_FRONT_LEFT`` and
+``AUDIO_CHANNEL_FRONT_RIGHT`` identify the selected stereo pair, or ADC1/ADC2 in four-channel
+mode. ``AUDIO_CHANNEL_ALL`` changes all converters in the frame. The ES7210-specific MIC1
+through MIC4 channel identifiers select channel indices before serial packing. Pair routing
+changes the input source; digital gain, mute and polarity inversion apply after that routing. Analog
+PGA gain always addresses the physical input. Disabled inputs and output channels follow the
+enabled converter mask even when routing duplicates or swaps sources.
+Properties take effect immediately; :c:func:`audio_codec_apply_properties` does no extra work.
+
+Use :c:func:`audio_codec_es7210_get_processing` to obtain the current settings, edit the desired
+fields, and call :c:func:`audio_codec_es7210_set_processing` while capture is stopped. The settings
+include:
+
+* Enabled converter mask and analog/digital input selection per pair. Digital microphone gain
+  ranges from 0 through 42 dB in 6 dB steps. Digital microphones must provide compatible clocks
+  and data connections to the ES7210; this does not create a host DMIC device.
+* Per-converter analog gain, digital gain and polarity inversion.
+* Pair routing: normal, first input duplicated, second input duplicated, or swapped.
+* Independent five-bit HPF coefficients and automatic offset tracking or frozen offset per pair.
+  The datasheet names coefficient 6 as fast and 13 as slow. It does not specify a cutoff-frequency
+  conversion, so these controls do not claim a particular frequency response or noise suppression.
+* ALC selection for either or both converters in each pair, lower/upper target levels, and ramp
+  speed. ALC controls digital level; the digital-gain setting becomes its per-converter maximum.
+  It does not automatically change analog PGA gain.
+
+ALC target levels use 0.1 dBFS units and must match one of the documented values:
+-301, -241, -206, -181, -161, -145, -132, -120, -110, -101, -93, -85, -78, -72, -66 or -60.
+The minimum must not exceed the maximum. ALC ramp periods are powers of two from 2 through
+65536 LRCK cycles per 0.25 dB step. Direct-gain ramp periods are disabled with zero or selected
+from powers of two from 4 through 256 LRCK cycles per 0.5 dB step.
+
+Successful serial reconfiguration resets processing and mute settings: all converters belonging
+to the frame are enabled, analog inputs selected, digital gain is 0 dB, ALC disabled, routing and
+polarity normal, and both HPF coefficients set to 10 with frozen offset, following the Espressif
+initialization. Processing and mute survive stop/start. Configuration or processing changes while
+running return ``-EBUSY``.
+Invalid requests do not write registers. A write failure attempts mute/shutdown and invalidates
+the configuration; reconfigure before retrying. Shutdown retains DLL power because external MCLK
+must stop before the DLL can safely power down.
+
+:c:func:`audio_codec_es7210_get_status` reads the chip revision and state-machine status. Its
+software configured/running flags do not prove valid analog input or correct external clocking.
+
+Processing example
+******************
+
+The following example configures stereo capture on an ES7210 connected through SDOUT1,
+with 24 dB analog gain and -6 dB digital gain. The application configures the I2S receiver
+separately to supply 4.096 MHz MCLK, 16 kHz LRCK and the corresponding BCLK. Call this
+function while capture is stopped, before starting the receiver and ADC.
+
+.. code-block:: c
+
+   #include <zephyr/drivers/audio/es7210.h>
+
+   static int configure_microphones(const struct device *adc)
+   {
+           const struct audio_codec_es7210_dai_cfg serial = {
+                   .mclk_freq = 4096000U,
+                   .sample_rate = 16000U,
+                   .format = AUDIO_CODEC_ES7210_I2S,
+                   .word_size = 16U,
+                   .slot_width = 16U,
+                   .channels = 2U,
+           };
+           struct audio_codec_es7210_processing processing;
+           int ret;
+
+           ret = audio_codec_es7210_configure(adc, &serial);
+           if (ret != 0) {
+                   return ret;
+           }
+           ret = audio_codec_es7210_get_processing(adc, &processing);
+           if (ret != 0) {
+                   return ret;
+           }
+           processing.channel[0].pga_gain = 48;
+           processing.channel[1].pga_gain = 48;
+           processing.channel[0].digital_gain = -12;
+           processing.channel[1].digital_gain = -12;
+
+           return audio_codec_es7210_set_processing(adc, &processing);
+   }
+
+EQ and validation limits
+************************
+
+EQ is explicitly bypassed. The public datasheet names coefficient addresses 0x24 through 0x37
+but does not define their encoding or the filter design procedure. Arbitrary coefficient writes
+and a generic EQ-gain API are therefore not exposed. A manufacturer coefficient specification
+is needed before this can be implemented and verified.
+
+Register emulation checks control transactions and failure recovery. It cannot validate analog
+performance, digital microphone timing, filter response, ALC dynamics, or TDM channel alignment.
+Hardware coverage and limitations must be reported separately for each tested platform and mode.
+
+API reference
+*************
+
+.. doxygengroup:: es7210_interface
+
+References
+**********
+
+* `ES7210 datasheet revision 21.0, January 2023`_: register definitions in section 7.
+* `ES7210 datasheet revision 22.0, May 2023`_: serial timing in section 5.
+* `Espressif esp-bsp ES7210 component 1.0.1~1`_: initialization and clock coefficients.
+* `Espressif esp-adf ES7210 driver`_: mute controls.
+
+.. _ES7210 datasheet revision 21.0, January 2023: https://files.waveshare.com/wiki/common/ES7210_DS.pdf
+.. _ES7210 datasheet revision 22.0, May 2023: https://files.waveshare.com/wiki/common/ES7210-datasheet.pdf
+.. _Espressif esp-bsp ES7210 component 1.0.1~1: https://github.com/espressif/esp-bsp/blob/f259a6abd5808019b1903a422092a4234ca95a51/components/es7210/es7210.c
+.. _Espressif esp-adf ES7210 driver: https://github.com/espressif/esp-adf/blob/a8a14c8fa6cb8aefa5299f4c06fe9679278097cc/components/esp_codec_dev/device/es7210/es7210.c

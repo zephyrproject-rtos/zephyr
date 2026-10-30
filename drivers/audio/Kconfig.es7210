@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_ES7210
+	bool "Everest Semiconductor ES7210 ADC"
+	default y
+	depends on DT_HAS_EVEREST_ES7210_ENABLED
+	select I2C
+	help
+	  Enable the ES7210 microphone ADC with I2C control and I2S output.

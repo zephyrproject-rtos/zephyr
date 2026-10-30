@@ -96,6 +96,15 @@
 				vdd-amp-supply = <&test_regulator>;
 				status = "okay";
 			};
+
+			test_i2c_es7210: es7210@40 {
+				compatible = "everest,es7210";
+				reg = <0x40>;
+				everest,sdout = <1>;
+				everest,micbias-millivolt = <2870>;
+				everest,vdda-millivolt = <3300>;
+				everest,vddd-millivolt = <3300>;
+			};
 		};
 
 		test_gpio: gpio@deadbeef {
