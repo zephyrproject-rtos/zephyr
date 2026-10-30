@@ -42,6 +42,7 @@ struct wiznet_regs {
 	uint32_t s0_cr;
 	uint32_t s0_ir;
 	uint32_t s0_irclr;
+	uint32_t s0_imr;
 	uint32_t s0_tx_wr;
 	uint32_t s0_rx_rsr;
 	uint32_t s0_rx_rd;
@@ -84,7 +85,6 @@ struct wiznet_runtime {
 	struct k_thread thread;
 	uint8_t mac_addr[6];
 	struct gpio_callback gpio_cb;
-	struct k_sem tx_sem;
 	struct k_sem int_sem;
 	struct phy_link_state state;
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
@@ -108,7 +108,7 @@ int wiznet_command(const struct device *dev, uint8_t cmd);
 int wiznet_readbuf(const struct device *dev, uint16_t offset, uint8_t *buf, size_t len);
 int wiznet_writebuf(const struct device *dev, uint16_t offset, uint8_t *buf, size_t len);
 
-void wiznet_rx(const struct device *dev);
+bool wiznet_rx(const struct device *dev);
 int wiznet_tx(const struct device *dev, struct net_pkt *pkt);
 
 void wiznet_iface_init(struct net_if *iface);
@@ -128,7 +128,6 @@ int wiznet_init(const struct device *dev);
 	static K_KERNEL_STACK_DEFINE(wiznet_stack_##node,                                          \
 				     CONFIG_ETH_WIZNET_RX_THREAD_STACK_SIZE);                  \
 	static struct wiznet_runtime wiznet_runtime_##node = {                                     \
-		.tx_sem = Z_SEM_INITIALIZER(wiznet_runtime_##node.tx_sem, 1, UINT_MAX),            \
 		.int_sem = Z_SEM_INITIALIZER(wiznet_runtime_##node.int_sem, 0, UINT_MAX),          \
 	};                                                                                         \
 	static const struct wiznet_config wiznet_config_##node = {                                 \
