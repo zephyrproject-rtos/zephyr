@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/rh850u2c.dtsi>
+
+/ {
+	soc {
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>;
+			ranges = <0x0 0x0 DT_SIZE_M(8)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		rlin311: serial@ff89bb00 {
+			compatible = "renesas,rh850-rlin3-uart";
+			reg = <0xff89bb00 0x40>;
+			interrupts = <493 15>, <494 15>, <495 15>, <496 15>;
+			interrupt-names = "lin", "tx", "rx", "err";
+			status = "disabled";
+		};
+	};
+
+	/* Local RAM CPU1, U2C HW UM Table 4.1 p480 */
+	lram1: memory@fda00000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfda00000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "LRAM1";
+	};
+
+	/* Cluster RAM cluster 0 (CRAM00-02), U2C HW UM Table 4.1 and note 5 p481 */
+	cram0: memory@fe000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfe000000 0x138000>;
+		zephyr,memory-region = "CRAM0";
+	};
+};

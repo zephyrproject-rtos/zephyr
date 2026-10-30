@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RH850U2C
+	bool
+	select SOC_FAMILY_RENESAS_RH850
+	help
+	  Renesas RH850/U2C series
+
+config SOC_R7F702600
+	bool
+	select SOC_SERIES_RH850U2C
+	help
+	  RH850/U2C8 (R7F702600)
+
+config SOC_SERIES
+	default "rh850u2c" if SOC_SERIES_RH850U2C
+
+config SOC
+	default "r7f702600" if SOC_R7F702600
