@@ -151,6 +151,9 @@ not in priority order.
 In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
 -:c:macro:`EAGAIN`.
 
+More than one event can be ready when :c:func:`k_poll` returns, so the state
+of every event must be checked, not only the first ready one.
+
 .. code-block:: c
 
     // assume there is no contention on this semaphore and FIFO
@@ -162,13 +165,16 @@ In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
         if (rc == 0) {
             if (events[0].state == K_POLL_STATE_SEM_AVAILABLE) {
                 k_sem_take(events[0].sem, 0);
-            } else if (events[1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
+            }
+            if (events[1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
                 data = k_fifo_get(events[1].fifo, 0);
                 // handle data
-            } else if (events[2].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+            }
+            if (events[2].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
                 ret = k_msgq_get(events[2].msgq, buf, K_NO_WAIT);
                 // handle data
-            } else if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
+            }
+            if (events[3].state == K_POLL_STATE_PIPE_DATA_AVAILABLE) {
                 bytes_read = k_pipe_read(events[3].pipe, buf, bytes_to_read, K_NO_WAIT);
                 if (bytes_read == -EPIPE) {
                     // pipe is closed
@@ -179,10 +185,18 @@ In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
         } else {
             // handle timeout
         }
+
+        events[0].state = K_POLL_STATE_NOT_READY;
+        events[1].state = K_POLL_STATE_NOT_READY;
+        events[2].state = K_POLL_STATE_NOT_READY;
+        events[3].state = K_POLL_STATE_NOT_READY;
     }
 
-When :c:func:`k_poll` is called in a loop, the events state must be reset
-to :c:macro:`K_POLL_STATE_NOT_READY` by the user.
+The kernel sets the state of an event when it becomes ready, but never
+clears it. Before the events are passed to :c:func:`k_poll` again, the state
+of each event must be reset to :c:macro:`K_POLL_STATE_NOT_READY` by the user,
+whether the previous call succeeded or timed out. For example, when
+:c:func:`k_poll` is called in a loop:
 
 .. code-block:: c
 
