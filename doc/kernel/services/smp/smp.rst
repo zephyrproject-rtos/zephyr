@@ -88,7 +88,7 @@ stacks remain cached, as does application memory explicitly declared with
 ``__incoherent``. This mode is intended only for SMP kernels running on
 cache-incoherent architectures, and it carries an implicit API contract: any
 memory passed to the kernel is assumed to be cache-coherent, so kernel data
-structures must not be created in uncached regions.
+structures must not be created in cached regions.
 
 .. _smp_cpu_mask:
 
