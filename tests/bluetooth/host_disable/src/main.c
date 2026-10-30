@@ -1055,3 +1055,64 @@ static ZTEST(bt_host_ncp, test_dropped_packets_not_reported)
 	test_conn = NULL;
 }
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_GATT_CLIENT */
+
+#if defined(CONFIG_BT_OBSERVER)
+static K_THREAD_STACK_DEFINE(scan_stop_stack,
+			     CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread scan_stop_thread;
+static bool scan_stopped_during_reset;
+static bool scan_stop_returned;
+static int scan_stop_err;
+
+static void scan_stop_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	scan_stopped_during_reset = !bt_is_ready() && k_work_delayable_is_pending(&reset_rsp_work);
+	scan_stop_err = bt_le_scan_stop();
+	scan_stop_returned = true;
+}
+
+/* An application thread that stops scanning while bt_disable() waits for the
+ * controller to be reset holds the locks of the scanner while it waits for the
+ * command buffer, which the reset has. It gets the buffer only after the reset
+ * has completed, the Host has reset the scanner state and closed the
+ * transport, so the command fails. The call must still return and release the
+ * locks.
+ */
+static ZTEST(bt_disable, test_scan_stop_during_disable)
+{
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Scanning failed to start");
+
+	scan_stopped_during_reset = false;
+	scan_stop_returned = false;
+	reset_rsp_delay = K_MSEC(20);
+
+	/* Lower in priority than the test thread, so that it runs only while
+	 * bt_disable() waits, and is not run again before bt_disable() returns.
+	 */
+	k_thread_create(&scan_stop_thread, scan_stop_stack, K_THREAD_STACK_SIZEOF(scan_stop_stack),
+			scan_stop_entry, NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0,
+			K_MSEC(10));
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	zassert_ok(k_thread_join(&scan_stop_thread, K_SECONDS(1)), "The stop did not return");
+
+	zassert_true(scan_stopped_during_reset, "Scanning was not stopped during the reset");
+	zassert_true(scan_stop_returned, "bt_le_scan_stop() did not return");
+	zassert_equal(scan_stop_err, -EHOSTDOWN, "bt_le_scan_stop() gave %d (!= %d)", scan_stop_err,
+		      -EHOSTDOWN);
+
+	/* The scanner is usable after the next enable */
+	reset_rsp_delay = K_NO_WAIT;
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Scanning failed to start");
+	zassert_ok(bt_le_scan_stop(), "Scanning failed to stop");
+}
+#endif /* CONFIG_BT_OBSERVER */
