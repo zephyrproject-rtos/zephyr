@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include "ms5607.h"
 
@@ -30,6 +31,7 @@ static int ms5607_i2c_reset(const struct ms5607_config *config)
 		return err;
 	}
 
+	k_sleep(K_MSEC(3));
 	return 0;
 }
 
