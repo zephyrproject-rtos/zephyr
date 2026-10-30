@@ -1,0 +1,33 @@
+sample:
+  description: Fuse the GPIO driver with the application hot path in one
+    translation unit by claiming the gpio source set
+  name: fast gpio
+common:
+  tags:
+    - gpio
+    - build
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "fast_gpio: toggling (.*)"
+tests:
+  sample.drivers.gpio.fast_gpio:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+    integration_platforms:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+  sample.drivers.gpio.fast_gpio.baseline:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+    extra_configs:
+      - CONFIG_FAST_GPIO_CLAIM=n
+  sample.drivers.gpio.fast_gpio.lto:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+    extra_args:
+      - EXTRA_CONF_FILE=lto.conf
+  sample.drivers.gpio.fast_gpio.m55:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    sysbuild: true
