@@ -50,6 +50,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/cache.h>
+#include <string.h>
 #include <hal/uhci_ll.h>
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 #define UHCI0 UHCI
@@ -189,6 +190,19 @@ struct uart_esp32_data {
 #define UART_RX_IDLE_THRESH (256U)
 /* Shorter RX idle time used to flush UHCI when async RX stops, in bit times */
 #define UART_RX_STOP_THRESH (2U * UART_MAX_FRAME_BITS)
+/* CONFIG_DCACHE_LINE_SIZE can be narrower than the line the cache really
+ * uses, so take the widest line in this build.
+ */
+#if defined(CONFIG_DCACHE)
+#if defined(CONFIG_ESP32_CACHE_L2_LINE_SIZE)
+#define UART_ESP32_SOC_CACHE_LINE CONFIG_ESP32_CACHE_L2_LINE_SIZE
+#elif defined(CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE)
+#define UART_ESP32_SOC_CACHE_LINE CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE
+#else
+#define UART_ESP32_SOC_CACHE_LINE 0
+#endif
+#define UART_ESP32_CACHE_LINE MAX(CONFIG_DCACHE_LINE_SIZE, UART_ESP32_SOC_CACHE_LINE)
+#endif
 #if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
 	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
 /* UHCI ends a packet after its first byte when the UART core clock, the source
@@ -702,6 +716,48 @@ static void uart_esp32_irq_callback_set(const struct device *dev, uart_irq_callb
 
 #ifdef CONFIG_UART_ASYNC_API
 
+/* Invalidates the reported part of the RX buffer. The bytes outside the buffer
+ * that share its first and last cache line belong to the CPU, so they are
+ * saved across the invalidate.
+ */
+static void uart_esp32_async_rx_invd(struct uart_esp32_data *data, size_t offset, size_t len)
+{
+#if defined(CONFIG_DCACHE)
+	uintptr_t buf_start = (uintptr_t)data->async.rx_buf;
+	uintptr_t buf_end = buf_start + data->async.rx_len;
+	uintptr_t base = ROUND_DOWN(buf_start + offset, UART_ESP32_CACHE_LINE);
+	uintptr_t top = ROUND_UP(buf_start + offset + len, UART_ESP32_CACHE_LINE);
+	size_t head_len = (base < buf_start) ? (buf_start - base) : 0U;
+	size_t tail_len = (top > buf_end) ? (top - buf_end) : 0U;
+	uint8_t head[UART_ESP32_CACHE_LINE];
+	uint8_t tail[UART_ESP32_CACHE_LINE];
+
+	if (len == 0U) {
+		return;
+	}
+
+	if (head_len > 0U) {
+		memcpy(head, (void *)base, head_len);
+	}
+	if (tail_len > 0U) {
+		memcpy(tail, (void *)buf_end, tail_len);
+	}
+
+	sys_cache_data_invd_range((void *)base, top - base);
+
+	if (head_len > 0U) {
+		memcpy((void *)base, head, head_len);
+	}
+	if (tail_len > 0U) {
+		memcpy((void *)buf_end, tail, tail_len);
+	}
+#else
+	ARG_UNUSED(data);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(len);
+#endif
+}
+
 static inline void uart_esp32_async_timer_start(struct k_work_delayable *work, size_t timeout)
 {
 	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
@@ -918,9 +974,6 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	if (data->async.rx_offset < data->async.rx_counter) {
 		size_t length = data->async.rx_counter - data->async.rx_offset;
 
-		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-						    length);
-
 		evt.type = UART_RX_RDY;
 		evt.data.rx.buf = data->async.rx_buf;
 		evt.data.rx.len = length;
@@ -1111,8 +1164,7 @@ static void uart_esp32_async_rx_stop(struct k_work *work)
 	if (data->async.rx_offset < rx_count) {
 		size_t length = rx_count - data->async.rx_offset;
 
-		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-						    length);
+		uart_esp32_async_rx_invd(data, data->async.rx_offset, length);
 
 		evt.type = UART_RX_RDY;
 		evt.data.rx.buf = data->async.rx_buf;
@@ -1206,8 +1258,7 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	if (rx_count > data->async.rx_offset) {
 		size_t length = rx_count - data->async.rx_offset;
 
-		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-						    length);
+		uart_esp32_async_rx_invd(data, data->async.rx_offset, length);
 
 		data->async.rx_counter = rx_count;
 		evt.type = UART_RX_RDY;
