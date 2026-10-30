@@ -292,12 +292,15 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	add r0, #1
 	str r0, [r2, #___cpu_t_nested_OFFSET]
 
-	/* If not nested: switch to IRQ stack and save current sp on it. */
+	/* If not nested: switch to IRQ stack and save current sp on it.
+	 * r1 is pushed as padding to keep the IRQ stack aligned at a
+	 * double-word boundary while the ISR runs.
+	 */
 	cmp r0, #1
 	bhi 1f
 	mov r0, sp
 	cps #MODE_IRQ
-	push {r0}
+	push {r0, r1}
 1:
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
@@ -424,16 +427,17 @@ z_arm_cortex_ar_irq_done:
 	bhi __EXIT_INT
 
 	/* retrieve pointer to the current thread */
-	pop {r0}
+	pop {r0, r1}
 	cps #MODE_SYS
 	mov sp, r0
 
 	ldr r1, [r2, #___cpu_t_current_OFFSET]
-	push {r1}
+	/* r2 is pushed as padding to keep the stack double-word aligned */
+	push {r1, r2}
 	mov r0, #0
 	bl z_get_next_switch_handle
 
-	pop {r1}
+	pop {r1, r2}
 	cmp r0, #0
 	beq __EXIT_INT
 
