@@ -7,9 +7,10 @@
 
 import os
 import shutil
+from functools import partial
 from pathlib import Path
 
-from runners.core import RunnerCaps, ZephyrBinaryRunner
+from runners.core import RunnerCaps, ZephyrBinaryRunner, depr_action
 
 
 class Esp32BinaryRunner(ZephyrBinaryRunner):
@@ -23,7 +24,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         self.reset = bool(args.reset)
         self.device = args.esp_device
         self.app_address = args.esp_app_address
-        self.baud = args.esp_baud_rate
+        self.baud = args.baud_rate
         self.flash_size = args.esp_flash_size
         self.flash_freq = args.esp_flash_freq
         self.flash_mode = args.esp_flash_mode
@@ -42,7 +43,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash'}, erase=True, reset=True, reset_types=True,
-                          reset_types_supported=['hard-reset', 'watchdog-reset'])
+                          reset_types_supported=['hard-reset', 'watchdog-reset'],
+                          baud_rate=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -58,8 +60,9 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='application load address')
         parser.add_argument('--esp-device', default=os.environ.get('ESPTOOL_PORT', None),
                             help='serial port to flash')
-        parser.add_argument('--esp-baud-rate', default='921600',
-                            help='serial baud rate, default 921600')
+        parser.add_argument('--esp-baud-rate', dest='baud_rate',
+                            action=partial(depr_action, cls=cls, replacement='--baud-rate'),
+                            help='Deprecated, use --baud-rate instead.')
         parser.add_argument('--esp-monitor-baud', default='115200',
                             help='serial monitor baud rate, default 115200')
         parser.add_argument('--esp-flash-size', default='detect',
@@ -82,7 +85,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--esp-no-progress', default=False, action='store_true',
                             help='Suppress esptool progress output')
 
-        parser.set_defaults(reset=True)
+        parser.set_defaults(reset=True, baud_rate='921600')
 
     def _get_prev_bin_path(self):
         return self.app_bin + '.prev'
@@ -167,7 +170,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
         if self.no_stub is True:
             cmd_flash.extend(['--no-stub'])
-        cmd_flash.extend(['--baud', self.baud])
+        cmd_flash.extend(['--baud', str(self.baud)])
         cmd_flash.extend(['--before', 'default-reset'])
         if self.reset_type is not None and not self.reset:
             self.logger.warning(
