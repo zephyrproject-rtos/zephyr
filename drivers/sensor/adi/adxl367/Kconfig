@@ -28,6 +28,14 @@ config ADXL367_MEASUREMENT_MODE
 
 endchoice
 
+config ADXL367_WAKEUP_MODE
+	bool "wake-up mode"
+	default n
+	help
+	  Configure the ADXL367 to operate in wake-up mode during
+	  initialization. Wake-up mode is incompatible with low-noise
+	  mode and FIFO streaming.
+
 config ADXL367_ACTIVITY_THRESHOLD
 	int "Activity threshold in raw value"
 	range 0 8191
