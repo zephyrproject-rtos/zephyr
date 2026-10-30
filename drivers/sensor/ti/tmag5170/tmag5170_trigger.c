@@ -116,7 +116,7 @@ int tmag5170_trigger_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_FALLING);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_INACTIVE);
 	if (ret < 0) {
 		return ret;
 	}
