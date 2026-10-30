@@ -1,0 +1,101 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 2 I2S (Inter-Integrated Circuit Sound)
+
+description: |
+  Silicon Labs Series 2 USART in I2S mode. Pins are TX, RX, CLK (bit clock),
+  and CS (word select / LRCLK). Enable this compatible on a USART instance only
+  in a board or application overlay (not the shared SoC DTSI), since SPI and
+  I2S cannot share the same USART.
+
+compatible: "silabs,usart-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  silabs,mclk-out:
+    type: phandle
+    description: |
+      Optional phandle to a ``clock-output@N`` child under
+      ``silabs,series-clock-output`` that supplies codec MCLK.
+
+  dmas:
+    required: true
+    description: |
+      DMA channels for ``txbl`` (USARTnTXBL), optional ``txblright``
+      (USARTnTXBLRIGHT, mono TX), and ``rx`` (USARTnRXDATAV).
+
+  dma-names:
+    required: true
+    description: |
+      Must include ``txbl`` and ``rx``. Add ``txblright`` for mono TX
+      (``channels = 1``). Legacy names ``tx`` / ``tx-right`` are accepted.
+
+  silabs,mono-tx-slot:
+    type: string
+    enum:
+      - left
+      - right
+    default: right
+    description: |
+      Which mono TX slot carries audio when ``channels = 1`` (the other is
+      silence).
+
+examples:
+  - |
+    /* Optional codec MCLK from CMU CLKOUT0 via silabs,mclk-out. */
+    &pinctrl {
+      clkout_default: clkout_default {
+        group0 {
+          pins = <CMU_CLKOUT0_PC1>;
+          drive-push-pull;
+          output-low;
+        };
+      };
+
+      usart0_i2s_default: usart0_i2s_default {
+        group0 {
+          pins = <USART0_TX_PC0>, <USART0_CLK_PC2>, <USART0_CS_PB2>;
+          drive-push-pull;
+          output-high;
+        };
+
+        group1 {
+          pins = <USART0_RX_PC1>;
+          input-enable;
+        };
+      };
+    };
+
+    &clkout {
+      pinctrl-0 = <&clkout_default>;
+      pinctrl-names = "default";
+      status = "okay";
+    };
+
+    &clkout0 {
+      clocks = <&exportclk>;
+      status = "okay";
+    };
+
+    &usart0 {
+      compatible = "silabs,usart-i2s";
+      status = "okay";
+      pinctrl-0 = <&usart0_i2s_default>;
+      pinctrl-names = "default";
+      silabs,mclk-out = <&clkout0>;
+      dmas = <&dma0 DMA_REQSEL_USART0TXBL>,
+             <&dma0 DMA_REQSEL_USART0TXBLRIGHT>,
+             <&dma0 DMA_REQSEL_USART0RXDATAV>;
+      dma-names = "txbl", "txblright", "rx";
+    };
