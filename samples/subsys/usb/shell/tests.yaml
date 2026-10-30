@@ -22,8 +22,6 @@ tests:
       - usb
     extra_args:
       - FILE_SUFFIX=host
-    platform_allow:
-      - rd_rw612_bga
     build_only: true
   sample.usbh.shell.shield:
     depends_on:
