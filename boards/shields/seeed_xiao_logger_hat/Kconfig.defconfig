@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SEEED_XIAO_LOGGER_HAT
+
+config SENSOR
+	default y
+
+config SHT4X
+	default y
+
+config RTC
+	default y
+
+config RTC_PCF8563
+	default y
+
+config GPIO
+	default y
+
+config BH1750
+	default y
+
+config ADC
+	default y
+
+config VOLTAGE_DIVIDER
+	default y
+
+endif # SHIELD_SEEED_XIAO_LOGGER_HAT
