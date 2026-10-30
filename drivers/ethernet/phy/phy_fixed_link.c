@@ -21,8 +21,8 @@ struct phy_mii_fixed_dev_config {
 	enum phy_link_speed fixed_speed;
 #if ANY_RESET_GPIO
 	const struct gpio_dt_spec reset_gpio;
-	uint32_t reset_assert_duration_us;
-	uint32_t reset_deassertion_timeout_ms;
+	uint32_t reset_assert_us;
+	uint32_t reset_deassert_us;
 #endif /* ANY_RESET_GPIO */
 };
 
@@ -68,7 +68,7 @@ static int phy_mii_fixed_init(const struct device *dev)
 		}
 
 		/* assertion time */
-		k_busy_wait(cfg->reset_assert_duration_us);
+		k_busy_wait(cfg->reset_assert_us);
 
 		ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
 		if (ret < 0) {
@@ -76,7 +76,7 @@ static int phy_mii_fixed_init(const struct device *dev)
 			return ret;
 		}
 
-		k_msleep(cfg->reset_deassertion_timeout_ms);
+		k_usleep(cfg->reset_deassert_us);
 	}
 
 	return 0;
@@ -91,8 +91,8 @@ static DEVICE_API(ethphy, phy_mii_fixed_driver_api) = {
 #if ANY_RESET_GPIO
 #define RESET_GPIO(n)                                                                              \
 	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                               \
-	.reset_assert_duration_us = DT_INST_PROP_OR(n, reset_assert_duration_us, 0),               \
-	.reset_deassertion_timeout_ms = DT_INST_PROP_OR(n, reset_deassertion_timeout_ms, 0),
+	.reset_assert_us = DT_INST_PROP_OR(n, reset_assert_us, 0),                                 \
+	.reset_deassert_us = DT_INST_PROP_OR(n, reset_deassert_us, 0),
 #else
 #define RESET_GPIO(n)
 #endif /* ANY_RESET_GPIO */

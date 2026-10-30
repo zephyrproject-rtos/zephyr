@@ -250,8 +250,8 @@
 		compatible = "ethernet-phy";
 		reg = <0x00>;
 		reset-gpios = <&gpioc_l 3 GPIO_ACTIVE_LOW>;
-		reset-assert-duration-us = <25000>;
-		reset-deassertion-timeout-ms = <25>;
+		reset-assert-us = <25000>;
+		reset-deassert-us = <25000>;
 	};
 };
 

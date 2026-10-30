@@ -98,8 +98,8 @@
 					compatible = "ethernet-phy";
 					reg = <0xa>;
 					reset-gpios = <&test_gpio 0 0>;
-					reset-assert-duration-us = <100>;
-					reset-deassertion-timeout-ms = <10>;
+					reset-assert-us = <100>;
+					reset-deassert-us = <10000>;
 					status = "okay";
 				};
 			};
