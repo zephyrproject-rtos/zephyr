@@ -59,7 +59,7 @@ static STRUCT_SECTION_ITERABLE(k_mem_slab, tx_0_mem_slab) =
 int main(void)
 {
 	void *tx_block[NUM_BLOCKS];
-	struct i2s_config i2s_cfg;
+	struct i2s_config i2s_cfg = {0};
 	int ret;
 	uint32_t tx_idx;
 	const struct device *dev_i2s = DEVICE_DT_GET(DT_ALIAS(i2s_tx));
