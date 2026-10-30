@@ -36,7 +36,6 @@ struct gpio_rts5912_data {
 	sys_slist_t callbacks;
 };
 
-#if defined(CONFIG_PM)
 #define GPIO_EXPIRED_TIMEOUT_MS 1000
 static struct k_work_delayable gpio_wake_delay_work;
 static atomic_t gpio_wake_hold;			/* 0: no hold, 1: holding */
@@ -50,7 +49,6 @@ static void gpio_wake_delay_work_handler(struct k_work *work)
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	}
 }
-#endif /* CONFIG_PM */
 
 static int pin_is_valid(const struct gpio_rts5912_config *config, gpio_pin_t pin)
 {
