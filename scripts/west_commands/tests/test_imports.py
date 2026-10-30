@@ -27,6 +27,7 @@ def test_runner_imports():
         'arc-nsim',
         'bflb_flash_command',
         'bflb_mcu_tool',
+        'bkflash',
         'blackmagicprobe',
         'bossac',
         'canopen',

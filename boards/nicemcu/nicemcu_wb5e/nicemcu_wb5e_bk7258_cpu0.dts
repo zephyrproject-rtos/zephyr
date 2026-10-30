@@ -1,0 +1,93 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <beken/bk7258.dtsi>
+#include <zephyr/dt-bindings/pinctrl/beken-bk7258-pinctrl.h>
+
+/ {
+	model = "NiceMCU WB5E";
+	compatible = "nicemcu,wb5e";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+/*
+ * 8 MB part. The CPU sees flash memory-mapped at 0x02000000, where every
+ * 32 bytes of code occupy 34 bytes of flash: a 2-byte CRC follows each
+ * 32 bytes, and the flash controller checks and removes it on access.
+ */
+&flash0 {
+	reg = <0x02000000 DT_SIZE_M(8)>;
+
+	/*
+	 * The code slot starts at flash offset 0, so it appears at
+	 * 0x02000000. The range covers that slot only.
+	 */
+	ranges = <0x0 0x02000000 DT_SIZE_M(2)>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The size is the code the linker places here. In flash
+		 * that code takes 2 MB x 34/32, or 0x220000, which is where
+		 * slot1 starts.
+		 */
+		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x0 DT_SIZE_M(2)>;
+		};
+	};
+
+	/*
+	 * Flash reached through the controller's data port, which addresses
+	 * it physically and reads it raw. Offsets and sizes are flash bytes.
+	 */
+	partitions-unmapped {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot1_partition: partition@220000 {
+			label = "image-1";
+			reg = <0x220000 0x220000>;
+		};
+
+		storage_partition: partition@440000 {
+			label = "storage";
+			reg = <0x440000 0x3c0000>;
+		};
+	};
+};
+
+&pinctrl {
+	uart0_rx_p10: uart0_rx_p10 {
+		pinmux = <BK7258_PINMUX(10, FUNC0)>;
+		bias-pull-up;
+	};
+
+	uart0_tx_p11: uart0_tx_p11 {
+		pinmux = <BK7258_PINMUX(11, FUNC0)>;
+		bias-pull-up;
+	};
+};
+
+/* UART0 is on GPIO11 (TX) and GPIO10 (RX) */
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_tx_p11 &uart0_rx_p10>;
+	pinctrl-names = "default";
+};
