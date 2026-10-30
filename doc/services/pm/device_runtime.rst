@@ -10,7 +10,7 @@ The device runtime power management (PM) framework is an active power management
 mechanism which reduces the overall system power consumption by suspending the
 devices which are idle or not used independently of the system state. It can be
 enabled by setting :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`. In this model the device
-driver is responsible to indicate when it needs the device and when it does not.
+driver is responsible for indicating when it needs the device and when it does not.
 This information is used to determine when to suspend or resume a device based
 on usage count.
 
@@ -31,7 +31,7 @@ power management automatically attempts to request and release the dependent dom
 in response to :c:func:`pm_device_runtime_get` and :c:func:`pm_device_runtime_put`
 calls on the child device.
 
-For the previous to automatically control the power domain state, device runtime PM must be enabled
+For the power domain state to be controlled automatically, device runtime PM must be enabled
 on the power domain device. To enable device runtime PM globally, enable
 :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`. To enable device runtime PM only for
 select devices, set the ``zephyr,pm-device-runtime-auto`` devicetree property, or use
@@ -69,8 +69,8 @@ Design principles
 *****************
 
 When runtime PM is enabled on a device it will no longer be resumed or suspended
-during system power transitions. Instead, the device is fully responsible to
-indicate when it needs a device and when it does not. The device runtime PM API
+during system power transitions. Instead, the device driver is fully responsible
+for indicating when the device is needed and when it is not. The device runtime PM API
 uses reference counting to keep track of device's usage. This allows the API to
 determine when a device needs to be resumed or suspended. The API uses the *get*
 and *put* terminology to indicate when a device is needed or not, respectively.
@@ -81,11 +81,12 @@ until the last sensor has finished using it.
 .. note::
 
     As of today, the device runtime power management API does not manage device
-    dependencies. This effectively means that, if a device depends on other
-    devices to operate (e.g. a sensor may depend on a bus device), the bus will
-    be resumed and suspended on every transaction. In general, it is more
-    efficient to keep parent devices active when their children are used, since
-    the children may perform multiple transactions in a short period of time.
+    dependencies other than power domains. This effectively means that, if a
+    device depends on other devices to operate (e.g. a sensor may depend on a
+    bus device), the bus will be resumed and suspended on every transaction.
+    In general, it is more efficient to keep parent devices active when their
+    children are used, since the children may perform multiple transactions
+    in a short period of time.
     Until this feature is added, devices can manually *get* or *put* their
     dependencies.
 
@@ -94,7 +95,7 @@ indicate it *needs* the device to be active or operational. This function will
 increase device usage count and resume the device if necessary. Similarly, the
 :c:func:`pm_device_runtime_put` function can be used to indicate that the device
 is no longer needed. This function will decrease the device usage count and
-suspend the device if necessary. It is worth to note that in both cases, the
+suspend the device if necessary. Note that in both cases the
 operation is carried out synchronously. The sequence diagram shown below
 illustrates how a device can use this API and the expected sequence of events.
 
@@ -112,17 +113,17 @@ slow bus. For this reason the device drivers can also make use of the
 the suspend operation, again, if device is no longer used.
 
 
-By default, runtime PM operations are offloaded to the system work queue.
-However, device drivers must not perform any blocking operations during suspend, as
-this can stall the system work queue and negatively impact system responsiveness.
+By default, asynchronous runtime PM operations are offloaded to the system work
+queue. In this configuration, device drivers must not perform any blocking
+operations during suspend, as this can stall the system work queue and
+negatively impact system responsiveness.
 
-To address this, applications can configure runtime PM to use a dedicated work queue
-by enabling :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`.
-
-If blocking behavior is required—for example, when accessing a slow peripheral
-or waiting for a bus transaction—the PM subsystem work queue must be used instead.
-Drivers that require this behavior can explicitly request it by enabling
-:kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`.
+If blocking behavior is required, for example when accessing a slow peripheral
+or waiting for a bus transaction, a dedicated work queue must be used instead.
+Applications can select the dedicated work queue by enabling
+:kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`. Drivers that
+require it can select :kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`,
+which makes the dedicated work queue the default choice.
 
 For targets with constrained resources that do not need asynchronous
 operations, this functionality can be disabled altogether by
@@ -137,7 +138,7 @@ memory usage and system complexity.
 Implementation guidelines
 *************************
 
-In a first place, a device driver needs to implement the PM action callback used
+First, a device driver needs to implement the PM action callback used
 by the PM subsystem to suspend or resume devices.
 
 .. code-block:: c
