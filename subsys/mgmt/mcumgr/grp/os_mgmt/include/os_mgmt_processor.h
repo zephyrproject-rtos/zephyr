@@ -198,6 +198,8 @@ extern "C" {
 #define PROCESSOR_NAME "tricore"
 #elif defined(CONFIG_HEXAGON)
 #define PROCESSOR_NAME "hexagon"
+#elif defined(CONFIG_RH850)
+#define PROCESSOR_NAME "rh850"
 #endif
 
 #if defined(CONFIG_ARCH_POSIX)
