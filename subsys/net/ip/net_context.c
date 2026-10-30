@@ -4583,7 +4583,7 @@ static int set_context_rcvbuf(struct net_context *context,
 				const void *value, uint32_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_RCVBUF)
-	return set_uint32_option(&context->options.rcvbuf, value, len, UINT16_MAX);
+	return set_uint32_option(&context->options.rcvbuf, value, len, NET_TCP_MAX_WINDOW);
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
@@ -4597,7 +4597,7 @@ static int set_context_sndbuf(struct net_context *context,
 				const void *value, uint32_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
-	return set_uint32_option(&context->options.sndbuf, value, len, UINT16_MAX);
+	return set_uint32_option(&context->options.sndbuf, value, len, NET_TCP_MAX_WINDOW);
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
