@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_SYS_TIME_UNITS_H_
 
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/div64.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
@@ -167,6 +168,10 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 #define z_tmcvt_divisor(a, b) ((a)/(b) ? (a)/(b) : 1U)
 
+/* 64-bit n / d and n % d, without libgcc when d is a constant */
+#define z_tmcvt_div64(__n, __d) sys_div64_u32_const(__n, __d)
+#define z_tmcvt_mod64(__n, __d) ((uint64_t)sys_mod64_u32_const(__n, __d))
+
 /*
  * Compute the offset needed to round the result correctly when
  * the conversion requires a full mul/div
@@ -185,10 +190,10 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 				     __round_up, __round_off)) /	\
 	  z_tmcvt_divisor(__from_hz, __to_hz)))				\
 	 :								\
-	 (uint32_t) (((uint64_t) (__t) +				\
-		      z_tmcvt_off_div(__from_hz, __to_hz,		\
-				      __round_up, __round_off)) /	\
-		     z_tmcvt_divisor(__from_hz, __to_hz))		\
+	 (uint32_t) z_tmcvt_div64((uint64_t) (__t) +			\
+				  z_tmcvt_off_div(__from_hz, __to_hz,	\
+						  __round_up, __round_off), \
+				  z_tmcvt_divisor(__from_hz, __to_hz))	\
 		)
 
 /* Integer multiplication 32-bit conversion */
@@ -197,14 +202,14 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* General 32-bit conversion */
 #define z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	((uint32_t) (((uint64_t) (__t)*(__to_hz) +			\
-		      z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz)))
+	((uint32_t) z_tmcvt_div64((uint64_t) (__t)*(__to_hz) +		\
+		z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off), __from_hz))
 
 /* Integer division 64-bit conversion */
 #define z_tmcvt_int_div_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	(((uint64_t) (__t) + z_tmcvt_off_div(__from_hz, __to_hz,	\
-					     __round_up, __round_off)) / \
-	z_tmcvt_divisor(__from_hz, __to_hz))
+	z_tmcvt_div64((uint64_t) (__t) + z_tmcvt_off_div(__from_hz, __to_hz, \
+					     __round_up, __round_off),	\
+		      z_tmcvt_divisor(__from_hz, __to_hz))
 
 /* Integer multiplication 64-bit conversion */
 #define z_tmcvt_int_mul_64(__t, __from_hz, __to_hz)	\
@@ -212,14 +217,14 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* Fast 64-bit conversion. This relies on the multiply not overflowing */
 #define z_tmcvt_gen_64_fast(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	(((uint64_t) (__t)*(__to_hz) + \
-	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
+	z_tmcvt_div64((uint64_t) (__t)*(__to_hz) +			\
+		z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off), __from_hz)
 
 /* Slow 64-bit conversion. This avoids overflowing the multiply */
 #define z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	((((uint64_t) (__t) / (__from_hz))*(__to_hz)) +			\
-	 (((((uint64_t) (__t) % (__from_hz))*(__to_hz)) +		\
-	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz)))
+	((z_tmcvt_div64(__t, __from_hz)*(__to_hz)) +			\
+	 z_tmcvt_div64((z_tmcvt_mod64(__t, __from_hz)*(__to_hz)) +	\
+		z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off), __from_hz))
 
 /* General 64-bit conversion. Uses one of the two above macros */
 #define z_tmcvt_gen_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
