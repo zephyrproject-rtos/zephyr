@@ -1,0 +1,15 @@
+sample:
+  description: Logging to a flash partition, with a shell to read the log back.
+  name: flash log backend sample
+tests:
+  sample.logging.flash_backend:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags: logging
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - Severity levels showcase
