@@ -7,10 +7,10 @@ if FUEL_GAUGE
 
 # Composite fuel gauge gets battery voltage from ADC-based voltage-divider sensor
 
-config ADC
+configdefault ADC
 	default y
 
-config SENSOR
+configdefault SENSOR
 	default y
 
 endif # FUEL_GAUGE
@@ -25,10 +25,10 @@ choice LV_Z_RENDERING_MODE
 	default LV_Z_FULL_REFRESH
 endchoice
 
-config LV_Z_VDB_CUSTOM_SECTION
+configdefault LV_Z_VDB_CUSTOM_SECTION
 	default y
 
-config ESP_SPIRAM
+configdefault ESP_SPIRAM
 	default y
 
 endif # LVGL
