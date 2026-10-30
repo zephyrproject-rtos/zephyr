@@ -7,6 +7,16 @@ config COUNTER_INFINEON_TCPWM
 	bool "Infineon TCPWM counter driver"
 	default y
 	depends on DT_HAS_INFINEON_TCPWM_COUNTER_ENABLED
+	depends on !COUNTER_INFINEON_TCPWM_GRP
 	select USE_INFINEON_TIMER
 	help
 	  This option enables the TCPWM counter driver for Infineon devices.
+
+config COUNTER_INFINEON_TCPWM_GRP
+	bool "Infineon TCPWM group counter driver"
+	default y
+	depends on DT_HAS_INFINEON_TCPWM_COUNTER_ENABLED
+	depends on !SOC_FAMILY_INFINEON_PSOC4
+	select CLOCK_CONTROL
+	help
+	  Register-level counter driver for the Infineon TCPWM peripheral.
