@@ -36,7 +36,8 @@ void tc_unattached_src_entry(void *obj)
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 
 	/* Start DRP toggle timer with tDRP Source time */
-	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, TC_T_DRP_SRC_MS);
+	tc_drp_cycle_draw(tc);
+	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, tc->drp_src_window_ms);
 #endif
 }
 
@@ -172,10 +173,20 @@ enum smf_state_result tc_attach_wait_src_run(void *obj)
 	if (tcpc_is_cc_at_least_one_rd(tc->cc1, tc->cc2)) {
 		/* UFP attached */
 		new_cc_state = TC_CC_UFP_ATTACHED;
-	} else {
-		/* No UFP */
+	} else if (tcpc_is_cc_open(tc->cc1, tc->cc2)) {
+		/*
+		 * SRC.Open: a DRP goes to Unattached.SNK,
+		 * a Source to Unattached.SRC (USB Type-C 4.5.2.2.8.2)
+		 */
+#ifdef CONFIG_USBC_CSM_DRP
+		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
+#else
 		tc_set_state(dev, TC_UNATTACHED_SRC_STATE);
+#endif
 		return SMF_EVENT_HANDLED;
+	} else {
+		/* Neither SRC.Rd nor SRC.Open */
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	/* Debounce the cc state */
