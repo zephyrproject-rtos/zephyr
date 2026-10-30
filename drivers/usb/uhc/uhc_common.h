@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +14,27 @@
 #define ZEPHYR_INCLUDE_UHC_COMMON_H
 
 #include <zephyr/drivers/usb/uhc.h>
+
+/**
+ * @brief Transfer types selectable by uhc_xfer_get_next().
+ *
+ * Combine values with bitwise OR to select multiple transfer types.
+ */
+enum uhc_xfer_mask {
+	UHC_XFER_MASK_CONTROL = BIT(USB_EP_TYPE_CONTROL),     /**< Control transfers. */
+	UHC_XFER_MASK_ISO = BIT(USB_EP_TYPE_ISO),             /**< Isochronous transfers. */
+	UHC_XFER_MASK_BULK = BIT(USB_EP_TYPE_BULK),           /**< Bulk transfers. */
+	UHC_XFER_MASK_INTERRUPT = BIT(USB_EP_TYPE_INTERRUPT), /**< Interrupt transfers. */
+	/** Periodic transfers: interrupt or isochronous. */
+	UHC_XFER_MASK_PERIODIC = UHC_XFER_MASK_INTERRUPT | UHC_XFER_MASK_ISO,
+	/** Non-periodic transfers: control or bulk. */
+	UHC_XFER_MASK_NON_PERIODIC = UHC_XFER_MASK_CONTROL | UHC_XFER_MASK_BULK,
+	/** All transfer types. */
+	UHC_XFER_MASK_ALL = UHC_XFER_MASK_PERIODIC | UHC_XFER_MASK_NON_PERIODIC,
+};
+
+/** Transfer filtering function used in uhc_xfer_get_next(). */
+typedef bool (*uhc_xfer_filter_func_t)(const struct uhc_transfer *xfer, void *priv);
 
 /**
  * @brief Get driver's private data
@@ -59,6 +81,42 @@ static inline int uhc_unlock_internal(const struct device *dev)
 }
 
 /**
+ * @brief Compare microframe numbers of xfers to determine which one should be sent first.
+ *
+ * @return Negative value if a < b, positive if a > b, 0 if a == b
+ */
+static inline int32_t xfer_seq_cmp(uint32_t a, uint32_t b)
+{
+	/*
+	 * Use serial-number arithmetic for the unsigned 32-bit microframe counter. The
+	 * wrapped subtraction is interpreted as a signed delta, so values just
+	 * after rollover compare newer than values just before it. Comparisons
+	 * are meaningful only within half the counter range.
+	 */
+	return (int32_t)(a - b);
+}
+
+/**
+ * @brief Convert from bInterval value from USB descriptors to number of microframe ticks
+ *
+ * The microframe ticks are in 125 us units.
+ *
+ * @return The value in microframes ticks.
+ */
+uint32_t uhc_xfer_bInterval_to_microframe(const struct usb_device *const udev,
+					  uint16_t bInterval, uint8_t ep_type);
+
+/**
+ * @brief Encode a number of microframe ticks into a bInterval as used in USB descriptors
+ *
+ * The microframe ticks are in 125 us units.
+ *
+ * @return The bInterval value.
+ */
+uint32_t uhc_xfer_microframe_to_bInterval(const struct usb_device *const udev,
+					  uint32_t microframe_interval, uint8_t ep_type);
+
+/**
  * @brief Helper function to return UHC transfer to a higher level.
  *
  * Function to dequeue transfer and send UHC event to a higher level.
@@ -74,25 +132,47 @@ void uhc_xfer_return(const struct device *dev,
 /**
  * @brief Helper to get next transfer to process.
  *
- * This is currently a draft, and simple picks a transfer
- * from the lists.
+ * Return the next transfer that matches the provided mask and is accepted by
+ * the optional filter function. Move the selected transfer to the active list.
  *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @return pointer to the next transfer or NULL on error.
+ * If the mask matches more than one transfer type, prioritize transfers in this order:
+ *
+ * - Most-overdue eligible periodic transfer, either interrupt or isochronous.
+ * - Control transfer.
+ * - Bulk transfer.
+ *
+ * To use a different priority order, call this function multiple times with masks that each
+ * match only one transfer type.
+ *
+ * @param[in] dev          Pointer to device struct of the driver instance.
+ * @param[in] microframe   Current USB microframe number used to determine transfer eligibility.
+ * @param[in] mask         Bitmask of transfer types to consider. Combine UHC_XFER_MASK_* values
+ *                         with bitwise OR to select multiple transfer types.
+ * @param[in] filter       Optional function for further filtering transfers selected by @p mask.
+ *                         Return `true` to accept a transfer or `false` to skip it. Set to `NULL`
+ *                         to accept the first transfer selected by @p mask.
+ * @param[in] priv         Private data passed unchanged to @p filter. May be `NULL`.
+ *
+ * @return Next eligible transfer, or `NULL` if there are no pending matching non-periodic
+ *         transfers, no matching periodic transfer is due, or all otherwise eligible transfers
+ *         are rejected by @p filter.
  */
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev);
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe,
+				       enum uhc_xfer_mask mask, uhc_xfer_filter_func_t filter,
+				       void *priv);
 
 /**
  * @brief Helper to append a transfer to internal list.
  *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] xfer   Pointer to UHC transfer
+ * @param[in] dev          Pointer to device struct of the driver instance
+ * @param[in] xfer         Pointer to UHC transfer
+ * @param[in] microframe   Microframe number used to determine transfer eligibility.
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -ENOMEM if there is no buffer in the queue
  */
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer);
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer,
+		    uint32_t microframe);
 
 /**
  * @brief Helper function to send UHC event to a higher level.

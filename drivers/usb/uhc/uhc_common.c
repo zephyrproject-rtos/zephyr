@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,27 +56,131 @@ void uhc_xfer_return(const struct device *dev,
 	(void)uhc_xfer_unref(xfer);
 }
 
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
+/* Already locked by caller */
+static struct uhc_transfer *uhc_xfer_get_next_periodic(const struct device *dev,
+						       uint32_t microframe_number,
+						       enum uhc_xfer_mask mask,
+						       uhc_xfer_filter_func_t filter, void *priv)
 {
 	struct uhc_data *data = dev->data;
-	struct uhc_transfer *xfer;
 	sys_dnode_t *node;
+	struct uhc_transfer *xfer;
 
-	/* Draft, WIP */
-	node = sys_dlist_peek_head(&data->ctrl_xfers);
-	if (node == NULL) {
-		node = sys_dlist_peek_head(&data->bulk_xfers);
+	for (node = sys_dlist_peek_tail(&data->periodic_xfers); node != NULL;
+	     node = sys_dlist_peek_prev(&data->periodic_xfers, node)) {
+		xfer = SYS_DLIST_CONTAINER(node, xfer, node);
+
+		if (xfer_seq_cmp(xfer->start_microframe, microframe_number) > 0) {
+			break;
+		}
+
+		if ((BIT(xfer->type) & mask) == 0) {
+			continue;
+		}
+
+		if (filter == NULL || filter(xfer, priv)) {
+			return xfer;
+		}
 	}
 
-	return (node == NULL) ? NULL : SYS_DLIST_CONTAINER(node, xfer, node);
+	return NULL;
 }
 
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer)
+static struct uhc_transfer *uhc_xfer_get_next_non_periodic(const struct device *dev,
+						       sys_dlist_t *dlist,
+						       uhc_xfer_filter_func_t filter, void *priv)
+{
+	struct uhc_transfer *xfer = NULL;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(dlist, xfer, node) {
+		if (filter == NULL || filter(xfer, priv)) {
+			return xfer;
+		}
+	}
+
+	return NULL;
+}
+
+static void xfer_schedule_periodic(const struct device *dev,
+				  struct uhc_transfer *const xfer,
+				  const uint32_t current_microframe)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *item;
+
+	xfer->start_microframe = current_microframe;
+
+	/* Find the last position in the schedule for this address and endpoint */
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->periodic_xfers, item, node) {
+		if (xfer->udev->addr == item->udev->addr &&
+		    xfer->ep == item->ep &&
+		    xfer_seq_cmp(xfer->start_microframe, item->start_microframe) < 0) {
+			xfer->start_microframe = item->start_microframe;
+		}
+	}
+
+	/* Schedule it on the next interval after it */
+	xfer->start_microframe++;
+	xfer->start_microframe = ROUND_UP(xfer->start_microframe, xfer->microframe_interval);
+
+	/* Insert it at correct offset in the list */
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->periodic_xfers, item, node) {
+		if (xfer_seq_cmp(item->start_microframe, xfer->start_microframe) < 0) {
+			continue;
+		}
+		sys_dlist_insert(&item->node, &xfer->node);
+		return;
+	}
+
+	sys_dlist_append(&data->periodic_xfers, &xfer->node);
+}
+
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe_number,
+				       enum uhc_xfer_mask mask, uhc_xfer_filter_func_t filter,
+				       void *priv)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *xfer = NULL;
+
+	if (mask & UHC_XFER_MASK_PERIODIC) {
+		xfer = uhc_xfer_get_next_periodic(dev, microframe_number, mask, filter, priv);
+	}
+
+	if (xfer == NULL && mask & UHC_XFER_MASK_CONTROL) {
+		xfer = uhc_xfer_get_next_non_periodic(dev, &data->ctrl_xfers, filter, priv);
+	}
+
+	if (xfer == NULL && mask & UHC_XFER_MASK_BULK) {
+		xfer = uhc_xfer_get_next_non_periodic(dev, &data->bulk_xfers, filter, priv);
+	}
+
+	if (xfer != NULL) {
+		sys_dlist_remove(&xfer->node);
+		sys_dlist_append(&data->active_xfers, &xfer->node);
+	}
+
+	return xfer;
+}
+
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer,
+		    uint32_t current_microframe_number)
 {
 	struct uhc_data *data = dev->data;
 
-	sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+	switch (xfer->type) {
+	case USB_EP_TYPE_CONTROL:
+		sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+		break;
+	case USB_EP_TYPE_BULK:
+		sys_dlist_append(&data->bulk_xfers, &xfer->node);
+		break;
+	case USB_EP_TYPE_ISO:
+	case USB_EP_TYPE_INTERRUPT:
+		xfer_schedule_periodic(dev, xfer, 0);
+		break;
+	default:
+		LOG_ERR("Invalid xfer type: %d", xfer->type);
+	}
 
 	return 0;
 }
@@ -91,6 +196,75 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 	net_buf_unref(buf);
 }
 
+uint32_t uhc_xfer_bInterval_to_microframe(const struct usb_device *const udev,
+					  uint16_t bInterval, uint8_t ep_type)
+{
+	/* See USB 2.0 Specification Table 9-13 */
+	switch (udev->speed) {
+	case USB_SPEED_SPEED_SS:
+	case USB_SPEED_SPEED_HS:
+		if (!IN_RANGE(bInterval, 1, 16)) {
+			LOG_ERR("Invalid bInterval %u, not in range [1, 16]", bInterval);
+			bInterval = CLAMP(bInterval, 1, 16);
+		}
+
+		/* 2^(bInterval - 1) * 125 us */
+		return 1U << (bInterval - 1);
+
+	case USB_SPEED_SPEED_FS:
+		if (ep_type == USB_EP_TYPE_ISO) {
+			if (!IN_RANGE(bInterval, 1, 16)) {
+				LOG_ERR("Invalid bInterval %u, not in range [1, 16]", bInterval);
+				bInterval = CLAMP(bInterval, 1, 16);
+			}
+
+			/* 2^(bInterval - 1) * 1 ms */
+			return (1U << (bInterval - 1)) * 8;
+		} else {
+			if (!IN_RANGE(bInterval, 10, 255)) {
+				LOG_WRN("Invalid bInterval %u, not in range [10, 255]", bInterval);
+				bInterval = CLAMP(bInterval, 10, 255);
+			}
+
+			return bInterval * 8;
+		}
+		break;
+	case USB_SPEED_SPEED_LS:
+	case USB_SPEED_UNKNOWN:
+		if (!IN_RANGE(bInterval, 10, 255)) {
+			LOG_WRN("Invalid bInterval %u, not in range [10, 255]", bInterval);
+			bInterval = CLAMP(bInterval, 10, 255);
+		}
+
+		return bInterval * 8;
+	}
+
+	return 0;
+}
+
+uint32_t uhc_xfer_microframe_to_bInterval(const struct usb_device *const udev,
+					  uint32_t microframe_interval, uint8_t ep_type)
+{
+	/* See USB 2.0 Specification Table 9-13 */
+	switch (udev->speed) {
+	case USB_SPEED_SPEED_SS:
+	case USB_SPEED_SPEED_HS:
+		/* inverse of 2^(bInterval - 1) * 125 us */
+		return LOG2(microframe_interval) + 1;
+	case USB_SPEED_SPEED_FS:
+		if (ep_type == USB_EP_TYPE_ISO) {
+			/* inverse of 2^(bInterval - 1) * 1 ms */
+			return LOG2(microframe_interval / 8) - 1;
+		}
+		return microframe_interval / 8;
+	case USB_SPEED_SPEED_LS:
+	case USB_SPEED_UNKNOWN:
+		return microframe_interval / 8;
+	}
+
+	return 0;
+}
+
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
@@ -101,7 +275,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_transfer *xfer = NULL;
 	uint16_t mps;
-	uint16_t interval;
+	uint16_t bInterval;
 	uint8_t type;
 
 	api->lock(dev);
@@ -111,7 +285,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	}
 
 	if (ep_idx == 0) {
-		interval = 0;
+		bInterval = 0;
 		type = USB_EP_TYPE_CONTROL;
 		mps = udev->dev_desc.bMaxPacketSize0;
 	} else {
@@ -129,7 +303,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		}
 
 		mps = ep_desc->wMaxPacketSize;
-		interval = ep_desc->bInterval;
+		bInterval = ep_desc->bInterval;
 		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
 	}
 
@@ -144,7 +318,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	sys_ref_init(&xfer->ref);
 	xfer->ep = ep;
 	xfer->mps = mps;
-	xfer->interval = interval;
+	xfer->microframe_interval = uhc_xfer_bInterval_to_microframe(udev, bInterval, type);
+	xfer->bInterval = bInterval;
 	xfer->type = type;
 	xfer->udev = udev;
 	xfer->cb = cb;
@@ -348,6 +523,8 @@ int uhc_init(const struct device *dev,
 	data->event_ctx = event_ctx;
 	sys_dlist_init(&data->ctrl_xfers);
 	sys_dlist_init(&data->bulk_xfers);
+	sys_dlist_init(&data->periodic_xfers);
+	sys_dlist_init(&data->active_xfers);
 
 	ret = api->init(dev);
 	if (ret == 0) {
