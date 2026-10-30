@@ -1,0 +1,7 @@
+tests:
+  drivers.fuel_gauge.ltc3337:
+    tags:
+      - fuel_gauge
+    filter: dt_compat_enabled("adi,ltc3337")
+    platform_allow:
+      - native_sim
