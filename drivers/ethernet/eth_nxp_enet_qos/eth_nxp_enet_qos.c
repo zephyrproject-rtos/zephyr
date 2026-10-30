@@ -570,8 +570,6 @@ static void tx_dma_done(const struct device *dev)
 		ARG_UNUSED(timestamp);
 #endif
 
-		eth_stats_update_pkts_tx(data->iface);
-
 		enet_qos_tx_free_pkt(pkt);
 	}
 
@@ -799,8 +797,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 				net_pkt_unref(pkt);
 				eth_stats_update_errors_rx(data->iface);
 			} else {
-				/* Record successfully received packet */
-				eth_stats_update_pkts_rx(data->iface);
+				/* The stack owns the packet now */
 			}
 			pkt = NULL;
 		}
