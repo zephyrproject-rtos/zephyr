@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(uaol_intel_adsp);
 #define XHCI_CLOCKS_PER_UFRAME			(XHCI_CLOCKS_PER_SEC / UAOL_UFRAMES_PER_SEC)
 
 #define UAOL_POWER_CHANGE_TIMEOUT_USEC		32000
-#define UAOL_STREAM_STATE_CHANGE_TIMEOUT_USEC	32000
+#define UAOL_STREAM_STOP_TIMEOUT_MAX_USEC	2500
 #define UAOL_FRAME_ADJUST_TIMEOUT_USEC		32000
 #define XHCI_MSG_TIMEOUT_USEC			10000
 
@@ -64,6 +64,7 @@ struct uaol_intel_adsp_data {
 	uint16_t art_divider_n;
 	struct stream_id_pair *stream_map;
 	size_t stream_map_length;
+	enum uaol_device_speed device_speed;
 };
 
 /* Helper macros for accessing registers */
@@ -172,6 +173,20 @@ struct xhci_hh_timestamp_msg {
 } __packed __aligned(4);
 
 static struct k_spinlock lock;
+
+/* The stream ID is used to compute register addresses, so it better be validated */
+static bool uaol_intel_adsp_is_stream_valid(const struct uaol_intel_adsp_data *dp, int stream)
+{
+	size_t i;
+
+	for (i = 0; i < dp->stream_map_length; i++) {
+		if (dp->stream_map[i].uaol_stream_id == stream) {
+			return true;
+		}
+	}
+
+	return false;
+}
 
 static bool uaol_intel_adsp_power_steady(const struct device *dev)
 {
@@ -422,9 +437,46 @@ static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 }
 
 /*
+ * Program the feedback stream paired with a playback @stream: its FIFO area,
+ * the HDA link stream it is read through and the feedback packet format.
+ */
+static void uaol_intel_adsp_program_feedback(const struct device *dev, int stream,
+					     const struct uaol_config *cfg)
+{
+	struct uaol_intel_adsp_data *dp = dev->data;
+	int fb_stream = cfg->feedback_stream;
+	uint16_t fifo_start_address;
+	union UAOLxPCMSyCTL pcms_ctl;
+
+	/*
+	 * Must match the host's receive FIFO layout.
+	 * TODO: consider receiving the feedback FSA from the host, as is done for
+	 * the audio stream FSA.
+	 */
+	fifo_start_address = stream * 8;
+	sys_write16(fifo_start_address, UAOLxPCMSyFSA_ADDR(dp, fb_stream));
+
+	sys_write16(cfg->feedback_hda_link_map, UAOLxPCMSyCM_ADDR(dp, fb_stream));
+
+	/* feedback packet is 3 bytes (10.14) at FS and 4 bytes (16.16) at HS */
+	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, fb_stream));
+	pcms_ctl.part.si = uaol_intel_adsp_encode_service_interval(cfg->feedback_service_interval);
+	pcms_ctl.part.ass = cfg->feedback_packet_size - 1;
+	pcms_ctl.part.asbs = cfg->feedback_packet_size;
+	pcms_ctl.part.aps = cfg->feedback_packet_size;
+	pcms_ctl.part.mps = cfg->feedback_packet_size;
+	pcms_ctl.part.pm = 1;
+	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, fb_stream));
+
+	LOG_INF("feedback stream %d for stream %d: FSA 0x%04x, CM 0x%04x, si %uus, mps %u",
+		fb_stream, stream, fifo_start_address, cfg->feedback_hda_link_map,
+		cfg->feedback_service_interval, cfg->feedback_packet_size);
+}
+
+/*
  * Program M/N rate adjustment for UAOL stream.
  */
-static void uaol_intel_adsp_program_rate_adjustment(const struct device *dev, int stream,
+static void uaol_intel_adsp_program_mn_rate_adjustment(const struct device *dev, int stream,
 						    uint32_t sample_rate,
 						    uint32_t service_interval_usec)
 {
@@ -465,18 +517,28 @@ static int uaol_intel_adsp_set_stream_state(const struct device *dev, int stream
 {
 	struct uaol_intel_adsp_data *dp = dev->data;
 	union UAOLxPCMSyCTL pcms_ctl;
-	uint32_t timeout = UAOL_STREAM_STATE_CHANGE_TIMEOUT_USEC;
+	uint32_t timeout;
 
 	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
-	if (pcms_ctl.part.sen != uaol_intel_adsp_get_sbusy(dev, stream)) {
+	if (start && (pcms_ctl.part.sen || uaol_intel_adsp_get_sbusy(dev, stream))) {
 		LOG_ERR("Unexpected stream state; SEN %d", pcms_ctl.part.sen);
 		return -EBUSY;
 	}
 	pcms_ctl.part.sen = start;
 	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 
-	if (!WAIT_FOR(uaol_intel_adsp_get_sbusy(dev, stream) == start, timeout, k_busy_wait(1))) {
-		LOG_ERR("Stream start/stop timeout; start %d", start);
+	if (start) {
+		return 0;
+	}
+
+	/* SBUSY drops within 2 service intervals of SEN being cleared; add a 3rd one as a margin */
+	timeout = 3 * (UAOL_SERVICE_INTERVAL_BASE_USEC << pcms_ctl.part.si);
+	if (timeout > UAOL_STREAM_STOP_TIMEOUT_MAX_USEC) {
+		/* too long to spin under the lock, the caller resets the stream */
+		return -EAGAIN;
+	}
+	if (!WAIT_FOR(!uaol_intel_adsp_get_sbusy(dev, stream), timeout, k_busy_wait(1))) {
+		LOG_WRN("Stream %d stop timeout (%u us)", stream, timeout);
 		return -ETIMEDOUT;
 	}
 
@@ -696,19 +758,25 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 		dp->is_initialized = true;
 	}
 
-	/* Program the FIFO Start Address Offset and Channel Mapping */
+	dp->device_speed = cfg->device_speed;
+
+	/* Program the FIFO Start Address Offset and the HDA link stream mapping */
 	sys_write16(cfg->fifo_start_offset, UAOLxPCMSyFSA_ADDR(dp, stream));
-	sys_write16(cfg->channel_map, UAOLxPCMSyCM_ADDR(dp, stream));
+	sys_write16(cfg->hda_link_map, UAOLxPCMSyCM_ADDR(dp, stream));
 
 	LOG_INF("stream %d: FSA 0x%04x, CM 0x%04x", stream, cfg->fifo_start_offset,
-		cfg->channel_map);
+		cfg->hda_link_map);
 
 	uaol_intel_adsp_program_format(dev, stream, cfg->sample_rate, cfg->channels,
 				       cfg->sample_bits, cfg->sio_credit_size,
 				       cfg->service_interval, cfg->direction);
 
-	uaol_intel_adsp_program_rate_adjustment(dev, stream, cfg->sample_rate,
+	uaol_intel_adsp_program_mn_rate_adjustment(dev, stream, cfg->sample_rate,
 						cfg->service_interval);
+
+	if (cfg->feedback_stream) {
+		uaol_intel_adsp_program_feedback(dev, stream, cfg);
+	}
 
 out:
 	k_spin_unlock(&lock, key);
@@ -758,7 +826,9 @@ static int uaol_intel_adsp_stop(const struct device *dev, int stream)
 
 	ret = uaol_intel_adsp_set_stream_state(dev, stream, false);
 	if (ret) {
-		LOG_WRN("Failed to stop stream (ret %d), resetting stream...", ret);
+		if (ret != -EAGAIN) {
+			LOG_WRN("Failed to stop stream (ret %d), resetting stream...", ret);
+		}
 		uaol_intel_adsp_reset_stream(dev, stream, true);
 		uaol_intel_adsp_reset_stream(dev, stream, false);
 		ret = 0;
@@ -866,12 +936,73 @@ static int uaol_intel_adsp_get_capabilities(const struct device *dev,
 	return ret;
 }
 
+/*
+ * Perform a one time rate adjustment for UAOL stream.
+ */
+static int uaol_intel_adsp_adjust_rate(const struct device *dev, int stream, bool increase)
+{
+	struct uaol_intel_adsp_data *dp = dev->data;
+	union UAOLxPCMSyRA pcms_ra;
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	/* stream may come from user space via a syscall and is used as a register offset */
+	if (!uaol_intel_adsp_is_stream_valid(dp, stream)) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&lock);
+
+	if (!dp->is_powered_up) {
+		ret = -EIO;
+		goto out;
+	}
+
+	pcms_ra.full = sys_read32(UAOLxPCMSyRA_ADDR(dp, stream));
+	pcms_ra.part.fbadir = increase ? 0 : 1;
+	pcms_ra.part.fbadj = 1;
+	sys_write32(pcms_ra.full, UAOLxPCMSyRA_ADDR(dp, stream));
+
+out:
+	k_spin_unlock(&lock, key);
+
+	return ret;
+}
+
+/*
+ * Convert raw feedback endpoint value to a frequency in Hz.
+ */
+static int uaol_intel_adsp_interpret_feedback_value(const struct device *dev, int stream,
+						     uint32_t feedback_value)
+{
+	struct uaol_intel_adsp_data *dp = dev->data;
+
+	ARG_UNUSED(stream);
+
+	switch (dp->device_speed) {
+	case UAOL_DEVICE_SPEED_FULL:
+		/* Full-speed: 24-bit value left-justified in a 32-bit container, encoded as
+		 * 10.14 fixed-point kHz. Return the frequency rounded to the nearest Hz.
+		 */
+		return (int)(((uint64_t)(feedback_value >> 8) * 1000 + BIT(13)) >> 14);
+	case UAOL_DEVICE_SPEED_HIGH:
+		/* High-speed: audio frames per HS microframe as 16.16 fixed-point.
+		 * Return the frequency rounded to the nearest Hz.
+		 */
+		return (int)(((uint64_t)feedback_value * UAOL_UFRAMES_PER_SEC + BIT(15)) >> 16);
+	default:
+		return -EINVAL;
+	}
+}
+
 static DEVICE_API(uaol, uaol_intel_adsp_api_funcs) = {
 	.config = uaol_intel_adsp_config,
 	.start = uaol_intel_adsp_start,
 	.stop = uaol_intel_adsp_stop,
 	.program_ep_table = uaol_intel_adsp_program_ep_table,
 	.get_capabilities = uaol_intel_adsp_get_capabilities,
+	.adjust_rate = uaol_intel_adsp_adjust_rate,
+	.interpret_feedback_value = uaol_intel_adsp_interpret_feedback_value,
 };
 
 /* Can be called anytime, e.g., before the device probe. */
