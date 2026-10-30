@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_EMUL_BRIDGE
+	bool "Emulated UART bridge"
+	default y
+	depends on DT_HAS_ZEPHYR_UART_EMUL_BRIDGE_ENABLED
+	depends on UART_EMUL
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Bridge a UART with the wire side of an emulated UART, so a terminal
+	  on the UART drives the console or shell running on the emulated one.
+
+config UART_EMUL_BRIDGE_BUF_SIZE
+	int "Bytes buffered towards the UART"
+	default 64
+	depends on UART_EMUL_BRIDGE
+	help
+	  Data from the emulated UART waits here until the UART transmits it.

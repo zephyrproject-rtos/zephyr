@@ -1,0 +1,20 @@
+sample:
+  name: Terminal on a display
+  description: Console, log messages and shell shown on a display
+common:
+  build_only: true
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - display
+    - logging
+    - shell
+tests:
+  sample.display.terminal: {}
+  sample.display.terminal.lvgl:
+    modules:
+      - lvgl
+    extra_args: EXTRA_CONF_FILE="lvgl.conf"

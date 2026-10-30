@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fake_display: fake-display {
+		compatible = "vnd,display-fake";
+		width = <128>;
+		height = <64>;
+	};
+
+	uart_console: uart-console {
+		compatible = "zephyr,uart-emul";
+		tx-fifo-size = <256>;
+	};
+
+	chosen {
+		zephyr,display = &fake_display;
+		zephyr,console = &uart_console;
+	};
+};
