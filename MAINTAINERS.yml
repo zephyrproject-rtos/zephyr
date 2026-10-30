@@ -3576,13 +3576,15 @@ Infineon AURIX Platforms:
     - parthitce
     - ssekar15
   files:
-    - soc/qemu/tricore/
+    - soc/infineon/aurix/
     - boards/qemu/tricore/
     - drivers/*/*aurix*
     - include/zephyr/drivers/*/*aurix*
+    - include/zephyr/dt-bindings/*/infineon-aurix*
     - dts/bindings/*/infineon,asclin*
     - dts/bindings/*/infineon,aurix*
     - dts/tricore/
+    - tests/drivers/*/infineon_aurix*/
   labels:
     - "platform: Infineon AURIX"
   description: >-

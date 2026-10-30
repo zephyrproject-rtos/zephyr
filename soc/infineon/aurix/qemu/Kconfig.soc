@@ -4,22 +4,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_TC3X
-	select TRICORE
-	select CPU_TC162
-	select AURIX_IR
-
-config SOC_SERIES_TC4X
-	select TRICORE
-	select CPU_TC18
-	select AURIX_IR
-	select CPU_HAS_FPU
-	select CPU_HAS_FPU_DOUBLE_PRECISION
-	select CPU_HAS_TRICORE_VIRTUALIZATION
-	imply FPU
-
 config SOC_QEMU_TC3X
+	bool
 	select SOC_SERIES_TC3X
 
 config SOC_QEMU_TC4X
+	bool
 	select SOC_SERIES_TC4X
+
+config SOC
+	default "qemu_tc3x" if SOC_QEMU_TC3X
+	default "qemu_tc4x" if SOC_QEMU_TC4X
