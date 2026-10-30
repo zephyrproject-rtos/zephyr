@@ -3,6 +3,7 @@ anytree
 awscli
 canopen
 clang-format>=15.0.0
+cwe2
 elasticsearch<9
 exceptiongroup>=1.0.0rc8
 gcovr==8.6
