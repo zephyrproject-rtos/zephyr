@@ -129,6 +129,15 @@ the I2C position (R98 and R103) is not populated.
 
 Default communication settings are **115200 8N1**.
 
+Flash
+=====
+
+The 128 KB code flash (``flash0``) is written in 128-byte rows. It has no separate erase
+operation: every row write erases the row first. Applications that store data define a
+partition at the end of the flash that the application image does not use, as in
+:zephyr_file:`tests/drivers/flash/common/boards/kit_psoc4_hvpa_144k_lite.overlay`, which uses
+the last 32 KB. The 8 KB data flash at 0x1F000000 is not supported.
+
 Power
 =====
 
