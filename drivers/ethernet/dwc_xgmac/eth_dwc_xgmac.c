@@ -16,18 +16,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define ETH_XGMAC_CHECK_RESET(inst) DT_NODE_HAS_PROP(DT_DRV_INST(inst), resets)
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
-#define UPDATE_ETH_STATS_TX_PKT_CNT(dev_data, incr)       (dev_data->stats.pkts.tx += incr)
-#define UPDATE_ETH_STATS_RX_PKT_CNT(dev_data, incr)       (dev_data->stats.pkts.rx += incr)
-#define UPDATE_ETH_STATS_TX_BYTE_CNT(dev_data, incr)      (dev_data->stats.bytes.sent += incr)
-#define UPDATE_ETH_STATS_RX_BYTE_CNT(dev_data, incr)      (dev_data->stats.bytes.received += incr)
 #define UPDATE_ETH_STATS_TX_ERROR_PKT_CNT(dev_data, incr) (dev_data->stats.errors.tx += incr)
 #define UPDATE_ETH_STATS_RX_ERROR_PKT_CNT(dev_data, incr) (dev_data->stats.errors.rx += incr)
 #define UPDATE_ETH_STATS_TX_DROP_PKT_CNT(dev_data, incr)  (dev_data->stats.tx_dropped += incr)
 #else
-#define UPDATE_ETH_STATS_TX_PKT_CNT(dev_data, incr)
-#define UPDATE_ETH_STATS_RX_PKT_CNT(dev_data, incr)
-#define UPDATE_ETH_STATS_TX_BYTE_CNT(dev_data, incr)
-#define UPDATE_ETH_STATS_RX_BYTE_CNT(dev_data, incr)
 #define UPDATE_ETH_STATS_TX_ERROR_PKT_CNT(dev_data, incr)
 #define UPDATE_ETH_STATS_RX_ERROR_PKT_CNT(dev_data, incr)
 #define UPDATE_ETH_STATS_TX_DROP_PKT_CNT(dev_data, incr)
@@ -657,7 +649,6 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 			if (rx_desc_data.rdes3 & XGMAC_RDES3_LD) {
 				LOG_DBG("%s: received LD buffer. descriptor indx = %d", dev->name,
 					rx_desc_meta->next_to_read);
-				UPDATE_ETH_STATS_RX_PKT_CNT(data, 1u);
 
 				if (!(rx_desc_data.rdes3 & XGMAC_RDES3_ES)) {
 					desc_data_len =
@@ -685,9 +676,6 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 							err);
 					} else {
 						LOG_DBG("%s: received a packet", dev->name);
-						UPDATE_ETH_STATS_RX_BYTE_CNT(
-							data,
-							net_pkt_get_len(rx_desc_meta->rx_pkt));
 					}
 				} else {
 					LOG_ERR("%s: rx packet error", dev->name);
@@ -1443,9 +1431,6 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	update_desc_tail_ptr(dev, context.q_id, (uint32_t)context.descmeta->desc_tail_addr);
 	/* unlock the TX desc ring */
 	(void)k_mutex_unlock(&(context.descmeta->ring_lock));
-
-	UPDATE_ETH_STATS_TX_BYTE_CNT(dev_data, pkt_len);
-	UPDATE_ETH_STATS_TX_PKT_CNT(dev_data, 1u);
 
 	return 0;
 
