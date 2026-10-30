@@ -1,0 +1,14 @@
+common:
+  ignore_faults: true
+tests:
+  kernel.lockdep.fatal:
+    tags:
+      - kernel
+      - debug
+      - lockdep
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32
+      - qemu_cortex_m3
+      - qemu_x86
+      - qemu_cortex_a53
+      - native_sim
