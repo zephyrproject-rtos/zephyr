@@ -7,3 +7,7 @@ project(stm32_clock_configuration_n6)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+if(DEFINED TEST_PLL_RATE)
+  target_compile_definitions(app PRIVATE TEST_PLL_RATE=${TEST_PLL_RATE})
+endif()

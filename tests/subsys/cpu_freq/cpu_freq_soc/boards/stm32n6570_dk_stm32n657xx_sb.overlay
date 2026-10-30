@@ -1,0 +1,52 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,system-timer = &lptim1;
+	};
+
+	performance-states {
+		pstate0 {
+			compatible = "st,stm32n6-pstate";
+			clock-frequency = <600000000>;
+			load-threshold = <60>;
+		};
+
+		pstate1 {
+			compatible = "st,stm32n6-pstate";
+			clock-frequency = <200000000>;
+			load-threshold = <40>;
+		};
+
+		pstate2 {
+			compatible = "st,stm32n6-pstate";
+			clock-frequency = <50000000>;
+			load-threshold = <20>;
+		};
+
+		pstate3 {
+			compatible = "st,stm32n6-pstate";
+			clock-frequency = <16000000>;
+			load-threshold = <0>;
+		};
+	};
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 9)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	st,prescaler = <1>;
+	status = "okay";
+};
+
+/* Fixed 2.4 GHz PLL1 parent, 600 MHz CPU boot rate. */
+&ic1 {
+	ic-div = <4>;
+};
+
+&cpusw {
+	clock-frequency = <600000000>;
+};

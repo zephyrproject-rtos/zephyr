@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_STM32N6_CPU_CLOCK_STRESS_ITERATIONS
+	int "CPU clock rate change stress iterations"
+	range 0 10000
+	default 0
+	help
+	  Number of additional CPU clock changes to run after the normal sweep.
+	  Set to 10000 for an extended hardware stress run.
