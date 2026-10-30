@@ -209,6 +209,8 @@ static struct bt_le_ext_adv *adv_new(void)
 		return NULL;
 	}
 
+	/* A timeout armed after the previous advertising ended can still be scheduled */
+	bt_le_lim_adv_cancel_timeout(adv);
 	(void)memset(adv, 0, sizeof(*adv));
 	atomic_set_bit(adv_pool[i].flags, BT_ADV_CREATED);
 	adv->handle = i;
@@ -790,6 +792,14 @@ static bool ad_is_limited(const struct bt_data *ad, size_t ad_len)
 	return false;
 }
 
+static inline bool adv_is_directed(const struct bt_le_ext_adv *adv)
+{
+	/* The advertiser is assumed to be directed when the peer address has
+	 * been set.
+	 */
+	return !bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY);
+}
+
 static int le_adv_update(struct bt_le_ext_adv *adv,
 			 const struct bt_data *ad, size_t ad_len,
 			 const struct bt_data *sd, size_t sd_len,
@@ -822,11 +832,34 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 	return 0;
 }
 
+#if defined(CONFIG_BT_LIM_ADV)
+static void adv_timeout(struct k_work *work);
+
+/* The timeout runs from when the advertising data got the flag */
+static void lim_adv_timeout_update(struct bt_le_ext_adv *adv, const struct bt_data *ad,
+				   size_t ad_len)
+{
+	/* Directed advertising ignores the data */
+	if (adv_is_directed(adv)) {
+		return;
+	}
+
+	if (!ad_is_limited(ad, ad_len)) {
+		bt_le_lim_adv_cancel_timeout(adv);
+	} else if (!k_work_delayable_is_pending(&adv->lim_adv_timeout_work)) {
+		k_work_init_delayable(&adv->lim_adv_timeout_work, adv_timeout);
+		bt_work_reschedule(&adv->lim_adv_timeout_work,
+				   K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
+	}
+}
+#endif /* CONFIG_BT_LIM_ADV */
+
 int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 			  const struct bt_data *sd, size_t sd_len)
 {
 	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
-	bool scannable;
+	struct bt_ad wrapper;
+	int err;
 
 	if (!adv) {
 		return -EINVAL;
@@ -836,9 +869,37 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 		return -EAGAIN;
 	}
 
-	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
+	/* Nothing would end the limited discoverable mode. Directed advertising
+	 * ignores the data.
+	 */
+	if (!IS_ENABLED(CONFIG_BT_LIM_ADV) && !adv_is_directed(adv) && ad_is_limited(ad, ad_len)) {
+		return -ENOTSUP;
+	}
 
-	return le_adv_update(adv, ad, ad_len, sd, sd_len, false, scannable);
+	wrapper.data = ad;
+	wrapper.len = ad_len;
+
+	err = set_ad(adv, &wrapper, 1);
+	if (err != 0) {
+		return err;
+	}
+
+#if defined(CONFIG_BT_LIM_ADV)
+	/* The Controller has the advertising data, also if the scan response then fails */
+	lim_adv_timeout_update(adv, ad, ad_len);
+#endif /* CONFIG_BT_LIM_ADV */
+
+	if (atomic_test_bit(adv->flags, BT_ADV_SCANNABLE)) {
+		wrapper.data = sd;
+		wrapper.len = sd_len;
+
+		err = set_sd(adv, &wrapper, 1);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	return 0;
 }
 
 static uint8_t get_filter_policy(uint32_t options)
@@ -874,14 +935,6 @@ static uint8_t get_adv_channel_map(uint32_t options)
 	}
 
 	return channel_map;
-}
-
-static inline bool adv_is_directed(const struct bt_le_ext_adv *adv)
-{
-	/* The advertiser is assumed to be directed when the peer address has
-	 * been set.
-	 */
-	return !bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY);
 }
 
 static bool adv_is_high_duty_dir(const struct bt_le_ext_adv *adv)
@@ -1077,6 +1130,11 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 			return err;
 		}
 	}
+
+	/* Advertising that ended can have left its timeout scheduled. Cancelled only here, as a
+	 * start that fails earlier leaves advertising paused for an address update as it was.
+	 */
+	bt_le_lim_adv_cancel_timeout(adv);
 
 	err = bt_le_adv_set_enable(adv, true);
 	if (err) {
@@ -1391,8 +1449,6 @@ static int adv_start_ext(struct bt_le_ext_adv *adv,
 }
 
 #if defined(CONFIG_BT_LIM_ADV)
-static void adv_timeout(struct k_work *work);
-
 void bt_le_lim_adv_cancel_timeout(struct bt_le_ext_adv *adv)
 {
 	(void)k_work_cancel_delayable(&adv->lim_adv_timeout_work);
@@ -1427,19 +1483,20 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		err = adv_start_legacy(adv, param, ad, ad_len, sd, sd_len);
 	}
 
-	if (err) {
+	if (err != 0) {
 		bt_le_adv_delete_legacy();
+		return err;
 	}
 
 #if defined(CONFIG_BT_LIM_ADV)
-	if (ad_is_limited(ad, ad_len)) {
+	if (param->peer == NULL && ad_is_limited(ad, ad_len)) {
 		k_work_init_delayable(&adv->lim_adv_timeout_work, adv_timeout);
 		bt_work_reschedule(&adv->lim_adv_timeout_work,
 				   K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
 	}
 #endif /* CONFIG_BT_LIM_ADV */
 
-	return err;
+	return 0;
 }
 
 int bt_le_adv_stop(void)
@@ -1681,6 +1738,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 	err = bt_le_adv_set_enable_ext(adv, true, param);
 	if (err) {
 		LOG_ERR("Failed to start advertiser");
+		atomic_clear_bit(adv->flags, BT_ADV_LIMITED);
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);

@@ -298,12 +298,13 @@ config BT_LIM_ADV
 	default y
 	depends on BT_BROADCASTER
 	help
-	  Stop advertising that bt_le_adv_start() started with the
-	  BT_LE_AD_LIMITED flag in its advertising data after
-	  BT_LIM_ADV_TIMEOUT seconds, as the limited discoverable mode
-	  requires. Without this option bt_le_adv_start() rejects such
-	  advertising data with -ENOTSUP, and each advertising set does
-	  without the timer for it.
+	  Stop advertising BT_LIM_ADV_TIMEOUT seconds after bt_le_adv_start()
+	  or bt_le_adv_update_data() gave its advertising data the
+	  BT_LE_AD_LIMITED flag, as the limited discoverable mode requires.
+	  Without this option both functions reject such advertising data
+	  with -ENOTSUP, and each advertising set does without the timer for
+	  it. The bt_le_ext_adv_*() functions do not use the timer: their
+	  limit is the timeout or event count given to bt_le_ext_adv_start().
 
 config BT_LIM_ADV_TIMEOUT
 	int "Timeout for limited advertising in 1s units"
