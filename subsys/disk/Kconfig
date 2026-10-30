@@ -9,6 +9,13 @@ menuconfig DISK_ACCESS
 
 if DISK_ACCESS
 
+config DISK_PARTITION
+	bool "MBR/GPT FAT volume discovery helpers"
+	default y if DISK_DRIVER_SCSI
+	help
+	  MBR/GPT walk and FAT/exFAT volume discovery on block media. Default y
+	  when DISK_DRIVER_SCSI is enabled.
+
 module = DISK
 module-str = disk
 source "subsys/logging/Kconfig.template.log_config"
