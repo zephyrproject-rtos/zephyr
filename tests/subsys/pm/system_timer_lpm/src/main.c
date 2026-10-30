@@ -42,9 +42,20 @@ static uint32_t lpm_threshold_ms;
 static atomic_t lpm_entries;
 static atomic_t lpm_exits;
 
+/* Deadline of the sleep in progress, less the tick the kernel may still owe and
+ * the exit latency PM wakes early by, and the entries that began before it.
+ */
+#define LPM_DUE_GUARD_TICKS 2
+static uint32_t lpm_due_guard_ticks;
+static volatile int64_t lpm_due_ticks;
+static atomic_t lpm_entries_before_due;
+
 static void lpm_state_entry(enum pm_state state)
 {
 	ARG_UNUSED(state);
+	if (k_uptime_ticks() < lpm_due_ticks) {
+		atomic_inc(&lpm_entries_before_due);
+	}
 	atomic_inc(&lpm_entries);
 }
 
@@ -63,6 +74,7 @@ static void reset_counters(void)
 {
 	atomic_clear(&lpm_entries);
 	atomic_clear(&lpm_exits);
+	atomic_clear(&lpm_entries_before_due);
 }
 
 /*
@@ -70,13 +82,14 @@ static void reset_counters(void)
  *
  * Elapsed uptime must be at least the request (never early) and overshoot by no
  * more than the exit latency, proving the companion kept time while the system
- * timer was stopped. Entry count: none below the threshold, exactly one above.
- * Skipped if nothing reached a low-power state.
+ * timer was stopped. Entry count: none below the threshold, exactly one before
+ * the sleep is due above it. Skipped if nothing reached a low-power state.
  */
 ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 {
 	const size_t count = ARRAY_SIZE(sleep_durations_ms);
 	int64_t elapsed[ARRAY_SIZE(sleep_durations_ms)];
+	int32_t before_due[ARRAY_SIZE(sleep_durations_ms)];
 	int32_t entries[ARRAY_SIZE(sleep_durations_ms)];
 	int32_t exits[ARRAY_SIZE(sleep_durations_ms)];
 	int32_t total_wakeups = 0;
@@ -86,10 +99,13 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 
 		reset_counters();
 		start = k_uptime_get();
+		lpm_due_ticks = k_uptime_ticks() +
+				k_ms_to_ticks_ceil32(sleep_durations_ms[i]) - lpm_due_guard_ticks;
 		k_msleep(sleep_durations_ms[i]);
 		elapsed[i] = k_uptime_get() - start;
 		entries[i] = (int32_t)atomic_get(&lpm_entries);
 		exits[i] = (int32_t)atomic_get(&lpm_exits);
+		before_due[i] = (int32_t)atomic_get(&lpm_entries_before_due);
 	}
 
 	for (size_t i = 0; i < count; i++) {
@@ -103,9 +119,9 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 				 "(expected 0)\n",
 				 requested, elapsed[i], entries[i]);
 		} else if (above) {
-			TC_PRINT("requested %u ms, elapsed %lld ms, wakeups %d "
+			TC_PRINT("requested %u ms, elapsed %lld ms, wakeups %d, %d before due "
 				 "(expected 1)\n",
-				 requested, elapsed[i], entries[i]);
+				 requested, elapsed[i], entries[i], before_due[i]);
 		} else {
 			TC_PRINT("requested %u ms, elapsed %lld ms, wakeups %d "
 				 "(near %u ms threshold)\n",
@@ -123,17 +139,23 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 			      "%d exits",
 			      requested, entries[i], exits[i]);
 
-		/* None below the threshold; exactly one above. */
+		/* The kernel may split the sleep, finishing the tick it still owed in a
+		 * second entry at the deadline.
+		 */
 		if (below) {
 			zassert_equal(entries[i], 0,
 				      "%u ms sleep made %d low-power entries, "
 				      "expected none",
 				      requested, entries[i]);
 		} else if (above) {
-			zassert_equal(entries[i], 1,
-				      "%u ms sleep made %d low-power entries, "
-				      "expected exactly 1",
-				      requested, entries[i]);
+			zassert_equal(before_due[i], 1,
+				      "%u ms sleep made %d low-power entries before it was "
+				      "due, expected exactly 1",
+				      requested, before_due[i]);
+			zassert_true(entries[i] - before_due[i] <= 1,
+				     "%u ms sleep made %d low-power entries after it was "
+				     "due, expected at most 1",
+				     requested, entries[i] - before_due[i]);
 		}
 
 		total_wakeups += entries[i];
@@ -174,6 +196,11 @@ static void *setup(void)
 	/* The shallowest state (lowest residency) sets the entry threshold. */
 	lpm_threshold_ms =
 		DIV_ROUND_UP(shallowest_residency_us + shallowest_exit_latency_us, 1000U);
+
+	/* PM brings the wake forward by the exit latency, so a split sleep's second
+	 * entry starts that far ahead of the deadline.
+	 */
+	lpm_due_guard_ticks = LPM_DUE_GUARD_TICKS + k_us_to_ticks_ceil32(deepest_exit_latency_us);
 
 	TC_PRINT("PM states %u, overshoot tolerance %u ms, low-power entry "
 		 "threshold %u ms\n",
