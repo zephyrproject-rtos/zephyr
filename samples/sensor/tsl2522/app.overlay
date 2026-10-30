@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Carl Zeiss Meditec AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		light-sensor = &tls2522_mikroe_ambient_25_click;
+	};
+};
+
+/*
+ * Set the measurement time to 250 µs (default of the TSL2522) and use 256
+ * samples for one measurement.
+ */
+&tls2522_mikroe_ambient_25_click {
+	measurement-time-steps = <180>;
+	number-of-samples = <256>;
+};
