@@ -48,6 +48,11 @@
 . = ALIGN( 0x80 );
 #endif
 
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+/* AArch32 VBAR bits [4:0] are RES0. */
+. = ALIGN( 0x20 );
+#endif
+
 _vector_start = .;
 KEEP(*(.exc_vector_table))
 KEEP(*(".exc_vector_table.*"))
