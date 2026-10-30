@@ -53,6 +53,11 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Networking
+
+  * ``CONFIG_HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE``, replaced by
+    :kconfig:option:`CONFIG_HTTP_HUFFMAN_DECODE_BUFFER_SIZE`.
+
 New APIs and options
 ====================
 ..
@@ -77,6 +82,12 @@ New APIs and options
     * :c:func:`bt_hids_report_set`
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
+
+* Networking
+
+  * Multiprotocol HTTP client (:kconfig:option:`CONFIG_HTTP_CLIENT_MULTIPROTOCOL`),
+    a new client API meant to cover HTTP/1.1, HTTP/2 and HTTP/3. HTTP/2 over TCP
+    and TLS is supported in this release.
 
 .. zephyr-keep-sorted-stop
 
