@@ -320,6 +320,86 @@ int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video
 int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct video_reg16 *regs,
 				size_t num_regs);
 
+/** Burst register entry supporting 8-bit or 16-bit address encoded with
+ *  CCI size flags and variable length data
+ */
+struct video_burst_reg {
+	/** Starting register address with CCI flags (e.g. VIDEO_REG_ADDR16_DATA8) */
+	uint32_t addr;
+	/** Number of contiguous registers / data bytes */
+	uint16_t num_regs;
+	/** Pointer to array of contiguous data bytes */
+	const uint8_t *data;
+};
+
+/** Burst register entry supporting 8-bit address and variable length data */
+struct video_burst_reg8 {
+	/** Starting 8-bit register address */
+	uint8_t addr;
+	/** Number of contiguous registers / data bytes */
+	uint8_t num_regs;
+	/** Pointer to array of contiguous data bytes */
+	const uint8_t *data;
+};
+
+/** Burst register entry supporting 16-bit address and variable length data */
+struct video_burst_reg16 {
+	/** Starting 16-bit register address */
+	uint16_t addr;
+	/** Number of contiguous registers / data bytes */
+	uint16_t num_regs;
+	/** Pointer to array of contiguous data bytes */
+	const uint8_t *data;
+};
+
+/** Macro to initialize a struct video_burst_reg element */
+#define VIDEO_BURST_REG(start_addr, ...)                                                           \
+	{                                                                                          \
+		.addr = (start_addr), .num_regs = sizeof((const uint8_t[]){__VA_ARGS__}),          \
+		.data = (const uint8_t[])                                                          \
+		{                                                                                  \
+			__VA_ARGS__                                                                \
+		}                                                                                  \
+	}
+
+/** Macro to initialize a struct video_burst_reg8 element */
+#define VIDEO_BURST_REG8(start_addr, ...)                                                          \
+	{                                                                                          \
+		.addr = (start_addr), .num_regs = sizeof((const uint8_t[]){__VA_ARGS__}),          \
+		.data = (const uint8_t[])                                                          \
+		{                                                                                  \
+			__VA_ARGS__                                                                \
+		}                                                                                  \
+	}
+
+/** Macro to initialize a struct video_burst_reg16 element */
+#define VIDEO_BURST_REG16(start_addr, ...)                                                         \
+	{                                                                                          \
+		.addr = (start_addr), .num_regs = sizeof((const uint8_t[]){__VA_ARGS__}),          \
+		.data = (const uint8_t[])                                                          \
+		{                                                                                  \
+			__VA_ARGS__                                                                \
+		}                                                                                  \
+	}
+
+/**
+ * @brief Write contiguous burst blocks for 16-bit register addresses using zero-copy.
+ */
+int video_write_cci_burst_multiregs16(const struct i2c_dt_spec *i2c,
+				      const struct video_burst_reg16 *regs, size_t num_blocks);
+
+/**
+ * @brief Write contiguous burst blocks for 8-bit register addresses using zero-copy.
+ */
+int video_write_cci_burst_multiregs8(const struct i2c_dt_spec *i2c,
+				     const struct video_burst_reg8 *regs, size_t num_blocks);
+
+/**
+ * @brief Write generic contiguous burst blocks using zero-copy.
+ */
+int video_write_cci_burst_multiregs(const struct i2c_dt_spec *i2c,
+				    const struct video_burst_reg *regs, size_t num_blocks);
+
 /**
  * @}
  */

@@ -466,3 +466,143 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 
 	return 0;
 }
+
+static int video_write_burst_retry(const struct i2c_dt_spec *i2c, struct i2c_msg *msgs,
+				   size_t num_msgs)
+{
+	int ret;
+
+	if (i2c == NULL || msgs == NULL) {
+		return -EINVAL;
+	}
+
+	for (int i = 0;; i++) {
+		ret = i2c_transfer_dt(i2c, msgs, num_msgs);
+		if (ret == 0) {
+			break;
+		}
+		if (i == CONFIG_VIDEO_I2C_RETRY_NUM) {
+			LOG_ERR("failed i2c write burst");
+			return ret;
+		}
+		if (CONFIG_VIDEO_I2C_RETRY_NUM > 0) {
+			k_sleep(K_MSEC(1));
+		}
+	}
+
+	return 0;
+}
+
+int video_write_cci_burst_multiregs16(const struct i2c_dt_spec *i2c,
+				      const struct video_burst_reg16 *regs, size_t num_blocks)
+{
+	uint8_t addr_be[2];
+	struct i2c_msg msgs[2] = {
+		{
+			.buf = addr_be,
+			.len = 2,
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.flags = I2C_MSG_WRITE | I2C_MSG_STOP,
+		},
+	};
+	int ret;
+
+	if (regs == NULL) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < num_blocks; i++) {
+		/* The address is always big-endian as per CCI standard */
+		sys_put_be16(regs[i].addr, addr_be);
+		msgs[1].buf = (uint8_t *)regs[i].data;
+		msgs[1].len = regs[i].num_regs;
+
+		ret = video_write_burst_retry(i2c, msgs, 2);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_write_cci_burst_multiregs8(const struct i2c_dt_spec *i2c,
+				     const struct video_burst_reg8 *regs, size_t num_blocks)
+{
+	uint8_t addr;
+	struct i2c_msg msgs[2] = {
+		{
+			.buf = &addr,
+			.len = 1,
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.flags = I2C_MSG_WRITE | I2C_MSG_STOP,
+		},
+	};
+	int ret;
+
+	if (regs == NULL) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < num_blocks; i++) {
+		addr = regs[i].addr;
+		msgs[1].buf = (uint8_t *)regs[i].data;
+		msgs[1].len = regs[i].num_regs;
+
+		ret = video_write_burst_retry(i2c, msgs, 2);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int video_write_cci_burst_multiregs(const struct i2c_dt_spec *i2c,
+				    const struct video_burst_reg *regs, size_t num_blocks)
+{
+	uint8_t addr_buf[4];
+	struct i2c_msg msgs[2] = {
+		{
+			.buf = addr_buf,
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.flags = I2C_MSG_WRITE | I2C_MSG_STOP,
+		},
+	};
+	int ret;
+
+	if (regs == NULL) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < num_blocks; i++) {
+		uint32_t reg_addr = regs[i].addr;
+		size_t addr_size = FIELD_GET(VIDEO_REG_ADDR_SIZE_MASK, reg_addr);
+		uint16_t addr = FIELD_GET(VIDEO_REG_ADDR_MASK, reg_addr);
+
+		if (addr_size == 1) {
+			addr_buf[0] = (uint8_t)addr;
+			msgs[0].len = 1;
+		} else {
+			/* The address is always big-endian as per CCI standard */
+			sys_put_be16(addr, addr_buf);
+			msgs[0].len = 2;
+		}
+
+		msgs[1].buf = (uint8_t *)regs[i].data;
+		msgs[1].len = regs[i].num_regs;
+
+		ret = video_write_burst_retry(i2c, msgs, 2);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
