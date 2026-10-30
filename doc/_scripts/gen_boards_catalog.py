@@ -309,7 +309,10 @@ def get_catalog(
                             locations.add("soc")
 
                     existing_feature = features.get(binding_type, {}).get(node.matching_compat)
-                    target_compatibles.add(node.matching_compat)
+                    for compat in node.compats:
+                        if compat.startswith("zephyr,") and board.name != "native_sim":
+                            continue
+                        target_compatibles.add(compat)
 
                     node_info = {
                         "filename": str(filename),
