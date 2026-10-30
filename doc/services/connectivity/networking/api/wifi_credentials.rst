@@ -24,7 +24,7 @@ You can pick the backend using the following options:
 
 * :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` - Default option for non-secure targets with the TF-M Protected Storage partition and for targets that enable :kconfig:option:`CONFIG_SECURE_STORAGE`.
   It stores credentials using the PSA Protected Storage API.
-* :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA` - Default option for other non-secure targets that include TF-M.
+* :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA` - Deprecated option for non-secure targets that include TF-M.
   It stores credentials as persistent keys using the PSA Crypto API.
   Enable it explicitly to keep using credentials stored by it before :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` became the default.
 * :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS` - Default option for other targets.
