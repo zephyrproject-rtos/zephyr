@@ -1,0 +1,6 @@
+board:
+  name: pico4ml_pro
+  full_name: Pico4ML-Pro
+  vendor: arducam
+  socs:
+  - name: rp2040
