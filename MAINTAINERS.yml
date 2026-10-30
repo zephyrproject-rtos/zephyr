@@ -5551,6 +5551,20 @@ RAKwireless Platforms:
   labels:
     - "platform: RAKwireless"
 
+RH850 arch:
+  status: maintained
+  maintainers:
+    - parthitce
+    - ssekar15
+  files:
+    - arch/rh850/
+    - cmake/compiler/*/target_rh850.cmake
+    - cmake/toolchain/rh850/
+    - dts/bindings/cpu/renesas,rh850*
+    - include/zephyr/arch/rh850/
+  labels:
+    - "area: RH850"
+
 RISCV Platforms:
   status: maintained
   maintainers:
@@ -5855,6 +5869,23 @@ Renesas RA Platforms:
   tests:
     - boards.renesas.elc.renesas_elc_api
     - sample.boards.renesas
+
+Renesas RH850 Platforms:
+  status: maintained
+  maintainers:
+    - parthitce
+    - ssekar15
+  files:
+    - boards/qemu/rh850/
+    - drivers/*/*renesas_rh850*
+    - dts/bindings/*/renesas,rh850-*
+    - dts/rh850/
+    - include/zephyr/drivers/*/*renesas_rh850*
+    - soc/renesas/rh850/
+  labels:
+    - "platform: Renesas RH850"
+  description: >-
+    Renesas RH850 SoC family (U2A, U2B, U2C), QEMU boards, devicetree and related drivers.
 
 Renesas RX Platform:
   status: maintained
