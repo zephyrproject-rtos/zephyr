@@ -37,6 +37,8 @@
 DEFINE_FLAG_STATIC(flag_connected);
 DEFINE_FLAG_STATIC(flag_disconnected);
 DEFINE_FLAG_STATIC(flag_set_report);
+DEFINE_FLAG_STATIC(flag_set_boot_report);
+DEFINE_FLAG_STATIC(flag_protocol_mode_changed);
 DEFINE_FLAG_STATIC(flag_ctrl_point);
 
 static struct bt_conn *server_conn;
@@ -47,6 +49,12 @@ static uint8_t set_report_id;
 static uint8_t set_report_data[CONFIG_BT_HIDS_MAX_REPORT_LEN];
 static uint16_t set_report_len;
 static uint8_t feature_value[TEST_FEATURE_REPORT_LEN];
+
+/* Last SET_REPORT of the Boot Keyboard Output Report, the only writable Boot
+ * Report
+ */
+static uint8_t set_boot_report_data[TEST_BOOT_KB_OUT_LEN];
+static uint16_t set_boot_report_len;
 
 /* The long Feature Report is filled with a sequence number the server changes
  * between the client's reads, so the client can tell one value from the next.
@@ -66,6 +74,7 @@ static void set_long_report(void)
 	TEST_ASSERT(err == 0, "Failed to set the long Feature Report: %d", err);
 }
 
+static enum bt_hids_protocol_mode last_protocol_mode;
 static enum bt_hids_ctrl_point last_ctrl_point;
 
 /* The HID Device informs the Host of its security requirements with the
@@ -136,6 +145,14 @@ static void set_report(struct bt_conn *conn, enum bt_hids_report_type report_typ
 	SET_FLAG(flag_set_report);
 }
 
+static void protocol_mode_changed(struct bt_conn *conn, enum bt_hids_protocol_mode protocol)
+{
+	ARG_UNUSED(conn);
+
+	last_protocol_mode = protocol;
+	SET_FLAG(flag_protocol_mode_changed);
+}
+
 static void ctrl_point(struct bt_conn *conn, enum bt_hids_ctrl_point cmd)
 {
 	ARG_UNUSED(conn);
@@ -144,8 +161,40 @@ static void ctrl_point(struct bt_conn *conn, enum bt_hids_ctrl_point cmd)
 	SET_FLAG(flag_ctrl_point);
 }
 
+static void verify_suspend_state(bool expected)
+{
+	bool suspended;
+	int err;
+
+	err = bt_hids_suspend_state_get(server_conn, &suspended);
+	TEST_ASSERT(err == 0, "Failed to get the Suspend state: %d", err);
+	TEST_ASSERT(suspended == expected, "Suspend state is %d", suspended);
+}
+
+/* The Boot Keyboard Output Report is the only writable Boot Report, and the
+ * service refuses a write of any length but its own, so the application only
+ * ever sees the fixed length.
+ */
+static void set_boot_report(struct bt_conn *conn, enum bt_hids_boot_report report,
+			    const uint8_t *data, uint16_t len)
+{
+	ARG_UNUSED(conn);
+
+	TEST_ASSERT(report == BT_HIDS_BOOT_REPORT_KEYBOARD_OUTPUT, "SET_REPORT of Boot Report %u",
+		    (unsigned int)report);
+	TEST_ASSERT(len == sizeof(set_boot_report_data), "SET_REPORT of %u octets, expected %zu",
+		    len, sizeof(set_boot_report_data));
+
+	(void)memcpy(set_boot_report_data, data, len);
+	set_boot_report_len = len;
+
+	SET_FLAG(flag_set_boot_report);
+}
+
 static const struct bt_hids_cb hids_cb = {
 	.set_report = set_report,
+	.set_boot_report = set_boot_report,
+	.protocol_mode_changed = protocol_mode_changed,
 	.ctrl_point = ctrl_point,
 };
 
@@ -183,6 +232,15 @@ static void send_input_report(void)
 	err = bt_hids_send_report(server_conn, TEST_REPORT_ID_INPUT, test_input_data,
 				  TEST_INPUT_REPORT_LEN, NULL, NULL);
 	TEST_ASSERT(err == 0, "Failed to notify the Input Report: %d", err);
+}
+
+static void send_boot_kb_in_report(void)
+{
+	int err;
+
+	err = bt_hids_boot_report_send(server_conn, BT_HIDS_BOOT_REPORT_KEYBOARD_INPUT,
+				       test_boot_kb_in_data, TEST_BOOT_KB_IN_LEN, NULL, NULL);
+	TEST_ASSERT(err == 0, "Failed to notify the Boot Keyboard Input Report: %d", err);
 }
 
 static void test_send_report_validation(void)
@@ -243,6 +301,43 @@ static void test_report_get_too_small(void)
 	for (size_t i = 0; i < sizeof(value); i++) {
 		TEST_ASSERT(value[i] == 0xAA, "Destination changed at %zu", i);
 	}
+}
+
+/* Every Boot Report has a fixed length of its own, so a payload of another Boot
+ * Report's length is refused. That is what tells the three Boot Report contexts
+ * apart on this side: a read tells them apart on the Host side.
+ */
+static void test_boot_report_validation(void)
+{
+	uint8_t value[TEST_BOOT_KB_IN_LEN];
+	uint16_t len;
+	int err;
+
+	/* Only the Boot Input Reports are notifiable */
+	err = bt_hids_boot_report_send(server_conn, BT_HIDS_BOOT_REPORT_KEYBOARD_OUTPUT,
+				       test_boot_kb_out_data, TEST_BOOT_KB_OUT_LEN, NULL, NULL);
+	TEST_ASSERT(err == -EINVAL, "Notified the Boot Keyboard Output Report: %d", err);
+
+	err = bt_hids_boot_report_send(server_conn, BT_HIDS_BOOT_REPORT_MOUSE_INPUT,
+				       test_boot_kb_in_data, TEST_BOOT_KB_IN_LEN, NULL, NULL);
+	TEST_ASSERT(err == -EINVAL, "Notified a Boot Mouse Input Report of %u octets: %d",
+		    TEST_BOOT_KB_IN_LEN, err);
+
+	err = bt_hids_boot_report_set(BT_HIDS_BOOT_REPORT_MOUSE_INPUT, test_boot_kb_in_data,
+				      TEST_BOOT_KB_IN_LEN);
+	TEST_ASSERT(err == -EINVAL, "Set a Boot Mouse Input Report of %u octets: %d",
+		    TEST_BOOT_KB_IN_LEN, err);
+
+	len = TEST_BOOT_MOUSE_IN_LEN - 1;
+	err = bt_hids_boot_report_get(BT_HIDS_BOOT_REPORT_MOUSE_INPUT, value, &len);
+	TEST_ASSERT(err == -ENOMEM, "Read a Boot Mouse Input Report into %u octets: %d", len, err);
+
+	len = sizeof(value);
+	err = bt_hids_boot_report_get(BT_HIDS_BOOT_REPORT_MOUSE_INPUT, value, &len);
+	TEST_ASSERT(err == 0, "Failed to read the Boot Mouse Input Report: %d", err);
+	TEST_ASSERT(len == TEST_BOOT_MOUSE_IN_LEN,
+		    "Boot Mouse Input Report of %u octets, expected %u", len,
+		    TEST_BOOT_MOUSE_IN_LEN);
 }
 
 static void verify_set_report(enum bt_hids_report_type report_type, uint8_t report_id,
@@ -306,8 +401,57 @@ static void test_register_validation(void)
 	TEST_ASSERT(err == -EINVAL, "Duplicate Feature Report ID accepted: %d", err);
 }
 
+/* The Protocol Mode and the Suspend state are per connection and reset to
+ * their default values every time a Host connects.
+ */
+static void verify_per_connection_defaults(void)
+{
+	enum bt_hids_protocol_mode mode;
+	int err;
+
+	err = bt_hids_protocol_mode_get(server_conn, &mode);
+	TEST_ASSERT(err == 0, "Failed to get the Protocol Mode: %d", err);
+	TEST_ASSERT(mode == BT_HIDS_PROTOCOL_REPORT, "Protocol Mode is %u", mode);
+
+	verify_suspend_state(false);
+}
+
+/* Both getters fail the same way when the service has no state for the Host */
+static void verify_conn_state_error(int expected)
+{
+	enum bt_hids_protocol_mode mode;
+	bool suspended;
+	int err;
+
+	err = bt_hids_protocol_mode_get(server_conn, &mode);
+	TEST_ASSERT(err == expected, "Got the Protocol Mode: %d, expected %d", err, expected);
+
+	err = bt_hids_suspend_state_get(server_conn, &suspended);
+	TEST_ASSERT(err == expected, "Got the Suspend state: %d, expected %d", err, expected);
+}
+
+static void test_conn_state_validation(void)
+{
+	enum bt_hids_protocol_mode mode;
+	bool suspended;
+	int err;
+
+	err = bt_hids_protocol_mode_get(NULL, &mode);
+	TEST_ASSERT(err == -EINVAL, "Got the Protocol Mode of no connection: %d", err);
+
+	err = bt_hids_protocol_mode_get(server_conn, NULL);
+	TEST_ASSERT(err == -EINVAL, "Got the Protocol Mode into NULL: %d", err);
+
+	err = bt_hids_suspend_state_get(NULL, &suspended);
+	TEST_ASSERT(err == -EINVAL, "Got the Suspend state of no connection: %d", err);
+
+	err = bt_hids_suspend_state_get(server_conn, NULL);
+	TEST_ASSERT(err == -EINVAL, "Got the Suspend state into NULL: %d", err);
+}
+
 static void test_hids_server(void)
 {
+	enum bt_hids_protocol_mode mode;
 	int err;
 
 	TEST_START("HID Service server test");
@@ -344,6 +488,10 @@ static void test_hids_server(void)
 			  sizeof(feature_value));
 	test_report_get_too_small();
 
+	err = bt_hids_boot_report_set(BT_HIDS_BOOT_REPORT_KEYBOARD_INPUT, test_boot_kb_in_stored,
+				      TEST_BOOT_KB_IN_LEN);
+	TEST_ASSERT(err == 0, "Failed to set the Boot Keyboard Input Report: %d", err);
+
 	err = bt_hids_register(&hids_param);
 	TEST_ASSERT(err == -EALREADY, "Registered the HID Service twice: %d", err);
 
@@ -352,7 +500,10 @@ static void test_hids_server(void)
 	/* The client has subscribed to the Input Report */
 	WAIT_FOR_FLAG(flag_connected);
 	bk_sync_wait();
+	verify_per_connection_defaults();
+	test_conn_state_validation();
 	test_send_report_validation();
+	test_boot_report_validation();
 
 	/* The client waits for this Input Report notification */
 	bk_sync_send();
@@ -383,6 +534,7 @@ static void test_hids_server(void)
 	WAIT_FOR_FLAG(flag_ctrl_point);
 	TEST_ASSERT(last_ctrl_point == BT_HIDS_CTRL_SUSPEND, "HID Control Point command %u",
 		    last_ctrl_point);
+	verify_suspend_state(true);
 	UNSET_FLAG(flag_ctrl_point);
 	bk_sync_send();
 
@@ -391,7 +543,45 @@ static void test_hids_server(void)
 	WAIT_FOR_FLAG(flag_ctrl_point);
 	TEST_ASSERT(last_ctrl_point == BT_HIDS_CTRL_EXIT_SUSPEND, "HID Control Point command %u",
 		    last_ctrl_point);
+	verify_suspend_state(false);
 	UNSET_FLAG(flag_ctrl_point);
+	bk_sync_send();
+
+	/* Switch to Boot Protocol Mode */
+	bk_sync_wait();
+	WAIT_FOR_FLAG(flag_protocol_mode_changed);
+	TEST_ASSERT(last_protocol_mode == BT_HIDS_PROTOCOL_BOOT, "Protocol Mode is %u",
+		    last_protocol_mode);
+	err = bt_hids_protocol_mode_get(server_conn, &mode);
+	TEST_ASSERT(err == 0, "Failed to get the Protocol Mode: %d", err);
+	TEST_ASSERT(mode == BT_HIDS_PROTOCOL_BOOT, "Protocol Mode is %u", mode);
+	UNSET_FLAG(flag_protocol_mode_changed);
+	bk_sync_send();
+
+	/* Back to Report Protocol Mode */
+	bk_sync_wait();
+	WAIT_FOR_FLAG(flag_protocol_mode_changed);
+	TEST_ASSERT(last_protocol_mode == BT_HIDS_PROTOCOL_REPORT, "Protocol Mode is %u",
+		    last_protocol_mode);
+	UNSET_FLAG(flag_protocol_mode_changed);
+	bk_sync_send();
+
+	/* The client has subscribed to the Boot Keyboard Input Report */
+	bk_sync_wait();
+	send_boot_kb_in_report();
+	bk_sync_send();
+
+	/* A write of the wrong length to the Boot Keyboard Output Report is
+	 * refused by the service, so only the one of the fixed length arrives
+	 */
+	bk_sync_wait();
+	WAIT_FOR_FLAG(flag_set_boot_report);
+	TEST_ASSERT(set_boot_report_len == TEST_BOOT_KB_OUT_LEN, "SET_REPORT of %u octets",
+		    set_boot_report_len);
+	TEST_ASSERT(memcmp(set_boot_report_data, test_boot_kb_out_data,
+			   TEST_BOOT_KB_OUT_LEN) == 0,
+		    "Boot Keyboard Output Report payload mismatch");
+	UNSET_FLAG(flag_set_boot_report);
 	bk_sync_send();
 
 	/* GET_REPORT of the Input Report. The service answers a read from the
@@ -426,6 +616,7 @@ static void test_hids_server(void)
 	/* The client has subscribed to the Input Report again */
 	WAIT_FOR_FLAG(flag_connected);
 	bk_sync_wait();
+	verify_per_connection_defaults();
 
 	bk_sync_send();
 	send_input_report();
@@ -447,6 +638,11 @@ static void test_hids_server(void)
 	err = bt_hids_send_report(server_conn, TEST_REPORT_ID_INPUT, test_input_data,
 				  TEST_INPUT_REPORT_LEN, NULL, NULL);
 	TEST_ASSERT(err == -ESRCH, "Notified after unregistering: %d", err);
+	verify_conn_state_error(-ESRCH);
+
+	err = bt_hids_boot_report_send(server_conn, BT_HIDS_BOOT_REPORT_KEYBOARD_INPUT,
+				       test_boot_kb_in_data, TEST_BOOT_KB_IN_LEN, NULL, NULL);
+	TEST_ASSERT(err == -ESRCH, "Notified a Boot Report after unregistering: %d", err);
 
 	err = bt_hids_unregister();
 	TEST_ASSERT(err == -EALREADY, "Unregistered the HID Service twice: %d", err);
@@ -454,14 +650,20 @@ static void test_hids_server(void)
 	/* Signal the client that unregistering is done and we are still connected. */
 	bk_sync_send();
 
-	/* Registering again while a Host is connected serves that Host the
-	 * same service, which the client reads.
+	/* The connected and security_changed callbacks have already run for
+	 * the Host, so registering again does not track it yet.
 	 */
 	err = bt_hids_register(&hids_param);
 	TEST_ASSERT(err == 0, "Failed to register the HID Service again: %d", err);
+	verify_conn_state_error(-ENOTCONN);
 
+	/* The client reads the Protocol Mode, which starts tracking the Host
+	 * with its state at the default values.
+	 */
 	bk_sync_send();
 	bk_sync_wait();
+
+	verify_per_connection_defaults();
 
 	/* The client closes the connection */
 	bk_sync_send();
