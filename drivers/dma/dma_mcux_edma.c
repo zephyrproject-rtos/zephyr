@@ -75,6 +75,8 @@ struct dma_mcux_channel_transfer_edma_settings {
 	volatile uint8_t write_idx;
 	/* How many TCDs in TCD pool is empty(can be used to write transfer parameters) */
 	volatile uint8_t empty_tcds;
+	/* TCD currently loaded in hardware, used to count completed cyclic TCDs. */
+	uint8_t active_tcd;
 };
 
 
@@ -204,6 +206,36 @@ static bool data_size_valid(const size_t data_size)
 	       (data_size <= CONFIG_DMA_MCUX_MAX_DATA_SIZE);
 }
 
+static uint8_t dma_mcux_edma_completed_tcds(edma_handle_t *handle, struct call_back *data,
+					    uint32_t channel)
+{
+	const uint32_t pool =
+		EDMA_MMAP_ADDR((uint32_t)(uintptr_t)&DEV_CFG(data->dev)->tcdpool[channel][0]);
+	const uint32_t next = EDMA_GetNextTCDAddress(handle);
+	const uint32_t pool_size = CONFIG_DMA_TCD_QUEUE_SIZE * sizeof(edma_tcd_t);
+	const uint8_t queued_tcds =
+		(uint8_t)(CONFIG_DMA_TCD_QUEUE_SIZE - data->transfer_settings.empty_tcds);
+	uint8_t completed_tcds = MIN(queued_tcds, (uint8_t)1U);
+
+	if (next >= pool && next < pool + pool_size && ((next - pool) % sizeof(edma_tcd_t)) == 0U) {
+		const uint8_t next_tcd = (next - pool) / sizeof(edma_tcd_t);
+		const uint8_t active_tcd =
+			(next_tcd + CONFIG_DMA_TCD_QUEUE_SIZE - 1U) % CONFIG_DMA_TCD_QUEUE_SIZE;
+
+		completed_tcds = (active_tcd + CONFIG_DMA_TCD_QUEUE_SIZE -
+				  data->transfer_settings.active_tcd) %
+				 CONFIG_DMA_TCD_QUEUE_SIZE;
+		if (completed_tcds == 0U) {
+			completed_tcds = queued_tcds;
+		} else {
+			completed_tcds = MIN(completed_tcds, queued_tcds);
+		}
+		data->transfer_settings.active_tcd = active_tcd;
+	}
+
+	return completed_tcds;
+}
+
 static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferDone,
 			      uint32_t tcds)
 {
@@ -212,10 +244,21 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 	uint32_t channel = dma_mcux_edma_remove_channel_gap(data->dev, handle->channel);
 
 	if (data->transfer_settings.cyclic) {
-		data->transfer_settings.empty_tcds++;
-		/*In loop mode, DMA is always busy*/
+		const uint8_t completed_tcds = dma_mcux_edma_completed_tcds(handle, data, channel);
+
+		if (completed_tcds == 0U) {
+			LOG_WRN("cyclic callback without a queued TCD");
+			return;
+		}
+
+		data->transfer_settings.empty_tcds += completed_tcds;
+		/* In loop mode, DMA is always busy. */
 		data->busy = true;
 		ret = DMA_STATUS_COMPLETE;
+		for (uint8_t i = 0U; i < completed_tcds; i++) {
+			data->dma_callback(data->dev, data->user_data, channel, ret);
+		}
+		return;
 	} else if (transferDone) {
 		/* DMA is no longer busy when there are no remaining TCDs to transfer */
 		data->busy = (handle->tcdPool != NULL) && (handle->tcdUsed > 0);
@@ -363,6 +406,7 @@ static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 	/* Loop SG mode */
 	data->transfer_settings.write_idx = 0;
 	data->transfer_settings.empty_tcds = CONFIG_DMA_TCD_QUEUE_SIZE;
+	data->transfer_settings.active_tcd = 0U;
 
 	EDMA_PrepareTransfer(
 		&data->transferConfig, (void *)(uintptr_t)block_config->source_address,
