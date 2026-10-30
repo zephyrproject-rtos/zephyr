@@ -64,6 +64,10 @@ static void tmp11x_handle_interrupt(const struct device *dev)
 		goto re_enable;
 	}
 
+	/* This read clears the status bits, so latch them for the sensor API calls */
+	data->alert_status |= config_reg & (TMP11X_CFGR_DATA_READY | TMP11X_CFGR_HIGH_ALERT |
+					    TMP11X_CFGR_LOW_ALERT);
+
 	/* Call the user's alert handler if registered */
 	if (data->alert_handler != NULL) {
 		data->alert_handler(dev, data->alert_trigger);
