@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_U2C
+
+config NUM_IRQS
+	default 630
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,ostm0,clock-frequency)
+
+endif # SOC_SERIES_U2C

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_RENESAS_RH850
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_RENESAS_RH850
