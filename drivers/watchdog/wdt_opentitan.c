@@ -13,12 +13,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_opentitan, CONFIG_WDT_LOG_LEVEL);
 
-#define OT_REG_WDOG_REGWEN_OFFSET 0x10
-#define OT_REG_WDOG_CTRL_OFFSET 0x14
-#define OT_REG_WDOG_BARK_THOLD_OFFSET 0x18
-#define OT_REG_WDOG_BITE_THOLD_OFFSET 0x1C
-#define OT_REG_WDOG_COUNT_OFFSET 0x20
-#define OT_REG_INTR_STATE_OFFSET 0x24
+#define OT_REG_WDOG_REGWEN_OFFSET     0x18
+#define OT_REG_WDOG_CTRL_OFFSET       0x1C
+#define OT_REG_WDOG_BARK_THOLD_OFFSET 0x20
+#define OT_REG_WDOG_BITE_THOLD_OFFSET 0x24
+#define OT_REG_WDOG_COUNT_OFFSET      0x28
+#define OT_REG_INTR_STATE_OFFSET      0x2C
 
 struct wdt_ot_aontimer_cfg {
 	uintptr_t regs;
