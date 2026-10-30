@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TLS on-device key generation sample"
+
+config NET_SAMPLE_SEC_TAG
+	int "Security tag"
+	default 42
+	help
+	  Security tag of the generated key, the device certificate and the CA certificate.
+
+config NET_SAMPLE_CSR_SUBJECT
+	string "Subject of the CSR"
+	default "CN=zephyr-device"
+
+config NET_SAMPLE_SERVER_ADDR
+	string "IPv4 address of the TLS server"
+	default "127.0.0.1"
+
+config NET_SAMPLE_SERVER_PORT
+	int "Port of the TLS server"
+	default 4433
+
+config NET_SAMPLE_SERVER_HOSTNAME
+	string "Hostname of the TLS server"
+	default "localhost"
+	help
+	  Must match the common name or a subject alternative name of the server certificate.
+
+source "Kconfig.zephyr"

@@ -1,0 +1,24 @@
+sample:
+  description: Generate a TLS device key and a CSR on the device
+  name: tls_keygen
+common:
+  tags:
+    - net
+    - socket
+    - tls
+    - tls_credentials
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  sample.net.sockets.tls_keygen:
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "-----BEGIN CERTIFICATE REQUEST-----"
+        - "-----END CERTIFICATE REQUEST-----"
+        - "Waiting for the certificates"

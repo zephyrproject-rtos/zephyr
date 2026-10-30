@@ -1,0 +1,19 @@
+common:
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - net
+    - tls_credentials
+tests:
+  net.tls_credentials.keygen: {}
+  net.tls_credentials.keygen.p256_only:
+    extra_configs:
+      - CONFIG_TLS_CREDENTIALS_KEYGEN_SECP384R1=n
+  net.tls_credentials.keygen.no_shell_commands:
+    extra_configs:
+      - CONFIG_TLS_CREDENTIALS_SHELL_KEYGEN=n
+  net.tls_credentials.keygen.custom_store:
+    extra_configs:
+      - CONFIG_TLS_CREDENTIALS_KEYGEN_KEY_STORE_CUSTOM=y
