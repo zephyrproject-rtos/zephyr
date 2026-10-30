@@ -122,6 +122,10 @@ m2_hci_uart: &lpuart2 {
 	status = "okay";
 };
 
+m2_hci_bt_uart: &lpuart2 {};
+
+m2_wifi_sdio: &usdhc1 {};
+
 &lpi2c5 {
 	pinctrl-0 = <&pinmux_lpi2c5>;
 	pinctrl-names = "default";
