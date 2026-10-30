@@ -284,10 +284,6 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	lll->handle = ll_conn_handle_get(conn);
 	rx->hdr.handle = lll->handle;
 
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
-
 	/* Use Channel Selection Algorithm #2 if peer too supports it */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 		struct node_rx_pdu *rx_csa;
@@ -385,11 +381,6 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 #else /* CONFIG_BT_CTLR_PHY */
 	ready_delay_us = lll_radio_rx_ready_delay_get(0U, 0U);
 #endif /* CONFIG_BT_CTLR_PHY */
-
-	lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
-	lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
-	lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
-	lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
 
 	/* Calculate event time reservation */
 	slot_us = max_rx_time + max_tx_time;
