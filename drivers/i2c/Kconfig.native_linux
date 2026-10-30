@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_NATIVE_LINUX
+	bool "Native Linux I2C controller"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_I2C_ENABLED
+	depends on ARCH_POSIX
+	select NATIVE_USE_NSI_ERRNO
+	select NATIVE_SIMULATOR_PREFER_REAL_TIME
+	help
+	  native_sim I2C controller backed by a host i2c-dev node.
+
+if I2C_NATIVE_LINUX
+
+config I2C_NATIVE_LINUX_IRQ
+	int "Interrupt number of the native Linux I2C controller"
+	default 4
+	help
+	  Raised when a transfer is done, shared by all instances. Must differ
+	  from the other interrupts of the board, such as NSOS_IRQ.
+
+config I2C_NATIVE_LINUX_POLL_PERIOD
+	int "Transfer completion poll period of the native Linux I2C controller"
+	default 250
+	range 1 1000000
+	help
+	  Simulated microseconds between checks for a finished transfer. A
+	  value much shorter than the real time period (--rt-period) gains
+	  nothing.
+
+config I2C_NATIVE_LINUX_BOUNCE_SIZE
+	int "Bounce buffer size of the native Linux I2C controller"
+	default 1024
+	range 2 65535
+	help
+	  Per-instance buffer for joining messages sent without RESTART.
+
+endif # I2C_NATIVE_LINUX

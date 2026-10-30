@@ -702,6 +702,38 @@ Here are more details on the peripherals that are currently provided with this b
 
   SocketCAN support can be enabled by using the :ref:`snippet-socketcan-native-sim`.
 
+**I2C controller**
+  Drives real devices on a host I2C adapter through its Linux i2c-dev node, see
+  :dtcompatible:`zephyr,native-linux-i2c`. The adapter must support plain I2C transfers, not only
+  SMBus ones.
+
+  The bus speed is set on the Linux side, by the adapter's own driver. This Zephyr driver does
+  not apply the given configuration to the adapter: it only stores it, and returns it when
+  :c:func:`i2c_get_config` is called.
+
+  Note the board ``i2c_host`` node is disabled by default, as the adapter number depends on the
+  host, so to use it, you will need an overlay. For example, for ``/dev/i2c-1`` with a sensor at
+  ``0x76``:
+
+  .. code-block:: dts
+
+      &i2c_host {
+        path = "/dev/i2c-1";
+        status = "okay";
+
+        sensor@76 {
+          compatible = "bosch,bme280";
+          reg = <0x76>;
+        };
+      };
+
+  ``--<device>_path=<path>`` overrides the path at run time, where ``<device>`` is the DT node
+  name (``i2c`` for the board node). The ``i2c-dev`` Linux kernel module must be loaded and the
+  node accessible to the user.
+
+  Transfers run on a host thread while simulated time goes on. Their end is seen up to one real
+  time period late, so use a short period (``--rt-period=1e-3``).
+
 **Fuel gauge**
 
   A fuel gauge driver is available for reading battery properties from a Linux
