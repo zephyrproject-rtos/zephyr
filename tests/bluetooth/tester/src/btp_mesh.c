@@ -338,9 +338,9 @@ static void blob_cli_caps(struct bt_mesh_blob_cli *cli,
 
 	LOG_DBG("Mesh BLOB: capabilities:");
 	LOG_DBG("\tMax BLOB size: %u bytes", caps->max_size);
-	LOG_DBG("\tBlock size: %u-%u (%u-%u bytes)", caps->min_block_size_log,
-		caps->max_block_size_log, 1 << caps->min_block_size_log,
-		1 << caps->max_block_size_log);
+	LOG_DBG("\tBlock size: %u-%u (%llu-%llu bytes)", caps->min_block_size_log,
+		caps->max_block_size_log, BIT64(caps->min_block_size_log),
+		BIT64(caps->max_block_size_log));
 	LOG_DBG("\tMax chunks: %u", caps->max_chunks);
 	LOG_DBG("\tChunk size: %u", caps->max_chunk_size);
 	LOG_DBG("\tMTU size: %u", caps->mtu_size);
