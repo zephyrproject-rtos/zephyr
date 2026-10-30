@@ -2173,7 +2173,7 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 	rp->status = status;
 }
 
-static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
+static void le_create_cis(struct net_buf *buf, struct net_buf **evt, void **node_rx)
 {
 	uint16_t handle_used[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP] = {0};
 	struct bt_hci_cp_le_create_cis *cmd = (void *)buf->data;
@@ -2235,7 +2235,7 @@ static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 
 		cis_handle = sys_le16_to_cpu(cmd->cis[i].cis_handle);
 		acl_handle = sys_le16_to_cpu(cmd->cis[i].acl_handle);
-		ll_cis_create(cis_handle, acl_handle);
+		ll_cis_create(cis_handle, acl_handle, node_rx);
 	}
 
 	*evt = cmd_status(status);
@@ -4690,7 +4690,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_set_cig_params_test(cmd, evt);
 		break;
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CIS):
-		le_create_cis(cmd, evt);
+		le_create_cis(cmd, evt, node_rx);
 		break;
 	case BT_OCF(BT_HCI_OP_LE_REMOVE_CIG):
 		le_remove_cig(cmd, evt);
