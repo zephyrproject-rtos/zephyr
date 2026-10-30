@@ -1379,7 +1379,7 @@ static DEVICE_API(display, sdl_display_api) = {
 #define HAS_COLOR_PALETTE(n) DT_NODE_EXISTS(DT_INST_CHILD(n, color_palette))
 
 #define DISPLAY_SDL_DEFINE(n)                                                                      \
-	COND_CODE_1(HAS_COLOR_PALETTE(n), (DISPLAY_COLOR_DITHER_DEFINE(n);), ())                   \
+	COND_CODE_1(HAS_COLOR_PALETTE(n), (DISPLAY_COLOR_DITHER_INST_DEFINE(n);), ())              \
 	static const struct sdl_display_config sdl_config_##n = {                                  \
 		.height = DT_INST_PROP(n, height),                                                 \
 		.width = DT_INST_PROP(n, width),                                                   \
@@ -1396,7 +1396,7 @@ static DEVICE_API(display, sdl_display_api) = {
 	K_MSGQ_DEFINE_STATIC_TYPE(sdl_task_msgq_##n, struct sdl_display_task, 1);                  \
 	static struct sdl_display_data sdl_data_##n = {                                            \
 		COND_CODE_1(HAS_COLOR_PALETTE(n),                                                  \
-			    (.color_dither = DISPLAY_COLOR_DITHER_INIT(n),), ())                   \
+			    (.color_dither = DISPLAY_COLOR_DITHER_INST_INIT(n),), ())              \
 		.current_pixel_format = DT_INST_PROP(n, pixel_format),                             \
 		.buf = sdl_buf_##n,                                                                \
 		.read_buf = sdl_read_buf_##n,                                                      \

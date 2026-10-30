@@ -534,6 +534,41 @@
 				bias = <3>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_mipi_dbi_st7306_rbw: st7306@2b {
+				compatible = "sitronix,st7306";
+				reg = <0x2b>;
+				mipi-max-frequency = <10000000>;
+				width = <312>;
+				height = <400>;
+				start-line = <0>;
+				start-column = <30>;
+				nvm-load = [17 02];
+				gate-voltages = [12 0a];
+				vsh = [73 3e 3c 3c];
+				vsl = [00 21 23 23];
+				vshn = [50 5c 5a 5a];
+				vsln = [50 35 37 37];
+				osc-settings = <0xa6>;
+				framerate = <0x05>;
+				multiplex-ratio = <0x64>;
+				source-voltage = <0x0>;
+				remap-value = <0x4>;
+				panel-settings = <0x29>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				te-mode = "MIPI_DBI_TE_FALLING_EDGE";
+				hpm-gate-waveform = [e5 f6 17 77 77 77 77 77 77 71];
+				mono-color = <1>;
+				color-mode = "RBW";
+
+				color-palette {
+					compatible = "zephyr,panel-color-palette";
+					colors = <ARGB8888(200, 200, 200, 255)
+						  ARGB8888(128, 0, 0, 255)
+						  ARGB8888(165, 200, 200, 255)
+						  ARGB8888(0, 0, 0, 255)>;
+				};
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {

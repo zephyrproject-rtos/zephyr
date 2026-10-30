@@ -447,7 +447,7 @@ static DEVICE_API(display, ac057tc1_api) = {
 #define AC057TC1_DEFINE(inst)                                                                      \
 	BUILD_ASSERT(CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE >=                                      \
 		     DT_PROP_LEN(DT_INST_CHILD(inst, color_palette), colors));                     \
-	DISPLAY_COLOR_DITHER_DEFINE(inst);                                                         \
+	DISPLAY_COLOR_DITHER_INST_DEFINE(inst);                                                    \
 	static const struct ac057tc1_config ac057tc1_cfg_##inst = {                                \
 		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
 		.dbi_config =                                                                      \
@@ -462,7 +462,7 @@ static DEVICE_API(display, ac057tc1_api) = {
 		.height = DT_INST_PROP(inst, height),                                              \
 	};                                                                                         \
 	static struct ac057tc1_data ac057tc1_data_##inst = {                                       \
-		.color_dither = DISPLAY_COLOR_DITHER_INIT(inst),                                   \
+		.color_dither = DISPLAY_COLOR_DITHER_INST_INIT(inst),                              \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, ac057tc1_pm_action);                                        \
 	DEVICE_DT_INST_DEFINE(inst, ac057tc1_init, PM_DEVICE_DT_INST_GET(inst),                    \
