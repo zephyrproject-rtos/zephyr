@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the RISC-V architecture.
+
+rules:
+  PMP_DATA_EXECUTION_PREVENTION:
+    value: y
+    rationale: |
+      Strips execute permission from all memory outside the code region with a locked PMP entry,
+      so a jump into a payload planted on a stack, heap or buffer faults even in machine mode.
+    references: [CWE-119]
+
+  PMP_UNLOCK_ROM_FOR_DEBUG:
+    value: n
+    rationale: |
+      Clears the lock bit on the code region's PMP entry so machine-mode debuggers can set
+      breakpoints. Machine-mode code can then reprogram that entry at run time and lift the write
+      protection on its own instructions.
+    references: [CWE-1244]
+
+  RISCV_PMP:
+    value: y
+    rationale: |
+      Programs the Physical Memory Protection unit, which the RISC-V port needs for stack guards,
+      user-mode isolation and non-executable data; without it every thread can read, write and
+      execute all of memory.
+    references: [CWE-119]
