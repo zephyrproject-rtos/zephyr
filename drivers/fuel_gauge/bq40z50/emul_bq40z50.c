@@ -65,6 +65,9 @@ static int emul_bq40z70_buffer_read(int reg, uint8_t *buf, size_t len)
 
 static int emul_bq40z50_write(const struct emul *target, uint8_t *buf, size_t len)
 {
+	if (len == 1) {
+		return 0;
+	}
 	LOG_ERR("Write operation is not currently supported");
 	return -EIO;
 }
@@ -193,7 +196,7 @@ static int emul_bq40z50_read(const struct emul *target, int reg, uint8_t *buf, s
 static int bq40z50_emul_transfer_i2c(const struct emul *target, struct i2c_msg *msgs, int num_msgs,
 				     int addr)
 {
-	int reg;
+	static int reg;
 	int rc;
 	const struct bq40z50_emul_cfg *cfg = (const struct bq40z50_emul_cfg *)(target->cfg);
 
@@ -208,10 +211,11 @@ static int bq40z50_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 	switch (num_msgs) {
 	case 1:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
-			return -EIO;
+			return emul_bq40z50_read(target, reg, msgs->buf, msgs->len);
 		}
-
+		if (msgs->len == 1) {
+			reg = msgs->buf[0];
+		}
 		return emul_bq40z50_write(target, msgs->buf, msgs->len);
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
