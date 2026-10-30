@@ -18,10 +18,9 @@ menuconfig TMP108
 
 if TMP108
 
-config TMP108_ALERT_INTERRUPTS
-	bool "Allow interrupts to service over and under temp alerts"
-	help
-	  This will set up interrupts to service under and over temp alerts
-	  see TMP108 spec sheet for more information on how these work.
+module = TMP108
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
 
 endif # TMP108
