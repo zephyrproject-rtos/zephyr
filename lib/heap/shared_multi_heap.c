@@ -63,7 +63,7 @@ int shared_multi_heap_add(struct shared_multi_heap_region *region, void *user_da
 	}
 
 	/* No more heaps available */
-	if (smh_data[attr].heap_cnt >= MAX_MULTI_HEAPS) {
+	if (shared_multi_heap.nheaps >= MAX_MULTI_HEAPS) {
 		return -ENOMEM;
 	}
 
