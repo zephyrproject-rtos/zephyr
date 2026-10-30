@@ -157,6 +157,10 @@ _oops:
     mov r1, #0
     mov r2, #0
     bl z_do_kernel_oops
+    /* An oops normally does not return, but fatal error handling may
+     * return in test mode. Exit the exception in that case.
+     */
+    b z_arm_cortex_ar_exit_exc
 
 inv:
     mov r0, #0 /* K_ERR_CPU_EXCEPTION */
