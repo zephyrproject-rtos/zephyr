@@ -28,6 +28,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/toolchain.h>
 
 #include "aics_internal.h"
@@ -37,12 +38,18 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_aics);
 
+ZASSERT_MODULE(DEFAULT); /* for BT_AUDIO_LOCK_ASSERT */
+
 #define VALID_AICS_OPCODE(opcode)                                              \
 	((opcode) >= BT_AICS_OPCODE_SET_GAIN && (opcode) <= BT_AICS_OPCODE_SET_AUTO)
 
 #define AICS_CP_LEN                 0x02U
 #define AICS_CP_SET_GAIN_LEN        0x03U
 
+/* Mutex that should guard all access to aics_insts and the individual instances in that array */
+static K_MUTEX_DEFINE(aics_mutex);
+
+#if defined(CONFIG_BT_AICS)
 
 static ssize_t write_description(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
@@ -54,7 +61,6 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 				  const void *buf, uint16_t len,
 				  uint16_t offset, uint8_t flags);
 
-#if defined(CONFIG_BT_AICS)
 static void aics_state_cfg_changed(const struct bt_gatt_attr *attr,
 				   uint16_t value);
 static ssize_t read_aics_state(struct bt_conn *conn,
@@ -128,13 +134,20 @@ static ssize_t read_aics_state(struct bt_conn *conn,
 			       uint16_t len, uint16_t offset)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	ssize_t ret;
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	LOG_DBG("gain %d, mute %u, gain_mode %s (0x%02X), counter %u", inst->srv.state.gain,
 		inst->srv.state.mute, bt_aics_mode_to_str(inst->srv.state.gain_mode),
 		inst->srv.state.gain_mode, inst->srv.state.change_counter);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.state,
-				 sizeof(inst->srv.state));
+	ret = bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.state,
+				sizeof(inst->srv.state));
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	return ret;
 }
 
 static ssize_t read_aics_gain_settings(struct bt_conn *conn,
@@ -142,24 +155,37 @@ static ssize_t read_aics_gain_settings(struct bt_conn *conn,
 				       void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	int ret;
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	LOG_DBG("units %u, min %d, max %d", inst->srv.gain_settings.units,
 		inst->srv.gain_settings.minimum, inst->srv.gain_settings.maximum);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &inst->srv.gain_settings,
-				 sizeof(inst->srv.gain_settings));
+	ret = bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.gain_settings,
+				sizeof(inst->srv.gain_settings));
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	return ret;
 }
 
 static ssize_t read_type(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	int ret;
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	LOG_DBG("%u", inst->srv.type);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.type,
-				 sizeof(inst->srv.type));
+	ret = bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.type,
+				sizeof(inst->srv.type));
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	return ret;
 }
 
 static void aics_input_status_cfg_changed(const struct bt_gatt_attr *attr,
@@ -175,11 +201,18 @@ static ssize_t read_input_status(struct bt_conn *conn,
 				 uint16_t len, uint16_t offset)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	ssize_t ret;
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	LOG_DBG("%u", inst->srv.status);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.status,
-				 sizeof(inst->srv.status));
+	ret = bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.status,
+				sizeof(inst->srv.status));
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	return ret;
 }
 
 static const char *aics_notify_str(enum bt_aics_notify notify)
@@ -201,6 +234,8 @@ static void notify_work_reschedule(struct bt_aics *inst, enum bt_aics_notify not
 {
 	int err;
 
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
+
 	atomic_set_bit(inst->srv.notify, notify);
 
 	err = k_work_reschedule(&inst->srv.notify_work, delay);
@@ -214,6 +249,8 @@ static void notify(struct bt_aics *inst, enum bt_aics_notify notify, const struc
 		   const void *data, uint16_t len)
 {
 	int err;
+
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
 
 	err = bt_gatt_notify_uuid(NULL, uuid, inst->srv.service_p->attrs, data, len);
 	if (err == -ENOMEM) {
@@ -229,6 +266,18 @@ static void notify_work_handler(struct k_work *work)
 {
 	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
 	struct bt_aics *inst = CONTAINER_OF(d_work, struct bt_aics, srv.notify_work);
+	int err;
+
+	err = k_mutex_lock(&aics_mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Mutex lock failed (%d), rescheduling", err);
+		err = k_work_reschedule(d_work, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+		if (err < 0) {
+			LOG_ERR("Failed to reschedule notification err %d", err);
+		}
+
+		return;
+	}
 
 	if (atomic_test_and_clear_bit(inst->srv.notify, AICS_NOTIFY_STATE)) {
 		notify(inst, AICS_NOTIFY_STATE, BT_UUID_AICS_STATE, &inst->srv.state,
@@ -244,6 +293,8 @@ static void notify_work_handler(struct k_work *work)
 		notify(inst, AICS_NOTIFY_STATUS, BT_UUID_AICS_INPUT_STATUS, &inst->srv.status,
 		       sizeof(inst->srv.status));
 	}
+
+	bt_audio_mutex_unlock(&aics_mutex);
 }
 
 static void value_changed(struct bt_aics *inst, enum bt_aics_notify notify)
@@ -293,6 +344,8 @@ static uint8_t valid_control_point_write(uint16_t len, uint16_t offset,
 static uint8_t handle_set_gain_op(struct bt_aics *inst, const struct bt_aics_gain_control *cp,
 				  bool *state_change)
 {
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
+
 	LOG_DBG("Set gain %d", cp->gain_setting);
 	if (cp->gain_setting < inst->srv.gain_settings.minimum ||
 	    cp->gain_setting > inst->srv.gain_settings.maximum) {
@@ -309,6 +362,8 @@ static uint8_t handle_set_gain_op(struct bt_aics *inst, const struct bt_aics_gai
 
 static uint8_t handle_unmute_op(struct bt_aics *inst, bool *state_change)
 {
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
+
 	LOG_DBG("Unmute");
 	if (inst->srv.state.mute == BT_AICS_STATE_MUTE_DISABLED) {
 		return BT_AICS_ERR_MUTE_DISABLED;
@@ -323,6 +378,8 @@ static uint8_t handle_unmute_op(struct bt_aics *inst, bool *state_change)
 
 static uint8_t handle_mute_op(struct bt_aics *inst, bool *state_change)
 {
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
+
 	LOG_DBG("Mute");
 
 	if (inst->srv.state.mute == BT_AICS_STATE_MUTE_DISABLED) {
@@ -339,6 +396,8 @@ static uint8_t handle_mute_op(struct bt_aics *inst, bool *state_change)
 
 static uint8_t handle_set_manual_mode_op(struct bt_aics *inst, bool *state_change)
 {
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
+
 	LOG_DBG("Set manual mode");
 
 	if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->srv.state.gain_mode)) {
@@ -354,6 +413,8 @@ static uint8_t handle_set_manual_mode_op(struct bt_aics *inst, bool *state_chang
 }
 static uint8_t handle_set_automatic_mode_op(struct bt_aics *inst, bool *state_change)
 {
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
+
 	LOG_DBG("Set automatic mode");
 
 	if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->srv.state.gain_mode)) {
@@ -368,16 +429,13 @@ static uint8_t handle_set_automatic_mode_op(struct bt_aics *inst, bool *state_ch
 	return BT_ATT_ERR_SUCCESS;
 }
 
-static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				  const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+static ssize_t aics_control_write(struct bt_aics *inst, const void *buf, uint16_t len,
+				  uint16_t offset, bool *state_change)
 {
-	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 	const struct bt_aics_gain_control *cp = buf;
-	bool state_change = false;
 	int ret;
 
-	ARG_UNUSED(conn);
-	ARG_UNUSED(flags);
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
 
 	ret = valid_control_point_write(len, offset, cp, inst->srv.state.change_counter);
 	if (ret != BT_ATT_ERR_SUCCESS) {
@@ -386,19 +444,19 @@ static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_att
 
 	switch (cp->cp.opcode) {
 	case BT_AICS_OPCODE_SET_GAIN:
-		ret = handle_set_gain_op(inst, cp, &state_change);
+		ret = handle_set_gain_op(inst, cp, state_change);
 		break;
 	case BT_AICS_OPCODE_UNMUTE:
-		ret = handle_unmute_op(inst, &state_change);
+		ret = handle_unmute_op(inst, state_change);
 		break;
 	case BT_AICS_OPCODE_MUTE:
-		ret = handle_mute_op(inst, &state_change);
+		ret = handle_mute_op(inst, state_change);
 		break;
 	case BT_AICS_OPCODE_SET_MANUAL:
-		ret = handle_set_manual_mode_op(inst, &state_change);
+		ret = handle_set_manual_mode_op(inst, state_change);
 		break;
 	case BT_AICS_OPCODE_SET_AUTO:
-		ret = handle_set_automatic_mode_op(inst, &state_change);
+		ret = handle_set_automatic_mode_op(inst, state_change);
 		break;
 	default:
 		ret = BT_AICS_ERR_OP_NOT_SUPPORTED;
@@ -408,7 +466,7 @@ static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_att
 		return BT_GATT_ERR(ret);
 	}
 
-	if (state_change) {
+	if (*state_change) {
 		inst->srv.state.change_counter++; /* May overflow which is OK */
 
 		LOG_DBG("New state: gain %d, mute %u, gain_mode %s (0x%02X), counter %u",
@@ -417,20 +475,46 @@ static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_att
 			inst->srv.state.change_counter);
 
 		value_changed(inst, AICS_NOTIFY_STATE);
-
-		if (inst->srv.cb && inst->srv.cb->state) {
-			inst->srv.cb->state(inst, 0, inst->srv.state.gain,
-					inst->srv.state.mute,
-					inst->srv.state.gain_mode);
-		} else {
-			LOG_DBG("Callback not registered for instance %p", inst);
-		}
 	}
 
 	return len;
 }
 
 #if defined(CONFIG_BT_AICS)
+static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				  const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	bt_aics_state_cb state_cb = NULL;
+	bool state_change = false;
+	uint8_t gain_mode = 0U;
+	uint8_t mute = 0U;
+	int8_t gain = 0;
+	ssize_t ret;
+
+	ARG_UNUSED(conn);
+	ARG_UNUSED(flags);
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
+
+	ret = aics_control_write(inst, buf, len, offset, &state_change);
+
+	if (state_change && inst->srv.cb != NULL && inst->srv.cb->state != NULL) {
+		state_cb = inst->srv.cb->state;
+		gain = inst->srv.state.gain;
+		mute = inst->srv.state.mute;
+		gain_mode = inst->srv.state.gain_mode;
+	}
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	if (state_cb != NULL) {
+		state_cb(inst, 0, gain, mute, gain_mode);
+	}
+
+	return ret;
+}
+
 static void aics_description_cfg_changed(const struct bt_gatt_attr *attr,
 					 uint16_t value)
 {
@@ -440,15 +524,10 @@ static void aics_description_cfg_changed(const struct bt_gatt_attr *attr,
 }
 #endif /* CONFIG_BT_AICS */
 
-static ssize_t write_description(struct bt_conn *conn,
-				 const struct bt_gatt_attr *attr,
-				 const void *buf, uint16_t len, uint16_t offset,
-				 uint8_t flags)
+static ssize_t aics_description_write(struct bt_aics *inst, const void *buf, uint16_t len,
+				      uint16_t offset, bool *state_change)
 {
-	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-
-	ARG_UNUSED(conn);
-	ARG_UNUSED(flags);
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
 
 	if (offset != 0U) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -467,12 +546,7 @@ static ssize_t write_description(struct bt_conn *conn,
 
 		value_changed(inst, AICS_NOTIFY_DESCRIPTION);
 
-		if (inst->srv.cb && inst->srv.cb->description) {
-			inst->srv.cb->description(inst, 0,
-						  inst->srv.description);
-		} else {
-			LOG_DBG("Callback not registered for instance %p", inst);
-		}
+		*state_change = true;
 	}
 
 	LOG_DBG("%s", inst->srv.description);
@@ -480,24 +554,70 @@ static ssize_t write_description(struct bt_conn *conn,
 	return len;
 }
 
-static int aics_write(struct bt_aics *inst,
-		      ssize_t (*write)(struct bt_conn *conn,
-				       const struct bt_gatt_attr *attr,
-				       const void *buf, uint16_t len,
-				       uint16_t offset, uint8_t flags),
-		      const void *buf, uint16_t len)
+#if defined(CONFIG_BT_AICS)
+static ssize_t write_description(struct bt_conn *conn,
+				 const struct bt_gatt_attr *attr,
+				 const void *buf, uint16_t len, uint16_t offset,
+				 uint8_t flags)
 {
-	struct bt_audio_attr_user_data user_data = {
-		.user_data = inst,
-	};
-	struct bt_gatt_attr attr = {
-		.user_data = &user_data,
-	};
-	int err;
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	bt_aics_description_cb description_cb = NULL;
+	char description[BT_AICS_MAX_DESC_SIZE];
+	bool state_change = false;
+	ssize_t ret;
 
-	err = write(NULL, &attr, buf, len, 0, 0);
-	if (err < 0) {
-		return err;
+	ARG_UNUSED(conn);
+	ARG_UNUSED(flags);
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
+
+	ret = aics_description_write(inst, buf, len, offset, &state_change);
+
+	if (state_change && inst->srv.cb != NULL && inst->srv.cb->description != NULL) {
+		description_cb = inst->srv.cb->description;
+		(void)strcpy(description, inst->srv.description);
+	}
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	if (description_cb != NULL) {
+		description_cb(inst, 0, description);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_BT_AICS */
+
+static int aics_local_control_write(struct bt_aics *inst, struct bt_aics_gain_control *cp,
+				    uint16_t len)
+{
+	bt_aics_state_cb state_cb = NULL;
+	bool state_change = false;
+	uint8_t gain_mode = 0U;
+	uint8_t mute = 0U;
+	int8_t gain = 0;
+	ssize_t ret;
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
+
+	cp->cp.counter = inst->srv.state.change_counter;
+	ret = aics_control_write(inst, cp, len, 0U, &state_change);
+
+	if (state_change && inst->srv.cb != NULL && inst->srv.cb->state != NULL) {
+		state_cb = inst->srv.cb->state;
+		gain = inst->srv.state.gain;
+		mute = inst->srv.state.mute;
+		gain_mode = inst->srv.state.gain_mode;
+	}
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	if (state_cb != NULL) {
+		state_cb(inst, 0, gain, mute, gain_mode);
+	}
+
+	if (ret < 0) {
+		return (int)ret;
 	}
 
 	return 0;
@@ -509,26 +629,45 @@ static ssize_t read_description(struct bt_conn *conn,
 				uint16_t len, uint16_t offset)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	ssize_t ret;
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	LOG_DBG("%s", inst->srv.description);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &inst->srv.description, strlen(inst->srv.description));
+	ret = bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.description,
+				strlen(inst->srv.description));
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	return ret;
 }
 
 /************************ PUBLIC API ************************/
 void *bt_aics_svc_decl_get(struct bt_aics *aics)
 {
+	void *ret;
+
 	if (!aics) {
 		LOG_DBG("NULL instance");
 		return NULL;
 	}
 
-	return aics->srv.service_p->attrs;
+	bt_audio_mutex_lock_forever(&aics_mutex);
+	if (aics->srv.service_p == NULL) {
+		ret = NULL;
+	} else {
+		ret = aics->srv.service_p->attrs;
+	}
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	return ret;
 }
 
 static void prepare_aics_instances(void)
 {
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
+
 	for (int i = 0; i < ARRAY_SIZE(aics_insts); i++) {
 		aics_insts[i].srv.service_p = &aics_service_list[i];
 	}
@@ -547,15 +686,6 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 	if (!param) {
 		LOG_DBG("NULL param");
 		return -EINVAL;
-	}
-
-	if (!instance_prepared) {
-		prepare_aics_instances();
-		instance_prepared = true;
-	}
-
-	if (aics->srv.initialized) {
-		return -EALREADY;
 	}
 
 	if (param->mute > BT_AICS_STATE_MUTE_DISABLED) {
@@ -589,6 +719,19 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 		       "or higher than max gain (%d)",
 		       param->gain, param->min_gain, param->max_gain);
 		return -EINVAL;
+	}
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
+
+	if (!instance_prepared) {
+		prepare_aics_instances();
+		instance_prepared = true;
+	}
+
+	if (aics->srv.initialized) {
+		bt_audio_mutex_unlock(&aics_mutex);
+
+		return -EALREADY;
 	}
 
 	aics->srv.state.gain = param->gain;
@@ -642,26 +785,38 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 	err = bt_gatt_service_register(aics->srv.service_p);
 	if (err != 0) {
 		LOG_DBG("Could not register AICS service");
+		bt_audio_mutex_unlock(&aics_mutex);
+
 		return err;
 	}
 
 	aics->srv.initialized = true;
+
+	bt_audio_mutex_unlock(&aics_mutex);
 
 	return 0;
 }
 
 struct bt_aics *bt_aics_free_instance_get(void)
 {
-	if (instance_cnt >= CONFIG_BT_AICS_MAX_INSTANCE_COUNT) {
-		return NULL;
+	struct bt_aics *inst = NULL;
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
+
+	if (instance_cnt < CONFIG_BT_AICS_MAX_INSTANCE_COUNT) {
+		inst = &aics_insts[instance_cnt];
+		instance_cnt++;
 	}
 
-	return (struct bt_aics *)&aics_insts[instance_cnt++];
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	return inst;
 }
 
-/****************************** PUBLIC API ******************************/
 int bt_aics_deactivate(struct bt_aics *inst)
 {
+	bt_aics_status_cb status_cb = NULL;
+
 	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
@@ -670,6 +825,8 @@ int bt_aics_deactivate(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return -ENOTSUP;
 	}
+
+	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	if (inst->srv.status == BT_AICS_STATUS_ACTIVE) {
 		inst->srv.status = BT_AICS_STATUS_INACTIVE;
@@ -678,10 +835,16 @@ int bt_aics_deactivate(struct bt_aics *inst)
 		value_changed(inst, AICS_NOTIFY_STATUS);
 
 		if (inst->srv.cb && inst->srv.cb->status) {
-			inst->srv.cb->status(inst, 0, inst->srv.status);
+			status_cb = inst->srv.cb->status;
 		} else {
 			LOG_DBG("Callback not registered for instance %p", inst);
 		}
+	}
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	if (status_cb != NULL) {
+		status_cb(inst, 0, false);
 	}
 
 	return 0;
@@ -689,6 +852,8 @@ int bt_aics_deactivate(struct bt_aics *inst)
 
 int bt_aics_activate(struct bt_aics *inst)
 {
+	bt_aics_status_cb status_cb = NULL;
+
 	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
@@ -698,6 +863,8 @@ int bt_aics_activate(struct bt_aics *inst)
 		return -ENOTSUP;
 	}
 
+	bt_audio_mutex_lock_forever(&aics_mutex);
+
 	if (inst->srv.status == BT_AICS_STATUS_INACTIVE) {
 		inst->srv.status = BT_AICS_STATUS_ACTIVE;
 		LOG_DBG("Instance %p: Status was set to active", inst);
@@ -705,10 +872,16 @@ int bt_aics_activate(struct bt_aics *inst)
 		value_changed(inst, AICS_NOTIFY_STATUS);
 
 		if (inst->srv.cb && inst->srv.cb->status) {
-			inst->srv.cb->status(inst, 0, inst->srv.status);
+			status_cb = inst->srv.cb->status;
 		} else {
 			LOG_DBG("Callback not registered for instance %p", inst);
 		}
+	}
+
+	bt_audio_mutex_unlock(&aics_mutex);
+
+	if (status_cb != NULL) {
+		status_cb(inst, 0, true);
 	}
 
 	return 0;
@@ -722,9 +895,12 @@ int bt_aics_gain_set_manual_only(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	inst->srv.state.gain_mode = BT_AICS_MODE_MANUAL_ONLY;
+	bt_audio_mutex_lock_forever(&aics_mutex);
 
+	inst->srv.state.gain_mode = BT_AICS_MODE_MANUAL_ONLY;
 	value_changed(inst, AICS_NOTIFY_STATE);
+
+	bt_audio_mutex_unlock(&aics_mutex);
 
 	return 0;
 }
@@ -736,15 +912,19 @@ int bt_aics_gain_set_auto_only(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	inst->srv.state.gain_mode = BT_AICS_MODE_AUTO_ONLY;
+	bt_audio_mutex_lock_forever(&aics_mutex);
 
+	inst->srv.state.gain_mode = BT_AICS_MODE_AUTO_ONLY;
 	value_changed(inst, AICS_NOTIFY_STATE);
+
+	bt_audio_mutex_unlock(&aics_mutex);
 
 	return 0;
 }
 
 int bt_aics_state_get(struct bt_aics *inst)
 {
+
 	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
@@ -753,13 +933,28 @@ int bt_aics_state_get(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_state_get(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+		bt_aics_state_cb state_cb = NULL;
+		uint8_t gain_mode = 0U;
+		uint8_t mute = 0U;
+		int8_t gain = 0;
+
+		bt_audio_mutex_lock_forever(&aics_mutex);
+
 		if (inst->srv.cb && inst->srv.cb->state) {
-			inst->srv.cb->state(inst, 0, inst->srv.state.gain,
-					    inst->srv.state.mute,
-					    inst->srv.state.gain_mode);
+			state_cb = inst->srv.cb->state;
+			gain = inst->srv.state.gain;
+			mute = inst->srv.state.mute;
+			gain_mode = inst->srv.state.gain_mode;
 		} else {
 			LOG_DBG("Callback not registered for instance %p", inst);
 		}
+
+		bt_audio_mutex_unlock(&aics_mutex);
+
+		if (state_cb != NULL) {
+			state_cb(inst, 0, gain, mute, gain_mode);
+		}
+
 		return 0;
 	}
 
@@ -776,14 +971,28 @@ int bt_aics_gain_setting_get(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_gain_setting_get(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+		bt_aics_gain_setting_cb setting_cb = NULL;
+		int8_t minimum = 0;
+		int8_t maximum = 0;
+		uint8_t units = 0U;
+
+		bt_audio_mutex_lock_forever(&aics_mutex);
+
 		if (inst->srv.cb && inst->srv.cb->gain_setting) {
-			inst->srv.cb->gain_setting(inst, 0,
-						   inst->srv.gain_settings.units,
-						   inst->srv.gain_settings.minimum,
-						   inst->srv.gain_settings.maximum);
+			setting_cb = inst->srv.cb->gain_setting;
+			units = inst->srv.gain_settings.units;
+			minimum = inst->srv.gain_settings.minimum;
+			maximum = inst->srv.gain_settings.maximum;
 		} else {
 			LOG_DBG("Callback not registered for instance %p", inst);
 		}
+
+		bt_audio_mutex_unlock(&aics_mutex);
+
+		if (setting_cb != NULL) {
+			setting_cb(inst, 0, units, minimum, maximum);
+		}
+
 		return 0;
 	}
 
@@ -800,11 +1009,24 @@ int bt_aics_type_get(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_type_get(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+		bt_aics_type_cb type_cb = NULL;
+		uint8_t type = 0U;
+
+		bt_audio_mutex_lock_forever(&aics_mutex);
+
 		if (inst->srv.cb && inst->srv.cb->type) {
-			inst->srv.cb->type(inst, 0, inst->srv.type);
+			type_cb = inst->srv.cb->type;
+			type = inst->srv.type;
 		} else {
 			LOG_DBG("Callback not registered for instance %p", inst);
 		}
+
+		bt_audio_mutex_unlock(&aics_mutex);
+
+		if (type_cb != NULL) {
+			type_cb(inst, 0, type);
+		}
+
 		return 0;
 	}
 
@@ -821,11 +1043,24 @@ int bt_aics_status_get(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_status_get(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+		bt_aics_status_cb status_cb = NULL;
+		bool active = false;
+
+		bt_audio_mutex_lock_forever(&aics_mutex);
+
 		if (inst->srv.cb && inst->srv.cb->status) {
-			inst->srv.cb->status(inst, 0, inst->srv.status);
+			status_cb = inst->srv.cb->status;
+			active = inst->srv.status == BT_AICS_STATUS_ACTIVE;
 		} else {
 			LOG_DBG("Callback not registered for instance %p", inst);
 		}
+
+		bt_audio_mutex_unlock(&aics_mutex);
+
+		if (status_cb != NULL) {
+			status_cb(inst, 0, active);
+		}
+
 		return 0;
 	}
 
@@ -839,9 +1074,12 @@ int bt_aics_disable_mute(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	inst->srv.state.mute = BT_AICS_STATE_MUTE_DISABLED;
+	bt_audio_mutex_lock_forever(&aics_mutex);
 
+	inst->srv.state.mute = BT_AICS_STATE_MUTE_DISABLED;
 	value_changed(inst, AICS_NOTIFY_STATE);
+
+	bt_audio_mutex_unlock(&aics_mutex);
 
 	return 0;
 }
@@ -856,12 +1094,11 @@ int bt_aics_unmute(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_unmute(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_aics_control cp;
+		struct bt_aics_gain_control cp = {
+			.cp.opcode = BT_AICS_OPCODE_UNMUTE,
+		};
 
-		cp.opcode = BT_AICS_OPCODE_UNMUTE;
-		cp.counter = inst->srv.state.change_counter;
-
-		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
+		return aics_local_control_write(inst, &cp, AICS_CP_LEN);
 	}
 
 	return -ENOTSUP;
@@ -877,12 +1114,11 @@ int bt_aics_mute(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_mute(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_aics_control cp;
+		struct bt_aics_gain_control cp = {
+			.cp.opcode = BT_AICS_OPCODE_MUTE,
+		};
 
-		cp.opcode = BT_AICS_OPCODE_MUTE;
-		cp.counter = inst->srv.state.change_counter;
-
-		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
+		return aics_local_control_write(inst, &cp, AICS_CP_LEN);
 	}
 
 	return -ENOTSUP;
@@ -898,12 +1134,11 @@ int bt_aics_manual_gain_set(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_manual_gain_set(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_aics_control cp;
+		struct bt_aics_gain_control cp = {
+			.cp.opcode = BT_AICS_OPCODE_SET_MANUAL,
+		};
 
-		cp.opcode = BT_AICS_OPCODE_SET_MANUAL;
-		cp.counter = inst->srv.state.change_counter;
-
-		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
+		return aics_local_control_write(inst, &cp, AICS_CP_LEN);
 	}
 
 	return -ENOTSUP;
@@ -919,12 +1154,11 @@ int bt_aics_automatic_gain_set(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_automatic_gain_set(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_aics_control cp;
+		struct bt_aics_gain_control cp = {
+			.cp.opcode = BT_AICS_OPCODE_SET_AUTO,
+		};
 
-		cp.opcode = BT_AICS_OPCODE_SET_AUTO;
-		cp.counter = inst->srv.state.change_counter;
-
-		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
+		return aics_local_control_write(inst, &cp, AICS_CP_LEN);
 	}
 
 	return -ENOTSUP;
@@ -940,13 +1174,12 @@ int bt_aics_gain_set(struct bt_aics *inst, int8_t gain)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_gain_set(inst, gain);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_aics_gain_control cp;
+		struct bt_aics_gain_control cp = {
+			.cp.opcode = BT_AICS_OPCODE_SET_GAIN,
+			.gain_setting = gain,
+		};
 
-		cp.cp.opcode = BT_AICS_OPCODE_SET_GAIN;
-		cp.cp.counter = inst->srv.state.change_counter;
-		cp.gain_setting = gain;
-
-		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
+		return aics_local_control_write(inst, &cp, AICS_CP_SET_GAIN_LEN);
 	}
 
 	return -ENOTSUP;
@@ -962,12 +1195,24 @@ int bt_aics_description_get(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_description_get(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+		bt_aics_description_cb description_cb = NULL;
+		char description[BT_AICS_MAX_DESC_SIZE];
+
+		bt_audio_mutex_lock_forever(&aics_mutex);
+
 		if (inst->srv.cb && inst->srv.cb->description) {
-			inst->srv.cb->description(inst, 0,
-						  inst->srv.description);
+			description_cb = inst->srv.cb->description;
+			(void)strcpy(description, inst->srv.description);
 		} else {
 			LOG_DBG("Callback not registered for instance %p", inst);
 		}
+
+		bt_audio_mutex_unlock(&aics_mutex);
+
+		if (description_cb != NULL) {
+			description_cb(inst, 0, description);
+		}
+
 		return 0;
 	}
 
@@ -989,7 +1234,28 @@ int bt_aics_description_set(struct bt_aics *inst, const char *description)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_description_set(inst, description);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		return aics_write(inst, write_description, description, strlen(description));
+		bt_aics_description_cb description_cb = NULL;
+		char desc[BT_AICS_MAX_DESC_SIZE];
+		bool state_change = false;
+		ssize_t ret;
+
+		bt_audio_mutex_lock_forever(&aics_mutex);
+
+		ret = aics_description_write(inst, description, strlen(description), 0U,
+					     &state_change);
+
+		if (state_change && inst->srv.cb != NULL && inst->srv.cb->description != NULL) {
+			description_cb = inst->srv.cb->description;
+			(void)strcpy(desc, inst->srv.description);
+		}
+
+		bt_audio_mutex_unlock(&aics_mutex);
+
+		if (description_cb != NULL) {
+			description_cb(inst, 0, desc);
+		}
+
+		return ret < 0 ? (int)ret : 0;
 	}
 
 	return -ENOTSUP;
