@@ -91,3 +91,6 @@ family:
     - name: cy8c4046fni_t412
     - name: cy8c4046fni_t442
     - name: cy8c4046fni_t452
+  - name: psoc4100splus
+    socs:
+    - name: cy8c4147azi_s475
