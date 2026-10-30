@@ -250,7 +250,7 @@ int usbd_device_shutdown_core(struct usbd_context *const uds_ctx)
 	int ret;
 
 	if (USBD_SUPPORTS_HIGH_SPEED) {
-		SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
+		SYS_SLIST_FOR_EACH_CONTAINER(usbd_get_hs_configs(uds_ctx), cfg_nd, node) {
 			uint8_t cfg_value = usbd_config_get_value(cfg_nd);
 
 			ret = usbd_class_remove_all(uds_ctx, USBD_SPEED_HS, cfg_value);
@@ -294,9 +294,11 @@ static int usbd_pre_init(void)
 		atomic_set(&c_nd->state, 0);
 		LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
 	}
-	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
-		atomic_set(&c_nd->state, 0);
-		LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
+			atomic_set(&c_nd->state, 0);
+			LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
+		}
 	}
 
 	return 0;
