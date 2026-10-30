@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Carl Zeiss AG
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: S9706 Color Sensor Sample
+tests:
+  sample.sensor.s9706:
+    build_only: true
+    platform_allow:
+      - arduino_mkrzero
+    tags:
+      - sensors
