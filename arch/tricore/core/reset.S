@@ -21,7 +21,7 @@ GTEXT(z_tricore_cpu_disable_virtualization)
 #endif
 
 GDATA(z_interrupt_stacks)
-GDATA(z_triore_csa)
+GDATA(z_tricore_csa)
 GDATA(__biv)
 GDATA(__btv)
 
