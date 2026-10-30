@@ -24,6 +24,9 @@
 /** Low-frequency clock type */
 #define IFX_CLK_LF  2
 
+/** Internal low-speed oscillator clock type, clock ID selects ILO0 or ILO1 */
+#define IFX_CLK_ILO 3
+
 /** Infineon clock specifier */
 struct ifx_clk {
 	/** Clock type */

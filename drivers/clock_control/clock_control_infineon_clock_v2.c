@@ -18,6 +18,11 @@
 #define IFX_OSC_EXT 1
 #define IFX_OSC_ECO 2
 
+#define IFX_ILO0 0
+
+/* ILO0 runs from reset and needs no setup, so only its rate is described */
+#define IFX_ILO0_FREQ DT_PROP_OR(DT_NODELABEL(ilo0), clock_frequency, 0)
+
 /* ECO configure params */
 #define IFX_ECO_ENABLETIMEOUT 1000  /* 1 ms */
 #define IFX_PLL_ENABLETIMEOUT 10000 /* 10 ms */
@@ -59,6 +64,12 @@ static inline int ifx_clk_get_rate(const struct device *dev, clock_control_subsy
 		break;
 	case IFX_CLK_HF:
 		*rate = Cy_SysClk_ClkHfGetFrequency(clk->clk_id);
+		break;
+	case IFX_CLK_ILO:
+		if ((clk->clk_id != IFX_ILO0) || (IFX_ILO0_FREQ == 0)) {
+			return -EINVAL;
+		}
+		*rate = IFX_ILO0_FREQ;
 		break;
 	default:
 		return -EINVAL;

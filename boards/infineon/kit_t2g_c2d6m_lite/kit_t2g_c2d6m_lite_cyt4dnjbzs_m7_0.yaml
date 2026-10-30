@@ -17,4 +17,5 @@ supported:
   - adc
   - gpio
   - uart
+  - watchdog
 vendor: infineon

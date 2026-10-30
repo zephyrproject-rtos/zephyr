@@ -34,6 +34,12 @@
 			};
 		};
 
+		ilo0: ilo0 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+		};
+
 		pll {
 			#address-cells = <1>;
 			#size-cells = <0>;
