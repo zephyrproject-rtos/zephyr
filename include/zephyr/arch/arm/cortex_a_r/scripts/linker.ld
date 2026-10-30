@@ -313,9 +313,19 @@ SECTIONS
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
     {
+#ifndef CONFIG_KERNEL_COHERENCE
         __kernel_ram_start = .;
+#endif
         __data_region_start = .;
         __data_start = .;
+#ifdef CONFIG_KERNEL_COHERENCE
+        /* Initialized private data shares the ordinary data copy at boot. */
+        . = ALIGN(MAX(_region_min_align, CONFIG_DCACHE_LINE_SIZE));
+        __kernel_ram_start = .;
+        *(.cached .cached.*)
+        . = ALIGN(MAX(_region_min_align, CONFIG_DCACHE_LINE_SIZE));
+        __coherent_data_start = .;
+#endif
         *(.data)
         *(".data.*")
         *(".kernel.*")
@@ -401,6 +411,19 @@ GROUP_END(OCM)
      * calculate this value here. */
     _flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_start;
 
+#ifdef CONFIG_KERNEL_COHERENCE
+    /* Keep cached stacks outside the contiguous load image. */
+    SECTION_DATA_PROLOGUE(.cached_stacks,(NOLOAD),)
+    {
+        . = ALIGN(MAX(_region_min_align, CONFIG_DCACHE_LINE_SIZE));
+        __coherent_data_end = .;
+        *(.cached_stacks .cached_stacks.*)
+        . = ALIGN(MAX(_region_min_align, CONFIG_DCACHE_LINE_SIZE));
+        __coherent_start = .;
+    } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+    __coherent_data_size = __coherent_data_end - __coherent_data_start;
+#endif
+
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD), BSS_ALIGN)
     {
         /*
@@ -437,6 +460,10 @@ GROUP_END(OCM)
 
     __kernel_ram_end = RAM_ADDR + RAM_SIZE;
     __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
+#ifdef CONFIG_KERNEL_COHERENCE
+    __coherent_end = __kernel_ram_end;
+    __coherent_size = __coherent_end - __coherent_start;
+#endif
 
 #define LAST_RAM_ALIGN . = ALIGN(_region_min_align);
 
