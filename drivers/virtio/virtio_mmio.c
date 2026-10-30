@@ -232,7 +232,6 @@ static int virtio_mmio_set_virtqueues(const struct device *dev, uint16_t queue_c
 
 	int ret = 0;
 	int created_queues = 0;
-	int activated_queues = 0;
 
 	for (int i = 0; i < queue_count; i++) {
 		virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_SEL, i);
@@ -246,17 +245,24 @@ static int virtio_mmio_set_virtqueues(const struct device *dev, uint16_t queue_c
 		}
 		created_queues++;
 
+		if (queue_size == 0U) {
+			continue;
+		}
+
 		ret = virtio_mmio_set_virtqueue(dev, i, &data->virtqueues[i]);
 		if (ret != 0) {
 			goto fail;
 		}
-		activated_queues++;
 	}
 
 	return 0;
 
 fail:
-	for (int j = 0; j < activated_queues; j++) {
+	for (int j = 0; j < created_queues; j++) {
+		if (data->virtqueues[j].num == 0U) {
+			continue;
+		}
+
 		virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_SEL, j);
 		virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_READY, 0);
 	}
