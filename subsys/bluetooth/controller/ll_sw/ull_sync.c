@@ -512,6 +512,8 @@ uint8_t ll_sync_create_cancel(void **rx)
 	node_rx = sync->node_rx_sync_estab;
 	link_sync_estab = node_rx->hdr.link;
 	link_sync_lost = sync->node_rx_lost.rx.hdr.link;
+	/* hdr.next aliases hdr.link; terminate the single-node list */
+	sync->node_rx_lost.rx.hdr.next = NULL;
 
 	ll_rx_link_release(link_sync_lost);
 	ll_rx_link_release(link_sync_estab);

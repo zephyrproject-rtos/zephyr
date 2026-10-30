@@ -140,6 +140,12 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_acquire(void)
 		cis->node_rx_terminate.rx.hdr.link = ll_rx_link_alloc();
 		/* Link allocation should never fail */
 		LL_ASSERT_DBG(cis->node_rx_terminate.rx.hdr.link != NULL);
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+		cis->node_rx_terminate.rx.hdr.type = NODE_RX_TYPE_NONE;
+		cis->node_rx_estab.rx.hdr.link = NULL;
+		cis->node_rx_estab.rx.hdr.type = NODE_RX_TYPE_NONE;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 	}
 
 	return cis;
@@ -147,6 +153,15 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_acquire(void)
 
 void ll_conn_iso_stream_release(struct ll_conn_iso_stream *cis)
 {
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	if (cis->node_rx_estab.rx.hdr.type == NODE_RX_TYPE_NONE &&
+	    cis->node_rx_estab.rx.hdr.link != NULL) {
+		/* Free unused reserved link */
+		ll_rx_link_release(cis->node_rx_estab.rx.hdr.link);
+		cis->node_rx_estab.rx.hdr.link = NULL;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 	cis->cis_id = 0;
 	cis->group = NULL;
 
@@ -1284,7 +1299,12 @@ static void cis_disabled_cb(void *param)
 	num_cis = cig->lll.num_cis;
 	for (cis_idx = 0; cis_idx < num_cis; cis_idx++) {
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
-		LL_ASSERT_DBG(cis);
+		if (cis == NULL) {
+			/* A release callback of a previous CIS in this loop already released the
+			 * remaining CISes and the group
+			 */
+			break;
+		}
 
 		if (!cis->lll.active && (cis->lll.flush != LLL_CIS_FLUSH_COMPLETE)) {
 			/* CIS is not active and did not just complete LLL flush - skip it */

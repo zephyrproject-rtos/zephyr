@@ -34,6 +34,11 @@
 #include "lll_sync.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 
 #include "ull_conn_internal.h"
 
@@ -138,8 +143,30 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_ENC_REFRESH:
 		case NODE_RX_TYPE_PHY_UPDATE:
 		case NODE_RX_TYPE_CIS_REQUEST:
+			ll_rx_link_inc_quota(1);
+			mem_release(rx_free, &mem_pdu_rx.free);
+			break;
 		case NODE_RX_TYPE_CIS_ESTABLISHED:
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+		{
+			struct node_rx_pdu *node = (void *)rx_free;
+			struct ll_conn_iso_stream *cis = node->rx_ftr.param;
+			struct node_rx_conn_iso_estab *est = (void *)node->pdu;
 
+			if (est->central && (cis != NULL) &&
+			    (cis->node_rx_estab.rx.hdr.type == NODE_RX_TYPE_NONE) &&
+			    (cis->node_rx_estab.rx.hdr.link != NULL)) {
+				mem_release(cis->node_rx_estab.rx.hdr.link, &mem_link_rx.free);
+				cis->node_rx_estab.rx.hdr.link = NULL;
+			}
+
+			if ((cis != NULL) && (node == &cis->node_rx_estab.rx)) {
+				node->hdr.next = NULL;
+				node->hdr.type = NODE_RX_TYPE_NONE;
+				break;
+			}
+		}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 			ll_rx_link_inc_quota(1);
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
@@ -181,6 +208,17 @@ void ll_rx_release(void *node_rx)
 
 void ll_rx_put(memq_link_t *link, void *rx)
 {
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	struct node_rx_pdu *node = rx;
+	struct ll_conn_iso_stream *cis = node->rx_ftr.param;
+
+	if ((node->hdr.type == NODE_RX_TYPE_CIS_ESTABLISHED) && (cis != NULL) &&
+	    (node == &cis->node_rx_estab.rx)) {
+		zassert_not_null(link);
+		ll_rx_link_release(link);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 	if (((struct node_rx_hdr *)rx)->type != NODE_RX_TYPE_RELEASE) {
 		/* Only put/sched if node was not marked for release */
 		sys_slist_append(&ut_rx_q, (sys_snode_t *)rx);

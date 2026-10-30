@@ -1,11 +1,16 @@
 /*
  * Copyright (c) 2020 Demant
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/toolchain.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/iso.h>
@@ -156,6 +161,16 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
 	return BT_HCI_ERR_SUCCESS;
 }
 
+static bool cis_config_busy(struct ll_conn_iso_stream *cis)
+{
+	struct ll_conn *conn = ll_connected_get(cis->lll.acl_handle);
+
+	return (cis->node_rx_estab.rx.hdr.link != NULL) ||
+	       (cis->node_rx_estab.rx.hdr.type != NODE_RX_TYPE_NONE) ||
+	       (cis->node_rx_terminate.rx.hdr.type != NODE_RX_TYPE_NONE) ||
+	       ((conn != NULL) && ull_lp_cc_is_pending(conn, cis));
+}
+
 /* TODO:
  * - Calculate ISO_Interval to allow SDU_Interval < ISO_Interval
  */
@@ -189,6 +204,13 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 
 	cig_created = false;
 
+	for (uint8_t i = 0U; i < ll_iso_setup.cis_count; i++) {
+		cis = ll_conn_iso_stream_get_by_id(ll_iso_setup.stream[i].cis_id);
+		if ((cis != NULL) && cis_config_busy(cis)) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+	}
+
 	/* If CIG already exists, this is a reconfigure */
 	cig = ll_conn_iso_group_get_by_id(cig_id);
 	if (!cig) {
@@ -206,6 +228,16 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	} else if (cig->state != CIG_STATE_CONFIGURABLE) {
 		/* CIG is not in configurable state */
 		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	handle_iter = UINT16_MAX;
+	cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+	while (cis != NULL) {
+		if (cis_config_busy(cis)) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 	}
 
 	/* Store currently configured number of CISes before cache transfer */
@@ -714,6 +746,10 @@ uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
 		cis = ll_conn_iso_stream_get(cis_handle);
 
 		if (cis->group && (cis->lll.handle == cis_handle)) {
+			if (cis_config_busy(cis)) {
+				return BT_HCI_ERR_CMD_DISALLOWED;
+			}
+
 			if (cis->established) {
 				/* CIS is already created */
 				return BT_HCI_ERR_CONN_ALREADY_EXISTS;
@@ -726,7 +762,33 @@ uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
-void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
+static void cis_create_failed(struct ll_conn *conn, struct ll_conn_iso_stream *cis,
+			      void **node_rx_list)
+{
+	struct node_rx_conn_iso_estab *est;
+	struct node_rx_pdu *rx = &cis->node_rx_estab.rx;
+
+	cis->lll.acl_handle = LLL_HANDLE_INVALID;
+
+	LL_ASSERT_DBG(rx->hdr.link != NULL);
+	rx->hdr.type = NODE_RX_TYPE_CIS_ESTABLISHED;
+	rx->hdr.handle = conn->lll.handle;
+	rx->rx_ftr.param = cis;
+
+	est = (void *)rx->pdu;
+	est->cis_handle = cis->lll.handle;
+	est->status = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+	est->central = true;
+
+	/* hdr.next aliases hdr.link; release the reserved link before linking the node */
+	ll_rx_link_release(rx->hdr.link);
+
+	/* Prepend to caller's list; caller delivers after Command Status */
+	rx->hdr.next = *node_rx_list;
+	*node_rx_list = rx;
+}
+
+void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle, void **node_rx_list)
 {
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn *conn;
@@ -762,6 +824,12 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	memq_init(cis->lll.link_tx_free, &cis->lll.memq_tx.head, &cis->lll.memq_tx.tail);
 	cis->lll.link_tx_free = NULL;
 
+	/* Reserve the fallback notification link before publishing the procedure. */
+	if (cis->node_rx_estab.rx.hdr.link == NULL) {
+		cis->node_rx_estab.rx.hdr.link = ll_rx_link_alloc();
+		LL_ASSERT_DBG(cis->node_rx_estab.rx.hdr.link != NULL);
+	}
+
 	/* Initiate CIS Request Control Procedure */
 	if (ull_cp_cis_create(conn, cis) == BT_HCI_ERR_SUCCESS) {
 		LL_ASSERT_DBG(cis->group);
@@ -770,6 +838,11 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 			/* This CIG is now initiating an ISO connection */
 			cis->group->state = CIG_STATE_INITIATING;
 		}
+	} else {
+		/* The procedure could not be started, e.g. no free procedure context. Errors are
+		 * reported through the CIS Established event, which the host is waiting for.
+		 */
+		cis_create_failed(conn, cis, node_rx_list);
 	}
 }
 
@@ -800,20 +873,13 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 
 	handle_iter = UINT16_MAX;
 	for (uint8_t i = 0U; i < cig->lll.num_cis; i++)  {
-		struct ll_conn *conn;
-
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		if (!cis) {
 			break;
 		}
 
-		conn = ll_connected_get(cis->lll.acl_handle);
-
-		if (conn) {
-			if (ull_lp_cc_is_active(conn)) {
-				/* CIG creation is ongoing */
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
+		if (cis_config_busy(cis)) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 	}
 
