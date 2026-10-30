@@ -23,8 +23,10 @@ if ARM_MPU
 
 config MPU_STACK_GUARD
 	bool "Thread Stack Guards"
+	depends on !(CPU_CORTEX_R52 && KERNEL_COHERENCE)
 	help
 	  Enable Thread Stack Guards via MPU
+	  Cortex-R52 kernel coherence currently requires a static MPU map.
 
 config MPU_STACK_GUARD_MIN_SIZE_FLOAT
 	int
