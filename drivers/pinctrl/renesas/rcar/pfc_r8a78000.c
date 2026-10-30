@@ -5,8 +5,10 @@
  *
  */
 
+#include <errno.h>
 #include <pinctrl_soc.h>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a78000.h>
+#include <zephyr/sys/util.h>
 
 #define PFC_DRIVE_REG(r1, r2, r3) \
 	.drvctrl0 = r1,           \
@@ -812,4 +814,51 @@ int pfc_rcar_get_reg_index(uint16_t pin, uint8_t *reg_index)
 	*reg_index = pin / 32;
 
 	return 0;
+}
+
+/*
+ * SCMI pin ids are the existing pins numbered from 0 in hardware order. The
+ * hardware pins [hw_first, hw_last] of a range map to the SCMI ids
+ * [hw_first - shift, hw_last - shift].
+ */
+struct pfc_scmi_pin_range {
+	uint16_t hw_first;
+	uint16_t hw_last;
+	uint16_t shift;
+};
+
+static const struct pfc_scmi_pin_range pfc_scmi_pin_ranges[] = {
+	{.hw_first = RCAR_GP_PIN(0, 0), .hw_last = RCAR_GP_PIN(0, 27), .shift = 0},
+	{.hw_first = RCAR_GP_PIN(1, 0), .hw_last = RCAR_GP_PIN(1, 21), .shift = 4},
+	{.hw_first = RCAR_GP_PIN(2, 0), .hw_last = RCAR_GP_PIN(2, 28), .shift = 14},
+	{.hw_first = RCAR_GP_PIN(3, 0), .hw_last = RCAR_GP_PIN(3, 16), .shift = 17},
+	{.hw_first = RCAR_GP_PIN(4, 0), .hw_last = RCAR_GP_PIN(4, 15), .shift = 32},
+	{.hw_first = RCAR_GP_PIN(5, 0), .hw_last = RCAR_GP_PIN(5, 22), .shift = 48},
+	{.hw_first = RCAR_GP_PIN(6, 0), .hw_last = RCAR_GP_PIN(6, 30), .shift = 57},
+	{.hw_first = RCAR_GP_PIN(7, 0), .hw_last = RCAR_GP_PIN(7, 30), .shift = 58},
+	{.hw_first = RCAR_GP_PIN(8, 0), .hw_last = RCAR_GP_PIN(8, 15), .shift = 59},
+	{.hw_first = RCAR_GP_PIN(8, 26), .hw_last = RCAR_GP_PIN(9, 16), .shift = 69},
+	{.hw_first = RCAR_GP_PIN(10, 0), .hw_last = RCAR_GP_PIN(10, 13), .shift = 84},
+};
+
+int pfc_rcar_get_scmi_pin_id(uint16_t pin, uint32_t *id)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(pfc_scmi_pin_ranges); i++) {
+		const struct pfc_scmi_pin_range *range = &pfc_scmi_pin_ranges[i];
+
+		if ((pin >= range->hw_first) && (pin <= range->hw_last)) {
+			*id = pin - range->shift;
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
+uint16_t pfc_rcar_get_scmi_pin_count(void)
+{
+	const struct pfc_scmi_pin_range *last =
+		&pfc_scmi_pin_ranges[ARRAY_SIZE(pfc_scmi_pin_ranges) - 1U];
+
+	return last->hw_last - last->shift + 1U;
 }
