@@ -58,3 +58,14 @@ tests:
     tags:
       - uart
       - bluetooth
+  sample.bluetooth.hci_uart_3wire.bsim:
+    depends_on: bsim
+    build_only: true
+    platform_allow:
+      - nrf52_bsim
+    harness: bsim
+    harness_config:
+      bsim_exe_name: samples_bluetooth_hci_uart_3wire_prj_conf
+    tags:
+      - uart
+      - bluetooth
