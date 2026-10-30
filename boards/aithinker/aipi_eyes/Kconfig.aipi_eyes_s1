@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AIPI_EYES_S1
+	select SOC_BL618M05Q2I
