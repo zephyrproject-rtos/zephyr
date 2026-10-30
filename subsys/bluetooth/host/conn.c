@@ -2359,6 +2359,73 @@ static struct bt_conn *conn_lookup_sco(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_CLASSIC */
 
+#if defined(CONFIG_BT_ISO_PERIPHERAL_PENDING_CIS_TIMEOUT_MS) &&                                    \
+	CONFIG_BT_ISO_PERIPHERAL_PENDING_CIS_TIMEOUT_MS > 0
+static bool is_pending_peripheral_cis_of(const struct bt_conn *iso, const struct bt_conn *acl)
+{
+	return iso->iso.acl == acl && iso->role == BT_HCI_ROLE_PERIPHERAL &&
+	       iso->state == BT_CONN_INITIATING;
+}
+
+/* A controller may never report the end of a CIS it accepted as peripheral but had not yet
+ * established when the ACL was lost, which would hold the ACL's disconnected callback forever.
+ * Waits up to CONFIG_BT_ISO_PERIPHERAL_PENDING_CIS_TIMEOUT_MS, then ends such CIS locally as
+ * failed to establish. The work may re-run early when another CIS of the ACL ends, so the
+ * wait is a deadline. Returns true if the disconnected ACL's work is handled here.
+ */
+static bool end_pending_peripheral_cis(struct bt_conn *acl)
+{
+	bool pending = false;
+	int64_t remaining;
+
+	ARRAY_FOR_EACH_PTR(iso_conns, iso_conn) {
+		struct bt_conn *iso = bt_conn_ref(iso_conn);
+
+		if (iso == NULL) {
+			continue;
+		}
+
+		pending = pending || is_pending_peripheral_cis_of(iso, acl);
+		bt_conn_unref(iso);
+	}
+
+	if (!pending) {
+		return false;
+	}
+
+	if (acl->pending_cis_deadline == 0) {
+		LOG_DBG("acl %p waits for its pending CIS to end", acl);
+		acl->pending_cis_deadline =
+			k_uptime_get() + CONFIG_BT_ISO_PERIPHERAL_PENDING_CIS_TIMEOUT_MS;
+	}
+
+	remaining = acl->pending_cis_deadline - k_uptime_get();
+	if (remaining > 0) {
+		(void)bt_work_reschedule(&acl->deferred_work, K_MSEC(remaining));
+		return true;
+	}
+
+	ARRAY_FOR_EACH_PTR(iso_conns, iso_conn) {
+		struct bt_conn *iso = bt_conn_ref(iso_conn);
+
+		if (iso == NULL) {
+			continue;
+		}
+
+		if (is_pending_peripheral_cis_of(iso, acl)) {
+			LOG_WRN("CIS %u not reported ended after ACL loss, ending it locally",
+				iso->handle);
+			iso->err = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+			bt_iso_disconnected(iso);
+		}
+
+		bt_conn_unref(iso);
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_ISO_PERIPHERAL_PENDING_CIS_TIMEOUT_MS > 0 */
+
 static void deferred_work(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -2406,6 +2473,12 @@ static void deferred_work(struct k_work *work)
 		}
 
 		if (acl_coupled_with_cis) {
+#if defined(CONFIG_BT_ISO_PERIPHERAL_PENDING_CIS_TIMEOUT_MS) &&                                    \
+	CONFIG_BT_ISO_PERIPHERAL_PENDING_CIS_TIMEOUT_MS > 0
+			if (end_pending_peripheral_cis(conn)) {
+				return;
+			}
+#endif
 			LOG_DBG("acl %p is pending on CIS disconnects, wait for CIS disconnects",
 				conn);
 
