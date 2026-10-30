@@ -1899,6 +1899,10 @@ ZTEST(net_socket_tcp, test_so_protocol)
 	test_context_cleanup();
 }
 
+/* Largest SO_RCVBUF and SO_SNDBUF, the largest window TCP can use */
+#define TEST_MAX_TCP_WINDOW							\
+	(IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE) ? (UINT16_MAX << 14) : UINT16_MAX)
+
 ZTEST(net_socket_tcp, test_so_rcvbuf)
 {
 	struct net_sockaddr_in bind_addr4;
@@ -1929,7 +1933,7 @@ ZTEST(net_socket_tcp, test_so_rcvbuf)
 	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
-	optval = UINT16_MAX + 1;
+	optval = TEST_MAX_TCP_WINDOW + 1;
 	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
@@ -2018,8 +2022,8 @@ ZTEST(net_socket_tcp, test_so_sndbuf)
 	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
-	optval = UINT16_MAX + 1;
-	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
+	optval = TEST_MAX_TCP_WINDOW + 1;
+	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
 	test_close(sock1);
