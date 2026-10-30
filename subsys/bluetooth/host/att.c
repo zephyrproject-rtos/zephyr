@@ -469,10 +469,6 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 			return -EAGAIN;
 		}
 
-		if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
-			return -ENOTSUP;
-		}
-
 		/* Check if the channel is ready to send in case of a request */
 		if (att_op_get_type(hdr->code) == ATT_REQUEST &&
 		    !atomic_test_bit(att_chan_get_l2cap(chan)->status, BT_L2CAP_STATUS_OUT)) {
@@ -504,32 +500,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
-	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
-		net_buf_simple_save(&buf->b, &state);
-
-		err = bt_smp_sign(chan->att->conn, buf);
-		if (err != 0) {
-			LOG_ERR("Error signing data");
-			/* Restore the buffer state, since the callers retain
-			 * ownership of the buffer on failure and may retry
-			 * sending it later.
-			 */
-			net_buf_simple_restore(&buf->b, &state);
-			return err;
-		}
-
-		/* Keep the pre-signing state saved above: bt_smp_sign()
-		 * already consumed and persisted a sign counter value, so if
-		 * the send below fails the buffer must be restored to its
-		 * unsigned form. Retrying will then sign it again (consuming
-		 * the next counter value, which is fine since the spec only
-		 * requires the counter to strictly increase). Restoring the
-		 * already-signed state instead would let a retry append a
-		 * second signature onto a buffer sized for only one.
-		 */
-	} else {
-		net_buf_simple_save(&buf->b, &state);
-	}
+	net_buf_simple_save(&buf->b, &state);
 
 	data->att_chan = chan;
 
@@ -2193,7 +2164,7 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 	/* Set command flag if not a request */
-	if (data->op == BT_ATT_OP_WRITE_CMD || data->op == BT_ATT_OP_SIGNED_WRITE_CMD) {
+	if (data->op == BT_ATT_OP_WRITE_CMD) {
 		flags |= BT_GATT_WRITE_FLAG_CMD;
 	} else if (data->op == BT_ATT_OP_EXEC_WRITE_REQ) {
 		flags |= BT_GATT_WRITE_FLAG_EXECUTE;
@@ -2218,7 +2189,6 @@ static bool is_gatt_request(uint8_t op)
 {
 	switch (op) {
 	case BT_ATT_OP_WRITE_CMD:
-	case BT_ATT_OP_SIGNED_WRITE_CMD:
 		return false;
 	default:
 		return true;
@@ -2579,49 +2549,6 @@ static uint8_t att_write_cmd(struct bt_att_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
-#if defined(CONFIG_BT_SIGNING)
-static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *buf)
-{
-	struct bt_conn *conn = att_chan_get_conn(chan);
-	struct bt_att_signed_write_cmd *req;
-	uint16_t handle;
-	int err;
-
-	/* The Signed Write Without Response sub-procedure shall only be supported
-	 * on the LE Fixed Channel Unenhanced ATT bearer.
-	 */
-	if (bt_att_is_enhanced(chan)) {
-		/* No response for this command */
-		return 0;
-	}
-
-	req = (void *)buf->data;
-
-	handle = sys_le16_to_cpu(req->handle);
-
-	LOG_DBG("handle 0x%04x", handle);
-
-	/* Verifying data requires full buffer including attribute header */
-	net_buf_push(buf, sizeof(struct bt_att_hdr));
-	err = bt_smp_sign_verify(conn, buf);
-	if (err) {
-		LOG_ERR("Error verifying data");
-		/* No response for this command */
-		return 0;
-	}
-
-	net_buf_pull(buf, sizeof(struct bt_att_hdr));
-	net_buf_pull(buf, sizeof(*req));
-
-	if (perform_write(chan, BT_ATT_OP_SIGNED_WRITE_CMD, handle, 0, buf->data,
-			  buf->len - sizeof(struct bt_att_signature)) != 0) {
-		/* Nothing we can do here, as this is a write command */
-	}
-
-	return 0;
-}
-#endif /* CONFIG_BT_SIGNING */
-
 #if defined(CONFIG_BT_GATT_CLIENT)
 #if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
 static int att_change_security(struct bt_conn *conn, uint8_t err)
@@ -2947,13 +2874,6 @@ static const struct att_handler {
 		sizeof(struct bt_att_write_cmd),
 		ATT_COMMAND,
 		att_write_cmd },
-#if defined(CONFIG_BT_SIGNING)
-	{ BT_ATT_OP_SIGNED_WRITE_CMD,
-		(sizeof(struct bt_att_write_cmd) +
-		 sizeof(struct bt_att_signature)),
-		ATT_COMMAND,
-		att_signed_write_cmd },
-#endif /* CONFIG_BT_SIGNING */
 #if defined(CONFIG_BT_GATT_CLIENT)
 	{ BT_ATT_OP_ERROR_RSP,
 		sizeof(struct bt_att_error_rsp),
@@ -3045,7 +2965,6 @@ static att_type_t att_op_get_type(uint8_t op)
 	case BT_ATT_OP_CONFIRM:
 		return ATT_CONFIRMATION;
 	case BT_ATT_OP_WRITE_CMD:
-	case BT_ATT_OP_SIGNED_WRITE_CMD:
 		return ATT_COMMAND;
 	case BT_ATT_OP_ERROR_RSP:
 	case BT_ATT_OP_MTU_RSP:

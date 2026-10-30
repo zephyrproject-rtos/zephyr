@@ -495,14 +495,6 @@ struct bt_gatt_authorization_cb {
  */
 #define BT_GATT_CHRC_INDICATE			0x20
 /**
- *  @brief Characteristic Authenticated Signed Writes property.
- *
- *  @deprecated  This API is deprecated.
- *
- *  If set, permits signed writes to the Characteristic Value.
- */
-#define BT_GATT_CHRC_AUTH			0x40 __DEPRECATED_MACRO
-/**
  *  @brief Characteristic Extended Properties property.
  *
  * If set, additional characteristic properties are defined in the
@@ -2168,11 +2160,15 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  @param handle Attribute handle.
  *  @param data Data to be written.
  *  @param length Data length.
- *  @param sign Whether to sign data.
+ *  @param sign Must be false unless the connection is encrypted, since data
+ *  signing was removed in Bluetooth Core Specification 6.3. Has no effect on
+ *  an encrypted connection.
  *  @param func Transmission complete callback.
  *  @param user_data User data to be passed back to callback.
  *
  *  @retval 0 Successfully queued request.
+ *
+ *  @retval -ENOTSUP Signing requested on a connection that is not encrypted.
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
@@ -2193,9 +2189,13 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
  *  @param handle Attribute handle.
  *  @param data Data to be written.
  *  @param length Data length.
- *  @param sign Whether to sign data.
+ *  @param sign Must be false unless the connection is encrypted, since data
+ *  signing was removed in Bluetooth Core Specification 6.3. Has no effect on
+ *  an encrypted connection.
  *
  *  @retval 0 Successfully queued request.
+ *
+ *  @retval -ENOTSUP Signing requested on a connection that is not encrypted.
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
