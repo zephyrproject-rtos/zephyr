@@ -1,0 +1,12 @@
+common:
+  tags: memref
+
+tests:
+  libraries.memref:
+    integration_platforms:
+      - native_sim
+  libraries.memref.no_destroy_cb:
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_MEMREF_DESTROY_CB=n
