@@ -52,6 +52,17 @@
 			      IRQ_DEFAULT_PRIORITY>;
 	};
 
+	/*
+	 * PMU overflow IRQ (PPI 23 on some virt models). QEMU does not deliver
+	 * PMU overflows usefully — keep disabled unless verified on your target.
+	 */
+	pmu {
+		compatible = "arm,armv8-pmu";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 23 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+	};
+
 	uartclk: apb-pclk {
 		compatible = "fixed-clock";
 		clock-frequency = <24000000>;
