@@ -1,0 +1,15 @@
+common:
+  min_ram: 16
+  depends_on: netif
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - net
+    - iface
+tests:
+  net.nsos.iface: {}
+  net.nsos.iface.no_auto_start:
+    extra_configs:
+      - CONFIG_NET_NATIVE_OFFLOADED_SOCKETS_NO_AUTO_START=y
