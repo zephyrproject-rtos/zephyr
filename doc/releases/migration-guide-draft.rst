@@ -62,6 +62,13 @@ Ethernet
   the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
   must select it as well. (:github:`120871`)
 
+* The ``reset-gpios`` timing properties of the Ethernet PHY bindings, such as
+  :dtcompatible:`ethernet-phy` and :dtcompatible:`ethernet-phy-fixed-link`, have been renamed to
+  align with the Linux Ethernet PHY binding, which uses the same names.
+  Replace ``reset-assert-duration-us`` with ``reset-assert-us``, and replace
+  ``reset-deassertion-timeout-ms`` with ``reset-deassert-us``, multiplying its value by 1000 as
+  it is now in microseconds.
+
 OPAMP
 =====
 
