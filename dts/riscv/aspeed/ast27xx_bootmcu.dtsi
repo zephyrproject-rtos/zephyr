@@ -68,5 +68,21 @@
 			reg = <0x14c36000 0x40>;
 			interrupts-extended = <&hlic 7>;
 		};
+
+		mbox_ns_ca35: mbox@14c39300 {
+			compatible = "aspeed,ast2700-mailbox";
+			reg = <0x14c39300 0x100>, <0x14c39200 0x100>;
+			reg-names = "tx", "rx";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mbox_ssp: mbox@14c39500 {
+			compatible = "aspeed,ast2700-mailbox";
+			reg = <0x14c39500 0x100>, <0x14c39400 0x100>;
+			reg-names = "tx", "rx";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
