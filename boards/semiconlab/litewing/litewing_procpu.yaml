@@ -1,0 +1,21 @@
+identifier: litewing/esp32s3/procpu
+name: SemiconLab Litewing PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - watchdog
+  - entropy
+  - ledc
+  - mcpwm
+  - pwm
+  - input
+  - crypto
+  - retained_mem
+  - netif:wifi
+vendor: SemiconLab
