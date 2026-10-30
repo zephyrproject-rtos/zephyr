@@ -1,0 +1,19 @@
+identifier: esp32s3_touch_lcd_1_47/esp32s3/procpu
+name: ESP32-S3-Touch-LCD-1.47 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - display
+  - gpio
+  - i2c
+  - input
+  - pwm
+  - sdhc
+  - spi
+  - uart
+  - usb_device
+  - watchdog
+vendor: waveshare
