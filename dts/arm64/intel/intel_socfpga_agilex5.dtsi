@@ -17,6 +17,9 @@
 / {
 	cpus {
 		timebase-frequency = <DT_FREQ_M(400)>;
+		enable-method = "psci";
+		d-cache-line-size = <64>;
+		i-cache-line-size = <64>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 
@@ -24,28 +27,24 @@
 			compatible = "arm,cortex-a55";
 			reg = <0x0>;
 			device_type = "cpu";
-			enable-method = "psci";
 		};
 
 		cpu@100 {
 			compatible = "arm,cortex-a55";
 			reg = <0x100>;
 			device_type = "cpu";
-			enable-method = "psci";
 		};
 
 		cpu@200 {
 			compatible = "arm,cortex-a76";
 			reg = <0x200>;
 			device_type = "cpu";
-			enable-method = "psci";
 		};
 
 		cpu@300 {
 			compatible = "arm,cortex-a76";
 			reg = <0x300>;
 			device_type = "cpu";
-			enable-method = "psci";
 		};
 	};
 
@@ -74,16 +73,14 @@
 		status = "disabled";
 	};
 
-	sdmmc: sdmmc@10808000 {
-		compatible = "cdns,sdhc";
-		reg = <0x10808000 0x1000>,
-		      <0x10b92000 0x1000>;
-		reg-names = "reg_base", "combo_phy";
-		clock-frequency = <200000000>;
-		power-delay-ms = <1000>;
-		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
-			 <&reset RSTMGR_SDMMCECC_RSTLINE>,
-			 <&reset RSTMGR_SOFTPHY_RSTLINE>;
+	sdmmc: mmc@10808000 {
+		compatible = "cdns,sd6hc", "cdns,sdhc";
+		reg = <0x10808000 0x100>, <0x10808200 0x80>;
+		reg-names = "host", "slot";
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_MMC>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		has-host;
 		status = "disabled";
 	};
 
