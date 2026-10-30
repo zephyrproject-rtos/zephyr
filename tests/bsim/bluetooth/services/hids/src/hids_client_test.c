@@ -6,8 +6,8 @@
 
 /* Peer of the HID Service server test, in the HID Host role. It is a plain
  * GATT client: it discovers the HID Service, checks the static values and the
- * descriptors, and drives the Report and HID Control Point characteristics
- * the way a Host would.
+ * descriptors, and drives the Report, Protocol Mode and HID Control Point
+ * characteristics the way a Host would.
  *
  * It never initiates pairing, so the server has to request security itself.
  */
@@ -44,10 +44,10 @@
 
 /* One Report characteristic of each type */
 #define MAX_REPORTS 4U
-/* Every characteristic of the service: the Reports above, Report Map, HID
- * Information and HID Control Point.
+/* Every characteristic of the service: the Reports above, Protocol Mode, Report
+ * Map, HID Information and HID Control Point.
  */
-#define MAX_CHRCS (MAX_REPORTS + 3U)
+#define MAX_CHRCS (MAX_REPORTS + 4U)
 
 DEFINE_FLAG_STATIC(flag_security_updated);
 DEFINE_FLAG_STATIC(flag_discover_complete);
@@ -75,6 +75,7 @@ static struct bt_conn *client_conn;
 
 static uint16_t hids_start_handle;
 static uint16_t hids_end_handle;
+static uint16_t protocol_mode_handle;
 static uint16_t report_map_handle;
 static uint16_t hid_info_handle;
 static uint16_t ctrl_point_handle;
@@ -268,7 +269,9 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 		chrcs[chrcs_cnt].uuid_val = BT_UUID_16(chrc->uuid)->val;
 		chrcs_cnt++;
 
-		if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_REPORT_MAP) == 0) {
+		if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_PROTOCOL_MODE) == 0) {
+			protocol_mode_handle = chrc->value_handle;
+		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_REPORT_MAP) == 0) {
 			report_map_handle = chrc->value_handle;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_INFO) == 0) {
 			hid_info_handle = chrc->value_handle;
@@ -305,6 +308,7 @@ static void discover_hids(void)
 
 	reports_cnt = 0U;
 	chrcs_cnt = 0U;
+	protocol_mode_handle = 0U;
 	report_map_handle = 0U;
 	hid_info_handle = 0U;
 	ctrl_point_handle = 0U;
@@ -323,6 +327,7 @@ static void discover_hids(void)
 
 	WAIT_FOR_FLAG(flag_discover_complete);
 
+	TEST_ASSERT(protocol_mode_handle != 0U, "Protocol Mode not found");
 	TEST_ASSERT(report_map_handle != 0U, "Report Map not found");
 	TEST_ASSERT(hid_info_handle != 0U, "HID Information not found");
 	TEST_ASSERT(ctrl_point_handle != 0U, "HID Control Point not found");
@@ -413,7 +418,7 @@ static void gatt_write_expect_err(uint16_t handle, const uint8_t *data, uint16_t
 		    handle, att_err, expected);
 }
 
-/* The HID Control Point is written without a response */
+/* The Protocol Mode and the HID Control Point are written without a response */
 static void gatt_write_cmd(uint16_t handle, uint8_t value)
 {
 	int err;
@@ -644,6 +649,14 @@ static void verify_long_report_reads(void)
 	}
 }
 
+static void verify_protocol_mode(uint8_t expected)
+{
+	gatt_read(protocol_mode_handle);
+	TEST_ASSERT(read_buf.len == 1U, "Protocol Mode of %u bytes, expected 1", read_buf.len);
+	TEST_ASSERT(read_buf.data[0] == expected, "Protocol Mode is %u, expected %u",
+		    read_buf.data[0], expected);
+}
+
 static void test_hids_client(void)
 {
 	const struct report_chrc *input;
@@ -671,6 +684,7 @@ static void test_hids_client(void)
 	discover_hids();
 	resolve_reports();
 	verify_static_values();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
 
 	input = report_by_type(BT_HIDS_REPORT_TYPE_INPUT);
 	output = report_by_type(BT_HIDS_REPORT_TYPE_OUTPUT);
@@ -703,6 +717,17 @@ static void test_hids_client(void)
 	bk_sync_send();
 	bk_sync_wait();
 
+	/* Protocol Mode to Boot Protocol Mode and back */
+	gatt_write_cmd(protocol_mode_handle, BT_HIDS_PROTOCOL_BOOT);
+	bk_sync_send();
+	bk_sync_wait();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_BOOT);
+
+	gatt_write_cmd(protocol_mode_handle, BT_HIDS_PROTOCOL_REPORT);
+	bk_sync_send();
+	bk_sync_wait();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
+
 	/* GET_REPORT of the Input Report */
 	gatt_read(input->value_handle);
 	TEST_ASSERT(read_buf.len == TEST_INPUT_REPORT_LEN,
@@ -727,7 +752,9 @@ static void test_hids_client(void)
 	bk_sync_send();
 	bk_sync_wait();
 
-	/* Reconnect: the server serves the same HID Service again */
+	/* Reconnect: the server serves the same HID Service again, with the
+	 * per connection state back at its default values.
+	 */
 	err = bt_gatt_unsubscribe(client_conn, &sub_params);
 	TEST_ASSERT(err == 0, "Failed to unsubscribe: %d", err);
 
@@ -738,6 +765,7 @@ static void test_hids_client(void)
 
 	discover_hids();
 	resolve_reports();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
 
 	input = report_by_type(BT_HIDS_REPORT_TYPE_INPUT);
 	TEST_ASSERT(input != NULL, "The Input Report is missing after reconnecting");
@@ -754,10 +782,12 @@ static void test_hids_client(void)
 		    "The server disconnected us when it unregistered the HID Service");
 
 	/* The server registers the HID Service again, which serves it at the
-	 * same handles
+	 * same handles. Reading the Protocol Mode makes the server track this
+	 * already encrypted link.
 	 */
 	bk_sync_wait();
 	verify_static_values();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
 	bk_sync_send();
 
 	disconnect_from_server();
