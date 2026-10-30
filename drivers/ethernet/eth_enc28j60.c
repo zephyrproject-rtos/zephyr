@@ -29,6 +29,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define D10D24S 11
 
+/* The transmit status vector starts at ETXND + 1. Its byte 3 holds
+ * the "Transmit Late Collision" bit.
+ */
+#define ENC28J60_TSV3_OFFSET 4
+
 static int eth_enc28j60_soft_reset(const struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config;
@@ -472,23 +477,13 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 	uint16_t tx_bufaddr_end;
 	struct net_buf *frag;
 	uint8_t tx_end;
+	uint8_t tsv3;
+	int ret = -EIO;
+	int retries;
 
 	LOG_DBG("%s: pkt %p (len %u)", dev->name, pkt, len);
 
 	k_sem_take(&context->tx_rx_sem, K_FOREVER);
-
-	/* Latest errata sheet: DS80349C
-	* always reset transmit logic (Errata Issue 12)
-	* the Microchip TCP/IP stack implementation used to first check
-	* whether TXERIF is set and only then reset the transmit logic
-	* but this has been changed in later versions; possibly they
-	* have a reason for this; they don't mention this in the errata
-	* sheet
-	*/
-	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1,
-				 ENC28J60_BIT_ECON1_TXRST);
-	eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_ECON1,
-				   ENC28J60_BIT_ECON1_TXRST);
 
 	/* Write the buffer content into the transmission buffer */
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_ETXSTL);
@@ -510,24 +505,29 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 			       tx_bufaddr_end & 0xFF);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_ETXNDH, tx_bufaddr_end >> 8);
 
-	/* Signal ENC28J60 to send the buffer */
-	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1,
-				 ENC28J60_BIT_ECON1_TXRTS);
+	/* Send the buffer. On a late collision the hardware aborts and
+	 * does not retransmit; software must do it (errata issue 13,
+	 * Example 1).
+	 */
+	for (retries = 0;; retries++) {
+		/* Latest errata sheet: DS80349C
+		 * always reset transmit logic (Errata Issue 12)
+		 * the Microchip TCP/IP stack implementation used to first check
+		 * whether TXERIF is set and only then reset the transmit logic
+		 * but this has been changed in later versions; possibly they
+		 * have a reason for this; they don't mention this in the errata
+		 * sheet
+		 */
+		eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1, ENC28J60_BIT_ECON1_TXRST);
+		eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_ECON1, ENC28J60_BIT_ECON1_TXRST);
 
-	do {
-		/* wait 10.24 useconds */
-		k_busy_wait(D10D24S);
-		eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &tx_end);
-		tx_end &= ENC28J60_BIT_EIR_TXIF;
-	} while (!tx_end);
-
-
-	eth_enc28j60_read_reg(dev, ENC28J60_REG_ESTAT, &tx_end);
-
-	k_sem_give(&context->tx_rx_sem);
-
-	if (tx_end & ENC28J60_BIT_ESTAT_TXABRT) {
-		LOG_ERR("%s: TX failed!", dev->name);
+		/* Clear a stale TXIF before setting TXRTS (datasheet section
+		 * 7.1), else the wait loop below exits too early and ESTAT
+		 * is read before the end of the transmit. The TXRST above can set TXERIF,
+		 * so clear the flags after the reset.
+		 */
+		eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
+					   ENC28J60_BIT_EIR_TXIF | ENC28J60_BIT_EIR_TXERIF);
 
 		/* 12.1.3 "TRANSMIT ERROR INTERRUPT FLAG (TXERIF)" states:
 		 *
@@ -535,12 +535,80 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 		 * host controller should clear the LATECOL (if set) and
 		 * TXABRT bits so that future aborts can be detected
 		 * accurately."
+		 *
+		 * Clear them before each attempt. The TXRST pulse can leave
+		 * TXABRT set, and the ESTAT read after the wait would then
+		 * report an abort for a frame that was sent.
 		 */
 		eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_ESTAT,
 					   ENC28J60_BIT_ESTAT_TXABRT
 					   | ENC28J60_BIT_ESTAT_LATECOL);
 
-		return -EIO;
+		/* Signal ENC28J60 to send the buffer */
+		eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1, ENC28J60_BIT_ECON1_TXRTS);
+
+		do {
+			/* wait 10.24 useconds */
+			k_busy_wait(D10D24S);
+			eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &tx_end);
+			/* After an abort TXIF may never rise, only TXERIF does
+			 * (errata issue 13, DS80349C). Exit when either bit is set.
+			 */
+			tx_end &= ENC28J60_BIT_EIR_TXIF | ENC28J60_BIT_EIR_TXERIF;
+		} while (!tx_end);
+
+		/* Errata issue 13. After an aborted TX, software must clear
+		 * TXRTS to put the transmit logic back in a correct state.
+		 * We always clear it, like Example 1 of the errata document
+		 * DS80349C. This is safe because after a normal TX the hardware
+		 * has already cleared TXRTS, so clearing it again does nothing.
+		 */
+		eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_ECON1, ENC28J60_BIT_ECON1_TXRTS);
+
+		eth_enc28j60_read_reg(dev, ENC28J60_REG_ESTAT, &tx_end);
+
+		if (!(tx_end & ENC28J60_BIT_ESTAT_TXABRT)) {
+			/* Transmitted */
+			ret = 0;
+			break;
+		}
+
+		/* Aborted. Read the late collision bit from the TSV, because
+		 * ESTAT.LATECOL is unreliable (errata issue 15). No need to
+		 * save ERDPT, the RX path rewrites it.
+		 */
+		eth_enc28j60_set_bank(dev, ENC28J60_REG_ERDPTL);
+		eth_enc28j60_write_reg(dev, ENC28J60_REG_ERDPTL,
+				       (tx_bufaddr_end + ENC28J60_TSV3_OFFSET) & 0xFF);
+		eth_enc28j60_write_reg(dev, ENC28J60_REG_ERDPTH,
+				       (tx_bufaddr_end + ENC28J60_TSV3_OFFSET) >> 8);
+		/* 0 = no late collision, in case the read fails */
+		tsv3 = 0U;
+		eth_enc28j60_read_mem(dev, &tsv3, 1);
+
+		/* A missing chip can read 0xFF on every register, so tsv3
+		 * would show a late collision. ESTAT bit 3 is unimplemented and
+		 * reads 0 on a working chip, so there is no retry when it is set.
+		 */
+		if (!(tsv3 & ENC28J60_BIT_TSV3_LATECOL) || (tx_end & ENC28J60_BIT_ESTAT_UNIMPL3) ||
+		    retries >= CONFIG_ETH_ENC28J60_TX_RETRIES) {
+			break;
+		}
+
+		LOG_DBG("%s: TX late collision, retransmitting", dev->name);
+	}
+
+	k_sem_give(&context->tx_rx_sem);
+
+	if (ret != 0) {
+		LOG_ERR("%s: TX failed! (tsv3 0x%02x, estat 0x%02x, %d retries)", dev->name, tsv3,
+			tx_end, retries);
+
+		return ret;
+	}
+
+	if (retries > 0) {
+		LOG_WRN("%s: TX sent after %d late collisions", dev->name, retries);
 	}
 
 	LOG_DBG("%s: Tx successful", dev->name);

@@ -40,6 +40,19 @@ config ETH_ENC28J60_CLKRDY_INIT_WAIT_MS
 	  by the CLKRDY bit set. If timeout driver init will fail
 	  with -ETIMEDOUT.
 
+config ETH_ENC28J60_TX_RETRIES
+	int "TX retries on late collision"
+	depends on ETH_ENC28J60
+	default 4
+	range 0 15
+	help
+	  Max software retransmissions after a late collision in
+	  half-duplex mode (errata DS80349C, issue 13). Example 1 of
+	  the errata counts up to 15. Each attempt busy waits up to
+	  one frame time (about 1.2 ms for 1518 bytes at 10 Mbit/s)
+	  on the calling thread. With the default 4 the worst case is
+	  about 6 ms.
+
 config ETH_ENC28J60_TIMEOUT
 	int "IP buffer timeout"
 	depends on ETH_ENC28J60
