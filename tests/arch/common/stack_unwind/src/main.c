@@ -8,6 +8,11 @@
 #include <stdbool.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
+#if defined(STACK_UNWIND_BUSY_LOG_TEST)
+LOG_MODULE_REGISTER(stack_unwind, LOG_LEVEL_INF);
+#endif
 
 #if defined(STACK_UNWIND_LEAF_TEST)
 extern void leaf_fault(void);
@@ -50,6 +55,13 @@ static void __noinline func1(int a)
 int main(void)
 {
 	printf("Hello World! %s\n", CONFIG_BOARD);
+
+#if defined(STACK_UNWIND_BUSY_LOG_TEST)
+	/* Keep the logging thread printing on another CPU while the fault is reported */
+	for (int i = 0; i < 20; i++) {
+		LOG_INF("message %d before the fault", i);
+	}
+#endif
 
 #if defined(STACK_UNWIND_LEAF_TEST)
 	leaf_caller();

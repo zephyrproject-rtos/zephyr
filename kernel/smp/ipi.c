@@ -343,6 +343,8 @@ void z_sched_ipi(void)
 	/* NOTE: When adding code to this, make sure this is called
 	 * at appropriate location when !CONFIG_SCHED_IPI_SUPPORTED.
 	 */
+	z_fatal_ipi();
+
 #ifdef CONFIG_TRACE_SCHED_IPI
 	z_trace_sched_ipi();
 #endif /* CONFIG_TRACE_SCHED_IPI */
