@@ -139,7 +139,6 @@
 		pinctrl: pinctrl@4080a800 {
 			compatible = "realtek,ameba-pinctrl";
 			reg = <0x4080a800 0x200>;
-			status = "disabled";
 		};
 
 		rtc: rtc@4080aa00 {
@@ -345,6 +344,22 @@
 			compatible = "realtek,ameba-trng";
 			reg = <0x41001000 0x200>;
 			clocks = <&rcc AMEBA_TRNG_CLK>;
+			status = "disabled";
+		};
+
+	can0: can@41005000 {
+			compatible = "realtek,ameba-can";
+			reg = <0x41005000 0x400>;
+			clocks = <&rcc AMEBA_CAN0_CLK>;
+			interrupts = <60 0>;
+			status = "disabled";
+		};
+
+		can1: can@41006000 {
+			compatible = "realtek,ameba-can";
+			reg = <0x41006000 0x400>;
+			clocks = <&rcc AMEBA_CAN1_CLK>;
+			interrupts = <61 0>;
 			status = "disabled";
 		};
 
