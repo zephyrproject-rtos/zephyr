@@ -291,9 +291,17 @@ static int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	tx_pkt_conf.attributes = HAL_ETH_TX_PKT_CTRL_CRCPAD;
 	tx_pkt_conf.crc_pad_ctrl = HAL_ETH_TX_PKT_CRC_PAD_INSERT;
 	tx_pkt_conf.notify = HAL_ETH_TX_PKT_NOTIFY_ENABLE;
-	tx_pkt_conf.csum_ctrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM)
-					? HAL_ETH_TX_PKT_CSUM_PAYLOAD_HEADER_INSERT
-					: HAL_ETH_TX_PKT_CSUM_DISABLE;
+	/* The MAC computes the ICMPv4 checksum over the field as it is, so a
+	 * packet that carries its transport layer checksum already, a forwarded
+	 * one for example, gets the IPv4 header checksum only.
+	 */
+	if (!IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM)) {
+		tx_pkt_conf.csum_ctrl = HAL_ETH_TX_PKT_CSUM_DISABLE;
+	} else if (net_pkt_is_chksum_done(pkt)) {
+		tx_pkt_conf.csum_ctrl = HAL_ETH_TX_PKT_CSUM_HEADER_INSERT;
+	} else {
+		tx_pkt_conf.csum_ctrl = HAL_ETH_TX_PKT_CSUM_PAYLOAD_HEADER_INSERT;
+	}
 	if (IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM)) {
 		tx_pkt_conf.attributes |= HAL_ETH_TX_PKT_CTRL_CSUM;
 	}

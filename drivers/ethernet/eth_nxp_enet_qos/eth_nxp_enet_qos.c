@@ -432,8 +432,15 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 		desc->read.control1 = FIELD_PREP(0x3FFF, fragment->len);
 		desc->read.control2 = FIELD_PREP(0x7FFF, total_bytes);
 
+		/* The MAC computes the ICMPv4 checksum over the field as it is,
+		 * so a packet that carries its transport layer checksum already,
+		 * a forwarded one for example, gets the IPv4 header checksum only.
+		 */
 		if (frags_idx == 0) {
-			desc->read.control2 |= FIRST_DESCRIPTOR_FLAG | TX_CHECKSUM_INSERT_FLAG;
+			desc->read.control2 |= FIRST_DESCRIPTOR_FLAG |
+					       (net_pkt_is_chksum_done(pkt) ?
+							TX_CHECKSUM_INSERT_IP_HDR_FLAG :
+							TX_CHECKSUM_INSERT_FLAG);
 		}
 
 		/* if there are more fragments use buffer2 - ringbuffer mode */

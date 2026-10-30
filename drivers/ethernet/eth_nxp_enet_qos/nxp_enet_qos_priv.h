@@ -40,13 +40,16 @@
 #define TX_INTERRUPT_ON_COMPLETE_FLAG BIT(31)
 #define TX_TIMESTAMP_ENABLE_FLAG      BIT(30)
 /* TDES3 CIC (checksum insertion control) field: 0b11 inserts the IP header,
- * the payload and the pseudo header checksums. The MAC only rewrites IP frames
- * with a known L4 protocol and leaves other frames untouched.
+ * the payload and the pseudo header checksums, 0b01 the IP header checksum
+ * only. The MAC only rewrites IP frames with a known L4 protocol and leaves
+ * other frames untouched.
  */
 #if defined(CONFIG_NET_CHECKSUM_OFFLOAD)
 #define TX_CHECKSUM_INSERT_FLAG       FIELD_PREP(GENMASK(17, 16), 0x3)
+#define TX_CHECKSUM_INSERT_IP_HDR_FLAG FIELD_PREP(GENMASK(17, 16), 0x1)
 #else
 #define TX_CHECKSUM_INSERT_FLAG       0
+#define TX_CHECKSUM_INSERT_IP_HDR_FLAG 0
 #endif
 #define TX_TIMESTAMP_STATUS_FLAG      BIT(17)
 #define BUF1_ADDR_VALID_FLAG          BIT(24)
