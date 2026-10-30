@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Virtual FAT disk device
+
+compatible: "zephyr,virtual-fat-disk"
+
+include: base.yaml
+
+properties:
+  sector-size:
+    type: int
+    default: 512
+    description: |
+      Reported sector size in bytes.
+      Must be one of 512, 1024, 2048 or 4096.
+
+  data-partition-size:
+    type: int
+    required: true
+    description: |
+      Size of the virtual FAT data partition in bytes.
+
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.
