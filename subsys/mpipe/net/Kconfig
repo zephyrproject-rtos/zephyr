@@ -1,0 +1,44 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MPIPE_NET
+	bool "Network plugin support"
+	depends on NETWORKING && NET_TCP && NET_SOCKETS
+	select NET_IPV4_MAPPING_TO_IPV6 if NET_NATIVE_IPV6
+	help
+	  TCP server sink and source elements. Each listens on its own port,
+	  takes one client and moves pipeline buffers as a raw byte stream.
+	  With IPv6 enabled a single socket serves IPv4 clients too, through
+	  IPv4-mapped addresses.
+
+if MPIPE_NET
+
+config MPIPE_NET_SINK_PORT
+	int "Default port the TCP sink listens on"
+	range 1 65535
+	default 5000
+	help
+	  Used unless the application sets MPIPE_PROP_TCP_SERVER_SINK_PORT.
+
+config MPIPE_NET_SRC_PORT
+	int "Default port the TCP source listens on"
+	range 1 65535
+	default 5001
+	help
+	  Used unless the application sets MPIPE_PROP_TCP_SERVER_SRC_PORT.
+
+config MPIPE_NET_SRC_BUF_SIZE
+	int "Size of a TCP source receive buffer in bytes"
+	range 64 65535
+	default 4096
+	help
+	  One recv() fills at most this many bytes.
+
+config MPIPE_NET_SRC_NUM_BUFS
+	int "Number of buffers in the TCP source pool"
+	range 1 255
+	default 4
+	help
+	  Use more than one when downstream holds buffers across calls.
+
+endif # MPIPE_NET
