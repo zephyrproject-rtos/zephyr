@@ -371,6 +371,7 @@ endif()
 
 if(CONFIG_SOC_SERIES_RW6XX)
   set(CONFIG_MCUX_COMPONENT_driver.ocotp_rw61x ON)
+  set_variable_ifdef(CONFIG_OTP_NXP_RW6XX CONFIG_MCUX_COMPONENT_driver.romapi)
 endif()
 
 if(CONFIG_SOC_SERIES_IMXRT10XX)

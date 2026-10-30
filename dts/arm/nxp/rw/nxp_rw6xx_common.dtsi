@@ -240,6 +240,13 @@
 		status = "okay";
 	};
 
+	ocotp: ocotp@a000 {
+		compatible = "nxp,rw6xx-ocotp";
+		reg = <0xa000 0x690>;
+		clocks = <&clkctl0 MCUX_SYSTEM_CLK>;
+		status = "disabled";
+	};
+
 	wwdt: watchdog@e000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xe000 0x1000>;
