@@ -75,5 +75,27 @@ properties:
       Selects whether the ADC uses internal (true) or external (false) reference.
       External reference recommended for best performance.
 
+  fifo-chan-id:
+    type: boolean
+    description: |
+      Tag each FIFO word with the channel number that produced it, so a FIFO
+      buffer shared by multiple channels can be demultiplexed.
+
 io-channel-cells:
   - input
+
+child-binding:
+  description: |
+    A single SAR ADC input channel, named channel@N where N is the channel
+    number 0 to 27. Channels 0 to 11 are the direct samplers; 12 to 27 reach
+    the four muxed samplers, four channels each.
+
+  properties:
+    fifo-sel:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3, 4]
+      description: |
+        Route this channel's conversion result to a FIFO buffer.
+        Use the IFX_HPPASS_SAR_FIFO_* macros:
+        DISABLED (0, default), FIFO_0 (1), FIFO_1 (2), FIFO_2 (3), FIFO_3 (4).

@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: HPPASS SAR ADC FIFO Configuration
+
+description: |
+  FIFO configuration for the Infineon HPPASS SAR ADC.
+
+  32 words of FIFO storage, split into up to 4 buffers. A channel routes its
+  result to a buffer via fifo-sel on the channel node. This node is named
+  "fifo" under the SAR ADC node, and its interrupt is named "fifo" on the
+  parent ADC node.
+
+compatible: "infineon,hppass-sar-fifo"
+
+properties:
+  fifo-levels:
+    type: array
+    required: true
+    description: |
+      Watermark threshold for each FIFO buffer. The length of this array
+      selects the split:
+        1 entry  -> one 32-word buffer
+        2 entries -> two 16-word buffers
+        4 entries -> four 8-word buffers
+
+      A watermark interrupt fires for a buffer once its occupancy reaches
+      the configured entry. An entry of 0 disables the watermark interrupt
+      for that buffer.

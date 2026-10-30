@@ -1,0 +1,88 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: HPPASS SAR ADC Sequencer
+
+description: |
+  Holds the SAR sequencer groups. Each child node is one group, owning a set of
+  channels and its own trigger.
+
+  Must be a child of an "infineon,hppass-sar-adc" node. Groups live here rather
+  than directly under the ADC so the channel numbering stays free for the
+  channel nodes.
+
+    &adc0 {
+        channel@1 {
+            reg = <1>;
+            ...
+        };
+
+        sequencer {
+            compatible = "infineon,hppass-sar-sequencer";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            group@0 {
+                reg = <0>;
+                infineon,channel-mask = <0x2>;
+                infineon,trigger-source = <IFX_HPPASS_SAR_TRIG_0>;
+            };
+        };
+    };
+
+compatible: "infineon,hppass-sar-sequencer"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: |
+    One SAR sequencer group.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Group number, 0 to 7.
+
+    infineon,channel-mask:
+      type: int
+      required: true
+      description: |
+        Channels this group converts, one bit per channel. Bit 0 is channel 0.
+
+        Each channel needs its own channel node, and two groups cannot share a
+        channel.
+
+        If two groups use the same muxed sampler, meaning channels from the same
+        block of 12-15, 16-19, 20-23 or 24-27, both must set
+        infineon,sample-time-cycles. The mux switches when the conversion
+        starts, so without it the new input has no time to settle.
+
+    infineon,sample-time-cycles:
+      type: int
+      description: |
+        How long to sample before converting, in SAR clock cycles, 1 to 1024.
+        Leave it out for 32 cycles, enough for a low impedance source on a
+        channel no other group uses.
+
+        There are three sample timers for the eight groups. Groups asking for
+        the same value share a timer, so use no more than three different
+        values.
+
+    infineon,trigger-source:
+      type: int
+      required: true
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      description: |
+        Trigger that fires this group. Use one of the IFX_HPPASS_SAR_TRIG_*
+        constants. Group 0 must use IFX_HPPASS_SAR_TRIG_0, the trigger
+        adc_read() fires.
