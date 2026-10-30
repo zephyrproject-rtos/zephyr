@@ -1,0 +1,13 @@
+# Copyright (c) Arduino s.r.l. and/or its affiliated companies
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_RPI_PICO_PIO
+	bool "RP2040 PIO-based PDM DMIC driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_RP2040_PDM_ENABLED
+	select PICOSDK_USE_PIO
+	select PICOSDK_USE_DMA
+	help
+	  Enable the RP2040 PIO + DMA PDM capture driver. Uses a PIO state
+	  machine to generate the PDM clock and sample data, DMA to transfer
+	  raw bits to a buffer, and the ST OpenPDM filter to decimate to PCM.
