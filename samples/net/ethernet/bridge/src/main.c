@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(net_bridge_sample, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 
 #include <zephyr/net/ethernet_bridge.h>
+#include <zephyr/net/ethernet_bridge_stp.h>
 
 struct ud {
 	struct net_if *bridge;
@@ -97,6 +98,18 @@ int main(void)
 	net_eth_bridge_foreach(bridge_find_cb, u);
 	net_if_foreach(bridge_add_iface_cb, u);
 	net_if_up(u->bridge);
+
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE_STP)) {
+		int ret = eth_bridge_stp_enable(u->bridge, true);
+
+		if (ret < 0) {
+			LOG_ERR("eth_bridge_stp_enable failed: %d", ret);
+		} else {
+			LOG_INF("Spanning tree started on bridge %d.",
+				net_if_get_by_iface(u->bridge));
+		}
+	}
+
 #if defined(CONFIG_NET_MGMT_EVENT) && defined(CONFIG_NET_DHCPV4)
 	net_mgmt_init_event_callback(&u->mgmt_cb, event_handler, NET_EVENT_IF_UP);
 	net_mgmt_add_event_callback(&u->mgmt_cb);

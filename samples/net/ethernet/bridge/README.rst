@@ -60,3 +60,31 @@ The steps are as below.
 .. code-block:: console
 
     bridge-test-setup.sh clean
+
+Spanning tree
+*************
+
+The :zephyr_file:`samples/net/ethernet/bridge/overlay-rstp.conf` overlay runs the Rapid Spanning
+Tree Protocol on the bridge. The bridge then blocks the ports that would make a loop, so its ports
+can be cabled in a ring with other bridges. The overlay also gives the bridge a MAC address derived
+from the device ID, so that its Bridge Identifier stays the same across reboots.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/ethernet/bridge
+   :board: mimxrt1170_evk@B/mimxrt1176/cm7
+   :gen-args: -DEXTRA_CONF_FILE=overlay-rstp.conf
+   :goals: build flash
+   :compact:
+
+On the MIMXRT1170-EVK, the sample uses both Ethernet ports, the 100 Mb/s ENET and the 1 Gb/s
+ENET_1G, as bridge ports.
+
+The ``net bridge stp`` shell command shows and sets the protocol. Without options it shows the
+bridge and its ports. The commands take interface indexes, which ``net iface`` lists:
+
+.. code-block:: console
+
+   uart:~$ net bridge stp 1
+   uart:~$ net bridge stp 1 --priority 4096 --max-age 20 --forward-delay 15
+   uart:~$ net bridge stp 1 port 2 --cost 20000 --link p2p
+   uart:~$ net bridge stp 1 --help

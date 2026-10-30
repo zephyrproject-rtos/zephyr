@@ -15,6 +15,9 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/coap_mgmt.h>
 #include <zephyr/net/ethernet_mgmt.h>
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_STP)
+#include <zephyr/net/ethernet_bridge_stp.h>
+#endif
 
 #include "net_shell_private.h"
 
@@ -27,7 +30,7 @@ LOG_MODULE_DECLARE(net_shell);
 #define MONITOR_L3_IPV6_MASK (NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
 #define MONITOR_L4_MASK (NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
 
-#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT) || defined(CONFIG_NET_ETHERNET_BRIDGE_STP)
 #define MONITOR_L2_ETHERNET_MASK (NET_ETHERNET_BASE)
 static struct net_mgmt_event_callback l2_ethernet_cb;
 #endif
@@ -74,6 +77,72 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		NET_ERR("Cannot write to msgq (%d)\n", ret);
 	}
 }
+
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_STP)
+static const char *stp_role_str(enum eth_bridge_stp_role role)
+{
+	switch (role) {
+	case ETH_BRIDGE_STP_ROLE_ROOT:
+		return "root";
+	case ETH_BRIDGE_STP_ROLE_DESIGNATED:
+		return "designated";
+	case ETH_BRIDGE_STP_ROLE_ALTERNATE:
+		return "alternate";
+	case ETH_BRIDGE_STP_ROLE_BACKUP:
+		return "backup";
+	default:
+		return "disabled";
+	}
+}
+
+static char *get_stp_desc(struct event_msg *msg, const char **desc, const char **desc2,
+			  char *extra_info, size_t extra_info_len)
+{
+	*desc = "bridge";
+
+	if (msg->event == NET_EVENT_ETHERNET_BRIDGE_PORT_STATE) {
+		const struct eth_bridge_stp_port_event *ev = (const void *)msg->data;
+
+		*desc2 = "port state";
+		if (msg->len < sizeof(*ev)) {
+			return NULL;
+		}
+
+		snprintk(extra_info, extra_info_len, "%s %s, bridge %d", stp_role_str(ev->role),
+			 ev->forwarding ? "forwarding" : (ev->learning ? "learning" : "discarding"),
+			 net_if_get_by_iface(ev->bridge));
+	} else if (msg->event == NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT) {
+		const struct eth_bridge_stp_root_event *ev = (const void *)msg->data;
+		uint8_t id[sizeof(ev->root_id)];
+		int len;
+
+		*desc2 = "new root";
+		if (msg->len < sizeof(*ev)) {
+			return NULL;
+		}
+
+		sys_put_be64(ev->root_id, id);
+		len = snprintk(extra_info, extra_info_len,
+			       "%02x%02x.%02x:%02x:%02x:%02x:%02x:%02x, cost %u", id[0], id[1],
+			       id[2], id[3], id[4], id[5], id[6], id[7], ev->root_path_cost);
+		if (ev->root_port != NULL && len > 0 && (size_t)len < extra_info_len) {
+			snprintk(&extra_info[len], extra_info_len - (size_t)len, ", root port %d",
+				 net_if_get_by_iface(ev->root_port));
+		}
+	} else {
+		const struct eth_bridge_stp_topology_event *ev = (const void *)msg->data;
+
+		*desc2 = "topology change";
+		if (msg->len < sizeof(*ev)) {
+			return NULL;
+		}
+
+		snprintk(extra_info, extra_info_len, "count %u", ev->topology_change_count);
+	}
+
+	return extra_info;
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_STP */
 
 static char *get_l2_desc(struct event_msg *msg,
 			 const char **desc, const char **desc2,
@@ -140,6 +209,13 @@ static char *get_l2_desc(struct event_msg *msg,
 #endif
 		break;
 	}
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_STP)
+	case NET_EVENT_ETHERNET_BRIDGE_PORT_STATE:
+	case NET_EVENT_ETHERNET_BRIDGE_NEW_ROOT:
+	case NET_EVENT_ETHERNET_BRIDGE_TOPOLOGY_CHANGE:
+		info = get_stp_desc(msg, desc, desc2, extra_info, extra_info_len);
+		break;
+#endif
 	case NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD:
 	case NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP: {
 		struct net_event_packet_mcast *mcast =
@@ -564,7 +640,7 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 				     MONITOR_L4_MASK);
 	net_mgmt_add_event_callback(&l4_cb);
 
-#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT) || defined(CONFIG_NET_ETHERNET_BRIDGE_STP)
 	net_mgmt_init_event_callback(&l2_ethernet_cb, event_handler,
 				     MONITOR_L2_ETHERNET_MASK);
 	net_mgmt_add_event_callback(&l2_ethernet_cb);
@@ -617,7 +693,7 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 	net_mgmt_del_event_callback(&l3_ipv6_cb);
 	net_mgmt_del_event_callback(&l4_cb);
 
-#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT) || defined(CONFIG_NET_ETHERNET_BRIDGE_STP)
 	net_mgmt_del_event_callback(&l2_ethernet_cb);
 #endif
 

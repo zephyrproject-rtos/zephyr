@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use both Ethernet ports: ENET (100 Mb/s) is enabled by the board, enable
+ * ENET_1G next to it so that the bridge has two ports.
+ */
+
+&enet1g {
+	status = "okay";
+};
+
+&enet1g_mac {
+	status = "okay";
+};
+
+&enet1g_mdio {
+	status = "okay";
+
+	enet1g_phy: phy@1 {
+		status = "okay";
+	};
+};
