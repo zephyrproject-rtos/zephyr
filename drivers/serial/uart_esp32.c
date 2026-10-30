@@ -65,6 +65,7 @@
 #include <hal/uart_hal.h>
 #include <hal/uart_types.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #include <soc/uart_reg.h>
@@ -185,6 +186,13 @@ struct uart_esp32_data {
 #define UART_RX_IDLE_THRESH (256U)
 /* Shorter RX idle time used to flush UHCI when async RX stops, in bit times */
 #define UART_RX_STOP_THRESH (2U * UART_MAX_FRAME_BITS)
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
+	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
+/* UHCI ends a packet after its first byte when the UART core clock, the source
+ * clock after the baud rate prescaler, is slower than APB divided by this
+ */
+#define UART_UHCI_MAX_APB_TO_CORE_CLK (7U)
+#endif
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
 static void uart_esp32_isr(void *arg);
@@ -423,6 +431,10 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	soc_module_clk_t src_clk;
 	uint32_t sclk_freq;
 	uint32_t inv_mask = 0;
+#if defined(CONFIG_UART_ASYNC_API) && defined(UART_UHCI_MAX_APB_TO_CORE_CLK)
+	uint32_t apb_freq;
+	uint32_t sclk_div;
+#endif
 
 	/*
 	 * On P4 and C61, switching UART clock source (e.g. XTAL to PLL_F80M)
@@ -446,6 +458,20 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 #elif !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
 #endif
+	uart_hal_get_sclk(&data->hal, &src_clk);
+	esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+
+#if defined(CONFIG_UART_ASYNC_API) && defined(UART_UHCI_MAX_APB_TO_CORE_CLK)
+	if (config->rx_dma_channel != 0xFF && cfg->baudrate != 0U) {
+		apb_freq = (uint32_t)esp_clk_apb_freq();
+		sclk_div = DIV_ROUND_UP(sclk_freq, (uint64_t)UART_CLKDIV_V * cfg->baudrate);
+		if ((uint64_t)sclk_freq * UART_UHCI_MAX_APB_TO_CORE_CLK <
+		    (uint64_t)apb_freq * sclk_div) {
+			return -ENOTSUP;
+		}
+	}
+#endif
+
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
 	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
 	uart_hal_rxfifo_rst(&data->hal);
@@ -512,8 +538,6 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 		return -ENOTSUP;
 	}
 
-	uart_hal_get_sclk(&data->hal, &src_clk);
-	esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
 	uart_hal_set_baudrate(&data->hal, cfg->baudrate, sclk_freq);
 
 	uart_hal_set_rx_timeout(&data->hal, 0x16);
