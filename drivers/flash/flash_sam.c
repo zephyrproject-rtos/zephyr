@@ -18,6 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/cache.h>
 #include <zephyr/sys/barrier.h>
 #include <string.h>
 #include <soc.h>
@@ -287,10 +288,13 @@ static int sam_flash_write(const struct device *dev, off_t offset, const void *d
 
 	key = k_spin_lock(&sam_data->lock);
 	if (sam_flash_write_dwords_to_flash(dev, offset, data, len / sizeof(uint32_t)) < 0) {
+		(void)sys_cache_instr_invd_all();
 		k_spin_unlock(&sam_data->lock, key);
 		return -EAGAIN;
 	}
 
+	/* The cache on the code bus still holds the old contents */
+	(void)sys_cache_instr_invd_all();
 	k_spin_unlock(&sam_data->lock, key);
 	return 0;
 }
@@ -433,6 +437,7 @@ static int sam_flash_erase(const struct device *dev, off_t offset, size_t size)
 	sam_data->erase_data.section_end = offset + size;
 	sam_data->erase_data.succeeded = true;
 	flash_page_foreach(dev, sam_flash_erase_foreach_page, sam_data);
+	(void)sys_cache_instr_invd_all();
 	if (!sam_data->erase_data.succeeded) {
 		k_spin_unlock(&sam_data->lock, key);
 		return -EFAULT;
