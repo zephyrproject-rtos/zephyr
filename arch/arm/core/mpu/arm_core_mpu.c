@@ -5,6 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_KERNEL_COHERENCE
+#include <cmsis_core.h>
+#include <zephyr/cache.h>
+#endif
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -65,6 +69,13 @@ extern char _sram_vector_size[];
 #endif
 
 static const struct z_arm_mpu_partition static_regions[] = {
+#ifdef CONFIG_KERNEL_COHERENCE
+	{
+		.start = (uint32_t)__coherent_start,
+		.size = (uint32_t)__coherent_size,
+		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
+	},
+#endif
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
 	{
 		/* GCOV code coverage accounting area. Needs User permissions
@@ -157,6 +168,14 @@ void z_arm_configure_static_mpu_regions(void)
 	 * into account the unused SRAM area, as well.
 	 */
 #ifdef CONFIG_AARCH32_ARMV8_R
+#ifdef CONFIG_KERNEL_COHERENCE
+	/* Keep shared data uncached while the MPU's attributes are unavailable. */
+	bool dcache_enabled = (__get_SCTLR() & SCTLR_C_Msk) != 0U;
+
+	if (dcache_enabled) {
+		arch_dcache_disable();
+	}
+#endif
 	arm_core_mpu_disable();
 #endif
 	arm_core_mpu_configure_static_mpu_regions(static_regions,
@@ -165,6 +184,11 @@ void z_arm_configure_static_mpu_regions(void)
 		(uint32_t)&__kernel_ram_end);
 #ifdef CONFIG_AARCH32_ARMV8_R
 	arm_core_mpu_enable();
+#ifdef CONFIG_KERNEL_COHERENCE
+	if (dcache_enabled) {
+		arch_dcache_enable();
+	}
+#endif
 #endif
 
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \

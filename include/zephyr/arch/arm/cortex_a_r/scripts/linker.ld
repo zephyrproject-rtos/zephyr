@@ -311,11 +311,30 @@ SECTIONS
     _app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif  /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_KERNEL_COHERENCE
+    SECTION_DATA_PROLOGUE(.cached_stacks,(NOLOAD),)
+    {
+        . = ALIGN(MAX(_region_min_align, CONFIG_DCACHE_LINE_SIZE));
+        __kernel_ram_start = .;
+        *(.cached_stacks .cached_stacks.*)
+        . = ALIGN(MAX(_region_min_align, CONFIG_DCACHE_LINE_SIZE));
+    } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+#endif
+
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
     {
+#ifndef CONFIG_KERNEL_COHERENCE
         __kernel_ram_start = .;
+#endif
         __data_region_start = .;
         __data_start = .;
+#ifdef CONFIG_KERNEL_COHERENCE
+        /* Initialized private data shares the ordinary data copy at boot. */
+        . = ALIGN(MAX(_region_min_align, CONFIG_DCACHE_LINE_SIZE));
+        *(.cached .cached.*)
+        . = ALIGN(MAX(_region_min_align, CONFIG_DCACHE_LINE_SIZE));
+        __coherent_start = .;
+#endif
         *(.data)
         *(".data.*")
         *(".kernel.*")
@@ -437,6 +456,10 @@ GROUP_END(OCM)
 
     __kernel_ram_end = RAM_ADDR + RAM_SIZE;
     __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
+#ifdef CONFIG_KERNEL_COHERENCE
+    __coherent_end = __kernel_ram_end;
+    __coherent_size = __coherent_end - __coherent_start;
+#endif
 
 #define LAST_RAM_ALIGN . = ALIGN(_region_min_align);
 

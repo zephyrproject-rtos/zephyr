@@ -14,12 +14,32 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cache.h>
+#include <zephyr/linker/linker-defs.h>
 #include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
 /* Cache Type Register */
 #define	CTR_DMINLINE_SHIFT	16
 #define	CTR_DMINLINE_MASK	BIT_MASK(4)
+
+#ifdef CONFIG_CACHE_CAN_SAY_MEM_COHERENCE
+bool arch_mem_coherent(void *ptr)
+{
+	__maybe_unused uintptr_t addr = (uintptr_t)ptr;
+
+#ifdef CONFIG_KERNEL_COHERENCE
+	if ((addr >= (uintptr_t)__coherent_start) && (addr < (uintptr_t)__coherent_end)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_NOCACHE_MEMORY
+	if ((addr >= (uintptr_t)_nocache_ram_start) && (addr < (uintptr_t)_nocache_ram_end)) {
+		return true;
+	}
+#endif
+	return false;
+}
+#endif
 
 #ifdef CONFIG_DCACHE
 

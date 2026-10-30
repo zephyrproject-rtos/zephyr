@@ -131,7 +131,9 @@ enum k_fatal_error_reason_arch {
  * boundaries
  *
  */
-#ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
+#ifdef CONFIG_KERNEL_COHERENCE
+#define ARCH_STACK_PTR_ALIGN CONFIG_DCACHE_LINE_SIZE
+#elif defined(CONFIG_STACK_ALIGN_DOUBLE_WORD)
 #define ARCH_STACK_PTR_ALIGN 8
 #else
 #define ARCH_STACK_PTR_ALIGN 4
