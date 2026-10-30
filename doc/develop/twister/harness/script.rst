@@ -29,5 +29,15 @@ tests_scripts: <list of script paths> (default tests_scripts)
             - ../../test/test_b.sh
             - $ENV_VAR/tests_scripts
 
+tests_scripts_parallel: <boolean> (default true)
+    Run the scripts of a scenario at the same time, as far as Twister has free job slots.
+    The first script in flight runs on the job the worker already holds for the scenario,
+    so it never waits; each further script in flight takes a free job from the ``-j``
+    budget, without waiting for one, and gives it back when it ends. The load therefore
+    never exceeds ``-j``, and a scenario with many scripts speeds up as other work
+    finishes. Set it to ``false`` for scripts that must not run at the same time, for
+    example because they share a simulation id or a file. The results and logs are recorded
+    in the order the scripts are listed, whichever order they finish in.
+
 Any extra command-line arguments passed to Twister after ``--`` are forwarded to every script as
 additional positional arguments.

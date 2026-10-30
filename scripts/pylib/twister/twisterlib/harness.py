@@ -14,6 +14,7 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import asdict
 from enum import Enum
 from glob import glob
@@ -426,9 +427,14 @@ class Console(Harness):
 
 
 class Script(Harness):
+    # Seconds the output reader may take past the timeout to drain the pipe
+    OUTPUT_DRAIN_GRACE = 1.0
+    # Seconds to wait for a running script before looking for free job slots again
+    SCRIPT_POLL_INTERVAL = 1.0
 
     def __init__(self):
         super().__init__()
+        self.jobserver = None
         self.log_file_path = None
         self.source_dir = None
         self.running_dir = None
@@ -451,24 +457,91 @@ class Script(Harness):
         if not all_scripts:
             self._log_error("No scripts found!")
 
-        for script in all_scripts:
-            if not os.path.exists(script):
-                self._handle_missing_script(script)
-                continue
-            rc = -1
-            duration = 0.0
-            cmd = self._build_script_command(script)
-            try:
-                start_time = time.time()
-                rc = self.run_command(cmd, timeout, env=self._get_env())
-                duration = time.time() - start_time
-            except Exception as err:
-                logger.error(str(err))
-            self._add_testcase_from_script(script, rc, duration)
-            self._flush_output_to_log(cmd, rc)
+        start_time = time.time()
+        if self.instance.testsuite.harness_config.get('tests_scripts_parallel', True):
+            self._run_scripts_parallel(all_scripts, timeout)
+        else:
+            for script in all_scripts:
+                self._record_script_result(self._run_script(script, timeout), timeout)
         self.instance.record(self.recording)
         self._update_test_status()
+        # With scripts running in parallel the sum of their durations overstates the
+        # elapsed time, so report the wall time of the whole run.
+        self.instance.execution_time = time.time() - start_time
         return True
+
+    def _run_scripts_parallel(self, scripts: list[str], timeout: float) -> None:
+        """Run the scripts with as many in flight as twister has free job slots.
+
+        The first script in flight runs on the job this worker already holds, so it never
+        waits; each further one needs a job taken from the job server without waiting, so
+        the load stays within -j and grows only as other workers finish. Results are
+        recorded in listing order as the scripts end.
+        """
+        futures: list[Future] = []
+        next_record = 0
+        with ThreadPoolExecutor(max_workers=len(scripts)) as executor:
+            while next_record < len(scripts):
+                running = [f for f in futures[next_record:] if not f.done()]
+                while len(futures) < len(scripts):
+                    job = None
+                    if running:
+                        job = self._try_get_job()
+                        if job is None:
+                            break
+                    future = executor.submit(self._run_script, scripts[len(futures)], timeout)
+                    if job is not None:
+                        future.add_done_callback(lambda _f, job=job: job.release())
+                    futures.append(future)
+                    running.append(future)
+                if futures[next_record].done():
+                    self._record_script_result(futures[next_record].result(), timeout)
+                    next_record += 1
+                else:
+                    wait(running, timeout=self.SCRIPT_POLL_INTERVAL, return_when=FIRST_COMPLETED)
+
+    def _try_get_job(self):
+        """Take a free job from twister's job server without waiting, or return None."""
+        if self.jobserver is None:
+            return None
+        return self.jobserver.try_get_job()
+
+    def _record_script_result(
+        self, result: tuple[str, list[str] | None, int, float, list[str], bool], timeout: float
+    ) -> None:
+        script, cmd, rc, duration, output, timed_out = result
+        if cmd is None:
+            self._handle_missing_script(script)
+            return
+        for line in output:
+            self.parse_record(line)
+        if timed_out:
+            self._handle_timeout(timeout)
+        self._add_testcase_from_script(script, rc, duration, output=output, timed_out=timed_out)
+        self._flush_output_to_log(cmd, rc, output)
+
+    def _run_script(
+        self, script: str, timeout: float
+    ) -> tuple[str, list[str] | None, int, float, list[str], bool]:
+        """Run one script and return (script, cmd, rc, duration, output, timed_out).
+
+        Does not touch any state shared between scripts, so it can run in a worker thread.
+        A missing script is reported with cmd set to None.
+        """
+        if not os.path.exists(script):
+            return script, None, -1, 0.0, [], False
+        cmd = self._build_script_command(script)
+        rc = -1
+        duration = 0.0
+        output: list[str] = []
+        timed_out = False
+        try:
+            start_time = time.time()
+            rc, timed_out = self._run_command_capture(cmd, timeout, output, env=self._get_env())
+            duration = time.time() - start_time
+        except Exception as err:
+            logger.error(str(err))
+        return script, cmd, rc, duration, output, timed_out
 
     def _log_error(self, reason: str) -> None:
         logger.error(reason)
@@ -542,64 +615,100 @@ class Script(Harness):
 
     def run_command(self, cmd: list[str], timeout: float, env: dict[str, str] | None = None) -> int:
         """Run a command, stream its output, and return the exit code."""
+        self._output = []
+        rc, timed_out = self._run_command_capture(cmd, timeout, self._output, env=env)
+        for line in self._output:
+            self.parse_record(line)
+        if timed_out:
+            self._handle_timeout(timeout)
+        return rc
+
+    def _run_command_capture(
+        self, cmd: list[str], timeout: float, output: list[str],
+        env: dict[str, str] | None = None
+    ) -> tuple[int, bool]:
+        """Run a command, append its output lines to ``output``.
+
+        Returns the exit code and whether the command had to be stopped at the timeout.
+        Only ``output`` is written to, so several calls may run concurrently. The whole
+        call, including the draining of the output pipe, is bounded by the timeout plus
+        OUTPUT_DRAIN_GRACE.
+        """
         logger.debug(f"Running command: {shlex.join(cmd)}")
-        with subprocess.Popen(
+        deadline = time.monotonic() + timeout
+        timed_out = False
+        proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             env=env,
-        ) as proc:
-            try:
-                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
-                reader_t.start()
-                reader_t.join(timeout)
-                if reader_t.is_alive():
-                    terminate_process(proc)
-                    logger.warning('Timeout has occurred. Can be extended in testspec file. '
-                                   f'Currently set to {timeout} seconds.')
-                    self.instance.reason = 'Test timeout'
-                    self.status = TwisterStatus.FAIL
-                proc.wait(timeout)
-            except subprocess.TimeoutExpired:
-                self.status = TwisterStatus.FAIL
-                proc.kill()
+        )
+        reader_t = threading.Thread(target=self._output_reader, args=(proc, output), daemon=True)
+        reader_t.start()
+        try:
+            proc.wait(timeout)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            terminate_process(proc)
+            proc.wait()
+        # Let the reader drain what the script and its children wrote, within the same
+        # deadline. A process the script left behind may still hold the pipe; do not block
+        # on it or close the pipe underneath the reader, the daemon thread ends with it.
+        reader_t.join(max(0.0, deadline - time.monotonic()) + self.OUTPUT_DRAIN_GRACE)
+        if not reader_t.is_alive():
+            proc.stdout.close()
 
-        return proc.returncode
+        return proc.returncode, timed_out
 
-    def _flush_output_to_log(self, cmd: list[str], returncode: int) -> None:
+    def _handle_timeout(self, timeout: float) -> None:
+        logger.warning('Timeout has occurred. Can be extended in testspec file. '
+                       f'Currently set to {timeout} seconds.')
+        self.instance.reason = 'Test timeout'
+        self.status = TwisterStatus.FAIL
+
+    def _flush_output_to_log(
+        self, cmd: list[str], returncode: int, output: list[str] | None = None
+    ) -> None:
+        if output is None:
+            output = self._output
+            self._output = []
         with open(self.log_file_path, 'a') as log_file:
             log_file.write(shlex.join(cmd) + '\n\n')
-            log_file.write('\n'.join(self._output))
+            log_file.write('\n'.join(output))
             log_file.write(f'\n=== Return code: {returncode}\n\n')
-        self._output = []
 
-    def _output_reader(self, proc: subprocess.Popen) -> None:
-        self._output = []
+    def _output_reader(self, proc: subprocess.Popen, output: list[str]) -> None:
         log_prefix = self.log_prefix or self.__class__.__name__.upper()
-        while proc.stdout.readable() and proc.poll() is None:
+        # Read until EOF rather than until the process has exited: a script that exits
+        # before this thread gets to run would otherwise have its output discarded.
+        for raw_line in iter(proc.stdout.readline, b''):
             # errors="replace": a non-UTF-8 serial byte must not crash this reader
             # thread (which would stop capturing the DUT's output mid-run).
-            line = proc.stdout.readline().decode(errors="replace").rstrip()
+            line = raw_line.decode(errors="replace").rstrip()
             if not line:
                 continue
-            self._output.append(line)
+            output.append(line)
             logger.debug(f'{log_prefix}: {line}')
-            self.parse_record(line)
-        proc.communicate()
 
     def _add_testcase_from_script(
-        self, script: str, rc: int, duration: float = 0.0, reason: str = ''
+        self, script: str, rc: int, duration: float = 0.0, reason: str = '',
+        output: list[str] | None = None, timed_out: bool = False
     ) -> None:
         script_name = self._script_names.get(script, os.path.basename(script))
         tc_name = f"{self.id}.{script_name}"
         tc = self.instance.add_testcase(tc_name)
         tc.duration = duration
-        if rc == 0:
+        if timed_out:
+            # A script stopped at the timeout failed whatever its exit code says
+            tc.status = TwisterStatus.FAIL
+            tc.reason = reason or f"Script {script_name} timed out"
+            tc.output = '\n'.join(self._output if output is None else output)
+        elif rc == 0:
             tc.status = TwisterStatus.PASS
         else:
             tc.status = TwisterStatus.FAIL
             tc.reason = reason or f"Script {script_name} failed with return code {rc}"
-            tc.output = '\n'.join(self._output)
+            tc.output = '\n'.join(self._output if output is None else output)
 
     def _update_test_status(self):
         if not self.instance.testcases:
