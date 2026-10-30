@@ -278,6 +278,9 @@ struct lll_event {
 	lll_abort_cb_t           abort_cb;
 	uint8_t                  is_resume:1;
 	uint8_t                  is_aborted:1;
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	uint8_t                  is_yield:1;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 };
 
 #define DEFINE_NODE_RX_USER_TYPE(i, _) NODE_RX_TYPE_##i
@@ -622,6 +625,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			lll_prepare_cb_t prepare_cb,
 			struct lll_prepare_param *prepare_param,
 			uint8_t is_resume, uint8_t is_dequeue);
+bool lll_is_yield_early(const struct lll_event *e);
 
 struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 				      lll_abort_cb_t abort_cb,
@@ -630,6 +634,7 @@ struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 				      uint8_t is_resume);
 void *ull_prepare_dequeue_get(void);
 void *ull_prepare_dequeue_iter(void **idx);
+void ull_prepare_dequeue_first_set(struct lll_event *e);
 void ull_prepare_dequeue(uint8_t caller_id);
 void *ull_pdu_rx_alloc_peek(uint8_t count);
 void *ull_pdu_rx_alloc_peek_iter(uint8_t *idx);
