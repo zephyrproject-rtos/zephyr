@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Advanced Micro Devices, Inc.
+ * Copyright (c) 2026, Advanced Micro Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,6 +67,13 @@
 				interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
+		};
+
+		sysmon0: sysmon@f1270000 {
+			compatible = "xlnx,versal-sysmon";
+			reg = <0x0 0xf1270000 0x0 0x4000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		};
 	};
 };
