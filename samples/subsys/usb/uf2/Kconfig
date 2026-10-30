@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "$(ZEPHYR_BASE)/samples/subsys/usb/uf2/Kconfig.family"
+
+menu "UF2 sample options"
+
+config APP_UF2_FAMILY_ID
+	string "UF2 device family ID"
+	default APP_UF2_FAMILY_ID_DEFAULT if APP_UF2_FAMILY_ID_DEFAULT != ""
+	default BUILD_OUTPUT_UF2_FAMILY_ID
+	help
+	  Only blocks of UF2 files with this family ID are programmed. This can
+	  be either a hex value, e.g. 0x68ed2b88, or a well-known family name
+	  string. The default is the ID from Kconfig.family if the board has one,
+	  otherwise the family ID of the SoC if it is known to the UF2 family
+	  list. The IDs in Kconfig.family are not registered, they are local to
+	  this sample.
+
+config APP_UF2_AUTO_REBOOT
+	bool "Restart when the image is complete"
+	default y
+	help
+	  Detach from the USB bus and restart after the last block of the UF2
+	  file has been programmed, which starts the new application. The
+	  restart waits until the host marks the volume clean, one second at most.
+	  If disabled, the bootloader stays in UF2 mode and the user has to reset
+	  the board to start the application.
+
+endmenu
+
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

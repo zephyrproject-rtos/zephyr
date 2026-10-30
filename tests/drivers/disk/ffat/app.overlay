@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	ffatdisk0 {
+		compatible = "zephyr,ffat-disk";
+		disk-name = "RAM";
+		sector-size = <512>;
+		sector-count = <32680>;
+		sector-per-cluster = <1>;
+	};
+
+	ffatdisk1 {
+		compatible = "zephyr,ffat-disk";
+		disk-name = "NAND";
+		sector-size = <512>;
+		sector-count = <262144>;
+		sector-per-cluster = <4>;
+	};
+
+	ffatdisk2 {
+		compatible = "zephyr,ffat-disk";
+		disk-name = "CF";
+		sector-size = <1024>;
+		sector-count = <524288>;
+		sector-per-cluster = <8>;
+	};
+
+	ffatdisk3 {
+		compatible = "zephyr,ffat-disk";
+		disk-name = "SD";
+		sector-size = <4096>;
+		sector-count = <1048576>;
+		sector-per-cluster = <32>;
+	};
+
+	ffatdisk4 {
+		compatible = "zephyr,ffat32-disk", "zephyr,ffat-disk";
+		disk-name = "SD2";
+		sector-size = <512>;
+		sector-count = <131072>;
+		sector-per-cluster = <1>;
+	};
+
+	ffatdisk5 {
+		compatible = "zephyr,ffat32-disk", "zephyr,ffat-disk";
+		disk-name = "USB";
+		sector-size = <512>;
+		sector-count = <524288>;
+		sector-per-cluster = <4>;
+	};
+
+	ffatdisk6 {
+		compatible = "zephyr,ffat32-disk", "zephyr,ffat-disk";
+		disk-name = "USB2";
+		sector-size = <1024>;
+		sector-count = <1048576>;
+		sector-per-cluster = <8>;
+	};
+
+	ffatdisk7 {
+		compatible = "zephyr,ffat32-disk", "zephyr,ffat-disk";
+		disk-name = "USB3";
+		sector-size = <4096>;
+		sector-count = <16777216>;
+		sector-per-cluster = <64>;
+	};
+};
