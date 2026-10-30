@@ -164,21 +164,32 @@ void virtnet_rx_cb(void *priv, uint32_t len)
 	const struct virtnet_config *config = data->dev->config;
 	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_RX(1));
 
-	len -= sizeof(struct _virtio_net_hdr);
-	struct net_pkt *pkt =
-		net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
-
-	if (pkt == NULL) {
-		LOG_ERR("received packet, but could not pass it to the operating system");
-	} else if (net_pkt_write(pkt, &(data->rxb[buf_no][sizeof(struct _virtio_net_hdr)]), len)) {
-		LOG_ERR("could not copy entire received packet");
-		net_pkt_unref(pkt);
-	} else if (net_recv_data(data->iface, pkt)) {
-		LOG_ERR("operating system failed to receive packet");
-		net_pkt_unref(pkt);
+	/*
+	 * used_len is controlled by the device. Reject lengths that would
+	 * underflow the header subtraction or read past rxb, but still requeue
+	 * the buffer below so the RX queue keeps working.
+	 */
+	if (len <= sizeof(struct _virtio_net_hdr) || len > VIRTIO_NET_BUFLEN) {
+		LOG_ERR("invalid RX used_len %u", len);
 	} else {
-		/* Packet received correctly, no error */
+		len -= sizeof(struct _virtio_net_hdr);
+		struct net_pkt *pkt =
+			net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
+
+		if (pkt == NULL) {
+			LOG_ERR("received packet, but could not pass it to the operating system");
+		} else if (net_pkt_write(pkt, &(data->rxb[buf_no][sizeof(struct _virtio_net_hdr)]),
+					 len)) {
+			LOG_ERR("could not copy entire received packet");
+			net_pkt_unref(pkt);
+		} else if (net_recv_data(data->iface, pkt)) {
+			LOG_ERR("operating system failed to receive packet");
+			net_pkt_unref(pkt);
+		} else {
+			/* Packet received correctly, no error */
+		}
 	}
+
 	struct virtq_buf vqbuf[] = {{.addr = &(data->rxb[buf_no]), .len = VIRTIO_NET_BUFLEN}};
 
 	virtq_add_buffer_chain(vq, vqbuf, 1, 0, virtnet_rx_cb, priv, K_FOREVER);
