@@ -1,0 +1,24 @@
+identifier: esp32p4_wifi6_touch_lcd_4_3/esp32p4/hpcore
+name: Waveshare ESP32-P4-WIFI6-Touch-LCD-4.3 HP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - heap
+supported:
+  - counter
+  - display
+  - dma
+  - entropy
+  - gpio
+  - hwinfo
+  - i2c
+  - input
+  - netif:wifi
+  - sdhc
+  - uart
+  - usb_device
+  - watchdog
+vendor: waveshare
