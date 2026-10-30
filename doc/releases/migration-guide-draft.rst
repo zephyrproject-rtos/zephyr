@@ -100,6 +100,14 @@ Networking
 Other subsystems
 ****************
 
+C++
+===
+
+* On targets using :kconfig:option:`CONFIG_ATOMIC_OPERATIONS_C`, Zephyr now provides
+  ``__atomic_exchange_N`` and ``__atomic_fetch_<op>_N`` for 1, 2 and 4 byte types.
+  Applications that define these functions themselves must remove their definitions
+  to avoid multiple definition link errors.
+
 Modules
 *******
 
