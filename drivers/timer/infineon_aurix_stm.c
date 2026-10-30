@@ -11,6 +11,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 
 #if CONFIG_SOC_SERIES_TC3X
 #define STM_TIM0       0x10
@@ -82,7 +83,8 @@ static uint64_t timer_driver_cycle_get(void)
 
 	return (uint64_t)lo | ((uint64_t)hi << 32);
 #elif CONFIG_SOC_SERIES_TC4X
-	return sys_read64(STM_BASE + STM_ABS);
+	/* Reading ABS[31:0] latches STM[63:32], so read the low word first. */
+	return sys_read64_lo_hi(STM_BASE + STM_ABS);
 #else
 	return 0;
 #endif
@@ -100,7 +102,7 @@ uint32_t sys_clock_cycle_get_32(void)
 #if CONFIG_SOC_SERIES_TC3X
 	return sys_read32(STM_BASE + STM_TIM0);
 #elif CONFIG_SOC_SERIES_TC4X
-	return (uint32_t)sys_read64(STM_BASE + STM_ABS);
+	return sys_read32(STM_BASE + STM_ABS);
 #else
 	return 0;
 #endif

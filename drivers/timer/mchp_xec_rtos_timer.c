@@ -9,7 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <soc.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/spinlock.h>

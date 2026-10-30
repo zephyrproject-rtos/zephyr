@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/sys/barrier.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/cpu.h>
 
 /* clocks (soc-specific) */
 #define FT9001_CLK_CFG_ADDR    0x40004008u

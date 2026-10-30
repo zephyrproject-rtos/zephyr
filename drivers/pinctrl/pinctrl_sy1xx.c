@@ -8,8 +8,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/cpu.h>
 
 static uint32_t pinctrl0_base_addr = DT_REG_ADDR(DT_NODELABEL(pinctrl));
 static uint32_t pinctrl0_base_mask = DT_REG_SIZE(DT_NODELABEL(pinctrl)) - 1;

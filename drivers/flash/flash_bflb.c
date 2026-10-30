@@ -31,7 +31,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/barrier.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/cache.h>
 #include <zephyr/sys/byteorder.h>
 

@@ -7,15 +7,13 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 
 #define DT_DRV_COMPAT brcm_iproc_pcie_ep
 
 #include "pcie_ep_iproc.h"
 
 LOG_MODULE_DECLARE(iproc_pcie, CONFIG_PCIE_EP_LOG_LEVEL);
-
-/* Helper macro to read 64-bit data using two 32-bit data read */
-#define sys_read64(addr) (((uint64_t)(sys_read32(addr + 4)) << 32) | sys_read32(addr))
 
 #ifdef PCIE_EP_IPROC_INIT_CFG
 void iproc_pcie_msix_config(const struct device *dev)
@@ -83,7 +81,7 @@ static int generate_msix(const struct device *dev, const uint32_t msix_num)
 	uint64_t addr;
 	uint32_t data;
 
-	addr = sys_read64(MSIX_VECTOR_OFF(msix_num) + MSIX_TBL_ADDR_OFF);
+	addr = sys_read64_hi_lo(MSIX_VECTOR_OFF(msix_num) + MSIX_TBL_ADDR_OFF);
 
 	if (addr == 0) {
 		/*
