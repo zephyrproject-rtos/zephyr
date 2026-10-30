@@ -1,0 +1,39 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: ztest
+  sidecar: bumble
+
+tests:
+  bluetooth.classic.bumble.rfcomm.single_conn:
+    timeout: 120
+    sidecar_config:
+      bumble:
+        addresses:
+          - "00:00:01:00:00:01"
+          - "00:00:01:00:00:02"
+        devices:
+          - '--peer_bd_address={addr1} -test=rfcomm_client::test_01_single_conn'
+          - '--peer_bd_address={addr0} -test=rfcomm_server::test_01_single_conn'
+  bluetooth.classic.bumble.rfcomm.single_conn_with_credit:
+    timeout: 120
+    sidecar_config:
+      bumble:
+        addresses:
+          - "00:00:01:00:00:01"
+          - "00:00:01:00:00:02"
+        devices:
+          - '--peer_bd_address={addr1} -test=rfcomm_client::test_02_single_conn_with_credit'
+          - '--peer_bd_address={addr0} -test=rfcomm_server::test_02_single_conn_with_credit'
+  bluetooth.classic.bumble.rfcomm.multi_conn:
+    timeout: 120
+    sidecar_config:
+      bumble:
+        addresses:
+          - "00:00:01:00:00:01"
+          - "00:00:01:00:00:02"
+        devices:
+          - '--peer_bd_address={addr1} -test=rfcomm_client::test_03_multi_conn'
+          - '--peer_bd_address={addr0} -test=rfcomm_server::test_03_multi_conn'
