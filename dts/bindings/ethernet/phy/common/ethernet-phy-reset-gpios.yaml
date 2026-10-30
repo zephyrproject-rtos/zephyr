@@ -8,11 +8,11 @@ properties:
     type: phandle-array
     description: |
       Optional GPIO used to reset the PHY
-  reset-assert-duration-us:
+  reset-assert-us:
     type: int
     description: |
-      Minimum duration in microseconds to assert the reset-gpios pin.
-  reset-deassertion-timeout-ms:
+      Time in microseconds to hold the reset-gpios pin asserted.
+  reset-deassert-us:
     type: int
     description: |
-      Timeout in milliseconds after the reset-gpios pin is deasserted.
+      Time in microseconds to wait after deasserting the reset-gpios pin.
