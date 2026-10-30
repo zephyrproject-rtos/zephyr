@@ -1,10 +1,14 @@
 # Copyright (c) 2023 STMicroelectronics
 # Copyright (c) 2025 8tronix GmbH
+# Copyright (c) 2026 Dotcom IoT LLP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    When setting the accel-range, accel-odr, properties in a .dts or .dtsi
-    file you may include lis2du12.h and use the macros defined there.
+  STMicroelectronics LIS2DU12 / MIS2DU12 3-axis accelerometer sensor
+  common properties.
+
+  When setting the accel-range, accel-odr, properties in a .dts or .dtsi
+  file you may include lis2du12.h and use the macros defined there.
 
 include: sensor-device.yaml
 
