@@ -8,6 +8,7 @@
 
 #include "nrf54lm20a_cpuapp_common.dtsi"
 #include "seeed_xiao_connector.dtsi"
+#include <vendor/nordic/nrf54lm20a_cpuapp_partition.dtsi>
 
 / {
 	compatible = "seeed,xiao_nrf54lm20a_nrf54lm20a-cpuapp";
