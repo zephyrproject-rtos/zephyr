@@ -168,6 +168,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	iframe->a3 = (uint32_t)p2;
 	iframe->a4 = (uint32_t)p3;
 
+	iframe->lr = 0;
 	iframe->xpsr = 0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
 	thread->callee_saved.psp = (uint32_t)iframe;
