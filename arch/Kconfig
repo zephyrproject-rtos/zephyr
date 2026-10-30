@@ -593,6 +593,7 @@ config ARCH_STACKWALK_MAX_FRAMES
 	help
 	  Depending on implementation, this can place a hard limit on the depths of the stack
 	  for the stack walk function to examine.
+	  TriCore walks of other threads capture at most 32 frames to bound snapshot storage.
 
 menu "Interrupt Configuration"
 
