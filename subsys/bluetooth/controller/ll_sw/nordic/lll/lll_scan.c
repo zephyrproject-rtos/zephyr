@@ -32,6 +32,7 @@
 #include "lll_clock.h"
 #include "lll_df_types.h"
 #include "lll_scan.h"
+#include "lll_scan_aux.h"
 #include "lll_sync.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
@@ -94,7 +95,7 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 			      uint8_t irkmatch_ok, uint8_t rl_idx,
 			      uint8_t rssi_ready, uint8_t phy_flags_rx,
-			      bool dir_report);
+			      bool dir_report, bool tgta_resolved);
 
 int lll_scan_init(void)
 {
@@ -188,51 +189,67 @@ bool lll_scan_adva_check(const struct lll_scan *lll, uint8_t addr_type,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 bool lll_scan_ext_tgta_check(const struct lll_scan *lll, bool pri, bool is_init,
 			     const struct pdu_adv *pdu, uint8_t rl_idx,
-			     bool *const dir_report)
+			     bool *const dir_report, bool *const tgta_resolved)
 {
-	const uint8_t *adva;
-	const uint8_t *tgta;
-	uint8_t is_directed;
-	uint8_t tx_addr;
-	uint8_t rx_addr;
+	const struct pdu_adv_com_ext_adv *com_hdr = &pdu->adv_ext_ind;
+	const struct pdu_adv_ext_hdr *hdr = &com_hdr->ext_hdr;
+	bool is_directed = false;
+	uint8_t adva_size = 0U;
+	bool has_aux = false;
 
-	if (pri && !pdu->adv_ext_ind.ext_hdr.adv_addr) {
+	/* The ULL and HCI read the fields that the flags announce */
+	if (!ull_scan_aux_lll_ext_hdr_is_complete(pdu)) {
+		return false;
+	}
+
+	/* Without an extended header, there are no flags either */
+	if (com_hdr->ext_hdr_len != 0U) {
+		adva_size = (hdr->adv_addr != 0U) ? ADVA_SIZE : 0U;
+		is_directed = (hdr->tgt_addr != 0U);
+		has_aux = (hdr->aux_ptr != 0U);
+	}
+
+	if (adva_size == 0U) {
+		/* Connectable and scannable advertising has the AdvA in the
+		 * AUX_ADV_IND that the AuxPtr of its ADV_EXT_IND points to (Core
+		 * Spec v6.3, Vol 6, Part B, Tables 2.4 and 2.5), and the
+		 * connection and scan requests take it from there
+		 */
+		if ((pri && is_init && !has_aux) ||
+		    (!pri && (com_hdr->adv_mode != 0U))) {
+			return false;
+		}
+	} else if (is_init && ((lll->filter_policy & SCAN_FP_FILTER) == 0U) &&
+		   !lll_scan_adva_check(lll, pdu->tx_addr,
+					&hdr->data[ADVA_OFFSET], rl_idx)) {
+		return false;
+	}
+
+	if (!is_directed) {
 		return true;
 	}
 
-	/* The AUX_ADV_IND of connectable and scannable advertising has the
-	 * AdvA (Core Spec v6.3, Vol 6, Part B, Tables 2.4 and 2.5)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	/* Without AdvA there is no resolving list entry of the advertiser, so
+	 * a TargetA that is a resolvable private address is resolved with the
+	 * local IRKs of the list (Core Spec v6.3, Vol 6, Part B, Sections
+	 * 1.3.2.3 and 6.3)
 	 */
-	if (!pri && (pdu->adv_ext_ind.adv_mode != 0U) &&
-	    ((pdu->adv_ext_ind.ext_hdr_len == 0U) ||
-	     !pdu->adv_ext_ind.ext_hdr.adv_addr)) {
-		return false;
-	}
+	if ((adva_size == 0U) &&
+	    ull_filter_lll_local_irk_resolve(pdu->rx_addr, &hdr->data[adva_size])) {
+		if (tgta_resolved != NULL) {
+			*tgta_resolved = true;
+		}
 
-	if (pdu->len <
-	    PDU_AC_EXT_HEADER_SIZE_MIN + sizeof(struct pdu_adv_ext_hdr) +
-	    ADVA_SIZE) {
-		return false;
+		return true;
 	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
-	if (is_directed && (pdu->len < PDU_AC_EXT_HEADER_SIZE_MIN +
-				       sizeof(struct pdu_adv_ext_hdr) +
-				       ADVA_SIZE + TARGETA_SIZE)) {
-		return false;
-	}
-
-	tx_addr = pdu->tx_addr;
-	rx_addr = pdu->rx_addr;
-	adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
-	tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
-	return ((!is_init ||
-		 ((lll->filter_policy & SCAN_FP_FILTER) != 0U) ||
-		 lll_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
-		((!is_directed) ||
-		 (is_directed &&
-		  isr_scan_tgta_check(lll, is_init, rx_addr, tgta, rl_idx,
-				      dir_report))));
+	/* TargetA follows the AdvA, if any. An ADV_EXT_IND may have it while
+	 * the AdvA is in its AUX_ADV_IND, which then has no TargetA.
+	 */
+	return isr_scan_tgta_check(lll, is_init, pdu->rx_addr, &hdr->data[adva_size], rl_idx,
+				   dir_report);
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -252,7 +269,10 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	/* Note: this code is also valid for AUX_CONNECT_REQ */
 	pdu_tx->type = PDU_ADV_TYPE_CONNECT_IND;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
+	/* ChSel is RFU in AUX_CONNECT_REQ, as Channel Selection Algorithm #2
+	 * is used anyway.
+	 */
+	if ((phy == PHY_LEGACY) && IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 		pdu_tx->chan_sel = 1;
 	} else {
 		pdu_tx->chan_sel = 0;
@@ -1186,6 +1206,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t rl_idx, uint8_t rssi_ready,
 			     uint8_t phy_flags_rx)
 {
+	bool tgta_resolved = false;
 	bool dir_report = false;
 
 	if (0) {
@@ -1398,7 +1419,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		/* save the adv packet */
 		err = isr_rx_scan_report(lll, devmatch_ok, irkmatch_ok, rl_idx,
-					 rssi_ready, phy_flags_rx, false);
+					 rssi_ready, phy_flags_rx, false, false);
 		if (err) {
 			return err;
 		}
@@ -1493,7 +1514,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		   lll->phy &&
 		   !lll->state &&
 		   lll_scan_ext_tgta_check(lll, true, false, pdu_adv_rx, rl_idx,
-					   &dir_report)) ||
+					   &dir_report, &tgta_resolved)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (pdu_adv_rx->len >= offsetof(struct pdu_adv_scan_rsp, data)) &&
@@ -1514,7 +1535,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		/* save the scan response packet */
 		err = isr_rx_scan_report(lll, devmatch_ok, irkmatch_ok, rl_idx,
-					 rssi_ready, phy_flags_rx, dir_report);
+					 rssi_ready, phy_flags_rx, dir_report,
+					 tgta_resolved);
 		if (err) {
 			/* Auxiliary PDU LLL scanning has been setup */
 			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
@@ -1607,7 +1629,7 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 			      uint8_t irkmatch_ok, uint8_t rl_idx,
 			      uint8_t rssi_ready, uint8_t phy_flags_rx,
-			      bool dir_report)
+			      bool dir_report, bool tgta_resolved)
 {
 	struct node_rx_pdu *node_rx;
 	int err = 0;
@@ -1696,7 +1718,7 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 	node_rx->rx_ftr.rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	node_rx->rx_ftr.direct_resolved = (rl_idx != FILTER_IDX_NONE);
+	node_rx->rx_ftr.direct_resolved = (rl_idx != FILTER_IDX_NONE) || tgta_resolved;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
