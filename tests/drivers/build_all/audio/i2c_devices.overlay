@@ -96,6 +96,14 @@
 				vdd-amp-supply = <&test_regulator>;
 				status = "okay";
 			};
+
+			test_i2c_cs42l51: cs42l51@a {
+				compatible = "cirrus,cs42l51";
+				status = "okay";
+				reg = <0xa>;
+				reset-gpios = <&test_gpio 0 0>;
+				input-channel = <1>;
+			};
 		};
 
 		test_gpio: gpio@deadbeef {
