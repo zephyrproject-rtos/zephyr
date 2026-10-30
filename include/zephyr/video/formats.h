@@ -768,7 +768,10 @@ extern "C" {
  * @param ... extra parameters
  */
 #define VIDEO_FOREACH_RGB_PADDED(X, ...)					\
-	X(VIDEO_PIX_FMT_XRGB32, __VA_ARGS__)
+	X(VIDEO_PIX_FMT_XRGB32, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_XBGR32, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_RGBX32, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_BGRX32, __VA_ARGS__)
 
 /**
  * The first byte is empty (X) for each pixel.
@@ -1173,6 +1176,193 @@ extern "C" {
 /**
  * @}
  */
+
+/**
+ * @name Display formats equivalents
+ *
+ * Display RGB is typically described as 32-bit or 16-bit integer assuming a little endian CPU
+ * and explains why "RGB" formats are byte-per-byte encoded as B-G-R.
+ *
+ * Video formats are described as they appear in memory byte-per-byte, for instance "RGB" are
+ * encoded as R-G-B in memory, but appear as B-G-R if read as integer.
+ *
+ * RGB565 which is expressed as a 16-bit little-endian integer for both video and display and their
+ * definition is matching across video and display APIs.
+ *
+ * @{
+ */
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_RGB_888
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_RGB_888(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_BGR24)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_MONO01
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_MONO01(pixfmt)					\
+	(0)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_MONO10
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_MONO10(pixfmt)					\
+	(0)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_ARGB_8888
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_ARGB_8888(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_BGRA32)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_RGB_565
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_RGB_565(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_RGB565)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_RGB_565X
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_RGB_565X(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_RGB565X)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_L_8
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_L_8(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_GREY)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_AL_88
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_AL_88(pixfmt)					\
+	(0)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_XRGB_8888
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_XRGB_8888(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_BGRX32)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_BGR_888
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_BGR_888(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_RGB24)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_ABGR_8888
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_ABGR_8888(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_RGBA32)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_RGBA_8888
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_RGBA_8888(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_ABGR32)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_BGRA_8888
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_BGRA_8888(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_ARGB32)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_I_4
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_I_4(pixfmt)					\
+	(0)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_L_4
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_L_4(pixfmt)					\
+	(0)
+
+/**
+ * @brief Test if a FourCC is matching the display format @ref PIXEL_FORMAT_YUYV
+ *
+ * @param pixfmt Video pixel format
+ * @retval true if the video format matches the display format
+ */
+#define VIDEO_FMT_IS_DISPLAY_YUYV(pixfmt)					\
+	((pixfmt) == VIDEO_PIX_FMT_YUYV)
+
+/**
+ * @brief Convert a video FourCC to a display
+ *
+ * @param pixfmt Video pixel format
+ * @retval the pixel format or 0 if no equivalent is known
+ */
+#define VIDEO_FMT_TO_DISPLAY(pixfmt)						\
+	(VIDEO_FMT_IS_DISPLAY_RGB_888(pixfmt)	? PIXEL_FORMAT_RGB_888 :	\
+	 VIDEO_FMT_IS_DISPLAY_RGB_888(pixfmt)	? PIXEL_FORMAT_RGB_888 :	\
+	 VIDEO_FMT_IS_DISPLAY_MONO01(pixfmt)	? PIXEL_FORMAT_MONO01 :		\
+	 VIDEO_FMT_IS_DISPLAY_MONO10(pixfmt)	? PIXEL_FORMAT_MONO10 :		\
+	 VIDEO_FMT_IS_DISPLAY_ARGB_8888(pixfmt)	? PIXEL_FORMAT_ARGB_8888 :	\
+	 VIDEO_FMT_IS_DISPLAY_RGB_565(pixfmt)	? PIXEL_FORMAT_RGB_565 :	\
+	 VIDEO_FMT_IS_DISPLAY_RGB_565X(pixfmt)	? PIXEL_FORMAT_RGB_565X :	\
+	 VIDEO_FMT_IS_DISPLAY_L_8(pixfmt)	? PIXEL_FORMAT_L_8 :		\
+	 VIDEO_FMT_IS_DISPLAY_AL_88(pixfmt)	? PIXEL_FORMAT_AL_88 :		\
+	 VIDEO_FMT_IS_DISPLAY_XRGB_8888(pixfmt)	? PIXEL_FORMAT_XRGB_8888 :	\
+	 VIDEO_FMT_IS_DISPLAY_BGR_888(pixfmt)	? PIXEL_FORMAT_BGR_888 :	\
+	 VIDEO_FMT_IS_DISPLAY_ABGR_8888(pixfmt)	? PIXEL_FORMAT_ABGR_8888 :	\
+	 VIDEO_FMT_IS_DISPLAY_RGBA_8888(pixfmt)	? PIXEL_FORMAT_RGBA_8888 :	\
+	 VIDEO_FMT_IS_DISPLAY_BGRA_8888(pixfmt)	? PIXEL_FORMAT_BGRA_8888 :	\
+	 VIDEO_FMT_IS_DISPLAY_I_4(pixfmt)	? PIXEL_FORMAT_I_4 :		\
+	 VIDEO_FMT_IS_DISPLAY_L_4(pixfmt)	? PIXEL_FORMAT_L_4 :		\
+	 VIDEO_FMT_IS_DISPLAY_YUYV(pixfmt)	? PIXEL_FORMAT_YUYV :		\
+	 0)
+
+/** @} */
 
 /** @cond INTERNAL_HIDDEN */
 #define _VIDEO_FMT_OR_EQ(pixfmt_a, pixfmt_b) || ((pixfmt_a) == (pixfmt_b))
