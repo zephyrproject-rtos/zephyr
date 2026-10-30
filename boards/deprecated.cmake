@@ -13,6 +13,10 @@
 # https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated,
 # so these aliases are eventually removed
 
+set(lp_em_cc35x1/_DEPRECATED
+    lp_em_cc35x1/cc3551e
+)
+
 set(fvp_base_revc_2xaemv8a_DEPRECATED
     fvp_base_revc_2xaem/v8a
 )

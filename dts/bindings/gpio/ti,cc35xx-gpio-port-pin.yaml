@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI GPIO
+
+compatible: "ti,cc35xx-gpio-port-pin"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  npins:
+    type: int
+    const: 1
+    description: |
+      Number of GPIOs available on port.
+
+  gpio-index:
+    type: int
+    required: true
+
+gpio-cells:
+  - pin
+  - flags

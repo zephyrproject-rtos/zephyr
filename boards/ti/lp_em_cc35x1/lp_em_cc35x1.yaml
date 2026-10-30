@@ -1,0 +1,14 @@
+identifier: lp_em_cc35x1
+name: TI SimpleLink™ CC35x1 LaunchPad
+type: mcu
+arch: arm
+ram: 1024
+flash: 4096
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - pinctrl
+  - serial
+vendor: ti

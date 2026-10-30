@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+# Dictionary for INI version Demo Version
+
+StaPowerSave                            mac.ps_mode
+PowerSaveScheme                         mac.ps_scheme
+HE_Enable                               mac.he_enable
+ListenInterval                          core.listen_interval
+WakeUpEvent                             core.wake_up_event
+ApMaxNumStations                        mac.ApMaxNumStations
+MaxRxAmpduLen                           core.max_rx_ampdu_len
+EnableBle                               core.enable_ble
+DisableLogger                           core.disable_logger
+MixedModeSupport                        core.mixed_mode_support
+CountryCode                             core.country_code
+DefaultAntenna                          core.ant_diversity.default_antenna
+BleUartBaudrate                         core.BleUartBaudrate
+EnableUartFlowCtrl                      core.enable_FlowCtrl
+BleDefaultTxPower                       core.ble_default_tx_power
+PowerLimitArray                         core.per_channel_power_limit
+InsertionLoss_2_4GHz                    phy.insertion_loss_2_4GHz
+InsertionLoss_5GHz                      phy.insertion_loss_5GHz
+AntGain_2_4GHz                          phy.ant_gain_2_4GHz
+AntGain_5GHz                            phy.ant_gain_5GHz
+BleChLim1M                              phy.ble_ch_lim_1M
+BleChLim2M                              phy.ble_ch_lim_2M
+OneTimeCalibrationOnly                  phy.one_time_calibration_only
+IsDiplexerPresent                       phy.is_diplexer_present
+NumOfAntennas                           phy.num_of_antennas
+RegDomain                               phy.reg_domain
+TxPsatCompensation_2_4GHz               phy.tx_psat_compensation_2_4GHz
+TxPsatCompensation_5GHz                 phy.tx_psat_compensation_5GHz
+InternalSlowClkDrift_WakeupEarlier      core.internalSlowclk_wakeupEarlier
+ExtSlowClkDrift_WakeupEarlier           core.externalSlowclk_wakeupEarlier
+InternalSlowClkDrift_OpenWindowLonger   core.internalSlowclk_OpenWindowLonger
+ExtSlowClkDrift_OpenWindowLonger        core.externalSlowclk_OpenWindowLonger
+SlowClk_SampledCycles                   core.slowclk_sampledCycles
+SlowClockSource                         core.mx_slowclk_source
+SLOW_CLOCK_IN_pull_val                  core.iomux_configuration.slow_clock_in_pull_val
+SDIO_CLK_pull_val                       core.iomux_configuration.sdio_clk_pull_val
+SDIO_CMD_pull_val                       core.iomux_configuration.sdio_cmd_pull_val
+SDIO_D0_pull_val                        core.iomux_configuration.sdio_d0_pull_val
+SDIO_D1_pull_val                        core.iomux_configuration.sdio_d1_pull_val
+SDIO_D2_pull_val                        core.iomux_configuration.sdio_d2_pull_val
+SDIO_D3_pull_val                        core.iomux_configuration.sdio_d3_pull_val
+HOST_IRQ_WL_pull_val                    core.iomux_configuration.host_irq_wl_pull_val
+UART1_TX_pull_val                       core.iomux_configuration.uart1_tx_pull_val
+UART1_RX_pull_val                       core.iomux_configuration.uart1_rx_pull_val
+UART1_CTS_pull_val                      core.iomux_configuration.uart1_cts_pull_val
+UART1_RTS_pull_val                      core.iomux_configuration.uart1_rts_pull_val
+COEX_PRIORITY_pull_val                  core.iomux_configuration.coex_priority_pull_val
+COEX_REQ_pull_val                       core.iomux_configuration.coex_req_pull_val
+COEX_GRANT_pull_val                     core.iomux_configuration.coex_grant_pull_val
+HOST_IRQ_BLE_pull_val                   core.iomux_configuration.host_irq_ble_pull_val
+FAST_CLK_REQ_pull_val                   core.iomux_configuration.fast_clk_req_pull_val
+ANT_SEL_pull_val                        core.iomux_configuration.ant_sel_pull_val
+Is_ExtSoC_Connected                     core.coex_configuration.is_Ext_soc_enable
+ExtSoC_grant_polarity                   core.coex_configuration.ext_soc_grant_polarity
+ExtSoC_priority_polarity                core.coex_configuration.ext_soc_priority_polarity
+ExtSoC_request_polarity                 core.coex_configuration.ext_soc_request_polarity
+ExtSoC_min_grant_time                   core.coex_configuration.ext_soc_min_grant_time
+ExtSoC_max_grant_time                   core.coex_configuration.ext_soc_max_grant_time
+ExtSoC_t2_time                          core.coex_configuration.ext_soc_t2_time
+ExtSoC_to_wifi_grant_delay              core.coex_configuration.ext_soc_to_wifi_grant_delay
+ExtSoC_to_ble_grant_delay               core.coex_configuration.ext_soc_to_ble_grant_delay
+XTAL_SettlingTime                       core.xtal_SettlingTime_usec
