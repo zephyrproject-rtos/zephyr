@@ -1820,6 +1820,21 @@ __maybe_unused static int get_uint16_option(uint16_t option, int *value, uint32_
 	return 0;
 }
 
+__maybe_unused static int get_uint32_option(uint32_t option, int *value, uint32_t *len)
+{
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
+	*value = (int)option;
+
+	if (len != NULL) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+}
+
 static int get_context_priority(struct net_context *context,
 				void *value, uint32_t *len)
 {
@@ -1922,7 +1937,7 @@ static int get_context_rcvbuf(struct net_context *context,
 			      void *value, uint32_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_RCVBUF)
-	return get_uint16_option(context->options.rcvbuf,
+	return get_uint32_option(context->options.rcvbuf,
 				 value, len);
 #else
 	ARG_UNUSED(context);
@@ -1937,7 +1952,7 @@ static int get_context_sndbuf(struct net_context *context,
 				void *value, uint32_t *len)
 {
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
-	return get_uint16_option(context->options.sndbuf,
+	return get_uint32_option(context->options.sndbuf,
 				 value, len);
 #else
 	ARG_UNUSED(context);
@@ -4497,6 +4512,31 @@ __maybe_unused static int set_uint16_option(uint16_t *option, const void *value,
 
 }
 
+/* The value is an int, so max must not be above INT_MAX. */
+__maybe_unused static int set_uint32_option(uint32_t *option, const void *value, uint32_t len,
+					    uint32_t max)
+{
+	int v;
+
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	v = *((const int *)value);
+
+	if (v < 0 || (uint32_t)v > max) {
+		return -EINVAL;
+	}
+
+	*option = (uint32_t)v;
+
+	return 0;
+}
+
 static int set_context_priority(struct net_context *context,
 				const void *value, uint32_t len)
 {
@@ -4596,7 +4636,7 @@ static int set_context_rcvbuf(struct net_context *context,
 				const void *value, uint32_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_RCVBUF)
-	return set_uint16_option(&context->options.rcvbuf, value, len);
+	return set_uint32_option(&context->options.rcvbuf, value, len, UINT16_MAX);
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
@@ -4610,7 +4650,7 @@ static int set_context_sndbuf(struct net_context *context,
 				const void *value, uint32_t len)
 {
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
-	return set_uint16_option(&context->options.sndbuf, value, len);
+	return set_uint32_option(&context->options.sndbuf, value, len, UINT16_MAX);
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
