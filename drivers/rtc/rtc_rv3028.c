@@ -391,7 +391,6 @@ static int rv3028_set_calibration(const struct device *dev, int32_t freq_ppb)
 	int err;
 	int32_t nb_pulses;
 	uint16_t offset;
-	uint8_t val_backup;
 
 	if ((freq_ppb > MAX_PPB) || (freq_ppb < MIN_PPB)) {
 		/* out of supported range */
@@ -404,40 +403,15 @@ static int rv3028_set_calibration(const struct device *dev, int32_t freq_ppb)
 	LOG_DBG("Set calibration: frequency ppb: %d, offset value: %d", NB_PULSES_TO_PPB(nb_pulses),
 		offset);
 
-	/* Refresh the settings in the RAM with the settings from the EEPROM */
-	err = mfd_rv3028_enter_eerd(config->mfd);
+	err = mfd_rv3028_update_cfg(config->mfd, RV3028_REG_OFFSET, 0xFFU, offset >> 1);
 	if (err) {
-		return -ENODEV;
-	}
-	err = mfd_rv3028_refresh(config->mfd);
-	if (err) {
-		mfd_rv3028_exit_eerd(config->mfd);
-		return err;
-	}
-
-	err = mfd_rv3028_read_reg8(config->mfd, RV3028_REG_BACKUP, &val_backup);
-	if (err) {
-		mfd_rv3028_exit_eerd(config->mfd);
 		return err;
 	}
 
 	/* LSB of offset is stored in BACKUP register */
-	val_backup &= ~BIT(RV3028_BACKUP_OFFSET_BIT_INDEX);
-	val_backup |= (offset & 0x01) << RV3028_BACKUP_OFFSET_BIT_INDEX;
-
-	err = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_BACKUP, val_backup);
-	if (err) {
-		mfd_rv3028_exit_eerd(config->mfd);
-		return err;
-	}
-
-	err = mfd_rv3028_write_reg8(config->mfd, RV3028_REG_OFFSET, offset >> 1);
-	if (err) {
-		mfd_rv3028_exit_eerd(config->mfd);
-		return err;
-	}
-
-	return mfd_rv3028_update(config->mfd);
+	return mfd_rv3028_update_cfg(config->mfd, RV3028_REG_BACKUP,
+				     BIT(RV3028_BACKUP_OFFSET_BIT_INDEX),
+				     (offset & 0x01) << RV3028_BACKUP_OFFSET_BIT_INDEX);
 }
 
 static int rv3028_get_calibration(const struct device *dev, int32_t *freq_ppb)
