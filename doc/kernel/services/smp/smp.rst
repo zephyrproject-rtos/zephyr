@@ -90,6 +90,35 @@ cache-incoherent architectures, and it carries an implicit API contract: any
 memory passed to the kernel is assumed to be cache-coherent, so kernel data
 structures must not be created in cached regions.
 
+On Cortex-R52, this mode requires :kconfig:option:`CONFIG_ARM_MPU`,
+:kconfig:option:`CONFIG_DCACHE`, and the architectural cache controller
+(:kconfig:option:`CONFIG_ARCH_CACHE`), with :kconfig:option:`CONFIG_USE_SWITCH`.
+It supports execution from RAM only; :kconfig:option:`CONFIG_XIP` is incompatible
+with :kconfig:option:`CONFIG_KERNEL_COHERENCE` on Cortex-R52.
+The linker places initialized ``__incoherent`` data in the ordinary data section
+and stacks in a cached ``NOLOAD`` section after the last loadable section. This
+keeps stacks outside the contiguous load image. The MPU maps shared initialized
+data before the stacks and the remaining kernel RAM after them as Normal
+non-cacheable, Outer Shareable memory. The SoC MPU configuration must contain a
+cacheable RAM region covering these areas; the MPU driver splits that region
+to establish the two coherent mappings.
+
+Each thread records the CPU which last saved its context. Resuming on that CPU
+requires no invalidation. After migration, the live stack above the saved stack
+pointer, including TLS, is invalidated, together with the stack sentinel when
+enabled. First use and stack reuse invalidate the entire stack. Cortex-R52's
+write-through L1 cache and the context-switch completion barrier publish outgoing
+stack writes.
+Application buffers and objects accessed by another CPU through kernel
+APIs must still be in coherent memory. In particular, a buffer on a cached
+stack cannot be used as the destination of a blocking message queue receive
+unless the application provides the necessary cache maintenance.
+
+On Cortex-R52, :kconfig:option:`CONFIG_MPU_STACK_GUARD` is incompatible with
+this mode. The MPU map remains static during context switches, avoiding changes
+to shared memory attributes and whole-cache maintenance. Software stack checking
+with :kconfig:option:`CONFIG_STACK_SENTINEL` remains available.
+
 .. _smp_cpu_mask:
 
 CPU Mask
