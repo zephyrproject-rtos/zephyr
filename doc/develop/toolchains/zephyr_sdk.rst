@@ -87,6 +87,30 @@ example, you can set ``ZEPHYR_SDK_INSTALL_DIR`` to ``/company/tools``, where the
 This allows the Zephyr build system to choose the correct version of the SDK,
 while allowing multiple Zephyr SDKs to be grouped together at a specific path.
 
+When several Zephyr SDKs are installed, a specific version can be selected by
+setting the :makevar:`ZEPHYR_SDK_VERSION` variable (for example
+``-DZEPHYR_SDK_VERSION=0.16.4``) to the desired version number. The build fails
+with an error if the requested version is not installed, or is not compatible
+with the Zephyr version being built.
+
+:envvar:`ZEPHYR_SDK_INSTALL_DIR` takes precedence over
+:makevar:`ZEPHYR_SDK_VERSION`. When both are set, the Zephyr SDK is looked up in
+the install directory and a warning reports that the requested version is
+ignored.
+
+Neither variable decides *whether* the Zephyr SDK is used, only *which* one is
+used. The Zephyr SDK is looked up when it is selected with
+:envvar:`ZEPHYR_TOOLCHAIN_VARIANT`, when no toolchain is selected at all, or
+when a toolchain that relies on Zephyr SDK host tools requires it.
+
+If you use :ref:`west <west>`, the ``build.sdk`` configuration option provides a
+per-workspace way to select the Zephyr SDK, by version number or installation
+directory, without setting :envvar:`ZEPHYR_SDK_INSTALL_DIR` in the environment::
+
+  west config build.sdk 0.16.4
+
+See :ref:`west-building-config` for details.
+
 .. _toolchain_zephyr_sdk_compatibility:
 
 Zephyr SDK version compatibility
