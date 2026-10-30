@@ -21,6 +21,7 @@ config PM_CPU_OPS_PSCI
 	bool "Support for the ARM Power State Coordination Interface (PSCI)"
 	default y
 	depends on DT_HAS_ARM_PSCI_0_2_ENABLED || DT_HAS_ARM_PSCI_1_1_ENABLED
+	depends on HAS_ARM_SMCCC
 	select PM_CPU_OPS_HAS_DRIVER
 	select HAS_POWEROFF
 	help
