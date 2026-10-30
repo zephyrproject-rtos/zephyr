@@ -97,7 +97,7 @@ static int cmd_espi_peci_get_dib(const struct shell *sh, size_t argc, char **arg
 		return -EINVAL;
 	}
 	msg.cmd_code = PECI_CMD_GET_DIB;
-	msg.tx_buffer.len = 0;
+	msg.tx_buffer.len = PECI_GET_DIB_WR_LEN;
 	msg.rx_buffer.len = PECI_GET_DIB_RD_LEN;
 	msg.rx_buffer.buf = rx_buf;
 
