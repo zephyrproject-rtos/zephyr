@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tcc0 {
+	compatible = "microchip,tcc-g1-counter";
+	max-bit-width = <24>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+&tcc1 {
+	compatible = "microchip,tcc-g1-counter";
+	max-bit-width = <24>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+&tcc2 {
+	compatible = "microchip,tcc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	/delete-property/ #pwm-cells;
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+	status = "okay";
+};
+
+/delete-node/ &pwm_led0;
+
+/ {
+	aliases {
+		/delete-property/ pwm-led0;
+	};
+};
