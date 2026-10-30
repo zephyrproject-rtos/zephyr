@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_QEMU_X86_64
+config BOARD_QEMU_X86_64_COMMON
+	bool
+	default y
 	select X86_64
 	select QEMU_TARGET
 	select HAS_COVERAGE_SUPPORT
+	select X86_CPU_HAS_CET if BOARD_QEMU_X86_64_KVM

@@ -31,6 +31,7 @@ endif()
 # QEMU_BOARD_FLAGS, and boards whose -machine already implies a CPU set it
 # without passing -cpu at all.
 
+include(${CMAKE_CURRENT_LIST_DIR}/qemu/validator.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/qemu/binary.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/qemu/flags.cmake)
 
