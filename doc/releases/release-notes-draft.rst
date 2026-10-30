@@ -78,6 +78,20 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Secure Storage
+
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_MAX_DATA_SIZE`
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_COUNTER`
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_CUSTOM` to allow implementing
+    your own ``secure_storage_ps_get_replay_protection()``.
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE`
+
+* TF-M
+
+  * :kconfig:option:`CONFIG_TFM_PS_MAX_ASSET_SIZE_OVERRIDE`
+  * :kconfig:option:`CONFIG_TFM_PS_MAX_ASSET_SIZE`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -120,6 +134,17 @@ Libraries / Subsystems
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
+
+* Secure Storage
+
+  * Added a Zephyr implementation of the PSA Protected Storage API
+    (:kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`). Like the ITS one, it
+    calls into transform and store modules, which can be configured and customized separately,
+    and adds a replay protection module. Its ZMS store module uses a dedicated partition, selected
+    with the ``zephyr,secure-storage-ps-partition`` devicetree chosen property.
+    The create flags and replay protection values of its entries are stored in the ITS through the
+    existing ITS interface, which is unchanged, so custom ITS implementations need no update to
+    be used with it.
 
 Other notable changes
 *********************
