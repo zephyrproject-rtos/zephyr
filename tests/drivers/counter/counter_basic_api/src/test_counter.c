@@ -196,7 +196,7 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RENESAS_RZ_CMTW
 	DEVS_FOR_DT_COMPAT(renesas_rz_cmtw_counter)
 #endif
-#ifdef CONFIG_COUNTER_INFINEON_TCPWM
+#if defined(CONFIG_COUNTER_INFINEON_TCPWM) || defined(CONFIG_COUNTER_INFINEON_TCPWM_GRP)
 	DEVS_FOR_DT_COMPAT(infineon_tcpwm_counter)
 #endif
 #ifdef CONFIG_COUNTER_MCHP_G1_TCC
