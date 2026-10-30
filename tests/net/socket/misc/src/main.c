@@ -1416,6 +1416,159 @@ ZTEST(socket_misc_test_suite, test_ipv6_global_peer_no_scope_tcp)
 	k_sleep(K_MSEC(2 * CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
+#define ANY_PORT 4252
+
+/* TCP from a client bound to the unspecified address, to an address of the
+ * given interface: bind() runs before the peer is known, so the interface
+ * must be picked again at connect() time. The handshake goes through that
+ * interface and the client reports the address of that interface.
+ *
+ * zexpect is used once the sockets are open, so that a failure closes them
+ * and does not make the tests that run later fail at socket().
+ */
+static void check_tcp_bound_any(int family, struct net_if *iface,
+				const struct net_sockaddr *srv_addr, net_socklen_t addr_len)
+{
+	struct net_sockaddr_storage any_addr = {0};
+	struct net_sockaddr_storage local;
+	net_socklen_t len;
+	int sock_s, sock_c, sock_a = -1;
+	int ret;
+
+	any_addr.ss_family = family;
+
+	sock_s = zsock_socket(family, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(sock_s >= 0, "socket open failed, %d", errno);
+	sock_c = zsock_socket(family, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	if (sock_c < 0) {
+		zsock_close(sock_s);
+		zassert_unreachable("socket open failed, %d", errno);
+	}
+
+	ret = zsock_bind(sock_s, srv_addr, addr_len);
+	zexpect_equal(ret, 0, "bind failed, %d", errno);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = zsock_listen(sock_s, 1);
+	zexpect_equal(ret, 0, "listen failed, %d", errno);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = zsock_bind(sock_c, net_sad(&any_addr), addr_len);
+	zexpect_equal(ret, 0, "bind failed, %d", errno);
+	if (ret < 0) {
+		goto out;
+	}
+
+	current_dev = NULL;
+	ret = zsock_connect(sock_c, srv_addr, addr_len);
+	zexpect_equal(ret, 0, "connect failed, %d", errno);
+	if (ret < 0) {
+		goto out;
+	}
+
+	zexpect_equal_ptr(current_dev, net_if_get_device(iface),
+			  "handshake through the wrong interface");
+
+	len = sizeof(local);
+	ret = zsock_getsockname(sock_c, net_sad(&local), &len);
+	zexpect_equal(ret, 0, "getsockname failed, %d", errno);
+	if (ret == 0 && family == NET_AF_INET) {
+		zexpect_true(net_ipv4_addr_cmp(&net_sin(net_sad(&local))->sin_addr,
+					       &net_sin(srv_addr)->sin_addr),
+			     "wrong local address");
+	} else if (ret == 0) {
+		zexpect_true(net_ipv6_addr_cmp(&net_sin6(net_sad(&local))->sin6_addr,
+					       &net_sin6(srv_addr)->sin6_addr),
+			     "wrong local address");
+	}
+
+	sock_a = zsock_accept(sock_s, NULL, NULL);
+	zexpect_true(sock_a >= 0, "accept failed, %d", errno);
+
+out:
+	if (sock_a >= 0) {
+		zexpect_equal(zsock_close(sock_a), 0, "close failed, %d", errno);
+	}
+	zexpect_equal(zsock_close(sock_c), 0, "close failed, %d", errno);
+	zexpect_equal(zsock_close(sock_s), 0, "close failed, %d", errno);
+
+	k_sleep(K_MSEC(2 * CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
+ZTEST(socket_misc_test_suite, test_ipv4_tcp_bound_any)
+{
+	struct net_sockaddr_in srv_addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(ANY_PORT),
+	};
+
+	srv_addr.sin_addr = my_ipv4_addr1;
+	check_tcp_bound_any(NET_AF_INET, dummy_data1.iface, (struct net_sockaddr *)&srv_addr,
+			    sizeof(srv_addr));
+	srv_addr.sin_addr = my_ipv4_addr2;
+	check_tcp_bound_any(NET_AF_INET, dummy_data2.iface, (struct net_sockaddr *)&srv_addr,
+			    sizeof(srv_addr));
+}
+
+ZTEST(socket_misc_test_suite, test_ipv6_tcp_bound_any)
+{
+	struct net_sockaddr_in6 srv_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(ANY_PORT),
+	};
+
+	srv_addr.sin6_addr = my_ipv6_addr1;
+	check_tcp_bound_any(NET_AF_INET6, dummy_data1.iface, (struct net_sockaddr *)&srv_addr,
+			    sizeof(srv_addr));
+	srv_addr.sin6_addr = my_ipv6_addr2;
+	check_tcp_bound_any(NET_AF_INET6, dummy_data2.iface, (struct net_sockaddr *)&srv_addr,
+			    sizeof(srv_addr));
+}
+
+/* A client bound to 0.0.0.0 gets the interface of its peer at connect() time,
+ * so the subnet broadcast of that interface is refused, also when it is not the
+ * default one. An unbound client is covered by test_tcp_connect_not_unicast.
+ */
+ZTEST(socket_misc_test_suite, test_ipv4_tcp_bound_any_subnet_bcast)
+{
+	struct net_sockaddr_in any_addr = {
+		.sin_family = NET_AF_INET,
+	};
+	struct net_sockaddr_in dst = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(DST_PORT),
+	};
+	int sock;
+	int ret;
+
+	/* Subnet broadcast of my_ipv4_addr2 (dummy_2) with the default netmask */
+	ret = zsock_inet_pton(NET_AF_INET, "192.0.2.255", &dst.sin_addr);
+	zassert_equal(ret, 1, "cannot parse address");
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(sock >= 0, "socket open failed, %d", errno);
+
+	ret = zsock_bind(sock, (struct net_sockaddr *)&any_addr, sizeof(any_addr));
+	zexpect_equal(ret, 0, "bind failed, %d", errno);
+
+	current_dev = NULL;
+	sys_sem_init(&send_sem, 0, 1);
+
+	ret = zsock_connect(sock, (struct net_sockaddr *)&dst, sizeof(dst));
+	zexpect_equal(ret, -1, "connect succeeded");
+	zexpect_equal(errno, EADDRNOTAVAIL, "connect: errno %d, expected %d", errno, EADDRNOTAVAIL);
+
+	ret = sys_sem_take(&send_sem, K_MSEC(100));
+	zexpect_not_equal(ret, 0, "connect sent a packet");
+
+	ret = zsock_close(sock);
+	zexpect_equal(ret, 0, "close failed, %d", errno);
+}
+
 static void *setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
